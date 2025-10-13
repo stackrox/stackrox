@@ -9,19 +9,18 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type LogImbuesStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestLogImbuesStore(t *testing.T) {
@@ -29,28 +28,17 @@ func TestLogImbuesStore(t *testing.T) {
 }
 
 func (s *LogImbuesStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
 
 	s.testDB = pgtest.ForT(s.T())
-	s.store = New(s.testDB.Pool)
+	s.store = New(s.testDB.DB)
 }
 
 func (s *LogImbuesStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE log_imbues CASCADE")
 	s.T().Log("log_imbues", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
-}
-
-func (s *LogImbuesStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *LogImbuesStoreSuite) TestStore() {
@@ -72,12 +60,12 @@ func (s *LogImbuesStoreSuite) TestStore() {
 	foundLogImbue, exists, err = store.Get(ctx, logImbue.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(logImbue, foundLogImbue)
+	protoassert.Equal(s.T(), logImbue, foundLogImbue)
 
-	logImbueCount, err := store.Count(ctx)
+	logImbueCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, logImbueCount)
-	logImbueCount, err = store.Count(withNoAccessCtx)
+	logImbueCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(logImbueCount)
 
@@ -87,11 +75,6 @@ func (s *LogImbuesStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, logImbue))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, logImbue), sac.ErrResourceAccessDenied)
 
-	foundLogImbue, exists, err = store.Get(ctx, logImbue.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(logImbue, foundLogImbue)
-
 	s.NoError(store.Delete(ctx, logImbue.GetId()))
 	foundLogImbue, exists, err = store.Get(ctx, logImbue.GetId())
 	s.NoError(err)
@@ -100,18 +83,23 @@ func (s *LogImbuesStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, logImbue.GetId()), sac.ErrResourceAccessDenied)
 
 	var logImbues []*storage.LogImbue
+	var logImbueIDs []string
 	for i := 0; i < 200; i++ {
 		logImbue := &storage.LogImbue{}
 		s.NoError(testutils.FullInit(logImbue, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		logImbues = append(logImbues, logImbue)
+		logImbueIDs = append(logImbueIDs, logImbue.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, logImbues))
-	allLogImbue, err := store.GetAll(ctx)
-	s.NoError(err)
-	s.ElementsMatch(logImbues, allLogImbue)
 
-	logImbueCount, err = store.Count(ctx)
+	logImbueCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, logImbueCount)
+
+	s.NoError(store.DeleteMany(ctx, logImbueIDs))
+
+	logImbueCount, err = store.Count(ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.Equal(0, logImbueCount)
 }

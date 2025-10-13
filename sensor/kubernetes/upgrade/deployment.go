@@ -6,7 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/namespaces"
+	"github.com/stackrox/rox/pkg/pods"
 	appsV1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -46,7 +46,7 @@ func (p *process) determineImage() (string, error) {
 
 	// If the image is not specified, sensor uses the same image it's using to launch the upgrader.
 	// This code path will be hit during cert rotation.
-	sensorDeployment, err := p.k8sClient.AppsV1().Deployments(namespaces.StackRox).Get(p.ctx(), sensorDeploymentName, metav1.GetOptions{})
+	sensorDeployment, err := p.k8sClient.AppsV1().Deployments(pods.GetPodNamespace()).Get(p.ctx(), sensorDeploymentName, metav1.GetOptions{})
 	if err != nil {
 		return "", errors.Wrap(err, "failed to fetch sensor deployment from Kube")
 	}
@@ -70,7 +70,7 @@ func (p *process) createDeployment(serviceAccountName string, sensorDeployment *
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      upgraderDeploymentName,
-			Namespace: namespaces.StackRox,
+			Namespace: pods.GetPodNamespace(),
 			Labels: map[string]string{
 				"app":             upgraderDeploymentName,
 				processIDLabelKey: p.trigger.GetUpgradeProcessId(),
@@ -86,7 +86,7 @@ func (p *process) createDeployment(serviceAccountName string, sensorDeployment *
 			},
 			Template: v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Namespace: namespaces.StackRox,
+					Namespace: pods.GetPodNamespace(),
 					Labels: map[string]string{
 						"app":             upgraderDeploymentName,
 						processIDLabelKey: p.trigger.GetUpgradeProcessId(),
@@ -207,6 +207,15 @@ func (p *process) createDeployment(serviceAccountName string, sensorDeployment *
 	*envVars = append(*envVars, v1.EnvVar{
 		Name:  "ROX_UPGRADER_OWNER",
 		Value: fmt.Sprintf("%s:%s:%s/%s", deployment.Kind, deployment.APIVersion, deployment.Namespace, deployment.Name),
+	})
+
+	*envVars = append(*envVars, v1.EnvVar{
+		Name: "POD_NAMESPACE",
+		ValueFrom: &v1.EnvVarSource{
+			FieldRef: &v1.ObjectFieldSelector{
+				FieldPath: "metadata.namespace",
+			},
+		},
 	})
 
 	// These are all nil safe because they are all non-pointers

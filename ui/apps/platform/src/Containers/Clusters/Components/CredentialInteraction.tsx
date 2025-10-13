@@ -1,4 +1,5 @@
-import React, { ReactElement, useState } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 
 import { generateSecuredClusterCertSecret } from 'services/CertGenerationService';
 import { rotateClusterCerts } from 'services/ClustersService';
@@ -11,7 +12,7 @@ import {
     isCertificateExpiringSoon,
     isUpToDateStateObject,
 } from '../cluster.helpers';
-import { CertExpiryStatus } from '../clusterTypes';
+import type { CertExpiryStatus, SensorUpgradeStatus } from '../clusterTypes';
 
 /*
  * The heading is a simple explanation of what did not happen because of the error.
@@ -44,22 +45,15 @@ const labelClassName = 'leading-tight ml-2';
 
 type CredentialInteractionProps = {
     certExpiryStatus: CertExpiryStatus;
-    upgradeStatus: {
-        upgradability: string;
-        mostRecentProcess: {
-            type: string;
-            process: {
-                upgradeState: string;
-            };
-            initiatedAt: string;
-        };
-    };
+    upgradeStatus: SensorUpgradeStatus;
+    autoRefreshEnabled: boolean;
     clusterId: string;
 };
 
 function CredentialInteraction({
     certExpiryStatus,
     upgradeStatus,
+    autoRefreshEnabled = false,
     clusterId,
 }: CredentialInteractionProps): ReactElement {
     const upgradeStateObject = findUpgradeState(upgradeStatus);
@@ -200,7 +194,10 @@ function CredentialInteraction({
 
     return (
         <div className="flex flex-col">
-            <CredentialExpiration certExpiryStatus={certExpiryStatus} />
+            <CredentialExpiration
+                certExpiryStatus={certExpiryStatus}
+                autoRefreshEnabled={autoRefreshEnabled}
+            />
             {interactionElement}
             {errorElement}
         </div>

@@ -1,0 +1,96 @@
+{
+  "policies": [
+    {
+      "id": "38bf79e7-48bf-4ab1-b72f-38e8ad8b4ec3",
+      "name": "Deployments should have at least one ingress Network Policy",
+      "description": "Alerts if deployments are missing an ingress Network Policy",
+      "rationale": "",
+      "remediation": "",
+      "disabled": false,
+      "categories": [
+        "Security Best Practices"
+      ],
+      "lifecycleStages": [
+        "DEPLOY"
+      ],
+      "eventSource": "NOT_APPLICABLE",
+      "exclusions": [],
+      "scope": [],
+      "severity": "MEDIUM_SEVERITY",
+      "enforcementActions": [],
+      "notifiers": [],
+      "lastUpdated": "2022-07-20T07:29:24.578090548Z",
+      "SORTName": "Deployments should have at least one ingress Network Policy",
+      "SORTLifecycleStage": "DEPLOY",
+      "SORTEnforcement": false,
+      "policyVersion": "1.1",
+      "policySections": [
+        {
+          "sectionName": "Alert on missing ingres Network Policy",
+          "policyGroups": [
+            {
+              "fieldName": "Has Ingress Network Policy",
+              "booleanOperator": "OR",
+              "negate": false,
+              "values": [
+                {
+                  "value": "false"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "mitreAttackVectors": [],
+      "criteriaLocked": true,
+      "mitreVectorsLocked": true,
+      "isDefault": true
+    },
+    {
+      "id": "32d770b9-c6ba-4398-b48a-0c3e807644ed",
+      "name": "Deployments should have at least one egress Network Policy",
+      "description": "Alerts if deployments are missing an egress Network Policy",
+      "rationale": "",
+      "remediation": "",
+      "disabled": false,
+      "categories": [
+        "Security Best Practices"
+      ],
+      "lifecycleStages": [
+        "DEPLOY"
+      ],
+      "eventSource": "NOT_APPLICABLE",
+      "exclusions": [],
+      "scope": [],
+      "severity": "MEDIUM_SEVERITY",
+      "enforcementActions": [],
+      "notifiers": [],
+      "lastUpdated": "2022-07-20T07:29:24.578090548Z",
+      "SORTName": "Deployments should have at least one ingress Network Policy",
+      "SORTLifecycleStage": "DEPLOY",
+      "SORTEnforcement": false,
+      "policyVersion": "1.1",
+      "policySections": [
+        {
+          "sectionName": "Alert on missing egress Network Policy",
+          "policyGroups": [
+            {
+              "fieldName": "Has Egress Network Policy",
+              "booleanOperator": "OR",
+              "negate": false,
+              "values": [
+                {
+                  "value": "false"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "mitreAttackVectors": [],
+      "criteriaLocked": true,
+      "mitreVectorsLocked": true,
+      "isDefault": true
+    }
+  ]
+}

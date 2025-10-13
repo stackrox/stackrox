@@ -1,43 +1,107 @@
-import { useState } from 'react';
+/* eslint-disable no-console */
+import { useEffect, useState } from 'react';
+import type { JsonValue } from 'utils/type.utils';
 
-function useLocalStorage<T>(key: string, initialValue: T): [T, (T) => void] {
-    // State to store our value
-    // Pass initial state function to useState so logic is only executed once
+declare global {
+    interface WindowEventMap {
+        'use-local-storage': StorageEvent;
+    }
+}
 
-    // State to store our value
-    // Pass initial state function to useState so logic is only executed once
-    const [storedValue, setStoredValue] = useState<T>(() => {
+type StateUpdater<State> = State | ((previousValue: State) => State);
+
+export type UseLocalStorageReturn<Storage> = [Storage, (t: StateUpdater<Storage>) => void];
+
+/**
+ * A hook that allows you to store a value in local storage and have it automatically
+ * synced across all instances of the hook on the page. If a previous stored value exists and
+ * is valid, it will be used instead of the initial value.
+ *
+ * @param key
+ *      The key to use for the local storage item
+ * @param initialValue
+ *      The initial value to use if no value is stored
+ * @param isValidPredicate
+ *      A type predicate that returns true if the stored value is valid, ensuring that the returned value
+ *      is of the correct type at runtime.
+ * @returns
+ *      A tuple containing the stored value and a function to update it
+ */
+function useLocalStorage<Storage extends JsonValue>(
+    key: string,
+    initialValue: Storage,
+    isValidPredicate: (rawValue: JsonValue) => rawValue is Storage
+): UseLocalStorageReturn<Storage> {
+    const [storedValue, setInternalStoredValue] = useState<Storage>(() => {
         try {
-            // Get from local storage by key
+            // Load any previously stored value, if it exists and is valid
             const item = window.localStorage.getItem(key);
-            // Parse stored json or if none return initialValue
-            return item ? (JSON.parse(item) as T) : initialValue;
-        } catch (error) {
-            // If error also return initialValue
-            // eslint-disable-next-line no-console
-            console.warn(error);
+            const parsedItem = JSON.parse(item ?? 'null');
+            return isValidPredicate(parsedItem) ? parsedItem : initialValue;
+        } catch {
+            // On error, return the initial value
             return initialValue;
         }
     });
 
-    // Return a wrapped version of useState's setter function that ...
-    // ... persists the new value to localStorage.
-    const setValue = (value: T | ((val: T) => T)) => {
+    function setStoredValue(newValue: StateUpdater<Storage>): unknown {
         try {
-            // Allow value to be a function so we have same API as useState
-            const valueToStore = value instanceof Function ? value(storedValue) : value;
-            // Save state
-            setStoredValue(valueToStore);
-            // Save to local storage
-            window.localStorage.setItem(key, JSON.stringify(valueToStore));
-        } catch (error) {
-            // A more advanced implementation would handle the error case
-            // eslint-disable-next-line no-console
-            console.warn(error);
+            const valueToStore = newValue instanceof Function ? newValue(storedValue) : newValue;
+            const stringifiedValue = JSON.stringify(valueToStore);
+            // Save to local storage and dispatch custom event to notify other hook instances
+            window.localStorage.setItem(key, stringifiedValue);
+            window.dispatchEvent(
+                new StorageEvent('use-local-storage', { key, newValue: stringifiedValue })
+            );
+            return undefined;
+        } catch (error: unknown) {
+            return error;
         }
-    };
+    }
 
-    return [storedValue, setValue];
+    // Subscribe to storage events from other instances of this hook
+    function storageChangeListener(event: StorageEvent) {
+        if (event.key !== key) {
+            return;
+        }
+
+        try {
+            const parsedValue = JSON.parse(event.newValue ?? 'null');
+            if (isValidPredicate(parsedValue)) {
+                setInternalStoredValue(parsedValue);
+            } else {
+                console.warn(
+                    'An invalid value was set in local storage, ignoring it.',
+                    parsedValue
+                );
+            }
+        } catch (error: unknown) {
+            console.warn('Failed to parse incoming JSON value', error);
+        }
+    }
+
+    useEffect(() => {
+        // 'storage' to handle events from other tabs, 'local-storage' to handle events from other hooks
+        window.addEventListener('storage', storageChangeListener);
+        window.addEventListener('use-local-storage', storageChangeListener);
+        return () => {
+            window.removeEventListener('storage', storageChangeListener);
+            window.removeEventListener('use-local-storage', storageChangeListener);
+        };
+    });
+
+    return [storedValue, setStoredValue];
+}
+
+export function useBooleanLocalStorage(
+    key: string,
+    initialValue: boolean
+): UseLocalStorageReturn<boolean> {
+    return useLocalStorage<boolean>(
+        key,
+        initialValue,
+        (rawValue): rawValue is boolean => typeof rawValue === 'boolean'
+    );
 }
 
 export default useLocalStorage;

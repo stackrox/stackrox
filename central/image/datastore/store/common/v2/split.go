@@ -4,18 +4,19 @@ import (
 	"github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scancomponent"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
 )
 
+// TODO(ROX-28123): Remove file
+
 // Split splits the input image into a set of parts.
-func Split(image *storage.Image, withComponents bool) ImageParts {
+func Split(image *storage.Image, withComponents bool) (ImageParts, error) {
 	parts := ImageParts{
-		Image:         image.Clone(),
+		Image:         image.CloneVT(),
 		ImageCVEEdges: make(map[string]*storage.ImageCVEEdge),
 	}
 
-	// These need to be called in order.
 	if withComponents {
 		parts.Children = splitComponents(parts)
 	}
@@ -24,7 +25,7 @@ func Split(image *storage.Image, withComponents bool) ImageParts {
 	if parts.Image.GetScan() != nil {
 		parts.Image.Scan.Components = nil
 	}
-	return parts
+	return parts, nil
 }
 
 func splitComponents(parts ImageParts) []ComponentParts {
@@ -69,13 +70,13 @@ func splitCVEs(parts ImageParts, component ComponentParts, embedded *storage.Emb
 
 func generateComponentCVEEdge(convertedComponent *storage.ImageComponent, convertedCVE *storage.ImageCVE, embedded *storage.EmbeddedVulnerability) *storage.ComponentCVEEdge {
 	ret := &storage.ComponentCVEEdge{
-		Id:               postgres.IDFromPks([]string{convertedComponent.GetId(), convertedCVE.GetId()}),
+		Id:               pgSearch.IDFromPks([]string{convertedComponent.GetId(), convertedCVE.GetId()}),
 		IsFixable:        embedded.GetFixedBy() != "",
 		ImageCveId:       convertedCVE.GetId(),
 		ImageComponentId: convertedComponent.GetId(),
 	}
 
-	if ret.IsFixable {
+	if ret.GetIsFixable() {
 		ret.HasFixedBy = &storage.ComponentCVEEdge_FixedBy{
 			FixedBy: embedded.GetFixedBy(),
 		}
@@ -83,13 +84,14 @@ func generateComponentCVEEdge(convertedComponent *storage.ImageComponent, conver
 	return ret
 }
 
+// Deprecated: replaced with equivalent functions using storage.ImageComponentV2
 // GenerateImageComponent returns top-level image component from embedded component.
 func GenerateImageComponent(os string, from *storage.EmbeddedImageScanComponent) *storage.ImageComponent {
 	ret := &storage.ImageComponent{
 		Id:              scancomponent.ComponentID(from.GetName(), from.GetVersion(), os),
 		Name:            from.GetName(),
 		Version:         from.GetVersion(),
-		License:         from.GetLicense().Clone(),
+		License:         from.GetLicense().CloneVT(),
 		Source:          from.GetSource(),
 		FixedBy:         from.GetFixedBy(),
 		RiskScore:       from.GetRiskScore(),
@@ -105,7 +107,7 @@ func GenerateImageComponent(os string, from *storage.EmbeddedImageScanComponent)
 
 func generateImageComponentEdge(image *storage.Image, convImgComponent *storage.ImageComponent, embedded *storage.EmbeddedImageScanComponent) *storage.ImageComponentEdge {
 	ret := &storage.ImageComponentEdge{
-		Id:               postgres.IDFromPks([]string{image.GetId(), convImgComponent.GetId()}),
+		Id:               pgSearch.IDFromPks([]string{image.GetId(), convImgComponent.GetId()}),
 		ImageId:          image.GetId(),
 		ImageComponentId: convImgComponent.GetId(),
 		Location:         embedded.GetLocation(),
@@ -121,7 +123,7 @@ func generateImageComponentEdge(image *storage.Image, convImgComponent *storage.
 
 func generateImageCVEEdge(imageID string, convertedCVE *storage.ImageCVE, embedded *storage.EmbeddedVulnerability) *storage.ImageCVEEdge {
 	ret := &storage.ImageCVEEdge{
-		Id:         postgres.IDFromPks([]string{imageID, convertedCVE.GetId()}),
+		Id:         pgSearch.IDFromPks([]string{imageID, convertedCVE.GetId()}),
 		State:      embedded.GetState(),
 		ImageId:    imageID,
 		ImageCveId: convertedCVE.GetId(),

@@ -1,28 +1,30 @@
 import React, { ReactElement } from 'react';
-import { Button, Flex, FlexItem } from '@patternfly/react-core';
+import { Link } from 'react-router-dom-v5-compat';
+import { Flex, FlexItem } from '@patternfly/react-core';
 
-import LinkShim from 'Components/PatternFly/LinkShim';
 import { SearchResultCategory } from 'services/SearchService';
 import { SearchFilter } from 'types/search';
 import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
 
 import NotApplicable from './NotApplicable';
-import { searchResultCategoryMap } from './searchCategories';
+import { SearchResultCategoryMap } from './searchCategories';
 
 type FilterLinksProps = {
     filterValue: string;
     resultCategory: SearchResultCategory;
     searchFilter: SearchFilter;
+    searchResultCategoryMap: SearchResultCategoryMap;
 };
 
 function FilterLinks({
     filterValue,
     resultCategory,
     searchFilter,
+    searchResultCategoryMap,
 }: FilterLinksProps): ReactElement {
-    const { filterOn } = searchResultCategoryMap[resultCategory];
+    const { filterOn } = searchResultCategoryMap[resultCategory] ?? {};
 
-    if (filterOn !== null) {
+    if (filterOn) {
         const { filterCategory, filterLinks } = filterOn;
 
         const queryString = getUrlQueryStringForSearchFilter({
@@ -34,14 +36,7 @@ function FilterLinks({
             <Flex spaceItems={{ default: 'spaceItemsMd' }}>
                 {filterLinks.map(({ basePath, linkText }) => (
                     <FlexItem key={linkText}>
-                        <Button
-                            variant="link"
-                            isInline
-                            component={LinkShim}
-                            href={`${basePath}?${queryString}`}
-                        >
-                            {linkText}
-                        </Button>
+                        <Link to={`${basePath}?${queryString}`}>{linkText}</Link>
                     </FlexItem>
                 ))}
             </Flex>

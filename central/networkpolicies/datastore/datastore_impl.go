@@ -8,10 +8,15 @@ import (
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore"
-	"github.com/stackrox/rox/central/role/resources"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -41,6 +46,7 @@ func (ds *datastoreImpl) GetNetworkPolicy(ctx context.Context, id string) (*stor
 }
 
 func (ds *datastoreImpl) doForMatching(ctx context.Context, clusterID, namespace string, fn func(np *storage.NetworkPolicy)) error {
+	// Postgres retry in caller.
 	return ds.storage.Walk(ctx, func(np *storage.NetworkPolicy) error {
 		if clusterID != "" && np.GetClusterId() != clusterID {
 			return nil
@@ -53,11 +59,34 @@ func (ds *datastoreImpl) doForMatching(ctx context.Context, clusterID, namespace
 	})
 }
 
+func getQuery(clusterID, namespace string) *v1.Query {
+	if stringutils.AllEmpty(clusterID, namespace) {
+		return search.EmptyQuery()
+	}
+
+	query := search.NewQueryBuilder()
+	if clusterID != "" {
+		query = query.AddExactMatches(search.ClusterID, clusterID)
+	}
+	if namespace != "" {
+		query = query.AddExactMatches(search.Namespace, namespace)
+	}
+	return query.ProtoQuery()
+}
+
 func (ds *datastoreImpl) GetNetworkPolicies(ctx context.Context, clusterID, namespace string) ([]*storage.NetworkPolicy, error) {
+	if !stringutils.AllEmpty(clusterID, namespace) {
+		return ds.storage.GetByQuery(ctx, getQuery(clusterID, namespace))
+	}
 	var netPols []*storage.NetworkPolicy
-	err := ds.doForMatching(ctx, clusterID, namespace, func(np *storage.NetworkPolicy) {
-		netPols = append(netPols, np)
-	})
+	err := pgutils.RetryIfPostgres(ctx,
+		func() error {
+			netPols = netPols[:0]
+			return ds.doForMatching(ctx, clusterID, namespace, func(np *storage.NetworkPolicy) {
+				netPols = append(netPols, np)
+			})
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -74,26 +103,7 @@ func (ds *datastoreImpl) GetNetworkPolicies(ctx context.Context, clusterID, name
 }
 
 func (ds *datastoreImpl) CountMatchingNetworkPolicies(ctx context.Context, clusterID, namespace string) (int, error) {
-	if namespace == "" {
-		netPols, err := ds.GetNetworkPolicies(ctx, clusterID, "")
-		if err != nil {
-			return 0, err
-		}
-		return len(netPols), nil
-	}
-
-	scopeKeys := []sac.ScopeKey{sac.ClusterScopeKey(clusterID), sac.NamespaceScopeKey(namespace)}
-	if ok, err := netpolSAC.AccessAllowed(ctx, storage.Access_READ_ACCESS, scopeKeys...); err != nil || !ok {
-		return 0, err
-	}
-	var count int
-	err := ds.doForMatching(ctx, clusterID, namespace, func(np *storage.NetworkPolicy) {
-		count++
-	})
-	if err != nil {
-		return 0, err
-	}
-	return count, nil
+	return ds.storage.Count(ctx, getQuery(clusterID, namespace))
 }
 
 func (ds *datastoreImpl) UpsertNetworkPolicy(ctx context.Context, np *storage.NetworkPolicy) error {
@@ -150,7 +160,7 @@ func (ds *datastoreImpl) UpsertUndoRecord(ctx context.Context, undoRecord *stora
 		return err
 	}
 	if exists {
-		if undoRecord.GetApplyTimestamp().Compare(previousUndo.GetApplyTimestamp()) < 0 {
+		if protocompat.CompareTimestamps(undoRecord.GetApplyTimestamp(), previousUndo.GetApplyTimestamp()) < 0 {
 			return fmt.Errorf("apply timestamp of record to store (%v) is older than that of existing record (%v)",
 				protoconv.ConvertTimestampToTimeOrDefault(undoRecord.GetApplyTimestamp(), time.Time{}),
 				protoconv.ConvertTimestampToTimeOrDefault(previousUndo.GetApplyTimestamp(), time.Time{}))
@@ -160,7 +170,7 @@ func (ds *datastoreImpl) UpsertUndoRecord(ctx context.Context, undoRecord *stora
 }
 
 // UndoDeploymentDataStore functionality.
-///////////////////////////////
+// /////////////////////////////
 func (ds *datastoreImpl) GetUndoDeploymentRecord(ctx context.Context, deploymentID string) (*storage.NetworkPolicyApplicationUndoDeploymentRecord, bool, error) {
 	undoRecord, found, err := ds.undoDeploymentStorage.Get(ctx, deploymentID)
 	if err != nil || !found {
@@ -191,7 +201,7 @@ func (ds *datastoreImpl) getNetworkPolicy(ctx context.Context, id string) (*stor
 	return netpol, true, nil
 }
 
-func filterResults(ctx context.Context, resourceScopeChecker sac.ScopeChecker, results []*storage.NetworkPolicy) ([]*storage.NetworkPolicy, error) {
+func filterResults(_ context.Context, resourceScopeChecker sac.ScopeChecker, results []*storage.NetworkPolicy) ([]*storage.NetworkPolicy, error) {
 	var allowed []*storage.NetworkPolicy
 	for _, netPol := range results {
 		scopeKeys := sac.KeyForNSScopedObj(netPol)

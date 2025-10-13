@@ -1,0 +1,14 @@
+{{- include "srox.init" . -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stackrox-secured-cluster-helm
+  namespace: {{ ._rox._namespace | quote }}
+  labels:
+    {{- include "srox.labels" (list . "configmap" "stackrox-secured-cluster-helm") | nindent 4 }}
+  annotations:
+    {{- $annotations := dict "helm.sh/hook" "pre-install" -}}
+    {{- include "srox.annotations" (list . "configmap" "stackrox-secured-cluster-helm" $annotations) | nindent 4 }}
+data:
+  installAppVersion: {{ .Chart.AppVersion | quote }}
+  installXYVersion: {{ .Chart.AppVersion | regexFind "^\\d+\\.\\d+" | quote }}

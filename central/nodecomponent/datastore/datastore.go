@@ -4,18 +4,17 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/nodecomponent/datastore/index"
-	"github.com/stackrox/rox/central/nodecomponent/datastore/search"
-	"github.com/stackrox/rox/central/nodecomponent/datastore/store/postgres"
+	pgStore "github.com/stackrox/rox/central/nodecomponent/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
 // DataStore is an intermediary to NodeComponent storage.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
@@ -29,27 +28,20 @@ type DataStore interface {
 }
 
 // New returns a new instance of a DataStore.
-func New(storage postgres.Store, indexer index.Indexer, searcher search.Searcher, risks riskDataStore.DataStore, ranker *ranking.Ranker) DataStore {
+func New(storage pgStore.Store, risks riskDataStore.DataStore, ranker *ranking.Ranker) DataStore {
 	ds := &datastoreImpl{
 		storage:             storage,
-		indexer:             indexer,
-		searcher:            searcher,
 		risks:               risks,
 		nodeComponentRanker: ranker,
 	}
 
-	ds.initializeRankers()
+	go ds.initializeRankers()
 	return ds
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t *testing.T, pool *pgxpool.Pool) (DataStore, error) {
-	dbstore := postgres.New(pool)
-	indexer := postgres.NewIndexer(pool)
-	searcher := search.New(dbstore, indexer)
-	riskStore, err := riskDataStore.GetTestPostgresDataStore(t, pool)
-	if err != nil {
-		return nil, err
-	}
-	return New(dbstore, indexer, searcher, riskStore, ranking.NodeComponentRanker()), nil
+func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) DataStore {
+	dbstore := pgStore.New(pool)
+	riskStore := riskDataStore.GetTestPostgresDataStore(t, pool)
+	return New(dbstore, riskStore, ranking.NodeComponentRanker())
 }

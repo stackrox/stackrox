@@ -6,27 +6,33 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	queueMocks "github.com/stackrox/rox/central/deployment/queue/mocks"
 	"github.com/stackrox/rox/central/networkbaseline/datastore"
 	networkEntityDSMock "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
+	treeMocks "github.com/stackrox/rox/central/networkgraph/entity/networktree/mocks"
 	networkFlowDSMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	networkPolicyMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
-	"github.com/stackrox/rox/central/role/resources"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
+	"github.com/stackrox/rox/pkg/networkgraph/testutils"
+	"github.com/stackrox/rox/pkg/networkgraph/tree"
+	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 var (
@@ -40,14 +46,14 @@ type fakeDS struct {
 	datastore.DataStore
 }
 
-func (f *fakeDS) UpsertNetworkBaselines(ctx context.Context, baselines []*storage.NetworkBaseline) error {
+func (f *fakeDS) UpsertNetworkBaselines(_ context.Context, baselines []*storage.NetworkBaseline) error {
 	for _, baseline := range baselines {
 		f.baselines[baseline.GetDeploymentId()] = baseline
 	}
 	return nil
 }
 
-func (f *fakeDS) Walk(ctx context.Context, fn func(baseline *storage.NetworkBaseline) error) error {
+func (f *fakeDS) Walk(_ context.Context, fn func(baseline *storage.NetworkBaseline) error) error {
 	for _, baseline := range f.baselines {
 		if err := fn(baseline); err != nil {
 			return err
@@ -56,19 +62,19 @@ func (f *fakeDS) Walk(ctx context.Context, fn func(baseline *storage.NetworkBase
 	return nil
 }
 
-func (f *fakeDS) DeleteNetworkBaseline(ctx context.Context, deploymentID string) error {
+func (f *fakeDS) DeleteNetworkBaseline(_ context.Context, deploymentID string) error {
 	delete(f.baselines, deploymentID)
 	return nil
 }
 
-func (f *fakeDS) DeleteNetworkBaselines(ctx context.Context, deploymentIDs []string) error {
+func (f *fakeDS) DeleteNetworkBaselines(_ context.Context, deploymentIDs []string) error {
 	for _, id := range deploymentIDs {
 		delete(f.baselines, id)
 	}
 	return nil
 }
 
-func (f *fakeDS) GetNetworkBaseline(ctx context.Context, deploymentID string) (*storage.NetworkBaseline, bool, error) {
+func (f *fakeDS) GetNetworkBaseline(_ context.Context, deploymentID string) (*storage.NetworkBaseline, bool, error) {
 	if baseline, ok := f.baselines[deploymentID]; ok {
 		return baseline, true, nil
 	}
@@ -90,6 +96,7 @@ type ManagerTestSuite struct {
 	flowStore                  *networkFlowDSMocks.MockFlowDataStore
 	connectionManager          *connectionMocks.MockManager
 	deploymentObservationQueue *queueMocks.MockDeploymentObservationQueue
+	treeManager                *treeMocks.MockManager
 
 	m             Manager
 	currTestStart timestamp.MicroTS
@@ -106,6 +113,7 @@ func (suite *ManagerTestSuite) SetupTest() {
 	suite.flowStore = networkFlowDSMocks.NewMockFlowDataStore(suite.mockCtrl)
 	suite.connectionManager = connectionMocks.NewMockManager(suite.mockCtrl)
 	suite.deploymentObservationQueue = queueMocks.NewMockDeploymentObservationQueue(suite.mockCtrl)
+	suite.treeManager = treeMocks.NewMockManager(suite.mockCtrl)
 }
 
 func (suite *ManagerTestSuite) TearDownTest() {
@@ -115,12 +123,16 @@ func (suite *ManagerTestSuite) TearDownTest() {
 func (suite *ManagerTestSuite) mustInitManager(initialBaselines ...*storage.NetworkBaseline) {
 	suite.ds = &fakeDS{baselines: make(map[string]*storage.NetworkBaseline)}
 	for _, baseline := range initialBaselines {
-		baseline.ObservationPeriodEnd = getNewObservationPeriodEnd().GogoProtobuf()
+		baseline.ObservationPeriodEnd = protoconv.ConvertMicroTSToProtobufTS(getNewObservationPeriodEnd())
 		suite.ds.baselines[baseline.GetDeploymentId()] = baseline
 	}
+
 	var err error
+
 	suite.networkPolicyDS.EXPECT().GetNetworkPolicies(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-	suite.m, err = New(suite.ds, suite.networkEntities, suite.deploymentDS, suite.networkPolicyDS, suite.clusterFlows, suite.connectionManager)
+	suite.treeManager.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(nil).AnyTimes()
+
+	suite.m, err = New(suite.ds, suite.networkEntities, suite.deploymentDS, suite.networkPolicyDS, suite.clusterFlows, suite.connectionManager, suite.treeManager)
 	suite.Require().NoError(err)
 }
 
@@ -172,9 +184,9 @@ func (suite *ManagerTestSuite) initBaselinesForDeployments(ids ...int) {
 		).AnyTimes()
 		suite.clusterFlows.EXPECT().GetFlowStore(gomock.Any(), clusterID(id)).Return(suite.flowStore, nil).AnyTimes()
 		suite.flowStore.EXPECT().GetFlowsForDeployment(gomock.Any(), depID(id), false).Return(nil, nil).AnyTimes()
+		suite.treeManager.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), clusterID(id)).Return(nil).AnyTimes()
 		suite.Require().NoError(suite.m.ProcessDeploymentCreate(depID(id), depName(id), clusterID(id), ns(id)))
 		suite.Require().NoError(suite.m.CreateNetworkBaseline(depID(id)))
-
 	}
 }
 
@@ -204,14 +216,15 @@ func (suite *ManagerTestSuite) assertBaselinesAre(baselines ...*storage.NetworkB
 	// Assume that the test takes no longer than one minute.
 	obsPeriodEnd := obsPeriodStart.Add(time.Minute)
 	for _, baseline := range suite.ds.baselines {
-		cloned := baseline.Clone()
+		cloned := baseline.CloneVT()
 		actualObsEnd := timestamp.FromProtobuf(cloned.GetObservationPeriodEnd())
 		suite.True(actualObsEnd.After(obsPeriodStart), "Actual obs end: %v, expected obs window: %v-%v", actualObsEnd.GoTime(), obsPeriodStart.GoTime(), obsPeriodEnd.GoTime())
 		suite.True(obsPeriodEnd.After(actualObsEnd), "Actual obs end: %v, expected obs window: %v-%v", actualObsEnd.GoTime(), obsPeriodStart.GoTime(), obsPeriodEnd.GoTime())
 		cloned.ObservationPeriodEnd = nil
 		baselinesWithoutObsPeriod = append(baselinesWithoutObsPeriod, cloned)
 	}
-	suite.ElementsMatch(baselinesWithoutObsPeriod, baselines)
+
+	protoassert.ElementsMatch(suite.T(), baselines, baselinesWithoutObsPeriod)
 }
 
 func (suite *ManagerTestSuite) TestFlowsUpdateForOtherEntityTypes() {
@@ -231,11 +244,13 @@ func (suite *ManagerTestSuite) TestFlowsUpdateForOtherEntityTypes() {
 				Id:   extSrcID(10),
 				Desc: &storage.NetworkEntityInfo_ExternalSource_{
 					ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-						Name: extSrcName(10),
+						Name:   extSrcName(10),
+						Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{Cidr: "11.0.0.0/32"},
 					},
 				},
 			},
 		}, true, nil)
+
 	suite.processFlowUpdate([]networkgraph.NetworkConnIndicator{
 		// This conn is valid and should get incorporated into the baseline.
 		{
@@ -250,6 +265,21 @@ func (suite *ManagerTestSuite) TestFlowsUpdateForOtherEntityTypes() {
 			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			DstPort:  1,
 		},
+		// This conn is valid and should get incorporated into the baseline
+		// and should be anonymised to the internet
+		{
+			SrcEntity: networkgraph.Entity{
+				Type: storage.NetworkEntityInfo_DEPLOYMENT,
+				ID:   depID(1),
+			},
+			DstEntity: networkgraph.Entity{
+				Type:       storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+				ID:         extSrcID(11),
+				Discovered: true,
+			},
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			DstPort:  12,
+		},
 		// This conn is valid and should get incorporated into the baseline.
 		{
 			SrcEntity: networkgraph.Entity{
@@ -259,6 +289,19 @@ func (suite *ManagerTestSuite) TestFlowsUpdateForOtherEntityTypes() {
 			DstEntity: networkgraph.Entity{
 				Type: storage.NetworkEntityInfo_INTERNET,
 				ID:   "INTERNETTZZ",
+			},
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			DstPort:  13,
+		},
+		// This conn is also valid and should get incorporated into the baseline.
+		{
+			SrcEntity: networkgraph.Entity{
+				Type: storage.NetworkEntityInfo_DEPLOYMENT,
+				ID:   depID(1),
+			},
+			DstEntity: networkgraph.Entity{
+				Type: storage.NetworkEntityInfo_INTERNAL_ENTITIES,
+				ID:   "INTERNALZZ",
 			},
 			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			DstPort:  13,
@@ -298,7 +341,8 @@ func (suite *ManagerTestSuite) TestFlowsUpdateForOtherEntityTypes() {
 					Id:   extSrcID(10),
 					Desc: &storage.NetworkEntityInfo_ExternalSource_{
 						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-							Name: extSrcName(10),
+							Name:   extSrcName(10),
+							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{Cidr: "11.0.0.0/32"},
 						},
 					},
 				}},
@@ -306,10 +350,24 @@ func (suite *ManagerTestSuite) TestFlowsUpdateForOtherEntityTypes() {
 			},
 			&storage.NetworkBaselinePeer{
 				Entity: &storage.NetworkEntity{Info: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_INTERNAL_ENTITIES,
+					Id:   "INTERNALZZ",
+				}},
+				Properties: []*storage.NetworkBaselineConnectionProperties{properties(false, 13)},
+			},
+			&storage.NetworkBaselinePeer{
+				Entity: &storage.NetworkEntity{Info: &storage.NetworkEntityInfo{
 					Type: storage.NetworkEntityInfo_INTERNET,
 					Id:   "INTERNETTZZ",
 				}},
 				Properties: []*storage.NetworkBaselineConnectionProperties{properties(false, 13)},
+			},
+			&storage.NetworkBaselinePeer{
+				Entity: &storage.NetworkEntity{Info: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_INTERNET,
+					Id:   networkgraph.InternetEntity().ID,
+				}},
+				Properties: []*storage.NetworkBaselineConnectionProperties{properties(false, 12)},
 			},
 		),
 		baselineWithPeers(2, depPeer(1, properties(true, 52))),
@@ -512,6 +570,45 @@ func (suite *ManagerTestSuite) TestUpdateBaselineStatus() {
 			depPeer(2, properties(false, 8443)),
 		),
 	)
+
+	// Add an external discovered anomalous flow
+	suite.NoError(suite.m.ProcessBaselineStatusUpdate(ctxWithAccessToWrite(1),
+		modifyPeersReq(1, protoExternalPeerStatus(v1.NetworkBaselinePeerStatus_ANOMALOUS, 1, 52, true, true)),
+	))
+
+	suite.assertBaselinesAre(
+		wrapWithForbidden(
+			baselineWithPeers(1, depPeer(2, properties(true, 443)), depPeer(3, properties(true, 512))),
+			depPeer(2, properties(false, 52)),
+			// added anomalous internet flow (the external flow is anonymized to the internet)
+			internetPeer(properties(true, 52)),
+		),
+		wrapWithForbidden(baselineWithPeers(2, depPeer(1, properties(false, 443))),
+			depPeer(1, properties(true, 52)), depPeer(3, properties(true, 8443)),
+		),
+		wrapWithForbidden(baselineWithPeers(3, depPeer(1, properties(false, 512))),
+			depPeer(2, properties(false, 8443)),
+		),
+	)
+
+	// Then make it a baseline flow
+
+	suite.NoError(suite.m.ProcessBaselineStatusUpdate(ctxWithAccessToWrite(1),
+		modifyPeersReq(1, protoExternalPeerStatus(v1.NetworkBaselinePeerStatus_BASELINE, 1, 52, true, true)),
+	))
+
+	suite.assertBaselinesAre(
+		wrapWithForbidden(
+			baselineWithPeers(1, depPeer(2, properties(true, 443)), depPeer(3, properties(true, 512)), internetPeer(properties(true, 52))),
+			depPeer(2, properties(false, 52)),
+		),
+		wrapWithForbidden(baselineWithPeers(2, depPeer(1, properties(false, 443))),
+			depPeer(1, properties(true, 52)), depPeer(3, properties(true, 8443)),
+		),
+		wrapWithForbidden(baselineWithPeers(3, depPeer(1, properties(false, 512))),
+			depPeer(2, properties(false, 8443)),
+		),
+	)
 }
 
 func (suite *ManagerTestSuite) TestDeploymentDelete() {
@@ -559,13 +656,32 @@ func (suite *ManagerTestSuite) TestDeploymentDelete() {
 	)
 }
 
+func (suite *ManagerTestSuite) TestDeploymentDelete_WithoutBaseline() {
+	suite.mustInitManager(
+		baselineWithPeers(1, depPeer(2, properties(false, 52))),
+		wrapWithForbidden(baselineWithPeers(3),
+			depPeer(2, properties(false, 52))),
+	)
+
+	// DeploymentID 2 should be in the internal map, but no baseline created yet.
+	suite.Require().NoError(suite.m.ProcessDeploymentCreate(depID(2), depName(2), clusterID(2), ns(2)))
+
+	suite.Require().NoError(suite.m.ProcessDeploymentDelete(depID(2)))
+
+	// Should remove DeploymentID 2 from other baselines (BaselinedPeers and ForbiddenPeers) even if its baseline was never created
+	suite.assertBaselinesAre(
+		baselineWithPeers(1),
+		baselineWithPeers(3),
+	)
+}
+
 func (suite *ManagerTestSuite) TestDeleteWithExtSrcPeer() {
 	suite.networkPolicyDS.EXPECT().GetNetworkPolicies(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 	suite.mustInitManager(
 		baselineWithPeers(
 			1,
 			depPeer(2, properties(false, 52)),
-			extSrcPeer(3, properties(false, 443)),
+			extSrcPeer(3, "11.0.0.0/32", properties(false, 443)),
 		),
 		baselineWithPeers(2, depPeer(1, properties(true, 52))),
 	)
@@ -573,13 +689,13 @@ func (suite *ManagerTestSuite) TestDeleteWithExtSrcPeer() {
 		baselineWithPeers(
 			1,
 			depPeer(2, properties(false, 52)),
-			extSrcPeer(3, properties(false, 443)),
+			extSrcPeer(3, "11.0.0.0/32", properties(false, 443)),
 		),
 		baselineWithPeers(2, depPeer(1, properties(true, 52))),
 	)
 	// Make sure deleting a deployment does not trigger an error even if we have ext src peer
 	suite.Nil(suite.m.ProcessDeploymentDelete(depID(2)))
-	suite.assertBaselinesAre(baselineWithPeers(1, extSrcPeer(3, properties(false, 443))))
+	suite.assertBaselinesAre(baselineWithPeers(1, extSrcPeer(3, "11.0.0.0/32", properties(false, 443))))
 }
 
 func (suite *ManagerTestSuite) TestValidEntityTypesMatch() {
@@ -686,7 +802,7 @@ func (suite *ManagerTestSuite) TestLockBaseline() {
 	)
 	baseline1 := suite.mustGetBaseline(1)
 	beforeLockUpdateState := baseline1.GetLocked()
-	baseline1Copy := baseline1.Clone()
+	baseline1Copy := baseline1.CloneVT()
 	baseline1Copy.Locked = !beforeLockUpdateState
 	expectOneTimeCallToConnectionManagerWithBaseline(suite, baseline1Copy)
 
@@ -763,7 +879,7 @@ func (suite *ManagerTestSuite) TestBaselineSyncMsg() {
 	suite.Nil(suite.m.ProcessBaselineLockUpdate(managerCtx, depID(1), false))
 
 	baseline1 := suite.mustGetBaseline(1)
-	baseline1Copy := baseline1.Clone()
+	baseline1Copy := baseline1.CloneVT()
 	baseline1Copy.Locked = true
 	// Lock state changed from unlocked to locked, we should sync this baseline to sensor now
 	expectOneTimeCallToConnectionManagerWithBaseline(suite, baseline1Copy)
@@ -774,7 +890,7 @@ func (suite *ManagerTestSuite) TestBaselineSyncMsg() {
 	// If it stays as locked, and some updates are made to the baseline, then we should also sync to sensor
 	modifiedBaseline := baselineWithPeers(1)
 	modifiedBaseline.Locked = baseline1Copy.GetLocked()
-	modifiedBaseline.ObservationPeriodEnd = baseline1.ObservationPeriodEnd
+	modifiedBaseline.ObservationPeriodEnd = baseline1.GetObservationPeriodEnd()
 	expectOneTimeCallToConnectionManagerWithBaseline(suite, modifiedBaseline)
 	suite.Nil(suite.m.ProcessDeploymentDelete(depID(2)))
 
@@ -785,6 +901,170 @@ func (suite *ManagerTestSuite) TestBaselineSyncMsg() {
 	// And locked state should be updated
 	afterLockUpdateState = suite.mustGetBaseline(1).GetLocked()
 	suite.False(afterLockUpdateState)
+}
+
+func (suite *ManagerTestSuite) TestGetExternalNetworkPeers() {
+	suite.mustInitManager()
+	suite.deploymentDS.EXPECT().GetDeployment(gomock.Any(), gomock.Any()).Return(
+		&storage.Deployment{
+			Id:        fixtureconsts.Deployment1,
+			ClusterId: fixtureconsts.Cluster1,
+		}, true, nil,
+	)
+
+	entities := []*storage.NetworkEntity{
+		testutils.GetExtSrcNetworkEntity("entity1", "1.2.3.4", "1.2.3.4/32", false, fixtureconsts.Cluster1, true),
+		testutils.GetExtSrcNetworkEntity("entity2", "1.2.3.5", "1.2.3.5/32", false, fixtureconsts.Cluster1, true),
+		testutils.GetExtSrcNetworkEntity("entity3", "1.2.3.6", "1.2.3.6/32", false, fixtureconsts.Cluster1, false),
+		testutils.GetExtSrcNetworkEntity("entity4", "1.2.3.7", "1.2.3.7/32", false, fixtureconsts.Cluster1, false),
+	}
+
+	flows := []*storage.NetworkFlow{
+		testutils.ExtFlow("entity1", fixtureconsts.Deployment1),
+		testutils.ExtFlow("entity2", fixtureconsts.Deployment1),
+		testutils.ExtFlow("entity3", fixtureconsts.Deployment1),
+		// duplicate flow to test name aggregation
+		testutils.ExtFlow("entity3", fixtureconsts.Deployment1),
+	}
+
+	mockTree := tree.NewDefaultNetworkTreeWrapper()
+	for _, entity := range entities {
+		suite.NoError(mockTree.Insert(entity.GetInfo()))
+	}
+
+	suite.treeManager.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), fixtureconsts.Cluster1).Return(mockTree).AnyTimes()
+	suite.treeManager.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(nil).AnyTimes()
+	suite.networkEntities.EXPECT().GetEntityByQuery(gomock.Any(), gomock.Any()).Return(entities, nil)
+	suite.clusterFlows.EXPECT().GetFlowStore(gomock.Any(), fixtureconsts.Cluster1).Return(suite.flowStore, nil).AnyTimes()
+	suite.flowStore.EXPECT().GetMatchingFlows(gomock.Any(), gomock.Any(), gomock.Any()).Return(flows, nil, nil).AnyTimes()
+
+	expectedPeers := []*v1.NetworkBaselineStatusPeer{
+		{
+			Entity: &v1.NetworkBaselinePeerEntity{
+				Id:         "entity1",
+				Type:       storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+				Name:       "1.2.3.4",
+				Discovered: true,
+			},
+		},
+
+		{
+			Entity: &v1.NetworkBaselinePeerEntity{
+				Id:         "entity2",
+				Type:       storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+				Name:       "1.2.3.5",
+				Discovered: true,
+			},
+		},
+
+		{
+			Entity: &v1.NetworkBaselinePeerEntity{
+				Id:         "entity3",
+				Type:       storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+				Name:       "1.2.3.6",
+				Discovered: false,
+			},
+		},
+	}
+
+	result, err := suite.m.GetExternalNetworkPeers(allAllowedCtx, fixtureconsts.Deployment1, "", nil)
+	suite.Nil(err)
+
+	protoassert.ElementsMatch(suite.T(), expectedPeers, result)
+}
+
+func (suite *ManagerTestSuite) TestAddBaselineAnonymizeDiscoveredExternalSource() {
+	discoveredExtSourceID := "discovered-external-src-1"
+
+	mockDeployment := &storage.Deployment{
+		Id:        fixtureconsts.Deployment1,
+		Name:      "deployment1",
+		ClusterId: fixtureconsts.Cluster1,
+		Namespace: fixtureconsts.Namespace1,
+		PodLabels: map[string]string{"app": "anonymize-test"},
+	}
+
+	suite.deploymentDS.EXPECT().GetDeployment(gomock.Any(), fixtureconsts.Deployment1).Return(mockDeployment, true, nil).Times(1)
+
+	mockFlows := []*storage.NetworkFlow{
+		{
+			Props: &storage.NetworkFlowProperties{
+				SrcEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   fixtureconsts.Deployment1,
+				},
+				DstEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+					Id:   discoveredExtSourceID,
+				},
+				DstPort:    443,
+				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			},
+			LastSeenTimestamp: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
+		},
+	}
+
+	suite.clusterFlows.EXPECT().GetFlowStore(gomock.Any(), fixtureconsts.Cluster1).Return(suite.flowStore, nil).Times(1)
+	suite.flowStore.EXPECT().GetFlowsForDeployment(gomock.Any(), fixtureconsts.Deployment1, false).Return(mockFlows, nil).Times(1)
+
+	// Note: The 'Discovered' flag on the flow's DstEntity is what triggers anonymization.
+	// The tree provides the descriptive info for the original (pre-anonymization) entity.
+	discoveredEntityInfoFromTree := &storage.NetworkEntityInfo{
+		Id:   discoveredExtSourceID,
+		Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+		Desc: &storage.NetworkEntityInfo_ExternalSource_{
+			ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+				Name: "8.8.8.8/32",
+				Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+					Cidr: "8.8.8.8/32", // Example CIDR
+				},
+				Discovered: true,
+			},
+		},
+	}
+
+	defaultTree := tree.NewDefaultNetworkTreeWrapper()
+	readOnlyTree, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{discoveredEntityInfoFromTree})
+	suite.Require().NoError(err)
+
+	suite.treeManager.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), fixtureconsts.Cluster1).Return(readOnlyTree).Times(1)
+	suite.treeManager.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(defaultTree).Times(1)
+
+	suite.connectionManager.EXPECT().SendMessage(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+
+	suite.mustInitManager()
+	err = suite.m.CreateNetworkBaseline(fixtureconsts.Deployment1)
+	suite.Require().NoError(err)
+
+	baseline, found, err := suite.ds.GetNetworkBaseline(managerCtx, fixtureconsts.Deployment1)
+	suite.Require().NoError(err)
+	suite.Require().True(found)
+	suite.Require().NotNil(baseline)
+	suite.Require().NotEmpty(baseline.GetPeers(), "Baseline should have peers")
+
+	var foundAnonymizedPeer bool
+	for _, peer := range baseline.GetPeers() {
+		info := peer.GetEntity().GetInfo()
+		if info.GetId() == networkgraph.InternetExternalSourceID && info.GetType() == storage.NetworkEntityInfo_INTERNET {
+			foundAnonymizedPeer = true
+			// Check that the name also matches the standard Internet name
+			suite.Assert().Equal(networkgraph.InternetExternalSourceID, info.GetId())
+			suite.Assert().Equal(uint32(443), peer.GetProperties()[0].GetPort())
+			suite.Assert().False(peer.GetProperties()[0].GetIngress()) // Egress from our deployment
+			break
+		}
+	}
+	suite.Require().True(foundAnonymizedPeer, "Expected anonymized Internet peer not found in baseline")
+
+	// Also assert that the original discoveredExtSourceID is NOT present as a peer
+	var foundOriginalDiscoveredPeer bool
+	for _, peer := range baseline.GetPeers() {
+		if peer.GetEntity().GetInfo().GetId() == discoveredExtSourceID {
+			foundOriginalDiscoveredPeer = true
+			break
+		}
+	}
+	suite.Require().False(foundOriginalDiscoveredPeer, "Original discovered external source ID should not be a peer")
 }
 
 ///// Helper functions to make test code less verbose.
@@ -808,7 +1088,7 @@ func expectOneTimeCallToConnectionManagerWithBaseline(suite *ManagerTestSuite, b
 func ctxWithAccessToWrite(id int) context.Context {
 	return sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-		sac.ResourceScopeKeys(resources.NetworkBaseline),
+		sac.ResourceScopeKeys(resources.DeploymentExtension),
 		sac.ClusterScopeKeys(clusterID(id)),
 		sac.NamespaceScopeKeys(ns(id)),
 	))
@@ -827,6 +1107,23 @@ func protoPeerStatus(status v1.NetworkBaselinePeerStatus_Status, peerID int, por
 			Entity: &v1.NetworkBaselinePeerEntity{
 				Id:   depID(peerID),
 				Type: storage.NetworkEntityInfo_DEPLOYMENT,
+			},
+			Port:     port,
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			Ingress:  ingress,
+		},
+		Status: status,
+	}
+}
+
+func protoExternalPeerStatus(status v1.NetworkBaselinePeerStatus_Status, peerID int, port uint32, ingress, discovered bool) *v1.NetworkBaselinePeerStatus {
+	return &v1.NetworkBaselinePeerStatus{
+		Peer: &v1.NetworkBaselineStatusPeer{
+			Entity: &v1.NetworkBaselinePeerEntity{
+				Id:         extSrcID(peerID),
+				Name:       extSrcName(peerID),
+				Type:       storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+				Discovered: discovered,
 			},
 			Port:     port,
 			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
@@ -881,7 +1178,7 @@ func depPeer(id int, properties ...*storage.NetworkBaselineConnectionProperties)
 	}
 }
 
-func extSrcPeer(id int, properties ...*storage.NetworkBaselineConnectionProperties) *storage.NetworkBaselinePeer {
+func extSrcPeer(id int, cidr string, properties ...*storage.NetworkBaselineConnectionProperties) *storage.NetworkBaselinePeer {
 	return &storage.NetworkBaselinePeer{
 		Entity: &storage.NetworkEntity{
 			Info: &storage.NetworkEntityInfo{
@@ -889,10 +1186,23 @@ func extSrcPeer(id int, properties ...*storage.NetworkBaselineConnectionProperti
 				Id:   extSrcID(id),
 				Desc: &storage.NetworkEntityInfo_ExternalSource_{
 					ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-						Name: extSrcName(id),
+						Name:   extSrcName(id),
+						Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{Cidr: cidr},
 					},
 				},
 			}},
+		Properties: properties,
+	}
+}
+
+func internetPeer(properties ...*storage.NetworkBaselineConnectionProperties) *storage.NetworkBaselinePeer {
+	return &storage.NetworkBaselinePeer{
+		Entity: &storage.NetworkEntity{
+			Info: &storage.NetworkEntityInfo{
+				Id:   networkgraph.InternetExternalSourceID,
+				Type: storage.NetworkEntityInfo_INTERNET,
+			},
+		},
 		Properties: properties,
 	}
 }

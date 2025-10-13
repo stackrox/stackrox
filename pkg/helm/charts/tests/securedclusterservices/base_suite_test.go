@@ -1,6 +1,7 @@
 package securedclusterservices
 
 import (
+	_ "embed"
 	"io"
 	"path"
 	"strings"
@@ -9,7 +10,6 @@ import (
 	"github.com/stackrox/rox/image"
 	metaUtil "github.com/stackrox/rox/pkg/helm/charts/testutils"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -30,90 +30,16 @@ var (
 
 	// A values YAML that sets all generatable values explicitly, and causes all
 	// objects to be generated.
-	allValuesExplicit = `
-cluster:
-  name: foo
-  type: OPENSHIFT4_CLUSTER
-
-ca:
-  cert: "DUMMY CA CERTIFICATE"
-
-imagePullSecrets:
-  username: myuser
-  password: mypass
-  
-endpoint:
-  central: "central.stackrox:443"
-  advertised: "central-advertised.stackrox:443"
-
-image:
-  repository:
-    main: "custom-main-repo"
-    collector: "custom-collector-repo"
-  registry:
-    main: "custom-main-registry"
-    collector: "custom-collector-registry"
-
-envVars:
-- name: CUSTOM_ENV_VAR
-  value: FOO
-
-sensor:
-  serviceTLS:
-    cert: "DUMMY SENSOR CERT"
-    key: "DUMMY SENSOR KEY"
-
-collector:
-  serviceTLS:
-    cert: "DUMMY COLLECTOR CERT"
-    key: "DUMMY COLLECTOR KEY"
-
-admissionControl:
-  serviceTLS:
-    cert: "DUMMY ADMISSION CONTROL CERT"
-    key: "DUMMY ADMISSION CONTROL KEY"
-
-config:
-  collectionMethod: KERNEL_MODULE
-  admissionControl:
-    listenOnCreates: true
-    listenOnUpdates: true
-    enforceOnCreates: true
-    enforceOnUpdates: true
-    scanInline: true
-    disableBypass: true
-    timeout: 4
-  disableTaintTolerations: true
-  createUpgraderServiceAccount: true
-  createSecrets: true
-  offlineMode: true
-  slimCollector: true
-  exposeMonitoring: true
-
-enableOpenShiftMonitoring: true
-scanner:
-  disable: false
-
-system:
-    enablePodSecurityPolicies: true
-`
+	//go:embed testdata/all-values-explicit.yaml
+	allValuesExplicit string
 )
 
 type baseSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
 }
 
 func TestBase(t *testing.T) {
 	suite.Run(t, new(baseSuite))
-}
-
-func (s *baseSuite) SetupTest() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-}
-
-func (s *baseSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
 }
 
 func (s *baseSuite) LoadAndRenderWithNamespace(namespace string, valStrs ...string) (*chart.Chart, map[string]string) {
@@ -181,6 +107,8 @@ func (s *baseSuite) TestAllGeneratableExplicit() {
 	for k, v := range rendered {
 		if path.Base(k) == "additional-ca-sensor.yaml" {
 			s.Empty(v, "expected additional CAs to be empty")
+		} else if path.Base(k) == "cluster-registration-secret.yaml" {
+			s.Empty(v, "expected cluster-registration-secrets to be empty")
 		} else {
 			s.NotEmptyf(v, "unexpected empty rendered YAML %s", k)
 		}

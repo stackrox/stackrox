@@ -1,19 +1,19 @@
 syntax = "proto3";
 
-option go_package = "sensor";
+package sensor;
 
 import "storage/service_identity.proto";
 
-package sensor;
+option go_package = "./internalapi/sensor;sensor";
 
 message FetchCertificateRequest {
   storage.ServiceType service_type = 1;
-  string service_account_token     = 2;
+  string service_account_token = 2;
 }
 
 message FetchCertificateResponse {
   string pem_cert = 1;
-  string pem_key  = 2;
+  string pem_key = 2;
 }
 
 service CertDistributionService {

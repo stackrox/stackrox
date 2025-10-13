@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /usr/bin/env bash
 
 set -eu
 
@@ -22,8 +22,8 @@ if [ $# -gt 2 ]; then
   exit 1
 fi
 
-if [ -z ${ROX_PASSWORD+x} ]; then
-  echo "ROX_PASSWORD must be set to authenticate against profiling endpoints"
+if [[ -z "${ROX_ADMIN_PASSWORD}" ]]; then
+  echo "ROX_ADMIN_PASSWORD must be set to authenticate against profiling endpoints"
   exit 1
 fi
 

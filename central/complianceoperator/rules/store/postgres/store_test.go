@@ -9,19 +9,18 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type ComplianceOperatorRulesStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestComplianceOperatorRulesStore(t *testing.T) {
@@ -29,28 +28,17 @@ func TestComplianceOperatorRulesStore(t *testing.T) {
 }
 
 func (s *ComplianceOperatorRulesStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
 
 	s.testDB = pgtest.ForT(s.T())
-	s.store = New(s.testDB.Pool)
+	s.store = New(s.testDB.DB)
 }
 
 func (s *ComplianceOperatorRulesStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE compliance_operator_rules CASCADE")
 	s.T().Log("compliance_operator_rules", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
-}
-
-func (s *ComplianceOperatorRulesStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *ComplianceOperatorRulesStoreSuite) TestStore() {
@@ -72,12 +60,12 @@ func (s *ComplianceOperatorRulesStoreSuite) TestStore() {
 	foundComplianceOperatorRule, exists, err = store.Get(ctx, complianceOperatorRule.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(complianceOperatorRule, foundComplianceOperatorRule)
+	protoassert.Equal(s.T(), complianceOperatorRule, foundComplianceOperatorRule)
 
-	complianceOperatorRuleCount, err := store.Count(ctx)
+	complianceOperatorRuleCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, complianceOperatorRuleCount)
-	complianceOperatorRuleCount, err = store.Count(withNoAccessCtx)
+	complianceOperatorRuleCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(complianceOperatorRuleCount)
 
@@ -87,11 +75,6 @@ func (s *ComplianceOperatorRulesStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, complianceOperatorRule))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, complianceOperatorRule), sac.ErrResourceAccessDenied)
 
-	foundComplianceOperatorRule, exists, err = store.Get(ctx, complianceOperatorRule.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(complianceOperatorRule, foundComplianceOperatorRule)
-
 	s.NoError(store.Delete(ctx, complianceOperatorRule.GetId()))
 	foundComplianceOperatorRule, exists, err = store.Get(ctx, complianceOperatorRule.GetId())
 	s.NoError(err)
@@ -100,15 +83,23 @@ func (s *ComplianceOperatorRulesStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, complianceOperatorRule.GetId()), sac.ErrResourceAccessDenied)
 
 	var complianceOperatorRules []*storage.ComplianceOperatorRule
+	var complianceOperatorRuleIDs []string
 	for i := 0; i < 200; i++ {
 		complianceOperatorRule := &storage.ComplianceOperatorRule{}
 		s.NoError(testutils.FullInit(complianceOperatorRule, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		complianceOperatorRules = append(complianceOperatorRules, complianceOperatorRule)
+		complianceOperatorRuleIDs = append(complianceOperatorRuleIDs, complianceOperatorRule.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, complianceOperatorRules))
 
-	complianceOperatorRuleCount, err = store.Count(ctx)
+	complianceOperatorRuleCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, complianceOperatorRuleCount)
+
+	s.NoError(store.DeleteMany(ctx, complianceOperatorRuleIDs))
+
+	complianceOperatorRuleCount, err = store.Count(ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.Equal(0, complianceOperatorRuleCount)
 }

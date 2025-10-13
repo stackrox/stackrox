@@ -1,14 +1,13 @@
 import React, { ReactElement } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import { Flex, FlexItem, Nav, NavItem, NavList, Split, SplitItem } from '@patternfly/react-core';
 
-import usePermissions from 'hooks/usePermissions';
 import { SearchResponse } from 'services/SearchService';
 import { SearchFilter } from 'types/search';
 import { searchPath } from 'routePaths';
 
 import SearchTable from './SearchTable';
-import { SearchNavCategory, searchResultCategoryMap, searchNavMap } from './searchCategories';
+import { SearchNavCategory, searchNavMap } from './searchCategories';
 import { stringifyQueryObject } from './searchQuery';
 
 type SearchNavAndTableProps = {
@@ -22,28 +21,20 @@ function SearchNavAndTable({
     searchFilter,
     searchResponse,
 }: SearchNavAndTableProps): ReactElement {
-    const { hasReadAccess } = usePermissions();
-
     const { counts, results } = searchResponse;
 
     function getNavCategoryCount(navCategory: SearchNavCategory) {
         return navCategory === 'SEARCH_UNSET'
             ? results.length
-            : counts.find(({ category }) => category === navCategory)?.count ?? 0;
+            : (counts.find(({ category }) => category === navCategory)?.count ?? 0);
     }
-
-    const searchNavEntriesFiltered = Object.entries(searchNavMap).filter(
-        ([navCategory]) =>
-            navCategory === 'SEARCH_UNSET' ||
-            hasReadAccess(searchResultCategoryMap[navCategory].resourceName)
-    );
 
     return (
         <Split hasGutter>
             <SplitItem>
                 <Nav aria-label="Categories" theme="light">
                     <NavList>
-                        {searchNavEntriesFiltered.map(([navCategory, text]) => (
+                        {Object.entries(searchNavMap).map(([navCategory, text]) => (
                             <NavItem key={navCategory} isActive={navCategory === activeNavCategory}>
                                 <Link
                                     to={`${searchPath}${stringifyQueryObject({

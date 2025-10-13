@@ -1,3 +1,6 @@
+values:
+  imagePullSecrets:
+    allowNone: true
 tests:
 - name: "All clusters should have secret created"
   expect: |
@@ -9,13 +12,11 @@ tests:
     set:
       helmManaged: true
     expect: |
-      helmClusterConfig | assertThat(.notHelmManaged == false)
       helmClusterConfig | assertThat(.managedBy == "MANAGER_TYPE_HELM_CHART")
   - name: "with false setting"
     set:
       helmManaged: false
     expect: |
-      helmClusterConfig | assertThat(.notHelmManaged == true)
       helmClusterConfig | assertThat(.managedBy == "MANAGER_TYPE_MANUAL")
 
 - name: "Explicitly set fingerprint should be as expected"
@@ -24,3 +25,19 @@ tests:
     envVars(.deployments.sensor; "sensor") | assertThat(.["ROX_HELM_CLUSTER_CONFIG_FP"] == "test-fpr")
   set:
     meta.configFingerprintOverride: "test-fpr"
+
+- name: "Operator-installed instance should have managedBy=MANAGER_TYPE_KUBERNETES_OPERATOR"
+  set:
+    managedBy: MANAGER_TYPE_KUBERNETES_OPERATOR
+  tests:
+  - name: "be managed by operator"
+    expect: |
+      helmClusterConfig | assertThat(.managedBy == "MANAGER_TYPE_KUBERNETES_OPERATOR")
+
+- name: "Helm-installed instance should have managedBy=MANAGER_TYPE_HELM_CHART"
+  set:
+    managedBy: MANAGER_TYPE_HELM_CHART
+  tests:
+  - name: "be managed by operator"
+    expect: |
+      helmClusterConfig | assertThat(.managedBy == "MANAGER_TYPE_HELM_CHART")

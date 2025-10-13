@@ -2,12 +2,14 @@ package services
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+
 import io.stackrox.proto.api.v1.ClusterService.GetClustersRequest
 import io.stackrox.proto.api.v1.ClustersServiceGrpc
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.storage.ClusterOuterClass
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.ClusterOuterClass.Cluster
+import io.stackrox.proto.storage.ClusterOuterClass.ClusterMetadata.Type
 import io.stackrox.proto.storage.ClusterOuterClass.DynamicClusterConfig
 
 @CompileStatic
@@ -28,7 +30,7 @@ class ClusterService extends BaseService {
         return getClusterServiceClient().getCluster(Common.ResourceByID.newBuilder().setId(clusterId).build()).cluster
     }
 
-    static getClusterId(String name = DEFAULT_CLUSTER_NAME) {
+    static String getClusterId(String name = DEFAULT_CLUSTER_NAME) {
         return getClusterServiceClient().getClusters(
                 GetClustersRequest.newBuilder().setQuery("Cluster:${name}").build()
         ).clustersList.find { it.name == name }?.id
@@ -98,9 +100,8 @@ class ClusterService extends BaseService {
     }
 
     static Boolean isEKS() {
-        Boolean isEKS = false
         try {
-            isEKS = clusters.every {
+            return ClusterService.getClusters().every {
                 Cluster cluster ->
                     cluster.getStatus().getProviderMetadata().hasAws() &&
                             cluster.getStatus().getOrchestratorMetadata().getVersion().contains("eks")
@@ -108,23 +109,29 @@ class ClusterService extends BaseService {
         } catch (Exception e) {
             log.error("Error getting cluster info", e)
         }
-        isEKS
+        return false
     }
 
-    static Boolean isAKS() {
-        Boolean isAKS = false
+    static Boolean isAzure() {
         try {
-            isAKS = clusters.every {
+            return ClusterService.getClusters().every {
                 Cluster cluster -> cluster.getStatus().getProviderMetadata().hasAzure()
             }
         } catch (Exception e) {
             log.error("Error getting cluster info", e)
         }
-        isAKS
+        return false
     }
 
-    static Boolean isOpenShift3() {
-        return getCluster().getType() == ClusterOuterClass.ClusterType.OPENSHIFT_CLUSTER
+    static Boolean isAKS() {
+        try {
+            return ClusterService.getClusters().every {
+                Cluster cluster -> cluster.getStatus().getProviderMetadata().getCluster().getType() == Type.AKS
+            }
+        } catch (Exception e) {
+            log.error("Error getting cluster info", e)
+        }
+        return false
     }
 
     static Boolean isOpenShift4() {

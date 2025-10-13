@@ -1,11 +1,12 @@
 import isEqual from 'lodash/isEqual';
 import set from 'lodash/set';
+import pluralize from 'pluralize';
 
-import { IntegrationBase } from 'services/IntegrationsService';
-import { IntegrationSource, IntegrationType } from 'types/integration';
-import { ImageIntegrationCategory } from 'types/imageIntegration.proto';
+import type { IntegrationBase } from 'services/IntegrationsService';
+import type { IntegrationSource, IntegrationType } from 'types/integration';
+import type { ImageIntegrationCategory } from 'types/imageIntegration.proto';
 
-import integrationsList from './integrationsList';
+import type { Traits } from 'types/traits.proto';
 
 export type { IntegrationSource, IntegrationType };
 
@@ -13,25 +14,43 @@ export type Integration = {
     type: IntegrationType;
     id: string;
     name: string;
+    traits?: Traits;
 };
-
-export function getIntegrationLabel(source: string, type: string): string {
-    const integrationTileLabel = integrationsList[source]?.find(
-        (integration) => integration.type === type
-    )?.label;
-    return typeof integrationTileLabel === 'string' ? integrationTileLabel : '';
-}
 
 export function getIsAPIToken(source: IntegrationSource, type: IntegrationType): boolean {
     return source === 'authProviders' && type === 'apitoken';
 }
 
-export function getIsClusterInitBundle(source: IntegrationSource, type: IntegrationType): boolean {
-    return source === 'authProviders' && type === 'clusterInitBundle';
+export function getIsMachineAccessConfig(
+    source: IntegrationSource,
+    type: IntegrationType
+): boolean {
+    return source === 'authProviders' && type === 'machineAccess';
 }
 
 export function getIsSignatureIntegration(source: IntegrationSource): boolean {
     return source === 'signatureIntegrations';
+}
+
+export function getIsScannerV4(source: IntegrationSource, type: IntegrationType): boolean {
+    return source === 'imageIntegrations' && type === 'scannerv4';
+}
+
+export function getIsCloudSource(source: IntegrationSource): boolean {
+    return source === 'cloudSources';
+}
+
+export function getGoogleCredentialsPlaceholder(
+    useWorkloadId: boolean,
+    updatePassword: boolean
+): string {
+    if (useWorkloadId) {
+        return '';
+    }
+    if (updatePassword) {
+        return 'example,\n{\n  "type": "service_account",\n  "project_id": "123456"\n  ...\n}';
+    }
+    return 'Currently-stored credentials will be used.';
 }
 
 /*
@@ -53,6 +72,45 @@ export function clearStoredCredentials<I extends IntegrationBase>(
     return integration;
 }
 
+export function getEditDisabledMessage(type) {
+    if (type === 'apitoken') {
+        return 'This API Token cannot be edited. Create a new API Token or delete an existing one.';
+    }
+    return '';
+}
+
+export function transformDurationLongForm(duration: string): string {
+    const hours = extractUnitsOfTime(duration, 'h');
+    const minutes = extractUnitsOfTime(duration, 'm');
+    const seconds = extractUnitsOfTime(duration, 's');
+    let result = '';
+    if (hours && hours > 0) {
+        result += pluralizeUnit(hours, 'hour');
+    }
+    if (minutes && minutes > 0) {
+        result += hours && hours > 0 ? ' ' : '';
+        result += pluralizeUnit(minutes, 'minute');
+    }
+    if (seconds && seconds > 0) {
+        result += (hours && hours > 0) || (minutes && minutes > 0) ? ' ' : '';
+        result += pluralizeUnit(seconds, 'second');
+    }
+    return result;
+}
+
+function pluralizeUnit(count: number, unit: string): string {
+    return `${count} ${pluralize(unit, count)}`;
+}
+
+function extractUnitsOfTime(duration: string, unit: string): number {
+    const unitRegex = new RegExp(`[0-9]+${unit}`);
+    const matchUnits = duration.match(unitRegex);
+    if (matchUnits && matchUnits.length !== 0) {
+        return parseInt(matchUnits[0].replace(unit, ''));
+    }
+    return 0;
+}
+
 export const daysOfWeek = [
     'Sunday',
     'Monday',
@@ -63,42 +121,47 @@ export const daysOfWeek = [
     'Saturday',
 ];
 
-const getTimes = () => {
-    const times = ['12:00'];
-    for (let i = 1; i <= 11; i += 1) {
-        if (i < 10) {
-            times.push(`0${i}:00`);
-        } else {
-            times.push(`${i}:00`);
-        }
-    }
-    return times.map((x) => `${x}AM`).concat(times.map((x) => `${x}PM`));
-};
+// ["00:00", ..., "23:00"]
+export const timesOfDay = new Array(24)
+    .fill(1)
+    .map((_, t) => `${t.toString().padStart(2, '0')}:00`);
 
-export const timesOfDay = getTimes();
+export function backupScheduleDescriptor() {
+    return {
+        accessor: ({ schedule }) => {
+            if (schedule.intervalType === 'WEEKLY') {
+                return `Weekly on ${daysOfWeek[schedule.weekly.day]} at ${
+                    timesOfDay[schedule.hour]
+                } UTC`;
+            }
+            return `Daily at ${timesOfDay[schedule.hour]} UTC`;
+        },
+        Header: 'Schedule',
+    };
+}
 
 // Utilities for image integrations which can have either or both of two categories.
 
 // Categories alternatives correspond to mutually exclusive toggle group items.
 type CategoriesAlternatives<
     Category0 extends ImageIntegrationCategory,
-    Category1 extends Exclude<ImageIntegrationCategory, Category0>
+    Category1 extends Exclude<ImageIntegrationCategory, Category0>,
 > = [
     [[category0: Category0]],
     [[category1: Category1]],
     // The alternative for both categories includes both orders.
-    [[category0: Category0, category1: Category1], [category1: Category1, category0: Category0]]
+    [[category0: Category0, category1: Category1], [category1: Category1, category0: Category0]],
 ];
 
 // Compiler verifies that first argument of matchCategoriesAlternative method is a category alternative.
 type CategoriesAlternative<
     Category0 extends ImageIntegrationCategory,
-    Category1 extends Exclude<ImageIntegrationCategory, Category0>
+    Category1 extends Exclude<ImageIntegrationCategory, Category0>,
 > = CategoriesAlternatives<Category0, Category1>[number];
 
 function getCategoriesUtils<
     Category0 extends ImageIntegrationCategory,
-    Category1 extends Exclude<ImageIntegrationCategory, Category0>
+    Category1 extends Exclude<ImageIntegrationCategory, Category0>,
 >([category0, category1]: [Category0, Category1], [text0, text1]: [string, string]) {
     const categoriesAlternatives: CategoriesAlternatives<Category0, Category1> = [
         [[category0]],
@@ -110,7 +173,6 @@ function getCategoriesUtils<
     ];
 
     // For robust behavior in case of unexpected response, provide ternary fallback even though categories limited to Category0 and Category1.
-    /* eslint-disable no-nested-ternary */
     return {
         categoriesAlternatives,
 
@@ -131,7 +193,6 @@ function getCategoriesUtils<
 
         validCategories: [category0, category1],
     };
-    /* eslint-enable no-nested-ternary */
 }
 
 export const categoriesUtilsForClairifyScanner = getCategoriesUtils(

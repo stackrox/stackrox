@@ -51,6 +51,17 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
+  name: grafana-plugins
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: stackrox
+data:
+  sample.yaml: |-
+    apiVersion: 1
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
   name: grafana-dashboards
   namespace: {{ .Release.Namespace }}
   labels:
@@ -64,9 +75,17 @@ data:
         type: file
         options:
           path: /etc/grafana/provisioning/dashboards
-  central.json: |-
-{{ .Files.Get "dashboards/central.json" | indent 4 }}
+  stackrox-core-dashboard.json: |-
+{{ .Files.Get "dashboards/stackrox-core-dashboard.json" | indent 4 }}
   cluster-health.json: |-
 {{ .Files.Get "dashboards/cluster-health.json" | indent 4 }}
   dataplane.json: |-
 {{ .Files.Get "dashboards/dataplane.json" | indent 4 }}
+  node-inventory.json: |-
+{{ .Files.Get "dashboards/node-inventory.json" | indent 4 }}
+  compliance-operator.json: |-
+{{ .Files.Get "dashboards/compliance-operator.json" | indent 4 }}
+  enrichment-connections.json: |-
+{{ .Files.Get "dashboards/enrichment-connections.json" | indent 4 }}
+  enrichment-endpoints.json: |-
+{{ .Files.Get "dashboards/enrichment-endpoints.json" | indent 4 }}

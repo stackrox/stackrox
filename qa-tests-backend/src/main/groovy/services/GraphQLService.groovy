@@ -1,23 +1,31 @@
 package services
 
-import groovy.json.JsonOutput
-import groovy.json.JsonSlurper
-import groovy.transform.ToString
-import groovy.util.logging.Slf4j
 import javax.net.ssl.HostnameVerifier
 import javax.net.ssl.SSLContext
+
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import groovy.transform.CompileDynamic
+import groovy.transform.CompileStatic
+import groovy.transform.ToString
+import groovy.util.logging.Slf4j
 import org.apache.http.HttpResponse
+import org.apache.http.StatusLine
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.conn.ssl.NoopHostnameVerifier
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory
 import org.apache.http.conn.ssl.TrustAllStrategy
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.CloseableHttpClient
+import org.apache.http.impl.client.DefaultHttpRequestRetryHandler
+import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy
 import org.apache.http.impl.client.HttpClients
 import org.apache.http.ssl.SSLContextBuilder
+
 import util.Env
 
 @Slf4j
+@CompileStatic
 class GraphQLService {
     // Top level service object functionality
     /////////////////////////////////////////
@@ -74,6 +82,10 @@ class GraphQLService {
             return this.value
         }
 
+        List<String> getErrors() {
+            return this.errors
+        }
+
         Boolean hasNoErrors() {
             return this.code == 200 && (this.errors == null || this.errors.size() == 0)
         }
@@ -109,48 +121,59 @@ class GraphQLService {
         private final List<Tuple2<String, String>> defaultHeaders
         private final String addr
 
+        private static final Integer MAX_LOG_CHARS = 1024
+
         Poster(String addr) {
             this.addr = addr
             this.defaultHeaders = [new Tuple2<String, String>("Content-Type", "application/json")]
         }
 
-        Response CallPost(List<Tuple2<String, String>> headers, Map content)  {
+        Response CallPost(List<Tuple2<String, String>> headers, Map content) {
             CloseableHttpClient client = buildClient()
             HttpPost httpPost = buildRequest(headers, content)
 
-            try {
-                HttpResponse response = client.execute(httpPost)
-                return parseResponse(response)
-            } catch (Exception e) {
-                log.error("failed to GQL post", e)
-            }
-            return new Response()
+            HttpResponse response = client.execute(httpPost)
+            return parseResponse(response)
         }
 
-        private Response parseResponse(HttpResponse response)  {
+        @CompileDynamic
+        private Response parseResponse(HttpResponse response) {
             def bsa = new ByteArrayOutputStream()
             response.getEntity().writeTo(bsa)
-            log.info "GraphQL response: " + bsa
+            StatusLine status = response.getStatusLine()
+            log.debug "GraphQL response: $status: " + (
+                    bsa.size() < MAX_LOG_CHARS ? bsa : bsa.toString().take(MAX_LOG_CHARS) + "...")
+            if (status.statusCode != 200) {
+                return new Response(status.statusCode, null, [bsa.toString()])
+            }
             def returnedValue = new JsonSlurper().parseText(bsa.toString())
-            return new Response(response.getStatusLine().getStatusCode(), returnedValue.data, returnedValue.errors)
+
+            return new Response(status.getStatusCode(), returnedValue.data, returnedValue.errors)
         }
 
-        private CloseableHttpClient buildClient()  {
+        private CloseableHttpClient buildClient() {
             // Create connection with SSL information.
             SSLContext sslContext = SSLContextBuilder
-                .create()
-                .loadTrustMaterial(new TrustAllStrategy())
-                .build()
+                    .create()
+                    .loadTrustMaterial(new TrustAllStrategy())
+                    .build()
             HostnameVerifier allowAllHosts = new NoopHostnameVerifier()
             SSLConnectionSocketFactory connectionFactory = new SSLConnectionSocketFactory(sslContext, allowAllHosts)
+
+            int maxRetryCount = 3
+            int retryIntervalMs = 5000
             CloseableHttpClient client = HttpClients
                     .custom()
                     .setSSLSocketFactory(connectionFactory)
+                    .setRetryHandler(
+                            new DefaultHttpRequestRetryHandler(maxRetryCount, true))
+                    .setServiceUnavailableRetryStrategy(
+                            new DefaultServiceUnavailableRetryStrategy(maxRetryCount, retryIntervalMs))
                     .build()
             return client
         }
 
-        private HttpPost buildRequest(List<Tuple2<String, String>> headers, Map content)  {
+        private HttpPost buildRequest(List<Tuple2<String, String>> headers, Map content) {
             HttpPost httpPost = new HttpPost(addr)
             for (Tuple2<String, String> header : headers) {
                 httpPost.addHeader(header.getFirst(), header.getSecond())
@@ -159,7 +182,8 @@ class GraphQLService {
                 httpPost.addHeader(header.getFirst(), header.getSecond())
             }
             def jsonContent = new JsonOutput().toJson(content)
-            log.info "GraphQL query: " + jsonContent
+            log.debug "GraphQL query: " + (
+                    jsonContent.length() < MAX_LOG_CHARS ? jsonContent : jsonContent.take(MAX_LOG_CHARS) + "...")
             httpPost.setEntity(new StringEntity(jsonContent))
             return httpPost
         }

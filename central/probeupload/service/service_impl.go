@@ -6,14 +6,13 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gogo/protobuf/proto"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/probesources"
 	"github.com/stackrox/rox/central/probeupload/manager"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -22,14 +21,16 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/probeupload"
+	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.ProbeUpload)): {
-			"/v1.ProbeUploadService/GetExistingProbes",
+		user.With(permissions.View(resources.Administration)): {
+			v1.ProbeUploadService_GetExistingProbes_FullMethodName,
 		},
 	})
 
@@ -77,10 +78,12 @@ func (s *service) GetExistingProbes(ctx context.Context, req *v1.GetExistingProb
 func (s *service) CustomRoutes() []routes.CustomRoute {
 	return []routes.CustomRoute{
 		{
-			Route:         "/api/extensions/probeupload",
-			Authorizer:    user.With(permissions.Modify(resources.ProbeUpload)),
-			ServerHandler: http.HandlerFunc(s.handleProbeUpload),
-			Compression:   false,
+			Route:      "/api/extensions/probeupload",
+			Authorizer: user.With(permissions.Modify(resources.Administration)),
+			ServerHandler: utils.IfThenElse[http.Handler](
+				env.EnableKernelPackageUpload.BooleanSetting(), http.HandlerFunc(s.handleProbeUpload),
+				httputil.NotImplementedHandler("api is not supported because kernel package upload is disabled.")),
+			Compression: false,
 		},
 		{
 			Route:         "/kernel-objects/",
@@ -115,7 +118,7 @@ func (s *service) doHandleProbeUpload(req *http.Request) error {
 	}
 
 	var manifest v1.ProbeUploadManifest
-	if err := proto.Unmarshal(manifestBytes, &manifest); err != nil {
+	if err := manifest.UnmarshalVTUnsafe(manifestBytes); err != nil {
 		return errors.Wrap(err, "failed to unmarshal manifest")
 	}
 
@@ -131,8 +134,8 @@ func (s *service) doHandleProbeUpload(req *http.Request) error {
 	}
 
 	for _, file := range manifest.GetFiles() {
-		nextChunk := io.LimitReader(req.Body, file.GetSize_())
-		if err := s.mgr.StoreFile(req.Context(), file.GetName(), nextChunk, file.GetSize_(), file.GetCrc32()); err != nil {
+		nextChunk := io.LimitReader(req.Body, file.GetSize())
+		if err := s.mgr.StoreFile(req.Context(), file.GetName(), nextChunk, file.GetSize(), file.GetCrc32()); err != nil {
 			return errors.Wrapf(err, "failed to write file %s", file.GetName())
 		}
 	}

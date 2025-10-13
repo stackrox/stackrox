@@ -3,32 +3,32 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/serviceidentities/internal/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 var (
-	serviceIdentitiesSAC = sac.ForResource(resources.ServiceIdentity)
+	administrationSAC = sac.ForResource(resources.Administration)
 )
 
 type dataStoreImpl struct {
 	storage store.Store
 }
 
-func (ds *dataStoreImpl) GetServiceIdentities(ctx context.Context) ([]*storage.ServiceIdentity, error) {
-	if ok, err := serviceIdentitiesSAC.ReadAllowed(ctx); err != nil {
-		return nil, err
+func (ds *dataStoreImpl) ForEachServiceIdentity(ctx context.Context, fn func(obj *storage.ServiceIdentity) error) error {
+	if ok, err := administrationSAC.ReadAllowed(ctx); err != nil {
+		return err
 	} else if !ok {
-		return nil, nil
+		return nil
 	}
 
-	return ds.storage.GetAll(ctx)
+	return ds.storage.Walk(ctx, fn)
 }
 
 func (ds *dataStoreImpl) AddServiceIdentity(ctx context.Context, identity *storage.ServiceIdentity) error {
-	if ok, err := serviceIdentitiesSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := administrationSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied

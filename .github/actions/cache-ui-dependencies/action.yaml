@@ -1,24 +1,18 @@
 name: Cache UI Dependencies
 description: Cache UI Dependencies
 inputs:
-  lockFile: 
-    description: Where the monorepo lock is written
+  lockFile:
+    description: Where the package lock is written
     required: true
-    default: "ui/monorepo.lock"
+    default: "ui/apps/platform/package-lock.json"
 runs:
   using: composite
   steps:
     - name: Cache UI Dependencies
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: |
-          ui/deps
+          /github/home/.npm
           /github/home/.cache/Cypress
           /usr/local/share/.cache
-          ui/node_modules
-          ui/apps/platform/node_modules
-          ui/packages/ui-components/node_modules
-          ui/packages/tailwind-config/node_modules
         key: npm-v2-${{ hashFiles(inputs.lockFile) }}
-        restore-keys: |
-          npm-v2-

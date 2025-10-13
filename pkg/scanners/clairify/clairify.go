@@ -8,18 +8,21 @@ import (
 	"net/http"
 	"time"
 
-	gogoProto "github.com/gogo/protobuf/types"
+	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	clairConv "github.com/stackrox/rox/pkg/clair"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/registries"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/set"
@@ -30,36 +33,46 @@ import (
 	"github.com/stackrox/scanner/pkg/clairify/client"
 	"github.com/stackrox/scanner/pkg/clairify/types"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/status"
 )
 
 const (
-	// TypeString is the name of the Clairify scanner.
-	TypeString = "clairify"
+	// defaultClientTimeout default timeout for scanner calls.
+	defaultClientTimeout = 5 * time.Minute
 
-	clientTimeout             = 5 * time.Minute
+	// nodeScanClientTimeout is used for node scanning operations, it is shorter than
+	// the default because we expect it to have only the database on its path.
+	nodeScanClientTimeout = 1 * time.Minute
+
 	defaultMaxConcurrentScans = int64(30)
 )
 
 var (
 	_ scannerTypes.Scanner                  = (*clairify)(nil)
 	_ scannerTypes.ImageVulnerabilityGetter = (*clairify)(nil)
+	_ scannerTypes.NodeScanner              = (*clairify)(nil)
+
+	log             = logging.LoggerForModule()
+	scannerEndpoint = fmt.Sprintf("scanner.%s.svc", env.Namespace.Setting())
 )
 
-var (
-	log = logging.LoggerForModule()
-)
+// GetScannerEndpoint returns the scanner endpoint with a configured namespace. env.ScannerGRPCEndpoint is only used by Sensor.
+func GetScannerEndpoint() string {
+	return scannerEndpoint
+}
 
 // Creator provides the type scanners.Creator to add to the scanners Registry.
 func Creator(set registries.Set) (string, func(integration *storage.ImageIntegration) (scannerTypes.Scanner, error)) {
-	return TypeString, func(integration *storage.ImageIntegration) (scannerTypes.Scanner, error) {
+	return scannerTypes.Clairify, func(integration *storage.ImageIntegration) (scannerTypes.Scanner, error) {
 		return newScanner(integration, set)
 	}
 }
 
 // NodeScannerCreator provides the type scanners.NodeScannerCreator to add to the scanners registry.
 func NodeScannerCreator() (string, func(integration *storage.NodeIntegration) (scannerTypes.NodeScanner, error)) {
-	return TypeString, func(integration *storage.NodeIntegration) (scannerTypes.NodeScanner, error) {
+	return scannerTypes.Clairify, func(integration *storage.NodeIntegration) (scannerTypes.NodeScanner, error) {
 		return newNodeScanner(integration)
 	}
 }
@@ -91,7 +104,7 @@ func newScanner(protoImageIntegration *storage.ImageIntegration, activeRegistrie
 	if err := validateConfig(conf); err != nil {
 		return nil, err
 	}
-	endpoint := urlfmt.FormatURL(conf.Endpoint, urlfmt.InsecureHTTP, urlfmt.NoTrailingSlash)
+	endpoint := urlfmt.FormatURL(conf.GetEndpoint(), urlfmt.InsecureHTTP, urlfmt.NoTrailingSlash)
 
 	dialer := net.Dialer{
 		Timeout: 2 * time.Second,
@@ -103,7 +116,7 @@ func newScanner(protoImageIntegration *storage.ImageIntegration, activeRegistrie
 	}
 
 	httpClient := &http.Client{
-		Timeout: clientTimeout,
+		Timeout: defaultClientTimeout,
 		Transport: &http.Transport{
 			DialContext:     dialer.DialContext,
 			TLSClientConfig: tlsConfig,
@@ -144,9 +157,11 @@ func createGRPCConnectionToScanner(conf *storage.ClairifyConfig) (*grpc.ClientCo
 		return nil, err
 	}
 
+	// Checking for an empty endpoint can't be removed because of backward-compatibility. Existing image
+	// integrations are configured in the database on Central's startup and are not updated dynamically.
 	endpoint := conf.GetGrpcEndpoint()
 	if endpoint == "" {
-		endpoint = fmt.Sprintf("scanner.%s:8443", env.Namespace.Setting())
+		endpoint = fmt.Sprintf("%s:8443", GetScannerEndpoint())
 	}
 
 	// Note: it is possible we call `grpc.Dial` multiple times per endpoint,
@@ -170,13 +185,16 @@ func newNodeScanner(protoNodeIntegration *storage.NodeIntegration) (*clairify, e
 
 	pingServiceClient := clairGRPCV1.NewPingServiceClient(gRPCConnection)
 	scanServiceClient := clairGRPCV1.NewNodeScanServiceClient(gRPCConnection)
+	// required as RHCOS scanning uses ImageScan API
+	imageScanServiceClient := clairGRPCV1.NewImageScanServiceClient(gRPCConnection)
 
 	return &clairify{
-		NodeScanSemaphore:     scannerTypes.NewNodeSemaphoreWithValue(defaultMaxConcurrentScans),
-		conf:                  conf,
-		pingServiceClient:     pingServiceClient,
-		nodeScanServiceClient: scanServiceClient,
-		protoNodeIntegration:  protoNodeIntegration,
+		NodeScanSemaphore:      scannerTypes.NewNodeSemaphoreWithValue(defaultMaxConcurrentScans),
+		conf:                   conf,
+		pingServiceClient:      pingServiceClient,
+		nodeScanServiceClient:  scanServiceClient,
+		imageScanServiceClient: imageScanServiceClient,
+		protoNodeIntegration:   protoNodeIntegration,
 	}, nil
 }
 
@@ -198,7 +216,7 @@ func (c *clairify) Test() error {
 // TestNodeScanner initiates a test of the Clairify Scanner which verifies
 // that we have the proper scan permissions for node scanning
 func (c *clairify) TestNodeScanner() error {
-	ctx, cancel := context.WithTimeout(context.Background(), clientTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultClientTimeout)
 	defer cancel()
 	_, err := c.pingServiceClient.Ping(ctx, &clairGRPCV1.Empty{})
 	return err
@@ -236,7 +254,7 @@ func convertLayerToImageScan(image *storage.Image, layerEnvelope *clairV1.LayerE
 	os := stringutils.OrDefault(layerEnvelope.Layer.NamespaceName, "unknown")
 	return &storage.ImageScan{
 		OperatingSystem: os,
-		ScanTime:        gogoProto.TimestampNow(),
+		ScanTime:        protocompat.TimestampNow(),
 		ScannerVersion:  layerEnvelope.ScannerVersion,
 		Components:      clairConv.ConvertFeatures(image, layerEnvelope.Layer.Features, os),
 		Notes:           notes,
@@ -301,7 +319,7 @@ func (c *clairify) getInitialScanResults(img *storage.Image) (*clairV1.LayerEnve
 	var opts types.GetImageDataOpts
 	layerEnv, err := c.httpClient.RetrieveImageDataBySHA(sha, &opts)
 	if err != nil {
-		return nil, err
+		return nil, errox.ConcealSensitive(err)
 	}
 	for _, note := range layerEnv.Notes {
 		if note == clairV1.CertifiedRHELScanUnavailable {
@@ -311,6 +329,9 @@ func (c *clairify) getInitialScanResults(img *storage.Image) (*clairV1.LayerEnve
 			log.Debugf("Image %v is out of Red Hat Scanner Certification scope. Retrying fetch for uncertified results", v1ImageToClairifyImage(img))
 			opts.UncertifiedRHELResults = true
 			layerEnv, err = c.httpClient.RetrieveImageDataBySHA(sha, &opts)
+			if err != nil {
+				err = errox.ConcealSensitive(err)
+			}
 		}
 	}
 
@@ -360,11 +381,11 @@ func (c *clairify) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 
 func (c *clairify) scanImage(image *storage.Image, opts types.GetImageDataOpts) (*clairV1.LayerEnvelope, error) {
 	if err := c.addScan(image, opts.UncertifiedRHELResults); err != nil {
-		return nil, err
+		return nil, errox.ConcealSensitive(err)
 	}
 	layerEnv, err := c.getScan(image, &opts)
 	if err != nil {
-		return nil, err
+		return nil, errox.ConcealSensitive(err)
 	}
 
 	return layerEnv, nil
@@ -387,12 +408,15 @@ func (c *clairify) addScan(image *storage.Image, uncertifiedRHEL bool) error {
 
 // GetVulnerabilities retrieves the vulnerabilities present in the given image
 // represented by the given components and scan notes.
-func (c *clairify) GetVulnerabilities(image *storage.Image, components *clairGRPCV1.Components, notes []clairGRPCV1.Note) (*storage.ImageScan, error) {
+func (c *clairify) GetVulnerabilities(image *storage.Image, components *scannerTypes.ScanComponents, notes []clairGRPCV1.Note) (*storage.ImageScan, error) {
+	clairComponents := components.Clairify()
+
 	req := &clairGRPCV1.GetImageVulnerabilitiesRequest{
-		Components: components,
+		Image:      utils.GetFullyQualifiedFullName(image),
+		Components: clairComponents,
 		Notes:      notes,
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), clientTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultClientTimeout)
 	defer cancel()
 	resp, err := c.imageScanServiceClient.GetImageVulnerabilities(ctx, req)
 	if err != nil {
@@ -402,15 +426,52 @@ func (c *clairify) GetVulnerabilities(image *storage.Image, components *clairGRP
 	return convertImageToImageScan(image.GetMetadata(), resp.GetImage()), nil
 }
 
-// GetNodeScan retrieves the most recent node scan
-func (c *clairify) GetNodeScan(node *storage.Node) (*storage.NodeScan, error) {
-	req := convertNodeToVulnRequest(node)
-	ctx, cancel := context.WithTimeout(context.Background(), clientTimeout)
+func retryOnGRPCErrors(ctx context.Context, name string, f func() error) error {
+	op := func() error {
+		err := f()
+		if err != nil {
+			e, _ := status.FromError(err)
+			switch e.Code() {
+			// Unavailable indicates the service is currently unavailable. The error code is
+			// set by the gRPC framework during failed connections, abrupt shutdown of a
+			// server process or network connection.
+			//
+			// Aborted is not generated by the gRPC framework, but may be used by the server
+			// to retry on certain conditions that are retriable, e.g concurrency issue,
+			// sequencer check failures, transaction aborts, etc.
+			case codes.Aborted, codes.Unavailable:
+				return err
+			default:
+				return backoff.Permanent(err)
+			}
+		}
+		return err
+	}
+	notify := func(err error, duration time.Duration) {
+		log.Warnf("calling %s() (retrying in %s): %v", name, duration, err)
+	}
+	eb := backoff.NewExponentialBackOff()
+	return backoff.RetryNotify(op, backoff.WithContext(eb, ctx), notify)
+}
+
+func (c *clairify) GetNodeInventoryScan(node *storage.Node, inv *storage.NodeInventory, ir *v4.IndexReport) (*storage.NodeScan, error) {
+	if inv == nil && ir != nil {
+		return nil, fmt.Errorf("received a Scanner v4 request for Scanner v2. "+
+			"Upgrade the source cluster %s or set it up to use Node Scanning v4", node.GetClusterName())
+	}
+	req := convertNodeToVulnRequest(node, inv)
+	ctx, cancel := context.WithTimeout(context.Background(), nodeScanClientTimeout)
 	defer cancel()
-	resp, err := c.nodeScanServiceClient.GetNodeVulnerabilities(ctx, req)
+	log.Debugf("Calling GetNodeVulnerabilities with node inventory: %v", req.GetComponents())
+	var resp *clairGRPCV1.GetNodeVulnerabilitiesResponse
+	err := retryOnGRPCErrors(ctx, "GetNodeVulnerabilities", func() (err error) {
+		resp, err = c.nodeScanServiceClient.GetNodeVulnerabilities(ctx, req)
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}
+	log.Debugf("Got reply GetNodeVulnerabilities with features: %v", resp.GetFeatures())
 
 	scan := convertVulnResponseToNodeScan(req, resp)
 	if scan == nil {
@@ -420,6 +481,11 @@ func (c *clairify) GetNodeScan(node *storage.Node) (*storage.NodeScan, error) {
 	return scan, nil
 }
 
+// GetNodeScan retrieves the most recent node scan
+func (c *clairify) GetNodeScan(node *storage.Node) (*storage.NodeScan, error) {
+	return c.GetNodeInventoryScan(node, nil, nil)
+}
+
 // Match decides if the image is contained within this scanner
 func (c *clairify) Match(image *storage.ImageName) bool {
 	return c.activeRegistries.Match(image)
@@ -427,7 +493,7 @@ func (c *clairify) Match(image *storage.ImageName) bool {
 
 // Type returns the stringified type of this scanner
 func (c *clairify) Type() string {
-	return TypeString
+	return scannerTypes.Clairify
 }
 
 // Name returns the integration's name
@@ -449,7 +515,7 @@ func (c *clairify) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
 
 // OrchestratorScannerCreator provides creator for OrchestratorScanner
 func OrchestratorScannerCreator() (string, func(integration *storage.OrchestratorIntegration) (scannerTypes.OrchestratorScanner, error)) {
-	return TypeString, func(integration *storage.OrchestratorIntegration) (scannerTypes.OrchestratorScanner, error) {
+	return scannerTypes.Clairify, func(integration *storage.OrchestratorIntegration) (scannerTypes.OrchestratorScanner, error) {
 		return newOrchestratorScanner(integration)
 	}
 }
@@ -478,7 +544,7 @@ func (c *clairify) KubernetesScan(version string) (map[string][]*storage.Embedde
 	req := &clairGRPCV1.GetKubeVulnerabilitiesRequest{
 		KubernetesVersion: version,
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), clientTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultClientTimeout)
 	defer cancel()
 
 	resp, err := c.orchestratorScanServiceClient.GetKubeVulnerabilities(ctx, req)
@@ -487,14 +553,32 @@ func (c *clairify) KubernetesScan(version string) (map[string][]*storage.Embedde
 	}
 
 	results := map[string][]*storage.EmbeddedVulnerability{
-		kubernetes.KubeAPIServer:         convertK8sVulns(resp.ApiserverVulnerabilities),
-		kubernetes.KubeAggregator:        convertK8sVulns(resp.AggregatorVulnerabilities),
-		kubernetes.KubeControllerManager: convertK8sVulns(resp.ControllerManagerVulnerabilities),
-		kubernetes.KubeScheduler:         convertK8sVulns(resp.SchedulerVulnerabilities),
-		kubernetes.Generic:               convertK8sVulns(resp.GenericVulnerabilities),
+		kubernetes.KubeAPIServer:         convertK8sVulns(resp.GetApiserverVulnerabilities()),
+		kubernetes.KubeAggregator:        convertK8sVulns(resp.GetAggregatorVulnerabilities()),
+		kubernetes.KubeControllerManager: convertK8sVulns(resp.GetControllerManagerVulnerabilities()),
+		kubernetes.KubeScheduler:         convertK8sVulns(resp.GetSchedulerVulnerabilities()),
+		kubernetes.Generic:               convertK8sVulns(resp.GetGenericVulnerabilities()),
 	}
 
 	return results, nil
+}
+
+// IstioScan retrieves the most recent Istio scan from scanner
+func (c *clairify) IstioScan(version string) ([]*storage.EmbeddedVulnerability, error) {
+
+	req := &clairGRPCV1.GetIstioVulnerabilitiesRequest{
+		IstioVersion: version,
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), defaultClientTimeout)
+	defer cancel()
+	resp, err := c.orchestratorScanServiceClient.GetIstioVulnerabilities(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	res := convertIstioVulns(resp.GetVulnerabilities())
+
+	return res, nil
 }
 
 // OpenShiftScan retrieves OpenShift scan from scanner
@@ -502,7 +586,7 @@ func (c *clairify) OpenShiftScan(version string) ([]*storage.EmbeddedVulnerabili
 	req := &clairGRPCV1.GetOpenShiftVulnerabilitiesRequest{
 		OpenShiftVersion: version,
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), clientTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultClientTimeout)
 	defer cancel()
 
 	resp, err := c.orchestratorScanServiceClient.GetOpenShiftVulnerabilities(ctx, req)
@@ -510,7 +594,7 @@ func (c *clairify) OpenShiftScan(version string) ([]*storage.EmbeddedVulnerabili
 		return nil, err
 	}
 
-	results := convertVulnerabilities(resp.Vulnerabilities, storage.EmbeddedVulnerability_OPENSHIFT_VULNERABILITY)
+	results := convertVulnerabilities(resp.GetVulnerabilities(), storage.EmbeddedVulnerability_OPENSHIFT_VULNERABILITY)
 
 	return results, nil
 }

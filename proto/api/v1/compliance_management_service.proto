@@ -1,114 +1,110 @@
 syntax = "proto3";
 
-option go_package = "v1";
-option java_package = "io.stackrox.proto.api.v1";
+package v1;
 
 import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
-package v1;
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
 
 message ComplianceRunSelection {
-    // The ID of the cluster. "*" means "all clusters".
-    string cluster_id = 1;
-    // The ID of the compliance standard. "*" means "all standards".
-    string standard_id = 2;
+  // The ID of the cluster. "*" means "all clusters".
+  string cluster_id = 1;
+  // The ID of the compliance standard. "*" means "all standards".
+  string standard_id = 2;
 }
 
 message GetActiveComplianceRunsRequest {
-    ComplianceRunSelection selection = 1;
+  ComplianceRunSelection selection = 1;
 }
 
 message GetActiveComplianceRunsResponse {
-    repeated ComplianceRun active_runs = 1;
+  repeated ComplianceRun active_runs = 1;
 }
 
 message ComplianceRun {
-    enum State {
-        INVALID = 0;
-        READY = 1;
-        STARTED = 2;
-        WAIT_FOR_DATA = 3;
-        EVALUTING_CHECKS = 4;
-        FINISHED = 5;
-    }
+  enum State {
+    INVALID = 0;
+    READY = 1;
+    STARTED = 2;
+    WAIT_FOR_DATA = 3;
+    EVALUTING_CHECKS = 4;
+    FINISHED = 5;
+  }
 
-    string id = 1;
+  string id = 1;
 
-    string cluster_id  = 2;
-    string standard_id = 3;
+  string cluster_id = 2;
+  string standard_id = 3;
 
-    reserved 4;
+  reserved 4;
 
-    google.protobuf.Timestamp start_time  = 5;
-    google.protobuf.Timestamp finish_time = 6;
+  google.protobuf.Timestamp start_time = 5;
+  google.protobuf.Timestamp finish_time = 6;
 
-    State state          = 7;
-    string error_message = 8;
+  State state = 7;
+  string error_message = 8;
 }
 
 message GetRecentComplianceRunsRequest {
-    oneof cluster_id_opt {
-        string cluster_id = 1;
-    }
-    oneof standard_id_opt {
-        string standard_id = 2;
-    }
-    google.protobuf.Timestamp since = 3;
+  oneof cluster_id_opt {
+    string cluster_id = 1;
+  }
+  oneof standard_id_opt {
+    string standard_id = 2;
+  }
+  google.protobuf.Timestamp since = 3;
 }
 
 message GetRecentComplianceRunsResponse {
-    repeated ComplianceRun compliance_runs = 1;
+  repeated ComplianceRun compliance_runs = 1;
 }
 
 message TriggerComplianceRunRequest {
-    string cluster_id = 1;
-    string standard_id = 2;
+  string cluster_id = 1;
+  string standard_id = 2;
 }
 
 message TriggerComplianceRunResponse {
-    ComplianceRun started_run = 1;
+  ComplianceRun started_run = 1;
 }
 
 message TriggerComplianceRunsRequest {
-    ComplianceRunSelection selection = 1;
+  ComplianceRunSelection selection = 1;
 }
 
 message TriggerComplianceRunsResponse {
-    repeated ComplianceRun started_runs = 1;
+  repeated ComplianceRun started_runs = 1;
 }
 
 message GetComplianceRunStatusesRequest {
-    repeated string run_ids = 1;
+  repeated string run_ids = 1;
+  bool latest = 2;
 }
 
 message GetComplianceRunStatusesResponse {
-    repeated string invalid_run_ids = 1;
-    repeated ComplianceRun runs     = 2;
+  repeated string invalid_run_ids = 1;
+  repeated ComplianceRun runs = 2;
 }
 
 service ComplianceManagementService {
+  // BEGIN EXPERIMENTAL/UNSTABLE API
 
-    // BEGIN EXPERIMENTAL/UNSTABLE API
+  rpc GetRecentRuns(GetRecentComplianceRunsRequest) returns (GetRecentComplianceRunsResponse) {
+    option (google.api.http) = {get: "/v1/complianceManagement/runs"};
+  }
 
-    rpc GetRecentRuns(GetRecentComplianceRunsRequest) returns (GetRecentComplianceRunsResponse) {
-        option (google.api.http) = {
-            get: "/v1/complianceManagement/runs"
-        };
-    }
+  // END EXPERIMENTAL/UNSTABLE API
 
-    // END EXPERIMENTAL/UNSTABLE API
+  rpc TriggerRuns(TriggerComplianceRunsRequest) returns (TriggerComplianceRunsResponse) {
+    option (google.api.http) = {
+      post: "/v1/compliancemanagement/runs"
+      body: "*"
+    };
+  }
 
-    rpc TriggerRuns(TriggerComplianceRunsRequest) returns (TriggerComplianceRunsResponse) {
-        option (google.api.http) = {
-            post: "/v1/compliancemanagement/runs"
-            body: "*"
-        };
-    }
-
-    rpc GetRunStatuses(GetComplianceRunStatusesRequest) returns (GetComplianceRunStatusesResponse) {
-        option (google.api.http) = {
-            get: "/v1/compliancemanagement/runstatuses"
-        };
-    }
+  rpc GetRunStatuses(GetComplianceRunStatusesRequest) returns (GetComplianceRunStatusesResponse) {
+    option (google.api.http) = {get: "/v1/compliancemanagement/runstatuses"};
+  }
 }

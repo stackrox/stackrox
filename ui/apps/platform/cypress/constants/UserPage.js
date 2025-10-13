@@ -1,8 +1,6 @@
 import pageSelectors from '../selectors/page';
 import scopeSelectors from '../helpers/scopeSelectors';
 
-export const url = '/main/user';
-
 const permissionColumn = (permission, testid) => {
     return `tr:contains("${permission}") td[data-testid="${testid}"]`;
 };

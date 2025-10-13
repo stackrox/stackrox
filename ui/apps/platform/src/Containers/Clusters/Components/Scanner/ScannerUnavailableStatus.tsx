@@ -1,5 +1,7 @@
-import React, { ReactElement } from 'react';
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
+import React from 'react';
+import type { ReactElement } from 'react';
+import { Tooltip } from '@patternfly/react-core';
+
 import HealthStatus from '../HealthStatus';
 
 type ScannerUnavailableStatusProps = {
@@ -24,7 +26,7 @@ const ScannerUnavailableStatus = ({
     );
 
     return isList ? (
-        <Tooltip content={<TooltipOverlay>{reasonUnavailable}</TooltipOverlay>}>
+        <Tooltip content={reasonUnavailable}>
             <div className="inline">{healthStatusElement}</div>
         </Tooltip>
     ) : (

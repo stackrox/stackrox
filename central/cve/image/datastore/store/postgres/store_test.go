@@ -9,19 +9,18 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type ImageCvesStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestImageCvesStore(t *testing.T) {
@@ -29,28 +28,17 @@ func TestImageCvesStore(t *testing.T) {
 }
 
 func (s *ImageCvesStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
 
 	s.testDB = pgtest.ForT(s.T())
-	s.store = New(s.testDB.Pool)
+	s.store = New(s.testDB.DB)
 }
 
 func (s *ImageCvesStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE image_cves CASCADE")
 	s.T().Log("image_cves", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
-}
-
-func (s *ImageCvesStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *ImageCvesStoreSuite) TestStore() {
@@ -72,12 +60,12 @@ func (s *ImageCvesStoreSuite) TestStore() {
 	foundImageCVE, exists, err = store.Get(ctx, imageCVE.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(imageCVE, foundImageCVE)
+	protoassert.Equal(s.T(), imageCVE, foundImageCVE)
 
-	imageCVECount, err := store.Count(ctx)
+	imageCVECount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, imageCVECount)
-	imageCVECount, err = store.Count(withNoAccessCtx)
+	imageCVECount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(imageCVECount)
 
@@ -87,11 +75,6 @@ func (s *ImageCvesStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, imageCVE))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, imageCVE), sac.ErrResourceAccessDenied)
 
-	foundImageCVE, exists, err = store.Get(ctx, imageCVE.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(imageCVE, foundImageCVE)
-
 	s.NoError(store.Delete(ctx, imageCVE.GetId()))
 	foundImageCVE, exists, err = store.Get(ctx, imageCVE.GetId())
 	s.NoError(err)
@@ -100,15 +83,23 @@ func (s *ImageCvesStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, imageCVE.GetId()))
 
 	var imageCVEs []*storage.ImageCVE
+	var imageCVEIDs []string
 	for i := 0; i < 200; i++ {
 		imageCVE := &storage.ImageCVE{}
 		s.NoError(testutils.FullInit(imageCVE, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		imageCVEs = append(imageCVEs, imageCVE)
+		imageCVEIDs = append(imageCVEIDs, imageCVE.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, imageCVEs))
 
-	imageCVECount, err = store.Count(ctx)
+	imageCVECount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, imageCVECount)
+
+	s.NoError(store.DeleteMany(ctx, imageCVEIDs))
+
+	imageCVECount, err = store.Count(ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.Equal(0, imageCVECount)
 }

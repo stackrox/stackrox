@@ -39,13 +39,50 @@ defs: |
       | select(.containerPort == 9090 and .name == "monitoring")]
         | (length == 1);
 
+  # Please keep the defs here in sync with the ones in the central image-pull-secrets test.
+
+  # Separate functions, to make error messages helpful.
+  def containsAll(needles):
+      . as $hay | all(needles[]; . as $needle | any($hay[]; . == $needle));
+  def containsNone(needles):
+      . as $hay | all(needles[]; . as $needle | all($hay[]; . != $needle));
+
+  def saRefersTo(pullSecretNames):
+      (.imagePullSecrets // []) | [.[] | .name] | assertThat(. | containsAll(pullSecretNames));
+
+  def saNotRefersTo(pullSecretNames):
+      (.imagePullSecrets // []) | [.[] | .name] | assertThat(. | containsNone(pullSecretNames));
+
+  # This treats the lists as multisets.
+  def saOnlyRefersTo(pullSecretNames):
+      [.imagePullSecrets[] | .name] | sort | assertThat(. == (pullSecretNames | sort));
+
 server:
   visibleSchemas:
   - kubernetes-1.20.2
+  objects:
+    # Apparently, for the `lookup` function in the Helm chart to be able to list the objects of a certain kind
+    # at least one such object needs to exist. Therefore, we create a StorageClass here solely
+    # for enabling lookups in the charts under test.
+    - apiVersion: storage.k8s.io/v1
+      kind: StorageClass
+      metadata:
+        name: some-sc-that-we-dont-care-about
+        annotations:
+          storageclass.kubernetes.io/is-default-class: false
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        namespace: stackrox
+        name: just-some-dummy-pvc
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: "314159Mi"
 values:
   clusterName: "testcluster"
-  imagePullSecrets:
-    allowNone: true
   createSecrets: false
   ca:
     cert: "DUMMY CA CERTIFICATE"

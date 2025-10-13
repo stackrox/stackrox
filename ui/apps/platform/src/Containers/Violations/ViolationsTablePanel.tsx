@@ -1,29 +1,41 @@
-import React, { useState, ReactElement } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import {
-    Flex,
-    FlexItem,
+    Alert,
+    AlertActionCloseButton,
+    AlertGroup,
     Divider,
-    PageSection,
     Title,
+    PageSection,
     Pagination,
-    Select,
-    SelectOption,
     pluralize,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
 } from '@patternfly/react-core';
-import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
+import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import { ActionsColumn, Table, Tbody, Thead, Td, Th, Tr } from '@patternfly/react-table';
 
-import useTableSelection from 'hooks/useTableSelection';
-import { resolveAlert } from 'services/AlertsService';
-import { excludeDeployments } from 'services/PoliciesService';
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
-import VIOLATION_STATES from 'constants/violationStates';
+import { VIOLATION_STATES } from 'constants/violationStates';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import TableCell from 'Components/PatternFly/TableCell';
-import { GetSortParams } from 'hooks/useURLSort';
-import { TableColumn } from 'types/table';
+import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
+import usePermissions from 'hooks/usePermissions';
+import useTableSelection from 'hooks/useTableSelection';
+import type { GetSortParams } from 'hooks/useURLSort';
+import useRestMutation from 'hooks/useRestMutation';
+import useToasts from 'hooks/patternfly/useToasts';
+import { resolveAlert } from 'services/AlertsService';
+import { excludeDeployments } from 'services/PoliciesService';
+import type { ListAlert } from 'types/alert.proto';
+import type { TableColumn } from 'types/table';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import type { SearchFilter } from 'types/search';
+import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
 import ResolveConfirmation from './Modals/ResolveConfirmation';
 import ExcludeConfirmation from './Modals/ExcludeConfirmation';
-import { ListAlert } from './types/violationTypes';
+import ViolationsTableSearchFilter from './ViolationsTableSearchFilter';
 
 export type ActionItem = {
     title: string | ReactElement;
@@ -43,6 +55,12 @@ type ViolationsTablePanelProps = {
     setPerPage: (perPage) => void;
     getSortParams: GetSortParams;
     columns: TableColumn[];
+    searchFilter: SearchFilter;
+    onFilterChange: (newFilter: SearchFilter) => void;
+    onSearch: OnSearchCallback;
+    additionalContextFilter: SearchFilter;
+    hasActiveViolations: boolean;
+    isTableDataUpdating: boolean;
 };
 
 function ViolationsTablePanel({
@@ -56,7 +74,23 @@ function ViolationsTablePanel({
     excludableAlerts,
     getSortParams,
     columns,
+    searchFilter,
+    onFilterChange,
+    onSearch,
+    additionalContextFilter,
+    hasActiveViolations,
+    isTableDataUpdating,
 }: ViolationsTablePanelProps): ReactElement {
+    const isRouteEnabled = useIsRouteEnabled();
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForAlert = hasReadWriteAccess('Alert');
+    // Require READ_WRITE_ACCESS to exclude plus READ_ACCESS to other resources for Policies route.
+    const hasWriteAccessForExcludeDeploymentsFromPolicy =
+        hasReadWriteAccess('WorkflowAdministration') && isRouteEnabled('policy-management');
+    const hasActions =
+        hasActiveViolations &&
+        (hasWriteAccessForAlert || hasWriteAccessForExcludeDeploymentsFromPolicy);
+
     // Handle confirmation modal being open.
     const [modalType, setModalType] = useState<ModalType>();
 
@@ -71,6 +105,25 @@ function ViolationsTablePanel({
         onClearAll,
         getSelectedIds,
     } = useTableSelection(violations);
+
+    const { toasts, addToast, removeToast } = useToasts();
+
+    const excludeDeploymentMutation = useRestMutation(
+        ({ policyId, deploymentNames }: { policyId: string; deploymentNames: string[] }) =>
+            excludeDeployments(policyId, deploymentNames),
+        {
+            onSuccess: () => {
+                addToast('Deployment excluded from policy', 'success');
+            },
+            onError: (err: unknown) => {
+                addToast(
+                    'There was an error excluding the deployment',
+                    'danger',
+                    getAxiosErrorMessage(err)
+                );
+            },
+        }
+    );
 
     function onToggleSelect(toggleOpen) {
         setIsSelectOpen(toggleOpen);
@@ -130,59 +183,92 @@ function ViolationsTablePanel({
 
     return (
         <>
-            <Flex
-                className="pf-u-pb-md"
-                alignSelf={{ default: 'alignSelfCenter' }}
-                fullWidth={{ default: 'fullWidth' }}
-            >
-                <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
-                    <Title headingLevel="h2" className="pf-u-color-100">
-                        {pluralize(violationsCount, 'result')} found
-                    </Title>
-                </FlexItem>
-                <FlexItem data-testid="violations-bulk-actions-dropdown">
-                    <Select
-                        onToggle={onToggleSelect}
-                        isOpen={isSelectOpen}
-                        placeholderText="Row Actions"
-                        onSelect={closeSelect}
-                        isDisabled={!hasSelections}
+            <AlertGroup isToast isLiveRegion>
+                {toasts.map(({ key, variant, title, children }) => (
+                    <Alert
+                        key={key}
+                        variant={variant}
+                        title={title}
+                        component="p"
+                        timeout={variant === 'success'}
+                        onTimeout={() => removeToast(key)}
+                        actionClose={
+                            <AlertActionCloseButton
+                                title={title}
+                                variantLabel={variant}
+                                onClose={() => removeToast(key)}
+                            />
+                        }
                     >
-                        <SelectOption
-                            key="1"
-                            value={`Mark as resolved (${numResolveable})`}
-                            isDisabled={numResolveable === 0}
-                            onClick={showResolveConfirmationDialog}
+                        {children}
+                    </Alert>
+                ))}
+            </AlertGroup>
+            <ViolationsTableSearchFilter
+                searchFilter={searchFilter}
+                onFilterChange={onFilterChange}
+                onSearch={onSearch}
+                additionalContextFilter={additionalContextFilter}
+            />
+            <Divider component="div" />
+            <Toolbar>
+                <ToolbarContent>
+                    <ToolbarItem>
+                        <Title headingLevel="h2" className="pf-v5-u-color-100">
+                            {pluralize(violationsCount, 'result')} found
+                        </Title>
+                    </ToolbarItem>
+                    {hasActions && (
+                        <ToolbarItem align={{ default: 'alignRight' }}>
+                            <Select
+                                onToggle={(_event, toggleOpen) => onToggleSelect(toggleOpen)}
+                                isOpen={isSelectOpen}
+                                placeholderText="Row actions"
+                                onSelect={closeSelect}
+                                isDisabled={!hasSelections}
+                            >
+                                <SelectOption
+                                    key="1"
+                                    value={`Mark as resolved (${numResolveable})`}
+                                    isDisabled={!hasWriteAccessForAlert || numResolveable === 0}
+                                    onClick={showResolveConfirmationDialog}
+                                />
+                                <SelectOption
+                                    key="2"
+                                    value={`Exclude deployments from policy (${numScopesToExclude})`}
+                                    isDisabled={
+                                        !hasWriteAccessForExcludeDeploymentsFromPolicy ||
+                                        numScopesToExclude === 0
+                                    }
+                                    onClick={showExcludeConfirmationDialog}
+                                />
+                            </Select>
+                        </ToolbarItem>
+                    )}
+                    <ToolbarItem align={{ default: 'alignRight' }} variant="pagination">
+                        <Pagination
+                            itemCount={violationsCount}
+                            page={currentPage}
+                            onSetPage={changePage}
+                            perPage={perPage}
+                            onPerPageSelect={changePerPage}
                         />
-                        <SelectOption
-                            key="2"
-                            value={`Exclude deployments from policy (${numScopesToExclude})`}
-                            isDisabled={numScopesToExclude === 0}
-                            onClick={showExcludeConfirmationDialog}
-                        />
-                    </Select>
-                </FlexItem>
-                <FlexItem align={{ default: 'alignRight' }}>
-                    <Pagination
-                        itemCount={violationsCount}
-                        page={currentPage}
-                        onSetPage={changePage}
-                        perPage={perPage}
-                        onPerPageSelect={changePerPage}
-                    />
-                </FlexItem>
-            </Flex>
+                    </ToolbarItem>
+                </ToolbarContent>
+            </Toolbar>
             <Divider component="div" />
             <PageSection isFilled padding={{ default: 'noPadding' }} hasOverflowScroll>
-                <TableComposable variant="compact" isStickyHeader>
+                <Table variant="compact" isStickyHeader>
                     <Thead>
                         <Tr>
-                            <Th
-                                select={{
-                                    onSelect: onSelectAll,
-                                    isSelected: allRowsSelected,
-                                }}
-                            />
+                            {hasActions && (
+                                <Th
+                                    select={{
+                                        onSelect: onSelectAll,
+                                        isSelected: allRowsSelected,
+                                    }}
+                                />
+                            )}
                             {columns.map(({ Header, sortField }) => {
                                 const sortParams = sortField
                                     ? { sort: getSortParams(sortField) }
@@ -193,10 +279,14 @@ function ViolationsTablePanel({
                                     </Th>
                                 );
                             })}
-                            <Th />
+                            {hasActions && (
+                                <Th>
+                                    <span className="pf-v5-screen-reader">Row actions</span>
+                                </Th>
+                            )}
                         </Tr>
                     </Thead>
-                    <Tbody>
+                    <Tbody aria-live="polite" aria-busy={isTableDataUpdating ? 'true' : 'false'}>
                         {violations.map((violation, rowIndex) => {
                             const { state, lifecycleStage, enforcementAction, policy, id } =
                                 violation;
@@ -207,8 +297,13 @@ function ViolationsTablePanel({
                                 enforcementAction ===
                                 ENFORCEMENT_ACTIONS.FAIL_DEPLOYMENT_CREATE_ENFORCEMENT;
 
+                            // Instead of items prop of Td element, render ActionsColumn element
+                            // so every cell has vertical ellipsis (also known as kabob)
+                            // even if its items array is empty. For example:
+                            // hasWriteAccessForAlert but alert is not Runtime lifecycle.
+                            // !hasWriteAccessForWorkflowAdministration
                             const actionItems: ActionItem[] = [];
-                            if (!isResolved) {
+                            if (hasWriteAccessForAlert && !isResolved) {
                                 if (isRuntimeAlert) {
                                     actionItems.push({
                                         title: 'Resolve and add to process baseline',
@@ -222,24 +317,31 @@ function ViolationsTablePanel({
                                     });
                                 }
                             }
-                            if (!isDeployCreateAttemptedAlert && 'deployment' in violation) {
+                            if (
+                                hasWriteAccessForExcludeDeploymentsFromPolicy &&
+                                !isDeployCreateAttemptedAlert &&
+                                'deployment' in violation
+                            ) {
                                 actionItems.push({
                                     title: 'Exclude deployment from policy',
                                     onClick: () =>
-                                        excludeDeployments(policy.id, [violation.deployment.name]),
+                                        excludeDeploymentMutation.mutate({
+                                            policyId: policy.id,
+                                            deploymentNames: [violation.deployment.name],
+                                        }),
                                 });
                             }
                             return (
-                                // eslint-disable-next-line react/no-array-index-key
-                                <Tr key={rowIndex}>
-                                    <Td
-                                        key={id}
-                                        select={{
-                                            rowIndex,
-                                            onSelect,
-                                            isSelected: selected[rowIndex],
-                                        }}
-                                    />
+                                <Tr key={id}>
+                                    {hasActions && (
+                                        <Td
+                                            select={{
+                                                rowIndex,
+                                                onSelect,
+                                                isSelected: selected[rowIndex],
+                                            }}
+                                        />
+                                    )}
                                     {columns.map((column) => {
                                         return (
                                             <TableCell
@@ -249,16 +351,20 @@ function ViolationsTablePanel({
                                             />
                                         );
                                     })}
-                                    <Td
-                                        actions={{
-                                            items: actionItems,
-                                        }}
-                                    />
+                                    {hasActions && (
+                                        <Td isActionCell>
+                                            <ActionsColumn
+                                                // menuAppendTo={() => document.body}
+                                                isDisabled={actionItems.length === 0}
+                                                items={actionItems}
+                                            />
+                                        </Td>
+                                    )}
                                 </Tr>
                             );
                         })}
                     </Tbody>
-                </TableComposable>
+                </Table>
             </PageSection>
             <ExcludeConfirmation
                 isOpen={modalType === 'excludeScopes'}

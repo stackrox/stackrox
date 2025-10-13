@@ -77,12 +77,11 @@ func (s *probeSources) initializeStandardSources(probeUploadManager probeUploadM
 		return
 	}
 
-	opts := kocache.Options{}
 	httpClient := &http.Client{
 		Transport: proxy.RoundTripper(),
 		Timeout:   httpTimeout,
 	}
-	s.probeSources = append(s.probeSources, kocache.New(context.Background(), httpClient, baseURL, opts))
+	s.probeSources = append(s.probeSources, kocache.New(context.Background(), httpClient, baseURL))
 }
 
 // Singleton returns the singleton instance for the ProbeSources entity.

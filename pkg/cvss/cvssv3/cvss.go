@@ -2,9 +2,10 @@ package cvssv3
 
 import (
 	"fmt"
-	"strings"
 
+	"github.com/facebookincubator/nvdtools/cvss3"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/mathutil"
 )
 
 var attackVectorMap = map[string]storage.CVSSV3_AttackVector{
@@ -61,43 +62,28 @@ func GetSeverityMapProtoVal(s string) (storage.CVSSV3_Severity, error) {
 
 // ParseCVSSV3 parses the vector string and returns an internal representation of CVSS V3
 func ParseCVSSV3(vectorStr string) (*storage.CVSSV3, error) {
-	cvssV3 := &storage.CVSSV3{
-		Vector: vectorStr,
+	vec, err := cvss3.VectorFromString(vectorStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid CVSSv3 vector %q: %w", vectorStr, err)
 	}
-	vectorStr = strings.TrimPrefix(vectorStr, "CVSS:3.0/")
-	vectorStr = strings.TrimPrefix(vectorStr, "CVSS:3.1/")
+	if err := vec.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid CVSSv3 vector %q: %w", vectorStr, err)
+	}
 
-	vectors := strings.Split(vectorStr, "/")
-	for _, vector := range vectors {
-		vals := strings.Split(vector, ":")
-		if len(vals) != 2 {
-			return nil, fmt.Errorf("Invalid format for vector subfield %q", vector)
-		}
-		k, v := strings.TrimSpace(vals[0]), strings.TrimSpace(vals[1])
-		var ok bool
-		switch k {
-		case "AV":
-			cvssV3.AttackVector, ok = attackVectorMap[v]
-		case "AC":
-			cvssV3.AttackComplexity, ok = complexityMap[v]
-		case "PR":
-			cvssV3.PrivilegesRequired, ok = privilegesMap[v]
-		case "UI":
-			cvssV3.UserInteraction, ok = userInteractionMap[v]
-		case "S":
-			cvssV3.Scope, ok = scopeMap[v]
-		case "C":
-			cvssV3.Confidentiality, ok = impactMap[v]
-		case "I":
-			cvssV3.Integrity, ok = impactMap[v]
-		case "A":
-			cvssV3.Availability, ok = impactMap[v]
-		}
-		if !ok {
-			return nil, fmt.Errorf("invalid field value %q for %q", v, k)
-		}
-	}
-	return cvssV3, nil
+	// We only care about base metrics at this time.
+	metrics := vec.BaseMetrics
+
+	return &storage.CVSSV3{
+		Vector:             vectorStr,
+		AttackVector:       attackVectorMap[metrics.AttackVector.String()],
+		AttackComplexity:   complexityMap[metrics.AttackComplexity.String()],
+		PrivilegesRequired: privilegesMap[metrics.PrivilegesRequired.String()],
+		UserInteraction:    userInteractionMap[metrics.UserInteraction.String()],
+		Scope:              scopeMap[metrics.Scope.String()],
+		Confidentiality:    impactMap[metrics.Confidentiality.String()],
+		Integrity:          impactMap[metrics.Integrity.String()],
+		Availability:       impactMap[metrics.Availability.String()],
+	}, nil
 }
 
 // Severity returns the severity for the cvss v3 score
@@ -115,4 +101,19 @@ func Severity(score float32) storage.CVSSV3_Severity {
 		return storage.CVSSV3_CRITICAL
 	}
 	return storage.CVSSV3_UNKNOWN
+}
+
+// CalculateScores calculates and sets CVSS scores based on the current vector string.
+func CalculateScores(cvssV3 *storage.CVSSV3) error {
+	vec, err := cvss3.VectorFromString(cvssV3.GetVector())
+	if err != nil {
+		return fmt.Errorf("parsing: %w", err)
+	}
+	if err := vec.Validate(); err != nil {
+		return fmt.Errorf("validating: %w", err)
+	}
+	cvssV3.Score = float32(vec.BaseScore())
+	cvssV3.ExploitabilityScore = float32(mathutil.RoundToDecimal(vec.ExploitabilityScore(), 1))
+	cvssV3.ImpactScore = float32(mathutil.RoundToDecimal(vec.ImpactScore(), 1))
+	return nil
 }

@@ -3,10 +3,9 @@ package service
 import (
 	"context"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/secret/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"google.golang.org/grpc"
@@ -27,9 +27,9 @@ const (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Secret)): {
-			"/v1.SecretService/GetSecret",
-			"/v1.SecretService/CountSecrets",
-			"/v1.SecretService/ListSecrets",
+			v1.SecretService_GetSecret_FullMethodName,
+			v1.SecretService_CountSecrets_FullMethodName,
+			v1.SecretService_ListSecrets_FullMethodName,
 		},
 	})
 )
@@ -81,8 +81,8 @@ func (s *serviceImpl) GetSecret(ctx context.Context, request *v1.ResourceByID) (
 	var deployments []*storage.SecretDeploymentRelationship
 	for _, r := range deploymentResults {
 		deployments = append(deployments, &storage.SecretDeploymentRelationship{
-			Id:   r.Id,
-			Name: r.Name,
+			Id:   r.GetId(),
+			Name: r.GetName(),
 		})
 	}
 	secret.Relationship = &storage.SecretRelationship{

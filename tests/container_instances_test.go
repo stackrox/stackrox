@@ -1,3 +1,5 @@
+//go:build test_e2e
+
 package tests
 
 import (
@@ -19,15 +21,18 @@ type ContainerNameGroup struct {
 }
 
 func TestContainerInstances(testT *testing.T) {
+	testT.Skip("Flaky: https://issues.redhat.com/browse/ROX-30400")
 	// https://stack-rox.atlassian.net/browse/ROX-6493
 	// - the process events expected in this test are not reliably detected.
+	kPod := getPodFromFile(testT, "yamls/multi-container-pod.yaml")
+	client := createK8sClient(testT)
 	testutils.Retry(testT, 3, 5*time.Second, func(retryT testutils.T) {
 		// Set up testing environment
-		defer teardownDeploymentFromFile(retryT, deploymentName, "yamls/multi-container-pod.yaml")
-		setupDeploymentFromFile(retryT, deploymentName, "yamls/multi-container-pod.yaml")
+		defer teardownPod(testT, client, kPod)
+		createPod(testT, client, kPod)
 
 		// Get the test pod.
-		deploymentID := getDeploymentID(retryT, deploymentName)
+		deploymentID := getDeploymentID(retryT, kPod.GetName())
 		pods := getPods(retryT, deploymentID)
 		require.Len(retryT, pods, 1)
 		pod := pods[0]

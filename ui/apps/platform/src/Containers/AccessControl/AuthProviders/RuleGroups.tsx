@@ -1,12 +1,26 @@
 /* eslint-disable react/no-array-index-key */
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ChangeEvent, FormEvent, ReactElement } from 'react';
 import { FieldArray } from 'formik';
-import { Button, Flex, FlexItem, FormGroup, SelectOption, TextInput } from '@patternfly/react-core';
-import { ArrowRightIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
+import {
+    Button,
+    Flex,
+    FlexItem,
+    FormGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
+    SelectOption,
+    TextInput,
+    Tooltip,
+} from '@patternfly/react-core';
+import { ArrowRightIcon, InfoCircleIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 
-import { Group } from 'services/AuthService';
-import { Role } from 'services/RolesService';
 import SelectSingle from 'Components/SelectSingle';
+import TypeaheadSelect from 'Components/TypeaheadSelect';
+import type { Group } from 'services/AuthService';
+import type { Role } from 'services/RolesService';
+import { getOriginLabel, isUserResource } from 'utils/traits.utils';
 
 export type RuleGroupErrors = {
     roleName?: string;
@@ -20,8 +34,8 @@ export type RuleGroupErrors = {
 export type RuleGroupsProps = {
     authProviderId: string;
     onChange: (
-        _value: unknown,
-        event: React.FormEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>
+        event: FormEvent<HTMLInputElement> | ChangeEvent<HTMLTextAreaElement>,
+        _value: unknown
     ) => void;
     roles: Role[];
     groups: Group[];
@@ -64,7 +78,8 @@ function RuleGroups({
                 'props' in group &&
                 'traits' in group.props &&
                 group?.props?.traits != null &&
-                group?.props?.traits?.mutabilityMode !== 'ALLOW_MUTATE')
+                (group?.props?.traits?.mutabilityMode !== 'ALLOW_MUTATE' ||
+                    !isUserResource(group?.props?.traits)))
         );
     }
 
@@ -79,35 +94,48 @@ function RuleGroups({
                             <Flex key={`${group.props.authProviderId}_custom_rule_${index}`}>
                                 <FlexItem>
                                     <FormGroup
-                                        label="Key"
-                                        fieldId={`groups[${index}].props.key`}
-                                        helperTextInvalid={errors[index]?.props?.key ?? ''}
-                                        validated={errors[index]?.props?.key ? 'error' : 'default'}
+                                        label="Origin"
+                                        fieldId={`groups[${index}].props.traits.origin`}
                                     >
-                                        <SelectSingle
+                                        {getOriginLabel(group?.props?.traits)}
+                                    </FormGroup>
+                                </FlexItem>
+                                <FlexItem>
+                                    <FormGroup label="Key" fieldId={`groups[${index}].props.key`}>
+                                        <TypeaheadSelect
                                             id={`groups[${index}].props.key`}
                                             value={groups[`${index}`].props.key ?? ''}
                                             isDisabled={isDisabled(group)}
-                                            handleSelect={setFieldValue}
+                                            onChange={(value) =>
+                                                setFieldValue(`groups[${index}].props.key`, value)
+                                            }
                                             direction="up"
-                                            isCreatable
-                                            variant="typeahead"
-                                            placeholderText="Select or enter a key"
-                                        >
-                                            {augmentedRuleKeys.map((ruleKey) => (
-                                                <SelectOption key={ruleKey} value={ruleKey} />
-                                            ))}
-                                        </SelectSingle>
+                                            allowCreate
+                                            placeholder="Create or select a key"
+                                            options={augmentedRuleKeys.map((key) => ({
+                                                value: key,
+                                            }))}
+                                        />
+                                        <FormHelperText>
+                                            <HelperText>
+                                                <HelperTextItem
+                                                    variant={
+                                                        errors[index]?.props?.key
+                                                            ? 'error'
+                                                            : 'default'
+                                                    }
+                                                >
+                                                    {errors[index]?.props?.key ??
+                                                        'Create or select a key'}
+                                                </HelperTextItem>
+                                            </HelperText>
+                                        </FormHelperText>
                                     </FormGroup>
                                 </FlexItem>
                                 <FlexItem>
                                     <FormGroup
                                         label="Value"
                                         fieldId={`groups[${index}].props.value`}
-                                        helperTextInvalid={errors[index]?.props?.value || ''}
-                                        validated={
-                                            errors[index]?.props?.value ? 'error' : 'default'
-                                        }
                                     >
                                         <TextInput
                                             type="text"
@@ -116,18 +144,26 @@ function RuleGroups({
                                             onChange={onChange}
                                             isDisabled={isDisabled(group)}
                                         />
+                                        <FormHelperText>
+                                            <HelperText>
+                                                <HelperTextItem
+                                                    variant={
+                                                        errors[index]?.props?.value
+                                                            ? 'error'
+                                                            : 'default'
+                                                    }
+                                                >
+                                                    {errors[index]?.props?.value || ''}
+                                                </HelperTextItem>
+                                            </HelperText>
+                                        </FormHelperText>
                                     </FormGroup>
                                 </FlexItem>
                                 <FlexItem>
                                     <ArrowRightIcon style={{ transform: 'translate(0, 42px)' }} />
                                 </FlexItem>
                                 <FlexItem>
-                                    <FormGroup
-                                        label="Role"
-                                        fieldId={`groups[${index}].roleName`}
-                                        helperTextInvalid={errors[index]?.roleName || ''}
-                                        validated={errors[index]?.roleName ? 'error' : 'default'}
-                                    >
+                                    <FormGroup label="Role" fieldId={`groups[${index}].roleName`}>
                                         <SelectSingle
                                             id={`groups[${index}].roleName`}
                                             value={groups[`${index}`].roleName}
@@ -135,11 +171,27 @@ function RuleGroups({
                                             handleSelect={setFieldValue}
                                             direction="up"
                                             placeholderText="Select a role"
+                                            toggleAriaLabel="Select a role"
                                         >
                                             {roles.map(({ name }) => (
-                                                <SelectOption key={name} value={name} />
+                                                <SelectOption key={name} value={name}>
+                                                    {name}
+                                                </SelectOption>
                                             ))}
                                         </SelectSingle>
+                                        <FormHelperText>
+                                            <HelperText>
+                                                <HelperTextItem
+                                                    variant={
+                                                        errors[index]?.roleName
+                                                            ? 'error'
+                                                            : 'default'
+                                                    }
+                                                >
+                                                    {errors[index]?.roleName || ''}
+                                                </HelperTextItem>
+                                            </HelperText>
+                                        </FormHelperText>
                                     </FormGroup>
                                 </FlexItem>
                                 {!isDisabled(group) && (
@@ -154,6 +206,19 @@ function RuleGroups({
                                         </Button>
                                     </FlexItem>
                                 )}
+                                {!isUserResource(group?.props?.traits) && (
+                                    <FlexItem>
+                                        <Tooltip content="This rule is managed declaratively and can only be edited declaratively.">
+                                            <Button
+                                                variant="plain"
+                                                aria-label="Information button"
+                                                style={{ transform: 'translate(0, 42px)' }}
+                                            >
+                                                <InfoCircleIcon />
+                                            </Button>
+                                        </Tooltip>
+                                    </FlexItem>
+                                )}
                             </Flex>
                         ))}
                     {!disabled && (
@@ -163,7 +228,7 @@ function RuleGroups({
                                     variant="link"
                                     isInline
                                     isDisabled={!!errors?.length}
-                                    icon={<PlusCircleIcon className="pf-u-mr-sm" />}
+                                    icon={<PlusCircleIcon className="pf-v5-u-mr-sm" />}
                                     onClick={() =>
                                         arrayHelpers.push({
                                             roleName: '',

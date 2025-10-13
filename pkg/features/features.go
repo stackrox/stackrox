@@ -3,10 +3,14 @@ package features
 
 import (
 	"fmt"
+	"slices"
 	"strings"
+
+	"github.com/stackrox/rox/pkg/logging"
 )
 
-// A FeatureFlag is a product behavior that can be enabled or disabled using an environment variable.
+// A FeatureFlag is a product behavior that can be enabled or disabled using an
+// environment variable.
 type FeatureFlag interface {
 	Name() string
 	EnvVar() string
@@ -17,17 +21,53 @@ type FeatureFlag interface {
 var (
 	// Flags contains all defined FeatureFlags by name.
 	Flags = make(map[string]FeatureFlag)
+
+	log = logging.LoggerForModule()
 )
 
-func registerFeature(name, envVar string, defaultValue bool) FeatureFlag {
+// registerFeature registers and returns a new feature flag, configured with the
+// provided options.
+// If no option is provided the feature is disabled by default.
+func registerFeature(name, envVar string, options ...option) FeatureFlag {
 	if !strings.HasPrefix(envVar, "ROX_") {
 		panic(fmt.Sprintf("invalid env var: %s, must start with ROX_", envVar))
 	}
 	f := &feature{
-		name:         name,
-		envVar:       envVar,
-		defaultValue: defaultValue,
+		name:   name,
+		envVar: envVar,
 	}
-	Flags[f.Name()] = f
+	for _, o := range options {
+		o(f)
+	}
+	Flags[f.envVar] = f
 	return f
+}
+
+func sortEnvVars() []string {
+	sortedEnvVars := []string{}
+	for envVar := range Flags {
+		sortedEnvVars = append(sortedEnvVars, envVar)
+	}
+	slices.Sort(sortedEnvVars)
+	return sortedEnvVars
+}
+
+// LogFeatureFlags logs the global state of all features flags.
+func LogFeatureFlags() {
+	data := []interface{}{}
+	for _, envVar := range sortEnvVars() {
+		flag := Flags[envVar]
+		data = append(data, logging.Any(flag.EnvVar(), flag.Enabled()))
+	}
+	if len(data) > 0 {
+		log.Infow("Feature flags", data...)
+	}
+}
+
+func GetFeatureFlagsAsGenericMap() map[string]interface{} {
+	featureFlagVals := make(map[string]interface{})
+	for _, feature := range Flags {
+		featureFlagVals[feature.EnvVar()] = feature.Enabled()
+	}
+	return featureFlagVals
 }

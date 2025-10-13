@@ -11,6 +11,8 @@ import (
 	k8sCoreV1 "k8s.io/api/core/v1"
 	networkingV1 "k8s.io/api/networking/v1"
 	k8sMetaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -22,10 +24,27 @@ type KubernetesNetworkPolicyWrap struct {
 
 // ToYaml produces a string holding a JSON formatted yaml for the network policy.
 func (np KubernetesNetworkPolicyWrap) ToYaml() (string, error) {
-	encoder := json.NewYAMLSerializer(json.DefaultMetaFactory, nil, nil)
+	// Kubernetes added a 'status' field for NetworkPolicies in 1.24. See:
+	// * (https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG/CHANGELOG-1.24.md#api-change-3)
+	// * (https://github.com/kubernetes/kubernetes/pull/107963)
+	// Using the `NewSerializerWithOptions` from `k8s.io/apimachinery/pkg/runtime/serializer/json` with a `v1.NetworkPolicy` will return the `status` field.
+	// The problem is: Old cluster using kubernetes < 1.24 will fail to apply NetworkPolicies generated this way.
+	// Since the `status` field is not handled by ACS, we delete the field manually if present here.
+	// This code might not be necessary in the future since the feature was withdrawn by the sig-network. See:
+	// * (https://github.com/kubernetes/enhancements/tree/master/keps/sig-network/2943-networkpolicy-status#implementation-history)
+	// * (https://github.com/kubernetes/kubernetes/pull/107963#issuecomment-1400220883)
+	uObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(np.NetworkPolicy)
+	if err != nil {
+		return "", err
+	}
+	delete(uObj, "status")
+
+	encoder := json.NewSerializerWithOptions(json.DefaultMetaFactory, nil, nil, json.SerializerOptions{
+		Yaml: true,
+	})
 
 	stringBuilder := &strings.Builder{}
-	err := encoder.Encode(np, stringBuilder)
+	err = encoder.Encode(&unstructured.Unstructured{Object: uObj}, stringBuilder)
 	if err != nil {
 		return "", err
 	}

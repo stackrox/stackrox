@@ -1,18 +1,21 @@
-import common.Constants
-import groups.BAT
-import groups.NetworkPolicySimulation
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass
 import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyReference
+
+import common.Constants
 import objects.Deployment
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import objects.SlackNotifier
-import org.junit.experimental.categories.Category
 import services.NetworkGraphService
 import services.NetworkPolicyService
-import spock.lang.Unroll
+import util.Env
 import util.NetworkGraphUtil
 
+import spock.lang.IgnoreIf
+import spock.lang.Tag
+import spock.lang.Unroll
+
+@Tag("PZ")
 class NetworkSimulator extends BaseSpecification {
 
     // Deployment names
@@ -24,21 +27,21 @@ class NetworkSimulator extends BaseSpecification {
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
                     .setName(WEBDEPLOYMENT)
-                    .setImage("quay.io/rhacs-eng/qa:nginx")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx")
                     .addPort(80)
                     .addLabel("app", WEBDEPLOYMENT),
             new Deployment()
                     .setName(WEB2DEPLOYMENT)
-                    .setImage("quay.io/rhacs-eng/qa:nginx")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx")
                     .addLabel("app", WEB2DEPLOYMENT),
             new Deployment()
                     .setName(CLIENTDEPLOYMENT)
-                    .setImage("quay.io/rhacs-eng/qa:nginx")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx")
                     .addPort(443)
                     .addLabel("app", CLIENTDEPLOYMENT),
             new Deployment()
                     .setName(CLIENT2DEPLOYMENT)
-                    .setImage("quay.io/rhacs-eng/qa:nginx")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx")
                     .addLabel("app", CLIENT2DEPLOYMENT),
     ]
 
@@ -53,7 +56,8 @@ class NetworkSimulator extends BaseSpecification {
         }
     }
 
-    @Category([NetworkPolicySimulation, BAT])
+    @Tag("NetworkPolicySimulation")
+    @Tag("BAT")
     def "Verify NetworkPolicy Simulator replace existing network policy"() {
         given:
         def allDeps = NetworkGraphUtil.getDeploymentsAsGraphNodes()
@@ -121,7 +125,8 @@ class NetworkSimulator extends BaseSpecification {
         ""                              | true
     }
 
-    @Category([NetworkPolicySimulation, BAT])
+    @Tag("NetworkPolicySimulation")
+    @Tag("BAT")
     def "Verify NetworkPolicy Simulator add to an existing network policy"() {
         given:
         def allDeps = NetworkGraphUtil.getDeploymentsAsGraphNodes()
@@ -194,7 +199,8 @@ class NetworkSimulator extends BaseSpecification {
         ""                              | true
     }
 
-    @Category([NetworkPolicySimulation, BAT])
+    @Tag("NetworkPolicySimulation")
+    @Tag("BAT")
     def "Verify NetworkPolicy Simulator with query - multiple policy simulation"() {
         given:
         def allDeps = new NetworkGraphUtil().getDeploymentsAsGraphNodes()
@@ -287,7 +293,11 @@ class NetworkSimulator extends BaseSpecification {
         ""                              | false
     }
 
-    @Category([NetworkPolicySimulation, BAT])
+    @Tag("NetworkPolicySimulation")
+    @Tag("BAT")
+    // skip if executed in a test environment with just secured-cluster deployed in the test cluster
+    // i.e. central is deployed elsewhere
+    @IgnoreIf({ Env.ONLY_SECURED_CLUSTER == "true" })
     def "Verify NetworkPolicy Simulator with query - single policy simulation"() {
         given:
         def allDeps = NetworkGraphUtil.getDeploymentsAsGraphNodes()
@@ -360,7 +370,8 @@ class NetworkSimulator extends BaseSpecification {
         ""                              | true
     }
 
-    @Category([NetworkPolicySimulation, BAT])
+    @Tag("NetworkPolicySimulation")
+    @Tag("BAT")
     def "Verify NetworkPolicy Simulator with delete policies"() {
         given:
         def allDeps = NetworkGraphUtil.getDeploymentsAsGraphNodes()
@@ -451,7 +462,7 @@ class NetworkSimulator extends BaseSpecification {
         ""                              | true
     }
 
-    @Category([NetworkPolicySimulation])
+    @Tag("NetworkPolicySimulation")
     def "Verify NetworkPolicy Simulator allow traffic to an application from all namespaces"() {
         when:
         "generate simulation"
@@ -515,7 +526,7 @@ class NetworkSimulator extends BaseSpecification {
         }
      }
 
-    @Category([NetworkPolicySimulation])
+    @Tag("NetworkPolicySimulation")
     def "Verify yaml requires namespace in metadata"() {
         when:
         "create NetworkPolicy object"
@@ -526,7 +537,7 @@ class NetworkSimulator extends BaseSpecification {
         assert NetworkPolicyService.submitNetworkGraphSimulation(orchestrator.generateYaml(policy)) == null
     }
 
-    @Category([NetworkPolicySimulation])
+    @Tag("NetworkPolicySimulation")
     def "Verify malformed yaml returns error"() {
         when:
         "create NetworkPolicy object"
@@ -546,7 +557,7 @@ class NetworkSimulator extends BaseSpecification {
     }
 
     @Unroll
-    @Category([NetworkPolicySimulation])
+    @Tag("NetworkPolicySimulation")
     def "Verify NetworkPolicy Simulator results for #policy.name"() {
         when:
         "Get Base Graph"
@@ -654,7 +665,7 @@ class NetworkSimulator extends BaseSpecification {
                 orchestrator.getAllDeploymentTypesCount(Constants.ORCHESTRATOR_NAMESPACE) - 1       | _
     }
 
-    @Category([NetworkPolicySimulation])
+    @Tag("NetworkPolicySimulation")
     def "Verify invalid clusterId passed to notification API"() {
         when:
         "create slack notifier"
@@ -688,7 +699,7 @@ class NetworkSimulator extends BaseSpecification {
         notifier.deleteNotifier()
     }
 
-    @Category([NetworkPolicySimulation])
+    @Tag("NetworkPolicySimulation")
     def "Verify invalid notifierId passed to notification API"() {
         when:
         "create Netowrk Policy yaml"

@@ -19,7 +19,7 @@ var (
 	log = logging.LoggerForModule()
 )
 
-func restorePostgresDB(ctx common.RestoreFileContext, fileReader io.Reader, size int64) error {
+func restorePostgresDB(_ common.RestoreFileContext, fileReader io.Reader, _ int64) error {
 	log.Debug("restorePostgresDB")
 	err := restore.LoadRestoreStream(fileReader)
 	if err != nil {
@@ -29,7 +29,7 @@ func restorePostgresDB(ctx common.RestoreFileContext, fileReader io.Reader, size
 	return nil
 }
 
-func checkPostgresSize(ctx common.RestoreFileContext, fileReader io.Reader, size int64) error {
+func checkPostgresSize(_ common.RestoreFileContext, fileReader io.Reader, size int64) error {
 	// When using managed services, Postgres space is not a concern at this time.
 	if env.ManagedCentral.BooleanSetting() {
 		return nil
@@ -43,7 +43,7 @@ func checkPostgresSize(ctx common.RestoreFileContext, fileReader io.Reader, size
 		return nil
 	}
 
-	restoreBytes, err := strconv.ParseInt(string(bytes[:]), 10, 64)
+	restoreBytes, err := strconv.ParseInt(string(bytes), 10, 64)
 	if err != nil {
 		log.Warnf("Could not determine free disk space for Postgres: %v. Assuming free space is sufficient.", err)
 		return nil

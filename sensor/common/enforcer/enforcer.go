@@ -3,7 +3,6 @@ package enforcer
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -11,7 +10,9 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/enforcers"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
 )
 
 var (
@@ -32,23 +33,25 @@ func CreateEnforcer(enforcementMap map[storage.EnforcementAction]EnforceFunc) En
 	return &enforcer{
 		enforcementMap: enforcementMap,
 		actionsC:       make(chan *central.SensorEnforcement, 10),
-		stopC:          concurrency.NewSignal(),
-		stoppedC:       concurrency.NewSignal(),
+		stopper:        concurrency.NewStopper(),
 	}
 }
 
 type enforcer struct {
 	enforcementMap map[storage.EnforcementAction]EnforceFunc
 	actionsC       chan *central.SensorEnforcement
-	stopC          concurrency.Signal
-	stoppedC       concurrency.Signal
+	stopper        concurrency.Stopper
+}
+
+func (e *enforcer) Name() string {
+	return "enforcer.enforcer"
 }
 
 func (e *enforcer) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (e *enforcer) ResponsesC() <-chan *central.MsgFromSensor {
+func (e *enforcer) ResponsesC() <-chan *message.ExpiringMessage {
 	return nil
 }
 
@@ -78,7 +81,7 @@ func (e *enforcer) ProcessAlertResults(action central.ResourceAction, stage stor
 		switch stage {
 		case storage.LifecycleStage_DEPLOY:
 			e.actionsC <- &central.SensorEnforcement{
-				Enforcement: a.GetEnforcement().Action,
+				Enforcement: a.GetEnforcement().GetAction(),
 				Resource: &central.SensorEnforcement_Deployment{
 					Deployment: generateDeploymentEnforcement(a),
 				},
@@ -89,7 +92,7 @@ func (e *enforcer) ProcessAlertResults(action central.ResourceAction, stage stor
 				continue
 			}
 			e.actionsC <- &central.SensorEnforcement{
-				Enforcement: a.GetEnforcement().Action,
+				Enforcement: a.GetEnforcement().GetAction(),
 				Resource: &central.SensorEnforcement_ContainerInstance{
 					ContainerInstance: &central.ContainerInstanceEnforcement{
 						PodId:                 a.GetProcessViolation().GetProcesses()[0].GetPodId(),
@@ -101,42 +104,46 @@ func (e *enforcer) ProcessAlertResults(action central.ResourceAction, stage stor
 	}
 }
 
-func (e *enforcer) ProcessMessage(msg *central.MsgToSensor) error {
+func (e *enforcer) Accepts(msg *central.MsgToSensor) bool {
+	return msg.GetEnforcement() != nil
+}
+
+func (e *enforcer) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
 	enforcement := msg.GetEnforcement()
 	if enforcement == nil {
 		return nil
 	}
 
 	if enforcement.GetEnforcement() == storage.EnforcementAction_UNSET_ENFORCEMENT {
-		return errors.Errorf("received enforcement with unset action: %s", proto.MarshalTextString(enforcement))
+		return errors.Errorf("received enforcement with unset action: %s", protocompat.MarshalTextString(enforcement))
 	}
 
 	select {
 	case e.actionsC <- enforcement:
 		return nil
-	case <-e.stoppedC.Done():
-		return errors.Errorf("unable to send enforcement: %s", proto.MarshalTextString(enforcement))
+	case <-e.stopper.Flow().StopRequested():
+		return errors.Errorf("unable to send enforcement: %s", protocompat.MarshalTextString(enforcement))
 	}
 }
 
 func (e *enforcer) start() {
-	defer e.stoppedC.Signal()
+	defer e.stopper.Flow().ReportStopped()
 
 	for {
 		select {
 		case action := <-e.actionsC:
-			f, ok := e.enforcementMap[action.Enforcement]
+			f, ok := e.enforcementMap[action.GetEnforcement()]
 			if !ok {
-				log.Errorf("unknown enforcement action: %s", action.Enforcement)
+				log.Errorf("unknown enforcement action: %s", action.GetEnforcement())
 				continue
 			}
 
-			if err := f(concurrency.AsContext(&e.stopC), action); err != nil {
-				log.Errorf("error during enforcement. action: %s err: %v", proto.MarshalTextString(action), err)
+			if err := f(concurrency.AsContext(e.stopper.LowLevel().GetStopRequestSignal()), action); err != nil {
+				log.Errorf("error during enforcement. action: %s err: %v", protocompat.MarshalTextString(action), err)
 			} else {
-				log.Infof("enforcement successful. action %s", proto.MarshalTextString(action))
+				log.Infof("enforcement successful. action %s", protocompat.MarshalTextString(action))
 			}
-		case <-e.stopC.Done():
+		case <-e.stopper.Flow().StopRequested():
 			log.Info("Shutting down Enforcer")
 			return
 		}
@@ -148,7 +155,9 @@ func (e *enforcer) Start() error {
 	return nil
 }
 
-func (e *enforcer) Stop(_ error) {
-	e.stopC.Signal()
-	e.stoppedC.Wait()
+func (e *enforcer) Stop() {
+	e.stopper.Client().Stop()
+	_ = e.stopper.Client().Stopped().Wait()
 }
+
+func (e *enforcer) Notify(common.SensorComponentEvent) {}

@@ -4,11 +4,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
+	"sigs.k8s.io/yaml"
 )
 
 var (
@@ -19,13 +19,13 @@ var (
 var (
 	defaultBucketFillFraction = 0.5
 	defaultCompactionState    = true
-	defaultDBSource           = "host=central-db.stackrox port=5432 user=postgres sslmode=verify-full statement_timeout=600000 pool_min_conns=1 pool_max_conns=90 client_encoding=UTF-8"
-	defaultDatabase           = "central"
+	defaultDBSource           = "host=central-db.stackrox port=5432 user=postgres sslmode=verify-full statement_timeout=600000 pool_min_conns=1 pool_max_conns=90 client_encoding=UTF8"
+	defaultDatabase           = "central_active"
 
 	once   sync.Once
 	config *Config
 
-	log = logging.CreatePersistentLogger(logging.CurrentModule(), 0)
+	log = logging.CreateLogger(logging.CurrentModule(), 0)
 )
 
 // Compaction defines the compaction configuration
@@ -79,6 +79,7 @@ func (m *Maintenance) validate() error {
 // CentralDB defines the config options to access central-db
 type CentralDB struct {
 	Source       string `yaml:"source"`
+	External     bool   `yaml:"external"`
 	DatabaseName string
 }
 

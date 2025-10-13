@@ -1,22 +1,25 @@
+//go:build sql_integration
+
 package service
 
 import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/pod/datastore"
 	processIndicatorMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
+	plopMocks "github.com/stackrox/rox/central/processlisteningonport/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	filterMocks "github.com/stackrox/rox/pkg/process/filter/mocks"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 func TestAuthz(t *testing.T) {
@@ -69,17 +72,15 @@ func TestGetPods(t *testing.T) {
 	mockFilter.EXPECT().UpdateByPod(gomock.Any()).AnyTimes()
 
 	mockIndicators := processIndicatorMocks.NewMockDataStore(mockCtrl)
+	mockPlops := plopMocks.NewMockDataStore(mockCtrl)
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			rocksDB := rocksdbtest.RocksDBForT(t)
-			defer rocksDB.Close()
+			pgtestbase := pgtest.ForT(t)
+			require.NotNil(t, pgtestbase)
+			pool := pgtestbase.DB
 
-			bleveIndex, err := globalindex.MemOnlyIndex()
-			require.NoError(t, err)
-
-			podsDS, err := datastore.NewRocksDB(rocksDB, bleveIndex, mockIndicators, mockFilter)
-			require.NoError(t, err)
+			podsDS := datastore.NewPostgresDB(pool, mockIndicators, mockPlops, mockFilter)
 
 			for _, pod := range c.pods {
 				assert.NoError(t, podsDS.UpsertPod(ctx, pod))
@@ -91,7 +92,7 @@ func TestGetPods(t *testing.T) {
 
 			results, err := service.GetPods(ctx, &v1.RawQuery{})
 			assert.NoError(t, err)
-			assert.ElementsMatch(t, results.Pods, c.pods)
+			protoassert.ElementsMatch(t, results.GetPods(), c.pods)
 		})
 	}
 }

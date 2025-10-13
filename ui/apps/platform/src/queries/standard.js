@@ -92,8 +92,11 @@ export const LIST_STANDARD_NO_NODES = gql`
     }
 `;
 
-export const COMPLIANCE_STANDARDS = gql`
-    query complianceStandards($groupBy: [ComplianceAggregation_Scope!], $where: String) {
+export const COMPLIANCE_STANDARDS = (standardId) => gql`
+    query complianceStandards_${standardId.replace(
+        /\W/g,
+        '_'
+    )}($groupBy: [ComplianceAggregation_Scope!], $where: String) {
         complianceStandards {
             id
             name
@@ -146,21 +149,6 @@ export const TRIGGER_SCAN = gql`
             clusterId
             state
             errorMessage
-        }
-    }
-`;
-
-export const RUN_STATUSES = gql`
-    query runStatuses($ids: [ID!]!) {
-        complianceRunStatuses(ids: $ids) {
-            invalidRunIds
-            runs {
-                id
-                standardId
-                clusterId
-                state
-                errorMessage
-            }
         }
     }
 `;

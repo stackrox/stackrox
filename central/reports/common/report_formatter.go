@@ -3,7 +3,6 @@ package common
 import (
 	"archive/zip"
 	"bytes"
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -12,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/csv"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -29,80 +27,140 @@ var (
 		"Component",
 		"CVE",
 		"Fixable",
-		"Component Upgrade",
+		"CVE Fixed In",
 		"Severity",
+		"CVSS",
 		"Discovered At",
 		"Reference",
 	}
 )
 
-type imageVulnerability struct {
+// ImageVulnerability contains image CVE data for vuln report
+type ImageVulnerability struct {
 	Cve               string        `json:"cve,omitempty"`
 	Severity          string        `json:"severity,omitempty"`
 	FixedByVersion    string        `json:"fixedByVersion,omitempty"`
 	IsFixable         bool          `json:"isFixable,omitempty"`
 	DiscoveredAtImage *graphql.Time `json:"discoveredAtImage,omitempty"`
 	Link              string        `json:"link,omitempty"`
+	Cvss              float64       `json:"cvss,omitempty"`
+	Nvdcvss           float64       `json:"nvdcvss,omitempty"`
 }
 
-type imageComponent struct {
+// ImageComponent data for vuln report
+type ImageComponent struct {
 	Name                 string                `json:"name,omitempty"`
-	ImageVulnerabilities []*imageVulnerability `json:"imageVulnerabilities,omitempty"`
-	Vulns                []*imageVulnerability `json:"vulns,omitempty"`
+	ImageVulnerabilities []*ImageVulnerability `json:"imageVulnerabilities,omitempty"`
+	Vulns                []*ImageVulnerability `json:"vulns,omitempty"`
 }
 
-type image struct {
+// Image data for vuln report
+type Image struct {
 	Name            *storage.ImageName `json:"name,omitempty"`
-	ImageComponents []*imageComponent  `json:"imageComponents,omitempty"`
-	Components      []*imageComponent  `json:"components,omitempty"`
+	ImageComponents []*ImageComponent  `json:"imageComponents,omitempty"`
+	Components      []*ImageComponent  `json:"components,omitempty"`
 }
 
-type deployment struct {
+// Deployment data used for generating vuln reports
+type Deployment struct {
 	Cluster        *storage.Cluster `json:"cluster,omitempty"`
+	ClusterName    string           `json:"clusterName,omitempty"`
 	Namespace      string           `json:"namespace,omitempty"`
 	DeploymentName string           `json:"name,omitempty"`
-	Images         []*image         `json:"images,omitempty"`
+	Images         []*Image         `json:"images,omitempty"`
 }
 
-// Result is the query results of running a single cvefields query and scope query combination
-type Result struct {
-	Deployments []*deployment `json:"deployments,omitempty"`
+// DeployedImagesResult contains results of running a single cvefields query and scope query combination on deployments graphQL schema
+type DeployedImagesResult struct {
+	Deployments []*Deployment `json:"deployments,omitempty"`
+}
+
+// WatchedImagesResult contains results of running a single cvefields query and scope query combination on images graphQL schema
+type WatchedImagesResult struct {
+	Images []*Image `json:"images,omitempty"`
+}
+
+// ZippedCSVResult contains the compressed report data and the number of CVEs found in deployed and watched images
+type ZippedCSVResult struct {
+	ZippedCsv            *bytes.Buffer
+	NumDeployedImageCVEs int
+	NumWatchedImageCVEs  int
 }
 
 // Format takes in the results of vuln report query, converts to CSV and returns zipped CSV data and
-// a flag if the report is empty or not
-func Format(results []Result) (*bytes.Buffer, error) {
-	csvWriter := csv.NewGenericWriter(csvHeader, true)
-	for _, r := range results {
+// a flag if the report is empty or not. For v1 config pass an empty string.
+func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults []WatchedImagesResult, configName string, includeNvd bool) (*ZippedCSVResult, error) {
+	csvHeaderRep := csvHeader
+	if includeNvd {
+		csvHeaderRep = append(csvHeader, "NVDCVSS")
+	}
+	csvWriter := csv.NewGenericWriter(csvHeaderRep, true)
+	numDeployedImageCVEs := 0
+	for _, r := range deployedImagesResults {
 		for _, d := range r.Deployments {
 			for _, i := range d.Images {
 				for _, c := range i.getComponents() {
 					for _, v := range c.getVulnerabilities() {
+						numDeployedImageCVEs++
 						discoveredTs := "Not Available"
 						if v.DiscoveredAtImage != nil {
 							discoveredTs = v.DiscoveredAtImage.Time.Format("January 02, 2006")
 						}
-						csvWriter.AddValue(csv.Value{
-							d.Cluster.Name,
+						row := csv.Value{
+							d.GetClusterName(),
 							d.Namespace,
 							d.DeploymentName,
-							i.Name.FullName,
+							i.Name.GetFullName(),
 							c.Name,
 							v.Cve,
 							strconv.FormatBool(v.IsFixable),
 							v.FixedByVersion,
 							strings.ToTitle(stringutils.GetUpTo(v.Severity, "_")),
+							strconv.FormatFloat(v.Cvss, 'f', 2, 64),
 							discoveredTs,
 							v.Link,
-						})
+						}
+						if includeNvd {
+							csvWriter.AppendToValue(&row, strconv.FormatFloat(v.Nvdcvss, 'f', 2, 64))
+						}
+						csvWriter.AddValue(row)
 					}
 				}
 			}
 		}
 	}
 
-	if csvWriter.IsEmpty() {
-		return nil, nil
+	numWatchedImageCVEs := 0
+	for _, r := range watchedImagesResults {
+		for _, i := range r.Images {
+			for _, c := range i.getComponents() {
+				for _, v := range c.getVulnerabilities() {
+					numWatchedImageCVEs++
+					discoveredTs := "Not Available"
+					if v.DiscoveredAtImage != nil {
+						discoveredTs = v.DiscoveredAtImage.Time.Format("January 02, 2006")
+					}
+					row := csv.Value{
+						"",
+						"",
+						"",
+						i.Name.GetFullName(),
+						c.Name,
+						v.Cve,
+						strconv.FormatBool(v.IsFixable),
+						v.FixedByVersion,
+						strings.ToTitle(stringutils.GetUpTo(v.Severity, "_")),
+						strconv.FormatFloat(v.Cvss, 'f', 2, 64),
+						discoveredTs,
+						v.Link,
+					}
+					if includeNvd {
+						csvWriter.AppendToValue(&row, strconv.FormatFloat(v.Nvdcvss, 'f', 2, 64))
+					}
+					csvWriter.AddValue(row)
+				}
+			}
+		}
 	}
 
 	var buf bytes.Buffer
@@ -113,10 +171,9 @@ func Format(results []Result) (*bytes.Buffer, error) {
 
 	var zipBuf bytes.Buffer
 	zipWriter := zip.NewWriter(&zipBuf)
-	zipFile, err := zipWriter.Create(fmt.Sprintf("RHACS_Vulnerability_Report_%s.csv", time.Now().Format("02_January_2006")))
+	zipFile, err := zipWriter.Create(makeFileName(configName, time.Now()))
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create a zip file of the vuln report")
-
 	}
 	_, err = zipFile.Write(buf.Bytes())
 	if err != nil {
@@ -126,19 +183,48 @@ func Format(results []Result) (*bytes.Buffer, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create a zip file of the vuln report")
 	}
-	return &zipBuf, nil
+
+	return &ZippedCSVResult{
+		ZippedCsv:            &zipBuf,
+		NumDeployedImageCVEs: numDeployedImageCVEs,
+		NumWatchedImageCVEs:  numWatchedImageCVEs,
+	}, nil
 }
 
-func (img *image) getComponents() []*imageComponent {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return img.ImageComponents
+func makeFileName(configName string, timestamp time.Time) string {
+	var builder strings.Builder
+	builder.WriteString("RHACS_Vulnerability_Report")
+	if len(configName) > 0 {
+		builder.WriteRune('_')
+		replaceUnsafeRunes(&builder, configName)
 	}
-	return img.Components
+	builder.WriteRune('_')
+	builder.WriteString(timestamp.UTC().Format("02_January_2006"))
+	builder.WriteString(".csv")
+	return builder.String()
 }
 
-func (component *imageComponent) getVulnerabilities() []*imageVulnerability {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return component.ImageVulnerabilities
+func replaceUnsafeRunes(builder *strings.Builder, configName string) {
+	const allowedSet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
+	const replacementRune = '_'
+	length := min(80, len(configName))
+	for _, char := range configName[0:length] {
+		if !strings.ContainsRune(allowedSet, char) {
+			char = replacementRune
+		}
+		builder.WriteRune(char)
 	}
-	return component.Vulns
+}
+
+// GetClusterName returns name of cluster containing the Deployment
+func (dep *Deployment) GetClusterName() string {
+	return dep.ClusterName
+}
+
+func (img *Image) getComponents() []*ImageComponent {
+	return img.ImageComponents
+}
+
+func (component *ImageComponent) getVulnerabilities() []*ImageVulnerability {
+	return component.ImageVulnerabilities
 }

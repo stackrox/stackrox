@@ -4,10 +4,9 @@ import (
 	"context"
 	"regexp"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/policycategory/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -15,35 +14,26 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
 )
 
 var (
-	log = logging.LoggerForModule()
-
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.Policy)): {
-			"/v1.PolicyCategoryService/GetPolicyCategory",
-			"/v1.PolicyCategoryService/GetPolicyCategories",
+		user.With(permissions.View(resources.WorkflowAdministration)): {
+			v1.PolicyCategoryService_GetPolicyCategory_FullMethodName,
+			v1.PolicyCategoryService_GetPolicyCategories_FullMethodName,
 		},
-		user.With(permissions.Modify(resources.Policy)): {
-			"/v1.PolicyCategoryService/PostPolicyCategory",
-			"/v1.PolicyCategoryService/RenamePolicyCategory",
-			"/v1.PolicyCategoryService/DeletePolicyCategory",
+		user.With(permissions.Modify(resources.WorkflowAdministration)): {
+			v1.PolicyCategoryService_PostPolicyCategory_FullMethodName,
+			v1.PolicyCategoryService_RenamePolicyCategory_FullMethodName,
+			v1.PolicyCategoryService_DeletePolicyCategory_FullMethodName,
 		},
 	})
 
 	validateName         = regexp.MustCompile(`^[^\n\r\$]{5,128}$`)
 	invalidNameErrString = "policy category must have a name between 5 and 128 characters long with no new lines or dollar signs"
-)
-
-var (
-	policySyncReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Policy)))
 )
 
 // serviceImpl provides APIs for alerts.

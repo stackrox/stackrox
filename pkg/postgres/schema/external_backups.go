@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 var (
@@ -24,17 +25,19 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ExternalBackup)(nil)), "external_backups")
+		schema.ScopingResource = resources.Integration
 		RegisterTable(schema, CreateTableExternalBackupsStmt)
 		return schema
 	}()
 )
 
 const (
+	// ExternalBackupsTableName specifies the name of the table in postgres.
 	ExternalBackupsTableName = "external_backups"
 )
 
 // ExternalBackups holds the Gorm model for Postgres table `external_backups`.
 type ExternalBackups struct {
-	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	ID         string `gorm:"column:id;type:varchar;primaryKey"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

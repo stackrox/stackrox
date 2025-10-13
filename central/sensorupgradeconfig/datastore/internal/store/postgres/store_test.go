@@ -9,19 +9,17 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type SensorUpgradeConfigsStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestSensorUpgradeConfigsStore(t *testing.T) {
@@ -29,21 +27,8 @@ func TestSensorUpgradeConfigsStore(t *testing.T) {
 }
 
 func (s *SensorUpgradeConfigsStoreSuite) SetupTest() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
-
 	s.testDB = pgtest.ForT(s.T())
-	s.store = New(s.testDB.Pool)
-}
-
-func (s *SensorUpgradeConfigsStoreSuite) TearDownTest() {
-	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
+	s.store = New(s.testDB.DB)
 }
 
 func (s *SensorUpgradeConfigsStoreSuite) TestStore() {
@@ -65,12 +50,7 @@ func (s *SensorUpgradeConfigsStoreSuite) TestStore() {
 	foundSensorUpgradeConfig, exists, err = store.Get(ctx)
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(sensorUpgradeConfig, foundSensorUpgradeConfig)
-
-	foundSensorUpgradeConfig, exists, err = store.Get(ctx)
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(sensorUpgradeConfig, foundSensorUpgradeConfig)
+	protoassert.Equal(s.T(), sensorUpgradeConfig, foundSensorUpgradeConfig)
 
 	s.NoError(store.Delete(ctx))
 	foundSensorUpgradeConfig, exists, err = store.Get(ctx)
@@ -87,7 +67,7 @@ func (s *SensorUpgradeConfigsStoreSuite) TestStore() {
 	foundSensorUpgradeConfig, exists, err = store.Get(ctx)
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(sensorUpgradeConfig, foundSensorUpgradeConfig)
+	protoassert.Equal(s.T(), sensorUpgradeConfig, foundSensorUpgradeConfig)
 
 	sensorUpgradeConfig = &storage.SensorUpgradeConfig{}
 	s.NoError(testutils.FullInit(sensorUpgradeConfig, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -96,5 +76,5 @@ func (s *SensorUpgradeConfigsStoreSuite) TestStore() {
 	foundSensorUpgradeConfig, exists, err = store.Get(ctx)
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(sensorUpgradeConfig, foundSensorUpgradeConfig)
+	protoassert.Equal(s.T(), sensorUpgradeConfig, foundSensorUpgradeConfig)
 }

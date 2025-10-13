@@ -1,12 +1,14 @@
-import React, { CSSProperties } from 'react';
-import { Button, ButtonVariant, Flex, FlexItem, Stack, StackItem } from '@patternfly/react-core';
+import React from 'react';
+import type { CSSProperties } from 'react';
+import { Button, Flex, FlexItem, Stack, StackItem } from '@patternfly/react-core';
 
-import { violationsBasePath } from 'routePaths';
-import { SearchFilter } from 'types/search';
+import { violationsFullViewPath } from 'routePaths';
+import type { SearchFilter } from 'types/search';
 import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
 import { severityLabels } from 'messages/common';
-import { severityColors } from 'constants/visuals/colors';
-import { policySeverities, PolicySeverity } from 'types/policy.proto';
+import { policySeverityColorMap } from 'constants/severityColors';
+import { policySeverities } from 'types/policy.proto';
+import type { PolicySeverity } from 'types/policy.proto';
 import LinkShim from 'Components/PatternFly/LinkShim';
 
 import './SeverityTile.css';
@@ -20,15 +22,17 @@ type SeverityTileProps = {
 function SeverityTile({ severity, violationCount, link }: SeverityTileProps) {
     return (
         <Button
-            style={{ '--pf-severity-tile-color': severityColors[severity] } as CSSProperties}
-            className="pf-severity-tile pf-u-w-100 pf-u-px-md pf-u-py-sm pf-u-align-items-center"
+            style={
+                { '--pf-severity-tile-color': policySeverityColorMap[severity] } as CSSProperties
+            }
+            className="pf-severity-tile pf-v5-u-w-100 pf-v5-u-px-md pf-v5-u-py-sm pf-v5-u-align-items-center"
             key={severity}
-            variant={ButtonVariant.link}
+            variant="link"
             component={LinkShim}
             href={link}
         >
             <Stack>
-                <StackItem className="pf-u-font-weight-bold pf-u-font-size-xl">
+                <StackItem className="pf-v5-u-font-weight-bold pf-v5-u-font-size-xl">
                     {violationCount}
                 </StackItem>
                 <StackItem>{severityLabels[severity]}</StackItem>
@@ -42,7 +46,7 @@ function linkToViolations(searchFilter, severity) {
         ...searchFilter,
         Severity: severity,
     });
-    return `${violationsBasePath}?${queryString}`;
+    return `${violationsFullViewPath}&${queryString}`;
 }
 
 export type PolicyViolationTilesProps = {

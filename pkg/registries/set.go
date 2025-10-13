@@ -6,22 +6,28 @@ import (
 )
 
 // Set provides an interface for reading the active set of image integrations.
+//
 //go:generate mockgen-wrapper
 type Set interface {
+	Get(id string) types.ImageRegistry
 	GetAll() []types.ImageRegistry
+	GetAllUnique() []types.ImageRegistry
 	Match(image *storage.ImageName) bool
 	GetRegistryMetadataByImage(image *storage.Image) *types.Config
+	GetRegistryByImage(image *storage.Image) types.Registry
 
 	IsEmpty() bool
+	Len() int
 	Clear()
-	UpdateImageIntegration(integration *storage.ImageIntegration) error
+	UpdateImageIntegration(integration *storage.ImageIntegration) (bool, error)
 	RemoveImageIntegration(id string) error
 }
 
 // NewSet returns a new Set instance.
-func NewSet(factory Factory) Set {
+func NewSet(factory Factory, creatorOpts ...types.CreatorOption) Set {
 	return &setImpl{
 		factory:      factory,
 		integrations: make(map[string]types.ImageRegistry),
+		creatorOpts:  creatorOpts,
 	}
 }

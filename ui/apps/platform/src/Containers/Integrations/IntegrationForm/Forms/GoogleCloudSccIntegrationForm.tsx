@@ -1,24 +1,30 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Checkbox, Form, PageSection, TextInput, TextArea } from '@patternfly/react-core';
 import * as yup from 'yup';
+import merge from 'lodash/merge';
 
-import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
+import type { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
 
-import usePageState from 'Containers/Integrations/hooks/usePageState';
 import FormMessage from 'Components/PatternFly/FormMessage';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
+
+import usePageState from '../../hooks/usePageState';
 import useIntegrationForm from '../useIntegrationForm';
-import { IntegrationFormProps } from '../integrationFormTypes';
+import type { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';
+
+import { getGoogleCredentialsPlaceholder } from '../../utils/integrationUtils';
 
 export type GoogleCloudSccIntegration = {
     cscc: {
         serviceAccount: string;
         sourceId: string;
+        wifEnabled: boolean;
     };
     type: 'cscc';
 } & NotifierIntegrationBase;
@@ -32,33 +38,32 @@ const sourceIdRegex = /^organizations\/[0-9]+\/sources\/[0-9]+$/;
 
 export const validationSchema = yup.object().shape({
     notifier: yup.object().shape({
-        name: yup.string().trim().required('Required'),
+        name: yup.string().trim().required('An integration name is required'),
         cscc: yup.object().shape({
+            wifEnabled: yup.bool(),
             serviceAccount: yup
                 .string()
                 .trim()
-                .required('A service account is required')
                 .test(
-                    'isValidJson',
-                    'Service account must be valid JSON',
+                    'serviceAccount-test',
+                    'Valid JSON is required for service account key',
                     (value, context: yup.TestContext) => {
-                        const isRequired =
+                        const requirePasswordField =
                             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                             // @ts-ignore
                             context?.from[2]?.value?.updatePassword || false;
+                        const useWorkloadId = context?.parent?.wifEnabled;
 
-                        if (!isRequired) {
+                        if (!requirePasswordField || useWorkloadId) {
                             return true;
                         }
-                        if (!value) {
-                            return false;
-                        }
                         try {
-                            JSON.parse(value);
-                        } catch (e) {
+                            JSON.parse(value as string);
+                        } catch {
                             return false;
                         }
-                        return true;
+                        const trimmedValue = value?.trim();
+                        return !!trimmedValue;
                     }
                 ),
             sourceId: yup
@@ -81,6 +86,7 @@ export const defaultValues: GoogleCloudSccIntegrationFormValues = {
         cscc: {
             serviceAccount: '',
             sourceId: '',
+            wifEnabled: false,
         },
         labelDefault: '',
         labelKey: '',
@@ -94,15 +100,16 @@ function GoogleCloudSccIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<GoogleCloudSccIntegration>): ReactElement {
-    const formInitialValues = { ...defaultValues, ...initialValues };
+    const formInitialValues = structuredClone(defaultValues);
     if (initialValues) {
-        formInitialValues.notifier = {
-            ...formInitialValues.notifier,
-            ...initialValues,
-        };
+        merge(formInitialValues.notifier, initialValues);
+
         // We want to clear the password because backend returns '******' to represent that there
         // are currently stored credentials
         formInitialValues.notifier.cscc.serviceAccount = '';
+
+        // Don't assume user wants to change password; that has caused confusing UX.
+        formInitialValues.updatePassword = false;
     }
     const {
         values,
@@ -151,7 +158,7 @@ function GoogleCloudSccIntegrationForm({
                             id="notifier.name"
                             value={values.notifier.name}
                             placeholder="(example, Cloud SCC Integration)"
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -169,7 +176,21 @@ function GoogleCloudSccIntegrationForm({
                             id="notifier.cscc.sourceId"
                             value={values.notifier.cscc.sourceId}
                             placeholder="example, organizations/123/sources/456"
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
+                            onBlur={handleBlur}
+                            isDisabled={!isEditable}
+                        />
+                    </FormLabelGroup>
+                    <FormLabelGroup
+                        fieldId="notifier.cscc.wifEnabled"
+                        touched={touched}
+                        errors={errors}
+                    >
+                        <Checkbox
+                            label="Use workload identity"
+                            id="notifier.cscc.wifEnabled"
+                            isChecked={values.notifier.cscc.wifEnabled}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -179,39 +200,46 @@ function GoogleCloudSccIntegrationForm({
                             label=""
                             fieldId="updatePassword"
                             helperText="Enable this option to replace currently stored credentials (if any)"
+                            touched={touched}
                             errors={errors}
                         >
                             <Checkbox
-                                label="Update token"
+                                label="Update stored credentials"
                                 id="updatePassword"
-                                isChecked={values.updatePassword}
-                                onChange={onUpdateCredentialsChange}
+                                isChecked={
+                                    !values.notifier.cscc.wifEnabled && values.updatePassword
+                                }
+                                onChange={(event, value) => onUpdateCredentialsChange(value, event)}
                                 onBlur={handleBlur}
-                                isDisabled={!isEditable}
+                                isDisabled={!isEditable || values.notifier.cscc.wifEnabled}
                             />
                         </FormLabelGroup>
                     )}
                     <FormLabelGroup
-                        label="Service Account Key (JSON)"
-                        isRequired={values.updatePassword}
+                        label="Service account key (JSON)"
+                        isRequired={values.updatePassword && !values.notifier.cscc.wifEnabled}
                         fieldId="notifier.cscc.serviceAccount"
                         touched={touched}
                         errors={errors}
                     >
                         <TextArea
                             className="json-input"
-                            isRequired={values.updatePassword}
+                            isRequired={values.updatePassword && !values.notifier.cscc.wifEnabled}
                             type="text"
                             id="notifier.cscc.serviceAccount"
+                            name="notifier.cscc.serviceAccount"
                             value={values.notifier.cscc.serviceAccount}
-                            placeholder={
-                                values.updatePassword
-                                    ? 'example,\n{\n  "type": "service_account",\n  "project_id": "123456"\n  ...\n}'
-                                    : 'Currently-stored credentials will be used.'
-                            }
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
-                            isDisabled={!isEditable || !values.updatePassword}
+                            isDisabled={
+                                !isEditable ||
+                                !values.updatePassword ||
+                                values.notifier.cscc.wifEnabled
+                            }
+                            placeholder={getGoogleCredentialsPlaceholder(
+                                values.notifier.cscc.wifEnabled,
+                                values.updatePassword
+                            )}
                         />
                     </FormLabelGroup>
                 </Form>

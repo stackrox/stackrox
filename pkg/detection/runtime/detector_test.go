@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/detection"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -56,6 +56,34 @@ func (s *RuntimeDetectorTestSuite) TestCreateConfigMap() {
 	s.NotNil(j)
 }
 
+func (s *RuntimeDetectorTestSuite) TestConfigMapPolicyWithRegex() {
+	policySet := detection.NewPolicySet()
+
+	cmPolicy := s.getCreateConfigmapPolicy()
+	cmPolicy.PolicySections[0].PolicyGroups = append(cmPolicy.PolicySections[0].PolicyGroups, &storage.PolicyGroup{
+		FieldName: "Kubernetes Resource Name",
+		Values: []*storage.PolicyValue{
+			{
+				Value: "r/config-.*",
+			},
+		},
+	})
+	err := policySet.UpsertPolicy(cmPolicy)
+	s.NoError(err, "upsert policy should succeed")
+
+	d := NewDetector(policySet)
+
+	kubeEvent := s.getKubeEvent(storage.KubernetesEvent_Object_CONFIGMAPS, storage.KubernetesEvent_CREATE, "cluster-id", "namespace", "config-name", true)
+	alerts, err := d.DetectForAuditEvents([]*storage.KubernetesEvent{kubeEvent})
+	s.NoError(err)
+	s.Len(alerts, 1, "incorrect number of alerts received")
+
+	kubeEvent.Object.Name = "secret-hello"
+	alerts, err = d.DetectForAuditEvents([]*storage.KubernetesEvent{kubeEvent})
+	s.NoError(err)
+	s.Len(alerts, 0, "incorrect number of alerts received")
+}
+
 func (s *RuntimeDetectorTestSuite) getKubeEvent(resource storage.KubernetesEvent_Object_Resource, verb storage.KubernetesEvent_APIVerb, clusterID, namespace, name string, isImpersonated bool) *storage.KubernetesEvent {
 	event := &storage.KubernetesEvent{
 		Id: uuid.NewV4().String(),
@@ -65,7 +93,7 @@ func (s *RuntimeDetectorTestSuite) getKubeEvent(resource storage.KubernetesEvent
 			ClusterId: clusterID,
 			Namespace: namespace,
 		},
-		Timestamp: types.TimestampNow(),
+		Timestamp: protocompat.TimestampNow(),
 		ApiVerb:   verb,
 		User: &storage.KubernetesEvent_User{
 			Username: "username",

@@ -1,46 +1,70 @@
 syntax = "proto3";
 
-option go_package = "storage";
-option java_package = "io.stackrox.proto.storage";
+package storage;
 
 import "storage/schedule.proto";
 
-import "gogoproto/gogo.proto";
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
 
-package storage;
-
+// Next available tag: 10
 message ExternalBackup {
-    string           id              = 1 [(gogoproto.moretags) = 'sql:"pk"'];
-    string           name            = 2;
-    string           type            = 3;
-    storage.Schedule schedule        = 4;
-    int32            backups_to_keep = 5;
+  string id = 1; // @gotags: sql:"pk"
+  string name = 2;
+  string type = 3;
+  storage.Schedule schedule = 4;
+  int32 backups_to_keep = 5;
 
-    oneof Config {
-        S3Config       s3       = 6;
-        GCSConfig      gcs      = 7;
-    }
-    oneof include_certificates_opt {
-        bool include_certificates = 8 [deprecated = true];
-    }
+  oneof Config {
+    S3Config s3 = 6;
+    GCSConfig gcs = 7;
+    S3Compatible s3compatible = 9;
+  }
+  oneof include_certificates_opt {
+    bool include_certificates = 8 [deprecated = true];
+  }
 }
 
+// S3Config configures the backup integration with AWS S3.
 message S3Config {
-    string bucket            = 1;
-    bool   use_iam           = 2 [(gogoproto.moretags) = 'scrub:"dependent"'];
-    // The access key ID for the storage integration. The server will mask the value of this credential in responses and logs.
-    string access_key_id     = 3 [(gogoproto.moretags) = 'scrub:"always"'];
-    // The secret access key for the storage integration. The server will mask the value of this credential in responses and logs.
-    string secret_access_key = 4 [(gogoproto.moretags) = 'scrub:"always"'];
-    string region            = 5;
-    string object_prefix     = 6;
-    string endpoint          = 7 [(gogoproto.moretags) = 'scrub:"dependent" validate:"nolocalendpoint"'];
+  string bucket = 1;
+  bool use_iam = 2; // @gotags: scrub:"dependent"
+  // The access key ID for the storage integration. The server will mask the value of this credential in responses and logs.
+  string access_key_id = 3; // @gotags: scrub:"always"
+  // The secret access key for the storage integration. The server will mask the value of this credential in responses and logs.
+  string secret_access_key = 4; // @gotags: scrub:"always"
+  string region = 5;
+  string object_prefix = 6;
+  string endpoint = 7; // @gotags: scrub:"dependent" validate:"nolocalendpoint"
+}
+
+enum S3URLStyle {
+  S3_URL_STYLE_UNSPECIFIED = 0;
+  S3_URL_STYLE_VIRTUAL_HOSTED = 1;
+  S3_URL_STYLE_PATH = 2;
+}
+
+// S3Compatible configures the backup integration with an S3 compatible storage provider.
+// S3 compatible is intended for non-AWS providers. For AWS S3 use S3Config.
+message S3Compatible {
+  string bucket = 1;
+  // The access key ID to use. The server will mask the value of this credential in responses and logs.
+  string access_key_id = 2; // @gotags: scrub:"always"
+  // The secret access key to use. The server will mask the value of this credential in responses and logs.
+  string secret_access_key = 3; // @gotags: scrub:"always"
+  string region = 4;
+  string object_prefix = 5;
+  string endpoint = 6; // @gotags: scrub:"dependent" validate:"nolocalendpoint"
+  // The URL style defines the bucket URL addressing.
+  // Virtual-hosted-style buckets are addressed as `https://<bucket>.<endpoint>'
+  // while path-style buckets are addressed as `https://<endpoint>/<bucket>`.
+  S3URLStyle url_style = 7;
 }
 
 message GCSConfig {
-    string bucket            = 1;
-    // The service account for the storage integration. The server will mask the value of this credential in responses and logs.
-    string service_account   = 2 [(gogoproto.moretags) = 'scrub:"always"'];
-    string object_prefix     = 3;
-    bool   use_workload_id   = 4 [(gogoproto.moretags) = 'scrub:"dependent"'];
+  string bucket = 1;
+  // The service account for the storage integration. The server will mask the value of this credential in responses and logs.
+  string service_account = 2; // @gotags: scrub:"always"
+  string object_prefix = 3;
+  bool use_workload_id = 4; // @gotags: scrub:"dependent"
 }

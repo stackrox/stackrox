@@ -1,0 +1,19 @@
+# Default values for helm.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+app:
+  scanner:
+    name: scanner-v4
+    image:
+      registry: quay.io/stackrox-io
+      name: scanner-v4
+      tag: latest
+  db:
+    name: scanner-v4-db
+    image:
+      registry: quay.io/stackrox-io
+      name: scanner-v4-db
+      tag: latest
+    persistence:
+      hostPath: null

@@ -1,4 +1,4 @@
-export const graphql = (operationName) => `/api/graphql?opname=${operationName}`;
+export const graphql = (opname) => `/api/graphql?opname=${opname}`;
 
 function searchObjToQuery(searchObj) {
     let result = '';
@@ -13,12 +13,6 @@ function searchObjToQuery(searchObj) {
     return encodeURI(result);
 }
 
-export const general = {
-    graphqlOps: {
-        summaryCounts: 'summary_counts',
-    },
-};
-
 export const search = {
     results: '/v1/search?query=*',
     options: '/v1/search/metadata/options*',
@@ -29,32 +23,6 @@ export const search = {
     graphqlOps: {
         autocomplete: 'autocomplete',
     },
-};
-
-export const alerts = {
-    countsByCluster: '/v1/alerts/summary/counts?*group_by=CLUSTER*',
-    countsByCategory: '/v1/alerts/summary/counts?*group_by=CATEGORY*',
-    alerts: '/v1/alerts',
-    alertsWithQuery: '/v1/alerts?query=*',
-    alertById: '/v1/alerts/*',
-    resolveAlert: '/v1/alerts/*/resolve',
-    alertsCountWithQuery: '/v1/alertscount?query=*',
-    pageSearchAutocomplete: (searchObj) => search.autocompleteBySearch(searchObj, 'ALERTS'),
-    graphqlOps: {
-        addTags: 'addAlertTags',
-        getTags: 'getAlertTags',
-        tagsAutocomplete: 'autocomplete',
-        bulkAddAlertTags: 'bulkAddAlertTags',
-        removeTags: 'removeAlertTags',
-    },
-};
-
-export const clusters = {
-    single: 'v1/clusters/**',
-    list: 'v1/clusters',
-    clusterDefaults: '/v1/cluster-defaults',
-    sensorUpgradesConfig: '/v1/sensorupgrades/config',
-    zip: 'api/extensions/clusters/zip',
 };
 
 export const risks = {
@@ -73,42 +41,11 @@ export const risks = {
     },
 };
 
-export const images = {
-    list: '/v1/images*',
-    count: '/v1/imagescount*',
-    get: '/v1/images/*',
-};
-
-export const auth = {
-    loginAuthProviders: '/v1/login/authproviders',
-    authProviders: '/v1/authProviders',
-    authStatus: '/v1/auth/status',
-    logout: '/sso/session/logout',
-    tokenRefresh: '/sso/session/tokenrefresh',
-};
-
-export const certExpiry = {
-    central: 'v1/credentialexpiry?component=CENTRAL',
-    scanner: 'v1/credentialexpiry?component=SCANNER',
-};
-
-export const certGen = {
-    central: 'api/extensions/certgen/central',
-    scanner: 'api/extensions/certgen/scanner',
-};
-
-export const dashboard = {
-    summaryCounts: graphql('summary_counts'),
-};
-
-export const metadata = 'v1/metadata';
-
 export const network = {
     networkBaseline: '/v1/networkbaseline/*', // deployment id
     networkBaselineLock: '/v1/networkbaseline/*/lock',
     networkBaselineUnlock: '/v1/networkbaseline/*/unlock',
     networkBaselinePeers: '/v1/networkbaseline/*/peers',
-    networkBaselineStatus: '/v1/networkbaseline/*/status',
     networkPoliciesGraph: '/v1/networkpolicies/cluster/*',
     networkGraph: '/v1/networkgraph/cluster/*',
     epoch: '/v1/networkpolicies/graph/epoch',
@@ -126,53 +63,18 @@ export const policies = {
     reassess: '/v1/policies/reassess',
 };
 
-export const roles = {
-    list: '/v1/roles',
-    mypermissions: 'v1/mypermissions',
-};
-
-export const permissionSets = {
-    list: '/v1/permissionsets',
-};
-
-export const accessScopes = {
-    list: '/v1/simpleaccessscopes',
-};
-
-export const groups = {
-    batch: '/v1/groupsbatch',
-    list: '/v1/groups',
-};
-
-export const userAttributes = {
-    list: '/v1/userattributes/*',
-};
-
-const complianceEntitiesOp = {
-    clusters: 'clustersList',
-    deployments: 'deploymentsList',
-    namespaces: 'namespaceList', // singular: too bad, so sad
-    nodes: 'nodesList',
-};
-
-export const compliance = {
-    // For example, graphqlEntities('clusters')
-    graphqlEntities: (key) => graphql(complianceEntitiesOp[key]),
-    export: {
-        csv: '/api/compliance/export/csv',
-    },
-};
-
-export const logs = '/api/logimbue';
-
-export const featureFlags = '/v1/featureflags';
-
 export const integrationHealth = {
     imageIntegrations: '/v1/integrationhealth/imageintegrations',
     signatureIntegrations: '/v1/signatureintegrations',
     notifiers: '/v1/integrationhealth/notifiers',
     externalBackups: '/v1/integrationhealth/externalbackups',
-    vulnDefinitions: '/v1/integrationhealth/vulndefinitions',
+    vulnDefinitions: '/v1/integrationhealth/vulndefinitions?component=*',
+};
+
+export const credentialHealth = {
+    central: '/v1/credentialexpiry?component=CENTRAL',
+    centralDb: '/v1/credentialexpiry?component=CENTRAL_DB',
+    scanner: '/v1/credentialexpiry?component=SCANNER',
 };
 
 export const integrations = {
@@ -182,6 +84,7 @@ export const integrations = {
     externalBackups: '/v1/externalbackups',
     apiTokens: 'v1/apitokens?revoked=false',
     clusterInitBundles: '/v1/cluster-init/init-bundles',
+    machineAccessConfigs: '/v1/auth/m2m',
 };
 
 export const integration = {
@@ -193,27 +96,4 @@ export const integration = {
         generate: 'v1/cluster-init/init-bundles',
         revoke: '/v1/cluster-init/init-bundles/revoke',
     },
-};
-
-export const riskAcceptance = {
-    getImageVulnerabilities: graphql('getImageVulnerabilities'),
-    deferVulnerability: graphql('deferVulnerability'),
-    markVulnerabilityFalsePositive: graphql('markVulnerabilityFalsePositive'),
-};
-
-export const system = {
-    config: '/v1/config',
-    configPublic: '/v1/config/public',
-};
-
-export const extensions = {
-    diagnostics: '/api/extensions/diagnostics',
-};
-
-export const permissions = {
-    mypermissions: '/v1/mypermissions',
-};
-
-export const apiDocs = {
-    docs: '/api/docs/swagger',
 };

@@ -4,10 +4,9 @@ import (
 	"context"
 	"sort"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/reprocessor"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/signatureintegration/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -16,19 +15,20 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"google.golang.org/grpc"
 )
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.SignatureIntegration)): {
-			"/v1.SignatureIntegrationService/ListSignatureIntegrations",
-			"/v1.SignatureIntegrationService/GetSignatureIntegration",
+		user.With(permissions.View(resources.Integration)): {
+			v1.SignatureIntegrationService_ListSignatureIntegrations_FullMethodName,
+			v1.SignatureIntegrationService_GetSignatureIntegration_FullMethodName,
 		},
-		user.With(permissions.Modify(resources.SignatureIntegration)): {
-			"/v1.SignatureIntegrationService/PostSignatureIntegration",
-			"/v1.SignatureIntegrationService/PutSignatureIntegration",
-			"/v1.SignatureIntegrationService/DeleteSignatureIntegration",
+		user.With(permissions.Modify(resources.Integration)): {
+			v1.SignatureIntegrationService_PostSignatureIntegration_FullMethodName,
+			v1.SignatureIntegrationService_PutSignatureIntegration_FullMethodName,
+			v1.SignatureIntegrationService_DeleteSignatureIntegration_FullMethodName,
 		},
 	})
 )
@@ -87,19 +87,26 @@ func (s *serviceImpl) PostSignatureIntegration(ctx context.Context, requestedInt
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create signature integration")
 	}
-	s.reprocessingLoop.ReprocessSignatureVerifications()
+
+	// In case this was the first integration we added, signal this to the reprocessing loop.
+	integrations, err := s.datastore.GetAllSignatureIntegrations(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list signature integrations")
+	}
+
+	s.reprocessingLoop.ReprocessSignatureVerifications(len(integrations) == 1)
 	return integration, nil
 }
 
 func (s *serviceImpl) PutSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration) (*v1.Empty, error) {
-	hasUpdatedKeys, err := s.datastore.UpdateSignatureIntegration(ctx, integration)
+	hasUpdates, err := s.datastore.UpdateSignatureIntegration(ctx, integration)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to update signature integration")
 	}
 
-	// Only trigger reprocessing of signature verification results when the keys have been updated.
-	if hasUpdatedKeys {
-		s.reprocessingLoop.ReprocessSignatureVerifications()
+	// Only trigger reprocessing of signature verification results when the verification data has been updated.
+	if hasUpdates {
+		s.reprocessingLoop.ReprocessSignatureVerifications(false)
 	}
 	return &v1.Empty{}, nil
 }
@@ -109,6 +116,6 @@ func (s *serviceImpl) DeleteSignatureIntegration(ctx context.Context, id *v1.Res
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to delete signature integration")
 	}
-	s.reprocessingLoop.ReprocessSignatureVerifications()
+	s.reprocessingLoop.ReprocessSignatureVerifications(false)
 	return &v1.Empty{}, nil
 }

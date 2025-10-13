@@ -1,8 +1,9 @@
 package fieldmap
 
 import (
-	"fmt"
 	"reflect"
+
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // FieldPath represents the fields we need to access to get to the field we care about.
@@ -62,17 +63,8 @@ func visitElemField(currentType reflect.Type, path FieldPath, visitField func(fi
 // Assumes that the interface type is a OneOf field, because everything else compiled from a proto will be a Ptr to a
 // concrete type.
 func visitInterfaceFields(parentType, currentType reflect.Type, path FieldPath, visitField func(fieldPath FieldPath) bool) {
-	ptrToParent := reflect.PtrTo(parentType)
-	method, ok := ptrToParent.MethodByName("XXX_OneofWrappers")
-	if !ok {
-		panic(fmt.Sprintf("XXX_OneofWrappers should exist for all protobuf oneofs, not found for %s", parentType.Name()))
-	}
-	out := method.Func.Call([]reflect.Value{reflect.New(parentType)})
-	actualOneOfFields := out[0].Interface().([]interface{})
-	for _, f := range actualOneOfFields {
-		typ := reflect.TypeOf(f)
-		if typ.Implements(currentType) {
-			visitChildrenRec(currentType, typ, path, visitField)
-		}
+	oneOfTypes := protocompat.GetOneOfTypesByInterface(parentType, currentType)
+	for _, typ := range oneOfTypes {
+		visitChildrenRec(currentType, typ, path, visitField)
 	}
 }

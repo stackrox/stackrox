@@ -1,14 +1,40 @@
 [< if eq .RenderMode "scannerOnly" >]
 !templates/_*.tpl
-!templates/02-scanner-*.yaml
+!templates/02-scanner-[0-9]*.yaml
+!templates/02-scanner-v4-*.yaml
 templates/*
 [< else if eq .RenderMode "scannerTLSOnly" >]
 !templates/_*.tpl
 !templates/02-scanner-03-tls-secret.yaml
 templates/*
+[< else if eq .RenderMode "scannerV4TLSOnly" >]
+!templates/_*.tpl
+!templates/02-scanner-v4-03-db-tls-secret.yaml
+!templates/02-scanner-v4-03-indexer-tls-secret.yaml
+!templates/02-scanner-v4-03-matcher-tls-secret.yaml
+templates/*
 [< else if eq .RenderMode "centralTLSOnly" >]
 !templates/_*.tpl
 !templates/01-central-05-tls-secret.yaml
 templates/*
+[< else if eq .RenderMode "centralDBTLSOnly" >]
+!templates/_*.tpl
+!templates/01-central-05-db-tls-secret.yaml
+templates/*
+[< else if eq .RenderMode "centralDBOnly" >]
+!templates/_*.tpl
+!templates/01-central-*-central-db.yaml
+!templates/01-central-*-db-serviceaccount.yaml
+!templates/01-central-*-db-psps.yaml
+!templates/01-central-*-db-security.yaml
+!templates/01-central-*-db-configmap.yaml
+!templates/01-central-*-external-db-configmap.yaml
+!templates/01-central-*-db-networkpolicy.yaml
+!templates/01-central-*-db-pvc.yaml
+!templates/01-central-*-db-tls-secret.yaml
+templates/*
+[< end >]
+[< if .KubectlOutput >]
+templates/00-stackrox-helm-configmap.yaml
 [< end >]
 templates/keep.yaml

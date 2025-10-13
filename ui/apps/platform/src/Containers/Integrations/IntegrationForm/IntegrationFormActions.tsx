@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Divider, FlexItem, Flex } from '@patternfly/react-core';
 
 export type IntegrationFormActionsProps = {
@@ -18,7 +19,7 @@ function IntegrationFormActions({ children }: IntegrationFormActionsProps): Reac
     return (
         <>
             <Divider component="div" />
-            <Flex className="pf-u-p-md">
+            <Flex className="pf-v5-u-p-md">
                 <FlexItem align={{ default: 'alignLeft' }}>
                     <Flex>{integrationActionItems}</Flex>
                 </FlexItem>

@@ -1,0 +1,338 @@
+- query: claircore_vulnstore_gc_duration_seconds_bucket{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_claircore_vulnstore_gc_duration_seconds_bucket
+
+- query: claircore_vulnstore_gc_duration_seconds_count{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_claircore_vulnstore_gc_duration_seconds_count
+
+- query: claircore_vulnstore_gc_duration_seconds_sum{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_claircore_vulnstore_gc_duration_seconds_sum
+
+- query: claircore_vulnstore_gc_total{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_claircore_vulnstore_gc_total
+
+- query: claircore_vulnstore_getenrichments_duration_seconds_bucket{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_claircore_vulnstore_getenrichments_duration_seconds_bucket
+
+- query: claircore_vulnstore_getenrichments_duration_seconds_count{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_claircore_vulnstore_getenrichments_duration_seconds_count
+
+- query: claircore_vulnstore_getenrichments_duration_seconds_sum{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_claircore_vulnstore_getenrichments_duration_seconds_sum
+
+- query: claircore_vulnstore_getenrichments_total{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_claircore_vulnstore_getenrichments_total
+
+- query: claircore_vulnstore_getupdateoperations_duration_seconds_bucket{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_claircore_vulnstore_getupdateoperations_duration_seconds_bucket
+
+- query: claircore_vulnstore_getupdateoperations_duration_seconds_count{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_claircore_vulnstore_getupdateoperations_duration_seconds_count
+
+- query: claircore_vulnstore_getupdateoperations_duration_seconds_sum{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_claircore_vulnstore_getupdateoperations_duration_seconds_sum
+
+- query: claircore_vulnstore_getupdateoperations_total{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_claircore_vulnstore_getupdateoperations_total
+
+- query: claircore_vulnstore_getvulnerabilities_duration_seconds_bucket{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_claircore_vulnstore_getvulnerabilities_duration_seconds_bucket
+
+- query: claircore_vulnstore_getvulnerabilities_duration_seconds_count{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_claircore_vulnstore_getvulnerabilities_duration_seconds_count
+
+- query: claircore_vulnstore_getvulnerabilities_duration_seconds_sum{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_claircore_vulnstore_getvulnerabilities_duration_seconds_sum
+
+- query: claircore_vulnstore_getvulnerabilities_total{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_claircore_vulnstore_getvulnerabilities_total
+
+- query: claircore_vulnstore_updateenrichments_duration_seconds_bucket{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_claircore_vulnstore_updateenrichments_duration_seconds_bucket
+
+- query: claircore_vulnstore_updateenrichments_duration_seconds_count{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_claircore_vulnstore_updateenrichments_duration_seconds_count
+
+- query: claircore_vulnstore_updateenrichments_duration_seconds_sum{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_claircore_vulnstore_updateenrichments_duration_seconds_sum
+
+- query: claircore_vulnstore_updateenrichments_total{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_claircore_vulnstore_updateenrichments_total
+
+- query: claircore_vulnstore_updatevulnerabilities_duration_seconds_bucket{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_claircore_vulnstore_updatevulnerabilities_duration_seconds_bucket
+
+- query: claircore_vulnstore_updatevulnerabilities_duration_seconds_count{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_claircore_vulnstore_updatevulnerabilities_duration_seconds_count
+
+- query: claircore_vulnstore_updatevulnerabilities_duration_seconds_sum{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_claircore_vulnstore_updatevulnerabilities_duration_seconds_sum
+
+- query: claircore_vulnstore_updatevulnerabilities_total{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_claircore_vulnstore_updatevulnerabilities_total
+
+- query: file_extraction_count_bucket{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_file_extraction_count_bucket
+
+- query: file_extraction_count_count{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_file_extraction_count_count
+
+- query: file_extraction_count_sum{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_file_extraction_count_sum
+
+- query: file_extraction_inaccessible_count_bucket{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_file_extraction_inaccessible_count_bucket
+
+- query: file_extraction_inaccessible_count_count{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_file_extraction_inaccessible_count_count
+
+- query: file_extraction_inaccessible_count_sum{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_file_extraction_inaccessible_count_sum
+
+- query: file_extraction_match_count_bucket{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_file_extraction_match_count_bucket
+
+- query: file_extraction_match_count_count{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_file_extraction_match_count_count
+
+- query: file_extraction_match_count_sum{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_file_extraction_match_count_sum
+
+- query: go_gc_duration_seconds{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_gc_duration_seconds
+
+- query: go_gc_duration_seconds_count{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_gc_duration_seconds_count
+
+- query: go_gc_duration_seconds_sum{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_gc_duration_seconds_sum
+
+- query: go_gc_gogc_percent{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_gc_gogc_percent
+
+- query: go_gc_gomemlimit_bytes{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_gc_gomemlimit_bytes
+
+- query: go_goroutines{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_goroutines
+
+- query: go_info{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_info
+
+- query: go_memstats_alloc_bytes{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_memstats_alloc_bytes
+
+- query: go_memstats_alloc_bytes_total{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_memstats_alloc_bytes_total
+
+- query: go_memstats_buck_hash_sys_bytes{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_memstats_buck_hash_sys_bytes
+
+- query: go_memstats_frees_total{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_memstats_frees_total
+
+- query: go_memstats_gc_sys_bytes{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_memstats_gc_sys_bytes
+
+- query: go_memstats_heap_alloc_bytes{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_memstats_heap_alloc_bytes
+
+- query: go_memstats_heap_idle_bytes{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_memstats_heap_idle_bytes
+
+- query: go_memstats_heap_inuse_bytes{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_memstats_heap_inuse_bytes
+
+- query: go_memstats_heap_objects{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_memstats_heap_objects
+
+- query: go_memstats_heap_released_bytes{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_memstats_heap_released_bytes
+
+- query: go_memstats_heap_sys_bytes{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_memstats_heap_sys_bytes
+
+- query: go_memstats_last_gc_time_seconds{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_memstats_last_gc_time_seconds
+
+- query: go_memstats_mallocs_total{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_memstats_mallocs_total
+
+- query: go_memstats_mcache_inuse_bytes{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_memstats_mcache_inuse_bytes
+
+- query: go_memstats_mcache_sys_bytes{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_memstats_mcache_sys_bytes
+
+- query: go_memstats_mspan_inuse_bytes{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_memstats_mspan_inuse_bytes
+
+- query: go_memstats_mspan_sys_bytes{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_memstats_mspan_sys_bytes
+
+- query: go_memstats_next_gc_bytes{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_memstats_next_gc_bytes
+
+- query: go_memstats_other_sys_bytes{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_memstats_other_sys_bytes
+
+- query: go_memstats_stack_inuse_bytes{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_memstats_stack_inuse_bytes
+
+- query: go_memstats_stack_sys_bytes{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_memstats_stack_sys_bytes
+
+- query: go_memstats_sys_bytes{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_memstats_sys_bytes
+
+- query: go_sched_gomaxprocs_threads{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_sched_gomaxprocs_threads
+
+- query: go_threads{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_go_threads
+
+- query: grpc_server_handled_total{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_grpc_server_handled_total
+
+- query: grpc_server_handling_seconds_bucket{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_grpc_server_handling_seconds_bucket
+
+- query: grpc_server_handling_seconds_count{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_grpc_server_handling_seconds_count
+
+- query: grpc_server_handling_seconds_sum{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_grpc_server_handling_seconds_sum
+
+- query: grpc_server_msg_received_total{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_grpc_server_msg_received_total
+
+- query: grpc_server_msg_sent_total{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_grpc_server_msg_sent_total
+
+- query: grpc_server_started_total{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_grpc_server_started_total
+
+- query: http_incoming_in_flight_requests{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_http_incoming_in_flight_requests
+
+- query: http_incoming_request_duration_histogram_seconds_bucket{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_http_incoming_request_duration_histogram_seconds_bucket
+
+- query: http_incoming_request_duration_histogram_seconds_count{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_http_incoming_request_duration_histogram_seconds_count
+
+- query: http_incoming_request_duration_histogram_seconds_sum{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_http_incoming_request_duration_histogram_seconds_sum
+
+- query: http_incoming_request_size_histogram_bytes_bucket{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_http_incoming_request_size_histogram_bytes_bucket
+
+- query: http_incoming_request_size_histogram_bytes_count{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_http_incoming_request_size_histogram_bytes_count
+
+- query: http_incoming_request_size_histogram_bytes_sum{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_http_incoming_request_size_histogram_bytes_sum
+
+- query: http_incoming_requests_total{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_http_incoming_requests_total
+
+- query: http_incoming_response_size_histogram_bytes_bucket{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_http_incoming_response_size_histogram_bytes_bucket
+
+- query: http_incoming_response_size_histogram_bytes_count{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_http_incoming_response_size_histogram_bytes_count
+
+- query: http_incoming_response_size_histogram_bytes_sum{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_http_incoming_response_size_histogram_bytes_sum
+
+- query: pgxpool_acquire_count{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_pgxpool_acquire_count
+
+- query: pgxpool_acquire_duration_seconds_total{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_pgxpool_acquire_duration_seconds_total
+
+- query: pgxpool_acquired_conns{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_pgxpool_acquired_conns
+
+- query: pgxpool_canceled_acquire_count{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_pgxpool_canceled_acquire_count
+
+- query: pgxpool_constructing_conns{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_pgxpool_constructing_conns
+
+- query: pgxpool_empty_acquire{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_pgxpool_empty_acquire
+
+- query: pgxpool_idle_conns{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_pgxpool_idle_conns
+
+- query: pgxpool_max_conns{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_pgxpool_max_conns
+
+- query: pgxpool_total_conns{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_pgxpool_total_conns
+
+- query: process_cpu_seconds_total{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_process_cpu_seconds_total
+
+- query: process_max_fds{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_process_max_fds
+
+- query: process_network_receive_bytes_total{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_process_network_receive_bytes_total
+
+- query: process_network_transmit_bytes_total{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_process_network_transmit_bytes_total
+
+- query: process_open_fds{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_process_open_fds
+
+- query: process_resident_memory_bytes{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_process_resident_memory_bytes
+
+- query: process_start_time_seconds{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_process_start_time_seconds
+
+- query: process_virtual_memory_bytes{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_process_virtual_memory_bytes
+
+- query: process_virtual_memory_max_bytes{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_process_virtual_memory_max_bytes
+
+- query: rox_scanner_process_cpu_nr_periods{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_rox_scanner_process_cpu_nr_periods
+
+- query: rox_scanner_process_cpu_nr_throttled{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_rox_scanner_process_cpu_nr_throttled
+
+- query: rox_scanner_process_cpu_throttled_time{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_rox_scanner_process_cpu_throttled_time
+
+- query: rox_scanner_uptime_seconds{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_rox_scanner_uptime_seconds
+
+- query: tar_extracted_contents_bytes_per_layer_bucket{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_tar_extracted_contents_bytes_per_layer_bucket
+
+- query: tar_extracted_contents_bytes_per_layer_count{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_tar_extracted_contents_bytes_per_layer_count
+
+- query: tar_extracted_contents_bytes_per_layer_sum{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_tar_extracted_contents_bytes_per_layer_sum
+
+- query: tar_file_count_per_layer_bucket{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_tar_file_count_per_layer_bucket
+
+- query: tar_file_count_per_layer_count{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_tar_file_count_per_layer_count
+
+- query: tar_file_count_per_layer_sum{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_tar_file_count_per_layer_sum
+
+- query: tar_matched_file_count_per_layer_bucket{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_tar_matched_file_count_per_layer_bucket
+
+- query: tar_matched_file_count_per_layer_count{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_tar_matched_file_count_per_layer_count
+
+- query: tar_matched_file_count_per_layer_sum{namespace="stackrox",container="matcher"}
+  metricName: scanner_v4_matcher_tar_matched_file_count_per_layer_sum

@@ -10,7 +10,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -47,22 +49,25 @@ var (
 			v1.SearchCategory_NAMESPACES,
 			v1.SearchCategory_CLUSTERS,
 		}...)
+		schema.ScopingResource = resources.Image
 		RegisterTable(schema, CreateTableImageComponentCveEdgesStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPONENT_VULN_EDGE, schema)
 		return schema
 	}()
 )
 
 const (
+	// ImageComponentCveEdgesTableName specifies the name of the table in postgres.
 	ImageComponentCveEdgesTableName = "image_component_cve_edges"
 )
 
 // ImageComponentCveEdges holds the Gorm model for Postgres table `image_component_cve_edges`.
 type ImageComponentCveEdges struct {
-	Id                 string          `gorm:"column:id;type:varchar;primaryKey"`
+	ID                 string          `gorm:"column:id;type:varchar;primaryKey"`
 	IsFixable          bool            `gorm:"column:isfixable;type:bool"`
 	FixedBy            string          `gorm:"column:fixedby;type:varchar"`
-	ImageComponentId   string          `gorm:"column:imagecomponentid;type:varchar;index:imagecomponentcveedges_imagecomponentid,type:hash"`
-	ImageCveId         string          `gorm:"column:imagecveid;type:varchar;index:imagecomponentcveedges_imagecveid,type:hash"`
+	ImageComponentID   string          `gorm:"column:imagecomponentid;type:varchar;index:imagecomponentcveedges_imagecomponentid,type:hash"`
+	ImageCveID         string          `gorm:"column:imagecveid;type:varchar;index:imagecomponentcveedges_imagecveid,type:hash"`
 	Serialized         []byte          `gorm:"column:serialized;type:bytea"`
 	ImageComponentsRef ImageComponents `gorm:"foreignKey:imagecomponentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

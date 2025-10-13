@@ -14,7 +14,7 @@ type Manager interface {
 
 	StoreFile(ctx context.Context, file string, data io.Reader, size int64, crc32 uint32) error
 
-	// OpenFile attempts to open a probe file, returning the data reader and its size, or an error. This function does
+	// LoadProbe attempts to open a probe file, returning the data reader and its size, or an error. This function does
 	// not perform any access checks.
 	LoadProbe(ctx context.Context, file string) (io.ReadCloser, int64, error)
 

@@ -3,15 +3,11 @@ package orchestrator
 import (
 	"context"
 
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/sensor/common/orchestrator"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	coreV1Listers "k8s.io/client-go/listers/core/v1"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 type kubernetesOrchestrator struct {
@@ -34,14 +30,13 @@ func New(kubernetes kubernetes.Interface) orchestrator.Orchestrator {
 func (k *kubernetesOrchestrator) GetNodeScrapeConfig(nodeName string) (*orchestrator.NodeScrapeConfig, error) {
 	node, err := k.nodeLister.Get(nodeName)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "getting node %q", nodeName)
 	}
 
-	_, hasMasterNodeLabel := node.GetLabels()["node-role.kubernetes.io/master"]
 	_, hasControlPlaneNodeLabel := node.GetLabels()["node-role.kubernetes.io/control-plane"]
 
 	return &orchestrator.NodeScrapeConfig{
 		ContainerRuntimeVersion: node.Status.NodeInfo.ContainerRuntimeVersion,
-		IsMasterNode:            hasMasterNodeLabel || hasControlPlaneNodeLabel,
+		IsMasterNode:            hasControlPlaneNodeLabel,
 	}, nil
 }

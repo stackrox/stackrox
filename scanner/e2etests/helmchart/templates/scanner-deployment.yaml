@@ -1,0 +1,101 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.app.scanner.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.app.scanner.name }}
+spec:
+  replicas: 1
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: {{ .Values.app.scanner.name }}
+  template:
+    metadata:
+      namespace: {{ .Release.Namespace }}
+      labels:
+        app: {{ .Values.app.scanner.name }}
+    spec:
+      securityContext:
+        fsGroup: 65534  # Set the group ownership to the `nobody` group, see dockerfile.
+      containers:
+      - name: scanner
+        image: "{{ ( printf "%s/%s:%s" .Values.app.scanner.image.registry .Values.app.scanner.image.name .Values.app.scanner.image.tag ) }}"
+        imagePullPolicy: IfNotPresent
+        command:
+          - entrypoint.sh
+        args:
+          - -conf
+          - /etc/stackrox.d/scanner/config.yaml
+        env:
+        - name: ROX_MEMLIMIT
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.memory
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.cpu
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        ports:
+          - name: grpc
+            protocol: TCP
+            containerPort: 8443
+        startupProbe:
+          httpGet:
+            path: /health/readiness
+            port: 9443
+            scheme: HTTPS
+          failureThreshold: 30
+          periodSeconds: 60
+        resources:
+          limits:
+            cpu: 2
+            memory: 10Gi
+          requests:
+            cpu: 1
+            memory: 1Gi
+        volumeMounts:
+        - name: config
+          mountPath: /etc/stackrox.d/scanner
+          readOnly: true
+        - name: tls-volume
+          mountPath: /run/secrets/stackrox.io/certs/
+          readOnly: true
+        - name: db-password
+          mountPath: /run/secrets/stackrox.io/postgresql
+          readOnly: true
+        - name: etc-ssl-volume
+          mountPath: /etc/ssl
+        - name: etc-pki-volume
+          mountPath: /etc/pki/ca-trust
+        - name: tmp-volume
+          mountPath: /tmp
+      volumes:
+      - name: config
+        configMap:
+          name: {{ .Values.app.scanner.name }}-config
+      - name: tls-volume
+        secret:
+          secretName: {{ .Values.app.scanner.name }}-tls
+          defaultMode: 0640
+      - name: db-password
+        secret:
+          secretName: {{ .Values.app.db.name }}-password
+          defaultMode: 0640
+      - name: etc-ssl-volume
+        emptyDir: {}
+      - name: etc-pki-volume
+        emptyDir: {}
+      - name: tmp-volume
+        emptyDir:
+          medium: Memory

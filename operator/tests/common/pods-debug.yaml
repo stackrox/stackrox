@@ -1,0 +1,45 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+collectors:
+- type: pod
+  selector: app=central
+  tail: -1
+- type: pod
+  selector: app=central-db
+  tail: -1
+- type: pod
+  selector: app=scanner
+  tail: -1
+- type: pod
+  selector: app=scanner-db
+  tail: -1
+- type: pod
+  selector: app=scanner-v4-indexer
+  tail: -1
+- type: pod
+  selector: app=scanner-v4-matcher
+  tail: -1
+- type: pod
+  selector: app=scanner-v4-db
+  tail: -1
+- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=central
+- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=central-db
+- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner
+- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner-db
+- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner-v4-indexer
+- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner-v4-matcher
+- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner-v4-db
+# Please keep the above lists in sync with central-cr-assert.yaml
+- type: pod
+  selector: app=sensor
+  tail: -1
+- type: pod
+  selector: app=admission-control
+  tail: -1
+- type: pod
+  selector: app=collector
+  tail: -1
+- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=sensor
+- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=admission-control
+- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=collector
+# Please keep the above lists in sync with secured-cluster-cr-assert.yaml

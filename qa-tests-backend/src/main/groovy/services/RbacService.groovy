@@ -1,31 +1,35 @@
 package services
 
+import static io.stackrox.proto.api.v1.RbacServiceOuterClass.SubjectAndRoles
+import static io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
+import static io.stackrox.proto.storage.Rbac.Subject
+
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.RbacServiceGrpc
-import io.stackrox.proto.api.v1.SearchServiceOuterClass
+import io.stackrox.proto.storage.Rbac
+
 import objects.K8sRole
 import objects.K8sRoleBinding
 import util.Timer
 
 @Slf4j
+@CompileStatic
 class RbacService extends BaseService {
-    static getRbacService() {
+    static RbacServiceGrpc.RbacServiceBlockingStub getRbacService() {
         return RbacServiceGrpc.newBlockingStub(getChannel())
     }
 
-    static getRoles(SearchServiceOuterClass.RawQuery query = SearchServiceOuterClass.RawQuery.newBuilder().build()) {
+    static List<Rbac.K8sRole> getRoles(RawQuery query = RawQuery.newBuilder().build()) {
         return getRbacService().listRoles(query).rolesList
     }
 
-    static getRole(String id) {
-        try {
-            return getRbacService().getRole(
-                    Common.ResourceByID.newBuilder().setId(id).build()
-            ).role
-        } catch (Exception e) {
-            log.warn("Error fetching role", e)
-        }
+    static Rbac.K8sRole getRole(String id) {
+        return getRbacService().getRole(
+                Common.ResourceByID.newBuilder().setId(id).build()
+        ).role
     }
 
     static boolean waitForRole(K8sRole role) {
@@ -63,19 +67,9 @@ class RbacService extends BaseService {
         return false
     }
 
-    static getRoleBindings(
-            SearchServiceOuterClass.RawQuery query = SearchServiceOuterClass.RawQuery.newBuilder().build()) {
+    static List<Rbac.K8sRoleBinding> getRoleBindings(RawQuery query = RawQuery.newBuilder().build()) {
+        log.debug("Get bindings list: ${query}")
         return getRbacService().listRoleBindings(query).bindingsList
-    }
-
-    static getRoleBinding(String id) {
-        try {
-            return getRbacService().getRoleBinding(
-                    Common.ResourceByID.newBuilder().setId(id).build()
-            ).binding
-        } catch (Exception e) {
-            log.warn("Error fetching role binding", e)
-        }
     }
 
     static boolean waitForRoleBinding(K8sRoleBinding roleBinding) {
@@ -113,17 +107,14 @@ class RbacService extends BaseService {
         return false
     }
 
-    static getSubjects(SearchServiceOuterClass.RawQuery query = SearchServiceOuterClass.RawQuery.newBuilder().build()) {
+    static List<SubjectAndRoles> getSubjects(
+            RawQuery query = RawQuery.newBuilder().build()) {
         return getRbacService().listSubjects(query).subjectAndRolesList
     }
 
-    static getSubject(String id) {
-        try {
-            return getRbacService().getSubject(
-                    Common.ResourceByID.newBuilder().setId(id).build()
-            ).subject
-        } catch (Exception e) {
-            log.warn("Error fetching subject", e)
-        }
+    static Subject getSubject(String id) {
+        return getRbacService().getSubject(
+                Common.ResourceByID.newBuilder().setId(id).build()
+        ).subject
     }
 }

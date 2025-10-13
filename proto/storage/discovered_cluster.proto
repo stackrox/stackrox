@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package storage;
+
+import "google/protobuf/timestamp.proto";
+import "storage/cluster.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+// DiscoveredCluster is the storage representation of discovered clusters.
+//
+// Refer to v1.DiscoveredCluster for a more detailed doc.
+message DiscoveredCluster {
+  string id = 1; // @gotags: sql:"pk,type(uuid)"
+
+  message Metadata {
+    string id = 1;
+    string name = 2; // @gotags: search:"Cluster,hidden"
+
+    ClusterMetadata.Type type = 3; // @gotags: search:"Cluster Type,hidden"
+
+    enum ProviderType {
+      PROVIDER_TYPE_UNSPECIFIED = 0;
+      PROVIDER_TYPE_AWS = 1;
+      PROVIDER_TYPE_GCP = 2;
+      PROVIDER_TYPE_AZURE = 3;
+    }
+    ProviderType provider_type = 4;
+
+    string region = 5;
+    google.protobuf.Timestamp first_discovered_at = 6; // @gotags: search:"Cluster Discovered Time,hidden"
+  }
+  Metadata metadata = 2;
+
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SECURED = 1;
+    STATUS_UNSECURED = 2;
+  }
+  Status status = 3; // @gotags: search:"Cluster Status,hidden"
+
+  string source_id = 4; // @gotags: search:"Integration ID,hidden" sql:"fk(CloudSource:id),no-fk-constraint,type(uuid)"
+
+  google.protobuf.Timestamp last_updated_at = 5; // @gotags: search:"Last Updated,hidden"
+}

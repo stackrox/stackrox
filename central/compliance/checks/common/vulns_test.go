@@ -3,9 +3,9 @@ package common
 import (
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/compliance/checks/testutils"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 func TestCheckAtLeastOnePolicyEnabledReferringToVulns(t *testing.T) {

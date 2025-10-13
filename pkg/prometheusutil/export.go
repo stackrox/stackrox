@@ -1,16 +1,28 @@
 package prometheusutil
 
 import (
+	"context"
 	"fmt"
 	"io"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/expfmt"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
-// ExportText prometheus metrics to io.Writer in text format
-func ExportText(w io.Writer) error {
+// ExportText prometheus metrics to io.Writer in text format.
+func ExportText(ctx context.Context, w io.Writer) error {
+	var err error
+	if ctxErr := concurrency.DoInWaitable(ctx, func() {
+		err = exportText(w)
+	}); ctxErr != nil {
+		return ctxErr
+	}
+	return err
+}
+
+func exportText(w io.Writer) error {
 	g := prometheus.DefaultGatherer
 	mfs, err := g.Gather()
 	if err != nil {

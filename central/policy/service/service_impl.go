@@ -2,23 +2,20 @@ package service
 
 import (
 	"context"
-	"sort"
+	_ "embed"
+	"slices"
 	"strings"
 	"time"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/lifecycle"
-	mitreDataStore "github.com/stackrox/rox/central/mitre/datastore"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
-	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/policy/datastore"
-	policyUtils "github.com/stackrox/rox/central/policy/utils"
 	"github.com/stackrox/rox/central/reprocessor"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -34,17 +31,21 @@ import (
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/images/cache"
 	"github.com/stackrox/rox/pkg/logging"
+	mitreDS "github.com/stackrox/rox/pkg/mitre/datastore"
+	mitreUtils "github.com/stackrox/rox/pkg/mitre/utils"
+	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/predicate/basematchers"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -59,26 +60,26 @@ var (
 	log = logging.LoggerForModule()
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.Policy)): {
-			"/v1.PolicyService/GetPolicy",
-			"/v1.PolicyService/ListPolicies",
-			"/v1.PolicyService/ReassessPolicies",
-			"/v1.PolicyService/GetPolicyCategories",
-			"/v1.PolicyService/QueryDryRunJobStatus",
-			"/v1.PolicyService/ExportPolicies",
-			"/v1.PolicyService/PolicyFromSearch",
-			"/v1.PolicyService/GetPolicyMitreVectors",
+		user.With(permissions.View(resources.WorkflowAdministration)): {
+			v1.PolicyService_GetPolicy_FullMethodName,
+			v1.PolicyService_ListPolicies_FullMethodName,
+			v1.PolicyService_ReassessPolicies_FullMethodName,
+			v1.PolicyService_GetPolicyCategories_FullMethodName,
+			v1.PolicyService_QueryDryRunJobStatus_FullMethodName,
+			v1.PolicyService_ExportPolicies_FullMethodName,
+			v1.PolicyService_PolicyFromSearch_FullMethodName,
+			v1.PolicyService_GetPolicyMitreVectors_FullMethodName,
 		},
-		user.With(permissions.Modify(resources.Policy)): {
-			"/v1.PolicyService/PostPolicy",
-			"/v1.PolicyService/PutPolicy",
-			"/v1.PolicyService/PatchPolicy",
-			"/v1.PolicyService/DeletePolicy",
-			"/v1.PolicyService/DryRunPolicy",
-			"/v1.PolicyService/SubmitDryRunPolicyJob",
-			"/v1.PolicyService/CancelDryRunJob",
-			"/v1.PolicyService/EnableDisablePolicyNotification",
-			"/v1.PolicyService/ImportPolicies",
+		user.With(permissions.Modify(resources.WorkflowAdministration)): {
+			v1.PolicyService_PostPolicy_FullMethodName,
+			v1.PolicyService_PutPolicy_FullMethodName,
+			v1.PolicyService_PatchPolicy_FullMethodName,
+			v1.PolicyService_DeletePolicy_FullMethodName,
+			v1.PolicyService_DryRunPolicy_FullMethodName,
+			v1.PolicyService_SubmitDryRunPolicyJob_FullMethodName,
+			v1.PolicyService_CancelDryRunJob_FullMethodName,
+			v1.PolicyService_EnableDisablePolicyNotification_FullMethodName,
+			v1.PolicyService_ImportPolicies_FullMethodName,
 		},
 	})
 )
@@ -87,12 +88,13 @@ const (
 	uncategorizedCategory = `Uncategorized`
 	dryRunParallelism     = 8
 	identityUIDKey        = "identityUID"
+	maxPoliciesReturned   = 1000
 )
 
 var (
 	policySyncReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Policy)))
+			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
 
 	partialListPolicyGroups = set.NewStringSet(fieldnames.ImageComponent, fieldnames.DockerfileLine, fieldnames.EnvironmentVariable)
 )
@@ -106,14 +108,12 @@ type serviceImpl struct {
 	deployments       deploymentDataStore.DataStore
 	networkPolicies   networkPolicyDS.DataStore
 	notifiers         notifierDataStore.DataStore
-	mitreStore        mitreDataStore.MitreAttackReadOnlyDataStore
+	mitreStore        mitreDS.AttackReadOnlyDataStore
 	reprocessor       reprocessor.Loop
 	connectionManager connection.Manager
-
-	buildTimePolicies detection.PolicySet
 	lifecycleManager  lifecycle.Manager
-	processor         notifierProcessor.Processor
-	metadataCache     expiringcache.Cache
+	processor         notifier.Processor
+	metadataCache     cache.ImageMetadata
 
 	validator *policyValidator
 
@@ -171,6 +171,7 @@ func convertPoliciesToListPolicies(policies []*storage.Policy) []*storage.ListPo
 			LastUpdated:     p.GetLastUpdated(),
 			EventSource:     p.GetEventSource(),
 			IsDefault:       p.GetIsDefault(),
+			Source:          p.GetSource(),
 		})
 	}
 	return listPolicies
@@ -179,23 +180,24 @@ func convertPoliciesToListPolicies(policies []*storage.Policy) []*storage.ListPo
 // ListPolicies retrieves all policies in ListPolicy form according to the request.
 func (s *serviceImpl) ListPolicies(ctx context.Context, request *v1.RawQuery) (*v1.ListPoliciesResponse, error) {
 	resp := new(v1.ListPoliciesResponse)
-	if request.GetQuery() == "" {
-		policies, err := s.policies.GetAllPolicies(ctx)
-		if err != nil {
-			return nil, err
-		}
-		resp.Policies = convertPoliciesToListPolicies(policies)
-	} else {
-		parsedQuery, err := search.ParseQuery(request.GetQuery())
-		if err != nil {
-			return nil, errors.Wrap(errox.InvalidArgs, err.Error())
-		}
-		policies, err := s.policies.SearchRawPolicies(ctx, parsedQuery)
-		if err != nil {
-			return nil, err
-		}
-		resp.Policies = convertPoliciesToListPolicies(policies)
+	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
+	// Fill in pagination.
+	pagination := request.GetPagination()
+	if request.GetPagination() == nil {
+		pagination = &v1.Pagination{
+			Limit: maxPoliciesReturned,
+		}
+	}
+	paginated.FillPagination(parsedQuery, pagination, maxPoliciesReturned)
+
+	policies, err := s.policies.SearchRawPolicies(ctx, parsedQuery)
+	if err != nil {
+		return nil, err
+	}
+	resp.Policies = convertPoliciesToListPolicies(policies)
 
 	return resp, nil
 }
@@ -263,7 +265,7 @@ func (s *serviceImpl) GetPolicyMitreVectors(ctx context.Context, request *v1.Get
 		return nil, err
 	}
 
-	fullVectors, err := policyUtils.GetFullMitreAttackVectors(s.mitreStore, policy)
+	fullVectors, err := mitreUtils.GetFullMitreAttackVectors(s.mitreStore, policy)
 	if err != nil {
 		return nil, errors.Wrapf(err, "fetching MITRE ATT&CK vectors for policy %q", request.GetId())
 	}
@@ -314,13 +316,27 @@ func (s *serviceImpl) PatchPolicy(ctx context.Context, request *v1.PatchPolicyRe
 	return s.PutPolicy(ctx, policy)
 }
 
-// DeletePolicy deletes an policy from the system.
+// DeletePolicy deletes a policy from the system.
 func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "A policy id must be specified to delete a Policy")
 	}
 
-	if err := s.policies.RemovePolicy(ctx, request.GetId()); err != nil {
+	policy, exists, err := s.policies.GetPolicy(ctx, request.GetId())
+	if !exists {
+		// make repeated calls with the same policy ID idempotent
+		return &v1.Empty{}, nil
+	} else if err != nil {
+		// if any database error other than not exist occurs, bail early
+		return nil, errors.Wrap(err, "Database error while trying to delete policy")
+	}
+
+	// Note: default policies cannot be deleted, only disabled
+	if policy.GetIsDefault() {
+		return nil, errors.Wrap(errox.InvalidArgs, "A default policy cannot be deleted. (You can disable a default policy, but not delete it.)")
+	}
+
+	if err := s.policies.RemovePolicy(ctx, policy); err != nil {
 		return nil, err
 	}
 
@@ -331,7 +347,6 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 	if err := s.syncPoliciesWithSensors(); err != nil {
 		return nil, err
 	}
-
 	return &v1.Empty{}, nil
 }
 
@@ -370,7 +385,7 @@ func (s *serviceImpl) SubmitDryRunPolicyJob(ctx context.Context, request *storag
 }
 
 func (s *serviceImpl) QueryDryRunJobStatus(ctx context.Context, jobid *v1.JobId) (*v1.DryRunJobStatusResponse, error) {
-	metadata, res, completed, err := s.dryRunPolicyJobManager.GetTaskStatusAndMetadata(jobid.JobId)
+	metadata, res, completed, err := s.dryRunPolicyJobManager.GetTaskStatusAndMetadata(jobid.GetJobId())
 	if err != nil {
 		return nil, err
 	}
@@ -385,7 +400,7 @@ func (s *serviceImpl) QueryDryRunJobStatus(ctx context.Context, jobid *v1.JobId)
 
 	if completed {
 		resp.Result, _ = res.(*v1.DryRunResponse)
-		if resp.Result == nil {
+		if resp.GetResult() == nil {
 			return nil, errors.New("Invalid response.")
 		}
 	}
@@ -394,7 +409,7 @@ func (s *serviceImpl) QueryDryRunJobStatus(ctx context.Context, jobid *v1.JobId)
 }
 
 func (s *serviceImpl) CancelDryRunJob(ctx context.Context, jobid *v1.JobId) (*v1.Empty, error) {
-	metadata, _, _, err := s.dryRunPolicyJobManager.GetTaskStatusAndMetadata(jobid.JobId)
+	metadata, _, _, err := s.dryRunPolicyJobManager.GetTaskStatusAndMetadata(jobid.GetJobId())
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
@@ -403,7 +418,7 @@ func (s *serviceImpl) CancelDryRunJob(ctx context.Context, jobid *v1.JobId) (*v1
 		return nil, err
 	}
 
-	if err := s.dryRunPolicyJobManager.CancelTask(jobid.JobId); err != nil {
+	if err := s.dryRunPolicyJobManager.CancelTask(jobid.GetJobId()); err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
@@ -486,13 +501,10 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 				return
 			}
 
-			var matched *augmentedobjs.NetworkPoliciesApplied
-			if features.NetworkPolicySystemPolicy.Enabled() {
-				matched, err = s.getNetworkPoliciesForDeployment(ctx, deployment)
-				if err != nil {
-					log.Errorf("failed to fetch network policies for deployment: %s", err.Error())
-					return
-				}
+			matched, err := s.getNetworkPoliciesForDeployment(ctx, deployment)
+			if err != nil {
+				log.Errorf("failed to fetch network policies for deployment: %s", err.Error())
+				return
 			}
 
 			violations, err := compiledPolicy.MatchAgainstDeployment(nil, booleanpolicy.EnhancedDeployment{
@@ -551,7 +563,7 @@ func (s *serviceImpl) GetPolicyCategories(ctx context.Context, _ *v1.Empty) (*v1
 
 	response := new(v1.PolicyCategoriesResponse)
 	response.Categories = categorySet.AsSlice()
-	sort.Strings(response.Categories)
+	slices.Sort(response.GetCategories())
 
 	return response, nil
 }
@@ -572,23 +584,11 @@ func (s *serviceImpl) getPolicyCategorySet(ctx context.Context) (categorySet set
 }
 
 func (s *serviceImpl) addActivePolicy(policy *storage.Policy) error {
-	errorList := errorhelpers.NewErrorList("error adding policy to detection caches: ")
-
-	if policies.AppliesAtBuildTime(policy) {
-		errorList.AddError(s.buildTimePolicies.UpsertPolicy(policy))
-	} else {
-		s.buildTimePolicies.RemovePolicy(policy.GetId())
-	}
-
-	errorList.AddError(s.lifecycleManager.UpsertPolicy(policy))
-	return errorList.ToError()
+	return errors.Wrap(s.lifecycleManager.UpsertPolicy(policy), "adding policy to detection cache")
 }
 
 func (s *serviceImpl) removeActivePolicy(id string) error {
-	errorList := errorhelpers.NewErrorList("error removing policy from detection: ")
-	s.buildTimePolicies.RemovePolicy(id)
-	errorList.AddError(s.lifecycleManager.RemovePolicy(id))
-	return errorList.ToError()
+	return errors.Wrap(s.lifecycleManager.RemovePolicy(id), "removing policy from detection cache")
 }
 
 func (s *serviceImpl) EnableDisablePolicyNotification(ctx context.Context, request *v1.EnableDisablePolicyNotificationRequest) (*v1.Empty, error) {
@@ -620,7 +620,7 @@ func (s *serviceImpl) enablePolicyNotification(ctx context.Context, policyID str
 	if !exists {
 		return errors.Wrapf(errox.NotFound, "Policy %q not found", policyID)
 	}
-	notifierSet := set.NewStringSet(policy.Notifiers...)
+	notifierSet := set.NewStringSet(policy.GetNotifiers()...)
 	errorList := errorhelpers.NewErrorList("unable to use all requested notifiers")
 	for _, notifierID := range notifierIDs {
 		_, exists, err := s.notifiers.GetNotifier(ctx, notifierID)
@@ -631,12 +631,11 @@ func (s *serviceImpl) enablePolicyNotification(ctx context.Context, policyID str
 		if !exists {
 			errorList.AddStringf("notifier with id: %s not found", notifierID)
 			continue
-		} else {
-			if notifierSet.Contains(notifierID) {
-				continue
-			}
-			policy.Notifiers = append(policy.Notifiers, notifierID)
 		}
+		if notifierSet.Contains(notifierID) {
+			continue
+		}
+		policy.Notifiers = append(policy.Notifiers, notifierID)
 	}
 
 	_, err = s.PutPolicy(ctx, policy)
@@ -669,7 +668,7 @@ func (s *serviceImpl) disablePolicyNotification(ctx context.Context, policyID st
 	if !exists {
 		return errors.Wrapf(errox.NotFound, "Policy %q not found", policyID)
 	}
-	notifierSet := set.NewStringSet(policy.Notifiers...)
+	notifierSet := set.NewStringSet(policy.GetNotifiers()...)
 	if notifierSet.Cardinality() == 0 {
 		return nil
 	}
@@ -714,14 +713,14 @@ func checkIdentityFromMetadata(ctx context.Context, metadata map[string]interfac
 
 func (s *serviceImpl) ExportPolicies(ctx context.Context, request *v1.ExportPoliciesRequest) (*storage.ExportPoliciesResponse, error) {
 	// missingIndices and policyErrors should not overlap
-	policyList, missingIndices, err := s.policies.GetPolicies(ctx, request.PolicyIds)
+	policyList, missingIndices, err := s.policies.GetPolicies(ctx, request.GetPolicyIds())
 	if err != nil {
 		return nil, err
 	}
-	errDetails := &v1.ExportPoliciesErrorList{}
+	errDetails := &v1.PolicyOperationErrorList{}
 	for _, missingIndex := range missingIndices {
-		policyID := request.PolicyIds[missingIndex]
-		errDetails.Errors = append(errDetails.Errors, &v1.ExportPolicyError{
+		policyID := request.GetPolicyIds()[missingIndex]
+		errDetails.Errors = append(errDetails.Errors, &v1.PolicyOperationError{
 			PolicyId: policyID,
 			Error: &v1.PolicyError{
 				Error: "not found",
@@ -733,7 +732,7 @@ func (s *serviceImpl) ExportPolicies(ctx context.Context, request *v1.ExportPoli
 	if len(missingIndices) > 0 {
 		statusMsg, err := status.New(codes.InvalidArgument, "Some policies could not be retrieved. Check the error details for a list of policies that could not be found").WithDetails(errDetails)
 		if err != nil {
-			return nil, utils.Should(errors.Errorf("unexpected error creating status proto: %v", err))
+			return nil, utils.ShouldErr(errors.Errorf("unexpected error creating status proto: %v", err))
 		}
 		return nil, statusMsg.Err()
 	}
@@ -768,7 +767,7 @@ func (s *serviceImpl) convertAndValidateForImport(p *storage.Policy) error {
 }
 
 func (s *serviceImpl) ImportPolicies(ctx context.Context, request *v1.ImportPoliciesRequest) (*v1.ImportPoliciesResponse, error) {
-	responses := make([]*v1.ImportPolicyResponse, 0, len(request.Policies))
+	responses := make([]*v1.ImportPolicyResponse, 0, len(request.GetPolicies()))
 	allValidationSucceeded := true
 	// Validate input policies
 	validPolicyList := make([]*storage.Policy, 0, len(request.GetPolicies()))
@@ -799,8 +798,8 @@ func (s *serviceImpl) ImportPolicies(ctx context.Context, request *v1.ImportPoli
 			}
 		}
 		// Clone here because this may be the same object stored by the DB
-		importResponse.Policy = importResponse.GetPolicy().Clone()
-		removeInternal(importResponse.Policy)
+		importResponse.Policy = importResponse.GetPolicy().CloneVT()
+		removeInternal(importResponse.GetPolicy())
 	}
 
 	if err := s.syncPoliciesWithSensors(); err != nil {

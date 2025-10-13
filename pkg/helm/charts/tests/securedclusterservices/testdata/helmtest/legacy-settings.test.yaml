@@ -1,3 +1,9 @@
+values:
+  imagePullSecrets:
+    allowNone: true
+  monitoring:
+    openshift:
+      enabled: false
 tests:
 - name: Basic legacy settings
   values:
@@ -16,7 +22,7 @@ tests:
         main: "legacy-main"
         collector: "legacy-collector"
     config:
-      collectionMethod: "EBPF"
+      collectionMethod: "CORE_BPF"
     envVars:
       - name: "CUSTOM_ENV_VAR"
         value: "custom-value"
@@ -30,7 +36,7 @@ tests:
             (.mainImage | assertThat(. == "legacy-main.example.com/legacy-main")),
             (.collectorImage | assertThat(. == "legacy-collector.example.com/legacy-collector")),
             (.centralApiEndpoint | assertThat(. == "legacy-central.example.com:8443")),
-            (.collectionMethod | assertThat(. == "EBPF"))
+            (.collectionMethod | assertThat(. == "CORE_BPF"))
           ][])
         ][])
       ][]
@@ -63,7 +69,6 @@ tests:
     .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml |
       .clusterConfig.staticConfig.type | assertThat(. == "OPENSHIFT_CLUSTER")
     envVars(.deployments.sensor; "sensor")["ROX_OPENSHIFT_API"] | assertThat(. == "true")
-    .securitycontextconstraints | assertThat(length == 3)
 
 - name: OpenShift in Legacy mode with Kubernetes v3.11 should detect OpenShift 3
   values:
@@ -79,7 +84,6 @@ tests:
     .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml |
       .clusterConfig.staticConfig.type | assertThat(. == "OPENSHIFT_CLUSTER")
     envVars(.deployments.sensor; "sensor")["ROX_OPENSHIFT_API"] | assertThat(. == "true")
-    .securitycontextconstraints | assertThat(length == 3)
 
 - name: OpenShift in Legacy mode accepts OpenShift4 cluster type
   values:
@@ -92,4 +96,3 @@ tests:
     .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml |
       .clusterConfig.staticConfig.type | assertThat(. == "OPENSHIFT4_CLUSTER")
     envVars(.deployments.sensor; "sensor")["ROX_OPENSHIFT_API"] | assertThat(. == "true")
-    .securitycontextconstraints | assertThat(length == 3)

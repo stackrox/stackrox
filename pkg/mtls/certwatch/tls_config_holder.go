@@ -4,29 +4,32 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"sync/atomic"
-	"unsafe"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/tlscheck"
 )
 
-var (
-	errNoTLSConfig = errors.New("no TLS config is available")
-)
+var errNoTLSConfig = errors.New("no TLS config is available")
 
 // TLSConfigHolder holds a pointer to the tls.Config instance and provides an ability to update it in runtime.
 type TLSConfigHolder struct {
 	rootTLSConfig *tls.Config
+	// fallbackClientAuth overrides rootTLSConfig.ClientAuth if clientCASources is empty.
+	fallbackClientAuth tls.ClientAuthType
 
 	serverCertSources []*[]tls.Certificate
 	clientCASources   []*[]*x509.Certificate
 
-	liveTLSConfig unsafe.Pointer
+	customTLSCertVerifier tlscheck.TLSCertVerifier
+
+	liveTLSConfig atomic.Pointer[tls.Config]
 }
 
 // NewTLSConfigHolder instantiates a new instance of TLSConfigHolder
-func NewTLSConfigHolder(rootCfg *tls.Config) *TLSConfigHolder {
+func NewTLSConfigHolder(rootCfg *tls.Config, fallbackClientAuth tls.ClientAuthType) *TLSConfigHolder {
 	return &TLSConfigHolder{
-		rootTLSConfig: rootCfg,
+		rootTLSConfig:      rootCfg,
+		fallbackClientAuth: fallbackClientAuth,
 	}
 }
 
@@ -50,14 +53,19 @@ func (c *TLSConfigHolder) UpdateTLSConfig() {
 	if hasClientCAs {
 		newTLSConfig.ClientCAs = clientCAs
 	} else {
-		newTLSConfig.ClientAuth = tls.NoClientCert
+		newTLSConfig.ClientAuth = c.fallbackClientAuth
 	}
 
-	atomic.StorePointer(&c.liveTLSConfig, (unsafe.Pointer)(newTLSConfig))
+	if c.customTLSCertVerifier != nil {
+		newTLSConfig.InsecureSkipVerify = true
+		newTLSConfig.VerifyPeerCertificate = tlscheck.VerifyPeerCertFunc(newTLSConfig, c.customTLSCertVerifier)
+	}
+
+	c.liveTLSConfig.Store(newTLSConfig)
 }
 
 func (c *TLSConfigHolder) liveConfig(_ *tls.ClientHelloInfo) (*tls.Config, error) {
-	liveCfg := (*tls.Config)(atomic.LoadPointer(&c.liveTLSConfig))
+	liveCfg := c.liveTLSConfig.Load()
 	if liveCfg == nil {
 		return nil, errNoTLSConfig
 	}
@@ -79,4 +87,9 @@ func (c *TLSConfigHolder) AddServerCertSource(serverCertSource *[]tls.Certificat
 // AddClientCertSource adds client cert source.
 func (c *TLSConfigHolder) AddClientCertSource(clientCertSource *[]*x509.Certificate) {
 	c.clientCASources = append(c.clientCASources, clientCertSource)
+}
+
+// SetCustomCertVerifier adds a custom TLS certificate verifier.
+func (c *TLSConfigHolder) SetCustomCertVerifier(customVerifier tlscheck.TLSCertVerifier) {
+	c.customTLSCertVerifier = customVerifier
 }

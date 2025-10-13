@@ -2,29 +2,30 @@ package generator
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"testing"
+	"time"
 
-	"github.com/gogo/protobuf/proto"
-	"github.com/gogo/protobuf/types"
-	"github.com/golang/mock/gomock"
 	dDSMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	nsDSMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/datastore/mocks"
 	netTreeMgrMocks "github.com/stackrox/rox/central/networkgraph/entity/networktree/mocks"
 	nfDSMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	npDSMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/namespaces"
+	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	sacTestutils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 type generatorTestSuite struct {
@@ -44,7 +45,6 @@ type generatorTestSuite struct {
 }
 
 func TestGenerator(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(generatorTestSuite))
 }
 
@@ -150,7 +150,7 @@ func (s *generatorTestSuite) TestGetNetworkPolicies_DeleteNone() {
 
 	existing, toDelete, err := s.generator.getNetworkPolicies(s.hasReadCtx, v1.GenerateNetworkPoliciesRequest_NONE, "cluster")
 	s.NoError(err)
-	s.ElementsMatch(existing, testNetworkPolicies)
+	protoassert.ElementsMatch(s.T(), existing, testNetworkPolicies)
 	s.Empty(toDelete)
 }
 
@@ -159,15 +159,15 @@ func (s *generatorTestSuite) TestGetNetworkPolicies_DeleteGenerated() {
 
 	existing, toDelete, err := s.generator.getNetworkPolicies(s.hasReadCtx, v1.GenerateNetworkPoliciesRequest_GENERATED_ONLY, "cluster")
 	s.NoError(err)
-	s.ElementsMatch(existing, []*storage.NetworkPolicy{testNetworkPolicies[0], testNetworkPolicies[2]})
-	s.ElementsMatch(toDelete, []*storage.NetworkPolicyReference{
+	protoassert.ElementsMatch(s.T(), existing, []*storage.NetworkPolicy{testNetworkPolicies[0], testNetworkPolicies[2]})
+	protoassert.ElementsMatch(s.T(), toDelete, []*storage.NetworkPolicyReference{
 		{
-			Namespace: testNetworkPolicies[1].Namespace,
-			Name:      testNetworkPolicies[1].Name,
+			Namespace: testNetworkPolicies[1].GetNamespace(),
+			Name:      testNetworkPolicies[1].GetName(),
 		},
 		{
-			Namespace: testNetworkPolicies[3].Namespace,
-			Name:      testNetworkPolicies[3].Name,
+			Namespace: testNetworkPolicies[3].GetNamespace(),
+			Name:      testNetworkPolicies[3].GetName(),
 		},
 	})
 }
@@ -178,44 +178,45 @@ func (s *generatorTestSuite) TestGetNetworkPolicies_DeleteAll() {
 	existing, toDelete, err := s.generator.getNetworkPolicies(s.hasReadCtx, v1.GenerateNetworkPoliciesRequest_ALL, "cluster")
 	s.NoError(err)
 	s.Empty(existing)
-	s.ElementsMatch(toDelete, []*storage.NetworkPolicyReference{
+	protoassert.ElementsMatch(s.T(), toDelete, []*storage.NetworkPolicyReference{
 		{
-			Namespace: testNetworkPolicies[0].Namespace,
-			Name:      testNetworkPolicies[0].Name,
+			Namespace: testNetworkPolicies[0].GetNamespace(),
+			Name:      testNetworkPolicies[0].GetName(),
 		},
 		{
-			Namespace: testNetworkPolicies[1].Namespace,
-			Name:      testNetworkPolicies[1].Name,
+			Namespace: testNetworkPolicies[1].GetNamespace(),
+			Name:      testNetworkPolicies[1].GetName(),
 		},
 		{
-			Namespace: testNetworkPolicies[2].Namespace,
-			Name:      testNetworkPolicies[2].Name,
+			Namespace: testNetworkPolicies[2].GetNamespace(),
+			Name:      testNetworkPolicies[2].GetName(),
 		},
 		{
-			Namespace: testNetworkPolicies[3].Namespace,
-			Name:      testNetworkPolicies[3].Name,
+			Namespace: testNetworkPolicies[3].GetNamespace(),
+			Name:      testNetworkPolicies[3].GetName(),
 		},
 	})
 }
 
 func sortPolicies(policies []*storage.NetworkPolicy) {
 	for _, policy := range policies {
-		for _, ingressRule := range policy.Spec.Ingress {
-			sort.Slice(ingressRule.From, func(i, j int) bool {
-				return proto.MarshalTextString(ingressRule.From[i]) < proto.MarshalTextString(ingressRule.From[j])
+		for _, ingressRule := range policy.GetSpec().GetIngress() {
+			sort.Slice(ingressRule.GetFrom(), func(i, j int) bool {
+				return protocompat.MarshalTextString(ingressRule.GetFrom()[i]) < protocompat.MarshalTextString(ingressRule.GetFrom()[j])
 			})
 		}
-		sort.Slice(policy.Spec.Ingress, func(i, j int) bool {
-			return proto.MarshalTextString(policy.Spec.Ingress[i]) < proto.MarshalTextString(policy.Spec.Ingress[j])
+		sort.Slice(policy.GetSpec().GetIngress(), func(i, j int) bool {
+			return protocompat.MarshalTextString(policy.GetSpec().GetIngress()[i]) < protocompat.MarshalTextString(policy.GetSpec().GetIngress()[j])
 		})
 	}
 	sort.Slice(policies, func(i, j int) bool {
-		return proto.MarshalTextString(policies[i]) < proto.MarshalTextString(policies[j])
+		return protocompat.MarshalTextString(policies[i]) < protocompat.MarshalTextString(policies[j])
 	})
 }
 
 func (s *generatorTestSuite) TestGenerate() {
-	ts := types.TimestampNow()
+	now := time.Now().UTC()
+	ts := protoconv.ConvertTimeToTimestampOrNow(&now)
 	req := &v1.GenerateNetworkPoliciesRequest{
 		ClusterId:        "mycluster",
 		DeleteExisting:   v1.GenerateNetworkPoliciesRequest_NONE,
@@ -322,7 +323,7 @@ func (s *generatorTestSuite) TestGenerate() {
 			sac.ClusterScopeKey("mycluster"),
 		})
 
-	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(ts)).Return(
+	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(&now)).Return(
 		[]*storage.NetworkFlow{
 			{
 				Props: &storage.NetworkFlowProperties{
@@ -383,7 +384,7 @@ func (s *generatorTestSuite) TestGenerate() {
 					},
 				},
 			},
-		}, *types.TimestampNow(), nil)
+		}, &now, nil)
 
 	s.mockNetTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(nil)
 	s.mockNetTreeMgr.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(nil)
@@ -466,7 +467,7 @@ func (s *generatorTestSuite) TestGenerate() {
 
 	sortPolicies(expectedPolicies)
 
-	s.Equal(expectedPolicies, generatedPolicies)
+	protoassert.SlicesEqual(s.T(), expectedPolicies, generatedPolicies)
 }
 
 func depFlow(fromID, toID string) *storage.NetworkFlow {
@@ -530,7 +531,8 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 				},
 			}))
 
-	ts := types.TimestampNow()
+	now := time.Now().UTC()
+	ts := protoconv.ConvertTimeToTimestampOrNow(&now)
 	req := &v1.GenerateNetworkPoliciesRequest{
 		ClusterId:        "mycluster",
 		Query:            "Namespace: foo,bar,qux",
@@ -646,7 +648,7 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 			sac.ClusterScopeKey("mycluster"),
 		})
 
-	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasClusterWideNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(ts)).Return(
+	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasClusterWideNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(&now)).Return(
 		[]*storage.NetworkFlow{
 			depFlow("depA", "depB"),
 			depFlow("depA", "depD"),
@@ -661,7 +663,7 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 			depFlow("depF", "depC"),
 			depFlow("depF", "depD"),
 			depFlow("depF", "depG"),
-		}, *types.TimestampNow(), nil)
+		}, &now, nil)
 
 	s.mockNetTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(nil)
 	s.mockNetTreeMgr.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(nil)
@@ -870,148 +872,5 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 	}
 
 	sortPolicies(expectedPolicies)
-	s.Equal(expectedPolicies, generatedPolicies)
-}
-
-func (s *generatorTestSuite) TestGenerateFromBaselineForDeployment() {
-	skipTest := true
-	if skipTest {
-		return
-	}
-	deps := make([]*storage.Deployment, 0, 3)
-	for i := 0; i < 3; i++ {
-		depID := fmt.Sprintf("deployment%03d", i)
-		deps = append(deps, &storage.Deployment{
-			Id:          depID,
-			Name:        depID,
-			Namespace:   "some-namespace",
-			ClusterId:   "some-cluster",
-			ClusterName: "some-cluster",
-			PodLabels: map[string]string{
-				"app": depID,
-			},
-		})
-		s.mockDeployments.EXPECT().GetDeployment(gomock.Any(), depID).Return(deps[i], true, nil).AnyTimes()
-	}
-
-	s.mockNetworkBaselineStore.EXPECT().GetNetworkBaseline(gomock.Any(), "deployment000").Return(
-		&storage.NetworkBaseline{
-			DeploymentId: "deployment000",
-			ClusterId:    "some-cluster",
-			Namespace:    "some-namespace",
-			Peers: []*storage.NetworkBaselinePeer{
-				{
-					Entity: &storage.NetworkEntity{
-						Info: &storage.NetworkEntityInfo{
-							Type: storage.NetworkEntityInfo_DEPLOYMENT,
-							Id:   "deployment001",
-						},
-					},
-					Properties: []*storage.NetworkBaselineConnectionProperties{
-						{
-							Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-							Port:     80,
-							Ingress:  true,
-						},
-						{
-							Protocol: storage.L4Protocol_L4_PROTOCOL_UDP,
-							Port:     80,
-							Ingress:  true,
-						},
-					},
-				},
-				{
-					Entity: &storage.NetworkEntity{
-						Info: &storage.NetworkEntityInfo{
-							Type: storage.NetworkEntityInfo_DEPLOYMENT,
-							Id:   "deployment002",
-						},
-					},
-					Properties: []*storage.NetworkBaselineConnectionProperties{
-						{
-							Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-							Port:     80,
-							Ingress:  true,
-						},
-						{
-							Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-							Port:     22,
-							Ingress:  false,
-						},
-					},
-				},
-			},
-		}, true, nil)
-
-	s.mockNamespaceStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return(
-		[]*storage.NamespaceMetadata{
-			{
-				Name: "some-namespace",
-			},
-		}, nil)
-
-	generated, toDelete, err := s.generator.GenerateFromBaselineForDeployment(s.hasWriteCtx, &v1.GetBaselineGeneratedPolicyForDeploymentRequest{
-		DeploymentId:   "deployment000",
-		DeleteExisting: v1.GenerateNetworkPoliciesRequest_GENERATED_ONLY,
-		IncludePorts:   true,
-	})
-	s.NoError(err)
-	s.Empty(toDelete)
-
-	s.ElementsMatch(generated, []*storage.NetworkPolicy{
-		{
-			Id:          "",
-			Name:        "stackrox-baseline-generated-deployment000",
-			ClusterId:   "some-cluster",
-			ClusterName: "some-cluster",
-			Namespace:   "some-namespace",
-			Labels:      map[string]string{"network-policy-generator.stackrox.io/from-baseline": "true"},
-			Spec: &storage.NetworkPolicySpec{
-				PodSelector: labelSelectorForDeployment(deps[0]),
-				Ingress: []*storage.NetworkPolicyIngressRule{
-					{
-						Ports: []*storage.NetworkPolicyPort{
-							{
-								PortRef: &storage.NetworkPolicyPort_Port{
-									Port: int32(80),
-								},
-								Protocol: storage.Protocol_TCP_PROTOCOL,
-							},
-						},
-						From: []*storage.NetworkPolicyPeer{
-							{
-								PodSelector: &storage.LabelSelector{
-									MatchLabels: map[string]string{"app": "deployment001"},
-								},
-							},
-							{
-								PodSelector: &storage.LabelSelector{
-									MatchLabels: map[string]string{"app": "deployment002"},
-								},
-							},
-						},
-					},
-					{
-						Ports: []*storage.NetworkPolicyPort{
-							{
-								PortRef: &storage.NetworkPolicyPort_Port{
-									Port: int32(80),
-								},
-								Protocol: storage.Protocol_UDP_PROTOCOL,
-							},
-						},
-						From: []*storage.NetworkPolicyPeer{
-							{
-								PodSelector: &storage.LabelSelector{
-									MatchLabels: map[string]string{"app": "deployment001"},
-								},
-							},
-						},
-					},
-				},
-				PolicyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE},
-			},
-			ApiVersion: "networking.k8s.io/v1",
-		},
-	})
+	protoassert.SlicesEqual(s.T(), expectedPolicies, generatedPolicies)
 }

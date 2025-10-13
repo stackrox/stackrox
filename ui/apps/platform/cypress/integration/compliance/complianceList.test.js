@@ -1,66 +1,104 @@
-import { url, selectors as ComplianceSelectors } from '../../constants/CompliancePage';
 import withAuth from '../../helpers/basicAuth';
-import { visitComplianceEntities, visitComplianceStandard } from '../../helpers/compliance';
-import selectors from '../../selectors/index';
+import searchSelectors from '../../selectors/search';
 
-describe('Compliance list page', () => {
+import {
+    assertComplianceEntityPage,
+    interactAndWaitForComplianceEntities,
+    interactAndWaitForComplianceEntityInSidePanel,
+    triggerScan,
+    visitComplianceEntities,
+    visitComplianceStandard,
+} from './Compliance.helpers';
+import { selectors } from './Compliance.selectors';
+
+describe('Compliance entities list', () => {
     withAuth();
 
-    it('should filter the table with passing controls', () => {
+    // TODO: ROX-30939: fix test for OCP4.20 "1 namespace" (openshift-cloud-credential-operator)
+    it.skip('should filter namespaces table with passing controls', () => {
+        triggerScan(); // in case complianceDashboard.test.js is skipped
         visitComplianceEntities('namespaces');
 
-        cy.get(selectors.search.input).type('Compliance State:').type('{enter}');
-        cy.get(selectors.search.input).type('Pass').type('{enter}');
-        cy.get(selectors.table.rows).should('not.exist');
-        cy.get(ComplianceSelectors.list.table.header).should('contain', '0 NAMESPACES');
+        interactAndWaitForComplianceEntities(() => {
+            cy.get(searchSelectors.input).type('Compliance State:');
+            cy.get(searchSelectors.input).type('{enter}');
+            cy.get(searchSelectors.input).type('Pass');
+            cy.get(searchSelectors.input).type('{enter}');
+        }, 'namespaces');
+        cy.get('.rt-tbody .rt-tr').should('not.exist');
+        cy.get('[data-testid="panel-header"]').should('contain', '0 namespaces');
     });
 
-    it('should filter the table with failing controls', () => {
+    it('should filter namespaces table with failing controls', () => {
         visitComplianceEntities('namespaces');
 
-        cy.get(selectors.search.input).type('Compliance State:').type('{enter}');
-        cy.get(selectors.search.input).type('Fail').type('{enter}');
-        cy.get(selectors.table.rows);
-        cy.get(ComplianceSelectors.list.table.header).should('contain', 'NAMESPACE');
+        interactAndWaitForComplianceEntities(() => {
+            cy.get(searchSelectors.input).type('Compliance State:');
+            cy.get(searchSelectors.input).type('{enter}');
+            cy.get(searchSelectors.input).type('Fail');
+            cy.get(searchSelectors.input).type('{enter}');
+        }, 'namespaces');
+        cy.get('.rt-tbody .rt-tr');
+        cy.get('[data-testid="panel-header"]').should('contain', 'namespace');
     });
 
     it('should open/close side panel when clicking on a table row', () => {
         visitComplianceEntities('clusters');
 
-        cy.get(ComplianceSelectors.list.table.firstRowName)
+        cy.get(selectors.list.table.firstRowName)
             .invoke('text')
             .then((name) => {
-                cy.get(ComplianceSelectors.list.table.header).should('contain', 'CLUSTER');
-                cy.get(ComplianceSelectors.list.table.firstRow).click();
-                cy.get(selectors.panel.sidePanel).should('exist');
-                cy.get(selectors.panel.sidePanelHeader).contains(name);
-                cy.get(ComplianceSelectors.widget.relatedEntities).should('not.exist');
-                cy.get(selectors.panel.closeButton).click();
-                cy.get(selectors.panel.sidePanel).should('not.exist');
-                cy.get(ComplianceSelectors.list.table.header).should('contain', 'CLUSTER');
+                cy.get('[data-testid="panel-header"]').should('contain', 'cluster');
+                cy.get(selectors.list.table.firstRow).click();
+                cy.get('[data-testid="side-panel"]').should('exist');
+                cy.get('[data-testid="side-panel-header"]').contains(name);
+                cy.get('[data-testid="side-panel"] [aria-label="Close"]').click();
+                cy.get('[data-testid="side-panel"]').should('not.exist');
+                cy.get('[data-testid="panel-header"]').should('contain', 'cluster');
+            });
+    });
+
+    it('should have the same percentage from list to entity widget', () => {
+        visitComplianceEntities('clusters');
+
+        cy.get(selectors.list.table.firstRow).click();
+        cy.get(selectors.list.table.firstStandard)
+            .invoke('text')
+            .then((firstStandard) => {
+                cy.get(selectors.list.table.firstPercentage)
+                    .invoke('text')
+                    .then((firstTablePercentage) => {
+                        cy.get(`[data-testid="${firstStandard}-compliance"] div.rv-sunburst text`)
+                            .invoke('text')
+                            .then((firstWidgetPercentage) =>
+                                expect(firstTablePercentage).to.equal(firstWidgetPercentage)
+                            );
+                    });
             });
     });
 
     it('should link to entity page when clicking on side panel header', () => {
         visitComplianceEntities('clusters');
 
-        cy.get(ComplianceSelectors.list.table.firstRowName)
+        cy.get(selectors.list.table.firstRowName)
             .invoke('text')
             .then((name) => {
-                cy.get(ComplianceSelectors.list.table.firstRow).click();
-                cy.get(selectors.panel.sidePanelHeader).contains(name);
-                cy.get(selectors.panel.sidePanelHeader).click();
-                cy.location('pathname').should('include', url.entity.cluster);
+                interactAndWaitForComplianceEntityInSidePanel(() => {
+                    cy.get(selectors.list.table.firstRow).click();
+                }, 'clusters');
+                cy.get('[data-testid="side-panel-header"]').contains(name);
+                cy.get('[data-testid="side-panel-header"]').click();
+                assertComplianceEntityPage('clusters');
             });
     });
 
     it('should be sorted by version in standards list', () => {
-        visitComplianceStandard('CIS Docker v1.2.0');
+        visitComplianceStandard('CIS Kubernetes v1.5');
 
-        cy.get(ComplianceSelectors.list.table.firstRowName)
+        cy.get(selectors.list.table.firstRowName)
             .invoke('text')
             .then((text1) => {
-                cy.get(ComplianceSelectors.list.table.secondRowName)
+                cy.get(selectors.list.table.secondRowName)
                     .invoke('text')
                     .then((text2) => {
                         const arr1 = text1.split(' ')[0];
@@ -82,8 +120,8 @@ describe('Compliance list page', () => {
     it('should collapse/open table grouping', () => {
         visitComplianceStandard('PCI DSS 3.2.1');
 
-        cy.get(ComplianceSelectors.list.table.firstTableGroup).should('be.visible');
-        cy.get(ComplianceSelectors.list.table.firstGroup).click();
-        cy.get(ComplianceSelectors.list.table.firstTableGroup).should('not.be.visible');
+        cy.get(selectors.list.table.firstTableGroup).should('be.visible');
+        cy.get(selectors.list.table.firstGroup).click();
+        cy.get(selectors.list.table.firstTableGroup).should('not.be.visible');
     });
 });

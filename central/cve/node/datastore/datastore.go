@@ -3,25 +3,24 @@ package datastore
 import (
 	"context"
 	"testing"
+	"time"
 
-	"github.com/gogo/protobuf/types"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/cve/common"
-	"github.com/stackrox/rox/central/cve/node/datastore/index"
-	"github.com/stackrox/rox/central/cve/node/datastore/search"
 	"github.com/stackrox/rox/central/cve/node/datastore/store"
-	"github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
+	pgStore "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/concurrency"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/postgres"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
 // DataStore is an intermediary to CVE storage.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
-	SearchCVEs(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
+	SearchNodeCVEs(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 	SearchRawCVEs(ctx context.Context, q *v1.Query) ([]*storage.NodeCVE, error)
 
 	Exists(ctx context.Context, id string) (bool, error)
@@ -29,19 +28,20 @@ type DataStore interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	GetBatch(ctx context.Context, id []string) ([]*storage.NodeCVE, error)
 
+	UpsertMany(ctx context.Context, cves []*storage.NodeCVE) error
+	PruneNodeCVEs(ctx context.Context, ids []string) error
+
 	// Suppress suppresses node vulnerabilities with provided cve names (not ids) for the duration provided.
-	Suppress(ctx context.Context, start *types.Timestamp, duration *types.Duration, cves ...string) error
+	Suppress(ctx context.Context, start *time.Time, duration *time.Duration, cves ...string) error
 	// Unsuppress unsuppresses node vulnerabilities with provided cve names (not ids).
 	Unsuppress(ctx context.Context, cves ...string) error
 	EnrichNodeWithSuppressedCVEs(node *storage.Node)
 }
 
 // New returns a new instance of a DataStore.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, kf concurrency.KeyFence) (DataStore, error) {
+func New(storage store.Store, kf concurrency.KeyFence) (DataStore, error) {
 	ds := &datastoreImpl{
-		storage:  storage,
-		indexer:  indexer,
-		searcher: searcher,
+		storage: storage,
 
 		cveSuppressionCache: make(common.CVESuppressionCache),
 		keyFence:            kf,
@@ -53,9 +53,7 @@ func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, k
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool *pgxpool.Pool) (DataStore, error) {
-	dbstore := postgres.New(pool)
-	indexer := postgres.NewIndexer(pool)
-	searcher := search.New(dbstore, indexer)
-	return New(dbstore, indexer, searcher, concurrency.NewKeyFence())
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error) {
+	dbstore := pgStore.New(pool)
+	return New(dbstore, concurrency.NewKeyFence())
 }

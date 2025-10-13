@@ -1,17 +1,53 @@
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Breadcrumb, BreadcrumbItem, Divider, PageSection } from '@patternfly/react-core';
-import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import React, { ReactElement } from 'react';
 
-import { violationsBasePath } from 'routePaths';
+import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+import type { FilteredWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
+
+import {
+    violationsFullViewPath,
+    violationsPlatformViewPath,
+    violationsUserWorkloadsViewPath,
+} from 'routePaths';
+import { ensureExhaustive } from 'utils/type.utils';
+
+function getTopLevelBreadcrumb(filteredWorkflowView: FilteredWorkflowView) {
+    switch (filteredWorkflowView) {
+        case 'Applications view':
+            return {
+                title: 'User workload violations',
+                url: violationsUserWorkloadsViewPath,
+            };
+        case 'Platform view':
+            return {
+                title: 'Platform violations',
+                url: violationsPlatformViewPath,
+            };
+        case 'Full view':
+            return {
+                title: 'All violations',
+                url: violationsFullViewPath,
+            };
+        default:
+            return ensureExhaustive(filteredWorkflowView);
+    }
+}
 
 type ViolationsBreadcrumbsProps = {
     /** The title of the current Violation entity sub-page */
     current?: string;
+    /** The current Violation sub-page workflow filter */
+    filteredWorkflowView: FilteredWorkflowView;
 };
 
-const ViolationsBreadcrumbs = ({ current }: ViolationsBreadcrumbsProps): ReactElement => {
+const ViolationsBreadcrumbs = ({
+    current,
+    filteredWorkflowView,
+}: ViolationsBreadcrumbsProps): ReactElement => {
+    const { title, url } = getTopLevelBreadcrumb(filteredWorkflowView);
     const topLevelBreadcrumb = current ? (
-        <BreadcrumbItemLink to={violationsBasePath}>Violations</BreadcrumbItemLink>
+        <BreadcrumbItemLink to={url}>{title}</BreadcrumbItemLink>
     ) : (
         <BreadcrumbItem>Violations</BreadcrumbItem>
     );
@@ -19,8 +55,8 @@ const ViolationsBreadcrumbs = ({ current }: ViolationsBreadcrumbsProps): ReactEl
 
     return (
         <>
-            <PageSection variant="light" className="pf-u-py-md">
-                <Breadcrumb className="pf-u-mb-0 pf-u-pl-0">
+            <PageSection variant="light" className="pf-v5-u-py-md">
+                <Breadcrumb className="pf-v5-u-mb-0 pf-v5-u-pl-0">
                     {topLevelBreadcrumb}
                     {subPageBreadcrumb}
                 </Breadcrumb>

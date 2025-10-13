@@ -3,9 +3,10 @@ package service
 import (
 	"context"
 	"math"
-	"sort"
+	"slices"
+	"time"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	processBaselineStore "github.com/stackrox/rox/central/processbaseline/datastore"
@@ -13,7 +14,6 @@ import (
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -21,10 +21,11 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/options/deployments"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	pgsearch "github.com/stackrox/rox/pkg/search/postgres/query"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
@@ -37,15 +38,16 @@ const (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Deployment)): {
-			"/v1.DeploymentService/GetDeployment",
-			"/v1.DeploymentService/GetDeploymentWithRisk",
-			"/v1.DeploymentService/CountDeployments",
-			"/v1.DeploymentService/ListDeployments",
-			"/v1.DeploymentService/GetLabels",
-			"/v1.DeploymentService/ListDeploymentsWithProcessInfo",
+			v1.DeploymentService_GetDeployment_FullMethodName,
+			v1.DeploymentService_GetDeploymentWithRisk_FullMethodName,
+			v1.DeploymentService_CountDeployments_FullMethodName,
+			v1.DeploymentService_ListDeployments_FullMethodName,
+			v1.DeploymentService_GetLabels_FullMethodName,
+			v1.DeploymentService_ListDeploymentsWithProcessInfo_FullMethodName,
+			v1.DeploymentService_ExportDeployments_FullMethodName,
 		},
 	})
-	baselineAndIndicatorAuth = user.With(permissions.View(resources.ProcessWhitelist), permissions.View(resources.Indicator))
+	deploymentExtensionAuth = user.With(permissions.View(resources.DeploymentExtension))
 )
 
 // serviceImpl provides APIs for deployments.
@@ -60,6 +62,25 @@ type serviceImpl struct {
 	manager                manager.Manager
 }
 
+func (s *serviceImpl) ExportDeployments(req *v1.ExportDeploymentRequest, srv v1.DeploymentService_ExportDeploymentsServer) error {
+	parsedQuery, err := search.ParseQuery(req.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+	ctx := srv.Context()
+	if timeout := req.GetTimeout(); timeout != 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(srv.Context(), time.Duration(timeout)*time.Second)
+		defer cancel()
+	}
+	return s.datastore.WalkByQuery(ctx, parsedQuery, func(d *storage.Deployment) error {
+		if err := srv.Send(&v1.ExportDeploymentResponse{Deployment: d}); err != nil {
+			return err
+		}
+		return nil
+	})
+}
+
 func (s *serviceImpl) baselineResultsForDeployment(ctx context.Context, deployment *storage.ListDeployment) (*storage.ProcessBaselineResults, error) {
 	baselineResults, err := s.processBaselineResults.GetBaselineResults(ctx, deployment.GetId())
 	if err != nil {
@@ -69,8 +90,8 @@ func (s *serviceImpl) baselineResultsForDeployment(ctx context.Context, deployme
 }
 
 func (s *serviceImpl) fillBaselineResults(ctx context.Context, resp *v1.ListDeploymentsWithProcessInfoResponse) error {
-	if err := baselineAndIndicatorAuth.Authorized(ctx, ""); err == nil {
-		for _, depWithProc := range resp.Deployments {
+	if err := deploymentExtensionAuth.Authorized(ctx, ""); err == nil {
+		for _, depWithProc := range resp.GetDeployments() {
 			baselineResults, err := s.baselineResultsForDeployment(ctx, depWithProc.GetDeployment())
 			if err != nil {
 				return err
@@ -88,7 +109,7 @@ func (s *serviceImpl) ListDeploymentsWithProcessInfo(ctx context.Context, rawQue
 	}
 
 	resp := &v1.ListDeploymentsWithProcessInfoResponse{}
-	for _, deployment := range deployments.Deployments {
+	for _, deployment := range deployments.GetDeployments() {
 		resp.Deployments = append(resp.Deployments,
 			&v1.ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo{
 				Deployment: deployment,
@@ -216,27 +237,28 @@ func labelsMapFromSearchResults(results []search.Result) (map[string]*v1.Deploym
 		return nil, nil
 	}
 	labelFieldPath := labelField.GetFieldPath()
-	keyFieldPath := blevesearch.ToMapKeyPath(labelFieldPath)
-	valueFieldPath := blevesearch.ToMapValuePath(labelFieldPath)
-
 	tempSet := make(map[string]set.StringSet)
 	globalValueSet := set.NewStringSet()
 
-	for _, r := range results {
-		keyMatches, valueMatches := r.Matches[keyFieldPath], r.Matches[valueFieldPath]
-		if len(keyMatches) != len(valueMatches) {
-			utils.Should(errors.Errorf("mismatch between key and value matches: %d != %d", len(keyMatches), len(valueMatches)))
-			continue
+	setUpdater := func(key, value string) {
+		valSet, ok := tempSet[key]
+		if !ok {
+			valSet = set.NewStringSet()
+			tempSet[key] = valSet
 		}
-		for i, keyMatch := range keyMatches {
-			valueMatch := valueMatches[i]
-			valSet, ok := tempSet[keyMatch]
-			if !ok {
-				valSet = set.NewStringSet()
-				tempSet[keyMatch] = valSet
+		valSet.Add(value)
+		globalValueSet.Add(value)
+	}
+
+	for _, r := range results {
+		// In postgres, map key and values are returned as one `k=v`.
+		for _, match := range r.Matches[labelFieldPath] {
+			key, value, hasEquals := pgsearch.ParseMapQuery(match)
+			if !hasEquals {
+				utils.Should(errors.Errorf("cannot handle label %s", match))
+				continue
 			}
-			valSet.Add(valueMatch)
-			globalValueSet.Add(valueMatch)
+			setUpdater(key, value)
 		}
 	}
 
@@ -246,10 +268,10 @@ func labelsMapFromSearchResults(results []search.Result) (map[string]*v1.Deploym
 		keyValuesMap[k] = &v1.DeploymentLabelsResponse_LabelValues{
 			Values: valSet.AsSlice(),
 		}
-		sort.Strings(keyValuesMap[k].Values)
+		slices.Sort(keyValuesMap[k].GetValues())
 	}
 	values = globalValueSet.AsSlice()
-	sort.Strings(values)
+	slices.Sort(values)
 
 	return keyValuesMap, values
 }

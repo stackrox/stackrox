@@ -4,24 +4,17 @@ import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/ranking"
-	"github.com/stackrox/rox/central/risk/datastore/internal/index"
-	"github.com/stackrox/rox/central/risk/datastore/internal/search"
 	"github.com/stackrox/rox/central/risk/datastore/internal/store"
-	"github.com/stackrox/rox/central/risk/datastore/internal/store/postgres"
-	"github.com/stackrox/rox/central/risk/datastore/internal/store/rocksdb"
+	pgStore "github.com/stackrox/rox/central/risk/datastore/internal/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
-	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
-	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/postgres"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
 // DataStore is an intermediary to RiskStorage.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
@@ -34,48 +27,25 @@ type DataStore interface {
 	RemoveRisk(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType) error
 }
 
-// New returns a new instance of DataStore using the input store, indexer, and searcher.
-func New(riskStore store.Store, indexer index.Indexer, searcher search.Searcher) (DataStore, error) {
+// New returns a new instance of DataStore using the input store, and searcher.
+func New(riskStore store.Store) DataStore {
 	d := &datastoreImpl{
-		storage:  riskStore,
-		indexer:  indexer,
-		searcher: searcher,
+		storage: riskStore,
 		entityTypeToRanker: map[string]*ranking.Ranker{
-			storage.RiskSubjectType_CLUSTER.String():   ranking.ClusterRanker(),
-			storage.RiskSubjectType_NAMESPACE.String(): ranking.NamespaceRanker(),
-			storage.RiskSubjectType_NODE.String():      ranking.NodeRanker(),
-			storage.RiskSubjectType_NODE_COMPONENT.String(): func() *ranking.Ranker {
-				if env.PostgresDatastoreEnabled.BooleanSetting() {
-					return ranking.NodeComponentRanker()
-				}
-				return ranking.ComponentRanker()
-			}(),
+			storage.RiskSubjectType_CLUSTER.String():         ranking.ClusterRanker(),
+			storage.RiskSubjectType_NAMESPACE.String():       ranking.NamespaceRanker(),
+			storage.RiskSubjectType_NODE.String():            ranking.NodeRanker(),
+			storage.RiskSubjectType_NODE_COMPONENT.String():  ranking.NodeComponentRanker(),
 			storage.RiskSubjectType_DEPLOYMENT.String():      ranking.DeploymentRanker(),
 			storage.RiskSubjectType_IMAGE.String():           ranking.ImageRanker(),
 			storage.RiskSubjectType_IMAGE_COMPONENT.String(): ranking.ComponentRanker(),
 		},
 	}
-
-	ctx := sac.WithAllAccess(context.Background())
-	if err := d.buildIndex(ctx); err != nil {
-		return nil, errors.Wrap(err, "failed to build index from existing store")
-	}
-	return d, nil
-
+	return d
 }
 
-// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool *pgxpool.Pool) (DataStore, error) {
-	dbstore := postgres.New(pool)
-	indexer := postgres.NewIndexer(pool)
-	searcher := search.New(dbstore, indexer)
-	return New(dbstore, indexer, searcher)
-}
-
-// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveDataStore(_ *testing.T, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index) (DataStore, error) {
-	dbstore := rocksdb.New(rocksengine)
-	indexer := index.New(bleveIndex)
-	searcher := search.New(dbstore, indexer)
-	return New(dbstore, indexer, searcher)
+// GetTestPostgresDataStore provides a datastore connected to pgStore for testing purposes.
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
+	dbstore := pgStore.New(pool)
+	return New(dbstore)
 }

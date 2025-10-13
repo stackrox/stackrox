@@ -1,6 +1,6 @@
-import { AxiosError } from 'axios';
+import type { AxiosError } from 'axios';
 
-function isAxiosError(error: Error): error is AxiosError {
+function isAxiosError(error: Error): error is AxiosError<{ message?: string }> {
     return (
         Object.prototype.hasOwnProperty.call(error, 'response') ||
         Object.prototype.hasOwnProperty.call(error, 'request')
@@ -22,7 +22,6 @@ export function getAxiosErrorMessage(error: unknown): string {
 
             if (typeof error.response?.data?.message === 'string') {
                 // The server responded to the request with an error.
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-return
                 return error.response.data.message;
             }
 
@@ -37,4 +36,11 @@ export function getAxiosErrorMessage(error: unknown): string {
     }
 
     return 'Unknown error';
+}
+
+export function isTimeoutError(error: unknown): boolean {
+    if (error instanceof Error && isAxiosError(error)) {
+        return error.code === 'ECONNABORTED';
+    }
+    return false;
 }

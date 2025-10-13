@@ -1,18 +1,18 @@
 syntax = "proto3";
 
-option go_package = "v1";
-option java_package = "io.stackrox.proto.api.v1";
-
 package v1;
 
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
+
 message ResourceByID {
-    string id = 1;
+  string id = 1;
 }
 
 // EXPERIMENTAL.
 //
 // Used in combination with MutabilityMode.ALLOW_MUTATE_FORCED to enable forced removal.
 message DeleteByIDWithForce {
-    string id  = 1;
-    bool force = 2;
+  string id = 1;
+  bool force = 2;
 }

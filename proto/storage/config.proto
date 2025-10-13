@@ -1,72 +1,146 @@
 syntax = "proto3";
 
-option go_package = "storage";
-option java_package = "io.stackrox.proto.storage";
-
-import "google/protobuf/timestamp.proto";
-
 package storage;
 
+import "google/protobuf/timestamp.proto";
+import "storage/telemetry.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
 message LoginNotice {
-    bool enabled = 1;
-    string text  = 2;
+  bool enabled = 1;
+  string text = 2;
 }
 
 message BannerConfig {
-    enum Size {
-        UNSET  = 0;
-        SMALL  = 1;
-        MEDIUM = 2;
-        LARGE  = 3;
-    }
+  enum Size {
+    UNSET = 0;
+    SMALL = 1;
+    MEDIUM = 2;
+    LARGE = 3;
+  }
 
-    bool   enabled          = 1;
-    string text             = 2;
-    Size   size             = 3;
-    string color            = 4;
-    string background_color = 5;
+  bool enabled = 1;
+  string text = 2;
+  Size size = 3;
+  string color = 4;
+  string background_color = 5;
 }
 
 message PublicConfig {
-    LoginNotice login_notice = 1;
-    BannerConfig header      = 2;
-    BannerConfig footer      = 3;
+  LoginNotice login_notice = 1;
+  BannerConfig header = 2;
+  BannerConfig footer = 3;
+  TelemetryConfiguration telemetry = 4;
 }
 
 message AlertRetentionConfig {
-    int32 resolved_deploy_retention_duration_days   = 1;
-    // This runtime alert retention configuration takes precedence after `allRuntimeRetentionDurationDays`.
-    int32 deleted_runtime_retention_duration_days   = 2;
-    // This runtime alert retention configuration has highest precedence. All runtime alerts, including attempted
-    // alerts and deleted deployment alerts, are deleted even if respective retention is longer.
-    int32 all_runtime_retention_duration_days       = 3;
-    int32 attempted_deploy_retention_duration_days  = 4;
-    // This runtime alert retention configuration has lowest precedence.
-    int32 attempted_runtime_retention_duration_days = 5;
+  int32 resolved_deploy_retention_duration_days = 1;
+  // This runtime alert retention configuration takes precedence after `allRuntimeRetentionDurationDays`.
+  int32 deleted_runtime_retention_duration_days = 2;
+  // This runtime alert retention configuration has highest precedence. All runtime alerts, including attempted
+  // alerts and deleted deployment alerts, are deleted even if respective retention is longer.
+  int32 all_runtime_retention_duration_days = 3;
+  int32 attempted_deploy_retention_duration_days = 4;
+  // This runtime alert retention configuration has lowest precedence.
+  int32 attempted_runtime_retention_duration_days = 5;
 }
 
 // next available tag: 5
 message DecommissionedClusterRetentionConfig {
-    int32 retention_duration_days              = 1;
-    map<string, string> ignore_cluster_labels  = 2;
-    google.protobuf.Timestamp last_updated     = 3;
-    google.protobuf.Timestamp created_at       = 4;
+  int32 retention_duration_days = 1;
+  map<string, string> ignore_cluster_labels = 2;
+  google.protobuf.Timestamp last_updated = 3;
+  google.protobuf.Timestamp created_at = 4;
 }
 
-// next available tag: 6
-message PrivateConfig {
-    oneof alert_retention {
-        // will be deprecated after migration is ready
-        int32                DEPRECATED_alert_retention_duration_days       = 1;
-        AlertRetentionConfig alert_config                                   = 3;
+// next available tag: 4
+message ReportRetentionConfig {
+  uint32 history_retention_duration_days = 1;
+  uint32 downloadable_report_retention_days = 2;
+  uint32 downloadable_report_global_retention_bytes = 3;
+}
+
+// next available tag: 4
+message PrometheusMetrics {
+  // A group is a collection of metrics that are computed by the same
+  // aggregator. Metrics in a group may use different subsets of a complete list
+  // of labels supported by the aggregator.
+  message Group {
+    message Labels {
+      repeated string labels = 1;
     }
-    int32                    image_retention_duration_days                  = 2;
-    int32                    expired_vuln_req_retention_duration_days       = 4;
-    DecommissionedClusterRetentionConfig decommissioned_cluster_retention   = 5;
+    uint32 gathering_period_minutes = 1;
+    // Metric descriptors is a map of metric names to the list of allowed
+    // labels.
+    map<string, Labels> descriptors = 2;
+  }
+  Group image_vulnerabilities = 1;
+  Group policy_violations = 2;
+  Group node_vulnerabilities = 3;
 }
 
+// next available tag: 10
+message PrivateConfig {
+  oneof alert_retention {
+    // will be deprecated after migration is ready
+    int32 DEPRECATED_alert_retention_duration_days = 1;
+    AlertRetentionConfig alert_config = 3;
+  }
+  int32 image_retention_duration_days = 2;
+  int32 expired_vuln_req_retention_duration_days = 4;
+  DecommissionedClusterRetentionConfig decommissioned_cluster_retention = 5;
+  ReportRetentionConfig report_retention_config = 6;
+
+  VulnerabilityExceptionConfig vulnerability_exception_config = 7;
+
+  AdministrationEventsConfig administration_events_config = 8;
+
+  // This field defines groups of custom Prometheus metrics to be exposed by the
+  // backend on the API endpoint.
+  PrometheusMetrics metrics = 9;
+}
+
+message PlatformComponentConfig {
+  message Rule {
+    message NamespaceRule {
+      string regex = 1;
+    }
+    string name = 1;
+    NamespaceRule namespace_rule = 2;
+  }
+  repeated Rule rules = 1;
+  bool needs_reevaluation = 2;
+}
 
 message Config {
-    PublicConfig public_config = 1;
-    PrivateConfig private_config = 2;
+  PublicConfig public_config = 1;
+  PrivateConfig private_config = 2;
+  PlatformComponentConfig platform_component_config = 3;
+}
+
+message VulnerabilityExceptionConfig {
+  message FixableCVEOptions {
+    bool all_fixable = 1;
+    bool any_fixable = 2;
+  }
+
+  message ExpiryOptions {
+    repeated DayOption day_options = 1;
+    FixableCVEOptions fixable_cve_options = 2;
+    bool custom_date = 3;
+    bool indefinite = 4;
+  }
+
+  ExpiryOptions expiry_options = 1;
+}
+
+message AdministrationEventsConfig {
+  uint32 retention_duration_days = 1;
+}
+
+message DayOption {
+  uint32 num_days = 1;
+  bool enabled = 2;
 }

@@ -9,7 +9,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -27,19 +29,25 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Cluster)(nil)), "clusters")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_CLUSTERS, "cluster", (*storage.Cluster)(nil)))
+		schema.ScopingResource = resources.Cluster
 		RegisterTable(schema, CreateTableClustersStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_CLUSTERS, schema)
 		return schema
 	}()
 )
 
 const (
+	// ClustersTableName specifies the name of the table in postgres.
 	ClustersTableName = "clusters"
 )
 
 // Clusters holds the Gorm model for Postgres table `clusters`.
 type Clusters struct {
-	Id         string            `gorm:"column:id;type:varchar;primaryKey"`
-	Name       string            `gorm:"column:name;type:varchar;unique"`
-	Labels     map[string]string `gorm:"column:labels;type:jsonb"`
-	Serialized []byte            `gorm:"column:serialized;type:bytea"`
+	ID                                string                       `gorm:"column:id;type:uuid;primaryKey"`
+	Name                              string                       `gorm:"column:name;type:varchar;unique"`
+	Type                              storage.ClusterType          `gorm:"column:type;type:integer"`
+	Labels                            map[string]string            `gorm:"column:labels;type:jsonb"`
+	StatusProviderMetadataClusterType storage.ClusterMetadata_Type `gorm:"column:status_providermetadata_cluster_type;type:integer"`
+	StatusOrchestratorMetadataVersion string                       `gorm:"column:status_orchestratormetadata_version;type:varchar"`
+	Serialized                        []byte                       `gorm:"column:serialized;type:bytea"`
 }

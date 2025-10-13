@@ -1,87 +1,110 @@
 syntax = "proto3";
 
-option go_package = "v1";
-option java_package = "io.stackrox.proto.api.v1";
+package v1;
 
 import weak "google/api/annotations.proto";
 import "storage/process_baseline.proto";
 
-package v1;
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
 
 // These protobuf messages replace the family of existing *ProcessWhitelists* ones
 // and are identical to them except named differently. Reason: inclusive language.
 
 message GetProcessBaselineRequest {
-    storage.ProcessBaselineKey key = 1;
+  storage.ProcessBaselineKey key = 1;
 }
 
 message UpdateProcessBaselinesRequest {
-    repeated storage.ProcessBaselineKey keys            = 1;
-    repeated storage.BaselineItem       add_elements    = 2;
-    repeated storage.BaselineItem       remove_elements = 3;
+  repeated storage.ProcessBaselineKey keys = 1;
+  repeated storage.BaselineItem add_elements = 2;
+  repeated storage.BaselineItem remove_elements = 3;
 }
 
 message ProcessBaselinesResponse {
-    repeated storage.ProcessBaseline baselines = 1;
+  repeated storage.ProcessBaseline baselines = 1;
 }
 
 message ProcessBaselineUpdateError {
-    string                     error = 1;
-    storage.ProcessBaselineKey key   = 2;
+  string error = 1;
+  storage.ProcessBaselineKey key = 2;
+}
+
+message BulkUpdateProcessBaselinesResponse {
+  bool success = 1;
 }
 
 message UpdateProcessBaselinesResponse {
-    repeated storage.ProcessBaseline    baselines = 1;
-    repeated ProcessBaselineUpdateError errors    = 2;
+  repeated storage.ProcessBaseline baselines = 1;
+  repeated ProcessBaselineUpdateError errors = 2;
 }
 
 message LockProcessBaselinesRequest {
-    repeated storage.ProcessBaselineKey keys   = 1;
-    bool                                locked = 2;
+  repeated storage.ProcessBaselineKey keys = 1;
+  bool locked = 2;
+}
+
+message BulkProcessBaselinesRequest {
+  string cluster_id = 1;
+  repeated string namespaces = 2;
 }
 
 message DeleteProcessBaselinesRequest {
-    string query   = 1;
-    bool   confirm = 2;
+  string query = 1;
+  bool confirm = 2;
 }
 
 message DeleteProcessBaselinesResponse {
-    int32 num_deleted = 1;
-    bool  dry_run     = 2;
+  int32 num_deleted = 1;
+  bool dry_run = 2;
 }
 
 // `ProcessBaselineService` APIs can be used to manage process baselines.
 service ProcessBaselineService {
-    // `GetProcessBaselineById` returns the single
-    // process baseline referenced by the given ID.
-    rpc GetProcessBaseline (GetProcessBaselineRequest) returns (storage.ProcessBaseline) {
-        option (google.api.http) = {
-                get: "/v1/processbaselines/key"
-            };
-    }
+  // `GetProcessBaselineById` returns the single
+  // process baseline referenced by the given ID.
+  rpc GetProcessBaseline(GetProcessBaselineRequest) returns (storage.ProcessBaseline) {
+    option (google.api.http) = {get: "/v1/processbaselines/key"};
+  }
 
-    // `AddToProcessBaselines` adds a list of process
-    // names to each of a list of process baselines.
-    rpc UpdateProcessBaselines (UpdateProcessBaselinesRequest) returns (UpdateProcessBaselinesResponse) {
-        option (google.api.http) = {
-                put: "/v1/processbaselines"
-                body: "*"
-            };
-    }
+  // `AddToProcessBaselines` adds a list of process
+  // names to each of a list of process baselines.
+  rpc UpdateProcessBaselines(UpdateProcessBaselinesRequest) returns (UpdateProcessBaselinesResponse) {
+    option (google.api.http) = {
+      put: "/v1/processbaselines"
+      body: "*"
+    };
+  }
 
-    // `LockProcessBaselines` accepts a list of baseline IDs, locks
-    // those baselines, and returns the updated baseline objects.
-    rpc LockProcessBaselines (LockProcessBaselinesRequest) returns (UpdateProcessBaselinesResponse) {
-        option (google.api.http) = {
-                put: "/v1/processbaselines/lock"
-                body: "*"
-            };
-    }
+  // `LockProcessBaselines` accepts a list of baseline IDs, locks
+  // those baselines, and returns the updated baseline objects.
+  rpc LockProcessBaselines(LockProcessBaselinesRequest) returns (UpdateProcessBaselinesResponse) {
+    option (google.api.http) = {
+      put: "/v1/processbaselines/lock"
+      body: "*"
+    };
+  }
 
-    // `DeleteProcessBaselines` deletes baselines.
-    rpc DeleteProcessBaselines (DeleteProcessBaselinesRequest) returns (DeleteProcessBaselinesResponse) {
-        option (google.api.http) = {
-          delete: "/v1/processbaselines"
-        };
-    }
+  // `BulkLockProcessBaselines` locks process baselines given a cluster and
+  // an optional set of namespaces. It returns success or an error.
+  rpc BulkLockProcessBaselines(BulkProcessBaselinesRequest) returns (BulkUpdateProcessBaselinesResponse) {
+    option (google.api.http) = {
+      put: "/v1/processbaselines/bulk/lock"
+      body: "*"
+    };
+  }
+
+  // `BulkUnockProcessBaselines` unlocks process baselines given a cluster and
+  // an optional set of namespaces. It returns success or an error.
+  rpc BulkUnlockProcessBaselines(BulkProcessBaselinesRequest) returns (BulkUpdateProcessBaselinesResponse) {
+    option (google.api.http) = {
+      put: "/v1/processbaselines/bulk/unlock"
+      body: "*"
+    };
+  }
+
+  // `DeleteProcessBaselines` deletes baselines.
+  rpc DeleteProcessBaselines(DeleteProcessBaselinesRequest) returns (DeleteProcessBaselinesResponse) {
+    option (google.api.http) = {delete: "/v1/processbaselines"};
+  }
 }

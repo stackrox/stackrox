@@ -4,15 +4,16 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	podMocks "github.com/stackrox/rox/central/pod/datastore/mocks"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 const (
@@ -47,7 +48,7 @@ func (suite *PipelineTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
 }
 
-func newSensorEvent(active bool, action central.ResourceAction) *central.SensorEvent {
+func newSensorEvent(_ bool, action central.ResourceAction) *central.SensorEvent {
 	return &central.SensorEvent{
 		Resource: &central.SensorEvent_Pod{
 			Pod: &storage.Pod{
@@ -74,7 +75,7 @@ func (suite *PipelineTestSuite) TestAddPod() {
 
 	suite.NoError(suite.pipeline.Run(ctx, clusterID, newMsgFromSensor(event), nil))
 
-	suite.Equal(expectedPod, event.GetPod())
+	protoassert.Equal(suite.T(), expectedPod, event.GetPod())
 }
 
 func (suite *PipelineTestSuite) TestUpdatePod() {
@@ -85,7 +86,7 @@ func (suite *PipelineTestSuite) TestUpdatePod() {
 
 	suite.NoError(suite.pipeline.Run(ctx, clusterID, newMsgFromSensor(event), nil))
 
-	suite.Equal(expectedPod, event.GetPod())
+	protoassert.Equal(suite.T(), expectedPod, event.GetPod())
 }
 
 func (suite *PipelineTestSuite) TestRemovePod() {
@@ -96,7 +97,7 @@ func (suite *PipelineTestSuite) TestRemovePod() {
 
 	suite.NoError(suite.pipeline.Run(ctx, clusterID, newMsgFromSensor(event), nil))
 
-	suite.Equal(expectedPod, event.GetPod())
+	protoassert.Equal(suite.T(), expectedPod, event.GetPod())
 }
 
 func (suite *PipelineTestSuite) TestReconcileNoOp() {
@@ -109,7 +110,7 @@ func (suite *PipelineTestSuite) TestReconcile() {
 	expectedQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 	expectedPod := fixtures.GetPod()
 	result := search.NewResult()
-	result.ID = expectedPod.Id
+	result.ID = expectedPod.GetId()
 	suite.pods.EXPECT().Search(ctx, expectedQuery).Return([]search.Result{*result}, nil)
 	suite.pods.EXPECT().RemovePod(ctx, expectedPod.GetId()).Return(nil)
 	suite.NoError(suite.pipeline.Reconcile(ctx, clusterID, reconciliation.NewStoreMap()))

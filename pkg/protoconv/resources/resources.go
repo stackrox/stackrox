@@ -5,18 +5,19 @@ import (
 	"fmt"
 	"reflect"
 
-	ptypes "github.com/gogo/protobuf/types"
-	openshift_appsv1 "github.com/openshift/api/apps/v1"
+	openshiftAppsV1 "github.com/openshift/api/apps/v1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv/k8s"
 	"github.com/stackrox/rox/pkg/protoconv/resources/volumes"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/utils"
+	batchV1 "k8s.io/api/batch/v1"
 	batchV1beta1 "k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -99,7 +100,7 @@ func extractDeploymentConfig(encodedDeploymentConfig string) (metav1.Object, str
 }
 
 func newWrap(meta metav1.Object, kind, clusterID, registryOverride string) *DeploymentWrap {
-	createdTime, err := ptypes.TimestampProto(meta.GetCreationTimestamp().Time)
+	createdTime, err := protocompat.ConvertTimeToTimestampOrError(meta.GetCreationTimestamp().Time)
 	if err != nil {
 		log.Error(err)
 	}
@@ -122,6 +123,9 @@ func newWrap(meta metav1.Object, kind, clusterID, registryOverride string) *Depl
 // SpecToPodTemplateSpec turns a top level spec into a podTemplateSpec
 func SpecToPodTemplateSpec(spec reflect.Value) (v1.PodTemplateSpec, error) {
 	templateInterface := spec.FieldByName("Template")
+	if !doesFieldExist(templateInterface) {
+		return v1.PodTemplateSpec{}, errors.Errorf("obj %+v does not have a Template field", spec)
+	}
 	if templateInterface.Type().Kind() == reflect.Ptr && !templateInterface.IsNil() {
 		templateInterface = templateInterface.Elem()
 	}
@@ -223,9 +227,10 @@ func (w *DeploymentWrap) populateFields(obj interface{}) {
 	w.populateReplicas(spec, obj)
 
 	var podSpec v1.PodSpec
+	var podMeta metav1.ObjectMeta
 
 	switch o := obj.(type) {
-	case *openshift_appsv1.DeploymentConfig:
+	case *openshiftAppsV1.DeploymentConfig:
 		if o.Spec.Template == nil {
 			log.Errorf("Spec obj %+v does not have a Template field or is not a pointer pod spec", spec)
 			return
@@ -237,7 +242,10 @@ func (w *DeploymentWrap) populateFields(obj interface{}) {
 		// types do. So, we need to directly access the Pod's Spec field,
 		// instead of looking for it inside a PodTemplate.
 		podSpec = o.Spec
+	// batch/v1beta1 CronJob is deprecated in v1.21+, unavailable in v1.25+.
 	case *batchV1beta1.CronJob:
+		podSpec = o.Spec.JobTemplate.Spec.Template.Spec
+	case *batchV1.CronJob:
 		podSpec = o.Spec.JobTemplate.Spec.Template.Spec
 	default:
 		podTemplate, err := SpecToPodTemplateSpec(spec)
@@ -246,9 +254,11 @@ func (w *DeploymentWrap) populateFields(obj interface{}) {
 			return
 		}
 		podSpec = podTemplate.Spec
+		podMeta = podTemplate.ObjectMeta
 	}
 
 	w.PopulateDeploymentFromPodSpec(podSpec)
+	w.PopulateDeploymentFromPodMeta(podMeta)
 }
 
 // PopulateDeploymentFromPodSpec fills in the initialized wrap with data from the passed pod spec
@@ -263,6 +273,11 @@ func (w *DeploymentWrap) PopulateDeploymentFromPodSpec(podSpec v1.PodSpec) {
 	w.populateImagePullSecrets(podSpec)
 
 	w.populateContainers(podSpec)
+}
+
+// PopulateDeploymentFromPodMeta fills in the initialized wrap with data from the passed pod meta
+func (w *DeploymentWrap) PopulateDeploymentFromPodMeta(podMeta metav1.ObjectMeta) {
+	w.PodLabels = podMeta.GetLabels()
 }
 
 func (w *DeploymentWrap) populateTolerations(podSpec v1.PodSpec) {
@@ -281,7 +296,7 @@ func (w *DeploymentWrap) populateContainers(podSpec v1.PodSpec) {
 	w.Deployment.Containers = make([]*storage.Container, 0, len(podSpec.Containers))
 	for _, c := range podSpec.Containers {
 		w.Deployment.Containers = append(w.Deployment.Containers, &storage.Container{
-			Id:   fmt.Sprintf("%s:%s", w.Deployment.Id, c.Name),
+			Id:   fmt.Sprintf("%s:%s", w.Deployment.GetId(), c.Name),
 			Name: c.Name,
 		})
 	}
@@ -425,8 +440,12 @@ func (w *DeploymentWrap) populateImages(podSpec v1.PodSpec) {
 			log.Error(err)
 			parsedImage = &storage.ContainerImage{
 				Name: &storage.ImageName{
-					FullName: fmt.Sprintf("%s is an invalid image", c.Image),
+					FullName: fmt.Sprintf("%q is an invalid image", c.Image),
 				},
+				// This Container image (with invalid name) will be sent to Scanner (possibly via Central)
+				// and a scan will be attempted. By setting NonPullable=true, we can avoid the unnecessary API calls,
+				// because we know already here that the FullName is invalid and cannot be pulled
+				NotPullable: true,
 			}
 		}
 		w.Deployment.Containers[i].Image = parsedImage
@@ -455,9 +474,12 @@ func (w *DeploymentWrap) populateSecurityContext(podSpec v1.PodSpec) {
 					sc.DropCapabilities = append(sc.DropCapabilities, string(drop))
 				}
 			}
-
+			// If allowPrivilegeEscalation is not defined explicitly in the container's security context
+			// its default value is true
 			if ape := s.AllowPrivilegeEscalation; ape != nil {
 				sc.AllowPrivilegeEscalation = *ape
+			} else {
+				sc.AllowPrivilegeEscalation = true
 			}
 		}
 		sc.Selinux = makeSELinuxWithDefaults(s, podSpec.SecurityContext)

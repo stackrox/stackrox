@@ -4,11 +4,11 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/suite"
 )
 
 func TestUserStore(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(UserStoreTestSuite))
 }
 
@@ -72,10 +72,10 @@ func (s *UserStoreTestSuite) TestUserStore() {
 	for _, a := range users {
 		full, err := s.sto.GetUser(a.GetId())
 		s.NoError(err)
-		s.Equal(a, full)
+		protoassert.Equal(s.T(), a, full)
 	}
 
 	retrievedUsers, err := s.sto.GetAllUsers()
 	s.NoError(err)
-	s.ElementsMatch(users, retrievedUsers)
+	protoassert.ElementsMatch(s.T(), users, retrievedUsers)
 }

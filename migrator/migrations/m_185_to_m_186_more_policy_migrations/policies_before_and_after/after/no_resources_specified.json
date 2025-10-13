@@ -1,0 +1,438 @@
+{
+  "id": "886c3c94-3a6a-4f2b-82fc-d6bf5a310840",
+  "name": "No resource requests or limits specified",
+  "description": "Alert on deployments that have containers without resource requests and limits",
+  "rationale": "If a container does not have resource requests or limits specified then the host may become over-provisioned.",
+  "remediation": "Specify the requests and limits of CPU and Memory for your deployment.",
+  "categories": [
+    "DevOps Best Practices",
+    "Docker CIS"
+  ],
+  "lifecycleStages": [
+    "DEPLOY"
+  ],
+  "exclusions": [
+    {
+      "name": "Don't alert on system namespaces",
+      "deployment": {
+        "scope": {
+          "namespace": "^kube.*|^openshift.*|^redhat.*|^istio-system$"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on management-infra namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "management-infra"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment application-manager in namespace open-cluster-management-agent-addon",
+      "deployment": {
+        "name": "application-manager",
+        "scope": {
+          "namespace": "open-cluster-management-agent-addon"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment cert-policy-controller in namespace open-cluster-management-agent-addon",
+      "deployment": {
+        "name": "cert-policy-controller",
+        "scope": {
+          "namespace": "open-cluster-management-agent-addon"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment cluster-manager in namespace multicluster-engine",
+      "deployment": {
+        "name": "cluster-manager",
+        "scope": {
+          "namespace": "multicluster-engine"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment cluster-manager-placement-controller in namespace open-cluster-management-hub",
+      "deployment": {
+        "name": "cluster-manager-placement-controller",
+        "scope": {
+          "namespace": "open-cluster-management-hub"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment cluster-manager-registration-controller in namespace open-cluster-management-hub",
+      "deployment": {
+        "name": "cluster-manager-registration-controller",
+        "scope": {
+          "namespace": "open-cluster-management-hub"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment cluster-manager-registration-webhook in namespace open-cluster-management-hub",
+      "deployment": {
+        "name": "cluster-manager-registration-webhook",
+        "scope": {
+          "namespace": "open-cluster-management-hub"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment cluster-manager-work-webhook in namespace open-cluster-management-hub",
+      "deployment": {
+        "name": "cluster-manager-work-webhook",
+        "scope": {
+          "namespace": "open-cluster-management-hub"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment cluster-proxy in namespace multicluster-engine",
+      "deployment": {
+        "name": "cluster-proxy",
+        "scope": {
+          "namespace": "multicluster-engine"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment cluster-proxy-addon-manager in namespace multicluster-engine",
+      "deployment": {
+        "name": "cluster-proxy-addon-manager",
+        "scope": {
+          "namespace": "multicluster-engine"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment cluster-proxy-addon-user in namespace multicluster-engine",
+      "deployment": {
+        "name": "cluster-proxy-addon-user",
+        "scope": {
+          "namespace": "multicluster-engine"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment cluster-proxy-proxy-agent in namespace open-cluster-management-agent-addon",
+      "deployment": {
+        "name": "cluster-proxy-proxy-agent",
+        "scope": {
+          "namespace": "open-cluster-management-agent-addon"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment cluster-proxy-service-proxy in namespace open-cluster-management-agent-addon",
+      "deployment": {
+        "name": "cluster-proxy-service-proxy",
+        "scope": {
+          "namespace": "open-cluster-management-agent-addon"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment config-policy-controller in namespace open-cluster-management-agent-addon",
+      "deployment": {
+        "name": "config-policy-controller",
+        "scope": {
+          "namespace": "open-cluster-management-agent-addon"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment console-chart-console-v2 in namespace open-cluster-management",
+      "deployment": {
+        "name": "console-chart-console-v2",
+        "scope": {
+          "namespace": "open-cluster-management"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment console-mce-console in namespace multicluster-engine",
+      "deployment": {
+        "name": "console-mce-console",
+        "scope": {
+          "namespace": "multicluster-engine"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment governance-policy-framework in namespace open-cluster-management-agent-addon",
+      "deployment": {
+        "name": "governance-policy-framework",
+        "scope": {
+          "namespace": "open-cluster-management-agent-addon"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment grc-policy-addon-controller in namespace open-cluster-management",
+      "deployment": {
+        "name": "grc-policy-addon-controller",
+        "scope": {
+          "namespace": "open-cluster-management"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment grc-policy-propagator in namespace open-cluster-management",
+      "deployment": {
+        "name": "grc-policy-propagator",
+        "scope": {
+          "namespace": "open-cluster-management"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment hive-clustersync in namespace hive",
+      "deployment": {
+        "name": "hive-clustersync",
+        "scope": {
+          "namespace": "hive"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment hive-controllers in namespace hive",
+      "deployment": {
+        "name": "hive-controllers",
+        "scope": {
+          "namespace": "hive"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment hive-operator in namespace multicluster-engine",
+      "deployment": {
+        "name": "hive-operator",
+        "scope": {
+          "namespace": "multicluster-engine"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment hiveadmission in namespace hive",
+      "deployment": {
+        "name": "hiveadmission",
+        "scope": {
+          "namespace": "hive"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment iam-policy-controller in namespace open-cluster-management-agent-addon",
+      "deployment": {
+        "name": "iam-policy-controller",
+        "scope": {
+          "namespace": "open-cluster-management-agent-addon"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment infrastructure-operator in namespace multicluster-engine",
+      "deployment": {
+        "name": "infrastructure-operator",
+        "scope": {
+          "namespace": "multicluster-engine"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment insights-client in namespace open-cluster-management",
+      "deployment": {
+        "name": "insights-client",
+        "scope": {
+          "namespace": "open-cluster-management"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment insights-metrics in namespace open-cluster-management",
+      "deployment": {
+        "name": "insights-metrics",
+        "scope": {
+          "namespace": "open-cluster-management"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment klusterlet-addon-search in namespace open-cluster-management-agent-addon",
+      "deployment": {
+        "name": "klusterlet-addon-search",
+        "scope": {
+          "namespace": "open-cluster-management-agent-addon"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment klusterlet-addon-workmgr in namespace open-cluster-management-agent-addon",
+      "deployment": {
+        "name": "klusterlet-addon-workmgr",
+        "scope": {
+          "namespace": "open-cluster-management-agent-addon"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment klusterlet-registration-agent in namespace open-cluster-management-agent",
+      "deployment": {
+        "name": "klusterlet-registration-agent",
+        "scope": {
+          "namespace": "open-cluster-management-agent"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment klusterlet-work-agent in namespace open-cluster-management-agent",
+      "deployment": {
+        "name": "klusterlet-work-agent",
+        "scope": {
+          "namespace": "open-cluster-management-agent"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment ocm-controller in namespace multicluster-engine",
+      "deployment": {
+        "name": "ocm-controller",
+        "scope": {
+          "namespace": "multicluster-engine"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment ocm-proxyserver in namespace multicluster-engine",
+      "deployment": {
+        "name": "ocm-proxyserver",
+        "scope": {
+          "namespace": "multicluster-engine"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment ocm-webhook in namespace multicluster-engine",
+      "deployment": {
+        "name": "ocm-webhook",
+        "scope": {
+          "namespace": "multicluster-engine"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment search-api in namespace open-cluster-management",
+      "deployment": {
+        "name": "search-api",
+        "scope": {
+          "namespace": "open-cluster-management"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment search-collector in namespace open-cluster-management",
+      "deployment": {
+        "name": "search-collector",
+        "scope": {
+          "namespace": "open-cluster-management"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment search-indexer in namespace open-cluster-management",
+      "deployment": {
+        "name": "search-indexer",
+        "scope": {
+          "namespace": "open-cluster-management"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment search-postgres in namespace open-cluster-management",
+      "deployment": {
+        "name": "search-postgres",
+        "scope": {
+          "namespace": "open-cluster-management"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment submariner-addon in namespace open-cluster-management",
+      "deployment": {
+        "name": "submariner-addon",
+        "scope": {
+          "namespace": "open-cluster-management"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment volsync-addon-controller in namespace open-cluster-management",
+      "deployment": {
+        "name": "volsync-addon-controller",
+        "scope": {
+          "namespace": "open-cluster-management"
+        }
+      }
+    }
+  ],
+  "severity": "MEDIUM_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Container CPU Limit",
+          "values": [
+            {
+              "value": "0.000000"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Container CPU Request",
+          "values": [
+            {
+              "value": "0.000000"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Container Memory Limit",
+          "values": [
+            {
+              "value": "0.000000"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Container Memory Request",
+          "values": [
+            {
+              "value": "0.000000"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

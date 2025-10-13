@@ -4,8 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
-
-	"github.com/stackrox/rox/pkg/sliceutils"
+	"slices"
 )
 
 var (
@@ -44,7 +43,7 @@ func (w *chanWriter) Write(buf []byte) (int, error) {
 	}
 
 	select {
-	case w.ch <- sliceutils.ShallowClone(buf):
+	case w.ch <- slices.Clone(buf):
 		return len(buf), nil
 	case <-w.ctx.Done():
 		w.err = w.ctx.Err()

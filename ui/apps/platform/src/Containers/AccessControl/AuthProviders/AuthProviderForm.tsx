@@ -1,19 +1,24 @@
 /* eslint-disable react/no-array-index-key */
-import React, { ReactElement } from 'react';
-import { useHistory, Link } from 'react-router-dom';
+import React from 'react';
+import type { FormEvent, ReactElement } from 'react';
+import { Link, useNavigate } from 'react-router-dom-v5-compat';
 import { useSelector, useDispatch } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import { useFormik, FormikProvider } from 'formik';
+import { useFormik, FormikProvider, FieldArray } from 'formik';
 import * as yup from 'yup';
 import {
     Alert,
     Button,
     Flex,
+    FlexItem,
     Form,
     FormGroup,
+    FormHelperText,
     FormSection,
     Grid,
     GridItem,
+    HelperText,
+    HelperTextItem,
     SelectOption,
     TextInput,
     Title,
@@ -21,24 +26,32 @@ import {
     ToolbarContent,
     ToolbarGroup,
     ToolbarItem,
+    Tooltip,
     ValidatedOptions,
 } from '@patternfly/react-core';
+import { InfoCircleIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 
 import SelectSingle from 'Components/SelectSingle'; // TODO import from where?
+import TraitsOriginLabel from 'Components/TraitsOriginLabel';
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
+import type { Role } from 'services/RolesService';
+import { getIsAuthProviderImmutable } from 'services/AuthService';
+import type { AuthProvider, AuthProviderInfo, Group } from 'services/AuthService';
+import { isUserResource } from 'utils/traits.utils';
 
-import { AuthProvider, getIsAuthProviderImmutable } from 'services/AuthService';
 import ConfigurationFormFields from './ConfigurationFormFields';
-import RuleGroups, { RuleGroupErrors } from './RuleGroups';
+import RuleGroups from './RuleGroups';
+import type { RuleGroupErrors } from './RuleGroups';
 import {
     getInitialAuthProviderValues,
     transformInitialValues,
     transformValuesBeforeSaving,
     getGroupsByAuthProviderId,
     getDefaultRoleByAuthProviderId,
+    isDefaultGroupModifiable,
 } from './authProviders.utils';
-import { AccessControlQueryAction } from '../accessControlPaths';
+import type { AccessControlQueryAction } from '../accessControlPaths';
 
 export type AuthProviderFormProps = {
     isActionable: boolean;
@@ -48,7 +61,14 @@ export type AuthProviderFormProps = {
     onClickEdit: () => void;
 };
 
-const authProviderState = createStructuredSelector({
+type AuthProviderState = {
+    roles: Role[];
+    groups: Group[];
+    saveAuthProviderStatus: { status: string; message: string } | null;
+    availableProviderTypes: AuthProviderInfo[];
+};
+
+const authProviderState = createStructuredSelector<AuthProviderState>({
     roles: selectors.getRoles,
     groups: selectors.getRuleGroups,
     saveAuthProviderStatus: selectors.getSaveAuthProviderStatus,
@@ -69,7 +89,12 @@ function getRuleAttributes(type, availableProviderTypes) {
 }
 
 function testModeSupported(provider) {
-    return provider.type === 'auth0' || provider.type === 'oidc' || provider.type === 'saml';
+    return (
+        provider.type === 'auth0' ||
+        provider.type === 'oidc' ||
+        provider.type === 'saml' ||
+        provider.type === 'openshift'
+    );
 }
 
 function AuthProviderForm({
@@ -79,7 +104,7 @@ function AuthProviderForm({
     onClickCancel,
     onClickEdit,
 }: AuthProviderFormProps): ReactElement {
-    const history = useHistory();
+    const navigate = useNavigate();
     const { groups, roles, saveAuthProviderStatus, availableProviderTypes } =
         useSelector(authProviderState);
     const dispatch = useDispatch();
@@ -89,6 +114,7 @@ function AuthProviderForm({
         : { ...selectedAuthProvider };
     const filteredGroups = getGroupsByAuthProviderId(groups, selectedAuthProvider.id);
     const defaultRole = getDefaultRoleByAuthProviderId(groups, selectedAuthProvider.id);
+    const canChangeDefaultRole = isDefaultGroupModifiable(groups, selectedAuthProvider.id);
 
     const modifiedInitialValues = {
         ...transformInitialValues(initialValues),
@@ -109,7 +135,24 @@ function AuthProviderForm({
                 }),
             })
         ),
-        /* eslint-disable @typescript-eslint/no-unsafe-return */
+        requiredAttributes: yup.array().of(
+            yup.object().shape({
+                attributeKey: yup.string().required('Key is a required field'),
+                attributeValue: yup.string().required('Value is a required field'),
+            })
+        ),
+        claimMappings: yup
+            .array()
+            .of(yup.array().of(yup.string().required('Empty value is not allowed')).length(2))
+            .test('uniqueness test', 'Claim mappings should contain unique keys', (value) => {
+                if (!value) {
+                    return true;
+                }
+                const keys = value.map((mapping) => {
+                    return mapping ? mapping[0] : '';
+                });
+                return keys.length === new Set(keys).size;
+            }),
         config: yup
             .object()
             .when('type', {
@@ -192,7 +235,6 @@ function AuthProviderForm({
                         audience: yup.string().required('An audience is required.'),
                     }),
             }),
-        /* eslint-enable @typescript-eslint/no-unsafe-return */
     });
 
     const formik = useFormik({
@@ -204,7 +246,7 @@ function AuthProviderForm({
     const { dirty, handleChange, isValid, setFieldValue, handleBlur, values, errors, touched } =
         formik;
 
-    function onChange(_value, event) {
+    function onChange(event: FormEvent) {
         handleChange(event);
     }
 
@@ -237,7 +279,7 @@ function AuthProviderForm({
         dispatch(authActions.setSaveAuthProviderStatus(null));
 
         // Go back from action=create to list.
-        history.goBack();
+        navigate(-1);
     }
     const isSaving = saveAuthProviderStatus?.status === 'saving';
 
@@ -250,16 +292,24 @@ function AuthProviderForm({
 
     const ruleAttributes = getRuleAttributes(selectedAuthProvider.type, availableProviderTypes);
 
+    const isDisabled = isViewing || values.active || getIsAuthProviderImmutable(values);
+    const nameValidated = errors.name && touched.name ? ValidatedOptions.error : 'default';
+
     return (
         <Form>
-            <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pt-0">
+            <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pt-0">
                 <ToolbarContent>
                     <ToolbarItem>
-                        <Title headingLevel="h2">{formTitle}</Title>
+                        <Title headingLevel="h1">{formTitle}</Title>
                     </ToolbarItem>
+                    {action !== 'create' && (
+                        <ToolbarItem>
+                            <TraitsOriginLabel traits={selectedAuthProvider.traits} />
+                        </ToolbarItem>
+                    )}
                     {isActionable && (
                         <ToolbarGroup
-                            alignment={{ default: 'alignRight' }}
+                            align={{ default: 'alignRight' }}
                             spaceItems={{ default: 'spaceItemsLg' }}
                         >
                             {hasAction ? (
@@ -269,7 +319,7 @@ function AuthProviderForm({
                                             variant="primary"
                                             onClick={onClickSubmit}
                                             isDisabled={!dirty || !isValid}
-                                            isSmall
+                                            size="sm"
                                             isLoading={isSaving}
                                             spinnerAriaValueText={isSaving ? 'Saving' : undefined}
                                         >
@@ -277,7 +327,11 @@ function AuthProviderForm({
                                         </Button>
                                     </ToolbarItem>
                                     <ToolbarItem>
-                                        <Button variant="tertiary" onClick={onClickCancel} isSmall>
+                                        <Button
+                                            variant="tertiary"
+                                            onClick={onClickCancel}
+                                            size="sm"
+                                        >
                                             Cancel
                                         </Button>
                                     </ToolbarItem>
@@ -285,14 +339,13 @@ function AuthProviderForm({
                             ) : (
                                 <ToolbarGroup variant="button-group">
                                     <ToolbarItem>
-                                        <Button variant="link" isSmall>
-                                            <Link
-                                                to="/main/access-control/auth-providers"
-                                                aria-current="page"
-                                            >
-                                                Return to auth providers list
-                                            </Link>
-                                        </Button>
+                                        <Link
+                                            to="/main/access-control/auth-providers"
+                                            aria-current="page"
+                                            className="pf-v5-u-font-size-sm"
+                                        >
+                                            Return to auth providers list
+                                        </Link>
                                     </ToolbarItem>
                                     {testModeSupported(selectedAuthProvider) &&
                                         selectedAuthProvider.id && (
@@ -301,7 +354,7 @@ function AuthProviderForm({
                                                     variant="secondary"
                                                     onClick={handleTest}
                                                     isDisabled={action === 'edit'}
-                                                    isSmall
+                                                    size="sm"
                                                 >
                                                     Test login
                                                 </Button>
@@ -312,7 +365,7 @@ function AuthProviderForm({
                                             variant="primary"
                                             onClick={onClickEdit}
                                             isDisabled={action === 'edit'}
-                                            isSmall
+                                            size="sm"
                                         >
                                             {selectedAuthProvider.active ||
                                             getIsAuthProviderImmutable(selectedAuthProvider)
@@ -327,7 +380,7 @@ function AuthProviderForm({
                 </ToolbarContent>
             </Toolbar>
             {saveAuthProviderStatus?.status === 'error' && (
-                <Alert isInline variant="danger" title="Problem saving auth provider">
+                <Alert isInline variant="danger" title="Problem saving auth provider" component="p">
                     <p>{saveAuthProviderStatus?.message}</p>
                 </Alert>
             )}
@@ -343,6 +396,7 @@ function AuthProviderForm({
                                 is working properly.
                             </span>
                         }
+                        component="p"
                     />
                 )}
             {selectedAuthProvider.active && (
@@ -356,6 +410,7 @@ function AuthProviderForm({
                             delete and recreate.
                         </span>
                     }
+                    component="p"
                 />
             )}
             {getIsAuthProviderImmutable(selectedAuthProvider) && (
@@ -368,31 +423,20 @@ function AuthProviderForm({
                             rules.
                         </span>
                     }
+                    component="p"
                 />
             )}
             <FormikProvider value={formik}>
-                <FormSection title="Configuration" titleElement="h3" className="pf-u-mt-0">
+                <FormSection title="Configuration" titleElement="h2" className="pf-v5-u-mt-0">
                     <Grid hasGutter>
                         <GridItem span={12} lg={6}>
-                            <FormGroup
-                                label="Name"
-                                fieldId="name"
-                                isRequired
-                                helperTextInvalid={errors.name || ''}
-                                validated={
-                                    errors.name && touched.name ? ValidatedOptions.error : 'default'
-                                }
-                            >
+                            <FormGroup label="Name" fieldId="name" isRequired>
                                 <TextInput
                                     type="text"
                                     id="name"
                                     value={values.name}
                                     onChange={onChange}
-                                    isDisabled={
-                                        isViewing ||
-                                        values.active ||
-                                        getIsAuthProviderImmutable(values)
-                                    }
+                                    isDisabled={isDisabled}
                                     isRequired
                                     onBlur={handleBlur}
                                     validated={
@@ -401,6 +445,13 @@ function AuthProviderForm({
                                             : 'default'
                                     }
                                 />
+                                <FormHelperText>
+                                    <HelperText>
+                                        <HelperTextItem variant={nameValidated}>
+                                            {errors.name ? errors.name : ''}
+                                        </HelperTextItem>
+                                    </HelperText>
+                                </FormHelperText>
                             </FormGroup>
                         </GridItem>
                         <GridItem span={12} lg={6}>
@@ -428,16 +479,17 @@ function AuthProviderForm({
                             onBlur={handleBlur}
                             configErrors={errors.config}
                             configTouched={touched.config}
-                            disabled={values.active || getIsAuthProviderImmutable(values)}
+                            isAuthProviderActive={values.active}
+                            isAuthProviderDeclarative={getIsAuthProviderImmutable(values)}
                         />
                     </Grid>
                 </FormSection>
                 <FormSection
                     title={`Assign roles to your ${selectedAuthProvider.type} users`}
-                    titleElement="h3"
+                    titleElement="h2"
                 >
                     <FormGroup
-                        className="pf-u-w-100 pf-u-w-75-on-md pf-u-w-50-on-lg"
+                        className="pf-v5-u-w-100 pf-v5-u-w-75-on-md pf-v5-u-w-50-on-lg"
                         label="Minimum access role"
                         fieldId="minimumAccessRole"
                         isRequired
@@ -446,19 +498,23 @@ function AuthProviderForm({
                             id="defaultRole"
                             value={values.defaultRole} // TODO see getDefaultRoleByAuthProviderId in classic code
                             handleSelect={setFieldValue}
-                            isDisabled={isViewing}
+                            isDisabled={isViewing || !canChangeDefaultRole}
                         >
                             {roles.map(({ name }) => (
-                                <SelectOption key={name} value={name} />
+                                <SelectOption key={name} value={name}>
+                                    {name}
+                                </SelectOption>
                             ))}
                         </SelectSingle>
                     </FormGroup>
                     <div id="minimum-access-role-description">
-                        <Alert isInline variant="info" title="">
-                            <p>
-                                The minimum access role is granted to all users who sign in with
-                                this authentication provider.
-                            </p>
+                        <Alert
+                            isInline
+                            variant="info"
+                            title="Note: the minimum access role is granted to all users who sign in with
+                                this authentication provider."
+                            component="p"
+                        >
                             <p>
                                 To give users different roles, add rules. Users are granted all
                                 matching roles.
@@ -469,54 +525,233 @@ function AuthProviderForm({
                             </p>
                         </Alert>
                     </div>
-                    {selectedAuthProvider.requiredAttributes &&
-                        selectedAuthProvider.requiredAttributes.length > 0 && (
-                            <FormSection
-                                title="Required attributes for the authentication provider"
-                                titleElement="h3"
+                    {selectedAuthProvider.type === 'oidc' && (
+                        <FormSection
+                            title="Required attributes for the authentication provider"
+                            titleElement="h2"
+                        >
+                            <Alert
+                                isInline
+                                variant="info"
+                                title="Note: the required attributes are used to require attributes being
+                                    returned from the authentication provider."
+                                component="p"
                             >
-                                {selectedAuthProvider.requiredAttributes.map(
-                                    (attribute, index: number) => (
-                                        <Flex
-                                            key={`${attribute.attributeKey}_required_attribute_${index}`}
-                                        >
-                                            <FormGroup label="Key" fieldId={attribute.attributeKey}>
-                                                <TextInput
-                                                    type="text"
-                                                    id={attribute.attributeKey}
-                                                    value={attribute.attributeKey}
-                                                    isDisabled
-                                                />
-                                            </FormGroup>
-                                            <FormGroup
-                                                label="Value"
-                                                fieldId={attribute.attributeValue}
-                                            >
-                                                <TextInput
-                                                    type="text"
-                                                    id={attribute.attributeValue}
-                                                    value={attribute.attributeValue}
-                                                    isDisabled
-                                                />
-                                            </FormGroup>
-                                        </Flex>
-                                    )
+                                <p>
+                                    In case a required attribute is not returned from the
+                                    authentication provider, the login attempt will fail and no role
+                                    will be assigned to the user.
+                                </p>
+                            </Alert>
+                            {(!values.requiredAttributes ||
+                                values.requiredAttributes.length === 0) && (
+                                <p>No required attributes defined</p>
+                            )}
+                            <FieldArray
+                                name="requiredAttributes"
+                                render={(arrayHelpers) => (
+                                    <>
+                                        {values.requiredAttributes &&
+                                            values.requiredAttributes.map(
+                                                (attribute, index: number) => (
+                                                    <Flex key={`required_attribute_${index}`}>
+                                                        <FormGroup
+                                                            label="Key"
+                                                            fieldId={`requiredAttributes[${index}].attributeKey`}
+                                                        >
+                                                            <TextInput
+                                                                type="text"
+                                                                id={`requiredAttributes[${index}].attributeKey`}
+                                                                value={attribute.attributeKey}
+                                                                onChange={onChange}
+                                                                isDisabled={isDisabled}
+                                                            />
+                                                        </FormGroup>
+                                                        <FormGroup
+                                                            label="Value"
+                                                            fieldId={`requiredAttributes[${index}].attributeValue`}
+                                                        >
+                                                            <TextInput
+                                                                type="text"
+                                                                id={`requiredAttributes[${index}].attributeValue`}
+                                                                value={attribute.attributeValue}
+                                                                onChange={onChange}
+                                                                isDisabled={isDisabled}
+                                                            />
+                                                        </FormGroup>
+                                                        {!isDisabled && (
+                                                            <FlexItem>
+                                                                <Button
+                                                                    variant="plain"
+                                                                    aria-label="Delete required attribute"
+                                                                    style={{
+                                                                        transform:
+                                                                            'translate(0, 42px)',
+                                                                    }}
+                                                                    onClick={() =>
+                                                                        arrayHelpers.remove(index)
+                                                                    }
+                                                                >
+                                                                    <TrashIcon />
+                                                                </Button>
+                                                            </FlexItem>
+                                                        )}
+                                                        {!isUserResource(
+                                                            selectedAuthProvider.traits
+                                                        ) && (
+                                                            <FlexItem>
+                                                                <Tooltip content="Auth provider is managed declaratively and can only be edited declaratively.">
+                                                                    <Button
+                                                                        variant="plain"
+                                                                        aria-label="Information button"
+                                                                        style={{
+                                                                            transform:
+                                                                                'translate(0, 42px)',
+                                                                        }}
+                                                                    >
+                                                                        <InfoCircleIcon />
+                                                                    </Button>
+                                                                </Tooltip>
+                                                            </FlexItem>
+                                                        )}
+                                                    </Flex>
+                                                )
+                                            )}
+                                        {!isDisabled && (
+                                            <Flex>
+                                                <FlexItem>
+                                                    <Button
+                                                        variant="link"
+                                                        isInline
+                                                        icon={
+                                                            <PlusCircleIcon className="pf-v5-u-mr-sm" />
+                                                        }
+                                                        onClick={() =>
+                                                            arrayHelpers.push({
+                                                                attributeKey: '',
+                                                                attributeValue: '',
+                                                            })
+                                                        }
+                                                    >
+                                                        Add required attribute
+                                                    </Button>
+                                                </FlexItem>
+                                            </Flex>
+                                        )}
+                                    </>
                                 )}
-                                <div id="required-attributes-description">
-                                    <Alert isInline variant="info" title="">
-                                        <p>
-                                            The required attributes are used to require attributes
-                                            being returned from the authentication provider.
-                                        </p>
-                                        <p>
-                                            In case a required attribute is not set, the login will
-                                            fail and no role will be set to the user.
-                                        </p>
-                                    </Alert>
-                                </div>
-                            </FormSection>
-                        )}
-                    <FormSection title="Rules" titleElement="h3" className="pf-u-mt-0">
+                            />
+                        </FormSection>
+                    )}
+                    {selectedAuthProvider.type === 'oidc' && (
+                        <FormSection
+                            title="Claim mappings for the authentication provider"
+                            titleElement="h2"
+                        >
+                            <Alert
+                                isInline
+                                variant="info"
+                                title="Note: the claim mappings are used to map claims returned in underlying identity provider’s token to ACS token."
+                                component="p"
+                            >
+                                <p>
+                                    In case claim mapping is not configured for a certain claim,
+                                    this claim will not be returned from authentication provider.
+                                </p>
+                            </Alert>
+                            {(!Array.isArray(values.claimMappings) ||
+                                values.claimMappings.length === 0) && (
+                                <p>No claim mappings defined</p>
+                            )}
+                            <FieldArray
+                                name="claimMappings"
+                                render={(arrayHelpers) => (
+                                    <>
+                                        {Array.isArray(values.claimMappings) &&
+                                            values.claimMappings.map((mapping, index: number) => (
+                                                <Flex key={`claim_mapping_${index}`}>
+                                                    <FormGroup
+                                                        label="Key"
+                                                        fieldId={`claimMappings[${index}][0]`}
+                                                    >
+                                                        <TextInput
+                                                            type="text"
+                                                            id={`claimMappings[${index}][0]`}
+                                                            value={mapping[0]}
+                                                            onChange={onChange}
+                                                            isDisabled={isDisabled}
+                                                        />
+                                                    </FormGroup>
+                                                    <FormGroup
+                                                        label="Value"
+                                                        fieldId={`claimMappings[${index}][1]`}
+                                                    >
+                                                        <TextInput
+                                                            type="text"
+                                                            id={`claimMappings[${index}][1]`}
+                                                            value={mapping[1]}
+                                                            onChange={onChange}
+                                                            isDisabled={isDisabled}
+                                                        />
+                                                    </FormGroup>
+                                                    {!isDisabled && (
+                                                        <FlexItem>
+                                                            <Button
+                                                                variant="plain"
+                                                                aria-label="Delete claim mapping"
+                                                                style={{
+                                                                    transform: 'translate(0, 42px)',
+                                                                }}
+                                                                onClick={() =>
+                                                                    arrayHelpers.remove(index)
+                                                                }
+                                                            >
+                                                                <TrashIcon />
+                                                            </Button>
+                                                        </FlexItem>
+                                                    )}
+                                                    {!isUserResource(
+                                                        selectedAuthProvider.traits
+                                                    ) && (
+                                                        <FlexItem>
+                                                            <Tooltip content="Auth provider is managed declaratively and can only be edited declaratively.">
+                                                                <Button
+                                                                    variant="plain"
+                                                                    aria-label="Information button"
+                                                                    style={{
+                                                                        transform:
+                                                                            'translate(0, 42px)',
+                                                                    }}
+                                                                >
+                                                                    <InfoCircleIcon />
+                                                                </Button>
+                                                            </Tooltip>
+                                                        </FlexItem>
+                                                    )}
+                                                </Flex>
+                                            ))}
+                                        {!isDisabled && (
+                                            <Flex>
+                                                <FlexItem>
+                                                    <Button
+                                                        variant="link"
+                                                        isInline
+                                                        icon={
+                                                            <PlusCircleIcon className="pf-v5-u-mr-sm" />
+                                                        }
+                                                        onClick={() => arrayHelpers.push(['', ''])}
+                                                    >
+                                                        Add claim mapping
+                                                    </Button>
+                                                </FlexItem>
+                                            </Flex>
+                                        )}
+                                    </>
+                                )}
+                            />
+                        </FormSection>
+                    )}
+                    <FormSection title="Rules" titleElement="h2" className="pf-v5-u-mt-0">
                         <RuleGroups
                             authProviderId={selectedAuthProvider.id}
                             groups={values.groups}

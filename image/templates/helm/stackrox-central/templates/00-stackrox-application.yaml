@@ -97,8 +97,10 @@ spec:
       kind: ClusterRoleBinding
     - group: apps
       kind: Deployment
+{{- if ._rox.network.enableNetworkPolicies }}
     - group: networking.k8s.io
       kind: NetworkPolicy
+{{- end }}
     - group: rbac.authorization.k8s.io
       kind: Role
     - group: rbac.authorization.k8s.io

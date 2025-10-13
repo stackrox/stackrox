@@ -1,0 +1,19 @@
+{
+  "id": "def456",
+  "name": "Test Policy 2",
+  "description": "This is a test policy for unit tests!",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Process Name",
+          "values": [
+            {
+              "value": "sshd"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

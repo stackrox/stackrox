@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { FormikProps, FormikValues, useFormik } from 'formik';
+import { useFormik } from 'formik';
+import type { FormikProps, FormikValues } from 'formik';
 
-import { FormResponseMessage } from 'Components/PatternFly/FormMessage';
+import type { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 type UseFormModalProps<T> = {
@@ -54,7 +55,7 @@ function useFormModal<T extends FormikValues>({
 
                 // TODO: factor out and increase robustness of the following
                 //       scroll to error behavior
-                const container = document.querySelector('.pf-c-modal-box__body'); // PF modal body element
+                const container = document.querySelector('.pf-v5-c-modal-box__body'); // PF modal body element
                 const alertEl = document.getElementById('form-message-alert'); // PF alert message element
                 if (container && alertEl) {
                     container.scrollTop = alertEl.offsetTop - container.scrollTop;

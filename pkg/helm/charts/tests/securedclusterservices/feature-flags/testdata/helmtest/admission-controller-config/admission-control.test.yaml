@@ -1,0 +1,134 @@
+tests:
+- name: "Defaults for OpenShift3"
+  set:
+    env.openshift: 3
+  expect: |
+   .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .rules[0] | assertThat(.operations == ["CREATE", "UPDATE"])
+   [.validatingwebhookconfigurations[].webhooks[] | select(.name == "k8sevents.stackrox.io")] | assertThat(length == 0)
+   .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.scanInline == true)
+   .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.timeoutSeconds == 10)
+- name: "Defaults for OpenShift4"
+  set:
+    env.openshift: 4
+  expect: |
+   .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .rules[0] | assertThat(.operations == ["CREATE", "UPDATE"])
+   [.validatingwebhookconfigurations[].webhooks[] | select(.name == "k8sevents.stackrox.io")] | assertThat(length == 1)
+   .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.scanInline == true)
+   .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.timeoutSeconds == 10)
+- name: "Defaults for vanilla K8s"
+  set:
+    env.openshift: false
+  expect: |
+   .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .rules[0] | assertThat(.operations == ["CREATE", "UPDATE"])
+   [.validatingwebhookconfigurations[].webhooks[] | select(.name == "k8sevents.stackrox.io")] | assertThat(length == 1)
+   .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.scanInline == true)
+   .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.timeoutSeconds == 10)
+- name: "disabling listenOn* is ignored"
+  set:
+    admissionControl.listenOnCreates: false
+    admissionControl.listenOnUpdates: false
+    admissionControl.listenOnEvents: false
+  expect: |
+   .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .rules[0].operations | assertThat(contains(["CREATE"]))
+   .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .rules[0].operations | assertThat(contains(["UPDATE"]))
+   .validatingwebhookconfigurations[].webhooks[] | select(.name == "k8sevents.stackrox.io") | assertThat(. != null)
+- name: "Warnings are emitted when listenOn* fields set"
+  values:
+    admissionControl:
+      listenOnCreates: false
+      listenOnUpdates: false
+      listenOnEvents: false
+  expect: |
+    .notes | assertThat(contains("It is not supported anymore to specify 'admissionControl.listenOnCreates'. This setting will be ignored. The effective value is 'true'"))
+    .notes | assertThat(contains("It is not supported anymore to specify 'admissionControl.listenOnUpdates'. This setting will be ignored. The effective value is 'true'"))
+    .notes | assertThat(contains("It is not supported anymore to specify 'admissionControl.listenOnEvents'. This setting will be ignored. The effective value is 'true'"))
+- name: "Warning is emitted when scanInline fields set"
+  set:
+    admissionControl.dynamic.scanInline: false
+  expect: |
+    .notes | assertThat(contains("It is not supported anymore to specify 'admissionControl.dynamic.scanInline'. This setting will be ignored. The effective value is 'true'"))
+- name: "Enforcement defaults to enabled during installations"
+  release:
+    isInstall: true
+    isUpgrade: false
+  expect: |
+    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.enabled == true)
+    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.enforceOnUpdates == true)
+- name: "Enforcement can be disabled"
+  release:
+    isInstall: true
+    isUpgrade: false
+  set:
+    admissionControl.enforce: false
+  expect: |
+    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.enabled == false)
+    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.enforceOnUpdates == false)
+- name: "Enforcement during upgrade from pre-4.9"
+  release:
+    isUpgrade: true
+    isInstall: false
+  server:
+    objects:
+    - apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: stackrox-secured-cluster-helm
+        namespace: stackrox
+      data:
+        installXYVersion: "4.8"
+  tests:
+  - name: "is disabled if enforceOn* disabled"
+    values:
+      admissionControl:
+        dynamic:
+          enforceOnCreates: false
+          enforceOnUpdates: false
+    expect: |
+      .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.enabled == false)
+      .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.enforceOnUpdates == false)
+  - name: "is enabled"
+    expect: |
+      .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.enabled == true)
+      .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.enforceOnUpdates == true)
+    tests:
+    - name: "if enforceOnUpdates enabled"
+      set:
+        admissionControl.dynamic.enforceOnUpdates: true
+        admissionControl.dynamic.enforceOnCreates: false
+    - name: "if enforceOnCreates enabled"
+      set:
+        admissionControl.dynamic.enforceOnUpdates: false
+        admissionControl.dynamic.enforceOnCreates: true
+- name: "Warning is emitted when enforcement is disabled"
+  expect:
+    .notes | assertThat(contains("Admission Controller enforcement will be completely disabled, this is a bad idea"))
+  tests:
+  - name: "during upgrades"
+    release:
+      isUpgrade: true
+      isInstall: false
+    server:
+      objects:
+      - apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: stackrox-secured-cluster-helm
+          namespace: stackrox
+        data:
+          installXYVersion: "4.8"
+  - name: "during fresh installations"
+    release:
+      isUpgrade: false
+      isInstall: true
+    set:
+      admissionControl.enforce: false
+- name: "When timeout field is set"
+  set:
+    admissionControl.dynamic.timeout: 11
+  tests:
+  - name: "a warning is emitted"
+    expect: |
+      .notes | assertThat(contains("It is not supported anymore to specify 'admissionControl.dynamic.timeout'. This setting will be ignored. The effective value is '10'"))
+  - name: "the user-specified value is ignored"
+    expect: |
+      .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.timeoutSeconds == 10)

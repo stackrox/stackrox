@@ -17,8 +17,11 @@ const (
 	callbackRelativePath = "callback"
 )
 
+type newBackendFunc func(id string, callbackURL string, _ map[string]string) (*backend, error)
+
 type factory struct {
 	callbackURLPath string
+	newBackend      newBackendFunc
 }
 
 var _ authproviders.BackendFactory = (*factory)(nil)
@@ -28,14 +31,15 @@ func NewFactory(urlPathPrefix string) authproviders.BackendFactory {
 	urlPathPrefix = strings.TrimRight(urlPathPrefix, "/") + "/"
 	return &factory{
 		callbackURLPath: urlPathPrefix + callbackRelativePath,
+		newBackend:      newBackend,
 	}
 }
 
-func (f *factory) CreateBackend(_ context.Context, id string, _ []string, config map[string]string) (authproviders.Backend, error) {
-	return newBackend(id, f.callbackURLPath, config)
+func (f *factory) CreateBackend(_ context.Context, id string, _ []string, config map[string]string, _ map[string]string) (authproviders.Backend, error) {
+	return f.newBackend(id, f.callbackURLPath, config)
 }
 
-func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (providerID string, clientState string, err error) {
+func (f *factory) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (providerID string, clientState string, err error) {
 	if r.URL.Path != f.callbackURLPath {
 		return "", "", httputil.NewError(http.StatusNotFound, "Not Found")
 	}

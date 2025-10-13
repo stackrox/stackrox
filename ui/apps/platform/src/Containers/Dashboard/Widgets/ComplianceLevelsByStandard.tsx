@@ -1,18 +1,19 @@
 import React, { useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom-v5-compat';
 import {
+    Button,
+    EmptyState,
+    EmptyStateBody,
+    EmptyStateFooter,
+    EmptyStateHeader,
+    EmptyStateIcon,
     Flex,
     FlexItem,
-    Title,
+    Form,
     FormGroup,
+    Title,
     ToggleGroup,
     ToggleGroupItem,
-    Button,
-    Form,
-    EmptyState,
-    EmptyStateIcon,
-    EmptyStateVariant,
-    EmptyStateBody,
 } from '@patternfly/react-core';
 import { SyncIcon } from '@patternfly/react-icons';
 import { useQuery } from '@apollo/client';
@@ -20,43 +21,36 @@ import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
+import WidgetCard from 'Components/PatternFly/WidgetCard';
 import useURLSearch from 'hooks/useURLSearch';
 import useWidgetConfig from 'hooks/useWidgetConfig';
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 
 import {
     getRequestQueryStringForSearchFilter,
     getUrlQueryStringForSearchFilter,
 } from 'utils/searchUtils';
-import entityTypes, {
-    StandardEntityType,
-    standardTypes,
-    standardEntityTypes,
-} from 'constants/entityTypes';
+import entityTypes from 'constants/entityTypes';
+import type { StandardEntityType, standardTypes } from 'constants/entityTypes';
 import { AGGREGATED_RESULTS_ACROSS_ENTITIES } from 'queries/controls';
-import { complianceBasePath, urlEntityListTypes } from 'routePaths';
+import { complianceBasePath } from 'routePaths';
 import { standardLabels } from 'messages/standards';
-import ComplianceLevelsByStandardChart, { ComplianceData } from './ComplianceLevelsByStandardChart';
-import WidgetCard from './WidgetCard';
+import ComplianceLevelsByStandardChart from './ComplianceLevelsByStandardChart';
+import type { ComplianceLevelByStandard } from './ComplianceLevelsByStandardChart';
 import WidgetOptionsMenu from './WidgetOptionsMenu';
 import WidgetOptionsResetButton from './WidgetOptionsResetButton';
 
 const fieldIdPrefix = 'compliance-levels-by-standard';
 
-function ComplianceScanEmptyState() {
-    return (
-        <EmptyState className="pf-u-h-100" variant={EmptyStateVariant.xs}>
-            <EmptyStateIcon className="pf-u-font-size-xl" icon={SyncIcon} />
-            <Title headingLevel="h3" size="md">
-                No Standard results available.
-            </Title>
-            <EmptyStateBody>Run a scan on the Compliance page.</EmptyStateBody>
-            <Button component={LinkShim} href={complianceBasePath}>
-                Go to compliance
-            </Button>
-        </EmptyState>
-    );
-}
+type ComplianceStandard = {
+    id: string;
+    name: string;
+};
+
+type ComplianceData = {
+    complianceStandards: ComplianceStandard[];
+    complianceLevelsByStandard: ComplianceLevelByStandard[];
+};
 
 // Adapted from `processData` function in the original DashboardCompliance.js code
 function processData(
@@ -67,27 +61,29 @@ function processData(
     if (!data) {
         return undefined;
     }
-    const { complianceStandards } = data;
-    const modifiedData = data.controls.results.map((result) => {
+    const { complianceStandards, controls } = data;
+
+    const modifiedData: ComplianceLevelByStandard[] = [];
+    controls.results.forEach((result) => {
         const aggregationName = result?.aggregationKeys[0]?.id;
         const standard = complianceStandards.find((cs) => cs.id === aggregationName);
-        const { numPassing, numFailing } = result;
-        const standardQueryValue =
-            standardLabels[standard?.id] || aggregationName || 'Unrecognized standard';
-        const query = getUrlQueryStringForSearchFilter({
-            ...searchFilter,
-            Cluster: searchFilter.Cluster || '*',
-            standard: standardQueryValue,
-        });
-        const link = `${complianceBasePath}/${
-            urlEntityListTypes[standardEntityTypes.CONTROL]
-        }?${query}`;
-        const modifiedResult = {
-            name: standard?.name || aggregationName || 'Unrecognized standard',
-            passing: Math.round((numPassing / (numFailing + numPassing)) * 100) || 0,
-            link,
-        };
-        return modifiedResult;
+
+        if (standard) {
+            const { numPassing, numFailing } = result;
+            const standardQueryValue =
+                standardLabels[standard.id] || aggregationName || 'Unrecognized standard';
+            const query = getUrlQueryStringForSearchFilter({
+                ...searchFilter,
+                Cluster: searchFilter.Cluster || '*',
+                standard: standardQueryValue,
+            });
+            const link = `${complianceBasePath}/controls?${query}`;
+            modifiedData.push({
+                name: standard.name || aggregationName || 'Unrecognized standard',
+                passing: Math.round((numPassing / (numFailing + numPassing)) * 100) || 0,
+                link,
+            });
+        }
     });
 
     const sorted = sortBy(modifiedData, [(datum) => datum.passing]);
@@ -96,7 +92,12 @@ function processData(
         sorted.reverse();
     }
 
-    return sorted;
+    return {
+        complianceStandards,
+        // Slice to limit number of bars in chart.
+        // Reverse since Victory charts renders items from bottom to top
+        complianceLevelsByStandard: sorted.slice(0, 6).reverse(),
+    };
 }
 
 type AggregationResult = {
@@ -112,10 +113,7 @@ type AggregationResult = {
             unit: StandardEntityType;
         }[];
     };
-    complianceStandards: {
-        id: string;
-        name: string;
-    }[];
+    complianceStandards: ComplianceStandard[];
 };
 
 type SortBy = 'asc' | 'desc';
@@ -146,10 +144,7 @@ function ComplianceLevelsByStandard() {
     );
 
     const complianceData = useMemo(
-        () =>
-            processData(searchFilter, sortDataBy, data || previousData)
-                ?.slice(0, 6)
-                ?.reverse(), // Reverse since Victory charts renders items from bottom to top
+        () => processData(searchFilter, sortDataBy, data || previousData),
         [searchFilter, sortDataBy, data, previousData]
     );
 
@@ -199,10 +194,35 @@ function ComplianceLevelsByStandard() {
                 </Flex>
             }
         >
-            {complianceData && complianceData.length > 0 ? (
-                <ComplianceLevelsByStandardChart complianceData={complianceData} />
+            {Array.isArray(complianceData?.complianceLevelsByStandard) &&
+            complianceData.complianceLevelsByStandard.length !== 0 ? (
+                <ComplianceLevelsByStandardChart
+                    complianceLevelsByStandard={complianceData.complianceLevelsByStandard}
+                />
             ) : (
-                <ComplianceScanEmptyState />
+                <EmptyState className="pf-v5-u-h-100" variant="xs">
+                    <EmptyStateHeader
+                        titleText={
+                            Array.isArray(complianceData?.complianceStandards) &&
+                            complianceData.complianceStandards.length === 0
+                                ? 'No standards selected'
+                                : 'No results available.'
+                        }
+                        icon={<EmptyStateIcon className="pf-v5-u-font-size-xl" icon={SyncIcon} />}
+                        headingLevel="h3"
+                    />
+                    <EmptyStateBody>
+                        {Array.isArray(complianceData?.complianceStandards) &&
+                        complianceData.complianceStandards.length === 0
+                            ? 'Manage profiles on the Compliance page.'
+                            : 'Run a scan on the Compliance page.'}
+                    </EmptyStateBody>
+                    <EmptyStateFooter>
+                        <Button component={LinkShim} href={complianceBasePath}>
+                            Go to compliance
+                        </Button>
+                    </EmptyStateFooter>
+                </EmptyState>
             )}
         </WidgetCard>
     );

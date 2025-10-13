@@ -1,0 +1,51 @@
+# This file serves as a list of StackRox releases to which we should generate
+# vulnerability bundles.
+#
+# Notice that offline bundles have one bundle per release. However, online
+# bundles are published per vulnerability schema (eg. v1, v2, etc). If a release
+# is not specified in this file, then the vulnerability updater workflow (a.)
+# won't take into account its vulnerability schema, and (b.) won't create the
+# offline bundle for that release.
+4.4.0
+4.4.1
+4.4.2
+4.4.3
+4.4.4
+4.4.5
+4.4.6
+4.4.7
+4.4.8
+4.5.0
+4.5.1
+4.5.2
+4.5.3
+4.5.4
+4.5.5
+4.5.6
+4.5.7
+4.5.8
+4.5.9
+4.6.0
+4.6.1
+4.6.10
+4.6.2
+4.6.3
+4.6.4
+4.6.5
+4.6.6
+4.6.7
+4.6.8
+4.6.9
+4.7.0
+4.7.1
+4.7.2
+4.7.3
+4.7.4
+4.7.5
+4.7.6
+4.7.7
+4.8.0
+4.8.1
+4.8.2
+4.8.3
+4.8.4

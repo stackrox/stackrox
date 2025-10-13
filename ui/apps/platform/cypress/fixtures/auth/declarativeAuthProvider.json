@@ -1,0 +1,21 @@
+{
+  "authProviders": [
+    {
+      "id": "declarative-auth-provider",
+      "name": "auth-provider-1",
+      "type": "saml",
+      "uiEndpoint": "irrelevant",
+      "enabled": true,
+      "config": {
+        "idp_metadata_url": "irrelevant",
+        "sp_issuer": "irrelevant"
+      },
+      "loginUrl": "irrelevant",
+      "validated": false,
+      "active": false,
+      "traits": {
+        "origin": "DECLARATIVE"
+      }
+    }
+  ]
+}

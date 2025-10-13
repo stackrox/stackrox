@@ -5,47 +5,47 @@ import { connectRouter } from 'connected-react-router';
 import bindSelectors from 'utils/bindSelectors';
 import apiTokens, { selectors as apiTokenSelectors } from './apitokens';
 import auth, { selectors as authSelectors } from './auth';
-import clusterInitBundles, { selectors as clusterInitBundleSelectors } from './clusterInitBundles';
-import clusters, { selectors as clusterSelectors } from './clusters';
+import machineAccessConfigs, {
+    selectors as machineAccessConfigSelectors,
+} from './machineAccessConfigs';
+import feedback, { selectors as feedbackSelectors } from './feedback';
 import formMessages, { selectors as formMessageSelectors } from './formMessages';
 import integrations, { selectors as integrationSelectors } from './integrations';
+import invite, { selectors as inviteSelectors } from './invite';
 import notifications, { selectors as notificationSelectors } from './notifications';
-import featureFlags, { selectors as featureFlagSelectors } from './featureFlags';
-import globalSearch, { selectors as globalSearchSelectors } from './globalSearch';
 import policies, { selectors as policySelectors } from './policies/reducer';
 import roles, { selectors as roleSelectors } from './roles';
 import searchAutoComplete, { selectors as searchAutoCompleteSelectors } from './searchAutocomplete';
-import serverError, { selectors as serverErrorSelectors } from './serverError';
-import metadata, { selectors as metadataSelectors } from './metadata';
+import serverResponseStatus, {
+    selectors as serverResponseStatusSelectors,
+} from './serverResponseStatus';
+
 import loading, { selectors as loadingSelectors } from './loading';
-import { selectors as routeSelectors } from './routes';
-import network, { selectors as networkSelectors } from './network/reducer';
 import groups, { selectors as groupsSelectors } from './groups';
-import attributes, { selectors as attributesSelectors } from './attributes';
-import systemConfig, { selectors as systemConfigSelectors } from './systemConfig';
+import centralCapabilities, {
+    selectors as centralCapabilitiesSelectors,
+} from './centralCapabilities';
+import cloudSources, { selectors as cloudSourcesSelectors } from './cloudSources';
 
 // Reducers
 
 const appReducer = combineReducers({
     apiTokens,
     auth,
-    clusterInitBundles,
-    clusters,
+    machineAccessConfigs,
+    feedback,
     formMessages,
     integrations,
+    invite,
     notifications,
-    featureFlags,
-    globalSearch,
     policies,
     roles,
     searchAutoComplete,
-    serverError,
+    serverResponseStatus,
     loading,
-    metadata,
-    network,
     groups,
-    attributes,
-    systemConfig,
+    centralCapabilities,
+    cloudSources,
 });
 
 const createRootReducer = (history) => {
@@ -60,49 +60,43 @@ export default createRootReducer;
 
 // Selectors
 
-const getRoute = (state) => state.router;
 const getApp = (state) => state.app;
 const getAPITokens = (state) => getApp(state).apiTokens;
 const getAuth = (state) => getApp(state).auth;
-const getClusterInitBundles = (state) => getApp(state).clusterInitBundles;
-const getClusters = (state) => getApp(state).clusters;
+const getMachineAccessConfigs = (state) => getApp(state).machineAccessConfigs;
+const getFeedback = (state) => getApp(state).feedback;
 const getFormMessages = (state) => getApp(state).formMessages;
 const getIntegrations = (state) => getApp(state).integrations;
+const getInvite = (state) => getApp(state).invite;
 const getNotifications = (state) => getApp(state).notifications;
-const getFeatureFlags = (state) => getApp(state).featureFlags;
-const getGlobalSearches = (state) => getApp(state).globalSearch;
 const getPolicies = (state) => getApp(state).policies;
 const getRoles = (state) => getApp(state).roles;
 const getSearchAutocomplete = (state) => getApp(state).searchAutoComplete;
-const getServerError = (state) => getApp(state).serverError;
+const getServerResponseStatus = (state) => getApp(state).serverResponseStatus;
 const getLoadingStatus = (state) => getApp(state).loading;
-const getMetadata = (state) => getApp(state).metadata;
-const getNetwork = (state) => getApp(state).network;
+
 const getRuleGroups = (state) => getApp(state).groups;
-const getAttributes = (state) => getApp(state).attributes;
-const getSystemConfig = (state) => getApp(state).systemConfig;
+const getCentralCapabilities = (state) => getApp(state).centralCapabilities;
+const getCloudSources = (state) => getApp(state).cloudSources;
 
 const boundSelectors = {
     ...bindSelectors(getAPITokens, apiTokenSelectors),
     ...bindSelectors(getAuth, authSelectors),
-    ...bindSelectors(getClusterInitBundles, clusterInitBundleSelectors),
-    ...bindSelectors(getClusters, clusterSelectors),
+    ...bindSelectors(getMachineAccessConfigs, machineAccessConfigSelectors),
+    ...bindSelectors(getFeedback, feedbackSelectors),
     ...bindSelectors(getFormMessages, formMessageSelectors),
     ...bindSelectors(getIntegrations, integrationSelectors),
+    ...bindSelectors(getInvite, inviteSelectors),
     ...bindSelectors(getNotifications, notificationSelectors),
-    ...bindSelectors(getFeatureFlags, featureFlagSelectors),
-    ...bindSelectors(getGlobalSearches, globalSearchSelectors),
     ...bindSelectors(getPolicies, policySelectors),
     ...bindSelectors(getRoles, roleSelectors),
-    ...bindSelectors(getRoute, routeSelectors),
     ...bindSelectors(getSearchAutocomplete, searchAutoCompleteSelectors),
-    ...bindSelectors(getServerError, serverErrorSelectors),
+    ...bindSelectors(getServerResponseStatus, serverResponseStatusSelectors),
     ...bindSelectors(getLoadingStatus, loadingSelectors),
-    ...bindSelectors(getMetadata, metadataSelectors),
-    ...bindSelectors(getNetwork, networkSelectors),
+
     ...bindSelectors(getRuleGroups, groupsSelectors),
-    ...bindSelectors(getAttributes, attributesSelectors),
-    ...bindSelectors(getSystemConfig, systemConfigSelectors),
+    ...bindSelectors(getCentralCapabilities, centralCapabilitiesSelectors),
+    ...bindSelectors(getCloudSources, cloudSourcesSelectors),
 };
 
 export const selectors = {

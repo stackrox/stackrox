@@ -12,6 +12,7 @@ metadata:
 # 6. kubectl get "${ns_kinds}" -n kuttl-ns -o yaml > ns_resources_after.yaml
 # 7. ./operator/bin/yq-* --null-input  '[load("ns_resources_after.yaml") | .items[] | (with_entries(select(.key == "apiVersion" or .key == "kind")) + {"metadata": {"name": .metadata.name}})] - [load("ns_resources_before.yaml") | .items[] | (with_entries(select(.key == "apiVersion" or .key == "kind")) + {"metadata": {"name": .metadata.name}})]| .[]| select(.kind != "PersistentVolumeClaim" and .kind != "Event" and .kind != "Pod" and .kind != "PodMetrics" and .kind != "ReplicaSet" and .kind != "EndpointSlice") | split_doc'
 # 8. Massage the output to omit those few Secrets whose names are unpredictable
+# 9. Move the openshift-specific resources to delete-central-errors-openshift.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -20,7 +21,17 @@ metadata:
 apiVersion: v1
 kind: ConfigMap
 metadata:
+  name: central-db-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
   name: central-endpoints
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: central-external-db
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -33,9 +44,29 @@ metadata:
   name: scanner-config
 ---
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scanner-v4-db-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scanner-v4-indexer-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scanner-v4-matcher-config
+---
+apiVersion: v1
 kind: Endpoints
 metadata:
   name: central
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: central-db
 ---
 apiVersion: v1
 kind: Endpoints
@@ -48,9 +79,39 @@ metadata:
   name: scanner-db
 ---
 apiVersion: v1
+kind: Endpoints
+metadata:
+  name: scanner-v4-db
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: scanner-v4-indexer
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: scanner-v4-matcher
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: central-db-password
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: central-db-tls
+---
+apiVersion: v1
 kind: Secret
 metadata:
   name: central-htpasswd
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: central-monitoring-tls
 ---
 apiVersion: v1
 kind: Secret
@@ -75,6 +136,26 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  name: scanner-v4-db-password
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: scanner-v4-db-tls
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: scanner-v4-indexer-tls
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: scanner-v4-matcher-tls
+---
+apiVersion: v1
+kind: Secret
+metadata:
   name: sh.helm.release.v1.stackrox-central-services.v1
 ---
 apiVersion: v1
@@ -85,12 +166,27 @@ metadata:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
+  name: central-db
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
   name: scanner
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: scanner-v4
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: central
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: central-db
 ---
 apiVersion: v1
 kind: Service
@@ -102,10 +198,30 @@ kind: Service
 metadata:
   name: scanner-db
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scanner-v4-db
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scanner-v4-indexer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scanner-v4-matcher
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: central
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central-db
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -117,50 +233,20 @@ kind: Deployment
 metadata:
   name: scanner-db
 ---
-apiVersion: authorization.openshift.io/v1
-kind: RoleBinding
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: central-use-scc
+  name: scanner-v4-db
 ---
-apiVersion: authorization.openshift.io/v1
-kind: RoleBinding
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: scanner-use-scc
+  name: scanner-v4-indexer
 ---
-apiVersion: authorization.openshift.io/v1
-kind: RoleBinding
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: stackrox-central-diagnostics
----
-apiVersion: authorization.openshift.io/v1
-kind: RoleBinding
-metadata:
-  name: stackrox-central-psp
----
-apiVersion: authorization.openshift.io/v1
-kind: RoleBinding
-metadata:
-  name: stackrox-scanner-psp
----
-apiVersion: authorization.openshift.io/v1
-kind: Role
-metadata:
-  name: stackrox-central-diagnostics
----
-apiVersion: authorization.openshift.io/v1
-kind: Role
-metadata:
-  name: use-central-scc
----
-apiVersion: authorization.openshift.io/v1
-kind: Role
-metadata:
-  name: use-scanner-scc
----
-apiVersion: autoscaling/v1
-kind: HorizontalPodAutoscaler
-metadata:
-  name: scanner
+  name: scanner-v4-matcher
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -170,6 +256,16 @@ metadata:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
+  name: central-db
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: central-monitoring-tls
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
   name: scanner
 ---
 apiVersion: networking.k8s.io/v1
@@ -177,10 +273,40 @@ kind: NetworkPolicy
 metadata:
   name: scanner-db
 ---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: scanner-v4-db
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: scanner-v4-indexer
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: scanner-v4-matcher
+---
 apiVersion: platform.stackrox.io/v1alpha1
 kind: Central
 metadata:
   name: stackrox-central-services
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: central-db-use-scc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: central-prometheus-k8s
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: central-sts-config-reader
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -195,22 +321,32 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
+  name: scanner-v4-use-scc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
   name: stackrox-central-diagnostics
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: Role
 metadata:
-  name: stackrox-central-psp
+  name: central-prometheus-k8s
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: Role
 metadata:
-  name: stackrox-scanner-psp
+  name: central-sts-config-reader
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: stackrox-central-diagnostics
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: use-central-db-scc
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -222,12 +358,7 @@ kind: Role
 metadata:
   name: use-scanner-scc
 ---
-apiVersion: route.openshift.io/v1
-kind: Route
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
 metadata:
-  name: central
----
-apiVersion: route.openshift.io/v1
-kind: Route
-metadata:
-  name: central-mtls
+  name: use-scanner-v4-scc

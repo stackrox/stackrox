@@ -8,8 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/types"
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/generated/api/integrations"
@@ -17,10 +15,12 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/jsonutil"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
-	"go.uber.org/zap"
 )
 
 const (
@@ -37,6 +37,10 @@ const (
 	// detected but not yet seen in the database. Ten seconds were chosen based on our understanding how quickly
 	// violations are persisted.
 	eventualConsistencyMargin = 10 * time.Second
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 type paginationSettings struct {
@@ -89,7 +93,7 @@ func newViolationsHandler(alertDS datastore.DataStore, pagination paginationSett
 			httputil.WriteError(w, err)
 			return
 		}
-		err = (&jsonpb.Marshaler{}).Marshal(w, res)
+		err = jsonutil.Marshal(w, res)
 		if err != nil {
 			log.Warn("Error writing violations response: ", err)
 			panic(http.ErrAbortHandler)
@@ -102,18 +106,10 @@ func getViolationsResponse(alertDS datastore.DataStore, r *http.Request, paginat
 	if err != nil {
 		return nil, err
 	}
-	fromTimestamp, err := types.TimestampProto(checkpoint.fromTimestamp)
-	if err != nil {
-		return nil, err
-	}
-	toTimestamp, err := types.TimestampProto(checkpoint.toTimestamp)
-	if err != nil {
-		return nil, err
-	}
 
 	response := integrations.SplunkViolationsResponse{}
 
-	for len(response.Violations) < pagination.violationsPerResponse {
+	for len(response.GetViolations()) < pagination.violationsPerResponse {
 		alerts, err := queryAlerts(r.Context(), alertDS, checkpoint, pagination.maxAlertsFromQuery)
 		if err != nil {
 			return nil, err
@@ -122,7 +118,7 @@ func getViolationsResponse(alertDS datastore.DataStore, r *http.Request, paginat
 		lastAlertID := ""
 
 		for _, alert := range alerts {
-			violations, err := extractViolations(alert, fromTimestamp, toTimestamp)
+			violations, err := extractViolations(alert, checkpoint.fromTimestamp, checkpoint.toTimestamp)
 			if err != nil {
 				return nil, err
 			}
@@ -134,7 +130,7 @@ func getViolationsResponse(alertDS datastore.DataStore, r *http.Request, paginat
 
 			// We cannot strictly limit number of violations in the response without further complicating the checkpoint
 			// format. Therefore we stop after we got enough violations and processed the entire Alert.
-			if len(response.Violations) >= pagination.violationsPerResponse {
+			if len(response.GetViolations()) >= pagination.violationsPerResponse {
 				break
 			}
 		}
@@ -196,10 +192,10 @@ func queryAlerts(ctx context.Context, alertDS datastore.DataStore, checkpoint sp
 		}},
 	}
 
-	return alertDS.SearchRawAlerts(ctx, pq)
+	return alertDS.SearchRawAlerts(ctx, pq, true)
 }
 
-func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp, toTimestamp *types.Timestamp) ([]*integrations.SplunkViolation, error) {
+func extractViolations(alert *storage.Alert, fromTime time.Time, toTime time.Time) ([]*integrations.SplunkViolation, error) {
 	var result []*integrations.SplunkViolation
 	seenViolations := false
 
@@ -208,13 +204,14 @@ func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp, toT
 
 	if processViolation := alert.GetProcessViolation(); processViolation != nil {
 		if len(processViolation.GetProcesses()) == 0 {
-			log.Warnw("Detected ProcessViolation without ProcessIndicators. No process violations can be extracted from this Alert.", zap.String("Alert.Id", alert.GetId()))
+			log.Warnw("Detected ProcessViolation without ProcessIndicators. No process violations can be extracted from this Alert.", logging.AlertID(alert.GetId()))
 		}
 		for _, procIndicator := range processViolation.GetProcesses() {
 			seenViolations = true
 
-			timestamp := getProcessViolationTime(alert, procIndicator)
-			if timestamp.Compare(fromTimestamp) <= 0 || timestamp.Compare(toTimestamp) > 0 {
+			violationTime := getProcessViolationTime(alert, procIndicator)
+			if violationTime == nil || violationTime.Compare(fromTime) <= 0 ||
+				violationTime.Compare(toTime) > 0 {
 				continue
 			}
 
@@ -235,8 +232,9 @@ func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp, toT
 	for _, v := range alert.GetViolations() {
 		seenViolations = true
 
-		timestamp := getNonProcessViolationTime(alert, v)
-		if timestamp.Compare(fromTimestamp) <= 0 || timestamp.Compare(toTimestamp) > 0 {
+		violationTime := getNonProcessViolationTime(alert, v)
+		if violationTime == nil || violationTime.Compare(fromTime) <= 0 ||
+			violationTime.Compare(toTime) > 0 {
 			continue
 		}
 
@@ -257,7 +255,7 @@ func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp, toT
 			ViolationInfo:   violationInfo,
 			AlertInfo:       extractAlertInfo(alert, violationInfo),
 			PolicyInfo:      policyInfo,
-			NetworkFlowInfo: v.GetNetworkFlowInfo().Clone(),
+			NetworkFlowInfo: v.GetNetworkFlowInfo().CloneVT(),
 		}
 
 		addEntityInfoToSplunkViolation(alert, &violation, deploymentInfo)
@@ -276,7 +274,7 @@ func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp, toT
 	}
 
 	if !seenViolations {
-		log.Warnw("Did not detect any extractable violations from the Alert. Information about the alert will not be available in Splunk.", zap.String("Alert.Id", alert.GetId()))
+		log.Warnw("Did not detect any extractable violations from the Alert. Information about the alert will not be available in Splunk.", logging.AlertID(alert.GetId()))
 	}
 
 	return result, nil
@@ -290,7 +288,7 @@ func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp, toT
 // It still may happen that different violations in storage.Alert have the same content and we'll produce the same Ids
 // for them. Let's see if this ever becomes a problem.
 func generateViolationID(alertID string, v *storage.Alert_Violation) (string, error) {
-	data, err := v.Marshal()
+	data, err := v.MarshalVT()
 	if err != nil {
 		return "", err
 	}
@@ -301,14 +299,14 @@ func generateViolationID(alertID string, v *storage.Alert_Violation) (string, er
 	return uuid.NewV5(alertUUID, hex.Dump(data)).String(), nil
 }
 
-func getProcessViolationTime(fromAlert *storage.Alert, fromProcIndicator *storage.ProcessIndicator) *types.Timestamp {
+func getProcessViolationTime(fromAlert *storage.Alert, fromProcIndicator *storage.ProcessIndicator) *time.Time {
 	timestamp := fromProcIndicator.GetSignal().GetTime()
 	if timestamp == nil {
 		// As a fallback when process violation does not have own time on the record take Alert's last seen time to
 		// provide at least some value.
 		timestamp = fromAlert.GetTime()
 	}
-	return timestamp
+	return protocompat.ConvertTimestampToTimeOrNil(timestamp)
 }
 
 func extractProcessViolationInfo(fromAlert *storage.Alert, fromProcViolation *storage.Alert_ProcessViolation, fromProcIndicator *storage.ProcessIndicator) *integrations.SplunkViolation_ViolationInfo {
@@ -319,11 +317,12 @@ func extractProcessViolationInfo(fromAlert *storage.Alert, fromProcViolation *st
 	// and so on. Here's another example
 	//   Binaries '/usr/bin/apt' and '/usr/bin/dpkg' executed with 5 different arguments under 2 different user IDs
 	// We still map it as best effort.
+	violationTime := getProcessViolationTime(fromAlert, fromProcIndicator)
 	return &integrations.SplunkViolation_ViolationInfo{
 		ViolationId:        fromProcIndicator.GetId(),
 		ViolationMessage:   fromProcViolation.GetMessage(),
 		ViolationType:      integrations.SplunkViolation_ViolationInfo_PROCESS_EVENT,
-		ViolationTime:      getProcessViolationTime(fromAlert, fromProcIndicator),
+		ViolationTime:      protocompat.ConvertTimeToTimestampOrNil(violationTime),
 		PodId:              fromProcIndicator.GetPodId(),
 		PodUid:             fromProcIndicator.GetPodUid(),
 		ContainerName:      fromProcIndicator.GetContainerName(),
@@ -332,13 +331,13 @@ func extractProcessViolationInfo(fromAlert *storage.Alert, fromProcViolation *st
 	}
 }
 
-func getNonProcessViolationTime(fromAlert *storage.Alert, fromViolation *storage.Alert_Violation) *types.Timestamp {
+func getNonProcessViolationTime(fromAlert *storage.Alert, fromViolation *storage.Alert_Violation) *time.Time {
 	timestamp := fromViolation.GetTime()
 	if timestamp == nil {
 		// Use alert timestamp as a fallback in case violation timestamp wasn't provided.
 		timestamp = fromAlert.GetTime()
 	}
-	return timestamp
+	return protocompat.ConvertTimestampToTimeOrNil(timestamp)
 }
 
 func extractNonProcessViolationInfo(fromAlert *storage.Alert, fromViolation *storage.Alert_Violation) (*integrations.SplunkViolation_ViolationInfo, error) {
@@ -351,11 +350,11 @@ func extractNonProcessViolationInfo(fromAlert *storage.Alert, fromViolation *sto
 
 	var podID, containerName string
 	for _, kv := range msgAttrs {
-		if kv.Key == printer.PodKey {
-			podID = kv.Value
+		if kv.GetKey() == printer.PodKey {
+			podID = kv.GetValue()
 		}
-		if kv.Key == printer.ContainerKey {
-			containerName = kv.Value
+		if kv.GetKey() == printer.ContainerKey {
+			containerName = kv.GetValue()
 		}
 	}
 
@@ -369,12 +368,14 @@ func extractNonProcessViolationInfo(fromAlert *storage.Alert, fromViolation *sto
 		typ = integrations.SplunkViolation_ViolationInfo_NETWORK_FLOW
 	}
 
+	violationTime := getNonProcessViolationTime(fromAlert, fromViolation)
+
 	return &integrations.SplunkViolation_ViolationInfo{
 		ViolationId:                id,
 		ViolationMessage:           fromViolation.GetMessage(),
 		ViolationMessageAttributes: msgAttrs,
 		ViolationType:              typ,
-		ViolationTime:              getNonProcessViolationTime(fromAlert, fromViolation),
+		ViolationTime:              protocompat.ConvertTimeToTimestampOrNil(violationTime),
 		PodId:                      podID,
 		ContainerName:              containerName,
 	}, nil
@@ -383,15 +384,15 @@ func extractNonProcessViolationInfo(fromAlert *storage.Alert, fromViolation *sto
 func extractViolationMessageAttrs(fromViolation *storage.Alert_Violation) []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr {
 	var msgAttrs []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr
 	if kvs := fromViolation.GetKeyValueAttrs(); kvs != nil {
-		msgAttrs = kvs.Clone().GetAttrs()
+		msgAttrs = kvs.CloneVT().GetAttrs()
 	}
 
 	// Filter out some message attributes, but only for K8S Events
 	// This is done so that we can reduce the amount of unnecessary bytes to Splunk for fields that can be inferred.
-	if fromViolation.Type == storage.Alert_Violation_K8S_EVENT {
+	if fromViolation.GetType() == storage.Alert_Violation_K8S_EVENT {
 		var filteredAttrs []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr
 		for _, kvp := range msgAttrs {
-			if !violationMessagesToRemoveForK8SEvent.Contains(kvp.Key) {
+			if !violationMessagesToRemoveForK8SEvent.Contains(kvp.GetKey()) {
 				filteredAttrs = append(filteredAttrs, kvp)
 			}
 		}
@@ -425,59 +426,58 @@ func isGenericViolation(violation *storage.Alert_Violation) bool {
 
 func extractProcessInfo(alertID string, from *storage.ProcessIndicator) *integrations.SplunkViolation_ProcessInfo {
 	var signal storage.ProcessSignal
-	var pid, uid, gid *types.UInt32Value
-	var lineage []*storage.ProcessSignal_LineageInfo
-
 	if from.GetSignal() != nil {
 		signal = *from.GetSignal()
-		pid = &types.UInt32Value{Value: signal.GetPid()}
-		uid = &types.UInt32Value{Value: signal.GetUid()}
-		gid = &types.UInt32Value{Value: signal.GetGid()}
-
-		lineage = make([]*storage.ProcessSignal_LineageInfo, 0, len(signal.GetLineageInfo()))
-		for _, x := range signal.GetLineageInfo() {
-			lineage = append(lineage, x.Clone())
-		}
-	} else {
-		log.Warnw("Detected ProcessIndicator without inner ProcessSignal. Resulting process details will be incomplete.", zap.String("ProcessIndicator.Id", from.GetId()), zap.String("Alert.Id", alertID))
 	}
-
-	return &integrations.SplunkViolation_ProcessInfo{
+	splunkProcessInfo := &integrations.SplunkViolation_ProcessInfo{
 		ProcessViolationId:  from.GetId(),
 		ProcessSignalId:     signal.GetId(),
 		ProcessCreationTime: signal.GetTime(),
 		ProcessName:         signal.GetName(),
 		ProcessArgs:         signal.GetArgs(),
 		ExecFilePath:        signal.GetExecFilePath(),
-		Pid:                 pid,
-		ProcessUid:          uid,
-		ProcessGid:          gid,
-		ProcessLineageInfo:  lineage,
 	}
+
+	if from.GetSignal() != nil {
+		splunkProcessInfo.Pid = protocompat.ProtoUInt32Value(signal.GetPid())
+		splunkProcessInfo.ProcessUid = protocompat.ProtoUInt32Value(signal.GetUid())
+		splunkProcessInfo.ProcessGid = protocompat.ProtoUInt32Value(signal.GetGid())
+
+		lineage := make([]*storage.ProcessSignal_LineageInfo, 0, len(signal.GetLineageInfo()))
+		for _, x := range signal.GetLineageInfo() {
+			lineage = append(lineage, x.CloneVT())
+		}
+		splunkProcessInfo.ProcessLineageInfo = lineage
+	} else {
+		log.Warnw("Detected ProcessIndicator without inner ProcessSignal. Resulting process details will be incomplete.",
+			logging.String("ProcessIndicator.Id", from.GetId()), logging.AlertID(alertID))
+	}
+
+	return splunkProcessInfo
 }
 
 func extractAlertInfo(from *storage.Alert, violationInfo *integrations.SplunkViolation_ViolationInfo) *integrations.SplunkViolation_AlertInfo {
-	var firstOccurred *types.Timestamp
+	alertInfo := &integrations.SplunkViolation_AlertInfo{
+		AlertId:        from.GetId(),
+		LifecycleStage: from.GetLifecycleStage(),
+	}
 	if violationInfo.GetViolationType() == integrations.SplunkViolation_ViolationInfo_GENERIC {
 		// Generic violations don't have own timestamp and so we assign Alert's last seen time to violation time.
 		// That is not accurate and therefore here we add Alert's first seen time as an additional information element.
-		firstOccurred = from.GetFirstOccurred()
+		alertInfo.AlertFirstOccurred = from.GetFirstOccurred()
 		// We're NOT doing the same for other violation types because the user can get confused thinking that Alert's
 		// first occurred time applies to the _specific_ violation. I.e. external users don't necessarily know
 		// relationship between Alerts anv Violations is 1:n in StackRox.
 	}
 
-	return &integrations.SplunkViolation_AlertInfo{
-		AlertId:            from.GetId(),
-		LifecycleStage:     from.GetLifecycleStage(),
-		AlertFirstOccurred: firstOccurred,
-	}
-	// from.State and from.SnoozeTill are ignored because they might change over time.
+	return alertInfo
+	// from.State is ignored because they might change over time.
 }
 
 func extractPolicyInfo(alertID string, from *storage.Policy) *integrations.SplunkViolation_PolicyInfo {
 	if from == nil {
-		log.Warnw("Detected Alert without Policy. Resulting violation item will not have policy details.", zap.String("Alert.Id", alertID))
+		log.Warnw("Detected Alert without Policy. Resulting violation item will not have policy details.",
+			logging.AlertID(alertID))
 		return nil
 	}
 
@@ -507,7 +507,7 @@ func extractDeploymentInfo(from *storage.Alert) *integrations.SplunkViolation_De
 	case *storage.Alert_Deployment_:
 		containers := make([]*storage.Alert_Deployment_Container, 0, len(e.Deployment.GetContainers()))
 		for _, x := range e.Deployment.GetContainers() {
-			containers = append(containers, x.Clone())
+			containers = append(containers, x.CloneVT())
 		}
 
 		// NOTE: For backwards compatibility with older TA deployments and existing Splunk queries, we still send DeploymentInfo.
@@ -532,13 +532,13 @@ func extractDeploymentInfo(from *storage.Alert) *integrations.SplunkViolation_De
 		// e.Deployment.Inactive not mapped because it might change
 	case *storage.Alert_Image:
 		res = integrations.SplunkViolation_DeploymentInfo{
-			DeploymentImage: e.Image.Clone(),
+			DeploymentImage: e.Image.CloneVT(),
 		}
 	case *storage.Alert_Resource_:
 		// ignore for now. Resource cannot be converted to deployment. It will correctly get populated into its own entity later
 		return nil
 	default:
-		log.Warnw("Alert.Entity unrecognized or not set. Resulting violation item will not have deployment details.", zap.String("Alert.Id", from.GetId()))
+		log.Warnw("Alert.Entity unrecognized or not set. Resulting violation item will not have deployment details.", logging.AlertID(from.GetId()))
 	}
 
 	return &res
@@ -583,14 +583,14 @@ func refineDeploymentInfo(alertID string, deploymentInfo *integrations.SplunkVio
 		return deploymentInfo
 	}
 
-	res := deploymentInfo.Clone()
+	res := deploymentInfo.CloneVT()
 
 	resetIfDiffer := func(field, v1, v2 string) {
 		if v1 != "" && v2 != "" && v1 != v2 {
 			log.Warnw(
 				fmt.Sprintf("Alert %s=%q does not correspond to %s=%q of recorded process violation.", field, v1, field, v2)+
 					" Resulting deployment details will not be complete.",
-				zap.String("Alert.Id", alertID))
+				logging.AlertID(alertID))
 			res = &integrations.SplunkViolation_DeploymentInfo{}
 		}
 	}
@@ -615,6 +615,7 @@ func refineDeploymentInfo(alertID string, deploymentInfo *integrations.SplunkVio
 // splunkCheckpoint represents parsed checkpoint. Possible checkpoint formats are:
 //  1. "FromTimestamp__ToTimestamp__FromAlertID"
 //  2. "FromTimestamp"
+//
 // #2 is used as initial checkpoint setting in Splunk TA config and when there were no more alerts in the previous request.
 // #1 is used when there were more alerts between FromTimestamp and ToTimestamp and response had to stop because
 // sufficient number of violations was returned.

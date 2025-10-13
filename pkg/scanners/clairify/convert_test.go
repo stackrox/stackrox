@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/scanners/clairify/mock"
 	v1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"github.com/stretchr/testify/assert"
@@ -17,6 +18,7 @@ func TestConvertNodeToVulnRequest(t *testing.T) {
 		osImage          string
 		kubeletVersion   string
 		kubeProxyVersion string
+		nodeInventory    *storage.NodeInventory
 
 		expected *v1.GetNodeVulnerabilitiesRequest
 	}{
@@ -64,6 +66,62 @@ func TestConvertNodeToVulnRequest(t *testing.T) {
 				},
 			},
 		},
+		{
+			nodeInventory: &storage.NodeInventory{
+				Components: &storage.NodeInventory_Components{
+					Namespace:       "rhcos:4.11",
+					RhelContentSets: []string{"rhel-8-for-x86_64-appstream-rpms", "rhel-8-for-x86_64-baseos-rpms"},
+					RhelComponents: []*storage.NodeInventory_Components_RHELComponent{
+						{
+							Id:        int64(1),
+							Name:      "vim-minimal",
+							Namespace: "rhel:8",
+							Version:   "2:7.4.629-6.el8",
+							Arch:      "x86_64",
+							Module:    "",
+							AddedBy:   "",
+						},
+					},
+				},
+			},
+			kernelVersion:    "3.10.0-1127.13.1.el7.x86_64",
+			osImage:          "linux",
+			kubeletVersion:   "v1.14.8",
+			kubeProxyVersion: "v1.16.13-gke.401",
+			containerRuntime: &storage.ContainerRuntimeInfo{
+				Type:    storage.ContainerRuntime_UNKNOWN_CONTAINER_RUNTIME,
+				Version: "containerd://1.2.8",
+			},
+			expected: &v1.GetNodeVulnerabilitiesRequest{
+				KernelVersion:    "3.10.0-1127.13.1.el7.x86_64",
+				OsImage:          "linux",
+				KubeletVersion:   "v1.14.8",
+				KubeproxyVersion: "v1.16.13-gke.401",
+				Runtime: &v1.GetNodeVulnerabilitiesRequest_ContainerRuntime{
+					Name:    "containerd",
+					Version: "1.2.8",
+				},
+				Components: &v1.Components{
+					Namespace:       "rhcos:4.11",
+					RhelContentSets: []string{"rhel-8-for-x86_64-appstream-rpms", "rhel-8-for-x86_64-baseos-rpms"},
+					RhelComponents: []*v1.RHELComponent{
+						{
+							Id:          int64(1),
+							Name:        "vim-minimal",
+							Namespace:   "rhel:8",
+							Version:     "2:7.4.629-6.el8",
+							Arch:        "x86_64",
+							Module:      "",
+							AddedBy:     "",
+							Cpes:        nil,
+							Executables: []*v1.Executable{},
+						},
+					},
+					OsComponents:       nil,
+					LanguageComponents: nil,
+				},
+			},
+		},
 	} {
 		node := &storage.Node{
 			ContainerRuntime: testCase.containerRuntime,
@@ -72,7 +130,7 @@ func TestConvertNodeToVulnRequest(t *testing.T) {
 			KubeletVersion:   testCase.kubeletVersion,
 			KubeProxyVersion: testCase.kubeProxyVersion,
 		}
-		assert.Equal(t, testCase.expected, convertNodeToVulnRequest(node))
+		protoassert.Equal(t, testCase.expected, convertNodeToVulnRequest(node, testCase.nodeInventory))
 	}
 }
 
@@ -133,9 +191,9 @@ func TestConvertVulnResponseToNodeScan(t *testing.T) {
 						FixedBy: "4",
 					},
 				},
-				Notes: []v1.NodeNote{v1.NodeNote_NODE_UNSUPPORTED, v1.NodeNote_NODE_KERNEL_UNSUPPORTED},
+				NodeNotes: []v1.NodeNote{v1.NodeNote_NODE_UNSUPPORTED, v1.NodeNote_NODE_KERNEL_UNSUPPORTED, v1.NodeNote_NODE_CERTIFIED_RHEL_CVES_UNAVAILABLE},
 			},
-			expectedNotes: []storage.NodeScan_Note{storage.NodeScan_UNSUPPORTED, storage.NodeScan_KERNEL_UNSUPPORTED},
+			expectedNotes: []storage.NodeScan_Note{storage.NodeScan_UNSUPPORTED, storage.NodeScan_KERNEL_UNSUPPORTED, storage.NodeScan_CERTIFIED_RHEL_CVES_UNAVAILABLE},
 			expectedComponents: []*storage.EmbeddedNodeScanComponent{
 				{
 					Name:    "docker",
@@ -201,17 +259,92 @@ func TestConvertVulnResponseToNodeScan(t *testing.T) {
 				},
 			},
 		},
+		{
+			req: &v1.GetNodeVulnerabilitiesRequest{
+				KubeletVersion:   "v1.24.6+deccab3",
+				KubeproxyVersion: "v1.24.6+deccab3",
+				Runtime: &v1.GetNodeVulnerabilitiesRequest_ContainerRuntime{
+					Name:    "cri-o",
+					Version: "1.24.4-5.rhaos4.11.git57d7127.el8",
+				},
+				Components: &v1.Components{
+					Namespace:       "rhcos:4.11",
+					RhelContentSets: []string{"rhel-8-for-x86_64-appstream-rpms", "rhel-8-for-x86_64-baseos-rpms"},
+					RhelComponents: []*v1.RHELComponent{
+						{
+							Id:          int64(1),
+							Name:        "vim-minimal",
+							Namespace:   "rhel:8",
+							Version:     "2:7.4.629-6.el8",
+							Arch:        "x86_64",
+							Module:      "",
+							AddedBy:     "",
+							Cpes:        nil,
+							Executables: []*v1.Executable{},
+						},
+					},
+					OsComponents:       nil,
+					LanguageComponents: nil,
+				},
+			},
+			resp: &v1.GetNodeVulnerabilitiesResponse{
+				Features: []*v1.Feature{
+					{
+						Name:    "vim-minimal",
+						Version: "2:7.4.629-6.el8",
+						Vulnerabilities: []*v1.Vulnerability{
+							{
+								Name:    "CVE-2020-0000",
+								Link:    "link0",
+								FixedBy: "0",
+							},
+							{
+								Name:    "CVE-2020-1111",
+								Link:    "link1",
+								FixedBy: "1",
+							},
+						},
+					},
+				},
+				NodeNotes: []v1.NodeNote{v1.NodeNote_NODE_UNSUPPORTED, v1.NodeNote_NODE_KERNEL_UNSUPPORTED},
+			},
+			expectedNotes: []storage.NodeScan_Note{storage.NodeScan_UNSUPPORTED, storage.NodeScan_KERNEL_UNSUPPORTED},
+			expectedComponents: []*storage.EmbeddedNodeScanComponent{
+				{
+					Name:    "vim-minimal",
+					Version: "2:7.4.629-6.el8",
+					Vulns: []*storage.EmbeddedVulnerability{
+						{
+							Cve:  "CVE-2020-0000",
+							Link: "link0",
+							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+								FixedBy: "0",
+							},
+							VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+						},
+						{
+							Cve:  "CVE-2020-1111",
+							Link: "link1",
+							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+								FixedBy: "1",
+							},
+							VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+						},
+					},
+				},
+			},
+		},
 	} {
 		actual := convertVulnResponseToNodeScan(testCase.req, testCase.resp)
-		assert.ElementsMatch(t, testCase.expectedNotes, actual.Notes)
-		assert.ElementsMatch(t, testCase.expectedComponents, actual.Components)
+		assert.ElementsMatch(t, testCase.expectedNotes, actual.GetNotes())
+		protoassert.ElementsMatch(t, testCase.expectedComponents, actual.GetComponents())
 	}
 }
 
 func TestConvertNodeVulnerabilities(t *testing.T) {
 	scannerVulns, protoVulns := mock.GetTestScannerVulns()
 	for i := range scannerVulns {
-		assert.Equal(t, protoVulns[i], convertVulnerability(&scannerVulns[i], storage.EmbeddedVulnerability_NODE_VULNERABILITY))
+		protoassert.Equal(t, protoVulns[i], convertVulnerability(&scannerVulns[i], storage.EmbeddedVulnerability_NODE_VULNERABILITY))
 	}
 }
 
@@ -317,12 +450,7 @@ func TestConvertFeatures(t *testing.T) {
 			HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
 				LayerIndex: 0,
 			},
-			Executables: []*storage.EmbeddedImageScanComponent_Executable{
-				{
-					Path:         "/bin/rpm",
-					Dependencies: []string{"Z2xpYmM:MQ", "bGliLnNv:Mg"},
-				},
-			},
+			Executables: []*storage.EmbeddedImageScanComponent_Executable{},
 		},
 		{
 			Name:    "curl",
@@ -347,5 +475,5 @@ func TestConvertFeatures(t *testing.T) {
 	}
 
 	converted := convertFeatures(metadata, features, "")
-	assert.Equal(t, expectedFeatures, converted)
+	protoassert.SlicesEqual(t, expectedFeatures, converted)
 }

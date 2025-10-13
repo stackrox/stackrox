@@ -4,12 +4,15 @@ defs: |
 
   def collectorImageFromConfig:
     .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.staticConfig.collectorImage;
+values:
+  imagePullSecrets:
+    allowNone: true
 
 expect: |
   # The image in the config should at least be a prefix (sans tag) of the sensor image
   collectorImageFromConfig as $imgFromConfig
     | collector | .image | assertThat(startswith($imgFromConfig))
-  # Whenever the image in the config contains a tag, there shold be a warning informing the user about the upgrade
+  # Whenever the image in the config contains a tag, there should be a warning informing the user about the upgrade
   # impact.
   .notes as $notes
     | collectorImageFromConfig | assumeThat(contains(":"))

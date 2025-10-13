@@ -1,15 +1,15 @@
 syntax = "proto3";
 
-option go_package = "wrapper";
+package wrapper;
 
 import "google/protobuf/any.proto";
 
-package wrapper;
+option go_package = "./internalapi/wrapper;wrapper";
 
 // Splunk notification needs the source of data
 // and the type of data.
 message SplunkEvent {
-    google.protobuf.Any event = 1;
-    string source             = 2;
-    string sourcetype         = 3;
+  google.protobuf.Any event = 1;
+  string source = 2;
+  string sourcetype = 3;
 }

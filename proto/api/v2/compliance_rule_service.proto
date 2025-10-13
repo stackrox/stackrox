@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package v2;
+
+import "api/v2/compliance_common.proto";
+import "api/v2/search_query.proto";
+import weak "google/api/annotations.proto";
+
+option go_package = "./api/v2;v2";
+option java_package = "io.stackrox.proto.api.v2";
+
+message RuleRequest {
+  string rule_name = 1;
+  RawQuery query = 2;
+}
+
+service ComplianceRuleService {
+  // GetComplianceRule returns rule matching given request
+  rpc GetComplianceRule(RuleRequest) returns (ComplianceRule) {
+    option (google.api.http) = {get: "/v2/compliance/rule/summary/{rule_name}"};
+  }
+}

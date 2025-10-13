@@ -17,9 +17,12 @@ import (
 	"github.com/cloudflare/cfssl/signer/local"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/pkg/x509utils"
 )
 
@@ -28,6 +31,13 @@ const (
 	CACertFileName = "ca.pem"
 	// CAKeyFileName is the canonical file name (basename) of the file storing the CA certificate private key.
 	CAKeyFileName = "ca-key.pem"
+
+	// SecondaryCACertFileName is the file name of the secondary CA certificate.
+	// Operator installations use two CA certificates in parallel to enable CA certificate rotation.
+	SecondaryCACertFileName = "ca-secondary.pem"
+
+	// SecondaryCAKeyFileName is the file name of the secondary CA private key.
+	SecondaryCAKeyFileName = "ca-secondary-key.pem"
 
 	// ServiceCertFileName is the canonical file name (basename) of the file storing the public part of
 	// an internal service certificate. Note that if files for several services are stored in the same
@@ -44,6 +54,10 @@ const (
 	defaultCACertFilePath = CertsPrefix + CACertFileName
 	// defaultCAKeyFilePath is where the key is stored.
 	defaultCAKeyFilePath = CertsPrefix + CAKeyFileName
+	// defaultSecondaryCACertFilePath is where the secondary CA certificate is stored.
+	defaultSecondaryCACertFilePath = CertsPrefix + SecondaryCACertFileName
+	// defaultSecondaryCAKeyFilePath is where the key of the secondary CA certificate is stored.
+	defaultSecondaryCAKeyFilePath = CertsPrefix + SecondaryCAKeyFileName
 
 	// defaultCertFilePath is where the certificate is stored.
 	defaultCertFilePath = CertsPrefix + ServiceCertFileName
@@ -60,9 +74,13 @@ const (
 
 	ephemeralProfileWithExpirationInDays             = "ephemeralWithExpirationInDays"
 	ephemeralProfileWithExpirationInDaysCertLifetime = 2 * 24 * time.Hour
+
+	crsProfileDefaultValidityPeriod = 24 * time.Hour
 )
 
 var (
+	log = logging.LoggerForModule()
+
 	// serialMax is the max value to be used with `rand.Int` to obtain a `*big.Int` with 64 bits of random data
 	// (i.e., 1 << 64).
 	serialMax = func() *big.Int {
@@ -99,19 +117,45 @@ var (
 	// ScannerDBSubject is the identity used in certificates for Scanners Postgres DB
 	ScannerDBSubject = Subject{ServiceType: storage.ServiceType_SCANNER_DB_SERVICE, Identifier: "Scanner DB"}
 
+	// ScannerV4IndexerSubject is the identity used in certificates for Scanner V4 Indexer.
+	ScannerV4IndexerSubject = Subject{ServiceType: storage.ServiceType_SCANNER_V4_INDEXER_SERVICE, Identifier: "Scanner V4 Indexer"}
+
+	// ScannerV4MatcherSubject is the identity used in certificates for Scanner V4 Matcher.
+	ScannerV4MatcherSubject = Subject{ServiceType: storage.ServiceType_SCANNER_V4_MATCHER_SERVICE, Identifier: "Scanner V4 Matcher"}
+
+	// ScannerV4DBSubject is the identity used in certificates for Scanner V4 DB.
+	ScannerV4DBSubject = Subject{ServiceType: storage.ServiceType_SCANNER_V4_DB_SERVICE, Identifier: "Scanner V4 DB"}
+
+	// ScannerV4Subject is the identity used in certificates for Scanner V4 running in combo-mode (testing, only).
+	ScannerV4Subject = Subject{ServiceType: storage.ServiceType_SCANNER_V4_SERVICE, Identifier: "Scanner V4"}
+
 	readCACertOnce     sync.Once
 	caCert             *x509.Certificate
 	caCertDER          []byte
 	caCertFileContents []byte
 	caCertErr          error
 
+	readSecondaryCACertOnce     sync.Once
+	secondaryCACert             *x509.Certificate
+	secondaryCACertDER          []byte
+	secondaryCACertFileContents []byte
+	secondaryCACertErr          error
+
 	readCAKeyOnce     sync.Once
 	caKeyFileContents []byte
 	caKeyErr          error
 
+	readSecondaryCAKeyOnce     sync.Once
+	secondaryCAKeyFileContents []byte
+	secondaryCAKeyErr          error
+
 	caForSigningOnce sync.Once
 	caForSigning     CA
 	caForSigningErr  error
+
+	secondaryCAForSigningOnce sync.Once
+	secondaryCAForSigning     CA
+	secondaryCAForSigningErr  error
 )
 
 // IssuedCert is a representation of an issued certificate
@@ -153,37 +197,71 @@ func readCAKey() ([]byte, error) {
 
 func readCA() (*x509.Certificate, []byte, []byte, error) {
 	readCACertOnce.Do(func() {
-		caBytes, err := os.ReadFile(caFilePathSetting.Setting())
-		if err != nil {
-			caCertErr = errors.Wrap(err, "reading CA file")
-			return
-		}
-
-		der, err := x509utils.ConvertPEMToDERs(caBytes)
-		if err != nil {
-			caCertErr = errors.Wrap(err, "CA cert could not be decoded")
-			return
-		}
-		if len(der) == 0 {
-			caCertErr = errors.New("reading CA file failed")
-			return
-		}
-
-		cert, err := x509.ParseCertificate(der[0])
-		if err != nil {
-			caCertErr = errors.Wrap(err, "CA cert could not be parsed")
-			return
-		}
-		caCertFileContents = caBytes
-		caCert = cert
-		caCertDER = der[0]
+		caCert, caCertFileContents, caCertDER, caCertErr = readCAFromFile(caFilePathSetting.Setting())
 	})
 	return caCert, caCertFileContents, caCertDER, caCertErr
+}
+
+func readSecondaryCAKey() ([]byte, error) {
+	readSecondaryCAKeyOnce.Do(func() {
+		caKeyBytes, err := os.ReadFile(secondaryCAKeyFilePathSetting.Setting())
+		if err != nil {
+			if !errors.Is(err, os.ErrNotExist) {
+				log.Warnf("Failed to read secondary CA key, some Sensors may not be able to connect to Central: %v", err)
+			}
+
+			secondaryCAKeyErr = errors.Wrap(err, "reading secondary CA key")
+			return
+		}
+		secondaryCAKeyFileContents = caKeyBytes
+	})
+	return secondaryCAKeyFileContents, secondaryCAKeyErr
+}
+
+func readSecondaryCA() (*x509.Certificate, []byte, []byte, error) {
+	readSecondaryCACertOnce.Do(func() {
+		secondaryCACert, secondaryCACertFileContents, secondaryCACertDER, secondaryCACertErr = readCAFromFile(
+			secondaryCAFilePathSetting.Setting())
+
+		if secondaryCACertErr != nil && !errors.Is(secondaryCACertErr, os.ErrNotExist) {
+			log.Warnf("Failed to read secondary CA cert, some Sensors may not be able to connect to Central: %v", secondaryCACertErr)
+		}
+	})
+	return secondaryCACert, secondaryCACertFileContents, secondaryCACertDER, secondaryCACertErr
+}
+
+func readCAFromFile(filePath string) (*x509.Certificate, []byte, []byte, error) {
+	caBytes, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, nil, nil, errors.Wrap(err, "reading CA file")
+	}
+
+	der, err := x509utils.ConvertPEMToDERs(caBytes)
+	if err != nil {
+		return nil, nil, nil, errors.Wrap(err, "CA cert could not be decoded")
+	}
+	if len(der) == 0 {
+		return nil, nil, nil, errors.New("reading CA file failed")
+	}
+
+	cert, err := x509.ParseCertificate(der[0])
+	if err != nil {
+		return nil, nil, nil, errors.Wrap(err, "CA cert could not be parsed")
+
+	}
+	return cert, caBytes, der[0], nil
 }
 
 // CACert reads the cert from the local file system and returns the cert and the DER encoding.
 func CACert() (*x509.Certificate, []byte, error) {
 	caCert, _, caCertDER, caCertErr := readCA()
+	return caCert, caCertDER, caCertErr
+}
+
+// SecondaryCACert reads the secondary CA cert from the local file system and returns the cert and the DER encoding.
+// Note that the secondary CA cert is optional, and may only be present in Operator-based installations.
+func SecondaryCACert() (*x509.Certificate, []byte, error) {
+	caCert, _, caCertDER, caCertErr := readSecondaryCA()
 	return caCert, caCertDER, caCertErr
 }
 
@@ -208,8 +286,32 @@ func CAForSigning() (CA, error) {
 	return caForSigning, caForSigningErr
 }
 
+func SecondaryCAForSigning() (CA, error) {
+	secondaryCAForSigningOnce.Do(func() {
+		_, certPEM, _, err := readSecondaryCA()
+		if err != nil {
+			secondaryCAForSigningErr = errors.Wrap(err, "could not read secondary CA certificate PEM")
+			return
+		}
+
+		keyPEM, err := readSecondaryCAKey()
+		if err != nil {
+			secondaryCAForSigningErr = errors.Wrap(err, "could not read secondary CA key PEM")
+			return
+		}
+
+		secondaryCAForSigning, secondaryCAForSigningErr = LoadCAForSigning(certPEM, keyPEM)
+	})
+
+	return secondaryCAForSigning, secondaryCAForSigningErr
+}
+
 func signer() (cfsigner.Signer, error) {
 	return local.NewSignerFromFile(caFilePathSetting.Setting(), caKeyFilePathSetting.Setting(), createSigningPolicy())
+}
+
+func crsSigner() (cfsigner.Signer, error) {
+	return local.NewSignerFromFile(caFilePathSetting.Setting(), caKeyFilePathSetting.Setting(), createCrsSigningPolicy())
 }
 
 func createSigningPolicy() *config.Signing {
@@ -219,6 +321,12 @@ func createSigningPolicy() *config.Signing {
 			ephemeralProfileWithExpirationInHours: createSigningProfile(ephemeralProfileWithExpirationInHoursCertLifetime, 0),
 			ephemeralProfileWithExpirationInDays:  createSigningProfile(ephemeralProfileWithExpirationInDaysCertLifetime, 0),
 		},
+	}
+}
+
+func createCrsSigningPolicy() *config.Signing {
+	return &config.Signing{
+		Default: createSigningProfile(crsProfileDefaultValidityPeriod, beforeGracePeriod),
 	}
 }
 
@@ -284,8 +392,10 @@ func issueNewCertFromSigner(subj Subject, signer cfsigner.Signer, opts []IssueCe
 			Names:        []cfcsr.Name{subj.Name()},
 			SerialNumber: serial.String(),
 		},
-		Serial:  serial,
-		Profile: issueOpts.signerProfile,
+		Serial:    serial,
+		Profile:   issueOpts.signerProfile,
+		NotBefore: issueOpts.notBefore,
+		NotAfter:  issueOpts.expiresAt,
 	}
 	certBytes, err := signer.Sign(req)
 	if err != nil {
@@ -314,6 +424,21 @@ func IssueNewCert(subj Subject, opts ...IssueCertOption) (cert *IssuedCert, err 
 		return nil, errors.Wrap(err, "signer creation")
 	}
 	return issueNewCertFromSigner(subj, s, opts)
+}
+
+// IssueNewCrsCert generates a new key and certificate chain for a CRS.
+func IssueNewCrsCert(crsId uuid.UUID, validUntil time.Time) (cert *IssuedCert, err error) {
+	opts := []IssueCertOption{
+		WithValidityNotAfter(validUntil),
+	}
+
+	subj := NewInitSubject(centralsensor.RegisteredInitCertClusterID, storage.ServiceType_REGISTRANT_SERVICE, crsId)
+	signer, err := crsSigner()
+	if err != nil {
+		return nil, errors.Wrap(err, "CRS signer creation")
+	}
+
+	return issueNewCertFromSigner(subj, signer, opts)
 }
 
 // RandomSerial returns a new integer that can be used as a certificate serial number (i.e., it is positive and contains

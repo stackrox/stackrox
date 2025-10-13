@@ -1,12 +1,14 @@
-import {
+import type {
     AuthProvider,
     AuthProviderConfig,
-    AuthProviderRequiredAttributes,
+    AuthProviderRequiredAttribute,
     Group,
 } from 'services/AuthService';
+import { isUserResource } from 'utils/traits.utils';
 
 export type DisplayedAuthProvider = AuthProvider & {
     do_not_use_client_secret?: boolean;
+    disable_offline_access_scope?: boolean;
     defaultRole?: string;
     groups?: Group[];
 };
@@ -62,7 +64,11 @@ function populateDefaultValues(authProvider: AuthProvider): AuthProvider {
     if (authProvider.type === 'oidc') {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        newInitialValues.config = { mode: 'auto', do_not_use_client_secret: false };
+        newInitialValues.config = {
+            mode: 'auto',
+            do_not_use_client_secret: false,
+            disable_offline_access_scope: false,
+        };
     }
     newInitialValues.groups = Array.isArray(authProvider.groups) ? [...authProvider.groups] : [];
     newInitialValues.groups.push({
@@ -94,7 +100,8 @@ export function transformValuesBeforeSaving(
         | string[]
         | boolean
         | AuthProviderConfig
-        | AuthProviderRequiredAttributes[]
+        | AuthProviderRequiredAttribute[]
+        | [string, string][]
         | Group[]
         | undefined
     >
@@ -104,7 +111,8 @@ export function transformValuesBeforeSaving(
     | string[]
     | boolean
     | AuthProviderConfig
-    | AuthProviderRequiredAttributes[]
+    | AuthProviderRequiredAttribute[]
+    | [string, string][]
     | Group[]
     | undefined
 > {
@@ -125,6 +133,9 @@ export function transformValuesBeforeSaving(
 
         // backend expects only string values for the config
         alteredConfig.do_not_use_client_secret = alteredConfig.do_not_use_client_secret
+            ? 'true'
+            : 'false';
+        alteredConfig.disable_offline_access_scope = alteredConfig.disable_offline_access_scope
             ? 'true'
             : 'false';
 
@@ -176,8 +187,8 @@ export function mergeGroupsWithAuthProviders(
         item.groups = [];
 
         // comma operator is much faster than spread in a reduce loop
-        // eslint-disable-next-line no-return-assign, no-param-reassign, no-sequences
-        return (obj[item.id] = item), obj;
+        // eslint-disable-next-line no-return-assign, no-param-reassign
+        return ((obj[item.id] = item), obj);
     }, {});
 
     if (authProviders.length) {
@@ -197,6 +208,19 @@ export function mergeGroupsWithAuthProviders(
 }
 
 export function getDefaultRoleByAuthProviderId(groups: Group[], id: string): string {
+    const defaultGroup = getDefaultGroupByAuthProviderId(groups, id);
+    if (defaultGroup) {
+        return defaultGroup.roleName;
+    }
+    return id ? 'None' : 'Admin';
+}
+
+export function isDefaultGroupModifiable(groups: Group[], id: string): boolean {
+    const defaultGroup = getDefaultGroupByAuthProviderId(groups, id);
+    return isUserResource(defaultGroup?.props?.traits);
+}
+
+export function getDefaultGroupByAuthProviderId(groups: Group[], id: string): Group | undefined {
     const defaultRoleGroups = groups.filter(
         (group) =>
             group.props &&
@@ -206,7 +230,7 @@ export function getDefaultRoleByAuthProviderId(groups: Group[], id: string): str
             group.props.value === ''
     );
     if (defaultRoleGroups.length) {
-        return defaultRoleGroups[0].roleName;
+        return defaultRoleGroups[0];
     }
-    return id ? 'None' : 'Admin';
+    return undefined;
 }

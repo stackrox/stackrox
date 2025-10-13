@@ -7,7 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (w *WorkloadManager) getNodes(workload NodeWorkload) []*corev1.Node {
+func (w *WorkloadManager) getNodes(workload NodeWorkload, ids []string) []*corev1.Node {
 	nodes := make([]*corev1.Node, 0, workload.NumNodes)
 	for i := 0; i < workload.NumNodes; i++ {
 		name := fmt.Sprintf("gke-setup-devadda2-large-pool-a9523a88-%d", i)
@@ -17,7 +17,7 @@ func (w *WorkloadManager) getNodes(workload NodeWorkload) []*corev1.Node {
 				Kind:       "Node",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				UID:  newUUID(),
+				UID:  idOrNewUID(getID(ids, i)),
 				Name: name,
 				Annotations: map[string]string{
 					"container.googleapis.com/instance_id":                   "6748817401527894896",

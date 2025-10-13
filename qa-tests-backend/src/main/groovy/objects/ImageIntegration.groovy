@@ -37,7 +37,7 @@ class StackroxScannerIntegration implements ImageIntegration {
     static ImageIntegrationOuterClass.ImageIntegration.Builder getCustomBuilder(Map customArgs = [:]) {
         Map defaultArgs = [
                 name: Constants.AUTO_REGISTERED_STACKROX_SCANNER_INTEGRATION,
-                endpoint: "https://scanner.stackrox:8080",
+                endpoint: "https://scanner.stackrox.svc:8080",
         ]
         Map args = defaultArgs + customArgs
 
@@ -84,6 +84,36 @@ class ClairScannerIntegration implements ImageIntegration {
                 .clearCategories()
                 .addAllCategories([ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER])
                 .setClair(config)
+    }
+}
+
+class ClairV4ScannerIntegration implements ImageIntegration {
+
+    static String name() { "Clair v4 Scanner" }
+
+    static Boolean isTestable() {
+        return Env.get("CLAIR_V4_ENDPOINT") != null
+    }
+
+    static ImageIntegrationOuterClass.ImageIntegration.Builder getCustomBuilder(Map customArgs = [:]) {
+        Map defaultArgs = [
+                name: "clairv4",
+                endpoint: Env.get("CLAIR_V4_ENDPOINT", ""),
+                insecure: true,
+        ]
+        Map args = defaultArgs + customArgs
+
+        ImageIntegrationOuterClass.ClairV4Config.Builder config =
+                ImageIntegrationOuterClass.ClairV4Config.newBuilder()
+                        .setEndpoint(args.endpoint as String)
+                        .setInsecure(args.insecure as boolean)
+
+        return ImageIntegrationOuterClass.ImageIntegration.newBuilder()
+                .setName(args.name as String)
+                .setType("clairV4")
+                .clearCategories()
+                .addAllCategories([ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER])
+                .setClairV4(config)
     }
 }
 
@@ -160,25 +190,41 @@ class AzureRegistryIntegration implements ImageIntegration {
 
     static ImageIntegrationOuterClass.ImageIntegration.Builder getCustomBuilder(Map customArgs = [:]) {
         Map defaultArgs = [
-                name: "acr",
-                endpoint: "stackroxci.azurecr.io",
-                username: "stackroxci",
-                password: Env.mustGet("AZURE_REGISTRY_PASSWORD"),
+            configSchema: "AzureConfig",
+            name: "acr",
+            endpoint: "stackroxci.azurecr.io",
+            username: "stackroxci",
+            password: Env.mustGet("AZURE_REGISTRY_PASSWORD"),
+            wifEnabled: false,
         ]
         Map args = defaultArgs + customArgs
 
-        ImageIntegrationOuterClass.DockerConfig.Builder config =
+        if (args.configSchema == "DockerConfig") {
+            ImageIntegrationOuterClass.DockerConfig.Builder config =
                 ImageIntegrationOuterClass.DockerConfig.newBuilder()
-                        .setEndpoint(args.endpoint as String)
-                        .setUsername(args.username as String)
-                        .setPassword(args.password as String)
-
-        return ImageIntegrationOuterClass.ImageIntegration.newBuilder()
+                    .setEndpoint(args.endpoint as String)
+                    .setUsername(args.username as String)
+                    .setPassword(args.password as String)
+            return ImageIntegrationOuterClass.ImageIntegration.newBuilder()
                 .setName(args.name as String)
                 .setType("azure")
                 .clearCategories()
                 .addAllCategories([ImageIntegrationOuterClass.ImageIntegrationCategory.REGISTRY])
                 .setDocker(config)
+        }
+
+        ImageIntegrationOuterClass.AzureConfig.Builder config =
+            ImageIntegrationOuterClass.AzureConfig.newBuilder()
+                .setEndpoint(args.endpoint as String)
+                .setUsername(args.username as String)
+                .setPassword(args.password as String)
+                .setWifEnabled(args.wifEnabled as Boolean)
+        return ImageIntegrationOuterClass.ImageIntegration.newBuilder()
+            .setName(args.name as String)
+            .setType("azure")
+            .clearCategories()
+            .addAllCategories([ImageIntegrationOuterClass.ImageIntegrationCategory.REGISTRY])
+            .setAzure(config)
     }
 }
 
@@ -196,7 +242,7 @@ class QuayImageIntegration implements ImageIntegration {
                 endpoint: "quay.io",
                 includeScanner: true,
                 insecure: false,
-                oauthToken: Env.mustGet("QUAY_BEARER_TOKEN"),
+                oauthToken: Env.mustGet("QUAY_RHACS_ENG_BEARER_TOKEN"),
         ]
         Map args = defaultArgs + customArgs
 
@@ -223,6 +269,38 @@ class QuayImageIntegration implements ImageIntegration {
     }
 }
 
+class GHCRImageIntegration implements ImageIntegration {
+
+    static String name() { "GitHub Container Registry" }
+
+    static Boolean isTestable() {
+        return true
+    }
+
+    static ImageIntegrationOuterClass.ImageIntegration.Builder getCustomBuilder(Map customArgs = [:]) {
+        Map defaultArgs = [
+                name: "ghcr",
+                endpoint: "https://ghcr.io",
+                username: Env.mustGet("GHCR_REGISTRY_USER"),
+                password: Env.mustGet("GHCR_REGISTRY_PASSWORD"),
+        ]
+        Map args = defaultArgs + customArgs
+
+        ImageIntegrationOuterClass.DockerConfig.Builder config =
+                ImageIntegrationOuterClass.DockerConfig.newBuilder()
+                        .setEndpoint(args.endpoint as String)
+                        .setUsername(args.username as String)
+                        .setPassword(args.password as String)
+
+        return ImageIntegrationOuterClass.ImageIntegration.newBuilder()
+                .setName(args.name as String)
+                .setType("ghcr")
+                .clearCategories()
+                .addAllCategories([ImageIntegrationOuterClass.ImageIntegrationCategory.REGISTRY])
+                .setDocker(config)
+    }
+}
+
 class GoogleArtifactRegistry implements ImageIntegration {
 
     static String name() { "Google Artifact Registry" }
@@ -234,18 +312,24 @@ class GoogleArtifactRegistry implements ImageIntegration {
     static ImageIntegrationOuterClass.ImageIntegration.Builder getCustomBuilder(Map customArgs = [:]) {
         Map defaultArgs = [
                 name: "google-artifact-registry",
-                project: "stackrox-ci",
+                project: "acs-san-stackroxci",
                 endpoint: "us-west1-docker.pkg.dev",
-                serviceAccount: Env.mustGet("GOOGLE_ARTIFACT_REGISTRY_SERVICE_ACCOUNT"),
+                serviceAccount: Env.mustGet("GOOGLE_ARTIFACT_REGISTRY_SERVICE_ACCOUNT_V2"),
+                wifEnabled: false,
                 skipTestIntegration: false,
         ]
         Map args = defaultArgs + customArgs
+
+        if (args.wifEnabled) {
+            args.serviceAccount = ""
+        }
 
         ImageIntegrationOuterClass.GoogleConfig.Builder config =
                 ImageIntegrationOuterClass.GoogleConfig.newBuilder()
                         .setProject(args.project as String)
                         .setServiceAccount(args.serviceAccount as String)
                         .setEndpoint(args.endpoint as String)
+                        .setWifEnabled(args.wifEnabled as Boolean)
 
         return ImageIntegrationOuterClass.ImageIntegration.newBuilder()
                 .setName(args.name as String)
@@ -268,19 +352,25 @@ class GCRImageIntegration implements ImageIntegration {
     static ImageIntegrationOuterClass.ImageIntegration.Builder getCustomBuilder(Map customArgs = [:]) {
         Map defaultArgs = [
                 name: "gcr",
-                project: "stackrox-ci",
+                project: "acs-san-stackroxci",
                 endpoint: "us.gcr.io",
                 includeScanner: true,
-                serviceAccount: Env.mustGet("GOOGLE_CREDENTIALS_GCR_SCANNER"),
+                serviceAccount: Env.mustGetGCRServiceAccount(),
+                wifEnabled: false,
                 skipTestIntegration: false,
         ]
         Map args = defaultArgs + customArgs
+
+        if (args.wifEnabled) {
+            args.serviceAccount = ""
+        }
 
         ImageIntegrationOuterClass.GoogleConfig.Builder config =
                 ImageIntegrationOuterClass.GoogleConfig.newBuilder()
                         .setProject(args.project as String)
                         .setServiceAccount(args.serviceAccount as String)
                         .setEndpoint(args.endpoint as String)
+                        .setWifEnabled(args.wifEnabled as Boolean)
 
         return ImageIntegrationOuterClass.ImageIntegration.newBuilder()
                 .setName(args.name as String)

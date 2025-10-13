@@ -5,12 +5,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/stringutils"
 	admission "k8s.io/api/admission/v1"
 	"k8s.io/utils/pointer"
@@ -67,7 +67,7 @@ func (m *manager) evaluateRuntimeAdmissionRequest(s *state, req *admission.Admis
 
 		return nil, errors.Wrap(err, "translating admission request object from request")
 	}
-	event.Timestamp = types.TimestampNow()
+	event.Timestamp = protocompat.TimestampNow()
 	event.Object.ClusterId = s.ClusterId
 
 	log.Debugf("Evaluating policies on kubernetes request %s", kubernetes.EventAsString(event))
@@ -82,7 +82,7 @@ func (m *manager) evaluateRuntimeAdmissionRequest(s *state, req *admission.Admis
 		return pass(req.UID), nil
 	}
 
-	sendAlerts := enrichedWithDeployment && !pointer.BoolPtrDerefOr(req.DryRun, false)
+	sendAlerts := enrichedWithDeployment && !pointer.BoolDeref(req.DryRun, false)
 
 	if failReviewRequest(alerts...) {
 		if sendAlerts {
@@ -121,7 +121,7 @@ func (m *manager) evaluatePodEvent(s *state, req *admission.AdmissionRequest, ev
 
 		alerts, err := m.kickOffImgScansAndDetect(fetchImgCtx, s, getAlertsFunc, deployment)
 		if err != nil {
-			return nil, false, err
+			return nil, false, errors.Wrap(err, "runtime detection for deployment and event")
 		}
 		return alerts, true, nil
 	}
@@ -132,20 +132,20 @@ func (m *manager) evaluatePodEvent(s *state, req *admission.AdmissionRequest, ev
 		"Policies with deploy-time fields for kubernetes event %s will be detected in background",
 		event.GetObject().GetNamespace(), event.GetObject().GetName(), kubernetes.EventAsString(event))
 
-	if !pointer.BoolPtrDerefOr(req.DryRun, false) {
+	if !pointer.BoolDeref(req.DryRun, false) {
 		go m.waitForDeploymentAndDetect(s, event)
 	}
 
 	alerts, err := s.runtimeDetectorForPoliciesWithoutDeployFields.DetectForDeploymentAndKubeEvent(booleanpolicy.EnhancedDeployment{}, event)
 	if err != nil {
-		return nil, false, err
+		return nil, false, errors.Wrap(err, "runtime detection without deployment enrichment")
 	}
 	return alerts, false, nil
 }
 
 func (m *manager) waitForDeploymentAndDetect(s *state, event *storage.KubernetesEvent) {
 	select {
-	case <-m.stopSig.Done():
+	case <-m.stopper.Flow().StopRequested():
 		return
 	case <-m.initialSyncSig.Done():
 		deployment := m.getDeploymentForPod(event.GetObject().GetNamespace(), event.GetObject().GetName())

@@ -1,0 +1,91 @@
+
+cluster:
+  name: foo
+
+env:
+  platform: gke
+  openshift: 4
+ca:
+  cert: "DUMMY CA CERTIFICATE"
+  key: "ca key pem"
+
+imagePullSecrets:
+  username: myuser
+  password: mypass
+
+endpoint:
+  central: "central.stackrox:443"
+  advertised: "central-advertised.stackrox:443"
+
+image:
+  repository:
+    main: "custom-main-repo"
+    collector: "custom-collector-repo"
+  registry:
+    main: "custom-main-registry"
+    collector: "custom-collector-registry"
+
+envVars:
+- name: CUSTOM_ENV_VAR
+  value: FOO
+
+sensor:
+  serviceTLS:
+    cert: "DUMMY SENSOR CERT"
+    key: "DUMMY SENSOR KEY"
+
+collector:
+  serviceTLS:
+    cert: "DUMMY COLLECTOR CERT"
+    key: "DUMMY COLLECTOR KEY"
+
+admissionControl:
+  serviceTLS:
+    cert: "DUMMY ADMISSION CONTROL CERT"
+    key: "DUMMY ADMISSION CONTROL KEY"
+
+config:
+  collectionMethod: CORE_BPF
+  admissionControl:
+    listenOnCreates: true
+    listenOnUpdates: true
+    enforceOnCreates: true
+    enforceOnUpdates: true
+    scanInline: true
+    disableBypass: true
+    timeout: 4
+  disableTaintTolerations: true
+  createUpgraderServiceAccount: true
+  createSecrets: true
+  offlineMode: true
+  slimCollector: true
+  exposeMonitoring: true
+
+monitoring:
+  openshift:
+    enabled: true
+
+scanner:
+  disable: false
+
+scannerV4:
+  disable: false
+  indexer:
+    serviceTLS:
+      cert: "scanner tls cert pem"
+      key: "scanner tls key pem"
+  db:
+    serviceTLS:
+      cert: "scanner tls cert pem"
+      key: "scanner tls key pem"
+    password:
+      value: "db password"
+    persistence:
+      persistentVolumeClaim:
+        claimName: "scanner-v4-db"
+        size: "10Gi"
+        createClaim: true
+        storageClass: "stackrox-gke-ssd"
+
+system:
+  enablePodSecurityPolicies: true

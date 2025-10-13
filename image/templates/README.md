@@ -3,7 +3,7 @@
 The currently maintained helm charts consists of the `stackrox-central-services`
 and `stackrox-secured-cluster-services` charts.
 
-Helm charts are distributed by `https://charts.stackrox.io` and [stackrox/helm-charts](https://github.com/stackrox/helm-charts).
+Helm charts are distributed by `https://mirror.openshift.com/pub/rhacs/charts/`, `https://charts.stackrox.io` and [stackrox/helm-charts](https://github.com/stackrox/helm-charts).
 The [stackrox/release-artifacts](https://github.com/stackrox/release-artifacts) repository takes care of the publishing automation.
 
 ## StackRox central services
@@ -12,7 +12,8 @@ Location: `./helm/stackrox-central`
 
 Installs:
  - `central`
- - `scanner`
+ - `scanner`, if enabled
+ - `scanner-v4`, if enabled
 
 ## StackRox secured cluster services
 
@@ -22,6 +23,7 @@ Installs:
  - `admission-controller`
  - `sensor`
  - `collector`
+ - `scanner`, if enabled
 
 ## Developing helm charts
 
@@ -81,9 +83,6 @@ $ helm list -n stackrox
 
 # To uninstall central, run:
 $ helm uninstall stackrox-central-services -n stackrox
-
-# Delete the pvc if you want to reset the database
-$ kubectl -n stackrox delete pvc stackrox-db
 
 # To access central, forward port 443:
 $ kubectl -n stackrox port-forward svc/central 8000:443 &

@@ -5,6 +5,15 @@ import (
 	"unsafe"
 )
 
+// ReadOnlySignal provides an interface to inspect a Signal without modifying it.
+type ReadOnlySignal interface {
+	WaitC() WaitableChan
+	Done() <-chan struct{}
+	IsDone() bool
+	Wait()
+	Snapshot() WaitableChan
+}
+
 // Signal implements a signalling facility. Unlike sync.Cond, it is based on channels and can hence be used
 // in `select` statements.
 // There are two ways to instantiate a Signal. The preferred way is by calling `NewSignal()`, which will return a signal
@@ -63,6 +72,7 @@ func (s *Signal) Wait() {
 // actually performed (i.e., the signal was triggered). It returns false if the signal was not in the triggered state.
 func (s *Signal) Reset() bool {
 	ch := make(chan struct{})
+	//#nosec G103
 	return atomic.CompareAndSwapPointer(&s.ch, nil, unsafe.Pointer(&ch))
 }
 

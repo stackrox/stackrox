@@ -3,6 +3,7 @@ package networkflowupdate
 import (
 	"context"
 	"errors"
+	"time"
 
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
@@ -10,11 +11,12 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 var (
-	log = logging.LoggerForModule()
+	_ pipeline.Fragment = (*pipelineImpl)(nil)
 )
 
 // Template design pattern. We define control flow here and defer logic to subclasses.
@@ -31,6 +33,13 @@ func NewPipeline(clusterID string, storeUpdater flowPersister) pipeline.Fragment
 type pipelineImpl struct {
 	clusterID    string
 	storeUpdater flowPersister
+}
+
+func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
+	return []centralsensor.CentralCapability{
+		centralsensor.NetworkGraphInternalEntitiesSupported,
+		centralsensor.NetworkGraphDiscoveredExternalEntitiesSupported,
+	}
 }
 
 func (s *pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {
@@ -62,7 +71,15 @@ func (s *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		return nil
 	}
 
-	if err = s.storeUpdater.update(ctx, allUpdatedFlows, update.Time); err != nil {
+	var updateTime *time.Time
+	if update.GetTime() != nil {
+		updateRawTime, err := protocompat.ConvertTimestampToTimeOrError(update.GetTime())
+		if err != nil {
+			return err
+		}
+		updateTime = &updateRawTime
+	}
+	if err = s.storeUpdater.update(ctx, allUpdatedFlows, updateTime); err != nil {
 		return err
 	}
 	return nil

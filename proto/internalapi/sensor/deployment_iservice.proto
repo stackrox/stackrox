@@ -1,17 +1,17 @@
 syntax = "proto3";
 
-option go_package = "sensor";
+package sensor;
 
 import "storage/deployment.proto";
 
-package sensor;
+option go_package = "./internalapi/sensor;sensor";
 
 message GetDeploymentForPodRequest {
-   string pod_name  = 1;
-   string namespace = 2;
+  string pod_name = 1;
+  string namespace = 2;
 }
 
 // A Sensor service that allows admission controller to retrieve deployments from Sensor.
 service DeploymentService {
-    rpc GetDeploymentForPod (GetDeploymentForPodRequest) returns (storage.Deployment);
+  rpc GetDeploymentForPod(GetDeploymentForPodRequest) returns (storage.Deployment);
 }

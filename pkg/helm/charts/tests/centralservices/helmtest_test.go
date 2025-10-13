@@ -8,5 +8,6 @@ import (
 )
 
 func TestWithHelmtest(t *testing.T) {
-	helmChartTestUtils.RunHelmTestSuite(t, "testdata/helmtest", image.CentralServicesChartPrefix, helmChartTestUtils.RunHelmTestSuiteOpts{})
+	testSuiteOpts := helmChartTestUtils.RunHelmTestSuiteOpts{}
+	helmChartTestUtils.RunHelmTestSuite(t, "testdata/helmtest", image.CentralServicesChartPrefix, testSuiteOpts)
 }

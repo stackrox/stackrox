@@ -1,63 +1,62 @@
 syntax = "proto3";
 
-option go_package = "central";
+package central;
 
 import "google/protobuf/empty.proto";
 
-package central;
+option go_package = "./internalapi/central;central";
 
 message UpgradeCheckInFromUpgraderRequest {
-    string  cluster_id                = 5;
+  string cluster_id = 5;
 
-    string  upgrade_process_id        = 1;
-    string  current_workflow          = 2;
-    string  last_executed_stage       = 3;
+  string upgrade_process_id = 1;
+  string current_workflow = 2;
+  string last_executed_stage = 3;
 
-    // The error from the last executed stage, if any.
-    // If this is empty, that implies that the last stage
-    // was succesfully executed.
-    string  last_executed_stage_error = 4;
+  // The error from the last executed stage, if any.
+  // If this is empty, that implies that the last stage
+  // was succesfully executed.
+  string last_executed_stage_error = 4;
 }
 
 message UpgradeCheckInFromUpgraderResponse {
-    string workflow_to_execute = 1;
+  string workflow_to_execute = 1;
 }
 
 message UpgradeCheckInFromSensorRequest {
-    message PodErrorCondition {
-        string message = 1;
-        bool image_related = 2;
-    }
+  message PodErrorCondition {
+    string message = 1;
+    bool image_related = 2;
+  }
 
-    message UpgraderPodState {
-        string pod_name = 1;
+  message UpgraderPodState {
+    string pod_name = 1;
 
-        bool started            = 2;
-        PodErrorCondition error = 3;
-    }
+    bool started = 2;
+    PodErrorCondition error = 3;
+  }
 
-    message UpgraderPodStates {
-        repeated UpgraderPodState states = 1;
-    }
+  message UpgraderPodStates {
+    repeated UpgraderPodState states = 1;
+  }
 
-    string cluster_id         = 5;
-    string upgrade_process_id = 1;
+  string cluster_id = 5;
+  string upgrade_process_id = 1;
 
-    oneof state {
-        string launch_error          = 2;
-        UpgraderPodStates pod_states = 3;
-        bool deployment_gone         = 4;
-    }
+  oneof state {
+    string launch_error = 2;
+    UpgraderPodStates pod_states = 3;
+    bool deployment_gone = 4;
+  }
 }
 
 // UpgradeCheckInResponseDetails contains proto messages that are added to details
 // when returning errors from these endpoints.
 message UpgradeCheckInResponseDetails {
-    message NoUpgradeInProgress {
-    }
+  message NoUpgradeInProgress {}
 }
 
 service SensorUpgradeControlService {
-    rpc UpgradeCheckInFromUpgrader(UpgradeCheckInFromUpgraderRequest) returns (UpgradeCheckInFromUpgraderResponse);
-    rpc UpgradeCheckInFromSensor(UpgradeCheckInFromSensorRequest) returns (google.protobuf.Empty);
+  rpc UpgradeCheckInFromUpgrader(UpgradeCheckInFromUpgraderRequest) returns (UpgradeCheckInFromUpgraderResponse);
+  rpc UpgradeCheckInFromSensor(UpgradeCheckInFromSensorRequest) returns (google.protobuf.Empty);
 }

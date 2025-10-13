@@ -7,11 +7,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/logimbue/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 type logMatcher struct {
@@ -19,7 +19,7 @@ type logMatcher struct {
 }
 
 func (e logMatcher) Matches(x interface{}) bool {
-	return e.x == string(x.(*storage.LogImbue).Log)
+	return e.x == string(x.(*storage.LogImbue).GetLog())
 }
 
 func (e logMatcher) String() string {
@@ -106,7 +106,7 @@ func (suite *LogImbueHandlerTestSuite) TestPostHandlesCloseError() {
 }
 
 // Mock ReadCloser implementation to function as the http request body.
-///////////////////////////////////////////////////////////////////////
+// /////////////////////////////////////////////////////////////////////
 func mockReadCloseMessage(message string) *mockReadCloser {
 	byteSlice := []byte(message)
 	return &mockReadCloser{

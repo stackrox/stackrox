@@ -1,38 +1,86 @@
 package listener
 
 import (
+	"context"
+	"errors"
 	"io"
-	"time"
 
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
-	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/internalmessage"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 )
 
 const (
 	// See https://groups.google.com/forum/#!topic/kubernetes-sig-api-machinery/PbSCXdLDno0
 	// Kubernetes scheduler no longer uses a resync period and it seems like its usage doesn't apply to us
-	noResyncPeriod              = 0
-	clusterOperatorResourceName = "clusteroperators"
-	clusterOperatorGroupVersion = "config.openshift.io/v1"
+	noResyncPeriod = 0
+
+	osConfigGroupVersion                = "config.openshift.io/v1"
+	osClusterOperatorsResourceName      = "clusteroperators"
+	osImageDigestMirrorSetsResourceName = "imagedigestmirrorsets"
+	osImageTagMirrorSetsResourceName    = "imagetagmirrorsets"
+
+	osOperatorAlphaGroupVersion              = "operator.openshift.io/v1alpha1"
+	osImageContentSourcePoliciesResourceName = "imagecontentsourcepolicies"
 )
 
+type stoppable interface {
+	Shutdown()
+}
+
+type clusterIDWaiter interface {
+	Get() string
+}
+
 type listenerImpl struct {
-	client             client.Interface
-	eventsC            chan *central.MsgFromSensor
-	stopSig            concurrency.Signal
-	credentialsManager awscredentials.RegistryCredentialsManager
-	configHandler      config.Handler
-	detector           detector.Detector
-	resyncPeriod       time.Duration
-	traceWriter        io.Writer
+	client                    client.Interface
+	stopSig                   concurrency.Signal
+	credentialsManager        awscredentials.RegistryCredentialsManager
+	configHandler             config.Handler
+	traceWriter               io.Writer
+	outputQueue               component.Resolver
+	storeProvider             *resources.StoreProvider
+	mayCreateHandlers         concurrency.Signal
+	context                   context.Context
+	pubSub                    *internalmessage.MessageSubscriber
+	sifLock                   sync.Mutex
+	sharedInformersToShutdown []stoppable
+	clusterID                 clusterIDWaiter
+}
+
+func (k *listenerImpl) StartWithContext(ctx context.Context) error {
+	// There is a caveat here that we need to make sure that the previous Start has already
+	// finished before swap the context, otherwise there is a risk of data racing by swapping
+	// the context while its being used to create the handlers.
+	// Since the handleAllEvents function takes too long to run, using mutex is a problem in
+	// dev environments, since the mutex will be locked to more than 5s, resulting in a panic.
+	// The current workaround is to use a signal instead of a mutex.
+	k.mayCreateHandlers.Wait()
+	k.mayCreateHandlers.Reset()
+	k.context = ctx
+	return k.Start()
 }
 
 func (k *listenerImpl) Start() error {
+	if k.context == nil {
+		if !buildinfo.ReleaseBuild {
+			panic("Something went very wrong: starting Kubernetes Listener with nil context")
+		}
+		return errors.New("cannot start listener without a context")
+	}
+
+	// This happens if the listener is restarting. Then the signal will already have been triggered
+	// when starting a new run of the listener.
+	if k.stopSig.IsDone() {
+		k.stopSig.Reset()
+	}
+
 	// Patch namespaces to include labels
 	patchNamespaces(k.client.Kubernetes(), &k.stopSig)
 	// Start credentials manager.
@@ -44,34 +92,22 @@ func (k *listenerImpl) Start() error {
 	return nil
 }
 
-func (k *listenerImpl) Stop(_ error) {
+func (k *listenerImpl) Stop() {
 	if k.credentialsManager != nil {
 		k.credentialsManager.Stop()
 	}
 	k.stopSig.Signal()
+	k.storeProvider.CleanupStores()
+	k.shutdownSharedInformers()
 }
 
-func (k *listenerImpl) Capabilities() []centralsensor.SensorCapability {
-	return nil
-}
-
-func (k *listenerImpl) ProcessMessage(_ *central.MsgToSensor) error {
-	return nil
-}
-
-func (k *listenerImpl) ResponsesC() <-chan *central.MsgFromSensor {
-	return k.eventsC
-}
-
-func clusterOperatorCRDExists(client client.Interface) (bool, error) {
-	resourceList, err := client.Kubernetes().Discovery().ServerResourcesForGroupVersion(clusterOperatorGroupVersion)
-	if err != nil {
-		return false, err
+func (k *listenerImpl) shutdownSharedInformers() {
+	// We need to wait for all the SharedInformers to be started before attempting to stop them
+	k.mayCreateHandlers.Wait()
+	k.sifLock.Lock()
+	defer k.sifLock.Unlock()
+	for _, sif := range k.sharedInformersToShutdown {
+		sif.Shutdown()
 	}
-	for _, apiResource := range resourceList.APIResources {
-		if apiResource.Name == clusterOperatorResourceName {
-			return true, nil
-		}
-	}
-	return false, nil
+	k.sharedInformersToShutdown = []stoppable{}
 }

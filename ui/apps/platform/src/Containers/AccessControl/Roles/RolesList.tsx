@@ -1,23 +1,16 @@
-import React, { ReactElement, useState } from 'react';
-import {
-    Alert,
-    AlertVariant,
-    Button,
-    Modal,
-    ModalVariant,
-    PageSection,
-    pluralize,
-    Title,
-} from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
+import { Alert, Button, Modal, PageSection, pluralize, Title } from '@patternfly/react-core';
+import { ActionsColumn, Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
-import { getIsDefaultRoleName } from 'constants/accessControl';
-import { AccessScope } from 'services/AccessScopesService';
-import { Group } from 'services/AuthService';
-import { PermissionSet, Role } from 'services/RolesService';
+import usePermissions from 'hooks/usePermissions';
+import type { AccessScope } from 'services/AccessScopesService';
+import type { Group } from 'services/AuthService';
+import type { PermissionSet, Role } from 'services/RolesService';
+import { getOriginLabel, isUserResource } from 'utils/traits.utils';
 
 import { AccessControlEntityLink } from '../AccessControlLinks';
-import { AccessControlQueryFilter } from '../accessControlPaths';
+import type { AccessControlQueryFilter } from '../accessControlPaths';
 
 // Return whether an auth provider rule refers to a role name,
 // therefore need to disable the delete action for the role.
@@ -47,6 +40,8 @@ function RolesList({
     const [nameDeleting, setNameDeleting] = useState('');
     const [nameConfirmingDelete, setNameConfirmingDelete] = useState<string | null>(null);
     const [alertDelete, setAlertDelete] = useState<ReactElement | null>(null);
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForPage = hasReadWriteAccess('Access');
 
     function onClickDelete(name: string) {
         setNameDeleting(name);
@@ -59,7 +54,7 @@ function RolesList({
         handleDelete(nameDeleting)
             .catch((error) => {
                 setAlertDelete(
-                    <Alert title="Delete role failed" variant={AlertVariant.danger} isInline>
+                    <Alert title="Delete role failed" component="p" variant="danger" isInline>
                         {error.message}
                     </Alert>
                 );
@@ -99,19 +94,22 @@ function RolesList({
             <Title headingLevel="h2">{pluralize(rolesFiltered.length, 'result')} found</Title>
             {alertDelete}
             {rolesFiltered.length !== 0 && (
-                <TableComposable variant="compact" isStickyHeader>
+                <Table variant="compact" isStickyHeader>
                     <Thead>
                         <Tr>
-                            <Th width={20}>Name</Th>
-                            <Th width={30}>Description</Th>
-                            <Th width={20}>Permission set</Th>
+                            <Th width={15}>Name</Th>
+                            <Th width={15}>Origin</Th>
+                            <Th width={25}>Description</Th>
+                            <Th width={15}>Permission set</Th>
                             <Th width={20}>Access scope</Th>
-                            <Th width={10} aria-label="Row actions" />
+                            <Th width={10}>
+                                <span className="pf-v5-screen-reader">Row actions</span>
+                            </Th>
                         </Tr>
                     </Thead>
                     <Tbody>
                         {rolesFiltered.map(
-                            ({ name, description, permissionSetId, accessScopeId }) => (
+                            ({ name, description, permissionSetId, accessScopeId, traits }) => (
                                 <Tr key={name}>
                                     <Td dataLabel="Name">
                                         <AccessControlEntityLink
@@ -120,6 +118,7 @@ function RolesList({
                                             entityName={name}
                                         />
                                     </Td>
+                                    <Td dataLabel="Origin">{getOriginLabel(traits)}</Td>
                                     <Td dataLabel="Description">{description}</Td>
                                     <Td dataLabel="Permission set">
                                         <AccessControlEntityLink
@@ -135,29 +134,30 @@ function RolesList({
                                             entityName={getAccessScopeName(accessScopeId)}
                                         />
                                     </Td>
-                                    <Td
-                                        actions={{
-                                            disable:
+                                    <Td isActionCell>
+                                        <ActionsColumn
+                                            isDisabled={
+                                                !hasWriteAccessForPage ||
                                                 nameDeleting === name ||
-                                                getIsDefaultRoleName(name) ||
-                                                getHasRoleName(groups, name),
-                                            items: [
+                                                !isUserResource(traits) ||
+                                                getHasRoleName(groups, name)
+                                            }
+                                            items={[
                                                 {
                                                     title: 'Delete role',
                                                     onClick: () => onClickDelete(name),
                                                 },
-                                            ],
-                                        }}
-                                        className="pf-u-text-align-right"
-                                    />
+                                            ]}
+                                        />
+                                    </Td>
                                 </Tr>
                             )
                         )}
                     </Tbody>
-                </TableComposable>
+                </Table>
             )}
             <Modal
-                variant={ModalVariant.small}
+                variant="small"
                 title="Permanently delete role?"
                 isOpen={typeof nameConfirmingDelete === 'string'}
                 onClose={onCancelDelete}

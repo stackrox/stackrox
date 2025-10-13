@@ -1,30 +1,41 @@
+//go:build sql_integration
+
 package datastoretest
 
 import (
 	"context"
 	"testing"
 
-	dackboxTestUtils "github.com/stackrox/rox/central/dackbox/testutils"
+	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
 	imageComponentDataStore "github.com/stackrox/rox/central/imagecomponent/datastore"
 	nodeComponentDataStore "github.com/stackrox/rox/central/nodecomponent/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stretchr/testify/suite"
 )
 
-func TestCVEDataStoreSAC(t *testing.T) {
+var (
+	log = logging.LoggerForModule()
+)
+
+func TestImageComponentDataStoreSAC(t *testing.T) {
+	if features.FlattenCVEData.Enabled() {
+		t.Skip("FlattenCVEData enabled.  Test is obsolete.")
+	}
 	suite.Run(t, new(cveDataStoreSACTestSuite))
 }
 
 type cveDataStoreSACTestSuite struct {
 	suite.Suite
 
-	dackboxTestStore    dackboxTestUtils.DackboxTestDataStore
+	testGraphDatastore  graphDBTestUtils.TestGraphDataStore
 	imageComponentStore imageComponentDataStore.DataStore
 	nodeComponentStore  nodeComponentDataStore.DataStore
 
@@ -34,32 +45,13 @@ type cveDataStoreSACTestSuite struct {
 
 func (s *cveDataStoreSACTestSuite) SetupSuite() {
 	var err error
-	s.dackboxTestStore, err = dackboxTestUtils.NewDackboxTestDataStore(s.T())
+	s.testGraphDatastore, err = graphDBTestUtils.NewTestGraphDataStore(s.T())
 	s.Require().NoError(err)
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pool := s.dackboxTestStore.GetPostgresPool()
-		s.imageComponentStore, err = imageComponentDataStore.GetTestPostgresDataStore(s.T(), pool)
-		s.Require().NoError(err)
-		s.nodeComponentStore, err = nodeComponentDataStore.GetTestPostgresDataStore(s.T(), pool)
-		s.Require().NoError(err)
-	} else {
-		dacky := s.dackboxTestStore.GetDackbox()
-		keyFence := s.dackboxTestStore.GetKeyFence()
-		rocksEngine := s.dackboxTestStore.GetRocksEngine()
-		bleveIndex := s.dackboxTestStore.GetBleveIndex()
-		s.imageComponentStore, err = imageComponentDataStore.GetTestRocksBleveDataStore(s.T(), rocksEngine, bleveIndex, dacky,
-			keyFence)
-		s.Require().NoError(err)
-		s.nodeComponentStore = &nodeComponentFromImageComponentDataStore{
-			imageComponentStore: s.imageComponentStore,
-		}
-	}
+	pool := s.testGraphDatastore.GetPostgresPool()
+	s.imageComponentStore = imageComponentDataStore.GetTestPostgresDataStore(s.T(), pool)
+	s.nodeComponentStore = nodeComponentDataStore.GetTestPostgresDataStore(s.T(), pool)
 	s.imageTestContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Image)
 	s.nodeTestContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Node)
-}
-
-func (s *cveDataStoreSACTestSuite) TearDownSuite() {
-	s.Require().NoError(s.dackboxTestStore.Cleanup(s.T()))
 }
 
 func getImageComponentID(component *storage.EmbeddedImageScanComponent, os string) string {
@@ -70,12 +62,12 @@ func getNodeComponentID(component *storage.EmbeddedNodeScanComponent, os string)
 	return scancomponent.ComponentID(component.GetName(), component.GetVersion(), os)
 }
 
-func (s *cveDataStoreSACTestSuite) cleanImageToVulnerabilitiesGraph(waitForIndexing bool) {
-	s.Require().NoError(s.dackboxTestStore.CleanImageToVulnerabilitiesGraph(waitForIndexing))
+func (s *cveDataStoreSACTestSuite) cleanImageToVulnerabilitiesGraph() {
+	s.Require().NoError(s.testGraphDatastore.CleanImageToVulnerabilitiesGraph())
 }
 
-func (s *cveDataStoreSACTestSuite) cleanNodeToVulnerabilitiesGraph(waitForIndexing bool) {
-	s.Require().NoError(s.dackboxTestStore.CleanNodeToVulnerabilitiesGraph(waitForIndexing))
+func (s *cveDataStoreSACTestSuite) cleanNodeToVulnerabilitiesGraph() {
+	s.Require().NoError(s.testGraphDatastore.CleanNodeToVulnerabilitiesGraph())
 }
 
 type componentTestCase struct {
@@ -319,11 +311,10 @@ var (
 		},
 		{
 			contextKey: sacTestUtils.Cluster1NamespacesABReadWriteCtx,
-			// Partial cluster scope is too narrow for allowfixedscope at cluster level.
 			expectedComponentFound: map[string]bool{
-				nodeComponentID1x1:   false,
-				nodeComponentID1x2:   false,
-				nodeComponentID1s2x3: false,
+				nodeComponentID1x1:   true,
+				nodeComponentID1x2:   true,
+				nodeComponentID1s2x3: true,
 				nodeComponentID2x4:   false,
 				nodeComponentID2x5:   false,
 			},
@@ -340,13 +331,12 @@ var (
 		},
 		{
 			contextKey: sacTestUtils.Cluster2NamespaceBReadWriteCtx,
-			// Partial cluster scope is too narrow for allowfixedscope at cluster level.
 			expectedComponentFound: map[string]bool{
 				nodeComponentID1x1:   false,
 				nodeComponentID1x2:   false,
-				nodeComponentID1s2x3: false,
-				nodeComponentID2x4:   false,
-				nodeComponentID2x5:   false,
+				nodeComponentID1s2x3: true,
+				nodeComponentID2x4:   true,
+				nodeComponentID2x5:   true,
 			},
 		},
 		{
@@ -364,435 +354,415 @@ var (
 			// The mixed scope context can see cluster1 and namespaceA as well as all cluster2.
 			// Therefore it should see only cluster2 vulnerabilities (and shared ones).
 			expectedComponentFound: map[string]bool{
-				nodeComponentID1x1:   false,
-				nodeComponentID1x2:   false,
+				nodeComponentID1x1:   true,
+				nodeComponentID1x2:   true,
 				nodeComponentID1s2x3: true,
 				nodeComponentID2x4:   true,
 				nodeComponentID2x5:   true,
 			},
 		},
 	}
-
-	dontWaitForIndexing = false
-	waitForIndexing     = true
 )
 
 func (s *cveDataStoreSACTestSuite) TestSACImageComponentExistsSingleScopeOnly() {
 	// Inject the fixture graph, and test exists for Component1x1
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanImageToVulnerabilitiesGraph(dontWaitForIndexing)
-	s.Require().NoError(err)
-	for _, c := range imageComponentTestCases {
-		s.Run(c.contextKey, func() {
-			testCtx := s.imageTestContexts[c.contextKey]
-			exists, err := s.imageComponentStore.Exists(testCtx, imageComponentID1x1)
-			s.NoError(err)
-			s.Equal(c.expectedComponentFound[imageComponentID1x1], exists)
-		})
-	}
+	s.runImageTest("TestSACImageComponentExistsSingleScopeOnly", func(c componentTestCase) {
+		testCtx := s.imageTestContexts[c.contextKey]
+		exists, err := s.imageComponentStore.Exists(testCtx, imageComponentID1x1)
+		s.NoError(err)
+		s.Equal(c.expectedComponentFound[imageComponentID1x1], exists)
+	})
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACImageComponentExistsSharedComponent() {
 	// Inject the fixture graph, and test exists for Component1s2x3
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanImageToVulnerabilitiesGraph(dontWaitForIndexing)
-	s.Require().NoError(err)
-	for _, c := range imageComponentTestCases {
-		s.Run(c.contextKey, func() {
-			testCtx := s.imageTestContexts[c.contextKey]
-			exists, err := s.imageComponentStore.Exists(testCtx, imageComponentID1s2x3)
-			s.NoError(err)
-			s.Equal(c.expectedComponentFound[imageComponentID1s2x3], exists)
-		})
-	}
+	s.runImageTest("TestSACImageComponentExistsSharedComponent", func(c componentTestCase) {
+		testCtx := s.imageTestContexts[c.contextKey]
+		exists, err := s.imageComponentStore.Exists(testCtx, imageComponentID1s2x3)
+		s.NoError(err)
+		s.Equal(c.expectedComponentFound[imageComponentID1s2x3], exists)
+	})
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACImageComponentGetSingleScopeOnly() {
 	// Inject the fixture graph, and test retrieval for Component1x1
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanImageToVulnerabilitiesGraph(dontWaitForIndexing)
-	s.Require().NoError(err)
 	targetComponent := imageComponent1x1
 	componentName := targetComponent.GetName()
 	cvss := targetComponent.GetTopCvss()
-	for _, c := range imageComponentTestCases {
-		s.Run(c.contextKey, func() {
-			testCtx := s.imageTestContexts[c.contextKey]
-			imageComponent, found, err := s.imageComponentStore.Get(testCtx, imageComponentID1x1)
-			s.NoError(err)
-			s.Equal(c.expectedComponentFound[imageComponentID1x1], found)
-			if c.expectedComponentFound[imageComponentID1x1] {
-				s.Require().NotNil(imageComponent)
-				s.Equal(componentName, imageComponent.GetName())
-				s.Equal(cvss, imageComponent.GetTopCvss())
-			} else {
-				s.Nil(imageComponent)
-			}
-		})
-	}
+	s.runImageTest("TestSACImageComponentGetSingleScopeOnly", func(c componentTestCase) {
+		testCtx := s.imageTestContexts[c.contextKey]
+		imageComponent, found, err := s.imageComponentStore.Get(testCtx, imageComponentID1x1)
+		s.NoError(err)
+		s.Equal(c.expectedComponentFound[imageComponentID1x1], found)
+		if c.expectedComponentFound[imageComponentID1x1] {
+			s.Require().NotNil(imageComponent)
+			s.Equal(componentName, imageComponent.GetName())
+			s.Equal(cvss, imageComponent.GetTopCvss())
+		} else {
+			s.Nil(imageComponent)
+		}
+	})
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACImageComponentGetSharedComponent() {
 	// Inject the fixture graph, and test retrieval for Component1s2x3
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanImageToVulnerabilitiesGraph(dontWaitForIndexing)
-	s.Require().NoError(err)
 	targetComponent := imageComponent1s2x3
 	componentName := targetComponent.GetName()
 	cvss := targetComponent.GetTopCvss()
-	for _, c := range imageComponentTestCases {
-		s.Run(c.contextKey, func() {
-			testCtx := s.imageTestContexts[c.contextKey]
-			imageComponent, found, err := s.imageComponentStore.Get(testCtx, imageComponentID1s2x3)
-			s.NoError(err)
-			s.Equal(c.expectedComponentFound[imageComponentID1s2x3], found)
-			if c.expectedComponentFound[imageComponentID1s2x3] {
-				s.Require().NotNil(imageComponent)
-				s.Equal(componentName, imageComponent.GetName())
-				s.Equal(cvss, imageComponent.GetTopCvss())
-			} else {
-				s.Nil(imageComponent)
-			}
-		})
-	}
+	s.runImageTest("TestSACImageComponentGetSharedComponent", func(c componentTestCase) {
+		testCtx := s.imageTestContexts[c.contextKey]
+		imageComponent, found, err := s.imageComponentStore.Get(testCtx, imageComponentID1s2x3)
+		s.NoError(err)
+		s.Equal(c.expectedComponentFound[imageComponentID1s2x3], found)
+		if c.expectedComponentFound[imageComponentID1s2x3] {
+			s.Require().NotNil(imageComponent)
+			s.Equal(componentName, imageComponent.GetName())
+			s.Equal(cvss, imageComponent.GetTopCvss())
+		} else {
+			s.Nil(imageComponent)
+		}
+	})
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACImageComponentGetBatch() {
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanImageToVulnerabilitiesGraph(dontWaitForIndexing)
-	s.Require().NoError(err)
 	componentIDs := []string{
 		imageComponentID1x1,
 		imageComponentID1x2,
 		imageComponentID1s2x3,
 		imageComponentID2x5,
 	}
-	for _, c := range imageComponentTestCases {
-		s.Run(c.contextKey, func() {
-			testCtx := s.imageTestContexts[c.contextKey]
-			imageComponents, err := s.imageComponentStore.GetBatch(testCtx, componentIDs)
-			s.NoError(err)
-			expectedComponentIDs := make([]string, 0, len(componentIDs))
-			for _, componentID := range componentIDs {
-				if c.expectedComponentFound[componentID] {
-					expectedComponentIDs = append(expectedComponentIDs, componentID)
-				}
+	s.runImageTest("TestSACImageComponentGetBatch", func(c componentTestCase) {
+		testCtx := s.imageTestContexts[c.contextKey]
+		imageComponents, err := s.imageComponentStore.GetBatch(testCtx, componentIDs)
+		s.NoError(err)
+		expectedComponentIDs := make([]string, 0, len(componentIDs))
+		for _, componentID := range componentIDs {
+			if c.expectedComponentFound[componentID] {
+				expectedComponentIDs = append(expectedComponentIDs, componentID)
 			}
-			fetchedComponentIDs := make([]string, 0, len(imageComponents))
-			for _, imageComponent := range imageComponents {
-				fetchedComponentIDs = append(fetchedComponentIDs, imageComponent.GetId())
-			}
-			s.ElementsMatch(expectedComponentIDs, fetchedComponentIDs)
-		})
-	}
+		}
+		fetchedComponentIDs := make([]string, 0, len(imageComponents))
+		for _, imageComponent := range imageComponents {
+			fetchedComponentIDs = append(fetchedComponentIDs, imageComponent.GetId())
+		}
+		s.ElementsMatch(expectedComponentIDs, fetchedComponentIDs)
+	})
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACImageComponentCount() {
-	s.T().Skip("Not implemented yet.")
+	s.T().Skip("Skipping Component count tests for now.")
+	s.runImageTest("TestSACImageComponentCount", func(c componentTestCase) {
+
+		testCtx := s.imageTestContexts[c.contextKey]
+		count, err := s.imageComponentStore.Count(testCtx, nil)
+		s.NoError(err)
+		expectedCount := 0
+		for _, visible := range c.expectedComponentFound {
+			if visible {
+				expectedCount++
+			}
+		}
+		s.Equal(expectedCount, count)
+	})
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACImageComponentSearch() {
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanImageToVulnerabilitiesGraph(waitForIndexing)
-	s.Require().NoError(err)
-	for _, c := range imageComponentTestCases {
-		s.Run(c.contextKey, func() {
+	s.runImageTest("", func(c componentTestCase) {
 
-			testCtx := s.imageTestContexts[c.contextKey]
-			results, err := s.imageComponentStore.Search(testCtx, nil)
-			s.NoError(err)
-			expectedComponentIDs := make([]string, 0, len(c.expectedComponentFound))
-			for ID, visible := range c.expectedComponentFound {
-				if visible {
-					expectedComponentIDs = append(expectedComponentIDs, ID)
-				}
+		testCtx := s.imageTestContexts[c.contextKey]
+		results, err := s.imageComponentStore.Search(testCtx, nil)
+		s.NoError(err)
+		expectedComponentIDs := make([]string, 0, len(c.expectedComponentFound))
+		for ID, visible := range c.expectedComponentFound {
+			if visible {
+				expectedComponentIDs = append(expectedComponentIDs, ID)
 			}
-			fetchedComponentIDset := make(map[string]bool, 0)
-			for _, result := range results {
-				fetchedComponentIDset[result.ID] = true
-			}
-			fetchedComponentIDs := make([]string, 0, len(fetchedComponentIDset))
-			for id := range fetchedComponentIDset {
-				fetchedComponentIDs = append(fetchedComponentIDs, id)
-			}
-			s.ElementsMatch(fetchedComponentIDs, expectedComponentIDs)
-		})
-	}
+		}
+		fetchedComponentIDset := make(map[string]bool, 0)
+		for _, result := range results {
+			fetchedComponentIDset[result.ID] = true
+		}
+		fetchedComponentIDs := make([]string, 0, len(fetchedComponentIDset))
+		for id := range fetchedComponentIDset {
+			fetchedComponentIDs = append(fetchedComponentIDs, id)
+		}
+		s.ElementsMatch(fetchedComponentIDs, expectedComponentIDs)
+	})
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACImageComponentSearchImageComponents() {
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanImageToVulnerabilitiesGraph(waitForIndexing)
-	s.Require().NoError(err)
-	for _, c := range imageComponentTestCases {
-		s.Run(c.contextKey, func() {
+	s.runImageTest("TestSACImageComponentSearchImageComponents", func(c componentTestCase) {
 
-			testCtx := s.imageTestContexts[c.contextKey]
-			results, err := s.imageComponentStore.SearchImageComponents(testCtx, nil)
-			s.NoError(err)
-			expectedComponentIDs := make([]string, 0, len(c.expectedComponentFound))
-			for ID, visible := range c.expectedComponentFound {
-				if visible {
-					expectedComponentIDs = append(expectedComponentIDs, ID)
-				}
+		testCtx := s.imageTestContexts[c.contextKey]
+		results, err := s.imageComponentStore.SearchImageComponents(testCtx, nil)
+		s.NoError(err)
+		expectedComponentIDs := make([]string, 0, len(c.expectedComponentFound))
+		for ID, visible := range c.expectedComponentFound {
+			if visible {
+				expectedComponentIDs = append(expectedComponentIDs, ID)
 			}
-			fetchedComponentIDset := make(map[string]bool, 0)
-			for _, result := range results {
-				fetchedComponentIDset[result.GetId()] = true
-			}
-			fetchedComponentIDs := make([]string, 0, len(fetchedComponentIDset))
-			for id := range fetchedComponentIDset {
-				fetchedComponentIDs = append(fetchedComponentIDs, id)
-			}
-			s.ElementsMatch(fetchedComponentIDs, expectedComponentIDs)
-		})
-	}
+		}
+		fetchedComponentIDset := make(map[string]bool, 0)
+		for _, result := range results {
+			fetchedComponentIDset[result.GetId()] = true
+		}
+		fetchedComponentIDs := make([]string, 0, len(fetchedComponentIDset))
+		for id := range fetchedComponentIDset {
+			fetchedComponentIDs = append(fetchedComponentIDs, id)
+		}
+		s.ElementsMatch(fetchedComponentIDs, expectedComponentIDs)
+	})
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACImageComponentSearchRawImageComponents() {
-	err := s.dackboxTestStore.PushImageToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanImageToVulnerabilitiesGraph(waitForIndexing)
-	s.Require().NoError(err)
-	for _, c := range imageComponentTestCases {
-		s.Run(c.contextKey, func() {
+	s.runImageTest("TestSACImageComponentSearchRawImageComponents", func(c componentTestCase) {
 
-			testCtx := s.imageTestContexts[c.contextKey]
-			results, err := s.imageComponentStore.SearchRawImageComponents(testCtx, nil)
-			s.NoError(err)
-			expectedComponentIDs := make([]string, 0, len(c.expectedComponentFound))
-			for ID, visible := range c.expectedComponentFound {
-				if visible {
-					expectedComponentIDs = append(expectedComponentIDs, ID)
-				}
+		testCtx := s.imageTestContexts[c.contextKey]
+		results, err := s.imageComponentStore.SearchRawImageComponents(testCtx, nil)
+		s.NoError(err)
+		expectedComponentIDs := make([]string, 0, len(c.expectedComponentFound))
+		for ID, visible := range c.expectedComponentFound {
+			if visible {
+				expectedComponentIDs = append(expectedComponentIDs, ID)
 			}
-			fetchedComponentIDset := make(map[string]bool, 0)
-			for _, result := range results {
-				fetchedComponentIDset[result.GetId()] = true
-			}
-			fetchedComponentIDs := make([]string, 0, len(fetchedComponentIDset))
-			for id := range fetchedComponentIDset {
-				fetchedComponentIDs = append(fetchedComponentIDs, id)
-			}
-			s.ElementsMatch(fetchedComponentIDs, expectedComponentIDs)
+		}
+		fetchedComponentIDset := make(map[string]bool, 0)
+		for _, result := range results {
+			fetchedComponentIDset[result.GetId()] = true
+		}
+		fetchedComponentIDs := make([]string, 0, len(fetchedComponentIDset))
+		for id := range fetchedComponentIDset {
+			fetchedComponentIDs = append(fetchedComponentIDs, id)
+		}
+		s.ElementsMatch(fetchedComponentIDs, expectedComponentIDs)
+	})
+}
+
+func (s *cveDataStoreSACTestSuite) runImageTest(testName string, testFunc func(c componentTestCase)) {
+	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilitiesGraph()
+	s.Require().NoError(err)
+
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+
+	failed := false
+	for _, c := range imageComponentTestCases {
+		caseSucceeded := s.Run(c.contextKey, func() {
+			// s.T().Parallel()
+			testFunc(c)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Infof("%s failed, dumping DB content.", testName)
+		imageGraphBefore.Log()
 	}
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACNodeComponentExistsSingleScopeOnly() {
 	// Inject the fixture graph, and test exists for Component1x1
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanNodeToVulnerabilitiesGraph(dontWaitForIndexing)
-	s.Require().NoError(err)
-	for _, c := range nodeComponentTestCases {
-		s.Run(c.contextKey, func() {
-			testCtx := s.nodeTestContexts[c.contextKey]
-			exists, err := s.nodeComponentStore.Exists(testCtx, nodeComponentID1x1)
-			s.NoError(err)
-			s.Equal(c.expectedComponentFound[nodeComponentID1x1], exists)
-		})
-	}
+	s.runNodeTest("TestSACNodeComponentExistsSingleScopeOnly", func(c componentTestCase) {
+		testCtx := s.nodeTestContexts[c.contextKey]
+		exists, err := s.nodeComponentStore.Exists(testCtx, nodeComponentID1x1)
+		s.NoError(err)
+		s.Equal(c.expectedComponentFound[nodeComponentID1x1], exists)
+	})
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACNodeComponentExistsSharedComponent() {
 	// Inject the fixture graph, and test exists for Component1s2x3
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanNodeToVulnerabilitiesGraph(dontWaitForIndexing)
-	s.Require().NoError(err)
-	for _, c := range nodeComponentTestCases {
-		s.Run(c.contextKey, func() {
-			testCtx := s.nodeTestContexts[c.contextKey]
-			exists, err := s.nodeComponentStore.Exists(testCtx, nodeComponentID1s2x3)
-			s.NoError(err)
-			s.Equal(c.expectedComponentFound[nodeComponentID1s2x3], exists)
-		})
-	}
+	s.runNodeTest("TestSACNodeComponentExistsSharedComponent", func(c componentTestCase) {
+		testCtx := s.nodeTestContexts[c.contextKey]
+		exists, err := s.nodeComponentStore.Exists(testCtx, nodeComponentID1s2x3)
+		s.NoError(err)
+		s.Equal(c.expectedComponentFound[nodeComponentID1s2x3], exists)
+	})
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACNodeComponentGetSingleScopeOnly() {
 	// Inject the fixture graph, and test retrieval for Component1x1
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanNodeToVulnerabilitiesGraph(dontWaitForIndexing)
-	s.Require().NoError(err)
 	targetComponent := nodeComponent1x1
 	componentName := targetComponent.GetName()
 	cvss := targetComponent.GetTopCvss()
-	for _, c := range nodeComponentTestCases {
-		s.Run(c.contextKey, func() {
-			testCtx := s.nodeTestContexts[c.contextKey]
-			nodeComponent, found, err := s.nodeComponentStore.Get(testCtx, nodeComponentID1x1)
-			s.NoError(err)
-			s.Equal(c.expectedComponentFound[nodeComponentID1x1], found)
-			if c.expectedComponentFound[nodeComponentID1x1] {
-				s.NotNil(nodeComponent)
-				s.Equal(componentName, nodeComponent.GetName())
-				s.Equal(cvss, nodeComponent.GetTopCvss())
-			} else {
-				s.Nil(nodeComponent)
-			}
-		})
-	}
+	s.runNodeTest("TestSACNodeComponentGetSingleScopeOnly", func(c componentTestCase) {
+		testCtx := s.nodeTestContexts[c.contextKey]
+		nodeComponent, found, err := s.nodeComponentStore.Get(testCtx, nodeComponentID1x1)
+		s.NoError(err)
+		s.Equal(c.expectedComponentFound[nodeComponentID1x1], found)
+		if c.expectedComponentFound[nodeComponentID1x1] {
+			s.NotNil(nodeComponent)
+			s.Equal(componentName, nodeComponent.GetName())
+			s.Equal(cvss, nodeComponent.GetTopCvss())
+		} else {
+			s.Nil(nodeComponent)
+		}
+	})
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACNodeComponentGetSharedComponent() {
 	// Inject the fixture graph, and test retrieval for Component1s2x3
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanNodeToVulnerabilitiesGraph(dontWaitForIndexing)
-	s.Require().NoError(err)
 	targetComponent := nodeComponent1s2x3
 	componentName := targetComponent.GetName()
 	cvss := targetComponent.GetTopCvss()
-	for _, c := range nodeComponentTestCases {
-		s.Run(c.contextKey, func() {
-			testCtx := s.nodeTestContexts[c.contextKey]
-			nodeComponent, found, err := s.nodeComponentStore.Get(testCtx, nodeComponentID1s2x3)
-			s.NoError(err)
-			s.Equal(c.expectedComponentFound[nodeComponentID1s2x3], found)
-			if c.expectedComponentFound[nodeComponentID1s2x3] {
-				s.NotNil(nodeComponent)
-				s.Equal(componentName, nodeComponent.GetName())
-				s.Equal(cvss, nodeComponent.GetTopCvss())
-			} else {
-				s.Nil(nodeComponent)
-			}
-		})
-	}
+	s.runNodeTest("TestSACNodeComponentGetSharedComponent", func(c componentTestCase) {
+		testCtx := s.nodeTestContexts[c.contextKey]
+		nodeComponent, found, err := s.nodeComponentStore.Get(testCtx, nodeComponentID1s2x3)
+		s.NoError(err)
+		s.Equal(c.expectedComponentFound[nodeComponentID1s2x3], found)
+		if c.expectedComponentFound[nodeComponentID1s2x3] {
+			s.NotNil(nodeComponent)
+			s.Equal(componentName, nodeComponent.GetName())
+			s.Equal(cvss, nodeComponent.GetTopCvss())
+		} else {
+			s.Nil(nodeComponent)
+		}
+	})
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACNodeComponentGetBatch() {
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(dontWaitForIndexing)
-	defer s.cleanNodeToVulnerabilitiesGraph(dontWaitForIndexing)
-	s.Require().NoError(err)
 	componentIDs := []string{
 		nodeComponentID1x1,
 		nodeComponentID1x2,
 		nodeComponentID1s2x3,
 		nodeComponentID2x5,
 	}
-	for _, c := range nodeComponentTestCases {
-		s.Run(c.contextKey, func() {
-			testCtx := s.nodeTestContexts[c.contextKey]
-			nodeComponents, err := s.nodeComponentStore.GetBatch(testCtx, componentIDs)
-			s.NoError(err)
-			expectedComponentIDs := make([]string, 0, len(componentIDs))
-			for _, componentID := range componentIDs {
-				if c.expectedComponentFound[componentID] {
-					expectedComponentIDs = append(expectedComponentIDs, componentID)
-				}
+	s.runNodeTest("TestSACNodeComponentGetBatch", func(c componentTestCase) {
+		testCtx := s.nodeTestContexts[c.contextKey]
+		nodeComponents, err := s.nodeComponentStore.GetBatch(testCtx, componentIDs)
+		s.NoError(err)
+		expectedComponentIDs := make([]string, 0, len(componentIDs))
+		for _, componentID := range componentIDs {
+			if c.expectedComponentFound[componentID] {
+				expectedComponentIDs = append(expectedComponentIDs, componentID)
 			}
-			fetchedComponentIDs := make([]string, 0, len(nodeComponents))
-			for _, nodeComponent := range nodeComponents {
-				fetchedComponentIDs = append(fetchedComponentIDs, nodeComponent.GetId())
-			}
-			s.ElementsMatch(expectedComponentIDs, fetchedComponentIDs)
-		})
-	}
+		}
+		fetchedComponentIDs := make([]string, 0, len(nodeComponents))
+		for _, nodeComponent := range nodeComponents {
+			fetchedComponentIDs = append(fetchedComponentIDs, nodeComponent.GetId())
+		}
+		s.ElementsMatch(expectedComponentIDs, fetchedComponentIDs)
+	})
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACNodeComponentCount() {
 	s.T().Skip("Skipping Component count tests for now.")
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanNodeToVulnerabilitiesGraph(waitForIndexing)
-	s.Require().NoError(err)
-	for _, c := range nodeComponentTestCases {
-		s.Run(c.contextKey, func() {
+	s.runNodeTest("TestSACNodeComponentCount", func(c componentTestCase) {
 
-			testCtx := s.nodeTestContexts[c.contextKey]
-			count, err := s.nodeComponentStore.Count(testCtx, nil)
-			s.NoError(err)
-			expectedCount := 0
-			for _, visible := range c.expectedComponentFound {
-				if visible {
-					expectedCount++
-				}
+		testCtx := s.nodeTestContexts[c.contextKey]
+		count, err := s.nodeComponentStore.Count(testCtx, nil)
+		s.NoError(err)
+		expectedCount := 0
+		for _, visible := range c.expectedComponentFound {
+			if visible {
+				expectedCount++
 			}
-			s.Equal(expectedCount, count)
-		})
-	}
+		}
+		s.Equal(expectedCount, count)
+	})
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACNodeComponentSearch() {
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanNodeToVulnerabilitiesGraph(waitForIndexing)
-	s.Require().NoError(err)
-	for _, c := range nodeComponentTestCases {
-		s.Run(c.contextKey, func() {
+	s.runNodeTest("TestSACNodeComponentSearch", func(c componentTestCase) {
 
-			testCtx := s.nodeTestContexts[c.contextKey]
-			results, err := s.nodeComponentStore.Search(testCtx, nil)
-			s.NoError(err)
-			expectedComponentIDs := make([]string, 0, len(c.expectedComponentFound))
-			for ID, visible := range c.expectedComponentFound {
-				if visible {
-					expectedComponentIDs = append(expectedComponentIDs, ID)
-				}
+		testCtx := s.nodeTestContexts[c.contextKey]
+		results, err := s.nodeComponentStore.Search(testCtx, nil)
+		s.NoError(err)
+		expectedComponentIDs := make([]string, 0, len(c.expectedComponentFound))
+		for ID, visible := range c.expectedComponentFound {
+			if visible {
+				expectedComponentIDs = append(expectedComponentIDs, ID)
 			}
-			fetchedComponentIDset := make(map[string]bool, 0)
-			for _, result := range results {
-				fetchedComponentIDset[result.ID] = true
-			}
-			fetchedComponentIDs := make([]string, 0, len(fetchedComponentIDset))
-			for id := range fetchedComponentIDset {
-				fetchedComponentIDs = append(fetchedComponentIDs, id)
-			}
-			s.ElementsMatch(fetchedComponentIDs, expectedComponentIDs)
-		})
-	}
+		}
+		fetchedComponentIDset := make(map[string]bool, 0)
+		for _, result := range results {
+			fetchedComponentIDset[result.ID] = true
+		}
+		fetchedComponentIDs := make([]string, 0, len(fetchedComponentIDset))
+		for id := range fetchedComponentIDset {
+			fetchedComponentIDs = append(fetchedComponentIDs, id)
+		}
+		s.ElementsMatch(fetchedComponentIDs, expectedComponentIDs)
+	})
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACNodeComponentSearchNodeComponents() {
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanNodeToVulnerabilitiesGraph(waitForIndexing)
-	s.Require().NoError(err)
-	for _, c := range nodeComponentTestCases {
-		s.Run(c.contextKey, func() {
+	s.runNodeTest("TestSACNodeComponentSearchNodeComponents", func(c componentTestCase) {
 
-			testCtx := s.nodeTestContexts[c.contextKey]
-			results, err := s.nodeComponentStore.SearchNodeComponents(testCtx, nil)
-			s.NoError(err)
-			expectedComponentIDs := make([]string, 0, len(c.expectedComponentFound))
-			for ID, visible := range c.expectedComponentFound {
-				if visible {
-					expectedComponentIDs = append(expectedComponentIDs, ID)
-				}
+		testCtx := s.nodeTestContexts[c.contextKey]
+		results, err := s.nodeComponentStore.SearchNodeComponents(testCtx, nil)
+		s.NoError(err)
+		expectedComponentIDs := make([]string, 0, len(c.expectedComponentFound))
+		for ID, visible := range c.expectedComponentFound {
+			if visible {
+				expectedComponentIDs = append(expectedComponentIDs, ID)
 			}
-			fetchedComponentIDset := make(map[string]bool, 0)
-			for _, result := range results {
-				fetchedComponentIDset[result.GetId()] = true
-			}
-			fetchedComponentIDs := make([]string, 0, len(fetchedComponentIDset))
-			for id := range fetchedComponentIDset {
-				fetchedComponentIDs = append(fetchedComponentIDs, id)
-			}
-			s.ElementsMatch(fetchedComponentIDs, expectedComponentIDs)
-		})
-	}
+		}
+		fetchedComponentIDset := make(map[string]bool, 0)
+		for _, result := range results {
+			fetchedComponentIDset[result.GetId()] = true
+		}
+		fetchedComponentIDs := make([]string, 0, len(fetchedComponentIDset))
+		for id := range fetchedComponentIDset {
+			fetchedComponentIDs = append(fetchedComponentIDs, id)
+		}
+		s.ElementsMatch(fetchedComponentIDs, expectedComponentIDs)
+	})
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACNodeComponentSearchRawNodeComponents() {
-	err := s.dackboxTestStore.PushNodeToVulnerabilitiesGraph(waitForIndexing)
-	defer s.cleanNodeToVulnerabilitiesGraph(waitForIndexing)
-	s.Require().NoError(err)
-	for _, c := range nodeComponentTestCases {
-		s.Run(c.contextKey, func() {
+	s.runNodeTest("TestSACNodeComponentSearchRawNodeComponents", func(c componentTestCase) {
 
-			testCtx := s.nodeTestContexts[c.contextKey]
-			results, err := s.nodeComponentStore.SearchRawNodeComponents(testCtx, nil)
-			s.NoError(err)
-			expectedComponentIDs := make([]string, 0, len(c.expectedComponentFound))
-			for ID, visible := range c.expectedComponentFound {
-				if visible {
-					expectedComponentIDs = append(expectedComponentIDs, ID)
-				}
+		testCtx := s.nodeTestContexts[c.contextKey]
+		results, err := s.nodeComponentStore.SearchRawNodeComponents(testCtx, nil)
+		s.NoError(err)
+		expectedComponentIDs := make([]string, 0, len(c.expectedComponentFound))
+		for ID, visible := range c.expectedComponentFound {
+			if visible {
+				expectedComponentIDs = append(expectedComponentIDs, ID)
 			}
-			fetchedComponentIDset := make(map[string]bool, 0)
-			for _, result := range results {
-				fetchedComponentIDset[result.GetId()] = true
-			}
-			fetchedComponentIDs := make([]string, 0, len(fetchedComponentIDset))
-			for id := range fetchedComponentIDset {
-				fetchedComponentIDs = append(fetchedComponentIDs, id)
-			}
-			s.ElementsMatch(fetchedComponentIDs, expectedComponentIDs)
+		}
+		fetchedComponentIDset := make(map[string]bool, 0)
+		for _, result := range results {
+			fetchedComponentIDset[result.GetId()] = true
+		}
+		fetchedComponentIDs := make([]string, 0, len(fetchedComponentIDset))
+		for id := range fetchedComponentIDset {
+			fetchedComponentIDs = append(fetchedComponentIDs, id)
+		}
+		s.ElementsMatch(fetchedComponentIDs, expectedComponentIDs)
+	})
+}
+
+func (s *cveDataStoreSACTestSuite) runNodeTest(testName string, testFunc func(c componentTestCase)) {
+	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
+	defer s.cleanNodeToVulnerabilitiesGraph()
+	s.Require().NoError(err)
+	nodeGraphBefore := graphDBTestUtils.GetNodeGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
+	for _, c := range nodeComponentTestCases {
+		caseSucceeded := s.Run(c.contextKey, func() {
+			// When triggered in parallel, most tests fail.
+			// TearDownTest is executed before the sub-tests.
+			// See https://github.com/stretchr/testify/issues/934
+			// s.T().Parallel()
+			testFunc(c)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Infof("%s failed, dumping DB content.", testName)
+		nodeGraphBefore.Log()
 	}
 }

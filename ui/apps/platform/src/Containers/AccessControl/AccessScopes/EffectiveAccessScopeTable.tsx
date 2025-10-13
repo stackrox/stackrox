@@ -1,9 +1,10 @@
-import React, { CSSProperties, ReactElement, useState } from 'react';
+import React, { useState } from 'react';
+import type { CSSProperties, ReactElement } from 'react';
 import { Badge, Button, Flex, FlexItem, Switch, TextInput } from '@patternfly/react-core';
 import { AngleDownIcon, AngleUpIcon } from '@patternfly/react-icons';
-import { TableComposable, Tbody, Td, Thead, Th, Tr, TreeRowWrapper } from '@patternfly/react-table';
+import { Table, Tbody, Td, Thead, Th, Tr, TreeRowWrapper } from '@patternfly/react-table';
 
-import {
+import type {
     EffectiveAccessScopeCluster,
     SimpleAccessScopeNamespace,
 } from 'services/AccessScopesService';
@@ -109,7 +110,12 @@ function EffectiveAccessScopeTable({
                         props: clusterProps,
                     }}
                 >
-                    {clusterName}
+                    {/*
+                        In rare cases this value can be an empty string which will cause a runtime error in PatternFly
+                        due to a bug in the table component.https://github.com/patternfly/patternfly-react/issues/10185
+                        In this case, we display a dash instead to avoid a crash.
+                    */}
+                    {clusterName || '-'}
                 </Td>
                 <Td dataLabel="Cluster allowed">
                     <EffectiveAccessScopeStateIcon state={clusterState} isCluster />
@@ -120,7 +126,7 @@ function EffectiveAccessScopeTable({
                         className="acs-m-manual-inclusion"
                         isChecked={includedClusters.includes(clusterName)}
                         isDisabled={isDisabled}
-                        onChange={(isChecked) =>
+                        onChange={(_event, isChecked) =>
                             handleIncludedClustersChange(clusterName, isChecked)
                         }
                     />
@@ -174,7 +180,7 @@ function EffectiveAccessScopeTable({
                 <TreeRowWrapper
                     key={namespaceId}
                     row={{ props: namespaceProps }}
-                    className="pf-u-background-color-200"
+                    className="pf-v5-u-background-color-200"
                 >
                     <Td
                         dataLabel="Namespace name"
@@ -184,7 +190,12 @@ function EffectiveAccessScopeTable({
                             props: namespaceProps,
                         }}
                     >
-                        {namespaceName}
+                        {/*
+                        In rare cases this value can be an empty string which will cause a runtime error in PatternFly
+                        due to a bug in the table component.https://github.com/patternfly/patternfly-react/issues/10185
+                        In this case, we display a dash instead to avoid a crash.
+                    */}
+                        {namespaceName || '-'}
                     </Td>
                     <Td dataLabel="Namespace allowed">
                         <EffectiveAccessScopeStateIcon state={namespaceState} isCluster={false} />
@@ -199,7 +210,7 @@ function EffectiveAccessScopeTable({
                                     includedNamespace.namespaceName === namespaceName
                             )}
                             isDisabled={isDisabled}
-                            onChange={(isChecked) =>
+                            onChange={(_event, isChecked) =>
                                 handleIncludedNamespacesChange(
                                     clusterName,
                                     namespaceName,
@@ -240,15 +251,21 @@ function EffectiveAccessScopeTable({
 
     return (
         <>
-            <Flex className="pf-u-pt-sm pf-u-pb-sm pf-u-pl-lg">
-                <Flex spaceItems={{ default: 'spaceItemsSm' }} className="pf-u-pb-sm">
+            <Flex className="pf-v5-u-pt-sm pf-v5-u-pb-sm pf-v5-u-pl-lg">
+                <Flex spaceItems={{ default: 'spaceItemsSm' }} className="pf-v5-u-pb-sm">
                     <FlexItem>
-                        <span className="pf-u-font-size-sm pf-u-text-nowrap">Cluster filter:</span>
+                        <label
+                            htmlFor="Cluster_filter"
+                            className="pf-v5-u-font-size-sm pf-v5-u-text-nowrap"
+                        >
+                            Cluster filter:
+                        </label>
                     </FlexItem>
                     <FlexItem>
                         <TextInput
+                            id="Cluster_filter"
                             value={clusterNameFilter}
-                            onChange={setClusterNameFilter}
+                            onChange={(_event, val) => setClusterNameFilter(val)}
                             className="pf-m-small"
                         />
                     </FlexItem>
@@ -256,16 +273,20 @@ function EffectiveAccessScopeTable({
                         <Badge isRead>{`${clusterFilterCount} / ${clusters.length}`}</Badge>
                     </FlexItem>
                 </Flex>
-                <Flex spaceItems={{ default: 'spaceItemsSm' }} className="pf-u-pb-sm">
+                <Flex spaceItems={{ default: 'spaceItemsSm' }} className="pf-v5-u-pb-sm">
                     <FlexItem>
-                        <span className="pf-u-font-size-sm pf-u-text-nowrap">
+                        <label
+                            htmlFor="Namespace_filter"
+                            className="pf-v5-u-font-size-sm pf-v5-u-text-nowrap"
+                        >
                             Namespace filter:
-                        </span>
+                        </label>
                     </FlexItem>
                     <FlexItem>
                         <TextInput
+                            id="Namespace_filter"
                             value={namespaceNameFilter}
-                            onChange={setNamespaceNameFilter}
+                            onChange={(_event, val) => setNamespaceNameFilter(val)}
                             className="pf-m-small"
                         />
                     </FlexItem>
@@ -275,13 +296,15 @@ function EffectiveAccessScopeTable({
                 </Flex>
             </Flex>
             <div style={{ maxHeight: '50vh', overflow: 'auto' }}>
-                <TableComposable variant="compact" isStickyHeader isTreeTable>
+                <Table variant="compact" isStickyHeader isTreeTable>
                     <Thead>
                         <Tr>
                             <Th width={40}>Cluster name</Th>
                             <Th
                                 modifier="fitContent"
-                                className={counterComputing === 0 ? '' : '--pf-global--Color--200'}
+                                className={
+                                    counterComputing === 0 ? '' : '--pf-v5-global--Color--200'
+                                }
                             >
                                 Allowed
                             </Th>
@@ -290,7 +313,7 @@ function EffectiveAccessScopeTable({
                         </Tr>
                     </Thead>
                     <Tbody>{rows}</Tbody>
-                </TableComposable>
+                </Table>
             </div>
         </>
     );

@@ -1,11 +1,11 @@
 package istioutils
 
 import (
+	"slices"
 	"sort"
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/sliceutils"
 	"k8s.io/apimachinery/pkg/util/version"
 )
 
@@ -327,5 +327,5 @@ func GetAPIResourcesByVersion(istioVersion string) ([]string, error) {
 
 // ListKnownIstioVersions lists all known istio versions in sorted order.
 func ListKnownIstioVersions() []string {
-	return sliceutils.ShallowClone(allIstioVersions)
+	return slices.Clone(allIstioVersions)
 }

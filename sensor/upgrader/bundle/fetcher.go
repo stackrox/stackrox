@@ -5,10 +5,10 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 )
@@ -28,13 +28,13 @@ func (f *fetcher) FetchBundle() (Contents, error) {
 		Id: f.ctx.ClusterID(),
 	}
 	var buf bytes.Buffer
-	if err := new(jsonpb.Marshaler).Marshal(&buf, resByID); err != nil {
-		return nil, utils.Should(err)
+	if err := jsonutil.Marshal(&buf, resByID); err != nil {
+		return nil, utils.ShouldErr(err)
 	}
 
 	req, err := http.NewRequest(http.MethodPost, "/api/extensions/clusters/zip", &buf)
 	if err != nil {
-		return nil, utils.Should(err)
+		return nil, utils.ShouldErr(err)
 	}
 
 	resp, err := f.ctx.DoCentralHTTPRequest(req)

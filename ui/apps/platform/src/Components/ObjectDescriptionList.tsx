@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { DescriptionList, DescriptionListTerm } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
@@ -36,7 +37,7 @@ function ObjectDescriptionList({ data, className }: ObjectDescriptionListProps):
                             {typeof item0 !== 'object' && (
                                 <DescriptionListTerm>{key}</DescriptionListTerm>
                             )}
-                            <ArrayDescriptionList data={value} className="pf-u-pl-md" />
+                            <ArrayDescriptionList data={value} className="pf-v5-u-pl-md" />
                         </div>
                     );
                 }
@@ -47,7 +48,7 @@ function ObjectDescriptionList({ data, className }: ObjectDescriptionListProps):
 
                 return (
                     <div key={key}>
-                        <ObjectDescriptionList data={value} className="pf-u-pl-md" />
+                        <ObjectDescriptionList data={value} className="pf-v5-u-pl-md" />
                     </div>
                 );
             })}
@@ -71,7 +72,7 @@ function ArrayDescriptionList({ data, className }: ArrayDescriptionListProps): R
                     {typeof value === 'number' || typeof value === 'string' ? (
                         <DescriptionListItem term={key} desc={value} />
                     ) : (
-                        <ObjectDescriptionList data={value} className="pf-u-pl-md" />
+                        <ObjectDescriptionList data={value} className="pf-v5-u-pl-md" />
                     )}
                 </div>
             ))}

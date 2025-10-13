@@ -168,7 +168,7 @@ func FilterMatchesToResults(fieldsToPathsAndValues map[string][]PathAndValueHold
 	// Panics will only happen with invalid inputs, which is always a programming error.
 	defer func() {
 		if r := recover(); r != nil {
-			err = utils.Should(errors.Errorf("invalid input: %v", r))
+			err = utils.ShouldErr(errors.Errorf("invalid input: %v", r))
 		}
 	}()
 	t := newTree()

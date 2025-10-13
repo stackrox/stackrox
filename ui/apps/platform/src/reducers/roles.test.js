@@ -1,4 +1,4 @@
-import reducer, { selectors, getHasReadPermission, getHasReadWritePermission } from './roles';
+import reducer, { getHasReadPermission, getHasReadWritePermission, selectors } from './roles';
 
 describe('roles reducer', () => {
     it('should return the initial state', () => {
@@ -31,7 +31,7 @@ describe('userRolePermissions selector', () => {
             name: '',
             userRolePermissions: {
                 Deployment: 'READ_ACCESS',
-                ServiceIdentity: 'NO_ACCESS',
+                Administration: 'NO_ACCESS',
             },
         };
         const state = {

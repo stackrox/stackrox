@@ -1,12 +1,11 @@
 package resources
 
 import (
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/store"
-
-	"github.com/stackrox/rox/generated/storage"
 )
 
 /* Matching labels using selectors
@@ -44,7 +43,7 @@ The Find operation returns all NetworkPolicies that would match a given set of l
 Example:
   policiesMatchingDeployment := store.Find("default"), map[string]string{"app": "nginx"})
 
-*) TODO: See ADR-XXX for alternative implementations that were considered
+See ADR-0002 "Design In-Memory Data Store for Network Policies in Sensor" for alternative implementations that were considered
 
 ## Complexities
 
@@ -86,6 +85,13 @@ func newNetworkPoliciesStore() *networkPolicyStoreImpl {
 	return &networkPolicyStoreImpl{
 		data: make(map[string]map[string]*storage.NetworkPolicy),
 	}
+}
+
+// Cleanup deletes all entries from store
+func (n *networkPolicyStoreImpl) Cleanup() {
+	n.lock.Lock()
+	defer n.lock.Unlock()
+	n.data = make(map[string]map[string]*storage.NetworkPolicy)
 }
 
 // Size returns number of network policies in the store
@@ -180,7 +186,7 @@ func (n *networkPolicyStoreImpl) Find(namespace string, podLabels map[string]str
 	// Apparently 'labels.MatchLabels' does not cover this corner case
 	if len(podLabels) == 0 {
 		for id, policy := range nsPolicies {
-			if policy.GetSpec().GetPodSelector().Size() == 0 {
+			if policy.GetSpec().GetPodSelector().SizeVT() == 0 {
 				results[id] = policy
 			}
 		}

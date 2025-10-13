@@ -5,26 +5,24 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/types"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/parse"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/regexutils"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/stringutils"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 // ForString returns a matcher for a string.
 func ForString(value string) (func(string) bool, error) {
-	negated := strings.HasPrefix(value, search.NegationPrefix)
-	if negated {
-		value = strings.TrimPrefix(value, search.NegationPrefix)
-	}
-	if strings.HasPrefix(value, search.RegexPrefix) {
-		value = strings.TrimPrefix(value, search.RegexPrefix)
+	negated := stringutils.ConsumePrefix(&value, search.NegationPrefix)
+
+	if stringutils.ConsumePrefix(&value, search.RegexPrefix) {
 		return forStringRegexMatch(value, negated)
-	} else if strings.HasPrefix(value, `"`) && strings.HasSuffix(value, `"`) && len(value) > 1 {
-		return forStringExactMatch(value[1:len(value)-1], negated)
+	} else if stringutils.ConsumePrefix(&value, `"`) && stringutils.ConsumeSuffix(&value, `"`) && len(value) > 1 {
+		return forStringExactMatch(value, negated)
 	}
 	return forStringPrefixMatch(value, negated)
 }
@@ -146,9 +144,9 @@ func ForBool(value string) (func(bool) bool, error) {
 }
 
 // ForTimestamp returns a matcher for a proto timestamp type.
-func ForTimestamp(value string) (func(*types.Timestamp) bool, error) {
+func ForTimestamp(value string) (func(*protocompat.Timestamp) bool, error) {
 	if value == "-" {
-		return func(instance *types.Timestamp) bool {
+		return func(instance *protocompat.Timestamp) bool {
 			return instance == nil
 		}, nil
 	}
@@ -167,19 +165,19 @@ func ForTimestamp(value string) (func(*types.Timestamp) bool, error) {
 	// This is because, for example, >90d means more than 90 days ago,
 	// which means <=(ts of time.Now().Add(-90days).
 	if durationValue != nil {
-		actualComparator = func(instance, value *types.Timestamp) bool {
+		actualComparator = func(instance, value *protocompat.Timestamp) bool {
 			return !comparator(instance, value)
 		}
 	}
 
-	return func(instance *types.Timestamp) bool {
+	return func(instance *protocompat.Timestamp) bool {
 		// This has to be done inside the closure, since we want to take time.Now() at evaluation time,
 		// not at build time.
-		var ts *types.Timestamp
+		var ts *protocompat.Timestamp
 		if timestampValue != nil {
 			ts = timestampValue
 		} else if durationValue != nil {
-			ts, err = types.TimestampProto(time.Now().Add(-*durationValue))
+			ts, err = protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-*durationValue))
 			if err != nil {
 				return false
 			}
@@ -194,7 +192,7 @@ func ForTimestamp(value string) (func(*types.Timestamp) bool, error) {
 }
 
 // MapEnumValues provides mappings between enum string name and enum number
-func MapEnumValues(enumDesc *descriptor.EnumDescriptorProto) (nameToNumber map[string]int32, numberToName map[int32]string) {
+func MapEnumValues(enumDesc *descriptorpb.EnumDescriptorProto) (nameToNumber map[string]int32, numberToName map[int32]string) {
 	nameToNumber = make(map[string]int32, len(enumDesc.GetValue()))
 	numberToName = make(map[int32]string, len(enumDesc.GetValue()))
 	for _, v := range enumDesc.GetValue() {
@@ -206,14 +204,20 @@ func MapEnumValues(enumDesc *descriptor.EnumDescriptorProto) (nameToNumber map[s
 }
 
 func forStringRegexMatch(regex string, negated bool) (func(string) bool, error) {
-	matcher, err := regexutils.CompileWholeStringMatcher(regex, regexutils.Flags{CaseInsensitive: true})
+	var err error
+	var matcher regexutils.StringMatcher
+	if stringutils.ConsumePrefix(&regex, search.ContainsPrefix) {
+		matcher, err = regexutils.CompileContainsStringMatcher(regex, regexutils.Flags{CaseInsensitive: true})
+	} else {
+		matcher, err = regexutils.CompileWholeStringMatcher(regex, regexutils.Flags{CaseInsensitive: true})
+	}
 	if err != nil {
 		return nil, errors.Wrapf(err, "invalid regex: %q", regex)
 	}
 
 	return func(instance string) bool {
 		// matched != negated is equivalent to (matched XOR negated), which is what we want here
-		return matcher.MatchWholeString(instance) != negated
+		return matcher.MatchString(instance) != negated
 	}, nil
 }
 
@@ -226,8 +230,9 @@ func forStringExactMatch(value string, negated bool) (func(string) bool, error) 
 }
 
 func forStringPrefixMatch(value string, negated bool) (func(string) bool, error) {
+	lowerValue := strings.ToLower(value)
 	return func(instance string) bool {
 		// matched != negated is equivalent to (matched XOR negated), which is what we want here
-		return (value == search.WildcardString || strings.HasPrefix(instance, value)) != negated
+		return (value == search.WildcardString || strings.HasPrefix(strings.ToLower(instance), lowerValue)) != negated
 	}, nil
 }

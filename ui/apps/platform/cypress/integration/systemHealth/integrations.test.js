@@ -1,47 +1,14 @@
-import { url as integrationsUrl } from '../../constants/IntegrationsPage';
 import { selectors } from '../../constants/SystemHealth';
 import withAuth from '../../helpers/basicAuth';
 import { visitSystemHealth } from '../../helpers/systemHealth';
 
-describe('System Health Integrations local deployment', () => {
-    withAuth();
+function getCardBodyDescendantSelector(cardTitle, descendant) {
+    return `.pf-v5-c-card:has('h2:contains("${cardTitle}")') .pf-v5-c-card__body ${descendant}`;
+}
 
-    it('should go to Image Integrations anchor on Integrations page via click View All', () => {
-        visitSystemHealth();
-
-        cy.get(
-            `${selectors.integrations.widgets.imageIntegrations} ${selectors.integrations.viewAllButton}`
-        ).click();
-
-        cy.location('pathname').should('eq', integrationsUrl);
-        cy.get('h1:contains("Integrations")');
-        cy.get('h2:contains("Image Integrations")').should('be.visible'); // should scroll to anchor
-    });
-
-    it('should go to Notifier Integrations anchor on Integrations page via click View All', () => {
-        visitSystemHealth();
-
-        cy.get(
-            `${selectors.integrations.widgets.notifierIntegrations} ${selectors.integrations.viewAllButton}`
-        ).click();
-
-        cy.location('pathname').should('eq', integrationsUrl);
-        cy.get('h1:contains("Integrations")');
-        cy.get('h2:contains("Notifier Integrations")').should('be.visible'); // should scroll to anchor
-    });
-
-    it('should go to Backup Integrations anchor on Integrations page via click View All', () => {
-        visitSystemHealth();
-
-        cy.get(
-            `${selectors.integrations.widgets.backupIntegrations} ${selectors.integrations.viewAllButton}`
-        ).click();
-
-        cy.location('pathname').should('eq', integrationsUrl);
-        cy.get('h1:contains("Integrations")');
-        cy.get('h2:contains("Backup Integrations")').should('be.visible'); // should scroll to anchor
-    });
-});
+function getCardHeaderDescendantSelector(cardTitle, descendant) {
+    return `.pf-v5-c-card__header:has('h2:contains("${cardTitle}")') ${descendant}`;
+}
 
 describe('System Health Integrations fixtures', () => {
     withAuth();
@@ -53,14 +20,10 @@ describe('System Health Integrations fixtures', () => {
             'integrationhealth/externalbackups': { body: { integrationHealth } },
         });
 
-        const { healthyText, widgets } = selectors.integrations;
-        cy.get(`${widgets.backupIntegrations} ${healthyText}`).should(
-            'have.text',
-            'No configured integrations'
-        );
+        cy.get(getCardHeaderDescendantSelector('Backup Integrations', 'div:contains("no errors")'));
     });
 
-    it('should have counts in healthy text for image integrations', () => {
+    it('should not have count in healthy text for image integrations', () => {
         const integrations = [
             {
                 id: '05fea766-e2f8-44b3-9959-eaa61a4f7466',
@@ -109,14 +72,10 @@ describe('System Health Integrations fixtures', () => {
             'integrationhealth/imageintegrations': { body: { integrationHealth } },
         });
 
-        const { healthyText, widgets } = selectors.integrations;
-        cy.get(`${widgets.imageIntegrations} ${healthyText}`).should(
-            'have.text',
-            '2 / 3 healthy integrations'
-        );
+        cy.get(getCardHeaderDescendantSelector('Image Integrations', 'div:contains("no errors")'));
     });
 
-    it('should have count in healthy text for notifier integrations', () => {
+    it('should not have count in healthy text for notifier integrations', () => {
         const notifiers = [
             {
                 id: '4af2a32d-adeb-40ad-b509-0b191faecf7b',
@@ -139,10 +98,8 @@ describe('System Health Integrations fixtures', () => {
             'integrationhealth/notifiers': { body: { integrationHealth } },
         });
 
-        const { healthyText, widgets } = selectors.integrations;
-        cy.get(`${widgets.notifierIntegrations} ${healthyText}`).should(
-            'have.text',
-            '1 healthy integration'
+        cy.get(
+            getCardHeaderDescendantSelector('Notifier Integrations', 'div:contains("no errors")')
         );
     });
 
@@ -170,19 +127,61 @@ describe('System Health Integrations fixtures', () => {
             'integrationhealth/imageintegrations': { body: { integrationHealth } },
         });
 
-        const { integrationLabel, integrationName, widgets } = selectors.integrations;
+        cy.get(getCardHeaderDescendantSelector('Image Integrations', 'div:contains("1 error")'));
 
-        [
+        const name = 'StackRox Scanner';
+        const errorMessage =
+            'Error scanning "docker.io/library/nginx:latest" with scanner "Stackrox Scanner": dial tcp 10.0.1.229:5432: connect: connection refused';
+        const itemSelector = getCardBodyDescendantSelector('Image Integrations', 'tbody tr:first');
+        cy.get(`${itemSelector} td[data-label="Name"]`).should('have.text', name);
+        cy.get(`${itemSelector} td[data-label="Error message"]`).should('have.text', errorMessage);
+    });
+
+    it('should have a list with 1 declarative configuration error', () => {
+        const healthName = 'Config Map declarative-configuration';
+        const errorMessageText = 'this is error message';
+        const integrationHealth = [
             {
-                name: 'StackRox Scanner',
-                label: 'StackRox Scanner',
-                errorMessage:
-                    'Error scanning "docker.io/library/nginx:latest" with scanner "Stackrox Scanner": dial tcp 10.0.1.229:5432: connect: connection refused',
+                id: '169b0d3f-8277-4900-bbce-1127077defae',
+                name: healthName,
+                resourceType: 'CONFIG_MAP',
+                status: 'UNHEALTHY',
+                errorMessage: errorMessageText,
+                lastTimestamp: '2020-12-04T00:38:17.906318735Z',
             },
-        ].forEach(({ name }, i) => {
-            const itemSelector = `${widgets.imageIntegrations} li:nth-child(${i + 1})`;
-            cy.get(`${itemSelector} ${integrationName}`).should('have.text', name);
-            cy.get(`${itemSelector} ${integrationLabel}`).should('not.exist'); // because redundant
+        ];
+
+        visitSystemHealth({
+            'declarative-config/health': { body: { healths: integrationHealth } },
         });
+
+        const { widgets } = selectors.integrations;
+        const itemSelector = `${widgets.declarativeConfigs} tr:first`;
+        cy.get(`${itemSelector} td[data-label="Name"]`).should('have.text', healthName);
+        cy.get(`${itemSelector} td[data-label="Error message"]`).should(
+            'have.text',
+            errorMessageText
+        );
+    });
+
+    it('should have no declarative configuration errors displayed', () => {
+        const healthName = 'Config Map declarative-configuration';
+        const integrationHealth = [
+            {
+                id: '169b0d3f-8277-4900-bbce-1127077defae',
+                name: healthName,
+                resourceType: 'CONFIG_MAP',
+                status: 'HEALTHY',
+                errorMessage: '',
+                lastTimestamp: '2020-12-04T00:38:17.906318735Z',
+            },
+        ];
+
+        visitSystemHealth({
+            'declarative-config/health': { body: { healths: integrationHealth } },
+        });
+        const { widgets } = selectors.integrations;
+        const itemSelector = `${widgets.declarativeConfigs} tr:first`;
+        cy.get(`${itemSelector} td[data-label="Name"]`).should('not.exist');
     });
 });

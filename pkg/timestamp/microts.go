@@ -5,8 +5,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/gogo/protobuf/types"
-	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -67,16 +66,8 @@ func (ts MicroTS) UnixNanosFraction() int32 {
 }
 
 // Protobuf converts this microtimestamp to a (Google) protobuf representation.
-func (ts MicroTS) Protobuf() *timestamp.Timestamp {
-	return &timestamp.Timestamp{
-		Seconds: ts.UnixSeconds(),
-		Nanos:   ts.UnixNanosFraction(),
-	}
-}
-
-// GogoProtobuf converts this microtimestamp to a (Gogo) protobuf representation.
-func (ts MicroTS) GogoProtobuf() *types.Timestamp {
-	return &types.Timestamp{
+func (ts MicroTS) Protobuf() *timestamppb.Timestamp {
+	return &timestamppb.Timestamp{
 		Seconds: ts.UnixSeconds(),
 		Nanos:   ts.UnixNanosFraction(),
 	}

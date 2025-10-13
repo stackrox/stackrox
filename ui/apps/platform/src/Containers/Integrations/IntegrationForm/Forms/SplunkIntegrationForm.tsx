@@ -1,16 +1,19 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Checkbox, Form, PageSection, TextInput } from '@patternfly/react-core';
 import * as yup from 'yup';
+import merge from 'lodash/merge';
 
-import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
+import type { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
 
-import usePageState from 'Containers/Integrations/hooks/usePageState';
 import FormMessage from 'Components/PatternFly/FormMessage';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
+
+import usePageState from '../../hooks/usePageState';
 import useIntegrationForm from '../useIntegrationForm';
-import { IntegrationFormProps } from '../integrationFormTypes';
+import type { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';
@@ -104,15 +107,16 @@ function SplunkIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<SplunkIntegration>): ReactElement {
-    const formInitialValues = { ...defaultValues, ...initialValues };
+    const formInitialValues = structuredClone(defaultValues);
     if (initialValues) {
-        formInitialValues.notifier = {
-            ...formInitialValues.notifier,
-            ...initialValues,
-        };
+        merge(formInitialValues.notifier, initialValues);
+
         // We want to clear the password because backend returns '******' to represent that there
         // are currently stored credentials
         formInitialValues.notifier.splunk.httpToken = '';
+
+        // Don't assume user wants to change password; that has caused confusing UX.
+        formInitialValues.updatePassword = false;
     }
     const {
         values,
@@ -160,7 +164,7 @@ function SplunkIntegrationForm({
                             type="text"
                             id="notifier.name"
                             value={values.notifier.name}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -177,7 +181,7 @@ function SplunkIntegrationForm({
                             type="text"
                             id="notifier.splunk.httpEndpoint"
                             value={values.notifier.splunk.httpEndpoint}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -193,7 +197,7 @@ function SplunkIntegrationForm({
                                 label="Update token"
                                 id="updatePassword"
                                 isChecked={values.updatePassword}
-                                onChange={onUpdateCredentialsChange}
+                                onChange={(event, value) => onUpdateCredentialsChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -212,7 +216,7 @@ function SplunkIntegrationForm({
                             id="notifier.splunk.httpToken"
                             name="notifier.splunk.httpToken"
                             value={values.notifier.splunk.httpToken}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable || !values.updatePassword}
                             placeholder={
@@ -235,7 +239,7 @@ function SplunkIntegrationForm({
                             type="number"
                             id="notifier.splunk.truncate"
                             value={values.notifier.splunk.truncate}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -245,7 +249,7 @@ function SplunkIntegrationForm({
                             label="Disable TLS certificate validation (insecure)"
                             id="notifier.splunk.insecure"
                             isChecked={values.notifier.splunk.insecure}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -259,7 +263,7 @@ function SplunkIntegrationForm({
                             label="Enable audit logging"
                             id="notifier.splunk.auditLoggingEnabled"
                             isChecked={values.notifier.splunk.auditLoggingEnabled}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -276,7 +280,7 @@ function SplunkIntegrationForm({
                             type="text"
                             id="notifier.splunk.sourceTypes.alert"
                             value={values.notifier.splunk.sourceTypes.alert}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -293,7 +297,7 @@ function SplunkIntegrationForm({
                             type="text"
                             id="notifier.splunk.sourceTypes.audit"
                             value={values.notifier.splunk.sourceTypes.audit}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />

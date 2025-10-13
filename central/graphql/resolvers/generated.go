@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/graphql/generator"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage" // end range imports
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -26,6 +27,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("AWSSecurityHub_Credentials", []string{
 		"accessKeyId: String!",
 		"secretAccessKey: String!",
+		"stsEnabled: Boolean!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Access(0)))
 	utils.Must(builder.AddType("ActiveComponent_ActiveContext", []string{
@@ -42,22 +44,31 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"scanInline: Boolean!",
 		"timeoutSeconds: Int!",
 	}))
+	utils.Must(builder.AddType("Advisory", []string{
+		"link: String!",
+		"name: String!",
+	}))
+	utils.Must(builder.AddInput("AggregateBy", []string{
+		"aggregateFunc: String",
+		"distinct: Boolean",
+	}))
 	utils.Must(builder.AddType("Alert", []string{
 		"clusterId: String!",
 		"clusterName: String!",
 		"deployment: Alert_Deployment",
 		"enforcement: Alert_Enforcement",
+		"entityType: Alert_EntityType!",
 		"firstOccurred: Time",
 		"id: ID!",
 		"image: ContainerImage",
 		"lifecycleStage: LifecycleStage!",
 		"namespace: String!",
 		"namespaceId: String!",
+		"platformComponent: Boolean!",
 		"policy: Policy",
 		"processViolation: Alert_ProcessViolation",
 		"resolvedAt: Time",
 		"resource: Alert_Resource",
-		"snoozeTill: Time",
 		"state: ViolationState!",
 		"time: Time",
 		"violations: [Alert_Violation]!",
@@ -89,6 +100,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"action: EnforcementAction!",
 		"message: String!",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Alert_EntityType(0)))
 	utils.Must(builder.AddType("Alert_ProcessViolation", []string{
 		"message: String!",
 		"processes: [ProcessIndicator]!",
@@ -134,6 +146,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"port: Int!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Alert_Violation_Type(0)))
+	utils.Must(builder.AddType("AutoLockProcessBaselinesConfig", []string{
+		"enabled: Boolean!",
+	}))
 	utils.Must(builder.AddType("AzureProviderMetadata", []string{
 		"subscriptionId: String!",
 	}))
@@ -141,6 +156,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("CSCC", []string{
 		"serviceAccount: String!",
 		"sourceId: String!",
+		"wifEnabled: Boolean!",
 	}))
 	utils.Must(builder.AddType("CVE", []string{
 		"createdAt: Time",
@@ -162,8 +178,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("CVEInfo", []string{
 		"createdAt: Time",
 		"cve: String!",
+		"cvssMetrics: [CVSSScore]!",
 		"cvssV2: CVSSV2",
 		"cvssV3: CVSSV3",
+		"epss: EPSS",
 		"lastModified: Time",
 		"link: String!",
 		"publishedOn: Time",
@@ -182,6 +200,17 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"uRI: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVE_ScoreVersion(0)))
+	utils.Must(builder.AddType("CVSSScore", []string{
+		"cvssv2: CVSSV2",
+		"cvssv3: CVSSV3",
+		"source: Source!",
+		"url: String!",
+		"cvssScore: CVSSScoreCvssScore",
+	}))
+	utils.Must(builder.AddUnionType("CVSSScoreCvssScore", []string{
+		"CVSSV2",
+		"CVSSV3",
+	}))
 	utils.Must(builder.AddType("CVSSV2", []string{
 		"accessComplexity: CVSSV2_AccessComplexity!",
 		"attackVector: CVSSV2_AttackVector!",
@@ -244,6 +273,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("Cluster", []string{
 		"admissionController: Boolean!",
 		"admissionControllerEvents: Boolean!",
+		"admissionControllerFailOnError: Boolean!",
 		"admissionControllerUpdates: Boolean!",
 		"centralApiEndpoint: String!",
 		"collectionMethod: CollectionMethod!",
@@ -260,6 +290,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"name: String!",
 		"priority: Int!",
 		"runtimeSupport: Boolean!",
+		"sensorCapabilities: [String!]!",
 		"slimCollector: Boolean!",
 		"status: ClusterStatus",
 		"tolerationsConfig: TolerationsConfig",
@@ -294,6 +325,12 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"sensorHealthStatus: ClusterHealthStatus_HealthStatusLabel!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterHealthStatus_HealthStatusLabel(0)))
+	utils.Must(builder.AddType("ClusterMetadata", []string{
+		"id: ID!",
+		"name: String!",
+		"type: ClusterMetadata_Type!",
+	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterMetadata_Type(0)))
 	utils.Must(builder.AddType("ClusterStatus", []string{
 		"certExpiryStatus: ClusterCertExpiryStatus",
 		"orchestratorMetadata: OrchestratorMetadata",
@@ -457,6 +494,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("ComplianceStandardMetadata", []string{
 		"description: String!",
 		"dynamic: Boolean!",
+		"hideScanResults: Boolean!",
 		"id: ID!",
 		"name: String!",
 		"numImplementedChecks: Int!",
@@ -494,6 +532,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ContainerConfig_EnvironmentConfig_EnvVarSource(0)))
 	utils.Must(builder.AddType("ContainerImage", []string{
 		"id: ID!",
+		"idV2: String!",
 		"isClusterLocal: Boolean!",
 		"name: ImageName",
 		"notPullable: Boolean!",
@@ -523,6 +562,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("DataSource", []string{
 		"id: ID!",
+		"mirror: String!",
 		"name: String!",
 	}))
 	utils.Must(builder.AddType("Deployment", []string{
@@ -544,6 +584,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"namespace: String!",
 		"namespaceId: String!",
 		"orchestratorComponent: Boolean!",
+		"platformComponent: Boolean!",
 		"podLabels: [Label!]!",
 		"ports: [PortConfig]!",
 		"priority: Int!",
@@ -558,16 +599,23 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("DynamicClusterConfig", []string{
 		"admissionControllerConfig: AdmissionControllerConfig",
+		"autoLockProcessBaselinesConfig: AutoLockProcessBaselinesConfig",
 		"disableAuditLogs: Boolean!",
 		"registryOverride: String!",
+	}))
+	utils.Must(builder.AddType("EPSS", []string{
+		"epssPercentile: Float!",
+		"epssProbability: Float!",
 	}))
 	utils.Must(builder.AddType("Email", []string{
 		"allowUnauthenticatedSmtp: Boolean!",
 		"disableTLS: Boolean!",
 		"from: String!",
+		"hostnameHeloEhlo: String!",
 		"password: String!",
 		"sender: String!",
 		"server: String!",
+		"skipTLSVerify: Boolean!",
 		"startTLSAuthMethod: Email_AuthMethod!",
 		"username: String!",
 	}))
@@ -645,34 +693,13 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"lastUpdated: Time",
 		"metadata: ImageMetadata",
 		"name: ImageName",
+		"names: [ImageName]!",
 		"notPullable: Boolean!",
 		"notes: [Image_Note!]!",
 		"priority: Int!",
 		"riskScore: Float!",
 		"signature: ImageSignature",
 		"signatureVerificationData: ImageSignatureVerificationData",
-	}))
-	utils.Must(builder.AddType("ImageCVE", []string{
-		"cveBaseInfo: CVEInfo",
-		"cvss: Float!",
-		"id: ID!",
-		"impactScore: Float!",
-		"operatingSystem: String!",
-		"severity: VulnerabilitySeverity!",
-		"snoozeExpiry: Time",
-		"snoozeStart: Time",
-		"snoozed: Boolean!",
-	}))
-	utils.Must(builder.AddType("ImageComponent", []string{
-		"fixedBy: String!",
-		"id: ID!",
-		"license: License",
-		"name: String!",
-		"operatingSystem: String!",
-		"priority: Int!",
-		"riskScore: Float!",
-		"source: SourceType!",
-		"version: String!",
 	}))
 	utils.Must(builder.AddType("ImageLayer", []string{
 		"author: String!",
@@ -719,12 +746,45 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"description: String!",
 		"status: ImageSignatureVerificationResult_Status!",
 		"verificationTime: Time",
+		"verifiedImageReferences: [String!]!",
 		"verifierId: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ImageSignatureVerificationResult_Status(0)))
+	utils.Must(builder.AddType("ImageV2", []string{
+		"digest: String!",
+		"id: ID!",
+		"isClusterLocal: Boolean!",
+		"lastUpdated: Time",
+		"metadata: ImageMetadata",
+		"name: ImageName",
+		"notPullable: Boolean!",
+		"notes: [ImageV2_Note!]!",
+		"priority: Int!",
+		"riskScore: Float!",
+		"signature: ImageSignature",
+		"signatureVerificationData: ImageSignatureVerificationData",
+		"topCvss: Float!",
+	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ImageV2_Note(0)))
+	utils.Must(builder.AddType("ImageV2_ScanStats", []string{
+		"componentCount: Int!",
+		"criticalCveCount: Int!",
+		"cveCount: Int!",
+		"fixableCriticalCveCount: Int!",
+		"fixableCveCount: Int!",
+		"fixableImportantCveCount: Int!",
+		"fixableLowCveCount: Int!",
+		"fixableModerateCveCount: Int!",
+		"fixableUnknownCveCount: Int!",
+		"importantCveCount: Int!",
+		"lowCveCount: Int!",
+		"moderateCveCount: Int!",
+		"unknownCveCount: Int!",
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Image_Note(0)))
 	utils.Must(builder.AddType("Jira", []string{
 		"defaultFieldsJson: String!",
+		"disablePriority: Boolean!",
 		"issueType: String!",
 		"password: String!",
 		"priorityMappings: [Jira_PriorityMapping]!",
@@ -793,6 +853,25 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"version: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(v1.Metadata_LicenseStatus(0)))
+	utils.Must(builder.AddType("MicrosoftSentinel", []string{
+		"alertDcrConfig: MicrosoftSentinel_DataCollectionRuleConfig",
+		"applicationClientId: String!",
+		"auditLogDcrConfig: MicrosoftSentinel_DataCollectionRuleConfig",
+		"clientCertAuthConfig: MicrosoftSentinel_ClientCertAuthConfig",
+		"directoryTenantId: String!",
+		"logIngestionEndpoint: String!",
+		"secret: String!",
+		"wifEnabled: Boolean!",
+	}))
+	utils.Must(builder.AddType("MicrosoftSentinel_ClientCertAuthConfig", []string{
+		"clientCert: String!",
+		"privateKey: String!",
+	}))
+	utils.Must(builder.AddType("MicrosoftSentinel_DataCollectionRuleConfig", []string{
+		"dataCollectionRuleId: String!",
+		"enabled: Boolean!",
+		"streamName: String!",
+	}))
 	utils.Must(builder.AddType("MitreAttackVector", []string{
 		"tactic: MitreTactic",
 		"techniques: [MitreTechnique]!",
@@ -846,6 +925,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("NetworkEntityInfo_ExternalSource", []string{
 		"default: Boolean!",
+		"discovered: Boolean!",
 		"name: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NetworkEntityInfo_Type(0)))
@@ -853,6 +933,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"clusterId: String!",
 		"lastSeenTimestamp: Time",
 		"props: NetworkFlowProperties",
+		"updatedAt: Time",
 	}))
 	utils.Must(builder.AddType("NetworkFlowProperties", []string{
 		"dstEntity: NetworkEntityInfo",
@@ -890,6 +971,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"id: ID!",
 		"impactScore: Float!",
 		"operatingSystem: String!",
+		"orphaned: Boolean!",
+		"orphanedTime: Time",
 		"severity: VulnerabilitySeverity!",
 		"snoozeExpiry: Time",
 		"snoozeStart: Time",
@@ -907,8 +990,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"notes: [NodeScan_Note!]!",
 		"operatingSystem: String!",
 		"scanTime: Time",
+		"scannerVersion: NodeScan_Scanner!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NodeScan_Note(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NodeScan_Scanner(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Node_Note(0)))
 	utils.Must(builder.AddType("Notifier", []string{
 		"awsSecurityHub: AWSSecurityHub",
@@ -919,11 +1004,14 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"jira: Jira",
 		"labelDefault: String!",
 		"labelKey: String!",
+		"microsoftSentinel: MicrosoftSentinel",
 		"name: String!",
+		"notifierSecret: String!",
 		"pagerduty: PagerDuty",
 		"splunk: Splunk",
 		"sumologic: SumoLogic",
 		"syslog: Syslog",
+		"traits: Traits",
 		"type: String!",
 		"uiEndpoint: String!",
 		"config: NotifierConfig",
@@ -938,6 +1026,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"SumoLogic",
 		"AWSSecurityHub",
 		"Syslog",
+		"MicrosoftSentinel",
 	}))
 	utils.Must(builder.AddType("OrchestratorMetadata", []string{
 		"apiVersions: [String!]!",
@@ -951,12 +1040,14 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"limit: Int",
 		"offset: Int",
 		"sortOption: SortOption",
+		"sortOptions: [SortOption]",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.PermissionLevel(0)))
 	utils.Must(builder.AddType("PermissionSet", []string{
 		"description: String!",
 		"id: ID!",
 		"name: String!",
+		"traits: Traits",
 	}))
 	utils.Must(builder.AddType("Pod", []string{
 		"clusterId: String!",
@@ -996,6 +1087,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"sORTName: String!",
 		"scope: [Scope]!",
 		"severity: Severity!",
+		"source: PolicySource!",
 	}))
 	utils.Must(builder.AddType("PolicyGroup", []string{
 		"booleanOperator: BooleanOperator!",
@@ -1014,6 +1106,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"policyGroups: [PolicyGroup]!",
 		"sectionName: String!",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.PolicySource(0)))
 	utils.Must(builder.AddType("PolicyValue", []string{
 		"value: String!",
 	}))
@@ -1088,6 +1181,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("ProviderMetadata", []string{
 		"aws: AWSProviderMetadata",
 		"azure: AzureProviderMetadata",
+		"cluster: ClusterMetadata",
 		"google: GoogleProviderMetadata",
 		"region: String!",
 		"verified: Boolean!",
@@ -1142,6 +1236,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"globalAccess: Access!",
 		"name: String!",
 		"permissionSetId: String!",
+		"traits: Traits",
 	}))
 	utils.Must(builder.AddType("ScannerHealthInfo", []string{
 		"statusErrors: [String!]!",
@@ -1150,6 +1245,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"cluster: String!",
 		"label: Scope_Label",
 		"namespace: String!",
+	}))
+	utils.Must(builder.AddType("ScopeObject", []string{
+		"id: ID!",
+		"name: String!",
 	}))
 	utils.Must(builder.AddType("Scope_Label", []string{
 		"key: String!",
@@ -1264,6 +1363,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"id: ID!",
 		"name: String!",
 		"rules: SimpleAccessScope_Rules",
+		"traits: Traits",
 	}))
 	utils.Must(builder.AddType("SimpleAccessScope_Rules", []string{
 		"clusterLabelSelectors: [SetBasedLabelSelector]!",
@@ -1280,9 +1380,11 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"name: String!",
 	}))
 	utils.Must(builder.AddInput("SortOption", []string{
+		"aggregateBy: AggregateBy",
 		"field: String",
 		"reversed: Boolean",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Source(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.SourceType(0)))
 	utils.Must(builder.AddType("Splunk", []string{
 		"auditLoggingEnabled: Boolean!",
@@ -1295,6 +1397,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("StaticClusterConfig", []string{
 		"admissionController: Boolean!",
 		"admissionControllerEvents: Boolean!",
+		"admissionControllerFailOnError: Boolean!",
 		"admissionControllerUpdates: Boolean!",
 		"centralApiEndpoint: String!",
 		"collectionMethod: CollectionMethod!",
@@ -1318,7 +1421,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"skipTLSVerify: Boolean!",
 	}))
 	utils.Must(builder.AddType("Syslog", []string{
+		"extraFields: [KeyValuePair]!",
 		"localFacility: Syslog_LocalFacility!",
+		"maxMessageSize: Int!",
+		"messageFormat: Syslog_MessageFormat!",
 		"tcpConfig: Syslog_TCPConfig",
 		"endpoint: SyslogEndpoint",
 	}))
@@ -1326,6 +1432,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"Syslog_TCPConfig",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Syslog_LocalFacility(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Syslog_MessageFormat(0)))
 	utils.Must(builder.AddType("Syslog_TCPConfig", []string{
 		"hostname: String!",
 		"port: Int!",
@@ -1359,9 +1466,11 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("Traits", []string{
 		"mutabilityMode: Traits_MutabilityMode!",
+		"origin: Traits_Origin!",
 		"visibility: Traits_Visibility!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Traits_MutabilityMode(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Traits_Origin(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Traits_Visibility(0)))
 	utils.Must(builder.AddType("UpgradeProgress", []string{
 		"since: Time",
@@ -1406,7 +1515,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"imageScope: VulnReqImageScope",
 	}))
 	utils.Must(builder.AddType("VulnerabilityRequest_CVEs", []string{
-		"ids: [String!]!",
+		"cves: [String!]!",
 	}))
 	utils.Must(builder.AddType("VulnerabilityRequest_Scope", []string{
 		"globalScope: VulnerabilityRequest_Scope_Global",
@@ -1581,6 +1690,11 @@ func (resolver *aWSSecurityHub_CredentialsResolver) AccessKeyId(ctx context.Cont
 
 func (resolver *aWSSecurityHub_CredentialsResolver) SecretAccessKey(ctx context.Context) string {
 	value := resolver.data.GetSecretAccessKey()
+	return value
+}
+
+func (resolver *aWSSecurityHub_CredentialsResolver) StsEnabled(ctx context.Context) bool {
+	value := resolver.data.GetStsEnabled()
 	return value
 }
 
@@ -1768,6 +1882,58 @@ func (resolver *admissionControllerConfigResolver) TimeoutSeconds(ctx context.Co
 	return value
 }
 
+type advisoryResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Advisory
+}
+
+func (resolver *Resolver) wrapAdvisory(value *storage.Advisory, ok bool, err error) (*advisoryResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &advisoryResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAdvisories(values []*storage.Advisory, err error) ([]*advisoryResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*advisoryResolver, len(values))
+	for i, v := range values {
+		output[i] = &advisoryResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapAdvisoryWithContext(ctx context.Context, value *storage.Advisory, ok bool, err error) (*advisoryResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &advisoryResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAdvisoriesWithContext(ctx context.Context, values []*storage.Advisory, err error) ([]*advisoryResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*advisoryResolver, len(values))
+	for i, v := range values {
+		output[i] = &advisoryResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *advisoryResolver) Link(ctx context.Context) string {
+	value := resolver.data.GetLink()
+	return value
+}
+
+func (resolver *advisoryResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
 type alertResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -1852,10 +2018,16 @@ func (resolver *alertResolver) Enforcement(ctx context.Context) (*alert_Enforcem
 	return resolver.root.wrapAlert_Enforcement(value, true, nil)
 }
 
+func (resolver *alertResolver) EntityType(ctx context.Context) string {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetEntityType()
+	return value.String()
+}
+
 func (resolver *alertResolver) FirstOccurred(ctx context.Context) (*graphql.Time, error) {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetFirstOccurred()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *alertResolver) Id(ctx context.Context) graphql.ID {
@@ -1892,6 +2064,12 @@ func (resolver *alertResolver) NamespaceId(ctx context.Context) string {
 	return value
 }
 
+func (resolver *alertResolver) PlatformComponent(ctx context.Context) bool {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetPlatformComponent()
+	return value
+}
+
 func (resolver *alertResolver) Policy(ctx context.Context) (*policyResolver, error) {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetPolicy()
@@ -1907,19 +2085,13 @@ func (resolver *alertResolver) ProcessViolation(ctx context.Context) (*alert_Pro
 func (resolver *alertResolver) ResolvedAt(ctx context.Context) (*graphql.Time, error) {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetResolvedAt()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *alertResolver) Resource(ctx context.Context) (*alert_ResourceResolver, error) {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetResource()
 	return resolver.root.wrapAlert_Resource(value, true, nil)
-}
-
-func (resolver *alertResolver) SnoozeTill(ctx context.Context) (*graphql.Time, error) {
-	resolver.ensureData(ctx)
-	value := resolver.data.GetSnoozeTill()
-	return timestamp(value)
 }
 
 func (resolver *alertResolver) State(ctx context.Context) string {
@@ -1935,7 +2107,7 @@ func (resolver *alertResolver) Time(ctx context.Context) (*graphql.Time, error) 
 	if resolver.data == nil {
 		value = resolver.list.GetTime()
 	}
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *alertResolver) Violations(ctx context.Context) ([]*alert_ViolationResolver, error) {
@@ -2183,6 +2355,24 @@ func (resolver *alert_EnforcementResolver) Message(ctx context.Context) string {
 	return value
 }
 
+func toAlert_EntityType(value *string) storage.Alert_EntityType {
+	if value != nil {
+		return storage.Alert_EntityType(storage.Alert_EntityType_value[*value])
+	}
+	return storage.Alert_EntityType(0)
+}
+
+func toAlert_EntityTypes(values *[]string) []storage.Alert_EntityType {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.Alert_EntityType, len(*values))
+	for i, v := range *values {
+		output[i] = toAlert_EntityType(&v)
+	}
+	return output
+}
+
 type alert_ProcessViolationResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -2384,7 +2574,7 @@ func (resolver *alert_ViolationResolver) NetworkFlowInfo(ctx context.Context) (*
 
 func (resolver *alert_ViolationResolver) Time(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetTime()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *alert_ViolationResolver) Type(ctx context.Context) string {
@@ -2661,6 +2851,53 @@ func toAlert_Violation_Types(values *[]string) []storage.Alert_Violation_Type {
 	return output
 }
 
+type autoLockProcessBaselinesConfigResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.AutoLockProcessBaselinesConfig
+}
+
+func (resolver *Resolver) wrapAutoLockProcessBaselinesConfig(value *storage.AutoLockProcessBaselinesConfig, ok bool, err error) (*autoLockProcessBaselinesConfigResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &autoLockProcessBaselinesConfigResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAutoLockProcessBaselinesConfigs(values []*storage.AutoLockProcessBaselinesConfig, err error) ([]*autoLockProcessBaselinesConfigResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*autoLockProcessBaselinesConfigResolver, len(values))
+	for i, v := range values {
+		output[i] = &autoLockProcessBaselinesConfigResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapAutoLockProcessBaselinesConfigWithContext(ctx context.Context, value *storage.AutoLockProcessBaselinesConfig, ok bool, err error) (*autoLockProcessBaselinesConfigResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &autoLockProcessBaselinesConfigResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAutoLockProcessBaselinesConfigsWithContext(ctx context.Context, values []*storage.AutoLockProcessBaselinesConfig, err error) ([]*autoLockProcessBaselinesConfigResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*autoLockProcessBaselinesConfigResolver, len(values))
+	for i, v := range values {
+		output[i] = &autoLockProcessBaselinesConfigResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *autoLockProcessBaselinesConfigResolver) Enabled(ctx context.Context) bool {
+	value := resolver.data.GetEnabled()
+	return value
+}
+
 type azureProviderMetadataResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -2778,6 +3015,11 @@ func (resolver *cSCCResolver) SourceId(ctx context.Context) string {
 	return value
 }
 
+func (resolver *cSCCResolver) WifEnabled(ctx context.Context) bool {
+	value := resolver.data.GetWifEnabled()
+	return value
+}
+
 type cVEResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -2822,7 +3064,7 @@ func (resolver *Resolver) wrapCVEsWithContext(ctx context.Context, values []*sto
 
 func (resolver *cVEResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetCreatedAt()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *cVEResolver) Id(ctx context.Context) graphql.ID {
@@ -2837,7 +3079,7 @@ func (resolver *cVEResolver) ImpactScore(ctx context.Context) float64 {
 
 func (resolver *cVEResolver) LastModified(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetLastModified()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *cVEResolver) Link(ctx context.Context) string {
@@ -2847,7 +3089,7 @@ func (resolver *cVEResolver) Link(ctx context.Context) string {
 
 func (resolver *cVEResolver) PublishedOn(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetPublishedOn()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *cVEResolver) References(ctx context.Context) ([]*cVE_ReferenceResolver, error) {
@@ -2872,12 +3114,12 @@ func (resolver *cVEResolver) Summary(ctx context.Context) string {
 
 func (resolver *cVEResolver) SuppressActivation(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetSuppressActivation()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *cVEResolver) SuppressExpiry(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetSuppressExpiry()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *cVEResolver) Suppressed(ctx context.Context) bool {
@@ -2939,12 +3181,17 @@ func (resolver *Resolver) wrapCVEInfosWithContext(ctx context.Context, values []
 
 func (resolver *cVEInfoResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetCreatedAt()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *cVEInfoResolver) Cve(ctx context.Context) string {
 	value := resolver.data.GetCve()
 	return value
+}
+
+func (resolver *cVEInfoResolver) CvssMetrics(ctx context.Context) ([]*cVSSScoreResolver, error) {
+	value := resolver.data.GetCvssMetrics()
+	return resolver.root.wrapCVSSScores(value, nil)
 }
 
 func (resolver *cVEInfoResolver) CvssV2(ctx context.Context) (*cVSSV2Resolver, error) {
@@ -2957,9 +3204,14 @@ func (resolver *cVEInfoResolver) CvssV3(ctx context.Context) (*cVSSV3Resolver, e
 	return resolver.root.wrapCVSSV3(value, true, nil)
 }
 
+func (resolver *cVEInfoResolver) Epss(ctx context.Context) (*ePSSResolver, error) {
+	value := resolver.data.GetEpss()
+	return resolver.root.wrapEPSS(value, true, nil)
+}
+
 func (resolver *cVEInfoResolver) LastModified(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetLastModified()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *cVEInfoResolver) Link(ctx context.Context) string {
@@ -2969,7 +3221,7 @@ func (resolver *cVEInfoResolver) Link(ctx context.Context) string {
 
 func (resolver *cVEInfoResolver) PublishedOn(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetPublishedOn()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *cVEInfoResolver) References(ctx context.Context) ([]*cVEInfo_ReferenceResolver, error) {
@@ -3143,6 +3395,96 @@ func toCVE_ScoreVersions(values *[]string) []storage.CVE_ScoreVersion {
 		output[i] = toCVE_ScoreVersion(&v)
 	}
 	return output
+}
+
+type cVSSScoreResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.CVSSScore
+}
+
+func (resolver *Resolver) wrapCVSSScore(value *storage.CVSSScore, ok bool, err error) (*cVSSScoreResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &cVSSScoreResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapCVSSScores(values []*storage.CVSSScore, err error) ([]*cVSSScoreResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*cVSSScoreResolver, len(values))
+	for i, v := range values {
+		output[i] = &cVSSScoreResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapCVSSScoreWithContext(ctx context.Context, value *storage.CVSSScore, ok bool, err error) (*cVSSScoreResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &cVSSScoreResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapCVSSScoresWithContext(ctx context.Context, values []*storage.CVSSScore, err error) ([]*cVSSScoreResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*cVSSScoreResolver, len(values))
+	for i, v := range values {
+		output[i] = &cVSSScoreResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *cVSSScoreResolver) Cvssv2(ctx context.Context) (*cVSSV2Resolver, error) {
+	value := resolver.data.GetCvssv2()
+	return resolver.root.wrapCVSSV2(value, true, nil)
+}
+
+func (resolver *cVSSScoreResolver) Cvssv3(ctx context.Context) (*cVSSV3Resolver, error) {
+	value := resolver.data.GetCvssv3()
+	return resolver.root.wrapCVSSV3(value, true, nil)
+}
+
+func (resolver *cVSSScoreResolver) Source(ctx context.Context) string {
+	value := resolver.data.GetSource()
+	return value.String()
+}
+
+func (resolver *cVSSScoreResolver) Url(ctx context.Context) string {
+	value := resolver.data.GetUrl()
+	return value
+}
+
+type cVSSScoreCvssScoreResolver struct {
+	resolver interface{}
+}
+
+func (resolver *cVSSScoreResolver) CvssScore() *cVSSScoreCvssScoreResolver {
+	if val := resolver.data.GetCvssv2(); val != nil {
+		return &cVSSScoreCvssScoreResolver{
+			resolver: &cVSSV2Resolver{root: resolver.root, data: val},
+		}
+	}
+	if val := resolver.data.GetCvssv3(); val != nil {
+		return &cVSSScoreCvssScoreResolver{
+			resolver: &cVSSV3Resolver{root: resolver.root, data: val},
+		}
+	}
+	return nil
+}
+
+func (resolver *cVSSScoreCvssScoreResolver) ToCVSSV2() (*cVSSV2Resolver, bool) {
+	res, ok := resolver.resolver.(*cVSSV2Resolver)
+	return res, ok
+}
+
+func (resolver *cVSSScoreCvssScoreResolver) ToCVSSV3() (*cVSSV3Resolver, bool) {
+	res, ok := resolver.resolver.(*cVSSV3Resolver)
+	return res, ok
 }
 
 type cVSSV2Resolver struct {
@@ -3614,7 +3956,7 @@ func (resolver *certResolver) Algorithm(ctx context.Context) string {
 
 func (resolver *certResolver) EndDate(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetEndDate()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *certResolver) Issuer(ctx context.Context) (*certNameResolver, error) {
@@ -3629,7 +3971,7 @@ func (resolver *certResolver) Sans(ctx context.Context) []string {
 
 func (resolver *certResolver) StartDate(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetStartDate()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *certResolver) Subject(ctx context.Context) (*certNameResolver, error) {
@@ -3776,6 +4118,11 @@ func (resolver *clusterResolver) AdmissionControllerEvents(ctx context.Context) 
 	return value
 }
 
+func (resolver *clusterResolver) AdmissionControllerFailOnError(ctx context.Context) bool {
+	value := resolver.data.GetAdmissionControllerFailOnError()
+	return value
+}
+
 func (resolver *clusterResolver) AdmissionControllerUpdates(ctx context.Context) bool {
 	value := resolver.data.GetAdmissionControllerUpdates()
 	return value
@@ -3853,6 +4200,11 @@ func (resolver *clusterResolver) Priority(ctx context.Context) int32 {
 
 func (resolver *clusterResolver) RuntimeSupport(ctx context.Context) bool {
 	value := resolver.data.GetRuntimeSupport()
+	return value
+}
+
+func (resolver *clusterResolver) SensorCapabilities(ctx context.Context) []string {
+	value := resolver.data.GetSensorCapabilities()
 	return value
 }
 
@@ -3945,12 +4297,12 @@ func (resolver *clusterCVEResolver) Severity(ctx context.Context) string {
 
 func (resolver *clusterCVEResolver) SnoozeExpiry(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetSnoozeExpiry()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *clusterCVEResolver) SnoozeStart(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetSnoozeStart()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *clusterCVEResolver) Snoozed(ctx context.Context) bool {
@@ -4007,12 +4359,12 @@ func (resolver *Resolver) wrapClusterCertExpiryStatusesWithContext(ctx context.C
 
 func (resolver *clusterCertExpiryStatusResolver) SensorCertExpiry(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetSensorCertExpiry()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *clusterCertExpiryStatusResolver) SensorCertNotBefore(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetSensorCertNotBefore()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 type clusterHealthStatusResolver struct {
@@ -4089,7 +4441,7 @@ func (resolver *clusterHealthStatusResolver) Id(ctx context.Context) graphql.ID 
 
 func (resolver *clusterHealthStatusResolver) LastContact(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetLastContact()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *clusterHealthStatusResolver) OverallHealthStatus(ctx context.Context) string {
@@ -4126,6 +4478,81 @@ func toClusterHealthStatus_HealthStatusLabels(values *[]string) []storage.Cluste
 	output := make([]storage.ClusterHealthStatus_HealthStatusLabel, len(*values))
 	for i, v := range *values {
 		output[i] = toClusterHealthStatus_HealthStatusLabel(&v)
+	}
+	return output
+}
+
+type clusterMetadataResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ClusterMetadata
+}
+
+func (resolver *Resolver) wrapClusterMetadata(value *storage.ClusterMetadata, ok bool, err error) (*clusterMetadataResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &clusterMetadataResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapClusterMetadatas(values []*storage.ClusterMetadata, err error) ([]*clusterMetadataResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*clusterMetadataResolver, len(values))
+	for i, v := range values {
+		output[i] = &clusterMetadataResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapClusterMetadataWithContext(ctx context.Context, value *storage.ClusterMetadata, ok bool, err error) (*clusterMetadataResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &clusterMetadataResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapClusterMetadatasWithContext(ctx context.Context, values []*storage.ClusterMetadata, err error) ([]*clusterMetadataResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*clusterMetadataResolver, len(values))
+	for i, v := range values {
+		output[i] = &clusterMetadataResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *clusterMetadataResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *clusterMetadataResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *clusterMetadataResolver) Type(ctx context.Context) string {
+	value := resolver.data.GetType()
+	return value.String()
+}
+
+func toClusterMetadata_Type(value *string) storage.ClusterMetadata_Type {
+	if value != nil {
+		return storage.ClusterMetadata_Type(storage.ClusterMetadata_Type_value[*value])
+	}
+	return storage.ClusterMetadata_Type(0)
+}
+
+func toClusterMetadata_Types(values *[]string) []storage.ClusterMetadata_Type {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.ClusterMetadata_Type, len(*values))
+	for i, v := range *values {
+		output[i] = toClusterMetadata_Type(&v)
 	}
 	return output
 }
@@ -4344,7 +4771,7 @@ func (resolver *clusterUpgradeStatus_UpgradeProcessStatusResolver) Id(ctx contex
 
 func (resolver *clusterUpgradeStatus_UpgradeProcessStatusResolver) InitiatedAt(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetInitiatedAt()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *clusterUpgradeStatus_UpgradeProcessStatusResolver) Progress(ctx context.Context) (*upgradeProgressResolver, error) {
@@ -5609,7 +6036,7 @@ func (resolver *complianceRunResolver) ErrorMessage(ctx context.Context) string 
 
 func (resolver *complianceRunResolver) FinishTime(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetFinishTime()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *complianceRunResolver) Id(ctx context.Context) graphql.ID {
@@ -5624,7 +6051,7 @@ func (resolver *complianceRunResolver) StandardId(ctx context.Context) string {
 
 func (resolver *complianceRunResolver) StartTime(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetStartTime()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *complianceRunResolver) State(ctx context.Context) string {
@@ -5691,7 +6118,7 @@ func (resolver *complianceRunMetadataResolver) ErrorMessage(ctx context.Context)
 
 func (resolver *complianceRunMetadataResolver) FinishTimestamp(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetFinishTimestamp()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *complianceRunMetadataResolver) RunId(ctx context.Context) string {
@@ -5706,7 +6133,7 @@ func (resolver *complianceRunMetadataResolver) StandardId(ctx context.Context) s
 
 func (resolver *complianceRunMetadataResolver) StartTimestamp(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetStartTimestamp()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *complianceRunMetadataResolver) Success(ctx context.Context) bool {
@@ -5838,6 +6265,11 @@ func (resolver *complianceStandardMetadataResolver) Description(ctx context.Cont
 
 func (resolver *complianceStandardMetadataResolver) Dynamic(ctx context.Context) bool {
 	value := resolver.data.GetDynamic()
+	return value
+}
+
+func (resolver *complianceStandardMetadataResolver) HideScanResults(ctx context.Context) bool {
+	value := resolver.data.GetHideScanResults()
 	return value
 }
 
@@ -6193,6 +6625,11 @@ func (resolver *containerImageResolver) Id(ctx context.Context) graphql.ID {
 	return graphql.ID(value)
 }
 
+func (resolver *containerImageResolver) IdV2(ctx context.Context) string {
+	value := resolver.data.GetIdV2()
+	return value
+}
+
 func (resolver *containerImageResolver) IsClusterLocal(ctx context.Context) bool {
 	value := resolver.data.GetIsClusterLocal()
 	return value
@@ -6272,7 +6709,7 @@ func (resolver *containerInstanceResolver) ExitCode(ctx context.Context) int32 {
 
 func (resolver *containerInstanceResolver) Finished(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetFinished()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *containerInstanceResolver) ImageDigest(ctx context.Context) string {
@@ -6287,7 +6724,7 @@ func (resolver *containerInstanceResolver) InstanceId(ctx context.Context) (*con
 
 func (resolver *containerInstanceResolver) Started(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetStarted()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *containerInstanceResolver) TerminationReason(ctx context.Context) string {
@@ -6464,8 +6901,23 @@ func (resolver *Resolver) wrapCosignSignaturesWithContext(ctx context.Context, v
 	return output, nil
 }
 
+func (resolver *cosignSignatureResolver) CertChainPem(ctx context.Context) []byte {
+	value := resolver.data.GetCertChainPem()
+	return value
+}
+
+func (resolver *cosignSignatureResolver) CertPem(ctx context.Context) []byte {
+	value := resolver.data.GetCertPem()
+	return value
+}
+
 func (resolver *cosignSignatureResolver) RawSignature(ctx context.Context) []byte {
 	value := resolver.data.GetRawSignature()
+	return value
+}
+
+func (resolver *cosignSignatureResolver) RekorBundle(ctx context.Context) []byte {
+	value := resolver.data.GetRekorBundle()
 	return value
 }
 
@@ -6519,6 +6971,11 @@ func (resolver *Resolver) wrapDataSourcesWithContext(ctx context.Context, values
 func (resolver *dataSourceResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
+}
+
+func (resolver *dataSourceResolver) Mirror(ctx context.Context) string {
+	value := resolver.data.GetMirror()
+	return value
 }
 
 func (resolver *dataSourceResolver) Name(ctx context.Context) string {
@@ -6623,7 +7080,7 @@ func (resolver *deploymentResolver) Created(ctx context.Context) (*graphql.Time,
 	if resolver.data == nil {
 		value = resolver.list.GetCreated()
 	}
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *deploymentResolver) HostIpc(ctx context.Context) bool {
@@ -6701,6 +7158,12 @@ func (resolver *deploymentResolver) NamespaceId(ctx context.Context) string {
 func (resolver *deploymentResolver) OrchestratorComponent(ctx context.Context) bool {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetOrchestratorComponent()
+	return value
+}
+
+func (resolver *deploymentResolver) PlatformComponent(ctx context.Context) bool {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetPlatformComponent()
 	return value
 }
 
@@ -6819,6 +7282,11 @@ func (resolver *dynamicClusterConfigResolver) AdmissionControllerConfig(ctx cont
 	return resolver.root.wrapAdmissionControllerConfig(value, true, nil)
 }
 
+func (resolver *dynamicClusterConfigResolver) AutoLockProcessBaselinesConfig(ctx context.Context) (*autoLockProcessBaselinesConfigResolver, error) {
+	value := resolver.data.GetAutoLockProcessBaselinesConfig()
+	return resolver.root.wrapAutoLockProcessBaselinesConfig(value, true, nil)
+}
+
 func (resolver *dynamicClusterConfigResolver) DisableAuditLogs(ctx context.Context) bool {
 	value := resolver.data.GetDisableAuditLogs()
 	return value
@@ -6827,6 +7295,58 @@ func (resolver *dynamicClusterConfigResolver) DisableAuditLogs(ctx context.Conte
 func (resolver *dynamicClusterConfigResolver) RegistryOverride(ctx context.Context) string {
 	value := resolver.data.GetRegistryOverride()
 	return value
+}
+
+type ePSSResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.EPSS
+}
+
+func (resolver *Resolver) wrapEPSS(value *storage.EPSS, ok bool, err error) (*ePSSResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &ePSSResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapEPSSs(values []*storage.EPSS, err error) ([]*ePSSResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*ePSSResolver, len(values))
+	for i, v := range values {
+		output[i] = &ePSSResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapEPSSWithContext(ctx context.Context, value *storage.EPSS, ok bool, err error) (*ePSSResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &ePSSResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapEPSSsWithContext(ctx context.Context, values []*storage.EPSS, err error) ([]*ePSSResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*ePSSResolver, len(values))
+	for i, v := range values {
+		output[i] = &ePSSResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *ePSSResolver) EpssPercentile(ctx context.Context) float64 {
+	value := resolver.data.GetEpssPercentile()
+	return float64(value)
+}
+
+func (resolver *ePSSResolver) EpssProbability(ctx context.Context) float64 {
+	value := resolver.data.GetEpssProbability()
+	return float64(value)
 }
 
 type emailResolver struct {
@@ -6886,6 +7406,11 @@ func (resolver *emailResolver) From(ctx context.Context) string {
 	return value
 }
 
+func (resolver *emailResolver) HostnameHeloEhlo(ctx context.Context) string {
+	value := resolver.data.GetHostnameHeloEhlo()
+	return value
+}
+
 func (resolver *emailResolver) Password(ctx context.Context) string {
 	value := resolver.data.GetPassword()
 	return value
@@ -6898,6 +7423,11 @@ func (resolver *emailResolver) Sender(ctx context.Context) string {
 
 func (resolver *emailResolver) Server(ctx context.Context) string {
 	value := resolver.data.GetServer()
+	return value
+}
+
+func (resolver *emailResolver) SkipTLSVerify(ctx context.Context) bool {
+	value := resolver.data.GetSkipTLSVerify()
 	return value
 }
 
@@ -7154,7 +7684,7 @@ func (resolver *exclusionResolver) Deployment(ctx context.Context) (*exclusion_D
 
 func (resolver *exclusionResolver) Expiration(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetExpiration()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *exclusionResolver) Image(ctx context.Context) (*exclusion_ImageResolver, error) {
@@ -7786,7 +8316,7 @@ func (resolver *imageResolver) LastUpdated(ctx context.Context) (*graphql.Time, 
 	if resolver.data == nil {
 		value = resolver.list.GetLastUpdated()
 	}
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *imageResolver) Metadata(ctx context.Context) (*imageMetadataResolver, error) {
@@ -7799,6 +8329,12 @@ func (resolver *imageResolver) Name(ctx context.Context) (*imageNameResolver, er
 	resolver.ensureData(ctx)
 	value := resolver.data.GetName()
 	return resolver.root.wrapImageName(value, true, nil)
+}
+
+func (resolver *imageResolver) Names(ctx context.Context) ([]*imageNameResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetNames()
+	return resolver.root.wrapImageNames(value, nil)
 }
 
 func (resolver *imageResolver) NotPullable(ctx context.Context) bool {
@@ -7837,180 +8373,6 @@ func (resolver *imageResolver) SignatureVerificationData(ctx context.Context) (*
 	resolver.ensureData(ctx)
 	value := resolver.data.GetSignatureVerificationData()
 	return resolver.root.wrapImageSignatureVerificationData(value, true, nil)
-}
-
-type imageCVEResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.ImageCVE
-}
-
-func (resolver *Resolver) wrapImageCVE(value *storage.ImageCVE, ok bool, err error) (*imageCVEResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &imageCVEResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapImageCVEs(values []*storage.ImageCVE, err error) ([]*imageCVEResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*imageCVEResolver, len(values))
-	for i, v := range values {
-		output[i] = &imageCVEResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *Resolver) wrapImageCVEWithContext(ctx context.Context, value *storage.ImageCVE, ok bool, err error) (*imageCVEResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &imageCVEResolver{ctx: ctx, root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapImageCVEsWithContext(ctx context.Context, values []*storage.ImageCVE, err error) ([]*imageCVEResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*imageCVEResolver, len(values))
-	for i, v := range values {
-		output[i] = &imageCVEResolver{ctx: ctx, root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *imageCVEResolver) CveBaseInfo(ctx context.Context) (*cVEInfoResolver, error) {
-	value := resolver.data.GetCveBaseInfo()
-	return resolver.root.wrapCVEInfo(value, true, nil)
-}
-
-func (resolver *imageCVEResolver) Cvss(ctx context.Context) float64 {
-	value := resolver.data.GetCvss()
-	return float64(value)
-}
-
-func (resolver *imageCVEResolver) Id(ctx context.Context) graphql.ID {
-	value := resolver.data.GetId()
-	return graphql.ID(value)
-}
-
-func (resolver *imageCVEResolver) ImpactScore(ctx context.Context) float64 {
-	value := resolver.data.GetImpactScore()
-	return float64(value)
-}
-
-func (resolver *imageCVEResolver) OperatingSystem(ctx context.Context) string {
-	value := resolver.data.GetOperatingSystem()
-	return value
-}
-
-func (resolver *imageCVEResolver) Severity(ctx context.Context) string {
-	value := resolver.data.GetSeverity()
-	return value.String()
-}
-
-func (resolver *imageCVEResolver) SnoozeExpiry(ctx context.Context) (*graphql.Time, error) {
-	value := resolver.data.GetSnoozeExpiry()
-	return timestamp(value)
-}
-
-func (resolver *imageCVEResolver) SnoozeStart(ctx context.Context) (*graphql.Time, error) {
-	value := resolver.data.GetSnoozeStart()
-	return timestamp(value)
-}
-
-func (resolver *imageCVEResolver) Snoozed(ctx context.Context) bool {
-	value := resolver.data.GetSnoozed()
-	return value
-}
-
-type imageComponentResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.ImageComponent
-}
-
-func (resolver *Resolver) wrapImageComponent(value *storage.ImageComponent, ok bool, err error) (*imageComponentResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &imageComponentResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapImageComponents(values []*storage.ImageComponent, err error) ([]*imageComponentResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*imageComponentResolver, len(values))
-	for i, v := range values {
-		output[i] = &imageComponentResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *Resolver) wrapImageComponentWithContext(ctx context.Context, value *storage.ImageComponent, ok bool, err error) (*imageComponentResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &imageComponentResolver{ctx: ctx, root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapImageComponentsWithContext(ctx context.Context, values []*storage.ImageComponent, err error) ([]*imageComponentResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*imageComponentResolver, len(values))
-	for i, v := range values {
-		output[i] = &imageComponentResolver{ctx: ctx, root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *imageComponentResolver) FixedBy(ctx context.Context) string {
-	value := resolver.data.GetFixedBy()
-	return value
-}
-
-func (resolver *imageComponentResolver) Id(ctx context.Context) graphql.ID {
-	value := resolver.data.GetId()
-	return graphql.ID(value)
-}
-
-func (resolver *imageComponentResolver) License(ctx context.Context) (*licenseResolver, error) {
-	value := resolver.data.GetLicense()
-	return resolver.root.wrapLicense(value, true, nil)
-}
-
-func (resolver *imageComponentResolver) Name(ctx context.Context) string {
-	value := resolver.data.GetName()
-	return value
-}
-
-func (resolver *imageComponentResolver) OperatingSystem(ctx context.Context) string {
-	value := resolver.data.GetOperatingSystem()
-	return value
-}
-
-func (resolver *imageComponentResolver) Priority(ctx context.Context) int32 {
-	value := resolver.data.GetPriority()
-	return int32(value)
-}
-
-func (resolver *imageComponentResolver) RiskScore(ctx context.Context) float64 {
-	value := resolver.data.GetRiskScore()
-	return float64(value)
-}
-
-func (resolver *imageComponentResolver) Source(ctx context.Context) string {
-	value := resolver.data.GetSource()
-	return value.String()
-}
-
-func (resolver *imageComponentResolver) Version(ctx context.Context) string {
-	value := resolver.data.GetVersion()
-	return value
 }
 
 type imageLayerResolver struct {
@@ -8062,7 +8424,7 @@ func (resolver *imageLayerResolver) Author(ctx context.Context) string {
 
 func (resolver *imageLayerResolver) Created(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetCreated()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *imageLayerResolver) Empty(ctx context.Context) bool {
@@ -8362,7 +8724,7 @@ func (resolver *imageScanResolver) OperatingSystem(ctx context.Context) string {
 
 func (resolver *imageScanResolver) ScanTime(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetScanTime()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *imageScanResolver) ScannerVersion(ctx context.Context) string {
@@ -8432,7 +8794,7 @@ func (resolver *Resolver) wrapImageSignaturesWithContext(ctx context.Context, va
 
 func (resolver *imageSignatureResolver) Fetched(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetFetched()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *imageSignatureResolver) Signatures(ctx context.Context) ([]*signatureResolver, error) {
@@ -8541,7 +8903,12 @@ func (resolver *imageSignatureVerificationResultResolver) Status(ctx context.Con
 
 func (resolver *imageSignatureVerificationResultResolver) VerificationTime(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetVerificationTime()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
+}
+
+func (resolver *imageSignatureVerificationResultResolver) VerifiedImageReferences(ctx context.Context) []string {
+	value := resolver.data.GetVerifiedImageReferences()
+	return value
 }
 
 func (resolver *imageSignatureVerificationResultResolver) VerifierId(ctx context.Context) string {
@@ -8565,6 +8932,275 @@ func toImageSignatureVerificationResult_Statuses(values *[]string) []storage.Ima
 		output[i] = toImageSignatureVerificationResult_Status(&v)
 	}
 	return output
+}
+
+type imageV2Resolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ImageV2
+	list *storage.ListImageV2
+}
+
+func (resolver *Resolver) wrapImageV2(value *storage.ImageV2, ok bool, err error) (*imageV2Resolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imageV2Resolver{root: resolver, data: value, list: nil}, nil
+}
+
+func (resolver *Resolver) wrapImageV2s(values []*storage.ImageV2, err error) ([]*imageV2Resolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*imageV2Resolver, len(values))
+	for i, v := range values {
+		output[i] = &imageV2Resolver{root: resolver, data: v, list: nil}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapImageV2WithContext(ctx context.Context, value *storage.ImageV2, ok bool, err error) (*imageV2Resolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imageV2Resolver{ctx: ctx, root: resolver, data: value, list: nil}, nil
+}
+
+func (resolver *Resolver) wrapImageV2sWithContext(ctx context.Context, values []*storage.ImageV2, err error) ([]*imageV2Resolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*imageV2Resolver, len(values))
+	for i, v := range values {
+		output[i] = &imageV2Resolver{ctx: ctx, root: resolver, data: v, list: nil}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapListImageV2s(values []*storage.ListImageV2, err error) ([]*imageV2Resolver, error) {
+	if err != nil || values == nil {
+		return nil, err
+	}
+	output := make([]*imageV2Resolver, len(values))
+	for i, v := range values {
+		output[i] = &imageV2Resolver{root: resolver, data: nil, list: v}
+	}
+	return output, nil
+}
+
+func (resolver *imageV2Resolver) ensureData(ctx context.Context) {
+	if resolver.data == nil {
+		resolver.data = resolver.root.getImageV2(ctx, resolver.list.GetId())
+	}
+}
+
+func (resolver *imageV2Resolver) Digest(ctx context.Context) string {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetDigest()
+	return value
+}
+
+func (resolver *imageV2Resolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	if resolver.data == nil {
+		value = resolver.list.GetId()
+	}
+	return graphql.ID(value)
+}
+
+func (resolver *imageV2Resolver) IsClusterLocal(ctx context.Context) bool {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetIsClusterLocal()
+	return value
+}
+
+func (resolver *imageV2Resolver) LastUpdated(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetLastUpdated()
+	if resolver.data == nil {
+		value = resolver.list.GetLastUpdated()
+	}
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
+}
+
+func (resolver *imageV2Resolver) Metadata(ctx context.Context) (*imageMetadataResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetMetadata()
+	return resolver.root.wrapImageMetadata(value, true, nil)
+}
+
+func (resolver *imageV2Resolver) Name(ctx context.Context) (*imageNameResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetName()
+	return resolver.root.wrapImageName(value, true, nil)
+}
+
+func (resolver *imageV2Resolver) NotPullable(ctx context.Context) bool {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetNotPullable()
+	return value
+}
+
+func (resolver *imageV2Resolver) Notes(ctx context.Context) []string {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetNotes()
+	return stringSlice(value)
+}
+
+func (resolver *imageV2Resolver) Priority(ctx context.Context) int32 {
+	value := resolver.data.GetPriority()
+	if resolver.data == nil {
+		value = resolver.list.GetPriority()
+	}
+	return int32(value)
+}
+
+func (resolver *imageV2Resolver) RiskScore(ctx context.Context) float64 {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetRiskScore()
+	return float64(value)
+}
+
+func (resolver *imageV2Resolver) Signature(ctx context.Context) (*imageSignatureResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetSignature()
+	return resolver.root.wrapImageSignature(value, true, nil)
+}
+
+func (resolver *imageV2Resolver) SignatureVerificationData(ctx context.Context) (*imageSignatureVerificationDataResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetSignatureVerificationData()
+	return resolver.root.wrapImageSignatureVerificationData(value, true, nil)
+}
+
+func (resolver *imageV2Resolver) TopCvss(ctx context.Context) float64 {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetTopCvss()
+	return float64(value)
+}
+
+func toImageV2_Note(value *string) storage.ImageV2_Note {
+	if value != nil {
+		return storage.ImageV2_Note(storage.ImageV2_Note_value[*value])
+	}
+	return storage.ImageV2_Note(0)
+}
+
+func toImageV2_Notes(values *[]string) []storage.ImageV2_Note {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.ImageV2_Note, len(*values))
+	for i, v := range *values {
+		output[i] = toImageV2_Note(&v)
+	}
+	return output
+}
+
+type imageV2_ScanStatsResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ImageV2_ScanStats
+}
+
+func (resolver *Resolver) wrapImageV2_ScanStats(value *storage.ImageV2_ScanStats, ok bool, err error) (*imageV2_ScanStatsResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imageV2_ScanStatsResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapImageV2_ScanStatses(values []*storage.ImageV2_ScanStats, err error) ([]*imageV2_ScanStatsResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*imageV2_ScanStatsResolver, len(values))
+	for i, v := range values {
+		output[i] = &imageV2_ScanStatsResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapImageV2_ScanStatsWithContext(ctx context.Context, value *storage.ImageV2_ScanStats, ok bool, err error) (*imageV2_ScanStatsResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imageV2_ScanStatsResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapImageV2_ScanStatsesWithContext(ctx context.Context, values []*storage.ImageV2_ScanStats, err error) ([]*imageV2_ScanStatsResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*imageV2_ScanStatsResolver, len(values))
+	for i, v := range values {
+		output[i] = &imageV2_ScanStatsResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *imageV2_ScanStatsResolver) ComponentCount(ctx context.Context) int32 {
+	value := resolver.data.GetComponentCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) CriticalCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetCriticalCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) CveCount(ctx context.Context) int32 {
+	value := resolver.data.GetCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) FixableCriticalCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetFixableCriticalCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) FixableCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetFixableCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) FixableImportantCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetFixableImportantCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) FixableLowCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetFixableLowCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) FixableModerateCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetFixableModerateCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) FixableUnknownCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetFixableUnknownCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) ImportantCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetImportantCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) LowCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetLowCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) ModerateCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetModerateCveCount()
+	return value
+}
+
+func (resolver *imageV2_ScanStatsResolver) UnknownCveCount(ctx context.Context) int32 {
+	value := resolver.data.GetUnknownCveCount()
+	return value
 }
 
 func toImage_Note(value *string) storage.Image_Note {
@@ -8629,6 +9265,11 @@ func (resolver *Resolver) wrapJirasWithContext(ctx context.Context, values []*st
 
 func (resolver *jiraResolver) DefaultFieldsJson(ctx context.Context) string {
 	value := resolver.data.GetDefaultFieldsJson()
+	return value
+}
+
+func (resolver *jiraResolver) DisablePriority(ctx context.Context) bool {
+	value := resolver.data.GetDisablePriority()
 	return value
 }
 
@@ -8773,7 +9414,7 @@ func (resolver *k8SRoleResolver) ClusterRole(ctx context.Context) bool {
 
 func (resolver *k8SRoleResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetCreatedAt()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *k8SRoleResolver) Id(ctx context.Context) graphql.ID {
@@ -8865,7 +9506,7 @@ func (resolver *k8SRoleBindingResolver) ClusterRole(ctx context.Context) bool {
 
 func (resolver *k8SRoleBindingResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetCreatedAt()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *k8SRoleBindingResolver) Id(ctx context.Context) graphql.ID {
@@ -9333,6 +9974,197 @@ func toMetadata_LicenseStatuses(values *[]string) []v1.Metadata_LicenseStatus {
 	return output
 }
 
+type microsoftSentinelResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.MicrosoftSentinel
+}
+
+func (resolver *Resolver) wrapMicrosoftSentinel(value *storage.MicrosoftSentinel, ok bool, err error) (*microsoftSentinelResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &microsoftSentinelResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapMicrosoftSentinels(values []*storage.MicrosoftSentinel, err error) ([]*microsoftSentinelResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*microsoftSentinelResolver, len(values))
+	for i, v := range values {
+		output[i] = &microsoftSentinelResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapMicrosoftSentinelWithContext(ctx context.Context, value *storage.MicrosoftSentinel, ok bool, err error) (*microsoftSentinelResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &microsoftSentinelResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapMicrosoftSentinelsWithContext(ctx context.Context, values []*storage.MicrosoftSentinel, err error) ([]*microsoftSentinelResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*microsoftSentinelResolver, len(values))
+	for i, v := range values {
+		output[i] = &microsoftSentinelResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *microsoftSentinelResolver) AlertDcrConfig(ctx context.Context) (*microsoftSentinel_DataCollectionRuleConfigResolver, error) {
+	value := resolver.data.GetAlertDcrConfig()
+	return resolver.root.wrapMicrosoftSentinel_DataCollectionRuleConfig(value, true, nil)
+}
+
+func (resolver *microsoftSentinelResolver) ApplicationClientId(ctx context.Context) string {
+	value := resolver.data.GetApplicationClientId()
+	return value
+}
+
+func (resolver *microsoftSentinelResolver) AuditLogDcrConfig(ctx context.Context) (*microsoftSentinel_DataCollectionRuleConfigResolver, error) {
+	value := resolver.data.GetAuditLogDcrConfig()
+	return resolver.root.wrapMicrosoftSentinel_DataCollectionRuleConfig(value, true, nil)
+}
+
+func (resolver *microsoftSentinelResolver) ClientCertAuthConfig(ctx context.Context) (*microsoftSentinel_ClientCertAuthConfigResolver, error) {
+	value := resolver.data.GetClientCertAuthConfig()
+	return resolver.root.wrapMicrosoftSentinel_ClientCertAuthConfig(value, true, nil)
+}
+
+func (resolver *microsoftSentinelResolver) DirectoryTenantId(ctx context.Context) string {
+	value := resolver.data.GetDirectoryTenantId()
+	return value
+}
+
+func (resolver *microsoftSentinelResolver) LogIngestionEndpoint(ctx context.Context) string {
+	value := resolver.data.GetLogIngestionEndpoint()
+	return value
+}
+
+func (resolver *microsoftSentinelResolver) Secret(ctx context.Context) string {
+	value := resolver.data.GetSecret()
+	return value
+}
+
+func (resolver *microsoftSentinelResolver) WifEnabled(ctx context.Context) bool {
+	value := resolver.data.GetWifEnabled()
+	return value
+}
+
+type microsoftSentinel_ClientCertAuthConfigResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.MicrosoftSentinel_ClientCertAuthConfig
+}
+
+func (resolver *Resolver) wrapMicrosoftSentinel_ClientCertAuthConfig(value *storage.MicrosoftSentinel_ClientCertAuthConfig, ok bool, err error) (*microsoftSentinel_ClientCertAuthConfigResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &microsoftSentinel_ClientCertAuthConfigResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapMicrosoftSentinel_ClientCertAuthConfigs(values []*storage.MicrosoftSentinel_ClientCertAuthConfig, err error) ([]*microsoftSentinel_ClientCertAuthConfigResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*microsoftSentinel_ClientCertAuthConfigResolver, len(values))
+	for i, v := range values {
+		output[i] = &microsoftSentinel_ClientCertAuthConfigResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapMicrosoftSentinel_ClientCertAuthConfigWithContext(ctx context.Context, value *storage.MicrosoftSentinel_ClientCertAuthConfig, ok bool, err error) (*microsoftSentinel_ClientCertAuthConfigResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &microsoftSentinel_ClientCertAuthConfigResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapMicrosoftSentinel_ClientCertAuthConfigsWithContext(ctx context.Context, values []*storage.MicrosoftSentinel_ClientCertAuthConfig, err error) ([]*microsoftSentinel_ClientCertAuthConfigResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*microsoftSentinel_ClientCertAuthConfigResolver, len(values))
+	for i, v := range values {
+		output[i] = &microsoftSentinel_ClientCertAuthConfigResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *microsoftSentinel_ClientCertAuthConfigResolver) ClientCert(ctx context.Context) string {
+	value := resolver.data.GetClientCert()
+	return value
+}
+
+func (resolver *microsoftSentinel_ClientCertAuthConfigResolver) PrivateKey(ctx context.Context) string {
+	value := resolver.data.GetPrivateKey()
+	return value
+}
+
+type microsoftSentinel_DataCollectionRuleConfigResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.MicrosoftSentinel_DataCollectionRuleConfig
+}
+
+func (resolver *Resolver) wrapMicrosoftSentinel_DataCollectionRuleConfig(value *storage.MicrosoftSentinel_DataCollectionRuleConfig, ok bool, err error) (*microsoftSentinel_DataCollectionRuleConfigResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &microsoftSentinel_DataCollectionRuleConfigResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapMicrosoftSentinel_DataCollectionRuleConfigs(values []*storage.MicrosoftSentinel_DataCollectionRuleConfig, err error) ([]*microsoftSentinel_DataCollectionRuleConfigResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*microsoftSentinel_DataCollectionRuleConfigResolver, len(values))
+	for i, v := range values {
+		output[i] = &microsoftSentinel_DataCollectionRuleConfigResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapMicrosoftSentinel_DataCollectionRuleConfigWithContext(ctx context.Context, value *storage.MicrosoftSentinel_DataCollectionRuleConfig, ok bool, err error) (*microsoftSentinel_DataCollectionRuleConfigResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &microsoftSentinel_DataCollectionRuleConfigResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapMicrosoftSentinel_DataCollectionRuleConfigsWithContext(ctx context.Context, values []*storage.MicrosoftSentinel_DataCollectionRuleConfig, err error) ([]*microsoftSentinel_DataCollectionRuleConfigResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*microsoftSentinel_DataCollectionRuleConfigResolver, len(values))
+	for i, v := range values {
+		output[i] = &microsoftSentinel_DataCollectionRuleConfigResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *microsoftSentinel_DataCollectionRuleConfigResolver) DataCollectionRuleId(ctx context.Context) string {
+	value := resolver.data.GetDataCollectionRuleId()
+	return value
+}
+
+func (resolver *microsoftSentinel_DataCollectionRuleConfigResolver) Enabled(ctx context.Context) bool {
+	value := resolver.data.GetEnabled()
+	return value
+}
+
+func (resolver *microsoftSentinel_DataCollectionRuleConfigResolver) StreamName(ctx context.Context) string {
+	value := resolver.data.GetStreamName()
+	return value
+}
+
 type mitreAttackVectorResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -9620,7 +10452,7 @@ func (resolver *namespaceMetadataResolver) ClusterName(ctx context.Context) stri
 
 func (resolver *namespaceMetadataResolver) CreationTime(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetCreationTime()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *namespaceMetadataResolver) Id(ctx context.Context) graphql.ID {
@@ -9894,6 +10726,11 @@ func (resolver *networkEntityInfo_ExternalSourceResolver) Default(ctx context.Co
 	return value
 }
 
+func (resolver *networkEntityInfo_ExternalSourceResolver) Discovered(ctx context.Context) bool {
+	value := resolver.data.GetDiscovered()
+	return value
+}
+
 func (resolver *networkEntityInfo_ExternalSourceResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
@@ -9966,12 +10803,17 @@ func (resolver *networkFlowResolver) ClusterId(ctx context.Context) string {
 
 func (resolver *networkFlowResolver) LastSeenTimestamp(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetLastSeenTimestamp()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *networkFlowResolver) Props(ctx context.Context) (*networkFlowPropertiesResolver, error) {
 	value := resolver.data.GetProps()
 	return resolver.root.wrapNetworkFlowProperties(value, true, nil)
+}
+
+func (resolver *networkFlowResolver) UpdatedAt(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetUpdatedAt()
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 type networkFlowPropertiesResolver struct {
@@ -10120,12 +10962,12 @@ func (resolver *nodeResolver) InternalIpAddresses(ctx context.Context) []string 
 
 func (resolver *nodeResolver) JoinedAt(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetJoinedAt()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *nodeResolver) K8SUpdated(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetK8SUpdated()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *nodeResolver) KernelVersion(ctx context.Context) string {
@@ -10150,7 +10992,7 @@ func (resolver *nodeResolver) Labels(ctx context.Context) labels {
 
 func (resolver *nodeResolver) LastUpdated(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetLastUpdated()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *nodeResolver) Name(ctx context.Context) string {
@@ -10255,6 +11097,16 @@ func (resolver *nodeCVEResolver) OperatingSystem(ctx context.Context) string {
 	return value
 }
 
+func (resolver *nodeCVEResolver) Orphaned(ctx context.Context) bool {
+	value := resolver.data.GetOrphaned()
+	return value
+}
+
+func (resolver *nodeCVEResolver) OrphanedTime(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetOrphanedTime()
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
+}
+
 func (resolver *nodeCVEResolver) Severity(ctx context.Context) string {
 	value := resolver.data.GetSeverity()
 	return value.String()
@@ -10262,12 +11114,12 @@ func (resolver *nodeCVEResolver) Severity(ctx context.Context) string {
 
 func (resolver *nodeCVEResolver) SnoozeExpiry(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetSnoozeExpiry()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *nodeCVEResolver) SnoozeStart(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetSnoozeStart()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *nodeCVEResolver) Snoozed(ctx context.Context) bool {
@@ -10401,7 +11253,12 @@ func (resolver *nodeScanResolver) OperatingSystem(ctx context.Context) string {
 
 func (resolver *nodeScanResolver) ScanTime(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetScanTime()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
+}
+
+func (resolver *nodeScanResolver) ScannerVersion(ctx context.Context) string {
+	value := resolver.data.GetScannerVersion()
+	return value.String()
 }
 
 func toNodeScan_Note(value *string) storage.NodeScan_Note {
@@ -10418,6 +11275,24 @@ func toNodeScan_Notes(values *[]string) []storage.NodeScan_Note {
 	output := make([]storage.NodeScan_Note, len(*values))
 	for i, v := range *values {
 		output[i] = toNodeScan_Note(&v)
+	}
+	return output
+}
+
+func toNodeScan_Scanner(value *string) storage.NodeScan_Scanner {
+	if value != nil {
+		return storage.NodeScan_Scanner(storage.NodeScan_Scanner_value[*value])
+	}
+	return storage.NodeScan_Scanner(0)
+}
+
+func toNodeScan_Scanners(values *[]string) []storage.NodeScan_Scanner {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.NodeScan_Scanner, len(*values))
+	for i, v := range *values {
+		output[i] = toNodeScan_Scanner(&v)
 	}
 	return output
 }
@@ -10522,8 +11397,18 @@ func (resolver *notifierResolver) LabelKey(ctx context.Context) string {
 	return value
 }
 
+func (resolver *notifierResolver) MicrosoftSentinel(ctx context.Context) (*microsoftSentinelResolver, error) {
+	value := resolver.data.GetMicrosoftSentinel()
+	return resolver.root.wrapMicrosoftSentinel(value, true, nil)
+}
+
 func (resolver *notifierResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *notifierResolver) NotifierSecret(ctx context.Context) string {
+	value := resolver.data.GetNotifierSecret()
 	return value
 }
 
@@ -10545,6 +11430,11 @@ func (resolver *notifierResolver) Sumologic(ctx context.Context) (*sumoLogicReso
 func (resolver *notifierResolver) Syslog(ctx context.Context) (*syslogResolver, error) {
 	value := resolver.data.GetSyslog()
 	return resolver.root.wrapSyslog(value, true, nil)
+}
+
+func (resolver *notifierResolver) Traits(ctx context.Context) (*traitsResolver, error) {
+	value := resolver.data.GetTraits()
+	return resolver.root.wrapTraits(value, true, nil)
 }
 
 func (resolver *notifierResolver) Type(ctx context.Context) string {
@@ -10607,6 +11497,11 @@ func (resolver *notifierResolver) Config() *notifierConfigResolver {
 			resolver: &syslogResolver{root: resolver.root, data: val},
 		}
 	}
+	if val := resolver.data.GetMicrosoftSentinel(); val != nil {
+		return &notifierConfigResolver{
+			resolver: &microsoftSentinelResolver{root: resolver.root, data: val},
+		}
+	}
 	return nil
 }
 
@@ -10652,6 +11547,11 @@ func (resolver *notifierConfigResolver) ToAWSSecurityHub() (*aWSSecurityHubResol
 
 func (resolver *notifierConfigResolver) ToSyslog() (*syslogResolver, bool) {
 	res, ok := resolver.resolver.(*syslogResolver)
+	return res, ok
+}
+
+func (resolver *notifierConfigResolver) ToMicrosoftSentinel() (*microsoftSentinelResolver, bool) {
+	res, ok := resolver.resolver.(*microsoftSentinelResolver)
 	return res, ok
 }
 
@@ -10704,7 +11604,7 @@ func (resolver *orchestratorMetadataResolver) ApiVersions(ctx context.Context) [
 
 func (resolver *orchestratorMetadataResolver) BuildDate(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetBuildDate()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *orchestratorMetadataResolver) Version(ctx context.Context) string {
@@ -10834,6 +11734,11 @@ func (resolver *permissionSetResolver) Name(ctx context.Context) string {
 	return value
 }
 
+func (resolver *permissionSetResolver) Traits(ctx context.Context) (*traitsResolver, error) {
+	value := resolver.data.GetTraits()
+	return resolver.root.wrapTraits(value, true, nil)
+}
+
 type podResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -10908,7 +11813,7 @@ func (resolver *podResolver) Namespace(ctx context.Context) string {
 
 func (resolver *podResolver) Started(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetStarted()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *podResolver) TerminatedInstances(ctx context.Context) ([]*pod_ContainerInstanceListResolver, error) {
@@ -11052,7 +11957,7 @@ func (resolver *policyResolver) IsDefault(ctx context.Context) bool {
 
 func (resolver *policyResolver) LastUpdated(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetLastUpdated()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *policyResolver) LifecycleStages(ctx context.Context) []string {
@@ -11122,6 +12027,11 @@ func (resolver *policyResolver) Scope(ctx context.Context) ([]*scopeResolver, er
 
 func (resolver *policyResolver) Severity(ctx context.Context) string {
 	value := resolver.data.GetSeverity()
+	return value.String()
+}
+
+func (resolver *policyResolver) Source(ctx context.Context) string {
+	value := resolver.data.GetSource()
 	return value.String()
 }
 
@@ -11304,6 +12214,24 @@ func (resolver *policySectionResolver) PolicyGroups(ctx context.Context) ([]*pol
 func (resolver *policySectionResolver) SectionName(ctx context.Context) string {
 	value := resolver.data.GetSectionName()
 	return value
+}
+
+func toPolicySource(value *string) storage.PolicySource {
+	if value != nil {
+		return storage.PolicySource(storage.PolicySource_value[*value])
+	}
+	return storage.PolicySource(0)
+}
+
+func toPolicySources(values *[]string) []storage.PolicySource {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.PolicySource, len(*values))
+	for i, v := range *values {
+		output[i] = toPolicySource(&v)
+	}
+	return output
 }
 
 type policyValueResolver struct {
@@ -11683,7 +12611,7 @@ func (resolver *processIndicatorResolver) ContainerName(ctx context.Context) str
 
 func (resolver *processIndicatorResolver) ContainerStartTime(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetContainerStartTime()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *processIndicatorResolver) DeploymentId(ctx context.Context) string {
@@ -11872,7 +12800,7 @@ func (resolver *processSignalResolver) Scraped(ctx context.Context) bool {
 
 func (resolver *processSignalResolver) Time(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetTime()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *processSignalResolver) Uid(ctx context.Context) int32 {
@@ -11982,6 +12910,11 @@ func (resolver *providerMetadataResolver) Aws(ctx context.Context) (*aWSProvider
 func (resolver *providerMetadataResolver) Azure(ctx context.Context) (*azureProviderMetadataResolver, error) {
 	value := resolver.data.GetAzure()
 	return resolver.root.wrapAzureProviderMetadata(value, true, nil)
+}
+
+func (resolver *providerMetadataResolver) Cluster(ctx context.Context) (*clusterMetadataResolver, error) {
+	value := resolver.data.GetCluster()
+	return resolver.root.wrapClusterMetadata(value, true, nil)
 }
 
 func (resolver *providerMetadataResolver) Google(ctx context.Context) (*googleProviderMetadataResolver, error) {
@@ -12133,7 +13066,7 @@ func (resolver *Resolver) wrapRequestCommentsWithContext(ctx context.Context, va
 
 func (resolver *requestCommentResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetCreatedAt()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *requestCommentResolver) Id(ctx context.Context) graphql.ID {
@@ -12531,6 +13464,11 @@ func (resolver *roleResolver) PermissionSetId(ctx context.Context) string {
 	return value
 }
 
+func (resolver *roleResolver) Traits(ctx context.Context) (*traitsResolver, error) {
+	value := resolver.data.GetTraits()
+	return resolver.root.wrapTraits(value, true, nil)
+}
+
 type scannerHealthInfoResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -12632,6 +13570,58 @@ func (resolver *scopeResolver) Label(ctx context.Context) (*scope_LabelResolver,
 
 func (resolver *scopeResolver) Namespace(ctx context.Context) string {
 	value := resolver.data.GetNamespace()
+	return value
+}
+
+type scopeObjectResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *v1.ScopeObject
+}
+
+func (resolver *Resolver) wrapScopeObject(value *v1.ScopeObject, ok bool, err error) (*scopeObjectResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &scopeObjectResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapScopeObjects(values []*v1.ScopeObject, err error) ([]*scopeObjectResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*scopeObjectResolver, len(values))
+	for i, v := range values {
+		output[i] = &scopeObjectResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapScopeObjectWithContext(ctx context.Context, value *v1.ScopeObject, ok bool, err error) (*scopeObjectResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &scopeObjectResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapScopeObjectsWithContext(ctx context.Context, values []*v1.ScopeObject, err error) ([]*scopeObjectResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*scopeObjectResolver, len(values))
+	for i, v := range values {
+		output[i] = &scopeObjectResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *scopeObjectResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *scopeObjectResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
 	return value
 }
 
@@ -12859,7 +13849,7 @@ func (resolver *secretResolver) CreatedAt(ctx context.Context) (*graphql.Time, e
 	if resolver.data == nil {
 		value = resolver.list.GetCreatedAt()
 	}
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *secretResolver) Files(ctx context.Context) ([]*secretDataFileResolver, error) {
@@ -13524,7 +14514,7 @@ func (resolver *serviceAccountResolver) ClusterName(ctx context.Context) string 
 
 func (resolver *serviceAccountResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetCreatedAt()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *serviceAccountResolver) Id(ctx context.Context) graphql.ID {
@@ -13824,6 +14814,11 @@ func (resolver *simpleAccessScopeResolver) Rules(ctx context.Context) (*simpleAc
 	return resolver.root.wrapSimpleAccessScope_Rules(value, true, nil)
 }
 
+func (resolver *simpleAccessScopeResolver) Traits(ctx context.Context) (*traitsResolver, error) {
+	value := resolver.data.GetTraits()
+	return resolver.root.wrapTraits(value, true, nil)
+}
+
 type simpleAccessScope_RulesResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -13990,6 +14985,24 @@ func (resolver *slimUserResolver) Name(ctx context.Context) string {
 	return value
 }
 
+func toSource(value *string) storage.Source {
+	if value != nil {
+		return storage.Source(storage.Source_value[*value])
+	}
+	return storage.Source(0)
+}
+
+func toSources(values *[]string) []storage.Source {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.Source, len(*values))
+	for i, v := range *values {
+		output[i] = toSource(&v)
+	}
+	return output
+}
+
 func toSourceType(value *string) storage.SourceType {
 	if value != nil {
 		return storage.SourceType(storage.SourceType_value[*value])
@@ -14129,6 +15142,11 @@ func (resolver *staticClusterConfigResolver) AdmissionController(ctx context.Con
 
 func (resolver *staticClusterConfigResolver) AdmissionControllerEvents(ctx context.Context) bool {
 	value := resolver.data.GetAdmissionControllerEvents()
+	return value
+}
+
+func (resolver *staticClusterConfigResolver) AdmissionControllerFailOnError(ctx context.Context) bool {
+	value := resolver.data.GetAdmissionControllerFailOnError()
 	return value
 }
 
@@ -14356,8 +15374,23 @@ func (resolver *Resolver) wrapSyslogsWithContext(ctx context.Context, values []*
 	return output, nil
 }
 
+func (resolver *syslogResolver) ExtraFields(ctx context.Context) ([]*keyValuePairResolver, error) {
+	value := resolver.data.GetExtraFields()
+	return resolver.root.wrapKeyValuePairs(value, nil)
+}
+
 func (resolver *syslogResolver) LocalFacility(ctx context.Context) string {
 	value := resolver.data.GetLocalFacility()
+	return value.String()
+}
+
+func (resolver *syslogResolver) MaxMessageSize(ctx context.Context) int32 {
+	value := resolver.data.GetMaxMessageSize()
+	return value
+}
+
+func (resolver *syslogResolver) MessageFormat(ctx context.Context) string {
+	value := resolver.data.GetMessageFormat()
 	return value.String()
 }
 
@@ -14398,6 +15431,24 @@ func toSyslog_LocalFacilities(values *[]string) []storage.Syslog_LocalFacility {
 	output := make([]storage.Syslog_LocalFacility, len(*values))
 	for i, v := range *values {
 		output[i] = toSyslog_LocalFacility(&v)
+	}
+	return output
+}
+
+func toSyslog_MessageFormat(value *string) storage.Syslog_MessageFormat {
+	if value != nil {
+		return storage.Syslog_MessageFormat(storage.Syslog_MessageFormat_value[*value])
+	}
+	return storage.Syslog_MessageFormat(0)
+}
+
+func toSyslog_MessageFormats(values *[]string) []storage.Syslog_MessageFormat {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.Syslog_MessageFormat, len(*values))
+	for i, v := range *values {
+		output[i] = toSyslog_MessageFormat(&v)
 	}
 	return output
 }
@@ -14583,7 +15634,7 @@ func (resolver *Resolver) wrapTokenMetadatasWithContext(ctx context.Context, val
 
 func (resolver *tokenMetadataResolver) Expiration(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetExpiration()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *tokenMetadataResolver) Id(ctx context.Context) graphql.ID {
@@ -14593,7 +15644,7 @@ func (resolver *tokenMetadataResolver) Id(ctx context.Context) graphql.ID {
 
 func (resolver *tokenMetadataResolver) IssuedAt(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetIssuedAt()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *tokenMetadataResolver) Name(ctx context.Context) string {
@@ -14790,6 +15841,11 @@ func (resolver *traitsResolver) MutabilityMode(ctx context.Context) string {
 	return value.String()
 }
 
+func (resolver *traitsResolver) Origin(ctx context.Context) string {
+	value := resolver.data.GetOrigin()
+	return value.String()
+}
+
 func (resolver *traitsResolver) Visibility(ctx context.Context) string {
 	value := resolver.data.GetVisibility()
 	return value.String()
@@ -14809,6 +15865,24 @@ func toTraits_MutabilityModes(values *[]string) []storage.Traits_MutabilityMode 
 	output := make([]storage.Traits_MutabilityMode, len(*values))
 	for i, v := range *values {
 		output[i] = toTraits_MutabilityMode(&v)
+	}
+	return output
+}
+
+func toTraits_Origin(value *string) storage.Traits_Origin {
+	if value != nil {
+		return storage.Traits_Origin(storage.Traits_Origin_value[*value])
+	}
+	return storage.Traits_Origin(0)
+}
+
+func toTraits_Origins(values *[]string) []storage.Traits_Origin {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.Traits_Origin, len(*values))
+	for i, v := range *values {
+		output[i] = toTraits_Origin(&v)
 	}
 	return output
 }
@@ -14875,7 +15949,7 @@ func (resolver *Resolver) wrapUpgradeProgressesWithContext(ctx context.Context, 
 
 func (resolver *upgradeProgressResolver) Since(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetSince()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *upgradeProgressResolver) UpgradeState(ctx context.Context) string {
@@ -14960,7 +16034,7 @@ func (resolver *v1MetadataResolver) Command(ctx context.Context) []string {
 
 func (resolver *v1MetadataResolver) Created(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetCreated()
-	return timestamp(value)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *v1MetadataResolver) Digest(ctx context.Context) string {
@@ -15190,8 +16264,8 @@ func (resolver *Resolver) wrapVulnerabilityRequest_CVEsesWithContext(ctx context
 	return output, nil
 }
 
-func (resolver *vulnerabilityRequest_CVEsResolver) Ids(ctx context.Context) []string {
-	value := resolver.data.GetIds()
+func (resolver *vulnerabilityRequest_CVEsResolver) Cves(ctx context.Context) []string {
+	value := resolver.data.GetCves()
 	return value
 }
 

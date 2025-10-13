@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/compliance/framework"
 	complianceMocks "github.com/stackrox/rox/central/compliance/framework/mocks"
 	"github.com/stackrox/rox/generated/storage"
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 var (
@@ -49,7 +49,7 @@ var (
 		},
 	}
 
-	domain = framework.NewComplianceDomain(testCluster, testNodes, testDeployments, nil, nil)
+	domain = framework.NewComplianceDomain(testCluster, testNodes, testDeployments, nil)
 
 	cvssPolicyEnabledAndEnforced = &storage.Policy{
 		Id:                 uuid.NewV4().String(),
@@ -117,29 +117,6 @@ var (
 				Pid:          32,
 				Name:         "sshd",
 				ExecFilePath: "/bin/sshd",
-			},
-		},
-	}
-
-	indicatorsWithoutSSH = []*storage.ProcessIndicator{
-		{
-			Id:            uuid.NewV4().String(),
-			DeploymentId:  testDeployments[0].GetId(),
-			ContainerName: testDeployments[0].GetContainers()[0].GetName(),
-			Signal: &storage.ProcessSignal{
-				Pid:          15,
-				Name:         "ssh",
-				ExecFilePath: "/bin/bash",
-			},
-		},
-		{
-			Id:            uuid.NewV4().String(),
-			DeploymentId:  testDeployments[1].GetId(),
-			ContainerName: testDeployments[1].GetContainers()[0].GetName(),
-			Signal: &storage.ProcessSignal{
-				Pid:          32,
-				Name:         "sshd",
-				ExecFilePath: "/bin/zsh",
 			},
 		},
 	}
@@ -245,11 +222,11 @@ func TestNIST412_Success(t *testing.T) {
 
 	categoryPolicies := make(map[string]set.StringSet)
 	policySet := set.NewStringSet()
-	policySet.Add(cvssPolicyEnabledAndEnforced.Name)
+	policySet.Add(cvssPolicyEnabledAndEnforced.GetName())
 	categoryPolicies["Vulnerability Management"] = policySet
 
 	privSet := set.NewStringSet()
-	privSet.Add(cvssPolicyEnabledAndEnforced.Name)
+	privSet.Add(cvssPolicyEnabledAndEnforced.GetName())
 	categoryPolicies["Privileges"] = privSet
 
 	mockCtrl := gomock.NewController(t)
@@ -261,7 +238,7 @@ func TestNIST412_Success(t *testing.T) {
 	data.EXPECT().Policies().AnyTimes().Return(policies)
 	data.EXPECT().PolicyCategories().AnyTimes().Return(categoryPolicies)
 	data.EXPECT().ImageIntegrations().AnyTimes().Return(imageIntegrations)
-	data.EXPECT().ProcessIndicators().AnyTimes().Return(indicatorsWithoutSSH)
+	data.EXPECT().SSHProcessIndicators().AnyTimes().Return(nil)
 
 	run, err := framework.NewComplianceRun(check)
 	require.NoError(t, err)
@@ -294,11 +271,11 @@ func TestNIST412_FAIL(t *testing.T) {
 
 	categoryPolicies := make(map[string]set.StringSet)
 	policySet := set.NewStringSet()
-	policySet.Add(cvssPolicyEnabledAndEnforced.Name)
+	policySet.Add(cvssPolicyEnabledAndEnforced.GetName())
 	categoryPolicies["Vulnerability Management"] = policySet
 
 	privSet := set.NewStringSet()
-	privSet.Add(cvssPolicyEnabledAndEnforced.Name)
+	privSet.Add(cvssPolicyEnabledAndEnforced.GetName())
 	categoryPolicies["Privileges"] = privSet
 
 	mockCtrl := gomock.NewController(t)
@@ -310,7 +287,7 @@ func TestNIST412_FAIL(t *testing.T) {
 	data.EXPECT().Policies().AnyTimes().Return(policies)
 	data.EXPECT().PolicyCategories().AnyTimes().Return(categoryPolicies)
 	data.EXPECT().ImageIntegrations().AnyTimes().Return(nil)
-	data.EXPECT().ProcessIndicators().AnyTimes().Return(indicatorsWithSSH)
+	data.EXPECT().SSHProcessIndicators().AnyTimes().Return(indicatorsWithSSH)
 
 	run, err := framework.NewComplianceRun(check)
 	require.NoError(t, err)

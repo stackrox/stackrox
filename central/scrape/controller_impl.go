@@ -108,7 +108,7 @@ func (s *controllerImpl) getScrape(scrapeID string, remove bool) *scrapeImpl {
 func (s *controllerImpl) ProcessScrapeUpdate(update *central.ScrapeUpdate) error {
 	scrape := s.getScrape(update.GetScrapeId(), update.GetScrapeKilled() != nil)
 	if scrape == nil {
-		return fmt.Errorf("received update for invalid scrape ID %q", update.GetScrapeId())
+		return fmt.Errorf("received update for invalid scrape ID %q: %+v", update.GetScrapeId(), update)
 	}
 
 	scrape.AcceptUpdate(update)

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -80,5 +81,9 @@ func TestSortBySeverity(t *testing.T) {
 		},
 	}
 	sortBySeverity(deployments)
-	assert.EqualValues(t, deployments, expected)
+	for i, e := range expected {
+		a := deployments[i]
+		assert.EqualValues(t, e.policySeverityCounts, a.policySeverityCounts)
+		protoassert.Equal(t, e.deployment, a.deployment)
+	}
 }

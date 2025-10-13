@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
@@ -15,10 +14,9 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/defaults/policies"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestPolicyValidator(t *testing.T) {
@@ -32,8 +30,7 @@ type PolicyValidatorTestSuite struct {
 	nStorage       *notifierMocks.MockDataStore
 	cStorage       *clusterMocks.MockDataStore
 
-	mockCtrl    *gomock.Controller
-	envIsolator *envisolator.EnvIsolator
+	mockCtrl *gomock.Controller
 }
 
 func (s *PolicyValidatorTestSuite) SetupTest() {
@@ -43,14 +40,11 @@ func (s *PolicyValidatorTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.nStorage = notifierMocks.NewMockDataStore(s.mockCtrl)
 	s.cStorage = clusterMocks.NewMockDataStore(s.mockCtrl)
-
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.validator = newPolicyValidator(s.nStorage)
 }
 
 func (s *PolicyValidatorTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
-	s.envIsolator.RestoreAll()
 }
 
 func (s *PolicyValidatorTestSuite) TestValidatesName() {
@@ -95,6 +89,13 @@ func (s *PolicyValidatorTestSuite) TestValidatesName() {
 	}
 	err = s.validator.validateName(policy)
 	s.Error(err, "special characters should not be supported")
+
+	policy = &storage.Policy{
+		Name: "  Boo's policy  ",
+	}
+	err = s.validator.validateName(policy)
+	s.NoError(err, "leading and trailing spaces should be trimmed")
+	s.Equal("Boo's policy", policy.GetName())
 }
 
 func (s *PolicyValidatorTestSuite) TestValidateVersion() {
@@ -530,7 +531,7 @@ func (s *PolicyValidatorTestSuite) TestValidateLifeCycleEnforcementCombination()
 		s.T().Run(c.description, func(t *testing.T) {
 			c.p.Name = "BLAHBLAH"
 			s.validator.removeEnforcementsForMissingLifecycles(c.p)
-			assert.Equal(t, c.expectedSize, len(c.p.EnforcementActions), "enforcement size does not match")
+			assert.Equal(t, c.expectedSize, len(c.p.GetEnforcementActions()), "enforcement size does not match")
 		})
 	}
 }
@@ -915,9 +916,6 @@ func (s *PolicyValidatorTestSuite) TestValidateNoDockerfileLineFrom() {
 }
 
 func (s *PolicyValidatorTestSuite) TestValidateEnforcement() {
-	s.envIsolator.Setenv(features.NetworkPolicySystemPolicy.EnvVar(), "true")
-	defer s.envIsolator.RestoreAll()
-
 	validatorWithFlag := newPolicyValidator(s.nStorage)
 
 	cases := map[string]struct {

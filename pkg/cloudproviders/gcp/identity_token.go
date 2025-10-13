@@ -7,11 +7,12 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/httputil"
+	pkgjwt "github.com/stackrox/rox/pkg/jwt"
 	"github.com/stackrox/rox/pkg/utils"
-	"gopkg.in/square/go-jose.v2/jwt"
 )
 
 const (
@@ -35,7 +36,7 @@ type identityTokenClaims struct {
 func getIdentityToken(ctx context.Context, audience string) (string, error) {
 	req, err := http.NewRequest(http.MethodGet, baseIdentityURL, nil)
 	if err != nil {
-		return "", utils.Should(err)
+		return "", utils.ShouldErr(err)
 	}
 	req = req.WithContext(ctx)
 	q := req.URL.Query()
@@ -90,7 +91,7 @@ func getMetadataFromIdentityToken(ctx context.Context) (*gcpMetadata, error) {
 		log.Warnf("Failed to fetch Google OAuth2 certs: %v", err)
 	}
 
-	parsedToken, err := jwt.ParseSigned(identityToken)
+	parsedToken, err := pkgjwt.ParseSigned(identityToken)
 	if err != nil {
 		return nil, err
 	}
@@ -112,8 +113,8 @@ func getMetadataFromIdentityToken(ctx context.Context) (*gcpMetadata, error) {
 	}
 
 	expectedClaims := jwt.Expected{
-		Issuer:   "https://accounts.google.com",
-		Audience: jwt.Audience{audience},
+		Issuer:      "https://accounts.google.com",
+		AnyAudience: jwt.Audience{audience},
 	}
 
 	if err := claims.Validate(expectedClaims); err != nil {

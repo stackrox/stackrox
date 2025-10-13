@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/search/enumregistry"
 )
@@ -71,6 +72,13 @@ func (s *searchWalker) getSearchField(path, tag string) (string, *Field) {
 func (s *searchWalker) handleStruct(prefix string, original reflect.Type) {
 	for i := 0; i < original.NumField(); i++ {
 		field := original.Field(i)
+
+		// Currently only proto structs are supported. We need to skip
+		// internal fields, because they contain recursive references.
+		if protoreflect.IsInternalGeneratorField(field) {
+			continue
+		}
+
 		jsonTag := strings.TrimSuffix(field.Tag.Get("json"), ",omitempty")
 		if jsonTag == "-" {
 			continue
@@ -84,7 +92,7 @@ func (s *searchWalker) handleStruct(prefix string, original reflect.Type) {
 		}
 
 		// Special case proto timestamp because we actually want to index seconds
-		if field.Type.String() == "*types.Timestamp" {
+		if field.Type == protocompat.TimestampPtrType {
 			fieldName, searchField := s.getSearchField(fullPath+".seconds", searchTag)
 			if searchField == nil {
 				continue
@@ -93,34 +101,12 @@ func (s *searchWalker) handleStruct(prefix string, original reflect.Type) {
 			s.fields[FieldLabel(fieldName)] = searchField
 			continue
 		}
-		// If it is a oneof then call XXX_OneofWrappers to get the types.
-		// The return values is a slice of interfaces that are nil type pointers
+		// For oneof fields, get the types and return values as a slice of
+		// interfaces that are nil type pointers.
 		if field.Tag.Get("protobuf_oneof") != "" {
-			ptrToOriginal := reflect.PtrTo(original)
-
-			methodName := fmt.Sprintf("Get%s", field.Name)
-			oneofGetter, ok := ptrToOriginal.MethodByName(methodName)
-			if !ok {
-				panic("didn't find oneof function, did the naming change?")
-			}
-			oneofInterfaces := oneofGetter.Func.Call([]reflect.Value{reflect.New(original)})
-			if len(oneofInterfaces) != 1 {
-				panic(fmt.Sprintf("found %d interfaces returned from oneof getter", len(oneofInterfaces)))
-			}
-
-			oneofInterface := oneofInterfaces[0].Type()
-
-			method, ok := ptrToOriginal.MethodByName("XXX_OneofWrappers")
-			if !ok {
-				panic(fmt.Sprintf("XXX_OneofWrappers should exist for all protobuf oneofs, not found for %s", original.Name()))
-			}
-			out := method.Func.Call([]reflect.Value{reflect.New(original)})
-			actualOneOfFields := out[0].Interface().([]interface{})
-			for _, f := range actualOneOfFields {
-				typ := reflect.TypeOf(f)
-				if typ.Implements(oneofInterface) {
-					s.walkRecursive(fullPath, typ)
-				}
+			oneOfFieldTypes := protocompat.GetOneOfTypesByFieldIndex(original, i)
+			for _, oneOfFieldType := range oneOfFieldTypes {
+				s.walkRecursive(fullPath, oneOfFieldType)
 			}
 			continue
 		}

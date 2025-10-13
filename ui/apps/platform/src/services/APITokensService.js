@@ -13,6 +13,10 @@ export function fetchAPITokens() {
     }));
 }
 
+export function fetchAllowedRoles() {
+    return axios.get(`${url}/generate/allowed-roles`).then((response) => response.data.roleNames);
+}
+
 export function generateAPIToken(data) {
     const options = {
         method: 'post',

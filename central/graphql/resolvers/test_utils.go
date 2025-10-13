@@ -2,86 +2,89 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
-	ptypes "github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/jackc/pgx/v4/pgxpool"
-	componentCVEEdgeDataStore "github.com/stackrox/rox/central/componentcveedge/datastore"
-	componentCVEEdgePostgres "github.com/stackrox/rox/central/componentcveedge/datastore/store/postgres"
-	componentCVEEdgeSearch "github.com/stackrox/rox/central/componentcveedge/search"
 	"github.com/stackrox/rox/central/cve/converter/v2"
-	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
-	imageCVESearch "github.com/stackrox/rox/central/cve/image/datastore/search"
-	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
-	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
-	deploymentPostgres "github.com/stackrox/rox/central/deployment/store/postgres"
-	imageDatastore "github.com/stackrox/rox/central/image/datastore"
-	imagePostgres "github.com/stackrox/rox/central/image/datastore/store/postgres"
-	imageComponentDataStore "github.com/stackrox/rox/central/imagecomponent/datastore"
-	imageComponentPostgres "github.com/stackrox/rox/central/imagecomponent/datastore/store/postgres"
-	imageComponentSearch "github.com/stackrox/rox/central/imagecomponent/search"
-	imageCVEEdgeDataStore "github.com/stackrox/rox/central/imagecveedge/datastore"
-	imageCVEEdgePostgres "github.com/stackrox/rox/central/imagecveedge/datastore/postgres"
-	imageCVEEdgeSearch "github.com/stackrox/rox/central/imagecveedge/search"
-	"github.com/stackrox/rox/central/ranking"
-	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
+	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/generated/storage"
-	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
-	types2 "github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/cve"
+	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
+	imageTypes "github.com/stackrox/rox/pkg/images/types"
+	nodeConverter "github.com/stackrox/rox/pkg/nodes/converter"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
-	"gorm.io/gorm"
+	"go.uber.org/mock/gomock"
+)
+
+const (
+	cluster1name   = "cluster1name"
+	cluster2name   = "cluster2name"
+	container1name = "container1name"
+	container2name = "container2name"
+	dep1name       = "dep1name"
+	dep2name       = "dep2name"
+	dep3name       = "dep3name"
+	namespace1name = "namespace1name"
+	namespace2name = "namespace2name"
 )
 
 func testDeployments() []*storage.Deployment {
 	return []*storage.Deployment{
 		{
-			Id:          "dep1id",
-			Name:        "dep1name",
-			Namespace:   "namespace1name",
-			NamespaceId: "namespace1id",
-			ClusterId:   "cluster1id",
-			ClusterName: "cluster1name",
+			Id:          fixtureconsts.Deployment1,
+			Name:        dep1name,
+			Namespace:   namespace1name,
+			NamespaceId: fixtureconsts.Namespace1,
+			ClusterId:   fixtureconsts.Cluster1,
+			ClusterName: cluster1name,
 			Containers: []*storage.Container{
 				{
-					Name:  "container1name",
-					Image: types2.ToContainerImage(testImages()[0]),
+					Name:  container1name,
+					Image: imageTypes.ToContainerImage(testImages()[0]),
 				},
 				{
-					Name:  "container2name",
-					Image: types2.ToContainerImage(testImages()[1]),
-				},
-			},
-		},
-		{
-			Id:          "dep2id",
-			Name:        "dep2name",
-			Namespace:   "namespace1name",
-			NamespaceId: "namespace1id",
-			ClusterId:   "cluster1id",
-			ClusterName: "cluster1name",
-			Containers: []*storage.Container{
-				{
-					Name:  "container1name",
-					Image: types2.ToContainerImage(testImages()[0]),
+					Name:  container2name,
+					Image: imageTypes.ToContainerImage(testImages()[1]),
 				},
 			},
 		},
 		{
-			Id:          "dep3id",
-			Name:        "dep3name",
-			Namespace:   "namespace2name",
-			NamespaceId: "namespace2id",
-			ClusterId:   "cluster2id",
-			ClusterName: "cluster2name",
+			Id:          fixtureconsts.Deployment2,
+			Name:        dep2name,
+			Namespace:   namespace1name,
+			NamespaceId: fixtureconsts.Namespace1,
+			ClusterId:   fixtureconsts.Cluster1,
+			ClusterName: cluster1name,
 			Containers: []*storage.Container{
 				{
-					Name:  "container1name",
-					Image: types2.ToContainerImage(testImages()[1]),
+					Name:  container1name,
+					Image: imageTypes.ToContainerImage(testImages()[0]),
+				},
+			},
+		},
+		{
+			Id:          fixtureconsts.Deployment3,
+			Name:        dep3name,
+			Namespace:   namespace2name,
+			NamespaceId: fixtureconsts.Namespace2,
+			ClusterId:   fixtureconsts.Cluster2,
+			ClusterName: cluster2name,
+			Containers: []*storage.Container{
+				{
+					Name:  container1name,
+					Image: imageTypes.ToContainerImage(testImages()[1]),
 				},
 			},
 		},
@@ -89,13 +92,19 @@ func testDeployments() []*storage.Deployment {
 }
 
 func testImages() []*storage.Image {
-	t1, err := ptypes.TimestampProto(time.Unix(0, 1000))
+	t1, err := protocompat.ConvertTimeToTimestampOrError(time.Unix(0, 1000))
 	utils.CrashOnError(err)
-	t2, err := ptypes.TimestampProto(time.Unix(0, 2000))
+	t2, err := protocompat.ConvertTimeToTimestampOrError(time.Unix(0, 2000))
 	utils.CrashOnError(err)
 	return []*storage.Image{
 		{
 			Id: "sha1",
+			Name: &storage.ImageName{
+				Registry: "reg1",
+				Remote:   "img1",
+				Tag:      "tag1",
+				FullName: "reg1/img1:tag1",
+			},
 			SetCves: &storage.Image_Cves{
 				Cves: 3,
 			},
@@ -110,6 +119,7 @@ func testImages() []*storage.Image {
 								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 									FixedBy: "1.1",
 								},
+								Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
 							},
 						},
 					},
@@ -122,20 +132,28 @@ func testImages() []*storage.Image {
 								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 									FixedBy: "1.5",
 								},
+								Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
 							},
 						},
 					},
 					{
-						Name:    "comp3",
-						Version: "1.0",
+						Name:     "comp3",
+						Version:  "1.0",
+						Source:   storage.SourceType_JAVA,
+						Location: "p/q/r",
+						HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
+							LayerIndex: 10,
+						},
 						Vulns: []*storage.EmbeddedVulnerability{
 							{
-								Cve:  "cve-2019-1",
-								Cvss: 4,
+								Cve:      "cve-2019-1",
+								Cvss:     4,
+								Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
 							},
 							{
-								Cve:  "cve-2019-2",
-								Cvss: 3,
+								Cve:      "cve-2019-2",
+								Cvss:     3,
+								Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
 							},
 						},
 					},
@@ -145,6 +163,12 @@ func testImages() []*storage.Image {
 		},
 		{
 			Id: "sha2",
+			Name: &storage.ImageName{
+				Registry: "reg2",
+				Remote:   "img2",
+				Tag:      "tag2",
+				FullName: "reg2/img2:tag2",
+			},
 			SetCves: &storage.Image_Cves{
 				Cves: 5,
 			},
@@ -164,8 +188,13 @@ func testImages() []*storage.Image {
 						},
 					},
 					{
-						Name:    "comp3",
-						Version: "1.0",
+						Name:     "comp3",
+						Version:  "1.0",
+						Source:   storage.SourceType_JAVA,
+						Location: "p/q/r",
+						HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
+							LayerIndex: 10,
+						},
 						Vulns: []*storage.EmbeddedVulnerability{
 							{
 								Cve:      "cve-2019-1",
@@ -180,8 +209,13 @@ func testImages() []*storage.Image {
 						},
 					},
 					{
-						Name:    "comp4",
-						Version: "1.0",
+						Name:     "comp4",
+						Version:  "1.0",
+						Source:   storage.SourceType_PYTHON,
+						Location: "a/b/c",
+						HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
+							LayerIndex: 10,
+						},
 						Vulns: []*storage.EmbeddedVulnerability{
 							{
 								Cve:      "cve-2017-1",
@@ -257,9 +291,9 @@ func testCluster() []*storage.Cluster {
 
 func testClusterCVEParts(clusterIDs []string) []converter.ClusterCVEParts {
 	cveIds := []string{"clusterCve1", "clusterCve2", "clusterCve3", "clusterCve4", "clusterCve5"}
-	t1, err := ptypes.TimestampProto(time.Unix(0, 1000))
+	t1, err := protocompat.ConvertTimeToTimestampOrError(time.Unix(0, 1000))
 	utils.CrashOnError(err)
-	t2, err := ptypes.TimestampProto(time.Unix(0, 2000))
+	t2, err := protocompat.ConvertTimeToTimestampOrError(time.Unix(0, 2000))
 	utils.CrashOnError(err)
 	return []converter.ClusterCVEParts{
 		{
@@ -276,7 +310,7 @@ func testClusterCVEParts(clusterIDs []string) []converter.ClusterCVEParts {
 			Children: []converter.EdgeParts{
 				{
 					Edge: &storage.ClusterCVEEdge{
-						Id:         postgres.IDFromPks([]string{clusterIDs[0], cveIds[0]}),
+						Id:         pgSearch.IDFromPks([]string{clusterIDs[0], cveIds[0]}),
 						IsFixable:  true,
 						HasFixedBy: &storage.ClusterCVEEdge_FixedBy{FixedBy: "1.1"},
 						ClusterId:  clusterIDs[0],
@@ -300,7 +334,7 @@ func testClusterCVEParts(clusterIDs []string) []converter.ClusterCVEParts {
 			Children: []converter.EdgeParts{
 				{
 					Edge: &storage.ClusterCVEEdge{
-						Id:         postgres.IDFromPks([]string{clusterIDs[0], cveIds[1]}),
+						Id:         pgSearch.IDFromPks([]string{clusterIDs[0], cveIds[1]}),
 						IsFixable:  false,
 						HasFixedBy: nil,
 						ClusterId:  clusterIDs[0],
@@ -310,7 +344,7 @@ func testClusterCVEParts(clusterIDs []string) []converter.ClusterCVEParts {
 				},
 				{
 					Edge: &storage.ClusterCVEEdge{
-						Id:         postgres.IDFromPks([]string{clusterIDs[1], cveIds[1]}),
+						Id:         pgSearch.IDFromPks([]string{clusterIDs[1], cveIds[1]}),
 						IsFixable:  false,
 						HasFixedBy: nil,
 						ClusterId:  clusterIDs[1],
@@ -335,7 +369,7 @@ func testClusterCVEParts(clusterIDs []string) []converter.ClusterCVEParts {
 			Children: []converter.EdgeParts{
 				{
 					Edge: &storage.ClusterCVEEdge{
-						Id:         postgres.IDFromPks([]string{clusterIDs[1], cveIds[2]}),
+						Id:         pgSearch.IDFromPks([]string{clusterIDs[1], cveIds[2]}),
 						IsFixable:  true,
 						HasFixedBy: &storage.ClusterCVEEdge_FixedBy{FixedBy: "1.2"},
 						ClusterId:  clusterIDs[1],
@@ -356,7 +390,7 @@ func testClusterCVEParts(clusterIDs []string) []converter.ClusterCVEParts {
 			Children: []converter.EdgeParts{
 				{
 					Edge: &storage.ClusterCVEEdge{
-						Id:         postgres.IDFromPks([]string{clusterIDs[0], cveIds[3]}),
+						Id:         pgSearch.IDFromPks([]string{clusterIDs[0], cveIds[3]}),
 						IsFixable:  false,
 						HasFixedBy: nil,
 						ClusterId:  clusterIDs[0],
@@ -366,7 +400,7 @@ func testClusterCVEParts(clusterIDs []string) []converter.ClusterCVEParts {
 				},
 				{
 					Edge: &storage.ClusterCVEEdge{
-						Id:         postgres.IDFromPks([]string{clusterIDs[1], cveIds[3]}),
+						Id:         pgSearch.IDFromPks([]string{clusterIDs[1], cveIds[3]}),
 						IsFixable:  true,
 						HasFixedBy: &storage.ClusterCVEEdge_FixedBy{FixedBy: "1.4"},
 						ClusterId:  clusterIDs[1],
@@ -387,7 +421,7 @@ func testClusterCVEParts(clusterIDs []string) []converter.ClusterCVEParts {
 			Children: []converter.EdgeParts{
 				{
 					Edge: &storage.ClusterCVEEdge{
-						Id:         postgres.IDFromPks([]string{clusterIDs[0], cveIds[4]}),
+						Id:         pgSearch.IDFromPks([]string{clusterIDs[0], cveIds[4]}),
 						IsFixable:  false,
 						HasFixedBy: nil,
 						ClusterId:  clusterIDs[0],
@@ -407,14 +441,14 @@ func testImagesWithOperatingSystems() []*storage.Image {
 	return ret
 }
 
-func testNodes() []*storage.Node {
-	t1, err := ptypes.TimestampProto(time.Unix(0, 1000))
+func testNodes(includeCVEsToOrphan bool) []*storage.Node {
+	t1, err := protocompat.ConvertTimeToTimestampOrError(time.Unix(0, 1000))
 	utils.CrashOnError(err)
-	t2, err := ptypes.TimestampProto(time.Unix(0, 2000))
+	t2, err := protocompat.ConvertTimeToTimestampOrError(time.Unix(0, 2000))
 	utils.CrashOnError(err)
-	return []*storage.Node{
+	nodes := []*storage.Node{
 		{
-			Id:   "nodeID1",
+			Id:   fixtureconsts.Node1,
 			Name: "node1",
 			SetCves: &storage.Node_Cves{
 				Cves: 3,
@@ -472,7 +506,7 @@ func testNodes() []*storage.Node {
 			},
 		},
 		{
-			Id:   "nodeID2",
+			Id:   fixtureconsts.Node2,
 			Name: "node2",
 			SetCves: &storage.Node_Cves{
 				Cves: 5,
@@ -537,29 +571,49 @@ func testNodes() []*storage.Node {
 			},
 		},
 	}
+
+	if includeCVEsToOrphan {
+		for _, node := range nodes {
+			if len(node.GetScan().GetComponents()) > 0 {
+				node.Scan.Components = append(node.Scan.Components, &storage.EmbeddedNodeScanComponent{
+					Name:    "comp5",
+					Version: "1.0",
+					Vulnerabilities: []*storage.NodeVulnerability{
+						{
+							CveBaseInfo: &storage.CVEInfo{
+								Cve: "cve-to-be-orphaned",
+							},
+						},
+					},
+				})
+			}
+		}
+	}
+
+	return nodes
 }
 
 // returns clusters and associated nodes for testing
-func testClustersWithNodes() ([]*storage.Cluster, []*storage.Node) {
+func testClustersWithNodes(includeCVEsToOrphan bool) ([]*storage.Cluster, []*storage.Node) {
 	clusters := []*storage.Cluster{
 		{
-			Id:        "clusterID1",
+			Id:        fixtureconsts.Cluster1,
 			Name:      "cluster1",
 			MainImage: "quay.io/stackrox-io/main",
 		},
 		{
-			Id:        "clusterID2",
+			Id:        fixtureconsts.Cluster2,
 			Name:      "cluster2",
 			MainImage: "quay.io/stackrox-io/main",
 		},
 	}
 
-	nodes := testNodes()
-	nodes[0].ClusterId = clusters[0].Id
-	nodes[0].ClusterName = clusters[0].Name
+	nodes := testNodes(includeCVEsToOrphan)
+	nodes[0].ClusterId = clusters[0].GetId()
+	nodes[0].ClusterName = clusters[0].GetName()
 
-	nodes[1].ClusterId = clusters[1].Id
-	nodes[1].ClusterName = clusters[1].Name
+	nodes[1].ClusterId = clusters[1].GetId()
+	nodes[1].ClusterName = clusters[1].GetName()
 
 	return clusters, nodes
 }
@@ -586,7 +640,7 @@ func getIDList(ctx context.Context, resolvers interface{}) []string {
 		for _, r := range res {
 			list = append(list, string(r.Id(ctx)))
 		}
-	case []*imageResolver:
+	case []ImageResolver:
 		for _, r := range res {
 			list = append(list, string(r.Id(ctx)))
 		}
@@ -658,40 +712,57 @@ func getNodeVulnerabilityResolver(ctx context.Context, t *testing.T, resolver *R
 	return vuln
 }
 
-func getImageCVEDatastore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) (imageCVEDataStore.DataStore, error) {
-	imageCVEStore := imageCVEPostgres.CreateTableAndNewStore(ctx, db, gormDB)
-	imageCVEIndexer := imageCVEPostgres.NewIndexer(db)
-	imageCVESearcher := imageCVESearch.New(imageCVEStore, imageCVEIndexer)
-	imageCVEDatastore, err := imageCVEDataStore.New(imageCVEStore, imageCVEIndexer, imageCVESearcher, dackboxConcurrency.NewKeyFence())
-	return imageCVEDatastore, err
+func getTestImages(imageCount int) []*storage.Image {
+	images := make([]*storage.Image, 0, imageCount)
+	for i := 0; i < imageCount; i++ {
+		img := fixtures.GetImageWithUniqueComponents(100)
+		id := fmt.Sprintf("%d", i)
+		img.Id = id
+		images = append(images, img)
+	}
+	return images
 }
 
-func getImageDatastore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB, risks riskDataStore.DataStore) imageDatastore.DataStore {
-	imageStore := imagePostgres.CreateTableAndNewStore(ctx, db, gormDB, false)
-	return imageDatastore.NewWithPostgres(imageStore, imagePostgres.NewIndexer(db), risks, ranking.NewRanker(), ranking.NewRanker())
+func contextWithImagePerm(t testing.TB, ctrl *gomock.Controller) context.Context {
+	id := mockIdentity.NewMockIdentity(ctrl)
+	id.EXPECT().Permissions().Return(map[string]storage.Access{"Image": storage.Access_READ_ACCESS}).AnyTimes()
+	return authn.ContextWithIdentity(sac.WithAllAccess(loaders.WithLoaderContext(context.Background())), id, t)
 }
 
-func getImageComponentDatastore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB, risks riskDataStore.DataStore) imageComponentDataStore.DataStore {
-	imageCompStore := imageComponentPostgres.CreateTableAndNewStore(ctx, db, gormDB)
-	imageCompIndexer := imageComponentPostgres.NewIndexer(db)
-	imageCompSearcher := imageComponentSearch.NewV2(imageCompStore, imageCompIndexer)
-	return imageComponentDataStore.New(nil, imageCompStore, imageCompIndexer, imageCompSearcher, risks, ranking.NewRanker())
-}
-func getImageCVEEdgeDatastore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) imageCVEEdgeDataStore.DataStore {
-	imageCveEdgeStore := imageCVEEdgePostgres.CreateTableAndNewStore(ctx, db, gormDB)
-	imageCveEdgeIndexer := imageCVEEdgePostgres.NewIndexer(db)
-	imageCveEdgeSearcher := imageCVEEdgeSearch.NewV2(imageCveEdgeStore, imageCveEdgeIndexer)
-	return imageCVEEdgeDataStore.New(nil, imageCveEdgeStore, imageCveEdgeSearcher)
-}
-
-func getImageComponentCVEEdgeDatastore(ctx context.Context, db *pgxpool.Pool, gormDB *gorm.DB) componentCVEEdgeDataStore.DataStore {
-	componentCveEdgeStore := componentCVEEdgePostgres.CreateTableAndNewStore(ctx, db, gormDB)
-	componentCveEdgeIndexer := componentCVEEdgePostgres.NewIndexer(db)
-	componentCveEdgeSearcher := componentCVEEdgeSearch.NewV2(componentCveEdgeStore, componentCveEdgeIndexer)
-	return componentCVEEdgeDataStore.New(nil, componentCveEdgeStore, componentCveEdgeIndexer, componentCveEdgeSearcher)
+func getTestNodes(nodeCount int) []*storage.Node {
+	nodes := make([]*storage.Node, 0, nodeCount)
+	for i := 0; i < nodeCount; i++ {
+		node := fixtures.GetNodeWithUniqueComponents(100, 5)
+		nodeConverter.MoveNodeVulnsToNewField(node)
+		id := uuid.NewV4().String()
+		node.Id = id
+		nodes = append(nodes, node)
+	}
+	return nodes
 }
 
-func getDeploymentDatastore(ctx context.Context, t *testing.T, db *pgxpool.Pool, gormDB *gorm.DB, imageDatastore imageDatastore.DataStore, risks riskDataStore.DataStore) (deploymentDatastore.DataStore, error) {
-	deploymentStore := deploymentPostgres.NewFullTestStore(t, deploymentPostgres.CreateTableAndNewStore(ctx, db, gormDB))
-	return deploymentDatastore.NewTestDataStore(t, deploymentStore, nil, db, nil, nil, imageDatastore, nil, nil, risks, nil, nil, ranking.ClusterRanker(), ranking.NamespaceRanker(), ranking.DeploymentRanker())
+func contextWithNodePerm(t testing.TB, ctrl *gomock.Controller) context.Context {
+	id := mockIdentity.NewMockIdentity(ctrl)
+	id.EXPECT().Permissions().Return(map[string]storage.Access{"Node": storage.Access_READ_ACCESS}).AnyTimes()
+	return authn.ContextWithIdentity(sac.WithAllAccess(loaders.WithLoaderContext(context.Background())), id, t)
+}
+
+func contextWithClusterPerm(t testing.TB, ctrl *gomock.Controller) context.Context {
+	id := mockIdentity.NewMockIdentity(ctrl)
+	id.EXPECT().Permissions().Return(map[string]storage.Access{"Cluster": storage.Access_READ_ACCESS}).AnyTimes()
+	return authn.ContextWithIdentity(sac.WithAllAccess(loaders.WithLoaderContext(context.Background())), id, t)
+}
+
+func getTestComponentID(t *testing.T, testComponent *storage.EmbeddedImageScanComponent, imageID string) string {
+	id, err := scancomponent.ComponentIDV2(testComponent, imageID)
+	require.NoError(t, err)
+
+	return id
+}
+
+func getTestCVEID(t *testing.T, testCVE *storage.EmbeddedVulnerability, componentID string) string {
+	id, err := cve.IDV2(testCVE, componentID)
+	require.NoError(t, err)
+
+	return id
 }

@@ -1,14 +1,18 @@
 import static java.util.UUID.randomUUID
-import groups.BAT
+
 import io.stackrox.proto.api.v1.ApiTokenService
-import org.junit.Assume
-import org.junit.experimental.categories.Category
+
 import services.BaseService
 import services.ClusterInitBundleService
-import services.ClusterService
-import spock.lang.Shared
+import util.Env
 
-@Category(BAT)
+import spock.lang.IgnoreIf
+import spock.lang.Shared
+import spock.lang.Tag
+
+@Tag("BAT")
+@Tag("PZ")
+@IgnoreIf({ Env.IS_BYODB })
 class ClusterInitBundleTest extends BaseSpecification {
 
     @Shared
@@ -22,33 +26,6 @@ class ClusterInitBundleTest extends BaseSpecification {
         if (adminToken != null) {
             services.ApiTokenService.revokeToken(adminToken.metadata.id)
         }
-    }
-
-    def "Test that revoke cluster init bundle requires impacted clusters"() {
-        BaseService.useApiToken(adminToken.token)
-
-        def cluster = ClusterService.getCluster()
-        Assume.assumeTrue(cluster.hasHelmConfig())
-
-        when:
-        "making a request for the cluster init bundle"
-        def bundles = ClusterInitBundleService.getInitBundles()
-
-        then:
-        "there is a bundle for current cluster"
-        def bundle = bundles.find { b -> b.impactedClustersList.find { c -> c.id == cluster.id } }
-        assert bundle
-
-        when:
-        "try to delete used init bundle not confirming impacted clusters"
-        def response = ClusterInitBundleService.revokeInitBundle(bundle.id)
-
-        then:
-        "no bundle is revoked"
-        assert response.initBundleRevokedIdsCount == 0
-        and:
-        "impacted cluster is listed"
-        assert response.initBundleRevocationErrorsList.first().impactedClustersList*.id.contains(clusterId)
     }
 
     def "Test that cluster init bundle can be revoked when it has no impacted clusters"() {

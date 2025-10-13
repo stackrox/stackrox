@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package storage;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+// Next Tag: 7
+message Blob {
+  string name = 1; // @gotags: sql:"pk" search:"Blob Name"
+  uint32 oid = 2;
+  string checksum = 3;
+  int64 length = 4; // @gotags: search:"Blob Length"
+  google.protobuf.Timestamp last_updated = 5;
+  google.protobuf.Timestamp modified_time = 6; // @gotags: search:"Blob Modified On"
+}

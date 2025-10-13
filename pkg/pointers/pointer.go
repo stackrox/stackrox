@@ -20,7 +20,16 @@ func Int(i int) *int {
 	return &i
 }
 
+// Float32 returns a pointer of the passed float32
+func Float32(f float32) *float32 {
+	return &f
+}
+
 // String returns a pointer to the passed string.
 func String(s string) *string {
 	return &s
+}
+
+func Pointer[T any](d T) *T {
+	return &d
 }

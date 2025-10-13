@@ -5,7 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -39,16 +39,6 @@ func (resolver *Resolver) wrapPlottedImageVulnerabilitiesWithContext(ctx context
 
 // PlottedImageVulnerabilities - returns image vulns
 func (resolver *Resolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		query := withImageCveTypeFiltering(args.String())
-		allCveIds, fixableCount, err := getPlottedVulnsIdsAndFixableCount(ctx, resolver, RawQuery{Query: &query})
-		if err != nil {
-			return nil, err
-		}
-
-		return resolver.wrapPlottedImageVulnerabilitiesWithContext(ctx, allCveIds, fixableCount)
-	}
-
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -63,6 +53,28 @@ func (resolver *Resolver) PlottedImageVulnerabilities(ctx context.Context, args 
 			},
 		},
 	}
+
+	if features.FlattenCVEData.Enabled() {
+		// get loader
+		vulnLoader, err := loaders.GetImageCVEV2Loader(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		allCveIds, err := vulnLoader.GetIDs(ctx, query)
+		if err != nil {
+			return nil, err
+		}
+
+		fixableCount, err := vulnLoader.CountFromQuery(ctx,
+			search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery()))
+		if err != nil {
+			return nil, err
+		}
+
+		return resolver.wrapPlottedImageVulnerabilitiesWithContext(ctx, allCveIds, int(fixableCount))
+	}
+
 	query = tryUnsuppressedQuery(query)
 
 	vulnLoader, err := loaders.GetImageCVELoader(ctx)

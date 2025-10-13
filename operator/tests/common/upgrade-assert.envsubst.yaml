@@ -11,17 +11,12 @@ status:
   - status: "False"
     type: Irreconcilable
   - status: "False"
+    type: Paused
+  - status: "False"
     type: ProxyConfigFailed
   - status: "False"
     type: ReleaseFailed
   productVersion: ${PRODUCT_VERSION}
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: central
-status:
-  availableReplicas: 1
 ---
 apiVersion: platform.stackrox.io/v1alpha1
 kind: SecuredCluster
@@ -37,23 +32,11 @@ status:
   - status: "False"
     type: Irreconcilable
   - status: "False"
+    type: Paused
+  - status: "False"
     type: ProxyConfigFailed
   - status: "False"
     type: ReleaseFailed
   productVersion: ${PRODUCT_VERSION}
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: sensor
-status:
-  availableReplicas: 1
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: admission-control
-status:
-  availableReplicas: 3
 # Note: when adding/removing entries in this file, see the comment about timeout near the place
 # where `kuttl assert` is invoked on this file.

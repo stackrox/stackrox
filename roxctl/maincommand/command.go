@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/roxctl/central"
 	"github.com/stackrox/rox/roxctl/cluster"
@@ -15,19 +15,22 @@ import (
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/completion"
+	"github.com/stackrox/rox/roxctl/declarativeconfig"
 	"github.com/stackrox/rox/roxctl/deployment"
-	"github.com/stackrox/rox/roxctl/generate"
+	"github.com/stackrox/rox/roxctl/doc"
 	"github.com/stackrox/rox/roxctl/helm"
 	"github.com/stackrox/rox/roxctl/image"
 	"github.com/stackrox/rox/roxctl/logconvert"
+	"github.com/stackrox/rox/roxctl/netpol"
 	"github.com/stackrox/rox/roxctl/scanner"
 	"github.com/stackrox/rox/roxctl/sensor"
 )
 
 func versionCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
-		Use:  "version",
-		Args: cobra.NoArgs,
+		Use:   "version",
+		Short: "Display the current roxctl version",
+		Args:  cobra.NoArgs,
 		RunE: func(c *cobra.Command, args []string) error {
 			if useJSON, _ := c.Flags().GetBool("json"); useJSON {
 				enc := json.NewEncoder(cliEnvironment.InputOutput().Out())
@@ -42,13 +45,16 @@ func versionCommand(cliEnvironment environment.Environment) *cobra.Command {
 			return nil
 		},
 	}
-	c.PersistentFlags().Bool("json", false, "display extended version information as JSON")
+	c.PersistentFlags().Bool("json", false, "Display extended version information as JSON.")
+	flags.HideInheritedFlags(c)
 	return c
 }
 
 // Command constructs and returns the roxctl command tree
 func Command() *cobra.Command {
 	c := &cobra.Command{
+		Long: "roxctl is a command-line interface (CLI) for running commands" +
+			" on Red Hat Advanced Cluster Security for Kubernetes (RHACS).",
 		SilenceUsage: true,
 		Use:          os.Args[0],
 	}
@@ -58,10 +64,14 @@ func Command() *cobra.Command {
 	flags.AddConnectionFlags(c)
 	flags.AddAPITokenFile(c)
 
+	c.MarkFlagsMutuallyExclusive("password", "token-file")
+
 	cliEnvironment := environment.CLIEnvironment()
 	c.SetErr(errorWriter{
 		logger: cliEnvironment.Logger(),
 	})
+
+	_ = c.PersistentFlags().BoolP("help", "h", false, "Help.")
 
 	c.AddCommand(
 		central.Command(cliEnvironment),
@@ -75,9 +85,13 @@ func Command() *cobra.Command {
 		helm.Command(cliEnvironment),
 		versionCommand(cliEnvironment),
 		completion.Command(cliEnvironment),
+		netpol.Command(cliEnvironment),
 	)
-	if features.RoxctlNetpolGenerate.Enabled() {
-		c.AddCommand(generate.Command(cliEnvironment))
+	if env.DeclarativeConfiguration.BooleanSetting() {
+		c.AddCommand(declarativeconfig.Command(cliEnvironment))
+	}
+	if !buildinfo.ReleaseBuild {
+		c.AddCommand(doc.Command(cliEnvironment))
 	}
 
 	return c

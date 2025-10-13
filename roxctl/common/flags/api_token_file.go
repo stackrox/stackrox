@@ -6,11 +6,13 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 )
 
 var (
-	apiTokenFile string
+	apiTokenFile        string
+	apiTokenFileChanged *bool
 )
 
 // AddAPITokenFile adds the token-file flag to the base command.
@@ -19,12 +21,20 @@ func AddAPITokenFile(c *cobra.Command) {
 		"token-file",
 		"",
 		"",
-		"Use the API token in the provided file to authenticate")
+		"Use the API token in the provided file to authenticate. "+
+			"Alternatively, set the path via the ROX_API_TOKEN_FILE environment variable or "+
+			"set the token via the ROX_API_TOKEN environment variable.")
+	apiTokenFileChanged = &c.PersistentFlags().Lookup("token-file").Changed
 }
 
 // APITokenFile returns the currently specified API token file name.
 func APITokenFile() string {
-	return apiTokenFile
+	return flagOrSettingValue(apiTokenFile, APITokenFileChanged(), env.TokenFileEnv)
+}
+
+// APITokenFileChanged returns whether the token-file is provided as an argument.
+func APITokenFileChanged() bool {
+	return apiTokenFileChanged != nil && *apiTokenFileChanged
 }
 
 // ReadTokenFromFile attempts to retrieve a token from the currently specified file.

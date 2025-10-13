@@ -33,8 +33,3 @@ func GetAllRegisteredSchemas() []*walker.Schema {
 	}
 	return allSchemas
 }
-
-// UnregisterCategory removes record for specified search category.
-func UnregisterCategory(category v1.SearchCategory) {
-	delete(categoryToTableMap, category)
-}

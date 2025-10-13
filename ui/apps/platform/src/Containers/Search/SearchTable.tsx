@@ -1,12 +1,18 @@
 import React, { ReactElement } from 'react';
-import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
+import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { SearchResult, SearchResultCategory } from 'services/SearchService';
 import { SearchFilter } from 'types/search';
 
 import FilterLinks from './FilterLinks';
 import ViewLinks from './ViewLinks';
-import { SearchNavCategory, searchResultCategoryMap, searchNavMap } from './searchCategories';
+import {
+    SearchNavCategory,
+    searchNavMap,
+    searchResultCategoryMapFilteredIsRouteEnabled,
+} from './searchCategories';
 
 function getLocationTextForCategory(location: string, category: SearchResultCategory) {
     return category === 'DEPLOYMENTS' ? location.replace(/^\//, '') : location.replace(/\/.+/, '');
@@ -23,6 +29,13 @@ type SearchTableProps = {
 };
 
 function SearchTable({ navCategory, searchFilter, searchResults }: SearchTableProps): ReactElement {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isRouteEnabled = useIsRouteEnabled();
+    const searchResultCategoryMap = searchResultCategoryMapFilteredIsRouteEnabled(
+        isRouteEnabled,
+        isFeatureFlagEnabled
+    );
+
     const firstColumnHeading = searchNavMap[navCategory];
     const hasLocationColumn =
         navCategory === 'DEPLOYMENTS' || navCategory === 'NAMESPACES' || navCategory === 'NODES';
@@ -30,26 +43,42 @@ function SearchTable({ navCategory, searchFilter, searchResults }: SearchTablePr
     const hasCategoryColumn = navCategory === 'SEARCH_UNSET';
     const hasViewLinkColumn =
         navCategory === 'SEARCH_UNSET' ||
-        searchResultCategoryMap[navCategory].viewLinks.length !== 0;
+        Boolean(searchResultCategoryMap[navCategory]?.viewLinks?.length);
     const hasFilterLinkColumn =
-        navCategory === 'SEARCH_UNSET' || !!searchResultCategoryMap[navCategory].filterOn;
+        navCategory === 'SEARCH_UNSET' || Boolean(searchResultCategoryMap[navCategory]?.filterOn);
 
     const searchResultsFilteredAndSorted =
         navCategory === 'SEARCH_UNSET'
-            ? [...searchResults].sort((a: SearchResult, b: SearchResult) => {
-                  const byName = a.name.localeCompare(b.name);
-                  if (byName === 0) {
+            ? [...searchResults].sort(
+                  (
+                      { name: namePrev, category: categoryPrev }: SearchResult,
+                      { name: nameNext, category: categoryNext }: SearchResult
+                  ) => {
+                      if (namePrev < nameNext) {
+                          return -1;
+                      }
+                      if (namePrev > nameNext) {
+                          return 1;
+                      }
+
                       // If equal by name, secondary sort by category text.
-                      return searchNavMap[a.category].localeCompare(searchNavMap[b.category]);
+                      const categoryNavPrev = searchNavMap[categoryPrev] ?? categoryPrev;
+                      const categoryNavNext = searchNavMap[categoryNext] ?? categoryNext;
+                      if (categoryNavPrev < categoryNavNext) {
+                          return -1;
+                      }
+                      if (categoryNavPrev > categoryNavNext) {
+                          return 1;
+                      }
+                      return 0;
                   }
-                  return byName;
-              })
+              )
             : searchResults
                   .filter(({ category }) => category === navCategory)
                   .sort((a: SearchResult, b: SearchResult) => a.name.localeCompare(b.name));
 
     return (
-        <TableComposable aria-label="Search results" variant="compact" isStickyHeader>
+        <Table aria-label="Search results" variant="compact" isStickyHeader>
             <Thead>
                 <Tr>
                     <Th>{firstColumnHeading}</Th>
@@ -60,7 +89,9 @@ function SearchTable({ navCategory, searchFilter, searchResults }: SearchTablePr
                 </Tr>
             </Thead>
             <Tbody>
-                {searchResultsFilteredAndSorted.map(({ category, id, location, name }) => {
+                {searchResultsFilteredAndSorted.map((searchResult) => {
+                    const { category, id, location, name } = searchResult;
+                    const locationTextForCategory = getLocationTextForCategory(location, category);
                     return (
                         <Tr key={id}>
                             <Td dataLabel={firstColumnHeading} modifier="breakWord">
@@ -71,25 +102,31 @@ function SearchTable({ navCategory, searchFilter, searchResults }: SearchTablePr
                                     location.length !== 0 && (
                                         <div
                                             aria-label={getLocationLabelForCategory(category)}
-                                            className="pf-u-color-400"
+                                            className="pf-v5-u-color-200"
                                         >
-                                            {getLocationTextForCategory(location, category)}
+                                            {locationTextForCategory}
                                         </div>
                                     )}
                             </Td>
                             {hasLocationColumn && (
-                                <Td dataLabel={locationColumnHeading} className="pf-u-color-400">
-                                    {getLocationTextForCategory(location, category)}
+                                <Td dataLabel={locationColumnHeading} className="pf-v5-u-color-200">
+                                    {locationTextForCategory}
                                 </Td>
                             )}
                             {hasCategoryColumn && (
                                 <Td dataLabel="Category" modifier="nowrap">
-                                    {searchNavMap[category]}
+                                    {searchNavMap[category] ?? category}
                                 </Td>
                             )}
                             {hasViewLinkColumn && (
                                 <Td dataLabel="View on">
-                                    <ViewLinks id={id} resultCategory={category} />
+                                    <ViewLinks
+                                        searchResult={{
+                                            ...searchResult,
+                                            locationTextForCategory,
+                                        }}
+                                        searchResultCategoryMap={searchResultCategoryMap}
+                                    />
                                 </Td>
                             )}
                             {hasFilterLinkColumn && (
@@ -98,6 +135,7 @@ function SearchTable({ navCategory, searchFilter, searchResults }: SearchTablePr
                                         filterValue={name}
                                         resultCategory={category}
                                         searchFilter={searchFilter}
+                                        searchResultCategoryMap={searchResultCategoryMap}
                                     />
                                 </Td>
                             )}
@@ -105,7 +143,7 @@ function SearchTable({ navCategory, searchFilter, searchResults }: SearchTablePr
                     );
                 })}
             </Tbody>
-        </TableComposable>
+        </Table>
     );
 }
 

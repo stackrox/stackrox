@@ -1,11 +1,11 @@
 syntax = "proto3";
 
-option go_package = "central";
+package central;
 
 import "storage/process_baseline.proto";
 
-package central;
+option go_package = "./internalapi/central;central";
 
 message BaselineSync {
-    repeated storage.ProcessBaseline baselines = 1;
+  repeated storage.ProcessBaseline baselines = 1;
 }

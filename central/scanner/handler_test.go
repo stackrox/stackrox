@@ -8,14 +8,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
-	buildTestutils "github.com/stackrox/rox/pkg/buildinfo/testutils"
+	"github.com/stackrox/rox/pkg/images/defaults"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
-	"github.com/stackrox/rox/pkg/version/testutils"
+	"github.com/stackrox/rox/pkg/testutils"
+	testutilsVersion "github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -25,25 +24,16 @@ func TestHandler(t *testing.T) {
 
 type handlerTestSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-}
-
-func (s *handlerTestSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-}
-
-func (s *handlerTestSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
 }
 
 func (s *handlerTestSuite) SetupTest() {
-	err := testutilsMTLS.LoadTestMTLSCerts(s.envIsolator)
+	err := testutilsMTLS.LoadTestMTLSCerts(s.T())
 	s.Require().NoError(err)
-	testutils.SetExampleVersion(s.T())
-	buildTestutils.SetBuildTimestamp(s.T(), time.Now())
+	testutilsVersion.SetExampleVersion(s.T())
 }
 
 func (s *handlerTestSuite) TestGenerateScannerHTTPHandler() {
+	s.T().Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameDevelopmentBuild)
 	server := httptest.NewServer(Handler())
 	defer server.Close()
 
@@ -52,12 +42,13 @@ func (s *handlerTestSuite) TestGenerateScannerHTTPHandler() {
 	s.Require().NoError(err)
 
 	resp, err := http.Post(server.URL, "application/json", bytes.NewReader(marshaledJSON))
+	defer testutils.SafeClientClose(resp)
 	s.Require().NoError(err)
 	s.Assert().Equal(http.StatusOK, resp.StatusCode)
 	body, err := io.ReadAll(resp.Body)
 	s.Require().NoError(err)
-	s.Assert().NotEmpty(body)
 
+	s.Assert().NotEmpty(body)
 	_, err = zip.NewReader(bytes.NewReader(body), int64(len(body)))
 	s.Assert().NoError(err)
 }

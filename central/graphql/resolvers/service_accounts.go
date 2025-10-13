@@ -9,7 +9,6 @@ import (
 	rbacUtils "github.com/stackrox/rox/central/rbac/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -60,8 +59,7 @@ func (resolver *Resolver) ServiceAccounts(ctx context.Context, args PaginatedQue
 		return nil, err
 	}
 
-	serviceAccountResolvers, err := resolver.wrapServiceAccounts(resolver.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, query))
-	return paginate(query.GetPagination(), serviceAccountResolvers, err)
+	return resolver.wrapServiceAccounts(resolver.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, query))
 }
 
 // ServiceAccountCount returns count of all service accounts across infrastructure
@@ -116,7 +114,7 @@ func (resolver *serviceAccountResolver) K8sRoles(ctx context.Context, args Pagin
 	if err != nil {
 		return nil, err
 	}
-	pagination := q.Pagination
+	pagination := q.GetPagination()
 	q.Pagination = nil
 
 	bindings, roles, err := resolver.getRolesAndBindings(ctx, q)
@@ -246,12 +244,11 @@ func (resolver *serviceAccountResolver) getEvaluators(ctx context.Context) (map[
 		rbacUtils.NewClusterPermissionEvaluator(saClusterID,
 			resolver.root.K8sRoleStore, resolver.root.K8sRoleBindingStore)
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		ctx = scoped.Context(ctx, scoped.Scope{
-			Level: v1.SearchCategory_CLUSTERS,
-			ID:    saClusterID,
-		})
-	}
+	ctx = scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_CLUSTERS,
+		IDs:   []string{saClusterID},
+	})
+
 	namespaces, err := resolver.root.Namespaces(ctx, PaginatedQuery{})
 
 	if err != nil {
@@ -266,7 +263,7 @@ func (resolver *serviceAccountResolver) getEvaluators(ctx context.Context) (map[
 	return evaluators, nil
 }
 
-func (resolver *serviceAccountResolver) getClusterEvaluator(ctx context.Context) k8srbac.EvaluatorForContext {
+func (resolver *serviceAccountResolver) getClusterEvaluator(_ context.Context) k8srbac.EvaluatorForContext {
 	saClusterID := resolver.data.GetClusterId()
 
 	return rbacUtils.NewClusterPermissionEvaluator(saClusterID,
@@ -278,7 +275,7 @@ func (resolver *serviceAccountResolver) ImagePullSecretCount(ctx context.Context
 	if err := readSecrets(ctx); err != nil {
 		return 0, err
 	}
-	return int32(len(resolver.data.ImagePullSecrets)), nil
+	return int32(len(resolver.data.GetImagePullSecrets())), nil
 }
 
 func (resolver *serviceAccountResolver) ImagePullSecretObjects(ctx context.Context, args RawQuery) ([]*secretResolver, error) {

@@ -1,123 +1,155 @@
 syntax = "proto3";
 
-option go_package = "v1";
-option java_package = "io.stackrox.proto.api.v1";
+package v1;
 
+import "api/v1/common.proto";
+import "api/v1/empty.proto";
+import "api/v1/pagination.proto";
 import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "storage/network_flow.proto";
 import "storage/network_graph_config.proto";
-import "api/v1/common.proto";
-import "api/v1/empty.proto";
 
-package v1;
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
 
 message NetworkGraphScope {
-    string query = 1;
+  string query = 1;
 }
 
 message NetworkEdgeProperties {
-    uint32     port     = 1;
-    storage.L4Protocol protocol = 2;
+  uint32 port = 1;
+  storage.L4Protocol protocol = 2;
 
-    google.protobuf.Timestamp last_active_timestamp = 3;
+  google.protobuf.Timestamp last_active_timestamp = 3;
 }
 
 message NetworkEdgePropertiesBundle {
-    repeated NetworkEdgeProperties properties = 1;
+  repeated NetworkEdgeProperties properties = 1;
 }
 
 message NetworkNode {
-    storage.NetworkEntityInfo entity       = 1;
-    bool              internet_access      = 2;
-    repeated string   policy_ids           = 3;
-    bool              non_isolated_ingress = 5;
-    bool              non_isolated_egress  = 6;
-    bool              query_match          = 7;
+  storage.NetworkEntityInfo entity = 1;
+  bool internet_access = 2;
+  repeated string policy_ids = 3;
+  bool non_isolated_ingress = 5;
+  bool non_isolated_egress = 6;
+  bool query_match = 7;
 
-    map<int32, NetworkEdgePropertiesBundle> out_edges = 4;
+  map<int32, NetworkEdgePropertiesBundle> out_edges = 4;
 }
 
 message NetworkGraphRequest {
-    string cluster_id               = 1;
-    string query                    = 2;
-    google.protobuf.Timestamp since = 3;
-
-    bool              include_ports = 4;
-    NetworkGraphScope scope         = 5;
+  string cluster_id = 1;
+  string query = 2;
+  google.protobuf.Timestamp since = 3;
+  bool include_ports = 4;
+  NetworkGraphScope scope = 5;
+  bool include_policies = 6;
 }
 
 message NetworkGraph {
-    uint32               epoch = 1;
-    repeated NetworkNode nodes = 2;
+  uint32 epoch = 1;
+  repeated NetworkNode nodes = 2;
 }
 
 message CreateNetworkEntityRequest {
-    string                                   cluster_id = 1;
-    storage.NetworkEntityInfo.ExternalSource entity     = 2;
+  string cluster_id = 1;
+  storage.NetworkEntityInfo.ExternalSource entity = 2;
 }
 
 message PatchNetworkEntityRequest {
-    string id   = 1;
-    string name = 2;
+  string id = 1;
+  string name = 2;
 }
 
 message GetExternalNetworkEntitiesRequest {
-    string cluster_id = 1;
-    string query      = 2;
+  string cluster_id = 1;
+  string query = 2;
 }
 
 message GetExternalNetworkEntitiesResponse {
-    repeated storage.NetworkEntity entities = 1;
+  repeated storage.NetworkEntity entities = 1;
+}
+
+message GetExternalNetworkFlowsRequest {
+  string cluster_id = 1;
+  string entity_id = 2;
+  string query = 3;
+  google.protobuf.Timestamp since = 4;
+  Pagination pagination = 5;
+}
+
+message GetExternalNetworkFlowsResponse {
+  storage.NetworkEntityInfo entity = 1;
+  int32 total_flows = 2;
+  repeated storage.NetworkFlow flows = 3;
+}
+
+message GetExternalNetworkFlowsMetadataRequest {
+  string cluster_id = 1;
+  string query = 2;
+  google.protobuf.Timestamp since = 3;
+  Pagination pagination = 4;
+}
+
+message ExternalNetworkFlowMetadata {
+  storage.NetworkEntityInfo entity = 1;
+  int32 flowsCount = 2;
+}
+
+message GetExternalNetworkFlowsMetadataResponse {
+  repeated ExternalNetworkFlowMetadata entities = 1;
+  int32 total_entities = 2;
 }
 
 message PutNetworkGraphConfigRequest {
-    storage.NetworkGraphConfig config = 1;
+  storage.NetworkGraphConfig config = 1;
 }
 
 service NetworkGraphService {
-    rpc GetNetworkGraph (NetworkGraphRequest) returns (NetworkGraph) {
-        option (google.api.http) = {
-            get: "/v1/networkgraph/cluster/{cluster_id}"
-        };
-    }
+  rpc GetNetworkGraph(NetworkGraphRequest) returns (NetworkGraph) {
+    option (google.api.http) = {get: "/v1/networkgraph/cluster/{cluster_id}"};
+  }
 
-    rpc GetExternalNetworkEntities (GetExternalNetworkEntitiesRequest) returns (GetExternalNetworkEntitiesResponse) {
-        option (google.api.http) = {
-            get: "/v1/networkgraph/cluster/{cluster_id}/externalentities"
-        };
-    }
+  rpc GetExternalNetworkEntities(GetExternalNetworkEntitiesRequest) returns (GetExternalNetworkEntitiesResponse) {
+    option (google.api.http) = {get: "/v1/networkgraph/cluster/{cluster_id}/externalentities"};
+  }
 
-    rpc CreateExternalNetworkEntity (CreateNetworkEntityRequest) returns (storage.NetworkEntity) {
-        option (google.api.http) = {
-            post: "/v1/networkgraph/cluster/{cluster_id}/externalentities"
-            body: "*"
-        };
-    }
+  rpc GetExternalNetworkFlows(GetExternalNetworkFlowsRequest) returns (GetExternalNetworkFlowsResponse) {
+    option (google.api.http) = {get: "/v1/networkgraph/cluster/{cluster_id}/externalentities/{entity_id}/flows"};
+  }
 
-    rpc PatchExternalNetworkEntity (PatchNetworkEntityRequest) returns (storage.NetworkEntity) {
-        option (google.api.http) = {
-            patch: "/v1/networkgraph/externalentities/{id}"
-            body: "*"
-        };
-    }
+  rpc GetExternalNetworkFlowsMetadata(GetExternalNetworkFlowsMetadataRequest) returns (GetExternalNetworkFlowsMetadataResponse) {
+    option (google.api.http) = {get: "/v1/networkgraph/cluster/{cluster_id}/externalentities/metadata"};
+  }
 
-    rpc DeleteExternalNetworkEntity (ResourceByID) returns (Empty) {
-        option (google.api.http) = {
-            delete: "/v1/networkgraph/externalentities/{id}"
-        };
-    }
+  rpc CreateExternalNetworkEntity(CreateNetworkEntityRequest) returns (storage.NetworkEntity) {
+    option (google.api.http) = {
+      post: "/v1/networkgraph/cluster/{cluster_id}/externalentities"
+      body: "*"
+    };
+  }
 
-    rpc GetNetworkGraphConfig(Empty) returns (storage.NetworkGraphConfig) {
-        option (google.api.http) = {
-            get: "/v1/networkgraph/config"
-        };
-    }
+  rpc PatchExternalNetworkEntity(PatchNetworkEntityRequest) returns (storage.NetworkEntity) {
+    option (google.api.http) = {
+      patch: "/v1/networkgraph/externalentities/{id}"
+      body: "*"
+    };
+  }
 
-    rpc PutNetworkGraphConfig(PutNetworkGraphConfigRequest) returns (storage.NetworkGraphConfig) {
-        option (google.api.http) = {
-            put: "/v1/networkgraph/config"
-            body: "*"
-        };
-    }
+  rpc DeleteExternalNetworkEntity(ResourceByID) returns (Empty) {
+    option (google.api.http) = {delete: "/v1/networkgraph/externalentities/{id}"};
+  }
+
+  rpc GetNetworkGraphConfig(Empty) returns (storage.NetworkGraphConfig) {
+    option (google.api.http) = {get: "/v1/networkgraph/config"};
+  }
+
+  rpc PutNetworkGraphConfig(PutNetworkGraphConfigRequest) returns (storage.NetworkGraphConfig) {
+    option (google.api.http) = {
+      put: "/v1/networkgraph/config"
+      body: "*"
+    };
+  }
 }

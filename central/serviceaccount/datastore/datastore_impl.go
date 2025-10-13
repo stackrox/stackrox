@@ -3,58 +3,23 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/serviceaccount/internal/index"
 	"github.com/stackrox/rox/central/serviceaccount/internal/store"
-	"github.com/stackrox/rox/central/serviceaccount/search"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 )
 
-const (
-	batchSize = 1000
-)
+const whenUnlimited = 100
 
 var (
 	serviceAccountsSAC = sac.ForResource(resources.ServiceAccount)
 )
 
 type datastoreImpl struct {
-	storage  store.Store
-	indexer  index.Indexer
-	searcher search.Searcher
-}
-
-func (d *datastoreImpl) buildIndex(ctx context.Context) error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil
-	}
-	log.Info("[STARTUP] Indexing service accounts")
-	var serviceAccounts []*storage.ServiceAccount
-	var count int
-	err := d.storage.Walk(ctx, func(sa *storage.ServiceAccount) error {
-		serviceAccounts = append(serviceAccounts, sa)
-		if len(serviceAccounts) == batchSize {
-			if err := d.indexer.AddServiceAccounts(serviceAccounts); err != nil {
-				return err
-			}
-			serviceAccounts = serviceAccounts[:0]
-		}
-		count++
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-	if err := d.indexer.AddServiceAccounts(serviceAccounts); err != nil {
-		return err
-	}
-
-	log.Infof("[STARTUP] Successfully indexed %d service accounts", count)
-	return nil
+	storage store.Store
 }
 
 func (d *datastoreImpl) GetServiceAccount(ctx context.Context, id string) (*storage.ServiceAccount, bool, error) {
@@ -71,11 +36,25 @@ func (d *datastoreImpl) GetServiceAccount(ctx context.Context, id string) (*stor
 }
 
 func (d *datastoreImpl) SearchRawServiceAccounts(ctx context.Context, q *v1.Query) ([]*storage.ServiceAccount, error) {
-	return d.searcher.SearchRawServiceAccounts(ctx, q)
+	serviceAccounts := make([]*storage.ServiceAccount, 0, paginated.GetLimit(q.GetPagination().GetLimit(), whenUnlimited))
+	err := d.storage.GetByQueryFn(ctx, q, func(serviceAccount *storage.ServiceAccount) error {
+		serviceAccounts = append(serviceAccounts, serviceAccount)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return serviceAccounts, nil
 }
 
 func (d *datastoreImpl) SearchServiceAccounts(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	return d.searcher.SearchServiceAccounts(ctx, q)
+	serviceAccounts, results, err := d.searchServiceAccounts(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	return convertMany(serviceAccounts, results), nil
 }
 
 func (d *datastoreImpl) UpsertServiceAccount(ctx context.Context, request *storage.ServiceAccount) error {
@@ -85,10 +64,7 @@ func (d *datastoreImpl) UpsertServiceAccount(ctx context.Context, request *stora
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := d.storage.Upsert(ctx, request); err != nil {
-		return err
-	}
-	return d.indexer.AddServiceAccount(request)
+	return d.storage.Upsert(ctx, request)
 }
 
 func (d *datastoreImpl) RemoveServiceAccount(ctx context.Context, id string) error {
@@ -98,17 +74,45 @@ func (d *datastoreImpl) RemoveServiceAccount(ctx context.Context, id string) err
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := d.storage.Delete(ctx, id); err != nil {
-		return err
-	}
-	return d.indexer.DeleteServiceAccount(id)
+	return d.storage.Delete(ctx, id)
 }
 
 func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
-	return d.searcher.Search(ctx, q)
+	return d.storage.Search(ctx, q)
 }
 
 // Count returns the number of search results from the query
 func (d *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return d.searcher.Count(ctx, q)
+	return d.storage.Count(ctx, q)
+}
+
+func (d *datastoreImpl) searchServiceAccounts(ctx context.Context, q *v1.Query) ([]*storage.ServiceAccount, []searchPkg.Result, error) {
+	results, err := d.Search(ctx, q)
+	if err != nil {
+		return nil, nil, err
+	}
+	serviceAccounts, missingIndices, err := d.storage.GetMany(ctx, searchPkg.ResultsToIDs(results))
+	if err != nil {
+		return nil, nil, err
+	}
+	results = searchPkg.RemoveMissingResults(results, missingIndices)
+	return serviceAccounts, results, nil
+}
+
+func convertMany(serviceAccounts []*storage.ServiceAccount, results []searchPkg.Result) []*v1.SearchResult {
+	outputResults := make([]*v1.SearchResult, len(serviceAccounts))
+	for index, sar := range serviceAccounts {
+		outputResults[index] = convertServiceAccount(sar, &results[index])
+	}
+	return outputResults
+}
+
+func convertServiceAccount(sa *storage.ServiceAccount, result *searchPkg.Result) *v1.SearchResult {
+	return &v1.SearchResult{
+		Category:       v1.SearchCategory_SERVICE_ACCOUNTS,
+		Id:             sa.GetId(),
+		Name:           sa.GetName(),
+		FieldToMatches: searchPkg.GetProtoMatchesMap(result.Matches),
+		Score:          result.Score,
+	}
 }

@@ -1,0 +1,69 @@
+{
+  "id": "7760a5f3-bca4-4ca8-94a7-ad89edbc0e2c",
+  "name": "Process with UID 0",
+  "description": "Alert on deployments that contain processes running with UID 0",
+  "rationale": "Processes that are running with UID 0 run as the root user. This can allow for unintended privilege escalation if a container mounts host directories that are owned by the host's root user",
+  "remediation": "Specify the USER instruction in the Docker image or the runAsUser field within the Pod Security Context",
+  "disabled": true,
+  "categories": [
+    "DevOps Best Practices",
+    "Security Best Practices"
+  ],
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "exclusions": [
+    {
+      "name": "Don't alert on kube-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "kube-system"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on istio-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "istio-system"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on StackRox Namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "stackrox"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on istio-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "istio-system"
+        }
+      }
+    }
+  ],
+  "severity": "HIGH_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Process UID",
+          "values": [
+            {
+              "value": "0"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

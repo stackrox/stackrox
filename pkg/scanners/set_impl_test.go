@@ -7,7 +7,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scanners/mocks"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 	"golang.org/x/sync/semaphore"
 )
 
@@ -87,12 +87,12 @@ func TestSetOrdering(t *testing.T) {
 	scannerSet := NewSet(scannerFactory)
 
 	scannerFactory.EXPECT().CreateScanner(testutils.PredMatcher("clairify", func(integration *storage.ImageIntegration) bool {
-		return integration.GetType() == "clairify"
-	})).Return(newFakeImageScanner(&fakeScanner{typ: "clairify"}), nil)
+		return integration.GetType() == types.Clairify
+	})).Return(newFakeImageScanner(&fakeScanner{typ: types.Clairify}), nil)
 
 	clairifyIntegration := &storage.ImageIntegration{
 		Id:   "clairify",
-		Type: "clairify",
+		Type: types.Clairify,
 		IntegrationConfig: &storage.ImageIntegration_Clairify{
 			Clairify: &storage.ClairifyConfig{
 				Endpoint: server.URL,
@@ -115,12 +115,27 @@ func TestSetOrdering(t *testing.T) {
 			},
 		},
 	}
+
+	scannerFactory.EXPECT().CreateScanner(testutils.PredMatcher("scannerv4", func(integration *storage.ImageIntegration) bool {
+		return integration.GetType() == types.ScannerV4
+	})).Return(newFakeImageScanner(&fakeScanner{typ: types.ScannerV4}), nil)
+
+	scannerV4Integration := &storage.ImageIntegration{
+		Id:   "scannerv4",
+		Type: types.ScannerV4,
+		IntegrationConfig: &storage.ImageIntegration_ScannerV4{
+			ScannerV4: &storage.ScannerV4Config{},
+		},
+	}
+
 	require.NoError(t, scannerSet.UpdateImageIntegration(clairifyIntegration))
 	require.NoError(t, scannerSet.UpdateImageIntegration(ecrIntegration))
+	require.NoError(t, scannerSet.UpdateImageIntegration(scannerV4Integration))
 	for i := 0; i < 10000; i++ {
 		scanners := scannerSet.GetAll()
 		assert.Equal(t, "ecr", scanners[0].GetScanner().Type())
-		assert.Equal(t, "clairify", scanners[1].GetScanner().Type())
+		assert.Equal(t, types.ScannerV4, scanners[1].GetScanner().Type())
+		assert.Equal(t, types.Clairify, scanners[2].GetScanner().Type())
 	}
 }
 

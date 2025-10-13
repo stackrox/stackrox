@@ -9,16 +9,15 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
 
 const (
-	scannerUploadDbAPIPath = "/api/extensions/scannerdefinitions"
+	scannerUploadDBAPIPath = "/api/extensions/scannerdefinitions"
 )
 
-type scannerUploadDbCommand struct {
+type scannerUploadDBCommand struct {
 	// Properties that are bound to cobra flags.
 	filename string
 	timeout  time.Duration
@@ -27,18 +26,22 @@ type scannerUploadDbCommand struct {
 	env environment.Environment
 }
 
-func (cmd *scannerUploadDbCommand) construct(c *cobra.Command) {
+func (cmd *scannerUploadDBCommand) construct(c *cobra.Command) {
 	cmd.timeout = flags.Timeout(c)
 }
 
-func (cmd *scannerUploadDbCommand) uploadDd() error {
+func (cmd *scannerUploadDBCommand) uploadDB() error {
 	file, err := os.Open(cmd.filename)
 	if err != nil {
 		return errors.Wrap(err, "could not open file")
 	}
 	defer utils.IgnoreError(file.Close)
 
-	resp, err := common.DoHTTPRequestAndCheck200(scannerUploadDbAPIPath, cmd.timeout, http.MethodPost, file, cmd.env.Logger())
+	client, err := cmd.env.HTTPClient(cmd.timeout)
+	if err != nil {
+		return errors.Wrap(err, "creating HTTP client")
+	}
+	resp, err := client.DoReqAndVerifyStatusCode(scannerUploadDBAPIPath, http.MethodPost, http.StatusOK, file)
 	if err != nil {
 		return errors.Wrap(err, "could not connect with scanner definitions API")
 	}
@@ -56,19 +59,21 @@ func (cmd *scannerUploadDbCommand) uploadDd() error {
 
 // Command represents the command.
 func Command(cliEnvironment environment.Environment) *cobra.Command {
-	scannerUploadDbCmd := &scannerUploadDbCommand{env: cliEnvironment}
+	scannerUploadDBCmd := &scannerUploadDBCommand{env: cliEnvironment}
 
 	c := &cobra.Command{
-		Use:  "upload-db",
-		Args: cobra.NoArgs,
+		Use:   "upload-db",
+		Short: "Upload the vulnerability database for StackRox Scanner and/or Scanner V4",
+		Args:  cobra.NoArgs,
 		RunE: func(c *cobra.Command, args []string) error {
-			scannerUploadDbCmd.construct(c)
+			scannerUploadDBCmd.construct(c)
 
-			return scannerUploadDbCmd.uploadDd()
+			return scannerUploadDBCmd.uploadDB()
 		},
 	}
 
-	c.Flags().StringVar(&scannerUploadDbCmd.filename, "scanner-db-file", "", "File containing the dumped Scanner definitions DB")
+	c.Flags().StringVar(&scannerUploadDBCmd.filename, "scanner-db-file", "", "File containing the dumped Scanner definitions DB.")
+	flags.AddTimeoutWithDefault(c, 10*time.Minute)
 	utils.Must(c.MarkFlagRequired("scanner-db-file"))
 
 	return c

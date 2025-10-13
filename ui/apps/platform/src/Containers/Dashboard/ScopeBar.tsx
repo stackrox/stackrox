@@ -7,8 +7,9 @@ import useURLSearch from 'hooks/useURLSearch';
 
 import { flattenFilterValue } from 'utils/searchUtils';
 import NamespaceSelect from './NamespaceSelect';
-import ClusterSelect, { SelectionChangeAction } from './ClusterSelect';
-import { Cluster } from './types';
+import ClusterSelect from './ClusterSelect';
+import type { SelectionChangeAction } from './ClusterSelect';
+import type { Cluster } from './types';
 
 type NamespacesResponse = {
     clusters: Cluster[];
@@ -81,8 +82,8 @@ function ScopeBar() {
     }
 
     return (
-        <Toolbar className="pf-u-p-0">
-            <ToolbarContent className="pf-u-p-0">
+        <Toolbar className="pf-v5-u-p-0">
+            <ToolbarContent className="pf-v5-u-p-0">
                 <ToolbarItem>
                     <div>Resources:</div>
                 </ToolbarItem>

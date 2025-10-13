@@ -11,6 +11,8 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/grpc/authz/interceptor"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/search"
@@ -45,12 +47,12 @@ type scopedPermissionsResolver struct {
 }
 
 // Key represents the key value of the string list entry
-func (resolver *stringListEntryResolver) Key(ctx context.Context) string {
+func (resolver *stringListEntryResolver) Key(_ context.Context) string {
 	return resolver.key
 }
 
 // Values represents the set of values of the string list entry
-func (resolver *stringListEntryResolver) Values(ctx context.Context) []string {
+func (resolver *stringListEntryResolver) Values(_ context.Context) []string {
 	return resolver.values.AsSlice()
 }
 
@@ -68,12 +70,12 @@ func wrapStringListEntries(values map[string]set.StringSet) []*stringListEntryRe
 }
 
 // Scope represents the scope of the permissions - cluster wide or the namespace name to which the permissions are scoped
-func (resolver *scopedPermissionsResolver) Scope(ctx context.Context) string {
+func (resolver *scopedPermissionsResolver) Scope(_ context.Context) string {
 	return resolver.scope
 }
 
 // Permissions represents the verbs and the resources to which those verbs are granted
-func (resolver *scopedPermissionsResolver) Permissions(ctx context.Context) []*stringListEntryResolver {
+func (resolver *scopedPermissionsResolver) Permissions(_ context.Context) []*stringListEntryResolver {
 	return resolver.permissions
 }
 
@@ -303,7 +305,13 @@ func getImageIDFromIfImageShaQuery(ctx context.Context, resolver *Resolver, args
 	query, filtered := search.FilterQuery(query, func(bq *v1.BaseQuery) bool {
 		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
 		if ok {
-			if strings.EqualFold(matchFieldQuery.MatchFieldQuery.GetField(), search.ImageSHA.String()) {
+			var searchField search.FieldLabel
+			if features.FlattenImageData.Enabled() {
+				searchField = search.ImageID
+			} else {
+				searchField = search.ImageSHA
+			}
+			if strings.EqualFold(matchFieldQuery.MatchFieldQuery.GetField(), searchField.String()) {
 				return true
 			}
 		}
@@ -356,39 +364,6 @@ func logErrorOnQueryContainingField(query *v1.Query, label search.FieldLabel, re
 	})
 }
 
-func imageComponentToNodeComponent(comp *storage.ImageComponent) (*storage.NodeComponent, error) {
-	if comp == nil {
-		return nil, nil
-	}
-	if comp.GetSource() != storage.SourceType_INFRASTRUCTURE {
-		return nil, errors.Errorf("incorrect component source type '%s', should be '%s'", comp.GetSource().String(), storage.SourceType_INFRASTRUCTURE)
-	}
-	nodeComp := &storage.NodeComponent{
-		Id:              comp.GetId(),
-		Name:            comp.GetName(),
-		Version:         comp.GetVersion(),
-		Priority:        comp.GetPriority(),
-		RiskScore:       comp.GetRiskScore(),
-		OperatingSystem: comp.GetOperatingSystem(),
-	}
-	if comp.GetSetTopCvss() != nil {
-		nodeComp.SetTopCvss = &storage.NodeComponent_TopCvss{TopCvss: comp.GetTopCvss()}
-	}
-	return nodeComp, nil
-}
-
-func imageComponentsToNodeComponents(comps []*storage.ImageComponent) ([]*storage.NodeComponent, error) {
-	ret := make([]*storage.NodeComponent, 0, len(comps))
-	for _, comp := range comps {
-		nodeComp, err := imageComponentToNodeComponent(comp)
-		if err != nil {
-			return nil, err
-		}
-		ret = append(ret, nodeComp)
-	}
-	return ret, nil
-}
-
 // FilterFieldFromRawQuery removes the given field from RawQuery
 func FilterFieldFromRawQuery(rq RawQuery, label search.FieldLabel) RawQuery {
 	return RawQuery{
@@ -397,4 +372,43 @@ func FilterFieldFromRawQuery(rq RawQuery, label search.FieldLabel) RawQuery {
 		})),
 		ScopeQuery: rq.ScopeQuery,
 	}
+}
+
+// processWithAuditLog runs handler and logs to the audit log pipeline (assuming there is a notifier setup for audit logging).
+// It logs details of the request and if there was an error. processWithAuditLog will return the response and error directly
+// from handler. You may need to cast it back to your desired type.
+// This is required because currently audit logs are only automatically added for GRPC calls and not GraphQL.
+// However, mutating calls should also log. This is a workaround for this limitation.
+func (resolver *Resolver) processWithAuditLog(ctx context.Context, req interface{}, method string, handler func() (interface{}, error)) (interface{}, error) {
+	resp, err := handler()
+	if resolver.AuditLogger != nil {
+		go resolver.AuditLogger.SendAuditMessage(ctx, req, method, interceptor.AuthStatus{}, err)
+	}
+	return resp, err
+}
+
+func getImageIDFromQuery(q *v1.Query) string {
+	if q == nil {
+		return ""
+	}
+	var imageID string
+	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
+		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if !ok {
+			return
+		}
+
+		var searchField search.FieldLabel
+		if features.FlattenImageData.Enabled() {
+			searchField = search.ImageID
+		} else {
+			searchField = search.ImageSHA
+		}
+		if strings.EqualFold(matchFieldQuery.MatchFieldQuery.GetField(), searchField.String()) {
+			imageID = matchFieldQuery.MatchFieldQuery.GetValue()
+			imageID = strings.TrimRight(imageID, `"`)
+			imageID = strings.TrimLeft(imageID, `"`)
+		}
+	})
+	return imageID
 }

@@ -4,6 +4,7 @@
 # claimed to be fixed by this PR are still referenced by a TODO.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. && pwd)"
+# shellcheck source=../../../scripts/ci/lib.sh
 source "$ROOT/scripts/ci/lib.sh"
 
 set -euo pipefail

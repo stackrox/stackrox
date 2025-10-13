@@ -1,0 +1,66 @@
+{
+    "data": {
+        "nodes": [
+            {
+                "id": "1",
+                "name": "cypress-node-1",
+                "osImage": "Red Hat Enterprise Linux CoreOS 414.92.202402010350-0 (Plow)",
+                "cluster": {
+                    "name": "control-cluster",
+                    "__typename": "Cluster"
+                },
+                "nodeComponents": [
+                    {
+                        "name": "openshift-clients",
+                        "source": "INFRASTRUCTURE",
+                        "version": "4.14.0-202401111553.p0.g286cfa5.assembly.stream.el9.x86_64",
+                        "nodeVulnerabilities": [
+                            {
+                                "severity": "IMPORTANT_VULNERABILITY_SEVERITY",
+                                "isFixable": false,
+                                "fixedByVersion": "",
+                                "__typename": "NodeVulnerability",
+                                "vulnerabilityId": "CYPRESS-CVE-2022-1996#rhcos:4.14",
+                                "cve": "CYPRESS-CVE-2022-1996",
+                                "cvss": 9.100000381469727,
+                                "scoreVersion": "V3"
+                            }
+                        ],
+                        "__typename": "NodeComponent"
+                    }
+                ],
+                "__typename": "Node"
+            },
+            {
+                "id": "2",
+                "name": "cypress-node-2",
+                "osImage": "Red Hat Enterprise Linux CoreOS 415.92.202402201450-0 (Plow)",
+                "cluster": {
+                    "name": "my-cluster",
+                    "__typename": "Cluster"
+                },
+                "nodeComponents": [
+                    {
+                        "name": "openshift-clients",
+                        "source": "INFRASTRUCTURE",
+                        "version": "4.15.0-202402070507.p0.g48dcf59.assembly.stream.el9.x86_64",
+                        "nodeVulnerabilities": [
+                            {
+                                "severity": "IMPORTANT_VULNERABILITY_SEVERITY",
+                                "isFixable": false,
+                                "fixedByVersion": "",
+                                "__typename": "NodeVulnerability",
+                                "vulnerabilityId": "CYPRESS-CVE-2022-1996#rhcos:4.15",
+                                "cve": "CYPRESS-CVE-2022-1996",
+                                "cvss": 9.100000381469727,
+                                "scoreVersion": "V3"
+                            }
+                        ],
+                        "__typename": "NodeComponent"
+                    }
+                ],
+                "__typename": "Node"
+            }
+        ]
+    }
+}

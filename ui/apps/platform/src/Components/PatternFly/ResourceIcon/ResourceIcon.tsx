@@ -2,17 +2,42 @@ import React from 'react';
 
 import './ResourceIcon.css';
 
-type K8sResourceKind = 'Cluster' | 'Namespace' | 'Deployment';
+type K8sResourceKind =
+    | 'Cluster'
+    | 'ConfigMap'
+    | 'ClusterRoles'
+    | 'ClusterRoleBindings'
+    | 'NetworkPolicies'
+    | 'SecurityContextConstraints'
+    | 'EgressFirewalls'
+    | 'Deployment'
+    | 'Namespace'
+    | 'Secret'
+    | 'Unknown';
 
 export type ResourceIconProps = {
     className?: string;
     kind: K8sResourceKind;
 };
 
-const IconAttributes: Record<K8sResourceKind, { text: string; classNameSuffix: string }> = {
-    Cluster: { text: 'CL', classNameSuffix: 'cluster' },
-    Namespace: { text: 'NS', classNameSuffix: 'namespace' },
-    Deployment: { text: 'D', classNameSuffix: 'deployment' },
+const IconAttributes: Record<K8sResourceKind, { text: string; backgroundColor: string }> = {
+    Cluster: { text: 'CL', backgroundColor: 'var(--pf-v5-global--palette--purple-500)' },
+    ConfigMap: { text: 'CM', backgroundColor: 'var(--pf-v5-global--palette--purple-600)' },
+    ClusterRoles: { text: 'CR', backgroundColor: 'var(--pf-v5-global--palette--purple-600)' },
+    ClusterRoleBindings: {
+        text: 'CRB',
+        backgroundColor: 'var(--pf-v5-global--palette--purple-600)',
+    },
+    NetworkPolicies: { text: 'NP', backgroundColor: 'var(--pf-v5-global--palette--purple-600)' },
+    SecurityContextConstraints: {
+        text: 'SCC',
+        backgroundColor: 'var(--pf-v5-global--palette--purple-600)',
+    },
+    EgressFirewalls: { text: 'EF', backgroundColor: 'var(--pf-v5-global--palette--purple-600)' },
+    Deployment: { text: 'D', backgroundColor: 'var(--pf-v5-global--palette--blue-500)' },
+    Namespace: { text: 'NS', backgroundColor: 'var(--pf-v5-global--palette--green-500)' },
+    Secret: { text: 'S', backgroundColor: 'var(--pf-v5-global--palette--orange-600)' },
+    Unknown: { text: '?', backgroundColor: 'var(--pf-v5-global--palette--black-700)' },
 } as const;
 
 /**
@@ -24,11 +49,16 @@ const IconAttributes: Record<K8sResourceKind, { text: string; classNameSuffix: s
  *
  */
 function ResourceIcon(props: ResourceIconProps) {
-    const { text, classNameSuffix } = IconAttributes[props.kind];
+    const { text, backgroundColor } = IconAttributes[props.kind] ?? {
+        text: '?',
+        backgroundColor: 'var(--pf-v5-global--palette--black-700)',
+    };
+
     return (
         <span
             title={props.kind}
-            className={`resource-icon resource-icon-${classNameSuffix} ${props.className ?? ''}`}
+            className={`resource-icon ${props.className ?? ''}`}
+            style={{ backgroundColor }}
         >
             {text}
         </span>

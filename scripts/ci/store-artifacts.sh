@@ -3,6 +3,9 @@
 # A secure store for CI artifacts
 
 SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+# shellcheck source=../../scripts/ci/lib.sh
+source "$SCRIPTS_ROOT/scripts/ci/lib.sh"
+# shellcheck source=../../scripts/ci/gcp.sh
 source "$SCRIPTS_ROOT/scripts/ci/gcp.sh"
 
 set -euo pipefail
@@ -22,7 +25,7 @@ store_artifacts() {
         exit 1
     fi
 
-    # Circle CI does a poor job with ~ expansion
+    # Some CI do a poor job with ~ expansion
     if [[ "$path" =~ ^~ ]]; then
         path="$HOME$(cut -c2- -<<< "$path")"
     fi
@@ -78,7 +81,7 @@ get_unique_gs_destination() {
 }
 
 set_gs_path_vars() {
-    GS_URL="gs://roxci-artifacts"
+    GS_URL="gs://stackrox-ci-artifacts"
 
     if is_OPENSHIFT_CI; then
         local repo
@@ -101,15 +104,6 @@ set_gs_path_vars() {
         local workflow_id="${PULL_PULL_SHA:-${PULL_BASE_SHA:-nightly-$(date '+%Y%m%d')}}"
         WORKFLOW_SUBDIR="${repo}/${workflow_id}"
         JOB_SUBDIR="${BUILD_ID}-${JOB_NAME}"
-        GS_JOB_URL="${GS_URL}/${WORKFLOW_SUBDIR}/${JOB_SUBDIR}"
-    elif is_CIRCLECI; then
-        require_environment "CIRCLE_PROJECT_REPONAME"
-        require_environment "CIRCLE_WORKFLOW_ID"
-        require_environment "CIRCLE_BUILD_NUM"
-        require_environment "CIRCLE_JOB"
-
-        WORKFLOW_SUBDIR="${CIRCLE_PROJECT_REPONAME}/${CIRCLE_WORKFLOW_ID}"
-        JOB_SUBDIR="${CIRCLE_BUILD_NUM}-${CIRCLE_JOB}"
         GS_JOB_URL="${GS_URL}/${WORKFLOW_SUBDIR}/${JOB_SUBDIR}"
     else
         die "Support is missing for this CI environment"
@@ -139,37 +133,58 @@ make_artifacts_help() {
     
     local gs_workflow_url="$GS_URL/$WORKFLOW_SUBDIR"
     local gs_job_url="$gs_workflow_url/$JOB_SUBDIR"
-    local browser_url="https://console.cloud.google.com/storage/browser/roxci-artifacts"
+    local browser_url="https://console.cloud.google.com/storage/browser/stackrox-ci-artifacts"
     local browser_job_url="$browser_url/$WORKFLOW_SUBDIR/$JOB_SUBDIR"
 
     local help_file
     if is_OPENSHIFT_CI; then
         require_environment "ARTIFACT_DIR"
-        help_file="$ARTIFACT_DIR/howto-locate-other-artifacts.html"
-    elif is_CIRCLECI; then
-        help_file="/tmp/howto-locate-artifacts.html"
+        help_file="$ARTIFACT_DIR/howto-locate-other-artifacts-summary.html"
     else
         die "This is an unsupported environment"
     fi
 
     cat > "$help_file" <<- EOH
-        Artifacts are stored in a GCS bucket ($GS_URL). There are at least two options for access:
+        <html>
+        <head>
+        <title>Additional StackRox e2e artifacts</title>
+        <style>
+          body { color: #e8e8e8; background-color: #424242; font-family: "Roboto", "Helvetica", "Arial", sans-serif }
+          a { color: #ff8caa }
+          a:visited { color: #ff8caa }
+        </style>
+        </head>
+        <body>
 
-        <h3>gsutil cp</h3>
+        Additional StackRox e2e artifacts are stored in a GCS bucket (<code>$GS_URL</code>) by the
+        <code>store_artifacts</code> bash function.<br>
+
+        There are at least two options for access:
+
+        <h2>Option 1: gcloud storage cp</h2>
 
         Copy all artifacts for the build/job:
-        <pre>gsutil -m cp -r $gs_job_url .</pre>
+        <pre>gcloud storage cp -r $gs_job_url .</pre>
 
-        Copy all artifacts for the entire workflow:
-        <pre>gsutil -m cp -r $gs_workflow_url .</pre>
+        or copy all artifacts for the entire workflow:
+        <pre>gcloud storage cp -r $gs_workflow_url .</pre>
 
-        <h3>Browse using the google cloud UI</h3>
+        Then browse files locally.
 
-        <p>The URL you use will depend on the <i>authuser</i> value you use for your @stackrox.com account.</p>
+        <h2>Option 2: Browse using the Google cloud UI</h2>
 
-        <a href="$browser_job_url?authuser=0">authuser=0</a><br>
-        <a href="$browser_job_url?authuser=1">authuser=1</a><br>
-        <a href="$browser_job_url?authuser=2">authuser=2</a><br>
+        <p>Make sure to use the URL where <code>authuser</code> corresponds to your @redhat.com account.<br>
+        You can check this by clicking on the user avatar in the top right corner of Google Cloud Console page
+        after following the link.</p>
+
+        <a target="_blank" href="$browser_job_url?authuser=0">authuser=0</a><br>
+        <a target="_blank" href="$browser_job_url?authuser=1">authuser=1</a><br>
+        <a target="_blank" href="$browser_job_url?authuser=2">authuser=2</a><br>
+
+        <br><br>
+
+        </body>
+        </html>
 EOH
 
     info "Artifacts are stored in a GCS bucket ($GS_URL)"

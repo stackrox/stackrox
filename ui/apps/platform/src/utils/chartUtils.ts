@@ -1,13 +1,14 @@
-import { History } from 'react-router-dom';
-import { getTheme, ChartThemeColor } from '@patternfly/react-charts';
-import { EventCallbackInterface, EventPropTypeInterface } from 'victory-core';
+import type { NavigateFunction } from 'react-router-dom-v5-compat';
+import { ChartThemeColor, getTheme } from '@patternfly/react-charts';
+import type { ChartBarProps, ChartLabelProps } from '@patternfly/react-charts';
 import merge from 'lodash/merge';
 
-import { severityColors } from 'constants/visuals/colors';
+import { policySeverityColorMap } from 'constants/severityColors';
+import type { ValueOf } from './type.utils';
 
-export const solidBlueChartColor = 'var(--pf-global--palette--blue-400)';
+export const solidBlueChartColor = 'var(--pf-v5-global--palette--blue-400)';
 
-export const severityColorScale = Object.values(severityColors);
+export const severityColorScale = Object.values(policySeverityColorMap);
 
 // Clone default PatternFly chart themes
 const defaultTheme = getTheme(ChartThemeColor.multi);
@@ -46,20 +47,23 @@ export const patternflySeverityTheme = {
     },
 };
 
+type ChartEventProp = NonNullable<ChartBarProps['events']>[number];
+type ChartEventHandler = ValueOf<ChartEventProp['eventHandlers']>;
+
 /**
  * A helper function to generate a chart onClick event that initiates navigation to another page.
  */
 export function navigateOnClickEvent(
-    history: History,
+    navigate: NavigateFunction,
     /** A function that generates the link to navigate to when the entity is clicked */
-    linkWith: (props: any) => string,
+    linkWith: (props: ChartLabelProps) => string,
     /** An array of Victory onClick event handlers that will be called before navigation is initiated */
-    defaultOnClicks: EventCallbackInterface<string, string>[] = []
-): EventPropTypeInterface<'data', string | number | number[] | string[]> {
+    defaultOnClicks: ChartEventHandler[] = []
+): ChartEventProp {
     const navigateEventHandler = {
         mutation: (props) => {
             const link = linkWith(props);
-            history.push(link);
+            navigate(link);
             return null;
         },
     };

@@ -15,13 +15,14 @@ var (
 	// ErrInitBundleIDCollision signals that an init bundle could not be added to the store due to an ID collision.
 	ErrInitBundleIDCollision = errors.New("init bundle ID collision")
 
-	// ErrInitBundleDuplicateName signals that an init bundle could not be added because the name already exists on a non-revoked init bundle
-	ErrInitBundleDuplicateName = errors.New("init bundle already exists")
+	// ErrInitBundleDuplicateName signals that an init bundle or CRS could not be added because the name already exists on a non-revoked init bundle or CRS.
+	ErrInitBundleDuplicateName = errors.New("init bundle or CRS already exists")
 )
 
 // Store interface for managing persisted cluster init bundles.
 type Store interface {
 	GetAll(ctx context.Context) ([]*storage.InitBundleMeta, error)
+	GetAllCRS(ctx context.Context) ([]*storage.InitBundleMeta, error)
 	Get(ctx context.Context, id string) (*storage.InitBundleMeta, error)
 	Add(ctx context.Context, bundleMeta *storage.InitBundleMeta) error
 	Revoke(ctx context.Context, id string) error
@@ -50,6 +51,26 @@ func NewStore(store UnderlyingStore) Store {
 func (w *storeImpl) GetAll(ctx context.Context) ([]*storage.InitBundleMeta, error) {
 	var result []*storage.InitBundleMeta
 	if err := w.store.Walk(ctx, func(obj *storage.InitBundleMeta) error {
+		if obj.GetVersion() != storage.InitBundleMeta_INIT_BUNDLE {
+			return nil
+		}
+		if obj.GetIsRevoked() {
+			return nil
+		}
+		result = append(result, obj)
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (w *storeImpl) GetAllCRS(ctx context.Context) ([]*storage.InitBundleMeta, error) {
+	var result []*storage.InitBundleMeta
+	if err := w.store.Walk(ctx, func(obj *storage.InitBundleMeta) error {
+		if obj.GetVersion() != storage.InitBundleMeta_CRS {
+			return nil
+		}
 		if obj.GetIsRevoked() {
 			return nil
 		}
@@ -93,6 +114,11 @@ func (w *storeImpl) checkDuplicateName(ctx context.Context, meta *storage.InitBu
 	if err != nil {
 		return err
 	}
+	crsMetas, err := w.GetAllCRS(ctx)
+	if err != nil {
+		return err
+	}
+	metas = append(metas, crsMetas...)
 	for _, m := range metas {
 		if m.GetName() == meta.GetName() && !m.GetIsRevoked() {
 			return ErrInitBundleDuplicateName

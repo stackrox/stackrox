@@ -1,8 +1,13 @@
 package mtls
 
+import "time"
+
 type issueOptions struct {
 	namespace     string
 	signerProfile string
+	// set this value to specify a custom start time for the certificate's validity (default is time.Now() - 5 minutes)
+	notBefore time.Time
+	expiresAt time.Time
 }
 
 func (o *issueOptions) apply(opts []IssueCertOption) {
@@ -33,5 +38,19 @@ func WithValidityExpiringInHours() IssueCertOption {
 func WithValidityExpiringInDays() IssueCertOption {
 	return func(o *issueOptions) {
 		o.signerProfile = ephemeralProfileWithExpirationInDays
+	}
+}
+
+// WithValidityNotBefore requests certificates with customized validity start time
+func WithValidityNotBefore(notBefore time.Time) IssueCertOption {
+	return func(o *issueOptions) {
+		o.notBefore = notBefore
+	}
+}
+
+// WithValidityNotAfter requests certificates with customized validity end time.
+func WithValidityNotAfter(validUntil time.Time) IssueCertOption {
+	return func(o *issueOptions) {
+		o.expiresAt = validUntil
 	}
 }

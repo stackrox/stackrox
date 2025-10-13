@@ -1,21 +1,25 @@
 package services
 
-import io.stackrox.proto.api.v1.ConfigServiceGrpc
+import groovy.transform.CompileStatic
 
+import io.stackrox.proto.api.v1.ConfigServiceGrpc
+import io.stackrox.proto.storage.ConfigOuterClass
+
+@CompileStatic
 class ConfigService extends BaseService {
-    static getConfigClient() {
+    static ConfigServiceGrpc.ConfigServiceBlockingStub getConfigClient() {
         return ConfigServiceGrpc.newBlockingStub(getChannel())
     }
 
-    static getConfig() {
-        return getConfigClient().getConfig()
+    static ConfigOuterClass.Config getConfig() {
+        return getConfigClient().getConfig(EMPTY)
     }
 
     static getPublicConfig() {
-        return getConfigClient().getPublicConfig()
+        return getConfigClient().getPublicConfig(EMPTY)
     }
 
     static getPrivateConfig() {
-        return getConfigClient().getPrivateConfig()
+        return getConfigClient().getPrivateConfig(EMPTY)
     }
 }

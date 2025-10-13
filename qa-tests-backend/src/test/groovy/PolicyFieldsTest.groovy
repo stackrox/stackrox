@@ -1,6 +1,7 @@
 import static Services.waitForViolation
-import common.Constants
-import groups.BAT
+
+import orchestratormanager.OrchestratorTypes
+
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
@@ -9,19 +10,24 @@ import io.stackrox.proto.storage.PolicyOuterClass.PolicyGroup
 import io.stackrox.proto.storage.PolicyOuterClass.PolicySection
 import io.stackrox.proto.storage.PolicyOuterClass.PolicyValue
 import io.stackrox.proto.storage.ScopeOuterClass
+
+import common.Constants
 import objects.ConfigMapKeyRef
 import objects.Deployment
 import objects.SecretKeyRef
 import objects.Volume
-import orchestratormanager.OrchestratorTypes
-import org.junit.Assume
-import org.junit.experimental.categories.Category
 import services.AlertService
 import services.PolicyService
-import spock.lang.Shared
-import spock.lang.Unroll
 import util.Env
 
+import org.junit.Assume
+import spock.lang.IgnoreIf
+import spock.lang.Shared
+import spock.lang.Tag
+import spock.lang.Unroll
+
+// TODO(ROX-12814): re-enable the test on all platforms. Scanner OOMs on this test in some Openshift jobs.
+@IgnoreIf({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })
 class PolicyFieldsTest extends BaseSpecification {
 
     // NOTE: this is populated by registerDeployments call, do not manually
@@ -35,7 +41,7 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private Deployment DEP_A =
             createAndRegisterDeployment()
                     .setName("deployment-a")
-                    .setImage("us.gcr.io/stackrox-ci/qa/trigger-policy-violations/more:0.3")
+                    .setImage("us.gcr.io/acs-san-stackroxci/qa/trigger-policy-violations/more:0.3")
                     .setCapabilities(["NET_ADMIN", "SYSLOG"], ["IPC_LOCK", "WAKE_ALARM"])
                     .addLimits("cpu", "0.5")
                     .addRequest("cpu", "0.25")
@@ -105,7 +111,7 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private Deployment DEP_B =
             createAndRegisterDeployment()
                     .setName("deployment-b")
-                    .setImage("us.gcr.io/stackrox-ci/qa/trigger-policy-violations/most:0.19")
+                    .setImage("us.gcr.io/acs-san-stackroxci/qa/trigger-policy-violations/most:0.19")
                     .setCapabilities(["NET_ADMIN"], ["IPC_LOCK"])
                     .addLimits("cpu", "1")
                     .addRequest("cpu", "0.5")
@@ -177,7 +183,7 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private Deployment DEP_C =
             createAndRegisterDeployment()
                     .setName("deployment-c")
-                    .setImage("us.gcr.io/stackrox-ci/qa/trigger-policy-violations/alpine:0.6")
+                    .setImage("us.gcr.io/acs-san-stackroxci/qa/trigger-policy-violations/alpine:0.6")
                     .addAnnotation("im-a-key", "with a different value")
                     .addAnnotation("another-key", "and a value")
                     .addLabel("im-a-key", "with_a_different_value")
@@ -241,7 +247,7 @@ class PolicyFieldsTest extends BaseSpecification {
             "some_configuration": "a value",
     ]
 
-    // https://stack-rox.atlassian.net/browse/ROX-6891
+    // ROX-6891
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =
                 isRaceBuild() ? 450 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 100 : 30)
 
@@ -250,7 +256,7 @@ class PolicyFieldsTest extends BaseSpecification {
             .addCategories("Test")
             .setDisabled(false)
             .setSeverityValue(2)
-            // https://stack-rox.atlassian.net/browse/ROX-6891
+            // ROX-6891
             // limiting the scope of the test policies to the test namespaces reduces the workload that
             // causes slow alert triggers.
             .addAllScope(["qa", "qa-policyfieldstest-.*"].collect
@@ -544,7 +550,7 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private NO_IMAGE_REMOTE = setPolicyFieldANDValues(
             BASE_POLICY.clone().setName("AAA_NO_IMAGE_REMOTE"),
             "Image Remote",
-            ["stackrox-ci/qa/trigger-policy-violations/more"]
+            ["acs-san-stackroxci/qa/trigger-policy-violations/more"]
     )
 
     // "Image Tag"
@@ -842,8 +848,8 @@ class PolicyFieldsTest extends BaseSpecification {
                     !newNamespaces.contains(deployment.namespace)) {
                 log.info "Creating the test namespace ${deployment.namespace} with pull rights before deployment"
                 orchestrator.ensureNamespaceExists(deployment.namespace)
-                addStackroxImagePullSecret(deployment.namespace)
-                addGCRImagePullSecret(deployment.namespace)
+                addStackroxImagePullSecret(orchestrator, deployment.namespace)
+                addGCRImagePullSecret(orchestrator, deployment.namespace)
                 newNamespaces.add(deployment.namespace)
             }
         }
@@ -879,7 +885,7 @@ class PolicyFieldsTest extends BaseSpecification {
 
     @SuppressWarnings('LineLength')
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Expect violation for policy field '#fieldName' - #testName"() {
         expect:
         "Verify expected violations are triggered"
@@ -893,8 +899,9 @@ class PolicyFieldsTest extends BaseSpecification {
         "Add Capabilities"                | NO_ADD_CAPS_NET_ADMIN_AND_SYSLOG     | WITH_ADD_CAPS_NET_ADMIN_AND_SYSLOG      | "match set"
         "Automount Service Account Token" | NO_AUTOMOUNT_SERVICE_ACCOUNT_TOKEN   | WITH_AUTOMOUNT_SERVICE_ACCOUNT_TOKEN    | "match"
         "Automount Service Account Token" | NO_AUTOMOUNT_SERVICE_ACCOUNT_TOKEN   | DEFAULT_AUTOMOUNT_SERVICE_ACCOUNT_TOKEN | "match"
-        "CVE"                             | EXCLUDE_CVE_2019_5436                | WITH_CVE_2019_5436                      | "match"
-        "CVSS"                            | EXCLUDE_CVSS_GT_8                    | WITH_CVSS_GT_8                          | "match"
+        // ROX-29720 - disable gcr.io until tests are fixed for metadata failures after migration to artifacts registry
+        //"CVE"                             | EXCLUDE_CVE_2019_5436                | WITH_CVE_2019_5436                      | "match"
+        //"CVSS"                            | EXCLUDE_CVSS_GT_8                    | WITH_CVSS_GT_8                          | "match"
         "Container CPU Limit"             | CPU_LIMIT_GT_0PT7                    | WITH_CPU_LIMIT_ONE                      | "GT"
         "Container CPU Limit"             | CPU_LIMIT_GE_1                       | WITH_CPU_LIMIT_ONE                      | "GE"
         "Container CPU Request"           | CPU_REQUEST_LT_HALF                  | WITH_CPU_REQUEST_QUARTER                | "LT"
@@ -904,8 +911,9 @@ class PolicyFieldsTest extends BaseSpecification {
         "Disallowed Annotation"           | DISALLOWED_ANNOTATION_KEY_ONLY       | WITH_KEY_ONLY_ANNOTATION                | "key only"
         "Disallowed Annotation"           | DISALLOWED_ANNOTATION_KEY_ONLY       | WITH_KEY_AND_VALUE_ANNOTATION           | "key only matches key and value"
         "Disallowed Annotation"           | DISALLOWED_ANNOTATION_KEY_AND_VALUE  | WITH_KEY_AND_VALUE_ANNOTATION           | "key and value"
-        "Disallowed Image Label"          | DISALLOWED_IMAGE_LABEL_KEY_ONLY      | WITH_IMAGE_LABELS                       | "key only"
-        "Disallowed Image Label"          | DISALLOWED_IMAGE_LABEL_KEY_AND_VALUE | WITH_IMAGE_LABELS                       | "key and value"
+        // ROX-29720 - disable gcr.io until tests are fixed for metadata failures after migration to artifacts registry
+        //"Disallowed Image Label"          | DISALLOWED_IMAGE_LABEL_KEY_ONLY      | WITH_IMAGE_LABELS                       | "key only"
+        //"Disallowed Image Label"          | DISALLOWED_IMAGE_LABEL_KEY_AND_VALUE | WITH_IMAGE_LABELS                       | "key and value"
         "Drop Capabilities"               | HAS_DROP_CAPS_WAKE_ALARM             | WITH_DROP_CAPS_IPC_LOCK                 | "mismatch"
         "Drop Capabilities"               | HAS_DROP_CAPS_LEASE                  | WITH_DROP_CAPS_IPC_LOCK                 | "mismatch II"
         "Drop Capabilities"               | HAS_DROP_CAPS_LEASE                  | WITH_DROP_CAPS_IPC_LOCK_AND_WAKE_ALARM  | "mismatch III"
@@ -919,12 +927,14 @@ class PolicyFieldsTest extends BaseSpecification {
         "Environment Variable"            | HAS_ENV_FROM_SECRET_KEY              | WITH_ENV_FROM_SECRET_KEY                | "match secret key"
         "Environment Variable"            | HAS_ENV_FROM_FIELD                   | WITH_ENV_FROM_FIELD                     | "match field"
         "Environment Variable"            | HAS_ENV_FROM_RESOURCE_FIELD          | WITH_ENV_FROM_RESOURCE_FIELD            | "match resource field"
-        "Image Age"                       | IS_GREATER_THAN_1_DAY                | OLDER_THAN_1_DAY                        | "match"
+        // ROX-29720 - disable gcr.io until tests are fixed for metadata failures after migration to artifacts registry
+        //"Image Age"                       | IS_GREATER_THAN_1_DAY                | OLDER_THAN_1_DAY                        | "match"
         "Image Component"                 | HAS_COMPONENT_CPIO                   | WITH_COMPONENT_CPIO                     | "match name"
         "Image Component"                 | HAS_COMPONENT_CPIO_WITH_VERSION      | WITH_COMPONENT_CPIO                     | "match name & version"
-        "Image OS"                        | IS_BASED_ON_DEBIAN_7                 | BASED_ON_DEBIAN_7                       | "match"
-        "Image OS"                        | IS_BASED_ON_CENTOS_8                 | BASED_ON_CENTOS_8                       | "match"
-        "Image OS"                        | IS_BASED_ON_ALPINE                   | BASED_ON_ALPINE                         | "match"
+        // ROX-29720 - disable gcr.io until tests are fixed for metadata failures after migration to artifacts registry
+        //"Image OS"                        | IS_BASED_ON_DEBIAN_7                 | BASED_ON_DEBIAN_7                       | "match"
+        //"Image OS"                        | IS_BASED_ON_CENTOS_8                 | BASED_ON_CENTOS_8                       | "match"
+        //"Image OS"                        | IS_BASED_ON_ALPINE                   | BASED_ON_ALPINE                         | "match"
         "Image Registry"                  | NO_IMAGE_REGISTRY_USCGR              | USES_USGCR                              | "match"
         "Image Remote"                    | NO_IMAGE_REMOTE                      | WITH_IMAGE_REMOTE_TO_MATCH              | "match"
         "Image Tag"                       | NO_IMAGE_TAG                         | WITH_IMAGE_TAG_TO_MATCH                 | "match"
@@ -947,14 +957,16 @@ class PolicyFieldsTest extends BaseSpecification {
         "Readiness Probe Defined"         | NO_READINESS_PROBE_DEFINED           | WITHOUT_READINESS_PROBE                 | "match"
         "Required Annotation"             | REQUIRED_ANNOTATION_KEY_AND_VALUE    | WITH_KEY_ONLY_ANNOTATION                | "no key only when value required"
         "Required Annotation"             | REQUIRED_ANNOTATION_KEY_AND_VALUE    | WITH_MISMATCHED_ANNOTATIONS             | "both required"
-        "Required Image Label"            | REQUIRED_IMAGE_LABEL_KEY_ONLY        | WITHOUT_IMAGE_LABELS                    | "no labels I"
-        "Required Image Label"            | REQUIRED_IMAGE_LABEL_KEY_AND_VALUE   | WITHOUT_IMAGE_LABELS                    | "no labels II"
-        "Required Image Label"            | REQUIRED_IMAGE_LABEL_NO_MATCH_I      | WITH_IMAGE_LABELS                       | "no match"
-        "Required Image Label"            | REQUIRED_IMAGE_LABEL_NO_MATCH_II     | WITH_IMAGE_LABELS                       | "no match II"
+        // ROX-29720 - disable gcr.io until tests are fixed for metadata failures after migration to artifacts registry
+        //"Required Image Label"            | REQUIRED_IMAGE_LABEL_KEY_ONLY        | WITHOUT_IMAGE_LABELS                    | "no labels I"
+        //"Required Image Label"            | REQUIRED_IMAGE_LABEL_KEY_AND_VALUE   | WITHOUT_IMAGE_LABELS                    | "no labels II"
+        //"Required Image Label"            | REQUIRED_IMAGE_LABEL_NO_MATCH_I      | WITH_IMAGE_LABELS                       | "no match"
+        //"Required Image Label"            | REQUIRED_IMAGE_LABEL_NO_MATCH_II     | WITH_IMAGE_LABELS                       | "no match II"
         "Required Label"                  | REQUIRED_LABEL_KEY_AND_VALUE         | WITH_KEY_ONLY_LABEL                     | "no key only when value required"
         "Required Label"                  | REQUIRED_LABEL_KEY_AND_VALUE         | WITH_MISMATCHED_LABELS                  | "both required"
-        "Severity"                        | EXCLUDE_SEVERITY_GT_IMPORTANT        | WITH_SEVERITY_GT_IMPORTANT              | "match"
-        "Unscanned Image"                 | IMAGES_ARE_UNSCANNED                 | UNSCANNED                               | "match"
+        // ROX-29720 - disable gcr.io until tests are fixed for metadata failures after migration to artifacts registry
+        //"Severity"                        | EXCLUDE_SEVERITY_GT_IMPORTANT        | WITH_SEVERITY_GT_IMPORTANT              | "match"
+        //"Unscanned Image"                 | IMAGES_ARE_UNSCANNED                 | UNSCANNED                               | "match"
         "Volume Destination"              | NO_FOO_VOLUME_DESTINATIONS           | WITH_A_RW_FOO_VOLUME                    | "match"
         "Volume Name"                     | NO_FOO_VOLUME_NAME                   | WITH_A_RW_FOO_VOLUME                    | "match"
         "Volume Source"                   | NO_TMP_VOLUME_SOURCE                 | WITH_A_RO_HOST_BAR_VOLUME               | "match"
@@ -965,7 +977,7 @@ class PolicyFieldsTest extends BaseSpecification {
 
     @SuppressWarnings('LineLength')
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Expect no violation for policy field '#fieldName' - #testName"() {
         expect:
         "Verify unexpected violations are not triggered"
@@ -1046,7 +1058,8 @@ class PolicyFieldsTest extends BaseSpecification {
         "Required Label"                  | REQUIRED_LABEL_KEY_ONLY               | WITH_KEY_ONLY_LABEL                    | "key only"
         "Required Label"                  | REQUIRED_LABEL_KEY_ONLY               | WITH_KEY_AND_VALUE_LABEL               | "key only matches key and value"
         "Required Label"                  | REQUIRED_LABEL_KEY_AND_VALUE          | WITH_KEY_AND_VALUE_LABEL               | "key and value"
-        "Unscanned Image"                 | IMAGES_ARE_UNSCANNED                  | IS_SCANNED                             | "no match"
+        // ROX-29720 - disable gcr.io until tests are fixed for metadata failures after migration to artifacts registry
+        //"Unscanned Image"                 | IMAGES_ARE_UNSCANNED                  | IS_SCANNED                             | "no match"
         "Volume Destination"              | NO_FOO_VOLUME_DESTINATIONS            | WITH_A_RO_HOST_BAR_VOLUME              | "no match"
         "Volume Destination"              | NO_FOO_VOLUME_DESTINATIONS            | WITHOUT_FOO_OR_BAR_VOLUMES             | "no match II"
         "Volume Name"                     | NO_FOO_VOLUME_NAME                    | WITH_A_RO_HOST_BAR_VOLUME              | "no match"
@@ -1063,7 +1076,7 @@ class PolicyFieldsTest extends BaseSpecification {
 
     @SuppressWarnings('LineLength')
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Route exposure works as expected - #shouldMatch"() {
         given:
         "Running on an OpenShift 4 cluster"

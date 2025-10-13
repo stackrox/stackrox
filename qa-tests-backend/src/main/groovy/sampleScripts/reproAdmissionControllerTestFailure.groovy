@@ -3,7 +3,7 @@ package sampleScripts
 import common.Constants
 import io.stackrox.proto.storage.ClusterOuterClass
 import objects.Deployment
-import orchestratormanager.OrchestratorMain
+import orchestratormanager.Kubernetes
 import orchestratormanager.OrchestratorType
 import services.BaseService
 import services.ClusterService
@@ -16,7 +16,7 @@ import util.Env
 
 // Use basic authentication for API calls to central. Relies on:
 // ROX_USERNAME (defaults to admin)
-// ROX_PASSWORD (inferred from the most recent deploy/{k8s,openshift}/central-deploy/password)
+// ROX_ADMIN_PASSWORD (inferred from the most recent deploy/{k8s,openshift}/central-deploy/password)
 // API_HOSTNAME & API_PORT
 BaseService.useBasicAuth()
 BaseService.setUseClientCert(false)
@@ -24,7 +24,7 @@ BaseService.setUseClientCert(false)
 // Get a cluster client. Assumes you have a working kube configuration. Relies on:
 // CLUSTER: Either `OPENSHIFT` or `K8S`. This is inferred from the most recent
 //   `deploy/{k8s,openshift}/central-deploy` dir
-OrchestratorMain client = OrchestratorType.create(
+Kubernetes client = OrchestratorType.create(
         Env.mustGetOrchestratorType(),
         Constants.ORCHESTRATOR_NAMESPACE
 )

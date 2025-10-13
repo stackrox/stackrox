@@ -1,4 +1,5 @@
-import React, { ReactElement, ReactNode } from 'react';
+import React from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const variants = {
@@ -13,7 +14,6 @@ const transition = {
 
 export type SidePanelAnimatedAreaProps = {
     children: ReactNode;
-    isDarkMode: boolean;
     isOpen: boolean;
 };
 
@@ -28,13 +28,7 @@ export type SidePanelAnimatedAreaProps = {
  * A semi-transparent gray background color covers the main panel (underlay style).
  * The side panel opens from right to left.
  */
-function SidePanelAnimatedArea({
-    children,
-    isDarkMode,
-    isOpen,
-}: SidePanelAnimatedAreaProps): ReactElement {
-    const bgClassName = isDarkMode ? 'bg-base-0' : 'bg-base-100';
-
+function SidePanelAnimatedArea({ children, isOpen }: SidePanelAnimatedAreaProps): ReactElement {
     return (
         <AnimatePresence initial={false}>
             {isOpen && (
@@ -43,7 +37,7 @@ function SidePanelAnimatedArea({
                     style={{ backgroundColor: 'rgba(3, 3, 3, 0.62)' }}
                 >
                     <motion.div
-                        className={`${bgClassName} border-base-400 border-l h-full rounded-tl-lg shadow-sidepanel w-full lg:w-9/10`}
+                        className="bg-base-100 border-base-400 border-l h-full rounded-tl-lg shadow-sidepanel w-full lg:w-9/10"
                         initial="closed"
                         animate="open"
                         exit="closed"

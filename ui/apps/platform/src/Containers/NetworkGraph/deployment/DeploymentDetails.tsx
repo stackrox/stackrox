@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import {
-    Button,
     DescriptionList,
     DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
     Divider,
+    EmptyState,
     ExpandableSection,
     Flex,
     FlexItem,
@@ -13,11 +13,40 @@ import {
     LabelGroup,
     Stack,
     StackItem,
-    Text,
     TextContent,
-    TextVariants,
+    Title,
+    EmptyStateHeader,
 } from '@patternfly/react-core';
-import { InfoCircleIcon } from '@patternfly/react-icons';
+
+import usePermissions from 'hooks/usePermissions';
+import type { Deployment } from 'types/deployment.proto';
+import type { ListenPort } from 'types/networkFlow.proto';
+import { getDateTime } from 'utils/dateUtils';
+
+import DeploymentPortConfig from 'Components/DeploymentPortConfig';
+import DeploymentContainerConfig from 'Components/DeploymentContainerConfig';
+
+import BothPolicyRules from 'images/network-graph/both-policy-rules.svg?react';
+import EgressOnly from 'images/network-graph/egress-only.svg?react';
+import IngressOnly from 'images/network-graph/ingress-only.svg?react';
+import NoPolicyRules from 'images/network-graph/no-policy-rules.svg?react';
+
+import type { EdgeState } from '../components/EdgeStateSelect';
+import type { CustomEdgeModel, CustomNodeModel, NetworkPolicyState } from '../types/topology.type';
+
+import AnomalousTraffic from './AnomalousTraffic';
+
+import './DeploymentDetails.css';
+
+type DeploymentDetailsProps = {
+    deployment: Deployment;
+    deploymentId: string;
+    edgeState: EdgeState;
+    edges: CustomEdgeModel[];
+    listenPorts: ListenPort[];
+    networkPolicyState: NetworkPolicyState;
+    nodes: CustomNodeModel[];
+};
 
 function DetailSection({ title, children }) {
     const [isExpanded, setIsExpanded] = useState(true);
@@ -26,80 +55,106 @@ function DetailSection({ title, children }) {
         setIsExpanded(_isExpanded);
     };
 
+    // TextContent so heading has black instead of blue color.
     return (
         <ExpandableSection
             isExpanded={isExpanded}
-            onToggle={onToggle}
+            onToggle={(_event, _isExpanded: boolean) => onToggle(_isExpanded)}
             toggleContent={
                 <TextContent>
-                    <Text component={TextVariants.h1} className="pf-u-font-size-xl">
-                        {title}
-                    </Text>
+                    <Title headingLevel="h2">{title}</Title>
                 </TextContent>
             }
         >
-            <div className="pf-u-px-sm pf-u-pb-md">{children}</div>
+            <div className="pf-v5-u-px-sm pf-v5-u-pb-md">{children}</div>
         </ExpandableSection>
     );
 }
 
-function DeploymentDetails() {
+function DeploymentDetails({
+    deployment,
+    deploymentId,
+    edgeState,
+    edges,
+    listenPorts,
+    networkPolicyState,
+    nodes,
+}: DeploymentDetailsProps) {
+    const labelKeys = Object.keys(deployment.labels);
+    const annotationKeys = Object.keys(deployment.annotations);
+
+    const { hasReadAccess } = usePermissions();
+    const hasReadAccessForNetworkPolicy = hasReadAccess('NetworkPolicy');
+
     return (
-        <div className="pf-u-h-100 pf-u-p-md">
+        <div className="pf-v5-u-h-100 pf-v5-u-p-md">
             <ul>
                 <li>
                     <DetailSection title="Network security">
                         <DescriptionList columnModifier={{ default: '1Col' }}>
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>Anomalous traffic</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    <Flex
-                                        direction={{ default: 'row' }}
-                                        alignItems={{ default: 'alignItemsCenter' }}
-                                    >
-                                        <FlexItem>
-                                            <Label
-                                                variant="outline"
-                                                color="red"
-                                                icon={<InfoCircleIcon />}
-                                            >
-                                                2 external flows
-                                            </Label>
-                                        </FlexItem>
-                                        <FlexItem>
-                                            <Label
-                                                variant="outline"
-                                                color="gold"
-                                                icon={<InfoCircleIcon />}
-                                            >
-                                                3 internal flows
-                                            </Label>
-                                        </FlexItem>
-                                    </Flex>
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
+                            {hasReadAccessForNetworkPolicy && (
+                                <AnomalousTraffic
+                                    deploymentId={deploymentId}
+                                    edgeState={edgeState}
+                                    edges={edges}
+                                    nodes={nodes}
+                                />
+                            )}
                             <DescriptionListGroup>
                                 <DescriptionListTerm>Network policy rules</DescriptionListTerm>
                                 <DescriptionListDescription>
-                                    <Flex
-                                        direction={{ default: 'row' }}
-                                        alignItems={{ default: 'alignItemsCenter' }}
-                                    >
-                                        <FlexItem>
+                                    {networkPolicyState === 'both' && (
+                                        <Label
+                                            variant="outline"
+                                            color="blue"
+                                            icon={<BothPolicyRules width="22px" height="22px" />}
+                                        >
+                                            1 or more policies regulating bidirectional traffic
+                                        </Label>
+                                    )}
+                                    {networkPolicyState === 'egress' && (
+                                        <LabelGroup>
                                             <Label
                                                 variant="outline"
-                                                color="gold"
-                                                icon={<InfoCircleIcon />}
+                                                color="red"
+                                                icon={<NoPolicyRules width="22px" height="22px" />}
                                             >
-                                                0 egress, allowing 325 flows
+                                                A missing policy is allowing all ingress traffic
                                             </Label>
-                                        </FlexItem>
-                                        <FlexItem>
-                                            <Label variant="outline" color="blue">
-                                                1 egress
+                                            <Label
+                                                variant="outline"
+                                                color="blue"
+                                                icon={<EgressOnly width="22px" height="22px" />}
+                                            >
+                                                1 or more policies regulating egress traffic
                                             </Label>
-                                        </FlexItem>
-                                    </Flex>
+                                        </LabelGroup>
+                                    )}
+                                    {networkPolicyState === 'ingress' && (
+                                        <LabelGroup>
+                                            <Label
+                                                variant="outline"
+                                                icon={<NoPolicyRules width="22px" height="22px" />}
+                                            >
+                                                A missing policy is allowing all egress traffic
+                                            </Label>
+                                            <Label
+                                                variant="outline"
+                                                color="blue"
+                                                icon={<IngressOnly width="22px" height="22px" />}
+                                            >
+                                                1 or more policies regulating ingress traffic
+                                            </Label>
+                                        </LabelGroup>
+                                    )}
+                                    {networkPolicyState === 'none' && (
+                                        <Label
+                                            variant="outline"
+                                            icon={<NoPolicyRules width="22px" height="22px" />}
+                                        >
+                                            A missing policy is allowing all network traffic
+                                        </Label>
+                                    )}
                                 </DescriptionListDescription>
                             </DescriptionListGroup>
                             <DescriptionListGroup>
@@ -110,7 +165,22 @@ function DeploymentDetails() {
                                         alignItems={{ default: 'alignItemsCenter' }}
                                     >
                                         <FlexItem>
-                                            <Label variant="outline">TCP: 2020, 2021</Label>
+                                            <LabelGroup>
+                                                {listenPorts.map(({ port, l4protocol }) => {
+                                                    const protocol = l4protocol.replace(
+                                                        'L4_PROTOCOL_',
+                                                        ''
+                                                    );
+                                                    return (
+                                                        <Label
+                                                            variant="outline"
+                                                            key={`${port}-${protocol}`}
+                                                        >
+                                                            {protocol}: {port}
+                                                        </Label>
+                                                    );
+                                                })}
+                                            </LabelGroup>
                                         </FlexItem>
                                     </Flex>
                                 </DescriptionListDescription>
@@ -118,56 +188,46 @@ function DeploymentDetails() {
                         </DescriptionList>
                     </DetailSection>
                 </li>
-                <Divider component="li" className="pf-u-mb-sm" />
                 <li>
-                    <DetailSection title="Deployment configuration">
+                    <Divider className="pf-v5-u-mb-sm" />
+                    <DetailSection title="Deployment overview">
                         <Stack hasGutter>
                             <StackItem>
                                 <DescriptionList columnModifier={{ default: '2Col' }}>
                                     <DescriptionListGroup>
                                         <DescriptionListTerm>Name</DescriptionListTerm>
                                         <DescriptionListDescription>
-                                            <Button variant="link" isInline>
-                                                visa-processor
-                                            </Button>
+                                            {deployment.name}
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                     <DescriptionListGroup>
                                         <DescriptionListTerm>Created</DescriptionListTerm>
                                         <DescriptionListDescription>
-                                            12/09/21 | 6:03:23 PM
+                                            {getDateTime(deployment.created)}
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                     <DescriptionListGroup>
                                         <DescriptionListTerm>Cluster</DescriptionListTerm>
                                         <DescriptionListDescription>
-                                            <Button variant="link" isInline>
-                                                Production
-                                            </Button>
+                                            {deployment.clusterName}
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                     <DescriptionListGroup>
                                         <DescriptionListTerm>Namespace</DescriptionListTerm>
                                         <DescriptionListDescription>
-                                            <Button variant="link" isInline>
-                                                Naples
-                                            </Button>
+                                            {deployment.namespace}
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                     <DescriptionListGroup>
                                         <DescriptionListTerm>Replicas</DescriptionListTerm>
                                         <DescriptionListDescription>
-                                            <Button variant="link" isInline>
-                                                2 pods
-                                            </Button>
+                                            {deployment.replicas}
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                     <DescriptionListGroup>
                                         <DescriptionListTerm>Service account</DescriptionListTerm>
                                         <DescriptionListDescription>
-                                            <Button variant="link" isInline>
-                                                visa-processor
-                                            </Button>
+                                            {deployment.serviceAccount}
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                 </DescriptionList>
@@ -177,41 +237,43 @@ function DeploymentDetails() {
                                     <DescriptionListGroup>
                                         <DescriptionListTerm>Labels</DescriptionListTerm>
                                         <DescriptionListDescription>
-                                            <LabelGroup>
-                                                <Label color="blue">app:visa-processor</Label>
-                                                <Label color="blue">
-                                                    helm.sh/release-namespace:naples
-                                                </Label>
-                                            </LabelGroup>
+                                            {labelKeys.length === 0 ? (
+                                                'None'
+                                            ) : (
+                                                <LabelGroup>
+                                                    {labelKeys.map((labelKey) => {
+                                                        const labelValue =
+                                                            deployment.labels[labelKey];
+                                                        const label = `${labelKey}:${labelValue}`;
+                                                        return (
+                                                            <Label key={label} color="blue">
+                                                                {label}
+                                                            </Label>
+                                                        );
+                                                    })}
+                                                </LabelGroup>
+                                            )}
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                     <DescriptionListGroup>
                                         <DescriptionListTerm>Annotations</DescriptionListTerm>
                                         <DescriptionListDescription>
-                                            <LabelGroup>
-                                                <Label color="blue">
-                                                    deprecated.daemonset.template.generation:15
-                                                </Label>
-                                                <Label color="blue">
-                                                    email:support@stackrox.com
-                                                </Label>
-                                            </LabelGroup>
-                                        </DescriptionListDescription>
-                                    </DescriptionListGroup>
-                                </DescriptionList>
-                            </StackItem>
-                            <StackItem>
-                                <DescriptionList columnModifier={{ default: '2Col' }}>
-                                    <DescriptionListGroup>
-                                        <DescriptionListTerm>AddCapabilities</DescriptionListTerm>
-                                        <DescriptionListDescription>
-                                            SYS_ADMIN
-                                        </DescriptionListDescription>
-                                    </DescriptionListGroup>
-                                    <DescriptionListGroup>
-                                        <DescriptionListTerm>Privileged</DescriptionListTerm>
-                                        <DescriptionListDescription>
-                                            true
+                                            {annotationKeys.length === 0 ? (
+                                                'None'
+                                            ) : (
+                                                <LabelGroup>
+                                                    {annotationKeys.map((annotationKey) => {
+                                                        const annotationValue =
+                                                            deployment.annotations[annotationKey];
+                                                        const annotation = `${annotationKey}:${annotationValue}`;
+                                                        return (
+                                                            <Label key={annotationKey} color="blue">
+                                                                {annotation}
+                                                            </Label>
+                                                        );
+                                                    })}
+                                                </LabelGroup>
+                                            )}
                                         </DescriptionListDescription>
                                     </DescriptionListGroup>
                                 </DescriptionList>
@@ -219,10 +281,50 @@ function DeploymentDetails() {
                         </Stack>
                     </DetailSection>
                 </li>
-                <Divider component="li" className="pf-u-mb-sm" />
                 <li>
+                    <Divider className="pf-v5-u-mb-sm" />
                     <DetailSection title="Port configurations">
-                        @TODO: Add port configurations section
+                        {deployment.ports.length ? (
+                            <Stack hasGutter>
+                                {deployment.ports.map((port) => {
+                                    return (
+                                        <StackItem key={port.name}>
+                                            <DeploymentPortConfig port={port} />
+                                        </StackItem>
+                                    );
+                                })}
+                            </Stack>
+                        ) : (
+                            <EmptyState variant="xs">
+                                <EmptyStateHeader
+                                    titleText="No ports available"
+                                    headingLevel="h4"
+                                />
+                            </EmptyState>
+                        )}
+                    </DetailSection>
+                </li>
+                <li>
+                    <Divider className="pf-v5-u-mb-sm" />
+                    <DetailSection title="Container configurations">
+                        {deployment.containers.length ? (
+                            <Stack hasGutter>
+                                {deployment.containers.map((container) => {
+                                    return (
+                                        <StackItem key={container.id}>
+                                            <DeploymentContainerConfig container={container} />
+                                        </StackItem>
+                                    );
+                                })}
+                            </Stack>
+                        ) : (
+                            <EmptyState variant="xs">
+                                <EmptyStateHeader
+                                    titleText="No containers available"
+                                    headingLevel="h4"
+                                />
+                            </EmptyState>
+                        )}
                     </DetailSection>
                 </li>
             </ul>

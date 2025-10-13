@@ -31,7 +31,7 @@ type ProviderCallbacks interface {
 	GetProviderForFingerprint(fingerprint string) authproviders.Provider
 }
 
-func (f *factory) CreateBackend(ctx context.Context, id string, uiEndpoints []string, config map[string]string) (authproviders.Backend, error) {
+func (f *factory) CreateBackend(ctx context.Context, id string, _ []string, config map[string]string, _ map[string]string) (authproviders.Backend, error) {
 	pathPrefix := f.callbackURLPath + id + "/"
 	be, err := newBackend(ctx, pathPrefix, f.callbacks, config)
 	if err != nil {
@@ -40,14 +40,14 @@ func (f *factory) CreateBackend(ctx context.Context, id string, uiEndpoints []st
 	return be, nil
 }
 
-func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (providerID string, clientState string, err error) {
+func (f *factory) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (providerID string, clientState string, err error) {
 	if r.Method != http.MethodGet {
 		return "", "", httputil.Errorf(http.StatusMethodNotAllowed, "invalid method %q, only GET requests are allowed", r.Method)
 	}
 
 	restURL := strings.TrimPrefix(r.URL.Path, f.callbackURLPath)
 	if len(restURL) == len(r.URL.Path) {
-		return "", "", utils.Should(httputil.Errorf(http.StatusNotFound, "invalid path %q, expected sub-path of %q", r.URL.Path, f.callbackURLPath))
+		return "", "", utils.ShouldErr(httputil.Errorf(http.StatusNotFound, "invalid path %q, expected sub-path of %q", r.URL.Path, f.callbackURLPath))
 	}
 
 	if restURL == "" {
@@ -66,7 +66,7 @@ func (f *factory) RedactConfig(config map[string]string) map[string]string {
 	return config
 }
 
-func (f *factory) MergeConfig(newCfg, oldCfg map[string]string) map[string]string {
+func (f *factory) MergeConfig(newCfg, _ map[string]string) map[string]string {
 	return newCfg
 }
 

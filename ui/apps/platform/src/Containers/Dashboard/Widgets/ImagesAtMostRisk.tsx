@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom-v5-compat';
 import { gql, useQuery } from '@apollo/client';
 import {
     Button,
@@ -14,16 +14,16 @@ import {
 import isEqual from 'lodash/isEqual';
 
 import { vulnManagementImagesPath } from 'routePaths';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useURLSearch from 'hooks/useURLSearch';
 import useWidgetConfig from 'hooks/useWidgetConfig';
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 import { getQueryString } from 'utils/queryStringUtils';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import LinkShim from 'Components/PatternFly/LinkShim';
+import WidgetCard from 'Components/PatternFly/WidgetCard';
 
-import WidgetCard from './WidgetCard';
-import ImagesAtMostRiskTable, { CveStatusOption, ImageData } from './ImagesAtMostRiskTable';
+import ImagesAtMostRiskTable from './ImagesAtMostRiskTable';
+import type { CveStatusOption, ImageData } from './ImagesAtMostRiskTable';
 import isResourceScoped from '../utils';
 import NoDataEmptyState from './NoDataEmptyState';
 import WidgetOptionsMenu from './WidgetOptionsMenu';
@@ -43,9 +43,8 @@ function getViewAllLink(searchFilter: SearchFilter) {
     return `${vulnManagementImagesPath}${queryString}`;
 }
 
-export function getImagesQuery(useUpdatedVmResolver: boolean) {
-    return gql`
-    query getImages($query: String) {
+export const imagesAtMostRiskQuery = gql`
+    query getImagesAtMostRisk($query: String) {
         images(
             query: $query
             pagination: { limit: 6, sortOption: { field: "Image Risk Priority", reversed: false } }
@@ -56,11 +55,7 @@ export function getImagesQuery(useUpdatedVmResolver: boolean) {
                 fullName
             }
             priority
-            ${
-                useUpdatedVmResolver
-                    ? 'imageVulnerabilityCounter'
-                    : 'imageVulnerabilityCounter: vulnCounter'
-            } {
+            imageVulnerabilityCounter {
                 important {
                     total
                     fixable
@@ -73,7 +68,6 @@ export function getImagesQuery(useUpdatedVmResolver: boolean) {
         }
     }
 `;
-}
 
 // If no resource scope is applied and the user selects "Active images" only, we
 // can use the wildcard query `Namespace:*` to return images part of any namespace i.e. active
@@ -110,11 +104,8 @@ function ImagesAtMostRisk() {
     );
     const { cveStatus, imageStatus } = config;
 
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-
     const variables = getQueryVariables(searchFilter, imageStatus);
-    const imagesQuery = getImagesQuery(isFeatureFlagEnabled('ROX_POSTGRES_DATASTORE'));
-    const { data, previousData, loading, error } = useQuery<ImageData>(imagesQuery, {
+    const { data, previousData, loading, error } = useQuery<ImageData>(imagesAtMostRiskQuery, {
         variables,
     });
 
@@ -144,7 +135,7 @@ function ImagesAtMostRisk() {
                                     >
                                         <ToggleGroup aria-label="Show all CVEs or fixable CVEs only">
                                             <ToggleGroupItem
-                                                className="pf-u-font-weight-normal"
+                                                className="pf-v5-u-font-weight-normal"
                                                 text="Fixable CVEs"
                                                 buttonId={`${fieldIdPrefix}-fixable-only`}
                                                 isSelected={cveStatus === 'Fixable'}

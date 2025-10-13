@@ -3,9 +3,8 @@ package manager
 import (
 	"context"
 	"sync/atomic"
-	"unsafe"
+	"time"
 
-	"github.com/gogo/protobuf/types"
 	pkgErr "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -18,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/detection/runtime"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/size"
 	"github.com/stackrox/rox/pkg/sizeboundedcache"
@@ -70,11 +70,10 @@ func (s *state) activeForOperation(op admission.Operation) bool {
 }
 
 type manager struct {
-	stopSig    concurrency.Signal
-	stoppedSig concurrency.ErrorSignal
+	stopper concurrency.Stopper
 
 	client     sensor.ImageServiceClient
-	imageCache sizeboundedcache.Cache
+	imageCache sizeboundedcache.Cache[string, imageCacheEntry]
 
 	depClient        sensor.DeploymentServiceClient
 	resourceUpdatesC chan *sensor.AdmCtrlUpdateResourceRequest
@@ -85,11 +84,11 @@ type manager struct {
 
 	settingsStream     *concurrency.ValueStream[*sensor.AdmissionControlSettings]
 	settingsC          chan *sensor.AdmissionControlSettings
-	lastSettingsUpdate *types.Timestamp
+	lastSettingsUpdate *time.Time
 
 	syncC chan *concurrency.Signal
 
-	statePtr unsafe.Pointer
+	state atomic.Pointer[state]
 
 	cacheVersion string
 
@@ -102,8 +101,8 @@ type manager struct {
 
 // NewManager creates a new manager
 func NewManager(namespace string, maxImageCacheSize int64, imageServiceClient sensor.ImageServiceClient, deploymentServiceClient sensor.DeploymentServiceClient) *manager {
-	cache, err := sizeboundedcache.New(maxImageCacheSize, 2*size.MB, func(key interface{}, value interface{}) int64 {
-		return int64(len(key.(string)) + value.(imageCacheEntry).Size())
+	cache, err := sizeboundedcache.New(maxImageCacheSize, 2*size.MB, func(key string, value imageCacheEntry) int64 {
+		return int64(len(key) + value.SizeVT())
 	})
 	utils.CrashOnError(err)
 
@@ -113,7 +112,7 @@ func NewManager(namespace string, maxImageCacheSize int64, imageServiceClient se
 	return &manager{
 		settingsStream: concurrency.NewValueStream[*sensor.AdmissionControlSettings](nil),
 		settingsC:      make(chan *sensor.AdmissionControlSettings),
-		stoppedSig:     concurrency.NewErrorSignal(),
+		stopper:        concurrency.NewStopper(),
 		syncC:          make(chan *concurrency.Signal),
 
 		client:     imageServiceClient,
@@ -133,7 +132,7 @@ func NewManager(namespace string, maxImageCacheSize int64, imageServiceClient se
 }
 
 func (m *manager) currentState() *state {
-	return (*state)(atomic.LoadPointer(&m.statePtr))
+	return m.state.Load()
 }
 
 func (m *manager) SettingsStream() concurrency.ReadOnlyValueStream[*sensor.AdmissionControlSettings] {
@@ -149,36 +148,37 @@ func (m *manager) Sync(ctx context.Context) error {
 	select {
 	case m.syncC <- &syncSig:
 	case <-ctx.Done():
-		return ctx.Err()
-	case <-m.stoppedSig.Done():
-		return m.stoppedSig.ErrorWithDefault(pkgErr.New("manager was stopped"))
+		return pkgErr.Wrap(ctx.Err(), "sync")
+	case <-m.stopper.Client().Stopped().Done():
+		return pkgErr.Wrap(
+			m.stopper.Client().Stopped().ErrorWithDefault(pkgErr.New("manager was stopped")),
+			"sync",
+		)
 	}
 
 	select {
 	case <-syncSig.Done():
 		return nil
 	case <-ctx.Done():
-		return ctx.Err()
-	case <-m.stoppedSig.Done():
-		return m.stoppedSig.ErrorWithDefault(pkgErr.New("manager was stopped"))
+		return pkgErr.Wrap(ctx.Err(), "syncing")
+	case <-m.stopper.Client().Stopped().Done():
+		return pkgErr.Wrap(
+			m.stopper.Client().Stopped().ErrorWithDefault(pkgErr.New("manager was stopped")),
+			"sync",
+		)
 	}
 }
 
-func (m *manager) Start() error {
-	if !m.stopSig.Reset() {
-		return pkgErr.New("admission control manager has already been started")
-	}
-
+func (m *manager) Start() {
 	go m.run()
-	return nil
 }
 
 func (m *manager) Stop() {
-	m.stopSig.Signal()
+	m.stopper.Client().Stop()
 }
 
 func (m *manager) Stopped() concurrency.ErrorWaitable {
-	return &m.stoppedSig
+	return m.stopper.Client().Stopped()
 }
 
 func (m *manager) SettingsUpdateC() chan<- *sensor.AdmissionControlSettings {
@@ -194,12 +194,12 @@ func (m *manager) InitialResourceSyncSig() *concurrency.Signal {
 }
 
 func (m *manager) run() {
-	defer m.stoppedSig.Signal()
+	defer m.stopper.Flow().ReportStopped()
 	defer log.Info("Stopping watcher")
 
-	for !m.stopSig.IsDone() {
+	for {
 		select {
-		case <-m.stopSig.Done():
+		case <-m.stopper.Flow().StopRequested():
 			m.ProcessNewSettings(nil)
 			return
 		case newSettings := <-m.settingsC:
@@ -211,7 +211,7 @@ func (m *manager) run() {
 			// channels. The duplication of select branches is a bit ugly, but inevitable
 			// without reflection.
 			select {
-			case <-m.stopSig.Done():
+			case <-m.stopper.Flow().StopRequested():
 				m.ProcessNewSettings(nil)
 				return
 			case newSettings := <-m.settingsC:
@@ -229,13 +229,13 @@ func (m *manager) run() {
 func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSettings) {
 	if newSettings == nil {
 		log.Info("DISABLING admission control service (config map was deleted).")
-		atomic.StorePointer(&m.statePtr, nil)
+		m.state.Store(nil)
 		m.lastSettingsUpdate = nil
 		m.settingsStream.Push(newSettings) // typed nil ptr, not nil!
 		return
 	}
 
-	if m.lastSettingsUpdate != nil && newSettings.GetTimestamp().Compare(m.lastSettingsUpdate) <= 0 {
+	if m.lastSettingsUpdate != nil && protocompat.CompareTimestampToTime(newSettings.GetTimestamp(), m.lastSettingsUpdate) <= 0 {
 		return // no update
 	}
 
@@ -243,7 +243,7 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 	runtimePoliciesWithDeployFields, runtimePoliciesWithoutDeployFields := detection.NewPolicySet(), detection.NewPolicySet()
 	for _, policy := range newSettings.GetRuntimePolicies().GetPolicies() {
 		if policyfields.ContainsScanRequiredFields(policy) && !newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline() {
-			log.Warnf(errors.ImageScanUnavailableMsg(policy))
+			log.Warn(errors.ImageScanUnavailableMsg(policy))
 			continue
 		}
 
@@ -271,7 +271,7 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 		for _, policy := range newSettings.GetEnforcedDeployTimePolicies().GetPolicies() {
 			if policyfields.ContainsScanRequiredFields(policy) &&
 				!newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline() {
-				log.Warnf(errors.ImageScanUnavailableMsg(policy))
+				log.Warn(errors.ImageScanUnavailableMsg(policy))
 				continue
 			}
 			if err := deployTimePolicySet.UpsertPolicy(policy); err != nil {
@@ -315,7 +315,7 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 		}
 
 		if newSettings.GetCentralEndpoint() != "" {
-			conn, err := clientconn.AuthenticatedGRPCConnection(newSettings.GetCentralEndpoint(), mtls.CentralSubject, clientconn.UseServiceCertToken(true))
+			conn, err := clientconn.AuthenticatedGRPCConnection(context.Background(), newSettings.GetCentralEndpoint(), mtls.CentralSubject, clientconn.UseServiceCertToken(true))
 			if err != nil {
 				log.Errorf("Could not create connection to Central: %v", err)
 			} else {
@@ -329,11 +329,11 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 		m.cacheVersion = newSettings.GetCacheVersion()
 	}
 
-	atomic.StorePointer(&m.statePtr, unsafe.Pointer(newState))
+	m.state.Store(newState)
 	if m.lastSettingsUpdate == nil {
 		log.Info("RE-ENABLING admission control service")
 	}
-	m.lastSettingsUpdate = newSettings.GetTimestamp()
+	m.lastSettingsUpdate = protocompat.ConvertTimestampToTimeOrNil(newSettings.GetTimestamp())
 
 	enforceablePolicies := 0
 	for _, policy := range allRuntimePolicySet.GetCompiledPolicies() {
@@ -416,7 +416,7 @@ func (m *manager) filterAndPutAttemptedAlertsOnChan(op admission.Operation, aler
 
 func (m *manager) putAlertsOnChan(alerts []*storage.Alert) {
 	select {
-	case <-m.stopSig.Done():
+	case <-m.stopper.Flow().StopRequested():
 		return
 	case m.alertsC <- alerts:
 	}

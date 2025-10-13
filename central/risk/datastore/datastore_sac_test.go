@@ -1,21 +1,19 @@
+//go:build sql_integration
+
 package datastore
 
 import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/risk/mappings"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -30,10 +28,7 @@ func TestRiskDataStoreSAC(t *testing.T) {
 type riskDatastoreSACSuite struct {
 	suite.Suite
 
-	engine *rocksdb.RocksDB
-	index  bleve.Index
-
-	pool *pgxpool.Pool
+	pool postgres.DB
 
 	datastore DataStore
 
@@ -44,36 +39,18 @@ type riskDatastoreSACSuite struct {
 }
 
 func (s *riskDatastoreSACSuite) SetupSuite() {
-	var err error
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pgtestbase := pgtest.ForT(s.T())
-		s.Require().NotNil(pgtestbase)
-		s.pool = pgtestbase.Pool
-		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
-		s.Require().NoError(err)
-		s.optionsMap = schema.RisksSchema.OptionsMap
-	} else {
-		s.engine, err = rocksdb.NewTemp("riskSACTest")
-		s.Require().NoError(err)
-		s.index, err = globalindex.MemOnlyIndex()
-		s.Require().NoError(err)
-
-		s.datastore, err = GetTestRocksBleveDataStore(s.T(), s.engine, s.index)
-		s.Require().NoError(err)
-		s.optionsMap = mappings.OptionsMap
-	}
+	pgtestbase := pgtest.ForT(s.T())
+	s.Require().NotNil(pgtestbase)
+	s.pool = pgtestbase.DB
+	s.datastore = GetTestPostgresDataStore(s.T(), s.pool)
+	s.optionsMap = schema.RisksSchema.OptionsMap
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
-		resources.Risk)
+		resources.DeploymentExtension)
 }
 
 func (s *riskDatastoreSACSuite) TearDownSuite() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pool.Close()
-	} else {
-		s.Require().NoError(rocksdb.CloseAndRemove(s.engine))
-		s.Require().NoError(s.index.Close())
-	}
+	s.pool.Close()
 }
 
 func (s *riskDatastoreSACSuite) SetupTest() {
@@ -139,7 +116,7 @@ func (s *riskDatastoreSACSuite) TestGetRisk() {
 			s.Require().NoError(err)
 			if c.ExpectedFound {
 				s.Require().True(found)
-				s.Equal(*risk, *res)
+				protoassert.Equal(s.T(), risk, res)
 			} else {
 				s.False(found)
 				s.Nil(res)
@@ -170,7 +147,7 @@ func (s *riskDatastoreSACSuite) TestGetRiskForDeployment() {
 			s.Require().NoError(err)
 			if c.ExpectedFound {
 				s.Require().True(found)
-				s.Equal(*risk, *res)
+				protoassert.Equal(s.T(), risk, res)
 			} else {
 				s.False(found)
 				s.Nil(res)
@@ -210,7 +187,7 @@ func (s *riskDatastoreSACSuite) runSearchRawTest(c testutils.SACSearchTestCase) 
 	s.Require().NoError(err)
 	resultObjs := make([]sac.NamespaceScopedObject, 0, len(results))
 	for i := range results {
-		resultObjs = append(resultObjs, results[i].Subject)
+		resultObjs = append(resultObjs, results[i].GetSubject())
 	}
 	resultCounts := testutils.CountSearchResultObjectsPerClusterAndNamespace(s.T(), resultObjs)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, c.Results, resultCounts)
@@ -220,7 +197,18 @@ func (s *riskDatastoreSACSuite) runSearchTest(c testutils.SACSearchTestCase) {
 	ctx := s.testContexts[c.ScopeKey]
 	results, err := s.datastore.Search(ctx, nil)
 	s.Require().NoError(err)
-	resultCounts := testutils.CountResultsPerClusterAndNamespace(s.T(), results, s.optionsMap)
+	resultObjects := make([]sac.NamespaceScopedObject, 0, len(results))
+	for _, r := range results {
+		subjectType, subjectID, err := GetIDParts(r.ID)
+		if err != nil {
+			continue
+		}
+		obj, found, err := s.datastore.GetRisk(s.testContexts[testutils.UnrestrictedReadCtx], subjectID, subjectType)
+		if found && err == nil {
+			resultObjects = append(resultObjects, obj.GetSubject())
+		}
+	}
+	resultCounts := testutils.CountSearchResultObjectsPerClusterAndNamespace(s.T(), resultObjects)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, c.Results, resultCounts)
 }
 
@@ -233,7 +221,7 @@ func (s *riskDatastoreSACSuite) TestScopedSearch() {
 }
 
 func (s *riskDatastoreSACSuite) TestUnrestrictedSearch() {
-	for name, c := range testutils.GenericUnrestrictedSACSearchTestCases(s.T()) {
+	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runSearchTest(c)
 		})

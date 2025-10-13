@@ -3,15 +3,16 @@ package gatherers
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/node/globaldatastore"
+	"github.com/stackrox/rox/central/node/datastore"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/telemetry/data"
 )
 
 type nodeGatherer struct {
-	nodeDatastore globaldatastore.GlobalDataStore
+	nodeDatastore datastore.DataStore
 }
 
-func newNodeGatherer(nodeDatastore globaldatastore.GlobalDataStore) *nodeGatherer {
+func newNodeGatherer(nodeDatastore datastore.DataStore) *nodeGatherer {
 	return &nodeGatherer{
 		nodeDatastore: nodeDatastore,
 	}
@@ -19,12 +20,8 @@ func newNodeGatherer(nodeDatastore globaldatastore.GlobalDataStore) *nodeGathere
 
 // Gather returns a list of stats about all the nodes in a cluster
 func (n *nodeGatherer) Gather(ctx context.Context, clusterID string) []*data.NodeInfo {
-	datastore, err := n.nodeDatastore.GetClusterNodeStore(ctx, clusterID, false)
-	if err != nil {
-		log.Errorf("unable to get node datastore for cluster %s: %v", clusterID, err)
-		return nil
-	}
-	nodes, err := datastore.ListNodes()
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
+	nodes, err := n.nodeDatastore.SearchRawNodes(ctx, q)
 	if err != nil {
 		log.Errorf("unable to get nodes for cluster %s: %v", clusterID, err)
 		return nil

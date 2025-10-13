@@ -107,7 +107,7 @@ func (c scopeChecker) Namespace(namespace string) ScopeChecker {
 }
 
 // Check checks the given predicate in this scope.
-func (c scopeChecker) Check(ctx context.Context, pred ScopePredicate) (bool, error) {
+func (c scopeChecker) Check(_ context.Context, pred ScopePredicate) (bool, error) {
 	return pred.Allowed(c), nil
 }
 

@@ -1,20 +1,12 @@
 package printer
 
 import (
-	"errors"
 	"fmt"
 	"strings"
-	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
-	"github.com/stackrox/rox/pkg/protoconv"
-)
-
-const (
-	networkFlowTimestampAttrKey = "NetworkFlowTimestamp"
-	networkFlowTimestampLayout  = "2006-01-02 15:04:05 UTC"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // GenerateNetworkFlowViolation constructs violation message for network flow violations.
@@ -64,20 +56,6 @@ func GenerateNetworkFlowViolation(networkFlow *augmentedobjs.NetworkFlowDetails)
 			},
 		},
 		Type: storage.Alert_Violation_NETWORK_FLOW,
-		Time: networkFlow.LastSeenTimestamp,
+		Time: protocompat.ConvertTimeToTimestampOrNil(&networkFlow.LastSeenTimestamp),
 	}, nil
-}
-
-// GetNetworkFlowTimestampFromViolation returns the network flow's last observed timestamp
-func GetNetworkFlowTimestampFromViolation(violation *storage.Alert_Violation) (*types.Timestamp, error) {
-	for _, attr := range violation.GetKeyValueAttrs().GetAttrs() {
-		if attr.GetKey() == networkFlowTimestampAttrKey {
-			t, err := time.Parse(networkFlowTimestampLayout, attr.GetValue())
-			if err != nil {
-				return nil, err
-			}
-			return protoconv.ConvertTimeToTimestamp(t), nil
-		}
-	}
-	return nil, errors.New("network flow timestamp not found")
 }

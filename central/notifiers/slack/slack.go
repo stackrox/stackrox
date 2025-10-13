@@ -11,12 +11,14 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	mitreDataStore "github.com/stackrox/rox/central/mitre/datastore"
-	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
-	"github.com/stackrox/rox/central/notifiers"
+	"github.com/stackrox/rox/central/notifiers/metadatagetter"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events/codes"
+	"github.com/stackrox/rox/pkg/administration/events/option"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
+	mitreDS "github.com/stackrox/rox/pkg/mitre/datastore"
+	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
@@ -29,7 +31,7 @@ const (
 )
 
 var (
-	log = logging.LoggerForModule()
+	log = logging.LoggerForModule(option.EnableAdministrationEvents())
 )
 
 // slack notifier plugin
@@ -37,8 +39,8 @@ type slack struct {
 	*storage.Notifier
 	client *http.Client
 
-	namespaces namespaceDataStore.DataStore
-	mitreStore mitreDataStore.MitreAttackReadOnlyDataStore
+	metadataGetter notifiers.MetadataGetter
+	mitreStore     mitreDS.AttackReadOnlyDataStore
 }
 
 // notification json struct for richly-formatted notifications
@@ -112,11 +114,11 @@ func (s *slack) getDescription(alert *storage.Alert) (string, error) {
 			return valuesString
 		},
 	}
-	alertLink := notifiers.AlertLink(s.Notifier.UiEndpoint, alert)
+	alertLink := notifiers.AlertLink(s.Notifier.GetUiEndpoint(), alert)
 	return notifiers.FormatAlert(alert, alertLink, funcMap, s.mitreStore)
 }
 
-func (*slack) Close(ctx context.Context) error {
+func (*slack) Close(_ context.Context) error {
 	return nil
 }
 
@@ -140,10 +142,10 @@ func (s *slack) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	}
 	jsonPayload, err := json.Marshal(&notification)
 	if err != nil {
-		return errors.Errorf("Could not marshal notification for alert %v", alert.Id)
+		return errors.Errorf("Could not marshal notification for alert %v", alert.GetId())
 	}
 
-	webhookURL := notifiers.GetAnnotationValue(ctx, alert, s.GetLabelKey(), s.GetLabelDefault(), s.namespaces)
+	webhookURL := s.metadataGetter.GetAnnotationValue(ctx, alert, s.GetLabelKey(), s.GetLabelDefault())
 	webhook := urlfmt.FormatURL(webhookURL, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 
 	return retry.WithRetry(
@@ -214,14 +216,15 @@ func (s *slack) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, cluste
 	)
 }
 
-func newSlack(notifier *storage.Notifier, namespaces namespaceDataStore.DataStore, mitreStore mitreDataStore.MitreAttackReadOnlyDataStore) (*slack, error) {
+// NewSlack exported to allow for usage in various components
+func NewSlack(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter, mitreStore mitreDS.AttackReadOnlyDataStore) (*slack, error) {
 	return &slack{
 		Notifier: notifier,
 		client: &http.Client{
 			Transport: proxy.RoundTripper(),
 		},
-		namespaces: namespaces,
-		mitreStore: mitreStore,
+		metadataGetter: metadataGetter,
+		mitreStore:     mitreStore,
 	}, nil
 }
 
@@ -229,18 +232,18 @@ func (s *slack) ProtoNotifier() *storage.Notifier {
 	return s.Notifier
 }
 
-func (s *slack) Test(ctx context.Context) error {
+func (s *slack) Test(ctx context.Context) *notifiers.NotifierError {
 	n := notification{
 		Text: "This is a test message created to test integration with StackRox.",
 	}
 	jsonPayload, err := json.Marshal(&n)
 	if err != nil {
-		return errors.New("Could not marshal test notification")
+		return notifiers.NewNotifierError("create test message failed", errors.New("Could not marshal test notification"))
 	}
 
 	webhook := urlfmt.FormatURL(s.GetLabelDefault(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 
-	return retry.WithRetry(
+	err = retry.WithRetry(
 		func() error {
 			return s.postMessage(ctx, webhook, jsonPayload)
 		},
@@ -251,10 +254,16 @@ func (s *slack) Test(ctx context.Context) error {
 			time.Sleep(wait * time.Millisecond)
 		}),
 	)
+
+	if err != nil {
+		return notifiers.NewNotifierError("send test message failed", err)
+	}
+
+	return nil
 }
 
 func (s *slack) postMessage(ctx context.Context, url string, jsonPayload []byte) error {
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonPayload))
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		return err
 	}
@@ -262,17 +271,18 @@ func (s *slack) postMessage(ctx context.Context, url string, jsonPayload []byte)
 
 	resp, err := s.client.Do(req.WithContext(ctx))
 	if err != nil {
-		log.Errorf("Error posting to slack: %v", err)
+		log.Errorw("Error posting message to Slack", logging.Err(err),
+			logging.ErrCode(codes.SlackGeneric), logging.NotifierName(s.GetName()))
 		return errors.Wrap(err, "Error posting to slack")
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 
-	return notifiers.CreateError("Slack", resp)
+	return notifiers.CreateError(s.GetName(), resp, codes.SlackGeneric)
 }
 
 func init() {
-	notifiers.Add("slack", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		s, err := newSlack(notifier, namespaceDataStore.Singleton(), mitreDataStore.Singleton())
+	notifiers.Add(notifiers.SlackType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
+		s, err := NewSlack(notifier, metadatagetter.Singleton(), mitreDS.Singleton())
 		return s, err
 	})
 }

@@ -4,16 +4,16 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	storeMocks "github.com/stackrox/rox/central/apitoken/datastore/internal/store/mocks"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestTokenDataStore(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(apiTokenDataStoreTestSuite))
 }
 
@@ -23,9 +23,6 @@ type apiTokenDataStoreTestSuite struct {
 	hasNoneCtx  context.Context
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
-
-	hasReadIntegrationCtx  context.Context
-	hasWriteIntegrationCtx context.Context
 
 	dataStore DataStore
 	storage   *storeMocks.MockStore
@@ -38,17 +35,8 @@ func (s *apiTokenDataStoreTestSuite) SetupTest() {
 	s.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.APIToken)))
-	s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.APIToken)))
-
-	s.hasReadIntegrationCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Integration)))
-	s.hasWriteIntegrationCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+	s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Integration)))
@@ -64,59 +52,39 @@ func (s *apiTokenDataStoreTestSuite) TearDownTest() {
 
 func (s *apiTokenDataStoreTestSuite) TestAddToken() {
 	token := &storage.TokenMetadata{Id: "id"}
-	s.storage.EXPECT().Upsert(gomock.Any(), token).Return(nil).MaxTimes(2)
+	s.storage.EXPECT().Upsert(gomock.Any(), token).Return(nil).MaxTimes(1)
 
 	s.NoError(s.dataStore.AddToken(s.hasWriteCtx, token))
-
-	token.Id = "id2"
-
-	s.NoError(s.dataStore.AddToken(s.hasWriteIntegrationCtx, token))
 }
 
 func (s *apiTokenDataStoreTestSuite) TestGetTokenOrNil() {
 	expectedToken := &storage.TokenMetadata{Id: "id"}
-	s.storage.EXPECT().Get(gomock.Any(), "id").Return(nil, false, nil).MaxTimes(2)
+	s.storage.EXPECT().Get(gomock.Any(), "id").Return(nil, false, nil).MaxTimes(1)
 
 	token, err := s.dataStore.GetTokenOrNil(s.hasReadCtx, "id")
 	s.NoError(err)
 	s.Nil(token)
 
-	token, err = s.dataStore.GetTokenOrNil(s.hasReadIntegrationCtx, "id")
-	s.NoError(err)
-	s.Nil(token)
-
-	s.storage.EXPECT().Get(gomock.Any(), "id").Return(expectedToken, true, nil).MaxTimes(2)
+	s.storage.EXPECT().Get(gomock.Any(), "id").Return(expectedToken, true, nil).MaxTimes(1)
 
 	token, err = s.dataStore.GetTokenOrNil(s.hasReadCtx, "id")
 	s.NoError(err)
-	s.Equal(expectedToken, token)
-
-	token, err = s.dataStore.GetTokenOrNil(s.hasReadIntegrationCtx, "id")
-	s.NoError(err)
-	s.Equal(expectedToken, token)
+	protoassert.Equal(s.T(), expectedToken, token)
 }
 
 func (s *apiTokenDataStoreTestSuite) TestRevokeToken() {
 	expectedToken := &storage.TokenMetadata{Id: "id"}
-	s.storage.EXPECT().Get(gomock.Any(), "id").Return(nil, false, nil).MaxTimes(2)
+	s.storage.EXPECT().Get(gomock.Any(), "id").Return(nil, false, nil).MaxTimes(1)
 
 	exists, err := s.dataStore.RevokeToken(s.hasWriteCtx, "id")
 	s.NoError(err)
 	s.False(exists)
 
-	exists, err = s.dataStore.RevokeToken(s.hasWriteIntegrationCtx, "id")
-	s.NoError(err)
-	s.False(exists)
-
-	s.storage.EXPECT().Get(gomock.Any(), "id").Return(expectedToken, true, nil).MaxTimes(2)
+	s.storage.EXPECT().Get(gomock.Any(), "id").Return(expectedToken, true, nil).MaxTimes(1)
 	expectedToken.Revoked = true
-	s.storage.EXPECT().Upsert(gomock.Any(), expectedToken).Return(nil).MaxTimes(2)
+	s.storage.EXPECT().Upsert(gomock.Any(), expectedToken).Return(nil).MaxTimes(1)
 
 	exists, err = s.dataStore.RevokeToken(s.hasWriteCtx, "id")
-	s.NoError(err)
-	s.True(exists)
-
-	exists, err = s.dataStore.RevokeToken(s.hasWriteIntegrationCtx, "id")
 	s.NoError(err)
 	s.True(exists)
 }

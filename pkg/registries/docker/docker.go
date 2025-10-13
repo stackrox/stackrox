@@ -1,51 +1,60 @@
 package docker
 
 import (
-	"crypto/tls"
+	"context"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
+	"github.com/docker/distribution/manifest/manifestlist"
 	manifestV1 "github.com/docker/distribution/manifest/schema1"
-	"github.com/docker/distribution/manifest/schema2"
+	manifestV2 "github.com/docker/distribution/manifest/schema2"
 	"github.com/heroku/docker-registry-client/registry"
-	ociSpec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/urlfmt"
+	pkgUtils "github.com/stackrox/rox/pkg/utils"
 )
 
 const (
-	// GenericDockerRegistryType exposes the default registry type
-	GenericDockerRegistryType = "docker"
-
-	registryTimeout  = 5 * time.Second
 	repoListInterval = 10 * time.Minute
 )
 
-var (
-	log = logging.LoggerForModule()
-)
+var log = logging.LoggerForModule()
 
 // Creator provides the type and registries.Creator to add to the registries Registry.
-func Creator() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
-	return GenericDockerRegistryType, func(integration *storage.ImageIntegration) (types.Registry, error) {
-		reg, err := NewDockerRegistry(integration)
-		return reg, err
-	}
+func Creator() (string, types.Creator) {
+	return types.DockerType,
+		func(integration *storage.ImageIntegration, options ...types.CreatorOption) (types.Registry, error) {
+			cfg := types.ApplyCreatorOptions(options...)
+			reg, err := NewDockerRegistry(integration, false, cfg.GetMetricsHandler())
+			return reg, err
+		}
 }
+
+// CreatorWithoutRepoList provides the type and registries.Creator to add to the registries Registry.
+// Populating the internal repo list will be disabled.
+func CreatorWithoutRepoList() (string, types.Creator) {
+	return types.DockerType,
+		func(integration *storage.ImageIntegration, options ...types.CreatorOption) (types.Registry, error) {
+			cfg := types.ApplyCreatorOptions(options...)
+			reg, err := NewDockerRegistry(integration, true, cfg.GetMetricsHandler())
+			return reg, err
+		}
+}
+
+var _ types.Registry = (*Registry)(nil)
 
 // Registry is the basic docker registry implementation
 type Registry struct {
-	cfg                   Config
+	cfg                   *Config
 	protoImageIntegration *storage.ImageIntegration
 
 	Client *registry.Registry
@@ -56,80 +65,58 @@ type Registry struct {
 	repositoryList       set.StringSet
 	repositoryListTicker *time.Ticker
 	repositoryListLock   sync.RWMutex
-}
 
-// Config is the basic config for the docker registry
-type Config struct {
-	// Endpoint defines the Docker Registry URL
-	Endpoint string
-	// Username defines the Username for the Docker Registry
-	Username string
-	// Password defines the password for the Docker Registry
-	Password string
-	// Insecure defines if the registry should be insecure
-	Insecure bool
+	repoListOnce sync.Once
 }
 
 // NewDockerRegistryWithConfig creates a new instantiation of the docker registry
 // TODO(cgorman) AP-386 - properly put the base docker registry into another pkg
-func NewDockerRegistryWithConfig(cfg Config, integration *storage.ImageIntegration) (*Registry, error) {
-	endpoint := cfg.Endpoint
-	if strings.EqualFold(endpoint, "https://docker.io") || strings.EqualFold(endpoint, "docker.io") {
-		endpoint = "https://registry-1.docker.io"
-	}
-	url := urlfmt.FormatURL(endpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+func NewDockerRegistryWithConfig(cfg *Config, integration *storage.ImageIntegration,
+	transports ...registry.Transport,
+) (*Registry, error) {
+	hostname, url := RegistryHostnameURL(cfg.Endpoint)
 
-	// if the registryServer endpoint contains docker.io then the image will be docker.io/namespace/repo:tag
-	registryServer := urlfmt.GetServerFromURL(url)
-	if strings.Contains(cfg.Endpoint, "docker.io") {
-		registryServer = "docker.io"
-	}
-	var transport http.RoundTripper
-	if cfg.Insecure {
-		transport = proxy.RoundTripperWithTLSConfig(&tls.Config{
-			InsecureSkipVerify: true,
-		})
+	var transport registry.Transport
+	if len(transports) == 0 || transports[0] == nil {
+		transport = DefaultTransport(cfg)
 	} else {
-		transport = proxy.RoundTripper()
+		transport = transports[0]
 	}
-
-	client, err := registry.NewFromTransport(
-		url, registry.WrapTransport(transport, strings.TrimSuffix(url, "/"), cfg.Username, cfg.Password), registry.Quiet)
+	client, err := registry.NewFromTransport(url, transport, registry.Quiet)
 	if err != nil {
 		return nil, err
 	}
 
-	client.Client.Timeout = registryTimeout
+	client.Client.Timeout = env.RegistryClientTimeout.DurationSetting()
 
-	repoSet, err := retrieveRepositoryList(client)
-	if err != nil {
-		// This is not a critical error so it is purposefully not returned
-		log.Debugf("could not update repo list for integration %s: %v", integration.GetName(), err)
-	}
+	repoListState := pkgUtils.IfThenElse(cfg.DisableRepoList, "disabled", "enabled")
+	log.Debugf("created integration %q with repo list %s", integration.GetName(), repoListState)
 
 	return &Registry{
 		url:                   url,
-		registry:              registryServer,
+		registry:              hostname,
 		Client:                client,
 		cfg:                   cfg,
 		protoImageIntegration: integration,
-
-		repositoryList:       repoSet,
-		repositoryListTicker: time.NewTicker(repoListInterval),
 	}, nil
 }
 
 // NewDockerRegistry creates a generic docker registry integration
-func NewDockerRegistry(integration *storage.ImageIntegration) (*Registry, error) {
-	dockerConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Docker)
+func NewDockerRegistry(integration *storage.ImageIntegration, disableRepoList bool,
+	metricsHandler *types.MetricsHandler,
+) (*Registry, error) {
+	dockerConfig, ok := integration.GetIntegrationConfig().(*storage.ImageIntegration_Docker)
 	if !ok {
 		return nil, errors.New("Docker configuration required")
 	}
-	cfg := Config{
-		Endpoint: dockerConfig.Docker.GetEndpoint(),
-		Username: dockerConfig.Docker.GetUsername(),
-		Password: dockerConfig.Docker.GetPassword(),
-		Insecure: dockerConfig.Docker.GetInsecure(),
+	cfg := &Config{
+		Endpoint:        dockerConfig.Docker.GetEndpoint(),
+		username:        dockerConfig.Docker.GetUsername(),
+		password:        dockerConfig.Docker.GetPassword(),
+		Insecure:        dockerConfig.Docker.GetInsecure(),
+		DisableRepoList: disableRepoList,
+		MetricsHandler:  metricsHandler,
+		RegistryType:    integration.GetType(),
 	}
 	return NewDockerRegistryWithConfig(cfg, integration)
 }
@@ -148,9 +135,14 @@ func retrieveRepositoryList(client *registry.Registry) (set.StringSet, error) {
 // Match decides if the image is contained within this registry
 func (r *Registry) Match(image *storage.ImageName) bool {
 	match := urlfmt.TrimHTTPPrefixes(r.registry) == image.GetRegistry()
-	var list set.StringSet
-	concurrency.WithRLock(&r.repositoryListLock, func() {
-		list = r.repositoryList
+	if !match || r.cfg.DisableRepoList {
+		return match
+	}
+
+	r.lazyLoadRepoList()
+
+	list := concurrency.WithRLock1(&r.repositoryListLock, func() set.StringSet {
+		return r.repositoryList
 	})
 	if list == nil {
 		return match
@@ -176,7 +168,44 @@ func (r *Registry) Match(image *storage.ImageName) bool {
 	return r.repositoryList.Contains(image.GetRemote())
 }
 
-// Metadata returns the metadata via this registries implementation
+// lazyLoadRepoList will perform the initial repo list load if necessary.
+// This is safe to call multiple times.
+func (r *Registry) lazyLoadRepoList() {
+	r.repoListOnce.Do(func() {
+		repoSet, err := retrieveRepositoryList(r.Client)
+		if err != nil {
+			// This is not a critical error, matching will instead be performed solely
+			// based on the registry endpoint (instead of endpoint AND repo list).
+			log.Debugf("could not initialize repo list for integration %s: %v", r.protoImageIntegration.GetName(), err)
+			return
+		}
+
+		r.repositoryList = repoSet
+		r.repositoryListTicker = time.NewTicker(repoListInterval)
+	})
+}
+
+func handleManifests(r *Registry, manifestType, remote, digest string) (*storage.ImageMetadata, error) {
+	// Note: Any updates here must be accompanied by updates to registry_without_digest.go.
+	switch manifestType {
+	case manifestV1.MediaTypeManifest:
+		return HandleV1Manifest(r, remote, digest)
+	case manifestV1.MediaTypeSignedManifest:
+		return HandleV1SignedManifest(r, remote, digest)
+	case manifestlist.MediaTypeManifestList:
+		return HandleV2ManifestList(r, remote, digest)
+	case manifestV2.MediaTypeManifest:
+		return HandleV2Manifest(r, remote, digest)
+	case registry.MediaTypeImageIndex:
+		return HandleOCIImageIndex(r, remote, digest)
+	case registry.MediaTypeImageManifest:
+		return HandleOCIManifest(r, remote, digest)
+	default:
+		return nil, fmt.Errorf("unknown manifest type '%s'", manifestType)
+	}
+}
+
+// Metadata returns the metadata via this registry's implementation
 func (r *Registry) Metadata(image *storage.Image) (*storage.ImageMetadata, error) {
 	if image == nil {
 		return nil, nil
@@ -185,29 +214,14 @@ func (r *Registry) Metadata(image *storage.Image) (*storage.ImageMetadata, error
 	remote := image.GetName().GetRemote()
 	digest, manifestType, err := r.Client.ManifestDigest(remote, utils.Reference(image))
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to get the manifest digest ")
+		return nil, errors.Wrap(err, "failed to get the manifest digest")
 	}
-
-	switch manifestType {
-	case manifestV1.MediaTypeManifest:
-		return HandleV1Manifest(r, remote, digest.String())
-	case manifestV1.MediaTypeSignedManifest:
-		return HandleV1SignedManifest(r, remote, digest.String())
-	case registry.MediaTypeManifestList:
-		return HandleV2ManifestList(r, remote, digest.String())
-	case schema2.MediaTypeManifest:
-		return HandleV2Manifest(r, remote, digest.String())
-	case ociSpec.MediaTypeImageManifest:
-		return HandleOCIManifest(r, remote, digest.String())
-	default:
-		return nil, fmt.Errorf("unknown manifest type '%s'", manifestType)
-	}
+	return handleManifests(r, manifestType, remote, digest.String())
 }
 
 // Test tests the current registry and makes sure that it is working properly
 func (r *Registry) Test() error {
 	err := r.Client.Ping()
-
 	if err != nil {
 		log.Errorf("error testing docker integration: %v", err)
 		if e, _ := err.(*registry.ClientError); e != nil {
@@ -219,10 +233,11 @@ func (r *Registry) Test() error {
 }
 
 // Config returns the configuration of the docker registry
-func (r *Registry) Config() *types.Config {
+func (r *Registry) Config(_ context.Context) *types.Config {
+	username, password := r.cfg.GetCredentials()
 	return &types.Config{
-		Username:         r.cfg.Username,
-		Password:         r.cfg.Password,
+		Username:         username,
+		Password:         password,
 		Insecure:         r.cfg.Insecure,
 		URL:              r.url,
 		RegistryHostname: r.registry,
@@ -233,4 +248,9 @@ func (r *Registry) Config() *types.Config {
 // Name returns the name of the registry
 func (r *Registry) Name() string {
 	return r.protoImageIntegration.GetName()
+}
+
+// HTTPClient returns the *http.Client used to contact the registry.
+func (r *Registry) HTTPClient() *http.Client {
+	return r.Client.Client
 }

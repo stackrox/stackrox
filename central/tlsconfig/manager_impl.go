@@ -45,6 +45,11 @@ func newManager(namespace string) (*managerImpl, error) {
 	}
 	trustRoots := []*x509.Certificate{ca}
 
+	secondaryCA, _, err := mtls.SecondaryCACert()
+	if err == nil {
+		trustRoots = append(trustRoots, secondaryCA)
+	}
+
 	internalCerts, err := getInternalCertificates(namespace)
 	if err != nil {
 		return nil, err
@@ -56,12 +61,12 @@ func newManager(namespace string) (*managerImpl, error) {
 		internalCerts:            internalCerts,
 	}
 
-	certwatch.WatchCertDir(DefaultCertPath, loadDefaultCertificate, mgr.UpdateDefaultCert)
+	certwatch.WatchCertDir(DefaultCertPath, MaybeGetDefaultTLSCertificateFromDirectory, mgr.UpdateDefaultTLSCertificate)
 
 	return mgr, nil
 }
 
-func (m *managerImpl) UpdateDefaultCert(defaultCert *tls.Certificate) {
+func (m *managerImpl) UpdateDefaultTLSCertificate(defaultCert *tls.Certificate) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -149,7 +154,7 @@ func (m *managerImpl) TLSConfigurer(opts Options) (verifier.TLSConfigurer, error
 	if opts.RequireClientCert {
 		rootCfg.ClientAuth = tls.RequireAndVerifyClientCert
 	}
-	configurer := certwatch.NewTLSConfigHolder(rootCfg)
+	configurer := certwatch.NewTLSConfigHolder(rootCfg, tls.NoClientCert)
 
 	for _, serverCert := range opts.ServerCerts {
 		switch serverCert {

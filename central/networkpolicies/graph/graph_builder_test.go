@@ -10,7 +10,6 @@ import (
 )
 
 func TestMatchPolicyPeer(t *testing.T) {
-	t.Parallel()
 
 	t1, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{
 		{
@@ -440,10 +439,10 @@ func TestMatchPolicyPeer(t *testing.T) {
 					var formattedMatch expectedMatch
 					if match.deployment != nil {
 						formattedMatch.matchType = storage.NetworkEntityInfo_DEPLOYMENT
-						formattedMatch.id = match.deployment.Id
+						formattedMatch.id = match.deployment.GetId()
 					} else if match.extSrc != nil {
-						formattedMatch.id = match.extSrc.Id
-						if match.extSrc.Id == networkgraph.InternetExternalSourceID {
+						formattedMatch.id = match.extSrc.GetId()
+						if match.extSrc.GetId() == networkgraph.InternetExternalSourceID {
 							formattedMatch.matchType = storage.NetworkEntityInfo_INTERNET
 						} else {
 							formattedMatch.matchType = storage.NetworkEntityInfo_EXTERNAL_SOURCE
@@ -458,7 +457,6 @@ func TestMatchPolicyPeer(t *testing.T) {
 }
 
 func TestIngressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
-	t.Parallel()
 
 	cases := []struct {
 		name     string

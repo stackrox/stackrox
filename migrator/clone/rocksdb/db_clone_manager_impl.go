@@ -2,24 +2,14 @@ package rocksdb
 
 import (
 	"os"
-	"os/exec"
 	"path/filepath"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/clone/metadata"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fileutils"
-	"github.com/stackrox/rox/pkg/fsutils"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/pkg/version"
-)
-
-const (
-	decommissionedCurrent = ".central.internal.database.decommissioned.roll.back.not.supported"
 )
 
 // dbCloneManagerImpl - scans and manage database clones within central.
@@ -86,12 +76,6 @@ func (d *dbCloneManagerImpl) Scan() error {
 	}
 
 	currClone, currExists := d.cloneMap[CurrentClone]
-	if !currExists && !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return errors.Errorf("Cannot find database at %s", filepath.Join(d.basePath, CurrentClone))
-	}
-	if currExists && !env.PostgresDatastoreEnabled.BooleanSetting() && currClone.GetDirName() == decommissionedCurrent {
-		return errors.New(metadata.ErrUnsupportedDatabase)
-	}
 	if currExists && (currClone.GetSeqNum() > migrations.CurrentDBVersionSeqNum() || version.CompareVersions(currClone.GetVersion(), version.GetMainVersion()) > 0) {
 		// If there is no previous clone or force rollback is not requested, we cannot downgrade.
 		prevClone, prevExists := d.cloneMap[PreviousClone]
@@ -111,16 +95,6 @@ func (d *dbCloneManagerImpl) Scan() error {
 		}
 	}
 
-	// Remove unknown clones that are not in use
-	for _, r := range d.cloneMap {
-		clonesToRemove.Remove(r.GetDirName())
-	}
-
-	// Now clones contains only unknown clones
-	for r := range clonesToRemove {
-		d.safeRemove(r)
-	}
-
 	log.Info("Database clones:")
 	for k, v := range d.cloneMap {
 		log.Infof("%s -> %v", k, v.GetMigVersion())
@@ -129,178 +103,21 @@ func (d *dbCloneManagerImpl) Scan() error {
 	return nil
 }
 
-func (d *dbCloneManagerImpl) safeRemove(clone string) {
-	path := d.getPath(clone)
-	utils.Should(migrations.SafeRemoveDBWithSymbolicLink(path))
-	delete(d.cloneMap, clone)
-}
-
-func (d *dbCloneManagerImpl) contains(clone string) bool {
-	_, ok := d.cloneMap[clone]
-	return ok
-}
-
 // GetCloneToMigrate - finds a clone to migrate.
 // It returns the clone link, path to database and error if fails.
 func (d *dbCloneManagerImpl) GetCloneToMigrate() (string, string, error) {
-	if restoreRepl, ok := d.cloneMap[RestoreClone]; ok {
-		log.Info("Database restore directory found. Migrating restored database files.")
-		if err := os.RemoveAll(filepath.Join(migrations.DBMountPath(), bleveIndex)); err != nil && !os.IsNotExist(err) {
-			log.Error(err)
-		}
-		if err := os.RemoveAll(filepath.Join(migrations.DBMountPath(), index)); err != nil && !os.IsNotExist(err) {
-			log.Error(err)
-		}
-		return RestoreClone, d.getPath(restoreRepl.GetDirName()), nil
-	}
-
-	currClone, currExists := d.cloneMap[CurrentClone]
+	_, currExists := d.cloneMap[CurrentClone]
 	// If our focus is Postgres, and there is no Rocks current, then we can ignore Rocks
-	if !currExists && env.PostgresDatastoreEnabled.BooleanSetting() {
+	if !currExists {
 		log.Warn("cannot find current clone for RocksDB")
 		return "", "", nil
-	}
-
-	prevClone, prevExists := d.cloneMap[PreviousClone]
-	if d.rollbackEnabled() && currClone.GetVersion() != version.GetMainVersion() {
-		// If previous clone has the same version as current version, the previous upgrade was not completed.
-		// Central could be in a loop of booting up the service. So we should continue to run with current.
-		if prevExists && currClone.GetVersion() == prevClone.GetVersion() {
-			return CurrentClone, d.getPath(d.cloneMap[CurrentClone].GetDirName()), nil
-		}
-		if version.CompareVersions(currClone.GetVersion(), version.GetMainVersion()) > 0 || currClone.GetSeqNum() > migrations.CurrentDBVersionSeqNum() {
-			// Force rollback
-			return PreviousClone, d.getPath(d.cloneMap[PreviousClone].GetDirName()), nil
-		}
-
-		d.safeRemove(PreviousClone)
-		if d.hasSpaceForRollback() {
-			tempDir := ".db-" + uuid.NewV4().String()
-			log.Info("Database rollback enabled. Copying database files and migrate it to current version.")
-			// Copy directory: not following link, do not overwrite
-			cmd := exec.Command("cp", "-Rp", d.getPath(d.cloneMap[CurrentClone].GetDirName()), d.getPath(tempDir))
-			if output, err := cmd.CombinedOutput(); err != nil {
-				_ = os.RemoveAll(d.getPath(tempDir))
-				return "", "", errors.Wrapf(err, "failed to copy current db %s", output)
-			}
-			ver, err := migrations.Read(d.getPath(tempDir))
-			if err != nil {
-				_ = os.RemoveAll(d.getPath(tempDir))
-				return "", "", err
-			}
-			d.cloneMap[TempClone] = metadata.New(tempDir, ver)
-			return TempClone, d.getPath(d.cloneMap[TempClone].GetDirName()), nil
-		}
-
-		// If the space is not enough to make a clone, continue to upgrade with current.
-		return CurrentClone, d.getPath(d.cloneMap[CurrentClone].GetDirName()), nil
-	}
-
-	// Rollback from previous version.
-	if prevExists && prevClone.GetVersion() == version.GetMainVersion() {
-		return PreviousClone, d.getPath(prevClone.GetDirName()), nil
 	}
 
 	return CurrentClone, d.getPath(d.cloneMap[CurrentClone].GetDirName()), nil
 }
 
-// Persist - replaces current clone with upgraded one.
-func (d *dbCloneManagerImpl) Persist(cloneName string) error {
-	if !d.contains(cloneName) {
-		utils.CrashOnError(errors.New("Unexpected clone to persist"))
-	}
-	log.Infof("Persisting upgraded clone: %s", cloneName)
-
-	switch cloneName {
-	case RestoreClone:
-		return d.doPersist(cloneName, BackupClone)
-	case CurrentClone:
-		// No need to persist
-	case TempClone:
-		return d.doPersist(cloneName, PreviousClone)
-	case PreviousClone:
-		return d.doPersist(cloneName, "")
-	default:
-		utils.CrashOnError(errors.Errorf("commit with unknown clone: %s", cloneName))
-	}
-	return nil
-}
-
-func (d *dbCloneManagerImpl) doPersist(cloneName string, prev string) error {
-	// Remove prev clone if exist.
-	if prev != "" {
-		d.safeRemove(prev)
-
-		// prev -> current
-		if err := fileutils.AtomicSymlink(d.cloneMap[CurrentClone].GetDirName(), d.getPath(prev)); err != nil {
-			return err
-		}
-		d.cloneMap[prev] = d.cloneMap[CurrentClone]
-	}
-
-	// current -> clone
-	if err := fileutils.AtomicSymlink(d.cloneMap[cloneName].GetDirName(), d.getPath(CurrentClone)); err != nil {
-		return err
-	}
-
-	currClone := d.cloneMap[CurrentClone].GetDirName()
-	d.cloneMap[CurrentClone] = d.cloneMap[cloneName]
-
-	if prev == "" {
-		d.safeRemove(currClone)
-	}
-
-	// Remove clone symbolic link only, if exists.
-	_ = os.Remove(d.getPath(cloneName))
-	return nil
-}
-
 func (d *dbCloneManagerImpl) getPath(cloneLink string) string {
 	return filepath.Join(d.basePath, cloneLink)
-}
-
-func (d *dbCloneManagerImpl) rollbackEnabled() bool {
-	// If we are upgrading from earlier version without a migration version, we cannot do rollback.
-	currClone, currExists := d.cloneMap[CurrentClone]
-	if !currExists {
-		// If our focus is Postgres, just log the error and ignore Rocks as that likely means no PVC
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			log.Warn("cannot find current clone for RocksDB")
-		} else {
-			utils.Should(errors.New("cannot find current clone"))
-		}
-
-		return false
-	}
-	return currClone.GetSeqNum() != 0
-}
-
-func (d *dbCloneManagerImpl) hasSpaceForRollback() bool {
-	currClone, currExists := d.cloneMap[CurrentClone]
-	if !currExists {
-		// If our focus is Postgres, just log the error and ignore Rocks
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			log.Warn("cannot find current clone for RocksDB")
-		} else {
-			utils.Should(errors.New("cannot find current clone"))
-		}
-
-		return false
-	}
-	availableBytes, err := fsutils.AvailableBytesIn(d.basePath)
-	if err != nil {
-		log.Warnf("Fail to get available bytes in %s", d.basePath)
-		return false
-	}
-	requiredBytes, err := fileutils.DirectorySize(d.getPath(currClone.GetDirName()))
-	if err != nil {
-		log.Warnf("Fail to directory size %s", d.getPath(currClone.GetDirName()))
-		return false
-	}
-
-	hasSpace := float64(availableBytes) > float64(requiredBytes)*(1.0+migrations.CapacityMarginFraction)
-	log.Infof("Central has space to create backup for rollback: %v, required: %d, available: %d with %f margin", hasSpace, requiredBytes, availableBytes, migrations.CapacityMarginFraction)
-	return hasSpace
 }
 
 // GetVersion - gets the version of the RocksDB clone
@@ -312,83 +129,15 @@ func (d *dbCloneManagerImpl) GetVersion(cloneName string) *migrations.MigrationV
 	return nil
 }
 
-// GetCurrentCloneCreationTime - time current clone was created
-func (d *dbCloneManagerImpl) GetCurrentCloneCreationTime() time.Time {
-	path := d.getPath(CurrentClone)
-	fileInfo, err := os.Lstat(path)
-	if err != nil {
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			return time.Time{}
-		}
-		log.Panicf("Unable to find current DB path: %v", err)
-	}
-	return fileInfo.ModTime()
-}
-
 // GetDirName - gets the directory name of the clone
 func (d *dbCloneManagerImpl) GetDirName(cloneName string) string {
 	return d.cloneMap[cloneName].GetDirName()
 }
 
-// DecommissionRocksDB -- removes RocksDB from central
-func (d *dbCloneManagerImpl) DecommissionRocksDB() {
-	log.Info("DecommissionRocksDB")
-	for k := range d.cloneMap {
-		dirPath := d.getPath(k)
-		if exists, err := fileutils.Exists(dirPath); err != nil {
-			log.Error(err)
-			continue
-		} else if exists {
-			// TODO(ROX-9882): While there is still stuff on the PVC there is an expectation that current
-			// exists in a certain state.  So until we can remove the rest of the components on the PVC, it
-			// is safer to put an empty current to ensure everything else starts properly.
-			if k == CurrentClone {
-				dirName := d.GetDirName(CurrentClone)
-				// Get the location Current points to
-				linkTo, err := fileutils.ResolveIfSymlink(dirPath)
-				if err != nil {
-					log.Error(err)
-					continue
-				}
-				if linkTo == d.getPath(decommissionedCurrent) {
-					log.Info("we have already moved to the RocksDB current to be decomissioned")
-					continue
-				}
-				if err := os.MkdirAll(d.getPath(decommissionedCurrent), 0755); err != nil {
-					log.Error(err)
-					continue
-				}
-				// Set the new symbolic link
-				if err := fileutils.AtomicSymlink(decommissionedCurrent, d.getPath(CurrentClone)); err != nil {
-					log.Error(err)
-					continue
-				}
-
-				// Remove the stale database
-				if err := os.RemoveAll(d.getPath(dirName)); err != nil {
-					log.Error(err)
-					continue
-				}
-			} else {
-				log.Infof("Removing database %s", dirPath)
-				linkTo, err := fileutils.ResolveIfSymlink(dirPath)
-				if err != nil {
-					log.Error(err)
-					continue
-				}
-				log.Infof("Remove path = %q", dirPath)
-				if err = os.RemoveAll(dirPath); err != nil {
-					log.Error(err)
-					continue
-				}
-				// Remove any rocks database if in postgres mode
-				log.Infof("Remove linkTo = %q", linkTo)
-				if err = os.RemoveAll(linkTo); err != nil {
-					log.Error(err)
-					continue
-				}
-			}
-		}
-		delete(d.cloneMap, k)
+// CheckForRestore - checks to see if a restore clone exists
+func (d *dbCloneManagerImpl) CheckForRestore() bool {
+	if _, ok := d.cloneMap[RestoreClone]; ok {
+		return true
 	}
+	return false
 }

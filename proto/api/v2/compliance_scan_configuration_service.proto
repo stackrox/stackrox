@@ -1,0 +1,224 @@
+syntax = "proto3";
+
+package v2;
+
+import "api/v2/common.proto";
+import "api/v2/compliance_common.proto";
+import "api/v2/report_service.proto";
+import "api/v2/search_query.proto";
+import "api/v2/user.proto";
+import weak "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./api/v2;v2";
+option java_package = "io.stackrox.proto.api.v2";
+
+// ClusterScanStatus holds status based on cluster in the event that a scan configuration
+// was successfully applied to some clusters but not others.
+// Next available tag: 5
+message ClusterScanStatus {
+  string cluster_id = 1;
+  repeated string errors = 2;
+  string cluster_name = 3;
+
+  // Additional scan status gathered from ComplianceSuite
+  message SuiteStatus {
+    string phase = 1;
+    string result = 2;
+    string error_message = 3;
+    google.protobuf.Timestamp last_transition_time = 4;
+  }
+
+  SuiteStatus suite_status = 4;
+}
+
+// Next available tag: 5
+message BaseComplianceScanConfigurationSettings {
+  bool one_time_scan = 1;
+  repeated string profiles = 2;
+  Schedule scan_schedule = 3;
+  string description = 4;
+  repeated NotifierConfiguration notifiers = 5;
+}
+
+// Next available tag: 5
+message ComplianceScanConfiguration {
+  string id = 1;
+  string scan_name = 2;
+  BaseComplianceScanConfigurationSettings scan_config = 3;
+  repeated string clusters = 4;
+}
+
+// Next available tag: 9
+message ComplianceScanConfigurationStatus {
+  string id = 1;
+  string scan_name = 2;
+  BaseComplianceScanConfigurationSettings scan_config = 3;
+  repeated ClusterScanStatus cluster_status = 4;
+  google.protobuf.Timestamp created_time = 5;
+  google.protobuf.Timestamp last_updated_time = 6;
+  // Most recent user to update the scan settings
+  SlimUser modified_by = 7;
+  google.protobuf.Timestamp last_executed_time = 8;
+}
+
+message ComplianceConfigClusterProfileRequest {
+  string cluster_id = 1;
+  RawQuery query = 2;
+}
+
+message ListComplianceScanConfigurationsResponse {
+  repeated ComplianceScanConfigurationStatus configurations = 1;
+  int32 total_count = 2;
+}
+
+message ComplianceRunReportRequest {
+  string scan_config_id = 1;
+  NotificationMethod report_notification_method = 2;
+}
+
+message ComplianceRunReportResponse {
+  enum RunState {
+    SUBMITTED = 0;
+    ERROR = 1;
+  }
+  RunState run_state = 1;
+  google.protobuf.Timestamp submitted_at = 2;
+  string error_msg = 3;
+}
+
+message ComplianceReportHistoryRequest {
+  string id = 1;
+  RawQuery report_param_query = 2;
+}
+
+message ComplianceReportHistoryResponse {
+  repeated ComplianceReportSnapshot compliance_report_snapshots = 1;
+}
+
+message ComplianceReportSnapshot {
+  string report_job_id = 1;
+  string scan_config_id = 2;
+  string name = 3;
+  string description = 4;
+  ComplianceReportStatus report_status = 5;
+  ComplianceScanConfigurationStatus report_data = 6;
+  SlimUser user = 7;
+  bool is_download_available = 8;
+}
+
+message FailedCluster {
+  string cluster_id = 1;
+  string cluster_name = 2;
+  string reason = 3;
+  string operator_version = 4;
+}
+
+message ComplianceReportStatus {
+  enum RunState {
+    WAITING = 0;
+    PREPARING = 1;
+    GENERATED = 2;
+    DELIVERED = 3;
+    FAILURE = 4;
+    PARTIAL_ERROR = 5;
+    PARTIAL_SCAN_ERROR_DOWNLOAD = 6;
+    PARTIAL_SCAN_ERROR_EMAIL = 7;
+  }
+  enum ReportMethod {
+    ON_DEMAND = 0;
+    SCHEDULED = 1;
+  }
+  RunState run_state = 1;
+  google.protobuf.Timestamp started_at = 2;
+  google.protobuf.Timestamp completed_at = 3;
+  string error_msg = 4;
+  ReportMethod report_request_type = 5;
+  NotificationMethod report_notification_method = 6;
+  repeated FailedCluster failed_clusters = 7;
+}
+
+message ListComplianceScanConfigsProfileResponse {
+  repeated ComplianceProfileSummary profiles = 1;
+  int32 total_count = 2;
+}
+
+message ListComplianceScanConfigsClusterProfileResponse {
+  string cluster_id = 1;
+  string cluster_name = 2;
+  repeated ComplianceProfileSummary profiles = 3;
+  int32 total_count = 4;
+}
+
+service ComplianceScanConfigurationService {
+  // ListComplianceScanConfigurations lists all the compliance operator scan configurations for the secured clusters
+  rpc ListComplianceScanConfigurations(RawQuery) returns (ListComplianceScanConfigurationsResponse) {
+    option (google.api.http) = {get: "/v2/compliance/scan/configurations"};
+  }
+
+  // GetComplianceScanConfiguration retrieves the specified compliance scan configurations
+  rpc GetComplianceScanConfiguration(ResourceByID) returns (ComplianceScanConfigurationStatus) {
+    option (google.api.http) = {get: "/v2/compliance/scan/configurations/{id}"};
+  }
+
+  // CreateComplianceScanConfiguration creates a compliance scan configuration
+  rpc CreateComplianceScanConfiguration(ComplianceScanConfiguration) returns (ComplianceScanConfiguration) {
+    option (google.api.http) = {
+      post: "/v2/compliance/scan/configurations"
+      body: "*"
+    };
+  }
+
+  // UpdateComplianceScanConfiguration updates a compliance scan configuration
+  rpc UpdateComplianceScanConfiguration(ComplianceScanConfiguration) returns (Empty) {
+    option (google.api.http) = {
+      put: "/v2/compliance/scan/configurations/{id}"
+      body: "*"
+    };
+  }
+
+  // DeleteComplianceScanConfiguration removes the compliance scan configuration with given Name
+  rpc DeleteComplianceScanConfiguration(ResourceByID) returns (Empty) {
+    option (google.api.http) = {delete: "/v2/compliance/scan/configurations/{id}"};
+  }
+
+  // RunComplianceScanConfiguration launches scan for the specified scan
+  // configuration, which will invoke scans to run for the applicable
+  // profiles across the configured clusters.
+  rpc RunComplianceScanConfiguration(ResourceByID) returns (Empty) {
+    option (google.api.http) = {post: "/v2/compliance/scan/configurations/{id}/run"};
+  }
+
+  // RunReport runs an on demand compliance report for the scan configuration
+  rpc RunReport(ComplianceRunReportRequest) returns (ComplianceRunReportResponse) {
+    option (google.api.http) = {
+      post: "/v2/compliance/scan/configurations/reports/run"
+      body: "*"
+    };
+  }
+
+  // GetReportHistory returns a list of snapshots (scan executions) from a given scan configuration.
+  rpc GetReportHistory(ComplianceReportHistoryRequest) returns (ComplianceReportHistoryResponse) {
+    option (google.api.http) = {get: "/v2/compliance/scan/configurations/{id}/reports/history"};
+  }
+
+  // GetMyReportHistory returns a list of snapshots (scan executions) executed by the current user from a given scan configuration.
+  rpc GetMyReportHistory(ComplianceReportHistoryRequest) returns (ComplianceReportHistoryResponse) {
+    option (google.api.http) = {get: "/v2/compliance/scan/configurations/{id}/reports/my-history"};
+  }
+
+  // DeleteReport deletes a given snapshot (scan execution).
+  rpc DeleteReport(ResourceByID) returns (Empty) {
+    option (google.api.http) = {delete: "/v2/compliance/scan/configurations/reports/{id}"};
+  }
+
+  // ListComplianceScanConfigurations lists all the compliance operator scan configurations for the secured clusters
+  rpc ListComplianceScanConfigProfiles(RawQuery) returns (ListComplianceScanConfigsProfileResponse) {
+    option (google.api.http) = {get: "/v2/compliance/scan/configurations/profiles/collection"};
+  }
+
+  // GetComplianceScanConfiguration retrieves the specified compliance scan configurations
+  rpc ListComplianceScanConfigClusterProfiles(ComplianceConfigClusterProfileRequest) returns (ListComplianceScanConfigsClusterProfileResponse) {
+    option (google.api.http) = {get: "/v2/compliance/scan/configurations/clusters/{cluster_id}/profiles/collection"};
+  }
+}

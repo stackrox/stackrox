@@ -14,6 +14,7 @@ import (
 
 var (
 	queryThreshold = env.PostgresQueryTracerQueryThreshold.DurationSetting()
+	defaultTimeout = env.PostgresDefaultStatementTimeout.DurationSetting()
 )
 
 type queryTracerKey struct{}
@@ -56,12 +57,12 @@ func (qt *queryTracer) AddEvent(start time.Time, query string, args ...interface
 }
 
 // LogTracef is a wrapper around LogTrace that provides formatting
-func LogTracef(ctx context.Context, logger *logging.Logger, contextString string, args ...interface{}) {
+func LogTracef(ctx context.Context, logger logging.Logger, contextString string, args ...interface{}) {
 	LogTrace(ctx, logger, fmt.Sprintf(contextString, args...))
 }
 
 // LogTrace logs the queries seen in the current trace
-func LogTrace(ctx context.Context, logger *logging.Logger, contextString string) {
+func LogTrace(ctx context.Context, logger logging.Logger, contextString string) {
 	tracer := GetTracerFromContext(ctx)
 
 	logger.Infof("trace=%s: %s", tracer.id, contextString)

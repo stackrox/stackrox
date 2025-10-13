@@ -1,0 +1,78 @@
+{
+  "policies": [
+    {
+      "id": "550081a1-ad3a-4eab-a874-8eb68fab2bbd",
+      "name": "Required Label: Owner/Team",
+      "description": "Alert on deployments missing the 'owner' or 'team' label",
+      "rationale": "The 'owner' or 'team' label should always be specified so that the deployment can quickly be associated with a specific user or team.",
+      "remediation": "Redeploy your service and set the 'owner' or 'team' label to yourself or your team respectively per organizational standards.",
+      "disabled": false,
+      "categories": [
+        "DevOps Best Practices",
+        "Security Best Practices"
+      ],
+      "lifecycleStages": [
+        "DEPLOY"
+      ],
+      "eventSource": "NOT_APPLICABLE",
+      "exclusions": [
+        {
+          "name": "Don't alert on kube-system namespace",
+          "deployment": {
+            "name": "",
+            "scope": {
+              "cluster": "",
+              "namespace": "kube-system",
+              "label": null
+            }
+          },
+          "image": null,
+          "expiration": null
+        },
+        {
+          "name": "Don't alert on istio-system namespace",
+          "deployment": {
+            "name": "",
+            "scope": {
+              "cluster": "",
+              "namespace": "istio-system",
+              "label": null
+            }
+          },
+          "image": null,
+          "expiration": null
+        }
+      ],
+      "scope": [],
+      "severity": "LOW_SEVERITY",
+      "enforcementActions": [],
+      "notifiers": [],
+      "lastUpdated": "2022-07-20T07:29:24.580107859Z",
+      "SORTName": "Required Label: Owner/Team",
+      "SORTLifecycleStage": "DEPLOY",
+      "SORTEnforcement": false,
+      "policyVersion": "1.1",
+      "policySections": [
+        {
+          "sectionName": "",
+          "policyGroups": [
+            {
+              "fieldName": "Required Label",
+              "booleanOperator": "OR",
+              "negate": false,
+              "values": [
+                {
+                  "value": "owner|team=.+"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "mitreAttackVectors": [],
+      "criteriaLocked": true,
+      "mitreVectorsLocked": true,
+      "isDefault": true
+    }
+  ]
+}

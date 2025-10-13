@@ -3,10 +3,11 @@ package clusterstatus
 import (
 	"context"
 	"encoding/json"
-	"sort"
+	"slices"
+	"sync/atomic"
 	"time"
 
-	v1 "github.com/openshift/api/config/v1"
+	configv1 "github.com/openshift/api/config/v1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -18,8 +19,11 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/providers"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/unimplemented"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,41 +39,89 @@ var (
 )
 
 type updaterImpl struct {
+	unimplemented.Receiver
+
 	client     client.Interface
 	kubeClient kubernetes.Interface
 
-	updates chan *central.MsgFromSensor
+	updates chan *message.ExpiringMessage
 	stopSig concurrency.Signal
+
+	offlineMode   *atomic.Bool
+	context       context.Context
+	contextMtx    sync.Mutex
+	cancelContext context.CancelFunc
+	// This function is needed to be able to mock in test
+	getProviders                     func(context.Context) *storage.ProviderMetadata
+	getProviderMetadataFromOpenShift providerMetadataFromOpenShift
+}
+
+func (u *updaterImpl) Name() string {
+	return "clusterstatus.updaterImpl"
 }
 
 func (u *updaterImpl) Start() error {
-	go u.run()
+	// We don't do anything on Start, run will be called when Central is reachable.
 	return nil
 }
 
-func (u *updaterImpl) Stop(_ error) {
+func (u *updaterImpl) Stop() {
 	u.stopSig.Signal()
+}
+
+func (u *updaterImpl) Notify(e common.SensorComponentEvent) {
+	log.Info(common.LogSensorComponentEvent(e))
+	switch e {
+	case common.SensorComponentEventCentralReachable:
+		if u.offlineMode.CompareAndSwap(true, false) {
+			u.createContext()
+			go u.run()
+		}
+	case common.SensorComponentEventOfflineMode:
+		if u.offlineMode.CompareAndSwap(false, true) {
+			u.cancelCurrentContext()
+		}
+	}
+}
+
+func (u *updaterImpl) cancelCurrentContext() {
+	u.contextMtx.Lock()
+	defer u.contextMtx.Unlock()
+	if u.cancelContext != nil {
+		u.cancelContext()
+	}
+}
+
+func (u *updaterImpl) createContext() {
+	u.contextMtx.Lock()
+	defer u.contextMtx.Unlock()
+	u.context, u.cancelContext = context.WithCancel(context.Background())
+}
+
+func (u *updaterImpl) getCurrentContext() context.Context {
+	u.contextMtx.Lock()
+	defer u.contextMtx.Unlock()
+	return u.context
 }
 
 func (u *updaterImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (u *updaterImpl) ProcessMessage(msg *central.MsgToSensor) error {
-	return nil
-}
-
-func (u *updaterImpl) ResponsesC() <-chan *central.MsgFromSensor {
+func (u *updaterImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return u.updates
 }
 
 func (u *updaterImpl) sendMessage(msg *central.ClusterStatusUpdate) bool {
+	ctx := u.getCurrentContext()
 	select {
-	case u.updates <- &central.MsgFromSensor{
+	case <-ctx.Done():
+		return false
+	case u.updates <- message.NewExpiring(ctx, &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_ClusterStatusUpdate{
 			ClusterStatusUpdate: msg,
 		},
-	}:
+	}):
 		return true
 	case <-u.stopSig.Done():
 		return false
@@ -77,7 +129,7 @@ func (u *updaterImpl) sendMessage(msg *central.ClusterStatusUpdate) bool {
 }
 
 func (u *updaterImpl) run() {
-	clusterMetadata := u.getClusterMetadata()
+	orchestratorMetadata := u.getOrchestratorMetadata()
 	cloudProviderMetadata := u.getCloudProviderMetadata(context.Background())
 
 	updateMessage := &central.ClusterStatusUpdate{
@@ -85,7 +137,7 @@ func (u *updaterImpl) run() {
 			Status: &storage.ClusterStatus{
 				SensorVersion:        version.GetMainVersion(),
 				ProviderMetadata:     cloudProviderMetadata,
-				OrchestratorMetadata: clusterMetadata,
+				OrchestratorMetadata: orchestratorMetadata,
 			},
 		},
 	}
@@ -111,7 +163,7 @@ func (u *updaterImpl) run() {
 	u.sendMessage(updateMessage)
 }
 
-func (u *updaterImpl) getClusterMetadata() *storage.OrchestratorMetadata {
+func (u *updaterImpl) getOrchestratorMetadata() *storage.OrchestratorMetadata {
 	serverVersion, err := u.kubeClient.Discovery().ServerVersion()
 	if err != nil {
 		log.Errorf("Could not get cluster metadata: %v", err)
@@ -164,7 +216,7 @@ func (u *updaterImpl) getOpenshiftVersion() (string, error) {
 	if operators == nil {
 		return "", errors.Errorf("cannot get cluster operators from ConfigV1 %v", configV1)
 	}
-	var clusterOperator *v1.ClusterOperator
+	var clusterOperator *configv1.ClusterOperator
 	err := retry.WithRetry(
 		func() error {
 			ctx, cancel := context.WithTimeout(context.Background(), getVersionTimeout)
@@ -175,7 +227,7 @@ func (u *updaterImpl) getOpenshiftVersion() (string, error) {
 				if kerrors.IsTimeout(err) || kerrors.IsServerTimeout(err) || kerrors.IsTooManyRequests(err) || kerrors.IsServiceUnavailable(err) {
 					return retry.MakeRetryable(err)
 				}
-				return err
+				return errors.Wrap(err, "getting openshift-apiserver cluster operator")
 			}
 			return nil
 		},
@@ -210,7 +262,7 @@ func (u *updaterImpl) getOpenshiftVersionLegacyAPI() (string, error) {
 				if kerrors.IsTimeout(err) || kerrors.IsServerTimeout(err) || kerrors.IsTooManyRequests(err) || kerrors.IsServiceUnavailable(err) {
 					return retry.MakeRetryable(err)
 				}
-				return err
+				return errors.Wrap(err, "fetching openshift version via legacy API")
 			}
 			return nil
 		},
@@ -227,7 +279,7 @@ func (u *updaterImpl) getOpenshiftVersionLegacyAPI() (string, error) {
 	var ocServerInfo apimachineryversion.Info
 	err = json.Unmarshal(oVersionBody, &ocServerInfo)
 	if err != nil && len(oVersionBody) > 0 {
-		return "", err
+		return "", errors.Wrap(err, "unmarshalling openshift version response")
 	}
 	return ocServerInfo.String(), nil
 }
@@ -241,24 +293,44 @@ func (u *updaterImpl) getAPIVersions() []string {
 	}
 
 	apiVersions := metav1.ExtractGroupVersions(groupList)
-	sort.Strings(apiVersions)
+	slices.Sort(apiVersions)
 	return apiVersions
 }
 
 func (u *updaterImpl) getCloudProviderMetadata(ctx context.Context) *storage.ProviderMetadata {
-	m := providers.GetMetadata(ctx)
-	if m == nil {
-		log.Info("No Cloud Provider metadata is found")
+	// We first attempt to get providers by calling the metadata service of each cloud provider we currently support.
+	m := u.getProviders(ctx)
+	if m != nil {
+		return m
 	}
-	return m
+
+	// In the case of OpenShift _and_ not having collected metadata previously through cloud providers metadata service,
+	// we can read out the Infrastructure CR for provider specific information.
+	if env.OpenshiftAPI.BooleanSetting() {
+		m, err := u.getProviderMetadataFromOpenShift(ctx, u.client.OpenshiftConfig())
+		if err != nil {
+			log.Error("Failed to obtain provider metadata from config.openshift.io/v1/Infrastructure: ", err)
+		}
+		if m != nil {
+			return m
+		}
+	}
+
+	log.Info("No cloud provider metadata was found")
+	return nil
 }
 
 // NewUpdater returns a new ready-to-use updater.
 func NewUpdater(client client.Interface) common.SensorComponent {
+	offlineMode := &atomic.Bool{}
+	offlineMode.Store(true)
 	return &updaterImpl{
-		client:     client,
-		kubeClient: client.Kubernetes(),
-		updates:    make(chan *central.MsgFromSensor),
-		stopSig:    concurrency.NewSignal(),
+		client:                           client,
+		kubeClient:                       client.Kubernetes(),
+		updates:                          make(chan *message.ExpiringMessage),
+		stopSig:                          concurrency.NewSignal(),
+		offlineMode:                      offlineMode,
+		getProviders:                     providers.GetMetadata,
+		getProviderMetadataFromOpenShift: getProviderMetadataFromOpenShiftConfig,
 	}
 }

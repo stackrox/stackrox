@@ -1,7 +1,7 @@
 package check412
 
 import (
-	"strings"
+	"slices"
 
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
 	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 const (
@@ -43,7 +42,7 @@ func checkNIST412(ctx framework.ComplianceContext) {
 func checkSSHPortAndProcesses(ctx framework.ComplianceContext) {
 	// Map process indicators to deployments.
 	deploymentIDToIndicators := make(map[string][]*storage.ProcessIndicator)
-	for _, indicator := range ctx.Data().ProcessIndicators() {
+	for _, indicator := range ctx.Data().SSHProcessIndicators() {
 		deploymentIDToIndicators[indicator.GetDeploymentId()] = append(deploymentIDToIndicators[indicator.GetDeploymentId()], indicator)
 	}
 
@@ -68,17 +67,8 @@ func checkPrivilegedCategoryPolicies(ctx framework.ComplianceContext) {
 
 // deploymentHasSSHProcess returns true if the deployment has ssh process running.
 func deploymentHasSSHProcess(deploymentToIndicators map[string][]*storage.ProcessIndicator, deployment *storage.Deployment) bool {
-	for deploymentID, indicators := range deploymentToIndicators {
-		if deploymentID != deployment.GetId() {
-			continue
-		}
-		for _, indicator := range indicators {
-			if strings.Contains(indicator.GetSignal().GetExecFilePath(), "ssh") {
-				return true
-			}
-		}
-	}
-	return false
+	indicators := deploymentToIndicators[deployment.GetId()]
+	return len(indicators) > 0
 }
 
 // sshPolicyEnforced checks if there is a policy to detect and enforce
@@ -95,5 +85,5 @@ func sshPolicyEnforced(ctx framework.ComplianceContext) bool {
 }
 
 func policyHasSSH(policy *storage.Policy) bool {
-	return sliceutils.Find(policyfields.GetProcessNames(policy), "sshd") >= 0
+	return slices.Index(policyfields.GetProcessNames(policy), "sshd") >= 0
 }

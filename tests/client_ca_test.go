@@ -1,3 +1,5 @@
+//go:build test_e2e
+
 package tests
 
 import (
@@ -13,12 +15,11 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"slices"
 	"testing"
 	"time"
 
 	"github.com/cloudflare/cfssl/helpers"
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders/userpki"
@@ -26,7 +27,8 @@ import (
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/grpc/client/authn/tokenbased"
 	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -96,13 +98,13 @@ func validateAuthStatusResponseForClientCert(t *testing.T, cert *x509.Certificat
 	assert.Equal(t, "userpki", authStatus.GetAuthProvider().GetType())
 	fingerprint := cryptoutils.CertFingerprint(cert)
 
-	userIDAttributeIdx := sliceutils.FindMatching(authStatus.UserAttributes, func(attr *v1.UserAttribute) bool {
-		return attr.Key == "userid"
+	userIDAttributeIdx := slices.IndexFunc(authStatus.GetUserAttributes(), func(attr *v1.UserAttribute) bool {
+		return attr.GetKey() == "userid"
 	})
 	assert.True(t, userIDAttributeIdx >= 0, "couldn't find userid attribute in resp %+v", authStatus)
-	userIDAttr := authStatus.UserAttributes[userIDAttributeIdx]
-	require.Len(t, userIDAttr.Values, 1, "unexpected number of values for userid attr in resp %+v", authStatus)
-	assert.Equal(t, fmt.Sprintf("userpki:%s", fingerprint), userIDAttr.Values[0])
+	userIDAttr := authStatus.GetUserAttributes()[userIDAttributeIdx]
+	require.Len(t, userIDAttr.GetValues(), 1, "unexpected number of values for userid attr in resp %+v", authStatus)
+	assert.Equal(t, fmt.Sprintf("userpki:%s", fingerprint), userIDAttr.GetValues()[0])
 }
 
 func getAuthStatus(t *testing.T, tlsConf *tls.Config, token string) (*v1.AuthStatus, error) {
@@ -182,7 +184,12 @@ func TestClientCAAuthWithMultipleVerifiedChains(t *testing.T) {
 	authStatus, err := getAuthStatus(t, tlsConfWithLeaf, "")
 	require.NoError(t, err)
 	validateAuthStatusResponseForClientCert(t, leafCert, authStatus)
-	assert.Empty(t, cmp.Diff(createdAuthProvider, authStatus.GetAuthProvider(), cmpopts.IgnoreFields(storage.AuthProvider{}, "Config")))
+
+	// Compare auth provider ignoring "Config" field.
+	expectedAuthProvider := createdAuthProvider.CloneVT()
+	actualAuthProvider := authStatus.GetAuthProvider().CloneVT()
+	actualAuthProvider.Config = expectedAuthProvider.GetConfig()
+	protoassert.Equal(t, expectedAuthProvider, actualAuthProvider)
 
 	// Simulate the flow used in the browser, where the certs are exchanged for a token.
 	token := getTokenForUserPKIAuthProvider(t, createdAuthProvider.GetId(), tlsConfWithLeaf)
@@ -198,15 +205,22 @@ func TestClientCAAuthWithMultipleVerifiedChains(t *testing.T) {
 	// Token plus matching cert => things should work.
 	authStatusWithToken, err := getAuthStatus(t, tlsConfWithLeaf, token)
 	require.NoError(t, err)
-	assert.Empty(t, cmp.Diff(createdAuthProvider, authStatusWithToken.GetAuthProvider(), cmpopts.IgnoreFields(storage.AuthProvider{}, "Config", "Validated", "Active")))
+
+	// Compare auth provider ignoring fields: "Config", "Validated", "Active", and "LastUpdated".
+	expectedAuthProvider = createdAuthProvider.CloneVT()
+	actualAuthProvider = authStatusWithToken.GetAuthProvider().CloneVT()
+	actualAuthProvider.Config = expectedAuthProvider.GetConfig()
+	actualAuthProvider.Validated = expectedAuthProvider.GetValidated()
+	actualAuthProvider.Active = expectedAuthProvider.GetActive()
+	actualAuthProvider.LastUpdated = protocompat.GetProtoTimestampFromSecondsAndNanos(expectedAuthProvider.GetLastUpdated().GetSeconds(), expectedAuthProvider.GetLastUpdated().GetNanos())
+	protoassert.Equal(t, expectedAuthProvider, actualAuthProvider)
+
 	validateAuthStatusResponseForClientCert(t, leafCert, authStatusWithToken)
 }
 
 func TestClientCARequested(t *testing.T) {
-	t.Parallel()
 
-	clientCAFile := os.Getenv("CLIENT_CA_PATH")
-	require.NotEmpty(t, clientCAFile, "no client CA file path set")
+	clientCAFile := mustGetEnv(t, "CLIENT_CA_PATH")
 	pemBytes, err := os.ReadFile(clientCAFile)
 	require.NoErrorf(t, err, "Could not read client CA file %s", clientCAFile)
 	caCert, err := helpers.ParseCertificatePEM(pemBytes)
@@ -224,7 +238,10 @@ func TestClientCARequested(t *testing.T) {
 
 	conn, err := tls.Dial("tcp", centralgrpc.RoxAPIEndpoint(t), tlsConf)
 	require.NoError(t, err, "could not connect to central")
-	_ = conn.Handshake()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	_ = conn.HandshakeContext(ctx)
 	_ = conn.Close()
 
 	found := false

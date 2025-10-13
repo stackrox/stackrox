@@ -3,13 +3,13 @@ package manager
 import (
 	"fmt"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/compliance/framework"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"
 	pkgStandards "github.com/stackrox/rox/pkg/compliance/checks/standards"
 	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 var (
@@ -160,45 +160,42 @@ func (r *runInstance) metadataProto(fixTimestamps bool) *storage.ComplianceRunMe
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 
-	var startTS, finishTS *types.Timestamp
+	runMetadata := &storage.ComplianceRunMetadata{
+		RunId:      r.id,
+		ClusterId:  r.domain.Cluster().Cluster().GetId(),
+		StandardId: r.standard.Standard.ID,
+		Success:    r.status == v1.ComplianceRun_FINISHED && r.err == nil,
+		DomainId:   r.domain.ID(),
+	}
+
 	var err error
 	if !r.startTime.IsZero() {
-		startTS, err = types.TimestampProto(r.startTime)
+		runMetadata.StartTimestamp, err = protocompat.ConvertTimeToTimestampOrError(r.startTime)
 		if err != nil {
 			log.Errorf("could not convert compliance run start timestamp to proto: %v", err)
 		}
 	}
 
 	if !r.finishTime.IsZero() {
-		finishTS, err = types.TimestampProto(r.finishTime)
+		runMetadata.FinishTimestamp, err = protocompat.ConvertTimeToTimestampOrError(r.finishTime)
 		if err != nil {
 			log.Errorf("could not convert compliance run finish timestamp to proto: %v", err)
 		}
 	}
 
 	if fixTimestamps {
-		if startTS == nil {
-			startTS = types.TimestampNow()
+		if runMetadata.GetStartTimestamp() == nil {
+			runMetadata.StartTimestamp = protocompat.TimestampNow()
 		}
-		if finishTS == nil {
-			finishTS = types.TimestampNow()
+		if runMetadata.GetFinishTimestamp() == nil {
+			runMetadata.FinishTimestamp = protocompat.TimestampNow()
 		}
 	}
-	var errMsg string
 	if r.err != nil {
-		errMsg = r.err.Error()
+		runMetadata.ErrorMessage = r.err.Error()
 	}
 
-	return &storage.ComplianceRunMetadata{
-		RunId:           r.id,
-		ClusterId:       r.domain.Cluster().Cluster().GetId(),
-		StandardId:      r.standard.Standard.ID,
-		StartTimestamp:  startTS,
-		FinishTimestamp: finishTS,
-		Success:         r.status == v1.ComplianceRun_FINISHED && r.err == nil,
-		ErrorMessage:    errMsg,
-		DomainId:        r.domain.ID(),
-	}
+	return runMetadata
 }
 
 func (r *runInstance) collectResults(run framework.ComplianceRun, remoteResults map[string]map[string]*compliance.ComplianceStandardResult) *storage.ComplianceRunResults {
@@ -252,7 +249,7 @@ func (r *runInstance) foldRemoteResults(remoteResults map[string]map[string]*com
 		mergeComplianceResultValue(clusterResults, standardResults.GetClusterCheckResults())
 
 		// Fold in each of the node-level results individually
-		nodeResults[node.ID()] = standardResults.NodeCheckResults
+		nodeResults[node.ID()] = standardResults.GetNodeCheckResults()
 	}
 	// Add notes for any missing cluster-level checks
 	r.noteMissingNodeClusterChecks(clusterResults)

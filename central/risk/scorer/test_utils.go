@@ -53,6 +53,51 @@ func GetMockImage() *storage.Image {
 	}
 }
 
+// GetMockImageV2 returns a mock image v2
+func GetMockImageV2() *storage.ImageV2 {
+	return &storage.ImageV2{
+		Id: "ImageID",
+		Name: &storage.ImageName{
+			FullName: "docker.io/library/nginx:1.10",
+			Registry: "docker.io",
+			Remote:   "library/nginx",
+			Tag:      "1.10",
+		},
+		Scan: &storage.ImageScan{
+			Components: []*storage.EmbeddedImageScanComponent{
+				{
+					Name:    "ComponentX",
+					Version: "v1",
+					Vulns: []*storage.EmbeddedVulnerability{
+						{
+							Cve:          "CVE-2019-0001",
+							Cvss:         5,
+							ScoreVersion: storage.EmbeddedVulnerability_V3,
+							Severity:     storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+						},
+						{
+							Cve:      "CVE-2019-0002",
+							Cvss:     5,
+							Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+						},
+						{
+							Cve:          "RHSA-2019:0002",
+							Cvss:         10,
+							ScoreVersion: storage.EmbeddedVulnerability_V3,
+							Severity:     storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+						},
+					},
+				},
+			},
+		},
+		Metadata: &storage.ImageMetadata{
+			V1: &storage.V1Metadata{
+				Created: protoconv.ConvertTimeToTimestamp(time.Now().Add(-(180 * 24 * time.Hour))),
+			},
+		},
+	}
+}
+
 // GetMockDeployment returns a mock deployment
 func GetMockDeployment() *storage.Deployment {
 	return &storage.Deployment{
@@ -128,6 +173,22 @@ func GetMockNode() *storage.Node {
 						},
 						{
 							Cve:      "CVE-2019-0002",
+							Cvss:     5,
+							Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
+						},
+					},
+					Vulnerabilities: []*storage.NodeVulnerability{
+						{
+							CveBaseInfo: &storage.CVEInfo{
+								Cve: "CVE-2019-0001",
+							},
+							Cvss:     5,
+							Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+						},
+						{
+							CveBaseInfo: &storage.CVEInfo{
+								Cve: "CVE-2019-0002",
+							},
 							Cvss:     5,
 							Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
 						},

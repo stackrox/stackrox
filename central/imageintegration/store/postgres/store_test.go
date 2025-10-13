@@ -9,19 +9,18 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type ImageIntegrationsStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestImageIntegrationsStore(t *testing.T) {
@@ -29,28 +28,17 @@ func TestImageIntegrationsStore(t *testing.T) {
 }
 
 func (s *ImageIntegrationsStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
 
 	s.testDB = pgtest.ForT(s.T())
-	s.store = New(s.testDB.Pool)
+	s.store = New(s.testDB.DB)
 }
 
 func (s *ImageIntegrationsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE image_integrations CASCADE")
 	s.T().Log("image_integrations", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
-}
-
-func (s *ImageIntegrationsStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *ImageIntegrationsStoreSuite) TestStore() {
@@ -72,12 +60,12 @@ func (s *ImageIntegrationsStoreSuite) TestStore() {
 	foundImageIntegration, exists, err = store.Get(ctx, imageIntegration.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(imageIntegration, foundImageIntegration)
+	protoassert.Equal(s.T(), imageIntegration, foundImageIntegration)
 
-	imageIntegrationCount, err := store.Count(ctx)
+	imageIntegrationCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, imageIntegrationCount)
-	imageIntegrationCount, err = store.Count(withNoAccessCtx)
+	imageIntegrationCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(imageIntegrationCount)
 
@@ -87,11 +75,6 @@ func (s *ImageIntegrationsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, imageIntegration))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, imageIntegration), sac.ErrResourceAccessDenied)
 
-	foundImageIntegration, exists, err = store.Get(ctx, imageIntegration.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(imageIntegration, foundImageIntegration)
-
 	s.NoError(store.Delete(ctx, imageIntegration.GetId()))
 	foundImageIntegration, exists, err = store.Get(ctx, imageIntegration.GetId())
 	s.NoError(err)
@@ -100,18 +83,23 @@ func (s *ImageIntegrationsStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, imageIntegration.GetId()), sac.ErrResourceAccessDenied)
 
 	var imageIntegrations []*storage.ImageIntegration
+	var imageIntegrationIDs []string
 	for i := 0; i < 200; i++ {
 		imageIntegration := &storage.ImageIntegration{}
 		s.NoError(testutils.FullInit(imageIntegration, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		imageIntegrations = append(imageIntegrations, imageIntegration)
+		imageIntegrationIDs = append(imageIntegrationIDs, imageIntegration.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, imageIntegrations))
-	allImageIntegration, err := store.GetAll(ctx)
-	s.NoError(err)
-	s.ElementsMatch(imageIntegrations, allImageIntegration)
 
-	imageIntegrationCount, err = store.Count(ctx)
+	imageIntegrationCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, imageIntegrationCount)
+
+	s.NoError(store.DeleteMany(ctx, imageIntegrationIDs))
+
+	imageIntegrationCount, err = store.Count(ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.Equal(0, imageIntegrationCount)
 }

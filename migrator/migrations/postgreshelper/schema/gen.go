@@ -1,7 +1,8 @@
 package schema
 
-//go:generate pg-schema-migration-helper --type=storage.TestSingleKeyStruct --search-category SEARCH_UNSET --get-all-func
-//go:generate pg-schema-migration-helper --type=storage.TestMultiKeyStruct --search-category SEARCH_UNSET
+//go:generate pg-schema-migration-helper --type=storage.TestSingleKeyStruct --search-category SEARCH_UNSET
+//go:generate pg-schema-migration-helper --type=storage.TestSingleUUIDKeyStruct --search-category SEARCH_UNSET
+//go:generate pg-schema-migration-helper --type=storage.TestStruct --search-category SEARCH_UNSET
 //go:generate pg-schema-migration-helper --type=storage.TestParent4 --search-category 72 --references storage.TestGrandparent --search-scope 61,74
 //go:generate pg-schema-migration-helper --type=storage.TestParent3 --search-category 69 --references storage.TestGrandparent
 //go:generate pg-schema-migration-helper --type=storage.TestChild1P4 --search-category 74 --references storage.TestParent4 --search-scope 74
@@ -15,9 +16,3 @@ package schema
 //go:generate pg-schema-migration-helper --type=storage.TestGrandChild1 --search-category 64 --references storage.TestChild1,storage.TestGGrandChild1
 //go:generate pg-schema-migration-helper --type=storage.TestG3GrandChild1 --search-category 67
 //go:generate pg-schema-migration-helper --type=storage.TestShortCircuit --search-category 71 --references storage.TestChild1,storage.TestG2GrandChild1
-//go:generate pg-schema-migration-helper --type=storage.Image --search-category IMAGES --search-scope IMAGE_VULNERABILITIES,COMPONENT_VULN_EDGE,IMAGE_COMPONENTS,IMAGE_COMPONENT_EDGE,IMAGE_VULN_EDGE,IMAGES,DEPLOYMENTS,NAMESPACES,CLUSTERS
-
-// We only need conversion tool in migrator for version.
-// We do not need to migrate version table, use the pkg schema for versions.
-//go:generate pg-schema-migration-helper --type=storage.Version --singleton
-//go:generate rm ./versions.go

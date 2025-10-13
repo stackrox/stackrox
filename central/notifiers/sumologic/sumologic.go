@@ -9,20 +9,16 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events/codes"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
-)
-
-var (
-	log = logging.LoggerForModule()
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const (
@@ -43,7 +39,7 @@ func (*sumologic) Close(context.Context) error {
 
 // AlertNotify takes in an alert and generates the Slack message
 func (s *sumologic) AlertNotify(ctx context.Context, alert *storage.Alert) error {
-	clonedAlert := alert.Clone()
+	clonedAlert := alert.CloneVT()
 	notifiers.PruneAlert(clonedAlert, 10000)
 
 	return retry.WithRetry(
@@ -59,12 +55,12 @@ func (s *sumologic) AlertNotify(ctx context.Context, alert *storage.Alert) error
 	)
 }
 
-func (s *sumologic) sendProtoPayload(ctx context.Context, msg proto.Message) error {
-	var buf bytes.Buffer
-	if err := new(jsonpb.Marshaler).Marshal(&buf, msg); err != nil {
+func (s *sumologic) sendProtoPayload(ctx context.Context, msg protocompat.Message) error {
+	data, err := protojson.Marshal(msg)
+	if err != nil {
 		return err
 	}
-	return s.sendPayload(ctx, &buf)
+	return s.sendPayload(ctx, bytes.NewBuffer(data))
 }
 
 func (s *sumologic) sendPayload(ctx context.Context, buf io.Reader) error {
@@ -80,7 +76,7 @@ func (s *sumologic) sendPayload(ctx context.Context, buf io.Reader) error {
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 
-	return notifiers.CreateError("Sumo Logic", resp)
+	return notifiers.CreateError(s.GetName(), resp, codes.SumoLogicGeneric)
 }
 
 func validateConfig(sumologic *storage.SumoLogic) error {
@@ -125,20 +121,26 @@ type testPayload struct {
 	TestMessage string `json:"testMessage"`
 }
 
-func (s *sumologic) Test(ctx context.Context) error {
+func (s *sumologic) Test(ctx context.Context) *notifiers.NotifierError {
 	payload := testPayload{
 		TestID:      "testalert",
 		TestMessage: "This is a test message created to test integration with StackRox.",
 	}
 	marshaledPayload, err := json.Marshal(payload)
 	if err != nil {
-		return err
+		return notifiers.NewNotifierError("create test alert failed", err)
 	}
-	return s.sendPayload(ctx, bytes.NewBuffer(marshaledPayload))
+
+	err = s.sendPayload(ctx, bytes.NewBuffer(marshaledPayload))
+	if err != nil {
+		return notifiers.NewNotifierError("send test alert failed", err)
+	}
+
+	return nil
 }
 
 func init() {
-	notifiers.Add("sumologic", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
+	notifiers.Add(notifiers.SumoLogicType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
 		return newSumoLogic(notifier)
 	})
 }

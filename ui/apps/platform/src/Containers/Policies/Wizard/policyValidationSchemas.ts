@@ -2,8 +2,17 @@ import * as yup from 'yup';
 
 import { Policy } from 'types/policy.proto';
 
+import {
+    POLICY_DEFINITION_DETAILS_ID,
+    POLICY_DEFINITION_LIFECYCLE_ID,
+    POLICY_DEFINITION_RULES_ID,
+    POLICY_BEHAVIOR_SCOPE_ID,
+} from '../policies.constants';
 import { WizardPolicyStep4, WizardScope } from '../policies.utils';
-import { imageSigningCriteriaName } from './Step3/policyCriteriaDescriptors';
+import {
+    imageSigningCriteriaName,
+    mountPropagationCriteriaName,
+} from './Step3/policyCriteriaDescriptors';
 
 type PolicyStep1 = Pick<Policy, 'name' | 'severity' | 'categories'>;
 
@@ -68,24 +77,41 @@ const validationSchemaStep3 = yup.object().shape(
                                     .array()
                                     .of(
                                         yup.object().shape({
-                                            value: yup.string(), // dryrun validates whether value is required
+                                            // value: yup.string(), // dryrun validates whether value is required
                                             arrayValue: yup
                                                 .array(yup.string().required())
-                                                .test((value, context: yup.TestContext) => {
-                                                    if (
-                                                        // from[1] means one level up in the object
-                                                        context.from &&
-                                                        context.from[1]?.value?.fieldName ===
-                                                            imageSigningCriteriaName
-                                                    ) {
-                                                        return (
-                                                            Array.isArray(value) &&
-                                                            value.length !== 0
-                                                        );
-                                                    }
+                                                .test(
+                                                    'policy-criteria',
+                                                    'Please enter a valid value',
+                                                    (value, context: yup.TestContext) => {
+                                                        if (
+                                                            // from[1] means one level up in the object
+                                                            context.from &&
+                                                            context.from[1]?.value?.fieldName ===
+                                                                imageSigningCriteriaName
+                                                        ) {
+                                                            return (
+                                                                Array.isArray(value) &&
+                                                                value.length !== 0
+                                                            );
+                                                        }
+                                                        if (
+                                                            // from[1] means one level up in the object
+                                                            context.from &&
+                                                            context.from[1]?.value?.fieldName ===
+                                                                mountPropagationCriteriaName
+                                                        ) {
+                                                            const currentValue =
+                                                                context.from[0]?.value?.value;
+                                                            return (
+                                                                typeof currentValue === 'string' &&
+                                                                currentValue.trim().length > 0
+                                                            );
+                                                        }
 
-                                                    return true;
-                                                }),
+                                                        return true;
+                                                    }
+                                                ),
                                         })
                                     )
                                     .min(1)
@@ -163,15 +189,15 @@ export const validationSchemaStep4: yup.ObjectSchema<WizardPolicyStep4> = yup.ob
 
 const validationSchemaStep5 = yup.object().shape({});
 
-export function getValidationSchema(stepId: number | string | undefined): yup.Schema {
+export function getValidationSchema(stepId: number | string): yup.Schema {
     switch (stepId) {
-        case 1:
+        case POLICY_DEFINITION_DETAILS_ID:
             return validationSchemaStep1;
-        case 2:
+        case POLICY_DEFINITION_LIFECYCLE_ID:
             return validationSchemaStep2;
-        case 3:
+        case POLICY_DEFINITION_RULES_ID:
             return validationSchemaStep3;
-        case 4:
+        case POLICY_BEHAVIOR_SCOPE_ID:
             return validationSchemaStep4;
         default:
             return validationSchemaStep5;

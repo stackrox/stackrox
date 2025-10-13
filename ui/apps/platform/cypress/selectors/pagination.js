@@ -3,8 +3,8 @@
  */
 
 const pagination = {
-    previousPage: '[data-testid="previous-page-button"]',
-    nextPage: '[data-testid="next-page-button"]',
+    previousPage: '[aria-label="Go to previous page"]',
+    nextPage: '[aria-label="Go to next page"]',
 };
 
 export default pagination;

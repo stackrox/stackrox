@@ -32,8 +32,8 @@ func configureCA() error {
 	}
 
 	// Found fallback CA
-	log.Infof("Switching to fallback CA file location")
-	if err := utils.Should(os.Setenv(mtls.CAFileEnvName, alternativeCAPath)); err != nil {
+	log.Info("Switching to fallback CA file location")
+	if err := utils.ShouldErr(os.Setenv(mtls.CAFileEnvName, alternativeCAPath)); err != nil {
 		return errors.Wrap(err, "failed to update environment for alternative CA location")
 	}
 	log.Info("Successfully configured CA to be read from fallback location")
@@ -48,7 +48,7 @@ func isUsableServiceCert(certFilePath, namespace string) bool {
 	}
 	desiredDNS := mtls.AdmissionControlSubject.HostnameForNamespace(namespace) + ".svc"
 	if err := certFromFile.VerifyHostname(desiredDNS); err != nil {
-		log.Errorf("mTLS certificate with common name %s is not valid for DNS name %s: %v", certFromFile.Subject.CommonName, desiredDNS, err)
+		log.Infof("mTLS certificate with common name %q is not valid for DNS name %s: %v", certFromFile.Subject.CommonName, desiredDNS, err)
 		return false
 	}
 	return true
@@ -56,13 +56,13 @@ func isUsableServiceCert(certFilePath, namespace string) bool {
 
 func configureCerts(namespace string) error {
 	if allExist, err := fileutils.AllExist(mtls.CertFilePath(), mtls.KeyFilePath()); err != nil {
-		log.Errorf("Could not stat certificate and key in default location: %v. Assuming they don't exist...", err)
+		log.Infof("Could not stat certificate and key in default location: %v. Assuming they don't exist...", err)
 	} else if allExist && isUsableServiceCert(mtls.CertFilePath(), namespace) {
 		// Found usable cert in default location
 		return nil
 	}
 
-	log.Info("No usable certificates found, attempting to fetch certificates from sensor ...")
+	log.Info("No usable certificates found. This is expected in some configurations. Attempting to fetch certificates from sensor ...")
 	if err := fetchcerts.FetchAndSetupCertificates(context.Background()); err != nil {
 		return errors.Wrap(err, "failed to fetch certificates from sensor")
 	}

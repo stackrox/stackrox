@@ -5,7 +5,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/compliance/framework"
 	complianceMocks "github.com/stackrox/rox/central/compliance/framework/mocks"
 	"github.com/stackrox/rox/generated/storage"
@@ -13,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 var (
@@ -136,7 +136,7 @@ func TestNIST414_Success(t *testing.T) {
 	data.EXPECT().Policies().AnyTimes().Return(policies)
 	data.EXPECT().Deployments().AnyTimes().Return(toMapDeployments(testDeployments))
 
-	domain := framework.NewComplianceDomain(testCluster, testNodes, testDeployments, nil, nil)
+	domain := framework.NewComplianceDomain(testCluster, testNodes, testDeployments, nil)
 
 	run, err := framework.NewComplianceRun(check)
 	require.NoError(t, err)
@@ -258,7 +258,7 @@ func TestNIST414_FAIL(t *testing.T) {
 	data.EXPECT().Policies().AnyTimes().Return(policies)
 	data.EXPECT().Deployments().AnyTimes().Return(toMapDeployments(testDeployments))
 
-	domain := framework.NewComplianceDomain(testCluster, testNodes, testDeployments, nil, nil)
+	domain := framework.NewComplianceDomain(testCluster, testNodes, testDeployments, nil)
 
 	run, err := framework.NewComplianceRun(check)
 	require.NoError(t, err)

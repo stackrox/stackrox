@@ -1,91 +1,90 @@
 syntax = "proto3";
 
-option go_package = "v1";
-option java_package = "io.stackrox.proto.api.v1";
-
-import weak "google/api/annotations.proto";
-import "api/v1/common.proto";
-import "api/v1/search_service.proto";
-import "api/v1/empty.proto";
-import "storage/deployment.proto";
-import "storage/risk.proto";
-import "storage/process_baseline.proto";
-
 package v1;
 
+import "api/v1/common.proto";
+import "api/v1/empty.proto";
+import "api/v1/search_service.proto";
+import weak "google/api/annotations.proto";
+import "storage/deployment.proto";
+import "storage/process_baseline.proto";
+import "storage/risk.proto";
+
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
 
 message DeploymentLabelsResponse {
-    message LabelValues {
-        repeated string values = 1;
-    }
-    map<string, LabelValues> labels     = 1;
-    repeated string values              = 2;
+  message LabelValues {
+    repeated string values = 1;
+  }
+  map<string, LabelValues> labels = 1;
+  repeated string values = 2;
 }
 
 message ListDeploymentsResponse {
-    repeated storage.ListDeployment deployments = 1;
+  repeated storage.ListDeployment deployments = 1;
 }
 
 message CountDeploymentsResponse {
-    int32 count = 1;
+  int32 count = 1;
 }
 
 message ListDeploymentsWithProcessInfoResponse {
-    message DeploymentWithProcessInfo {
-        storage.ListDeployment                          deployment         = 1;
-        reserved                                                             2; // formerly whitelist_statuses
-        repeated storage.ContainerNameAndBaselineStatus baseline_statuses  = 3;
-    }
-    repeated DeploymentWithProcessInfo deployments = 1;
+  message DeploymentWithProcessInfo {
+    storage.ListDeployment deployment = 1;
+    reserved 2; // formerly whitelist_statuses
+    repeated storage.ContainerNameAndBaselineStatus baseline_statuses = 3;
+  }
+  repeated DeploymentWithProcessInfo deployments = 1;
 }
 
 message GetDeploymentWithRiskResponse {
-    storage.Deployment deployment = 1;
-    storage.Risk       risk       = 2;
+  storage.Deployment deployment = 1;
+  storage.Risk risk = 2;
+}
+
+message ExportDeploymentRequest {
+  int32 timeout = 1;
+  string query = 2;
+}
+
+message ExportDeploymentResponse {
+  storage.Deployment deployment = 1;
 }
 
 // DeploymentService APIs can be used to manage deployments.
 service DeploymentService {
+  // GetDeployment returns a deployment given its ID.
+  rpc GetDeployment(ResourceByID) returns (storage.Deployment) {
+    option (google.api.http) = {get: "/v1/deployments/{id}"};
+  }
 
-    // GetDeployment returns a deployment given its ID.
-    rpc GetDeployment (ResourceByID) returns (storage.Deployment) {
-        option (google.api.http) = {
-            get: "/v1/deployments/{id}"
-        };
-    }
+  // GetDeploymentWithRisk returns a deployment and its risk given its ID.
+  rpc GetDeploymentWithRisk(ResourceByID) returns (GetDeploymentWithRiskResponse) {
+    option (google.api.http) = {get: "/v1/deploymentswithrisk/{id}"};
+  }
 
-    // GetDeploymentWithRisk returns a deployment and its risk given its ID.
-    rpc GetDeploymentWithRisk (ResourceByID) returns (GetDeploymentWithRiskResponse) {
-        option(google.api.http) = {
-            get: "/v1/deploymentswithrisk/{id}"
-        };
-    }
+  // CountDeployments returns the number of deployments.
+  rpc CountDeployments(RawQuery) returns (CountDeploymentsResponse) {
+    option (google.api.http) = {get: "/v1/deploymentscount"};
+  }
 
-    // CountDeployments returns the number of deployments.
-    rpc CountDeployments (RawQuery) returns (CountDeploymentsResponse) {
-        option (google.api.http) = {
-            get: "/v1/deploymentscount"
-        };
-    }
+  // ListDeployments returns the list of deployments.
+  rpc ListDeployments(RawQuery) returns (ListDeploymentsResponse) {
+    option (google.api.http) = {get: "/v1/deployments"};
+  }
 
-    // ListDeployments returns the list of deployments.
-    rpc ListDeployments (RawQuery) returns (ListDeploymentsResponse) {
-        option (google.api.http) = {
-            get: "/v1/deployments"
-        };
-    }
+  // ListDeploymentsWithProcessInfo returns the list of deployments with process information.
+  rpc ListDeploymentsWithProcessInfo(RawQuery) returns (ListDeploymentsWithProcessInfoResponse) {
+    option (google.api.http) = {get: "/v1/deploymentswithprocessinfo"};
+  }
 
-    // ListDeploymentsWithProcessInfo returns the list of deployments with process information.
-    rpc ListDeploymentsWithProcessInfo (RawQuery) returns (ListDeploymentsWithProcessInfoResponse) {
-        option(google.api.http) = {
-            get: "/v1/deploymentswithprocessinfo"
-        };
-    }
+  // GetLabels returns the labels used by deployments.
+  rpc GetLabels(Empty) returns (DeploymentLabelsResponse) {
+    option (google.api.http) = {get: "/v1/deployments/metadata/labels"};
+  }
 
-    // GetLabels returns the labels used by deployments.
-    rpc GetLabels (Empty) returns (DeploymentLabelsResponse) {
-        option (google.api.http) = {
-            get: "/v1/deployments/metadata/labels"
-        };
-    }
+  rpc ExportDeployments(ExportDeploymentRequest) returns (stream ExportDeploymentResponse) {
+    option (google.api.http) = {get: "/v1/export/deployments"};
+  }
 }

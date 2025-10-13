@@ -21,6 +21,27 @@ defs: |
 server:
   visibleSchemas:
   - kubernetes-1.20.2
+  objects:
+    # Apparently, for the `lookup` function in the Helm chart to be able to list the objects of a certain kind
+    # at least one such object needs to exist. Therefore, we create a StorageClass here solely
+    # for enabling lookups in the charts under test.
+    - apiVersion: storage.k8s.io/v1
+      kind: StorageClass
+      metadata:
+        name: some-sc
+        annotations:
+          storageclass.kubernetes.io/is-default-class: false
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        namespace: stackrox
+        name: just-some-dummy-pvc
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: "314159Mi"
 values:
   clusterName: "testcluster"
   imagePullSecrets:
@@ -28,3 +49,6 @@ values:
   createSecrets: false
   ca:
     cert: "DUMMY CA CERTIFICATE"
+  monitoring:
+    openshift:
+      enabled: false

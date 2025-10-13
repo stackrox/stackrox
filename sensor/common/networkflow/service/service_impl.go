@@ -5,12 +5,13 @@ import (
 	"io"
 	"strings"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	metautils "github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/metrics"
@@ -25,18 +26,51 @@ const (
 	networkGraphExtSrcsCap = `network-graph-external-srcs`
 )
 
-// NewService creates a new streaming service with the collector. It should only be called once.
-func NewService(networkFlowManager manager.Manager) Service {
-	return &serviceImpl{
-		manager: networkFlowManager,
-	}
+var (
+	log = logging.LoggerForModule()
+)
 
+// Option function for the networkFlow service.
+type Option func(*serviceImpl)
+
+// WithAuthFuncOverride sets the AuthFuncOverride.
+func WithAuthFuncOverride(overrideFn func(context.Context, string) (context.Context, error)) Option {
+	return func(srv *serviceImpl) {
+		srv.authFuncOverride = overrideFn
+	}
+}
+
+// WithTraceWriter sets a trace writer that will write the messages received from collector.
+func WithTraceWriter(writer io.Writer) Option {
+	return func(srv *serviceImpl) {
+		srv.writer = writer
+	}
+}
+
+// NewService creates a new streaming service with the collector. It should only be called once.
+func NewService(networkFlowManager manager.Manager, opts ...Option) Service {
+	srv := &serviceImpl{
+		manager:          networkFlowManager,
+		authFuncOverride: authFuncOverride,
+		writer:           nil,
+	}
+	for _, o := range opts {
+		o(srv)
+	}
+	return srv
+}
+
+func authFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	err := idcheck.CollectorOnly().Authorized(ctx, fullMethodName)
+	return ctx, errors.Wrapf(err, "networkflow authorization for %q", fullMethodName)
 }
 
 type serviceImpl struct {
 	sensor.UnimplementedNetworkConnectionInfoServiceServer
 
-	manager manager.Manager
+	manager          manager.Manager
+	authFuncOverride func(context.Context, string) (context.Context, error)
+	writer           io.Writer
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -44,18 +78,18 @@ func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
 	sensor.RegisterNetworkConnectionInfoServiceServer(grpcServer, s)
 }
 
-// RegisterServiceHandlerFromEndpoint registers this service with the given gRPC Gateway endpoint.
-func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+// RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.
+func (s *serviceImpl) RegisterServiceHandler(_ context.Context, _ *runtime.ServeMux, _ *grpc.ClientConn) error {
 	// There is no grpc gateway handler for network connection info service
 	return nil
 }
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, idcheck.CollectorOnly().Authorized(ctx, fullMethodName)
+	return s.authFuncOverride(ctx, fullMethodName)
 }
 
-// PushSignals handles the bidirectional gRPC stream with the collector
+// PushNetworkConnectionInfo handles the bidirectional gRPC stream with the collector
 func (s *serviceImpl) PushNetworkConnectionInfo(stream sensor.NetworkConnectionInfoService_PushNetworkConnectionInfoServer) error {
 	return s.receiveMessages(stream)
 }
@@ -119,7 +153,7 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 
 		select {
 		case <-stream.Context().Done():
-			return stream.Context().Err()
+			return errors.Wrap(stream.Context().Err(), "networkflow receiving Messages")
 
 		case err := <-recvErrC:
 			if err == io.EOF {
@@ -160,6 +194,15 @@ func (s *serviceImpl) runRecv(stream sensor.NetworkConnectionInfoService_PushNet
 		if err != nil {
 			errC <- err
 			return
+		}
+		if s.writer != nil {
+			if data, err := msg.MarshalVT(); err == nil {
+				if _, err := s.writer.Write(data); err != nil {
+					log.Warnf("Error writing msg: %v", err)
+				}
+			} else {
+				log.Warnf("Error marshalling  msg: %v", err)
+			}
 		}
 
 		select {

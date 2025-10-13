@@ -22,10 +22,10 @@ const LoadingSection = ({
     <Flex
         className={`loading-section ${
             variant === 'light' ? 'pf-m-light' : 'pf-m-dark'
-        } pf-u-flex-direction-column pf-u-h-100 pf-u-justify-content-center pf-u-align-items-center`}
+        } pf-v5-u-flex-direction-column pf-v5-u-h-100 pf-v5-u-justify-content-center pf-v5-u-align-items-center`}
     >
         <Spinner aria-valuetext={message} size={spinnerSize} />
-        <div className="pf-u-mt-sm">{message}</div>
+        <div className="pf-v5-u-mt-sm">{message}</div>
     </Flex>
 );
 

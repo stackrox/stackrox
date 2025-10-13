@@ -9,19 +9,18 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type CollectionsStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestCollectionsStore(t *testing.T) {
@@ -29,28 +28,17 @@ func TestCollectionsStore(t *testing.T) {
 }
 
 func (s *CollectionsStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
 
 	s.testDB = pgtest.ForT(s.T())
-	s.store = New(s.testDB.Pool)
+	s.store = New(s.testDB.DB)
 }
 
 func (s *CollectionsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE collections CASCADE")
 	s.T().Log("collections", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
-}
-
-func (s *CollectionsStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *CollectionsStoreSuite) TestStore() {
@@ -73,12 +61,12 @@ func (s *CollectionsStoreSuite) TestStore() {
 	foundResourceCollection, exists, err = store.Get(ctx, resourceCollection.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(resourceCollection, foundResourceCollection)
+	protoassert.Equal(s.T(), resourceCollection, foundResourceCollection)
 
-	resourceCollectionCount, err := store.Count(ctx)
+	resourceCollectionCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, resourceCollectionCount)
-	resourceCollectionCount, err = store.Count(withNoAccessCtx)
+	resourceCollectionCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(resourceCollectionCount)
 
@@ -88,11 +76,6 @@ func (s *CollectionsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, resourceCollection))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, resourceCollection), sac.ErrResourceAccessDenied)
 
-	foundResourceCollection, exists, err = store.Get(ctx, resourceCollection.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(resourceCollection, foundResourceCollection)
-
 	s.NoError(store.Delete(ctx, resourceCollection.GetId()))
 	foundResourceCollection, exists, err = store.Get(ctx, resourceCollection.GetId())
 	s.NoError(err)
@@ -101,16 +84,24 @@ func (s *CollectionsStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, resourceCollection.GetId()), sac.ErrResourceAccessDenied)
 
 	var resourceCollections []*storage.ResourceCollection
+	var resourceCollectionIDs []string
 	for i := 0; i < 200; i++ {
 		resourceCollection := &storage.ResourceCollection{}
 		s.NoError(testutils.FullInit(resourceCollection, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		resourceCollection.EmbeddedCollections = nil
 		resourceCollections = append(resourceCollections, resourceCollection)
+		resourceCollectionIDs = append(resourceCollectionIDs, resourceCollection.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, resourceCollections))
 
-	resourceCollectionCount, err = store.Count(ctx)
+	resourceCollectionCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, resourceCollectionCount)
+
+	s.NoError(store.DeleteMany(ctx, resourceCollectionIDs))
+
+	resourceCollectionCount, err = store.Count(ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.Equal(0, resourceCollectionCount)
 }

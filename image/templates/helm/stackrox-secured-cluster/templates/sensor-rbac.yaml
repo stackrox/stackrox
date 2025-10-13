@@ -10,16 +10,18 @@ metadata:
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "serviceaccount" "sensor") | nindent 4 }}
+{{- if ._rox.mainImagePullSecrets._names }}
 imagePullSecrets:
 {{- range $secretName := ._rox.mainImagePullSecrets._names }}
 - name: {{ quote $secretName }}
+{{- end }}
 {{- end }}
 
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: stackrox:view-cluster
+  name: {{ include "srox.globalResourceName" (list . "stackrox:view-cluster") }}
   labels:
     {{- include "srox.labels" (list . "clusterrole" "stackrox:view-cluster") | nindent 4 }}
     auto-upgrade.stackrox.io/component: "sensor"
@@ -38,7 +40,7 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: stackrox:monitor-cluster
+  name: {{ include "srox.globalResourceName" (list . "stackrox:monitor-cluster") }}
   labels:
     {{- include "srox.labels" (list . "clusterrolebinding" "stackrox:monitor-cluster") | nindent 4 }}
     auto-upgrade.stackrox.io/component: "sensor"
@@ -50,7 +52,7 @@ subjects:
   namespace: {{ ._rox._namespace }}
 roleRef:
   kind: ClusterRole
-  name: stackrox:view-cluster
+  name: {{ include "srox.globalResourceName" (list . "stackrox:view-cluster") }}
   apiGroup: rbac.authorization.k8s.io
 ---
 # Role edit has all verbs but 'use' to disallow using any SCCs (resources: *).
@@ -102,7 +104,7 @@ roleRef:
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: stackrox:edit-workloads
+  name: {{ include "srox.globalResourceName" (list . "stackrox:edit-workloads") }}
   labels:
     {{- include "srox.labels" (list . "clusterrole" "stackrox:edit-workloads") | nindent 4 }}
     auto-upgrade.stackrox.io/component: "sensor"
@@ -131,7 +133,7 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: stackrox:enforce-policies
+  name: {{ include "srox.globalResourceName" (list . "stackrox:enforce-policies") }}
   labels:
     {{- include "srox.labels" (list . "clusterrolebinding" "stackrox:enforce-policies") | nindent 4 }}
     auto-upgrade.stackrox.io/component: "sensor"
@@ -143,13 +145,13 @@ subjects:
   namespace: {{ ._rox._namespace }}
 roleRef:
   kind: ClusterRole
-  name: stackrox:edit-workloads
+  name: {{ include "srox.globalResourceName" (list . "stackrox:edit-workloads") }}
   apiGroup: rbac.authorization.k8s.io
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: stackrox:network-policies
+  name: {{ include "srox.globalResourceName" (list . "stackrox:network-policies") }}
   labels:
     {{- include "srox.labels" (list . "clusterrole" "stackrox:network-policies") | nindent 4 }}
     auto-upgrade.stackrox.io/component: "sensor"
@@ -173,7 +175,7 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: stackrox:network-policies-binding
+  name: {{ include "srox.globalResourceName" (list . "stackrox:network-policies-binding") }}
   labels:
     {{- include "srox.labels" (list . "clusterrolebinding" "stackrox:network-policies-binding") | nindent 4 }}
     auto-upgrade.stackrox.io/component: "sensor"
@@ -185,13 +187,13 @@ subjects:
   namespace: {{ ._rox._namespace }}
 roleRef:
   kind: ClusterRole
-  name: stackrox:network-policies
+  name: {{ include "srox.globalResourceName" (list . "stackrox:network-policies") }}
   apiGroup: rbac.authorization.k8s.io
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: stackrox:update-namespaces
+  name: {{ include "srox.globalResourceName" (list . "stackrox:update-namespaces") }}
   labels:
     {{- include "srox.labels" (list . "clusterrole" "stackrox:update-namespaces") | nindent 4 }}
     auto-upgrade.stackrox.io/component: "sensor"
@@ -207,7 +209,7 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: stackrox:update-namespaces-binding
+  name: {{ include "srox.globalResourceName" (list . "stackrox:update-namespaces-binding") }}
   labels:
     {{- include "srox.labels" (list . "clusterrolebinding" "stackrox:update-namespaces-binding") | nindent 4 }}
     auto-upgrade.stackrox.io/component: "sensor"
@@ -219,13 +221,13 @@ subjects:
   namespace: {{ ._rox._namespace }}
 roleRef:
   kind: ClusterRole
-  name: stackrox:update-namespaces
+  name: {{ include "srox.globalResourceName" (list . "stackrox:update-namespaces") }}
   apiGroup: rbac.authorization.k8s.io
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: stackrox:create-events
+  name: {{ include "srox.globalResourceName" (list . "stackrox:create-events") }}
   labels:
     {{- include "srox.labels" (list . "clusterrole" "stackrox:create-events") | nindent 4 }}
     auto-upgrade.stackrox.io/component: "sensor"
@@ -243,7 +245,7 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: stackrox:create-events-binding
+  name: {{ include "srox.globalResourceName" (list . "stackrox:create-events-binding") }}
   labels:
     {{- include "srox.labels" (list . "clusterrolebinding" "stackrox:create-events-binding") | nindent 4 }}
     auto-upgrade.stackrox.io/component: "sensor"
@@ -255,13 +257,13 @@ subjects:
   namespace: {{ ._rox._namespace }}
 roleRef:
   kind: ClusterRole
-  name: stackrox:create-events
+  name: {{ include "srox.globalResourceName" (list . "stackrox:create-events") }}
   apiGroup: rbac.authorization.k8s.io
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: stackrox:review-tokens
+  name: {{ include "srox.globalResourceName" (list . "stackrox:review-tokens") }}
   labels:
     {{- include "srox.labels" (list . "clusterrole" "stackrox:review-tokens") | nindent 4 }}
     auto-upgrade.stackrox.io/component: "sensor"
@@ -277,7 +279,7 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: stackrox:review-tokens-binding
+  name: {{ include "srox.globalResourceName" (list . "stackrox:review-tokens-binding") }}
   labels:
     {{- include "srox.labels" (list . "clusterrolebinding" "stackrox:review-tokens-binding") | nindent 4 }}
     auto-upgrade.stackrox.io/component: "sensor"
@@ -289,5 +291,5 @@ subjects:
   namespace: {{ ._rox._namespace }}
 roleRef:
   kind: ClusterRole
-  name: stackrox:review-tokens
+  name: {{ include "srox.globalResourceName" (list . "stackrox:review-tokens") }}
   apiGroup: rbac.authorization.k8s.io

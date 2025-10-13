@@ -11,7 +11,7 @@ type perRPCCreds struct {
 	metadata map[string]string
 }
 
-func (c perRPCCreds) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
+func (c perRPCCreds) GetRequestMetadata(_ context.Context, _ ...string) (map[string]string, error) {
 	return c.metadata, nil
 }
 

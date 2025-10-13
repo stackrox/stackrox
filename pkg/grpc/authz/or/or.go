@@ -32,9 +32,9 @@ func Or(authorizers ...authz.Authorizer) authz.Authorizer {
 	}
 }
 
-// SensorOrAuthorizer returns an Authorizer that allows authorizes any
-// sensor, or anything that the passed authorizer authorizes.
-func SensorOrAuthorizer(authorizer authz.Authorizer) authz.Authorizer {
+// SensorOr returns an Authorizer that authorizes any sensor,
+// or anything that the passed authorizer authorizes.
+func SensorOr(authorizer authz.Authorizer) authz.Authorizer {
 	return Or(
 		idcheck.SensorsOnly(),
 		authorizer,
@@ -42,7 +42,12 @@ func SensorOrAuthorizer(authorizer authz.Authorizer) authz.Authorizer {
 }
 
 // ScannerOr returns an Authorizer that authorizes the scanner,
-// or anything that the passed authorizer authorizers.
+// or anything that the passed authorizer authorizes.
 func ScannerOr(authorizer authz.Authorizer) authz.Authorizer {
 	return Or(idcheck.ScannerOnly(), authorizer)
+}
+
+// ScannerV4 returns an Authorizer that authorizes Scanner v4 Indexer or Scanner v4 Matcher.
+func ScannerV4() authz.Authorizer {
+	return Or(idcheck.ScannerV4IndexerOnly(), idcheck.ScannerV4MatcherOnly())
 }

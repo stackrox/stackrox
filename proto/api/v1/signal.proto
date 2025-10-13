@@ -1,17 +1,17 @@
 syntax = "proto3";
 
-option go_package = "v1";
-option java_package = "io.stackrox.proto.api.v1";
-option cc_enable_arenas = true;
+package v1;
 
 import "storage/process_indicator.proto";
 
-package v1;
+option cc_enable_arenas = true;
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
 
 // Signal message tracks process and network activity.
 // Specifically, process launches and network connects/accepts.
 message Signal {
-    oneof signal {
-        storage.ProcessSignal process_signal = 1;
-    }
+  oneof signal {
+    storage.ProcessSignal process_signal = 1;
+  }
 }

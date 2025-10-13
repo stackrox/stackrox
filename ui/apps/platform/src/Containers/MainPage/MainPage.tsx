@@ -1,80 +1,102 @@
-import React, { ReactElement } from 'react';
+import React, { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useHistory } from 'react-router-dom';
-import { createStructuredSelector } from 'reselect';
-import { Page } from '@patternfly/react-core';
-
-import { selectors } from 'reducers';
-import { actions as globalSearchActions } from 'reducers/globalSearch';
+import { useNavigate } from 'react-router-dom-v5-compat';
+import { Page, Button } from '@patternfly/react-core';
+import { OutlinedCommentsIcon } from '@patternfly/react-icons';
 
 import LoadingSection from 'Components/PatternFly/LoadingSection';
-import Notifications from 'Containers/Notifications';
-import SearchModal from 'Containers/Search/SearchModal';
-import UnreachableWarning from 'Containers/UnreachableWarning';
-import AppWrapper from 'Containers/AppWrapper';
-import Body from 'Containers/MainPage/Body';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
+import usePublicConfig from 'hooks/usePublicConfig';
+import { selectors } from 'reducers';
+import { actions } from 'reducers/feedback';
+import { getClustersForPermissions } from 'services/RolesService';
+import { clustersBasePath } from 'routePaths';
 
-import CredentialExpiryBanner from './CredentialExpiryBanner';
-import VersionOutOfDate from './VersionOutOfDate';
-import Masthead from './Header/Masthead';
-import NavigationSidebar from './Sidebar/NavigationSidebar';
+import Header from './Header/Header';
+import PublicConfigFooter from './PublicConfig/PublicConfigFooter';
+import NavigationSidebar from './Navigation/NavigationSidebar';
+import HorizontalSubnav from './Navigation/HorizontalSubnav';
 
-const mainPageSelector = createStructuredSelector({
-    isGlobalSearchView: selectors.getGlobalSearchView,
-    metadata: selectors.getMetadata,
-    publicConfig: selectors.getPublicConfig,
-    serverState: selectors.getServerState,
-});
+import Body from './Body';
+import AcsFeedbackModal from './AcsFeedbackModal';
 
 function MainPage(): ReactElement {
-    const {
-        isGlobalSearchView,
-        metadata = {
-            stale: false,
-        },
-        publicConfig,
-        serverState,
-    } = useSelector(mainPageSelector);
-
-    // Follow-up: Replace SearchModal with path like /main/search and component like GlobalSearchPage.
+    const navigate = useNavigate();
     const dispatch = useDispatch();
-    const history = useHistory();
-    function onCloseGlobalSearchModal(toURL) {
-        dispatch(globalSearchActions.toggleGlobalSearchView());
-        if (typeof toURL === 'string') {
-            history.push(toURL);
-        }
-    }
 
     const { isFeatureFlagEnabled, isLoadingFeatureFlags } = useFeatureFlags();
     const { hasReadAccess, hasReadWriteAccess, isLoadingPermissions } = usePermissions();
+    const { publicConfig, isLoadingPublicConfig } = usePublicConfig();
+    const isLoadingCentralCapabilities = useSelector(selectors.getIsLoadingCentralCapabilities);
+    const [isLoadingClustersCount, setIsLoadingClustersCount] = useState(false);
+    const showFeedbackModal = useSelector(selectors.feedbackSelector);
 
-    // Render Body and NavigationSideBar only when feature flags and permissions are available.
-    if (isLoadingFeatureFlags || isLoadingPermissions) {
+    const hasWriteAccessForCluster = hasReadWriteAccess('Cluster');
+
+    useEffect(() => {
+        if (hasWriteAccessForCluster) {
+            setIsLoadingClustersCount(true);
+            getClustersForPermissions([])
+                .then(({ clusters }) => {
+                    // Essential that service function DOES NOT provide a default empty array!
+                    if (clusters?.length === 0) {
+                        // If no clusters, and user can admin Clusters, redirect to clusters section.
+                        // Only applicable in Cloud Services.
+                        navigate(clustersBasePath);
+                    }
+                })
+                .catch(() => {})
+                .finally(() => {
+                    setIsLoadingClustersCount(false);
+                });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [hasWriteAccessForCluster]);
+
+    // Prerequisites from initial requests for conditional rendering that affects all authenticated routes:
+    // feature flags: for NavigationSidebar and Body
+    // permissions: for NavigationSidebar and Body
+    // public config: for PublicConfigHeader and PublicConfigFooter and analytics
+    // central capabilities: for System Health and some integrations
+    // clusters: for redirect to clusters
+    if (
+        isLoadingFeatureFlags ||
+        isLoadingPermissions ||
+        (isLoadingPublicConfig && !publicConfig) ||
+        isLoadingCentralCapabilities ||
+        isLoadingClustersCount
+    ) {
         return <LoadingSection message="Loading..." />;
     }
 
-    const hasServiceIdentityWritePermission = hasReadWriteAccess('ServiceIdentity');
-
     return (
-        <AppWrapper publicConfig={publicConfig}>
-            <div className="flex flex-1 flex-col h-full relative">
-                <UnreachableWarning serverState={serverState} />
-                <Notifications />
-                <CredentialExpiryBanner
-                    component="CENTRAL"
-                    hasServiceIdentityWritePermission={hasServiceIdentityWritePermission}
-                />
-                <CredentialExpiryBanner
-                    component="SCANNER"
-                    hasServiceIdentityWritePermission={hasServiceIdentityWritePermission}
-                />
-                {metadata?.stale && <VersionOutOfDate />}
+        <>
+            <div id="PageParent">
+                <Button
+                    style={{
+                        bottom: 'calc(var(--pf-v5-global--spacer--lg) * 6)',
+                        position: 'absolute',
+                        right: '0',
+                        transform: 'rotate(270deg)',
+                        transformOrigin: 'bottom right',
+                        zIndex: 20000,
+                    }}
+                    icon={<OutlinedCommentsIcon />}
+                    iconPosition="left"
+                    variant="danger"
+                    id="feedback-trigger-button"
+                    onClick={() => {
+                        dispatch(actions.setFeedbackModalVisibility(true));
+                    }}
+                >
+                    Feedback
+                </Button>
+                {showFeedbackModal && <AcsFeedbackModal />}
                 <Page
                     mainContainerId="main-page-container"
-                    header={<Masthead />}
+                    header={<Header />}
                     isManagedSidebar
                     sidebar={
                         <NavigationSidebar
@@ -83,14 +105,20 @@ function MainPage(): ReactElement {
                         />
                     }
                 >
+                    <HorizontalSubnav
+                        hasReadAccess={hasReadAccess}
+                        isFeatureFlagEnabled={isFeatureFlagEnabled}
+                    />
                     <Body
                         hasReadAccess={hasReadAccess}
                         isFeatureFlagEnabled={isFeatureFlagEnabled}
                     />
                 </Page>
-                {isGlobalSearchView && <SearchModal onClose={onCloseGlobalSearchModal} />}
             </div>
-        </AppWrapper>
+            <footer>
+                <PublicConfigFooter />
+            </footer>
+        </>
     );
 }
 

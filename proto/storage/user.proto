@@ -1,54 +1,55 @@
 syntax = "proto3";
 
-option go_package = "storage";
-option java_package = "io.stackrox.proto.storage";
-
-import "gogoproto/gogo.proto";
-import "storage/role.proto";
-
 package storage;
 
+import "storage/role.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
 message SlimUser {
-    string id    = 1;
-    string name  = 2 [(gogoproto.moretags) = 'search:"User Name"'];
+  string id = 1; // @gotags: search:"User ID"
+  string name = 2; // @gotags: search:"User Name"
 }
 
 // User is an object that allows us to track the roles a user is tied to, and how they logged in.
 message User {
-    string id               = 1;
-    string auth_provider_id = 2;
+  string id = 1;
+  string auth_provider_id = 2;
 
-    repeated UserAttribute attributes = 3;
+  repeated UserAttribute attributes = 3;
+
+  string idp_token = 4;
 }
 
 message UserAttribute {
-    string key   = 1;
-    string value = 2;
+  string key = 1;
+  string value = 2;
 }
 
 message UserInfo {
-    // Role is wire compatible with the old format of storage.Role and
-    // hence only includes role name and associated permissions.
-    message Role {
-        string name                            = 1;
-        map<string, Access> resource_to_access = 3;
+  // Role is wire compatible with the old format of storage.Role and
+  // hence only includes role name and associated permissions.
+  message Role {
+    string name = 1;
+    map<string, Access> resource_to_access = 3;
 
-        reserved 2; // global_access, not in use any more, treat as NO_ACCESS
-    }
+    reserved 2; // global_access, not in use any more, treat as NO_ACCESS
+  }
 
-    // ResourceToAccess represents a collection of permissions. It is wire
-    // compatible with the old format of storage.Role and replaces it in
-    // places where only aggregated permissions are required.
-    message ResourceToAccess {
-        reserved 1; // name, likely not used in permission checking
-        reserved 2; // global_access, phased out
-        map<string, Access> resource_to_access = 3;
-    }
+  // ResourceToAccess represents a collection of permissions. It is wire
+  // compatible with the old format of storage.Role and replaces it in
+  // places where only aggregated permissions are required.
+  message ResourceToAccess {
+    reserved 1; // name, likely not used in permission checking
+    reserved 2; // global_access, phased out
+    map<string, Access> resource_to_access = 3;
+  }
 
-    string           username      = 1;
-    string           friendly_name = 2;
-    ResourceToAccess permissions   = 4;
-    repeated Role    roles         = 5;
+  string username = 1;
+  string friendly_name = 2;
+  ResourceToAccess permissions = 4;
+  repeated Role roles = 5;
 
-    reserved 3; // used to be role; use permissions instead
+  reserved 3; // used to be role; use permissions instead
 }

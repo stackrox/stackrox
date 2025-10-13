@@ -4,12 +4,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/cve/cluster/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 const (
@@ -55,7 +56,7 @@ func (suite *ClusterCVELoaderTestSuite) TestFromID() {
 	// Get a preloaded cve from id.
 	cve, err := loader.FromID(suite.ctx, clusterCve1)
 	suite.NoError(err)
-	suite.Equal(loader.loaded[clusterCve1], cve)
+	protoassert.Equal(suite.T(), loader.loaded[clusterCve1], cve)
 
 	// Get a non-preloaded cve from id.
 	thirdCVE := &storage.ClusterCVE{Id: clusterCve3}
@@ -64,12 +65,12 @@ func (suite *ClusterCVELoaderTestSuite) TestFromID() {
 
 	cve, err = loader.FromID(suite.ctx, clusterCve3)
 	suite.NoError(err)
-	suite.Equal(thirdCVE, cve)
+	protoassert.Equal(suite.T(), thirdCVE, cve)
 
 	// Above call should now be preloaded.
 	cve, err = loader.FromID(suite.ctx, clusterCve3)
 	suite.NoError(err)
-	suite.Equal(loader.loaded[clusterCve3], cve)
+	protoassert.Equal(suite.T(), loader.loaded[clusterCve3], cve)
 }
 
 func (suite *ClusterCVELoaderTestSuite) TestFromIDs() {
@@ -85,7 +86,7 @@ func (suite *ClusterCVELoaderTestSuite) TestFromIDs() {
 	// Get a preloaded cve from id.
 	cves, err := loader.FromIDs(suite.ctx, []string{clusterCve1, clusterCve2})
 	suite.NoError(err)
-	suite.Equal([]*storage.ClusterCVE{
+	protoassert.SlicesEqual(suite.T(), []*storage.ClusterCVE{
 		loader.loaded[clusterCve1],
 		loader.loaded[clusterCve2],
 	}, cves)
@@ -97,7 +98,7 @@ func (suite *ClusterCVELoaderTestSuite) TestFromIDs() {
 
 	cves, err = loader.FromIDs(suite.ctx, []string{clusterCve1, clusterCve2, clusterCve3})
 	suite.NoError(err)
-	suite.Equal([]*storage.ClusterCVE{
+	protoassert.SlicesEqual(suite.T(), []*storage.ClusterCVE{
 		loader.loaded[clusterCve1],
 		loader.loaded[clusterCve2],
 		thirdCVE,
@@ -106,7 +107,7 @@ func (suite *ClusterCVELoaderTestSuite) TestFromIDs() {
 	// Above call should now be preloaded.
 	cves, err = loader.FromIDs(suite.ctx, []string{clusterCve1, clusterCve2, clusterCve3})
 	suite.NoError(err)
-	suite.Equal([]*storage.ClusterCVE{
+	protoassert.SlicesEqual(suite.T(), []*storage.ClusterCVE{
 		loader.loaded[clusterCve1],
 		loader.loaded[clusterCve2],
 		loader.loaded[clusterCve3],
@@ -137,7 +138,7 @@ func (suite *ClusterCVELoaderTestSuite) TestFromQuery() {
 
 	cves, err := loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.ClusterCVE{
+	protoassert.SlicesEqual(suite.T(), []*storage.ClusterCVE{
 		loader.loaded[clusterCve1],
 		loader.loaded[clusterCve2],
 	}, cves)
@@ -162,7 +163,7 @@ func (suite *ClusterCVELoaderTestSuite) TestFromQuery() {
 
 	cves, err = loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.ClusterCVE{
+	protoassert.SlicesEqual(suite.T(), []*storage.ClusterCVE{
 		loader.loaded[clusterCve1],
 		loader.loaded[clusterCve2],
 		thirdCVE,
@@ -184,7 +185,7 @@ func (suite *ClusterCVELoaderTestSuite) TestFromQuery() {
 
 	cves, err = loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.ClusterCVE{
+	protoassert.SlicesEqual(suite.T(), []*storage.ClusterCVE{
 		loader.loaded[clusterCve1],
 		loader.loaded[clusterCve2],
 		loader.loaded[clusterCve3],

@@ -10,7 +10,6 @@ import (
 // TestEnsureBundleResourcesTypesAreCorrect exists to make accidental modifications of OrderedBundleResourcesTypes less
 // likely. There is of course no protection against somebody intentionally modifying both lists.
 func TestEnsureBundleResourcesTypesAreCorrect(t *testing.T) {
-	t.Parallel()
 
 	assert.ElementsMatch(t, OrderedBundleResourceTypes, []schema.GroupVersionKind{
 		{Version: "v1", Kind: "Service"},
@@ -29,5 +28,7 @@ func TestEnsureBundleResourcesTypesAreCorrect(t *testing.T) {
 		{Group: "policy", Version: "v1beta1", Kind: "PodSecurityPolicy"},
 		{Group: "apps", Version: "v1", Kind: "DaemonSet"},
 		{Group: "apps", Version: "v1", Kind: "Deployment"},
+		{Group: "monitoring.coreos.com", Version: "v1", Kind: "ServiceMonitor"},
+		{Group: "monitoring.coreos.com", Version: "v1", Kind: "PrometheusRule"},
 	})
 }

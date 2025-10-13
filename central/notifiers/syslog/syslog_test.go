@@ -6,14 +6,16 @@ import (
 	"fmt"
 	"strconv"
 	"testing"
+	"time"
 
-	"github.com/gogo/protobuf/types"
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/notifiers/syslog/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	metadataGetterMocks "github.com/stackrox/rox/pkg/notifiers/mocks"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestSyslogNotifier(t *testing.T) {
@@ -23,14 +25,16 @@ func TestSyslogNotifier(t *testing.T) {
 type SyslogNotifierTestSuite struct {
 	suite.Suite
 
-	mockCtrl   *gomock.Controller
-	mockSender *mocks.MocksyslogSender
+	mockCtrl           *gomock.Controller
+	mockSender         *mocks.MocksyslogSender
+	mockMetadataGetter *metadataGetterMocks.MockMetadataGetter
 }
 
 func (s *SyslogNotifierTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 
 	s.mockSender = mocks.NewMocksyslogSender(s.mockCtrl)
+	s.mockMetadataGetter = metadataGetterMocks.NewMockMetadataGetter(s.mockCtrl)
 }
 
 func (s *SyslogNotifierTestSuite) TearDownTest() {
@@ -39,10 +43,12 @@ func (s *SyslogNotifierTestSuite) TearDownTest() {
 
 func (s *SyslogNotifierTestSuite) makeSyslog(notifier *storage.Notifier) *syslog {
 	return &syslog{
-		Notifier: notifier,
-		sender:   s.mockSender,
-		pid:      1,
-		facility: (int(notifier.GetSyslog().GetLocalFacility()) + 16) * 8,
+		Notifier:       notifier,
+		metadataGetter: s.mockMetadataGetter,
+		sender:         s.mockSender,
+		pid:            1,
+		facility:       (int(notifier.GetSyslog().GetLocalFacility()) + 16) * 8,
+		maxMessageSize: 32768,
 	}
 }
 
@@ -58,9 +64,37 @@ func makeNotifier() *storage.Notifier {
 						Hostname: "hostname",
 					},
 				},
+				MessageFormat: storage.Syslog_CEF,
 			},
 		},
 	}
+}
+
+func makeNotifierExtrafields(keyVals []*storage.KeyValuePair) *storage.Notifier {
+	return &storage.Notifier{
+		Id:   "testID",
+		Name: "testName",
+		Type: "syslog",
+		Config: &storage.Notifier_Syslog{
+			Syslog: &storage.Syslog{
+				Endpoint: &storage.Syslog_TcpConfig{
+					TcpConfig: &storage.Syslog_TCPConfig{
+						Hostname: "hostname",
+					},
+				},
+				MessageFormat: storage.Syslog_CEF,
+				ExtraFields:   keyVals,
+			},
+		},
+	}
+}
+
+func (s *SyslogNotifierTestSuite) setupMockMetadataGetterForAlert(alert *storage.Alert) {
+	s.mockMetadataGetter.EXPECT().GetNamespaceLabels(gomock.Any(), alert).Return(map[string]string{
+		"x":                           "y",
+		"abc":                         "xyz",
+		"kubernetes.io/metadata.name": "stackrox",
+	})
 }
 
 func (s *SyslogNotifierTestSuite) TestCEFMakeExtensionPair() {
@@ -86,12 +120,12 @@ func (s *SyslogNotifierTestSuite) TestCEFMakeJSONExtensionPair() {
 
 func (s *SyslogNotifierTestSuite) TestCEFMakeTimestampExtensionPair() {
 	key := "key"
-	value := types.TimestampNow()
+	value := time.Now()
 
-	msTs := int64(value.GetSeconds())*1000 + int64(value.GetNanos())/1000000
+	msTs := int64(value.Unix())*1000 + int64(value.Nanosecond())/1000000
 	expectedValue := []string{fmt.Sprintf("%s=%s", key, strconv.Itoa(int(msTs)))}
 
-	extensionPair := makeTimestampExtensionPair(key, value)
+	extensionPair := makeTimestampExtensionPair(key, &value)
 	s.Equal(expectedValue, extensionPair)
 }
 
@@ -104,11 +138,122 @@ func (s *SyslogNotifierTestSuite) TestCEFExtensionFromPairs() {
 	s.Equal(fmt.Sprintf("%s %s", extensionPair1, extensionPair2), extension)
 }
 
+func (s *SyslogNotifierTestSuite) TestValidateSyslogEmptyExtrafields() {
+	keyVals := []*storage.KeyValuePair{{Key: "", Value: ""}}
+
+	notifier := makeNotifierExtrafields(keyVals)
+	sys := notifier.GetSyslog()
+	e := validateSyslog(sys)
+	s.ErrorContains(e, "all extra fields must have both a key and a value")
+}
+
+func (s *SyslogNotifierTestSuite) TestValidateSyslogExtraFieldsEmptyList() {
+	keyVals := []*storage.KeyValuePair{}
+	notifier := makeNotifierExtrafields(keyVals)
+
+	sys := notifier.GetSyslog()
+	e := validateSyslog(sys)
+	s.NoError(e)
+
+	testAlert := fixtures.GetAlert()
+	s.setupMockMetadataGetterForAlert(testAlert)
+	a := s.makeSyslog(notifier).alertToCEF(context.Background(), testAlert)
+	s.NotEmpty(a)
+}
+
+func (s *SyslogNotifierTestSuite) TestValidateSyslogExtraFields() {
+	keyVals := []*storage.KeyValuePair{{Key: "foo", Value: "bar"}}
+	notifier := makeNotifierExtrafields(keyVals)
+	sys := notifier.GetSyslog()
+	e := validateSyslog(sys)
+	s.NoError(e)
+}
+
+func (s *SyslogNotifierTestSuite) TestValidateAlertToCEFWithExtraFields() {
+	keyVals := []*storage.KeyValuePair{{Key: "foo", Value: "bar"}}
+	notifier := makeNotifierExtrafields(keyVals)
+	testAlert := fixtures.GetAlert()
+	s.setupMockMetadataGetterForAlert(testAlert)
+	a := s.makeSyslog(notifier).alertToCEF(context.Background(), testAlert)
+	s.Contains(a, "foo=bar")
+}
+
+func (s *SyslogNotifierTestSuite) TestValidateAlertToCEFWithNamespaceLabels() {
+	cases := []struct {
+		title                  string
+		alert                  *storage.Alert
+		namespaceInNotifcation bool
+		expectedNamespaceProp  string
+		expectedLabelsProp     string
+	}{
+		{
+			title:                  "Namespace and labels should be in included for deployment alert",
+			alert:                  fixtures.GetScopedDeploymentAlert("xyz", "cluster-id", "deployment-namespace"),
+			namespaceInNotifcation: true,
+			expectedNamespaceProp:  "ns=deployment-namespace",
+			expectedLabelsProp:     "nslabels={\"abc\":\"xyz\",\"kubernetes.io/metadata.name\":\"stackrox\",\"x\":\"y\"}",
+		},
+		{
+			title:                  "Namespace and labels should be in included for resource alert",
+			alert:                  fixtures.GetScopedResourceAlert("abcd", "cluser-id", "my-namespace"),
+			namespaceInNotifcation: true,
+			expectedNamespaceProp:  "ns=my-namespace",
+			expectedLabelsProp:     "nslabels={\"abc\":\"xyz\",\"kubernetes.io/metadata.name\":\"stackrox\",\"x\":\"y\"}",
+		},
+		{
+			title: "Namespace and labels should not be in included for image alert",
+			alert: fixtures.GetImageAlert(),
+		},
+		{
+			title: "Namespace and labels should not be in included for alert that's missing a namespace",
+			alert: fixtures.GetScopedDeploymentAlert("xyz", "cluster-id", ""),
+		},
+	}
+
+	notifier := makeNotifier()
+
+	for _, c := range cases {
+		s.T().Run(c.title, func(t *testing.T) {
+			if c.namespaceInNotifcation {
+				s.setupMockMetadataGetterForAlert(c.alert)
+			}
+			cef := s.makeSyslog(notifier).alertToCEF(context.Background(), c.alert)
+			if c.namespaceInNotifcation {
+				s.Contains(cef, c.expectedNamespaceProp)
+				s.Contains(cef, c.expectedLabelsProp)
+			}
+		})
+	}
+}
+
+func (s *SyslogNotifierTestSuite) TestValidateExtraFieldsAuditLog() {
+	keyVals := []*storage.KeyValuePair{{Key: "foo", Value: "bar"}}
+	notifier := makeNotifierExtrafields(keyVals)
+	testAuditMessage := &v1.Audit_Message{
+		Time: protocompat.TimestampNow(),
+		User: &storage.UserInfo{
+			Username:     "Joseph",
+			FriendlyName: "Rules",
+			Permissions:  nil,
+			Roles:        nil,
+		},
+		Request: &v1.Audit_Message_Request{
+			Endpoint: "asg",
+			Method:   "jtyr",
+			Payload:  nil,
+		},
+	}
+	syslog := s.makeSyslog(notifier)
+
+	m := syslog.auditLogToCEF(testAuditMessage, notifier)
+	s.Contains(m, "foo=bar")
+}
+
 func (s *SyslogNotifierTestSuite) TestSendAuditLog() {
 	notifier := makeNotifier()
 	syslog := s.makeSyslog(notifier)
 	testAuditMessage := &v1.Audit_Message{
-		Time: types.TimestampNow(),
+		Time: protocompat.TimestampNow(),
 		User: &storage.UserInfo{
 			Username:     "Joseph",
 			FriendlyName: "Rules",
@@ -130,11 +275,53 @@ func (s *SyslogNotifierTestSuite) TestSendAuditLog() {
 func (s *SyslogNotifierTestSuite) TestAlerts() {
 	syslog := s.makeSyslog(makeNotifier())
 	testAlert := fixtures.GetAlert()
-	s.mockSender.EXPECT().SendSyslog(gomock.Any()).Return(nil)
+	s.mockSender.EXPECT().SendSyslog(gomock.Any()).Return(nil).AnyTimes()
+	s.setupMockMetadataGetterForAlert(testAlert)
 	s.Require().NoError(syslog.AlertNotify(context.Background(), testAlert))
 
 	// Ensure it doesn't panic with nil timestamps
 	testAlert.FirstOccurred = nil
-	s.mockSender.EXPECT().SendSyslog(gomock.Any()).Return(nil)
+	s.setupMockMetadataGetterForAlert(testAlert)
 	s.Require().NoError(syslog.AlertNotify(context.Background(), testAlert))
+}
+
+func (s *SyslogNotifierTestSuite) TestValidateRemoteConfig() {
+	tcpConfig := &storage.Syslog_TCPConfig{
+		Hostname:      "google.com",
+		Port:          66666666,
+		SkipTlsVerify: true,
+		UseTls:        true,
+	}
+	_, errPort := validateRemoteConfig(tcpConfig)
+	s.Error(errPort)
+
+	tcpConfigExtraSpace := &storage.Syslog_TCPConfig{
+		Hostname:      "10.46.152.34 ",
+		Port:          514,
+		SkipTlsVerify: true,
+		UseTls:        true,
+	}
+	_, errURL := validateRemoteConfig(tcpConfigExtraSpace)
+	s.Error(errURL)
+
+	tcpConfigValidIP := &storage.Syslog_TCPConfig{
+		Hostname:      "10.46.152.34",
+		Port:          514,
+		SkipTlsVerify: true,
+		UseTls:        true,
+	}
+	_, errURLValidIP := validateRemoteConfig(tcpConfigValidIP)
+	s.NoError(errURLValidIP)
+}
+
+func (s *SyslogNotifierTestSuite) TestHeaderFormat() {
+	notifier := makeNotifier()
+	syslog := s.makeSyslog(notifier)
+	header := syslog.getCEFHeaderWithExtension("deviceEventClassID", "alertnameunique", 999, "extension")
+	s.Regexp(`^CEF:0\|StackRox\|Kubernetes Security Platform\|.*\|deviceEventClassID\|alertnameunique\|999\|extension$`, header)
+
+	// Legacy format
+	syslog.Notifier.GetSyslog().MessageFormat = storage.Syslog_LEGACY
+	header = syslog.getCEFHeaderWithExtension("deviceEventClassID", "alertnameunique", 999, "extension")
+	s.Regexp(`^CEF:0\|StackRox\|Kubernetes Security Platform\|.*\|deviceEventClassID\|999\|alertnameunique\|extension$`, header)
 }

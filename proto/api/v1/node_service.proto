@@ -1,38 +1,46 @@
 syntax = "proto3";
 
-option go_package = "v1";
-option java_package = "io.stackrox.proto.api.v1";
+package v1;
 
 import weak "google/api/annotations.proto";
 import "storage/node.proto";
 
-package v1;
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
 
 message ListNodesRequest {
-    string cluster_id = 1;
+  string cluster_id = 1;
 }
 
 message ListNodesResponse {
-    repeated storage.Node nodes = 1;
+  repeated storage.Node nodes = 1;
 }
 
 message GetNodeRequest {
-    string cluster_id = 1;
-    string node_id = 2;
+  string cluster_id = 1;
+  string node_id = 2;
+}
+
+message ExportNodeRequest {
+  int32 timeout = 1;
+  string query = 2;
+}
+
+message ExportNodeResponse {
+  storage.Node node = 1;
 }
 
 // storage.Node represents information about a node in the cluster.
 service NodeService {
+  rpc ListNodes(ListNodesRequest) returns (ListNodesResponse) {
+    option (google.api.http) = {get: "/v1/nodes/{cluster_id}"};
+  }
 
-    rpc ListNodes(ListNodesRequest) returns (ListNodesResponse) {
-        option (google.api.http) = {
-            get: "/v1/nodes/{cluster_id}"
-        };
-    }
+  rpc GetNode(GetNodeRequest) returns (storage.Node) {
+    option (google.api.http) = {get: "/v1/nodes/{cluster_id}/{node_id}"};
+  }
 
-    rpc GetNode(GetNodeRequest) returns (storage.Node) {
-        option (google.api.http) = {
-            get: "/v1/nodes/{cluster_id}/{node_id}"
-        };
-    }
+  rpc ExportNodes(ExportNodeRequest) returns (stream ExportNodeResponse) {
+    option (google.api.http) = {get: "/v1/export/nodes"};
+  }
 }

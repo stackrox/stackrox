@@ -1,8 +1,15 @@
 # Labels for operator certification https://redhat-connect.gitbook.io/certified-operator-guide/ocp-deployment/operator-metadata/bundle-directory
-# TODO(ROX-7337): add support for v4.5
-# Note: vX means "X or later": https://redhat-connect.gitbook.io/certified-operator-guide/ocp-deployment/operator-metadata/bundle-directory/managing-openshift-versions
-LABEL com.redhat.openshift.versions="v4.6"
 LABEL com.redhat.delivery.operator.bundle=true
+
+# This sets the earliest version of OCP where our operator build would show up in the official Red Hat operator catalog.
+# vX means "X or later": https://redhat-connect.gitbook.io/certified-operator-guide/ocp-deployment/operator-metadata/bundle-directory/managing-openshift-versions
+#
+# The version here should stay the lowest not yet EOL so that downstream CVP tests don't fail.
+# See EOL schedule: https://docs.engineering.redhat.com/display/SP/Shipping+Operators+to+EOL+OCP+versions
+#
+# See https://docs.engineering.redhat.com/display/StackRox/Add+support+for+new+OpenShift+version#AddsupportfornewOpenShiftversion-RemovesupportforOpenShiftversionwentEOL
+# for info when to adjust this version.
+LABEL com.redhat.openshift.versions="v4.12"
 
 # Use post-processed files (instead of the original ones).
 COPY build/bundle/manifests /manifests/

@@ -2,8 +2,8 @@ package store
 
 import (
 	"context"
+	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/timestamp"
 )
@@ -12,17 +12,21 @@ import (
 //
 //go:generate mockgen-wrapper
 type FlowStore interface {
-	GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error)
-	GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error)
+	GetAllFlows(ctx context.Context, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error)
+	GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error)
 	// GetFlowsForDeployment returns all flows referencing a specific deployment id
 	GetFlowsForDeployment(ctx context.Context, deploymentID string) ([]*storage.NetworkFlow, error)
+	// GetExternalFlowsForDeployment returns all External flows referencing a specific deployment id
+	GetExternalFlowsForDeployment(ctx context.Context, deploymentID string) ([]*storage.NetworkFlow, error)
 
 	UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error
 	RemoveFlow(ctx context.Context, props *storage.NetworkFlowProperties) error
 
 	RemoveFlowsForDeployment(ctx context.Context, id string) error
-	RemoveMatchingFlows(ctx context.Context, keyMatchFn func(props *storage.NetworkFlowProperties) bool, valueMatchFn func(flow *storage.NetworkFlow) bool) error
 
 	// RemoveStaleFlows - remove stale duplicate network flows
 	RemoveStaleFlows(ctx context.Context) error
+
+	// RemoveOrphanedFlows - remove flows that have been orphaned by deployments
+	RemoveOrphanedFlows(ctx context.Context, orphanWindow *time.Time) error
 }

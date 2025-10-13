@@ -1,12 +1,8 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 
-import { healthStatusLabels } from 'messages/common';
-import {
-    delayedCollectorStatusStyle,
-    delayedAdmissionControlStatusStyle,
-    healthStatusStyles,
-} from '../cluster.helpers';
-import { ClusterHealthItemStatus, ClusterHealthItem } from '../clusterTypes';
+import { healthStatusLabels } from '../cluster.constants';
+import type { ClusterHealthItemStatus, ClusterHealthItem } from '../clusterTypes';
 
 type HealthLabelWithDelayedProps = {
     delayedText: string;
@@ -27,24 +23,11 @@ function HealthLabelWithDelayed({
     clusterHealthItemStatus,
     isList,
 }: HealthLabelWithDelayedProps): ReactElement {
-    let { bgColor, fgColor } = healthStatusStyles[clusterHealthItemStatus];
-    if (isDelayed) {
-        if (clusterHealthItem === 'collector') {
-            bgColor = delayedCollectorStatusStyle.bgColor;
-            fgColor = delayedCollectorStatusStyle.fgColor;
-        }
-        if (clusterHealthItem === 'admissionControl') {
-            bgColor = delayedAdmissionControlStatusStyle.bgColor;
-            fgColor = delayedAdmissionControlStatusStyle.fgColor;
-        }
-    }
     const testId = `${clusterHealthItem}Status`;
     const healthLabelText = isList
         ? clusterHealthItem
         : healthStatusLabels[clusterHealthItemStatus];
-    const healthLabelElement = (
-        <span className={`${bgColor} ${fgColor} capitalize`}>{healthLabelText}</span>
-    );
+    const healthLabelElement = <span className="capitalize">{healthLabelText}</span>;
     if (isDelayed) {
         return (
             <div data-testid={testId} className={`${isList ? 'inline' : ''}`}>

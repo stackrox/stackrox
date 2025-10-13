@@ -1,19 +1,12 @@
 clusterName: foo
-helmManaged: true
 centralEndpoint: central.stackrox:443
 
 admissionControl:
-  listenOnCreates: true
-  listenOnUpdates: true
-  listenOnEvents: true
   dynamic:
-    enforceOnCreates: true
-    scanInline: true
+    enforce: true
     disableBypass: true
-    timeout: 3
-    enforceOnUpdates: true
-
+  failurePolicy: Ignore
 collector:
-  collectionMethod: KERNEL_MODULE
+  collectionMethod: CORE_BPF
   disableTaintTolerations: false
   slimMode: false

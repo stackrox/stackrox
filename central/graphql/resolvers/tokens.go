@@ -22,7 +22,7 @@ func init() {
 // Tokens gets a list of all tokens (or just the ones that are or are not resolved)
 func (resolver *Resolver) Tokens(ctx context.Context, args struct{ Revoked *bool }) ([]*tokenMetadataResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Tokens")
-	if err := readTokens(ctx); err != nil {
+	if err := readIntegrations(ctx); err != nil {
 		return nil, err
 	}
 	req := &v1.GetAPITokensRequest{}
@@ -36,7 +36,7 @@ func (resolver *Resolver) Tokens(ctx context.Context, args struct{ Revoked *bool
 // Token gets a single API token by ID
 func (resolver *Resolver) Token(ctx context.Context, args struct{ graphql.ID }) (*tokenMetadataResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Token")
-	if err := readTokens(ctx); err != nil {
+	if err := readIntegrations(ctx); err != nil {
 		return nil, err
 	}
 	token, err := resolver.APITokenBackend.GetTokenOrNil(ctx, string(args.ID))

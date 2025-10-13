@@ -2,13 +2,13 @@ package datastore
 
 import (
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/globaldb/dackbox"
-	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/image/datastore/keyfence"
-	"github.com/stackrox/rox/central/image/datastore/store/postgres"
+	"github.com/stackrox/rox/central/image/datastore/store"
+	pgStore "github.com/stackrox/rox/central/image/datastore/store/postgres"
+	pgStoreV2 "github.com/stackrox/rox/central/image/datastore/store/v2/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -19,21 +19,13 @@ var (
 )
 
 func initialize() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		storage := postgres.New(globaldb.GetPostgres(), false, keyfence.ImageKeyFenceSingleton())
-		indexer := postgres.NewIndexer(globaldb.GetPostgres())
-		ad = NewWithPostgres(storage, indexer, riskDS.Singleton(), ranking.ImageRanker(), ranking.ComponentRanker())
-		return
+	var storage store.Store
+	if features.FlattenCVEData.Enabled() {
+		storage = pgStoreV2.New(globaldb.GetPostgres(), false, keyfence.ImageKeyFenceSingleton())
+	} else {
+		storage = pgStore.New(globaldb.GetPostgres(), false, keyfence.ImageKeyFenceSingleton())
 	}
-
-	ad = New(dackbox.GetGlobalDackBox(),
-		dackbox.GetKeyFence(),
-		globalindex.GetGlobalIndex(),
-		globalindex.GetProcessIndex(),
-		false,
-		riskDS.Singleton(),
-		ranking.ImageRanker(),
-		ranking.ComponentRanker())
+	ad = NewWithPostgres(storage, riskDS.Singleton(), ranking.ImageRanker(), ranking.ComponentRanker())
 }
 
 // Singleton provides the interface for non-service external interaction.

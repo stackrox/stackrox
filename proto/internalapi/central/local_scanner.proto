@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-option go_package = "central";
+package central;
 
 import "storage/service_identity.proto";
 
-package central;
+option go_package = "./internalapi/central;central";
 
 message LocalScannerCertsIssueError {
   string message = 1;
@@ -17,7 +17,7 @@ message IssueLocalScannerCertsRequest {
 message IssueLocalScannerCertsResponse {
   string request_id = 1;
   oneof response {
-      storage.TypedServiceCertificateSet certificates = 2;
-      LocalScannerCertsIssueError error = 3;
+    storage.TypedServiceCertificateSet certificates = 2;
+    LocalScannerCertsIssueError error = 3;
   }
 }

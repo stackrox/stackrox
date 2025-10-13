@@ -4,10 +4,10 @@ import (
 	"io"
 	"text/template"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -37,6 +37,7 @@ const (
 
 	// passedTemplate is a (raw) template for displaying when there are no
 	// failed policies.
+	//#nosec G101 -- This is a false positive
 	passedTemplate = `✔ The scanned resources passed all policies
 `
 
@@ -55,16 +56,32 @@ func JSON(output io.Writer, alerts []*storage.Alert) error {
 	// Just pipe out the violated alerts as JSON.
 
 	// This object is really just a filler because its a wrapper around the alerts
-	// this is required because jsonpb can only marshal proto.Message
+	// this is required because jsonpb can only marshal protocompat.Message
 	bdr := &v1.BuildDetectionResponse{
 		Alerts: alerts,
 	}
-	marshaler := jsonpb.Marshaler{Indent: "  "}
-	if err := marshaler.Marshal(output, bdr); err != nil {
+	if err := jsonutil.MarshalPretty(output, bdr); err != nil {
 		return errors.Wrap(err, "could not marshal alerts")
 	}
 	if _, err := output.Write([]byte{'\n'}); err != nil {
 		return errors.Wrap(err, "could not write alerts")
+	}
+	return nil
+}
+
+// JSONWithRemarks renders the given list of policies and remarks as JSON and writes them to the output steam.
+func JSONWithRemarks(output io.Writer, alerts []*storage.Alert, remarks []*v1.DeployDetectionRemark) error {
+	// This object is really just a filler because it's a wrapper around the alerts
+	// this is required because jsonpb can only marshal proto.Message
+	bdr := &v1.ResultAggregation{
+		Alerts:  alerts,
+		Remarks: remarks,
+	}
+	if err := jsonutil.MarshalPretty(output, bdr); err != nil {
+		return errors.Wrap(err, "could not marshal alerts")
+	}
+	if _, err := output.Write([]byte{'\n'}); err != nil {
+		return errors.Wrap(err, "could not write final newline for alerts")
 	}
 	return nil
 }

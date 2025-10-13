@@ -1,14 +1,14 @@
 syntax = "proto3";
 
-option go_package = "storage";
-option cc_enable_arenas = true;
-option java_package = "io.stackrox.proto.storage";
+package storage;
 
 import "google/protobuf/timestamp.proto";
 
-package storage;
+option cc_enable_arenas = true;
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
 
 message TelemetryConfiguration {
-    bool                      enabled       = 1;
-    google.protobuf.Timestamp last_set_time = 2;
+  bool enabled = 1;
+  google.protobuf.Timestamp last_set_time = 2 [deprecated = true];
 }

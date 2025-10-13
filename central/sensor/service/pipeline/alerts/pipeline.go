@@ -12,12 +12,12 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/metrics"
 )
 
 var (
-	log = logging.LoggerForModule()
+	_ pipeline.Fragment = (*pipelineImpl)(nil)
 )
 
 // GetPipeline returns an instantiation of this particular pipeline
@@ -40,7 +40,11 @@ type pipelineImpl struct {
 	deployments      deploymentDataStore.DataStore
 }
 
-func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
+func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
+	return nil
+}
+
+func (s *pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {
 	return nil
 }
 
@@ -49,7 +53,7 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
+func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.Alert)
 
 	clusterName, exists, err := s.clusters.GetClusterName(ctx, clusterID)
@@ -78,14 +82,14 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		if deployment := a.GetDeployment(); deployment != nil {
 			deployment.ClusterId = clusterID
 			deployment.ClusterName = clusterName
-			a.Namespace = deployment.Namespace
-			a.NamespaceId = deployment.NamespaceId
+			a.Namespace = deployment.GetNamespace()
+			a.NamespaceId = deployment.GetNamespaceId()
 		}
 		if resource := a.GetResource(); resource != nil {
 			resource.ClusterId = clusterID
 			resource.ClusterName = clusterName
-			a.Namespace = resource.Namespace
-			a.NamespaceId = resource.NamespaceId
+			a.Namespace = resource.GetNamespace()
+			a.NamespaceId = resource.GetNamespaceId()
 		}
 	}
 

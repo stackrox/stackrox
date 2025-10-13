@@ -1,10 +1,12 @@
 package processsignal
 
 import (
+	"context"
 	"time"
 
-	lru "github.com/hashicorp/golang-lru"
+	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/metrics"
@@ -19,10 +21,11 @@ const (
 )
 
 type enricher struct {
-	lru                  *lru.Cache
+	lru                  *lru.Cache[string, *containerWrap]
 	clusterEntities      *clusterentities.Store
 	indicators           chan *storage.ProcessIndicator
 	metadataCallbackChan <-chan clusterentities.ContainerMetadata
+	stopper              concurrency.Stopper
 }
 
 type containerWrap struct {
@@ -50,11 +53,11 @@ func (cw *containerWrap) fetchAndClearProcesses() []*storage.ProcessIndicator {
 	return processes
 }
 
-func newEnricher(clusterEntities *clusterentities.Store, indicators chan *storage.ProcessIndicator) *enricher {
-	evictfunc := func(key interface{}, value interface{}) {
+func newEnricher(ctx context.Context, clusterEntities *clusterentities.Store) *enricher {
+	evictfunc := func(key string, value *containerWrap) {
 		metrics.IncrementProcessEnrichmentDrops()
 	}
-	lru, err := lru.NewWithEvict(maxLRUCache, evictfunc)
+	lru, err := lru.NewWithEvict[string, *containerWrap](maxLRUCache, evictfunc)
 	if err != nil {
 		panic(err)
 	}
@@ -66,11 +69,16 @@ func newEnricher(clusterEntities *clusterentities.Store, indicators chan *storag
 	e := &enricher{
 		lru:                  lru,
 		clusterEntities:      clusterEntities,
-		indicators:           indicators,
+		indicators:           make(chan *storage.ProcessIndicator),
 		metadataCallbackChan: callbackChan,
+		stopper:              concurrency.NewStopper(),
 	}
-	go e.processLoop()
+	go e.processLoop(ctx)
 	return e
+}
+
+func (e *enricher) getEnrichedC() <-chan *storage.ProcessIndicator {
+	return e.indicators
 }
 
 func (e *enricher) Add(indicator *storage.ProcessIndicator) {
@@ -84,7 +92,7 @@ func (e *enricher) Add(indicator *storage.ProcessIndicator) {
 			expiration: time.Now().Add(containerExpiration),
 		}
 	} else {
-		wrap = wrapObj.(*containerWrap)
+		wrap = wrapObj
 	}
 
 	wrap.addProcess(indicator)
@@ -92,25 +100,33 @@ func (e *enricher) Add(indicator *storage.ProcessIndicator) {
 	metrics.SetProcessEnrichmentCacheSize(float64(e.lru.Len()))
 }
 
-func (e *enricher) processLoop() {
+func (e *enricher) Stopped() concurrency.ReadOnlyErrorSignal {
+	return e.stopper.Client().Stopped()
+}
+
+func (e *enricher) processLoop(ctx context.Context) {
+	defer e.stopper.Flow().ReportStopped()
+	defer close(e.indicators)
 	ticker := time.NewTicker(enrichInterval)
 	expirationTicker := time.NewTicker(pruneInterval)
 	for {
 		select {
+		case <-ctx.Done():
+			log.Debugf("process indicator enricher stopped: %s", ctx.Err())
+			return
 		// unresolved indicators
 		case <-ticker.C:
 			for _, containerID := range e.lru.Keys() {
-				if metadata, ok := e.clusterEntities.LookupByContainerID(containerID.(string)); ok {
+				if metadata, ok, _ := e.clusterEntities.LookupByContainerID(containerID); ok {
 					e.scanAndEnrich(metadata)
 				}
 			}
 		case <-expirationTicker.C:
 			for _, containerID := range e.lru.Keys() {
-				wrapObj, exists := e.lru.Peek(containerID)
+				wrap, exists := e.lru.Peek(containerID)
 				if !exists {
 					continue
 				}
-				wrap := wrapObj.(*containerWrap)
 				// If the current value has not expired, then break because all the next values are newer
 				if wrap.expiration.After(time.Now()) {
 					break
@@ -133,7 +149,7 @@ func (e *enricher) scanAndEnrich(metadata clusterentities.ContainerMetadata) {
 		// However, that process will not be dropped because either (a) it was added prior to fetchAndClearProcesses()
 		// or (b) it is added after fetchAndClearProcesses(). In case (b), Add will add the *containerWrap back into
 		// the cache.
-		processes := wrapObj.(*containerWrap).fetchAndClearProcesses()
+		processes := wrapObj.fetchAndClearProcesses()
 		for _, indicator := range processes {
 			e.enrich(indicator, metadata)
 		}

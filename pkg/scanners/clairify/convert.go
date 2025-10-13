@@ -1,25 +1,68 @@
 package clairify
 
 import (
-	gogoProto "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clair"
 	"github.com/stackrox/rox/pkg/cvss/cvssv2"
 	"github.com/stackrox/rox/pkg/cvss/cvssv3"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/scans"
 	"github.com/stackrox/rox/pkg/stringutils"
 	v1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
-func convertNodeToVulnRequest(node *storage.Node) *v1.GetNodeVulnerabilitiesRequest {
-	return &v1.GetNodeVulnerabilitiesRequest{
+func convertNodeToVulnRequest(node *storage.Node, inventory *storage.NodeInventory) *v1.GetNodeVulnerabilitiesRequest {
+	req := &v1.GetNodeVulnerabilitiesRequest{
 		OsImage:          node.GetOsImage(),
 		KernelVersion:    node.GetKernelVersion(),
 		KubeletVersion:   node.GetKubeletVersion(),
 		KubeproxyVersion: node.GetKubeProxyVersion(),
 		Runtime:          convertContainerRuntime(node.GetContainerRuntime()),
+		Components:       nil,
 	}
+	if inventory != nil && inventory.GetComponents() != nil {
+		req.Components = convertComponents(inventory.GetComponents())
+	}
+	return req
+}
+
+func convertComponents(c *storage.NodeInventory_Components) *v1.Components {
+	components := &v1.Components{
+		Namespace:          c.GetNamespace(),
+		OsComponents:       nil,
+		LanguageComponents: nil,
+		RhelComponents:     make([]*v1.RHELComponent, len(c.GetRhelComponents())),
+		RhelContentSets:    c.GetRhelContentSets(),
+	}
+	for i, comp := range c.GetRhelComponents() {
+		components.RhelComponents[i] = &v1.RHELComponent{
+			Id:          comp.GetId(),
+			Name:        comp.GetName(),
+			Namespace:   comp.GetNamespace(),
+			Version:     comp.GetVersion(),
+			Arch:        comp.GetArch(),
+			Module:      comp.GetModule(),
+			AddedBy:     comp.GetAddedBy(),
+			Executables: make([]*v1.Executable, len(comp.GetExecutables())),
+		}
+		for i2, exe := range comp.GetExecutables() {
+			components.RhelComponents[i].Executables[i2] = &v1.Executable{
+				Path:             exe.GetPath(),
+				RequiredFeatures: make([]*v1.FeatureNameVersion, len(exe.GetRequiredFeatures())),
+			}
+			for i3, fnv := range exe.GetRequiredFeatures() {
+				components.RhelComponents[i].Executables[i2].RequiredFeatures[i3] = &v1.FeatureNameVersion{
+					Name:    fnv.GetName(),
+					Version: fnv.GetVersion(),
+				}
+			}
+		}
+
+	}
+	return components
 }
 
 func convertContainerRuntime(containerRuntime *storage.ContainerRuntimeInfo) *v1.GetNodeVulnerabilitiesRequest_ContainerRuntime {
@@ -48,9 +91,13 @@ func convertContainerRuntime(containerRuntime *storage.ContainerRuntimeInfo) *v1
 
 func convertVulnResponseToNodeScan(req *v1.GetNodeVulnerabilitiesRequest, resp *v1.GetNodeVulnerabilitiesResponse) *storage.NodeScan {
 	scan := &storage.NodeScan{
-		ScanTime:        gogoProto.TimestampNow(),
+		ScanTime:        protocompat.TimestampNow(),
 		OperatingSystem: resp.GetOperatingSystem(),
-		Components: []*storage.EmbeddedNodeScanComponent{
+		Notes:           convertNodeNotes(resp.GetNodeNotes()),
+		ScannerVersion:  storage.NodeScan_SCANNER,
+	}
+	if resp.GetFeatures() == nil {
+		scan.Components = []*storage.EmbeddedNodeScanComponent{
 			{
 				Name:    stringutils.OrDefault(resp.GetKernelComponent().GetName(), "kernel"),
 				Version: resp.GetKernelComponent().GetVersion(),
@@ -66,15 +113,22 @@ func convertVulnResponseToNodeScan(req *v1.GetNodeVulnerabilitiesRequest, resp *
 				Version: req.GetKubeproxyVersion(),
 				Vulns:   convertNodeVulns(resp.GetKubeproxyVulnerabilities()),
 			},
-		},
-		Notes: convertNodeNotes(resp.GetNotes()),
-	}
-	if req.GetRuntime().GetName() != "" && req.GetRuntime().GetVersion() != "" {
-		scan.Components = append(scan.Components, &storage.EmbeddedNodeScanComponent{
-			Name:    req.GetRuntime().GetName(),
-			Version: req.GetRuntime().GetVersion(),
-			Vulns:   convertNodeVulns(resp.GetRuntimeVulnerabilities()),
-		})
+		}
+		if req.GetRuntime().GetName() != "" && req.GetRuntime().GetVersion() != "" {
+			scan.Components = append(scan.Components, &storage.EmbeddedNodeScanComponent{
+				Name:    req.GetRuntime().GetName(),
+				Version: req.GetRuntime().GetVersion(),
+				Vulns:   convertNodeVulns(resp.GetRuntimeVulnerabilities()),
+			})
+		}
+	} else {
+		for _, feature := range resp.GetFeatures() {
+			scan.Components = append(scan.Components, &storage.EmbeddedNodeScanComponent{
+				Name:    feature.GetName(),
+				Version: feature.GetVersion(),
+				Vulns:   convertNodeVulns(feature.GetVulnerabilities()),
+			})
+		}
 	}
 	return scan
 }
@@ -87,6 +141,8 @@ func convertNodeNotes(v1Notes []v1.NodeNote) []storage.NodeScan_Note {
 			notes = append(notes, storage.NodeScan_UNSUPPORTED)
 		case v1.NodeNote_NODE_KERNEL_UNSUPPORTED:
 			notes = append(notes, storage.NodeScan_KERNEL_UNSUPPORTED)
+		case v1.NodeNote_NODE_CERTIFIED_RHEL_CVES_UNAVAILABLE:
+			notes = append(notes, storage.NodeScan_CERTIFIED_RHEL_CVES_UNAVAILABLE)
 		default:
 			continue
 		}
@@ -101,6 +157,10 @@ func convertNodeVulns(vulnerabilities []*v1.Vulnerability) []*storage.EmbeddedVu
 
 func convertK8sVulns(vulnerabilities []*v1.Vulnerability) []*storage.EmbeddedVulnerability {
 	return convertVulnerabilities(vulnerabilities, storage.EmbeddedVulnerability_K8S_VULNERABILITY)
+}
+
+func convertIstioVulns(vulnerabilities []*v1.Vulnerability) []*storage.EmbeddedVulnerability {
+	return convertVulnerabilities(vulnerabilities, storage.EmbeddedVulnerability_ISTIO_VULNERABILITY)
 }
 
 func convertVulnerabilities(vulnerabilities []*v1.Vulnerability, vulnType storage.EmbeddedVulnerability_VulnerabilityType) []*storage.EmbeddedVulnerability {
@@ -132,9 +192,9 @@ func convertVulnerability(v *v1.Vulnerability, vulnType storage.EmbeddedVulnerab
 	if v.GetMetadataV2() != nil {
 		m := v.GetMetadataV2()
 
-		vuln.PublishedOn = clair.ConvertTime(m.GetPublishedDateTime())
-		vuln.LastModified = clair.ConvertTime(m.GetLastModifiedDateTime())
-		if m.GetCvssV2() != nil && m.GetCvssV2().Vector != "" {
+		vuln.PublishedOn = protoconv.ConvertTimeString(m.GetPublishedDateTime())
+		vuln.LastModified = protoconv.ConvertTimeString(m.GetLastModifiedDateTime())
+		if m.GetCvssV2() != nil && m.GetCvssV2().GetVector() != "" {
 			if cvssV2, err := cvssv2.ParseCVSSV2(m.GetCvssV2().GetVector()); err == nil {
 				cvssV2.ExploitabilityScore = m.GetCvssV2().GetExploitabilityScore()
 				cvssV2.ImpactScore = m.GetCvssV2().GetImpactScore()
@@ -150,7 +210,7 @@ func convertVulnerability(v *v1.Vulnerability, vulnType storage.EmbeddedVulnerab
 			}
 		}
 
-		if m.GetCvssV3() != nil && m.GetCvssV3().Vector != "" {
+		if m.GetCvssV3() != nil && m.GetCvssV3().GetVector() != "" {
 			if cvssV3, err := cvssv3.ParseCVSSV3(m.GetCvssV3().GetVector()); err == nil {
 				cvssV3.ExploitabilityScore = m.GetCvssV3().GetExploitabilityScore()
 				cvssV3.ImpactScore = m.GetCvssV3().GetImpactScore()
@@ -171,9 +231,9 @@ func convertVulnerability(v *v1.Vulnerability, vulnType storage.EmbeddedVulnerab
 }
 
 func convertImageToImageScan(metadata *storage.ImageMetadata, image *v1.Image) *storage.ImageScan {
-	components := convertFeatures(metadata, image.GetFeatures(), image.Namespace)
+	components := convertFeatures(metadata, image.GetFeatures(), image.GetNamespace())
 	return &storage.ImageScan{
-		ScanTime:        gogoProto.TimestampNow(),
+		ScanTime:        protocompat.TimestampNow(),
 		Components:      components,
 		OperatingSystem: image.GetNamespace(),
 	}
@@ -208,16 +268,19 @@ func convertFeature(feature *v1.Feature, os string) *storage.EmbeddedImageScanCo
 		component.Source = source
 	}
 	component.Vulns = convertVulnerabilities(feature.GetVulnerabilities(), storage.EmbeddedVulnerability_IMAGE_VULNERABILITY)
-	executables := make([]*storage.EmbeddedImageScanComponent_Executable, 0, len(feature.GetProvidedExecutables()))
-	for _, executable := range feature.GetProvidedExecutables() {
-		imageComponentIds := make([]string, 0, len(executable.GetRequiredFeatures()))
-		for _, f := range executable.GetRequiredFeatures() {
-			imageComponentIds = append(imageComponentIds, scancomponent.ComponentID(f.GetName(), f.GetVersion(), os))
+	// TODO:  Figure out what is happening with Active Vuln Management
+	if features.ActiveVulnMgmt.Enabled() && !features.FlattenCVEData.Enabled() {
+		executables := make([]*storage.EmbeddedImageScanComponent_Executable, 0, len(feature.GetProvidedExecutables()))
+		for _, executable := range feature.GetProvidedExecutables() {
+			imageComponentIds := make([]string, 0, len(executable.GetRequiredFeatures()))
+			for _, f := range executable.GetRequiredFeatures() {
+				imageComponentIds = append(imageComponentIds, scancomponent.ComponentID(f.GetName(), f.GetVersion(), os))
+			}
+			exec := &storage.EmbeddedImageScanComponent_Executable{Path: executable.GetPath(), Dependencies: imageComponentIds}
+			executables = append(executables, exec)
 		}
-		exec := &storage.EmbeddedImageScanComponent_Executable{Path: executable.GetPath(), Dependencies: imageComponentIds}
-		executables = append(executables, exec)
+		component.Executables = executables
 	}
-	component.Executables = executables
 
 	return component
 }

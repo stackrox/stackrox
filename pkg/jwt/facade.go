@@ -3,8 +3,8 @@ package jwt
 import (
 	"crypto/rsa"
 
-	"gopkg.in/square/go-jose.v2"
-	"gopkg.in/square/go-jose.v2/jwt"
+	"github.com/go-jose/go-jose/v4"
+	"github.com/go-jose/go-jose/v4/jwt"
 )
 
 // CreateRS256SignerAndValidator creates a token signer and validator pair with the given properties from the

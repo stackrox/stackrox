@@ -15,31 +15,27 @@ class ClusterTestSetsRunner:
     """A cluster test runner that runs multiple sets of pre, test & post steps
     wrapped by a cluster provision and with similar semantics to
     ClusterTestRunner. Each test set will attempt to run regardless of the outcome of
-    prior sets. This can be overriden on a set by set basis with 'always_run'"""
+    prior sets. This can be overridden on a set by set basis with 'always_run'"""
 
     def __init__(
         self,
         cluster=NullCluster(),
-        final_post=NullPostTest(),
+        initial_pre_test=NullPreTest(),
         sets=None,
+        final_post=NullPostTest(),
     ):
         self.cluster = cluster
-        self.final_post = final_post
+        self.initial_pre_test = initial_pre_test
         if sets is None:
             sets = []
         self.sets = sets
+        self.final_post = final_post
 
     def run(self):
-        hold = None
-        try:
-            self.log_event("About to provision")
-            self.cluster.provision()
-            self.log_event("provisioned")
-        except Exception as err:
-            self.log_event("ERROR: provision failed")
-            hold = err
+        exception = self.cluster_provision()
+        exception = self.run_initial_pre_test(exception)
 
-        if hold is None:
+        if exception is None:
             for idx, test_set in enumerate(self.sets):
                 test_set = {
                     **{
@@ -51,66 +47,89 @@ class ClusterTestSetsRunner:
                     },
                     **test_set,
                 }
-                if hold is None or test_set["always_run"]:
+                if exception is None or test_set["always_run"]:
                     try:
                         self.log_event("About to run", test_set)
                         self.run_test_set(test_set)
                         self.log_event("run completed", test_set)
                     except Exception as err:
-                        self.log_event("ERROR: run failed", test_set)
-                        if hold is None:
-                            hold = err
+                        self.log_event(f"ERROR: run failed [{err}]", test_set)
+                        if exception is None:
+                            exception = err
 
         try:
             self.log_event("About to teardown")
             self.cluster.teardown()
             self.log_event("teardown completed")
         except Exception as err:
-            self.log_event("ERROR: teardown failed")
-            if hold is None:
-                hold = err
+            self.log_event(f"ERROR: teardown failed [{err}]")
+            if exception is None:
+                exception = err
 
         try:
             self.log_event("About to run final post")
             self.final_post.run()
             self.log_event("final post completed")
         except Exception as err:
-            self.log_event("ERROR: final post failed")
-            if hold is None:
-                hold = err
+            self.log_event(f"ERROR: final post failed [{err}]")
+            if exception is None:
+                exception = err
 
-        if hold is not None:
-            raise hold
+        if exception is not None:
+            raise exception
+
+    def cluster_provision(self):
+        exception = None
+        try:
+            self.log_event("About to provision")
+            self.cluster.provision()
+            self.log_event("provisioned")
+        except Exception as err:
+            self.log_event(f"ERROR: provision failed [{err}]")
+            exception = err
+        return exception
+
+    def run_initial_pre_test(self, exception):
+        if exception is None:
+            try:
+                self.log_event("About to run initial pre test")
+                self.initial_pre_test.run()
+                self.log_event("initial pre test completed")
+            except Exception as err:
+                self.log_event(f"ERROR: initial pre test failed [{err}]")
+                exception = err
+        return exception
 
     def run_test_set(self, test_set):
-        hold = None
+        exception = None
         try:
             self.log_event("About to run pre test", test_set)
             test_set["pre_test"].run()
             self.log_event("pre test completed", test_set)
         except Exception as err:
-            self.log_event("ERROR: pre test failed", test_set)
-            hold = err
-        if hold is None:
+            self.log_event(f"ERROR: pre test failed [{err}]", test_set)
+            exception = err
+        if exception is None:
             try:
                 self.log_event("About to run test", test_set)
                 test_set["test"].run()
                 self.log_event("test completed", test_set)
             except Exception as err:
-                self.log_event("ERROR: test failed", test_set)
-                hold = err
+                self.log_event(f"ERROR: test failed [{err}]", test_set)
+                exception = err
             try:
                 self.log_event("About to run post test", test_set)
-                test_set["post_test"].run(test_outputs=test_set["test"].test_outputs,
-                                          test_results=test_set["test"].test_results)
+                test_set["post_test"].run(
+                    test_outputs=test_set["test"].test_outputs,
+                )
                 self.log_event("post test completed", test_set)
             except Exception as err:
-                self.log_event("ERROR: post test failed", test_set)
-                if hold is None:
-                    hold = err
+                self.log_event(f"ERROR: post test failed [{err}]", test_set)
+                if exception is None:
+                    exception = err
 
-        if hold is not None:
-            raise hold
+        if exception is not None:
+            raise exception
 
     def log_event(self, msg, test_set=None):
         now = datetime.now()

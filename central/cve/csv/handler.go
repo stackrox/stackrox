@@ -2,35 +2,28 @@ package csv
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
-	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
 	clusterCveCsv "github.com/stackrox/rox/central/cve/cluster/csv"
 	csvCommon "github.com/stackrox/rox/central/cve/common/csv"
 	imageCveCsv "github.com/stackrox/rox/central/cve/image/csv"
 	nodeCveCsv "github.com/stackrox/rox/central/cve/node/csv"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
-	componentMappings "github.com/stackrox/rox/central/imagecomponent/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/csv"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/parser"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
-	log = logging.LoggerForModule()
-
 	once       sync.Once
 	csvHandler *csvCommon.HandlerImpl
 
@@ -56,16 +49,50 @@ func initialize() {
 }
 
 func newHandler(resolver *resolvers.Resolver) *csvCommon.HandlerImpl {
+	if features.FlattenCVEData.Enabled() {
+		if features.FlattenImageData.Enabled() {
+			return csvCommon.NewCSVHandler(
+				resolver,
+				// CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.
+				[]*csvCommon.SearchWrapper{
+					csvCommon.NewSearchWrapper(v1.SearchCategory_IMAGE_COMPONENTS_V2, schema.ImageComponentV2Schema.OptionsMap,
+						resolver.ImageComponentV2DataStore),
+					csvCommon.NewSearchWrapper(v1.SearchCategory_IMAGES_V2, csvCommon.ImageV2OnlyOptionsMap, resolver.ImageV2DataStore),
+					csvCommon.NewSearchWrapper(v1.SearchCategory_DEPLOYMENTS, csvCommon.DeploymentOnlyOptionsMap, resolver.DeploymentDataStore),
+					csvCommon.NewSearchWrapper(v1.SearchCategory_NAMESPACES, csvCommon.NamespaceOnlyOptionsMap, resolver.NamespaceDataStore),
+					csvCommon.NewSearchWrapper(v1.SearchCategory_NODES, csvCommon.NodeOnlyOptionsMap, resolver.NodeDataStore),
+					csvCommon.NewSearchWrapper(v1.SearchCategory_CLUSTERS, schema.ClustersSchema.OptionsMap,
+						resolver.ClusterDataStore),
+				},
+			)
+		}
+		return csvCommon.NewCSVHandler(
+			resolver,
+			// CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.
+			[]*csvCommon.SearchWrapper{
+				csvCommon.NewSearchWrapper(v1.SearchCategory_IMAGE_COMPONENTS_V2, schema.ImageComponentV2Schema.OptionsMap,
+					resolver.ImageComponentV2DataStore),
+				csvCommon.NewSearchWrapper(v1.SearchCategory_IMAGES, csvCommon.ImageOnlyOptionsMap, resolver.ImageDataStore),
+				csvCommon.NewSearchWrapper(v1.SearchCategory_DEPLOYMENTS, csvCommon.DeploymentOnlyOptionsMap, resolver.DeploymentDataStore),
+				csvCommon.NewSearchWrapper(v1.SearchCategory_NAMESPACES, csvCommon.NamespaceOnlyOptionsMap, resolver.NamespaceDataStore),
+				csvCommon.NewSearchWrapper(v1.SearchCategory_NODES, csvCommon.NodeOnlyOptionsMap, resolver.NodeDataStore),
+				csvCommon.NewSearchWrapper(v1.SearchCategory_CLUSTERS, schema.ClustersSchema.OptionsMap,
+					resolver.ClusterDataStore),
+			},
+		)
+	}
 	return csvCommon.NewCSVHandler(
 		resolver,
 		// CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.
 		[]*csvCommon.SearchWrapper{
-			csvCommon.NewSearchWrapper(v1.SearchCategory_IMAGE_COMPONENTS, componentMappings.OptionsMap, resolver.ImageComponentDataStore),
+			csvCommon.NewSearchWrapper(v1.SearchCategory_IMAGE_COMPONENTS, schema.ImageComponentsSchema.OptionsMap,
+				resolver.ImageComponentDataStore),
 			csvCommon.NewSearchWrapper(v1.SearchCategory_IMAGES, csvCommon.ImageOnlyOptionsMap, resolver.ImageDataStore),
 			csvCommon.NewSearchWrapper(v1.SearchCategory_DEPLOYMENTS, csvCommon.DeploymentOnlyOptionsMap, resolver.DeploymentDataStore),
 			csvCommon.NewSearchWrapper(v1.SearchCategory_NAMESPACES, csvCommon.NamespaceOnlyOptionsMap, resolver.NamespaceDataStore),
-			csvCommon.NewSearchWrapper(v1.SearchCategory_NODES, csvCommon.NodeOnlyOptionsMap, resolver.NodeGlobalDataStore),
-			csvCommon.NewSearchWrapper(v1.SearchCategory_CLUSTERS, clusterMappings.OptionsMap, resolver.ClusterDataStore),
+			csvCommon.NewSearchWrapper(v1.SearchCategory_NODES, csvCommon.NodeOnlyOptionsMap, resolver.NodeDataStore),
+			csvCommon.NewSearchWrapper(v1.SearchCategory_CLUSTERS, schema.ClustersSchema.OptionsMap,
+				resolver.ClusterDataStore),
 		},
 	)
 }
@@ -124,14 +151,14 @@ func CVECSVHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		query, rQuery, err := parser.ParseURLQuery(r.URL.Query())
 		if err != nil {
-			csv.WriteError(w, http.StatusBadRequest, err)
+			csv.WriteError(w, errox.InvalidArgs.CausedBy(err))
 			return
 		}
 		rawQuery, paginatedQuery := resolvers.V1RawQueryAsResolverQuery(rQuery)
 
 		cveRows, err := cveCSVRows(loaders.WithLoaderContext(r.Context()), query, rawQuery, paginatedQuery)
 		if err != nil {
-			csv.WriteError(w, http.StatusInternalServerError, err)
+			csv.WriteError(w, errox.ServerError.CausedBy(err))
 			return
 		}
 
@@ -143,7 +170,7 @@ func CVECSVHandler() http.HandlerFunc {
 		for _, row := range cveRows {
 			output.addRow(row)
 		}
-		filename := time.Now().Format("cve_export_2006_01_02_15_04_05")
+		filename := time.Now().Format("cve_export_2006_01_02_15_04_05") + ".csv"
 		output.Write(w, filename)
 	}
 }
@@ -161,10 +188,6 @@ func cveCSVRows(c context.Context, query *v1.Query, rawQuery resolvers.RawQuery,
 	if _, ok := storage.CVE_CVEType_value[cveType]; !ok || cveType == storage.CVE_UNKNOWN_CVE.String() {
 		return nil, errors.Errorf("Unexpected value for 'CVE Type' filter. Value should be one of '%s', '%s', '%s', '%s', '%s'",
 			storage.CVE_IMAGE_CVE.String(), storage.CVE_NODE_CVE.String(), storage.CVE_K8S_CVE.String(), storage.CVE_OPENSHIFT_CVE.String(), storage.CVE_ISTIO_CVE.String())
-	}
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		return cveCSVRowsFromLegacyVulnResolver(c, query, rawQuery, paginatedQuery)
 	}
 
 	switch cveType {
@@ -189,86 +212,6 @@ func cveCSVRows(c context.Context, query *v1.Query, rawQuery resolvers.RawQuery,
 	default:
 		return nil, errors.Errorf("Unhandled CVEType '%s'", cveType)
 	}
-}
-
-func cveCSVRowsFromLegacyVulnResolver(c context.Context, query *v1.Query, rawQuery resolvers.RawQuery, paginatedQuery resolvers.PaginatedQuery) ([]*cveRow, error) {
-	ctx, err := csvHandler.GetScopeContext(c, query)
-	if err != nil {
-		log.Errorf("unable to determine resource scope for query %q: %v", query.String(), err)
-		return nil, err
-	}
-
-	res := csvHandler.GetResolver()
-	if res == nil {
-		log.Errorf("Unexpected value (nil) for resolver in Handler")
-		return nil, errors.New("Resolver not initialized in handler")
-	}
-	vulnResolvers, err := res.Vulnerabilities(ctx, paginatedQuery)
-	if err != nil {
-		log.Errorf("unable to get vulnerabilities for csv export: %v", err)
-		return nil, err
-	}
-
-	cveRows := make([]*cveRow, 0, len(vulnResolvers))
-	for _, d := range vulnResolvers {
-		var errorList errorhelpers.ErrorList
-		dataRow := &cveRow{}
-		dataRow.CVE = d.CVE(ctx)
-		dataRow.CveTypes = strings.Join(d.VulnerabilityTypes(), " ")
-		isFixable, err := d.IsFixable(ctx, rawQuery)
-		if err != nil {
-			errorList.AddError(err)
-		}
-		dataRow.Fixable = strconv.FormatBool(isFixable)
-		dataRow.CvssScore = fmt.Sprintf("%.2f (%s)", d.Cvss(ctx), d.ScoreVersion(ctx))
-		envImpact, err := d.EnvImpact(ctx)
-		if err != nil {
-			errorList.AddError(err)
-		}
-		dataRow.EnvImpact = fmt.Sprintf("%.2f", envImpact*100)
-		dataRow.ImpactScore = fmt.Sprintf("%.2f", d.ImpactScore(ctx))
-		// Entity counts should be scoped to CVE only
-		deploymentCount, err := d.DeploymentCount(ctx, resolvers.RawQuery{})
-		if err != nil {
-			errorList.AddError(err)
-		}
-		dataRow.DeploymentCount = fmt.Sprint(deploymentCount)
-		// Entity counts should be scoped to CVE only
-		imageCount, err := d.ImageCount(ctx, resolvers.RawQuery{})
-		if err != nil {
-			errorList.AddError(err)
-		}
-		dataRow.ImageCount = fmt.Sprint(imageCount)
-		// Entity counts should be scoped to CVE only
-		nodeCount, err := d.NodeCount(ctx, resolvers.RawQuery{})
-		if err != nil {
-			errorList.AddError(err)
-		}
-		dataRow.NodeCount = fmt.Sprint(nodeCount)
-		// Entity counts should be scoped to CVE only
-		componentCount, err := d.ComponentCount(ctx, resolvers.RawQuery{})
-		if err != nil {
-			errorList.AddError(err)
-		}
-		dataRow.ComponentCount = fmt.Sprint(componentCount)
-		scannedTime, err := d.LastScanned(ctx)
-		if err != nil {
-			errorList.AddError(err)
-		}
-		dataRow.ScannedTime = csv.FromGraphQLTime(scannedTime)
-		publishedTime, err := d.PublishedOn(ctx)
-		if err != nil {
-			errorList.AddError(err)
-		}
-		dataRow.PublishedTime = csv.FromGraphQLTime(publishedTime)
-		dataRow.Summary = d.Summary(ctx)
-
-		cveRows = append(cveRows, dataRow)
-		if err := errorList.ToError(); err != nil {
-			log.Errorf("failed to generate complete csv entry for cve %s: %v", dataRow.CVE, err)
-		}
-	}
-	return cveRows, nil
 }
 
 func imageCVERowsToCVERows(imageCveRows []*imageCveCsv.ImageCVERow) []*cveRow {

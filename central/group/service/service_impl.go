@@ -3,12 +3,10 @@ package service
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/group/datastore"
 	"github.com/stackrox/rox/central/group/datastore/serialize"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -16,20 +14,22 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"google.golang.org/grpc"
 )
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.Group)): {
-			"/v1.GroupService/GetGroups",
-			"/v1.GroupService/GetGroup",
+		user.With(permissions.View(resources.Access)): {
+			v1.GroupService_GetGroups_FullMethodName,
+			v1.GroupService_GetGroup_FullMethodName,
 		},
-		user.With(permissions.Modify(resources.Group)): {
-			"/v1.GroupService/BatchUpdate",
-			"/v1.GroupService/CreateGroup",
-			"/v1.GroupService/UpdateGroup",
-			"/v1.GroupService/DeleteGroup",
+		user.With(permissions.Modify(resources.Access)): {
+			v1.GroupService_BatchUpdate_FullMethodName,
+			v1.GroupService_CreateGroup_FullMethodName,
+			v1.GroupService_UpdateGroup_FullMethodName,
+			v1.GroupService_DeleteGroup_FullMethodName,
 		},
 	})
 )
@@ -67,19 +67,19 @@ func (s *serviceImpl) GetGroups(ctx context.Context, req *v1.GetGroupsRequest) (
 		id = &m.Id
 	}
 
-	var filter func(*storage.GroupProperties) bool
+	var filter func(*storage.Group) bool
 	if authProvider != nil || key != nil || value != nil || id != nil {
-		filter = func(props *storage.GroupProperties) bool {
-			if authProvider != nil && *authProvider != props.GetAuthProviderId() {
+		filter = func(group *storage.Group) bool {
+			if authProvider != nil && *authProvider != group.GetProps().GetAuthProviderId() {
 				return false
 			}
-			if key != nil && *key != props.GetKey() {
+			if key != nil && *key != group.GetProps().GetKey() {
 				return false
 			}
-			if value != nil && *value != props.GetValue() {
+			if value != nil && *value != group.GetProps().GetValue() {
 				return false
 			}
-			if id != nil && *id != props.GetId() {
+			if id != nil && *id != group.GetProps().GetId() {
 				return false
 			}
 			return true
@@ -100,7 +100,7 @@ func (s *serviceImpl) GetGroup(ctx context.Context, props *storage.GroupProperti
 		return nil, err
 	}
 	if group == nil {
-		return nil, errors.Wrapf(errox.NotFound, "group %q not found", proto.MarshalTextString(props))
+		return nil, errors.Wrapf(errox.NotFound, "group %q not found", protocompat.MarshalTextString(props))
 	}
 	return group, nil
 }
@@ -191,7 +191,7 @@ func diffGroups(previous []*storage.Group, required []*storage.Group) (removed [
 	}
 	for key, group := range requiredByID {
 		if previousGroup, hasPreviousGroup := previousByID[key]; hasPreviousGroup {
-			if !proto.Equal(previousGroup, group) {
+			if !previousGroup.EqualVT(group) {
 				updated = append(updated, group)
 				// Delete the to-be-updated group, otherwise we potentially do not create a group based on stale data.
 				delete(groupsByPropsAndRole,

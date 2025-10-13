@@ -39,5 +39,17 @@ var (
 	// service. This is a programming error.
 	NoAuthzConfigured = makeSentinel("service authorization is misconfigured")
 
+	// ServerError is a generic server error.
+	ServerError = makeSentinel("server error")
+
+	// ResourceExhausted indicates that service is unable to respond because
+	// a quota is reached. i.e., max number of connections, etc.
+	ResourceExhausted = makeSentinel("resource exhausted")
+
+	// NotImplemented indicates the functionality is not implemented.
+	NotImplemented = makeSentinel("not implemented")
+
+	// ReferencedObjectNotFound indicates that a referenced object could not be found.
+	ReferencedObjectNotFound = makeSentinel("referenced object not found")
 	// When adding a new error please update the translators in this package (gRPC, etc.).
 )

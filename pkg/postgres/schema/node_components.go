@@ -9,7 +9,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -35,18 +37,21 @@ var (
 			v1.SearchCategory_NODES,
 			v1.SearchCategory_CLUSTERS,
 		}...)
+		schema.ScopingResource = resources.Node
 		RegisterTable(schema, CreateTableNodeComponentsStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_NODE_COMPONENTS, schema)
 		return schema
 	}()
 )
 
 const (
+	// NodeComponentsTableName specifies the name of the table in postgres.
 	NodeComponentsTableName = "node_components"
 )
 
 // NodeComponents holds the Gorm model for Postgres table `node_components`.
 type NodeComponents struct {
-	Id              string  `gorm:"column:id;type:varchar;primaryKey"`
+	ID              string  `gorm:"column:id;type:varchar;primaryKey"`
 	Name            string  `gorm:"column:name;type:varchar"`
 	Version         string  `gorm:"column:version;type:varchar"`
 	Priority        int64   `gorm:"column:priority;type:bigint"`

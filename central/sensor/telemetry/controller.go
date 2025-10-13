@@ -2,7 +2,6 @@ package telemetry
 
 import (
 	"context"
-	"time"
 
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -22,10 +21,10 @@ type MetricsInfoChunkCallback func(ctx concurrency.ErrorWaitable, chunk *central
 
 // Controller handles requesting telemetry data from remote clusters.
 type Controller interface {
-	PullKubernetesInfo(ctx context.Context, cb KubernetesInfoChunkCallback, since time.Time) error
+	PullKubernetesInfo(ctx context.Context, cb KubernetesInfoChunkCallback, opts PullKubernetesInfoOpts) error
 	PullClusterInfo(ctx context.Context, cb ClusterInfoCallback) error
 	PullMetrics(ctx context.Context, cb MetricsInfoChunkCallback) error
-	ProcessTelemetryDataResponse(resp *central.PullTelemetryDataResponse) error
+	ProcessTelemetryDataResponse(ctx context.Context, resp *central.PullTelemetryDataResponse) error
 }
 
 // NewController creates and returns a new controller for telemetry data.

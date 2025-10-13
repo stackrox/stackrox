@@ -1,12 +1,19 @@
 package fixtures
 
-import "github.com/stackrox/rox/generated/storage"
+import (
+	"fmt"
+
+	"github.com/stackrox/rox/generated/storage"
+)
+
+var idCounter int
 
 // GetGroup return a mock storage.Group with all possible properties filled out.
 func GetGroup() *storage.Group {
+	idCounter++
 	return &storage.Group{
 		Props: &storage.GroupProperties{
-			Id:             "abcdef-123",
+			Id:             fmt.Sprintf("abcdef-%d", idCounter),
 			AuthProviderId: "authProviderA",
 			Key:            "AttributeA",
 			Value:          "ValueUno",
@@ -20,6 +27,15 @@ func GetGroupWithMutability(mode storage.Traits_MutabilityMode) *storage.Group {
 	group := GetGroup()
 
 	group.Props.Traits = &storage.Traits{MutabilityMode: mode}
+
+	return group
+}
+
+// GetGroupWithOrigin returns a mock storage.Group with all possible properties filled out and with the specified origin set.
+func GetGroupWithOrigin(origin storage.Traits_Origin) *storage.Group {
+	group := GetGroup()
+
+	group.Props.Traits = &storage.Traits{Origin: origin}
 
 	return group
 }

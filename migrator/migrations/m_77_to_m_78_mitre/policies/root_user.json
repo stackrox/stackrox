@@ -1,6 +1,0 @@
-{
-  "id": "dce17697-1b72-49d2-b18a-05d893cd9368",
-  "name": "Docker CIS 4.1: Ensure That a User for the Container Has Been Created",
-  "mitreAttackVectors": null,
-  "mitreVectorsLocked": true
-}

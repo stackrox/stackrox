@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import { ChartLabel, ChartLabelProps } from '@patternfly/react-charts';
 
 export type LinkableChartLabelProps = ChartLabelProps & {
@@ -17,7 +17,7 @@ export type LinkableChartLabelProps = ChartLabelProps & {
 export function LinkableChartLabel({ linkWith, ...props }: LinkableChartLabelProps) {
     return (
         <Link to={linkWith(props)}>
-            <ChartLabel {...props} style={{ fill: 'var(--pf-global--link--Color)' }} />
+            <ChartLabel {...props} style={{ fill: 'var(--pf-v5-global--link--Color)' }} />
         </Link>
     );
 }

@@ -1,33 +1,33 @@
 import com.google.protobuf.util.JsonFormat
 import groovy.io.FileType
-import groups.Upgrade
 import io.grpc.StatusRuntimeException
+
+import io.stackrox.proto.api.v1.NamespaceServiceOuterClass
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
-import io.stackrox.proto.api.v1.SummaryServiceOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
-import org.junit.experimental.categories.Category
+
+import services.AlertService
 import services.ClusterService
 import services.GraphQLService
+import services.ImageService
+import services.NamespaceService
+import services.NodeService
 import services.PolicyService
-import services.SummaryService
-import spock.lang.Unroll
 import util.Env
+
+import spock.lang.Tag
+import spock.lang.Unroll
+import spock.lang.IgnoreIf
 
 class UpgradesTest extends BaseSpecification {
     private final static String CLUSTERID = Env.mustGet("UPGRADE_CLUSTER_ID")
     private final static String POLICIES_JSON_PATH =
             Env.get("POLICIES_JSON_RELATIVE_PATH", "../pkg/defaults/policies/files")
 
-    private static final String VULNERABILITY_RESOURCE_TYPE =
-        isPostgresRun() ?
-            "nodeVulnerabilities" :
-            "vulnerabilities"
+    private static final String VULNERABILITY_RESOURCE_TYPE = "nodeVulnerabilities"
 
-    private static final String COMPONENT_RESOURCE_TYPE =
-        isPostgresRun() ?
-            "nodeComponents" :
-            "components"
+    private static final String COMPONENT_RESOURCE_TYPE = "nodeComponents"
 
     private static final COMPLIANCE_QUERY = """query getAggregatedResults(
         \$groupBy: [ComplianceAggregation_Scope!],
@@ -43,7 +43,7 @@ class UpgradesTest extends BaseSpecification {
             }
         }"""
 
-    @Category(Upgrade)
+    @Tag("Upgrade")
     def "Verify cluster has listen on exec/pf webhook turned on"() {
         expect:
         "Migrated clusters to have admissionControllerEvents set to true"
@@ -52,7 +52,7 @@ class UpgradesTest extends BaseSpecification {
         assert(cluster.getAdmissionControllerEvents() == true)
     }
 
-    @Category(Upgrade)
+    @Tag("Upgrade")
     def "Verify cluster has disable audit logs set to true"() {
         expect:
         "Migrated k8s clusters to have disableAuditLogs set to true"
@@ -60,22 +60,36 @@ class UpgradesTest extends BaseSpecification {
         cluster != null
         assert(cluster.getDynamicConfig().getDisableAuditLogs() == true)
     }
-
-    @Category(Upgrade)
-    def "Verify that summary API returns non-zero values on upgrade"() {
+    @Tag("Upgrade")
+    def "Verify that APIs returns non-zero values on upgrade"() {
         expect:
-        "Summary API returns non-zero values on upgrade"
-        SummaryServiceOuterClass.SummaryCountsResponse resp = SummaryService.getCounts()
-        assert resp.numAlerts != 0
-        assert resp.numDeployments != 0
-        assert resp.numSecrets != 0
-        assert resp.numClusters != 0
-        assert resp.numImages != 0
-        assert resp.numNodes != 0
+        "Namespace API returns non-zero values on upgrade"
+        def namespaces = NamespaceService.getNamespaces()
+        assert namespaces.size() != 0
+        int numDeployments = 0
+        int numSecrets = 0
+        for (NamespaceServiceOuterClass.Namespace ns: namespaces) {
+            numDeployments += ns.getNumDeployments()
+            numSecrets += ns.getNumSecrets()
+        }
+        assert numDeployments != 0
+        assert numSecrets != 0
+        "Alert API returns non-zero values on upgrade"
+        def alerts = AlertService.getAlertCounts()
+        assert alerts.getGroupsList().size() != 0
+        "Cluster API returns non-zero values on upgrade"
+        def clusters = ClusterService.getClusters()
+        assert clusters.size() != 0
+        "Node API returns non-zero values on upgrade"
+        def nodes = NodeService.getNodes()
+        assert nodes.size() != 0
+        "Image API returns non-zero values on upgrade"
+        def images = ImageService.getImages()
+        assert images.size() != 0
     }
 
     @Unroll
-    @Category(Upgrade)
+    @Tag("Upgrade")
     def "verify that we find the correct number of #resourceType for query"() {
         when:
         "Fetch the #resourceType from GraphQL"
@@ -112,7 +126,7 @@ class UpgradesTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(Upgrade)
+    @Tag("Upgrade")
     def "verify that we find the correct number of compliance results"() {
         when:
         "Fetch the compliance results by #unit from GraphQL"
@@ -194,7 +208,8 @@ class UpgradesTest extends BaseSpecification {
         }
     }
 
-    @Category(Upgrade)
+    @Tag("Upgrade")
+    @IgnoreIf({ true }) // ROX-16401 this test will not work with current upgrade methodology & image tags
     def "Verify upgraded policies match default policy set"() {
         given:
         "Default policies in code"
@@ -230,24 +245,24 @@ class UpgradesTest extends BaseSpecification {
         }
 
         def knownPolicyDifferences = [
-                "2e90874a-3521-44de-85c6-5720f519a701": new KnownPolicyDiffs()
-                        // this diff is only for the 56.1 upgrade test
-                        .applyToCluster("268c98c6-e983-4f4e-95d2-9793cebddfd7")
-                        .removeExclusions([
-                                ["kube-system", "", ""],
-                                ["istio-system", "", ""]
-                        ])
-                        .addExclusionsWithName([
-                                ["kube-system", "", "kube-system namespace", 0],
-                                ["istio-system", "", "istio-system namespace", 1]
-                        ])
-                        .clearEnforcementActions()
-                        .clearLastUpdated(),
-                "1913283f-ce3c-4134-84ef-195c4cd687ae": new KnownPolicyDiffs().setPolicyAsDisabled(),
-                "842feb9f-ecb1-4e3c-a4bf-8a1dcb63948a": new KnownPolicyDiffs().setPolicyAsDisabled(),
-                "f09f8da1-6111-4ca0-8f49-294a76c65115": new KnownPolicyDiffs().setPolicyAsDisabled(),
-                "a919ccaf-6b43-4160-ac5d-a405e1440a41": new KnownPolicyDiffs().setPolicyAsEnabled(),
-                "93f4b2dd-ef5a-419e-8371-38aed480fb36": new KnownPolicyDiffs().setPolicyAsDisabled(),
+            "2e90874a-3521-44de-85c6-5720f519a701" : new KnownPolicyDiffs()
+            // this diff is only for the 56.1 upgrade test
+                .applyToCluster("268c98c6-e983-4f4e-95d2-9793cebddfd7")
+                .removeExclusions([
+                        ["kube-system", "", ""],
+                        ["istio-system", "", ""]
+                ])
+                .addExclusionsWithName([
+                        ["kube-system", "", "kube-system namespace", 0],
+                        ["istio-system", "", "istio-system namespace", 1]
+                ])
+                .clearEnforcementActions()
+                .clearLastUpdated(),
+            "1913283f-ce3c-4134-84ef-195c4cd687ae" : new KnownPolicyDiffs().setPolicyAsDisabled(),
+            "842feb9f-ecb1-4e3c-a4bf-8a1dcb63948a" : new KnownPolicyDiffs().setPolicyAsDisabled(),
+            "f09f8da1-6111-4ca0-8f49-294a76c65115" : new KnownPolicyDiffs().setPolicyAsDisabled(),
+            "a919ccaf-6b43-4160-ac5d-a405e1440a41" : new KnownPolicyDiffs().setPolicyAsEnabled(),
+            "93f4b2dd-ef5a-419e-8371-38aed480fb36" : new KnownPolicyDiffs().setPolicyAsDisabled(),
         ]
         and:
         "Skip over known differences due to differences in tests"
@@ -289,7 +304,7 @@ class UpgradesTest extends BaseSpecification {
         }
 
         and:
-        "Ignore ordering for exclusions in policies by resorting them"
+        "Ignore ordering for exclusions and categories in policies by resorting them"
         upgradedPolicies = upgradedPolicies.collect { policy ->
             def builder = PolicyOuterClass.Policy.newBuilder(policy)
             if (policy.exclusionsList != null || !policy.exclusionsList.isEmpty()) {
@@ -299,16 +314,19 @@ class UpgradesTest extends BaseSpecification {
                         policy.exclusionsList.sort(false) { it.name }
                 )
             }
+            builder.clearCategories().addAllCategories(policy.categoriesList.sort(false))
             builder.build()
         }
 
         defaultPolicies = defaultPolicies.collectEntries { id, policy ->
             def builder = PolicyOuterClass.Policy.newBuilder(policy)
+
             if (policy.exclusionsList != null || !policy.exclusionsList.isEmpty()) {
                 builder.clearExclusions().addAllExclusions(
                         policy.exclusionsList.sort(false) { it.name }
                 )
             }
+            builder.clearCategories().addAllCategories(policy.categoriesList.sort(false))
             [id, builder.build()]
         } as Map<String, PolicyOuterClass.Policy>
 

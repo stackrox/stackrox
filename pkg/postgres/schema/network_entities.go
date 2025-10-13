@@ -9,7 +9,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -27,18 +29,23 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.NetworkEntity)(nil)), "network_entities")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NETWORK_ENTITY, "networkentity", (*storage.NetworkEntity)(nil)))
+		schema.ScopingResource = resources.NetworkEntity
 		RegisterTable(schema, CreateTableNetworkEntitiesStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_NETWORK_ENTITY, schema)
 		return schema
 	}()
 )
 
 const (
+	// NetworkEntitiesTableName specifies the name of the table in postgres.
 	NetworkEntitiesTableName = "network_entities"
 )
 
 // NetworkEntities holds the Gorm model for Postgres table `network_entities`.
 type NetworkEntities struct {
-	InfoId                    string `gorm:"column:info_id;type:varchar;primaryKey"`
-	InfoExternalSourceDefault bool   `gorm:"column:info_externalsource_default;type:bool"`
-	Serialized                []byte `gorm:"column:serialized;type:bytea"`
+	InfoID                       string `gorm:"column:info_id;type:varchar;primaryKey"`
+	InfoExternalSourceCidr       string `gorm:"column:info_externalsource_cidr;type:cidr;index:networkentities_info_externalsource_cidr,type:btree"`
+	InfoExternalSourceDefault    bool   `gorm:"column:info_externalsource_default;type:bool"`
+	InfoExternalSourceDiscovered bool   `gorm:"column:info_externalsource_discovered;type:bool"`
+	Serialized                   []byte `gorm:"column:serialized;type:bytea"`
 }

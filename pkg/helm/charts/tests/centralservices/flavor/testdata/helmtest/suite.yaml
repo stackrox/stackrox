@@ -14,6 +14,16 @@ defs: |
 server:
   visibleSchemas:
   - kubernetes-1.20.2
+  objects:
+    # Apparently, for the `lookup` function in the Helm chart to be able to list the objects of a certain kind
+    # at least one such object needs to exist. Therefore, we create a StorageClass here solely
+    # for enabling lookups in the charts under test.
+    - apiVersion: storage.k8s.io/v1
+      kind: StorageClass
+      metadata:
+        name: some-sc-that-we-dont-care-about
+        annotations:
+          storageclass.kubernetes.io/is-default-class: false
 values:
   imagePullSecrets:
     allowNone: true
@@ -26,6 +36,10 @@ values:
     serviceTLS:
       cert: "Central cert"
       key: "Central key"
+    db:
+      serviceTLS:
+        cert: "Central DB cert"
+        key: "Central DB key"
   scanner:
     serviceTLS:
       cert: "Scanner cert"
@@ -33,3 +47,17 @@ values:
     dbServiceTLS:
       cert: "ScannerDB cert"
       key: "ScannerDB key"
+  scannerV4:
+    # Setting certificate and key to dummy values, otherwise an attempt is made to generate the certificates, which would fail.
+    indexer:
+      serviceTLS:
+        cert: "ScannerV4 Indexer cert"
+        key: "ScannerV4 Indexer key"
+    matcher:
+      serviceTLS:
+        cert: "ScannerV4 Matcher cert"
+        key: "ScannerV4 Matcher key"
+    db:
+      serviceTLS:
+        cert: "ScannerV4 DB cert"
+        key: "ScannerV4 DB key"

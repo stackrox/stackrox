@@ -1,1 +1,1 @@
-export type CertExpiryComponent = 'CENTRAL' | 'SCANNER'; // omit 'UNKNOWN'
+export type CertExpiryComponent = 'CENTRAL' | 'CENTRAL_DB' | 'SCANNER' | 'SCANNER_V4'; // omit 'UNKNOWN'

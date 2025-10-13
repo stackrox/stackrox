@@ -1,39 +1,28 @@
 package main
 
 import (
-	"context"
 	"net/http"
 	"os"
+	"strings"
+	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/migrator/bolthelpers"
 	cloneMgr "github.com/stackrox/rox/migrator/clone"
-	"github.com/stackrox/rox/migrator/compact"
 	"github.com/stackrox/rox/migrator/log"
-	"github.com/stackrox/rox/migrator/option"
-	"github.com/stackrox/rox/migrator/postgreshelper"
-	"github.com/stackrox/rox/migrator/rockshelper"
-	"github.com/stackrox/rox/migrator/runner"
-	"github.com/stackrox/rox/migrator/types"
-	migVer "github.com/stackrox/rox/migrator/version"
 	"github.com/stackrox/rox/pkg/config"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/rocksdb"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/tecbot/gorocksdb"
-	"go.etcd.io/bbolt"
-	"gorm.io/gorm"
+	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/version"
 )
 
 func main() {
 	startProfilingServer()
 	if err := run(); err != nil {
-		log.WriteToStderrf("Migrator failed: %s", err)
+		log.WriteToStderrf("Migrator failed: %+v", err)
 		os.Exit(1)
 	}
 }
@@ -52,7 +41,7 @@ func startProfilingServer() {
 }
 
 func run() error {
-	log.WriteToStderr("In migrator.run()")
+	log.WriteToStderrf("Run migrator.run() with version: %s, DB sequence: %d", version.GetMainVersion(), migrations.CurrentDBVersionSeqNum())
 	conf := config.GetConfig()
 	if conf == nil {
 		log.WriteToStderrf("cannot get central configuration. Skipping migrator")
@@ -64,142 +53,80 @@ func run() error {
 		return nil
 	}
 
-	var dbm cloneMgr.DBCloneManager
-	// Create the clone manager
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		sourceMap, adminConfig, err := pgconfig.GetPostgresConfig()
-		if err != nil {
-			return errors.Wrap(err, "unable to get Postgres DB config")
-		}
-		dbm = cloneMgr.NewPostgres(migrations.DBMountPath(), conf.Maintenance.ForceRollbackVersion, adminConfig, sourceMap)
-	} else {
-		dbm = cloneMgr.New(migrations.DBMountPath(), conf.Maintenance.ForceRollbackVersion)
+	rollbackVersion := strings.TrimSpace(conf.Maintenance.ForceRollbackVersion)
+	if rollbackVersion != "" {
+		log.WriteToStderrf("conf.Maintenance.ForceRollbackVersion: %s", rollbackVersion)
 	}
 
-	err := dbm.Scan()
+	// If using internal database, ensure the default database (`central_active`) exists
+	if !pgconfig.IsExternalDatabase() {
+		if err := ensureDatabaseExists(); err != nil {
+			return err
+		}
+	}
+
+	// Create the clone manager
+	sourceMap, adminConfig, err := pgconfig.GetPostgresConfig()
+	if err != nil {
+		return errors.Wrap(err, "unable to get Postgres DB config")
+	}
+
+	dbm := cloneMgr.NewPostgres(migrations.DBMountPath(), rollbackVersion, adminConfig, sourceMap)
+
+	err = dbm.Scan()
 	if err != nil {
 		return errors.Wrap(err, "failed to scan clones")
 	}
 
 	// Get the clone we are migrating
-	clone, clonePath, pgClone, err := dbm.GetCloneToMigrate()
+	pgClone, err := dbm.GetCloneToMigrate()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clone to migrate")
 	}
-	log.WriteToStderrf("Clone to Migrate %q, %q", clone, pgClone)
+	log.WriteToStderrf("Clone to Migrate %q", pgClone)
 
-	// Set the path to Rocks if it exists.
-	if clonePath != "" {
-		option.MigratorOptions.DBPathBase = clonePath
-	}
-
-	// If GetCloneToMigrate returns Rocks and Postgres clones that means we need
-	// to migrate Rocks->Postgres.  Otherwise, we need to process Rocks in Rocks mode and
-	// Postgres in Postgres mode.
-	processBoth := clone != "" && pgClone != ""
-
-	err = upgrade(conf, pgClone, processBoth)
+	err = upgrade(pgClone)
 	if err != nil {
 		return err
 	}
 
-	if err = dbm.Persist(clone, pgClone, processBoth); err != nil {
+	if err = dbm.Persist(pgClone); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func upgrade(conf *config.Config, dbClone string, processBoth bool) error {
-	err := compact.Compact(conf)
+func dbCheck(source map[string]string, adminConfig *postgres.Config) error {
+	// Create the central database if necessary
+	log.WriteToStderrf("checking if the database %q exists", pgconfig.GetActiveDB())
+	exists, err := pgadmin.CheckIfDBExists(adminConfig, pgconfig.GetActiveDB())
 	if err != nil {
-		log.WriteToStderrf("error compacting DB: %v", err)
+		log.WriteToStderrf("Could not check for central database: %v", err)
+		return err
 	}
-
-	var pkgRocksDB *rocksdb.RocksDB
-	var rocks *gorocksdb.DB
-	var boltDB *bbolt.DB
-
-	// We need to pass Rocks to the runner if we are in Rocks mode OR
-	// if we need to processBoth for the purpose of migrating Rocks to Postgres
-	if !env.PostgresDatastoreEnabled.BooleanSetting() || processBoth {
-		boltDB, err = bolthelpers.Load()
+	if !exists {
+		err = pgadmin.CreateDB(source, adminConfig, pgadmin.EmptyDB, pgconfig.GetActiveDB())
 		if err != nil {
-			return errors.Wrap(err, "failed to open bolt DB")
-		}
-		if boltDB == nil {
-			log.WriteToStderr("No legacy DB found. Nothing to migrate...")
-		} else {
-			pkgRocksDB, err = rockshelper.New()
-			if err != nil {
-				return errors.Wrap(err, "failed to open rocksdb")
-			}
-
-			rocks = pkgRocksDB.DB
-			defer func() {
-				if err := boltDB.Close(); err != nil {
-					log.WriteToStderrf("Error closing DB: %v", err)
-				}
-				if rocks != nil {
-					rocks.Close()
-				}
-			}()
+			log.WriteToStderrf("Could not create central database: %v", err)
+			return err
 		}
 	}
+	return nil
+}
 
-	var gormDB *gorm.DB
-	var pgPool *pgxpool.Pool
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pgPool, gormDB, err = postgreshelper.Load(dbClone)
-		if err != nil {
-			return errors.Wrap(err, "failed to connect to postgres DB")
-		}
-		// Close when needed
-		defer postgreshelper.Close()
-
-		ctx := sac.WithAllAccess(context.Background())
-		ver, err := migVer.ReadVersionGormDB(ctx, gormDB)
-		if err != nil {
-			return errors.Wrap(err, "failed to get version from the database")
-		}
-
-		// If Postgres has no version and we have no bolt then we have no populated databases at all and thus don't
-		// need to migrate
-		if ver.SeqNum == 0 && ver.MainVersion == "0" && (!processBoth || boltDB == nil) {
-			log.WriteToStderr("Fresh install of the database. There is no data to migrate...")
-			pkgSchema.ApplyAllSchemas(context.Background(), gormDB)
-			return nil
-		}
-		log.WriteToStderrf("version for %q is %v", dbClone, ver)
-	}
-
-	if boltDB == nil && !env.PostgresDatastoreEnabled.BooleanSetting() {
-		log.WriteToStderr("No DB found. Nothing to migrate...")
-		return nil
-	}
-
-	err = runner.Run(&types.Databases{
-		BoltDB:     boltDB,
-		RocksDB:    rocks,
-		GormDB:     gormDB,
-		PostgresDB: pgPool,
-		PkgRocksDB: pkgRocksDB,
-	})
+func ensureDatabaseExists() error {
+	sourceMap, adminConfig, err := pgconfig.GetPostgresConfig()
 	if err != nil {
-		return errors.Wrap(err, "migrations failed")
+		return err
 	}
 
-	// If we need to process Rocks and Postgres we used Rocks to populate Postgres.  As such we still need
-	// to update the current version of Rocks.  Central takes care of that for active databases, but since
-	// Rocks will not be the active database, we need to do that as part of the migrations.
-	if processBoth {
-		// Update last associated software version on DBs.
-		migrations.SetCurrent(option.MigratorOptions.DBPathBase)
+	if !pgconfig.IsExternalDatabase() {
+		return retry.WithRetry(func() error {
+			return dbCheck(sourceMap, adminConfig)
+		}, retry.Tries(60), retry.BetweenAttempts(func(_ int) {
+			time.Sleep(5 * time.Second)
+		}))
 	}
-
-	if gormDB != nil {
-		pkgSchema.ApplyAllSchemas(context.Background(), gormDB)
-	}
-
 	return nil
 }

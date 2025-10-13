@@ -1,14 +1,14 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
+import { Link } from 'react-router-dom-v5-compat';
 import {
     Bullseye,
     Button,
-    ButtonVariant,
     EmptyState,
     EmptyStateBody,
-    Title,
+    EmptyStateHeader,
+    EmptyStateFooter,
 } from '@patternfly/react-core';
-
-import LinkShim from 'Components/PatternFly/LinkShim';
 
 export type NotFoundMessageProps = {
     title: string;
@@ -28,18 +28,18 @@ const NotFoundMessage = ({
     const isButtonVisible = actionText && onClick;
     const isLinkVisible = actionText && url;
     return (
-        <Bullseye className="pf-u-flex-grow-1">
+        <Bullseye className="pf-v5-u-flex-grow-1">
             <EmptyState>
-                <Title headingLevel="h4" size="lg">
-                    {title}
-                </Title>
-                {message && <EmptyStateBody>{message}</EmptyStateBody>}
-                {isButtonVisible && <Button variant="primary">{actionText}</Button>}
-                {isLinkVisible && (
-                    <Button variant={ButtonVariant.link} isInline component={LinkShim} href={url}>
-                        {actionText}
-                    </Button>
-                )}
+                <EmptyStateHeader titleText={title} headingLevel="h1" />
+                <EmptyStateFooter>
+                    {message && <EmptyStateBody>{message}</EmptyStateBody>}
+                    {isButtonVisible && (
+                        <Button variant="primary" onClick={onClick}>
+                            {actionText}
+                        </Button>
+                    )}
+                    {isLinkVisible && <Link to={url}>{actionText}</Link>}
+                </EmptyStateFooter>
             </EmptyState>
         </Bullseye>
     );

@@ -15,6 +15,7 @@ func TestResolvedRegistry(t *testing.T) {
 		{image: "library/nginx", expected: "https://docker.io"},
 		{image: "docker.io/library/nginx:latest", expected: "https://docker.io"},
 		{image: "stackrox.io/main:1.10", expected: "https://stackrox.io"},
+		{image: "quay.io/stackrox-io/main:1.10", expected: "https://quay.io"},
 		{image: "gcr.io/project-name/main:1.2.3", expected: "https://gcr.io"},
 		{image: "dtr.example.com/stackrox/main:1.2.3", expected: "https://dtr.example.com"},
 		{image: "docker-default.registry.svc:5000/stackrox/main:1.2", expected: "https://docker-default.registry.svc:5000"},

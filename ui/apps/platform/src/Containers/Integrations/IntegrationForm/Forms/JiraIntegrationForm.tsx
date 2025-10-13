@@ -1,5 +1,6 @@
 /* eslint-disable react/no-array-index-key */
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import {
     Checkbox,
     Flex,
@@ -15,15 +16,16 @@ import merge from 'lodash/merge';
 import * as yup from 'yup';
 import { FieldArray, FormikProvider } from 'formik';
 
-import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
+import type { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
 
-import usePageState from 'Containers/Integrations/hooks/usePageState';
 import FormMessage from 'Components/PatternFly/FormMessage';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
+
+import usePageState from '../../hooks/usePageState';
 import useIntegrationForm from '../useIntegrationForm';
-import { IntegrationFormProps } from '../integrationFormTypes';
+import type { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';
@@ -40,6 +42,7 @@ export type JiraIntegration = {
             priorityName: string;
         }[];
         defaultFieldsJson: string;
+        disablePriority: boolean;
     };
     type: 'jira';
 } & NotifierIntegrationBase;
@@ -85,19 +88,19 @@ export const validationSchema = yup.object().shape({
 const defaultSeverities = [
     {
         severity: 'CRITICAL_SEVERITY',
-        priorityName: 'P0-Highest',
+        priorityName: 'Highest',
     },
     {
         severity: 'HIGH_SEVERITY',
-        priorityName: 'P1-High',
+        priorityName: 'High',
     },
     {
         severity: 'MEDIUM_SEVERITY',
-        priorityName: 'P2-Medium',
+        priorityName: 'Medium',
     },
     {
         severity: 'LOW_SEVERITY',
-        priorityName: 'P3-Low',
+        priorityName: 'Low',
     },
 ];
 
@@ -112,6 +115,7 @@ export const defaultValues: JiraIntegrationFormValues = {
             url: '',
             priorityMappings: defaultSeverities,
             defaultFieldsJson: '',
+            disablePriority: false,
         },
         labelDefault: '',
         labelKey: '',
@@ -125,13 +129,16 @@ function JiraIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<JiraIntegration>): ReactElement {
-    const formInitialValues = { ...defaultValues, ...initialValues };
+    const formInitialValues = structuredClone(defaultValues);
     if (initialValues) {
-        formInitialValues.notifier = merge({}, defaultValues.notifier, initialValues); // in case properties are missing from initialValues
+        merge(formInitialValues.notifier, initialValues);
 
         // We want to clear the password because backend returns '******' to represent that there
         // are currently stored credentials
         formInitialValues.notifier.jira.password = '';
+
+        // Don't assume user wants to change password; that has caused confusing UX.
+        formInitialValues.updatePassword = false;
     }
     const formik = useIntegrationForm<JiraIntegrationFormValues>({
         initialValues: formInitialValues,
@@ -181,7 +188,7 @@ function JiraIntegrationForm({
                                 type="text"
                                 id="notifier.name"
                                 value={values.notifier.name}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -198,7 +205,7 @@ function JiraIntegrationForm({
                                 type="text"
                                 id="notifier.jira.username"
                                 value={values.notifier.jira.username}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -214,7 +221,9 @@ function JiraIntegrationForm({
                                     label="Update password"
                                     id="updatePassword"
                                     isChecked={values.updatePassword}
-                                    onChange={onUpdateCredentialsChange}
+                                    onChange={(event, value) =>
+                                        onUpdateCredentialsChange(value, event)
+                                    }
                                     onBlur={handleBlur}
                                     isDisabled={!isEditable}
                                 />
@@ -232,7 +241,7 @@ function JiraIntegrationForm({
                                 type="password"
                                 id="notifier.jira.password"
                                 value={values.notifier.jira.password}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable || !values.updatePassword}
                                 placeholder={
@@ -254,7 +263,7 @@ function JiraIntegrationForm({
                                 type="text"
                                 id="notifier.jira.issueType"
                                 value={values.notifier.jira.issueType}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                                 placeholder="Epic, Story, Task, Sub-task, or Bug"
@@ -273,7 +282,7 @@ function JiraIntegrationForm({
                                 type="text"
                                 id="notifier.jira.url"
                                 value={values.notifier.jira.url}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -290,7 +299,7 @@ function JiraIntegrationForm({
                                 type="text"
                                 id="notifier.labelDefault"
                                 value={values.notifier.labelDefault}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -306,7 +315,21 @@ function JiraIntegrationForm({
                                 type="text"
                                 id="notifier.labelKey"
                                 value={values.notifier.labelKey}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
+                                onBlur={handleBlur}
+                                isDisabled={!isEditable}
+                            />
+                        </FormLabelGroup>
+                        <FormLabelGroup
+                            fieldId="notifier.jira.disablePriority"
+                            touched={touched}
+                            errors={errors}
+                        >
+                            <Checkbox
+                                label="Disable setting priority"
+                                id="notifier.jira.disablePriority"
+                                isChecked={values.notifier.jira.disablePriority}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -346,8 +369,7 @@ function JiraIntegrationForm({
                                                                 <TextInput
                                                                     isRequired
                                                                     tabIndex={-1}
-                                                                    className="pf-u-background-color-200"
-                                                                    isReadOnly
+                                                                    className="pf-v5-u-background-color-200"
                                                                     type="text"
                                                                     id={`notifier.jira.priorityMappings[${index}].severity`}
                                                                     value={
@@ -356,8 +378,11 @@ function JiraIntegrationForm({
                                                                             `${index}`
                                                                         ].severity
                                                                     }
-                                                                    onChange={onChange}
+                                                                    onChange={(event, value) =>
+                                                                        onChange(value, event)
+                                                                    }
                                                                     onBlur={handleBlur}
+                                                                    readOnlyVariant="default"
                                                                 />
                                                             </FormLabelGroup>
                                                         </FlexItem>
@@ -383,9 +408,15 @@ function JiraIntegrationForm({
                                                                             `${index}`
                                                                         ].priorityName
                                                                     }
-                                                                    onChange={onChange}
+                                                                    onChange={(event, value) =>
+                                                                        onChange(value, event)
+                                                                    }
                                                                     onBlur={handleBlur}
-                                                                    isDisabled={!isEditable}
+                                                                    isDisabled={
+                                                                        !isEditable ||
+                                                                        values.notifier.jira
+                                                                            .disablePriority
+                                                                    }
                                                                 />
                                                             </FormLabelGroup>
                                                         </FlexItem>
@@ -399,7 +430,7 @@ function JiraIntegrationForm({
                         {/* </FormSection>
                         )} */}
                         <FormLabelGroup
-                            label="Default Fields JSON"
+                            label="Default fields JSON"
                             fieldId="notifier.jira.defaultFieldsJson"
                             touched={touched}
                             errors={errors}
@@ -410,7 +441,7 @@ function JiraIntegrationForm({
                                 type="text"
                                 id="notifier.jira.defaultFieldsJson"
                                 value={values.notifier.jira.defaultFieldsJson}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />

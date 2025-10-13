@@ -2,12 +2,10 @@ package output
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 	"testing"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -36,7 +34,6 @@ type HelmChartTestSuite struct {
 
 func (s *HelmChartTestSuite) SetupTest() {
 	testutils.SetExampleVersion(s.T())
-	testbuildinfo.SetForTest(s.T())
 }
 
 func TestHelmLint(t *testing.T) {
@@ -62,7 +59,6 @@ func (s *HelmChartTestSuite) TestOutputHelmChart() {
 
 		// Group: Valid --image-defaults, no --rhacs
 		{flavor: defaults.ImageFlavorNameDevelopmentBuild, rhacs: false},
-		{flavor: defaults.ImageFlavorNameStackRoxIORelease, rhacs: false},
 		{flavor: defaults.ImageFlavorNameRHACSRelease, rhacs: false},
 		{flavor: defaults.ImageFlavorNameOpenSource, rhacs: false},
 
@@ -74,7 +70,6 @@ func (s *HelmChartTestSuite) TestOutputHelmChart() {
 		{flavor: "", flavorProvided: true, rhacs: true, wantErr: true},
 		{flavor: "dummy", rhacs: true, wantErr: true},
 		{flavor: defaults.ImageFlavorNameDevelopmentBuild, rhacs: true, wantErr: true},
-		{flavor: defaults.ImageFlavorNameStackRoxIORelease, rhacs: true, wantErr: true},
 		{flavor: defaults.ImageFlavorNameRHACSRelease, rhacs: true, wantErr: true},
 		{flavor: defaults.ImageFlavorNameOpenSource, rhacs: true, wantErr: true},
 	}
@@ -83,7 +78,6 @@ func (s *HelmChartTestSuite) TestOutputHelmChart() {
 	env := environment.NewTestCLIEnvironment(s.T(), testIO, printer.DefaultColorPrinter())
 
 	for _, tt := range tests {
-		tt := tt
 		for chartName := range common.ChartTemplates {
 			s.Run(fmt.Sprintf("%s-rhacs-%t-flavorProvided-%t-image-defaults-%s", chartName, tt.rhacs, tt.flavorProvided, tt.flavor), func() {
 				outputDir := s.T().TempDir()
@@ -104,7 +98,6 @@ func (s *HelmChartTestSuite) TestOutputHelmChart() {
 func (s *HelmChartTestSuite) TestHelmLint() {
 	flavorsToTest := []string{
 		defaults.ImageFlavorNameDevelopmentBuild,
-		defaults.ImageFlavorNameStackRoxIORelease,
 		defaults.ImageFlavorNameRHACSRelease,
 		defaults.ImageFlavorNameOpenSource,
 	}
@@ -165,11 +158,14 @@ func executeHelpOutputCommand(chartName, outputDir string, removeOutputDir bool,
 }
 
 func testChartInNamespaceLint(t *testing.T, chartDir string, namespace string) {
-	linter := lint.All(chartDir, nil, namespace, false)
+	// The 'ca.cert' config option MUST be set to StackRox's Service CA certificate
+	// in order for the admission controller to be usable
+	// To not produce warning let's provide it
+	values := map[string]any{"ca": map[string]any{"cert": "fake"}}
+	linter := lint.All(chartDir, values, namespace, false)
 
 	assert.LessOrEqualf(t, linter.HighestSeverity, maxTolerableSev, "linting chart produced warnings with severity %v", linter.HighestSeverity)
 	for _, msg := range linter.Messages {
-		fmt.Fprintln(os.Stderr, msg.Error())
 		assert.LessOrEqual(t, msg.Severity, maxTolerableSev, msg.Error())
 	}
 }

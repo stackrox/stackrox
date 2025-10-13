@@ -5,12 +5,14 @@ import (
 
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/detection/runtime"
-	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/generated/storage"
+	notifierProcessor "github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/set"
 )
 
 // AlertManager is a simplified interface for fetching and updating alerts.
+//
+//go:generate mockgen-wrapper
 type AlertManager interface {
 	// AlertAndNotify takes in a list of alerts being produced, and a bunch of filters that specify what subset of alerts
 	// we're looking at. It then pulls out the alerts matching the filters, and compares the alerts in the DB with the ones

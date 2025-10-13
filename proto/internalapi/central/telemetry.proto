@@ -1,58 +1,67 @@
 syntax = "proto3";
 
-option go_package = "central";
+package central;
 
 import "google/protobuf/timestamp.proto";
 
-package central;
-
+option go_package = "./internalapi/central;central";
 
 message CancelPullTelemetryDataRequest {
-    string request_id = 1;
+  string request_id = 1;
 }
 
+// PullTelemetryDataRequest requests telemetry at Sensor
 message PullTelemetryDataRequest {
-    enum TelemetryDataType {
-        UNKNOWN         = 0;
-        KUBERNETES_INFO = 1;
-        CLUSTER_INFO    = 2;
-        METRICS         = 3;
-    }
+  enum TelemetryDataType {
+    UNKNOWN = 0;
+    KUBERNETES_INFO = 1;
+    CLUSTER_INFO = 2;
+    METRICS = 3;
+  }
 
-    string request_id               = 1;
-    TelemetryDataType data_type     = 2;
-    int64 timeout_ms                = 3;
-    google.protobuf.Timestamp since = 4;
-
+  string request_id = 1;
+  TelemetryDataType data_type = 2;
+  int64 timeout_ms = 3;
+  google.protobuf.Timestamp since = 4;
+  bool with_compliance_operator = 5;
 }
 
 message TelemetryResponsePayload {
-    message EndOfStream {
-        string error_message = 1;  // empty indicates success
+  message EndOfStream {
+    string error_message = 1; // empty indicates success
+  }
+
+  message KubernetesInfo {
+    message File {
+      string path = 1;
+      bytes contents = 2; // compression (if any) is handled at the gRPC level
     }
 
-    message KubernetesInfo {
-        message File {
-            string path    = 1;
-            bytes contents = 2;  // compression (if any) is handled at the gRPC level
-        }
+    repeated File files = 1;
+  }
 
-        repeated File files = 1;
-    }
+  message ClusterInfo {
+    bytes chunk = 1;
+  }
 
-    message ClusterInfo {
-        bytes chunk = 1;
-    }
-
-    oneof payload {
-        EndOfStream    end_of_stream   = 1;
-        KubernetesInfo kubernetes_info = 2;
-        ClusterInfo    cluster_info    = 3;
-        KubernetesInfo metrics_info    = 4;
-    }
+  oneof payload {
+    EndOfStream end_of_stream = 1;
+    KubernetesInfo kubernetes_info = 2;
+    ClusterInfo cluster_info = 3;
+    KubernetesInfo metrics_info = 4;
+  }
 }
 
 message PullTelemetryDataResponse {
-    string request_id                  = 1;
-    TelemetryResponsePayload payload   = 2;
+  string request_id = 1;
+  TelemetryResponsePayload payload = 2;
+}
+
+message TelemetryConfig {
+  // API user ID hash:
+  string user_id = 1;
+  // An empty endpoint means using default endpoint:
+  string endpoint = 2;
+  // Telemetry storage service key:
+  string storage_key_v1 = 3;
 }

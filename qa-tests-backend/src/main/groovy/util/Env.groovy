@@ -1,5 +1,6 @@
 package util
 
+import groovy.transform.CompileStatic
 import orchestratormanager.OrchestratorTypes
 
 import java.nio.file.Files
@@ -8,21 +9,38 @@ import java.nio.file.attribute.FileTime
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+@CompileStatic
 class Env {
 
     private static final Logger LOG = LoggerFactory.getLogger(this.getClass())
 
-    private static final PROPERTIES_FILE = "qa-test-settings.properties"
+    private static final String PROPERTIES_FILE = "qa-test-settings.properties"
 
-    private static final DEFAULT_VALUES = [
+    private static final Map<String, String> DEFAULT_VALUES = [
             "API_HOSTNAME": "localhost",
             "API_PORT": "8000",
             "ROX_USERNAME": "admin",
     ]
 
-    static final IN_CI = (System.getenv("CI") != null)
-    static final CI_JOBNAME = System.getenv("CI_JOB_NAME") ?: System.getenv("CIRCLE_JOB") ?: ""
-    static final CI_TAG = System.getenv("CIRCLE_TAG")
+    static final boolean IN_CI = (System.getenv("CI") == "true")
+    static final String CI_JOB_NAME = System.getenv("CI_JOB_NAME")
+    static final String BUILD_TAG = System.getenv("BUILD_TAG")
+    static final boolean GATHER_QA_TEST_DEBUG_LOGS = (System.getenv("GATHER_QA_TEST_DEBUG_LOGS") == "true")
+    static final String QA_TEST_DEBUG_LOGS = System.getenv("QA_TEST_DEBUG_LOGS") ?: ""
+    static final boolean HAS_WORKLOAD_IDENTITIES = (System.getenv("SETUP_WORKLOAD_IDENTITIES") == "true")
+
+    static final String IMAGE_PULL_POLICY_FOR_QUAY_IO = System.getenv("IMAGE_PULL_POLICY_FOR_QUAY_IO")
+
+    // REMOTE_CLUSTER_ARCH specifies architecture of a remote cluster on which tests are to be executed
+    // the remote cluster arch can be ppc64le or s390x, default is x86_64
+    static final String REMOTE_CLUSTER_ARCH = System.getenv("REMOTE_CLUSTER_ARCH") ?: "x86_64"
+
+    // ONLY_SECURED_CLUSTER specifies that the remote cluster being used to execute tests
+    // only has secured-cluster deployed and connects to a remote central
+    static final String ONLY_SECURED_CLUSTER = System.getenv("ONLY_SECURED_CLUSTER") ?: "false"
+
+    // IS_BYODB specifies that this is testing an external Postgres database
+    static final boolean IS_BYODB = (System.getenv("BYODB_TEST") == "true")
 
     private static final Env INSTANCE = new Env()
 
@@ -38,7 +56,7 @@ class Env {
         return INSTANCE.mustGetInCIInternal(key, defVal)
     }
 
-    private final envVars = new Properties()
+    private final Properties envVars = new Properties()
 
     private Env() {
         if (!IN_CI) {
@@ -73,7 +91,7 @@ class Env {
     protected String mustGetInCIInternal(String key, String defVal) {
         def value = envVars.get(key)
         if (value == null) {
-            if (inCI) {
+            if (IN_CI) {
                 throw new RuntimeException("No value assigned for required key ${key}")
             }
             return defVal
@@ -91,7 +109,8 @@ class Env {
         OrchestratorTypes selected = null
         FileTime mostRecent = null
         for (def orchestratorType : OrchestratorTypes.values()) {
-            def passwordPath = "../deploy/${orchestratorType.toString().toLowerCase()}/central-deploy/password"
+            def passwordPath = "../deploy/${orchestratorType.toString().toLowerCase()}" +
+                    "/central-deploy/password"
             try {
                 def modTime = Files.getLastModifiedTime(Paths.get(passwordPath))
                 if (mostRecent == null || modTime > mostRecent) {
@@ -114,14 +133,15 @@ class Env {
         }
         LOG.debug System.getenv().toMapString()
 
-        if (isEnvVarEmpty("ROX_PASSWORD")) {
+        if (isEnvVarEmpty("ROX_ADMIN_PASSWORD")) {
             if (isEnvVarEmpty("CLUSTER")) {
                 envVars.put("CLUSTER", inferOrchestratorType().toString())
             }
 
             String password = null
             try {
-                def passwordPath = "../deploy/${envVars.get("CLUSTER").toLowerCase()}/central-deploy/password"
+                def passwordPath = "../deploy/${envVars.get("CLUSTER").toString().toLowerCase()}" +
+                        "/central-deploy/password"
                 BufferedReader br = new BufferedReader(new FileReader(passwordPath))
                 password = br.readLine()
             } catch (Exception ex) {
@@ -129,7 +149,7 @@ class Env {
             }
 
             if (password != null) {
-                envVars.put("ROX_PASSWORD", password)
+                envVars.put("ROX_ADMIN_PASSWORD", password)
             }
         }
 
@@ -143,7 +163,7 @@ class Env {
     }
 
     static String mustGetPassword() {
-        return mustGet("ROX_PASSWORD")
+        return mustGet("ROX_ADMIN_PASSWORD")
     }
 
     static int mustGetPort() {
@@ -182,10 +202,6 @@ class Env {
 
     static String mustGetClientCAPath() {
         return mustGet("CLIENT_CA_PATH")
-    }
-
-    static String mustGetCiJobName() {
-        return mustGet("CI_JOB_NAME")
     }
 
     static String mustGetImageTag() {
@@ -244,20 +260,40 @@ class Env {
         return mustGet("AWS_ECR_DOCKER_PULL_PASSWORD") // aws ecr get-login-password
     }
 
+    static String mustGetCloudflareR2BucketName() {
+        return mustGet("CLOUDFLARE_R2_BACKUP_TEST_BUCKET_NAME") // stackrox-ci-qa-backup-test
+    }
+
+    static String mustGetCloudflareR2BucketRegion() {
+        return mustGet("CLOUDFLARE_R2_BACKUP_TEST_REGION") // ENAM
+    }
+
+    static String mustGetCloudflareR2Endpoint() {
+        return "${mustGet("CLOUDFLARE_R2_BACKUP_TEST_ACCOUNT_ID")}.r2.cloudflarestorage.com"
+    }
+
+    static String mustGetCloudflareR2AccessKeyID() {
+        return mustGet("CLOUDFLARE_R2_BACKUP_TEST_ACCESS_KEY_ID")
+    }
+
+    static String mustGetCloudflareR2SecretAccessKey() {
+        return mustGet("CLOUDFLARE_R2_BACKUP_TEST_SECRET_ACCESS_KEY")
+    }
+
     static String mustGetGCSBucketName() {
-        return mustGet("GCP_GCS_BACKUP_TEST_BUCKET_NAME") // stackrox-qa-gcs-test
+        return mustGet("GCP_GCS_BACKUP_TEST_BUCKET_NAME_V2")
     }
 
-    static String mustGetGCSBucketRegion() {
-        return mustGet("GCP_GCS_BACKUP_TEST_BUCKET_REGION") // us-east-1
+    static String mustGetGCSServiceAccount() {
+        return mustGet("GOOGLE_GCS_BACKUP_SERVICE_ACCOUNT_V2")
     }
 
-    static String mustGetGCPAccessKeyID() {
-        return mustGet("GCP_ACCESS_KEY_ID")
+    static String mustGetGCRServiceAccount() {
+        return mustGet("GOOGLE_CREDENTIALS_GCR_SCANNER_V2")
     }
 
-    static String mustGetGCPAccessKey() {
-        return mustGet("GCP_SECRET_ACCESS_KEY")
+    static String mustGetGCRNoAccessServiceAccount() {
+        return mustGet("GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY_V2")
     }
 
     static String mustGetPagerdutyToken() {
@@ -274,5 +310,33 @@ class Env {
 
     static String mustGetSlackAltWebhook() {
         return mustGet("SLACK_ALT_WEBHOOK")
+    }
+
+    static String getDisableAuditLogAlertsTest() {
+        return get("DISABLE_AUDIT_LOG_ALERTS_TEST")
+    }
+
+    static String getManagedControlPlane() {
+        return get("MANAGED_CP", "false")
+    }
+
+    static String getSupportsLoadBalancerSvc() {
+        return get("SUPPORTS_LOAD_BALANCER_SVC", "true")
+    }
+
+    static String mustGetOcmOfflineToken() {
+        return get("OCM_OFFLINE_TOKEN")
+    }
+
+    static String mustGetOcmClientId() {
+        return get("CLOUD_SOURCES_TEST_OCM_CLIENT_ID")
+    }
+
+    static String mustGetOcmClientSecret() {
+        return get("CLOUD_SOURCES_TEST_OCM_CLIENT_SECRET")
+    }
+
+    static String getTestTarget() {
+        return get("TEST_TARGET", "")
     }
 }

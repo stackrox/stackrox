@@ -6,6 +6,10 @@ import (
 )
 
 // NewService creates a new service for certificate distribution.
-func NewService(k8sClient kubernetes.Interface, namespace string) grpc.APIService {
-	return newService(k8sClient, namespace)
+func NewService(clusterID clusterIDWaiter, k8sClient kubernetes.Interface, namespace string) grpc.APIService {
+	return newService(clusterID, k8sClient, namespace)
+}
+
+type clusterIDWaiter interface {
+	Get() string
 }

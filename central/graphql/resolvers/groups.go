@@ -22,18 +22,23 @@ func init() {
 func (resolver *Resolver) Groups(ctx context.Context) ([]*groupResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Groups")
 
-	err := readGroups(ctx)
+	err := readAccess(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return resolver.wrapGroups(resolver.GroupDataStore.GetAll(ctx))
+	var groups []*groupResolver
+	err = resolver.GroupDataStore.ForEach(ctx, func(group *storage.Group) error {
+		groups = append(groups, &groupResolver{root: resolver, data: group})
+		return nil
+	})
+	return groups, err
 }
 
 // Group returns a GraphQL resolver for the matching group, if it exists
 func (resolver *Resolver) Group(ctx context.Context, args struct{ AuthProviderID, Key, Value, ID *string }) (*groupResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Group")
 
-	err := readGroups(ctx)
+	err := readAccess(ctx)
 	if err != nil {
 		return nil, err
 	}

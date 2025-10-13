@@ -1,7 +1,7 @@
 # We have to emulate directory layout as in the repo so that imports in go files work fine.
 ARG roxpath=/workspace/src/github.com/stackrox/rox
 
-FROM quay.io/stackrox-io/apollo-ci:${BUILD_IMAGE_VERSION} as builder
+FROM quay.io/stackrox-io/apollo-ci:${BUILD_IMAGE_VERSION} AS builder
 
 # Build the manager binary
 ARG roxpath
@@ -25,7 +25,9 @@ COPY go.sum go.sum
 # However it does _not_ seem to resolve packages _incorrectly_ and so should be safe especially given that downloaded
 # packages are only used during build and later this docker layer is discarded (only resulting binary goes in the final
 # image).
-RUN go mod download
+# Retry as the proxy can be unavailable at times.
+ENV GOPROXY=https://proxy.golang.org|https://goproxy.io|direct
+RUN go mod download || go mod download || go mod download
 
 # Copy operator source
 COPY operator/ operator/
@@ -50,11 +52,9 @@ RUN git init && git add .
 ENV CGO_ENABLED=0
 
 # Build the operator binary.
-RUN GOOS=$(go env GOOS) GOARCH=$(go env GOARCH) scripts/go-build.sh operator
-# Copy the operator binary to a location from where it will be taken into the final image.
-RUN cp -a bin/$(go env GOOS)_$(go env GOARCH)/operator stackrox-operator
+RUN GOOS=$(go env GOOS) GOARCH=$(go env GOARCH) scripts/go-build-file.sh operator/cmd/main.go stackrox-operator
 
-FROM registry.access.redhat.com/ubi8-micro:8.6
+FROM registry.access.redhat.com/ubi8-micro:latest
 
 ARG roxpath
 

@@ -25,7 +25,7 @@ func TestReadme(t *testing.T) {
 			deploymentFormat: v1.DeploymentFormat_KUBECTL,
 			mode:             renderAll,
 
-			mustContain:                           []string{"kubectl create -R -f scanner", "kubectl create -R -f central"},
+			mustContain:                           []string{"kubectl create -R -f scanner", "kubectl create -R -f scanner-v4", "kubectl create -R -f central"},
 			mustNotContain:                        []string{"kubectl create -R -f monitoring", "helm install"},
 			mustContainInstructionSuffixAndPrefix: true,
 		},
@@ -34,7 +34,7 @@ func TestReadme(t *testing.T) {
 			deploymentFormat: v1.DeploymentFormat_KUBECTL,
 			mode:             scannerOnly,
 
-			mustContain:    []string{"kubectl create -R -f scanner"},
+			mustContain:    []string{"kubectl create -R -f scanner", "kubectl create -R -f scanner-v4"},
 			mustNotContain: []string{"kubectl create -R -f central", "kubectl create -R -f monitoring", "helm install"},
 		},
 		{
@@ -42,7 +42,7 @@ func TestReadme(t *testing.T) {
 			deploymentFormat: v1.DeploymentFormat_KUBECTL,
 			mode:             scannerOnly,
 
-			mustContain:    []string{"oc create -R -f scanner"},
+			mustContain:    []string{"oc create -R -f scanner", "oc create -R -f scanner-v4"},
 			mustNotContain: []string{"oc create -R -f central", "oc create -R -f monitoring", "helm install", "oc create -R -f scannerv2"},
 		},
 		{

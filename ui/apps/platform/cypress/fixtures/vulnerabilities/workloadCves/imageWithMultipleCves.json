@@ -1,0 +1,30 @@
+{
+    "data": {
+        "image": {
+            "id": "sha256:abcxyz",
+            "name": {
+                "registry": "docker.io",
+                "remote": "cypress-test/image",
+                "tag": "v0.0.1",
+                "__typename": "ImageName"
+            },
+            "deploymentCount": 1,
+            "operatingSystem": "debian:8",
+            "metadata": {
+                "v1": {
+                    "created": "2020-09-15T22:35:00.560827473Z",
+                    "__typename": "V1Metadata"
+                },
+                "__typename": "ImageMetadata"
+            },
+            "dataSource": {
+                "name": "Stackrox Scanner",
+                "__typename": "DataSource"
+            },
+            "scanTime": "2024-12-02T13:51:19.876935617Z",
+            "scanNotes": ["OS_CVES_STALE"],
+            "notes": ["MISSING_SIGNATURE", "MISSING_SIGNATURE_VERIFICATION_DATA"],
+            "__typename": "Image"
+        }
+    }
+}

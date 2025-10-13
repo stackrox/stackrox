@@ -4,12 +4,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/policy/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 const (
@@ -55,7 +56,7 @@ func (suite *PolicyLoaderTestSuite) TestFromID() {
 	// Get a preloaded policy from id.
 	policy, err := loader.FromID(suite.ctx, policy1)
 	suite.NoError(err)
-	suite.Equal(loader.loaded[policy1], policy)
+	protoassert.Equal(suite.T(), loader.loaded[policy1], policy)
 
 	// Get a non-preloaded policy from id.
 	thirdPolicy := &storage.Policy{Id: policy3}
@@ -65,12 +66,12 @@ func (suite *PolicyLoaderTestSuite) TestFromID() {
 
 	policy, err = loader.FromID(suite.ctx, policy3)
 	suite.NoError(err)
-	suite.Equal(thirdPolicy, policy)
+	protoassert.Equal(suite.T(), thirdPolicy, policy)
 
 	// Above call should now be preloaded.
 	policy, err = loader.FromID(suite.ctx, policy3)
 	suite.NoError(err)
-	suite.Equal(loader.loaded[policy3], policy)
+	protoassert.Equal(suite.T(), loader.loaded[policy3], policy)
 }
 
 func (suite *PolicyLoaderTestSuite) TestFromIDs() {
@@ -86,7 +87,7 @@ func (suite *PolicyLoaderTestSuite) TestFromIDs() {
 	// Get a preloaded policy from id.
 	policies, err := loader.FromIDs(suite.ctx, []string{policy1, policy2})
 	suite.NoError(err)
-	suite.Equal([]*storage.Policy{
+	protoassert.SlicesEqual(suite.T(), []*storage.Policy{
 		loader.loaded[policy1],
 		loader.loaded[policy2],
 	}, policies)
@@ -99,7 +100,7 @@ func (suite *PolicyLoaderTestSuite) TestFromIDs() {
 
 	policies, err = loader.FromIDs(suite.ctx, []string{policy1, policy2, policy3})
 	suite.NoError(err)
-	suite.Equal([]*storage.Policy{
+	protoassert.SlicesEqual(suite.T(), []*storage.Policy{
 		loader.loaded[policy1],
 		loader.loaded[policy2],
 		thirdPolicy,
@@ -108,7 +109,7 @@ func (suite *PolicyLoaderTestSuite) TestFromIDs() {
 	// Above call should now be preloaded.
 	policies, err = loader.FromIDs(suite.ctx, []string{policy1, policy2, policy3})
 	suite.NoError(err)
-	suite.Equal([]*storage.Policy{
+	protoassert.SlicesEqual(suite.T(), []*storage.Policy{
 		loader.loaded[policy1],
 		loader.loaded[policy2],
 		loader.loaded[policy3],
@@ -139,7 +140,7 @@ func (suite *PolicyLoaderTestSuite) TestFromQuery() {
 
 	policies, err := loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.Policy{
+	protoassert.SlicesEqual(suite.T(), []*storage.Policy{
 		loader.loaded[policy1],
 		loader.loaded[policy2],
 	}, policies)
@@ -165,7 +166,7 @@ func (suite *PolicyLoaderTestSuite) TestFromQuery() {
 
 	policies, err = loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.Policy{
+	protoassert.SlicesEqual(suite.T(), []*storage.Policy{
 		loader.loaded[policy1],
 		loader.loaded[policy2],
 		thirdPolicy,
@@ -187,7 +188,7 @@ func (suite *PolicyLoaderTestSuite) TestFromQuery() {
 
 	policies, err = loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.Policy{
+	protoassert.SlicesEqual(suite.T(), []*storage.Policy{
 		loader.loaded[policy1],
 		loader.loaded[policy2],
 		loader.loaded[policy3],

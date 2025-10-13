@@ -7,6 +7,8 @@ type NodeScrapeConfig struct {
 }
 
 // Orchestrator returns an interface to interact with an orchestrator generically
+//
+//go:generate mockgen-wrapper
 type Orchestrator interface {
 	GetNodeScrapeConfig(nodeName string) (*NodeScrapeConfig, error)
 }

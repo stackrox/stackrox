@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	acConverter "github.com/stackrox/rox/central/activecomponent/converter"
 	acMocks "github.com/stackrox/rox/central/activecomponent/datastore/mocks"
 	aggregatorPkg "github.com/stackrox/rox/central/activecomponent/updater/aggregator"
@@ -17,18 +16,17 @@ import (
 	piMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/simplecache"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 type indicatorModel struct {
@@ -126,7 +124,7 @@ var (
 		{
 			DeploymentID:  "depA",
 			ContainerName: "depA-C1-image1",
-			ImageID:       mockImage.Id,
+			ImageID:       mockImage.GetId(),
 			ExePaths: []string{
 				"/root/bin/image1_component1_match_file1",
 				"/root/bin/image1_component2_match_file3",
@@ -137,7 +135,7 @@ var (
 		{
 			DeploymentID:  "depB",
 			ContainerName: "depB-C2-image1",
-			ImageID:       mockImage.Id,
+			ImageID:       mockImage.GetId(),
 			ExePaths: []string{
 				"/root/bin/image1_component1_match_file1",
 				"/root/bin/image1_component3_match_file3",
@@ -148,6 +146,7 @@ var (
 )
 
 func TestActiveComponentUpdater(t *testing.T) {
+	t.Setenv(features.ActiveVulnMgmt.EnvVar(), "true")
 	suite.Run(t, new(acUpdaterTestSuite))
 }
 
@@ -158,7 +157,6 @@ type acUpdaterTestSuite struct {
 	mockDeploymentDatastore       *deploymentMocks.MockDataStore
 	mockActiveComponentDataStore  *acMocks.MockDataStore
 	mockProcessIndicatorDataStore *piMocks.MockDataStore
-	envIsolator                   *envisolator.EnvIsolator
 	mockImageDataStore            *imageMocks.MockDataStore
 	executableCache               simplecache.Cache
 	mockAggregator                *mocks.MockProcessAggregator
@@ -171,12 +169,10 @@ func (s *acUpdaterTestSuite) SetupTest() {
 	s.mockProcessIndicatorDataStore = piMocks.NewMockDataStore(s.mockCtrl)
 	s.mockImageDataStore = imageMocks.NewMockDataStore(s.mockCtrl)
 	s.executableCache = simplecache.New()
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.mockAggregator = mocks.NewMockProcessAggregator(s.mockCtrl)
 }
 
 func (s *acUpdaterTestSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
 	s.mockCtrl.Finish()
 }
 
@@ -253,14 +249,7 @@ func (s *acUpdaterTestSuite) TestUpdater() {
 			// Deployment C does not have image1.
 			s.Assert().NotEqual(ac.GetDeploymentId(), mockDeployments[2].GetId())
 
-			var imageComponent string
-			if env.PostgresDatastoreEnabled.BooleanSetting() {
-				imageComponent = postgres.IDToParts(ac.GetComponentId())[0]
-			} else {
-				edge, err := edges.FromString(ac.GetComponentId())
-				s.NoError(err)
-				imageComponent = edge.ParentID
-			}
+			imageComponent := pgSearch.IDToParts(ac.GetComponentId())[0]
 
 			s.Assert().True(strings.HasPrefix(imageComponent, mockImage.GetId()))
 			s.Assert().NotEqual(imageComponent, mockImage.GetScan().GetComponents()[2].GetName())
@@ -268,7 +257,7 @@ func (s *acUpdaterTestSuite) TestUpdater() {
 
 			var expectedComponent *storage.EmbeddedImageScanComponent
 			var expectedContainer string
-			if ac.GetDeploymentId() == mockDeployments[0].Id {
+			if ac.GetDeploymentId() == mockDeployments[0].GetId() {
 				expectedContainer = mockIndicators[0].ContainerName
 				// Component 1 or 2
 				expectedComponent = mockImage.GetScan().GetComponents()[0]
@@ -276,7 +265,7 @@ func (s *acUpdaterTestSuite) TestUpdater() {
 					expectedComponent = mockImage.GetScan().GetComponents()[1]
 				}
 			} else {
-				s.Assert().Equal(ac.GetDeploymentId(), mockDeployments[1].Id)
+				s.Assert().Equal(ac.GetDeploymentId(), mockDeployments[1].GetId())
 				expectedContainer = mockIndicators[1].ContainerName
 				// Component 1 or 4
 				expectedComponent = mockImage.GetScan().GetComponents()[0]
@@ -309,14 +298,14 @@ func (s *acUpdaterTestSuite) TestUpdater_PopulateExecutableCache() {
 
 	// Initial population
 	// scanner version is empty to test backward compatibility
-	image := mockImage.Clone()
+	image := mockImage.CloneVT()
 	s.Assert().Equal(image.GetScan().GetScannerVersion(), "")
 	s.Assert().NoError(updater.PopulateExecutableCache(updaterCtx, image))
 	s.verifyExecutableCache(updater, mockImage)
 
 	// Verify the executables are not stored.
 	for _, component := range image.GetScan().GetComponents() {
-		s.Assert().Empty(component.Executables)
+		s.Assert().Empty(component.GetExecutables())
 	}
 
 	// Image won't be processed again.
@@ -324,11 +313,11 @@ func (s *acUpdaterTestSuite) TestUpdater_PopulateExecutableCache() {
 	s.verifyExecutableCache(updater, mockImage)
 
 	// New update without the first component
-	image = mockImage.Clone()
+	image = mockImage.CloneVT()
 	// update the scanner version to make sure cache gets re-populated
 	image.GetScan().ScannerVersion = "2.22.0"
 	image.GetScan().Components = image.GetScan().GetComponents()[1:]
-	imageForVerify := image.Clone()
+	imageForVerify := image.CloneVT()
 	s.Assert().NoError(updater.PopulateExecutableCache(updaterCtx, image))
 	s.verifyExecutableCache(updater, imageForVerify)
 }
@@ -344,11 +333,11 @@ func (s *acUpdaterTestSuite) verifyExecutableCache(updater *updaterImpl, image *
 	execToComponents := result.(*imageExecutable).execToComponents
 	allExecutables := set.NewStringSet()
 	for _, component := range image.GetScan().GetComponents() {
-		if component.Source != storage.SourceType_OS {
+		if component.GetSource() != storage.SourceType_OS {
 			continue
 		}
 		componentID := scancomponent.ComponentID(component.GetName(), component.GetVersion(), "")
-		for _, exec := range component.Executables {
+		for _, exec := range component.GetExecutables() {
 			s.Assert().Contains(execToComponents, exec.GetPath())
 			s.Assert().Len(execToComponents[exec.GetPath()], 1)
 			s.Assert().Equal(componentID, execToComponents[exec.GetPath()][0])
@@ -416,7 +405,7 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 		func(ctx context.Context, query *v1.Query) ([]search.Result, error) {
 			return []search.Result{{ID: image.GetId()}}, nil
 		})
-	s.Assert().NoError(updater.PopulateExecutableCache(updaterCtx, image.Clone()))
+	s.Assert().NoError(updater.PopulateExecutableCache(updaterCtx, image.CloneVT()))
 	s.mockDeploymentDatastore.EXPECT().GetDeploymentIDs(gomock.Any()).AnyTimes().Return([]string{deployment.GetId()}, nil)
 
 	// Test active components with designated image and deployment
@@ -430,6 +419,10 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 		acsToUpdate map[string]set.StringSet // expected Acs to be updated, componentID to container name map
 		acsToDelete []string
 		imageChange bool
+
+		getBatchTimes                  int
+		searchRawActiveComponentsTimes int
+		upsertBatchTimes               int
 	}{
 		{
 			description: "First populate from database",
@@ -443,8 +436,8 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					ContainerName: containerNames[0],
 					ImageID:       image.GetId(),
 					ExePaths: []string{
-						components[0].Executables[0].Path,
-						components[1].Executables[1].Path,
+						components[0].GetExecutables()[0].GetPath(),
+						components[1].GetExecutables()[1].GetPath(),
 					},
 				},
 				containerNames[1]: {
@@ -452,14 +445,16 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					ContainerName: containerNames[1],
 					ImageID:       image.GetId(),
 					ExePaths: []string{
-						components[1].Executables[0].Path,
+						components[1].GetExecutables()[0].GetPath(),
 					},
 				},
 			},
 			acsToUpdate: map[string]set.StringSet{
-				componentsIDs[0]: set.NewStringSet(deployment.Containers[0].GetName()),
-				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName(), deployment.Containers[1].GetName()),
+				componentsIDs[0]: set.NewStringSet(deployment.GetContainers()[0].GetName()),
+				componentsIDs[1]: set.NewStringSet(deployment.GetContainers()[0].GetName(), deployment.GetContainers()[1].GetName()),
 			},
+			upsertBatchTimes:               1,
+			searchRawActiveComponentsTimes: 1,
 		},
 		{
 			description: "Restart and populate from database no updates",
@@ -473,8 +468,8 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					ContainerName: containerNames[0],
 					ImageID:       image.GetId(),
 					ExePaths: []string{
-						components[0].Executables[0].Path,
-						components[1].Executables[1].Path,
+						components[0].GetExecutables()[0].GetPath(),
+						components[1].GetExecutables()[1].GetPath(),
 					},
 				},
 				containerNames[1]: {
@@ -482,14 +477,15 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					ContainerName: containerNames[1],
 					ImageID:       image.GetId(),
 					ExePaths: []string{
-						components[1].Executables[0].Path,
+						components[1].GetExecutables()[0].GetPath(),
 					},
 				},
 			},
 			existingAcs: map[string]set.StringSet{
-				componentsIDs[0]: set.NewStringSet(deployment.Containers[0].GetName()),
-				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName(), deployment.Containers[1].GetName()),
+				componentsIDs[0]: set.NewStringSet(deployment.GetContainers()[0].GetName()),
+				componentsIDs[1]: set.NewStringSet(deployment.GetContainers()[0].GetName(), deployment.GetContainers()[1].GetName()),
 			},
+			searchRawActiveComponentsTimes: 1,
 		},
 		{
 			description: "Restart and populate from database with updates",
@@ -503,8 +499,8 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					ContainerName: containerNames[0],
 					ImageID:       image.GetId(),
 					ExePaths: []string{
-						components[0].Executables[0].Path,
-						components[1].Executables[1].Path,
+						components[0].GetExecutables()[0].GetPath(),
+						components[1].GetExecutables()[1].GetPath(),
 					},
 				},
 				containerNames[1]: {
@@ -512,18 +508,20 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					ContainerName: containerNames[1],
 					ImageID:       image.GetId(),
 					ExePaths: []string{
-						components[1].Executables[0].Path,
+						components[1].GetExecutables()[0].GetPath(),
 					},
 				},
 			},
 			existingAcs: map[string]set.StringSet{
-				componentsIDs[0]: set.NewStringSet(deployment.Containers[1].GetName()),
-				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName()),
+				componentsIDs[0]: set.NewStringSet(deployment.GetContainers()[1].GetName()),
+				componentsIDs[1]: set.NewStringSet(deployment.GetContainers()[0].GetName()),
 			},
 			acsToUpdate: map[string]set.StringSet{
-				componentsIDs[0]: set.NewStringSet(deployment.Containers[0].GetName()),
-				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName(), deployment.Containers[1].GetName()),
+				componentsIDs[0]: set.NewStringSet(deployment.GetContainers()[0].GetName()),
+				componentsIDs[1]: set.NewStringSet(deployment.GetContainers()[0].GetName(), deployment.GetContainers()[1].GetName()),
 			},
+			upsertBatchTimes:               1,
+			searchRawActiveComponentsTimes: 1,
 		},
 		{
 			description: "Restart and populate from database with removal",
@@ -537,8 +535,8 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					ContainerName: containerNames[0],
 					ImageID:       image.GetId(),
 					ExePaths: []string{
-						components[1].Executables[0].Path,
-						components[1].Executables[1].Path,
+						components[1].GetExecutables()[0].GetPath(),
+						components[1].GetExecutables()[1].GetPath(),
 					},
 				},
 				containerNames[1]: {
@@ -546,18 +544,21 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					ContainerName: containerNames[1],
 					ImageID:       image.GetId(),
 					ExePaths: []string{
-						components[1].Executables[0].Path,
+						components[1].GetExecutables()[0].GetPath(),
 					},
 				},
 			},
 			existingAcs: map[string]set.StringSet{
-				componentsIDs[0]: set.NewStringSet(deployment.Containers[1].GetName()),
-				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName()),
+				componentsIDs[0]: set.NewStringSet(deployment.GetContainers()[1].GetName()),
+				componentsIDs[1]: set.NewStringSet(deployment.GetContainers()[0].GetName()),
 			},
 			acsToUpdate: map[string]set.StringSet{
-				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName(), deployment.Containers[1].GetName()),
+				componentsIDs[1]: set.NewStringSet(deployment.GetContainers()[0].GetName(), deployment.GetContainers()[1].GetName()),
 			},
 			acsToDelete: []string{componentsIDs[0]},
+
+			searchRawActiveComponentsTimes: 1,
+			upsertBatchTimes:               1,
 		},
 		{
 			description: "Restart and populate from database with removal request",
@@ -571,8 +572,8 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					ContainerName: containerNames[0],
 					ImageID:       image.GetId(),
 					ExePaths: []string{
-						components[1].Executables[0].Path,
-						components[1].Executables[1].Path,
+						components[1].GetExecutables()[0].GetPath(),
+						components[1].GetExecutables()[1].GetPath(),
 					},
 				},
 				containerNames[1]: {
@@ -580,15 +581,17 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					ContainerName: containerNames[1],
 					ImageID:       image.GetId(),
 					ExePaths: []string{
-						components[0].Executables[0].Path,
+						components[0].GetExecutables()[0].GetPath(),
 					},
 				},
 			},
 			existingAcs: map[string]set.StringSet{
-				componentsIDs[0]: set.NewStringSet(deployment.Containers[1].GetName()),
-				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName()),
+				componentsIDs[0]: set.NewStringSet(deployment.GetContainers()[1].GetName()),
+				componentsIDs[1]: set.NewStringSet(deployment.GetContainers()[0].GetName()),
 			},
 			acsToDelete: []string{componentsIDs[1]},
+
+			searchRawActiveComponentsTimes: 1,
 		},
 		{
 			description: "Image change populate from database with updates",
@@ -602,8 +605,8 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					ContainerName: containerNames[0],
 					ImageID:       image.GetId(),
 					ExePaths: []string{
-						components[0].Executables[0].Path,
-						components[1].Executables[1].Path,
+						components[0].GetExecutables()[0].GetPath(),
+						components[1].GetExecutables()[1].GetPath(),
 					},
 				},
 				containerNames[1]: {
@@ -611,19 +614,22 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					ContainerName: containerNames[1],
 					ImageID:       image.GetId(),
 					ExePaths: []string{
-						components[1].Executables[0].Path,
+						components[1].GetExecutables()[0].GetPath(),
 					},
 				},
 			},
 			existingAcs: map[string]set.StringSet{
-				componentsIDs[0]: set.NewStringSet(deployment.Containers[0].GetName()),
-				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName(), deployment.Containers[1].GetName()),
+				componentsIDs[0]: set.NewStringSet(deployment.GetContainers()[0].GetName()),
+				componentsIDs[1]: set.NewStringSet(deployment.GetContainers()[0].GetName(), deployment.GetContainers()[1].GetName()),
 			},
 			acsToUpdate: map[string]set.StringSet{
-				componentsIDs[0]: set.NewStringSet(deployment.Containers[0].GetName()),
-				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName(), deployment.Containers[1].GetName()),
+				componentsIDs[0]: set.NewStringSet(deployment.GetContainers()[0].GetName()),
+				componentsIDs[1]: set.NewStringSet(deployment.GetContainers()[0].GetName(), deployment.GetContainers()[1].GetName()),
 			},
 			imageChange: true,
+
+			searchRawActiveComponentsTimes: 1,
+			upsertBatchTimes:               1,
 		},
 		{
 			description: "Image change populate from database with updates",
@@ -637,8 +643,8 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					ContainerName: containerNames[0],
 					ImageID:       image.GetId(),
 					ExePaths: []string{
-						components[0].Executables[0].Path,
-						components[1].Executables[1].Path,
+						components[0].GetExecutables()[0].GetPath(),
+						components[1].GetExecutables()[1].GetPath(),
 					},
 				},
 				containerNames[1]: {
@@ -646,19 +652,22 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					ContainerName: containerNames[1],
 					ImageID:       image.GetId(),
 					ExePaths: []string{
-						components[1].Executables[0].Path,
+						components[1].GetExecutables()[0].GetPath(),
 					},
 				},
 			},
 			existingAcs: map[string]set.StringSet{
-				componentsIDs[0]: set.NewStringSet(deployment.Containers[1].GetName()),
-				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName()),
+				componentsIDs[0]: set.NewStringSet(deployment.GetContainers()[1].GetName()),
+				componentsIDs[1]: set.NewStringSet(deployment.GetContainers()[0].GetName()),
 			},
 			acsToUpdate: map[string]set.StringSet{
-				componentsIDs[0]: set.NewStringSet(deployment.Containers[0].GetName()),
-				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName(), deployment.Containers[1].GetName()),
+				componentsIDs[0]: set.NewStringSet(deployment.GetContainers()[0].GetName()),
+				componentsIDs[1]: set.NewStringSet(deployment.GetContainers()[0].GetName(), deployment.GetContainers()[1].GetName()),
 			},
 			imageChange: true,
+
+			upsertBatchTimes:               1,
+			searchRawActiveComponentsTimes: 1,
 		},
 		{
 			description: "Image change populate from database with removal",
@@ -672,8 +681,8 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					ContainerName: containerNames[0],
 					ImageID:       image.GetId(),
 					ExePaths: []string{
-						components[1].Executables[0].Path,
-						components[1].Executables[1].Path,
+						components[1].GetExecutables()[0].GetPath(),
+						components[1].GetExecutables()[1].GetPath(),
 					},
 				},
 				containerNames[1]: {
@@ -681,19 +690,22 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					ContainerName: containerNames[1],
 					ImageID:       image.GetId(),
 					ExePaths: []string{
-						components[1].Executables[0].Path,
+						components[1].GetExecutables()[0].GetPath(),
 					},
 				},
 			},
 			existingAcs: map[string]set.StringSet{
-				componentsIDs[0]: set.NewStringSet(deployment.Containers[1].GetName()),
-				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName()),
+				componentsIDs[0]: set.NewStringSet(deployment.GetContainers()[1].GetName()),
+				componentsIDs[1]: set.NewStringSet(deployment.GetContainers()[0].GetName()),
 			},
 			acsToUpdate: map[string]set.StringSet{
-				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName(), deployment.Containers[1].GetName()),
+				componentsIDs[1]: set.NewStringSet(deployment.GetContainers()[0].GetName(), deployment.GetContainers()[1].GetName()),
 			},
 			acsToDelete: []string{componentsIDs[0]},
 			imageChange: true,
+
+			searchRawActiveComponentsTimes: 1,
+			upsertBatchTimes:               1,
 		},
 		{
 			description: "Image change populate from database with removal request",
@@ -707,8 +719,8 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					ContainerName: containerNames[0],
 					ImageID:       image.GetId(),
 					ExePaths: []string{
-						components[1].Executables[0].Path,
-						components[1].Executables[1].Path,
+						components[1].GetExecutables()[0].GetPath(),
+						components[1].GetExecutables()[1].GetPath(),
 					},
 				},
 				containerNames[1]: {
@@ -716,52 +728,60 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					ContainerName: containerNames[1],
 					ImageID:       image.GetId(),
 					ExePaths: []string{
-						components[0].Executables[0].Path,
+						components[0].GetExecutables()[0].GetPath(),
 					},
 				},
 			},
 			existingAcs: map[string]set.StringSet{
-				componentsIDs[0]: set.NewStringSet(deployment.Containers[1].GetName()),
-				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName()),
+				componentsIDs[0]: set.NewStringSet(deployment.GetContainers()[1].GetName()),
+				componentsIDs[1]: set.NewStringSet(deployment.GetContainers()[0].GetName()),
 			},
 			acsToUpdate: map[string]set.StringSet{
-				componentsIDs[0]: set.NewStringSet(deployment.Containers[1].GetName()),
+				componentsIDs[0]: set.NewStringSet(deployment.GetContainers()[1].GetName()),
 			},
 			acsToDelete: []string{componentsIDs[1]},
 			imageChange: true,
+
+			upsertBatchTimes:               1,
+			searchRawActiveComponentsTimes: 1,
 		},
 		{
 			description: "Update from cache adding new active contexts",
 			updates: []*aggregatorPkg.ProcessUpdate{
-				aggregatorPkg.NewProcessUpdate(image.GetId(), containerNames[0], set.NewStringSet(components[0].Executables[0].Path), aggregatorPkg.FromCache),
-				aggregatorPkg.NewProcessUpdate(image.GetId(), containerNames[1], set.NewStringSet(components[1].Executables[0].Path, components[1].Executables[1].Path), aggregatorPkg.FromCache),
+				aggregatorPkg.NewProcessUpdate(image.GetId(), containerNames[0], set.NewStringSet(components[0].GetExecutables()[0].GetPath()), aggregatorPkg.FromCache),
+				aggregatorPkg.NewProcessUpdate(image.GetId(), containerNames[1], set.NewStringSet(components[1].GetExecutables()[0].GetPath(), components[1].GetExecutables()[1].GetPath()), aggregatorPkg.FromCache),
 			},
 			existingAcs: map[string]set.StringSet{
-				componentsIDs[0]: set.NewStringSet(deployment.Containers[1].GetName()),
-				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName()),
+				componentsIDs[0]: set.NewStringSet(deployment.GetContainers()[1].GetName()),
+				componentsIDs[1]: set.NewStringSet(deployment.GetContainers()[0].GetName()),
 			},
 			acsToUpdate: map[string]set.StringSet{
-				componentsIDs[0]: set.NewStringSet(deployment.Containers[0].GetName(), deployment.Containers[1].GetName()),
-				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName(), deployment.Containers[1].GetName()),
+				componentsIDs[0]: set.NewStringSet(deployment.GetContainers()[0].GetName(), deployment.GetContainers()[1].GetName()),
+				componentsIDs[1]: set.NewStringSet(deployment.GetContainers()[0].GetName(), deployment.GetContainers()[1].GetName()),
 			},
+
+			getBatchTimes:    1,
+			upsertBatchTimes: 1,
 		},
 		{
 			description: "update from cache no new change and no updates",
 			updates: []*aggregatorPkg.ProcessUpdate{
-				aggregatorPkg.NewProcessUpdate(image.GetId(), containerNames[0], set.NewStringSet(components[0].Executables[0].Path), aggregatorPkg.FromCache),
-				aggregatorPkg.NewProcessUpdate(image.GetId(), containerNames[1], set.NewStringSet(components[0].Executables[1].Path, components[1].Executables[0].Path, components[1].Executables[1].Path), aggregatorPkg.FromCache),
+				aggregatorPkg.NewProcessUpdate(image.GetId(), containerNames[0], set.NewStringSet(components[0].GetExecutables()[0].GetPath()), aggregatorPkg.FromCache),
+				aggregatorPkg.NewProcessUpdate(image.GetId(), containerNames[1], set.NewStringSet(components[0].GetExecutables()[1].GetPath(), components[1].GetExecutables()[0].GetPath(), components[1].GetExecutables()[1].GetPath()), aggregatorPkg.FromCache),
 			},
 			existingAcs: map[string]set.StringSet{
-				componentsIDs[0]: set.NewStringSet(deployment.Containers[0].GetName(), deployment.Containers[1].GetName()),
-				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName(), deployment.Containers[1].GetName()),
+				componentsIDs[0]: set.NewStringSet(deployment.GetContainers()[0].GetName(), deployment.GetContainers()[1].GetName()),
+				componentsIDs[1]: set.NewStringSet(deployment.GetContainers()[0].GetName(), deployment.GetContainers()[1].GetName()),
 			},
 			acsToUpdate: map[string]set.StringSet{},
+
+			getBatchTimes: 1,
 		},
 		{
 			description: "update from cache with removal request",
 			updates: []*aggregatorPkg.ProcessUpdate{
 				aggregatorPkg.NewProcessUpdate(image.GetId(), containerNames[0], set.NewStringSet(), aggregatorPkg.ToBeRemoved),
-				aggregatorPkg.NewProcessUpdate(image.GetId(), containerNames[1], set.NewStringSet(components[0].Executables[1].Path), aggregatorPkg.FromCache),
+				aggregatorPkg.NewProcessUpdate(image.GetId(), containerNames[1], set.NewStringSet(components[0].GetExecutables()[1].GetPath()), aggregatorPkg.FromCache),
 			},
 			// This should not be used in this test case.
 			indicators: map[string]indicatorModel{
@@ -770,8 +790,8 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					ContainerName: containerNames[0],
 					ImageID:       image.GetId(),
 					ExePaths: []string{
-						components[0].Executables[0].Path,
-						components[1].Executables[1].Path,
+						components[0].GetExecutables()[0].GetPath(),
+						components[1].GetExecutables()[1].GetPath(),
 					},
 				},
 				containerNames[1]: {
@@ -779,18 +799,21 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					ContainerName: containerNames[1],
 					ImageID:       image.GetId(),
 					ExePaths: []string{
-						components[0].Executables[0].Path,
-						components[1].Executables[1].Path,
+						components[0].GetExecutables()[0].GetPath(),
+						components[1].GetExecutables()[1].GetPath(),
 					},
 				},
 			},
 			existingAcs: map[string]set.StringSet{
-				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName()),
+				componentsIDs[1]: set.NewStringSet(deployment.GetContainers()[0].GetName()),
 			},
 			acsToUpdate: map[string]set.StringSet{
-				componentsIDs[0]: set.NewStringSet(deployment.Containers[1].GetName()),
+				componentsIDs[0]: set.NewStringSet(deployment.GetContainers()[1].GetName()),
 			},
 			acsToDelete: []string{componentsIDs[1]},
+
+			searchRawActiveComponentsTimes: 1,
+			upsertBatchTimes:               1,
 		},
 		{
 			description: "First populate from database multiple component",
@@ -804,7 +827,7 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					ContainerName: containerNames[0],
 					ImageID:       image.GetId(),
 					ExePaths: []string{
-						components[0].Executables[2].Path,
+						components[0].GetExecutables()[2].GetPath(),
 					},
 				},
 				containerNames[1]: {
@@ -812,28 +835,34 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					ContainerName: containerNames[1],
 					ImageID:       image.GetId(),
 					ExePaths: []string{
-						components[1].Executables[2].Path,
+						components[1].GetExecutables()[2].GetPath(),
 					},
 				},
 			},
 			acsToUpdate: map[string]set.StringSet{
-				componentsIDs[0]: set.NewStringSet(deployment.Containers[0].GetName(), deployment.Containers[1].GetName()),
-				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName(), deployment.Containers[1].GetName()),
+				componentsIDs[0]: set.NewStringSet(deployment.GetContainers()[0].GetName(), deployment.GetContainers()[1].GetName()),
+				componentsIDs[1]: set.NewStringSet(deployment.GetContainers()[0].GetName(), deployment.GetContainers()[1].GetName()),
 			},
+
+			searchRawActiveComponentsTimes: 1,
+			upsertBatchTimes:               1,
 		},
 		{
 			description: "update from cache with removal request with multiple components",
 			updates: []*aggregatorPkg.ProcessUpdate{
 				aggregatorPkg.NewProcessUpdate(image.GetId(), containerNames[0], set.NewStringSet(), aggregatorPkg.ToBeRemoved),
-				aggregatorPkg.NewProcessUpdate(image.GetId(), containerNames[1], set.NewStringSet(components[0].Executables[2].Path), aggregatorPkg.FromCache),
+				aggregatorPkg.NewProcessUpdate(image.GetId(), containerNames[1], set.NewStringSet(components[0].GetExecutables()[2].GetPath()), aggregatorPkg.FromCache),
 			},
 			existingAcs: map[string]set.StringSet{
-				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName()),
+				componentsIDs[1]: set.NewStringSet(deployment.GetContainers()[0].GetName()),
 			},
 			acsToUpdate: map[string]set.StringSet{
-				componentsIDs[0]: set.NewStringSet(deployment.Containers[1].GetName()),
-				componentsIDs[1]: set.NewStringSet(deployment.Containers[1].GetName()),
+				componentsIDs[0]: set.NewStringSet(deployment.GetContainers()[1].GetName()),
+				componentsIDs[1]: set.NewStringSet(deployment.GetContainers()[1].GetName()),
 			},
+
+			searchRawActiveComponentsTimes: 1,
+			upsertBatchTimes:               1,
 		},
 	}
 
@@ -851,40 +880,40 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					databaseFetchCount++
 				}
 			}
-			if databaseFetchCount > 0 {
-				s.mockProcessIndicatorDataStore.EXPECT().SearchRawProcessIndicators(gomock.Any(), gomock.Any()).Times(databaseFetchCount).DoAndReturn(
-					func(ctx context.Context, query *v1.Query) ([]*storage.ProcessIndicator, error) {
-						queries := query.GetConjunction().Queries
-						s.Assert().Len(queries, 2)
-						var containerName string
-						for _, q := range queries {
-							mf := q.GetBaseQuery().GetMatchFieldQuery()
 
-							switch mf.GetField() {
-							case search.DeploymentID.String():
-								assert.Equal(t, strconv.Quote(deployment.GetId()), mf.GetValue())
-							case search.ContainerName.String():
-								containerName = stripQuotes(mf.GetValue())
-							default:
-								s.Assert().Fail("unexpected query")
-							}
+			s.mockProcessIndicatorDataStore.EXPECT().SearchRawProcessIndicators(gomock.Any(), gomock.Any()).Times(databaseFetchCount).DoAndReturn(
+				func(ctx context.Context, query *v1.Query) ([]*storage.ProcessIndicator, error) {
+					queries := query.GetConjunction().GetQueries()
+					s.Assert().Len(queries, 2)
+					var containerName string
+					for _, q := range queries {
+						mf := q.GetBaseQuery().GetMatchFieldQuery()
+
+						switch mf.GetField() {
+						case search.DeploymentID.String():
+							assert.Equal(t, strconv.Quote(deployment.GetId()), mf.GetValue())
+						case search.ContainerName.String():
+							containerName = stripQuotes(mf.GetValue())
+						default:
+							s.Assert().Fail("unexpected query")
 						}
+					}
 
-						var ret []*storage.ProcessIndicator
+					var ret []*storage.ProcessIndicator
 
-						for _, exec := range testCase.indicators[containerName].ExePaths {
-							ret = append(ret, &storage.ProcessIndicator{
-								Id:            uuid.NewV4().String(),
-								ImageId:       testCase.indicators[containerName].ImageID,
-								DeploymentId:  deployment.GetId(),
-								ContainerName: containerName,
-								Signal:        &storage.ProcessSignal{ExecFilePath: exec}},
-							)
-						}
-						return ret, nil
-					})
-			}
-			s.mockActiveComponentDataStore.EXPECT().SearchRawActiveComponents(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(
+					for _, exec := range testCase.indicators[containerName].ExePaths {
+						ret = append(ret, &storage.ProcessIndicator{
+							Id:            uuid.NewV4().String(),
+							ImageId:       testCase.indicators[containerName].ImageID,
+							DeploymentId:  deployment.GetId(),
+							ContainerName: containerName,
+							Signal:        &storage.ProcessSignal{ExecFilePath: exec}},
+						)
+					}
+					return ret, nil
+				})
+
+			s.mockActiveComponentDataStore.EXPECT().SearchRawActiveComponents(gomock.Any(), gomock.Any()).Times(testCase.searchRawActiveComponentsTimes).DoAndReturn(
 				func(ctx context.Context, query *v1.Query) ([]*storage.ActiveComponent, error) {
 					existingImageID := image.GetId()
 					if testCase.imageChange {
@@ -908,7 +937,7 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					}
 					return ret, nil
 				})
-			s.mockActiveComponentDataStore.EXPECT().GetBatch(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(
+			s.mockActiveComponentDataStore.EXPECT().GetBatch(gomock.Any(), gomock.Any()).Times(testCase.getBatchTimes).DoAndReturn(
 				func(ctx context.Context, ids []string) ([]*storage.ActiveComponent, error) {
 					existingImageID := image.GetId()
 					if testCase.imageChange {
@@ -949,31 +978,29 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 						return nil
 					})
 			}
-			if len(testCase.acsToUpdate) > 0 {
-				s.mockActiveComponentDataStore.EXPECT().UpsertBatch(gomock.Any(), gomock.Any()).Times(1).Return(nil).Do(func(_ context.Context, acs []*storage.ActiveComponent) {
-					// Verify active components
-					assert.Equal(t, len(testCase.acsToUpdate), len(acs))
-					actualAcs := make(map[string]*storage.ActiveComponent, len(acs))
-					for _, ac := range acs {
-						_, _, err := acConverter.DecomposeID(ac.GetId())
-						assert.NoError(t, err)
-						actualAcs[ac.GetId()] = ac
-					}
+			s.mockActiveComponentDataStore.EXPECT().UpsertBatch(gomock.Any(), gomock.Any()).Times(testCase.upsertBatchTimes).Return(nil).Do(func(_ context.Context, acs []*storage.ActiveComponent) {
+				// Verify active components
+				assert.Equal(t, len(testCase.acsToUpdate), len(acs))
+				actualAcs := make(map[string]*storage.ActiveComponent, len(acs))
+				for _, ac := range acs {
+					_, _, err := acConverter.DecomposeID(ac.GetId())
+					assert.NoError(t, err)
+					actualAcs[ac.GetId()] = ac
+				}
 
-					for componentID, expectedContexts := range testCase.acsToUpdate {
-						acID := acConverter.ComposeID(deployment.GetId(), componentID)
-						assert.Contains(t, actualAcs, acID)
-						assert.Equal(t, deployment.GetId(), actualAcs[acID].GetDeploymentId())
-						assert.Equal(t, componentID, actualAcs[acID].GetComponentId())
-						assert.Equal(t, acID, actualAcs[acID].GetId())
-						assert.Equal(t, len(expectedContexts), len(actualAcs[acID].ActiveContextsSlice))
-						for _, activeContext := range actualAcs[acID].ActiveContextsSlice {
-							assert.Contains(t, expectedContexts, activeContext.GetContainerName())
-							assert.Equal(t, image.GetId(), activeContext.GetImageId())
-						}
+				for componentID, expectedContexts := range testCase.acsToUpdate {
+					acID := acConverter.ComposeID(deployment.GetId(), componentID)
+					assert.Contains(t, actualAcs, acID)
+					assert.Equal(t, deployment.GetId(), actualAcs[acID].GetDeploymentId())
+					assert.Equal(t, componentID, actualAcs[acID].GetComponentId())
+					assert.Equal(t, acID, actualAcs[acID].GetId())
+					assert.Equal(t, len(expectedContexts), len(actualAcs[acID].GetActiveContextsSlice()))
+					for _, activeContext := range actualAcs[acID].GetActiveContextsSlice() {
+						assert.Contains(t, expectedContexts, activeContext.GetContainerName())
+						assert.Equal(t, image.GetId(), activeContext.GetImageId())
 					}
-				})
-			}
+				}
+			})
 			updater.Update()
 		})
 	}

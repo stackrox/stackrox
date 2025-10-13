@@ -15,7 +15,7 @@ image:
     collector: docker.io
 
 config:
-  collectionMethod: EBPF
+  collectionMethod: CORE_BPF
   admissionControl:
     createService: true
     listenOnUpdates: true

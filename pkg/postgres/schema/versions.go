@@ -4,10 +4,12 @@ package schema
 
 import (
 	"reflect"
+	"time"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 var (
@@ -15,6 +17,9 @@ var (
 	CreateTableVersionsStmt = &postgres.CreateStmts{
 		GormModel: (*Versions)(nil),
 		Children:  []*postgres.CreateStmts{},
+		PostStmts: []string{
+			"ALTER TABLE versions REPLICA IDENTITY FULL",
+		},
 	}
 
 	// VersionsSchema is the go schema for table `versions`.
@@ -24,16 +29,22 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Version)(nil)), "versions")
+		schema.ScopingResource = resources.Version
 		RegisterTable(schema, CreateTableVersionsStmt)
 		return schema
 	}()
 )
 
 const (
+	// VersionsTableName specifies the name of the table in postgres.
 	VersionsTableName = "versions"
 )
 
 // Versions holds the Gorm model for Postgres table `versions`.
 type Versions struct {
-	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	SeqNum        int32      `gorm:"column:seqnum;type:integer"`
+	Version       string     `gorm:"column:version;type:varchar"`
+	LastPersisted *time.Time `gorm:"column:lastpersisted;type:timestamp"`
+	MinSeqNum     int32      `gorm:"column:minseqnum;type:integer"`
+	Serialized    []byte     `gorm:"column:serialized;type:bytea"`
 }

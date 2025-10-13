@@ -14,8 +14,10 @@ deploymentWorkload:
       processInterval: 1m30s
   updateInterval: 25m0s
 networkWorkload:
-  batchSize: 100
-  flowInterval: 2s
+  batchSize: 5000
+  flowInterval: 30s
+  generateUnclosedEndpoints: true
+  openPortReuseProbability: 0.05
 nodeWorkload:
   numNodes: 1000
 rbacWorkload:
@@ -23,3 +25,9 @@ rbacWorkload:
   numRoles: 3000
   numServiceAccounts: 3000
 numNamespaces: 1000
+networkPolicyWorkload:
+- lifecycleDuration: 30m0s
+  numNetworkPolicies: 5000
+  numLifecycles: 0
+  numLabels: 5
+  updateInterval: 10m0s

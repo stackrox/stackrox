@@ -1,5 +1,4 @@
 //go:build integration
-// +build integration
 
 package ecr
 
@@ -39,11 +38,11 @@ func TestECRIntegration(t *testing.T) {
 			},
 		},
 	}
-	ecr, err := newRegistry(integration)
+	ecr, err := newRegistry(integration, false, nil)
 	require.NoError(t, err)
 
 	assert.NoError(t, ecr.Test())
-	assert.Equal(t, fmt.Sprintf("%s.dkr.ecr.us-west-2.amazonaws.com", registryID), ecr.endpoint)
+	assert.Equal(t, fmt.Sprintf("%s.dkr.ecr.us-west-2.amazonaws.com", registryID), ecr.config.GetEndpoint())
 
 	metadata, err := ecr.Metadata(&storage.Image{
 		Name: &storage.ImageName{

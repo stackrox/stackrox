@@ -1,0 +1,7 @@
+# Namespace for backend
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: backend
+  labels:
+    name: backend

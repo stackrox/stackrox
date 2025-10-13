@@ -9,19 +9,18 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type ComplianceStringsStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestComplianceStringsStore(t *testing.T) {
@@ -29,28 +28,17 @@ func TestComplianceStringsStore(t *testing.T) {
 }
 
 func (s *ComplianceStringsStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
 
 	s.testDB = pgtest.ForT(s.T())
-	s.store = New(s.testDB.Pool)
+	s.store = New(s.testDB.DB)
 }
 
 func (s *ComplianceStringsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE compliance_strings CASCADE")
 	s.T().Log("compliance_strings", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
-}
-
-func (s *ComplianceStringsStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *ComplianceStringsStoreSuite) TestStore() {
@@ -72,12 +60,12 @@ func (s *ComplianceStringsStoreSuite) TestStore() {
 	foundComplianceStrings, exists, err = store.Get(ctx, complianceStrings.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(complianceStrings, foundComplianceStrings)
+	protoassert.Equal(s.T(), complianceStrings, foundComplianceStrings)
 
-	complianceStringsCount, err := store.Count(ctx)
+	complianceStringsCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, complianceStringsCount)
-	complianceStringsCount, err = store.Count(withNoAccessCtx)
+	complianceStringsCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(complianceStringsCount)
 
@@ -87,11 +75,6 @@ func (s *ComplianceStringsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, complianceStrings))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, complianceStrings), sac.ErrResourceAccessDenied)
 
-	foundComplianceStrings, exists, err = store.Get(ctx, complianceStrings.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(complianceStrings, foundComplianceStrings)
-
 	s.NoError(store.Delete(ctx, complianceStrings.GetId()))
 	foundComplianceStrings, exists, err = store.Get(ctx, complianceStrings.GetId())
 	s.NoError(err)
@@ -100,15 +83,23 @@ func (s *ComplianceStringsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, complianceStrings.GetId()))
 
 	var complianceStringss []*storage.ComplianceStrings
+	var complianceStringsIDs []string
 	for i := 0; i < 200; i++ {
 		complianceStrings := &storage.ComplianceStrings{}
 		s.NoError(testutils.FullInit(complianceStrings, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		complianceStringss = append(complianceStringss, complianceStrings)
+		complianceStringsIDs = append(complianceStringsIDs, complianceStrings.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, complianceStringss))
 
-	complianceStringsCount, err = store.Count(ctx)
+	complianceStringsCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, complianceStringsCount)
+
+	s.NoError(store.DeleteMany(ctx, complianceStringsIDs))
+
+	complianceStringsCount, err = store.Count(ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.Equal(0, complianceStringsCount)
 }

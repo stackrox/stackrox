@@ -1,0 +1,36 @@
+{
+    "data": {
+        "node": {
+            "id": "1",
+            "nodeCVECountBySeverity": {
+                "unknown": {
+                    "total": 2,
+                    "fixable": 2,
+                    "__typename": "ResourceCountByFixability"
+                },
+                "low": {
+                    "total": 15,
+                    "fixable": 0,
+                    "__typename": "ResourceCountByFixability"
+                },
+                "moderate": {
+                    "total": 64,
+                    "fixable": 23,
+                    "__typename": "ResourceCountByFixability"
+                },
+                "important": {
+                    "total": 23,
+                    "fixable": 16,
+                    "__typename": "ResourceCountByFixability"
+                },
+                "critical": {
+                    "total": 0,
+                    "fixable": 0,
+                    "__typename": "ResourceCountByFixability"
+                },
+                "__typename": "ResourceCountByCVESeverity"
+            },
+            "__typename": "Node"
+        }
+    }
+}

@@ -29,13 +29,17 @@ var (
 func sendRequest(upgradeCtx *upgradectx.UpgradeContext, svc central.SensorUpgradeControlServiceClient, workflow string, stage sensorupgrader.Stage, lastExecutedStageError string) (*central.UpgradeCheckInFromUpgraderResponse, error) {
 	ctx, cancel := context.WithTimeout(upgradeCtx.Context(), timeout)
 	defer cancel()
-	return svc.UpgradeCheckInFromUpgrader(ctx, &central.UpgradeCheckInFromUpgraderRequest{
+	resp, err := svc.UpgradeCheckInFromUpgrader(ctx, &central.UpgradeCheckInFromUpgraderRequest{
 		UpgradeProcessId:       upgradeCtx.ProcessID(),
 		ClusterId:              upgradeCtx.ClusterID(),
 		CurrentWorkflow:        workflow,
 		LastExecutedStage:      stage.String(),
 		LastExecutedStageError: lastExecutedStageError,
 	})
+	if err != nil {
+		return nil, errors.Wrap(err, "sending upgrade check-in to Central")
+	}
+	return resp, nil
 }
 
 func sendRequestWithRetries(upgradeCtx *upgradectx.UpgradeContext, svc central.SensorUpgradeControlServiceClient, workflow string, stage sensorupgrader.Stage, lastExecutedStageError string) (*central.UpgradeCheckInFromUpgraderResponse, error) {
@@ -45,7 +49,7 @@ func sendRequestWithRetries(upgradeCtx *upgradectx.UpgradeContext, svc central.S
 			return resp, err
 		}
 		if tryNumber >= maxRetries {
-			return nil, err
+			return nil, errors.Wrap(err, "exhausted retries sending upgrade check-in to Central")
 		}
 		log.Errorf("Error getting instructions from Central remote control service: %v. Retrying (%d) ...", err, tryNumber)
 		time.Sleep(sleepDurationBetweenRetries)
@@ -60,9 +64,10 @@ func Run(upgradeCtx *upgradectx.UpgradeContext) error {
 		return errors.New("no gRPC client to Central found")
 	}
 	svc := central.NewSensorUpgradeControlServiceClient(client)
-	if err := runLoop(upgradeCtx, svc); err != nil {
-		log.Errorf("Couldn't successfully run remote control service, despite retries: %v. Giving up now, and cleaning up...", err)
-		return runner.Run(upgradeCtx, sensorupgrader.CleanupWorkflow)
+	err := runLoop(upgradeCtx, svc)
+	log.Errorf("Couldn't successfully run remote control service, despite retries: %v. Giving up now, and cleaning up...", err)
+	if err := runner.Run(upgradeCtx, sensorupgrader.CleanupWorkflow); err != nil {
+		return errors.Wrap(err, "running cleanup workflow")
 	}
 	return nil
 }
@@ -89,7 +94,7 @@ func runLoop(upgradeCtx *upgradectx.UpgradeContext, svc central.SensorUpgradeCon
 			// New workflow. Abandon old runner.
 			currRunner, err = runner.New(upgradeCtx, newWorkflow)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "initializing runner for workflow %s", newWorkflow)
 			}
 		}
 
@@ -98,7 +103,7 @@ func runLoop(upgradeCtx *upgradectx.UpgradeContext, svc central.SensorUpgradeCon
 		if currRunner.Err() != nil {
 			currRunner, err = runner.New(upgradeCtx, newWorkflow)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "reinitializing runner for workflow %s", newWorkflow)
 			}
 		}
 

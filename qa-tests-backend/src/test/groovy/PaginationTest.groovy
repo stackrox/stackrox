@@ -1,14 +1,16 @@
-import groups.BAT
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 import io.stackrox.proto.api.v1.PaginationOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
+
 import objects.Deployment
-import org.junit.experimental.categories.Category
 import services.AlertService
 import services.DeploymentService
 import services.ImageService
 import services.SecretService
 
+import spock.lang.Tag
+
+@Tag("PZ")
 class PaginationTest extends BaseSpecification {
     static final private Map<String, String> SECRETS = [
             "pagination-secret-1" : null,
@@ -21,44 +23,44 @@ class PaginationTest extends BaseSpecification {
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
                     .setName("pagination1")
-                    .setImage("quay.io/rhacs-eng/qa:busybox-1-26")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-32")
                     .addLabel("app", "pagination1")
                     .setCommand(["sleep", "600"])
                     .addSecretName("p1", SECRETS[0]),
             new Deployment()
                     .setName("pagination2")
-                    .setImage("quay.io/rhacs-eng/qa:busybox-1-25")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-31")
                     .addLabel("app", "pagination2")
                     .setCommand(["sleep", "600"])
                     .addSecretName("p2", SECRETS[1]),
             new Deployment()
                     .setName("pagination3")
-                    .setImage("quay.io/rhacs-eng/qa:busybox-1-30")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-30")
                     .addLabel("app", "pagination3")
                     .setCommand(["sleep", "600"])
                     .addSecretName("p3", SECRETS[2]),
             new Deployment()
                     .setName("pagination4")
-                    .setImage("quay.io/rhacs-eng/qa:busybox-1-29")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-29")
                     .addLabel("app", "pagination4")
                     .setCommand(["sleep", "600"])
                     .addSecretName("p4", SECRETS[3]),
             new Deployment()
                     .setName("pagination5")
-                    .setImage("quay.io/rhacs-eng/qa:busybox-1-28")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-28")
                     .addLabel("app", "pagination5")
                     .setCommand(["sleep", "600"])
                     .addSecretName("p5", SECRETS[4]),
             new Deployment()
                     .setName("pagination6")
-                    .setImage("quay.io/rhacs-eng/qa:busybox-1-27")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-27")
                     .addLabel("app", "pagination6")
                     .setCommand(["sleep", "600"])
                     .addSecretName("p6", SECRETS[5]),
     ]
 
-    static final private IMAGE_AND_TAGS_QUERY = "Image:quay.io/rhacs-eng/qa+"+
-            "Image Tag:busybox-1-25,busybox-1-26,busybox-1-27,busybox-1-28,busybox-1-29,busybox-1-30"
+    static final private IMAGE_AND_TAGS_QUERY = "Image:quay.io/rhacs-eng/qa-multi-arch+"+
+            "Image Tag:busybox-1-31,busybox-1-32,busybox-1-27,busybox-1-28,busybox-1-29,busybox-1-30"
 
     def setupSpec() {
         for (String secretName : SECRETS.keySet()) {
@@ -80,7 +82,7 @@ class PaginationTest extends BaseSpecification {
         }
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify deployment pagination"() {
         when:
         "Set pagination limit to 3"
@@ -130,7 +132,7 @@ class PaginationTest extends BaseSpecification {
         assert deployments3 == deployments4.reverse()
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify image pagination"() {
         when:
         "Set pagination limit to 3"
@@ -180,7 +182,7 @@ class PaginationTest extends BaseSpecification {
         assert images3 == images4.reverse()
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify secret pagination"() {
         when:
         "Set pagination limit to 3"
@@ -230,18 +232,18 @@ class PaginationTest extends BaseSpecification {
         assert secrets3 == secrets4.reverse()
     }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify violation pagination"() {
         given:
         "6 violations exist for pagination"
         for (int i = 1; i <= 6; i++) {
-            assert Services.waitForViolation("pagination${i}", "No resource requests or limits specified", 30)
+            assert Services.waitForViolation("pagination${i}", "No CPU request or memory limit specified", 30)
         }
 
         when:
         "Set pagination limit to 3"
         AlertServiceOuterClass.ListAlertsRequest request = AlertServiceOuterClass.ListAlertsRequest.newBuilder()
-                .setQuery("Deployment:pagination+Policy:No resource requests or limits specified")
+                .setQuery("Deployment:pagination+Policy:No CPU request or memory limit specified")
                 .setPagination(
                 PaginationOuterClass.Pagination.newBuilder()
                         .setLimit(3)
@@ -256,7 +258,7 @@ class PaginationTest extends BaseSpecification {
         and:
         "Set limit to 10 with offset to 5 on a total count of 10"
         AlertServiceOuterClass.ListAlertsRequest request2 = AlertServiceOuterClass.ListAlertsRequest.newBuilder()
-                .setQuery("Deployment:pagination+Policy:No resource requests or limits specified")
+                .setQuery("Deployment:pagination+Policy:No CPU request or memory limit specified")
                 .setPagination(
                 PaginationOuterClass.Pagination.newBuilder()
                         .setLimit(6)
@@ -271,7 +273,7 @@ class PaginationTest extends BaseSpecification {
         and:
         "Get the same violation set in reversed and non-reversed order"
         AlertServiceOuterClass.ListAlertsRequest request3 = AlertServiceOuterClass.ListAlertsRequest.newBuilder()
-                .setQuery("Deployment:pagination+Policy:No resource requests or limits specified")
+                .setQuery("Deployment:pagination+Policy:No CPU request or memory limit specified")
                 .setPagination(
                 PaginationOuterClass.Pagination.newBuilder()
                         .setSortOption(
@@ -281,7 +283,7 @@ class PaginationTest extends BaseSpecification {
         ).build()
         def alerts3 = AlertService.getViolations(request3).collect { it.policy.name }
         AlertServiceOuterClass.ListAlertsRequest request4 = AlertServiceOuterClass.ListAlertsRequest.newBuilder()
-                .setQuery("Deployment:pagination+Policy:No resource requests or limits specified")
+                .setQuery("Deployment:pagination+Policy:No CPU request or memory limit specified")
                 .setPagination(
                 PaginationOuterClass.Pagination.newBuilder()
                         .setSortOption(

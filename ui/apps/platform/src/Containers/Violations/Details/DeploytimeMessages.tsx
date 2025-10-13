@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Card, CardBody } from '@patternfly/react-core';
 
 type DeploytimeMessageProps = {
@@ -7,7 +8,7 @@ type DeploytimeMessageProps = {
 
 function DeploytimeMessage({ message }: DeploytimeMessageProps): ReactElement {
     return (
-        <Card isFlat className="pf-u-mb-md">
+        <Card isFlat className="pf-v5-u-mb-md">
             <CardBody>{message}</CardBody>
         </Card>
     );

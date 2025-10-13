@@ -1,0 +1,1582 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api/v1/vuln_mgmt_service.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "VulnMgmtService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/export/vuln-mgmt/workloads": {
+      "get": {
+        "summary": "Streams vulnerability data upon request. Each entry consists of a deployment and the associated container images.",
+        "description": "The response is structured as:\n{\"result\": {\"deployment\": {...}, \"images\": [...]}}\n...\n{\"result\": {\"deployment\": {...}, \"images\": [...]}}",
+        "operationId": "VulnMgmtService_VulnMgmtExportWorkloads",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/v1VulnMgmtExportWorkloadsResponse"
+                },
+                "error": {
+                  "$ref": "#/definitions/googlerpcStatus"
+                }
+              },
+              "title": "Stream result of v1VulnMgmtExportWorkloadsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "timeout",
+            "description": "Request timeout in seconds.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query",
+            "description": "Query to constrain the deployments for which vulnerability data is returned.\nThe queries contain pairs of `Search Option:Value` separated by `+` signs.\nFor HTTP requests the query should be quoted. For example\n> curl \"$ROX_ENDPOINT/v1/export/vuln-mgmt/workloads?query=Deployment%3Ascanner%2BNamespace%3Astackrox\"\nqueries vulnerability data for all scanner deployments in the stackrox namespace.\nSee https://docs.openshift.com/acs/operating/search-filter.html for more information.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "VulnMgmtService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "CVSSV2AccessComplexity": {
+      "type": "string",
+      "enum": [
+        "ACCESS_HIGH",
+        "ACCESS_MEDIUM",
+        "ACCESS_LOW"
+      ],
+      "default": "ACCESS_HIGH"
+    },
+    "CVSSV2Authentication": {
+      "type": "string",
+      "enum": [
+        "AUTH_MULTIPLE",
+        "AUTH_SINGLE",
+        "AUTH_NONE"
+      ],
+      "default": "AUTH_MULTIPLE"
+    },
+    "CVSSV3Complexity": {
+      "type": "string",
+      "enum": [
+        "COMPLEXITY_LOW",
+        "COMPLEXITY_HIGH"
+      ],
+      "default": "COMPLEXITY_LOW"
+    },
+    "CVSSV3Privileges": {
+      "type": "string",
+      "enum": [
+        "PRIVILEGE_NONE",
+        "PRIVILEGE_LOW",
+        "PRIVILEGE_HIGH"
+      ],
+      "default": "PRIVILEGE_NONE"
+    },
+    "CVSSV3UserInteraction": {
+      "type": "string",
+      "enum": [
+        "UI_NONE",
+        "UI_REQUIRED"
+      ],
+      "default": "UI_NONE"
+    },
+    "ContainerConfigEnvironmentConfig": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "envVarSource": {
+          "$ref": "#/definitions/EnvironmentConfigEnvVarSource"
+        }
+      }
+    },
+    "EmbeddedVulnerabilityVulnerabilityType": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN_VULNERABILITY",
+        "IMAGE_VULNERABILITY",
+        "K8S_VULNERABILITY",
+        "ISTIO_VULNERABILITY",
+        "NODE_VULNERABILITY",
+        "OPENSHIFT_VULNERABILITY"
+      ],
+      "default": "UNKNOWN_VULNERABILITY"
+    },
+    "EnvironmentConfigEnvVarSource": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "RAW",
+        "SECRET_KEY",
+        "CONFIG_MAP_KEY",
+        "FIELD",
+        "RESOURCE_FIELD",
+        "UNKNOWN"
+      ],
+      "default": "UNSET",
+      "title": "For any update to EnvVarSource, please also update 'ui/src/messages/common.js'"
+    },
+    "PortConfigExposureInfo": {
+      "type": "object",
+      "properties": {
+        "level": {
+          "$ref": "#/definitions/PortConfigExposureLevel"
+        },
+        "serviceName": {
+          "type": "string",
+          "title": "only set if level is not HOST"
+        },
+        "serviceId": {
+          "type": "string"
+        },
+        "serviceClusterIp": {
+          "type": "string"
+        },
+        "servicePort": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "nodePort": {
+          "type": "integer",
+          "format": "int32",
+          "title": "only set if level is HOST, NODE, EXTERNAL or ROUTE"
+        },
+        "externalIps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "only set if level is EXTERNAL"
+        },
+        "externalHostnames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "only set if level is EXTERNAL or ROUTE"
+        }
+      }
+    },
+    "PortConfigExposureLevel": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "EXTERNAL",
+        "NODE",
+        "INTERNAL",
+        "HOST",
+        "ROUTE"
+      ],
+      "default": "UNSET"
+    },
+    "SeccompProfileProfileType": {
+      "type": "string",
+      "enum": [
+        "UNCONFINED",
+        "RUNTIME_DEFAULT",
+        "LOCALHOST"
+      ],
+      "default": "UNCONFINED"
+    },
+    "SecurityContextSELinux": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "level": {
+          "type": "string"
+        }
+      }
+    },
+    "SecurityContextSeccompProfile": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/SeccompProfileProfileType"
+        },
+        "localhostProfile": {
+          "type": "string"
+        }
+      }
+    },
+    "VolumeMountPropagation": {
+      "type": "string",
+      "enum": [
+        "NONE",
+        "HOST_TO_CONTAINER",
+        "BIDIRECTIONAL"
+      ],
+      "default": "NONE"
+    },
+    "googlerpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string",
+          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. This string must contain at least\none \"/\" character. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com. As of May 2023, there are no widely used type server\nimplementations and no plans to implement one.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
+        }
+      },
+      "additionalProperties": {},
+      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(&foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n    // or ...\n    if (any.isSameTypeAs(Foo.getDefaultInstance())) {\n      foo = any.unpack(Foo.getDefaultInstance());\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := &pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := &pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": <string>,\n      \"lastName\": <string>\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
+    },
+    "storageAdvisory": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "link": {
+          "type": "string"
+        }
+      }
+    },
+    "storageCVSSScore": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "$ref": "#/definitions/storageSource"
+        },
+        "url": {
+          "type": "string"
+        },
+        "cvssv2": {
+          "$ref": "#/definitions/storageCVSSV2"
+        },
+        "cvssv3": {
+          "$ref": "#/definitions/storageCVSSV3"
+        }
+      }
+    },
+    "storageCVSSV2": {
+      "type": "object",
+      "properties": {
+        "vector": {
+          "type": "string"
+        },
+        "attackVector": {
+          "$ref": "#/definitions/storageCVSSV2AttackVector"
+        },
+        "accessComplexity": {
+          "$ref": "#/definitions/CVSSV2AccessComplexity"
+        },
+        "authentication": {
+          "$ref": "#/definitions/CVSSV2Authentication"
+        },
+        "confidentiality": {
+          "$ref": "#/definitions/storageCVSSV2Impact"
+        },
+        "integrity": {
+          "$ref": "#/definitions/storageCVSSV2Impact"
+        },
+        "availability": {
+          "$ref": "#/definitions/storageCVSSV2Impact"
+        },
+        "exploitabilityScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "impactScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "score": {
+          "type": "number",
+          "format": "float"
+        },
+        "severity": {
+          "$ref": "#/definitions/storageCVSSV2Severity"
+        }
+      }
+    },
+    "storageCVSSV2AttackVector": {
+      "type": "string",
+      "enum": [
+        "ATTACK_LOCAL",
+        "ATTACK_ADJACENT",
+        "ATTACK_NETWORK"
+      ],
+      "default": "ATTACK_LOCAL"
+    },
+    "storageCVSSV2Impact": {
+      "type": "string",
+      "enum": [
+        "IMPACT_NONE",
+        "IMPACT_PARTIAL",
+        "IMPACT_COMPLETE"
+      ],
+      "default": "IMPACT_NONE"
+    },
+    "storageCVSSV2Severity": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "LOW",
+        "MEDIUM",
+        "HIGH"
+      ],
+      "default": "UNKNOWN"
+    },
+    "storageCVSSV3": {
+      "type": "object",
+      "properties": {
+        "vector": {
+          "type": "string"
+        },
+        "exploitabilityScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "impactScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "attackVector": {
+          "$ref": "#/definitions/storageCVSSV3AttackVector"
+        },
+        "attackComplexity": {
+          "$ref": "#/definitions/CVSSV3Complexity"
+        },
+        "privilegesRequired": {
+          "$ref": "#/definitions/CVSSV3Privileges"
+        },
+        "userInteraction": {
+          "$ref": "#/definitions/CVSSV3UserInteraction"
+        },
+        "scope": {
+          "$ref": "#/definitions/storageCVSSV3Scope"
+        },
+        "confidentiality": {
+          "$ref": "#/definitions/storageCVSSV3Impact"
+        },
+        "integrity": {
+          "$ref": "#/definitions/storageCVSSV3Impact"
+        },
+        "availability": {
+          "$ref": "#/definitions/storageCVSSV3Impact"
+        },
+        "score": {
+          "type": "number",
+          "format": "float"
+        },
+        "severity": {
+          "$ref": "#/definitions/storageCVSSV3Severity"
+        }
+      }
+    },
+    "storageCVSSV3AttackVector": {
+      "type": "string",
+      "enum": [
+        "ATTACK_LOCAL",
+        "ATTACK_ADJACENT",
+        "ATTACK_NETWORK",
+        "ATTACK_PHYSICAL"
+      ],
+      "default": "ATTACK_LOCAL"
+    },
+    "storageCVSSV3Impact": {
+      "type": "string",
+      "enum": [
+        "IMPACT_NONE",
+        "IMPACT_LOW",
+        "IMPACT_HIGH"
+      ],
+      "default": "IMPACT_NONE"
+    },
+    "storageCVSSV3Scope": {
+      "type": "string",
+      "enum": [
+        "UNCHANGED",
+        "CHANGED"
+      ],
+      "default": "UNCHANGED"
+    },
+    "storageCVSSV3Severity": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "NONE",
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "default": "UNKNOWN"
+    },
+    "storageContainer": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "config": {
+          "$ref": "#/definitions/storageContainerConfig"
+        },
+        "image": {
+          "$ref": "#/definitions/storageContainerImage"
+        },
+        "securityContext": {
+          "$ref": "#/definitions/storageSecurityContext"
+        },
+        "volumes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageVolume"
+          }
+        },
+        "ports": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storagePortConfig"
+          },
+          "title": "Policies use the port config on the top-level deployment."
+        },
+        "secrets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageEmbeddedSecret"
+          }
+        },
+        "resources": {
+          "$ref": "#/definitions/storageResources"
+        },
+        "name": {
+          "type": "string"
+        },
+        "livenessProbe": {
+          "$ref": "#/definitions/storageLivenessProbe"
+        },
+        "readinessProbe": {
+          "$ref": "#/definitions/storageReadinessProbe"
+        }
+      }
+    },
+    "storageContainerConfig": {
+      "type": "object",
+      "properties": {
+        "env": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/ContainerConfigEnvironmentConfig"
+          }
+        },
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "directory": {
+          "type": "string"
+        },
+        "user": {
+          "type": "string"
+        },
+        "uid": {
+          "type": "string",
+          "format": "int64"
+        },
+        "appArmorProfile": {
+          "type": "string"
+        }
+      }
+    },
+    "storageContainerImage": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/definitions/storageImageName"
+        },
+        "notPullable": {
+          "type": "boolean"
+        },
+        "isClusterLocal": {
+          "type": "boolean"
+        },
+        "idV2": {
+          "type": "string"
+        }
+      },
+      "title": "Next tag: 13"
+    },
+    "storageCosignSignature": {
+      "type": "object",
+      "properties": {
+        "rawSignature": {
+          "type": "string",
+          "format": "byte"
+        },
+        "signaturePayload": {
+          "type": "string",
+          "format": "byte"
+        },
+        "certPem": {
+          "type": "string",
+          "format": "byte"
+        },
+        "certChainPem": {
+          "type": "string",
+          "format": "byte"
+        },
+        "rekorBundle": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "storageDataSource": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "mirror": {
+          "type": "string"
+        }
+      }
+    },
+    "storageDeployment": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "hash": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "type": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "namespaceId": {
+          "type": "string"
+        },
+        "orchestratorComponent": {
+          "type": "boolean"
+        },
+        "replicas": {
+          "type": "string",
+          "format": "int64"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "podLabels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "labelSelector": {
+          "$ref": "#/definitions/storageLabelSelector"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "clusterId": {
+          "type": "string"
+        },
+        "clusterName": {
+          "type": "string"
+        },
+        "containers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageContainer"
+          }
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "priority": {
+          "type": "string",
+          "format": "int64"
+        },
+        "inactive": {
+          "type": "boolean"
+        },
+        "imagePullSecrets": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "serviceAccount": {
+          "type": "string"
+        },
+        "serviceAccountPermissionLevel": {
+          "$ref": "#/definitions/storagePermissionLevel"
+        },
+        "automountServiceAccountToken": {
+          "type": "boolean"
+        },
+        "hostNetwork": {
+          "type": "boolean"
+        },
+        "hostPid": {
+          "type": "boolean"
+        },
+        "hostIpc": {
+          "type": "boolean"
+        },
+        "runtimeClass": {
+          "type": "string"
+        },
+        "tolerations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageToleration"
+          }
+        },
+        "ports": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storagePortConfig"
+          }
+        },
+        "stateTimestamp": {
+          "type": "string",
+          "format": "int64",
+          "title": "Internal use only"
+        },
+        "riskScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "platformComponent": {
+          "type": "boolean"
+        }
+      },
+      "title": "Next available tag: 36"
+    },
+    "storageEPSS": {
+      "type": "object",
+      "properties": {
+        "epssProbability": {
+          "type": "number",
+          "format": "float"
+        },
+        "epssPercentile": {
+          "type": "number",
+          "format": "float"
+        }
+      },
+      "title": "EPSS Score stores two epss metrics returned by scanner - epss probability and epss percentile"
+    },
+    "storageEmbeddedImageScanComponent": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "license": {
+          "$ref": "#/definitions/storageLicense"
+        },
+        "vulns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageEmbeddedVulnerability"
+          }
+        },
+        "layerIndex": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "priority": {
+          "type": "string",
+          "format": "int64"
+        },
+        "source": {
+          "$ref": "#/definitions/storageSourceType"
+        },
+        "location": {
+          "type": "string"
+        },
+        "topCvss": {
+          "type": "number",
+          "format": "float"
+        },
+        "riskScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "fixedBy": {
+          "type": "string",
+          "description": "Component version that fixes all the fixable vulnerabilities in this component."
+        },
+        "executables": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageEmbeddedImageScanComponentExecutable"
+          },
+          "title": "Values are cleared after moving to cache, remove them from the grpc return as well"
+        },
+        "architecture": {
+          "type": "string"
+        }
+      },
+      "title": "Next Tag: 14"
+    },
+    "storageEmbeddedImageScanComponentExecutable": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "storageEmbeddedSecret": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        }
+      }
+    },
+    "storageEmbeddedVulnerability": {
+      "type": "object",
+      "properties": {
+        "cve": {
+          "type": "string"
+        },
+        "advisory": {
+          "$ref": "#/definitions/storageAdvisory"
+        },
+        "cvss": {
+          "type": "number",
+          "format": "float"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "link": {
+          "type": "string"
+        },
+        "fixedBy": {
+          "type": "string"
+        },
+        "scoreVersion": {
+          "$ref": "#/definitions/storageEmbeddedVulnerabilityScoreVersion"
+        },
+        "cvssV2": {
+          "$ref": "#/definitions/storageCVSSV2",
+          "title": "CVSSV2 CVSSV3 can be deprecated ROX-26066"
+        },
+        "cvssV3": {
+          "$ref": "#/definitions/storageCVSSV3"
+        },
+        "publishedOn": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastModified": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "vulnerabilityType": {
+          "$ref": "#/definitions/EmbeddedVulnerabilityVulnerabilityType",
+          "description": "For internal purposes only."
+        },
+        "vulnerabilityTypes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EmbeddedVulnerabilityVulnerabilityType"
+          }
+        },
+        "suppressed": {
+          "type": "boolean"
+        },
+        "suppressActivation": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "suppressExpiry": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "firstSystemOccurrence": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Time when the CVE was first seen, for this specific distro, in the system."
+        },
+        "firstImageOccurrence": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Time when the CVE was first seen in this image."
+        },
+        "severity": {
+          "$ref": "#/definitions/storageVulnerabilitySeverity"
+        },
+        "state": {
+          "$ref": "#/definitions/storageVulnerabilityState"
+        },
+        "cvssMetrics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageCVSSScore"
+          },
+          "title": "cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc"
+        },
+        "nvdCvss": {
+          "type": "number",
+          "format": "float"
+        },
+        "epss": {
+          "$ref": "#/definitions/storageEPSS"
+        }
+      },
+      "title": "Next Tag: 25"
+    },
+    "storageEmbeddedVulnerabilityScoreVersion": {
+      "type": "string",
+      "enum": [
+        "V2",
+        "V3"
+      ],
+      "default": "V2",
+      "description": "- V2: No unset for automatic backwards compatibility",
+      "title": "ScoreVersion can be deprecated ROX-26066"
+    },
+    "storageImage": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "$ref": "#/definitions/storageImageName"
+        },
+        "names": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageImageName"
+          },
+          "description": "This should deprecate the ImageName field long-term, allowing images with the same digest to be associated with\ndifferent locations.\nTODO(dhaus): For now, this message will be without search tags due to duplicated search tags otherwise."
+        },
+        "metadata": {
+          "$ref": "#/definitions/storageImageMetadata"
+        },
+        "scan": {
+          "$ref": "#/definitions/storageImageScan"
+        },
+        "signatureVerificationData": {
+          "$ref": "#/definitions/storageImageSignatureVerificationData"
+        },
+        "signature": {
+          "$ref": "#/definitions/storageImageSignature"
+        },
+        "components": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "cves": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "fixableCves": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "notPullable": {
+          "type": "boolean"
+        },
+        "isClusterLocal": {
+          "type": "boolean"
+        },
+        "priority": {
+          "type": "string",
+          "format": "int64"
+        },
+        "riskScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "topCvss": {
+          "type": "number",
+          "format": "float"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageImageNote"
+          }
+        }
+      },
+      "title": "This proto is deprecated and replaced by ImageV2.\nNext Tag: 19"
+    },
+    "storageImageLayer": {
+      "type": "object",
+      "properties": {
+        "instruction": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "author": {
+          "type": "string"
+        },
+        "empty": {
+          "type": "boolean"
+        }
+      }
+    },
+    "storageImageMetadata": {
+      "type": "object",
+      "properties": {
+        "v1": {
+          "$ref": "#/definitions/storageV1Metadata",
+          "title": "V1Metadata contains all of the V1 docker data. In the normal case we will get this because the image is a\nV1 image OR because the v2 manifest has a link to it in it's config.\nSee https://docs.docker.com/registry/spec/manifest-v2-2/#image-manifest-field-descriptions\nThe only time we will not get it is in the rare caseof a strictly V2 image schema"
+        },
+        "v2": {
+          "$ref": "#/definitions/storageV2Metadata",
+          "title": "We should always get V2 metadata unless the registry is old or the image is strictly V1"
+        },
+        "layerShas": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "We never need both sets of layers so consolidate them. They will be ordered by oldest->newest"
+        },
+        "dataSource": {
+          "$ref": "#/definitions/storageDataSource",
+          "title": "DataSource contains information about which integration was used to pull the metadata"
+        },
+        "version": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Version is used to determine if the metadata needs to be re-pulled"
+        }
+      },
+      "title": "If any fields of ImageMetadata are modified including subfields, please check pkg/images/enricher/metadata.go\nto ensure that those changes will be automatically picked up\nNext Tag: 6"
+    },
+    "storageImageName": {
+      "type": "object",
+      "properties": {
+        "registry": {
+          "type": "string"
+        },
+        "remote": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "fullName": {
+          "type": "string"
+        }
+      }
+    },
+    "storageImageNote": {
+      "type": "string",
+      "enum": [
+        "MISSING_METADATA",
+        "MISSING_SCAN_DATA",
+        "MISSING_SIGNATURE",
+        "MISSING_SIGNATURE_VERIFICATION_DATA"
+      ],
+      "default": "MISSING_METADATA"
+    },
+    "storageImageScan": {
+      "type": "object",
+      "properties": {
+        "scannerVersion": {
+          "type": "string"
+        },
+        "scanTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageEmbeddedImageScanComponent"
+          }
+        },
+        "operatingSystem": {
+          "type": "string"
+        },
+        "dataSource": {
+          "$ref": "#/definitions/storageDataSource",
+          "title": "DataSource contains information about which integration was used to scan the image"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageImageScanNote"
+          }
+        },
+        "hash": {
+          "type": "string",
+          "format": "uint64"
+        }
+      },
+      "title": "Next tag: 8"
+    },
+    "storageImageScanNote": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "OS_UNAVAILABLE",
+        "PARTIAL_SCAN_DATA",
+        "OS_CVES_UNAVAILABLE",
+        "OS_CVES_STALE",
+        "LANGUAGE_CVES_UNAVAILABLE",
+        "CERTIFIED_RHEL_SCAN_UNAVAILABLE"
+      ],
+      "default": "UNSET"
+    },
+    "storageImageSignature": {
+      "type": "object",
+      "properties": {
+        "signatures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageSignature"
+          }
+        },
+        "fetched": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "storageImageSignatureVerificationData": {
+      "type": "object",
+      "properties": {
+        "results": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageImageSignatureVerificationResult"
+          }
+        }
+      }
+    },
+    "storageImageSignatureVerificationResult": {
+      "type": "object",
+      "properties": {
+        "verificationTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "verifierId": {
+          "type": "string",
+          "description": "verifier_id correlates to the ID of the signature integration used to verify the signature."
+        },
+        "status": {
+          "$ref": "#/definitions/storageImageSignatureVerificationResultStatus"
+        },
+        "description": {
+          "type": "string",
+          "description": "description is set in the case of an error with the specific error's message. Otherwise, this will not be set."
+        },
+        "verifiedImageReferences": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The full image names that are verified by this specific signature integration ID."
+        }
+      },
+      "title": "Next Tag: 6"
+    },
+    "storageImageSignatureVerificationResultStatus": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "VERIFIED",
+        "FAILED_VERIFICATION",
+        "INVALID_SIGNATURE_ALGO",
+        "CORRUPTED_SIGNATURE",
+        "GENERIC_ERROR"
+      ],
+      "default": "UNSET",
+      "description": "Status represents the status of the result.\n\n - VERIFIED: VERIFIED is set when the signature's verification was successful.\n - FAILED_VERIFICATION: FAILED_VERIFICATION is set when the signature's verification failed.\n - INVALID_SIGNATURE_ALGO: INVALID_SIGNATURE_ALGO is set when the signature's algorithm is invalid and unsupported.\n - CORRUPTED_SIGNATURE: CORRUPTED_SIGNATURE is set when the raw signature is corrupted, i.e. wrong base64 encoding.\n - GENERIC_ERROR: GENERIC_ERROR is set when an error occurred during verification that cannot be associated with a specific\nstatus."
+    },
+    "storageLabelSelector": {
+      "type": "object",
+      "properties": {
+        "matchLabels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "This is actually a oneof, but we can't make it one due to backwards\ncompatibility constraints."
+        },
+        "requirements": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageLabelSelectorRequirement"
+          }
+        }
+      },
+      "description": "Next available tag: 3",
+      "title": "Label selector components are joined with logical AND, see\n    https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/"
+    },
+    "storageLabelSelectorOperator": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "IN",
+        "NOT_IN",
+        "EXISTS",
+        "NOT_EXISTS"
+      ],
+      "default": "UNKNOWN"
+    },
+    "storageLabelSelectorRequirement": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "op": {
+          "$ref": "#/definitions/storageLabelSelectorOperator"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "title": "Next available tag: 4"
+    },
+    "storageLicense": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      }
+    },
+    "storageLivenessProbe": {
+      "type": "object",
+      "properties": {
+        "defined": {
+          "type": "boolean"
+        }
+      }
+    },
+    "storagePermissionLevel": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "NONE",
+        "DEFAULT",
+        "ELEVATED_IN_NAMESPACE",
+        "ELEVATED_CLUSTER_WIDE",
+        "CLUSTER_ADMIN"
+      ],
+      "default": "UNSET",
+      "title": "For any update to PermissionLevel, also update:\n- pkg/searchbasedpolicies/builders/k8s_rbac.go\n- ui/src/messages/common.js"
+    },
+    "storagePortConfig": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "containerPort": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "protocol": {
+          "type": "string"
+        },
+        "exposure": {
+          "$ref": "#/definitions/PortConfigExposureLevel"
+        },
+        "exposedPort": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "exposureInfos": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/PortConfigExposureInfo"
+          }
+        }
+      },
+      "title": "Next Available Tag: 6"
+    },
+    "storageReadinessProbe": {
+      "type": "object",
+      "properties": {
+        "defined": {
+          "type": "boolean"
+        }
+      }
+    },
+    "storageResources": {
+      "type": "object",
+      "properties": {
+        "cpuCoresRequest": {
+          "type": "number",
+          "format": "float"
+        },
+        "cpuCoresLimit": {
+          "type": "number",
+          "format": "float"
+        },
+        "memoryMbRequest": {
+          "type": "number",
+          "format": "float"
+        },
+        "memoryMbLimit": {
+          "type": "number",
+          "format": "float"
+        }
+      }
+    },
+    "storageSecurityContext": {
+      "type": "object",
+      "properties": {
+        "privileged": {
+          "type": "boolean"
+        },
+        "selinux": {
+          "$ref": "#/definitions/SecurityContextSELinux"
+        },
+        "dropCapabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "addCapabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "readOnlyRootFilesystem": {
+          "type": "boolean"
+        },
+        "seccompProfile": {
+          "$ref": "#/definitions/SecurityContextSeccompProfile"
+        },
+        "allowPrivilegeEscalation": {
+          "type": "boolean"
+        }
+      }
+    },
+    "storageSignature": {
+      "type": "object",
+      "properties": {
+        "cosign": {
+          "$ref": "#/definitions/storageCosignSignature"
+        }
+      }
+    },
+    "storageSource": {
+      "type": "string",
+      "enum": [
+        "SOURCE_UNKNOWN",
+        "SOURCE_RED_HAT",
+        "SOURCE_OSV",
+        "SOURCE_NVD"
+      ],
+      "default": "SOURCE_UNKNOWN"
+    },
+    "storageSourceType": {
+      "type": "string",
+      "enum": [
+        "OS",
+        "PYTHON",
+        "JAVA",
+        "RUBY",
+        "NODEJS",
+        "GO",
+        "DOTNETCORERUNTIME",
+        "INFRASTRUCTURE"
+      ],
+      "default": "OS"
+    },
+    "storageTaintEffect": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN_TAINT_EFFECT",
+        "NO_SCHEDULE_TAINT_EFFECT",
+        "PREFER_NO_SCHEDULE_TAINT_EFFECT",
+        "NO_EXECUTE_TAINT_EFFECT"
+      ],
+      "default": "UNKNOWN_TAINT_EFFECT"
+    },
+    "storageToleration": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "operator": {
+          "$ref": "#/definitions/storageTolerationOperator"
+        },
+        "value": {
+          "type": "string"
+        },
+        "taintEffect": {
+          "$ref": "#/definitions/storageTaintEffect"
+        }
+      }
+    },
+    "storageTolerationOperator": {
+      "type": "string",
+      "enum": [
+        "TOLERATION_OPERATION_UNKNOWN",
+        "TOLERATION_OPERATOR_EXISTS",
+        "TOLERATION_OPERATOR_EQUAL"
+      ],
+      "default": "TOLERATION_OPERATION_UNKNOWN"
+    },
+    "storageV1Metadata": {
+      "type": "object",
+      "properties": {
+        "digest": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "author": {
+          "type": "string"
+        },
+        "layers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageImageLayer"
+          }
+        },
+        "user": {
+          "type": "string"
+        },
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "entrypoint": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "volumes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "storageV2Metadata": {
+      "type": "object",
+      "properties": {
+        "digest": {
+          "type": "string"
+        }
+      }
+    },
+    "storageVolume": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "destination": {
+          "type": "string"
+        },
+        "readOnly": {
+          "type": "boolean"
+        },
+        "type": {
+          "type": "string"
+        },
+        "mountPropagation": {
+          "$ref": "#/definitions/VolumeMountPropagation"
+        }
+      }
+    },
+    "storageVulnerabilitySeverity": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN_VULNERABILITY_SEVERITY",
+        "LOW_VULNERABILITY_SEVERITY",
+        "MODERATE_VULNERABILITY_SEVERITY",
+        "IMPORTANT_VULNERABILITY_SEVERITY",
+        "CRITICAL_VULNERABILITY_SEVERITY"
+      ],
+      "default": "UNKNOWN_VULNERABILITY_SEVERITY"
+    },
+    "storageVulnerabilityState": {
+      "type": "string",
+      "enum": [
+        "OBSERVED",
+        "DEFERRED",
+        "FALSE_POSITIVE"
+      ],
+      "default": "OBSERVED",
+      "description": "VulnerabilityState indicates if vulnerability is being observed or deferred(/suppressed). By default, it vulnerabilities are observed.\n\n - OBSERVED: [Default state]"
+    },
+    "v1VulnMgmtExportWorkloadsResponse": {
+      "type": "object",
+      "properties": {
+        "deployment": {
+          "$ref": "#/definitions/storageDeployment"
+        },
+        "images": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageImage"
+          }
+        },
+        "livePods": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "description": "The workloads response contains the full image details including the\nvulnerability data."
+    }
+  }
+}

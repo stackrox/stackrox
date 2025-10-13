@@ -1,10 +1,15 @@
 package cvssv3
 
 import (
+	"bufio"
+	"fmt"
+	"os"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestParseCVSSV3(t *testing.T) {
@@ -60,7 +65,7 @@ func TestParseCVSSV3(t *testing.T) {
 		t.Run(c.input, func(t *testing.T) {
 			cvss, err := ParseCVSSV3(c.input)
 			assert.NoError(t, err)
-			assert.Equal(t, c.cvssV3, cvss)
+			protoassert.Equal(t, c.cvssV3, cvss)
 		})
 	}
 
@@ -153,4 +158,30 @@ func TestParseCVSSV3(t *testing.T) {
 			assert.Error(t, err)
 		})
 	}
+}
+
+func Test_CalculateScores(t *testing.T) {
+	f, err := os.Open("testdata/cvss.v3.1.samples")
+	require.NoError(t, err)
+	defer func() {
+		_ = f.Close()
+	}()
+	s := bufio.NewScanner(f)
+	var bS, eS, iS float32
+	var vec string
+	for n := 1; s.Scan(); n++ {
+		l := s.Text()
+		_, err = fmt.Sscanf(l, "%f %f %f %s\n", &bS, &eS, &iS, &vec)
+		require.NoError(t, err)
+		t.Run(fmt.Sprintf("#%d/%s", n, l), func(t *testing.T) {
+			cvssV3, err := ParseCVSSV3(vec)
+			assert.NoError(t, err)
+			err = CalculateScores(cvssV3)
+			assert.NoError(t, err)
+			assert.InEpsilon(t, bS, cvssV3.GetScore(), 0.09)
+			assert.InEpsilon(t, eS, cvssV3.GetExploitabilityScore(), 0.09)
+			assert.InEpsilon(t, iS, cvssV3.GetImpactScore(), 0.09)
+		})
+	}
+	require.NoError(t, s.Err())
 }

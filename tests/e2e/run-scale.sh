@@ -3,10 +3,15 @@
 # Runs scale tests. Formerly CircleCI gke-api-scale-tests and gke-postgres-api-scale-tests.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+# shellcheck source=../../scripts/ci/lib.sh
 source "$ROOT/scripts/ci/lib.sh"
+# shellcheck source=../../scripts/ci/gcp.sh
 source "$ROOT/scripts/ci/gcp.sh"
+# shellcheck source=../../scripts/ci/sensor-wait.sh
 source "$ROOT/scripts/ci/sensor-wait.sh"
+# shellcheck source=../../tests/e2e/lib.sh
 source "$ROOT/tests/e2e/lib.sh"
+# shellcheck source=../../tests/scripts/setup-certs.sh
 source "$ROOT/tests/scripts/setup-certs.sh"
 
 set -euo pipefail
@@ -36,7 +41,7 @@ deploy_stackrox_in_scale_mode() {
     "$ROOT/deploy/k8s/deploy.sh"
     
     DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}" \
-    get_central_basic_auth_creds
+    export_central_basic_auth_creds
 
     "$ROOT/scale/launch_workload.sh" scale-test
 
@@ -69,14 +74,9 @@ run_scale_test() {
     fi
 }
 
-get_prometheus_metrics_parser() {
-    go install github.com/stackrox/prometheus-metric-parser@latest
-    prometheus-metric-parser help
-}
-
 compare_with_stored_metrics() {
     local debug_dump_dir="$1"
-    local gs_path="gs://stackrox-ci-metrics/${COMPARISON_METRICS}"
+    local gs_path="gs://stackrox-ci-scale-test-results/${COMPARISON_METRICS}"
     local baseline_source
     local baseline_dir="/tmp/scale-test-baseline-metrics"
     local baseline_metrics
@@ -110,7 +110,7 @@ compare_with_stored_metrics() {
 store_metrics() {
     local debug_dump_dir="$1"
     local this_run_metrics
-    local gs_path="gs://stackrox-ci-metrics/${STORE_METRICS}"
+    local gs_path="gs://stackrox-ci-scale-test-results/${STORE_METRICS}"
 
     this_run_metrics=$(echo "${debug_dump_dir}"/stackrox_debug*.zip)
     gsutil cp "${this_run_metrics}" "${gs_path}"
@@ -118,7 +118,7 @@ store_metrics() {
     unzip -d "${debug_dump_dir}"/stackrox_debug "${this_run_metrics}"
     prometheus-metric-parser single --file="${debug_dump_dir}"/stackrox_debug/metrics-2 \
         --format=gcp-monitoring --labels='Test=ci-scale-test,ClusterFlavor=gke' \
-        --project-id=stackrox-ci --timestamp="$(date -u +"%s")"
+        --project-id=acs-san-stackroxci --timestamp="$(date -u +"%s")"
 }
 
 store_as_spyglass_artifact() {
@@ -130,7 +130,7 @@ store_as_spyglass_artifact() {
     cat > "$artifact_file" <<- HEAD
 <html>
     <head>
-        <title><h4>Scale test comparison with baseline: ${metrics_name}</h4></title>
+        <title>Scale test comparison with baseline: ${metrics_name}</title>
     </head>
     <body>
     <pre style="background: #fff;">

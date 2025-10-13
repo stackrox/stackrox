@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	complianceDS "github.com/stackrox/rox/central/compliance/datastore"
 	"github.com/stackrox/rox/central/compliance/framework"
@@ -12,13 +11,9 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
-)
-
-const (
-	// maxFinishedRunAge specifies the maximum age of a finished run before it will be flagged for deletion.
-	maxFinishedRunAge = 12 * time.Hour
 )
 
 // runInstance is a run managed by the ComplianceManager. It is different from a run in the compliance framework,
@@ -99,7 +94,7 @@ func (r *runInstance) doRun(dataPromise dataPromise) (framework.ComplianceRun, m
 		r.status = v1.ComplianceRun_STARTED
 	})
 
-	log.Infof("Starting compliance run %s for cluster %q and standard %q", r.id, r.domain.Cluster().Cluster().Name, r.standard.Standard.Name)
+	log.Infof("Starting compliance run %s for cluster %q and standard %q", r.id, r.domain.Cluster().Cluster().GetName(), r.standard.Standard.Name)
 
 	r.updateStatus(v1.ComplianceRun_WAIT_FOR_DATA)
 	data, err := dataPromise.WaitForResult(r.ctx)
@@ -112,23 +107,15 @@ func (r *runInstance) doRun(dataPromise dataPromise) (framework.ComplianceRun, m
 		return nil, nil, errors.Wrap(err, "creating compliance run")
 	}
 
-	log.Infof("Starting evaluating checks (%d checks total) for run %s for cluster %q and standard %q", len(r.standard.AllChecks()), r.id, r.domain.Cluster().Cluster().Name, r.standard.Standard.Name)
+	log.Infof("Starting evaluating checks (%d checks total) for run %s for cluster %q and standard %q", len(r.standard.AllChecks()), r.id, r.domain.Cluster().Cluster().GetName(), r.standard.Standard.Name)
 	r.updateStatus(v1.ComplianceRun_EVALUTING_CHECKS)
 
 	if err := run.Run(r.ctx, r.standard.Name, r.domain, data); err != nil {
-		log.Errorf("Error evaluating checks for run %s for cluster %q and standard %q: %v", r.id, r.domain.Cluster().Cluster().Name, r.standard.Standard.Name, err)
+		log.Errorf("Error evaluating checks for run %s for cluster %q and standard %q: %v", r.id, r.domain.Cluster().Cluster().GetName(), r.standard.Standard.Name, err)
 		return nil, nil, err
 	}
-	log.Infof("Successfully evaluated checks for run %s for cluster %q and standard %q", r.id, r.domain.Cluster().Cluster().Name, r.standard.Standard.Name)
+	log.Infof("Successfully evaluated checks for run %s for cluster %q and standard %q", r.id, r.domain.Cluster().Cluster().GetName(), r.standard.Standard.Name)
 	return run, data.NodeResults(), nil
-}
-
-func timeToProto(t time.Time) *types.Timestamp {
-	if t.IsZero() {
-		return nil
-	}
-	tspb, _ := types.TimestampProto(t)
-	return tspb
 }
 
 func (r *runInstance) standardID() string {
@@ -152,20 +139,14 @@ func (r *runInstance) ToProto() *v1.ComplianceRun {
 		Id:           r.id,
 		ClusterId:    r.domain.Cluster().Cluster().GetId(),
 		StandardId:   r.standardID(),
-		StartTime:    timeToProto(r.startTime),
-		FinishTime:   timeToProto(r.finishTime),
 		State:        r.status,
 		ErrorMessage: errorMessage,
 	}
-	return proto
-}
-
-func (r *runInstance) shouldDelete() bool {
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
-
-	if r.status != v1.ComplianceRun_FINISHED {
-		return false
+	if !r.startTime.IsZero() {
+		proto.StartTime, _ = protocompat.ConvertTimeToTimestampOrError(r.startTime)
 	}
-	return time.Since(r.finishTime) > maxFinishedRunAge
+	if !r.finishTime.IsZero() {
+		proto.FinishTime, _ = protocompat.ConvertTimeToTimestampOrError(r.finishTime)
+	}
+	return proto
 }

@@ -2,8 +2,8 @@ package backend
 
 import (
 	"context"
+	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/clusterinit/backend/access"
 	"github.com/stackrox/rox/central/clusterinit/backend/certificate"
@@ -11,9 +11,16 @@ import (
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/crs"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
+)
+
+const (
+	currentCrsVersion = 1
 )
 
 var _ authn.ValidateCertChain = (*backendImpl)(nil)
@@ -27,10 +34,24 @@ func (b *backendImpl) GetAll(ctx context.Context) ([]*storage.InitBundleMeta, er
 	if err := access.CheckAccess(ctx, storage.Access_READ_ACCESS); err != nil {
 		return nil, err
 	}
+	storeCtx := getStoreReadContext(ctx)
 
-	allBundleMetas, err := b.store.GetAll(ctx)
+	allBundleMetas, err := b.store.GetAll(storeCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving all init bundles")
+	}
+	return allBundleMetas, nil
+}
+
+func (b *backendImpl) GetAllCRS(ctx context.Context) ([]*storage.InitBundleMeta, error) {
+	if err := access.CheckAccess(ctx, storage.Access_READ_ACCESS); err != nil {
+		return nil, err
+	}
+	storeCtx := getStoreReadContext(ctx)
+
+	allBundleMetas, err := b.store.GetAllCRS(storeCtx)
+	if err != nil {
+		return nil, errors.Wrap(err, "retrieving all CRSs")
 	}
 	return allBundleMetas, nil
 }
@@ -61,22 +82,33 @@ func extractUserIdentity(ctx context.Context) *storage.User {
 	}
 }
 
-func extractExpiryDate(certBundle clusters.CertBundle) (*types.Timestamp, error) {
+func extractCertExpiryDate(cert *mtls.IssuedCert) (time.Time, error) {
+	if cert == nil {
+		return time.Time{}, errors.New("provided certificate is empty")
+	}
+	if cert.X509Cert == nil {
+		return time.Time{}, errors.New("issued certificate is missing X509 material")
+	}
+	return cert.X509Cert.NotAfter, nil
+}
+
+func extractExpiryDate(certBundle clusters.CertBundle) (time.Time, error) {
 	sensorCert := certBundle[storage.ServiceType_SENSOR_SERVICE]
 	if sensorCert == nil {
-		return nil, errors.New("no sensor certificate in init bundle")
+		return time.Time{}, errors.New("no sensor certificate in init bundle")
 	}
-	timestamp, err := types.TimestampProto(sensorCert.X509Cert.NotAfter)
+	expiryDate, err := extractCertExpiryDate(sensorCert)
 	if err != nil {
-		return nil, errors.Wrap(err, "converting expiry date to timestamp")
+		return time.Time{}, errors.Wrap(err, "failed to extract expiry date from sensor client certificate")
 	}
-	return timestamp, nil
+	return expiryDate, nil
 }
 
 func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMeta, error) {
 	if err := access.CheckAccess(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
 		return nil, err
 	}
+	storeCtx := getStoreReadWriteContext(ctx)
 
 	if err := validateName(name); err != nil {
 		return nil, err
@@ -95,18 +127,23 @@ func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMe
 
 	expiryDate, err := extractExpiryDate(certBundle)
 	if err != nil {
-		return nil, errors.Wrap(err, "extracting expiry date of certificate bundle")
+		return nil, errors.Wrap(err, "extracting expiry date of newly generated init bundle")
+	}
+
+	expiryTimestamp, err := protocompat.ConvertTimeToTimestampOrError(expiryDate)
+	if err != nil {
+		return nil, errors.Wrap(err, "converting expiry date to timestamp")
 	}
 
 	meta := &storage.InitBundleMeta{
 		Id:        id.String(),
 		Name:      name,
-		CreatedAt: types.TimestampNow(),
+		CreatedAt: protocompat.TimestampNow(),
 		CreatedBy: user,
-		ExpiresAt: expiryDate,
+		ExpiresAt: expiryTimestamp,
 	}
 
-	if err := b.store.Add(ctx, meta); err != nil {
+	if err := b.store.Add(storeCtx, meta); err != nil {
 		return nil, errors.Wrap(err, "adding new init bundle to data store")
 	}
 
@@ -116,6 +153,62 @@ func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMe
 		},
 		CertBundle: certBundle,
 		Meta:       meta,
+	}, nil
+}
+
+func (b *backendImpl) IssueCRS(ctx context.Context, name string, validUntil time.Time) (*CRSWithMeta, error) {
+	if err := access.CheckAccess(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
+		return nil, err
+	}
+	storeCtx := getStoreReadWriteContext(ctx)
+
+	if err := validateName(name); err != nil {
+		return nil, err
+	}
+
+	caCert, err := b.certProvider.GetCA()
+	if err != nil {
+		return nil, errors.Wrap(err, "retrieving CA certificate")
+	}
+
+	user := extractUserIdentity(ctx)
+	cert, id, err := b.certProvider.GetCRSCert(validUntil)
+	if err != nil {
+		return nil, errors.Wrap(err, "generating CRS certificates")
+	}
+
+	expiryDate, err := extractCertExpiryDate(cert)
+	if err != nil {
+		return nil, errors.Wrap(err, "extracting expiry date of CRS certificate")
+	}
+
+	expiryTimestamp, err := protocompat.ConvertTimeToTimestampOrError(expiryDate)
+	if err != nil {
+		return nil, errors.Wrap(err, "converting CRS expiry date to timestamp")
+	}
+
+	// On the storage side we are reusing the InitBundleMeta.
+	meta := &storage.InitBundleMeta{
+		Id:        id.String(),
+		Name:      name,
+		CreatedAt: protocompat.TimestampNow(),
+		CreatedBy: user,
+		ExpiresAt: expiryTimestamp,
+		Version:   storage.InitBundleMeta_CRS,
+	}
+
+	if err := b.store.Add(storeCtx, meta); err != nil {
+		return nil, errors.Wrap(err, "adding new CRS metadata to data store")
+	}
+
+	return &CRSWithMeta{
+		CRS: &crs.CRS{
+			CAs:     []string{caCert},
+			Cert:    string(cert.CertPEM),
+			Key:     string(cert.KeyPEM),
+			Version: currentCrsVersion,
+		},
+		Meta: meta,
 	}, nil
 }
 
@@ -138,9 +231,10 @@ func (b *backendImpl) Revoke(ctx context.Context, id string) error {
 	if err := access.CheckAccess(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
 		return err
 	}
+	storeCtx := getStoreReadWriteContext(ctx)
 
-	if err := b.store.Revoke(ctx, id); err != nil {
-		return errors.Wrap(err, "revoking init bundle")
+	if err := b.store.Revoke(storeCtx, id); err != nil {
+		return errors.Wrapf(err, "revoking init bundle %q", id)
 	}
 
 	return nil
@@ -150,10 +244,11 @@ func (b *backendImpl) CheckRevoked(ctx context.Context, id string) error {
 	if err := access.CheckAccess(ctx, storage.Access_READ_ACCESS); err != nil {
 		return err
 	}
+	storeCtx := getStoreReadContext(ctx)
 
-	bundleMeta, err := b.store.Get(ctx, id)
+	bundleMeta, err := b.store.Get(storeCtx, id)
 	if err != nil {
-		return errors.Wrap(err, "retrieving init bundle")
+		return errors.Wrapf(err, "retrieving init bundle %q", id)
 	}
 
 	if bundleMeta.GetIsRevoked() {
@@ -172,7 +267,6 @@ func (b *backendImpl) ValidateClientCertificate(ctx context.Context, chain []mtl
 	bundleID := leaf.Subject.Organization
 	// check if leaf cert is part of an init bundle
 	if len(bundleID) == 0 {
-		log.Debugf("Init bundle ID was not found in certificate %q", leaf.Subject.OrganizationalUnit)
 		return nil
 	}
 
@@ -187,8 +281,30 @@ func (b *backendImpl) ValidateClientCertificate(ctx context.Context, chain []mtl
 			log.Errorf("init bundle cert is revoked: %q", bundleID)
 			return errors.Wrapf(err, "init bundle verification failed %q", bundleID[0])
 		}
-		return errors.Wrap(err, "failed checking init bundle status")
+		return errors.Wrapf(err, "failed checking init bundle status %q", bundleID[0])
 	}
 
 	return nil
+}
+
+func getStoreContext(ctx context.Context, accessMode storage.Access) context.Context {
+	accessLevels := []storage.Access{accessMode}
+	if accessMode == storage.Access_READ_WRITE_ACCESS {
+		accessLevels = append(accessLevels, storage.Access_READ_ACCESS)
+	}
+	return sac.WithGlobalAccessScopeChecker(
+		ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(accessLevels...),
+			sac.ResourceScopeKeys(resources.InitBundleMeta),
+		),
+	)
+}
+
+func getStoreReadContext(ctx context.Context) context.Context {
+	return getStoreContext(ctx, storage.Access_READ_ACCESS)
+}
+
+func getStoreReadWriteContext(ctx context.Context) context.Context {
+	return getStoreContext(ctx, storage.Access_READ_WRITE_ACCESS)
 }

@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Popover } from '@patternfly/react-core';
 import { HelpIcon } from '@patternfly/react-icons';
 
@@ -6,12 +7,12 @@ function AnnotationKeyLabelIcon(): ReactElement {
     return (
         <Popover
             showClose={false}
+            aria-label="Information about annotation key"
             bodyContent={
                 <div>
                     Using an annotation key, you can define an audience to notify about policy
                     violations associated with any given deployment or namespace. If the deployment
-                    has the annotation, its value overrides the default; otherwise, if the namespace
-                    has the annotation, its value overrides the default.
+                    and/or namespace has the annotation, its value overrides the default.
                 </div>
             }
         >
@@ -20,9 +21,9 @@ function AnnotationKeyLabelIcon(): ReactElement {
                 aria-label="More info for annotation field"
                 onClick={(e) => e.preventDefault()}
                 aria-describedby="simple-form-name-01"
-                className="pf-c-form__group-label-help"
+                className="pf-v5-c-form__group-label-help"
             >
-                <HelpIcon noVerticalAlign />
+                <HelpIcon />
             </button>
         </Popover>
     );

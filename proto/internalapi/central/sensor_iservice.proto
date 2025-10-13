@@ -1,98 +1,143 @@
 syntax = "proto3";
 
-option go_package = "central";
+package central;
 
+import "internalapi/central/baseline_sync.proto";
 import "internalapi/central/cluster_config.proto";
+import "internalapi/central/cluster_metrics.proto";
 import "internalapi/central/cluster_status.proto";
+import "internalapi/central/compliance_operator.proto";
+import "internalapi/central/delegated_registry_config.proto";
+import "internalapi/central/deployment_enhancement.proto";
+import "internalapi/central/hello.proto";
+import "internalapi/central/image.proto";
+import "internalapi/central/local_scanner.proto";
+import "internalapi/central/network_baseline_sync.proto";
 import "internalapi/central/network_flow.proto";
 import "internalapi/central/policy_sync.proto";
+import "internalapi/central/process_listening_on_ports_update.proto";
+import "internalapi/central/secured_cluster_cert_refresh.proto";
 import "internalapi/central/sensor_events.proto";
 import "internalapi/central/sensor_upgrade.proto";
-import "internalapi/central/cluster_metrics.proto";
 import "internalapi/central/telemetry.proto";
-import "internalapi/central/baseline_sync.proto";
-import "internalapi/central/hello.proto";
-import "internalapi/central/network_baseline_sync.proto";
-import "internalapi/central/local_scanner.proto";
-import "internalapi/central/process_listening_on_ports_update.proto";
 import "storage/cluster.proto";
 import "storage/image.proto";
 
-package central;
+option go_package = "./internalapi/central;central";
 
+// next available tag: 20
 message MsgFromSensor {
-    string hash_key                                                     = 7;
-    string dedupe_key                                                   = 8;
-    oneof msg {
-        SensorEvent                   event                             = 1;
-        NetworkFlowUpdate             network_flow_update               = 2;
-        ScrapeUpdate                  scrape_update                     = 3;
-        NetworkPoliciesResponse       network_policies_response         = 4;
-        ClusterStatusUpdate           cluster_status_update             = 5;
-        PullTelemetryDataResponse     telemetry_data_response           = 6;
-        RawClusterHealthInfo          cluster_health_info               = 9;
-        SensorHello                   hello                             = 10;
-        AuditLogStatusInfo            audit_log_status_info             = 11;
-        IssueLocalScannerCertsRequest issue_local_scanner_certs_request = 12;
-        ClusterMetrics                cluster_metrics                   = 13;
-	ProcessListeningOnPortsUpdate	process_listening_on_port_update	= 14;
-    }
+  string hash_key = 7;
+  string dedupe_key = 8;
+  int32 processing_attempt = 15;
+  oneof msg {
+    SensorEvent event = 1;
+    NetworkFlowUpdate network_flow_update = 2;
+    ScrapeUpdate scrape_update = 3;
+    NetworkPoliciesResponse network_policies_response = 4;
+    ClusterStatusUpdate cluster_status_update = 5;
+    PullTelemetryDataResponse telemetry_data_response = 6;
+    RawClusterHealthInfo cluster_health_info = 9;
+    SensorHello hello = 10;
+    AuditLogStatusInfo audit_log_status_info = 11;
+    IssueLocalScannerCertsRequest issue_local_scanner_certs_request = 12;
+    ClusterMetrics cluster_metrics = 13;
+    ProcessListeningOnPortsUpdate process_listening_on_port_update = 14;
+    ComplianceOperatorInfo compliance_operator_info = 16;
+    ComplianceResponse compliance_response = 17;
+    DeploymentEnhancementResponse deployment_enhancement_response = 18;
+    IssueSecuredClusterCertsRequest issue_secured_cluster_certs_request = 19;
+  }
 }
-
-message ReassessPolicies {}
 
 message ReprocessDeployments {}
 
+// next available tag: 29
 message MsgToSensor {
-    oneof msg {
-        SensorEnforcement              enforcement                        =  1;
-        ScrapeCommand                  scrape_command                     =  2;
-        NetworkPoliciesCommand         network_policies_command           =  3;
-        ClusterConfig                  cluster_config                     =  4;
-        SensorUpgradeTrigger           sensor_upgrade_trigger             =  5;
-        PullTelemetryDataRequest       telemetry_data_request             =  6;
-        PolicySync                     policy_sync                        =  7;
-        ReassessPolicies               reassess_policies                  =  8;
-        BaselineSync                   baseline_sync                      =  9;
-        CancelPullTelemetryDataRequest cancel_pull_telemetry_data_request = 10;
-        PushNetworkEntitiesRequest     push_network_entities_request      = 11;
-        CentralHello                   hello                              = 12;
-        NetworkBaselineSync            network_baseline_sync              = 13;
-        AuditLogSync                   audit_log_sync                     = 14;
-        ReprocessDeployment            reprocess_deployment               = 15;
-        InvalidateImageCache           invalidate_image_cache             = 16;
-        IssueLocalScannerCertsResponse issue_local_scanner_certs_response = 17;
-        storage.Image                  updated_image                      = 18;
-        ReprocessDeployments           reprocess_deployments              = 19;
-    }
+  oneof msg {
+    SensorEnforcement enforcement = 1;
+    ScrapeCommand scrape_command = 2;
+    NetworkPoliciesCommand network_policies_command = 3;
+    ClusterConfig cluster_config = 4;
+    SensorUpgradeTrigger sensor_upgrade_trigger = 5;
+    PullTelemetryDataRequest telemetry_data_request = 6;
+    PolicySync policy_sync = 7;
+    // 8 was ReassessPolicies
+    BaselineSync baseline_sync = 9;
+    CancelPullTelemetryDataRequest cancel_pull_telemetry_data_request = 10;
+    PushNetworkEntitiesRequest push_network_entities_request = 11;
+    CentralHello hello = 12;
+    NetworkBaselineSync network_baseline_sync = 13;
+    AuditLogSync audit_log_sync = 14;
+    ReprocessDeployment reprocess_deployment = 15;
+    InvalidateImageCache invalidate_image_cache = 16;
+    IssueLocalScannerCertsResponse issue_local_scanner_certs_response = 17;
+    storage.Image updated_image = 18;
+    ReprocessDeployments reprocess_deployments = 19;
+    NodeInventoryACK node_inventory_ack = 20;
+    DelegatedRegistryConfig delegated_registry_config = 21;
+    ScanImage scan_image = 22;
+    ImageIntegrations image_integrations = 23;
+    ComplianceRequest compliance_request = 24;
+    ClusterHealthResponse cluster_health_response = 25;
+    DeduperState deduper_state = 26;
+    DeploymentEnhancementRequest deployment_enhancement_request = 27;
+    IssueSecuredClusterCertsResponse issue_secured_cluster_certs_response = 28;
+  }
+}
+
+message DeduperState {
+  map<string, uint64> resource_hashes = 1;
+  int32 current = 2;
+  int32 total = 3;
+}
+
+message NodeInventoryACK {
+  string cluster_id = 1;
+  string node_name = 2;
+  Action action = 3;
+
+  enum Action {
+    ACK = 0;
+    NACK = 1;
+  }
+
+  // MessageType determines the type of message being acknowledged.
+  // It is a generic way of determining to which component this message is directed to.
+  // In version 4.6 and earlier, the messageType field was missing, because there was only one type and it
+  // was the node-inventory.
+  MessageType messageType = 4;
+
+  enum MessageType {
+    NodeInventory = 0;
+    NodeIndexer = 1;
+  }
 }
 
 message AuditLogSync {
-    map<string, storage.AuditLogFileState> node_audit_log_file_states = 1;
+  map<string, storage.AuditLogFileState> node_audit_log_file_states = 1;
 }
 
 message AuditLogStatusInfo {
-    map<string, storage.AuditLogFileState> node_audit_log_file_states = 1;
+  map<string, storage.AuditLogFileState> node_audit_log_file_states = 1;
 }
 
 message ReprocessDeployment {
-    // Sensor stores deployments, hence no need to send the full deployment. Note that the sensor image cache is not
-    // invalidated by this message. `InvalidateImageCache` message must be sent before this message to pull new image scan.
+  // Sensor stores deployments, hence no need to send the full deployment. Note that the sensor image cache is not
+  // invalidated by this message. `InvalidateImageCache` message must be sent before this message to pull new image scan.
 
-    repeated string  deployment_ids = 1;
+  repeated string deployment_ids = 1;
 }
 
 message InvalidateImageCache {
-    message ImageKey {
-        string image_id        = 1;
-        string image_full_name = 2;
-    }
+  message ImageKey {
+    string image_id = 1;
+    string image_full_name = 2;
+  }
 
-    repeated ImageKey image_keys = 1;
+  repeated ImageKey image_keys = 1;
 }
 
 service SensorService {
-
-    rpc Communicate(stream MsgFromSensor) returns (stream MsgToSensor);
-
+  rpc Communicate(stream MsgFromSensor) returns (stream MsgToSensor);
 }

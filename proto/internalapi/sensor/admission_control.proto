@@ -1,41 +1,41 @@
 syntax = "proto3";
 
-option go_package = "sensor";
-
-import "storage/cluster.proto";
-import "storage/namespace_metadata.proto";
-import "storage/deployment.proto";
-import "storage/policy.proto";
-import "google/protobuf/timestamp.proto";
-import "internalapi/central/sensor_events.proto";
-
 package sensor;
 
+import "google/protobuf/timestamp.proto";
+import "internalapi/central/sensor_events.proto";
+import "storage/cluster.proto";
+import "storage/deployment.proto";
+import "storage/namespace_metadata.proto";
+import "storage/policy.proto";
+
+option go_package = "./internalapi/sensor;sensor";
+
 message AdmissionControlSettings {
-    storage.DynamicClusterConfig cluster_config                = 1;
-    storage.PolicyList           enforced_deploy_time_policies = 2;
-    google.protobuf.Timestamp    timestamp                     = 3;
-    string                       cache_version                 = 4;
+  storage.DynamicClusterConfig cluster_config = 1;
+  storage.PolicyList enforced_deploy_time_policies = 2;
+  google.protobuf.Timestamp timestamp = 3;
+  string cache_version = 4;
 
-    string                       central_endpoint              = 5;
+  string central_endpoint = 5;
 
-    string                       cluster_id                    = 6;
-    storage.PolicyList           runtime_policies              = 7;
+  string cluster_id = 6;
+  storage.PolicyList runtime_policies = 7;
 }
 
 message AdmissionControlAlerts {
-    repeated central.AlertResults   alert_results   = 1;
+  repeated central.AlertResults alert_results = 1;
 }
 
 message AdmCtrlUpdateResourceRequest {
-    message ResourcesSynced {}
+  message ResourcesSynced {}
 
-    central.ResourceAction        action     = 1;
-    oneof resource {
-        storage.Deployment        deployment = 2;
-        storage.Pod               pod        = 3;
-        storage.NamespaceMetadata namespace  = 4;
+  central.ResourceAction action = 1;
+  oneof resource {
+    storage.Deployment deployment = 2;
+    storage.Pod pod = 3;
+    storage.NamespaceMetadata namespace = 4;
 
-        ResourcesSynced           synced     = 5;
-    }
+    ResourcesSynced synced = 5;
+  }
 }

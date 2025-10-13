@@ -1,20 +1,21 @@
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom-v5-compat';
 import { integrationsPath } from 'routePaths';
 
 import {
-    IntegrationOptions,
     createIntegration,
     saveIntegration,
     saveIntegrationV2,
     testIntegration,
     testIntegrationV2,
 } from 'services/IntegrationsService';
-import { IntegrationSource, IntegrationType } from 'Containers/Integrations/utils/integrationUtils';
+import type { IntegrationOptions } from 'services/IntegrationsService';
 import { generateAPIToken } from 'services/APITokensService';
-import { generateClusterInitBundle } from 'services/ClustersService';
-import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import { getAxiosErrorMessage, isTimeoutError } from 'utils/responseErrorUtils';
 
-import { FormResponseMessage } from 'Components/PatternFly/FormMessage';
+import type { FormResponseMessage } from 'Components/PatternFly/FormMessage';
+import { createMachineAccessConfig } from 'services/MachineAccessService';
+
+import type { IntegrationSource, IntegrationType } from '../utils/integrationUtils';
 import useFetchIntegrations from './useFetchIntegrations';
 import usePageState from './usePageState';
 
@@ -30,7 +31,7 @@ export type UseIntegrationActionsResult = {
 };
 
 function useIntegrationActions(): UseIntegrationActionsResult {
-    const history = useHistory();
+    const navigate = useNavigate();
     const {
         isEditing,
         params: { source, type },
@@ -47,15 +48,16 @@ function useIntegrationActions(): UseIntegrationActionsResult {
                     typeof updatePassword === 'boolean'
                         ? await saveIntegration(source, data, { updatePassword })
                         : await saveIntegrationV2(source, data);
-                history.push(integrationsListPath);
+                navigate(integrationsListPath);
             } else if (type === 'apitoken') {
                 responseData = await generateAPIToken(data);
-            } else if (type === 'clusterInitBundle') {
-                responseData = await generateClusterInitBundle(data);
+            } else if (type === 'machineAccess') {
+                responseData = await createMachineAccessConfig(data);
+                navigate(-1);
             } else {
                 responseData = await createIntegration(source, data);
-                // we only want to redirect when creating a new (non-apitoken and non-clusterinitbundle) integration
-                history.goBack();
+                // we only want to redirect when creating a new non-apitoken integration
+                navigate(-1);
             }
 
             fetchIntegrations();
@@ -74,12 +76,15 @@ function useIntegrationActions(): UseIntegrationActionsResult {
             }
             return { message: `The test was successful`, isError: false };
         } catch (error) {
+            if (source === 'cloudSources' && isTimeoutError(error)) {
+                return { message: 'Could not reach the cloud source endpoint.', isError: true };
+            }
             return { message: getAxiosErrorMessage(error), isError: true };
         }
     }
 
     function onCancel() {
-        history.push(integrationsListPath);
+        navigate(integrationsListPath);
     }
 
     return { onSave, onTest, onCancel };

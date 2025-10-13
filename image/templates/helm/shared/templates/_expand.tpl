@@ -8,7 +8,7 @@
   of $target that is also present in $expandable, the following action is performed:
   - If the entry in $expandable is a dict, recursive invoke "srox.expandAll" on the
     respective entries, with an adjusted $path.
-  - Otherwise, the entry in $expandable is assume to be of boolean value. If the value is
+  - Otherwise, the entry in $expandable is assumed to be of boolean value. If the value is
     true, the corresponding entry's value in $target is expanded (see "srox._expandSingle"
     below for a definition of expanding), and the result of the expansion is stored under
     the key with a "_" prepended in $target. The original entry in $target is removed. This
@@ -47,7 +47,7 @@
 {{ end }}
 
 {{/*
-  srox.expand $ $spec
+  srox._expandSingle $ $spec
 
   Parses and expands a "specification string" in the following way:
   - If $spec is a dictionary, return $spec rendered as a YAML.

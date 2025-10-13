@@ -5,25 +5,27 @@ import (
 
 	"github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
+// TODO(ROX-28123): Remove file
+
+// Deprecated: replaced with equivalent functions using flattened data model
 // Merge merges the images parts into an image.
 func Merge(parts ImageParts) *storage.Image {
-	ret := parts.Image.Clone()
-	mergeComponents(parts, ret)
-	return ret
+	mergeComponents(parts, parts.Image)
+	return parts.Image
 }
 
 func mergeComponents(parts ImageParts, image *storage.Image) {
 	// If the image has a nil scan, there is nothing to fill in.
-	if image.Scan == nil {
+	if image.GetScan() == nil {
 		return
 	}
 
 	// Use the edges to combine into the parent image.
 	for _, cp := range parts.Children {
-		IDParts := postgres.IDToParts(cp.Edge.GetId())
+		IDParts := pgSearch.IDToParts(cp.Edge.GetId())
 		if len(IDParts) == 0 {
 			log.Error("image to component edge does not have primary keys")
 			continue
@@ -34,28 +36,33 @@ func mergeComponents(parts ImageParts, image *storage.Image) {
 			log.Error("image to component edge does not match image")
 			continue
 		}
+		if cp.Component == nil || cp.Edge == nil {
+			log.Errorf("UNEXPECTED: nil component or edge when retrieving components for image %q", image.GetId())
+			continue
+		}
 		// Generate an embedded component for the edge and non-embedded version.
 		image.Scan.Components = append(image.Scan.Components, generateEmbeddedComponent(image.GetScan().GetOperatingSystem(), cp, parts.ImageCVEEdges))
 	}
 
 	sort.SliceStable(image.GetScan().GetComponents(), func(i, j int) bool {
-		return image.GetScan().GetComponents()[i].GetName() < image.GetScan().GetComponents()[j].GetName()
+		compI, compJ := image.GetScan().GetComponents()[i], image.GetScan().GetComponents()[j]
+		if compI.GetName() != compJ.GetName() {
+			return compI.GetName() < compJ.GetName()
+		}
+		return compI.GetVersion() < compJ.GetVersion()
 	})
 	for _, comp := range image.GetScan().GetComponents() {
-		sort.SliceStable(comp.Vulns, func(i, j int) bool {
-			return comp.Vulns[i].GetCve() < comp.Vulns[j].GetCve()
+		sort.SliceStable(comp.GetVulns(), func(i, j int) bool {
+			return comp.GetVulns()[i].GetCve() < comp.GetVulns()[j].GetCve()
 		})
 	}
 }
 
-func generateEmbeddedComponent(os string, cp ComponentParts, imageCVEEdges map[string]*storage.ImageCVEEdge) *storage.EmbeddedImageScanComponent {
-	if cp.Component == nil || cp.Edge == nil {
-		return nil
-	}
+func generateEmbeddedComponent(_ string, cp ComponentParts, imageCVEEdges map[string]*storage.ImageCVEEdge) *storage.EmbeddedImageScanComponent {
 	ret := &storage.EmbeddedImageScanComponent{
 		Name:      cp.Component.GetName(),
 		Version:   cp.Component.GetVersion(),
-		License:   cp.Component.GetLicense().Clone(),
+		License:   cp.Component.GetLicense().CloneVT(),
 		Source:    cp.Component.GetSource(),
 		Location:  cp.Edge.GetLocation(),
 		FixedBy:   cp.Component.GetFixedBy(),
@@ -83,18 +90,18 @@ func generateEmbeddedComponent(os string, cp ComponentParts, imageCVEEdges map[s
 		if cveEdge == nil {
 			continue
 		}
+		if cve.CVE == nil || cve.Edge == nil {
+			log.Errorf("UNEXPECTED: nil cve or edge when retrieving cves for component %q", cp.Component.GetId())
+			continue
+		}
 		ret.Vulns = append(ret.Vulns, generateEmbeddedCVE(cve, imageCVEEdges[cve.CVE.GetId()]))
 	}
 	return ret
 }
 
 func generateEmbeddedCVE(cp CVEParts, imageCVEEdge *storage.ImageCVEEdge) *storage.EmbeddedVulnerability {
-	if cp.CVE == nil || cp.Edge == nil {
-		return nil
-	}
-
 	ret := utils.ImageCVEToEmbeddedVulnerability(cp.CVE)
-	if cp.Edge.IsFixable {
+	if cp.Edge.GetIsFixable() {
 		ret.SetFixedBy = &storage.EmbeddedVulnerability_FixedBy{
 			FixedBy: cp.Edge.GetFixedBy(),
 		}

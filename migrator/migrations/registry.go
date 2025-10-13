@@ -4,8 +4,6 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/migrations"
 )
 
 var (
@@ -14,9 +12,6 @@ var (
 
 // MustRegisterMigration registers a Migration, panic-ing if there's an error.
 func MustRegisterMigration(m types.Migration) {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() && m.StartingSeqNum > migrations.CurrentDBVersionSeqNumWithoutPostgres() {
-		return
-	}
 	if _, ok := migrationRegistry[m.StartingSeqNum]; ok {
 		panic(fmt.Sprintf("Found multiple migrations starting at seq num %d", m.StartingSeqNum))
 	}

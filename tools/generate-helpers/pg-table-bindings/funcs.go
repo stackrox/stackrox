@@ -8,9 +8,9 @@ import (
 	"text/template"
 	"unicode"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -26,7 +26,7 @@ func parseReferencesAndInjectPeerSchemas(schema *walker.Schema, refs []string) (
 			refTable = pgutils.NamingStrategy.TableName(stringutils.GetAfter(refObjType, "."))
 		}
 
-		refMsgType := proto.MessageType(refObjType)
+		refMsgType := protoutils.MessageType(refObjType)
 		if refMsgType == nil {
 			log.Fatalf("could not find message for type: %s", refObjType)
 		}
@@ -83,7 +83,11 @@ func lowerCamelCase(s string) string {
 		return ""
 	}
 	words[0] = strings.ToLower(words[0])
+	if len(words) == 1 && words[0] == "id" {
+		return "id"
+	}
 	applyPointwise(words[1:], strings.Title)
+	applyPointwise(words, stringutils.UpperCaseAcronyms)
 	return strings.Join(words, "")
 }
 
@@ -93,6 +97,7 @@ func upperCamelCase(s string) string {
 		return ""
 	}
 	applyPointwise(words, strings.Title)
+	applyPointwise(words, stringutils.UpperCaseAcronyms)
 	return strings.Join(words, "")
 }
 
@@ -123,7 +128,12 @@ func dict(values ...interface{}) (map[string]interface{}, error) {
 	return dict, nil
 }
 
+func arr(els ...any) []any {
+	return els
+}
+
 var funcMap = template.FuncMap{
+	"arr":                          arr,
 	"lowerCamelCase":               lowerCamelCase,
 	"upperCamelCase":               upperCamelCase,
 	"valueExpansion":               valueExpansion,

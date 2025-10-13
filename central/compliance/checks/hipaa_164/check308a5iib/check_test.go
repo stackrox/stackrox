@@ -4,16 +4,15 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/framework/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestCheck(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(suiteImpl))
 }
 
@@ -48,7 +47,7 @@ func (s *suiteImpl) TestFail() {
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
 
-	domain := framework.NewComplianceDomain(testCluster, testNodes, testDeployments, nil, nil)
+	domain := framework.NewComplianceDomain(testCluster, testNodes, testDeployments, nil)
 	err = run.Run(context.Background(), "standard", domain, data)
 	s.NoError(err)
 
@@ -83,7 +82,7 @@ func (s *suiteImpl) TestPass() {
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
 
-	domain := framework.NewComplianceDomain(testCluster, testNodes, testDeployments, nil, nil)
+	domain := framework.NewComplianceDomain(testCluster, testNodes, testDeployments, nil)
 	err = run.Run(context.Background(), "standard", domain, data)
 	s.NoError(err)
 
@@ -138,7 +137,7 @@ func (s *suiteImpl) policies() map[string]*storage.Policy {
 	}
 
 	for _, p := range policies {
-		policiesMap[p.Name] = p
+		policiesMap[p.GetName()] = p
 	}
 
 	return policiesMap

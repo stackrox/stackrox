@@ -3,14 +3,17 @@ package gatherers
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/providers"
 	"github.com/stackrox/rox/pkg/telemetry"
 	"github.com/stackrox/rox/pkg/telemetry/data"
 	"github.com/stackrox/rox/pkg/telemetry/gatherers"
-	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
+	"github.com/stackrox/rox/sensor/common/store"
+	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -24,7 +27,7 @@ type ClusterGatherer struct {
 
 // NewClusterGatherer returns a new ClusterGatherer which will gather telemetry data about the cluster monitored by this
 // sensor
-func NewClusterGatherer(k8sClient kubernetes.Interface, deploymentStore *resources.DeploymentStore) *ClusterGatherer {
+func NewClusterGatherer(k8sClient kubernetes.Interface, deploymentStore store.DeploymentStore) *ClusterGatherer {
 	return &ClusterGatherer{
 		componentGatherer: gatherers.NewComponentInfoGatherer(),
 		nodeGatherer:      newNodeGatherer(k8sClient),
@@ -37,7 +40,7 @@ func NewClusterGatherer(k8sClient kubernetes.Interface, deploymentStore *resourc
 func (c *ClusterGatherer) Gather(ctx context.Context) *data.ClusterInfo {
 	errorList := errorhelpers.NewErrorList("")
 
-	orchestrator, err := c.getOrchestrator()
+	orchestrator, err := c.getOrchestrator(ctx)
 	errorList.AddError(err)
 
 	providerMetadata := providers.GetMetadata(ctx)
@@ -62,10 +65,20 @@ func (c *ClusterGatherer) Gather(ctx context.Context) *data.ClusterInfo {
 	}
 }
 
-func (c *ClusterGatherer) getOrchestrator() (*data.OrchestratorInfo, error) {
-	serverVersion, err := c.k8sClient.Discovery().ServerVersion()
+func (c *ClusterGatherer) getOrchestrator(ctx context.Context) (*data.OrchestratorInfo, error) {
+	var (
+		serverVersion *version.Info
+		err           error
+	)
+	// The default API client we use does not have a global timeout set and the discovery API does not respect context
+	// cancellation, hence need to wrap this with concurrency.DoInWaitable.
+	if ctxErr := concurrency.DoInWaitable(ctx, func() {
+		serverVersion, err = c.k8sClient.Discovery().ServerVersion()
+	}); ctxErr != nil {
+		return nil, errors.Wrap(ctxErr, "getting Kubernetes server version (context cancelled)")
+	}
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "getting Kubernetes server version")
 	}
 	orchestrator := storage.ClusterType_KUBERNETES_CLUSTER.String()
 	if env.OpenshiftAPI.BooleanSetting() {

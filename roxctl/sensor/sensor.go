@@ -1,8 +1,6 @@
 package sensor
 
 import (
-	"time"
-
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
@@ -14,13 +12,15 @@ import (
 // Command controls all of the functions being applied to a sensor
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
-		Use: "sensor",
+		Use:   "sensor",
+		Short: "Commands related to deploying StackRox services in secured clusters",
 	}
 	c.AddCommand(
 		generate.Command(cliEnvironment),
 		getbundle.Command(cliEnvironment),
 		generatecerts.Command(cliEnvironment),
 	)
-	flags.AddTimeoutWithDefault(c, 30*time.Second)
+	flags.AddTimeout(c)
+	flags.AddRetryTimeout(c)
 	return c
 }

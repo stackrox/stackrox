@@ -3,20 +3,13 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/rbac/k8srole/internal/index"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/rbac/k8srole/internal/store"
-	"github.com/stackrox/rox/central/rbac/k8srole/search"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/debug"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	searchPkg "github.com/stackrox/rox/pkg/search"
-)
-
-const (
-	batchSize = 1000
 )
 
 var (
@@ -24,40 +17,7 @@ var (
 )
 
 type datastoreImpl struct {
-	storage  store.Store
-	indexer  index.Indexer
-	searcher search.Searcher
-}
-
-func (d *datastoreImpl) buildIndex(ctx context.Context) error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil
-	}
-	defer debug.FreeOSMemory()
-
-	log.Info("[STARTUP] Indexing roles")
-
-	var roles []*storage.K8SRole
-	var count int
-	err := d.storage.Walk(ctx, func(role *storage.K8SRole) error {
-		roles = append(roles, role)
-		if len(roles) == batchSize {
-			if err := d.indexer.AddK8SRoles(roles); err != nil {
-				return err
-			}
-			roles = roles[:0]
-		}
-		count++
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-	if err := d.indexer.AddK8SRoles(roles); err != nil {
-		return err
-	}
-	log.Infof("[STARTUP] Successfully indexed %d roles", count)
-	return nil
+	storage store.Store
 }
 
 func (d *datastoreImpl) GetRole(ctx context.Context, id string) (*storage.K8SRole, bool, error) {
@@ -73,11 +33,26 @@ func (d *datastoreImpl) GetRole(ctx context.Context, id string) (*storage.K8SRol
 }
 
 func (d *datastoreImpl) SearchRoles(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	return d.searcher.SearchRoles(ctx, q)
+	results, err := d.Search(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	roles, missingIndices, err := d.storage.GetMany(ctx, searchPkg.ResultsToIDs(results))
+	if err != nil {
+		return nil, err
+	}
+	results = searchPkg.RemoveMissingResults(results, missingIndices)
+
+	return convertMany(roles, results)
 }
 
 func (d *datastoreImpl) SearchRawRoles(ctx context.Context, request *v1.Query) ([]*storage.K8SRole, error) {
-	return d.searcher.SearchRawRoles(ctx, request)
+	roles := make([]*storage.K8SRole, 0)
+	err := d.storage.GetByQueryFn(ctx, request, func(role *storage.K8SRole) error {
+		roles = append(roles, role)
+		return nil
+	})
+	return roles, err
 }
 
 func (d *datastoreImpl) UpsertRole(ctx context.Context, request *storage.K8SRole) error {
@@ -87,10 +62,7 @@ func (d *datastoreImpl) UpsertRole(ctx context.Context, request *storage.K8SRole
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := d.storage.Upsert(ctx, request); err != nil {
-		return err
-	}
-	return d.indexer.AddK8SRole(request)
+	return d.storage.Upsert(ctx, request)
 }
 
 func (d *datastoreImpl) RemoveRole(ctx context.Context, id string) error {
@@ -100,17 +72,36 @@ func (d *datastoreImpl) RemoveRole(ctx context.Context, id string) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := d.storage.Delete(ctx, id); err != nil {
-		return err
-	}
-	return d.indexer.DeleteK8SRole(id)
+	return d.storage.Delete(ctx, id)
 }
 
 func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
-	return d.searcher.Search(ctx, q)
+	return d.storage.Search(ctx, q)
 }
 
 // Count returns the number of search results from the query
 func (d *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return d.searcher.Count(ctx, q)
+	return d.storage.Count(ctx, q)
+}
+
+func convertMany(roles []*storage.K8SRole, results []searchPkg.Result) ([]*v1.SearchResult, error) {
+	if len(roles) != len(results) {
+		return nil, errors.New("mismatch between search results and retrieved roles")
+	}
+
+	outputResults := make([]*v1.SearchResult, len(roles))
+	for index, role := range roles {
+		outputResults[index] = convertOne(role, &results[index])
+	}
+	return outputResults, nil
+}
+
+func convertOne(role *storage.K8SRole, result *searchPkg.Result) *v1.SearchResult {
+	return &v1.SearchResult{
+		Category:       v1.SearchCategory_ROLES,
+		Id:             role.GetId(),
+		Name:           role.GetName(),
+		FieldToMatches: searchPkg.GetProtoMatchesMap(result.Matches),
+		Score:          result.Score,
+	}
 }

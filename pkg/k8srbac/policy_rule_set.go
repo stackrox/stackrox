@@ -34,7 +34,7 @@ func (p *policyRuleSet) Add(prs ...*storage.PolicyRule) {
 		// policyRuleSet can *take ownership of and later modify* its
 		// parameter on subsequent calls. It is better to play it safe and Clone the rules
 		// before adding.
-		p.add(pr.Clone())
+		p.add(pr.CloneVT())
 	}
 }
 
@@ -105,11 +105,11 @@ func (p *policyRuleSet) GetPermissionMap() map[string]set.StringSet {
 				if resource == "*" {
 					permissionSet[verb] = set.NewStringSet(resource)
 					break
-				} else {
-					resourceSet := permissionSet[verb]
-					resourceSet.Add(resource)
-					permissionSet[verb] = resourceSet
 				}
+
+				resourceSet := permissionSet[verb]
+				resourceSet.Add(resource)
+				permissionSet[verb] = resourceSet
 			}
 		}
 	}

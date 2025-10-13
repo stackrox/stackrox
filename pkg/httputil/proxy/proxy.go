@@ -42,6 +42,41 @@ func getGlobalProxyConfig() *compiledConfig {
 	return cc
 }
 
+// Option returns a modified proxy round tripper.
+type Option func(base *http.Transport) *http.Transport
+
+// WithDialTimeout returns a proxy option which sets the dial timeout on the transport.
+func WithDialTimeout(timeout time.Duration) Option {
+	return func(transport *http.Transport) *http.Transport {
+		transport.DialContext = dialerWithTimeout(timeout).DialContext
+		return transport
+	}
+}
+
+// WithResponseHeaderTimeout returns a proxy option which sets the response header timeout
+// on the transport.
+func WithResponseHeaderTimeout(timeout time.Duration) Option {
+	return func(transport *http.Transport) *http.Transport {
+		transport.ResponseHeaderTimeout = timeout
+		return transport
+	}
+}
+
+// WithTLSConfig returns a proxy option which sets the TLS config on the transport.
+func WithTLSConfig(tlsConf *tls.Config) Option {
+	return func(transport *http.Transport) *http.Transport {
+		transport.TLSClientConfig = tlsConf
+		return transport
+	}
+}
+
+func applyOptions(transport *http.Transport, options ...Option) *http.Transport {
+	for _, opt := range options {
+		transport = opt(transport)
+	}
+	return transport
+}
+
 // UseWithDefaultTransport configures the default HTTP transport to use the proxy function defined in this package.
 // It should be called from an `init()` function to avoid any concurrent access to fields of `http.DefaultTransport`.
 func UseWithDefaultTransport() bool {
@@ -65,23 +100,20 @@ func TransportFunc(req *http.Request) (*url.URL, error) {
 }
 
 // Without is a ProxyFunc for http.Transport that will always attempt a direct connection.
-func Without() http.RoundTripper {
+func Without(options ...Option) http.RoundTripper {
 	transport := copyDefaultTransport()
 	transport.Proxy = nil
-	return transport
+	return applyOptions(transport, options...)
 }
 
 // RoundTripper returns something very similar to http.DefaultTransport, but with the Proxy setting changed to use
 // the configuration supported by this package.
-func RoundTripper() http.RoundTripper {
-	return proxyTransport
-}
-
-// RoundTripperWithTLSConfig returns a round tripper like RoundTripper(), but using a custom TLS config.
-func RoundTripperWithTLSConfig(tlsConf *tls.Config) http.RoundTripper {
-	trans := proxyTransport.Clone()
-	trans.TLSClientConfig = tlsConf
-	return trans
+func RoundTripper(options ...Option) http.RoundTripper {
+	if len(options) == 0 {
+		return proxyTransport
+	}
+	transport := proxyTransport.Clone()
+	return applyOptions(transport, options...)
 }
 
 // AwareDialContext implements a TCP "DialContext", but respecting the proxy configuration.
@@ -91,9 +123,9 @@ func AwareDialContext(ctx context.Context, address string) (net.Conn, error) {
 		return defaultDialer.DialContext(ctx, "tcp", address)
 	}
 
-	fakeHTTPReq, err := http.NewRequest(http.MethodGet, fmt.Sprintf("tcp://%s", address), nil)
+	fakeHTTPReq, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("tcp://%s", address), nil)
 	if err != nil {
-		return nil, utils.Should(errors.Wrapf(err, "failed to instantiate fake HTTP request for address %q", address))
+		return nil, utils.ShouldErr(errors.Wrapf(err, "failed to instantiate fake HTTP request for address %q", address))
 	}
 	proxyURL, err := configurator(fakeHTTPReq)
 	if err != nil {
@@ -123,7 +155,8 @@ func AwareDialContextTLS(ctx context.Context, address string, tlsClientConf *tls
 		tlsClientConf.ServerName = host
 	}
 	tlsConn := tls.Client(conn, tlsClientConf)
-	if err := tlsConn.Handshake(); err != nil {
+	// The handshake must be done with a timeout to avoid infinite blocking of Sensor sync.
+	if err := tlsConn.HandshakeContext(ctx); err != nil {
 		utils.IgnoreError(tlsConn.Close)
 		return nil, err
 	}

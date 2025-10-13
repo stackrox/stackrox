@@ -1,10 +1,11 @@
 package store
 
 import (
+	"testing"
+
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/logimbue/store/bolt"
-	"github.com/stackrox/rox/central/logimbue/store/postgres"
-	"github.com/stackrox/rox/pkg/env"
+	pgStore "github.com/stackrox/rox/central/logimbue/store/postgres"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -16,12 +17,13 @@ var (
 // Singleton returns the singleton instance for the sensor connection manager.
 func Singleton() Store {
 	storeInstanceInit.Do(func() {
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			storeInstance = postgres.New(globaldb.GetPostgres())
-		} else {
-			storeInstance = bolt.NewStore(globaldb.GetGlobalDB())
-		}
+		storeInstance = pgStore.New(globaldb.GetPostgres())
 	})
 
 	return storeInstance
+}
+
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) Store {
+	return pgStore.New(pool)
 }

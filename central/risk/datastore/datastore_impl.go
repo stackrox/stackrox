@@ -4,72 +4,57 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/ranking"
-	"github.com/stackrox/rox/central/risk/datastore/internal/index"
-	"github.com/stackrox/rox/central/risk/datastore/internal/search"
 	"github.com/stackrox/rox/central/risk/datastore/internal/store"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
 var (
-	riskSAC = sac.ForResource(resources.Risk)
+	deploymentExtensionSAC = sac.ForResource(resources.DeploymentExtension)
 )
 
 type datastoreImpl struct {
 	storage            store.Store
-	indexer            index.Indexer
-	searcher           search.Searcher
 	entityTypeToRanker map[string]*ranking.Ranker
 }
 
-func (d *datastoreImpl) buildIndex(ctx context.Context) error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil
-	}
-	log.Info("[STARTUP] Indexing risk")
-	var risks []*storage.Risk
-	err := d.storage.Walk(ctx, func(risk *storage.Risk) error {
-		risks = append(risks, risk)
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-	if err := d.indexer.AddRisks(risks); err != nil {
-		return err
-	}
-	log.Info("[STARTUP] Successfully indexed risk")
-	return nil
-}
-
 func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
-	return d.searcher.Search(ctx, q)
+	return d.storage.Search(ctx, q)
 }
 
 // Count returns the number of search results from the query
 func (d *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return d.searcher.Count(ctx, q)
+	return d.storage.Count(ctx, q)
 }
 
 func (d *datastoreImpl) SearchRawRisks(ctx context.Context, q *v1.Query) ([]*storage.Risk, error) {
-	return d.searcher.SearchRawRisks(ctx, q)
+	var risks []*storage.Risk
+	// Using WalkByQuery as risk could potentially return a large amount of data
+	err := d.storage.WalkByQuery(ctx, q, func(risk *storage.Risk) error {
+		risks = append(risks, risk)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return risks, nil
 }
 
 // TODO: if subject is namespace or cluster, compute risk based on all visible child subjects
 func (d *datastoreImpl) GetRisk(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType) (*storage.Risk, bool, error) {
-	if allowed, err := riskSAC.ReadAllowed(ctx); err != nil || !allowed {
+	if allowed, err := deploymentExtensionSAC.ReadAllowed(ctx); err != nil || !allowed {
 		return nil, false, err
 	}
 	return d.getRiskForSubject(ctx, subjectID, subjectType)
 }
 
 func (d *datastoreImpl) GetRiskForDeployment(ctx context.Context, deployment *storage.Deployment) (*storage.Risk, bool, error) {
-	if allowed, err := riskSAC.ReadAllowed(ctx, sac.KeyForNSScopedObj(deployment)...); err != nil || !allowed {
+	if allowed, err := deploymentExtensionSAC.ReadAllowed(ctx, sac.KeyForNSScopedObj(deployment)...); err != nil || !allowed {
 		return nil, false, err
 	}
 	return d.getRiskForSubject(ctx, deployment.GetId(), storage.RiskSubjectType_DEPLOYMENT)
@@ -90,7 +75,7 @@ func (d *datastoreImpl) getRiskForSubject(ctx context.Context, subjectID string,
 }
 
 func (d *datastoreImpl) GetRiskByIndicators(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType, _ []string) (*storage.Risk, error) {
-	if allowed, err := riskSAC.ReadAllowed(ctx); err != nil || !allowed {
+	if allowed, err := deploymentExtensionSAC.ReadAllowed(ctx); err != nil || !allowed {
 		return nil, err
 	}
 	risk, found, err := d.GetRisk(ctx, subjectID, subjectType)
@@ -114,7 +99,7 @@ func (d *datastoreImpl) GetRiskByIndicators(ctx context.Context, subjectID strin
 }
 
 func (d *datastoreImpl) UpsertRisk(ctx context.Context, risk *storage.Risk) error {
-	if allowed, err := riskSAC.WriteAllowed(ctx); err != nil {
+	if allowed, err := deploymentExtensionSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !allowed {
 		return sac.ErrResourceAccessDenied
@@ -130,11 +115,11 @@ func (d *datastoreImpl) UpsertRisk(ctx context.Context, risk *storage.Risk) erro
 		return err
 	}
 	upsertRankerRecord(d.getRanker(risk.GetSubject().GetType()), risk.GetSubject().GetId(), risk.GetScore())
-	return d.indexer.AddRisk(risk)
+	return nil
 }
 
 func (d *datastoreImpl) RemoveRisk(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType) error {
-	if allowed, err := riskSAC.WriteAllowed(ctx); err != nil {
+	if allowed, err := deploymentExtensionSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !allowed {
 		return sac.ErrResourceAccessDenied
@@ -154,7 +139,7 @@ func (d *datastoreImpl) RemoveRisk(ctx context.Context, subjectID string, subjec
 		return err
 	}
 	removeRankerRecord(d.getRanker(risk.GetSubject().GetType()), risk.GetSubject().GetId())
-	return d.indexer.DeleteRisk(id)
+	return nil
 }
 
 func (d *datastoreImpl) getRisk(ctx context.Context, id string) (*storage.Risk, bool, error) {

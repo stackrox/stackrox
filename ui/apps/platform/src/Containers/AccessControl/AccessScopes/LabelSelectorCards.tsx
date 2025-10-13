@@ -1,18 +1,16 @@
 /* eslint-disable react/no-array-index-key */
-import React, { ReactElement, useState } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import { Button, Label, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 
-import {
+import type {
     LabelSelector,
     LabelSelectorRequirement,
     LabelSelectorsKey,
 } from 'services/AccessScopesService';
 
-import {
-    LabelSelectorsEditingState,
-    getIsEditingLabelSelectorOnTab,
-    getLabelSelectorActivity,
-} from './accessScopes.utils';
+import { getIsEditingLabelSelectorOnTab, getLabelSelectorActivity } from './accessScopes.utils';
+import type { LabelSelectorsEditingState } from './accessScopes.utils';
 import LabelSelectorCard from './LabelSelectorCard';
 
 export type LabelSelectorCardsProps = {
@@ -96,10 +94,10 @@ function LabelSelectorCards({
     return (
         <ul>
             {labelSelectors.map((labelSelector, indexLabelSelector) => (
-                <li key={indexLabelSelector} className="pf-u-pt-md">
+                <li key={indexLabelSelector} className="pf-v5-u-pt-md">
                     {indexLabelSelector !== 0 && (
-                        <div className="pf-u-mb-md pf-u-text-align-center">
-                            <Label variant="outline" className="pf-u-px-md">
+                        <div className="pf-v5-u-mb-md pf-v5-u-text-align-center">
+                            <Label variant="outline" className="pf-v5-u-px-md">
                                 or
                             </Label>
                         </div>

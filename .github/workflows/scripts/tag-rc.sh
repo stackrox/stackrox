@@ -16,14 +16,12 @@ check_not_empty \
     \
     DRY_RUN
 
-if [ "$(git tag "$TAG" --points-at HEAD)" = "$TAG" ]; then
+if [ "$(git tag --list "$TAG")" = "$TAG" ]; then
+    gh_log warning "Tag $TAG exists."
     if [ "$DRY_RUN" = "false" ]; then
         git push --delete origin "$TAG"
     fi
     gh_log warning "Existing tag '$TAG' has been deleted."
-elif [ "$(git tag --list "$TAG")" = "$TAG" ]; then
-    gh_log error "Tag $TAG exists and is not on the head."
-    exit 1
 fi
 
 git commit --allow-empty --message "Empty commit to trigger CI"

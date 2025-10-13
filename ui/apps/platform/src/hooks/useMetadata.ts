@@ -1,19 +1,30 @@
-import { useSelector } from 'react-redux';
-import { createSelector } from 'reselect';
-import { selectors } from 'reducers';
-import { Metadata } from 'types/metadataService.proto';
+import { createContext, useContext } from 'react';
 
-const selectMetadata = createSelector([selectors.getMetadata], (metadata: Metadata) => metadata);
+import type { MetadataContextType } from 'providers/MetadataProvider';
+import type { Metadata } from 'types/metadataService.proto';
 
-function useMetadata(): Metadata {
-    const metadata: Metadata = useSelector(selectMetadata);
+export const MetadataContext = createContext<MetadataContextType | undefined>(undefined);
 
-    const versionSuffix = metadata.releaseBuild === false ? ' [DEV BUILD]' : '';
-    const versionString = `v${metadata.version}${versionSuffix}`;
+type UseMetadataResult = Metadata & {
+    isLoadingMetadata: boolean;
+    error: Error | undefined;
+    isOutdatedVersion: boolean;
+    refetchMetadata: () => void;
+};
 
-    metadata.versionString = versionString;
+function useMetadata(): UseMetadataResult {
+    const context = useContext(MetadataContext);
+    if (context === undefined) {
+        throw new Error('useMetadata must be used within a MetadataProvider');
+    }
 
-    return metadata;
+    return {
+        ...context.metadata, // Spread metadata properties for compatibility with existing code
+        isLoadingMetadata: context.isLoadingMetadata,
+        error: context.error,
+        isOutdatedVersion: context.isOutdatedVersion,
+        refetchMetadata: context.refetchMetadata,
+    };
 }
 
 export default useMetadata;

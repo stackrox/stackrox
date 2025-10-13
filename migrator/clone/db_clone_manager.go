@@ -6,8 +6,8 @@ type DBCloneManager interface {
 	Scan() error
 
 	// GetCloneToMigrate -- retrieves the clone that needs moved to the active database.
-	GetCloneToMigrate() (string, string, string, error)
+	GetCloneToMigrate() (string, error)
 
 	// Persist -- moves the clone database to be the active database.
-	Persist(clone string, pgClone string, persistBoth bool) error
+	Persist(pgClone string) error
 }

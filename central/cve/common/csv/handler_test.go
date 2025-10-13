@@ -4,44 +4,43 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/audit"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
-	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
-	cveMocks "github.com/stackrox/rox/central/cve/datastore/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	componentMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
-	componentMappings "github.com/stackrox/rox/central/imagecomponent/mappings"
+	componentV2Mocks "github.com/stackrox/rox/central/imagecomponent/v2/datastore/mocks"
 	nsMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
-	nodeMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
-	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
+	nodeMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/features"
+	notifierMocks "github.com/stackrox/rox/pkg/notifier/mocks"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestCVEScoping(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(CVEScopingTestSuite))
 }
 
 type CVEScopingTestSuite struct {
 	suite.Suite
-	ctx                 context.Context
-	mockCtrl            *gomock.Controller
-	clusterDataStore    *clusterMocks.MockDataStore
-	nsDataStore         *nsMocks.MockDataStore
-	deploymentDataStore *deploymentMocks.MockDataStore
-	imageDataStore      *imageMocks.MockDataStore
-	nodeDataStore       *nodeMocks.MockGlobalDataStore
-	componentDataStore  *componentMocks.MockDataStore
-	cveDataStore        *cveMocks.MockDataStore
-	resolver            *resolvers.Resolver
-	handler             *HandlerImpl
+	ctx                  context.Context
+	mockCtrl             *gomock.Controller
+	clusterDataStore     *clusterMocks.MockDataStore
+	nsDataStore          *nsMocks.MockDataStore
+	deploymentDataStore  *deploymentMocks.MockDataStore
+	imageDataStore       *imageMocks.MockDataStore
+	nodeDataStore        *nodeMocks.MockDataStore
+	componentDataStore   *componentMocks.MockDataStore
+	componentV2DataStore *componentV2Mocks.MockDataStore
+	resolver             *resolvers.Resolver
+	handler              *HandlerImpl
 }
 
 func (suite *CVEScopingTestSuite) SetupTest() {
@@ -50,22 +49,33 @@ func (suite *CVEScopingTestSuite) SetupTest() {
 	suite.nsDataStore = nsMocks.NewMockDataStore(suite.mockCtrl)
 	suite.deploymentDataStore = deploymentMocks.NewMockDataStore(suite.mockCtrl)
 	suite.imageDataStore = imageMocks.NewMockDataStore(suite.mockCtrl)
-	suite.nodeDataStore = nodeMocks.NewMockGlobalDataStore(suite.mockCtrl)
+	suite.nodeDataStore = nodeMocks.NewMockDataStore(suite.mockCtrl)
 	suite.componentDataStore = componentMocks.NewMockDataStore(suite.mockCtrl)
-	suite.cveDataStore = cveMocks.NewMockDataStore(suite.mockCtrl)
+	suite.componentV2DataStore = componentV2Mocks.NewMockDataStore(suite.mockCtrl)
 	notifierMock := notifierMocks.NewMockProcessor(suite.mockCtrl)
 
 	notifierMock.EXPECT().HasEnabledAuditNotifiers().Return(false).AnyTimes()
 
-	suite.resolver = &resolvers.Resolver{
-		ClusterDataStore:        suite.clusterDataStore,
-		NamespaceDataStore:      suite.nsDataStore,
-		DeploymentDataStore:     suite.deploymentDataStore,
-		ImageDataStore:          suite.imageDataStore,
-		NodeGlobalDataStore:     suite.nodeDataStore,
-		ImageComponentDataStore: suite.componentDataStore,
-		CVEDataStore:            suite.cveDataStore,
-		AuditLogger:             audit.New(notifierMock),
+	if features.FlattenCVEData.Enabled() {
+		suite.resolver = &resolvers.Resolver{
+			ClusterDataStore:          suite.clusterDataStore,
+			NamespaceDataStore:        suite.nsDataStore,
+			DeploymentDataStore:       suite.deploymentDataStore,
+			ImageDataStore:            suite.imageDataStore,
+			NodeDataStore:             suite.nodeDataStore,
+			ImageComponentV2DataStore: suite.componentV2DataStore,
+			AuditLogger:               audit.New(notifierMock),
+		}
+	} else {
+		suite.resolver = &resolvers.Resolver{
+			ClusterDataStore:        suite.clusterDataStore,
+			NamespaceDataStore:      suite.nsDataStore,
+			DeploymentDataStore:     suite.deploymentDataStore,
+			ImageDataStore:          suite.imageDataStore,
+			NodeDataStore:           suite.nodeDataStore,
+			ImageComponentDataStore: suite.componentDataStore,
+			AuditLogger:             audit.New(notifierMock),
+		}
 	}
 
 	suite.handler = newTestHandler(suite.resolver)
@@ -90,7 +100,7 @@ func (suite *CVEScopingTestSuite) TestSingleResourceQuery() {
 
 	expected := scoped.Context(suite.ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGES,
-		ID:    imgSha,
+		IDs:   []string{imgSha},
 	})
 	actual, err := suite.handler.GetScopeContext(suite.ctx, query)
 	suite.NoError(err)
@@ -111,7 +121,7 @@ func (suite *CVEScopingTestSuite) TestMultipleResourceQuery() {
 
 	expected := scoped.Context(suite.ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGES,
-		ID:    imgSha,
+		IDs:   []string{imgSha},
 	})
 	// Lowest resource scope should be applied.
 	actual, err := suite.handler.GetScopeContext(suite.ctx, query)
@@ -145,7 +155,7 @@ func (suite *CVEScopingTestSuite) TestNoReScope() {
 
 	expected := scoped.Context(suite.ctx, scoped.Scope{
 		Level: v1.SearchCategory_DEPLOYMENTS,
-		ID:    "dep",
+		IDs:   []string{"dep"},
 	})
 	actual, err := suite.handler.GetScopeContext(expected, query)
 	suite.NoError(err)
@@ -153,16 +163,32 @@ func (suite *CVEScopingTestSuite) TestNoReScope() {
 }
 
 func newTestHandler(resolver *resolvers.Resolver) *HandlerImpl {
+	if features.FlattenCVEData.Enabled() {
+		return NewCSVHandler(
+			resolver,
+			// CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.
+			[]*SearchWrapper{
+				NewSearchWrapper(v1.SearchCategory_IMAGE_COMPONENTS_V2, schema.ImageComponentV2Schema.OptionsMap,
+					resolver.ImageComponentV2DataStore),
+				NewSearchWrapper(v1.SearchCategory_IMAGES, ImageOnlyOptionsMap, resolver.ImageDataStore),
+				NewSearchWrapper(v1.SearchCategory_DEPLOYMENTS, DeploymentOnlyOptionsMap, resolver.DeploymentDataStore),
+				NewSearchWrapper(v1.SearchCategory_NAMESPACES, NamespaceOnlyOptionsMap, resolver.NamespaceDataStore),
+				NewSearchWrapper(v1.SearchCategory_NODES, NodeOnlyOptionsMap, resolver.NodeDataStore),
+				NewSearchWrapper(v1.SearchCategory_CLUSTERS, schema.ClustersSchema.OptionsMap, resolver.ClusterDataStore),
+			},
+		)
+	}
 	return NewCSVHandler(
 		resolver,
 		// CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.
 		[]*SearchWrapper{
-			NewSearchWrapper(v1.SearchCategory_IMAGE_COMPONENTS, componentMappings.OptionsMap, resolver.ImageComponentDataStore),
+			NewSearchWrapper(v1.SearchCategory_IMAGE_COMPONENTS, schema.ImageComponentsSchema.OptionsMap,
+				resolver.ImageComponentDataStore),
 			NewSearchWrapper(v1.SearchCategory_IMAGES, ImageOnlyOptionsMap, resolver.ImageDataStore),
 			NewSearchWrapper(v1.SearchCategory_DEPLOYMENTS, DeploymentOnlyOptionsMap, resolver.DeploymentDataStore),
 			NewSearchWrapper(v1.SearchCategory_NAMESPACES, NamespaceOnlyOptionsMap, resolver.NamespaceDataStore),
-			NewSearchWrapper(v1.SearchCategory_NODES, NodeOnlyOptionsMap, resolver.NodeGlobalDataStore),
-			NewSearchWrapper(v1.SearchCategory_CLUSTERS, clusterMappings.OptionsMap, resolver.ClusterDataStore),
+			NewSearchWrapper(v1.SearchCategory_NODES, NodeOnlyOptionsMap, resolver.NodeDataStore),
+			NewSearchWrapper(v1.SearchCategory_CLUSTERS, schema.ClustersSchema.OptionsMap, resolver.ClusterDataStore),
 		},
 	)
 }

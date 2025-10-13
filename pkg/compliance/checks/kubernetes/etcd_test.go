@@ -225,9 +225,7 @@ func TestETCDChecks(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
-		t.Run(strings.Replace(c.name, ":", "-", -1), func(t *testing.T) {
-			t.Parallel()
+		t.Run(strings.ReplaceAll(c.name, ":", "-"), func(t *testing.T) {
 
 			standard := standards.NodeChecks[standards.CISKubernetes]
 			require.NotNil(t, standard)
@@ -241,7 +239,7 @@ func TestETCDChecks(t *testing.T) {
 			checkResults := check.CheckFunc(mockNodeData)
 			require.Len(t, checkResults, c.numResults)
 			for _, checkResult := range checkResults {
-				assert.Equal(t, c.status, checkResult.State)
+				assert.Equal(t, c.status, checkResult.GetState())
 			}
 		})
 	}

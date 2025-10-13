@@ -1,44 +1,50 @@
 package services
 
-import static com.jayway.restassured.RestAssured.given
+import static io.restassured.RestAssured.given
 
-import com.jayway.restassured.config.RestAssuredConfig
-import groovy.util.logging.Slf4j
-
-import util.Keys
-
-import javax.net.ssl.SSLContext
 import java.security.SecureRandom
+import javax.net.ssl.SSLContext
 
-import com.jayway.restassured.config.SSLConfig
+import groovy.transform.CompileStatic
+import groovy.util.logging.Slf4j
+import io.restassured.config.RestAssuredConfig
+import io.restassured.config.SSLConfig
 import org.apache.http.conn.ssl.SSLSocketFactory
-import util.Env
 
 import io.stackrox.proto.api.v1.AuthProviderServiceGrpc
 import io.stackrox.proto.api.v1.AuthproviderService
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.storage.AuthProviderOuterClass
 
+import util.Env
+import util.Helpers
+import util.Keys
+
 @Slf4j
+@CompileStatic
 class AuthProviderService extends BaseService {
-    static getAuthProviderService() {
+    static AuthProviderServiceGrpc.AuthProviderServiceBlockingStub getAuthProviderService() {
         return AuthProviderServiceGrpc.newBlockingStub(getChannel())
     }
 
-    static getAuthProviders() {
-        return getAuthProviderService().getAuthProviders(
-                AuthproviderService.GetAuthProvidersRequest.newBuilder().build()
-        )
+    static AuthproviderService.GetAuthProvidersResponse getAuthProviders() {
+        AuthproviderService.GetAuthProvidersResponse ret = null
+        Helpers.withRetry(3, 2) {
+            ret = getAuthProviderService().getAuthProviders(
+                    AuthproviderService.GetAuthProvidersRequest.newBuilder().build()
+            )
+        }
+        return ret
     }
 
-    static getAuthProvider(String id) {
-        try {
-            return getAuthProviderService().getAuthProvider(
+    static private AuthProviderOuterClass.AuthProvider getAuthProvider(String id) {
+        AuthProviderOuterClass.AuthProvider ret = null
+        Helpers.withRetry(3, 2) {
+            ret = getAuthProviderService().getAuthProvider(
                     AuthproviderService.GetAuthProviderRequest.newBuilder().setId(id).build()
             )
-        } catch (Exception e) {
-            log.error( "Failed getting auth provider", e)
         }
+        return ret
     }
 
     static createAuthProvider(String name, String type, Map<String, String> config, String defaultRole = null) {
@@ -76,15 +82,17 @@ class AuthProviderService extends BaseService {
         // There are two redirects: first from the generic URL to the auth provider's URL, and then from the auth
         // provider's URL to the token response URL.
         for (int i = 0; i < 2; i++) {
-            def response =
-                    given().header("Content-Type", "application/json")
-                            .config(RestAssuredConfig.newConfig().sslConfig(
-                            SSLConfig.sslConfig().with().sslSocketFactory(socketFactory)
-                                    .and().allowAllHostnames()))
-                            .when()
-                            .redirects().follow(false)
-                            .get("https://${Env.mustGetHostname()}:${Env.mustGetPort()}${location}")
-            location = response.getHeader("Location")
+            Helpers.withRetry(3, 2) {
+                def response =
+                        given().header("Content-Type", "application/json")
+                                .config(RestAssuredConfig.newConfig().sslConfig(
+                                SSLConfig.sslConfig().with().sslSocketFactory(socketFactory)
+                                        .and().allowAllHostnames()))
+                                .when()
+                                .redirects().follow(false)
+                                .get("https://${Env.mustGetHostname()}:${Env.mustGetPort()}${location}")
+                location = response.getHeader("Location")
+            }
         }
         def fullURL = new URL("https://${Env.mustGetHostname()}:${Env.mustGetPort()}${location}")
         def token = ""

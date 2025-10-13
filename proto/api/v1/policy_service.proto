@@ -1,255 +1,238 @@
 syntax = "proto3";
 
-option go_package = "v1";
-option java_package = "io.stackrox.proto.api.v1";
+package v1;
 
-import weak "google/api/annotations.proto";
 import "api/v1/common.proto";
 import "api/v1/empty.proto";
 import "api/v1/search_service.proto";
+import weak "google/api/annotations.proto";
 import "storage/mitre.proto";
 import "storage/policy.proto";
 
-package v1;
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
 
 message DryRunResponse {
-    message Alert {
-        string deployment          = 1;
-        repeated string violations = 2;
-    }
-    repeated Alert alerts = 1;
+  message Alert {
+    string deployment = 1;
+    repeated string violations = 2;
+  }
+  repeated Alert alerts = 1;
 }
 
 message JobId {
-    string job_id = 1;
+  string job_id = 1;
 }
 
 message DryRunJobStatusResponse {
-    bool pending = 1;
-    DryRunResponse result = 2;
+  bool pending = 1;
+  DryRunResponse result = 2;
 }
 
 message PolicyCategoriesResponse {
-    repeated string categories = 1;
+  repeated string categories = 1;
 }
 
 message EnableDisablePolicyNotificationRequest {
-    string                     policy_id   = 1;
-    repeated string            notifier_ids = 2;
-    bool disable = 3;
+  string policy_id = 1;
+  repeated string notifier_ids = 2;
+  bool disable = 3;
 }
 
 message ListPoliciesResponse {
-    repeated storage.ListPolicy policies = 1;
+  repeated storage.ListPolicy policies = 1;
 }
 
 message PostPolicyRequest {
-    storage.Policy policy         = 1;
-    bool enable_strict_validation = 2;
+  storage.Policy policy = 1;
+  bool enable_strict_validation = 2;
 }
 
 message PatchPolicyRequest {
-    string id         = 1;
-    oneof set_disabled {
-        bool disabled = 2;
-    }
+  string id = 1;
+  oneof set_disabled {
+    bool disabled = 2;
+  }
 }
 
 message ExportPoliciesRequest {
-    repeated string policy_ids = 1;
+  repeated string policy_ids = 1;
 }
 
 message PolicyError {
-    string error = 1;
+  string error = 1;
 }
 
-message ExportPolicyError {
-    string      policy_id = 1;
-    PolicyError error     = 2;
+message PolicyOperationError {
+  string policy_id = 1;
+  PolicyError error = 2;
 }
 
-message ExportPoliciesErrorList {
-    repeated ExportPolicyError errors = 1;
+message PolicyOperationErrorList {
+  repeated PolicyOperationError errors = 1;
 }
 
 message PolicyFromSearchRequest {
-    string search_params = 1;
+  string search_params = 1;
 }
 
 message ImportPoliciesMetadata {
-    bool overwrite = 1;
+  bool overwrite = 1;
 }
 
 message ImportPoliciesRequest {
-    ImportPoliciesMetadata  metadata = 1;
-    repeated storage.Policy policies = 2;
+  ImportPoliciesMetadata metadata = 1;
+  repeated storage.Policy policies = 2;
 }
 
 message ImportPolicyError {
-    string message              = 1;
-    string type                 = 2;
-    oneof metadata {
-        string duplicate_name   = 3;
-        string validation_error = 4;
-    }
+  string message = 1;
+  string type = 2;
+  oneof metadata {
+    string duplicate_name = 3;
+    string validation_error = 4;
+  }
 }
 
 message ImportPolicyResponse {
-    bool                       succeeded = 1;
-    storage.Policy             policy    = 2;
-    repeated ImportPolicyError errors    = 3;
+  bool succeeded = 1;
+  storage.Policy policy = 2;
+  repeated ImportPolicyError errors = 3;
 }
 
 message ImportPoliciesResponse {
-    repeated ImportPolicyResponse responses     = 1;
-    bool                          all_succeeded = 2;
+  repeated ImportPolicyResponse responses = 1;
+  bool all_succeeded = 2;
 }
 
 message PolicyFromSearchResponse {
-    storage.Policy  policy                 = 1;
-    repeated string altered_search_terms   = 2;
-    bool            has_nested_fields      = 3;
+  storage.Policy policy = 1;
+  repeated string altered_search_terms = 2;
+  bool has_nested_fields = 3;
 }
 
 message GetPolicyMitreVectorsRequest {
-    message Options {
-        // If set to true, policy is excluded from the response.
-        bool exclude_policy = 1;
-    }
+  message Options {
+    // If set to true, policy is excluded from the response.
+    bool exclude_policy = 1;
+  }
 
-    string  id      = 1;
-    Options options = 2;
+  string id = 1;
+  Options options = 2;
 }
 
 message GetPolicyMitreVectorsResponse {
-    storage.Policy                     policy  = 1;
-    repeated storage.MitreAttackVector vectors = 2;
+  storage.Policy policy = 1;
+  repeated storage.MitreAttackVector vectors = 2;
 }
 
 // PolicyService APIs can be used to manage policies.
 service PolicyService {
+  // GetPolicy returns the requested policy by ID.
+  rpc GetPolicy(ResourceByID) returns (storage.Policy) {
+    option (google.api.http) = {get: "/v1/policies/{id}"};
+  }
 
-    // GetPolicy returns the requested policy by ID.
-    rpc GetPolicy (ResourceByID) returns (storage.Policy) {
-        option (google.api.http) = {
-            get: "/v1/policies/{id}"
-        };
-    }
+  // GetMitreVectorsForPolicy returns the requested policy by ID.
+  rpc GetPolicyMitreVectors(GetPolicyMitreVectorsRequest) returns (GetPolicyMitreVectorsResponse) {
+    option (google.api.http) = {get: "/v1/policies/{id}/mitrevectors"};
+  }
 
-    // GetMitreVectorsForPolicy returns the requested policy by ID.
-    rpc GetPolicyMitreVectors (GetPolicyMitreVectorsRequest) returns (GetPolicyMitreVectorsResponse) {
-        option (google.api.http) = {
-            get: "/v1/policies/{id}/mitrevectors"
-        };
-    }
+  // ListPolicies returns the list of policies.
+  rpc ListPolicies(RawQuery) returns (ListPoliciesResponse) {
+    option (google.api.http) = {get: "/v1/policies"};
+  }
 
-    // ListPolicies returns the list of policies.
-    rpc ListPolicies (RawQuery) returns (ListPoliciesResponse) {
-        option (google.api.http) = {
-            get: "/v1/policies"
-        };
-    }
+  // PostPolicy creates a new policy.
+  rpc PostPolicy(PostPolicyRequest) returns (storage.Policy) {
+    option (google.api.http) = {
+      post: "/v1/policies"
+      body: "policy"
+    };
+  }
 
-    // PostPolicy creates a new policy.
-    rpc PostPolicy (PostPolicyRequest) returns (storage.Policy) {
-        option (google.api.http) = {
-            post: "/v1/policies"
-            body: "policy"
-        };
-    }
+  // PutPolicy modifies an existing policy.
+  rpc PutPolicy(storage.Policy) returns (Empty) {
+    option (google.api.http) = {
+      put: "/v1/policies/{id}"
+      body: "*"
+    };
+  }
 
-    // PutPolicy modifies an existing policy.
-    rpc PutPolicy (storage.Policy) returns (Empty) {
-        option (google.api.http) = {
-            put: "/v1/policies/{id}"
-            body: "*"
-        };
-    }
+  // PatchPolicy edits an existing policy.
+  rpc PatchPolicy(PatchPolicyRequest) returns (Empty) {
+    option (google.api.http) = {
+      patch: "/v1/policies/{id}"
+      body: "*"
+    };
+  }
 
-    // PatchPolicy edits an existing policy.
-    rpc PatchPolicy (PatchPolicyRequest) returns (Empty) {
-        option (google.api.http) = {
-            patch: "/v1/policies/{id}"
-            body: "*"
-        };
-    }
+  // DeletePolicy removes a policy by ID.
+  rpc DeletePolicy(ResourceByID) returns (Empty) {
+    option (google.api.http) = {delete: "/v1/policies/{id}"};
+  }
 
-    // DeletePolicy removes a policy by ID.
-    rpc DeletePolicy (ResourceByID) returns (Empty) {
-        option (google.api.http) = {
-            delete: "/v1/policies/{id}"
-        };
-    }
+  // EnableDisablePolicyNotification enables or disables notifications for a policy by ID.
+  rpc EnableDisablePolicyNotification(EnableDisablePolicyNotificationRequest) returns (Empty) {
+    option (google.api.http) = {
+      patch: "/v1/policies/{policy_id}/notifiers"
+      body: "*"
+    };
+  }
 
-    // EnableDisablePolicyNotification enables or disables notifications for a policy by ID.
-    rpc EnableDisablePolicyNotification (EnableDisablePolicyNotificationRequest) returns (Empty) {
-        option (google.api.http) = {
-            patch: "/v1/policies/{policy_id}/notifiers"
-            body: "*"
-        };
-    }
+  // ReassessPolicies reevaluates all the policies.
+  rpc ReassessPolicies(Empty) returns (Empty) {
+    option (google.api.http) = {post: "/v1/policies/reassess"};
+  }
 
-    // ReassessPolicies reevaluates all the policies.
-    rpc ReassessPolicies (Empty) returns (Empty) {
-        option (google.api.http) = {
-            post: "/v1/policies/reassess"
-        };
-    }
+  // DryRunPolicy evaluates the given policy and returns any alerts without creating the policy.
+  rpc DryRunPolicy(storage.Policy) returns (DryRunResponse) {
+    option (google.api.http) = {
+      post: "/v1/policies/dryrun"
+      body: "*"
+    };
+  }
 
-    // DryRunPolicy evaluates the given policy and returns any alerts without creating the policy.
-    rpc DryRunPolicy (storage.Policy) returns (DryRunResponse) {
-        option (google.api.http) = {
-            post: "/v1/policies/dryrun"
-            body: "*"
-        };
-    }
+  rpc SubmitDryRunPolicyJob(storage.Policy) returns (JobId) {
+    option (google.api.http) = {
+      post: "/v1/policies/dryrunjob"
+      body: "*"
+    };
+  }
 
-    rpc SubmitDryRunPolicyJob (storage.Policy) returns (JobId) {
-        option (google.api.http) = {
-            post: "/v1/policies/dryrunjob"
-            body: "*"
-        };
-    }
+  rpc QueryDryRunJobStatus(JobId) returns (DryRunJobStatusResponse) {
+    option (google.api.http) = {get: "/v1/policies/dryrunjob/{job_id}"};
+  }
 
-    rpc QueryDryRunJobStatus (JobId) returns (DryRunJobStatusResponse) {
-        option (google.api.http) = {
-            get: "/v1/policies/dryrunjob/{job_id}"
-        };
-    }
+  rpc CancelDryRunJob(JobId) returns (Empty) {
+    option (google.api.http) = {delete: "/v1/policies/dryrunjob/{job_id}"};
+  }
 
-    rpc CancelDryRunJob (JobId) returns (Empty) {
-        option (google.api.http) = {
-            delete: "/v1/policies/dryrunjob/{job_id}"
-        };
-    }
+  // GetPolicyCategories returns the policy categories.
+  rpc GetPolicyCategories(Empty) returns (PolicyCategoriesResponse) {
+    option (google.api.http) = {get: "/v1/policyCategories"};
+  }
 
-    // GetPolicyCategories returns the policy categories.
-    rpc GetPolicyCategories (Empty) returns (PolicyCategoriesResponse) {
-        option (google.api.http) = {
-            get: "/v1/policyCategories"
-        };
-    }
+  // ExportPolicies takes a list of policy IDs and returns either the entire list of policies or an error message
+  rpc ExportPolicies(ExportPoliciesRequest) returns (storage.ExportPoliciesResponse) {
+    option (google.api.http) = {
+      post: "/v1/policies/export"
+      body: "*"
+    };
+  }
 
-    // ExportPolicies takes a list of policy IDs and returns either the entire list of policies or an error message
-    rpc ExportPolicies (ExportPoliciesRequest) returns (storage.ExportPoliciesResponse) {
-        option (google.api.http) = {
-            post: "/v1/policies/export"
-            body: "*"
-        };
-    }
+  rpc PolicyFromSearch(PolicyFromSearchRequest) returns (PolicyFromSearchResponse) {
+    option (google.api.http) = {
+      post: "/v1/policies/from-search"
+      body: "*"
+    };
+  }
 
-    rpc PolicyFromSearch (PolicyFromSearchRequest) returns (PolicyFromSearchResponse) {
-        option (google.api.http) = {
-            post: "/v1/policies/from-search"
-            body: "*"
-        };
-    }
-
-    // ImportPolicies accepts a list of Policies and returns a list of the policies which could not be imported
-    rpc ImportPolicies (ImportPoliciesRequest) returns (ImportPoliciesResponse) {
-        option (google.api.http) = {
-            post: "/v1/policies/import"
-            body: "*"
-        };
-    }
+  // ImportPolicies accepts a list of Policies and returns a list of the policies which could not be imported
+  rpc ImportPolicies(ImportPoliciesRequest) returns (ImportPoliciesResponse) {
+    option (google.api.http) = {
+      post: "/v1/policies/import"
+      body: "*"
+    };
+  }
 }

@@ -1,94 +1,157 @@
 syntax = "proto3";
 
-option go_package = "v1";
-option java_package = "io.stackrox.proto.api.v1";
-
-import weak "google/api/annotations.proto";
-import "google/protobuf/timestamp.proto";
-import "api/v1/empty.proto";
-import "storage/user.proto";
-
 package v1;
 
-message InitBundleMeta {
-    message ImpactedCluster {
-        string name = 1;
-        string id   = 2;
-    }
+import "api/v1/empty.proto";
+import weak "google/api/annotations.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+import "storage/user.proto";
 
-    string                    id                = 1;
-    string                    name              = 2;
-    repeated ImpactedCluster  impacted_clusters = 6;
-    google.protobuf.Timestamp created_at        = 3;
-    storage.User              created_by        = 4;
-    google.protobuf.Timestamp expires_at        = 5;
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+message InitBundleMeta {
+  message ImpactedCluster {
+    string name = 1;
+    string id = 2;
+  }
+
+  string id = 1;
+  string name = 2;
+  repeated ImpactedCluster impacted_clusters = 6;
+  google.protobuf.Timestamp created_at = 3;
+  storage.User created_by = 4;
+  google.protobuf.Timestamp expires_at = 5;
+}
+
+message CRSMeta {
+  string id = 1;
+  string name = 2;
+  google.protobuf.Timestamp created_at = 3;
+  storage.User created_by = 4;
+  google.protobuf.Timestamp expires_at = 5;
 }
 
 message InitBundleGenResponse {
-    InitBundleMeta meta               = 1;
-    bytes          helm_values_bundle = 2;
-    bytes          kubectl_bundle     = 3;
+  InitBundleMeta meta = 1;
+  bytes helm_values_bundle = 2;
+  bytes kubectl_bundle = 3;
+}
+
+message CRSGenResponse {
+  CRSMeta meta = 1;
+  bytes crs = 2;
 }
 
 message GetCAConfigResponse {
-    bytes helm_values_bundle = 1;
+  bytes helm_values_bundle = 1;
 }
 
 message InitBundleMetasResponse {
-    repeated InitBundleMeta items = 1;
+  repeated InitBundleMeta items = 1;
+}
+
+message CRSMetasResponse {
+  repeated CRSMeta items = 1;
 }
 
 message InitBundleGenRequest {
-    string name = 1;
+  string name = 1;
+}
+
+message CRSGenRequest {
+  string name = 1;
+}
+
+message CRSGenRequestExtended {
+  string name = 1;
+  google.protobuf.Timestamp valid_until = 2;
+  google.protobuf.Duration valid_for = 3;
+  int32 max_registrations = 4; // Support for this is to be implemented in ROX-26769.
 }
 
 message InitBundleRevokeRequest {
-    repeated string ids                           = 1;
-    repeated string confirm_impacted_clusters_ids = 2;
-
+  repeated string ids = 1;
+  repeated string confirm_impacted_clusters_ids = 2;
 }
 
+message CRSRevokeRequest {
+  repeated string ids = 1;
+}
 
 message InitBundleRevokeResponse {
-    message InitBundleRevocationError {
-        string                                  id                = 1;
-        string                                  error             = 2;
-        repeated InitBundleMeta.ImpactedCluster impacted_clusters = 3;
-    }
+  message InitBundleRevocationError {
+    string id = 1;
+    string error = 2;
+    repeated InitBundleMeta.ImpactedCluster impacted_clusters = 3;
+  }
 
-    repeated InitBundleRevocationError init_bundle_revocation_errors = 2;
-    repeated string init_bundle_revoked_ids = 3;
+  repeated InitBundleRevocationError init_bundle_revocation_errors = 2;
+  repeated string init_bundle_revoked_ids = 3;
 }
 
-// ClusterInitService manages cluster init bundles.
+message CRSRevokeResponse {
+  message CRSRevocationError {
+    string id = 1;
+    string error = 2;
+  }
+
+  repeated CRSRevocationError crs_revocation_errors = 2;
+  repeated string revoked_ids = 3;
+}
+
+// ClusterInitService manages cluster init bundles and CRSs.
 service ClusterInitService {
-    // RevokeInitBundle deletes cluster init bundle. If this operation impacts any cluster
-    // then its ID should be included in request.
-    // If confirm_impacted_clusters_ids does not match with current impacted clusters
-    // then request will fail with error that includes all impacted clusters.
-    rpc RevokeInitBundle(InitBundleRevokeRequest) returns (InitBundleRevokeResponse) {
-        option (google.api.http) = {
-            patch: "/v1/cluster-init/init-bundles/revoke",
-            body: "*"
-        };
-    }
+  // RevokeInitBundle deletes cluster init bundle. If this operation impacts any cluster
+  // then its ID should be included in request.
+  // If confirm_impacted_clusters_ids does not match with current impacted clusters
+  // then request will fail with error that includes all impacted clusters.
+  rpc RevokeInitBundle(InitBundleRevokeRequest) returns (InitBundleRevokeResponse) {
+    option (google.api.http) = {
+      patch: "/v1/cluster-init/init-bundles/revoke"
+      body: "*"
+    };
+  }
 
-    rpc GetCAConfig(Empty) returns (GetCAConfigResponse) {
-        option (google.api.http) = {
-            get: "/v1/cluster-init/ca-config"
-        };
-    }
+  // RevokeCRSBundle deletes cluster registration secrets.
+  rpc RevokeCRS(CRSRevokeRequest) returns (CRSRevokeResponse) {
+    option (google.api.http) = {
+      patch: "/v1/cluster-init/crs/revoke"
+      body: "*"
+    };
+  }
 
-    rpc GetInitBundles(Empty) returns (InitBundleMetasResponse) {
-        option (google.api.http) = {
-            get: "/v1/cluster-init/init-bundles"
-        };
-    }
+  rpc GetCAConfig(Empty) returns (GetCAConfigResponse) {
+    option (google.api.http) = {get: "/v1/cluster-init/ca-config"};
+  }
 
-    rpc GenerateInitBundle(InitBundleGenRequest) returns (InitBundleGenResponse) {
-        option (google.api.http) = {
-            post: "/v1/cluster-init/init-bundles"
-            body: "*"
-        };
-    }
+  rpc GetInitBundles(Empty) returns (InitBundleMetasResponse) {
+    option (google.api.http) = {get: "/v1/cluster-init/init-bundles"};
+  }
+
+  rpc GetCRSs(Empty) returns (CRSMetasResponse) {
+    option (google.api.http) = {get: "/v1/cluster-init/crs"};
+  }
+
+  rpc GenerateInitBundle(InitBundleGenRequest) returns (InitBundleGenResponse) {
+    option (google.api.http) = {
+      post: "/v1/cluster-init/init-bundles"
+      body: "*"
+    };
+  }
+
+  rpc GenerateCRS(CRSGenRequest) returns (CRSGenResponse) {
+    option (google.api.http) = {
+      post: "/v1/cluster-init/crs"
+      body: "*"
+    };
+  }
+
+  rpc GenerateCRSExtended(CRSGenRequestExtended) returns (CRSGenResponse) {
+    option (google.api.http) = {
+      post: "/v1/cluster-init/crs-extended"
+      body: "*"
+    };
+  }
 }

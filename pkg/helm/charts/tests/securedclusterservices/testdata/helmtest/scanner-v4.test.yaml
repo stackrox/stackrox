@@ -1,0 +1,451 @@
+values:
+  monitoring:
+    openshift:
+      enabled: false
+defs: |
+  def getVolume(deploymentName; volumeName):
+    .deployments[deploymentName].spec.template.spec.volumes[] | select(.name == "disk");
+  def getScannerV4Disk:
+    getVolume("scanner-v4-db"; "disk");
+server:
+  visibleSchemas:
+  - openshift-4.1.0
+  availableSchemas:
+  - openshift-4.1.0
+tests:
+- name: "scanner v4 indexer mounts additional-ca-sensor secret"
+  set:
+    imagePullSecrets.allowNone: true
+    scannerV4.disable: false
+  expect: |
+    .deployments["scanner-v4-indexer"].spec.template.spec.volumes[] | select(.name == "additional-ca-volume") | assertThat(.secret.secretName == "additional-ca-sensor")
+    container(.deployments["scanner-v4-indexer"]; "indexer") | .volumeMounts[] | select(.name == "additional-ca-volume") | assertThat(. != null)
+- name: "scanner v4 with default settings with indexer enabled"
+  set:
+    imagePullSecrets.allowNone: true
+    scanner.disable: false
+    scannerV4.disable: false
+  expect: |
+    container(.deployments["scanner-v4-indexer"]; "indexer") | assertThat (. != null)
+    envVars(.deployments.sensor; "sensor")["ROX_LOCAL_IMAGE_SCANNING_ENABLED"] | assertThat(. == "true")
+  tests:
+  - name: "on openshift 4"
+    set:
+      env.openshift: 4
+  - name: "on openshift 3"
+    set:
+      env.openshift: 3
+
+- name: "scanner V4 should be installed by default for new installations"
+  release: { "isInstall": true, "isUpgrade": false }
+  set:
+    imagePullSecrets.allowNone: true
+  expect: |
+    .deployments["scanner-v4-indexer"] | assertThat(. != null)
+    .deployments["scanner-v4-db"] | assertThat(. != null)
+
+- name: "scanner V4 should not be installed by default for upgrades from < 4.8"
+  release: { "isInstall": false, "isUpgrade": true}
+  set:
+    imagePullSecrets.allowNone: true
+  expect: |
+    .deployments["scanner-v4-indexer"] | assertThat(. == null)
+    .deployments["scanner-v4-db"] | assertThat(. == null)
+
+- name: "scanner V2 should be installed by default for new installations"
+  release: { "isInstall": true, "isUpgrade": false }
+  set:
+    imagePullSecrets.allowNone: true
+  expect: |
+    .deployments["scanner"] | assertThat(. != null)
+    .deployments["scanner-db"] | assertThat(. != null)
+
+- name: "scanner V2 should be not installed by default for upgrades from < 4.8"
+  release: { "isInstall": false, "isUpgrade": true}
+  set:
+    imagePullSecrets.allowNone: true
+  expect: |
+    .deployments["scanner"] | assertThat(. == null)
+    .deployments["scanner-db"] | assertThat(. == null)
+
+- name: "scanner V2 should be installed by default for upgrades from >= 4.8"
+  release: { "isInstall": false, "isUpgrade": true}
+  set:
+    imagePullSecrets.allowNone: true
+  expect: |
+    .deployments["scanner"] | assertThat(. != null)
+    .deployments["scanner-db"] | assertThat(. != null)
+  tests:
+  - name: "from 4.8"
+    server:
+      objects:
+      - apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: stackrox-secured-cluster-helm
+          namespace: stackrox
+        data:
+          installXYVersion: "4.8"
+  - name: "from 4.9"
+    server:
+      objects:
+      - apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: stackrox-secured-cluster-helm
+          namespace: stackrox
+        data:
+          installXYVersion: "4.9"
+
+- name: "scanner V4 enabled should only deploy indexer and db"
+  set:
+    scannerV4.disable: false
+    imagePullSecrets.allowNone: true
+  expect: |
+    .deployments["scanner-v4-indexer"] | assertThat(. != null)
+    .deployments["scanner-v4-matcher"] | assertThat(. == null)
+    .deployments["scanner-v4-db"] | assertThat(. != null)
+
+- name: "Scanner V4 Indexer can find Sensor"
+  release:
+    namespace: "other"
+  set:
+    scannerV4.disable: false
+    imagePullSecrets.allowNone: true
+    allowNonstandardNamespace: true
+  expect: |
+    .deployments["scanner-v4-indexer"].spec.template.spec.containers[0].env[] |
+          select(.name == "ROX_SENSOR_ENDPOINT") | assertThat(.value == "sensor.other.svc:443")
+
+- name: "no matcher resources should exist"
+  set:
+    scannerV4.disable: false
+    imagePullSecrets.allowNone: true
+  expect: |
+    .deployments["scanner-v4-matcher"] | assertThat(. == null)
+    .secrets["scanner-v4-matcher-tls"] | assertThat(. == null)
+    .configmaps["scanner-v4-matcher-config"] | assertThat(. == null)
+    .networkpolicys["scanner-v4-matcher"] | assertThat(. == null)
+    .services["scanner-v4-matcher"] | assertThat(. == null)
+    .horizontalpodautoscalers["scanner-v4-matcher"] | assertThat(. == null)
+
+- name: "scanner can override image config"
+  set:
+    scannerV4.disable: false
+    imagePullSecrets.allowNone: true
+  expect: |
+    container(.deployments["scanner-v4-indexer"]; "indexer") | assertThat(.image == "custom.io/custom-scanner:1.2.3")
+    container(.deployments["scanner-v4-db"]; "db") | assertThat(.image == "custom.io/custom-scanner-db:1.2.3")
+  tests:
+  - name: "with fullref"
+    values:
+      image:
+        scannerV4:
+          fullRef: "custom.io/custom-scanner:1.2.3"
+        scannerV4DB:
+          fullRef: "custom.io/custom-scanner-db:1.2.3"
+  - name: "with separate parts"
+    values:
+      image:
+        scannerV4:
+          tag: 1.2.3
+          registry: custom.io
+          name: custom-scanner
+        scannerV4DB:
+          tag: 1.2.3
+          registry: custom.io
+          name: custom-scanner-db
+
+- name: "scanner V4 service account can access image pull secrets"
+  server:
+    objects:
+    - apiVersion: v1
+      kind: Secret
+      metadata:
+        name: stackrox
+        namespace: stackrox
+    - apiVersion: v1
+      kind: Secret
+      metadata:
+        name: stackrox-scanner
+        namespace: stackrox
+    - apiVersion: v1
+      kind: Secret
+      metadata:
+        name: stackrox-scanner-v4
+        namespace: stackrox
+    - apiVersion: v1
+      kind: Secret
+      metadata:
+        name: collector-stackrox
+        namespace: stackrox
+    - apiVersion: v1
+      kind: Secret
+      metadata:
+        name: secured-cluster-services-main
+        namespace: stackrox
+    - apiVersion: v1
+      kind: Secret
+      metadata:
+        name: secured-cluster-services-collector
+        namespace: stackrox
+  set:
+    scannerV4.disable: false
+    scanner.disable: true
+  expect: |
+    assumeThat(.error == null) | .serviceaccounts["scanner-v4"] | saRefersTo(["secured-cluster-services-main", "stackrox", "stackrox-scanner-v4"])
+    assumeThat(.error == null) | .serviceaccounts["scanner-v4"] | saNotRefersTo(["secured-cluster-services-collector", "collector-stackrox"])
+  tests:
+  - name: "when authenticating in image registry with user and password"
+    set:
+      imagePullSecrets.username: "imagePullUser"
+      imagePullSecrets.password: "imagePullPassword"
+    expect: |
+      .serviceaccounts["scanner-v4"] | saOnlyRefersTo(["secured-cluster-services-main", "stackrox", "stackrox-scanner-v4"])
+      .secrets["secured-cluster-services-main"] | assertThat(. != null)
+  - name: "when username/password are not provided, no secret is created"
+    expect: .secrets["secured-cluster-services-main"] | assertThat(. == null)
+    tests:
+    - name: "by default (allowNone is false), chart fails"
+      expectError: true
+      expect: |
+        .error | assertThat(contains("You have not specified any image pull secrets, and no existing image pull secrets were automatically inferred."))
+    - name: "when allowNone is true"
+      set:
+        imagePullSecrets.allowNone: true
+      expect: .serviceaccounts["scanner-v4"] | saOnlyRefersTo(["secured-cluster-services-main", "stackrox", "stackrox-scanner-v4"])
+    - name: "when using existing secrets"
+      set:
+        imagePullSecrets.useExisting: "existing-secret1; existing-secret2"
+      expect: |
+        .serviceaccounts["scanner-v4"] | saOnlyRefersTo([
+          "secured-cluster-services-main", "stackrox", "stackrox-scanner-v4", "existing-secret1", "existing-secret2"])
+
+- name: "Scanner V4 is enabled for Sensor in same-namespace setting"
+  set:
+    imagePullSecrets.allowNone: true
+  server:
+    objects:
+    - apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: central
+        namespace: stackrox
+  expect: |
+    envVars(.deployments.sensor; "sensor")["ROX_SCANNER_V4"] | assertThat(. == "true")
+    envVars(.deployments.sensor; "sensor")["ROX_SCANNER_V4_INDEXER_ENDPOINT"] | assertThat(. != "")
+
+- name: "local scanning is"
+  set:
+    imagePullSecrets.allowNone: true
+  tests:
+  - name: "enabled"
+    expect: |
+      envVars(.deployments.sensor; "sensor")["ROX_LOCAL_IMAGE_SCANNING_ENABLED"] | assertThat(. == "true")
+    tests:
+    - name: "if only StackRox Scanner is enabled"
+      set:
+        scanner.disable: false
+        scannerV4.disable: true
+    - name: "if both scanners are enabled"
+      set:
+        scanner.disable: false
+        scannerV4.disable: false
+    - name: "if localImageScanningScanner is enabled"
+      set:
+        sensor.localImageScanning.enabled: true
+    - name: "if StackRox Scanner is disabled and Scanner V4 is enabled"
+      set:
+        scanner.disable: true
+        scannerV4.disable: false
+  - name: "disabled"
+    expect: |
+      envVars(.deployments.sensor; "sensor")["ROX_LOCAL_IMAGE_SCANNING_ENABLED"] | assertThat(. != "true")
+    tests:
+    - name: "if both scanners are disabled"
+      set:
+        scanner.disable: true
+        scannerV4.disable: true
+- name: "sensor connects to local scanner using the correct gRPC endpoint"
+  release:
+    namespace: custom-ns
+  set:
+    allowNonstandardNamespace: true
+    scannerV4.disable: false
+    imagePullSecrets.allowNone: true
+  expect: |
+    .deployments["sensor"].spec.template.spec.containers[0].env[] |
+      select(.name == "ROX_SCANNER_V4_INDEXER_ENDPOINT") | assertThat(.value == "scanner-v4-indexer.custom-ns.svc:8443")
+
+- name: "Test customize for local scanner v4"
+  values:
+    scannerV4:
+      disable: false
+    imagePullSecrets:
+      allowNone: true
+    customize:
+      envVars:
+        FOO: bar
+  expect: |
+    envVars(.deployments["scanner-v4-indexer"]; "indexer")["FOO"] | assertThat(. == "bar")
+
+- name: "Disabling scanner V2 does not automatically enable scanner V4 as well"
+  values:
+    scanner:
+      disable: true
+    imagePullSecrets:
+      allowNone: true
+  expect: |
+    .deployments["scanner-v4-indexer"] | assertThat(. != null)
+
+- name: "Enabling scanner v2 does not enable scanner v4 if it has been explicitly disabled"
+  values:
+    scannerV4:
+      disable: true
+    scanner:
+      disable: false
+    imagePullSecrets:
+      allowNone: true
+  expect: |
+    .deployments["scanner-v4-indexer"] | assertThat(. == null)
+
+- name: "indexer should be using sensor endpoints when deployed as part of secured-cluster-services"
+  set:
+    scannerV4.disable: false
+    imagePullSecrets.allowNone: true
+  expect: |
+    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.repository_to_cpe_url | assertThat(. == "https://sensor.stackrox.svc/scanner/definitions?file=repo2cpe")
+    .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | fromyaml | .indexer.name_to_repos_url | assertThat(. == "https://sensor.stackrox.svc/scanner/definitions?file=name2repos")
+
+- name: "indexer should not allow ingress from central and matcher when deployed as a secured-cluster-service"
+  set:
+    scannerV4.disable: false
+    imagePullSecrets.allowNone: true
+  expect: |
+    .networkpolicys["scanner-v4-indexer"].spec.ingress | assertThat(length == 1)
+    .networkpolicys["scanner-v4-indexer"].spec.ingress[0] | .ports | assertThat(length == 1)
+    .networkpolicys["scanner-v4-indexer"].spec.ingress[0] | .from[0].podSelector.matchLabels.app | assertThat(. == "sensor")
+
+- name: "scanner with network policies enabled"
+  set:
+    scannerV4.disable: false
+    imagePullSecrets.allowNone: true
+    network.enableNetworkPolicies: true
+  expect: |
+    .networkpolicys["scanner-v4-indexer"] | assertThat(. != null)
+    .networkpolicys["scanner-v4-matcher"] | assertThat(. == null)  # No matcher in secured cluster
+
+- name: "scanner with network policies disabled"
+  set:
+    scannerV4.disable: false
+    imagePullSecrets.allowNone: true
+    network.enableNetworkPolicies: false
+  expect: |
+    .networkpolicys["scanner-v4-indexer"] | assertThat(. == null)
+    .networkpolicys["scanner-v4-matcher"] | assertThat(. == null)
+
+- name: "Scanner V4 DB is backed by an emptyDir"
+  set:
+    scannerV4.disable: false
+    imagePullSecrets.allowNone: true
+  tests:
+  - name: "if configured explicitly"
+    set:
+      scannerV4.db.persistence.none: true
+    expect: |
+      .deployments["scanner-v4-db"].spec.template.spec.volumes[] | select(.name == "disk") | assertThat(.emptyDir != null)
+    tests:
+    - name: "in absence of a default StorageClass"
+    - name: "in presence of a default StorageClass"
+      server:
+        objects:
+        - apiVersion: storage.k8s.io/v1
+          kind: StorageClass
+          metadata:
+            name: def-sc
+            annotations:
+              storageclass.kubernetes.io/is-default-class: true
+
+- name: "Scanner V4 DB is backed by a PVC"
+  set:
+    imagePullSecrets.allowNone: true
+    scannerV4.disable: false
+  tests:
+  - name: "by default if a default StorageClass exists"
+    server:
+      objects:
+      - apiVersion: storage.k8s.io/v1
+        kind: StorageClass
+        metadata:
+          name: def-sc
+          annotations:
+            storageclass.kubernetes.io/is-default-class: true
+    expect: |
+      .deployments["scanner-v4-db"].spec.template.spec.volumes[] | select(.name == "disk") | assertThat(.persistentVolumeClaim != null)
+  - name: "if a PVC by the configured name already exists"
+    server:
+      objects:
+      - apiVersion: v1
+        kind: PersistentVolumeClaim
+        metadata:
+          namespace: stackrox
+          name: scanner-v4-db
+        spec:
+          accessModes:
+          - ReadWriteOnce
+          resources:
+            requests:
+              storage: "10Gi"
+    expect: |
+      .persistentvolumeclaims["scanner-v4-db"] | assertThat(. == null)
+      getScannerV4Disk | assertThat(.persistentVolumeClaim != null)
+      getScannerV4Disk | assumeThat(.persistentVolumeClaim != null) | .persistentVolumeClaim | assertThat(.claimName == "scanner-v4-db")
+  - name: "if configured explicitly"
+    values:
+      scannerV4:
+        db:
+          persistence:
+            persistentVolumeClaim:
+              claimName: "foo"
+              size: "10Gi"
+              storageClass: "somes-sc"
+              createClaim: true
+    server:
+      objects:
+      - apiVersion: storage.k8s.io/v1
+        kind: StorageClass
+        metadata:
+          name: some-sc
+          annotations:
+            storageclass.kubernetes.io/is-default-class: false
+    expect: |
+      getScannerV4Disk | assertThat(.persistentVolumeClaim != null)
+      getScannerV4Disk | assumeThat(.persistentVolumeClaim != null) | .persistentVolumeClaim | assertThat(.claimName == "foo")
+      .persistentvolumeclaims["foo"] | assertThat(. != null)
+    tests:
+      - name: "in absence of a default StorageClass"
+      - name: "in presence of a default StorageClass"
+        server:
+          objects:
+          - apiVersion: storage.k8s.io/v1
+            kind: StorageClass
+            metadata:
+              name: a-default-sc
+              annotations:
+                storageclass.kubernetes.io/is-default-class: true
+
+- name: "Installation log contains"
+  values:
+    imagePullSecrets:
+      allowNone: true
+    scanner:
+      disable: false
+  tests:
+  - name: "reference to Scanner V4 if Scanner V4 is not disabled"
+    expect: |
+      .notes | assertThat(contains("Scanner V4 is enabled"))
+  - name: "no reference to Scanner V4 if Scanner V4 is disabled"
+    set:
+      scannerV4.disable: true
+    expect: |
+      .notes | assertThat(contains("Scanner V4 is enabled") | not)

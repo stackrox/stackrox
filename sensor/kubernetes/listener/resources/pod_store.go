@@ -4,12 +4,32 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/metrics"
 )
 
 // PodStore stores pods (by namespace, deploymentID, and id).
 type PodStore struct {
 	lock sync.RWMutex
 	pods map[string]map[string]map[string]*storage.Pod
+}
+
+func (ps *PodStore) updateMetrics() {
+	for ns, data := range ps.pods {
+		podsInNamespace := 0
+		for _, pods := range data {
+			podsInNamespace += len(pods)
+		}
+		metrics.UpdateNumberPodsInStored(ns, podsInNamespace)
+	}
+}
+
+// Cleanup deletes all entries from store
+func (ps *PodStore) Cleanup() {
+	ps.lock.Lock()
+	defer ps.lock.Unlock()
+	defer ps.updateMetrics()
+
+	ps.pods = make(map[string]map[string]map[string]*storage.Pod)
 }
 
 // newPodStore creates and returns a new pod store.
@@ -22,6 +42,7 @@ func newPodStore() *PodStore {
 func (ps *PodStore) addOrUpdatePod(pod *storage.Pod) {
 	ps.lock.Lock()
 	defer ps.lock.Unlock()
+	defer ps.updateMetrics()
 
 	nsMap := ps.pods[pod.GetNamespace()]
 	if nsMap == nil {
@@ -39,6 +60,7 @@ func (ps *PodStore) addOrUpdatePod(pod *storage.Pod) {
 func (ps *PodStore) removePod(namespace, deploymentID, podID string) {
 	ps.lock.Lock()
 	defer ps.lock.Unlock()
+	defer ps.updateMetrics()
 
 	delete(ps.pods[namespace][deploymentID], podID)
 }
@@ -72,6 +94,7 @@ func (ps *PodStore) getContainersForDeployment(ns, deploymentID string) set.Stri
 func (ps *PodStore) OnNamespaceDeleted(ns string) {
 	ps.lock.Lock()
 	defer ps.lock.Unlock()
+	defer ps.updateMetrics()
 
 	delete(ps.pods, ns)
 }
@@ -80,6 +103,7 @@ func (ps *PodStore) OnNamespaceDeleted(ns string) {
 func (ps *PodStore) onDeploymentRemove(wrap *deploymentWrap) {
 	ps.lock.Lock()
 	defer ps.lock.Unlock()
+	defer ps.updateMetrics()
 
 	delete(ps.pods[wrap.GetNamespace()], wrap.GetId())
 }
@@ -89,6 +113,14 @@ func (ps *PodStore) GetAll() []*storage.Pod {
 	ps.lock.RLock()
 	defer ps.lock.RUnlock()
 
+	var ret []*storage.Pod
+	for _, pod := range ps.getAllNoLock() {
+		ret = append(ret, pod.CloneVT())
+	}
+	return ret
+}
+
+func (ps *PodStore) getAllNoLock() []*storage.Pod {
 	var ret []*storage.Pod
 	for _, depMap := range ps.pods {
 		for _, podMap := range depMap {

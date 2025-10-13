@@ -30,6 +30,10 @@ function die() {
 	exit 1
 }
 
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+[[ -n "${MOCKGEN_BIN:-}" ]] || MOCKGEN_BIN="$(make --quiet --no-print-directory -C "${PROJECT_ROOT}" which-mockgen)"
+[[ -x "$MOCKGEN_BIN" ]] || die "mockgen binary not found or not executable at ${MOCKGEN_BIN}"
+
 interfaces="${1:-}"
 package="${2:-}"
 
@@ -40,7 +44,7 @@ if [[ -n "$interfaces" ]] && [[ -n "$package" ]]; then
   out_directory="$(dirname "${out_file}")"
   mkdir -p "${out_directory}"
 
-  exec mockgen -package mocks -destination "${out_file}" "${package}" "${interfaces}"
+  exec "$MOCKGEN_BIN" -package mocks -destination "${out_file}" "${package}" "${interfaces}"
 elif [[ -n "$interfaces" ]]; then
   # Generate mocks for only the specified interfaces in the calling GOFILE.
   [[ -n "$GOFILE" ]] || die "Required environment variable GOFILE not set, must run using go:generate"
@@ -50,7 +54,7 @@ elif [[ -n "$interfaces" ]]; then
   out_directory="$(dirname "${out_file}")"
   mkdir -p "${out_directory}"
 
-  exec mockgen -package mocks -destination "${out_file}" "${package}" "${interfaces}"
+  exec "$MOCKGEN_BIN" -package mocks -destination "${out_file}" "${package}" "${interfaces}"
 else
   # Generate mocks for all interfaces found in the calling GOFILE.
   [[ -n "$GOFILE" ]] || die "Required environment variable GOFILE not set, must run using go:generate"
@@ -58,5 +62,5 @@ else
   out_directory="$(dirname "${out_file}")"
   mkdir -p "${out_directory}"
 
-  exec mockgen -package mocks -destination "${out_file}" -source "${GOFILE}"
+  exec "$MOCKGEN_BIN" -package mocks -destination "${out_file}" -source "${GOFILE}"
 fi

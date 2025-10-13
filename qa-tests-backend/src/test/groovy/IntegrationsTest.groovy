@@ -1,22 +1,21 @@
-import java.util.concurrent.TimeUnit
+import static util.Helpers.withRetry
 
 import io.grpc.StatusRuntimeException
-import org.apache.commons.lang3.RandomStringUtils
 
 import io.stackrox.proto.storage.ClusterOuterClass
+import io.stackrox.proto.storage.ExternalBackupOuterClass.S3URLStyle
 import io.stackrox.proto.storage.NotifierOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
 
 import common.Constants
-import groups.BAT
-import groups.Integration
-import groups.Notifiers
 import objects.AzureRegistryIntegration
 import objects.ClairScannerIntegration
 import objects.Deployment
 import objects.ECRRegistryIntegration
 import objects.EmailNotifier
+import objects.GHCRImageIntegration
+import objects.GoogleArtifactRegistry
 import objects.GCRImageIntegration
 import objects.GenericNotifier
 import objects.NetworkPolicy
@@ -26,6 +25,7 @@ import objects.QuayImageIntegration
 import objects.SlackNotifier
 import objects.SplunkNotifier
 import objects.StackroxScannerIntegration
+import objects.SyslogNotifier
 import services.ClusterService
 import services.ExternalBackupService
 import services.ImageIntegrationService
@@ -35,21 +35,21 @@ import services.PolicyService
 import util.Env
 import util.MailServer
 import util.SplunkUtil
+import util.SyslogServer
 
 import org.junit.Assume
-import org.junit.AssumptionViolatedException
-import org.junit.Rule
-import org.junit.experimental.categories.Category
-import org.junit.rules.Timeout
+import spock.lang.IgnoreIf
+import spock.lang.Tag
 import spock.lang.Unroll
 
+@Tag("PZ")
 class IntegrationsTest extends BaseSpecification {
     static final private String NOTIFIERDEPLOYMENT = "netpol-notification-test-deployment"
 
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
                     .setName(NOTIFIERDEPLOYMENT)
-                    .setImage("nginx")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
                     .addLabel("app", NOTIFIERDEPLOYMENT),
     ]
 
@@ -57,29 +57,23 @@ class IntegrationsTest extends BaseSpecification {
 
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = 30
 
-    @Rule
-    @SuppressWarnings(["JUnitPublicProperty"])
-    Timeout globalTimeout = new Timeout(1000, TimeUnit.SECONDS)
-
     def setupSpec() {
-        ImageIntegrationService.deleteStackRoxScannerIntegrationIfExists()
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         DEPLOYMENTS.each { Services.waitForDeployment(it) }
     }
 
     def cleanupSpec() {
-        ImageIntegrationService.addStackroxScannerIntegration()
         DEPLOYMENTS.each { orchestrator.deleteDeployment(it) }
     }
 
     @SuppressWarnings('LineLength')
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify create Email Integration (disableTLS=#disableTLS, startTLS=#startTLS, authenticated=#authenticated, sendCreds=#sendCreds)"() {
         given:
         "mailserver is running"
         def mailServer = MailServer.createMailServer(orchestrator, authenticated, !disableTLS)
-        sleep 15 * 1000 // wait 15s for service to start
+        sleep 30 * 1000 // wait 30s for service to start
 
         and:
         "a configuration that is expected to work"
@@ -154,7 +148,7 @@ class IntegrationsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify create Generic Integration Test Endpoint (#tlsOptsDesc, audit=#auditLoggingEnabled)"() {
         when:
         "the integration is tested"
@@ -186,21 +180,19 @@ class IntegrationsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(Integration)
-    def "Verify Splunk Integration (legacy mode: #legacy)"() {
+    @Tag("Integration")
+    // splunk is not supported on P/Z
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    def "Verify Splunk Integration"() {
         given:
         "the integration is tested"
-        SplunkUtil.SplunkDeployment parts = SplunkUtil.createSplunk(orchestrator,
-                Constants.ORCHESTRATOR_NAMESPACE, true)
+        SplunkUtil.SplunkDeployment parts = SplunkUtil.createSplunk(orchestrator, Constants.ORCHESTRATOR_NAMESPACE)
+        SplunkUtil.waitForSplunkBoot(parts.splunkPortForward.localPort)
 
         when:
         "call the grpc API for the splunk integration."
-        SplunkNotifier notifier = new SplunkNotifier(legacy, parts.collectorSvc.name, parts.splunkPortForward.localPort)
-        try {
-            notifier.createNotifier()
-        } catch (Exception e) {
-            throw new AssumptionViolatedException("Could not create Splunk notifier. Skipping test!", e)
-        }
+        SplunkNotifier notifier = new SplunkNotifier(parts.collectorSvc.name, parts.splunkPortForward.localPort)
+        notifier.createNotifier()
 
         and:
         "Edit the policy with the latest keyword."
@@ -221,7 +213,7 @@ class IntegrationsTest extends BaseSpecification {
         Deployment nginxdeployment =
                 new Deployment()
                         .setName(nginxName)
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
                         .addLabel("app", nginxName)
         orchestrator.createDeployment(nginxdeployment)
         assert Services.waitForViolation(nginxName, policy.name, 60)
@@ -242,14 +234,11 @@ class IntegrationsTest extends BaseSpecification {
             SplunkUtil.tearDownSplunk(orchestrator, parts)
         }
         notifier.deleteNotifier()
-
-        where:
-        "Data inputs are"
-        legacy << [false, true]
     }
 
     @Unroll
-    @Category([BAT, Notifiers])
+    @Tag("BAT")
+    @Tag("Notifiers")
     def "Verify Network Simulator Notifications: #type"() {
         when:
         "create notifier"
@@ -279,6 +268,12 @@ class IntegrationsTest extends BaseSpecification {
             notifier.validateNetpolNotification(orchestrator.generateYaml(policy), strictIntegrationTesting)
         }
 
+        and:
+        "check notifier is scrubbed"
+        NotifierService.getNotifiers().notifiersList.each {
+            it.getNotifierSecret() == "******"
+        }
+
         cleanup:
         "delete notifiers"
         for (Notifier notifier : notifierTypes) {
@@ -306,7 +301,8 @@ class IntegrationsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, Notifiers])
+    @Tag("BAT")
+    @Tag("Notifiers")
     def "Verify Policy Violation Notifications: #type"() {
         when:
         "Create notifications(s)"
@@ -353,8 +349,6 @@ class IntegrationsTest extends BaseSpecification {
             PolicyService.deletePolicy(policyId)
         }
         for (Notifier notifier : notifierTypes) {
-            notifier.validateViolationResolution()
-            notifier.cleanup()
             notifier.deleteNotifier()
         }
 
@@ -371,7 +365,7 @@ class IntegrationsTest extends BaseSpecification {
                         // add random id to name to make it easier to search for when validating
                         .setName(uniqueName("policy-violation-email-notification"))
                         .addLabel("app", "policy-violation-email-notification")
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
         */
 
         /*
@@ -380,17 +374,18 @@ class IntegrationsTest extends BaseSpecification {
                 new Deployment()
                         .setName("policy-violation-pagerduty-notification")
                         .addLabel("app", "policy-violation-pagerduty-notification")
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
         */
         "GENERIC"   | [new GenericNotifier()]     |
                 new Deployment()
                         .setName("policy-violation-generic-notification")
                         .addLabel("app", "policy-violation-generic-notification")
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
     }
 
     @Unroll
-    @Category([BAT, Notifiers])
+    @Tag("BAT")
+    @Tag("Notifiers")
     def "Verify Attempted Policy Violation Notifications: #type"() {
         when:
         "Create notifications(s)"
@@ -464,7 +459,6 @@ class IntegrationsTest extends BaseSpecification {
             PolicyService.deletePolicy(policyId)
         }
         for (Notifier notifier : notifierTypes) {
-            notifier.cleanup()
             notifier.deleteNotifier()
         }
         ClusterService.updateAdmissionController(oldAdmCtrlConfig)
@@ -482,7 +476,7 @@ class IntegrationsTest extends BaseSpecification {
                         // add random id to name to make it easier to search for when validating
                         .setName(uniqueName("policy-violation-email-notification"))
                         .addLabel("app", "policy-violation-email-notification")
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
         */
 
          /*
@@ -491,17 +485,31 @@ class IntegrationsTest extends BaseSpecification {
                 new Deployment()
                         .setName("policy-violation-pagerduty-notification")
                         .addLabel("app", "policy-violation-pagerduty-notification")
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
         */
         "GENERIC"   | [new GenericNotifier()]     |
                 new Deployment()
                         .setName("policy-violation-generic-notification")
                         .addLabel("app", "policy-violation-generic-notification")
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
     }
 
     @Unroll
-    @Category(Integration)
+    @Tag("Integration")
+    @IgnoreIf({ !Env.IS_BYODB })
+    def "Verify external backup errors on external DB"() {
+        when:
+        def backup = ExternalBackupService.getS3IntegrationConfig("this shall not work")
+        ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
+
+        then:
+        def exception = thrown(StatusRuntimeException)
+        assert exception.message.contains('Please manage backups directly with your database provider.')
+    }
+
+    @Unroll
+    @Tag("Integration")
+    @IgnoreIf(reason = "Backup service is not available with external db", value = { Env.IS_BYODB })
     def "Verify AWS S3 Integration: #integrationName"() {
         when:
         "the integration is tested"
@@ -511,7 +519,9 @@ class IntegrationsTest extends BaseSpecification {
         then:
         "verify test integration"
         // Test integration for S3 performs test backup (and rollback).
-        assert ExternalBackupService.testExternalBackup(backup)
+        withRetry(3, 10) {
+            assert ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
+        }
 
         where:
         "configurations are:"
@@ -525,13 +535,69 @@ class IntegrationsTest extends BaseSpecification {
         "S3 without endpoint" | Env.mustGetAWSS3BucketName() | Env.mustGetAWSS3BucketRegion() |
                 ""                                                   | Env.mustGetAWSAccessKeyID() |
                 Env.mustGetAWSSecretAccessKey()
-        "GCS"                 | Env.mustGetGCSBucketName()   | Env.mustGetGCSBucketRegion()   |
-                "storage.googleapis.com"                             | Env.mustGetGCPAccessKeyID() |
-                Env.mustGetGCPAccessKey()
     }
 
     @Unroll
-    @Category([BAT, Notifiers])
+    @Tag("Integration")
+    @IgnoreIf(reason = "Backup service is not available with external db", value = { Env.IS_BYODB })
+    def "Verify S3 Compatible Integration: #integrationName"() {
+        when:
+        "the integration is tested"
+        def backup = ExternalBackupService.getS3CompatibleIntegrationConfig(integrationName, endpoint, urlStyle)
+
+        then:
+        "verify test integration"
+        // Test integration for S3 compatible performs test backup (and rollback).
+        withRetry(3, 10) {
+            assert ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
+        }
+
+        where:
+        "configurations are:"
+
+        // Cloudflare R2 requires an active credit card subscription to access the buckets.
+        // See BitWarden item `06917dbc-17be-40f9-b8e1-b1a1015ce473` for the account details.
+        integrationName                          | endpoint
+        | urlStyle
+        "Cloudflare R2/path-based/no-prefix"     | Env.mustGetCloudflareR2Endpoint()
+        | S3URLStyle.S3_URL_STYLE_PATH
+        "Cloudflare R2/path-based/https"         | "https://${Env.mustGetCloudflareR2Endpoint()}"
+        | S3URLStyle.S3_URL_STYLE_PATH
+        "Cloudflare R2/virtual-hosted/no-prefix" | Env.mustGetCloudflareR2Endpoint()
+        | S3URLStyle.S3_URL_STYLE_VIRTUAL_HOSTED
+        "Cloudflare R2/virtual-hosted/https"     | "https://${Env.mustGetCloudflareR2Endpoint()}"
+        | S3URLStyle.S3_URL_STYLE_VIRTUAL_HOSTED
+    }
+
+    @Unroll
+    @Tag("Integration")
+    @IgnoreIf(reason = "Backup service is not available with external db", value = { Env.IS_BYODB })
+    def "Verify GCS Integration: #integrationName"() {
+        setup:
+        Assume.assumeTrue(!useWorkloadId || Env.HAS_WORKLOAD_IDENTITIES)
+
+        when:
+        "the integration is tested"
+        def backup = ExternalBackupService.getGCSIntegrationConfig(integrationName, useWorkloadId)
+
+        then:
+        "verify test integration"
+        // Test integration for GCS performs test backup (and rollback).
+        withRetry(3, 10) {
+            assert ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
+        }
+
+        where:
+        "configurations are:"
+
+        integrationName                | bucket                     | useWorkloadId
+        "GCS with service account key" | Env.mustGetGCSBucketName() | false
+        "GCS with workload identity"   | Env.mustGetGCSBucketName() | true
+    }
+
+    @Unroll
+    @Tag("BAT")
+    @Tag("Notifiers")
     def "Verify Policy Violation Notifications Destination Overrides: #type"() {
         when:
         "Create notifier"
@@ -584,8 +650,6 @@ class IntegrationsTest extends BaseSpecification {
             PolicyService.deletePolicy(policyId)
         }
 
-        notifier.validateViolationResolution()
-        notifier.cleanup()
         notifier.deleteNotifier()
 
         if (namespaceAnnotation != null) {
@@ -611,7 +675,7 @@ class IntegrationsTest extends BaseSpecification {
                         .setName(uniqueName("policy-violation-email-notification-deploy-override"))
                         .addLabel("app", "policy-violation-email-notification-deploy-override")
                         .addAnnotation("mailgun", "stackrox.qa+alt1@gmail.com")
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
         "Email namespace override"     |
                 new EmailNotifier("Email Test", false,
                         NotifierOuterClass.Email.AuthMethod.DISABLED, null, "stackrox.qa+alt2@gmail.com")   |
@@ -620,30 +684,42 @@ class IntegrationsTest extends BaseSpecification {
                         // add random id to name to make it easier to search for when validating
                         .setName(uniqueName("policy-violation-email-notification-ns-override"))
                         .addLabel("app", "policy-violation-email-notification-ns-override")
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
          */
         "Slack deploy override"   |
                 new SlackNotifier("slack test", "slack-key")   |
-                null   |
+                null                                                    |
                 new Deployment()
                         .setName("policy-violation-generic-notification-deploy-override")
                         .addLabel("app", "policy-violation-generic-notification-deploy-override")
-                        .addAnnotation("slack-key", NotifierService.SLACK_ALT_WEBHOOK)
-                        .setImage("nginx:latest")
+                        .addAnnotation("slack-key", Env.mustGetSlackAltWebhook())
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
         "Slack namespace override"   |
                 new SlackNotifier("slack test", "slack-key")   |
-                [key: "slack-key", value: NotifierService.SLACK_ALT_WEBHOOK] |
+                [key: "slack-key", value: Env.mustGetSlackAltWebhook()] |
                 new Deployment()
                         .setName("policy-violation-generic-notification-ns-override")
                         .addLabel("app", "policy-violation-generic-notification-ns-override")
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
     }
 
     @Unroll
-    @Category(Integration)
+    @Tag("Integration")
     def "Verify #imageIntegration.name() integration - #testAspect"() {
+        setup:
+        ImageIntegrationService.deleteStackRoxScannerIntegrationIfExists()
+
         Assume.assumeTrue(imageIntegration.isTestable())
-        Assume.assumeTrue(!testAspect.contains("IAM") || ClusterService.isEKS())
+        Assume.assumeTrue("requires AWS container IAM role",
+            !testAspect.contains("IAM") || ClusterService.isEKS(),
+        )
+        Assume.assumeTrue("requires GCP workload identity",
+            !testAspect.contains("workload identity") || Env.HAS_WORKLOAD_IDENTITIES,
+        )
+        // Does not run on ARO because ARO does not support workload identity federation today.
+        Assume.assumeTrue("requires Azure workload identity",
+            !testAspect.contains("AKS managed identity") || ClusterService.isAKS(),
+        )
 
         when:
         "the integration is tested"
@@ -655,22 +731,36 @@ class IntegrationsTest extends BaseSpecification {
         "verify test integration outcome"
         assert outcome
 
+        cleanup:
+        ImageIntegrationService.addStackroxScannerIntegration()
+
         where:
         "tests are:"
 
-        imageIntegration                 | customArgs      | testAspect
-        new StackroxScannerIntegration() | [:]             | "default config"
-        new ClairScannerIntegration()    | [:]             | "default config"
-        new QuayImageIntegration()       | [:]             | "default config"
-        new GCRImageIntegration()        | [:]             | "default config"
-        new AzureRegistryIntegration()   | [:]             | "default config"
-        new ECRRegistryIntegration()     | [:]             | "default config"
-        new ECRRegistryIntegration()     | [endpoint: "",] | "without endpoint"
-        new ECRRegistryIntegration()     | [useIam: true,] | "requires IAM"
+        imageIntegration                 | customArgs         | testAspect
+        new StackroxScannerIntegration() | [:]                | "default config"
+        new ClairScannerIntegration()    | [:]                | "default config"
+        new QuayImageIntegration()       | [:]                | "default config"
+        new GHCRImageIntegration()       | [:]                | "default config"
+        new GoogleArtifactRegistry()     | [:]                | "default config"
+        new GoogleArtifactRegistry()     | [wifEnabled: true]
+                                                              | "requires workload identity"
+        new GCRImageIntegration()        | [:]                | "default config"
+        new GCRImageIntegration()        | [includeScanner: false, wifEnabled: true]
+                                                              | "requires workload identity"
+        new AzureRegistryIntegration()   | [configSchema: "AzureConfig"]
+                                                              | "default config with AzureConfig"
+        new AzureRegistryIntegration()   | [configSchema: "DockerConfig"]
+                                                              | "default config with DockerConfig"
+        new AzureRegistryIntegration()   | [configSchema: "AzureConfig", wifEnabled: true]
+                                                              | "requires AKS managed identity"
+        new ECRRegistryIntegration()     | [:]                | "default config"
+        new ECRRegistryIntegration()     | [endpoint: ""]     | "without endpoint"
+        new ECRRegistryIntegration()     | [useIam: true]     | "requires IAM"
     }
 
     @Unroll
-    @Category(Integration)
+    @Tag("Integration")
     def "Verify improper #imageIntegration.name() integration - #testAspect"() {
         Assume.assumeTrue(imageIntegration.isTestable())
 
@@ -744,43 +834,39 @@ class IntegrationsTest extends BaseSpecification {
         }       | StatusRuntimeException |
         /invalid endpoint: endpoint cannot reference localhost/ |
         "invalid endpoint"
-        new GCRImageIntegration() | { [serviceAccount: Env.mustGet("GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY"),]
+        new GCRImageIntegration() | { [serviceAccount: Env.mustGetGCRNoAccessServiceAccount(),]
         }       | StatusRuntimeException | /PermissionDenied/ | "account without access"
         new GCRImageIntegration() | { [project: "not-a-project",]
         }       | StatusRuntimeException | /PermissionDenied/ | "incorrect project"
     }
 
-    // TODO disabled due to flaking (ROX-7902), shoudl be re-enabled once reworked (ROX-10310)
-    //@Category(Integration)
-    //def "Verify syslog notifier"() {
-    //    given:
-    //    "the some syslog receiver is created"
-    //    // Change the local port numbers so we don't conflict with any other splunk instances
-    //    SplunkUtil.SplunkDeployment splunkDeployment = SplunkUtil.createSplunk(orchestrator,
-    //            Constants.ORCHESTRATOR_NAMESPACE, true)
+    @Tag("Integration")
+    @Tag("BAT")
+    // syslog test image is not multi-arch, docker files have x86 only dependencies
+    // https://hub.docker.com/r/rsyslog/syslog_appliance_alpine
+    // https://github.com/rsyslog/rsyslog-docker/tree/master/appliance/alpine
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    def "Verify syslog notifier"() {
+        given:
+        "syslog server is created"
+        def syslog = SyslogServer.createRsyslog(orchestrator, Constants.ORCHESTRATOR_NAMESPACE)
+        sleep 15 * 1000 // wait 15s for service to start
 
-    //    when:
-    //    "call the grpc API for the syslog integration."
-    //    SyslogNotifier notifier = new SyslogNotifier(splunkDeployment.syslogSvc.name, 514,
-    //            splunkDeployment.splunkPortForward.localPort)
-    //    try {
-    //        notifier.createNotifier()
-    //    } catch (Exception e) {
-    //        throw new AssumptionViolatedException("Could not create syslog notifier. Skipping test!", e)
-    //    }
+        when:
+        "call the grpc API for the syslog notifier integration."
+        SyslogNotifier notifier = new SyslogNotifier(syslog.syslogSvc.name, syslog.SYSLOG_PORT)
 
-    //    then:
-    //    "Verify the messages are seen in the json"
-    //    // We should have at least one audit log for the message which created the syslog integration.
-    //    notifier.validateViolationNotification(null, null, false)
+        then:
+        "Verify syslog connection is successful"
+        withRetry(3, 10) {
+            assert notifier.testNotifier()
+        }
+        def msg = syslog.fetchLastMsg()
+        assert msg.contains("app_name:stackRoxKubernetesSecurityPlatform")
 
-    //    cleanup:
-    //    "remove splunk and syslog notifier integration"
-    //    SplunkUtil.tearDownSplunk(orchestrator, splunkDeployment)
-    //    notifier.deleteNotifier()
-    //}
-
-    def uniqueName(String name) {
-        return name + RandomStringUtils.randomAlphanumeric(5).toLowerCase()
+        cleanup:
+        "remove syslog notifier integration"
+        syslog.tearDown(orchestrator)
     }
+
 }

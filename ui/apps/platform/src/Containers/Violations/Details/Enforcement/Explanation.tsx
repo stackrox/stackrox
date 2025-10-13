@@ -1,9 +1,10 @@
-import React, { ReactElement } from 'react';
-import { Link } from 'react-router-dom';
+import React from 'react';
+import type { ReactElement } from 'react';
+import { Link } from 'react-router-dom-v5-compat';
 import { Divider } from '@patternfly/react-core';
 
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
-import { LifecycleStage } from '../../types/violationTypes';
+import type { LifecycleStage } from 'types/policy.proto';
 
 function getEnforcementExplanation(lifecycleStage: LifecycleStage, message: string) {
     if (lifecycleStage === LIFECYCLE_STAGES.DEPLOY) {
@@ -29,12 +30,12 @@ function Explanation({ lifecycleStage, enforcement, policyId }: ExplanationProps
     const linkAddr = `../policies/${policyId}`;
 
     return (
-        <div className="pf-u-p-md" data-testid="enforcement-explanation-message">
-            <div className="pf-u-pb-md">
+        <div className="pf-v5-u-p-md" aria-label="Enforcement explanation message">
+            <div className="pf-v5-u-pb-md">
                 {getEnforcementExplanation(lifecycleStage, enforcement.message)}
             </div>
             <Divider component="div" />
-            <div className="pf-u-pt-md">
+            <div className="pf-v5-u-pt-md">
                 If the enforcement action is being applied several times, learn more on how you can
                 <Link to={linkAddr}> remediate and resolve the issue.</Link>
             </div>

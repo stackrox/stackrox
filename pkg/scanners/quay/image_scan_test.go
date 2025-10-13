@@ -3,6 +3,7 @@ package quay
 import (
 	"testing"
 
+	"github.com/stackrox/rox/pkg/protoassert"
 	clairV1 "github.com/stackrox/scanner/api/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -92,5 +93,12 @@ func TestParseImageScan(t *testing.T) {
 
 	expectedScan, err := getImageScan()
 	assert.Nil(t, err)
-	assert.Equal(t, expectedScan, actualScan)
+	expectedFeatures := expectedScan.Data.Layer.Features
+	actualFeatures := actualScan.Data.Layer.Features
+	for i, e := range expectedFeatures {
+		protoassert.SlicesEqual(t, e.Executables, actualFeatures[i].Executables)
+		e.Executables = nil
+		actualFeatures[i].Executables = nil
+	}
+	assert.Equal(t, expectedScan, actualScan) //nolint:donotcompareproto // proto field handled above and nilled
 }

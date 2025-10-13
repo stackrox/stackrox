@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package v1;
+
+import "api/v1/empty.proto";
+import weak "google/api/annotations.proto";
+import "storage/declarative_config_health.proto";
+
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+message GetDeclarativeConfigHealthsResponse {
+  repeated storage.DeclarativeConfigHealth healths = 1;
+}
+
+service DeclarativeConfigHealthService {
+  rpc GetDeclarativeConfigHealths(Empty) returns (GetDeclarativeConfigHealthsResponse) {
+    option (google.api.http) = {get: "/v1/declarative-config/health"};
+  }
+}

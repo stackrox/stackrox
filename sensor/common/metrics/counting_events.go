@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/metrics"
@@ -22,7 +23,7 @@ type countingMessageStream struct {
 }
 
 func (s countingMessageStream) updateMetrics(msg *central.MsgFromSensor) {
-	switch m := msg.Msg.(type) {
+	switch m := msg.GetMsg().(type) {
 	case *central.MsgFromSensor_Event:
 		incrementSensorEvents(m.Event, s.typ)
 	default:
@@ -32,7 +33,10 @@ func (s countingMessageStream) updateMetrics(msg *central.MsgFromSensor) {
 
 func (s countingMessageStream) Send(msg *central.MsgFromSensor) error {
 	s.updateMetrics(msg)
-	return s.stream.Send(msg)
+	if err := s.stream.Send(msg); err != nil {
+		return errors.Wrap(err, "sending sensor message")
+	}
+	return nil
 }
 
 // NewCountingEventStream returns a new SensorMessageStream that automatically updates metrics counters.

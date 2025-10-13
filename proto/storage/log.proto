@@ -1,15 +1,14 @@
 syntax = "proto3";
 
-option go_package = "storage";
-option java_package = "io.stackrox.proto.storage";
-
-import "google/protobuf/timestamp.proto";
-import "gogoproto/gogo.proto";
-
 package storage;
 
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
 message LogImbue {
-  string                    id        = 1 [(gogoproto.moretags) = 'sql:"pk"'];
-  google.protobuf.Timestamp timestamp = 2;
-  bytes                     log       = 3;
+  string id = 1; // @gotags: sql:"pk"
+  google.protobuf.Timestamp timestamp = 2; // @gotags: search:"Log Imbue Creation Time,hidden"
+  bytes log = 3;
 }

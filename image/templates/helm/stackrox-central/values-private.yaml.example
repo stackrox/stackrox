@@ -123,14 +123,28 @@
 #     htpasswd: |
 #       admin:<bcrypt hash>
 #
-#   # The password to be used for authenticating central database access IF USING POSTGRES.
-#   # This is not user-relevant and only serves to properly secure the database with a
-#   # pre-shared secret. If this setting is omitted, a password will be automatically generated
-#   # upon initial deployment, and the existing password will be used upon upgrades.
-#   dbPassword:
-#     value: <central database password value>
+#   # Secret configuration options for the StackRox Central DB deployment.
+#   db:
+#     # The password to be used for authenticating central database access IF USING POSTGRES.
+#     # This is not user-relevant and only serves to properly secure the database with a
+#     # pre-shared secret. If this setting is omitted, a password will be automatically generated
+#     # upon initial deployment, and the existing password will be used upon upgrades.
+#     password:
+#       # The plaintext value of the administrator password.
+#       value: <central database password value>
+#     # Internal "central-db.stackrox.svc" service TLS certificate for the Central DB deployment.
+#     # Omit to auto-generate (initial deployment) or use existing (upgrade).
+#     serviceTLS:
+#       cert: |
+#         -----BEGIN CERTIFICATE-----
+#         <PEM-encoded Central DB certificate>
+#         -----END CERTIFICATE-----
+#       key: |
+#         -----BEGIN RSA PRIVATE KEY-----
+#         <PEM-encoded Central DB cert private key>
+#         -----END RSA PRIVATE KEY-----
 #
-# # Secret configuration options for the StackRox Central deployment.
+# # Secret configuration options for the StackRox Scanner deployment.
 # scanner:
 #   # The password to be used for authenticating database access. This is not user-relevant
 #   # and only serves to properly secure the database with a pre-shared secret. If this
@@ -162,3 +176,49 @@
 #       -----BEGIN RSA PRIVATE KEY-----
 #       <PEM-encoded Scanner DB service cert private key>
 #       -----END RSA PRIVATE KEY-----
+#
+# # Secret configuration options for the Scanner V4 deployment.
+# scannerV4:
+#   indexer:
+#     # Internal "scanner-v4-indexer.<namespace>.svc" service TLS certificate for the Scanner V4 indexer deployment.
+#     # Omit to auto-generate (initial deployment) or use existing (upgrade).
+#     serviceTLS:
+#       cert: |
+#         -----BEGIN CERTIFICATE-----
+#         <PEM-encoded Scanner V4 indexer service certificate>
+#         -----END CERTIFICATE-----
+#       key: |
+#         -----BEGIN RSA PRIVATE KEY-----
+#         <PEM-encoded Scanner V4 indexer service cert private key>
+#         -----END RSA PRIVATE KEY-----
+#
+#   matcher:
+#     # Internal "scanner-v4-matcher.<namespace>.svc" service TLS certificate for the Scanner V4 matcher deployment.
+#     # Omit to auto-generate (initial deployment) or use existing (upgrade).
+#     serviceTLS:
+#       cert: |
+#         -----BEGIN CERTIFICATE-----
+#         <PEM-encoded Scanner V4 matcher service certificate>
+#         -----END CERTIFICATE-----
+#       key: |
+#         -----BEGIN RSA PRIVATE KEY-----
+#         <PEM-encoded Scanner V4 matcher service cert private key>
+#         -----END RSA PRIVATE KEY-----
+#
+#   db:
+#     # The password to be used for authenticating database access. If this setting is omitted, a password will be
+#     # automatically generated upon initial deployment and the existing password will be used upon upgrades.
+#     password:
+#       value: <scanner database password value>
+#
+#     # Internal "scanner-v4-db.<namespace>.svc" service TLS certificate for the Scanner V4 db deployment.
+#     # Omit to auto-generate (initial deployment) or use existing (upgrade).
+#     serviceTLS:
+#       cert: |
+#         -----BEGIN CERTIFICATE-----
+#         <PEM-encoded Scanner V4 db service certificate>
+#         -----END CERTIFICATE-----
+#       key: |
+#         -----BEGIN RSA PRIVATE KEY-----
+#         <PEM-encoded Scanner V4 db service cert private key>
+#         -----END RSA PRIVATE KEY-----

@@ -1,3 +1,0 @@
-blah blah
-main: 2020/10/30 11:02:15.529350 main.go:74: Fatal: error initializing stream to sensor: Failed to initialize sensor connection: error communicating with sensor: rpc error: code = Unavailable desc = connection error: desc = "transport: Error while dialing dial tcp 172.30.109.185:443: connect: no route to host"
-more blah

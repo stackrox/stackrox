@@ -11,13 +11,14 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/process/id"
+	"github.com/stackrox/rox/pkg/process/normalize"
 )
 
 var (
-	log = logging.LoggerForModule()
+	_ pipeline.Fragment = (*pipelineImpl)(nil)
 )
 
 // GetPipeline returns an instantiation of this particular pipeline
@@ -36,7 +37,11 @@ type pipelineImpl struct {
 	manager lifecycle.Manager
 }
 
-func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, _ *reconciliation.StoreMap) error {
+func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
+	return nil
+}
+
+func (s *pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {
 	// Nothing to reconcile
 	return nil
 }
@@ -46,13 +51,15 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
+func (s *pipelineImpl) Run(_ context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.ProcessIndicator)
 
 	event := msg.GetEvent()
 	switch event.GetAction() {
 	case central.ResourceAction_CREATE_RESOURCE:
 		indicator := event.GetProcessIndicator()
+		normalize.Indicator(indicator)
+
 		indicator.ClusterId = clusterID
 
 		// Build indicator from exec filepath, process, and args
@@ -70,4 +77,4 @@ func (s *pipelineImpl) process(indicator *storage.ProcessIndicator) error {
 	return s.manager.IndicatorAdded(indicator)
 }
 
-func (s *pipelineImpl) OnFinish(clusterID string) {}
+func (s *pipelineImpl) OnFinish(_ string) {}

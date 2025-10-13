@@ -2,14 +2,15 @@ package clusters
 
 import (
 	"context"
+	"time"
 
-	"github.com/stackrox/rox/central/role/resources"
 	siDataStore "github.com/stackrox/rox/central/serviceidentities/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -23,11 +24,11 @@ func CreateIdentity(clusterID string, serviceType storage.ServiceType, identityS
 		return nil, err
 	}
 	if identityStore != nil {
-		srvIDAllAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		administrationAllAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-				sac.ResourceScopeKeys(resources.ServiceIdentity)))
-		if err := identityStore.AddServiceIdentity(srvIDAllAccessCtx, issuedCert.ID); err != nil {
+				sac.ResourceScopeKeys(resources.Administration)))
+		if err := identityStore.AddServiceIdentity(administrationAllAccessCtx, issuedCert.ID); err != nil {
 			return nil, err
 		}
 	}
@@ -68,4 +69,16 @@ func IssueSecuredClusterInitCertificates() (CertBundle, uuid.UUID, error) {
 		certs[serviceType] = issuedCert
 	}
 	return certs, bundleID, nil
+}
+
+// IssueSecuredClusterCRSCertificates creates a cert which holds init certificates which have a UUID nil cluster id
+// These certificates are used to register new clusters at central.
+// All certificates share the same init bundle UUID written in the OU subject field.
+func IssueSecuredClusterCRSCertificates(validUntil time.Time) (*mtls.IssuedCert, uuid.UUID, error) {
+	crsID := uuid.NewV4()
+	cert, err := mtls.IssueNewCrsCert(crsID, validUntil)
+	if err != nil {
+		return nil, uuid.Nil, err
+	}
+	return cert, crsID, nil
 }

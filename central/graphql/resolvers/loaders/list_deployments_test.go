@@ -4,12 +4,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/deployment/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestListDeploymentLoader(t *testing.T) {
@@ -49,7 +50,7 @@ func (suite *ListDeploymentLoaderTestSuite) TestFromIDs() {
 	// Get a preloaded deployment from id.
 	deployments, err := loader.FromIDs(suite.ctx, []string{dep1, dep2})
 	suite.NoError(err)
-	suite.Equal([]*storage.ListDeployment{
+	protoassert.SlicesEqual(suite.T(), []*storage.ListDeployment{
 		loader.loaded[dep1],
 		loader.loaded[dep2],
 	}, deployments)
@@ -61,7 +62,7 @@ func (suite *ListDeploymentLoaderTestSuite) TestFromIDs() {
 
 	deployments, err = loader.FromIDs(suite.ctx, []string{dep1, dep2, dep3})
 	suite.NoError(err)
-	suite.Equal([]*storage.ListDeployment{
+	protoassert.SlicesEqual(suite.T(), []*storage.ListDeployment{
 		loader.loaded[dep1],
 		loader.loaded[dep2],
 		thirdListDeployment,
@@ -70,7 +71,7 @@ func (suite *ListDeploymentLoaderTestSuite) TestFromIDs() {
 	// Above call should now be preloaded.
 	deployments, err = loader.FromIDs(suite.ctx, []string{dep1, dep2, dep3})
 	suite.NoError(err)
-	suite.Equal([]*storage.ListDeployment{
+	protoassert.SlicesEqual(suite.T(), []*storage.ListDeployment{
 		loader.loaded[dep1],
 		loader.loaded[dep2],
 		loader.loaded[dep3],
@@ -101,7 +102,7 @@ func (suite *ListDeploymentLoaderTestSuite) TestFromQuery() {
 
 	deployments, err := loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.ListDeployment{
+	protoassert.SlicesEqual(suite.T(), []*storage.ListDeployment{
 		loader.loaded[dep1],
 		loader.loaded[dep2],
 	}, deployments)
@@ -126,7 +127,7 @@ func (suite *ListDeploymentLoaderTestSuite) TestFromQuery() {
 
 	deployments, err = loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.ListDeployment{
+	protoassert.SlicesEqual(suite.T(), []*storage.ListDeployment{
 		loader.loaded[dep1],
 		loader.loaded[dep2],
 		thirdListDeployment,
@@ -148,7 +149,7 @@ func (suite *ListDeploymentLoaderTestSuite) TestFromQuery() {
 
 	deployments, err = loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.ListDeployment{
+	protoassert.SlicesEqual(suite.T(), []*storage.ListDeployment{
 		loader.loaded[dep1],
 		loader.loaded[dep2],
 		loader.loaded[dep3],

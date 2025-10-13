@@ -1,3 +1,9 @@
+values:
+  imagePullSecrets:
+    allowNone: true
+  monitoring:
+    openshift:
+      enabled: false
 tests:
 - name: "Detect OpenShift 3 if no openshift server resources are not visible"
   set:

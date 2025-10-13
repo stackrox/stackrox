@@ -5,16 +5,21 @@ import (
 	"testing"
 
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/buildinfo"
+	pkgEnv "github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome"
+	"github.com/stackrox/rox/pkg/version/testutils"
 	env "github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/io"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
 func TestHelmOutputCommand(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(helmOutputTestSuite))
 }
 
@@ -29,6 +34,64 @@ func (suite *helmOutputTestSuite) SetupTest() {
 	suite.helmOutputCommand = helmOutputCommand{}
 	suite.helmOutputCommand.env = env.NewTestCLIEnvironment(suite.T(), testIO, printer.DefaultColorPrinter())
 	suite.errOur = errOut
+}
+
+func TestTelemetryConfiguration(t *testing.T) {
+	dirtyVersion := "1.2.3-dirty"
+	releaseVersion := "1.2.3"
+	var disabledInDebug any
+	if !buildinfo.ReleaseBuild || buildinfo.TestBuild {
+		disabledInDebug = phonehome.DisabledKey
+	}
+
+	testIO, _, _, _ := io.TestIO()
+	cmd := helmOutputCommand{
+		imageFlavor: "opensource",
+		env:         env.NewTestCLIEnvironment(t, testIO, printer.DefaultColorPrinter()),
+	}
+
+	type result struct {
+		enabled bool
+		key     interface{}
+	}
+
+	disabled := result{enabled: false, key: phonehome.DisabledKey}
+
+	testCases := []struct {
+		testName  string
+		version   string
+		telemetry bool
+		key       string
+		expected  result
+	}{
+		{testName: "test1", version: dirtyVersion, telemetry: true, key: "", expected: disabled},
+		{testName: "test2", version: dirtyVersion, telemetry: false, key: "", expected: disabled},
+		{testName: "test3", version: dirtyVersion, telemetry: true, key: "KEY", expected: result{enabled: true, key: "KEY"}},
+		{testName: "test4", version: dirtyVersion, telemetry: false, key: "KEY", expected: disabled},
+
+		{testName: "test5", version: releaseVersion, telemetry: true, key: "", expected: result{enabled: buildinfo.ReleaseBuild && !buildinfo.TestBuild, key: disabledInDebug}},
+		{testName: "test6", version: releaseVersion, telemetry: false, key: "", expected: disabled},
+		{testName: "test7", version: releaseVersion, telemetry: true, key: "KEY", expected: result{enabled: true, key: "KEY"}},
+		{testName: "test8", version: releaseVersion, telemetry: false, key: "KEY", expected: disabled},
+
+		{testName: "test9", version: dirtyVersion, telemetry: true, key: phonehome.DisabledKey, expected: disabled},
+		{testName: "test10", version: dirtyVersion, telemetry: false, key: phonehome.DisabledKey, expected: disabled},
+		{testName: "test11", version: releaseVersion, telemetry: true, key: phonehome.DisabledKey, expected: disabled},
+		{testName: "test12", version: releaseVersion, telemetry: false, key: phonehome.DisabledKey, expected: disabled},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.testName, func(t *testing.T) {
+			t.Setenv(pkgEnv.TelemetryStorageKey.EnvVar(), testCase.key)
+			testutils.SetMainVersion(t, testCase.version)
+
+			cmd.telemetry = testCase.telemetry
+			values, err := cmd.getChartMetaValues(true)
+			require.NoError(t, err, err)
+			assert.Equal(t, testCase.expected.enabled, values.TelemetryEnabled)
+			assert.Equal(t, testCase.expected.key, values.TelemetryKey)
+		})
+	}
 }
 
 func (suite *helmOutputTestSuite) TestInvalidCommandArgs() {
@@ -94,47 +157,43 @@ func (suite *helmOutputTestSuite) TestConstruct() {
 
 func (suite *helmOutputTestSuite) TestValidate() {
 	cases := map[string]struct {
-		chartName       string
-		outputDir       string
-		createOutputDir bool
-		removeOutputDir bool
-		errOutRegexp    string
-		shouldFail      bool
-		error           error
-		errorRegexp     string
+		chartName    string
+		outputDir    string
+		createOutDir bool
+		removeOutDir bool
+		errOutRegexp string
+		shouldFail   bool
+		error        error
+		errorRegexp  string
 	}{
 		"should not fail for valid chartName and provided outputDir": {
-			chartName: common.ChartCentralServices,
 			outputDir: "test_output_dir",
 		},
 		"should not fail for valid chartName and non provided outputDir": {
-			chartName: common.ChartCentralServices,
 			errOutRegexp: `WARN:	No output directory specified, using default directory "./stackrox-central-services-chart"`,
 		},
 		"should not fail for valid chartName and existed outputDir": {
-			chartName:       common.ChartCentralServices,
-			createOutputDir: true,
-			removeOutputDir: true,
+			createOutDir: true,
+			removeOutDir: true,
 			errOutRegexp: "WARN:	Removed output directory .*",
 		},
 		"should fail for already existed output directory": {
-			chartName:       common.ChartCentralServices,
-			createOutputDir: true,
-			removeOutputDir: false,
+			error:        errox.AlreadyExists,
+			shouldFail:   true,
+			errorRegexp:  `directory ".*" already exists`,
+			createOutDir: true,
+			removeOutDir: false,
 			errOutRegexp: "ERROR:	Directory .* already exists, use --remove or select a different directory with --output-dir.",
-			shouldFail:  true,
-			error:       errox.AlreadyExists,
-			errorRegexp: `directory ".*" already exists`,
 		},
 	}
 
 	for name, c := range cases {
 		suite.Run(name, func() {
 			helmOutputCmd := suite.helmOutputCommand
-			helmOutputCmd.chartName = c.chartName
-			helmOutputCmd.removeOutputDir = c.removeOutputDir
+			helmOutputCmd.chartName = common.ChartCentralServices
+			helmOutputCmd.removeOutputDir = c.removeOutDir
 			helmOutputCmd.outputDir = c.outputDir
-			if c.createOutputDir {
+			if c.createOutDir {
 				helmOutputCmd.outputDir = suite.T().TempDir()
 			}
 

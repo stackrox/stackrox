@@ -9,11 +9,13 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/gjson"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/printers"
 	"github.com/stackrox/rox/pkg/retry"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/logger"
@@ -45,6 +47,31 @@ var (
 		printers.JUnitSkippedTestCasesExpressionKey:     "results.#.violatedPolicies.#(failingCheck==~false)#.name",
 		printers.JUnitFailedTestCaseErrMsgExpressionKey: "results.#.violatedPolicies.#(failingCheck==~true)#.violation.@list",
 	}
+
+	sarifJSONPathExpressions = map[string]string{
+		printers.SarifRuleJSONPathExpressionKey: "results.#.violatedPolicies.#.name",
+		printers.SarifHelpJSONPathExpressionKey: gjson.MultiPathExpression(
+			"@text",
+			gjson.Expression{
+				Key:        "Policy",
+				Expression: "results.#.violatedPolicies.#.name",
+			},
+			gjson.Expression{
+				Key:        "Severity",
+				Expression: "results.#.violatedPolicies.#.severity",
+			},
+			gjson.Expression{
+				Key:        "Violations",
+				Expression: "results.#.violatedPolicies.#.violation.@list",
+			},
+			gjson.Expression{
+				Key:        "Remediation",
+				Expression: "results.#.violatedPolicies.#.remediation",
+			},
+		),
+		printers.SarifSeverityJSONPathExpressionKey: "results.#.violatedPolicies.#.severity",
+	}
+
 	// supported output formats with default values
 	supportedObjectPrinters = []printer.CustomPrinterFactory{
 		printer.NewTabularPrinterFactory(defaultImageCheckHeaders, defaultImageCheckJSONPathExpression),
@@ -57,15 +84,16 @@ var (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	imageCheckCmd := &imageCheckCommand{env: cliEnvironment}
 
-	// object printer factory - allows output formats of JSON, csv, table with table being the default
-	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", supportedObjectPrinters...)
+	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", append(supportedObjectPrinters,
+		printer.NewSarifPrinterFactory(printers.SarifPolicyReport, sarifJSONPathExpressions, &imageCheckCmd.image))...)
 	// the returned error only occurs when default values do not allow the creation of any printer, this should be considered
 	// a programming error rather than a user error
 	pkgUtils.Must(err)
 
 	c := &cobra.Command{
-		Use:  "check",
-		Args: cobra.NoArgs,
+		Use:   "check",
+		Short: "Check images for build time policy violations, and report them",
+		Args:  cobra.NoArgs,
 		RunE: func(c *cobra.Command, args []string) error {
 			if err := imageCheckCmd.Construct(nil, c, objectPrinterFactory); err != nil {
 				return err
@@ -81,28 +109,31 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	objectPrinterFactory.AddFlags(c)
 
 	// Image Check specific flags
-	c.Flags().StringVarP(&imageCheckCmd.image, "image", "i", "", "image name and reference. (e.g. nginx:latest or nginx@sha256:...)")
+	c.Flags().StringVarP(&imageCheckCmd.image, "image", "i", "", "Image name and reference (e.g. nginx:latest or nginx@sha256:...).")
 	pkgUtils.Must(c.MarkFlagRequired("image"))
-	c.Flags().IntVarP(&imageCheckCmd.retryDelay, "retry-delay", "d", 3, "set time to wait between retries in seconds.")
-	c.Flags().IntVarP(&imageCheckCmd.retryCount, "retries", "r", 3, "number of retries before exiting as error.")
+	c.Flags().IntVarP(&imageCheckCmd.retryDelay, "retry-delay", "d", 3, "Set time to wait between retries in seconds.")
+	c.Flags().IntVarP(&imageCheckCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error.")
+	c.Flags().BoolVarP(&imageCheckCmd.force, "force", "f", false, "Bypass Central's cache for the image and force a new pull from the Scanner.")
 	c.Flags().BoolVar(&imageCheckCmd.sendNotifications, "send-notifications", false,
-		"whether to send notifications for violations (notifications will be sent to the notifiers "+
+		"Whether to send notifications for violations (notifications will be sent to the notifiers "+
 			"configured in each violated policy).")
-	c.Flags().StringSliceVarP(&imageCheckCmd.policyCategories, "categories", "c", nil, "optional comma separated list of policy categories to run.  Defaults to all policy categories.")
+	c.Flags().StringSliceVarP(&imageCheckCmd.policyCategories, "categories", "c", nil, "Optional comma separated list of policy categories to run.  Defaults to all policy categories.")
+	c.Flags().StringVar(&imageCheckCmd.cluster, "cluster", "", "Cluster name or ID to use as context for evaluation.")
+	c.Flags().StringVar(&imageCheckCmd.namespace, "namespace", "", "Namespace on the secured cluster from which to read context information when delegating image scans, specifically pull secrets to access the image registry.")
 
 	// deprecated, old output format specific flags
-	c.Flags().BoolVar(&imageCheckCmd.printAllViolations, "print-all-violations", false, "whether to print all violations per alert or truncate violations for readability")
-	c.Flags().BoolVar(&imageCheckCmd.json, jsonFlagName, false, "Output policy results as JSON")
+	c.Flags().BoolVar(&imageCheckCmd.printAllViolations, "print-all-violations", false, "Whether to print all violations per alert or truncate violations for readability.")
+	c.Flags().BoolVar(&imageCheckCmd.json, jsonFlagName, false, "Output policy results as JSON.")
 	c.Flags().BoolVar(&imageCheckCmd.failViolationsWithJSON, jsonFailFlagName, true,
 		"Whether policy violations should cause the command to exit non-zero in JSON output mode too. "+
 			"This flag only has effect when --json is also specified.")
 	// mark old output format flags as deprecated, but do not fully remove them to not break API for customer
 	// each deprecation message will be prefixed with "<flag-name> is deprecated,"
-	pkgUtils.Must(c.Flags().MarkDeprecated("print-all-violations", "use the new output format which handles this by default. The flag is only "+
-		"relevant in combination with the --json flag"))
-	pkgUtils.Must(c.Flags().MarkDeprecated(jsonFlagName, "use the new output format which also offers JSON. NOTE: The new output format's structure "+
+	pkgUtils.Must(c.Flags().MarkDeprecated("print-all-violations", "Use the new output format which handles this by default. The flag is only "+
+		"relevant in combination with the --json flag."))
+	pkgUtils.Must(c.Flags().MarkDeprecated(jsonFlagName, "Use the new output format which also offers JSON. NOTE: The new output format's structure "+
 		"has changed in a non-backward compatible way."))
-	pkgUtils.Must(c.Flags().MarkDeprecated(jsonFailFlagName, "use the new output format which will always fail with policy violations."))
+	pkgUtils.Must(c.Flags().MarkDeprecated(jsonFailFlagName, "Use the new output format which will always fail with policy violations."))
 
 	return c
 }
@@ -113,10 +144,13 @@ type imageCheckCommand struct {
 	image              string
 	retryDelay         int
 	retryCount         int
+	force              bool
 	sendNotifications  bool
 	policyCategories   []string
 	printAllViolations bool
 	timeout            time.Duration
+	cluster            string
+	namespace          string
 
 	// values injected from either Construct, parent command or for abstracting external dependencies
 	env                      environment.Environment
@@ -130,7 +164,7 @@ type imageCheckCommand struct {
 }
 
 // Construct will enhance the struct with other values coming either from os.Args, other, global flags or environment variables
-func (i *imageCheckCommand) Construct(args []string, cmd *cobra.Command, f *printer.ObjectPrinterFactory) error {
+func (i *imageCheckCommand) Construct(_ []string, cmd *cobra.Command, f *printer.ObjectPrinterFactory) error {
 	i.timeout = flags.Timeout(cmd)
 
 	// TODO: remove this once we have fully deprecated the old output format
@@ -150,7 +184,6 @@ func (i *imageCheckCommand) Construct(args []string, cmd *cobra.Command, f *prin
 // Validate will validate the injected values and check whether it's possible to execute the operation with the
 // provided values
 func (i *imageCheckCommand) Validate() error {
-
 	// TODO: remove this once we have fully deprecated the old output format
 	// Only print warnings specific to old --json format when no printer is created
 	if i.objectPrinter == nil {
@@ -164,30 +197,35 @@ func (i *imageCheckCommand) Validate() error {
 
 // CheckImage will execute the image check with retry functionality
 func (i *imageCheckCommand) CheckImage() error {
+	var failedAttempts int
 	err := retry.WithRetry(func() error {
 		return i.checkImage()
 	},
 		retry.Tries(i.retryCount+1),
 		retry.OnlyRetryableErrors(),
 		retry.OnFailedAttempts(func(err error) {
+			failedAttempts++
 			i.env.Logger().ErrfLn("Checking image failed: %v. Retrying after %v seconds...", err, i.retryDelay)
 			time.Sleep(time.Duration(i.retryDelay) * time.Second)
 		}))
 	if err != nil {
-		return errors.Wrapf(err, "checking image failed after %d retries", i.retryCount)
+		if failedAttempts > 0 {
+			return errors.Wrapf(err, "checking image failed after %d retries", failedAttempts)
+		}
+		return errors.Wrap(err, "checking image failed")
 	}
 	return nil
 }
 
 func (i *imageCheckCommand) checkImage() error {
 	// Get the violated policies for the input data.
-	req, err := buildRequest(i.image, i.sendNotifications, i.policyCategories)
+	req, err := buildRequest(i.image, i.sendNotifications, i.force, i.policyCategories, i.cluster, i.namespace)
 	if err != nil {
 		return err
 	}
 	alerts, err := i.getAlerts(req)
 	if err != nil {
-		return retry.MakeRetryable(err)
+		return errors.Wrap(common.MakeRetryable(err), "retrieving alerts")
 	}
 	return i.printResults(alerts)
 }
@@ -247,7 +285,7 @@ func (i *imageCheckCommand) getAlerts(req *v1.BuildDetectionRequest) ([]*storage
 	return response.GetAlerts(), err
 }
 
-// legacyPrint supports the old printing behavior of the --json format to ensure backwards compatability
+// legacyPrint supports the old printing behavior of the --json format to ensure backwards compatibility
 func legacyPrint(alerts []*storage.Alert, failViolations bool, numBuildBreakingPolicies int, out io.Writer) error {
 	err := report.JSON(out, alerts)
 	if err != nil {
@@ -275,7 +313,8 @@ func printPolicySummary(image string, numOfPolicyViolations map[string]int, out 
 // policy that failed the check. This will be printed only for non-standardized output formats, i.e. table format
 // and if there are any failed policies
 func printAdditionalWarnsAndErrs(numTotalViolatedPolicies int, results []policy.EntityResult, numBreakingPolicies int,
-	out logger.Logger) {
+	out logger.Logger,
+) {
 	if numTotalViolatedPolicies == 0 {
 		return
 	}
@@ -295,7 +334,7 @@ func printAdditionalWarnsAndErrs(numTotalViolatedPolicies int, results []policy.
 }
 
 // Use inputs to generate an image name for request.
-func buildRequest(image string, sendNotifications bool, policyCategories []string) (*v1.BuildDetectionRequest, error) {
+func buildRequest(image string, sendNotifications, force bool, policyCategories []string, cluster string, namespace string) (*v1.BuildDetectionRequest, error) {
 	img, err := utils.GenerateImageFromString(image)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not parse image '%s'", image)
@@ -303,6 +342,9 @@ func buildRequest(image string, sendNotifications bool, policyCategories []strin
 	return &v1.BuildDetectionRequest{
 		Resource:          &v1.BuildDetectionRequest_Image{Image: img},
 		SendNotifications: sendNotifications,
+		Force:             force,
 		PolicyCategories:  policyCategories,
+		Cluster:           cluster,
+		Namespace:         namespace,
 	}, nil
 }

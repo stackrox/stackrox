@@ -22,6 +22,8 @@ protoc-*
 coverage.out
 coverage.html
 combined_coverage.dat
+/.gotools/
+.proto/
 
 # Build output
 /bin/
@@ -36,9 +38,6 @@ combined_coverage.dat
 # Yet, include per-project code style settings in the root of the repo.
 # `codeStyles/` directory must be included explicitly because otherwise files will not be seen by `git`. See why in the
 # link above.
-!/.idea/codeStyles/
-!/.idea/codeStyles/codeStyleConfig.xml
-!/.idea/codeStyles/Project.xml
 !/qa-tests-backend/.idea/codeStyles/
 !/qa-tests-backend/.idea/codeStyles/codeStyleConfig.xml
 !/qa-tests-backend/.idea/codeStyles/Project.xml
@@ -51,6 +50,9 @@ combined_coverage.dat
 /stackrox-central-services-chart/
 /stackrox-secured-cluster-services-chart/
 .vscode
+
+# Used for mounting into the qa e2e-test docker container.
+.gitconfig
 
 # Mac OS hidden file
 .DS_Store
@@ -66,3 +68,14 @@ local/database-restore/*
 
 # shellcheck output
 shellcheck-reports
+
+# Direnv
+.direnv/
+
+# Snyk
+.dccache
+
+# Konflux builds download scanner vuln files to the code repo.
+# These files need to be ignored in order for `make tag` return a clean version string.
+repository-to-cpe.json
+container-name-repos-map.json

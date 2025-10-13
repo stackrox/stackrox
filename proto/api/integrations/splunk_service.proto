@@ -1,8 +1,6 @@
 syntax = "proto3";
 
-option go_package = "integrations";
-
-option java_package = "io.stackrox.proto.api.integrations";
+package integrations;
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
@@ -11,7 +9,8 @@ import "storage/deployment.proto";
 import "storage/policy.proto";
 import "storage/process_indicator.proto";
 
-package integrations;
+option go_package = "./api/integrations;integrations";
+option java_package = "io.stackrox.proto.api.integrations";
 
 // SplunkViolationsResponse is what StackRox Platform returns on the request from Splunk Technology Addon for StackRox.
 message SplunkViolationsResponse {
@@ -114,10 +113,10 @@ message SplunkViolation {
   message ResourceInfo {
     // This is converted from an enum to a string so that it can be properly formatted (capitalized, etc)
     string resource_type = 1;
-    string name          = 2;
-    string cluster_id    = 3;
-    string cluster_name  = 4;
-    string namespace     = 5;
+    string name = 2;
+    string cluster_id = 3;
+    string cluster_name = 4;
+    string namespace = 5;
   }
 
   // From storage.Policy
@@ -132,16 +131,16 @@ message SplunkViolation {
     string policy_version = 8;
   }
 
-  ViolationInfo  violation_info = 1;
-  AlertInfo      alert_info = 2;
-  ProcessInfo    process_info = 3;
+  ViolationInfo violation_info = 1;
+  AlertInfo alert_info = 2;
+  ProcessInfo process_info = 3;
 
   oneof EntityInfo {
     DeploymentInfo deployment_info = 4;
-    ResourceInfo   resource_info   = 10;
+    ResourceInfo resource_info = 10;
   }
 
-  PolicyInfo     policy_info = 5;
+  PolicyInfo policy_info = 5;
   // extra details for network violation
   storage.Alert.Violation.NetworkFlowInfo network_flow_info = 6;
 }

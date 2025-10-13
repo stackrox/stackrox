@@ -1,0 +1,45 @@
+values:
+  imagePullSecrets:
+    allowNone: true
+tests:
+  - name: "incorrect init bundle format"
+    values:
+      metadata:
+        annotations:
+          "init-bundle.stackrox.io/name": "incorrect format"
+      ca:
+        cert: null
+    expectError: True
+    expect: |
+      .error | assertThat(contains("It seems an init bundle in the operator format has been provided. Note that this bundle format is ignored by the Helm chart. Make sure to provide an init bundle for Helm chart installation."))
+  - name: "incorrect init bundle format when both are passed"
+    values:
+      metadata:
+        annotations:
+          "init-bundle.stackrox.io/name": "one incorrect format"
+      ca:
+        cert: "certification"
+      sensor:
+        serviceTLS:
+          cert: "dummy service certificate"
+    expect: |
+      .notes | contains("It seems an init bundle in the operator format has been provided. Note that this bundle format is ignored by the Helm chart.")
+  - name: "Trying with no bundle"
+    values:
+      ca:
+        cert: null
+    expectError: True
+    expect: |
+      .error | assertThat(contains("A CA certificate must be specified"))
+  - name: "Trying with helm bundle"
+    values:
+      metadata:
+        annotations:
+          "init-bundle.stackrox.io/name": null
+      ca:
+        cert: "certification"
+      sensor:
+        serviceTLS:
+          cert: "dummy service certificate"
+    expect: |
+      .notes | assertThat(contains("Thank you for using StackRox!"))

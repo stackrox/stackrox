@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/pods"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/upgrader/common"
 	v1 "k8s.io/api/core/v1"
@@ -21,7 +22,8 @@ func readFile(openFn OpenFunc) ([]byte, error) {
 	}
 	defer utils.IgnoreError(reader.Close)
 
-	return io.ReadAll(reader)
+	all, err := io.ReadAll(reader)
+	return all, errors.Wrap(err, "reading file")
 }
 
 func createDynamicObject(objDesc common.DynamicBundleObjectDesc, bundleContents Contents) (*unstructured.Unstructured, error) {
@@ -87,7 +89,7 @@ func createDynamicObject(objDesc common.DynamicBundleObjectDesc, bundleContents 
 	}
 
 	obj.SetName(objDesc.Name)
-	obj.SetNamespace(common.Namespace)
+	obj.SetNamespace(pods.GetPodNamespace())
 
 	lbls := obj.GetLabels()
 	if lbls == nil {

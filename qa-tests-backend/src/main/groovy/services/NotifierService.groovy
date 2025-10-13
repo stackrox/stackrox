@@ -1,36 +1,46 @@
 package services
 
-import common.Constants
+import static util.Helpers.getStackRoxEndpoint
+
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+
 import io.stackrox.proto.api.v1.NotifierServiceGrpc
 import io.stackrox.proto.api.v1.NotifierServiceOuterClass
 import io.stackrox.proto.storage.Common
 import io.stackrox.proto.storage.NotifierOuterClass
+
+import common.Constants
 import util.Env
+import util.Helpers
 import util.MailServer
+import io.stackrox.annotations.Retry
 
 @Slf4j
+@CompileStatic
 class NotifierService extends BaseService {
     // FIXME(ROX-7589): this should be secret
     // private static final PAGERDUTY_API_KEY = Env.mustGetPagerdutyApiKey()
     private static final String PAGERDUTY_API_KEY = null
 
-    // SLACK_MAIN_WEBHOOK is the webhook URL for #slack-test
-    public static final SLACK_MAIN_WEBHOOK = Env.mustGetSlackMainWebhook()
-    // SLACK_ALT_WEBHOOK is the webhook URL for #stackrox-alerts-2
-    public static final SLACK_ALT_WEBHOOK = Env.mustGetSlackAltWebhook()
-
-    static getNotifierClient() {
+    static NotifierServiceGrpc.NotifierServiceBlockingStub getNotifierClient() {
         return NotifierServiceGrpc.newBlockingStub(getChannel())
     }
 
+    @Retry
     static addNotifier(NotifierOuterClass.Notifier notifier) {
         return getNotifierClient().postNotifier(notifier)
     }
 
+    static getNotifiers() {
+        return getNotifierClient().getNotifiers(NotifierServiceOuterClass.GetNotifiersRequest.newBuilder().build())
+    }
+
     static testNotifier(NotifierOuterClass.Notifier notifier) {
         try {
-            getNotifierClient().testNotifier(notifier)
+            Helpers.withRetry(3, 1) {
+                getNotifierClient().testNotifier(notifier)
+            }
             return true
         } catch (Exception e) {
             log.error("error testing notifier", e)
@@ -118,7 +128,7 @@ class NotifierService extends BaseService {
                 .setType("slack")
                 .setName(name)
                 .setLabelKey(labelKey)
-                .setLabelDefault(SLACK_MAIN_WEBHOOK)
+                .setLabelDefault(Env.mustGetSlackMainWebhook())
                 .setUiEndpoint(getStackRoxEndpoint())
                 .build()
     }
@@ -162,15 +172,14 @@ class NotifierService extends BaseService {
     /**
      * This function add a notifier for Splunk.
      *
-     * @param legacy Does this integration provide the full URL path or just the base
      * @param name Splunk Integration name
      */
     static NotifierOuterClass.Notifier getSplunkIntegrationConfig(
-            boolean legacy,
             String serviceName,
-            String name) throws Exception {
+            String name,
+            String token
+    ) throws Exception {
         String splunkIntegration = "splunk-Integration"
-        String prePackagedToken = "00000000-0000-0000-0000-000000000000"
 
         return NotifierOuterClass.Notifier.newBuilder()
                 .setType("splunk")
@@ -180,11 +189,9 @@ class NotifierService extends BaseService {
                 .setUiEndpoint(getStackRoxEndpoint())
                 .setSplunk(NotifierOuterClass.Splunk.newBuilder()
                         .setDerivedSourceType(true)
-                        .setHttpToken(prePackagedToken)
+                        .setHttpToken(token)
                         .setInsecure(true)
-                        .setHttpEndpoint(String.format(
-                                "https://${serviceName}.qa:8088%s",
-                                legacy ? "/services/collector/event" : "")))
+                        .setHttpEndpoint("https://${serviceName}.qa:8088/services/collector/event"))
                 .build()
     }
 
@@ -213,6 +220,7 @@ class NotifierService extends BaseService {
                                 .setSkipTlsVerify(true)
                                 .build()
                         )
+                        .setMessageFormat(NotifierOuterClass.Syslog.MessageFormat.CEF)
                         .build()
                 )
                 .build()

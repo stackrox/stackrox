@@ -1,5 +1,7 @@
 package retry
 
+import "errors"
+
 // MakeRetryable is an explicit wrapper for errors you want to retry if you use the IsRetryable function with
 // the OnlyIf option.
 func MakeRetryable(e error) error {
@@ -15,6 +17,6 @@ type retryableError struct {
 
 // IsRetryable returns if the error is an instance of RetryableError
 func IsRetryable(e error) bool {
-	_, ir := e.(*retryableError)
-	return ir
+	var retryableError *retryableError
+	return errors.As(e, &retryableError)
 }

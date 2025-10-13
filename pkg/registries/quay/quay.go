@@ -8,7 +8,6 @@ import (
 	"github.com/cloudflare/cfssl/log"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/registries/types"
@@ -23,12 +22,27 @@ const (
 )
 
 // Creator provides the type and registries.Creator to add to the registries Registry.
-func Creator() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
-	return "quay", func(integration *storage.ImageIntegration) (types.Registry, error) {
-		reg, err := newRegistry(integration)
-		return reg, err
-	}
+func Creator() (string, types.Creator) {
+	return types.QuayType,
+		func(integration *storage.ImageIntegration, options ...types.CreatorOption) (types.Registry, error) {
+			cfg := types.ApplyCreatorOptions(options...)
+			reg, err := newRegistry(integration, false, cfg.GetMetricsHandler())
+			return reg, err
+		}
 }
+
+// CreatorWithoutRepoList provides the type and registries.Creator to add to the registries Registry.
+// Populating the internal repo list will be disabled.
+func CreatorWithoutRepoList() (string, types.Creator) {
+	return types.QuayType,
+		func(integration *storage.ImageIntegration, options ...types.CreatorOption) (types.Registry, error) {
+			cfg := types.ApplyCreatorOptions(options...)
+			reg, err := newRegistry(integration, true, cfg.GetMetricsHandler())
+			return reg, err
+		}
+}
+
+var _ types.Registry = (*Quay)(nil)
 
 // Quay is the implementation of the Docker Registry for Quay
 type Quay struct {
@@ -41,31 +55,29 @@ func validate(quay *storage.QuayConfig, categories []storage.ImageIntegrationCat
 		return errors.New("Quay endpoint must be specified")
 	}
 
-	if features.QuayRobotAccounts.Enabled() {
-		if len(categories) == 1 && categories[0] == storage.ImageIntegrationCategory_SCANNER {
-			// If scanner only, robot credentials doesn't work. So expect either OAuth token or nothing (public registry)
-			if quay.GetRegistryRobotCredentials() != nil {
-				return errors.New("Quay scanner integration cannot use robot credentials")
-			}
-		} else if len(categories) == 1 && categories[0] == storage.ImageIntegrationCategory_REGISTRY {
-			// If registry only, only one of OAuth token, robot credentials or neither is allowed. Error if both are provided
-			if quay.GetRegistryRobotCredentials() != nil && quay.GetOauthToken() != "" {
-				return errors.New("Quay registry integration should use robot credentials or OAuth token but not both")
-			}
-		} else {
-			// If both scanner and registry, then ensure that we don't have robot credentials by itself
-			// That implies we have to use robot creds for scanner which is not possible.
-			// Both being empty is ok as that's a public registry.
-			if quay.GetOauthToken() == "" && quay.GetRegistryRobotCredentials() != nil {
-				return errors.New("Quay scanner integration cannot use robot credentials")
-			}
-		}
-
-		// If using robot creds, check that both username and password is provided.
+	if len(categories) == 1 && categories[0] == storage.ImageIntegrationCategory_SCANNER {
+		// If scanner only, robot credentials doesn't work. So expect either OAuth token or nothing (public registry)
 		if quay.GetRegistryRobotCredentials() != nil {
-			if quay.GetRegistryRobotCredentials().GetUsername() == "" || quay.GetRegistryRobotCredentials().GetPassword() == "" {
-				return errors.New("Both username and password must be provided when using Quay robot credentials")
-			}
+			return errors.New("Quay scanner integration cannot use robot credentials")
+		}
+	} else if len(categories) == 1 && categories[0] == storage.ImageIntegrationCategory_REGISTRY {
+		// If registry only, only one of OAuth token, robot credentials or neither is allowed. Error if both are provided
+		if quay.GetRegistryRobotCredentials() != nil && quay.GetOauthToken() != "" {
+			return errors.New("Quay registry integration should use robot credentials or OAuth token but not both")
+		}
+	} else {
+		// If both scanner and registry, then ensure that we don't have robot credentials by itself
+		// That implies we have to use robot creds for scanner which is not possible.
+		// Both being empty is ok as that's a public registry.
+		if quay.GetOauthToken() == "" && quay.GetRegistryRobotCredentials() != nil {
+			return errors.New("Quay scanner integration cannot use robot credentials")
+		}
+	}
+
+	// If using robot creds, check that both username and password is provided.
+	if quay.GetRegistryRobotCredentials() != nil {
+		if quay.GetRegistryRobotCredentials().GetUsername() == "" || quay.GetRegistryRobotCredentials().GetPassword() == "" {
+			return errors.New("Both username and password must be provided when using Quay robot credentials")
 		}
 	}
 
@@ -74,7 +86,9 @@ func validate(quay *storage.QuayConfig, categories []storage.ImageIntegrationCat
 }
 
 // NewRegistryFromConfig returns a new instantiation of the Quay registry
-func NewRegistryFromConfig(config *storage.QuayConfig, integration *storage.ImageIntegration) (types.Registry, error) {
+func NewRegistryFromConfig(config *storage.QuayConfig, integration *storage.ImageIntegration,
+	disableRepoList bool, metricsHandler *types.MetricsHandler,
+) (types.Registry, error) {
 	if err := validate(config, integration.GetCategories()); err != nil {
 		return nil, err
 	}
@@ -82,27 +96,23 @@ func NewRegistryFromConfig(config *storage.QuayConfig, integration *storage.Imag
 	var username, password string
 	password = config.GetOauthToken()
 
-	if features.QuayRobotAccounts.Enabled() {
-		if config.GetRegistryRobotCredentials() != nil {
-			// If robot credentials are provided use it for registry, regardless of whether ImageIntegration is also for scanner.
-			// The scanner portion of it can use OAuth token, but the registry object should use proper robot creds.
-			username = config.GetRegistryRobotCredentials().GetUsername()
-			password = config.GetRegistryRobotCredentials().GetPassword()
-		} else if config.GetOauthToken() != "" {
-			username = oauthTokenString
-		}
-	} else {
-		if config.GetOauthToken() != "" {
-			username = oauthTokenString
-		}
+	if config.GetRegistryRobotCredentials() != nil {
+		// If robot credentials are provided use it for registry, regardless of whether ImageIntegration is also for scanner.
+		// The scanner portion of it can use OAuth token, but the registry object should use proper robot creds.
+		username = config.GetRegistryRobotCredentials().GetUsername()
+		password = config.GetRegistryRobotCredentials().GetPassword()
+	} else if config.GetOauthToken() != "" {
+		username = oauthTokenString
 	}
 
-	cfg := docker.Config{
-		Username: username,
-		Password: password,
-		Endpoint: config.GetEndpoint(),
-		Insecure: config.GetInsecure(),
+	cfg := &docker.Config{
+		Endpoint:        config.GetEndpoint(),
+		Insecure:        config.GetInsecure(),
+		DisableRepoList: disableRepoList,
+		MetricsHandler:  metricsHandler,
+		RegistryType:    integration.GetType(),
 	}
+	cfg.SetCredentials(username, password)
 	dockerRegistry, err := docker.NewDockerRegistryWithConfig(cfg, integration)
 	if err != nil {
 		return nil, err
@@ -113,12 +123,14 @@ func NewRegistryFromConfig(config *storage.QuayConfig, integration *storage.Imag
 	}, nil
 }
 
-func newRegistry(integration *storage.ImageIntegration) (types.Registry, error) {
-	quayConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Quay)
+func newRegistry(integration *storage.ImageIntegration, disableRepoList bool,
+	metricsHandler *types.MetricsHandler,
+) (types.Registry, error) {
+	quayConfig, ok := integration.GetIntegrationConfig().(*storage.ImageIntegration_Quay)
 	if !ok {
 		return nil, errors.New("Quay config must be specified")
 	}
-	return NewRegistryFromConfig(quayConfig.Quay, integration)
+	return NewRegistryFromConfig(quayConfig.Quay, integration, disableRepoList, metricsHandler)
 }
 
 // Test overrides the default docker Test function because the Quay Ping endpoint requires Auth
@@ -135,8 +147,11 @@ func (q *Quay) Test() error {
 	}
 	resp, err := client.Get(discoveryURL)
 	if err != nil {
-		log.Errorf("Quay error response: %d", resp.StatusCode)
-		return errors.Errorf("received http status code %d from Quay. Check Central logs for full error.", resp.StatusCode)
+		log.Errorf("Quay error response: %s", err)
+		if resp == nil {
+			return errors.New("received error from Quay; check Central logs for the full error")
+		}
+		return errors.Errorf("received http status code %d from Quay; check Central logs for the full error", resp.StatusCode)
 	}
 
 	defer utils.IgnoreError(resp.Body.Close)
@@ -146,7 +161,7 @@ func (q *Quay) Test() error {
 			return errors.Errorf("error reaching quay.io with HTTP code %d", resp.StatusCode)
 		}
 		log.Errorf("Quay error response: %d %s", resp.StatusCode, string(body))
-		return errors.Errorf("received http status code %d from Quay. Check Central logs for full error.", resp.StatusCode)
+		return errors.Errorf("received http status code %d from Quay; check Central logs for the full error", resp.StatusCode)
 	}
 	return nil
 }

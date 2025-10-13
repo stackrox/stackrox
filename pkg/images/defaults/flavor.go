@@ -34,12 +34,6 @@ var (
 			constructorFunc:         DevelopmentBuildImageFlavor,
 		},
 		{
-			// TODO(ROX-11642): This was just hidden in release builds but should go away completely.
-			imageFlavorName:         ImageFlavorNameStackRoxIORelease,
-			isVisibleInReleaseBuild: false,
-			constructorFunc:         StackRoxIOReleaseImageFlavor,
-		},
-		{
 			imageFlavorName:         ImageFlavorNameRHACSRelease,
 			isVisibleInReleaseBuild: true,
 			constructorFunc:         RHACSReleaseImageFlavor,
@@ -81,12 +75,13 @@ type ImageFlavor struct {
 	CentralDBImageTag  string
 	CentralDBImageName string
 
-	// CollectorRegistry may be different from MainRegistry in case of stackrox.io.
-	CollectorRegistry      string
-	CollectorImageName     string
-	CollectorImageTag      string
-	CollectorSlimImageName string
-	CollectorSlimImageTag  string
+	CollectorRegistry  string
+	CollectorImageName string
+	CollectorImageTag  string
+
+	FactRegistry  string
+	FactImageName string
+	FactImageTag  string
 
 	// ScannerImageTag is used for all scanner* images (scanner, scanner-db, scanner-slim and scanner-db-slim)
 	ScannerImageTag        string
@@ -94,6 +89,11 @@ type ImageFlavor struct {
 	ScannerSlimImageName   string
 	ScannerDBImageName     string
 	ScannerDBSlimImageName string
+
+	// ScannerV4ImageTag is used for all scanner-v4* images (scanner-v4, scanner-v4-db)
+	ScannerV4ImageTag    string
+	ScannerV4ImageName   string
+	ScannerV4DBImageName string
 
 	ChartRepo        ChartRepo
 	ImagePullSecrets ImagePullSecrets
@@ -103,14 +103,10 @@ type ImageFlavor struct {
 // DevelopmentBuildImageFlavor returns image values for `development_build` flavor.
 func DevelopmentBuildImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsDevelopment()
-	collectorTag := v.CollectorVersion + "-latest"
-	collectorSlimName := "collector"
-	collectorSlimTag := v.CollectorVersion + "-slim"
+	collectorTag := v.CollectorVersion
 	if buildinfo.ReleaseBuild {
 		v = version.GetAllVersionsUnified()
 		collectorTag = v.CollectorVersion
-		collectorSlimName = "collector-slim"
-		collectorSlimTag = v.CollectorVersion
 	}
 	return ImageFlavor{
 		MainRegistry:       "quay.io/rhacs-eng",
@@ -119,17 +115,24 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 		CentralDBImageTag:  v.MainVersion,
 		CentralDBImageName: "central-db",
 
-		CollectorRegistry:      "quay.io/rhacs-eng",
-		CollectorImageName:     "collector",
-		CollectorImageTag:      collectorTag,
-		CollectorSlimImageName: collectorSlimName,
-		CollectorSlimImageTag:  collectorSlimTag,
+		CollectorRegistry:  "quay.io/rhacs-eng",
+		CollectorImageName: "collector",
+		CollectorImageTag:  collectorTag,
+
+		FactRegistry:  "quay.io/rhacs-eng",
+		FactImageName: "fact",
+		FactImageTag:  v.FactVersion,
 
 		ScannerImageName:       "scanner",
 		ScannerSlimImageName:   "scanner-slim",
 		ScannerImageTag:        v.ScannerVersion,
 		ScannerDBImageName:     "scanner-db",
 		ScannerDBSlimImageName: "scanner-db-slim",
+
+		ScannerV4ImageName:   "scanner-v4",
+		ScannerV4DBImageName: "scanner-v4-db",
+		// Scanner v4 is released along with the main image, so the tags are expected to be the same.
+		ScannerV4ImageTag: v.MainVersion,
 
 		ChartRepo: ChartRepo{
 			URL:     "https://mirror.openshift.com/pub/rhacs/charts",
@@ -142,62 +145,34 @@ func DevelopmentBuildImageFlavor() ImageFlavor {
 	}
 }
 
-// StackRoxIOReleaseImageFlavor returns image values for `stackrox.io` flavor.
-// TODO(ROX-11642): remove stackrox.io flavor as stackrox.io image distribution is shut down.
-func StackRoxIOReleaseImageFlavor() ImageFlavor {
-	v := version.GetAllVersionsUnified()
-	return ImageFlavor{
-		MainRegistry:       "stackrox.io",
-		MainImageName:      "main",
-		MainImageTag:       v.MainVersion,
-		CentralDBImageTag:  v.MainVersion,
-		CentralDBImageName: "central-db",
-
-		CollectorRegistry:      "collector.stackrox.io",
-		CollectorImageName:     "collector",
-		CollectorImageTag:      v.CollectorVersion,
-		CollectorSlimImageName: "collector-slim",
-		CollectorSlimImageTag:  v.CollectorVersion,
-
-		ScannerImageName:       "scanner",
-		ScannerSlimImageName:   "scanner-slim",
-		ScannerImageTag:        v.ScannerVersion,
-		ScannerDBImageName:     "scanner-db",
-		ScannerDBSlimImageName: "scanner-db-slim",
-
-		ChartRepo: ChartRepo{
-			URL:     "https://charts.stackrox.io",
-			IconURL: "https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/Red_Hat-Hat_icon.png",
-		},
-		ImagePullSecrets: ImagePullSecrets{
-			AllowNone: false,
-		},
-		Versions: v,
-	}
-}
-
 // RHACSReleaseImageFlavor returns image values for `rhacs` flavor.
 func RHACSReleaseImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsUnified()
 	return ImageFlavor{
-		MainRegistry:  "registry.redhat.io/advanced-cluster-security",
-		MainImageName: "rhacs-main-rhel8",
-		MainImageTag:  v.MainVersion,
-		/* TODO(ROX-9858): Create repo rhacs-central-db-rhel8 when starting building rhacs */
+		MainRegistry:       "registry.redhat.io/advanced-cluster-security",
+		MainImageName:      "rhacs-main-rhel8",
+		MainImageTag:       v.MainVersion,
 		CentralDBImageTag:  v.MainVersion,
 		CentralDBImageName: "rhacs-central-db-rhel8",
 
-		CollectorRegistry:      "registry.redhat.io/advanced-cluster-security",
-		CollectorImageName:     "rhacs-collector-rhel8",
-		CollectorImageTag:      v.CollectorVersion,
-		CollectorSlimImageName: "rhacs-collector-slim-rhel8",
-		CollectorSlimImageTag:  v.CollectorVersion,
+		CollectorRegistry:  "registry.redhat.io/advanced-cluster-security",
+		CollectorImageName: "rhacs-collector-rhel8",
+		CollectorImageTag:  v.CollectorVersion,
+
+		FactRegistry:  "registry.redhat.io/advanced-cluster-security",
+		FactImageName: "rhacs-fact-rhel8",
+		FactImageTag:  v.FactVersion,
 
 		ScannerImageName:       "rhacs-scanner-rhel8",
 		ScannerSlimImageName:   "rhacs-scanner-slim-rhel8",
 		ScannerImageTag:        v.ScannerVersion,
 		ScannerDBImageName:     "rhacs-scanner-db-rhel8",
 		ScannerDBSlimImageName: "rhacs-scanner-db-slim-rhel8",
+
+		ScannerV4ImageName:   "rhacs-scanner-v4-rhel8",
+		ScannerV4DBImageName: "rhacs-scanner-v4-db-rhel8",
+		// Scanner v4 is released along with the main image, so the tags are expected to be the same.
+		ScannerV4ImageTag: v.MainVersion,
 
 		ChartRepo: ChartRepo{
 			URL:     "https://mirror.openshift.com/pub/rhacs/charts",
@@ -217,14 +192,10 @@ func RHACSReleaseImageFlavor() ImageFlavor {
 // Release builds get unified tags like in other release image flavors.
 func OpenSourceImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsDevelopment()
-	collectorTag := v.CollectorVersion + "-latest"
-	collectorSlimName := "collector"
-	collectorSlimTag := v.CollectorVersion + "-slim"
+	collectorTag := v.CollectorVersion
 	if buildinfo.ReleaseBuild {
 		v = version.GetAllVersionsUnified()
 		collectorTag = v.CollectorVersion
-		collectorSlimName = "collector-slim"
-		collectorSlimTag = v.CollectorVersion
 	}
 	return ImageFlavor{
 		MainRegistry:       "quay.io/stackrox-io",
@@ -233,17 +204,24 @@ func OpenSourceImageFlavor() ImageFlavor {
 		CentralDBImageTag:  v.MainVersion,
 		CentralDBImageName: "central-db",
 
-		CollectorRegistry:      "quay.io/stackrox-io",
-		CollectorImageName:     "collector",
-		CollectorImageTag:      collectorTag,
-		CollectorSlimImageName: collectorSlimName,
-		CollectorSlimImageTag:  collectorSlimTag,
+		CollectorRegistry:  "quay.io/stackrox-io",
+		CollectorImageName: "collector",
+		CollectorImageTag:  collectorTag,
+
+		FactRegistry:  "quay.io/stackrox-io",
+		FactImageName: "fact",
+		FactImageTag:  v.FactVersion,
 
 		ScannerImageName:       "scanner",
 		ScannerSlimImageName:   "scanner-slim",
 		ScannerImageTag:        v.ScannerVersion,
 		ScannerDBImageName:     "scanner-db",
 		ScannerDBSlimImageName: "scanner-db-slim",
+
+		ScannerV4ImageName:   "scanner-v4",
+		ScannerV4DBImageName: "scanner-v4-db",
+		// Scanner v4 is released along with the main image, so the tags are expected to be the same.
+		ScannerV4ImageTag: v.MainVersion,
 
 		ChartRepo: ChartRepo{
 			URL:     "https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/",
@@ -293,7 +271,7 @@ func GetImageFlavorNameFromEnv() string {
 	envValue := strings.TrimSpace(imageFlavorEnv())
 	if envValue == "" && !buildinfo.ReleaseBuild {
 		envValue = ImageFlavorNameDevelopmentBuild
-		log.Warnf("Environment variable %s not set, this will cause a panic in release build. Assuming this code is executed in unit test session and using '%s' as default.", imageFlavorEnvName, envValue)
+		log.Warnf("Environment variable %s not set, this will cause a panic in release build. Assuming this code is executed in unit test session and using '%s' as default.", ImageFlavorEnvName, envValue)
 	}
 	err := checkImageFlavorName(envValue, buildinfo.ReleaseBuild)
 	if err != nil {
@@ -324,12 +302,12 @@ func getImageFlavorByName(name string) ImageFlavor {
 }
 
 func panicImageFlavorEnv(err error) {
-	log.Panicf("Incorrect image flavor in environment variable %s: %s", imageFlavorEnvName, err)
+	log.Panicf("Incorrect image flavor in environment variable %s: %s", ImageFlavorEnvName, err)
 }
 
 // IsImageDefaultMain checks if provided image matches main image defined in flavor.
 func (f *ImageFlavor) IsImageDefaultMain(img *storage.ImageName) bool {
-	overrideImageNoTag := fmt.Sprintf("%s/%s", img.Registry, img.Remote)
+	overrideImageNoTag := fmt.Sprintf("%s/%s", img.GetRegistry(), img.GetRemote())
 	return f.MainImageNoTag() == overrideImageNoTag
 }
 
@@ -338,9 +316,24 @@ func (f *ImageFlavor) ScannerImage() string {
 	return fmt.Sprintf("%s/%s:%s", f.MainRegistry, f.ScannerImageName, f.ScannerImageTag)
 }
 
+// ScannerSlimImage is the container image reference (full name) for the scanner-slim image.
+func (f *ImageFlavor) ScannerSlimImage() string {
+	return fmt.Sprintf("%s/%s:%s", f.MainRegistry, f.ScannerSlimImageName, f.ScannerImageTag)
+}
+
 // ScannerDBImage is the container image reference (full name) for the scanner-db image.
 func (f *ImageFlavor) ScannerDBImage() string {
 	return fmt.Sprintf("%s/%s:%s", f.MainRegistry, f.ScannerDBImageName, f.ScannerImageTag)
+}
+
+// ScannerV4Image is the container image reference (full name) for the scanner-v4 image.
+func (f *ImageFlavor) ScannerV4Image() string {
+	return fmt.Sprintf("%s/%s:%s", f.MainRegistry, f.ScannerV4ImageName, f.ScannerV4ImageTag)
+}
+
+// ScannerV4DBImage is the container image reference (full name) for the scanner-v4-db image.
+func (f *ImageFlavor) ScannerV4DBImage() string {
+	return fmt.Sprintf("%s/%s:%s", f.MainRegistry, f.ScannerV4DBImageName, f.ScannerV4ImageTag)
 }
 
 // MainImage is the container image reference (full name) for the "main" image.
@@ -359,21 +352,11 @@ func (f *ImageFlavor) CentralDBImage() string {
 }
 
 // CollectorFullImage is the container image reference (full name) for the "collector" image
-func (f *ImageFlavor) CollectorFullImage() string {
+func (f *ImageFlavor) CollectorImage() string {
 	return fmt.Sprintf("%s/%s:%s", f.CollectorRegistry, f.CollectorImageName, f.CollectorImageTag)
 }
 
-// CollectorSlimImage is the container image reference (full name) for the "collector slim" image
-func (f *ImageFlavor) CollectorSlimImage() string {
-	return fmt.Sprintf("%s/%s:%s", f.CollectorRegistry, f.CollectorSlimImageName, f.CollectorSlimImageTag)
-}
-
-// CollectorSlimImageNoTag is the container image repository (image name including registry, excluding tag) for the "collector slim" image.
-func (f *ImageFlavor) CollectorSlimImageNoTag() string {
-	return fmt.Sprintf("%s/%s", f.CollectorRegistry, f.CollectorSlimImageName)
-}
-
 // CollectorFullImageNoTag is the container image repository (image name including registry, excluding tag) for the  "collector" image.
-func (f *ImageFlavor) CollectorFullImageNoTag() string {
+func (f *ImageFlavor) CollectorImageNoTag() string {
 	return fmt.Sprintf("%s/%s", f.CollectorRegistry, f.CollectorImageName)
 }

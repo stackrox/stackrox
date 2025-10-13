@@ -104,7 +104,7 @@ func (m *managerImpl) applyDefaults() {
 	m.cancelFuncTasksMutex = concurrency.NewKeyedMutex(uint32(cap(m.parallel) + cap(m.pendingTasks)))
 }
 
-// // AddTask adds a task to its pending task list to be run as a background process and returns a jobid.
+// AddTask adds a task to its pending task list to be run as a background process and returns a jobid.
 func (m *managerImpl) AddTask(metadata map[string]interface{}, task Task) (string, error) {
 	t := &taskWrapper{
 		exec:     task,
@@ -133,13 +133,13 @@ func (m *managerImpl) Start() {
 			m.parallel <- struct{}{}
 			t := <-m.pendingTasks
 			ctx, cancel := context.WithCancel(parentCtx)
-			m.cancelFuncTasksMutex.Lock(t.id)
-			if t.cancel != nil {
-				cancel()
-			}
 
-			t.cancel = cancel
-			m.cancelFuncTasksMutex.Unlock(t.id)
+			m.cancelFuncTasksMutex.DoWithLock(t.id, func() {
+				if t.cancel != nil {
+					cancel()
+				}
+				t.cancel = cancel
+			})
 
 			m.startTaskExec(ctx, t)
 		}

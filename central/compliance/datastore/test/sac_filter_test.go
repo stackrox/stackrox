@@ -7,14 +7,14 @@ import (
 	"github.com/stackrox/rox/central/compliance"
 	"github.com/stackrox/rox/central/compliance/datastore"
 	"github.com/stackrox/rox/central/compliance/datastore/types"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
 )
 
 func TestSacFilter(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(sacFilterTestSuite))
 }
 
@@ -80,7 +80,7 @@ func (s *sacFilterTestSuite) TestRunNotFiltered() {
 	filtered, err := s.filter.FilterRunResults(ctx, resultToFilter)
 
 	s.NoError(err)
-	s.Equal(resultToFilter, filtered)
+	protoassert.Equal(s.T(), resultToFilter, filtered)
 }
 
 func (s *sacFilterTestSuite) TestFilterCluster() {
@@ -171,7 +171,7 @@ func (s *sacFilterTestSuite) TestFilterCluster() {
 		},
 	}
 	s.NoError(err)
-	s.Equal(expectedResults, filtered)
+	protoassert.Equal(s.T(), expectedResults, filtered)
 }
 
 func (s *sacFilterTestSuite) TestFiltersAllDeployments() {
@@ -253,7 +253,7 @@ func (s *sacFilterTestSuite) TestFiltersAllDeployments() {
 		},
 	}
 	s.NoError(err)
-	s.Equal(expectedResults, filtered)
+	protoassert.Equal(s.T(), expectedResults, filtered)
 }
 
 func (s *sacFilterTestSuite) TestFiltersSomeDeployments() {
@@ -369,7 +369,7 @@ func (s *sacFilterTestSuite) TestFiltersSomeDeployments() {
 		},
 	}
 	s.NoError(err)
-	s.Equal(expectedResults, filtered)
+	protoassert.Equal(s.T(), expectedResults, filtered)
 }
 
 func (s *sacFilterTestSuite) TestFilterNodes() {
@@ -450,7 +450,7 @@ func (s *sacFilterTestSuite) TestFilterNodes() {
 		},
 	}
 	s.NoError(err)
-	s.Equal(expectedResults, filtered)
+	protoassert.Equal(s.T(), expectedResults, filtered)
 }
 
 func (s *sacFilterTestSuite) TestFiltersClustersBatch() {

@@ -1,0 +1,45 @@
+{
+  "id": "16c95922-08c4-41b6-a721-dc4b2a806632",
+  "name": "Container with privilege escalation allowed",
+  "description": "Alerts if a deployment has containers with allowPrivilegeEscalation set to true in its security context.",
+  "rationale": "A container process can run with more privileges than its parent process if the container's security context has the boolean setting allowPrivilegeEscalation enabled. In Kubernetes pods, this setting is true by default. Set the value to false if the pod is to run as a non-root user.",
+  "remediation": "Verify that privileged escalation is required and cannot be provided with a subset of other controls. Disable privilege escalation by setting allowPrivilegeEscalation to false.",
+  "categories": [
+    "Security Best Practices",
+    "Privileges"
+  ],
+  "lifecycleStages": [
+    "DEPLOY"
+  ],
+  "exclusions": [
+    {
+      "name": "Don't alert on deployment  router-default in namespace openshift-ingress",
+      "deployment": {
+        "name": "router-default",
+        "scope": {
+          "namespace": "openshift-ingress"
+        }
+      }
+    }
+  ],
+  "severity": "MEDIUM_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "sectionName": "Policy Section 1",
+      "policyGroups": [
+        {
+          "fieldName": "Allow Privilege Escalation",
+          "values": [
+            {
+              "value": "true"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

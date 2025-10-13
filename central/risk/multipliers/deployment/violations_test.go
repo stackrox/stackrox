@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/central/risk/getters"
 	"github.com/stackrox/rox/central/risk/multipliers"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stretchr/testify/assert"
+	"github.com/stackrox/rox/pkg/protoassert"
 )
 
 func TestViolationsScore(t *testing.T) {
@@ -178,12 +178,12 @@ func TestViolationsScore(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			mult := NewViolations(&getters.MockAlertsGetter{
+			mult := NewViolations(&getters.MockAlertsSearcher{
 				Alerts: c.alerts,
 			})
 			deployment := multipliers.GetMockDeployment()
 			result := mult.Score(context.Background(), deployment, nil)
-			assert.Equal(t, c.expected, result)
+			protoassert.Equal(t, c.expected, result)
 		})
 	}
 }

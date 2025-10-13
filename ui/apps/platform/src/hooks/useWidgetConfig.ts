@@ -1,11 +1,11 @@
 import { useCallback, useState } from 'react';
 import isPlainObject from 'lodash/isPlainObject';
 
-import { WidgetConfigStorage, RouteId, WidgetId, WidgetConfig } from 'types/widgetConfig';
+import type { RouteId, WidgetConfig, WidgetConfigStorage, WidgetId } from 'types/widgetConfig';
 
 export type UseWidgetConfigReturn<ConfigT extends WidgetConfig, UpdateAction> = [
     ConfigT,
-    (action: UpdateAction) => Promise<ConfigT>
+    (action: UpdateAction) => Promise<ConfigT>,
 ];
 
 export const defaultStorageKey = 'widgetConfigurations';
@@ -14,7 +14,7 @@ function loadConfigs(): WidgetConfigStorage {
     try {
         const configs = localStorage.getItem(defaultStorageKey) ?? '{}';
         return JSON.parse(configs) as WidgetConfigStorage;
-    } catch (err) {
+    } catch {
         return {};
     }
 }
@@ -99,7 +99,7 @@ function useWidgetConfig<ConfigT extends WidgetConfig, ActionT = Partial<ConfigT
     });
 
     const configUpdateFn = useCallback(
-        (config) => {
+        (config: ActionT) => {
             const nextValue = reducer
                 ? reducer(widgetRouteConfig, config)
                 : { ...widgetRouteConfig, ...config };

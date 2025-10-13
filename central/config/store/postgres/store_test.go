@@ -9,19 +9,17 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type ConfigsStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestConfigsStore(t *testing.T) {
@@ -29,21 +27,8 @@ func TestConfigsStore(t *testing.T) {
 }
 
 func (s *ConfigsStoreSuite) SetupTest() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
-
 	s.testDB = pgtest.ForT(s.T())
-	s.store = New(s.testDB.Pool)
-}
-
-func (s *ConfigsStoreSuite) TearDownTest() {
-	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
+	s.store = New(s.testDB.DB)
 }
 
 func (s *ConfigsStoreSuite) TestStore() {
@@ -65,12 +50,7 @@ func (s *ConfigsStoreSuite) TestStore() {
 	foundConfig, exists, err = store.Get(ctx)
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(config, foundConfig)
-
-	foundConfig, exists, err = store.Get(ctx)
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(config, foundConfig)
+	protoassert.Equal(s.T(), config, foundConfig)
 
 	s.NoError(store.Delete(ctx))
 	foundConfig, exists, err = store.Get(ctx)
@@ -87,7 +67,7 @@ func (s *ConfigsStoreSuite) TestStore() {
 	foundConfig, exists, err = store.Get(ctx)
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(config, foundConfig)
+	protoassert.Equal(s.T(), config, foundConfig)
 
 	config = &storage.Config{}
 	s.NoError(testutils.FullInit(config, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
@@ -96,5 +76,5 @@ func (s *ConfigsStoreSuite) TestStore() {
 	foundConfig, exists, err = store.Get(ctx)
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(config, foundConfig)
+	protoassert.Equal(s.T(), config, foundConfig)
 }

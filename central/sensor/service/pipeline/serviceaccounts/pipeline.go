@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/central/serviceaccount/datastore"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
@@ -23,6 +24,8 @@ import (
 
 var (
 	log = logging.LoggerForModule()
+
+	_ pipeline.Fragment = (*pipelineImpl)(nil)
 )
 
 // Template design pattern. We define control flow here and defer logic to subclasses.
@@ -51,6 +54,10 @@ type pipelineImpl struct {
 	riskReprocessor reprocessor.Loop
 
 	reconciliationSignal concurrency.Signal
+}
+
+func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
+	return nil
 }
 
 func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
@@ -106,9 +113,9 @@ func (s *pipelineImpl) runRemovePipeline(ctx context.Context, event *storage.Ser
 }
 
 func (s *pipelineImpl) reprocessRisk(ctx context.Context, sa *storage.ServiceAccount) error {
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, sa.ClusterId).
-		AddExactMatches(search.Namespace, sa.Namespace).
-		AddExactMatches(search.ServiceAccountName, sa.Name).ProtoQuery()
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, sa.GetClusterId()).
+		AddExactMatches(search.Namespace, sa.GetNamespace()).
+		AddExactMatches(search.ServiceAccountName, sa.GetName()).ProtoQuery()
 
 	results, err := s.deployments.Search(ctx, q)
 	if err != nil {
@@ -178,4 +185,4 @@ func (s *pipelineImpl) persistServiceAccount(ctx context.Context, action central
 	}
 }
 
-func (s *pipelineImpl) OnFinish(clusterID string) {}
+func (s *pipelineImpl) OnFinish(_ string) {}

@@ -1,20 +1,26 @@
 package services
 
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import io.stackrox.proto.api.v1.ServiceAccountServiceGrpc
+import io.stackrox.proto.api.v1.ServiceAccountServiceOuterClass
 import io.stackrox.proto.storage.ServiceAccountOuterClass
+
 import objects.K8sServiceAccount
 import util.Timer
 
 @Slf4j
+@CompileStatic
 class ServiceAccountService extends BaseService {
-    static getServiceAccountService() {
+    static ServiceAccountServiceGrpc.ServiceAccountServiceBlockingStub getServiceAccountService() {
         return ServiceAccountServiceGrpc.newBlockingStub(getChannel())
     }
 
-    static getServiceAccounts(RawQuery query = RawQuery.newBuilder().build()) {
+    static List<ServiceAccountServiceOuterClass.ServiceAccountAndRoles> getServiceAccounts(
+            RawQuery query = RawQuery.newBuilder().build()) {
         return getServiceAccountService().listServiceAccounts(query).getSaAndRolesList()
     }
 
@@ -28,17 +34,17 @@ class ServiceAccountService extends BaseService {
         }
     }
 
+    static RawQuery getServiceAccountQuery(K8sServiceAccount serviceAccount) {
+        def query = "Namespace:\"${serviceAccount.namespace}\"+Service Account:\"${serviceAccount.name}\""
+        return RawQuery.newBuilder().setQuery(query).build()
+    }
+
     static boolean waitForServiceAccount(K8sServiceAccount serviceAccount) {
         Timer t = new Timer(30, 3)
         while (t.IsValid()) {
             log.debug "Waiting for Service Account"
-            def serviceAccounts = getServiceAccounts()
-            def sa = serviceAccounts.find {
-                it.getServiceAccount().name == serviceAccount.name &&
-                    it.getServiceAccount().namespace == serviceAccount.namespace
-            }
-
-            if (sa) {
+            def serviceAccounts = getServiceAccounts(getServiceAccountQuery(serviceAccount))
+            if (serviceAccounts.size() > 0) {
                 return true
             }
         }
@@ -50,7 +56,7 @@ class ServiceAccountService extends BaseService {
         Timer t = new Timer(30, 3)
         while (t.IsValid()) {
             log.debug "Waiting for Service Account removed"
-            def serviceAccounts = getServiceAccounts()
+            def serviceAccounts = getServiceAccounts(getServiceAccountQuery(serviceAccount))
             def sa = serviceAccounts.find {
                 it.getServiceAccount().name == serviceAccount.name &&
                         it.getServiceAccount().namespace == serviceAccount.namespace

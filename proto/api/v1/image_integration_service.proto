@@ -1,91 +1,84 @@
 syntax = "proto3";
 
-option go_package = "v1";
-option java_package = "io.stackrox.proto.api.v1";
-
-import weak "google/api/annotations.proto";
-import "api/v1/common.proto";
-import "api/v1/empty.proto";
-import "storage/image_integration.proto";
-
 package v1;
 
+import "api/v1/common.proto";
+import "api/v1/empty.proto";
+import weak "google/api/annotations.proto";
+import "storage/image_integration.proto";
+
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
+
 message GetImageIntegrationsRequest {
-    string name    = 1;
-    string cluster = 2;
+  string name = 1;
+  string cluster = 2;
 }
 
 message GetImageIntegrationsResponse {
-    repeated storage.ImageIntegration integrations = 1;
+  repeated storage.ImageIntegration integrations = 1;
 }
 
 message UpdateImageIntegrationRequest {
-    storage.ImageIntegration config       = 1;
-    // When false, use the stored credentials of an existing image integration given its ID.
-    bool updatePassword = 2;
+  storage.ImageIntegration config = 1;
+  // When false, use the stored credentials of an existing image integration given its ID.
+  bool updatePassword = 2;
 }
 
 // ImageIntegrationService APIs manage image registry and image scanner integration.
 service ImageIntegrationService {
+  // GetImageIntegration returns the image integration given its ID.
+  rpc GetImageIntegration(ResourceByID) returns (storage.ImageIntegration) {
+    option (google.api.http) = {get: "/v1/imageintegrations/{id}"};
+  }
 
-    // GetImageIntegration returns the image integration given its ID.
-    rpc GetImageIntegration (ResourceByID) returns (storage.ImageIntegration) {
-        option (google.api.http) = {
-            get: "/v1/imageintegrations/{id}"
-        };
-    }
+  // GetImageIntegrations returns all image integrations that match the request filters.
+  rpc GetImageIntegrations(GetImageIntegrationsRequest) returns (GetImageIntegrationsResponse) {
+    option (google.api.http) = {get: "/v1/imageintegrations"};
+  }
 
-    // GetImageIntegrations returns all image integrations that match the request filters.
-    rpc GetImageIntegrations (GetImageIntegrationsRequest) returns (GetImageIntegrationsResponse) {
-        option (google.api.http) = {
-            get: "/v1/imageintegrations"
-        };
-    }
+  // PostImageIntegration creates a image integration.
+  rpc PostImageIntegration(storage.ImageIntegration) returns (storage.ImageIntegration) {
+    option (google.api.http) = {
+      post: "/v1/imageintegrations"
+      body: "*"
+    };
+  }
 
-    // PostImageIntegration creates a image integration.
-    rpc PostImageIntegration (storage.ImageIntegration) returns (storage.ImageIntegration) {
-        option (google.api.http) = {
-            post: "/v1/imageintegrations"
-            body: "*"
-        };
-    }
+  // PutImageIntegration modifies a given image integration, without using stored credential reconciliation.
+  rpc PutImageIntegration(storage.ImageIntegration) returns (Empty) {
+    option (google.api.http) = {
+      put: "/v1/imageintegrations/{id}"
+      body: "*"
+    };
+  }
 
-    // PutImageIntegration modifies a given image integration, without using stored credential reconciliation.
-    rpc PutImageIntegration (storage.ImageIntegration) returns (Empty) {
-        option (google.api.http) = {
-            put: "/v1/imageintegrations/{id}"
-            body: "*"
-        };
-    }
+  // TestImageIntegration checks if the given image integration is correctly configured, without using stored credential reconciliation.
+  rpc TestImageIntegration(storage.ImageIntegration) returns (Empty) {
+    option (google.api.http) = {
+      post: "/v1/imageintegrations/test"
+      body: "*"
+    };
+  }
 
-    // TestImageIntegration checks if the given image integration is correctly configured, without using stored credential reconciliation.
-    rpc TestImageIntegration (storage.ImageIntegration) returns (Empty) {
-        option (google.api.http) = {
-            post: "/v1/imageintegrations/test"
-            body: "*"
-        };
-    }
+  // DeleteImageIntegration removes a image integration given its ID.
+  rpc DeleteImageIntegration(ResourceByID) returns (Empty) {
+    option (google.api.http) = {delete: "/v1/imageintegrations/{id}"};
+  }
 
-    // DeleteImageIntegration removes a image integration given its ID.
-    rpc DeleteImageIntegration (ResourceByID) returns (Empty) {
-        option (google.api.http) = {
-            delete: "/v1/imageintegrations/{id}"
-        };
-    }
+  // UpdateImageIntegration modifies a given image integration, with optional stored credential reconciliation.
+  rpc UpdateImageIntegration(UpdateImageIntegrationRequest) returns (Empty) {
+    option (google.api.http) = {
+      patch: "/v1/imageintegrations/{config.id}"
+      body: "*"
+    };
+  }
 
-    // UpdateImageIntegration modifies a given image integration, with optional stored credential reconciliation.
-    rpc UpdateImageIntegration (UpdateImageIntegrationRequest) returns (Empty) {
-        option (google.api.http) = {
-            patch: "/v1/imageintegrations/{config.id}"
-            body: "*"
-        };
-    }
-
-    // TestUpdatedImageIntegration checks if the given image integration is correctly configured, with optional stored credential reconciliation.
-    rpc TestUpdatedImageIntegration (UpdateImageIntegrationRequest) returns (Empty) {
-        option (google.api.http) = {
-            post: "/v1/imageintegrations/test/updated"
-            body: "*"
-        };
-    }
+  // TestUpdatedImageIntegration checks if the given image integration is correctly configured, with optional stored credential reconciliation.
+  rpc TestUpdatedImageIntegration(UpdateImageIntegrationRequest) returns (Empty) {
+    option (google.api.http) = {
+      post: "/v1/imageintegrations/test/updated"
+      body: "*"
+    };
+  }
 }

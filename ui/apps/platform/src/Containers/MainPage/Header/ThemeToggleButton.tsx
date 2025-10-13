@@ -1,3 +1,4 @@
+/*
 import React, { CSSProperties, ReactElement } from 'react';
 import { Moon, Sun } from 'react-feather';
 import { Button, Tooltip } from '@patternfly/react-core';
@@ -6,8 +7,8 @@ import { useTheme } from 'Containers/ThemeProvider';
 
 // On masthead, black text on white background like a dropdown menu.
 const styleTooltip = {
-    '--pf-c-tooltip__content--Color': 'var(--pf-global--Color--100)',
-    '--pf-c-tooltip__content--BackgroundColor': 'var(--pf-global--BackgroundColor--100)',
+    '--pf-v5-c-tooltip__content--Color': 'var(--pf-v5-global--Color--100)',
+    '--pf-v5-c-tooltip__content--BackgroundColor': 'var(--pf-v5-global--BackgroundColor--100)',
 } as CSSProperties;
 
 const ThemeToggleButton = (): ReactElement => {
@@ -24,3 +25,4 @@ const ThemeToggleButton = (): ReactElement => {
 };
 
 export default ThemeToggleButton;
+*/

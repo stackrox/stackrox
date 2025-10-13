@@ -3,30 +3,31 @@ package datastore
 import (
 	"context"
 	"fmt"
-	"math"
+	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/alert/datastore/internal/index"
-	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
+	alertutils "github.com/stackrox/rox/central/alert/utils"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/role/resources"
+	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
-	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/debug"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	searchCommon "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/sync"
 )
+
+const whenUnlimited = 100
 
 var (
 	log = logging.LoggerForModule()
@@ -34,69 +35,91 @@ var (
 	alertSAC = sac.ForResource(resources.Alert)
 )
 
-const (
-	alertBatchSize = 1000
-)
-
 // datastoreImpl is a transaction script with methods that provide the domain logic for CRUD uses cases for Alert
 // objects.
 type datastoreImpl struct {
-	storage    store.Store
-	indexer    index.Indexer
-	searcher   search.Searcher
-	keyedMutex *concurrency.KeyedMutex
+	storage         store.Store
+	keyedMutex      *concurrency.KeyedMutex
+	keyFence        concurrency.KeyFence
+	platformMatcher platformmatcher.PlatformMatcher
 }
 
-func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchCommon.Result, error) {
+func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query, excludeResolved bool) ([]searchCommon.Result, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "Search")
 
-	return ds.searcher.Search(ctx, q)
+	if excludeResolved {
+		q = applyDefaultState(q)
+	}
+	return ds.storage.Search(ctx, q)
 }
 
 // Count returns the number of search results from the query
-func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query, excludeResolved bool) (int, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "Count")
 
-	return ds.searcher.Count(ctx, q)
+	if excludeResolved {
+		q = applyDefaultState(q)
+	}
+	return ds.storage.Count(ctx, q)
 }
 
-func (ds *datastoreImpl) SearchListAlerts(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, error) {
+func (ds *datastoreImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.ListAlert, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchListAlerts")
 
-	return ds.searcher.SearchListAlerts(ctx, q)
+	if excludeResolved {
+		q = applyDefaultState(q)
+	}
+	listAlerts := make([]*storage.ListAlert, 0, paginated.GetLimit(q.GetPagination().GetLimit(), whenUnlimited))
+	err := ds.storage.GetByQueryFn(ctx, q, func(alert *storage.Alert) error {
+		listAlerts = append(listAlerts, convert.AlertToListAlert(alert))
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return listAlerts, nil
 }
 
-// SearchAlerts returns search results for the given request.
+// SearchAlerts returns search results for the given request. This will exclude resolved alerts by default unless Violation State = Resolved is explicitly specified in the query
 func (ds *datastoreImpl) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchAlerts")
 
-	return ds.searcher.SearchAlerts(ctx, q)
+	results, err := ds.Search(ctx, q, true)
+	if err != nil {
+		return nil, err
+	}
+	alerts, missingIndices, err := ds.storage.GetMany(ctx, searchCommon.ResultsToIDs(results))
+	if err != nil {
+		return nil, err
+	}
+	listAlerts := make([]*storage.ListAlert, 0, len(alerts))
+	for _, alert := range alerts {
+		listAlerts = append(listAlerts, convert.AlertToListAlert(alert))
+	}
+	results = searchCommon.RemoveMissingResults(results, missingIndices)
+
+	protoResults := make([]*v1.SearchResult, 0, len(alerts))
+	for i, alert := range listAlerts {
+		protoResults = append(protoResults, convertAlert(alert, results[i]))
+	}
+	return protoResults, nil
 }
 
 // SearchRawAlerts returns search results for the given request in the form of a slice of alerts.
-func (ds *datastoreImpl) SearchRawAlerts(ctx context.Context, q *v1.Query) ([]*storage.Alert, error) {
+func (ds *datastoreImpl) SearchRawAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.Alert, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchRawAlerts")
 
-	return ds.searcher.SearchRawAlerts(ctx, q)
-}
-
-func (ds *datastoreImpl) ListAlerts(ctx context.Context, request *v1.ListAlertsRequest) ([]*storage.ListAlert, error) {
-	var q *v1.Query
-	if request.GetQuery() == "" {
-		q = searchCommon.EmptyQuery()
-	} else {
-		var err error
-		q, err = searchCommon.ParseQuery(request.GetQuery())
-		if err != nil {
-			return nil, err
-		}
+	if excludeResolved {
+		q = applyDefaultState(q)
 	}
 
-	paginated.FillPagination(q, request.GetPagination(), math.MaxInt32)
-
-	alerts, err := ds.SearchListAlerts(ctx, q)
+	alerts := make([]*storage.Alert, 0, paginated.GetLimit(q.GetPagination().GetLimit(), whenUnlimited))
+	err := ds.storage.GetByQueryFn(ctx, q, func(alert *storage.Alert) error {
+		alerts = append(alerts, alert)
+		return nil
+	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to search alerts")
 	}
 	return alerts, nil
 }
@@ -117,10 +140,10 @@ func (ds *datastoreImpl) GetAlert(ctx context.Context, id string) (*storage.Aler
 // CountAlerts returns the number of alerts that are active
 func (ds *datastoreImpl) CountAlerts(ctx context.Context) (int, error) {
 	activeQuery := searchCommon.NewQueryBuilder().AddExactMatches(searchCommon.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()
-	return ds.Count(ctx, activeQuery)
+	return ds.Count(ctx, activeQuery, true)
 }
 
-// UpsertAlert inserts an alert into storage and into the indexer
+// UpsertAlert inserts an alert into storage
 func (ds *datastoreImpl) UpsertAlert(ctx context.Context, alert *storage.Alert) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "UpsertAlert")
 
@@ -134,20 +157,31 @@ func (ds *datastoreImpl) UpsertAlert(ctx context.Context, alert *storage.Alert) 
 	return ds.updateAlertNoLock(ctx, alert)
 }
 
-// UpdateAlertBatch updates an alert in storage and in the indexer
+// UpdateAlertBatch updates an alert in storage
 func (ds *datastoreImpl) UpdateAlertBatch(ctx context.Context, alert *storage.Alert, waitGroup *sync.WaitGroup, c chan error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "UpdateAlertBatch")
 
 	defer waitGroup.Done()
 	ds.keyedMutex.Lock(alert.GetId())
 	defer ds.keyedMutex.Unlock(alert.GetId())
-	oldAlert, exists, err := ds.GetAlert(ctx, alert.GetId())
+	// Avoid `ds.GetAlert` since that leads to extra read SAC check in addition to read-write check below.
+	oldAlert, exists, err := ds.storage.Get(ctx, alert.GetId())
 	if err != nil {
 		log.Errorf("error in get alert: %+v", err)
 		c <- err
 		return
 	}
 	if exists {
+		ok, err := alertSAC.WriteAllowed(ctx, sacKeyForAlert(alert)...)
+		if err != nil {
+			c <- err
+			return
+		}
+		if !ok {
+			c <- sac.ErrResourceAccessDenied
+			return
+		}
+
 		if !hasSameScope(getNSScopedObjectFromAlert(alert), getNSScopedObjectFromAlert(oldAlert)) {
 			c <- fmt.Errorf("cannot change the cluster or namespace of an existing alert %q", alert.GetId())
 			return
@@ -159,7 +193,7 @@ func (ds *datastoreImpl) UpdateAlertBatch(ctx context.Context, alert *storage.Al
 	}
 }
 
-// UpsertAlerts updates an alert in storage and in the indexer
+// UpsertAlerts updates an alert in storage
 func (ds *datastoreImpl) UpsertAlerts(ctx context.Context, alertBatch []*storage.Alert) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "UpsertAlerts")
 
@@ -181,26 +215,46 @@ func (ds *datastoreImpl) UpsertAlerts(ctx context.Context, alertBatch []*storage
 	return nil
 }
 
-func (ds *datastoreImpl) MarkAlertStale(ctx context.Context, id string) error {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "MarkAlertStale")
+func (ds *datastoreImpl) MarkAlertsResolvedBatch(ctx context.Context, ids ...string) ([]*storage.Alert, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "MarkAlertsResolvedBatch")
 
-	ds.keyedMutex.Lock(id)
-	defer ds.keyedMutex.Unlock(id)
-
-	alert, exists, err := ds.GetAlert(ctx, id)
-	if err != nil {
-		return err
-	}
-	if !exists {
-		return fmt.Errorf("alert with id '%s' does not exist", id)
+	resolvedAt := protocompat.TimestampNow()
+	idsAsBytes := make([][]byte, 0, len(ids))
+	for _, id := range ids {
+		idsAsBytes = append(idsAsBytes, []byte(id))
 	}
 
-	if ok, err := alertSAC.WriteAllowed(ctx, sacKeyForAlert(alert)...); err != nil || !ok {
-		return sac.ErrResourceAccessDenied
-	}
-	alert.State = storage.ViolationState_RESOLVED
-	alert.ResolvedAt = types.TimestampNow()
-	return ds.updateAlertNoLock(ctx, alert)
+	var resolvedAlerts []*storage.Alert
+	err := ds.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(idsAsBytes...), func() error {
+		var err error
+		var missing []int
+		// Avoid `ds.GetAlert` since that leads to extra read SAC check in addition to read-write check below.
+		resolvedAlerts, missing, err = ds.storage.GetMany(ctx, ids)
+		if err != nil {
+			return err
+		}
+		if len(missing) > 0 {
+			// Warn and continue marking the found alerts stale instead of returning error.
+			// Marking alerts stale essentially removes the alerts from APIs by default anyway.
+			log.Warnf("%d/%d alert(s) to be marked stale do not exist", len(missing), len(ids))
+		}
+
+		for _, alert := range resolvedAlerts {
+			ok, err := alertSAC.WriteAllowed(ctx, sacKeyForAlert(alert)...)
+			if err != nil {
+				return err
+			}
+			if !ok {
+				return sac.ErrResourceAccessDenied
+			}
+
+			alert.State = storage.ViolationState_RESOLVED
+			alert.ResolvedAt = resolvedAt
+		}
+
+		return ds.updateAlertNoLock(ctx, resolvedAlerts...)
+	})
+	return resolvedAlerts, err
 }
 
 func (ds *datastoreImpl) DeleteAlerts(ctx context.Context, ids ...string) error {
@@ -212,18 +266,25 @@ func (ds *datastoreImpl) DeleteAlerts(ctx context.Context, ids ...string) error 
 		return sac.ErrResourceAccessDenied
 	}
 
-	errorList := errorhelpers.NewErrorList("deleting alert")
 	if err := ds.storage.DeleteMany(ctx, ids); err != nil {
-		errorList.AddError(err)
+		return errors.Wrap(err, "deleting alert")
 	}
-	if err := ds.indexer.DeleteListAlerts(ids); err != nil {
-		errorList.AddError(err)
-	}
-	if err := ds.storage.AckKeysIndexed(ctx, ids...); err != nil {
-		errorList.AddError(err)
+	return nil
+}
+
+func (ds *datastoreImpl) PruneAlerts(ctx context.Context, ids ...string) error {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "PruneAlerts")
+
+	if ok, err := alertSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
 	}
 
-	return errorList.ToError()
+	if err := ds.storage.PruneMany(ctx, ids); err != nil {
+		return errors.Wrap(err, "pruning alert")
+	}
+	return nil
 }
 
 func sacKeyForAlert(alert *storage.Alert) []sac.ScopeKey {
@@ -248,126 +309,31 @@ func getNSScopedObjectFromAlert(alert *storage.Alert) sac.NamespaceScopedObject 
 	return nil
 }
 
-func (ds *datastoreImpl) updateAlertNoLock(ctx context.Context, alert *storage.Alert) error {
-	// Checks pass then update.
-	if err := ds.storage.Upsert(ctx, alert); err != nil {
-		return err
+func (ds *datastoreImpl) updateAlertNoLock(ctx context.Context, alerts ...*storage.Alert) error {
+	if len(alerts) == 0 {
+		return nil
 	}
-	if err := ds.indexer.AddListAlert(fillSortHelperFields(convert.AlertToListAlert(alert))); err != nil {
-		return err
+
+	if features.PlatformComponents.Enabled() {
+		for _, alert := range alerts {
+			alert.EntityType = alertutils.GetEntityType(alert)
+			match, err := ds.platformMatcher.MatchAlert(alert)
+			if err != nil {
+				return err
+			}
+			alert.PlatformComponent = match
+		}
 	}
-	return ds.storage.AckKeysIndexed(ctx, alert.GetId())
+
+	return ds.storage.UpsertMany(ctx, alerts)
 }
 
 func hasSameScope(o1, o2 sac.NamespaceScopedObject) bool {
 	return o1 != nil && o2 != nil && o1.GetClusterId() == o2.GetClusterId() && o1.GetNamespace() == o2.GetNamespace()
 }
 
-func (ds *datastoreImpl) fullReindex(ctx context.Context) error {
-	log.Info("[STARTUP] Reindexing all alerts")
-
-	alertIDs, err := ds.storage.GetIDs(ctx)
-	if err != nil {
-		return err
-	}
-	log.Infof("[STARTUP] Found %d alerts to index", len(alertIDs))
-	alertBatcher := batcher.New(len(alertIDs), alertBatchSize)
-	for start, end, valid := alertBatcher.Next(); valid; start, end, valid = alertBatcher.Next() {
-		listAlerts, _, err := ds.getListAlerts(ctx, alertIDs[start:end])
-		if err != nil {
-			return err
-		}
-		if err := ds.indexer.AddListAlerts(listAlerts); err != nil {
-			return err
-		}
-		if end%(alertBatchSize*10) == 0 {
-			log.Infof("[STARTUP] Successfully indexed %d/%d alerts", end, len(alertIDs))
-		}
-	}
-	log.Infof("[STARTUP] Successfully indexed %d alerts", len(alertIDs))
-
-	// Clear the keys because we just re-indexed everything
-	keys, err := ds.storage.GetKeysToIndex(ctx)
-	if err != nil {
-		return err
-	}
-	if err := ds.storage.AckKeysIndexed(ctx, keys...); err != nil {
-		return err
-	}
-
-	// Write out that initial indexing is complete
-	if err := ds.indexer.MarkInitialIndexingComplete(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (ds *datastoreImpl) buildIndex(ctx context.Context) error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil
-	}
-	defer debug.FreeOSMemory()
-
-	needsFullIndexing, err := ds.indexer.NeedsInitialIndexing()
-	if err != nil {
-		return err
-	}
-	if needsFullIndexing {
-		return ds.fullReindex(ctx)
-	}
-
-	log.Info("[STARTUP] Determining if alert db/indexer reconciliation is needed")
-	keysToIndex, err := ds.storage.GetKeysToIndex(ctx)
-	if err != nil {
-		return errors.Wrap(err, "error retrieving keys to index from store")
-	}
-
-	log.Infof("[STARTUP] Found %d Alerts to index", len(keysToIndex))
-
-	defer debug.FreeOSMemory()
-
-	alertBatcher := batcher.New(len(keysToIndex), alertBatchSize)
-	for start, end, valid := alertBatcher.Next(); valid; start, end, valid = alertBatcher.Next() {
-		listAlerts, missingIndices, err := ds.getListAlerts(ctx, keysToIndex[start:end])
-		if err != nil {
-			return err
-		}
-		if err := ds.indexer.AddListAlerts(listAlerts); err != nil {
-			return err
-		}
-
-		if len(missingIndices) > 0 {
-			idsToRemove := make([]string, 0, len(missingIndices))
-			for _, missingIdx := range missingIndices {
-				idsToRemove = append(idsToRemove, keysToIndex[start:end][missingIdx])
-			}
-			if err := ds.indexer.DeleteListAlerts(idsToRemove); err != nil {
-				return err
-			}
-		}
-		// Ack keys so that even if central restarts, we don't need to reindex them again
-		if err := ds.storage.AckKeysIndexed(ctx, keysToIndex[start:end]...); err != nil {
-			return err
-		}
-
-		log.Infof("[STARTUP] Successfully indexed %d/%d alerts", end, len(keysToIndex))
-	}
-
-	log.Info("[STARTUP] Successfully indexed all out of sync alerts")
-	return nil
-}
-
-func (ds *datastoreImpl) getListAlerts(ctx context.Context, ids []string) ([]*storage.ListAlert, []int, error) {
-	alerts, missingIndices, err := ds.storage.GetMany(ctx, ids)
-	if err != nil {
-		return nil, nil, err
-	}
-	listAlerts := make([]*storage.ListAlert, 0, len(ids))
-	for _, alert := range alerts {
-		listAlerts = append(listAlerts, convert.AlertToListAlert(alert))
-	}
-	return listAlerts, missingIndices, nil
+func (ds *datastoreImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(alert *storage.Alert) error) error {
+	return ds.storage.GetByQueryFn(ctx, q, fn)
 }
 
 func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(*storage.ListAlert) error) error {
@@ -377,8 +343,77 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(*storage.ListAlert
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.storage.Walk(ctx, func(alert *storage.Alert) error {
-		listAlert := convert.AlertToListAlert(alert)
-		return fn(listAlert)
+	walkFn := func() error {
+		return ds.storage.Walk(ctx, func(alert *storage.Alert) error {
+			listAlert := convert.AlertToListAlert(alert)
+			return fn(listAlert)
+		})
+	}
+	return pgutils.RetryIfPostgres(ctx, walkFn)
+}
+
+// DefaultStateAlertDataStoreImpl will only return unresolved alerts unless Violation State=Resolved is explicitly provided by the query
+type DefaultStateAlertDataStoreImpl struct {
+	DataStore *DataStore
+}
+
+func (ds *DefaultStateAlertDataStoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchCommon.Result, error) {
+	return (*ds.DataStore).Search(ctx, q, true)
+}
+
+func (ds *DefaultStateAlertDataStoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	return (*ds.DataStore).Count(ctx, q, true)
+}
+
+func applyDefaultState(q *v1.Query) *v1.Query {
+	// By default, set stale to false.
+	querySpecifiesStateField := false
+	searchCommon.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
+		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if !ok {
+			return
+		}
+		if matchFieldQuery.MatchFieldQuery.GetField() == searchCommon.ViolationState.String() {
+			querySpecifiesStateField = true
+		}
 	})
+
+	if !querySpecifiesStateField {
+		cq := searchCommon.ConjunctionQuery(q, searchCommon.NewQueryBuilder().AddExactMatches(
+			searchCommon.ViolationState,
+			storage.ViolationState_ACTIVE.String(),
+			storage.ViolationState_ATTEMPTED.String()).ProtoQuery())
+		cq.Pagination = q.GetPagination()
+		return cq
+	}
+	return q
+}
+
+// convertAlert returns proto search result from an alert object and the internal search result
+func convertAlert(alert *storage.ListAlert, result searchCommon.Result) *v1.SearchResult {
+	entityInfo := alert.GetCommonEntityInfo()
+	var entityName string
+	switch entity := alert.GetEntity().(type) {
+	case *storage.ListAlert_Resource:
+		entityName = entity.Resource.GetName()
+	case *storage.ListAlert_Deployment:
+		entityName = entity.Deployment.GetName()
+	}
+	resourceTypeTitleCase := strings.Title(strings.ToLower(entityInfo.GetResourceType().String()))
+	var location string
+	if entityInfo.GetNamespace() != "" {
+		location = fmt.Sprintf("/%s/%s/%s/%s",
+			entityInfo.GetClusterName(), entityInfo.GetNamespace(), resourceTypeTitleCase, entityName)
+	} else {
+		location = fmt.Sprintf("/%s/%s/%s",
+			entityInfo.GetClusterName(), resourceTypeTitleCase, entityName)
+	}
+	return &v1.SearchResult{
+		Category:       v1.SearchCategory_ALERTS,
+		Id:             alert.GetId(),
+		Name:           alert.GetPolicy().GetName(),
+		FieldToMatches: searchCommon.GetProtoMatchesMap(result.Matches),
+		Score:          result.Score,
+		Location:       location,
+	}
 }

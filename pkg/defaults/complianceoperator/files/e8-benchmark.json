@@ -1,0 +1,18 @@
+{
+  "id": "dcd2955f-8337-4f02-b713-60f1237229f0",
+  "name": "Australian Cyber Security Centre (ACSC) Essential Eight",
+  "version": "",
+  "description": "",
+  "provider": "ACSC",
+  "shortName": "E8",
+  "profiles": [
+    {
+      "profileName": "ocp4-e8",
+      "profileVersion": "latest"
+    },
+    {
+      "profileName": "rhcos4-e8",
+      "profileVersion": "latest"
+    }
+  ]
+}

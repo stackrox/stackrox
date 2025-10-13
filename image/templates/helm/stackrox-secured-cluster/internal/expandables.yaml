@@ -27,7 +27,10 @@ collector:
     key: true
   resources: true
   complianceResources: true
+  nodeScanningResources: true
   nodeSelector: true
+fact:
+  resources: true
 scanner:
   resources: true
   dbResources: true
@@ -41,3 +44,20 @@ scanner:
   dbServiceTLS:
     cert: true
     key: true
+scannerV4:
+  indexer:
+    nodeSelector: true
+    resources: true
+    serviceTLS:
+      cert: true
+      key: true
+  db:
+    postgresConfig: true
+    hbaConfig: true
+    password:
+      value: true
+    nodeSelector: true
+    resources: true
+    serviceTLS:
+      cert: true
+      key: true

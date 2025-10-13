@@ -23,7 +23,7 @@ var (
 // RetryTickers can only be started once.
 // RetryTickers are not safe for simultaneous use by multiple goroutines.
 type RetryTicker interface {
-	Start() error
+	Start(ctx context.Context) error
 	Stop()
 	Stopped() bool
 }
@@ -35,6 +35,7 @@ type tickFunc func(ctx context.Context) (timeToNextTick time.Duration, err error
 // then:
 //   - If that error is ErrNonRecoverable (according to `errors.Is`) then the RetryTicker stops.
 //   - Otherwise the RetryTicker will wait the time returned by `backoff.Step` before calling `doFunc` again.
+//
 // - `doFunc` should return an error if ctx is cancelled. RetryTicker always calls `doFunc` with a context
 // with a timeout of `timeout`.
 // - On success `RetryTicker` will reset `backoff`, and wait the amount of time returned by `doFunc` before
@@ -56,7 +57,7 @@ type retryTickerImpl struct {
 	initialBackoff wait.Backoff
 	backoff        wait.Backoff
 	timer          *time.Timer
-	mutex          sync.RWMutex
+	timerMutex     sync.RWMutex
 	stopFlag       Flag
 }
 
@@ -64,7 +65,8 @@ type retryTickerImpl struct {
 // Start returns and error if the RetryTicker is started more than once:
 // - ErrStartedTimer is returned if the timer was already started.
 // - ErrStoppedTimer is returned if the timer was stopped.
-func (t *retryTickerImpl) Start() error {
+// The ctx parameter can be used to stop the timer and cancel any ongoing tick.
+func (t *retryTickerImpl) Start(ctx context.Context) error {
 	if t.Stopped() {
 		return ErrStoppedTimer
 	}
@@ -72,14 +74,19 @@ func (t *retryTickerImpl) Start() error {
 		return ErrStartedTimer
 	}
 	t.backoff = t.initialBackoff // initialize backoff strategy
-	t.scheduleTick(0)
+	t.scheduleTick(ctx, 0)
 	return nil
 }
 
 // Stop cancels this RetryTicker. If Stop is called while the tick function is running then Stop does not
 // wait for the tick function to complete before returning.
+// If you want to cancel the execution of the tick function as well (in case it is running), cancel
+// the context passed to Start instead
 func (t *retryTickerImpl) Stop() {
 	t.stopFlag.Set(true)
+
+	t.timerMutex.Lock()
+	defer t.timerMutex.Unlock()
 	t.setTickTimer(nil)
 }
 
@@ -88,32 +95,39 @@ func (t *retryTickerImpl) Stopped() bool {
 	return t.stopFlag.Get()
 }
 
-func (t *retryTickerImpl) scheduleTick(timeToTick time.Duration) {
-	t.setTickTimer(t.scheduler(timeToTick, func() {
-		ctx, cancel := context.WithTimeout(context.Background(), t.timeout)
+func (t *retryTickerImpl) scheduleTick(ctx context.Context, timeToTick time.Duration) {
+	t.timerMutex.Lock()
+	defer t.timerMutex.Unlock()
+
+	timer := t.scheduler(timeToTick, func() {
+		tickCtx, cancel := context.WithTimeout(ctx, t.timeout)
 		defer cancel()
 
-		nextTimeToTick, tickErr := t.doFunc(ctx)
+		nextTimeToTick, tickErr := t.doFunc(tickCtx)
 		if t.Stopped() {
 			// ticker was stopped while tick function was running.
 			return
 		}
-		if errors.Is(tickErr, ErrNonRecoverable) {
+
+		if errors.Is(tickErr, ErrNonRecoverable) || ctx.Err() != nil {
 			t.Stop()
 			return
 		}
 		if tickErr != nil {
-			t.scheduleTick(t.backoff.Step())
+			t.scheduleTick(ctx, t.backoff.Step())
 			return
 		}
 		t.backoff = t.initialBackoff // reset backoff strategy
-		t.scheduleTick(nextTimeToTick)
-	}))
+		t.scheduleTick(ctx, nextTimeToTick)
+	})
+	// We take mutex at the start of this method (rather than inside setTickTimer)
+	// to make sure the setTickTimer() call below completes before one of
+	// the t.scheduleTick() calls in the goroutine started by t.scheduler() above
+	// starts running.
+	t.setTickTimer(timer)
 }
 
 func (t *retryTickerImpl) setTickTimer(timer *time.Timer) {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
 	if t.timer != nil {
 		t.timer.Stop()
 	}
@@ -121,7 +135,7 @@ func (t *retryTickerImpl) setTickTimer(timer *time.Timer) {
 }
 
 func (t *retryTickerImpl) getTickTimer() *time.Timer {
-	t.mutex.RLock()
-	defer t.mutex.RUnlock()
+	t.timerMutex.RLock()
+	defer t.timerMutex.RUnlock()
 	return t.timer
 }

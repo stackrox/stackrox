@@ -13,9 +13,9 @@ import (
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/formats"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/fsutils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/osutils"
+	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -92,57 +92,59 @@ func analyzeManifest(manifest *v1.DBExportManifest, format *formats.ExportFormat
 	return handlerFuncs, totalSizeUncompressed, nil
 }
 
-func (m *manager) checkDiskSpace(requiredBytes int64) error {
-	availableBytes, err := fsutils.AvailableBytesIn(m.outputRoot)
-	if err != nil {
-		log.Warnf("Could not determine free disk space of volume containing %s: %v. Assuming free space is sufficient for %d bytes.", m.outputRoot, err, requiredBytes)
-		return nil
-	}
-	if availableBytes < uint64(requiredBytes) {
-		return errors.Errorf("restoring backup requires %d bytes of free disk space, but volume containing %s only has %d bytes available", requiredBytes, m.outputRoot, availableBytes)
-	}
-	return nil
-}
-
-func (m *manager) finalOutputDir() string {
-	return filepath.Join(m.outputRoot, ".restore")
-}
-
 func (m *manager) LaunchRestoreProcess(ctx context.Context, id string, requestHeader *v1.DBRestoreRequestHeader, data io.Reader) (concurrency.ErrorWaitable, error) {
 	log.Infof("Attempting to launch restore process %s", id)
 
 	format := m.formatRegistry.GetFormat(requestHeader.GetFormatName())
 	if format == nil {
-		return nil, errors.Errorf("invalid DB restore format %q", requestHeader.GetFormatName())
-	}
-
-	handlerFuncs, totalSizeUncompressed, err := analyzeManifest(requestHeader.GetManifest(), format)
-	if err != nil {
+		err := errors.Errorf("invalid DB restore format %q", requestHeader.GetFormatName())
+		log.Error(err)
 		return nil, err
 	}
 
-	if err := m.checkDiskSpace(totalSizeUncompressed); err != nil {
+	handlerFuncs, _, err := analyzeManifest(requestHeader.GetManifest(), format)
+	if err != nil {
+		err := errors.Errorf("Error analyzing manifest: %s", err)
+		log.Error(err)
 		return nil, err
 	}
 
 	process, err := newRestoreProcess(ctx, id, requestHeader, handlerFuncs, data)
 	if err != nil {
+		err := errors.Errorf("Error restoring process: %s", err)
+		log.Error(err)
 		return nil, err
 	}
 
-	finalOutputDir := m.finalOutputDir()
+	if !process.postgresBundle {
+		err := errors.New("restoration of a database prior to 4.0 is not supported.  Please use a backup from 4.0 or later.")
+		log.Error(err)
+		return nil, err
+	}
+
+	if process.postgresBundle && pgconfig.IsExternalDatabase() {
+		err := errors.New("restore is not supported with external database.  Use your normal DB restoration methods.")
+		log.Error(err)
+		return nil, err
+	}
+
+	// Create the paths for the restore directory
 	tempOutputDir := filepath.Join(m.outputRoot, fmt.Sprintf(".restore-%s", process.Metadata().GetId()))
 
 	m.activeProcessMutex.Lock()
 	defer m.activeProcessMutex.Unlock()
 
 	if m.activeProcess != nil {
-		return nil, errors.New("an active restore process currently exists; cancel it before initiating a new restore process")
+		err := errors.New("an active restore process currently exists; cancel it before initiating a new restore process")
+		log.Error(err)
+		return nil, err
 	}
 
-	attemptDone, err := process.Launch(tempOutputDir, finalOutputDir)
+	attemptDone, err := process.Launch(tempOutputDir)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not launch restore process")
+		err := errors.Wrap(err, "could not launch restore process")
+		log.Error(err)
+		return nil, err
 	}
 
 	m.activeProcess = process

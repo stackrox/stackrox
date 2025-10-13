@@ -7,12 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
-	"github.com/gogo/protobuf/types"
 	ctTLS "github.com/google/certificate-transparency-go/tls"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/cryptoutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // ParseToken parses a ServiceCert token and returns the parsed x509 certificate. Note that the returned certificate is
@@ -33,11 +32,11 @@ func ParseToken(token string, maxLeeway time.Duration) (*x509.Certificate, error
 	}
 
 	var auth central.ServiceCertAuth
-	if err := proto.Unmarshal(authBytes, &auth); err != nil {
+	if err := auth.UnmarshalVTUnsafe(authBytes); err != nil {
 		return nil, errors.Wrap(err, "could not unmarshal service cert auth structure")
 	}
 
-	ts, err := types.TimestampFromProto(auth.GetCurrentTime())
+	ts, err := protocompat.ConvertTimestampToTimeOrError(auth.GetCurrentTime())
 	if err != nil {
 		return nil, errors.Wrap(err, "could not convert timestamp")
 	}
@@ -70,7 +69,7 @@ func ParseToken(token string, maxLeeway time.Duration) (*x509.Certificate, error
 
 // CreateToken creates a ServiceCert token from the given certificate, stamping it with the given current timestamp.
 func CreateToken(cert *tls.Certificate, currTime time.Time) (string, error) {
-	tsPb, err := types.TimestampProto(currTime)
+	tsPb, err := protocompat.ConvertTimeToTimestampOrError(currTime)
 	if err != nil {
 		return "", errors.Wrap(err, "could not create timestamp proto")
 	}
@@ -80,7 +79,7 @@ func CreateToken(cert *tls.Certificate, currTime time.Time) (string, error) {
 		CurrentTime: tsPb,
 	}
 
-	authBytes, err := proto.Marshal(auth)
+	authBytes, err := auth.MarshalVT()
 	if err != nil {
 		return "", errors.Wrap(err, "could not marshal service cert auth structure")
 	}

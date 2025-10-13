@@ -1,9 +1,10 @@
-import React, { ReactElement, useState } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import { Badge, Tab, TabContent, Tabs, TabTitleText } from '@patternfly/react-core';
 
-import { LabelSelector, LabelSelectorsKey } from 'services/AccessScopesService';
+import type { LabelSelector, LabelSelectorsKey } from 'services/AccessScopesService';
 
-import { LabelSelectorsEditingState } from './accessScopes.utils';
+import type { LabelSelectorsEditingState } from './accessScopes.utils';
 import LabelSelectorCards from './LabelSelectorCards';
 
 export type LabelInclusionProps = {
@@ -42,7 +43,7 @@ function LabelInclusion({
                     title={
                         <TabTitleText>
                             Cluster
-                            <Badge isRead className="pf-u-ml-sm">
+                            <Badge isRead className="pf-v5-u-ml-sm">
                                 {clusterLabelSelectors.length}
                             </Badge>
                         </TabTitleText>
@@ -54,7 +55,7 @@ function LabelInclusion({
                     title={
                         <TabTitleText>
                             Namespace
-                            <Badge isRead className="pf-u-ml-sm">
+                            <Badge isRead className="pf-v5-u-ml-sm">
                                 {namespaceLabelSelectors.length}
                             </Badge>
                         </TabTitleText>

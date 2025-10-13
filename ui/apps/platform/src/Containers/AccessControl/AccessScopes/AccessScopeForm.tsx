@@ -1,31 +1,33 @@
-import React, { ReactElement, useEffect, useState } from 'react';
-import { FormikContextType } from 'formik';
+import React, { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
+import type { FormikContextType } from 'formik';
 import {
     Alert,
-    AlertVariant,
     Flex,
     FlexItem,
     Form,
     FormGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
     TextInput,
     Tooltip,
 } from '@patternfly/react-core';
 import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 
 import {
+    computeEffectiveAccessScopeClusters,
+    getIsUnrestrictedAccessScopeId,
+} from 'services/AccessScopesService';
+import type {
     AccessScope,
     EffectiveAccessScopeCluster,
     LabelSelector,
     LabelSelectorsKey,
-    computeEffectiveAccessScopeClusters,
-    defaultAccessScopeIds,
 } from 'services/AccessScopesService';
 
-import {
-    LabelSelectorsEditingState,
-    getIsValidRules,
-    getTemporarilyValidRules,
-} from './accessScopes.utils';
+import { getIsValidRules, getTemporarilyValidRules } from './accessScopes.utils';
+import type { LabelSelectorsEditingState } from './accessScopes.utils';
 import EffectiveAccessScopeTable from './EffectiveAccessScopeTable';
 import LabelInclusion from './LabelInclusion';
 
@@ -35,7 +37,7 @@ const labelIconEffectiveAccessScope = (
         isContentLeftAligned
         maxWidth="24em"
     >
-        <div className="pf-c-button pf-m-plain pf-m-small">
+        <div className="pf-v5-c-button pf-m-plain pf-m-small">
             <OutlinedQuestionCircleIcon />
         </div>
     </Tooltip>
@@ -52,7 +54,7 @@ const labelIconLabelInclusion = (
         isContentLeftAligned
         maxWidth="24em"
     >
-        <div className="pf-c-button pf-m-plain pf-m-small">
+        <div className="pf-v5-c-button pf-m-plain pf-m-small">
             <OutlinedQuestionCircleIcon />
         </div>
     </Tooltip>
@@ -62,8 +64,6 @@ export type AccessScopeFormProps = {
     hasAction: boolean;
     alertSubmit: ReactElement | null;
     formik: FormikContextType<AccessScope>;
-    labelSelectorsEditingState: LabelSelectorsEditingState;
-    setLabelSelectorsEditingState: React.Dispatch<React.SetStateAction<LabelSelectorsEditingState>>;
 };
 
 function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProps): ReactElement {
@@ -85,9 +85,10 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
      * before its first requirement or value has been added.
      */
     const isValidRules =
-        values.id !== defaultAccessScopeIds.Unrestricted && getIsValidRules(values.rules);
+        !getIsUnrestrictedAccessScopeId(values.id) && getIsValidRules(values.rules);
+    /* eslint-disable react-hooks/exhaustive-deps */
     useEffect(() => {
-        if (values.id === defaultAccessScopeIds.Unrestricted) {
+        if (getIsUnrestrictedAccessScopeId(values.id)) {
             return;
         }
         setCounterComputing((counterPrev) => counterPrev + 1);
@@ -102,7 +103,8 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
                 setAlertCompute(
                     <Alert
                         title="Compute effective access scope failed"
-                        variant={AlertVariant.danger}
+                        component="p"
+                        variant="danger"
                         isInline
                     >
                         {error.message}
@@ -113,6 +115,8 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
                 setCounterComputing((counterPrev) => counterPrev - 1);
             });
     }, [isValidRules, values.rules]);
+    // values.id
+    /* eslint-enable react-hooks/exhaustive-deps */
 
     function onChange(_value, event) {
         handleChange(event);
@@ -166,41 +170,41 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
     return (
         <Form id="access-scope-form">
             {alertSubmit}
-            <FormGroup
-                label="Name"
-                fieldId="name"
-                isRequired
-                validated={nameValidatedState}
-                helperTextInvalid={nameErrorMessage}
-                className="pf-m-horizontal"
-            >
+            <FormGroup label="Name" fieldId="name" isRequired className="pf-m-horizontal">
                 <TextInput
                     type="text"
                     id="name"
                     value={values.name}
                     validated={nameValidatedState}
-                    onChange={onChange}
+                    onChange={(event, _value) => onChange(_value, event)}
                     isDisabled={isViewing}
                     isRequired
                     className="pf-m-limit-width"
                 />
+                <FormHelperText>
+                    <HelperText>
+                        <HelperTextItem variant={nameValidatedState}>
+                            {nameErrorMessage}
+                        </HelperTextItem>
+                    </HelperText>
+                </FormHelperText>
             </FormGroup>
             <FormGroup label="Description" fieldId="description" className="pf-m-horizontal">
                 <TextInput
                     type="text"
                     id="description"
                     value={values.description}
-                    onChange={onChange}
+                    onChange={(event, _value) => onChange(_value, event)}
                     isDisabled={isViewing}
                 />
             </FormGroup>
             {alertCompute}
-            {values.id !== defaultAccessScopeIds.Unrestricted && (
+            {!getIsUnrestrictedAccessScopeId(values.id) && (
                 <Flex
                     direction={{ default: 'row' }}
                     spaceItems={{ default: 'spaceItemsSm', xl: 'spaceItemsLg' }}
                 >
-                    <FlexItem className="pf-u-flex-basis-0" flex={{ default: 'flex_1' }}>
+                    <FlexItem className="pf-v5-u-flex-basis-0" flex={{ default: 'flex_1' }}>
                         <FormGroup
                             label="Allowed resources"
                             fieldId="effectiveAccessScope"
@@ -217,7 +221,7 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
                             />
                         </FormGroup>
                     </FlexItem>
-                    <FlexItem className="pf-u-flex-basis-0" flex={{ default: 'flex_1' }}>
+                    <FlexItem className="pf-v5-u-flex-basis-0" flex={{ default: 'flex_1' }}>
                         <FormGroup
                             label="Label selection rules"
                             fieldId="labelInclusion"

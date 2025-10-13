@@ -1,16 +1,8 @@
 tests:
-- name: non slim mode
-  set:
-    collector.slimMode: false
+- name: collector image
   expect: |
     assertMainIs("quay.io/stackrox-io/main:3.0.99.0")
-    assertCollectorIs("quay.io/stackrox-io/collector:99.9.9-latest")
-- name: slim mode
-  set:
-    collector.slimMode: true
-  expect: |
-    assertMainIs("quay.io/stackrox-io/main:3.0.99.0")
-    assertCollectorIs("quay.io/stackrox-io/collector:99.9.9-slim")
+    assertCollectorIs("quay.io/stackrox-io/collector:99.9.9")
 
 - name: scanner image
   server:

@@ -1,5 +1,7 @@
+import qs from 'qs';
+import type { Traits } from 'types/traits.proto';
 import axios from './instance';
-import { Empty } from './types';
+import type { Empty } from './types';
 
 const resourcesUrl = '/v1/resources';
 
@@ -25,6 +27,7 @@ export type Role = {
     description: string;
     permissionSetId: string;
     accessScopeId: string;
+    traits?: Traits;
 };
 
 /**
@@ -84,6 +87,7 @@ export type PermissionSet = {
     name: string;
     description: string;
     resourceToAccess: PermissionsMap;
+    traits?: Traits;
 };
 
 /*
@@ -115,4 +119,55 @@ export function updatePermissionSet(entity: PermissionSet): Promise<Empty> {
  */
 export function deletePermissionSet(id: string): Promise<Empty> {
     return axios.delete(`${permissionSetsUrl}/${id}`);
+}
+
+const clustersForPermissionsUrl = '/v1/sac/clusters';
+
+type ClustersForPermissionRequest = {
+    permissions: string[];
+};
+
+// ScopeObject represents the (ID, name) pair identifying elements that belong to
+// the access scope of a user.
+type ScopeObject = {
+    id: string;
+    name: string;
+};
+
+// Aliases to increase readability of server responses with the same shape but different semantics.
+export type ClusterScopeObject = ScopeObject;
+export type NamespaceScopeObject = ScopeObject;
+
+export type ClustersForPermissionsResponse = {
+    clusters: ClusterScopeObject[];
+};
+
+export function getClustersForPermissions(
+    permissions: string[]
+): Promise<ClustersForPermissionsResponse> {
+    const request: ClustersForPermissionRequest = { permissions };
+    const params = qs.stringify(request, { arrayFormat: 'repeat' });
+    return axios
+        .get<ClustersForPermissionsResponse>(`${clustersForPermissionsUrl}?${params}`)
+        .then((response) => response.data);
+}
+
+type NamespacesForClusterAndPermissionsRequest = {
+    permissions: string[];
+};
+
+export type NamespacesForClusterAndPermissionsResponse = {
+    namespaces: NamespaceScopeObject[];
+};
+
+export function getNamespacesForClusterAndPermissions(
+    clusterID: string,
+    permissions: string[]
+): Promise<NamespacesForClusterAndPermissionsResponse> {
+    const request: NamespacesForClusterAndPermissionsRequest = { permissions };
+    const params = qs.stringify(request, { arrayFormat: 'repeat' });
+    const targetUrl = `${clustersForPermissionsUrl}/${clusterID}/namespaces?${params}`;
+    return axios
+        .get<NamespacesForClusterAndPermissionsResponse>(targetUrl)
+        .then((response) => response.data);
 }

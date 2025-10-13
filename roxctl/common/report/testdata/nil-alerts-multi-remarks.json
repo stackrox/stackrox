@@ -1,0 +1,15 @@
+{
+  "remarks": [
+    {
+      "name": "deployment1",
+      "permissionLevel": "CLUSTER_ADMIN",
+      "appliedNetworkPolicies": [
+        "Policy1, Policy2"
+      ]
+    },
+    {
+      "name": "deployment2",
+      "permissionLevel": "NONE"
+    }
+  ]
+}

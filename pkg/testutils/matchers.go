@@ -6,8 +6,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 var (
@@ -36,7 +36,7 @@ func PredMatcher(desc string, checker interface{}) gomock.Matcher {
 	}
 
 	if ty.NumOut() != 1 {
-		panic("function for predicate matcher must have exactly one output paramer")
+		panic("function for predicate matcher must have exactly one output parameter")
 	}
 
 	outTy := ty.Out(0)
@@ -100,7 +100,7 @@ func (m stringTestMatcher) Matches(x interface{}) bool {
 
 type failureRecorder bool
 
-func (r *failureRecorder) Errorf(format string, args ...interface{}) {
+func (r *failureRecorder) Errorf(_ string, _ ...interface{}) {
 	*r = true
 }
 

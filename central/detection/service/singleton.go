@@ -6,8 +6,12 @@ import (
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	networkpolicyDatastore "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/risk/manager"
+	"github.com/stackrox/rox/central/role/sachelper"
+	"github.com/stackrox/rox/central/sensor/enhancement"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -18,14 +22,23 @@ var (
 )
 
 func initialize() {
-	as = New(clusterDatastore.Singleton(), enrichment.ImageEnricherSingleton(),
+	clusterDS := clusterDatastore.Singleton()
+
+	as = New(
+		clusterDS,
+		enrichment.ImageEnricherSingleton(),
 		imageDatastore.Singleton(),
 		manager.Singleton(),
 		enrichment.Singleton(),
 		buildTimeDetection.SingletonDetector(),
 		processor.Singleton(),
 		deploytime.SingletonDetector(),
-		deploytime.SingletonPolicySet())
+		deploytime.SingletonPolicySet(),
+		sachelper.NewClusterSacHelper(clusterDS),
+		connection.ManagerSingleton(),
+		enhancement.BrokerSingleton(),
+		networkpolicyDatastore.Singleton(),
+	)
 }
 
 // Singleton provides the instance of the Service interface to register.

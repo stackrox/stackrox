@@ -6,6 +6,7 @@ import (
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/role/datastore"
+	"github.com/stackrox/rox/central/role/sachelper"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 )
@@ -24,5 +25,7 @@ func New(roleDataStore datastore.DataStore, clusterDataStore clusterDS.DataStore
 		roleDataStore:      roleDataStore,
 		clusterDataStore:   clusterDataStore,
 		namespaceDataStore: namespaceDataStore,
+		clusterSACHelper:   sachelper.NewClusterSacHelper(clusterDataStore),
+		namespaceSACHelper: sachelper.NewClusterNamespaceSacHelper(clusterDataStore, namespaceDataStore),
 	}
 }

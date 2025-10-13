@@ -5,23 +5,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/blevesearch/bleve"
-	"github.com/gogo/protobuf/types"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/deployment/queue"
 	"github.com/stackrox/rox/central/networkbaseline/datastore"
+	"github.com/stackrox/rox/central/networkgraph/aggregator"
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
+	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	networkFlowDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
@@ -29,15 +25,18 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
-	"github.com/stackrox/rox/pkg/protoutils"
-	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/networkgraph/tree"
+	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/utils"
-	"go.etcd.io/bbolt"
 )
 
 const (
@@ -47,7 +46,7 @@ const (
 var (
 	managerCtx = sac.WithAllAccess(context.Background())
 
-	networkBaselineSAC = sac.ForResource(resources.NetworkBaseline)
+	deploymentExtensionSAC = sac.ForResource(resources.DeploymentExtension)
 
 	log = logging.LoggerForModule()
 
@@ -61,6 +60,7 @@ type manager struct {
 	networkPolicyDS   networkPolicyDS.DataStore
 	clusterFlows      networkFlowDS.ClusterDataStore
 	connectionManager connection.Manager
+	treeManager       networktree.Manager
 
 	baselinesByDeploymentID map[string]*networkbaseline.BaselineInfo
 	seenNetworkPolicies     set.Set[uint64]
@@ -165,7 +165,7 @@ func (m *manager) persistNetworkBaselines(deploymentIDs set.StringSet, baselines
 			Namespace:            baselineInfo.Namespace,
 			Peers:                peers,
 			ForbiddenPeers:       forbiddenPeers,
-			ObservationPeriodEnd: baselineInfo.ObservationPeriodEnd.GogoProtobuf(),
+			ObservationPeriodEnd: protoconv.ConvertMicroTSToProtobufTS(baselineInfo.ObservationPeriodEnd),
 			Locked:               baselineInfo.UserLocked,
 			DeploymentName:       baselineInfo.DeploymentName,
 		})
@@ -201,7 +201,12 @@ func (m *manager) sendNetworkBaselinesToSensor(baselines []*storage.NetworkBasel
 	}
 }
 
-func (m *manager) lookUpPeerName(entity networkgraph.Entity) string {
+type peerInfo struct {
+	name      string
+	cidrBlock string
+}
+
+func (m *manager) lookUpPeerInfo(entity networkgraph.Entity) peerInfo {
 	switch entity.Type {
 	case storage.NetworkEntityInfo_DEPLOYMENT:
 		// If the peer is a deployment, just look it up from the baselines
@@ -214,28 +219,34 @@ func (m *manager) lookUpPeerName(entity networkgraph.Entity) string {
 			// - created baseline for B
 			// Returning an empty string with a log
 			log.Warnf("baseline for deployment peer does not exist: %q", entity.ID)
-			return ""
+			return peerInfo{}
 		}
-		return peerBaseline.DeploymentName
+		return peerInfo{name: peerBaseline.DeploymentName}
 	case storage.NetworkEntityInfo_EXTERNAL_SOURCE:
 		// Look it up from datastore since as of now the external source name can change without ID changing.
 		networkEntity, found, err := m.networkEntities.GetEntity(managerCtx, entity.ID)
 		if err != nil {
 			log.Warnf("failed to get network entity for its name: %v", err)
-			return ""
+			return peerInfo{}
 		}
 		if !found {
 			// Unexpected. Network entity can only be captured in a flow when it is in the DS
 			log.Warnf("network entity peer %q not found", entity.ID)
-			return ""
+			return peerInfo{}
 		}
-		return networkEntity.GetInfo().GetExternalSource().GetName()
+		externalSource := networkEntity.GetInfo().GetExternalSource()
+		return peerInfo{
+			name:      externalSource.GetName(),
+			cidrBlock: externalSource.GetCidr(),
+		}
 	case storage.NetworkEntityInfo_INTERNET:
-		return networkgraph.InternetExternalSourceName
+		return peerInfo{name: networkgraph.InternetExternalSourceName}
+	case storage.NetworkEntityInfo_INTERNAL_ENTITIES:
+		return peerInfo{name: networkgraph.InternalEntitiesName}
 	default:
 		// Unsupported type.
 		log.Warnf("unsupported entity type in network baseline: %v", entity)
-		return ""
+		return peerInfo{}
 	}
 }
 
@@ -246,24 +257,27 @@ func (m *manager) processFlowUpdate(flows map[networkgraph.NetworkConnIndicator]
 			continue
 		}
 		if conn.SrcEntity.Type == storage.NetworkEntityInfo_DEPLOYMENT {
-			peerName := m.lookUpPeerName(conn.DstEntity)
-			if peerName != "" {
+			anonymizedDst := networkbaseline.AnonymizeExternalDiscoveredEntity(conn.DstEntity)
+			peer := m.lookUpPeerInfo(anonymizedDst)
+			if peer.name != "" {
 				m.maybeAddPeer(conn.SrcEntity.ID, &networkbaseline.Peer{
 					IsIngress: false,
-					Entity:    conn.DstEntity,
-					Name:      peerName,
+					Entity:    anonymizedDst,
+					Name:      peer.name,
 					DstPort:   conn.DstPort,
 					Protocol:  conn.Protocol,
+					CidrBlock: peer.cidrBlock,
 				}, modifiedDeploymentIDs)
 			}
 		}
 		if conn.DstEntity.Type == storage.NetworkEntityInfo_DEPLOYMENT {
-			peerName := m.lookUpPeerName(conn.SrcEntity)
-			if peerName != "" {
+			anonymizedSrc := networkbaseline.AnonymizeExternalDiscoveredEntity(conn.SrcEntity)
+			peer := m.lookUpPeerInfo(anonymizedSrc)
+			if peer.name != "" {
 				m.maybeAddPeer(conn.DstEntity.ID, &networkbaseline.Peer{
 					IsIngress: true,
-					Entity:    conn.SrcEntity,
-					Name:      peerName,
+					Entity:    anonymizedSrc,
+					Name:      peer.name,
 					DstPort:   conn.DstPort,
 					Protocol:  conn.Protocol,
 				}, modifiedDeploymentIDs)
@@ -278,7 +292,7 @@ func (m *manager) processFlowUpdate(flows map[networkgraph.NetworkConnIndicator]
 	return modifiedDeploymentIDs, nil
 }
 
-func (m *manager) processDeploymentCreate(deploymentID, clusterID string) error {
+func (m *manager) processDeploymentCreate(deploymentID, _ string) error {
 	// Deployment has already had a baseline created.  Nothing to do in this case.
 	if _, exists := m.baselinesByDeploymentID[deploymentID]; exists {
 		return nil
@@ -294,17 +308,38 @@ func (m *manager) processDeploymentCreate(deploymentID, clusterID string) error 
 		&queue.DeploymentObservation{
 			DeploymentID:   deploymentID,
 			InObservation:  true,
-			ObservationEnd: getNewObservationPeriodEnd().GogoProtobuf(),
+			ObservationEnd: getNewObservationPeriodEnd().GoTime(),
 		})
 
 	return nil
 }
 
-func (m *manager) ProcessDeploymentCreate(deploymentID, deploymentName, clusterID, namespace string) error {
+func (m *manager) ProcessDeploymentCreate(deploymentID, _, clusterID, _ string) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
 	return m.processDeploymentCreate(deploymentID, clusterID)
+}
+
+func (m *manager) deleteDeploymentFromBaselines(deploymentID string) error {
+	modifiedDeployments := set.NewStringSet()
+	for id, baseline := range m.baselinesByDeploymentID {
+		if ok, peer := baseline.GetPeer(deploymentID); ok {
+			delete(baseline.BaselinePeers, peer)
+			modifiedDeployments.Add(id)
+		}
+
+		if ok, forbiddenPeer := baseline.GetForbiddenPeer(deploymentID); ok {
+			delete(baseline.ForbiddenPeers, forbiddenPeer)
+			modifiedDeployments.Add(id)
+		}
+	}
+
+	if err := m.persistNetworkBaselines(modifiedDeployments, nil); err != nil {
+		return errors.Wrapf(err, "deleting baseline of deployment ID %s", deploymentID)
+	}
+
+	return nil
 }
 
 func (m *manager) processDeploymentDelete(deploymentID string) error {
@@ -314,8 +349,8 @@ func (m *manager) processDeploymentDelete(deploymentID string) error {
 		return nil
 	}
 
-	// If the deployment is being tracked, but the baseline is not yet created, we cannot look at hte peers.  If we
-	// have a peer at all, then the peer will have been created
+	// If baseline for deleting deploynment exists, then we should look at all entries in its baseline
+	// in order to the delete its reference from peer baselines.
 	if deletingBaseline != nil {
 		modifiedDeployments := set.NewStringSet()
 		for peer := range deletingBaseline.BaselinePeers {
@@ -347,11 +382,17 @@ func (m *manager) processDeploymentDelete(deploymentID string) error {
 		if err != nil {
 			return errors.Wrapf(err, "deleting baseline of deployment %q", deletingBaseline.DeploymentName)
 		}
+	} else {
+		// If baseline does not exist yet, it could still be that this deployment is already present in some other
+		// deployment's baseline. So we need to manually look through all the baselines
+		if err := m.deleteDeploymentFromBaselines(deploymentID); err != nil {
+			return err
+		}
 	}
 
 	err := m.ds.DeleteNetworkBaseline(managerCtx, deploymentID)
 	if err != nil {
-		return errors.Wrapf(err, "deleting baseline of deployment %q", deletingBaseline.DeploymentName)
+		return errors.Wrapf(err, "deleting baseline of deployment %q", deploymentID)
 	}
 
 	// Clean up cache
@@ -420,7 +461,7 @@ func (m *manager) ProcessBaselineStatusUpdate(ctx context.Context, modifyRequest
 	// It's not ideal to have to duplicate this check, but we do the permission check here upfront so that we know for sure
 	// what the end state of the in-memory data structures should be. Otherwise, if there is a permission denied error,
 	// we will need to come back and undo the in-memory changes, which is more complex.
-	if ok, err := networkBaselineSAC.WriteAllowed(ctx, sac.ClusterScopeKey(baseline.ClusterID), sac.NamespaceScopeKey(baseline.Namespace)); err != nil {
+	if ok, err := deploymentExtensionSAC.WriteAllowed(ctx, sac.ClusterScopeKey(baseline.ClusterID), sac.NamespaceScopeKey(baseline.Namespace)); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -429,12 +470,11 @@ func (m *manager) ProcessBaselineStatusUpdate(ctx context.Context, modifyRequest
 	modifiedDeploymentIDs := set.NewStringSet()
 	for _, peerAndStatus := range modifyRequest.GetPeers() {
 		v1Peer := peerAndStatus.GetPeer()
-		peerName := m.lookUpPeerName(
-			networkgraph.Entity{
-				Type: v1Peer.GetEntity().GetType(),
-				ID:   v1Peer.GetEntity().GetId(),
-			})
-		peer := networkbaseline.PeerFromV1Peer(v1Peer, peerName)
+
+		entity := networkbaseline.AnonymizeExternalDiscoveredPeer(v1Peer.GetEntity())
+		info := m.lookUpPeerInfo(entity)
+		peer := networkbaseline.PeerFromV1Peer(v1Peer, info.name, info.cidrBlock)
+
 		_, inBaseline := baseline.BaselinePeers[peer]
 		_, inForbidden := baseline.ForbiddenPeers[peer]
 		switch peerAndStatus.GetStatus() {
@@ -475,7 +515,7 @@ func (m *manager) ProcessBaselineStatusUpdate(ctx context.Context, modifyRequest
 				}
 			}
 		default:
-			return utils.Should(errors.Errorf("unknown status: %v", peerAndStatus.GetStatus()))
+			return utils.ShouldErr(errors.Errorf("unknown status: %v", peerAndStatus.GetStatus()))
 		}
 	}
 	if err := m.persistNetworkBaselines(modifiedDeploymentIDs, nil); err != nil {
@@ -526,7 +566,7 @@ func (m *manager) processNetworkPolicyUpdate(
 				&queue.DeploymentObservation{
 					DeploymentID:   deployment.GetId(),
 					InObservation:  true,
-					ObservationEnd: newObservationPeriodEnd.GogoProtobuf(),
+					ObservationEnd: newObservationPeriodEnd.GoTime(),
 				})
 		} else {
 			baseline.ObservationPeriodEnd = newObservationPeriodEnd
@@ -545,7 +585,7 @@ func (m *manager) processNetworkPolicyUpdate(
 }
 
 func (m *manager) getDeploymentIDsAffectedByNetworkPolicy(
-	ctx context.Context,
+	_ context.Context,
 	policy *storage.NetworkPolicy,
 ) ([]*storage.Deployment, error) {
 	deploymentQuery :=
@@ -606,7 +646,7 @@ func (m *manager) processBaselineLockUpdate(ctx context.Context, deploymentID st
 		return errors.Wrap(errox.InvalidArgs, "no baseline with given deployment ID found")
 	}
 	// Permission check before modifying in-memory data structures
-	if ok, err := networkBaselineSAC.WriteAllowed(ctx, sac.ClusterScopeKey(baseline.ClusterID), sac.NamespaceScopeKey(baseline.Namespace)); err != nil {
+	if ok, err := deploymentExtensionSAC.WriteAllowed(ctx, sac.ClusterScopeKey(baseline.ClusterID), sac.NamespaceScopeKey(baseline.Namespace)); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -698,45 +738,48 @@ func (m *manager) ProcessPostClusterDelete(deploymentIDs []string) error {
 }
 
 func (m *manager) initFromStore() error {
-	seenClusterAndNamespace := make(map[clusterNamespacePair]struct{})
-	m.baselinesByDeploymentID = make(map[string]*networkbaseline.BaselineInfo)
-	return m.ds.Walk(managerCtx, func(baseline *storage.NetworkBaseline) error {
-		baselineInfo, err := networkbaseline.ConvertBaselineInfoFromProto(baseline)
-		if err != nil {
-			return err
-		}
-
-		m.baselinesByDeploymentID[baseline.GetDeploymentId()] = baselineInfo
-
-		// Try loading all the network policies to build the seen network policies cache
-		curPair := clusterNamespacePair{ClusterID: baseline.GetClusterId(), Namespace: baseline.GetNamespace()}
-		if _, ok := seenClusterAndNamespace[curPair]; !ok {
-			// Mark seen
-			seenClusterAndNamespace[curPair] = struct{}{}
-
-			policies, err := m.networkPolicyDS.GetNetworkPolicies(managerCtx, baseline.ClusterId, baseline.Namespace)
+	walkFn := func() error {
+		seenClusterAndNamespace := make(map[clusterNamespacePair]struct{})
+		m.baselinesByDeploymentID = make(map[string]*networkbaseline.BaselineInfo)
+		return m.ds.Walk(managerCtx, func(baseline *storage.NetworkBaseline) error {
+			baselineInfo, err := networkbaseline.ConvertBaselineInfoFromProto(baseline)
 			if err != nil {
 				return err
 			}
-			for _, policy := range policies {
-				// On start treat all policies as have just been created.
-				hash, err := m.getHashOfNetworkPolicyWithResourceAction(central.ResourceAction_CREATE_RESOURCE, policy)
+
+			m.baselinesByDeploymentID[baseline.GetDeploymentId()] = baselineInfo
+
+			// Try loading all the network policies to build the seen network policies cache
+			curPair := clusterNamespacePair{ClusterID: baseline.GetClusterId(), Namespace: baseline.GetNamespace()}
+			if _, ok := seenClusterAndNamespace[curPair]; !ok {
+				// Mark seen
+				seenClusterAndNamespace[curPair] = struct{}{}
+
+				policies, err := m.networkPolicyDS.GetNetworkPolicies(managerCtx, baseline.GetClusterId(), baseline.GetNamespace())
 				if err != nil {
 					return err
 				}
-				m.seenNetworkPolicies.Add(hash)
+				for _, policy := range policies {
+					// On start treat all policies as have just been created.
+					hash, err := m.getHashOfNetworkPolicyWithResourceAction(central.ResourceAction_CREATE_RESOURCE, policy)
+					if err != nil {
+						return err
+					}
+					m.seenNetworkPolicies.Add(hash)
+				}
 			}
-		}
 
-		return nil
-	})
+			return nil
+		})
+	}
+	return pgutils.RetryIfPostgres(context.Background(), walkFn)
 }
 
 func (m *manager) flushBaselineQueue() {
 	for {
 		// ObservationEnd is in the future so we have nothing to do at this time
 		head := m.deploymentObservationQueue.Peek()
-		if head == nil || protoutils.After(head.ObservationEnd, types.TimestampNow()) {
+		if head == nil || head.ObservationEnd.After(time.Now()) {
 			return
 		}
 
@@ -755,7 +798,7 @@ func (m *manager) flushBaselineQueue() {
 			continue
 		}
 
-		err = m.addBaseline(deployment.GetId(), deployment.GetName(), deployment.GetClusterId(), deployment.GetNamespace(), timestamp.FromProtobuf(observedDep.ObservationEnd))
+		err = m.addBaseline(deployment.GetId(), deployment.GetName(), deployment.GetClusterId(), deployment.GetNamespace(), timestamp.FromGoTime(observedDep.ObservationEnd))
 		if err != nil {
 			log.Error(err)
 		}
@@ -811,6 +854,15 @@ func (m *manager) addBaseline(deploymentID, deploymentName, clusterID, namespace
 		return err
 	}
 
+	listDeployment := &storage.ListDeployment{
+		Name:      deploymentName,
+		Id:        deploymentID,
+		ClusterId: clusterID,
+		Namespace: namespace,
+	}
+
+	flows = m.enrichFlows(listDeployment, flows)
+
 	// If we have flows then process them.  If we don't persist an empty baseline
 	if len(flows) > 0 {
 		// package them into a map of flows like comes in
@@ -861,7 +913,7 @@ func (m *manager) CreateNetworkBaseline(deploymentID string) error {
 	if depDetails == nil {
 		t = getNewObservationPeriodEnd()
 	} else {
-		t = timestamp.FromProtobuf(depDetails.ObservationEnd)
+		t = timestamp.FromGoTime(depDetails.ObservationEnd)
 	}
 
 	// Now build the baseline
@@ -873,18 +925,174 @@ func (m *manager) CreateNetworkBaseline(deploymentID string) error {
 	return nil
 }
 
+func (m *manager) GetExternalNetworkPeers(ctx context.Context, deploymentID string, query string, since *time.Time) ([]*v1.NetworkBaselineStatusPeer, error) {
+	deployment, found, err := m.deploymentDS.GetDeployment(ctx, deploymentID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !found {
+		return nil, errors.Wrapf(errox.NotFound, "deployment with id %q does not exist", deploymentID)
+	}
+
+	entities, err := m.getEntitiesByQuery(ctx, deployment.GetClusterId(), query)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get matching entities")
+	}
+
+	entityFilter := set.NewStringSet()
+	for _, entity := range entities {
+		info := entity.GetInfo()
+		entityFilter.Add(info.GetId())
+	}
+
+	pred := func(props *storage.NetworkFlowProperties) bool {
+		src := props.GetSrcEntity()
+		dst := props.GetDstEntity()
+
+		if src.GetId() != deploymentID && dst.GetId() != deploymentID {
+			return false
+		}
+
+		if !networkgraph.AnyExternal(src, dst) || networkgraph.AllExternal(src, dst) {
+			// only looking for external flows, and not external pairs
+			return false
+		}
+
+		if !networkgraph.AnyExternalInFilter(src, dst, entityFilter) {
+			return false
+		}
+
+		return true
+	}
+
+	flowStore, err := m.getFlowStore(ctx, deployment.GetClusterId())
+	if err != nil {
+		return nil, err
+	}
+
+	flows, _, err := flowStore.GetMatchingFlows(ctx, pred, since)
+	if err != nil {
+		return nil, err
+	}
+
+	networkTree := tree.NewMultiNetworkTree(
+		m.treeManager.GetReadOnlyNetworkTree(managerCtx, deployment.GetClusterId()),
+		m.treeManager.GetDefaultNetworkTree(managerCtx),
+	)
+
+	listDeployment := &storage.ListDeployment{
+		Name:      deployment.GetName(),
+		Id:        deploymentID,
+		ClusterId: deployment.GetClusterId(),
+		Namespace: deployment.GetNamespace(),
+	}
+
+	flows = m.enrichFlows(listDeployment, flows)
+
+	aggr, err := aggregator.NewSubnetToSupernetConnAggregator(networkTree)
+	utils.Should(err)
+
+	flows = aggr.Aggregate(flows)
+	flows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
+	flows = aggregator.NewLatestTimestampAggregator().Aggregate(flows)
+
+	peers := make([]*v1.NetworkBaselineStatusPeer, 0, len(flows))
+
+	for _, flow := range flows {
+		peers = append(peers, m.mapFlowToPeer(flow))
+	}
+
+	return peers, nil
+}
+
+func (m *manager) mapFlowToPeer(flow *storage.NetworkFlow) *v1.NetworkBaselineStatusPeer {
+	var entity *v1.NetworkBaselinePeerEntity
+	ingress := false
+
+	props := flow.GetProps()
+	src, dst := props.GetSrcEntity(), props.GetDstEntity()
+
+	if src.GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
+		entity = &v1.NetworkBaselinePeerEntity{
+			Id:         dst.GetId(),
+			Type:       dst.GetType(),
+			Name:       dst.GetExternalSource().GetName(),
+			Discovered: dst.GetExternalSource().GetDiscovered(),
+		}
+	} else {
+		entity = &v1.NetworkBaselinePeerEntity{
+			Id:         src.GetId(),
+			Type:       src.GetType(),
+			Name:       src.GetExternalSource().GetName(),
+			Discovered: src.GetExternalSource().GetDiscovered(),
+		}
+		ingress = true
+	}
+
+	return &v1.NetworkBaselineStatusPeer{
+		Entity:   entity,
+		Port:     props.GetDstPort(),
+		Protocol: props.GetL4Protocol(),
+		Ingress:  ingress,
+	}
+}
+
+func (m *manager) getEntitiesByQuery(ctx context.Context, clusterId, query string) ([]*storage.NetworkEntity, error) {
+	q, err := search.ParseQuery(query, search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+
+	// Retrieves entities where the cluster ID matches the request cluster OR where the cluster ID is empty indicating global entities.
+	clusterMatch := search.DisjunctionQuery(
+		search.NewQueryBuilder().AddNullField(search.ClusterID).ProtoQuery(),
+		search.MatchFieldQuery(search.ClusterID.String(), search.ExactMatchString(clusterId), false),
+	)
+
+	q = search.ConjunctionQuery(q, clusterMatch)
+
+	q, _ = search.FilterQueryWithMap(q, schema.NetworkEntitiesSchema.OptionsMap)
+
+	return m.networkEntities.GetEntityByQuery(ctx, q)
+}
+
 func (m *manager) putFlowsInMap(newFlows []*storage.NetworkFlow) map[networkgraph.NetworkConnIndicator]timestamp.MicroTS {
 	out := make(map[networkgraph.NetworkConnIndicator]timestamp.MicroTS, len(newFlows))
 	now := timestamp.Now()
 	for _, newFlow := range newFlows {
-		t := timestamp.FromProtobuf(newFlow.LastSeenTimestamp)
-		if newFlow.LastSeenTimestamp == nil {
+		t := timestamp.FromProtobuf(newFlow.GetLastSeenTimestamp())
+		if newFlow.GetLastSeenTimestamp() == nil {
 			t = now
 		}
 
 		out[networkgraph.GetNetworkConnIndicator(newFlow)] = t
 	}
 	return out
+}
+
+func (m *manager) enrichFlows(listDeployment *storage.ListDeployment, flows []*storage.NetworkFlow) []*storage.NetworkFlow {
+	networkTree := tree.NewMultiNetworkTree(
+		m.treeManager.GetReadOnlyNetworkTree(managerCtx, listDeployment.GetClusterId()),
+		m.treeManager.GetDefaultNetworkTree(managerCtx),
+	)
+
+	listDeploymentMap := map[string]*storage.ListDeployment{
+		listDeployment.GetId(): listDeployment,
+	}
+
+	flows, missingInfoFlows := networkgraph.UpdateFlowsWithEntityDesc(flows, listDeploymentMap,
+		func(id string) *storage.NetworkEntityInfo {
+			if networkTree == nil {
+				return nil
+			}
+			return networkTree.Get(id)
+		},
+	)
+
+	// There's not a lot we can do about flows with no info, so just process them
+	// as normal
+	return append(flows, missingInfoFlows...)
 }
 
 // New returns an initialized manager, and starts the manager's processing loop in the background.
@@ -895,6 +1103,7 @@ func New(
 	networkPolicyDS networkPolicyDS.DataStore,
 	clusterFlows networkFlowDS.ClusterDataStore,
 	connectionManager connection.Manager,
+	treeManager networktree.Manager,
 ) (Manager, error) {
 	m := &manager{
 		ds:                         ds,
@@ -903,9 +1112,11 @@ func New(
 		networkPolicyDS:            networkPolicyDS,
 		clusterFlows:               clusterFlows,
 		connectionManager:          connectionManager,
+		treeManager:                treeManager,
 		seenNetworkPolicies:        set.NewSet[uint64](),
 		deploymentObservationQueue: queue.New(),
 		baselineFlushTicker:        time.NewTicker(baselineFlushTickerDuration),
+		baselinesByDeploymentID:    make(map[string]*networkbaseline.BaselineInfo),
 	}
 	if err := m.initFromStore(); err != nil {
 		return nil, err
@@ -918,15 +1129,12 @@ func New(
 }
 
 // GetTestPostgresManager provides a network baseline manager connected to postgres for testing purposes.
-func GetTestPostgresManager(t *testing.T, pool *pgxpool.Pool) (Manager, error) {
+func GetTestPostgresManager(t testing.TB, pool postgres.DB) (Manager, error) {
 	networkBaselineStore, err := datastore.GetTestPostgresDataStore(t, pool)
 	if err != nil {
 		return nil, err
 	}
-	networkEntityStore, err := networkEntityDS.GetTestPostgresDataStore(t, pool)
-	if err != nil {
-		return nil, err
-	}
+	networkEntityStore := networkEntityDS.GetTestPostgresDataStore(t, pool)
 	deploymentStore, err := deploymentDS.GetTestPostgresDataStore(t, pool)
 	if err != nil {
 		return nil, err
@@ -940,31 +1148,5 @@ func GetTestPostgresManager(t *testing.T, pool *pgxpool.Pool) (Manager, error) {
 		return nil, err
 	}
 	sensorCnxMgr := connection.ManagerSingleton()
-	return New(networkBaselineStore, networkEntityStore, deploymentStore, networkPolicyStore, networkFlowClusterStore, sensorCnxMgr)
-}
-
-// GetTestRocksBleveManager provides a network baseline manager connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveManager(t *testing.T, rocksengine *rocksdbBase.RocksDB, bleveIndex bleve.Index, dacky *dackbox.DackBox, keyFence concurrency.KeyFence, boltengine *bbolt.DB) (Manager, error) {
-	networkBaselineStore, err := datastore.GetTestRocksBleveDataStore(t, rocksengine)
-	if err != nil {
-		return nil, err
-	}
-	networkEntityStore, err := networkEntityDS.GetTestRocksBleveDataStore(t, rocksengine)
-	if err != nil {
-		return nil, err
-	}
-	deploymentStore, err := deploymentDS.GetTestRocksBleveDataStore(t, rocksengine, bleveIndex, dacky, keyFence)
-	if err != nil {
-		return nil, err
-	}
-	networkPolicyStore, err := networkPolicyDS.GetTestRocksBleveDataStore(t, rocksengine, boltengine)
-	if err != nil {
-		return nil, err
-	}
-	networkFlowClusterStore, err := networkFlowDS.GetTestRocksBleveClusterDataStore(t, rocksengine)
-	if err != nil {
-		return nil, err
-	}
-	sensorCnxMgr := connection.ManagerSingleton()
-	return New(networkBaselineStore, networkEntityStore, deploymentStore, networkPolicyStore, networkFlowClusterStore, sensorCnxMgr)
+	return New(networkBaselineStore, networkEntityStore, deploymentStore, networkPolicyStore, networkFlowClusterStore, sensorCnxMgr, networktree.Singleton())
 }

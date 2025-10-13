@@ -1,0 +1,495 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.13.0
+  name: compliancesuites.compliance.openshift.io
+spec:
+  group: compliance.openshift.io
+  names:
+    kind: ComplianceSuite
+    listKind: ComplianceSuiteList
+    plural: compliancesuites
+    shortNames:
+    - suites
+    - suite
+    singular: compliancesuite
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .status.result
+      name: Result
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: ComplianceSuite represents a set of scans that will be applied
+          to the cluster. These should help deployers achieve a certain compliance
+          target.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Contains the definition of the suite
+            properties:
+              autoApplyRemediations:
+                description: Defines whether or not the remediations should be applied
+                  automatically
+                type: boolean
+              autoUpdateRemediations:
+                description: Defines whether or not the remediations should be updated
+                  automatically. This is done by deleting the "outdated" object from
+                  the remediation.
+                type: boolean
+              scans:
+                description: Contains a list of the scans to execute on the cluster
+                items:
+                  description: ComplianceScanSpecWrapper provides a ComplianceScanSpec
+                    and a Name
+                  properties:
+                    content:
+                      description: Is the path to the file that contains the content
+                        (the data stream). Note that the path needs to be relative
+                        to the `/` (root) directory, as it is in the ContentImage
+                      type: string
+                    contentImage:
+                      description: Is the image with the content (Data Stream), that
+                        will be used to run OpenSCAP.
+                      type: string
+                    debug:
+                      description: Enable debug logging of workloads and OpenSCAP
+                      type: boolean
+                    httpsProxy:
+                      description: It is recommended to set the proxy via the config.openshift.io/Proxy
+                        object Defines a proxy for the scan to get external resources
+                        from. This is useful for disconnected installations with access
+                        to a proxy.
+                      type: string
+                    maxRetryOnTimeout:
+                      default: 3
+                      description: MaxRetryOnTimeout is the maximum number of times
+                        the scan will be retried if it times out.
+                      type: integer
+                    name:
+                      description: Contains a human readable name for the scan. This
+                        is to identify the objects that it creates.
+                      type: string
+                    noExternalResources:
+                      description: Defines that no external resources in the Data
+                        Stream should be used. External resources could be, for instance,
+                        CVE feeds. This is useful for disconnected installations without
+                        access to a proxy.
+                      type: boolean
+                    nodeSelector:
+                      additionalProperties:
+                        type: string
+                      description: By setting this, it's possible to only run the
+                        scan on certain nodes in the cluster. Note that when applying
+                        remediations generated from the scan, this should match the
+                        selector of the MachineConfigPool you want to apply the remediations
+                        to.
+                      type: object
+                    priorityClass:
+                      description: Defines the PriorityClass to use for launching
+                        scan related pods, the Name of a desired PriorityClass should
+                        be set here, this is an optional field, if PriorityClass is
+                        invalid or not found, it will be ignored.
+                      type: string
+                    profile:
+                      description: Is the profile in the data stream to be used. This
+                        is the collection of rules that will be checked for.
+                      type: string
+                    rawResultStorage:
+                      description: Specifies settings that pertain to raw result storage.
+                      properties:
+                        nodeSelector:
+                          additionalProperties:
+                            type: string
+                          description: By setting this, it's possible to configure
+                            where the result server instances are run. These instances
+                            will mount a Persistent Volume to store the raw results,
+                            so special care should be taken to schedule these in trusted
+                            nodes.
+                          type: object
+                        pvAccessModes:
+                          default:
+                          - ReadWriteOnce
+                          description: Specifies the access modes that the PersistentVolume
+                            will be created with. The persistent volume will hold
+                            the raw results of the scan.
+                          items:
+                            type: string
+                          type: array
+                        rotation:
+                          default: 3
+                          description: Specifies the amount of scans for which the
+                            raw results will be stored. Older results will get rotated,
+                            and it's the responsibility of administrators to store
+                            these results elsewhere before rotation happens. Note
+                            that a rotation policy of '0' disables rotation entirely.
+                            Defaults to 3.
+                          type: integer
+                        size:
+                          default: 1Gi
+                          description: Specifies the amount of storage to ask for
+                            storing the raw results. Note that if re-scans happen,
+                            the new results will also need to be stored. Defaults
+                            to 1Gi.
+                          type: string
+                        storageClassName:
+                          description: Specifies the StorageClassName to use when
+                            creating the PersistentVolumeClaim to hold the raw results.
+                            By default this is null, which will attempt to use the
+                            default storage class configured in the cluster. If there
+                            is no default class specified then this needs to be set.
+                          nullable: true
+                          type: string
+                        tolerations:
+                          description: Specifies tolerations needed for the result
+                            server to run on the nodes. This is useful in case the
+                            target set of nodes have custom taints that don't allow
+                            certain workloads to run. Defaults to allowing scheduling
+                            on master nodes.
+                          items:
+                            description: The pod this Toleration is attached to tolerates
+                              any taint that matches the triple <key,value,effect>
+                              using the matching operator <operator>.
+                            properties:
+                              effect:
+                                description: Effect indicates the taint effect to
+                                  match. Empty means match all taint effects. When
+                                  specified, allowed values are NoSchedule, PreferNoSchedule
+                                  and NoExecute.
+                                type: string
+                              key:
+                                description: Key is the taint key that the toleration
+                                  applies to. Empty means match all taint keys. If
+                                  the key is empty, operator must be Exists; this
+                                  combination means to match all values and all keys.
+                                type: string
+                              operator:
+                                description: Operator represents a key's relationship
+                                  to the value. Valid operators are Exists and Equal.
+                                  Defaults to Equal. Exists is equivalent to wildcard
+                                  for value, so that a pod can tolerate all taints
+                                  of a particular category.
+                                type: string
+                              tolerationSeconds:
+                                description: TolerationSeconds represents the period
+                                  of time the toleration (which must be of effect
+                                  NoExecute, otherwise this field is ignored) tolerates
+                                  the taint. By default, it is not set, which means
+                                  tolerate the taint forever (do not evict). Zero
+                                  and negative values will be treated as 0 (evict
+                                  immediately) by the system.
+                                format: int64
+                                type: integer
+                              value:
+                                description: Value is the taint value the toleration
+                                  matches to. If the operator is Exists, the value
+                                  should be empty, otherwise just a regular string.
+                                type: string
+                            type: object
+                          type: array
+                      type: object
+                    remediationEnforcement:
+                      description: 'Specifies what to do with remediations of Enforcement
+                        type. If left empty, this defaults to "off" which doesn''t
+                        create nor apply any enforcement remediations. If set to "all"
+                        this creates any enforcement remediations it encounters. Subsequently,
+                        this can also be set to a specific type. e.g. setting it to
+                        "gatekeeper" will apply any enforcement remediations relevant
+                        to the Gatekeeper OPA system. These objects will annotated
+                        in the content itself with: complianceascode.io/enforcement-type:
+                        <type>'
+                      type: string
+                    rule:
+                      description: A Rule can be specified if the scan should check
+                        only for a specific rule. Note that when leaving this empty,
+                        the scan will check for all the rules for a specific profile.
+                      type: string
+                    scanLimits:
+                      additionalProperties:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      description: ScanLimits allows to set the resource limits that
+                        the scan pods are allowed to use. By default, compliance operator
+                        will use sensible defaults (500Mi memory, 100m CPU for the
+                        scanner container and 200Mi memory with 100m CPU for the api-resource-collector
+                        container).
+                      type: object
+                    scanTolerations:
+                      default:
+                      - operator: Exists
+                      description: Specifies tolerations needed for the scan to run
+                        on the nodes. This is useful in case the target set of nodes
+                        have custom taints that don't allow certain workloads to run.
+                        Defaults to allowing scheduling on all nodes.
+                      items:
+                        description: The pod this Toleration is attached to tolerates
+                          any taint that matches the triple <key,value,effect> using
+                          the matching operator <operator>.
+                        properties:
+                          effect:
+                            description: Effect indicates the taint effect to match.
+                              Empty means match all taint effects. When specified,
+                              allowed values are NoSchedule, PreferNoSchedule and
+                              NoExecute.
+                            type: string
+                          key:
+                            description: Key is the taint key that the toleration
+                              applies to. Empty means match all taint keys. If the
+                              key is empty, operator must be Exists; this combination
+                              means to match all values and all keys.
+                            type: string
+                          operator:
+                            description: Operator represents a key's relationship
+                              to the value. Valid operators are Exists and Equal.
+                              Defaults to Equal. Exists is equivalent to wildcard
+                              for value, so that a pod can tolerate all taints of
+                              a particular category.
+                            type: string
+                          tolerationSeconds:
+                            description: TolerationSeconds represents the period of
+                              time the toleration (which must be of effect NoExecute,
+                              otherwise this field is ignored) tolerates the taint.
+                              By default, it is not set, which means tolerate the
+                              taint forever (do not evict). Zero and negative values
+                              will be treated as 0 (evict immediately) by the system.
+                            format: int64
+                            type: integer
+                          value:
+                            description: Value is the taint value the toleration matches
+                              to. If the operator is Exists, the value should be empty,
+                              otherwise just a regular string.
+                            type: string
+                        type: object
+                      type: array
+                    scanType:
+                      default: Node
+                      description: The type of Compliance scan.
+                      type: string
+                    showNotApplicable:
+                      default: false
+                      description: Determines whether to hide or show results that
+                        are not applicable.
+                      type: boolean
+                    strictNodeScan:
+                      default: true
+                      description: Defines whether the scan should proceed if we're
+                        not able to scan all the nodes or not. `true` means that the
+                        operator should be strict and error out. `false` means that
+                        we don't need to be strict and we can proceed.
+                      type: boolean
+                    tailoringConfigMap:
+                      description: Is a reference to a ConfigMap that contains the
+                        tailoring file. It assumes a key called `tailoring.xml` which
+                        will have the tailoring contents.
+                      properties:
+                        name:
+                          description: Name of the ConfigMap being referenced
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    timeout:
+                      default: 30m
+                      description: Timeout is the maximum amount of time the scan
+                        can run. If the scan hasn't finished by then, it will be aborted.
+                      type: string
+                  type: object
+                type: array
+                x-kubernetes-list-type: atomic
+              schedule:
+                description: Defines a schedule for the scans to run. This is in cronjob
+                  format. Note the scan will still be triggered immediately, and the
+                  scheduled scans will start running only after the initial results
+                  are ready.
+                type: string
+              suspend:
+                default: false
+                description: Defines if a schedule should be suspended and is a boolean
+                  value, defaulting to False.
+                type: boolean
+            required:
+            - scans
+            type: object
+          status:
+            description: Contains the current state of the suite
+            properties:
+              conditions:
+                description: Conditions is a set of Condition instances.
+                items:
+                  description: "Condition represents an observation of an object's
+                    state. Conditions are an extension mechanism intended to be used
+                    when the details of an observation are not a priori known or would
+                    not apply to all instances of a given Kind. \n Conditions should
+                    be added to explicitly convey properties that users and components
+                    care about rather than requiring those properties to be inferred
+                    from other observations. Once defined, the meaning of a Condition
+                    can not be changed arbitrarily - it becomes part of the API, and
+                    has the same backwards- and forwards-compatibility concerns of
+                    any other part of the API."
+                  properties:
+                    lastTransitionTime:
+                      format: date-time
+                      type: string
+                    message:
+                      type: string
+                    reason:
+                      description: ConditionReason is intended to be a one-word, CamelCase
+                        representation of the category of cause of the current status.
+                        It is intended to be used in concise output, such as one-line
+                        kubectl get output, and in summarizing occurrences of causes.
+                      type: string
+                    status:
+                      type: string
+                    type:
+                      description: "ConditionType is the type of the condition and
+                        is typically a CamelCased word or short phrase. \n Condition
+                        types should indicate state in the \"abnormal-true\" polarity.
+                        For example, if the condition indicates when a policy is invalid,
+                        the \"is valid\" case is probably the norm, so the condition
+                        should be called \"Invalid\"."
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              errorMessage:
+                type: string
+              phase:
+                description: Represents the status of the compliance scan run.
+                type: string
+              result:
+                description: Represents the result of the compliance scan
+                type: string
+              scanStatuses:
+                items:
+                  description: ComplianceScanStatusWrapper provides a ComplianceScanStatus
+                    and a Name
+                  properties:
+                    conditions:
+                      description: Conditions is a set of Condition instances.
+                      items:
+                        description: "Condition represents an observation of an object's
+                          state. Conditions are an extension mechanism intended to
+                          be used when the details of an observation are not a priori
+                          known or would not apply to all instances of a given Kind.
+                          \n Conditions should be added to explicitly convey properties
+                          that users and components care about rather than requiring
+                          those properties to be inferred from other observations.
+                          Once defined, the meaning of a Condition can not be changed
+                          arbitrarily - it becomes part of the API, and has the same
+                          backwards- and forwards-compatibility concerns of any other
+                          part of the API."
+                        properties:
+                          lastTransitionTime:
+                            format: date-time
+                            type: string
+                          message:
+                            type: string
+                          reason:
+                            description: ConditionReason is intended to be a one-word,
+                              CamelCase representation of the category of cause of
+                              the current status. It is intended to be used in concise
+                              output, such as one-line kubectl get output, and in
+                              summarizing occurrences of causes.
+                            type: string
+                          status:
+                            type: string
+                          type:
+                            description: "ConditionType is the type of the condition
+                              and is typically a CamelCased word or short phrase.
+                              \n Condition types should indicate state in the \"abnormal-true\"
+                              polarity. For example, if the condition indicates when
+                              a policy is invalid, the \"is valid\" case is probably
+                              the norm, so the condition should be called \"Invalid\"."
+                            type: string
+                        required:
+                        - status
+                        - type
+                        type: object
+                      type: array
+                    currentIndex:
+                      description: Specifies the current index of the scan. Given
+                        multiple scans, this marks the amount that have been executed.
+                      format: int64
+                      type: integer
+                    endTimestamp:
+                      description: Is the time when the scan was finished
+                      format: date-time
+                      type: string
+                    errormsg:
+                      description: If there are issues on the scan, this will be filled
+                        up with an error message.
+                      type: string
+                    name:
+                      description: Contains a human readable name for the scan. This
+                        is to identify the objects that it creates.
+                      type: string
+                    phase:
+                      description: Is the phase where the scan is at. Normally, one
+                        must wait for the scan to reach the phase DONE.
+                      type: string
+                    remainingRetries:
+                      description: Is the number of retries left for the scan on timeout
+                      type: integer
+                    result:
+                      description: Once the scan reaches the phase DONE, this will
+                        contain the result of the scan. Where COMPLIANT means that
+                        the scan succeeded; NON-COMPLIANT means that there were rule
+                        violations; and ERROR means that the scan couldn't complete
+                        due to an issue.
+                      type: string
+                    resultsStorage:
+                      description: Specifies the object that's storing the raw results
+                        for the scan.
+                      properties:
+                        apiVersion:
+                          description: API version of the referent.
+                          type: string
+                        kind:
+                          description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                          type: string
+                        name:
+                          description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                          type: string
+                        namespace:
+                          description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                          type: string
+                      type: object
+                    startTimestamp:
+                      description: Is the time when the scan was started
+                      format: date-time
+                      type: string
+                    warnings:
+                      description: If there are warnings on the scan, this will be
+                        filled up with warning messages.
+                      type: string
+                  type: object
+                type: array
+                x-kubernetes-list-type: atomic
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

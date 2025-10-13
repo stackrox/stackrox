@@ -1,0 +1,96 @@
+{
+  "id": "436811e7-892f-4da6-a0f5-8cc459f1b954",
+  "name": "Docker CIS 5.15: Ensure that the host's process namespace is not shared",
+  "description": "The Process ID (PID) namespace isolates the process ID space, meaning that processes in different PID namespaces can have the same PID. This creates process level isolation between the containers and the host.",
+  "rationale": "PID namespace provides separation between processes. It prevents system processes from being visible, and allows process ids to be reused including PID 1. If the host's PID namespace is shared with containers, it would basically allow these to see all of the processes on the host system. This reduces the benefit of process level isolation between the host and the containers. Under these circumstances a malicious user who has access to a container could get access to processes on the host itself, manipulate them, and even be able to kill them. This could allow for the host itself being shut down, which could be extremely serious, particularly in a multi-tenanted environment. You should not share the host's process namespace with the containers running on it.",
+  "remediation": "You should not create a deployment with `hostPID: true`",
+  "categories": [
+    "Docker CIS"
+  ],
+  "lifecycleStages": [
+    "DEPLOY"
+  ],
+  "exclusions": [
+    {
+      "name": "Don't alert on deployment apiserver-watcher-* in kube-system namespace",
+      "deployment": {
+        "name": "apiserver-watcher-.*",
+        "scope": {
+          "namespace": "kube-system"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment in openshift-kube-apiserver namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-kube-apiserver"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment tuned in openshift-cluster-node-tuning-operator namespace",
+      "deployment": {
+        "name": "tuned",
+        "scope": {
+          "namespace": "openshift-cluster-node-tuning-operator"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment ovnkube-node in openshift-ovn-kubernetes namespace",
+      "deployment": {
+        "name": "ovnkube-node",
+        "scope": {
+          "namespace": "openshift-ovn-kubernetes"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment machine-config-daemon in openshift-machine-config-operator namespace",
+      "deployment": {
+        "name": "machine-config-daemon",
+        "scope": {
+          "namespace": "openshift-machine-config-operator"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on the openshift-sdn namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-sdn"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment node-exporter in namespace openshift-monitoring",
+      "deployment": {
+        "name": "node-exporter",
+        "scope": {
+          "namespace": "openshift-monitoring"
+        }
+      }
+    }
+  ],
+  "severity": "MEDIUM_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "sectionName": "Section 1",
+      "policyGroups": [
+        {
+          "fieldName": "Host PID",
+          "values": [
+            {
+              "value": "true"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

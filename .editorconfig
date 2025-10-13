@@ -1,6 +1,19 @@
 [{Makefile,**.mk}]
 indent_style = tab
 
-[**.proto]
+[**.sh]
 indent_style = space
 indent_size = 4
+
+[**.proto]
+indent_style = space
+indent_size = 2
+
+[{*.go,*.go2}]
+# ij_ settings meaning can be mapped from https://www.jetbrains.com/help/idea/code-style-go.html
+indent_style = tab
+ij_go_import_sorting = goimports
+
+[{*.yaml,*.yml}]
+# ij_ settings meaning can be mapped from https://www.jetbrains.com/help/idea/code-style-yaml.html
+ij_yaml_indent_sequence_value = false

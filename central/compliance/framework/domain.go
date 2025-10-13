@@ -11,7 +11,6 @@ type ComplianceDomain interface {
 	Cluster() ComplianceTarget
 	Nodes() []ComplianceTarget
 	Deployments() []ComplianceTarget
-	Pods() []*storage.Pod
 	MachineConfigs() map[string][]ComplianceTarget
 }
 
@@ -20,11 +19,10 @@ type complianceDomain struct {
 	cluster        clusterTarget
 	nodes          []nodeTarget
 	deployments    []deploymentTarget
-	pods           []*storage.Pod
 	machineConfigs map[string][]machineConfigTarget
 }
 
-func newComplianceDomain(cluster *storage.Cluster, nodes []*storage.Node, deployments []*storage.Deployment, pods []*storage.Pod, machineConfigs map[string][]string) *complianceDomain {
+func newComplianceDomain(cluster *storage.Cluster, nodes []*storage.Node, deployments []*storage.Deployment, machineConfigs map[string][]string) *complianceDomain {
 	clusterTarget := targetForCluster(cluster)
 	nodeTargets := make([]nodeTarget, len(nodes))
 	for i, node := range nodes {
@@ -46,7 +44,6 @@ func newComplianceDomain(cluster *storage.Cluster, nodes []*storage.Node, deploy
 		cluster:        clusterTarget,
 		nodes:          nodeTargets,
 		deployments:    deploymentTargets,
-		pods:           pods,
 		machineConfigs: machineConfigTargets,
 	}
 }
@@ -85,13 +82,7 @@ func (d *complianceDomain) MachineConfigs() map[string][]ComplianceTarget {
 	return results
 }
 
-func (d *complianceDomain) Pods() []*storage.Pod {
-	result := make([]*storage.Pod, len(d.pods))
-	copy(result, d.pods)
-	return result
-}
-
 // NewComplianceDomain creates a new compliance domain from the given cluster, list of nodes and list of deployments.
-func NewComplianceDomain(cluster *storage.Cluster, nodes []*storage.Node, deployments []*storage.Deployment, pods []*storage.Pod, machineConfigs map[string][]string) ComplianceDomain {
-	return newComplianceDomain(cluster, nodes, deployments, pods, machineConfigs)
+func NewComplianceDomain(cluster *storage.Cluster, nodes []*storage.Node, deployments []*storage.Deployment, machineConfigs map[string][]string) ComplianceDomain {
+	return newComplianceDomain(cluster, nodes, deployments, machineConfigs)
 }

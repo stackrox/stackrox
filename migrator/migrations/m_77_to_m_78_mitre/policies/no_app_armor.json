@@ -1,6 +1,0 @@
-{
-  "id": "7448b475-8e80-4ece-bc9b-b9845c003a6f",
-  "name": "Docker CIS 5.1 Ensure that, if applicable, an AppArmor Profile is enabled",
-  "mitreAttackVectors": null,
-  "mitreVectorsLocked": true
-}

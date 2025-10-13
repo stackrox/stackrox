@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package datastore
 
 import (
@@ -5,14 +7,13 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -29,8 +30,7 @@ func TestNetworkBaselineDatastoreSAC(t *testing.T) {
 
 type networkBaselineDatastoreSACTestSuite struct {
 	suite.Suite
-	engine       *rocksdb.RocksDB
-	pool         *pgxpool.Pool
+	pool         postgres.DB
 	datastore    DataStore
 	testContexts map[string]context.Context
 	testNBIDs    []string
@@ -45,32 +45,18 @@ var _ interface {
 
 func (s *networkBaselineDatastoreSACTestSuite) SetupSuite() {
 	var err error
-	networkBaselineObj := "networkBaselineSACTest"
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pgtestbase := pgtest.ForT(s.T())
-		s.Require().NotNil(pgtestbase)
-		s.pool = pgtestbase.Pool
-		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
-		s.Require().NoError(err)
-	} else {
-		s.engine, err = rocksdb.NewTemp(networkBaselineObj)
-		s.NoError(err)
+	pgtestbase := pgtest.ForT(s.T())
+	s.Require().NotNil(pgtestbase)
+	s.pool = pgtestbase.DB
+	s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
+	s.Require().NoError(err)
 
-		s.datastore, err = GetTestRocksBleveDataStore(s.T(), s.engine)
-		s.Require().NoError(err)
-	}
-
-	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.NetworkBaseline)
+	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.DeploymentExtension)
 }
 
 func (s *networkBaselineDatastoreSACTestSuite) TearDownSuite() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pool.Close()
-	} else {
-		err := rocksdb.CloseAndRemove(s.engine)
-		s.NoError(err)
-	}
+	s.pool.Close()
 }
 
 func (s *networkBaselineDatastoreSACTestSuite) SetupTest() {
@@ -84,9 +70,8 @@ func (s *networkBaselineDatastoreSACTestSuite) TearDownTest() {
 }
 
 type crudTest struct {
-	scopeKey      string
-	expectedError error
-	expectFound   bool
+	scopeKey    string
+	expectFound bool
 }
 
 func (s *networkBaselineDatastoreSACTestSuite) cleanupNetworkBaseline(ID string) {
@@ -110,7 +95,7 @@ func (s *networkBaselineDatastoreSACTestSuite) TestGetNetworkBaseline() {
 			s.NoError(getErr)
 			s.Equal(c.ExpectedFound, found)
 			if c.ExpectedFound {
-				s.Equal(testNB, readNetworkBaseline)
+				protoassert.Equal(s.T(), testNB, readNetworkBaseline)
 			} else {
 				s.Nil(readNetworkBaseline)
 			}

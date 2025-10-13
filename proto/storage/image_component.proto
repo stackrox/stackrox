@@ -1,25 +1,54 @@
 syntax = "proto3";
 
-option go_package = "storage";
-option java_package = "io.stackrox.proto.storage";
-
-import "storage/image.proto";
-import "gogoproto/gogo.proto";
-
 package storage;
 
+import "storage/image.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+// This proto is deprecated and replaced by ImageComponentV2
 message ImageComponent {
-    string                         id               = 1 [(gogoproto.moretags) = 'search:"Component ID,store,hidden" sql:"pk,id"']; // This field is composite id over name, version, and operating system.
-    string                         name             = 2 [(gogoproto.moretags) = 'search:"Component,store"'];
-    string                         version          = 3 [(gogoproto.moretags) = 'search:"Component Version,store"'];
-    License                        license          = 4;
-    int64                          priority         = 5 [(gogoproto.moretags) = 'search:"Component Risk Priority,hidden"'];
-    SourceType                     source           = 6 [(gogoproto.moretags) = 'search:"Component Source,store"'];
-    float                          risk_score       = 7 [(gogoproto.moretags) = 'search:"Component Risk Score,hidden"'];
-    oneof set_top_cvss {
-        float                      top_cvss         = 8 [(gogoproto.moretags) = 'search:"Component Top CVSS,store"'];
-    }
-    // Component version that fixes all the fixable vulnerabilities in this component.
-    string                         fixed_by         = 9;
-    string                         operating_system = 10 [(gogoproto.moretags) = 'search:"Operating System"'];
+  option deprecated = true;
+  string id = 1; // This field is composite id over name, version, and operating system. // @gotags: search:"Component ID,store,hidden" sql:"pk,id"
+  string name = 2; // @gotags: search:"Component,store"
+  string version = 3; // @gotags: search:"Component Version,store"
+  License license = 4;
+  int64 priority = 5; // @gotags: search:"Component Risk Priority,hidden"
+  SourceType source = 6; // @gotags: search:"Component Source,store"
+  float risk_score = 7; // @gotags: search:"Component Risk Score,hidden"
+  oneof set_top_cvss {
+    float top_cvss = 8; // @gotags: search:"Component Top CVSS,store"
+  }
+  // Component version that fixes all the fixable vulnerabilities in this component.
+  string fixed_by = 9;
+  string operating_system = 10; // @gotags: search:"Operating System"
+}
+
+message ImageComponentV2 {
+  // ID will be form of Name+version+arch+imageID
+  string id = 1; // @gotags: search:"Component ID,store,hidden" sql:"pk,id"
+  string name = 2; // @gotags: search:"Component,store"
+  string version = 3; // @gotags: search:"Component Version,store"
+  int64 priority = 4; // @gotags: search:"Component Risk Priority,hidden"
+  SourceType source = 5; // @gotags: search:"Component Source,store"
+  float risk_score = 6; // @gotags: search:"Component Risk Score,hidden"
+  oneof set_top_cvss {
+    float top_cvss = 7; // @gotags: search:"Component Top CVSS,store"
+  }
+  // Component version that fixes all the fixable vulnerabilities in this component.
+  string fixed_by = 8;
+  string operating_system = 9; // @gotags: search:"Operating System"
+  // was hash index, making it btree
+  string image_id = 10 [deprecated = true]; // @gotags: sql:"fk(Image:id),index=btree"
+  /// Layer that contains this component
+  oneof has_layer_index {
+    int32 layer_index = 11;
+  }
+
+  string location = 12; // @gotags: search:"Component Location,store,hidden"
+
+  string architecture = 13;
+
+  string image_id_v2 = 14; // @gotags: sql:"fk(ImageV2:id),index=btree,allow-null"
 }

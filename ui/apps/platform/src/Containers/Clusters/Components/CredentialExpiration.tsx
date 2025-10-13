@@ -1,26 +1,32 @@
-import React, { ReactElement } from 'react';
-import { ExternalLink } from 'react-feather';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { differenceInDays } from 'date-fns';
+import { Tooltip } from '@patternfly/react-core';
 
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 import { getTime, getDate, getDayOfWeek, getDistanceStrictAsPhrase } from 'utils/dateUtils';
-
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
+import useMetadata from 'hooks/useMetadata';
+import { getVersionedDocs } from 'utils/versioning';
 import HealthStatus from './HealthStatus';
 import HealthStatusNotApplicable from './HealthStatusNotApplicable';
-import { getCredentialExpirationStatus, healthStatusStyles } from '../cluster.helpers';
-import { CertExpiryStatus } from '../clusterTypes';
+import { getCredentialExpirationStatus, healthStatusStylesLegacy } from '../cluster.helpers';
+import type { CertExpiryStatus } from '../clusterTypes';
 
 const testId = 'credentialExpiration';
 
 type CredentialExpirationProps = {
     certExpiryStatus?: CertExpiryStatus;
+    autoRefreshEnabled: boolean;
     isList?: boolean;
 };
 
 function CredentialExpiration({
     certExpiryStatus,
+    autoRefreshEnabled,
     isList = false,
 }: CredentialExpirationProps): ReactElement {
+    const { version } = useMetadata();
+
     if (!certExpiryStatus?.sensorCertExpiry) {
         return <HealthStatusNotApplicable testId={testId} />;
     }
@@ -30,14 +36,14 @@ function CredentialExpiration({
 
     // Adapt health status categories to certificate expiration.
     const healthStatus = getCredentialExpirationStatus(certExpiryStatus, currentDatetime);
-    const { Icon, bgColor, fgColor } = healthStatusStyles[healthStatus];
+    const { Icon, fgColor } = healthStatusStylesLegacy[healthStatus];
     const icon = <Icon className="h-4 w-4" />;
 
     // Order arguments according to date-fns@2 convention:
     // If sensorCertExpiry > currentDateTime: in X units
     // If sensorCertExpiry <= currentDateTime: X units ago
     const distanceElement = (
-        <span className={`${bgColor} ${fgColor} whitespace-nowrap`}>
+        <span className="whitespace-nowrap">
             {getDistanceStrictAsPhrase(sensorCertExpiry, currentDatetime)}
         </span>
     );
@@ -53,7 +59,7 @@ function CredentialExpiration({
         }
         // A tooltip displays expiration date or time
         expirationElement = (
-            <Tooltip content={<TooltipOverlay>{tooltipText}</TooltipOverlay>}>
+            <Tooltip content={tooltipText}>
                 <div data-testid={testId}>{distanceElement}</div>
             </Tooltip>
         );
@@ -75,24 +81,30 @@ function CredentialExpiration({
     return (
         <HealthStatus icon={icon} iconColor={fgColor}>
             {isList || healthStatus === 'HEALTHY' ? (
-                expirationElement
+                <div>
+                    {expirationElement}
+                    {autoRefreshEnabled && <div>Auto-refresh enabled</div>}
+                </div>
             ) : (
                 <div>
                     {expirationElement}
-                    <div className="flex flex-row items-end leading-tight text-tertiary-700">
-                        <a
-                            href="/docs/product/rhacs/latest/configuration/reissue-internal-certificates.html#reissue-internal-certificates-secured-clusters"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="underline"
-                            data-testid="reissueCertificatesLink"
-                        >
-                            Re-issue internal certificates
-                        </a>
-                        <span className="flex-shrink-0 ml-2">
-                            <ExternalLink className="h-4 w-4" />
-                        </span>
-                    </div>
+                    {version && (
+                        <div className="flex flex-row items-end leading-tight">
+                            <ExternalLink>
+                                <a
+                                    href={getVersionedDocs(
+                                        version,
+                                        'configuring/reissue-internal-certificates#reissue-internal-certificates-secured-clusters'
+                                    )}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    data-testid="reissueCertificatesLink"
+                                >
+                                    Re-issue internal certificates
+                                </a>
+                            </ExternalLink>
+                        </div>
+                    )}
                 </div>
             )}
         </HealthStatus>

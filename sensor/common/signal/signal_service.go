@@ -2,11 +2,12 @@ package signal
 
 import (
 	"context"
+	"io"
 	"strings"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/internalapi/central"
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -15,6 +16,8 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/unimplemented"
 	"google.golang.org/grpc"
 )
 
@@ -23,6 +26,23 @@ const maxBufferSize = 10000
 var (
 	log = logging.LoggerForModule()
 )
+
+// Option function for the signal service.
+type Option func(*serviceImpl)
+
+// WithAuthFuncOverride sets the AuthFuncOverride.
+func WithAuthFuncOverride(overrideFn func(context.Context, string) (context.Context, error)) Option {
+	return func(srv *serviceImpl) {
+		srv.authFuncOverride = overrideFn
+	}
+}
+
+// WithTraceWriter sets a trace writer that will write the messages received from collector.
+func WithTraceWriter(writer io.Writer) Option {
+	return func(srv *serviceImpl) {
+		srv.writer = writer
+	}
+}
 
 // Service is the interface that manages the SignalEvent API from the server side
 type Service interface {
@@ -33,29 +53,45 @@ type Service interface {
 }
 
 type serviceImpl struct {
+	unimplemented.Receiver
+
 	sensorAPI.UnimplementedSignalServiceServer
 
 	queue      chan *v1.Signal
-	indicators chan *central.MsgFromSensor
+	indicators chan *message.ExpiringMessage
 
-	processPipeline Pipeline
+	processPipeline  Pipeline
+	writer           io.Writer
+	authFuncOverride func(context.Context, string) (context.Context, error)
+}
+
+func (s *serviceImpl) Name() string {
+	return "signal.serviceImpl"
+}
+
+func authFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	err := idcheck.CollectorOnly().Authorized(ctx, fullMethodName)
+	return ctx, errors.Wrap(err, "collector authorization")
 }
 
 func (s *serviceImpl) Start() error {
 	return nil
 }
 
-func (s *serviceImpl) Stop(err error) {}
+func (s *serviceImpl) Stop() {
+	s.processPipeline.Shutdown()
+}
+
+func (s *serviceImpl) Notify(e common.SensorComponentEvent) {
+	log.Info(common.LogSensorComponentEvent(e))
+	s.processPipeline.Notify(e)
+}
 
 func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (s *serviceImpl) ProcessMessage(msg *central.MsgToSensor) error {
-	return nil
-}
-
-func (s *serviceImpl) ResponsesC() <-chan *central.MsgFromSensor {
+func (s *serviceImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return s.indicators
 }
 
@@ -64,15 +100,15 @@ func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
 	sensorAPI.RegisterSignalServiceServer(grpcServer, s)
 }
 
-// RegisterServiceHandlerFromEndpoint registers this service with the given gRPC Gateway endpoint.
-func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+// RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.
+func (s *serviceImpl) RegisterServiceHandler(_ context.Context, _ *runtime.ServeMux, _ *grpc.ClientConn) error {
 	// There is no grpc gateway handler for signal service
 	return nil
 }
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, idcheck.CollectorOnly().Authorized(ctx, fullMethodName)
+	return s.authFuncOverride(ctx, fullMethodName)
 }
 
 // PushSignals handles the bidirectional gRPC stream with the collector
@@ -100,12 +136,11 @@ func isProcessSignalValid(signal *storage.ProcessSignal) bool {
 }
 
 func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignalsServer) error {
-	log.Info("starting receiveMessages")
 	for {
 		signalStreamMsg, err := stream.Recv()
 		if err != nil {
 			log.Error("error dequeueing signalStreamMsg event: ", err)
-			return err
+			return errors.Wrap(err, "receiving signal stream message")
 		}
 
 		// Ignore the collector register request
@@ -127,6 +162,15 @@ func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignals
 			if !isProcessSignalValid(processSignal) {
 				log.Debugf("Invalid process signal: %+v", processSignal)
 				continue
+			}
+			if s.writer != nil {
+				if data, err := signalStreamMsg.MarshalVT(); err == nil {
+					if _, err := s.writer.Write(data); err != nil {
+						log.Warnf("Error writing msg: %v", err)
+					}
+				} else {
+					log.Warnf("Error marshalling  msg: %v", err)
+				}
 			}
 
 			s.processPipeline.Process(processSignal)

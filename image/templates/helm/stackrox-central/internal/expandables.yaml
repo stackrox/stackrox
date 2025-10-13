@@ -33,6 +33,9 @@ central:
     password:
       value: true
     resources: true
+configController:
+  nodeSelector: true
+  resources: true
 scanner:
   resources: true
   dbResources: true
@@ -46,3 +49,26 @@ scanner:
   dbServiceTLS:
     cert: true
     key: true
+scannerV4:
+  indexer:
+    nodeSelector: true
+    resources: true
+    serviceTLS:
+      cert: true
+      key: true
+  matcher:
+    nodeSelector: true
+    resources: true
+    serviceTLS:
+      cert: true
+      key: true
+  db:
+    nodeSelector: true
+    resources: true
+    postgresConfig: true
+    hbaConfig: true
+    password:
+      value: true
+    serviceTLS:
+      cert: true
+      key: true

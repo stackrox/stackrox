@@ -1,34 +1,32 @@
 syntax = "proto3";
 
-option go_package = "storage";
-option java_package = "io.stackrox.proto.storage";
-
-import "gogoproto/gogo.proto";
-
 package storage;
 
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
 enum TaintEffect {
-    UNKNOWN_TAINT_EFFECT            = 0;
-    NO_SCHEDULE_TAINT_EFFECT        = 1;
-    PREFER_NO_SCHEDULE_TAINT_EFFECT = 2;
-    NO_EXECUTE_TAINT_EFFECT         = 3;
+  UNKNOWN_TAINT_EFFECT = 0;
+  NO_SCHEDULE_TAINT_EFFECT = 1;
+  PREFER_NO_SCHEDULE_TAINT_EFFECT = 2;
+  NO_EXECUTE_TAINT_EFFECT = 3;
 }
 
 message Taint {
-    string      key          = 1 [(gogoproto.moretags) = 'search:"Taint Key"'];
-    string      value        = 2 [(gogoproto.moretags) = 'search:"Taint Value"'];
-    TaintEffect taint_effect = 3 [(gogoproto.moretags) = 'search:"Taint Effect"'];
+  string key = 1; // @gotags: search:"Taint Key"
+  string value = 2; // @gotags: search:"Taint Value"
+  TaintEffect taint_effect = 3; // @gotags: search:"Taint Effect"
 }
 
 message Toleration {
-    enum Operator  {
-        TOLERATION_OPERATION_UNKNOWN = 0;
-        TOLERATION_OPERATOR_EXISTS   = 1;
-        TOLERATION_OPERATOR_EQUAL    = 2;
-    }
+  enum Operator {
+    TOLERATION_OPERATION_UNKNOWN = 0;
+    TOLERATION_OPERATOR_EXISTS = 1;
+    TOLERATION_OPERATOR_EQUAL = 2;
+  }
 
-    string      key          = 1 [(gogoproto.moretags) = 'search:"Toleration Key"'];
-    Operator    operator     = 2;
-    string      value        = 3 [(gogoproto.moretags) = 'search:"Toleration Value"'];
-    TaintEffect taint_effect = 4;
+  string key = 1; // @gotags: search:"Toleration Key"
+  Operator operator = 2;
+  string value = 3; // @gotags: search:"Toleration Value"
+  TaintEffect taint_effect = 4;
 }

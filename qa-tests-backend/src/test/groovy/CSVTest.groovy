@@ -1,35 +1,28 @@
-import static com.jayway.restassured.RestAssured.given
-import com.jayway.restassured.response.Response
+import static io.restassured.RestAssured.given
+import static util.Helpers.withRetry
+
 import com.opencsv.CSVReader
 import groovy.transform.EqualsAndHashCode
-import groups.BAT
+import groovy.transform.ToString
+import io.restassured.response.Response
+
 import objects.Deployment
 import objects.Pagination
 import objects.SortOption
-import org.junit.experimental.categories.Category
 import services.GraphQLService
 import services.ImageService
-import spock.lang.Retry
-import spock.lang.Unroll
 import util.Env
 
-@Retry(count = 0)
-@Unroll
-@Category(BAT)
-class CSVTest extends BaseSpecification {
-    private static final CVE_FIELDS_FRAGEMENT = """
-    fragment cveFields on EmbeddedVulnerability {
-      id: cve
-      cvss
-      isFixable(query: \$scopeQuery)
-      deploymentCount(query: \$query)
-      imageCount(query: \$query)
-      componentCount(query: \$query)
-      __typename
-    }
-    """
+import spock.lang.Tag
+import spock.lang.Unroll
 
-    private static final CVE_POSTGRES_FIELDS_FRAGEMENT = """
+@Unroll
+@Tag("BAT")
+//ROX-20525 Disable test for ppc64le and s390x until Fix is availble
+//@Tag("PZ")
+class CSVTest extends BaseSpecification {
+
+    private static final CVE_FIELDS_FRAGEMENT = """
         fragment cveFields on ImageVulnerability {
           id: cve
           cvss
@@ -42,21 +35,6 @@ class CSVTest extends BaseSpecification {
         """
 
     private static final FIXABLE_CVES_IN_IMAGE_QUERY = """
-    query getFixableCvesInImage(\$id: ID!, \$query: String, \$scopeQuery: String, \$vulnQuery: String,
-     \$vulnPagination: Pagination) {
-      result: image(id: \$id) {
-        id
-        vulnerabilities: vulns(query: \$vulnQuery, pagination: \$vulnPagination) {
-          ...cveFields
-          __typename
-        }
-        __typename
-      }
-    }
-    ${CVE_FIELDS_FRAGEMENT}
-    """
-
-    private static final FIXABLE_CVES_IN_IMAGE_POSTGRES_QUERY = """
         query getFixableCvesInImage(\$id: ID!, \$query: String, \$scopeQuery: String, \$vulnQuery: String,
          \$vulnPagination: Pagination) {
           result: image(id: \$id) {
@@ -68,25 +46,10 @@ class CSVTest extends BaseSpecification {
             __typename
           }
         }
-        ${CVE_POSTGRES_FIELDS_FRAGEMENT}
+        ${CVE_FIELDS_FRAGEMENT}
         """
 
     private static final FIXABLE_CVES_IN_COMPONENT_QUERY = """
-    query getFixableCvesInComponent(\$id: ID!, \$query: String, \$scopeQuery: String, \$vulnQuery: String,
-     \$vulnPagination: Pagination) {
-      result: component(id: \$id) {
-        id
-        vulnerabilities: vulns(query: \$vulnQuery, pagination: \$vulnPagination) {
-          ...cveFields
-          __typename
-        }
-        __typename
-      }
-    }
-    ${CVE_FIELDS_FRAGEMENT}
-    """
-
-    private static final FIXABLE_CVES_IN_COMPONENT_POSTGRES_QUERY = """
         query getFixableCvesInComponent(\$id: ID!, \$query: String, \$scopeQuery: String, \$vulnQuery: String,
          \$vulnPagination: Pagination) {
           result: imageComponent(id: \$id) {
@@ -98,25 +61,10 @@ class CSVTest extends BaseSpecification {
             __typename
           }
         }
-        ${CVE_POSTGRES_FIELDS_FRAGEMENT}
+        ${CVE_FIELDS_FRAGEMENT}
         """
 
     private static final FIXABLE_CVES_IN_DEPLOYMENT_QUERY = """
-    query getFixableCvesInDeployment(\$id: ID!, \$query: String, \$scopeQuery: String, \$vulnQuery: String,
-     \$vulnPagination: Pagination) {
-      result: deployment(id: \$id) {
-        id
-        vulnerabilities: vulns(query: \$vulnQuery, pagination: \$vulnPagination) {
-          ...cveFields
-          __typename
-        }
-        __typename
-      }
-    }
-    ${CVE_FIELDS_FRAGEMENT}
-    """
-
-    private static final FIXABLE_CVES_IN_DEPLOYMENT_POSTGRES_QUERY = """
         query getFixableCvesInDeployment(\$id: ID!, \$query: String, \$scopeQuery: String, \$vulnQuery: String,
          \$vulnPagination: Pagination) {
           result: deployment(id: \$id) {
@@ -128,18 +76,24 @@ class CSVTest extends BaseSpecification {
             __typename
           }
         }
-        ${CVE_POSTGRES_FIELDS_FRAGEMENT}
+        ${CVE_FIELDS_FRAGEMENT}
         """
 
-    static final private Deployment CVE_DEPLOYMENT = new Deployment()
+    private static final Map<String, String> QUERIES = [
+            "FIXABLE_CVES_IN_IMAGE_QUERY"     : FIXABLE_CVES_IN_IMAGE_QUERY,
+            "FIXABLE_CVES_IN_DEPLOYMENT_QUERY": FIXABLE_CVES_IN_DEPLOYMENT_QUERY,
+    ]
+
+    private static final Deployment CVE_DEPLOYMENT = new Deployment()
             .setName("nginx-deployment")
-            .setImage("quay.io/rhacs-eng/qa:nginx-1-9")
+            .setImage(TEST_IMAGE)
             .addLabel("app", "test")
 
     def setupSpec() {
-        ImageService.scanImage("quay.io/rhacs-eng/qa:nginx-1-9")
+        ImageService.scanImage("quay.io/rhacs-eng/qa-multi-arch:nginx")
         orchestrator.createDeployment(CVE_DEPLOYMENT)
         assert Services.waitForDeployment(CVE_DEPLOYMENT)
+        assert Services.waitForVulnerabilitiesForImage(CVE_DEPLOYMENT)
     }
 
     def cleanupSpec() {
@@ -152,9 +106,6 @@ class CSVTest extends BaseSpecification {
         }
     }
 
-    // Non-postgres runs
-    // "CVE", "CVE Type(s)", "Fixable", "CVSS Score (version)", "Env Impact (%)", "Impact Score", "Deployments",
-    // "Images", "Nodes", "Components", "Scanned", "Published", "Summary"
     // Postgres runs
     // "Image CVE", "Fixable", "CVSS Score", "Env Impact (%s)", "Impact Score", "Deployments", "Images",
     // "Image Components", "Last Scanned", "Published", "Summary"
@@ -164,60 +115,58 @@ class CSVTest extends BaseSpecification {
     }
 
     def getCVSSScoreIndex() {
-        return isPostgresRun() ? 2 : 3
+        return 2
     }
 
     def getDeploymentCountIndex() {
-        return isPostgresRun() ? 5 : 6
+        return 5
     }
 
     def getImageCountIndex() {
-        return isPostgresRun() ? 6 : 7
+        return 6
     }
 
     def getImageComponentCountIndex() {
-        return isPostgresRun() ? 7 : 9
-    }
-
-    def getComponentId() {
-        return isPostgresRun() ? "openssl#1.0.1k-3+deb8u5#debian:8" : "b3BlbnNzbA:MS4wLjFrLTMrZGViOHU1"
-    }
-
-    def getComponentQuery() {
-        return "COMPONENT ID:" + getComponentId() + "+Fixable:true"
+        return 7
     }
 
     def getCVETypeImageQuery() {
         return "CVE Type:IMAGE_CVE+"
     }
 
-    @Category(BAT)
-    def "Verify CVE CSV data scoped by entity is correct"() {
+    Map<String, Object> payload(String id) {
+        def pagination = new Pagination(0, 0, new SortOption("cvss", true))
+        return [
+                id            : id,
+                query         : "",
+                scopeQuery    : "",
+                vulnQuery     : "Fixable:true",
+                vulnPagination: pagination,
+        ]
+    }
+
+    @Tag("BAT")
+    def "Verify CVE CSV data scoped by entity is correct #description"() {
+        given:
+        def graphQLPayload = payload(id)
+        def csvQuery = getCVETypeImageQuery() + query
+        def graphQLQuery = QUERIES[description]
+
         when:
         "Query fixable CVEs from graphQL"
         def gqlService = new GraphQLService()
-        def graphQLQuery = ""
-        if (isPostgresRun()) {
-            graphQLQuery = postgresGraphQLQuery
-        } else {
-            graphQLQuery = baseGraphQLQuery
-        }
         def ret = gqlService.Call(graphQLQuery, graphQLPayload)
         assert ret.getCode() == 200
         assert ret.value.result.vulnerabilities.toList().size() > 0
 
-        def graphQLCVEs = new ArrayList<CVE>()
-        for (def vuln : ret.value.result.vulnerabilities) {
-            graphQLCVEs.add(new CVE(vuln.id, vuln.cvss, vuln.deploymentCount, vuln.imageCount, vuln.componentCount))
+        def graphQLCVEs = ret.value.result.vulnerabilities.collect { def vuln ->
+            new CVE(vuln.id, vuln.cvss, vuln.deploymentCount, vuln.imageCount, vuln.componentCount)
         }
 
         and:
         "Fetch fixable CVE CSV"
         Response response = null
-        def csvEndpoint = "/api/vm/export/csv"
-        if (isPostgresRun()) {
-            csvEndpoint = "/api/export/csv/image/cve"
-        }
+        def csvEndpoint = "/api/export/csv/image/cve"
         def csvURL = "https://${Env.mustGetHostname()}:${Env.mustGetPort()}" + csvEndpoint
         withRetry(10, 3) {
             response = given()
@@ -275,37 +224,17 @@ class CSVTest extends BaseSpecification {
             assert csvCVEs.get(i) == graphQLCVEs.get(i)
         }
 
-        where :
+        where:
         "Data is"
 
-        baseGraphQLQuery                | postgresGraphQLQuery                       | graphQLPayload | csvQuery
-        FIXABLE_CVES_IN_IMAGE_QUERY     | FIXABLE_CVES_IN_IMAGE_POSTGRES_QUERY       | [
-                id        : "sha256:e18c5814a9f7ddd5fe410f17417a48d2de562325e9d71337274134f4a6654e3f",
-                query: "",
-                // must scope without scope query since graphQL is hitting sub-resolver
-                scopeQuery: "",
-                vulnQuery : "Fixable:true",
-                vulnPagination: new Pagination(0, 0, new SortOption("cvss", true)),
-        ] | getCVETypeImageQuery() +
-            "Image Sha:sha256:e18c5814a9f7ddd5fe410f17417a48d2de562325e9d71337274134f4a6654e3f+Fixable:true"
-        FIXABLE_CVES_IN_COMPONENT_QUERY | FIXABLE_CVES_IN_COMPONENT_POSTGRES_QUERY   | [
-                // openssl 1.0.1k-3+deb8u5
-                id        : getComponentId(),
-                query: "",
-                scopeQuery: "",
-                vulnQuery : "Fixable:true",
-                vulnPagination: new Pagination(0, 0, new SortOption("cvss", true)),
-        ] | getCVETypeImageQuery() + getComponentQuery()
-        FIXABLE_CVES_IN_DEPLOYMENT_QUERY | FIXABLE_CVES_IN_DEPLOYMENT_POSTGRES_QUERY | [
-                id        : CVE_DEPLOYMENT.deploymentUid,
-                query: "",
-                scopeQuery: "",
-                vulnQuery : "Fixable:true",
-                vulnPagination: new Pagination(0, 0, new SortOption("cvss", true)),
-        ] | getCVETypeImageQuery() + "Deployment ID:${CVE_DEPLOYMENT.deploymentUid}+Fixable:true"
+        description                        | id                           | query
+        "FIXABLE_CVES_IN_IMAGE_QUERY"      | TEST_IMAGE_SHA               | "Image Sha:${TEST_IMAGE_SHA}+Fixable:true"
+        "FIXABLE_CVES_IN_DEPLOYMENT_QUERY" | CVE_DEPLOYMENT.deploymentUid |
+                "Deployment ID:${CVE_DEPLOYMENT.deploymentUid}+Fixable:true"
     }
 
     @EqualsAndHashCode(includeFields = true)
+    @ToString(includes = "id,cvss")
     class CVE {
         String id
         float cvss

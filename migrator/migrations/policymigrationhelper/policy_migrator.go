@@ -1,22 +1,16 @@
 package policymigrationhelper
 
 import (
-	"bytes"
 	"embed"
-	"fmt"
-	"path/filepath"
-	"reflect"
 	"strings"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
-	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/migrator/log"
+	"github.com/stackrox/rox/pkg/jsonutil"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
-	bolt "go.etcd.io/bbolt"
+	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 // PolicyDiff is an alternative to PolicyChanges that automatically constructs migrations based on diffs of policies.
@@ -43,6 +37,10 @@ type PolicyUpdates struct {
 	ExclusionsToAdd []*storage.Exclusion
 	// ExclusionsToRemove is a list of exclusions to remove from policy
 	ExclusionsToRemove []*storage.Exclusion
+	// CategoriesToAdd is a list of policy categories to add to the policy
+	CategoriesToAdd []string
+	// CategoriesToRemove is a list of policy categories to remove from policy
+	CategoriesToRemove []string
 	// Name is the new name for the policy
 	Name *string
 	// Remediation is the new remediation string
@@ -51,6 +49,8 @@ type PolicyUpdates struct {
 	Rationale *string
 	// Description is the new description string
 	Description *string
+	// Severity is the new severity
+	Severity storage.Severity
 	// Disable is true if the policy should be disabled, false if it should be enabled and nil for no change
 	Disable *bool
 }
@@ -63,7 +63,7 @@ func (u *PolicyUpdates) applyToPolicy(policy *storage.Policy) {
 	if u.ExclusionsToRemove != nil {
 		for _, toRemove := range u.ExclusionsToRemove {
 			if !removeExclusion(policy, toRemove) {
-				log.WriteToStderrf("policy ID %s has already been altered because exclusion was already removed. Will not update.", policy.Id)
+				log.WriteToStderrf("policy ID %s has already been altered because exclusion was already removed. Will not update.", policy.GetId())
 				continue
 			}
 		}
@@ -102,13 +102,40 @@ func (u *PolicyUpdates) applyToPolicy(policy *storage.Policy) {
 	if u.Description != nil {
 		policy.Description = *u.Description
 	}
+	if u.Severity != 0 {
+		policy.Severity = u.Severity
+	}
+
+	for _, toRemove := range u.CategoriesToRemove {
+		if !removeCategory(policy, toRemove) {
+			log.WriteToStderrf("policy ID %s has already been altered because category was already removed. Will not update.", policy.GetId())
+			continue
+		}
+	}
+
+	// Add new categories as needed (unless it already exists)
+	if u.CategoriesToAdd != nil {
+		policy.Categories = append(policy.Categories, sliceutils.Without(u.CategoriesToAdd, policy.GetCategories())...)
+	}
+
 }
 
 func removeExclusion(policy *storage.Policy, exclusionToRemove *storage.Exclusion) bool {
 	exclusions := policy.GetExclusions()
 	for i, exclusion := range exclusions {
-		if reflect.DeepEqual(exclusion, exclusionToRemove) {
+		if exclusion.EqualVT(exclusionToRemove) {
 			policy.Exclusions = append(exclusions[:i], exclusions[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
+func removeCategory(policy *storage.Policy, categoryToRemove string) bool {
+	categories := policy.GetCategories()
+	for i, category := range categories {
+		if category == categoryToRemove {
+			policy.Categories = append(categories[:i], categories[i+1:]...)
 			return true
 		}
 	}
@@ -120,17 +147,22 @@ type FieldComparator func(first, second *storage.Policy) bool
 
 // PolicySectionComparator compares the policySections of both policies and returns true if they are equal
 func PolicySectionComparator(first, second *storage.Policy) bool {
-	return reflect.DeepEqual(first.GetPolicySections(), second.GetPolicySections())
+	return protoutils.SlicesEqual(first.GetPolicySections(), second.GetPolicySections())
 }
 
 // ExclusionComparator compares the Exclusions of both policies and returns true if they are equal
 func ExclusionComparator(first, second *storage.Policy) bool {
-	return reflect.DeepEqual(first.GetExclusions(), second.GetExclusions())
+	return protoutils.SlicesEqual(first.GetExclusions(), second.GetExclusions())
 }
 
 // NameComparator compares both policies' names and returns true if they are equal
 func NameComparator(first, second *storage.Policy) bool {
 	return strings.TrimSpace(first.GetName()) == strings.TrimSpace(second.GetName())
+}
+
+// SeverityComparator compares both policies' severity and returns true if they are equal
+func SeverityComparator(first, second *storage.Policy) bool {
+	return first.GetSeverity() == second.GetSeverity()
 }
 
 // RemediationComparator compares the Remediation section of both policies and returns true if they are equal
@@ -148,39 +180,6 @@ func DescriptionComparator(first, second *storage.Policy) bool {
 	return strings.TrimSpace(first.GetDescription()) == strings.TrimSpace(second.GetDescription())
 }
 
-var (
-	policyBucketName = []byte("policies")
-)
-
-// ReadPolicyFromDir reads policies from file given the path and the dir.
-func ReadPolicyFromDir(fs embed.FS, dir string) ([]*storage.Policy, error) {
-	files, err := fs.ReadDir(dir)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not read default system policies JSON")
-	}
-
-	var multiErr *multierror.Error
-	var policies []*storage.Policy
-	for _, f := range files {
-		p, err := ReadPolicyFromFile(fs, filepath.Join(dir, f.Name()))
-		if err != nil {
-			multiErr = multierror.Append(multiErr, err)
-			continue
-		}
-
-		if p.GetId() == "" {
-			multiErr = multierror.Append(multiErr, errors.Errorf("policy %s does not have an ID defined", p.GetName()))
-			continue
-		}
-		policies = append(policies, p)
-	}
-	if multiErr != nil {
-		return nil, multiErr
-	}
-
-	return policies, nil
-}
-
 // ReadPolicyFromFile reads policies from file given the path and the collection of files.
 func ReadPolicyFromFile(fs embed.FS, filePath string) (*storage.Policy, error) {
 	contents, err := fs.ReadFile(filePath)
@@ -188,7 +187,7 @@ func ReadPolicyFromFile(fs embed.FS, filePath string) (*storage.Policy, error) {
 		return nil, errors.Wrapf(err, "unable to read file %s", filePath)
 	}
 	var policy storage.Policy
-	err = jsonpb.Unmarshal(bytes.NewReader(contents), &policy)
+	err = jsonutil.JSONBytesToProto(contents, &policy)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to unmarshal policy json at path %s", filePath)
 	}
@@ -204,8 +203,8 @@ func diffPolicies(beforePolicy, afterPolicy *storage.Policy) (PolicyUpdates, err
 	}
 
 	// Clone policies because we mutate them.
-	beforePolicy = beforePolicy.Clone()
-	afterPolicy = afterPolicy.Clone()
+	beforePolicy = beforePolicy.CloneVT()
+	afterPolicy = afterPolicy.CloneVT()
 
 	var updates PolicyUpdates
 
@@ -215,46 +214,53 @@ func diffPolicies(beforePolicy, afterPolicy *storage.Policy) (PolicyUpdates, err
 	afterPolicy.Exclusions = nil
 
 	// Policy section
-	if !reflect.DeepEqual(beforePolicy.GetPolicySections(), afterPolicy.GetPolicySections()) {
-		updates.PolicySections = afterPolicy.PolicySections
+	if !protoutils.SlicesEqual(beforePolicy.GetPolicySections(), afterPolicy.GetPolicySections()) {
+		updates.PolicySections = afterPolicy.GetPolicySections()
 	}
 	beforePolicy.PolicySections = nil
 	afterPolicy.PolicySections = nil
 
 	// MITRE section
-	if !reflect.DeepEqual(beforePolicy.GetMitreAttackVectors(), afterPolicy.GetMitreAttackVectors()) {
-		updates.MitreVectors = afterPolicy.MitreAttackVectors
+	if !protoutils.SlicesEqual(beforePolicy.GetMitreAttackVectors(), afterPolicy.GetMitreAttackVectors()) {
+		updates.MitreVectors = afterPolicy.GetMitreAttackVectors()
 	}
 	beforePolicy.MitreAttackVectors = nil
 	afterPolicy.MitreAttackVectors = nil
 
 	// Name
 	if beforePolicy.GetName() != afterPolicy.GetName() {
-		updates.Name = strPtr(afterPolicy.Name)
+		updates.Name = strPtr(afterPolicy.GetName())
 	}
 	beforePolicy.Name = ""
 	afterPolicy.Name = ""
 
 	// Description
 	if beforePolicy.GetDescription() != afterPolicy.GetDescription() {
-		updates.Description = strPtr(afterPolicy.Description)
+		updates.Description = strPtr(afterPolicy.GetDescription())
 	}
 	beforePolicy.Description = ""
 	afterPolicy.Description = ""
 
 	// Rationale
 	if beforePolicy.GetRationale() != afterPolicy.GetRationale() {
-		updates.Rationale = strPtr(afterPolicy.Rationale)
+		updates.Rationale = strPtr(afterPolicy.GetRationale())
 	}
 	beforePolicy.Rationale = ""
 	afterPolicy.Rationale = ""
 
 	// Remediation
 	if beforePolicy.GetRemediation() != afterPolicy.GetRemediation() {
-		updates.Remediation = strPtr(afterPolicy.Remediation)
+		updates.Remediation = strPtr(afterPolicy.GetRemediation())
 	}
 	beforePolicy.Remediation = ""
 	afterPolicy.Remediation = ""
+
+	// Severity
+	if beforePolicy.GetSeverity() != afterPolicy.GetSeverity() {
+		updates.Severity = afterPolicy.GetSeverity()
+	}
+	beforePolicy.Severity = 0
+	afterPolicy.Severity = 0
 
 	// Enable/Disable
 	if beforePolicy.GetDisabled() != afterPolicy.GetDisabled() {
@@ -263,9 +269,14 @@ func diffPolicies(beforePolicy, afterPolicy *storage.Policy) (PolicyUpdates, err
 	beforePolicy.Disabled = false
 	afterPolicy.Disabled = false
 
+	// Diff categories and clear out if they are similar
+	getCategoryUpdates(beforePolicy, afterPolicy, &updates)
+	beforePolicy.Categories = nil
+	afterPolicy.Categories = nil
+
 	// TODO: Add others as needed
 
-	if !reflect.DeepEqual(beforePolicy, afterPolicy) {
+	if !beforePolicy.EqualVT(afterPolicy) {
 		return PolicyUpdates{}, errors.New("policies have diff after nil-ing out fields we checked, please update this function " +
 			"to be able to diff more fields")
 	}
@@ -277,10 +288,13 @@ func getExclusionsUpdates(beforePolicy *storage.Policy, afterPolicy *storage.Pol
 	for _, beforeExclusion := range beforePolicy.GetExclusions() {
 		var found bool
 		for afterExclusionIdx, afterExclusion := range afterPolicy.GetExclusions() {
-			if reflect.DeepEqual(beforeExclusion, afterExclusion) {
-				found = true
-				matchedAfterExclusionsIdxs.Add(afterExclusionIdx)
-				break
+			if beforeExclusion.EqualVT(afterExclusion) {
+				if !matchedAfterExclusionsIdxs.Contains(afterExclusionIdx) { // to account for duplicates
+					found = true
+					matchedAfterExclusionsIdxs.Add(afterExclusionIdx)
+					break
+				}
+
 			}
 		}
 		if !found {
@@ -294,114 +308,21 @@ func getExclusionsUpdates(beforePolicy *storage.Policy, afterPolicy *storage.Pol
 	}
 }
 
+func getCategoryUpdates(beforePolicy *storage.Policy, afterPolicy *storage.Policy, updates *PolicyUpdates) {
+	beforeCategories := set.NewFrozenStringSet(beforePolicy.GetCategories()...)
+	afterCategories := set.NewFrozenStringSet(afterPolicy.GetCategories()...)
+
+	unionCategories := beforeCategories.Union(afterCategories)
+
+	updates.CategoriesToAdd = unionCategories.Difference(beforeCategories).AsSlice()
+	updates.CategoriesToRemove = unionCategories.Difference(afterCategories).AsSlice()
+}
+
 const (
 	policyDiffParentDirName = "policies_before_and_after"
 	beforeDirName           = policyDiffParentDirName + "/before"
 	afterDirName            = policyDiffParentDirName + "/after"
 )
-
-// MigratePoliciesWithDiffs migrates policies with the given diffs.
-// The policyDiffFS should be an embedded FS that satisfies the following conditions:
-// 1. It must contain a top-level directory called "policies_before_and_after".
-// 2. That directory must contain two subdirectories: "before" and "after".
-// 3. For each policy being migrated, there must be one copy in the "before" directory and one in the "after" directory.
-// 4. The file names for a policy should match the PolicyFileName in the corresponding PolicyDiff passed in the third argument.
-// This function then automatically computes the diff for each policy, and executes the migration.
-func MigratePoliciesWithDiffs(db *bolt.DB, policyDiffFS embed.FS, policyDiffs []PolicyDiff) error {
-	policiesToMigrate := make(map[string]PolicyChanges, len(policyDiffs))
-	preMigrationPolicies := make(map[string]*storage.Policy, len(policyDiffs))
-	for _, diff := range policyDiffs {
-		beforePolicy, err := ReadPolicyFromFile(policyDiffFS, filepath.Join(beforeDirName, diff.PolicyFileName))
-		if err != nil {
-			return err
-		}
-		afterPolicy, err := ReadPolicyFromFile(policyDiffFS, filepath.Join(afterDirName, diff.PolicyFileName))
-		if err != nil {
-			return err
-		}
-		if beforePolicy.GetId() == "" || beforePolicy.GetId() != afterPolicy.GetId() {
-			return errors.Errorf("policies in file %s don't both have the same, non-empty, id", diff.PolicyFileName)
-		}
-		updates, err := diffPolicies(beforePolicy, afterPolicy)
-		if err != nil {
-			return err
-		}
-		policiesToMigrate[beforePolicy.GetId()] = PolicyChanges{FieldsToCompare: diff.FieldsToCompare, ToChange: updates}
-		preMigrationPolicies[beforePolicy.GetId()] = beforePolicy
-	}
-	return MigratePolicies(db, policiesToMigrate, preMigrationPolicies)
-}
-
-// MigratePoliciesWithPreMigrationFS is a variant of MigratePolicies that takes in an embed.FS with the pre migration policies.
-// `preMigFS` is expected to have a directory called `preMigDirName`, which has one JSON file per policy.
-// Each JSON file is expected to have the filename <policy_id>.json.
-func MigratePoliciesWithPreMigrationFS(db *bolt.DB, policiesToMigrate map[string]PolicyChanges, preMigFS embed.FS, preMigDirName string) error {
-	comparisonPolicies := make(map[string]*storage.Policy)
-	for policyID := range policiesToMigrate {
-		path := filepath.Join(preMigDirName, fmt.Sprintf("%s.json", policyID))
-		policy, err := ReadPolicyFromFile(preMigFS, path)
-		if err != nil {
-			return err
-		}
-		comparisonPolicies[policyID] = policy
-	}
-	return MigratePolicies(db, policiesToMigrate, comparisonPolicies)
-}
-
-// MigratePolicies will migrate all policies in the db as specified by policiesToMigrate assuming the policies in the db
-// matches the policies within comparisonPolicies.
-func MigratePolicies(db *bolt.DB, policiesToMigrate map[string]PolicyChanges, comparisonPolicies map[string]*storage.Policy) error {
-	if exists, err := bolthelpers.BucketExists(db, policyBucketName); err != nil {
-		return errors.Wrapf(err, "getting bucket with name %q", policyBucketName)
-	} else if !exists {
-		return errors.Errorf("unable to find policy bucket with name %s", policyBucketName)
-	}
-
-	return db.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(policyBucketName)
-
-		// Migrate and update policies one by one. Abort the transaction, and hence
-		// the migration, in case of any error.
-		for policyID, updateDetails := range policiesToMigrate {
-			v := bucket.Get([]byte(policyID))
-			if v == nil {
-				log.WriteToStderrf("no policy exists for ID %s in policy migration. Continuing", policyID)
-				continue
-			}
-
-			var policy storage.Policy
-			if err := proto.Unmarshal(v, &policy); err != nil {
-				// Unable to recover, so abort transaction
-				return errors.Wrapf(err, "unmarshaling migrated policy with id %q", policyID)
-			}
-
-			// Fetch the saved policy state to compare with
-			comparePolicy, ok := comparisonPolicies[policyID]
-			if !ok || comparePolicy == nil {
-				return errors.Errorf("policy cannot be compared because comparison policy doesn't exist for %q", policyID)
-			}
-
-			// Validate all the required fields to ensure policy hasn't been updated
-			if !checkIfPoliciesMatch(updateDetails.FieldsToCompare, comparePolicy, &policy) {
-				log.WriteToStderrf("policy ID %s has already been altered. Will not update.", policyID)
-				continue
-			}
-
-			// Update policy as needed
-			updateDetails.ToChange.applyToPolicy(&policy)
-
-			policyBytes, err := proto.Marshal(&policy)
-			if err != nil {
-				return errors.Wrapf(err, "marshaling migrated policy %q with id %q", policy.GetName(), policy.GetId())
-			}
-			if err := bucket.Put([]byte(policyID), policyBytes); err != nil {
-				return errors.Wrapf(err, "writing migrated policy with id %q to the store", policy.GetId())
-			}
-		}
-
-		return nil
-	})
-}
 
 func checkIfPoliciesMatch(fieldsToCompare []FieldComparator, first *storage.Policy, second *storage.Policy) bool {
 	for _, field := range fieldsToCompare {

@@ -103,11 +103,9 @@ func (t *multiReadOnlyNTree) GetSubnets(key string) []*storage.NetworkEntityInfo
 		return nil
 	}
 
-	if entity.GetId() != networkgraph.InternetExternalSourceID {
+	if !networkgraph.IsConstantID(entity.GetId()) {
 		t.GetSubnetsForCIDR(entity.GetExternalSource().GetCidr())
-	}
-
-	if entity.GetId() == networkgraph.InternetExternalSourceID {
+	} else {
 		ipv4s := getLargestSubnets(t.GetSubnetsForCIDR(ipv4InternetCIDR)...)
 		ipv6s := getLargestSubnets(t.GetSubnetsForCIDR(ipv6InternetCIDR)...)
 
@@ -168,8 +166,8 @@ func getSmallestSupernet(entities ...*storage.NetworkEntityInfo) *storage.Networ
 			continue
 		}
 
-		// Special case since Internet entity does not have CIDR.
-		if entity.GetId() == networkgraph.InternetExternalSourceID {
+		// Special case since Internet entity and internal entities do not have CIDR.
+		if networkgraph.IsConstantID(entity.GetId()) {
 			continue
 		}
 

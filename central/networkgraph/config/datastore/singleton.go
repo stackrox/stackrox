@@ -2,9 +2,7 @@ package datastore
 
 import (
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/networkgraph/config/datastore/internal/store/postgres"
-	"github.com/stackrox/rox/central/networkgraph/config/datastore/internal/store/rocksdb"
-	"github.com/stackrox/rox/pkg/env"
+	pgStore "github.com/stackrox/rox/central/networkgraph/config/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -16,11 +14,7 @@ var (
 // Singleton provides the instance of DataStore to use.
 func Singleton() DataStore {
 	once.Do(func() {
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			instance = New(postgres.New(globaldb.GetPostgres()))
-		} else {
-			instance = New(rocksdb.New(globaldb.GetRocksDB()))
-		}
+		instance = New(pgStore.New(globaldb.GetPostgres()))
 	})
 	return instance
 }

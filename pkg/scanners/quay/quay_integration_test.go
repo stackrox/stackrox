@@ -1,5 +1,4 @@
 //go:build integration
-// +build integration
 
 package quay
 
@@ -14,11 +13,13 @@ import (
 )
 
 const (
-	testOauthToken = "0j9dhT9jCNFpsVAzwLavnyeEy2HWnrfTQnbJgQF8"
+	testOauthToken = "0j9dhT9jCNFpsVAzwLavnyeEy2HWnrfTQnbJgQF8" //#nosec G101
 )
 
 func TestQuayIntegrationSuite(t *testing.T) {
 	t.Skip("See ROX-9448 for re-enabling")
+	t.Setenv("ROX_REGISTRY_RESPONSE_TIMEOUT", "90s")
+	t.Setenv("ROX_REGISTRY_CLIENT_TIMEOUT", "120s")
 	suite.Run(t, new(QuayIntegrationSuite))
 }
 
@@ -71,7 +72,7 @@ func (suite *QuayIntegrationSuite) TestGetScan() {
 		}
 		return nil
 	}, retry.OnFailedAttempts(func(err error) {
-		log.Errorf("error scanning image: %v", err)
+		suite.T().Logf("error scanning image: %v", err)
 		time.Sleep(5 * time.Second)
 	}), retry.Tries(10))
 

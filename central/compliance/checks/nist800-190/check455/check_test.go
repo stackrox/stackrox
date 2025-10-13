@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/framework/mocks"
 	"github.com/stackrox/rox/generated/storage"
@@ -13,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestCheck(t *testing.T) {
@@ -106,7 +106,7 @@ func (s *suiteImpl) TestPass() {
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
 
-	domain := framework.NewComplianceDomain(testCluster, testNodes, testDeployments, nil, nil)
+	domain := framework.NewComplianceDomain(testCluster, testNodes, testDeployments, nil)
 	err = run.Run(context.Background(), "standard", domain, data)
 	s.NoError(err)
 
@@ -191,8 +191,8 @@ func (s *suiteImpl) TestFail() {
 			},
 			Entity: &storage.ListAlert_Deployment{
 				Deployment: &storage.ListAlertDeployment{
-					Id:   testDeployments[0].Id,
-					Name: testDeployments[0].Name,
+					Id:   testDeployments[0].GetId(),
+					Name: testDeployments[0].GetName(),
 				},
 			},
 		},
@@ -201,7 +201,7 @@ func (s *suiteImpl) TestFail() {
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
 
-	domain := framework.NewComplianceDomain(testCluster, testNodes, testDeployments, nil, nil)
+	domain := framework.NewComplianceDomain(testCluster, testNodes, testDeployments, nil)
 	err = run.Run(context.Background(), "standard", domain, data)
 	s.NoError(err)
 

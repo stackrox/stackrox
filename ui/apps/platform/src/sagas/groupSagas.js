@@ -1,17 +1,20 @@
 import { all, call, fork, put, select, takeLatest } from 'redux-saga/effects';
-import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
-import { accessControlPath } from 'routePaths';
-import * as service from 'services/GroupsService';
+import {
+    deleteRuleGroup as serviceDeleteRuleGroup,
+    fetchGroups as serviceFetchGroups,
+    getDefaultGroup as serviceGetDefaultGroup,
+    updateOrAddGroup as serviceUpdateOrAddGroup,
+} from 'services/GroupsService';
 import { actions, types } from 'reducers/groups';
 import { actions as authActions } from 'reducers/auth';
 import { selectors } from 'reducers';
-import { getGroupsWithDefault, getExistingGroupsWithDefault } from 'utils/permissionRuleGroupUtils';
+import { getExistingGroupsWithDefault, getGroupsWithDefault } from 'utils/permissionRuleGroupUtils';
 
 import Raven from 'raven-js';
 
 function* getRuleGroups() {
     try {
-        const result = yield call(service.fetchGroups);
+        const result = yield call(serviceFetchGroups);
         yield put(actions.fetchGroups.success(result?.response || []));
     } catch (error) {
         yield put(actions.fetchGroups.failure(error));
@@ -36,13 +39,13 @@ function* saveRuleGroup(action) {
             );
         }
         const existingGroups = yield select(selectors.getGroupsByAuthProviderId);
-        const defaultGroup = yield call(service.getDefaultGroup, {
+        const defaultGroup = yield call(serviceGetDefaultGroup, {
             authProviderId: id,
             roleName: defaultRole,
         });
-        yield call(service.updateOrAddGroup, {
-            newGroups: getGroupsWithDefault(group, id, defaultRole, defaultGroup?.response),
-            oldGroups: getExistingGroupsWithDefault(existingGroups, id),
+        yield call(serviceUpdateOrAddGroup, {
+            requiredGroups: getGroupsWithDefault(group, id, defaultRole, defaultGroup?.response),
+            previousGroups: getExistingGroupsWithDefault(existingGroups, id),
         });
         yield call(getRuleGroups);
         yield put(authActions.setAuthProviderEditingState(false));
@@ -66,7 +69,7 @@ function* saveRuleGroup(action) {
 function* deleteRuleGroup(action) {
     const { group } = action;
     try {
-        yield call(service.deleteRuleGroup, group);
+        yield call(serviceDeleteRuleGroup, group);
         yield call(getRuleGroups);
     } catch (error) {
         Raven.captureException(error);
@@ -83,7 +86,6 @@ function* watchDeleteRuleGroup() {
 
 export default function* groups() {
     yield all([
-        takeEveryNewlyMatchedLocation(accessControlPath, getRuleGroups),
         takeLatest(types.FETCH_RULE_GROUPS.REQUEST, getRuleGroups),
         fork(watchSaveRuleGroup),
         fork(watchDeleteRuleGroup),

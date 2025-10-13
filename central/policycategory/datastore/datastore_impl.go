@@ -3,55 +3,126 @@ package datastore
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	errorsPkg "github.com/pkg/errors"
-	"github.com/stackrox/rox/central/policycategory/index"
-	"github.com/stackrox/rox/central/policycategory/search"
 	"github.com/stackrox/rox/central/policycategory/store"
-	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/policycategoryedge/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/policycategory"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 var (
 	log               = logging.LoggerForModule()
-	policyCategorySAC = sac.ForResource(resources.Policy)
+	policyCategorySAC = sac.ForResource(resources.WorkflowAdministration)
+	titleCase         = cases.Title(language.English)
 
 	policyCategoryCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Policy)))
+			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
 )
 
 type datastoreImpl struct {
-	storage  store.Store
-	indexer  index.Indexer
-	searcher search.Searcher
+	storage              store.Store
+	policyCategoryEdgeDS datastore.DataStore
+	categoryMutex        sync.Mutex
 
-	categoryMutex sync.Mutex
+	categoryNameIDMap map[string]string
 }
 
-func (ds *datastoreImpl) buildIndex() error {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil
+func (ds *datastoreImpl) SetPolicyCategoriesForPolicy(ctx context.Context, policyID string, categoryNames []string) error {
+	ds.categoryMutex.Lock()
+	defer ds.categoryMutex.Unlock()
+
+	for i, categoryName := range categoryNames {
+		categoryNames[i] = titleCase.String(categoryName)
 	}
-	var categories []*storage.PolicyCategory
-	err := ds.storage.Walk(policyCategoryCtx, func(category *storage.PolicyCategory) error {
-		categories = append(categories, category)
-		return nil
-	})
+
+	edges, err := ds.policyCategoryEdgeDS.SearchRawEdges(ctx, searchPkg.NewQueryBuilder().AddExactMatches(searchPkg.PolicyID, policyID).ProtoQuery())
 	if err != nil {
 		return err
 	}
-	return ds.indexer.AddPolicyCategories(categories)
+	existingCategoryIDs := make([]string, 0, len(edges))
+	for _, e := range edges {
+		existingCategoryIDs = append(existingCategoryIDs, e.GetCategoryId())
+	}
+	existingCategories, _, err := ds.storage.GetMany(ctx, existingCategoryIDs)
+	if err != nil {
+		return err
+	}
+	existingCategoryNames := set.NewStringSet()
+	for _, c := range existingCategories {
+		existingCategoryNames.Add(c.GetName())
+	}
+
+	categoriesToUpdate := set.NewStringSet(categoryNames...)
+	if len(existingCategoryNames.Difference(categoriesToUpdate).AsSlice()) == 0 &&
+		len(categoriesToUpdate.Difference(existingCategoryNames).AsSlice()) == 0 {
+		// no edges to update since existing categories and categories to be updated are the same
+		return nil
+	}
+
+	// disassociate all categories from given policy
+	if err := ds.policyCategoryEdgeDS.DeleteByQuery(ctx, searchPkg.NewQueryBuilder().AddExactMatches(searchPkg.PolicyID, policyID).ProtoQuery()); err != nil {
+		return err
+	}
+	if len(categoryNames) == 0 {
+		return nil
+	}
+
+	categoryIds := make([]string, 0, len(categoryNames))
+	categoriesToAdd := make([]*storage.PolicyCategory, 0)
+	for _, c := range categoryNames {
+		if ds.categoryNameIDMap[c] != "" {
+			categoryIds = append(categoryIds, ds.categoryNameIDMap[c])
+		} else {
+			newCategory := &storage.PolicyCategory{
+				Id:        uuid.NewV4().String(),
+				Name:      c,
+				IsDefault: false,
+			}
+			categoriesToAdd = append(categoriesToAdd, newCategory)
+			categoryIds = append(categoryIds, newCategory.GetId())
+		}
+	}
+
+	err = ds.storage.UpsertMany(ctx, categoriesToAdd)
+	if err != nil {
+		return err
+	}
+
+	for _, c := range categoriesToAdd {
+		ds.categoryNameIDMap[c.GetName()] = c.GetId()
+	}
+
+	policyCategoryEdges := make([]*storage.PolicyCategoryEdge, 0, len(categoryIds))
+	for _, id := range categoryIds {
+		policyCategoryEdges = append(policyCategoryEdges, &storage.PolicyCategoryEdge{
+			Id:         uuid.NewV4().String(),
+			PolicyId:   policyID,
+			CategoryId: id,
+		})
+	}
+	return ds.policyCategoryEdgeDS.UpsertMany(ctx, policyCategoryEdges)
+}
+
+func (ds *datastoreImpl) GetPolicyCategoriesForPolicy(ctx context.Context, policyID string) ([]*storage.PolicyCategory, error) {
+	ds.categoryMutex.Lock()
+	defer ds.categoryMutex.Unlock()
+
+	return ds.SearchRawPolicyCategories(ctx, searchPkg.NewQueryBuilder().AddStrings(searchPkg.PolicyID, policyID).ProtoQuery())
 }
 
 // Search returns policy category related search results for the provided query
@@ -59,7 +130,7 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.R
 	if ok, err := policyCategorySAC.ReadAllowed(ctx); err != nil || !ok {
 		return nil, err
 	}
-	return ds.searcher.Search(ctx, q)
+	return ds.storage.Search(ctx, policycategory.TransformCategoryNameFieldsQuery(q))
 }
 
 // Count returns the number of search results from the query
@@ -67,7 +138,7 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	if ok, err := policyCategorySAC.ReadAllowed(ctx); err != nil || !ok {
 		return 0, err
 	}
-	return ds.searcher.Count(ctx, q)
+	return ds.storage.Count(ctx, q)
 }
 
 // GetPolicyCategory get a policy category by id
@@ -88,7 +159,34 @@ func (ds *datastoreImpl) GetPolicyCategory(ctx context.Context, id string) (*sto
 
 // SearchPolicyCategories returns search results that match the provided query
 func (ds *datastoreImpl) SearchPolicyCategories(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	return ds.searcher.SearchCategories(ctx, q)
+	// TODO(ROX-29943): remove 2 pass database calls
+	results, err := ds.Search(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	var categories []*storage.PolicyCategory
+	var newResults []searchPkg.Result
+	for _, result := range results {
+		category, exists, err := ds.storage.Get(ctx, result.ID)
+		if err != nil {
+			return nil, err
+		}
+		// The result may not exist if the object was deleted after the search
+		if !exists {
+			continue
+		}
+		categories = append(categories, category)
+		// Because of using 2 calls we are at risk of a race condition causing a mismatch in results
+		// and policies.  So we have to make sure we match for building the output below.
+		newResults = append(newResults, result)
+	}
+
+	protoResults := make([]*v1.SearchResult, 0, len(categories))
+	for i, c := range categories {
+		protoResults = append(protoResults, convertCategory(c, newResults[i]))
+	}
+	return protoResults, nil
 }
 
 // SearchRawPolicyCategories returns policy category objects that match the provided query
@@ -97,7 +195,17 @@ func (ds *datastoreImpl) SearchRawPolicyCategories(ctx context.Context, q *v1.Qu
 		return nil, err
 	}
 
-	return ds.searcher.SearchRawCategories(ctx, q)
+	q = policycategory.TransformCategoryNameFieldsQuery(q)
+	var cats []*storage.PolicyCategory
+	err := ds.storage.GetByQueryFn(ctx, q, func(cat *storage.PolicyCategory) error {
+		cats = append(cats, cat)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return cats, nil
 }
 
 // GetAllPolicyCategories lists all policy categories
@@ -107,24 +215,27 @@ func (ds *datastoreImpl) GetAllPolicyCategories(ctx context.Context) ([]*storage
 	}
 
 	var categories []*storage.PolicyCategory
-	err := ds.storage.Walk(ctx, func(category *storage.PolicyCategory) error {
-		categories = append(categories, category)
-		return nil
-	})
-	if err != nil {
+	walkFn := func() error {
+		categories = categories[:0]
+		return ds.storage.Walk(ctx, func(category *storage.PolicyCategory) error {
+			categories = append(categories, category)
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err
 	}
-	return categories, err
+	return categories, nil
 }
 
-// AddPolicyCategory inserts a policy category into the storage and the indexer
+// AddPolicyCategory inserts a policy category into the storage.
 func (ds *datastoreImpl) AddPolicyCategory(ctx context.Context, category *storage.PolicyCategory) (*storage.PolicyCategory, error) {
 	if ok, err := policyCategorySAC.WriteAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, sac.ErrResourceAccessDenied
 	}
-	if category.Id == "" {
+	if category.GetId() == "" {
 		category.Id = uuid.NewV4().String()
 	}
 	// Any category added after startup must be marked custom category.
@@ -133,12 +244,14 @@ func (ds *datastoreImpl) AddPolicyCategory(ctx context.Context, category *storag
 	ds.categoryMutex.Lock()
 	defer ds.categoryMutex.Unlock()
 
-	category.Name = strings.Title(category.GetName())
+	category.Name = titleCase.String(category.GetName())
 	err := ds.storage.Upsert(ctx, category)
 	if err != nil {
 		return nil, err
 	}
-	return category, ds.indexer.AddPolicyCategory(category)
+	ds.categoryNameIDMap[category.GetName()] = category.GetId()
+
+	return category, nil
 }
 
 // RenamePolicyCategory renames a policy category
@@ -153,6 +266,8 @@ func (ds *datastoreImpl) RenamePolicyCategory(ctx context.Context, id, newName s
 	defer ds.categoryMutex.Unlock()
 
 	category, exists, err := ds.storage.Get(ctx, id)
+	existingCategoryName := category.GetName()
+
 	if err != nil {
 		return nil, err
 	}
@@ -164,16 +279,13 @@ func (ds *datastoreImpl) RenamePolicyCategory(ctx context.Context, id, newName s
 		return nil, errorsPkg.Wrap(errox.InvalidArgs, fmt.Sprintf("policy category %q is a default category, cannot be renamed", id))
 	}
 
-	category.Name = strings.Title(newName)
+	category.Name = titleCase.String(newName)
 	err = ds.storage.Upsert(ctx, category)
 	if err != nil {
 		return nil, errorsPkg.Wrap(err, fmt.Sprintf("failed to rename category '%q' to '%q'", id, newName))
 	}
-
-	err = ds.indexer.AddPolicyCategory(category)
-	if err != nil {
-		return nil, errorsPkg.Wrap(err, fmt.Sprintf("failed to rename category '%q' to '%q'", id, newName))
-	}
+	delete(ds.categoryNameIDMap, existingCategoryName)
+	ds.categoryNameIDMap[category.GetName()] = category.GetId()
 
 	return &storage.PolicyCategory{
 		Id:        category.GetId(),
@@ -182,7 +294,7 @@ func (ds *datastoreImpl) RenamePolicyCategory(ctx context.Context, id, newName s
 	}, nil
 }
 
-// DeletePolicyCategory removes a policy from the storage and the indexer
+// DeletePolicyCategory removes a policy from the storage
 func (ds *datastoreImpl) DeletePolicyCategory(ctx context.Context, id string) error {
 	if ok, err := policyCategorySAC.WriteAllowed(ctx); err != nil {
 		return err
@@ -207,5 +319,17 @@ func (ds *datastoreImpl) DeletePolicyCategory(ctx context.Context, id string) er
 	if err := ds.storage.Delete(ctx, id); err != nil {
 		return err
 	}
-	return ds.indexer.DeletePolicyCategory(id)
+	delete(ds.categoryNameIDMap, category.GetName())
+	return nil
+}
+
+// convertCategory returns proto search result from a category object and the internal search result
+func convertCategory(category *storage.PolicyCategory, result searchPkg.Result) *v1.SearchResult {
+	return &v1.SearchResult{
+		Category:       v1.SearchCategory_POLICY_CATEGORIES,
+		Id:             category.GetId(),
+		Name:           category.GetName(),
+		FieldToMatches: searchPkg.GetProtoMatchesMap(result.Matches),
+		Score:          result.Score,
+	}
 }

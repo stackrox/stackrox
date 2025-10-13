@@ -1,55 +1,27 @@
 {
     "name": "@stackrox/ui",
-    "description": "Lerna-controlled monorepo for StackRox UI packages",
+    "description": "Deprecated top-level package.json for StackRox UI",
     "version": "0.0.0",
     "license": "UNLICENSED",
     "private": true,
-    "workspaces": {
-        "packages": [
-            "packages/*",
-            "apps/*"
-        ],
-        "nohoist": [
-            "**/mocha-multi-reporters",
-            "**/mocha-multi-reporters/**",
-            "**/@tailwindcss/**"
-        ]
-    },
     "engines": {
-        "node": ">=12.13.0"
+        "node": ">=20.0.0"
     },
     "scripts": {
-        "postinstall": "./scripts/patch-deps.sh",
-        "lerna:version": "lerna version --no-git-tag-version --no-push --yes",
-        "postlerna:version": "chalk bold red 'Please commit the changes and create a PR!'",
-        "prelerna:publish": "if [ ! \"$CI\" = true ]; then chalk bold red 'Not expected to be used outside of CI context.'; exit 1; fi",
-        "lerna:publish": "lerna publish from-package --yes",
-        "clean": "rm -rf build test-results; lerna run clean --stream",
-        "prestart": "chalk italic yellowBright 'Why CI=true? See https://github.com/facebook/create-react-app/issues/8685'",
-        "start": "CI=true lerna run start --parallel --stream",
-        "start:coverage": "CI=true lerna run start:coverage --scope @stackrox/platform-app --stream",
-        "lint": "yarn build:packages && lerna run lint --parallel --stream",
-        "test": "yarn build:packages && CI=true TEST_RESULTS_OUTPUT_DIR=../../test-results lerna run test --parallel --no-bail --stream",
-        "test-e2e": "TEST_RESULTS_OUTPUT_DIR=../../test-results lerna run test-e2e --parallel --no-bail --stream",
-        "test-e2e:coverage": "TEST_RESULTS_OUTPUT_DIR=../../test-results lerna run test-e2e:coverage --parallel --stream",
+        "clean": "rm -rf build test-results; npm --prefix apps/platform run clean",
+        "start": "CI=true npm --prefix apps/platform run start",
+        "lint": "npm --prefix apps/platform run lint",
+        "test": "CI=true npm --prefix apps/platform run test",
+        "test-e2e": "TEST_RESULTS_OUTPUT_DIR=../../test-results npm --prefix apps/platform run test-e2e",
+        "test-e2e:ocp": "TEST_RESULTS_OUTPUT_DIR=../../test-results npm --prefix apps/platform run test-e2e:ocp",
+        "test-component": "npm --prefix apps/platform run test-component",
         "posttest-e2e:coverage": "mv apps/platform/coverage/ ./test-results/artifacts/",
-        "test-e2e-demo": "TEST_RESULTS_OUTPUT_DIR=../../test-results lerna run test-e2e-demo --scope @stackrox/platform-app --stream",
-        "build:packages": "lerna run build --stream --ignore @stackrox/*-app",
-        "prebuild": "yarn clean",
-        "build": "lerna run build --stream",
+        "prebuild": "npm run clean",
+        "build": "npm --prefix apps/platform run build && npm --prefix apps/platform run build:ocp-plugin",
         "postbuild": "mv apps/platform/build/ .",
         "connect": "../scripts/connect-ui.sh ${1}",
         "deploy": "../deploy/k8s/deploy.sh",
         "deploy-local": "../deploy/k8s/deploy-local.sh",
         "forward": "../scripts/port-forward-ui.sh"
-    },
-    "resolutions": {
-        "@typescript-eslint/parser": "^4.32.0",
-        "autoprefixer": "10.4.5"
-    },
-    "devDependencies": {
-        "chalk-cli": "^5.0.0",
-        "lerna": "^3.22.1",
-        "postinstall-postinstall": "^2.1.0"
     }
 }

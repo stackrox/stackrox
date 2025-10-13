@@ -1,65 +1,80 @@
 syntax = "proto3";
 
-option go_package = "sensor";
+package sensor;
 
 import "internalapi/compliance/compliance_data.proto";
+import "internalapi/scanner/v4/index_report.proto";
 import "storage/cluster.proto";
 import "storage/container_runtime.proto";
 import "storage/kube_event.proto";
 import "storage/node.proto";
 
-package sensor;
+option go_package = "./internalapi/sensor;sensor";
 
 message GetScrapeConfigRequest {
-    string node_name = 1;
-    string scrape_id = 2;
+  string node_name = 1;
+  string scrape_id = 2;
 }
 
 message AuditEvents {
-    // events are ordered with the most recent being the last element
-    repeated storage.KubernetesEvent events = 1;
+  // events are ordered with the most recent being the last element
+  repeated storage.KubernetesEvent events = 1;
 }
 
 message MsgFromCompliance {
-    string node = 1;
+  string node = 1;
 
-    oneof msg {
-        compliance.ComplianceReturn return       = 2;
-        AuditEvents                 audit_events = 3;
-        storage.NodeScanV2          node_scan_v2 = 4;
-    }
+  oneof msg {
+    compliance.ComplianceReturn return = 2;
+    AuditEvents audit_events = 3;
+    storage.NodeInventory node_inventory = 4;
+    scanner.v4.IndexReport index_report = 5;
+  }
 }
 
 message MsgToCompliance {
-    message ScrapeConfig {
-        storage.ContainerRuntime container_runtime = 1;
-        bool                     is_master_node    = 2;
+  message ScrapeConfig {
+    storage.ContainerRuntime container_runtime = 1;
+    bool is_master_node = 2;
+  }
+  message TriggerRun {
+    string scrape_id = 1;
+    repeated string standard_ids = 2;
+  }
+  message AuditLogCollectionRequest {
+    message StartRequest {
+      string cluster_id = 1;
+      storage.AuditLogFileState collect_start_state = 2;
     }
-    message TriggerRun {
-        string          scrape_id    = 1;
-        repeated string standard_ids = 2;
-    }
-    message AuditLogCollectionRequest {
-        message StartRequest {
-            string                    cluster_id = 1;
-            storage.AuditLogFileState collect_start_state = 2;
-        }
-        message StopRequest {}
+    message StopRequest {}
 
-        oneof req {
-            StartRequest start_req = 1;
-            StopRequest  stop_req  = 2;
-        }
+    oneof req {
+      StartRequest start_req = 1;
+      StopRequest stop_req = 2;
     }
+  }
+  message NodeInventoryACK {
+    Action action = 1;
+    enum Action {
+      ACK = 0;
+      NACK = 1;
+    }
+    MessageType messageType = 2;
+    enum MessageType {
+      NodeInventory = 0;
+      NodeIndexer = 1;
+    }
+  }
 
-    oneof msg {
-        ScrapeConfig              config                       = 1;
-        TriggerRun                trigger                      = 2;
-        AuditLogCollectionRequest audit_log_collection_request = 3;
-    }
+  oneof msg {
+    ScrapeConfig config = 1;
+    TriggerRun trigger = 2;
+    AuditLogCollectionRequest audit_log_collection_request = 3;
+    NodeInventoryACK ack = 4;
+  }
 }
 
-// A Sensor service that allows Compliance to report node scrapes results and audit events.
+// A Sensor service that allows Compliance to report node scrapes results, audit events, and node scans v2.
 service ComplianceService {
-    rpc Communicate (stream MsgFromCompliance) returns (stream MsgToCompliance);
+  rpc Communicate(stream MsgFromCompliance) returns (stream MsgToCompliance);
 }

@@ -25,7 +25,7 @@ func UnstructuredFromYAML(yamlStr string) (*unstructured.Unstructured, error) {
 	}
 	asUnstructured, ok := obj.(*unstructured.Unstructured)
 	if !ok {
-		return nil, utils.Should(errors.Errorf("obj was not Unstructured (got %T)", obj))
+		return nil, utils.ShouldErr(errors.Errorf("obj was not Unstructured (got %T)", obj))
 	}
 	return asUnstructured, nil
 }

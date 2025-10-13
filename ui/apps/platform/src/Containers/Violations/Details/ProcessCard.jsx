@@ -1,0 +1,83 @@
+import React, { useState } from 'react';
+import PropTypes from 'prop-types';
+import { getTime } from 'date-fns';
+import {
+    Card,
+    CardHeader,
+    CardBody,
+    CardExpandableContent,
+    DescriptionList,
+} from '@patternfly/react-core';
+
+import DescriptionListItem from 'Components/DescriptionListItem';
+import { getDateTime } from 'utils/dateUtils';
+import ProcessCardContent from './ProcessCardContent';
+
+function ProcessCard({ processes, message }) {
+    const [selectedId, selectId] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(true);
+
+    function onExpand() {
+        setIsExpanded(!isExpanded);
+    }
+
+    function onSelectIdHandler(id) {
+        // if the same process id is already selected, remove it
+        const result = selectedId && selectedId === id ? null : id;
+        selectId(result);
+    }
+
+    const timestamps = processes.map((process) => getTime(process.signal.time));
+    const firstOccurrenceTimestamp = Math.min(...timestamps);
+    const lastOccurrenceTimestamp = Math.max(...timestamps);
+
+    return (
+        <Card isFlat isExpanded={isExpanded}>
+            <CardHeader
+                onExpand={onExpand}
+                toggleButtonProps={{ 'aria-expanded': isExpanded, 'aria-label': 'Details' }}
+            >
+                {message}
+            </CardHeader>
+            <CardExpandableContent>
+                <CardBody>
+                    <DescriptionList
+                        columnModifier={{
+                            default: '2Col',
+                        }}
+                        className="pf-v5-u-my-md"
+                    >
+                        <DescriptionListItem
+                            term="First occurrence"
+                            desc={getDateTime(firstOccurrenceTimestamp)}
+                        />
+                        <DescriptionListItem
+                            term="Last occurrence"
+                            desc={getDateTime(lastOccurrenceTimestamp)}
+                        />
+                    </DescriptionList>
+                    {processes.map((process) => (
+                        <>
+                            <ProcessCardContent
+                                key={process.id}
+                                process={process}
+                                selectProcessId={onSelectIdHandler}
+                            />
+                        </>
+                    ))}
+                </CardBody>
+            </CardExpandableContent>
+        </Card>
+    );
+}
+
+ProcessCard.propTypes = {
+    message: PropTypes.string.isRequired,
+    processes: PropTypes.arrayOf(
+        PropTypes.shape({
+            id: PropTypes.string.isRequired,
+        })
+    ).isRequired,
+};
+
+export default ProcessCard;

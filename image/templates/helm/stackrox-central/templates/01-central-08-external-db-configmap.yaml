@@ -1,5 +1,4 @@
 {{- include "srox.init" . -}}
-{{- if ._rox.central.db.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -13,8 +12,10 @@ data:
   central-external-db.yaml: |
     centralDB:
       {{- if ._rox.central.db.external }}
-      source: {{ ._rox.central.db.source.connectionString }} statement_timeout={{ ._rox.central.db.source.statementTimeoutMs }} pool_min_conns={{ ._rox.central.db.source.minConns }} pool_max_conns={{ ._rox.central.db.source.maxConns }}
+      external: true
+      source: {{ ._rox.central.db.source.connectionString }} pool_min_conns={{ ._rox.central.db.source.minConns }} pool_max_conns={{ ._rox.central.db.source.maxConns }}
       {{- else }}
+      external: false
       source: >
         host=central-db.{{ .Release.Namespace }}.svc
         port=5432
@@ -24,5 +25,5 @@ data:
         statement_timeout={{ ._rox.central.db.source.statementTimeoutMs }}
         pool_min_conns={{ ._rox.central.db.source.minConns }}
         pool_max_conns={{ ._rox.central.db.source.maxConns }}
+        client_encoding=UTF8
       {{- end }}
-{{- end }}

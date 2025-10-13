@@ -1,58 +1,87 @@
 syntax = "proto3";
 
-option go_package = "storage";
-option java_package = "io.stackrox.proto.storage";
-
-import "storage/cve.proto";
-import "storage/schedule.proto";
-import "gogoproto/gogo.proto";
-import "google/protobuf/timestamp.proto";
-
 package storage;
 
+import "google/protobuf/timestamp.proto";
+import "storage/cve.proto";
+import "storage/report_notifier_configuration.proto";
+import "storage/role.proto";
+import "storage/schedule.proto";
+import "storage/user.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
 message ReportConfiguration {
-    enum ReportType {
-        VULNERABILITY = 0;
-    }
-    string                    id                           = 1 [(gogoproto.moretags) = 'sql:"pk"'];
-    string                    name                         = 2 [(gogoproto.moretags) = 'search:"Report Name"'];
-    string                    description                  = 3;
-    ReportType                type                         = 4 [(gogoproto.moretags) = 'search:"Report Type"'];
-    oneof                    filter {
-        VulnerabilityReportFilters  vuln_report_filters    = 5;
-    }
-    string                    scope_id                     = 6;
-    oneof  notifier_config {
-        EmailNotifierConfiguration email_config            = 7;
-    }
-    storage.Schedule           schedule                    = 8;
-    ReportLastRunStatus        last_run_status             = 9;
-    google.protobuf.Timestamp  last_successful_run_time    = 10;
+  enum ReportType {
+    VULNERABILITY = 0;
+  }
+
+  string id = 1; // @gotags: sql:"pk"
+  string name = 2; // @gotags: search:"Report Name"
+  string description = 3;
+  ReportType type = 4; // @gotags: search:"Report Type"
+  oneof filter {
+    VulnerabilityReportFilters vuln_report_filters = 5;
+  }
+  string scope_id = 6; // @gotags: search:"Embedded Collection ID"
+  oneof notifier_config {
+    EmailNotifierConfiguration email_config = 7;
+  }
+  storage.Schedule schedule = 8;
+  ReportLastRunStatus last_run_status = 9;
+  google.protobuf.Timestamp last_successful_run_time = 10;
+  ResourceScope resource_scope = 11;
+  repeated NotifierConfiguration notifiers = 12;
+  SlimUser creator = 13; // @gotags: sql:"ignore_labels(User ID)"
+  int32 version = 14; // version=0 is unmigrated v1 config, version=1 is migrated v1 config and version=2 is v2 config
 }
 
 message ReportLastRunStatus {
-     enum RunStatus {
-         SUCCESS = 0;
-         FAILURE = 1;
-     }
-     RunStatus                  report_status   = 1;
-     google.protobuf.Timestamp  last_run_time   = 2;
-     string                     error_msg       = 3;
+  enum RunStatus {
+    SUCCESS = 0;
+    FAILURE = 1;
+  }
+  RunStatus report_status = 1;
+  google.protobuf.Timestamp last_run_time = 2;
+  string error_msg = 3;
 }
 
 message VulnerabilityReportFilters {
   enum Fixability {
-      BOTH = 0;
-      FIXABLE = 1;
-      NOT_FIXABLE = 2;
+    BOTH = 0;
+    FIXABLE = 1;
+    NOT_FIXABLE = 2;
   }
-  Fixability                        fixability             = 1;
-  bool                              since_last_report      = 2;
-  repeated VulnerabilitySeverity    severities             = 3;
+
+  enum ImageType {
+    DEPLOYED = 0;
+    WATCHED = 1;
+  }
+
+  Fixability fixability = 1;
+  bool since_last_report = 2;
+  repeated VulnerabilitySeverity severities = 3;
+  repeated ImageType image_types = 4;
+  oneof cves_since {
+    bool all_vuln = 5;
+    bool since_last_sent_scheduled_report = 6;
+    google.protobuf.Timestamp since_start_date = 7;
+  }
+  repeated SimpleAccessScope.Rules access_scope_rules = 8;
+  bool include_nvd_cvss = 9;
+  bool include_epss_probability = 10;
+  bool include_advisory = 11;
 }
 
+message ResourceScope {
+  oneof scope_reference {
+    string collection_id = 1; // @gotags: search:"Collection ID"
+  }
+}
 
-message EmailNotifierConfiguration  {
-  string                 notifier_id           = 1;
-  repeated string        mailing_lists         = 2;
+// filter for view based reports
+message ViewBasedVulnerabilityReportFilters {
+  string query = 1;
+  repeated SimpleAccessScope.Rules access_scope_rules = 2;
 }

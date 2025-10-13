@@ -1,11 +1,5 @@
 [
     {
-        "comment": "ROX-5861: compliance restarts with openshift after sensor bounce tests",
-        "job": "openshift",
-        "logfile": "compliance-previous",
-        "logline": "Fatal: error initializing stream to sensor"
-    },
-    {
         "comment": "collector initialization restart with download failure",
         "job": ".*",
         "logfile": "collector-previous",
@@ -13,14 +7,62 @@
     },
     {
         "comment": "collector restart due to slow sensor start",
-        "job": "openshift",
+        "job": "^(ocp|openshift)",
         "logfile": "collector-previous",
         "logline": "Failed to connect to sensor.stackrox.* port 443: No route to host"
+    },
+    {
+        "comment": "scanner restart due to slow postgres db start",
+        "job": ".*",
+        "logfile": "scanner-previous",
+        "logline": "Failed to open database despite multiple retries"
     },
     {
         "comment": "sensor is up before central in scale-tests",
         "job": "scale-tests",
         "logfile": "sensor-previous",
-        "logline": "checking central status failed after 15 retries"
+        "logline": "checking central status failed after"
+    },
+    {
+        "comment": "collector initialization restart with download failure due to bouncing in upgrade test",
+        "job": "upgrade",
+        "logfile": "collector-previous",
+        "logline": "No suitable kernel object downloaded for kernel"
+    },
+    {
+        "comment": "collector restart due to sensor connection failure (likely slow start)",
+        "job": ".*",
+        "logfile": "collector-previous",
+        "logline": "Unable to connect to Sensor at"
+    },
+    {
+        "comment": "collector downloads throttled due to bouncing in upgrade test",
+        "job": "upgrade",
+        "logfile": "collector-previous",
+        "logline": "Failed to initialize collector kernel components"
+    },
+    {
+        "comment": "Central images may be slow to pull",
+        "job": "upgrade",
+        "logfile": "sensor-previous",
+        "logline": "checking central status failed after"
+    },
+    {
+        "comment": "collector restart due to sensor bounce in compliance test",
+        "job": "compliance-e2e-tests",
+        "logfile": "collector-previous",
+        "logline": "Socket closed"
+    },
+    {
+        "comment": "Scanner V4 slow to start",
+        "job": "gke-external-pg-17-qa-e2e-tests",
+        "logfile": "indexer-previous",
+        "logline": "panic: migrate: failed to connect to"
+    },
+    {
+        "comment": "Scanner V4 slow to start matcher",
+        "job": "gke-external-pg-17-qa-e2e-tests",
+        "logfile": "matcher-previous",
+        "logline": "panic: migrate: failed to connect to"
     }
 ]

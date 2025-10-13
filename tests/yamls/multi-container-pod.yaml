@@ -5,6 +5,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: end-to-end-api-test-pod-multi-container
+  namespace: default
 spec:
   volumes:
     - name: html
@@ -16,7 +17,7 @@ spec:
         - name: html
           mountPath: /usr/share/nginx/html
     - name: 2nd
-      image: debian
+      image: debian:latest@sha256:1e5f2d70c9441c971607727f56d0776fb9eecf23cd37b595b26db7a974b2301d
       volumeMounts:
         - name: html
           mountPath: /html

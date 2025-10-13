@@ -1,11 +1,39 @@
 import React from 'react';
-import { Button, Flex, FormGroup, ValidatedOptions } from '@patternfly/react-core';
+import type { FormEvent } from 'react';
+import {
+    Button,
+    FormGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
+    Icon,
+    TextInput,
+    ValidatedOptions,
+} from '@patternfly/react-core';
+import { SelectOption } from '@patternfly/react-core/deprecated';
 import { TrashIcon } from '@patternfly/react-icons';
 import cloneDeep from 'lodash/cloneDeep';
 
-import { FormikErrors } from 'formik';
-import { AutoCompleteSelect } from './AutoCompleteSelect';
-import { ByNameResourceSelector, ScopedResourceSelector, SelectorEntityType } from '../types';
+import type { FormikErrors } from 'formik';
+import useIndexKey from 'hooks/useIndexKey';
+import type {
+    ByNameMatchType,
+    ByNameResourceSelector,
+    ScopedResourceSelector,
+    SelectorEntityType,
+} from '../types';
+import { NameMatchTypeSelect } from './MatchTypeSelect';
+
+function parseInlineRuleError(
+    errors: ByNameSelectorProps['validationErrors'],
+    valueIndex: number
+): string | undefined {
+    const valueErrors = errors?.rule?.values?.[valueIndex];
+    if (typeof valueErrors === 'string') {
+        return valueErrors;
+    }
+    return valueErrors?.value;
+}
 
 export type ByNameSelectorProps = {
     entityType: SelectorEntityType;
@@ -14,28 +42,43 @@ export type ByNameSelectorProps = {
         entityType: SelectorEntityType,
         scopedResourceSelector: ScopedResourceSelector
     ) => void;
+    placeholder: string;
     validationErrors: FormikErrors<ByNameResourceSelector> | undefined;
+    isDisabled: boolean;
 };
 
 function ByNameSelector({
     entityType,
     scopedResourceSelector,
     handleChange,
+    placeholder,
     validationErrors,
+    isDisabled,
 }: ByNameSelectorProps) {
+    const { keyFor, invalidateIndexKeys } = useIndexKey();
+    const lowerCaseEntity = entityType.toLowerCase();
+
     function onAddValue() {
         const selector = cloneDeep(scopedResourceSelector);
         // Only add a new form row if there are no blank entries
-        if (selector.rule.values.every((value) => value)) {
-            selector.rule.values.push('');
+        if (selector.rule.values.every(({ value }) => value)) {
+            selector.rule.values.push({ value: '', matchType: 'EXACT' });
             handleChange(entityType, selector);
         }
     }
 
-    function onChangeValue(resourceSelector, valueIndex) {
-        return (value: string) => {
+    function onChangeMatchType(resourceSelector: ByNameResourceSelector, valueIndex: number) {
+        return (value: ByNameMatchType) => {
             const newSelector = cloneDeep(resourceSelector);
-            newSelector.rule.values[valueIndex] = value;
+            newSelector.rule.values[valueIndex].matchType = value;
+            handleChange(entityType, newSelector);
+        };
+    }
+
+    function onChangeValue(resourceSelector, valueIndex) {
+        return (event: FormEvent<HTMLInputElement>, value: string) => {
+            const newSelector = cloneDeep(resourceSelector);
+            newSelector.rule.values[valueIndex].value = value;
             handleChange(entityType, newSelector);
         };
     }
@@ -45,44 +88,98 @@ function ByNameSelector({
 
         if (newSelector.rule.values.length > 1) {
             newSelector.rule.values.splice(valueIndex, 1);
+            invalidateIndexKeys();
             handleChange(entityType, newSelector);
         } else {
             // This was the last value in the rule, so drop the selector
-            handleChange(entityType, {});
+            handleChange(entityType, { type: 'NoneSpecified' });
         }
     }
 
     return (
-        <FormGroup label={`${entityType} name`} isRequired>
-            <Flex spaceItems={{ default: 'spaceItemsSm' }} direction={{ default: 'column' }}>
-                {scopedResourceSelector.rule.values.map((value, index) => (
-                    <Flex key={value}>
-                        <AutoCompleteSelect
-                            typeAheadAriaLabel={`Select a value for the ${entityType.toLowerCase()} name`}
-                            className="pf-u-flex-grow-1 pf-u-w-auto"
-                            selectedOption={value}
-                            onChange={onChangeValue(scopedResourceSelector, index)}
-                            validated={
-                                validationErrors?.rule?.values?.[index]
-                                    ? ValidatedOptions.error
-                                    : ValidatedOptions.default
-                            }
-                        />
-                        <Button variant="plain" onClick={() => onDeleteValue(index)}>
-                            <TrashIcon
-                                aria-label={`Delete ${value}`}
-                                className="pf-u-flex-shrink-1"
-                                style={{ cursor: 'pointer' }}
-                                color="var(--pf-global--Color--dark-200)"
-                            />
-                        </Button>
-                    </Flex>
-                ))}
-            </Flex>
-            <Button className="pf-u-pl-0 pf-u-pt-md" variant="link" onClick={onAddValue}>
-                Add value
-            </Button>
-        </FormGroup>
+        <>
+            <div className="rule-selector-list">
+                {scopedResourceSelector.rule.values.map(({ matchType, value }, index) => {
+                    const inputId = `${entityType}-name-value-${index}`;
+                    const inputAriaLabel = `Select value ${index + 1} of ${
+                        scopedResourceSelector.rule.values.length
+                    } for the ${lowerCaseEntity} name`;
+                    const inputClassName = 'pf-v5-u-flex-grow-1 pf-v5-u-w-auto';
+                    const inputOnChange = onChangeValue(scopedResourceSelector, index);
+                    const errorMessage = parseInlineRuleError(validationErrors, index);
+                    const inputValidated = errorMessage
+                        ? ValidatedOptions.error
+                        : ValidatedOptions.default;
+
+                    return (
+                        <div className="rule-selector-list-item" key={keyFor(index)}>
+                            <div className="rule-selector-match-type-select">
+                                <NameMatchTypeSelect
+                                    selected={matchType}
+                                    isDisabled={isDisabled}
+                                    onChange={onChangeMatchType(scopedResourceSelector, index)}
+                                >
+                                    <SelectOption value="EXACT">An exact value of</SelectOption>
+                                    <SelectOption value="REGEX">A regex value of</SelectOption>
+                                </NameMatchTypeSelect>
+                            </div>
+                            <div className="rule-selector-name-value-input">
+                                <FormGroup
+                                    className="rule-selector-name-value-input"
+                                    fieldId={inputId}
+                                >
+                                    <TextInput
+                                        id={inputId}
+                                        aria-label={inputAriaLabel}
+                                        placeholder={
+                                            matchType === 'REGEX' ? `^${placeholder}$` : placeholder
+                                        }
+                                        className={inputClassName}
+                                        onChange={inputOnChange}
+                                        validated={inputValidated}
+                                        value={value}
+                                        isDisabled={isDisabled}
+                                    />
+                                    <FormHelperText>
+                                        <HelperText>
+                                            <HelperTextItem variant={inputValidated}>
+                                                {errorMessage}
+                                            </HelperTextItem>
+                                        </HelperText>
+                                    </FormHelperText>
+                                </FormGroup>
+                            </div>
+                            {!isDisabled && (
+                                <Button
+                                    className="rule-selector-delete-value-button"
+                                    aria-label={`Delete ${value}`}
+                                    variant="plain"
+                                    onClick={() => onDeleteValue(index)}
+                                >
+                                    <Icon>
+                                        <TrashIcon
+                                            color="var(--pf-v5-global--Color--dark-200)"
+                                            className="pf-v5-u-flex-shrink-1"
+                                            style={{ cursor: 'pointer' }}
+                                        />
+                                    </Icon>
+                                </Button>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+            {!isDisabled && (
+                <Button
+                    aria-label={`Add ${lowerCaseEntity} name value`}
+                    className="rule-selector-add-value-button"
+                    variant="link"
+                    onClick={onAddValue}
+                >
+                    OR...
+                </Button>
+            )}
+        </>
     );
 }
 

@@ -1,6 +1,7 @@
 package renderer
 
 import (
+	"bytes"
 	"encoding/base64"
 
 	"github.com/pkg/errors"
@@ -9,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/defaults"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/zip"
 )
@@ -22,6 +24,7 @@ func init() {
 }
 
 // mode is the mode we want the renderer to function in.
+//
 //go:generate stringer -type=mode
 type mode int
 
@@ -32,8 +35,14 @@ const (
 	scannerOnly
 	// centralTLSOnly renders only the central tls secret.
 	centralTLSOnly
+	// centralDBTLSOnly renders only the central-db tls secret
+	centralDBTLSOnly
 	// scannerTLSOnly renders only the scanner tls secret
 	scannerTLSOnly
+	// centralDBOnly renders only the central db
+	centralDBOnly
+	// scannerV4TLSOnly renders only the scanner v4 tls secrets.
+	scannerV4TLSOnly
 )
 
 func postProcessConfig(c *Config, mode mode, imageFlavor defaults.ImageFlavor) error {
@@ -50,6 +59,12 @@ func postProcessConfig(c *Config, mode mode, imageFlavor defaults.ImageFlavor) e
 	if c.K8sConfig.ScannerDBImage == "" {
 		c.K8sConfig.ScannerDBImage = imageFlavor.ScannerDBImage()
 	}
+	if c.K8sConfig.ScannerV4Image == "" {
+		c.K8sConfig.ScannerV4Image = imageFlavor.ScannerV4Image()
+	}
+	if c.K8sConfig.ScannerV4DBImage == "" {
+		c.K8sConfig.ScannerV4DBImage = imageFlavor.ScannerV4DBImage()
+	}
 
 	// Make all items in SecretsByteMap base64 encoded
 	c.SecretsBase64Map = make(map[string]string)
@@ -61,7 +76,7 @@ func postProcessConfig(c *Config, mode mode, imageFlavor defaults.ImageFlavor) e
 		c.HelmImage = image.GetDefaultImage()
 	}
 
-	if mode == centralTLSOnly || mode == scannerTLSOnly {
+	if mode == centralTLSOnly || mode == scannerTLSOnly || mode == scannerV4TLSOnly || mode == centralDBTLSOnly {
 		return nil
 	}
 	if c.ClusterType == storage.ClusterType_KUBERNETES_CLUSTER {
@@ -70,10 +85,14 @@ func postProcessConfig(c *Config, mode mode, imageFlavor defaults.ImageFlavor) e
 		c.K8sConfig.Command = "oc"
 	}
 
+	if mode == centralDBOnly {
+		c.K8sConfig.EnableCentralDB = true
+	}
+
 	configureImageOverrides(c, imageFlavor)
 
 	var err error
-	if mode == renderAll {
+	if mode == renderAll || mode == centralDBOnly {
 		c.K8sConfig.Registry, err = kubernetesPkg.GetResolvedRegistry(c.K8sConfig.MainImage)
 		if err != nil {
 			return err
@@ -96,6 +115,15 @@ func postProcessConfig(c *Config, mode mode, imageFlavor defaults.ImageFlavor) e
 		}
 	}
 
+	// Currently, when the K8S config is generated through interactive mode, the configuration flags will be called twice.
+	// This doesn't affect single value configurations, like booleans and strings, but slices.
+	// TODO(ROX-14956):Once the duplication of flag values is removed, this can be removed.
+	c.K8sConfig.DeclarativeConfigMounts.ConfigMaps = sliceutils.Unique(c.K8sConfig.DeclarativeConfigMounts.ConfigMaps)
+	c.K8sConfig.DeclarativeConfigMounts.Secrets = sliceutils.Unique(c.K8sConfig.DeclarativeConfigMounts.Secrets)
+	// Additionally, the default value used by the configuration for empty arrays is "[]", which we will have to remove.
+	c.K8sConfig.DeclarativeConfigMounts.ConfigMaps = sliceutils.Without(c.K8sConfig.DeclarativeConfigMounts.ConfigMaps, []string{"[]"})
+	c.K8sConfig.DeclarativeConfigMounts.Secrets = sliceutils.Without(c.K8sConfig.DeclarativeConfigMounts.Secrets, []string{"[]"})
+
 	return nil
 }
 
@@ -109,16 +137,42 @@ func RenderScannerOnly(c Config, imageFlavor defaults.ImageFlavor) ([]*zip.File,
 	return render(c, scannerOnly, imageFlavor)
 }
 
+// RenderCentralDBOnly renders the zip files for the Central DB
+func RenderCentralDBOnly(c Config, imageFlavor defaults.ImageFlavor) ([]*zip.File, error) {
+	return render(c, centralDBOnly, imageFlavor)
+}
+
 func renderAndExtractSingleFileContents(c Config, mode mode, imageFlavor defaults.ImageFlavor) ([]byte, error) {
+	return renderAndExtractFileContents(c, mode, imageFlavor, 1)
+}
+
+func renderAndExtractFileContents(c Config, mode mode, imageFlavor defaults.ImageFlavor, numFiles int) ([]byte, error) {
 	files, err := render(c, mode, imageFlavor)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(files) != 1 {
-		return nil, utils.Should(errors.Errorf("got unexpected number of files when rendering in mode %s: %d", mode, len(files)))
+	if len(files) != numFiles {
+		return nil, utils.ShouldErr(errors.Errorf("expected %d but got %d files when rendering in mode %s", numFiles, len(files), mode))
 	}
-	return files[0].Content, nil
+
+	if len(files) == 1 {
+		// Short circuit if a single file.
+		return files[0].Content, nil
+	}
+
+	var buf bytes.Buffer
+	for i, f := range files {
+		if i > 0 {
+			buf.WriteString("\n\n---\n\n")
+		}
+		_, err = buf.Write(f.Content)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return buf.Bytes(), nil
 }
 
 // RenderCentralTLSSecretOnly renders just the file that contains the central-tls secret.
@@ -126,9 +180,20 @@ func RenderCentralTLSSecretOnly(c Config, imageFlavor defaults.ImageFlavor) ([]b
 	return renderAndExtractSingleFileContents(c, centralTLSOnly, imageFlavor)
 }
 
+// RenderCentralDBTLSSecretOnly renders just the file that contains the central-db-tls secret
+func RenderCentralDBTLSSecretOnly(c Config, imageFlavor defaults.ImageFlavor) ([]byte, error) {
+	return renderAndExtractSingleFileContents(c, centralDBTLSOnly, imageFlavor)
+}
+
 // RenderScannerTLSSecretOnly renders just the file that contains the scanner-tls secret.
 func RenderScannerTLSSecretOnly(c Config, imageFlavor defaults.ImageFlavor) ([]byte, error) {
 	return renderAndExtractSingleFileContents(c, scannerTLSOnly, imageFlavor)
+}
+
+// RenderScannerV4TLSSecretOnly renders just the file that contains the scanner-v4-tls secret.
+func RenderScannerV4TLSSecretOnly(c Config, imageFlavor defaults.ImageFlavor) ([]byte, error) {
+	// Separate secrets for indexer, matcher, and db expected
+	return renderAndExtractFileContents(c, scannerV4TLSOnly, imageFlavor, 3)
 }
 
 func render(c Config, mode mode, imageFlavor defaults.ImageFlavor) ([]*zip.File, error) {

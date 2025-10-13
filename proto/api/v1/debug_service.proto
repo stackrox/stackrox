@@ -1,110 +1,110 @@
 syntax = "proto3";
 
-option go_package = "v1";
-option java_package = "io.stackrox.proto.api.v1";
+package v1;
 
-import weak "google/api/annotations.proto";
 import "api/v1/empty.proto";
+import weak "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "storage/role.proto";
 
-package v1;
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
 
 message GetLogLevelRequest {
-    repeated string modules = 1;
+  repeated string modules = 1;
 }
 
 message LogLevelRequest {
-    string          level   = 1;
-    repeated string modules = 2;
+  string level = 1;
+  repeated string modules = 2;
 }
 
 message ModuleLevel {
-    string module = 1;
-    string level  = 2;
+  string module = 1;
+  string level = 2;
 }
 
 message LogLevelResponse {
-    string               level         = 1;
-    repeated ModuleLevel module_levels = 2;
+  string level = 1;
+  repeated ModuleLevel module_levels = 2;
 }
 
 message AuthorizationTraceResponse {
-    message Request {
-        string endpoint = 1;
-        string method   = 2;
+  message Request {
+    string endpoint = 1;
+    string method = 2;
+  }
+
+  message Response {
+    enum Status {
+      UNKNOWN_STATUS = 0;
+      SUCCESS = 1;
+      FAILURE = 2;
     }
 
-    message Response {
-        enum Status {
-            UNKNOWN_STATUS = 0;
-            SUCCESS        = 1;
-            FAILURE        = 2;
-        }
+    Status status = 1;
+    string error = 2;
+  }
 
-        Status status = 1;
-        string error  = 2;
+  message User {
+    message Role {
+      string name = 1;
+      map<string, storage.Access> permissions = 2;
+      string access_scope_name = 3;
+      storage.SimpleAccessScope.Rules access_scope = 4;
     }
 
-    message User {
-        message Role {
-            string                          name              = 1;
-            map<string, storage.Access>     permissions       = 2;
-            string                          access_scope_name = 3;
-            storage.SimpleAccessScope.Rules access_scope      = 4;
-        }
+    string username = 1;
+    string friendly_name = 2;
+    map<string, storage.Access> aggregated_permissions = 3;
+    repeated Role roles = 4;
+  }
 
-        string                      username               = 1;
-        string                      friendly_name          = 2;
-        map<string, storage.Access> aggregated_permissions = 3;
-        repeated Role               roles                  = 4;
+  message Trace {
+    message BuiltInAuthorizer {
+      int32 clusters_total_num = 1;
+      int32 namespaces_total_num = 2;
+      map<string, int32> denied_authz_decisions = 3;
+      map<string, int32> allowed_authz_decisions = 4;
+      map<string, string> effective_access_scopes = 5;
     }
 
-    message Trace {
-        message BuiltInAuthorizer {
-            int32               clusters_total_num      = 1;
-            int32               namespaces_total_num    = 2;
-            map<string, int32>  denied_authz_decisions  = 3;
-            map<string, int32>  allowed_authz_decisions = 4;
-            map<string, string> effective_access_scopes = 5;
-        }
-
-        string scope_checker_type      = 1;
-        oneof authorizer {
-            BuiltInAuthorizer built_in = 2;
-        }
+    string scope_checker_type = 1;
+    oneof authorizer {
+      BuiltInAuthorizer built_in = 2;
     }
+  }
 
-    google.protobuf.Timestamp arrived_at   = 1;
-    google.protobuf.Timestamp processed_at = 2;
-    Request                   request      = 3;
-    Response                  response     = 4;
-    User                      user         = 5;
-    Trace                     trace        = 6;
+  google.protobuf.Timestamp arrived_at = 1;
+  google.protobuf.Timestamp processed_at = 2;
+  Request request = 3;
+  Response response = 4;
+  User user = 5;
+  Trace trace = 6;
 }
 
 // APIs for debugging.
 service DebugService {
+  // Get the current logging level for StackRox services.
+  rpc GetLogLevel(GetLogLevelRequest) returns (LogLevelResponse) {
+    option (google.api.http) = {get: "/v1/debug/loglevel"};
+  }
 
-    // Get the current logging level for StackRox services.
-    rpc GetLogLevel(GetLogLevelRequest) returns (LogLevelResponse) {
-        option (google.api.http) = {
-             get: "/v1/debug/loglevel"
-         };
-    }
+  // Set logging level for StackRox services.
+  rpc SetLogLevel(LogLevelRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      patch: "/v1/debug/loglevel"
+      body: "*"
+    };
+  }
+  // Stream authorization traces for all incoming requests.
+  rpc StreamAuthzTraces(v1.Empty) returns (stream AuthorizationTraceResponse) {
+    option (google.api.http) = {get: "/v1/debug/authz/trace"};
+  }
 
-    // Set logging level for StackRox services.
-    rpc SetLogLevel(LogLevelRequest) returns (google.protobuf.Empty) {
-        option (google.api.http) = {
-             patch: "/v1/debug/loglevel"
-             body: "*"
-         };
-    }
-    // Stream authorization traces for all incoming requests.
-    rpc StreamAuthzTraces(v1.Empty) returns (stream AuthorizationTraceResponse) {
-        option (google.api.http) = {
-            get: "/v1/debug/authz/trace"
-        };
-    }
+  // Reset database debugging statistics.
+  rpc ResetDBStats(v1.Empty) returns (v1.Empty) {
+    option (google.api.http) = {post: "/v1/debug/db/stats/reset"};
+  }
 }

@@ -1,17 +1,17 @@
-import groups.BAT
+
 import objects.Pagination
 import objects.SortOption
 import services.GraphQLService
 
 import org.junit.Assume
-import org.junit.experimental.categories.Category
+import spock.lang.Tag
 import spock.lang.Unroll
 
 class GraphQLResourcePaginationTest extends BaseSpecification {
 
     @Unroll
-    @Category(BAT)
-    def "Verify graphql/sublist pagination #topResource #topLevelQuery #topLevelSortOption #subResource"() {
+    @Tag("BAT")
+    def "Verify graphql/sublist pagination #topResource #topLevelQuery #topLevelSortOptionDesc #subResource"() {
         given:
         "Ensure on GKE"
         Assume.assumeTrue(orchestrator.isGKE())
@@ -47,32 +47,34 @@ class GraphQLResourcePaginationTest extends BaseSpecification {
         assert sublistGraphQLQuery == "" || resultRet.getValue()["${topResource}"]["${subResource}"].size() != 0
 
         where:
-        topResource  | topLevelQuery | topLevelSortOption | subResource
+        topResource  | topLevelQuery | topLevelSortOption | topLevelSortOptionDesc | subResource
 
-        "deployment" | "Namespace:stackrox+Deployment:c"       | new SortOption("Deployment", true) | "images"
-        "deployment" | "Namespace:stackrox+Deployment:central" | new SortOption("Deployment", true) | "secrets"
+        "deployment" | "Namespace:stackrox+Deployment:c"       | new SortOption("Deployment", true) \
+            | "Sort(Deployment)" | "images"
+        "deployment" | "Namespace:stackrox+Deployment:central" | new SortOption("Deployment", true) \
+            | "Sort(Deployment)" | "secrets"
 
-        "cluster"    | "" | null | "subjects"
-        "cluster"    | "" | null | "serviceAccounts"
-        "cluster"    | "" | null | "k8sRoles"
+        "cluster"    | "" | null | "Sort(null)" | "subjects"
+        "cluster"    | "" | null | "Sort(null)" | "serviceAccounts"
+        "cluster"    | "" | null | "Sort(null)" | "k8sRoles"
 
-        "node"       | "" | null | ""
+        "node"       | "" | null | "Sort(null)" | ""
 
         // TODO: re-activate once fixed against postgres
-        //"image"      | "Image:main" | null | "deployments"
+        //"image"      | "Image:main" | null | "Sort(null)" | "deployments"
 
-        "secret"     | "Secret:scanner-db-password" | null | "deployments"
+        "secret"     | "Secret:scanner-db-password" | null | "Sort(null)" | "deployments"
 
-        "subject"    | "Subject:kubelet" | null | "k8sRoles"
+        "subject"    | "Subject:kubelet" | null | "Sort(null)" | "k8sRoles"
 
-        "k8sRole"    | "Role:system:node-bootstrapper" | null | "subjects"
-        "k8sRole"    | "Namespace:stackrox+Role:edit"  | null | "serviceAccounts"
+        "k8sRole"    | "Role:system:node-bootstrapper" | null | "Sort(null)" | "subjects"
+        "k8sRole"    | "Namespace:stackrox+Role:edit"  | null | "Sort(null)" | "serviceAccounts"
 
-        "serviceAccount" | "Service Account:\"central\"" | null |  "k8sRoles"
+        "serviceAccount" | "Service Account:\"central\"" | null | "Sort(null)" | "k8sRoles"
     }
 
     @Unroll
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify graphql pagination and sublist pagination for namespaces #topLevelQuery #subResource"() {
         given:
         "Check on GKE"

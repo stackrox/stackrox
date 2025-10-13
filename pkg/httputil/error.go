@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	grpc_errors "github.com/stackrox/rox/pkg/grpc/errors"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -15,6 +15,12 @@ import (
 type HTTPError interface {
 	error
 	HTTPStatus
+}
+
+// TimeoutError is an interface for HTTP errors that specify whether a timeout occurred.
+type TimeoutError interface {
+	error
+	Timeout() bool
 }
 
 type httpError struct {
@@ -62,10 +68,8 @@ func ErrorFromStatus(status HTTPStatus) HTTPError {
 // It's useful when you have to write an http method.
 func WriteGRPCStyleError(w http.ResponseWriter, c codes.Code, err error) {
 	userErr := status.New(c, err.Error()).Proto()
-	m := jsonpb.Marshaler{}
-
 	w.WriteHeader(runtime.HTTPStatusFromCode(c))
-	_ = m.Marshal(w, userErr)
+	_ = jsonutil.Marshal(w, userErr)
 }
 
 // WriteGRPCStyleErrorf writes a gRPC-style error to an http response writer.
@@ -88,7 +92,7 @@ func WriteGRPCStyleErrorf(w http.ResponseWriter, c codes.Code, format string, ar
 func WriteError(w http.ResponseWriter, err error) {
 	w.WriteHeader(StatusFromError(err))
 	st := grpc_errors.ErrToGrpcStatus(err)
-	_ = new(jsonpb.Marshaler).Marshal(w, st.Proto())
+	_ = jsonutil.Marshal(w, st.Proto())
 }
 
 // WriteErrorf is a convenience method that is equivalent to calling

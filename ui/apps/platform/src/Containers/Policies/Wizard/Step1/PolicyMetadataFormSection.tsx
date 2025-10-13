@@ -1,141 +1,140 @@
 import React, { ReactElement } from 'react';
-import { Flex, TextInput, FormGroup, Radio, TextArea, Form } from '@patternfly/react-core';
-import { Field, useFormikContext } from 'formik';
+import { Flex, TextInput, Radio, TextArea, Form } from '@patternfly/react-core';
+import { FormikContextType, useFormikContext } from 'formik';
+
+import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
+import { ClientPolicy } from 'types/policy.proto';
 
 import PolicyCategoriesSelectField from './PolicyCategoriesSelectField';
 
 function PolicyMetadataFormSection(): ReactElement {
-    const { handleChange } = useFormikContext();
+    const {
+        errors,
+        handleChange,
+        handleBlur,
+        setFieldValue,
+        touched,
+        values,
+    }: FormikContextType<ClientPolicy> = useFormikContext();
 
-    function onChange(_value, event) {
-        handleChange(event);
+    function handleSeverityChange(severity: string) {
+        setFieldValue('severity', severity);
     }
+
     return (
         <Form>
-            <Field name="name">
-                {({ field }) => (
-                    <FormGroup
-                        helperText="Provide a descriptive and unique policy name"
-                        fieldId="policy-name"
-                        label="Name"
-                        isRequired
-                    >
-                        <TextInput
-                            id={field.name}
-                            name={field.name}
-                            value={field.value}
-                            onChange={onChange}
-                            isRequired
-                        />
-                    </FormGroup>
-                )}
-            </Field>
-            <FormGroup
-                helperText="Select a severity level for this policy"
-                fieldId="policy-severity"
-                label="Severity"
+            <FormLabelGroup
                 isRequired
+                label="Name"
+                fieldId="name"
+                errors={errors}
+                touched={touched}
+                helperText={'Provide a descriptive and unique policy name'}
+            >
+                <TextInput
+                    isRequired
+                    type="text"
+                    id="name"
+                    name="name"
+                    value={values.name}
+                    validated={errors?.name && touched?.name ? 'error' : 'default'}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                />
+            </FormLabelGroup>
+            <FormLabelGroup
+                isRequired
+                label="Severity"
+                fieldId="severity"
+                errors={errors}
+                touched={touched}
+                helperText={'Select a severity level for this policy'}
             >
                 <Flex direction={{ default: 'row' }}>
-                    <Field name="severity" type="radio" value="LOW_SEVERITY">
-                        {({ field }) => (
-                            <Radio
-                                name={field.name}
-                                value={field.value}
-                                onChange={onChange}
-                                label="Low"
-                                id="policy-severity-radio-low"
-                                isChecked={field.checked}
-                            />
-                        )}
-                    </Field>
-                    <Field name="severity" type="radio" value="MEDIUM_SEVERITY">
-                        {({ field }) => (
-                            <Radio
-                                name={field.name}
-                                value={field.value}
-                                onChange={onChange}
-                                label="Medium"
-                                id="policy-severity-radio-medium"
-                                isChecked={field.checked}
-                            />
-                        )}
-                    </Field>
-                    <Field name="severity" type="radio" value="HIGH_SEVERITY">
-                        {({ field }) => (
-                            <Radio
-                                name={field.name}
-                                value={field.value}
-                                onChange={onChange}
-                                label="High"
-                                id="policy-severity-radio-high"
-                                isChecked={field.checked}
-                            />
-                        )}
-                    </Field>
-                    <Field name="severity" type="radio" value="CRITICAL_SEVERITY">
-                        {({ field }) => (
-                            <Radio
-                                name={field.name}
-                                value={field.value}
-                                onChange={onChange}
-                                label="Critical"
-                                id="policy-severity-radio-critical"
-                                isChecked={field.checked}
-                            />
-                        )}
-                    </Field>
+                    <Radio
+                        name="severity"
+                        value="LOW_SEVERITY"
+                        onChange={() => handleSeverityChange('LOW_SEVERITY')}
+                        label="Low"
+                        id="policy-severity-radio-low"
+                        isChecked={values.severity === 'LOW_SEVERITY'}
+                        onBlur={handleBlur}
+                    />
+                    <Radio
+                        name="severity"
+                        value="MEDIUM_SEVERITY"
+                        onChange={() => handleSeverityChange('MEDIUM_SEVERITY')}
+                        label="Medium"
+                        id="policy-severity-radio-medium"
+                        isChecked={values.severity === 'MEDIUM_SEVERITY'}
+                        onBlur={handleBlur}
+                    />
+                    <Radio
+                        name="severity"
+                        value="HIGH_SEVERITY"
+                        onChange={() => handleSeverityChange('HIGH_SEVERITY')}
+                        label="High"
+                        id="policy-severity-radio-high"
+                        isChecked={values.severity === 'HIGH_SEVERITY'}
+                        onBlur={handleBlur}
+                    />
+                    <Radio
+                        name="severity"
+                        value="CRITICAL_SEVERITY"
+                        onChange={() => handleSeverityChange('CRITICAL_SEVERITY')}
+                        label="Critical"
+                        id="policy-severity-radio-critical"
+                        isChecked={values.severity === 'CRITICAL_SEVERITY'}
+                        onBlur={handleBlur}
+                    />
                 </Flex>
-            </FormGroup>
+            </FormLabelGroup>
             <PolicyCategoriesSelectField />
-            <Field name="description">
-                {({ field }) => (
-                    <FormGroup
-                        helperText="Enter details about the policy"
-                        fieldId="policy-description"
-                        label="Description"
-                    >
-                        <TextArea
-                            id={field.name}
-                            name={field.name}
-                            value={field.value}
-                            onChange={onChange}
-                        />
-                    </FormGroup>
-                )}
-            </Field>
-            <Field name="rationale">
-                {({ field }) => (
-                    <FormGroup
-                        helperText="Enter an explanation about why this policy exists"
-                        fieldId="policy-rationale"
-                        label="Rationale"
-                    >
-                        <TextArea
-                            id={field.name}
-                            name={field.name}
-                            value={field.value}
-                            onChange={onChange}
-                        />
-                    </FormGroup>
-                )}
-            </Field>
-            <Field name="remediation">
-                {({ field }) => (
-                    <FormGroup
-                        helperText="Enter steps to resolve the violations of this policy"
-                        fieldId="policy-guidance"
-                        label="Guidance"
-                    >
-                        <TextArea
-                            id={field.name}
-                            name={field.name}
-                            value={field.value}
-                            onChange={onChange}
-                        />
-                    </FormGroup>
-                )}
-            </Field>
+            <FormLabelGroup
+                label="Description"
+                fieldId="description"
+                errors={errors}
+                touched={touched}
+                helperText={'Enter a description of the policy'}
+            >
+                <TextArea
+                    id="description"
+                    name="description"
+                    value={values.description}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                />
+            </FormLabelGroup>
+            <FormLabelGroup
+                label="Rationale"
+                fieldId="rationale"
+                errors={errors}
+                touched={touched}
+                helperText={'Enter an explanation about why this policy exists'}
+            >
+                <TextArea
+                    id="rationale"
+                    name="rationale"
+                    value={values.rationale}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                />
+            </FormLabelGroup>
+            <FormLabelGroup
+                label="Guidance"
+                fieldId="remediation"
+                errors={errors}
+                touched={touched}
+                helperText={'Enter steps to resolve the violations of this policy'}
+            >
+                <TextArea
+                    id="remediation"
+                    name="remediation"
+                    value={values.remediation}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                />
+            </FormLabelGroup>
         </Form>
     );
 }

@@ -11,17 +11,17 @@ import {
 } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
+import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
 import { NotifierIntegration } from 'types/notifier.proto';
-import { Policy } from 'types/policy.proto';
+import { BasePolicy } from 'types/policy.proto';
 import MitreAttackVectorsViewContainer from 'Containers/MitreAttackVectors/MitreAttackVectorsViewContainer';
 
-import { formatCategories, formatType } from '../policies.utils';
-import PolicySeverityLabel from '../PolicySeverityLabel';
+import { formatCategories, getPolicyOriginLabel } from '../policies.utils';
 import Notifier from './Notifier';
 
 type PolicyOverviewProps = {
     notifiers: NotifierIntegration[];
-    policy: Policy;
+    policy: BasePolicy;
     isReview?: boolean;
 };
 
@@ -33,7 +33,6 @@ function PolicyOverview({
     const {
         categories,
         description,
-        isDefault,
         notifiers: notifierIds,
         rationale,
         remediation,
@@ -53,18 +52,18 @@ function PolicyOverview({
                 <DescriptionList isCompact isHorizontal>
                     <DescriptionListItem
                         term="Severity"
-                        desc={<PolicySeverityLabel severity={severity} />}
+                        desc={<PolicySeverityIconText severity={severity} />}
                     />
                     <DescriptionListItem term="Categories" desc={formatCategories(categories)} />
-                    <DescriptionListItem term="Type" desc={formatType(isDefault)} />
+                    <DescriptionListItem term="Origin" desc={getPolicyOriginLabel(policy)} />
                     <DescriptionListItem term="Description" desc={description} />
                     <DescriptionListItem term="Rationale" desc={rationale} />
                     <DescriptionListItem term="Guidance" desc={remediation} />
                 </DescriptionList>
                 {notifierIds?.length !== 0 && (
                     <>
-                        <Divider component="div" className="pf-u-mt-md" />
-                        <Title headingLevel="h3" className="pf-u-pt-md pf-u-pb-sm">
+                        <Divider component="div" className="pf-v5-u-mt-md" />
+                        <Title headingLevel="h3" className="pf-v5-u-pt-md pf-v5-u-pb-sm">
                             Notifiers
                         </Title>
                         <Grid hasGutter sm={12} md={6}>
@@ -83,8 +82,8 @@ function PolicyOverview({
                         </Grid>
                     </>
                 )}
-                <Divider component="div" className="pf-u-mt-md" />
-                <Title headingLevel="h3" className="pf-u-mb-md pf-u-pt-lg">
+                <Divider component="div" className="pf-v5-u-mt-md" />
+                <Title headingLevel="h3" className="pf-v5-u-mb-md pf-v5-u-pt-lg">
                     MITRE ATT&CK
                 </Title>
                 <MitreAttackVectorsViewContainer

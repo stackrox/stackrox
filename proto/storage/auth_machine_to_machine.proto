@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package storage;
+
+import "storage/traits.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+// AuthMachineToMachineConfig is the storage representation of auth machine to machine configs in Central.
+//
+// Refer to v1.AuthMachineToMachineConfig for a more detailed doc.
+// Next tag: 7.
+message AuthMachineToMachineConfig {
+  string id = 1; // @gotags: sql:"pk,type(uuid)"
+
+  enum Type {
+    GENERIC = 0;
+    GITHUB_ACTIONS = 1;
+    KUBE_SERVICE_ACCOUNT = 2;
+  }
+  Type type = 2;
+
+  string token_expiration_duration = 3;
+
+  message Mapping {
+    string key = 1;
+    string value_expression = 2;
+    string role = 3; // @gotags: sql:"fk(Role:name),restrict-delete"
+  }
+  repeated Mapping mappings = 4;
+
+  // The issuer is related to an ID token's issuer.
+  // Spec: https://openid.net/specs/openid-connect-core-1_0.html#IDToken.
+  string issuer = 5; // @gotags: sql:"unique"
+
+  Traits traits = 6;
+}

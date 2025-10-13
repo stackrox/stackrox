@@ -9,19 +9,18 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type TestGrandparentsStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestTestGrandparentsStore(t *testing.T) {
@@ -29,28 +28,17 @@ func TestTestGrandparentsStore(t *testing.T) {
 }
 
 func (s *TestGrandparentsStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
 
 	s.testDB = pgtest.ForT(s.T())
-	s.store = New(s.testDB.Pool)
+	s.store = New(s.testDB.DB)
 }
 
 func (s *TestGrandparentsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE test_grandparents CASCADE")
 	s.T().Log("test_grandparents", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
-}
-
-func (s *TestGrandparentsStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *TestGrandparentsStoreSuite) TestStore() {
@@ -72,12 +60,12 @@ func (s *TestGrandparentsStoreSuite) TestStore() {
 	foundTestGrandparent, exists, err = store.Get(ctx, testGrandparent.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(testGrandparent, foundTestGrandparent)
+	protoassert.Equal(s.T(), testGrandparent, foundTestGrandparent)
 
-	testGrandparentCount, err := store.Count(ctx)
+	testGrandparentCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, testGrandparentCount)
-	testGrandparentCount, err = store.Count(withNoAccessCtx)
+	testGrandparentCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(testGrandparentCount)
 
@@ -87,11 +75,6 @@ func (s *TestGrandparentsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, testGrandparent))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, testGrandparent), sac.ErrResourceAccessDenied)
 
-	foundTestGrandparent, exists, err = store.Get(ctx, testGrandparent.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(testGrandparent, foundTestGrandparent)
-
 	s.NoError(store.Delete(ctx, testGrandparent.GetId()))
 	foundTestGrandparent, exists, err = store.Get(ctx, testGrandparent.GetId())
 	s.NoError(err)
@@ -100,15 +83,23 @@ func (s *TestGrandparentsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, testGrandparent.GetId()))
 
 	var testGrandparents []*storage.TestGrandparent
+	var testGrandparentIDs []string
 	for i := 0; i < 200; i++ {
 		testGrandparent := &storage.TestGrandparent{}
 		s.NoError(testutils.FullInit(testGrandparent, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		testGrandparents = append(testGrandparents, testGrandparent)
+		testGrandparentIDs = append(testGrandparentIDs, testGrandparent.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, testGrandparents))
 
-	testGrandparentCount, err = store.Count(ctx)
+	testGrandparentCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, testGrandparentCount)
+
+	s.NoError(store.DeleteMany(ctx, testGrandparentIDs))
+
+	testGrandparentCount, err = store.Count(ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.Equal(0, testGrandparentCount)
 }

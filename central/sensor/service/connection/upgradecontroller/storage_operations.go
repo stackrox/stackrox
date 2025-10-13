@@ -3,12 +3,12 @@ package upgradecontroller
 import (
 	"context"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/connection/upgradecontroller/stateutils"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 var (
@@ -58,7 +58,7 @@ func (u *upgradeController) setUpgradeProgress(expectedProcessID string, state s
 	prevState := u.active.status.GetProgress().GetUpgradeState()
 	since := u.active.status.GetProgress().GetSince()
 	if prevState != state || since == nil {
-		since = types.TimestampNow()
+		since = protocompat.TimestampNow()
 	}
 
 	// Carryover the detail if the state did not change and no new detail was specified.

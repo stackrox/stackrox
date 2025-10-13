@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 var (
@@ -24,17 +25,23 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Group)(nil)), "groups")
+		schema.ScopingResource = resources.Access
 		RegisterTable(schema, CreateTableGroupsStmt)
 		return schema
 	}()
 )
 
 const (
+	// GroupsTableName specifies the name of the table in postgres.
 	GroupsTableName = "groups"
 )
 
 // Groups holds the Gorm model for Postgres table `groups`.
 type Groups struct {
-	PropsId    string `gorm:"column:props_id;type:varchar;primaryKey"`
-	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	PropsID             string `gorm:"column:props_id;type:varchar;primaryKey"`
+	PropsAuthProviderID string `gorm:"column:props_authproviderid;type:varchar;uniqueIndex:groups_unique_indicator"`
+	PropsKey            string `gorm:"column:props_key;type:varchar;uniqueIndex:groups_unique_indicator"`
+	PropsValue          string `gorm:"column:props_value;type:varchar;uniqueIndex:groups_unique_indicator"`
+	RoleName            string `gorm:"column:rolename;type:varchar;uniqueIndex:groups_unique_indicator"`
+	Serialized          []byte `gorm:"column:serialized;type:bytea"`
 }

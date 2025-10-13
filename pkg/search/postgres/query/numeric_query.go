@@ -7,7 +7,9 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/readable"
+	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
 type prefixAndInversion struct {
@@ -56,7 +58,7 @@ func parseNumericPrefix(value string) (prefix string, trimmedValue string) {
 func parseNumericStringToFloat(s string) (float64, error) {
 	val, err := strconv.ParseFloat(s, 64)
 	if err != nil {
-		return 0, err
+		return 0, errox.InvalidArgs.Newf("cannot parse %q as a number", s)
 	}
 	return val, nil
 }
@@ -175,6 +177,18 @@ func newNumericQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
 	if len(ctx.queryModifiers) > 0 {
 		return nil, errors.Errorf("modifiers not supported for numeric query: %+v", ctx.queryModifiers)
 	}
+
+	if isWildCardOrNullStringQuery(ctx.value) {
+		existenceStr := ""
+		if ctx.value == pkgSearch.WildcardString {
+			existenceStr = "not"
+		}
+		return qeWithSelectFieldIfNeeded(ctx, &WhereClause{
+			Query:  fmt.Sprintf("%s is %s null", ctx.qualifiedColumnName, existenceStr),
+			Values: []interface{}{},
+		}, nil), nil
+	}
+
 	prefix, trimmedValue := parseNumericPrefix(ctx.value)
 
 	var whereClause WhereClause

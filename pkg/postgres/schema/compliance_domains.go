@@ -9,7 +9,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -27,17 +29,20 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceDomain)(nil)), "compliance_domains")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_DOMAIN, "compliancedomain", (*storage.ComplianceDomain)(nil)))
+		schema.ScopingResource = resources.Compliance
 		RegisterTable(schema, CreateTableComplianceDomainsStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_DOMAIN, schema)
 		return schema
 	}()
 )
 
 const (
+	// ComplianceDomainsTableName specifies the name of the table in postgres.
 	ComplianceDomainsTableName = "compliance_domains"
 )
 
 // ComplianceDomains holds the Gorm model for Postgres table `compliance_domains`.
 type ComplianceDomains struct {
-	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	ID         string `gorm:"column:id;type:varchar;primaryKey"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

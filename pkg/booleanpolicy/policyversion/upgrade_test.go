@@ -29,7 +29,7 @@ func TestNoUpgraderLeftBehind(t *testing.T) {
 
 func SetupUpgradersForTest(_ *testing.T) {
 	simpleUpgrader := func(policy *storage.Policy) {
-		v, _ := strconv.ParseFloat(policy.PolicyVersion, 64)
+		v, _ := strconv.ParseFloat(policy.GetPolicyVersion(), 64)
 		policy.PolicyVersion = fmt.Sprintf("%.1f", v+1.0)
 	}
 
@@ -157,7 +157,7 @@ func TestGetUpgradersByVersions(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			actual := getUpgradersByVersions(tc.upgraders, versions[:])
+			actual := getUpgradersByVersions(tc.upgraders, versions)
 			require.Len(t, actual, len(versions))
 
 			// Since func values are deeply equal iff both are nil,

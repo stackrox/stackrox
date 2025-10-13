@@ -2,7 +2,7 @@ package schema
 
 import (
 	"context"
-	"sort"
+	"slices"
 	"strings"
 	"testing"
 
@@ -21,17 +21,22 @@ var (
 )
 
 type registeredTable struct {
-	Schema     *walker.Schema
-	CreateStmt *postgres.CreateStmts
+	Schema             *walker.Schema
+	CreateStmt         *postgres.CreateStmts
+	FeatureEnabledFunc func() bool
 }
 
 // RegisterTable maps a table to an object type for the purposes of metrics gathering
-func RegisterTable(schema *walker.Schema, stmt *postgres.CreateStmts) {
+func RegisterTable(schema *walker.Schema, stmt *postgres.CreateStmts, featureFlagFuncs ...func() bool) {
 	if _, ok := registeredTables[schema.Table]; ok {
 		log.Fatalf("table %q is already registered for %s", schema.Table, schema.Type)
 		return
 	}
-	registeredTables[schema.Table] = &registeredTable{Schema: schema, CreateStmt: stmt}
+	featureFlagFunc := func() bool { return true }
+	if len(featureFlagFuncs) != 0 {
+		featureFlagFunc = featureFlagFuncs[0]
+	}
+	registeredTables[schema.Table] = &registeredTable{Schema: schema, CreateStmt: stmt, FeatureEnabledFunc: featureFlagFunc}
 }
 
 // GetSchemaForTable return the schema registered for specified table name.
@@ -42,6 +47,14 @@ func GetSchemaForTable(tableName string) *walker.Schema {
 	return nil
 }
 
+func getAllTables() []*registeredTable {
+	tables := make([]*registeredTable, 0, len(registeredTables))
+	for _, v := range registeredTables {
+		tables = append(tables, v)
+	}
+	return tables
+}
+
 func getAllRegisteredTablesInOrder() []*registeredTable {
 	visited := set.NewStringSet()
 
@@ -49,7 +62,7 @@ func getAllRegisteredTablesInOrder() []*registeredTable {
 	for table := range registeredTables {
 		tables = append(tables, table)
 	}
-	sort.Strings(tables)
+	slices.Sort(tables)
 
 	var rts []*registeredTable
 	for _, table := range tables {
@@ -64,6 +77,9 @@ func getRegisteredTablesFor(visited set.StringSet, table string) []*registeredTa
 	}
 	var rts []*registeredTable
 	rt := registeredTables[table]
+	if !rt.FeatureEnabledFunc() {
+		return nil
+	}
 	for _, ref := range rt.Schema.References {
 		rts = append(rts, getRegisteredTablesFor(visited, ref.OtherSchema.Table)...)
 	}
@@ -85,7 +101,7 @@ func ApplyAllSchemas(ctx context.Context, gormDB *gorm.DB) {
 }
 
 // ApplyAllSchemasIncludingTests creates or auto migrate according to the current schema including test schemas
-func ApplyAllSchemasIncludingTests(ctx context.Context, gormDB *gorm.DB, t testing.TB) {
+func ApplyAllSchemasIncludingTests(ctx context.Context, gormDB *gorm.DB, _ testing.TB) {
 	for _, rt := range getAllRegisteredTablesInOrder() {
 		log.Debugf("Applying schema for table %s", rt.Schema.Table)
 		pgutils.CreateTableFromModel(ctx, gormDB, rt.CreateStmt)

@@ -4,8 +4,8 @@ import logError from 'utils/logError';
 import { toast } from 'react-toastify';
 import html2canvas from 'html2canvas';
 
-import { getDate, addBrandedTimestampToString } from 'utils/dateUtils';
-import { RequestAction, SuccessAction } from 'utils/fetchingReduxRoutines';
+import { addBrandedTimestampToString, getDate } from 'utils/dateUtils';
+import type { RequestAction, SuccessAction } from 'utils/fetchingReduxRoutines';
 import { getProductBranding } from 'constants/productBranding';
 
 /**

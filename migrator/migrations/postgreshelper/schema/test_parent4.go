@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -35,18 +36,20 @@ var (
 			v1.SearchCategory(61),
 			v1.SearchCategory(74),
 		}...)
+		schema.ScopingResource = resources.Namespace
 		return schema
 	}()
 )
 
 const (
+	// TestParent4TableName specifies the name of the table in postgres.
 	TestParent4TableName = "test_parent4"
 )
 
 // TestParent4 holds the Gorm model for Postgres table `test_parent4`.
 type TestParent4 struct {
-	Id                  string           `gorm:"column:id;type:varchar;primaryKey"`
-	ParentId            string           `gorm:"column:parentid;type:varchar"`
+	ID                  string           `gorm:"column:id;type:uuid;primaryKey"`
+	ParentID            string           `gorm:"column:parentid;type:varchar"`
 	Val                 string           `gorm:"column:val;type:varchar"`
 	Serialized          []byte           `gorm:"column:serialized;type:bytea"`
 	TestGrandparentsRef TestGrandparents `gorm:"foreignKey:parentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`

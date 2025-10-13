@@ -13,6 +13,10 @@ import (
 	"testing"
 	"time"
 
+	// Embed is used to import the serialized test object file.
+	_ "embed"
+
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth"
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
@@ -20,7 +24,9 @@ import (
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/testutils/roletest"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -193,7 +199,8 @@ func (s *registryProviderCallbackTestSuite) TestAuthenticationTestModeUserWithou
 	urlPrefix := s.registry.providersURLPrefix()
 	req, err := http.NewRequest(http.MethodGet, urlPrefix+dummyProviderType+"/callback", strings.NewReader(""))
 	s.Require().NoError(err, "error creating http request")
-	clientState := idputil.AttachTestStateOrEmpty("", true)
+	clientState, err := idputil.AttachStateOrEmpty("", true, "")
+	s.Require().NoError(err, "error attaching state")
 	testAuthProviderBackendFactory.registerProcessResponse(dummyProviderType, clientState, nil)
 	authRsp := generateAuthResponse(testUserWithoutRole, nil)
 	testAuthProviderBackend.registerProcessHTTPResponse(authRsp, nil)
@@ -217,7 +224,8 @@ func (s *registryProviderCallbackTestSuite) TestAuthenticationTestModeUserWithRo
 	urlPrefix := s.registry.providersURLPrefix()
 	req, err := http.NewRequest(http.MethodGet, urlPrefix+dummyProviderType+"/callback", strings.NewReader(""))
 	s.Require().NoError(err, "error creating http request")
-	clientState := idputil.AttachTestStateOrEmpty("", true)
+	clientState, err := idputil.AttachStateOrEmpty("", true, "")
+	s.Require().NoError(err, "error attaching state")
 	testAuthProviderBackendFactory.registerProcessResponse(dummyProviderType, clientState, nil)
 	authRsp := generateAuthResponse(testUserWithAdminRole, nil)
 	testAuthProviderBackend.registerProcessHTTPResponse(authRsp, nil)
@@ -242,7 +250,8 @@ func (s *registryProviderCallbackTestSuite) TestAuthenticationRejectsUserWithout
 	urlPrefix := s.registry.providersURLPrefix()
 	req, err := http.NewRequest(http.MethodGet, urlPrefix+dummyProviderType+"/callback", strings.NewReader(""))
 	s.Require().NoError(err, "error creating http request")
-	clientState := idputil.AttachTestStateOrEmpty("", false)
+	clientState, err := idputil.AttachStateOrEmpty("", false, "")
+	s.Require().NoError(err, "error attaching state")
 	testAuthProviderBackendFactory.registerProcessResponse(dummyProviderType, clientState, nil)
 	authRsp := generateAuthResponse(testUserWithoutRole, nil)
 	testAuthProviderBackend.registerProcessHTTPResponse(authRsp, nil)
@@ -266,7 +275,8 @@ func (s *registryProviderCallbackTestSuite) TestAuthenticationIssuesTokenForUser
 	urlPrefix := s.registry.providersURLPrefix()
 	req, err := http.NewRequest(http.MethodGet, urlPrefix+dummyProviderType+"/callback", strings.NewReader(""))
 	s.Require().NoError(err, "error creating http request")
-	clientState := idputil.AttachTestStateOrEmpty("", false)
+	clientState, err := idputil.AttachStateOrEmpty("", false, "")
+	s.Require().NoError(err, "error attaching state")
 	testAuthProviderBackendFactory.registerProcessResponse(dummyProviderType, clientState, nil)
 	authRsp := generateAuthResponse(testUserWithAdminRole, nil)
 	testAuthProviderBackend.registerProcessHTTPResponse(authRsp, nil)
@@ -291,7 +301,8 @@ func (s *registryProviderCallbackTestSuite) TestAuthenticationVerifyRequiredAttr
 	urlPrefix := s.registry.providersURLPrefix()
 	req, err := http.NewRequest(http.MethodGet, urlPrefix+dummyAttributeVerifierProviderType+"/callback", strings.NewReader(""))
 	s.Require().NoError(err, "error creating http request")
-	clientState := idputil.AttachTestStateOrEmpty("", false)
+	clientState, err := idputil.AttachStateOrEmpty("", false, "")
+	s.Require().NoError(err, "error attaching state")
 	testAuthProviderBackendFactory.registerProcessResponse(dummyAttributeVerifierProviderType, clientState, nil)
 	authRsp := generateAuthResponse(testUserWithAdminRole, map[string][]string{
 		"name": {"something"},
@@ -318,7 +329,8 @@ func (s *registryProviderCallbackTestSuite) TestAuthenticationMissingRequiredAtt
 	urlPrefix := s.registry.providersURLPrefix()
 	req, err := http.NewRequest(http.MethodGet, urlPrefix+dummyAttributeVerifierProviderType+"/callback", strings.NewReader(""))
 	s.Require().NoError(err, "error creating http request")
-	clientState := idputil.AttachTestStateOrEmpty("", false)
+	clientState, err := idputil.AttachStateOrEmpty("", false, "")
+	s.Require().NoError(err, "error attaching state")
 	testAuthProviderBackendFactory.registerProcessResponse(dummyAttributeVerifierProviderType, clientState, nil)
 	authRsp := generateAuthResponse(testUserWithAdminRole, map[string][]string{
 		"name": {"something-else"},
@@ -339,6 +351,111 @@ func (s *registryProviderCallbackTestSuite) TestAuthenticationMissingRequiredAtt
 		"should redirect to the registry redirect URL")
 	s.Equal(errox.NoCredentials.CausedBy("required attribute \"name\" did not have the required value").Error(), redirectURLFragments.Get("error"),
 		"callback activated for user without role should issue an explicit message")
+}
+
+var (
+	expiresTime      = time.Date(2020, time.December, 31, 23, 59, 59, 999999999, time.UTC)
+	expiresTimestamp = protocompat.ConvertTimeToTimestampOrNil(&expiresTime)
+
+	testAuthStatus = &v1.AuthStatus{
+		Id: &v1.AuthStatus_UserId{
+			UserId: "admin",
+		},
+		Expires: expiresTimestamp,
+		AuthProvider: &storage.AuthProvider{
+			Id:   "adaaaaaa-cccc-4011-0000-111111111111",
+			Name: "Login with username/password",
+			Type: "basic",
+		},
+		UserInfo: &storage.UserInfo{
+			Username:     "admin",
+			FriendlyName: "",
+			Roles: []*storage.UserInfo_Role{
+				{
+					Name: "Admin",
+					ResourceToAccess: map[string]storage.Access{
+						"Access":                           storage.Access_READ_WRITE_ACCESS,
+						"Administration":                   storage.Access_READ_WRITE_ACCESS,
+						"Alert":                            storage.Access_READ_WRITE_ACCESS,
+						"CVE":                              storage.Access_READ_WRITE_ACCESS,
+						"Cluster":                          storage.Access_READ_WRITE_ACCESS,
+						"Compliance":                       storage.Access_READ_WRITE_ACCESS,
+						"Deployment":                       storage.Access_READ_WRITE_ACCESS,
+						"DeploymentExtension":              storage.Access_READ_WRITE_ACCESS,
+						"Detection":                        storage.Access_READ_WRITE_ACCESS,
+						"Image":                            storage.Access_READ_WRITE_ACCESS,
+						"Integration":                      storage.Access_READ_WRITE_ACCESS,
+						"K8sRole":                          storage.Access_READ_WRITE_ACCESS,
+						"K8sRoleBinding":                   storage.Access_READ_WRITE_ACCESS,
+						"K8sSubject":                       storage.Access_READ_WRITE_ACCESS,
+						"Namespace":                        storage.Access_READ_WRITE_ACCESS,
+						"NetworkGraph":                     storage.Access_READ_WRITE_ACCESS,
+						"NetworkPolicy":                    storage.Access_READ_WRITE_ACCESS,
+						"Node":                             storage.Access_READ_WRITE_ACCESS,
+						"Secret":                           storage.Access_READ_WRITE_ACCESS,
+						"ServiceAccount":                   storage.Access_READ_WRITE_ACCESS,
+						"VulnerabilityManagementApprovals": storage.Access_READ_WRITE_ACCESS,
+						"VulnerabilityManagementRequests":  storage.Access_READ_WRITE_ACCESS,
+						"WatchedImages":                    storage.Access_READ_WRITE_ACCESS,
+						"WorkflowAdministration":           storage.Access_READ_WRITE_ACCESS,
+					},
+				},
+			},
+		},
+		UserAttributes: []*v1.UserAttribute{
+			{
+				Key:    "role",
+				Values: []string{"Admin"},
+			},
+			{
+				Key:    "username",
+				Values: []string{"admin"},
+			},
+		},
+		IdpToken: "abcdefghijklmnopqrstuvwxyz0123456789",
+	}
+)
+
+//go:embed serialized_test_auth_status.json
+var expectedSerializedTestAuthStatus string
+
+func TestGetSerializedAuthStatusData(t *testing.T) {
+	var nilAuthStatus *v1.AuthStatus
+	_, err := getSerializedAuthStatusData(nilAuthStatus)
+	assert.Error(t, err)
+
+	buf, err := getSerializedAuthStatusData(testAuthStatus)
+	assert.NoError(t, err)
+	assert.JSONEq(t, expectedSerializedTestAuthStatus, string(buf))
+}
+
+func TestUserMetadataURLError(t *testing.T) {
+	var nilAuthStatus *v1.AuthStatus
+	const testRedirectURL = "test://Redirect/URL"
+	const testClientState = "testClientState"
+	const testType = "testType"
+	const testMode = false
+	registry := &registryImpl{
+		redirectURL: testRedirectURL,
+	}
+	responseURL := registry.userMetadataURL(
+		nilAuthStatus,
+		testType,
+		testClientState,
+		testMode,
+	)
+	errorText := "Marshal called with nil"
+	expectedErr := errors.New(errorText)
+	expectedURL := &url.URL{
+		Path: testRedirectURL,
+		Fragment: url.Values{
+			testQueryParameter:  {strconv.FormatBool(testMode)},
+			errorQueryParameter: {expectedErr.Error()},
+			typeQueryParameter:  {testType},
+			stateQueryParameter: {testClientState},
+		}.Encode(),
+	}
+	assert.Equal(t, expectedURL, responseURL)
 }
 
 /*****************************************************
@@ -385,6 +502,11 @@ var mockAuthProvider = &storage.AuthProvider{
 	Active:           true,
 }
 
+var mockedAuthProviders = []*storage.AuthProvider{
+	mockAuthProvider,
+	mockAuthProviderWithAttributes,
+}
+
 func generateAuthResponse(user string, userAttr map[string][]string) *AuthResponse {
 	return &AuthResponse{
 		Claims: &tokens.ExternalUserClaim{
@@ -399,11 +521,34 @@ func generateAuthResponse(user string, userAttr map[string][]string) *AuthRespon
 
 var _ Store = (*tstAuthProviderStore)(nil)
 
-// Authprovider store (needed for NewStoreBackedRegistry)
+// AuthProvider store (needed for NewStoreBackedRegistry)
 type tstAuthProviderStore struct{}
 
-func (*tstAuthProviderStore) GetAllAuthProviders(_ context.Context) ([]*storage.AuthProvider, error) {
-	return []*storage.AuthProvider{mockAuthProvider, mockAuthProviderWithAttributes}, nil
+func (s *tstAuthProviderStore) GetAuthProvider(_ context.Context, id string) (*storage.AuthProvider, bool, error) {
+	for _, ap := range mockedAuthProviders {
+		if ap.GetId() == id {
+			return ap, true, nil
+		}
+	}
+	return nil, false, nil
+}
+
+func (*tstAuthProviderStore) ForEachAuthProvider(_ context.Context, fn func(obj *storage.AuthProvider) error) error {
+	for _, p := range []*storage.AuthProvider{mockAuthProvider, mockAuthProviderWithAttributes} {
+		err := fn(p)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (*tstAuthProviderStore) GetAuthProvidersFiltered(_ context.Context, _ func(provider *storage.AuthProvider) bool) ([]*storage.AuthProvider, error) {
+	return nil, nil
+}
+
+func (*tstAuthProviderStore) AuthProviderExistsWithName(ctx context.Context, name string) (bool, error) {
+	return false, nil
 }
 
 func (*tstAuthProviderStore) AddAuthProvider(_ context.Context, _ *storage.AuthProvider) error {
@@ -484,7 +629,7 @@ func (*tstAuthProviderBackend) Config() map[string]string {
 	return nil
 }
 
-func (b *tstAuthProviderBackend) LoginURL(_ string, r *requestinfo.RequestInfo) (string, error) {
+func (b *tstAuthProviderBackend) LoginURL(_ string, _ *requestinfo.RequestInfo) (string, error) {
 	return b.loginURL, b.err
 }
 
@@ -492,9 +637,9 @@ func (*tstAuthProviderBackend) RefreshURL() string {
 	return "refresh"
 }
 
-func (*tstAuthProviderBackend) OnEnable(provider Provider) {}
+func (*tstAuthProviderBackend) OnEnable(_ Provider) {}
 
-func (*tstAuthProviderBackend) OnDisable(provider Provider) {}
+func (*tstAuthProviderBackend) OnDisable(_ Provider) {}
 
 func (b *tstAuthProviderBackend) ProcessHTTPRequest(_ http.ResponseWriter,
 	_ *http.Request) (*AuthResponse, error) {
@@ -528,8 +673,7 @@ func (f *tstAuthProviderBackendFactory) registerProcessResponse(providerID strin
 	f.err = err
 }
 
-func (*tstAuthProviderBackendFactory) CreateBackend(_ context.Context, _ string, _ []string,
-	_ map[string]string) (Backend, error) {
+func (*tstAuthProviderBackendFactory) CreateBackend(_ context.Context, _ string, _ []string, _ map[string]string, _ map[string]string) (Backend, error) {
 	return testAuthProviderBackend, nil
 }
 

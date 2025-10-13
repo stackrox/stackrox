@@ -53,7 +53,7 @@ func (e *executor) executeAction(act plan.ActionDesc) error {
 			if k8sErrors.IsAlreadyExists(err) && common.IsSharedObject(act.ObjectRef) {
 				log.Warnf("Skipping creation of shared object %v", act.ObjectRef)
 			} else {
-				return err
+				return errors.Wrapf(err, "creating object %v", act.ObjectRef)
 			}
 		}
 	case plan.UpdateAction:
@@ -68,7 +68,7 @@ func (e *executor) executeAction(act plan.ActionDesc) error {
 			// Of course, if there is a conflict with a resource like an admission controller, this will still fail --
 			// however, that should be relatively rare, and in those cases, the upgrade can be retried.
 			if !k8sErrors.IsConflict(err) {
-				return err
+				return errors.Wrapf(err, "updating object %v", act.ObjectRef)
 			}
 			log.Warnf("The update for object %v hit a conflict. Trying again without setting resourceVersion: %v", act.ObjectRef, err)
 			obj.SetResourceVersion("")
@@ -79,7 +79,7 @@ func (e *executor) executeAction(act plan.ActionDesc) error {
 		}
 	case plan.DeleteAction:
 		if err := client.Delete(e.ctx.Context(), act.ObjectRef.Name, kubernetes.DeleteBackgroundOption); err != nil {
-			return err
+			return errors.Wrapf(err, "deleting object %v", act.ObjectRef)
 		}
 	default:
 		return errors.Errorf("invalid action %q on object %v", act.ActionName, act.ObjectRef)

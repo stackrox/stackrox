@@ -1,16 +1,18 @@
+import withAuth from '../../helpers/basicAuth';
+
 import {
-    renderListAndSidePanel,
-    navigateToSingleEntityPage,
-    hasCountWidgetsFor,
+    clickEntityTableRowThatHasLinkInColumn,
     clickOnCountWidget,
     clickOnSingularEntityWidgetInSidePanel,
-    entityListCountMatchesTableLinkCount,
-    hasTabsFor,
+    hasCountWidgetsFor,
     hasRelatedEntityFor,
-    pageEntityCountMatchesTableRows,
-    sidePanelEntityCountMatchesTableRows,
-} from '../../helpers/configWorkflowUtils';
-import withAuth from '../../helpers/basicAuth';
+    hasTabsFor,
+    navigateToSingleEntityPage,
+    verifyTableLinkToSidePanelTable,
+    verifyWidgetLinkToTableFromSidePanel,
+    verifyWidgetLinkToTableFromSinglePage,
+    visitConfigurationManagementEntityInSidePanel,
+} from './ConfigurationManagement.helpers';
 
 const entitiesKey = 'deployments';
 
@@ -18,25 +20,29 @@ describe('Configuration Management Deployments', () => {
     withAuth();
 
     it('should render the deployments list and open the side panel when a row is clicked', () => {
-        renderListAndSidePanel(entitiesKey);
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
+        // Expect the list of failed policies to be displayed in the side panel
+        cy.get(
+            'header:contains("Deployment Findings") + div:contains("policies failed across this deployment")'
+        );
     });
 
-    it('should open the side panel to show the same number of secrets when the secrets link is clicked', () => {
-        entityListCountMatchesTableLinkCount(entitiesKey, 'secrets', /\d+ secrets?$/);
+    it('should go from table link to images table in side panel', () => {
+        verifyTableLinkToSidePanelTable(entitiesKey, 'images');
     });
 
     it('should click on the cluster entity widget in the side panel and match the header ', () => {
-        renderListAndSidePanel(entitiesKey);
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
         clickOnSingularEntityWidgetInSidePanel(entitiesKey, 'clusters');
     });
 
     it('should take you to a deployments single when the "navigate away" button is clicked', () => {
-        renderListAndSidePanel(entitiesKey);
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
         navigateToSingleEntityPage(entitiesKey);
     });
 
     it('should show the related cluster, namespace, and service account widgets', () => {
-        renderListAndSidePanel(entitiesKey);
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
         navigateToSingleEntityPage(entitiesKey);
         hasRelatedEntityFor('Cluster');
         hasRelatedEntityFor('Namespace');
@@ -44,50 +50,45 @@ describe('Configuration Management Deployments', () => {
     });
 
     it('should have the correct count widgets for a single entity view', () => {
-        renderListAndSidePanel(entitiesKey);
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
         navigateToSingleEntityPage(entitiesKey);
         hasCountWidgetsFor(['Images', 'Secrets']);
     });
 
     it('should have the correct tabs for a single entity view', () => {
-        renderListAndSidePanel(entitiesKey);
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
         navigateToSingleEntityPage(entitiesKey);
         hasTabsFor(['images', 'secrets']);
     });
 
     it('should click on the images count widget in the entity page and show the images tab', () => {
-        renderListAndSidePanel(entitiesKey, 'collector');
+        const columnIndexForImages = 6;
+        clickEntityTableRowThatHasLinkInColumn(entitiesKey, columnIndexForImages);
         navigateToSingleEntityPage(entitiesKey);
         clickOnCountWidget('images', 'entityList');
     });
 
-    describe('should have same number in images table as in count widget', () => {
+    describe('should go to images table from widget link', () => {
         const entitiesKey2 = 'images';
 
-        it('of page', () => {
-            renderListAndSidePanel(entitiesKey);
-            navigateToSingleEntityPage(entitiesKey);
-            pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
+        it('in single page', () => {
+            verifyWidgetLinkToTableFromSinglePage(entitiesKey, entitiesKey2);
         });
 
-        it('of side panel', () => {
-            renderListAndSidePanel(entitiesKey);
-            sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
+        it('in side panel', () => {
+            verifyWidgetLinkToTableFromSidePanel(entitiesKey, entitiesKey2);
         });
     });
 
-    describe('should have same number in secrets table as in count widget', () => {
+    describe('should go to secrets table from widget link', () => {
         const entitiesKey2 = 'secrets';
 
-        it('of page', () => {
-            renderListAndSidePanel(entitiesKey);
-            navigateToSingleEntityPage(entitiesKey);
-            pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
+        it('in single page', () => {
+            verifyWidgetLinkToTableFromSinglePage(entitiesKey, entitiesKey2);
         });
 
-        it('of side panel', () => {
-            renderListAndSidePanel(entitiesKey);
-            sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
+        it('in side panel', () => {
+            verifyWidgetLinkToTableFromSidePanel(entitiesKey, entitiesKey2);
         });
     });
 });

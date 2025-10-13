@@ -12,26 +12,38 @@ import (
     "github.com/lib/pq"
     v1 "github.com/stackrox/rox/generated/api/v1"
     "github.com/stackrox/rox/generated/storage"
+    {{- if .FeatureFlag }}
+    "github.com/stackrox/rox/pkg/features"{{- end }}
     "github.com/stackrox/rox/pkg/postgres"
     "github.com/stackrox/rox/pkg/postgres/walker"
+    "github.com/stackrox/rox/pkg/sac"
+    "github.com/stackrox/rox/pkg/sac/resources"
     "github.com/stackrox/rox/pkg/search"
+    "github.com/stackrox/rox/pkg/search/postgres/mapping"
+    "github.com/stackrox/rox/pkg/uuid"
 )
 
 {{- define "createTableStmt" }}
-{{- $schema := . }}
+{{- $singleton := .Singleton }}
+{{- $schema := .Schema }}
 &postgres.CreateStmts{
     GormModel: (*{{$schema.Table|upperCamelCase}})(nil),
     Children: []*postgres.CreateStmts{
-     {{- range $idx, $child := $schema.Children }}
-        {{- template "createTableStmt" $child }},
+     {{- range $index, $child := $schema.Children }}
+        {{- template "createTableStmt" dict "Schema" $child "Singleton" $singleton }},
     {{- end }}
     },
+    {{- if $singleton }}
+    PostStmts: []string{
+        "ALTER TABLE {{$schema.Table|lowerCase}} REPLICA IDENTITY FULL",
+    },
+    {{- end }}
 }
 {{- end}}
 
 var (
     // {{template "createTableStmtVar" .Schema }} holds the create statement for table `{{.Schema.Table|lowerCase}}`.
-    {{template "createTableStmtVar" .Schema }} = {{template "createTableStmt" .Schema }}
+    {{template "createTableStmtVar" .Schema }} = {{template "createTableStmt" dict "Schema" .Schema "Singleton" .Singleton }}
 
     // {{template "schemaVar" .Schema.Table}} is the go schema for table `{{.Schema.Table|lowerCase}}`.
     {{template "schemaVar" .Schema.Table}} = func() *walker.Schema {
@@ -67,8 +79,15 @@ var (
             }...)
             {{- end }}
         {{- end }}
+
+        {{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
+            schema.ScopingResource = resources.{{.Type | storageToResource}}
+        {{- end }}
         {{- if .RegisterSchema }}
-        RegisterTable(schema, {{template "createTableStmtVar" .Schema }})
+        RegisterTable(schema, {{template "createTableStmtVar" .Schema }}{{ if .FeatureFlag }}, features.{{.FeatureFlag}}.Enabled {{ end }})
+            {{- if .SearchCategory }}
+                mapping.RegisterCategoryToTable(v1.{{.SearchCategory}}, schema)
+            {{- end}}
         {{- end}}
         return schema
     }()
@@ -79,20 +98,23 @@ var (
 {{- $schema := .Schema }}
     // {{$schema.Table|upperCamelCase}} holds the Gorm model for Postgres table `{{$schema.Table|lowerCase}}`.
     type {{$schema.Table|upperCamelCase}} struct {
-    {{- range $idx, $field := $schema.DBColumnFields }}
+    {{- range $index, $field := $schema.DBColumnFields }}
         {{$field.ColumnName|upperCamelCase}} {{$field.ModelType}} `gorm:"{{- /**/ -}}
         column:{{$field.ColumnName|lowerCase}};{{- /**/ -}}
         type:{{$field.SQLType}}{{if $field.Options.Unique}};unique{{end}}{{if $field.Options.PrimaryKey}};primaryKey{{end}}{{- /**/ -}}
-        {{if $field.Options.Index}};{{- /**/ -}}
-            index:{{$schema.Table|lowerCamelCase|lowerCase}}_{{$field.ColumnName|lowerCase}},{{- /**/ -}}
-            type:{{$field.Options.Index}}{{- /**/ -}}
+        {{if $field.Options.Index}}
+            {{- range $subindex, $indexconfig := $field.Options.Index -}};{{- /**/ -}}
+                {{- if eq $indexconfig.IndexCategory "unique"}}uniqueIndex{{else}}index{{end -}}:{{- /**/ -}}
+                    {{if gt (len $indexconfig.IndexName) 0}}{{$indexconfig.IndexName}}{{else}}{{$schema.Table|lowerCamelCase|lowerCase}}_{{$field.ColumnName|lowerCase}}{{end}}{{- /**/ -}}
+                {{- if ne $indexconfig.IndexCategory "unique"}},type:{{$indexconfig.IndexType}}{{end -}}{{- /**/ -}}
+            {{- end -}}
         {{end}}{{- /**/ -}}
         {{if $field|isSacScoping }};{{- /**/ -}}
             index:{{$schema.Table|lowerCamelCase|lowerCase}}_sac_filter,type:{{- if $obj.IsClusterScope }}hash{{else}}btree{{end}}{{- /**/ -}}
         {{end}}{{- /**/ -}}
         "`
     {{- end}}
-    {{- range $idx, $rel := $schema.RelationshipsToDefineAsForeignKeys }}
+    {{- range $index, $rel := $schema.RelationshipsToDefineAsForeignKeys }}
         {{$rel.OtherSchema.Table|upperCamelCase}}{{if $rel.CycleReference}}Cycle{{end}}Ref {{$rel.OtherSchema.Table|upperCamelCase}} `gorm:"{{- /**/ -}}
         foreignKey:{{ (concatWith $rel.ThisSchemaColumnNames ",") | lowerCase}};{{- /**/ -}}
         references:{{ (concatWith $rel.OtherSchemaColumnNames ",")|lowerCase}};belongsTo;{{- /**/ -}}
@@ -100,13 +122,14 @@ var (
         "`
     {{- end}}
     }
-    {{- range $idx, $child := $schema.Children }}
+    {{- range $index, $child := $schema.Children }}
         {{- template "createGormModel"  dict "Schema" $child "Obj" $obj }}
     {{- end }}
 {{- end}}
 {{- define "createTableNames" }}
-	{{.Table|upperCamelCase}}TableName = "{{.Table|lowerCase}}"
-	{{- range $idx, $child := .Children }}
+    // {{.Table|upperCamelCase}}TableName specifies the name of the table in postgres.
+    {{.Table|upperCamelCase}}TableName = "{{.Table|lowerCase}}"
+	{{- range $index, $child := .Children }}
 	   {{- template "createTableNames" $child }}
     {{- end }}
 {{- end}}

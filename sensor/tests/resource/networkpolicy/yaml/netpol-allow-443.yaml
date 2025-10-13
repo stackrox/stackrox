@@ -9,3 +9,5 @@ spec:
   ingress:
   - ports:
     - port: 443
+  policyTypes:
+  - Ingress

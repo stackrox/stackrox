@@ -10,8 +10,8 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/fullsailor/pkcs7"
 	"github.com/pkg/errors"
+	"github.com/stackrox/pkcs7"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -42,7 +42,7 @@ type attestedMetadata struct {
 func getAttestedVMID(ctx context.Context) (string, error) {
 	req, err := http.NewRequest(http.MethodGet, attestedMetadataBaseURL, nil)
 	if err != nil {
-		return "", utils.Should(err)
+		return "", utils.ShouldErr(err)
 	}
 	req = req.WithContext(ctx)
 

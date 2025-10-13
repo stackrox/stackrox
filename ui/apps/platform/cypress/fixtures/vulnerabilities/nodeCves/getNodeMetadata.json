@@ -1,0 +1,13 @@
+{
+    "data": {
+        "node": {
+            "id": "1",
+            "name": "cypress-node-1",
+            "osImage": "Red Hat Enterprise Linux CoreOS 414.92.202402010350-0 (Plow)",
+            "kubeletVersion": "v1.27.10+28ed2d7",
+            "kernelVersion": "5.14.0-284.50.1.el9_2.x86_64",
+            "scanTime": "2024-07-09T13:42:01.32810868Z",
+            "__typename": "Node"
+        }
+    }
+}

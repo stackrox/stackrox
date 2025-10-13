@@ -12,14 +12,44 @@ const (
 	scrubStructTag = "scrub"
 	// scrubTagAlways is a scrub tag type used to indicate a field is a credential
 	scrubTagAlways = "always"
+	// scrubTagMapValues is a scrub tag type used to indicate a map[string]string field that contain keys with secrets.
+	// List of scrubbed keys are listed in mapKeysToReplace.
+	scrubTagMapValues = "map-values"
 	// scrubTagDependent is a scrub tag type used to indicate a field is dependent on credentials and could be used to exfiltrate credentials
 	scrubTagDependent = "dependent"
+	// scrubTagDisableDependentIfTrue is a scrub tag type used to indicate if dependent scrub reconcile should be disabled for the struct
+	scrubTagDisableDependentIfTrue = "disableDependentIfTrue"
 	// ScrubReplacementStr is a string format of a masked credential
 	ScrubReplacementStr = "******"
 )
 
+var mapKeysToReplace = []string{"client_secret"}
+
+type ScrubOption func(*scrubConfig)
+
+type scrubConfig struct {
+	scrubZeroValues bool
+}
+
+func applyScrubOptions(options ...ScrubOption) *scrubConfig {
+	cfg := &scrubConfig{scrubZeroValues: true}
+	for _, o := range options {
+		o(cfg)
+	}
+	return cfg
+}
+
+// WithScrubZeroValues specifies that zero values should not be scrubbed.
+// This is useful to indicate in the API response that a secret field has not been set.
+func WithScrubZeroValues(value bool) ScrubOption {
+	return func(o *scrubConfig) {
+		o.scrubZeroValues = value
+	}
+}
+
 // ScrubSecretsFromStructWithReplacement hides secret keys from an object with given replacement
-func ScrubSecretsFromStructWithReplacement(obj interface{}, replacement string) {
+func ScrubSecretsFromStructWithReplacement(obj interface{}, replacement string, options ...ScrubOption) {
+	cfg := applyScrubOptions(options...)
 	scrubber := func(field reflect.Value, scrubTag string) {
 		switch scrubTag {
 		case scrubTagAlways:
@@ -29,11 +59,30 @@ func ScrubSecretsFromStructWithReplacement(obj interface{}, replacement string) 
 			if field.Type() != reflect.TypeOf(replacement) {
 				utils.CrashOnError(errors.Errorf("field type mismatch %s!=%s", field.Type(), reflect.TypeOf(replacement)))
 			}
-			if field.String() != "" {
+			if cfg.scrubZeroValues || !field.IsZero() {
 				field.Set(reflect.ValueOf(replacement))
+			}
+		case scrubTagMapValues:
+			if field.Kind() != reflect.Map {
+				utils.CrashOnError(errors.Errorf("expected map kind, got %s", field.Kind()))
+			}
+			if field.Type() != reflect.TypeOf(map[string]string{}) {
+				utils.CrashOnError(errors.Errorf("field type mismatch %s!=%s", field.Type(), reflect.TypeOf(map[string]string{})))
+			}
+
+			if field.IsNil() {
+				return
+			}
+			for _, scrubKey := range mapKeysToReplace {
+				if val := field.MapIndex(reflect.ValueOf(scrubKey)); !val.IsValid() {
+					continue
+				}
+
+				field.SetMapIndex(reflect.ValueOf(scrubKey), reflect.ValueOf(replacement))
 			}
 		}
 	}
+
 	visitStructTags(reflect.ValueOf(obj), scrubber)
 }
 

@@ -3,9 +3,9 @@ package common
 import (
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/compliance/checks/testutils"
 	"github.com/stackrox/rox/generated/storage"
+	"go.uber.org/mock/gomock"
 )
 
 func TestCheckSecretsInEnv(t *testing.T) {
@@ -100,14 +100,14 @@ func TestCheckNotifierInUseByCluster(t *testing.T) {
 		"one policy with matching notifier but not enabled": {
 
 			policies: []testutils.LightPolicy{
-				{Name: "Some Policy", Disabled: true, Notifiers: []string{someNotifier.Id}},
+				{Name: "Some Policy", Disabled: true, Notifiers: []string{someNotifier.GetId()}},
 			},
 			notifiers:  notifiers,
 			shouldPass: false,
 		},
 		"one policy with matching notifier": {
 			policies: []testutils.LightPolicy{
-				{Name: "Some Policy", Notifiers: []string{someNotifier.Id}},
+				{Name: "Some Policy", Notifiers: []string{someNotifier.GetId()}},
 			},
 			notifiers:  notifiers,
 			shouldPass: true,
@@ -123,7 +123,7 @@ func TestCheckNotifierInUseByCluster(t *testing.T) {
 		"two policies second one with notifier": {
 			policies: []testutils.LightPolicy{
 				{Name: "Policy one"},
-				{Name: "Policy two", Notifiers: []string{someNotifier.Id}},
+				{Name: "Policy two", Notifiers: []string{someNotifier.GetId()}},
 			},
 			notifiers:  notifiers,
 			shouldPass: true,

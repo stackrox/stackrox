@@ -4,15 +4,14 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	dsMocks "github.com/stackrox/rox/central/group/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestUserService(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(UserServiceTestSuite))
 }
 

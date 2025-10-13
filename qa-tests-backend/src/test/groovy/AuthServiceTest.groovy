@@ -1,12 +1,14 @@
-import groups.BAT
 import io.stackrox.proto.api.v1.AuthServiceOuterClass
 import io.stackrox.proto.storage.RoleOuterClass
-import org.junit.Assume
-import org.junit.experimental.categories.Category
+
 import services.AuthService
 import services.BaseService
 
-@Category(BAT)
+import spock.lang.Tag
+
+@Tag("BAT")
+@Tag("COMPATIBILITY")
+@Tag("PZ")
 class AuthServiceTest extends BaseSpecification {
 
     private static Map<String, List<String>> getAttrMap(List<AuthServiceOuterClass.UserAttribute> attrList) {
@@ -24,13 +26,13 @@ class AuthServiceTest extends BaseSpecification {
         assert status
         assert status.userId == "admin"
 
-        status.authProvider.withDo {
+        status.authProvider.with {
             assert name == "Login with username/password"
             assert id == "4df1b98c-24ed-4073-a9ad-356aec6bb62d"
             assert type == "basic"
         }
 
-        status.userInfo.withDo {
+        status.userInfo.with {
             assert permissions.resourceToAccessCount > 0
             permissions.resourceToAccessMap.each {
                 assert it.value == RoleOuterClass.Access.READ_WRITE_ACCESS
@@ -46,8 +48,7 @@ class AuthServiceTest extends BaseSpecification {
 
     def "Verify response for auth token"() {
         when:
-        Assume.assumeTrue(allAccessToken != null)
-        BaseService.useApiToken(allAccessToken)
+        useTokenServiceAuth()
 
         AuthServiceOuterClass.AuthStatus status = AuthService.getAuthStatus()
 
@@ -56,7 +57,7 @@ class AuthServiceTest extends BaseSpecification {
         assert status.userId.startsWith("auth-token:")
         assert !status.authProvider.id
 
-        status.userInfo.withDo {
+        status.userInfo.with {
             assert permissions.resourceToAccessCount > 0
             permissions.resourceToAccessMap.each {
                 assert it.value == RoleOuterClass.Access.READ_WRITE_ACCESS

@@ -1,83 +1,55 @@
+//go:build sql_integration
+
 package datastoretest
 
 import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
-	activeComponentDackbox "github.com/stackrox/rox/central/activecomponent/dackbox"
-	activeComponentIndex "github.com/stackrox/rox/central/activecomponent/datastore/index"
-	clusterCVEEdgeDackbox "github.com/stackrox/rox/central/clustercveedge/dackbox"
-	clusterCVEEdgeIndex "github.com/stackrox/rox/central/clustercveedge/index"
-	componentCVEEdgeDackbox "github.com/stackrox/rox/central/componentcveedge/dackbox"
-	componentCVEEdgeIndex "github.com/stackrox/rox/central/componentcveedge/index"
-	cveDackbox "github.com/stackrox/rox/central/cve/dackbox"
-	cveIndex "github.com/stackrox/rox/central/cve/index"
-	deploymentDackbox "github.com/stackrox/rox/central/deployment/dackbox"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
-	"github.com/stackrox/rox/central/globalindex"
-	imageDackbox "github.com/stackrox/rox/central/image/dackbox"
+	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
 	"github.com/stackrox/rox/central/image/datastore"
-	imageIndex "github.com/stackrox/rox/central/image/index"
-	"github.com/stackrox/rox/central/image/mappings"
-	imageComponentDackbox "github.com/stackrox/rox/central/imagecomponent/dackbox"
-	imageComponentIndex "github.com/stackrox/rox/central/imagecomponent/index"
-	imageComponentEdgeDackbox "github.com/stackrox/rox/central/imagecomponentedge/dackbox"
-	imageComponentEdgeIndex "github.com/stackrox/rox/central/imagecomponentedge/index"
-	imageCVEEdgeDackbox "github.com/stackrox/rox/central/imagecveedge/dackbox"
 	imageCVEEdgeDataStore "github.com/stackrox/rox/central/imagecveedge/datastore"
-	imageCVEEdgeIndex "github.com/stackrox/rox/central/imagecveedge/index"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
-	nodeDackbox "github.com/stackrox/rox/central/node/dackbox"
-	nodeIndex "github.com/stackrox/rox/central/node/index"
-	nodeComponentEdgeDackbox "github.com/stackrox/rox/central/nodecomponentedge/dackbox"
-	nodeComponentEdgeIndex "github.com/stackrox/rox/central/nodecomponentedge/index"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/dackbox"
-	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
-	"github.com/stackrox/rox/pkg/dackbox/indexer"
-	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
 	searchPkg "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
+var (
+	log = logging.LoggerForModule()
+)
+
 func TestImageDataStoreSAC(t *testing.T) {
+	if features.FlattenCVEData.Enabled() {
+		t.Skip("FlattenCVEData enabled.  Test is obsolete.")
+	}
 	suite.Run(t, new(imageDatastoreSACSuite))
 }
 
 type imageDatastoreSACSuite struct {
 	suite.Suite
 
-	// Elements for bleve+rocksdb mode
-	engine   *rocksdb.RocksDB
-	index    bleve.Index
-	dacky    *dackbox.DackBox
-	keyFence dackboxConcurrency.KeyFence
-	indexQ   queue.WaitableQueue
-
 	// Elements for postgres mode
 	pgtestbase *pgtest.TestPostgres
 
 	datastore datastore.DataStore
 
-	imageVulnDatastore  imageCVEEdgeDataStore.DataStore
-	deploymentDatastore deploymentDataStore.DataStore
-	namespaceDatastore  namespaceDataStore.DataStore
+	imageVulnEdgeDatastore imageCVEEdgeDataStore.DataStore
+	deploymentDatastore    deploymentDataStore.DataStore
+	namespaceDatastore     namespaceDataStore.DataStore
 
 	optionsMap searchPkg.OptionsMap
 
@@ -89,49 +61,15 @@ type imageDatastoreSACSuite struct {
 
 func (s *imageDatastoreSACSuite) SetupSuite() {
 	var err error
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pgtestbase = pgtest.ForT(s.T())
-		s.Require().NotNil(s.pgtestbase)
-		s.datastore, err = datastore.GetTestPostgresDataStore(s.T(), s.pgtestbase.Pool)
-		s.Require().NoError(err)
-		s.imageVulnDatastore = imageCVEEdgeDataStore.GetTestPostgresDataStore(s.T(), s.pgtestbase.Pool)
-		s.deploymentDatastore, err = deploymentDataStore.GetTestPostgresDataStore(s.T(), s.pgtestbase.Pool)
-		s.Require().NoError(err)
-		s.namespaceDatastore, err = namespaceDataStore.GetTestPostgresDataStore(s.T(), s.pgtestbase.Pool)
-		s.Require().NoError(err)
-		s.optionsMap = schema.ImagesSchema.OptionsMap
-	} else {
-		s.engine, err = rocksdb.NewTemp("imageSACTest")
-		s.Require().NoError(err)
-		s.index, err = globalindex.MemOnlyIndex()
-		s.Require().NoError(err)
-		s.keyFence = dackboxConcurrency.NewKeyFence()
-		s.indexQ = queue.NewWaitableQueue()
-		s.dacky, err = dackbox.NewRocksDBDackBox(s.engine, s.indexQ, []byte("graph"), []byte("dirty"), []byte("valid"))
-		s.Require().NoError(err)
-		reg := indexer.NewWrapperRegistry()
-		indexer.NewLazy(s.indexQ, reg, s.index, s.dacky.AckIndexed).Start()
-		reg.RegisterWrapper(activeComponentDackbox.Bucket, activeComponentIndex.Wrapper{})
-		reg.RegisterWrapper(clusterCVEEdgeDackbox.Bucket, clusterCVEEdgeIndex.Wrapper{})
-		reg.RegisterWrapper(componentCVEEdgeDackbox.Bucket, componentCVEEdgeIndex.Wrapper{})
-		reg.RegisterWrapper(cveDackbox.Bucket, cveIndex.Wrapper{})
-		reg.RegisterWrapper(deploymentDackbox.Bucket, deploymentIndex.Wrapper{})
-		reg.RegisterWrapper(imageDackbox.Bucket, imageIndex.Wrapper{})
-		reg.RegisterWrapper(imageComponentDackbox.Bucket, imageComponentIndex.Wrapper{})
-		reg.RegisterWrapper(imageComponentEdgeDackbox.Bucket, imageComponentEdgeIndex.Wrapper{})
-		reg.RegisterWrapper(imageCVEEdgeDackbox.Bucket, imageCVEEdgeIndex.Wrapper{})
-		reg.RegisterWrapper(nodeDackbox.Bucket, nodeIndex.Wrapper{})
-		reg.RegisterWrapper(nodeComponentEdgeDackbox.Bucket, nodeComponentEdgeIndex.Wrapper{})
-
-		s.datastore, err = datastore.GetTestRocksBleveDataStore(s.T(), s.engine, s.index, s.dacky, s.keyFence)
-		s.Require().NoError(err)
-		s.imageVulnDatastore = imageCVEEdgeDataStore.GetTestRocksBleveDataStore(s.T(), s.index, s.dacky, s.keyFence)
-		s.deploymentDatastore, err = deploymentDataStore.GetTestRocksBleveDataStore(s.T(), s.engine, s.index, s.dacky, s.keyFence)
-		s.Require().NoError(err)
-		s.namespaceDatastore, err = namespaceDataStore.GetTestRocksBleveDataStore(s.T(), s.engine, s.index, s.dacky, s.keyFence)
-		s.Require().NoError(err)
-		s.optionsMap = mappings.OptionsMap
-	}
+	s.pgtestbase = pgtest.ForT(s.T())
+	s.Require().NotNil(s.pgtestbase)
+	s.datastore = datastore.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
+	s.imageVulnEdgeDatastore = imageCVEEdgeDataStore.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
+	s.deploymentDatastore, err = deploymentDataStore.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
+	s.Require().NoError(err)
+	s.namespaceDatastore, err = namespaceDataStore.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
+	s.Require().NoError(err)
+	s.optionsMap = schema.ImagesSchema.OptionsMap
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
 		resources.Image)
@@ -140,12 +78,7 @@ func (s *imageDatastoreSACSuite) SetupSuite() {
 }
 
 func (s *imageDatastoreSACSuite) TearDownSuite() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pgtestbase.Pool.Close()
-	} else {
-		s.Require().NoError(rocksdb.CloseAndRemove(s.engine))
-		s.Require().NoError(s.index.Close())
-	}
+	s.pgtestbase.Close()
 }
 
 func (s *imageDatastoreSACSuite) SetupTest() {
@@ -155,15 +88,6 @@ func (s *imageDatastoreSACSuite) SetupTest() {
 func (s *imageDatastoreSACSuite) TearDownTest() {
 	for _, id := range s.testImageIDs {
 		s.deleteImage(id)
-	}
-}
-
-func (s *imageDatastoreSACSuite) waitForIndexing() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		// Some cases need to wait for dackbox indexing to complete.
-		doneSignal := concurrency.NewSignal()
-		s.indexQ.PushSignal(&doneSignal)
-		<-doneSignal.Done()
 	}
 }
 
@@ -180,18 +104,12 @@ func (s *imageDatastoreSACSuite) deleteNamespace(id string) {
 }
 
 func getImageCVEID(cve string) string {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return cve + "#crime-stories"
-	}
-	return cve
+	return cve + "#crime-stories"
 }
 
 // getImageCVEEdgeID returns base 64 encoded Image:CVE ids
 func getImageCVEEdgeID(image, cve string) string {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return postgres.IDFromPks([]string{image, getImageCVEID(cve)})
-	}
-	return edges.EdgeID{ParentID: image, ChildID: getImageCVEID(cve)}.ToString()
+	return pgSearch.IDFromPks([]string{image, getImageCVEID(cve)})
 }
 
 func (s *imageDatastoreSACSuite) verifyListImagesEqual(image1, image2 *storage.ListImage) {
@@ -252,14 +170,14 @@ func (s *imageDatastoreSACSuite) TestUpdateVulnerabilityState() {
 			s.Require().NoError(insertErr)
 			for _, cve := range foundCVEs {
 				edgeID := getImageCVEEdgeID(image.GetId(), cve.GetCve())
-				edge, found, err := s.imageVulnDatastore.Get(checkCtx, edgeID)
+				edge, found, err := s.imageVulnEdgeDatastore.Get(checkCtx, edgeID)
 				s.NoError(err)
 				s.True(found)
 				s.Equal(storage.VulnerabilityState_OBSERVED, edge.GetState())
 			}
 			for _, cve := range missingCVEs {
 				edgeID := getImageCVEEdgeID(image.GetId(), cve.GetCve())
-				edge, found, err := s.imageVulnDatastore.Get(checkCtx, edgeID)
+				edge, found, err := s.imageVulnEdgeDatastore.Get(checkCtx, edgeID)
 				s.NoError(err)
 				s.False(found)
 				s.Nil(edge)
@@ -274,19 +192,18 @@ func (s *imageDatastoreSACSuite) TestUpdateVulnerabilityState() {
 				s.NoError(updateErr)
 				for _, cve := range foundCVEs {
 					expectedState := storage.VulnerabilityState_OBSERVED
-					if !env.PostgresDatastoreEnabled.BooleanSetting() && cve.GetCve() == cve3.GetCve() {
-						// Currently, UpdateVulnerabilityState only updates the state column, but not the stored serialized object
+					if cve.GetCve() == cve3.GetCve() {
 						expectedState = storage.VulnerabilityState_DEFERRED
 					}
 					edgeID := getImageCVEEdgeID(image.GetId(), cve.GetCve())
-					edge, found, err := s.imageVulnDatastore.Get(checkCtx, edgeID)
+					edge, found, err := s.imageVulnEdgeDatastore.Get(checkCtx, edgeID)
 					s.NoError(err)
 					s.True(found)
 					s.Equal(expectedState, edge.GetState())
 				}
 				for _, cve := range missingCVEs {
 					edgeID := getImageCVEEdgeID(image.GetId(), cve.GetCve())
-					edge, found, err := s.imageVulnDatastore.Get(checkCtx, edgeID)
+					edge, found, err := s.imageVulnEdgeDatastore.Get(checkCtx, edgeID)
 					s.NoError(err)
 					s.False(found)
 					s.Nil(edge)
@@ -378,7 +295,6 @@ func (s *imageDatastoreSACSuite) setupReadTest() ([]*storage.Image, func(), erro
 	if setupErr != nil {
 		return nil, cleanup, setupErr
 	}
-	s.waitForIndexing()
 	return images, cleanup, nil
 }
 
@@ -389,20 +305,16 @@ func (s *imageDatastoreSACSuite) TestExists() {
 	s.Require().NotZero(len(images))
 	image := images[0]
 
-	cases := testutils.GenericNamespaceSACGetTestCases(s.T())
-
-	for name, testCase := range cases {
-		s.Run(name, func() {
-			ctx := s.testContexts[testCase.ScopeKey]
-			exists, err := s.datastore.Exists(ctx, image.GetId())
-			s.NoError(err)
-			if testCase.ExpectedFound {
-				s.True(exists)
-			} else {
-				s.False(exists)
-			}
-		})
-	}
+	s.runReadTest("TestExists", "", func(testCase testutils.SACCrudTestCase) {
+		ctx := s.testContexts[testCase.ScopeKey]
+		exists, err := s.datastore.Exists(ctx, image.GetId())
+		s.NoError(err)
+		if testCase.ExpectedFound {
+			s.True(exists)
+		} else {
+			s.False(exists)
+		}
+	})
 }
 
 func (s *imageDatastoreSACSuite) TestListImage() {
@@ -412,22 +324,18 @@ func (s *imageDatastoreSACSuite) TestListImage() {
 	s.Require().NotZero(len(images))
 	image := images[0]
 
-	cases := testutils.GenericNamespaceSACGetTestCases(s.T())
-
-	for name, testCase := range cases {
-		s.Run(name, func() {
-			ctx := s.testContexts[testCase.ScopeKey]
-			readImage, found, err := s.datastore.ListImage(ctx, image.GetId())
-			s.Require().NoError(err)
-			if testCase.ExpectedFound {
-				s.True(found)
-				s.verifyListImagesEqual(types.ConvertImageToListImage(image), readImage)
-			} else {
-				s.False(found)
-				s.Nil(readImage)
-			}
-		})
-	}
+	s.runReadTest("TestListImage", "", func(testCase testutils.SACCrudTestCase) {
+		ctx := s.testContexts[testCase.ScopeKey]
+		readImage, found, err := s.datastore.ListImage(ctx, image.GetId())
+		s.Require().NoError(err)
+		if testCase.ExpectedFound {
+			s.True(found)
+			s.verifyListImagesEqual(types.ConvertImageToListImage(image), readImage)
+		} else {
+			s.False(found)
+			s.Nil(readImage)
+		}
+	})
 }
 
 func (s *imageDatastoreSACSuite) TestGetImage() {
@@ -437,22 +345,18 @@ func (s *imageDatastoreSACSuite) TestGetImage() {
 	s.Require().NotZero(len(images))
 	image := images[0]
 
-	cases := testutils.GenericNamespaceSACGetTestCases(s.T())
-
-	for name, testCase := range cases {
-		s.Run(name, func() {
-			ctx := s.testContexts[testCase.ScopeKey]
-			readImage, found, err := s.datastore.GetImage(ctx, image.GetId())
-			s.Require().NoError(err)
-			if testCase.ExpectedFound {
-				s.True(found)
-				s.verifyRawImagesEqual(image, readImage)
-			} else {
-				s.False(found)
-				s.Nil(readImage)
-			}
-		})
-	}
+	s.runReadTest("TestGetImage", "", func(testCase testutils.SACCrudTestCase) {
+		ctx := s.testContexts[testCase.ScopeKey]
+		readImage, found, err := s.datastore.GetImage(ctx, image.GetId())
+		s.Require().NoError(err)
+		if testCase.ExpectedFound {
+			s.True(found)
+			s.verifyRawImagesEqual(image, readImage)
+		} else {
+			s.False(found)
+			s.Nil(readImage)
+		}
+	})
 }
 
 func (s *imageDatastoreSACSuite) TestGetImageMetadata() {
@@ -462,59 +366,51 @@ func (s *imageDatastoreSACSuite) TestGetImageMetadata() {
 	s.Require().NotZero(len(images))
 	image := images[0]
 
-	cases := testutils.GenericNamespaceSACGetTestCases(s.T())
-
-	for name, testCase := range cases {
-		s.Run(name, func() {
-			ctx := s.testContexts[testCase.ScopeKey]
-			readImageMeta, found, err := s.datastore.GetImageMetadata(ctx, image.GetId())
-			s.Require().NoError(err)
-			if testCase.ExpectedFound {
-				s.True(found)
-				s.Equal(image.GetId(), readImageMeta.GetId())
-				s.Equal(image.GetComponents(), readImageMeta.GetComponents())
-				s.Equal(image.GetCves(), readImageMeta.GetCves())
-			} else {
-				s.False(found)
-				s.Nil(readImageMeta)
-			}
-		})
-	}
-
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.Require().True(len(images) > 1)
-		image2 := images[1]
-		// Test GetManyImageMetadata in postgres mode (only supported mode).
-		for name, testCase := range cases {
-			s.Run("Many_"+name, func() {
-				ctx := s.testContexts[testCase.ScopeKey]
-				readMeta, err := s.datastore.GetManyImageMetadata(ctx, []string{image.GetId(), image2.GetId()})
-				s.Require().NoError(err)
-				if testCase.ExpectedFound {
-					s.Require().Equal(2, len(readMeta))
-					readImageMeta1 := readMeta[0]
-					readImageMeta2 := readMeta[1]
-					if readImageMeta1.GetId() == image.GetId() {
-						s.Equal(image.GetId(), readImageMeta1.GetId())
-						s.Equal(image.GetComponents(), readImageMeta1.GetComponents())
-						s.Equal(image.GetCves(), readImageMeta1.GetCves())
-						s.Equal(image2.GetId(), readImageMeta2.GetId())
-						s.Equal(image2.GetComponents(), readImageMeta2.GetComponents())
-						s.Equal(image2.GetCves(), readImageMeta2.GetCves())
-					} else {
-						s.Equal(image2.GetId(), readImageMeta1.GetId())
-						s.Equal(image2.GetComponents(), readImageMeta1.GetComponents())
-						s.Equal(image2.GetCves(), readImageMeta1.GetCves())
-						s.Equal(image.GetId(), readImageMeta2.GetId())
-						s.Equal(image.GetComponents(), readImageMeta2.GetComponents())
-						s.Equal(image.GetCves(), readImageMeta2.GetCves())
-					}
-				} else {
-					s.Equal(0, len(readMeta))
-				}
-			})
+	s.runReadTest("TestGetImageMetadata", "", func(testCase testutils.SACCrudTestCase) {
+		ctx := s.testContexts[testCase.ScopeKey]
+		readImageMeta, found, err := s.datastore.GetImageMetadata(ctx, image.GetId())
+		s.Require().NoError(err)
+		if testCase.ExpectedFound {
+			s.True(found)
+			s.Equal(image.GetId(), readImageMeta.GetId())
+			s.Equal(image.GetComponents(), readImageMeta.GetComponents())
+			s.Equal(image.GetCves(), readImageMeta.GetCves())
+		} else {
+			s.False(found)
+			s.Nil(readImageMeta)
 		}
-	}
+	})
+
+	s.Require().True(len(images) > 1)
+	image2 := images[1]
+	// Test GetManyImageMetadata in postgres mode (only supported mode).
+	s.runReadTest("TestGetManyImageMetadata", "Many_", func(testCase testutils.SACCrudTestCase) {
+		ctx := s.testContexts[testCase.ScopeKey]
+		readMeta, err := s.datastore.GetManyImageMetadata(ctx, []string{image.GetId(), image2.GetId()})
+		s.Require().NoError(err)
+		if testCase.ExpectedFound {
+			s.Require().Len(readMeta, 2)
+			readImageMeta1 := readMeta[0]
+			readImageMeta2 := readMeta[1]
+			if readImageMeta1.GetId() == image.GetId() {
+				s.Equal(image.GetId(), readImageMeta1.GetId())
+				s.Equal(image.GetComponents(), readImageMeta1.GetComponents())
+				s.Equal(image.GetCves(), readImageMeta1.GetCves())
+				s.Equal(image2.GetId(), readImageMeta2.GetId())
+				s.Equal(image2.GetComponents(), readImageMeta2.GetComponents())
+				s.Equal(image2.GetCves(), readImageMeta2.GetCves())
+			} else {
+				s.Equal(image2.GetId(), readImageMeta1.GetId())
+				s.Equal(image2.GetComponents(), readImageMeta1.GetComponents())
+				s.Equal(image2.GetCves(), readImageMeta1.GetCves())
+				s.Equal(image.GetId(), readImageMeta2.GetId())
+				s.Equal(image.GetComponents(), readImageMeta2.GetComponents())
+				s.Equal(image.GetCves(), readImageMeta2.GetCves())
+			}
+		} else {
+			s.Len(readMeta, 0)
+		}
+	})
 }
 
 func (s *imageDatastoreSACSuite) TestGetImagesBatch() {
@@ -525,37 +421,89 @@ func (s *imageDatastoreSACSuite) TestGetImagesBatch() {
 	image1 := images[0]
 	image2 := images[1]
 
+	s.runReadTest("TestGetImagesBatch", "", func(testCase testutils.SACCrudTestCase) {
+		ctx := s.testContexts[testCase.ScopeKey]
+		readMeta, err := s.datastore.GetImagesBatch(ctx, []string{image1.GetId(), image2.GetId()})
+		s.Require().NoError(err)
+		if testCase.ExpectedFound {
+			s.Require().Len(readMeta, 2)
+			readImageMeta1 := readMeta[0]
+			readImageMeta2 := readMeta[1]
+			if readImageMeta1.GetId() == image1.GetId() {
+				s.Equal(image1.GetId(), readImageMeta1.GetId())
+				s.Equal(image1.GetComponents(), readImageMeta1.GetComponents())
+				s.Equal(image1.GetCves(), readImageMeta1.GetCves())
+				s.Equal(image2.GetId(), readImageMeta2.GetId())
+				s.Equal(image2.GetComponents(), readImageMeta2.GetComponents())
+				s.Equal(image2.GetCves(), readImageMeta2.GetCves())
+			} else {
+				s.Equal(image2.GetId(), readImageMeta1.GetId())
+				s.Equal(image2.GetComponents(), readImageMeta1.GetComponents())
+				s.Equal(image2.GetCves(), readImageMeta1.GetCves())
+				s.Equal(image1.GetId(), readImageMeta2.GetId())
+				s.Equal(image1.GetComponents(), readImageMeta2.GetComponents())
+				s.Equal(image1.GetCves(), readImageMeta2.GetCves())
+			}
+		} else {
+			s.Len(readMeta, 0)
+		}
+	})
+}
+
+func (s *imageDatastoreSACSuite) TestWalkByQuery() {
+	images, cleanup, setupErr := s.setupReadTest()
+	defer cleanup()
+	s.Require().NoError(setupErr)
+	s.Require().True(len(images) > 1)
+	image1 := images[0]
+	image2 := images[1]
+
+	s.runReadTest("TestWalkByQuery", "", func(testCase testutils.SACCrudTestCase) {
+		ctx := s.testContexts[testCase.ScopeKey]
+		var foundAtLeastOne bool
+		err := s.datastore.WalkByQuery(ctx, nil, func(image *storage.Image) error {
+			foundAtLeastOne = true
+			matchedImage := image1
+			if image.GetId() == image2.GetId() {
+				matchedImage = image2
+			}
+			s.Equal(matchedImage.GetId(), image.GetId())
+			s.Equal(matchedImage.GetComponents(), image.GetComponents())
+			s.Equal(matchedImage.GetCves(), image.GetCves())
+			return nil
+		})
+		s.Require().NoError(err)
+		s.Equal(testCase.ExpectedFound, foundAtLeastOne)
+	})
+}
+
+func (s *imageDatastoreSACSuite) runReadTest(testName string, prefix string, testFunc func(c testutils.SACCrudTestCase)) {
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.pgtestbase.DB,
+	)
+
 	cases := testutils.GenericNamespaceSACGetTestCases(s.T())
 
+	failed := false
 	for name, testCase := range cases {
-		s.Run(name, func() {
-			ctx := s.testContexts[testCase.ScopeKey]
-			readMeta, err := s.datastore.GetImagesBatch(ctx, []string{image1.GetId(), image2.GetId()})
-			s.Require().NoError(err)
-			if testCase.ExpectedFound {
-				s.Require().Equal(2, len(readMeta))
-				readImageMeta1 := readMeta[0]
-				readImageMeta2 := readMeta[1]
-				if readImageMeta1.GetId() == image1.GetId() {
-					s.Equal(image1.GetId(), readImageMeta1.GetId())
-					s.Equal(image1.GetComponents(), readImageMeta1.GetComponents())
-					s.Equal(image1.GetCves(), readImageMeta1.GetCves())
-					s.Equal(image2.GetId(), readImageMeta2.GetId())
-					s.Equal(image2.GetComponents(), readImageMeta2.GetComponents())
-					s.Equal(image2.GetCves(), readImageMeta2.GetCves())
-				} else {
-					s.Equal(image2.GetId(), readImageMeta1.GetId())
-					s.Equal(image2.GetComponents(), readImageMeta1.GetComponents())
-					s.Equal(image2.GetCves(), readImageMeta1.GetCves())
-					s.Equal(image1.GetId(), readImageMeta2.GetId())
-					s.Equal(image1.GetComponents(), readImageMeta2.GetComponents())
-					s.Equal(image1.GetCves(), readImageMeta2.GetCves())
-				}
-			} else {
-				s.Equal(0, len(readMeta))
-			}
+		caseSucceeded := s.Run(prefix+name, func() {
+			// When triggered in parallel, most tests fail.
+			// TearDownTest is executed before the sub-tests.
+			// See https://github.com/stretchr/testify/issues/934
+			// s.T().Parallel()
+			testFunc(testCase)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
 	}
+	if failed {
+		log.Infof("%s failed, dumping DB content.", testName)
+		imageGraphBefore.Log()
+	}
+
 }
 
 func (s *imageDatastoreSACSuite) getSearchTestCases() map[string]map[string]bool {
@@ -719,9 +667,7 @@ func (s *imageDatastoreSACSuite) setupSearchTest() (func(), error) {
 		return cleanup, setupErr
 	}
 
-	s.waitForIndexing()
 	return cleanup, nil
-
 }
 
 func (s *imageDatastoreSACSuite) TestCountImages() {
@@ -729,21 +675,18 @@ func (s *imageDatastoreSACSuite) TestCountImages() {
 	defer cleanup()
 	s.Require().NoError(setupErr)
 
-	cases := s.getSearchTestCases()
-	for key, testCase := range cases {
-		s.Run(key, func() {
-			ctx := s.testContexts[key]
-			expectedCount := 0
-			for _, visible := range testCase {
-				if visible {
-					expectedCount++
-				}
+	s.runSearchTest("TestCountImages", func(key string, testCase map[string]bool) {
+		ctx := s.testContexts[key]
+		expectedCount := 0
+		for _, visible := range testCase {
+			if visible {
+				expectedCount++
 			}
-			count, err := s.datastore.CountImages(ctx)
-			s.NoError(err)
-			s.Equal(expectedCount, count)
-		})
-	}
+		}
+		count, err := s.datastore.CountImages(ctx)
+		s.NoError(err)
+		s.Equal(expectedCount, count)
+	})
 }
 
 func (s *imageDatastoreSACSuite) TestCount() {
@@ -751,21 +694,18 @@ func (s *imageDatastoreSACSuite) TestCount() {
 	defer cleanup()
 	s.Require().NoError(setupErr)
 
-	cases := s.getSearchTestCases()
-	for key, testCase := range cases {
-		s.Run(key, func() {
-			ctx := s.testContexts[key]
-			expectedCount := 0
-			for _, visible := range testCase {
-				if visible {
-					expectedCount++
-				}
+	s.runSearchTest("TestCount", func(key string, testCase map[string]bool) {
+		ctx := s.testContexts[key]
+		expectedCount := 0
+		for _, visible := range testCase {
+			if visible {
+				expectedCount++
 			}
-			count, err := s.datastore.Count(ctx, searchPkg.EmptyQuery())
-			s.NoError(err)
-			s.Equal(expectedCount, count)
-		})
-	}
+		}
+		count, err := s.datastore.Count(ctx, searchPkg.EmptyQuery())
+		s.NoError(err)
+		s.Equal(expectedCount, count)
+	})
 }
 
 func (s *imageDatastoreSACSuite) TestSearch() {
@@ -773,29 +713,26 @@ func (s *imageDatastoreSACSuite) TestSearch() {
 	defer cleanup()
 	s.Require().NoError(setupErr)
 
-	cases := s.getSearchTestCases()
-	for key, testCase := range cases {
-		s.Run(key, func() {
-			ctx := s.testContexts[key]
-			expectedIDs := make([]string, 0, len(testCase))
-			for imageID, visible := range testCase {
-				if visible {
-					expectedIDs = append(expectedIDs, imageID)
-				}
+	s.runSearchTest("TestSearch", func(key string, testCase map[string]bool) {
+		ctx := s.testContexts[key]
+		expectedIDs := make([]string, 0, len(testCase))
+		for imageID, visible := range testCase {
+			if visible {
+				expectedIDs = append(expectedIDs, imageID)
 			}
-			results, err := s.datastore.Search(ctx, searchPkg.EmptyQuery())
-			s.NoError(err)
-			resultIDHeap := make(map[string]struct{}, 0)
-			for _, r := range results {
-				resultIDHeap[r.ID] = struct{}{}
-			}
-			resultIDs := make([]string, 0, len(resultIDHeap))
-			for k := range resultIDHeap {
-				resultIDs = append(resultIDs, k)
-			}
-			s.ElementsMatch(expectedIDs, resultIDs)
-		})
-	}
+		}
+		results, err := s.datastore.Search(ctx, searchPkg.EmptyQuery())
+		s.NoError(err)
+		resultIDHeap := make(map[string]struct{}, 0)
+		for _, r := range results {
+			resultIDHeap[r.ID] = struct{}{}
+		}
+		resultIDs := make([]string, 0, len(resultIDHeap))
+		for k := range resultIDHeap {
+			resultIDs = append(resultIDs, k)
+		}
+		s.ElementsMatch(expectedIDs, resultIDs)
+	})
 }
 
 func (s *imageDatastoreSACSuite) TestSearchImages() {
@@ -803,29 +740,26 @@ func (s *imageDatastoreSACSuite) TestSearchImages() {
 	defer cleanup()
 	s.Require().NoError(setupErr)
 
-	cases := s.getSearchTestCases()
-	for key, testCase := range cases {
-		s.Run(key, func() {
-			ctx := s.testContexts[key]
-			expectedIDs := make([]string, 0, len(testCase))
-			for imageID, visible := range testCase {
-				if visible {
-					expectedIDs = append(expectedIDs, imageID)
-				}
+	s.runSearchTest("TestSearchImages", func(key string, testCase map[string]bool) {
+		ctx := s.testContexts[key]
+		expectedIDs := make([]string, 0, len(testCase))
+		for imageID, visible := range testCase {
+			if visible {
+				expectedIDs = append(expectedIDs, imageID)
 			}
-			results, err := s.datastore.SearchImages(ctx, searchPkg.EmptyQuery())
-			s.NoError(err)
-			resultIDHeap := make(map[string]struct{}, 0)
-			for _, r := range results {
-				resultIDHeap[r.GetId()] = struct{}{}
-			}
-			resultIDs := make([]string, 0, len(resultIDHeap))
-			for k := range resultIDHeap {
-				resultIDs = append(resultIDs, k)
-			}
-			s.ElementsMatch(expectedIDs, resultIDs)
-		})
-	}
+		}
+		results, err := s.datastore.SearchImages(ctx, searchPkg.EmptyQuery())
+		s.NoError(err)
+		resultIDHeap := make(map[string]struct{}, 0)
+		for _, r := range results {
+			resultIDHeap[r.GetId()] = struct{}{}
+		}
+		resultIDs := make([]string, 0, len(resultIDHeap))
+		for k := range resultIDHeap {
+			resultIDs = append(resultIDs, k)
+		}
+		s.ElementsMatch(expectedIDs, resultIDs)
+	})
 }
 
 func (s *imageDatastoreSACSuite) TestSearchRawImages() {
@@ -838,32 +772,29 @@ func (s *imageDatastoreSACSuite) TestSearchRawImages() {
 		fixtures.GetImageDoctorJekyll2().GetId():   fixtures.GetImageDoctorJekyll2(),
 	}
 
-	cases := s.getSearchTestCases()
-	for key, testCase := range cases {
-		s.Run(key, func() {
-			ctx := s.testContexts[key]
-			expectedIDs := make([]string, 0, len(testCase))
-			for imageID, visible := range testCase {
-				if visible {
-					expectedIDs = append(expectedIDs, imageID)
-				}
+	s.runSearchTest("TestSearchRawImages", func(key string, testCase map[string]bool) {
+		ctx := s.testContexts[key]
+		expectedIDs := make([]string, 0, len(testCase))
+		for imageID, visible := range testCase {
+			if visible {
+				expectedIDs = append(expectedIDs, imageID)
 			}
-			results, err := s.datastore.SearchRawImages(ctx, searchPkg.EmptyQuery())
-			s.NoError(err)
-			resultImages := make(map[string]*storage.Image, 0)
-			for _, r := range results {
-				resultImages[r.GetId()] = r
-			}
-			resultIDs := make([]string, 0, len(resultImages))
-			for k := range resultImages {
-				resultIDs = append(resultIDs, k)
-			}
-			s.ElementsMatch(expectedIDs, resultIDs)
-			for _, imageID := range expectedIDs {
-				s.verifyRawImagesEqual(refImages[imageID], resultImages[imageID])
-			}
-		})
-	}
+		}
+		results, err := s.datastore.SearchRawImages(ctx, searchPkg.EmptyQuery())
+		s.NoError(err)
+		resultImages := make(map[string]*storage.Image, 0)
+		for _, r := range results {
+			resultImages[r.GetId()] = r
+		}
+		resultIDs := make([]string, 0, len(resultImages))
+		for k := range resultImages {
+			resultIDs = append(resultIDs, k)
+		}
+		s.ElementsMatch(expectedIDs, resultIDs)
+		for _, imageID := range expectedIDs {
+			s.verifyRawImagesEqual(refImages[imageID], resultImages[imageID])
+		}
+	})
 }
 
 func (s *imageDatastoreSACSuite) TestSearchListImages() {
@@ -875,31 +806,54 @@ func (s *imageDatastoreSACSuite) TestSearchListImages() {
 		fixtures.GetImageSherlockHolmes1().GetId(): fixtures.GetImageSherlockHolmes1(),
 		fixtures.GetImageDoctorJekyll2().GetId():   fixtures.GetImageDoctorJekyll2(),
 	}
+	s.runSearchTest("TestSearchListImages", func(key string, testCase map[string]bool) {
+		ctx := s.testContexts[key]
+		expectedIDs := make([]string, 0, len(testCase))
+		for imageID, visible := range testCase {
+			if visible {
+				expectedIDs = append(expectedIDs, imageID)
+			}
+		}
+		results, err := s.datastore.SearchListImages(ctx, searchPkg.EmptyQuery())
+		s.NoError(err)
+		resultListImages := make(map[string]*storage.ListImage, 0)
+		for _, r := range results {
+			resultListImages[r.GetId()] = r
+		}
+		resultIDs := make([]string, 0, len(resultListImages))
+		for k := range resultListImages {
+			resultIDs = append(resultIDs, k)
+		}
+		s.ElementsMatch(expectedIDs, resultIDs)
+		for _, imageID := range expectedIDs {
+			s.verifyListImagesEqual(types.ConvertImageToListImage(refImages[imageID]), resultListImages[imageID])
+		}
+	})
+}
+
+func (s *imageDatastoreSACSuite) runSearchTest(testName string, testFunc func(key string, c map[string]bool)) {
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.pgtestbase.DB,
+	)
 
 	cases := s.getSearchTestCases()
+	failed := false
 	for key, testCase := range cases {
-		s.Run(key, func() {
-			ctx := s.testContexts[key]
-			expectedIDs := make([]string, 0, len(testCase))
-			for imageID, visible := range testCase {
-				if visible {
-					expectedIDs = append(expectedIDs, imageID)
-				}
-			}
-			results, err := s.datastore.SearchListImages(ctx, searchPkg.EmptyQuery())
-			s.NoError(err)
-			resultListImages := make(map[string]*storage.ListImage, 0)
-			for _, r := range results {
-				resultListImages[r.GetId()] = r
-			}
-			resultIDs := make([]string, 0, len(resultListImages))
-			for k := range resultListImages {
-				resultIDs = append(resultIDs, k)
-			}
-			s.ElementsMatch(expectedIDs, resultIDs)
-			for _, imageID := range expectedIDs {
-				s.verifyListImagesEqual(types.ConvertImageToListImage(refImages[imageID]), resultListImages[imageID])
-			}
+		caseSucceeded := s.Run(key, func() {
+			// When triggered in parallel, most tests fail.
+			// TearDownTest is executed before the sub-tests.
+			// See https://github.com/stretchr/testify/issues/934
+			// s.T().Parallel()
+			testFunc(key, testCase)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Infof("%s failed, dumping DB content.", testName)
+		imageGraphBefore.Log()
 	}
 }

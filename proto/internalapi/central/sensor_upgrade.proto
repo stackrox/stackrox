@@ -1,21 +1,21 @@
 syntax = "proto3";
 
-option go_package = "central";
-
 package central;
 
+option go_package = "./internalapi/central;central";
+
 message SensorUpgradeTrigger {
-    message EnvVarDef {
-        string name = 1;
+  message EnvVarDef {
+    string name = 1;
 
-        string source_env_var = 2;
-        string default_value  = 3;
-    }
+    string source_env_var = 2;
+    string default_value = 3;
+  }
 
-    // A UUID that identifies this specific upgrade process.
-    string upgrade_process_id = 1;
+  // A UUID that identifies this specific upgrade process.
+  string upgrade_process_id = 1;
 
-    string image                = 2;
-    repeated string command     = 3;
-    repeated EnvVarDef env_vars = 4;
+  string image = 2;
+  repeated string command = 3;
+  repeated EnvVarDef env_vars = 4;
 }

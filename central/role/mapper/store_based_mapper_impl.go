@@ -3,7 +3,6 @@ package mapper
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -33,9 +33,18 @@ func (rm *storeBasedMapperImpl) FromUserDescriptor(ctx context.Context, user *pe
 
 func (rm *storeBasedMapperImpl) recordUser(ctx context.Context, descriptor *permissions.UserDescriptor) {
 	user := rm.createUser(descriptor)
+
+	// Telemetry logic: add the first time logging in users to the group of
+	// other players like central and fleet manager under the tenant group, so
+	// that the users share the common tenant properties like organization ID
+	// available for analytics purposes:
+	if existing, _ := rm.users.GetUser(ctx, user.GetId()); existing == nil {
+		addUserToTenantGroup(user)
+	}
+
 	if err := rm.users.Upsert(ctx, user); err != nil {
 		// Just log since we don't actually need the user information.
-		log.Errorf("unable to log user: %s: %v", proto.MarshalTextString(user), err)
+		log.Errorf("unable to log user: %s: %v", protocompat.MarshalTextString(user), err)
 	}
 }
 
@@ -90,6 +99,7 @@ func (rm *storeBasedMapperImpl) createUser(descriptor *permissions.UserDescripto
 	user := &storage.User{
 		Id:             descriptor.UserID,
 		AuthProviderId: rm.authProviderID,
+		IdpToken:       descriptor.IdpToken,
 	}
 	addAttributesToUser(user, descriptor.Attributes)
 	return user

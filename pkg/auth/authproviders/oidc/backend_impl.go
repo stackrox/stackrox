@@ -2,6 +2,7 @@ package oidc
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -17,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/oidc/internal/endpoint"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/cryptoutils"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/ioutils"
@@ -26,20 +28,24 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// Specifies the constants used for the auth provider configuration.
 const (
 	fragmentCallbackURLPath = "/auth/response/oidc"
 
-	issuerConfigKey                    = "issuer"
-	clientIDConfigKey                  = "client_id"
-	clientSecretConfigKey              = "client_secret"
-	dontUseClientSecretConfigKey       = "do_not_use_client_secret"
-	modeConfigKey                      = "mode"
-	disableOfflineAccessScopeConfigKey = "disable_offline_access_scope"
+	IssuerConfigKey       = "issuer"
+	ClientIDConfigKey     = "client_id"
+	ClientSecretConfigKey = "client_secret"
+	ExtraScopesConfigKey  = "extra_scopes"
+	//#nosec G101 -- This is a false positive
+	DontUseClientSecretConfigKey       = "do_not_use_client_secret"
+	ModeConfigKey                      = "mode"
+	DisableOfflineAccessScopeConfigKey = "disable_offline_access_scope"
 
 	userInfoExpiration = 5 * time.Minute
+)
 
-	orgIDAttribute = "orgid"
-	orgAdminGroup  = "org_admin"
+var (
+	errNonceVerificationFailed = errors.New("nonce verification failed for ID token")
 )
 
 type nonceVerificationSetting int
@@ -65,7 +71,8 @@ type backendImpl struct {
 	responseMode  string
 	responseTypes set.FrozenStringSet
 
-	config map[string]string
+	config   map[string]string
+	mappings map[string]string
 
 	httpClient *http.Client
 }
@@ -119,7 +126,7 @@ func (p *backendImpl) refreshWithRefreshToken(ctx context.Context, refreshToken 
 		return nil, errors.New("did not receive an identity token in exchange for the refresh token")
 	}
 
-	authResp, err := p.verifyIDToken(ctx, rawIDToken, dontVerifyNonce)
+	authResp, err := p.authFromIDToken(ctx, rawIDToken, token.AccessToken, dontVerifyNonce)
 	if err != nil {
 		return nil, errors.Wrap(err, "verifying ID token after refresh")
 	}
@@ -132,7 +139,7 @@ func (p *backendImpl) refreshWithRefreshToken(ctx context.Context, refreshToken 
 }
 
 func (p *backendImpl) refreshWithAccessToken(ctx context.Context, accessToken string) (*authproviders.AuthResponse, error) {
-	return p.fetchUserInfo(ctx, accessToken)
+	return p.authFromUserInfo(ctx, accessToken)
 }
 
 func (p *backendImpl) RevokeRefreshToken(ctx context.Context, refreshTokenData authproviders.RefreshTokenData) error {
@@ -170,45 +177,104 @@ func (p *backendImpl) RefreshURL() string {
 	return ""
 }
 
-func (p *backendImpl) verifyIDToken(ctx context.Context, rawIDToken string, nonceVerification nonceVerificationSetting) (*authproviders.AuthResponse, error) {
+func (p *backendImpl) claimsFromUserInfo(ctx context.Context, rawAccessToken string) (*tokens.ExternalUserClaim, string,
+	error) {
+	userInfoFromEndpoint, err := p.provider.UserInfo(p.injectHTTPClient(ctx), oauth2.StaticTokenSource(&oauth2.Token{
+		AccessToken: rawAccessToken,
+	}))
+	if err != nil {
+		return nil, "", errors.Wrap(err, "fetching userinfo claims")
+	}
+
+	externalClaims, err := p.extractExternalClaims(userInfoFromEndpoint)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "extracting external claims from userinfo endpoint response")
+	}
+
+	rawUserInfo, err := claimsAsString(userInfoFromEndpoint)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "extracting raw user info from userinfo endpoint response")
+	}
+
+	return externalClaims, rawUserInfo, nil
+}
+
+func (p *backendImpl) claimsFromIDToken(ctx context.Context, idToken oidcIDToken, rawAccessToken string) (*tokens.ExternalUserClaim, string, error) {
+	externalClaims, err := p.extractExternalClaims(idToken)
+	if err != nil {
+		return nil, "", err
+	}
+
+	// Special case: in the case of an ID token being presented which has an empty group attribute, we attempt to
+	// enrich data from the userinfo endpoint. The rationale behind this is that some OIDC providers we've seen
+	// (i.e. GitLab) only present the complete group membership in the userinfo endpoint, not within the ID token.
+	if hasEmptyGroups(externalClaims) && rawAccessToken != "" {
+		userInfoClaims, _, err := p.claimsFromUserInfo(ctx, rawAccessToken)
+		if err != nil {
+			return nil, "", errors.Wrap(err, "fetching userinfo claims")
+		}
+
+		if !hasEmptyGroups(userInfoClaims) {
+			externalClaims.Attributes[authproviders.GroupsAttribute] =
+				userInfoClaims.Attributes[authproviders.GroupsAttribute]
+		}
+	}
+
+	rawIDToken, err := claimsAsString(idToken)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "extracting raw ID token claims from ID token")
+	}
+
+	return externalClaims, rawIDToken, nil
+}
+
+// authFromIDToken returns an auth response from the given raw ID token.
+// It will verify the ID token according to the given nonceVerificationSetting, extract claims
+// from the given ID token, and potentially enrich the claims of the ID token with the userinfo claims
+// iff the ID token claims do not contain groups.
+func (p *backendImpl) authFromIDToken(ctx context.Context, rawIDToken string, rawAccessToken string,
+	nonceVerification nonceVerificationSetting) (*authproviders.AuthResponse, error) {
+	idToken, err := p.verifyIDToken(ctx, rawIDToken, nonceVerification)
+	if err != nil {
+		return nil, errors.Wrap(err, "verifying ID token")
+	}
+
+	externalClaims, claimsStr, err := p.claimsFromIDToken(ctx, idToken, rawAccessToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return &authproviders.AuthResponse{
+		Claims:     externalClaims,
+		Expiration: idToken.GetExpiry(),
+		IdpToken:   claimsStr,
+	}, nil
+}
+
+func (p *backendImpl) verifyIDToken(ctx context.Context, rawIDToken string,
+	nonceVerification nonceVerificationSetting) (oidcIDToken, error) {
 	idToken, err := p.idTokenVerifier.Verify(p.injectHTTPClient(ctx), rawIDToken)
 	if err != nil {
 		return nil, err
 	}
 
 	if nonceVerification != dontVerifyNonce && !p.noncePool.ConsumeNonce(idToken.GetNonce()) {
-		return nil, errors.New("invalid token")
+		return nil, errNonceVerificationFailed
 	}
 
-	var userInfo userInfoType
-	if err := idToken.Claims(&userInfo); err != nil {
-		return nil, err
-	}
-
-	externalClaims := userInfoToExternalClaims(&userInfo)
-	return &authproviders.AuthResponse{
-		Claims:     externalClaims,
-		Expiration: idToken.GetExpiry(),
-	}, nil
+	return idToken, nil
 }
 
-func (p *backendImpl) fetchUserInfo(ctx context.Context, rawAccessToken string) (*authproviders.AuthResponse, error) {
-	userInfoFromEndpoint, err := p.provider.UserInfo(p.injectHTTPClient(ctx), oauth2.StaticTokenSource(&oauth2.Token{
-		AccessToken: rawAccessToken,
-	}))
+func (p *backendImpl) authFromUserInfo(ctx context.Context, rawAccessToken string) (*authproviders.AuthResponse, error) {
+	externalClaims, claimsStr, err := p.claimsFromUserInfo(ctx, rawAccessToken)
 	if err != nil {
-		return nil, errors.Wrap(err, "fetching updated userinfo")
+		return nil, errors.Wrap(err, "fetching userinfo claims")
 	}
 
-	var userInfo userInfoType
-	if err := userInfoFromEndpoint.Claims(&userInfo); err != nil {
-		return nil, errors.Wrap(err, "parsing userinfo")
-	}
-
-	externalClaims := userInfoToExternalClaims(&userInfo)
 	return &authproviders.AuthResponse{
 		Claims:     externalClaims,
 		Expiration: time.Now().Add(userInfoExpiration),
+		IdpToken:   claimsStr,
 	}, nil
 }
 
@@ -218,26 +284,28 @@ var (
 	errQueryWithoutClientSecret  = errors.New("query response mode can only be used with a client secret")
 )
 
-func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackURLPath string, config map[string]string,
-	providerFactory providerFactoryFunc, exchange exchangeFunc, noncePool cryptoutils.NoncePool) (*backendImpl, error) {
+func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackURLPath string, config map[string]string, providerFactory providerFactoryFunc, exchange exchangeFunc, noncePool cryptoutils.NoncePool, mappings map[string]string) (*backendImpl, error) {
 	if len(uiEndpoints) == 0 {
 		return nil, errors.New("OIDC requires a default UI endpoint")
 	}
 
-	clientID := config[clientIDConfigKey]
+	clientID := config[ClientIDConfigKey]
 	if clientID == "" {
 		return nil, errNoClientIDProvided
 	}
 
-	issuerHelper, err := endpoint.NewHelper(config[issuerConfigKey])
+	issuerHelper, err := endpoint.NewHelper(config[IssuerConfigKey])
 	if err != nil {
 		return nil, err
 	}
+
+	log.Infof("Creating OIDC provider for %q", issuerHelper.Issuer())
 	provider, err := createOIDCProvider(ctx, issuerHelper, providerFactory)
 	if err != nil {
 		return nil, err
 	}
 
+	log.Infof("Creating OIDC provider backend %s", id)
 	b := &backendImpl{
 		id:                 id,
 		noncePool:          noncePool,
@@ -246,15 +314,16 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 		provider:           provider,
 		httpClient:         issuerHelper.HTTPClient(),
 		oauthExchange:      exchange,
+		mappings:           mappings,
 	}
 
 	b.baseRedirectURL = url.URL{
 		Scheme: "https",
 	}
 
-	clientSecret := config[clientSecretConfigKey]
+	clientSecret := config[ClientSecretConfigKey]
 
-	mode := strings.ToLower(config[modeConfigKey])
+	mode := strings.ToLower(config[ModeConfigKey])
 	if mode == "auto" {
 		mode, err = provider.SelectResponseMode(clientSecret != "")
 		if err != nil {
@@ -268,7 +337,7 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 		mode = "fragment" // legacy setting
 	}
 
-	if clientSecret == "" && config[dontUseClientSecretConfigKey] == "false" {
+	if clientSecret == "" && config[DontUseClientSecretConfigKey] == "false" {
 		if mode == "query" {
 			return nil, errQueryWithoutClientSecret
 		}
@@ -306,7 +375,7 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 
 	b.idTokenVerifier = provider.Verifier(&oidc.Config{ClientID: clientID})
 
-	disableOfflineAccessScope := config[disableOfflineAccessScopeConfigKey] == "true"
+	disableOfflineAccessScope := config[DisableOfflineAccessScopeConfigKey] == "true"
 	b.baseOauthConfig, err = createBaseOAuthConfig(
 		clientID,
 		clientSecret,
@@ -318,14 +387,22 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 		return nil, err
 	}
 
+	extraScopes, extraScopesRequested := config[ExtraScopesConfigKey]
+	if extraScopesRequested {
+		b.baseOauthConfig.Scopes = append(b.baseOauthConfig.Scopes, strings.Split(extraScopes, " ")...)
+	}
+
 	b.config = map[string]string{
-		issuerConfigKey:       issuerHelper.Issuer(),
-		clientIDConfigKey:     clientID,
-		clientSecretConfigKey: clientSecret,
-		modeConfigKey:         mode,
+		IssuerConfigKey:       issuerHelper.Issuer(),
+		ClientIDConfigKey:     clientID,
+		ClientSecretConfigKey: clientSecret,
+		ModeConfigKey:         mode,
 	}
 	if disableOfflineAccessScope {
-		b.config[disableOfflineAccessScopeConfigKey] = "true"
+		b.config[DisableOfflineAccessScopeConfigKey] = "true"
+	}
+	if extraScopesRequested {
+		b.config[ExtraScopesConfigKey] = extraScopes
 	}
 
 	return b, nil
@@ -398,9 +475,12 @@ func (p *backendImpl) processIDPResponseForImplicitFlowWithIDToken(ctx context.C
 		return nil, errors.New("no id_token field found in response")
 	}
 
-	authResp, err := p.verifyIDToken(ctx, rawIDToken, verifyNonce)
+	// For the implicit flow, according to the spec an access token _should_ be sent which should be valid for
+	// calling the userinfo endpoint. If no access token is given, the auth response will not contain the enriched
+	// groups claim from the userinfo endpoint (in case the ID token does not have groups present).
+	authResp, err := p.authFromIDToken(ctx, rawIDToken, responseData.Get("access_token"), verifyNonce)
 	if err != nil {
-		return nil, errors.Wrap(err, "id token verification failed")
+		return nil, errors.Wrap(err, "failed to authenticate with ID token")
 	}
 
 	return authResp, nil
@@ -412,9 +492,9 @@ func (p *backendImpl) processIDPResponseForImplicitFlowWithAccessToken(ctx conte
 		return nil, errors.New("no access_token field found in response")
 	}
 
-	authResp, err := p.fetchUserInfo(ctx, rawToken)
+	authResp, err := p.authFromUserInfo(ctx, rawToken)
 	if err != nil {
-		return nil, errors.Wrap(err, "fetching user info with access token")
+		return nil, errors.Wrap(err, "failed to authenticate with access token")
 	}
 
 	authResp.RefreshTokenData = authproviders.RefreshTokenData{
@@ -445,9 +525,9 @@ func (p *backendImpl) processIDPResponseForCodeFlow(ctx context.Context, respons
 		return nil, errors.New("response from server did not contain ID token in violation of OIDC spec")
 	}
 
-	authResp, err := p.verifyIDToken(ctx, rawIDToken, verifyNonce)
+	authResp, err := p.authFromIDToken(ctx, rawIDToken, token.GetAccessToken(), verifyNonce)
 	if err != nil {
-		return nil, errors.Wrap(err, "ID token verification failed")
+		return nil, errors.Wrap(err, "failed to authenticate with ID token")
 	}
 
 	if token.GetRefreshToken() != "" {
@@ -501,6 +581,13 @@ func (p *backendImpl) processIDPResponse(ctx context.Context, responseData url.V
 		var err error
 		authRespIDToken, err = p.processIDPResponseForImplicitFlowWithIDToken(ctx, responseData)
 		if err != nil {
+			// In case a nonce verification failure occurred, we are short-circuiting and returning.
+			// This is due to the fact that the access token verification _may_ be successful, since no nonce
+			// will be verified for it and re-using identity tokens for multiple requests shall not be allowed.
+			if errors.Is(err, errNonceVerificationFailed) {
+				log.Warnf("Received a nonce verification failure: %v", err)
+				return nil, errox.InvalidArgs.CausedBy(err)
+			}
 			combinedErr = multierror.Append(combinedErr, err)
 		}
 	}
@@ -539,15 +626,6 @@ func (p *backendImpl) processIDPResponse(ctx context.Context, responseData url.V
 	return nil, combinedErr
 }
 
-func translateErrorCode(idpError string) string {
-	switch idpError {
-	case "unauthorized_client":
-		return "Identity provider claims that this authentication provider configuration is not authorized to request an authorization code or access token using this method."
-	default:
-		return fmt.Sprintf("Identity provider returned a %q error.", idpError)
-	}
-}
-
 func (p *backendImpl) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (*authproviders.AuthResponse, error) {
 	var values url.Values
 	switch r.Method {
@@ -576,18 +654,32 @@ func (p *backendImpl) Validate(context.Context, *tokens.Claims) error {
 // Helpers
 ///////////
 
+func (p *backendImpl) injectHTTPClient(ctx context.Context) context.Context {
+	if p.httpClient != nil {
+		return oidc.ClientContext(ctx, p.httpClient)
+	}
+	return ctx
+}
+
+func (p *backendImpl) extractExternalClaims(extractor claimExtractor) (*tokens.ExternalUserClaim, error) {
+	var userInfo userInfoType
+	if err := extractor.Claims(&userInfo); err != nil {
+		return nil, errors.Wrap(err, "failed to extract userinfo claims")
+	}
+
+	externalClaims := userInfoToExternalClaims(&userInfo)
+	if err := mapCustomClaims(externalClaims, p.mappings, extractor); err != nil {
+		return nil, errors.Wrap(err, "failed to add custom mapped claims")
+	}
+	return externalClaims, nil
+}
+
 // userInfoType is an internal helper struct to unmarshal OIDC token info into.
 type userInfoType struct {
 	Name   string   `json:"name"`
 	EMail  string   `json:"email"`
 	UID    string   `json:"sub"`
 	Groups []string `json:"groups"`
-	// Every Red Hat SSO user belongs to exactly one organization, claim
-	// "account_id" represents that organisation. See more on the claims here:
-	// 	https://source.redhat.com/groups/public/it-user/it_user_team_wiki/topic_external_sso_enablements#attributes-needed
-	OrgID string `json:"account_id"`
-	// Claim "is_org_admin" is the claim that identifies organisation admins within sso.redhat.com.
-	IsOrgAdmin bool `json:"is_org_admin"`
 }
 
 func userInfoToExternalClaims(userInfo *userInfoType) *tokens.ExternalUserClaim {
@@ -618,20 +710,95 @@ func userInfoToExternalClaims(userInfo *userInfoType) *tokens.ExternalUserClaim 
 	if len(userInfo.Groups) > 0 {
 		claim.Attributes[authproviders.GroupsAttribute] = userInfo.Groups
 	}
-
-	// Add sso.redhat.com attributes.
-	if userInfo.OrgID != "" {
-		claim.Attributes[orgIDAttribute] = []string{userInfo.OrgID}
-	}
-	if userInfo.IsOrgAdmin {
-		claim.Attributes[authproviders.GroupsAttribute] = append(claim.Attributes[authproviders.GroupsAttribute], orgAdminGroup)
-	}
 	return claim
 }
 
-func (p *backendImpl) injectHTTPClient(ctx context.Context) context.Context {
-	if p.httpClient != nil {
-		return oidc.ClientContext(ctx, p.httpClient)
+type claimExtractor interface {
+	Claims(v interface{}) error
+}
+
+func mapCustomClaims(externalUserClaim *tokens.ExternalUserClaim, mappings map[string]string, claimExtractor claimExtractor) error {
+	claims := make(map[string]interface{}, 0)
+	if err := claimExtractor.Claims(&claims); err != nil {
+		return errors.Wrap(err, "failed to extract claims from IdP's token")
 	}
-	return ctx
+	for fromClaimPath, toClaimName := range mappings {
+		val, err := extractClaimFromPath(fromClaimPath, claims)
+		if err != nil {
+			log.Debugf("Failed to extract claim from path: %v", err)
+			continue
+		}
+		if err := addClaimToUserClaims(externalUserClaim, toClaimName, val); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func claimsAsString(claimExtractor claimExtractor) (string, error) {
+	claims := make(map[string]interface{})
+	if err := claimExtractor.Claims(&claims); err != nil {
+		return "", errors.Wrap(err, "failed to extract all claims")
+	}
+	byteClaims, err := json.Marshal(claims)
+	if err != nil {
+		return "", err
+	}
+	return string(byteClaims), nil
+}
+
+func addClaimToUserClaims(externalUserClaim *tokens.ExternalUserClaim, attributeName string, claimValue interface{}) error {
+	switch v := claimValue.(type) {
+	case []interface{}:
+		for i, arrayVal := range v {
+			_, isArray := arrayVal.([]interface{})
+			_, isNestedStruct := arrayVal.(map[string]interface{})
+			if isArray || isNestedStruct {
+				return errors.Errorf("unsupported claim type %T with value %+v", arrayVal, arrayVal)
+			}
+			if err := addClaimToUserClaims(externalUserClaim, attributeName, arrayVal); err != nil {
+				return errors.Wrapf(err, "failed to add %d element of %+v", i, v)
+			}
+		}
+	case string:
+		externalUserClaim.Attributes[attributeName] = append(externalUserClaim.Attributes[attributeName], v)
+	case bool:
+		externalUserClaim.Attributes[attributeName] = append(externalUserClaim.Attributes[attributeName], strconv.FormatBool(v))
+	default:
+		return errors.Errorf("unsupported claim type %T with value %+v", claimValue, claimValue)
+	}
+	return nil
+}
+
+func extractClaimFromPath(fromClaimName string, claims map[string]interface{}) (interface{}, error) {
+	claimPath := strings.Split(fromClaimName, ".")
+	currentNode := claims
+	for i, next := range claimPath {
+		nextVal, ok := currentNode[next]
+		if !ok {
+			return nil, errors.Errorf("no value %q on the path %q", next, fromClaimName)
+		}
+		if i == len(claimPath)-1 {
+			return nextVal, nil
+		}
+		currentNode, ok = nextVal.(map[string]interface{})
+		if !ok {
+			return nil, errors.Errorf("expected next value to be of map type but got %T", nextVal)
+		}
+	}
+	log.Warnf("Suspicious loop exit while extracting claim from path %q", fromClaimName)
+	return nil, errors.Errorf("no value on path %q", fromClaimName)
+}
+
+func translateErrorCode(idpError string) string {
+	switch idpError {
+	case "unauthorized_client":
+		return "Identity provider claims that this authentication provider configuration is not authorized to request an authorization code or access token using this method."
+	default:
+		return fmt.Sprintf("Identity provider returned a %q error.", idpError)
+	}
+}
+
+func hasEmptyGroups(claims *tokens.ExternalUserClaim) bool {
+	return len(claims.Attributes[authproviders.GroupsAttribute]) == 0
 }

@@ -12,10 +12,12 @@ import (
 	"strings"
 	"time"
 
+	compv1alpha1 "github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
+	"github.com/cloudflare/cfssl/log"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/k8sutil"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/utils"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,6 +27,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/kubectl/pkg/scheme"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/yaml"
 )
 
@@ -34,10 +37,6 @@ const (
 	maxLogLines        = 5000
 	maxFirstLineCutOff = 1024    // only cut off first (partial line) if less than that many characters
 	maxLogFileSize     = 1 << 20 // 1MB
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 type collector struct {
@@ -89,14 +88,20 @@ func generateFileName(obj k8sutil.Object, suffix string) string {
 		namespace = "_global"
 	}
 
-	app := obj.GetLabels()["app"]
-	if app == "" {
-		app = obj.GetLabels()["app.kubernetes.io/name"]
+	groupDirectory := obj.GetLabels()["app"]
+	if groupDirectory == "" {
+		groupDirectory = obj.GetLabels()["app.kubernetes.io/name"]
 	}
-	if app == "" {
-		app = "_ungrouped"
+	if groupDirectory == "" && obj.GetObjectKind().GroupVersionKind().Group == compv1alpha1.SchemeGroupVersion.Group {
+		// Group compliance CRDs into a single directory
+		groupDirectory = obj.GetObjectKind().GroupVersionKind().Kind
 	}
-	return fmt.Sprintf("%s/%s/%s-%s%s", namespace, app, strings.ToLower(obj.GetObjectKind().GroupVersionKind().Kind), obj.GetName(), suffix)
+	if groupDirectory == "" {
+		groupDirectory = "_ungrouped"
+	}
+
+	fileName := fmt.Sprintf("%s/%s/%s-%s%s", namespace, groupDirectory, strings.ToLower(obj.GetObjectKind().GroupVersionKind().Kind), obj.GetName(), suffix)
+	return fileName
 }
 
 func (c *collector) emitFile(obj k8sutil.Object, suffix string, data []byte) error {
@@ -176,16 +181,17 @@ func (c *collector) collectPodData(pod *v1.Pod) error {
 	sinceSeconds := int64(time.Since(c.since).Seconds())
 	for _, container := range pod.Status.ContainerStatuses {
 		if container.State.Running != nil {
-			podLogOpts := &v1.PodLogOptions{
-				Container:    container.Name,
-				SinceSeconds: &[]int64{sinceSeconds}[0],
-				TailLines:    &[]int64{maxLogLines}[0],
-			}
+			podLogOpts := c.podLogOptions()
+			podLogOpts.Container = container.Name
+			podLogOpts.SinceSeconds = pointer.Int64(sinceSeconds)
+
 			logsData, err := c.client.CoreV1().Pods(pod.GetNamespace()).GetLogs(pod.GetName(), podLogOpts).DoRaw(c.ctx)
 			if err != nil {
-				logsData = []byte(fmt.Sprintf("Error retrieving container logs: %v", err))
+				logsData = []byte(fmt.Sprintf("Error retrieving container logs: %v\n", err))
+				logsData = appendDebugError(logsData, err)
 			} else {
-				logsData = truncateLogData(logsData, maxLogFileSize, maxFirstLineCutOff)
+				logsData = utils.IfThenElse(c.cfg.IgnoreLogLimits,
+					logsData, truncateLogData(logsData, maxLogFileSize, maxFirstLineCutOff))
 			}
 
 			if err := c.emitFile(pod, fmt.Sprintf("-logs-%s.txt", container.Name), logsData); err != nil {
@@ -200,17 +206,18 @@ func (c *collector) collectPodData(pod *v1.Pod) error {
 				sinceSeconds = int64(time.Since(c.since).Seconds())
 			}
 
-			podLogOpts := &v1.PodLogOptions{
-				Container:    container.Name,
-				Previous:     true,
-				SinceSeconds: &[]int64{sinceSeconds}[0],
-				TailLines:    &[]int64{maxLogLines}[0],
-			}
+			podLogOpts := c.podLogOptions()
+			podLogOpts.Container = container.Name
+			podLogOpts.SinceSeconds = pointer.Int64(sinceSeconds)
+			podLogOpts.Previous = true
+
 			logsData, err := c.client.CoreV1().Pods(pod.GetNamespace()).GetLogs(pod.GetName(), podLogOpts).DoRaw(c.ctx)
 			if err != nil {
-				logsData = []byte(fmt.Sprintf("Error retrieving previous container logs: %v", err))
+				logsData = []byte(fmt.Sprintf("Error retrieving previous container logs: %v\n", err))
+				logsData = appendDebugError(logsData, err)
 			} else {
-				logsData = truncateLogData(logsData, maxLogFileSize, maxFirstLineCutOff)
+				logsData = utils.IfThenElse(c.cfg.IgnoreLogLimits,
+					logsData, truncateLogData(logsData, maxLogFileSize, maxFirstLineCutOff))
 			}
 
 			if err := c.emitFile(pod, fmt.Sprintf("-logs-%s-previous.txt", container.Name), logsData); err != nil {
@@ -222,10 +229,28 @@ func (c *collector) collectPodData(pod *v1.Pod) error {
 	return nil
 }
 
+func appendDebugError(logsData []byte, err error) []byte {
+	var serr *k8sErrors.StatusError
+	if errors.As(err, &serr) {
+		f, status := serr.DebugError()
+		logsData = append(logsData, fmt.Sprintf(f, status)...)
+	}
+	return logsData
+}
+
 func (c *collector) recordError(err error) {
 	if err != nil {
 		c.errors = append(c.errors, err)
 	}
+}
+
+func (c *collector) podLogOptions() *v1.PodLogOptions {
+	opts := &v1.PodLogOptions{}
+	if c.cfg.IgnoreLogLimits {
+		return opts
+	}
+	opts.TailLines = pointer.Int64(maxLogLines)
+	return opts
 }
 
 func (c *collector) collectObjectsData(ns string, cfg ObjectConfig, resourceClient dynamic.NamespaceableResourceInterface) error {
@@ -391,6 +416,7 @@ func (c *collector) Run() error {
 		for _, objCfg := range c.cfg.Objects {
 			objClient := clientMap[objCfg.GVK]
 			if objClient == nil {
+				log.Warningf("Missing type information for %q when generating diagnostic bundle. (CRD not present in cluster?)", objCfg.GVK.String())
 				continue
 			}
 			if err := c.collectObjectsData(ns, objCfg, objClient); err != nil {

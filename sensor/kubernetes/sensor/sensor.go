@@ -3,96 +3,106 @@ package sensor
 import (
 	"context"
 	"os"
+	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/internalapi/central"
 	sensorInternal "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/clusterid"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/namespaces"
+	"github.com/stackrox/rox/pkg/pods"
 	"github.com/stackrox/rox/pkg/protoutils"
-	"github.com/stackrox/rox/pkg/satoken"
+	"github.com/stackrox/rox/pkg/sensor/queue"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/certdistribution"
-	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/compliance"
 	"github.com/stackrox/rox/sensor/common/config"
+	"github.com/stackrox/rox/sensor/common/delegatedregistry"
 	"github.com/stackrox/rox/sensor/common/deployment"
+	"github.com/stackrox/rox/sensor/common/deploymentenhancer"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
+	"github.com/stackrox/rox/sensor/common/heritage"
 	"github.com/stackrox/rox/sensor/common/image"
+	"github.com/stackrox/rox/sensor/common/image/cache"
+	"github.com/stackrox/rox/sensor/common/installmethod"
+	"github.com/stackrox/rox/sensor/common/internalmessage"
+	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/networkflow/service"
+	"github.com/stackrox/rox/sensor/common/networkflow/updatecomputer"
 	"github.com/stackrox/rox/sensor/common/processfilter"
 	"github.com/stackrox/rox/sensor/common/processsignal"
-	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/reprocessor"
+	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/sensor"
-	"github.com/stackrox/rox/sensor/common/sensor/helmconfig"
 	signalService "github.com/stackrox/rox/sensor/common/signal"
+	vmIndex "github.com/stackrox/rox/sensor/common/virtualmachine/index"
 	k8sadmctrl "github.com/stackrox/rox/sensor/kubernetes/admissioncontroller"
+	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterhealth"
 	"github.com/stackrox/rox/sensor/kubernetes/clustermetrics"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterstatus"
+	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer"
-	"github.com/stackrox/rox/sensor/kubernetes/listener"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline"
+	"github.com/stackrox/rox/sensor/kubernetes/helm"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
-	"github.com/stackrox/rox/sensor/kubernetes/localscanner"
 	"github.com/stackrox/rox/sensor/kubernetes/networkpolicies"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestrator"
 	"github.com/stackrox/rox/sensor/kubernetes/telemetry"
 	"github.com/stackrox/rox/sensor/kubernetes/upgrade"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
+var log = logging.LoggerForModule()
 
 // CreateSensor takes in a client interface and returns a sensor instantiation
 func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
-	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(resources.DeploymentStoreSingleton(), resources.PodStoreSingleton())
+	log.Info("Running sensor with Kubernetes re-sync disabled")
 
-	var helmManagedConfig *central.HelmManagedConfigInit
-	if configFP := helmconfig.HelmConfigFingerprint.Setting(); configFP != "" {
-		var err error
-		helmManagedConfig, err = helmconfig.Load()
-		if err != nil {
-			return nil, errors.Wrap(err, "loading Helm cluster config")
-		}
-		if helmManagedConfig.GetClusterConfig().GetConfigFingerprint() != configFP {
-			return nil, errors.Errorf("fingerprint %q of loaded config does not match expected fingerprint %q, config changes can only be applied via 'helm upgrade' or a similar chart-based mechanism", helmManagedConfig.GetClusterConfig().GetConfigFingerprint(), configFP)
-		}
-		log.Infof("Loaded Helm cluster configuration with fingerprint %q", configFP)
+	clusterID := cfg.clusterIDHandler
 
-		if err := helmconfig.CheckEffectiveClusterName(helmManagedConfig); err != nil {
-			return nil, errors.Wrap(err, "validating cluster name")
-		}
+	hm := heritage.NewHeritageManager(pods.GetPodNamespace(), cfg.k8sClient.Kubernetes().CoreV1(), time.Now())
+	storeProvider := resources.InitializeStore(hm)
+	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(clusterID, storeProvider.Deployments(), storeProvider.Pods())
+
+	helmManagedConfig, err := helm.GetHelmManagedConfig(storage.ServiceType_SENSOR_SERVICE)
+	if err != nil {
+		return nil, errors.Wrap(err, "assembling Helm configuration")
 	}
 
-	if helmManagedConfig.GetClusterName() == "" {
-		certClusterID, err := clusterid.ParseClusterIDFromServiceCert(storage.ServiceType_SENSOR_SERVICE)
-		if err != nil {
-			return nil, errors.Wrap(err, "parsing cluster ID from service certificate")
-		}
-		if centralsensor.IsInitCertClusterID(certClusterID) {
-			return nil, errors.New("a sensor that uses certificates from an init bundle must have a cluster name specified")
-		}
+	log.Infof("Install method: %q", helmManagedConfig.GetManagedBy())
+	installmethod.Set(helmManagedConfig.GetManagedBy())
+
+	if cfg.introspectionK8sClient == nil {
+		// This is used so we can still identify sensor's deployment with the fake-workloads.
+		cfg.introspectionK8sClient = cfg.k8sClient
 	}
 
-	deploymentIdentification := fetchDeploymentIdentification(context.Background(), cfg.k8sClient.Kubernetes())
-	log.Infof("Determined deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
+	var deploymentIdentification *storage.SensorDeploymentIdentification
+	if cfg.deploymentIdentification != nil {
+		// Use explicitly provided deployment identification (e.g., from local-sensor)
+		deploymentIdentification = cfg.deploymentIdentification
+		log.Infof("Using provided deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
+	} else {
+		// Fetch deployment identification from service account files and Kubernetes API
+		deploymentIdentification = FetchDeploymentIdentification(context.Background(), cfg.introspectionK8sClient.Kubernetes())
+		log.Infof("Determined deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
+	}
 
 	auditLogEventsInput := make(chan *sensorInternal.AuditEvents)
-	auditLogCollectionManager := compliance.NewAuditLogCollectionManager()
+	auditLogCollectionManager := compliance.NewAuditLogCollectionManager(clusterID)
 
 	o := orchestrator.New(cfg.k8sClient.Kubernetes())
-	complianceService := compliance.NewService(o, auditLogEventsInput, auditLogCollectionManager)
+	complianceMultiplexer := compliance.NewMultiplexer()
+	// TODO(ROX-16931): Turn auditLogEventsInput and auditLogCollectionManager into ComplianceComponents if possible
+	complianceService := compliance.NewService(o, auditLogEventsInput, auditLogCollectionManager, complianceMultiplexer.ComplianceC())
 
 	configHandler := config.NewCommandHandler(admCtrlSettingsMgr, deploymentIdentification, helmManagedConfig, auditLogCollectionManager)
 	enforcer, err := enforcer.New(cfg.k8sClient)
@@ -100,20 +110,36 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		return nil, errors.Wrap(err, "creating enforcer")
 	}
 
-	imageCache := expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting())
-	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, resources.DeploymentStoreSingleton(), resources.ServiceAccountStoreSingleton(), imageCache, auditLogEventsInput, auditLogCollectionManager, resources.NetworkPolicySingleton())
-	resourceListener := listener.New(cfg.k8sClient, configHandler, policyDetector, k8sNodeName.Setting(), cfg.resyncPeriod, cfg.traceWriter)
-	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, resourceListener)
+	imageCache := expiringcache.NewExpiringCache[cache.Key, cache.Value](env.ReprocessInterval.DurationSetting())
 
-	imageService := image.NewService(imageCache, registry.Singleton())
+	localScan := scan.NewLocalScan(storeProvider.Registries(), storeProvider.RegistryMirrors())
+	delegatedRegistryHandler := delegatedregistry.NewHandler(clusterID, storeProvider.Registries(), localScan)
+
+	pubSub := internalmessage.NewMessageSubscriber()
+
+	policyDetector := detector.New(clusterID, enforcer, admCtrlSettingsMgr, storeProvider.Deployments(), storeProvider.ServiceAccounts(), imageCache, auditLogEventsInput, auditLogCollectionManager, storeProvider.NetworkPolicies(), storeProvider.Registries(), localScan)
+	reprocessorHandler := reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache)
+	pipeline := eventpipeline.New(clusterID, cfg.k8sClient, configHandler, policyDetector, reprocessorHandler, k8sNodeName.Setting(), cfg.traceWriter, storeProvider, cfg.eventPipelineQueueSize, pubSub)
+	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, pipeline)
+
+	imageService := image.NewService(clusterID, imageCache, storeProvider.Registries(), storeProvider.RegistryMirrors())
 	complianceCommandHandler := compliance.NewCommandHandler(complianceService)
 
 	// Create Process Pipeline
-	indicators := make(chan *central.MsgFromSensor)
-	processPipeline := processsignal.NewProcessPipeline(indicators, clusterentities.StoreInstance(), processfilter.Singleton(), policyDetector)
-	processSignals := signalService.New(processPipeline, indicators)
+	indicators := make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.ProcessIndicatorBufferSize))
+	processPipeline := processsignal.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector)
+	var processSignals signalService.Service
+	if cfg.signalServiceAuthFuncOverride != nil && cfg.localSensor {
+		processSignals = signalService.New(processPipeline, indicators,
+			signalService.WithAuthFuncOverride(cfg.signalServiceAuthFuncOverride),
+			signalService.WithTraceWriter(cfg.processIndicatorWriter))
+	} else {
+		processSignals = signalService.New(processPipeline, indicators, signalService.WithTraceWriter(cfg.processIndicatorWriter))
+	}
+
 	networkFlowManager :=
-		manager.NewManager(clusterentities.StoreInstance(), externalsrcs.StoreInstance(), policyDetector)
+		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub, updatecomputer.New(), manager.WithEnrichTicker(cfg.networkFlowTicker))
+	enhancer := deploymentenhancer.CreateEnhancer(storeProvider)
 	components := []common.SensorComponent{
 		admCtrlMsgForwarder,
 		enforcer,
@@ -121,53 +147,65 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		networkpolicies.NewCommandHandler(cfg.k8sClient.Kubernetes()),
 		clusterstatus.NewUpdater(cfg.k8sClient),
 		clusterhealth.NewUpdater(cfg.k8sClient.Kubernetes(), 0),
-		clustermetrics.New(cfg.k8sClient.Kubernetes()),
+		clustermetrics.New(clusterID, cfg.k8sClient.Kubernetes()),
 		complianceCommandHandler,
 		processSignals,
-		telemetry.NewCommandHandler(cfg.k8sClient.Kubernetes()),
+		telemetry.NewCommandHandler(cfg.k8sClient.Kubernetes(), storeProvider),
 		externalsrcs.Singleton(),
 		admissioncontroller.AlertHandlerSingleton(),
 		auditLogCollectionManager,
-		reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache),
+		reprocessorHandler,
+		delegatedRegistryHandler,
+		imageService,
+		enhancer,
+		complianceService,
 	}
 
+	var virtualMachineHandler vmIndex.Handler
+	if features.VirtualMachines.Enabled() {
+		virtualMachineHandler = vmIndex.NewHandler(storeProvider.VirtualMachines())
+		components = append(components, virtualMachineHandler)
+	}
+
+	matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
+	nodeInventoryHandler := compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), complianceService.IndexReportWraps(), matcher, matcher)
+	complianceMultiplexer.AddComponentWithComplianceC(nodeInventoryHandler)
+	// complianceMultiplexer must start after all components that implement common.ComplianceComponent
+	// i.e., after nodeInventoryHandler
+	components = append(components, nodeInventoryHandler, complianceMultiplexer)
+
+	coReadySignal := concurrency.NewSignal()
+	coInfoUpdater := complianceoperator.NewInfoUpdater(cfg.k8sClient.Kubernetes(), 0, &coReadySignal)
+	components = append(components, coInfoUpdater, complianceoperator.NewRequestHandler(cfg.k8sClient.Dynamic(), coInfoUpdater, &coReadySignal))
+
 	if !cfg.localSensor {
-		upgradeCmdHandler, err := upgrade.NewCommandHandler(configHandler)
+		upgradeCmdHandler, err := upgrade.NewCommandHandler(clusterID, configHandler)
 		if err != nil {
 			return nil, errors.Wrap(err, "creating upgrade command handler")
 		}
 		components = append(components, upgradeCmdHandler)
 	}
 
-	sensorNamespace, err := satoken.LoadNamespaceFromFile()
-	if err != nil {
-		log.Errorf("Failed to determine namespace from service account token file: %s", err)
-	}
-	if sensorNamespace == "" {
-		sensorNamespace = os.Getenv("POD_NAMESPACE")
-	}
-	if sensorNamespace == "" {
-		sensorNamespace = namespaces.StackRox
-		log.Warnf("Unable to determine Sensor namespace, defaulting to %s", sensorNamespace)
-	}
+	sensorNamespace := pods.GetPodNamespace()
 
 	if admCtrlSettingsMgr != nil {
 		components = append(components, k8sadmctrl.NewConfigMapSettingsPersister(cfg.k8sClient.Kubernetes(), admCtrlSettingsMgr, sensorNamespace))
 	}
 
-	// Local scanner can be started even if scanner-tls certs are available in the same namespace because
-	// it ignores secrets not owned by Sensor.
-	if securedClusterIsNotManagedManually(helmManagedConfig) && env.LocalImageScanningEnabled.BooleanSetting() {
+	if centralsensor.SecuredClusterIsNotManagedManually(helmManagedConfig) {
 		podName := os.Getenv("POD_NAME")
 		components = append(components,
-			localscanner.NewLocalScannerTLSIssuer(cfg.k8sClient.Kubernetes(), sensorNamespace, podName))
+			certrefresh.NewSecuredClusterTLSIssuer(cfg.introspectionK8sClient.Kubernetes(), sensorNamespace, podName))
 	}
 
 	s := sensor.NewSensor(
+		clusterID,
 		configHandler,
 		policyDetector,
 		imageService,
 		cfg.centralConnFactory,
+		pubSub,
+		cfg.certLoader,
 		components...,
 	)
 
@@ -175,26 +213,32 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		cfg.workloadManager.SetSignalHandlers(processPipeline, networkFlowManager)
 	}
 
-	networkFlowService := service.NewService(networkFlowManager)
+	var networkFlowService service.Service
+	if cfg.networkFlowServiceAuthFuncOverride != nil && cfg.localSensor {
+		networkFlowService = service.NewService(networkFlowManager,
+			service.WithAuthFuncOverride(cfg.networkFlowServiceAuthFuncOverride),
+			service.WithTraceWriter(cfg.networkFlowWriter))
+	} else {
+		networkFlowService = service.NewService(networkFlowManager, service.WithTraceWriter(cfg.networkFlowWriter))
+	}
 	apiServices := []grpc.APIService{
 		networkFlowService,
 		processSignals,
 		complianceService,
 		imageService,
-		deployment.NewService(resources.DeploymentStoreSingleton(), resources.PodStoreSingleton()),
+		deployment.NewService(storeProvider.Deployments(), storeProvider.Pods()),
+	}
+
+	if features.VirtualMachines.Enabled() {
+		apiServices = append(apiServices, vmIndex.NewService(virtualMachineHandler))
 	}
 
 	if admCtrlSettingsMgr != nil {
 		apiServices = append(apiServices, admissioncontroller.NewManagementService(admCtrlSettingsMgr, admissioncontroller.AlertHandlerSingleton()))
 	}
 
-	apiServices = append(apiServices, certdistribution.NewService(cfg.k8sClient.Kubernetes(), sensorNamespace))
+	apiServices = append(apiServices, certdistribution.NewService(clusterID, cfg.k8sClient.Kubernetes(), sensorNamespace))
 
 	s.AddAPIServices(apiServices...)
 	return s, nil
-}
-
-func securedClusterIsNotManagedManually(helmManagedConfig *central.HelmManagedConfigInit) bool {
-	return helmManagedConfig.GetManagedBy() != storage.ManagerType_MANAGER_TYPE_UNKNOWN &&
-		helmManagedConfig.GetManagedBy() != storage.ManagerType_MANAGER_TYPE_MANUAL
 }

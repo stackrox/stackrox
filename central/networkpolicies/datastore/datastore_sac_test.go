@@ -1,28 +1,27 @@
+//go:build sql_integration
+
 package store
 
 import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store"
-	boltStore "github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/bolt"
 	pgdbStore "github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/postgres"
 	undodeploymentstoremock "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore/mocks"
 	undostoremock "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore/mocks"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
-	bolt "go.etcd.io/bbolt"
+	"go.uber.org/mock/gomock"
 )
 
 func TestNetworkPolicySAC(t *testing.T) {
@@ -34,10 +33,7 @@ type networkPolicySACSuite struct {
 
 	datastore DataStore
 
-	pool *pgxpool.Pool
-
-	engine *bolt.DB
-
+	pool    postgres.DB
 	storage store.Store
 
 	testContexts         map[string]context.Context
@@ -46,22 +42,17 @@ type networkPolicySACSuite struct {
 
 func (s *networkPolicySACSuite) SetupSuite() {
 	var err error
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		ctx := context.Background()
-		src := pgtest.GetConnectionString(s.T())
-		cfg, err := pgxpool.ParseConfig(src)
-		s.Require().NoError(err)
-		s.pool, err = pgxpool.ConnectConfig(ctx, cfg)
-		s.Require().NoError(err)
-		pgdbStore.Destroy(ctx, s.pool)
-		gormDB := pgtest.OpenGormDB(s.T(), src)
-		defer pgtest.CloseGormDB(s.T(), gormDB)
-		s.storage = pgdbStore.CreateTableAndNewStore(ctx, s.pool, gormDB)
-	} else {
-		s.engine, err = bolthelper.NewTemp(s.T().Name() + ".db")
-		s.Require().NoError(err)
-		s.storage = boltStore.New(s.engine)
-	}
+	ctx := context.Background()
+	src := pgtest.GetConnectionString(s.T())
+	cfg, err := postgres.ParseConfig(src)
+	s.Require().NoError(err)
+	s.pool, err = postgres.New(ctx, cfg)
+	s.Require().NoError(err)
+	pgdbStore.Destroy(ctx, s.pool)
+	gormDB := pgtest.OpenGormDB(s.T(), src)
+	defer pgtest.CloseGormDB(s.T(), gormDB)
+	s.storage = pgdbStore.CreateTableAndNewStore(ctx, s.pool, gormDB)
+
 	mockCtrl := gomock.NewController(s.T())
 	undomock := undostoremock.NewMockUndoStore(mockCtrl)
 	undodeploymentmock := undodeploymentstoremock.NewMockUndoDeploymentStore(mockCtrl)
@@ -72,11 +63,7 @@ func (s *networkPolicySACSuite) SetupSuite() {
 }
 
 func (s *networkPolicySACSuite) TearDownSuite() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pool.Close()
-	} else {
-		s.Require().NoError(s.engine.Close())
-	}
+	s.pool.Close()
 }
 
 func (s *networkPolicySACSuite) SetupTest() {
@@ -107,7 +94,7 @@ func (s *networkPolicySACSuite) TestGetNetworkPolicy() {
 			s.NoError(err)
 			if c.ExpectedFound {
 				s.True(found)
-				s.Equal(networkPolicy, policy)
+				protoassert.Equal(s.T(), networkPolicy, policy)
 			} else {
 				s.False(found)
 				s.Nil(policy)
@@ -134,9 +121,9 @@ func (s *networkPolicySACSuite) TestGetNetworkPolicies() {
 			policies, err := s.datastore.GetNetworkPolicies(ctx, testconsts.Cluster2, testconsts.NamespaceB)
 			s.NoError(err)
 			if c.ExpectedFound {
-				s.ElementsMatch([]*storage.NetworkPolicy{networkPolicy1}, policies)
+				protoassert.ElementsMatch(s.T(), []*storage.NetworkPolicy{networkPolicy1}, policies)
 			} else {
-				s.ElementsMatch([]*storage.NetworkPolicy{}, policies)
+				s.Empty(policies)
 			}
 		})
 	}

@@ -1,107 +1,98 @@
 syntax = "proto3";
 
-option go_package = "v1";
-
-option java_package = "io.stackrox.proto.api.v1";
-
-import weak "google/api/annotations.proto";
-import "api/v1/empty.proto";
-import "storage/group.proto";
-
 package v1;
 
+import "api/v1/empty.proto";
+import weak "google/api/annotations.proto";
+import "storage/group.proto";
+
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
+
 message GetGroupsRequest {
-    oneof auth_provider_id_opt {
-        string auth_provider_id = 1;
-    }
-    oneof key_opt {
-        string key = 2;
-    }
-    oneof value_opt {
-        string value = 3;
-    }
-    oneof id_opt {
-        string id = 4;
-    }
+  oneof auth_provider_id_opt {
+    string auth_provider_id = 1;
+  }
+  oneof key_opt {
+    string key = 2;
+  }
+  oneof value_opt {
+    string value = 3;
+  }
+  oneof id_opt {
+    string id = 4;
+  }
 }
 
 // API for updating Groups and getting users.
 // Next Available Tag: 2
 message GetGroupsResponse {
-    repeated storage.Group groups = 1;
+  repeated storage.Group groups = 1;
 }
 
 // GroupBatchUpdateRequest is an in transaction batch update to the groups present.
 // Next Available Tag: 3
 message GroupBatchUpdateRequest {
-    // Previous groups are the groups expected to be present in the store.
-    // Performs a diff on the GroupProperties present in previous_groups and required_groups:
-    // 1) if in previous_groups but not required_groups, it gets deleted.
-    // 2) if in previous_groups and required_groups, it gets updated.
-    // 3) if not in previous_groups but in required_groups, it gets added.
-    repeated storage.Group previous_groups = 1;
+  // Previous groups are the groups expected to be present in the store.
+  // Performs a diff on the GroupProperties present in previous_groups and required_groups:
+  // 1) if in previous_groups but not required_groups, it gets deleted.
+  // 2) if in previous_groups and required_groups, it gets updated.
+  // 3) if not in previous_groups but in required_groups, it gets added.
+  repeated storage.Group previous_groups = 1;
 
-    // Required groups are the groups we want to mutate the previous groups into.
-    repeated storage.Group required_groups = 2;
+  // Required groups are the groups we want to mutate the previous groups into.
+  repeated storage.Group required_groups = 2;
 
-    bool force                             = 3;
+  bool force = 3;
 }
 
 message DeleteGroupRequest {
-    // We copy over parameters from storage.GroupProperties for seamless HTTP API migration.
-    string auth_provider_id = 1;
-    string key              = 2;
-    string value            = 3;
-    string id               = 4;
+  // We copy over parameters from storage.GroupProperties for seamless HTTP API migration.
+  string auth_provider_id = 1;
+  string key = 2;
+  string value = 3;
+  string id = 4;
 
-    bool force              = 5;
+  bool force = 5;
 }
 
 message UpdateGroupRequest {
-    storage.Group group = 1;
+  storage.Group group = 1;
 
-    bool force          = 2;
+  bool force = 2;
 }
 
 service GroupService {
+  rpc GetGroups(GetGroupsRequest) returns (GetGroupsResponse) {
+    option (google.api.http) = {get: "/v1/groups"};
+  }
 
-    rpc GetGroups (GetGroupsRequest) returns (GetGroupsResponse) {
-        option (google.api.http) = {
-            get: "/v1/groups"
-        };
-    }
+  rpc GetGroup(storage.GroupProperties) returns (storage.Group) {
+    option (google.api.http) = {get: "/v1/group"};
+  }
 
-    rpc GetGroup (storage.GroupProperties) returns (storage.Group) {
-        option (google.api.http) = {
-            get: "/v1/group"
-        };
-    }
+  rpc BatchUpdate(GroupBatchUpdateRequest) returns (Empty) {
+    option (google.api.http) = {
+      post: "/v1/groupsbatch"
+      body: "*"
+    };
+  }
 
-    rpc BatchUpdate (GroupBatchUpdateRequest) returns (Empty) {
-        option (google.api.http) = {
-            post: "/v1/groupsbatch"
-            body: "*"
-        };
-    }
+  rpc CreateGroup(storage.Group) returns (Empty) {
+    option (google.api.http) = {
+      post: "/v1/groups"
+      body: "*"
+    };
+  }
 
-    rpc CreateGroup (storage.Group) returns (Empty) {
-        option (google.api.http) = {
-            post: "/v1/groups"
-            body: "*"
-        };
-    }
+  rpc UpdateGroup(UpdateGroupRequest) returns (Empty) {
+    option (google.api.http) = {
+      put: "/v1/groups"
+      body: "group"
+    };
+  }
 
-    rpc UpdateGroup (UpdateGroupRequest) returns (Empty) {
-        option (google.api.http) = {
-            put: "/v1/groups"
-            body: "group"
-        };
-    }
-
-    rpc DeleteGroup (DeleteGroupRequest) returns (Empty) {
-        option (google.api.http) = {
-            delete: "/v1/groups"
-        };
-    }
-
+  rpc DeleteGroup(DeleteGroupRequest) returns (Empty) {
+    option (google.api.http) = {delete: "/v1/groups"};
+  }
 }

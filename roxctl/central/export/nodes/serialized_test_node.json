@@ -1,0 +1,249 @@
+{
+	"id": "bbaaaaaa-bbbb-4011-0000-111111111111",
+	"name": "fp-3-14-rethorical-hhg-h2g2-worker-b-abcde",
+	"clusterId": "caaaaaaa-bbbb-4011-0000-111111111111",
+	"clusterName": "my-cluster",
+	"labels": {
+		"kubernetes.io/arch": "amd64",
+		"kubernetes.io/hostname": "fp-3-14-rethorical-hhg-h2g2-worker-b-abcde",
+		"kubernetes.io/os": "linux",
+		"node-role.kubernetes.io/worker": "",
+		"node.kubernetes.io/instance-type": "e4-standard-32",
+		"topology.gke.io/zone": "us-east17-b",
+		"topology.kubernetes.io/region": "us-east17",
+		"topology.kubernetes.io/zone": "us-east17-b"
+	},
+	"annotations": {
+		"machine.openshift.io/machine": "openshift-machine-api/fp-3-14-rethorical-hhg-h2g2-worker-b-abcde",
+		"machineconfiguration.openshift.io/controlPlaneTopology": "HighlyAvailable",
+		"machineconfiguration.openshift.io/currentConfig": "rendered-worker-1234567890abcdef1234567890abcdef",
+		"machineconfiguration.openshift.io/desiredConfig": "rendered-worker-1234567890abcdef1234567890abcdef",
+		"machineconfiguration.openshift.io/desiredDrain": "uncordon-rendered-worker-1234567890abcdef1234567890abcdef",
+		"machineconfiguration.openshift.io/lastAppliedDrain": "uncordon-rendered-worker-1234567890abcdef1234567890abcdef",
+		"machineconfiguration.openshift.io/lastSyncedControllerConfigResourceVersion": "12345",
+		"machineconfiguration.openshift.io/reason": "",
+		"machineconfiguration.openshift.io/state": "Done",
+		"volumes.kubernetes.io/controller-managed-attach-detach": "true"
+	},
+	"joinedAt": "2020-12-24T23:59:59.999999999Z",
+	"internalIpAddresses": [
+		"192.168.0.1"
+	],
+	"containerRuntime": {
+		"type": "DOCKER_CONTAINER_RUNTIME",
+		"version": "3.14-15.9"
+	},
+	"kernelVersion": "5.6.7-89.0.x86_64",
+	"operatingSystem": "linux",
+	"osImage": "Some Real good Linux",
+	"kubeletVersion": "v3.14.2",
+	"kubeProxyVersion": "v3.14.2",
+	"lastUpdated": "2020-12-31T23:59:59.999999999Z",
+	"k8sUpdated": "2020-12-31T23:59:59.999999999Z",
+	"scan": {
+		"scanTime": "2021-01-01T01:01:01.111111111Z",
+		"operatingSystem": "linux-5.6.7-89.0",
+		"components": [
+			{
+				"name": "NetworkManager",
+				"version": "1:1.42.2-12.el9_2.x86_64",
+				"vulnerabilities": [
+					{
+						"cveBaseInfo": {
+							"cve": "CVE-2021-20297",
+							"summary": "DOCUMENTATION: A flaw was found in NetworkManager. Setting match.path and activating a profile crashes NetworkManager. The highest threat from this vulnerability is to system availability.",
+							"link": "https://access.redhat.com/security/cve/CVE-2021-20297",
+							"createdAt": "2021-01-01T01:01:01.111111111Z",
+							"lastModified": "2020-12-31T23:59:59.999999999Z",
+							"scoreVersion": "V3",
+							"cvssV3": {
+								"vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H",
+								"exploitabilityScore": 1.8,
+								"impactScore": 3.6,
+								"privilegesRequired": "PRIVILEGE_LOW",
+								"availability": "IMPACT_HIGH",
+								"score": 5.5,
+								"severity": "MEDIUM"
+							}
+						},
+						"cvss": 5.5,
+						"severity": "MODERATE_VULNERABILITY_SEVERITY"
+					}
+				],
+				"priority": "25",
+				"topCvss": 5.5,
+				"riskScore": 1.1
+			},
+			{
+				"name": "basesystem",
+				"version": "11-13.el9.noarch",
+				"priority": "26"
+			},
+			{
+				"name": "bash",
+				"version": "5.1.8-6.el9_1.x86_64",
+				"priority": "26"
+			},
+			{
+				"name": "common",
+				"version": "2:2.1.7-1.el9_2.x86_64",
+				"vulnerabilities": [
+					{
+						"cveBaseInfo": {
+							"cve": "CVE-2024-28176",
+							"summary": "DOCUMENTATION: Jose was found to have an uncontrolled resource consumption vulnerability. Under certain conditions, the user's environment can consume an unreasonable amount of CPU time or memory during JWE decryption operations, leading to a denial of service.",
+							"link": "https://access.redhat.com/security/cve/CVE-2024-28176",
+							"createdAt": "2021-01-01T01:01:01.111111111Z",
+							"lastModified": "2020-12-31T23:59:59.999999999Z",
+							"scoreVersion": "V3",
+							"cvssV3": {
+								"vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+								"exploitabilityScore": 3.9,
+								"impactScore": 1.4,
+								"attackVector": "ATTACK_NETWORK",
+								"availability": "IMPACT_LOW",
+								"score": 5.3,
+								"severity": "MEDIUM"
+							}
+						},
+						"cvss": 5.3,
+						"severity": "MODERATE_VULNERABILITY_SEVERITY"
+					},
+					{
+						"cveBaseInfo": {
+							"cve": "CVE-2024-28180",
+							"summary": "DOCUMENTATION: A vulnerability was found in Jose due to improper handling of highly compressed data. This issue could allow an attacker to send a JWE containing compressed data that uses large amounts of memory and CPU when decompressed by Decrypt or DecryptMulti.",
+							"link": "https://access.redhat.com/security/cve/CVE-2024-28180",
+							"createdAt": "2021-01-01T01:01:01.111111111Z",
+							"lastModified": "2020-12-31T23:59:59.999999999Z",
+							"scoreVersion": "V3",
+							"cvssV3": {
+								"vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:L",
+								"exploitabilityScore": 2.8,
+								"impactScore": 1.4,
+								"attackVector": "ATTACK_NETWORK",
+								"privilegesRequired": "PRIVILEGE_LOW",
+								"availability": "IMPACT_LOW",
+								"score": 4.3,
+								"severity": "MEDIUM"
+							}
+						},
+						"cvss": 4.3,
+						"severity": "MODERATE_VULNERABILITY_SEVERITY"
+					}
+				],
+				"priority": "23",
+				"topCvss": 5.3,
+				"riskScore": 1.1815
+			},
+			{
+				"name": "glibc",
+				"version": "2.34-60.el9_2.7.x86_64",
+				"priority": "26"
+			},
+			{
+				"name": "glibc-common",
+				"version": "2.34-60.el9_2.7.x86_64",
+				"priority": "26"
+			},
+			{
+				"name": "oniguruma",
+				"version": "6.9.6-1.el9.5.x86_64",
+				"vulnerabilities": [
+					{
+						"cveBaseInfo": {
+							"cve": "CVE-2017-9226",
+							"summary": "DOCUMENTATION: The MITRE CVE dictionary describes this issue as: An issue was discovered in Oniguruma 6.2.0, as used in Oniguruma-mod in Ruby through 2.4.1 and mbstring in PHP through 7.1.5. A heap out-of-bounds write or read occurs in next_state_val() during regular expression compilation. Octal numbers larger than 0xff are not handled correctly in fetch_token() and fetch_token_in_cc(). A malformed regular expression containing an octal number in the form of '\\\\700' would produce an invalid code point value larger than 0xff in next_state_val(), resulting in an out-of-bounds write memory corruption.",
+							"link": "https://access.redhat.com/security/cve/CVE-2017-9226",
+							"createdAt": "2020-12-31T23:59:59.999999999Z",
+							"lastModified": "2020-12-24T23:59:59.999999999Z",
+							"scoreVersion": "V3",
+							"cvssV3": {
+								"vector": "CVSS:3.0/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:L",
+								"exploitabilityScore": 2.2,
+								"impactScore": 2.5,
+								"attackVector": "ATTACK_NETWORK",
+								"attackComplexity": "COMPLEXITY_HIGH",
+								"integrity": "IMPACT_LOW",
+								"availability": "IMPACT_LOW",
+								"score": 4.8,
+								"severity": "MEDIUM"
+							}
+						},
+						"cvss": 4.8,
+						"severity": "MODERATE_VULNERABILITY_SEVERITY"
+					},
+					{
+						"cveBaseInfo": {
+							"cve": "CVE-2019-16163",
+							"summary": "DOCUMENTATION: The MITRE CVE dictionary describes this issue as: Oniguruma before 6.9.3 allows Stack Exhaustion in regcomp.c because of recursion in regparse.c.",
+							"link": "https://access.redhat.com/security/cve/CVE-2019-16163",
+							"createdAt": "2021-01-01T01:01:01.111111111Z",
+							"lastModified": "2020-12-31T23:59:59.999999999Z",
+							"scoreVersion": "V3",
+							"cvssV3": {
+								"vector": "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H",
+								"exploitabilityScore": 2.8,
+								"impactScore": 3.6,
+								"attackVector": "ATTACK_NETWORK",
+								"privilegesRequired": "PRIVILEGE_LOW",
+								"availability": "IMPACT_HIGH",
+								"score": 6.5,
+								"severity": "MEDIUM"
+							}
+						},
+						"cvss": 6.5,
+						"severity": "MODERATE_VULNERABILITY_SEVERITY"
+					},
+					{
+						"cveBaseInfo": {
+							"cve": "CVE-2020-26159",
+							"summary": "DOCUMENTATION: A flaw was found in oniguruma. An attacker, able to supply a regular expression for compilation, may be able to overflow a buffer by one byte in concat_opt_exact_str in src/regcomp.c . \\n\t\t\t\tSTATEMENT: Red Hat Ceph Storage 4 is not affected because the affected method, concat_opt_exact_str is not shipped. However, there is an identical flaw in concat_opt_exact_info_str and concat_opt_exact_info, which do not exist in the most recent version of oniguruma as methods. The impact is rated as low because we ship an older version without this exact exploit, so an attacker could not simply copy and paste this exploit, but would need to dig into the code itself and modify this attack for the older version of the code.\\n            MITIGATION: Mitigation for this issue is either not available or the currently available options do not meet the Red Hat Product Security criteria comprising ease of use and deployment, applicability to widespread installation base or stability.",
+							"link": "https://access.redhat.com/security/cve/CVE-2020-26159",
+							"createdAt": "2021-01-01T01:01:01.111111111Z",
+							"lastModified": "2020-12-24T23:59:59.999999999Z",
+							"scoreVersion": "V3",
+							"cvssV3": {
+								"vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:H",
+								"exploitabilityScore": 3.9,
+								"impactScore": 4.7,
+								"attackVector": "ATTACK_NETWORK",
+								"confidentiality": "IMPACT_LOW",
+								"integrity": "IMPACT_LOW",
+								"availability": "IMPACT_HIGH",
+								"score": 8.6,
+								"severity": "HIGH"
+							}
+						},
+						"cvss": 8.6,
+						"severity": "MODERATE_VULNERABILITY_SEVERITY"
+					}
+				],
+				"priority": "13",
+				"topCvss": 8.6,
+				"riskScore": 1.5565
+			},
+			{
+				"name": "rpcbind",
+				"version": "1.2.6-5.el9.x86_64",
+				"priority": "26"
+			},
+			{
+				"name": "tar",
+				"version": "2:1.34-6.el9_1.x86_64",
+				"priority": "26"
+			},
+			{
+				"name": "xz",
+				"version": "5.2.5-8.el9_0.x86_64",
+				"priority": "26"
+			}
+		]
+	},
+	"components": 10,
+	"cves": 6,
+	"fixableCves": 0,
+	"priority": "1",
+	"riskScore": 3.14,
+	"topCvss": 8.6
+}

@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
@@ -30,7 +31,7 @@ func (s *SearchMapperTestSuite) testMapSearchString(fieldLabel search.FieldLabel
 	s.Equal(shouldFindMaper, foundMapper)
 	s.Equal(shouldBeAltered, fieldsAltered)
 	s.Equal(storage.BooleanOperator_OR, policyGroup.GetBooleanOperator())
-	s.Equal(expectedGroup, policyGroup)
+	protoassert.Equal(s.T(), expectedGroup, policyGroup)
 }
 
 func (s *SearchMapperTestSuite) testDirectMapSearchString(fieldLabel search.FieldLabel, expectedPolicyField string) {
@@ -222,6 +223,22 @@ func (s *SearchMapperTestSuite) TestConvertCVSS() {
 		},
 	}
 	s.testMapSearchString(search.CVSS, searchTerms, expectedGroup, false, true)
+}
+
+func (s *SearchMapperTestSuite) TestConvertNVDCVSS() {
+	searchTerms := []string{">88", "7644"}
+	expectedGroup := &storage.PolicyGroup{
+		FieldName: fieldnames.NvdCvss,
+		Values: []*storage.PolicyValue{
+			{
+				Value: "> 88",
+			},
+			{
+				Value: "7644",
+			},
+		},
+	}
+	s.testMapSearchString(search.NVDCVSS, searchTerms, expectedGroup, false, true)
 }
 
 func (s *SearchMapperTestSuite) TestConvertCPUCoresLimit() {

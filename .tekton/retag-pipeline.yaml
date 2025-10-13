@@ -1,0 +1,201 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: retag-pipeline
+spec:
+
+  finally:
+  - name: slack-notification
+    params:
+    - name: message
+      value: ':x: `{{event_type}}` pipeline for <https://console.redhat.com/application-pipeline/workspaces/rh-acs/applications/acs/pipelineruns/$(context.pipelineRun.name)|$(context.pipelineRun.name)> (`$(params.output-image-repo)`, revision <$(params.git-url)/commit/$(params.revision)|$(params.revision)>) has failed.'
+    - name: key-name
+      value: 'acs-konflux-notifications'
+    when:
+    # Run when any task has Failed
+    - input: $(tasks.status)
+      operator: in
+      values: [ "Failed" ]
+    taskRef:
+      params:
+      - name: name
+        value: slack-webhook-notification
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-slack-webhook-notification:0.1@sha256:4e68fe2225debc256d403b828ed358345bb56d03327b46d55cb6c42911375750
+      - name: kind
+        value: task
+      resolver: bundles
+
+  - name: post-metric-end
+    params:
+    - name: AGGREGATE_TASKS_STATUS
+      value: $(tasks.status)
+    taskRef: &post-bigquery-metrics-ref
+      params:
+      - name: name
+        value: post-bigquery-metrics
+      - name: bundle
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:1ec052cfe55faa372e38a16eee8456a78ade9e2865aaad6f18994092f0a590e3
+      - name: kind
+        value: task
+      resolver: bundles
+
+  params:
+  - description: Source Repository URL.
+    name: git-url
+    type: string
+  - description: Revision of the Source Repository.
+    name: revision
+    type: string
+  - description: Output Image Repository.
+    name: output-image-repo
+    type: string
+  - default: "-fast"
+    description: Suffix that's appended to generated image tags (both input and output).
+    name: image-tag-suffix
+    type: string
+  - description: Input Image Repository.
+    name: input-image-repo
+    type: string
+  - description: Makefile target to execute in order to determine the input image's tag.
+    name: input-image-tag-makefile-target
+    type: string
+
+  # Common params for all retagging pipelines.
+  - default: "0"
+    description: Depth of the git clone in number of commits. Use "1" for shallow clone. Use "0" for deep clone, i.e. to fetch all commits.
+    name: clone-depth
+    type: string
+  - default: "true"
+    description: Fetch tags with git clone
+    name: clone-fetch-tags
+    type: string
+  - default: "1d"
+    description: This sets the expiration time for intermediate OCI artifacts produced and used during builds after which they can be garbage collected.
+    name: oci-artifact-expires-after
+    type: string
+
+  results:
+  # *IMAGE_URL and *IMAGE_DIGEST must not be declared here because Tekton Chains will overwrite the original pipeline
+  # information linked to the image with this pipeline's info, and it will most certainly fail EC checks.
+
+  # These result parameters are to make retagged image's info conveniently displayed in Konflux UI.
+  - name: RESULTING_DIGEST
+    description: Digest of the output image (will be the same as of the input one).
+    value: $(tasks.retag-image.results.RESULTING_DIGEST)
+  - name: RESULTING_URL
+    description: Image repository and tag of the output image.
+    value: $(tasks.retag-image.results.RESULTING_URL)
+  - name: RESULTING_REF
+    description: Image reference of the output image containing both the repository, the tag and the digest.
+    value: $(tasks.retag-image.results.RESULTING_REF)
+
+  workspaces:
+  - name: git-auth
+
+  tasks:
+
+  - name: post-metric-start
+    taskRef: *post-bigquery-metrics-ref
+
+  - name: clone-repository
+    params:
+    - name: url
+      value: $(params.git-url)
+    - name: revision
+      value: $(params.revision)
+    - name: depth
+      value: $(params.clone-depth)
+    - name: fetchTags
+      value: $(params.clone-fetch-tags)
+    - name: ociStorage
+      value: $(params.output-image-repo):konflux-$(params.revision).git
+    - name: ociArtifactExpiresAfter
+      value: $(params.oci-artifact-expires-after)
+    taskRef:
+      params:
+      - name: name
+        value: git-clone-oci-ta
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:3f1b468066b301083d8550e036f5a654fcb064810bd29eb06fec6d8ad3e35b9c
+      - name: kind
+        value: task
+      resolver: bundles
+    workspaces:
+    - name: basic-auth
+      workspace: git-auth
+
+  - name: determine-output-image-tag
+    params:
+    - name: TAG_SUFFIX
+      value: $(params.image-tag-suffix)
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
+    taskRef:
+      params:
+      - name: name
+        value: determine-image-tag
+      - name: bundle
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:1ec052cfe55faa372e38a16eee8456a78ade9e2865aaad6f18994092f0a590e3
+      - name: kind
+        value: task
+      resolver: bundles
+
+  - name: determine-input-image-tag
+    params:
+    - name: MAKEFILE_TARGET
+      value: $(params.input-image-tag-makefile-target)
+    - name: TAG_SUFFIX
+      value: $(params.image-tag-suffix)
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
+    taskRef:
+      params:
+      - name: name
+        value: determine-dependency-image-tag
+      - name: bundle
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:1ec052cfe55faa372e38a16eee8456a78ade9e2865aaad6f18994092f0a590e3
+      - name: kind
+        value: task
+      resolver: bundles
+
+    # We only check the input image is ready and otherwise fail the retag pipeline early and with a meaningful error.
+    # This confirms that the image is present and that it has successfully passed its build pipeline.
+  - name: wait-for-image
+    params:
+    - name: IMAGE
+      value: "$(params.input-image-repo):$(tasks.determine-input-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      params:
+      - name: name
+        value: wait-for-image
+      - name: bundle
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:1ec052cfe55faa372e38a16eee8456a78ade9e2865aaad6f18994092f0a590e3
+      - name: kind
+        value: task
+      resolver: bundles
+    timeout: 5m
+
+  - name: retag-image
+    # runAfter needs to be specified, because there is no implicit dependency on wait-for-image's
+    # results, but we still need it to run before.
+    runAfter:
+    - wait-for-image
+    params:
+    - name: INPUT_IMAGE_REPO
+      value: $(params.input-image-repo)
+    - name: INPUT_IMAGE_TAG
+      value: $(tasks.determine-input-image-tag.results.IMAGE_TAG)
+    - name: OUTPUT_IMAGE_REPO
+      value: $(params.output-image-repo)
+    - name: OUTPUT_IMAGE_TAG
+      value: $(tasks.determine-output-image-tag.results.IMAGE_TAG)
+    taskRef:
+      params:
+      - name: name
+        value: retag-image
+      - name: bundle
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:1ec052cfe55faa372e38a16eee8456a78ade9e2865aaad6f18994092f0a590e3
+      - name: kind
+        value: task
+      resolver: bundles

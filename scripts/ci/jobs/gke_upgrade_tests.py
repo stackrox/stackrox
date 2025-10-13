@@ -10,16 +10,14 @@ from pre_tests import PreSystemTests
 from ci_tests import UpgradeTest
 from post_tests import PostClusterTest, FinalPost
 
-# don't use postgres
-os.environ["ROX_POSTGRES_DATASTORE"] = "false"
+os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 
 ClusterTestRunner(
-    cluster=GKECluster("upgrade-test"),
+    cluster=GKECluster("upgrade-test", machine_type="e2-standard-8"),
     pre_test=PreSystemTests(),
     test=UpgradeTest(),
     post_test=PostClusterTest(),
     final_post=FinalPost(
-        store_qa_test_debug_logs=True,
-        store_qa_spock_results=True,
+        store_qa_tests_data=True,
     ),
 ).run()

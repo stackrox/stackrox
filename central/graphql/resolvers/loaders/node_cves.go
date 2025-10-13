@@ -9,7 +9,6 @@ import (
 	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -17,11 +16,9 @@ import (
 var nodeCveLoaderType = reflect.TypeOf(storage.NodeCVE{})
 
 func init() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		RegisterTypeFactory(reflect.TypeOf(storage.NodeCVE{}), func() interface{} {
-			return NewNodeCVELoader(nodeCVEDataStore.Singleton())
-		})
-	}
+	RegisterTypeFactory(reflect.TypeOf(storage.NodeCVE{}), func() interface{} {
+		return NewNodeCVELoader(nodeCVEDataStore.Singleton())
+	})
 }
 
 // NewNodeCVELoader creates a new loader for nodeCVE data.

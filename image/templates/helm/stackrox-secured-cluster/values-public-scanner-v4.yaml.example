@@ -1,0 +1,163 @@
+# # Public configuration options for Scanner V4 configured as part of the
+# # secured-cluster-services Helm chart.
+# #
+# # Image configuration for Scanner V4.
+# # For a complete example, see the `values-public.yaml.example` file.
+# image:
+#   # Configuration of the `scannerV4` image.
+#   scannerV4:
+#     registry: null
+#     name: null
+#     tag: null
+#     fullRef: null
+#
+#   # Configuration of the `scannerV4DB` image.
+#   scannerV4DB:
+#     registry: null
+#     name: null
+#     tag: null
+#     fullRef: null
+#
+# scannerV4:
+#
+#   # If this is set to false, Scanner V4 will be enabled and deployed.
+#   # Note that currently Scanner V4 cannot be used as the only scanner component.
+#   # Instead it must be currently deployed side-by-side with StackRox Scanner (scanner.disable=false).
+#   # If it is set to true, no other setting in this section will have any effect.
+#   disable: true
+#
+#   # Scanner V4 consists of three components: indexer, matcher and db.
+#   # But when deployed as part of secured-cluster-services the only components
+#   # which can be deployed are indexer and db. Scanner V4 matcher is only supposed to
+#   # run as part of central-services.
+#
+#   # Configuration for the indexer component:
+#   indexer:
+#     # The log level for the indexer deployment. This typically does not need to be changed.
+#     logLevel: INFO
+#
+#     # If you want to enforce indexer to only run on certain nodes, you can specify
+#     # a node selector here to make sure Scanner V4 can only be scheduled on Nodes with the
+#     # given label.
+#     nodeSelector:
+#       # This can contain arbitrary `label-key: label-value` pairs.
+#       role: scanner-v4
+#
+#     # If the nodes selected by the node selector are tainted, you can specify the corresponding taint tolerations here.
+#     tolerations:
+#       - effect: NoSchedule
+#         key: infra
+#         value: reserved
+#       - effect: NoExecute
+#         key: infra
+#         value: reserved
+#
+#     # If scheduling needs specific affinities, you can specify the corresponding affinities here.
+#     affinity:
+#       podAntiAffinity:
+#         preferredDuringSchedulingIgnoredDuringExecution:
+#         - weight: 100
+#           podAffinityTerm:
+#             labelSelector:
+#               matchLabels:
+#                 app: scanner-v4-indexer
+#             topologyKey: kubernetes.io/hostname
+#       nodeAffinity:
+#         preferredDuringSchedulingIgnoredDuringExecution:
+#         - weight: 50
+#           preference:
+#             matchExpressions:
+#             - key: node-role.kubernetes.io/infra
+#               operator: Exists
+#         - weight: 25
+#           preference:
+#             matchExpressions:
+#             - key: node-role.kubernetes.io/compute
+#               operator: Exists
+#         - weight: 100
+#           preference:
+#             matchExpressions:
+#             - key: node-role.kubernetes.io/control-plane
+#               operator: DoesNotExist
+#
+#     # Default number of indexer replicas created upon startup. The actual number might be higher
+#     # or lower if autoscaling is enabled (see below).
+#     replicas: 3
+#
+#     # Settings related to autoscaling the indexer deployment.
+#     autoscaling:
+#       # If true, autoscaling will be disabled. None of the other settings in this section will
+#       # have any effect.
+#       disable: false
+#       # The minimum number of replicas for autoscaling. The following value is the default.
+#       minReplicas: 2
+#       # The maximum number of replicas for autoscaling. The following value is the default.
+#       maxReplicas: 5
+#
+#     # Custom resource overrides for the indexer deployment.
+#      resources:
+#        requests:
+#          memory: "1500Mi"
+#          cpu: "1000m"
+#        limits:
+#          memory: "3Gi"
+#          cpu: "2000m"
+#
+#   # Configuration for the DB component:
+#   db:
+#
+#     # If you want to enforce indexer to only run on certain nodes, you can specify
+#     # a node selector here to make sure Scanner V4 can only be scheduled on Nodes with the
+#     # given label.
+#     nodeSelector:
+#       # This can contain arbitrary `label-key: label-value` pairs.
+#       role: scanner-v4
+#
+#     # If scheduling needs specific affinities, you can specify the corresponding affinities here.
+#     affinity:
+#       nodeAffinity:
+#         preferredDuringSchedulingIgnoredDuringExecution:
+#         # Scanner V4 DB is single-homed, so avoid preemptible nodes.
+#         - weight: 100
+#           preference:
+#             matchExpressions:
+#             - key: cloud.google.com/gke-preemptible
+#               operator: NotIn
+#               values:
+#                 - "true"
+#         - weight: 50
+#           preference:
+#             matchExpressions:
+#             - key: node-role.kubernetes.io/infra
+#               operator: Exists
+#         - weight: 25
+#           preference:
+#             matchExpressions:
+#             - key: node-role.kubernetes.io/compute
+#               operator: Exists
+#         - weight: 100
+#           preference:
+#             matchExpressions:
+#             - key: node-role.kubernetes.io/control-plane
+#               operator: DoesNotExist
+#
+#     # Resource settings for the DB deployment.
+#     resources:
+#       requests:
+#         cpu: "200m"
+#         memory: "2Gi"
+#       limits:
+#         cpu: "2000m"
+#         memory: "4Gi"
+#
+#     # Configures how Scanner V4 stores its persistent data.
+#     # You can use a persistent volume claim (the recommended default), a host path,
+#     # or an emptyDir volume if Scanner V4 is running on a secured cluster without default StorageClass.
+#     #
+#     # For performance reasons it is HIGHLY RECOMMENDED to use a PVC.
+#     # Following values show how to apply custom configuration to a PVC:
+#     persistence:
+#       persistentVolumeClaim:
+#         claimName: "scanner-v4-db"
+#         size: "50Gi"
+#         storageClass: "some-storage-class-name"

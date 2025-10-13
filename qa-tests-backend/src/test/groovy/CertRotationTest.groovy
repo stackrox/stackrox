@@ -1,24 +1,36 @@
-import com.google.gson.JsonObject
-import com.google.gson.JsonPrimitive
-import groups.BAT
-import io.fabric8.kubernetes.api.model.Secret
-import io.grpc.StatusRuntimeException
-import io.stackrox.proto.storage.ClusterOuterClass.ClusterUpgradeStatus.UpgradeProcessStatus.UpgradeProcessType
-import io.stackrox.proto.storage.ClusterOuterClass.UpgradeProgress.UpgradeState
+import static util.Helpers.withRetry
+
 import java.nio.charset.Charset
 import java.security.cert.X509Certificate
+
+import com.google.gson.JsonObject
+import com.google.gson.JsonPrimitive
+import io.fabric8.kubernetes.api.model.Secret
+import io.grpc.StatusRuntimeException
 import org.bouncycastle.asn1.x500.X500Name
 import org.bouncycastle.asn1.x500.style.BCStyle
 import org.bouncycastle.asn1.x500.style.IETFUtils
-import org.junit.Assume
-import org.junit.experimental.categories.Category
 import org.yaml.snakeyaml.Yaml
+
+import io.stackrox.proto.storage.ClusterOuterClass.ClusterUpgradeStatus.UpgradeProcessStatus.UpgradeProcessType
+import io.stackrox.proto.storage.ClusterOuterClass.UpgradeProgress.UpgradeState
+
 import services.ClusterService
 import services.DirectHTTPService
 import services.SensorUpgradeService
 import util.Cert
+import util.Env
 
-@Category(BAT)
+import org.junit.Assume
+import spock.lang.IgnoreIf
+import spock.lang.Tag
+
+@Tag("BAT")
+@Tag("PZ")
+// skip if executed in a test environment with just secured-cluster deployed in the test cluster
+// i.e. central is deployed elsewhere
+@IgnoreIf({ Env.ONLY_SECURED_CLUSTER == "true" })
+@IgnoreIf({ Env.IS_BYODB })
 class CertRotationTest extends BaseSpecification {
 
     def generateCerts(String path, String expectedFileName, JsonObject data = null) {
@@ -165,9 +177,10 @@ class CertRotationTest extends BaseSpecification {
         return true
     }
 
-    def "Test sensor cert rotation with upgrader succeeds for non-Helm clusters"() {
+    // This test is skipped in Operator and Helm, upgrader only works in Manifest based installations
+    def "Test sensor cert rotation with upgrader succeeds for manifest based installed clusters"() {
         when:
-        "Check that the cluster is not Helm-managed"
+        "Check that the cluster is manifest installed"
         def cluster = ClusterService.getCluster()
         assert cluster
 
@@ -219,7 +232,7 @@ class CertRotationTest extends BaseSpecification {
 
     def "Test sensor cert rotation with upgrader fails for Helm clusters"() {
         when:
-        "Check that the cluster is Helm-managed"
+        "Check that the cluster is managed by external tools"
         def cluster = ClusterService.getCluster()
         assert cluster
 
@@ -234,7 +247,10 @@ class CertRotationTest extends BaseSpecification {
             SensorUpgradeService.triggerCertRotation(cluster.getId())
         } catch (StatusRuntimeException exc) {
             caughtException = true
-            assert exc.status.description.contains("cluster is Helm-managed")
+            // Cluster in CI can be installed either by Helm or Operator. The two possibilities are:
+            // "Helm controls the secured cluster version"
+            // "Operator controls the secured cluster version"
+            assert exc.status.description.contains("controls the secured cluster version")
         }
         assert caughtException
     }

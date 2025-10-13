@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 var (
@@ -15,6 +16,9 @@ var (
 	CreateTableInstallationInfosStmt = &postgres.CreateStmts{
 		GormModel: (*InstallationInfos)(nil),
 		Children:  []*postgres.CreateStmts{},
+		PostStmts: []string{
+			"ALTER TABLE installation_infos REPLICA IDENTITY FULL",
+		},
 	}
 
 	// InstallationInfosSchema is the go schema for table `installation_infos`.
@@ -24,12 +28,14 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.InstallationInfo)(nil)), "installation_infos")
+		schema.ScopingResource = resources.InstallationInfo
 		RegisterTable(schema, CreateTableInstallationInfosStmt)
 		return schema
 	}()
 )
 
 const (
+	// InstallationInfosTableName specifies the name of the table in postgres.
 	InstallationInfosTableName = "installation_infos"
 )
 

@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 var (
@@ -21,7 +21,7 @@ type responseHeaderContextKey struct{}
 // request, and returns a response object or an error. In case of a non-nil error, this error is written in JSON/gRPC
 // style via `WriteError` (i.e., you can return a plain Golang error (equivalent to status code 500), a gRPC-style
 // status, or an `HTTPError`). Otherwise, the returned object is written as JSON (using `jsonpb` if it is a
-// `proto.Message`, and `encoding/json` otherwise).
+// `protocompat.Message`, and `encoding/json` otherwise).
 // If you need to mutate response headers, these can be accessed by calling ResponseHeaderFromContext.
 // Any errors that occur writing to the response body are simply logged.
 func RESTHandler(endpointFunc func(*http.Request) (interface{}, error)) http.HandlerFunc {
@@ -36,8 +36,16 @@ func RESTHandler(endpointFunc func(*http.Request) (interface{}, error)) http.Han
 		}
 		if resp == nil {
 			_, err = fmt.Fprint(w, "{}")
-		} else if protoMsg, _ := resp.(proto.Message); protoMsg != nil {
-			err = (&jsonpb.Marshaler{}).Marshal(w, protoMsg)
+		} else if protoMsg, _ := resp.(protocompat.Message); protoMsg != nil {
+			var data []byte
+			data, err = protojson.Marshal(protoMsg)
+			if err != nil {
+				log.Errorf("Failed to send response from REST handler: %v", err)
+			}
+			_, err = w.Write(data)
+			if err != nil {
+				log.Errorf("Failed to send response from REST handler: %v", err)
+			}
 		} else {
 			err = json.NewEncoder(w).Encode(resp)
 		}

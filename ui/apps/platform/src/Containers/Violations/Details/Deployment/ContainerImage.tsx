@@ -1,7 +1,7 @@
-import React, { ReactElement } from 'react';
-import { Link } from 'react-router-dom';
+import React from 'react';
+import type { ReactElement } from 'react';
+import { Link } from 'react-router-dom-v5-compat';
 
-import { vulnManagementPath } from 'routePaths';
 import DescriptionListItem from 'Components/DescriptionListItem';
 
 type ContainerImageProps = {
@@ -15,9 +15,12 @@ type ContainerImageProps = {
         notPullable: boolean;
         id: string;
     };
+    vulnMgmtBasePath: string;
 };
 
-function ContainerImage({ image }: ContainerImageProps): ReactElement {
+function ContainerImage({ image, vulnMgmtBasePath }: ContainerImageProps): ReactElement {
+    const imageDetailsPageURL = `${vulnMgmtBasePath}/images/${image.id}`;
+
     if (image.id === '' || image.notPullable) {
         const unavailableText = image.notPullable
             ? 'image not currently pullable'
@@ -25,7 +28,7 @@ function ContainerImage({ image }: ContainerImageProps): ReactElement {
         const NameComponent = (
             <div>
                 {image.name.fullName}
-                <span className="pf-u-pl-sm">({unavailableText})</span>
+                <span className="pf-v5-u-pl-sm">({unavailableText})</span>
             </div>
         );
         return <DescriptionListItem term="Image name" desc={NameComponent} />;
@@ -33,7 +36,7 @@ function ContainerImage({ image }: ContainerImageProps): ReactElement {
     return (
         <DescriptionListItem
             term="Image name"
-            desc={<Link to={`${vulnManagementPath}/image/${image.id}`}>{image.name.fullName}</Link>}
+            desc={<Link to={imageDetailsPageURL}>{image.name.fullName}</Link>}
         />
     );
 }

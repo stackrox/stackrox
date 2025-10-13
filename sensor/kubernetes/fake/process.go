@@ -4,8 +4,8 @@ import (
 	"math/rand"
 	"path/filepath"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 var (
@@ -474,7 +474,7 @@ func getActiveProcesses(containerID string) []*storage.ProcessSignal {
 func getProcess(path, name, containerID string) *storage.ProcessSignal {
 	return &storage.ProcessSignal{
 		ContainerId:  containerID[:12],
-		Time:         types.TimestampNow(),
+		Time:         protocompat.TimestampNow(),
 		Name:         name,
 		Args:         "abc def ghi jkl lmn op qrs tuv",
 		ExecFilePath: filepath.Clean(path + "/" + name),

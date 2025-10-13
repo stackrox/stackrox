@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -30,7 +31,7 @@ type failingClient struct {
 	grpc.ClientStream
 }
 
-func (c *failingClient) Send(msg *sensor.MsgFromCompliance) error {
+func (c *failingClient) Send(_ *sensor.MsgFromCompliance) error {
 	return errors.New("test fail")
 }
 
@@ -114,7 +115,7 @@ func (s *ComplianceAuditLogSenderTestSuite) TestSendCorrectSendsEventWithoutReas
 	msg := client.sendList[0]
 	s.validateSentMessage(msg, event)
 
-	s.Empty(msg.GetAuditEvents().Events[0].ResponseStatus.Reason)
+	s.Empty(msg.GetAuditEvents().GetEvents()[0].GetResponseStatus().GetReason())
 }
 
 func (s *ComplianceAuditLogSenderTestSuite) TestSendUsesReceivedTimeIfStageTimeIsInvalid() {
@@ -144,7 +145,7 @@ func (s *ComplianceAuditLogSenderTestSuite) getMocks() (*mockClient, *auditLogSe
 }
 
 func (s *ComplianceAuditLogSenderTestSuite) validateSentMessage(msg *sensor.MsgFromCompliance, mockEvent auditEvent) {
-	s.Equal("fakeNodeName", msg.Node)
+	s.Equal("fakeNodeName", msg.GetNode())
 
 	auditEventsMsg := msg.GetAuditEvents()
 	s.NotNil(auditEventsMsg)
@@ -152,7 +153,7 @@ func (s *ComplianceAuditLogSenderTestSuite) validateSentMessage(msg *sensor.MsgF
 	events := auditEventsMsg.GetEvents()
 	s.Len(events, 1)
 
-	s.Equal(mockEvent.ToKubernetesEvent("test-cluster"), events[0])
+	protoassert.Equal(s.T(), mockEvent.ToKubernetesEvent("test-cluster"), events[0])
 }
 
 func (s *ComplianceAuditLogSenderTestSuite) fakeAuditEvent(verb, resourceType, resourceName, namespace string) auditEvent {

@@ -4,9 +4,8 @@ import (
 	"context"
 	"sort"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -17,7 +16,11 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		allow.Anonymous(): {
-			"/v1.FeatureFlagService/GetFeatureFlags",
+			// This endpoint is used by the UI to populate framework
+			// information which is done at UI start when there is no
+			// authenticated user yet. It should stay anonymous / public
+			// as long as the UI needs it at startup time.
+			v1.FeatureFlagService_GetFeatureFlags_FullMethodName,
 		},
 	})
 )
@@ -36,18 +39,8 @@ func (s *serviceImpl) GetFeatureFlags(context.Context, *v1.Empty) (*v1.GetFeatur
 		})
 	}
 
-	// HACK: Inject in the postgres env var as a feature flag response so that the UI can work as-is without modifications
-	// TODO: When GA'ing postgresm remove this hack (and all conditional checks). https://issues.redhat.com/browse/ROX-12848
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		resp.FeatureFlags = append(resp.FeatureFlags, &v1.FeatureFlag{
-			Name:    "Enable Postgres Datastore",
-			EnvVar:  env.PostgresDatastoreEnabled.EnvVar(),
-			Enabled: true,
-		})
-	}
-
-	sort.Slice(resp.FeatureFlags, func(i, j int) bool {
-		return resp.FeatureFlags[i].GetName() < resp.FeatureFlags[j].GetName()
+	sort.Slice(resp.GetFeatureFlags(), func(i, j int) bool {
+		return resp.GetFeatureFlags()[i].GetName() < resp.GetFeatureFlags()[j].GetName()
 	})
 	return resp, nil
 }

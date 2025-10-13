@@ -3,6 +3,8 @@ package env
 import "time"
 
 var (
+	// RiskReprocessInterval will set the duration for which to debounce risk reprocessing
+	RiskReprocessInterval = registerDurationSetting("ROX_RISK_REPROCESSING_INTERVAL", 10*time.Minute)
 	// ReprocessInterval will set the duration for which to reprocess all deployments and get new scans
 	ReprocessInterval = registerDurationSetting("ROX_REPROCESSING_INTERVAL", 4*time.Hour)
 	// ActiveVulnRefreshInterval will set the duration for which to refresh active components and vulnerabilities.
@@ -11,4 +13,10 @@ var (
 	VulnDeferralTimedReObserveInterval = registerDurationSetting("ROX_VULN_TIMED_DEFERRAL_REOBSERVE_INTERVAL", 1*time.Hour)
 	// VulnDeferralFixableReObserveInterval will set the duration for when to check to see if "when fixable" vuln deferrals need to be checked for expiry.
 	VulnDeferralFixableReObserveInterval = registerDurationSetting("ROX_VULN_FIXABLE_DEFERRAL_REOBSERVE_INTERVAL", 4*time.Hour)
+	// OrchestratorVulnScanInterval specifies the frequency at which Central should scan for new orchestrator-level vulnerabilities.
+	OrchestratorVulnScanInterval = registerDurationSetting("ROX_ORCHESTRATOR_VULN_SCAN_INTERVAL", 2*time.Hour)
+	// ReprocessInjectMessageTimeout specifies the duration to wait when sending a message to sensor during reprocessing. If this duration
+	// is exceeded subsequent messages targeting this particular sensor will be skipped until the next reprocessing cycle.
+	// Setting the duration to zero will disable the timeout.
+	ReprocessInjectMessageTimeout = registerDurationSetting("ROX_REPROCESSING_INJECT_MESSAGE_TIMEOUT", 1*time.Minute, WithDurationZeroAllowed())
 )

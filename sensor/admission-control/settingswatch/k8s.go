@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -13,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/gziputil"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
@@ -54,7 +53,7 @@ func getConfigMapFromObj(obj interface{}) *v1.ConfigMap {
 	return cm
 }
 
-func (w *k8sSettingsWatch) OnAdd(obj interface{}) {
+func (w *k8sSettingsWatch) OnAdd(obj interface{}, _ bool) {
 	cm := getConfigMapFromObj(obj)
 	if cm == nil {
 		return
@@ -63,7 +62,7 @@ func (w *k8sSettingsWatch) OnAdd(obj interface{}) {
 	w.parseAndSendSettings(cm)
 }
 
-func (w *k8sSettingsWatch) OnUpdate(oldObj, newObj interface{}) {
+func (w *k8sSettingsWatch) OnUpdate(_, newObj interface{}) {
 	cm := getConfigMapFromObj(newObj)
 	if cm == nil {
 		return
@@ -72,7 +71,7 @@ func (w *k8sSettingsWatch) OnUpdate(oldObj, newObj interface{}) {
 	w.parseAndSendSettings(cm)
 }
 
-func (w *k8sSettingsWatch) OnDelete(oldObj interface{}) {
+func (w *k8sSettingsWatch) OnDelete(_ interface{}) {
 	w.sendSettings(nil)
 }
 
@@ -82,7 +81,7 @@ func parseSettings(cm *v1.ConfigMap) (*sensor.AdmissionControlSettings, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not parse timestamp %q from configmap", timestampStr)
 	}
-	tsProto, err := types.TimestampProto(timestamp)
+	tsProto, err := protocompat.ConvertTimeToTimestampOrError(timestamp)
 	if err != nil {
 		return nil, errors.Wrap(err, "timestamp in configmap is not valid")
 	}
@@ -104,7 +103,7 @@ func parseSettings(cm *v1.ConfigMap) (*sensor.AdmissionControlSettings, error) {
 	}
 
 	var config storage.DynamicClusterConfig
-	if err := proto.Unmarshal(configData, &config); err != nil {
+	if err := config.UnmarshalVTUnsafe(configData); err != nil {
 		return nil, errors.Wrap(err, "could not parse protobuf-encoded config data from configmap")
 	}
 
@@ -141,7 +140,7 @@ func (w *k8sSettingsWatch) sendSettings(settings *sensor.AdmissionControlSetting
 	case w.outC <- settings:
 	}
 
-	log.Infof("Detected and propagated updated admission controller settings via Kubernetes config map watch, timestamp: %v", settings.GetTimestamp().String())
+	log.Infof("Detected and propagated updated admission controller settings via Kubernetes config map watch, timestamp: %v", settings.GetTimestamp().AsTime().Format(time.RFC3339Nano))
 }
 
 func (w *k8sSettingsWatch) start() error {
@@ -158,7 +157,9 @@ func (w *k8sSettingsWatch) start() error {
 		informers.WithNamespace(w.namespace),
 		informers.WithTweakListOptions(tweakListOpts))
 
-	sif.Core().V1().ConfigMaps().Informer().AddEventHandler(w)
+	if _, err := sif.Core().V1().ConfigMaps().Informer().AddEventHandler(w); err != nil {
+		return errors.Wrap(err, "could not add event handler")
+	}
 	sif.Start(w.ctx.Done())
 
 	return nil

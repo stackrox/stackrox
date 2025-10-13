@@ -1,7 +1,6 @@
 package framework
 
 import (
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
@@ -25,21 +24,20 @@ type ComplianceDataRepository interface {
 	Deployments() map[string]*storage.Deployment
 
 	UnresolvedAlerts() []*storage.ListAlert
-	NetworkPolicies() map[string]*storage.NetworkPolicy
-	NetworkGraph() *v1.NetworkGraph
+	DeploymentsToNetworkPolicies() map[string][]*storage.NetworkPolicy
 	// Policies returns all policies, keyed by their name.
 	Policies() map[string]*storage.Policy
 	Images() []*storage.ListImage
 	ImageIntegrations() []*storage.ImageIntegration
 	RegistryIntegrations() []ImageMatcher
 	ScannerIntegrations() []ImageMatcher
-	ProcessIndicators() []*storage.ProcessIndicator
-	NetworkFlows() []*storage.NetworkFlow
+	SSHProcessIndicators() []*storage.ProcessIndicator
+	HasProcessIndicators() bool
+	NetworkFlowsWithDeploymentDst() []*storage.NetworkFlow
 	PolicyCategories() map[string]set.StringSet
 	Notifiers() []*storage.Notifier
 	K8sRoles() []*storage.K8SRole
 	K8sRoleBindings() []*storage.K8SRoleBinding
-	CISDockerTriggered() bool
 	CISKubernetesTriggered() bool
 
 	ComplianceOperatorResults() map[string][]*storage.ComplianceOperatorCheckResult
@@ -47,4 +45,6 @@ type ComplianceDataRepository interface {
 	// Per-host data
 	HostScraped(node *storage.Node) *compliance.ComplianceReturn
 	NodeResults() map[string]map[string]*compliance.ComplianceStandardResult
+
+	AddHostScrapedData(scrapeResults map[string]*compliance.ComplianceReturn)
 }

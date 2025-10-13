@@ -1,5 +1,5 @@
-import React, { useEffect, useState, ReactElement } from 'react';
-import { useHistory, useLocation } from 'react-router-dom';
+import React, { ReactElement, useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat';
 import {
     Alert,
     Bullseye,
@@ -34,7 +34,7 @@ import {
 import './SearchPage.css';
 
 function SearchPage(): ReactElement {
-    const history = useHistory();
+    const navigate = useNavigate();
     const { search } = useLocation();
 
     /*
@@ -114,9 +114,9 @@ function SearchPage(): ReactElement {
 
             // If the current search filter is empty, then replace, else push.
             if (stringifiedSearchFilter.length === 0) {
-                history.replace(searchPathWithQueryString);
+                navigate(searchPathWithQueryString, { replace: true });
             } else {
-                history.push(searchPathWithQueryString);
+                navigate(searchPathWithQueryString);
             }
         }
 
@@ -128,12 +128,12 @@ function SearchPage(): ReactElement {
     if (isLoadingSearchOptions || isLoadingSearchResponse) {
         content = (
             <Bullseye>
-                <Spinner isSVG />
+                <Spinner />
             </Bullseye>
         );
     } else if (searchOptions.length !== 0 && stringifiedSearchFilter.length === 0) {
         content = (
-            <Alert variant="info" isInline title="Enter a new search filter">
+            <Alert variant="info" isInline title="Enter a new search filter" component="p">
                 <p>
                     Instead of a new search, you can go back in browser history to see previous
                     search results.
@@ -146,7 +146,14 @@ function SearchPage(): ReactElement {
         );
     } else if (searchResponse) {
         if (searchResponse.results.length === 0) {
-            content = <Alert variant="info" isInline title="No results match the search filter" />;
+            content = (
+                <Alert
+                    variant="info"
+                    isInline
+                    title="No results match the search filter"
+                    component="p"
+                />
+            );
         } else {
             content = (
                 <SearchNavAndTable
@@ -158,7 +165,12 @@ function SearchPage(): ReactElement {
         }
     } else if (typeof searchResponseErrorMessage === 'string') {
         content = (
-            <Alert variant="danger" isInline title="Request failed for search results">
+            <Alert
+                variant="danger"
+                isInline
+                title="Request failed for search results"
+                component="p"
+            >
                 {searchResponseErrorMessage}
             </Alert>
         );
@@ -174,11 +186,16 @@ function SearchPage(): ReactElement {
             <PageTitle title={pageTitleItems.join(' - ')} />
             <Stack hasGutter>
                 <StackItem>
-                    <Title headingLevel="h1" className="pf-u-mb-md">
+                    <Title headingLevel="h1" className="pf-v5-u-mb-md">
                         Search
                     </Title>
                     {typeof searchOptionsErrorMessage === 'string' ? (
-                        <Alert variant="danger" isInline title="Request failed for search options">
+                        <Alert
+                            variant="danger"
+                            isInline
+                            title="Request failed for search options"
+                            component="p"
+                        >
                             {searchOptionsErrorMessage}
                         </Alert>
                     ) : (

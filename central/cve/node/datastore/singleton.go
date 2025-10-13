@@ -1,10 +1,9 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/central/cve/node/datastore/search"
-	"github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
+	pgStore "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/node/datastore/dackbox/datastore/keyfence"
+	"github.com/stackrox/rox/central/node/datastore/keyfence"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -16,11 +15,10 @@ var (
 )
 
 func initialize() {
-	storage := postgres.New(globaldb.GetPostgres())
-	indexer := postgres.NewIndexer(globaldb.GetPostgres())
+	storage := pgStore.New(globaldb.GetPostgres())
 
 	var err error
-	ds, err = New(storage, indexer, search.New(storage, indexer), keyfence.NodeKeyFenceSingleton())
+	ds, err = New(storage, keyfence.NodeKeyFenceSingleton())
 	utils.CrashOnError(err)
 }
 

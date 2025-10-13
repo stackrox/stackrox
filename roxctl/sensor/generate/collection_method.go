@@ -9,10 +9,10 @@ import (
 
 var (
 	humanReadableToEnum = map[string]storage.CollectionMethod{
-		"default":       storage.CollectionMethod_UNSET_COLLECTION,
-		"none":          storage.CollectionMethod_NO_COLLECTION,
-		"kernel-module": storage.CollectionMethod_KERNEL_MODULE,
-		"ebpf":          storage.CollectionMethod_EBPF,
+		"default":  storage.CollectionMethod_UNSET_COLLECTION,
+		"none":     storage.CollectionMethod_NO_COLLECTION,
+		"ebpf":     storage.CollectionMethod_EBPF,
+		"core_bpf": storage.CollectionMethod_CORE_BPF,
 	}
 
 	enumToHumanReadable = func() map[storage.CollectionMethod]string {

@@ -4,10 +4,10 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	store "github.com/stackrox/rox/central/complianceoperator/checkresults/store"
-	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/complianceoperator/checkresults/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 var (
@@ -15,6 +15,8 @@ var (
 )
 
 // DataStore defines the possible interactions with compliance operator check results
+//
+//go:generate mockgen-wrapper
 type DataStore interface {
 	Walk(ctx context.Context, fn func(result *storage.ComplianceOperatorCheckResult) error) error
 	Upsert(ctx context.Context, result *storage.ComplianceOperatorCheckResult) error
@@ -36,6 +38,7 @@ func (d *datastoreImpl) Walk(ctx context.Context, fn func(result *storage.Compli
 	} else if !ok {
 		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator check results read")
 	}
+	// Retry in the caller
 	return d.store.Walk(ctx, fn)
 }
 

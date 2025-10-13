@@ -49,6 +49,17 @@ func WaitForErrorUntil(ew ErrorWaitable, cancelCond Waitable) (Error, bool) {
 	}
 }
 
+// WaitForErrorInContext waits until the given ErrorWaitable is triggered, in which case the return value is the same
+// as for CheckError. If the parent Waitable is triggered before the ErrorWaitable is triggered, nil is returned.
+func WaitForErrorInContext(ew ErrorWaitable, parentContext Waitable) Error {
+	select {
+	case <-ew.Done():
+		return ew.Err()
+	case <-parentContext.Done():
+		return nil
+	}
+}
+
 // WaitForErrorWithTimeout waits for the given ErrorWaitable and returns the error (equivalent to `CheckError(ew)`) once
 // this happens. If the given timeout expires beforehand, `nil, false` is returnd.
 func WaitForErrorWithTimeout(ew ErrorWaitable, timeout time.Duration) (Error, bool) {

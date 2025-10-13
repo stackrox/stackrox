@@ -2,10 +2,12 @@ package gjson
 
 import (
 	"encoding/json"
+	"slices"
 	"sort"
 	"strings"
 
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/tidwall/gjson"
 )
 
@@ -18,7 +20,7 @@ type RowMapper struct {
 // NewRowMapper creates a RowMapper which takes a json object and GJSON compatible multi-path JSON expression
 // and will retrieve all values from the JSON object and create a row representation in form of a two-dimensional
 // string array. Each element within the multi-path JSON expression will be seen as a column value
-func NewRowMapper(jsonObj interface{}, multiPathExpression string) (*RowMapper, error) {
+func NewRowMapper(jsonObj interface{}, multiPathExpression string, options ...ColumnTreeOptions) (*RowMapper, error) {
 	bytes, err := json.Marshal(jsonObj)
 	if err != nil {
 		return nil, errox.InvariantViolation.CausedBy(err)
@@ -29,7 +31,7 @@ func NewRowMapper(jsonObj interface{}, multiPathExpression string) (*RowMapper, 
 		return nil, err
 	}
 
-	ct := constructColumnTree(result, multiPathExpression)
+	ct := constructColumnTree(result, multiPathExpression, options...)
 
 	return &RowMapper{
 		columnTree: ct,
@@ -124,28 +126,33 @@ func jaggedArrayError(maxAmount, violatedAmount, arrayIndex int) error {
 //
 // Example:
 // Assuming you have a multi-path query such as:
-// {result.deployments.#.depName,result.deployments.#.images.#.imgName,result.deployments.#.images.#.components.#.compName,result.deployments.#.images.#.components.#.vulns.#.vulnName}
+//
+//	{result.deployments.#.depName,result.deployments.#.images.#.imgName,result.deployments.#.images.#.components.#.compName,result.deployments.#.images.#.components.#.vulns.#.vulnName}
+//
 // which is used against the following JSON object:
-// {"result":{"deployments":[{"name":"dep1","images":[{"name":"image1","components":[{"name":"comp11","vulns":[{"name":"cve1"}]},{"name":"comp12"}]},{"name":"image2","components":[{"name":"comp21","vulns":[{"name":"cve1"}]},{"name":"comp22","vulns":[{"name":"cve2"}]}]}]}]}}
+//
+//	{"result":{"deployments":[{"name":"dep1","images":[{"name":"image1","components":[{"name":"comp11","vulns":[{"name":"cve1"}]},{"name":"comp12"}]},{"name":"image2","components":[{"name":"comp21","vulns":[{"name":"cve1"}]},{"name":"comp22","vulns":[{"name":"cve2"}]}]}]}]}}
 //
 // The yielded gjson.Result would look like this:
-// {"depName":["dep1"],"imgName":[["image1","image2"]],"compName":[[["comp11","comp12"],["comp21","comp22"]]],"vulnName":[[[["cve1"],[]],[["cve1"],["cve2"]]]]}
+//
+//	{"depName":["dep1"],"imgName":[["image1","image2"]],"compName":[[["comp11","comp12"],["comp21","comp22"]]],"vulnName":[[[["cve1"],[]],[["cve1"],["cve2"]]]]}
 //
 // When constructing the column tree, the query will be sorted for "dimension". A dimension is the depth of arrays
 // available per result.
 //
 // The constructed tree would look like the following:
+//
 //	dep1
-//	- image1
+//	 - image1
 //	  - comp11
-//      - cve1
-//    - comp12
-//      - -
-//  - image2
-//    - comp21
-//      - cve1
-//    - comp22
-//      - cve2
+//		- cve1
+//	  - comp12
+//	     - -
+//	 - image2
+//	  - comp21
+//	  	- cve1
+//	  - comp22
+//	    - cve2
 //
 // Each children is representing a related data. Now, when constructing the column, we are aware of
 // related data and can expand the column values.
@@ -162,15 +169,19 @@ func jaggedArrayError(maxAmount, violatedAmount, arrayIndex int) error {
 type columnTree struct {
 	rootNode        *columnNode
 	originalQuery   string
+	result          []queryResult
 	numberOfColumns int
+	strictColumns   []string
 }
 
 // newColumnTree creates a column tree with a root columnNode that has the root property set.
 func newColumnTree(query string, numberOfColumns int) *columnTree {
 	return &columnTree{
 		originalQuery:   query,
+		result:          nil,
 		numberOfColumns: numberOfColumns,
 		rootNode:        &columnNode{root: true, columnIndex: -1},
+		strictColumns:   []string{},
 	}
 }
 
@@ -189,7 +200,16 @@ type columnNode struct {
 	root         bool // Specified when the node is a root node
 }
 
-func constructColumnTree(result gjson.Result, originalQuery string) *columnTree {
+// ColumnTreeOptions models an option for modifying the column tree by eg. pruning sparsely populated parts of it
+type ColumnTreeOptions func(*columnTree)
+
+func HideRowsIfColumnNotPopulated(columns []string) ColumnTreeOptions {
+	return func(ct *columnTree) {
+		ct.strictColumns = columns
+	}
+}
+
+func constructColumnTree(result gjson.Result, originalQuery string, options ...ColumnTreeOptions) *columnTree {
 	// in multipath queries, the result will be represented as an array.
 	res := getQueryResults(result, originalQuery)
 
@@ -201,6 +221,9 @@ func constructColumnTree(result gjson.Result, originalQuery string) *columnTree 
 	})
 
 	ct := newColumnTree(originalQuery, len(res))
+	ct.result = res
+
+	applyOptions(ct, options...)
 
 	for _, r := range res {
 		nodes := getColumnNodesForResult(r.query, r.result, r.dimension, r.originalIndex)
@@ -212,18 +235,53 @@ func constructColumnTree(result gjson.Result, originalQuery string) *columnTree 
 	return ct
 }
 
+func applyOptions(tree *columnTree, options ...ColumnTreeOptions) {
+	for _, option := range options {
+		option(tree)
+	}
+}
+
 func (ct *columnTree) CreateColumns() [][]string {
 	// Get the number of queries. Each query represents a column.
 	numberOfQueries := getNumberOfQueries(ct.originalQuery)
 	columns := make([][]string, 0, numberOfQueries)
+	var strictColIndices []int
+	if len(ct.strictColumns) > 0 {
+		for i, r := range ct.result {
+			if slices.Contains(ct.strictColumns, r.query) {
+				strictColIndices = append(strictColIndices, i)
+			}
+		}
+	}
+	deletionSet := set.IntSet{}
 	for columnIndex := 0; columnIndex < numberOfQueries; columnIndex++ {
 		// For each query, the query ID == columnID on the node. Retrieve all values for the specific columnID
 		// and auto expand, if required, them.
 		// The values need to be merged based on their index.
-		columns = append(columns, ct.createColumnFromColumnNodes(columnIndex))
+		newCol := ct.createColumnFromColumnNodes(columnIndex)
+		columns = append(columns, newCol)
+		if sort.SearchInts(strictColIndices, columnIndex) != len(strictColIndices) {
+			for i, item := range newCol {
+				if item == emptyReplacement {
+					deletionSet.Add(i)
+				}
+			}
+		}
+	}
+	var newCols [][]string
+	for _, column := range columns {
+		var purgedCol []string
+		for i, item := range column {
+			if !deletionSet.Contains(i) {
+				purgedCol = append(purgedCol, item)
+			}
+		}
+		if len(purgedCol) > 0 {
+			newCols = append(newCols, purgedCol)
+		}
 	}
 
-	return columns
+	return newCols
 }
 
 type queryResult struct {

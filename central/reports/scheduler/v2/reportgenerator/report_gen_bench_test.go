@@ -1,0 +1,150 @@
+//go:build sql_integration
+
+package reportgenerator
+
+import (
+	"context"
+	"testing"
+	"time"
+
+	"github.com/graph-gophers/graphql-go"
+	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	"github.com/stackrox/rox/central/graphql/resolvers"
+	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	namespaceDSMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
+	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
+	collectionPostgres "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
+	deploymentsView "github.com/stackrox/rox/central/views/deployments"
+	imagesView "github.com/stackrox/rox/central/views/images"
+	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
+)
+
+type ReportGeneratorBenchmarkTestSuite struct {
+	b        *testing.B
+	mockCtrl *gomock.Controller
+
+	ctx             context.Context
+	testDB          *pgtest.TestPostgres
+	reportGenerator *reportGeneratorImpl
+	resolver        *resolvers.Resolver
+	schema          *graphql.Schema
+
+	watchedImageDatastore   watchedImageDS.DataStore
+	collectionQueryResolver collectionDS.QueryResolver
+
+	clusterDatastore   *clusterDSMocks.MockDataStore
+	namespaceDatastore *namespaceDSMocks.MockDataStore
+}
+
+func BenchmarkReportGenerator(b *testing.B) {
+	if features.FlattenCVEData.Enabled() {
+		b.Skip()
+	}
+
+	bts := &ReportGeneratorBenchmarkTestSuite{b: b}
+	bts.setupTestSuite()
+
+	clusters := []*storage.Cluster{
+		{Id: uuid.NewV4().String(), Name: "c1"},
+		{Id: uuid.NewV4().String(), Name: "c2"},
+	}
+
+	namespaces := testNamespaces(clusters, 10)
+
+	deployments, images := testDeploymentsWithImages(namespaces, 100)
+	bts.upsertManyImages(images)
+	bts.upsertManyDeployments(deployments)
+
+	watchedImages := testWatchedImages(500)
+	bts.upsertManyImages(watchedImages)
+	bts.upsertManyWatchedImages(watchedImages)
+
+	bts.clusterDatastore.EXPECT().GetClusters(gomock.Any()).
+		Return(clusters, nil).AnyTimes()
+
+	bts.namespaceDatastore.EXPECT().GetAllNamespaces(gomock.Any()).
+		Return(namespaces, nil).AnyTimes()
+
+	collection := testCollection("col4", "", "", "")
+	fixability := storage.VulnerabilityReportFilters_BOTH
+	severities := allSeverities()
+	imageTypes := []storage.VulnerabilityReportFilters_ImageType{
+		storage.VulnerabilityReportFilters_DEPLOYED,
+		storage.VulnerabilityReportFilters_WATCHED,
+	}
+
+	expectedRowCount := 5002
+
+	reportSnap := testReportSnapshot(collection.GetId(), fixability, severities, imageTypes, nil)
+
+	b.Run("GetReportDataSQF", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			reportData, err := bts.reportGenerator.getReportDataSQF(reportSnap, collection, time.Time{})
+			require.NoError(b, err)
+			require.Equal(b, expectedRowCount, len(reportData.CVEResponses))
+		}
+	})
+}
+
+func (bts *ReportGeneratorBenchmarkTestSuite) setupTestSuite() {
+	if features.FlattenCVEData.Enabled() {
+		bts.b.Skip()
+	}
+	bts.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
+	bts.mockCtrl = gomock.NewController(bts.b)
+	bts.testDB = resolvers.SetupTestPostgresConn(bts.b)
+
+	imageDataStore := resolvers.CreateTestImageDatastore(bts.b, bts.testDB, bts.mockCtrl)
+	imageCVEDatastore := resolvers.CreateTestImageCVEDatastore(bts.b, bts.testDB)
+	bts.resolver, bts.schema = resolvers.SetupTestResolver(bts.b,
+		imageDataStore,
+		imagesView.NewImageView(bts.testDB.DB),
+		resolvers.CreateTestImageComponentDatastore(bts.b, bts.testDB, bts.mockCtrl),
+		imageCVEDatastore,
+		resolvers.CreateTestImageComponentCVEEdgeDatastore(bts.b, bts.testDB),
+		resolvers.CreateTestImageCVEEdgeDatastore(bts.b, bts.testDB),
+		resolvers.CreateTestDeploymentDatastore(bts.b, bts.testDB, bts.mockCtrl, imageDataStore),
+		deploymentsView.NewDeploymentView(bts.testDB.DB),
+	)
+
+	var err error
+	collectionStore := collectionPostgres.CreateTableAndNewStore(bts.ctx, bts.testDB.DB, bts.testDB.GetGormDB(bts.b))
+	_, bts.collectionQueryResolver, err = collectionDS.New(collectionStore)
+	require.NoError(bts.b, err)
+
+	bts.watchedImageDatastore = watchedImageDS.GetTestPostgresDataStore(bts.b, bts.testDB.DB)
+	bts.clusterDatastore = clusterDSMocks.NewMockDataStore(bts.mockCtrl)
+	bts.namespaceDatastore = namespaceDSMocks.NewMockDataStore(bts.mockCtrl)
+
+	bts.reportGenerator = newReportGeneratorImpl(bts.testDB, nil, bts.resolver.DeploymentDataStore,
+		bts.watchedImageDatastore, bts.collectionQueryResolver, nil, nil, bts.clusterDatastore,
+		bts.namespaceDatastore, imageCVEDatastore, bts.resolver.ImageCVEV2DataStore, bts.schema)
+}
+
+func (bts *ReportGeneratorBenchmarkTestSuite) upsertManyImages(images []*storage.Image) {
+	for _, img := range images {
+		err := bts.resolver.ImageDataStore.UpsertImage(bts.ctx, img)
+		require.NoError(bts.b, err)
+	}
+}
+
+func (bts *ReportGeneratorBenchmarkTestSuite) upsertManyWatchedImages(images []*storage.Image) {
+	for _, img := range images {
+		err := bts.watchedImageDatastore.UpsertWatchedImage(bts.ctx, img.GetName().GetFullName())
+		require.NoError(bts.b, err)
+	}
+}
+
+func (bts *ReportGeneratorBenchmarkTestSuite) upsertManyDeployments(deployments []*storage.Deployment) {
+	for _, dep := range deployments {
+		err := bts.resolver.DeploymentDataStore.UpsertDeployment(bts.ctx, dep)
+		require.NoError(bts.b, err)
+	}
+}

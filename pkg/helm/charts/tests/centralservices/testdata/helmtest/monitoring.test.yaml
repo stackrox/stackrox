@@ -1,3 +1,8 @@
+values:
+  imagePullSecrets:
+    allowNone: true
+  scannerV4:
+    disable: false
 tests:
 - name: Central monitoring should not be exposed by default
   expect: |
@@ -34,3 +39,31 @@ tests:
         assertThat(.name == "monitoring")
       ]
     .networkpolicys["scanner-monitoring"] | assertThat(. != null)
+
+- name: Scanner V4 monitoring should not be exposed by default
+  expect: |
+    [.deployments["scanner-v4-indexer"].spec.template.spec.containers[0].ports[] | select(.containerPort == 9090)] | assertThat(length == 0)
+    [.services["scanner-v4-indexer"].spec.ports[] | select(.port == 9090)] | assertThat(length == 0)
+    .networkpolicys["scanner-v4-indexer-monitoring"] | assertThat(. == null)
+    [.deployments["scanner-v4-matcher"].spec.template.spec.containers[0].ports[] | select(.containerPort == 9090)] | assertThat(length == 0)
+    [.services["scanner-v4-matcher"].spec.ports[] | select(.port == 9090)] | assertThat(length == 0)
+    .networkpolicys["scanner-v4-matcher-monitoring"] | assertThat(. == null)
+
+- name: Scanner V4 monitoring should be exposed when enabled
+  set:
+    scannerV4.exposeMonitoring: true
+  expect: |
+    .deployments["scanner-v4-indexer"].spec.template.spec.containers[0].ports[] | select(.containerPort == 9090)
+      | assertThat(.name == "monitoring")
+    .services["scanner-v4-indexer"].spec.ports[] | select(.port == 9090) | [
+        assertThat(.targetPort == "monitoring"),
+        assertThat(.name == "monitoring")
+      ]
+    .networkpolicys["scanner-v4-matcher-monitoring"] | assertThat(. != null)
+    .deployments["scanner-v4-matcher"].spec.template.spec.containers[0].ports[] | select(.containerPort == 9090)
+      | assertThat(.name == "monitoring")
+    .services["scanner-v4-matcher"].spec.ports[] | select(.port == 9090) | [
+        assertThat(.targetPort == "monitoring"),
+        assertThat(.name == "monitoring")
+      ]
+    .networkpolicys["scanner-v4-matcher-monitoring"] | assertThat(. != null)

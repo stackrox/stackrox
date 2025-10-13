@@ -4,13 +4,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	mocks2 "github.com/stackrox/rox/central/policy/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/detection/mocks"
-	"github.com/stretchr/testify/assert"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 type compiledPolicyWrapper struct {
@@ -83,5 +83,5 @@ func TestPolicySet_RemoveNotifier(t *testing.T) {
 		},
 	}
 
-	assert.ElementsMatch(t, expectedUpdates, updatedPolicies)
+	protoassert.ElementsMatch(t, expectedUpdates, updatedPolicies)
 }

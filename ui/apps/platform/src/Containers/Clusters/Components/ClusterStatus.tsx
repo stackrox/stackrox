@@ -1,39 +1,26 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 
-import { healthStatusLabels } from 'messages/common';
-import HealthStatus from './HealthStatus';
-import ClusterStatusPill from './ClusterStatusPill';
+import type { ClusterHealthStatus } from 'types/cluster.proto';
+
+import { healthStatusLabels } from '../cluster.constants';
 import { healthStatusStyles } from '../cluster.helpers';
-import { ClusterHealthStatus } from '../clusterTypes';
-
-/*
- * Cluster Status in Clusters list or Cluster side panel
- *
- * Caller is responsible for optional chaining in case healthStatus is null.
- */
+import HealthStatus from './HealthStatus';
 
 type ClusterStatusProps = {
-    healthStatus: ClusterHealthStatus;
-    isList?: boolean;
+    healthStatus?: ClusterHealthStatus;
 };
 
-function ClusterStatus({ healthStatus, isList = false }: ClusterStatusProps): ReactElement {
-    const { overallHealthStatus } = healthStatus;
-    const { Icon, bgColor, fgColor } = healthStatusStyles[overallHealthStatus];
-    const icon = <Icon className={`${isList ? 'inline' : ''} h-4 w-4`} />;
+function ClusterStatus({ healthStatus }: ClusterStatusProps): ReactElement {
+    const { overallHealthStatus = 'UNAVAILABLE' } = healthStatus ?? {};
+
+    const { Icon, fgColor } = healthStatusStyles[overallHealthStatus];
+    const icon = <Icon className="h-4 w-4" />;
+
     return (
-        <div>
-            <div className={`${isList ? 'mb-1' : ''}`}>
-                <HealthStatus icon={icon} iconColor={fgColor} isList={isList}>
-                    <div data-testid="clusterStatus" className={`${isList ? 'inline' : ''}`}>
-                        <span className={`${bgColor} ${fgColor}`}>
-                            {healthStatusLabels[overallHealthStatus]}
-                        </span>
-                    </div>
-                </HealthStatus>
-            </div>
-            {isList && <ClusterStatusPill healthStatus={healthStatus} />}
-        </div>
+        <HealthStatus icon={icon} iconColor={fgColor}>
+            {healthStatusLabels[overallHealthStatus]}
+        </HealthStatus>
     );
 }
 

@@ -4,12 +4,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -18,6 +18,7 @@ import (
 
 const (
 	telemetryChanGCPeriod = 5 * time.Minute
+	progressTimeout       = 5 * time.Minute
 )
 
 type controller struct {
@@ -44,8 +45,7 @@ func newController(capabilities set.Set[centralsensor.SensorCapability], injecto
 	return ctrl
 }
 
-func (c *controller) streamingRequest(ctx context.Context, dataType central.PullTelemetryDataRequest_TelemetryDataType,
-	cb telemetryCallback, since time.Time) error {
+func (c *controller) streamingRequest(ctx context.Context, dataType central.PullTelemetryDataRequest_TelemetryDataType, cb telemetryCallback, opts PullKubernetesInfoOpts) error {
 	subCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -54,24 +54,25 @@ func (c *controller) streamingRequest(ctx context.Context, dataType central.Pull
 	requestID := uuid.NewV4().String()
 
 	var timeoutMs int64
-	if deadline, ok := ctx.Deadline(); ok {
+	if deadline, ok := subCtx.Deadline(); ok {
 		timeoutMs = time.Until(deadline).Milliseconds()
 		if timeoutMs <= 0 {
 			return errors.New("deadline already expired")
 		}
 	}
 
-	sinceTs, err := types.TimestampProto(since)
+	sinceTs, err := protocompat.ConvertTimeToTimestampOrError(opts.Since)
 	if err != nil {
-		return errors.Wrap(err, "could not convert since timestamp")
+		return errors.Wrap(err, "could not convert Since timestamp")
 	}
 	msg := &central.MsgToSensor{
 		Msg: &central.MsgToSensor_TelemetryDataRequest{
 			TelemetryDataRequest: &central.PullTelemetryDataRequest{
-				RequestId: requestID,
-				DataType:  dataType,
-				TimeoutMs: timeoutMs,
-				Since:     sinceTs,
+				RequestId:              requestID,
+				DataType:               dataType,
+				TimeoutMs:              timeoutMs,
+				Since:                  sinceTs,
+				WithComplianceOperator: opts.WithComplianceOperator,
 			},
 		},
 	}
@@ -85,8 +86,8 @@ func (c *controller) streamingRequest(ctx context.Context, dataType central.Pull
 		c.returnChans[requestID] = nil
 	})
 
-	if err := c.injector.InjectMessage(ctx, msg); err != nil {
-		return errors.Wrap(err, "could not pull telemetry data")
+	if err := c.injector.InjectMessage(subCtx, msg); err != nil {
+		return errors.Wrapf(err, "could not pull telemetry data for type %s", dataType.String())
 	}
 
 	hasEOS := false
@@ -99,14 +100,21 @@ func (c *controller) streamingRequest(ctx context.Context, dataType central.Pull
 		go c.sendCancellation(requestID)
 	}()
 
+	// In case there's no progress regarding sensor sending telemetry response data,
+	// we should stop waiting.
+	progressTicker := time.NewTicker(progressTimeout)
+	defer progressTicker.Stop()
 	for {
 		var resp *central.TelemetryResponsePayload
 		select {
-		case <-ctx.Done():
-			return errors.Wrap(ctx.Err(), "context error")
+		case <-subCtx.Done():
+			return errors.Wrap(subCtx.Err(), "context error")
 		case <-c.stopSig.Done():
 			return errors.Wrap(c.stopSig.Err(), "lost connection to sensor")
+		case <-progressTicker.C:
+			return errors.Errorf("sensor didn't sent any data in last %s", progressTimeout)
 		case resp = <-retC:
+			progressTicker.Reset(progressTimeout)
 		}
 
 		if eos := resp.GetEndOfStream(); eos != nil {
@@ -142,7 +150,12 @@ func (c *controller) sendCancellation(requestID string) {
 	_ = c.injector.InjectMessage(context.Background(), cancelMsg)
 }
 
-func (c *controller) PullKubernetesInfo(ctx context.Context, cb KubernetesInfoChunkCallback, since time.Time) error {
+type PullKubernetesInfoOpts struct {
+	Since                  time.Time
+	WithComplianceOperator bool
+}
+
+func (c *controller) PullKubernetesInfo(ctx context.Context, cb KubernetesInfoChunkCallback, opts PullKubernetesInfoOpts) error {
 	genericCB := func(ctx concurrency.ErrorWaitable, chunk *central.TelemetryResponsePayload) error {
 		k8sInfo := chunk.GetKubernetesInfo()
 		if k8sInfo == nil {
@@ -152,7 +165,7 @@ func (c *controller) PullKubernetesInfo(ctx context.Context, cb KubernetesInfoCh
 
 		return cb(ctx, k8sInfo)
 	}
-	return c.streamingRequest(ctx, central.PullTelemetryDataRequest_KUBERNETES_INFO, genericCB, since)
+	return c.streamingRequest(ctx, central.PullTelemetryDataRequest_KUBERNETES_INFO, genericCB, opts)
 }
 
 func (c *controller) PullMetrics(ctx context.Context, cb MetricsInfoChunkCallback) error {
@@ -165,7 +178,9 @@ func (c *controller) PullMetrics(ctx context.Context, cb MetricsInfoChunkCallbac
 
 		return cb(ctx, metricsInfo)
 	}
-	return c.streamingRequest(ctx, central.PullTelemetryDataRequest_METRICS, genericCB, time.Now())
+	return c.streamingRequest(ctx, central.PullTelemetryDataRequest_METRICS, genericCB, PullKubernetesInfoOpts{
+		Since: time.Now(),
+	})
 }
 
 func (c *controller) PullClusterInfo(ctx context.Context, cb ClusterInfoCallback) error {
@@ -178,23 +193,24 @@ func (c *controller) PullClusterInfo(ctx context.Context, cb ClusterInfoCallback
 
 		return cb(ctx, clusterInfo)
 	}
-	return c.streamingRequest(ctx, central.PullTelemetryDataRequest_CLUSTER_INFO, genericCB, time.Now())
+	return c.streamingRequest(ctx, central.PullTelemetryDataRequest_CLUSTER_INFO, genericCB, PullKubernetesInfoOpts{
+		Since: time.Now(),
+	})
 }
 
-func (c *controller) ProcessTelemetryDataResponse(resp *central.PullTelemetryDataResponse) error {
+func (c *controller) ProcessTelemetryDataResponse(ctx context.Context, resp *central.PullTelemetryDataResponse) error {
 	requestID := resp.GetRequestId()
 	if resp.GetPayload() == nil {
-		return utils.Should(errors.Errorf("received a telemetry response with an empty payload for requested ID %s", requestID))
+		return utils.ShouldErr(errors.Errorf("received a telemetry response with an empty payload for requested ID %s", requestID))
 	}
 
-	var retC chan *central.TelemetryResponsePayload
-	var found bool
-	concurrency.WithLock(&c.returnChansMutex, func() {
-		retC, found = c.returnChans[requestID]
+	retC, found := concurrency.WithLock2(&c.returnChansMutex, func() (chan *central.TelemetryResponsePayload, bool) {
+		retC, found := c.returnChans[requestID]
 		if !found {
 			// Add the channel to the map to make sure log messages get throttled.
 			c.returnChans[requestID] = nil
 		}
+		return retC, found
 	})
 	if retC == nil {
 		if found {
@@ -205,6 +221,8 @@ func (c *controller) ProcessTelemetryDataResponse(resp *central.PullTelemetryDat
 	}
 
 	select {
+	case <-ctx.Done():
+		return ctx.Err()
 	case <-c.stopSig.Done():
 		return errors.Wrap(c.stopSig.Err(), "sensor connection stopped while waiting for network policies response")
 	case retC <- resp.GetPayload():

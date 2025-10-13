@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 var (
@@ -15,6 +16,9 @@ var (
 	CreateTableSensorUpgradeConfigsStmt = &postgres.CreateStmts{
 		GormModel: (*SensorUpgradeConfigs)(nil),
 		Children:  []*postgres.CreateStmts{},
+		PostStmts: []string{
+			"ALTER TABLE sensor_upgrade_configs REPLICA IDENTITY FULL",
+		},
 	}
 
 	// SensorUpgradeConfigsSchema is the go schema for table `sensor_upgrade_configs`.
@@ -24,12 +28,14 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.SensorUpgradeConfig)(nil)), "sensor_upgrade_configs")
+		schema.ScopingResource = resources.Administration
 		RegisterTable(schema, CreateTableSensorUpgradeConfigsStmt)
 		return schema
 	}()
 )
 
 const (
+	// SensorUpgradeConfigsTableName specifies the name of the table in postgres.
 	SensorUpgradeConfigsTableName = "sensor_upgrade_configs"
 )
 

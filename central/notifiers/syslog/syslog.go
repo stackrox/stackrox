@@ -4,17 +4,21 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/notifiers"
+	"github.com/stackrox/rox/central/notifiers/metadatagetter"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events/codes"
+	"github.com/stackrox/rox/pkg/administration/events/option"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/version"
 )
 
@@ -48,7 +52,7 @@ const (
 )
 
 var (
-	log = logging.LoggerForModule()
+	log = logging.LoggerForModule(option.EnableAdministrationEvents())
 
 	// We could instead do abs(severity - 4) + 2 but I feel this is high maintenance and obfuscates the meaning
 	alertToSyslogSeverityMap = map[storage.Severity]int{
@@ -69,12 +73,6 @@ var (
 	}
 )
 
-func init() {
-	notifiers.Add("syslog", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		return newSyslog(notifier)
-	})
-}
-
 //go:generate mockgen-wrapper
 type syslogSender interface {
 	SendSyslog(syslogBytes []byte) error
@@ -83,6 +81,9 @@ type syslogSender interface {
 
 type syslog struct {
 	*storage.Notifier
+
+	metadataGetter notifiers.MetadataGetter
+	maxMessageSize int
 
 	sender   syslogSender
 	pid      int
@@ -99,10 +100,17 @@ func validateSyslog(syslog *storage.Syslog) error {
 		return errors.Errorf("invalid facility %s must be between 0 and 7", facility.String())
 	}
 
+	for _, f := range syslog.GetExtraFields() {
+		if f.GetKey() == "" || f.GetValue() == "" {
+			return errors.New("all extra fields must have both a key and a value")
+		}
+	}
+
 	return nil
 }
 
-func newSyslog(notifier *storage.Notifier) (*syslog, error) {
+// NewSyslog exported to allow for usage in various components
+func NewSyslog(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter) (*syslog, error) {
 	if err := validateSyslog(notifier.GetSyslog()); err != nil {
 		return nil, err
 	}
@@ -117,19 +125,25 @@ func newSyslog(notifier *storage.Notifier) (*syslog, error) {
 
 	facility := 8 * (int(notifier.GetSyslog().GetLocalFacility()) + 16)
 
+	maxMessageSize := int(notifier.GetSyslog().GetMaxMessageSize())
+
 	return &syslog{
-		sender:   sender,
-		Notifier: notifier,
-		pid:      pid,
-		facility: facility,
+		sender:         sender,
+		Notifier:       notifier,
+		metadataGetter: metadataGetter,
+		pid:            pid,
+		facility:       facility,
+		maxMessageSize: maxMessageSize,
 	}, nil
 }
 
-func auditLogToCEF(auditLog *v1.Audit_Message) string {
-	extensionList := make([]string, 0, 8) // There will be 8 different key/value pairs in this message.
+func (s *syslog) auditLogToCEF(auditLog *v1.Audit_Message, notifier *storage.Notifier) string {
+	// There will be 8+len(extra fields) different key/value pairs in this message.
+	extensionList := make([]string, 0, 8+len(notifier.GetSyslog().GetExtraFields()))
 
 	// deviceReciptTime is allowed to be ms since epoch, seems easier than converting it to a time string
-	extensionList = append(extensionList, makeTimestampExtensionPair(deviceReceiptTime, auditLog.GetTime())...)
+	auditLogTime := protocompat.ConvertTimestampToTimeOrNil(auditLog.GetTime())
+	extensionList = append(extensionList, makeTimestampExtensionPair(deviceReceiptTime, auditLogTime)...)
 	extensionList = append(extensionList, makeExtensionPair(sourceUserPrivileges, joinRoleNames(auditLog.GetUser().GetRoles())))
 	extensionList = append(extensionList, makeExtensionPair(sourceUserName, auditLog.GetUser().GetUsername()))
 	extensionList = append(extensionList, makeExtensionPair(requestURL, auditLog.GetRequest().GetEndpoint()))
@@ -138,7 +152,11 @@ func auditLogToCEF(auditLog *v1.Audit_Message) string {
 	extensionList = append(extensionList, makeExtensionPair(requestClientApplication, auditLog.GetMethod().String()))
 	extensionList = append(extensionList, makeJSONExtensionPair(stackroxKubernetesSecurityPlatformAuditLog, auditLog))
 
-	return getCEFHeaderWithExtension("AuditLog", "AuditLog", 3, makeExtensionFromPairs(extensionList))
+	// add custom fields to alert
+	for _, k := range notifier.GetSyslog().GetExtraFields() {
+		extensionList = append(extensionList, makeExtensionPair(k.GetKey(), k.GetValue()))
+	}
+	return s.getCEFHeaderWithExtension("AuditLog", "AuditLog", 3, makeExtensionFromPairs(extensionList))
 }
 
 func joinRoleNames(roles []*storage.UserInfo_Role) string {
@@ -149,26 +167,65 @@ func joinRoleNames(roles []*storage.UserInfo_Role) string {
 	return strings.Join(roleNames, ",")
 }
 
-func alertToCEF(alert *storage.Alert) string {
-	// There will be 4-5 different key/value pairs in this message.  Allocate space for 5 because additional
-	// allocations are more expensive than a slightly large list
-	extensionList := make([]string, 0, 5)
+func (s *syslog) alertToCEF(ctx context.Context, alert *storage.Alert) string {
+	// There will be  (4 or 5)+(2 namespace)+len(extra fields) different key/value pairs in this message.
+	extensionList := make([]string, 0, 5+2+len(s.Notifier.GetSyslog().GetExtraFields()))
 
+	alertFirstOccurred := protocompat.ConvertTimestampToTimeOrNil(alert.GetFirstOccurred())
+	alertTime := protocompat.ConvertTimestampToTimeOrNil(alert.GetTime())
 	extensionList = append(extensionList, makeExtensionPair(devicePayloadID, alert.GetId()))
-	extensionList = append(extensionList, makeTimestampExtensionPair(startTime, alert.GetFirstOccurred())...)
-	extensionList = append(extensionList, makeTimestampExtensionPair(deviceReceiptTime, alert.GetTime())...)
+	extensionList = append(extensionList, makeTimestampExtensionPair(startTime, alertFirstOccurred)...)
+	extensionList = append(extensionList, makeTimestampExtensionPair(deviceReceiptTime, alertTime)...)
 	if alert.GetState() == storage.ViolationState_RESOLVED {
-		extensionList = append(extensionList, makeTimestampExtensionPair(endTime, alert.GetTime())...)
+		extensionList = append(extensionList, makeTimestampExtensionPair(endTime, alertTime)...)
 	}
+
+	if namespaceName := getNamespaceFromAlert(alert); namespaceName != "" {
+		extensionList = append(extensionList, makeExtensionPair("ns", alert.GetNamespace()))
+		extensionList = append(extensionList, makeJSONExtensionPair("nslabels", s.metadataGetter.GetNamespaceLabels(ctx, alert)))
+	} else {
+		// This may not be an error as image alerts and certain resource alerts don't have a namespace associated with it
+		log.Debugf("Alert entity doesn't contain namespace: %+v", alert.GetEntity())
+	}
+
 	extensionList = append(extensionList, makeJSONExtensionPair(stackroxKubernetesSecurityPlatformAlert, alert))
+
+	// add custom fields to alert
+	for _, k := range s.Notifier.GetSyslog().GetExtraFields() {
+		extensionList = append(extensionList, makeExtensionPair(k.GetKey(), k.GetValue()))
+	}
 
 	severity := alertToCEFSeverityMap[alert.GetPolicy().GetSeverity()]
 
-	return getCEFHeaderWithExtension("Alert", alert.GetPolicy().GetName(), severity, makeExtensionFromPairs(extensionList))
+	return s.getCEFHeaderWithExtension("Alert", alert.GetPolicy().GetName(), severity, makeExtensionFromPairs(extensionList))
 }
 
-func getCEFHeaderWithExtension(deviceEventClassID, name string, severity int, extension string) string {
-	return fmt.Sprintf("CEF:0|StackRox|Kubernetes Security Platform|%s|%s|%d|%s|%s", version.GetMainVersion(), deviceEventClassID, severity, name, extension)
+func getNamespaceFromAlert(alert *storage.Alert) string {
+	switch entity := alert.GetEntity().(type) {
+	case *storage.Alert_Deployment_:
+		return entity.Deployment.GetNamespace()
+	case *storage.Alert_Resource_:
+		return entity.Resource.GetNamespace()
+	case *storage.Alert_Image:
+		// An image doesn't have a namespace, but it's not an error so just return
+		return ""
+	default:
+		log.Error("Unexpected entity in alert")
+		return ""
+	}
+}
+
+func (s *syslog) getCEFHeaderWithExtension(deviceEventClassID, name string, severity int, extension string) string {
+	// As seen in the GitHub issue (https://github.com/stackrox/stackrox/pull/5414) by @yrro, ACS swapped severity and name in the headers
+	// The change here is to flip it as done in his PR (https://github.com/stackrox/stackrox/pull/5414), however that cannot be done for all users
+	// because it is backwards incompatible. If the new message format field is set to "CEF" format it will send it in the right way.
+	// Otherwise, assume it's an existing old one and send the legacy (incorrect) way.
+	switch s.GetSyslog().GetMessageFormat() {
+	case storage.Syslog_CEF:
+		return fmt.Sprintf("CEF:0|StackRox|Kubernetes Security Platform|%s|%s|%s|%d|%s", version.GetMainVersion(), deviceEventClassID, name, severity, extension)
+	default:
+		return fmt.Sprintf("CEF:0|StackRox|Kubernetes Security Platform|%s|%s|%d|%s|%s", version.GetMainVersion(), deviceEventClassID, severity, name, extension)
+	}
 }
 
 func makeExtensionPair(key, value string) string {
@@ -178,18 +235,19 @@ func makeExtensionPair(key, value string) string {
 func makeJSONExtensionPair(key string, valueObject interface{}) string {
 	value, err := json.Marshal(valueObject)
 	if err != nil {
-		log.Warnf("unable to json marshal audit log field %s due to %v", key, err)
+		log.Warnw("Unable to JSON marshal audit log field",
+			logging.String("audit_log_field", key), logging.Err(err))
 		return makeExtensionPair(key, "missing")
 	}
 	return makeExtensionPair(key, string(value))
 }
 
-func makeTimestampExtensionPair(key string, timestamp *types.Timestamp) []string {
+func makeTimestampExtensionPair(key string, timestamp *time.Time) []string {
 	// string(seconds) + string(milliseconds) should result in the string representation of a millisecond timestamp
 	if timestamp == nil {
 		return nil
 	}
-	msts := strconv.Itoa(int((timestamp.Seconds)*1000 + int64(timestamp.Nanos/1000000)))
+	msts := strconv.Itoa(int((timestamp.Unix())*1000 + int64(timestamp.Nanosecond()/1000000)))
 	return []string{makeExtensionPair(key, msts)}
 }
 
@@ -204,13 +262,21 @@ func (s *syslog) wrapSyslogUnstructuredData(severity int, timestamp time.Time, m
 }
 
 func (s *syslog) AlertNotify(ctx context.Context, alert *storage.Alert) error {
-	unstructuredData := alertToCEF(alert)
+	unstructuredData := s.alertToCEF(ctx, alert)
 	severity := alertToSyslogSeverityMap[alert.GetPolicy().GetSeverity()]
-	timestamp, err := types.TimestampFromProto(alert.GetTime())
+	timestamp, err := protocompat.ConvertTimestampToTimeOrError(alert.GetTime())
 	if err != nil {
 		return err
 	}
-	return s.sendSyslog(severity, timestamp, stackroxKubernetesSecurityPlatformAlert, unstructuredData)
+	err = s.sendSyslog(severity, timestamp, stackroxKubernetesSecurityPlatformAlert, unstructuredData)
+	if err != nil {
+		log.Errorw("Failed to send alert to syslog",
+			logging.Err(err),
+			logging.ErrCode(codes.SyslogGeneric),
+			logging.AlertID(alert.GetId()),
+			logging.NotifierName(s.GetName()))
+	}
+	return err
 }
 
 func (s *syslog) Close(context.Context) error {
@@ -222,14 +288,18 @@ func (s *syslog) ProtoNotifier() *storage.Notifier {
 	return s.Notifier
 }
 
-func (s *syslog) Test(context.Context) error {
-	data := getCEFHeaderWithExtension("Test", "Test", 0, "stackroxKubernetesSecurityPlatformTestMessage=test")
-	return s.sendSyslog(testMessageSeverity, time.Now(), "stackroxKubernetesSecurityPlatformIntegrationTest", data)
+func (s *syslog) Test(context.Context) *notifiers.NotifierError {
+	data := s.getCEFHeaderWithExtension("Test", "Test", 0, "stackroxKubernetesSecurityPlatformTestMessage=test")
+	if err := s.sendSyslog(testMessageSeverity, time.Now(), "stackroxKubernetesSecurityPlatformIntegrationTest", data); err != nil {
+		return notifiers.NewNotifierError("send test syslog failed", err)
+	}
+
+	return nil
 }
 
-func (s *syslog) SendAuditMessage(ctx context.Context, msg *v1.Audit_Message) error {
-	unstructuredData := auditLogToCEF(msg)
-	timestamp, err := types.TimestampFromProto(msg.GetTime())
+func (s *syslog) SendAuditMessage(_ context.Context, msg *v1.Audit_Message) error {
+	unstructuredData := s.auditLogToCEF(msg, s.Notifier)
+	timestamp, err := protocompat.ConvertTimestampToTimeOrError(msg.GetTime())
 	if err != nil {
 		return err
 	}
@@ -237,10 +307,27 @@ func (s *syslog) SendAuditMessage(ctx context.Context, msg *v1.Audit_Message) er
 }
 
 func (s *syslog) AuditLoggingEnabled() bool {
-	return true // TODO: Joseph this will have to change if we allow users to configure which messages are sent to splunk
+	return true // audit logging is always enabled by default for syslog integrations
 }
 
 func (s *syslog) sendSyslog(severity int, timestamp time.Time, messageID, unstructuredData string) error {
-	syslog := s.wrapSyslogUnstructuredData(severity, timestamp, messageID, unstructuredData)
-	return s.sender.SendSyslog([]byte(syslog))
+	syslog := []byte(s.wrapSyslogUnstructuredData(severity, timestamp, messageID, unstructuredData))
+	maxSize := s.maxMessageSize
+	if maxSize == 0 {
+		// If maxSize was 0 because user did not configure max size, do not chunk
+		maxSize = 1<<31 - 1
+	}
+	for len(syslog) != 0 {
+		if err := s.sender.SendSyslog(syslog[0:int(math.Min(float64(maxSize), float64(len(syslog))))]); err != nil {
+			return err
+		}
+		syslog = syslog[int(math.Min(float64(maxSize), float64(len(syslog)))):]
+	}
+	return nil
+}
+
+func init() {
+	notifiers.Add(notifiers.SyslogType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
+		return NewSyslog(notifier, metadatagetter.Singleton())
+	})
 }

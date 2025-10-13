@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
@@ -12,11 +13,8 @@ import (
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 )
-
-var log = logging.LoggerForModule()
 
 // NewExtractor returns a new token-based identity extractor.
 func NewExtractor(roleStore permissions.RoleStore, tokenValidator tokens.Validator) authn.IdentityExtractor {
@@ -31,28 +29,30 @@ type extractor struct {
 	validator tokens.Validator
 }
 
-func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.RequestInfo) (authn.Identity, error) {
+func getExtractorError(msg string, err error) *authn.ExtractorError {
+	return authn.NewExtractorError("token-based", msg, err)
+}
+
+func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.RequestInfo) (authn.Identity, *authn.ExtractorError) {
 	rawToken := authn.ExtractToken(ri.Metadata, "Bearer")
 	if rawToken == "" {
 		return nil, nil
 	}
-
 	token, err := e.validator.Validate(ctx, rawToken)
 	if err != nil {
-		log.Warnf("Token validation failed: %v", err)
-		return nil, errors.New("token validation failed")
+		return nil, getExtractorError("token validation failed", err)
 	}
 
 	// All tokens should have a source.
 	if len(token.Sources) != 1 {
-		return nil, errors.New("tokens must originate from exactly one source")
+		return nil, getExtractorError("tokens must originate from exactly one source", nil)
 	}
 	authProviderSrc, ok := token.Sources[0].(authproviders.Provider)
 	if !ok {
-		return nil, errors.New("API tokens must originate from an authentication provider source")
+		return nil, getExtractorError("API tokens must originate from an authentication provider source", nil)
 	}
 	if !authProviderSrc.Enabled() {
-		return nil, fmt.Errorf("auth provider %s is not enabled", authProviderSrc.Name())
+		return nil, getExtractorError(fmt.Sprintf("auth provider %q is not enabled", authProviderSrc.Name()), nil)
 	}
 
 	// We need all access for retrieving roles and upserting user info. Note that this context
@@ -65,22 +65,32 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 	roleNames := token.RoleNames
 	if token.RoleName != "" {
 		if len(roleNames) != 0 {
-			return nil, errors.New("malformed token: uses both 'roles' and deprecated 'role' claims")
+			return nil, getExtractorError("malformed token: uses both 'roles' and deprecated 'role' claims", nil)
 		}
 		roleNames = []string{token.RoleName}
 	}
 
 	// Anonymous role-based tokens.
 	if len(roleNames) > 0 {
-		return e.withRoleNames(ctx, token, roleNames, authProviderSrc)
+		identityWithRoleNames, errWithRoleNames := e.withRoleNames(ctx, token, roleNames, authProviderSrc)
+		if errWithRoleNames != nil {
+			return nil, getExtractorError("failed to resolve user roles", errWithRoleNames)
+		}
+
+		return identityWithRoleNames, nil
 	}
 
 	// External user token
 	if token.ExternalUser != nil {
-		return e.withExternalUser(ctx, token, authProviderSrc)
+		identityWithExternalUser, errWithExternalUser := e.withExternalUser(ctx, token, authProviderSrc)
+		if errWithExternalUser != nil {
+			return nil, getExtractorError("failed to resolve external user", errWithExternalUser)
+		}
+
+		return identityWithExternalUser, nil
 	}
 
-	return nil, errors.New("could not determine token type")
+	return nil, getExtractorError("could not determine token type", nil)
 }
 
 func (e *extractor) withRoleNames(ctx context.Context, token *tokens.TokenInfo, roleNames []string, authProvider authproviders.Provider) (authn.Identity, error) {
@@ -107,7 +117,12 @@ func (e *extractor) withRoleNames(ctx context.Context, token *tokens.TokenInfo, 
 		authProvider:  authProvider,
 	}
 	if id.friendlyName == "" {
-		id.friendlyName = fmt.Sprintf("anonymous bearer token with roles %s (expires %v)", strings.Join(roleNames, ","), token.Expiry())
+		// Note we use roles as seen in the token, without filtering.
+		id.friendlyName = fmt.Sprintf("anonymous bearer token %q with roles [%s] (jti: %s, expires: %s)",
+			token.Name,
+			strings.Join(roleNames, ","),
+			token.ID,
+			token.Expiry().Format(time.RFC3339))
 	}
 	return id, nil
 }

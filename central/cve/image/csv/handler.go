@@ -14,6 +14,8 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/csv"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
@@ -47,6 +49,35 @@ func initialize() {
 }
 
 func newHandler(resolver *resolvers.Resolver) *csvCommon.HandlerImpl {
+	if features.FlattenCVEData.Enabled() {
+		if features.FlattenImageData.Enabled() {
+			return csvCommon.NewCSVHandler(
+				resolver,
+				// CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.
+				[]*csvCommon.SearchWrapper{
+					csvCommon.NewSearchWrapper(v1.SearchCategory_IMAGE_COMPONENTS_V2, schema.ImageComponentV2Schema.OptionsMap,
+						resolver.ImageComponentV2DataStore),
+					csvCommon.NewSearchWrapper(v1.SearchCategory_IMAGES_V2, csvCommon.ImageV2OnlyOptionsMap, resolver.ImageV2DataStore),
+					csvCommon.NewSearchWrapper(v1.SearchCategory_DEPLOYMENTS, csvCommon.DeploymentOnlyOptionsMap, resolver.DeploymentDataStore),
+					csvCommon.NewSearchWrapper(v1.SearchCategory_NAMESPACES, csvCommon.NamespaceOnlyOptionsMap, resolver.NamespaceDataStore),
+					csvCommon.NewSearchWrapper(v1.SearchCategory_CLUSTERS, schema.ClustersSchema.OptionsMap, resolver.ClusterDataStore),
+				},
+			)
+		}
+		return csvCommon.NewCSVHandler(
+			resolver,
+			// CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.
+			[]*csvCommon.SearchWrapper{
+				csvCommon.NewSearchWrapper(v1.SearchCategory_IMAGE_COMPONENTS_V2, schema.ImageComponentV2Schema.OptionsMap,
+					resolver.ImageComponentV2DataStore),
+				csvCommon.NewSearchWrapper(v1.SearchCategory_IMAGES, csvCommon.ImageOnlyOptionsMap, resolver.ImageDataStore),
+				csvCommon.NewSearchWrapper(v1.SearchCategory_DEPLOYMENTS, csvCommon.DeploymentOnlyOptionsMap, resolver.DeploymentDataStore),
+				csvCommon.NewSearchWrapper(v1.SearchCategory_NAMESPACES, csvCommon.NamespaceOnlyOptionsMap, resolver.NamespaceDataStore),
+				csvCommon.NewSearchWrapper(v1.SearchCategory_CLUSTERS, schema.ClustersSchema.OptionsMap, resolver.ClusterDataStore),
+			},
+		)
+	}
+
 	return csvCommon.NewCSVHandler(
 		resolver,
 		// CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.
@@ -111,14 +142,14 @@ func ImageCVECSVHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		query, rQuery, err := parser.ParseURLQuery(r.URL.Query())
 		if err != nil {
-			csv.WriteError(w, http.StatusBadRequest, err)
+			csv.WriteError(w, errox.InvalidArgs.CausedBy(err))
 			return
 		}
 		rawQuery, paginatedQuery := resolvers.V1RawQueryAsResolverQuery(rQuery)
 
 		cveRows, err := ImageCVECSVRows(loaders.WithLoaderContext(r.Context()), query, rawQuery, paginatedQuery)
 		if err != nil {
-			csv.WriteError(w, http.StatusInternalServerError, err)
+			csv.WriteError(w, errox.ServerError.CausedBy(err))
 			return
 		}
 
@@ -130,7 +161,7 @@ func ImageCVECSVHandler() http.HandlerFunc {
 		for _, row := range cveRows {
 			output.addRow(row)
 		}
-		filename := time.Now().Format("image_cve_export_2006_01_02_15_04_05")
+		filename := time.Now().Format("image_cve_export_2006_01_02_15_04_05") + ".csv"
 		output.Write(w, filename)
 	}
 }
@@ -149,7 +180,7 @@ func ImageCVECSVRows(c context.Context, query *v1.Query, rawQuery resolvers.RawQ
 
 	res := csvHandler.GetResolver()
 	if res == nil {
-		log.Errorf("Unexpected value (nil) for resolver in Handler")
+		log.Error("Unexpected value (nil) for resolver in Handler")
 		return nil, errors.New("Resolver not initialized in handler")
 	}
 	vulnResolvers, err := res.ImageVulnerabilities(ctx, paginatedQuery)

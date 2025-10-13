@@ -6,5 +6,5 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-// OptionsMap contains fields which the indexer should index in a document
+// OptionsMap contains fields for storage.Subject.
 var OptionsMap = search.Walk(v1.SearchCategory_SUBJECTS, "subject", (*storage.Subject)(nil))

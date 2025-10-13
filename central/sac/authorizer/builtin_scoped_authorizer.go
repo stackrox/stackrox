@@ -7,13 +7,13 @@ import (
 	clusterStore "github.com/stackrox/rox/central/cluster/datastore"
 	namespaceStore "github.com/stackrox/rox/central/namespace/datastore"
 	rolePkg "github.com/stackrox/rox/central/role"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sac/observe"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -30,11 +30,11 @@ var (
 func NewBuiltInScopeChecker(ctx context.Context, roles []permissions.ResolvedRole) (sac.ScopeCheckerCore, error) {
 	adminCtx := sac.WithGlobalAccessScopeChecker(ctx, sac.AllowAllAccessScopeChecker())
 
-	clusters, err := clusterStore.Singleton().GetClusters(adminCtx)
+	clusters, err := clusterStore.Singleton().GetClustersForSAC(adminCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all clusters")
 	}
-	namespaces, err := namespaceStore.Singleton().GetAllNamespaces(adminCtx)
+	namespaces, err := namespaceStore.Singleton().GetNamespacesForSAC(adminCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all namespaces")
 	}
@@ -111,6 +111,15 @@ type accessModeLevelScopeCheckerCore struct {
 	access storage.Access
 }
 
+func (a *accessModeLevelScopeCheckerCore) EffectiveAccessScope(resource permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
+	if a.access < resource.Access {
+		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
+	}
+	return a.
+		SubScopeChecker(sac.ResourceScopeKey(resource.Resource.GetResource())).
+		EffectiveAccessScope(resource)
+}
+
 func (a *accessModeLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.ScopeKey) sac.ScopeCheckerCore {
 	scope, ok := scopeKey.(sac.ResourceScopeKey)
 	if !ok {
@@ -170,7 +179,7 @@ func (a *resourceLevelScopeCheckerCore) Allowed() bool {
 	}
 	for _, role := range a.roles {
 		scope, err := a.cache.getEffectiveAccessScope(role.GetAccessScope())
-		if utils.Should(err) != nil {
+		if utils.ShouldErr(err) != nil {
 			return false
 		}
 		if scope.State == effectiveaccessscope.Included {
@@ -190,9 +199,14 @@ func (a *resourceLevelScopeCheckerCore) EffectiveAccessScope(resource permission
 		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
 	}
 	// Ensure replaced resources are also taken into account.
-	if a.resource != resource.Resource && (a.resource.ReplacingResource == nil ||
-		(a.resource.ReplacingResource != nil && *a.resource.ReplacingResource != resource.Resource)) {
+	if a.resource.GetResource() != resource.Resource.GetResource() && (a.resource.ReplacingResource == nil ||
+		(a.resource.ReplacingResource != nil &&
+			a.resource.ReplacingResource.GetResource() != resource.Resource.GetResource())) {
 		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
+	}
+
+	if a.resource.GetScope() == permissions.GlobalScope {
+		return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
 	}
 
 	eas := effectiveaccessscope.DenyAllEffectiveAccessScope()
@@ -235,7 +249,7 @@ type clusterNamespaceLevelScopeCheckerCore struct {
 func (a *clusterNamespaceLevelScopeCheckerCore) Allowed() bool {
 	for _, role := range a.roles {
 		scope, err := a.cache.getEffectiveAccessScope(role.GetAccessScope())
-		if utils.Should(err) != nil {
+		if utils.ShouldErr(err) != nil {
 			return false
 		}
 		if effectiveAccessScopeAllows(scope, a.resource, a.clusterID, a.namespace) {
@@ -306,10 +320,14 @@ func (c *authorizerDataCache) getEffectiveAccessScopeFromCache(id string) *effec
 }
 
 func (c *authorizerDataCache) computeEffectiveAccessScope(accessScope *storage.SimpleAccessScope) (*effectiveaccessscope.ScopeTree, error) {
-	if accessScope == nil || accessScope.Id == rolePkg.AccessScopeExcludeAll.Id {
+	// Note: Below special handling for system scopes AccessScopeExcludeAll and AccessScopeIncludeAll scopes
+	//   is replicated in central/reports/common/utils.go for access scoping vulnerability reports for reporting 2.0 feature.
+	//   Vulnerability report config stores the access scope rules of the user that creates the config and uses those
+	//   rules for scoping future scheduled reports. If the below behavior changes, central/reports/common/utils.go should be updated as well.
+	if accessScope == nil || accessScope.GetId() == rolePkg.AccessScopeExcludeAll.GetId() {
 		return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
 	}
-	if accessScope.Id == rolePkg.AccessScopeIncludeAll.Id {
+	if accessScope.GetId() == rolePkg.AccessScopeIncludeAll.GetId() {
 		return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
 	}
 	eas, err := effectiveaccessscope.ComputeEffectiveAccessScope(accessScope.GetRules(), c.clusters, c.namespaces, v1.ComputeEffectiveAccessScopeRequest_MINIMAL)

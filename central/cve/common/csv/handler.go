@@ -4,20 +4,11 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
-	componentCVEEdgeMappings "github.com/stackrox/rox/central/componentcveedge/mappings"
-	cveMappings "github.com/stackrox/rox/central/cve/mappings"
 	"github.com/stackrox/rox/central/graphql/resolvers"
-	componentMappings "github.com/stackrox/rox/central/imagecomponent/mappings"
-	imageComponentEdgeMappings "github.com/stackrox/rox/central/imagecomponentedge/mappings"
-	nsMappings "github.com/stackrox/rox/central/namespace/index/mappings"
-	nodeMappings "github.com/stackrox/rox/central/node/index/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
-	deploymentMappings "github.com/stackrox/rox/pkg/search/options/deployments"
-	imageMappings "github.com/stackrox/rox/pkg/search/options/images"
 	"github.com/stackrox/rox/pkg/search/scoped"
 )
 
@@ -26,6 +17,8 @@ var (
 	DeploymentOnlyOptionsMap search.OptionsMap
 	// ImageOnlyOptionsMap is OptionsMap containing image only fields
 	ImageOnlyOptionsMap search.OptionsMap
+	// ImageV2OnlyOptionsMap is OptionsMap containing imagev2 only fields
+	ImageV2OnlyOptionsMap search.OptionsMap
 	// NodeOnlyOptionsMap is OptionsMap containing node only fields
 	NodeOnlyOptionsMap search.OptionsMap
 	// NamespaceOnlyOptionsMap is OptionsMap namespace only fields
@@ -33,16 +26,30 @@ var (
 )
 
 func init() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		NamespaceOnlyOptionsMap = search.Difference(schema.NamespacesSchema.OptionsMap, schema.ClustersSchema.OptionsMap)
-		DeploymentOnlyOptionsMap = search.Difference(
-			schema.DeploymentsSchema.OptionsMap,
+	NamespaceOnlyOptionsMap = search.Difference(schema.NamespacesSchema.OptionsMap, schema.ClustersSchema.OptionsMap)
+	var imageOptionsMap search.OptionsMap
+	if features.FlattenImageData.Enabled() {
+		imageOptionsMap = schema.ImagesV2Schema.OptionsMap
+	} else {
+		imageOptionsMap = schema.ImagesSchema.OptionsMap
+	}
+	DeploymentOnlyOptionsMap = search.Difference(
+		schema.DeploymentsSchema.OptionsMap,
+		search.CombineOptionsMaps(
+			schema.ClustersSchema.OptionsMap,
+			schema.NamespacesSchema.OptionsMap,
+			imageOptionsMap,
+		),
+	)
+	if features.FlattenCVEData.Enabled() {
+		ImageOnlyOptionsMap = search.Difference(
+			schema.ImagesSchema.OptionsMap,
 			search.CombineOptionsMaps(
-				schema.ClustersSchema.OptionsMap,
-				schema.NamespacesSchema.OptionsMap,
-				schema.ImagesSchema.OptionsMap,
+				schema.ImageComponentV2Schema.OptionsMap,
+				schema.ImageCvesV2Schema.OptionsMap,
 			),
 		)
+	} else {
 		ImageOnlyOptionsMap = search.Difference(
 			schema.ImagesSchema.OptionsMap,
 			search.CombineOptionsMaps(
@@ -52,43 +59,23 @@ func init() {
 				schema.ImageCvesSchema.OptionsMap,
 			),
 		)
-		NodeOnlyOptionsMap = search.Difference(
-			schema.NodesSchema.OptionsMap,
-			search.CombineOptionsMaps(
-				schema.NodeComponentEdgesSchema.OptionsMap,
-				schema.NodeComponentsSchema.OptionsMap,
-				schema.NodeComponentsCvesEdgesSchema.OptionsMap,
-				schema.NodeCvesSchema.OptionsMap,
-			),
-		)
-	} else {
-		NamespaceOnlyOptionsMap = search.Difference(nsMappings.OptionsMap, clusterMappings.OptionsMap)
-		DeploymentOnlyOptionsMap = search.Difference(deploymentMappings.OptionsMap,
-			search.CombineOptionsMaps(
-				clusterMappings.OptionsMap,
-				nsMappings.OptionsMap,
-				imageMappings.OptionsMap,
-			),
-		)
-		ImageOnlyOptionsMap = search.Difference(
-			imageMappings.OptionsMap,
-			search.CombineOptionsMaps(
-				imageComponentEdgeMappings.OptionsMap,
-				componentMappings.OptionsMap,
-				componentCVEEdgeMappings.OptionsMap,
-				cveMappings.OptionsMap,
-			),
-		)
-		NodeOnlyOptionsMap = search.Difference(
-			nodeMappings.OptionsMap,
-			search.CombineOptionsMaps(
-				imageComponentEdgeMappings.OptionsMap,
-				componentMappings.OptionsMap,
-				componentCVEEdgeMappings.OptionsMap,
-				cveMappings.OptionsMap,
-			),
-		)
 	}
+	ImageV2OnlyOptionsMap = search.Difference(
+		schema.ImagesV2Schema.OptionsMap,
+		search.CombineOptionsMaps(
+			schema.ImageComponentV2Schema.OptionsMap,
+			schema.ImageCvesV2Schema.OptionsMap,
+		),
+	)
+	NodeOnlyOptionsMap = search.Difference(
+		schema.NodesSchema.OptionsMap,
+		search.CombineOptionsMaps(
+			schema.NodeComponentEdgesSchema.OptionsMap,
+			schema.NodeComponentsSchema.OptionsMap,
+			schema.NodeComponentsCvesEdgesSchema.OptionsMap,
+			schema.NodeCvesSchema.OptionsMap,
+		),
+	)
 }
 
 // SearchWrapper is used to extract scope from a cve csv export query
@@ -146,7 +133,7 @@ func (h *HandlerImpl) GetScopeContext(ctx context.Context, query *v1.Query) (con
 		return ctx, nil
 	}
 
-	cloned := query.Clone()
+	cloned := query.CloneVT()
 	// Remove pagination since we are only determining the resource category which should scope the query.
 	cloned.Pagination = nil
 	for _, searchWrapper := range h.searchWrappers {
@@ -168,7 +155,7 @@ func (h *HandlerImpl) GetScopeContext(ctx context.Context, query *v1.Query) (con
 
 		// Add searchWrapper only if we get exactly one match. Currently only scoping by one resource is supported in search.
 		if len(result) == 1 {
-			return scoped.Context(ctx, scoped.Scope{Level: searchWrapper.category, ID: result[0].ID}), nil
+			return scoped.Context(ctx, scoped.Scope{Level: searchWrapper.category, IDs: []string{result[0].ID}}), nil
 		}
 	}
 	return ctx, nil

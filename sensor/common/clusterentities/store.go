@@ -1,12 +1,19 @@
 package clusterentities
 
 import (
-	"github.com/gogo/protobuf/types"
-	"github.com/pkg/errors"
+	"context"
+	"fmt"
+	"maps"
+	"slices"
+	"strings"
+	"time"
+
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/sensor/common/heritage"
 )
 
 // ContainerMetadata is the container metadata that is stored per instance
@@ -18,7 +25,7 @@ type ContainerMetadata struct {
 	ContainerName string
 	ContainerID   string
 	Namespace     string
-	StartTime     *types.Timestamp
+	StartTime     *time.Time
 	ImageID       string
 }
 
@@ -26,52 +33,10 @@ type ContainerMetadata struct {
 // Note: Implementors of this interface must ensure the methods complete in a very short time/do not block, as they
 // get invoked synchronously in a critical section.
 type PublicIPsListener interface {
-	OnAdded(ip net.IPAddress)
-	OnRemoved(ip net.IPAddress)
+	OnUpdate(ips set.Set[net.IPAddress])
 }
 
-// Store is a store for managing cluster entities (currently deployments only) and allows looking them up by
-// endpoint.
-type Store struct {
-	// ipMap maps ip addresses to sets of deployment ids this IP is associated with.
-	ipMap map[net.IPAddress]map[string]struct{}
-	// endpointMap maps endpoints to a (deployment id -> endpoint target info) mapping.
-	endpointMap map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]struct{}
-	// containerIDMap maps container IDs to container metadata
-	containerIDMap map[string]ContainerMetadata
-
-	// reverseIpMap maps deployment ids to sets of IP addresses associated with this deployment.
-	reverseIPMap map[string]map[net.IPAddress]struct{}
-	// reverseEndpointMap maps deployment ids to sets of endpoints associated with this deployment.
-	reverseEndpointMap map[string]map[net.NumericEndpoint]struct{}
-	// reverseContainerIDMap maps deployment ids to sets of container IDs associated with this deployment.
-	reverseContainerIDMap map[string]map[string]struct{}
-	// callbackChannel is a channel to send container metadata upon resolution
-	callbackChannel chan<- ContainerMetadata
-
-	publicIPRefCounts  map[net.IPAddress]*int
-	publicIPsListeners map[PublicIPsListener]struct{}
-
-	mutex sync.RWMutex
-}
-
-// NewStore creates and returns a new store instance.
-// Note: Generally, you probably do not want to call this function, but use the singleton instance returned by
-// `StoreInstance()`.
-func NewStore() *Store {
-	return &Store{
-		ipMap:                 make(map[net.IPAddress]map[string]struct{}),
-		endpointMap:           make(map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]struct{}),
-		containerIDMap:        make(map[string]ContainerMetadata),
-		reverseIPMap:          make(map[string]map[net.IPAddress]struct{}),
-		reverseEndpointMap:    make(map[string]map[net.NumericEndpoint]struct{}),
-		reverseContainerIDMap: make(map[string]map[string]struct{}),
-		publicIPRefCounts:     make(map[net.IPAddress]*int),
-		publicIPsListeners:    make(map[PublicIPsListener]struct{}),
-	}
-}
-
-// EndpointTargetInfo is the target port for an endpoint (container port, service port etc.).
+// EndpointTargetInfo is the target port for an endpoint (container port, service port, etc.).
 type EndpointTargetInfo struct {
 	ContainerPort uint16
 	PortName      string
@@ -82,6 +47,43 @@ type EntityData struct {
 	ips          map[net.IPAddress]struct{}
 	endpoints    map[net.NumericEndpoint][]EndpointTargetInfo
 	containerIDs map[string]ContainerMetadata
+}
+
+func (ed *EntityData) String() string {
+	if ed == nil {
+		return "nil"
+	}
+	return fmt.Sprintf("ips: %v, endpoints: %v, containerIDs: %v",
+		slices.Collect(maps.Keys(ed.ips)), slices.Collect(maps.Keys(ed.endpoints)), slices.Collect(maps.Keys(ed.containerIDs)))
+}
+
+// GetContainerIDs returns containerIDs for container with matching name
+func (ed *EntityData) GetContainerIDs(containerName string) []string {
+	ids := make([]string, 0)
+	for s, metadata := range ed.containerIDs {
+		if metadata.ContainerName == containerName {
+			ids = append(ids, s)
+		}
+	}
+	return ids
+}
+
+// GetValidIPs returns list of valid entity IP addresses
+func (ed *EntityData) GetValidIPs() []net.IPAddress {
+	return slices.DeleteFunc(slices.Collect(maps.Keys(ed.ips)), func(e net.IPAddress) bool {
+		return !e.IsValid()
+	})
+}
+
+// isDeleteOnly prevents from treating a request as ADD with empty values, as such requests should be treated as DELETE
+func (ed *EntityData) isDeleteOnly() bool {
+	if ed == nil {
+		return true
+	}
+	if len(ed.endpoints)+len(ed.containerIDs)+len(ed.ips) == 0 {
+		return true
+	}
+	return false
 }
 
 // AddIP adds an IP address to the set of IP addresses of the respective deployment.
@@ -108,121 +110,260 @@ func (ed *EntityData) AddContainerID(containerID string, container ContainerMeta
 	ed.containerIDs[containerID] = container
 }
 
+// Store is a store for managing cluster entities (currently deployments only) and allows looking them up by
+// endpoint.
+type Store struct {
+	endpointsStore    *endpointsStore
+	podIPsStore       *podIPsStore
+	containerIDsStore *containerIDsStore
+
+	publicIPsTrackingMutex sync.RWMutex
+	publicIPsListeners     set.Set[PublicIPsListener]
+	// callbackChannel is a channel to send container metadata upon resolution
+	callbackChannel chan<- ContainerMetadata
+
+	// pastSensors provides data about past Sensor IPs and container IDs
+	pastSensors HeritageManager
+	// heritageApplied ensures that past heritage data is applied to the current instance only once.
+	heritageApplied concurrency.Signal
+
+	// Cache enriched data for the current instance of Sensor.
+	// This data won't be stored into config map.
+	// It will be used to find the data about the current sensor instance,
+	// so that the past data can be applied to it.
+	currentSensorLock         sync.RWMutex
+	currentSensorDeploymentID string
+	currentSensorEntityData   *EntityData
+
+	// memorySize defines how many ticks old endpoint data should be remembered after removal request
+	// Set to 0 to disable memory
+	memorySize uint16
+
+	// list of events for debugging purposes
+	debugMode  bool
+	traceMutex sync.RWMutex
+	trace      map[string]string
+}
+
+type HeritageManager interface {
+	GetData(ctx context.Context) []*heritage.SensorMetadata
+	SetCurrentSensorData(currentIP, currentContainerID string)
+	IsEnabled() bool
+}
+
+// NewStore returns store that remembers past IPs of an endpoint for a given number of ticks
+func NewStore(numTicks uint16, hm HeritageManager, debugMode bool) *Store {
+	store := &Store{
+		endpointsStore:    newEndpointsStoreWithMemory(numTicks),
+		podIPsStore:       newPodIPsStoreWithMemory(numTicks),
+		containerIDsStore: newContainerIDsStoreWithMemory(numTicks),
+		memorySize:        numTicks,
+		pastSensors:       hm,
+		heritageApplied:   concurrency.NewSignal(),
+		debugMode:         debugMode,
+	}
+	store.initMaps()
+	return store
+}
+
+func (e *Store) initMaps() {
+	e.publicIPsTrackingMutex.Lock()
+	defer e.publicIPsTrackingMutex.Unlock()
+	e.publicIPsListeners = set.NewSet[PublicIPsListener]()
+	e.trace = make(map[string]string)
+	if !e.debugMode {
+		concurrency.WithLock(&e.traceMutex, func() {
+			e.trace["init"] = "events trace disabled in non-debug mode"
+		})
+	}
+}
+
+func (e *Store) resetMaps() {
+	e.endpointsStore.resetMaps()
+	e.podIPsStore.resetMaps()
+	e.containerIDsStore.resetMaps()
+	if e.memorySize == 0 {
+		// delete all tracked public IPs
+		e.updatePublicIPRefs(set.NewSet[net.IPAddress]())
+	}
+}
+
+// Cleanup deletes all entries from store
+func (e *Store) Cleanup() {
+	e.resetMaps()
+}
+
+func (e *Store) GetHeritageManager() HeritageManager {
+	return e.pastSensors
+}
+
+// ApplyDataFromHeritageOnce adds heritage data about past sensors to the store if that hasn't happened yet.
+func (e *Store) ApplyDataFromHeritageOnce() {
+	if e.heritageApplied.IsDone() {
+		return
+	}
+	if !e.pastSensors.IsEnabled() {
+		log.Info("Won't apply heritage data to cluster-entities Store - feature is disabled")
+		e.heritageApplied.Signal()
+		return
+	}
+	if e.applyHeritageData(e.pastSensors) {
+		e.heritageApplied.Signal()
+	}
+}
+
+type dataGetter interface {
+	GetData(ctx context.Context) []*heritage.SensorMetadata
+	IsEnabled() bool
+}
+
+// applyHeritageData adds heritage data about past sensors to the store. Returns true on success, and false otherwise.
+func (e *Store) applyHeritageData(dg dataGetter) bool {
+	// Applying heritage data would pollute the data about current sensor (it would be impossible to tell
+	// the current container ID from the past ones), so we must wait until current sensor metadata is stored.
+	// Only then we can add heritage data to the store.
+	if !e.HasCurrentSensorMetadata() {
+		log.Warnf("Can't apply heritage data - missing current sensor metadata.")
+		return false
+	}
+
+	apiReadCtx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	past := dg.GetData(apiReadCtx)
+	if len(past) == 0 {
+		log.Warnf("Can't apply heritage data - incomplete heritage data.")
+		return false
+	}
+
+	e.currentSensorLock.RLock()
+	defer e.currentSensorLock.RUnlock()
+	for _, entry := range past {
+		log.Infof("Applying heritage data %q to current Sensor deploymentID %s", entry.String(), e.currentSensorDeploymentID)
+		modEntityData := e.currentSensorEntityData
+		if applyPastToEntityData(modEntityData, entry) {
+			e.Apply(map[string]*EntityData{e.currentSensorDeploymentID: modEntityData}, true)
+		}
+	}
+	return true
+}
+
+// RememberCurrentSensorMetadata stores internally current deploymentID and EntityData of Sensor container.
+// The data will be used to identify the target (i.e., finding Sensor in entityStore) to apply the heritage data.
+func (e *Store) RememberCurrentSensorMetadata(deplID string, data *EntityData) {
+	e.currentSensorLock.Lock()
+	defer e.currentSensorLock.Unlock()
+	e.currentSensorDeploymentID = deplID
+	e.currentSensorEntityData = data
+}
+
+func (e *Store) HasCurrentSensorMetadata() bool {
+	e.currentSensorLock.RLock()
+	defer e.currentSensorLock.RUnlock()
+	return e.currentSensorDeploymentID != "" && e.currentSensorEntityData != nil
+}
+
+// applyPastToEntityData returns true if the `past` data was added to `data`; false otherwise.
+func applyPastToEntityData(data *EntityData, past *heritage.SensorMetadata) bool {
+	if _, found := data.containerIDs[past.ContainerID]; found {
+		// The cluster entities store knows about this past instance of sensor. Skip adding.
+		log.Debugf("Cluster entities store already knows about container %s. Skipping.", past.ContainerID)
+		return false
+	}
+	log.Debugf("Adding heritage data: %s", past.String())
+
+	pastIP := net.ParseIP(past.PodIP)
+	// Adding additional pod IP to the Sensor deployment
+	data.AddIP(pastIP)
+	for endpoint, infos := range data.endpoints {
+		// Craft endpoint with the same port and proto but with past IP
+		newEndpoint := net.MakeNumericEndpoint(pastIP, endpoint.IPAndPort.Port, endpoint.L4Proto)
+		// Container port and port name included in `infos` remain the same
+		for _, info := range infos {
+			data.AddEndpoint(newEndpoint, info)
+		}
+	}
+	// Sensor has a few containers. Let's find the `sensor` one.
+	currentSensorContainerID := ""
+	for s, metadata := range data.containerIDs {
+		if metadata.ContainerName == "sensor" {
+			currentSensorContainerID = s
+		}
+	}
+	currentMetaCopy := data.containerIDs[currentSensorContainerID]
+	// This adds a new container to the current sensor deployment.
+	// We could theoretically copy the entire metadata as we do not care whether something has happened
+	// to the past sensor or the current one. However, there maybe some conflicts, so let's set the basics.
+	currentMetaCopy.ContainerID = past.ContainerID
+	currentMetaCopy.StartTime = &past.SensorStart
+	data.containerIDs[past.ContainerID] = currentMetaCopy
+	return true
+}
+
 // Apply applies an update to the store. If incremental is true, data will be added; otherwise, data for each deployment
 // that is a key in the map will be replaced (or deleted).
-func (e *Store) Apply(updates map[string]*EntityData, incremental bool) {
-	e.mutex.Lock()
-	defer e.mutex.Unlock()
-	e.applyNoLock(updates, incremental)
-}
-
-func (e *Store) purgeNoLock(deploymentID string) {
-	for ip := range e.reverseIPMap[deploymentID] {
-		set := e.ipMap[ip]
-		delete(set, deploymentID)
-		if len(set) == 0 {
-			delete(e.ipMap, ip)
-			if ip.IsPublic() {
-				e.decPublicIPRefNoLock(ip)
-			}
-		}
-	}
-	for ep := range e.reverseEndpointMap[deploymentID] {
-		set := e.endpointMap[ep]
-		delete(set, deploymentID)
-		if len(set) == 0 {
-			delete(e.endpointMap, ep)
-			if ipAddr := ep.IPAndPort.Address; ipAddr.IsPublic() {
-				e.decPublicIPRefNoLock(ipAddr)
-			}
-		}
-	}
-	for containerID := range e.reverseContainerIDMap[deploymentID] {
-		delete(e.containerIDMap, containerID)
-	}
-
-	delete(e.reverseIPMap, deploymentID)
-	delete(e.reverseEndpointMap, deploymentID)
-	delete(e.reverseContainerIDMap, deploymentID)
-}
-
-func (e *Store) applyNoLock(updates map[string]*EntityData, incremental bool) {
-	if !incremental {
-		for deploymentID := range updates {
-			e.purgeNoLock(deploymentID)
+func (e *Store) Apply(updates map[string]*EntityData, incremental bool, auxInfo ...string) {
+	if e.debugMode {
+		for id, data := range updates {
+			e.track("add-deployment (%s) overwrite=%t ID=%s, data=%v", auxInfo, !incremental, id, data.String())
 		}
 	}
 
-	for deploymentID, data := range updates {
-		if data == nil {
-			continue
-		}
-		e.applySingleNoLock(deploymentID, *data)
+	// Order matters: Endpoints must be applied before IPs, as the IP store may query the endpoints store to check
+	// whether a given IP is used by other endpoints.
+	e.endpointsStore.Apply(updates, incremental)
+	e.podIPsStore.Apply(updates, incremental)
+
+	e.updatePublicIPRefs(e.currentlyStoredPublicIPs())
+
+	callbacks := e.containerIDsStore.Apply(updates, incremental)
+	if e.callbackChannel != nil && len(callbacks) > 0 {
+		go sendMetadataCallbacks(e.callbackChannel, callbacks)
 	}
 }
 
-func (e *Store) applySingleNoLock(deploymentID string, data EntityData) {
-	reverseEPs := e.reverseEndpointMap[deploymentID]
-	reverseIPs := e.reverseIPMap[deploymentID]
-	reverseContainerIDs := e.reverseContainerIDMap[deploymentID]
-
-	for ep, targetInfos := range data.endpoints {
-		if reverseEPs == nil {
-			reverseEPs = make(map[net.NumericEndpoint]struct{})
-			e.reverseEndpointMap[deploymentID] = reverseEPs
-		}
-		reverseEPs[ep] = struct{}{}
-
-		epMap := e.endpointMap[ep]
-		if epMap == nil {
-			epMap = make(map[string]map[EndpointTargetInfo]struct{})
-			e.endpointMap[ep] = epMap
-			if ipAddr := ep.IPAndPort.Address; ipAddr.IsPublic() {
-				e.incPublicIPRefNoLock(ipAddr)
+// currentlyStoredPublicIPs returns all public IPs currently stored in the store (including history).
+func (e *Store) currentlyStoredPublicIPs() set.Set[net.IPAddress] {
+	s := set.NewSet[net.IPAddress]()
+	concurrency.WithRLock(&e.endpointsStore.mutex, func() {
+		for endpoint := range e.endpointsStore.endpointMap {
+			if endpoint.IPAndPort.Address.IsPublic() {
+				s.Add(endpoint.IPAndPort.Address)
 			}
 		}
-		targetSet := epMap[deploymentID]
-		if targetSet == nil {
-			targetSet = make(map[EndpointTargetInfo]struct{})
-			epMap[deploymentID] = targetSet
-		}
-		for _, tgtInfo := range targetInfos {
-			targetSet[tgtInfo] = struct{}{}
-		}
-	}
-
-	for ip := range data.ips {
-		if reverseIPs == nil {
-			reverseIPs = make(map[net.IPAddress]struct{})
-			e.reverseIPMap[deploymentID] = reverseIPs
-		}
-		reverseIPs[ip] = struct{}{}
-
-		ipMap := e.ipMap[ip]
-		if ipMap == nil {
-			ipMap = make(map[string]struct{})
-			e.ipMap[ip] = ipMap
-			if ip.IsPublic() {
-				e.incPublicIPRefNoLock(ip)
+		for endpoint := range e.endpointsStore.historicalEndpoints {
+			if endpoint.IPAndPort.Address.IsPublic() {
+				s.Add(endpoint.IPAndPort.Address)
 			}
 		}
-		ipMap[deploymentID] = struct{}{}
-	}
-
-	mdsForCallback := make([]ContainerMetadata, 0, len(data.containerIDs))
-	for containerID, metadata := range data.containerIDs {
-		if reverseContainerIDs == nil {
-			reverseContainerIDs = make(map[string]struct{})
-			e.reverseContainerIDMap[deploymentID] = reverseContainerIDs
+	})
+	concurrency.WithRLock(&e.podIPsStore.mutex, func() {
+		for address := range e.podIPsStore.ipMap {
+			if address.IsPublic() {
+				s.Add(address)
+			}
 		}
-		reverseContainerIDs[containerID] = struct{}{}
-		e.containerIDMap[containerID] = metadata
-		mdsForCallback = append(mdsForCallback, metadata)
-	}
+		for address := range e.podIPsStore.historicalIPs {
+			if address.IsPublic() {
+				s.Add(address)
+			}
+		}
+	})
+	return s
+}
 
-	if e.callbackChannel != nil && len(mdsForCallback) > 0 {
-		go sendMetadataCallbacks(e.callbackChannel, mdsForCallback)
+// RecordTick records the information that a unit of time (1 tick) has passed
+func (e *Store) RecordTick() {
+	e.track("Tick")
+	// Avoid or-statements like "a.RecordTick() || b.RecordTick()"
+	// because there is no guarantee that b.RecordTick() will be called.
+	removedPubIP := e.podIPsStore.RecordTick()
+	removedEpWithPubIP := e.endpointsStore.RecordTick()
+	if removedPubIP || removedEpWithPubIP {
+		// If there are any public IPs expiring in this tick, then we need to update the listeners.
+		e.updatePublicIPRefs(e.currentlyStoredPublicIPs())
 	}
+	e.containerIDsStore.RecordTick()
 }
 
 func sendMetadataCallbacks(callbackC chan<- ContainerMetadata, mds []ContainerMetadata) {
@@ -235,8 +376,8 @@ func sendMetadataCallbacks(callbackC chan<- ContainerMetadata, mds []ContainerMe
 // Any previously registered callback channel will get overwritten by repeatedly calling this method. The previous
 // callback channel (if any) is returned by this function.
 func (e *Store) RegisterContainerMetadataCallbackChannel(callbackChan chan<- ContainerMetadata) chan<- ContainerMetadata {
-	e.mutex.Lock()
-	defer e.mutex.Unlock()
+	e.publicIPsTrackingMutex.Lock()
+	defer e.publicIPsTrackingMutex.Unlock()
 
 	oldChan := e.callbackChannel
 	e.callbackChannel = callbackChan
@@ -251,104 +392,71 @@ type LookupResult struct {
 }
 
 // LookupByEndpoint returns possible target deployments by endpoint (if any).
+// If no matching graph Entity is found by Endpoint, the podIP store is searched
 func (e *Store) LookupByEndpoint(endpoint net.NumericEndpoint) []LookupResult {
-	e.mutex.RLock()
-	defer e.mutex.RUnlock()
-	return e.lookupNoLock(endpoint)
+	current, historical, ipLookup, ipLookupHistorical := e.endpointsStore.lookupEndpoint(endpoint, e.podIPsStore)
+	// Return early to avoid potential duplicates... not sure if duplicates are bad here.
+	if len(current)+len(historical) > 0 {
+		e.track("LookupByEndpoint(%s): found=true, foundIn=endpointsStore", endpoint.String())
+		return append(current, historical...)
+	}
+	if len(ipLookup)+len(ipLookupHistorical) > 0 {
+		e.track("LookupByEndpoint(%s): found=true, foundIn=ipLookup", endpoint.String())
+		return append(ipLookupHistorical, ipLookup...)
+	}
+	e.track("LookupByEndpoint(%s): found=false", endpoint.String())
+	return []LookupResult{}
 }
 
 // LookupByContainerID retrieves the deployment ID by a container ID.
-func (e *Store) LookupByContainerID(containerID string) (ContainerMetadata, bool) {
-	e.mutex.RLock()
-	defer e.mutex.RUnlock()
-	metadata, ok := e.containerIDMap[containerID]
-	return metadata, ok
-}
-
-func (e *Store) lookupNoLock(endpoint net.NumericEndpoint) (results []LookupResult) {
-	for deploymentID, targetInfoSet := range e.endpointMap[endpoint] {
-		result := LookupResult{
-			Entity:         networkgraph.EntityForDeployment(deploymentID),
-			ContainerPorts: make([]uint16, 0, len(targetInfoSet)),
-		}
-		for tgtInfo := range targetInfoSet {
-			result.ContainerPorts = append(result.ContainerPorts, tgtInfo.ContainerPort)
-			if tgtInfo.PortName != "" {
-				result.PortNames = append(result.PortNames, tgtInfo.PortName)
-			}
-		}
-		results = append(results, result)
-	}
-
-	if len(results) > 0 {
-		return
-	}
-
-	for deploymentID := range e.ipMap[endpoint.IPAndPort.Address] {
-		result := LookupResult{
-			Entity:         networkgraph.EntityForDeployment(deploymentID),
-			ContainerPorts: []uint16{endpoint.IPAndPort.Port},
-		}
-		results = append(results, result)
-	}
-
-	return
+func (e *Store) LookupByContainerID(containerID string) (metadata ContainerMetadata, found bool, isHistorical bool) {
+	metadata, found, isHistorical = e.containerIDsStore.lookupByContainer(containerID)
+	e.track("LookupByContainerID(%s): found=%t", containerID, found)
+	return metadata, found, isHistorical
 }
 
 // RegisterPublicIPsListener registers a listener that listens on changes to the set of public IP addresses.
 // It returns a boolean indicating whether the listener was actually unregistered (i.e., a return value of false
 // indicates that the listener was already registered).
 func (e *Store) RegisterPublicIPsListener(listener PublicIPsListener) bool {
-	// This mutex is pretty broad in scope, but since registering listeners occurs rarely, it's better than adding
-	// another mutex that would need to get locked separately.
-	e.mutex.Lock()
-	defer e.mutex.Unlock()
-
-	oldLen := len(e.publicIPsListeners)
-	e.publicIPsListeners[listener] = struct{}{}
-
-	return len(e.publicIPsListeners) > oldLen
+	// This publicIPsTrackingMutex is pretty broad in scope, but since registering listeners occurs rarely, it's better than adding
+	// another publicIPsTrackingMutex that would need to get locked separately.
+	e.publicIPsTrackingMutex.Lock()
+	defer e.publicIPsTrackingMutex.Unlock()
+	return e.publicIPsListeners.Add(listener)
 }
 
 // UnregisterPublicIPsListener unregisters a previously registered listener for public IP events. It returns a boolean
 // indicating whether the listener was actually unregistered (i.e., a return value of false indicates that the listener
 // was not registered in the first place).
 func (e *Store) UnregisterPublicIPsListener(listener PublicIPsListener) bool {
-	e.mutex.Lock()
-	defer e.mutex.Lock()
-
-	oldLen := len(e.publicIPsListeners)
-	delete(e.publicIPsListeners, listener)
-
-	return len(e.publicIPsListeners) < oldLen
+	e.publicIPsTrackingMutex.Lock()
+	defer e.publicIPsTrackingMutex.Unlock()
+	return e.publicIPsListeners.Remove(listener)
 }
 
-func (e *Store) incPublicIPRefNoLock(addr net.IPAddress) {
-	refCnt := e.publicIPRefCounts[addr]
-	if refCnt == nil {
-		refCnt = new(int)
-		e.publicIPRefCounts[addr] = refCnt
-		e.notifyPublicIPsListenersNoLock(PublicIPsListener.OnAdded, addr)
-	}
-	*refCnt++
+func (e *Store) updatePublicIPRefs(addrs set.Set[net.IPAddress]) {
+	e.notifyPublicIPsListenersNoLock(PublicIPsListener.OnUpdate, addrs)
 }
 
-func (e *Store) decPublicIPRefNoLock(addr net.IPAddress) {
-	refCnt := e.publicIPRefCounts[addr]
-	if refCnt == nil {
-		utils.Should(errors.New("public IP has zero refcount already"))
-		return
-	}
-
-	*refCnt--
-	if *refCnt == 0 {
-		delete(e.publicIPRefCounts, addr)
-		e.notifyPublicIPsListenersNoLock(PublicIPsListener.OnRemoved, addr)
-	}
-}
-
-func (e *Store) notifyPublicIPsListenersNoLock(notifyFunc func(PublicIPsListener, net.IPAddress), ip net.IPAddress) {
+func (e *Store) notifyPublicIPsListenersNoLock(notifyFunc func(PublicIPsListener, set.Set[net.IPAddress]), ips set.Set[net.IPAddress]) {
+	e.publicIPsTrackingMutex.RLock()
+	defer e.publicIPsTrackingMutex.RUnlock()
 	for listener := range e.publicIPsListeners {
-		notifyFunc(listener, ip)
+		notifyFunc(listener, ips)
 	}
+}
+
+func prettyPrintHistoricalData[M ~map[K1]map[K2]*entityStatus, K1 comparable, K2 comparable](data M) string {
+	if len(data) == 0 {
+		return "history is empty"
+	}
+	fragments := make([]string, 0, len(data))
+	for ID, m := range data {
+		for _, status := range m {
+			fragments = append(fragments,
+				fmt.Sprintf("[ID=%v, ticksLeft=%d]", ID, status.ticksLeft))
+		}
+	}
+	return strings.Join(fragments, "\n")
 }

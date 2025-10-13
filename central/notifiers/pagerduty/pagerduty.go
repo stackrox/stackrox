@@ -1,23 +1,28 @@
 package pagerduty
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	pd "github.com/PagerDuty/go-pagerduty"
-	"github.com/gogo/protobuf/types"
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/notifiers"
+	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events/codes"
+	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	imagesTypes "github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -48,22 +53,21 @@ type pagerDuty struct {
 	routingKey string
 }
 
-func init() {
-	notifiers.Add("pagerduty", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		s, err := newPagerDuty(notifier)
-		return s, err
-	})
-}
-
-func newPagerDuty(notifier *storage.Notifier) (*pagerDuty, error) {
-	pagerDutyConfig, ok := notifier.GetConfig().(*storage.Notifier_Pagerduty)
-	if !ok {
-		return nil, errors.New("PagerDuty configuration required")
-	}
-	conf := pagerDutyConfig.Pagerduty
-	if err := validate(conf); err != nil {
+func newPagerDuty(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCodec, cryptoKey string) (*pagerDuty, error) {
+	conf := notifier.GetPagerduty()
+	if err := Validate(conf, !env.EncNotifierCreds.BooleanSetting()); err != nil {
 		return nil, err
 	}
+
+	decCreds := conf.GetApiKey()
+	var err error
+	if env.EncNotifierCreds.BooleanSetting() {
+		decCreds, err = cryptoCodec.Decrypt(cryptoKey, notifier.GetNotifierSecret())
+		if err != nil {
+			return nil, errors.Errorf("Error decrypting notifier secret for notifier '%s'", notifier.GetName())
+		}
+	}
+
 	pdClient := pd.NewClient("")
 	pdClient.HTTPClient = &http.Client{
 		Transport: proxy.RoundTripper(),
@@ -71,12 +75,13 @@ func newPagerDuty(notifier *storage.Notifier) (*pagerDuty, error) {
 	return &pagerDuty{
 		Notifier:   notifier,
 		pdClient:   pdClient,
-		routingKey: conf.GetApiKey(),
+		routingKey: decCreds,
 	}, nil
 }
 
-func validate(conf *storage.PagerDuty) error {
-	if len(conf.ApiKey) == 0 {
+// Validate PagerDuty notifier
+func Validate(conf *storage.PagerDuty, validateSecret bool) error {
+	if validateSecret && len(conf.GetApiKey()) == 0 {
 		return errors.New("PagerDuty API key must be specified")
 	}
 	return nil
@@ -86,7 +91,7 @@ func (*pagerDuty) Close(context.Context) error {
 	return nil
 }
 
-func (p *pagerDuty) AlertNotify(ctx context.Context, alert *storage.Alert) error {
+func (p *pagerDuty) AlertNotify(_ context.Context, alert *storage.Alert) error {
 	return p.postAlert(alert, newAlert)
 }
 
@@ -94,8 +99,8 @@ func (p *pagerDuty) ProtoNotifier() *storage.Notifier {
 	return p.Notifier
 }
 
-func (p *pagerDuty) Test(ctx context.Context) error {
-	return p.postAlert(&storage.Alert{
+func (p *pagerDuty) Test(_ context.Context) *notifiers.NotifierError {
+	err := p.postAlert(&storage.Alert{
 		Id: uuid.NewDummy().String(),
 		Policy: &storage.Policy{
 			Name:        "Test PagerDuty Policy",
@@ -111,15 +116,21 @@ func (p *pagerDuty) Test(ctx context.Context) error {
 		Violations: []*storage.Alert_Violation{
 			{Message: "This is a sample pagerduty alert message created to test integration with StackRox."},
 		},
-		Time: types.TimestampNow(),
+		Time: protocompat.TimestampNow(),
 	}, newAlert)
+
+	if err != nil {
+		return notifiers.NewNotifierError("send PagerDuty alert failed", err)
+	}
+
+	return nil
 }
 
-func (p *pagerDuty) AckAlert(ctx context.Context, alert *storage.Alert) error {
+func (p *pagerDuty) AckAlert(_ context.Context, alert *storage.Alert) error {
 	return p.postAlert(alert, ackAlert)
 }
 
-func (p *pagerDuty) ResolveAlert(ctx context.Context, alert *storage.Alert) error {
+func (p *pagerDuty) ResolveAlert(_ context.Context, alert *storage.Alert) error {
 	return p.postAlert(alert, resolveAlert)
 }
 
@@ -133,7 +144,9 @@ func (p *pagerDuty) postAlert(alert *storage.Alert, eventType string) error {
 	resp, err := p.pdClient.ManageEvent(&pagerDutyEvent)
 
 	if err != nil {
-		log.Errorf("PagerDuty response: %+v. Error: %s", resp, err)
+		log.Errorw("Error sending alert to PagerDuty",
+			logging.Any("response", resp), logging.Err(err), logging.ErrCode(codes.PagerDutyGeneric),
+			logging.NotifierName(p.GetName()))
 
 		matches := httpStatusCodePattern.FindAllString(err.Error(), 1)
 		if len(matches) == 0 {
@@ -145,7 +158,6 @@ func (p *pagerDuty) postAlert(alert *storage.Alert, eventType string) error {
 			return err
 		}
 		if statusCode != http.StatusAccepted {
-			log.Errorf("PagerDuty error response: %v", err)
 			return errors.Errorf("Received HTTP status code %d from PagerDuty. Check central logs for full error.", statusCode)
 		}
 	}
@@ -158,7 +170,7 @@ func (p *pagerDuty) createPagerDutyEvent(alert *storage.Alert, eventType string)
 	payload := &pd.V2Payload{
 		Summary:   notifiers.SummaryForAlert(alert),
 		Severity:  severityMap[alert.GetPolicy().GetSeverity()],
-		Timestamp: alert.GetTime().String(),
+		Timestamp: alert.GetTime().AsTime().Format(time.RFC3339Nano),
 		Class:     strings.Join(alert.GetPolicy().GetCategories(), " "),
 		Details:   (*marshalableAlert)(alert),
 	}
@@ -171,14 +183,18 @@ func (p *pagerDuty) createPagerDutyEvent(alert *storage.Alert, eventType string)
 		payload.Source = fmt.Sprintf("Image from %s/%s", entity.Image.GetName().GetRemote(), entity.Image.GetName().GetRegistry())
 		payload.Component = fmt.Sprintf("Image %s", imagesTypes.Wrapper{GenericImage: entity.Image}.FullName())
 	case *storage.Alert_Resource_:
-		payload.Source = fmt.Sprintf("%s/%s", entity.Resource.GetClusterName(), entity.Resource.GetNamespace())
+		if entity.Resource.GetNamespace() != "" {
+			payload.Source = fmt.Sprintf("%s/%s", entity.Resource.GetClusterName(), entity.Resource.GetNamespace())
+		} else {
+			payload.Source = entity.Resource.GetClusterName()
+		}
 		payload.Component = fmt.Sprintf("%s %s", entity.Resource.GetResourceType(), entity.Resource.GetName())
 	}
 	return pd.V2Event{
 		Action:     eventType,
 		RoutingKey: p.routingKey,
 		Client:     client,
-		ClientURL:  notifiers.AlertLink(p.Notifier.UiEndpoint, alert),
+		ClientURL:  notifiers.AlertLink(p.Notifier.GetUiEndpoint(), alert),
 		DedupKey:   alert.GetId(),
 		Payload:    payload,
 	}, nil
@@ -189,14 +205,30 @@ type marshalableAlert storage.Alert
 
 // MarshalJSON marshals alert data to bytes, following jsonpb rules.
 func (a *marshalableAlert) MarshalJSON() ([]byte, error) {
-	var buf bytes.Buffer
-	if err := (&jsonpb.Marshaler{}).Marshal(&buf, (*storage.Alert)(a)); err != nil {
+	payload, err := jsonutil.MarshalToString((*storage.Alert)(a))
+	if err != nil {
 		return nil, err
 	}
-	return buf.Bytes(), nil
+	return []byte(payload), nil
 }
 
 // UnmarshalJSON unmarshals alert JSON bytes into an Alert object, following jsonpb rules.
 func (a *marshalableAlert) UnmarshalJSON(data []byte) error {
-	return jsonpb.Unmarshal(bytes.NewReader(data), (*storage.Alert)(a))
+	return jsonutil.JSONBytesToProto(data, (*storage.Alert)(a))
+}
+
+func init() {
+	cryptoKey := ""
+	var err error
+	if env.EncNotifierCreds.BooleanSetting() {
+		cryptoKey, _, err = notifierUtils.GetActiveNotifierEncryptionKey()
+		if err != nil {
+			utils.Should(errors.Wrap(err, "Error reading encryption key, notifier will be unable to send notifications"))
+		}
+	}
+
+	notifiers.Add(notifiers.PagerDutyType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
+		s, err := newPagerDuty(notifier, cryptocodec.Singleton(), cryptoKey)
+		return s, err
+	})
 }

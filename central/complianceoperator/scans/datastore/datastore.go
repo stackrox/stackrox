@@ -5,9 +5,9 @@ import (
 
 	"github.com/pkg/errors"
 	store "github.com/stackrox/rox/central/complianceoperator/scans/store"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 var (
@@ -15,6 +15,8 @@ var (
 )
 
 // DataStore defines the possible interactions with compliance operator rules
+//
+//go:generate mockgen-wrapper
 type DataStore interface {
 	Walk(ctx context.Context, fn func(rule *storage.ComplianceOperatorScan) error) error
 	Upsert(ctx context.Context, rule *storage.ComplianceOperatorScan) error

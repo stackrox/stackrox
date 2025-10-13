@@ -1,6 +1,0 @@
-{
-  "id": "8ac93556-4ad4-4220-a275-3f518db0ceb9",
-  "name": "Container using read-write root filesystem",
-  "mitreAttackVectors": null,
-  "mitreVectorsLocked": true
-}

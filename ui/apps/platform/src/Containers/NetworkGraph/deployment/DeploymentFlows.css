@@ -1,0 +1,11 @@
+.pf-v5-c-table__toggle {
+    padding: 0 !important;
+}
+
+tbody tr.pf-v5-c-table__expandable-row td.pf-v5-c-table__check label {
+    padding: 0;
+}
+
+.advanced-flows-filters-select .pf-v5-c-select__menu {
+    min-width: 300px;
+}

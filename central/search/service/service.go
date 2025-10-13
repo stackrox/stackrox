@@ -9,8 +9,9 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
+	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
-	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
+	nodeDataStore "github.com/stackrox/rox/central/node/datastore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	categoryDataStore "github.com/stackrox/rox/central/policycategory/datastore"
 	roleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
@@ -42,10 +43,11 @@ type Builder interface {
 	WithAlertStore(store alertDataStore.DataStore) Builder
 	WithDeploymentStore(store deploymentDataStore.DataStore) Builder
 	WithImageStore(store imageDataStore.DataStore) Builder
+	WithImageV2Store(store imageV2Datastore.DataStore) Builder
 	WithPolicyStore(store policyDataStore.DataStore) Builder
 	WithSecretStore(store secretDataStore.DataStore) Builder
 	WithServiceAccountStore(store serviceAccountDataStore.DataStore) Builder
-	WithNodeStore(store nodeDataStore.GlobalDataStore) Builder
+	WithNodeStore(store nodeDataStore.DataStore) Builder
 	WithNamespaceStore(store namespaceDataStore.DataStore) Builder
 	WithRiskStore(store riskDataStore.DataStore) Builder
 	WithRoleStore(store roleDataStore.DataStore) Builder
@@ -62,10 +64,11 @@ type serviceBuilder struct {
 	alerts            alertDataStore.DataStore
 	deployments       deploymentDataStore.DataStore
 	images            imageDataStore.DataStore
+	imagesV2          imageV2Datastore.DataStore
 	policies          policyDataStore.DataStore
 	secrets           secretDataStore.DataStore
 	serviceAccounts   serviceAccountDataStore.DataStore
-	nodes             nodeDataStore.GlobalDataStore
+	nodes             nodeDataStore.DataStore
 	namespaces        namespaceDataStore.DataStore
 	risks             riskDataStore.DataStore
 	roles             roleDataStore.DataStore
@@ -92,7 +95,18 @@ func (b *serviceBuilder) WithDeploymentStore(store deploymentDataStore.DataStore
 }
 
 func (b *serviceBuilder) WithImageStore(store imageDataStore.DataStore) Builder {
+	if features.FlattenImageData.Enabled() {
+		return b
+	}
 	b.images = store
+	return b
+}
+
+func (b *serviceBuilder) WithImageV2Store(store imageV2Datastore.DataStore) Builder {
+	if !features.FlattenImageData.Enabled() {
+		return b
+	}
+	b.imagesV2 = store
 	return b
 }
 
@@ -111,7 +125,7 @@ func (b *serviceBuilder) WithServiceAccountStore(store serviceAccountDataStore.D
 	return b
 }
 
-func (b *serviceBuilder) WithNodeStore(store nodeDataStore.GlobalDataStore) Builder {
+func (b *serviceBuilder) WithNodeStore(store nodeDataStore.DataStore) Builder {
 	b.nodes = store
 	return b
 }
@@ -161,6 +175,7 @@ func (b *serviceBuilder) Build() Service {
 		alerts:            b.alerts,
 		deployments:       b.deployments,
 		images:            b.images,
+		imagesV2:          b.imagesV2,
 		policies:          b.policies,
 		secrets:           b.secrets,
 		serviceaccounts:   b.serviceAccounts,
@@ -184,6 +199,7 @@ func NewService() Service {
 		WithAlertStore(alertDataStore.Singleton()).
 		WithDeploymentStore(deploymentDataStore.Singleton()).
 		WithImageStore(imageDataStore.Singleton()).
+		WithImageV2Store(imageV2Datastore.Singleton()).
 		WithPolicyStore(policyDataStore.Singleton()).
 		WithSecretStore(secretDataStore.Singleton()).
 		WithServiceAccountStore(serviceAccountDataStore.Singleton()).
@@ -194,10 +210,7 @@ func NewService() Service {
 		WithRoleBindingStore(roleBindingDataStore.Singleton()).
 		WithAggregator(aggregation.Singleton()).
 		WithClusterDataStore(clusterDataStore.Singleton()).
-		WithImageIntegrationStore(imageIntegrationDataStore.Singleton())
-
-	if features.NewPolicyCategories.Enabled() {
-		builder = builder.WithPolicyCategoryDataStore(categoryDataStore.Singleton())
-	}
+		WithImageIntegrationStore(imageIntegrationDataStore.Singleton()).
+		WithPolicyCategoryDataStore(categoryDataStore.Singleton())
 	return builder.Build()
 }

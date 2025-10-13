@@ -66,7 +66,7 @@ func (a action) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	a.serveHTTPConfirmDialog(w, req)
 }
 
-func (a action) serveHTTPAction(w http.ResponseWriter, req *http.Request) {
+func (a action) serveHTTPAction(w http.ResponseWriter, _ *http.Request) {
 	err := a.do()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

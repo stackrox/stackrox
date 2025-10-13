@@ -59,11 +59,11 @@ func (c ScopeTreeCompacted) ToScopeQueries() []string {
 	scopeQueries := make([]string, 0, len(c))
 	for cluster, namespaces := range c {
 		if len(namespaces) == 1 && namespaces[0] == "*" {
-			scopeQueries = append(scopeQueries, fmt.Sprintf("%s:%s", search.Cluster.String(), cluster))
+			scopeQueries = append(scopeQueries, fmt.Sprintf("%s:%q", search.Cluster.String(), cluster))
 			continue
 		}
 		for _, ns := range namespaces {
-			scopeQueries = append(scopeQueries, fmt.Sprintf("%s:%s+%s:%s",
+			scopeQueries = append(scopeQueries, fmt.Sprintf("%s:%q+%s:%q",
 				search.Cluster.String(), cluster,
 				search.Namespace.String(), ns))
 		}

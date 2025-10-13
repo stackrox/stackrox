@@ -6,12 +6,12 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
+	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"helm.sh/helm/v3/pkg/chartutil"
 )
 
 func getBaseConfig() Config {
@@ -19,8 +19,9 @@ func getBaseConfig() Config {
 		ClusterType: storage.ClusterType_KUBERNETES_CLUSTER,
 		K8sConfig: &K8sConfig{
 			CommonConfig: CommonConfig{
-				MainImage:    "stackrox/main:2.2.11.0-57-g392c0f5bed-dirty",
-				ScannerImage: "stackrox.io/scanner:0.4.2",
+				MainImage:      "stackrox/main:2.2.11.0-57-g392c0f5bed-dirty",
+				ScannerImage:   "stackrox.io/scanner:0.4.2",
+				ScannerV4Image: "stackrox.io/scanner-v4:0.5.0",
 			},
 		},
 	}
@@ -32,25 +33,17 @@ func TestRender(t *testing.T) {
 
 type renderSuite struct {
 	suite.Suite
-	restorer    *testbuildinfo.TestBuildTimestampRestorer
-	envIsolator *envisolator.EnvIsolator
-	testFlavor  defaults.ImageFlavor
+	testFlavor defaults.ImageFlavor
 }
 
 func (suite *renderSuite) SetupSuite() {
-	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
-	suite.envIsolator.Setenv("TEST_VERSIONS", "true")
+	suite.T().Setenv("TEST_VERSIONS", "true")
 	suite.testFlavor = flavorUtils.MakeImageFlavorForTest(suite.T())
-}
-
-func (suite *renderSuite) TearDownSuite() {
-	suite.restorer.Restore()
-	suite.envIsolator.RestoreAll()
 }
 
 func (suite *renderSuite) testWithHostPath(t *testing.T, c Config) {
 	c.HostPath = &HostPathPersistence{
-		Central: &HostPathPersistenceInstance{
+		DB: &HostPathPersistenceInstance{
 			HostPath: "/var/lib/stackrox",
 		},
 	}
@@ -58,7 +51,7 @@ func (suite *renderSuite) testWithHostPath(t *testing.T, c Config) {
 	assert.NoError(t, err)
 
 	c.HostPath = &HostPathPersistence{
-		Central: &HostPathPersistenceInstance{
+		DB: &HostPathPersistenceInstance{
 			HostPath:          "/var/lib/stackrox",
 			NodeSelectorKey:   "key",
 			NodeSelectorValue: "value",
@@ -70,7 +63,7 @@ func (suite *renderSuite) testWithHostPath(t *testing.T, c Config) {
 
 func (suite *renderSuite) testWithPV(t *testing.T, c Config) {
 	c.External = &ExternalPersistence{
-		Central: &ExternalPersistenceInstance{
+		DB: &ExternalPersistenceInstance{
 			Name: "name",
 		},
 	}
@@ -78,7 +71,7 @@ func (suite *renderSuite) testWithPV(t *testing.T, c Config) {
 	assert.NoError(t, err)
 
 	c.External = &ExternalPersistence{
-		Central: &ExternalPersistenceInstance{
+		DB: &ExternalPersistenceInstance{
 			Name:         "name",
 			StorageClass: "storageClass",
 		},
@@ -98,12 +91,22 @@ func (suite *renderSuite) testWithLoadBalancers(t *testing.T, c Config) {
 }
 
 func (suite *renderSuite) TestRenderMultiple() {
+	upgradeOpts := helmUtil.Options{
+		ReleaseOptions: chartutil.ReleaseOptions{
+			Name:      "stackrox-secured-cluster-services",
+			Namespace: "stackrox",
+			IsUpgrade: true,
+		},
+	}
 	for _, orch := range []storage.ClusterType{storage.ClusterType_KUBERNETES_CLUSTER, storage.ClusterType_OPENSHIFT_CLUSTER, storage.ClusterType_OPENSHIFT4_CLUSTER} {
 		for _, format := range []v1.DeploymentFormat{v1.DeploymentFormat_KUBECTL, v1.DeploymentFormat_HELM} {
 			suite.T().Run(fmt.Sprintf("%s-%s", orch, format), func(t *testing.T) {
 				conf := getBaseConfig()
 				conf.ClusterType = orch
 				conf.K8sConfig.DeploymentFormat = format
+				// We do not need these tests anymore because this is not used in upgrade.
+				// But still keep it to see if it helps to find other issues.
+				conf.RenderOpts = &upgradeOpts
 
 				suite.testWithHostPath(t, conf)
 				suite.testWithPV(t, conf)
@@ -116,6 +119,13 @@ func (suite *renderSuite) TestRenderMultiple() {
 func (suite *renderSuite) TestRenderWithBadImage() {
 	conf := getBaseConfig()
 	conf.K8sConfig.ScannerImage = "invalid-image#!@$"
+	_, err := Render(conf, suite.testFlavor)
+	suite.Error(err)
+}
+
+func (suite *renderSuite) TestRenderWithBadV4Image() {
+	conf := getBaseConfig()
+	conf.K8sConfig.ScannerV4Image = "invalid-image#!@$"
 	_, err := Render(conf, suite.testFlavor)
 	suite.Error(err)
 }

@@ -10,16 +10,19 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/notifiers"
+	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/wrapper"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events/codes"
+	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/jsonutil"
+	"github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -27,8 +30,6 @@ import (
 )
 
 const (
-	integrationType = "splunk"
-
 	source                    = "stackrox"
 	splunkHECDefaultDataLimit = 10000
 	splunkHECHealthEndpoint   = "/services/collector/health/1.0"
@@ -40,8 +41,6 @@ const (
 )
 
 var (
-	log = logging.LoggerForModule()
-
 	timeout = 5 * time.Second
 
 	baseURLPattern = regexp.MustCompile(`^(https?://)?[^/]+/*$`)
@@ -53,9 +52,14 @@ var (
 )
 
 type splunk struct {
+	client *http.Client
+
 	eventEndpoint  string
 	healthEndpoint string
 	conf           *storage.Splunk
+	creds          string
+	cryptoKey      string
+	cryptoCodec    cryptocodec.CryptoCodec
 
 	*storage.Notifier
 }
@@ -68,9 +72,12 @@ func (s *splunk) ProtoNotifier() *storage.Notifier {
 	return s.Notifier
 }
 
-func (s *splunk) Test(ctx context.Context) error {
+func (s *splunk) Test(ctx context.Context) *notifiers.NotifierError {
 	if s.healthEndpoint != "" {
-		return s.sendHTTPPayload(ctx, http.MethodGet, s.healthEndpoint, nil)
+		if err := s.sendHTTPPayload(ctx, http.MethodGet, s.healthEndpoint, nil); err != nil {
+			return notifiers.NewNotifierError("health check failed", err)
+		}
+		return nil
 	}
 	alert := &storage.Alert{
 		Policy: &storage.Policy{Name: "Test Policy"},
@@ -79,11 +86,16 @@ func (s *splunk) Test(ctx context.Context) error {
 			{Message: "This is a sample Splunk alert message created to test integration with StackRox."},
 		},
 	}
-	return s.postAlert(ctx, alert)
+
+	if err := s.postAlert(ctx, alert); err != nil {
+		return notifiers.NewNotifierError("send test alert failed", err)
+	}
+
+	return nil
 }
 
 func (s *splunk) postAlert(ctx context.Context, alert *storage.Alert) error {
-	clonedAlert := alert.Clone()
+	clonedAlert := alert.CloneVT()
 	// Splunk's HEC by default has a limitation of data size == 10KB
 	// Removing some of the fields here to make it smaller
 	// More details on HEC limitation: https://developers.perfectomobile.com/display/TT/Splunk+-+Configure+HTTP+Event+Collector
@@ -107,20 +119,20 @@ func (s *splunk) postAlert(ctx context.Context, alert *storage.Alert) error {
 	)
 }
 
-func (s *splunk) getSplunkEvent(msg proto.Message, sourceTypeKey string) (*wrapper.SplunkEvent, error) {
-	any, err := protoutils.MarshalAny(msg)
+func (s *splunk) getSplunkEvent(msg protocompat.Message, sourceTypeKey string) (*wrapper.SplunkEvent, error) {
+	e, err := protoutils.MarshalAny(msg)
 	if err != nil {
 		return nil, err
 	}
 
 	return &wrapper.SplunkEvent{
-		Event:      any,
+		Event:      e,
 		Source:     source,
-		Sourcetype: s.conf.SourceTypes[sourceTypeKey],
+		Sourcetype: s.conf.GetSourceTypes()[sourceTypeKey],
 	}, nil
 }
 
-func (*splunk) Close(ctx context.Context) error {
+func (*splunk) Close(_ context.Context) error {
 	return nil
 }
 
@@ -146,14 +158,14 @@ func (s *splunk) AuditLoggingEnabled() bool {
 	return s.GetSplunk().GetAuditLoggingEnabled()
 }
 
-func (s *splunk) sendEvent(ctx context.Context, msg proto.Message, sourceTypeKey string) error {
+func (s *splunk) sendEvent(ctx context.Context, msg protocompat.Message, sourceTypeKey string) error {
 	splunkEvent, err := s.getSplunkEvent(msg, sourceTypeKey)
 	if err != nil {
 		return err
 	}
 
 	var data bytes.Buffer
-	err = new(jsonpb.Marshaler).Marshal(&data, splunkEvent)
+	err = jsonutil.Marshal(&data, splunkEvent)
 	if err != nil {
 		return err
 	}
@@ -174,36 +186,57 @@ func (s *splunk) sendHTTPPayload(ctx context.Context, method, path string, data 
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Splunk %s", s.conf.HttpToken))
-
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: s.conf.Insecure},
-		Proxy:           proxy.FromConfig(),
+	token, err := s.getHTTPToken()
+	if err != nil {
+		return err
 	}
+	req.Header.Set("Authorization", fmt.Sprintf("Splunk %s", token))
 
-	client := &http.Client{Transport: tr}
-	resp, err := client.Do(req)
+	resp, err := s.client.Do(req)
 	if err != nil {
 		return err
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 
-	return notifiers.CreateError("Splunk", resp)
+	return notifiers.CreateError(s.GetName(), resp, codes.SplunkGeneric)
+}
+
+func (s *splunk) getHTTPToken() (string, error) {
+	if s.creds != "" {
+		return s.creds, nil
+	}
+
+	if !env.EncNotifierCreds.BooleanSetting() {
+		s.creds = s.conf.GetHttpToken()
+		return s.creds, nil
+	}
+
+	decCreds, err := s.cryptoCodec.Decrypt(s.cryptoKey, s.GetNotifierSecret())
+	if err != nil {
+		return "", errors.Errorf("Error decrypting notifier secret for notifier '%s'", s.GetName())
+	}
+	s.creds = decCreds
+	return s.creds, nil
 }
 
 func init() {
-	notifiers.Add(integrationType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		s, err := newSplunk(notifier)
+	cryptoKey := ""
+	var err error
+	if env.EncNotifierCreds.BooleanSetting() {
+		cryptoKey, _, err = notifierUtils.GetActiveNotifierEncryptionKey()
+		if err != nil {
+			utils.Should(errors.Wrap(err, "Error reading encryption key, notifier will be unable to send notifications"))
+		}
+	}
+	notifiers.Add(notifiers.SplunkType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
+		s, err := newSplunk(notifier, cryptocodec.Singleton(), cryptoKey)
 		return s, err
 	})
 }
 
-func newSplunk(notifier *storage.Notifier) (*splunk, error) {
+func newSplunk(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCodec, cryptoKey string) (*splunk, error) {
 	conf := notifier.GetSplunk()
-	if conf == nil {
-		return nil, errors.New("Splunk configuration required")
-	}
-	if err := validate(conf); err != nil {
+	if err := Validate(conf, !env.EncNotifierCreds.BooleanSetting()); err != nil {
 		return nil, err
 	}
 	url := urlfmt.FormatURL(conf.GetHttpEndpoint(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
@@ -215,27 +248,38 @@ func newSplunk(notifier *storage.Notifier) (*splunk, error) {
 		healthEndpoint = url + splunkHECHealthEndpoint
 	}
 
+	tr := proxy.RoundTripper(proxy.WithTLSConfig(&tls.Config{InsecureSkipVerify: conf.GetInsecure()}))
+	client := &http.Client{Transport: tr}
+
 	return &splunk{
+		client:         client,
 		conf:           conf,
+		creds:          "",
+		cryptoKey:      cryptoKey,
+		cryptoCodec:    cryptoCodec,
 		eventEndpoint:  eventEndpoint,
 		healthEndpoint: healthEndpoint,
 		Notifier:       notifier,
 	}, nil
 }
 
-func validate(conf *storage.Splunk) error {
+// Validate Splunk notifier
+func Validate(conf *storage.Splunk, validateSecret bool) error {
+	if conf == nil {
+		return errors.New("Splunk configuration required")
+	}
 	errorList := errorhelpers.NewErrorList("Splunk config validation")
-	if len(conf.HttpToken) == 0 {
+	if validateSecret && len(conf.GetHttpToken()) == 0 {
 		errorList.AddString("Splunk HTTP Event Collector(HEC) token must be specified")
 	}
-	if len(conf.HttpEndpoint) == 0 {
+	if len(conf.GetHttpEndpoint()) == 0 {
 		errorList.AddString("Splunk HTTP endpoint must be specified")
 	}
 	if conf.GetTruncate() == 0 {
 		conf.Truncate = splunkHECDefaultDataLimit
 	}
 	for sourceTypeKey := range defaultSourceTypeMap {
-		if _, ok := conf.SourceTypes[sourceTypeKey]; !ok {
+		if _, ok := conf.GetSourceTypes()[sourceTypeKey]; !ok {
 			errorList.AddStringf("Source type key %s must be specified", sourceTypeKey)
 		}
 	}
@@ -244,7 +288,7 @@ func validate(conf *storage.Splunk) error {
 
 // UpgradeNotifierConfig applies changes to the current notifier to make it backwards compatible
 func UpgradeNotifierConfig(notifier *storage.Notifier) {
-	if notifier.GetType() == integrationType {
+	if notifier.GetType() == notifiers.SplunkType {
 		if notifier.GetSplunk().GetDerivedSourceTypeDeprecated() != nil {
 			splunk := notifier.GetSplunk()
 			// Handle backwards compatibility for derived source type field

@@ -1,15 +1,17 @@
-import React, { ReactElement } from 'react';
-import { TextInput, PageSection, Form, Checkbox } from '@patternfly/react-core';
+import React from 'react';
+import type { ReactElement } from 'react';
+import { Alert, Checkbox, Form, PageSection, Text, TextInput } from '@patternfly/react-core';
 import * as yup from 'yup';
+import merge from 'lodash/merge';
 
-import { ImageIntegrationBase } from 'services/ImageIntegrationsService';
+import type { ImageIntegrationBase } from 'services/ImageIntegrationsService';
 
 import FormMessage from 'Components/PatternFly/FormMessage';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import useIntegrationForm from '../useIntegrationForm';
-import { IntegrationFormProps } from '../integrationFormTypes';
+import type { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';
@@ -56,9 +58,7 @@ function ClairIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<ClairIntegration>): ReactElement {
-    const formInitialValues = initialValues
-        ? ({ ...defaultValues, ...initialValues } as ClairIntegration)
-        : defaultValues;
+    const formInitialValues: ClairIntegration = merge({}, defaultValues, initialValues);
     const {
         values,
         touched,
@@ -85,6 +85,16 @@ function ClairIntegrationForm({
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
+                <Alert
+                    title="Deprecation notice"
+                    component="p"
+                    variant={'warning'}
+                    isInline
+                    className="pf-v5-u-mb-lg"
+                >
+                    <Text>CoreOS Clair integration will be removed in a future release.</Text>
+                    <Text>Use Clair v4 integration instead.</Text>
+                </Alert>
                 <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormLabelGroup
@@ -99,7 +109,7 @@ function ClairIntegrationForm({
                             type="text"
                             id="name"
                             value={values.name}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -116,7 +126,7 @@ function ClairIntegrationForm({
                             type="text"
                             id="clair.endpoint"
                             value={values.clair.endpoint}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -126,7 +136,7 @@ function ClairIntegrationForm({
                             label="Disable TLS certificate validation (insecure)"
                             id="clair.insecure"
                             isChecked={values.clair.insecure}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />

@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/networkgraph"
-	"github.com/stretchr/testify/assert"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -49,7 +49,6 @@ func createDeploymentNode(id, name, namespace string, selectorLabels map[string]
 }
 
 func TestGenerateIngressRule_WithInternetIngress(t *testing.T) {
-	t.Parallel()
 
 	internetNode := &node{
 		entity: networkgraph.Entity{
@@ -77,11 +76,10 @@ func TestGenerateIngressRule_WithInternetIngress(t *testing.T) {
 	}
 
 	rule := generateIngressRule(deployment1, portDesc{}, nss)
-	assert.Equal(t, allowAllIngress, rule)
+	protoassert.Equal(t, allowAllIngress, rule)
 }
 
 func TestGenerateIngressRule_WithInternetIngress_WithPorts(t *testing.T) {
-	t.Parallel()
 
 	internetNode := &node{
 		entity: networkgraph.Entity{
@@ -143,11 +141,10 @@ func TestGenerateIngressRule_WithInternetIngress_WithPorts(t *testing.T) {
 	}
 
 	rules := generateIngressRules(deployment1, nss)
-	assert.ElementsMatch(t, expectedRules, rules)
+	protoassert.ElementsMatch(t, expectedRules, rules)
 }
 
 func TestGenerateIngressRule_WithInternetExposure(t *testing.T) {
-	t.Parallel()
 
 	deployment0 := createDeploymentNode("deployment0", "deployment0", "ns", map[string]string{"app": "foo"})
 	deployment1 := createDeploymentNode("deployment1", "deployment1", "ns", nil)
@@ -176,11 +173,10 @@ func TestGenerateIngressRule_WithInternetExposure(t *testing.T) {
 	}
 
 	rule := generateIngressRule(deployment1, portDesc{}, nss)
-	assert.Equal(t, allowAllIngress, rule)
+	protoassert.Equal(t, allowAllIngress, rule)
 }
 
 func TestGenerateIngressRule_WithInternetExposure_WithPorts(t *testing.T) {
-	t.Parallel()
 
 	deployment0 := createDeploymentNode("deployment0", "deployment0", "ns", map[string]string{"app": "foo"})
 	deployment1 := createDeploymentNode("deployment1", "deployment1", "ns", nil)
@@ -258,11 +254,10 @@ func TestGenerateIngressRule_WithInternetExposure_WithPorts(t *testing.T) {
 	}
 
 	rules := generateIngressRules(deployment1, nss)
-	assert.ElementsMatch(t, expectedRules, rules)
+	protoassert.ElementsMatch(t, expectedRules, rules)
 }
 
 func TestGenerateIngressRule_WithoutInternet(t *testing.T) {
-	t.Parallel()
 
 	deployment0 := createDeploymentNode("deployment0", "deployment0", "ns1", map[string]string{"app": "foo"})
 	deployment1 := createDeploymentNode("deployment1", "deployment1", "ns2", map[string]string{"app": "bar"})
@@ -309,11 +304,10 @@ func TestGenerateIngressRule_WithoutInternet(t *testing.T) {
 	}
 
 	rule := generateIngressRule(tgtDeployment, portDesc{}, nss)
-	assert.ElementsMatch(t, expectedPeers, rule.From)
+	protoassert.ElementsMatch(t, expectedPeers, rule.GetFrom())
 }
 
 func TestGenerateIngressRule_WithoutInternet_WithPorts(t *testing.T) {
-	t.Parallel()
 
 	deployment0 := createDeploymentNode("deployment0", "deployment0", "ns1", map[string]string{"app": "foo"})
 	deployment1 := createDeploymentNode("deployment1", "deployment1", "ns2", map[string]string{"app": "bar"})
@@ -393,15 +387,14 @@ func TestGenerateIngressRule_WithoutInternet_WithPorts(t *testing.T) {
 	// Modify rules to make sure that all namespace-local peers appear before all foreign-namespace-peers;
 	// otherwise the comparison below might fail.
 	for _, rule := range rules {
-		sort.SliceStable(rule.From, func(i, j int) bool {
-			return rule.From[i].NamespaceSelector == nil && rule.From[j].NamespaceSelector != nil
+		sort.SliceStable(rule.GetFrom(), func(i, j int) bool {
+			return rule.GetFrom()[i].GetNamespaceSelector() == nil && rule.GetFrom()[j].GetNamespaceSelector() != nil
 		})
 	}
-	assert.ElementsMatch(t, expectedRules, rules)
+	protoassert.ElementsMatch(t, expectedRules, rules)
 }
 
 func TestGenerateIngressRule_ScopeAlienDeployment(t *testing.T) {
-	t.Parallel()
 
 	deployment0 := createDeploymentNode("deployment0", "deployment0", "ns1", map[string]string{"app": "foo"})
 	deployment1 := createDeploymentNode("deployment1", "deployment1", "ns2", map[string]string{"app": "bar"})
@@ -431,11 +424,10 @@ func TestGenerateIngressRule_ScopeAlienDeployment(t *testing.T) {
 		},
 	}
 	rule := generateIngressRule(tgtDeployment, portDesc{}, nss)
-	assert.Equal(t, expectedPeers, rule.From)
+	protoassert.SlicesEqual(t, expectedPeers, rule.GetFrom())
 }
 
 func TestGenerateIngressRule_ScopeAlienNSOnly(t *testing.T) {
-	t.Parallel()
 
 	deployment0 := createDeploymentNode("deployment0", "deployment0", "ns1", map[string]string{"app": "foo"})
 	deployment1 := createDeploymentNode("deployment1", "deployment1", "ns2", map[string]string{"app": "bar"})
@@ -471,11 +463,10 @@ func TestGenerateIngressRule_ScopeAlienNSOnly(t *testing.T) {
 		},
 	}
 	rule := generateIngressRule(tgtDeployment, portDesc{}, nss)
-	assert.ElementsMatch(t, expectedPeers, rule.From)
+	protoassert.ElementsMatch(t, expectedPeers, rule.GetFrom())
 }
 
 func TestGenerateIngressRule_FromProtectedNS(t *testing.T) {
-	t.Parallel()
 
 	tgtDeployment := createDeploymentNode("tgtDeployment", "tgtDeployment", "ns1", nil)
 
@@ -538,5 +529,5 @@ func TestGenerateIngressRule_FromProtectedNS(t *testing.T) {
 
 	rules := generateIngressRules(tgtDeployment, nss)
 	require.Len(t, rules, 1)
-	assert.ElementsMatch(t, expectedPeers, rules[0].From)
+	protoassert.ElementsMatch(t, expectedPeers, rules[0].GetFrom())
 }

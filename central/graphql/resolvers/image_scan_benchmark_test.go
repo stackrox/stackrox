@@ -3,11 +3,13 @@ package resolvers
 import (
 	"testing"
 
-	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/graph-gophers/graphql-go"
+	"github.com/stackrox/rox/central/views/imagecomponentflat"
+	"github.com/stackrox/rox/central/views/imagecveflat"
+	imagesView "github.com/stackrox/rox/central/views/images"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 const (
@@ -73,26 +75,29 @@ const (
 )
 
 func BenchmarkImageResolver(b *testing.B) {
-	envIsolator := envisolator.NewEnvIsolator(b)
-	envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-	defer envIsolator.RestoreAll()
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		b.Skip("Skip postgres store tests")
-		b.SkipNow()
-	}
-
 	mockCtrl := gomock.NewController(b)
-	defer mockCtrl.Finish()
-	db, gormDB := setupPostgresConn(b)
-	defer pgtest.CloseGormDB(b, gormDB)
-	defer db.Close()
+	testDB := SetupTestPostgresConn(b)
+	var resolver *Resolver
+	var schema *graphql.Schema
 
-	imageDataStore := createImageDatastore(b, mockCtrl, db, gormDB)
-	imageComponentDataStore := createImageComponentDatastore(b, mockCtrl, db, gormDB)
-	cveDataStore := createImageCVEDatastore(b, db, gormDB)
-	componentCVEEdgeDataStore := createImageComponentCVEEdgeDatastore(b, db, gormDB)
-	resolver, schema := setupResolver(b, imageDataStore, imageComponentDataStore, cveDataStore, componentCVEEdgeDataStore)
+	if features.FlattenCVEData.Enabled() {
+		resolver, schema = SetupTestResolver(b,
+			imagesView.NewImageView(testDB.DB),
+			CreateTestImageComponentV2Datastore(b, testDB, mockCtrl),
+			CreateTestImageCVEV2Datastore(b, testDB),
+			CreateTestImageV2Datastore(b, testDB, mockCtrl),
+			imagecveflat.NewCVEFlatView(testDB.DB),
+			imagecomponentflat.NewComponentFlatView(testDB.DB),
+		)
+	} else {
+		resolver, schema = SetupTestResolver(b,
+			imagesView.NewImageView(testDB.DB),
+			CreateTestImageDatastore(b, testDB, mockCtrl),
+			CreateTestImageComponentDatastore(b, testDB, mockCtrl),
+			CreateTestImageCVEDatastore(b, testDB),
+			CreateTestImageComponentCVEEdgeDatastore(b, testDB),
+		)
+	}
 	ctx := contextWithImagePerm(b, mockCtrl)
 
 	images := getTestImages(100)

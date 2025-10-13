@@ -1,3 +1,5 @@
+//go:build test_e2e
+
 package tests
 
 import (
@@ -13,7 +15,6 @@ import (
 )
 
 func TestVersions(t *testing.T) {
-	t.Parallel()
 
 	client := centralgrpc.HTTPClientForCentral(t)
 

@@ -1,3 +1,6 @@
+values:
+  imagePullSecrets:
+    allowNone: true
 test:
     - name: "sensor with deprecated PodSecurityPolicies enabled"
       values:

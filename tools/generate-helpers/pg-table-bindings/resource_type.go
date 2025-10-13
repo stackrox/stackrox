@@ -13,18 +13,14 @@ type ResourceType int
 const (
 	unknown ResourceType = iota
 	joinTable
-	permissionChecker
 	globallyScoped
 	directlyScoped
 	indirectlyScoped
 )
 
-func getResourceType(storageType string, schema *walker.Schema, permissionCheckerEnabled bool, isJoinTable bool) ResourceType {
+func getResourceType(storageType string, schema *walker.Schema, isJoinTable bool) ResourceType {
 	if isJoinTable {
 		return joinTable
-	}
-	if permissionCheckerEnabled {
-		return permissionChecker
 	}
 	resource := storageToResource(storageType)
 	metadata := resourceMetadataFromString(resource)

@@ -18,7 +18,7 @@ type detectorImpl struct {
 	deployments datastore.DataStore
 }
 
-// UpsertPolicy adds or updates a policy in the set.
+// PolicySet retrieves the policy set.
 func (d *detectorImpl) PolicySet() detection.PolicySet {
 	return d.policySet
 }

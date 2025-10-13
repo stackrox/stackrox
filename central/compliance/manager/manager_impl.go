@@ -15,17 +15,17 @@ import (
 	complianceOperatorCheckDS "github.com/stackrox/rox/central/complianceoperator/checkresults/datastore"
 	complianceOperatorManager "github.com/stackrox/rox/central/complianceoperator/manager"
 	"github.com/stackrox/rox/central/deployment/datastore"
-	nodeDatastore "github.com/stackrox/rox/central/node/globaldatastore"
+	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/scrape/factory"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -41,21 +41,26 @@ var (
 
 	scrapeDataDeps = []string{"HostScraped"}
 
-	complianceRunSAC = sac.ForResource(resources.ComplianceRuns)
+	complianceSAC = sac.ForResource(resources.Compliance)
 )
+
+type latestRunKey struct {
+	clusterID, standardID string
+}
 
 type manager struct {
 	standardsRegistry         *standards.Registry
 	complianceOperatorManager complianceOperatorManager.Manager
 
-	mutex    sync.RWMutex
-	runsByID map[string]*runInstance
+	mutex      sync.RWMutex
+	runsByID   map[string]*runInstance
+	latestRuns map[latestRunKey]*runInstance
 
 	stopSig    concurrency.Signal
 	interruptC chan struct{}
 
 	clusterStore    clusterDatastore.DataStore
-	nodeStore       nodeDatastore.GlobalDataStore
+	nodeStore       nodeDatastore.DataStore
 	deploymentStore datastore.DataStore
 	podStore        podDatastore.DataStore
 
@@ -67,13 +72,14 @@ type manager struct {
 	resultsStore complianceDS.DataStore
 }
 
-func newManager(standardsRegistry *standards.Registry, complianceOperatorManager complianceOperatorManager.Manager, complianceOperatorResults complianceOperatorCheckDS.DataStore, clusterStore clusterDatastore.DataStore, nodeStore nodeDatastore.GlobalDataStore, deploymentStore datastore.DataStore, podStore podDatastore.DataStore, dataRepoFactory data.RepositoryFactory, scrapeFactory factory.ScrapeFactory, resultsStore complianceDS.DataStore) *manager {
+func newManager(standardsRegistry *standards.Registry, complianceOperatorManager complianceOperatorManager.Manager, complianceOperatorResults complianceOperatorCheckDS.DataStore, clusterStore clusterDatastore.DataStore, nodeStore nodeDatastore.DataStore, deploymentStore datastore.DataStore, podStore podDatastore.DataStore, dataRepoFactory data.RepositoryFactory, scrapeFactory factory.ScrapeFactory, resultsStore complianceDS.DataStore) *manager {
 	mgr := &manager{
 		standardsRegistry:         standardsRegistry,
 		complianceOperatorManager: complianceOperatorManager,
 		complianceOperatorResults: complianceOperatorResults,
 
-		runsByID: make(map[string]*runInstance),
+		runsByID:   make(map[string]*runInstance),
+		latestRuns: make(map[latestRunKey]*runInstance),
 
 		interruptC: make(chan struct{}),
 
@@ -99,35 +105,26 @@ func (m *manager) createDomain(ctx context.Context, clusterID string) (framework
 		return nil, errors.Wrapf(err, "could not get cluster with ID %q", clusterID)
 	}
 
-	clusterNodeStore, err := m.nodeStore.GetClusterNodeStore(ctx, clusterID, false)
+	clusterQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
+	results, err := m.nodeStore.Search(ctx, clusterQuery)
 	if err != nil {
-		return nil, errors.Wrapf(err, "could not get node store for cluster %s", clusterID)
+		return nil, errors.Wrapf(err, "retrieving nodes for cluster %s", clusterID)
 	}
-	nodes, err := clusterNodeStore.ListNodes()
-
-	if errors.Cause(err) == bolthelper.ErrBucketNotFound {
-		nodes = nil
-	} else if err != nil {
-		return nil, errors.Wrapf(err, "listing nodes for cluster %s", clusterID)
+	nodes, err := m.nodeStore.GetManyNodeMetadata(ctx, search.ResultsToIDs(results))
+	if err != nil {
+		return nil, errors.Wrapf(err, "retrieving nodes for cluster %s", clusterID)
 	}
 
-	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
-	deployments, err := m.deploymentStore.SearchRawDeployments(ctx, query)
+	deployments, err := m.deploymentStore.SearchRawDeployments(ctx, clusterQuery)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not get deployments for cluster %s", clusterID)
-	}
-
-	query = search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
-	pods, err := m.podStore.SearchRawPods(ctx, query)
-	if err != nil {
-		return nil, errors.Wrapf(err, "could not get pods for cluster %s", clusterID)
 	}
 
 	machineConfigs, err := m.complianceOperatorManager.GetMachineConfigs(clusterID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "getting machine configs for cluster %s", clusterID)
 	}
-	return framework.NewComplianceDomain(cluster, nodes, deployments, pods, machineConfigs), nil
+	return framework.NewComplianceDomain(cluster, nodes, deployments, machineConfigs), nil
 }
 
 func (m *manager) createRun(domain framework.ComplianceDomain, standard *standards.Standard) *runInstance {
@@ -135,26 +132,9 @@ func (m *manager) createRun(domain framework.ComplianceDomain, standard *standar
 	run := createRun(runID, domain, standard)
 	concurrency.WithLock(&m.mutex, func() {
 		m.runsByID[runID] = run
+		m.latestRuns[latestRunKey{clusterID: domain.Cluster().ID(), standardID: standard.ID}] = run
 	})
 	return run
-}
-
-func (m *manager) cleanupRuns() {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
-	// Step 1: Gather runs marked for deletion.
-	runsToDelete := set.NewStringSet()
-	for id, run := range m.runsByID {
-		if run.shouldDelete() {
-			runsToDelete.Add(id)
-		}
-	}
-
-	// Step 3: Actually delete the runs
-	for runID := range runsToDelete {
-		delete(m.runsByID, runID)
-	}
 }
 
 func (m *manager) interrupt() {
@@ -165,7 +145,7 @@ func (m *manager) interrupt() {
 }
 
 func runMatches(request *v1.GetRecentComplianceRunsRequest, runProto *v1.ComplianceRun) bool {
-	if request.GetSince() != nil && runProto.GetStartTime().Compare(request.GetSince()) < 0 {
+	if request.GetSince() != nil && protocompat.CompareTimestamps(runProto.GetStartTime(), request.GetSince()) < 0 {
 		return false
 	}
 	if request.GetClusterIdOpt() != nil && runProto.GetClusterId() != request.GetClusterId() {
@@ -183,7 +163,7 @@ func (m *manager) GetRecentRuns(ctx context.Context, request *v1.GetRecentCompli
 	// Filter out runs the user does not have read access to.
 	var returnedRuns []*v1.ComplianceRun
 	for _, run := range runs {
-		if ok, err := complianceRunSAC.ReadAllowed(ctx, sac.ClusterScopeKey(run.GetClusterId())); err != nil {
+		if ok, err := complianceSAC.ReadAllowed(ctx, sac.ClusterScopeKey(run.GetClusterId())); err != nil {
 			return nil, err
 		} else if ok {
 			returnedRuns = append(returnedRuns, run)
@@ -215,7 +195,7 @@ func (m *manager) GetRecentRun(ctx context.Context, id string) (*v1.ComplianceRu
 	}
 
 	// Check read access to the cluster the run is for.
-	if ok, err := complianceRunSAC.ReadAllowed(ctx, sac.ClusterScopeKey(run.ClusterId)); err != nil {
+	if ok, err := complianceSAC.ReadAllowed(ctx, sac.ClusterScopeKey(run.GetClusterId())); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, errox.NotFound
@@ -265,7 +245,7 @@ func (m *manager) expandClusters(ctx context.Context, clusterIDOrWildcard string
 	}
 	var clusterIDs []string
 	for _, cluster := range clusters {
-		if complianceRunSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).IsAllowed(sac.ClusterScopeKey(cluster.GetId())) {
+		if complianceSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).IsAllowed(sac.ClusterScopeKey(cluster.GetId())) {
 			clusterIDs = append(clusterIDs, cluster.GetId())
 		}
 	}
@@ -299,13 +279,28 @@ func (m *manager) TriggerRuns(ctx context.Context, clusterStandardPairs ...compl
 	return runProtos, nil
 }
 
+type perClusterDataRepoFactory struct {
+	once            sync.Once
+	dataRepoFactory data.RepositoryFactory
+
+	dataRepo framework.ComplianceDataRepository
+	err      error
+}
+
+func (p *perClusterDataRepoFactory) CreateDataRepository(ctx context.Context, domain framework.ComplianceDomain) (framework.ComplianceDataRepository, error) {
+	p.once.Do(func() {
+		p.dataRepo, p.err = p.dataRepoFactory.CreateDataRepository(ctx, domain)
+	})
+	return p.dataRepo, p.err
+}
+
 func (m *manager) createAndLaunchRuns(ctx context.Context, clusterStandardPairs []compliance.ClusterStandardPair) ([]*runInstance, error) {
 	// Check write access to all of the runs
 	clusterScopes := newClusterScopeCollector()
 	for _, clusterStandardPair := range clusterStandardPairs {
 		clusterScopes.add(clusterStandardPair.ClusterID)
 	}
-	if !complianceRunSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).AllAllowed(clusterScopes.get()) {
+	if !complianceSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).AllAllowed(clusterScopes.get()) {
 		return nil, sac.ErrResourceAccessDenied
 	}
 
@@ -331,12 +326,24 @@ func (m *manager) createAndLaunchRuns(ctx context.Context, clusterStandardPairs 
 			return nil, errors.Wrapf(err, "could not create domain for cluster ID %q", clusterID)
 		}
 		domainPB := getDomainProto(domain)
-		err = m.resultsStore.StoreComplianceDomain(ctx, domainPB)
+		// Domain is indirectly scoped, and checks global permissions for write operations.
+		// Temporarily elevating the privileges to write the domain informations.
+		domainWriteCtx := sac.WithGlobalAccessScopeChecker(
+			ctx,
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(resources.Compliance),
+			),
+		)
+		err = m.resultsStore.StoreComplianceDomain(domainWriteCtx, domainPB)
 		if err != nil {
 			return nil, errors.Wrapf(err, "could not create domain protobuf for ID %q", clusterID)
 		}
 
 		var scrapeBasedPromise, scrapeLessPromise dataPromise
+		perClusterDataRepoOnce := &perClusterDataRepoFactory{
+			dataRepoFactory: m.dataRepoFactory,
+		}
 		for _, standard := range standardImpls {
 			if !m.complianceOperatorManager.IsStandardActiveForCluster(standard.ID, clusterID) {
 				continue
@@ -349,12 +356,12 @@ func (m *manager) createAndLaunchRuns(ctx context.Context, clusterStandardPairs 
 					for _, standard := range standardImpls {
 						standardIDs = append(standardIDs, standard.ID)
 					}
-					scrapeBasedPromise = createAndRunScrape(elevatedCtx, m.scrapeFactory, m.dataRepoFactory, domain, scrapeTimeout, standardIDs)
+					scrapeBasedPromise = createAndRunScrape(elevatedCtx, m.scrapeFactory, perClusterDataRepoOnce, domain, scrapeTimeout, standardIDs)
 				}
 				dataPromise = scrapeBasedPromise
 			} else {
 				if scrapeLessPromise == nil {
-					scrapeLessPromise = newFixedDataPromise(elevatedCtx, m.dataRepoFactory, domain)
+					scrapeLessPromise = newFixedDataPromise(perClusterDataRepoOnce, domain)
 				}
 				dataPromise = scrapeLessPromise
 			}
@@ -377,11 +384,37 @@ func (m *manager) GetRunStatuses(ctx context.Context, ids ...string) ([]*v1.Comp
 	for _, runStatus := range runStatuses {
 		clusterScopes.add(runStatus.GetClusterId())
 	}
-	if !complianceRunSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).AllAllowed(clusterScopes.get()) {
+	if !complianceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).AllAllowed(clusterScopes.get()) {
 		return nil, errox.NotFound
 	}
 
 	return runStatuses, nil
+}
+
+func (m *manager) GetLatestRunStatuses(ctx context.Context) ([]*v1.ComplianceRun, error) {
+	runStatuses := m.getLatestRunStatuses()
+
+	// Check read access to all of the runs
+	clusterScopes := newClusterScopeCollector()
+	for _, runStatus := range runStatuses {
+		clusterScopes.add(runStatus.GetClusterId())
+	}
+	if !complianceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).AllAllowed(clusterScopes.get()) {
+		return nil, errox.NotFound
+	}
+
+	return runStatuses, nil
+}
+
+func (m *manager) getLatestRunStatuses() []*v1.ComplianceRun {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+
+	result := make([]*v1.ComplianceRun, 0, len(m.latestRuns))
+	for _, run := range m.latestRuns {
+		result = append(result, run.ToProto())
+	}
+	return result
 }
 
 func (m *manager) getRunStatuses(ids []string) []*v1.ComplianceRun {

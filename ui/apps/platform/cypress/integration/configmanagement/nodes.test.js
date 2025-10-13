@@ -1,17 +1,20 @@
+import withAuth from '../../helpers/basicAuth';
+import { hasOrchestratorFlavor } from '../../helpers/features';
+import { triggerScan } from '../compliance/Compliance.helpers';
+
 import {
-    renderListAndSidePanel,
-    navigateToSingleEntityPage,
-    hasCountWidgetsFor,
+    clickEntityTableRowThatHasLinkInColumn,
     clickOnCountWidget,
     clickOnSingularEntityWidgetInSidePanel,
     clickOnSingleEntityInTable,
-    hasTabsFor,
+    hasCountWidgetsFor,
     hasRelatedEntityFor,
-    pageEntityCountMatchesTableRows,
-    sidePanelEntityCountMatchesTableRows,
-} from '../../helpers/configWorkflowUtils';
-import withAuth from '../../helpers/basicAuth';
-import { triggerScan } from '../../helpers/compliance';
+    hasTabsFor,
+    navigateToSingleEntityPage,
+    verifyWidgetLinkToTableFromSidePanel,
+    verifyWidgetLinkToTableFromSinglePage,
+    visitConfigurationManagementEntityInSidePanel,
+} from './ConfigurationManagement.helpers';
 
 const entitiesKey = 'nodes';
 
@@ -19,7 +22,7 @@ describe('Configuration Management Nodes', () => {
     withAuth();
 
     it('should render the nodes list and open the side panel when a row is clicked', () => {
-        renderListAndSidePanel(entitiesKey);
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
     });
 
     it('should render the nodes list and open the side panel with the clicked cluster value', () => {
@@ -27,53 +30,55 @@ describe('Configuration Management Nodes', () => {
     });
 
     it('should click on the cluster entity widget in the side panel and match the header ', () => {
-        renderListAndSidePanel(entitiesKey);
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
         clickOnSingularEntityWidgetInSidePanel(entitiesKey, 'clusters');
     });
 
     it('should take you to a nodes single when the "navigate away" button is clicked', () => {
-        renderListAndSidePanel(entitiesKey);
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
         navigateToSingleEntityPage(entitiesKey);
     });
 
     it('should show the related cluster widget', () => {
-        renderListAndSidePanel(entitiesKey);
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
         navigateToSingleEntityPage(entitiesKey);
         hasRelatedEntityFor('Cluster');
     });
 
     it('should have the correct count widgets for a single entity view', () => {
-        renderListAndSidePanel(entitiesKey);
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
         navigateToSingleEntityPage(entitiesKey);
         hasCountWidgetsFor(['Controls']);
     });
 
     it('should have the correct tabs for a single entity view', () => {
-        renderListAndSidePanel(entitiesKey);
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
         navigateToSingleEntityPage(entitiesKey);
         hasTabsFor(['controls']);
     });
 
-    it('should click on the controls count widget in the entity page and show the controls tab', () => {
+    it('should click on the controls count widget in the entity page and show the controls tab', function () {
+        if (hasOrchestratorFlavor('openshift')) {
+            this.skip();
+        }
+
         triggerScan(); // because test assumes that scan results are available
 
-        renderListAndSidePanel(entitiesKey);
+        const columnIndexForControls = 7;
+        clickEntityTableRowThatHasLinkInColumn(entitiesKey, columnIndexForControls);
         navigateToSingleEntityPage(entitiesKey);
         clickOnCountWidget('controls', 'entityList');
     });
 
-    describe('should have same number in controls table as in count widget', () => {
+    describe('should go to controls table from widget link', () => {
         const entitiesKey2 = 'controls';
 
-        it('of page', () => {
-            renderListAndSidePanel(entitiesKey);
-            navigateToSingleEntityPage(entitiesKey);
-            pageEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
+        it('in single page', () => {
+            verifyWidgetLinkToTableFromSinglePage(entitiesKey, entitiesKey2);
         });
 
-        it('of side panel', () => {
-            renderListAndSidePanel(entitiesKey);
-            sidePanelEntityCountMatchesTableRows(entitiesKey, entitiesKey2);
+        it('in side panel', () => {
+            verifyWidgetLinkToTableFromSidePanel(entitiesKey, entitiesKey2);
         });
     });
 });

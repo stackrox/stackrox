@@ -1,0 +1,30 @@
+name: auto-merge
+
+on:
+  pull_request_target:
+    types:
+    - labeled
+
+jobs:
+  auto-merge-minor:
+    name: Auto-merge semver minor and patch bumps
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]' && github.event.label.name == 'auto-merge'
+    steps:
+    - uses: ahmadnassri/action-dependabot-auto-merge@v2.6
+      with:
+        github-token: '${{ secrets.RHACS_BOT_GITHUB_TOKEN }}'
+        command: "squash and merge"
+        approve: true
+        target: minor
+
+  auto-merge-any:
+    name: Auto-merge any version bumps
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]' && github.event.label.name == 'auto-merge-any'
+    steps:
+    - uses: ahmadnassri/action-dependabot-auto-merge@v2.6
+      with:
+        github-token: '${{ secrets.RHACS_BOT_GITHUB_TOKEN }}'
+        command: "squash and merge"
+        approve: true

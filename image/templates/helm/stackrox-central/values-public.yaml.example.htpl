@@ -11,18 +11,14 @@
 # The most notable exception is the `imagePullSecrets` section, which needs to be configured
 # according to the registry access in your environment.
 #
-# Other than that, the following are sections that are the most likely to require custom
-# configuration:
-# - `image.registry`: if you are pulling images from a registry other than `stackrox.io`.
+# Other than that, the following are sections most likely require custom configuration:
+# - `image.registry`: if you are pulling images from a registry other than `[< required "" .MainRegistry >]`.
 # - `env.offlineMode`: if you want to run StackRox in offline mode.
-# - `central.disableTelemetry`: if you want to opt out of the transmission of telemetry and
-#   diagnostic data.
 # - `central.endpointsConfig`: if you want to expose additional endpoints (such as endpoints
 #   without TLS) in Central.
 # - `central.resources`: if the default resource configuration for Central is not adequate
 #   for your environment.
-# - `central.persistence`: for configuring where Central stores its database volume.
-#
+# - `db.persistence`: for configuring where Central DB stores its postgres database volume.
 
 # # BEGIN CONFIGURATION VALUES SECTION
 
@@ -46,12 +42,12 @@
 #   useFromDefaultServiceAccount: true
 #
 # image:
-#   # The registry relative to which all image references are resolved, if no more
-#   # specify registry is specified for the workloads (see `central.image`, `scanner.image`,
-#   # and `scanner.dbImage` below).
-#   # This can be just a registry hostname such as `stackrox.io`, or a registry hostname with
+#   # The registry relative to which all image references are resolved, unless
+#   # a specific registry is provided for particular workloads which takes precedence
+#   # (see `central.image`, `db.image`, `scanner.image`, and `scanner.dbImage` below).
+#   # This can be just a registry hostname such as `quay.io`, or a registry hostname with
 #   # a "remote" component such as `us.gcr.io/my-stackrox-mirror`.
-#   registry: stackrox.io
+#   registry: us.gcr.io/my-stackrox-mirror
 #
 # env:
 #   # Treat the environment as an OpenShift cluster. Leave this unset to use auto-detection
@@ -90,10 +86,6 @@
 #
 # # Public configuration options for the StackRox Central deployment.
 # central:
-#   # disableTelemetry=true will opt out of transmitting telemetry data to StackRox.
-#   # This only has an effect upon initial deployment.
-#   disableTelemetry: false
-#
 #   # General configuration options for the Central deployment.
 #   # See the `config/central/config.yaml.default` file that is shipped with this chart
 #   # for a fully documented version.
@@ -142,6 +134,34 @@
 #       key: infra
 #       value: reserved
 #
+#   If scheduling needs specific affinities, you can specify the corresponding affinities here.
+#   affinity:
+#     nodeAffinity:
+#       preferredDuringSchedulingIgnoredDuringExecution:
+#       # Central is single-homed, so avoid preemptible nodes.
+#       - weight: 100
+#           preference:
+#           matchExpressions:
+#               - key: cloud.google.com/gke-preemptible
+#               operator: NotIn
+#               values:
+#               - "true"
+#       - weight: 50
+#           preference:
+#           matchExpressions:
+#               - key: node-role.kubernetes.io/infra
+#               operator: Exists
+#       - weight: 25
+#           preference:
+#           matchExpressions:
+#               - key: node-role.kubernetes.io/compute
+#               operator: Exists
+#       - weight: 100
+#           preference:
+#           matchExpressions:
+#               - key: node-role.kubernetes.io/control-plane
+#               operator: DoesNotExist
+#
 #   # Configures the Central image to be used. Most users will only need to configure a
 #   # custom registry (if any) at the global scope, and do not require any settings here.
 #   image:
@@ -179,38 +199,6 @@
 #       memory: "8Gi"
 #       cpu: "4000m"
 #
-#   # Persistence configuration for the StackRox database volume.
-#   # Exactly ONE of the nested values should be specified. If none is specified,
-#   # the StackRox deployment will be configured with the default PVC-based persistence.
-#   persistence:
-#     # The path on the node where to store the StackRox database volume
-#     # when using host path persistence.
-#     hostPath: /var/lib/stackrox
-#
-#     # The persistent volume claim details when storing the StackRox database
-#     # on a persistent volume managed by a Kubernetes persistent volume claim (PVC).
-#     persistentVolumeClaim:
-#       # The name of the claim. This defaults to stackrox-db if not set.
-#       claimName: stackrox-db
-#
-#       # Whether to create the claim upon deployment. The default is true; set this to false
-#       # if you have a pre-existing persistent volume claim that you want to use.
-#       createClaim: true
-#
-#       # The size of the persistent volume managed by the claim, in Gigabytes (or with an
-#       # explicit unit, such as "1Ti"). Defaults to 100Gi.
-#       size: 100
-#
-#       # If you want to bind a preexisting persistent volume, you can specify it here.
-#       volume:
-#         volumeSpec:
-#           # The section includes volume type specific config, the volume type can be:
-#           # gcePersistentDisk, hostpath, filestore(nfs) etc.
-#           gcePersistentDisk:
-#             # Type specific parameters. The specified persistent volume should have
-#             # been created.
-#             pdName: gke-pv
-#
 #   # Configuration for exposing the StackRox Central deployment for external access.
 #   # Generally, only ONE of the nested values should be specified. If none is specified,
 #   # the Central deployment will not be exposed, and you must either manually expose it,
@@ -231,9 +219,17 @@
 #       # letting Kubernetes automatically select a node port (recommended).
 #       port: 32000
 #
-#     # Exposure via an OpenShift route. Only available for OpenShift clusters
+#     # Exposure via an OpenShift passthrough route. Sensor must communicate with Central
+#     # via a passthrough route because of mutual TLS encryption.
+#     # Only available for OpenShift clusters.
 #     route:
 #       enabled: true
+#       # Exposure via an OpenShift reencrypt route. The route serves a certificate that was
+#       # signed by the OpenShift certificate authority. The reencrypt route cannot be used
+#       # for communication between Sensor and Central because of mutual TLS encryption.
+#       # Only available for OpenShift clusters.
+#       reencrypt:
+#         enabled: true
 #
 #     # Additional volume mounts for the Central container. Only few people will require this.
 #     extraMounts:
@@ -247,6 +243,94 @@
 #       # of the pod spec.
 #       mount:
 #         mountPath: /etc/my-config-data
+#
+#   # Public configuration options for the StackRox Central DB:
+#   db:
+#     # If you want to enforce StackRox Central DB to only run on certain nodes, you can specify
+#     # a node selector here to make sure Central can only be scheduled on Nodes with the
+#     # given label. This is particular relevant for the "hostPath" persistence type.
+#     nodeSelector:
+#       # This can contain arbitrary `label-key: label-value` pairs.
+#       role: stackrox-central-db
+#
+#     # If the nodes selected by the node selector are tainted, you can specify the corresponding taint tolerations here.
+#     tolerations:
+#       - effect: NoSchedule
+#         key: infra
+#         value: reserved
+#       - effect: NoExecute
+#         key: infra
+#         value: reserved
+#
+#     # External signifies that a Postgres wire-compatible database has already been deployed and a Central DB pod
+#     # does not need to be deployed
+#     external: false
+#
+#     # Customized Central DB source configurations to connect to Postgres database.
+#     # Default configurations are applied if the configurations are omitted.
+#     source:
+#       # ConnectionString should not be specified if the Central DB deployment is being managed by the helm chart
+#       # The connection string must be in the format described here https://www.postgresql.org/docs/current/static/libpq-connect.html#LIBPQ-CONNSTRING
+#       # The only connection string format supported is as specified in "34.1.1.1. Keyword/Value Connection Strings"
+#       # client_encoding=UTF8 is required in any connection string and the only supported encoding
+#       # statementTimeoutMs is ignored for external database connections
+#       # If using a connection that supports "statement_timeout" it is recommended to include "statement_timeout=1200000"
+#       # Do NOT use a connection string with a password field. Instead specify the value below in the password section in values-private.yaml.
+#       connectionString: "host=central-db.stackrox port=5432 user=postgres sslmode=verify-full"
+#       minConns: 10
+#       maxConns: 90
+#       statementTimeoutMs: 1200000
+#
+#     # Configures the Central DB image to be used. Most users will only need to configure a
+#     # custom registry (if any) at the global scope, and do not require any settings here.
+#     image:
+#       # A custom registry that will override the global `image.registry` setting for the
+#       # Central DB image.
+#       registry: us.gcr.io/central-db
+#       # A custom image name that will override the default `main`.
+#       name: custom-central-db
+#       # A custom image tag that will override the default tag based on the current
+#       # StackRox version.
+#       tag: custom-version
+#
+#     # Custom resource overrides for the Central DB deployment.
+#     resources:
+#       requests:
+#         memory: "8Gi"
+#         cpu: "4"
+#       limits:
+#         memory: "16Gi"
+#         cpu: "8"
+#
+#     # Persistence configuration for the StackRox Central DB.
+#     # Exactly ONE of the nested values should be specified. If none is specified,
+#     # the StackRox Central DB will be configured with the default PVC-based persistence.
+#     persistence:
+#       # The path on the node where to store the StackRox Central DB volume
+#       # when using host path persistence.
+#       hostPath: /var/lib/central-db
+#       # The persistent volume claim details when storing the StackRox database
+#       # on a persistent volume managed by a Kubernetes persistent volume claim (PVC).
+#       persistentVolumeClaim:
+#         # The name of the claim. This defaults to central-db if not set.
+#         claimName: central-db
+#         # Whether to create the claim upon deployment. The default is true; set this to false
+#         # if you have a pre-existing persistent volume claim that you want to use.
+#         createClaim: true
+#         # The storage class of the persistent volume.
+#         storageClass: stackrox-gke-ssd
+#         # The size of the persistent volume managed by the claim, in Gigabytes (or with an
+#         # explicit unit, such as "1Ti"). Defaults to 100Gi.
+#         size: 100
+#         # If you want to bind a preexisting persistent volume, you can specify it here.
+#         volume:
+#           volumeSpec:
+#             # The section includes volume type specific config, the volume type can be:
+#             # gcePersistentDisk, hostpath, filestore(nfs) etc.
+#             gcePersistentDisk:
+#               # Type specific parameters. The specified persistent volume should have
+#               # been created.
+#               pdName: gke-pv
 #
 # # Public configuration options for the StackRox Scanner.
 # scanner:
@@ -278,6 +362,34 @@
 #     - effect: NoExecute
 #       key: infra
 #       value: reserved
+#
+#   If scheduling needs specific affinities, you can specify the corresponding affinities here.
+#   affinity:
+#     podAntiAffinity:
+#       preferredDuringSchedulingIgnoredDuringExecution:
+#       - weight: 100
+#         podAffinityTerm:
+#           labelSelector:
+#             matchLabels:
+#               app: scanner
+#           topologyKey: kubernetes.io/hostname
+#     nodeAffinity:
+#       preferredDuringSchedulingIgnoredDuringExecution:
+#       - weight: 50
+#         preference:
+#           matchExpressions:
+#             - key: node-role.kubernetes.io/infra
+#               operator: Exists
+#       - weight: 25
+#         preference:
+#           matchExpressions:
+#             - key: node-role.kubernetes.io/compute
+#               operator: Exists
+#       - weight: 100
+#         preference:
+#           matchExpressions:
+#             - key: node-role.kubernetes.io/control-plane
+#               operator: DoesNotExist
 #
 #   # If you want to enforce StackRox Scanner DB to only run on certain nodes, you can specify
 #   # a node selector here to make sure Scanner DB can only be scheduled on Nodes with the
@@ -333,6 +445,219 @@
 #     registry: us.gcr.io/stackrox-scanner-db-repo
 #     name: scanner-db  # "scanner-db" is the default
 #
+# # Public configuration options for Scanner V4.
+# scannerV4:
+#
+#  # If this is set to false, Scanner V4 will be enabled and deployed.
+#  # Note that currently Scanner V4 cannot be used as the only scanner component.
+#  # Instead it must be currently deployed side-by-side with StackRox Scanner (scanner.disable=false).
+#  # If it is set to true, no other setting in this section will have any effect.
+#  disable: true
+#
+#  # Scanner V4 consists of three components: indexer, matcher and db.
+#
+#  # Configuration for the indexer component:
+#  indexer:
+#    # The log level for the indexer deployment. This typically does not need to be changed.
+#    logLevel: INFO
+#
+#    # If you want to enforce indexer to only run on certain nodes, you can specify
+#    # a node selector here to make sure Scanner V4 can only be scheduled on Nodes with the
+#    # given label.
+#    nodeSelector:
+#      # This can contain arbitrary `label-key: label-value` pairs.
+#      role: scanner-v4
+#
+#    # If the nodes selected by the node selector are tainted, you can specify the corresponding taint tolerations here.
+#    tolerations:
+#      - effect: NoSchedule
+#        key: infra
+#        value: reserved
+#      - effect: NoExecute
+#        key: infra
+#        value: reserved
+#
+#    # If scheduling needs specific affinities, you can specify the corresponding affinities here.
+#    affinity:
+#      podAntiAffinity:
+#        preferredDuringSchedulingIgnoredDuringExecution:
+#        - weight: 100
+#          podAffinityTerm:
+#            labelSelector:
+#              matchLabels:
+#                app: scanner-v4-indexer
+#            topologyKey: kubernetes.io/hostname
+#      nodeAffinity:
+#        preferredDuringSchedulingIgnoredDuringExecution:
+#        - weight: 50
+#          preference:
+#            matchExpressions:
+#            - key: node-role.kubernetes.io/infra
+#              operator: Exists
+#        - weight: 25
+#          preference:
+#            matchExpressions:
+#            - key: node-role.kubernetes.io/compute
+#              operator: Exists
+#        - weight: 100
+#          preference:
+#            matchExpressions:
+#            - key: node-role.kubernetes.io/control-plane
+#              operator: DoesNotExist
+#
+#    # Default number of indexer replicas created upon startup. The actual number might be higher
+#    # or lower if autoscaling is enabled (see below).
+#    replicas: 3
+#
+#    # Settings related to autoscaling the indexer deployment.
+#    autoscaling:
+#      # If true, autoscaling will be disabled. None of the other settings in this section will
+#      # have any effect.
+#      disable: false
+#      # The minimum number of replicas for autoscaling. The following value is the default.
+#      minReplicas: 2
+#      # The maximum number of replicas for autoscaling. The following value is the default.
+#      maxReplicas: 5
+#
+#    # Custom resource overrides for the indexer deployment.
+#     resources:
+#       requests:
+#         memory: "1500Mi"
+#         cpu: "1000m"
+#       limits:
+#         memory: "3Gi"
+#         cpu: "2000m"
+#
+#  # Configuration for the matcher component:
+#  matcher:
+#    # The log level for the matcher deployment. This typically does not need to be changed.
+#    logLevel: INFO
+#
+#    # If you want to enforce matcher to only run on certain nodes, you can specify
+#    # a node selector here to make sure Scanner V4 can only be scheduled on Nodes with the
+#    # given label.
+#    nodeSelector:
+#      # This can contain arbitrary `label-key: label-value` pairs.
+#      role: scanner-v4
+#
+#    # If the nodes selected by the node selector are tainted, you can specify the corresponding taint tolerations here.
+#    tolerations:
+#      - effect: NoSchedule
+#        key: infra
+#        value: reserved
+#      - effect: NoExecute
+#        key: infra
+#        value: reserved
+#
+#    # If scheduling needs specific affinities, you can specify the corresponding affinities here.
+#    affinity:
+#      podAntiAffinity:
+#        preferredDuringSchedulingIgnoredDuringExecution:
+#        - weight: 100
+#          podAffinityTerm:
+#            labelSelector:
+#              matchLabels:
+#                app: scanner-v4-matcher
+#            topologyKey: kubernetes.io/hostname
+#      nodeAffinity:
+#        preferredDuringSchedulingIgnoredDuringExecution:
+#        - weight: 50
+#          preference:
+#            matchExpressions:
+#            - key: node-role.kubernetes.io/infra
+#              operator: Exists
+#        - weight: 25
+#          preference:
+#            matchExpressions:
+#            - key: node-role.kubernetes.io/compute
+#              operator: Exists
+#        - weight: 100
+#          preference:
+#            matchExpressions:
+#            - key: node-role.kubernetes.io/control-plane
+#              operator: DoesNotExists
+#
+#    # Default number of matcher replicas created upon startup. The actual number might be higher
+#    # or lower if autoscaling is enabled (see below).
+#    replicas: 2
+#
+#    # Settings related to autoscaling the matcher deployment.
+#    autoscaling:
+#      # If true, autoscaling will be disabled. None of the other settings in this section will
+#      # have any effect.
+#      disable: false
+#      # The minimum number of replicas for autoscaling. The following value is the default.
+#      minReplicas: 2
+#      # The maximum number of replicas for autoscaling. The following value is the default.
+#      maxReplicas: 3
+#
+#    # Resource settings for the matcher deployment.
+#    resources:
+#      requests:
+#        memory: "4Gi"
+#        cpu: "1000m"
+#      limits:
+#        memory: "5Gi"
+#        cpu: "2000m"
+#
+#  # Configuration for the DB component:
+#  db:
+#
+#    # If you want to enforce indexer to only run on certain nodes, you can specify
+#    # a node selector here to make sure Scanner V4 can only be scheduled on Nodes with the
+#    # given label.
+#    nodeSelector:
+#      # This can contain arbitrary `label-key: label-value` pairs.
+#      role: scanner-v4
+#
+#    # If scheduling needs specific affinities, you can specify the corresponding affinities here.
+#    affinity:
+#      nodeAffinity:
+#        preferredDuringSchedulingIgnoredDuringExecution:
+#        # Scanner V4 DB is single-homed, so avoid preemptible nodes.
+#        - weight: 100
+#          preference:
+#            matchExpressions:
+#            - key: cloud.google.com/gke-preemptible
+#              operator: NotIn
+#              values:
+#                - "true"
+#        - weight: 50
+#          preference:
+#            matchExpressions:
+#            - key: node-role.kubernetes.io/infra
+#              operator: Exists
+#        - weight: 25
+#          preference:
+#            matchExpressions:
+#            - key: node-role.kubernetes.io/compute
+#              operator: Exists
+#        - weight: 100
+#          preference:
+#            matchExpressions:
+#            - key: node-role.kubernetes.io/control-plane
+#              operator: DoesNotExist
+#
+#    # Resource settings for the DB deployment.
+#    resources:
+#      requests:
+#        cpu: "200m"
+#        memory: "2Gi"
+#      limits:
+#        cpu: "2000m"
+#        memory: "4Gi"
+#
+#    # Configure DB password. If `generate` is true, a new password will be
+#    # generated. If it is false, a valid password is expected in `value`.
+#    password:
+#      generate: null
+#      value: null
+#
+#    # Configure persistence backend for the DB.
+#    persistence:
+#      persistentVolumeClaim:
+#        claimName: "scanner-v4-db"
+#        size: "50Gi"
 #
 # # Customization Settings.
 # # The following allows specifying custom Kubernetes metadata (labels and annotations)
@@ -413,3 +738,8 @@
 # # the default "stackrox-central-services". This has been observed to work in some cases,
 # # but is not generally supported.
 # allowNonstandardReleaseName: false
+
+# monitoring:
+#   # Enables integration with OpenShift platform monitoring.
+#   openshift:
+#     enabled: true

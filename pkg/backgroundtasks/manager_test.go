@@ -171,9 +171,9 @@ func TestBackgroundTasksManager(t *testing.T) {
 		if completed {
 			assert.Equal(t, testRes, res.(int))
 			break
-		} else {
-			assert.Nil(t, res)
 		}
+
+		assert.Nil(t, res)
 	}
 	t.Log("Passed.")
 }

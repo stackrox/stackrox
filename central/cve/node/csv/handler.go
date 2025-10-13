@@ -14,6 +14,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/csv"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
@@ -51,7 +52,7 @@ func newHandler(resolver *resolvers.Resolver) *csvCommon.HandlerImpl {
 		// Node CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.
 		[]*csvCommon.SearchWrapper{
 			csvCommon.NewSearchWrapper(v1.SearchCategory_NODE_COMPONENTS, schema.NodeComponentsSchema.OptionsMap, resolver.NodeComponentDataStore),
-			csvCommon.NewSearchWrapper(v1.SearchCategory_NODES, csvCommon.NodeOnlyOptionsMap, resolver.NodeGlobalDataStore),
+			csvCommon.NewSearchWrapper(v1.SearchCategory_NODES, csvCommon.NodeOnlyOptionsMap, resolver.NodeDataStore),
 			csvCommon.NewSearchWrapper(v1.SearchCategory_CLUSTERS, schema.ClustersSchema.OptionsMap, resolver.ClusterDataStore),
 		},
 	)
@@ -106,14 +107,14 @@ func NodeCVECSVHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		query, rQuery, err := parser.ParseURLQuery(r.URL.Query())
 		if err != nil {
-			csv.WriteError(w, http.StatusBadRequest, err)
+			csv.WriteError(w, errox.InvalidArgs.CausedBy(err))
 			return
 		}
 		rawQuery, paginatedQuery := resolvers.V1RawQueryAsResolverQuery(rQuery)
 
 		cveRows, err := NodeCVECSVRows(loaders.WithLoaderContext(r.Context()), query, rawQuery, paginatedQuery)
 		if err != nil {
-			csv.WriteError(w, http.StatusInternalServerError, err)
+			csv.WriteError(w, errox.ServerError.CausedBy(err))
 			return
 		}
 
@@ -125,7 +126,7 @@ func NodeCVECSVHandler() http.HandlerFunc {
 		for _, row := range cveRows {
 			output.addRow(row)
 		}
-		filename := time.Now().Format("node_cve_export_2006_01_02_15_04_05")
+		filename := time.Now().Format("node_cve_export_2006_01_02_15_04_05") + ".csv"
 		output.Write(w, filename)
 	}
 }
@@ -144,7 +145,7 @@ func NodeCVECSVRows(c context.Context, query *v1.Query, rawQuery resolvers.RawQu
 
 	res := csvHandler.GetResolver()
 	if res == nil {
-		log.Errorf("Unexpected value (nil) for resolver in Handler")
+		log.Error("Unexpected value (nil) for resolver in Handler")
 		return nil, errors.New("Resolver not initialized in handler")
 	}
 	vulnResolvers, err := res.NodeVulnerabilities(ctx, paginatedQuery)

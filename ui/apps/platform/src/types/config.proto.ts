@@ -1,3 +1,7 @@
+export type Telemetry = {
+    enabled: boolean;
+};
+
 export type LoginNotice = {
     enabled: boolean;
     text: string;
@@ -20,6 +24,7 @@ export type PublicConfig = {
     loginNotice: LoginNotice | null;
     header: BannerConfig | null;
     footer: BannerConfig | null;
+    telemetry: Telemetry | null;
 };
 
 export type AlertRetentionConfig = {
@@ -37,11 +42,54 @@ export type DecommissionedClusterRetentionConfig = {
     createdAt: string; // ISO 8601 date string
 };
 
+export type ReportRetentionConfig = {
+    historyRetentionDurationDays: number; // uint32
+    downloadableReportGlobalRetentionBytes: number; // uint32
+    downloadableReportRetentionDays: number; // uint32
+};
+
+export type AdministrationEventsConfig = {
+    retentionDurationDays: number; // uint32
+};
+
+export type PrometheusMetricsLabels = {
+    labels: string[];
+};
+
+export type PrometheusMetricsGroup = {
+    gatheringPeriodMinutes?: number; // uint32
+    descriptors?: Record<string, PrometheusMetricsLabels>;
+};
+
+// The type list of known metrics categories.
+export type PrometheusMetricsCategory = keyof PrometheusMetrics;
+
+export type PrometheusMetrics = {
+    imageVulnerabilities?: PrometheusMetricsGroup | null;
+    policyViolations?: PrometheusMetricsGroup | null;
+    nodeVulnerabilities?: PrometheusMetricsGroup | null;
+};
+
 export type PrivateConfig = {
     alertConfig: AlertRetentionConfig;
     imageRetentionDurationDays: number; // int32
     expiredVulnReqRetentionDurationDays: number; // int32
     decommissionedClusterRetention: DecommissionedClusterRetentionConfig;
+    reportRetentionConfig: ReportRetentionConfig;
+    administrationEventsConfig: AdministrationEventsConfig;
+    metrics?: PrometheusMetrics | null;
+};
+
+export type PlatformComponentRule = {
+    name: string;
+    namespaceRule: {
+        regex: string;
+    };
+};
+
+export type PlatformComponentsConfig = {
+    needsReevaluation: boolean;
+    rules: PlatformComponentRule[];
 };
 
 export type SystemConfig = {
@@ -50,4 +98,5 @@ export type SystemConfig = {
      */
     publicConfig: PublicConfig | null;
     privateConfig: PrivateConfig;
+    platformComponentConfig: PlatformComponentsConfig;
 };

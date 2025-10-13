@@ -1,13 +1,16 @@
-import React, { ReactElement, useState } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 import {
     Alert,
-    AlertVariant,
     Badge,
     Button,
     Form,
     FormGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
     Label,
     TextInput,
     Title,
@@ -17,10 +20,12 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
+import TraitsOriginLabel from 'Components/TraitsOriginLabel';
 import { defaultMinimalReadAccessResources } from 'constants/accessControl';
-import { PermissionSet } from 'services/RolesService';
+import usePermissions from 'hooks/usePermissions';
+import type { PermissionSet } from 'services/RolesService';
 
-import { AccessControlQueryAction } from '../accessControlPaths';
+import type { AccessControlQueryAction } from '../accessControlPaths';
 
 import PermissionsTable from './PermissionsTable';
 
@@ -45,6 +50,8 @@ function PermissionSetForm({
 }: PermissionSetFormProps): ReactElement {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [alertSubmit, setAlertSubmit] = useState<ReactElement | null>(null);
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForPage = hasReadWriteAccess('Access');
 
     const { dirty, errors, handleChange, isValid, resetForm, setFieldValue, values } = useFormik({
         initialValues: permissionSet,
@@ -89,7 +96,8 @@ function PermissionSetForm({
                 setAlertSubmit(
                     <Alert
                         title="Failed to save permission set"
-                        variant={AlertVariant.danger}
+                        component="p"
+                        variant="danger"
                         isInline
                     >
                         {error.message}
@@ -114,22 +122,27 @@ function PermissionSetForm({
 
     return (
         <Form id="permission-set-form">
-            <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pt-0">
+            <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pt-0">
                 <ToolbarContent>
                     <ToolbarItem>
-                        <Title headingLevel="h2">
+                        <Title headingLevel="h1">
                             {action === 'create' ? 'Create permission set' : permissionSet.name}
                         </Title>
                     </ToolbarItem>
                     {action !== 'create' && (
-                        <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
+                        <ToolbarItem>
+                            <TraitsOriginLabel traits={permissionSet.traits} />
+                        </ToolbarItem>
+                    )}
+                    {action !== 'create' && (
+                        <ToolbarGroup variant="button-group" align={{ default: 'alignRight' }}>
                             <ToolbarItem>
                                 {isActionable ? (
                                     <Button
                                         variant="primary"
                                         onClick={handleEdit}
-                                        isDisabled={action === 'edit'}
-                                        isSmall
+                                        isDisabled={!hasWriteAccessForPage || action === 'edit'}
+                                        size="sm"
                                     >
                                         Edit permission set
                                     </Button>
@@ -142,36 +155,41 @@ function PermissionSetForm({
                 </ToolbarContent>
             </Toolbar>
             {alertSubmit}
-            <FormGroup
-                label="Name"
-                fieldId="name"
-                isRequired
-                validated={nameValidatedState}
-                helperTextInvalid={nameErrorMessage}
-                className="pf-m-horizontal"
-            >
+            <FormGroup label="Name" fieldId="name" isRequired className="pf-m-horizontal">
                 <TextInput
                     type="text"
                     id="name"
                     value={values.name}
                     validated={nameValidatedState}
-                    onChange={onChange}
+                    onChange={(event, _value) => onChange(_value, event)}
                     isDisabled={isViewing}
                     isRequired
                     className="pf-m-limit-width"
                 />
+                <FormHelperText>
+                    <HelperText>
+                        <HelperTextItem variant={nameValidatedState}>
+                            {nameErrorMessage}
+                        </HelperTextItem>
+                    </HelperText>
+                </FormHelperText>
             </FormGroup>
             <FormGroup label="Description" fieldId="description" className="pf-m-horizontal">
                 <TextInput
                     type="text"
                     id="description"
                     value={values.description}
-                    onChange={onChange}
+                    onChange={(event, _value) => onChange(_value, event)}
                     isDisabled={isViewing}
                 />
             </FormGroup>
             {action === 'create' && (
-                <Alert title="Recommended minimum set of read permissions" variant="info" isInline>
+                <Alert
+                    title="Recommended minimum set of read permissions"
+                    component="p"
+                    variant="info"
+                    isInline
+                >
                     <p>
                         Users might not be able to load certain pages if they do not have a minimum
                         set of read permissions.
@@ -183,7 +201,7 @@ function PermissionSetForm({
                     </p>
                     <p>
                         <strong>{defaultMinimalReadAccessResources.join(', ')}</strong>
-                        <Badge isRead className="pf-u-ml-sm">
+                        <Badge isRead className="pf-v5-u-ml-sm">
                             {defaultMinimalReadAccessResources.length}
                         </Badge>
                     </p>
@@ -206,13 +224,13 @@ function PermissionSetForm({
                                     onClick={onClickSubmit}
                                     isDisabled={!dirty || !isValid || isSubmitting}
                                     isLoading={isSubmitting}
-                                    isSmall
+                                    size="sm"
                                 >
                                     Save
                                 </Button>
                             </ToolbarItem>
                             <ToolbarItem>
-                                <Button variant="tertiary" onClick={onClickCancel} isSmall>
+                                <Button variant="tertiary" onClick={onClickCancel} size="sm">
                                     Cancel
                                 </Button>
                             </ToolbarItem>

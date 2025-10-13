@@ -1,4 +1,5 @@
-import React, { ReactElement, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import {
     PageSection,
     PageSectionVariants,
@@ -6,48 +7,71 @@ import {
     Breadcrumb,
     BreadcrumbItem,
     Divider,
+    Flex,
 } from '@patternfly/react-core';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom-v5-compat';
 import { connect } from 'react-redux';
 
+import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+import PageTitle from 'Components/PageTitle';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
+import useCentralCapabilities from 'hooks/useCentralCapabilities';
 import { actions as integrationsActions } from 'reducers/integrations';
 import { actions as apitokensActions } from 'reducers/apitokens';
-import { actions as clusterInitBundlesActions } from 'reducers/clusterInitBundles';
+import { actions as machineAccessActions } from 'reducers/machineAccessConfigs';
+import { actions as cloudSourcesActions } from 'reducers/cloudSources';
 import { integrationsPath } from 'routePaths';
-import { ClusterInitBundle } from 'services/ClustersService';
+
+import TechPreviewLabel from 'Components/PatternFly/TechPreviewLabel';
+import useIntegrations from '../hooks/useIntegrations';
+import { getIntegrationLabel } from '../utils/integrationsList';
 import {
     getIsAPIToken,
-    getIsClusterInitBundle,
-    getIntegrationLabel,
+    getIsCloudSource,
+    getIsMachineAccessConfig,
     getIsSignatureIntegration,
-} from 'Containers/Integrations/utils/integrationUtils';
+    getIsScannerV4,
+} from '../utils/integrationUtils';
+import type { IntegrationSource, IntegrationType } from '../utils/integrationUtils';
 
-import PageTitle from 'Components/PageTitle';
-import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-
-import IntegrationsTable from './IntegrationsTable';
-import useIntegrations from '../hooks/useIntegrations';
 import {
     DeleteAPITokensConfirmationText,
     DeleteIntegrationsConfirmationText,
 } from './ConfirmationTexts';
-import DeleteClusterInitBundleConfirmationModal from './DeleteClusterInitBundleConfirmationModal';
+import IntegrationsTable from './IntegrationsTable';
 
 function IntegrationsListPage({
     deleteIntegrations,
     triggerBackup,
-    fetchClusterInitBundles,
     revokeAPITokens,
+    deleteMachineAccessConfigs,
+    deleteCloudSources,
 }): ReactElement {
-    const { source, type } = useParams();
+    const { source, type } = useParams() as { source: IntegrationSource; type: IntegrationType };
     const integrations = useIntegrations({ source, type });
     const [deletingIntegrationIds, setDeletingIntegrationIds] = useState([]);
 
+    const navigate = useNavigate();
+
+    const { isCentralCapabilityAvailable } = useCentralCapabilities();
+    const canUseCloudBackupIntegrations = isCentralCapabilityAvailable(
+        'centralCanUseCloudBackupIntegrations'
+    );
+    useEffect(() => {
+        if (!canUseCloudBackupIntegrations && source === 'backups') {
+            navigate(integrationsPath, { replace: true });
+        }
+    }, [canUseCloudBackupIntegrations, source, navigate]);
+
     const typeLabel = getIntegrationLabel(source, type);
     const isAPIToken = getIsAPIToken(source, type);
-    const isClusterInitBundle = getIsClusterInitBundle(source, type);
+    const isMachineAccessConfig = getIsMachineAccessConfig(source, type);
     const isSignatureIntegration = getIsSignatureIntegration(source);
+    const isScannerV4 = getIsScannerV4(source, type);
+    const isCloudSource = getIsCloudSource(source);
+
+    // There is currently nothing relevant in Tech Preview.
+    const isTechPreview = false;
 
     function onDeleteIntegrations(ids) {
         setDeletingIntegrationIds(ids);
@@ -56,6 +80,10 @@ function IntegrationsListPage({
     function onConfirmDeletingIntegrationIds() {
         if (isAPIToken) {
             revokeAPITokens(deletingIntegrationIds);
+        } else if (isMachineAccessConfig) {
+            deleteMachineAccessConfigs(deletingIntegrationIds);
+        } else if (isCloudSource) {
+            deleteCloudSources(deletingIntegrationIds);
         } else {
             deleteIntegrations(source, type, deletingIntegrationIds);
         }
@@ -66,20 +94,10 @@ function IntegrationsListPage({
         setDeletingIntegrationIds([]);
     }
 
-    /*
-     * Instead of using bundleId arg to delete bundle from integrations in local state,
-     * use Redux fetch action to indirectly update integrations and re-render the list,
-     * because confirmation modal has already made the revokeClusterInitBundles request.
-     */
-    function handleDeleteClusterInitBundle() {
-        setDeletingIntegrationIds([]);
-        fetchClusterInitBundles();
-    }
-
     return (
         <>
             <PageTitle title={typeLabel} />
-            <PageSection variant={PageSectionVariants.light} className="pf-u-py-md">
+            <PageSection variant={PageSectionVariants.light} className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={integrationsPath}>Integrations</BreadcrumbItemLink>
                     <BreadcrumbItem isActive>{typeLabel}</BreadcrumbItem>
@@ -90,14 +108,25 @@ function IntegrationsListPage({
                 <Title headingLevel="h1">
                     {isSignatureIntegration ? 'Signature' : ''} Integrations
                 </Title>
-                {!isSignatureIntegration && <Title headingLevel="h2">{typeLabel}</Title>}
+                {!isSignatureIntegration && (
+                    <Title headingLevel="h2">
+                        <Flex
+                            spaceItems={{ default: 'spaceItemsSm' }}
+                            alignItems={{ default: 'alignItemsCenter' }}
+                        >
+                            <span>{typeLabel}</span>
+                            {isTechPreview && <TechPreviewLabel />}
+                        </Flex>
+                    </Title>
+                )}
             </PageSection>
             <PageSection variant="default">
                 <IntegrationsTable
                     integrations={integrations}
-                    hasMultipleDelete={!isClusterInitBundle}
+                    hasMultipleDelete
                     onDeleteIntegrations={onDeleteIntegrations}
                     onTriggerBackup={triggerBackup}
+                    isReadOnly={isScannerV4}
                 />
             </PageSection>
             {isAPIToken && (
@@ -107,26 +136,14 @@ function IntegrationsListPage({
                     isOpen={deletingIntegrationIds.length !== 0}
                     onConfirm={onConfirmDeletingIntegrationIds}
                     onCancel={onCancelDeleteIntegrationIds}
+                    title="Delete API token"
                 >
                     <DeleteAPITokensConfirmationText
                         numIntegrations={deletingIntegrationIds.length}
                     />
                 </ConfirmationModal>
             )}
-            {isClusterInitBundle && (
-                <DeleteClusterInitBundleConfirmationModal
-                    bundle={
-                        deletingIntegrationIds.length === 1
-                            ? (integrations.find(
-                                  (integration) => integration.id === deletingIntegrationIds[0]
-                              ) as unknown as ClusterInitBundle)
-                            : undefined
-                    }
-                    handleCancel={onCancelDeleteIntegrationIds}
-                    handleDelete={handleDeleteClusterInitBundle}
-                />
-            )}
-            {!isAPIToken && !isClusterInitBundle && (
+            {!isAPIToken && (
                 <ConfirmationModal
                     ariaLabel="Confirm delete"
                     confirmText="Delete"
@@ -146,8 +163,9 @@ function IntegrationsListPage({
 const mapDispatchToProps = {
     deleteIntegrations: integrationsActions.deleteIntegrations,
     triggerBackup: integrationsActions.triggerBackup,
-    fetchClusterInitBundles: clusterInitBundlesActions.fetchClusterInitBundles.request,
     revokeAPITokens: apitokensActions.revokeAPITokens,
+    deleteMachineAccessConfigs: machineAccessActions.deleteMachineAccessConfigs,
+    deleteCloudSources: cloudSourcesActions.deleteCloudSources,
 };
 
 export default connect(null, mapDispatchToProps)(IntegrationsListPage);

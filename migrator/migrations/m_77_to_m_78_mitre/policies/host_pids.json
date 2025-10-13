@@ -1,6 +1,0 @@
-{
-  "id": "436811e7-892f-4da6-a0f5-8cc459f1b954",
-  "name": "Docker CIS 5.15: Ensure that the host's process namespace is not shared",
-  "mitreAttackVectors": null,
-  "mitreVectorsLocked": true
-}

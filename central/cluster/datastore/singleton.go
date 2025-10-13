@@ -2,24 +2,18 @@ package datastore
 
 import (
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
-	"github.com/stackrox/rox/central/cluster/index"
-	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
 	clusterPostgres "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
-	clusterRocksDB "github.com/stackrox/rox/central/cluster/store/cluster/rocksdb"
-	clusterHealthStatusStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
 	clusterHealthPostgres "github.com/stackrox/rox/central/cluster/store/clusterhealth/postgres"
-	healthRocksDB "github.com/stackrox/rox/central/cluster/store/clusterhealth/rocksdb"
+	compliancePruning "github.com/stackrox/rox/central/complianceoperator/v2/pruner"
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globaldb"
-	globalDackBox "github.com/stackrox/rox/central/globaldb/dackbox"
-	"github.com/stackrox/rox/central/globalindex"
 	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
 	netEntityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	netFlowsDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
-	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
+	nodeDataStore "github.com/stackrox/rox/central/node/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	podDataStore "github.com/stackrox/rox/central/pod/datastore"
 	"github.com/stackrox/rox/central/ranking"
@@ -28,8 +22,6 @@ import (
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
-	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -41,26 +33,11 @@ var (
 )
 
 func initialize() {
-	var dackbox *dackbox.DackBox
-	var clusterStorage clusterStore.Store
-	var clusterHealthStorage clusterHealthStatusStore.Store
-	var clusterCVEDataStore clusterCVEDS.DataStore
-	var indexer index.Indexer
 	var err error
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		clusterStorage = clusterPostgres.New(globaldb.GetPostgres())
-		clusterHealthStorage = clusterHealthPostgres.New(globaldb.GetPostgres())
-		indexer = clusterPostgres.NewIndexer(globaldb.GetPostgres())
-		clusterCVEDataStore = clusterCVEDS.Singleton()
-	} else {
-		dackbox = globalDackBox.GetGlobalDackBox()
-		clusterStorage, err = clusterRocksDB.New(globaldb.GetRocksDB())
-		utils.CrashOnError(err)
-		clusterHealthStorage, err = healthRocksDB.New(globaldb.GetRocksDB())
-		utils.CrashOnError(err)
-		indexer = index.New(globalindex.GetGlobalTmpIndex())
-	}
+	clusterStorage := clusterPostgres.New(globaldb.GetPostgres())
+	clusterHealthStorage := clusterHealthPostgres.New(globaldb.GetPostgres())
+	clusterCVEDataStore := clusterCVEDS.Singleton()
 
 	ad, err = New(clusterStorage,
 		clusterHealthStorage,
@@ -79,10 +56,9 @@ func initialize() {
 		roleBindingDataStore.Singleton(),
 		connection.ManagerSingleton(),
 		notifierProcessor.Singleton(),
-		dackbox,
 		ranking.ClusterRanker(),
-		indexer,
-		networkBaselineManager.Singleton())
+		networkBaselineManager.Singleton(),
+		compliancePruning.Singleton())
 
 	utils.CrashOnError(err)
 }

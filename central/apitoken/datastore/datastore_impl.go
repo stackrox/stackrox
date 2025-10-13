@@ -3,26 +3,43 @@ package datastore
 import (
 	"context"
 
+	scheduleStore "github.com/stackrox/rox/central/apitoken/datastore/internal/schedulestore/postgres"
 	"github.com/stackrox/rox/central/apitoken/datastore/internal/store"
-	"github.com/stackrox/rox/central/role/resources"
+	postgresStore "github.com/stackrox/rox/central/apitoken/datastore/internal/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
-	apiTokenSAC = sac.ForResource(resources.APIToken)
+	integrationSAC = sac.ForResource(resources.Integration)
 )
 
 type datastoreImpl struct {
 	storage store.Store
 
-	sync.Mutex
+	scheduleStorage scheduleStore.Store
+
+	sync.RWMutex
+}
+
+func newPostgres(pool postgres.DB) *datastoreImpl {
+	storage := postgresStore.New(pool)
+	scheduleStorage := scheduleStore.New(pool)
+
+	return &datastoreImpl{
+		storage:         storage,
+		scheduleStorage: scheduleStorage,
+	}
 }
 
 func (b *datastoreImpl) AddToken(ctx context.Context, token *storage.TokenMetadata) error {
-	if ok, err := apiTokenSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := integrationSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -35,14 +52,14 @@ func (b *datastoreImpl) AddToken(ctx context.Context, token *storage.TokenMetada
 }
 
 func (b *datastoreImpl) GetTokenOrNil(ctx context.Context, id string) (token *storage.TokenMetadata, err error) {
-	if ok, err := apiTokenSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := integrationSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, nil
 	}
 
-	b.Lock()
-	defer b.Unlock()
+	b.RLock()
+	defer b.RUnlock()
 
 	token, exists, err := b.storage.Get(ctx, id)
 	if err != nil {
@@ -55,31 +72,34 @@ func (b *datastoreImpl) GetTokenOrNil(ctx context.Context, id string) (token *st
 }
 
 func (b *datastoreImpl) GetTokens(ctx context.Context, req *v1.GetAPITokensRequest) ([]*storage.TokenMetadata, error) {
-	if ok, err := apiTokenSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := integrationSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, nil
 	}
 
-	b.Lock()
-	defer b.Unlock()
+	b.RLock()
+	defer b.RUnlock()
 
 	var tokens []*storage.TokenMetadata
-	err := b.storage.Walk(ctx, func(token *storage.TokenMetadata) error {
-		if req.GetRevokedOneof() != nil && req.GetRevoked() != token.GetRevoked() {
+	walkFn := func() error {
+		tokens = tokens[:0]
+		return b.storage.Walk(ctx, func(token *storage.TokenMetadata) error {
+			if req.GetRevokedOneof() != nil && req.GetRevoked() != token.GetRevoked() {
+				return nil
+			}
+			tokens = append(tokens, token)
 			return nil
-		}
-		tokens = append(tokens, token)
-		return nil
-	})
-	if err != nil {
+		})
+	}
+	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err
 	}
 	return tokens, nil
 }
 
 func (b *datastoreImpl) RevokeToken(ctx context.Context, id string) (bool, error) {
-	if ok, err := apiTokenSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := integrationSAC.WriteAllowed(ctx); err != nil {
 		return false, err
 	} else if !ok {
 		return false, sac.ErrResourceAccessDenied
@@ -101,4 +121,46 @@ func (b *datastoreImpl) RevokeToken(ctx context.Context, id string) (bool, error
 		return false, err
 	}
 	return true, nil
+}
+
+func (b *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	if err := sac.VerifyAuthzOK(integrationSAC.ReadAllowed(ctx)); err != nil {
+		return 0, err
+	}
+
+	b.RLock()
+	defer b.RUnlock()
+
+	return b.storage.Count(ctx, q)
+}
+
+func (b *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	if err := sac.VerifyAuthzOK(integrationSAC.ReadAllowed(ctx)); err != nil {
+		return nil, err
+	}
+
+	b.RLock()
+	defer b.RUnlock()
+
+	return b.storage.Search(ctx, q)
+}
+
+func (b *datastoreImpl) SearchRawTokens(ctx context.Context, q *v1.Query) ([]*storage.TokenMetadata, error) {
+	if err := sac.VerifyAuthzOK(integrationSAC.ReadAllowed(ctx)); err != nil {
+		return nil, err
+	}
+
+	b.RLock()
+	defer b.RUnlock()
+
+	return b.storage.GetByQuery(ctx, q)
+
+}
+
+func (b *datastoreImpl) GetNotificationSchedule(ctx context.Context) (*storage.NotificationSchedule, bool, error) {
+	return b.scheduleStorage.Get(ctx)
+}
+
+func (b *datastoreImpl) UpsertNotificationSchedule(ctx context.Context, schedule *storage.NotificationSchedule) error {
+	return b.scheduleStorage.Upsert(ctx, schedule)
 }

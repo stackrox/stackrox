@@ -3,38 +3,84 @@
 # Tests part I of qa-tests-backend. Formerly CircleCI gke-api-e2e-tests.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+# shellcheck source=../../scripts/ci/gcp.sh
 source "$ROOT/scripts/ci/gcp.sh"
+# shellcheck source=../../scripts/ci/lib.sh
 source "$ROOT/scripts/ci/lib.sh"
+# shellcheck source=../../scripts/ci/sensor-wait.sh
 source "$ROOT/scripts/ci/sensor-wait.sh"
+# shellcheck source=../../scripts/ci/create-webhookserver.sh
+source "$ROOT/scripts/ci/create-webhookserver.sh"
+# shellcheck source=../../tests/e2e/lib.sh
 source "$ROOT/tests/e2e/lib.sh"
+# shellcheck source=../../tests/scripts/setup-certs.sh
 source "$ROOT/tests/scripts/setup-certs.sh"
+# shellcheck source=../../qa-tests-backend/scripts/lib.sh
 source "$ROOT/qa-tests-backend/scripts/lib.sh"
+# shellcheck source=../../qa-tests-backend/scripts/workload-identities/workload-identities.sh
+source "$ROOT/qa-tests-backend/scripts/workload-identities/workload-identities.sh"
 
 set -euo pipefail
 
-test_part_1() {
+run_part_1() {
     info "Starting test (qa-tests-backend part I)"
+
+    config_part_1
+    test_part_1
+}
+
+config_part_1() {
+    info "Configuring the cluster to run part 1 of e2e tests"
 
     require_environment "ORCHESTRATOR_FLAVOR"
     require_environment "KUBECONFIG"
+
+    DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
 
     export_test_environment
 
     setup_gcp
     setup_deployment_env false false
+    setup_podsecuritypolicies_config
     remove_existing_stackrox_resources
-    setup_default_TLS_certs
+    setup_default_TLS_certs "$ROOT/$DEPLOY_DIR/default_TLS_certs"
 
-    deploy_stackrox
+    image_prefetcher_system_await
+
+    deploy_stackrox "$ROOT/$DEPLOY_DIR/client_TLS_certs"
+    deploy_optional_e2e_components
+    setup_workload_identities
 
     deploy_default_psp
-    deploy_webhook_server
+    deploy_webhook_server "$ROOT/$DEPLOY_DIR/webhook_server_certs"
     get_ECR_docker_pull_password
+    # TODO(ROX-14759): Re-enable once image pulling is fixed.
+    #deploy_clair_v4
 
-    run_tests_part_1
+    image_prefetcher_prebuilt_await
 }
 
-run_tests_part_1() {
+reuse_config_part_1() {
+    info "Reusing config from a prior part 1 e2e test"
+
+    DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
+
+    export_test_environment
+    setup_deployment_env false false
+    export_default_TLS_certs "$ROOT/$DEPLOY_DIR/default_TLS_certs"
+    export_client_TLS_certs "$ROOT/$DEPLOY_DIR/client_TLS_certs"
+
+    create_webhook_server_port_forward
+    export_webhook_server_certs "$ROOT/$DEPLOY_DIR/webhook_server_certs"
+    get_ECR_docker_pull_password
+
+    wait_for_api
+    export_central_basic_auth_creds
+
+    export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
+}
+
+test_part_1() {
     info "QA Automation Platform Part 1"
 
     if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]]; then
@@ -43,31 +89,34 @@ run_tests_part_1() {
 
     export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
 
+    rm -f FAIL
+    remove_qa_test_results
+
+    local test_target
     if is_openshift_CI_rehearse_PR; then
         info "On an openshift rehearse PR, running BAT tests only..."
-        make -C qa-tests-backend bat-test || touch FAIL
+        test_target="bat-test"
     elif is_in_PR_context && pr_has_label ci-all-qa-tests; then
         info "ci-all-qa-tests label was specified, so running all QA tests..."
-        make -C qa-tests-backend test || touch FAIL
+        test_target="test"
     elif is_in_PR_context; then
         info "In a PR context without ci-all-qa-tests, running BAT tests only..."
-        make -C qa-tests-backend bat-test || touch FAIL
-    elif is_nightly_run; then
-        info "Nightly tests, running all QA tests with --fast-fail..."
-        make -C qa-tests-backend test FAIL_FAST=TRUE || touch FAIL
-    elif is_tagged; then
-        info "Tagged, running all QA tests..."
-        make -C qa-tests-backend test || touch FAIL
-    elif [[ -n "${QA_TEST_TARGET:-}" ]]; then
-        info "Directed to run the '""${QA_TEST_TARGET:-}""' target..."
-        make -C qa-tests-backend "${QA_TEST_TARGET:-}" || touch FAIL
+        test_target="bat-test"
     else
-        info "An unexpected context. Defaulting to BAT tests only..."
-        make -C qa-tests-backend bat-test || touch FAIL
+        info "Running all QA tests by default..."
+        test_target="test"
     fi
 
+    setup_gcp
+    set_ci_shared_export "test_target" "${test_target}"
+
+    make -C qa-tests-backend "${test_target}" || touch FAIL
+
+    cleanup_workload_identities
     store_qa_test_results "part-1-tests"
     [[ ! -f FAIL ]] || die "Part 1 tests failed"
 }
 
-test_part_1
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    run_part_1 "$*"
+fi

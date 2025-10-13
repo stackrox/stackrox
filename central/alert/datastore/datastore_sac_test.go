@@ -1,22 +1,20 @@
+//go:build sql_integration
+
 package datastore
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
-	"github.com/blevesearch/bleve"
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/alert/mappings"
-	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -35,10 +33,7 @@ func TestAlertDatastoreSAC(t *testing.T) {
 type alertDatastoreSACTestSuite struct {
 	suite.Suite
 
-	engine *rocksdb.RocksDB
-	index  bleve.Index
-
-	pool *pgxpool.Pool
+	pool postgres.DB
 
 	optionsMap searchPkg.OptionsMap
 	datastore  DataStore
@@ -49,37 +44,17 @@ type alertDatastoreSACTestSuite struct {
 }
 
 func (s *alertDatastoreSACTestSuite) SetupSuite() {
-	var err error
-	alertObj := "alertSACTest"
-
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pgtestbase := pgtest.ForT(s.T())
-		s.Require().NotNil(pgtestbase)
-		s.pool = pgtestbase.Pool
-		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
-		s.Require().NoError(err)
-		s.optionsMap = schema.AlertsSchema.OptionsMap
-	} else {
-		s.engine, err = rocksdb.NewTemp(alertObj)
-		s.NoError(err)
-		s.index, err = globalindex.TempInitializeIndices(alertObj)
-		s.NoError(err)
-
-		s.datastore, err = GetTestRocksBleveDataStore(s.T(), s.engine, s.index)
-		s.Require().NoError(err)
-		s.optionsMap = mappings.OptionsMap
-	}
+	pgtestbase := pgtest.ForT(s.T())
+	s.Require().NotNil(pgtestbase)
+	s.pool = pgtestbase.DB
+	s.datastore = GetTestPostgresDataStore(s.T(), s.pool)
+	s.optionsMap = schema.AlertsSchema.OptionsMap
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Alert)
 }
 
 func (s *alertDatastoreSACTestSuite) TearDownSuite() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pool.Close()
-	} else {
-		err := rocksdb.CloseAndRemove(s.engine)
-		s.NoError(err)
-	}
+	s.pool.Close()
 }
 
 func (s *alertDatastoreSACTestSuite) SetupTest() {
@@ -104,7 +79,6 @@ type crudTest struct {
 	scopeKey      string
 	expectedError error
 	expectError   bool
-	expectedFound bool
 }
 
 func (s *alertDatastoreSACTestSuite) cleanupAlert(ID string) {
@@ -114,8 +88,8 @@ func (s *alertDatastoreSACTestSuite) cleanupAlert(ID string) {
 func (s *alertDatastoreSACTestSuite) TestUpsertAlert() {
 	alert1 := fixtures.GetScopedDeploymentAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
 	alert2 := fixtures.GetScopedResourceAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
-	s.testAlertIDs = append(s.testAlertIDs, alert1.Id)
-	s.testAlertIDs = append(s.testAlertIDs, alert2.Id)
+	s.testAlertIDs = append(s.testAlertIDs, alert1.GetId())
+	s.testAlertIDs = append(s.testAlertIDs, alert2.GetId())
 
 	cases := testutils.GenericNamespaceSACUpsertTestCases(s.T(), testutils.VerbUpsert)
 
@@ -124,14 +98,14 @@ func (s *alertDatastoreSACTestSuite) TestUpsertAlert() {
 			ctx := s.testContexts[c.ScopeKey]
 			var err error
 			err = s.datastore.UpsertAlert(ctx, alert1)
-			defer s.cleanupAlert(alert1.Id)
+			defer s.cleanupAlert(alert1.GetId())
 			if !c.ExpectError {
 				s.NoError(err)
 			} else {
 				s.Equal(c.ExpectedError, err)
 			}
 			err = s.datastore.UpsertAlert(ctx, alert2)
-			defer s.cleanupAlert(alert2.Id)
+			defer s.cleanupAlert(alert2.GetId())
 			if !c.ExpectError {
 				s.NoError(err)
 			} else {
@@ -141,12 +115,11 @@ func (s *alertDatastoreSACTestSuite) TestUpsertAlert() {
 	}
 }
 
-func (s *alertDatastoreSACTestSuite) TestMarkAlertStale() {
+func (s *alertDatastoreSACTestSuite) TestMarkAlertResolved() {
 	cases := map[string]crudTest{
 		"(full) read-only cannot mark alert stale": {
 			scopeKey:      testutils.UnrestrictedReadCtx,
 			expectError:   true,
-			expectedFound: true,
 			expectedError: sac.ErrResourceAccessDenied,
 		},
 		"full read-write can mark alert stale": {
@@ -156,22 +129,22 @@ func (s *alertDatastoreSACTestSuite) TestMarkAlertStale() {
 		"full read-write on wrong cluster cannot mark alert stale": {
 			scopeKey:      testutils.Cluster1ReadWriteCtx,
 			expectError:   true,
-			expectedFound: false,
+			expectedError: sac.ErrResourceAccessDenied,
 		},
 		"read-write on wrong cluster and wrong namespace name cannot mark alert stale": {
 			scopeKey:      testutils.Cluster1NamespaceAReadWriteCtx,
 			expectError:   true,
-			expectedFound: false,
+			expectedError: sac.ErrResourceAccessDenied,
 		},
 		"read-write on wrong cluster and matching namespace name cannot mark alert stale": {
 			scopeKey:      testutils.Cluster1NamespaceBReadWriteCtx,
 			expectError:   true,
-			expectedFound: false,
+			expectedError: sac.ErrResourceAccessDenied,
 		},
 		"read-write on right cluster but wrong namespaces cannot mark alert stale": {
 			scopeKey:      testutils.Cluster2NamespacesACReadWriteCtx,
 			expectError:   true,
-			expectedFound: false,
+			expectedError: sac.ErrResourceAccessDenied,
 		},
 		"full read-write on right cluster can mark alert stale": {
 			scopeKey:    testutils.Cluster2ReadWriteCtx,
@@ -191,32 +164,28 @@ func (s *alertDatastoreSACTestSuite) TestMarkAlertStale() {
 		s.Run(name, func() {
 			var err error
 			alert1 := fixtures.GetScopedDeploymentAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
-			s.testAlertIDs = append(s.testAlertIDs, alert1.Id)
+			s.testAlertIDs = append(s.testAlertIDs, alert1.GetId())
 			err = s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert1)
-			defer s.cleanupAlert(alert1.Id)
+			defer s.cleanupAlert(alert1.GetId())
 			s.NoError(err)
 			alert2 := fixtures.GetScopedResourceAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
-			s.testAlertIDs = append(s.testAlertIDs, alert2.Id)
+			s.testAlertIDs = append(s.testAlertIDs, alert2.GetId())
 			err = s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert2)
-			defer s.cleanupAlert(alert2.Id)
+			defer s.cleanupAlert(alert2.GetId())
 			s.NoError(err)
 
 			ctx := s.testContexts[c.scopeKey]
-			err = s.datastore.MarkAlertStale(ctx, alert1.GetId())
+			_, err = s.datastore.MarkAlertsResolvedBatch(ctx, alert1.GetId())
 			if !c.expectError {
 				s.NoError(err)
-			} else if !c.expectedFound {
-				s.Equal(fmt.Errorf("alert with id '%s' does not exist", alert1.GetId()), err)
-			} else {
-				s.Equal(c.expectedError, err)
+				// SAC behavior in postgres has changed. Instead of returning error, pg store returns nil result,
+				// hence `missing` var is set indicate that the record is missing.
 			}
-			err = s.datastore.MarkAlertStale(ctx, alert2.GetId())
+			_, err = s.datastore.MarkAlertsResolvedBatch(ctx, alert2.GetId())
 			if !c.expectError {
 				s.NoError(err)
-			} else if !c.expectedFound {
-				s.Equal(fmt.Errorf("alert with id '%s' does not exist", alert2.GetId()), err)
-			} else {
-				s.Equal(c.expectedError, err)
+				// SAC behavior in postgres has changed. Instead of returning error, pg store returns nil result,
+				// hence `missing` var is set indicate that the record is missing.
 			}
 		})
 	}
@@ -229,11 +198,11 @@ func (s *alertDatastoreSACTestSuite) TestGetAlert() {
 	var err error
 	alert1 := fixtures.GetScopedDeploymentAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
 	err = s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert1)
-	s.testAlertIDs = append(s.testAlertIDs, alert1.Id)
+	s.testAlertIDs = append(s.testAlertIDs, alert1.GetId())
 	s.NoError(err)
 	alert2 := fixtures.GetScopedResourceAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
 	err = s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert2)
-	s.testAlertIDs = append(s.testAlertIDs, alert2.Id)
+	s.testAlertIDs = append(s.testAlertIDs, alert2.GetId())
 	s.NoError(err)
 
 	cases := testutils.GenericNamespaceSACGetTestCases(s.T())
@@ -245,7 +214,7 @@ func (s *alertDatastoreSACTestSuite) TestGetAlert() {
 			s.NoError(err1)
 			if c.ExpectedFound {
 				s.True(found1)
-				s.Equal(*alert1, *readAlert1)
+				protoassert.Equal(s.T(), alert1, readAlert1)
 			} else {
 				s.False(found1)
 				s.Nil(readAlert1)
@@ -254,7 +223,7 @@ func (s *alertDatastoreSACTestSuite) TestGetAlert() {
 			s.NoError(err2)
 			if c.ExpectedFound {
 				s.True(found2)
-				s.Equal(*alert2, *readAlert2)
+				protoassert.Equal(s.T(), alert2, readAlert2)
 			} else {
 				s.False(found2)
 				s.Nil(readAlert2)
@@ -280,11 +249,11 @@ func (s *alertDatastoreSACTestSuite) TestDeleteAlert() {
 			var err error
 			alert1 := fixtures.GetScopedDeploymentAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
 			err = s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert1)
-			s.testAlertIDs = append(s.testAlertIDs, alert1.Id)
+			s.testAlertIDs = append(s.testAlertIDs, alert1.GetId())
 			s.NoError(err)
 			alert2 := fixtures.GetScopedResourceAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
 			err = s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert2)
-			s.testAlertIDs = append(s.testAlertIDs, alert2.Id)
+			s.testAlertIDs = append(s.testAlertIDs, alert2.GetId())
 			s.NoError(err)
 			ctx := s.testContexts[c.ScopeKey]
 			err1 := s.datastore.DeleteAlerts(ctx, alert1.GetId())
@@ -433,27 +402,37 @@ var alertScopedSACSearchTestCases = map[string]alertSACSearchResult{
 
 var alertUnrestrictedSACSearchTestCases = map[string]alertSACSearchResult{
 	"full read access should see all alerts": {
-		// SAC search fields are not injected in query when running unscoped search
-		// Therefore results cannot be dispatched per cluster and namespace
 		scopeKey: testutils.UnrestrictedReadCtx,
 		resultCounts: map[string]map[string]int{
-			"": {"": 19},
+			testconsts.Cluster1: {
+				testconsts.NamespaceA: 8,
+				testconsts.NamespaceB: 5,
+			},
+			testconsts.Cluster2: {
+				testconsts.NamespaceB: 3,
+				testconsts.NamespaceC: 2,
+			},
+			fixtureconsts.Cluster1: {"stackrox": 1},
 		},
 	},
 	"full read-write access should see all alerts": {
-		// SAC search fields are not injected in query when running unscoped search
-		// Therefore results cannot be dispatched per cluster and namespace
 		scopeKey: testutils.UnrestrictedReadWriteCtx,
 		resultCounts: map[string]map[string]int{
-			"": {"": 19},
+			testconsts.Cluster1: {
+				testconsts.NamespaceA: 8,
+				testconsts.NamespaceB: 5,
+			},
+			testconsts.Cluster2: {
+				testconsts.NamespaceB: 3,
+				testconsts.NamespaceC: 2,
+			},
+			fixtureconsts.Cluster1: {"stackrox": 1},
 		},
 	},
 }
 
 var alertUnrestrictedSACObjectSearchTestCases = map[string]alertSACSearchResult{
 	"full read access should see all alerts": {
-		// SAC search fields are not injected in query when running unscoped search
-		// Therefore results cannot be dispatched per cluster and namespace
 		scopeKey: testutils.UnrestrictedReadCtx,
 		resultCounts: map[string]map[string]int{
 			testconsts.Cluster1: {
@@ -468,8 +447,6 @@ var alertUnrestrictedSACObjectSearchTestCases = map[string]alertSACSearchResult{
 		},
 	},
 	"full read-write access should see all alerts": {
-		// SAC search fields are not injected in query when running unscoped search
-		// Therefore results cannot be dispatched per cluster and namespace
 		scopeKey: testutils.UnrestrictedReadWriteCtx,
 		resultCounts: map[string]map[string]int{
 			testconsts.Cluster1: {
@@ -487,9 +464,16 @@ var alertUnrestrictedSACObjectSearchTestCases = map[string]alertSACSearchResult{
 
 func (s *alertDatastoreSACTestSuite) runSearchTest(testparams alertSACSearchResult) {
 	ctx := s.testContexts[testparams.scopeKey]
-	searchResults, err := s.datastore.Search(ctx, nil)
+	searchResults, err := s.datastore.Search(ctx, nil, true)
 	s.NoError(err)
-	resultCounts := testutils.CountResultsPerClusterAndNamespace(s.T(), searchResults, s.optionsMap)
+	results := make([]sac.NamespaceScopedObject, 0, len(searchResults))
+	for _, r := range searchResults {
+		obj, found, err := s.datastore.GetAlert(s.testContexts[testutils.UnrestrictedReadCtx], r.ID)
+		if found && err == nil {
+			results = append(results, obj)
+		}
+	}
+	resultCounts := testutils.CountSearchResultObjectsPerClusterAndNamespace(s.T(), results)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.resultCounts, resultCounts)
 }
 
@@ -511,7 +495,7 @@ func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedSearch() {
 
 func (s *alertDatastoreSACTestSuite) runCountTest(testparams alertSACSearchResult) {
 	ctx := s.testContexts[testparams.scopeKey]
-	resultCount, err := s.datastore.Count(ctx, nil)
+	resultCount, err := s.datastore.Count(ctx, nil, true)
 	s.NoError(err)
 	expectedResultCount := testutils.AggregateCounts(s.T(), testparams.resultCounts)
 	s.Equal(expectedResultCount, resultCount)
@@ -526,7 +510,7 @@ func (s *alertDatastoreSACTestSuite) TestAlertScopedCount() {
 }
 
 func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedCount() {
-	for name, c := range alertUnrestrictedSACSearchTestCases {
+	for name, c := range alertUnrestrictedSACObjectSearchTestCases {
 		s.Run(name, func() {
 			s.runCountTest(c)
 		})
@@ -550,7 +534,7 @@ func (s *alertDatastoreSACTestSuite) TestAlertScopedCountAlerts() {
 }
 
 func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedCountAlerts() {
-	for name, c := range alertUnrestrictedSACSearchTestCases {
+	for name, c := range alertUnrestrictedSACObjectSearchTestCases {
 		s.Run(name, func() {
 			s.runCountAlertsTest(c)
 		})
@@ -561,7 +545,14 @@ func (s *alertDatastoreSACTestSuite) runSearchAlertsTest(testparams alertSACSear
 	ctx := s.testContexts[testparams.scopeKey]
 	searchResults, err := s.datastore.SearchAlerts(ctx, nil)
 	s.NoError(err)
-	resultsDistribution := testutils.CountSearchResultsPerClusterAndNamespace(s.T(), searchResults, s.optionsMap)
+	results := make([]sac.NamespaceScopedObject, 0, len(searchResults))
+	for _, r := range searchResults {
+		obj, found, err := s.datastore.GetAlert(s.testContexts[testutils.UnrestrictedReadCtx], r.GetId())
+		if found && err == nil {
+			results = append(results, obj)
+		}
+	}
+	resultsDistribution := testutils.CountSearchResultObjectsPerClusterAndNamespace(s.T(), results)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.resultCounts, resultsDistribution)
 }
 
@@ -602,7 +593,7 @@ func countListAlertsResultsPerClusterAndNamespace(results []*storage.ListAlert) 
 
 func (s *alertDatastoreSACTestSuite) runSearchListAlertsTest(testparams alertSACSearchResult) {
 	ctx := s.testContexts[testparams.scopeKey]
-	searchResults, err := s.datastore.SearchListAlerts(ctx, nil)
+	searchResults, err := s.datastore.SearchListAlerts(ctx, nil, true)
 	s.NoError(err)
 	resultsDistribution := countListAlertsResultsPerClusterAndNamespace(searchResults)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.resultCounts, resultsDistribution)
@@ -626,7 +617,7 @@ func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedSearchListAlerts() {
 
 func (s *alertDatastoreSACTestSuite) runListAlertsTest(testparams alertSACSearchResult) {
 	ctx := s.testContexts[testparams.scopeKey]
-	searchResults, err := s.datastore.ListAlerts(ctx, nil)
+	searchResults, err := s.datastore.SearchListAlerts(ctx, searchPkg.EmptyQuery(), true)
 	s.NoError(err)
 	resultsDistribution := countListAlertsResultsPerClusterAndNamespace(searchResults)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.resultCounts, resultsDistribution)
@@ -653,7 +644,7 @@ func countSearchRawAlertsResultsPerClusterAndNamespace(results []*storage.Alert)
 	for _, result := range results {
 		var clusterID string
 		var namespace string
-		switch entity := result.Entity.(type) {
+		switch entity := result.GetEntity().(type) {
 		case *storage.Alert_Deployment_:
 			if entity.Deployment != nil {
 				clusterID = entity.Deployment.GetClusterId()
@@ -678,7 +669,7 @@ func countSearchRawAlertsResultsPerClusterAndNamespace(results []*storage.Alert)
 
 func (s *alertDatastoreSACTestSuite) runSearchRawAlertsTest(testparams alertSACSearchResult) {
 	ctx := s.testContexts[testparams.scopeKey]
-	searchResults, err := s.datastore.SearchRawAlerts(ctx, nil)
+	searchResults, err := s.datastore.SearchRawAlerts(ctx, nil, true)
 	s.NoError(err)
 	resultsDistribution := countSearchRawAlertsResultsPerClusterAndNamespace(searchResults)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.resultCounts, resultsDistribution)

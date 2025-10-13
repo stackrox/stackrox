@@ -1,0 +1,345 @@
+{{- include "srox.init" . -}}
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    {{- include "srox.labels" (list . "daemonset" "collector") | nindent 4 }}
+    service: collector
+    app: collector
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "daemonset" "collector") | nindent 4 }}
+  name: collector
+  namespace: {{ ._rox._namespace }}
+spec:
+  selector:
+    matchLabels:
+      service: collector
+  template:
+    metadata:
+      namespace: {{ ._rox._namespace }}
+      labels:
+        service: collector
+        app: collector
+        {{- include "srox.podLabels" (list . "daemonset" "collector") | nindent 8 }}
+      annotations:
+        {{- $annotations := dict -}}
+        {{- if eq ._rox.env.openshift 4 }}
+          {{- $_ := set $annotations "openshift.io/required-scc" "privileged" -}}
+        {{- end }}
+        {{- include "srox.podAnnotations" (list . "daemonset" "collector" $annotations) | nindent 8 }}
+    spec:
+      {{- if not ._rox.collector.disableTaintTolerations }}
+      tolerations:
+      {{- toYaml ._rox.collector.tolerations | nindent 6 }}
+      {{- end }}
+      {{- if ._rox.collector._nodeSelector }}
+      nodeSelector:
+        {{- ._rox.collector._nodeSelector | nindent 8 }}
+      {{- end}}
+      {{- if ._rox.collector.priorityClassName }}
+      priorityClassName: {{ ._rox.collector.priorityClassName }}
+      {{- end }}
+      {{- if ._rox.collector.hostAliases }}
+      hostAliases: {{ toYaml ._rox.collector.hostAliases | nindent 8 }}
+      {{- end }}
+      serviceAccountName: collector
+      initContainers:
+      {{- if ._rox._securedClusterCertRefresh }}
+      - {{ include "srox.tlsCertsInitContainer" (list .) | indent 8 | trim }}
+      {{- end }}
+      containers:
+      {{- if ne ._rox.collector.collectionMethod "NO_COLLECTION"}}
+      - name: collector
+        image: {{ quote ._rox.image.collector.fullRef }}
+        imagePullPolicy: {{ ._rox.collector.imagePullPolicy }}
+        {{- if ._rox.collector.exposeMonitoring }}
+        ports:
+          - containerPort: 9090
+            name: monitoring
+        {{- end }}
+        env:
+        - name: COLLECTOR_CONFIG
+          value: '{"tlsConfig":{"caCertPath":"/var/run/secrets/stackrox.io/certs/ca.pem","clientCertPath":"/var/run/secrets/stackrox.io/certs/cert.pem","clientKeyPath":"/var/run/secrets/stackrox.io/certs/key.pem"}}'
+        - name: COLLECTION_METHOD
+          {{- if eq ._rox.collector.collectionMethod "EBPF" }}
+          value: CORE_BPF
+          {{- else }}
+          value: {{ default "CORE_BPF" ._rox.collector.collectionMethod }}
+          {{- end }}
+        - name: GRPC_SERVER
+          value: {{ ._rox.sensor.endpoint }}
+        - name: SNI_HOSTNAME
+          value: "sensor.stackrox.svc"
+        [<- if .FeatureFlags.ROX_COLLECTOR_RUNTIME_CONFIG >]
+        - name: ROX_COLLECTOR_RUNTIME_FILTERS_ENABLED
+          value: "{{ ._rox.collector.runtimeConfig.enabled }}"
+        [<- end >]
+        {{- include "srox.envVars" (list . "daemonset" "collector" "collector") | nindent 8 }}
+        resources:
+          {{- ._rox.collector._resources | nindent 10 }}
+        securityContext:
+          capabilities:
+            drop:
+            - NET_RAW
+          privileged: true
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /host/proc
+          name: proc-ro
+          readOnly: true
+          mountPropagation: HostToContainer
+        - mountPath: /host/etc
+          name: etc-ro
+          readOnly: true
+          mountPropagation: HostToContainer
+        - mountPath: /host/usr/lib
+          name: usr-lib-ro
+          readOnly: true
+          mountPropagation: HostToContainer
+        - mountPath: /host/sys
+          name: sys-ro
+          readOnly: true
+          mountPropagation: HostToContainer
+        - mountPath: /host/dev
+          name: dev-ro
+          readOnly: true
+          mountPropagation: HostToContainer
+        - mountPath: /run/secrets/stackrox.io/certs/
+          name: certs
+          readOnly: true
+        [<- if .FeatureFlags.ROX_COLLECTOR_RUNTIME_CONFIG >]
+        {{- if ._rox.collector.containerd.enabled }}
+        - mountPath: /host/run/containerd/containerd.sock
+          name: containerd-sock
+          mountPropagation: HostToContainer
+        {{- end }}
+        {{- if ._rox.collector.crio.enabled }}
+        - mountPath: /host/run/crio/crio.sock
+          name: crio-sock
+          mountPropagation: HostToContainer
+        {{- end }}
+        [<- end >]
+        - mountPath: "/etc/stackrox"
+          name: collector-config
+          readOnly: true
+        - mountPath: /var/profiles
+          name: collector-profiles
+      {{- end }}
+
+      [<- if .FeatureFlags.ROX_SENSITIVE_FILE_ACTIVITY >]
+      - name: fact
+        image: {{ quote ._rox.image.fact.fullRef }}
+        imagePullPolicy: {{ ._rox.fact.imagePullPolicy }}
+        {{- if ._rox.fact.exposeMonitoring }}
+        ports:
+          - containerPort: 9001
+            name: monitoring
+        {{- end }}
+        command: ["/usr/local/bin/fact", "--skip-pre-flight"]
+        env:
+        - name: FACT_LOGLEVEL
+          value: 'debug'
+        {{- include "srox.envVars" (list . "daemonset" "fact" "fact") | nindent 8 }}
+        resources:
+          {{- ._rox.fact._resources | nindent 10 }}
+        securityContext:
+          capabilities:
+            drop:
+            - NET_RAW
+          privileged: true
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /sys
+          name: sys-ro
+          readOnly: true
+          mountPropagation: HostToContainer
+        - mountPath: /run/secrets/stackrox.io/certs/
+          name: certs
+          readOnly: true
+      [<- end >]
+
+      - command:
+        - stackrox/compliance
+        env:
+        - name: ROX_MEMLIMIT
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.memory
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.cpu
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: ROX_CALL_NODE_INVENTORY_ENABLED
+          value: {{ if eq ._rox.env.openshift 4 }}"true"{{ else }}"false"{{ end }}
+      {{- if eq ._rox.env.openshift 4 }}
+        - name: ROX_NODE_INDEX_HOST_PATH
+          value: "/hostindex"
+      {{- end }}
+        - name: ROX_METRICS_PORT
+        {{- if ._rox.collector.exposeMonitoring }}
+          value: ":9091"
+        {{- else}}
+          value: "disabled"
+        {{- end }}
+        - name: ROX_NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: ROX_ADVERTISED_ENDPOINT
+          value: {{ quote ._rox.sensor.endpoint }}
+        - name: ROX_NODE_SCANNING_ENDPOINT
+          value: {{ quote ._rox.collector.nodescanningEndpoint }}
+        {{- include "srox.envVars" (list . "daemonset" "collector" "compliance") | nindent 8 }}
+        image: {{ quote ._rox.image.main.fullRef }}
+        imagePullPolicy: {{ ._rox.collector.complianceImagePullPolicy }}
+        name: compliance
+        {{- if ._rox.collector.exposeMonitoring }}
+        ports:
+        - containerPort: 9091
+          name: monitoring
+        {{- end }}
+        resources:
+          {{- ._rox.collector._complianceResources | nindent 10 }}
+        securityContext:
+          runAsUser: 0
+          readOnlyRootFilesystem: true
+          {{ if not ._rox.collector.disableSELinuxOptions }}
+          seLinuxOptions:
+            type: {{ ._rox.collector.seLinuxOptionsType | default "container_runtime_t" | quote }}
+          {{ end }}
+        volumeMounts:
+        - mountPath: /etc/ssl/
+          name: etc-ssl
+        - mountPath: /etc/pki/ca-trust/
+          name: etc-pki-volume
+        - mountPath: /host
+          name: host-root-ro
+          readOnly: true
+          mountPropagation: HostToContainer
+        - mountPath: /run/secrets/stackrox.io/certs/
+          name: certs
+          readOnly: true
+      {{- if eq ._rox.env.openshift 4 }}
+        - mountPath: /hostindex/usr/share
+          name: usr-share-ro
+          readOnly: true
+        - mountPath: /tmp
+          name: index-volume
+      {{- end }}
+      {{- if eq ._rox.env.openshift 4 }}
+      - name: node-inventory
+        image: {{ quote ._rox.image.scanner.fullRef }}
+        imagePullPolicy: IfNotPresent
+        command: ["/scanner", "--nodeinventory", "--config=", ""]
+        ports:
+          - containerPort: 8444
+            name: grpc
+        resources:
+          {{- ._rox.collector._nodeScanningResources | nindent 10 }}
+        securityContext:
+          privileged: true
+        env:
+        - name: ROX_NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        {{- include "srox.envVars" (list . "daemonset" "collector" "node-inventory") | nindent 8 }}
+        volumeMounts:
+         - mountPath: /host
+           name: host-root-ro
+           readOnly: true
+           mountPropagation: HostToContainer
+         - mountPath: /tmp/
+           name: tmp-volume
+         - mountPath: /cache
+           name: cache-volume
+      {{- end }}
+      volumes:
+      - hostPath:
+          path: /proc
+        name: proc-ro
+      - hostPath:
+          path: /etc
+        name: etc-ro
+      - hostPath:
+          path: /usr/lib
+        name: usr-lib-ro
+      - hostPath:
+          path: /sys/
+        name: sys-ro
+      - hostPath:
+          path: /dev
+        name: dev-ro
+      {{- if ._rox._securedClusterCertRefresh }}
+      {{- include "srox.tlsCertsInitContainerVolumes" (list "collector") | indent 6 }}
+      {{- else }}
+      - name: certs
+        secret:
+          secretName: collector-tls
+          optional: true
+          items:
+          - key: collector-cert.pem
+            path: cert.pem
+          - key: collector-key.pem
+            path: key.pem
+          - key: ca.pem
+            path: ca.pem
+      {{- end }}
+      - hostPath:
+          path: /
+        name: host-root-ro
+    {{- if eq ._rox.env.openshift 4 }}
+      - hostPath:
+          path: /usr/share
+        name: usr-share-ro
+      - name: index-volume
+        emptyDir: {}
+    {{- end }}
+      - name: etc-ssl
+        emptyDir: {}
+      - name: etc-pki-volume
+        emptyDir: {}
+      - name: tmp-volume
+        emptyDir: {}
+      - name: collector-profiles
+        emptyDir: {}
+      - name: cache-volume
+        emptyDir:
+          sizeLimit: 200Mi
+
+      [<- if .FeatureFlags.ROX_COLLECTOR_RUNTIME_CONFIG >]
+      {{- if ._rox.collector.containerd.enabled }}
+      - name: containerd-sock
+        hostPath:
+          path: /run/containerd/containerd.sock
+      {{- end }}
+      {{- if ._rox.collector.crio.enabled }}
+      - name: crio-sock
+        hostPath:
+          path: /run/crio/crio.sock
+      {{- end }}
+      [<- end >]
+      - name: collector-config
+        configMap:
+          name: collector-config
+          optional: true

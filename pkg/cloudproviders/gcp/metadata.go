@@ -66,6 +66,7 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 	if err != nil && !isNotDefinedError(err) {
 		return nil, err
 	}
+	clusterMetadata := getClusterMetadataFromAttributes(c)
 
 	return &storage.ProviderMetadata{
 		Region: region,
@@ -77,5 +78,15 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 			},
 		},
 		Verified: verified,
+		Cluster:  clusterMetadata,
 	}, nil
+}
+
+func getClusterMetadataFromAttributes(client *metadata.Client) *storage.ClusterMetadata {
+	name, _ := client.InstanceAttributeValue("cluster-name")
+	id, _ := client.InstanceAttributeValue("cluster-uid")
+	if name != "" && id != "" {
+		return &storage.ClusterMetadata{Type: storage.ClusterMetadata_GKE, Name: name, Id: id}
+	}
+	return nil
 }

@@ -1,5 +1,5 @@
-import React, { ReactElement, useState } from 'react';
-import { format } from 'date-fns';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import {
     Card,
     CardHeader,
@@ -10,8 +10,8 @@ import {
 } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
-import dateTimeFormat from 'constants/dateTimeFormat';
-import { NetworkFlowInfo } from '../types/violationTypes';
+import type { NetworkFlowInfo } from 'types/alert.proto';
+import { getDateTime } from 'utils/dateUtils';
 
 export type NetworkFlowCardProps = {
     networkFlowInfo: NetworkFlowInfo;
@@ -27,9 +27,12 @@ function NetworkFlowCard({ networkFlowInfo, message, time }: NetworkFlowCardProp
     }
 
     return (
-        <div className="pf-u-mb-md" key={message} data-testid="networkFlow">
-            <Card isExpanded={isExpanded} id={message} isFlat>
-                <CardHeader onExpand={onExpand}>
+        <div className="pf-v5-u-mb-md">
+            <Card isExpanded={isExpanded} isFlat>
+                <CardHeader
+                    onExpand={onExpand}
+                    toggleButtonProps={{ 'aria-expanded': isExpanded, 'aria-label': 'Details' }}
+                >
                     <CardTitle>{message}</CardTitle>
                 </CardHeader>
                 <CardExpandableContent>
@@ -92,7 +95,7 @@ function NetworkFlowCard({ networkFlowInfo, message, time }: NetworkFlowCardProp
                             <DescriptionListItem term="Protocol" desc={networkFlowInfo.protocol} />
                             <DescriptionListItem
                                 term="Time"
-                                desc={time ? format(time, dateTimeFormat) : 'N/A'}
+                                desc={time ? getDateTime(time) : 'N/A'}
                             />
                         </DescriptionList>
                     </CardBody>

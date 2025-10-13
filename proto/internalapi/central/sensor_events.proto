@@ -1,137 +1,160 @@
 syntax = "proto3";
 
-option go_package = "central";
+package central;
 
+import "internalapi/central/compliance_operator.proto";
 import "internalapi/compliance/compliance_data.proto";
+import "internalapi/scanner/v4/index_report.proto";
+import "internalapi/virtualmachine/v1/index_report.proto";
+import "internalapi/virtualmachine/v1/virtual_machine.proto";
 import "storage/alert.proto";
 import "storage/cluster.proto";
+import "storage/compliance_operator.proto";
 import "storage/deployment.proto";
+import "storage/image_integration.proto";
 import "storage/namespace_metadata.proto";
 import "storage/network_policy.proto";
 import "storage/node.proto";
-import "storage/secret.proto";
-import "storage/service_account.proto";
-import "storage/rbac.proto";
 import "storage/policy.proto";
 import "storage/process_indicator.proto";
-import "storage/image_integration.proto";
-import "storage/compliance_operator.proto";
+import "storage/rbac.proto";
+import "storage/secret.proto";
+import "storage/service_account.proto";
 
-package central;
+option go_package = "./internalapi/central;central";
 
 enum ResourceAction {
-    UNSET_ACTION_RESOURCE   = 0;
-    CREATE_RESOURCE         = 1;
-    REMOVE_RESOURCE         = 2;
-    UPDATE_RESOURCE         = 3;
-    SYNC_RESOURCE           = 4;
+  UNSET_ACTION_RESOURCE = 0;
+  CREATE_RESOURCE = 1;
+  REMOVE_RESOURCE = 2;
+  UPDATE_RESOURCE = 3;
+  SYNC_RESOURCE = 4;
 }
 
 // Event updates from sensor to central.
 ////////////////////////////////////////
 
 message ReprocessDeploymentRisk {
-    string deployment_id = 1;
+  string deployment_id = 1;
 }
 
 message AlertResults {
-    enum Source {
-      DEPLOYMENT_EVENT = 0;
-      AUDIT_EVENT      = 1;
-    }
-    // Only relevant if source == DEPLOYMENT.
-    string deployment_id          = 1;
-    repeated storage.Alert alerts = 2;
-    storage.LifecycleStage stage  = 3;
-    Source source                 = 4;
+  enum Source {
+    DEPLOYMENT_EVENT = 0;
+    AUDIT_EVENT = 1;
+  }
+  // Only relevant if source == DEPLOYMENT.
+  string deployment_id = 1;
+  repeated storage.Alert alerts = 2;
+  storage.LifecycleStage stage = 3;
+  Source source = 4;
 }
 
 message Timing {
-    string dispatcher = 1;
-    string resource   = 2;
-    int64  nanos      = 3;
+  string dispatcher = 1;
+  string resource = 2;
+  int64 nanos = 3;
 }
 
-// Next tag: 24.
+// Next tag: 37.
 message SensorEvent {
-    // These fields may be duplicated in the individual events, but avoid the need to branch all the time
-    string         id                           = 1;
-    ResourceAction action                       = 2;
-    Timing         timing                       = 3;
+  // These fields may be duplicated in the individual events, but avoid the need to branch all the time
+  string id = 1;
+  ResourceAction action = 2;
+  Timing timing = 3;
+  oneof sensor_hash_oneof {
+    uint64 sensor_hash = 26;
+  }
 
-    message ResourcesSynced {}
+  message ResourcesSynced {
+    repeated string unchanged_ids = 1;
+  }
 
-    oneof resource {
-        storage.NetworkPolicy     network_policy    = 4;
-        storage.Deployment        deployment        = 5;
-        storage.Pod               pod               = 19;
-        storage.NamespaceMetadata namespace         = 6;
-        storage.Secret            secret            = 7;
-        storage.Node              node              = 9;
-        storage.ServiceAccount    service_account   = 14;
-        storage.K8sRole           role              = 15;
-        storage.K8sRoleBinding    binding           = 16;
+  oneof resource {
+    storage.NetworkPolicy network_policy = 4;
+    storage.Deployment deployment = 5;
+    storage.Pod pod = 19;
+    storage.NamespaceMetadata namespace = 6;
+    storage.Secret secret = 7;
+    storage.Node node = 9;
+    storage.NodeInventory node_inventory = 25;
+    scanner.v4.IndexReport index_report = 34;
+    storage.ServiceAccount service_account = 14;
+    storage.K8sRole role = 15;
+    storage.K8sRoleBinding binding = 16;
 
-        storage.ProcessIndicator        process_indicator       = 8;
-        storage.ProviderMetadata        provider_metadata       = 10;
-        ResourcesSynced                 synced                  = 11;
-        storage.OrchestratorMetadata    orchestrator_metadata   = 12;
-        storage.ImageIntegration        image_integration       = 13;
-        ReprocessDeploymentRisk         reprocess_deployment    = 17;
-        AlertResults                    alert_results           = 18;
+    storage.ProcessIndicator process_indicator = 8;
+    storage.ProviderMetadata provider_metadata = 10;
+    ResourcesSynced synced = 11;
+    storage.OrchestratorMetadata orchestrator_metadata = 12;
+    storage.ImageIntegration image_integration = 13;
+    ReprocessDeploymentRisk reprocess_deployment = 17;
+    AlertResults alert_results = 18;
 
-        storage.ComplianceOperatorCheckResult        compliance_operator_result               = 20;
-        storage.ComplianceOperatorProfile            compliance_operator_profile              = 21;
-        storage.ComplianceOperatorRule               compliance_operator_rule                 = 22;
-        storage.ComplianceOperatorScanSettingBinding compliance_operator_scan_setting_binding = 23;
-        storage.ComplianceOperatorScan               compliance_operator_scan                 = 24;
-    }
+    storage.ComplianceOperatorCheckResult compliance_operator_result = 20;
+    storage.ComplianceOperatorProfile compliance_operator_profile = 21;
+    storage.ComplianceOperatorRule compliance_operator_rule = 22;
+    storage.ComplianceOperatorScanSettingBinding compliance_operator_scan_setting_binding = 23;
+    storage.ComplianceOperatorScan compliance_operator_scan = 24;
+
+    virtualmachine.v1.IndexReportEvent virtual_machine_index_report = 35;
+    virtualmachine.v1.VirtualMachine virtual_machine = 36;
+
+    // V2 Compliance
+    ComplianceOperatorCheckResultV2 compliance_operator_result_v2 = 27;
+    ComplianceOperatorProfileV2 compliance_operator_profile_v2 = 28;
+    ComplianceOperatorRuleV2 compliance_operator_rule_v2 = 29;
+    ComplianceOperatorScanV2 compliance_operator_scan_v2 = 30;
+    ComplianceOperatorScanSettingBindingV2 compliance_operator_scan_setting_binding_v2 = 31;
+    ComplianceOperatorSuiteV2 compliance_operator_suite_v2 = 32;
+    ComplianceOperatorRemediationV2 compliance_operator_remediation_v2 = 33;
+  }
 }
 
 // Central enforcement through sensor.
 //////////////////////////////////////
 
 message SensorEnforcement {
-    storage.EnforcementAction enforcement = 1;
+  storage.EnforcementAction enforcement = 1;
 
-    oneof resource {
-        DeploymentEnforcement        deployment         = 2;
-        ContainerInstanceEnforcement container_instance = 3;
-    }
+  oneof resource {
+    DeploymentEnforcement deployment = 2;
+    ContainerInstanceEnforcement container_instance = 3;
+  }
 }
 
 message DeploymentEnforcement {
-    string deployment_id   = 1;
-    string deployment_name = 2;
-    string deployment_type = 3;
-    string namespace       = 4;
-    string alert_id        = 5;
-    string policy_name     = 6;
+  string deployment_id = 1;
+  string deployment_name = 2;
+  string deployment_type = 3;
+  string namespace = 4;
+  string alert_id = 5;
+  string policy_name = 6;
 }
 
 message ContainerInstanceEnforcement {
-    string pod_id                = 2;
+  string pod_id = 2;
 
-    DeploymentEnforcement deployment_enforcement = 3;
+  DeploymentEnforcement deployment_enforcement = 3;
 }
 
 // Scrape commands sent to sensor.
 //////////////////////////////////
 
 message ScrapeCommand {
-    string scrape_id = 1;
+  string scrape_id = 1;
 
-    oneof command {
-        StartScrape start_scrape = 2;
-        KillScrape  kill_scrape  = 3;
-    }
+  oneof command {
+    StartScrape start_scrape = 2;
+    KillScrape kill_scrape = 3;
+  }
 }
 
 message StartScrape {
-    // Dictates the hosts we expect results from.
-    repeated string hostnames = 1;
-    // Dictates which standards the compliance pods should run.
-    repeated string standards = 2;
+  // Dictates the hosts we expect results from.
+  repeated string hostnames = 1;
+  // Dictates which standards the compliance pods should run.
+  repeated string standards = 2;
 }
 
 message KillScrape {}
@@ -140,60 +163,60 @@ message KillScrape {}
 ////////////////////////////////////////
 
 message ScrapeUpdate {
-    string scrape_id = 1;
+  string scrape_id = 1;
 
-    oneof update {
-        compliance.ComplianceReturn compliance_return = 2;
-        ScrapeStarted scrape_started                  = 3;
-        ScrapeKilled scrape_killed                    = 4;
-    }
+  oneof update {
+    compliance.ComplianceReturn compliance_return = 2;
+    ScrapeStarted scrape_started = 3;
+    ScrapeKilled scrape_killed = 4;
+  }
 }
 
 message ScrapeStarted {
-    string error_message = 1;
+  string error_message = 1;
 }
 
 message ScrapeKilled {
-    string error_message = 1;
+  string error_message = 1;
 }
 
 // Network policy application.
 ////////////////////////////////////////
 
 message NetworkPoliciesCommand {
-    message Apply {
-        string apply_id                           = 1;
-        storage.NetworkPolicyModification modification = 2;
-    }
+  message Apply {
+    string apply_id = 1;
+    storage.NetworkPolicyModification modification = 2;
+  }
 
-    message Payload {
-        oneof cmd {
-            Apply apply = 1;
-        }
+  message Payload {
+    oneof cmd {
+      Apply apply = 1;
     }
+  }
 
-    int64 seq_id    = 1;
-    Payload payload = 2;
+  int64 seq_id = 1;
+  Payload payload = 2;
 }
 
 message NetworkPoliciesResponse {
-    message Apply {
-        string apply_id = 1;
-        storage.NetworkPolicyModification undo_modification = 2;
+  message Apply {
+    string apply_id = 1;
+    storage.NetworkPolicyModification undo_modification = 2;
+  }
+
+  message Error {
+    string message = 1;
+  }
+
+  message Payload {
+    oneof cmd {
+      Error error = 1;
+
+      Apply apply = 2;
     }
+  }
 
-    message Error {
-        string message = 1;
-    }
-
-    message Payload {
-        oneof cmd {
-            Error error = 1;
-
-            Apply apply = 2;
-        }
-    }
-
-    int64 seq_id    = 1;
-    Payload payload = 2;
+  int64 seq_id = 1;
+  Payload payload = 2;
 }

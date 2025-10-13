@@ -1,16 +1,12 @@
-import React, { ChangeEvent } from 'react';
-import {
-    Divider,
-    Select,
-    SelectGroup,
-    SelectOption,
-    SelectOptionObject,
-    SelectVariant,
-} from '@patternfly/react-core';
+import React from 'react';
+import type { ChangeEvent } from 'react';
+import { Divider } from '@patternfly/react-core';
+import { Select, SelectGroup, SelectOption } from '@patternfly/react-core/deprecated';
+import type { SelectOptionObject } from '@patternfly/react-core/deprecated';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { flattenFilterValue } from 'utils/searchUtils';
-import { Cluster } from './types';
+import type { Cluster } from './types';
 
 import './NamespaceSelect.css';
 
@@ -43,7 +39,7 @@ function createOptions(clusters: Cluster[], filterValue?: string) {
         <SelectOption key={selectAll.toString()} value={selectAll}>
             <span>All namespaces</span>
         </SelectOption>,
-        <Divider key="namespace-select-option-divider" className="pf-u-mb-0" component="div" />,
+        <Divider key="namespace-select-option-divider" className="pf-v5-u-mb-0" component="div" />,
         ...clustersToShow.map(({ name: clusterName, namespaces }) => (
             <SelectGroup key={clusterName} label={clusterName}>
                 {namespaces.map(({ metadata: { id, name } }) => (
@@ -96,9 +92,9 @@ function NamespaceSelect({
         <Select
             toggleAriaLabel="Select namespaces"
             className="namespace-select"
-            variant={SelectVariant.checkbox}
+            variant="checkbox"
             isOpen={isOpen}
-            onToggle={onToggle}
+            onToggle={(_e, v) => onToggle(v)}
             onSelect={onSelect}
             onFilter={onFilter}
             placeholderText={currentSelection === selectAll ? 'All namespaces' : 'Namespaces'}

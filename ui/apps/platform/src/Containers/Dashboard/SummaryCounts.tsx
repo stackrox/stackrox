@@ -1,26 +1,21 @@
 import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import { gql, useQuery } from '@apollo/client';
 import Raven from 'raven-js';
-import pluralize from 'pluralize';
-import {
-    Alert,
-    Button,
-    ButtonVariant,
-    Skeleton,
-    Split,
-    SplitItem,
-    Stack,
-} from '@patternfly/react-core';
+import { Alert, Skeleton, Split, SplitItem } from '@patternfly/react-core';
 
 import {
     clustersBasePath,
     configManagementPath,
     urlEntityListTypes,
-    violationsBasePath,
-    vulnManagementImagesPath,
+    violationsFullViewPath,
+    vulnerabilitiesAllImagesPath,
 } from 'routePaths';
 import { resourceTypes } from 'constants/entityTypes';
-import LinkShim from 'Components/PatternFly/LinkShim';
+import { getDateTime } from 'utils/dateUtils';
+import { generatePathWithQuery } from 'utils/searchUtils';
+
+import SummaryCount from './SummaryCount';
 
 export type SummaryCountsResponse = {
     clusterCount: number;
@@ -31,36 +26,59 @@ export type SummaryCountsResponse = {
     secretCount: number;
 };
 
-export const SUMMARY_COUNTS = gql`
-    query summary_counts {
-        clusterCount
-        nodeCount
-        violationCount
-        deploymentCount
-        imageCount
-        secretCount
-    }
-`;
+const tileResources = ['Cluster', 'Node', 'Alert', 'Deployment', 'Image', 'Secret'] as const;
+type TileResource = (typeof tileResources)[number];
 
-const tileEntityTypes = ['Cluster', 'Node', 'Violation', 'Deployment', 'Image', 'Secret'] as const;
-type TileEntity = typeof tileEntityTypes[number];
-
-const tileLinks: Record<TileEntity, string> = {
-    Cluster: clustersBasePath,
-    Node: `${configManagementPath}/${urlEntityListTypes[resourceTypes.NODE]}`,
-    Violation: violationsBasePath,
-    Deployment: `${configManagementPath}/${urlEntityListTypes[resourceTypes.DEPLOYMENT]}`,
-    Image: vulnManagementImagesPath,
-    Secret: `${configManagementPath}/${urlEntityListTypes[resourceTypes.SECRET]}`,
+const dataKey: Record<TileResource, string> = {
+    Cluster: 'clusterCount',
+    Node: 'nodeCount',
+    Alert: 'violationCount',
+    Deployment: 'deploymentCount',
+    Image: 'imageCount',
+    Secret: 'secretCount',
 };
 
-const locale = window.navigator.language ?? 'en-US';
-const dateFormatter = new Intl.DateTimeFormat(locale);
-const timeFormatter = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: 'numeric' });
+const tileNouns: Record<TileResource, string> = {
+    Cluster: 'Cluster',
+    Node: 'Node',
+    Alert: 'Violation',
+    Deployment: 'Deployment',
+    Image: 'Image',
+    Secret: 'Secret',
+};
 
-function SummaryCounts() {
+export type SummaryCountsProps = {
+    hasReadAccessForResource: Record<TileResource, boolean>;
+};
+
+function SummaryCounts({ hasReadAccessForResource }: SummaryCountsProps): ReactElement {
+    // According to current minimalist philosophy, ignore that routes might have additional resource requirements.
+    const tileLinks: Record<TileResource, string> = {
+        Cluster: clustersBasePath,
+        Node: `${configManagementPath}/${urlEntityListTypes[resourceTypes.NODE]}`,
+        Alert: violationsFullViewPath,
+        Deployment: `${configManagementPath}/${urlEntityListTypes[resourceTypes.DEPLOYMENT]}`,
+        Image: generatePathWithQuery(
+            vulnerabilitiesAllImagesPath,
+            {},
+            { customParams: { entityTab: 'Image' } }
+        ),
+        Secret: `${configManagementPath}/${urlEntityListTypes[resourceTypes.SECRET]}`,
+    };
+
+    const tileResourcesQuery = tileResources
+        .filter((tileResource) => hasReadAccessForResource[tileResource])
+        .map((tileResource) => dataKey[tileResource])
+        .join('\n');
+    const query = gql`
+        query summary_counts {
+            ${tileResourcesQuery}
+        }
+    `;
+
     const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
-    const { loading, error, data } = useQuery<SummaryCountsResponse>(SUMMARY_COUNTS, {
+    const { loading, error, data } = useQuery<SummaryCountsResponse>(query, {
+        fetchPolicy: 'network-only',
         onCompleted: () => setLastUpdate(new Date()),
     });
 
@@ -68,7 +86,7 @@ function SummaryCounts() {
         return (
             <Skeleton
                 height="32px"
-                className="pf-u-m-md"
+                className="pf-v5-u-m-md"
                 screenreaderText="Loading system summary counts"
             />
         );
@@ -81,49 +99,37 @@ function SummaryCounts() {
                 isInline
                 variant="warning"
                 title="There was an error loading system summary counts"
+                component="p"
             />
         );
     }
 
-    const tileData: Record<TileEntity, number> = {
-        Cluster: data.clusterCount,
-        Node: data.nodeCount,
-        Violation: data.violationCount,
-        Deployment: data.deploymentCount,
-        Image: data.imageCount,
-        Secret: data.secretCount,
-    };
-
     return (
-        <Split className="pf-u-align-items-center">
+        <Split className="pf-v5-u-align-items-center">
             <SplitItem isFilled>
-                <Split className="pf-u-flex-wrap">
-                    {tileEntityTypes.map((tileEntity) => (
-                        <Button
-                            key={tileEntity}
-                            variant={ButtonVariant.link}
-                            component={LinkShim}
-                            href={tileLinks[tileEntity]}
-                        >
-                            <Stack className="pf-u-px-xs pf-u-px-sm-on-xl pf-u-align-items-center">
-                                <span className="pf-u-font-size-lg-on-md pf-u-font-size-sm pf-u-font-weight-bold">
-                                    {tileData[tileEntity]}
-                                </span>
-                                <span className="pf-u-font-size-md-on-md pf-u-font-size-xs">
-                                    {pluralize(tileEntity, tileData[tileEntity])}
-                                </span>
-                            </Stack>
-                        </Button>
-                    ))}
+                <Split className="pf-v5-u-flex-wrap">
+                    {tileResources
+                        .filter((tileResource) => typeof data[dataKey[tileResource]] === 'number')
+                        .map((tileResource) => {
+                            const tooltip =
+                                tileResource === 'Image'
+                                    ? 'Count includes all images, with or without observed CVEs'
+                                    : undefined;
+
+                            return (
+                                <SummaryCount
+                                    key={tileResource}
+                                    count={data[dataKey[tileResource]]}
+                                    href={tileLinks[tileResource]}
+                                    noun={tileNouns[tileResource]}
+                                    tooltip={tooltip}
+                                />
+                            );
+                        })}
                 </Split>
             </SplitItem>
-            <div
-                style={{ fontStyle: 'italic' }}
-                className="pf-u-color-200 pf-u-font-size-sm pf-u-mr-md pf-u-mr-lg-on-lg"
-            >
-                {`Last updated ${dateFormatter.format(lastUpdate)} at ${timeFormatter.format(
-                    lastUpdate
-                )}`}
+            <div className="pf-v5-u-color-200 pf-v5-u-font-size-sm pf-v5-u-mr-md pf-v5-u-mr-lg-on-lg">
+                {`Last updated ${getDateTime(lastUpdate)}`}
             </div>
         </Split>
     );

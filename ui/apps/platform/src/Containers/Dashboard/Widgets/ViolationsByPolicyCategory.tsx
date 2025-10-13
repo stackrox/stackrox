@@ -1,5 +1,5 @@
-import React, { useMemo, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { useCallback, useMemo } from 'react';
+import { useLocation } from 'react-router-dom-v5-compat';
 import {
     Flex,
     FlexItem,
@@ -14,13 +14,14 @@ import xor from 'lodash/xor';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import useURLSearch from 'hooks/useURLSearch';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
-import { PolicySeverity } from 'types/policy.proto';
+import type { PolicySeverity } from 'types/policy.proto';
+import WidgetCard from 'Components/PatternFly/WidgetCard';
 
 import useWidgetConfig from 'hooks/useWidgetConfig';
 import useAlertGroups from '../hooks/useAlertGroups';
-import WidgetCard from './WidgetCard';
 import NoDataEmptyState from './NoDataEmptyState';
-import ViolationsByPolicyCategoryChart, { Config } from './ViolationsByPolicyCategoryChart';
+import ViolationsByPolicyCategoryChart from './ViolationsByPolicyCategoryChart';
+import type { Config } from './ViolationsByPolicyCategoryChart';
 import WidgetOptionsMenu from './WidgetOptionsMenu';
 import WidgetOptionsResetButton from './WidgetOptionsResetButton';
 
@@ -59,7 +60,7 @@ function ViolationsByPolicyCategory() {
         queryFilter['Lifecycle Stage'] = LIFECYCLE_STAGES.RUNTIME;
     }
     const query = getRequestQueryStringForSearchFilter(queryFilter);
-    const { data: alertGroups, loading, error } = useAlertGroups(query, 'CATEGORY');
+    const { data: alertGroups, isLoading, error } = useAlertGroups(query, 'CATEGORY');
 
     const isOptionsChanged =
         lifecycle !== defaultConfig.lifecycle ||
@@ -69,7 +70,7 @@ function ViolationsByPolicyCategory() {
 
     return (
         <WidgetCard
-            isLoading={loading}
+            isLoading={isLoading}
             error={error}
             header={
                 <Flex direction={{ default: 'row' }}>
@@ -86,7 +87,7 @@ function ViolationsByPolicyCategory() {
                                     <FormGroup fieldId={`${fieldIdPrefix}-sort-by`} label="Sort by">
                                         <ToggleGroup aria-label="Sort data by highest severity counts or highest total violations">
                                             <ToggleGroupItem
-                                                className="pf-u-font-weight-normal"
+                                                className="pf-v5-u-font-weight-normal"
                                                 text="Severity"
                                                 buttonId={`${fieldIdPrefix}-sort-by-severity`}
                                                 isSelected={sortType === 'Severity'}

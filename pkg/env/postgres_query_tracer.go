@@ -11,4 +11,10 @@ var (
 
 	// PostgresQueryTracerQueryThreshold sets a threshold for how long an individual Postgres query must take to be logged
 	PostgresQueryTracerQueryThreshold = registerDurationSetting("ROX_POSTGRES_QUERY_TRACER_QUERY_THRESHOLD", 200*time.Millisecond)
+
+	// PostgresQueryLogger toggles whether to log Postgres queries for debugging
+	PostgresQueryLogger = RegisterBooleanSetting("ROX_POSTGRES_QUERY_LOGGER", false)
+
+	// PostgresKeepTestDB does not destroy the test databases for debugging
+	PostgresKeepTestDB = RegisterBooleanSetting("ROX_POSTGRES_TEST_KEEP_DB", false)
 )

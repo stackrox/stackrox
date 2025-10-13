@@ -1,0 +1,167 @@
+name: Job Preamble
+description: Common steps for most jobs
+inputs:
+  free-disk-space:
+    description: 'Free disk space desired in GB (2025-06 ubuntu-24.04 runner starts with 20GB free and we can delete and reach 40GB)'
+    required: false
+    default: 25
+  gcp-account:
+    description: 'Account to be used to upload tests data'
+    required: true
+runs:
+  using: composite
+  steps:
+    # auth prepares the gcp environment to authenticate.
+    - name: Auth gcloud
+      # Skip for external contributions.
+      if: |
+        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+      uses: 'google-github-actions/auth@v3'
+      with:
+        credentials_json: '${{ inputs.gcp-account }}'
+        export_environment_variables: true
+        create_credentials_file: true
+        cleanup_credentials: true
+
+    - name: Check gcloud CLI
+      id: gcloud-check
+      continue-on-error: true
+      shell: bash
+      run: |
+        which gcloud
+
+    # setup-gcloud authenticates gcloud
+    - name: Install gcloud CLI
+      uses: 'google-github-actions/setup-gcloud@v2'
+      with:
+        skip_install: ${{ steps.gcloud-check.outcome != 'failure' }}
+
+    - name: Shim gsutil as gcloud storage
+      continue-on-error: true
+      shell: bash
+      run: |
+        tee -a ~/.boto <<EOF
+        [GSUtil]
+        use_gcloud_storage=True
+        EOF
+
+    - name: Check disk space
+      id: disk-check
+      continue-on-error: true
+      shell: bash
+      run: |
+        free=$(df -BGB --output=avail / | tail -1)
+        echo "free=${free}" | tee -a "$GITHUB_OUTPUT"
+        if [[ ${free%GB} -ge "${{ inputs.free-disk-space }}" ]]; then
+          echo "Reached requested free disk space ${{ inputs.free-disk-space }} [${free} free]."
+          exit 0
+        else
+          df --si
+          exit 1
+        fi
+
+    - name: Free disk space (delete unused tools)
+      id: delete-unused-tools
+      if: steps.disk-check.outcome == 'failure'
+      continue-on-error: true
+      shell: bash
+      run: |
+        # delete preinstalled unused tools
+        cleanup=(
+          # non-container jobs are first priority (every second may be a high % of the total)
+          /usr/share/dotnet
+          /usr/share/miniconda
+          /usr/share/swift
+          /usr/share/kotlinc
+          /opt/ghc
+          /opt/hostedtoolcache/CodeQL
+          /opt/hostedtoolcache/Ruby
+          /opt/az
+          /usr/local/lib/android
+          # container jobs are lower priority: they are already slowed by container image pulls
+          /__t/CodeQL
+          /__t/Ruby
+          /__t/PyPy
+          /__t/Python
+          /__t/go
+          /__t/node
+          /__t/gcloud
+        )
+        for d in "${cleanup[@]}"; do
+          if [[ -d "$d" ]]; then
+            rm -rf -- "$d" && echo "deleted $d"
+          elif [[ -d "/mnt${d}" ]]; then
+            rm -rf -- "/mnt${d}" && echo "deleted /mnt${d}"
+          else
+            echo "$d not found"
+            continue
+          fi
+          free=$(df -BGB --output=avail / | tail -1)
+          if [[ ${free%GB} -ge "${{ inputs.free-disk-space }}" ]]; then
+            echo "Reached requested free disk space ${{ inputs.free-disk-space }} [${free} free]."
+            exit 0
+          fi
+        done
+        echo "Failed to free requested disk space, ${{ inputs.free-disk-space }} [${free} free]."
+        exit 1
+
+    - name: Free more disk space (docker system prune)
+      id: delete-docker-cache
+      if: steps.delete-unused-tools.outcome == 'failure'
+      continue-on-error: true
+      shell: bash
+      run: |
+        printf 'Docker prune: '
+        docker system prune --force --all
+
+    - name: Verify free disk space
+      id: disk-check-cleaned
+      if: steps.disk-check.outcome == 'failure'
+      continue-on-error: true
+      shell: bash
+      run: |
+        free=$(df -BGB --output=avail / | tail -1)
+        echo "free=${free}" | tee -a "$GITHUB_OUTPUT"
+        if [[ ${free%GB} -lt "${{ inputs.free-disk-space }}" ]]; then
+          echo "Failed to free requested disk space, ${{ inputs.free-disk-space }} [${free} free]." \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+          if [[ ! -d /opt/hostedtoolcache && ! -d /mnt/opt/hostedtoolcache && ! -d /mnt/usr/local ]]; then
+            printf 'For container workflows, you can mount the host /usr and /opt to allow deleting more unused tools:\n```\nvolumes:\n\t- /usr:/mnt/usr\n\t- /opt:/mnt/opt\n```' \
+              | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+          df --si /
+          exit 1
+        fi
+
+    - name: Ignore dubious repository ownership
+      run: |
+        # Prevent fatal error "detected dubious ownership in repository" from recent git.
+        git config --global --add safe.directory "$(pwd)"
+      shell: bash
+
+    - name: Record job info
+      uses: gacts/run-and-post-run@d803f6920adc9a47eeac4cb6c93dbc2e2890c684 # v1.4.0
+      id: record_job_info
+      env:
+        GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ inputs.gcp-account }}
+      # Skip for external contributions.
+      if: |
+        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+      with:
+        shell: bash
+        run: >
+          echo "started_at=${EPOCHSECONDS:-$(date -u +%s)}" >> "$GITHUB_OUTPUT"
+        post: >
+          source scripts/ci/lib.sh;
+          save_job_record "${{ github.job }}" "gha" \
+            outcome "${{ job.status }}" \
+            started_at "${{ steps.record_job_info.outputs.started_at }}";
+          free=$(df -BGB --output=avail / | tail -1);
+          echo "Free disk space before: ${{ steps.disk-check-cleaned.outputs.free }} [${{ steps.disk-check.outputs.free }} before cleanup], and after: ${free}.";
+          if [[ ${free%GB} -lt 5 ]]; then\
+            set -ex;\
+            df --si;\
+            du -ks /* 2>/dev/null | sort -V || true;\
+            du -k / 2>/dev/null | sort -V | tail -100 || true; \
+            printf "Low free disk space post-job: ${free}" | tee -a "$GITHUB_STEP_SUMMARY";\
+          fi;

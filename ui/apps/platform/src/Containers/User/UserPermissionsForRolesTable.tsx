@@ -1,12 +1,12 @@
 import React, { CSSProperties, ReactElement } from 'react';
-import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import RolesForResourceAccess from './RolesForResourceAccess';
 
 // Normal horizontal padding to separate icons from text in the preceding cell.
 const style = {
-    '--pf-c-table--m-compact--cell--PaddingLeft': 'var(--pf-global--spacer--md)',
-    '--pf-c-table--m-compact--cell--PaddingRight': 'var(--pf-global--spacer--md)',
+    '--pf-v5-c-table--m-compact--cell--PaddingLeft': 'var(--pf-v5-global--spacer--md)',
+    '--pf-v5-c-table--m-compact--cell--PaddingRight': 'var(--pf-v5-global--spacer--md)',
 } as CSSProperties;
 
 export type PermissionByRole = {
@@ -22,7 +22,7 @@ function UserPermissionsForRolesTable({
     resourceToAccessByRole,
 }: UserPermissionsForRolesTableProps): ReactElement {
     return (
-        <TableComposable aria-label="Permissions for roles" variant="compact" style={style}>
+        <Table aria-label="Permissions for roles" variant="compact" style={style}>
             <Thead>
                 <Tr>
                     <Th key="resourceName">Resource</Th>
@@ -45,7 +45,7 @@ function UserPermissionsForRolesTable({
                     </Tr>
                 ))}
             </Tbody>
-        </TableComposable>
+        </Table>
     );
 }
 

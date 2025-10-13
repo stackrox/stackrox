@@ -1,12 +1,9 @@
-import { History } from 'react-router-dom';
 import qs from 'qs';
 
-import { accessControlBasePathV2, accessControlPathV2 } from 'routePaths'; // import { accessControlPath } from 'routePaths';
-import { AccessControlEntityType } from 'constants/entityTypes';
-import { BasePageAction, getQueryObject as baseGetQueryObject } from 'utils/queryStringUtils';
-
-export const accessControlBasePath = accessControlBasePathV2; // export { accessControlBasePath };
-export const accessControlPath = accessControlPathV2; // export { accessControlPath };
+import { accessControlBasePath } from 'routePaths';
+import type { AccessControlEntityType } from 'constants/entityTypes';
+import { getQueryObject as baseGetQueryObject } from 'utils/queryStringUtils';
+import type { BasePageAction } from 'utils/queryStringUtils';
 
 export type AccessControlQueryAction = BasePageAction;
 
@@ -16,12 +13,6 @@ export type AccessControlQueryObject = {
     action?: AccessControlQueryAction;
     s?: AccessControlQueryFilter;
     type?: 'auth0' | 'odic' | 'saml' | 'userpki' | 'iap';
-};
-
-export type AccessControlContainerProps = {
-    entityId: string;
-    history: History;
-    queryObject: AccessControlQueryObject;
 };
 
 export const entityPathSegment: Record<AccessControlEntityType, string> = {

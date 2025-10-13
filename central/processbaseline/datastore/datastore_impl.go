@@ -4,34 +4,30 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/processbaseline/index"
-	"github.com/stackrox/rox/central/processbaseline/search"
 	"github.com/stackrox/rox/central/processbaseline/store"
 	processBaselineResultsStore "github.com/stackrox/rox/central/processbaselineresults/datastore"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	processBaselinePkg "github.com/stackrox/rox/pkg/processbaseline"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
 var (
-	processBaselineSAC = sac.ForResource(resources.ProcessWhitelist)
+	deploymentExtensionSAC = sac.ForResource(resources.DeploymentExtension)
 
 	genDuration = env.BaselineGenerationDuration.DurationSetting()
 )
 
 type datastoreImpl struct {
 	storage      store.Store
-	indexer      index.Indexer
-	searcher     search.Searcher
 	baselineLock *concurrency.KeyedMutex
 
 	processBaselineResults processBaselineResultsStore.DataStore
@@ -39,15 +35,25 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) SearchRawProcessBaselines(ctx context.Context, q *v1.Query) ([]*storage.ProcessBaseline, error) {
-	return ds.searcher.SearchRawProcessBaselines(ctx, q)
+	var baselines []*storage.ProcessBaseline
+	// The number of process baselines could be large.  So using WalkByQuery
+	err := ds.storage.WalkByQuery(ctx, q, func(baseline *storage.ProcessBaseline) error {
+		baselines = append(baselines, baseline)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return baselines, nil
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
-	return ds.searcher.Search(ctx, q)
+	return ds.storage.Search(ctx, q)
 }
 
 func (ds *datastoreImpl) GetProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey) (*storage.ProcessBaseline, bool, error) {
-	if !processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
+	if !deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
 		return nil, false, nil
 	}
 	id, err := keyToID(key)
@@ -62,7 +68,7 @@ func (ds *datastoreImpl) GetProcessBaseline(ctx context.Context, key *storage.Pr
 }
 
 func (ds *datastoreImpl) AddProcessBaseline(ctx context.Context, baseline *storage.ProcessBaseline) (string, error) {
-	if !processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(baseline.GetKey()).IsAllowed() {
+	if !deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(baseline.GetKey()).IsAllowed() {
 		return "", sac.ErrResourceAccessDenied
 	}
 
@@ -77,20 +83,13 @@ func (ds *datastoreImpl) AddProcessBaseline(ctx context.Context, baseline *stora
 
 func (ds *datastoreImpl) addProcessBaselineUnlocked(ctx context.Context, id string, baseline *storage.ProcessBaseline) (string, error) {
 	baseline.Id = id
-	baseline.Created = types.TimestampNow()
+	baseline.Created = protocompat.TimestampNow()
 	baseline.LastUpdate = baseline.GetCreated()
-	baseline.StackRoxLockedTimestamp = ds.generateLockTimestamp()
+	lockTime := ds.generateLockTimestamp()
+	baseline.StackRoxLockedTimestamp = protocompat.ConvertTimeToTimestampOrNil(&lockTime)
 
 	if err := ds.storage.Upsert(ctx, baseline); err != nil {
 		return id, errors.Wrapf(err, "inserting process baseline %q into store", baseline.GetId())
-	}
-	if err := ds.indexer.AddProcessBaseline(baseline); err != nil {
-		err = errors.Wrapf(err, "inserting process baseline %q into index", baseline.GetId())
-		subErr := ds.storage.Delete(ctx, id)
-		if subErr != nil {
-			err = errors.Wrap(err, "error rolling back process process baseline addition")
-		}
-		return id, err
 	}
 	return id, nil
 }
@@ -99,23 +98,12 @@ func (ds *datastoreImpl) addProcessBaselineLocked(ctx context.Context, baseline 
 	if err := ds.storage.Upsert(ctx, baseline); err != nil {
 		return baseline.GetId(), errors.Wrapf(err, "inserting process baseline %q into store", baseline.GetId())
 	}
-	if err := ds.indexer.AddProcessBaseline(baseline); err != nil {
-		err = errors.Wrapf(err, "inserting process baseline %q into index", baseline.GetId())
-		subErr := ds.storage.Delete(ctx, baseline.GetId())
-		if subErr != nil {
-			err = errors.Wrap(err, "error rolling back process process baseline addition")
-		}
-		return baseline.GetId(), err
-	}
 	return baseline.GetId(), nil
 }
 
 func (ds *datastoreImpl) removeProcessBaselineByID(ctx context.Context, id string) error {
 	ds.baselineLock.Lock(id)
 	defer ds.baselineLock.Unlock(id)
-	if err := ds.indexer.DeleteProcessBaseline(id); err != nil {
-		return errors.Wrap(err, "error removing process baseline from index")
-	}
 	if err := ds.storage.Delete(ctx, id); err != nil {
 		return errors.Wrap(err, "error removing process baseline from store")
 	}
@@ -130,7 +118,7 @@ func (ds *datastoreImpl) removeProcessBaselineResults(ctx context.Context, deplo
 }
 
 func (ds *datastoreImpl) RemoveProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey) error {
-	if !processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
+	if !deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
 		return sac.ErrResourceAccessDenied
 	}
 
@@ -144,7 +132,7 @@ func (ds *datastoreImpl) RemoveProcessBaseline(ctx context.Context, key *storage
 	// Delete process baseline results if this is the last process baseline with the given deploymentID
 	deploymentID := key.GetDeploymentId()
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, deploymentID).ProtoQuery()
-	results, err := ds.indexer.Search(ctx, q)
+	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return errors.Wrapf(err, "failed to query for deployment %s during process baseline deletion", deploymentID)
 	}
@@ -155,14 +143,14 @@ func (ds *datastoreImpl) RemoveProcessBaseline(ctx context.Context, key *storage
 }
 
 func (ds *datastoreImpl) RemoveProcessBaselinesByDeployment(ctx context.Context, deploymentID string) error {
-	if ok, err := processBaselineSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := deploymentExtensionSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
 
 	query := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, deploymentID).ProtoQuery()
-	results, err := ds.indexer.Search(ctx, query)
+	results, err := ds.Search(ctx, query)
 	if err != nil {
 		return err
 	}
@@ -214,7 +202,7 @@ func makeElementList(elementMap map[string]*storage.BaselineElement) []*storage.
 }
 
 func (ds *datastoreImpl) updateProcessBaselineAndSetTimestamp(ctx context.Context, baseline *storage.ProcessBaseline) error {
-	baseline.LastUpdate = types.TimestampNow()
+	baseline.LastUpdate = protocompat.TimestampNow()
 	return ds.storage.Upsert(ctx, baseline)
 }
 
@@ -228,7 +216,7 @@ func (ds *datastoreImpl) updateProcessBaselineElements(ctx context.Context, base
 			continue
 		}
 		existing, ok := baselineMap[element.GetProcessName()]
-		if !ok || existing.Auto {
+		if !ok || existing.GetAuto() {
 			delete(graveyardMap, element.GetProcessName())
 			baselineMap[element.GetProcessName()] = &storage.BaselineElement{
 				Element: element,
@@ -240,7 +228,7 @@ func (ds *datastoreImpl) updateProcessBaselineElements(ctx context.Context, base
 	for _, removeElement := range removeElements {
 		delete(baselineMap, removeElement.GetProcessName())
 		existing, ok := graveyardMap[removeElement.GetProcessName()]
-		if !ok || existing.Auto {
+		if !ok || existing.GetAuto() {
 			graveyardMap[removeElement.GetProcessName()] = &storage.BaselineElement{
 				Element: removeElement,
 				Auto:    auto,
@@ -256,13 +244,11 @@ func (ds *datastoreImpl) updateProcessBaselineElements(ctx context.Context, base
 		return nil, err
 	}
 
-	// no need to index the process baseline here because the only indexed things are
-	// top level fields that are immutable
 	return baseline, nil
 }
 
 func (ds *datastoreImpl) UpdateProcessBaselineElements(ctx context.Context, key *storage.ProcessBaselineKey, addElements []*storage.BaselineItem, removeElements []*storage.BaselineItem, auto bool) (*storage.ProcessBaseline, error) {
-	if !processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
+	if !deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
 		return nil, sac.ErrResourceAccessDenied
 	}
 
@@ -283,7 +269,7 @@ func (ds *datastoreImpl) UpdateProcessBaselineElements(ctx context.Context, key 
 }
 
 func (ds *datastoreImpl) UpsertProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey, addElements []*storage.BaselineItem, auto bool, lock bool) (*storage.ProcessBaseline, error) {
-	if !processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
+	if !deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
 		return nil, sac.ErrResourceAccessDenied
 	}
 
@@ -304,7 +290,7 @@ func (ds *datastoreImpl) UpsertProcessBaseline(ctx context.Context, key *storage
 		return ds.updateProcessBaselineElements(ctx, baseline, addElements, nil, auto)
 	}
 
-	timestamp := types.TimestampNow()
+	timestamp := protocompat.TimestampNow()
 	var elements []*storage.BaselineElement
 	for _, element := range addElements {
 		elements = append(elements, &storage.BaselineElement{Element: &storage.BaselineItem{Item: &storage.BaselineItem_ProcessName{ProcessName: element.GetProcessName()}}, Auto: auto})
@@ -330,7 +316,7 @@ func (ds *datastoreImpl) UpsertProcessBaseline(ctx context.Context, key *storage
 }
 
 func (ds *datastoreImpl) UserLockProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey, locked bool) (*storage.ProcessBaseline, error) {
-	if !processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
+	if !deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
 		return nil, sac.ErrResourceAccessDenied
 	}
 
@@ -347,7 +333,7 @@ func (ds *datastoreImpl) UserLockProcessBaseline(ctx context.Context, key *stora
 	}
 
 	if locked && baseline.GetUserLockedTimestamp() == nil {
-		baseline.UserLockedTimestamp = types.TimestampNow()
+		baseline.UserLockedTimestamp = protocompat.TimestampNow()
 		err = ds.updateProcessBaselineAndSetTimestamp(ctx, baseline)
 	} else if !locked && baseline.GetUserLockedTimestamp() != nil {
 		baseline.UserLockedTimestamp = nil
@@ -360,7 +346,7 @@ func (ds *datastoreImpl) UserLockProcessBaseline(ctx context.Context, key *stora
 }
 
 func (ds *datastoreImpl) CreateUnlockedProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey) (*storage.ProcessBaseline, error) {
-	if !processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
+	if !deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
 		return nil, sac.ErrResourceAccessDenied
 	}
 
@@ -404,7 +390,7 @@ func (ds *datastoreImpl) CreateUnlockedProcessBaseline(ctx context.Context, key 
 	}
 
 	// Build the baseline itself
-	timestamp := types.TimestampNow()
+	timestamp := protocompat.TimestampNow()
 	baseline = &storage.ProcessBaseline{
 		Id:         id,
 		Key:        key,
@@ -431,11 +417,12 @@ func (ds *datastoreImpl) getProcessList(ctx context.Context, key *storage.Proces
 }
 
 func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(baseline *storage.ProcessBaseline) error) error {
-	if ok, err := processBaselineSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := deploymentExtensionSAC.ReadAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
+	// Postgres retries in the caller.
 	return ds.storage.Walk(ctx, fn)
 }
 
@@ -445,7 +432,7 @@ func (ds *datastoreImpl) RemoveProcessBaselinesByIDs(ctx context.Context, ids []
 		if err != nil {
 			return err
 		}
-		if !processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
+		if !deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
 			return sac.ErrResourceAccessDenied
 		}
 		if err := ds.removeProcessBaselineByID(ctx, id); err != nil {
@@ -464,7 +451,7 @@ func (ds *datastoreImpl) ClearProcessBaselines(ctx context.Context, ids []string
 
 	// Go through the baselines and clear them out
 	for _, baseline := range baselines {
-		if !processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(baseline.Key).IsAllowed() {
+		if !deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(baseline.GetKey()).IsAllowed() {
 			return sac.ErrResourceAccessDenied
 		}
 
@@ -472,18 +459,21 @@ func (ds *datastoreImpl) ClearProcessBaselines(ctx context.Context, ids []string
 		baseline.ElementGraveyard = nil
 
 		// We need to extend the stackrox lock timestamp to re-observe the processes.
-		baseline.StackRoxLockedTimestamp = ds.generateLockTimestamp()
-		baseline.LastUpdate = types.TimestampNow()
+		lockTime := ds.generateLockTimestamp()
+		lockTimestamp := protocompat.ConvertTimeToTimestampOrNil(&lockTime)
+		baseline.StackRoxLockedTimestamp = lockTimestamp
+		baseline.LastUpdate = protocompat.TimestampNow()
 	}
 	return ds.storage.UpsertMany(ctx, baselines)
 }
 
-func (ds *datastoreImpl) generateLockTimestamp() *types.Timestamp {
-	lockTimestamp, err := types.TimestampProto(time.Now().Add(genDuration))
+func (ds *datastoreImpl) generateLockTimestamp() time.Time {
+	lockTimestamp := time.Now().Add(genDuration)
+	_, err := protocompat.ConvertTimeToTimestampOrError(lockTimestamp)
 	// This should not occur unless genDuration is in a bad state.  If that happens just
 	// set it to one hour in the future.
 	if err != nil {
-		lockTimestamp, _ = types.TimestampProto(time.Now().Add(1 * time.Hour))
+		lockTimestamp = time.Now().Add(1 * time.Hour)
 	}
 	return lockTimestamp
 }

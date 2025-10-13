@@ -1,19 +1,17 @@
 syntax = "proto3";
 
-option go_package = "storage";
-option java_package = "io.stackrox.proto.storage";
-
-import "gogoproto/gogo.proto";
-
 package storage;
 
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
 enum ContainerRuntime {
-    UNKNOWN_CONTAINER_RUNTIME = 0;
-    DOCKER_CONTAINER_RUNTIME  = 1;
-    CRIO_CONTAINER_RUNTIME    = 2;
+  UNKNOWN_CONTAINER_RUNTIME = 0;
+  DOCKER_CONTAINER_RUNTIME = 1;
+  CRIO_CONTAINER_RUNTIME = 2;
 }
 
 message ContainerRuntimeInfo {
-    ContainerRuntime type = 1;
-    string version        = 2 [(gogoproto.moretags) = 'search:"Container Runtime,store"'];
+  ContainerRuntime type = 1;
+  string version = 2; // @gotags: search:"Container Runtime,store"
 }

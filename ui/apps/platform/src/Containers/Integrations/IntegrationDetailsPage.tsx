@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 
 import useIntegrations from './hooks/useIntegrations';
 import usePageState from './hooks/usePageState';
@@ -19,7 +20,11 @@ function IntegrationDetailsPage(): ReactElement {
     }
 
     return (
-        <IntegrationPage title={integration.name}>
+        <IntegrationPage
+            title={integration.name}
+            name={integration.name}
+            traits={integration.traits}
+        >
             <IntegrationForm source={source} type={type} initialValues={integration} />
         </IntegrationPage>
     );

@@ -1,62 +1,70 @@
-import React, { ReactElement, useState } from 'react';
-import { Link } from 'react-router-dom';
-import {
-    ApplicationLauncher,
-    ApplicationLauncherGroup,
-    ApplicationLauncherItem,
-    ApplicationLauncherSeparator,
-} from '@patternfly/react-core';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
+import { Link } from 'react-router-dom-v5-compat';
+import { useDispatch } from 'react-redux';
+import { Divider, Dropdown, DropdownItem, DropdownList, MenuToggle } from '@patternfly/react-core';
 import { QuestionCircleIcon } from '@patternfly/react-icons';
 
 import useMetadata from 'hooks/useMetadata';
-import { apidocsPath, productDocsPath } from 'routePaths';
+import { actions } from 'reducers/feedback';
+import { apidocsPath, apidocsPathV2 } from 'routePaths';
+import { getVersionedDocs } from 'utils/versioning';
 
 function HelpMenu(): ReactElement {
-    const metadata = useMetadata();
+    const { releaseBuild, version } = useMetadata();
     const [isHelpMenuOpen, setIsHelpMenuOpen] = useState(false);
-
-    function onToggleHelpMenu() {
-        setIsHelpMenuOpen(!isHelpMenuOpen);
-    }
-
-    const appLauncherItems = [
-        <ApplicationLauncherGroup key="api">
-            <ApplicationLauncherItem
-                component={
-                    <Link className="pf-c-app-launcher__menu-item" to={apidocsPath}>
-                        API Reference
-                    </Link>
-                }
-            />
-            <ApplicationLauncherItem
-                href={productDocsPath}
-                isExternal
-                target="_blank"
-                rel="noopener noreferrer"
-            >
-                Help Center
-            </ApplicationLauncherItem>
-            <ApplicationLauncherSeparator />
-        </ApplicationLauncherGroup>,
-        <ApplicationLauncherGroup key="version">
-            <ApplicationLauncherItem isDisabled>
-                <span>{metadata.versionString}</span>
-            </ApplicationLauncherItem>
-        </ApplicationLauncherGroup>,
-    ];
+    const dispatch = useDispatch();
 
     return (
-        <ApplicationLauncher
-            aria-label="Help Menu"
-            isGrouped
+        <Dropdown
             isOpen={isHelpMenuOpen}
-            items={appLauncherItems}
-            onToggle={onToggleHelpMenu}
-            position="right"
-            toggleIcon={<QuestionCircleIcon alt="" />}
-            className="co-app-launcher"
-            data-quickstart-id="qs-masthead-utilitymenu"
-        />
+            onOpenChange={(isOpen) => setIsHelpMenuOpen(isOpen)}
+            onOpenChangeKeys={['Escape', 'Tab']}
+            onSelect={() => setIsHelpMenuOpen(false)}
+            popperProps={{ position: 'right' }}
+            toggle={(toggleRef) => (
+                <MenuToggle
+                    aria-label="Help menu"
+                    ref={toggleRef}
+                    variant="plain"
+                    onClick={() => setIsHelpMenuOpen((wasOpen) => !wasOpen)}
+                    isExpanded={isHelpMenuOpen}
+                >
+                    <QuestionCircleIcon />
+                </MenuToggle>
+            )}
+        >
+            <DropdownList>
+                <DropdownItem>
+                    <Link to={apidocsPath}>API Reference (v1)</Link>
+                </DropdownItem>
+                <DropdownItem>
+                    <Link to={apidocsPathV2}>API Reference (v2)</Link>
+                </DropdownItem>
+                <DropdownItem
+                    component="button"
+                    onClick={() => dispatch(actions.setFeedbackModalVisibility(true))}
+                >
+                    Share feedback
+                </DropdownItem>
+                {version && (
+                    <>
+                        <DropdownItem
+                            to={getVersionedDocs(version)}
+                            isExternalLink
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Help Center
+                        </DropdownItem>
+                        <Divider component="li" />
+                        <DropdownItem isDisabled isAriaDisabled>
+                            {`v${version}${releaseBuild ? '' : ' [DEV BUILD]'}`}
+                        </DropdownItem>
+                    </>
+                )}
+            </DropdownList>
+        </Dropdown>
     );
 }
 

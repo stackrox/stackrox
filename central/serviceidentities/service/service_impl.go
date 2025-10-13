@@ -3,9 +3,8 @@ package service
 import (
 	"context"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/serviceidentities/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -15,17 +14,18 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"google.golang.org/grpc"
 )
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.ServiceIdentity)): {
-			"/v1.ServiceIdentityService/GetServiceIdentities",
-			"/v1.ServiceIdentityService/GetAuthorities",
+		user.With(permissions.View(resources.Administration)): {
+			v1.ServiceIdentityService_GetServiceIdentities_FullMethodName,
+			v1.ServiceIdentityService_GetAuthorities_FullMethodName,
 		},
-		user.With(permissions.Modify(resources.ServiceIdentity)): {
-			"/v1.ServiceIdentityService/CreateServiceIdentity",
+		user.With(permissions.Modify(resources.Administration)): {
+			v1.ServiceIdentityService_CreateServiceIdentity_FullMethodName,
 		},
 	})
 )
@@ -54,7 +54,11 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetServiceIdentities returns the currently defined service identities.
 func (s *serviceImpl) GetServiceIdentities(ctx context.Context, _ *v1.Empty) (*v1.ServiceIdentityResponse, error) {
-	serviceIdentities, err := s.dataStore.GetServiceIdentities(ctx)
+	var serviceIdentities []*storage.ServiceIdentity
+	err := s.dataStore.ForEachServiceIdentity(ctx, func(si *storage.ServiceIdentity) error {
+		serviceIdentities = append(serviceIdentities, si)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +96,7 @@ func (s *serviceImpl) CreateServiceIdentity(ctx context.Context, request *v1.Cre
 }
 
 // GetAuthorities returns the authorities currently in use.
-func (s *serviceImpl) GetAuthorities(ctx context.Context, request *v1.Empty) (*v1.Authorities, error) {
+func (s *serviceImpl) GetAuthorities(_ context.Context, _ *v1.Empty) (*v1.Authorities, error) {
 	ca, err := mtls.CACertPEM()
 	if err != nil {
 		return nil, err

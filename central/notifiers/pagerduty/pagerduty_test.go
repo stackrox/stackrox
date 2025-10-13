@@ -4,16 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"os"
-	"reflect"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 const (
+	//#nosec G101 -- This is a false positive
 	apiKeyEnv = "PAGERDUTY_APIKEY"
 )
 
@@ -37,7 +39,7 @@ func getPagerDuty(t *testing.T) *pagerDuty {
 		},
 	}
 
-	s, err := newPagerDuty(notifier)
+	s, err := newPagerDuty(notifier, cryptocodec.Singleton(), "stackrox")
 	require.NoError(t, err)
 	return s
 }
@@ -55,7 +57,7 @@ func TestPagerDutyTest(t *testing.T) {
 func TestPagerDutyAckAlert(t *testing.T) {
 	p := getPagerDuty(t)
 	alert := fixtures.GetAlert()
-	alert.State = storage.ViolationState_SNOOZED
+	alert.State = storage.ViolationState_ACTIVE
 	assert.NoError(t, p.AckAlert(context.Background(), alert))
 }
 
@@ -87,7 +89,21 @@ func TestMarshalingAlert(t *testing.T) {
 			var unmarshaledAlert *marshalableAlert
 			require.NoError(t, json.Unmarshal(data, &unmarshaledAlert))
 
-			require.True(t, reflect.DeepEqual(alert, unmarshaledAlert))
+			protoassert.Equal(t, c.alert, (*storage.Alert)(unmarshaledAlert))
 		})
 	}
+}
+
+func TestMarshalUnmarshalAlert(t *testing.T) {
+	rawAlert := fixtures.GetSerializationTestAlert()
+	alert := (*marshalableAlert)(rawAlert)
+	marshaled, err := alert.MarshalJSON()
+	require.NoError(t, err)
+	assert.JSONEq(t, fixtures.GetJSONSerializedTestAlert(), string(marshaled))
+
+	decodedAlert := &marshalableAlert{}
+	err = decodedAlert.UnmarshalJSON(marshaled)
+	assert.NoError(t, err)
+	decodedProtoAlert := (*storage.Alert)(decodedAlert)
+	protoassert.Equal(t, rawAlert, decodedProtoAlert)
 }

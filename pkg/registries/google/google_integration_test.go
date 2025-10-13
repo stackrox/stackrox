@@ -1,5 +1,4 @@
 //go:build integration
-// +build integration
 
 package google
 
@@ -12,13 +11,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const project = "ultra-current-825"
+const project = "acs-san-stackroxci"
 
 func TestGoogle(t *testing.T) {
 	if os.Getenv("SERVICE_ACCOUNT") == "" {
 		t.Skip("SERVICE_ACCOUNT env variable required")
 		return
 	}
+	t.Setenv("ROX_REGISTRY_RESPONSE_TIMEOUT", "90s")
+	t.Setenv("ROX_REGISTRY_CLIENT_TIMEOUT", "120s")
+
 	integration := &storage.ImageIntegration{
 		IntegrationConfig: &storage.ImageIntegration_Google{
 			Google: &storage.GoogleConfig{
@@ -28,7 +30,7 @@ func TestGoogle(t *testing.T) {
 		},
 	}
 
-	registry, err := NewRegistry(integration)
+	registry, err := NewRegistry(integration, false, nil, nil)
 	require.NoError(t, err)
 
 	metadata, err := registry.Metadata(&storage.Image{
@@ -39,5 +41,5 @@ func TestGoogle(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
-	assert.Len(t, metadata.LayerShas, 14)
+	assert.Len(t, metadata.GetLayerShas(), 10)
 }

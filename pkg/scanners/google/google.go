@@ -8,7 +8,6 @@ import (
 	"unicode"
 
 	containeranalysis "cloud.google.com/go/containeranalysis/apiv1beta1"
-	gogoTypes "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -16,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"google.golang.org/api/iterator"
@@ -30,17 +30,13 @@ const (
 	requestTimeout = 10 * time.Second
 
 	maxOccurrenceResults = 1000
-
-	typeString = "google"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
+var log = logging.LoggerForModule()
 
 // Creator provides the type an scanners.Creator to add to the scanners Registry.
 func Creator() (string, func(integration *storage.ImageIntegration) (types.Scanner, error)) {
-	return typeString, func(integration *storage.ImageIntegration) (types.Scanner, error) {
+	return types.Google, func(integration *storage.ImageIntegration) (types.Scanner, error) {
 		scan, err := newScanner(integration)
 		return scan, err
 	}
@@ -66,11 +62,17 @@ func validate(google *storage.GoogleConfig) error {
 	if google.GetProject() == "" {
 		errorList.AddString("ProjectID must be specified for Google Container Analysis")
 	}
+	// Workload identities are only supported for registry image integrations. This is because
+	// we intend to remove the Google scanner in the future, and want to keep its features
+	// minimal for the time being.
+	if google.GetWifEnabled() {
+		errorList.AddString("Workload identities are not supported for Scanner integrations")
+	}
 	return errorList.ToError()
 }
 
 func newScanner(integration *storage.ImageIntegration) (*googleScanner, error) {
-	googleConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Google)
+	googleConfig, ok := integration.GetIntegrationConfig().(*storage.ImageIntegration_Google)
 	if !ok {
 		return nil, errors.New("Google Container Analysis configuration required")
 	}
@@ -222,8 +224,8 @@ func (c *googleScanner) GetScan(image *storage.Image) (*storage.ImageScan, error
 		}
 		packageIssue := vulnerability.GetPackageIssue()[0]
 		pv := packageAndVersion{
-			name:    packageIssue.AffectedLocation.Package,
-			version: packageIssue.AffectedLocation.GetVersion().GetName(),
+			name:    packageIssue.GetAffectedLocation().GetPackage(),
+			version: packageIssue.GetAffectedLocation().GetVersion().GetName(),
 		}
 
 		if _, ok := componentsToVulns[pv]; ok {
@@ -247,7 +249,7 @@ func (c *googleScanner) GetScan(image *storage.Image) (*storage.ImageScan, error
 	}
 	// Google can't give the data via layers at this time
 	return &storage.ImageScan{
-		ScanTime:        gogoTypes.TimestampNow(),
+		ScanTime:        protocompat.TimestampNow(),
 		Components:      components,
 		OperatingSystem: "unknown",
 		Notes: []storage.ImageScan_Note{
@@ -262,7 +264,7 @@ func (c *googleScanner) Match(image *storage.ImageName) bool {
 }
 
 func (c *googleScanner) Type() string {
-	return typeString
+	return types.Google
 }
 
 func (c *googleScanner) Name() string {

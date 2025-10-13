@@ -1,3 +1,5 @@
+//go:build test_e2e
+
 package tests
 
 import (
@@ -14,7 +16,6 @@ import (
 )
 
 func TestInternalCert(t *testing.T) {
-	t.Parallel()
 
 	tlsConf := &tls.Config{
 		InsecureSkipVerify: true,
@@ -34,15 +35,13 @@ func TestInternalCert(t *testing.T) {
 }
 
 func TestCustomCert(t *testing.T) {
-	t.Parallel()
 
 	testCentralCertCAPEM := os.Getenv("ROX_TEST_CA_PEM")
 	if testCentralCertCAPEM == "" {
 		t.Skip("No test CA pem specified")
 	}
 
-	centralCN := os.Getenv("ROX_TEST_CENTRAL_CN")
-	require.NotEmpty(t, centralCN)
+	centralCN := mustGetEnv(t, "ROX_TEST_CENTRAL_CN")
 
 	trustPool := x509.NewCertPool()
 	ok := trustPool.AppendCertsFromPEM([]byte(testCentralCertCAPEM))

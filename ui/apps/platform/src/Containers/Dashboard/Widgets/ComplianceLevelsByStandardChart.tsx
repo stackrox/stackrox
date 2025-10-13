@@ -1,33 +1,36 @@
 import React, { useState } from 'react';
-import { useHistory } from 'react-router-dom';
-import { Chart, ChartAxis, ChartBar, ChartGroup, ChartLabelProps } from '@patternfly/react-charts';
+import { useNavigate } from 'react-router-dom-v5-compat';
+import { Chart, ChartAxis, ChartBar, ChartContainer, ChartGroup } from '@patternfly/react-charts';
+import type { ChartLabelProps } from '@patternfly/react-charts';
 
 import { LinkableChartLabel } from 'Components/PatternFly/Charts/LinkableChartLabel';
 import useResizeObserver from 'hooks/useResizeObserver';
 import {
-    defaultChartHeight,
     defaultChartBarWidth,
+    defaultChartHeight,
     navigateOnClickEvent,
-    solidBlueChartColor,
     patternflySeverityTheme,
+    solidBlueChartColor,
 } from 'utils/chartUtils';
 
-const labelLinkCallback = ({ datum }: ChartLabelProps, data: ComplianceData) => {
-    return typeof datum === 'number' ? data[datum - 1]?.link ?? '' : '';
+const labelLinkCallback = ({ datum }: ChartLabelProps, data: ComplianceLevelByStandard[]) => {
+    return typeof datum === 'number' ? (data[datum - 1]?.link ?? '') : '';
 };
 
-export type ComplianceData = {
+export type ComplianceLevelByStandard = {
     name: string;
     passing: number;
     link: string;
-}[];
-
-type ComplianceLevelsByStandardChartProps = {
-    complianceData: ComplianceData;
 };
 
-function ComplianceLevelsByStandardChart({ complianceData }: ComplianceLevelsByStandardChartProps) {
-    const history = useHistory();
+type ComplianceLevelsByStandardChartProps = {
+    complianceLevelsByStandard: ComplianceLevelByStandard[];
+};
+
+function ComplianceLevelsByStandardChart({
+    complianceLevelsByStandard,
+}: ComplianceLevelsByStandardChartProps) {
+    const navigate = useNavigate();
     const [widgetContainer, setWidgetContainer] = useState<HTMLDivElement | null>(null);
     const widgetContainerResizeEntry = useResizeObserver(widgetContainer);
 
@@ -36,7 +39,7 @@ function ComplianceLevelsByStandardChart({ complianceData }: ComplianceLevelsByS
             <Chart
                 ariaDesc="Compliance coverage percentages by standard across the selected resource scope"
                 ariaTitle="Compliance coverage by standard"
-                animate={{ duration: 300 }}
+                containerComponent={<ChartContainer role="figure" />}
                 domainPadding={{ x: [20, 20] }}
                 height={defaultChartHeight}
                 width={widgetContainerResizeEntry?.contentRect.width}
@@ -51,7 +54,9 @@ function ComplianceLevelsByStandardChart({ complianceData }: ComplianceLevelsByS
                 <ChartAxis
                     tickLabelComponent={
                         <LinkableChartLabel
-                            linkWith={(props) => labelLinkCallback(props, complianceData)}
+                            linkWith={(props) =>
+                                labelLinkCallback(props, complianceLevelsByStandard)
+                            }
                         />
                     }
                 />
@@ -62,14 +67,14 @@ function ComplianceLevelsByStandardChart({ complianceData }: ComplianceLevelsByS
                     dependentAxis
                 />
                 <ChartGroup horizontal>
-                    {complianceData.map(({ name, passing, link }) => (
+                    {complianceLevelsByStandard.map(({ name, passing, link }) => (
                         <ChartBar
                             key={name}
                             style={{ data: { fill: solidBlueChartColor } }}
                             barWidth={defaultChartBarWidth}
                             data={[{ x: name, y: passing, link }]}
                             labels={({ datum }) => `${Math.round(parseInt(datum.y, 10))}%`}
-                            events={[navigateOnClickEvent(history, () => link)]}
+                            events={[navigateOnClickEvent(navigate, () => link)]}
                         />
                     ))}
                 </ChartGroup>

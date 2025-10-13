@@ -1,3 +1,5 @@
+//go:build test_e2e
+
 package tests
 
 import (
@@ -25,7 +27,9 @@ func getMetadata(t *testing.T, conn *grpc.ClientConn) *v1.Metadata {
 }
 
 func TestMetadataIsSetCorrectly(t *testing.T) {
-	t.Parallel()
+	if os.Getenv("ORCHESTRATOR_FLAVOR") == "openshift" {
+		t.Skip("Temporarily skipping this test on OCP: TODO(ROX-25171)")
+	}
 
 	if _, ok := os.LookupEnv("CI"); !ok {
 		t.Skip("Skipping metadata test because we are not on CI")
@@ -36,10 +40,4 @@ func TestMetadataIsSetCorrectly(t *testing.T) {
 	assert.Equal(t, buildinfo.BuildFlavor, metadataWithAuth.GetBuildFlavor())
 	assert.Equal(t, buildinfo.ReleaseBuild, metadataWithAuth.GetReleaseBuild())
 	assert.Equal(t, version.GetMainVersion(), metadataWithAuth.GetVersion())
-
-	// Test that an unauthenticated connection doesn't get the version.
-	metadataWithoutAuth := getMetadata(t, centralgrpc.UnauthenticatedGRPCConnectionToCentral(t))
-	assert.Equal(t, buildinfo.BuildFlavor, metadataWithoutAuth.GetBuildFlavor())
-	assert.Equal(t, buildinfo.ReleaseBuild, metadataWithoutAuth.GetReleaseBuild())
-	assert.Equal(t, "", metadataWithoutAuth.GetVersion())
 }

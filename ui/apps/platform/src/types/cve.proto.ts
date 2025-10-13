@@ -1,11 +1,49 @@
-export type VulnerabilitySeverity =
-    // | 'UNKNOWN_VULNERABILITY_SEVERITY'
-    | 'LOW_VULNERABILITY_SEVERITY'
-    | 'MODERATE_VULNERABILITY_SEVERITY'
-    | 'IMPORTANT_VULNERABILITY_SEVERITY'
-    | 'CRITICAL_VULNERABILITY_SEVERITY';
+export const vulnerabilitySeverities = [
+    'UNKNOWN_VULNERABILITY_SEVERITY',
+    'LOW_VULNERABILITY_SEVERITY',
+    'MODERATE_VULNERABILITY_SEVERITY',
+    'IMPORTANT_VULNERABILITY_SEVERITY',
+    'CRITICAL_VULNERABILITY_SEVERITY',
+] as const;
 
-export type VulnerabilityState = 'OBSERVED' | 'DEFERRED' | 'FALSE_POSITIVE';
+export type VulnerabilitySeverity = (typeof vulnerabilitySeverities)[number];
+
+export function isVulnerabilitySeverity(value: unknown): value is VulnerabilitySeverity {
+    return vulnerabilitySeverities.some((severity) => severity === value);
+}
+
+export const vulnerabilityStates = ['OBSERVED', 'DEFERRED', 'FALSE_POSITIVE'] as const;
+
+export type VulnerabilityState = (typeof vulnerabilityStates)[number];
+
+export function isVulnerabilityState(value: unknown): value is VulnerabilityState {
+    return vulnerabilityStates.some((state) => state === value);
+}
+
+// advisory property is null if not available or not applicable
+export type Advisory = {
+    name: string; // for example, RHSA-yyyy:nnnn
+    link: string; // for example, https://access.redhat.com/errata/RHSA-yyyy:nnnn
+};
+
+// epss property is null if not available
+export type EPSS = {
+    epssProbability: number; // float fraction between 0 and 1 inclusive
+    epssPercentile: number; // float fraction between 0 and 1 inclusive
+};
+
+export type Exploit = {
+    dateAdded: string; // ISO 8601 yyyy-mm-dd
+    shortDescription: string;
+    requiredAction: string;
+    dueDate: string; // ISO 8601 yyyy-mm-dd
+    knownRansomwareCampaignUse: string; // Known or Unknown
+};
+
+export type CveBaseInfo = {
+    epss: EPSS | null;
+    exploit: Exploit | null; // null if no known exploit
+};
 
 export type CVSSV2 = {
     vector: string;

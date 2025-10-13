@@ -28,7 +28,7 @@ var AllSecuredClusterServices = []storage.ServiceType{
 	storage.ServiceType_SENSOR_SERVICE,
 	storage.ServiceType_ADMISSION_CONTROL_SERVICE}
 
-// IsInitCertClusterID returns true if the passed cluster id is for an init cert that allows dynamic creation of clusters.
+// IsInitCertClusterID returns true if the passed cluster id is for an init cert or a CRS that allows dynamic creation of clusters.
 func IsInitCertClusterID(clusterID string) bool {
 	return clusterID == RegisteredInitCertClusterID || clusterID == EphemeralInitCertClusterID
 }
@@ -43,7 +43,8 @@ func GetClusterID(explicitID, idFromCert string) (string, error) {
 	}
 
 	if IsInitCertClusterID(id) {
-		return "", errors.Errorf("no concrete cluster ID was specified in conjunction with wildcard ID %q", id)
+		return "", errors.Errorf("no concrete cluster ID was specified in conjunction with wildcard ID %q. "+
+			"For potential solutions refer to https://access.redhat.com/solutions/6972449", id)
 	}
 
 	return id, nil

@@ -3,19 +3,18 @@ package schema
 
 import (
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/postgres/schema"
 )
 
 // ConvertTestChild2FromProto converts a `*storage.TestChild2` to Gorm model
-func ConvertTestChild2FromProto(obj *storage.TestChild2) (*schema.TestChild2, error) {
-	serialized, err := obj.Marshal()
+func ConvertTestChild2FromProto(obj *storage.TestChild2) (*TestChild2, error) {
+	serialized, err := obj.MarshalVT()
 	if err != nil {
 		return nil, err
 	}
-	model := &schema.TestChild2{
-		Id:            obj.GetId(),
-		ParentId:      obj.GetParentId(),
-		GrandparentId: obj.GetGrandparentId(),
+	model := &TestChild2{
+		ID:            obj.GetId(),
+		ParentID:      obj.GetParentId(),
+		GrandparentID: obj.GetGrandparentId(),
 		Val:           obj.GetVal(),
 		Serialized:    serialized,
 	}
@@ -23,9 +22,9 @@ func ConvertTestChild2FromProto(obj *storage.TestChild2) (*schema.TestChild2, er
 }
 
 // ConvertTestChild2ToProto converts Gorm model `TestChild2` to its protobuf type object
-func ConvertTestChild2ToProto(m *schema.TestChild2) (*storage.TestChild2, error) {
+func ConvertTestChild2ToProto(m *TestChild2) (*storage.TestChild2, error) {
 	var msg storage.TestChild2
-	if err := msg.Unmarshal(m.Serialized); err != nil {
+	if err := msg.UnmarshalVTUnsafe(m.Serialized); err != nil {
 		return nil, err
 	}
 	return &msg, nil

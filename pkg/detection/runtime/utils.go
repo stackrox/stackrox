@@ -1,11 +1,11 @@
 package runtime
 
 import (
-	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -38,7 +38,7 @@ func constructKubeEventAlert(
 	// NOTE: Most Kube Event alerts will have a Resource entity instead of a Deployment. However, there are a few exceptions
 	// such as pod exec/port forward policies that have deployment. To differentiate we will be using the policy event source
 	// Currently all audit log events have Resource
-	if policy.EventSource == storage.EventSource_AUDIT_LOG_EVENT {
+	if policy.GetEventSource() == storage.EventSource_AUDIT_LOG_EVENT {
 		return constructResourceRuntimeAlert(policy, kubeEvent, violations.AlertViolations)
 		// Audit Log event source policies cannot have enforcement (for now)
 	}
@@ -56,7 +56,7 @@ func constructKubeEventAlert(
 func constructNetworkFlowAlert(
 	policy *storage.Policy,
 	deployment *storage.Deployment,
-	flow *augmentedobjs.NetworkFlowDetails,
+	_ *augmentedobjs.NetworkFlowDetails,
 	violations booleanpolicy.Violations,
 ) *storage.Alert {
 	if len(violations.AlertViolations) == 0 {
@@ -74,11 +74,11 @@ func constructGenericRuntimeAlert(
 ) *storage.Alert {
 	return &storage.Alert{
 		Id:             uuid.NewV4().String(),
-		Policy:         policy.Clone(),
+		Policy:         policy.CloneVT(),
 		LifecycleStage: storage.LifecycleStage_RUNTIME,
 		Entity:         convert.ToAlertDeployment(deployment),
 		Violations:     violations,
-		Time:           ptypes.TimestampNow(),
+		Time:           protocompat.TimestampNow(),
 	}
 }
 
@@ -89,11 +89,11 @@ func constructResourceRuntimeAlert(
 ) *storage.Alert {
 	return &storage.Alert{
 		Id:             uuid.NewV4().String(),
-		Policy:         policy.Clone(),
+		Policy:         policy.CloneVT(),
 		LifecycleStage: storage.LifecycleStage_RUNTIME,
 		Entity:         convert.ToAlertResource(kubeEvent),
 		Violations:     violations,
-		Time:           ptypes.TimestampNow(),
+		Time:           protocompat.TimestampNow(),
 	}
 }
 

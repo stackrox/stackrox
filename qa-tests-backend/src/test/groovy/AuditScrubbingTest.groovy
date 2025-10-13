@@ -1,17 +1,20 @@
 import com.google.protobuf.util.JsonFormat
-import com.jayway.restassured.RestAssured
 import groovy.json.JsonSlurper
-import groups.BAT
+import io.restassured.RestAssured
+
 import io.stackrox.proto.api.v1.AuthproviderService
 import io.stackrox.proto.storage.NotifierOuterClass.Notifier
-import org.junit.experimental.categories.Category
-import services.NotifierService
-import spock.lang.Shared
-import spock.lang.Unroll
-import util.Env
-import util.Timer
 
-@Category(BAT)
+import services.NotifierService
+import util.Env
+import util.Helpers
+
+import spock.lang.Shared
+import spock.lang.Tag
+import spock.lang.Unroll
+
+@Tag("BAT")
+@Tag("PZ")
 class AuditScrubbingTest extends BaseSpecification {
 
     static private final String BASIC_AUTH_PROVIDER_ID = "4df1b98c-24ed-4073-a9ad-356aec6bb62d"
@@ -29,26 +32,18 @@ class AuditScrubbingTest extends BaseSpecification {
     }
 
     private getAuditEntry(String attemptId) {
-        def timer = new Timer(30, 1)
-        while (timer.IsValid()) {
-            def get = new URL("http://localhost:8080").openConnection()
-            def jsonSlurper = new JsonSlurper()
+        def jsonSlurper = new JsonSlurper()
+        def url = new URL("http://localhost:8080")
+        return Helpers.evaluateWithRetry(30, 1) {
+            def get = url.openConnection()
             def objects = jsonSlurper.parseText(get.getInputStream().getText())
             def entry = objects.find {
-                try {
-                    def data = it["data"]["audit"]
-                    return data["request"]["endpoint"] == ENDPOINT &&
-                            (data["request"]["payload"]["state"] as String).endsWith(attemptId)
-                } catch (Exception e) {
-                    log.warn("exception", e)
-                    return false
-                }
+                def req = it?.data?.audit?.request
+                return req?.endpoint == ENDPOINT && req?.payload?.state?.endsWith(attemptId)
             }
-            if (entry) {
-                return entry["data"]["audit"]
-            }
+            assert entry
+            return entry.data.audit
         }
-        return null
     }
 
     @Unroll
@@ -80,7 +75,6 @@ class AuditScrubbingTest extends BaseSpecification {
         then:
         "Verify that audit log is found"
         def auditLogEntry = getAuditEntry(attemptId)
-        assert auditLogEntry
 
         and:
         "Verify that audit log contains a scrubbed externalToken field"

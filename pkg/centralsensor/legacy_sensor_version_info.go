@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+	metautils "github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/metadata"
 )
@@ -41,7 +41,7 @@ func appendSensorVersionInfoToContext(ctx context.Context, version string) (cont
 	), nil
 }
 
-func deriveSensorVersionInfo(md metautils.NiceMD) (*sensorVersionInfo, error) {
+func deriveSensorVersionInfo(md metautils.MD) (*sensorVersionInfo, error) {
 	var sensorVersionInfo sensorVersionInfo
 	marshalledVersionInfo := md.Get(legacySensorVersionInfoKey)
 	if marshalledVersionInfo == "" {

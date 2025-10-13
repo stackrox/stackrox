@@ -9,7 +9,6 @@ metadata:
   labels:
     namespace.metadata.stackrox.io/name: openshift-compliance
   name: openshift-compliance
-  resourceVersion: "1379349"
   selfLink: /api/v1/namespaces/openshift-compliance
   uid: bfc5f98a-06a0-4fee-9ee1-52a8e9a98436
 spec:

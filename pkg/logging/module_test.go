@@ -3,7 +3,7 @@ package logging
 import (
 	"testing"
 
-	"github.com/gofrs/uuid"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -63,20 +63,20 @@ func TestModuleSetLogLevel(t *testing.T) {
 }
 
 func TestModuleRefCountingWorks(t *testing.T) {
-	module := newModule(uuid.Must(uuid.NewV4()).String(), zap.NewAtomicLevelAt(zapcore.InfoLevel))
+	module := newModule(uuid.NewV4().String(), zap.NewAtomicLevelAt(zapcore.InfoLevel))
 	module.ref()
 	assert.False(t, module.unref())
 	assert.True(t, module.unref())
 }
 
 func TestLoggerCreatedFromModuleReferencesModule(t *testing.T) {
-	module := newModule(uuid.Must(uuid.NewV4()).String(), zap.NewAtomicLevelAt(zapcore.InfoLevel))
+	module := newModule(uuid.NewV4().String(), zap.NewAtomicLevelAt(zapcore.InfoLevel))
 	logger := module.Logger()
 	assert.Equal(t, module, logger.module)
 }
 
 func TestRegistryPurgesModulesWithRefCountOfZero(t *testing.T) {
-	name := uuid.Must(uuid.NewV4()).String()
+	name := uuid.NewV4().String()
 	modules.getOrAddModule(name)
 	modules.unrefModule(name)
 
@@ -85,17 +85,17 @@ func TestRegistryPurgesModulesWithRefCountOfZero(t *testing.T) {
 
 func TestLoggerCreatedFromModuleUpdatesLogLevel(t *testing.T) {
 	for zapLevel := range validLevels {
-		module := newModule(uuid.Must(uuid.NewV4()).String(), zap.NewAtomicLevelAt(zapcore.InfoLevel))
+		module := newModule(uuid.NewV4().String(), zap.NewAtomicLevelAt(zapcore.InfoLevel))
 		logger := module.Logger()
 		module.SetLogLevel(zapLevel)
-		assert.True(t, logger.Desugar().Core().Enabled(zapLevel))
+		assert.True(t, logger.SugaredLogger().Desugar().Core().Enabled(zapLevel))
 		// uses internal knowledge of how Enabled(level) method works
-		assert.False(t, logger.Desugar().Core().Enabled(zapLevel-1))
+		assert.False(t, logger.SugaredLogger().Desugar().Core().Enabled(zapLevel-1))
 	}
 }
 
 func TestLoggerLevelUpdatesWithGlobalLevel(t *testing.T) {
-	module := ModuleForName(uuid.Must(uuid.NewV4()).String())
+	module := ModuleForName(uuid.NewV4().String())
 	logger := module.Logger()
 	level := GetGlobalLogLevel()
 
@@ -103,11 +103,11 @@ func TestLoggerLevelUpdatesWithGlobalLevel(t *testing.T) {
 
 	// verify the global level remains unchanged
 	assert.Equal(t, level, GetGlobalLogLevel())
-	assert.True(t, logger.Desugar().Core().Enabled(zapcore.DebugLevel))
+	assert.True(t, logger.SugaredLogger().Desugar().Core().Enabled(zapcore.DebugLevel))
 
 	SetGlobalLogLevel(zapcore.WarnLevel)
 	// verify logger level changes with global level
 	assert.Equal(t, zapcore.WarnLevel, GetGlobalLogLevel())
-	assert.True(t, logger.Desugar().Core().Enabled(zapcore.WarnLevel))
-	assert.False(t, logger.Desugar().Core().Enabled(zapcore.InfoLevel))
+	assert.True(t, logger.SugaredLogger().Desugar().Core().Enabled(zapcore.WarnLevel))
+	assert.False(t, logger.SugaredLogger().Desugar().Core().Enabled(zapcore.InfoLevel))
 }

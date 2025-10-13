@@ -1,93 +1,195 @@
-import * as api from '../constants/apiEndpoints';
-
+/**
+ * @typedef {import("cypress/types/net-stubbing").RouteMatcherOptions} RouteMatcherOptions
+ * @typedef {import("cypress/types/net-stubbing").RouteHandler} RouteHandler
+ * @typedef {import("cypress/types/net-stubbing").WaitOptions} WaitOptions
+ */
 import { interceptRequests, waitForResponses } from './request';
 
-// generic requests to render the MainPage component
-const requestConfigGeneric = {
-    routeMatcherMap: {
-        featureflags: {
-            method: 'GET',
-            url: api.featureFlags,
-        }, // reducers/featureFlags and sagas/featureFlagSagas
-        mypermissions: {
-            method: 'GET',
-            url: api.roles.mypermissions,
-        }, // hooks/usePermissions and reducers/roles and sagas/authSagas
-        'config/public': {
-            method: 'GET',
-            url: api.system.configPublic,
-        }, // reducers/systemConfig and sagas/systemConfig
-        'auth/status': {
-            method: 'GET',
-            url: api.auth.authStatus,
-        }, // sagas/authSagas
-        credentialexpiry_CENTRAL: {
-            method: 'GET',
-            url: api.certExpiry.central,
-        }, // MainPage/CredentialExpiryService
-        credentialexpiry_SCANNER: {
-            method: 'GET',
-            url: api.certExpiry.scanner,
-        }, // MainPage/CredentialExpiryService
-    },
+// Single source of truth for keys in staticResponseMapForAuthenticatedRoutes object.
+export const availableAuthProvidersAlias = 'availableAuthProviders';
+export const featureFlagsAlias = 'featureflags';
+export const loginAuthProvidersAlias = 'login/authproviders';
+export const myPermissionsAlias = 'mypermissions';
+export const configPublicAlias = 'config/public';
+export const authStatusAlias = 'auth/status';
+export const centralCapabilitiesAlias = 'central-capabilities';
+
+// Requests to render pages via MainPage and Body components.
+const routeMatcherMapForAuthenticatedRoutes = {
+    [availableAuthProvidersAlias]: {
+        method: 'GET',
+        url: '/v1/availableAuthProviders',
+    }, // reducers/auth and sagas/authSagas
+    [featureFlagsAlias]: {
+        method: 'GET',
+        url: '/v1/featureflags',
+    }, // reducers/featureFlags and sagas/featureFlagSagas
+    [loginAuthProvidersAlias]: {
+        method: 'GET',
+        url: '/v1/login/authproviders',
+    }, // reducers/auth and sagas/authSagas
+    [myPermissionsAlias]: {
+        method: 'GET',
+        url: 'v1/mypermissions',
+    }, // hooks/usePermissions and reducers/roles and sagas/authSagas
+    [configPublicAlias]: {
+        method: 'GET',
+        url: '/v1/config/public',
+    }, // reducers/systemConfig and sagas/systemConfig
+    [authStatusAlias]: {
+        method: 'GET',
+        url: '/v1/auth/status',
+    }, // sagas/authSagas,
+    [centralCapabilitiesAlias]: {
+        method: 'GET',
+        url: '/v1/central-capabilities',
+    }, // reducers/centralCapabilities,
+    /*
+     * Intentionally omit credentialexpiry requests for central and scanner,
+     * because they are in parallel with (and possibly even delayed by) page-specific requests.
+     */
 };
 
-/*
+/**
  * Wait for prerequisite requests to render container components.
  *
  * Always wait on generic requests for MainPage component.
  *
  * Optionally intercept specific requests for container component:
- * routeMatcherMap: { key: routeMatcher, … }
+ * routeMatcherMap: { alias: routeMatcher, … }
  *
  * Optionally replace responses with stub for routeMatcher alias key:
  * staticResponseMap: { alias: { body }, … }
  * staticResponseMap: { alias: { fixture }, … }
  *
- * Optionally assign aliases for multiple GraphQL requests with routeMatcher opname key:
- * graphqlMultiAliasMap: { opname: { aliases, routeHandler }, … }
- *
- * Optionally wait for responses with waitOptions: { requestTimeout, responseTimeout }
- *
  * @param {string} pageUrl
- * @param {{ routeMatcherMap?: Record<string, { method: string, url: string }>, opnameAliasesMap?: Record<string, (request: Object) => boolean>, waitOptions?: { requestTimeout?: number, responseTimeout?: number } }} [requestConfig]
- * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ * @param {Record<string, RouteMatcherOptions>} [routeMatcherMap]
+ * @param {Record<string, RouteHandler>} [staticResponseMap]
+ * @param {WaitOptions} [waitOptions]
+ * @returns {Cypress.Chainable<Interception[] | Interception}
  */
-export function visit(pageUrl, requestConfig, staticResponseMap) {
-    interceptRequests(requestConfigGeneric);
-    interceptRequests(requestConfig, staticResponseMap);
+export function visit(pageUrl, routeMatcherMap, staticResponseMap, waitOptions) {
+    interceptRequests(routeMatcherMapForAuthenticatedRoutes);
+    interceptRequests(routeMatcherMap, staticResponseMap);
 
     cy.visit(pageUrl);
 
-    waitForResponses(requestConfigGeneric);
-    waitForResponses(requestConfig);
+    waitForResponses(routeMatcherMapForAuthenticatedRoutes);
+    return waitForResponses(routeMatcherMap, waitOptions);
 }
 
-/*
+/**
+ * @param {string} pageUrl
+ * @param {Record<string, RouteMatcherOptions>} [routeMatcherMap]
+ * @param {Record<string, RouteHandler>} [staticResponseMap]
+ * @param {WaitOptions} [waitOptions]
+ * @returns {Cypress.Chainable<Interception[] | Interception}
+ */
+export function visitConsole(pageUrl, routeMatcherMap, staticResponseMap, waitOptions) {
+    interceptRequests(undefined); // TODO Determine route matcher map for console
+    interceptRequests(routeMatcherMap, staticResponseMap);
+
+    cy.visit(pageUrl);
+
+    waitForResponses(undefined); // TODO Determine route matcher map for console
+    return waitForResponses(routeMatcherMap, waitOptions);
+}
+/**
+ * Visit page to test conditional rendering for authentication status specified as response or fixture.
+ *
+ * { body: { resourceToAccess: { … } } }
+ * { fixture: 'fixtures/wherever/whatever.json' }
+ *
+ * @param {string} pageUrl
+ * @param {{ body: { userInfo: Record<string, unknown> } } | { fixture: string }} staticResponseForAuthStatus
+ * @param {Record<string, { method: string, url: string }>} [routeMatcherMap]
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
+export function visitWithStaticResponseForAuthStatus(
+    pageUrl,
+    staticResponseForAuthStatus,
+    routeMatcherMap,
+    staticResponseMap
+) {
+    const staticResponseMapForAuthenticatedRoutes = {
+        [authStatusAlias]: staticResponseForAuthStatus,
+    };
+    interceptRequests(
+        routeMatcherMapForAuthenticatedRoutes,
+        staticResponseMapForAuthenticatedRoutes
+    );
+    interceptRequests(routeMatcherMap, staticResponseMap);
+
+    cy.visit(pageUrl);
+
+    waitForResponses(routeMatcherMapForAuthenticatedRoutes);
+    waitForResponses(routeMatcherMap);
+}
+
+/**
  * Visit page to test conditional rendering for user role permissions specified as response or fixture.
  *
  * { body: { resourceToAccess: { … } } }
  * { fixture: 'fixtures/wherever/whatever.json' }
  *
  * @param {string} pageUrl
- * @param {{ body: { resourceToAccess: Record<string, string> } } | { fixture: string }} permissionsStaticResponseMap
- * @param {{ routeMatcherMap?: Record<string, { method: string, url: string }>, opnameAliasesMap?: Record<string, (request: Object) => boolean>, waitOptions?: { requestTimeout?: number, responseTimeout?: number } }} [requestConfig]
- * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ * @param {{ body: { resourceToAccess: Record<string, string> } } | { fixture: string }} staticResponseForPermissions
+ * @param {Record<string, RouteMatcherOptions>} [routeMatcherMap]
+ * @param {Record<string, RouteHandler>} [staticResponseMap]
  */
-export function visitWithPermissions(
+export function visitWithStaticResponseForPermissions(
     pageUrl,
-    permissionsStaticResponse,
-    requestConfig,
+    staticResponseForPermissions,
+    routeMatcherMap,
     staticResponseMap
 ) {
-    const staticResponseMapGeneric = {
-        mypermissions: permissionsStaticResponse,
+    const staticResponseMapForAuthenticatedRoutes = {
+        [myPermissionsAlias]: staticResponseForPermissions,
     };
-    interceptRequests(requestConfigGeneric, staticResponseMapGeneric);
-    interceptRequests(requestConfig, staticResponseMap);
+    interceptRequests(
+        routeMatcherMapForAuthenticatedRoutes,
+        staticResponseMapForAuthenticatedRoutes
+    );
+    interceptRequests(routeMatcherMap, staticResponseMap);
 
     cy.visit(pageUrl);
 
-    waitForResponses(requestConfigGeneric);
-    waitForResponses(requestConfig);
+    waitForResponses(routeMatcherMapForAuthenticatedRoutes);
+    waitForResponses(routeMatcherMap);
+}
+
+/**
+ * Visit page to test conditional rendering for central capabilities specified as response or fixture.
+ *
+ * { body: { ... } }
+ * { fixture: 'fixtures/wherever/whatever.json' }
+ *
+ * @param {string} pageUrl
+ * @param {{ body: { [key: string]: 'CapabilityAvailable' | 'CapabilityDisabled' } }} staticResponseForCapabilities
+ * @param {Record<string, { method: string, url: string }>} [routeMatcherMap]
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
+export function visitWithStaticResponseForCapabilities(
+    pageUrl,
+    staticResponseForCapabilities,
+    routeMatcherMap,
+    staticResponseMap
+) {
+    const staticResponseMapForAuthenticatedRoutes = {
+        [centralCapabilitiesAlias]: staticResponseForCapabilities,
+    };
+    interceptRequests(
+        routeMatcherMapForAuthenticatedRoutes,
+        staticResponseMapForAuthenticatedRoutes
+    );
+    interceptRequests(routeMatcherMap, staticResponseMap);
+
+    cy.visit(pageUrl);
+
+    waitForResponses(routeMatcherMapForAuthenticatedRoutes);
+    waitForResponses(routeMatcherMap);
+}
+
+export function assertCannotFindThePage() {
+    cy.get('h1:contains("Cannot find the page")');
 }

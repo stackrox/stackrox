@@ -1,4 +1,7 @@
 name: "Test environment variables"
+values:
+  imagePullSecrets:
+    allowNone: true
 tests:
 - name: with a plain value
   values:

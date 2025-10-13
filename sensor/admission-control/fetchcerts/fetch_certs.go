@@ -37,10 +37,10 @@ var (
 )
 
 func changeCertAndKeyFileEnvVars() error {
-	if err := utils.Should(os.Setenv(mtls.CertFilePathEnvName, certFile)); err != nil {
+	if err := utils.ShouldErr(os.Setenv(mtls.CertFilePathEnvName, certFile)); err != nil {
 		return errors.Wrap(err, "updating certificate path environment variable")
 	}
-	if err := utils.Should(os.Setenv(mtls.KeyFileEnvName, keyFile)); err != nil {
+	if err := utils.ShouldErr(os.Setenv(mtls.KeyFileEnvName, keyFile)); err != nil {
 		return errors.Wrap(err, "updating key path environment variable")
 	}
 	return nil
@@ -94,7 +94,7 @@ func fetchCertificateFromSensor(ctx context.Context, token string) (*sensor.Fetc
 				if ok && (spb.Code() == codes.Unavailable || spb.Code() == codes.DeadlineExceeded || spb.Code() == codes.NotFound) {
 					return retry.MakeRetryable(err)
 				}
-				return err
+				return errors.Wrap(err, "fetching certificate using RPC")
 			}
 			return nil
 		},
@@ -105,7 +105,7 @@ func fetchCertificateFromSensor(ctx context.Context, token string) (*sensor.Fetc
 			time.Sleep(retryDelay)
 		}))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "fetching certificate from sensor")
 	}
 	return fetchResult, nil
 }

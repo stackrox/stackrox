@@ -1,19 +1,21 @@
 package evaluator
 
 import (
+	"context"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	processBaselineMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
 	processBaselineResultMocks "github.com/stackrox/rox/central/processbaselineresults/datastore/mocks"
 	processIndicatorMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
+	"github.com/stackrox/rox/central/processindicator/views"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 func makeBaselineStatuses(t *testing.T, statuses ...string) (protoStatuses []storage.ContainerNameAndBaselineStatus_BaselineStatus) {
@@ -32,7 +34,7 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 		name         string
 		baseline     *storage.ProcessBaseline
 		baselineErr  error
-		indicators   []*storage.ProcessIndicator
+		indicators   []*views.ProcessIndicatorRiskView
 		indicatorErr error
 		// Specify expectedIndicators as indices into the indicators slice above.
 		expectedIndicatorIndices []int
@@ -51,17 +53,8 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 			shouldBePersisted:          true,
 		},
 		{
-			name:     "Process Baseline exists, but not locked",
-			baseline: &storage.ProcessBaseline{},
-			indicators: []*storage.ProcessIndicator{
-				{
-					Signal: &storage.ProcessSignal{
-						Name: "apt-get",
-						Args: "install nmap",
-					},
-					ContainerName: deployment.GetContainers()[0].GetName(),
-				},
-			},
+			name:                       "Process Baseline exists, but not locked",
+			baseline:                   &storage.ProcessBaseline{},
 			baselineStatuses:           makeBaselineStatuses(t, "UNLOCKED", "UNLOCKED"),
 			anomalousProcessesExecuted: []bool{false, false},
 			currentBaselineResults:     nil,
@@ -73,12 +66,10 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 				StackRoxLockedTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
 				Elements:                fixtures.MakeBaselineElements("/bin/apt-get", "/unrelated"),
 			},
-			indicators: []*storage.ProcessIndicator{
+			indicators: []*views.ProcessIndicatorRiskView{
 				{
-					Signal: &storage.ProcessSignal{
-						ExecFilePath: "/bin/apt-get",
-						Args:         "install nmap",
-					},
+					ExecFilePath:  "/bin/apt-get",
+					SignalArgs:    "install nmap",
 					ContainerName: deployment.GetContainers()[0].GetName(),
 				},
 			},
@@ -92,12 +83,10 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 			baseline: &storage.ProcessBaseline{
 				StackRoxLockedTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
 			},
-			indicators: []*storage.ProcessIndicator{
+			indicators: []*views.ProcessIndicatorRiskView{
 				{
-					Signal: &storage.ProcessSignal{
-						ExecFilePath: "apt-get",
-						Args:         "install nmap",
-					},
+					ExecFilePath:  "apt-get",
+					SignalArgs:    "install nmap",
 					ContainerName: deployment.GetContainers()[0].GetName(),
 				},
 			},
@@ -112,19 +101,15 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 			baseline: &storage.ProcessBaseline{
 				StackRoxLockedTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
 			},
-			indicators: []*storage.ProcessIndicator{
+			indicators: []*views.ProcessIndicatorRiskView{
 				{
-					Signal: &storage.ProcessSignal{
-						ExecFilePath: "apt-get",
-						Args:         "install nmap",
-					},
+					ExecFilePath:  "apt-get",
+					SignalArgs:    "install nmap",
 					ContainerName: deployment.GetContainers()[1].GetName(),
 				},
 				{
-					Signal: &storage.ProcessSignal{
-						ExecFilePath: "curl",
-						Args:         "badssl.com",
-					},
+					ExecFilePath:  "curl",
+					SignalArgs:    "badssl.com",
 					ContainerName: deployment.GetContainers()[1].GetName(),
 				},
 			},
@@ -140,26 +125,20 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 				StackRoxLockedTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
 				Elements:                fixtures.MakeBaselineElements("/bin/apt-get"),
 			},
-			indicators: []*storage.ProcessIndicator{
+			indicators: []*views.ProcessIndicatorRiskView{
 				{
-					Signal: &storage.ProcessSignal{
-						ExecFilePath: "/bin/not-apt-get",
-						Args:         "install nmap",
-					},
+					ExecFilePath:  "/bin/not-apt-get",
+					SignalArgs:    "install nmap",
 					ContainerName: deployment.GetContainers()[0].GetName(),
 				},
 				{
-					Signal: &storage.ProcessSignal{
-						ExecFilePath: "/bin/apt-get",
-						Args:         "install nmap",
-					},
+					ExecFilePath:  "/bin/apt-get",
+					SignalArgs:    "install nmap",
 					ContainerName: deployment.GetContainers()[0].GetName(),
 				},
 				{
-					Signal: &storage.ProcessSignal{
-						ExecFilePath: "/bin/curl",
-						Args:         "badssl.com",
-					},
+					ExecFilePath:  "/bin/curl",
+					SignalArgs:    "badssl.com",
 					ContainerName: deployment.GetContainers()[1].GetName(),
 				},
 			},
@@ -175,26 +154,20 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 				StackRoxLockedTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
 				Elements:                fixtures.MakeBaselineElements("/bin/apt-get"),
 			},
-			indicators: []*storage.ProcessIndicator{
+			indicators: []*views.ProcessIndicatorRiskView{
 				{
-					Signal: &storage.ProcessSignal{
-						ExecFilePath: "/bin/not-apt-get",
-						Args:         "install nmap",
-					},
+					ExecFilePath:  "/bin/not-apt-get",
+					SignalArgs:    "install nmap",
 					ContainerName: deployment.GetContainers()[0].GetName(),
 				},
 				{
-					Signal: &storage.ProcessSignal{
-						ExecFilePath: "/bin/apt-get",
-						Args:         "install nmap",
-					},
+					ExecFilePath:  "/bin/apt-get",
+					SignalArgs:    "install nmap",
 					ContainerName: deployment.GetContainers()[0].GetName(),
 				},
 				{
-					Signal: &storage.ProcessSignal{
-						ExecFilePath: "/bin/curl",
-						Args:         "badssl.com",
-					},
+					ExecFilePath:  "/bin/curl",
+					SignalArgs:    "badssl.com",
 					ContainerName: deployment.GetContainers()[1].GetName(),
 				},
 			},
@@ -223,26 +196,20 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 				StackRoxLockedTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
 				Elements:                fixtures.MakeBaselineElements("/bin/apt-get"),
 			},
-			indicators: []*storage.ProcessIndicator{
+			indicators: []*views.ProcessIndicatorRiskView{
 				{
-					Signal: &storage.ProcessSignal{
-						ExecFilePath: "/bin/not-apt-get",
-						Args:         "install nmap",
-					},
+					ExecFilePath:  "/bin/not-apt-get",
+					SignalArgs:    "install nmap",
 					ContainerName: deployment.GetContainers()[0].GetName(),
 				},
 				{
-					Signal: &storage.ProcessSignal{
-						ExecFilePath: "/bin/apt-get",
-						Args:         "install nmap",
-					},
+					ExecFilePath:  "/bin/apt-get",
+					SignalArgs:    "install nmap",
 					ContainerName: deployment.GetContainers()[0].GetName(),
 				},
 				{
-					Signal: &storage.ProcessSignal{
-						ExecFilePath: "/bin/curl",
-						Args:         "badssl.com",
-					},
+					ExecFilePath:  "/bin/curl",
+					SignalArgs:    "badssl.com",
 					ContainerName: deployment.GetContainers()[1].GetName(),
 				},
 			},
@@ -277,7 +244,15 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 			mockResults := processBaselineResultMocks.NewMockDataStore(mockCtrl)
 
 			mockBaselines.EXPECT().GetProcessBaseline(gomock.Any(), gomock.Any()).MaxTimes(len(deployment.GetContainers())).Return(c.baseline, c.baseline != nil, c.baselineErr)
-			mockIndicators.EXPECT().SearchRawProcessIndicators(gomock.Any(), gomock.Any()).Return(c.indicators, c.indicatorErr)
+			if c.indicators != nil {
+				mockIndicators.EXPECT().IterateOverProcessIndicatorsRiskView(gomock.Any(), gomock.Any(), gomock.Any()).Do(
+					func(_ context.Context, _ *v1.Query, fn func(indicator *views.ProcessIndicatorRiskView) error) {
+						for _, i := range c.indicators {
+							err := fn(i)
+							require.NoError(t, err)
+						}
+					}).Return(c.indicatorErr)
+			}
 
 			expectedBaselineResult := &storage.ProcessBaselineResults{
 				DeploymentId: deployment.GetId(),
@@ -299,11 +274,11 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 			results, err := New(mockResults, mockBaselines, mockIndicators).EvaluateBaselinesAndPersistResult(deployment)
 			require.NoError(t, err)
 
-			expectedIndicators := make([]*storage.ProcessIndicator, 0, len(c.expectedIndicatorIndices))
+			expectedIndicators := make([]*views.ProcessIndicatorRiskView, 0, len(c.expectedIndicatorIndices))
 			for _, idx := range c.expectedIndicatorIndices {
 				expectedIndicators = append(expectedIndicators, c.indicators[idx])
 			}
-			assert.ElementsMatch(t, results, expectedIndicators)
+			require.ElementsMatch(t, expectedIndicators, results)
 		})
 	}
 }

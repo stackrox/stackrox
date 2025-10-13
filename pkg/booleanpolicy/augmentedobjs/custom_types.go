@@ -1,7 +1,8 @@
 package augmentedobjs
 
 import (
-	"github.com/gogo/protobuf/types"
+	"time"
+
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -65,7 +66,7 @@ type NetworkFlowDetails struct {
 	DstPort              uint32
 	L4Protocol           storage.L4Protocol
 	NotInNetworkBaseline bool `policy:"Not In Network Baseline"`
-	LastSeenTimestamp    *types.Timestamp
+	LastSeenTimestamp    time.Time
 	// will only be populated if src is deployment
 	SrcDeploymentNamespace string
 	// will only be populated if dst is deployment

@@ -1,0 +1,23 @@
+{
+    "data": {
+        "nodeCVE": {
+            "cve": "CYPRESS-CVE-2022-1996",
+            "distroTuples": [
+                {
+                    "summary": "[CYPRESS] This is mocked CVE data for automated testing",
+                    "link": "https://access.redhat.com/security/cve/CVE-2022-1996",
+                    "operatingSystem": "rhcos:4.14",
+                    "__typename": "NodeVulnerability"
+                },
+                {
+                    "summary": "[CYPRESS] This is mocked CVE data for automated testing",
+                    "link": "https://access.redhat.com/security/cve/CVE-2022-1996",
+                    "operatingSystem": "rhcos:4.15",
+                    "__typename": "NodeVulnerability"
+                }
+            ],
+            "firstDiscoveredInSystem": "2024-03-14T22:48:43.642313Z",
+            "__typename": "NodeCVECore"
+        }
+    }
+}

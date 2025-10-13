@@ -54,7 +54,7 @@ func validateTimeouts(t timeoutProvider) error {
 
 func newWithTimeoutProvider(clusterID string, storage ClusterStorage, autoTriggerEnabledFlag *concurrency.Flag, timeouts timeoutProvider) (UpgradeController, error) {
 	if err := validateTimeouts(timeouts); err != nil {
-		return nil, utils.Should(err)
+		return nil, utils.ShouldErr(err)
 	}
 
 	u := &upgradeController{

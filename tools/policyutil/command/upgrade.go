@@ -74,7 +74,7 @@ func Command() *cobra.Command {
 	return c
 }
 
-func upgrade(c *cobra.Command, _ []string) error {
+func upgrade(_ *cobra.Command, _ []string) error {
 	fileStat, fileErr := os.Stat(file)
 	dirStat, dirErr := os.Stat(dir)
 
@@ -146,11 +146,11 @@ func upgradeSingle() error {
 	}
 
 	common.PrintVerboseLog("Policy successfully upgraded")
-	common.PrintVerboseLog(common.DiffWrapped(string(content), upgraded))
+	common.PrintVerboseLog("%s", common.DiffWrapped(string(content), upgraded))
 
 	if out == "" {
 		common.PrintVerboseLog("Upgraded policy is printed to stdout")
-		common.PrintResult(upgraded)
+		common.PrintResult("%s", upgraded)
 		return nil
 	}
 

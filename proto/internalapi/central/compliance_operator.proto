@@ -1,0 +1,294 @@
+syntax = "proto3";
+
+package central;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./internalapi/central;central";
+
+// ComplianceOperatorInfo has basic info and status about the compliance operator.
+message ComplianceOperatorInfo {
+  string version = 1;
+  string namespace = 2;
+
+  // The following fields are made optional/nullable because there can be errors when trying to obtain them.
+  oneof total_desired_pods_opt {
+    int32 total_desired_pods = 3;
+  }
+  oneof total_ready_pods_opt {
+    int32 total_ready_pods = 4;
+  }
+
+  // Collection of errors that occurred while trying to obtain compliance health info.
+  string status_error = 5;
+  bool is_installed = 6;
+}
+
+message EnableComplianceRequest {
+  string id = 1;
+}
+
+message DisableComplianceRequest {
+  string id = 1;
+}
+
+// SyncComplianceScanConfigRequest contains a list of the Scan Configs that should be applied in the cluster.
+// This is use during Central/Sensor connection' startup to reconcile ScanSettings and ScanSettingBindings.
+message SyncComplianceScanConfigRequest {
+  repeated ApplyComplianceScanConfigRequest scan_configs = 1;
+}
+
+// ApplyComplianceScanConfigRequest contains information about a compliance scan configuration to be applied to secured cluster.
+message ApplyComplianceScanConfigRequest {
+  message BaseScanSettings {
+    string db_record_id = 1;
+    string scan_name = 2;
+    repeated string profiles = 3;
+
+    bool show_not_applicable = 4;
+    bool strict_node_scan = 5;
+    bool auto_apply_remediations = 6;
+    bool auto_update_remediations = 7;
+  }
+
+  message OneTimeScan {
+    BaseScanSettings scan_settings = 1;
+  }
+  message ScheduledScan {
+    BaseScanSettings scan_settings = 1;
+    string cron = 2;
+  }
+  message RerunScheduledScan {
+    string scan_name = 1;
+  }
+  message SuspendScheduledScan {
+    string scan_name = 1;
+  }
+  message ResumeScheduledScan {
+    string scan_name = 1;
+  }
+  message UpdateScheduledScan {
+    BaseScanSettings scan_settings = 1;
+    string cron = 2;
+  }
+
+  string id = 1;
+  reserved 2; // previously OneTimeScan
+  oneof scan_request {
+    ScheduledScan scheduled_scan = 3;
+    RerunScheduledScan rerun_scan = 4;
+    SuspendScheduledScan suspend_scan = 5;
+    ResumeScheduledScan resume_scan = 6;
+    UpdateScheduledScan update_scan = 7;
+  }
+}
+
+// DeleteComplianceScanConfigRequest contains information about compliance scan configuration to be deleted from secured cluster.
+message DeleteComplianceScanConfigRequest {
+  string id = 1;
+  string name = 2;
+}
+
+// ComplianceRequest is a message from Central (to Sensor) to perform an action related to compliance.
+message ComplianceRequest {
+  oneof request {
+    EnableComplianceRequest enable_compliance = 1;
+    DisableComplianceRequest disable_compliance = 2;
+    ApplyComplianceScanConfigRequest apply_scan_config = 3;
+    DeleteComplianceScanConfigRequest delete_scan_config = 4;
+    SyncComplianceScanConfigRequest sync_scan_configs = 5;
+  }
+}
+
+// ComplianceResponse is a message from Sensor (to Central) representing success/failure processing request.
+message ComplianceResponse {
+  message EnableComplianceResponse {
+    string id = 1;
+    oneof payload {
+      string error = 2;
+    }
+  }
+  message DisableComplianceResponse {
+    string id = 1;
+    oneof payload {
+      string error = 2;
+    }
+  }
+  message ApplyComplianceScanConfigResponse {
+    string id = 1;
+    oneof payload {
+      string error = 2;
+    }
+  }
+  message DeleteComplianceScanConfigResponse {
+    string id = 1;
+    oneof payload {
+      string error = 2;
+    }
+  }
+  oneof response {
+    EnableComplianceResponse enable_compliance_response = 1;
+    DisableComplianceResponse disable_compliance_response = 2;
+    ApplyComplianceScanConfigResponse apply_compliance_scan_config_response = 3;
+    DeleteComplianceScanConfigResponse delete_compliance_scan_config_response = 4;
+  }
+}
+
+// Represents the severity of the rule
+enum ComplianceOperatorRuleSeverity {
+  UNSET_RULE_SEVERITY = 0;
+  UNKNOWN_RULE_SEVERITY = 1;
+  INFO_RULE_SEVERITY = 2;
+  LOW_RULE_SEVERITY = 3;
+  MEDIUM_RULE_SEVERITY = 4;
+  HIGH_RULE_SEVERITY = 5;
+}
+
+// ComplianceOperatorCheckResultV2 is a message from Sensor (to Central) representing a compliance check result.
+// Next tag: 17.
+message ComplianceOperatorCheckResultV2 {
+  enum CheckStatus {
+    UNSET = 0;
+    PASS = 1;
+    FAIL = 2;
+    ERROR = 3;
+    INFO = 4;
+    MANUAL = 5;
+    NOT_APPLICABLE = 6;
+    INCONSISTENT = 7;
+  }
+
+  string id = 1;
+  string check_id = 2;
+  string check_name = 3;
+  string cluster_id = 4;
+  CheckStatus status = 5;
+  ComplianceOperatorRuleSeverity severity = 6;
+  string description = 7;
+  string instructions = 8;
+  map<string, string> labels = 9;
+  map<string, string> annotations = 10;
+  google.protobuf.Timestamp created_time = 11;
+  reserved 12;
+  reserved 13;
+  string scan_name = 14;
+  string suite_name = 15;
+  string rationale = 16;
+  repeated string valuesUsed = 17;
+  repeated string warnings = 18;
+}
+
+// ComplianceOperatorProfileV2 is a message from Sensor (to Central) representing a compliance check profile.
+// Next tag: 11.
+message ComplianceOperatorProfileV2 {
+  string id = 1;
+  string profile_id = 2;
+  string name = 3;
+  string profile_version = 4;
+  map<string, string> labels = 5;
+  map<string, string> annotations = 6;
+  string description = 7;
+  message Rule {
+    string rule_name = 1;
+  }
+  repeated Rule rules = 8;
+  string title = 9;
+  repeated string values = 10;
+}
+
+// ComplianceOperatorRuleV2 is a message from Sensor (to Central) representing a compliance check rule.
+// Next tag: 14
+message ComplianceOperatorRuleV2 {
+  string rule_id = 1;
+  string id = 2;
+  string name = 3;
+  string rule_type = 4;
+  ComplianceOperatorRuleSeverity severity = 5;
+  map<string, string> labels = 6;
+  map<string, string> annotations = 7;
+  string title = 8;
+  string description = 9;
+  string rationale = 10;
+  message Fix {
+    string platform = 1;
+    string disruption = 2;
+  }
+  repeated Fix fixes = 11;
+  string warning = 12;
+  string instructions = 13;
+}
+
+message ComplianceOperatorScanV2 {
+  string id = 1;
+  string name = 2;
+  string profile_id = 3;
+  map<string, string> labels = 4;
+  map<string, string> annotations = 5;
+  string scan_type = 6;
+  ComplianceOperatorScanStatusV2 status = 7;
+}
+
+message ComplianceOperatorScanStatusV2 {
+  string phase = 1;
+  string result = 2;
+  string error_message = 3;
+  int64 current_index = 4;
+  string warnings = 5;
+  int64 remaining_retries = 6;
+  // start_time is the creation time of the Scan resource
+  google.protobuf.Timestamp start_time = 7;
+  google.protobuf.Timestamp end_time = 8;
+  // last_start_time is the last time the Scan resource was triggered
+  google.protobuf.Timestamp last_start_time = 9;
+}
+
+message ComplianceOperatorScanSettingBindingV2 {
+  string id = 1;
+  string name = 2;
+  repeated string profile_names = 3;
+  string scan_setting_name = 4;
+
+  reserved 5;
+  map<string, string> labels = 6;
+  map<string, string> annotations = 7;
+  ComplianceOperatorStatus status = 8;
+}
+
+message ComplianceOperatorCondition {
+  string type = 1;
+  string status = 2;
+  string reason = 3;
+  string message = 4;
+  google.protobuf.Timestamp last_transition_time = 5;
+}
+
+message ComplianceOperatorStatus {
+  string phase = 1;
+  string result = 2;
+  string error_message = 3;
+  repeated ComplianceOperatorCondition conditions = 4;
+}
+
+message ComplianceOperatorSuiteV2 {
+  string id = 1;
+  string name = 2;
+
+  reserved 3;
+  ComplianceOperatorStatus status = 4;
+}
+
+message ComplianceOperatorRemediationV2 {
+  string id = 1;
+  string name = 2;
+  string compliance_check_result_name = 3;
+  // apply is used by the compliance operator to apply a remediation
+  bool apply = 4;
+  // current holds the object which currently remediates the check result. It is saved in a "current" field because
+  // Compliance Operator can ship new remediations in a following versions.
+  // See: https://docs.openshift.com/container-platform/4.15/security/compliance_operator/co-scans/compliance-operator-remediation.html#compliance-updating_compliance-remediation
+  string current_object = 5;
+  // outdated is an old remediation object when a new remediation was added to the "current" field in the compliance operator.
+  // See: https://docs.openshift.com/container-platform/4.15/security/compliance_operator/co-scans/compliance-operator-remediation.html#compliance-updating_compliance-remediation
+  string outdated_object = 6;
+  string enforcement_type = 7;
+}

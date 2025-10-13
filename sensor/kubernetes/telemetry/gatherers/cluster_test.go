@@ -32,7 +32,9 @@ func (s *ClusterGathererTestSuite) TestGatherCluster() {
 			Name: "NamespaceName",
 		},
 	}
-	gatherer := NewClusterGatherer(fake.NewSimpleClientset(node, namespace), resources.DeploymentStoreSingleton())
+	gatherer := NewClusterGatherer(
+		fake.NewSimpleClientset(node, namespace),
+		resources.InitializeStore(nil).Deployments())
 	cluster := gatherer.Gather(context.Background())
 	s.NotNil(cluster)
 	s.Len(cluster.Nodes, 1)

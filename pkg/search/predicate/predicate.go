@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/fieldmap"
 	"github.com/stackrox/rox/pkg/utils"
@@ -200,11 +201,11 @@ func (tb Factory) base(q *v1.BaseQuery) (internalPredicate, error) {
 	}
 }
 
-func (tb Factory) docID(q *v1.DocIDQuery) (internalPredicate, error) {
+func (tb Factory) docID(_ *v1.DocIDQuery) (internalPredicate, error) {
 	return nil, errors.New("query predicates do not support DocID query types as DocIDs only exist in the index")
 }
 
-func (tb Factory) matchNone(q *v1.MatchNoneQuery) (internalPredicate, error) {
+func (tb Factory) matchNone(_ *v1.MatchNoneQuery) (internalPredicate, error) {
 	return alwaysFalse, nil
 }
 
@@ -514,7 +515,7 @@ func createStructFieldNestedPredicate(field reflect.StructField, structTy reflec
 			return nil, false
 		}
 		nextValue := instance.FieldByIndex(field.Index)
-		if !nilCheck(nextValue) || nextValue.Type() == timestampPtrType {
+		if !nilCheck(nextValue) || nextValue.Type() == protocompat.TimestampPtrType {
 			return pred.Evaluate(nextValue)
 		}
 		// Special-case image scans, replacing a nil scan with an empty scan.

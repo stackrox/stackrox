@@ -1,1 +1,0 @@
-openshift_4_qa_e2e_tests.py

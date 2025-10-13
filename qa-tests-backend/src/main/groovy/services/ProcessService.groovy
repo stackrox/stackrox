@@ -1,19 +1,20 @@
 package services
 
+import groovy.transform.CompileStatic
+
+import io.stackrox.annotations.Retry
 import io.stackrox.proto.api.v1.ProcessServiceGrpc
 import io.stackrox.proto.api.v1.ProcessServiceOuterClass
 import io.stackrox.proto.storage.ProcessIndicatorOuterClass.ProcessIndicator
 
+@CompileStatic
 class ProcessService extends BaseService {
-    static getClient() {
+    static ProcessServiceGrpc.ProcessServiceBlockingStub getClient() {
         return ProcessServiceGrpc.newBlockingStub(getChannel())
     }
 
     static Set<String> getUniqueProcessPaths(String deploymentID) {
-        def response = getClient().getProcessesByDeployment(ProcessServiceOuterClass.GetProcessesByDeploymentRequest
-            .newBuilder()
-            .setDeploymentId(deploymentID)
-            .build())
+        def response = getProcessesForDeployment(deploymentID)
 
         Set<String> paths = []
         for ( ProcessIndicator process : response.getProcessesList() ) {
@@ -23,10 +24,7 @@ class ProcessService extends BaseService {
     }
 
     static Map<String, Set<Tuple2<Integer, Integer>>> getProcessUserAndGroupIds(String deploymentID) {
-        def response = getClient().getProcessesByDeployment(ProcessServiceOuterClass.GetProcessesByDeploymentRequest
-                .newBuilder()
-                .setDeploymentId(deploymentID)
-                .build())
+        def response = getProcessesForDeployment(deploymentID)
         Map<String,Set<Tuple2<Integer,Integer>>> pathToIds = [:]
         for ( ProcessIndicator process : response.getProcessesList() ) {
             String path = process.getSignal().getExecFilePath()
@@ -39,10 +37,7 @@ class ProcessService extends BaseService {
     }
 
     static List<Tuple2<String, String>> getProcessesWithArgs(String deploymentID) {
-        def response = getClient().getProcessesByDeployment(ProcessServiceOuterClass.GetProcessesByDeploymentRequest
-                .newBuilder()
-                .setDeploymentId(deploymentID)
-                .build())
+        def response = getProcessesForDeployment(deploymentID)
 
         List<Tuple2<String, String>> processes = []
         for (ProcessIndicator process : response.getProcessesList()) {
@@ -56,10 +51,7 @@ class ProcessService extends BaseService {
     // Returns a map of process path -> list of container id's for each container
     // the path was executed (this list may have duplicates)
     static Map<String, List<String> > getProcessContainerMap(String deploymentID, Set<String> processes = null) {
-        def response = getClient().getProcessesByDeployment(ProcessServiceOuterClass.GetProcessesByDeploymentRequest
-            .newBuilder()
-            .setDeploymentId(deploymentID)
-            .build())
+        def response = getProcessesForDeployment(deploymentID)
 
         Map<String, List<String> > pathContainerMap = new HashMap<>()
         for ( ProcessIndicator process : response.getProcessesList() ) {
@@ -78,15 +70,7 @@ class ProcessService extends BaseService {
         return pathContainerMap
     }
 
-    static List<ProcessIndicator> getProcessIndicatorsByDeployment(String deploymentID) {
-        def response = getClient().getProcessesByDeployment(ProcessServiceOuterClass.GetProcessesByDeploymentRequest
-                .newBuilder()
-                .setDeploymentId(deploymentID)
-                .build())
-
-        return response.getProcessesList()
-    }
-
+    @Retry
     static getGroupedProcessByDeploymentAndContainer(String deploymentId) {
         def response = getClient().getGroupedProcessByDeploymentAndContainer(
             ProcessServiceOuterClass.GetProcessesByDeploymentRequest.newBuilder()
@@ -96,4 +80,13 @@ class ProcessService extends BaseService {
 
         return response.groupsList
     }
+
+    @Retry
+    private static ProcessServiceOuterClass.GetProcessesResponse getProcessesForDeployment(String deploymentID) {
+        getClient().getProcessesByDeployment(ProcessServiceOuterClass.GetProcessesByDeploymentRequest
+            .newBuilder()
+            .setDeploymentId(deploymentID)
+            .build())
+    }
+
 }

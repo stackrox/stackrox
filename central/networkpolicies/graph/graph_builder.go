@@ -3,6 +3,7 @@ package graph
 import (
 	"fmt"
 	"net"
+	"slices"
 	"sort"
 	"strings"
 
@@ -185,7 +186,7 @@ func (b *graphBuilder) getOrCreateExtSrcNode(extSrc *storage.NetworkEntityInfo) 
 		return n
 	}
 	for _, existingExtSrcNode := range b.extSrcs {
-		if existingExtSrcNode.extSrc.Id == extSrc.GetId() {
+		if existingExtSrcNode.extSrc.GetId() == extSrc.GetId() {
 			return existingExtSrcNode
 		}
 	}
@@ -321,6 +322,18 @@ func (b *graphBuilder) AddEdgesForNetworkPolicies(netPols []*storage.NetworkPoli
 	b.forEachNetworkPolicy(netPols, b.addEdgesForNetworkPolicy)
 }
 
+func (b *graphBuilder) GetApplyingPoliciesPerDeployment(allNetPols []*storage.NetworkPolicy) map[string][]*storage.NetworkPolicy {
+	deploymentsToNetPols := make(map[string][]*storage.NetworkPolicy)
+	b.forEachNetworkPolicy(allNetPols, func(netPol *storage.NetworkPolicy, _ *storage.NamespaceMetadata, matchedDeployments []*node) {
+		for _, node := range matchedDeployments {
+			if id := node.deployment.GetId(); id != "" {
+				deploymentsToNetPols[id] = append(deploymentsToNetPols[id], netPol)
+			}
+		}
+	})
+	return deploymentsToNetPols
+}
+
 func (b *graphBuilder) GetApplyingPolicies(allNetPols []*storage.NetworkPolicy) []*storage.NetworkPolicy {
 	var applyingPolicies []*storage.NetworkPolicy
 	b.forEachNetworkPolicy(allNetPols, func(netPol *storage.NetworkPolicy, _ *storage.NamespaceMetadata, matchedDeployments []*node) {
@@ -361,7 +374,7 @@ func (b *graphBuilder) forEachNetworkPolicy(netPols []*storage.NetworkPolicy, do
 
 func (b *graphBuilder) PostProcess() {
 	for _, d := range b.allDeployments {
-		sort.Strings(d.applyingPoliciesIDs)
+		slices.Sort(d.applyingPoliciesIDs)
 		for _, e := range d.ingressEdges {
 			e.ports.normalizeInPlace()
 		}

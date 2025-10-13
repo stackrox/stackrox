@@ -1,5 +1,4 @@
 //go:build sql_integration
-// +build sql_integration
 
 package test
 
@@ -9,17 +8,13 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
-	"github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/test/postgres"
+	pgStore "github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/test/postgres"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -29,13 +24,9 @@ var (
 
 type SingleIndexSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
 
-	pool    *pgxpool.Pool
-	store   postgres.Store
-	indexer interface {
-		Search(ctx context.Context, q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)
-	}
+	pool  postgres.DB
+	store pgStore.Store
 }
 
 func TestSingleIndex(t *testing.T) {
@@ -43,32 +34,23 @@ func TestSingleIndex(t *testing.T) {
 }
 
 func (s *SingleIndexSuite) SetupTest() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres index tests")
-		s.T().SkipNow()
-	}
 
 	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
+	config, err := postgres.ParseConfig(source)
 	s.Require().NoError(err)
-	s.pool, err = pgxpool.ConnectConfig(context.Background(), config)
+	s.pool, err = postgres.New(context.Background(), config)
 	s.Require().NoError(err)
 
-	postgres.Destroy(ctx, s.pool)
+	pgStore.Destroy(ctx, s.pool)
 	gormDB := pgtest.OpenGormDB(s.T(), source)
 	defer pgtest.CloseGormDB(s.T(), gormDB)
-	s.store = postgres.CreateTableAndNewStore(ctx, s.pool, gormDB)
-	s.indexer = postgres.NewIndexer(s.pool)
+	s.store = pgStore.CreateTableAndNewStore(ctx, s.pool, gormDB)
 }
 
 func (s *SingleIndexSuite) TearDownTest() {
 	if s.pool != nil {
 		s.pool.Close()
 	}
-	s.envIsolator.RestoreAll()
 }
 
 func getStruct(id int) *storage.TestSingleKeyStruct {
@@ -106,12 +88,12 @@ func (s *SingleIndexSuite) TestDocIDs() {
 		s.Run(testCase.desc, func() {
 			so := search.NewSortOption(search.DocID)
 			q := search.NewQueryBuilder().AddDocIDs(testCase.docIDs...).WithPagination(search.NewPagination().AddSortOption(so)).ProtoQuery()
-			results, err := s.indexer.Search(ctx, q)
+			results, err := s.store.Search(ctx, q)
 			s.Require().NoError(err)
 			s.Equal(testCase.docIDs, search.ResultsToIDs(results))
 
 			q = search.NewQueryBuilder().AddDocIDs(testCase.docIDs...).WithPagination(search.NewPagination().AddSortOption(so.Reversed(true))).ProtoQuery()
-			results, err = s.indexer.Search(ctx, q)
+			results, err = s.store.Search(ctx, q)
 			s.Require().NoError(err)
 
 			sort.Sort(sort.Reverse(sort.StringSlice(testCase.docIDs)))
@@ -177,7 +159,7 @@ func (s *SingleIndexSuite) TestSearchAfter() {
 	} {
 		s.Run(testCase.desc, func() {
 			q := search.NewQueryBuilder().WithPagination(testCase.pagination).ProtoQuery()
-			results, err := s.indexer.Search(ctx, q)
+			results, err := s.store.Search(ctx, q)
 			s.Equal(testCase.valid, err == nil)
 			s.Equal(testCase.results, search.ResultsToIDs(results))
 		})
@@ -325,7 +307,7 @@ func (s *SingleIndexSuite) TestAutocomplete() {
 			} else {
 				qb.AddStringsHighlighted(testCase.field, testCase.queryString)
 			}
-			results, err := s.indexer.Search(ctx, qb.ProtoQuery())
+			results, err := s.store.Search(ctx, qb.ProtoQuery())
 			s.NoError(err)
 			if len(testCase.results) > 0 {
 				s.Require().Len(results, 1)

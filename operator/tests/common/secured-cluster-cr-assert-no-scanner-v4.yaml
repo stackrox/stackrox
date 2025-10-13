@@ -1,0 +1,67 @@
+# NOTE: After 4.8 has been released, this file can be removed again and in favor for linking
+# to ../../common/secured-cluster-cr-assert.yaml.
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+collectors:
+- type: pod
+  selector: app=sensor
+  tail: -1
+- type: pod
+  selector: app=admission-control
+  tail: -1
+- type: pod
+  selector: app=collector
+  tail: -1
+- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=sensor
+- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=admission-control
+- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=collector
+# Please keep the above lists in sync with pods-debug.yaml
+timeout: 1500
+---
+apiVersion: platform.stackrox.io/v1alpha1
+kind: SecuredCluster
+metadata:
+  name: stackrox-secured-cluster-services
+status:
+  clusterName: testing-cluster
+  conditions:
+    - status: "True"
+      type: Deployed
+    - status: "True"
+      type: Initialized
+    - status: "False"
+      type: Irreconcilable
+    - status: "False"
+      type: Paused
+    - status: "False"
+      type: ProxyConfigFailed
+    - status: "False"
+      type: ReleaseFailed
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sensor
+status:
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admission-control
+status:
+  availableReplicas: 3
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner
+status:
+  availableReplicas: 1
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: securedcluster-stackrox-secured-cluster-services-proxy-env
+data:
+  NO_PROXY: MTI3LjEuMi4zLzg= # 127.1.2.3/8

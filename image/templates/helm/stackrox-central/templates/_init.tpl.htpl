@@ -30,14 +30,30 @@
 
 {{/* Global state (accessed from sub-templates) */}}
 {{ $generatedName := printf "stackrox-generated-%s" (randAlphaNum 6 | lower) }}
-{{ $state := dict "customCertGen" false "generated" dict "generatedName" $generatedName "notes" list "warnings" list "referencedImages" dict }}
+{{ $state := dict }}
+{{ $_ = set $state "customCertGen" false }}
+{{ $_ = set $state "generated" dict }}
+{{ $_ = set $state "generatedName" $generatedName }}
+{{ $_ = set $state "notes" list }}
+{{ $_ = set $state "warnings" list }}
+{{ $_ = set $state "referencedImages" dict }}
+{{ $_ = set $state "referencedStorageClasses" list }}
 {{ $_ = set $._rox "_state" $state }}
 
-{{ $configShape := $.Files.Get "internal/config-shape.yaml" | fromYaml }}
-{{ $configShapeScanner := $.Files.Get "internal/scanner-config-shape.yaml" | fromYaml}}
+{{- include "srox.checkVersionRequirements" $ -}}
 
-{{ $_ = include "srox.mergeInto" (list $rox $configShape $configShapeScanner (tpl ($.Files.Get "internal/bootstrap-defaults.yaml.tpl") . | fromYaml)) }}
+{{ $configShape := $.Files.Get "internal/config-shape.yaml" | fromYaml }}
+{{ $configShapeScanner := $.Files.Get "internal/scanner-config-shape.yaml" | fromYaml }}
+{{ $_ = include "srox.mergeInto" (list $configShape $configShapeScanner) }}
+
+{{ $configShapeScannerV4 := $.Files.Get "internal/scanner-v4-config-shape.yaml" | fromYaml }}
+{{ $_ = include "srox.mergeInto" (list $configShape $configShapeScannerV4) }}
+
+{{ $_ = include "srox.mergeInto" (list $rox $configShape (tpl ($.Files.Get "internal/bootstrap-defaults.yaml.tpl") . | fromYaml)) }}
+
 {{ $_ = set $._rox "_configShape" $configShape }}
+
+{{ $_ = include "srox.loadAnnotationTemplates" $ }}
 
 {{/*
     General validation.
@@ -46,7 +62,7 @@
   {{ if $._rox.allowNonstandardNamespace }}
     {{ include "srox.note" (list $ (printf "You have chosen to deploy to namespace '%s'." $.Release.Namespace)) }}
   {{ else }}
-    {{ include "srox.fail" (printf "You have chosen to deploy to namespace '%s', not 'stackrox'. If this was accidental, please re-run helm with the '-n stackrox' option. Otherwise, if you need to deploy into this namespace, set the 'allowNonstandardNamespace' configuration value to true." $.Release.Namespace) }}
+    {{ include "srox.fail" (printf "You have chosen to deploy to namespace '%s', not 'stackrox'. If this was accidental, please re-run helm with the '-n stackrox' option. Otherwise, if you need to deploy into this namespace, set the 'allowNonstandardNamespace' configuration value to true. NOTE: Please review the section of this chart's README titled 'Multiple Installations of Central' if you encounter installation errors regarding a CustomResourceDefinition." $.Release.Namespace) }}
   {{ end }}
 {{ end }}
 
@@ -55,6 +71,15 @@
     {{ include "srox.warn" (list $ (printf "You have chosen a release name of '%s', not '%s'. Accompanying scripts and commands in documentation might require adjustments." $.Release.Name $.Chart.Name)) }}
   {{ else }}
     {{ include "srox.fail" (printf "You have chosen a release name of '%s', not '%s'. We strongly recommend using the standard release name. If you must use a different name, set the 'allowNonstandardReleaseName' configuration option to true." $.Release.Name $.Chart.Name) }}
+  {{ end }}
+{{ end }}
+
+{{ if $._rox.central.db.external }}
+  {{ if not $._rox.central.db.source.connectionString }}
+    {{ include "srox.warn" (list $ "You have chosen to bring your own Central DB without providing its connection string. We are using the default source string. To ensure the connection to your Central DB, you may override it with `--set central.db.source.connectionString=<ConnectionString>`.") }}
+  {{ end }}
+  {{ if not $._rox.central.db.password.value }}
+    {{ include "srox.warn" (list $ "You have chosen to bring your own Central DB without providing its password. We are using a generated password for now. To ensure the connection to your Central DB, you may provide your DB password by `--set central.db.password.value=<DBPassword>`.") }}
   {{ end }}
 {{ end }}
 
@@ -93,17 +118,20 @@
 
 {{/* Openshift monitoring */}}
 {{ if $._rox.enableOpenShiftMonitoring }}
-  {{ if (ne $._rox.env.openshift 4) }}
-    {{ include "srox.fail" "'enableOpenShiftMonitoring' is set to true, but the chart is not being deployed in an OpenShift 4 cluster." }}
-  {{ end }}
-
-  {{/* Override monitoring exposure when openshift monitoring is desired */}}
-  {{ if not $._rox.central.exposeMonitoring }}
-    {{ include "srox.warn" (list . "The default or set value of 'central.exposeMonitoring' is false but 'enableOpenShiftMonitoring' is true.") }}
-    {{ include "srox.warn" (list . "'central.exposeMonitoring' will be overridden and set to true.") }}
-    {{ $_ := set $._rox.central "exposeMonitoring" true }}
-  {{ end }}
-  {{ include "srox.note" (list $ (printf "To have openshift-monitoring include metrics from the %s namespace a label metadata is required. Run: oc label namespace/%s openshift.io/cluster-monitoring=true." .Release.Namespace .Release.Namespace)) }}
+  {{ include "srox.warn" (list . "enableOpenShiftMonitoring option was replaced with monitoring.openshift.enabled") }}
+  {{ $_ := set $._rox "monitoring" (dict "openshift" (dict "enabled" true)) }}
+{{ end }}
+{{/* Default `monitoring.openshift.enabled = true` unless `env.openshift != 4`. */}}
+{{ if kindIs "invalid" $._rox.monitoring.openshift.enabled }}
+{{ $_ := set $._rox "monitoring" (dict "openshift" (dict "enabled" (eq $._rox.env.openshift 4))) }}
+{{ end }}
+{{ if and $._rox.monitoring.openshift.enabled (ne $._rox.env.openshift 4) }}
+  {{ include "srox.warn" (list . "'monitoring.openshift.enabled' is set to true, but the chart is not being deployed in an OpenShift 4 cluster. Proceeding with 'monitoring.openshift.enabled=false'.") }}
+  {{ $_ := set $._rox "monitoring" (dict "openshift" (dict "enabled" false)) }}
+{{ end }}
+{{ if $._rox.monitoring.openshift.enabled }}
+    {{ $_ := set $._rox.central "monitoring" dict }}
+    {{ include "srox.mergeInto" (list $._rox.central.monitoring $._rox.monitoring) }}
 {{ end }}
 
 {{/* Infer GKE, if needed */}}
@@ -121,6 +149,11 @@
 {{ include "srox.autoSensePodSecurityPolicies" (list $) }}
 [<- end >]
 
+{{ include "srox.setInstallMethod" (list $) }}
+
+{{/* Attempt to retrieve stackrox-central-helm ConfigMap. Must be done before the defaulting logic is applied. */}}
+{{ include "srox.retrieveStackroxCentralHelmConfigMap" (list $) }}
+
 {{/* Apply defaults */}}
 {{ $defaultsCfg := dict }}
 {{ $platformCfgFile := dict }}
@@ -128,22 +161,18 @@
 {{ if not $platformCfgFile.found }}
   {{ include "srox.fail" (printf "Invalid platform %q. Please select a valid platform, or leave this field unset." $env.platform) }}
 {{ end }}
-{{ $_ = include "srox.mergeInto" (list $defaultsCfg (fromYaml $platformCfgFile.contents) ($.Files.Get "internal/defaults.yaml" | fromYaml)) }}
+{{ $_ = include "srox.mergeInto" (list $defaultsCfg (fromYaml $platformCfgFile.contents) (tpl ($.Files.Get "internal/defaults.yaml") . | fromYaml)) }}
 {{ $_ = set $rox "_defaults" $defaultsCfg }}
 {{ $_ = include "srox.mergeInto" (list $rox $defaultsCfg.defaults) }}
 
+{{ $_ = include "srox.scannerV4Defaulting" (list $ .Release $rox.scannerV4 $.stackroxHelm) }}
 
 {{/* Expand applicable config values */}}
 {{ $expandables := $.Files.Get "internal/expandables.yaml" | fromYaml }}
 {{ include "srox.expandAll" (list $ $rox $expandables) }}
 
-{{/* Initial image pull secret setup.
-
-     Always assume that there are `stackrox` and `stackrox-scanner` image pull secrets,
-     even if they weren't specified.
-     This is required for updates anyway, so referencing it on first install will minimize a later
-     diff. */}}
-{{ include "srox.configureImagePullSecrets" (list $ "imagePullSecrets" $._rox.imagePullSecrets "stackrox" (list "stackrox" "stackrox-scanner") $.Release.Namespace) }}
+{{/* Add environment information which should not be modifiable by the user. */}}
+{{ $_ := set $env "centralServices" true }}
 
 {{/* Global CA setup */}}
 {{ $caCertSpec := dict "CN" "StackRox Certificate Authority" "ca" true }}
@@ -176,12 +205,30 @@
     {{ include "srox.fail" (printf "Invalid non-string contents kind %s at index %d (%q) of additionalCAs" (kindOf $elem.contents) $idx $elem.name) }}
   {{ end }}
   {{/* In a k8s secret, no characters other than alphanumeric, '.', '_' and '-' are allowed. Also, for the
-       update-ca-certificates script to work, the file names must end in '.crt'. */}}
+       import-additional-cas script to work, the file names must end in '.crt'. */}}
 
   {{ $normalizedName := printf "%02d-%s.crt" $idx (regexReplaceAll "[^[:alnum:]._-]" $elem.name "-" | trimSuffix ".crt") }}
   {{ $_ := set $additionalCAs $normalizedName $elem.contents }}
 {{ end }}
 {{ $_ = set $._rox "_additionalCAs" $additionalCAs }}
+
+{{/* Route configuration */}}
+{{ $reencryptConfig := $._rox.central.exposure.route.reencrypt }}
+{{ if $reencryptConfig.enabled }}
+  {{/* Default the destination CA certificate to the Central CA. */}}
+  {{ if kindIs "invalid" $reencryptConfig.tls.destinationCACertificate }}
+    {{ if kindIs "invalid" $._rox._ca.Cert }}
+      {{ include "srox.warn" (list $ "The reencrypt route does not specify a destination certificate authority. Routing may be impaired.") }}
+    {{ else }}
+      {{ $_ := set $reencryptConfig.tls "destinationCACertificate" $._rox._ca.Cert }}
+    {{ end }}
+  {{ end }}
+  {{ if and (kindIs "invalid" $reencryptConfig.tls.certificate) (kindIs "invalid" $reencryptConfig.tls.key) }}
+    {{ include "srox.note" (list $ "The reencrypt route will serve a certificate signed by the OpenShift certificate authority.") }}
+  {{ else if or $reencryptConfig.tls.certificate $reencryptConfig.tls.key }}
+    {{ include "srox.fail" "The reencrypt route must specify either both, certificate and key, or neither." }}
+  {{ end }}
+{{ end }}
 
 {{/* Proxy configuration.
      Note: The reason this is different is that unlike the endpoints config, the proxy configuration
@@ -220,6 +267,7 @@
 [<- end >]
 {{ end }}
 {{ $_ = set $env "_proxyConfig" $proxyCfg }}
+{{ $_ = set $._rox "_renderMode" "[< .RenderMode >]" }}
 
 {{/*
     Central setup.
@@ -246,20 +294,36 @@
   {{ include "srox.scannerInit" (list $ $scannerCfg) }}
 {{ end }}
 
+{{/*
+   ScannerV4 setup.
+  */}}
+
+{{ $scannerV4Cfg := $._rox.scannerV4 }}
+{{ include "srox.scannerV4Init" (list $ $scannerV4Cfg) }}
+
+{{ if $._rox.scannerV4._dbEnabled }}
+  {{ include "srox.scannerV4Volume" $ }}
+{{ end }}
+
 
 {{/*
     Post-processing steps.
    */}}
 
-
 {{/* Compact the post-processing config to prevent it from appearing non-empty if it doesn't
      contain any concrete (leaf) values. */}}
 {{ include "srox.compactDict" (list $._rox._state.generated -1) }}
 
-{{/* Setup Image Pull Secrets for Docker Registry.
-     Note: This must happen afterwards, as we rely on "srox.configureImage" to collect the
-     set of all referenced images first. */}}
-{{ include "srox.configureImagePullSecretsForDockerRegistry" (list $ ._rox.imagePullSecrets) }}
+{{/* Setup Image Pull Secrets.
+
+     Note: This must happen late, as we rely on "srox.configureImage" to collect the
+     set of all referenced images first.
+
+     Always assume that there are `stackrox` and `stackrox-scanner` image pull secrets,
+     even if they weren't specified.
+     This is required for updates anyway, so referencing it on first install will minimize a later
+     diff. */}}
+{{ include "srox.configureImagePullSecrets" (list $ "imagePullSecrets" $._rox.imagePullSecrets "stackrox" (list "stackrox" "stackrox-scanner") $.Release.Namespace) }}
 
 {{/* Final warnings based on state. */}}
 {{ if $._rox._state.customCertGen }}

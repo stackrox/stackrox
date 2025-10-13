@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: open-close-ports-load
+  labels:
+    app: open-close-ports-load
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: open-close-ports-load
+  template:
+    metadata:
+      labels:
+        app: open-close-ports-load
+    spec:
+      containers:
+      - name: open-close-ports-load
+        image: quay.io/rhacs-eng/qa:perf-scale-open-close-ports-load-d9f4a59459
+        command: ["/bin/bash"]
+        args:
+        - "-c"
+        - "/open-close-ports-load.sh $num_ports $num_per_second $num_concurrent; tail -f /dev/null"
+        env:
+        - name: num_ports
+          valueFrom:
+            configMapKeyRef:
+              name: open-close-ports-load-configmap
+              key: num_ports
+        - name: num_per_second
+          valueFrom:
+            configMapKeyRef:
+              name: open-close-ports-load-configmap
+              key: num_per_second
+        - name: num_concurrent
+          valueFrom:
+            configMapKeyRef:
+              name: open-close-ports-load-configmap
+              key: num_concurrent

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 )
@@ -40,7 +41,7 @@ func TestParseURLQuery(t *testing.T) {
 
 	actual, _, err := ParseURLQuery(vals)
 	assert.NoError(t, err)
-	assert.Equal(t, expectedQuery, actual)
+	protoassert.Equal(t, expectedQuery, actual)
 }
 
 func TestParseURLQueryWithExtraValues(t *testing.T) {
@@ -75,7 +76,7 @@ func TestParseURLQueryWithExtraValues(t *testing.T) {
 
 	actual, _, err := ParseURLQuery(vals)
 	assert.NoError(t, err)
-	assert.Equal(t, expectedQuery, actual)
+	protoassert.Equal(t, expectedQuery, actual)
 }
 
 func TestParseURLQueryConjunctionQuery(t *testing.T) {
@@ -124,5 +125,5 @@ func TestParseURLQueryConjunctionQuery(t *testing.T) {
 
 	actual, _, err := ParseURLQuery(vals)
 	assert.NoError(t, err)
-	assert.EqualValues(t, expectedQuery, actual)
+	protoassert.Equal(t, expectedQuery, actual)
 }

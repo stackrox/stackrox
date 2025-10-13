@@ -1,0 +1,10 @@
+{
+  "exceptions": {
+    "GO-2022-0635": {
+      "reason": "Unused portion of the SDK"
+    },
+    "GO-2022-0646": {
+      "reason": "Unused portion of the SDK"
+    }
+  }
+}

@@ -9,15 +9,16 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/jwt"
 	"github.com/stackrox/rox/pkg/namespaces"
-	"gopkg.in/square/go-jose.v2/jwt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
 const (
 	namespaceFile = `/run/secrets/kubernetes.io/serviceaccount/namespace`
-	tokenFile     = `/run/secrets/kubernetes.io/serviceaccount/token`
+	//#nosec G101 -- This is a false positive
+	tokenFile = `/run/secrets/kubernetes.io/serviceaccount/token`
 
 	namespaceClaimKey        = `kubernetes.io/serviceaccount/namespace`
 	serviceAccountIDClaimKey = `kubernetes.io/serviceaccount/service-account.uid`
@@ -87,7 +88,10 @@ func populateFromKubernetes(ctx context.Context, k8sClient kubernetes.Interface,
 
 	appNS := out.GetAppNamespace()
 	if appNS == "" {
-		return errResult
+		if errResult != nil {
+			return errors.Wrap(errResult, "checking application namespace")
+		}
+		return errors.New("application namespace not set")
 	}
 
 	appNSObj, err := nsClient.Get(ctx, appNS, metav1.GetOptions{})
@@ -97,12 +101,15 @@ func populateFromKubernetes(ctx context.Context, k8sClient kubernetes.Interface,
 		out.AppNamespaceId = string(appNSObj.GetUID())
 	}
 
-	return errResult
+	if errResult != nil {
+		return errors.Wrap(errResult, "populating identification from Kubernetes API")
+	}
+	return nil
 }
 
-// fetchDeploymentIdentification retrieves the identifying information for this sensor deployment, using a mixture of
+// FetchDeploymentIdentification retrieves the identifying information for this sensor deployment, using a mixture of
 // secret mounts and information from the Kubernetes API server.
-func fetchDeploymentIdentification(ctx context.Context, k8sClient kubernetes.Interface) *storage.SensorDeploymentIdentification {
+func FetchDeploymentIdentification(ctx context.Context, k8sClient kubernetes.Interface) *storage.SensorDeploymentIdentification {
 	ctx, cancel := context.WithTimeout(ctx, fetchClusterIdentificationTimeout)
 	defer cancel()
 

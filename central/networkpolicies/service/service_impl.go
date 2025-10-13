@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gogo/protobuf/types"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
@@ -18,15 +17,13 @@ import (
 	"github.com/stackrox/rox/central/networkpolicies/generator"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
-	"github.com/stackrox/rox/central/notifiers"
-	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -35,8 +32,11 @@ import (
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
+	"github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/protocompat"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/options/deployments"
 	"github.com/stackrox/rox/pkg/search/predicate"
@@ -45,35 +45,34 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 )
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.NetworkPolicy)): {
-			"/v1.NetworkPolicyService/GetNetworkPolicy",
-			"/v1.NetworkPolicyService/GetNetworkPolicies",
-			"/v1.NetworkPolicyService/SimulateNetworkGraph",
-			"/v1.NetworkPolicyService/GetNetworkGraph",
-			"/v1.NetworkPolicyService/GetNetworkGraphEpoch",
-			"/v1.NetworkPolicyService/GetUndoModification",
-			"/v1.NetworkPolicyService/GetAllowedPeersFromCurrentPolicyForDeployment",
-			"/v1.NetworkPolicyService/GetDiffFlowsBetweenPolicyAndBaselineForDeployment",
-			"/v1.NetworkPolicyService/GetUndoModificationForDeployment",
-			"/v1.NetworkPolicyService/GetDiffFlowsFromUndoModificationForDeployment",
+			v1.NetworkPolicyService_GetNetworkPolicy_FullMethodName,
+			v1.NetworkPolicyService_GetNetworkPolicies_FullMethodName,
+			v1.NetworkPolicyService_SimulateNetworkGraph_FullMethodName,
+			v1.NetworkPolicyService_GetNetworkGraph_FullMethodName,
+			v1.NetworkPolicyService_GetNetworkGraphEpoch_FullMethodName,
+			v1.NetworkPolicyService_GetUndoModification_FullMethodName,
+			v1.NetworkPolicyService_GetAllowedPeersFromCurrentPolicyForDeployment_FullMethodName,
+			v1.NetworkPolicyService_GetDiffFlowsBetweenPolicyAndBaselineForDeployment_FullMethodName,
+			v1.NetworkPolicyService_GetUndoModificationForDeployment_FullMethodName,
+			v1.NetworkPolicyService_GetDiffFlowsFromUndoModificationForDeployment_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.NetworkPolicy)): {
-			"/v1.NetworkPolicyService/ApplyNetworkPolicy",
-			"/v1.NetworkPolicyService/ApplyNetworkPolicyYamlForDeployment",
+			v1.NetworkPolicyService_ApplyNetworkPolicy_FullMethodName,
+			v1.NetworkPolicyService_ApplyNetworkPolicyYamlForDeployment_FullMethodName,
 		},
-		user.With(permissions.Modify(resources.Notifier)): {
-			"/v1.NetworkPolicyService/SendNetworkPolicyYAML",
+		user.With(permissions.Modify(resources.Integration)): {
+			v1.NetworkPolicyService_SendNetworkPolicyYAML_FullMethodName,
 		},
 		user.With(permissions.View(resources.NetworkPolicy), permissions.View(resources.NetworkGraph)): {
-			"/v1.NetworkPolicyService/GenerateNetworkPolicies",
+			v1.NetworkPolicyService_GenerateNetworkPolicies_FullMethodName,
 		},
-		user.With(permissions.View(resources.NetworkPolicy), permissions.View(resources.NetworkBaseline)): {
-			"/v1.NetworkPolicyService/GetBaselineGeneratedNetworkPolicyForDeployment",
+		user.With(permissions.View(resources.NetworkPolicy), permissions.View(resources.DeploymentExtension)): {
+			v1.NetworkPolicyService_GetBaselineGeneratedNetworkPolicyForDeployment_FullMethodName,
 		},
 	})
 
@@ -97,6 +96,8 @@ type serviceImpl struct {
 	notifierStore    notifierDataStore.DataStore
 	graphEvaluator   graph.Evaluator
 
+	clusterSACHelper sachelper.ClusterSacHelper
+
 	policyGenerator generator.Generator
 }
 
@@ -116,16 +117,12 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 func populateYAML(np *storage.NetworkPolicy) {
-	k8sNetworkPolicy := networkPolicyConversion.RoxNetworkPolicyWrap{NetworkPolicy: np}.ToKubernetesNetworkPolicy()
-	encoder := json.NewYAMLSerializer(json.DefaultMetaFactory, nil, nil)
-
-	stringBuilder := &strings.Builder{}
-	err := encoder.Encode(k8sNetworkPolicy, stringBuilder)
+	yaml, err := networkPolicyConversion.RoxNetworkPolicyWrap{NetworkPolicy: np}.ToYaml()
 	if err != nil {
 		np.Yaml = fmt.Sprintf("Could not render Network Policy YAML: %s", err)
 		return
 	}
-	np.Yaml = stringBuilder.String()
+	np.Yaml = yaml
 }
 
 func (s *serviceImpl) GetNetworkPolicy(ctx context.Context, request *v1.ResourceByID) (*storage.NetworkPolicy, error) {
@@ -361,7 +358,7 @@ func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.Sen
 
 func (s *serviceImpl) GenerateNetworkPolicies(ctx context.Context, req *v1.GenerateNetworkPoliciesRequest) (*v1.GenerateNetworkPoliciesResponse, error) {
 	// Default to `none` delete existing mode.
-	if req.DeleteExisting == v1.GenerateNetworkPoliciesRequest_UNKNOWN {
+	if req.GetDeleteExisting() == v1.GenerateNetworkPoliciesRequest_UNKNOWN {
 		req.DeleteExisting = v1.GenerateNetworkPoliciesRequest_NONE
 	}
 
@@ -418,9 +415,6 @@ func (s *serviceImpl) generateApplyYamlFromGeneratedPolicies(generatedPolicies [
 }
 
 func (s *serviceImpl) GetBaselineGeneratedNetworkPolicyForDeployment(ctx context.Context, request *v1.GetBaselineGeneratedPolicyForDeploymentRequest) (*v1.GetBaselineGeneratedPolicyForDeploymentResponse, error) {
-	if !features.NetworkDetectionBaselineSimulation.Enabled() {
-		return nil, errors.New("network baseline policy simulator is currently not enabled")
-	}
 	// Currently we don't look at request.GetDeleteExisting. We try to delete the existing baseline generated
 	// policy no matter what
 	if request.GetDeploymentId() == "" {
@@ -446,9 +440,6 @@ func (s *serviceImpl) GetBaselineGeneratedNetworkPolicyForDeployment(ctx context
 }
 
 func (s *serviceImpl) GetAllowedPeersFromCurrentPolicyForDeployment(ctx context.Context, request *v1.ResourceByID) (*v1.GetAllowedPeersFromCurrentPolicyForDeploymentResponse, error) {
-	if !features.NetworkDetectionBaselineSimulation.Enabled() {
-		return nil, errors.New("network baseline policy simulator is currently not enabled")
-	}
 	dep, networkTree, deploymentsInCluster, err := s.getRelevantClusterObjectsForDeployment(ctx, request.GetId())
 	if err != nil {
 		return nil, err
@@ -659,7 +650,7 @@ func (s *serviceImpl) applyModificationAndGetUndoRecord(
 	}
 	undoRecord := &storage.NetworkPolicyApplicationUndoRecord{
 		User:                 user,
-		ApplyTimestamp:       types.TimestampNow(),
+		ApplyTimestamp:       protocompat.TimestampNow(),
 		OriginalModification: modification,
 		UndoModification:     undoMod,
 	}
@@ -667,10 +658,6 @@ func (s *serviceImpl) applyModificationAndGetUndoRecord(
 }
 
 func (s *serviceImpl) ApplyNetworkPolicyYamlForDeployment(ctx context.Context, request *v1.ApplyNetworkPolicyYamlForDeploymentRequest) (*v1.Empty, error) {
-	if !features.NetworkDetectionBaselineSimulation.Enabled() {
-		return nil, errors.New("network baseline policy simulator is currently not enabled")
-	}
-
 	// Get the deployment
 	deployment, found, err := s.deployments.GetDeployment(ctx, request.GetDeploymentId())
 	if err != nil {
@@ -697,9 +684,6 @@ func (s *serviceImpl) ApplyNetworkPolicyYamlForDeployment(ctx context.Context, r
 }
 
 func (s *serviceImpl) GetUndoModificationForDeployment(ctx context.Context, request *v1.ResourceByID) (*v1.GetUndoModificationForDeploymentResponse, error) {
-	if !features.NetworkDetectionBaselineSimulation.Enabled() {
-		return nil, errors.New("network baseline policy simulator is currently not enabled")
-	}
 	// Try getting the deployment first
 	_, found, err := s.deployments.GetDeployment(ctx, request.GetId())
 	if err != nil {
@@ -725,10 +709,6 @@ type nameNSPair struct {
 }
 
 func (s *serviceImpl) GetDiffFlowsFromUndoModificationForDeployment(ctx context.Context, request *v1.ResourceByID) (*v1.GetDiffFlowsResponse, error) {
-	if !features.NetworkDetectionBaselineSimulation.Enabled() {
-		return nil, errors.New("network baseline policy simulator is currently not enabled")
-	}
-
 	// First get allowed peers from current network policies
 	dep, networkTree, deploymentsInCluster, err := s.getRelevantClusterObjectsForDeployment(ctx, request.GetId())
 	if err != nil {
@@ -781,9 +761,6 @@ func (s *serviceImpl) GetDiffFlowsFromUndoModificationForDeployment(ctx context.
 }
 
 func (s *serviceImpl) GetDiffFlowsBetweenPolicyAndBaselineForDeployment(ctx context.Context, request *v1.ResourceByID) (*v1.GetDiffFlowsResponse, error) {
-	if !features.NetworkDetectionBaselineSimulation.Enabled() {
-		return nil, errors.New("network baseline policy simulator is currently not enabled")
-	}
 	// First get allowed peers from current network policies
 	dep, networkTree, deploymentsInCluster, err := s.getRelevantClusterObjectsForDeployment(ctx, request.GetId())
 	if err != nil {
@@ -954,14 +931,14 @@ func (s *serviceImpl) getDeployments(ctx context.Context, clusterID, rawQ string
 func (s *serviceImpl) getNetworkTree(clusterID string) (tree.ReadOnlyNetworkTree, error) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.NetworkGraphConfig)))
+			sac.ResourceScopeKeys(resources.Administration)))
 
 	cfg, err := s.graphConfig.GetNetworkGraphConfig(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to obtain network graph configuration")
 	}
 
-	if cfg.HideDefaultExternalSrcs {
+	if cfg.GetHideDefaultExternalSrcs() {
 		return s.networkTreeMgr.GetReadOnlyNetworkTree(ctx, clusterID), nil
 	}
 
@@ -1021,8 +998,8 @@ func applyPolicyModification(policies policyModification) (outputPolicies []*v1.
 			return nil, fmt.Errorf("policy %s in namespace %s marked for deletion does not exist", toDeleteRef.GetName(), toDeleteRef.GetNamespace())
 		}
 
-		if simPolicy.OldPolicy == nil {
-			simPolicy.OldPolicy = simPolicy.Policy
+		if simPolicy.GetOldPolicy() == nil {
+			simPolicy.OldPolicy = simPolicy.GetPolicy()
 		}
 		simPolicy.Policy = nil
 		simPolicy.Status = v1.NetworkPolicyInSimulation_DELETED
@@ -1033,8 +1010,8 @@ func applyPolicyModification(policies policyModification) (outputPolicies []*v1.
 		oldPolicySim := policiesByRef[k8sutil.RefOf(newPolicy)]
 		if oldPolicySim != nil {
 			oldPolicySim.Status = v1.NetworkPolicyInSimulation_MODIFIED
-			if oldPolicySim.OldPolicy == nil {
-				oldPolicySim.OldPolicy = oldPolicySim.Policy
+			if oldPolicySim.GetOldPolicy() == nil {
+				oldPolicySim.OldPolicy = oldPolicySim.GetPolicy()
 			}
 			oldPolicySim.Policy = newPolicy
 			continue
@@ -1131,7 +1108,8 @@ func (s *serviceImpl) clusterExists(ctx context.Context, clusterID string) error
 	if clusterID == "" {
 		return errors.Wrap(errox.InvalidArgs, "cluster ID must be specified")
 	}
-	exists, err := s.clusterStore.Exists(ctx, clusterID)
+	requestedResourcesWithAccess := []permissions.ResourceWithAccess{permissions.View(resources.NetworkPolicy)}
+	exists, err := s.clusterSACHelper.IsClusterVisibleForPermissions(ctx, clusterID, requestedResourcesWithAccess)
 	if err != nil {
 		return err
 	}

@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recommendation
+  namespace: backend
+  labels:
+    app: recommendation
+    app.kubernetes.io/part-of: backend
+  annotations:
+      app.openshift.io/connects-to: "catalog"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: recommendation
+  template:
+    metadata:
+      labels:
+        app: recommendation
+    spec:
+      containers:
+        - image: quay.io/vuln/rce-webapp:latest
+          command: ["/bin/entrypoint"]
+          args:
+            [
+              "-listen",
+              ":8080",
+              "-connect",
+              "$(CATALOG_ADDR):$(CATALOG_PORT)",
+            ]
+          imagePullPolicy: Always
+          name: recommendation
+          envFrom:
+            - configMapRef:
+                name: recommendation-endpoint-config
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+---
+# Service named "recommendation-service"
+# Listens on :8080
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: recommendation
+  name: recommendation-service
+  namespace: backend
+spec:
+  ports:
+    - port: 8080
+      protocol: TCP
+      targetPort: 8080
+      name: http
+  selector:
+    app: recommendation
+  type: ClusterIP

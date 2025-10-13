@@ -1,38 +1,45 @@
-import { selectors } from '../../constants/ViolationsPage';
 import withAuth from '../../helpers/basicAuth';
+import { getRegExpForTitleWithBranding } from '../../helpers/title';
+
+import {
+    assertSortedItems,
+    callbackForPairOfAscendingPolicySeverityValuesFromElements,
+    callbackForPairOfDescendingPolicySeverityValuesFromElements,
+} from '../../helpers/sort';
+
 import {
     clickDeploymentTabWithFixture,
-    sortViolationsTableByColumn,
+    exportAndWaitForNetworkPolicyYaml,
+    interactAndWaitForNetworkPoliciesResponse,
+    interactAndWaitForViolationsResponses,
+    selectFilteredWorkflowView,
     visitViolationFromTableWithFixture,
     visitViolationWithFixture,
     visitViolations,
     visitViolationsFromLeftNav,
     visitViolationsWithFixture,
-} from '../../helpers/violations';
+} from './Violations.helpers';
+import { selectors } from './Violations.selectors';
 
-describe('Violations page', () => {
+describe('Violations', () => {
     withAuth();
 
     it('should visit via left nav', () => {
         visitViolationsFromLeftNav();
     });
 
-    it('should select item in left nav', () => {
-        visitViolations();
-
-        cy.get(selectors.navLink).should('have.class', 'pf-m-current');
-    });
-
     it('should have violations in table', () => {
         visitViolationsWithFixture('alerts/alerts.json');
 
-        const count = 2;
-        cy.get(selectors.resultsFoundHeader(count));
-        cy.get(selectors.table.rows).should('have.length', count);
+        const count = 3;
+        cy.get(`h2:contains("${count} result")`); // Partial match is independent of singular or plural count
+        cy.get('tbody tr').should('have.length', count);
     });
 
-    it('should have columns in table', () => {
+    it('should have title and table column headings', () => {
         visitViolationsWithFixture('alerts/alerts.json');
+
+        cy.title().should('match', getRegExpForTitleWithBranding('Violations'));
 
         cy.get('th[scope="col"]:contains("Policy")');
         cy.get('th[scope="col"]:contains("Entity")');
@@ -43,37 +50,43 @@ describe('Violations page', () => {
         cy.get('th[scope="col"]:contains("Lifecycle")');
         cy.get('th[scope="col"]:contains("Time")');
 
-        cy.get(`${selectors.firstTableRow} td[data-label="Entity"]`).should(
-            'contain',
-            'ip-masq-agent'
-        ); // table cell also has cluster/namespace
-        cy.get(`${selectors.firstTableRow} td[data-label="Type"]`).should(
+        // check Deployment type
+        cy.get('tbody tr:nth-child(1) td[data-label="Entity"]').should('contain', 'ip-masq-agent'); // table cell also has cluster/namespace
+        cy.get('tbody tr:nth-child(1) td[data-label="Type"]').should('have.text', 'Deployment');
+        cy.get('tbody tr:nth-child(1) td[data-label="Lifecycle"]').should('have.text', 'Runtime');
+
+        // check audit log type
+        cy.get('tbody tr:nth-child(2) td[data-label="Entity"]').should('contain', 'test-scc'); // table cell also has cluster
+        cy.get('tbody tr:nth-child(2) td[data-label="Entity"] div.pf-v5-u-font-size-xs').should(
             'have.text',
-            'deployment'
-        );
-        cy.get(`${selectors.firstTableRow} td[data-label="Lifecycle"]`).should(
+            'in "aaa_remote"'
+        ); // table cell also has cluster
+        cy.get('tbody tr:nth-child(2) td[data-label="Type"]').should(
             'have.text',
-            'Runtime'
+            'Security Context Constraits'
         );
+
+        // check that Type of Deployment is correctly display for workloads other than deployment
+        cy.get('tbody tr:nth-child(3) td[data-label="Type"]').should('have.text', 'CronJob');
     });
 
     it('should go to the detail page on row click', () => {
         visitViolationsWithFixture('alerts/alerts.json');
         visitViolationFromTableWithFixture('alerts/alertFirstInAlerts.json');
 
-        cy.get(selectors.details.page);
         cy.get(selectors.details.title).should('have.text', 'Misuse of iptables');
-        cy.get(selectors.details.subtitle).should('have.text', 'in "ip-masq-agent" deployment');
+        cy.get(selectors.details.subtitle).should('have.text', 'in "ip-masq-agent" Deployment');
     });
 
-    it('should have 4 tabs in the sidepanel', () => {
+    it('should have 5 tabs in the sidepanel', () => {
         visitViolationWithFixture('alerts/alertFirstInAlerts.json');
 
-        cy.get(selectors.details.tabs).should('have.length', 4);
+        cy.get(selectors.details.tabs).should('have.length', 5);
         cy.get(selectors.details.violationTab);
         cy.get(selectors.details.enforcementTab);
         cy.get(selectors.details.deploymentTab);
         cy.get(selectors.details.policyTab);
+        cy.get(selectors.details.networkPoliciesTab);
     });
 
     it('should have runtime violation information in the Violations tab', () => {
@@ -86,27 +99,22 @@ describe('Violations page', () => {
     it('should contain correct action buttons for the lifecycle stage', () => {
         visitViolationsWithFixture('alerts/alerts.json');
 
+        const { actions } = selectors;
+        const { btn, excludeDeploymentBtn, resolveAndAddToBaselineBtn, resolveBtn } = actions;
+
         // Lifecycle: Runtime
-        cy.get(`${selectors.firstTableRow} ${selectors.actions.btn}`).click(); // click kabob to open actions menu
-        cy.get(selectors.firstTableRow)
-            .get(selectors.actions.excludeDeploymentBtn)
-            .should('exist')
-            .get(selectors.actions.resolveBtn)
-            .should('exist')
-            .get(selectors.actions.resolveAndAddToBaselineBtn)
-            .should('exist');
-        cy.get(`${selectors.firstTableRow} ${selectors.actions.btn}`).click(); // click kabob to close actions menu
+        cy.get(`tbody tr:nth-child(1) ${btn}`).click(); // click kabob to open actions menu
+        cy.get(`tbody tr:nth-child(1) ${excludeDeploymentBtn}`).should('exist');
+        cy.get(`tbody tr:nth-child(1) ${resolveBtn}`).should('exist');
+        cy.get(`tbody tr:nth-child(1) ${resolveAndAddToBaselineBtn}`).should('exist');
+        cy.get(`tbody tr:nth-child(1) ${btn}`).click(); // click kabob to close actions menu
 
         // Lifecycle: Deploy
-        cy.get(`${selectors.lastTableRow} ${selectors.actions.btn}`).click(); // click kabob to open actions menu
-        cy.get(selectors.lastTableRow)
-            .get(selectors.actions.resolveBtn)
-            .should('not.exist')
-            .get(selectors.actions.resolveAndAddToBaselineBtn)
-            .should('not.exist')
-            .get(selectors.actions.excludeDeploymentBtn)
-            .should('exist');
-        cy.get(`${selectors.lastTableRow} ${selectors.actions.btn}`).click(); // click kabob to close actions menu
+        cy.get(`tbody tr:nth-child(3) ${btn}`).click(); // click kabob to open actions menu
+        cy.get(`tbody tr:nth-child(3) ${resolveBtn}`).should('not.exist');
+        cy.get(`tbody tr:nth-child(3) ${resolveAndAddToBaselineBtn}`).should('not.exist');
+        cy.get(`tbody tr:nth-child(3) ${excludeDeploymentBtn}`).should('exist');
+        cy.get(`tbody tr:nth-child(3) ${btn}`).click(); // click kabob to close actions menu
     });
 
     // TODO test of bulk actions
@@ -129,8 +137,11 @@ describe('Violations page', () => {
         clickDeploymentTabWithFixture('alerts/deploymentForAlertFirstInAlerts.json');
 
         cy.get(selectors.deployment.overview);
+        cy.get(selectors.deployment.overview)
+            .find('.pf-v5-c-description-list__term:contains("Deployment type")')
+            .siblings('.pf-v5-c-description-list__description:contains("DaemonSet")');
         cy.get(selectors.deployment.containerConfiguration);
-        cy.get(`${selectors.deployment.containerConfiguration} [data-testid="commands"]`).should(
+        cy.get(`${selectors.deployment.containerConfiguration} *[aria-label="Commands"]`).should(
             'not.exist'
         );
         cy.get(selectors.deployment.securityContext);
@@ -143,9 +154,48 @@ describe('Violations page', () => {
 
         cy.get(selectors.deployment.containerConfiguration);
         // TODO need more positive and negative assertions to contrast deployments in this and the previous test.
-        cy.get(`${selectors.deployment.containerConfiguration} [data-testid="commands"]`).should(
+        cy.get(`${selectors.deployment.containerConfiguration} *[aria-label="Commands"]`).should(
             'not.exist'
         );
+    });
+
+    it('should show network policy details for all policies in the namespace of the target deployment', () => {
+        visitViolationWithFixture('alerts/alertWithEmptyContainerConfig.json');
+        interactAndWaitForNetworkPoliciesResponse(() => {
+            cy.get(selectors.details.networkPoliciesTab).click();
+        });
+
+        const networkPoliciesSelector = `div div:has('h3:contains("Network policies")')`;
+        const networkPolicyModalSelector = '[role="dialog"]:contains("Network policy details")';
+
+        // Check for substrings in the YAML code editor
+        cy.get(`${networkPoliciesSelector} button:contains("central-db")`).click();
+        cy.get(`${networkPolicyModalSelector} *:contains("Policy name: central-db")`);
+        cy.get(`${networkPolicyModalSelector}`)
+            .invoke('text')
+            .should('to.match', /name:\s*central-db/)
+            .should('to.match', /namespace:\s*stackrox/);
+
+        // Check for substrings in the downloaded file
+        exportAndWaitForNetworkPolicyYaml('central-db.yml', (fileContents) => {
+            expect(fileContents).to.match(/name:\s*central-db/);
+            expect(fileContents).to.match(/namespace:\s*stackrox/);
+        });
+
+        // Close the modal and try another network policy
+        cy.get(`${networkPolicyModalSelector} button[aria-label="Close"]`).click();
+
+        cy.get(`${networkPoliciesSelector} button:contains("sensor")`).click();
+        cy.get(`${networkPolicyModalSelector} *:contains("Policy name: sensor")`);
+        cy.get(`${networkPolicyModalSelector}`)
+            .invoke('text')
+            .should('to.match', /name:\s*sensor/)
+            .should('to.match', /namespace:\s*stackrox/);
+
+        exportAndWaitForNetworkPolicyYaml('sensor.yml', (fileContents) => {
+            expect(fileContents).to.match(/name:\s*sensor/);
+            expect(fileContents).to.match(/namespace:\s*stackrox/);
+        });
     });
 
     it('should have policy information in the Policy Details tab', () => {
@@ -158,35 +208,72 @@ describe('Violations page', () => {
         // Conditionally rendered: Policy scope
     });
 
-    it('should sort violations when clicking on a table header', () => {
-        visitViolations();
-
-        // First click sorts in descending order.
-        sortViolationsTableByColumn('Policy');
-
-        cy.get('td[data-label="Policy"] a').should(($anchors) => {
-            const firstName = $anchors.first().text();
-            const lastName = $anchors.last().text();
-            const policyNamesReceivedOrder = [firstName, lastName];
-            const policyNamesExpectedOrder =
-                firstName.localeCompare(lastName) >= 0
-                    ? [firstName, lastName]
-                    : [lastName, firstName];
-            expect(policyNamesReceivedOrder).to.deep.equal(policyNamesExpectedOrder);
+    it('should sort the Severity column', () => {
+        interactAndWaitForViolationsResponses(() => {
+            visitViolations();
         });
 
-        // Second click sorts in ascending order.
-        sortViolationsTableByColumn('Policy');
+        interactAndWaitForViolationsResponses(() => {
+            selectFilteredWorkflowView('All Violations');
+        });
 
-        cy.get('td[data-label="Policy"] a').should(($anchors) => {
-            const firstName = $anchors.first().text();
-            const lastName = $anchors.last().text();
-            const policyNamesReceivedOrder = [firstName, lastName];
-            const policyNamesExpectedOrder =
-                firstName.localeCompare(lastName) <= 0
-                    ? [firstName, lastName]
-                    : [lastName, firstName];
-            expect(policyNamesReceivedOrder).to.deep.equal(policyNamesExpectedOrder);
+        const thSelector = 'th[scope="col"]:contains("Severity")';
+        const tdSelector = 'td[data-label="Severity"]';
+
+        // 0. Initial table state is sorted descending by Time.
+        cy.get(thSelector).should('have.attr', 'aria-sort', 'none');
+
+        // 1. Sort descending by the Severity column.
+        interactAndWaitForViolationsResponses(() => {
+            cy.get(thSelector).click();
+        });
+
+        cy.get(thSelector).should('have.attr', 'aria-sort', 'descending');
+
+        cy.get(tdSelector).then((items) => {
+            assertSortedItems(items, callbackForPairOfDescendingPolicySeverityValuesFromElements);
+        });
+
+        // 2. Sort ascending by the Severity column.
+        interactAndWaitForViolationsResponses(() => {
+            cy.get(thSelector).click();
+        });
+
+        cy.get(thSelector).should('have.attr', 'aria-sort', 'ascending');
+
+        cy.get(tdSelector).then((items) => {
+            assertSortedItems(items, callbackForPairOfAscendingPolicySeverityValuesFromElements);
+        });
+    });
+
+    it('should filter by active violations', () => {
+        visitViolations();
+
+        cy.intercept('GET', '/v1/alerts?query=*').as('getViolations');
+
+        // should filter using the correct query values for active violations
+        cy.wait('@getViolations').then((interception) => {
+            const queryString = interception.request.query.query;
+
+            expect(queryString).to.contain('Violation State:ACTIVE');
+        });
+    });
+
+    it('should filter by resolved violations', () => {
+        visitViolations();
+
+        // select the "Resolved" tab to view resolved violations
+        cy.get(
+            '[aria-label="Violation state tabs"] button[role="tab"]:contains("Resolved")'
+        ).click();
+
+        cy.intercept('GET', '/v1/alerts?query=*').as('getViolations');
+
+        // should filter using the correct query values for resolved violations
+        cy.wait('@getViolations').then((interception) => {
+            const queryString = interception.request.query.query;
+
+            expect(queryString).to.contain('Violation State:RESOLVED');
         });
     });
 });

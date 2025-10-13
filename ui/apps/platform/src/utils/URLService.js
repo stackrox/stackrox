@@ -1,7 +1,7 @@
 import qs from 'qs';
 import pageTypes from 'constants/pageTypes';
 import useCases from 'constants/useCaseTypes';
-import { generatePath } from 'react-router-dom';
+import { generatePath } from 'react-router-dom-v5-compat';
 import { entityParamNames, listParamNames } from 'constants/url';
 import entityTypes from 'constants/entityTypes';
 import merge from 'deepmerge';
@@ -9,12 +9,12 @@ import configMgmtEntityRelationship from 'Containers/ConfigManagement/entityTabR
 import Raven from 'raven-js';
 
 import {
-    workflowPaths,
+    policiesPath,
     riskPath,
     secretsPath,
     urlEntityListTypes,
     urlEntityTypes,
-    policiesPath,
+    workflowPaths,
 } from '../routePaths';
 
 export function getTypeKeyFromParamValue(value, listOnly) {

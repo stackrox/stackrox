@@ -2,13 +2,15 @@ package k8s
 
 import (
 	"context"
-	"log"
 	"testing"
 
 	appVersioned "github.com/openshift/client-go/apps/clientset/versioned"
 	configVersioned "github.com/openshift/client-go/config/clientset/versioned"
+	operatorVersioned "github.com/openshift/client-go/operator/clientset/versioned"
 	routeVersioned "github.com/openshift/client-go/route/clientset/versioned"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,6 +19,10 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/rest"
 	k8sConfig "sigs.k8s.io/controller-runtime/pkg/client/config"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // MakeFakeClient creates a k8s client that is not connected to any cluster
@@ -40,11 +46,12 @@ func MakeFakeClientFromRest(restConfig *rest.Config) *ClientSet {
 
 // ClientSet is a test version of kubernetes.ClientSet
 type ClientSet struct {
-	dynamic         dynamic.Interface
-	k8s             kubernetes.Interface
-	openshiftApps   appVersioned.Interface
-	openshiftConfig configVersioned.Interface
-	openshiftRoute  routeVersioned.Interface
+	dynamic           dynamic.Interface
+	k8s               kubernetes.Interface
+	openshiftApps     appVersioned.Interface
+	openshiftConfig   configVersioned.Interface
+	openshiftRoute    routeVersioned.Interface
+	openshiftOperator operatorVersioned.Interface
 }
 
 // MakeOutOfClusterClient creates a k8s client that uses host configuration to connect to a cluster.
@@ -61,8 +68,65 @@ func MakeOutOfClusterClient() (*ClientSet, error) {
 	}
 
 	return &ClientSet{
-		k8s: k8sClient,
+		k8s:               k8sClient,
+		dynamic:           mustCreateDynamicClient(config),
+		openshiftApps:     mustCreateOpenshiftAppsClient(config),
+		openshiftConfig:   mustCreateOpenshiftConfigClient(config),
+		openshiftRoute:    mustCreateOpenshiftRouteClient(config),
+		openshiftOperator: mustCreateOpenshiftOperatorClient(config),
 	}, nil
+}
+
+func mustCreateOpenshiftRouteClient(config *rest.Config) routeVersioned.Interface {
+	if !env.OpenshiftAPI.BooleanSetting() {
+		return nil
+	}
+	client, err := routeVersioned.NewForConfig(config)
+	if err != nil {
+		log.Panicf("Could not generate openshift routes client: %v", err)
+	}
+	return client
+}
+
+func mustCreateOpenshiftAppsClient(config *rest.Config) appVersioned.Interface {
+	if !env.OpenshiftAPI.BooleanSetting() {
+		return nil
+	}
+	client, err := appVersioned.NewForConfig(config)
+	if err != nil {
+		log.Panicf("Could not generate openshift apps client: %v", err)
+	}
+	return client
+}
+
+func mustCreateOpenshiftConfigClient(config *rest.Config) configVersioned.Interface {
+	if !env.OpenshiftAPI.BooleanSetting() {
+		return nil
+	}
+	client, err := configVersioned.NewForConfig(config)
+	if err != nil {
+		log.Warnf("Could not generate openshift config client: %v", err)
+	}
+	return client
+}
+
+func mustCreateOpenshiftOperatorClient(config *rest.Config) operatorVersioned.Interface {
+	if !env.OpenshiftAPI.BooleanSetting() {
+		return nil
+	}
+	client, err := operatorVersioned.NewForConfig(config)
+	if err != nil {
+		log.Warnf("Could not generate openshift operator client: %v", err)
+	}
+	return client
+}
+
+func mustCreateDynamicClient(config *rest.Config) dynamic.Interface {
+	client, err := dynamic.NewForConfig(config)
+	if err != nil {
+		log.Panicf("Creating dynamic client: %v", err)
+	}
+	return client
 }
 
 // Kubernetes returns the kubernetes interface
@@ -86,6 +150,12 @@ func (c *ClientSet) OpenshiftConfig() configVersioned.Interface {
 // This is not used in tests!
 func (c *ClientSet) OpenshiftRoute() routeVersioned.Interface {
 	return c.openshiftRoute
+}
+
+// OpenshiftOperator returns the OpenshiftOperator interface
+// This is not used in tests!
+func (c *ClientSet) OpenshiftOperator() operatorVersioned.Interface {
+	return c.openshiftOperator
 }
 
 // Dynamic returns the Dynamic interface

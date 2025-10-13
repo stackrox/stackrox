@@ -1,14 +1,19 @@
+//go:build sql_integration
+
 package testcommon
 
 import (
 	"context"
 	"time"
 
+	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
+	"github.com/stackrox/rox/central/networkgraph/testhelper"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -33,7 +38,12 @@ type FlowStoreTestSuite struct {
 // SetupSuite runs before any tests
 func (suite *FlowStoreTestSuite) SetupSuite() {
 	var err error
-	suite.tested, err = suite.store.CreateFlowStore(context.Background(), "fakecluster")
+
+	entitiesByCluster := map[string][]*storage.NetworkEntityInfo{}
+	err = networktree.Singleton().Initialize(entitiesByCluster)
+	suite.Require().NoError(err)
+
+	suite.tested, err = suite.store.CreateFlowStore(context.Background(), fixtureconsts.Cluster1)
 	suite.Require().NoError(err)
 }
 
@@ -41,37 +51,37 @@ func (suite *FlowStoreTestSuite) SetupSuite() {
 func (suite *FlowStoreTestSuite) TestStore() {
 	// Postgres timestamp only goes to the microsecond level, so we need to truncate these test times
 	// to ensure the comparisons of the results works correctly.
-	t1 := time.Now().Add(-5 * time.Minute).Truncate(time.Microsecond)
-	t2 := time.Now().Truncate(time.Microsecond)
+	t1 := time.Now().UTC().Add(-5 * time.Minute).Truncate(time.Microsecond)
+	t2 := time.Now().UTC().Truncate(time.Microsecond)
 	flows := []*storage.NetworkFlow{
 		{
 			Props: &storage.NetworkFlowProperties{
-				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
-				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode2"},
+				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: fixtureconsts.Deployment1},
+				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: fixtureconsts.Deployment2},
 				DstPort:    1,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
 			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(t1),
-			ClusterId:         "fakecluster",
+			ClusterId:         fixtureconsts.Cluster1,
 		},
 		{
 			Props: &storage.NetworkFlowProperties{
-				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode1"},
-				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"},
+				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: fixtureconsts.Deployment3},
+				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: fixtureconsts.Deployment4},
 				DstPort:    2,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
 			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(t2),
-			ClusterId:         "fakecluster",
+			ClusterId:         fixtureconsts.Cluster1,
 		},
 		{
 			Props: &storage.NetworkFlowProperties{
-				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "yetAnotherNode1"},
-				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "yetAnotherNode2"},
+				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: fixtureconsts.Deployment5},
+				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: fixtureconsts.Deployment6},
 				DstPort:    3,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
-			ClusterId: "fakecluster",
+			ClusterId: fixtureconsts.Cluster1,
 		},
 	}
 	var err error
@@ -80,32 +90,18 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	err = suite.tested.UpsertFlows(context.Background(), flows, updateTS)
 	suite.NoError(err, "upsert should succeed on first insert")
 
-	readFlows, readUpdateTS, err := suite.tested.GetAllFlows(context.Background(), nil)
+	readFlows, _, err := suite.tested.GetAllFlows(context.Background(), nil)
 	suite.Require().NoError(err)
-	suite.ElementsMatch(readFlows, flows)
-	// I don't think these time checks make sense based on how this will work in PG.
-	// Not sure it made sense regardless.
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
-	}
+	assert.True(suite.T(), testhelper.MatchElements(flows, readFlows))
 
-	readFlows, readUpdateTS, err = suite.tested.GetAllFlows(context.Background(), protoconv.ConvertTimeToTimestamp(t2))
+	readFlows, _, err = suite.tested.GetAllFlows(context.Background(), &t2)
 	suite.Require().NoError(err)
-	suite.ElementsMatch(readFlows, flows[1:])
-	// I don't think these time checks make sense based on how this will work in PG.
-	// Not sure it made sense regardless.
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
-	}
+	assert.True(suite.T(), testhelper.MatchElements(flows[1:], readFlows))
 
-	readFlows, readUpdateTS, err = suite.tested.GetAllFlows(context.Background(), protoconv.ConvertTimeToTimestamp(time.Now()))
+	now := time.Now().UTC()
+	readFlows, _, err = suite.tested.GetAllFlows(context.Background(), &now)
 	suite.Require().NoError(err)
-	suite.ElementsMatch(readFlows, flows[2:])
-	// I don't think these time checks make sense based on how this will work in PG.
-	// Not sure it made sense regardless.
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
-	}
+	assert.True(suite.T(), testhelper.MatchElements(flows[2:], readFlows))
 
 	updateTS += 1337
 	err = suite.tested.UpsertFlows(context.Background(), flows, updateTS)
@@ -128,121 +124,87 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	suite.NoError(err, "remove should succeed when not present")
 
 	var actualFlows []*storage.NetworkFlow
-	actualFlows, readUpdateTS, err = suite.tested.GetAllFlows(context.Background(), nil)
+	actualFlows, _, err = suite.tested.GetAllFlows(context.Background(), nil)
 	suite.NoError(err)
-	suite.ElementsMatch(actualFlows, flows[1:])
-	// I don't think these time checks make sense based on how this will work in PG.
-	// Not sure it made sense regardless.
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
-	}
+	assert.True(suite.T(), testhelper.MatchElements(flows[1:], actualFlows))
 
 	updateTS += 42
 	err = suite.tested.UpsertFlows(context.Background(), flows, updateTS)
 	suite.NoError(err, "upsert should succeed")
 
-	actualFlows, readUpdateTS, err = suite.tested.GetAllFlows(context.Background(), nil)
+	actualFlows, _, err = suite.tested.GetAllFlows(context.Background(), nil)
 	suite.NoError(err)
-	suite.ElementsMatch(actualFlows, flows)
-	// I don't think these time checks make sense based on how this will work in PG.
-	// Not sure it made sense regardless.
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
-	}
+	assert.True(suite.T(), testhelper.MatchElements(flows, actualFlows))
 
-	node1Flows, readUpdateTS, err := suite.tested.GetMatchingFlows(context.Background(), func(props *storage.NetworkFlowProperties) bool {
-		if props.GetDstEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT && props.GetDstEntity().GetId() == "someNode1" {
+	node1Flows, _, err := suite.tested.GetMatchingFlows(context.Background(), func(props *storage.NetworkFlowProperties) bool {
+		if props.GetDstEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT && props.GetDstEntity().GetId() == fixtureconsts.Deployment1 {
 			return true
 		}
-		if props.GetSrcEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT && props.GetSrcEntity().GetId() == "someNode1" {
+		if props.GetSrcEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT && props.GetSrcEntity().GetId() == fixtureconsts.Deployment1 {
 			return true
 		}
 		return false
 	}, nil)
 	suite.NoError(err)
-	suite.ElementsMatch(node1Flows, flows[:1])
-	// I don't think these time checks make sense based on how this will work in PG.
-	// Not sure it made sense regardless.
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
-	}
+	assert.True(suite.T(), testhelper.MatchElements(flows[:1], node1Flows))
 }
 
 // TestRemoveAllMatching tests removing flows that match deployments that have been removed
 func (suite *FlowStoreTestSuite) TestRemoveAllMatching() {
 	t1 := time.Now().Add(-5 * time.Minute)
 	t2 := time.Now()
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		// Round the timestamps to the microsecond
-		t1 = t1.Truncate(1000)
-		t2 = t2.Truncate(1000)
-	}
+	t3 := time.Now().Add(15 * time.Minute)
+	// Round the timestamps to the microsecond
+	t1 = t1.Truncate(1000)
+	t2 = t2.Truncate(1000)
+	t3 = t3.Truncate(1000)
 	flows := []*storage.NetworkFlow{
 		{
 			Props: &storage.NetworkFlowProperties{
-				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
-				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode2"},
+				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: fixtureconsts.Deployment1},
+				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: fixtureconsts.Deployment2},
 				DstPort:    1,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
 			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(t1),
-			ClusterId:         "fakecluster",
+			ClusterId:         fixtureconsts.Cluster1,
 		},
 		{
 			Props: &storage.NetworkFlowProperties{
-				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode1"},
-				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"},
+				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: fixtureconsts.Deployment3},
+				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: fixtureconsts.Deployment4},
 				DstPort:    2,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
 			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(t2),
-			ClusterId:         "fakecluster",
+			ClusterId:         fixtureconsts.Cluster1,
 		},
 		{
 			Props: &storage.NetworkFlowProperties{
-				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "yetAnotherNode1"},
-				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "yetAnotherNode2"},
+				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: fixtureconsts.Deployment5},
+				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: fixtureconsts.Deployment6},
 				DstPort:    3,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
-			ClusterId: "fakecluster",
+			ClusterId: fixtureconsts.Cluster1,
 		},
 	}
-	updateTS := timestamp.Now() - 1000000
-	err := suite.tested.UpsertFlows(context.Background(), flows, updateTS)
+	err := suite.tested.UpsertFlows(context.Background(), []*storage.NetworkFlow{flows[0]}, timestamp.FromGoTime(t1))
 	suite.NoError(err)
-
-	// Match none delete none
-	err = suite.tested.RemoveMatchingFlows(context.Background(), func(props *storage.NetworkFlowProperties) bool {
-		return false
-	}, nil)
+	err = suite.tested.UpsertFlows(context.Background(), []*storage.NetworkFlow{flows[1]}, timestamp.FromGoTime(t2))
+	suite.NoError(err)
+	err = suite.tested.UpsertFlows(context.Background(), []*storage.NetworkFlow{flows[2]}, timestamp.FromGoTime(t3))
 	suite.NoError(err)
 
 	currFlows, _, err := suite.tested.GetAllFlows(context.Background(), nil)
 	suite.NoError(err)
-	suite.ElementsMatch(flows, currFlows)
+	assert.True(suite.T(), testhelper.MatchElements(flows, currFlows))
 
-	// Match dst port 1
-	err = suite.tested.RemoveMatchingFlows(context.Background(), func(props *storage.NetworkFlowProperties) bool {
-		return props.DstPort == 1
-	}, nil)
+	utc := t3.UTC()
+	err = suite.tested.RemoveOrphanedFlows(context.Background(), &utc)
 	suite.NoError(err)
 
 	currFlows, _, err = suite.tested.GetAllFlows(context.Background(), nil)
 	suite.NoError(err)
-	suite.ElementsMatch(flows[1:], currFlows)
-
-	// Skipping this one out for right now.  Currently the only use of that function is to delete flows
-	// outside the orphan time window.  That is much easier more efficient to deal with in SQL than
-	// looping through all the flows and applying that function.
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		err = suite.tested.RemoveMatchingFlows(context.Background(), nil, func(flow *storage.NetworkFlow) bool {
-			return flow.LastSeenTimestamp.Compare(protoconv.ConvertTimeToTimestamp(t2)) == 0
-		})
-		suite.NoError(err)
-
-		currFlows, _, err = suite.tested.GetAllFlows(context.Background(), nil)
-		suite.NoError(err)
-		suite.ElementsMatch(flows[2:], currFlows)
-	}
+	assert.True(suite.T(), testhelper.MatchElements(flows[2:], currFlows))
 }

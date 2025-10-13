@@ -1,31 +1,24 @@
+//go:build sql_integration
+
 package datastore
 
 import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
-	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/central/cluster/index/mappings"
-	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	boltPkg "github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/dackbox"
-	dackboxConcurrency "github.com/stackrox/rox/pkg/dackbox/concurrency"
-	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
-	"go.etcd.io/bbolt"
 )
 
 var (
@@ -42,12 +35,7 @@ type clusterDatastoreSACSuite struct {
 	datastore DataStore
 
 	// Elements for postgres mode
-	pgtestbase *pgtest.TestPostgres
-
-	// Elements for bleve+rocksdb mode
-	boltengine *bbolt.DB
-	engine     *rocksdb.RocksDB
-	index      bleve.Index
+	pgTestBase *pgtest.TestPostgres
 
 	optionsMap searchPkg.OptionsMap
 
@@ -57,38 +45,16 @@ type clusterDatastoreSACSuite struct {
 
 func (s *clusterDatastoreSACSuite) SetupSuite() {
 	var err error
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pgtestbase = pgtest.ForT(s.T())
-		s.NotNil(s.pgtestbase)
-		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pgtestbase.Pool)
-		s.Require().NoError(err)
-		s.optionsMap = schema.ClustersSchema.OptionsMap
-	} else {
-		s.boltengine, err = boltPkg.NewTemp("clusterSACTestBolt")
-		s.Require().NoError(err)
-		s.engine, err = rocksdb.NewTemp("clusterSACTest")
-		s.Require().NoError(err)
-		s.index, err = globalindex.MemOnlyIndex()
-		s.Require().NoError(err)
-		keyFence := dackboxConcurrency.NewKeyFence()
-		indexQ := queue.NewWaitableQueue()
-		dacky, err := dackbox.NewRocksDBDackBox(s.engine, indexQ, []byte("graph"), []byte("dirty"), []byte("valid"))
-		s.Require().NoError(err)
-		s.datastore, err = GetTestRocksBleveDataStore(s.T(), s.engine, s.index, dacky, keyFence, s.boltengine)
-		s.Require().NoError(err)
-		s.optionsMap = mappings.OptionsMap
-	}
+	s.pgTestBase = pgtest.ForT(s.T())
+	s.NotNil(s.pgTestBase)
+	s.datastore, err = GetTestPostgresDataStore(s.T(), s.pgTestBase.DB)
+	s.Require().NoError(err)
+	s.optionsMap = schema.ClustersSchema.OptionsMap
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Cluster)
 }
 
 func (s *clusterDatastoreSACSuite) TearDownSuite() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pgtestbase.Pool.Close()
-	} else {
-		s.Require().NoError(s.boltengine.Close())
-		s.Require().NoError(rocksdb.CloseAndRemove(s.engine))
-		s.Require().NoError(s.index.Close())
-	}
+	s.pgTestBase.DB.Close()
 }
 
 func (s *clusterDatastoreSACSuite) SetupTest() {
@@ -112,15 +78,15 @@ func (s *clusterDatastoreSACSuite) deleteCluster(id string) {
 	<-doneSignal.Done()
 }
 
-type mutiClusterTest struct {
+type multiClusterTest struct {
 	Name                 string
 	Context              context.Context
 	ExpectedClusterIDs   []string
 	ExpectedClusterNames []string
 }
 
-func getMultiClusterTestCases(baseContext context.Context, clusterID1 string, clusterID2 string, otherClusterID string) []mutiClusterTest {
-	return []mutiClusterTest{
+func getMultiClusterTestCases(baseContext context.Context, clusterID1 string, clusterID2 string, otherClusterID string) []multiClusterTest {
+	return []multiClusterTest{
 		{
 			Name: "Cluster full read-only",
 			Context: sac.WithGlobalAccessScopeChecker(baseContext,
@@ -157,8 +123,8 @@ func getMultiClusterTestCases(baseContext context.Context, clusterID1 string, cl
 					sac.ResourceScopeKeys(resources.Cluster),
 					sac.ClusterScopeKeys(clusterID1),
 					sac.NamespaceScopeKeys(someNamespace))),
-			ExpectedClusterIDs:   []string{},
-			ExpectedClusterNames: []string{},
+			ExpectedClusterIDs:   []string{clusterID1},
+			ExpectedClusterNames: []string{testconsts.Cluster1},
 		},
 		{
 			Name: "Cluster read Cluster2",
@@ -178,8 +144,8 @@ func getMultiClusterTestCases(baseContext context.Context, clusterID1 string, cl
 					sac.ResourceScopeKeys(resources.Cluster),
 					sac.ClusterScopeKeys(clusterID2),
 					sac.NamespaceScopeKeys(someNamespace))),
-			ExpectedClusterIDs:   []string{},
-			ExpectedClusterNames: []string{},
+			ExpectedClusterIDs:   []string{clusterID2},
+			ExpectedClusterNames: []string{testconsts.Cluster2},
 		},
 		{
 			Name: "Cluster read other cluster",
@@ -220,8 +186,8 @@ func getMultiClusterTestCases(baseContext context.Context, clusterID1 string, cl
 					sac.ResourceScopeKeys(resources.Cluster),
 					sac.ClusterScopeKeys(clusterID1, clusterID2),
 					sac.NamespaceScopeKeys(someNamespace))),
-			ExpectedClusterIDs:   []string{},
-			ExpectedClusterNames: []string{},
+			ExpectedClusterIDs:   []string{clusterID1, clusterID2},
+			ExpectedClusterNames: []string{testconsts.Cluster1, testconsts.Cluster2},
 		},
 		{
 			Name: "Cluster read Cluster1 and some other cluster",
@@ -241,8 +207,8 @@ func getMultiClusterTestCases(baseContext context.Context, clusterID1 string, cl
 					sac.ResourceScopeKeys(resources.Cluster),
 					sac.ClusterScopeKeys(clusterID1, otherClusterID),
 					sac.NamespaceScopeKeys(someNamespace))),
-			ExpectedClusterIDs:   []string{},
-			ExpectedClusterNames: []string{},
+			ExpectedClusterIDs:   []string{clusterID1},
+			ExpectedClusterNames: []string{testconsts.Cluster1},
 		},
 	}
 }
@@ -296,7 +262,7 @@ func (s *clusterDatastoreSACSuite) TestGetCluster() {
 	cluster.Id = clusterID
 	cluster.Priority = 1
 
-	cases := testutils.GenericClusterSACGetTestCases(context.Background(), s.T(), clusterID, "not-"+clusterID, resources.Cluster)
+	cases := testutils.GenericClusterSACGetTestCases(context.Background(), s.T(), clusterID, testconsts.Cluster3, resources.Cluster)
 
 	for name, c := range cases {
 		s.Run(name, func() {
@@ -306,7 +272,7 @@ func (s *clusterDatastoreSACSuite) TestGetCluster() {
 			if c.ExpectedFound {
 				s.True(found)
 				s.Require().NotNil(fetchedCluster)
-				s.Equal(*cluster, *fetchedCluster)
+				protoassert.Equal(s.T(), cluster, fetchedCluster)
 			} else {
 				s.False(found)
 				s.Nil(fetchedCluster)
@@ -352,7 +318,7 @@ func (s *clusterDatastoreSACSuite) TestGetClusters() {
 	defer s.deleteCluster(clusterID2)
 	s.Require().NoError(err)
 	cluster2.Id = clusterID2
-	otherClusterID := "someOtherClusterID"
+	otherClusterID := testconsts.Cluster3
 
 	cases := getMultiClusterTestCases(context.Background(), clusterID1, clusterID2, otherClusterID)
 
@@ -360,6 +326,35 @@ func (s *clusterDatastoreSACSuite) TestGetClusters() {
 		s.Run(c.Name, func() {
 			ctx := c.Context
 			clusters, err := s.datastore.GetClusters(ctx)
+			s.NoError(err)
+			clusterNames := make([]string, 0, len(clusters))
+			for _, cluster := range clusters {
+				clusterNames = append(clusterNames, cluster.GetName())
+			}
+			s.ElementsMatch(c.ExpectedClusterNames, clusterNames)
+		})
+	}
+}
+
+func (s *clusterDatastoreSACSuite) TestGetClustersForSAC() {
+	cluster1 := fixtures.GetCluster(testconsts.Cluster1)
+	clusterID1, err := s.datastore.AddCluster(s.testContexts[testutils.UnrestrictedReadWriteCtx], cluster1)
+	defer s.deleteCluster(clusterID1)
+	s.Require().NoError(err)
+	cluster1.Id = clusterID1
+	cluster2 := fixtures.GetCluster(testconsts.Cluster2)
+	clusterID2, err := s.datastore.AddCluster(s.testContexts[testutils.UnrestrictedReadWriteCtx], cluster2)
+	defer s.deleteCluster(clusterID2)
+	s.Require().NoError(err)
+	cluster2.Id = clusterID2
+	otherClusterID := testconsts.Cluster3
+
+	cases := getMultiClusterTestCases(context.Background(), clusterID1, clusterID2, otherClusterID)
+
+	for _, c := range cases {
+		s.Run(c.Name, func() {
+			ctx := c.Context
+			clusters, err := s.datastore.GetClustersForSAC(ctx)
 			s.NoError(err)
 			clusterNames := make([]string, 0, len(clusters))
 			for _, cluster := range clusters {
@@ -525,7 +520,7 @@ func (s *clusterDatastoreSACSuite) TestRemoveCluster() {
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 				sac.ResourceScopeKeys(resources.Cluster),
-				sac.ClusterScopeKeys(clusterID, "otherthan"+clusterID)))
+				sac.ClusterScopeKeys(clusterID, testconsts.Cluster3)))
 		removeErr := s.datastore.RemoveCluster(ctx, clusterID, &doneSignal)
 		s.NoError(removeErr)
 		if removeErr == nil {
@@ -612,13 +607,13 @@ func (s *clusterDatastoreSACSuite) TestUpdateCluster() {
 func (s *clusterDatastoreSACSuite) TestUpdateClusterCertExpiryStatus() {
 	globalReadWriteCtx := s.testContexts[testutils.UnrestrictedReadWriteCtx]
 	oldCluster := fixtures.GetCluster(testconsts.Cluster2)
-	oldSensorExpiry := &types.Timestamp{Seconds: 1659478729}
-	oldSensorCertNotBefore := &types.Timestamp{Seconds: 1658458729}
+	oldSensorExpiry := protocompat.GetProtoTimestampFromSeconds(1659478729)
+	oldSensorCertNotBefore := protocompat.GetProtoTimestampFromSeconds(1658458729)
 	oldCertExpiryStatus := &storage.ClusterCertExpiryStatus{
 		SensorCertExpiry:    oldSensorExpiry,
 		SensorCertNotBefore: oldSensorCertNotBefore,
 	}
-	if oldCluster.Status == nil {
+	if oldCluster.GetStatus() == nil {
 		oldCluster.Status = &storage.ClusterStatus{
 			SensorVersion:         "3.71.x-88-g9798e675e5-dirty",
 			DEPRECATEDLastContact: nil,
@@ -628,8 +623,8 @@ func (s *clusterDatastoreSACSuite) TestUpdateClusterCertExpiryStatus() {
 			CertExpiryStatus:      oldCertExpiryStatus,
 		}
 	}
-	newSensorExpiry := &types.Timestamp{Seconds: 1659479729}
-	newSensorCertNotBefore := &types.Timestamp{Seconds: 1658468729}
+	newSensorExpiry := protocompat.GetProtoTimestampFromSeconds(1659479729)
+	newSensorCertNotBefore := protocompat.GetProtoTimestampFromSeconds(1658468729)
 	newCertExpiryStatus := &storage.ClusterCertExpiryStatus{
 		SensorCertExpiry:    newSensorExpiry,
 		SensorCertNotBefore: newSensorCertNotBefore,
@@ -652,17 +647,17 @@ func (s *clusterDatastoreSACSuite) TestUpdateClusterCertExpiryStatus() {
 			s.NoError(postUpdateErr)
 			s.True(postUpdateFound)
 			if c.ExpectError {
-				s.Equal(*oldSensorExpiry, *preUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry())
-				s.Equal(*oldSensorCertNotBefore, *preUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore())
+				s.Equal(oldSensorExpiry.AsTime(), preUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry().AsTime())
+				s.Equal(oldSensorCertNotBefore.AsTime(), preUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore().AsTime())
 				s.ErrorIs(updateErr, c.ExpectedError)
-				s.Equal(*oldSensorExpiry, *postUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry())
-				s.Equal(*oldSensorCertNotBefore, *postUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore())
+				s.Equal(oldSensorExpiry.AsTime(), postUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry().AsTime())
+				s.Equal(oldSensorCertNotBefore.AsTime(), postUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore().AsTime())
 			} else {
-				s.Equal(*oldSensorExpiry, *preUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry())
-				s.Equal(*oldSensorCertNotBefore, *preUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore())
+				s.Equal(oldSensorExpiry.AsTime(), preUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry().AsTime())
+				s.Equal(oldSensorCertNotBefore.AsTime(), preUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore().AsTime())
 				s.NoError(updateErr)
-				s.Equal(*newSensorExpiry, *postUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry())
-				s.Equal(*newSensorCertNotBefore, *postUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore())
+				s.Equal(newSensorExpiry.AsTime(), postUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry().AsTime())
+				s.Equal(newSensorCertNotBefore.AsTime(), postUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore().AsTime())
 			}
 			// Revert to pre-test state
 			err := s.datastore.UpdateClusterCertExpiryStatus(globalReadWriteCtx, clusterID, oldCertExpiryStatus)
@@ -670,8 +665,8 @@ func (s *clusterDatastoreSACSuite) TestUpdateClusterCertExpiryStatus() {
 			fetchedCluster, found, err := s.datastore.GetCluster(globalReadWriteCtx, clusterID)
 			s.Require().NoError(err)
 			s.Require().True(found)
-			s.Require().Equal(*oldSensorExpiry, *fetchedCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry())
-			s.Require().Equal(*oldSensorCertNotBefore, *fetchedCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore())
+			s.Equal(oldSensorExpiry.AsTime(), fetchedCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry().AsTime())
+			s.Equal(oldSensorCertNotBefore.AsTime(), fetchedCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore().AsTime())
 		})
 	}
 }
@@ -679,7 +674,7 @@ func (s *clusterDatastoreSACSuite) TestUpdateClusterCertExpiryStatus() {
 func (s *clusterDatastoreSACSuite) TestUpdateClusterHealth() {
 	globalReadWriteCtx := s.testContexts[testutils.UnrestrictedReadWriteCtx]
 	oldCluster := fixtures.GetCluster(testconsts.Cluster2)
-	oldLastContact := &types.Timestamp{Seconds: 1659478729}
+	oldLastContact := protocompat.GetProtoTimestampFromSeconds(1659478729)
 	oldHealthStatus := &storage.ClusterHealthStatus{
 		Id:                           "",
 		CollectorHealthInfo:          nil,
@@ -694,7 +689,7 @@ func (s *clusterDatastoreSACSuite) TestUpdateClusterHealth() {
 		HealthInfoComplete:           true,
 	}
 	oldCluster.HealthStatus = oldHealthStatus
-	newLastContact := &types.Timestamp{Seconds: 1659479729}
+	newLastContact := protocompat.GetProtoTimestampFromSeconds(1659479729)
 	newHealthStatus := &storage.ClusterHealthStatus{
 		Id:                           "",
 		CollectorHealthInfo:          nil,
@@ -716,11 +711,7 @@ func (s *clusterDatastoreSACSuite) TestUpdateClusterHealth() {
 
 	var cases map[string]testutils.ClusterSACCrudTestCase
 	testedVerb := "update cluster health"
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		cases = testutils.GenericGlobalClusterSACWriteTestCases(context.Background(), s.T(), testedVerb, clusterID, "not"+clusterID, resources.Cluster)
-	} else {
-		cases = testutils.GenericClusterSACWriteTestCases(context.Background(), s.T(), testedVerb, clusterID, "not"+clusterID, resources.Cluster)
-	}
+	cases = testutils.GenericGlobalClusterSACWriteTestCases(context.Background(), s.T(), testedVerb, clusterID, "not"+clusterID, resources.Cluster)
 
 	for name, c := range cases {
 		s.Run(name, func() {
@@ -735,19 +726,19 @@ func (s *clusterDatastoreSACSuite) TestUpdateClusterHealth() {
 			if c.ExpectError {
 				s.Equal(oldHealthStatus.GetCollectorHealthStatus(), preUpdateCluster.GetHealthStatus().GetCollectorHealthStatus())
 				s.Equal(oldHealthStatus.GetOverallHealthStatus(), preUpdateCluster.GetHealthStatus().GetOverallHealthStatus())
-				s.Equal(*oldHealthStatus.GetLastContact(), *preUpdateCluster.GetHealthStatus().GetLastContact())
+				s.Equal(oldHealthStatus.GetLastContact().AsTime(), preUpdateCluster.GetHealthStatus().GetLastContact().AsTime())
 				s.ErrorIs(updateErr, c.ExpectedError)
 				s.Equal(oldHealthStatus.GetCollectorHealthStatus(), postUpdateCluster.GetHealthStatus().GetCollectorHealthStatus())
 				s.Equal(oldHealthStatus.GetOverallHealthStatus(), postUpdateCluster.GetHealthStatus().GetOverallHealthStatus())
-				s.Equal(*oldHealthStatus.GetLastContact(), *preUpdateCluster.GetHealthStatus().GetLastContact())
+				s.Equal(oldHealthStatus.GetLastContact().AsTime(), preUpdateCluster.GetHealthStatus().GetLastContact().AsTime())
 			} else {
 				s.Equal(oldHealthStatus.GetCollectorHealthStatus(), preUpdateCluster.GetHealthStatus().GetCollectorHealthStatus())
 				s.Equal(oldHealthStatus.GetOverallHealthStatus(), preUpdateCluster.GetHealthStatus().GetOverallHealthStatus())
-				s.Equal(*oldHealthStatus.GetLastContact(), *preUpdateCluster.GetHealthStatus().GetLastContact())
+				s.Equal(oldHealthStatus.GetLastContact().AsTime(), preUpdateCluster.GetHealthStatus().GetLastContact().AsTime())
 				s.NoError(updateErr)
 				s.Equal(newHealthStatus.GetCollectorHealthStatus(), postUpdateCluster.GetHealthStatus().GetCollectorHealthStatus())
 				s.Equal(newHealthStatus.GetOverallHealthStatus(), postUpdateCluster.GetHealthStatus().GetOverallHealthStatus())
-				s.Equal(*newHealthStatus.GetLastContact(), *postUpdateCluster.GetHealthStatus().GetLastContact())
+				s.Equal(newHealthStatus.GetLastContact().AsTime(), postUpdateCluster.GetHealthStatus().GetLastContact().AsTime())
 			}
 			// Revert to pre-test state
 			err := s.datastore.UpdateClusterHealth(globalReadWriteCtx, clusterID, oldHealthStatus)
@@ -757,7 +748,7 @@ func (s *clusterDatastoreSACSuite) TestUpdateClusterHealth() {
 			s.Require().True(found)
 			s.Require().Equal(oldHealthStatus.GetCollectorHealthStatus(), fetchedCluster.GetHealthStatus().GetCollectorHealthStatus())
 			s.Require().Equal(oldHealthStatus.GetOverallHealthStatus(), fetchedCluster.GetHealthStatus().GetOverallHealthStatus())
-			s.Require().Equal(*oldHealthStatus.GetLastContact(), *preUpdateCluster.GetHealthStatus().GetLastContact())
+			s.Equal(oldHealthStatus.GetLastContact().AsTime(), preUpdateCluster.GetHealthStatus().GetLastContact().AsTime())
 		})
 	}
 }
@@ -928,7 +919,7 @@ func (s *clusterDatastoreSACSuite) TestUpdateAuditLogFileStates() {
 	// only one value is used in the test, and moves from initial to replaced state and back.
 	globalReadWriteCtx := s.testContexts[testutils.UnrestrictedReadWriteCtx]
 	oldCluster := fixtures.GetCluster(testconsts.Cluster2)
-	oldCollectTimestamp := &types.Timestamp{Seconds: 1659478729}
+	oldCollectTimestamp := protocompat.GetProtoTimestampFromSeconds(1659478729)
 	oldAuditLogFileState := map[string]*storage.AuditLogFileState{
 		"fileState": {
 			CollectLogsSince: oldCollectTimestamp,
@@ -940,7 +931,7 @@ func (s *clusterDatastoreSACSuite) TestUpdateAuditLogFileStates() {
 	defer s.deleteCluster(clusterID)
 	s.Require().NoError(err)
 	oldCluster.Id = clusterID
-	newCollectTimestamp := &types.Timestamp{Seconds: 1659479729}
+	newCollectTimestamp := protocompat.GetProtoTimestampFromSeconds(1659479729)
 	newAuditLogFileState := map[string]*storage.AuditLogFileState{
 		"fileState": {
 			CollectLogsSince: newCollectTimestamp,
@@ -964,29 +955,29 @@ func (s *clusterDatastoreSACSuite) TestUpdateAuditLogFileStates() {
 				s.Require().Equal(len(oldAuditLogFileState), len(preUpdateCluster.GetAuditLogState()))
 				for k := range oldAuditLogFileState {
 					s.Require().Equal(oldAuditLogFileState[k].GetLastAuditId(), preUpdateCluster.GetAuditLogState()[k].GetLastAuditId())
-					s.Require().NotNil(*preUpdateCluster.GetAuditLogState()[k])
-					s.Require().Equal(*oldAuditLogFileState[k].GetCollectLogsSince(), *preUpdateCluster.GetAuditLogState()[k].GetCollectLogsSince())
+					s.Require().NotNil(preUpdateCluster.GetAuditLogState()[k])
+					s.Equal(oldAuditLogFileState[k].GetCollectLogsSince().AsTime(), preUpdateCluster.GetAuditLogState()[k].GetCollectLogsSince().AsTime())
 				}
 				s.ErrorIs(updateErr, c.ExpectedError)
 				s.Require().Equal(len(oldAuditLogFileState), len(postUpdateCluster.GetAuditLogState()))
 				for k := range oldAuditLogFileState {
 					s.Require().Equal(oldAuditLogFileState[k].GetLastAuditId(), postUpdateCluster.GetAuditLogState()[k].GetLastAuditId())
-					s.Require().NotNil(*postUpdateCluster.GetAuditLogState()[k])
-					s.Require().Equal(*oldAuditLogFileState[k].GetCollectLogsSince(), *postUpdateCluster.GetAuditLogState()[k].GetCollectLogsSince())
+					s.Require().NotNil(postUpdateCluster.GetAuditLogState()[k])
+					s.Equal(oldAuditLogFileState[k].GetCollectLogsSince().AsTime(), postUpdateCluster.GetAuditLogState()[k].GetCollectLogsSince().AsTime())
 				}
 			} else {
 				s.Require().Equal(len(oldAuditLogFileState), len(preUpdateCluster.GetAuditLogState()))
 				for k := range oldAuditLogFileState {
 					s.Require().Equal(oldAuditLogFileState[k].GetLastAuditId(), preUpdateCluster.GetAuditLogState()[k].GetLastAuditId())
-					s.Require().NotNil(*preUpdateCluster.GetAuditLogState()[k])
-					s.Require().Equal(*oldAuditLogFileState[k].GetCollectLogsSince(), *preUpdateCluster.GetAuditLogState()[k].GetCollectLogsSince())
+					s.Require().NotNil(preUpdateCluster.GetAuditLogState()[k])
+					s.Equal(oldAuditLogFileState[k].GetCollectLogsSince().AsTime(), preUpdateCluster.GetAuditLogState()[k].GetCollectLogsSince().AsTime())
 				}
 				s.NoError(updateErr)
 				s.Require().Equal(len(newAuditLogFileState), len(postUpdateCluster.GetAuditLogState()))
 				for k := range newAuditLogFileState {
 					s.Require().Equal(newAuditLogFileState[k].GetLastAuditId(), postUpdateCluster.GetAuditLogState()[k].GetLastAuditId())
-					s.Require().NotNil(*postUpdateCluster.GetAuditLogState()[k])
-					s.Require().Equal(*newAuditLogFileState[k].GetCollectLogsSince(), *postUpdateCluster.GetAuditLogState()[k].GetCollectLogsSince())
+					s.Require().NotNil(postUpdateCluster.GetAuditLogState()[k])
+					s.Equal(newAuditLogFileState[k].GetCollectLogsSince().AsTime(), postUpdateCluster.GetAuditLogState()[k].GetCollectLogsSince().AsTime())
 				}
 				// Revert to pre-test state
 				err := s.datastore.UpdateAuditLogFileStates(globalReadWriteCtx, clusterID, oldAuditLogFileState)
@@ -997,8 +988,8 @@ func (s *clusterDatastoreSACSuite) TestUpdateAuditLogFileStates() {
 				s.Require().Equal(len(oldAuditLogFileState), len(fetchedCluster.GetAuditLogState()))
 				for k := range oldAuditLogFileState {
 					s.Require().Equal(oldAuditLogFileState[k].GetLastAuditId(), fetchedCluster.GetAuditLogState()[k].GetLastAuditId())
-					s.Require().NotNil(*fetchedCluster.GetAuditLogState()[k])
-					s.Require().Equal(*oldAuditLogFileState[k].GetCollectLogsSince(), *fetchedCluster.GetAuditLogState()[k].GetCollectLogsSince())
+					s.Require().NotNil(fetchedCluster.GetAuditLogState()[k])
+					s.Equal(oldAuditLogFileState[k].GetCollectLogsSince().AsTime(), fetchedCluster.GetAuditLogState()[k].GetCollectLogsSince().AsTime())
 				}
 			}
 		})
@@ -1016,7 +1007,7 @@ func (s *clusterDatastoreSACSuite) TestCount() {
 	defer s.deleteCluster(clusterID2)
 	s.Require().NoError(err)
 	cluster2.Id = clusterID2
-	otherClusterID := "someOtherClusterID"
+	otherClusterID := testconsts.Cluster3
 
 	cases := getMultiClusterTestCases(context.Background(), clusterID1, clusterID2, otherClusterID)
 
@@ -1041,7 +1032,7 @@ func (s *clusterDatastoreSACSuite) TestCountClusters() {
 	defer s.deleteCluster(clusterID2)
 	s.Require().NoError(err)
 	cluster2.Id = clusterID2
-	otherClusterID := "someOtherClusterID"
+	otherClusterID := testconsts.Cluster3
 
 	cases := getMultiClusterTestCases(context.Background(), clusterID1, clusterID2, otherClusterID)
 
@@ -1066,7 +1057,7 @@ func (s *clusterDatastoreSACSuite) TestSearch() {
 	defer s.deleteCluster(clusterID2)
 	s.Require().NoError(err)
 	cluster2.Id = clusterID2
-	otherClusterID := "someOtherClusterID"
+	otherClusterID := testconsts.Cluster3
 
 	cases := getMultiClusterTestCases(context.Background(), clusterID1, clusterID2, otherClusterID)
 
@@ -1095,7 +1086,7 @@ func (s *clusterDatastoreSACSuite) TestSearchRawClusters() {
 	defer s.deleteCluster(clusterID2)
 	s.Require().NoError(err)
 	cluster2.Id = clusterID2
-	otherClusterID := "someOtherClusterID"
+	otherClusterID := testconsts.Cluster3
 
 	cases := getMultiClusterTestCases(context.Background(), clusterID1, clusterID2, otherClusterID)
 
@@ -1129,7 +1120,7 @@ func (s *clusterDatastoreSACSuite) TestSearchResults() {
 	defer s.deleteCluster(clusterID2)
 	s.Require().NoError(err)
 	cluster2.Id = clusterID2
-	otherClusterID := "someOtherClusterID"
+	otherClusterID := testconsts.Cluster3
 
 	cases := getMultiClusterTestCases(context.Background(), clusterID1, clusterID2, otherClusterID)
 

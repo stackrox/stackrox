@@ -11,7 +11,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -36,8 +38,10 @@ var (
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_IMAGES, "image", (*storage.Image)(nil)))
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_IMAGE_VULNERABILITIES,
+			v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 			v1.SearchCategory_COMPONENT_VULN_EDGE,
 			v1.SearchCategory_IMAGE_COMPONENTS,
+			v1.SearchCategory_IMAGE_COMPONENTS_V2,
 			v1.SearchCategory_IMAGE_COMPONENT_EDGE,
 			v1.SearchCategory_IMAGE_VULN_EDGE,
 			v1.SearchCategory_IMAGES,
@@ -45,19 +49,23 @@ var (
 			v1.SearchCategory_NAMESPACES,
 			v1.SearchCategory_CLUSTERS,
 		}...)
+		schema.ScopingResource = resources.Image
 		RegisterTable(schema, CreateTableImagesStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGES, schema)
 		return schema
 	}()
 )
 
 const (
-	ImagesTableName       = "images"
+	// ImagesTableName specifies the name of the table in postgres.
+	ImagesTableName = "images"
+	// ImagesLayersTableName specifies the name of the table in postgres.
 	ImagesLayersTableName = "images_layers"
 )
 
 // Images holds the Gorm model for Postgres table `images`.
 type Images struct {
-	Id                   string            `gorm:"column:id;type:varchar;primaryKey"`
+	ID                   string            `gorm:"column:id;type:varchar;primaryKey"`
 	NameRegistry         string            `gorm:"column:name_registry;type:varchar"`
 	NameRemote           string            `gorm:"column:name_remote;type:varchar"`
 	NameTag              string            `gorm:"column:name_tag;type:varchar"`
@@ -83,7 +91,7 @@ type Images struct {
 
 // ImagesLayers holds the Gorm model for Postgres table `images_layers`.
 type ImagesLayers struct {
-	ImagesId    string `gorm:"column:images_id;type:varchar;primaryKey"`
+	ImagesID    string `gorm:"column:images_id;type:varchar;primaryKey"`
 	Idx         int    `gorm:"column:idx;type:integer;primaryKey;index:imageslayers_idx,type:btree"`
 	Instruction string `gorm:"column:instruction;type:varchar"`
 	Value       string `gorm:"column:value;type:varchar"`

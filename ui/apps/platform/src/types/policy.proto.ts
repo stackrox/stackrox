@@ -9,23 +9,22 @@ export type ListPolicy = {
     lastUpdated: string | null; // ISO 8601 date string
     eventSource: PolicyEventSource;
     readonly isDefault: boolean; // Indicates the policy is a default policy if true and a custom policy if false.
+    readonly source: 'IMPERATIVE' | 'DECLARATIVE';
 };
 
-// TODO supersedes src/Containers/Violations/PatternFly/types/violationTypes.ts
 export const policySeverities = [
     'LOW_SEVERITY',
     'MEDIUM_SEVERITY',
     'HIGH_SEVERITY',
     'CRITICAL_SEVERITY',
 ] as const;
-export type PolicySeverity = typeof policySeverities[number];
+export type PolicySeverity = (typeof policySeverities)[number];
 
-// TODO supersedes src/Containers/Violations/PatternFly/types/violationTypes.ts
 export type LifecycleStage = 'DEPLOY' | 'BUILD' | 'RUNTIME';
 
 export type PolicyEventSource = 'NOT_APPLICABLE' | 'DEPLOYMENT_EVENT' | 'AUDIT_LOG_EVENT';
 
-type BasePolicy = {
+export type BasePolicy = {
     rationale: string;
     remediation: string;
     categories: string[];
@@ -55,7 +54,6 @@ export type Policy = {
 
 export type PolicyExclusion = PolicyDeploymentExclusion | PolicyImageExclusion;
 
-// TODO prefer initial values instead of optional properties while adding a new policy?
 export type PolicyDeploymentExclusion = {
     deployment: PolicyExcludedDeployment;
     image: null;
@@ -74,9 +72,10 @@ export type PolicyImageExclusion = {
 } & PolicyBaseExclusion;
 
 // TODO prefer initial values instead of optional properties while adding a new policy?
+// TODO These are undefined at runtime - make optional here?
 export type PolicyBaseExclusion = {
-    name: string;
-    expiration: string | null; // ISO 8601 date string
+    name?: string;
+    expiration?: string | null; // ISO 8601 date string
 };
 
 // TODO prefer initial values instead of optional properties while adding a new policy?
@@ -91,7 +90,6 @@ export type PolicyScopeLabel = {
     value: string;
 };
 
-// TODO supersedes apps/platform/src/Containers/Violations/PatternFly/types/violationTypes.ts
 // FAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.
 // FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.
 // FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates.
@@ -142,9 +140,8 @@ export type ValueObj = {
 };
 
 export type ClientPolicyValue = {
-    value?: ValueObj;
     arrayValue?: string[];
-};
+} & ValueObj;
 
 // TODO supersedes MitreAttackVectorId in src/services/MitreService.ts
 export type PolicyMitreAttackVector = {

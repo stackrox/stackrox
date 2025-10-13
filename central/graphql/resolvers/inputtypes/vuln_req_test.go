@@ -1,7 +1,6 @@
 package inputtypes
 
 import (
-	"reflect"
 	"testing"
 	"time"
 
@@ -102,7 +101,7 @@ func (s *VulnReqInputResolversTestSuite) TestAsRequestExpiry() {
 
 	for _, c := range cases {
 		s.T().Run(c.name, func(t *testing.T) {
-			s.True(reflect.DeepEqual(c.expectedExpiry, c.input.AsRequestExpiry()))
+			s.True(c.expectedExpiry.EqualVT(c.input.AsRequestExpiry()))
 		})
 	}
 }

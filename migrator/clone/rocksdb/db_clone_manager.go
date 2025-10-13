@@ -2,7 +2,6 @@ package rocksdb
 
 import (
 	"regexp"
-	"time"
 
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/migrations"
@@ -10,10 +9,6 @@ import (
 )
 
 const (
-	// Indexes
-	bleveIndex = "scorch.bleve"
-	index      = "index"
-
 	// CurrentClone - active rocksdb clone name
 	CurrentClone = migrations.Current
 
@@ -25,9 +20,6 @@ const (
 
 	// PreviousClone - previous rocksdb clone used for rollback
 	PreviousClone = ".previous"
-
-	// TempClone - temp rocksdb clone
-	TempClone = "temp"
 )
 
 var (
@@ -46,18 +38,12 @@ type DBCloneManager interface {
 	// GetCloneToMigrate -- retrieves the clone that needs moved to the actived database.
 	GetCloneToMigrate() (string, string, error)
 
-	// Persist -- moves the clone database to be the active database.
-	Persist(cloneName string) error
-
 	// GetVersion -- gets the version of the clone
 	GetVersion(cloneName string) *migrations.MigrationVersion
-
-	// GetCurrentCloneCreationTime - time current clone was created
-	GetCurrentCloneCreationTime() time.Time
 
 	// GetDirName - gets the directory name of the clone
 	GetDirName(cloneName string) string
 
-	// DecommissionRocksDB -- removes RocksDB from central
-	DecommissionRocksDB()
+	// CheckForRestore -- checks to see if a restore from a RocksDB is requested
+	CheckForRestore() bool
 }

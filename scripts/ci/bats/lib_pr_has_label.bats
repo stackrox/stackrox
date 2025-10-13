@@ -4,8 +4,11 @@
 load "../../test_helpers.bats"
 
 function setup() {
+    unset GITHUB_ACTION
     export CI=true
     export OPENSHIFT_CI=true
+    export REPO_OWNER=mock
+    export REPO_NAME=mock
     source "${BATS_TEST_DIRNAME}/../lib.sh"
 }
 

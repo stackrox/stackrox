@@ -1,426 +1,551 @@
-import React, { useEffect, useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import type { CSSProperties, ReactElement } from 'react';
 import {
     Alert,
-    AlertActionCloseButton,
-    AlertGroup,
-    Breadcrumb,
-    BreadcrumbItem,
+    Badge,
     Button,
-    Divider,
-    Drawer,
-    DrawerActions,
-    DrawerCloseButton,
-    DrawerContent,
-    DrawerContentBody,
-    DrawerHead,
-    DrawerPanelBody,
-    DrawerPanelContent,
-    Dropdown,
-    DropdownItem,
-    DropdownSeparator,
-    DropdownToggle,
+    EmptyState,
+    EmptyStateFooter,
+    EmptyStateHeader,
+    EmptyStateIcon,
+    ExpandableSection,
+    ExpandableSectionToggle,
     Flex,
     FlexItem,
     Form,
     FormGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
     Label,
-    Text,
     TextInput,
     Title,
 } from '@patternfly/react-core';
-import { CaretDownIcon } from '@patternfly/react-icons';
+import { CubesIcon } from '@patternfly/react-icons';
+import { Table, Tbody, Td, Tr } from '@patternfly/react-table';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
-import isEmpty from 'lodash/isEmpty';
 
-import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import useToasts from 'hooks/patternfly/useToasts';
-import { collectionsBasePath } from 'routePaths';
-import { deleteCollection } from 'services/CollectionsService';
-import { CollectionPageAction } from './collections.utils';
+import type { Collection } from 'services/CollectionsService';
+import { getIsValidLabelKey, getIsValidLabelValue } from 'utils/labels';
+import { ensureExhaustive } from 'utils/type.utils';
+import type { CollectionPageAction } from './collections.utils';
 import RuleSelector from './RuleSelector';
 import CollectionAttacher from './CollectionAttacher';
-import CollectionResults from './CollectionResults';
-import { Collection, ScopedResourceSelector, SelectorEntityType } from './types';
+import type { CollectionAttacherProps } from './CollectionAttacher';
+import { byLabelMatchTypes, byNameMatchType, selectorEntityTypes } from './types';
+import type {
+    ByLabelResourceSelector,
+    ByNameResourceSelector,
+    ClientCollection,
+    ScopedResourceSelector,
+    SelectorEntityType,
+} from './types';
+import type { CollectionConfigError } from './errorUtils';
+
+import './CollectionForm.css';
+
+const ruleSectionContentId = 'expandable-rules-section-contentId';
+const attachmentSectionContentId = 'expandable-attachment-section-contentId';
+
+const ruleSectionToggleId = 'expandable-rules-section-toggleId';
+const attachmentSectionToggleId = 'expandable-attachment-section-toggleId';
+
+function AttachedCollectionTable({
+    collections,
+    collectionTableCells,
+}: {
+    collections: Collection[];
+    collectionTableCells: CollectionAttacherProps['collectionTableCells'];
+}): ReactElement {
+    return collections.length > 0 ? (
+        <Table aria-label="Attached collections">
+            <Tbody>
+                {collections.map((collection) => (
+                    <Tr key={collection.name}>
+                        {collectionTableCells.map(({ name, render }) => (
+                            <Td key={name} dataLabel={name}>
+                                {render(collection)}
+                            </Td>
+                        ))}
+                    </Tr>
+                ))}
+            </Tbody>
+        </Table>
+    ) : (
+        <EmptyState>
+            <EmptyStateHeader icon={<EmptyStateIcon icon={CubesIcon} />} />
+            <EmptyStateFooter>
+                <p>There are no other collections attached to this collection</p>
+            </EmptyStateFooter>
+        </EmptyState>
+    );
+}
 
 export type CollectionFormProps = {
     hasWriteAccessForCollections: boolean;
     /* The user's workflow action for this collection */
     action: CollectionPageAction;
-    /* initial data used to populate the form */
-    initialData: Collection;
-    /* Whether or not to display the collection results in an inline drawer. If false, will
-    display collection results in an overlay drawer. */
-    useInlineDrawer: boolean;
-    /* Whether or not to show breadcrumb navigation at the top of the form */
-    showBreadcrumbs: boolean;
-    /* Callback used when clicking on a collection name in the CollectionAttacher section. If
-    left undefined, collection names will not be linked. */
-    appendTableLinkAction?: (collectionId: string) => void;
+    /* parsed collection data used to populate the form */
+    initialData: ClientCollection;
+    /* collection responses for the embedded collections of `initialData` */
+    initialEmbeddedCollections: Collection[];
+    onFormChange: (values: ClientCollection) => void;
+    onSubmit: (collection: ClientCollection) => Promise<void>;
+    onCancel: () => void;
+    configError?: CollectionConfigError | undefined;
+    setConfigError?: (configError: CollectionConfigError | undefined) => void;
+    /* Table cells to render for each collection in the CollectionAttacher component */
+    getCollectionTableCells: (
+        collectionErrorId: string | undefined
+    ) => CollectionAttacherProps['collectionTableCells'];
 };
 
-function yupResourceSelectorObject() {
-    return yup.lazy((ruleObject) => {
-        if (isEmpty(ruleObject)) {
-            return yup.object().shape({});
-        }
-
-        const { field } = ruleObject;
-        return typeof field === 'string' && field.endsWith('Label')
-            ? yup.object().shape({
-                  field: yup.string().required().matches(new RegExp(field)),
-                  rules: yup.array().of(
-                      yup.object().shape({
-                          operator: yup.string().required().matches(/OR/),
-                          key: yup.string().trim().required(),
-                          values: yup.array().of(yup.string().trim().required()).required(),
-                      })
-                  ),
-              })
-            : yup.object().shape({
-                  field: yup.string().required().matches(new RegExp(field)),
-                  rule: yup.object().shape({
-                      operator: yup.string().required().matches(/OR/),
-                      values: yup.array().of(yup.string().trim().required()).required(),
-                  }),
-              });
+function yupLabelRuleObject({ field }: ByLabelResourceSelector) {
+    return yup.object().shape({
+        field: yup.string().required().matches(new RegExp(field)),
+        rules: yup.array().of(
+            yup.object().shape({
+                operator: yup.string().required().matches(/OR/),
+                values: yup
+                    .array()
+                    .of(
+                        yup.object().shape({
+                            value: yup
+                                .string()
+                                .required('This field cannot be empty')
+                                .test(
+                                    'label-value-k8s-format',
+                                    'Labels must be valid k8s labels in the form: key=value',
+                                    (val) => {
+                                        const parts = val.split('=');
+                                        if (parts.length !== 2) {
+                                            return false;
+                                        }
+                                        const validKey = getIsValidLabelKey(parts[0]);
+                                        const validLabel = getIsValidLabelValue(parts[1]);
+                                        return validKey && validLabel;
+                                    }
+                                ),
+                            matchType: yup
+                                .string()
+                                .required()
+                                .matches(new RegExp(byLabelMatchTypes.join('|'))),
+                        })
+                    )
+                    .required(),
+            })
+        ),
     });
+}
+
+function yupNameRuleObject({ field }: ByNameResourceSelector) {
+    return yup.object().shape({
+        field: yup.string().required().matches(new RegExp(field)),
+        rule: yup.object().shape({
+            operator: yup.string().required().matches(/OR/),
+            values: yup
+                .array()
+                .of(
+                    yup.object().shape({
+                        // TODO Add validation for k8s cluster, namespace, and deployment name characters
+                        value: yup.string().trim().required('This field cannot be empty'),
+                        matchType: yup
+                            .string()
+                            .required()
+                            .matches(new RegExp(byNameMatchType.join('|'))),
+                    })
+                )
+                .required(),
+        }),
+    });
+}
+
+function yupResourceSelectorObject() {
+    return yup.lazy((ruleObject: ScopedResourceSelector) => {
+        switch (ruleObject.type) {
+            case 'NoneSpecified':
+                return yup.object().shape({});
+            case 'ByName':
+                return yupNameRuleObject(ruleObject);
+            case 'ByLabel':
+                return yupLabelRuleObject(ruleObject);
+            default:
+                return ensureExhaustive(ruleObject);
+        }
+    });
+}
+
+const validationSchema = yup.object({
+    name: yup
+        .string()
+        .test(
+            'name-is-trimmed',
+            'Leading and trailing spaces are not allowed in collection names',
+            (name) => name?.trim() === name
+        )
+        .matches(
+            /^[a-zA-Z0-9 <>.-]*$/,
+            'Only the following characters are allowed in collection names: a-z A-Z 0-9 < . - >'
+        )
+        .required(),
+    description: yup.string(),
+    embeddedCollectionIds: yup.array(yup.string().trim().required()),
+    resourceSelector: yup.object().shape({
+        Deployment: yupResourceSelectorObject(),
+        Namespace: yupResourceSelectorObject(),
+        Cluster: yupResourceSelectorObject(),
+    }),
+});
+
+function getRuleCount(resourceSelector: ClientCollection['resourceSelector']) {
+    let count = 0;
+
+    selectorEntityTypes.forEach((entityType) => {
+        const selector = resourceSelector[entityType];
+        if (selector.type === 'ByName') {
+            count += 1;
+        } else if (selector.type === 'ByLabel') {
+            count += selector.rules.length;
+        }
+    });
+
+    return count;
 }
 
 function CollectionForm({
     hasWriteAccessForCollections,
     action,
     initialData,
-    useInlineDrawer,
-    showBreadcrumbs,
-}: CollectionFormProps) {
-    const history = useHistory();
+    initialEmbeddedCollections,
+    configError,
+    setConfigError = () => {},
+    onFormChange,
+    onSubmit,
+    onCancel,
+    getCollectionTableCells,
+}: CollectionFormProps): ReactElement {
+    const isReadOnly = action.type === 'view' || !hasWriteAccessForCollections;
+
+    const { isOpen: isRuleSectionOpen, onToggle: ruleSectionOnToggle } = useSelectToggle(true);
+    const { isOpen: isAttachmentSectionOpen, onToggle: attachmentSectionOnToggle } =
+        useSelectToggle(true);
 
     const {
-        isOpen: drawerIsOpen,
-        toggleSelect: toggleDrawer,
-        closeSelect: closeDrawer,
-        openSelect: openDrawer,
-    } = useSelectToggle(useInlineDrawer);
-    const {
-        isOpen: menuIsOpen,
-        toggleSelect: toggleMenu,
-        closeSelect: closeMenu,
-    } = useSelectToggle();
-    const [deleteId, setDeleteId] = useState<string | null>(null);
-    const [isDeleting, setIsDeleting] = useState(false);
-    const { toasts, addToast, removeToast } = useToasts();
-
-    const { values, isValid, errors, handleChange, handleBlur, setFieldValue } = useFormik({
+        values,
+        errors: formikErrors,
+        touched,
+        handleChange,
+        handleBlur,
+        setFieldValue,
+        submitForm,
+        isSubmitting,
+        isValid,
+    } = useFormik({
         initialValues: initialData,
-        onSubmit: () => {},
-        validationSchema: yup.object({
-            name: yup.string().trim().required(),
-            description: yup.string(),
-            embeddedCollectionIds: yup.array(yup.string()),
-            resourceSelectors: yup.object().shape({
-                Deployment: yupResourceSelectorObject(),
-                Namespace: yupResourceSelectorObject(),
-                Cluster: yupResourceSelectorObject(),
-            }),
-        }),
+        onSubmit: (collection, { setSubmitting }) => {
+            onSubmit(collection).catch(() => {
+                setSubmitting(false);
+            });
+        },
+        validationSchema,
     });
 
-    // eslint-disable-next-line no-console
-    console.log('formik change', isValid, values, errors);
-
     useEffect(() => {
-        toggleDrawer(useInlineDrawer);
-    }, [toggleDrawer, useInlineDrawer]);
+        onFormChange(values);
+    }, [onFormChange, values]);
 
-    const pageTitle = action.type === 'create' ? 'Create collection' : values.name;
+    // Synchronize the value of "name" in the form field when the page action changes
+    // e.g. from 'view' -> 'clone'
+    useEffect(() => {
+        const nameValue = {
+            create: '',
+            view: initialData.name,
+            edit: initialData.name,
+            clone: `${initialData.name} -COPY-`,
+        }[action.type];
 
-    function onEditCollection(id: string) {
-        history.push({
-            pathname: `${collectionsBasePath}/${id}`,
-            search: 'action=edit',
+        setFieldValue('name', nameValue).catch(() => {
+            // Nothing to do on error
         });
+    }, [action.type, initialData.name, setFieldValue]);
+
+    const clearConfigError = () => setConfigError(undefined);
+
+    const errors = {
+        ...formikErrors,
+    };
+
+    // We can associate this type of server error to a specific field, so update the formik errors
+    if (configError?.type === 'DuplicateName') {
+        errors.name = configError.message;
     }
 
-    function onCloneCollection(id: string) {
-        history.push({
-            pathname: `${collectionsBasePath}/${id}`,
-            search: 'action=clone',
-        });
+    if (configError?.type === 'EmptyName') {
+        errors.name = configError.message;
     }
 
-    function onConfirmDeleteCollection() {
-        if (!deleteId) {
-            return;
-        }
-        setIsDeleting(true);
-        deleteCollection(deleteId)
-            .request.then(history.goBack)
-            .catch((err) => {
-                addToast(
-                    `Could not delete collection ${initialData.name ?? ''}`,
-                    'danger',
-                    err.message
-                );
-            })
-            .finally(() => {
-                setDeleteId(null);
-                setIsDeleting(false);
-            });
-    }
+    // We only want to display the error in the name field if one of the following is true:
+    //   1. The user has focused and blurred the name field, and the value is invalid
+    //   2. A request has been sent to the server that resulted in an error, and the name is invalid
+    // This prevents an error from being shown as soon as the user loads the creation form, before
+    // a name value has been entered.
+    const nameError = (touched.name || configError) && errors.name;
 
-    function onCancelDeleteCollection() {
-        setDeleteId(null);
-    }
+    const collectionTableCells = getCollectionTableCells(
+        configError?.type === 'CollectionLoop' ? configError.loopId : undefined
+    );
 
     const onResourceSelectorChange = (
         entityType: SelectorEntityType,
         scopedResourceSelector: ScopedResourceSelector
-    ) => setFieldValue(`resourceSelectors.${entityType}`, scopedResourceSelector);
+    ) => setFieldValue(`resourceSelector.${entityType}`, scopedResourceSelector);
+
+    const onEmbeddedCollectionsChange = (newCollections: Collection[]) => {
+        if (
+            configError?.type === 'CollectionLoop' &&
+            !newCollections.find(({ id }) => id === configError.loopId)
+        ) {
+            clearConfigError();
+        }
+        return setFieldValue(
+            'embeddedCollectionIds',
+            newCollections.map(({ id }) => id)
+        );
+    };
+
+    const ruleCount = getRuleCount(values.resourceSelector);
 
     return (
-        <>
-            <Drawer isExpanded={drawerIsOpen} isInline={useInlineDrawer}>
-                <DrawerContent
-                    panelContent={
-                        <DrawerPanelContent
-                            style={{
-                                borderLeft: 'var(--pf-global--BorderColor--100) 1px solid',
-                            }}
-                        >
-                            <DrawerHead>
-                                <Title headingLevel="h2">Collection results</Title>
-                                <Text>See a live preview of current matches.</Text>
-                                <DrawerActions>
-                                    <DrawerCloseButton onClick={closeDrawer} />
-                                </DrawerActions>
-                            </DrawerHead>
-                            <DrawerPanelBody className="pf-u-h-100" style={{ overflow: 'auto' }}>
-                                <CollectionResults />
-                            </DrawerPanelBody>
-                        </DrawerPanelContent>
-                    }
+        <Form
+            className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-h-100"
+            style={
+                {
+                    '--pf-v5-c-form--GridGap': 0,
+                } as CSSProperties
+            }
+        >
+            <Flex
+                className="pf-v5-u-p-lg pf-v5-u-flex-grow-1 pf-v5-u-background-color-200"
+                spaceItems={{ default: 'spaceItemsMd' }}
+                direction={{ default: 'column' }}
+            >
+                <Flex
+                    className="pf-v5-u-background-color-100 pf-v5-u-p-lg"
+                    direction={{ default: 'column' }}
+                    spaceItems={{ default: 'spaceItemsMd' }}
                 >
-                    <DrawerContentBody className="pf-u-background-color-100 pf-u-display-flex pf-u-flex-direction-column">
-                        {showBreadcrumbs && (
-                            <>
-                                <Breadcrumb className="pf-u-my-xs pf-u-px-lg pf-u-py-md">
-                                    <BreadcrumbItemLink to={collectionsBasePath}>
-                                        Collections
-                                    </BreadcrumbItemLink>
-                                    <BreadcrumbItem>{pageTitle}</BreadcrumbItem>
-                                </Breadcrumb>
-                                <Divider component="div" />
-                            </>
-                        )}
+                    <Title headingLevel="h2">Collection details</Title>
+                    <Flex direction={{ default: 'column', lg: 'row' }}>
+                        <FlexItem flex={{ default: 'flex_1' }}>
+                            <FormGroup label="Name" fieldId="name" isRequired={!isReadOnly}>
+                                <TextInput
+                                    id="name"
+                                    name="name"
+                                    value={values.name}
+                                    validated={nameError ? 'error' : 'default'}
+                                    onChange={(e) => {
+                                        if (
+                                            configError?.type === 'DuplicateName' ||
+                                            configError?.type === 'EmptyName'
+                                        ) {
+                                            clearConfigError();
+                                        }
+                                        handleChange(e);
+                                    }}
+                                    onBlur={handleBlur}
+                                    readOnlyVariant={isReadOnly ? 'plain' : undefined}
+                                />
+                                <FormHelperText>
+                                    <HelperText>
+                                        <HelperTextItem variant={nameError ? 'error' : 'default'}>
+                                            {nameError}
+                                        </HelperTextItem>
+                                    </HelperText>
+                                </FormHelperText>
+                            </FormGroup>
+                        </FlexItem>
+                        <FlexItem flex={{ default: 'flex_2' }}>
+                            <FormGroup label="Description" fieldId="description">
+                                <TextInput
+                                    id="description"
+                                    name="description"
+                                    value={values.description}
+                                    onChange={(e) => handleChange(e)}
+                                    onBlur={handleBlur}
+                                    readOnlyVariant={isReadOnly ? 'plain' : undefined}
+                                />
+                            </FormGroup>
+                        </FlexItem>
+                    </Flex>
+                </Flex>
+                <div className="collection-form-expandable-section">
+                    <ExpandableSectionToggle
+                        contentId={ruleSectionContentId}
+                        toggleId={ruleSectionToggleId}
+                        isExpanded={isRuleSectionOpen}
+                        onToggle={ruleSectionOnToggle}
+                    >
                         <Flex
-                            className="pf-u-p-lg"
-                            direction={{ default: 'column', md: 'row' }}
-                            alignItems={{ default: 'alignItemsFlexStart', md: 'alignItemsCenter' }}
+                            alignItems={{ default: 'alignItemsCenter' }}
+                            spaceItems={{ default: 'spaceItemsSm' }}
                         >
-                            <Title className="pf-u-flex-grow-1" headingLevel="h1">
-                                {pageTitle}
-                            </Title>
-                            <FlexItem align={{ default: 'alignLeft', md: 'alignRight' }}>
-                                {action.type === 'view' && hasWriteAccessForCollections && (
-                                    <>
-                                        <Dropdown
-                                            onSelect={closeMenu}
-                                            toggle={
-                                                <DropdownToggle
-                                                    isPrimary
-                                                    onToggle={toggleMenu}
-                                                    toggleIndicator={CaretDownIcon}
-                                                >
-                                                    Actions
-                                                </DropdownToggle>
-                                            }
-                                            isOpen={menuIsOpen}
-                                            dropdownItems={[
-                                                <DropdownItem
-                                                    key="Edit collection"
-                                                    component="button"
-                                                    onClick={() =>
-                                                        onEditCollection(action.collectionId)
-                                                    }
-                                                >
-                                                    Edit collection
-                                                </DropdownItem>,
-                                                <DropdownItem
-                                                    key="Clone collection"
-                                                    component="button"
-                                                    onClick={() =>
-                                                        onCloneCollection(action.collectionId)
-                                                    }
-                                                >
-                                                    Clone collection
-                                                </DropdownItem>,
-                                                <DropdownSeparator key="Separator" />,
-                                                <DropdownItem
-                                                    key="Delete collection"
-                                                    component="button"
-                                                    isDisabled={initialData.inUse}
-                                                    onClick={() => setDeleteId(action.collectionId)}
-                                                >
-                                                    {initialData.inUse
-                                                        ? 'Cannot delete (in use)'
-                                                        : 'Delete collection'}
-                                                </DropdownItem>,
-                                            ]}
-                                        />
-                                        <Divider
-                                            className="pf-u-px-xs"
-                                            orientation={{ default: 'vertical' }}
-                                        />
-                                    </>
-                                )}
-                                {drawerIsOpen ? (
-                                    <Button variant="secondary" onClick={closeDrawer}>
-                                        Hide collection results
-                                    </Button>
-                                ) : (
-                                    <Button variant="secondary" onClick={openDrawer}>
-                                        Preview collection results
-                                    </Button>
-                                )}
-                            </FlexItem>
-                        </Flex>
-                        <Divider component="div" />
-                        <Form className="pf-u-background-color-200">
-                            <Flex
-                                className="pf-u-p-lg"
-                                spaceItems={{ default: 'spaceItemsMd' }}
-                                direction={{ default: 'column' }}
+                            <Title
+                                className={isReadOnly ? 'pf-v5-u-mb-0' : 'pf-v5-u-mb-xs'}
+                                headingLevel="h2"
                             >
-                                <Flex
-                                    className="pf-u-background-color-100 pf-u-p-lg"
-                                    direction={{ default: 'column' }}
-                                    spaceItems={{ default: 'spaceItemsMd' }}
-                                >
-                                    <Title headingLevel="h2">Collection details</Title>
-                                    <Flex direction={{ default: 'column', lg: 'row' }}>
-                                        <FlexItem flex={{ default: 'flex_1' }}>
-                                            <FormGroup label="Name" fieldId="name" isRequired>
-                                                <TextInput
-                                                    id="name"
-                                                    name="name"
-                                                    value={values.name}
-                                                    validated={errors.name ? 'error' : 'default'}
-                                                    onChange={(_, e) => handleChange(e)}
-                                                    onBlur={handleBlur}
-                                                />
-                                            </FormGroup>
-                                        </FlexItem>
-                                        <FlexItem flex={{ default: 'flex_2' }}>
-                                            <FormGroup label="Description" fieldId="description">
-                                                <TextInput
-                                                    id="description"
-                                                    name="description"
-                                                    value={values.description}
-                                                    onChange={(_, e) => handleChange(e)}
-                                                    onBlur={handleBlur}
-                                                />
-                                            </FormGroup>
-                                        </FlexItem>
-                                    </Flex>
-                                </Flex>
+                                Collection rules
+                            </Title>
+                            <Badge isRead>{ruleCount}</Badge>
+                        </Flex>
+                        {!isReadOnly && <p>Select deployments using names or labels</p>}
+                    </ExpandableSectionToggle>
 
-                                <Flex
-                                    className="pf-u-background-color-100 pf-u-p-lg"
-                                    direction={{ default: 'column' }}
-                                    spaceItems={{ default: 'spaceItemsMd' }}
+                    <ExpandableSection
+                        isDetached
+                        contentId={ruleSectionContentId}
+                        toggleId={ruleSectionToggleId}
+                        isExpanded={isRuleSectionOpen}
+                    >
+                        <Flex
+                            className="pf-v5-u-p-md"
+                            direction={{ default: 'column' }}
+                            spaceItems={{ default: 'spaceItemsMd' }}
+                        >
+                            {configError?.type === 'EmptyCollection' && (
+                                <Alert
+                                    title="At least one rule must be configured or one collection must be attached from the section below"
+                                    component="p"
+                                    variant="danger"
+                                    isInline
+                                />
+                            )}
+                            {configError?.type === 'InvalidRule' && (
+                                <Alert
+                                    title={configError.message}
+                                    component="p"
+                                    variant="danger"
+                                    isInline
                                 >
-                                    <Title className="pf-u-mb-xs" headingLevel="h2">
-                                        Add new collection rules
-                                    </Title>
-                                    <p>
-                                        Select deployments via rules. You can use regular
-                                        expressions (RE2 syntax).
-                                    </p>
-                                    <Divider className="pf-u-mb-lg" component="div" />
-                                    <RuleSelector
-                                        entityType="Deployment"
-                                        scopedResourceSelector={values.resourceSelectors.Deployment}
-                                        handleChange={onResourceSelectorChange}
-                                        validationErrors={errors.resourceSelectors?.Deployment}
-                                    />
-                                    <Label
-                                        variant="outline"
-                                        isCompact
-                                        className="pf-u-align-self-center"
-                                    >
-                                        in
-                                    </Label>
-                                    <RuleSelector
-                                        entityType="Namespace"
-                                        scopedResourceSelector={values.resourceSelectors.Namespace}
-                                        handleChange={onResourceSelectorChange}
-                                        validationErrors={errors.resourceSelectors?.Namespace}
-                                    />
-                                    <Label
-                                        variant="outline"
-                                        isCompact
-                                        className="pf-u-align-self-center"
-                                    >
-                                        in
-                                    </Label>
-                                    <RuleSelector
-                                        entityType="Cluster"
-                                        scopedResourceSelector={values.resourceSelectors.Cluster}
-                                        handleChange={onResourceSelectorChange}
-                                        validationErrors={errors.resourceSelectors?.Cluster}
-                                    />
-                                </Flex>
+                                    {configError.details}
+                                </Alert>
+                            )}
+                            <RuleSelector
+                                entityType="Deployment"
+                                scopedResourceSelector={values.resourceSelector.Deployment}
+                                handleChange={onResourceSelectorChange}
+                                validationErrors={errors.resourceSelector?.Deployment}
+                                isDisabled={isReadOnly}
+                            />
+                            <Label className="pf-v5-u-px-md pf-v5-u-font-size-md pf-v5-u-align-self-center">
+                                in
+                            </Label>
+                            <RuleSelector
+                                entityType="Namespace"
+                                scopedResourceSelector={values.resourceSelector.Namespace}
+                                handleChange={onResourceSelectorChange}
+                                validationErrors={errors.resourceSelector?.Namespace}
+                                isDisabled={isReadOnly}
+                            />
+                            <Label className="pf-v5-u-px-md pf-v5-u-font-size-md pf-v5-u-align-self-center">
+                                in
+                            </Label>
+                            <RuleSelector
+                                entityType="Cluster"
+                                scopedResourceSelector={values.resourceSelector.Cluster}
+                                handleChange={onResourceSelectorChange}
+                                validationErrors={errors.resourceSelector?.Cluster}
+                                isDisabled={isReadOnly}
+                            />
+                        </Flex>
+                    </ExpandableSection>
+                </div>
 
-                                <div className="pf-u-background-color-100 pf-u-p-lg">
-                                    <Title headingLevel="h2">Attach existing collections</Title>
-                                    <CollectionAttacher />
-                                </div>
-                            </Flex>
-                            {action.type !== 'view' && (
-                                <div className="pf-u-background-color-100 pf-u-p-lg pf-u-py-md">
-                                    <Button className="pf-u-mr-md">Save</Button>
-                                    <Button variant="secondary">Cancel</Button>
+                <div className="collection-form-expandable-section">
+                    <ExpandableSectionToggle
+                        contentId={attachmentSectionContentId}
+                        toggleId={attachmentSectionToggleId}
+                        isExpanded={isAttachmentSectionOpen}
+                        onToggle={attachmentSectionOnToggle}
+                    >
+                        <Flex
+                            alignItems={{ default: 'alignItemsCenter' }}
+                            spaceItems={{ default: 'spaceItemsSm' }}
+                        >
+                            <Title className="pf-v5-u-mb-xs" headingLevel="h2">
+                                Attached collections
+                            </Title>
+                            <Badge isRead>{values.embeddedCollectionIds.length}</Badge>
+                        </Flex>
+                        {!isReadOnly && <p>Extend this collection by attaching other sets.</p>}
+                    </ExpandableSectionToggle>
+
+                    <ExpandableSection
+                        isDetached
+                        contentId={attachmentSectionContentId}
+                        toggleId={attachmentSectionToggleId}
+                        isExpanded={isAttachmentSectionOpen}
+                    >
+                        <Flex
+                            direction={{ default: 'column' }}
+                            spaceItems={{ default: 'spaceItemsMd' }}
+                        >
+                            {configError?.type === 'EmptyCollection' && (
+                                <Alert
+                                    title="At least one collection must be attached or one rule must be configured from the section above"
+                                    component="p"
+                                    variant="danger"
+                                    isInline
+                                />
+                            )}
+                            {configError?.type === 'CollectionLoop' && (
+                                <Alert
+                                    title={configError.message}
+                                    component="p"
+                                    variant="danger"
+                                    isInline
+                                >
+                                    {configError.details}
+                                </Alert>
+                            )}
+                            {isReadOnly ? (
+                                <AttachedCollectionTable
+                                    collections={initialEmbeddedCollections}
+                                    collectionTableCells={collectionTableCells}
+                                />
+                            ) : (
+                                <div className="pf-v5-u-p-md">
+                                    <CollectionAttacher
+                                        excludedCollectionId={
+                                            action.type === 'edit' ? action.collectionId : null
+                                        }
+                                        initialEmbeddedCollections={initialEmbeddedCollections}
+                                        onSelectionChange={onEmbeddedCollectionsChange}
+                                        collectionTableCells={collectionTableCells}
+                                    />
                                 </div>
                             )}
-                        </Form>
-                    </DrawerContentBody>
-                </DrawerContent>
-            </Drawer>
-            <AlertGroup isToast isLiveRegion>
-                {toasts.map(({ key, variant, title, children }) => (
-                    <Alert
-                        key={key}
-                        variant={variant}
-                        title={title}
-                        timeout
-                        onTimeout={() => removeToast(key)}
-                        actionClose={
-                            <AlertActionCloseButton
-                                title={title}
-                                variantLabel={variant}
-                                onClose={() => removeToast(key)}
-                            />
-                        }
+                        </Flex>
+                    </ExpandableSection>
+                </div>
+            </Flex>
+            {action.type !== 'view' && (
+                <div className="pf-v5-u-background-color-100 pf-v5-u-p-lg pf-v5-u-py-md">
+                    <Button
+                        className="pf-v5-u-mr-md"
+                        onClick={submitForm}
+                        isDisabled={isSubmitting || !!configError || !isValid}
+                        isLoading={isSubmitting}
                     >
-                        {children}
-                    </Alert>
-                ))}
-            </AlertGroup>
-            <ConfirmationModal
-                ariaLabel="Confirm delete"
-                confirmText="Delete"
-                isLoading={isDeleting}
-                isOpen={deleteId !== null}
-                onConfirm={onConfirmDeleteCollection}
-                onCancel={onCancelDeleteCollection}
-            >
-                Are you sure you want to delete this collection?
-            </ConfirmationModal>
-        </>
+                        Save
+                    </Button>
+                    <Button variant="secondary" isDisabled={isSubmitting} onClick={onCancel}>
+                        Cancel
+                    </Button>
+                </div>
+            )}
+        </Form>
     );
 }
 

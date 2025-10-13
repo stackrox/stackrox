@@ -3,6 +3,7 @@
 import sys
 import yaml
 
+
 def fix_descriptor_order(descriptors):
     # Perform a stable sort (in Python, sorts are always stable) based on the path (excluding the last
     # component). This ensures items at the same nesting level retain their relative order, and children
@@ -20,7 +21,7 @@ def allow_relative_field_dependencies(descriptors):
                 continue
             field, val = x_desc.split(':', 6)[-2:]
             if not field.startswith('.'):
-                continue # absolute path
+                continue  # absolute path
             field = f'.{d["path"]}'.rsplit('.', 1)[0][1:] + field
             x_descs[i] = f'urn:alm:descriptor:com.tectonic.ui:fieldDependency:{field}:{val}'
 
@@ -32,6 +33,7 @@ def main():
         fix_descriptor_order(descs)
         allow_relative_field_dependencies(descs)
     print(yaml.safe_dump(csv_doc))
+
 
 if __name__ == '__main__':
     main()

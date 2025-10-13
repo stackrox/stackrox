@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { Modal, ModalVariant } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core';
 
 import { importPolicies } from 'services/PoliciesService';
 import { Policy } from 'types/policy.proto';
@@ -38,7 +38,7 @@ function ImportPolicyJSONModal({
 
     function startImportPolicies() {
         // Note: this only resolves errors on one policy for MVP,
-        //   see decision in comment on Jira story, https://stack-rox.atlassian.net/browse/ROX-4409
+        // see decision in comment on Jira story, https://issues.redhat.com/browse/ROX-4409
         const [policiesToImport, metadata] = getResolvedPolicies(
             policies,
             duplicateErrors,
@@ -48,20 +48,27 @@ function ImportPolicyJSONModal({
             .then((response) => {
                 if (response.allSucceeded) {
                     setModalType('success');
+
                     // TODO: multiple policies import will be handled in
-                    // https://stack-rox.atlassian.net/browse/ROX-8613
+                    // https://issues.redhat.com/browse/ROX-8613
                     setPolicies([response.responses[0].policy]);
                     setTimeout(() => {
                         handleCancelModal();
                         fetchPoliciesWithQuery();
-                    }, 3000);
+                    }, 4000);
                 } else {
                     const errors = parsePolicyImportErrors(response?.responses);
                     const onlyHasDupeErrors = checkDupeOnlyErrors(errors);
-                    if (onlyHasDupeErrors) {
+                    if (policiesToImport.length === 1 && onlyHasDupeErrors) {
                         setDuplicateErrors(errors[0]);
                     }
-                    const errorMessageArray = getErrorMessages(errors[0]).map(({ msg }) => msg);
+
+                    // the errors array in the response is a single-element array,
+                    //     that contains an array with as many elements as there are policies in the import file
+                    //     and each of those elements is an array of error objeccts
+                    // hence, we use .flat() to un-ravel that structure to get all the errors
+                    const errorMessageArray = getErrorMessages(errors.flat()).map(({ msg }) => msg);
+
                     setErrorMessages(errorMessageArray);
                     setModalType('error');
                 }
@@ -83,7 +90,7 @@ function ImportPolicyJSONModal({
         <Modal
             title="Import policy JSON"
             isOpen={isOpen}
-            variant={ModalVariant.small}
+            variant="small"
             onClose={handleCancelModal}
             data-testid="import-policy-modal"
             aria-label="Import policy"

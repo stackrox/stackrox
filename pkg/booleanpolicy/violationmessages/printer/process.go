@@ -2,7 +2,7 @@ package printer
 
 import (
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -29,7 +29,7 @@ func UpdateProcessAlertViolationMessage(v *storage.Alert_ProcessViolation) {
 	var sb strings.Builder
 
 	paths := pathSet.AsSlice()
-	sort.Strings(paths)
+	slices.Sort(paths)
 	switch numPaths := pathSet.Cardinality(); {
 	case numPaths == 1:
 		fmt.Fprintf(&sb, "Binary '%s'", paths[0])

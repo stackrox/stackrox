@@ -10,10 +10,7 @@ function join_str() {
 regex="todo\([^\)]*\b($(join_str "|" "$@"))\b"
 
 tmpfile="$(mktemp)"
-function delete_tmpfile() {
-	rm -f "$tmpfile"
-}
-trap delete_tmpfile EXIT
+trap 'rm -f "${tmpfile}"' EXIT
 
 git grep -inE "$regex" >"$tmpfile"
 

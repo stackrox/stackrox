@@ -1,0 +1,20 @@
+{{- include "srox.init" . -}}
+{{- if and ._rox.scannerV4._matcherEnabled (not ._rox.scannerV4.matcher.autoscaling.disable) }}
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: scanner-v4-matcher
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "horizontalpodautoscaler" "scanner-v4-matcher") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "horizontalpodautoscaler" "scanner-v4-matcher") | nindent 4 }}
+spec:
+  minReplicas: {{ ._rox.scannerV4.matcher.autoscaling.minReplicas }}
+  maxReplicas: {{ ._rox.scannerV4.matcher.autoscaling.maxReplicas }}
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: scanner-v4-matcher
+  targetCPUUtilizationPercentage: 150
+{{- end }}

@@ -2,18 +2,11 @@ package authn
 
 import (
 	"context"
-	"errors"
 
 	"github.com/stackrox/rox/pkg/auth"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
-	"github.com/stackrox/rox/pkg/logging"
-	"gopkg.in/square/go-jose.v2/jwt"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 type contextUpdater struct {
@@ -21,13 +14,11 @@ type contextUpdater struct {
 }
 
 func (u contextUpdater) updateContext(ctx context.Context) (context.Context, error) {
-	id, err := u.extractor.IdentityForRequest(ctx, requestinfo.FromContext(ctx))
+	ri := requestinfo.FromContext(ctx)
+	id, err := u.extractor.IdentityForRequest(ctx, ri)
 	if err != nil {
-		if errors.Is(err, jwt.ErrExpired) {
-			log.Debugf("Cannot extract identity: token expired")
-		} else {
-			log.Warnf("Cannot extract identity: %v", err)
-		}
+		err.LogL(ri)
+
 		// Ignore id value if error is not nil.
 		return context.WithValue(ctx, identityErrorContextKey{}, errox.NoCredentials.CausedBy(err)), nil
 	}

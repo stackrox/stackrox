@@ -1,9 +1,9 @@
 package admissioncontroller
 
 import (
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/message"
 )
 
 var (
@@ -13,8 +13,9 @@ var (
 
 func newAlertHandler() *alertHandlerImpl {
 	return &alertHandlerImpl{
-		stopSig: concurrency.NewSignal(),
-		output:  make(chan *central.MsgFromSensor),
+		stopSig:      concurrency.NewSignal(),
+		output:       make(chan *message.ExpiringMessage),
+		centralReady: concurrency.NewSignal(),
 	}
 }
 

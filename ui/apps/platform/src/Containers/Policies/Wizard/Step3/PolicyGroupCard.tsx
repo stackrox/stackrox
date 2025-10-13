@@ -1,15 +1,17 @@
 import React from 'react';
 import {
+    Alert,
     Card,
     CardHeader,
     CardTitle,
-    CardActions,
     CardBody,
     Divider,
     Flex,
     FlexItem,
     Button,
     Checkbox,
+    Stack,
+    StackItem,
 } from '@patternfly/react-core';
 import { TrashIcon, PlusIcon } from '@patternfly/react-icons';
 import { useFormikContext } from 'formik';
@@ -67,53 +69,83 @@ function PolicyGroupCard({
         ]);
     }
 
-    const headerText = group.negate
-        ? descriptor.negatedName
-        : descriptor.longName ?? descriptor.shortName ?? descriptor.name;
+    const hasNegation = !readOnly && 'negatedName' in descriptor && descriptor.negatedName;
+    const headerLongText =
+        group.negate && 'negatedName' in descriptor ? descriptor.negatedName : descriptor.longName;
 
     return (
         <>
             <Card isFlat isCompact data-testid="policy-criteria-group-card">
-                <CardHeader className="pf-u-p-0">
-                    <CardTitle className="pf-u-pl-md">
+                <CardHeader
+                    actions={{
+                        actions: (
+                            <>
+                                {hasNegation && (
+                                    <>
+                                        <Divider
+                                            component="div"
+                                            orientation={{ default: 'vertical' }}
+                                        />
+                                        <Checkbox
+                                            label="Not"
+                                            isChecked={group.negate}
+                                            onChange={handleNegate}
+                                            id={`${group.fieldName}-negate`}
+                                            isDisabled={readOnly}
+                                            data-testid="policy-criteria-value-negate-checkbox"
+                                        />
+                                    </>
+                                )}
+                                {!readOnly && (
+                                    <>
+                                        <Divider
+                                            orientation={{ default: 'vertical' }}
+                                            component="div"
+                                        />
+                                        <Button
+                                            variant="plain"
+                                            className="pf-v5-u-mr-xs pf-v5-u-px-sm pf-v5-u-py-md"
+                                            onClick={onDeleteGroup}
+                                            title="Delete policy field"
+                                        >
+                                            <TrashIcon />
+                                        </Button>
+                                    </>
+                                )}
+                            </>
+                        ),
+                        hasNoOffset: true,
+                        className: 'policy-group-card',
+                    }}
+                    className="pf-v5-u-p-0"
+                >
+                    <CardTitle className="pf-v5-u-pl-md">
                         <Flex
                             alignItems={{ default: 'alignItemsCenter' }}
-                            className="pf-u-py-sm pf-u-text-wrap-on-sm"
+                            className="pf-v5-u-py-sm pf-v5-u-text-wrap-on-sm"
                         >
-                            {headerText}:
+                            <Stack>
+                                <StackItem>{descriptor.shortName}</StackItem>
+                                {headerLongText && headerLongText !== descriptor.shortName && (
+                                    <StackItem className="pf-v5-u-font-size-sm pf-v5-u-font-weight-normal">
+                                        {headerLongText}:
+                                    </StackItem>
+                                )}
+                            </Stack>
                         </Flex>
                     </CardTitle>
-                    <CardActions hasNoOffset className="policy-group-card">
-                        {descriptor.negatedName && (
-                            <>
-                                <Divider component="div" isVertical />
-                                <Checkbox
-                                    label="Not"
-                                    isChecked={group.negate}
-                                    onChange={handleNegate}
-                                    id={`${group.fieldName}-negate`}
-                                    isDisabled={readOnly}
-                                    data-testid="policy-criteria-value-negate-checkbox"
-                                />
-                            </>
-                        )}
-                        {!readOnly && (
-                            <>
-                                <Divider isVertical component="div" />
-                                <Button
-                                    variant="plain"
-                                    className="pf-u-mr-xs pf-u-px-sm pf-u-py-md"
-                                    onClick={onDeleteGroup}
-                                    data-testid="delete-policy-criteria-btn"
-                                >
-                                    <TrashIcon />
-                                </Button>
-                            </>
-                        )}
-                    </CardActions>
                 </CardHeader>
                 <Divider component="div" />
                 <CardBody>
+                    {descriptor.infoText && (
+                        <Alert
+                            variant="info"
+                            isInline
+                            title={descriptor.infoText}
+                            component="p"
+                            className="pf-v5-u-mb-md"
+                        />
+                    )}
                     {group.values.map((_, valueIndex) => {
                         const name = `policySections[${sectionIndex}].policyGroups[${groupIndex}].values[${valueIndex}]`;
                         const groupName = `policySections[${sectionIndex}].policyGroups[${groupIndex}]`;
@@ -151,12 +183,12 @@ function PolicyGroupCard({
                             <Flex
                                 direction={{ default: 'column' }}
                                 alignItems={{ default: 'alignItemsCenter' }}
-                                className="pf-u-pt-sm"
+                                className="pf-v5-u-pt-sm"
                             >
                                 <Button
                                     onClick={handleAddValue}
                                     variant="plain"
-                                    data-testid="add-policy-criteria-value-btn"
+                                    title="Add value of policy field"
                                 >
                                     <PlusIcon />
                                 </Button>
@@ -167,7 +199,7 @@ function PolicyGroupCard({
             {(policyGroups.length - 1 !== groupIndex || !readOnly) && (
                 <Flex
                     direction={{ default: 'row' }}
-                    className="pf-u-my-sm"
+                    className="pf-v5-u-my-sm"
                     justifyContent={{ default: 'justifyContentCenter' }}
                 >
                     — and —

@@ -7,7 +7,6 @@ import (
 	helmTest "github.com/stackrox/helmtest/pkg/framework"
 	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	helmChartTestUtils "github.com/stackrox/rox/pkg/helm/charts/testutils"
 	"github.com/stackrox/rox/pkg/images/defaults"
@@ -28,6 +27,9 @@ func customFlavor(t *testing.T) defaults.ImageFlavor {
 		ScannerImageTag:        "3.2.1",
 		ScannerDBSlimImageName: "scanner-slim",
 		ScannerDBImageName:     "custom-scanner-db",
+		ScannerV4ImageName:     "custom-scanner-v4",
+		ScannerV4DBImageName:   "custom-scanner-v4-db",
+		ScannerV4ImageTag:      "4.2.1",
 
 		ChartRepo: defaults.ChartRepo{
 			URL:     "url",
@@ -41,7 +43,6 @@ func customFlavor(t *testing.T) defaults.ImageFlavor {
 }
 
 func TestOverriddenTagsAreRenderedInTheChart(t *testing.T) {
-	testbuildinfo.SetForTest(t)
 	testutils.SetVersion(t, testutils.GetExampleVersion(t))
 	helmChartTestUtils.RunHelmTestSuite(t, testDir, image.CentralServicesChartPrefix, helmChartTestUtils.RunHelmTestSuiteOpts{
 		MetaValuesOverridesFunc: func(values *charts.MetaValues) {
@@ -53,12 +54,10 @@ func TestOverriddenTagsAreRenderedInTheChart(t *testing.T) {
 }
 
 func TestWithDifferentImageFlavors(t *testing.T) {
-	testbuildinfo.SetForTest(t)
 	testutils.SetVersion(t, testutils.GetExampleVersion(t))
 	imageFlavorCases := map[string]defaults.ImageFlavor{
-		"stackrox": defaults.StackRoxIOReleaseImageFlavor(),
-		"rhacs":    defaults.RHACSReleaseImageFlavor(),
-		"custom":   customFlavor(t),
+		"rhacs":  defaults.RHACSReleaseImageFlavor(),
+		"custom": customFlavor(t),
 	}
 	if buildinfo.ReleaseBuild {
 		imageFlavorCases["development_build-release"] = defaults.DevelopmentBuildImageFlavor()
@@ -72,7 +71,10 @@ func TestWithDifferentImageFlavors(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			imageFlavor := imageFlavor
 			helmChartTestUtils.RunHelmTestSuite(t, testDir, image.CentralServicesChartPrefix, helmChartTestUtils.RunHelmTestSuiteOpts{
-				Flavor:       &imageFlavor,
+				Flavor: &imageFlavor,
+				MetaValuesOverridesFunc: func(values *charts.MetaValues) {
+					values.Operator = true
+				},
 				HelmTestOpts: []helmTest.LoaderOpt{helmTest.WithAdditionalTestDirs(path.Join(testDir, name))},
 			})
 		})

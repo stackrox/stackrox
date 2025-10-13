@@ -1,24 +1,26 @@
-import groups.BAT
-import groups.K8sEvents
-import groups.RUNTIME
+import static util.Helpers.withRetry
+
+import orchestratormanager.OrchestratorTypes
+
 import io.stackrox.proto.storage.AlertOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
+
 import objects.Deployment
-import orchestratormanager.OrchestratorTypes
-import org.junit.Assume
-import org.junit.experimental.categories.Category
 import services.AlertService
 import services.PolicyService
-import spock.lang.Retry
-import spock.lang.Unroll
 import util.Env
+
+import spock.lang.IgnoreIf
+import spock.lang.Tag
+import spock.lang.Unroll
 
 class K8sEventDetectionTest extends BaseSpecification {
     static final private List<Deployment> DEPLOYMENTS = []
 
     static private registerDeployment(String name, boolean privileged) {
         DEPLOYMENTS.add(
-            new Deployment().setName(name).setImage("quay.io/rhacs-eng/qa:nginx-1.14-alpine").addLabel("app", name).
+            new Deployment().setName(name)
+                .setImage(TEST_IMAGE).addLabel("app", name).
                 setPrivilegedFlag(privileged)
         )
         return name
@@ -34,6 +36,10 @@ class K8sEventDetectionTest extends BaseSpecification {
     static final private String CLONED_KUBECTL_EXEC_POLICY_NAME = "CLONED: Kubernetes Actions: Exec into Pod"
 
     def setupSpec() {
+        if (Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) {
+            // K8s event detection is not supported on OpenShift.
+            return
+        }
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         for (Deployment deployment : DEPLOYMENTS) {
             assert Services.waitForDeployment(deployment)
@@ -55,6 +61,10 @@ class K8sEventDetectionTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
+        if (Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) {
+            // K8s event detection is not supported on OpenShift.
+            return
+        }
         for (def deployment: DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
         }
@@ -76,7 +86,7 @@ class K8sEventDetectionTest extends BaseSpecification {
     def checkViolationsAreAsExpected(String policyName, List<String> execedIntoDeploymentNames,
                                      List<String> violatingDeploymentNames, Map<String, String> podNames,
                                      int expectedK8sViolationsCount) {
-        for (def violatingDeploymentName: violatingDeploymentNames) {
+        violatingDeploymentNames.each { String violatingDeploymentName ->
             def violatingDeployment = DEPLOYMENTS.find { it.name == violatingDeploymentName }
             assert violatingDeployment
             def violations = Services.getViolationsByDeploymentID(
@@ -92,7 +102,8 @@ class K8sEventDetectionTest extends BaseSpecification {
             def podName = podNames.get(violatingDeploymentName)
             assert k8sSubViolations.size() == expectedK8sViolationsCount
             for (def subViolation: k8sSubViolations) {
-                assert subViolation.message == "Kubernetes API received exec 'ls -l' request into pod '${podName}'"
+                assert subViolation.message == "Kubernetes API received exec 'ls -l' request into pod '${podName}'" +
+                        " container '${violatingDeploymentName}'"
                 def kvAttrs = subViolation.getKeyValueAttrs().getAttrsList()
                 def podAttr = kvAttrs.find { it.key == "pod" }
                 assert podAttr != null && podAttr.value == podName
@@ -118,15 +129,15 @@ class K8sEventDetectionTest extends BaseSpecification {
         return true
     }
 
-    @Retry(count = 0)
     @Unroll
-    @Category([BAT, RUNTIME, K8sEvents])
+    @Tag("BAT")
+    @Tag("RUNTIME")
+    @Tag("K8sEvents")
+    // K8s event detection is currently not supported on OpenShift.
+    @IgnoreIf({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })
     def "Verify k8s exec detection into #execIntoDeploymentNames with addl groups #additionalPolicyGroups"() {
         when:
         "Create the deployments, modify the policy, exec into them"
-        // K8s event detection is currently not supported on OpenShift.
-        Assume.assumeTrue(Env.mustGetOrchestratorType() != OrchestratorTypes.OPENSHIFT)
-
         def originalPolicy = Services.getPolicyByName(CLONED_KUBECTL_EXEC_POLICY_NAME)
         assert originalPolicy != null && originalPolicy.getName() == CLONED_KUBECTL_EXEC_POLICY_NAME
 

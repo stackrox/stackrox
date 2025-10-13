@@ -57,14 +57,33 @@ image:
     name: null # string
     tag: null # string
     fullRef: null # string
+  scannerV4:
+    registry: null # string
+    name: null # string
+    tag: null # string
+    fullRef: null # string
+  fact:
+    registry: null # string
+    name: null # string
+    repository: null # string
+    tag: null # string
+    fullRef: null # string
+    pullPolicy: null # string
 env:
+  grpcEnforceALPN: null # bool
   openshift: null # bool | int
   istio: null # bool
+  storageClasses:
+    all: {} # dict
+    default: null # string
+  pvcs:
+    names: null # [string]
 ca:
   cert: null # string
 sensor:
   imagePullPolicy: null # string
   endpoint: null # string
+  affinity: null # dict
   resources: null # string | dict
   serviceTLS:
     cert: null # string
@@ -72,6 +91,8 @@ sensor:
   exposeMonitoring: null # bool
   nodeSelector: null # string | dict
   tolerations: null # [dict]
+  hostAliases: null # [dict]
+  priorityClassName: null # string
   localImageScanning:
     # Enables the local image scanning feature in Sensor. This disabled if local image scanning should not be used to prevent
     # sensor reaching out to a scanner instance.
@@ -87,7 +108,10 @@ admissionControl:
     disableBypass: null # bool
     timeout: null # natural number
     enforceOnUpdates: null # bool
+  enforce: null # bool
   imagePullPolicy: null # string
+  replicas: null # int
+  affinity: null # dict
   resources: null # string | dict
   serviceTLS:
     cert: null # string
@@ -95,23 +119,42 @@ admissionControl:
   exposeMonitoring: null # bool
   nodeSelector: null # string | dict
   tolerations: null # [dict]
+  hostAliases: null # [dict]
+  priorityClassName: null # string
+  namespaceSelector: null # dict
+  failurePolicy: null # string
 collector:
+  forceCollectionMethod: null # bool
   collectionMethod: null # string
   disableTaintTolerations: null # bool
   slimMode: null # bool
   imagePullPolicy: null # string
+  tolerations: null # [dict]
   resources: null # string | dict
   complianceImagePullPolicy: null # string
   complianceResources: null # string | dict
+  nodeScanningResources: null # string | dict
   serviceTLS:
     cert: null # string
     key: null # string
   exposeMonitoring: null # bool
   nodeSelector: null # string | dict
+  priorityClassName: null # string
+  hostAliases: null # [dict]
   disableSELinuxOptions: null # bool
   seLinuxOptionsType: null # string
+  containerd:
+    enabled: null # bool
+  crio:
+    enabled: null # bool
+  runtimeConfig:
+    enabled: null # bool
+fact:
+  resources: null # string | dict
 auditLogs:
   disableCollection: null # bool
+autoLockProcessBaselines:
+  enabled: null # bool
 customize:
   labels: {} # dict
   annotations: {} # dict
@@ -136,10 +179,25 @@ customize:
     podLabels: {} # dict
     podAnnotations: {} # dict
     envVars: {} # dict
+  scanner-v4-indexer:
+    labels: {} # dict
+    annotations: {} # dict
+    podLabels: {} # dict
+    podAnnotations: {} # dict
+    envVars: {} # dict
+  scanner-v4-db:
+    labels: {} # dict
+    annotations: {} # dict
+    podLabels: {} # dict
+    podAnnotations: {} # dict
+    envVars: {} # dict
   other: {} # dict
 allowNonstandardNamespace: null # bool
 allowNonstandardReleaseName: null # bool
 enableOpenShiftMonitoring: null # bool
+monitoring:
+  openshift:
+    enabled: null # bool
 meta:
   namespaceOverride: null # bool
   useLookup: null # bool
@@ -149,6 +207,9 @@ meta:
     version: null # string
     overrideAPIResources: null # [string]
     extraAPIResources: null # [string]
+network:
+  enableNetworkPolicies: null # bool
 system:
-  createSCCs: null # bool
   enablePodSecurityPolicies: null # bool
+crs:
+  file: null # string

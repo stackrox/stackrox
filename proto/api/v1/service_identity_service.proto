@@ -1,59 +1,53 @@
 syntax = "proto3";
 
-option go_package = "v1";
-option java_package = "io.stackrox.proto.api.v1";
-
-import weak "google/api/annotations.proto";
-import "api/v1/empty.proto";
-import "storage/service_identity.proto";
-
 package v1;
 
+import "api/v1/empty.proto";
+import weak "google/api/annotations.proto";
+import "storage/service_identity.proto";
+
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
+
 message ServiceIdentityResponse {
-    repeated storage.ServiceIdentity identities = 1;
+  repeated storage.ServiceIdentity identities = 1;
 }
 
 message CreateServiceIdentityRequest {
-    string      id = 1;
-    storage.ServiceType type = 2;
+  string id = 1;
+  storage.ServiceType type = 2;
 }
 
 message CreateServiceIdentityResponse {
-    storage.ServiceIdentity identity       = 1;
-    bytes          certificate_pem = 2;
-    bytes          private_key_pem = 3;
+  storage.ServiceIdentity identity = 1;
+  bytes certificate_pem = 2;
+  bytes private_key_pem = 3;
 }
 
 message Authority {
-    bytes certificate_pem = 1;
+  bytes certificate_pem = 1;
 }
 
 message Authorities {
-    repeated Authority authorities = 1;
+  repeated Authority authorities = 1;
 }
 
 service ServiceIdentityService {
+  rpc GetServiceIdentities(Empty) returns (ServiceIdentityResponse) {
+    option (google.api.http) = {get: "/v1/serviceIdentities"};
+  }
 
-    rpc GetServiceIdentities (Empty) returns (ServiceIdentityResponse) {
-        option (google.api.http) = {
-            get: "/v1/serviceIdentities"
-        };
-    }
+  // CreateServiceIdentity creates a new key pair and certificate.
+  // The key and certificate are not retained and can never be retrieved again.
+  rpc CreateServiceIdentity(CreateServiceIdentityRequest) returns (CreateServiceIdentityResponse) {
+    option (google.api.http) = {
+      post: "/v1/serviceIdentities"
+      body: "*"
+    };
+  }
 
-    // CreateServiceIdentity creates a new key pair and certificate.
-    // The key and certificate are not retained and can never be retrieved again.
-    rpc CreateServiceIdentity (CreateServiceIdentityRequest) returns (CreateServiceIdentityResponse) {
-        option (google.api.http) = {
-            post: "/v1/serviceIdentities"
-            body: "*"
-        };
-    }
-
-    // GetAuthorities returns the authorities currently in use.
-    rpc GetAuthorities (Empty) returns (Authorities) {
-        option (google.api.http) = {
-            get: "/v1/authorities"
-        };
-    }
+  // GetAuthorities returns the authorities currently in use.
+  rpc GetAuthorities(Empty) returns (Authorities) {
+    option (google.api.http) = {get: "/v1/authorities"};
+  }
 }
-

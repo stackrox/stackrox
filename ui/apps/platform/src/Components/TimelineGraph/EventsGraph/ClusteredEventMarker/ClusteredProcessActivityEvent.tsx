@@ -42,7 +42,7 @@ const ClusteredProcessActivityEvent = forwardRef<SVGSVGElement, ClusteredProcess
                             rx="2"
                         />
                         <text
-                            fontFamily="OpenSans-Bold, Open Sans"
+                            fontFamily="var(--pf-v5-global--FontFamily--sans-serif)"
                             fontSize="9"
                             fontWeight="bold"
                             letterSpacing="-.18"
@@ -84,7 +84,7 @@ const ClusteredProcessActivityEvent = forwardRef<SVGSVGElement, ClusteredProcess
                             rx="2"
                         />
                         <text
-                            fontFamily="OpenSans-Bold, Open Sans"
+                            fontFamily="var(--pf-v5-global--FontFamily--sans-serif)"
                             fontSize="9"
                             fontWeight="bold"
                             letterSpacing="-.18"

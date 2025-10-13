@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
@@ -22,6 +23,8 @@ import (
 
 var (
 	log = logging.LoggerForModule()
+
+	_ pipeline.Fragment = (*pipelineImpl)(nil)
 )
 
 // GetPipeline returns an instantiation of this particular pipeline
@@ -42,6 +45,10 @@ type pipelineImpl struct {
 	clusters        clusterDatastore.DataStore
 	bindings        datastore.DataStore
 	riskReprocessor reprocessor.Loop
+}
+
+func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
+	return nil
 }
 
 func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
@@ -86,7 +93,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runRemovePipeline(ctx context.Context, action central.ResourceAction, event *storage.K8SRoleBinding) error {
+func (s *pipelineImpl) runRemovePipeline(ctx context.Context, _ central.ResourceAction, event *storage.K8SRoleBinding) error {
 	// Validate the the event we receive has necessary fields set.
 	if err := s.validateInput(event); err != nil {
 		return err
@@ -109,7 +116,7 @@ func enrichSubjects(binding *storage.K8SRoleBinding) {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.ResourceAction, binding *storage.K8SRoleBinding) error {
+func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, _ central.ResourceAction, binding *storage.K8SRoleBinding) error {
 	if err := s.validateInput(binding); err != nil {
 		return err
 	}

@@ -130,19 +130,25 @@ type IPAddress struct {
 	data ipAddrData
 }
 
-// IPAddressLess checks if the IP address a is less than the IP address b according to some defined ordering.
+// IPAddressLess checks if the IP address `a` is less than the IP address `b` according to arbitrary ordering.
+// Used for sort.Slice.
 func IPAddressLess(a, b IPAddress) bool {
+	return IPAddressCompare(a, b) < 0
+}
+
+// IPAddressCompare returns -1;0;1 for a<b; a==b; a>b comparison. Used for slices.SortFunc.
+func IPAddressCompare(a, b IPAddress) int {
 	aBytes, bBytes := a.data.bytes(), b.data.bytes()
 
 	if len(aBytes) != len(bBytes) {
-		return len(aBytes) < len(bBytes)
+		return len(aBytes) - len(bBytes)
 	}
 
 	if a.data.family() != b.data.family() {
-		return a.data.family() < b.data.family()
+		return int(a.data.family()) - int(b.data.family())
 	}
 
-	return bytes.Compare(aBytes, bBytes) < 0
+	return bytes.Compare(aBytes, bBytes)
 }
 
 // Family returns the address family of this IP address.
@@ -289,7 +295,7 @@ func (d IPNetwork) String() string {
 	return ipNet.String()
 }
 
-// IPNetworkFromCIDR converts a CIDR string string to an `IPNetwork`. In case of invalid string, an invalid IPNetwork is returned.
+// IPNetworkFromCIDR converts a CIDR string to an `IPNetwork`. In case of invalid string, an invalid IPNetwork is returned.
 func IPNetworkFromCIDR(cidr string) IPNetwork {
 	_, ipNet, err := net.ParseCIDR(cidr)
 	if err != nil {
@@ -330,4 +336,16 @@ func IPNetworkFromCIDRBytes(cidr []byte) IPNetwork {
 		IP:   cidr[:n-1],
 		Mask: net.CIDRMask(int(cidr[n-1]), (n-1)*8),
 	})
+}
+
+// IPNetworkFromNetworkPeerID extracts an IPNetwork from a NetworkPeerID.
+// IPNetwork is the prefered way to convey IP addresses, but NetworkPeerID can contain a legacy Address.
+func IPNetworkFromNetworkPeerID(peerID NetworkPeerID) IPNetwork {
+	if peerID.IPNetwork.IsValid() {
+		return peerID.IPNetwork
+	}
+	return IPNetwork{
+		ip:        peerID.Address,
+		prefixLen: byte(peerID.Address.Family().Bits()),
+	}
 }

@@ -1,32 +1,30 @@
+//go:build sql_integration
+
 package datastore
 
 import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/processbaseline/index"
-	baselineSearch "github.com/stackrox/rox/central/processbaseline/search"
 	"github.com/stackrox/rox/central/processbaseline/store"
 	postgresStore "github.com/stackrox/rox/central/processbaseline/store/postgres"
-	rocksdbStore "github.com/stackrox/rox/central/processbaseline/store/rocksdb"
 	"github.com/stackrox/rox/central/processbaselineresults/datastore/mocks"
 	indicatorMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestProcessBaselineDatastore(t *testing.T) {
@@ -38,12 +36,9 @@ type ProcessBaselineDataStoreTestSuite struct {
 	requestContext     context.Context
 	datastore          DataStore
 	storage            store.Store
-	indexer            index.Indexer
-	searcher           baselineSearch.Searcher
 	indicatorMockStore *indicatorMocks.MockDataStore
 
-	db   *rocksdb.RocksDB
-	pool *pgxpool.Pool
+	pool postgres.DB
 
 	baselineResultsStore *mocks.MockDataStore
 
@@ -54,46 +49,25 @@ func (suite *ProcessBaselineDataStoreTestSuite) SetupTest() {
 	suite.requestContext = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.ProcessWhitelist),
+			sac.ResourceScopeKeys(resources.DeploymentExtension),
 		),
 	)
-	var err error
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pgtestbase := pgtest.ForT(suite.T())
-		suite.Require().NotNil(pgtestbase)
-		suite.pool = pgtestbase.Pool
-		suite.storage = postgresStore.New(suite.pool)
-		suite.indexer = postgresStore.NewIndexer(suite.pool)
-	} else {
-		suite.db, err = rocksdb.NewTemp(suite.T().Name() + ".db")
-		suite.Require().NoError(err)
-
-		suite.storage, err = rocksdbStore.New(suite.db)
-		suite.NoError(err)
-
-		tmpIndex, err := globalindex.TempInitializeIndices("")
-		suite.NoError(err)
-		suite.indexer = index.New(tmpIndex)
-	}
-
-	suite.searcher, err = baselineSearch.New(suite.storage, suite.indexer)
-	suite.NoError(err)
+	pgtestbase := pgtest.ForT(suite.T())
+	suite.Require().NotNil(pgtestbase)
+	suite.pool = pgtestbase.DB
+	suite.storage = postgresStore.New(suite.pool)
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 
 	suite.baselineResultsStore = mocks.NewMockDataStore(suite.mockCtrl)
 	suite.indicatorMockStore = indicatorMocks.NewMockDataStore(suite.mockCtrl)
-	suite.datastore = New(suite.storage, suite.indexer, suite.searcher, suite.baselineResultsStore, suite.indicatorMockStore)
+	suite.datastore = New(suite.storage, suite.baselineResultsStore, suite.indicatorMockStore)
 }
 
 func (suite *ProcessBaselineDataStoreTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.pool.Close()
-	} else {
-		rocksdbtest.TearDownRocksDB(suite.db)
-	}
+	suite.pool.Close()
 }
 
 func (suite *ProcessBaselineDataStoreTestSuite) mustSerializeKey(key *storage.ProcessBaselineKey) string {
@@ -109,12 +83,12 @@ func (suite *ProcessBaselineDataStoreTestSuite) createAndStoreBaseline(key *stor
 	id, err := suite.datastore.AddProcessBaseline(suite.requestContext, baseline)
 	suite.NoError(err)
 	suite.NotNil(id)
-	suite.NotNil(baseline.Created)
-	suite.Equal(baseline.Created, baseline.LastUpdate)
-	suite.True(baseline.StackRoxLockedTimestamp.Compare(baseline.Created) >= 0)
+	suite.NotNil(baseline.GetCreated())
+	suite.Equal(baseline.GetCreated().AsTime(), baseline.GetLastUpdate().AsTime())
+	suite.True(protocompat.CompareTimestamps(baseline.GetStackRoxLockedTimestamp(), baseline.GetCreated()) >= 0)
 
 	suite.Equal(suite.mustSerializeKey(key), id)
-	suite.Equal(id, baseline.Id)
+	suite.Equal(id, baseline.GetId())
 	return baseline
 }
 
@@ -142,7 +116,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) doGet(key *storage.ProcessBaseli
 		suite.True(exists)
 		suite.NotNil(baseline)
 		if equals != nil {
-			suite.Equal(equals, baseline)
+			protoassert.Equal(suite.T(), equals, baseline)
 		}
 	} else {
 		suite.Nil(baseline)
@@ -155,11 +129,11 @@ func (suite *ProcessBaselineDataStoreTestSuite) testUpdate(key *storage.ProcessB
 	updated, err := suite.datastore.UpdateProcessBaselineElements(suite.requestContext, key, fixtures.MakeBaselineItems(addProcesses...), fixtures.MakeBaselineItems(removeProcesses...), auto)
 	suite.NoError(err)
 	suite.NotNil(updated)
-	suite.True(updated.GetLastUpdate().Compare(updated.GetCreated()) > 0)
-	suite.NotNil(updated.Elements)
-	suite.Equal(expectedResults.Cardinality(), len(updated.Elements))
+	suite.True(protocompat.CompareTimestamps(updated.GetLastUpdate(), updated.GetCreated()) > 0)
+	suite.NotNil(updated.GetElements())
+	suite.Equal(expectedResults.Cardinality(), len(updated.GetElements()))
 	actualResults := set.NewStringSet()
-	for _, process := range updated.Elements {
+	for _, process := range updated.GetElements() {
 		actualResults.Add(process.GetElement().GetProcessName())
 	}
 	suite.Equal(expectedResults, actualResults)
@@ -167,12 +141,12 @@ func (suite *ProcessBaselineDataStoreTestSuite) testUpdate(key *storage.ProcessB
 }
 
 func (suite *ProcessBaselineDataStoreTestSuite) TestGetById() {
-	suite.doGet(&storage.ProcessBaselineKey{DeploymentId: "FAKE", ContainerName: "whatever", ClusterId: "whatever", Namespace: "whatever"}, false, nil)
+	suite.doGet(&storage.ProcessBaselineKey{DeploymentId: fixtureconsts.Deployment1, ContainerName: "whatever", ClusterId: fixtureconsts.Cluster1, Namespace: "whatever"}, false, nil)
 
 	key := &storage.ProcessBaselineKey{
-		DeploymentId:  "blah",
+		DeploymentId:  fixtureconsts.Deployment1,
 		ContainerName: "container",
-		ClusterId:     "cluster1",
+		ClusterId:     fixtureconsts.Cluster1,
 		Namespace:     "namespace",
 	}
 	baseline := suite.createAndStoreBaseline(key)
@@ -197,13 +171,13 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestLockAndUnlockBaseline() {
 	suite.NoError(err)
 	suite.NotNil(updatedBaseline.GetUserLockedTimestamp())
 	suite.doGet(key, true, updatedBaseline)
-	suite.True(updatedBaseline.GetLastUpdate().Compare(updatedBaseline.GetCreated()) > 0)
+	suite.True(protocompat.CompareTimestamps(updatedBaseline.GetLastUpdate(), updatedBaseline.GetCreated()) > 0)
 
 	updatedBaseline, err = suite.datastore.UserLockProcessBaseline(suite.requestContext, key, false)
 	suite.NoError(err)
 	suite.Nil(updatedBaseline.GetUserLockedTimestamp())
 	suite.doGet(key, true, updatedBaseline)
-	suite.True(updatedBaseline.GetLastUpdate().Compare(updatedBaseline.GetCreated()) > 0)
+	suite.True(protocompat.CompareTimestamps(updatedBaseline.GetLastUpdate(), updatedBaseline.GetCreated()) > 0)
 }
 
 func (suite *ProcessBaselineDataStoreTestSuite) TestUpdateProcessBaseline() {
@@ -220,19 +194,19 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestUpdateProcessBaseline() {
 	otherProcess := []string{"Some other process"}
 	otherProcessSet := set.NewStringSet(otherProcess...)
 	updated := suite.testUpdate(key, processName, nil, true, processNameSet)
-	suite.True(updated.Elements[0].Auto)
+	suite.True(updated.GetElements()[0].GetAuto())
 
 	updated = suite.testUpdate(key, processName, nil, false, processNameSet)
-	suite.False(updated.Elements[0].Auto)
+	suite.False(updated.GetElements()[0].GetAuto())
 
 	updated = suite.testUpdate(key, otherProcess, processName, true, otherProcessSet)
-	suite.True(updated.Elements[0].Auto)
+	suite.True(updated.GetElements()[0].GetAuto())
 
 	multiAdd := []string{"a", "b", "c"}
 	multiAddExpected := set.NewStringSet(multiAdd...)
 	updated = suite.testUpdate(key, multiAdd, otherProcess, false, multiAddExpected)
-	for _, process := range updated.Elements {
-		suite.False(process.Auto)
+	for _, process := range updated.GetElements() {
+		suite.False(process.GetAuto())
 	}
 }
 
@@ -244,8 +218,8 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestUpsertProcessBaseline() {
 	suite.NoError(err)
 	suite.Equal(1, len(baseline.GetElements()))
 	suite.Equal(firstProcess, baseline.GetElements()[0].GetElement().GetProcessName())
-	suite.Equal(key, baseline.GetKey())
-	suite.True(baseline.GetLastUpdate().Compare(baseline.GetCreated()) == 0)
+	protoassert.Equal(suite.T(), key, baseline.GetKey())
+	suite.True(protocompat.CompareTimestamps(baseline.GetLastUpdate(), baseline.GetCreated()) == 0)
 
 	secondProcess := "Joseph is the Best"
 	newItem = []*storage.BaselineItem{{Item: &storage.BaselineItem_ProcessName{ProcessName: secondProcess}}}
@@ -257,8 +231,8 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestUpsertProcessBaseline() {
 		processNames = append(processNames, element.GetElement().GetProcessName())
 	}
 	suite.ElementsMatch([]string{firstProcess, secondProcess}, processNames)
-	suite.Equal(key, baseline.GetKey())
-	suite.True(baseline.GetLastUpdate().Compare(baseline.GetCreated()) > 0)
+	protoassert.Equal(suite.T(), key, baseline.GetKey())
+	suite.True(protocompat.CompareTimestamps(baseline.GetLastUpdate(), baseline.GetCreated()) > 0)
 }
 
 func makeItemList(elementList []*storage.BaselineElement) []*storage.BaselineItem {
@@ -277,20 +251,20 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestGraveyard() {
 	updatedBaseline, err := suite.datastore.UpdateProcessBaselineElements(suite.requestContext, baseline.GetKey(), nil, itemList, true)
 	// The elements should have been removed from the process baseline and put in the graveyard
 	suite.NoError(err)
-	suite.ElementsMatch(baseline.GetElements(), updatedBaseline.GetElementGraveyard())
+	protoassert.ElementsMatch(suite.T(), baseline.GetElements(), updatedBaseline.GetElementGraveyard())
 
 	updatedBaseline, err = suite.datastore.UpdateProcessBaselineElements(suite.requestContext, baseline.GetKey(), itemList, nil, true)
 	suite.NoError(err)
 	// The elements should NOT be added back on to the process baseline because they are in the graveyard and auto = true
 	suite.Empty(updatedBaseline.GetElements())
-	suite.ElementsMatch(baseline.GetElements(), updatedBaseline.GetElementGraveyard())
+	protoassert.ElementsMatch(suite.T(), baseline.GetElements(), updatedBaseline.GetElementGraveyard())
 
 	updatedBaseline, err = suite.datastore.UpdateProcessBaselineElements(suite.requestContext, baseline.GetKey(), itemList, nil, false)
 	suite.NoError(err)
 	// The elements SHOULD be added back on to the process baseline because auto = false
 	suite.Empty(updatedBaseline.GetElementGraveyard())
 	updatedItems := makeItemList(updatedBaseline.GetElements())
-	suite.ElementsMatch(itemList, updatedItems)
+	protoassert.ElementsMatch(suite.T(), itemList, updatedItems)
 }
 
 func (suite *ProcessBaselineDataStoreTestSuite) doQuery(q *v1.Query, len int) {
@@ -300,14 +274,14 @@ func (suite *ProcessBaselineDataStoreTestSuite) doQuery(q *v1.Query, len int) {
 }
 
 func (suite *ProcessBaselineDataStoreTestSuite) TestRemoveByDeployment() {
-	dep1 := "1"
-	key1 := &storage.ProcessBaselineKey{DeploymentId: dep1, ContainerName: "1", ClusterId: "1", Namespace: "1"}
-	key2 := &storage.ProcessBaselineKey{DeploymentId: dep1, ContainerName: "2", ClusterId: "1", Namespace: "2"}
-	key3 := &storage.ProcessBaselineKey{DeploymentId: "2", ContainerName: "1", ClusterId: "1", Namespace: "3"}
+	dep1 := fixtureconsts.Deployment1
+	key1 := &storage.ProcessBaselineKey{DeploymentId: dep1, ContainerName: "1", ClusterId: fixtureconsts.Cluster1, Namespace: "1"}
+	key2 := &storage.ProcessBaselineKey{DeploymentId: dep1, ContainerName: "2", ClusterId: fixtureconsts.Cluster1, Namespace: "2"}
+	key3 := &storage.ProcessBaselineKey{DeploymentId: fixtureconsts.Deployment2, ContainerName: "1", ClusterId: fixtureconsts.Cluster1, Namespace: "3"}
 	suite.createAndStoreBaselines(key1, key2, key3)
 
 	queryDep1 := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, dep1).ProtoQuery()
-	queryDep2 := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, "2").ProtoQuery()
+	queryDep2 := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, fixtureconsts.Deployment2).ProtoQuery()
 	suite.doQuery(queryDep1, 2)
 	suite.doQuery(queryDep2, 1)
 	suite.doGet(key1, true, nil)
@@ -327,9 +301,9 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestRemoveByDeployment() {
 
 func (suite *ProcessBaselineDataStoreTestSuite) TestIDToKeyConversion() {
 	key := &storage.ProcessBaselineKey{
-		DeploymentId:  "blah",
+		DeploymentId:  fixtureconsts.Deployment1,
 		ContainerName: "container",
-		ClusterId:     "cluster1",
+		ClusterId:     fixtureconsts.Cluster1,
 		Namespace:     "namespace",
 	}
 
@@ -338,7 +312,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestIDToKeyConversion() {
 	resKey, err := IDToKey(id)
 	suite.NoError(err)
 	suite.NotNil(resKey)
-	suite.Equal(*key, *resKey)
+	protoassert.Equal(suite.T(), key, resKey)
 }
 
 func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaseline() {
@@ -373,9 +347,9 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaseline
 	baseline, err := suite.datastore.CreateUnlockedProcessBaseline(suite.requestContext, key)
 	suite.NoError(err)
 
-	suite.Equal(key, baseline.GetKey())
-	suite.True(baseline.GetLastUpdate().Compare(baseline.GetCreated()) == 0)
-	suite.True(baseline.UserLockedTimestamp == nil)
+	protoassert.Equal(suite.T(), key, baseline.GetKey())
+	suite.True(protocompat.CompareTimestamps(baseline.GetLastUpdate(), baseline.GetCreated()) == 0)
+	suite.True(baseline.GetUserLockedTimestamp() == nil)
 	suite.True(baseline.Elements != nil)
 
 }
@@ -426,11 +400,11 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaseline
 	baseline, err := suite.datastore.CreateUnlockedProcessBaseline(suite.requestContext, key)
 	suite.NoError(err)
 
-	suite.Equal(key, baseline.GetKey())
-	suite.True(baseline.GetLastUpdate().Compare(baseline.GetCreated()) == 0)
-	suite.True(baseline.UserLockedTimestamp == nil)
+	protoassert.Equal(suite.T(), key, baseline.GetKey())
+	suite.True(protocompat.CompareTimestamps(baseline.GetLastUpdate(), baseline.GetCreated()) == 0)
+	suite.True(baseline.GetUserLockedTimestamp() == nil)
 	suite.True(baseline.Elements != nil)
-	suite.True(len(baseline.Elements) == len(indicators)-2)
+	suite.True(len(baseline.GetElements()) == len(indicators)-2)
 
 }
 
@@ -442,10 +416,10 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaseline
 	baseline, err := suite.datastore.CreateUnlockedProcessBaseline(suite.requestContext, key)
 	suite.NoError(err)
 
-	suite.Equal(key, baseline.GetKey())
-	suite.True(baseline.GetLastUpdate().Compare(baseline.GetCreated()) == 0)
-	suite.True(baseline.UserLockedTimestamp == nil)
-	suite.True(baseline.Elements == nil || len(baseline.Elements) == 0)
+	protoassert.Equal(suite.T(), key, baseline.GetKey())
+	suite.True(protocompat.CompareTimestamps(baseline.GetLastUpdate(), baseline.GetCreated()) == 0)
+	suite.True(baseline.GetUserLockedTimestamp() == nil)
+	suite.True(len(baseline.GetElements()) == 0)
 
 }
 
@@ -454,7 +428,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestClearProcessBaselines() {
 	baseline := suite.createAndStoreBaseline(key)
 	suite.True(baseline.Elements != nil)
 
-	ids := []string{baseline.Id}
+	ids := []string{baseline.GetId()}
 	err := suite.datastore.ClearProcessBaselines(suite.requestContext, ids)
 	suite.True(err == nil)
 	baseline, exists, err := suite.datastore.GetProcessBaseline(suite.requestContext, key)

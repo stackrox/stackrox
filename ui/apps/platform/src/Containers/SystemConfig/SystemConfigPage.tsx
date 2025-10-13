@@ -13,9 +13,13 @@ import {
 /*
 import { clustersBasePath, getIsRoutePathRendered } from 'routePaths';
 */
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
-import { fetchSystemConfig } from 'services/SystemConfigService';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import useRestQuery from 'hooks/useRestQuery';
+import {
+    fetchDefaultRedHatLayeredProductsRule,
+    fetchSystemConfig,
+} from 'services/SystemConfigService';
 import { SystemConfig } from 'types/config.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
@@ -27,11 +31,7 @@ const SystemConfigPage = (): ReactElement => {
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     */
     const { hasReadWriteAccess } = usePermissions();
-    const hasReadWriteAccessForConfig = hasReadWriteAccess('Config');
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isDecommissionedClusterRetentionEnabled = isFeatureFlagEnabled(
-        'ROX_DECOMMISSIONED_CLUSTER_RETENTION'
-    );
+    const hasReadWriteAccessForAdministration = hasReadWriteAccess('Administration');
     /*
     const isClustersRoutePathRendered = getIsRoutePathRendered({
         hasReadAccess,
@@ -40,7 +40,17 @@ const SystemConfigPage = (): ReactElement => {
     */
     const isClustersRoutePathRendered = true; // TODO replace with the preceding after #2105 has been merged
 
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isCustomizingPlatformComponentsEnabled = isFeatureFlagEnabled(
+        'ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS'
+    );
+
     const [isEditing, setIsEditing] = useState(false);
+
+    const {
+        data: defaultRedHatLayeredProductsRule,
+        isLoading: defaultRedHatLayeredProductsRuleIsLoading,
+    } = useRestQuery(fetchDefaultRedHatLayeredProductsRule);
 
     const [systemConfig, setSystemConfig] = useState<SystemConfig | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -72,34 +82,38 @@ const SystemConfigPage = (): ReactElement => {
 
     let content: ReactNode = null;
 
-    if (isLoading) {
+    if (isLoading || defaultRedHatLayeredProductsRuleIsLoading) {
         content = (
             <Bullseye>
-                <Spinner isSVG />
+                <Spinner />
             </Bullseye>
         );
     } else if (systemConfig) {
         content = isEditing ? (
-            <PageSection variant="light">
+            <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <SystemConfigForm
-                    isDecommissionedClusterRetentionEnabled={
-                        isDecommissionedClusterRetentionEnabled
-                    }
                     systemConfig={systemConfig}
                     setSystemConfig={setSystemConfig}
                     setIsNotEditing={setIsNotEditing}
+                    isCustomizingPlatformComponentsEnabled={isCustomizingPlatformComponentsEnabled}
+                    defaultRedHatLayeredProductsRule={defaultRedHatLayeredProductsRule || ''}
                 />
             </PageSection>
         ) : (
             <SystemConfigDetails
-                isClustersRoutePathRendered={isClustersRoutePathRendered}
-                isDecommissionedClusterRetentionEnabled={isDecommissionedClusterRetentionEnabled}
                 systemConfig={systemConfig}
+                isClustersRoutePathRendered={isClustersRoutePathRendered}
+                isCustomizingPlatformComponentsEnabled={isCustomizingPlatformComponentsEnabled}
             />
         );
     } else {
         content = (
-            <Alert variant="warning" isInline title="Failed to get system configuration">
+            <Alert
+                variant="warning"
+                isInline
+                title="Failed to get system configuration"
+                component="p"
+            >
                 {errorMessage}
             </Alert>
         );
@@ -107,12 +121,12 @@ const SystemConfigPage = (): ReactElement => {
 
     return (
         <>
-            <PageSection variant="light" sticky="top">
+            <PageSection variant="light">
                 <Flex>
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <Title headingLevel="h1">System Configuration</Title>
                     </FlexItem>
-                    {hasReadWriteAccessForConfig && (
+                    {hasReadWriteAccessForAdministration && (
                         <FlexItem align={{ default: 'alignRight' }}>
                             <Button
                                 variant="primary"

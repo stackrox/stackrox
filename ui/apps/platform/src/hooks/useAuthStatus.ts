@@ -2,9 +2,9 @@ import { useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 
 import { selectors } from 'reducers';
-import { ResourceName } from 'types/roleResources';
-import { Access } from 'types/role.proto';
-import { AuthProvider } from 'services/AuthService';
+import type { ResourceName } from 'types/roleResources';
+import type { Access } from 'types/role.proto';
+import type { AuthProvider } from 'services/AuthService';
 
 type CurrentUser = {
     authProvider: AuthProvider;

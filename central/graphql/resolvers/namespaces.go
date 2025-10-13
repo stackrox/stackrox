@@ -13,9 +13,9 @@ import (
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -56,21 +56,6 @@ func init() {
 			"unusedVarSink(query: String): Int",
 			"risk: Risk",
 		}),
-		// deprecated fields
-		schema.AddExtraResolvers("Namespace", []string{
-			"vulnCount(query: String): Int! " +
-				"@deprecated(reason: \"use 'imageVulnerabilityCount'\")",
-			"vulnCounter(query: String): VulnerabilityCounter! " +
-				"@deprecated(reason: \"use 'imageVulnerabilityCounter'\")",
-			"vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability]! " +
-				"@deprecated(reason: \"use 'imageVulnerabilities'\")",
-			"componentCount(query: String): Int!" +
-				"@deprecated(reason: \"use 'imageComponentCount'\")",
-			"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!" +
-				"@deprecated(reason: \"use 'imageComponents'\")",
-			"plottedVulns(query: String): PlottedVulnerabilities!" +
-				"@deprecated(reason: \"use 'plottedImageVulnerabilities'\")",
-		}),
 		// NOTE: This will not populate numDeployments, numNetworkPolicies, or numSecrets in Namespace! Use sub-resolvers for that.
 		schema.AddQuery("namespace(id: ID!): Namespace"),
 		schema.AddQuery("namespaceByClusterIDAndName(clusterID: ID!, name: String!): Namespace"),
@@ -80,23 +65,17 @@ func init() {
 	)
 }
 
-func (resolver *namespaceResolver) getNamespaceIDRawQuery() string {
-	return search.NewQueryBuilder().
-		AddExactMatches(search.NamespaceID, resolver.data.GetMetadata().GetId()).
-		Query()
-}
-
 func (resolver *namespaceResolver) getClusterNamespaceRawQuery() string {
 	return search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
-		AddExactMatches(search.Namespace, resolver.data.Metadata.GetName()).
+		AddExactMatches(search.Namespace, resolver.data.GetMetadata().GetName()).
 		Query()
 }
 
 func (resolver *namespaceResolver) getClusterNamespaceQuery() *v1.Query {
 	return search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
-		AddExactMatches(search.Namespace, resolver.data.Metadata.GetName()).
+		AddExactMatches(search.Namespace, resolver.data.GetMetadata().GetName()).
 		ProtoQuery()
 }
 
@@ -325,30 +304,14 @@ func (resolver *namespaceResolver) K8sRoles(ctx context.Context, args PaginatedQ
 	return resolver.root.K8sRoles(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
-func (resolver *namespaceResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
+func (resolver *namespaceResolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Images")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
-
-		return resolver.root.Images(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
-	}
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.Images(resolver.namespaceScopeContext(), args)
+	return resolver.root.Images(resolver.namespaceScopeContext(ctx), args)
 }
 
 func (resolver *namespaceResolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ImageCount")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
-
-		return resolver.root.ImageCount(ctx, RawQuery{Query: &query})
-	}
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.ImageCount(resolver.namespaceScopeContext(), args)
+	return resolver.root.ImageCount(resolver.namespaceScopeContext(ctx), args)
 }
 
 func (resolver *namespaceResolver) getApplicablePolicies(ctx context.Context, q *v1.Query) ([]*storage.Policy, error) {
@@ -362,7 +325,7 @@ func (resolver *namespaceResolver) getApplicablePolicies(ctx context.Context, q 
 		return nil, err
 	}
 
-	applicable, _ := matcher.NewNamespaceMatcher(resolver.data.Metadata).FilterApplicablePolicies(policies)
+	applicable, _ := matcher.NewNamespaceMatcher(resolver.data.GetMetadata()).FilterApplicablePolicies(policies)
 	return applicable, nil
 }
 
@@ -387,7 +350,7 @@ func (resolver *namespaceResolver) PolicyCount(ctx context.Context, args RawQuer
 func (resolver *namespaceResolver) Policies(ctx context.Context, args PaginatedQuery) ([]*policyResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Policies")
 
-	if err := readPolicies(ctx); err != nil {
+	if err := readWorkflowAdministration(ctx); err != nil {
 		return nil, err
 	}
 
@@ -409,7 +372,7 @@ func (resolver *namespaceResolver) Policies(ctx context.Context, args PaginatedQ
 	for _, policyResolver := range policyResolvers {
 		policyResolver.ctx = scoped.Context(ctx, scoped.Scope{
 			Level: v1.SearchCategory_NAMESPACES,
-			ID:    resolver.data.GetMetadata().GetId(),
+			IDs:   []string{resolver.data.GetMetadata().GetId()},
 		})
 	}
 
@@ -433,7 +396,7 @@ func (resolver *namespaceResolver) FailingPolicyCounter(ctx context.Context, arg
 		return nil, err
 	}
 
-	alerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q)
+	alerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q, true)
 	if err != nil {
 		return nil, nil
 	}
@@ -460,7 +423,7 @@ func (resolver *namespaceResolver) PolicyStatus(ctx context.Context, args RawQue
 
 	scopedCtx := scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_NAMESPACES,
-		ID:    resolver.data.GetMetadata().GetId(),
+		IDs:   []string{resolver.data.GetMetadata().GetId()},
 	})
 
 	if len(alerts) == 0 {
@@ -487,11 +450,13 @@ func (resolver *namespaceResolver) PolicyStatusOnly(ctx context.Context, args Ra
 		return "", err
 	}
 
-	results, err := resolver.root.ViolationsDataStore.Search(ctx,
-		search.ConjunctionQuery(q,
-			search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
-				AddExactMatches(search.Namespace, resolver.data.GetMetadata().GetName()).
-				AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()))
+	q.Pagination = &v1.QueryPagination{
+		Limit: 1,
+	}
+	results, err := resolver.root.ViolationsDataStore.Search(ctx, search.ConjunctionQuery(q,
+		search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
+			AddExactMatches(search.Namespace, resolver.data.GetMetadata().GetName()).
+			AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()), true)
 	if err != nil {
 		return "", err
 	}
@@ -508,128 +473,55 @@ func (resolver *namespaceResolver) getActiveDeployAlerts(ctx context.Context, q 
 	}
 
 	namespace := resolver.data
+	q = search.ConjunctionQuery(q,
+		search.NewQueryBuilder().AddExactMatches(search.ClusterID, namespace.GetMetadata().GetClusterId()).
+			AddExactMatches(search.Namespace, namespace.GetMetadata().GetName()).
+			AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).
+			AddExactMatches(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery())
+	q = paginated.FillDefaultSortOption(q, paginated.GetViolationTimeSortOption())
 
-	return resolver.root.ViolationsDataStore.SearchListAlerts(ctx,
-		search.ConjunctionQuery(q,
-			search.NewQueryBuilder().AddExactMatches(search.ClusterID, namespace.GetMetadata().GetClusterId()).
-				AddExactMatches(search.Namespace, namespace.GetMetadata().GetName()).
-				AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).
-				AddExactMatches(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery()))
+	return resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q, true)
 }
 
 func (resolver *namespaceResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ImageComponents")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.ImageComponents(resolver.namespaceScopeContext(), args)
+	return resolver.root.ImageComponents(resolver.namespaceScopeContext(ctx), args)
 }
 
 func (resolver *namespaceResolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ImageComponentCount")
+	return resolver.root.ImageComponentCount(resolver.namespaceScopeContext(ctx), args)
+}
+
+func (resolver *namespaceResolver) namespaceScopeContext(ctx context.Context) context.Context {
+	if ctx == nil {
+		err := utils.ShouldErr(errors.New("argument 'ctx' is nil"))
+		if err != nil {
+			log.Error(err)
+		}
+	}
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
-	return resolver.root.ImageComponentCount(resolver.namespaceScopeContext(), args)
-}
-
-func (resolver *namespaceResolver) namespaceScopeContext() context.Context {
-	if resolver.ctx == nil {
-		log.Errorf("attempted to scope context on nil")
-		return nil
-	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_NAMESPACES,
-		ID:    resolver.data.GetMetadata().GetId(),
+		IDs:   []string{resolver.data.GetMetadata().GetId()},
 	})
-}
-
-func (resolver *namespaceResolver) Components(ctx context.Context, args PaginatedQuery) ([]ComponentResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Components")
-
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNamespaceIDRawQuery())
-
-	return resolver.root.Components(scoped.Context(ctx, scoped.Scope{
-		Level: v1.SearchCategory_NAMESPACES,
-		ID:    resolver.data.GetMetadata().GetId(),
-	}), PaginatedQuery{Query: &query, Pagination: args.Pagination})
-}
-
-func (resolver *namespaceResolver) ComponentCount(ctx context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ComponentCount")
-
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNamespaceIDRawQuery())
-
-	return resolver.root.ComponentCount(scoped.Context(ctx, scoped.Scope{
-		Level: v1.SearchCategory_NAMESPACES,
-		ID:    resolver.data.GetMetadata().GetId(),
-	}), RawQuery{Query: &query})
-}
-
-func (resolver *namespaceResolver) vulnQueryScoping(ctx context.Context) context.Context {
-	ctx = scoped.Context(ctx, scoped.Scope{
-		Level: v1.SearchCategory_NAMESPACES,
-		ID:    resolver.data.Metadata.GetId(),
-	})
-
-	return ctx
 }
 
 func (resolver *namespaceResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ImageVulnerabilities")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.ImageVulnerabilities(resolver.namespaceScopeContext(), args)
+	return resolver.root.ImageVulnerabilities(resolver.namespaceScopeContext(ctx), args)
 }
 
 func (resolver *namespaceResolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ImageVulnerabilityCount")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.ImageVulnerabilityCount(resolver.namespaceScopeContext(), args)
+	return resolver.root.ImageVulnerabilityCount(resolver.namespaceScopeContext(ctx), args)
 }
 
 func (resolver *namespaceResolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ImageVulnerabilityCounter")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.ImageVulnerabilityCounter(resolver.namespaceScopeContext(), args)
-}
-
-func (resolver *namespaceResolver) Vulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Vulns")
-
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNamespaceIDRawQuery())
-
-	return resolver.root.Vulnerabilities(scoped.Context(ctx, scoped.Scope{
-		Level: v1.SearchCategory_NAMESPACES,
-		ID:    resolver.data.GetMetadata().GetId(),
-	}), PaginatedQuery{Query: &query, Pagination: args.Pagination})
-}
-
-func (resolver *namespaceResolver) VulnCount(ctx context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "VulnCount")
-
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNamespaceIDRawQuery())
-
-	return resolver.root.VulnerabilityCount(scoped.Context(ctx, scoped.Scope{
-		Level: v1.SearchCategory_NAMESPACES,
-		ID:    resolver.data.GetMetadata().GetId(),
-	}), RawQuery{Query: &query})
-}
-
-func (resolver *namespaceResolver) VulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "VulnCounter")
-
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNamespaceIDRawQuery())
-
-	return resolver.root.VulnCounter(scoped.Context(ctx, scoped.Scope{
-		Level: v1.SearchCategory_NAMESPACES,
-		ID:    resolver.data.GetMetadata().GetId(),
-	}), RawQuery{Query: &query})
+	return resolver.root.ImageVulnerabilityCounter(resolver.namespaceScopeContext(ctx), args)
 }
 
 func (resolver *namespaceResolver) Secrets(ctx context.Context, args PaginatedQuery) ([]*secretResolver, error) {
@@ -644,33 +536,12 @@ func (resolver *namespaceResolver) Secrets(ctx context.Context, args PaginatedQu
 
 func (resolver *namespaceResolver) Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Deployments")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := readDeployments(ctx); err != nil {
-			return nil, err
-		}
-
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
-
-		return resolver.root.Deployments(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
-	}
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.Deployments(resolver.namespaceScopeContext(), args)
+	return resolver.root.Deployments(resolver.namespaceScopeContext(ctx), args)
 }
 
 func (resolver *namespaceResolver) Cluster(ctx context.Context) (*clusterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Cluster")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := readClusters(ctx); err != nil {
-			return nil, err
-		}
-		return resolver.root.wrapCluster(resolver.root.ClusterDataStore.GetCluster(ctx, resolver.data.GetMetadata().GetClusterId()))
-	}
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.Cluster(resolver.namespaceScopeContext(), struct{ graphql.ID }{graphql.ID(resolver.data.GetMetadata().GetClusterId())})
+	return resolver.root.Cluster(resolver.namespaceScopeContext(ctx), struct{ graphql.ID }{graphql.ID(resolver.data.GetMetadata().GetClusterId())})
 }
 
 func (resolver *namespaceResolver) SecretCount(ctx context.Context, args RawQuery) (int32, error) {
@@ -686,22 +557,10 @@ func (resolver *namespaceResolver) SecretCount(ctx context.Context, args RawQuer
 
 func (resolver *namespaceResolver) DeploymentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "DeploymentCount")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := readDeployments(ctx); err != nil {
-			return 0, err
-		}
-
-		query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
-
-		return resolver.root.DeploymentCount(ctx, RawQuery{Query: &query})
-	}
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.DeploymentCount(resolver.namespaceScopeContext(), args)
+	return resolver.root.DeploymentCount(resolver.namespaceScopeContext(ctx), args)
 }
 
-func (resolver *namespaceResolver) NetworkPolicyCount(ctx context.Context, args RawQuery) (int32, error) {
+func (resolver *namespaceResolver) NetworkPolicyCount(ctx context.Context, _ RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "NetworkPolicyCount")
 	if err := readNetPolicies(ctx); err != nil {
 		return 0, err
@@ -710,7 +569,7 @@ func (resolver *namespaceResolver) NetworkPolicyCount(ctx context.Context, args 
 	networkPolicyCount, err := resolver.root.NetworkPoliciesStore.CountMatchingNetworkPolicies(
 		ctx,
 		resolver.data.GetMetadata().GetClusterId(),
-		resolver.data.Metadata.GetName(),
+		resolver.data.GetMetadata().GetName(),
 	)
 	if err != nil {
 		return 0, errors.Wrap(err, "counting network policies")
@@ -721,7 +580,7 @@ func (resolver *namespaceResolver) NetworkPolicyCount(ctx context.Context, args 
 
 func (resolver *namespaceResolver) Risk(ctx context.Context) (*riskResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Risk")
-	if err := readRisks(ctx); err != nil {
+	if err := readDeploymentExtensions(ctx); err != nil {
 		return nil, err
 	}
 	return resolver.root.wrapRisk(resolver.getNamespaceRisk(ctx))
@@ -778,22 +637,10 @@ func (resolver *namespaceResolver) LatestViolation(ctx context.Context, args Raw
 	return getLatestViolationTime(ctx, resolver.root, q)
 }
 
-func (resolver *namespaceResolver) PlottedVulns(ctx context.Context, args PaginatedQuery) (*PlottedVulnerabilitiesResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "PlottedVulns")
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil, errors.New("PlottedVulns resolver is not support on postgres. Use PlottedImageVulnerabilities.")
-	}
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
-	return newPlottedVulnerabilitiesResolver(ctx, resolver.root, RawQuery{Query: &query})
-}
-
 // PlottedImageVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
 func (resolver *namespaceResolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "PlottedImageVulnerabilities")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.PlottedImageVulnerabilities(resolver.namespaceScopeContext(), args)
+	return resolver.root.PlottedImageVulnerabilities(resolver.namespaceScopeContext(ctx), args)
 }
 
 func (resolver *namespaceResolver) UnusedVarSink(_ context.Context, _ RawQuery) *int32 {

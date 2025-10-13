@@ -1,91 +1,83 @@
 syntax = "proto3";
 
-option go_package = "v1";
-option java_package = "io.stackrox.proto.api.v1";
-
-import weak "google/api/annotations.proto";
-import "api/v1/common.proto";
-import "api/v1/empty.proto";
-import "storage/external_backup.proto";
-
 package v1;
 
+import "api/v1/common.proto";
+import "api/v1/empty.proto";
+import weak "google/api/annotations.proto";
+import "storage/external_backup.proto";
+
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
+
 message GetExternalBackupsResponse {
-    repeated storage.ExternalBackup external_backups = 1;
+  repeated storage.ExternalBackup external_backups = 1;
 }
 
 message UpdateExternalBackupRequest {
-    storage.ExternalBackup external_backup = 1;
-    // When false, use the stored credentials of an existing external backup configuration given its ID.
-    bool update_password = 2;
+  storage.ExternalBackup external_backup = 1;
+  // When false, use the stored credentials of an existing external backup configuration given its ID.
+  bool update_password = 2;
 }
 
 service ExternalBackupService {
-    // GetExternalBackup returns the external backup configuration given its ID.
-    rpc GetExternalBackup (ResourceByID) returns (storage.ExternalBackup) {
-        option (google.api.http) = {
-            get: "/v1/externalbackups/{id}"
-        };
-    }
+  // GetExternalBackup returns the external backup configuration given its ID.
+  rpc GetExternalBackup(ResourceByID) returns (storage.ExternalBackup) {
+    option (google.api.http) = {get: "/v1/externalbackups/{id}"};
+  }
 
-    // GetExternalBackups returns all external backup configurations.
-    rpc GetExternalBackups (Empty) returns (GetExternalBackupsResponse) {
-        option (google.api.http) = {
-            get: "/v1/externalbackups"
-        };
-    }
+  // GetExternalBackups returns all external backup configurations.
+  rpc GetExternalBackups(Empty) returns (GetExternalBackupsResponse) {
+    option (google.api.http) = {get: "/v1/externalbackups"};
+  }
 
-    // PostExternalBackup creates an external backup configuration.
-    rpc PostExternalBackup (storage.ExternalBackup) returns (storage.ExternalBackup) {
-        option (google.api.http) = {
-            post: "/v1/externalbackups"
-            body: "*"
-        };
-    }
+  // PostExternalBackup creates an external backup configuration.
+  rpc PostExternalBackup(storage.ExternalBackup) returns (storage.ExternalBackup) {
+    option (google.api.http) = {
+      post: "/v1/externalbackups"
+      body: "*"
+    };
+  }
 
-    // PutExternalBackup modifies a given external backup, without using stored credential reconciliation.
-    rpc PutExternalBackup (storage.ExternalBackup) returns (storage.ExternalBackup) {
-        option (google.api.http) = {
-            put: "/v1/externalbackups/{id}"
-            body: "*"
-        };
-    }
+  // PutExternalBackup modifies a given external backup, without using stored credential reconciliation.
+  rpc PutExternalBackup(storage.ExternalBackup) returns (storage.ExternalBackup) {
+    option (google.api.http) = {
+      put: "/v1/externalbackups/{id}"
+      body: "*"
+    };
+  }
 
-    // TestExternalBackup tests an external backup configuration.
-    rpc TestExternalBackup (storage.ExternalBackup) returns (Empty) {
-        option (google.api.http) = {
-            post: "/v1/externalbackups/test"
-            body: "*"
-        };
-    }
+  // TestExternalBackup tests an external backup configuration.
+  rpc TestExternalBackup(storage.ExternalBackup) returns (Empty) {
+    option (google.api.http) = {
+      post: "/v1/externalbackups/test"
+      body: "*"
+    };
+  }
 
-    // DeleteExternalBackup removes an external backup configuration given its ID.
-    rpc DeleteExternalBackup (ResourceByID) returns (Empty) {
-        option (google.api.http) = {
-            delete: "/v1/externalbackups/{id}"
-        };
-    }
+  // DeleteExternalBackup removes an external backup configuration given its ID.
+  rpc DeleteExternalBackup(ResourceByID) returns (Empty) {
+    option (google.api.http) = {delete: "/v1/externalbackups/{id}"};
+  }
 
-    // TriggerExternalBackup initiates an external backup for the given configuration.
-    rpc TriggerExternalBackup (ResourceByID) returns (Empty) {
-        option (google.api.http) = {
-            post: "/v1/externalbackups/{id}"
-        };
-    }
+  // TriggerExternalBackup initiates an external backup for the given configuration.
+  rpc TriggerExternalBackup(ResourceByID) returns (Empty) {
+    option (google.api.http) = {post: "/v1/externalbackups/{id}"};
+  }
 
-    // UpdateExternalBackup modifies a given external backup, with optional stored credential reconciliation.
-    rpc UpdateExternalBackup (UpdateExternalBackupRequest) returns (storage.ExternalBackup) {
-        option (google.api.http) = {
-            patch: "/v1/externalbackups/{external_backup.id}"
-            body: "*"
-        };
-    }
+  // UpdateExternalBackup modifies a given external backup, with optional stored credential reconciliation.
+  rpc UpdateExternalBackup(UpdateExternalBackupRequest) returns (storage.ExternalBackup) {
+    option (google.api.http) = {
+      patch: "/v1/externalbackups/{external_backup.id}"
+      body: "*"
+    };
+  }
 
-    // TestUpdatedExternalBackup checks if the given external backup is correctly configured, with optional stored credential reconciliation.
-    rpc TestUpdatedExternalBackup(UpdateExternalBackupRequest) returns (Empty) {
-        option (google.api.http) = {
-            post: "/v1/externalbackups/test/updated"
-            body: "*"
-        };
-    }
+  // TestUpdatedExternalBackup checks if the given external backup is correctly configured, with optional stored credential reconciliation.
+  rpc TestUpdatedExternalBackup(UpdateExternalBackupRequest) returns (Empty) {
+    option (google.api.http) = {
+      post: "/v1/externalbackups/test/updated"
+      body: "*"
+    };
+  }
 }

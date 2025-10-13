@@ -1,10 +1,8 @@
 package search
 
 import (
-	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
 	"github.com/stackrox/rox/central/compliance/standards/index"
-	namespaceMappings "github.com/stackrox/rox/central/namespace/index/mappings"
-	nodeMappings "github.com/stackrox/rox/central/node/index/mappings"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/options/deployments"
 )
@@ -26,9 +24,9 @@ var Options = []search.FieldLabel{
 var SearchOptionsMultiMap = search.MultiMapFromMapsFiltered(
 	Options,
 	index.StandardOptions,
-	clusterMappings.OptionsMap,
-	nodeMappings.OptionsMap,
-	namespaceMappings.OptionsMap,
+	schema.ClustersSchema.OptionsMap,
+	schema.NodesSchema.OptionsMap,
+	schema.NamespacesSchema.OptionsMap,
 	index.ControlOptions,
 	deployments.OptionsMap,
 )

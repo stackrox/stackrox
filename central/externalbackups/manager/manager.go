@@ -8,13 +8,14 @@ import (
 	"github.com/stackrox/rox/central/externalbackups/plugins"
 	"github.com/stackrox/rox/central/externalbackups/plugins/types"
 	"github.com/stackrox/rox/central/externalbackups/scheduler"
-	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/systeminfo/listener"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -23,6 +24,7 @@ var (
 )
 
 // Manager implements the interface for external backups
+//
 //go:generate mockgen-wrapper
 type Manager interface {
 	Upsert(ctx context.Context, backup *storage.ExternalBackup) error
@@ -38,15 +40,15 @@ type backupInfo struct {
 }
 
 // New returns a new external backup manager
-func New(reporter integrationhealth.Reporter) Manager {
+func New(reporter integrationhealth.Reporter, backupListener listener.BackupListener) Manager {
 	return &managerImpl{
-		scheduler:            scheduler.New(reporter),
+		scheduler:            scheduler.New(reporter, backupListener),
 		idsToExternalBackups: make(map[string]*backupInfo),
 	}
 }
 
 var (
-	externalBkpSAC = sac.ForResource(resources.BackupPlugins)
+	integrationSAC = sac.ForResource(resources.Integration)
 )
 
 type managerImpl struct {
@@ -71,7 +73,7 @@ func renderExternalBackupFromProto(backup *storage.ExternalBackup) (types.Extern
 }
 
 func (m *managerImpl) Upsert(ctx context.Context, backup *storage.ExternalBackup) error {
-	if ok, err := externalBkpSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := integrationSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -98,7 +100,7 @@ func (m *managerImpl) Upsert(ctx context.Context, backup *storage.ExternalBackup
 }
 
 func (m *managerImpl) Test(ctx context.Context, backup *storage.ExternalBackup) error {
-	if ok, err := externalBkpSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := integrationSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -123,7 +125,7 @@ func (m *managerImpl) getBackup(id string) (*backupInfo, error) {
 }
 
 func (m *managerImpl) Backup(ctx context.Context, id string) error {
-	if ok, err := externalBkpSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := integrationSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
@@ -145,7 +147,7 @@ func (m *managerImpl) Backup(ctx context.Context, id string) error {
 }
 
 func (m *managerImpl) Remove(ctx context.Context, id string) {
-	if ok, err := externalBkpSAC.WriteAllowed(ctx); err != nil || !ok {
+	if ok, err := integrationSAC.WriteAllowed(ctx); err != nil || !ok {
 		return
 	}
 

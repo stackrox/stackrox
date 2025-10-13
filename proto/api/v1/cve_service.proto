@@ -1,96 +1,84 @@
 syntax = "proto3";
 
-option go_package = "v1";
-option java_package = "io.stackrox.proto.api.v1";
-
-import weak "google/api/annotations.proto";
-import "google/protobuf/duration.proto";
-import "api/v1/empty.proto";
-
 package v1;
 
+import "api/v1/empty.proto";
+import weak "google/api/annotations.proto";
+import "google/protobuf/duration.proto";
+
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
+
 message SuppressCVERequest {
-    // These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.
-    // For example, CVE-2021-44832.
-    repeated string          cves     = 1;
-    reserved 2;
-    google.protobuf.Duration duration = 3;
+  // These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.
+  // For example, CVE-2021-44832.
+  repeated string cves = 1;
+  reserved 2;
+  // In JSON format, the Duration type is encoded as a string rather than an object,
+  // where the string ends in the suffix "s" (indicating seconds) and is preceded by the number of seconds,
+  // with nanoseconds expressed as fractional seconds.
+  // For example, 3 seconds with 0 nanoseconds should be encoded in JSON format as "3s",
+  // while 3 seconds and 1 nanosecond should be expressed in JSON format as "3.000000001s",
+  // and 3 seconds and 1 microsecond should be expressed in JSON format as "3.000001s".
+  google.protobuf.Duration duration = 3;
 }
 
 message UnsuppressCVERequest {
-    // These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.
-    // For example, CVE-2021-44832.
-    repeated string cves  = 1;
-}
-
-// CVEService APIs can be used to manage cves.
-service CVEService {
-    // SuppressCVE suppresses cves.
-    rpc SuppressCVEs (SuppressCVERequest) returns (Empty) {
-        option (google.api.http) = {
-            patch: "/v1/cves/suppress"
-            body: "*"
-        };
-    }
-    // UnsuppressCVE unsuppresses cves.
-    rpc UnsuppressCVEs (UnsuppressCVERequest) returns (Empty) {
-        option (google.api.http) = {
-            patch: "/v1/cves/unsuppress"
-            body: "*"
-        };
-    }
+  // These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.
+  // For example, CVE-2021-44832.
+  repeated string cves = 1;
 }
 
 // ImageCVEService APIs can be used to manage image cves.
 service ImageCVEService {
-    // SuppressCVE suppresses image cves.
-    rpc SuppressCVEs (SuppressCVERequest) returns (Empty) {
-        option (google.api.http) = {
-            patch: "/v1/imagecves/suppress"
-            body: "*"
-        };
-    }
-    // UnsuppressCVE unsuppresses image cves.
-    rpc UnsuppressCVEs (UnsuppressCVERequest) returns (Empty) {
-        option (google.api.http) = {
-            patch: "/v1/imagecves/unsuppress"
-            body: "*"
-        };
-    }
+  // SuppressCVE suppresses image cves.
+  rpc SuppressCVEs(SuppressCVERequest) returns (Empty) {
+    option (google.api.http) = {
+      patch: "/v1/imagecves/suppress"
+      body: "*"
+    };
+  }
+  // UnsuppressCVE unsuppresses image cves.
+  rpc UnsuppressCVEs(UnsuppressCVERequest) returns (Empty) {
+    option (google.api.http) = {
+      patch: "/v1/imagecves/unsuppress"
+      body: "*"
+    };
+  }
 }
 
 // NodeCVEService APIs can be used to manage node cves.
 service NodeCVEService {
-    // SuppressCVE suppresses node cves.
-    rpc SuppressCVEs (SuppressCVERequest) returns (Empty) {
-        option (google.api.http) = {
-            patch: "/v1/nodecves/suppress"
-            body: "*"
-        };
-    }
-    // UnsuppressCVE unsuppresses node cves.
-    rpc UnsuppressCVEs (UnsuppressCVERequest) returns (Empty) {
-        option (google.api.http) = {
-            patch: "/v1/nodecves/unsuppress"
-            body: "*"
-        };
-    }
+  // SuppressCVE suppresses node cves.
+  rpc SuppressCVEs(SuppressCVERequest) returns (Empty) {
+    option (google.api.http) = {
+      patch: "/v1/nodecves/suppress"
+      body: "*"
+    };
+  }
+  // UnsuppressCVE unsuppresses node cves.
+  rpc UnsuppressCVEs(UnsuppressCVERequest) returns (Empty) {
+    option (google.api.http) = {
+      patch: "/v1/nodecves/unsuppress"
+      body: "*"
+    };
+  }
 }
 
 // ClusterCVEService APIs can be used to manage cluster cves.
 service ClusterCVEService {
-    // SuppressCVE suppresses cluster cves.
-    rpc SuppressCVEs (SuppressCVERequest) returns (Empty) {
-        option (google.api.http) = {
-            patch: "/v1/clustercves/suppress"
-            body: "*"
-        };
-    }
-    // UnsuppressCVE unsuppresses cluster cves.
-    rpc UnsuppressCVEs (UnsuppressCVERequest) returns (Empty) {
-        option (google.api.http) = {
-            patch: "/v1/clustercves/unsuppress"
-            body: "*"
-        };
-    }
+  // SuppressCVE suppresses cluster cves.
+  rpc SuppressCVEs(SuppressCVERequest) returns (Empty) {
+    option (google.api.http) = {
+      patch: "/v1/clustercves/suppress"
+      body: "*"
+    };
+  }
+  // UnsuppressCVE unsuppresses cluster cves.
+  rpc UnsuppressCVEs(UnsuppressCVERequest) returns (Empty) {
+    option (google.api.http) = {
+      patch: "/v1/clustercves/unsuppress"
+      body: "*"
+    };
+  }
 }

@@ -4,19 +4,17 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/networkbaseline/store"
-	"github.com/stackrox/rox/central/networkbaseline/store/postgres"
-	"github.com/stackrox/rox/central/networkbaseline/store/rocksdb"
-	"github.com/stackrox/rox/central/role/resources"
+	pgStore "github.com/stackrox/rox/central/networkbaseline/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
-	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 var (
-	networkBaselineSAC = sac.ForResource(resources.NetworkBaseline)
+	deploymentExtensionSAC = sac.ForResource(resources.DeploymentExtension)
 )
 
 type dataStoreImpl struct {
@@ -32,14 +30,8 @@ func newNetworkBaselineDataStore(storage store.Store) DataStore {
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool *pgxpool.Pool) (DataStore, error) {
-	dbstore := postgres.New(pool)
-	return newNetworkBaselineDataStore(dbstore), nil
-}
-
-// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveDataStore(_ *testing.T, rocksengine *rocksdbBase.RocksDB) (DataStore, error) {
-	dbstore := rocksdb.New(rocksengine)
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error) {
+	dbstore := pgStore.New(pool)
 	return newNetworkBaselineDataStore(dbstore), nil
 }
 
@@ -119,8 +111,8 @@ func (ds *dataStoreImpl) validateClusterAndNamespaceAgainstExistingBaseline(
 		existingBaseline.GetNamespace() != baseline.GetNamespace() {
 		return true, errors.Errorf(
 			"cluster ID %s and namespace %s do not match with existing network baseline",
-			baseline.ClusterId,
-			baseline.Namespace)
+			baseline.GetClusterId(),
+			baseline.GetNamespace())
 	}
 	return true, nil
 }
@@ -134,7 +126,7 @@ func (ds *dataStoreImpl) DeleteNetworkBaselines(ctx context.Context, deploymentI
 	elevatedCheckForDeleteCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.NetworkBaseline),
+			sac.ResourceScopeKeys(resources.DeploymentExtension),
 		))
 	for _, id := range deploymentIDs {
 		baseline, found, err := ds.storage.Get(elevatedCheckForDeleteCtx, id)
@@ -170,16 +162,15 @@ func (ds *dataStoreImpl) allowed(
 	access storage.Access,
 	baseline *storage.NetworkBaseline,
 ) (bool, error) {
-	return networkBaselineSAC.ScopeChecker(ctx, access).ForNamespaceScopedObject(baseline).IsAllowed(), nil
+	return deploymentExtensionSAC.ScopeChecker(ctx, access).ForNamespaceScopedObject(baseline).IsAllowed(), nil
 }
 
 func (ds *dataStoreImpl) Walk(ctx context.Context, f func(baseline *storage.NetworkBaseline) error) error {
-	if ok, err := networkBaselineSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := deploymentExtensionSAC.ReadAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return nil
 	}
-
+	// Postgres retry in caller.
 	return ds.storage.Walk(ctx, f)
-
 }

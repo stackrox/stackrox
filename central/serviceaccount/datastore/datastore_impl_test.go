@@ -1,27 +1,23 @@
+//go:build sql_integration
+
 package datastore
 
 import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/serviceaccount/internal/index"
 	"github.com/stackrox/rox/central/serviceaccount/internal/store"
-	"github.com/stackrox/rox/central/serviceaccount/internal/store/postgres"
-	"github.com/stackrox/rox/central/serviceaccount/internal/store/rocksdb"
-	serviceAccountSearch "github.com/stackrox/rox/central/serviceaccount/search"
+	pgStore "github.com/stackrox/rox/central/serviceaccount/internal/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	rocksdbHelper "github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -32,12 +28,7 @@ func TestServiceAccountDataStore(t *testing.T) {
 type ServiceAccountDataStoreTestSuite struct {
 	suite.Suite
 
-	pool       *pgxpool.Pool
-	db         *rocksdbHelper.RocksDB
-	bleveIndex bleve.Index
-
-	indexer   index.Indexer
-	searcher  serviceAccountSearch.Searcher
+	pool      postgres.DB
 	storage   store.Store
 	datastore DataStore
 
@@ -45,27 +36,11 @@ type ServiceAccountDataStoreTestSuite struct {
 }
 
 func (suite *ServiceAccountDataStoreTestSuite) SetupSuite() {
-	var err error
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pgtestbase := pgtest.ForT(suite.T())
-		suite.Require().NotNil(pgtestbase)
-		suite.pool = pgtestbase.Pool
-		suite.storage = postgres.New(suite.pool)
-		suite.indexer = postgres.NewIndexer(suite.pool)
-	} else {
-		suite.bleveIndex, err = globalindex.TempInitializeIndices("")
-		suite.Require().NoError(err)
-
-		suite.db, err = rocksdbHelper.NewTemp(suite.T().Name())
-		suite.Require().NoError(err)
-
-		suite.storage = rocksdb.New(suite.db)
-		suite.Require().NoError(err)
-		suite.indexer = index.New(suite.bleveIndex)
-	}
-	suite.searcher = serviceAccountSearch.New(suite.storage, suite.indexer)
-	suite.datastore, err = New(suite.storage, suite.indexer, suite.searcher)
-	suite.Require().NoError(err)
+	pgtestbase := pgtest.ForT(suite.T())
+	suite.Require().NotNil(pgtestbase)
+	suite.pool = pgtestbase.DB
+	suite.storage = pgStore.New(suite.pool)
+	suite.datastore = New(suite.storage)
 
 	suite.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
@@ -74,12 +49,7 @@ func (suite *ServiceAccountDataStoreTestSuite) SetupSuite() {
 }
 
 func (suite *ServiceAccountDataStoreTestSuite) TearDownSuite() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.pool.Close()
-	} else {
-		rocksdbtest.TearDownRocksDB(suite.db)
-		suite.NoError(suite.bleveIndex.Close())
-	}
+	suite.pool.Close()
 }
 
 func (suite *ServiceAccountDataStoreTestSuite) assertSearchResults(q *v1.Query, s *storage.ServiceAccount) {
@@ -101,16 +71,17 @@ func (suite *ServiceAccountDataStoreTestSuite) TestServiceAccountsDataStore() {
 	foundSA, found, err := suite.datastore.GetServiceAccount(suite.ctx, sa.GetId())
 	suite.Require().NoError(err)
 	suite.True(found)
-	suite.Equal(sa, foundSA)
+	protoassert.Equal(suite.T(), sa, foundSA)
 
-	_, found, err = suite.datastore.GetServiceAccount(suite.ctx, "NONEXISTENT")
+	nonexistentID := uuid.Nil.String()
+	_, found, err = suite.datastore.GetServiceAccount(suite.ctx, nonexistentID)
 	suite.Require().NoError(err)
 	suite.False(found)
 
 	validQ := search.NewQueryBuilder().AddStrings(search.Cluster, sa.GetClusterName()).ProtoQuery()
 	suite.assertSearchResults(validQ, sa)
 
-	invalidQ := search.NewQueryBuilder().AddStrings(search.Cluster, "NONEXISTENT").ProtoQuery()
+	invalidQ := search.NewQueryBuilder().AddStrings(search.Cluster, nonexistentID).ProtoQuery()
 	suite.assertSearchResults(invalidQ, nil)
 
 	err = suite.datastore.RemoveServiceAccount(suite.ctx, sa.GetId())

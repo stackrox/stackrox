@@ -8,6 +8,7 @@ function setup() {
     unset REPO_OWNER
     unset REPO_NAME
     unset CLONEREFS_OPTIONS
+    unset GITHUB_ACTION
     source "${BATS_TEST_DIRNAME}/../lib.sh"
 }
 

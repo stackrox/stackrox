@@ -1,68 +1,147 @@
-import * as api from '../constants/apiEndpoints';
-import { url } from '../constants/DashboardPage';
 import navSelectors from '../selectors/navigation';
+import pf6 from '../selectors/pf6';
 
-import { interactAndWaitForResponses } from './request';
-import { visit } from './visit';
+import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from './request';
+import { visit, visitConsole, visitWithStaticResponseForPermissions } from './visit';
 
 /*
  * Import relevant alias constants in test files that call visitMainDashboard function
  * with staticResponseMap argument to provide mock data for a widget.
  */
-export const mostRecentAlertsAlias = 'mostRecentAlerts';
-export const getImagesAlias = 'getImages';
-export const deploymentswithprocessinfoAlias = 'deploymentswithprocessinfo';
-export const agingImagesQueryAlias = 'agingImagesQuery';
-export const alertsSummaryCountsAlias = 'alerts/summary/counts';
-export const getAggregatedResultsAlias = 'getAggregatedResults';
+export const summaryCountsOpname = 'summary_counts';
+export const getAllNamespacesByClusterOpname = 'getAllNamespacesByCluster';
+export const alertCountsBySeverityOpname = 'alertCountsBySeverity';
+export const mostRecentAlertsOpname = 'mostRecentAlerts';
+export const getImagesAtMostRiskOpname = 'getImagesAtMostRisk';
+export const deploymentsWithProcessInfoAlias = 'deploymentswithprocessinfo';
+export const agingImagesQueryOpname = 'agingImagesQuery';
+export const alertsSummaryCountsGroupByCategoryAlias = 'alerts/summary/counts_CATEGORY';
+export const getAggregatedResultsOpname = 'getAggregatedResults';
 
-const requestConfig = {
-    routeMatcherMap: {
-        // ViolationsByPolicySeverity
-        [mostRecentAlertsAlias]: {
-            method: 'POST',
-            url: api.graphql('mostRecentAlerts'),
-        },
-        // ImagesAtMostRisk
-        [getImagesAlias]: {
-            method: 'POST',
-            url: api.graphql('getImages'),
-        },
-        // DeploymentsAtMostRisk
-        [deploymentswithprocessinfoAlias]: {
-            method: 'GET',
-            url: api.risks.riskyDeployments,
-        },
-        // AgingImages
-        [agingImagesQueryAlias]: {
-            method: 'POST',
-            url: api.graphql('agingImagesQuery'),
-        },
-        // ViolationsByPolicySeverity ViolationsByPolicyCategory
-        [alertsSummaryCountsAlias]: {
-            method: 'GET',
-            url: api.alerts.countsByCategory,
-        },
-        // ComplianceLevelsByStandard
-        [getAggregatedResultsAlias]: {
-            method: 'POST',
-            url: api.graphql('getAggregatedResults'),
-        },
+export const routeMatcherMapForSummaryCounts = getRouteMatcherMapForGraphQL([summaryCountsOpname]);
+const routeMatcherMapForSearchFilter = getRouteMatcherMapForGraphQL([
+    getAllNamespacesByClusterOpname,
+]);
+const routeMatcherMapForViolationsByPolicySeverity = {
+    ...getRouteMatcherMapForGraphQL([alertCountsBySeverityOpname]),
+    ...getRouteMatcherMapForGraphQL([mostRecentAlertsOpname]),
+};
+const routeMatcherMapForImagesAtMostRisk = getRouteMatcherMapForGraphQL([
+    getImagesAtMostRiskOpname,
+]);
+const routeMatcherMapForDeploymentsAtMostRisk = {
+    [deploymentsWithProcessInfoAlias]: {
+        method: 'GET',
+        url: '/v1/deploymentswithprocessinfo?*',
     },
 };
+const routeMatcherMapForAgingImages = getRouteMatcherMapForGraphQL([agingImagesQueryOpname]);
+const routeMatcherMapForViolationsByPolicyCategory = {
+    [alertsSummaryCountsGroupByCategoryAlias]: {
+        method: 'GET',
+        url: '/v1/alerts/summary/counts?request.query=&group_by=CATEGORY',
+    },
+};
+const routeMatcherMapForComplianceLevelsByStandard = getRouteMatcherMapForGraphQL([
+    getAggregatedResultsOpname,
+]);
+
+const routeMatcherMap = {
+    ...routeMatcherMapForSummaryCounts,
+    ...routeMatcherMapForSearchFilter,
+    ...routeMatcherMapForViolationsByPolicySeverity,
+    ...routeMatcherMapForImagesAtMostRisk,
+    ...routeMatcherMapForDeploymentsAtMostRisk,
+    ...routeMatcherMapForAgingImages,
+    ...routeMatcherMapForViolationsByPolicyCategory,
+    ...routeMatcherMapForComplianceLevelsByStandard,
+};
+
+const routeMatcherMapForConsole = undefined;
+
+const basePath = '/main/dashboard';
+
+const title = 'Dashboard';
 
 // visit helpers
 
 export function visitMainDashboardFromLeftNav() {
     interactAndWaitForResponses(() => {
-        cy.get(`${navSelectors.navLinks}:contains("Dashboard")`).click();
-    }, requestConfig);
+        cy.get(`${navSelectors.navLinks}:contains("${title}")`).click();
+    }, routeMatcherMap);
 
-    cy.get('h1:contains("Dashboard")');
+    cy.location('pathname').should('eq', basePath);
+    cy.get(`h1:contains("${title}")`);
 }
 
+/**
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
 export function visitMainDashboard(staticResponseMap) {
-    visit(url, requestConfig, staticResponseMap);
+    visit(basePath, routeMatcherMap, staticResponseMap);
 
-    cy.get('h1:contains("Dashboard")');
+    cy.get(`.pf-v5-c-nav__link.pf-m-current:contains("${title}")`);
+    cy.get(`h1:contains("${title}")`);
+}
+
+/**
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
+export function visitConsoleMainDashboard(staticResponseMap) {
+    visitConsole('/dashboards', routeMatcherMapForConsole, staticResponseMap);
+    cy.get(`${pf6.navExpandable} button:contains("Home")`).click();
+    cy.get(`${pf6.navExpandable} ${pf6.navItem} a.pf-m-current:contains("Overview")`);
+    cy.get(`h1:contains("Overview")`);
+}
+
+/**
+ * Visit main dashboard to test conditional rendering for user role permissions specified as response or fixture.
+ * Conditional rendering for permissions might make a subset of requests.
+ *
+ * { body: { resourceToAccess: { … } } }
+ * { fixture: 'fixtures/wherever/whatever.json' }
+ *
+ * @param {{ body: { resourceToAccess: Record<string, string> } } | { fixture: string }} staticResponseForPermissions
+ * @param {Record<string, { method: string, url: string }>} [routeMatcherMapForSubsetOfRequests]
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMapForSubsetOfRequests]
+ */
+export function visitMainDashboardWithStaticResponseForPermissions(
+    staticResponseForPermissions,
+    routeMatcherMapForSubsetOfRequests,
+    staticResponseMapForSubsetOfRequests
+) {
+    visitWithStaticResponseForPermissions(
+        basePath,
+        staticResponseForPermissions,
+        routeMatcherMapForSubsetOfRequests,
+        staticResponseMapForSubsetOfRequests
+    );
+
+    cy.get(`h1:contains("${title}")`);
+}
+
+/**
+ * @param {{data: Record<string, number>}} staticResponseForClustersForPermissions
+ */
+export function visitMainDashboardWithStaticResponseForClustersForPermission(
+    staticResponseForClustersForPermissions
+) {
+    // Omit requests for widgets because Dashboard redirects to Clusters page.
+    const clustersForPermissionsAlias = 'sac/clusters';
+    const routeMatcherMapForClustersForPermissions = {
+        [clustersForPermissionsAlias]: {
+            method: 'GET',
+            url: '/v1/sac/clusters?',
+        },
+    };
+    const staticResponseMapForClustersForPermissions = {
+        [clustersForPermissionsAlias]: staticResponseForClustersForPermissions,
+    };
+    visit(
+        basePath,
+        routeMatcherMapForClustersForPermissions,
+        staticResponseMapForClustersForPermissions
+    );
+
+    // Omit assertion for Dashboard heading.
 }

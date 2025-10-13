@@ -4,14 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/notifier/datastore"
-	"github.com/stackrox/rox/central/notifier/processor"
-	"github.com/stackrox/rox/central/notifiers"
+	"github.com/stackrox/rox/central/notifier/policycleaner"
 	"github.com/stackrox/rox/central/notifiers/splunk"
-	"github.com/stackrox/rox/central/role/resources"
+	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
+	"github.com/stackrox/rox/central/notifiers/validation"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -23,6 +22,9 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/notifier"
+	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/secrets"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -31,32 +33,33 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.Notifier)): {
-			"/v1.NotifierService/GetNotifier",
-			"/v1.NotifierService/GetNotifiers",
+		user.With(permissions.View(resources.Integration)): {
+			v1.NotifierService_GetNotifier_FullMethodName,
+			v1.NotifierService_GetNotifiers_FullMethodName,
 		},
-		user.With(permissions.Modify(resources.Notifier)): {
-			"/v1.NotifierService/PutNotifier",
-			"/v1.NotifierService/PostNotifier",
-			"/v1.NotifierService/TestNotifier",
-			"/v1.NotifierService/DeleteNotifier",
-			"/v1.NotifierService/TestUpdatedNotifier",
-			"/v1.NotifierService/UpdateNotifier",
+		user.With(permissions.Modify(resources.Integration)): {
+			v1.NotifierService_PutNotifier_FullMethodName,
+			v1.NotifierService_PostNotifier_FullMethodName,
+			v1.NotifierService_TestNotifier_FullMethodName,
+			v1.NotifierService_DeleteNotifier_FullMethodName,
+			v1.NotifierService_TestUpdatedNotifier_FullMethodName,
+			v1.NotifierService_UpdateNotifier_FullMethodName,
 		},
 	})
 )
+
+const errSecureNotifierString = "Error securing notifier"
 
 // ClusterService is the struct that manages the cluster API
 type serviceImpl struct {
 	v1.UnimplementedNotifierServiceServer
 
 	storage   datastore.DataStore
-	processor processor.Processor
+	processor notifier.Processor
 	reporter  integrationhealth.Reporter
+	cryptoKey string
 
-	buildTimePolicies  detection.PolicySet
-	deployTimePolicies detection.PolicySet
-	runTimePolicies    detection.PolicySet
+	policyCleaner policycleaner.PolicyCleaner
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -92,7 +95,11 @@ func (s *serviceImpl) GetNotifier(ctx context.Context, request *v1.ResourceByID)
 
 // GetNotifiers retrieves all notifiers that match the request filters
 func (s *serviceImpl) GetNotifiers(ctx context.Context, _ *v1.GetNotifiersRequest) (*v1.GetNotifiersResponse, error) {
-	scrubbedNotifiers, err := s.storage.GetScrubbedNotifiers(ctx)
+	var scrubbedNotifiers []*storage.Notifier
+	err := s.storage.ForEachScrubbedNotifier(ctx, func(n *storage.Notifier) error {
+		scrubbedNotifiers = append(scrubbedNotifiers, n)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +121,7 @@ func validateNotifier(notifier *storage.Notifier) error {
 	if notifier.GetUiEndpoint() == "" {
 		errorList.AddString("notifier UI endpoint must be defined")
 	}
-	if err := endpoints.ValidateEndpoints(notifier.Config); err != nil {
+	if err := endpoints.ValidateEndpoints(notifier.GetConfig()); err != nil {
 		errorList.AddWrap(err, "invalid endpoint")
 	}
 	return errorList.ToError()
@@ -133,11 +140,22 @@ func (s *serviceImpl) UpdateNotifier(ctx context.Context, request *v1.UpdateNoti
 	if err := s.reconcileUpdateNotifierRequest(ctx, request); err != nil {
 		return nil, err
 	}
-	notifierCreator, ok := notifiers.Registry[request.GetNotifier().GetType()]
+	notifierCreator, ok := pkgNotifiers.Registry[request.GetNotifier().GetType()]
 	if !ok {
 		return nil, errors.Wrapf(errox.InvalidArgs, "notifier type %v is not a valid notifier type", request.GetNotifier().GetType())
 	}
 	upgradeNotifierConfig(request.GetNotifier())
+	if err := validation.ValidateNotifierConfig(request.GetNotifier(), request.GetUpdatePassword()); err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+	if request.GetUpdatePassword() {
+		err := notifierUtils.SecureNotifier(request.GetNotifier(), s.cryptoKey)
+		if err != nil {
+			// Don't send out error from crypto lib but log it.
+			log.Errorf("%s: %s", errSecureNotifierString, err.Error())
+			return nil, errors.New(errSecureNotifierString)
+		}
+	}
 	notifier, err := notifierCreator(request.GetNotifier())
 	if err != nil {
 		return nil, err
@@ -158,7 +176,16 @@ func (s *serviceImpl) PostNotifier(ctx context.Context, request *storage.Notifie
 		return nil, errors.Wrap(errox.InvalidArgs, "id field should be empty when posting a new notifier")
 	}
 	upgradeNotifierConfig(request)
-	notifier, err := notifiers.CreateNotifier(request)
+	if err := validation.ValidateNotifierConfig(request, true); err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+	err := notifierUtils.SecureNotifier(request, s.cryptoKey)
+	if err != nil {
+		// Don't send out error from crypto lib but log it.
+		log.Errorf("%s: %s", errSecureNotifierString, err.Error())
+		return nil, errors.New(errSecureNotifierString)
+	}
+	notifier, err := pkgNotifiers.CreateNotifier(request)
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
@@ -169,7 +196,7 @@ func (s *serviceImpl) PostNotifier(ctx context.Context, request *storage.Notifie
 	request.Id = id
 	s.processor.UpdateNotifier(ctx, notifier)
 
-	if err = s.reporter.Register(request.Id, request.Name, storage.IntegrationHealth_NOTIFIER); err != nil {
+	if err = s.reporter.Register(request.GetId(), request.GetName(), storage.IntegrationHealth_NOTIFIER); err != nil {
 		return nil, err
 	}
 	return request, nil
@@ -185,10 +212,21 @@ func (s *serviceImpl) TestUpdatedNotifier(ctx context.Context, request *v1.Updat
 	if err := validateNotifier(request.GetNotifier()); err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
+	if err := validation.ValidateNotifierConfig(request.GetNotifier(), request.GetUpdatePassword()); err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
 	if err := s.reconcileUpdateNotifierRequest(ctx, request); err != nil {
 		return nil, err
 	}
-	notifier, err := notifiers.CreateNotifier(request.GetNotifier())
+	if request.GetUpdatePassword() {
+		err := notifierUtils.SecureNotifier(request.GetNotifier(), s.cryptoKey)
+		if err != nil {
+			// Don't send out error from crypto lib but log it.
+			log.Errorf("%s: %s", errSecureNotifierString, err.Error())
+			return nil, errors.New(errSecureNotifierString)
+		}
+	}
+	notifier, err := pkgNotifiers.CreateNotifier(request.GetNotifier())
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
@@ -199,6 +237,8 @@ func (s *serviceImpl) TestUpdatedNotifier(ctx context.Context, request *v1.Updat
 	}()
 
 	if err := notifier.Test(ctx); err != nil {
+		log.Warnf("test notifier %q of type %q failed: %s: %v", request.GetNotifier().GetId(), request.GetNotifier().GetType(), err.Error(), err.Unwrap())
+
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	return &v1.Empty{}, nil
@@ -215,7 +255,7 @@ func (s *serviceImpl) DeleteNotifier(ctx context.Context, request *v1.DeleteNoti
 		return nil, err
 	}
 
-	err = s.deleteNotifiersFromPolicies(n.GetId())
+	err = s.policyCleaner.DeleteNotifierFromPolicies(n.GetId())
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("notifier is still in use by policies. Error: %s", err))
@@ -230,26 +270,6 @@ func (s *serviceImpl) DeleteNotifier(ctx context.Context, request *v1.DeleteNoti
 		return nil, err
 	}
 	return &v1.Empty{}, nil
-}
-
-func (s *serviceImpl) deleteNotifiersFromPolicies(notifierID string) error {
-
-	err := s.buildTimePolicies.RemoveNotifier(notifierID)
-	if err != nil {
-		return err
-	}
-
-	err = s.deployTimePolicies.RemoveNotifier(notifierID)
-	if err != nil {
-		return err
-	}
-
-	err = s.runTimePolicies.RemoveNotifier(notifierID)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (s *serviceImpl) reconcileUpdateNotifierRequest(ctx context.Context, updateRequest *v1.UpdateNotifierRequest) error {

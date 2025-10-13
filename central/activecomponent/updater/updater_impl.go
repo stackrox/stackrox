@@ -10,10 +10,11 @@ import (
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageStore "github.com/stackrox/rox/central/image/datastore"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/simplecache"
@@ -25,7 +26,7 @@ var (
 
 	updaterCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Deployment, resources.Image, resources.Indicator)))
+			sac.ResourceScopeKeys(resources.Deployment, resources.Image, resources.DeploymentExtension)))
 )
 
 type updaterImpl struct {
@@ -51,7 +52,10 @@ func clearExecutables(image *storage.Image) {
 
 // PopulateExecutableCache extracts executables from image scan and stores them in the executable cache.
 // Image executables are cleared on successful return.
-func (u *updaterImpl) PopulateExecutableCache(ctx context.Context, image *storage.Image) error {
+func (u *updaterImpl) PopulateExecutableCache(_ context.Context, image *storage.Image) error {
+	if !features.ActiveVulnMgmt.Enabled() {
+		return nil
+	}
 	imageID := image.GetId()
 	scan := image.GetScan()
 	if imageID == "" || scan == nil {
@@ -97,6 +101,9 @@ func (u *updaterImpl) getExecToComponentsMap(imageScan *storage.ImageScan) map[s
 
 // Update detects active components with most recent process run.
 func (u *updaterImpl) Update() {
+	if !features.ActiveVulnMgmt.Enabled() {
+		return
+	}
 	ctx := sac.WithAllAccess(context.Background())
 	ids, err := u.deploymentStore.GetDeploymentIDs(ctx)
 	if err != nil {
@@ -244,7 +251,7 @@ func merge(base *storage.ActiveComponent, subtrahend set.StringSet, addend map[s
 
 	contexts := make(map[string]*storage.ActiveComponent_ActiveContext)
 	for _, activeContext := range base.GetActiveContextsSlice() {
-		contexts[activeContext.ContainerName] = activeContext
+		contexts[activeContext.GetContainerName()] = activeContext
 	}
 
 	var changed bool
@@ -256,7 +263,7 @@ func merge(base *storage.ActiveComponent, subtrahend set.StringSet, addend map[s
 	}
 
 	for containerName, activeContext := range addend {
-		if baseContext, ok := contexts[containerName]; !ok || baseContext.ImageId != activeContext.ImageId {
+		if baseContext, ok := contexts[containerName]; !ok || baseContext.GetImageId() != activeContext.GetImageId() {
 			contexts[containerName] = activeContext
 			changed = true
 		}

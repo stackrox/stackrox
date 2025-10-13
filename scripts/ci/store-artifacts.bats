@@ -64,20 +64,14 @@ function setup() {
 
 make_env() {
     source "${BATS_TEST_DIRNAME}/lib.sh"
-    if ! is_CI; then
-        CI=true
-        OPENSHIFT_CI=true
-        GCLOUD_SERVICE_ACCOUNT_OPENSHIFT_CI_ROX=dummy
-        REPO_NAME="stackrox"
-        BUILD_ID="theBuildId"
-        JOB_NAME="job-name"
-        PULL_PULL_SHA="12345"
-    fi
-    if is_OPENSHIFT_CI; then
-        GS_URL="gs://roxci-artifacts/${REPO_NAME}/${PULL_PULL_SHA:-${PULL_BASE_SHA}}/${BUILD_ID}-${JOB_NAME}"
-    elif is_CIRCLECI; then
-        GS_URL="gs://roxci-artifacts/${CIRCLE_PROJECT_REPONAME}/${CIRCLE_WORKFLOW_ID}/${CIRCLE_BUILD_NUM}-${CIRCLE_JOB}"
-    fi
+    CI=true
+    OPENSHIFT_CI=true
+    GCP_SERVICE_ACCOUNT_STACKROX_CI=dummy
+    REPO_NAME="stackrox"
+    BUILD_ID="theBuildId"
+    JOB_NAME="job-name"
+    PULL_PULL_SHA="12345"
+    GS_URL="gs://stackrox-ci-artifacts/${REPO_NAME}/${PULL_PULL_SHA:-${PULL_BASE_SHA}}/${BUILD_ID}-${JOB_NAME}"
     PATH="$BATS_RUN_TMPDIR:$PATH"
     TEST_OUTPUT=1
 }

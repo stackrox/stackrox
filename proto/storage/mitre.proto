@@ -1,38 +1,38 @@
 syntax = "proto3";
 
-option go_package = "storage";
-option java_package = "io.stackrox.proto.storage";
-
 package storage;
 
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
 message MitreTactic {
-    string id          = 1;
-    string name        = 2;
-    string description = 3;
+  string id = 1;
+  string name = 2;
+  string description = 3;
 }
 
 message MitreTechnique {
-    string id          = 1;
-    string name        = 2;
-    string description = 3;
+  string id = 1;
+  string name = 2;
+  string description = 3;
 }
 
 message MitreAttackVector {
-    MitreTactic             tactic     = 1;
-    repeated MitreTechnique techniques = 2;
+  MitreTactic tactic = 1;
+  repeated MitreTechnique techniques = 2;
 }
 
 message MitreAttackMatrix {
-    message MatrixInfo {
-        string domain   = 1;
-        string platform = 2;
-    }
+  message MatrixInfo {
+    string domain = 1;
+    string platform = 2;
+  }
 
-    MatrixInfo                 matrix_info = 1;
-    repeated MitreAttackVector vectors     = 2;
+  MatrixInfo matrix_info = 1;
+  repeated MitreAttackVector vectors = 2;
 }
 
 message MitreAttackBundle {
-    string                     version  = 1;
-    repeated MitreAttackMatrix matrices = 2;
+  string version = 1;
+  repeated MitreAttackMatrix matrices = 2;
 }

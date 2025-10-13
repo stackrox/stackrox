@@ -1,10 +1,9 @@
-/* eslint-disable no-nested-ternary */
-import React, { ReactElement, useEffect, useState } from 'react';
-import { useHistory, useLocation, useParams } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom-v5-compat';
 import {
     Alert,
     AlertActionCloseButton,
-    AlertVariant,
     Bullseye,
     Button,
     PageSection,
@@ -13,10 +12,8 @@ import {
 } from '@patternfly/react-core';
 
 import NotFoundMessage from 'Components/NotFoundMessage';
-import { getIsDefaultRoleName } from 'constants/accessControl';
+import usePermissions from 'hooks/usePermissions';
 import {
-    PermissionSet,
-    Role,
     createPermissionSet,
     deletePermissionSet,
     fetchPermissionSets,
@@ -24,6 +21,8 @@ import {
     fetchRolesAsArray,
     updatePermissionSet,
 } from 'services/RolesService';
+import type { PermissionSet, Role } from 'services/RolesService';
+import { isUserResource } from 'utils/traits.utils';
 
 import AccessControlDescription from '../AccessControlDescription';
 import AccessControlPageTitle from '../AccessControlPageTitle';
@@ -39,7 +38,9 @@ import AccessControlHeading from '../AccessControlHeading';
 const entityType = 'PERMISSION_SET';
 
 function PermissionSets(): ReactElement {
-    const history = useHistory();
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForPage = hasReadWriteAccess('Access');
+    const navigate = useNavigate();
     const { search } = useLocation();
     const queryObject = getQueryObject(search);
     const { action } = queryObject;
@@ -68,7 +69,8 @@ function PermissionSets(): ReactElement {
                 setAlertPermissionSets(
                     <Alert
                         title="Fetch permission sets failed"
-                        variant={AlertVariant.danger}
+                        component="p"
+                        variant="danger"
                         isInline
                     >
                         {error.message}
@@ -92,7 +94,8 @@ function PermissionSets(): ReactElement {
                 setAlertRoles(
                     <Alert
                         title="Fetch resources failed"
-                        variant={AlertVariant.warning}
+                        component="p"
+                        variant="warning"
                         isInline
                         actionClose={actionClose}
                     >
@@ -115,7 +118,8 @@ function PermissionSets(): ReactElement {
                 setAlertRoles(
                     <Alert
                         title="Fetch roles failed"
-                        variant={AlertVariant.warning}
+                        component="p"
+                        variant="warning"
                         isInline
                         actionClose={actionClose}
                     >
@@ -129,7 +133,7 @@ function PermissionSets(): ReactElement {
     }, []);
 
     function handleCreate() {
-        history.push(getEntityPath(entityType, undefined, { action: 'create' }));
+        navigate(getEntityPath(entityType, undefined, { action: 'create' }));
     }
 
     function handleDelete(idDelete: string) {
@@ -140,12 +144,12 @@ function PermissionSets(): ReactElement {
     }
 
     function handleEdit() {
-        history.push(getEntityPath(entityType, entityId, { action: 'edit' }));
+        navigate(getEntityPath(entityType, entityId, { action: 'edit' }));
     }
 
     function handleCancel() {
         // Go back from action=create to list or go back from action=update to entity.
-        history.goBack();
+        navigate(-1);
     }
 
     function handleSubmit(values: PermissionSet): Promise<null> {
@@ -155,7 +159,7 @@ function PermissionSets(): ReactElement {
                   setPermissionSets([...permissionSets, entityCreated]);
 
                   // Go back from action=create to list.
-                  history.goBack();
+                  navigate(-1);
 
                   return null; // because the form has only catch and finally
               })
@@ -166,7 +170,7 @@ function PermissionSets(): ReactElement {
                   );
 
                   // Replace path which had action=update with plain entity path.
-                  history.replace(getEntityPath(entityType, entityId));
+                  navigate(getEntityPath(entityType, entityId), { replace: true });
 
                   return null; // because the form has only catch and finally
               });
@@ -190,7 +194,11 @@ function PermissionSets(): ReactElement {
                             </AccessControlDescription>
                         }
                         actionComponent={
-                            <Button variant="primary" onClick={handleCreate}>
+                            <Button
+                                isDisabled={!hasWriteAccessForPage}
+                                variant="primary"
+                                onClick={handleCreate}
+                            >
                                 Create permission set
                             </Button>
                         }
@@ -208,13 +216,12 @@ function PermissionSets(): ReactElement {
             <PageSection variant={isList ? PageSectionVariants.default : PageSectionVariants.light}>
                 {counterFetching !== 0 ? (
                     <Bullseye>
-                        <Spinner isSVG />
+                        <Spinner />
                     </Bullseye>
                 ) : isList ? (
                     <PermissionSetsList
                         permissionSets={permissionSets}
                         roles={roles}
-                        handleCreate={handleCreate}
                         handleDelete={handleDelete}
                     />
                 ) : typeof entityId === 'string' && !permissionSet ? (
@@ -226,7 +233,7 @@ function PermissionSets(): ReactElement {
                     />
                 ) : (
                     <PermissionSetForm
-                        isActionable={!permissionSet || !getIsDefaultRoleName(permissionSet.name)}
+                        isActionable={!permissionSet || isUserResource(permissionSet.traits)}
                         action={action}
                         permissionSet={
                             permissionSet

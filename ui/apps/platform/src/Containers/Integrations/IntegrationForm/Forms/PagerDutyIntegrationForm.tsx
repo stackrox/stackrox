@@ -1,9 +1,10 @@
-import React, { ReactElement, useState } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import { Checkbox, Form, PageSection, TextInput } from '@patternfly/react-core';
 import merge from 'lodash/merge';
 import * as yup from 'yup';
 
-import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
+import type { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
 
 import FormMessage from 'Components/PatternFly/FormMessage';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
@@ -13,7 +14,7 @@ import usePageState from '../../hooks/usePageState';
 import { clearStoredCredentials } from '../../utils/integrationUtils';
 
 import useIntegrationForm from '../useIntegrationForm';
-import { IntegrationFormProps } from '../integrationFormTypes';
+import type { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';
@@ -62,6 +63,12 @@ function PagerDutyIntegrationForm({
     const [isUpdatingStoredCredential, setIsUpdatingCredential] = useState(false);
     const isStoredCredentialInputEnabled = isCreating || isUpdatingStoredCredential;
 
+    let formInitialValues = structuredClone(defaultValues);
+    if (initialValues) {
+        merge(formInitialValues, initialValues);
+        formInitialValues = clearStoredCredentials(formInitialValues, storedCredentialKeyPaths);
+    }
+
     const {
         values,
         touched,
@@ -77,12 +84,7 @@ function PagerDutyIntegrationForm({
         onCancel,
         message,
     } = useIntegrationForm<PagerDutyIntegration>({
-        initialValues: initialValues
-            ? clearStoredCredentials(
-                  merge({}, defaultValues, initialValues),
-                  storedCredentialKeyPaths
-              )
-            : defaultValues,
+        initialValues: formInitialValues,
         validationSchema: () =>
             isStoredCredentialInputEnabled
                 ? validationSchemaStoredCredentialRequired
@@ -121,7 +123,7 @@ function PagerDutyIntegrationForm({
                             id="name"
                             name="name"
                             value={values.name}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -133,7 +135,7 @@ function PagerDutyIntegrationForm({
                                 id="updateStoredCredential"
                                 name="updateStoredCredential"
                                 isChecked={isUpdatingStoredCredential}
-                                onChange={onChangeUpdateStoredCredential}
+                                onChange={(_event, value) => onChangeUpdateStoredCredential(value)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -152,7 +154,7 @@ function PagerDutyIntegrationForm({
                             id="pagerduty.apiKey"
                             name="pagerduty.apiKey"
                             value={values.pagerduty.apiKey}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isStoredCredentialInputEnabled}
                             placeholder={

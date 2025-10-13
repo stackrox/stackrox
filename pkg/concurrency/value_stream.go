@@ -2,7 +2,6 @@ package concurrency
 
 import (
 	"sync/atomic"
-	"unsafe"
 )
 
 // ValueStream is a stream of values that can be pushed sequentially by a sender and observed in the same sequence
@@ -14,52 +13,52 @@ import (
 // cause unbounded memory growth. It is considerably slower than writing to a fully buffered channel or appending to
 // a slice, but considerably faster than those options if some synchronization/contention is involved. It also
 // has a number of practical benefits over approaches with explicit synchronization on the sender-side:
-// - Since senders do not have to synchronize, the performance of pushing a value does not depend on the number of
-//   subscribed observers.
-// - The order of pushed elements is always preserved, since it is never necessary to spawn goroutines for pushing.
-// - The observer maintains the entire state required for reading all future values in a single iterator, which obeys
-//   Go garbage collection rules. Hence, no explicit registration/deregistration of observers is necessary.
+//   - Since senders do not have to synchronize, the performance of pushing a value does not depend on the number of
+//     subscribed observers.
+//   - The order of pushed elements is always preserved, since it is never necessary to spawn goroutines for pushing.
+//   - The observer maintains the entire state required for reading all future values in a single iterator, which obeys
+//     Go garbage collection rules. Hence, no explicit registration/deregistration of observers is necessary.
 //
 // Receivers operate on this class via iterators obtained via the `Iterator` method. There are two modes of iteration:
-// - If you care about processing every single value in the stream, set the `strict` parameter to `true` when calling
-//   `Iterator`. Traversing the stream via the iterator is guaranteed to yield every single element that subsequently
-//   gets pushed to the stream, no matter how fast the writer and how slow this reader. This mode of operation might
-//   cause unbounded memory growth.
-//   Should you occasionally want to skip over intermediate elements and jump to the most recent one, you can call
-//   `FastForward` or `TryFastForward` on the `ValueStream`.
-// - Perhaps equally common is the case that you *do not* care about every single value in the stream, and are fine
-//   skipping over values, if, e.g., your observer might take a long time to process an observation, as long as you
-//   are sure to always be informed about the most recent value. For this, set the `strict` parameter to `false` when
-//   calling `Iterator`. Calling `Next` on the returned iterator will always return the most recent element in the
-//   stream that is newer than the current one. If the element pointed to by the current iterator is the most recent
-//   one, `Next` will block until a more recent one becomes available.
+//   - If you care about processing every single value in the stream, set the `strict` parameter to `true` when calling
+//     `Iterator`. Traversing the stream via the iterator is guaranteed to yield every single element that subsequently
+//     gets pushed to the stream, no matter how fast the writer and how slow this reader. This mode of operation might
+//     cause unbounded memory growth.
+//     Should you occasionally want to skip over intermediate elements and jump to the most recent one, you can call
+//     `FastForward` or `TryFastForward` on the `ValueStream`.
+//   - Perhaps equally common is the case that you *do not* care about every single value in the stream, and are fine
+//     skipping over values, if, e.g., your observer might take a long time to process an observation, as long as you
+//     are sure to always be informed about the most recent value. For this, set the `strict` parameter to `false` when
+//     calling `Iterator`. Calling `Next` on the returned iterator will always return the most recent element in the
+//     stream that is newer than the current one. If the element pointed to by the current iterator is the most recent
+//     one, `Next` will block until a more recent one becomes available.
 //
 // The following code exemplifies how to iterate over all values in the stream, in strict mode.
-//       it := stream.Iterator(true)  // pass false for skipping mode
-//       var err error
-//       for it != nil {
-//         fmt.Println("Value", it.Value())
-//         time.Sleep(1)
-//         it, err = it.Next(ctx)
-//       }
-//       if err != nil {
-//         fmt.Fprintln("Context error aborted iteration: %v", err)
-//       }
 //
+//	it := stream.Iterator(true)  // pass false for skipping mode
+//	var err error
+//	for it != nil {
+//	  fmt.Println("Value", it.Value())
+//	  time.Sleep(1)
+//	  it, err = it.Next(ctx)
+//	}
+//	if err != nil {
+//	  fmt.Fprintln("Context error aborted iteration: %v", err)
+//	}
 type ValueStream[T any] struct {
-	curr unsafe.Pointer // always holds a *valueStreamStrictIter[T]
+	curr atomic.Pointer[valueStreamStrictIter[T]] // always holds a *valueStreamStrictIter[T]
 }
 
 // NewValueStream initializes a value stream with an initial value.
 func NewValueStream[T any](initVal T) *ValueStream[T] {
-	return &ValueStream[T]{
-		curr: unsafe.Pointer(&valueStreamStrictIter[T]{
-			valueStreamIterBase: valueStreamIterBase[T]{
-				currVal: initVal,
-				nextC:   make(chan struct{}),
-			},
-		}),
-	}
+	vs := &ValueStream[T]{}
+	vs.curr.Store(&valueStreamStrictIter[T]{
+		valueStreamIterBase: valueStreamIterBase[T]{
+			currVal: initVal,
+			nextC:   make(chan struct{}),
+		},
+	})
+	return vs
 }
 
 // ValueStreamIter is an iterator that points to a position in a ValueStream.
@@ -102,7 +101,7 @@ func (i *valueStreamIterBase[T]) Done() <-chan struct{} {
 	return i.nextC
 }
 
-func (*valueStreamIterBase[T]) isValueStreamIter(T) {}
+func (*valueStreamIterBase[T]) isValueStreamIter(T) {} //nolint:unused // This is required for generic magic
 
 type valueStreamStrictIter[T any] struct {
 	valueStreamIterBase[T]
@@ -172,7 +171,7 @@ func (s *ValueStream[T]) Push(val T) (T, ValueStreamIter[T]) {
 		},
 	}
 
-	oldIter := (*valueStreamStrictIter[T])(atomic.SwapPointer(&s.curr, unsafe.Pointer(newIter)))
+	oldIter := s.curr.Swap(newIter)
 	oldIter.next = newIter
 	close(oldIter.nextC)
 
@@ -180,7 +179,7 @@ func (s *ValueStream[T]) Push(val T) (T, ValueStreamIter[T]) {
 }
 
 func (s *ValueStream[T]) current() *valueStreamStrictIter[T] {
-	return (*valueStreamStrictIter[T])(atomic.LoadPointer(&s.curr))
+	return s.curr.Load()
 }
 
 // Iterator obtains an iterator to the current value in the stream. If strict is true, it returns an iterator that

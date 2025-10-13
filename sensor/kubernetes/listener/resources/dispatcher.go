@@ -7,28 +7,28 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	metricsPkg "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/sensor/common/awscredentials"
-	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/config"
-	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/metrics"
-	"github.com/stackrox/rox/sensor/common/registry"
-	complianceOperatorDispatchers "github.com/stackrox/rox/sensor/kubernetes/listener/resources/complianceoperator/dispatchers"
+	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator/dispatchers"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
-	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/dispatcher"
+	"google.golang.org/protobuf/encoding/protojson"
+	"k8s.io/client-go/kubernetes"
 	v1Listers "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
 )
 
 // Dispatcher is responsible for processing resource events, and returning the sensor events that should be emitted
 // in response.
+//
 //go:generate mockgen-wrapper
 type Dispatcher interface {
-	ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) []*central.SensorEvent
+	ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *component.ResourceEvent
 }
 
 // DispatcherRegistry provides dispatchers to use.
@@ -45,13 +45,19 @@ type DispatcherRegistry interface {
 	ForServiceAccounts() Dispatcher
 	ForRBAC() Dispatcher
 	ForClusterOperators() Dispatcher
+	ForRegistryMirrors() Dispatcher
+
+	ForVirtualMachines() Dispatcher
+	ForVirtualMachineInstances() Dispatcher
 
 	ForComplianceOperatorResults() Dispatcher
 	ForComplianceOperatorProfiles() Dispatcher
 	ForComplianceOperatorRules() Dispatcher
 	ForComplianceOperatorScanSettingBindings() Dispatcher
 	ForComplianceOperatorScans() Dispatcher
+	ForComplianceOperatorSuites() Dispatcher
 	ForComplianceOperatorTailoredProfiles() Dispatcher
+	ForComplianceOperatorRemediations() Dispatcher
 }
 
 // NewDispatcherRegistry creates and returns a new DispatcherRegistry.
@@ -59,71 +65,82 @@ func NewDispatcherRegistry(
 	clusterID string,
 	podLister v1Listers.PodLister,
 	profileLister cache.GenericLister,
-	entityStore *clusterentities.Store,
 	processFilter filter.Filter,
 	configHandler config.Handler,
-	detector detector.Detector,
-	namespaces *orchestratornamespaces.OrchestratorNamespaces,
 	credentialsManager awscredentials.RegistryCredentialsManager,
 	traceWriter io.Writer,
+	storeProvider *StoreProvider,
+	k8sAPI kubernetes.Interface,
 ) DispatcherRegistry {
-	serviceStore := newServiceStore()
-	serviceAccountStore := ServiceAccountStoreSingleton()
-	deploymentStore := DeploymentStoreSingleton()
-	podStore := PodStoreSingleton()
-	nodeStore := newNodeStore()
-	nsStore := newNamespaceStore()
-	netPolicyStore := NetworkPolicySingleton()
-	endpointManager := newEndpointManager(serviceStore, deploymentStore, podStore, nodeStore, entityStore)
-	rbacUpdater := rbac.NewStore()
-	portExposureReconciler := newPortExposureReconciler(deploymentStore, serviceStore)
-	registryStore := registry.Singleton()
+	serviceStore := storeProvider.serviceStore
+	rbacUpdater := storeProvider.rbacStore
+	serviceAccountStore := storeProvider.serviceAccountStore
+	deploymentStore := storeProvider.deploymentStore
+	podStore := storeProvider.podStore
+	nsStore := storeProvider.nsStore
+	netPolicyStore := storeProvider.networkPolicyStore
+	endpointManager := storeProvider.endpointManager
+	portExposureReconciler := newPortExposureReconciler(deploymentStore, storeProvider.Services())
+	registryStore := storeProvider.registryStore
+	registryMirrorStore := storeProvider.registryMirrorStore
 
 	return &registryImpl{
-		deploymentHandler: newDeploymentHandler(clusterID, serviceStore, deploymentStore, podStore, endpointManager, nsStore,
-			rbacUpdater, podLister, processFilter, configHandler, detector, namespaces, registryStore, credentialsManager),
+		deploymentHandler: newDeploymentHandler(clusterID, storeProvider.Services(), deploymentStore, podStore, endpointManager, nsStore,
+			rbacUpdater, podLister, processFilter, configHandler, storeProvider.orchestratorNamespaces, registryStore, credentialsManager),
 
-		rbacDispatcher:            rbac.NewDispatcher(rbacUpdater),
-		namespaceDispatcher:       newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore, netPolicyStore),
-		serviceDispatcher:         newServiceDispatcher(serviceStore, deploymentStore, endpointManager, portExposureReconciler),
-		osRouteDispatcher:         newRouteDispatcher(serviceStore, portExposureReconciler),
-		secretDispatcher:          newSecretDispatcher(registryStore),
-		networkPolicyDispatcher:   newNetworkPolicyDispatcher(netPolicyStore, deploymentStore, detector),
-		nodeDispatcher:            newNodeDispatcher(serviceStore, deploymentStore, nodeStore, endpointManager),
-		serviceAccountDispatcher:  newServiceAccountDispatcher(serviceAccountStore),
-		clusterOperatorDispatcher: newClusterOperatorDispatcher(namespaces),
+		rbacDispatcher:             rbac.NewDispatcher(rbacUpdater, k8sAPI),
+		namespaceDispatcher:        newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore, netPolicyStore, storeProvider.VirtualMachines()),
+		serviceDispatcher:          newServiceDispatcher(serviceStore, deploymentStore, endpointManager, portExposureReconciler),
+		osRouteDispatcher:          newRouteDispatcher(serviceStore, portExposureReconciler),
+		secretDispatcher:           newSecretDispatcher(clusterID, registryStore),
+		networkPolicyDispatcher:    newNetworkPolicyDispatcher(netPolicyStore, deploymentStore),
+		nodeDispatcher:             newNodeDispatcher(deploymentStore, storeProvider.nodeStore, endpointManager),
+		serviceAccountDispatcher:   newServiceAccountDispatcher(serviceAccountStore),
+		clusterOperatorDispatcher:  newClusterOperatorDispatcher(storeProvider.orchestratorNamespaces),
+		osRegistryMirrorDispatcher: newRegistryMirrorDispatcher(registryMirrorStore),
 
 		traceWriter: traceWriter,
 
-		complianceOperatorResultDispatcher:              complianceOperatorDispatchers.NewResultDispatcher(),
-		complianceOperatorRulesDispatcher:               complianceOperatorDispatchers.NewRulesDispatcher(),
-		complianceOperatorProfileDispatcher:             complianceOperatorDispatchers.NewProfileDispatcher(),
-		complianceOperatorScanSettingBindingsDispatcher: complianceOperatorDispatchers.NewScanSettingBindingsDispatcher(),
-		complianceOperatorScanDispatcher:                complianceOperatorDispatchers.NewScanDispatcher(),
-		complianceOperatorTailoredProfileDispatcher:     complianceOperatorDispatchers.NewTailoredProfileDispatcher(profileLister),
+		complianceOperatorResultDispatcher:              dispatchers.NewResultDispatcher(),
+		complianceOperatorRulesDispatcher:               dispatchers.NewRulesDispatcher(),
+		complianceOperatorProfileDispatcher:             dispatchers.NewProfileDispatcher(),
+		complianceOperatorScanSettingBindingsDispatcher: dispatchers.NewScanSettingBindingsDispatcher(),
+		complianceOperatorScanDispatcher:                dispatchers.NewScanDispatcher(),
+		complianceOperatorTailoredProfileDispatcher:     dispatchers.NewTailoredProfileDispatcher(profileLister),
+		complianceOperatorSuiteDispatcher:               dispatchers.NewSuitesDispatcher(),
+		complianceOperatorRemediationDispatcher:         dispatchers.NewRemediationDispatcher(),
+
+		virtualMachineDispatcher:         dispatcher.NewVirtualMachineDispatcher(clusterID, storeProvider.VirtualMachines()),
+		virtualMachineInstanceDispatcher: dispatcher.NewVirtualMachineInstanceDispatcher(clusterID, storeProvider.VirtualMachines()),
 	}
 }
 
 type registryImpl struct {
 	deploymentHandler *deploymentHandler
 
-	rbacDispatcher            *rbac.Dispatcher
-	namespaceDispatcher       *namespaceDispatcher
-	serviceDispatcher         *serviceDispatcher
-	osRouteDispatcher         *routeDispatcher
-	secretDispatcher          *secretDispatcher
-	networkPolicyDispatcher   *networkPolicyDispatcher
-	nodeDispatcher            *nodeDispatcher
-	serviceAccountDispatcher  *serviceAccountDispatcher
-	clusterOperatorDispatcher *clusterOperatorDispatcher
-	traceWriter               io.Writer
+	rbacDispatcher             *rbac.Dispatcher
+	namespaceDispatcher        *namespaceDispatcher
+	serviceDispatcher          *serviceDispatcher
+	osRouteDispatcher          *routeDispatcher
+	secretDispatcher           *secretDispatcher
+	networkPolicyDispatcher    *networkPolicyDispatcher
+	nodeDispatcher             *nodeDispatcher
+	serviceAccountDispatcher   *serviceAccountDispatcher
+	clusterOperatorDispatcher  *clusterOperatorDispatcher
+	osRegistryMirrorDispatcher *registryMirrorDispatcher
+	traceWriter                io.Writer
 
-	complianceOperatorResultDispatcher              *complianceOperatorDispatchers.ResultDispatcher
-	complianceOperatorProfileDispatcher             *complianceOperatorDispatchers.ProfileDispatcher
-	complianceOperatorScanSettingBindingsDispatcher *complianceOperatorDispatchers.ScanSettingBindings
-	complianceOperatorRulesDispatcher               *complianceOperatorDispatchers.RulesDispatcher
-	complianceOperatorScanDispatcher                *complianceOperatorDispatchers.ScanDispatcher
-	complianceOperatorTailoredProfileDispatcher     *complianceOperatorDispatchers.TailoredProfileDispatcher
+	complianceOperatorResultDispatcher              *dispatchers.ResultDispatcher
+	complianceOperatorProfileDispatcher             *dispatchers.ProfileDispatcher
+	complianceOperatorScanSettingBindingsDispatcher *dispatchers.ScanSettingBindings
+	complianceOperatorRulesDispatcher               *dispatchers.RulesDispatcher
+	complianceOperatorScanDispatcher                *dispatchers.ScanDispatcher
+	complianceOperatorTailoredProfileDispatcher     *dispatchers.TailoredProfileDispatcher
+	complianceOperatorSuiteDispatcher               *dispatchers.SuitesDispatcher
+	complianceOperatorRemediationDispatcher         *dispatchers.RemediationDispatcher
+
+	virtualMachineDispatcher         *dispatcher.VirtualMachineDispatcher
+	virtualMachineInstanceDispatcher *dispatcher.VirtualMachineInstanceDispatcher
 }
 
 func wrapWithDumpingDispatcher(d Dispatcher, w io.Writer) Dispatcher {
@@ -147,23 +164,27 @@ type InformerK8sMsg struct {
 	EventsOutput []string
 }
 
-func (m dumpingDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) []*central.SensorEvent {
+func (m dumpingDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *component.ResourceEvent {
 	now := time.Now().Unix()
 	dispType := strings.Trim(fmt.Sprintf("%T", obj), "*")
 	events := m.Dispatcher.ProcessEvent(obj, oldObj, action)
+	if events == nil {
+		events = &component.ResourceEvent{}
+	}
+
 	if m.writer == nil {
 		return events
 	}
 
 	var eventsOutput []string
-	marshaler := jsonpb.Marshaler{}
-	for _, e := range events {
-		ev, err := marshaler.MarshalToString(e)
+	marshaler := protojson.MarshalOptions{}
+	for _, e := range events.ForwardMessages {
+		ev, err := marshaler.Marshal(e)
 		if err != nil {
 			log.Warnf("Error marshaling msg: %s\n", err.Error())
 			return events
 		}
-		eventsOutput = append(eventsOutput, ev)
+		eventsOutput = append(eventsOutput, string(ev))
 	}
 
 	jsonLine, err := json.Marshal(InformerK8sMsg{
@@ -193,12 +214,16 @@ type metricDispatcher struct {
 	Dispatcher
 }
 
-func (m metricDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) []*central.SensorEvent {
+func (m metricDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *component.ResourceEvent {
 	start := time.Now().UnixNano()
 	dispatcher := strings.Trim(fmt.Sprintf("%T", obj), "*")
 
 	events := m.Dispatcher.ProcessEvent(obj, oldObj, action)
-	for _, e := range events {
+	if events == nil {
+		events = &component.ResourceEvent{}
+	}
+
+	for _, e := range events.ForwardMessages {
 		e.Timing = &central.Timing{
 			Dispatcher: dispatcher,
 			Resource:   metricsPkg.GetResourceString(e),
@@ -207,6 +232,13 @@ func (m metricDispatcher) ProcessEvent(obj, oldObj interface{}, action central.R
 		metrics.SetResourceProcessingDurationForResource(e)
 	}
 	metrics.IncK8sEventCount(action.String(), dispatcher)
+
+	events.DeploymentTiming = &central.Timing{
+		Dispatcher: dispatcher,
+		Resource:   "Deployment",
+		Nanos:      start,
+	}
+
 	return events
 }
 
@@ -283,4 +315,24 @@ func (d *registryImpl) ForComplianceOperatorScanSettingBindings() Dispatcher {
 
 func (d *registryImpl) ForComplianceOperatorScans() Dispatcher {
 	return wrapDispatcher(d.complianceOperatorScanDispatcher, d.traceWriter)
+}
+
+func (d *registryImpl) ForRegistryMirrors() Dispatcher {
+	return wrapDispatcher(d.osRegistryMirrorDispatcher, d.traceWriter)
+}
+
+func (d *registryImpl) ForComplianceOperatorSuites() Dispatcher {
+	return wrapDispatcher(d.complianceOperatorSuiteDispatcher, d.traceWriter)
+}
+
+func (d *registryImpl) ForComplianceOperatorRemediations() Dispatcher {
+	return wrapDispatcher(d.complianceOperatorRemediationDispatcher, d.traceWriter)
+}
+
+func (d *registryImpl) ForVirtualMachines() Dispatcher {
+	return wrapDispatcher(d.virtualMachineDispatcher, d.traceWriter)
+}
+
+func (d *registryImpl) ForVirtualMachineInstances() Dispatcher {
+	return wrapDispatcher(d.virtualMachineInstanceDispatcher, d.traceWriter)
 }

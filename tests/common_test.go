@@ -1,269 +1,139 @@
+//go:build test_e2e
+
 package tests
 
 import (
-	"context"
+	"bytes"
 	"fmt"
-	"os/exec"
+	"io"
+	"net/http"
+	"regexp"
+	"strings"
 	"testing"
-	"time"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/client-go/kubernetes"
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/rest"
 )
 
-const (
-	nginxDeploymentName     = `nginx`
-	expectedLatestTagPolicy = `Latest tag`
+var text = []byte(`Here is some text.
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore
+magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
+consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`)
 
-	waitTimeout = 2 * time.Minute
-)
-
-var (
-	log = logging.LoggerForModule()
-)
-
-//lint:ignore U1000 Ignore unused code check since this function could be useful in future.
-func assumeFeatureFlagHasValue(t *testing.T, featureFlag features.FeatureFlag, assumedValue bool) {
-	conn := centralgrpc.GRPCConnectionToCentral(t)
-	featureService := v1.NewFeatureFlagServiceClient(conn)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	featureFlagsResp, err := featureService.GetFeatureFlags(ctx, &v1.Empty{})
-	require.NoError(t, err, "failed to get feature flags from central")
-
-	for _, flag := range featureFlagsResp.GetFeatureFlags() {
-		if flag.GetEnvVar() == featureFlag.EnvVar() {
-			if flag.GetEnabled() == assumedValue {
-				return
-			}
-			t.Skipf("skipping test because value of feature flag %s is not %t", featureFlag.EnvVar(), assumedValue)
-		}
-	}
-
-	t.Fatalf("Central has no knowledge about feature flag %s", featureFlag.EnvVar())
-}
-
-func retrieveDeployment(service v1.DeploymentServiceClient, deploymentID string) (*storage.Deployment, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	return service.GetDeployment(ctx, &v1.ResourceByID{Id: deploymentID})
-}
-
-func retrieveDeployments(service v1.DeploymentServiceClient, deps []*storage.ListDeployment) ([]*storage.Deployment, error) {
-	deployments := make([]*storage.Deployment, 0, len(deps))
-	for _, d := range deps {
-		deployment, err := retrieveDeployment(service, d.GetId())
-		if err != nil {
-			return nil, err
-		}
-		deployments = append(deployments, deployment)
-	}
-	return deployments, nil
-}
-
-func waitForDeployment(t testutils.T, deploymentName string) {
-	conn := centralgrpc.GRPCConnectionToCentral(t)
-
-	service := v1.NewDeploymentServiceClient(conn)
-
-	ticker := time.NewTicker(time.Second)
-	defer ticker.Stop()
-
-	timer := time.NewTimer(waitTimeout)
-	defer timer.Stop()
-
-	qb := search.NewQueryBuilder().AddStrings(search.DeploymentName, deploymentName)
-
-	for {
-		select {
-		case <-ticker.C:
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			listDeployments, err := service.ListDeployments(ctx, &v1.RawQuery{
-				Query: qb.Query(),
+func TestLogMatcher(t *testing.T) {
+	tests := map[string]struct {
+		funcs          []logMatcher
+		expectedResult assert.BoolAssertionFunc
+		expectedError  assert.ErrorAssertionFunc
+		expectedString string
+	}{
+		"one match": {
+			funcs: []logMatcher{
+				containsLineMatching(regexp.MustCompile("sunt in culpa qui officia deserunt")),
 			},
-			)
-			cancel()
-			if err != nil {
-				log.Errorf("Error listing deployments: %s", err)
-				continue
-			}
-
-			deployments, err := retrieveDeployments(service, listDeployments.GetDeployments())
-			if err != nil {
-				log.Errorf("Error retrieving deployments: %s", err)
-				continue
-			}
-
-			if len(deployments) > 0 {
-				d := deployments[0]
-
-				if len(d.GetContainers()) > 0 && d.GetContainers()[0].GetImage().GetId() != "" {
-					return
-				}
-			}
-		case <-timer.C:
-			t.Fatalf("Timed out waiting for deployment %s", deploymentName)
-		}
+			expectedResult: assert.True,
+			expectedError:  assert.NoError,
+			expectedString: `[contains line(s) matching "sunt in culpa qui officia deserunt"]`,
+		},
+		"two matches": {
+			funcs: []logMatcher{
+				containsLineMatching(regexp.MustCompile("Lorem ipsum dolor")),
+				containsLineMatching(regexp.MustCompile("Duis aute irure")),
+			},
+			expectedResult: assert.True,
+			expectedError:  assert.NoError,
+			expectedString: `[contains line(s) matching "Lorem ipsum dolor" contains line(s) matching "Duis aute irure"]`,
+		},
+		"text divided with newline": {
+			funcs: []logMatcher{
+				containsLineMatching(regexp.MustCompile("labore et dolore.*magna aliqua")),
+			},
+			expectedResult: assert.False,
+			expectedError:  assert.NoError,
+			expectedString: `[contains line(s) matching "labore et dolore.*magna aliqua"]`,
+		},
+	}
+	r := bytes.NewReader(text)
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			actual, actualErr := allMatch(r, test.funcs...)
+			test.expectedResult(t, actual)
+			test.expectedError(t, actualErr)
+			assert.Equal(t, test.expectedString, fmt.Sprintf("%s", test.funcs))
+		})
 	}
 }
 
-func waitForTermination(t testutils.T, deploymentName string) {
-	conn := centralgrpc.GRPCConnectionToCentral(t)
+func TestCreateK8sClientWithConfig_RetriesOnFailure(t *testing.T) {
+	// This test verifies that the createK8sClientWithConfig function configures retries correctly
+	// by injecting a mock transport that fails initially, then succeeds
 
-	service := v1.NewDeploymentServiceClient(conn)
+	var callCount int
 
-	ticker := time.NewTicker(time.Second)
-	defer ticker.Stop()
+	// Create a mock transport that fails the first 2 times, succeeds on the 3rd
+	mockTransport := RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
+		callCount++
+		currentCall := callCount
 
-	timer := time.NewTimer(waitTimeout)
-	defer timer.Stop()
+		t.Logf("Mock transport call #%d to %s", currentCall, r.URL.String())
 
-	query := search.NewQueryBuilder().AddStrings(search.DeploymentName, deploymentName).Query()
-
-	for {
-		select {
-		case <-ticker.C:
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			listDeployments, err := service.ListDeployments(ctx, &v1.RawQuery{
-				Query: query,
-			})
-			cancel()
-			if err != nil {
-				log.Error(err)
-				continue
-			}
-
-			if len(listDeployments.GetDeployments()) == 0 {
-				return
-			}
-		case <-timer.C:
-			t.Fatalf("Timed out waiting for deployment %s to stop", deploymentName)
+		if currentCall <= 2 {
+			// Simulate network error for first 2 calls
+			return nil, fmt.Errorf("network error: connection refused")
 		}
+
+		// Succeed on the 3rd call - return a mock successful response
+		responseBody := `{
+			"major": "1",
+			"minor": "28",
+			"gitVersion": "v1.28.0",
+			"gitCommit": "abcd1234",
+			"buildDate": "2023-08-01T12:00:00Z",
+			"goVersion": "go1.20.6",
+			"compiler": "gc",
+			"platform": "linux/amd64"
+		}`
+
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Status:     "200 OK",
+			Body:       io.NopCloser(strings.NewReader(responseBody)),
+			Header:     make(http.Header),
+		}, nil
+	})
+
+	// Create a mock REST config
+	restCfg := &rest.Config{
+		Host: "https://mock-k8s-api.example.com",
+		WrapTransport: func(rt http.RoundTripper) http.RoundTripper {
+			// Return our mock transport instead of the real one
+			return mockTransport
+		},
 	}
+
+	// Create client with our mock config
+	client := createK8sClientWithConfig(t, restCfg)
+	require.NotNil(t, client, "client should not be nil")
+
+	// Make an API call that should trigger retries
+	version, err := client.Discovery().ServerVersion()
+
+	// The call should succeed after retries
+	require.NoError(t, err, "Discovery call should succeed after retries")
+	require.NotNil(t, version, "Server version should not be nil")
+	assert.Equal(t, "1", version.Major)
+	assert.Equal(t, "28", version.Minor)
+
+	assert.Equal(t, 3, callCount, "Should have made exactly 3 calls (2 retries + 1 success)")
+	t.Logf("Successfully completed after %d calls (including retries)", callCount)
 }
 
-func applyFile(t testutils.T, path string) {
-	cmd := exec.Command(`kubectl`, `create`, `-f`, path)
-	output, err := cmd.CombinedOutput()
-	require.NoError(t, err, string(output))
-}
+// RoundTripperFunc is a function type that implements http.RoundTripper interface
+type RoundTripperFunc func(*http.Request) (*http.Response, error)
 
-// The deploymentName must be copied form the file path passed in
-func setupDeploymentFromFile(t testutils.T, deploymentName, path string) {
-	applyFile(t, path)
-	waitForDeployment(t, deploymentName)
-}
-
-func setupNginxLatestTagDeployment(t *testing.T) {
-	setupDeployment(t, "nginx", nginxDeploymentName)
-}
-
-func setupDeployment(t *testing.T, image, deploymentName string) {
-	setupDeploymentWithReplicas(t, image, deploymentName, 1)
-}
-
-func setupDeploymentWithReplicas(t *testing.T, image, deploymentName string, replicas int) {
-	cmd := exec.Command(`kubectl`, `create`, `deployment`, deploymentName, fmt.Sprintf("--image=%s", image), fmt.Sprintf("--replicas=%d", replicas))
-	output, err := cmd.CombinedOutput()
-	require.NoError(t, err, string(output))
-
-	waitForDeployment(t, deploymentName)
-}
-
-func setImage(t *testing.T, deploymentName string, deploymentID string, containerName string, image string) {
-	cmd := exec.Command(`kubectl`, `set`, `image`, fmt.Sprintf("deployment/%s", deploymentName), fmt.Sprintf("%s=%s", containerName, image))
-	output, err := cmd.CombinedOutput()
-	require.NoError(t, err, string(output))
-	conn := centralgrpc.GRPCConnectionToCentral(t)
-	service := v1.NewDeploymentServiceClient(conn)
-
-	waitForCondition(t, func() bool {
-		deployment, err := retrieveDeployment(service, deploymentID)
-		if err != nil {
-			log.Error(err)
-			return false
-		}
-		containers := deployment.GetContainers()
-		for _, container := range containers {
-			if container.GetImage().GetName().GetFullName() != image {
-				return false
-			}
-		}
-		log.Infof("Image set to %s for deployment %s(%s) container %s", image, deploymentName, deploymentID, containerName)
-		return true
-	}, "image updated", time.Minute, 5*time.Second)
-}
-
-func teardownFile(t testutils.T, path string) {
-	cmd := exec.Command(`kubectl`, `delete`, `-f`, path, `--ignore-not-found=true`)
-	output, err := cmd.CombinedOutput()
-	require.NoError(t, err, string(output))
-}
-
-func teardownDeploymentFromFile(t testutils.T, deploymentName, path string) {
-	teardownFile(t, path)
-	waitForTermination(t, deploymentName)
-}
-
-func teardownDeployment(t *testing.T, deploymentName string) {
-	cmd := exec.Command(`kubectl`, `delete`, `deployment`, deploymentName, `--ignore-not-found=true`)
-	output, err := cmd.CombinedOutput()
-	require.NoError(t, err, string(output))
-
-	waitForTermination(t, deploymentName)
-}
-
-func scaleDeployment(t testutils.T, deploymentName, replicas string) {
-	cmd := exec.Command(`kubectl`, `scale`, `deployment`, deploymentName, `--replicas`, replicas)
-	output, err := cmd.CombinedOutput()
-	require.NoError(t, err, string(output))
-
-	waitForDeployment(t, deploymentName)
-}
-
-func teardownNginxLatestTagDeployment(t *testing.T) {
-	teardownDeployment(t, nginxDeploymentName)
-}
-
-func createK8sClient(t *testing.T) kubernetes.Interface {
-	config, err := clientcmd.NewDefaultClientConfigLoadingRules().Load()
-	require.NoError(t, err, "could not load default Kubernetes client config")
-
-	restCfg, err := clientcmd.NewDefaultClientConfig(*config, &clientcmd.ConfigOverrides{}).ClientConfig()
-	require.NoError(t, err, "could not get REST client config from kubernetes config")
-
-	k8sClient, err := kubernetes.NewForConfig(restCfg)
-	require.NoError(t, err, "creating Kubernetes client from REST config")
-
-	return k8sClient
-}
-
-func waitForCondition(t testutils.T, condition func() bool, desc string, timeout time.Duration, frequency time.Duration) {
-	ticker := time.NewTicker(frequency)
-	defer ticker.Stop()
-
-	timer := time.NewTimer(timeout)
-	defer timer.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			if condition() {
-				return
-			}
-		case <-timer.C:
-			t.Fatalf("Timed out waiting for condition %s to stop", desc)
-		}
-	}
+// RoundTrip implements http.RoundTripper interface
+func (fn RoundTripperFunc) RoundTrip(r *http.Request) (*http.Response, error) {
+	return fn(r)
 }

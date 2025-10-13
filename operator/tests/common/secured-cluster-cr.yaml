@@ -4,7 +4,14 @@ metadata:
   name: stackrox-secured-cluster-services
 spec:
   clusterName: testing-cluster
+  imagePullSecrets:
+  - name: e2e-test-pull-secret
   admissionControl:
+    listenOnCreates: false # Shall be ignored
+    listenOnUpdates: false # Shall be ignored
+    listenOnEvents: false # Shall be ignored
+    contactImageScanners: DoNotScanInline # Shall be ignored
+    timeoutSeconds: 15 # Shall be ignored
     resources:
       requests:
         memory: 100Mi
@@ -21,6 +28,11 @@ spec:
           memory: 100Mi
           cpu: 100m
     compliance:
+      resources:
+        requests:
+          memory: 100Mi
+          cpu: 100m
+    nodeInventory:
       resources:
         requests:
           memory: 100Mi

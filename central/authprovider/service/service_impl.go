@@ -2,25 +2,27 @@ package service
 
 import (
 	"context"
+	"slices"
 	"sort"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/authprovider/datastore"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/basic"
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	userPkg "github.com/stackrox/rox/pkg/auth/user"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -28,19 +30,26 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		allow.Anonymous(): {
-			"/v1.AuthProviderService/ListAvailableProviderTypes",
-			"/v1.AuthProviderService/GetLoginAuthProviders",
-			"/v1.AuthProviderService/ExchangeToken",
+			v1.AuthProviderService_ListAvailableProviderTypes_FullMethodName,
+			// The GetLoginAuthProviders endpoint is used to render the list of providers
+			// on the UI login screen. At that point, the user is not authenticated or logged in.
+			// Therefore this endpoint should remain anonymously accessible.
+			v1.AuthProviderService_GetLoginAuthProviders_FullMethodName,
+			// The ExchangeToken endpoint is used by the UI as part of the
+			// user login flow, where user authentication data is not always
+			// available. This endpoint should therefore remain
+			// anonymous / public.
+			v1.AuthProviderService_ExchangeToken_FullMethodName,
 		},
-		user.With(permissions.View(resources.AuthProvider)): {
-			"/v1.AuthProviderService/GetAuthProvider",
-			"/v1.AuthProviderService/GetAuthProviders",
+		user.With(permissions.View(resources.Access)): {
+			v1.AuthProviderService_GetAuthProvider_FullMethodName,
+			v1.AuthProviderService_GetAuthProviders_FullMethodName,
 		},
-		user.With(permissions.Modify(resources.AuthProvider)): {
-			"/v1.AuthProviderService/PostAuthProvider",
-			"/v1.AuthProviderService/UpdateAuthProvider",
-			"/v1.AuthProviderService/PutAuthProvider",
-			"/v1.AuthProviderService/DeleteAuthProvider",
+		user.With(permissions.Modify(resources.Access)): {
+			v1.AuthProviderService_PostAuthProvider_FullMethodName,
+			v1.AuthProviderService_UpdateAuthProvider_FullMethodName,
+			v1.AuthProviderService_PutAuthProvider_FullMethodName,
+			v1.AuthProviderService_DeleteAuthProvider_FullMethodName,
 		},
 	})
 )
@@ -136,7 +145,7 @@ func (s *serviceImpl) ListAvailableProviderTypes(_ context.Context, _ *v1.Empty)
 		}
 
 		attributes := factory.GetSuggestedAttributes()
-		sort.Strings(attributes)
+		slices.Sort(attributes)
 		supportedTypes = append(supportedTypes, &v1.AvailableProviderTypesResponse_AuthProviderType{
 			Type:                typ,
 			SuggestedAttributes: attributes,
@@ -313,18 +322,23 @@ func (s *serviceImpl) ExchangeToken(ctx context.Context, request *v1.ExchangeTok
 		return nil, err
 	}
 
-	clientState, testMode := idputil.ParseClientState(clientState)
+	clientState, mode := idputil.ParseClientState(clientState)
+	testMode := mode == idputil.TestAuthMode
 	response := &v1.ExchangeTokenResponse{
 		ClientState: clientState,
 		Test:        testMode,
 	}
 
-	if testMode {
-		// We need all access for retrieving roles.
-		userMetadata, err := authproviders.CreateRoleBasedIdentity(sac.WithAllAccess(ctx), provider, authResponse)
-		if err != nil {
+	userMetadata, err := authproviders.CreateRoleBasedIdentity(sac.WithAllAccess(ctx), provider, authResponse)
+	if err != nil {
+		if testMode {
 			return nil, errors.Wrap(err, "cannot create role based identity")
 		}
+		log.Warnf("Error creating role based identity: %v", err)
+	}
+	userPkg.LogSuccessfulUserLogin(log, userMetadata)
+
+	if testMode {
 		response.User = userMetadata
 		return response, nil
 	}

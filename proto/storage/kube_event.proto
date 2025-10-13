@@ -1,79 +1,83 @@
 syntax = "proto3";
 
-option go_package = "storage";
-option java_package = "io.stackrox.proto.storage";
-
-import "gogoproto/gogo.proto";
-import "google/protobuf/timestamp.proto";
-
 package storage;
 
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
 message KubernetesEvent {
-    enum APIVerb {
-        UNKNOWN = 0;
-        CREATE  = 1;
-        UPDATE  = 2;
-        PATCH   = 3;
-        DELETE  = 4;
-        LIST    = 5;
-        GET     = 6;
-        WATCH   = 7;
-        PROXY   = 8;
+  enum APIVerb {
+    UNKNOWN = 0;
+    CREATE = 1;
+    UPDATE = 2;
+    PATCH = 3;
+    DELETE = 4;
+    LIST = 5;
+    GET = 6;
+    WATCH = 7;
+    PROXY = 8;
+  }
+
+  message Object {
+    // Resource and sub-resource mapping is represented as resource_subresource.
+    enum Resource {
+      UNKNOWN = 0;
+      PODS_EXEC = 1;
+      PODS_PORTFORWARD = 2;
+      SECRETS = 3;
+      CONFIGMAPS = 4;
+      CLUSTER_ROLES = 5;
+      CLUSTER_ROLE_BINDINGS = 6;
+      NETWORK_POLICIES = 7;
+      SECURITY_CONTEXT_CONSTRAINTS = 8;
+      EGRESS_FIREWALLS = 9;
     }
 
-    message Object {
-        // Resource and sub-resource mapping is represented as resource_subresource.
-        enum Resource {
-            UNKNOWN          = 0;
-            PODS_EXEC        = 1;
-            PODS_PORTFORWARD = 2;
-            SECRETS          = 3;
-            CONFIGMAPS       = 4;
-        }
+    string name = 1; // @gotags: policy:"Kubernetes Resource Name"
+    Resource resource = 2; // @gotags: policy:"Kubernetes Resource"
+    string cluster_id = 3;
+    string namespace = 4;
+  }
 
-        string   name       = 1 [(gogoproto.moretags) = 'policy:"Kubernetes Resource Name"'];
-        Resource resource   = 2 [(gogoproto.moretags) = 'policy:"Kubernetes Resource"'];
-        string   cluster_id = 3;
-        string   namespace  = 4;
-    }
+  string id = 1;
+  Object object = 2;
+  google.protobuf.Timestamp timestamp = 3;
+  APIVerb api_verb = 4; // @gotags: policy:"Kubernetes API Verb"
 
-    string                    id                    = 1;
-    Object                    object                = 2;
-    google.protobuf.Timestamp timestamp             = 3;
-    APIVerb                   api_verb              = 4 [(gogoproto.moretags) = 'policy:"Kubernetes API Verb"'];
+  // tags 5-14 reserved for ObjectArgs
+  // Next available tag: 7
+  oneof ObjectArgs {
+    PodExecArgs pod_exec_args = 5;
+    PodPortForwardArgs pod_port_forward_args = 6;
+  }
 
-    // tags 5-14 reserved for ObjectArgs
-    // Next available tag: 7
-    oneof ObjectArgs {
-        PodExecArgs           pod_exec_args         = 5;
-        PodPortForwardArgs    pod_port_forward_args = 6;
-    }
+  // Extended arguments. May not be available for pod exec and port forward events.
+  // These start at 15 because they were added after ObjectArgs and the previous tags are reserved in case it needs to be extended in the future.
+  User user = 15;
+  User impersonated_user = 16; // this field is optional if the request wasn't an impersonated request // @gotags: policy:",ignore"
+  repeated string source_ips = 17; // @gotags: policy:"Source IP Address"
+  string user_agent = 18; // @gotags: policy:"User Agent"
+  ResponseStatus response_status = 19;
+  string request_uri = 20; // Field will not be used for policy detection
 
-    // Extended arguments. May not be available for pod exec and port forward events.
-    // These start at 15 because they were added after ObjectArgs and the previous tags are reserved in case it needs to be extended in the future.
-    User                      user                 = 15;
-    User                      impersonated_user    = 16 [(gogoproto.moretags) = 'policy:",ignore"']; // this field is optional if the request wasn't an impersonated request
-    repeated string           source_ips           = 17 [(gogoproto.moretags) = 'policy:"Source IP Address"'];
-    string                    user_agent           = 18 [(gogoproto.moretags) = 'policy:"User Agent"'];
-    ResponseStatus            response_status      = 19;
-    string                    request_uri          = 20; // Field will not be used for policy detection
+  message PodExecArgs {
+    string container = 1;
+    repeated string commands = 2;
+  }
 
-    message PodExecArgs {
-        string          container = 1;
-        repeated string commands  = 2;
-    }
+  message PodPortForwardArgs {
+    repeated int32 ports = 1;
+  }
 
-    message PodPortForwardArgs {
-        repeated int32 ports = 1;
-    }
+  message ResponseStatus {
+    int32 status_code = 1;
+    string reason = 2;
+  }
 
-    message ResponseStatus {
-        int32  status_code = 1;
-        string reason      = 2;
-    }
-
-    message User {
-        string          username = 1 [(gogoproto.moretags) = 'policy:"Kubernetes User Name"'];
-        repeated string groups   = 2 [(gogoproto.moretags) = 'policy:"Kubernetes User Groups"'];
-    }
+  message User {
+    string username = 1; // @gotags: policy:"Kubernetes User Name"
+    repeated string groups = 2; // @gotags: policy:"Kubernetes User Groups"
+  }
 }

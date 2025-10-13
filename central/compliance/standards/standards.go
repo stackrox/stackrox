@@ -15,7 +15,6 @@ type Repository interface {
 	GetCategoryByControl(controlID string) *Category
 	Groups(standardID string) ([]*v1.ComplianceControlGroup, error)
 	Group(groupID string) *v1.ComplianceControlGroup
-	GetCISDockerStandardID() (string, error)
 	GetCISKubernetesStandardID() (string, error)
 
 	SearchStandards(q *v1.Query) ([]search.Result, error)

@@ -10,7 +10,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -28,20 +30,23 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceRunResults)(nil)), "compliance_run_results")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_RESULTS, "compliancerunresults", (*storage.ComplianceRunResults)(nil)))
+		schema.ScopingResource = resources.Compliance
 		RegisterTable(schema, CreateTableComplianceRunResultsStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_RESULTS, schema)
 		return schema
 	}()
 )
 
 const (
+	// ComplianceRunResultsTableName specifies the name of the table in postgres.
 	ComplianceRunResultsTableName = "compliance_run_results"
 )
 
 // ComplianceRunResults holds the Gorm model for Postgres table `compliance_run_results`.
 type ComplianceRunResults struct {
-	RunMetadataRunId           string     `gorm:"column:runmetadata_runid;type:varchar;primaryKey"`
-	RunMetadataStandardId      string     `gorm:"column:runmetadata_standardid;type:varchar"`
-	RunMetadataClusterId       string     `gorm:"column:runmetadata_clusterid;type:varchar;index:compliancerunresults_sac_filter,type:hash"`
+	RunMetadataRunID           string     `gorm:"column:runmetadata_runid;type:varchar;primaryKey"`
+	RunMetadataStandardID      string     `gorm:"column:runmetadata_standardid;type:varchar"`
+	RunMetadataClusterID       string     `gorm:"column:runmetadata_clusterid;type:uuid;index:compliancerunresults_sac_filter,type:hash"`
 	RunMetadataFinishTimestamp *time.Time `gorm:"column:runmetadata_finishtimestamp;type:timestamp"`
 	Serialized                 []byte     `gorm:"column:serialized;type:bytea"`
 }

@@ -3,7 +3,7 @@ package graph
 import (
 	"bytes"
 	"context"
-	"sort"
+	"slices"
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
+	"github.com/stackrox/rox/pkg/protoassert"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
@@ -513,7 +514,7 @@ var (
 
 type namespaceGetter struct{}
 
-func (n *namespaceGetter) GetAllNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
+func (n *namespaceGetter) GetAllNamespaces(_ context.Context) ([]*storage.NamespaceMetadata, error) {
 	return namespaces, nil
 }
 
@@ -704,7 +705,7 @@ func flattenEdges(edges ...[]testEdge) []testEdge {
 }
 
 func mockNode(node string, namespace string, internetAccess, nonIsolatedIngress, nonIsolatedEgress bool, queryMatch bool, policies ...string) *v1.NetworkNode {
-	sort.Strings(policies)
+	slices.Sort(policies)
 	return &v1.NetworkNode{
 		Entity: &storage.NetworkEntityInfo{
 			Type: storage.NetworkEntityInfo_DEPLOYMENT,
@@ -1362,7 +1363,7 @@ func TestEvaluateClusters(t *testing.T) {
 			nodes := graph.GetNodes()
 			require.Len(t, nodes, len(testCase.nodes))
 			for idx, expected := range testCase.nodes {
-				assert.Equalf(t, expected, nodes[idx], "node in pos %d and ID %d doesn't match expected", idx, expected.Entity.Id)
+				protoassert.Equal(t, expected, nodes[idx], "(pod, id): ", idx, expected.GetEntity().GetId())
 			}
 		})
 	}
@@ -2032,7 +2033,7 @@ func TestEvaluateNeighbors(t *testing.T) {
 
 		t.Run(c.name, func(t *testing.T) {
 			graph := g.GetGraph("", testCase.queryDeployments, testCase.clusterDeployments, testCase.networkTree, testCase.nps, false)
-			assert.ElementsMatch(t, testCase.nodes, graph.GetNodes())
+			protoassert.ElementsMatch(t, testCase.nodes, graph.GetNodes())
 		})
 	}
 }
@@ -2134,7 +2135,7 @@ func TestGetApplicable(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			actual := g.GetAppliedPolicies(c.deployments, nil, c.policies)
-			assert.ElementsMatch(t, c.expected, actual)
+			protoassert.ElementsMatch(t, c.expected, actual)
 		})
 	}
 }
@@ -2142,7 +2143,7 @@ func TestGetApplicable(t *testing.T) {
 func populateOutEdges(nodes []*v1.NetworkNode, edges []testEdge) {
 	indexMap := make(map[string]int)
 	for i, node := range nodes {
-		indexMap[node.Entity.Id] = i
+		indexMap[node.GetEntity().GetId()] = i
 	}
 
 	for _, e := range edges {
@@ -2326,7 +2327,47 @@ func TestEvaluateClustersWithPorts(t *testing.T) {
 
 		t.Run(c.name, func(t *testing.T) {
 			graph := g.GetGraph("", nil, testCase.deployments, nil, testCase.nps, true)
-			assert.ElementsMatch(t, testCase.nodes, graph.GetNodes())
+			protoassert.ElementsMatch(t, testCase.nodes, graph.GetNodes())
 		})
 	}
+}
+
+func TestGetApplyingPoliciesPerDeployment(t *testing.T) {
+	evaluator := newMockGraphEvaluator()
+
+	deployments := []*storage.Deployment{
+		{
+			Id:          "a",
+			Namespace:   "default",
+			NamespaceId: "default",
+			PodLabels:   deploymentLabels("app", "a"),
+		},
+		{
+			Id:          "b",
+			Namespace:   "default",
+			NamespaceId: "default",
+			PodLabels:   deploymentLabels("app", "b"),
+		},
+		{
+			Id:          "c",
+			Namespace:   "default",
+			NamespaceId: "default",
+			PodLabels:   deploymentLabels("app", "c"),
+		},
+	}
+
+	networkPolicies := []*storage.NetworkPolicy{
+		getExamplePolicy("a-ingress-tcp-8080"),
+		getExamplePolicy("b-egress-a-tcp-ports-and-dns"),
+		getExamplePolicy("c-egress-a-tcp-8443-and-udp"),
+	}
+
+	expectedResults := map[string][]*storage.NetworkPolicy{
+		"a": {networkPolicies[0]},
+		"b": {networkPolicies[1]},
+		"c": {networkPolicies[2]},
+	}
+
+	resultMap := evaluator.GetApplyingPoliciesPerDeployment(deployments, nil, networkPolicies)
+	protoassert.MapSliceEqual(t, expectedResults, resultMap)
 }

@@ -1,16 +1,11 @@
 package cve
 
 import (
-	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/search/postgres"
-	"github.com/stackrox/rox/pkg/utils"
-)
+	"strconv"
 
-var (
-	log = logging.LoggerForModule()
+	"github.com/mitchellh/hashstructure/v2"
+	"github.com/stackrox/rox/generated/storage"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
 var clusterCVETypes = map[storage.CVE_CVEType]struct{}{
@@ -24,56 +19,26 @@ var componentCVETypes = map[storage.CVE_CVEType]struct{}{
 	storage.CVE_NODE_CVE:  {},
 }
 
-// ContainsCVEType returns whether or not typ exists in the cve type slice
-func ContainsCVEType(types []storage.CVE_CVEType, typ storage.CVE_CVEType) bool {
-	for _, t := range types {
-		if t == typ {
-			return true
-		}
-	}
-	return false
-}
-
-// ContainsComponentBasedCVE returns true if a component-based CVE type exists in the type slice
-func ContainsComponentBasedCVE(types []storage.CVE_CVEType) bool {
-	for _, t := range types {
-		if _, ok := componentCVETypes[t]; ok {
-			return true
-		}
-	}
-	return false
-}
-
-// ContainsClusterCVE returns true if a cluster CVE type exists in the type slice
-func ContainsClusterCVE(types []storage.CVE_CVEType) bool {
-	for _, t := range types {
-		if _, ok := clusterCVETypes[t]; ok {
-			return true
-		}
-	}
-	return false
-}
-
-// ID creates a CVE ID from the given cve id (and os if postgres is enabled).
+// ID creates a CVE ID from the given cve id and os.
 func ID(cve, os string) string {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return postgres.IDFromPks([]string{cve, os})
+	return pgSearch.IDFromPks([]string{cve, os})
+}
+
+// IDV2 creates a CVE ID from the given cve name, component id and index of CVE within the component.
+func IDV2(cve *storage.EmbeddedVulnerability, componentID string) (string, error) {
+	hash, err := hashstructure.Hash(cve, hashstructure.FormatV2, &hashstructure.HashOptions{ZeroNil: true})
+	if err != nil {
+		return "", err
 	}
-	return cve
+
+	return pgSearch.IDFromPks([]string{cve.GetCve(), strconv.FormatUint(hash, 10), componentID}), nil
 }
 
 // IDToParts return the CVE ID parts—cve and operating system.
 func IDToParts(id string) (string, string) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		parts := postgres.IDToParts(id)
-		if len(parts) > 2 {
-			utils.Should(errors.Errorf("unexpected number of parts for CVE ID %s", id))
-			return "", ""
-		}
-		if len(parts) == 2 {
-			return parts[0], parts[1]
-		}
-		return parts[0], ""
+	parts := pgSearch.IDToParts(id)
+	if len(parts) >= 2 {
+		return parts[0], parts[1]
 	}
-	return id, ""
+	return parts[0], ""
 }

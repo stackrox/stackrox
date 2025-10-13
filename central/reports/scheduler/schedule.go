@@ -4,31 +4,37 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
+	"strings"
 	"text/template"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
-	namespaceDatastore "github.com/stackrox/rox/central/namespace/datastore"
+	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
-	"github.com/stackrox/rox/central/notifier/processor"
-	"github.com/stackrox/rox/central/notifiers"
-	reportConfigDS "github.com/stackrox/rox/central/reportconfigurations/datastore"
 	"github.com/stackrox/rox/central/reports/common"
+	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
+	collectionDataStore "github.com/stackrox/rox/central/resourcecollection/datastore"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/notifier"
+	"github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -36,44 +42,12 @@ import (
 )
 
 const (
-	numDeploymentsLimit = 50
+	deploymentsPaginationLimit = 50
 
-	reportDataQuery = `query getVulnReportData($scopequery: String, 
+	reportQueryPostgres = `query getVulnReportData($scopequery: String,
 							$cvequery: String, $pagination: Pagination) {
 							deployments: deployments(query: $scopequery, pagination: $pagination) {
-								cluster {
-									name
-								}
-								namespace
-								name
-								images {
-									name {
-										full_name:fullName
-									}
-									components {
-										name
-										vulns(query: $cvequery) {
-											...cveFields
-										}
-									}
-								}
-							}
-						}
-	fragment cveFields on EmbeddedVulnerability {
-        cve
-	    severity
-        fixedByVersion
-        isFixable
-        discoveredAtImage
-		link
-    }`
-
-	reportQueryPostgres = `query getVulnReportData($scopequery: String, 
-							$cvequery: String, $pagination: Pagination) {
-							deployments: deployments(query: $scopequery, pagination: $pagination) {
-								cluster {
-									name
-								}
+								clusterName
 								namespace
 								name
 								images {
@@ -105,6 +79,8 @@ const (
 
 	noVulnsFoundEmailTemplate = `
 	{{.BrandedProductName}} has found zero vulnerabilities associated with the running container images owned by your organization.`
+
+	paginatedQueryStartOffset = 0
 )
 
 var (
@@ -127,17 +103,19 @@ type scheduler struct {
 	cron                   *cron.Cron
 	reportConfigToEntryIDs map[string]cron.EntryID
 
-	reportConfigDatastore reportConfigDS.DataStore
-	notifierDatastore     notifierDataStore.DataStore
-	clusterDatastore      clusterDataStore.DataStore
-	namespaceDatastore    namespaceDatastore.DataStore
-	roleDatastore         roleDataStore.DataStore
-	notificationProcessor processor.Processor
+	reportConfigDatastore   reportConfigDS.DataStore
+	notifierDatastore       notifierDataStore.DataStore
+	clusterDatastore        clusterDataStore.DataStore
+	namespaceDatastore      namespaceDataStore.DataStore
+	deploymentDatastore     deploymentDataStore.DataStore
+	roleDatastore           roleDataStore.DataStore
+	collectionDatastore     collectionDataStore.DataStore
+	collectionQueryResolver collectionDataStore.QueryResolver
+	notificationProcessor   notifier.Processor
 
 	reportsToRun chan *ReportRequest
 
-	stoppedSig concurrency.Signal
-	stopped    concurrency.Signal
+	stopper concurrency.Stopper
 
 	Schema *graphql.Schema
 }
@@ -157,8 +135,9 @@ type reportEmailFormat struct {
 
 // New instantiates a new cron scheduler and supports adding and removing report configurations
 func New(reportConfigDS reportConfigDS.DataStore, notifierDS notifierDataStore.DataStore,
-	clusterDS clusterDataStore.DataStore, namespaceDS namespaceDatastore.DataStore, roleDS roleDataStore.DataStore,
-	notificationProcessor processor.Processor) Scheduler {
+	clusterDS clusterDataStore.DataStore, namespaceDS namespaceDataStore.DataStore,
+	deploymentDS deploymentDataStore.DataStore, collectionDS collectionDataStore.DataStore, roleDS roleDataStore.DataStore,
+	collectionQueryRes collectionDataStore.QueryResolver, notificationProcessor notifier.Processor) Scheduler {
 	cronScheduler := cron.New()
 	cronScheduler.Start()
 
@@ -166,22 +145,33 @@ func New(reportConfigDS reportConfigDS.DataStore, notifierDS notifierDataStore.D
 	if err != nil {
 		panic(err)
 	}
-	s := &scheduler{
-		reportConfigToEntryIDs: make(map[string]cron.EntryID),
-		cron:                   cronScheduler,
-		reportConfigDatastore:  reportConfigDS,
-		notifierDatastore:      notifierDS,
-		clusterDatastore:       clusterDS,
-		namespaceDatastore:     namespaceDS,
-		roleDatastore:          roleDS,
-		notificationProcessor:  notificationProcessor,
-		reportsToRun:           make(chan *ReportRequest, 100),
-		Schema:                 ourSchema,
 
-		stoppedSig: concurrency.NewSignal(),
-		stopped:    concurrency.NewSignal(),
+	return newSchedulerImpl(reportConfigDS, notifierDS, clusterDS, namespaceDS, deploymentDS, collectionDS, roleDS,
+		collectionQueryRes, notificationProcessor, cronScheduler, ourSchema)
+}
+
+func newSchedulerImpl(reportConfigDS reportConfigDS.DataStore, notifierDS notifierDataStore.DataStore,
+	clusterDS clusterDataStore.DataStore, namespaceDS namespaceDataStore.DataStore,
+	deploymentDS deploymentDataStore.DataStore, collectionDS collectionDataStore.DataStore, roleDS roleDataStore.DataStore,
+	collectionQueryRes collectionDataStore.QueryResolver, notificationProcessor notifier.Processor,
+	cronScheduler *cron.Cron, schema *graphql.Schema) *scheduler {
+	return &scheduler{
+		reportConfigToEntryIDs:  make(map[string]cron.EntryID),
+		cron:                    cronScheduler,
+		reportConfigDatastore:   reportConfigDS,
+		notifierDatastore:       notifierDS,
+		clusterDatastore:        clusterDS,
+		namespaceDatastore:      namespaceDS,
+		deploymentDatastore:     deploymentDS,
+		collectionDatastore:     collectionDS,
+		roleDatastore:           roleDS,
+		collectionQueryResolver: collectionQueryRes,
+		notificationProcessor:   notificationProcessor,
+		reportsToRun:            make(chan *ReportRequest, 100),
+		Schema:                  schema,
+
+		stopper: concurrency.NewStopper(),
 	}
-	return s
 }
 
 func (s *scheduler) reportClosure(reportConfig *storage.ReportConfiguration) func() {
@@ -230,10 +220,10 @@ func (s *scheduler) SubmitReport(reportRequest *ReportRequest) {
 }
 
 func (s *scheduler) runReports() {
-	defer s.stopped.Signal()
-	for !s.stoppedSig.IsDone() {
+	defer s.stopper.Flow().ReportStopped()
+	for {
 		select {
-		case <-s.stoppedSig.Done():
+		case <-s.stopper.Flow().StopRequested():
 			return
 		case req := <-s.reportsToRun:
 			log.Infof("Executing report '%s' at %v", req.ReportConfig.GetName(), time.Now().Format(time.RFC822))
@@ -256,16 +246,16 @@ func (s *scheduler) updateLastRunStatus(req *ReportRequest, err error) error {
 		// TODO: @khushboo for more accuracy, save timestamp when the vuln data is pulled aka the query is run
 		req.ReportConfig.LastRunStatus = &storage.ReportLastRunStatus{
 			ReportStatus: storage.ReportLastRunStatus_FAILURE,
-			LastRunTime:  timestamp.Now().GogoProtobuf(),
+			LastRunTime:  protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
 			ErrorMsg:     err.Error(),
 		}
 	} else {
 		req.ReportConfig.LastRunStatus = &storage.ReportLastRunStatus{
 			ReportStatus: storage.ReportLastRunStatus_SUCCESS,
-			LastRunTime:  timestamp.Now().GogoProtobuf(),
+			LastRunTime:  protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
 			ErrorMsg:     "",
 		}
-		req.ReportConfig.LastSuccessfulRunTime = types.TimestampNow()
+		req.ReportConfig.LastSuccessfulRunTime = protocompat.TimestampNow()
 	}
 	if err = s.UpsertReportSchedule(req.ReportConfig); err != nil {
 		return err
@@ -276,51 +266,33 @@ func (s *scheduler) updateLastRunStatus(req *ReportRequest, err error) error {
 func (s *scheduler) sendReportResults(req *ReportRequest) error {
 	rc := req.ReportConfig
 
-	clusters, err := s.clusterDatastore.GetClusters(req.Ctx)
-	if err != nil {
-		return errors.Wrap(err, "error building report query: unable to get clusters")
-	}
-	namespaces, err := s.namespaceDatastore.GetAllNamespaces(req.Ctx)
-	if err != nil {
-		return errors.Wrap(err, "error building report query: unable to get namespaces")
-	}
-
-	scope, found, err := s.roleDatastore.GetAccessScope(req.Ctx, rc.GetScopeId())
-	if err != nil {
-		return errors.Wrap(err, "error building report query: unable to get the resource scope")
-	}
-	if !found {
-		return errors.Errorf("error building report query: resource scope %s not found", scope.GetId())
-	}
-
-	qb := common.NewVulnReportQueryBuilder(clusters, namespaces, scope, rc.GetVulnReportFilters(),
-		timestamp.FromProtobuf(rc.GetLastSuccessfulRunTime()).GoTime())
-	reportQuery, err := qb.BuildQuery()
-	if err != nil {
-		return errors.Wrap(err, "error building report query")
-	}
-
+	reportName := rc.GetName()
 	notifier := s.notificationProcessor.GetNotifier(req.Ctx, rc.GetEmailConfig().GetNotifierId())
 	reportNotifier, ok := notifier.(notifiers.ReportNotifier)
 	if !ok {
 		return errors.Errorf("incorrect notifier type in report config '%s'", rc.GetName())
 	}
 	// Get the results of running the report query
-	reportData, err := s.getReportData(req.Ctx, reportQuery)
+	reportData, err := s.getReportData(req.Ctx, rc)
 	if err != nil {
 		return err
 	}
 	// Format results into CSV
-	zippedCSVData, err := common.Format(reportData)
+	watchedImagesReportData := []common.WatchedImagesResult{}
+	configName := ""
+	includedNvd := false
+	zippedCSVResult, err := common.Format(reportData, watchedImagesReportData, configName, includedNvd)
 	if err != nil {
 		return errors.Wrap(err, "error formatting the report data")
 	}
+	zippedCSVData := zippedCSVResult.ZippedCsv
+
 	// If it is an empty report, do not send an attachment in the final notification email and the email body
 	// will indicate that no vulns were found
-
 	templateStr := vulnReportEmailTemplate
-	if zippedCSVData == nil {
+	if zippedCSVResult.NumDeployedImageCVEs == 0 && zippedCSVResult.NumWatchedImageCVEs == 0 {
 		// If it is an empty report, the email body will indicate that no vulns were found
+		zippedCSVData = nil
 		templateStr = noVulnsFoundEmailTemplate
 	}
 
@@ -331,7 +303,7 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 
 	if err = retry.WithRetry(func() error {
 		return reportNotifier.ReportNotify(req.Ctx, zippedCSVData,
-			rc.GetEmailConfig().GetMailingLists(), messageText)
+			rc.GetEmailConfig().GetMailingLists(), "", messageText, reportName)
 	},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
@@ -342,7 +314,7 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 	); err != nil {
 		return err
 	}
-	log.Infof("Report generation for '%s' completed, email notification sent.", rc.Name)
+	log.Infof("Report generation for '%s' completed, email notification sent.", rc.GetName())
 	return nil
 }
 
@@ -352,9 +324,9 @@ func formatMessage(rc *storage.ReportConfiguration, emailTemplate string, date t
 		WhichVulns:         "for all vulnerabilities",
 		DateStr:            date.Format("January 02, 2006"),
 	}
-	if rc.GetVulnReportFilters().SinceLastReport && rc.GetLastSuccessfulRunTime() != nil {
+	if rc.GetVulnReportFilters().GetSinceLastReport() && rc.GetLastSuccessfulRunTime() != nil {
 		data.WhichVulns = fmt.Sprintf("for new vulnerabilities since %s",
-			timestamp.FromProtobuf(rc.LastSuccessfulRunTime).GoTime().Format("January 02, 2006"))
+			timestamp.FromProtobuf(rc.GetLastSuccessfulRunTime()).GoTime().Format("January 02, 2006"))
 	}
 	tmpl, err := template.New("emailBody").Parse(emailTemplate)
 	if err != nil {
@@ -363,52 +335,94 @@ func formatMessage(rc *storage.ReportConfiguration, emailTemplate string, date t
 	return templates.ExecuteToString(tmpl, data)
 }
 
-func (s *scheduler) getReportData(ctx context.Context, rQuery *common.ReportQuery) ([]common.Result, error) {
-	r := make([]common.Result, 0, len(rQuery.ScopeQueries))
-	for _, sq := range rQuery.ScopeQueries {
-		resultData, err := s.runPaginatedQuery(ctx, sq, rQuery.CveFieldsQuery)
-		if err != nil {
-			return nil, err
-		}
-		r = append(r, resultData)
+func (s *scheduler) getReportData(ctx context.Context, rc *storage.ReportConfiguration) ([]common.DeployedImagesResult, error) {
+	collection, found, err := s.collectionDatastore.Get(ctx, rc.GetScopeId())
+	if err != nil {
+		return nil, errors.Wrapf(err, "error building report query: unable to get the collection %s", rc.GetScopeId())
 	}
-	return r, nil
+	if !found {
+		return nil, errors.Errorf("error building report query: collection with id %s not found", rc.GetScopeId())
+	}
+	rQuery, err := s.buildReportQuery(ctx, rc, collection)
+	if err != nil {
+		return nil, err
+	}
+	deploymentIds, err := s.getDeploymentIDs(ctx, rQuery.DeploymentsQuery)
+	if err != nil {
+		return nil, err
+	}
+	result, err := s.runPaginatedDeploymentsQuery(ctx, rQuery.CveFieldsQuery, deploymentIds)
+	if err != nil {
+		return nil, err
+	}
+	result.Deployments = orderByClusterAndNamespace(result.Deployments)
+	return []common.DeployedImagesResult{result}, nil
 }
 
-func (s *scheduler) runPaginatedQuery(ctx context.Context, scopeQuery, cveQuery string) (common.Result, error) {
-	offset := 0
-	var resultData common.Result
+func (s *scheduler) buildReportQuery(ctx context.Context, rc *storage.ReportConfiguration,
+	collection *storage.ResourceCollection) (*common.ReportQuery, error) {
+	qb := common.NewVulnReportQueryBuilder(collection, rc.GetVulnReportFilters(), s.collectionQueryResolver,
+		timestamp.FromProtobuf(rc.GetLastSuccessfulRunTime()).GoTime())
+	rQuery, err := qb.BuildQuery(ctx, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "error building report query")
+	}
+	return rQuery, nil
+}
+
+// Returns vuln report data from deployments matched by embedded resource collection.
+func (s *scheduler) runPaginatedDeploymentsQuery(ctx context.Context, cveQuery string, deploymentIds []string) (common.DeployedImagesResult, error) {
+	offset := paginatedQueryStartOffset
+	var resultData common.DeployedImagesResult
 	for {
-		var gqlQuery string
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			gqlQuery = reportQueryPostgres
-		} else {
-			gqlQuery = reportDataQuery
-		}
-		response := s.Schema.Exec(ctx,
-			gqlQuery, "getVulnReportData", map[string]interface{}{
-				"scopequery": scopeQuery,
-				"cvequery":   cveQuery,
-				"pagination": map[string]interface{}{
-					"offset": offset,
-					"limit":  numDeploymentsLimit,
-				},
-			})
-		if len(response.Errors) > 0 {
-			log.Errorf("error running graphql query: %s", response.Errors[0].Message)
-			return common.Result{}, response.Errors[0].Err
-		}
-		var r common.Result
-		if err := json.Unmarshal(response.Data, &r); err != nil {
-			return common.Result{}, err
-		}
-		resultData.Deployments = append(resultData.Deployments, r.Deployments...)
-		if len(r.Deployments) < numDeploymentsLimit {
+		if offset >= len(deploymentIds) {
 			break
 		}
-		offset += len(r.Deployments)
+		// deploymentsQuery is a *v1.Query and graphQL resolvers accept a string queries.
+		// With nested collections, deploymentsQuery could be a disjunction of conjunctions like the example below.
+		// [(Cluster: c1 AND Namespace: n1 AND Deployment: d1) OR (Cluster: c2 AND Namespace: n2 AND Deployment: d2)]
+		// Current string query language doesn't support disjunction of multiple conjunctions, so we cannot build a
+		// string equivalent of deploymentsQuery for graphQL. Because of this, we first fetch deploymentIDs from
+		// deploymentDatastore using deploymentsQuery and then build string query for graphQL using those deploymentIDs.
+		scopeQuery := fmt.Sprintf("%s:%s", search.DeploymentID.String(),
+			strings.Join(deploymentIds[offset:min(offset+deploymentsPaginationLimit, len(deploymentIds))], ","))
+		r, err := s.execReportDataQuery(ctx, reportQueryPostgres, scopeQuery, cveQuery, paginatedQueryStartOffset)
+		if err != nil {
+			return r, err
+		}
+		resultData.Deployments = append(resultData.Deployments, r.Deployments...)
+		offset += deploymentsPaginationLimit
 	}
 	return resultData, nil
+}
+
+func (s *scheduler) execReportDataQuery(ctx context.Context, gqlQuery, scopeQuery, cveQuery string, offset int) (common.DeployedImagesResult, error) {
+	response := s.Schema.Exec(ctx,
+		gqlQuery, "getVulnReportData", map[string]interface{}{
+			"scopequery": scopeQuery,
+			"cvequery":   cveQuery,
+			"pagination": map[string]interface{}{
+				"offset": offset,
+				"limit":  deploymentsPaginationLimit,
+			},
+		})
+	if len(response.Errors) > 0 {
+		log.Errorf("error running graphql query: %s", response.Errors[0].Message)
+		return common.DeployedImagesResult{}, response.Errors[0].Err
+	}
+	var res common.DeployedImagesResult
+	if err := json.Unmarshal(response.Data, &res); err != nil {
+		return common.DeployedImagesResult{}, err
+	}
+	return res, nil
+}
+
+func (s *scheduler) getDeploymentIDs(ctx context.Context, deploymentsQuery *v1.Query) ([]string, error) {
+	results, err := s.deploymentDatastore.Search(ctx, deploymentsQuery)
+	if err != nil {
+		return nil, err
+	}
+	return search.ResultsToIDs(results), nil
 }
 
 func (s *scheduler) Start() {
@@ -416,6 +430,19 @@ func (s *scheduler) Start() {
 }
 
 func (s *scheduler) Stop() {
-	s.stoppedSig.Signal()
-	s.stopped.Wait()
+	s.stopper.Client().Stop()
+	err := s.stopper.Client().Stopped().Wait()
+	if err != nil {
+		log.Errorf("Error stopping vulnerability report scheduler : %v", err)
+	}
+}
+
+func orderByClusterAndNamespace(deployments []*common.Deployment) []*common.Deployment {
+	sort.SliceStable(deployments, func(i, j int) bool {
+		if deployments[i].Cluster.GetName() == deployments[j].Cluster.GetName() {
+			return deployments[i].Namespace < deployments[j].Namespace
+		}
+		return deployments[i].Cluster.GetName() < deployments[j].Cluster.GetName()
+	})
+	return deployments
 }

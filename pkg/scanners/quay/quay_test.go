@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -129,7 +130,7 @@ func (suite *QuaySuite) TestGetScan() {
 	// convert scans here. It relies on converting the scan but is not the conversion test.
 	// skipping scan time check.
 	expectedImageScan := convertScanToImageScan(image, expectedQuayScan)
-	suite.Equal(expectedImageScan.Components, scan.Components)
-	suite.Equal(expectedImageScan.OperatingSystem, scan.OperatingSystem)
-	suite.Equal(expectedImageScan.DataSource, scan.DataSource)
+	protoassert.SlicesEqual(suite.T(), expectedImageScan.GetComponents(), scan.GetComponents())
+	suite.Equal(expectedImageScan.GetOperatingSystem(), scan.GetOperatingSystem())
+	protoassert.Equal(suite.T(), expectedImageScan.GetDataSource(), scan.GetDataSource())
 }

@@ -1,81 +1,79 @@
 syntax = "proto3";
 
-option go_package = "storage";
-option java_package = "io.stackrox.proto.storage";
-
-import "gogoproto/gogo.proto";
-
 package storage;
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
 
 // Next Tag: 10
 message ComplianceOperatorCheckResult {
-    enum CheckStatus {
-        UNSET          = 0;
-        PASS           = 1;
-        FAIL           = 2;
-        ERROR          = 3;
-        INFO           = 4;
-        MANUAL         = 5;
-        NOT_APPLICABLE = 6;
-        INCONSISTENT   = 7;
-    }
-    string              id           = 1 [(gogoproto.moretags) = 'sql:"pk"'];
-    string              check_id     = 2;
-    string              check_name   = 3;
-    string              cluster_id   = 4;
-    CheckStatus         status       = 5;
-    string              description  = 6;
-    string              instructions = 7;
-    map<string, string> labels       = 8;
-    map<string, string> annotations  = 9;
+  enum CheckStatus {
+    UNSET = 0;
+    PASS = 1;
+    FAIL = 2;
+    ERROR = 3;
+    INFO = 4;
+    MANUAL = 5;
+    NOT_APPLICABLE = 6;
+    INCONSISTENT = 7;
+  }
+  string id = 1; // @gotags: sql:"pk"
+  string check_id = 2;
+  string check_name = 3;
+  string cluster_id = 4;
+  CheckStatus status = 5;
+  string description = 6;
+  string instructions = 7;
+  map<string, string> labels = 8;
+  map<string, string> annotations = 9;
 }
 
 // Next Tag: 9
 message ComplianceOperatorProfile {
-    string              id          = 1 [(gogoproto.moretags) = 'sql:"pk"'];
-    string              profile_id  = 2;
-    string              name        = 3;
-    string              cluster_id  = 4;
-    map<string, string> labels      = 5;
-    map<string, string> annotations = 6;
-    string              description = 7;
-    message Rule {
-        string name = 1;
-    }
-    repeated Rule       rules       = 8;
+  string id = 1; // @gotags: sql:"pk"
+  string profile_id = 2;
+  string name = 3;
+  string cluster_id = 4;
+  map<string, string> labels = 5;
+  map<string, string> annotations = 6;
+  string description = 7;
+  message Rule {
+    string name = 1;
+  }
+  repeated Rule rules = 8;
 }
 
 // Next Tag: 10
 message ComplianceOperatorRule {
-    string              id          = 1 [(gogoproto.moretags) = 'sql:"pk"'];
-    string              rule_id     = 2;
-    string              name        = 3;
-    string              cluster_id  = 4;
-    map<string, string> labels      = 5;
-    map<string, string> annotations = 6;
-    string              title       = 7;
-    string              description = 8;
-    string              rationale   = 9;
+  string id = 1; // @gotags: sql:"pk"
+  string rule_id = 2;
+  string name = 3;
+  string cluster_id = 4;
+  map<string, string> labels = 5;
+  map<string, string> annotations = 6;
+  string title = 7;
+  string description = 8;
+  string rationale = 9;
 }
 
 // Next Tag: 7
 message ComplianceOperatorScanSettingBinding {
-    string              id          = 1 [(gogoproto.moretags) = 'sql:"pk"'];
-    string              name        = 2;
-    string              cluster_id  = 3;
-    map<string, string> labels      = 4;
-    map<string, string> annotations = 5;
-    message Profile {
-        string name = 1;
-    }
-    repeated Profile    profiles    = 6;
+  string id = 1; // @gotags: sql:"pk"
+  string name = 2;
+  string cluster_id = 3;
+  map<string, string> labels = 4;
+  map<string, string> annotations = 5;
+  message Profile {
+    string name = 1;
+  }
+  repeated Profile profiles = 6;
 }
 
 message ComplianceOperatorScan {
-    string              id          = 1 [(gogoproto.moretags) = 'sql:"pk"'];
-    string              name        = 2;
-    string              cluster_id  = 3;
-    string              profile_id  = 4;
-    map<string, string> labels      = 5;
-    map<string, string> annotations = 6;
+  string id = 1; // @gotags: sql:"pk"
+  string name = 2;
+  string cluster_id = 3;
+  string profile_id = 4;
+  map<string, string> labels = 5;
+  map<string, string> annotations = 6;
 }

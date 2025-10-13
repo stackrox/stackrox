@@ -1,12 +1,13 @@
 package check422
 
 import (
+	"slices"
+
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
 	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
-	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 const (
@@ -92,7 +93,7 @@ func checkLatestImageTagPolicyEnforced(ctx framework.ComplianceContext) {
 }
 
 func policyHasLatestImageTag(p *storage.Policy) bool {
-	return sliceutils.Find(policyfields.GetImageTags(p), "latest") >= 0
+	return slices.Index(policyfields.GetImageTags(p), "latest") >= 0
 }
 
 func policyHasImageAgeDays(p *storage.Policy) bool {

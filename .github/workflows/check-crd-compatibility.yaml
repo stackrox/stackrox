@@ -1,0 +1,82 @@
+name: Check CRD Compatibility
+on:
+  push:
+    tags:
+    - '*'
+    branches:
+    - master
+    - release-*
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  check-crd-compatibility:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+    outputs:
+      released_version: ${{ steps.get_previous_released_version.outputs.released_version }}
+    steps:
+    - name: Checkout stackrox/stackrox
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Checkout crd-schema-checker
+      uses: actions/checkout@v5
+      with:
+        repository: openshift/crd-schema-checker
+        path: .crd-schema-checker
+        ref: 9c9f5f57c9f9ea4dba41d9eec5c365a622f08417 # 2025-04-08
+
+    - name: Build crd-schema-checker
+      run: |
+        make -C .crd-schema-checker
+
+    - name: Get previous released version
+      id: get_previous_released_version
+      run: |
+        make -C operator bundle-post-process
+        released_version="$(make --no-print-directory -C operator replaced-version)"
+        echo "released_version=$released_version" >> "$GITHUB_OUTPUT"
+
+    - name: Checkout previous released version
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+        ref: ${{ steps.get_previous_released_version.outputs.released_version }}
+        path: .old-stackrox
+
+    - name: Run crd-schema-checker for platform operator
+      run: |
+        set -e
+        old_path=.old-stackrox/operator/config/crd/bases
+        new_path=operator/config/crd/bases
+        sc_file=platform.stackrox.io_securedclusters.yaml
+        central_file=platform.stackrox.io_centrals.yaml
+        args="--disabled-validators=ConditionsMustHaveProperSSATags,ListsMustHaveSSATags,NoBools,NoMaps"
+        set -x
+        .crd-schema-checker/crd-schema-checker check-manifests $args --existing-crd-filename=$old_path/$sc_file --new-crd-filename=$new_path/$sc_file
+        .crd-schema-checker/crd-schema-checker check-manifests $args --existing-crd-filename=$old_path/$central_file --new-crd-filename=$new_path/$central_file
+
+    - name: Run crd-schema-checker for config operator
+      run: |
+        set -e
+        old_path=.old-stackrox/config-controller/config/crd/bases
+        new_path=config-controller/config/crd/bases
+        policy_file=config.stackrox.io_securitypolicies.yaml
+        args="--disabled-validators=ConditionsMustHaveProperSSATags,ListsMustHaveSSATags,NoBools,NoMaps"
+        set -x
+        .crd-schema-checker/crd-schema-checker check-manifests $args --existing-crd-filename=$old_path/$policy_file --new-crd-filename=$new_path/$policy_file

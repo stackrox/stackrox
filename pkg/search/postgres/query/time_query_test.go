@@ -1,6 +1,7 @@
 package pgsearch
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -11,6 +12,8 @@ import (
 
 func TestTimeQuery(t *testing.T) {
 	fakeNow := timeutil.MustParse(time.RFC3339, "2022-06-24T12:00:00Z")
+	fake1DayAgo := fakeNow.Add(-24 * time.Hour)
+	tsNow := fakeNow.Format(sqlTimeStampFormat)
 	ts1dayLater := fakeNow.Add(24 * time.Hour).Format(sqlTimeStampFormat)
 	ts1dayAgo := fakeNow.Add(-24 * time.Hour).Format(sqlTimeStampFormat)
 	ts10daysAgo := fakeNow.Add(-10 * 24 * time.Hour).Format(sqlTimeStampFormat)
@@ -54,6 +57,16 @@ func TestTimeQuery(t *testing.T) {
 			value:          "-1d-10d",
 			expectedQuery:  "blah > $$ and blah < $$",
 			expectedValues: []interface{}{ts10daysAgo, ts1dayLater},
+		},
+		{
+			value:          "-1d-10d",
+			expectedQuery:  "blah > $$ and blah < $$",
+			expectedValues: []interface{}{ts10daysAgo, ts1dayLater},
+		},
+		{
+			value:          fmt.Sprintf("tr/%d-%d", fake1DayAgo.UnixMilli(), fakeNow.UnixMilli()),
+			expectedQuery:  "blah >= $$ and blah < $$",
+			expectedValues: []interface{}{ts1dayAgo, tsNow},
 		},
 	}
 

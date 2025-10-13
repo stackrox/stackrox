@@ -4,19 +4,17 @@ import (
 	"context"
 	"hash/crc32"
 	"io"
-	"os"
-	"path/filepath"
 	"sync/atomic"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/backup"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/ioutils"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stackrox/rox/pkg/utils"
@@ -71,16 +69,24 @@ type restoreProcess struct {
 	// For statistics (atomic access; approximate only)
 	bytesRead      int64
 	filesProcessed int64
+
+	// Informs whether processing a RocksDB or Postgres backup bundle
+	postgresBundle bool
 }
 
 func newRestoreProcess(ctx context.Context, id string, header *v1.DBRestoreRequestHeader, handlerFuncs []common.RestoreFileHandlerFunc, data io.Reader) (*restoreProcess, error) {
+	var postgresBundle bool
 	mfFiles := header.GetManifest().GetFiles()
 	if len(mfFiles) != len(handlerFuncs) {
-		return nil, utils.Should(errors.Errorf("mismatch: %d handler functions provided for %d files in the manifest", len(handlerFuncs), len(mfFiles)))
+		return nil, utils.ShouldErr(errors.Errorf("mismatch: %d handler functions provided for %d files in the manifest", len(handlerFuncs), len(mfFiles)))
 	}
 
 	files := make([]*restoreFile, 0, len(mfFiles))
 	for i, manifestFile := range mfFiles {
+		// Check to see if we are processing a postgres bundle
+		if manifestFile.GetName() == backup.PostgresFileName {
+			postgresBundle = true
+		}
 		files = append(files, &restoreFile{
 			manifestFile: manifestFile,
 			handlerFunc:  handlerFuncs[i],
@@ -90,7 +96,7 @@ func newRestoreProcess(ctx context.Context, id string, header *v1.DBRestoreReque
 	metadata := &v1.DBRestoreProcessMetadata{
 		Id:        id,
 		Header:    header,
-		StartTime: types.TimestampNow(),
+		StartTime: protocompat.TimestampNow(),
 	}
 
 	if identity := authn.IdentityFromContextOrNil(ctx); identity != nil {
@@ -99,7 +105,7 @@ func newRestoreProcess(ctx context.Context, id string, header *v1.DBRestoreReque
 
 	resumableDataReader, initAttach, detachEvents := ioutils.NewResumableReader(crc32.NewIEEE())
 	if err := initAttach.Attach(data, 0, nil); err != nil {
-		return nil, utils.Should(errors.Wrap(err, "could not attach initial reader to resumable reader"))
+		return nil, utils.ShouldErr(errors.Wrap(err, "could not attach initial reader to resumable reader"))
 	}
 
 	p := &restoreProcess{
@@ -111,6 +117,8 @@ func newRestoreProcess(ctx context.Context, id string, header *v1.DBRestoreReque
 		cancelSig:       concurrency.NewSignal(),
 		completionSig:   concurrency.NewErrorSignal(),
 		reattachableSig: concurrency.NewSignal(),
+
+		postgresBundle: postgresBundle,
 	}
 
 	p.data = ioutils.NewCountingReader(resumableDataReader, &p.bytesRead)
@@ -122,7 +130,7 @@ func (p *restoreProcess) Metadata() *v1.DBRestoreProcessMetadata {
 	return p.metadata
 }
 
-func (p *restoreProcess) Launch(tempOutputDir, finalDir string) (concurrency.ErrorWaitable, error) {
+func (p *restoreProcess) Launch(tempOutputDir string) (concurrency.ErrorWaitable, error) {
 	if p.started.TestAndSet(true) {
 		return nil, errors.New("restore process has already been started")
 	}
@@ -130,11 +138,11 @@ func (p *restoreProcess) Launch(tempOutputDir, finalDir string) (concurrency.Err
 	p.currentAttemptSig.Reset()
 	currAttemptDone := p.currentAttemptSig.Snapshot()
 
-	go p.run(tempOutputDir, finalDir)
+	go p.run(tempOutputDir)
 	return currAttemptDone, nil
 }
 
-func (p *restoreProcess) run(tempOutputDir, finalDir string) {
+func (p *restoreProcess) run(tempOutputDir string) {
 	defer utils.IgnoreError(p.data.Close)
 	defer p.cancelSig.Signal()
 
@@ -144,34 +152,20 @@ func (p *restoreProcess) run(tempOutputDir, finalDir string) {
 
 	go p.resumeCtrl()
 
-	err := p.doRun(ctx, tempOutputDir, finalDir)
+	err := p.doRun(ctx, tempOutputDir)
 	p.currentAttemptSig.SignalWithError(err)
 	p.completionSig.SignalWithError(err)
 }
 
-func (p *restoreProcess) doRun(ctx context.Context, tempOutputDir, finalDir string) error {
-	if err := os.MkdirAll(tempOutputDir, 0700); err != nil {
-		return errors.Wrapf(err, "could not create temporary output directory %s", tempOutputDir)
-	}
-
-	restoreCtx := newRestoreProcessContext(ctx, tempOutputDir)
+func (p *restoreProcess) doRun(ctx context.Context, tempOutputDir string) error {
+	// store if Postgres bundle here
+	restoreCtx := newRestoreProcessContext(ctx, tempOutputDir, p.postgresBundle)
 
 	if err := p.processFiles(restoreCtx); err != nil {
 		return err
 	}
 
-	if err := restoreCtx.waitForAsyncChecks(); err != nil {
-		return err
-	}
-
-	// For Postgres we aren't using files and symlinks and such, so no need to do this.
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := os.Symlink(filepath.Base(tempOutputDir), finalDir); err != nil {
-			return errors.Wrapf(err, "restore process succeeded, but failed to atomically create symbolic link to output directory %s", tempOutputDir)
-		}
-	}
-
-	return nil
+	return restoreCtx.waitForAsyncChecks()
 }
 
 func (p *restoreProcess) Cancel() {
@@ -180,26 +174,22 @@ func (p *restoreProcess) Cancel() {
 }
 
 func (p *restoreProcess) Interrupt(ctx context.Context, attemptID string) (*v1.DBRestoreProcessStatus_ResumeInfo, error) {
-	var resumeInfo *v1.DBRestoreProcessStatus_ResumeInfo
-	var err error
-	var reattachCond concurrency.Waitable
-
-	concurrency.WithLock(&p.mutex, func() {
+	reattachCond, resumeInfo, err := concurrency.WithLock3(&p.mutex, func() (concurrency.Waitable, *v1.DBRestoreProcessStatus_ResumeInfo, error) {
 		if p.reattachC != nil {
 			// Process is already interrupted
-			resumeInfo = &v1.DBRestoreProcessStatus_ResumeInfo{
+			return nil, &v1.DBRestoreProcessStatus_ResumeInfo{
 				Pos: p.reattachPos,
-			}
-			return
+			}, nil
 		}
 
 		if p.attemptID != attemptID {
-			err = errors.Errorf("provided attempt ID %q does not match ID %s of current attempt", attemptID, p.attemptID)
-			return
+			return nil, nil,
+				errors.Errorf("provided attempt ID %q does not match ID %s of current attempt", attemptID, p.attemptID)
 		}
 
-		reattachCond = p.reattachableSig.Snapshot()
+		reattachCond := p.reattachableSig.Snapshot()
 		p.currentAttemptSig.SignalWithError(errors.New("attempt canceled"))
+		return reattachCond, nil, nil
 	})
 
 	if reattachCond == nil {

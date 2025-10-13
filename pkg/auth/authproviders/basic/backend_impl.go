@@ -34,10 +34,10 @@ type backendImpl struct {
 	basicAuthMgr *basic.Manager
 }
 
-func (p *backendImpl) OnEnable(provider authproviders.Provider) {
+func (p *backendImpl) OnEnable(_ authproviders.Provider) {
 }
 
-func (p *backendImpl) OnDisable(provider authproviders.Provider) {
+func (p *backendImpl) OnDisable(_ authproviders.Provider) {
 }
 
 func (p *backendImpl) ExchangeToken(ctx context.Context, externalRawToken, state string) (*authproviders.AuthResponse, string, error) {
@@ -128,6 +128,6 @@ func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request)
 	return nil, nil
 }
 
-func (p *backendImpl) Validate(ctx context.Context, claims *tokens.Claims) error {
+func (p *backendImpl) Validate(_ context.Context, _ *tokens.Claims) error {
 	return nil
 }

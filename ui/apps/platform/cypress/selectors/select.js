@@ -19,7 +19,7 @@ const singleSelect = {
 };
 
 const patternFlySelect = {
-    openMenu: '.pf-c-select__menu',
+    openMenu: '.pf-v5-c-select__menu',
 };
 
 const selectors = {

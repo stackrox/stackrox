@@ -1,18 +1,18 @@
 import qs from 'qs';
-import { generatePath } from 'react-router-dom';
+import { generatePath } from 'react-router-dom-v5-compat';
 
 import pageTypes from 'constants/pageTypes';
-import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
+import { pagingParams, searchParams, sortParams } from 'constants/searchParams';
 import useCases from 'constants/useCaseTypes';
 import {
-    workflowPaths,
     clustersBasePath,
     clustersPathWithParam,
+    policiesPath,
     riskPath,
     secretsPath,
     urlEntityListTypes,
     urlEntityTypes,
-    policiesPath,
+    workflowPaths,
 } from '../routePaths';
 
 const defaultPathMap = {
@@ -153,7 +153,14 @@ function generateURL(workflowState) {
               encodeValuesOnly: true,
           })
         : '';
-    const newPath = generatePath(path, params) + queryString;
+
+    const encodedParams = Object.fromEntries(
+        Object.entries(params).map(([key, value]) => [
+            key,
+            value !== undefined ? encodeURIComponent(value) : value,
+        ])
+    );
+    const newPath = generatePath(path, encodedParams) + queryString;
     return newPath;
 }
 

@@ -1,16 +1,16 @@
+//go:build sql_integration
+
 package pgadmin
 
 import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -25,11 +25,10 @@ const (
 
 type PostgresRestoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	pool        *pgxpool.Pool
-	config      *pgxpool.Config
-	sourceMap   map[string]string
-	ctx         context.Context
+	pool      postgres.DB
+	config    *postgres.Config
+	sourceMap map[string]string
+	ctx       context.Context
 }
 
 func TestRestore(t *testing.T) {
@@ -37,21 +36,13 @@ func TestRestore(t *testing.T) {
 }
 
 func (s *PostgresRestoreSuite) SetupTest() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
-
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
 
 	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
+	config, err := postgres.ParseConfig(source)
 	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(ctx, config)
+	pool, err := postgres.New(ctx, config)
 	s.Require().NoError(err)
 
 	s.ctx = ctx
@@ -71,8 +62,6 @@ func (s *PostgresRestoreSuite) TearDownTest() {
 		s.Nil(DropDB(s.sourceMap, s.config, tempDB))
 		s.pool.Close()
 	}
-
-	s.envIsolator.RestoreAll()
 }
 
 func (s *PostgresRestoreSuite) TestUtilities() {
@@ -91,7 +80,8 @@ func (s *PostgresRestoreSuite) TestUtilities() {
 	s.True(CheckIfDBExists(s.config, restoreDB))
 
 	// Get a connection to the restore database
-	restorePool := GetClonePool(s.config, restoreDB)
+	restorePool, err := GetClonePool(s.config, restoreDB)
+	s.Nil(err)
 	s.NotNil(restorePool)
 	err = restorePool.Ping(s.ctx)
 	s.Nil(err)
@@ -99,28 +89,10 @@ func (s *PostgresRestoreSuite) TestUtilities() {
 	// Successfully create active DB from restore DB
 	err = CreateDB(s.sourceMap, s.config, restoreDB, activeDB)
 	s.Nil(err)
-	// Have to terminate connections from the source DB before we can create
-	// the copy.  Make sure connection was terminated.
-	err = restorePool.Ping(s.ctx)
-	s.NotNil(err)
-
-	// Rename database to a database that exists
-	err = RenameDB(s.pool, restoreDB, activeDB)
-	s.NotNil(err)
-
-	// Get a connection to the active DB
-	activePool := GetClonePool(s.config, activeDB)
-	s.NotNil(activePool)
-
-	// Rename activeDB to a new one
-	err = RenameDB(s.pool, activeDB, tempDB)
-	s.Nil(err)
-	s.True(CheckIfDBExists(s.config, tempDB))
-	// Make sure connection to active database was terminated
-	s.NotNil(activePool.Ping(s.ctx))
 
 	// Reacquire a connection to the restore database
-	restorePool = GetClonePool(s.config, restoreDB)
+	restorePool, err = GetClonePool(s.config, restoreDB)
+	s.Nil(err)
 	s.NotNil(restorePool)
 	s.Nil(restorePool.Ping(s.ctx))
 

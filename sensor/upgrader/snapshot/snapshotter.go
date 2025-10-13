@@ -24,14 +24,15 @@ var (
 )
 
 type snapshotter struct {
-	ctx  *upgradectx.UpgradeContext
-	opts Options
+	ctx             *upgradectx.UpgradeContext
+	opts            Options
+	sensorNamespace string
 }
 
 func (s *snapshotter) SnapshotState() ([]*unstructured.Unstructured, error) {
 	coreV1Client := s.ctx.ClientSet().CoreV1()
 
-	snapshotSecret, err := coreV1Client.Secrets(common.Namespace).Get(s.ctx.Context(), secretName, metav1.GetOptions{})
+	snapshotSecret, err := coreV1Client.Secrets(s.sensorNamespace).Get(s.ctx.Context(), secretName, metav1.GetOptions{})
 	if k8sErrors.IsNotFound(err) {
 		snapshotSecret = nil
 		err = nil
@@ -58,7 +59,7 @@ func (s *snapshotter) SnapshotState() ([]*unstructured.Unstructured, error) {
 	}
 
 	if s.opts.Store {
-		_, err = coreV1Client.Secrets(common.Namespace).Create(s.ctx.Context(), snapshotSecret, metav1.CreateOptions{})
+		_, err = coreV1Client.Secrets(s.sensorNamespace).Create(s.ctx.Context(), snapshotSecret, metav1.CreateOptions{})
 		if err != nil {
 			return nil, errors.Wrap(err, "creating state snapshot secret")
 		}
@@ -110,7 +111,7 @@ func (s *snapshotter) stateFromSecret(secret *v1.Secret) ([]*unstructured.Unstru
 func (s *snapshotter) createStateSnapshot() ([]*unstructured.Unstructured, *v1.Secret, error) {
 	objs, err := s.ctx.ListCurrentObjects()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.Wrap(err, "listing current objects for snapshot")
 	}
 
 	byteSlices := make([][]byte, 0, len(objs))
@@ -126,18 +127,18 @@ func (s *snapshotter) createStateSnapshot() ([]*unstructured.Unstructured, *v1.S
 	var compressedData bytes.Buffer
 	gzipWriter, err := gzip.NewWriterLevel(&compressedData, gzip.BestCompression)
 	if err != nil {
-		return nil, nil, utils.Should(err) // level is valid, so expect no error
+		return nil, nil, utils.ShouldErr(err) // level is valid, so expect no error
 	}
 	if _, err := gzipWriter.Write(bytes.Join(byteSlices, jsonSeparator)); err != nil {
-		return nil, nil, utils.Should(err)
+		return nil, nil, utils.ShouldErr(err)
 	}
 	if err := gzipWriter.Close(); err != nil {
-		return nil, nil, utils.Should(err)
+		return nil, nil, utils.ShouldErr(err)
 	}
 
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: common.Namespace,
+			Namespace: s.sensorNamespace,
 			Name:      secretName,
 		},
 		Type: v1.SecretTypeOpaque,

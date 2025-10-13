@@ -2,12 +2,14 @@ package oidc
 
 import (
 	"context"
+	"slices"
 	"strings"
+	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/authproviders/oidc/internal/endpoint"
-	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 // In the go-oidc library the check for the issuer is done strictly, not even tolerating a trailing slash
@@ -19,7 +21,11 @@ import (
 // slash added or removed.
 func createOIDCProvider(ctx context.Context, helper *endpoint.Helper, providerFactory providerFactoryFunc) (*informedProvider, error) {
 	var err error
-	ctx = oidc.ClientContext(ctx, helper.HTTPClient())
+	retryClient := retryablehttp.NewClient()
+	retryClient.HTTPClient = helper.HTTPClient()
+	retryClient.RetryWaitMin = 10 * time.Second
+
+	ctx = oidc.ClientContext(ctx, retryClient.StandardClient())
 	for _, issuer := range helper.URLsForDiscovery() {
 		var provider oidcProvider
 		if provider, err = providerFactory(ctx, issuer); err == nil {
@@ -58,11 +64,11 @@ type extraDiscoveryInfo struct {
 }
 
 func (i *extraDiscoveryInfo) SupportsScope(scope string) bool {
-	return sliceutils.Find(i.ScopesSupported, scope) != -1
+	return slices.Index(i.ScopesSupported, scope) != -1
 }
 
 func (i *extraDiscoveryInfo) SupportsResponseType(responseType string) bool {
-	return sliceutils.Find(i.ResponseTypesSupported, responseType) != -1
+	return slices.Index(i.ResponseTypesSupported, responseType) != -1
 }
 
 func (i *extraDiscoveryInfo) SupportsResponseMode(responseMode string) bool {
@@ -70,7 +76,7 @@ func (i *extraDiscoveryInfo) SupportsResponseMode(responseMode string) bool {
 		// Some providers do not set this (Google). Assume all modes are supported.
 		return true
 	}
-	return sliceutils.Find(i.ResponseModesSupported, responseMode) != -1
+	return slices.Index(i.ResponseModesSupported, responseMode) != -1
 }
 
 func (i *extraDiscoveryInfo) SelectResponseMode(hasClientSecret bool) (string, error) {
@@ -133,7 +139,7 @@ func (i *extraDiscoveryInfo) SelectResponseType(responseMode string, hasClientSe
 
 func selectPreferred(options, preferences []string) (string, bool) {
 	for _, pref := range preferences {
-		if sliceutils.Find(options, pref) != -1 {
+		if slices.Index(options, pref) != -1 {
 			return pref, true
 		}
 	}

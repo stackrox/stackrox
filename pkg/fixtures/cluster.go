@@ -15,7 +15,7 @@ func GetCluster(name string) *storage.Cluster {
 		CollectorImage:             "quay.io/stackrox-io/collector",
 		CentralApiEndpoint:         "central.stackrox:443",
 		RuntimeSupport:             true,
-		CollectionMethod:           storage.CollectionMethod_EBPF,
+		CollectionMethod:           storage.CollectionMethod_CORE_BPF,
 		AdmissionController:        true,
 		AdmissionControllerUpdates: false,
 		AdmissionControllerEvents:  true,
@@ -23,7 +23,7 @@ func GetCluster(name string) *storage.Cluster {
 		DynamicConfig: &storage.DynamicClusterConfig{
 			AdmissionControllerConfig: &storage.AdmissionControllerConfig{
 				Enabled:          false,
-				TimeoutSeconds:   20,
+				TimeoutSeconds:   10,
 				ScanInline:       false,
 				DisableBypass:    false,
 				EnforceOnUpdates: false,

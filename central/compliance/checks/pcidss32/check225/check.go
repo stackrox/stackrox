@@ -23,13 +23,10 @@ func init() {
 func clusterIsCompliant(ctx framework.ComplianceContext) {
 	// Map deployments to flows where it is the destination.
 	deploymentIDToIncomingFlows := make(map[string][]*storage.NetworkFlow)
-	for _, flow := range ctx.Data().NetworkFlows() {
+	for _, flow := range ctx.Data().NetworkFlowsWithDeploymentDst() {
 		dst := flow.GetProps().GetDstEntity()
-		if flow.GetProps().GetDstEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
-			deploymentIDToIncomingFlows[dst.GetId()] = append(deploymentIDToIncomingFlows[dst.GetId()], flow)
-		}
+		deploymentIDToIncomingFlows[dst.GetId()] = append(deploymentIDToIncomingFlows[dst.GetId()], flow)
 	}
-
 	// Map enabled ports
 	framework.ForEachDeployment(ctx, func(ctx framework.ComplianceContext, deployment *storage.Deployment) {
 		deploymentIsCompliant(ctx, deployment, deploymentIDToIncomingFlows[deployment.GetId()])
@@ -43,9 +40,9 @@ func deploymentIsCompliant(ctx framework.ComplianceContext, deployment *storage.
 
 	// If we have exposed ports no one is sending traffic to, that's also a fail.
 	if exposedAndUnused.Cardinality() > 0 {
-		framework.Failf(ctx, failText(exposedAndUnused.AsSlice()))
+		framework.Fail(ctx, failText(exposedAndUnused.AsSlice()))
 	} else {
-		framework.Passf(ctx, passText())
+		framework.Pass(ctx, passText())
 	}
 }
 

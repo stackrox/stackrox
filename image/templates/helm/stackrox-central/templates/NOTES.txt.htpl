@@ -1,8 +1,20 @@
 {{- $_ := include "srox.init" . -}}
 
-StackRox {{.Chart.AppVersion}} has been installed.
+StackRox Central Services has been installed.
 
 [< if not .Operator >]
+Central Services Configuration Summary:
+
+  Stackrox Version:                            {{ .Chart.AppVersion }}
+  Kubernetes Version:                          {{ ._rox._apiServer.version }}
+  Kubernetes Namespace:                        {{ .Release.Namespace }}
+  Helm Release Name:                           {{ .Release.Name }}
+  OpenShift Cluster:                           {{ if eq ._rox.env.openshift 0 -}} false {{ else -}} {{ ._rox.env.openshift }} {{ end }}
+  Scanner V4:                                  {{ if ._rox._scannerV4Enabled -}} enabled {{- else -}} disabled {{- end }}
+{{- if and ._rox._scannerV4Enabled ._rox._scannerV4Volume }}
+  Scanner V4 DB Volume:                        {{ ._rox._scannerV4Volume }}
+{{- end }}
+
 {{ if include "srox.checkGenerated" (list . "central.adminPassword.value") -}}
 An administrator password has been generated automatically. Use username 'admin' and the following
 password to log in for initial setup:
@@ -46,5 +58,11 @@ IMPORTANT: You have deployed into an OpenShift-enabled cluster. If you see that 
              oc annotate namespace/{{ .Release.Namespace }} --overwrite openshift.io/node-selector=""
 {{ end -}}
 [< end >]
+
+{{ if ne (._rox.central.telemetry.enabled | toString) "false" }}
+StackRox Kubernetes Security Platform collects and transmits anonymous usage and
+system configuration information. If you want to OPT OUT from this, use
+--set central.telemetry.enabled=false.
+{{ end }}
 
 Thank you for using StackRox!

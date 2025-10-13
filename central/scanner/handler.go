@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
-	"sort"
+	"slices"
 
-	"github.com/docker/distribution/reference"
+	"github.com/distribution/reference"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
@@ -48,7 +48,7 @@ func validateParamsAndNormalizeClusterType(p *apiparams.Scanner) (storage.Cluste
 				validClusterTypes = append(validClusterTypes, clusterString)
 			}
 		}
-		sort.Strings(validClusterTypes)
+		slices.Sort(validClusterTypes)
 		errorList.AddStringf("invalid cluster type: %q; valid options are %+v", p.ClusterType, validClusterTypes)
 	}
 
@@ -73,14 +73,30 @@ func generateFilesForScannerV1(params *apiparams.Scanner, clusterType storage.Cl
 		return nil, errors.Wrap(err, "could not issue scanner db cert")
 	}
 	dbPassword := []byte(renderer.CreatePassword())
+	v4DBPassword := []byte(renderer.CreatePassword())
+
+	scannerV4IndexerCert, err := mtls.IssueNewCert(mtls.ScannerV4IndexerSubject)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not issue certificate for Scanner V4 Indexer")
+	}
+	scannerV4MatcherCert, err := mtls.IssueNewCert(mtls.ScannerV4MatcherSubject)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not issue certificate for Scanner V4 Matcher")
+	}
+	scannerV4DBCert, err := mtls.IssueNewCert(mtls.ScannerV4DBSubject)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not issue certificate for Scanner V4 DB")
+	}
 
 	flavor := defaults.GetImageFlavorFromEnv()
 	config := renderer.Config{
 		ClusterType: clusterType,
 		K8sConfig: &renderer.K8sConfig{
 			CommonConfig: renderer.CommonConfig{
-				ScannerImage:   stringutils.OrDefault(params.ScannerImage, flavor.ScannerImage()),
-				ScannerDBImage: stringutils.OrDefault(params.ScannerDBImage, flavor.ScannerDBImage()),
+				ScannerImage:     stringutils.OrDefault(params.ScannerImage, flavor.ScannerImage()),
+				ScannerDBImage:   stringutils.OrDefault(params.ScannerDBImage, flavor.ScannerDBImage()),
+				ScannerV4Image:   stringutils.OrDefault(params.ScannerV4Image, flavor.ScannerV4Image()),
+				ScannerV4DBImage: stringutils.OrDefault(params.ScannerV4DBImage, flavor.ScannerV4DBImage()),
 			},
 			OfflineMode:  params.OfflineMode,
 			IstioVersion: params.IstioVersion,
@@ -93,6 +109,16 @@ func generateFilesForScannerV1(params *apiparams.Scanner, clusterType storage.Cl
 			"scanner-db-cert.pem": scannerDBCert.CertPEM,
 			"scanner-db-key.pem":  scannerDBCert.KeyPEM,
 			"scanner-db-password": dbPassword,
+
+			"scanner-v4-db-cert.pem": scannerV4DBCert.CertPEM,
+			"scanner-v4-db-key.pem":  scannerV4DBCert.KeyPEM,
+			"scanner-v4-db-password": v4DBPassword,
+
+			"scanner-v4-indexer-cert.pem": scannerV4IndexerCert.CertPEM,
+			"scanner-v4-indexer-key.pem":  scannerV4IndexerCert.KeyPEM,
+
+			"scanner-v4-matcher-cert.pem": scannerV4MatcherCert.CertPEM,
+			"scanner-v4-matcher-key.pem":  scannerV4MatcherCert.KeyPEM,
 		},
 		EnablePodSecurityPolicies: !params.DisablePodSecurityPolicies,
 	}

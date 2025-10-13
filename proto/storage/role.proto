@@ -1,84 +1,90 @@
 syntax = "proto3";
 
-option go_package = "storage";
-option java_package = "io.stackrox.proto.storage";
+package storage;
 
 import "storage/labels.proto";
-import "gogoproto/gogo.proto";
+import "storage/traits.proto";
 
-package storage;
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
 
 // A role specifies which actions are allowed for which subset of cluster
 // objects. Permissions be can either specified directly via setting
 // resource_to_access together with global_access or by referencing a
 // permission set by its id in permission_set_name.
 message Role {
-    reserved             4; // id, future field
+  reserved 4; // id, future field
 
-    // `name` and `description` are provided by the user and can be changed.
-    string name        = 1 [(gogoproto.moretags) = 'sql:"pk"'];
-    string description = 5;
+  // `name` and `description` are provided by the user and can be changed.
+  string name = 1; // @gotags: sql:"pk"
+  string description = 5;
 
-    // The associated PermissionSet and AccessScope for this Role.
-    string permission_set_id = 6;
-    string access_scope_id   = 7;
+  // The associated PermissionSet and AccessScope for this Role.
+  string permission_set_id = 6; // @gotags: sql:"type(uuid)"
+  string access_scope_id = 7; // @gotags: sql:"type(uuid)"
 
-    // Minimum (not default!) access level for every resource. Can be extended
-    // below by explicit permissions but not shrunk.
-    // Deprecated 2021-04-20 in favor of `permission_set_id`.
-    // This field now should be always NO_ACCESS
-    Access global_access = 2 [deprecated = true];
+  // Minimum (not default!) access level for every resource. Can be extended
+  // below by explicit permissions but not shrunk.
+  // Deprecated 2021-04-20 in favor of `permission_set_id`.
+  // This field now should be always NO_ACCESS
+  Access global_access = 2 [deprecated = true];
 
-    // Deprecated 2021-04-20 in favor of `permission_set_id`.
-    map<string, Access> resource_to_access = 3 [deprecated = true];
+  // Deprecated 2021-04-20 in favor of `permission_set_id`.
+  map<string, Access> resource_to_access = 3 [deprecated = true];
+
+  Traits traits = 8;
 }
 
 enum Access {
-    NO_ACCESS         = 0;
-    READ_ACCESS       = 1;
-    READ_WRITE_ACCESS = 2;
+  NO_ACCESS = 0;
+  READ_ACCESS = 1;
+  READ_WRITE_ACCESS = 2;
 }
 
 // This encodes a set of permissions for StackRox resources.
 message PermissionSet {
-    // id is generated and cannot be changed.
-    string id          = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+  // id is generated and cannot be changed.
+  string id = 1; // @gotags: sql:"pk,type(uuid)"
 
-    // `name` and `description` are provided by the user and can be changed.
-    string name        = 2 [(gogoproto.moretags) = 'sql:"unique"'];
-    string description = 3;
+  // `name` and `description` are provided by the user and can be changed.
+  string name = 2; // @gotags: sql:"unique"
+  string description = 3;
 
-    map<string, Access> resource_to_access = 4;
+  map<string, Access> resource_to_access = 4;
+
+  Traits traits = 5;
 }
 
 // Simple access scope is a (simple) selection criteria for scoped resources.
 // It does *not* allow multi-component AND-rules nor set operations on names.
 message SimpleAccessScope {
-    // Each element of any repeated field is an individual rule. Rules are
-    // joined by logical OR: if there exists a rule allowing resource `x`,
-    // `x` is in the access scope.
-    message Rules {
-        message Namespace {
-            // Both fields must be set.
-            string cluster_name   = 1;
-            string namespace_name = 2;
-        }
-
-        repeated string included_clusters      = 1;
-        repeated Namespace included_namespaces = 2;
-
-        repeated SetBasedLabelSelector cluster_label_selectors   = 3;
-        repeated SetBasedLabelSelector namespace_label_selectors = 4;
+  // Each element of any repeated field is an individual rule. Rules are
+  // joined by logical OR: if there exists a rule allowing resource `x`,
+  // `x` is in the access scope.
+  message Rules {
+    message Namespace {
+      // Both fields must be set.
+      string cluster_name = 1;
+      string namespace_name = 2;
     }
 
-    // `id` is generated and cannot be changed.
-    string id          = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+    repeated string included_clusters = 1;
+    repeated Namespace included_namespaces = 2;
 
-    // `name` and `description` are provided by the user and can be changed.
-    string name        = 2  [(gogoproto.moretags) = 'sql:"unique"'];
-    string description = 3;
+    repeated SetBasedLabelSelector cluster_label_selectors = 3;
+    repeated SetBasedLabelSelector namespace_label_selectors = 4;
+  }
 
-    Rules  rules       = 4;
+  // `id` is generated and cannot be changed.
+  string id = 1; // @gotags: sql:"pk,type(uuid)"
+
+  // `name` and `description` are provided by the user and can be changed.
+  string name = 2; // @gotags: sql:"unique"
+  string description = 3;
+
+  Rules rules = 4;
+
+  Traits traits = 5;
 }
 
 // EffectiveAccessScope describes which clusters and namespaces are "in scope"
@@ -88,28 +94,28 @@ message SimpleAccessScope {
 // EffectiveAccessScope represents a tree with nodes marked as included and
 // excluded. If a node is included, all its child nodes are included.
 message EffectiveAccessScope {
-    enum State {
-        UNKNOWN  = 0;
-        INCLUDED = 1;
-        EXCLUDED = 2;
-        PARTIAL  = 3;
-    }
+  enum State {
+    UNKNOWN = 0;
+    INCLUDED = 1;
+    EXCLUDED = 2;
+    PARTIAL = 3;
+  }
 
-    message Namespace {
-        string              id     = 1;
-        string              name   = 2;
-        State               state  = 3;
-        map<string, string> labels = 4;
-    }
+  message Namespace {
+    string id = 1;
+    string name = 2;
+    State state = 3;
+    map<string, string> labels = 4;
+  }
 
-    message Cluster {
-        string              id     = 1;
-        string              name   = 2;
-        State               state  = 3;
-        map<string, string> labels = 5;
+  message Cluster {
+    string id = 1;
+    string name = 2;
+    State state = 3;
+    map<string, string> labels = 5;
 
-        repeated Namespace namespaces = 4;
-    }
+    repeated Namespace namespaces = 4;
+  }
 
-    repeated Cluster clusters = 1;
+  repeated Cluster clusters = 1;
 }

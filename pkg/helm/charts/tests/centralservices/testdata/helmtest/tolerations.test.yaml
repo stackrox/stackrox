@@ -1,27 +1,37 @@
+values:
+  imagePullSecrets:
+    allowNone: true
 tests:
 - name: "with default settings"
-  expect:
+  expect: |
     .deployments.central.spec.template.spec.tolerations | assertThat(. == null)
+    .deployments["config-controller"].spec.template.spec.tolerations | assertThat(. == null)
 
 - name: "with empty string settings"
   values:
     central:
+      tolerations: ""
+    configController:
       tolerations: ""
     scanner:
       tolerations: ""
       dbTolerations: ""
   expect: |
     .deployments.central.spec.template.spec.tolerations | assertThat(. == null)
+    .deployments["config-controller"].spec.template.spec.tolerations | assertThat(. == null)
 
 - name: "with empty dict settings"
   values:
     central:
+      tolerations: {}
+    configController:
       tolerations: {}
     scanner:
       tolerations: {}
       dbTolerations: {}
   expect: |
     .deployments.central.spec.template.spec.tolerations | assertThat(length == 0)
+    .deployments["config-controller"].spec.template.spec.tolerations | assertThat(length == 0)
     .deployments.scanner.spec.template.spec.tolerations | assertThat(length == 0)
     .deployments["scanner-db"].spec.template.spec.tolerations | assertThat(length == 0)
 
@@ -31,20 +41,27 @@ tests:
       tolerations:
       - key: "node-role.kubernetes.io/infra"
         operator: "Exists"
-      - key: "node-role.kubernetes.io/master"
+      - key: "node-role.kubernetes.io/control-plane"
+        operator: "Exists"
+    configController:
+      tolerations:
+      - key: "node-role.kubernetes.io/infra"
+        operator: "Exists"
+      - key: "node-role.kubernetes.io/control-plane"
         operator: "Exists"
     scanner:
       tolerations:
       - key: "node-role.kubernetes.io/infra"
         operator: "Exists"
-      - key: "node-role.kubernetes.io/master"
+      - key: "node-role.kubernetes.io/control-plane"
         operator: "Exists"
       dbTolerations:
       - key: "node-role.kubernetes.io/infra"
         operator: "Exists"
-      - key: "node-role.kubernetes.io/master"
+      - key: "node-role.kubernetes.io/control-plane"
         operator: "Exists"
   expect: |
     .deployments.central.spec.template.spec.tolerations | assertThat(length == 2)
+    .deployments["config-controller"].spec.template.spec.tolerations | assertThat(length == 2)
     .deployments.scanner.spec.template.spec.tolerations | assertThat(length == 2)
     .deployments["scanner-db"].spec.template.spec.tolerations | assertThat(length == 2)

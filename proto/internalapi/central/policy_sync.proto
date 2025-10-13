@@ -1,11 +1,11 @@
 syntax = "proto3";
 
-option go_package = "central";
+package central;
 
 import "storage/policy.proto";
 
-package central;
+option go_package = "./internalapi/central;central";
 
 message PolicySync {
-    repeated storage.Policy policies = 1;
+  repeated storage.Policy policies = 1;
 }

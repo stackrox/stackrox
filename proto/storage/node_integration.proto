@@ -1,19 +1,20 @@
 syntax = "proto3";
 
-option go_package = "storage";
-option java_package = "io.stackrox.proto.storage";
+package storage;
 
 import "storage/image_integration.proto";
 
-package storage;
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
 
 // Next Tag: 6
 message NodeIntegration {
-    string id   = 1;
-    string name = 2;
-    string type = 3;
+  string id = 1;
+  string name = 2;
+  string type = 3;
 
-    oneof IntegrationConfig {
-        ClairifyConfig clairify = 4;
-    }
+  oneof IntegrationConfig {
+    ClairifyConfig clairify = 4;
+    ScannerV4Config scannerv4 = 5;
+  }
 }

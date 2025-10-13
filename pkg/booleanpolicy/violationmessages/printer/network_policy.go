@@ -1,10 +1,10 @@
 package printer
 
 import (
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 const (
@@ -64,7 +64,7 @@ func EnhanceNetworkPolicyViolations(violations []*storage.Alert_Violation, np *a
 		kvAttrs = append(kvAttrs, attrs...)
 	}
 	for _, violation := range violations {
-		violation.Time = types.TimestampNow()
+		violation.Time = protocompat.TimestampNow()
 		if len(kvAttrs) > 0 {
 			violation.MessageAttributes = &storage.Alert_Violation_KeyValueAttrs_{
 				KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{

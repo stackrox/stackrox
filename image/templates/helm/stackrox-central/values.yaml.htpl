@@ -58,7 +58,7 @@
 #image:
 #  # The image registry to use. Unless overridden in the more specific configs, this
 #  # determines the base registry for each image referenced in this config file.
-#  registry: stackrox.io
+#  registry: [< required "" .MainRegistry >]
 #
 ## Settings regarding the installation environment
 #env:
@@ -103,11 +103,24 @@
 ## If specified, this should be a map mapping file names to PEM-encoded contents.
 #additionalCAs: null
 #
+[<- if and .TelemetryEnabled (and (eq .TelemetryKey "") (eq .TelemetryEndpoint ""))>]
 #central:
 #
-#  # Indicates whether telemetry data collection should be disabled. This defaults to true
-#  # in offline mode, and false otherwise. Only has an effect upon the first installation.
-#  disableTelemetry: null
+#  # Settings for telemetry data collection. Telemetry is enabled by default.
+#  telemetry:
+#    enabled: true
+#    storage:
+#      endpoint: null
+#      key: null
+[<- else >]
+central:
+# # Settings for telemetry data collection.
+  telemetry:
+    enabled: [< .TelemetryEnabled >]
+    storage:
+      endpoint: "[< .TelemetryEndpoint >]"
+      key: "[< .TelemetryKey >]"
+[<- end >]
 #
 #
 #  config: "@config/central/config.yaml|config/central/config.yaml.default"
@@ -135,7 +148,7 @@
 #  image:
 #    registry: null
 #    name: main
-#    tag: 3.0.48.x-121-g337915cd3d
+#    tag: 4.0.0
 #    fullRef: null
 #
 #  adminPassword:
@@ -150,16 +163,6 @@
 #    limits:
 #      memory: "8Gi"
 #      cpu: "4000m"
-#
-#  persistence:
-#    hostPath: null
-#    persistentVolumeClaim:
-#      claimName: null
-#      createClaim: null
-#      storageClass: null
-#      size: null
-#    none: null
-#
 #
 #  exposure:
 #
@@ -185,11 +188,6 @@
 #      host: null
 #
 #  db:
-#    # If enabled, a new central will use a Postgres database as its backing datastore either via a new Central DB pod
-#    # or with an external deployment (see below).
-#    # NOTE: Using Postgres as a datastore is in Tech Preview.
-#    enabled: false
-#
 #    # External signifies that a Postgres wire-compatible database has already been deployed and a Central DB pod
 #    # does not need to be deployed
 #    external: false
@@ -197,55 +195,63 @@
 #    source:
 #      # ConnectionString should not be specified if the Central DB deployment is being managed by the helm chart
 #      # The connection string must be in the format described here https://www.postgresql.org/docs/current/static/libpq-connect.html#LIBPQ-CONNSTRING
-#      # Do NOT use a connection string with a password field. Instead specify the value below in the password section/
+#      # client_encoding=UTF8 is required in any connection string and the only supported encoding
+#      # statementTimeoutMs is ignored for external database connections
+#      # If using a connection that supports "statement_timeout" it is recommended to include "statement_timeout=1200000"
+#      # Do NOT use a connection string with a password field. Instead specify the value below in the password section.
 #      connectionString: null
 #      minConns: 10
 #      maxConns: 90
-#      statementTimeoutMs: 60000
+#      statementTimeoutMs: 1200000
 #
-#  # The admin password setting for communication with Central's DB.
-#  # When a value is set explicitly, this is always used, even on upgrade.
-#  # Otherwise, a password will be automatically generated if `generate` is set to true,
-#  # or left unset (null) and the Helm chart is being installed (as opposed to upgraded).
-#  # Should only be used when utilizing Postgres as central's DB
-#  password:
-#    value: null
-#    generate: null
+#    # The admin password setting for communication with Central's DB.
+#    # When a value is set explicitly, this is always used, even on upgrade.
+#    # Otherwise, a password will be automatically generated if `generate` is set to true,
+#    # or left unset (null) and the Helm chart is being installed (as opposed to upgraded).
+#    # Should only be used when utilizing Postgres as central's DB
+#    password:
+#      value: null
+#      generate: null
 #
-#  postgresConfig: "@config/centraldb/postgresql.conf|config/centraldb/postgresql.conf.default"
-#  hbaConfig: "@config/centraldb/pg_hba.conf|config/centraldb/pg_hba.conf.default"
+#    postgresConfig: "@config/centraldb/postgresql.conf|config/centraldb/postgresql.conf.default"
+#    hbaConfig: "@config/centraldb/pg_hba.conf|config/centraldb/pg_hba.conf.default"
 #
-#  nodeSelector: null
+#    # Specifying configOverride mounts the specified config map in the same namespace which must contain
+#    # both pg_hba.conf and postgresql.conf. This should only be used when the default settings are not
+#    # sufficient and manual override is required.
+#    configOverride: null
 #
-#  # Settings for the internal service-to-service TLS certificate used by central.
-#  # See the documentation for `ca` at the top level for an explanation.
-#  serviceTLS:
-#    cert: null
-#    key: null
-#    generate: null
+#    nodeSelector: null
 #
-#  image:
-#    registry: null
-#    name: central-db
-#    tag: 3.0.48.x-121-g337915cd3d
-#    fullRef: null
+#    # Settings for the internal service-to-service TLS certificate used by central.
+#    # See the documentation for `ca` at the top level for an explanation.
+#    serviceTLS:
+#      cert: null
+#      key: null
+#      generate: null
 #
-#  resources:
-#    requests:
-#      memory: "4Gi"
-#      cpu: "2"
-#    limits:
-#      memory: "8Gi"
-#      cpu: "4"
+#    image:
+#      registry: null
+#      name: central-db
+#      tag: 4.0.0
+#      fullRef: null
 #
-#  persistence:
-#    hostPath: null
-#    persistentVolumeClaim:
-#      claimName: null
-#      createClaim: null
-#      storageClass: null
-#      size: null
-#    none: null
+#    resources:
+#      requests:
+#        memory: "8Gi"
+#        cpu: "4"
+#      limits:
+#        memory: "16Gi"
+#        cpu: "8"
+#
+#    persistence:
+#      hostPath: null
+#      persistentVolumeClaim:
+#        claimName: null
+#        createClaim: null
+#        storageClass: null
+#        size: null
+#      none: null
 #
 ## Configuration options relating to StackRox Scanner.
 #scanner:
@@ -319,6 +325,208 @@
 #    key: null
 #    generate: null
 #
+## Configuration options relating to Scanner V4.
+#scannerV4:
+#
+#  # If this is set to false, Scanner V4 will be enabled and deployed.
+#  # If it is set to true, no other setting in this section will have any effect.
+#  disable: true
+#
+#  image:
+#    registry: null
+#    name: [< required "" .ScannerV4ImageRemote >]
+#    tag: [< required "" .ScannerV4ImageTag >]
+#    fullRef: null
+#
+#  indexer:
+#    # The log level for the indexer deployment. This typically does not need to be changed.
+#    logLevel: INFO
+#
+#    # If you want to enforce indexer to only run on certain nodes, you can specify
+#    # a node selector here to make sure Scanner V4 can only be scheduled on Nodes with the
+#    # given label.
+#    nodeSelector: null
+#
+#    # If the nodes selected by the node selector are tainted, you can specify the corresponding taint tolerations here.
+#    tolerations: null
+#
+#    # If scheduling needs specific affinities, you can specify the corresponding affinities here.
+#    affinity:
+#      podAntiAffinity:
+#        preferredDuringSchedulingIgnoredDuringExecution:
+#        - weight: 100
+#          podAffinityTerm:
+#            labelSelector:
+#              matchLabels:
+#                app: scanner-v4-indexer
+#            topologyKey: kubernetes.io/hostname
+#      nodeAffinity:
+#        preferredDuringSchedulingIgnoredDuringExecution:
+#        - weight: 50
+#          preference:
+#            matchExpressions:
+#            - key: node-role.kubernetes.io/infra
+#              operator: Exists
+#        - weight: 25
+#          preference:
+#            matchExpressions:
+#            - key: node-role.kubernetes.io/compute
+#              operator: Exists
+#        - weight: 100
+#          preference:
+#            matchExpressions:
+#            - key: node-role.kubernetes.io/control-plane
+#              operator: DoesNotExist
+#
+#    # Default number of indexer replicas created upon startup. The actual number might be higher
+#    # or lower if autoscaling is enabled (see below).
+#    replicas: 3
+#
+#    # Settings related to autoscaling the indexer deployment.
+#    autoscaling:
+#      # If true, autoscaling will be disabled. None of the other settings in this section will
+#      # have any effect.
+#      disable: false
+#      minReplicas: 2
+#      maxReplicas: 5
+#
+#    # Resource settings for the indexer deployment.
+#    resources:
+#      requests:
+#        memory: "1500Mi"
+#        cpu: "1000m"
+#      limits:
+#        memory: "3Gi"
+#        cpu: "2000m"
+#
+#    # Settings for the internal service-to-service TLS certificate used by indexer.
+#    # See the documentation for `ca` at the top level for an explanation.
+#    serviceTLS:
+#      cert: null
+#      key: null
+#      generate: null
+#
+#  matcher:
+#    # The log level for the matcher deployment. This typically does not need to be changed.
+#    logLevel: INFO
+#
+#    # If you want to enforce matcher to only run on certain nodes, you can specify
+#    # a node selector here to make sure Scanner V4 can only be scheduled on Nodes with the
+#    # given label.
+#    nodeSelector: null
+#
+#    # If the nodes selected by the node selector are tainted, you can specify the corresponding taint tolerations here.
+#    tolerations: null
+#
+#    # If scheduling needs specific affinities, you can specify the corresponding affinities here.
+#    affinity:
+#      podAntiAffinity:
+#        preferredDuringSchedulingIgnoredDuringExecution:
+#        - weight: 100
+#          podAffinityTerm:
+#            labelSelector:
+#              matchLabels:
+#                app: scanner-v4-matcher
+#            topologyKey: kubernetes.io/hostname
+#      nodeAffinity:
+#        preferredDuringSchedulingIgnoredDuringExecution:
+#        - weight: 50
+#          preference:
+#            matchExpressions:
+#            - key: node-role.kubernetes.io/infra
+#              operator: Exists
+#        - weight: 25
+#          preference:
+#            matchExpressions:
+#            - key: node-role.kubernetes.io/compute
+#              operator: Exists
+#        - weight: 100
+#          preference:
+#            matchExpressions:
+#            - key: node-role.kubernetes.io/control-plane
+#              operator: DoesNotExist
+#
+#    # Default number of matcher replicas created upon startup. The actual number might be higher
+#    # or lower if autoscaling is enabled (see below).
+#    replicas: 2
+#    # Settings related to autoscaling the matcher deployment.
+#    autoscaling:
+#      # If true, autoscaling will be disabled. None of the other settings in this section will
+#      # have any effect.
+#      disable: false
+#      minReplicas: 2
+#      maxReplicas: 3
+#
+#    # Resource settings for the matcher deployment.
+#    resources:
+#      requests:
+#        memory: "4Gi"
+#        cpu: "1000m"
+#      limits:
+#        memory: "5Gi"
+#        cpu: "2000m"
+#
+#    # Settings for the internal service-to-service TLS certificate used by matcher.
+#    # See the documentation for `ca` at the top level for an explanation.
+#    serviceTLS:
+#      cert: null
+#      key: null
+#      generate: null
+#
+#  db:
+#    image:
+#      registry: null
+#      name: [< required "" .ScannerV4DBImageRemote >]
+#      tag: [< required "" .ScannerV4ImageTag >]
+#      fullRef: null
+#
+#    # Resource settings for the DB deployment.
+#    resources:
+#      requests:
+#        cpu: "200m"
+#        memory: "2Gi"
+#      limits:
+#        cpu: "2000m"
+#        memory: "4Gi"
+#
+#    # Configure DB password. If `generate` is true, a new password will be
+#    # generated. If it is false, a valid password is expected in `value`.
+#    password:
+#      generate: null
+#      value: null
+#
+#    # Configure persistence backend for the DB.
+#    # By default a PVC is used. Unless a Storage Class is specified
+#    # a default Storage Class is expected.
+#    persistence:
+#      hostPath: null
+#      persistentVolumeClaim:
+#        claimName: "scanner-v4-db"
+#        size: "50Gi"
+#        createClaim: true
+#        storageClass: null
+#       none: null
+#
+#    nodeSelector: null
+#
+#    # Settings for the internal service-to-service TLS certificate used by the DB.
+#    # See the documentation for `ca` at the top level for an explanation.
+#    serviceTLS:
+#      cert: null
+#      key: null
+#      generate: null
+#
+#    postgresConfig: "@config-templates/scanner-v4-db/postgresql.conf|config-templates/scanner-v4-db/postgresql.conf.default"
+#    hbaConfig: "@config-templates/scanner-v4-db/pg_hba.conf|config-templates/scanner-v4-db/pg_hba.conf.default"
+#
+#    # Specifying configOverride mounts the specified config map in the same namespace which must contain
+#    # both pg_hba.conf and postgresql.conf. This should only be used when the default settings are not
+#    # sufficient and manual override is required.
+#    configOverride: null
+#
+#configAsCode:
+#  enabled: true
+#
 ## EXPERT SETTINGS. You usually do not need to touch those.
 #
 ## If set to true, allow deploying in a namespace other than "stackrox". This is unsupported, so
@@ -329,6 +537,14 @@
 ## with that, but for streamlining purposes, we want to encourage all users to stick with the
 ## default name, and make it a little harder to deviate from that.
 #allowNonstandardReleaseName: false
+#
+## This option is meant to be a very explicit acknowledgement by a user that they understand
+## the implications of installing more than one instance of Central on a single cluster, particularly
+## around CRD management.
+##
+## To enable the option, please review the README section titled "Multiple Installations of Central"
+## and update the option value accordingly.
+#allowUnsupportedMultipleCentrals: no
 #
 #meta:
 #  # This controls whether the built-in `lookup` function will be used. If you see an error
@@ -354,3 +570,7 @@
 #    # via `overrideAPIResources`.
 #    extraAPIResources: []
 #
+#monitoring:
+#  # Enables integration with OpenShift platform monitoring.
+#  openshift:
+#    enabled: true

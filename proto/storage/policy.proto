@@ -1,244 +1,201 @@
 syntax = "proto3";
 
-option go_package = "storage";
-option java_package = "io.stackrox.proto.storage";
-
-import "google/protobuf/timestamp.proto";
-import "storage/scope.proto";
-import "storage/image.proto";
-import "gogoproto/gogo.proto";
-import "storage/deployment.proto";
-import "storage/rbac.proto";
-
 package storage;
 
+import "google/protobuf/timestamp.proto";
+import "storage/image.proto";
+import "storage/scope.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+// Note: If you add a new field to the Policy proto, please update the PolicySpec struct
+// in `config-controller/api/v1alpha1/policy_types.go` and the ToProtobuf() function
+// to account for the new field, and its conversion.
+
+//Next tag: 28
 message Policy {
-    string                      id                      = 1 [(gogoproto.moretags) = 'search:"Policy ID,store,hidden" sql:"pk"'];
-    string                      name                    = 2 [(gogoproto.moretags) = 'search:"Policy,store" sql:"unique"'];
-    string                      description             = 3 [(gogoproto.moretags) = 'search:"Description"'];
-    string                      rationale               = 4;
-    string                      remediation             = 5;
-    bool                        disabled                = 6 [(gogoproto.moretags) = 'search:"Disabled"'];
-    repeated string             categories              = 7 [(gogoproto.moretags) = 'search:"Category,store"'];
-    reserved                                              8; // was PolicyFields fields
+  string id = 1; // @gotags: search:"Policy ID,store,hidden" sql:"pk,index=btree" crYaml:"-"
+  // Name of the policy.  Must be unique.
+  string name = 2; // @gotags: search:"Policy,store" sql:"unique" crYaml:"policyName"
+  // Free-form text description of this policy.
+  string description = 3; // @gotags: search:"Description" crYaml:",omitempty"
+  string rationale = 4; // @gotags: crYaml:",omitempty"
+  // Describes how to remediate a violation of this policy.
+  string remediation = 5; // @gotags: crYaml:",omitempty"
+  // Toggles whether or not this policy will be executing and actively firing alerts.
+  bool disabled = 6; // @gotags: search:"Disabled" crYaml:",omitempty"
+  // List of categories that this policy falls under.  Category names must already exist in Central.
+  repeated string categories = 7; // @gotags: search:"Category,store" crYaml:",omitempty"
+  reserved 8; // was PolicyFields fields
 
-    repeated LifecycleStage     lifecycle_stages        = 9  [(gogoproto.moretags) = 'search:"Lifecycle Stage,store"'];
-    EventSource                 event_source            = 22;
+  // Describes which policy lifecylce stages this policy applies to.  Choices are DEPLOY, BUILD, and RUNTIME.
+  repeated LifecycleStage lifecycle_stages = 9; // @gotags: search:"Lifecycle Stage,store" crYaml:"lifecycleStages,stringer"
+  // Describes which events should trigger execution of this policy
+  EventSource event_source = 22; // @gotags: crYaml:"eventSource,stringer"
 
-    reserved                                            10; //was repeated Exclusion whitelists
-    repeated Exclusion          exclusions              = 21;
-    repeated Scope              scope                   = 11;
+  reserved 10; //was repeated Exclusion whitelists
+  // Define deployments or images that should be excluded from this policy.
+  repeated Exclusion exclusions = 21; // @gotags: crYaml:",omitempty"
+  // Defines clusters, namespaces, and deployments that should be included in this policy.  No scopes defined includes everything.
+  repeated Scope scope = 11; // @gotags: crYaml:",omitempty"
 
-    Severity                    severity                = 12 [(gogoproto.moretags) = 'search:"Severity,store"'];
-    // FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.
-    // FAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.
-    // FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates.
-    repeated EnforcementAction  enforcement_actions     = 13 [(gogoproto.moretags) = 'search:"Enforcement"'];
-    repeated string             notifiers               = 14;
-    google.protobuf.Timestamp   last_updated            = 15 [(gogoproto.moretags) = 'search:"Policy Last Updated"'];
+  // Defines how severe a violation from this policy is.  Possible values are UNSET_SEVERITY, LOW_SEVERITY, MEDIUM_SEVERITY, HIGH_SEVERITY, and CRITICAL_SEVERITY.
+  Severity severity = 12; // @gotags: search:"Severity,store" crYaml:",stringer"
+  // FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.
+  // FAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.
+  // FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates.
+  // Lists the enforcement actions to take when a violation from this policy is identified.  Possible value are UNSET_ENFORCEMENT, SCALE_TO_ZERO_ENFORCEMENT, UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT, KILL_POD_ENFORCEMENT, FAIL_BUILD_ENFORCEMENT, FAIL_KUBE_REQUEST_ENFORCEMENT, FAIL_DEPLOYMENT_CREATE_ENFORCEMENT, and. FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT.
+  repeated EnforcementAction enforcement_actions = 13; // @gotags: search:"Enforcement" crYaml:"enforcementActions,omitempty,stringer"
+  // List of IDs of the notifiers that should be triggered when a violation from this policy is identified.  IDs should be in the form of a UUID and are found through the Central API.
+  repeated string notifiers = 14; // @gotags: crYaml:",omitempty"
+  google.protobuf.Timestamp last_updated = 15; // @gotags: search:"Policy Last Updated" crYaml:"-"
 
-    // For internal use only.
-    string                      SORT_name               = 16 [(gogoproto.moretags) = 'search:"SORT_Policy,hidden,analyzer=keyword"'];
-    // For internal use only.
-    string                      SORT_lifecycleStage     = 17 [(gogoproto.moretags) = 'search:"SORT_Lifecycle Stage,hidden"'];
-    // For internal use only.
-    bool                        SORT_enforcement        = 18 [(gogoproto.moretags) = 'search:"SORT_Enforcement,hidden"'];
+  // For internal use only.
+  string SORT_name = 16; // @gotags: search:"SORT_Policy,hidden,analyzer=keyword" crYaml:"-"
+  // For internal use only.
+  string SORT_lifecycleStage = 17; // @gotags: search:"SORT_Lifecycle Stage,hidden" crYaml:"-"
+  // For internal use only.
+  bool SORT_enforcement = 18; // @gotags: search:"SORT_Enforcement,hidden" crYaml:"-"
 
-    string                      policy_version          = 19;
-    repeated PolicySection      policy_sections         = 20;
+  string policy_version = 19; // @gotags: crYaml:"-"
+  // PolicySections define the violation criteria for this policy.
+  repeated PolicySection policy_sections = 20; // @gotags: crYaml:"policySections,omitempty"
 
-    message MitreAttackVectors {
-        string          tactic     = 1;
-        repeated string techniques = 2;
-    }
+  message MitreAttackVectors {
+    string tactic = 1;
+    repeated string techniques = 2;
+  }
 
-    repeated MitreAttackVectors mitre_attack_vectors    = 23;
+  repeated MitreAttackVectors mitre_attack_vectors = 23; // @gotags: crYaml:"mitreAttackVectors,omitempty"
 
-    // Read-only field. If true, the policy's criteria fields are rendered read-only.
-    bool                        criteria_locked         = 24;
-    // Read-only field. If true, the policy's MITRE ATT&CK fields are rendered read-only.
-    bool                        mitre_vectors_locked    = 25;
-    // Read-only field. Indicates the policy is a default policy if true and a custom policy if false.
-    bool                        is_default              = 26;
+  // Read-only field. If true, the policy's criteria fields are rendered read-only.
+  bool criteria_locked = 24; // @gotags: crYaml:"criteriaLocked"
+  // Read-only field. If true, the policy's MITRE ATT&CK fields are rendered read-only.
+  bool mitre_vectors_locked = 25; // @gotags: crYaml:"mitreVectorsLocked"
+  // Read-only field. Indicates the policy is a default policy if true and a custom policy if false.
+  bool is_default = 26; // @gotags: crYaml:"isDefault"
+
+  PolicySource source = 27; // @gotags: crYaml:"-"
+}
+
+enum PolicySource {
+  IMPERATIVE = 0;
+  DECLARATIVE = 1;
 }
 
 enum EventSource {
-    NOT_APPLICABLE        = 0;
-    DEPLOYMENT_EVENT      = 1;
-    AUDIT_LOG_EVENT       = 2;
+  NOT_APPLICABLE = 0;
+  DEPLOYMENT_EVENT = 1;
+  AUDIT_LOG_EVENT = 2;
 }
 
 message PolicySection {
-    string section_name = 1;
-    repeated PolicyGroup policy_groups = 3;
+  string section_name = 1; // @gotags: crYaml:"sectionName,omitempty"
+  // The set of policies groups that make up this section.  Each group can be considered an individual criterion.
+  repeated PolicyGroup policy_groups = 3; // @gotags: crYaml:"policyGroups,omitempty"
 }
 
 message PolicyGroup {
-    string field_name                = 1;
-    BooleanOperator boolean_operator = 2;
-    bool negate                      = 3;
-    repeated PolicyValue values      = 4;
+  // Defines which field on a deployment or image this PolicyGroup evaluates.  See https://docs.openshift.com/acs/operating/manage-security-policies.html#policy-criteria_manage-security-policies for a complete list of possible values.
+  string field_name = 1; // @gotags: crYaml:"fieldName"
+  // Determines if the values are combined with an OR or an AND.  Defaults to OR.
+  BooleanOperator boolean_operator = 2; // @gotags: crYaml:"booleanOperator,stringer"
+  // Determines if the evaluation of this PolicyGroup is negated.  Default to false.
+  bool negate = 3; // @gotags: crYaml:",omitempty"
+  // List of values for the specified field
+  repeated PolicyValue values = 4; // @gotags: crYaml:",omitempty"
 }
 
 message PolicyValue {
-    string value = 1;
+  string value = 1;
 }
 
 enum BooleanOperator {
-    OR  = 0;
-    AND = 1;
+  OR = 0;
+  AND = 1;
 }
 
 message PolicyList {
-    repeated Policy policies = 1;
+  repeated Policy policies = 1;
 }
 
 message ListPolicy {
-    string                    id               = 1;
-    string                    name             = 2;
-    string                    description      = 3;
-    Severity                  severity         = 4;
-    bool                      disabled         = 5;
-    repeated LifecycleStage   lifecycle_stages = 6;
-    repeated string           notifiers        = 7;
-    google.protobuf.Timestamp last_updated     = 8;
-    EventSource               event_source     = 9;
-    bool                      is_default       = 10;
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  Severity severity = 4;
+  bool disabled = 5;
+  repeated LifecycleStage lifecycle_stages = 6;
+  repeated string notifiers = 7;
+  google.protobuf.Timestamp last_updated = 8;
+  EventSource event_source = 9;
+  bool is_default = 10;
+  PolicySource source = 11;
 }
 
 // Please ensure any changes to the following are reflected in comment of top-level policy field `enforcement_actions`.
 
 enum EnforcementAction {
-    UNSET_ENFORCEMENT                         = 0;
-    SCALE_TO_ZERO_ENFORCEMENT                 = 1;
-    UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT = 2;
-    KILL_POD_ENFORCEMENT                      = 3;
-    FAIL_BUILD_ENFORCEMENT                    = 4;
-    // FAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.
-    FAIL_KUBE_REQUEST_ENFORCEMENT             = 5;
-    // FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates.
-    FAIL_DEPLOYMENT_CREATE_ENFORCEMENT        = 6;
-    // FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates.
-    FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT        = 7;
+  UNSET_ENFORCEMENT = 0;
+  SCALE_TO_ZERO_ENFORCEMENT = 1;
+  UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT = 2;
+  KILL_POD_ENFORCEMENT = 3;
+  FAIL_BUILD_ENFORCEMENT = 4;
+  // FAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.
+  FAIL_KUBE_REQUEST_ENFORCEMENT = 5;
+  // FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates.
+  FAIL_DEPLOYMENT_CREATE_ENFORCEMENT = 6;
+  // FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates.
+  FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT = 7;
 }
 
 enum Severity {
-    UNSET_SEVERITY    = 0;
-    LOW_SEVERITY      = 1;
-    MEDIUM_SEVERITY   = 2;
-    HIGH_SEVERITY     = 3;
-    CRITICAL_SEVERITY = 4;
+  UNSET_SEVERITY = 0;
+  LOW_SEVERITY = 1;
+  MEDIUM_SEVERITY = 2;
+  HIGH_SEVERITY = 3;
+  CRITICAL_SEVERITY = 4;
 }
 
 enum LifecycleStage {
-    DEPLOY    = 0;
-    BUILD     = 1;
-    RUNTIME   = 2;
-}
-
-message Component {
-    string name    = 1;
-    string version = 2;
-}
-
-message DockerfileLineRuleField {
-    string instruction  = 1;
-    string value        = 2;
-}
-
-message KeyValuePolicy {
-    string key   = 1;
-    string value = 2;
-    ContainerConfig.EnvironmentConfig.EnvVarSource env_var_source = 3;
-}
-
-message VolumePolicy {
-    string name         = 1;
-    string source       = 2;
-    string destination  = 3;
-    oneof set_read_only {
-        bool read_only  = 4;
-    }
-    string type         = 5;
-}
-
-message HostMountPolicy {
-    oneof set_read_only {
-        bool read_only  = 1;
-    }
-}
-
-message ProcessPolicy {
-    string name     = 1;
-    string args     = 2;
-    string ancestor = 3;
-    string uid      = 4;
-}
-
-message ResourcePolicy {
-    NumericalPolicy cpu_resource_request    = 1;
-    NumericalPolicy cpu_resource_limit      = 2;
-    NumericalPolicy memory_resource_request = 3;
-    NumericalPolicy memory_resource_limit   = 4;
-}
-
-message NumericalPolicy {
-    Comparator op  = 1;
-    float value    = 3;
+  DEPLOY = 0;
+  BUILD = 1;
+  RUNTIME = 2;
 }
 
 enum Comparator {
-    LESS_THAN              = 0;
-    LESS_THAN_OR_EQUALS    = 1;
-    EQUALS                 = 2;
-    GREATER_THAN_OR_EQUALS = 3;
-    GREATER_THAN           = 4;
-}
-
-message PortPolicy {
-    int32 port          = 1;
-    string protocol     = 2;
-}
-
-// K8S RBAC Permission level configuration.
-message PermissionPolicy {
-    PermissionLevel permission_level = 1;
-}
-
-message ImageNamePolicy {
-    string registry        = 1; // e.g. docker.io
-    string remote          = 2; // e.g. stackrox/container-summarizer
-    string tag             = 3; // e.g. latest
-}
-
-message PortExposurePolicy {
-    repeated PortConfig.ExposureLevel exposure_levels = 1;
+  LESS_THAN = 0;
+  LESS_THAN_OR_EQUALS = 1;
+  EQUALS = 2;
+  GREATER_THAN_OR_EQUALS = 3;
+  GREATER_THAN = 4;
 }
 
 message Exclusion {
-    string                    name       = 1;
+  string name = 1; // @gotags: crYaml:",omitempty"
 
-    message Container {
-        ImageName image_name = 3 [(gogoproto.moretags) = 'search:"-"'];
-    }
-    reserved 2; // formally Container container
+  message Container {
+    ImageName image_name = 3; // @gotags: search:"-" crYaml:"imageName"
+  }
+  reserved 2; // formally Container container
 
-    message Deployment {
-        string                name       = 3;
-        Scope                 scope      = 4;
-    }
-    Deployment                deployment = 5;
+  message Deployment {
+    string name = 3; // @gotags: crYaml:",omitempty"
+    Scope scope = 4; // @gotags: crYaml:",omitempty"
+  }
+  Deployment deployment = 5; // @gotags: crYaml:",omitempty"
 
-    message Image {
-        string name = 1;
-    }
-    Image                     image      = 7;
+  message Image {
+    string name = 1;
+  }
+  Image image = 7; // @gotags: crYaml:",omitempty"
 
-    google.protobuf.Timestamp expiration = 6;
+  google.protobuf.Timestamp expiration = 6; // @gotags: crYaml:",timestamp,omitempty"
 }
 
 // ExportPoliciesResponse is used by the API but it is defined in storage because we expect customers to store them.
 // We do backwards-compatibility checks on objects in the storge folder and those checks should be applied to this object
 message ExportPoliciesResponse {
-    repeated storage.Policy policies = 1;
+  repeated storage.Policy policies = 1;
 }

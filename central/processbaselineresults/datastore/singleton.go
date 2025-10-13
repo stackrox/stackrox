@@ -2,11 +2,7 @@ package datastore
 
 import (
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/processbaselineresults/datastore/internal/store"
-	"github.com/stackrox/rox/central/processbaselineresults/datastore/internal/store/postgres"
-	"github.com/stackrox/rox/central/processbaselineresults/datastore/internal/store/rocksdb"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/logging"
+	pgStore "github.com/stackrox/rox/central/processbaselineresults/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -14,17 +10,10 @@ var (
 	once sync.Once
 
 	singleton DataStore
-
-	log = logging.LoggerForModule()
 )
 
 func initialize() {
-	var storage store.Store
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		storage = postgres.New(globaldb.GetPostgres())
-	} else {
-		storage = rocksdb.New(globaldb.GetRocksDB())
-	}
+	storage := pgStore.New(globaldb.GetPostgres())
 	singleton = New(storage)
 }
 

@@ -9,7 +9,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -27,18 +29,21 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.PolicyCategory)(nil)), "policy_categories")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_POLICY_CATEGORIES, "policycategory", (*storage.PolicyCategory)(nil)))
+		schema.ScopingResource = resources.WorkflowAdministration
 		RegisterTable(schema, CreateTablePolicyCategoriesStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_POLICY_CATEGORIES, schema)
 		return schema
 	}()
 )
 
 const (
+	// PolicyCategoriesTableName specifies the name of the table in postgres.
 	PolicyCategoriesTableName = "policy_categories"
 )
 
 // PolicyCategories holds the Gorm model for Postgres table `policy_categories`.
 type PolicyCategories struct {
-	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	ID         string `gorm:"column:id;type:varchar;primaryKey"`
 	Name       string `gorm:"column:name;type:varchar;unique"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

@@ -5,13 +5,14 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/internalapi/compliance"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 )
 
 const cmdLine = `/opt/k8s/bin/kubelet --kubeconfig=/etc/kubernetes/kubelet.conf --logtostderr=true --v=0 --container-runtime=docker --pod-manifest-path=/etc/kubernetes/manifests --hostname-override=hostname --tls-cert-file=/etc/kubernetes/pki/kubelet-crt.crt --tls-private-key-file=/etc/kubernetes/pki/kubelet-key.key --anonymous-auth=false --client-ca-file=/etc/kubernetes/pki/k8s-ca.crt --fail-swap-on=false --enable-test1 --feature-gates=A,B,C`
 
 var (
-	nullSeparatedCmdLine = strings.Replace(cmdLine, " ", "\x00", -1)
+	nullSeparatedCmdLine = strings.ReplaceAll(cmdLine, " ", "\x00")
 )
 
 func TestGetCommandLineArgs(t *testing.T) {
@@ -83,7 +84,7 @@ func TestParseArgs(t *testing.T) {
 		},
 	}
 	parsedArgs := parseArgs(args)
-	assert.Equal(t, expectedArgs, parsedArgs)
+	protoassert.SlicesEqual(t, expectedArgs, parsedArgs)
 }
 
 func TestGetProcessFromCmdLineBytes(t *testing.T) {

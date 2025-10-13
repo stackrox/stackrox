@@ -5,10 +5,17 @@
 # hands off to the test/build script in *scripts/ci/jobs*.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
+# shellcheck source=../scripts/ci/lib.sh
 source "$ROOT/scripts/ci/lib.sh"
+# shellcheck source=../tests/e2e/lib.sh
 source "$ROOT/tests/e2e/lib.sh"
 
 set -euo pipefail
+
+if [[ -f "${SHARED_DIR:-}/shared_env" ]]; then
+    # shellcheck disable=SC1091
+    source "${SHARED_DIR:-}/shared_env"
+fi
 
 openshift_ci_mods
 openshift_ci_import_creds
@@ -22,14 +29,12 @@ ci_job="$1"
 shift
 ci_export CI_JOB_NAME "$ci_job"
 
-gate_job "$ci_job"
-
 case "$ci_job" in
-    gke*qa-e2e-tests|gke-nongroovy-e2e-tests|gke*upgrade-tests|gke-ui-e2e-tests|\
-    eks-qa-e2e-tests|osd*qa-e2e-tests)
+    gke*qa-e2e-tests|gke*nongroovy-e2e-tests|gke*upgrade-tests|gke-ui-e2e-tests|\
+    eks-qa-e2e-tests|osd*qa-e2e-tests|gke*sensor-integration-tests)
         openshift_ci_e2e_mods
         ;;
-    openshift-*-operator-e2e-tests)
+    *-operator-e2e-tests)
         operator_e2e_test_setup
         ;;
 esac
@@ -59,12 +64,22 @@ else
     die "ERROR: There is no job script for $ci_job"
 fi
 
+if [[ "${JOB_NAME:-}" =~ -ocp- ]]; then
+    info "Allow restricted SCC for all users and namespaces."
+    oc create clusterrolebinding system:openshift:scc:restricted --clusterrole=system:openshift:scc:restricted --group=system:authenticated || true
+fi
+
 "${job_script}" "$@" &
 job_pid="$!"
 
+# An Openshift CI job is canceled and sent a SIGINT when for example a new
+# commit is pushed to a PR.
 forward_sigint() {
     echo "Dispatch is forwarding SIGINT to job"
     kill -SIGINT "${job_pid}"
+    # Delay the default exit trap execution and process completion to allow job
+    # SIGINT handlers to complete before ci-operator terminates.
+    sleep 3
 }
 trap forward_sigint SIGINT
 

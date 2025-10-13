@@ -1,21 +1,23 @@
 import React from 'react';
 import { gql, useQuery } from '@apollo/client';
-import { Flex, FlexItem, Title, Button, Divider, Stack, StackItem } from '@patternfly/react-core';
+import { Button, Divider, Flex, FlexItem, Stack, StackItem, Title } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
+import WidgetCard from 'Components/PatternFly/WidgetCard';
+import { filteredWorkflowViewKey } from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
+import { fullWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
 import useURLSearch from 'hooks/useURLSearch';
 import { violationsBasePath } from 'routePaths';
-import { SearchFilter } from 'types/search';
-import { DeploymentAlert } from 'types/alert.proto';
+import type { SearchFilter } from 'types/search';
+import type { Alert } from 'types/alert.proto';
 import { getQueryString } from 'utils/queryStringUtils';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 import { severities } from 'constants/severities';
 import pluralize from 'pluralize';
-import WidgetCard from './WidgetCard';
+import type { ValueOf } from 'utils/type.utils';
 import MostRecentViolations from './MostRecentViolations';
 import PolicyViolationTiles from './PolicyViolationTiles';
-import useAlertGroups from '../hooks/useAlertGroups';
 
 function getViewAllLink(searchFilter: SearchFilter) {
     const queryString = getQueryString({
@@ -23,6 +25,7 @@ function getViewAllLink(searchFilter: SearchFilter) {
             ...searchFilter,
         },
         sortOption: { field: 'Severity', direction: 'desc' },
+        [filteredWorkflowViewKey]: fullWorkflowView,
     });
     return `${violationsBasePath}${queryString}`;
 }
@@ -36,8 +39,10 @@ export const mostRecentAlertsQuery = gql`
             id
             time
             deployment {
-                clusterName
-                namespace
+                name
+            }
+            resource {
+                resourceType
                 name
             }
             policy {
@@ -48,28 +53,57 @@ export const mostRecentAlertsQuery = gql`
     }
 `;
 
+export const alertsBySeverityQuery = gql`
+    query alertCountsBySeverity(
+        $lowQuery: String
+        $medQuery: String
+        $highQuery: String
+        $critQuery: String
+    ) {
+        ${severities.LOW_SEVERITY}: violationCount(query: $lowQuery)
+        ${severities.MEDIUM_SEVERITY}: violationCount(query: $medQuery)
+        ${severities.HIGH_SEVERITY}: violationCount(query: $highQuery)
+        ${severities.CRITICAL_SEVERITY}: violationCount(query: $critQuery)
+    }
+`;
+
+export type AlertCounts = {
+    [severities.LOW_SEVERITY]: number;
+    [severities.MEDIUM_SEVERITY]: number;
+    [severities.HIGH_SEVERITY]: number;
+    [severities.CRITICAL_SEVERITY]: number;
+};
+
+function searchQueryBySeverity(severity: ValueOf<typeof severities>, searchFilter: SearchFilter) {
+    return getRequestQueryStringForSearchFilter({
+        ...searchFilter,
+        Severity: severity,
+    });
+}
+
 function ViolationsByPolicySeverity() {
     const { searchFilter } = useURLSearch();
-    const countsFilterQuery = getRequestQueryStringForSearchFilter(searchFilter);
-    const mostRecentFilterQuery = getRequestQueryStringForSearchFilter({
-        ...searchFilter,
-        Severity: severities.CRITICAL_SEVERITY,
-    });
     const {
         data: alertCountData,
         loading: alertCountLoading,
         error: alertCountError,
-    } = useAlertGroups(countsFilterQuery);
+    } = useQuery<AlertCounts>(alertsBySeverityQuery, {
+        variables: {
+            lowQuery: searchQueryBySeverity(severities.LOW_SEVERITY, searchFilter),
+            medQuery: searchQueryBySeverity(severities.MEDIUM_SEVERITY, searchFilter),
+            highQuery: searchQueryBySeverity(severities.HIGH_SEVERITY, searchFilter),
+            critQuery: searchQueryBySeverity(severities.CRITICAL_SEVERITY, searchFilter),
+        },
+    });
     const {
         data: currentRecentAlertsData,
         previousData: previousRecentAlertsData,
         loading: recentAlertsLoading,
         error: recentAlertsError,
-    } = useQuery<{ alerts: DeploymentAlert[] }>(mostRecentAlertsQuery, {
-        variables: { query: mostRecentFilterQuery },
+    } = useQuery<{ alerts: Alert[] }>(mostRecentAlertsQuery, {
+        variables: { query: searchQueryBySeverity(severities.CRITICAL_SEVERITY, searchFilter) },
     });
 
-    const severityCounts = (alertCountData && alertCountData[0]?.counts) ?? [];
     const recentAlertsData = currentRecentAlertsData || previousRecentAlertsData;
 
     const counts = {
@@ -79,8 +113,8 @@ function ViolationsByPolicySeverity() {
         CRITICAL_SEVERITY: 0,
     };
     let totalCount = 0;
-    severityCounts.forEach(({ severity, count }) => {
-        counts[severity] = parseInt(count, 10);
+    Object.entries(alertCountData ?? {}).forEach(([severity, count]) => {
+        counts[severity] = count;
         totalCount += counts[severity];
     });
 
@@ -112,10 +146,10 @@ function ViolationsByPolicySeverity() {
                 </Flex>
             }
         >
-            {severityCounts && recentAlertsData && (
+            {alertCountData && recentAlertsData && (
                 <Stack>
                     <PolicyViolationTiles searchFilter={searchFilter} counts={counts} />
-                    <Divider component="div" className="pf-u-my-lg" />
+                    <Divider component="div" className="pf-v5-u-my-lg" />
                     <StackItem isFilled>
                         <MostRecentViolations alerts={recentAlertsData.alerts} />
                     </StackItem>

@@ -1,0 +1,56 @@
+# Make kuttl ignore this file unless running against openshift.
+apiVersion: kuttl.dev/v1beta1
+kind: TestFile
+testRunSelector:
+  matchLabels:
+    openshift: "true"
+---
+# Assert only things specific to this step.
+# General sanity is asserted by the assert-common file.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central
+spec:
+  template:
+    spec:
+      containers:
+        - name: central
+          env:
+            - name: ROX_MEMLIMIT
+              valueFrom:
+                resourceFieldRef:
+                  resource: limits.memory
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  resource: limits.cpu
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: GRPC_ENFORCE_ALPN_ENABLED
+              value: "false"
+            - name: ROX_TELEMETRY_STORAGE_KEY_V1
+              value: DISABLED
+            - name: ROX_OFFLINE_MODE
+              value: "false"
+            - name: ROX_ENABLE_OPENSHIFT_AUTH
+              value: "true"
+            - name: ROX_OPENSHIFT
+              value: "true"
+            - name: ROX_INSTALL_METHOD
+              value: "operator"
+            - name: ROX_SCANNER_V4
+              value: "true"
+            - name: NO_PROXY
+              valueFrom:
+                secretKeyRef:
+                  key: NO_PROXY
+                  name: central-stackrox-central-services-proxy-env

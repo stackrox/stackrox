@@ -9,6 +9,8 @@ import (
 )
 
 // A TLSConfigurer instantiates the appropriate TLS config for your environment.
+//
+//go:generate mockgen-wrapper
 type TLSConfigurer interface {
 	TLSConfig() (*tls.Config, error)
 }
@@ -33,6 +35,7 @@ func TrustedCertPool() (*x509.CertPool, error) {
 	}
 	certPool := x509.NewCertPool()
 	certPool.AddCert(caCert)
+	addSecondaryCACertIfExists(certPool)
 	return certPool, nil
 }
 
@@ -47,7 +50,15 @@ func SystemCertPool() (*x509.CertPool, error) {
 		return nil, err
 	}
 	certPool.AddCert(caCert)
+	addSecondaryCACertIfExists(certPool)
 	return certPool, nil
+}
+
+func addSecondaryCACertIfExists(certPool *x509.CertPool) {
+	secondaryCACert, _, err := mtls.SecondaryCACert()
+	if err == nil {
+		certPool.AddCert(secondaryCACert)
+	}
 }
 
 // TLSConfig initializes a server configuration that requires client TLS

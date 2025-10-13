@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package tests
 
 import (
@@ -6,57 +8,36 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/clusterinit/store"
-	"github.com/stackrox/rox/central/clusterinit/store/rocksdb"
+	pgStore "github.com/stackrox/rox/central/clusterinit/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
-	"github.com/stretchr/testify/require"
+	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
 
-type storeCreator func(t *testing.T) (store.Store, func(t *testing.T))
-
-func createRocksDBStore(t *testing.T) (store.Store, func(t *testing.T)) {
-	testRocksDB := rocksdbtest.RocksDBForT(t)
-	rocksStore, err := rocksdb.New(testRocksDB)
-	require.NoError(t, err)
-	tearDown := func(t *testing.T) {
-		rocksdbtest.TearDownRocksDB(testRocksDB)
-	}
-	return store.NewStore(rocksStore), tearDown
-}
-
 func TestClusterInitStore(t *testing.T) {
-	t.Parallel()
-
-	stores := map[string]storeCreator{
-		"rocksdb": createRocksDBStore,
-	}
-
-	for name, storeCreator := range stores {
-		t.Run(name, func(t *testing.T) {
-			suite.Run(t, &clusterInitStoreTestSuite{storeCreator: storeCreator})
-		})
-	}
+	suite.Run(t, new(clusterInitStoreTestSuite))
 }
 
 type clusterInitStoreTestSuite struct {
-	storeCreator storeCreator
-
 	suite.Suite
-	store         store.Store
-	teardownStore func(t *testing.T)
-	ctx           context.Context
-	cancel        context.CancelFunc
+	store store.Store
+	ctx   context.Context
+	db    postgres.DB
+}
+
+func (s *clusterInitStoreTestSuite) SetupSuite() {
+	s.ctx = sac.WithAllAccess(context.Background())
 }
 
 func (s *clusterInitStoreTestSuite) SetupTest() {
-	s.store, s.teardownStore = s.storeCreator(s.T())
-	s.ctx, s.cancel = context.WithCancel(context.Background())
+	s.db = pgtest.ForT(s.T())
+	s.store = store.NewStore(pgStore.New(s.db))
 }
 
 func (s *clusterInitStoreTestSuite) TearDownTest() {
-	s.teardownStore(s.T())
-	s.cancel()
+	s.db.Close()
 }
 
 func (s *clusterInitStoreTestSuite) TestIDCollisionOnAdd() {

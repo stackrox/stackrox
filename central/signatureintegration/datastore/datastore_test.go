@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package datastore
 
 import (
@@ -5,23 +7,23 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	policyDataStoreMock "github.com/stackrox/rox/central/policy/datastore/mocks"
-	"github.com/stackrox/rox/central/role/resources"
-	signatureRocksdb "github.com/stackrox/rox/central/signatureintegration/store/rocksdb"
+	"github.com/stackrox/rox/central/signatureintegration/store"
+	"github.com/stackrox/rox/central/signatureintegration/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestSignatureDataStore(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(signatureDataStoreTestSuite))
 }
 
@@ -33,8 +35,8 @@ type signatureDataStoreTestSuite struct {
 	noAccessCtx context.Context
 
 	dataStore         DataStore
-	storage           signatureRocksdb.Store
-	rocksie           *rocksdb.RocksDB
+	db                *pgtest.TestPostgres
+	storage           store.SignatureIntegrationStore
 	policyStorageMock *policyDataStoreMock.MockDataStore
 }
 
@@ -42,16 +44,16 @@ func (s *signatureDataStoreTestSuite) SetupTest() {
 	s.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.SignatureIntegration)))
+			sac.ResourceScopeKeys(resources.Integration)))
 	s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.SignatureIntegration)))
+			sac.ResourceScopeKeys(resources.Integration)))
 	s.noAccessCtx = sac.WithNoAccess(context.Background())
 
-	s.rocksie = rocksdbtest.RocksDBForT(s.T())
+	s.db = pgtest.ForT(s.T())
 	var err error
-	s.storage, err = signatureRocksdb.New(s.rocksie)
+	s.storage = postgres.New(s.db)
 	s.Require().NoError(err)
 
 	s.policyStorageMock = policyDataStoreMock.NewMockDataStore(gomock.NewController(s.T()))
@@ -69,7 +71,7 @@ func (s *signatureDataStoreTestSuite) TestAddSignatureIntegration() {
 	acquiredIntegration, found, err := s.dataStore.GetSignatureIntegration(s.hasReadCtx, savedIntegration.GetId())
 	s.True(found)
 	s.NoError(err)
-	s.Equal(savedIntegration, acquiredIntegration)
+	protoassert.Equal(s.T(), savedIntegration, acquiredIntegration)
 
 	// 2. Name should be unique
 	integration = newSignatureIntegration("name")
@@ -98,46 +100,57 @@ func (s *signatureDataStoreTestSuite) TestUpdateSignatureIntegration() {
 
 	// 1. Modifications to integration are visible via GetSignatureIntegration
 	savedIntegration.Name = "name2"
-	hasUpdatedKeys, err := s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, savedIntegration)
+	hasUpdates, err := s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, savedIntegration)
 	s.NoError(err)
-	s.False(hasUpdatedKeys)
+	s.False(hasUpdates)
 
 	acquiredIntegration, found, err := s.dataStore.GetSignatureIntegration(s.hasReadCtx, savedIntegration.GetId())
 	s.True(found)
 	s.NoError(err)
-	s.Equal(savedIntegration, acquiredIntegration)
+	protoassert.Equal(s.T(), savedIntegration, acquiredIntegration)
 
 	// 2. Cannot update non-existing integration
 	nonExistingIntegration := newSignatureIntegration("idonotexist")
-	hasUpdatedKeys, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, nonExistingIntegration)
+	hasUpdates, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, nonExistingIntegration)
 	s.Error(err)
 	s.ErrorIs(err, errox.InvalidArgs)
-	s.False(hasUpdatedKeys)
+	s.False(hasUpdates)
 
 	// 3. Need write permission to update integration
-	hasUpdatedKeys, err = s.dataStore.UpdateSignatureIntegration(s.hasReadCtx, signatureIntegration)
+	hasUpdates, err = s.dataStore.UpdateSignatureIntegration(s.hasReadCtx, signatureIntegration)
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
-	s.False(hasUpdatedKeys)
+	s.False(hasUpdates)
 
-	// 4. Signal updated keys when keys differ
+	// 4. Signal updates when keys differ
 	savedIntegration.GetCosign().GetPublicKeys()[0].PublicKeyPemEnc = `-----BEGIN PUBLIC KEY-----
 MEkwEwYHKoZIzj0CAQYIKoZIzj0DAQMDMgAE+Y+qPqI3geo2hQH8eK7Rn+YWG09T
 ejZ5QFoj9fmxFrUyYhFap6XmTdJtEi8myBmW
 -----END PUBLIC KEY-----`
-	hasUpdatedKeys, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, savedIntegration)
+	hasUpdates, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, savedIntegration)
 	s.NoError(err)
-	s.True(hasUpdatedKeys)
+	s.True(hasUpdates)
 
-	// 5. Don't signal updated keys when keys are the same
-	hasUpdatedKeys, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, savedIntegration)
+	// 5. Signal updates when certificates differ
+	savedIntegration.CosignCertificates = []*storage.CosignCertificateVerification{
+		{
+			CertificateOidcIssuer: ".*",
+			CertificateIdentity:   ".*",
+		},
+	}
+	hasUpdates, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, savedIntegration)
 	s.NoError(err)
-	s.False(hasUpdatedKeys)
+	s.True(hasUpdates)
 
-	// 6. Don't signal updated keys when only the name is changed
+	// 6. Don't signal updates when verification data is the same
+	hasUpdates, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, savedIntegration)
+	s.NoError(err)
+	s.False(hasUpdates)
+
+	// 7. Don't signal updated keys when only the name is changed
 	savedIntegration.GetCosign().GetPublicKeys()[0].Name = "rename of public key"
-	hasUpdatedKeys, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, savedIntegration)
+	hasUpdates, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, savedIntegration)
 	s.NoError(err)
-	s.False(hasUpdatedKeys)
+	s.False(hasUpdates)
 }
 
 func (s *signatureDataStoreTestSuite) TestRemoveSignatureIntegration() {
@@ -264,8 +277,53 @@ func newSignatureIntegration(name string) *storage.SignatureIntegration {
 	return signatureIntegration
 }
 
-func (s *signatureDataStoreTestSuite) TearDownTest() {
-	rocksdbtest.TearDownRocksDB(s.rocksie)
+// TestDefaultIntegrationProtection tests that built-in integrations cannot be created, updated or deleted.
+// The protection is achieved by means of the origin trait (see traits.proto). While traits are generally used as part
+// of the declarative configuration framework, we only use the origin trait internally to implement the protection:
+// built-in integrations are created with the DEFAULT origin trait, and the add/update/remove functions check the trait
+// and reject the operations accordingly.
+func (s *signatureDataStoreTestSuite) TestDefaultIntegrationProtection() {
+	// 1. Built-in integrations cannot be created
+	defaultIntegration := newSignatureIntegration("default-integration")
+	defaultIntegration.Traits = &storage.Traits{Origin: storage.Traits_DEFAULT}
+	_, err := s.dataStore.AddSignatureIntegration(s.hasWriteCtx, defaultIntegration)
+	s.ErrorIs(err, errox.InvalidArgs)
+
+	// 2. Add it directly in storage, to verify it can't be updated or deleted
+	defaultIntegration.Id = GenerateSignatureIntegrationID()
+	err = s.storage.Upsert(s.hasWriteCtx, defaultIntegration)
+	s.Require().NoError(err)
+
+	// 3. Built-in integrations cannot be updated
+	defaultIntegration.Name = "updated-integration"
+	_, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, defaultIntegration)
+	s.ErrorIs(err, errox.InvalidArgs)
+
+	// 4. Built-in integrations cannot be deleted
+	err = s.dataStore.RemoveSignatureIntegration(s.hasWriteCtx, defaultIntegration.GetId())
+	s.ErrorIs(err, errox.InvalidArgs)
+}
+
+// TestUserProvidedTraitsRejection tests that user-provided traits are rejected when creating or updating an integration.
+// We use the DEFAULT origin trait internally to prevent creation/modification/deletion of built-in integrations (see
+// TestDefaultIntegrationProtection), but the rest of the declarative configuration framework, which uses traits, is
+// not supported. In order to prevent user confusion and issues with future changes, traits are rejected in create
+// and update operations.
+func (s *signatureDataStoreTestSuite) TestUserProvidedTraitsRejection() {
+	// 1. User-provided traits are rejected when creating an integration
+	integration := newSignatureIntegration("integration-with-traits")
+	integration.Traits = &storage.Traits{}
+	_, err := s.dataStore.AddSignatureIntegration(s.hasWriteCtx, integration)
+	s.ErrorIs(err, errox.InvalidArgs)
+
+	// 2. Create a regular integration to test update
+	integration, err = s.dataStore.AddSignatureIntegration(s.hasWriteCtx, newSignatureIntegration("regular-integration"))
+	s.Require().NoError(err)
+
+	// 3. Adding any trait is rejected when updating it
+	integration.Traits = &storage.Traits{}
+	_, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, integration)
+	s.ErrorIs(err, errox.InvalidArgs)
 }
 
 func TestRemovePoliciesInvisibleToUser(t *testing.T) {

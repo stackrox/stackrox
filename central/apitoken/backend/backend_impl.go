@@ -2,11 +2,13 @@ package backend
 
 import (
 	"context"
+	"time"
 
 	"github.com/stackrox/rox/central/apitoken/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timeutil"
 )
@@ -25,8 +27,12 @@ func (c *backendImpl) GetTokens(ctx context.Context, req *v1.GetAPITokensRequest
 	return c.tokenStore.GetTokens(ctx, req)
 }
 
-func (c *backendImpl) IssueRoleToken(ctx context.Context, name string, roleNames []string) (string, *storage.TokenMetadata, error) {
-	tokenInfo, err := c.issuer.Issue(ctx, tokens.RoxClaims{RoleNames: roleNames, Name: name})
+func (c *backendImpl) IssueRoleToken(ctx context.Context, name string, roleNames []string, expireAt *time.Time) (string, *storage.TokenMetadata, error) {
+	if expireAt != nil && expireAt.Before(time.Now()) {
+		return "", nil, errox.InvalidArgs.New("Expiration date cannot be in the past")
+	}
+	claims := tokens.RoxClaims{RoleNames: roleNames, Name: name, ExpireAt: expireAt}
+	tokenInfo, err := c.issuer.Issue(ctx, claims)
 	if err != nil {
 		return "", nil, err
 	}
@@ -48,7 +54,7 @@ func (c *backendImpl) RevokeToken(ctx context.Context, tokenID string) (bool, er
 	if t == nil {
 		return false, nil
 	}
-	if t.Revoked {
+	if t.GetRevoked() {
 		return true, nil
 	}
 

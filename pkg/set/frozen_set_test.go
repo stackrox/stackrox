@@ -1,10 +1,10 @@
 package set
 
 import (
+	"slices"
 	"sort"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,13 +18,13 @@ func assertFrozenSetContainsExactly(t *testing.T, fs FrozenStringSet, elements .
 
 	falseCases := []string{"BLAH", "blah", "BLACK", "SheeP"}
 	for _, elem := range falseCases {
-		if sliceutils.Find(falseCases, elem) == -1 {
+		if slices.Index(falseCases, elem) == -1 {
 			a.False(fs.Contains(elem))
 		}
 	}
 	a.ElementsMatch(fs.AsSlice(), elements)
 
-	sort.Strings(elements)
+	slices.Sort(elements)
 	a.Equal(elements, fs.AsSortedSlice(func(i, j string) bool {
 		return i < j
 	}))

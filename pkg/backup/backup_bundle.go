@@ -7,8 +7,6 @@ import (
 
 // Backup bundle structure in zip archive.
 const (
-	BoltFileName         = "bolt.db"
-	RocksFileName        = "rocks.db"
 	PostgresFileName     = "postgres.dump"
 	PostgresSizeFileName = "postgres.size"
 	KeysBaseFolder       = "keys"

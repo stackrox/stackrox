@@ -20,6 +20,10 @@ const (
 	FlagNameScannerImage = "scanner-image"
 	// FlagNameScannerDBImage is a shared constant for --scanner-db-image command line flag.
 	FlagNameScannerDBImage = "scanner-db-image"
+	// FlagNameScannerV4Image is a shared constant for --scanner-v4-image command line flag.
+	FlagNameScannerV4Image = "scanner-v4-image"
+	// FlagNameScannerV4DBImage is a shared constant for --scanner-v4-db-image command line flag.
+	FlagNameScannerV4DBImage = "scanner-v4-db-image"
 )
 
 var (
@@ -37,7 +41,7 @@ func init() {
 
 // AddImageDefaults adds the image-defaults flag to the command.
 func AddImageDefaults(pf *pflag.FlagSet, destination *string) {
-	imageFlavorHelpStr := fmt.Sprintf("default container images settings (%v); it controls repositories from where to download the images, image names and tags format",
+	imageFlavorHelpStr := fmt.Sprintf("Default container images settings (%v); it controls repositories from where to download the images, image names and tags format.",
 		strings.Join(defaults.GetVisibleImageFlavorNames(buildinfo.ReleaseBuild), ", "))
 	pf.StringVar(destination, FlagNameImageDefaults, imageFlavorDefault, imageFlavorHelpStr)
 }

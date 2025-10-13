@@ -3,9 +3,10 @@ package clair
 import (
 	"testing"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clair/mock"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/protoassert"
 	clairV1 "github.com/stackrox/scanner/api/v1"
 	"github.com/stackrox/scanner/pkg/component"
 	"github.com/stretchr/testify/assert"
@@ -15,13 +16,15 @@ import (
 func TestConvertVulnerability(t *testing.T) {
 	clairVulns, protoVulns := mock.GetTestVulns()
 	for i, vuln := range clairVulns {
-		assert.Equal(t, protoVulns[i], ConvertVulnerability(vuln))
+		protoassert.Equal(t, protoVulns[i], ConvertVulnerability(vuln))
 	}
 }
 
 func TestConvertFeatures(t *testing.T) {
+	t.Setenv(features.ActiveVulnMgmt.EnvVar(), "true")
+
 	clairFeatures, protoComponents := mock.GetTestFeatures()
-	assert.Equal(t, protoComponents, ConvertFeatures(nil, clairFeatures, ""))
+	protoassert.SlicesEqual(t, protoComponents, ConvertFeatures(nil, clairFeatures, ""))
 }
 
 func TestVersionFormatCompleteness(t *testing.T) {
@@ -44,6 +47,8 @@ func componentWithLayerIndex(name string, idx int32) *storage.EmbeddedImageScanC
 }
 
 func TestConvertFeaturesWithLayerIndexes(t *testing.T) {
+	t.Setenv(features.ActiveVulnMgmt.EnvVar(), "true")
+
 	var cases = []struct {
 		name               string
 		metadata           *storage.ImageMetadata
@@ -146,41 +151,8 @@ func TestConvertFeaturesWithLayerIndexes(t *testing.T) {
 			convertedComponents := ConvertFeatures(img, c.features, "")
 			require.Equal(t, len(c.expectedComponents), len(convertedComponents))
 			for i := range convertedComponents {
-				assert.Equal(t, c.expectedComponents[i], convertedComponents[i])
+				protoassert.Equal(t, c.expectedComponents[i], convertedComponents[i])
 			}
-		})
-	}
-}
-
-func TestConvertTime(t *testing.T) {
-	cases := []struct {
-		input  string
-		output *types.Timestamp
-	}{
-		{
-			input:  "",
-			output: nil,
-		},
-		{
-			input:  "malformed",
-			output: nil,
-		},
-		{
-			input: "2018-02-07T23:29Z",
-			output: &types.Timestamp{
-				Seconds: 1518046140,
-			},
-		},
-		{
-			input: "2019-01-20T00:00:00Z",
-			output: &types.Timestamp{
-				Seconds: 1547942400,
-			},
-		},
-	}
-	for _, c := range cases {
-		t.Run(c.input, func(t *testing.T) {
-			assert.Equal(t, c.output, ConvertTime(c.input))
 		})
 	}
 }

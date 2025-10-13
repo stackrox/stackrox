@@ -27,6 +27,9 @@ spec:
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8443,9443"
         {{- include "srox.podAnnotations" (list . "deployment" "sensor") | nindent 8 }}
+        {{- if eq ._rox.env.openshift 4 }}
+        openshift.io/required-scc: restricted-v2
+        {{- end }}
     spec:
       {{- if ._rox.sensor._nodeSelector }}
       nodeSelector:
@@ -36,45 +39,117 @@ spec:
       tolerations:
         {{- toYaml ._rox.sensor.tolerations | nindent 8 }}
       {{- end }}
+      {{- if ._rox.sensor.hostAliases }}
+      hostAliases: {{ toYaml ._rox.sensor.hostAliases | nindent 8 }}
+      {{- end }}
       affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            # Sensor is single-homed, so avoid preemptible nodes.
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: cloud.google.com/gke-preemptible
-                    operator: NotIn
-                    values:
-                    - "true"
-            - weight: 50
-              preference:
-                matchExpressions:
-                - key: node-role.kubernetes.io/infra
-                  operator: Exists
-            - weight: 25
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/compute
-                    operator: Exists
-            # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
-            # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/master
-                    operator: DoesNotExist
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/control-plane
-                    operator: DoesNotExist
+      {{- toYaml ._rox.sensor.affinity | nindent 8 }}
+      {{- if ._rox.sensor.priorityClassName }}
+      priorityClassName: {{ ._rox.sensor.priorityClassName }}
+      {{- end }}
       {{- if not ._rox.env.openshift }}
       securityContext:
         runAsUser: 4000
         fsGroup: 4000
       {{- end }}
       serviceAccountName: sensor
+      initContainers:
+      {{- if ._rox.crs._enabled }}
+      - image: {{ ._rox.image.main.fullRef | quote }}
+        imagePullPolicy: {{ ._rox.sensor.imagePullPolicy | quote }}
+        name: crs
+        command:
+        - kubernetes-sensor
+        resources:
+          requests:
+            memory: "200Mi"
+            cpu: "400m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        args:
+        - ensure-service-certificates
+        securityContext:
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+        env:
+        - name: ROX_MEMLIMIT
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.memory
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.cpu
+        - name: K8S_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: ROX_CENTRAL_ENDPOINT
+          value: {{ ._rox.centralEndpoint }}
+        - name: ROX_HELM_CLUSTER_CONFIG_FP
+          value: {{ quote ._rox._configFP }}
+        - name: GRPC_ENFORCE_ALPN_ENABLED
+          value: {{ quote ._rox.env.grpcEnforceALPN }}
+        {{- if ._rox._scannerV4Enabled }}
+        - name: ROX_SCANNER_V4
+          value: "true"
+        {{- end }}
+        - name: ROX_CRS_FILE
+          value: /run/secrets/stackrox.io/crs/crs
+        - name: ROX_LEGACY_SENSOR_SERVICE_CERT
+          # Keep in sync with pkg/crs/env.go.
+          valueFrom:
+            secretKeyRef:
+              name: sensor-tls
+              key: sensor-cert.pem
+              optional: true
+        - name: ROX_SENSOR_SERVICE_CERT
+          # Keep in sync with pkg/crs/env.go.
+          valueFrom:
+            secretKeyRef:
+              name: tls-cert-sensor
+              key: cert.pem
+              optional: true
+        {{- include "srox.envVars" (list . "deployment" "sensor" "sensor") | nindent 8 }}
+        volumeMounts:
+        - name: sensor-etc-ssl-volume
+          mountPath: /etc/ssl/
+        - name: sensor-etc-pki-volume
+          mountPath: /etc/pki/ca-trust/
+        - name: certs
+          mountPath: /run/secrets/stackrox.io/certs/
+        - name: crs
+          mountPath: /run/secrets/stackrox.io/crs/
+          readOnly: true
+        - name: additional-ca-volume
+          mountPath: /usr/local/share/ca-certificates/
+          readOnly: true
+        - name: cache
+          mountPath: /var/cache/stackrox
+        {{- if ._rox.env.openshift }}
+        - name: sensor-bound-sa-token
+          mountPath: /var/run/secrets/openshift/serviceaccount
+        {{- end }}
+        - name: helm-cluster-config
+          mountPath: /run/secrets/stackrox.io/helm-cluster-config/
+          readOnly: true
+        - name: helm-effective-cluster-name
+          mountPath: /run/secrets/stackrox.io/helm-effective-cluster-name/
+          readOnly: true
+        {{- include "srox.injectedCABundleVolumeMount" . | nindent 8 }}
+      {{- end }}
+      {{- if ._rox._securedClusterCertRefresh }}
+      - {{ include "srox.tlsCertsInitContainer" (list .) | indent 8 | trim }}
+      {{- end }}
       containers:
       - image: {{ quote ._rox.image.main.fullRef }}
         imagePullPolicy: {{ ._rox.sensor.imagePullPolicy }}
@@ -93,6 +168,10 @@ spec:
           - containerPort: 9090
             name: monitoring
           {{- end }}
+          {{- if ._rox.monitoring.openshift.enabled }}
+          - containerPort: 9091
+            name: monitoring-tls
+          {{- end }}
         command:
           - kubernetes-sensor
         resources:
@@ -101,6 +180,14 @@ spec:
           runAsNonRoot: true
           readOnlyRootFilesystem: true
         env:
+        - name: ROX_MEMLIMIT
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.memory
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.cpu
         - name: K8S_NODE_NAME
           valueFrom:
             fieldRef:
@@ -117,9 +204,12 @@ spec:
           value: {{ ._rox.centralEndpoint }}
         - name: ROX_ADVERTISED_ENDPOINT
           value: {{ ._rox.sensor.endpoint }}
+        - name: GRPC_ENFORCE_ALPN_ENABLED
+          value: {{ quote ._rox.env.grpcEnforceALPN }}
         {{- if ._rox.env.openshift }}
         - name: ROX_OPENSHIFT_API
           value: "true"
+        {{- end }}
         [<- if (not .KubectlOutput) >]
         {{- if ._rox.sensor.localImageScanning.enabled }}
         - name: ROX_SCANNER_GRPC_ENDPOINT
@@ -127,12 +217,19 @@ spec:
         - name: ROX_LOCAL_IMAGE_SCANNING_ENABLED
           value: "true"
         {{- end }}
-        [<- end >]
-        {{- end }}
-        [<- if not .KubectlOutput >]
         - name: ROX_HELM_CLUSTER_CONFIG_FP
           value: {{ quote ._rox._configFP }}
+        {{- if ._rox._scannerV4Enabled }}
+        - name: ROX_SCANNER_V4_INDEXER_ENDPOINT
+          value: {{ printf "scanner-v4-indexer.%s.svc:8443" .Release.Namespace }}
+        - name: ROX_SCANNER_V4
+          value: "true"
+        {{- end }}
         [<- end >]
+        {{- if ._rox.monitoring.openshift.enabled }}
+        - name: ROX_ENABLE_SECURE_METRICS
+          value: "true"
+        {{- end }}
         {{- include "srox.envVars" (list . "deployment" "sensor" "sensor") | nindent 8 }}
         volumeMounts:
         - name: varlog
@@ -149,6 +246,10 @@ spec:
           readOnly: true
         - name: cache
           mountPath: /var/cache/stackrox
+        {{- if ._rox.env.openshift }}
+        - name: sensor-bound-sa-token
+          mountPath: /var/run/secrets/openshift/serviceaccount
+        {{- end }}
         [<- if not .KubectlOutput >]
         - name: helm-cluster-config
           mountPath: /run/secrets/stackrox.io/helm-cluster-config/
@@ -158,10 +259,19 @@ spec:
           readOnly: true
         [<- end >]
         {{- include "srox.injectedCABundleVolumeMount" . | nindent 8 }}
+        {{- if ._rox.monitoring.openshift.enabled }}
+        - name: monitoring-tls
+          mountPath: /run/secrets/stackrox.io/monitoring-tls
+          readOnly: true
+        {{- end }}
       volumes:
+      {{- if ._rox._securedClusterCertRefresh }}
+      {{- include "srox.tlsCertsInitContainerVolumes" (list "sensor") | indent 6 }}
+      {{- else }}
       - name: certs
         secret:
           secretName: sensor-tls
+          optional: true
           items:
           - key: sensor-cert.pem
             path: cert.pem
@@ -169,6 +279,13 @@ spec:
             path: key.pem
           - key: ca.pem
             path: ca.pem
+      {{- end }}
+      {{- if ._rox.crs._enabled }}
+      - name: crs
+        secret:
+          secretName: cluster-registration-secret
+          optional: true
+      {{- end }}
       - name: sensor-etc-ssl-volume
         emptyDir: {}
       - name: sensor-etc-pki-volume
@@ -181,6 +298,16 @@ spec:
         emptyDir: {}
       - name: cache
         emptyDir: {}
+      {{- if ._rox.env.openshift }}
+      - name: sensor-bound-sa-token
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              path: token
+              audience: openshift
+              expirationSeconds: 3600
+      {{- end }}
       [<- if not .KubectlOutput >]
       - name: helm-cluster-config
         secret:
@@ -192,6 +319,11 @@ spec:
           optional: true
       [<- end >]
       {{- include "srox.injectedCABundleVolume" . | nindent 6 }}
+      {{- if ._rox.monitoring.openshift.enabled }}
+      - name: monitoring-tls
+        secret:
+          secretName: sensor-monitoring-tls
+      {{- end }}
 ---
 apiVersion: v1
 kind: Service
@@ -203,6 +335,9 @@ metadata:
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "service" "sensor") | nindent 4 }}
+    {{- if ._rox.monitoring.openshift.enabled }}
+    service.beta.openshift.io/serving-cert-secret-name: sensor-monitoring-tls
+    {{- end }}
 spec:
   ports:
   - name: https
@@ -213,6 +348,12 @@ spec:
   - name: monitoring
     port: 9090
     targetPort: monitoring
+    protocol: TCP
+  {{- end }}
+  {{- if ._rox.monitoring.openshift.enabled }}
+  - name: monitoring-tls
+    port: 9091
+    targetPort: monitoring-tls
     protocol: TCP
   {{- end }}
   selector:
@@ -275,9 +416,9 @@ metadata:
     {{- include "srox.labels" (list . "secret" "helm-effective-cluster-name") | nindent 4 }}
     auto-upgrade.stackrox.io/component: sensor
   annotations:
-    "helm.sh/hook": "pre-install,pre-upgrade"
-    "helm.sh/resource-policy": "keep"
-    {{- include "srox.annotations" (list . "secret" "helm-effective-cluster-name") | nindent 4 }}
+    {{- $annotations := dict -}}
+    {{- $_ := include "srox.getAnnotationTemplate" (list . "helm-hook_secret" $annotations) -}}
+    {{- include "srox.annotations" (list . "secret" "helm-effective-cluster-name" $annotations) | nindent 4 }}
 stringData:
   cluster-name: |
     {{- ._rox.clusterName | nindent 4 }}

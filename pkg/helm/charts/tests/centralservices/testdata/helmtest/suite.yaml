@@ -1,4 +1,7 @@
 defs: |
+  def container(obj; name):
+    obj.spec.template.spec.containers[] | select(.name == name);
+
   def verifyNodeAffinities(obj):
     [
       (obj.spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution[]
@@ -12,7 +15,7 @@ defs: |
           assertThat(.preference.matchExpressions[0].operator == "Exists")
         ]),
       (obj.spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution[]
-        | select(.preference.matchExpressions[0].key == "node-role.kubernetes.io/master" ) | [
+        | select(.preference.matchExpressions[0].key == "node-role.kubernetes.io/control-plane" ) | [
           assertThat(.weight == 100),
           assertThat(.preference.matchExpressions[0].operator == "DoesNotExist")
         ]),
@@ -26,9 +29,18 @@ defs: |
 server:
   visibleSchemas:
     - kubernetes-1.20.2
+  objects:
+    # Apparently, for the `lookup` function in the Helm chart to be able to list the objects of a certain kind
+    # at least one such object needs to exist. Therefore, we create a StorageClass here solely
+    # for enabling lookups in the charts under test.
+    - apiVersion: storage.k8s.io/v1
+      kind: StorageClass
+      metadata:
+        name: some-sc
+        annotations:
+          storageclass.kubernetes.io/is-default-class: false
+
 values:
-  imagePullSecrets:
-    allowNone: true
   ca:
     cert: "CA cert"
     key: "CA key"
@@ -38,6 +50,10 @@ values:
     serviceTLS:
       cert: "Central cert"
       key: "Central key"
+    db:
+      serviceTLS:
+        cert: "Central DB cert"
+        key: "Central DB key"
   scanner:
     serviceTLS:
       cert: "Scanner cert"
@@ -45,3 +61,16 @@ values:
     dbServiceTLS:
       cert: "ScannerDB cert"
       key: "ScannerDB key"
+  scannerV4:
+    indexer:
+      serviceTLS:
+        cert: "Indexer cert"
+        key: "Indexer key"
+    matcher:
+      serviceTLS:
+        cert: "Matcher cert"
+        key: "Matcher key"
+    db:
+      serviceTLS:
+        cert: "ScannerDB cert"
+        key: "ScannerDB key"

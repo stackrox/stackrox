@@ -1,8 +1,10 @@
-import React, { useState, ReactElement } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import { connect } from 'react-redux';
-import { SuccessButton } from '@stackrox/ui-components';
+import { Button, Flex, FlexItem, Text, Title } from '@patternfly/react-core';
+import { DownloadIcon } from '@patternfly/react-icons';
 
-import CollapsibleCard from 'Components/CollapsibleCard';
+import useAnalytics, { LEGACY_CLUSTER_DOWNLOAD_HELM_VALUES } from 'hooks/useAnalytics';
 import { actions as notificationActions } from 'reducers/notifications';
 import { downloadClusterHelmValuesYaml } from 'services/ClustersService';
 
@@ -19,6 +21,7 @@ const DownloadHelmValues = ({
     addToast,
     removeToast,
 }: DownloadHelmValuesProps): ReactElement => {
+    const { analyticsTrack } = useAnalytics();
     const [isFetchingValues, setIsFetchingValues] = useState(false);
 
     function downloadValues(): void {
@@ -33,22 +36,26 @@ const DownloadHelmValues = ({
             });
     }
 
+    // Without FlexItem element, Button stretches to column width.
     return (
-        <CollapsibleCard
-            cardClassName="flex-grow border border-base-400 md:self-start"
-            isCollapsible={false}
-            title="Download helm values"
-            titleClassName="border-b px-1 border-primary-300 leading-normal cursor-pointer flex justify-between items-center bg-primary-200 hover:border-primary-400"
-        >
-            <div className="w-full p-3 leading-normal border-b pb-3 border-primary-300">
-                {description}
-            </div>
-            <div className="flex justify-center items-center p-4">
-                <SuccessButton type="button" onClick={downloadValues} isDisabled={isFetchingValues}>
+        <Flex direction={{ default: 'column' }}>
+            <Title headingLevel="h2">Download helm values</Title>
+            <Text>{description}</Text>
+            <FlexItem>
+                <Button
+                    variant="secondary"
+                    icon={<DownloadIcon />}
+                    onClick={() => {
+                        downloadValues();
+                        analyticsTrack(LEGACY_CLUSTER_DOWNLOAD_HELM_VALUES);
+                    }}
+                    isDisabled={isFetchingValues}
+                    isLoading={isFetchingValues}
+                >
                     Download Helm values
-                </SuccessButton>
-            </div>
-        </CollapsibleCard>
+                </Button>
+            </FlexItem>
+        </Flex>
     );
 };
 const mapDispatchToProps = {

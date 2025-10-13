@@ -1,25 +1,11 @@
 /* constants specific to Roles */
+import type { ResourceName } from 'types/roleResources';
+
 export const NO_ACCESS = 'NO_ACCESS';
 export const READ_ACCESS = 'READ_ACCESS';
 export const READ_WRITE_ACCESS = 'READ_WRITE_ACCESS';
 
 export type AccessLevel = 'NO_ACCESS' | 'READ_ACCESS' | 'READ_WRITE_ACCESS';
-
-const defaultRoles = {
-    Admin: true,
-    Analyst: true,
-    'Continuous Integration': true,
-    None: true,
-    'Scope Manager': true,
-    'Sensor Creator': true,
-    'Vulnerability Management Approver': true,
-    'Vulnerability Management Requester': true,
-    'Vulnerability Report Creator': true,
-};
-
-export function getIsDefaultRoleName(name: string): boolean {
-    return Boolean(defaultRoles[name]);
-}
 
 export const authProviderLabels = {
     auth0: 'Auth0',
@@ -58,16 +44,16 @@ export const oidcCallbackValues = {
 };
 
 export const defaultMinimalReadAccessResources = [
+    'Administration',
     'Alert',
     'Cluster',
-    'Config',
     'Deployment',
     'Image',
     'Namespace',
     'NetworkPolicy',
     'NetworkGraph',
     'Node',
-    'Policy',
+    'WorkflowAdministration',
     'Secret',
 ];
 
@@ -85,3 +71,12 @@ export const defaultSelectedRole = {
     name: '',
     resourceToAccess: defaultNewRolePermissions,
 };
+
+export const resourceSubstitutions: Record<string, string[]> = {};
+
+export const resourceRemovalReleaseVersions = new Map<ResourceName, string>([]);
+
+// TODO(ROX-11453): Remove this mapping once the old resources are fully deprecated.
+export const replacedResourceMapping = new Map<ResourceName, string>([]);
+
+export const deprecatedResourceRowStyle = { backgroundColor: 'rgb(255,250,205)' };

@@ -10,7 +10,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -35,20 +37,23 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory(71), "testshortcircuit", (*storage.TestShortCircuit)(nil)))
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory(114), "testshortcircuit", (*storage.TestShortCircuit)(nil)))
+		schema.ScopingResource = resources.Namespace
 		RegisterTable(schema, CreateTableTestShortCircuitsStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory(114), schema)
 		return schema
 	}()
 )
 
 const (
+	// TestShortCircuitsTableName specifies the name of the table in postgres.
 	TestShortCircuitsTableName = "test_short_circuits"
 )
 
 // TestShortCircuits holds the Gorm model for Postgres table `test_short_circuits`.
 type TestShortCircuits struct {
-	Id             string `gorm:"column:id;type:varchar;primaryKey"`
-	ChildId        string `gorm:"column:childid;type:varchar"`
-	G2GrandchildId string `gorm:"column:g2grandchildid;type:varchar"`
+	ID             string `gorm:"column:id;type:varchar;primaryKey"`
+	ChildID        string `gorm:"column:childid;type:varchar"`
+	G2GrandchildID string `gorm:"column:g2grandchildid;type:varchar"`
 	Serialized     []byte `gorm:"column:serialized;type:bytea"`
 }

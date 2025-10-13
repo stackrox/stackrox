@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/binenc"
@@ -52,7 +51,7 @@ func (s *service) handleRestore(req *http.Request) error {
 	}
 
 	var header v1.DBRestoreRequestHeader
-	if err := proto.Unmarshal(headerBytes, &header); err != nil {
+	if err := header.UnmarshalVTUnsafe(headerBytes); err != nil {
 		return errors.Wrapf(errox.InvalidArgs, "could not parse restore request header: %v", err)
 	}
 

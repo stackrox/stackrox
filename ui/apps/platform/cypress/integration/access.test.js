@@ -1,5 +1,4 @@
 import { selectors, url } from '../constants/AccessPage';
-import * as api from '../constants/apiEndpoints';
 
 import withAuth from '../helpers/basicAuth';
 
@@ -9,7 +8,7 @@ describe.skip('Access Control Page', () => {
     describe('Auth Provider Rules', () => {
         function navigateToThePanel(authProviders = 'fixture:auth/authProviders-id1-id2-id3.json') {
             cy.server();
-            cy.route('GET', api.auth.authProviders, authProviders).as('authProviders');
+            cy.route('GET', '/v1/authProviders', authProviders).as('authProviders');
 
             cy.visit(url);
             cy.get(selectors.tabs.authProviders).click();
@@ -76,7 +75,8 @@ describe.skip('Access Control Page', () => {
             cy.get(selectors.authProviders.doNotUseClientSecretCheckbox).should('not.be.disabled');
             cy.get(selectors.authProviders.clientSecretInput).should('not.be.disabled');
 
-            cy.get(selectors.input.issuer).clear().type('irrelevant-updated');
+            cy.get(selectors.input.issuer).clear();
+            cy.get(selectors.input.issuer).type('irrelevant-updated');
             cy.get(selectors.saveButton).click();
 
             cy.get(`${selectors.authProviderDetails.clientSecret}:contains("*****")`);
@@ -100,7 +100,7 @@ describe.skip('Access Control Page', () => {
             cy.get(leftSidePanel.selectedRowDeleteButton).click({ force: true }); // forcing as its a hover button
 
             // mock now with the second one deleted
-            cy.route('GET', api.auth.authProviders, 'fixture:auth/authProviders-id1-id3.json').as(
+            cy.route('GET', '/v1/authProviders', 'fixture:auth/authProviders-id1-id3.json').as(
                 'authProviders'
             );
 
@@ -122,7 +122,7 @@ describe.skip('Access Control Page', () => {
             cy.get(leftSidePanel.secondRowDeleteButton).click({ force: true }); // forcing as its a hover button
 
             // mock now with the second one deleted
-            cy.route('GET', api.auth.authProviders, 'fixture:auth/authProviders-id1-id3.json').as(
+            cy.route('GET', '/v1/authProviders', 'fixture:auth/authProviders-id1-id3.json').as(
                 'authProviders'
             );
 
@@ -141,7 +141,7 @@ describe.skip('Access Control Page', () => {
             cy.get(leftSidePanel.selectedRowDeleteButton).click({ force: true }); // forcing as its a hover button
 
             // mock now with empty list of providers like nothing is left
-            cy.route('GET', api.auth.authProviders, { authProviders: [] }).as('authProviders');
+            cy.route('GET', '/v1/authProviders', { authProviders: [] }).as('authProviders');
             cy.get(selectors.modal.deleteButton).click();
 
             cy.wait('@authProviders');
@@ -249,9 +249,8 @@ describe.skip('Access Control Page', () => {
             cy.server();
 
             cy.fixture('auth/mypermissionsMinimalAccess.json').as('minimalPermissions');
-            cy.log('api.roles.mypermissions', api.roles.mypermissions);
 
-            cy.route('GET', api.roles.mypermissions, '@minimalPermissions').as('getMyPermissions');
+            cy.route('GET', 'v1/mypermissions', '@minimalPermissions').as('getMyPermissions');
 
             cy.visit(url);
             cy.wait('@getMyPermissions');

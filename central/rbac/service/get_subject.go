@@ -36,7 +36,7 @@ func getSubjectFromStores(ctx context.Context, subjectName string, roleDS k8sRol
 	}
 
 	var subject *storage.Subject
-	for _, subj := range relevantBindings[0].GetSubjects() {
+	for _, subj := range k8srbac.GetSubjectsAdjustedByKind(relevantBindings[0]) {
 		if subj.GetKind() != storage.SubjectKind_USER || subj.GetKind() != storage.SubjectKind_GROUP {
 			continue
 		}
@@ -56,7 +56,7 @@ func getSubjectFromStores(ctx context.Context, subjectName string, roleDS k8sRol
 	roleIDs := set.NewStringSet()
 	for _, binding := range relevantBindings {
 		roleIDs.Add(binding.GetRoleId())
-		if binding.GetClusterRole() {
+		if k8srbac.IsClusterRoleBinding(binding) {
 			clusterBindings = append(clusterBindings, binding)
 		} else {
 			namespacedBindings[binding.GetNamespace()] = append(namespacedBindings[binding.GetNamespace()], binding)

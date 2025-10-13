@@ -1,5 +1,4 @@
 //go:build !release
-// +build !release
 
 package sync
 
@@ -15,7 +14,7 @@ import (
 )
 
 const (
-	defaultLockTimeout = 5 * time.Second
+	defaultLockTimeout = 10 * time.Second
 
 	// We omit the `ROX_` prefix as this is fairly general (potential open-sourcing). Also, this is not a setting in the
 	// classical sense that is read by roxctl and propagated to deploying. It is a debug setting that normally should
@@ -56,6 +55,7 @@ func panicOnTimeout(action string, do func(), timeout time.Duration) {
 
 // panicOnTimeoutMarked allows recording the timestamp (in nanoseconds since unix epoch) as a parameter on the
 // stack. The noinline directive is supposed to prevent the optimizer from removing it.
+//
 //go:noinline
 func panicOnTimeoutMarked(action string, do func(), timeout time.Duration, nowNanos int64) {
 	do()
@@ -74,10 +74,19 @@ func (m *Mutex) Lock() {
 	m.acquireTime = time.Now()
 }
 
+// TryLock wraps the call to sync.Mutex TryLock. It returns true if the lock was acquired.
+func (m *Mutex) TryLock() bool {
+	if m.Mutex.TryLock() {
+		m.acquireTime = time.Now()
+		return true
+	}
+	return false
+}
+
 // Unlock releases an acquired lock on the mutex.
 func (m *Mutex) Unlock() {
 	panicIfTooMuchTimeElapsed("Mutex.Unlock", m.acquireTime, lockTimeout, 1)
-	m.Mutex.Unlock()
+	defer m.Mutex.Unlock() // suppress the roxvet error for calling Unlock()
 }
 
 // RWMutex is a watchdog-enabled version of sync.RWMutex.
@@ -97,8 +106,26 @@ func (m *RWMutex) Lock() {
 	m.acquireTime = time.Now()
 }
 
+// TryRLock wraps the call to sync.RWMutex TryRLock. It returns true if the lock was acquired.
+func (m *RWMutex) TryRLock() bool {
+	if m.RWMutex.TryRLock() {
+		m.acquireTime = time.Now()
+		return true
+	}
+	return false
+}
+
+// TryLock wraps the call to sync.RWMutex TryLock. It returns true if the lock was acquired.
+func (m *RWMutex) TryLock() bool {
+	if m.RWMutex.TryLock() {
+		m.acquireTime = time.Now()
+		return true
+	}
+	return false
+}
+
 // Unlock releases an acquired writer (exclusive) lock on the mutex.
 func (m *RWMutex) Unlock() {
 	panicIfTooMuchTimeElapsed("RWMutex.Unlock", m.acquireTime, lockTimeout, 1)
-	m.RWMutex.Unlock()
+	defer m.RWMutex.Unlock() // suppress the roxvet error for calling Unlock()
 }

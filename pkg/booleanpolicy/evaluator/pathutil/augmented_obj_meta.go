@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
@@ -13,33 +15,34 @@ import (
 // An AugmentedObjMeta represents metadata (ie, type information) about an augmented object.
 // An augmented object is an object that is augmented to look like has certain extra fields that it doesn't.
 // For example, if have something like
-// type A struct {
-//    Bs []B
-// }
 //
-// type B struct {
-//    BVal string
-// }
+//	type A struct {
+//	   Bs []B
+//	}
 //
-// type C struct {
-//   CVal float64
-// }
+//	type B struct {
+//	   BVal string
+//	}
+//
+//	type C struct {
+//	  CVal float64
+//	}
+//
 // Let's say you want to actually have a C inside each B.
 // ie, you want to make it appear that the types are:
 //
+//	type A struct {
+//	   Bs []B
+//	}
 //
-// type A struct {
-//    Bs []B
-// }
+//	type B struct {
+//	   BVal string
+//	   EmbeddedC C
+//	}
 //
-// type B struct {
-//    BVal string
-//    EmbeddedC C
-// }
-//
-// type C struct {
-//   CVal float64
-// }
+//	type C struct {
+//	  CVal float64
+//	}
 //
 // Augmentation allows you to achieve this, by simply adding
 // ("Bs.EmbeddedC", C) as an augment.
@@ -141,18 +144,9 @@ func (o *AugmentedObjMeta) addPathsForSearchTags(parentType, currentType reflect
 }
 
 func (o *AugmentedObjMeta) addPathsForSearchTagsFromInterface(parentType, currentType reflect.Type, pathUntilThisObj, pathWithinThisObj MetaPath, outputMap *FieldToMetaPathMap, seenAugmentKeys set.StringSet) {
-	ptrToParent := reflect.PtrTo(parentType)
-	method, ok := ptrToParent.MethodByName("XXX_OneofWrappers")
-	if !ok {
-		panic(fmt.Sprintf("XXX_OneofWrappers should exist for all protobuf oneofs, not found for %s", parentType.Name()))
-	}
-	out := method.Func.Call([]reflect.Value{reflect.New(parentType)})
-	actualOneOfFields := out[0].Interface().([]interface{})
-	for _, f := range actualOneOfFields {
-		typ := reflect.TypeOf(f)
-		if typ.Implements(currentType) {
-			o.addPathsForSearchTags(currentType, typ, pathUntilThisObj, pathWithinThisObj, outputMap, seenAugmentKeys)
-		}
+	oneOfTypes := protocompat.GetOneOfTypesByInterface(parentType, currentType)
+	for _, typ := range oneOfTypes {
+		o.addPathsForSearchTags(currentType, typ, pathUntilThisObj, pathWithinThisObj, outputMap, seenAugmentKeys)
 	}
 }
 
@@ -186,6 +180,12 @@ func (o *AugmentedObjMeta) addPathsForSearchTagsFromStruct(currentType reflect.T
 		field := currentType.Field(i)
 		if _, inAugmented := augmentedFields[field.Name]; inAugmented {
 			// Skip this field -- it has been clobbered by an augment.
+			continue
+		}
+
+		// We need to skip internal fields for proto generated structs,
+		// because they contain recursive references.
+		if protoreflect.IsProtoMessage(currentType) && protoreflect.IsInternalGeneratorField(field) {
 			continue
 		}
 

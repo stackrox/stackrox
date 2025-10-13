@@ -2,11 +2,11 @@ package service
 
 import (
 	"context"
+	"time"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/node/globaldatastore"
-	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/node/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -15,14 +15,17 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
 )
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Node)): {
-			"/v1.NodeService/GetNode",
-			"/v1.NodeService/ListNodes",
+			v1.NodeService_GetNode_FullMethodName,
+			v1.NodeService_ListNodes_FullMethodName,
+			v1.NodeService_ExportNodes_FullMethodName,
 		},
 	})
 )
@@ -30,13 +33,13 @@ var (
 type nodeServiceImpl struct {
 	v1.UnimplementedNodeServiceServer
 
-	nodeStore globaldatastore.GlobalDataStore
+	nodeDatastore datastore.DataStore
 }
 
 // New creates a new node service from the given node store.
-func New(nodeStore globaldatastore.GlobalDataStore) pkgGRPC.APIService {
+func New(nodeDatastore datastore.DataStore) pkgGRPC.APIService {
 	return &nodeServiceImpl{
-		nodeStore: nodeStore,
+		nodeDatastore: nodeDatastore,
 	}
 }
 
@@ -54,12 +57,8 @@ func (s *nodeServiceImpl) AuthFuncOverride(ctx context.Context, fullMethodName s
 }
 
 func (s *nodeServiceImpl) ListNodes(ctx context.Context, req *v1.ListNodesRequest) (*v1.ListNodesResponse, error) {
-	clusterLocalStore, err := s.nodeStore.GetClusterNodeStore(ctx, req.GetClusterId(), false)
-	if err != nil {
-		return nil, errors.Errorf("could not access per-cluster node store for cluster %q: %v", req.GetClusterId(), err)
-	}
-
-	nodes, err := clusterLocalStore.ListNodes()
+	nodes, err := s.nodeDatastore.SearchRawNodes(ctx,
+		search.NewQueryBuilder().AddExactMatches(search.ClusterID, req.GetClusterId()).ProtoQuery())
 	if err != nil {
 		return nil, errors.Errorf("could not list notes in cluster %s: %v", req.GetClusterId(), err)
 	}
@@ -69,19 +68,36 @@ func (s *nodeServiceImpl) ListNodes(ctx context.Context, req *v1.ListNodesReques
 }
 
 func (s *nodeServiceImpl) GetNode(ctx context.Context, req *v1.GetNodeRequest) (*storage.Node, error) {
-	clusterLocalStore, err := s.nodeStore.GetClusterNodeStore(ctx, req.GetClusterId(), false)
+	// Previously, the cluster ID in the request was used to obtain global store. However, when the datastore interfaces
+	// were consolidated, the global store was dropped. Nodes have non-composite unique node ID across all clusters.
+	// Hence, Cluster ID is not required to retrieve a node.
+	//
+	// The GRPC endpoint (that includes the request format) was not changed to avoid any user-facing changes (/deprecation).
+	node, found, err := s.nodeDatastore.GetNode(ctx, req.GetNodeId())
 	if err != nil {
-		return nil, errors.Errorf("could not access per-cluster node store for cluster %q: %v", req.GetClusterId(), err)
+		return nil, errors.Errorf("could not locate node %q for cluster %s: %v", req.GetNodeId(), req.GetClusterId(), err)
 	}
-
-	node, err := clusterLocalStore.GetNode(req.GetNodeId())
-	if err != nil {
-		return nil, errors.Errorf("could not locate node %q in per-cluster node store for cluster %s: %v", req.GetNodeId(), req.GetClusterId(), err)
-	}
-
-	if node == nil {
+	if !found {
 		return nil, errors.Wrapf(errox.NotFound, "node %q in cluster %q does not exist", req.GetNodeId(), req.GetClusterId())
 	}
-
 	return node, nil
+}
+
+func (s *nodeServiceImpl) ExportNodes(req *v1.ExportNodeRequest, srv v1.NodeService_ExportNodesServer) error {
+	parsedQuery, err := search.ParseQuery(req.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+	ctx := srv.Context()
+	if timeout := req.GetTimeout(); timeout != 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(srv.Context(), time.Duration(timeout)*time.Second)
+		defer cancel()
+	}
+	return s.nodeDatastore.WalkByQuery(ctx, parsedQuery, func(node *storage.Node) error {
+		if err := srv.Send(&v1.ExportNodeResponse{Node: node}); err != nil {
+			return err
+		}
+		return nil
+	})
 }

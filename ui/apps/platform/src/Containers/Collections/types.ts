@@ -1,5 +1,5 @@
 export const selectorEntityTypes = ['Cluster', 'Namespace', 'Deployment'] as const;
-export type SelectorEntityType = typeof selectorEntityTypes[number];
+export type SelectorEntityType = (typeof selectorEntityTypes)[number];
 
 export type ByNameSelectorField = `${SelectorEntityType}`;
 export type ByLabelSelectorField = `${SelectorEntityType} Label`;
@@ -10,6 +10,10 @@ export type SelectorField = ByNameSelectorField | ByLabelSelectorField | ByAnnot
 const byNameRegExp = new RegExp(`^(${selectorEntityTypes.join('|')})$`);
 const byLabelRegExp = new RegExp(`^(${selectorEntityTypes.join('|')}) Label$`);
 const byAnnotationRegExp = new RegExp(`^(${selectorEntityTypes.join('|')}) Annotation$`);
+
+export function isSelectorField(field: string): field is SelectorField {
+    return byNameRegExp.test(field) || byLabelRegExp.test(field) || byAnnotationRegExp.test(field);
+}
 
 export function isByNameField(field: SelectorField): field is ByNameSelectorField {
     return byNameRegExp.test(field);
@@ -23,20 +27,39 @@ export function isByAnnotationField(field: SelectorField): field is ByAnnotation
     return byAnnotationRegExp.test(field);
 }
 
+export const byLabelMatchTypes = ['EXACT'] as const;
+export type ByLabelMatchType = (typeof byLabelMatchTypes)[number];
+export const byNameMatchType = ['EXACT', 'REGEX'] as const;
+export type ByNameMatchType = (typeof byNameMatchType)[number];
+export type MatchType = ByNameMatchType | ByLabelMatchType;
+
 /**
  * A valid server side `SelectorRule` can use either 'AND' or 'OR' operations to resolve values, but
  * the current UI implementation only supports 'OR'.
  */
 export type NameSelectorRule = {
     operator: 'OR';
-    values: string[];
+    values: { value: string; matchType: ByNameMatchType }[];
 };
 
 export type LabelSelectorRule = {
     operator: 'OR';
-    key: string;
-    values: string[];
+    values: { value: string; matchType: ByLabelMatchType }[];
 };
+
+export function isNameMatchValue(value: {
+    value: string;
+    matchType: string;
+}): value is NameSelectorRule['values'][number] {
+    return byNameMatchType.includes(value.matchType as ByNameMatchType);
+}
+
+export function isLabelMatchValue(value: {
+    value: string;
+    matchType: string;
+}): value is LabelSelectorRule['values'][number] {
+    return byLabelMatchTypes.includes(value.matchType as ByLabelMatchType);
+}
 
 /**
  * The front end currently only supports rules defined for names and labels, annotations are excluded.
@@ -47,40 +70,36 @@ export function isSupportedSelectorField(field: SelectorField): field is Support
     return isByNameField(field) || isByLabelField(field);
 }
 
+export const selectorOptions = ['NoneSpecified', 'ByName', 'ByLabel'] as const;
+
+export type RuleSelectorOption = (typeof selectorOptions)[number];
+
+export type NoneSpecifiedResourceSelector = {
+    type: 'NoneSpecified';
+};
 export type ByNameResourceSelector = {
+    type: 'ByName';
     field: ByNameSelectorField;
     rule: NameSelectorRule;
 };
 export type ByLabelResourceSelector = {
+    type: 'ByLabel';
     field: ByLabelSelectorField;
     rules: LabelSelectorRule[];
 };
 export type ScopedResourceSelector =
+    | NoneSpecifiedResourceSelector
     | ByNameResourceSelector
-    | ByLabelResourceSelector
-    | Record<string, never>;
-
-export function isByNameSelector(
-    selector: ScopedResourceSelector
-): selector is ByNameResourceSelector {
-    return isByNameField(selector.field);
-}
-
-export function isByLabelSelector(
-    selector: ScopedResourceSelector
-): selector is ByLabelResourceSelector {
-    return isByLabelField(selector.field);
-}
+    | ByLabelResourceSelector;
 
 /**
- * `Collection` is the front end representation of a valid collection, which is more
+ * `ClientCollection` is the front end representation of a valid collection, which is more
  * restricted than Collection objects that can be created via the API.
  */
-export type Collection = {
+export type ClientCollection = {
     id?: string;
     name: string;
     description: string;
-    inUse: boolean;
-    resourceSelectors: Record<SelectorEntityType, ScopedResourceSelector>;
+    resourceSelector: Record<SelectorEntityType, ScopedResourceSelector>;
     embeddedCollectionIds: string[];
 };

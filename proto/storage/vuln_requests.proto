@@ -1,113 +1,139 @@
 syntax = "proto3";
 
-option go_package = "storage";
-option java_package = "io.stackrox.proto.storage";
+package storage;
 
 import "google/protobuf/timestamp.proto";
-import "gogoproto/gogo.proto";
 import "storage/cve.proto";
 import "storage/user.proto";
 
-package storage;
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
 
 message RequestComment {
-    string                    id         = 1;
-    string                    message    = 2;
-    SlimUser                  user       = 3;
-    google.protobuf.Timestamp created_at = 4;
+  string id = 1;
+  string message = 2;
+  SlimUser user = 3; // @gotags: sql:"ignore_labels(User ID)"
+  google.protobuf.Timestamp created_at = 4;
 }
 
 // Indicates the status of a request. Requests canceled by the user before they are acted upon by the approver
 // are not tracked/persisted (with the exception of audit logs if it is turned on).
 enum RequestStatus {
-    // Default request state. It indicates that the request has not been fulfilled and that an action (approve/deny) is required.
-    PENDING    = 0;
-    // Indicates that the request has been approved by the approver.
-    APPROVED   = 1;
-    // Indicates that the request has been denied by the approver.
-    DENIED     = 2;
-    // Indicates that the original request was approved, but an update is still pending an approval or denial.
-    APPROVED_PENDING_UPDATE = 3;
+  // Default request state. It indicates that the request has not been fulfilled and that an action (approve/deny) is required.
+  PENDING = 0;
+  // Indicates that the request has been approved by the approver.
+  APPROVED = 1;
+  // Indicates that the request has been denied by the approver.
+  DENIED = 2;
+  // Indicates that the original request was approved, but an update is still pending an approval or denial.
+  APPROVED_PENDING_UPDATE = 3;
 }
 
 message RequestExpiry {
-    oneof expiry {
-        // Indicates that this request expires when the associated vulnerability is fixed.
-        bool                       expires_when_fixed = 1 [(gogoproto.moretags) = 'search:"Request Expires When Fixed"'];
-        // Indicates the timestamp when this request expires.
-        google.protobuf.Timestamp  expires_on         = 2 [(gogoproto.moretags) = 'search:"Request Expiry Time"'];
-    }
+  enum ExpiryType {
+    TIME = 0;
+    ALL_CVE_FIXABLE = 1;
+    ANY_CVE_FIXABLE = 2;
+  }
+
+  oneof expiry {
+    // Indicates that this request expires when the associated vulnerability is fixed.
+    bool expires_when_fixed = 1; // @gotags: search:"Request Expires When Fixed"
+    // Indicates the timestamp when this request expires.
+    google.protobuf.Timestamp expires_on = 2; // @gotags: search:"Request Expiry Time"
+  }
+
+  // This field is under development, DO NOT USE FOR NON-DEVELOPMENT PURPOSES.
+  // This field can be used only for deferral requests.
+  // This field indicates the type of expiry set for the request.
+  // `TIME` indicates that the request has a fixed expiry time. If used, `expires_on` must be set.
+  // `ALL_CVE_FIXABLE` indicates the request expires if all CVEs in the request is fixable.
+  // `ANY_CVE_FIXABLE` indicates the request expires if any CVE in the request is fixable.
+  ExpiryType expiry_type = 3; // @gotags: search:"Expiry Type"
 }
 
 message DeferralRequest {
-    RequestExpiry                    expiry             = 1;
+  RequestExpiry expiry = 1;
 }
 
-message FalsePositiveRequest { }
+message FalsePositiveRequest {}
 
-// Next available tag: 21
+message DeferralUpdate {
+  repeated string CVEs = 1; // @gotags: search:"Deferral Update CVEs"
+  RequestExpiry expiry = 2; // @gotags: search:"-"
+}
+
+message FalsePositiveUpdate {
+  repeated string CVEs = 1; // @gotags: search:"False Positive Update CVEs"
+}
+
+message Requester {
+  string id = 1; // @gotags: search:"Requester User ID"
+  string name = 2; // @gotags: search:"Requester User Name"
+}
+
+message Approver {
+  string id = 1; // @gotags: search:"Approver User ID"
+  string name = 2; // @gotags: search:"Approver User Name"
+}
+
+// Next available tag: 30
 // VulnerabilityRequest encapsulates a request such as deferral request and false-positive request.
 message VulnerabilityRequest {
-    message CVEs {
-        // TODO: Rename this field to cves.
-
-        // These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.
-        // For example, CVE-2021-44832.
-        repeated string ids = 1 [(gogoproto.moretags) = 'search:"CVE"'];
-    }
-    message Scope {
-        message Image {
-            string registry  = 1;
-            string remote    = 2;
-            string tag       = 3;
-        }
-
-        // For now global scopes out all the images (i.e. .*). The field could be extended in future to support
-        //unrestricted regex or restricted regex. For example,
-        // message Global {
-        //   oneof desc {
-        //     Image image_scope;
-        //     string image_regex;
-        //   }
-        // }
-
-        message Global {}
-
-        oneof info {
-            Image  image_scope  = 1;
-            // If set, the scope of this request is system-wide.
-            Global global_scope = 2;
-        }
-    }
-    string                           id                 = 1 [(gogoproto.moretags) = 'sql:"pk"'];
-    // Indicates the state the vulnerabilities will move to once the request is complete.
-    VulnerabilityState               target_state       = 2 [(gogoproto.moretags) = 'search:"Requested Vulnerability State"'];
-    // Indicates the status of a request.
-    RequestStatus                    status             = 3 [(gogoproto.moretags) = 'search:"Request Status"'];
-    // Indicates if this request is a historical request that is no longer in effect
-    // due to deferral expiry, cancellation, or restarting cve observation.
-    bool                             expired            = 4 [(gogoproto.moretags) = 'search:"Expired Request"'];
-    SlimUser                         requestor          = 5;
-    repeated SlimUser                approvers          = 6;
-    google.protobuf.Timestamp        created_at         = 7 [(gogoproto.moretags) = 'search:"Created Time"'];
-    google.protobuf.Timestamp        last_updated       = 8 [(gogoproto.moretags) = 'search:"Last Updated"'];
-    repeated RequestComment          comments           = 9;
-    Scope                            scope              = 10;
-
-    // 11 to 15 reserved for the request type oneof.
-    oneof req {
-        DeferralRequest              deferral_req       = 11;
-        FalsePositiveRequest         fp_request         = 12;
+  message CVEs {
+    // These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.
+    // For example, CVE-2021-44832.
+    repeated string cves = 1; // @gotags: search:"CVE"
+  }
+  message Scope {
+    message Image {
+      string registry = 1; // @gotags: search:"Image Registry Scope"
+      string remote = 2; // @gotags: search:"Image Remote Scope"
+      string tag = 3; // @gotags: search:"Image Tag Scope"
     }
 
-    // 16 to 20 reserved for entities oneof.
-    oneof entities {
-        CVEs                         cves               = 16;
-    }
+    message Global {}
 
-    // 21 to 25 reserved for the updated request type oneof.
-    oneof updated_req {
-        DeferralRequest              updated_deferral_req       = 21 [(gogoproto.moretags) = 'search:"-"'];
+    oneof info {
+      // This field can be used to apply the request to selected images.
+      Image image_scope = 1;
+      // If set, the scope of this request is system-wide.
+      Global global_scope = 2 [deprecated = true];
     }
+  }
+  string id = 1; // @gotags: sql:"pk"
+  string name = 26; // @gotags: search:"Request Name" sql:"unique"
+  // Indicates the state the vulnerabilities will move to once the request is complete.
+  VulnerabilityState target_state = 2; // @gotags: search:"Requested Vulnerability State"
+  // Indicates the status of a request.
+  RequestStatus status = 3; // @gotags: search:"Request Status"
+  // Indicates if this request is a historical request that is no longer in effect
+  // due to deferral expiry, cancellation, or restarting cve observation.
+  bool expired = 4; // @gotags: search:"Expired Request"
+  SlimUser requestor = 5 [deprecated = true]; // @gotags: sql:"ignore_labels(User ID)"
+  repeated SlimUser approvers = 6 [deprecated = true]; // @gotags: sql:"ignore_labels(User ID)"
+  google.protobuf.Timestamp created_at = 7; // @gotags: search:"Created Time"
+  google.protobuf.Timestamp last_updated = 8; // @gotags: search:"Last Updated"
+  repeated RequestComment comments = 9;
+  Scope scope = 10;
+  Requester requester_v2 = 28;
+  repeated Approver approvers_v2 = 29;
 
+  // 11 to 15 reserved for the request type oneof.
+  oneof req {
+    DeferralRequest deferral_req = 11;
+    FalsePositiveRequest fp_request = 12;
+  }
+
+  // 16 to 20 reserved for entities oneof.
+  oneof entities {
+    CVEs cves = 16;
+  }
+
+  // 21 to 25 reserved for the updated request type oneof.
+  oneof updated_req {
+    DeferralRequest updated_deferral_req = 21 [deprecated = true]; // @gotags: search:"-"
+    DeferralUpdate deferral_update = 22;
+    FalsePositiveUpdate false_positive_update = 23;
+  }
 }

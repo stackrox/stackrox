@@ -1,17 +1,22 @@
 package buildtime
 
 import (
-	ptypes "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
 type detectorImpl struct {
 	policySet detection.PolicySet
+}
+
+// PolicySet retrieves the policy set.
+func (d *detectorImpl) PolicySet() detection.PolicySet {
+	return d.policySet
 }
 
 // Detect runs detection on an image, returning any generated alerts.  If policy categories are specified, we will only
@@ -58,10 +63,10 @@ func policyViolationsAndImageToAlert(policy *storage.Policy, violations []*stora
 	alert := &storage.Alert{
 		Id:             uuid.NewV4().String(),
 		LifecycleStage: storage.LifecycleStage_BUILD,
-		Policy:         policy.Clone(),
+		Policy:         policy.CloneVT(),
 		Entity:         &storage.Alert_Image{Image: types.ToContainerImage(image)},
 		Violations:     violations,
-		Time:           ptypes.TimestampNow(),
+		Time:           protocompat.TimestampNow(),
 	}
 	return alert
 }

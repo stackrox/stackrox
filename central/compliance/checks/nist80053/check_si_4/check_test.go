@@ -4,17 +4,33 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/compliance/checks/testutils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"go.uber.org/mock/gomock"
 )
 
+func getClusterWithLastContactTime(timestamp *time.Time) *storage.Cluster {
+	if timestamp == nil {
+		return &storage.Cluster{
+			HealthStatus: &storage.ClusterHealthStatus{
+				LastContact: nil,
+			},
+		}
+	}
+	return &storage.Cluster{
+		HealthStatus: &storage.ClusterHealthStatus{
+			LastContact: protoconv.ConvertTimeToTimestamp(*timestamp),
+		},
+	}
+}
+
 func TestCheckClusterCheckedInInThePastHour(t *testing.T) {
+	nowMinus30Minutes := time.Now().Add(-30 * time.Minute)
+	nowMinus2Hours := time.Now().Add(-2 * time.Hour)
 	for _, testCase := range []struct {
 		desc               string
-		clusterContactTime *types.Timestamp
+		clusterContactTime *time.Time
 		shouldPass         bool
 	}{
 		{
@@ -24,12 +40,12 @@ func TestCheckClusterCheckedInInThePastHour(t *testing.T) {
 		},
 		{
 			desc:               "checked in recently",
-			clusterContactTime: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-30 * time.Minute)),
+			clusterContactTime: &nowMinus30Minutes,
 			shouldPass:         true,
 		},
 		{
 			desc:               "checked in a long time ago",
-			clusterContactTime: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-2 * time.Hour)),
+			clusterContactTime: &nowMinus2Hours,
 			shouldPass:         false,
 		},
 	} {
@@ -38,7 +54,7 @@ func TestCheckClusterCheckedInInThePastHour(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			mockCtx, mockData, records := testutils.SetupMockCtxAndMockData(ctrl)
-			mockData.EXPECT().Cluster().Return(&storage.Cluster{HealthStatus: &storage.ClusterHealthStatus{LastContact: c.clusterContactTime}})
+			mockData.EXPECT().Cluster().Return(getClusterWithLastContactTime(c.clusterContactTime))
 			checkClusterCheckedInInThePastHour(mockCtx)
 			records.AssertExpectedResult(c.shouldPass, t)
 		})

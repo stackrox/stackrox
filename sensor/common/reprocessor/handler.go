@@ -5,11 +5,13 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/image/cache"
+	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/unimplemented"
 )
 
 var (
@@ -17,12 +19,16 @@ var (
 )
 
 // Handler handles request to reprocess deployment (sent by Central).
+//
+//go:generate mockgen-wrapper
 type Handler interface {
 	common.SensorComponent
+	ProcessReprocessDeployments(*central.ReprocessDeployment) error
+	ProcessInvalidateImageCache(*central.InvalidateImageCache) error
 }
 
 // NewHandler returns a new instance of a deployment reprocessor.
-func NewHandler(admCtrlSettingsMgr admissioncontroller.SettingsManager, detector detector.Detector, imageCache expiringcache.Cache) Handler {
+func NewHandler(admCtrlSettingsMgr admissioncontroller.SettingsManager, detector detector.Detector, imageCache cache.Image) Handler {
 	return &handlerImpl{
 		admCtrlSettingsMgr: admCtrlSettingsMgr,
 		detector:           detector,
@@ -32,19 +38,27 @@ func NewHandler(admCtrlSettingsMgr admissioncontroller.SettingsManager, detector
 }
 
 type handlerImpl struct {
+	unimplemented.Receiver
+
 	admCtrlSettingsMgr admissioncontroller.SettingsManager
 	detector           detector.Detector
-	imageCache         expiringcache.Cache
+	imageCache         cache.Image
 	stopSig            concurrency.ErrorSignal
+}
+
+func (h *handlerImpl) Name() string {
+	return "reprocessor.handlerImpl"
 }
 
 func (h *handlerImpl) Start() error {
 	return nil
 }
 
-func (h *handlerImpl) Stop(err error) {
-	h.stopSig.SignalWithError(err)
+func (h *handlerImpl) Stop() {
+	h.stopSig.Signal()
 }
+
+func (h *handlerImpl) Notify(common.SensorComponentEvent) {}
 
 func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 	// A new sensor capability to reprocess deployment has not been added. In case of mismatched upgrades,
@@ -52,17 +66,7 @@ func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (h *handlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
-	switch {
-	case msg.GetReprocessDeployment() != nil:
-		return h.reprocessDeployments(msg.GetReprocessDeployment())
-	case msg.GetInvalidateImageCache() != nil:
-		return h.invalidateImageCache(msg.GetInvalidateImageCache())
-	}
-	return nil
-}
-
-func (h *handlerImpl) reprocessDeployments(req *central.ReprocessDeployment) error {
+func (h *handlerImpl) ProcessReprocessDeployments(req *central.ReprocessDeployment) error {
 	log.Debug("Received request to reprocess deployments from Central")
 
 	select {
@@ -74,7 +78,7 @@ func (h *handlerImpl) reprocessDeployments(req *central.ReprocessDeployment) err
 	return nil
 }
 
-func (h *handlerImpl) invalidateImageCache(req *central.InvalidateImageCache) error {
+func (h *handlerImpl) ProcessInvalidateImageCache(req *central.InvalidateImageCache) error {
 	log.Debug("Received request to invalidate image caches")
 
 	select {
@@ -83,19 +87,19 @@ func (h *handlerImpl) invalidateImageCache(req *central.InvalidateImageCache) er
 	default:
 		h.admCtrlSettingsMgr.FlushCache()
 
-		keysToDelete := make([]interface{}, 0, len(req.GetImageKeys()))
+		keysToDelete := make([]cache.Key, 0, len(req.GetImageKeys()))
 		for _, image := range req.GetImageKeys() {
 			key := image.GetImageId()
 			if key == "" {
 				key = image.GetImageFullName()
 			}
-			keysToDelete = append(keysToDelete, key)
+			keysToDelete = append(keysToDelete, cache.Key(key))
 		}
 		h.imageCache.Remove(keysToDelete...)
 	}
 	return nil
 }
 
-func (h *handlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
+func (h *handlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return nil
 }

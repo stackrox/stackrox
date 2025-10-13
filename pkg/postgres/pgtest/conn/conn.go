@@ -27,7 +27,7 @@ func GetConnectionString(_ testing.TB) string {
 	pass := env.GetString("POSTGRES_PASSWORD", "")
 	host := env.GetString("POSTGRES_HOST", "localhost")
 	port := env.GetString("POSTGRES_PORT", "5432")
-	src := fmt.Sprintf("host=%s port=%s user=%s sslmode=disable statement_timeout=600000 client_encoding=UTF-8", host, port, user)
+	src := fmt.Sprintf("host=%s port=%s user=%s sslmode=disable statement_timeout=600000 client_encoding=UTF8", host, port, user)
 	if pass != "" {
 		src += fmt.Sprintf(" password=%s", pass)
 	}
@@ -42,6 +42,7 @@ func OpenGormDB(t testing.TB, source string, disableConstraint bool) *gorm.DB {
 			NamingStrategy:                           pgutils.NamingStrategy,
 			DisableForeignKeyConstraintWhenMigrating: disableConstraint,
 			Logger:                                   logger.Discard,
+			QueryFields:                              true,
 		},
 	)
 	require.NoError(t, err, "failed to connect to connect with gorm db")

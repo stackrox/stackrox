@@ -3,17 +3,26 @@ import { differenceInDays, differenceInMinutes } from 'date-fns';
 import get from 'lodash/get';
 import { DownloadCloud } from 'react-feather';
 import {
+    BanIcon,
     CheckCircleIcon,
     ExclamationCircleIcon,
+    ExclamationTriangleIcon,
     InfoCircleIcon,
     InProgressIcon,
     MinusCircleIcon,
     ResourcesEmptyIcon,
-    TimesCircleIcon,
+    UnknownIcon,
 } from '@patternfly/react-icons';
 
-import { getDate } from 'utils/dateUtils';
-import { CertExpiryStatus } from './clusterTypes';
+import type {
+    Cluster,
+    ClusterHealthStatusLabel,
+    ClusterProviderMetadata,
+} from 'types/cluster.proto';
+import { getDate, getDistanceStrict } from 'utils/dateUtils';
+
+import { healthStatusLabels } from './cluster.constants';
+import type { CertExpiryStatus } from './clusterTypes';
 
 export const runtimeOptions = [
     {
@@ -22,9 +31,9 @@ export const runtimeOptions = [
         value: 'NO_COLLECTION',
     },
     {
-        label: 'Kernel Module',
-        tableDisplay: 'Kernel Module',
-        value: 'KERNEL_MODULE',
+        label: 'CORE BPF',
+        tableDisplay: 'CORE BPF',
+        value: 'CORE_BPF',
     },
     {
         label: 'eBPF Program',
@@ -61,10 +70,11 @@ export const clusterTablePollingInterval = 5000; // milliseconds
 export const clusterDetailPollingInterval = 3000; // milliseconds
 
 const defaultNewClusterType = 'KUBERNETES_CLUSTER';
-const defaultCollectionMethod = 'EBPF';
+const defaultCollectionMethod = 'CORE_BPF';
 
 export const newClusterDefault = {
-    id: undefined,
+    // TODO Add Cluster type and add missing properties?
+    id: undefined, // TODO empty string?
     name: '',
     type: defaultNewClusterType,
     mainImage: 'stackrox/main',
@@ -72,24 +82,25 @@ export const newClusterDefault = {
     centralApiEndpoint: 'central.stackrox:443',
     runtimeSupport: false,
     collectionMethod: defaultCollectionMethod,
-    DEPRECATEDProviderMetadata: null,
     admissionControllerEvents: true,
-    admissionController: false,
-    admissionControllerUpdates: false,
-    DEPRECATEDOrchestratorMetadata: null,
-    status: undefined,
+    admissionController: true, // default changed in 4.9
+    admissionControllerUpdates: true, // default changed in 4.9
+    admissionControllerFailOnError: false, // property added in 4.9 false means Fail open
+    status: null,
     tolerationsConfig: {
         disabled: false,
     },
     dynamicConfig: {
         admissionControllerConfig: {
-            enabled: false,
-            enforceOnUpdates: false,
-            timeoutSeconds: 3,
-            scanInline: false,
+            enabled: true, // default changed in 4.9
+            enforceOnUpdates: true, // default changed in 4.9
+            timeoutSeconds: 0, // default changed in 4.9
+            scanInline: true, // default changed in 4.9
             disableBypass: false,
         },
         registryOverride: '',
+        disableAuditLogs: false,
+        autoLockProcessBaselinesConfig: null,
     },
     healthStatus: undefined,
     slimCollector: false,
@@ -107,64 +118,52 @@ const MinusCircleRotate45 = ({ className }: MinusCircleRotate45Props) => (
     <MinusCircleIcon className={`${className} transform rotate-45`} />
 );
 
-export const styleUninitialized = {
+const styleUninitializedLegacy = {
     Icon: MinusCircleRotate45,
-    bgColor: 'bg-base-200',
-    fgColor: 'text-base-700',
+    fgColor: '',
 };
 
-export const styleHealthy = {
+const styleUninitialized = {
+    Icon: BanIcon,
+    fgColor: '',
+};
+
+const styleHealthy = {
     Icon: CheckCircleIcon,
-    bgColor: 'bg-success-200',
-    fgColor: 'text-success-700',
+    fgColor: 'pf-v5-u-success-color-100',
 };
 
-export const styleDegraded = {
+const styleDegraded = {
+    Icon: ExclamationTriangleIcon,
+    fgColor: 'pf-v5-u-warning-color-100',
+};
+
+const styleUnhealthy = {
     Icon: ExclamationCircleIcon,
-    bgColor: 'bg-warning-200',
-    fgColor: 'text-warning-700',
+    fgColor: 'pf-v5-u-danger-color-100',
 };
 
-export const styleUnhealthy = {
-    Icon: TimesCircleIcon,
-    bgColor: 'bg-alert-200',
-    fgColor: 'text-alert-700',
-};
-
-// PatternFly versions of cluster style constants
-export const styleUninitializedPF = {
-    Icon: MinusCircleRotate45,
-    bgColor: 'pf-u-background-color-100',
-    fgColor: 'pf-u-default-color-300',
-};
-
-export const styleHealthyPF = {
-    Icon: CheckCircleIcon,
-    bgColor: 'pf-u-background-color-success',
-    fgColor: 'pf-u-success-color-100',
-};
-
-export const styleDegradedPF = {
-    Icon: ExclamationCircleIcon,
-    bgColor: 'pf-u-background-color-warning',
-    fgColor: 'pf-u-warning-color-100',
-};
-
-export const styleUnhealthyPF = {
-    Icon: TimesCircleIcon,
-    bgColor: 'pf-u-background-color-danger',
-    fgColor: 'pf-u-danger-color-100',
+const styleUnavailable = {
+    Icon: UnknownIcon,
+    fgColor: '',
 };
 
 // Styles for ClusterStatus, SensorStatus, CollectorStatus.
 // Colors are similar to LabelChip, but fgColor is slightly lighter 700 instead of 800.
-export const healthStatusStyles = {
-    UNINITIALIZED: styleUninitialized,
+export const healthStatusStylesLegacy = {
+    UNINITIALIZED: styleUninitializedLegacy,
     UNAVAILABLE: {
         Icon: ResourcesEmptyIcon,
-        bgColor: 'bg-secondary-200',
-        fgColor: 'text-secondary-700',
+        fgColor: '',
     },
+    UNHEALTHY: styleUnhealthy,
+    DEGRADED: styleDegraded,
+    HEALTHY: styleHealthy,
+};
+
+export const healthStatusStyles = {
+    UNINITIALIZED: styleUninitialized,
+    UNAVAILABLE: styleUnavailable,
     UNHEALTHY: styleUnhealthy,
     DEGRADED: styleDegraded,
     HEALTHY: styleHealthy,
@@ -173,42 +172,37 @@ export const healthStatusStyles = {
 // Special case for Collector when Sensor is UNHEALTHY or DELAYED.
 export const delayedCollectorStatusStyle = {
     Icon: InfoCircleIcon,
-    bgColor: 'bg-base-200',
-    fgColor: 'text-base-700',
+    fgColor: '',
 };
 
 // Special case for Admission Control when Sensor is UNHEALTHY or DELAYED.
 export const delayedAdmissionControlStatusStyle = {
     Icon: InfoCircleIcon,
-    bgColor: 'bg-base-200',
-    fgColor: 'text-base-700',
+    fgColor: '',
 };
 
 // Special case for Scanner when Sensor is UNHEALTHY or DELAYED.
 export const delayedScannerStatusStyle = {
     Icon: InfoCircleIcon,
-    bgColor: 'bg-base-200',
-    fgColor: 'text-base-700',
+    fgColor: '',
 };
 
 export const sensorUpgradeStyles = {
     current: styleHealthy,
     progress: {
         Icon: InProgressIcon,
-        bgColor: 'bg-tertiary-200',
-        fgColor: 'text-tertiary-700',
+        fgColor: 'pf-v5-u-primary-color-100',
     },
     download: {
         Icon: DownloadCloud,
-        bgColor: 'bg-tertiary-200',
-        fgColor: 'text-tertiary-700',
+        fgColor: 'pf-v5-u-link-color',
     },
     intervention: styleDegraded,
     failure: styleUnhealthy,
 };
 
 type UpgradeState = {
-    displayValue?: string;
+    displayValue: string;
     type: string;
     actionText?: string;
 };
@@ -221,12 +215,18 @@ const upgradeStates: UpgradeStates = {
         type: 'current',
     },
     MANUAL_UPGRADE_REQUIRED: {
-        displayValue: 'Manual upgrade required',
+        displayValue: 'Sensor is not running the same version as Central',
         type: 'intervention',
     },
     UPGRADE_AVAILABLE: {
+        displayValue: 'Upgrade available',
         type: 'download',
-        actionText: 'Upgrade available',
+        actionText: 'Upgrade sensor',
+    },
+    DOWNGRADE_POSSIBLE: {
+        displayValue: 'Downgrade possible',
+        type: 'download',
+        actionText: 'Downgrade sensor',
     },
     UPGRADE_INITIALIZING: {
         displayValue: 'Upgrade initializing',
@@ -293,40 +293,33 @@ const upgradeStates: UpgradeStates = {
 };
 
 export function formatKubernetesVersion(orchestratorMetadata: { version: string }) {
-    return orchestratorMetadata?.version || 'Not applicable';
+    return orchestratorMetadata?.version || 'Not available';
 }
 
 export function formatBuildDate(orchestratorMetadata) {
     return orchestratorMetadata?.buildDate
         ? getDate(orchestratorMetadata.buildDate)
-        : 'Not applicable';
+        : 'Not available';
 }
 
-type ProviderMetadata = {
-    region: string;
-    aws?: any;
-    azure?: any;
-    google?: any;
-};
-
-export function formatCloudProvider(providerMetadata: ProviderMetadata) {
+export function formatCloudProvider(providerMetadata: ClusterProviderMetadata) {
     if (providerMetadata) {
         const { region } = providerMetadata;
 
-        if (providerMetadata.aws) {
+        if ('aws' in providerMetadata) {
             return `AWS ${region}`;
         }
 
-        if (providerMetadata.azure) {
+        if ('azure' in providerMetadata) {
             return `Azure ${region}`;
         }
 
-        if (providerMetadata.google) {
+        if ('google' in providerMetadata) {
             return `GCP ${region}`;
         }
     }
 
-    return 'Not applicable';
+    return 'Not available';
 }
 
 const shortLivedCertMaxDays = 14;
@@ -508,7 +501,19 @@ export function findUpgradeState(
         // Auto upgrades are possible even in the case of SENSOR_VERSION_HIGHER (it's not technically an upgrade,
         // and not really something we ever expect, but eh.) If the backend detects this to be the case, it will not
         // trigger an upgrade unless asked to by the user.
-        case 'SENSOR_VERSION_HIGHER':
+        case 'SENSOR_VERSION_HIGHER': {
+            if (!hasRelevantInformationFromMostRecentUpgrade(upgradeStatus)) {
+                return upgradeStates.DOWNGRADE_POSSIBLE;
+            }
+
+            const upgradeState = get(
+                upgradeStatus,
+                'mostRecentProcess.progress.upgradeState',
+                'unknown'
+            );
+
+            return upgradeStates[upgradeState] || upgradeStates.unknown;
+        }
         case 'AUTO_UPGRADE_POSSIBLE': {
             if (!hasRelevantInformationFromMostRecentUpgrade(upgradeStatus)) {
                 return upgradeStates.UPGRADE_AVAILABLE;
@@ -532,7 +537,7 @@ export function isUpToDateStateObject(upgradeStateObject) {
     return upgradeStateObject?.type === 'current';
 }
 
-export function getUpgradeableClusters(clusters = []) {
+export function getUpgradeableClusters(clusters: Cluster[] = []): Cluster[] {
     return clusters.filter((cluster) => {
         const upgradeStatus: UpgradeStatus | null = get(cluster, 'status.upgradeStatus', null);
         const upgradeStateObject = findUpgradeState(upgradeStatus);
@@ -541,10 +546,22 @@ export function getUpgradeableClusters(clusters = []) {
     });
 }
 
-export const wizardSteps = Object.freeze({
-    FORM: 'FORM',
-    DEPLOYMENT: 'DEPLOYMENT',
-});
+export function buildStatusMessage(
+    healthStatus: ClusterHealthStatusLabel,
+    lastContact: string | null | undefined,
+    sensorHealthStatus: ClusterHealthStatusLabel,
+    formatDelayedText: (distance: string) => string = (distance) => `${distance} ago`
+): string {
+    let message = healthStatusLabels[healthStatus];
+
+    const isDelayed = !!(lastContact && isDelayedSensorHealthStatus(sensorHealthStatus));
+
+    if (isDelayed && lastContact) {
+        const distance = getDistanceStrict(lastContact, new Date());
+        message += ` ${formatDelayedText(distance)}`;
+    }
+    return message;
+}
 
 export default {
     runtimeOptions,
@@ -554,5 +571,4 @@ export default {
     newClusterDefault,
     findUpgradeState,
     isUpToDateStateObject,
-    wizardSteps,
 };

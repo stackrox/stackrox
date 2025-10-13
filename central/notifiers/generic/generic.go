@@ -9,53 +9,65 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/notifiers"
+	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events/codes"
+	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/jsonutil"
+	"github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/urlfmt"
-)
-
-var (
-	log = logging.LoggerForModule()
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
-	timeout = 5 * time.Second
-
 	alertMessageKey         = "alert"
 	auditMessageKey         = "audit"
 	networkPolicyMessageKey = "networkpolicy"
+
+	// serviceOperatorCAPath points to the secret of the service account, which within an OpenShift environment
+	// also has the service-ca.crt, which includes the CA to verify certificates issued by the service-ca operator.
+	// This could be i.e. the default ingress controller certificate.
+	serviceOperatorCAPath = "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
 )
 
-// generic notifier plugin
+var (
+	timeout = env.WebhookTimeout.DurationSetting()
+)
+
+// generic notifier plugin.
 type generic struct {
 	*storage.Notifier
 
-	client                 *http.Client
+	client      *http.Client
+	creds       string
+	cryptoKey   string
+	cryptoCodec cryptocodec.CryptoCodec
+
 	fullyQualifiedEndpoint string
 	extraFieldsJSONPrefix  string
 }
 
-func (*generic) Close(ctx context.Context) error {
+func (*generic) Close(_ context.Context) error {
 	return nil
 }
 
-// AlertNotify takes in an alert and generates the Slack message
+// AlertNotify takes in an alert and generates the Slack message.
 func (g *generic) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	return g.postMessageWithRetry(ctx, alert, alertMessageKey)
 }
 
-// YamlNotify takes in a yaml file and generates the Slack message
+// NetworkPolicyYAMLNotify takes in a yaml file and generates the Slack message.
 func (g *generic) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, clusterName string) error {
 	msg := &v1.NetworkPolicyNotification{
 		Cluster: clusterName,
@@ -64,12 +76,13 @@ func (g *generic) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, clus
 	return g.postMessageWithRetry(ctx, msg, networkPolicyMessageKey)
 }
 
-func validateConfig(generic *storage.Generic) error {
+// Validate Generic notifier
+func Validate(generic *storage.Generic, validateSecret bool) error {
 	errList := errorhelpers.NewErrorList("Generic webhook validation")
 	if generic.GetEndpoint() == "" {
 		errList.AddString("endpoint is required")
 	}
-	if generic.GetUsername() != generic.GetPassword() && stringutils.AtLeastOneEmpty(generic.GetUsername(), generic.GetPassword()) {
+	if validateSecret && generic.GetUsername() != generic.GetPassword() && stringutils.AtLeastOneEmpty(generic.GetUsername(), generic.GetPassword()) {
 		errList.AddString("both username and password must be defined together")
 	}
 	for _, f := range generic.GetHeaders() {
@@ -88,7 +101,7 @@ func validateConfig(generic *storage.Generic) error {
 func getExtraFieldJSON(fields []*storage.KeyValuePair) (string, error) {
 	fieldMap := make(map[string]string)
 	for _, f := range fields {
-		fieldMap[f.Key] = f.Value
+		fieldMap[f.GetKey()] = f.GetValue()
 	}
 	data, err := json.Marshal(fieldMap)
 	if err != nil {
@@ -100,14 +113,9 @@ func getExtraFieldJSON(fields []*storage.KeyValuePair) (string, error) {
 	return string(data), nil
 }
 
-func newGeneric(notifier *storage.Notifier) (*generic, error) {
-	genericConfig, ok := notifier.Config.(*storage.Notifier_Generic)
-
-	if !ok {
-		return nil, validateConfig(&storage.Generic{})
-	}
-	conf := genericConfig.Generic
-	if err := validateConfig(conf); err != nil {
+func newGeneric(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCodec, cryptoKey string) (*generic, error) {
+	conf := notifier.GetGeneric()
+	if err := Validate(conf, !env.EncNotifierCreds.BooleanSetting()); err != nil {
 		return nil, err
 	}
 	fullyQualifiedEndpoint := urlfmt.FormatURL(conf.GetEndpoint(), urlfmt.HTTPS, urlfmt.HonorInputSlash)
@@ -121,7 +129,11 @@ func newGeneric(notifier *storage.Notifier) (*generic, error) {
 			return nil, errors.New("could not add CA Cert passed in configuration")
 		}
 	}
-	extraFieldsJSON, err := getExtraFieldJSON(conf.ExtraFields)
+	// Trust local cluster services.
+	if serviceCA, err := os.ReadFile(serviceOperatorCAPath); err == nil {
+		rootCAs.AppendCertsFromPEM(serviceCA)
+	}
+	extraFieldsJSON, err := getExtraFieldJSON(conf.GetExtraFields())
 	if err != nil {
 		return nil, err
 	}
@@ -139,6 +151,9 @@ func newGeneric(notifier *storage.Notifier) (*generic, error) {
 				Proxy: proxy.FromConfig(),
 			},
 		},
+		creds:                  "",
+		cryptoKey:              cryptoKey,
+		cryptoCodec:            cryptoCodec,
 		fullyQualifiedEndpoint: fullyQualifiedEndpoint,
 		extraFieldsJSONPrefix:  extraFieldsJSON,
 	}, nil
@@ -148,18 +163,23 @@ func (g *generic) ProtoNotifier() *storage.Notifier {
 	return g.Notifier
 }
 
-func (g *generic) Test(ctx context.Context) error {
+func (g *generic) Test(ctx context.Context) *notifiers.NotifierError {
 	alert := &storage.Alert{
 		Id: "testalert",
 		Policy: &storage.Policy{
 			Name: "This is a test message created to test integration with StackRox.",
 		},
 	}
-	return g.AlertNotify(ctx, alert)
+
+	if err := g.AlertNotify(ctx, alert); err != nil {
+		return notifiers.NewNotifierError("send test message failed", err)
+	}
+
+	return nil
 }
 
-func (g *generic) constructJSON(message proto.Message, msgKey string) (io.Reader, error) {
-	msgStr, err := new(jsonpb.Marshaler).MarshalToString(message)
+func (g *generic) constructJSON(message protocompat.Message, msgKey string) (io.Reader, error) {
+	msgStr, err := jsonutil.MarshalToCompactString(message)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +194,11 @@ func (g *generic) constructJSON(message proto.Message, msgKey string) (io.Reader
 	return bytes.NewBufferString(strJSON), nil
 }
 
-func (g *generic) postMessage(ctx context.Context, message proto.Message, msgKey string) error {
+func (g *generic) postMessage(ctx context.Context, message protocompat.Message, msgKey string) error {
+	password, err := g.getPassword()
+	if err != nil {
+		return err
+	}
 	body, err := g.constructJSON(message, msgKey)
 	if err != nil {
 		return err
@@ -190,7 +214,7 @@ func (g *generic) postMessage(ctx context.Context, message proto.Message, msgKey
 	}
 
 	if g.GetGeneric().GetUsername() != "" {
-		req.SetBasicAuth(g.GetGeneric().GetUsername(), g.GetGeneric().GetPassword())
+		req.SetBasicAuth(g.GetGeneric().GetUsername(), password)
 	}
 
 	resp, err := g.client.Do(req)
@@ -198,10 +222,10 @@ func (g *generic) postMessage(ctx context.Context, message proto.Message, msgKey
 		return err
 	}
 
-	return notifiers.CreateError("webhook", resp)
+	return notifiers.CreateError(g.GetName(), resp, codes.WebhookGeneric)
 }
 
-func (g *generic) postMessageWithRetry(ctx context.Context, message proto.Message, msgKey string) error {
+func (g *generic) postMessageWithRetry(ctx context.Context, message protocompat.Message, msgKey string) error {
 	return retry.WithRetry(
 		func() error {
 			return g.postMessage(ctx, message, msgKey)
@@ -226,9 +250,40 @@ func (g *generic) AuditLoggingEnabled() bool {
 	return g.GetGeneric().GetAuditLoggingEnabled()
 }
 
+func (g *generic) getPassword() (string, error) {
+	if g.GetGeneric().GetUsername() == "" {
+		// Both username and password can be empty for unauthenticated generic notifier integration
+		return "", nil
+	}
+
+	if g.creds != "" {
+		return g.creds, nil
+	}
+
+	if !env.EncNotifierCreds.BooleanSetting() {
+		g.creds = g.GetGeneric().GetPassword()
+		return g.creds, nil
+	}
+
+	decCreds, err := g.cryptoCodec.Decrypt(g.cryptoKey, g.GetNotifierSecret())
+	if err != nil {
+		return "", errors.Errorf("Error decrypting notifier secret for notifier '%s'", g.GetName())
+	}
+	g.creds = decCreds
+	return g.creds, nil
+}
+
 func init() {
-	notifiers.Add("generic", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		g, err := newGeneric(notifier)
+	cryptoKey := ""
+	var err error
+	if env.EncNotifierCreds.BooleanSetting() {
+		cryptoKey, _, err = notifierUtils.GetActiveNotifierEncryptionKey()
+		if err != nil {
+			utils.Should(errors.Wrap(err, "Error reading encryption key, notifier will be unable to send notifications"))
+		}
+	}
+	notifiers.Add(notifiers.GenericType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
+		g, err := newGeneric(notifier, cryptocodec.Singleton(), cryptoKey)
 		return g, err
 	})
 }

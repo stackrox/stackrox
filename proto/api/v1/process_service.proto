@@ -1,70 +1,72 @@
 syntax = "proto3";
 
-option go_package = "v1";
-option java_package = "io.stackrox.proto.api.v1";
+package v1;
 
+import "api/v1/search_service.proto";
 import weak "google/api/annotations.proto";
 import "storage/process_indicator.proto";
 
-package v1;
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
 
 message GetProcessesByDeploymentRequest {
-    string deployment_id = 1;
+  string deployment_id = 1;
 }
 
 message GetProcessesResponse {
-    repeated storage.ProcessIndicator processes = 1;
+  repeated storage.ProcessIndicator processes = 1;
 }
 
 message ProcessGroup {
-    string                    args    = 1;
-    repeated storage.ProcessIndicator signals = 2;
+  string args = 1;
+  repeated storage.ProcessIndicator signals = 2;
 }
 
 message ProcessNameGroup {
-    string                name           = 1;
-    uint32                times_executed = 2;
-    repeated ProcessGroup groups         = 3;
+  string name = 1;
+  uint32 times_executed = 2;
+  repeated ProcessGroup groups = 3;
 }
 
 message GetGroupedProcessesResponse {
-    repeated ProcessNameGroup groups = 3;
+  repeated ProcessNameGroup groups = 3;
 }
 
 message ProcessNameAndContainerNameGroup {
-    string                name           = 1;
-    string                container_name = 2;
-    uint32                times_executed = 3;
-    repeated ProcessGroup groups         = 4;
-    bool                  suspicious     = 5;
+  string name = 1;
+  string container_name = 2;
+  uint32 times_executed = 3;
+  repeated ProcessGroup groups = 4;
+  bool suspicious = 5;
 }
 
 message GetGroupedProcessesWithContainerResponse {
-    repeated ProcessNameAndContainerNameGroup groups = 3;
+  repeated ProcessNameAndContainerNameGroup groups = 3;
+}
+
+message CountProcessesResponse {
+  int32 count = 1;
 }
 
 // ProcessService APIs can be used to list processes executed in deployments.
 service ProcessService {
+  // CountProcesses returns the count of processes.
+  rpc CountProcesses(RawQuery) returns (CountProcessesResponse) {
+    option (google.api.http) = {get: "/v1/processcount"};
+  }
 
-    // GetProcessesByDeployment returns the processes executed in the given deployment.
-    rpc GetProcessesByDeployment (GetProcessesByDeploymentRequest) returns (GetProcessesResponse) {
-        option (google.api.http) = {
-            get: "/v1/processes/deployment/{deployment_id}"
-        };
-    }
+  // GetProcessesByDeployment returns the processes executed in the given deployment.
+  rpc GetProcessesByDeployment(GetProcessesByDeploymentRequest) returns (GetProcessesResponse) {
+    option (google.api.http) = {get: "/v1/processes/deployment/{deployment_id}"};
+  }
 
-    // GetGroupedProcessByDeployment returns all the processes executed grouped by deployment.
-    rpc GetGroupedProcessByDeployment (GetProcessesByDeploymentRequest) returns (GetGroupedProcessesResponse) {
-        option (google.api.http) = {
-            get: "/v1/processes/deployment/{deployment_id}/grouped"
-        };
-    }
+  // GetGroupedProcessByDeployment returns all the processes executed grouped by deployment.
+  rpc GetGroupedProcessByDeployment(GetProcessesByDeploymentRequest) returns (GetGroupedProcessesResponse) {
+    option (google.api.http) = {get: "/v1/processes/deployment/{deployment_id}/grouped"};
+  }
 
-    // GetGroupedProcessByDeploymentAndContainer returns all the processes executed grouped by deployment and container.
-    rpc GetGroupedProcessByDeploymentAndContainer (GetProcessesByDeploymentRequest) returns (GetGroupedProcessesWithContainerResponse) {
-        option (google.api.http) = {
-            get: "/v1/processes/deployment/{deployment_id}/grouped/container"
-        };
-    }
-
+  // GetGroupedProcessByDeploymentAndContainer returns all the processes executed grouped by deployment and container.
+  rpc GetGroupedProcessByDeploymentAndContainer(GetProcessesByDeploymentRequest) returns (GetGroupedProcessesWithContainerResponse) {
+    option (google.api.http) = {get: "/v1/processes/deployment/{deployment_id}/grouped/container"};
+  }
 }

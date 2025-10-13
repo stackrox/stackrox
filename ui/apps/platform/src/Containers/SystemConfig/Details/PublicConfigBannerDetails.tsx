@@ -5,11 +5,9 @@ import ColorPicker from 'Components/ColorPicker';
 import { PublicConfig } from 'types/config.proto';
 import {
     Card,
-    CardActions,
     CardTitle,
     CardBody,
     CardHeader,
-    CardHeaderMain,
     Label,
     DescriptionList,
     DescriptionListGroup,
@@ -41,13 +39,27 @@ const PublicConfigBannerDetails = ({
 
     return (
         <Card isFlat data-testid={`${type}-config`}>
-            <CardHeader>
-                <CardHeaderMain>
-                    <CardTitle component="h3">{title}</CardTitle>
-                </CardHeaderMain>
-                <CardActions data-testid={`${type}-state`}>
-                    {enabled ? <Label color="green">Enabled</Label> : <Label>Disabled</Label>}
-                </CardActions>
+            <CardHeader
+                actions={{
+                    actions: (
+                        <>
+                            {enabled ? (
+                                <Label color="green">Enabled</Label>
+                            ) : (
+                                <Label>Disabled</Label>
+                            )}
+                        </>
+                    ),
+                    hasNoOffset: false,
+                    className: undefined,
+                }}
+                data-testid={`${type}-state`}
+            >
+                {
+                    <>
+                        <CardTitle component="h3">{title}</CardTitle>
+                    </>
+                }
             </CardHeader>
             <Divider component="div" />
             <CardBody>
@@ -63,7 +75,12 @@ const PublicConfigBannerDetails = ({
                     <DescriptionListGroup>
                         <DescriptionListTerm>Text color</DescriptionListTerm>
                         <DescriptionListDescription>
-                            <ColorPicker color={color} disabled />
+                            <ColorPicker
+                                id={`publicConfig.${type}.color`}
+                                label={`Text color of ${type}`}
+                                color={color}
+                                disabled
+                            />
                             {color || 'None'}
                         </DescriptionListDescription>
                     </DescriptionListGroup>
@@ -74,7 +91,12 @@ const PublicConfigBannerDetails = ({
                     <DescriptionListGroup>
                         <DescriptionListTerm>Background color</DescriptionListTerm>
                         <DescriptionListDescription>
-                            <ColorPicker color={backgroundColor} disabled />
+                            <ColorPicker
+                                id={`publicConfig.${type}.backgroundColor`}
+                                label={`Background color of ${type}`}
+                                color={backgroundColor}
+                                disabled
+                            />
                             {backgroundColor || 'None'}
                         </DescriptionListDescription>
                     </DescriptionListGroup>

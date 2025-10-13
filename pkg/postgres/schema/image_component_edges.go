@@ -10,7 +10,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -47,21 +49,24 @@ var (
 			v1.SearchCategory_NAMESPACES,
 			v1.SearchCategory_CLUSTERS,
 		}...)
+		schema.ScopingResource = resources.Image
 		RegisterTable(schema, CreateTableImageComponentEdgesStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGE_COMPONENT_EDGE, schema)
 		return schema
 	}()
 )
 
 const (
+	// ImageComponentEdgesTableName specifies the name of the table in postgres.
 	ImageComponentEdgesTableName = "image_component_edges"
 )
 
 // ImageComponentEdges holds the Gorm model for Postgres table `image_component_edges`.
 type ImageComponentEdges struct {
-	Id               string `gorm:"column:id;type:varchar;primaryKey"`
+	ID               string `gorm:"column:id;type:varchar;primaryKey"`
 	Location         string `gorm:"column:location;type:varchar"`
-	ImageId          string `gorm:"column:imageid;type:varchar;index:imagecomponentedges_imageid,type:hash"`
-	ImageComponentId string `gorm:"column:imagecomponentid;type:varchar;index:imagecomponentedges_imagecomponentid,type:hash"`
+	ImageID          string `gorm:"column:imageid;type:varchar;index:imagecomponentedges_imageid,type:hash"`
+	ImageComponentID string `gorm:"column:imagecomponentid;type:varchar;index:imagecomponentedges_imagecomponentid,type:hash"`
 	Serialized       []byte `gorm:"column:serialized;type:bytea"`
 	ImagesRef        Images `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

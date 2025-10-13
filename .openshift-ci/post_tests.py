@@ -6,21 +6,25 @@ of prior failures. This models existing CI behavior from Circle CI.
 """
 
 import os
+import shutil
 import subprocess
 from typing import List
+
+from common import log_print
 
 
 class PostTestsConstants:
     API_TIMEOUT = 5 * 60
-    COLLECT_TIMEOUT = 10 * 60
+    COLLECT_TIMEOUT = 15 * 60
+    COLLECT_INFRA_TIMEOUT = 12 * 60
     CHECK_TIMEOUT = 5 * 60
     STORE_TIMEOUT = 5 * 60
     FIXUP_TIMEOUT = 5 * 60
     ARTIFACTS_TIMEOUT = 3 * 60
-    # Where the QA tests store failure logs:
-    # qa-tests-backend/src/main/groovy/common/Constants.groovy
-    QA_TEST_DEBUG_LOGS = "/tmp/qa-tests-backend-logs"
-    QA_SPOCK_RESULTS = "qa-tests-backend/build/spock-reports"
+    # QA_TEST_DEBUG_LOGS - where the QA tests store failure logs.
+    QA_TEST_DEBUG_LOGS = os.getenv("QA_TEST_DEBUG_LOGS")
+    QA_GRADLE_RESULTS = "qa-tests-backend/build/reports"
+    QA_SPEC_LOGS = "qa-tests-backend/build/spec-logs"
     K8S_LOG_DIR = "/tmp/k8s-service-logs"
     COLLECTOR_METRICS_DIR = "/tmp/collector-metrics"
     DEBUG_OUTPUT = "debug-dump"
@@ -30,19 +34,19 @@ class PostTestsConstants:
 
 
 class NullPostTest:
-    def run(self, test_outputs=None, test_results=None):
+    def run(self, test_outputs=None):
         pass
 
 
 class RunWithBestEffortMixin:
     def __init__(
-            self,
+        self,
     ):
         self.exitstatus = 0
         self.failed_commands: List[List[str]] = []
 
     def run_with_best_effort(self, args: List[str], timeout: int):
-        print(f"Running post command: {args}")
+        log_print(f"Running post command: {args}")
         runs_ok = False
         try:
             subprocess.run(
@@ -52,7 +56,7 @@ class RunWithBestEffortMixin:
             )
             runs_ok = True
         except Exception as err:
-            print(f"Exception raised in {args}, {err}")
+            log_print(f"Exception raised in {args}, {err}")
             self.failed_commands.append(args)
             self.exitstatus = 1
         return runs_ok
@@ -60,7 +64,7 @@ class RunWithBestEffortMixin:
     def handle_run_failure(self):
         if self.exitstatus != 0:
             for args in self.failed_commands:
-                print(f"Post failure in: {args}")
+                log_print(f"Post failure in: {args}")
             raise RuntimeError(f"Post failed: exit {self.exitstatus}")
 
 
@@ -68,38 +72,29 @@ class StoreArtifacts(RunWithBestEffortMixin):
     """For tests that only need to store artifacts"""
 
     def __init__(
-            self,
-            artifact_destination_prefix=None,
+        self,
+        artifact_destination_prefix=None,
     ):
         super().__init__()
         self.artifact_destination_prefix = artifact_destination_prefix
         self.data_to_store = []
+        self.dirs_to_store_to_osci_artifacts = []
 
-    def run(self, test_outputs=None, test_results=None):
+    def run(self, test_outputs=None):
         self.store_artifacts(test_outputs)
-        self.add_test_results(test_results)
         self.handle_run_failure()
-
-    def add_test_results(self, test_results):
-        if not test_results:
-            return
-        print("Storing test results in JUnit format")
-        for to_dir, from_dir in test_results.items():
-            self.run_with_best_effort(
-                ["scripts/ci/store-artifacts.sh", "store_test_results",
-                 from_dir, to_dir],
-                timeout=PostTestsConstants.ARTIFACTS_TIMEOUT,
-            )
 
     def store_artifacts(self, test_outputs=None):
         if test_outputs is not None:
             self.data_to_store = test_outputs + self.data_to_store
+
         for source in self.data_to_store:
             args = ["scripts/ci/store-artifacts.sh", "store_artifacts", source]
             if self.artifact_destination_prefix:
                 args.append(
                     os.path.join(
-                        self.artifact_destination_prefix, os.path.basename(source)
+                        self.artifact_destination_prefix, os.path.basename(
+                            source)
                     )
                 )
             self.run_with_best_effort(
@@ -107,40 +102,98 @@ class StoreArtifacts(RunWithBestEffortMixin):
                 timeout=PostTestsConstants.STORE_TIMEOUT,
             )
 
+        self._store_osci_artifacts()
+
+    def _store_osci_artifacts(self):
+        for source in self.dirs_to_store_to_osci_artifacts:
+            if not os.path.exists(source):
+                log_print(f"Skipping missing artifact: {source}")
+                continue
+            self._store_osci_artifact(source)
+
+    def _store_osci_artifact(self, source):
+        try:
+            copied = False
+            unique_counter = 1
+            while not copied and unique_counter < 50:
+                try:
+                    dst = os.path.join(
+                        os.environ["ARTIFACT_DIR"], os.path.basename(source)
+                    )
+                    if unique_counter > 1:
+                        dst = dst + "-" + str(unique_counter)
+                    shutil.copytree(source, dst)
+                    copied = True
+                except FileExistsError:
+                    unique_counter += 1
+
+            if not copied:
+                raise RuntimeError(f"Could not copy {source} to artifacts")
+
+        # similar to run_with_best_effort(), save any failure until all post
+        # steps are complete.
+        except Exception as err:
+            log_print(f"Exception with artifact copy of {source}, {err}")
+            self.failed_commands.append(["artifact copy", source])
+            self.exitstatus = 1
+
 
 # pylint: disable=too-many-instance-attributes
 class PostClusterTest(StoreArtifacts):
     """The standard cluster test suite of debug gathering and analysis"""
 
+    # pylint: disable=too-many-arguments
     def __init__(
-            self,
-            collect_central_artifacts=True,
-            check_stackrox_logs=False,
-            artifact_destination_prefix=None,
+        self,
+        collect_collector_metrics=True,
+        collect_central_artifacts=True,
+        collect_service_logs=True,
+        check_stackrox_logs=False,
+        artifact_destination_prefix=None,
     ):
         super().__init__(artifact_destination_prefix=artifact_destination_prefix)
+        if self.artifact_destination_prefix is not None:
+            self.service_logs_destination = os.path.join(PostTestsConstants.K8S_LOG_DIR,
+                                                         self.artifact_destination_prefix,
+                                                         "k8s-logs")
+        else:
+            self.service_logs_destination = PostTestsConstants.K8S_LOG_DIR
+        self._collect_collector_metrics = collect_collector_metrics
+        self._collect_service_logs = collect_service_logs
         self._check_stackrox_logs = check_stackrox_logs
-        self.k8s_namespaces = ["stackrox", "stackrox-operator", "proxies", "squid"]
+        self.k8s_namespaces = [
+            "stackrox",
+            "stackrox-operator",
+            "proxies",
+            "squid",
+            "kube-system",
+            "prefetch-images",
+        ]
         self.openshift_namespaces = [
             "openshift-dns",
             "openshift-apiserver",
             "openshift-authentication",
             "openshift-etcd",
             "openshift-controller-manager",
+            "openshift-compliance",
+            "openshift-ingress",
+            "openshift-marketplace",
         ]
         self.collect_central_artifacts = collect_central_artifacts
 
-    def run(self, test_outputs=None, test_results=None):
-        self.collect_collector_metrics()
+    def run(self, test_outputs=None):
+        if self._collect_collector_metrics:
+            self.collect_collector_metrics()
         if self.collect_central_artifacts and self.wait_for_central_api():
             self.get_central_debug_dump()
+            self.process_central_metrics()
             self.get_central_diagnostics()
             self.grab_central_data()
-        self.collect_service_logs()
+        if self._collect_service_logs:
+            self.collect_service_logs()
         if self._check_stackrox_logs:
             self.check_stackrox_logs()
         self.store_artifacts(test_outputs)
-        self.add_test_results(test_results)
         self.handle_run_failure()
 
     def wait_for_central_api(self):
@@ -155,18 +208,18 @@ class PostClusterTest(StoreArtifacts):
                 [
                     "scripts/ci/collect-service-logs.sh",
                     namespace,
-                    PostTestsConstants.K8S_LOG_DIR,
+                    self.service_logs_destination,
                 ],
                 timeout=PostTestsConstants.COLLECT_TIMEOUT,
             )
         self.run_with_best_effort(
             [
                 "scripts/ci/collect-infrastructure-logs.sh",
-                PostTestsConstants.K8S_LOG_DIR,
+                self.service_logs_destination,
             ],
-            timeout=PostTestsConstants.COLLECT_TIMEOUT,
+            timeout=PostTestsConstants.COLLECT_INFRA_TIMEOUT,
         )
-        self.data_to_store.append(PostTestsConstants.K8S_LOG_DIR)
+        self.data_to_store.append(self.service_logs_destination)
 
     def collect_collector_metrics(self):
         self.run_with_best_effort(
@@ -189,6 +242,16 @@ class PostClusterTest(StoreArtifacts):
             timeout=PostTestsConstants.COLLECT_TIMEOUT,
         )
         self.data_to_store.append(PostTestsConstants.DEBUG_OUTPUT)
+
+    def process_central_metrics(self):
+        self.run_with_best_effort(
+            [
+                "scripts/ci/lib.sh",
+                "process_central_metrics",
+                PostTestsConstants.DEBUG_OUTPUT,
+            ],
+            timeout=PostTestsConstants.COLLECT_TIMEOUT,
+        )
 
     def get_central_diagnostics(self):
         self.run_with_best_effort(
@@ -213,7 +276,8 @@ class PostClusterTest(StoreArtifacts):
 
     def check_stackrox_logs(self):
         self.run_with_best_effort(
-            ["tests/e2e/lib.sh", "check_stackrox_logs", PostTestsConstants.K8S_LOG_DIR],
+            ["tests/e2e/lib.sh", "check_stackrox_logs",
+                self.service_logs_destination],
             timeout=PostTestsConstants.CHECK_TIMEOUT,
         )
 
@@ -222,17 +286,17 @@ class CheckStackroxLogs(StoreArtifacts):
     """When only stackrox logs and checks are required"""
 
     def __init__(
-            self,
-            check_for_stackrox_restarts=False,
-            check_for_errors_in_stackrox_logs=False,
-            artifact_destination_prefix=None,
+        self,
+        check_for_stackrox_restarts=False,
+        check_for_errors_in_stackrox_logs=False,
+        artifact_destination_prefix=None,
     ):
         super().__init__(artifact_destination_prefix=artifact_destination_prefix)
         self._check_for_stackrox_restarts = check_for_stackrox_restarts
         self._check_for_errors_in_stackrox_logs = check_for_errors_in_stackrox_logs
         self.central_is_responsive = False
 
-    def run(self, test_outputs=None, test_results=None):
+    def run(self, test_outputs=None):
         self.central_is_responsive = self.wait_for_central_api()
         if self.central_is_responsive:
             self.collect_stackrox_logs()
@@ -241,7 +305,6 @@ class CheckStackroxLogs(StoreArtifacts):
             if self._check_for_errors_in_stackrox_logs:
                 self.check_for_errors_in_stackrox_logs()
         self.store_artifacts(test_outputs)
-        self.add_test_results(test_results)
         self.handle_run_failure()
 
     def wait_for_central_api(self):
@@ -286,26 +349,30 @@ class FinalPost(StoreArtifacts):
     """Collect logs that accumulate over multiple tests and other final steps"""
 
     def __init__(
-            self,
-            store_qa_test_debug_logs=False,
-            store_qa_spock_results=False,
-            artifact_destination_prefix="final",
-            handle_e2e_progress_failures=True,
+        self,
+        store_qa_tests_data=False,
+        artifact_destination_prefix="final",
+        handle_e2e_progress_failures=True,
     ):
         super().__init__(artifact_destination_prefix=artifact_destination_prefix)
-        self._store_qa_test_debug_logs = store_qa_test_debug_logs
-        self._store_qa_spock_results = store_qa_spock_results
-        if self._store_qa_test_debug_logs:
+        if store_qa_tests_data:
+            # Store various artifacts generated by qa-tests-backend .groovy tests.
+            # Debug logs generated from test failures. See collectDebugForFailure().
             self.data_to_store.append(PostTestsConstants.QA_TEST_DEBUG_LOGS)
-        if self._store_qa_spock_results:
-            self.data_to_store.append(PostTestsConstants.QA_SPOCK_RESULTS)
+            # Gradle test framework reports.
+            self.dirs_to_store_to_osci_artifacts.append(
+                PostTestsConstants.QA_GRADLE_RESULTS
+            )
+            # Spock test specification logs.
+            self.dirs_to_store_to_osci_artifacts.append(
+                PostTestsConstants.QA_SPEC_LOGS)
         self._handle_e2e_progress_failures = handle_e2e_progress_failures
 
-    def run(self, test_outputs=None, test_results=None):
+    def run(self, test_outputs=None):
         self.store_artifacts()
-        self.add_test_results(test_results)
         self.fixup_artifacts_content_type()
         self.make_artifacts_help()
+        self.surface_spec_logs()
         self.handle_run_failure()
         if self._handle_e2e_progress_failures:
             self.handle_e2e_progress_failures()
@@ -319,6 +386,12 @@ class FinalPost(StoreArtifacts):
     def make_artifacts_help(self):
         self.run_with_best_effort(
             ["scripts/ci/store-artifacts.sh", "make_artifacts_help"],
+            timeout=PostTestsConstants.FIXUP_TIMEOUT,
+        )
+
+    def surface_spec_logs(self):
+        self.run_with_best_effort(
+            ["qa-tests-backend/scripts/lib.sh", "surface_spec_logs"],
             timeout=PostTestsConstants.FIXUP_TIMEOUT,
         )
 

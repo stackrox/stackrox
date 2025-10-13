@@ -96,19 +96,24 @@ func (s *StoreMap) Get(i interface{}) Store {
 	return val
 }
 
-// Add adds an id to the type
-func (s *StoreMap) Add(i interface{}, id string) {
+// AddWithTypeString adds an id directly to type with name typeString
+func (s *StoreMap) AddWithTypeString(typeString string, id string) {
 	if s.reconciliationMap == nil {
 		utils.Should(errors.Errorf("Attempted to perform an Add on a closed reconciliation store for the following ID: %s", id))
 		return
 	}
-	typ := reflectutils.Type(i)
-	val, ok := s.reconciliationMap[typ]
+	val, ok := s.reconciliationMap[typeString]
 	if !ok {
 		val = NewStore()
-		s.reconciliationMap[typ] = val
+		s.reconciliationMap[typeString] = val
 	}
 	val.Add(id)
+}
+
+// Add adds an id to the type
+func (s *StoreMap) Add(i interface{}, id string) {
+	typeString := reflectutils.Type(i)
+	s.AddWithTypeString(typeString, id)
 }
 
 // IsClosed indicates if the map is closed.

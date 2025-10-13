@@ -1,18 +1,17 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-import * as React from 'react';
-import {
-    DefaultGroup,
+import React, { useMemo } from 'react';
+import type { ComponentClass, FunctionComponent, PropsWithChildren, ReactNode } from 'react';
+import { DefaultGroup, observer, ScaleDetailsLevel } from '@patternfly/react-topology';
+import type {
     Node,
-    observer,
-    ScaleDetailsLevel,
     ShapeProps,
-    WithContextMenuProps,
     WithDragNodeProps,
     WithSelectionProps,
 } from '@patternfly/react-topology';
 import AlternateIcon from '@patternfly/react-icons/dist/esm/icons/regions-icon';
 import DefaultIcon from '@patternfly/react-icons/dist/esm/icons/builder-image-icon';
 import useDetailsLevel from '@patternfly/react-topology/dist/esm/hooks/useDetailsLevel';
+import type { SVGIconProps } from '@patternfly/react-icons/dist/js/createIcon';
+import type { CustomGroupNodeData } from '../types/topology.type';
 
 const ICON_PADDING = 20;
 
@@ -27,16 +26,13 @@ type StyleGroupProps = {
     collapsedWidth?: number;
     collapsedHeight?: number;
     onCollapseChange?: (group: Node, collapsed: boolean) => void;
-    getCollapsedShape?: (node: Node) => React.FunctionComponent<ShapeProps>;
+    getCollapsedShape?: (node: Node) => FunctionComponent<PropsWithChildren<ShapeProps>>;
     collapsedShadowOffset?: number; // defaults to 10
-} & WithContextMenuProps &
-    WithDragNodeProps &
+} & WithDragNodeProps &
     WithSelectionProps;
 
-const StyleGroup: React.FunctionComponent<StyleGroupProps> = ({
+const StyleGroup: FunctionComponent<PropsWithChildren<StyleGroupProps>> = ({
     element,
-    onContextMenu,
-    contextMenuOpen,
     collapsedWidth = 75,
     collapsedHeight = 75,
     ...rest
@@ -44,7 +40,7 @@ const StyleGroup: React.FunctionComponent<StyleGroupProps> = ({
     const data = element.getData();
     const detailsLevel = useDetailsLevel();
 
-    const getTypeIcon = (dataType?: DataTypes): any => {
+    const getTypeIcon = (dataType?: DataTypes): ComponentClass<SVGIconProps> => {
         switch (dataType) {
             case DataTypes.Alternate:
                 return AlternateIcon;
@@ -53,7 +49,7 @@ const StyleGroup: React.FunctionComponent<StyleGroupProps> = ({
         }
     };
 
-    const renderIcon = (): React.ReactNode => {
+    const renderIcon = (): ReactNode => {
         const iconSize = Math.min(collapsedWidth, collapsedHeight) - ICON_PADDING * 2;
         const Component = getTypeIcon(data.dataType);
 
@@ -68,24 +64,42 @@ const StyleGroup: React.FunctionComponent<StyleGroupProps> = ({
         );
     };
 
-    const passedData = React.useMemo(() => {
+    const passedData = useMemo(() => {
         const newData = { ...data };
         Object.keys(newData).forEach((key) => {
             if (newData[key] === undefined) {
                 delete newData[key];
             }
         });
-        return newData;
+        // look into using `useMemo<CustomGroupNodeData>` instead of `as CustomGroupNodeData`
+        // https://www.freecodecamp.org/news/react-typescript-how-to-set-up-types-on-hooks/#set-types-on-usememo
+        return newData as CustomGroupNodeData;
     }, [data]);
 
+    let className = '';
+
+    if (passedData.type === 'NAMESPACE') {
+        className = `${className} ${
+            passedData.isFilteredNamespace ? 'filtered-namespace' : 'related-namespace'
+        }`.trim();
+    }
+
+    // @TODO: If multiple classes need to be stringed together, then we need a more systematic way to generate those here
+    className = `${className} ${passedData?.isFadedOut ? 'pf-topology-node-faded' : ''}`.trim();
+
     return (
+        /*
+        (dv 2024-05-01)
+        Upgrading to React types 18 causes a type error below as React 18 no longer includes `children`
+        as a prop of `React.FC` by default
+
+        @ts-expect-error DefaultGroup does not expect children as a prop */
         <DefaultGroup
-            onContextMenu={data.showContextMenu ? onContextMenu : undefined}
-            contextMenuOpen={contextMenuOpen}
             element={element}
             collapsedWidth={collapsedWidth}
             collapsedHeight={collapsedHeight}
             showLabel={detailsLevel === ScaleDetailsLevel.high}
+            className={className}
             {...rest}
             {...passedData}
         >

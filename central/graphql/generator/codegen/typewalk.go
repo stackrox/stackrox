@@ -5,12 +5,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
-	"github.com/golang/protobuf/protoc-gen-go/generator"
 	"github.com/pkg/errors"
 	generator2 "github.com/stackrox/rox/central/graphql/generator"
 	"github.com/stackrox/rox/pkg/protoreflect"
+	"github.com/stackrox/rox/pkg/protoutils"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 type fieldData struct {
@@ -48,13 +47,13 @@ func (ctx *walkState) walkUnions(p reflect.Type) (output []unionData) {
 	}
 	for i, oneOf := range des.GetOneofDecl() {
 		union := unionData{
-			Name: generator.CamelCase(oneOf.GetName()),
+			Name: camelCase(oneOf.GetName()),
 		}
 		for _, field := range des.GetField() {
-			if field.OneofIndex == nil || *field.OneofIndex != int32(i) {
+			if field.OneofIndex == nil || field.GetOneofIndex() != int32(i) {
 				continue
 			}
-			if field.GetType() != descriptor.FieldDescriptorProto_TYPE_MESSAGE {
+			if field.GetType() != descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
 				continue
 			}
 			// field.GetTypeName() has a leading . that nothing else expects
@@ -62,13 +61,13 @@ func (ctx *walkState) walkUnions(p reflect.Type) (output []unionData) {
 			if len(msgTypeName) > 1 && msgTypeName[0] == '.' {
 				msgTypeName = msgTypeName[1:]
 			}
-			msgType := proto.MessageType(msgTypeName)
+			msgType := protoutils.MessageType(msgTypeName)
 			if msgType == nil {
 				continue
 			}
 			ctx.typeQueue = append(ctx.typeQueue, typeDescriptor{ty: msgType})
 			union.Entries = append(union.Entries, fieldData{
-				Name: generator.CamelCase(field.GetName()),
+				Name: camelCase(field.GetName()),
 				Type: msgType,
 			})
 		}
@@ -123,13 +122,13 @@ func (ctx *walkState) walkType(typeDesc typeDescriptor) {
 }
 
 func (ctx *walkState) walkField(td *typeData, p reflect.Type, sf reflect.StructField) {
-	if len(sf.Name) > 4 && sf.Name[:4] == "XXX_" {
+	if !td.IsInputType && protoreflect.IsInternalGeneratorField(sf) {
 		return
 	}
 	if strings.HasPrefix(sf.Name, "DEPRECATED") {
 		return
 	}
-	ctx.typeQueue = append(ctx.typeQueue, typeDescriptor{ty: sf.Type})
+	ctx.typeQueue = append(ctx.typeQueue, typeDescriptor{ty: sf.Type, isInputType: td.IsInputType})
 	if !rejectedField(p, sf, ctx.skipFields) {
 		td.FieldData = append(td.FieldData, fieldData{
 			Name: sf.Name,

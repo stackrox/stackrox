@@ -184,16 +184,25 @@ func applyPreservedProperties(newObj, oldObj *unstructured.Unstructured) error {
 	switch newObj.GetObjectKind().GroupVersionKind() {
 	case deploymentGVK, daemonSetGVK:
 	default:
-		return overallErr.ErrorOrNil()
+		if err := overallErr.ErrorOrNil(); err != nil {
+			return errors.Wrap(err, "preserving object properties")
+		}
+		return nil
 	}
 
 	// Ignore collector because tolerations are explicitly set
 	if newObj.GetObjectKind().GroupVersionKind() == daemonSetGVK && newObj.GetName() == collectorName {
-		return overallErr.ErrorOrNil()
+		if err := overallErr.ErrorOrNil(); err != nil {
+			return errors.Wrap(err, "preserving object properties")
+		}
+		return nil
 	}
 
 	if err := applyPreservedTolerations(newObj, oldObj); err != nil {
 		overallErr = multierror.Append(overallErr, errors.Wrap(err, "failed to preserve tolerations"))
 	}
-	return overallErr.ErrorOrNil()
+	if err := overallErr.ErrorOrNil(); err != nil {
+		return errors.Wrap(err, "preserving object properties")
+	}
+	return nil
 }

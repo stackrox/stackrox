@@ -1,12 +1,12 @@
 package common
 
-import "github.com/gogo/protobuf/types"
+import "time"
 
 // CVESuppressionCache holds suppressed vulnerabilities' information.
 type CVESuppressionCache map[string]SuppressionCacheEntry
 
 // SuppressionCacheEntry represents cache entry for suppressed resources.
 type SuppressionCacheEntry struct {
-	SuppressActivation *types.Timestamp
-	SuppressExpiry     *types.Timestamp
+	SuppressActivation *time.Time
+	SuppressExpiry     *time.Time
 }

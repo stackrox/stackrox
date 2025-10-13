@@ -45,15 +45,15 @@ func EnsureConvertedTo(p *storage.Policy, toVersion PolicyVersion) error {
 	default:
 	}
 
-	if p.PolicyVersion != toVersion.String() {
-		return errors.Errorf("converted from version %q to version %q", p.PolicyVersion, toVersion.String())
+	if p.GetPolicyVersion() != toVersion.String() {
+		return errors.Errorf("converted from version %q to version %q", p.GetPolicyVersion(), toVersion.String())
 	}
 	return nil
 }
 
 // CloneAndEnsureConverted returns a clone of the input that is upgraded if it is a legacy policy
 func CloneAndEnsureConverted(p *storage.Policy) (*storage.Policy, error) {
-	cloned := p.Clone()
+	cloned := p.CloneVT()
 	if err := EnsureConvertedToLatest(cloned); err != nil {
 		return nil, err
 	}

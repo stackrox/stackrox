@@ -12,11 +12,10 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
-	"github.com/stackrox/rox/pkg/namespaces"
+	"github.com/stackrox/rox/pkg/pods"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/sensor/common/clusterid"
 	"google.golang.org/grpc/status"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -42,6 +41,7 @@ const (
 
 	checkInTimeout       = 10 * time.Second
 	checkInRetryInterval = 10 * time.Second
+	deleteWaitTimeout    = 60 * time.Second
 )
 
 type process struct {
@@ -53,15 +53,18 @@ type process struct {
 	checkInReqC chan *central.UpgradeCheckInFromSensorRequest
 
 	checkInClient central.SensorUpgradeControlServiceClient
+
+	clusterID clusterIDWaiter
 }
 
-func newProcess(trigger *central.SensorUpgradeTrigger, checkInClient central.SensorUpgradeControlServiceClient, baseConfig *rest.Config) (*process, error) {
+func newProcess(clusterID clusterIDWaiter, trigger *central.SensorUpgradeTrigger, checkInClient central.SensorUpgradeControlServiceClient, baseConfig *rest.Config) (*process, error) {
 	config := *baseConfig
 	p := &process{
 		trigger:       trigger,
 		doneSig:       concurrency.NewErrorSignal(),
 		checkInClient: checkInClient,
 		checkInReqC:   make(chan *central.UpgradeCheckInFromSensorRequest, 1),
+		clusterID:     clusterID,
 	}
 	baseWrapTransport := baseConfig.WrapTransport
 	config.WrapTransport = func(rt http.RoundTripper) http.RoundTripper {
@@ -72,7 +75,7 @@ func newProcess(trigger *central.SensorUpgradeTrigger, checkInClient central.Sen
 	}
 	k8sClient, err := kubernetes.NewForConfig(&config)
 	if err != nil {
-		return nil, utils.Should(err)
+		return nil, utils.ShouldErr(err)
 	}
 	p.k8sClient = k8sClient
 
@@ -117,6 +120,16 @@ func (p *process) handleCentralCheckIns() {
 			for _, detail := range status.Convert(err).Details() {
 				if _, isNoUpgradeInProgress := detail.(*central.UpgradeCheckInResponseDetails_NoUpgradeInProgress); isNoUpgradeInProgress {
 					log.Info("Central says there is no upgrade in progress. Exiting loop...")
+					func() {
+						ctx, cancel := context.WithTimeout(context.Background(), deleteWaitTimeout)
+						defer cancel()
+						// We should not use p.ctx() as we cannot rely on doneSig to cancel the context as it is triggered after this call.
+						// We need to trigger the doneSig after this call because it is embedded in the k8s client, meaning if doneSig is triggered,
+						// the k8s client will ignore any call as the context is cancelled.
+						if err := p.deleteUpgraderDeploymentIfNecessary(ctx, true); err != nil {
+							log.Errorf("unable to delete the upgrader deployment: %v", err)
+						}
+					}()
 					p.doneSig.Signal()
 					return
 				}
@@ -134,7 +147,7 @@ func (p *process) sendCheckInRequestSingle(req *central.UpgradeCheckInFromSensor
 
 	_, err := p.checkInClient.UpgradeCheckInFromSensor(ctx, req)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "sending upgrade check-in request")
 	}
 	return nil
 }
@@ -142,7 +155,7 @@ func (p *process) sendCheckInRequestSingle(req *central.UpgradeCheckInFromSensor
 // checkInWithCentral schedules a check in request for being sent to central. This is done on a best-effort basis; if
 // it fails, NBD. We will keep retrying though while the upgrade process is in progress.
 func (p *process) checkInWithCentral(req *central.UpgradeCheckInFromSensorRequest) {
-	req.ClusterId = clusterid.Get()
+	req.ClusterId = p.clusterID.Get()
 	req.UpgradeProcessId = p.GetID()
 
 	// If there is a currently pending request, remove it from the channel - it is now obsolete.
@@ -179,23 +192,23 @@ func (p *process) doRun() {
 	p.watchUpgraderDeployment()
 }
 
-func (p *process) waitForDeploymentDeletion(name string, uid types.UID) error {
-	err := p.waitForDeploymentDeletionOnce(name, uid)
+func (p *process) waitForDeploymentDeletion(ctx context.Context, name string, uid types.UID) error {
+	err := p.waitForDeploymentDeletionOnce(ctx, name, uid)
 	for err != nil && retry.IsRetryable(err) {
-		err = p.waitForDeploymentDeletionOnce(name, uid)
+		err = p.waitForDeploymentDeletionOnce(ctx, name, uid)
 	}
 	return err
 }
 
-func (p *process) waitForDeploymentDeletionOnce(name string, uid types.UID) error {
-	deploymentsClient := p.k8sClient.AppsV1().Deployments(namespaces.StackRox)
+func (p *process) waitForDeploymentDeletionOnce(ctx context.Context, name string, uid types.UID) error {
+	deploymentsClient := p.k8sClient.AppsV1().Deployments(pods.GetPodNamespace())
 	listOpts := metav1.ListOptions{
 		FieldSelector: fmt.Sprintf("metadata.name=%s", name),
 	}
 
-	deploymentsList, err := deploymentsClient.List(p.ctx(), listOpts)
+	deploymentsList, err := deploymentsClient.List(ctx, listOpts)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "listing upgrader deployments for deletion")
 	}
 
 	if len(deploymentsList.Items) == 0 || deploymentsList.Items[0].UID != uid {
@@ -206,9 +219,9 @@ func (p *process) waitForDeploymentDeletionOnce(name string, uid types.UID) erro
 	watchOpts.ResourceVersion = deploymentsList.ResourceVersion
 
 	log.Infof("Deployment %s with UID %s is still present, watching for changes ...", name, uid)
-	watcher, err := deploymentsClient.Watch(p.ctx(), watchOpts)
+	watcher, err := deploymentsClient.Watch(ctx, watchOpts)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "watching deployment deletion")
 	}
 	defer watcher.Stop()
 	for {
@@ -220,7 +233,7 @@ func (p *process) waitForDeploymentDeletionOnce(name string, uid types.UID) erro
 
 			obj, _ := ev.Object.(metav1.Object)
 			if obj == nil {
-				return utils.Should(errors.Errorf("object returned by watch is a non-k8s object of type %T", ev.Object))
+				return utils.ShouldErr(errors.Errorf("object returned by watch is a non-k8s object of type %T", ev.Object))
 			}
 
 			if obj.GetName() != name {
@@ -235,51 +248,61 @@ func (p *process) waitForDeploymentDeletionOnce(name string, uid types.UID) erro
 				return nil // new object with this name exists
 			}
 
-		case <-p.doneSig.Done():
-			return p.doneSig.Err()
+		case <-ctx.Done():
+			return errors.Wrap(ctx.Err(), "the context was cancelled before receiving the deletion confirmation")
 		}
 	}
 }
 
-func (p *process) createUpgraderDeploymentIfNecessary() error {
-	deploymentsClient := p.k8sClient.AppsV1().Deployments(namespaces.StackRox)
+func (p *process) deleteUpgraderDeploymentIfNecessary(ctx context.Context, force bool) error {
+	deploymentsClient := p.k8sClient.AppsV1().Deployments(pods.GetPodNamespace())
 
-	upgraderDeployment, err := deploymentsClient.Get(p.ctx(), upgraderDeploymentName, metav1.GetOptions{})
+	upgraderDeployment, err := deploymentsClient.Get(ctx, upgraderDeploymentName, metav1.GetOptions{})
 	if err != nil {
 		if !k8sErrors.IsNotFound(err) {
 			return errors.Wrap(err, "retrieving existing upgrader deployment")
 		}
-		upgraderDeployment = nil
+		return nil
 	}
 
-	if upgraderDeployment != nil {
-		if upgraderDeployment.GetLabels()[processIDLabelKey] == p.GetID() {
-			log.Infof("Current upgrader deployment for process ID %s found", p.GetID())
-			return nil
-		}
-
-		log.Info("Found leftover upgrader deployment. Deleting ...")
-		err := deploymentsClient.Delete(p.ctx(), upgraderDeployment.GetName(), metav1.DeleteOptions{
-			Preconditions:     &metav1.Preconditions{UID: &upgraderDeployment.UID},
-			PropagationPolicy: &pkgKubernetes.DeletePolicyBackground,
-		})
-		if err != nil && !k8sErrors.IsNotFound(err) {
-			return errors.Wrap(err, "deleting old upgrader deployment")
-		}
-		if err := p.waitForDeploymentDeletion(upgraderDeployment.GetName(), upgraderDeployment.GetUID()); err != nil {
-			return errors.Wrap(err, "deleting old upgrader deployment")
-		}
-		log.Info("Deleted leftover upgrader deployment")
+	if !force && upgraderDeployment.GetLabels()[processIDLabelKey] == p.GetID() {
+		log.Infof("Current upgrader deployment for process ID %s found", p.GetID())
+		return nil
 	}
 
-	serviceAccountName := p.chooseServiceAccount()
-	log.Infof("Using service account %s for upgrade process %s", serviceAccountName, p.GetID())
+	log.Info("Found leftover upgrader deployment. Deleting ...")
+	err = deploymentsClient.Delete(ctx, upgraderDeployment.GetName(), metav1.DeleteOptions{
+		Preconditions:     &metav1.Preconditions{UID: &upgraderDeployment.UID},
+		PropagationPolicy: &pkgKubernetes.DeletePolicyBackground,
+	})
+	if err != nil && !k8sErrors.IsNotFound(err) {
+		return errors.Wrap(err, "deleting old upgrader deployment")
+	}
+	if err := p.waitForDeploymentDeletion(ctx, upgraderDeployment.GetName(), upgraderDeployment.GetUID()); err != nil {
+		return errors.Wrap(err, "deleting old upgrader deployment")
+	}
+	log.Info("Deleted leftover upgrader deployment")
+	return nil
+}
+
+func (p *process) createUpgraderDeploymentIfNecessary() error {
+	if err := p.deleteUpgraderDeploymentIfNecessary(p.ctx(), false); err != nil {
+		if p.doneSig.IsDone() {
+			return errors.Wrap(p.doneSig.Err(), "signal errored")
+		}
+		return err
+	}
+
+	deploymentsClient := p.k8sClient.AppsV1().Deployments(pods.GetPodNamespace())
 
 	// Fetch Sensor deployment to carry through some features of the pod spec
 	sensorDeployment, err := deploymentsClient.Get(p.ctx(), sensorDeploymentName, metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrap(err, "retrieving existing sensor deployment")
 	}
+
+	serviceAccountName := p.chooseServiceAccount()
+	log.Infof("Using service account %q for upgrade process %s", serviceAccountName, p.GetID())
 
 	newDeployment, err := p.createDeployment(serviceAccountName, sensorDeployment)
 	if err != nil {
@@ -341,7 +364,7 @@ func (p *process) watchUpgraderDeployment() {
 func (p *process) pollAndUpdateProgress() ([]*central.UpgradeCheckInFromSensorRequest_UpgraderPodState, bool, error) {
 	errs := errorhelpers.NewErrorList("polling")
 
-	deploymentsClient := p.k8sClient.AppsV1().Deployments(namespaces.StackRox)
+	deploymentsClient := p.k8sClient.AppsV1().Deployments(pods.GetPodNamespace())
 	foundDeployment, err := deploymentsClient.Get(p.ctx(), upgraderDeploymentName, metav1.GetOptions{})
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
@@ -358,7 +381,7 @@ func (p *process) pollAndUpdateProgress() ([]*central.UpgradeCheckInFromSensorRe
 	})
 	if err != nil {
 		errs.AddWrap(err, "upgrader pods")
-		return nil, false, errs.ToError()
+		return nil, false, errors.Wrap(errs.ToError(), "polling upgrader pods")
 	}
 
 	podStates := make([]*central.UpgradeCheckInFromSensorRequest_UpgraderPodState, 0, len(pods.Items))
@@ -400,7 +423,7 @@ func (p *process) checkPodStatus(pod *v1.Pod) *central.UpgradeCheckInFromSensorR
 	} else if waitingState := upgraderContainerStatus.State.Waiting; waitingState != nil {
 		if isImagePullRelatedReason(waitingState.Reason) {
 			s.Error = &central.UpgradeCheckInFromSensorRequest_PodErrorCondition{
-				Message:      fmt.Sprintf("Error pulling image: %s (%s)", waitingState.Reason, waitingState.Message),
+				Message:      fmt.Sprintf("The upgrader had trouble pulling the new \"%s\" image.%s (Reason: %s)", upgraderContainerStatus.Image, getImageErrorRemediation(waitingState.Reason), waitingState.Reason),
 				ImageRelated: true,
 			}
 			log.Warnf("Upgrader pod %s seems to have trouble pulling the image, reason: %s (%s)", pod.Name, waitingState.Reason, waitingState.Message)
@@ -419,7 +442,7 @@ func (p *process) GetID() string {
 }
 
 func (p *process) chooseServiceAccount() string {
-	saClient := p.k8sClient.CoreV1().ServiceAccounts(namespaces.StackRox)
+	saClient := p.k8sClient.CoreV1().ServiceAccounts(pods.GetPodNamespace())
 
 	sensorUpgraderSA, err := saClient.Get(p.ctx(), preferredServiceAccountName, metav1.GetOptions{})
 	if err != nil {

@@ -1,5 +1,4 @@
 //go:build sql_integration
-// +build sql_integration
 
 package suppress
 
@@ -9,28 +8,30 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
-	"github.com/jackc/pgx/v4/pgxpool"
 	cveDS "github.com/stackrox/rox/central/cve/image/datastore"
-	cveSearcher "github.com/stackrox/rox/central/cve/image/datastore/search"
 	cvePG "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imagePG "github.com/stackrox/rox/central/image/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/concurrency"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 	"gorm.io/gorm"
 )
 
 func TestReprocessorWithPostgres(t *testing.T) {
+	if features.FlattenCVEData.Enabled() {
+		t.Skip("FlattenCVEData is enabled and this flow is replaced with VM 2.0")
+	}
 	suite.Run(t, new(ReprocessorPostgresTestSuite))
 }
 
@@ -38,31 +39,23 @@ type ReprocessorPostgresTestSuite struct {
 	suite.Suite
 
 	ctx             context.Context
-	db              *pgxpool.Pool
+	db              postgres.DB
 	gormDB          *gorm.DB
 	imageDataStore  imageDS.DataStore
 	cveDataStore    cveDS.DataStore
 	mockRisk        *mockRisks.MockDataStore
 	reprocessorLoop *cveUnsuppressLoopImpl
-	envIsolator     *envisolator.EnvIsolator
 }
 
 func (s *ReprocessorPostgresTestSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
 
 	s.ctx = context.Background()
 
 	source := pgtest.GetConnectionString(s.T())
-	config, err := pgxpool.ParseConfig(source)
+	config, err := postgres.ParseConfig(source)
 	s.Require().NoError(err)
 
-	pool, err := pgxpool.ConnectConfig(s.ctx, config)
+	pool, err := postgres.New(s.ctx, config)
 	s.NoError(err)
 	s.gormDB = pgtest.OpenGormDB(s.T(), source)
 	s.db = pool
@@ -72,19 +65,16 @@ func (s *ReprocessorPostgresTestSuite) SetupTest() {
 	imagePG.Destroy(s.ctx, s.db)
 
 	s.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(s.T()))
-	s.imageDataStore = imageDS.NewWithPostgres(imagePG.CreateTableAndNewStore(s.ctx, s.db, s.gormDB, false), imagePG.NewIndexer(s.db), s.mockRisk, ranking.ImageRanker(), ranking.ComponentRanker())
+	s.imageDataStore = imageDS.NewWithPostgres(imagePG.CreateTableAndNewStore(s.ctx, s.db, s.gormDB, false), s.mockRisk, ranking.ImageRanker(), ranking.ComponentRanker())
 
 	cveStore := cvePG.New(s.db)
-	cveIndexer := cvePG.NewIndexer(s.db)
-	cveDataStore, err := cveDS.New(cveStore, cveIndexer, cveSearcher.New(cveStore, cveIndexer), concurrency.NewKeyFence())
-	s.NoError(err)
+	cveDataStore := cveDS.New(cveStore, concurrency.NewKeyFence())
 	s.cveDataStore = cveDataStore
 
 	s.reprocessorLoop = NewLoop(cveDataStore).(*cveUnsuppressLoopImpl)
 }
 
 func (s *ReprocessorPostgresTestSuite) TearDownSuite() {
-	s.envIsolator.RestoreAll()
 	s.db.Close()
 	pgtest.CloseGormDB(s.T(), s.gormDB)
 }
@@ -107,8 +97,8 @@ func (s *ReprocessorPostgresTestSuite) TestUnsuppressWithPostgres() {
 		return components[i].GetName() < components[j].GetName()
 	})
 	for _, comp := range components {
-		sort.SliceStable(comp.Vulns, func(i, j int) bool {
-			return comp.Vulns[i].GetCve() < comp.Vulns[j].GetCve()
+		sort.SliceStable(comp.GetVulns(), func(i, j int) bool {
+			return comp.GetVulns()[i].GetCve() < comp.GetVulns()[j].GetCve()
 		})
 	}
 
@@ -124,7 +114,7 @@ func (s *ReprocessorPostgresTestSuite) TestUnsuppressWithPostgres() {
 		}
 	}
 	expectedImage := cloneAndUpdateRiskPriority(image)
-	s.Equal(expectedImage, storedImage)
+	protoassert.Equal(s.T(), expectedImage, storedImage)
 
 	s.reprocessorLoop.unsuppressCVEsWithExpiredSuppressState()
 
@@ -139,7 +129,7 @@ func (s *ReprocessorPostgresTestSuite) TestUnsuppressWithPostgres() {
 }
 
 func cloneAndUpdateRiskPriority(image *storage.Image) *storage.Image {
-	cloned := image.Clone()
+	cloned := image.CloneVT()
 	cloned.Priority = 1
 	for _, component := range cloned.GetScan().GetComponents() {
 		component.Priority = 1

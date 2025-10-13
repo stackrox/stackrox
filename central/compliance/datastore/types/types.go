@@ -15,6 +15,11 @@ const (
 	RequireMessageStrings
 )
 
+// Hash provides an integer value for the GetFlags flag set.
+func (f GetFlags) Hash() int32 {
+	return int32(f)
+}
+
 // ResultsWithStatus returns the last successful results, as well as the metadata for the recent (i.e., since the
 // last successful results) failed results.
 type ResultsWithStatus struct {

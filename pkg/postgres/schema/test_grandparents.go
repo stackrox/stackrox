@@ -9,7 +9,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -36,21 +38,26 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.TestGrandparent)(nil)), "test_grandparents")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory(61), "testgrandparent", (*storage.TestGrandparent)(nil)))
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory(109), "testgrandparent", (*storage.TestGrandparent)(nil)))
+		schema.ScopingResource = resources.Namespace
 		RegisterTable(schema, CreateTableTestGrandparentsStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory(109), schema)
 		return schema
 	}()
 )
 
 const (
-	TestGrandparentsTableName                   = "test_grandparents"
-	TestGrandparentsEmbeddedsTableName          = "test_grandparents_embeddeds"
+	// TestGrandparentsTableName specifies the name of the table in postgres.
+	TestGrandparentsTableName = "test_grandparents"
+	// TestGrandparentsEmbeddedsTableName specifies the name of the table in postgres.
+	TestGrandparentsEmbeddedsTableName = "test_grandparents_embeddeds"
+	// TestGrandparentsEmbeddedsEmbedded2TableName specifies the name of the table in postgres.
 	TestGrandparentsEmbeddedsEmbedded2TableName = "test_grandparents_embeddeds_embedded2"
 )
 
 // TestGrandparents holds the Gorm model for Postgres table `test_grandparents`.
 type TestGrandparents struct {
-	Id         string  `gorm:"column:id;type:varchar;primaryKey"`
+	ID         string  `gorm:"column:id;type:varchar;primaryKey"`
 	Val        string  `gorm:"column:val;type:varchar"`
 	Priority   int64   `gorm:"column:priority;type:bigint"`
 	RiskScore  float32 `gorm:"column:riskscore;type:numeric"`
@@ -59,7 +66,7 @@ type TestGrandparents struct {
 
 // TestGrandparentsEmbeddeds holds the Gorm model for Postgres table `test_grandparents_embeddeds`.
 type TestGrandparentsEmbeddeds struct {
-	TestGrandparentsId  string           `gorm:"column:test_grandparents_id;type:varchar;primaryKey"`
+	TestGrandparentsID  string           `gorm:"column:test_grandparents_id;type:varchar;primaryKey"`
 	Idx                 int              `gorm:"column:idx;type:integer;primaryKey;index:testgrandparentsembeddeds_idx,type:btree"`
 	Val                 string           `gorm:"column:val;type:varchar"`
 	TestGrandparentsRef TestGrandparents `gorm:"foreignKey:test_grandparents_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
@@ -67,7 +74,7 @@ type TestGrandparentsEmbeddeds struct {
 
 // TestGrandparentsEmbeddedsEmbedded2 holds the Gorm model for Postgres table `test_grandparents_embeddeds_embedded2`.
 type TestGrandparentsEmbeddedsEmbedded2 struct {
-	TestGrandparentsId           string                    `gorm:"column:test_grandparents_id;type:varchar;primaryKey"`
+	TestGrandparentsID           string                    `gorm:"column:test_grandparents_id;type:varchar;primaryKey"`
 	TestGrandparentsEmbeddedsIdx int                       `gorm:"column:test_grandparents_embeddeds_idx;type:integer;primaryKey"`
 	Idx                          int                       `gorm:"column:idx;type:integer;primaryKey;index:testgrandparentsembeddedsembedded2_idx,type:btree"`
 	Val                          string                    `gorm:"column:val;type:varchar"`

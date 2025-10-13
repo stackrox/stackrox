@@ -3,8 +3,8 @@ package detection
 import (
 	"strings"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scopecomp"
 )
 
@@ -72,5 +72,5 @@ func exclusionIsExpired(exclusion *storage.Exclusion) bool {
 	if exclusion.GetExpiration() == nil {
 		return false
 	}
-	return exclusion.GetExpiration().Compare(types.TimestampNow()) < 0
+	return protocompat.CompareTimestamps(exclusion.GetExpiration(), protocompat.TimestampNow()) < 0
 }

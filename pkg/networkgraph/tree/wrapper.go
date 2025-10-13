@@ -88,6 +88,19 @@ func (t *networkTreeWrapper) Insert(entity *storage.NetworkEntityInfo) error {
 	return t.trees[ipNet.Family()].Insert(entity)
 }
 
+func (t *networkTreeWrapper) ValidateNetworkTree() bool {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+
+	for _, tree := range t.trees {
+		if !tree.ValidateNetworkTree() {
+			return false
+		}
+	}
+
+	return true
+}
+
 // Remove removes the network entity from a tree for given key, if present.
 func (t *networkTreeWrapper) Remove(key string) {
 	t.lock.Lock()
@@ -158,8 +171,8 @@ func (t *networkTreeWrapper) GetSubnets(key string) []*storage.NetworkEntityInfo
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 
-	// The subnet of INTERNET lies in both the trees.
-	if key == networkgraph.InternetExternalSourceID {
+	// The subnet of INTERNET and INTERNAL lies in both the trees.
+	if networkgraph.IsConstantID(key) {
 		var ret []*storage.NetworkEntityInfo
 		for _, tree := range t.trees {
 			if nets := tree.GetSubnets(key); len(nets) != 0 {

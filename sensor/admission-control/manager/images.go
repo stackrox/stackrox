@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -29,13 +30,12 @@ func (m *manager) getCachedImage(img *storage.ContainerImage) *storage.Image {
 		return nil
 	}
 
-	cachedEntry, ok := m.imageCache.Get(img.GetId())
+	cachedImg, ok := m.imageCache.Get(img.GetId())
 	if !ok {
 		return nil
 	}
-	cachedImg := cachedEntry.(imageCacheEntry)
 	if time.Since(cachedImg.timestamp) > imageCacheTTL {
-		m.imageCache.RemoveIf(img.GetId(), func(entry interface{}) bool { return entry == cachedEntry })
+		m.imageCache.RemoveIf(img.GetId(), func(entry imageCacheEntry) bool { return entry == cachedImg })
 		return nil
 	}
 
@@ -61,7 +61,7 @@ type fetchImageResult struct {
 	img *storage.Image
 }
 
-func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img *storage.ContainerImage) (*storage.Image, error) {
+func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img *storage.ContainerImage, deployment *storage.Deployment) (*storage.Image, error) {
 	// Talk to central if we know its endpoint (and the client connection is not shutting down), and if we are not
 	// currently connected to sensor.
 	// Note: Sensor is required to scan images in the local registry.
@@ -72,7 +72,7 @@ func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img
 			CachedOnly: !s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline(),
 		})
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "scanning image via central")
 		}
 		return resp.GetImage(), nil
 	}
@@ -81,21 +81,22 @@ func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img
 	resp, err := m.client.GetImage(ctx, &sensor.GetImageRequest{
 		Image:      img,
 		ScanInline: s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline(),
+		Namespace:  deployment.GetNamespace(),
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "getting image from sensor")
 	}
 	return resp.GetImage(), nil
 }
 
-func (m *manager) fetchImage(ctx context.Context, s *state, resultChan chan<- fetchImageResult, pendingCount *int32, idx int, image *storage.ContainerImage) {
+func (m *manager) fetchImage(ctx context.Context, s *state, resultChan chan<- fetchImageResult, pendingCount *int32, idx int, image *storage.ContainerImage, deployment *storage.Deployment) {
 	defer func() {
 		if atomic.AddInt32(pendingCount, -1) == 0 {
 			close(resultChan)
 		}
 	}()
 
-	scannedImg, err := m.getImageFromSensorOrCentral(ctx, s, image)
+	scannedImg, err := m.getImageFromSensorOrCentral(ctx, s, image, deployment)
 	if err != nil {
 		log.Errorf("error fetching image %q: %v", image.GetName().GetFullName(), err)
 		resultChan <- fetchImageResult{
@@ -131,7 +132,7 @@ func (m *manager) getAvailableImagesAndKickOffScans(ctx context.Context, s *stat
 			// The cached image might be insufficient if it doesn't have a scan and we want to do inline scans.
 			if ctx != nil && (cachedImage == nil || (scanInline && cachedImage.GetScan() == nil)) {
 				atomic.AddInt32(&pendingCount, 1)
-				go m.fetchImage(ctx, s, imgChan, &pendingCount, idx, image)
+				go m.fetchImage(ctx, s, imgChan, &pendingCount, idx, image, deployment)
 			}
 		}
 		if images[idx] == nil {
@@ -153,6 +154,14 @@ func hasModifiedImages(s *state, deployment *storage.Deployment, req *admission.
 		return true
 	}
 
+	if req.SubResource != "" && req.SubResource == ScaleSubResource {
+		// TODO: We could consider returning false here since when the admission review request is for the scale
+		// subresource, I do not believe it is possible for a user to change the image on the deployment at the same
+		// time as updating the scale subresource However, the contract of this function as designed was to be
+		// conservative and return true.
+		return true
+	}
+
 	oldK8sObj, err := unmarshalK8sObject(req.Kind, req.OldObject.Raw)
 	if err != nil {
 		log.Errorf("Failed to unmarshal old object into K8s object: %v", err)
@@ -164,7 +173,6 @@ func hasModifiedImages(s *state, deployment *storage.Deployment, req *admission.
 		log.Errorf("Failed to convert old K8s object into StackRox deployment: %v", err)
 		return true
 	}
-
 	if oldDeployment == nil {
 		return true
 	}

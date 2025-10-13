@@ -2,39 +2,40 @@
 package schema
 
 import (
+	"github.com/lib/pq"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/postgres/schema"
 )
 
 // ConvertTestParent1FromProto converts a `*storage.TestParent1` to Gorm model
-func ConvertTestParent1FromProto(obj *storage.TestParent1) (*schema.TestParent1, error) {
-	serialized, err := obj.Marshal()
+func ConvertTestParent1FromProto(obj *storage.TestParent1) (*TestParent1, error) {
+	serialized, err := obj.MarshalVT()
 	if err != nil {
 		return nil, err
 	}
-	model := &schema.TestParent1{
-		Id:         obj.GetId(),
-		ParentId:   obj.GetParentId(),
-		Val:        obj.GetVal(),
-		Serialized: serialized,
+	model := &TestParent1{
+		ID:          obj.GetId(),
+		ParentID:    obj.GetParentId(),
+		Val:         obj.GetVal(),
+		StringSlice: pq.Array(obj.GetStringSlice()).(*pq.StringArray),
+		Serialized:  serialized,
 	}
 	return model, nil
 }
 
 // ConvertTestParent1_Child1RefFromProto converts a `*storage.TestParent1_Child1Ref` to Gorm model
-func ConvertTestParent1_Child1RefFromProto(obj *storage.TestParent1_Child1Ref, idx int, test_parent1_Id string) (*schema.TestParent1Childrens, error) {
-	model := &schema.TestParent1Childrens{
-		TestParent1Id: test_parent1_Id,
+func ConvertTestParent1_Child1RefFromProto(obj *storage.TestParent1_Child1Ref, idx int, testParent1ID string) (*TestParent1Childrens, error) {
+	model := &TestParent1Childrens{
+		TestParent1ID: testParent1ID,
 		Idx:           idx,
-		ChildId:       obj.GetChildId(),
+		ChildID:       obj.GetChildId(),
 	}
 	return model, nil
 }
 
 // ConvertTestParent1ToProto converts Gorm model `TestParent1` to its protobuf type object
-func ConvertTestParent1ToProto(m *schema.TestParent1) (*storage.TestParent1, error) {
+func ConvertTestParent1ToProto(m *TestParent1) (*storage.TestParent1, error) {
 	var msg storage.TestParent1
-	if err := msg.Unmarshal(m.Serialized); err != nil {
+	if err := msg.UnmarshalVTUnsafe(m.Serialized); err != nil {
 		return nil, err
 	}
 	return &msg, nil

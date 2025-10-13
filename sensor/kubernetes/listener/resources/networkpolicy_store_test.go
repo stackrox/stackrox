@@ -1,10 +1,12 @@
 package resources
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNetworkPoliciesStoreFind(t *testing.T) {
@@ -59,11 +61,75 @@ func TestNetworkPoliciesStoreFind(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			found := store.Find(defaultNS, tt.podLabels)
-			assert.Equal(t, len(tt.expectedIDs), len(found), "expected to find %d IDs, but found: %v", len(tt.expectedIDs), found)
+			assert.Len(t, found, len(tt.expectedIDs))
 
 			for _, expID := range tt.expectedIDs {
 				assert.Equal(t, expID, found[expID].GetId())
 			}
+		})
+	}
+}
+
+func TestNetworkPolicyStoreCleanup(t *testing.T) {
+	testCases := []struct {
+		before []*storage.NetworkPolicy
+		after  []*storage.NetworkPolicy
+	}{
+		{
+			before: []*storage.NetworkPolicy{
+				newNPDummy("before1", defaultNS, map[string]string{"app": "sensor"}),
+				newNPDummy("before2", defaultNS, map[string]string{"app": "sensor"}),
+			},
+			after: []*storage.NetworkPolicy{
+				newNPDummy("after1", defaultNS, map[string]string{"app": "sensor"}),
+			},
+		},
+		{
+			before: []*storage.NetworkPolicy{
+				newNPDummy("before1", defaultNS, map[string]string{"app": "sensor"}),
+			},
+			after: []*storage.NetworkPolicy{},
+		},
+		{
+			before: []*storage.NetworkPolicy{},
+			after: []*storage.NetworkPolicy{
+				newNPDummy("after1", defaultNS, map[string]string{"app": "sensor"}),
+			},
+		},
+		{
+			before: []*storage.NetworkPolicy{
+				newNPDummy("before1", "old-ns", map[string]string{"app": "sensor"}),
+			},
+			after: []*storage.NetworkPolicy{
+				newNPDummy("after1", "new-ns", map[string]string{"app": "sensor"}),
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("Delete Network Policies %d before / %d after", len(tc.before), len(tc.after)), func(t *testing.T) {
+			store := newNetworkPoliciesStore()
+
+			for _, before := range tc.before {
+				store.Upsert(before)
+			}
+
+			store.Cleanup()
+
+			require.Equal(t, 0, store.Size())
+			for _, before := range tc.before {
+				assert.Nil(t, store.Get(before.GetId()))
+				podLabels := before.GetSpec().GetPodSelector().GetMatchLabels()
+				assert.Len(t, store.Find(before.GetNamespace(), podLabels), 0)
+			}
+
+			for _, after := range tc.after {
+				store.Upsert(after)
+				assert.NotNil(t, store.Get(after.GetId()))
+				podLabels := after.GetSpec().GetPodSelector().GetMatchLabels()
+				assert.Greater(t, len(store.Find(after.GetNamespace(), podLabels)), 0)
+			}
+			require.Equal(t, len(tc.after), store.Size())
 		})
 	}
 }

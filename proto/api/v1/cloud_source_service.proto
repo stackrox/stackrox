@@ -1,0 +1,166 @@
+syntax = "proto3";
+
+package v1;
+
+import "api/v1/empty.proto";
+import "api/v1/pagination.proto";
+import weak "google/api/annotations.proto";
+
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+// CloudSource is an integration which provides a source for discovered
+// clusters.
+message CloudSource {
+  string id = 1;
+  string name = 2;
+  enum Type {
+    TYPE_UNSPECIFIED = 0;
+    TYPE_PALADIN_CLOUD = 1;
+    TYPE_OCM = 2;
+  }
+  Type type = 3;
+
+  message Credentials {
+    // Used for single-valued authentication via long-lived tokens.
+    string secret = 1; // @gotags: scrub:"always"
+    // Used for client authentication in combination with client_secret.
+    string client_id = 2; // @gotags: scrub:"always"
+    // Used for client authentication in combination with client_id.
+    string client_secret = 3; // @gotags: scrub:"always"
+  }
+  Credentials credentials = 4;
+
+  bool skip_test_integration = 5;
+
+  oneof Config {
+    PaladinCloudConfig paladin_cloud = 6;
+    OCMConfig ocm = 7;
+  }
+}
+
+// PaladinCloudConfig provides information required to fetch discovered
+// clusters from Paladin Cloud.
+message PaladinCloudConfig {
+  // Endpoint to the Paladin Cloud API server. Https is assumed if no
+  // protocol is specified. Example: https://apiqa.paladincloud.io
+  string endpoint = 1;
+}
+
+// OCMConfig provides information required to fetch discovered clusters from
+// the OpenShift cluster manager.
+message OCMConfig {
+  // Endpoint to the OpenShift API server. Https is assumed if no
+  // protocol is specified. Example: https://api.openshift.com
+  string endpoint = 1;
+}
+
+message CloudSourcesFilter {
+  // Matches cloud sources based on their name.
+  repeated string names = 1;
+  // Matches cloud sources based on their type.
+  repeated CloudSource.Type types = 2;
+}
+
+message CountCloudSourcesRequest {
+  // Filters cloud sources based on the requested fields.
+  CloudSourcesFilter filter = 1;
+}
+
+message CountCloudSourcesResponse {
+  int32 count = 1;
+}
+
+message GetCloudSourceRequest {
+  string id = 1;
+}
+
+message GetCloudSourceResponse {
+  CloudSource cloud_source = 1;
+}
+
+message ListCloudSourcesRequest {
+  // Divides the response into chunks.
+  Pagination pagination = 1;
+
+  // Filters cloud sources based on the requested fields.
+  CloudSourcesFilter filter = 2;
+}
+
+message ListCloudSourcesResponse {
+  repeated CloudSource cloud_sources = 1;
+}
+
+message CreateCloudSourceRequest {
+  CloudSource cloud_source = 1;
+}
+
+message CreateCloudSourceResponse {
+  CloudSource cloud_source = 1;
+}
+
+message UpdateCloudSourceRequest {
+  CloudSource cloud_source = 1;
+  // If true, cloud_source must include valid credentials.
+  // If false, the resource must already exist and
+  // credentials in cloud_source are ignored.
+  bool update_credentials = 2;
+}
+
+message DeleteCloudSourceRequest {
+  string id = 1;
+}
+
+message TestCloudSourceRequest {
+  CloudSource cloud_source = 1;
+  // If true, cloud_source must include valid credentials.
+  // If false, the resource must already exist and
+  // credentials in cloud_source are ignored.
+  bool update_credentials = 2;
+}
+
+service CloudSourcesService {
+  // CountCloudSources returns the number of cloud sources after filtering by requested fields.
+  rpc CountCloudSources(CountCloudSourcesRequest) returns (CountCloudSourcesResponse) {
+    option (google.api.http) = {get: "/v1/count/cloud-sources"};
+  }
+
+  // GetCloudSource retrieves a cloud source by ID.
+  rpc GetCloudSource(GetCloudSourceRequest) returns (GetCloudSourceResponse) {
+    option (google.api.http) = {get: "/v1/cloud-sources/{id}"};
+  }
+
+  // ListCloudSources returns the list of cloud sources after filtered by requested fields.
+  rpc ListCloudSources(ListCloudSourcesRequest) returns (ListCloudSourcesResponse) {
+    option (google.api.http) = {get: "/v1/cloud-sources"};
+  }
+
+  // CreateCloudSource creates a cloud source.
+  rpc CreateCloudSource(CreateCloudSourceRequest) returns (CreateCloudSourceResponse) {
+    option (google.api.http) = {
+      post: "/v1/cloud-sources"
+      body: "*"
+    };
+  }
+
+  // UpdateCloudSource creates or replaces a cloud source.
+  rpc UpdateCloudSource(UpdateCloudSourceRequest) returns (Empty) {
+    option (google.api.http) = {
+      put: "/v1/cloud-sources/{cloud_source.id}"
+      body: "*"
+    };
+  }
+
+  // DeleteCloudSource removes a cloud source.
+  rpc DeleteCloudSource(DeleteCloudSourceRequest) returns (Empty) {
+    option (google.api.http) = {delete: "/v1/cloud-sources/{id}"};
+  }
+
+  // TestCloudSource tests a cloud source.
+  rpc TestCloudSource(TestCloudSourceRequest) returns (Empty) {
+    option (google.api.http) = {
+      post: "/v1/cloud-sources/test"
+      body: "*"
+    };
+  }
+}

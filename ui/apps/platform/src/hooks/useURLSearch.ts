@@ -1,13 +1,17 @@
 import { useRef } from 'react';
 import isEqual from 'lodash/isEqual';
 
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 import { isParsedQs } from 'utils/queryStringUtils';
-import useURLParameter, { QueryValue } from './useURLParameter';
 
-type UseUrlSearchReturn = {
+import useURLParameter from './useURLParameter';
+import type { HistoryAction, QueryValue } from './useURLParameter';
+
+export type SetSearchFilter = (newFilter: SearchFilter, historyAction?: HistoryAction) => void;
+
+export type UseUrlSearchReturn = {
     searchFilter: SearchFilter;
-    setSearchFilter: (newFilter: SearchFilter) => void;
+    setSearchFilter: SetSearchFilter;
 };
 
 function parseFilter(rawFilter: QueryValue): SearchFilter {

@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -31,18 +32,20 @@ var (
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory(68), "testparent2", (*storage.TestParent2)(nil)))
+		schema.ScopingResource = resources.Namespace
 		return schema
 	}()
 )
 
 const (
+	// TestParent2TableName specifies the name of the table in postgres.
 	TestParent2TableName = "test_parent2"
 )
 
 // TestParent2 holds the Gorm model for Postgres table `test_parent2`.
 type TestParent2 struct {
-	Id                  string           `gorm:"column:id;type:varchar;primaryKey"`
-	ParentId            string           `gorm:"column:parentid;type:varchar"`
+	ID                  string           `gorm:"column:id;type:uuid;primaryKey"`
+	ParentID            string           `gorm:"column:parentid;type:varchar"`
 	Val                 string           `gorm:"column:val;type:varchar"`
 	Serialized          []byte           `gorm:"column:serialized;type:bytea"`
 	TestGrandparentsRef TestGrandparents `gorm:"foreignKey:parentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`

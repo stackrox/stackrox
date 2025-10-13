@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
-import { AlertQueryGroupBy, fetchSummaryAlertCounts } from 'services/AlertsService';
-import useRestQuery from './useRestQuery';
+import { fetchSummaryAlertCounts } from 'services/AlertsService';
+import type { AlertQueryGroupBy } from 'services/AlertsService';
+import useRestQuery from 'hooks/useRestQuery';
 
 export default function useAlertGroups(query: string, groupBy?: AlertQueryGroupBy) {
     const restQuery = useCallback(

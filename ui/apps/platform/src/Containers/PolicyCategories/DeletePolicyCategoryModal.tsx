@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
     Modal,
-    ModalVariant,
     ModalBoxBody,
     ModalBoxFooter,
     Button,
@@ -21,7 +20,7 @@ import { deletePolicyCategory } from 'services/PolicyCategoriesService';
 import { PolicyCategory, ListPolicy } from 'types/policy.proto';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
-type DeletePolicyCategoryModalType = {
+type DeletePolicyCategoryModalProps = {
     isOpen: boolean;
     onClose: () => void;
     addToast: (toast) => void;
@@ -37,7 +36,7 @@ function DeletePolicyCategoryModal({
     refreshPolicyCategories,
     selectedCategory,
     setSelectedCategory,
-}: DeletePolicyCategoryModalType) {
+}: DeletePolicyCategoryModalProps) {
     const [affectedPolicies, setAffectedPolicies] = useState<ListPolicy[]>([]);
 
     function handleDelete() {
@@ -74,7 +73,7 @@ function DeletePolicyCategoryModal({
         <Modal
             title="Permanently delete category?"
             isOpen={isOpen}
-            variant={ModalVariant.small}
+            variant="small"
             onClose={onClose}
             data-testid="delete-category-modal"
             aria-label="Permanently delete category?"

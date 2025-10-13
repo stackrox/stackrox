@@ -3,21 +3,20 @@ package datastore
 import (
 	"context"
 	"testing"
+	"time"
 
-	"github.com/gogo/protobuf/types"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/cve/common"
-	"github.com/stackrox/rox/central/cve/image/datastore/index"
-	"github.com/stackrox/rox/central/cve/image/datastore/search"
 	"github.com/stackrox/rox/central/cve/image/datastore/store"
-	"github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
+	pgStore "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/concurrency"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/postgres"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
 // DataStore is an intermediary to CVE storage.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
@@ -29,31 +28,36 @@ type DataStore interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	GetBatch(ctx context.Context, id []string) ([]*storage.ImageCVE, error)
 
-	Suppress(ctx context.Context, start *types.Timestamp, duration *types.Duration, cves ...string) error
+	Suppress(ctx context.Context, start *time.Time, duration *time.Duration, cves ...string) error
 	Unsuppress(ctx context.Context, cves ...string) error
+
+	// Deprecated: ApplyException and RevertException are used for database backward compatibility purpose only.
+	// Those functions can be removed after a few releases.
+	ApplyException(ctx context.Context, start *time.Time, expiry *time.Time, cves ...string) error
+	RevertException(ctx context.Context, cves ...string) error
+
 	EnrichImageWithSuppressedCVEs(image *storage.Image)
+
+	// TODO(ROX-30117): This is normalized CVE model datastore, which is deprecated.
+	// Had to add this to make it satisfy the changes to the CVESupressor interface.
+	// This will be removed when the normalized CVE model is deleted
+	EnrichImageV2WithSuppressedCVEs(image *storage.ImageV2)
 }
 
 // New returns a new instance of a DataStore.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, kf concurrency.KeyFence) (DataStore, error) {
+func New(storage store.Store, kf concurrency.KeyFence) DataStore {
 	ds := &datastoreImpl{
-		storage:  storage,
-		indexer:  indexer,
-		searcher: searcher,
+		storage: storage,
 
 		cveSuppressionCache: make(common.CVESuppressionCache),
 		keyFence:            kf,
 	}
-	if err := ds.buildSuppressedCache(); err != nil {
-		return nil, err
-	}
-	return ds, nil
+	ds.buildSuppressedCache()
+	return ds
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool *pgxpool.Pool) (DataStore, error) {
-	dbstore := postgres.New(pool)
-	indexer := postgres.NewIndexer(pool)
-	searcher := search.New(dbstore, indexer)
-	return New(dbstore, indexer, searcher, concurrency.NewKeyFence())
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
+	dbstore := pgStore.New(pool)
+	return New(dbstore, concurrency.NewKeyFence())
 }

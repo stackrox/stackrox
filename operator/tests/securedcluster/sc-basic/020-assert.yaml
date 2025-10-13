@@ -1,0 +1,19 @@
+apiVersion: platform.stackrox.io/v1alpha1
+kind: SecuredCluster
+metadata:
+  name: stackrox-secured-cluster-services
+status:
+  clusterName: testing-cluster
+  conditions:
+  - status: "True"
+    type: Deployed
+  - status: "True"
+    type: Initialized
+  - status: "True"
+    type: Irreconcilable
+  - status: "False"
+    type: Paused
+  - status: "False"
+    type: ProxyConfigFailed
+  - status: "Unknown"
+    type: ReleaseFailed

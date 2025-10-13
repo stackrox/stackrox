@@ -1,23 +1,33 @@
-import static com.jayway.restassured.RestAssured.given
-import com.jayway.restassured.config.RestAssuredConfig
-import com.jayway.restassured.config.SSLConfig
-import groups.BAT
+import static io.restassured.RestAssured.given
+import static util.Helpers.evaluateWithRetry
+
+import java.time.Instant
+import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
+
+import io.restassured.RestAssured
+import io.restassured.config.HttpClientConfig
+import io.restassured.config.SSLConfig
+
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.storage.RoleOuterClass
 import io.stackrox.proto.storage.RoleOuterClass.Role
-import java.util.zip.ZipEntry
-import java.util.zip.ZipInputStream
-import org.junit.experimental.categories.Category
+
+import services.ClusterService
 import services.RoleService
-import spock.lang.Shared
-import spock.lang.Unroll
 import util.Env
 
-@Category(BAT)
+import spock.lang.Shared
+import spock.lang.Tag
+import spock.lang.Unroll
+
+@Tag("BAT")
+@Tag("COMPATIBILITY")
+@Tag("PZ")
 class DiagnosticBundleTest extends BaseSpecification {
 
     @Shared
-    private String debugLogsReaderRoleName
+    private String administrationReaderRoleName
     @Shared
     private GenerateTokenResponse adminToken
     @Shared
@@ -29,19 +39,19 @@ class DiagnosticBundleTest extends BaseSpecification {
 
     def setupSpec() {
         adminToken = services.ApiTokenService.generateToken(UUID.randomUUID().toString(), "Admin")
-        debugLogsReaderRoleName = UUID.randomUUID()
-        RoleService.createRoleWithScopeAndPermissionSet(debugLogsReaderRoleName,
+        administrationReaderRoleName = UUID.randomUUID()
+        RoleService.createRoleWithScopeAndPermissionSet(administrationReaderRoleName,
                 UNRESTRICTED_SCOPE_ID,
                 [
-                        "DebugLogs": RoleOuterClass.Access.READ_ACCESS,
+                        "Administration": RoleOuterClass.Access.READ_ACCESS,
                         "Cluster": RoleOuterClass.Access.READ_ACCESS,
                 ]
         )
         debugLogsReaderToken = services.ApiTokenService.generateToken(UUID.randomUUID().toString(),
-                debugLogsReaderRoleName)
+                administrationReaderRoleName)
         Map<String, RoleOuterClass.Access> resourceToAccess =
                 [
-                        "DebugLogs": RoleOuterClass.Access.NO_ACCESS,
+                        "Administration": RoleOuterClass.Access.NO_ACCESS,
                         "Cluster": RoleOuterClass.Access.NO_ACCESS,
                 ]
 
@@ -63,11 +73,14 @@ class DiagnosticBundleTest extends BaseSpecification {
         if (noAccessRole != null) {
             RoleService.deleteRole(noAccessRole.name)
         }
-        RoleService.deleteRole(debugLogsReaderRoleName)
+        RoleService.deleteRole(administrationReaderRoleName)
     }
 
     @Unroll
     def "Test that diagnostic bundle download #desc"() {
+        given:
+        Instant modifiedAfter = (new Date()).toInstant().minusSeconds(1)
+
         when:
         "Making a request for the diagnostic bundle"
 
@@ -90,12 +103,24 @@ class DiagnosticBundleTest extends BaseSpecification {
             headers.put("Authorization", "Bearer " + token)
         }
 
-        def response = given()
-                .config(RestAssuredConfig.newConfig()
-                    .sslConfig(SSLConfig.sslConfig().relaxedHTTPSValidation().allowAllHostnames()))
+        def response = evaluateWithRetry(10, 10) {
+            return given()
+                .config(RestAssured.config()
+                    .httpClient(HttpClientConfig.httpClientConfig()
+                        // Times out after 1 minute of trying to establish a connection.
+                        .setParam("http.connection.timeout", 60000)
+                        // Times out after 5 minutes of connection inactivity.
+                        .setParam("http.socket.timeout", 300000)
+                    )
+                    .sslConfig(SSLConfig.sslConfig()
+                        .relaxedHTTPSValidation()
+                        .allowAllHostnames()
+                    )
+                )
                 .headers(headers)
                 .when()
                 .get("https://${Env.mustGetHostname()}:${Env.mustGetPort()}/api/extensions/diagnostics")
+        }
 
         then:
         "Check that response is as expected"
@@ -107,8 +132,10 @@ class DiagnosticBundleTest extends BaseSpecification {
             try {
                 ZipEntry entry
                 while ((entry = zis.nextEntry) != null) {
-                    log.info "Found file ${entry.name}"
-                    if (entry.name == "kubernetes/remote/stackrox/sensor/deployment-sensor.yaml") {
+                    log.info "Found file ${entry.name} modified at ${entry.lastModifiedTime}"
+                    assert modifiedAfter.isBefore(entry.lastModifiedTime.toInstant())
+                    if (entry.name == ("kubernetes/" + ClusterService.DEFAULT_CLUSTER_NAME +
+                            "/stackrox/sensor/deployment-sensor.yaml")) {
                         foundK8sInfo = true
                     }
                 }

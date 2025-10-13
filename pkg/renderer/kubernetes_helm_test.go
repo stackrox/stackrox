@@ -3,9 +3,8 @@ package renderer
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
-	"sort"
+	"slices"
 	"strconv"
 	"testing"
 
@@ -18,7 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 	"helm.sh/helm/v3/pkg/chartutil"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -48,13 +47,19 @@ func getDefaultMetaValues(t *testing.T) *charts.MetaValues {
 
 		AdvertisedEndpoint: "sensor.stackrox:443",
 
-		CollectorRegistry:        "collector.stackrox.io",
-		CollectorFullImageRemote: "collector",
-		CollectorSlimImageRemote: "collector",
-		CollectorFullImageTag:    "3.0.11-latest",
-		CollectorSlimImageTag:    "3.0.11-slim",
+		CollectorRegistry:    "collector.stackrox.io",
+		CollectorImageRemote: "collector",
+		CollectorImageTag:    "3.0.11",
 
-		CollectionMethod: "EBPF",
+		FactRegistry:    "fact.stackrox.io",
+		FactImageRemote: "fact",
+		FactImageTag:    "0.1.0",
+
+		ScannerSlimImageRemote: "scanner",
+		ScannerImageTag:        "3.0.11-slim",
+		ScannerV4ImageTag:      "4.4.0.x-92-g9e8a347ffe",
+
+		CollectionMethod: "CORE_BPF",
 
 		ClusterType: "KUBERNETES_CLUSTER",
 
@@ -148,7 +153,6 @@ func TestRenderSensorHelm(t *testing.T) {
 
 			for _, file := range files {
 				if file.Name == "admission-controller.yaml" {
-					fmt.Println(string(file.Content))
 					admissionControllerRendered = true
 				}
 				if file.Name == "admission-controller-secret.yaml" {
@@ -166,6 +170,23 @@ func TestRenderSensorHelm(t *testing.T) {
 	}
 }
 
+func TestRenderSensorTLSSensorOnly_NoErrorOnMissingImageData(t *testing.T) {
+	fields := getDefaultMetaValues(t)
+	fields.CertsOnly = true
+	// (ROX-16212) Should not fail when meta-values don't set ImageTag (e.g. when running with Operator installation)
+	// ImageTag isn't used to render TLS secrets, therefore it shouldn't result in RenderSensorTLSSecretsOnly returning an error
+	fields.ImageTag = ""
+	renderedManifests, err := RenderSensorTLSSecretsOnly(*fields, certs)
+	require.NoError(t, err)
+
+	// Image tag should not be seen in any of the yaml files
+	rawYamlString := string(renderedManifests)
+	assert.Contains(t, rawYamlString, "sensor-tls")
+	assert.Contains(t, rawYamlString, "collector-tls")
+	assert.Contains(t, rawYamlString, "admission-control-tls")
+	assert.NotContains(t, rawYamlString, "should-never-see-this")
+}
+
 func TestRenderSensorTLSSecretsOnly(t *testing.T) {
 	fields := getDefaultMetaValues(t)
 	fields.CertsOnly = true
@@ -181,9 +202,8 @@ func TestRenderSensorTLSSecretsOnly(t *testing.T) {
 		err := d.Decode(spec)
 		if errors.Is(err, io.EOF) {
 			break
-		} else {
-			require.NoError(t, err)
 		}
+		require.NoError(t, err)
 
 		secret := &corev1.Secret{}
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(spec, secret)
@@ -192,6 +212,6 @@ func TestRenderSensorTLSSecretsOnly(t *testing.T) {
 		encounteredSecretNames = append(encounteredSecretNames, secret.Name)
 	}
 
-	sort.Strings(encounteredSecretNames)
+	slices.Sort(encounteredSecretNames)
 	assert.Equal(t, expectedSecrets, encounteredSecretNames)
 }

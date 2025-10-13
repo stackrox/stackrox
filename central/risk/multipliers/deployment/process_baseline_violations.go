@@ -5,8 +5,10 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/central/processbaseline/evaluator"
+	"github.com/stackrox/rox/central/processindicator/views"
 	"github.com/stackrox/rox/central/risk/multipliers"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -54,17 +56,20 @@ func NewProcessBaselines(evaluator evaluator.Evaluator) Multiplier {
 	}
 }
 
-func formatProcess(process *storage.ProcessIndicator) string {
+func formatProcess(process *views.ProcessIndicatorRiskView) string {
 	sb := strings.Builder{}
-	stringutils.WriteStringf(&sb, "Detected execution of suspicious process %q", process.GetSignal().GetName())
-	if len(process.GetSignal().GetArgs()) > 0 {
-		stringutils.WriteStringf(&sb, " with args %q", process.GetSignal().GetArgs())
+	stringutils.WriteStringf(&sb, "Detected execution of suspicious process %q", process.SignalName)
+	if len(process.SignalArgs) > 0 {
+		stringutils.WriteStringf(&sb, " with args %q", process.SignalArgs)
 	}
-	stringutils.WriteStrings(&sb, " in container ", process.GetContainerName())
+	stringutils.WriteStrings(&sb, " in container ", process.ContainerName)
 	return sb.String()
 }
 
 func (p *processBaselineMultiplier) Score(_ context.Context, deployment *storage.Deployment, _ map[string][]*storage.Risk_Result) *storage.Risk_Result {
+	if !env.ProcessBaselineRisk.BooleanSetting() {
+		return nil
+	}
 	violatingProcesses, err := p.evaluator.EvaluateBaselinesAndPersistResult(deployment)
 	if err != nil {
 		log.Errorf("Couldn't evaluate process baseline: %v", err)

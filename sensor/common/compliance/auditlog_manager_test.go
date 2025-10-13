@@ -5,12 +5,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/updater"
 	"github.com/stretchr/testify/suite"
 )
@@ -44,6 +48,10 @@ type AuditLogCollectionManagerTestSuite struct {
 	suite.Suite
 }
 
+func (s *AuditLogCollectionManagerTestSuite) TearDownTest() {
+	goleak.AssertNoGoroutineLeaks(s.T())
+}
+
 func (s *AuditLogCollectionManagerTestSuite) getFakeServersAndStates() (map[string]sensor.ComplianceService_CommunicateServer, map[string]*storage.AuditLogFileState) {
 	servers := map[string]sensor.ComplianceService_CommunicateServer{
 		"node-a": &mockServer{
@@ -56,15 +64,11 @@ func (s *AuditLogCollectionManagerTestSuite) getFakeServersAndStates() (map[stri
 
 	fileStates := map[string]*storage.AuditLogFileState{
 		"node-a": {
-			CollectLogsSince: types.TimestampNow(),
+			CollectLogsSince: protocompat.TimestampNow(),
 			LastAuditId:      "last-audit-id",
 		},
 	}
 	return servers, fileStates
-}
-
-func (s *AuditLogCollectionManagerTestSuite) getClusterID() string {
-	return "FAKECLUSTERID"
 }
 
 func (s *AuditLogCollectionManagerTestSuite) getManager(
@@ -77,14 +81,15 @@ func (s *AuditLogCollectionManagerTestSuite) getManager(
 	}
 
 	return &auditLogCollectionManagerImpl{
-		clusterIDGetter:         s.getClusterID,
+		clusterID:               &fakeClusterIDWaiter{},
 		eligibleComplianceNodes: servers,
 		fileStates:              fileStates,
-		updateInterval:          updateInterval,
-		stopSig:                 concurrency.NewSignal(),
+		updaterTicker:           time.NewTicker(updateInterval),
+		stopper:                 concurrency.NewStopper(),
 		forceUpdateSig:          concurrency.NewSignal(),
+		centralReady:            concurrency.NewSignal(),
 		auditEventMsgs:          make(chan *sensor.MsgFromCompliance, 5), // Buffered for the test only
-		fileStateUpdates:        make(chan *central.MsgFromSensor),
+		fileStateUpdates:        make(chan *message.ExpiringMessage),
 	}
 }
 
@@ -111,7 +116,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestEnableCollectionSendsFileStateI
 
 	manager.EnableCollection()
 
-	s.Equal(fileStates["node-a"],
+	protoassert.Equal(s.T(), fileStates["node-a"],
 		servers["node-a"].(*mockServer).sentList[0].GetAuditLogCollectionRequest().GetStartReq().GetCollectStartState())
 
 	s.Nil(servers["node-b"].(*mockServer).sentList[0].GetAuditLogCollectionRequest().GetStartReq().GetCollectStartState())
@@ -171,9 +176,9 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdateAuditLogFileStateSendsFil
 
 	manager.SetAuditLogFileStateFromCentral(fileStates)
 
-	s.Equal(fileStates, manager.fileStates)
+	protoassert.MapEqual(s.T(), fileStates, manager.fileStates)
 
-	s.Equal(fileStates["node-a"],
+	protoassert.Equal(s.T(), fileStates["node-a"],
 		servers["node-a"].(*mockServer).sentList[0].GetAuditLogCollectionRequest().GetStartReq().GetCollectStartState())
 
 	// Explicitly checking that if we got a nil state we send that down
@@ -186,7 +191,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdateAuditLogFileStateDoesNotS
 
 	manager.SetAuditLogFileStateFromCentral(fileStates)
 
-	s.Equal(fileStates, manager.fileStates, "Even if disabled the state change should be recorded")
+	protoassert.MapEqual(s.T(), fileStates, manager.fileStates, "Even if disabled the state change should be recorded")
 
 	for _, server := range servers {
 		s.Len(server.(*mockServer).sentList, 0, "No start message should have been sent because collection is disabled")
@@ -236,47 +241,58 @@ func (s *AuditLogCollectionManagerTestSuite) TestGetLatestFileStatesReturnsCopyO
 	manager := s.getManager(make(map[string]sensor.ComplianceService_CommunicateServer), nil)
 	manager.enabled.Set(true) // start out enabled
 
-	firstState := s.getAuditLogFileState(types.TimestampNow(), "first-id-a")
+	firstEventTime := time.Now()
+	firstEvent := s.getKubernetesEvent(firstEventTime, "first-id-a")
+	firstState := s.getAuditLogFileState(firstEventTime, "first-id-a")
 	// add a state manually
-	manager.updateFileState("node-a", firstState.CollectLogsSince, firstState.LastAuditId)
+	manager.updateFileState("node-a", firstEvent)
 
 	states := manager.getLatestFileStates()
-	s.Equal(
+	protoassert.MapEqual(s.T(),
 		map[string]*storage.AuditLogFileState{"node-a": firstState},
 		states,
 	)
 
 	// Update the state and add a new node
-	secondState := s.getAuditLogFileState(types.TimestampNow(), "second-id-a")
-	manager.updateFileState("node-a", secondState.CollectLogsSince, secondState.LastAuditId)
+	secondEventTime := time.Now()
+	secondEvent := s.getKubernetesEvent(secondEventTime, "second-id-a")
+	secondState := s.getAuditLogFileState(secondEventTime, "second-id-a")
+	manager.updateFileState("node-a", secondEvent)
 
-	altNodeState := s.getAuditLogFileState(types.TimestampNow(), "first-id-b")
-	manager.updateFileState("node-b", altNodeState.CollectLogsSince, altNodeState.LastAuditId)
+	altNodeEventTime := time.Now()
+	altNodeEvent := s.getKubernetesEvent(altNodeEventTime, "first-id-b")
+	altNodeState := s.getAuditLogFileState(altNodeEventTime, "first-id-b")
+	manager.updateFileState("node-b", altNodeEvent)
 
 	// The originally retrieved state should not have changed
-	s.Equal(
+	protoassert.MapEqual(s.T(),
 		map[string]*storage.AuditLogFileState{"node-a": firstState},
 		states,
 	)
 
 	// But when fetched again, the new states should be shown
-	s.Equal(
+	protoassert.MapEqual(s.T(),
 		map[string]*storage.AuditLogFileState{"node-a": secondState, "node-b": altNodeState},
 		manager.getLatestFileStates(),
 	)
 }
 
-func (s *AuditLogCollectionManagerTestSuite) getAuditLogFileState(time *types.Timestamp, lastID string) *storage.AuditLogFileState {
-	return &storage.AuditLogFileState{
-		CollectLogsSince: time,
-		LastAuditId:      lastID,
+func (s *AuditLogCollectionManagerTestSuite) getKubernetesEvent(eventTime time.Time, eventID string) *storage.KubernetesEvent {
+	timestamp, err := protocompat.ConvertTimeToTimestampOrError(eventTime)
+	s.NoError(err)
+	return &storage.KubernetesEvent{
+		Id:        eventID,
+		Timestamp: timestamp,
 	}
 }
 
-func (s *AuditLogCollectionManagerTestSuite) getAsProtoTime(now time.Time) *types.Timestamp {
-	protoTime, err := types.TimestampProto(now)
+func (s *AuditLogCollectionManagerTestSuite) getAuditLogFileState(collectLogsSince time.Time, lastID string) *storage.AuditLogFileState {
+	timestamp, err := protocompat.ConvertTimeToTimestampOrError(collectLogsSince)
 	s.NoError(err)
-	return protoTime
+	return &storage.AuditLogFileState{
+		CollectLogsSince: timestamp,
+		LastAuditId:      lastID,
+	}
 }
 
 func (s *AuditLogCollectionManagerTestSuite) TestStateSaverSavesFileStates() {
@@ -284,7 +300,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestStateSaverSavesFileStates() {
 	manager.enabled.Set(true) // start out enabled
 
 	s.NoError(manager.Start())
-	defer manager.Stop(nil)
+	defer manager.Stop()
 
 	// Now pass in a few messages and wait for the state to get updated asynchronously
 	expectedFileStates := make(map[string]*storage.AuditLogFileState)
@@ -292,9 +308,9 @@ func (s *AuditLogCollectionManagerTestSuite) TestStateSaverSavesFileStates() {
 	for node := 0; node < 2; node++ {
 		for i := 0; i < 2; i++ {
 			nodeName := fmt.Sprintf("node-%d", node)
-			ts := s.getAsProtoTime(startTime.Add(time.Duration(i*10) * time.Minute))
-			msg := s.getMsgFromCompliance(nodeName, ts)
-			state := s.getAuditLogFileState(ts, msg.GetAuditEvents().Events[0].Id)
+			msgTime := startTime.Add(time.Duration(i*10) * time.Minute)
+			msg := s.getMsgFromCompliance(nodeName, msgTime)
+			state := s.getAuditLogFileState(msgTime, msg.GetAuditEvents().GetEvents()[0].GetId())
 			expectedFileStates[nodeName] = state
 
 			manager.AuditMessagesChan() <- msg
@@ -302,7 +318,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestStateSaverSavesFileStates() {
 	}
 
 	// One more just to ensure that by the point we get the file state, all message before this one has been processed
-	manager.AuditMessagesChan() <- s.getMsgFromCompliance("node-X", s.getAsProtoTime(startTime.Add(30*time.Minute)))
+	manager.AuditMessagesChan() <- s.getMsgFromCompliance("node-X", startTime.Add(30*time.Minute))
 
 	// Wait until the buffer is empty, at which point we know all messages were consumed
 	for len(manager.auditEventMsgs) > 0 { // should be safe to do since we are the only reader and because it's a buffered channel
@@ -311,7 +327,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestStateSaverSavesFileStates() {
 
 	states := manager.getLatestFileStates()
 	delete(states, "node-X") // Just in case the test ran fast, and the message added to flush the channel exists, remove it
-	s.Equal(expectedFileStates, states)
+	protoassert.MapEqual(s.T(), expectedFileStates, states)
 
 }
 
@@ -320,7 +336,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestStateSaverDoesNotSaveIfMsgHasNo
 	manager.enabled.Set(true) // start out enabled
 
 	s.NoError(manager.Start())
-	defer manager.Stop(nil)
+	defer manager.Stop()
 
 	// Now pass in a few messages and wait for the state to get updated asynchronously
 	startTime := time.Now()
@@ -338,7 +354,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestStateSaverDoesNotSaveIfMsgHasNo
 	}
 
 	// One more just to ensure that by the point we get the file state, all message before this one has been processed
-	manager.AuditMessagesChan() <- s.getMsgFromCompliance("node-X", s.getAsProtoTime(startTime.Add(30*time.Minute)))
+	manager.AuditMessagesChan() <- s.getMsgFromCompliance("node-X", startTime.Add(30*time.Minute))
 
 	// Wait until the buffer is empty, at which point we know all messages were consumed
 	for len(manager.auditEventMsgs) > 0 { // should be safe to do since we are the only reader and because it's a buffered channel
@@ -351,7 +367,9 @@ func (s *AuditLogCollectionManagerTestSuite) TestStateSaverDoesNotSaveIfMsgHasNo
 
 }
 
-func (s *AuditLogCollectionManagerTestSuite) getMsgFromCompliance(nodeName string, timestamp *types.Timestamp) *sensor.MsgFromCompliance {
+func (s *AuditLogCollectionManagerTestSuite) getMsgFromCompliance(nodeName string, messageTime time.Time) *sensor.MsgFromCompliance {
+	timestamp, err := protocompat.ConvertTimeToTimestampOrError(messageTime)
+	s.NoError(err)
 	return &sensor.MsgFromCompliance{
 		Node: nodeName,
 		Msg: &sensor.MsgFromCompliance_AuditEvents{
@@ -389,7 +407,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterDoesNotSendWhenNoFileSta
 
 	err := manager.Start()
 	s.Require().NoError(err)
-	defer manager.Stop(nil)
+	defer manager.Stop()
 
 	timer := time.NewTimer(updateTimeout + (500 * time.Millisecond)) // wait an extra 1/2 second
 
@@ -404,17 +422,14 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterDoesNotSendWhenNoFileSta
 func (s *AuditLogCollectionManagerTestSuite) TestUpdaterDoesNotSendIfInitStateNotReceivedFromCentral() {
 	now := time.Now()
 	fileStates := map[string]*storage.AuditLogFileState{
-		"node-one": {
-			CollectLogsSince: s.getAsProtoTime(now.Add(-10 * time.Minute)),
-			LastAuditId:      uuid.NewV4().String(),
-		},
+		"node-one": s.getAuditLogFileState(now.Add(-10*time.Minute), uuid.NewV4().String()),
 	}
 	manager := s.getManager(make(map[string]sensor.ComplianceService_CommunicateServer), fileStates)
 	manager.receivedInitialStateFromCentral.Set(false)
 
 	err := manager.Start()
 	s.Require().NoError(err)
-	defer manager.Stop(nil)
+	defer manager.Stop()
 
 	timer := time.NewTimer(updateTimeout + (500 * time.Millisecond)) // wait an extra 1/2 second
 
@@ -429,54 +444,44 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterDoesNotSendIfInitStateNo
 func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSendsUpdateWithLatestFileStates() {
 	now := time.Now()
 	expectedStatus := map[string]*storage.AuditLogFileState{
-		"node-one": {
-			CollectLogsSince: s.getAsProtoTime(now.Add(-10 * time.Minute)),
-			LastAuditId:      uuid.NewV4().String(),
-		},
-		"node-two": {
-			CollectLogsSince: s.getAsProtoTime(now.Add(-10 * time.Second)),
-			LastAuditId:      uuid.NewV4().String(),
-		},
+		"node-one": s.getAuditLogFileState(now.Add(-10*time.Minute), uuid.NewV4().String()),
+		"node-two": s.getAuditLogFileState(now.Add(-10*time.Second), uuid.NewV4().String()),
 	}
 
 	manager := s.getManager(make(map[string]sensor.ComplianceService_CommunicateServer), expectedStatus)
 	manager.receivedInitialStateFromCentral.Set(true)
+	manager.Notify(common.SensorComponentEventCentralReachable)
 
 	err := manager.Start()
 	s.Require().NoError(err)
-	defer manager.Stop(nil)
+	defer manager.Stop()
 
 	status := s.getUpdaterStatusMsg(manager, 10)
-	s.Equal(expectedStatus, status.GetNodeAuditLogFileStates())
+	protoassert.MapEqual(s.T(), expectedStatus, status.GetNodeAuditLogFileStates())
 }
 
 func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSendsUpdateWhenForced() {
 	now := time.Now()
 	expectedStatus := map[string]*storage.AuditLogFileState{
-		"node-one": {
-			CollectLogsSince: s.getAsProtoTime(now.Add(-10 * time.Minute)),
-			LastAuditId:      uuid.NewV4().String(),
-		},
-		"node-two": {
-			CollectLogsSince: s.getAsProtoTime(now.Add(-10 * time.Second)),
-			LastAuditId:      uuid.NewV4().String(),
-		},
+		"node-one": s.getAuditLogFileState(now.Add(-10*time.Minute), uuid.NewV4().String()),
+		"node-two": s.getAuditLogFileState(now.Add(-10*time.Second), uuid.NewV4().String()),
 	}
 
 	manager := s.getManager(make(map[string]sensor.ComplianceService_CommunicateServer), expectedStatus)
 	// The updater will update a duration that is less than the test timeout, so the update will not be naturally sent until forced
-	manager.updateInterval = 1 * time.Minute
+	manager.updaterTicker = time.NewTicker(1 * time.Minute)
 
 	manager.receivedInitialStateFromCentral.Set(true)
+	manager.Notify(common.SensorComponentEventCentralReachable)
 
 	err := manager.Start()
 	s.Require().NoError(err)
-	defer manager.Stop(nil)
+	defer manager.Stop()
 
 	manager.ForceUpdate()
 
 	status := s.getUpdaterStatusMsg(manager, 1)
-	s.Equal(expectedStatus, status.GetNodeAuditLogFileStates())
+	protoassert.MapEqual(s.T(), expectedStatus, status.GetNodeAuditLogFileStates())
 }
 
 func (s *AuditLogCollectionManagerTestSuite) getUpdaterStatusMsg(updater updater.Component, times int) *central.AuditLogStatusInfo {
@@ -493,4 +498,63 @@ func (s *AuditLogCollectionManagerTestSuite) getUpdaterStatusMsg(updater updater
 	}
 
 	return status
+}
+
+// This tests simulates Sensor loosing connection to Central, followed by a reconnect.
+// On entering Offline mode, Sensor must not try to send updates to Central.
+// As soon as Central comes online, Sensor must run on regular intervals again.
+func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSkipsOnOfflineMode() {
+	servers, _ := s.getFakeServersAndStates()
+	manager := s.getManager(servers, nil)
+	manager.auditEventMsgs = make(chan *sensor.MsgFromCompliance)
+	defer close(manager.auditEventMsgs)
+	manager.receivedInitialStateFromCentral.Set(true)
+	// Create a testTicker
+	testTicker := make(chan time.Time)
+	defer close(testTicker)
+	// Start the component.
+	// Here we do not call Start so we can inject our testTicker
+	go manager.runStateSaver()
+	go manager.runUpdater(testTicker)
+
+	centralC := manager.ResponsesC()
+	complianceC := manager.AuditMessagesChan()
+
+	states := [3]common.SensorComponentEvent{common.SensorComponentEventCentralReachable, common.SensorComponentEventOfflineMode, common.SensorComponentEventCentralReachable}
+
+	for i, state := range states {
+		manager.Notify(state)
+		complianceC <- s.getMsgFromCompliance(fmt.Sprintf("Node-%d", i), time.Now().Add(1*time.Second))
+		s.Eventually(func() bool {
+			// If the len of the file states is 0, the complianceC message was not processed yet and we need to wait
+			return len(manager.getLatestFileStates()) > 0
+		}, 500*time.Millisecond, time.Millisecond)
+		// Controlled tick
+		testTicker <- time.Now()
+		select {
+		case <-centralC:
+			s.T().Logf("Received message on centralC (state: %s)", state)
+			if state == common.SensorComponentEventOfflineMode {
+				s.Fail("Must not receive messages to central in offline mode")
+			}
+		case <-time.After(500 * time.Millisecond):
+			s.T().Logf("Timeout waiting for a message on centralC (state: %s)", state)
+			if state == common.SensorComponentEventCentralReachable {
+				s.Fail("CentralC msg didn't arrive within deadline")
+				// The message was sent, so we must wait until it finally arrives,
+				// otherwise the next iteration may receive it
+				s.T().Logf("Timeout happened on %s state, so we must wait for the message", state)
+				<-centralC
+			}
+		}
+
+	}
+
+	manager.Stop()
+}
+
+type fakeClusterIDWaiter struct{}
+
+func (f *fakeClusterIDWaiter) Get() string {
+	return "FAKECLUSTERID"
 }

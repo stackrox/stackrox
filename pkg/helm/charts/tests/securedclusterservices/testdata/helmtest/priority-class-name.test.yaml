@@ -1,0 +1,35 @@
+values:
+  imagePullSecrets:
+    allowNone: true
+tests:
+- name: "with default settings"
+  expect: |
+    .deployments.sensor.spec.template.spec.priorityClassName | assertThat(. == null)
+    .daemonsets.collector.spec.template.spec.priorityClassName | assertThat(. == null)
+    .deployments["admission-control"].spec.template.spec.priorityClassName | assertThat(. == null)
+
+- name: "with empty string settings"
+  values:
+    sensor:
+      priorityClassName: ""
+    collector:
+      priorityClassName: ""
+    admissionControl:
+      priorityClassName: ""
+  expect: |
+    .deployments.sensor.spec.template.spec.priorityClassName | assertThat(. == null)
+    .daemonsets.collector.spec.template.spec.priorityClassName | assertThat(. == null)
+    .deployments["admission-control"].spec.template.spec.priorityClassName | assertThat(. == null)
+
+- name: "with populated settings"
+  values:
+    sensor:
+      priorityClassName: "sensor"
+    collector:
+      priorityClassName: "collector"
+    admissionControl:
+      priorityClassName: "admission-control"
+  expect: |
+    .deployments.sensor.spec.template.spec.priorityClassName | assertThat(. == "sensor")
+    .daemonsets.collector.spec.template.spec.priorityClassName | assertThat(. == "collector")
+    .deployments["admission-control"].spec.template.spec.priorityClassName | assertThat(. == "admission-control")

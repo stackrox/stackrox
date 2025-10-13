@@ -10,4 +10,7 @@ var (
 	// switching this on is not enough because extra steps are required to
 	// configure Central as an OAuth client.
 	EnableOpenShiftAuth = RegisterBooleanSetting("ROX_ENABLE_OPENSHIFT_AUTH", false)
+
+	// Openshift specifies whether Openshift is the orchestrator.
+	Openshift = RegisterBooleanSetting("ROX_OPENSHIFT", false)
 )

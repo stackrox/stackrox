@@ -1,51 +1,84 @@
-import * as api from '../../constants/apiEndpoints';
+import path from 'path';
+
 import { selectors } from '../../constants/SystemHealth';
 import withAuth from '../../helpers/basicAuth';
+import { interactAndWaitForResponses } from '../../helpers/request';
 import { setClock, visitSystemHealth } from '../../helpers/systemHealth';
-import selectSelectors from '../../selectors/select';
+
+const routeMatcherMapForClusters = {
+    clusters: '/v1/clusters',
+};
 
 function openDiagnosticBundleDialogBox() {
-    cy.intercept('GET', api.clusters.list).as('getClusters'); // TODO
+    cy.get('[role="dialog"]').should('not.exist');
 
-    cy.get(selectors.bundle.generateDiagnosticBundleButton).click();
+    interactAndWaitForResponses(() => {
+        cy.get('button:contains("Generate diagnostic bundle")').click();
+    }, routeMatcherMapForClusters);
 
-    cy.wait('@getClusters');
-    cy.get('[data-testid="diagnostic-bundle-dialog-box"] > div:contains("Diagnostic Bundle")');
+    cy.get('[role="dialog"]').should('exist');
+}
+
+const diagnosticBundleAlias = '/api/extensions/diagnostics';
+
+const mockResponseFilename = 'stackrox_diagnostic_2020_10_20_21_22_23.zip';
+
+const staticResponseMapForDiagnosticBundle = {
+    [diagnosticBundleAlias]: {
+        headers: {
+            'content-disposition': `attachment; filename="${mockResponseFilename}"`,
+            'content-type': 'application/zip',
+        },
+        // https://stackoverflow.com/questions/29234912/how-to-create-minimum-size-empty-zip-file-which-has-22b
+        body: Cypress.Blob.base64StringToBlob(
+            'UEsFBgAAAAAAAAAAAAAAAAAAAAAAAA==',
+            'application/zip'
+        ),
+    },
+};
+
+function downloadDiagnosticBundle(query) {
+    // Replace url with pathnname because of query property!
+    const routeMatcherMap = {
+        [diagnosticBundleAlias]: {
+            method: 'GET',
+            pathname: '/api/extensions/diagnostics',
+            query,
+        },
+    };
+
+    interactAndWaitForResponses(
+        () => {
+            cy.get('button:contains("Download diagnostic bundle")').click();
+        },
+        routeMatcherMap,
+        staticResponseMapForDiagnosticBundle
+    );
+
+    cy.readFile(path.join(Cypress.config('downloadsFolder'), mockResponseFilename)).should('exist');
 }
 
 describe('Download Diagnostic Data', () => {
     withAuth();
 
-    const {
-        downloadDiagnosticBundleButton,
-        filterByClusters,
-        filterByStartingTime,
-        startingTimeMessage,
-    } = selectors.bundle;
-    const { multiSelect } = selectSelectors;
+    const { filterByStartingTime, startingTimeMessage } = selectors.bundle;
 
     describe('interaction', () => {
         const currentTime = new Date('2020-10-20T21:22:00.000Z');
 
-        it('should display placeholder instead of value for initial default no cluster selected', () => {
-            visitSystemHealth();
-            openDiagnosticBundleDialogBox();
-
-            cy.get(`${filterByClusters} ${multiSelect.placeholder}`);
-            cy.get(`${filterByClusters} ${multiSelect.values}`).should('not.exist');
-        });
-
-        it('should display value instead of placeholder for one cluster selected', () => {
+        it('should display value for one cluster selected', () => {
             visitSystemHealth();
             openDiagnosticBundleDialogBox();
 
             const clusterName = 'remote';
 
-            cy.get(`${filterByClusters} ${multiSelect.dropdown}`).click();
-            cy.get(`${filterByClusters} ${multiSelect.options}:contains("${clusterName}")`).click();
+            cy.get(`.pf-v5-c-chip-group__list-item:contains("${clusterName}")`).should('not.exist');
 
-            cy.get(`${filterByClusters} ${multiSelect.placeholder}`).should('not.exist');
-            cy.get(`${filterByClusters} ${multiSelect.values}`).should('have.text', clusterName);
+            // TODO factor out as helper function
+            cy.get('[aria-label="Options menu"]').click(); // TODO better label
+            cy.get(`[role="option"]:contains("${clusterName}")`).click();
+
+            cy.get(`.pf-v5-c-chip-group__list-item:contains("${clusterName}")`).should('exist');
         });
 
         it('should display info message for initial default no starting time', () => {
@@ -92,27 +125,11 @@ describe('Download Diagnostic Data', () => {
         const currentTime = new Date('2020-10-20T21:22:00.000Z');
         const startingTime = '2020-10-20T20:21:22.345Z';
 
-        // https://stackoverflow.com/questions/29234912/how-to-create-minimum-size-empty-zip-file-which-has-22b
-        const emptyZipFileBlob = Cypress.Blob.base64StringToBlob(
-            'UEsFBgAAAAAAAAAAAAAAAAAAAAAAAA==',
-            'application/zip'
-        );
-
         it('should not have params for initial defaults', () => {
             visitSystemHealth();
             openDiagnosticBundleDialogBox();
 
-            cy.intercept('GET', api.extensions.diagnostics, {
-                headers: {
-                    'content-disposition':
-                        'attachment; filename="stackrox_diagnostic_2020_10_20_21_22_23.zip"',
-                    'content-type': 'application/zip',
-                },
-                body: emptyZipFileBlob,
-            }).as('getDiagnostics');
-
-            cy.get(downloadDiagnosticBundleButton).click();
-            cy.wait('@getDiagnostics');
+            downloadDiagnosticBundle();
         });
 
         it('should have param for valid starting time', () => {
@@ -120,27 +137,12 @@ describe('Download Diagnostic Data', () => {
             visitSystemHealth();
             openDiagnosticBundleDialogBox();
 
-            cy.intercept(
-                {
-                    method: 'GET',
-                    pathname: api.extensions.diagnostics, // without query parameters
-                    query: {
-                        since: startingTime,
-                    },
-                },
-                {
-                    headers: {
-                        'content-disposition':
-                            'attachment; filename="stackrox_diagnostic_2020_10_20_21_22_23.zip"',
-                        'content-type': 'application/zip',
-                    },
-                    body: emptyZipFileBlob,
-                }
-            ).as('getDiagnostics');
-
             cy.get(filterByStartingTime).type(startingTime);
-            cy.get(downloadDiagnosticBundleButton).click();
-            cy.wait('@getDiagnostics');
+
+            const query = {
+                since: startingTime,
+            };
+            downloadDiagnosticBundle(query);
         });
 
         it('should have params for one selected cluster and valid starting time', () => {
@@ -149,30 +151,17 @@ describe('Download Diagnostic Data', () => {
             openDiagnosticBundleDialogBox();
 
             const clusterName = 'remote';
-            cy.intercept(
-                {
-                    method: 'GET',
-                    pathname: api.extensions.diagnostics, // without query parameters
-                    query: {
-                        cluster: clusterName,
-                        since: startingTime,
-                    },
-                },
-                {
-                    headers: {
-                        'content-disposition':
-                            'attachment; filename="stackrox_diagnostic_2020_10_20_21_22_23.zip"',
-                        'content-type': 'application/zip',
-                    },
-                    body: emptyZipFileBlob,
-                }
-            ).as('getDiagnostics');
 
-            cy.get(`${filterByClusters} ${multiSelect.dropdown}`).click();
-            cy.get(`${filterByClusters} ${multiSelect.options}:contains("${clusterName}")`).click();
+            // TODO factor out as helper function
+            cy.get('[aria-label="Options menu"]').click(); // TODO better label
+            cy.get(`[role="option"]:contains("${clusterName}")`).click();
             cy.get(filterByStartingTime).type(startingTime);
-            cy.get(downloadDiagnosticBundleButton).click();
-            cy.wait('@getDiagnostics');
+
+            const query = {
+                cluster: clusterName,
+                since: startingTime,
+            };
+            downloadDiagnosticBundle(query);
         });
     });
 });

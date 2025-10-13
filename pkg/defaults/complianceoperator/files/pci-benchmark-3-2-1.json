@@ -1,0 +1,26 @@
+{
+  "id": "9f204799-c73d-46a1-8890-cd2ceec12d7e",
+  "name": "PCI-DSS v3.2.1 Control Baseline",
+  "version": "3.2.1",
+  "description": "",
+  "provider": "PCI",
+  "shortName": "PCI-DSS",
+  "profiles": [
+    {
+      "profileName": "ocp4-pci-dss",
+      "profileVersion": "3.2.1"
+    },
+    {
+      "profileName": "ocp4-pci-dss-node",
+      "profileVersion": "3.2.1"
+    },
+    {
+      "profileName": "ocp4-pci-dss-3-2",
+      "profileVersion": "3.2.1"
+    },
+    {
+      "profileName": "ocp4-pci-dss-node-3-2",
+      "profileVersion": "3.2.1"
+    }
+  ]
+}

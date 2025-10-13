@@ -18,12 +18,22 @@ info() {
 }
 
 die() {
-    echo >&2 "$@"
+    echo >&2 "ERROR:" "$@"
     exit 1
 }
 
 # Caution when editing: make sure groups would correspond to BASH_REMATCH use.
 RELEASE_RC_TAG_BASH_REGEX='^([[:digit:]]+(\.[[:digit:]]+)*)(-rc\.[[:digit:]]+)?$'
+
+curl_cfg() { # Use built-in echo to not expose $2 in the process list.
+    echo -n "$1 = \"${2//[\"\\]/\\&}\""
+}
+
+roxcurl() {
+    local url="$1"
+    shift
+    curl -sSfk --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") "https://${API_ENDPOINT}${url}" "$@"
+}
 
 is_release_version() {
     if [[ "$#" -ne 1 ]]; then
@@ -58,10 +68,6 @@ is_release_test_stream() {
 
 is_CI() {
     [[ "${CI:-}" == "true" ]]
-}
-
-is_CIRCLECI() {
-    [[ "${CIRCLECI:-}" == "true" ]]
 }
 
 is_OPENSHIFT_CI() {
@@ -168,6 +174,9 @@ retry() {
             if $delay; then
                 info "Retrying in $wait seconds..."
                 sleep $wait
+            fi
+            if [[ -n "${RETRY_HOOK:-}" ]]; then
+                $RETRY_HOOK
             fi
         else
             echo "Retry $count/$tries exited $exit, no more retries left."

@@ -1,0 +1,14 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.app.db.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+  - name: tcp-{{ .Values.app.db.name }}
+    port: 5432
+    targetPort: postgresql
+  selector:
+    app: {{ .Values.app.db.name }}
+  type: ClusterIP

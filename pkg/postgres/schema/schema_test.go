@@ -1,5 +1,4 @@
 //go:build sql_integration
-// +build sql_integration
 
 package schema
 
@@ -10,15 +9,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/jackc/pgx/v5"
+	"github.com/stackrox/rox/pkg/postgres"
 	pkgPostgres "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
@@ -31,11 +28,10 @@ var (
 
 type SchemaTestSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	connConfig  *pgx.ConnConfig
-	pool        *pgxpool.Pool
-	gormDB      *gorm.DB
-	ctx         context.Context
+	connConfig *pgx.ConnConfig
+	pool       postgres.DB
+	gormDB     *gorm.DB
+	ctx        context.Context
 }
 
 func TestSchema(t *testing.T) {
@@ -43,24 +39,16 @@ func TestSchema(t *testing.T) {
 }
 
 func (s *SchemaTestSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-	}
-
 	ctx := sac.WithAllAccess(context.Background())
-
 	source := conn.GetConnectionStringWithDatabaseName(s.T(), k8sEnv.GetString("POSTGRES_DB", "postgres"))
 
-	config, err := pgxpool.ParseConfig(source)
+	config, err := postgres.ParseConfig(source)
 	s.NoError(err)
 
 	s.connConfig = config.ConnConfig
 
 	s.Require().NoError(err)
-	pool, err := pgxpool.ConnectConfig(ctx, config)
+	pool, err := postgres.New(ctx, config)
 	s.Require().NoError(err)
 
 	s.ctx = ctx
@@ -75,7 +63,6 @@ func (s *SchemaTestSuite) SetupSuite() {
 }
 
 func (s *SchemaTestSuite) TearDownSuite() {
-	s.envIsolator.RestoreAll()
 	if s.pool == nil {
 		return
 	}
@@ -85,12 +72,13 @@ func (s *SchemaTestSuite) TearDownSuite() {
 
 func (s *SchemaTestSuite) TestTableNameSanity() {
 	type testCaseStruct struct {
-		name        string
-		createStmts *pkgPostgres.CreateStmts
+		name           string
+		createStmts    *pkgPostgres.CreateStmts
+		featureEnabled func() bool
 	}
 	var testCases []testCaseStruct
-	for _, rt := range getAllRegisteredTablesInOrder() {
-		testCases = append(testCases, testCaseStruct{rt.Schema.Table, rt.CreateStmt})
+	for _, rt := range getAllTables() {
+		testCases = append(testCases, testCaseStruct{rt.Schema.Table, rt.CreateStmt, rt.FeatureEnabledFunc})
 	}
 
 	for _, testCase := range testCases {

@@ -44,10 +44,19 @@ the login page, and log in with username "admin" and the password found in the
 `
 
 	kubectlScannerTemplate = `
-  - Deploy Scanner
-     If you want to run the StackRox Scanner:
-     - Run scanner/scripts/setup.sh
-     - Run {{.K8sConfig.Command}} create -R -f scanner
+  - Deploy Scanner components
+    - Run scanner/scripts/setup.sh
+    - Run {{.K8sConfig.Command}} create -R -f scanner
+
+  - Optional: Deploy Scanner V4 components
+    - Run scanner-v4/scripts/setup.sh
+    - Run {{.K8sConfig.Command}} create -R -f scanner-v4
+`
+	kubectlCentralDBTemplate = `
+  - Deploy Central DB
+     To deploy Postgres Central DB and prepare for Central upgrade:
+     - Run scripts/setup.sh
+     - Run ./deploy-central-db.sh
 `
 	recommendHelmInstallationTemplate = `
 PLEASE NOTE: The recommended way to deploy StackRox is by using Helm. If you have
@@ -100,6 +109,8 @@ func instructions(c Config, mode mode) (string, error) {
 	} else if c.K8sConfig.DeploymentFormat == v1.DeploymentFormat_KUBECTL {
 		if mode == scannerOnly {
 			template = kubectlScannerTemplate
+		} else if mode == centralDBOnly {
+			template = kubectlCentralDBTemplate
 		} else {
 			template = kubectlInstructionTemplate + kubectlScannerTemplate + recommendHelmInstallationTemplate
 		}
@@ -109,11 +120,11 @@ func instructions(c Config, mode mode) (string, error) {
 
 	tpl, err := helmTemplate.InitTemplate("temp").Parse(template)
 	if err != nil {
-		return "", utils.Should(err)
+		return "", utils.ShouldErr(err)
 	}
 	data, err := templates.ExecuteToBytes(tpl, &c)
 	if err != nil {
-		return "", utils.Should(err)
+		return "", utils.ShouldErr(err)
 	}
 
 	instructions := string(data)

@@ -11,6 +11,8 @@ var (
 )
 
 // Detector provides an interface for performing runtime policy violation detection.
+//
+//go:generate mockgen-wrapper
 type Detector interface {
 	PolicySet() detection.PolicySet
 

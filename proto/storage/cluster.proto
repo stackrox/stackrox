@@ -1,320 +1,364 @@
 syntax = "proto3";
 
-option go_package = "storage";
-option java_package = "io.stackrox.proto.storage";
-
-import "google/protobuf/timestamp.proto";
-import "gogoproto/gogo.proto";
-
 package storage;
 
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
 enum ClusterType {
-    GENERIC_CLUSTER          = 0;
-    KUBERNETES_CLUSTER       = 1;
-    OPENSHIFT_CLUSTER        = 2;
-    reserved 3;
-    reserved 4;
-    OPENSHIFT4_CLUSTER       = 5;
+  GENERIC_CLUSTER = 0;
+  KUBERNETES_CLUSTER = 1;
+  OPENSHIFT_CLUSTER = 2;
+  reserved 3;
+  reserved 4;
+  OPENSHIFT4_CLUSTER = 5;
+}
+
+// ClusterMetadata contains metadata information about the cluster infrastructure.
+message ClusterMetadata {
+  enum Type {
+    UNSPECIFIED = 0;
+    AKS = 1;
+    ARO = 2;
+    EKS = 3;
+    GKE = 4;
+    OCP = 5;
+    OSD = 6;
+    ROSA = 7;
+  }
+
+  Type type = 1; // @gotags: search:"Cluster Type"
+  // Name represents the name under which the cluster is registered with the
+  // cloud provider. In case of self managed OpenShift it is the name chosen
+  // by the OpenShift installer.
+  string name = 2;
+  // Id represents a unique ID under which the cluster is registered with the
+  // cloud provider. Not all cluster types have an id. For all OpenShift
+  // clusters, this is the Red Hat `cluster_id` registered with OCM.
+  string id = 3;
 }
 
 message GoogleProviderMetadata {
-    string project      = 1;
-    string cluster_name = 2;
+  string project = 1;
+  // Deprecated in favor of providerMetadata.cluster.name.
+  string cluster_name = 2 [deprecated = true];
 }
 
 message AWSProviderMetadata {
-    string account_id = 1;
+  string account_id = 1;
 }
 
 message AzureProviderMetadata {
-    string subscription_id = 1;
+  string subscription_id = 1;
 }
 
 message ProviderMetadata {
-    string region = 1;
-    string zone   = 2;
+  string region = 1;
+  string zone = 2;
 
-    oneof Provider {
-        GoogleProviderMetadata google = 3;
-        AWSProviderMetadata aws       = 4;
-        AzureProviderMetadata azure   = 5;
-    }
+  oneof Provider {
+    GoogleProviderMetadata google = 3;
+    AWSProviderMetadata aws = 4;
+    AzureProviderMetadata azure = 5;
+  }
 
-    bool verified = 15;
+  bool verified = 15;
+  ClusterMetadata cluster = 16;
 }
 
 message OrchestratorMetadata {
-    string version      = 1;
-    oneof is_openshift {
-        string openshift_version = 4;
-    }
-    google.protobuf.Timestamp build_date   = 2;
-    repeated string           api_versions = 3;
+  string version = 1; // @gotags: search:"Cluster Kubernetes Version"
+  oneof is_openshift {
+    string openshift_version = 4;
+  }
+  google.protobuf.Timestamp build_date = 2;
+  repeated string api_versions = 3;
 }
 
 enum CollectionMethod {
-    UNSET_COLLECTION = 0;
-    NO_COLLECTION    = 1;
-    KERNEL_MODULE    = 2;
-    EBPF             = 3;
+  UNSET_COLLECTION = 0;
+  NO_COLLECTION = 1;
+  KERNEL_MODULE = 2 [deprecated = true];
+  EBPF = 3 [deprecated = true];
+  CORE_BPF = 4;
 }
 
 message AdmissionControllerConfig {
-    bool  enabled            = 1;
-    int32 timeout_seconds    = 2;
-    bool  scan_inline        = 3;
-    bool  disable_bypass     = 4;
+  bool enabled = 1;
+  int32 timeout_seconds = 2;
+  bool scan_inline = 3;
+  bool disable_bypass = 4;
 
-    bool  enforce_on_updates = 5;
+  bool enforce_on_updates = 5;
 }
 
 message TolerationsConfig {
-        bool  disabled  = 1;
+  bool disabled = 1;
 }
 
+// The difference between Static and Dynamic cluster config is that Static values are not sent over the Central to Sensor gRPC connection. They are used, for example, to generate manifests that can be used to set up the Secured Cluster's k8s components. They are *not* dynamically reloaded.
 message StaticClusterConfig {
-    ClusterType               type                         = 1;
-    string                    main_image                   = 2;
-    string                    central_api_endpoint         = 3;
-    CollectionMethod          collection_method            = 4;
-    string                    collector_image              = 5;
-    bool                      admission_controller         = 6;
-    bool                      admission_controller_updates = 7;
-    TolerationsConfig         tolerations_config           = 8;
-    bool                      slim_collector               = 9;
-    bool                      admission_controller_events  = 10;
+  ClusterType type = 1;
+  string main_image = 2;
+  string central_api_endpoint = 3;
+  CollectionMethod collection_method = 4;
+  string collector_image = 5;
+  bool admission_controller = 6;
+  bool admission_controller_updates = 7;
+  TolerationsConfig tolerations_config = 8;
+  bool slim_collector = 9;
+  bool admission_controller_events = 10;
+  bool admission_controller_fail_on_error = 11;
 }
 
+message AutoLockProcessBaselinesConfig {
+  // More fields can be added later to control the feature at the
+  // namespace level
+  bool enabled = 1;
+}
+
+// The difference between Static and Dynamic cluster config is that Dynamic values are sent over the Central to Sensor gRPC connection. This has the benefit of allowing for "hot reloading" of values without restarting Secured cluster components.
 message DynamicClusterConfig {
-    AdmissionControllerConfig admission_controller_config = 1;
-    string registry_override                              = 2;
-    bool   disable_audit_logs                             = 3;
+  AdmissionControllerConfig admission_controller_config = 1;
+  string registry_override = 2;
+  bool disable_audit_logs = 3;
+  AutoLockProcessBaselinesConfig auto_lock_process_baselines_config = 4;
 }
 
 // Encodes a complete cluster configuration minus ID/Name identifiers
 // including static and dynamic settings.
 message CompleteClusterConfig {
-    DynamicClusterConfig  dynamic_config               = 1;
-    StaticClusterConfig   static_config                = 2;
-    string                config_fingerprint           = 3;
-    map<string, string>   cluster_labels               = 4;
+  DynamicClusterConfig dynamic_config = 1;
+  StaticClusterConfig static_config = 2;
+  string config_fingerprint = 3;
+  map<string, string> cluster_labels = 4;
 }
 
 // StackRoxDeploymentIdentification aims at uniquely identifying a StackRox Sensor deployment. It is used to determine
 // whether a sensor connection comes from a sensor pod that has restarted or was recreated (possibly after a network
 // partition), or from a deployment in a different namespace or cluster.
 message SensorDeploymentIdentification {
-    string system_namespace_id   = 1;
-    string default_namespace_id  = 2;
-    string app_namespace         = 3;
-    string app_namespace_id      = 4;
-    string app_serviceaccount_id = 5;
-    string k8s_node_name         = 6;
+  string system_namespace_id = 1;
+  string default_namespace_id = 2;
+  string app_namespace = 3;
+  string app_namespace_id = 4;
+  string app_serviceaccount_id = 5;
+  string k8s_node_name = 6;
 }
 
+//Next tag: 33
 message Cluster {
-    string                    id                               = 1 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"pk"'];
-    string                    name                             = 2 [(gogoproto.moretags) = 'search:"Cluster,store" sql:"unique"'];
-    ClusterType               type                             = 3;
-    map<string, string>       labels                           = 27 [(gogoproto.moretags) = 'search:"Cluster Label"'];
-    string                    main_image                       = 4;
-    string                    collector_image                  = 16;
-    string                    central_api_endpoint             = 5;
-    reserved                                                     6;
-    bool                      runtime_support                  = 7 [deprecated=true];
-    reserved                                                     8;
-    CollectionMethod          collection_method                = 17;
+  string id = 1; // @gotags: search:"Cluster ID,hidden,store" sql:"pk,type(uuid)"
+  string name = 2; // @gotags: search:"Cluster,store" sql:"unique"
+  ClusterType type = 3; // @gotags: search:"Cluster Platform Type"
+  map<string, string> labels = 27; // @gotags: search:"Cluster Label"
+  string main_image = 4;
+  string collector_image = 16;
+  string central_api_endpoint = 5;
+  reserved 6;
+  bool runtime_support = 7 [deprecated = true];
+  reserved 8;
+  CollectionMethod collection_method = 17;
 
-    reserved                                                     9,10,11,12,14;
+  reserved 9, 10, 11, 12, 14;
 
-    bool                      admission_controller             = 13;
-    bool                      admission_controller_updates     = 21;
-    bool                      admission_controller_events      = 25;
+  bool admission_controller = 13;
+  bool admission_controller_updates = 21;
+  bool admission_controller_events = 25;
 
-    ClusterStatus             status                           = 15;
-    DynamicClusterConfig      dynamic_config                   = 18;
-    TolerationsConfig         tolerations_config               = 19;
-    int64                     priority                         = 20;
-    ClusterHealthStatus       health_status                    = 22 [(gogoproto.moretags) = 'sql:"-"'];
-    bool                      slim_collector                   = 23;
-    // The Helm configuration of a cluster is only present in case the cluster is Helm- or Operator-managed.
-    CompleteClusterConfig     helm_config                      = 24;
+  ClusterStatus status = 15;
+  DynamicClusterConfig dynamic_config = 18;
+  TolerationsConfig tolerations_config = 19;
+  int64 priority = 20;
+  ClusterHealthStatus health_status = 22; // @gotags: sql:"-"
+  bool slim_collector = 23;
+  // The Helm configuration of a cluster is only present in case the cluster is Helm- or Operator-managed.
+  CompleteClusterConfig helm_config = 24;
 
-    // most_recent_sensor_id is the current or most recent identification of a successfully connected sensor (if any).
-    SensorDeploymentIdentification most_recent_sensor_id       = 26;
+  // most_recent_sensor_id is the current or most recent identification of a successfully connected sensor (if any).
+  SensorDeploymentIdentification most_recent_sensor_id = 26;
 
-    // For internal use only.
-    map<string, AuditLogFileState> audit_log_state             = 28;
+  // For internal use only.
+  map<string, AuditLogFileState> audit_log_state = 28;
 
-    string                    init_bundle_id                   = 29;
-    ManagerType               managed_by                       = 30;
+  string init_bundle_id = 29;
+  ManagerType managed_by = 30;
+
+  repeated string sensor_capabilities = 31;
+  bool admission_controller_fail_on_error = 32;
 }
 
 enum ManagerType {
-    MANAGER_TYPE_UNKNOWN             = 0;
-    MANAGER_TYPE_MANUAL              = 1;
-    MANAGER_TYPE_HELM_CHART          = 2;
-    MANAGER_TYPE_KUBERNETES_OPERATOR = 3;
+  MANAGER_TYPE_UNKNOWN = 0;
+  MANAGER_TYPE_MANUAL = 1;
+  MANAGER_TYPE_HELM_CHART = 2;
+  MANAGER_TYPE_KUBERNETES_OPERATOR = 3;
 }
 
 message ClusterCertExpiryStatus {
-    google.protobuf.Timestamp sensor_cert_expiry = 1;
-    google.protobuf.Timestamp sensor_cert_not_before = 2;
+  google.protobuf.Timestamp sensor_cert_expiry = 1;
+  google.protobuf.Timestamp sensor_cert_not_before = 2;
 }
 
 message ClusterStatus {
-    string                    sensor_version            = 1;
-    // This field has been deprecated starting release 49.0. Use healthStatus.lastContact instead.
-    google.protobuf.Timestamp DEPRECATED_last_contact   = 2;
-    ProviderMetadata          provider_metadata         = 3;
-    OrchestratorMetadata      orchestrator_metadata     = 4;
-    ClusterUpgradeStatus      upgrade_status            = 5;
-    ClusterCertExpiryStatus   cert_expiry_status        = 6;
+  string sensor_version = 1;
+  // This field has been deprecated starting release 49.0. Use healthStatus.lastContact instead.
+  google.protobuf.Timestamp DEPRECATED_last_contact = 2;
+  ProviderMetadata provider_metadata = 3;
+  OrchestratorMetadata orchestrator_metadata = 4;
+  ClusterUpgradeStatus upgrade_status = 5;
+  ClusterCertExpiryStatus cert_expiry_status = 6;
 }
 
 message ClusterUpgradeStatus {
-    enum Upgradability {
-        UNSET                   = 0;
-        UP_TO_DATE              = 1;
-        MANUAL_UPGRADE_REQUIRED = 2;
-        AUTO_UPGRADE_POSSIBLE   = 3;
-        // SENSOR_VERSION_HIGHER occurs when we detect that the sensor
-        // is running a newer version than this Central. This is unexpected,
-        // but can occur depending on the patches a customer does.
-        // In this case, we will NOT automatically "upgrade" the sensor,
-        // since that would be a downgrade, even if the autoupgrade setting is
-        // on. The user will be allowed to manually trigger the upgrade, but they are
-        // strongly discouraged from doing so without upgrading Central first, since this
-        // is an unsupported configuration.
-        SENSOR_VERSION_HIGHER   = 4;
+  enum Upgradability {
+    UNSET = 0;
+    UP_TO_DATE = 1;
+    MANUAL_UPGRADE_REQUIRED = 2;
+    AUTO_UPGRADE_POSSIBLE = 3;
+    // SENSOR_VERSION_HIGHER occurs when we detect that the sensor
+    // is running a newer version than this Central. This is unexpected,
+    // but can occur depending on the patches a customer does.
+    // In this case, we will NOT automatically "upgrade" the sensor,
+    // since that would be a downgrade, even if the autoupgrade setting is
+    // on. The user will be allowed to manually trigger the upgrade, but they are
+    // strongly discouraged from doing so without upgrading Central first, since this
+    // is an unsupported configuration.
+    SENSOR_VERSION_HIGHER = 4;
+  }
+
+  Upgradability upgradability = 1;
+  string upgradability_status_reason = 2;
+
+  message UpgradeProcessStatus {
+    enum UpgradeProcessType {
+      // UPGRADE represents a sensor version upgrade.
+      UPGRADE = 0;
+      // CERT_ROTATION represents an upgrade process that only rotates the TLS certs
+      // used by the cluster, without changing anything else.
+      CERT_ROTATION = 1;
     }
+    bool active = 1;
 
-    Upgradability   upgradability                = 1;
-    string          upgradability_status_reason  = 2;
+    string id = 2;
+    string target_version = 3; // only relevant if type == Upgrade
+    string upgrader_image = 4;
+    google.protobuf.Timestamp initiated_at = 5;
+    UpgradeProgress progress = 6;
 
-    message UpgradeProcessStatus {
-        enum UpgradeProcessType {
-            // UPGRADE represents a sensor version upgrade.
-            UPGRADE       = 0;
-            // CERT_ROTATION represents an upgrade process that only rotates the TLS certs
-            // used by the cluster, without changing anything else.
-            CERT_ROTATION = 1;
-        }
-        bool active = 1;
+    UpgradeProcessType type = 7;
+  }
 
-        string id                              = 2;
-        string target_version                  = 3; // only relevant if type == Upgrade
-        string upgrader_image                  = 4;
-        google.protobuf.Timestamp initiated_at = 5;
-        UpgradeProgress progress               = 6;
-
-        UpgradeProcessType        type         = 7;
-    }
-
-    // The progress of the current or most recent upgrade, if any,
-    // Note that we don't store any historical data -- the moment
-    // a new upgrade attempt is triggered, we overwrite
-    // information from the previous attempt.
-    UpgradeProcessStatus most_recent_process = 3;
+  // The progress of the current or most recent upgrade, if any,
+  // Note that we don't store any historical data -- the moment
+  // a new upgrade attempt is triggered, we overwrite
+  // information from the previous attempt.
+  UpgradeProcessStatus most_recent_process = 3;
 }
 
 message UpgradeProgress {
-    enum UpgradeState {
-        UPGRADE_INITIALIZING          = 0;
+  enum UpgradeState {
+    UPGRADE_INITIALIZING = 0;
 
-        // In-progress states.
-        UPGRADER_LAUNCHING            = 1;
-        UPGRADER_LAUNCHED             = 2;
-        PRE_FLIGHT_CHECKS_COMPLETE    = 3;
-        UPGRADE_OPERATIONS_DONE       = 4;
+    // In-progress states.
+    UPGRADER_LAUNCHING = 1;
+    UPGRADER_LAUNCHED = 2;
+    PRE_FLIGHT_CHECKS_COMPLETE = 3;
+    UPGRADE_OPERATIONS_DONE = 4;
 
+    // The success state.
+    // PLEASE NUMBER ALL IN-PROGRESS STATES ABOVE THIS
+    // AND ALL ERROR STATES BELOW THIS.
+    UPGRADE_COMPLETE = 10;
 
-        // The success state.
-        // PLEASE NUMBER ALL IN-PROGRESS STATES ABOVE THIS
-        // AND ALL ERROR STATES BELOW THIS.
-        UPGRADE_COMPLETE              = 10;
+    // Error states.
+    UPGRADE_INITIALIZATION_ERROR = 11;
+    PRE_FLIGHT_CHECKS_FAILED = 12;
+    UPGRADE_ERROR_ROLLING_BACK = 13;
+    UPGRADE_ERROR_ROLLED_BACK = 14;
+    UPGRADE_ERROR_ROLLBACK_FAILED = 15;
+    UPGRADE_ERROR_UNKNOWN = 16;
+    UPGRADE_TIMED_OUT = 17;
+  }
 
-
-        // Error states.
-        UPGRADE_INITIALIZATION_ERROR  = 11;
-        PRE_FLIGHT_CHECKS_FAILED      = 12;
-        UPGRADE_ERROR_ROLLING_BACK    = 13;
-        UPGRADE_ERROR_ROLLED_BACK     = 14;
-        UPGRADE_ERROR_ROLLBACK_FAILED = 15;
-        UPGRADE_ERROR_UNKNOWN         = 16;
-        UPGRADE_TIMED_OUT             = 17;
-    }
-
-    UpgradeState upgrade_state         = 1;
-    string       upgrade_status_detail = 2;
-    google.protobuf.Timestamp since    = 3;
+  UpgradeState upgrade_state = 1;
+  string upgrade_status_detail = 2;
+  google.protobuf.Timestamp since = 3;
 }
 
 // AuditLogFileState tracks the last audit log event timestamp and ID that was collected by Compliance
 // For internal use only
 message AuditLogFileState {
-    google.protobuf.Timestamp collect_logs_since = 1;
-    string                    last_audit_id      = 2; // Previously received audit id. May be empty
+  google.protobuf.Timestamp collect_logs_since = 1;
+  string last_audit_id = 2; // Previously received audit id. May be empty
 }
 
 message ClusterHealthStatus {
-    string                    id                               = 9 [(gogoproto.moretags) = 'sql:"pk,fk(Cluster:id),no-fk-constraint"'];
-    enum HealthStatusLabel {
-        UNINITIALIZED = 0;
-        // Only collector can have unavailable status
-        UNAVAILABLE   = 1;
-        UNHEALTHY     = 2;
-        DEGRADED      = 3;
-        HEALTHY       = 4;
-    }
+  string id = 9; // @gotags: sql:"pk,fk(Cluster:id),no-fk-constraint,type(uuid)"
+  enum HealthStatusLabel {
+    UNINITIALIZED = 0;
+    // Only collector can have unavailable status
+    UNAVAILABLE = 1;
+    UNHEALTHY = 2;
+    DEGRADED = 3;
+    HEALTHY = 4;
+  }
 
-    CollectorHealthInfo        collector_health_info            = 1;
-    AdmissionControlHealthInfo admission_control_health_info    = 8;
-    // scanner_health_info is filled when the scanner is deployed on a secured cluster (so called "local scanner").
-    // Please do not confuse this with the default scanner deployment on a central cluster.
-    ScannerHealthInfo          scanner_health_info              = 10;
+  CollectorHealthInfo collector_health_info = 1;
+  AdmissionControlHealthInfo admission_control_health_info = 8;
+  // scanner_health_info is filled when the scanner is deployed on a secured cluster (so called "local scanner").
+  // Please do not confuse this with the default scanner deployment on a central cluster.
+  ScannerHealthInfo scanner_health_info = 10;
 
-    // The following _health_status fields provide aggregated health status of the respective components and are assigned by central.
-    HealthStatusLabel         sensor_health_status              = 2 [(gogoproto.moretags) = 'search:"Sensor Status,store"'];
-    HealthStatusLabel         collector_health_status           = 3 [(gogoproto.moretags) = 'search:"Collector Status,store"'];
+  // The following _health_status fields provide aggregated health status of the respective components and are assigned by central.
+  HealthStatusLabel sensor_health_status = 2; // @gotags: search:"Sensor Status,store"
+  HealthStatusLabel collector_health_status = 3; // @gotags: search:"Collector Status,store"
 
-    HealthStatusLabel         overall_health_status             = 4 [(gogoproto.moretags) = 'search:"Cluster Status,store"'];
-    HealthStatusLabel         admission_control_health_status   = 7 [(gogoproto.moretags) = 'search:"Admission Control Status,store"'];
-    HealthStatusLabel         scanner_health_status             = 11 [(gogoproto.moretags) = 'search:"Scanner Status,store"'];
+  HealthStatusLabel overall_health_status = 4; // @gotags: search:"Cluster Status,store"
+  HealthStatusLabel admission_control_health_status = 7; // @gotags: search:"Admission Control Status,store"
+  HealthStatusLabel scanner_health_status = 11; // @gotags: search:"Scanner Status,store"
 
-    // For sensors not having health capability, this will be filled with gRPC connection poll. Otherwise,
-    // this timestamp will be updated by central pipeline when message is processed
-    google.protobuf.Timestamp last_contact                      = 5 [(gogoproto.moretags) = 'search:"Last Contact,store"'];;
+  // For sensors not having health capability, this will be filled with gRPC connection poll. Otherwise,
+  // this timestamp will be updated by central pipeline when message is processed.
+  //
+  // Note: we use this setting to guard against a specific attack vector during CRS-based cluster registration.
+  // Assuming that a CRS was used to register a cluster A and the CRS is leaked, an attacker shall not be able
+  // to re-run the CRS-flow which would then equip the attacker with a certificate & key issued to the cluster A.
+  // As countermeasure we only allow re-running the CRS-flow only as long as the last_contact field is empty,
+  // indicating that the legit cluster A's sensor has not yet connected with the CRS-issued service certificates.
+  google.protobuf.Timestamp last_contact = 5; // @gotags: search:"Last Contact,store"
 
-    // To track cases such as when sensor is healthy, but collector status data is unavailable because the sensor is on an old version
-    bool                      health_info_complete              = 6;
+  // To track cases such as when sensor is healthy, but collector status data is unavailable because the sensor is on an old version
+  bool health_info_complete = 6;
 
-    // Note that the tags are out of order. The next tag number is 12.
+  // Note that the tags are out of order. The next tag number is 12.
 }
 
 // CollectorHealthInfo carries data about collector deployment but does not include collector health status derived from this data.
 // Aggregated collector health status is not included because it is derived in central and not in the component that
 // first reports CollectorHealthInfo (sensor).
 message CollectorHealthInfo {
-    // This is the version of the collector deamonset as returned by k8s API
-    string version = 1;
+  // This is the version of the collector deamonset as returned by k8s API
+  string version = 1;
 
-    // The following fields are made optional/nullable because there can be errors when trying to obtain them and
-    // the default value of 0 might be confusing with the actual value 0. In case an error happens when trying to obtain
-    // a certain field, it will be absent (instead of having the default value).
+  // The following fields are made optional/nullable because there can be errors when trying to obtain them and
+  // the default value of 0 might be confusing with the actual value 0. In case an error happens when trying to obtain
+  // a certain field, it will be absent (instead of having the default value).
 
-    oneof total_desired_pods_opt {
-        int32  total_desired_pods = 2;
-    }
-    oneof total_ready_pods_opt {
-        int32  total_ready_pods = 3;
-    }
-    oneof total_registered_nodes_opt {
-        int32  total_registered_nodes = 4;
-    }
+  oneof total_desired_pods_opt {
+    int32 total_desired_pods = 2;
+  }
+  oneof total_ready_pods_opt {
+    int32 total_ready_pods = 3;
+  }
+  oneof total_registered_nodes_opt {
+    int32 total_registered_nodes = 4;
+  }
 
-    // Collection of errors that occurred while trying to obtain collector health info.
-    repeated string status_errors = 5;
+  // Collection of errors that occurred while trying to obtain collector health info.
+  repeated string status_errors = 5;
 }
 
 // AdmissionControlHealthInfo carries data about admission control deployment but does not include admission control health status
@@ -322,19 +366,19 @@ message CollectorHealthInfo {
 // Aggregated admission control health status is not included because it is derived in central and not in the component that
 // first reports AdmissionControlHealthInfo (sensor).
 message AdmissionControlHealthInfo {
-    // The following fields are made optional/nullable because there can be errors when trying to obtain them and
-    // the default value of 0 might be confusing with the actual value 0. In case an error happens when trying to obtain
-    // a certain field, it will be absent (instead of having the default value).
+  // The following fields are made optional/nullable because there can be errors when trying to obtain them and
+  // the default value of 0 might be confusing with the actual value 0. In case an error happens when trying to obtain
+  // a certain field, it will be absent (instead of having the default value).
 
-    oneof total_desired_pods_opt {
-        int32  total_desired_pods = 1;
-    }
-    oneof total_ready_pods_opt {
-        int32  total_ready_pods = 2;
-    }
+  oneof total_desired_pods_opt {
+    int32 total_desired_pods = 1;
+  }
+  oneof total_ready_pods_opt {
+    int32 total_ready_pods = 2;
+  }
 
-    // Collection of errors that occurred while trying to obtain admission control health info.
-    repeated string status_errors = 3;
+  // Collection of errors that occurred while trying to obtain admission control health info.
+  repeated string status_errors = 3;
 }
 
 // ScannerHealthInfo represents health info of a scanner instance that is deployed on a secured cluster (so called "local scanner").
@@ -344,23 +388,23 @@ message AdmissionControlHealthInfo {
 // Aggregated scanner health status is not included because it is derived in central and not in the component that
 // first reports ScannerHealthInfo (sensor).
 message ScannerHealthInfo {
-    // The following fields are made optional/nullable because there can be errors when trying to obtain them and
-    // the default value of 0 might be confusing with the actual value 0. In case an error happens when trying to obtain
-    // a certain field, it will be absent (instead of having the default value).
+  // The following fields are made optional/nullable because there can be errors when trying to obtain them and
+  // the default value of 0 might be confusing with the actual value 0. In case an error happens when trying to obtain
+  // a certain field, it will be absent (instead of having the default value).
 
-    oneof total_desired_analyzer_pods_opt {
-        int32 total_desired_analyzer_pods = 1;
-    }
-    oneof total_ready_analyzer_pods_opt {
-        int32 total_ready_analyzer_pods = 2;
-    }
-    oneof total_desired_db_pods_opt {
-        int32 total_desired_db_pods = 3;
-    }
-    oneof total_ready_db_pods_opt {
-        int32 total_ready_db_pods = 4;
-    }
+  oneof total_desired_analyzer_pods_opt {
+    int32 total_desired_analyzer_pods = 1;
+  }
+  oneof total_ready_analyzer_pods_opt {
+    int32 total_ready_analyzer_pods = 2;
+  }
+  oneof total_desired_db_pods_opt {
+    int32 total_desired_db_pods = 3;
+  }
+  oneof total_ready_db_pods_opt {
+    int32 total_ready_db_pods = 4;
+  }
 
-    // Collection of errors that occurred while trying to obtain scanner health info.
-    repeated string status_errors = 5;
+  // Collection of errors that occurred while trying to obtain scanner health info.
+  repeated string status_errors = 5;
 }

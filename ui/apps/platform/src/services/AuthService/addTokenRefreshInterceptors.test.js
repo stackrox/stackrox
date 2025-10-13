@@ -7,7 +7,7 @@ import AccessTokenManager from './AccessTokenManager';
 
 function newAxiosInstance() {
     const instance = axiosGlobal.create();
-    instance.request = jest.fn(); // to make sure we're not making any requests
+    instance.request = vi.fn(); // to make sure we're not making any requests
     return instance;
 }
 
@@ -39,8 +39,8 @@ describe('addTokenRefreshInterceptors', () => {
     it('should retry failed request after ongoing token refresh is finished', () => {
         const axios = newAxiosInstance();
         const m = new AccessTokenManager();
-        m.getRefreshTokenOpPromise = jest.fn().mockResolvedValue();
-        m.refreshToken = jest.fn().mockResolvedValue();
+        m.getRefreshTokenOpPromise = vi.fn().mockResolvedValue();
+        m.refreshToken = vi.fn().mockResolvedValue();
         axios.request = (config) => Promise.resolve(config);
         const handler = addInterceptorAndGetHandler(axios, m);
 
@@ -52,7 +52,7 @@ describe('addTokenRefreshInterceptors', () => {
             .resolves.toMatchObject({ myRequest: true })
             .then(() => {
                 // should not initiate refresh token operation as another one is in progress
-                expect(m.refreshToken).not.toBeCalled();
+                expect(m.refreshToken).not.toHaveBeenCalled();
             });
     });
 
@@ -60,9 +60,9 @@ describe('addTokenRefreshInterceptors', () => {
         const axios = newAxiosInstance();
         axios.request = (config) => Promise.resolve(config);
         const m = new AccessTokenManager();
-        m.refreshToken = jest.fn().mockResolvedValue();
-        m.getToken = jest.fn().mockReturnValueOnce('token2');
-        const extractAccessToken = jest.fn().mockReturnValueOnce('token1');
+        m.refreshToken = vi.fn().mockResolvedValue();
+        m.getToken = vi.fn().mockReturnValueOnce('token2');
+        const extractAccessToken = vi.fn().mockReturnValueOnce('token1');
 
         const handler = addInterceptorAndGetHandler(axios, m, { extractAccessToken });
 
@@ -73,8 +73,8 @@ describe('addTokenRefreshInterceptors', () => {
         return expect(handler.rejected(error))
             .resolves.toMatchObject({ myRequest: true })
             .then(() => {
-                expect(m.refreshToken).not.toBeCalled();
-                expect(extractAccessToken).toBeCalledTimes(1);
+                expect(m.refreshToken).not.toHaveBeenCalled();
+                expect(extractAccessToken).toHaveBeenCalledTimes(1);
             });
     });
 
@@ -82,7 +82,7 @@ describe('addTokenRefreshInterceptors', () => {
         const axios = newAxiosInstance();
         axios.request = (config) => Promise.resolve(config);
         const m = new AccessTokenManager();
-        m.refreshToken = jest.fn().mockResolvedValue();
+        m.refreshToken = vi.fn().mockResolvedValue();
 
         const handler = addInterceptorAndGetHandler(axios, m);
         const error = {
@@ -92,7 +92,7 @@ describe('addTokenRefreshInterceptors', () => {
         return expect(handler.rejected(error))
             .resolves.toMatchObject({ myRequest: true })
             .then(() => {
-                expect(m.refreshToken).toBeCalledTimes(1);
+                expect(m.refreshToken).toHaveBeenCalledTimes(1);
             });
     });
 
@@ -104,8 +104,8 @@ describe('addTokenRefreshInterceptors', () => {
                 config,
             });
         const m = new AccessTokenManager();
-        m.refreshToken = jest.fn().mockResolvedValue();
-        const handleAuthError = jest.fn();
+        m.refreshToken = vi.fn().mockResolvedValue();
+        const handleAuthError = vi.fn();
 
         const handler = addInterceptorAndGetHandler(axios, m, { handleAuthError });
 
@@ -117,12 +117,12 @@ describe('addTokenRefreshInterceptors', () => {
         return expect(handler.rejected(retriedResponseError))
             .rejects.toEqual(retriedResponseError)
             .then(() => {
-                expect(handleAuthError).toBeCalledTimes(1);
+                expect(handleAuthError).toHaveBeenCalledTimes(1);
             });
     });
 
     it('should stall new requests while token is being refreshed', () => {
-        const refreshToken = jest.fn().mockResolvedValue();
+        const refreshToken = vi.fn().mockResolvedValue();
         const m = new AccessTokenManager({ refreshToken });
         const axios = newAxiosInstance();
         addTokenRefreshInterceptors(axios, m);
@@ -143,7 +143,7 @@ describe('addTokenRefreshInterceptors', () => {
     });
 
     it('should not stall request marked for not stalling', () => {
-        const refreshToken = jest.fn().mockResolvedValue();
+        const refreshToken = vi.fn().mockResolvedValue();
         const m = new AccessTokenManager({ refreshToken });
         const axios = newAxiosInstance();
         addTokenRefreshInterceptors(axios, m);
@@ -155,7 +155,7 @@ describe('addTokenRefreshInterceptors', () => {
     });
 
     it('should not stall any requests if the corresponding config options is provided', () => {
-        const refreshToken = jest.fn().mockResolvedValue();
+        const refreshToken = vi.fn().mockResolvedValue();
         const m = new AccessTokenManager({ refreshToken });
         const axios = newAxiosInstance();
         addTokenRefreshInterceptors(axios, m, { doNotStallRequests: true });
@@ -166,7 +166,7 @@ describe('addTokenRefreshInterceptors', () => {
     });
 
     it('should detach the interceptors', () => {
-        const refreshToken = jest.fn().mockResolvedValue();
+        const refreshToken = vi.fn().mockResolvedValue();
         const m = new AccessTokenManager({ refreshToken });
         const axios = newAxiosInstance();
         const detach = addTokenRefreshInterceptors(axios, m);

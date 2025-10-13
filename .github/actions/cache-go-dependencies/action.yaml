@@ -6,19 +6,25 @@ runs:
     - name: Determine Go cache paths
       id: cache-paths
       run: |
-        echo "::set-output name=GOCACHE::$(go env GOCACHE)"
-        echo "::set-output name=GOMODCACHE::$(go env GOMODCACHE)"
+        echo "GOCACHE=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
+        echo "GOMODCACHE=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
+        echo "GOARCH=$(go env GOARCH)" >> "$GITHUB_OUTPUT"
       shell: bash
 
     - name: Cache Go Dependencies
-      uses: actions/cache@v2
+      uses: actions/cache@v4
+      with:
+        path: |
+          ${{ steps.cache-paths.outputs.GOMODCACHE }}
+        key: go-mod-v1-${{ hashFiles('**/go.sum') }}
+
+    - name: Cache Go Build
+      uses: actions/cache@v4
       with:
         path: |
           ${{ steps.cache-paths.outputs.GOCACHE }}
-          ${{ steps.cache-paths.outputs.GOMODCACHE }}
-          /github/home/.cache/go-build
-          /github/home/.cache/golangci-lint
-          /github/home/.cache/staticcheck
-        key: go-v2-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          go-v2-
+        key: go-build-v1-${{ github.job }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ hashFiles('**/go.sum') }}
+
+    - name: Download Go modules
+      run: make deps --always-make
+      shell: bash

@@ -4,11 +4,11 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/deployment/cache"
 	"github.com/stackrox/rox/central/networkgraph/aggregator"
 	graphConfigDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
-	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -16,7 +16,7 @@ type clusterDataStoreImpl struct {
 	storage                 store.ClusterStore
 	networkTreeMgr          networktree.Manager
 	graphConfig             graphConfigDS.DataStore
-	deletedDeploymentsCache expiringcache.Cache
+	deletedDeploymentsCache cache.DeletedDeployments
 }
 
 func (cds *clusterDataStoreImpl) GetFlowStore(ctx context.Context, clusterID string) (FlowDataStore, error) {

@@ -12,6 +12,114 @@
   ],
   "exclusions": [
     {
+      "name": "Don't alert on deployment gcp-cloud-controller-manager in openshift-cloud-controller-manager namespace",
+      "deployment": {
+        "name": "gcp-cloud-controller-manager",
+        "scope": {
+          "namespace": "openshift-cloud-controller-manager"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment gcp-pd-csi-driver-controller in namespace openshift-cluster-csi-drivers",
+      "deployment": {
+        "name": "gcp-pd-csi-driver-controller",
+        "scope": {
+          "namespace": "openshift-cluster-csi-drivers"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment gcp-pd-csi-driver-node in namespace openshift-cluster-csi-drivers",
+      "deployment": {
+        "name": "gcp-pd-csi-driver-node",
+        "scope": {
+          "namespace": "openshift-cluster-csi-drivers"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment machine-approver in namespace openshift-cluster-machine-approver",
+      "deployment": {
+        "name": "machine-approver",
+        "scope": {
+          "namespace": "openshift-cluster-machine-approver"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment ovnkube-master in namespace openshift-ovn-kubernetes",
+      "deployment": {
+        "name": "ovnkube-master",
+        "scope": {
+          "namespace": "openshift-ovn-kubernetes"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment ovnkube-node in namespace openshift-ovn-kubernetes",
+      "deployment": {
+        "name": "ovnkube-node",
+        "scope": {
+          "namespace": "openshift-ovn-kubernetes"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment cluster-cloud-controller-manager-operator in namespace openshift-cloud-controller-manager-operator",
+      "deployment": {
+        "name": "cluster-cloud-controller-manager-operator",
+        "scope": {
+          "namespace": "openshift-cloud-controller-manager-operator"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment node-resolver in namespace openshift-dns",
+      "deployment": {
+        "name": "node-resolver",
+        "scope": {
+          "namespace": "openshift-dns"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment aws-ebs-csi-driver-controller in namespace openshift-cluster-csi-drivers",
+      "deployment": {
+        "name": "aws-ebs-csi-driver-controller",
+        "scope": {
+          "namespace": "openshift-cluster-csi-drivers"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment aws-ebs-csi-driver-node in namespace openshift-cluster-csi-drivers",
+      "deployment": {
+        "name": "aws-ebs-csi-driver-node",
+        "scope": {
+          "namespace": "openshift-cluster-csi-drivers"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment azure-disk-csi-driver-controller in namespace openshift-cluster-csi-drivers",
+      "deployment": {
+        "name": "azure-disk-csi-driver-controller",
+        "scope": {
+          "namespace": "openshift-cluster-csi-drivers"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment azure-disk-csi-driver-node in namespace openshift-cluster-csi-drivers",
+      "deployment": {
+        "name": "azure-disk-csi-driver-node",
+        "scope": {
+          "namespace": "openshift-cluster-csi-drivers"
+        }
+      }
+    },
+    {
       "name": "Don't alert on kube-system namespace",
       "deployment": {
         "scope": {
@@ -121,6 +229,105 @@
       "deployment": {
         "scope": {
           "namespace": "openshift-cluster-node-tuning-operator"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment coredns-ci-ln-*-master-\\d+ in namespace openshift-vsphere-infra",
+      "deployment": {
+        "name": "coredns-ci-ln-.*-master-\\d+",
+        "scope": {
+          "namespace": "openshift-vsphere-infra"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment haproxy-ci-ln-*-master-\\d+ in namespace openshift-vsphere-infra",
+      "deployment": {
+        "name": "haproxy-ci-ln-.*-master-\\d+",
+        "scope": {
+          "namespace": "openshift-vsphere-infra"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment keepalived-ci-ln-*-master-\\d+ in namespace openshift-vsphere-infra",
+      "deployment": {
+        "name": "keepalived-ci-ln-.*-master-\\d+",
+        "scope": {
+          "namespace": "openshift-vsphere-infra"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployments coredns-ci-ln-*-worker-* in namespace openshift-vsphere-infra",
+      "deployment": {
+        "name": "coredns-ci-ln-.*-worker-.*",
+        "scope": {
+          "namespace": "openshift-vsphere-infra"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployments keepalived-ci-ln-*-worker-* in namespace openshift-vsphere-infra",
+      "deployment": {
+        "name": "keepalived-ci-ln-.*-worker-.*",
+        "scope": {
+          "namespace": "openshift-vsphere-infra"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment router-default in namespace openshift-ingress",
+      "deployment": {
+        "name": "router-default",
+        "scope": {
+          "namespace": "openshift-ingress"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment vmware-vsphere-csi-driver-controller in namespace openshift-cluster-csi-drivers",
+      "deployment": {
+        "name": "vmware-vsphere-csi-driver-controller",
+        "scope": {
+          "namespace": "openshift-cluster-csi-drivers"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment vmware-vsphere-csi-driver-node in namespace openshift-cluster-csi-drivers",
+      "deployment": {
+        "name": "vmware-vsphere-csi-driver-node",
+        "scope": {
+          "namespace": "openshift-cluster-csi-drivers"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment network-node-identity in namespace openshift-network-node-identity",
+      "deployment": {
+        "name": "network-node-identity",
+        "scope": {
+          "namespace": "openshift-network-node-identity"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment ovnkube-control-plane in namespace openshift-ovn-kubernetes",
+      "deployment": {
+        "name": "ovnkube-control-plane",
+        "scope": {
+          "namespace": "openshift-ovn-kubernetes"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment aws-cloud-controller-manager in namespace openshift-cloud-controller-manager",
+      "deployment": {
+        "name": "aws-cloud-controller-manager",
+        "scope": {
+          "namespace": "openshift-cloud-controller-manager"
         }
       }
     }

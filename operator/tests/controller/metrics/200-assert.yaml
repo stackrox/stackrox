@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: operator-metrics-no-auth
+status:
+  phase: Succeeded
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: operator-metrics-no-http2
+status:
+  phase: Succeeded
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: operator-metrics-privileged
+status:
+  phase: Succeeded
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: operator-metrics-unprivileged
+status:
+  phase: Succeeded
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+collectors:
+- type: pod
+  selector: test=metrics-access
+  tail: -1
+- command: retry-kubectl.sh describe pod -n $NAMESPACE -l test=metrics-access

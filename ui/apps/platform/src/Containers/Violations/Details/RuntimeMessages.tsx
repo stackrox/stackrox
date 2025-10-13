@@ -1,12 +1,13 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 
-import { ProcessViolation, Violation } from '../types/violationTypes';
+import type { ProcessViolation, Violation } from 'types/alert.proto';
 import ProcessCard from './ProcessCard';
 import NetworkFlowCard from './NetworkFlowCard';
 import K8sCard from './K8sCard';
 
 type RuntimeMessagesProps = {
-    processViolation?: ProcessViolation;
+    processViolation: ProcessViolation | null;
     violations?: Violation[];
 };
 
@@ -14,8 +15,12 @@ function RuntimeMessages({ processViolation, violations }: RuntimeMessagesProps)
     const isPlainViolation = !!violations?.length;
     const plainViolations: ReactElement[] = [];
 
-    violations?.forEach(({ message, networkFlowInfo, time, keyValueAttrs }) => {
-        if (networkFlowInfo) {
+    violations?.forEach((violation) => {
+        const { message } = violation;
+        const time = violation.time ?? '';
+
+        if (violation.type === 'NETWORK_FLOW') {
+            const { networkFlowInfo } = violation;
             plainViolations.push(
                 <NetworkFlowCard
                     key={`${time}-${message}`}
@@ -24,7 +29,8 @@ function RuntimeMessages({ processViolation, violations }: RuntimeMessagesProps)
                     time={time}
                 />
             );
-        } else {
+        } else if (violation.type === 'K8S_EVENT') {
+            const { keyValueAttrs } = violation;
             plainViolations.push(
                 <K8sCard
                     key={`${time}-${message}`}

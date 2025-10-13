@@ -1,112 +1,116 @@
 syntax = "proto3";
 
-option go_package = "v1";
-option java_package = "io.stackrox.proto.api.v1";
+package v1;
 
-import weak "google/api/annotations.proto";
-import "gogoproto/gogo.proto";
-import "storage/compliance.proto";
-import "api/v1/search_service.proto";
 import "api/v1/common.proto";
 import "api/v1/empty.proto";
+import "api/v1/search_service.proto";
+import weak "google/api/annotations.proto";
+import "storage/compliance.proto";
 
-package v1;
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
 
 // Next available tag: 4
 message ComplianceAggregationRequest {
-    repeated storage.ComplianceAggregation.Scope group_by = 1;
-    storage.ComplianceAggregation.Scope          unit     = 2;
+  repeated storage.ComplianceAggregation.Scope group_by = 1;
+  storage.ComplianceAggregation.Scope unit = 2;
 
-    RawQuery where = 3;
+  RawQuery where = 3;
 }
 
 message ComplianceStandardMetadata {
-    enum Scope {
-        UNSET      = 0;
-        CLUSTER    = 1;
-        NAMESPACE  = 2;
-        DEPLOYMENT = 3;
-        NODE       = 4;
-    }
+  enum Scope {
+    UNSET = 0;
+    CLUSTER = 1;
+    NAMESPACE = 2;
+    DEPLOYMENT = 3;
+    NODE = 4;
+  }
 
-    string id                     = 1 [(gogoproto.moretags) = "search:\"Standard ID,hidden\""];
-    string name                   = 2 [(gogoproto.moretags) = "search:\"Standard,store,hidden\""];
-    string description            = 3;
-    int32  num_implemented_checks = 4;
-    repeated Scope scopes         = 5;
-    bool   dynamic                = 6;
+  string id = 1; // @gotags: search:"Standard ID,hidden"
+  string name = 2; // @gotags: search:"Standard,store,hidden"
+  string description = 3;
+  int32 num_implemented_checks = 4;
+  repeated Scope scopes = 5;
+  bool dynamic = 6;
+  bool hideScanResults = 7;
 }
 
 message ComplianceControlGroup {
-    string id                     = 1 [(gogoproto.moretags) = "search:\"Control Group ID\""];
-    string standard_id            = 2 [(gogoproto.moretags) = "search:\"Standard ID,store\""];
-    string name                   = 3 [(gogoproto.moretags) = "search:\"Control Group,store\""];
-    string description            = 4;
-    int32  num_implemented_checks = 5;
+  string id = 1; // @gotags: search:"Control Group ID"
+  string standard_id = 2; // @gotags: search:"Standard ID,store"
+  string name = 3; // @gotags: search:"Control Group,store"
+  string description = 4;
+  int32 num_implemented_checks = 5;
 }
 
 message ComplianceControl {
-    string id          = 1 [(gogoproto.moretags) = "search:\"Control ID,hidden\""];
-    string standard_id = 2 [(gogoproto.moretags) = "search:\"Standard ID,hidden\""];
-    string group_id    = 3 [(gogoproto.moretags) = "search:\"Control Group ID,hidden\""];
-    string name        = 4 [(gogoproto.moretags) = "search:\"Control,store\""];
-    string description = 5;
+  string id = 1; // @gotags: search:"Control ID,hidden"
+  string standard_id = 2; // @gotags: search:"Standard ID,hidden"
+  string group_id = 3; // @gotags: search:"Control Group ID,hidden"
+  string name = 4; // @gotags: search:"Control,store"
+  string description = 5;
 
-    bool implemented           = 6;
-    string interpretation_text = 7;
+  bool implemented = 6;
+  string interpretation_text = 7;
 }
 
 message ComplianceStandard {
-    ComplianceStandardMetadata metadata    = 1;
-    repeated ComplianceControlGroup groups = 2 [(gogoproto.moretags) = "search:\"-\""];
-    repeated ComplianceControl controls    = 3 [(gogoproto.moretags) = "search:\"-\""];
+  ComplianceStandardMetadata metadata = 1;
+  repeated ComplianceControlGroup groups = 2; // @gotags: search:"-"
+  repeated ComplianceControl controls = 3; // @gotags: search:"-"
 }
 
 message GetComplianceStandardResponse {
-    ComplianceStandard standard = 1;
+  ComplianceStandard standard = 1;
 }
 
 message GetComplianceStandardsResponse {
-    repeated ComplianceStandardMetadata standards = 1;
+  repeated ComplianceStandardMetadata standards = 1;
+}
+
+message UpdateComplianceRequest {
+  string id = 1;
+  bool hideScanResults = 2;
 }
 
 message GetComplianceRunResultsRequest {
-    string cluster_id = 1;
-    string standard_id = 2;
+  string cluster_id = 1;
+  string standard_id = 2;
 
-    // Specifies the run ID for which to return results. If empty, the most recent run is returned.
-    // CAVEAT: Setting this field circumvents the results cache on the server-side, which may lead to significantly
-    //         increased memory pressure and decreased performance.
-    string run_id = 3;
+  // Specifies the run ID for which to return results. If empty, the most recent run is returned.
+  // CAVEAT: Setting this field circumvents the results cache on the server-side, which may lead to significantly
+  //         increased memory pressure and decreased performance.
+  string run_id = 3;
 }
 
 message GetComplianceRunResultsResponse {
-    storage.ComplianceRunResults           results     = 1;
-    repeated storage.ComplianceRunMetadata failed_runs = 2;
+  storage.ComplianceRunResults results = 1;
+  repeated storage.ComplianceRunMetadata failed_runs = 2;
 }
 
 service ComplianceService {
-    rpc GetStandards(Empty) returns (GetComplianceStandardsResponse) {
-        option (google.api.http) = {
-            get: "/v1/compliance/standards"
-        };
-    }
+  rpc GetStandards(Empty) returns (GetComplianceStandardsResponse) {
+    option (google.api.http) = {get: "/v1/compliance/standards"};
+  }
 
-    rpc GetStandard(ResourceByID) returns (GetComplianceStandardResponse) {
-        option (google.api.http) = {
-            get: "/v1/compliance/standards/{id}"
-        };
-    }
+  rpc GetStandard(ResourceByID) returns (GetComplianceStandardResponse) {
+    option (google.api.http) = {get: "/v1/compliance/standards/{id}"};
+  }
 
-    rpc GetRunResults(GetComplianceRunResultsRequest) returns (GetComplianceRunResultsResponse) {
-        option (google.api.http) = {
-            get: "/v1/compliance/runresults"
-        };
-    }
+  rpc GetRunResults(GetComplianceRunResultsRequest) returns (GetComplianceRunResultsResponse) {
+    option (google.api.http) = {get: "/v1/compliance/runresults"};
+  }
 
-    rpc GetAggregatedResults(ComplianceAggregationRequest) returns (storage.ComplianceAggregation.Response) {
-        option (google.api.http) = {
-            get: "/v1/compliance/aggregatedresults"
-        };
-    }
+  rpc GetAggregatedResults(ComplianceAggregationRequest) returns (storage.ComplianceAggregation.Response) {
+    option (google.api.http) = {get: "/v1/compliance/aggregatedresults"};
+  }
+
+  rpc UpdateComplianceStandardConfig(UpdateComplianceRequest) returns (Empty) {
+    option (google.api.http) = {
+      patch: "/v1/compliance/standards/{id}"
+      body: "*"
+    };
+  }
 }

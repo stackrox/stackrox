@@ -48,3 +48,22 @@ type nodeScanSemaphoreImpl struct {
 func (n *nodeScanSemaphoreImpl) MaxConcurrentNodeScanSemaphore() *semaphore.Weighted {
 	return n.MaxConcurrentScanSemaphore()
 }
+
+// NodeMatchSemaphore sets the maximum number of concurrent node match operations performed
+type NodeMatchSemaphore interface {
+	MaxConcurrentNodeMatchSemaphore() *semaphore.Weighted
+}
+
+func NewNodeMatchSemaphoreWithValue(val int64) NodeMatchSemaphore {
+	return &nodeMatchSemaphoreImpl{
+		NewSemaphoreWithValue(val),
+	}
+}
+
+type nodeMatchSemaphoreImpl struct {
+	ScanSemaphore
+}
+
+func (n *nodeMatchSemaphoreImpl) MaxConcurrentNodeMatchSemaphore() *semaphore.Weighted {
+	return n.MaxConcurrentScanSemaphore()
+}

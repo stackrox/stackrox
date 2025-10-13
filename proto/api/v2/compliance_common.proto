@@ -1,0 +1,120 @@
+syntax = "proto3";
+
+package v2;
+
+import "api/v2/search_query.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./api/v2;v2";
+option java_package = "io.stackrox.proto.api.v2";
+
+message ComplianceRule {
+  string name = 1;
+  reserved 2;
+  string rule_type = 3;
+  string severity = 4;
+  string standard = 5;
+  string control = 6;
+  string title = 7;
+  string description = 8;
+  string rationale = 9;
+  message Fix {
+    string platform = 1;
+    string disruption = 2;
+  }
+  repeated Fix fixes = 10;
+  string id = 11;
+  string rule_id = 12;
+  string parent_rule = 13;
+  string instructions = 14;
+  string warning = 15;
+}
+
+enum ComplianceCheckStatus {
+  UNSET_CHECK_STATUS = 0;
+  PASS = 1;
+  FAIL = 2;
+  ERROR = 3;
+  INFO = 4;
+  MANUAL = 5;
+  NOT_APPLICABLE = 6;
+  INCONSISTENT = 7;
+}
+
+message ComplianceScanCluster {
+  string cluster_id = 1;
+  string cluster_name = 2;
+}
+
+// Group the number of occurrences by status
+message ComplianceCheckStatusCount {
+  int32 count = 1;
+  ComplianceCheckStatus status = 2;
+}
+
+// Group the number of occurrences by status
+message ComplianceCheckResultStatusCount {
+  string check_name = 1;
+  string rationale = 2;
+  string rule_name = 3;
+  repeated ComplianceCheckStatusCount check_stats = 4;
+  repeated ComplianceControl controls = 5;
+}
+
+message ComplianceControl {
+  string standard = 1;
+  string control = 2;
+}
+
+message ComplianceBenchmark {
+  string name = 1;
+  string version = 2;
+  string description = 3;
+  string provider = 4;
+  // This is extracted from the annotation.
+  // Example: from https://control.compliance.openshift.io/CIS-OCP we should have CIS-OCP
+  string short_name = 5;
+}
+
+// ListComplianceProfileResults provides scan stats overview based on profile
+message ListComplianceProfileResults {
+  repeated ComplianceCheckResultStatusCount profile_results = 1;
+  string profile_name = 2;
+  int32 total_count = 3;
+}
+
+// ComplianceClusterOverallStats provides overall stats for cluster
+message ComplianceClusterOverallStats {
+  ComplianceScanCluster cluster = 1;
+  repeated ComplianceCheckStatusCount check_stats = 2;
+  repeated string cluster_errors = 3;
+  google.protobuf.Timestamp last_scan_time = 4;
+}
+
+// ListComplianceCheckScanStatsResponse provides stats per cluster
+message ListComplianceClusterOverallStatsResponse {
+  repeated ComplianceClusterOverallStats scan_stats = 1;
+  int32 total_count = 2;
+}
+
+message ComplianceProfileResultsRequest {
+  string profile_name = 1;
+  RawQuery query = 2;
+}
+
+message ComplianceProfileCheckRequest {
+  string profile_name = 1;
+  string check_name = 2;
+  RawQuery query = 3;
+}
+
+// Next Tag: 8
+message ComplianceProfileSummary {
+  string name = 1;
+  string product_type = 2;
+  string description = 3;
+  string title = 4;
+  int32 rule_count = 5;
+  string profile_version = 6;
+  repeated ComplianceBenchmark standards = 7;
+}

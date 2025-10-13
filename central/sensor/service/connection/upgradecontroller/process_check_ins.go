@@ -101,11 +101,7 @@ func analyzeUpgraderPodStates(states []*central.UpgradeCheckInFromSensorRequest_
 		return "upgrader pods are waiting to start", true
 	}
 
-	errMsg := relevantErrCond.GetMessage()
-	if relevantErrCond.GetImageRelated() {
-		errMsg = fmt.Sprintf("The upgrader pods have trouble pulling the new image: %s", errMsg)
-	}
-	return errMsg, false
+	return relevantErrCond.GetMessage(), false
 }
 
 func (u *upgradeController) doProcessCheckInFromSensor(req *central.UpgradeCheckInFromSensorRequest) error {
@@ -172,6 +168,5 @@ func (u *upgradeController) doProcessCheckInFromSensor(req *central.UpgradeCheck
 	default:
 		return errors.Errorf("Unknown or malformed upgrade check-in from sensor: %+v", req)
 	}
-
 	return u.setUpgradeProgress(req.GetUpgradeProcessId(), nextState, detail)
 }

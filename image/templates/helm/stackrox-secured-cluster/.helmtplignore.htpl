@@ -1,7 +1,7 @@
 [<- if .KubectlOutput >]
 templates/cluster-config.yaml
-templates/openshift-monitoring.yaml
 templates/00-injected-ca-bundle.yaml
+templates/stackrox-helm-configmap.yaml
 internal/cluster-config.yaml.tpl
 sensor-chart-upgrade.md
 scripts/
@@ -17,16 +17,28 @@ scripts/
 templates/*
 [<- end >]
 [<- end >]
-[< if .ReleaseBuild >]
+[<- if .ReleaseBuild >]
 feature-flag-values.yaml
-[< end >]
+[<- end >]
 *.swp
-[< if .KubectlOutput >]
+[<- if .KubectlOutput >]
 templates/*scanner*
 internal/scanner-config-shape.yaml
 config-templates/scanner/
 values-scanner.yaml.example
+values-public-scanner-v4.yaml.example
+values-private-scanner-v4.yaml.example
 internal/defaults/70-scanner.yaml
-[< end >]
-[</* Ignore tls secret unconditionally in secured cluster because only slim mode is supported */>]
+templates/*scanner-v4*
+internal/*scanner-v4*
+internal/defaults/*scanner-v4*
+config-templates/*scanner-v4*
+values-scanner-v4-indexer.yaml.example
+templates/00-storage-class.yaml
+[<- end >]
+[</* Ignore all matcher related manifests unconditionally in secured cluster. */>]
+templates/02-scanner-v4-*-matcher*.yaml
+[</* Ignore all other scanner related tls secrets unconditionally in secured cluster. */>]
 templates/02-scanner-03-tls-secret.yaml
+templates/02-scanner-v4-03-db-tls-secret.yaml
+templates/02-scanner-v4-03-indexer-tls-secret.yaml

@@ -13,13 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
-	io2 "github.com/stackrox/rox/roxctl/common/io"
+	roxctlio "github.com/stackrox/rox/roxctl/common/io"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func executeUpdateDbCommand(t *testing.T, serverURL string) (*bytes.Buffer, *bytes.Buffer, error) {
+func executeUpdateDBCommand(t *testing.T, serverURL string) (*bytes.Buffer, *bytes.Buffer, error) {
 	tmpFile, errTempFile := os.CreateTemp("", "*.zip")
 	if errTempFile != nil {
 		return nil, nil, errTempFile
@@ -28,11 +28,10 @@ func executeUpdateDbCommand(t *testing.T, serverURL string) (*bytes.Buffer, *byt
 		return os.Remove(tmpFile.Name())
 	})
 
-	testIO, _, stdOut, stdErr := io2.TestIO()
+	testIO, _, stdOut, stdErr := roxctlio.TestIO()
 	env := environment.NewTestCLIEnvironment(t, testIO, printer.DefaultColorPrinter())
 
 	cmd := Command(env)
-	flags.AddTimeout(cmd)
 	flags.AddConnectionFlags(cmd)
 	flags.AddPassword(cmd)
 
@@ -42,7 +41,7 @@ func executeUpdateDbCommand(t *testing.T, serverURL string) (*bytes.Buffer, *byt
 
 	// We are using common.DoHTTPRequestAndCheck200 inside uploadDd(). This
 	// function uses  global variables that are set by command execution.
-	// TODO: Change uploadDd function to use HTTPClient from Environment.
+	// TODO(ROX-13638): Change uploadDB function to use HTTPClient from Environment.
 	cmdArgs := []string{"--insecure-skip-tls-verify", "--insecure", "--endpoint", serverURL, "--password", "test"}
 	cmdArgs = append(cmdArgs, "--scanner-db-file", tmpFile.Name())
 	cmd.SetArgs(cmdArgs)
@@ -57,9 +56,9 @@ func executeUpdateDbCommand(t *testing.T, serverURL string) (*bytes.Buffer, *byt
 
 func TestScannerUploadDbCommand(t *testing.T) {
 	t.Run("file does not exist", func(t *testing.T) {
-		cmdNoFile := scannerUploadDbCommand{filename: "non-existing-filename"}
+		cmdNoFile := scannerUploadDBCommand{filename: "non-existing-filename"}
 
-		actualErr := cmdNoFile.uploadDd()
+		actualErr := cmdNoFile.uploadDB()
 
 		require.Error(t, actualErr)
 		assert.ErrorIs(t, actualErr, fs.ErrNotExist)
@@ -68,12 +67,12 @@ func TestScannerUploadDbCommand(t *testing.T) {
 	t.Run("server error", func(t *testing.T) {
 		expectedErrorStr := "test-server-error"
 		server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-			rw.WriteHeader(http.StatusInternalServerError)
+			rw.WriteHeader(http.StatusBadRequest)
 			_, _ = rw.Write([]byte(expectedErrorStr))
 		}))
 		defer server.Close()
 
-		_, _, err := executeUpdateDbCommand(t, server.URL)
+		_, _, err := executeUpdateDBCommand(t, server.URL)
 
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), expectedErrorStr)
@@ -85,7 +84,7 @@ func TestScannerUploadDbCommand(t *testing.T) {
 		}))
 		defer server.Close()
 
-		stdOut, stdErr, err := executeUpdateDbCommand(t, server.URL)
+		stdOut, stdErr, err := executeUpdateDBCommand(t, server.URL)
 
 		require.Error(t, err)
 		require.NotNil(t, stdOut)
@@ -102,7 +101,7 @@ func TestScannerUploadDbCommand(t *testing.T) {
 		}))
 		defer server.Close()
 
-		stdOut, stdErr, err := executeUpdateDbCommand(t, server.URL)
+		stdOut, stdErr, err := executeUpdateDBCommand(t, server.URL)
 
 		require.NoError(t, err)
 		assert.Empty(t, stdErr.String())

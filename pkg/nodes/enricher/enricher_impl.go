@@ -3,24 +3,33 @@ package enricher
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/nodes/converter"
 	pkgScanners "github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
+var _ NodeEnricher = (*enricherImpl)(nil)
+
+var (
+	log = logging.LoggerForModule()
+)
+
 type enricherImpl struct {
 	cves CVESuppressor
 
-	lock     sync.RWMutex
-	scanners map[string]types.NodeScannerWithDataSource
+	lock sync.RWMutex
 
+	scanners map[string]types.NodeScannerWithDataSource
 	creators map[string]pkgScanners.NodeScannerCreator
 
 	metrics metrics
@@ -49,13 +58,15 @@ func (e *enricherImpl) RemoveNodeIntegration(id string) {
 	delete(e.scanners, id)
 }
 
-// EnrichNode enriches a node with the integration set present.
-func (e *enricherImpl) EnrichNode(node *storage.Node) error {
+// EnrichNodeWithVulnerabilities does vulnerability scanning and sets the result in node.NodeScan.
+// node must not be nil - it is caller's responsibility to ensure this
+// nodeInventory can be nil - in that case it is skipped on scanning
+func (e *enricherImpl) EnrichNodeWithVulnerabilities(node *storage.Node, nodeInventory *storage.NodeInventory, indexReport *v4.IndexReport) error {
 	// Clear any pre-existing notes, as it will all be filled here.
 	// Note: this is valid even if node.Notes is nil.
-	node.Notes = node.Notes[:0]
+	node.Notes = node.GetNotes()[:0]
 
-	err := e.enrichWithScan(node)
+	err := e.enrichWithScan(node, nodeInventory, indexReport)
 	if err != nil {
 		node.Notes = append(node.Notes, storage.Node_MISSING_SCAN_DATA)
 	}
@@ -65,15 +76,24 @@ func (e *enricherImpl) EnrichNode(node *storage.Node) error {
 	return err
 }
 
-func (e *enricherImpl) enrichWithScan(node *storage.Node) error {
+// EnrichNode enriches a node with the integration set present.
+func (e *enricherImpl) EnrichNode(node *storage.Node) error {
+	return e.EnrichNodeWithVulnerabilities(node, nil, nil)
+}
+
+func (e *enricherImpl) enrichWithScan(node *storage.Node, nodeInventory *storage.NodeInventory, indexReport *v4.IndexReport) error {
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning node %s:%s", node.GetClusterName(), node.GetName()))
 
-	e.lock.RLock()
-	scanners := make([]types.NodeScannerWithDataSource, 0, len(e.scanners))
-	for _, scanner := range e.scanners {
-		scanners = append(scanners, scanner)
-	}
-	e.lock.RUnlock()
+	log.Debugf("Enriching Node with Inventory: %t / Index: %t", nodeInventory != nil, indexReport != nil)
+	log.Debugf("Number of known scanners: %d", len(e.scanners))
+
+	scanners := concurrency.WithRLock1(&e.lock, func() []types.NodeScannerWithDataSource {
+		scanners := make([]types.NodeScannerWithDataSource, 0, len(e.scanners))
+		for _, scanner := range e.scanners {
+			scanners = append(scanners, scanner)
+		}
+		return scanners
+	})
 
 	if len(scanners) == 0 {
 		errorList.AddError(errors.New("no node scanners are integrated"))
@@ -81,26 +101,46 @@ func (e *enricherImpl) enrichWithScan(node *storage.Node) error {
 	}
 
 	for _, scanner := range scanners {
-		if err := e.enrichNodeWithScanner(node, scanner.GetNodeScanner()); err != nil {
+		// Prevent unnecessary scanner calls - v4 only works on indexReports, v2/Clairify only on nodeInventory.
+		// If both, indexReport and nodeInventory, are unset, we do not skip to keep the legacy NodeScan v1 working.
+		if (scanner.GetNodeScanner().Type() == types.ScannerV4 && indexReport == nil && nodeInventory != nil) ||
+			(scanner.GetNodeScanner().Type() == types.Clairify && nodeInventory == nil && indexReport != nil) {
+			continue
+		}
+		log.Debugf("Enriching Node with Scanner %s / %s", scanner.GetNodeScanner().Type(), scanner.GetNodeScanner().Name())
+		if err := e.enrichNodeWithScanner(node, nodeInventory, indexReport, scanner.GetNodeScanner()); err != nil {
 			errorList.AddError(err)
 			continue
 		}
-
 		return nil
 	}
 
 	return errorList.ToError()
 }
 
-func (e *enricherImpl) enrichNodeWithScanner(node *storage.Node, scanner types.NodeScanner) error {
+func (e *enricherImpl) enrichNodeWithScanner(node *storage.Node, nodeInventory *storage.NodeInventory, indexReport *v4.IndexReport, scanner types.NodeScanner) error {
 	sema := scanner.MaxConcurrentNodeScanSemaphore()
 	_ = sema.Acquire(context.Background(), 1)
 	defer sema.Release(1)
 
-	scanStartTime := time.Now()
-	scan, err := scanner.GetNodeScan(node)
+	var scan *storage.NodeScan
+	var err error
 
-	e.metrics.SetScanDurationTime(scanStartTime, scanner.Name(), err)
+	scanStartTime := time.Now()
+	if scanner.Type() == types.ScannerV4 {
+		scan, err = scanner.GetNodeInventoryScan(node, nil, indexReport)
+		e.metrics.SetScanDurationTime(scanStartTime, scanner.Name(), err)
+		count := len(indexReport.GetContents().GetPackages())
+		if count == 0 {
+			count = len(indexReport.GetContents().GetPackagesDEPRECATED())
+		}
+		e.metrics.SetNodeInventoryNumberComponents(count, node.GetClusterName(), node.GetName(), scanner.Name())
+	} else {
+		scan, err = scanner.GetNodeInventoryScan(node, nodeInventory, nil)
+		e.metrics.SetScanDurationTime(scanStartTime, scanner.Name(), err)
+		e.metrics.SetNodeInventoryNumberComponents(len(nodeInventory.GetComponents().GetRhelComponents()), node.GetClusterName(), node.GetName(), scanner.Name())
+	}
+
 	if err != nil {
 		return errors.Wrapf(err, "Error scanning '%s:%s' with scanner %q", node.GetClusterName(), node.GetName(), scanner.Name())
 	}
@@ -109,11 +149,9 @@ func (e *enricherImpl) enrichNodeWithScanner(node *storage.Node, scanner types.N
 	}
 
 	node.Scan = scan
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		converter.FillV2NodeVulnerabilities(node)
-		for _, component := range node.GetScan().GetComponents() {
-			component.Vulns = nil
-		}
+	converter.FillV2NodeVulnerabilities(node)
+	for _, component := range node.GetScan().GetComponents() {
+		component.Vulns = nil
 	}
 	FillScanStats(node)
 
@@ -137,45 +175,23 @@ func FillScanStats(n *storage.Node) {
 		var componentTopCVSS float32
 		var hasVulns bool
 
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			for _, v := range c.GetVulnerabilities() {
-				hasVulns = true
-				if _, ok := vulns[v.GetCveBaseInfo().GetCve()]; !ok {
-					vulns[v.GetCveBaseInfo().GetCve()] = false
-				}
-
-				if v.GetCvss() > componentTopCVSS {
-					componentTopCVSS = v.GetCvss()
-				}
-
-				if v.GetSetFixedBy() == nil {
-					continue
-				}
-
-				fixedByProvided = true
-				if v.GetFixedBy() != "" {
-					vulns[v.GetCveBaseInfo().GetCve()] = true
-				}
+		for _, v := range c.GetVulnerabilities() {
+			hasVulns = true
+			if _, ok := vulns[v.GetCveBaseInfo().GetCve()]; !ok {
+				vulns[v.GetCveBaseInfo().GetCve()] = false
 			}
-		} else {
-			for _, v := range c.GetVulns() {
-				hasVulns = true
-				if _, ok := vulns[v.GetCve()]; !ok {
-					vulns[v.GetCve()] = false
-				}
 
-				if v.GetCvss() > componentTopCVSS {
-					componentTopCVSS = v.GetCvss()
-				}
+			if v.GetCvss() > componentTopCVSS {
+				componentTopCVSS = v.GetCvss()
+			}
 
-				if v.GetSetFixedBy() == nil {
-					continue
-				}
+			if v.GetSetFixedBy() == nil {
+				continue
+			}
 
-				fixedByProvided = true
-				if v.GetFixedBy() != "" {
-					vulns[v.GetCve()] = true
-				}
+			fixedByProvided = true
+			if v.GetFixedBy() != "" {
+				vulns[v.GetCveBaseInfo().GetCve()] = true
 			}
 		}
 
@@ -211,4 +227,17 @@ func FillScanStats(n *storage.Node) {
 			FixableCves: numFixableVulns,
 		}
 	}
+}
+
+// nodeScanningOSImagePrefixes lists OsImages prefixes that supports full-host node scanning.
+var nodeScanningOSImagePrefixes = []string{"Red Hat Enterprise Linux CoreOS"}
+
+// SupportsNodeScanning returns if the provided node object supports full host node scanning.
+func SupportsNodeScanning(node *storage.Node) bool {
+	for _, osPrefix := range nodeScanningOSImagePrefixes {
+		if strings.HasPrefix(node.GetOsImage(), osPrefix) {
+			return true
+		}
+	}
+	return false
 }

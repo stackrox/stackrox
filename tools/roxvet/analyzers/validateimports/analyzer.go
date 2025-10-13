@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -19,27 +20,33 @@ const doc = `check that imports are valid`
 const roxPrefix = "github.com/stackrox/rox/"
 
 var (
-	validRoots = []string{
+	// Keep this in alphabetic order.
+	validRoots = set.NewFrozenStringSet(
 		"central",
 		"compliance",
+		"config-controller",
+		"govulncheck",
 		"image",
-		"integration-tests",
 		"migrator",
+		"migrator/migrations",
+		"operator",
 		"pkg",
 		"roxctl",
 		"scale",
-		"sensor/common",
-		"sensor/kubernetes",
-		"sensor/kubernetes/sensor",
+		"scanner",
 		"sensor/admission-control",
-		"sensor/upgrader",
+		"sensor/common",
 		"sensor/debugger",
+		"sensor/init-tls-certs",
+		"sensor/kubernetes",
 		"sensor/tests",
 		"sensor/testutils",
+		"sensor/upgrader",
+		"sensor/utils",
 		"tools",
 		"webhookserver",
-		"operator",
-	}
+		"qa-tests-backend/test-images/syslog",
+	)
 
 	ignoredRoots = []string{
 		"generated",
@@ -52,13 +59,36 @@ var (
 		allowlist   set.StringSet
 	}{
 		"io/ioutil": {
-			replacement: "https://golang.org/doc/go1.18#ioutil",
+			replacement: "https://golang.org/doc/go1.16#ioutil",
 		},
 		"sync": {
 			replacement: "github.com/stackrox/rox/pkg/sync",
 			allowlist: set.NewStringSet(
-				"github.com/stackrox/rox/pkg/bolthelper/crud/proto",
+				// The cacheValue lock used while images are being scanned
+				// is expected to be held longer then 10s, to avoid panics in
+				// dev builds using stdlib sync in the detector instead.
+				"github.com/stackrox/rox/sensor/common/detector",
 			),
+		},
+		"github.com/gogo/protobuf/proto": {
+			replacement: "pkg/proto*",
+			allowlist: set.NewStringSet(
+				"github.com/stackrox/rox/pkg/protocompat",
+				"github.com/stackrox/rox/pkg/protoconv",
+				"github.com/stackrox/rox/pkg/protoutils",
+			),
+		},
+		"github.com/gogo/protobuf/types": {
+			replacement: "pkg/proto*",
+			allowlist: set.NewStringSet(
+				"github.com/stackrox/rox/pkg/protocompat",
+				"github.com/stackrox/rox/pkg/protoconv",
+				"github.com/stackrox/rox/pkg/protoconv/resources",
+				"github.com/stackrox/rox/pkg/protoutils",
+			),
+		},
+		"github.com/golang/mock": {
+			replacement: "go.uber.org/mock",
 		},
 		"github.com/magiconair/properties/assert": {
 			replacement: "github.com/stretchr/testify/assert",
@@ -70,7 +100,13 @@ var (
 			replacement: "a logger",
 		},
 		"github.com/gogo/protobuf/jsonpb": {
-			replacement: "github.com/golang/protobuf/jsonpb",
+			replacement: "google.golang.org/protobuf/encoding/protojson",
+		},
+		"github.com/golang/protobuf/jsonpb": {
+			replacement: "google.golang.org/protobuf/encoding/protojson",
+		},
+		"go.uber.org/goleak": {
+			replacement: "github.com/stackrox/rox/pkg/testutils/goleak",
 		},
 		"k8s.io/helm/...": {
 			replacement: "package from helm.sh/v3",
@@ -80,6 +116,13 @@ var (
 		},
 		"github.com/google/uuid": {
 			replacement: "github.com/stackrox/rox/pkg/uuid",
+			allowlist: set.NewStringSet(
+				// Used by ClairCore as return types.
+				"github.com/stackrox/rox/scanner/datastore/postgres/mocks",
+				"github.com/stackrox/rox/scanner/matcher/updater/vuln",
+				// TODO(ROX-24333): Remove this once ClairCore supports it.
+				"github.com/stackrox/rox/scanner/updater/jsonblob",
+			),
 		},
 	}
 )
@@ -92,6 +135,30 @@ var Analyzer = &analysis.Analyzer{
 	Run:      run,
 }
 
+type allowedPackage struct {
+	path            string
+	excludeChildren bool
+}
+
+func appendPackage(list []*allowedPackage, excludeChildren bool, pkgs ...string) []*allowedPackage {
+	if list == nil {
+		list = make([]*allowedPackage, 0, len(pkgs))
+	}
+
+	for _, pkg := range pkgs {
+		list = append(list, &allowedPackage{path: pkg, excludeChildren: excludeChildren})
+	}
+	return list
+}
+
+func appendPackageWithChildren(list []*allowedPackage, pkgs ...string) []*allowedPackage {
+	return appendPackage(list, false, pkgs...)
+}
+
+func appendPackageWithoutChildren(list []*allowedPackage, pkgs ...string) []*allowedPackage {
+	return appendPackage(list, true, pkgs...)
+}
+
 // Given the package name, get the root directory of the service.
 // (The directory boundary that imports should not cross.)
 func getRoot(packageName string) (root string, valid bool, err error) {
@@ -99,9 +166,10 @@ func getRoot(packageName string) (root string, valid bool, err error) {
 		return "", false, errors.Errorf("Package %s is not part of %s", packageName, roxPrefix)
 	}
 	unqualifiedPackageName := strings.TrimPrefix(packageName, roxPrefix)
-
-	for _, validRoot := range validRoots {
-		if strings.HasPrefix(unqualifiedPackageName, validRoot) {
+	pathElems := strings.Split(unqualifiedPackageName, string(filepath.Separator))
+	for i := len(pathElems); i > 0; i-- {
+		validRoot := strings.Join(pathElems[:i], string(filepath.Separator))
+		if validRoots.Contains(validRoot) {
 			return validRoot, true, nil
 		}
 	}
@@ -122,7 +190,7 @@ func getRoot(packageName string) (root string, valid bool, err error) {
 
 // verifySingleImportFromAllowedPackagesOnly returns true if the given import statement is allowed from the respective
 // source package.
-func verifySingleImportFromAllowedPackagesOnly(spec *ast.ImportSpec, packageName string, importRoot string, allowedPackages ...string) error {
+func verifySingleImportFromAllowedPackagesOnly(spec *ast.ImportSpec, packageName string, importRoot string, allowedPackages ...*allowedPackage) error {
 	impPath, err := strconv.Unquote(spec.Path.Value)
 	if err != nil {
 		return err
@@ -138,12 +206,19 @@ func verifySingleImportFromAllowedPackagesOnly(spec *ast.ImportSpec, packageName
 
 	trimmed := strings.TrimPrefix(impPath, roxPrefix)
 
-	for _, allowedPrefix := range allowedPackages {
-		if strings.HasPrefix(trimmed, allowedPrefix) {
-			return nil
+	packagePaths := make([]string, 0, len(allowedPackages))
+	for _, allowedPackage := range allowedPackages {
+		if strings.HasPrefix(trimmed+"/", allowedPackage.path+"/") {
+			if allowedPackage.excludeChildren && trimmed == allowedPackage.path {
+				return nil
+			}
+			if !allowedPackage.excludeChildren {
+				return nil
+			}
 		}
+		packagePaths = append(packagePaths, allowedPackage.path)
 	}
-	return fmt.Errorf("%s cannot import from %s; only allowed roots are %+v", importRoot, trimmed, allowedPackages)
+	return fmt.Errorf("%s cannot import from %s; only allowed roots are %+v", importRoot, trimmed, packagePaths)
 }
 
 // checkForbidden returns an error if an import has been forbidden and the importing package isn't in the allowlist
@@ -176,19 +251,20 @@ func checkForbidden(impPath, packageName string) error {
 // verifyImportsFromAllowedPackagesOnly verifies that all Go files in (subdirectories of) root
 // only import StackRox code from allowedPackages
 func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.ImportSpec, validImportRoot, packageName string) {
-	allowedPackages := []string{validImportRoot, "generated", "image"}
-	// The migrator is NOT allowed to import all code from pkg except process/id as that pkg is isolated.
-	if validImportRoot != "pkg" && validImportRoot != "migrator" {
-		allowedPackages = append(allowedPackages, "pkg")
+	allowedPackages := []*allowedPackage{{path: validImportRoot}, {path: "generated"}, {path: "image"}}
+	// The migrator is NOT allowed to import all codes from pkg except isolated packages.
+	if validImportRoot != "pkg" && !strings.HasPrefix(validImportRoot, "migrator") {
+		allowedPackages = appendPackageWithChildren(allowedPackages, "pkg")
 	}
-	// Specific sub-packages in pkg that the migrator is allowed to import go here.
+
+	// Specific sub-packages in pkg that the migrator and its sub-packages are allowed to import go here.
 	// Please be VERY prudent about adding to this list, since everything that's added to this list
 	// will need to be protected by strict compatibility guarantees.
-	if validImportRoot == "migrator" {
-		allowedPackages = append(allowedPackages,
+	// Keep this in alphabetic order.
+	if strings.HasPrefix(validImportRoot, "migrator") {
+		allowedPackages = appendPackageWithChildren(allowedPackages,
 			"pkg/auth",
-			"pkg/batcher",
-			"pkg/bolthelper",
+			"pkg/binenc",
 			"pkg/booleanpolicy/policyversion",
 			"pkg/buildinfo",
 			"pkg/concurrency",
@@ -196,43 +272,50 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/cve",
 			"pkg/cvss/cvssv2",
 			"pkg/cvss/cvssv3",
-			"pkg/dackbox",
-			"pkg/dackbox/crud",
-			"pkg/dackbox/raw",
-			"pkg/dackbox/sortedkeys",
-			"pkg/defaults/policies",
-			"pkg/nodes/converter",
 			"pkg/db",
+			"pkg/dberrors",
+			"pkg/dbhelper",
+			"pkg/defaults/policies",
 			"pkg/env",
 			"pkg/errorhelpers",
-			"pkg/features",
+			// DO NOT ADD "pkg/features" to the packages allowed for the migrator.
+			// Migration code should not depend on features being activated or not.
+			// See the migrator README for more details.
 			"pkg/fileutils",
 			"pkg/fsutils",
 			"pkg/grpc/routes",
 			"pkg/images/types",
+			"pkg/ioutils",
+			"pkg/jsonutil",
 			"pkg/logging",
+			"pkg/mathutil",
 			"pkg/metrics",
 			"pkg/migrations",
+			"pkg/nodes/converter",
 			"pkg/policyutils",
-			"pkg/postgres",
+			"pkg/postgres/gorm",
 			"pkg/postgres/pgadmin",
 			"pkg/postgres/pgconfig",
 			"pkg/postgres/pgtest",
 			"pkg/postgres/pgutils",
-			"pkg/postgres/schema",
 			"pkg/postgres/walker",
+			"pkg/probeupload",
+			"pkg/process/normalize",
 			"pkg/process/id",
+			"pkg/protoassert",
+			"pkg/protocompat",
 			"pkg/protoconv",
+			"pkg/protoutils",
 			"pkg/retry",
-			"pkg/rocksdb",
 			"pkg/sac",
-			"pkg/scans",
 			"pkg/scancomponent",
+			"pkg/scans",
 			"pkg/search",
 			"pkg/search/postgres",
 			"pkg/secondarykey",
 			"pkg/set",
 			"pkg/sliceutils",
+			"pkg/stringutils",
 			"pkg/sync",
 			"pkg/testutils",
 			"pkg/timestamp",
@@ -240,29 +323,59 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/uuid",
 			"pkg/version",
 		)
+
+		allowedPackages = appendPackageWithoutChildren(allowedPackages, "pkg/postgres")
+
+		// Migrations shall not depend on current schemas. Each migration can include a copy of the schema before and
+		// after a specific migration.
+		if validImportRoot == "migrator" {
+			allowedPackages = appendPackageWithChildren(allowedPackages, "pkg/postgres/schema")
+		}
+
+		if validImportRoot == "migrator/migrations" {
+			allowedPackages = appendPackageWithChildren(allowedPackages, "migrator")
+		}
 	}
 
 	if validImportRoot == "sensor/debugger" {
-		allowedPackages = append(allowedPackages, "sensor/kubernetes/listener/resources", "sensor/kubernetes/client")
+		allowedPackages = appendPackageWithChildren(allowedPackages, "sensor/kubernetes/listener/resources", "sensor/kubernetes/client", "sensor/common/centralclient")
 	}
 
 	if validImportRoot == "tools" {
-		allowedPackages = append(allowedPackages, "central/globaldb", "central/metrics", "central/postgres", "central/role/resources",
-			"sensor/kubernetes/client", "sensor/kubernetes/fake", "sensor/kubernetes/sensor", "sensor/debugger", "sensor/testutils")
+		allowedPackages = appendPackageWithChildren(allowedPackages,
+			"central/globaldb", "central/metrics", "central/postgres", "pkg/sac/resources",
+			"sensor/common/sensor", "sensor/common/centralclient", "sensor/kubernetes/client", "sensor/common/clusterid",
+			"sensor/kubernetes/fake", "sensor/kubernetes/sensor", "sensor/debugger", "sensor/testutils",
+			"compliance", "compliance/utils", "compliance/node")
 	}
 
 	if validImportRoot == "sensor/kubernetes" {
-		allowedPackages = append(allowedPackages, "sensor/common")
+		allowedPackages = appendPackageWithChildren(allowedPackages, "sensor/common")
+		allowedPackages = appendPackageWithChildren(allowedPackages, "sensor/utils")
 	}
 
 	// Allow scale tests to import some constants from central, to be more DRY.
 	// This is not a problem since none of this code is used in prod anyway.
 	if validImportRoot == "scale" {
-		allowedPackages = append(allowedPackages, "central")
+		allowedPackages = appendPackageWithChildren(allowedPackages, "central")
 	}
 
 	if validImportRoot == "sensor/tests" {
-		allowedPackages = append(allowedPackages, "sensor/common", "sensor/kubernetes", "sensor/debugger", "sensor/testutils")
+		allowedPackages = appendPackageWithChildren(allowedPackages, "sensor/common", "sensor/kubernetes", "sensor/debugger", "sensor/testutils")
+	}
+
+	if validImportRoot == "sensor/common" {
+		// Need this for unit tests.
+		allowedPackages = appendPackageWithChildren(allowedPackages, "sensor/debugger")
+	}
+
+	if validImportRoot == "central" {
+		// Need this for unit tests.
+		allowedPackages = appendPackageWithChildren(allowedPackages, "tests/bad-ca")
+	}
+
+	if validImportRoot == "pkg" {
+		allowedPackages = appendPackageWithChildren(allowedPackages, "operator/api")
 	}
 
 	for _, imp := range imports {

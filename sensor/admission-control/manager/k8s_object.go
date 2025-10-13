@@ -1,7 +1,7 @@
 package manager
 
 import (
-	openshift_appsv1 "github.com/openshift/api/apps/v1"
+	openshiftAppsV1 "github.com/openshift/api/apps/v1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/kubernetes"
@@ -34,17 +34,21 @@ func unmarshalK8sObject(gvk metav1.GroupVersionKind, raw []byte) (k8sutil.Object
 	case kubernetes.ReplicaSet:
 		obj = &apps.ReplicaSet{}
 	case kubernetes.CronJob:
-		obj = &batchV1beta1.CronJob{}
+		if gvk.Version == "v1beta1" {
+			obj = &batchV1beta1.CronJob{}
+		} else {
+			obj = &batchV1.CronJob{}
+		}
 	case kubernetes.Job:
 		obj = &batchV1.Job{}
 	case kubernetes.DeploymentConfig:
-		obj = &openshift_appsv1.DeploymentConfig{}
+		obj = &openshiftAppsV1.DeploymentConfig{}
 	default:
 		return nil, errors.Errorf("currently do not recognize kind %q in admission controller", gvk.Kind)
 	}
 
 	if _, _, err := universalDeserializer.Decode(raw, nil, obj); err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "decoding %s object", gvk.Kind)
 	}
 
 	return obj, nil

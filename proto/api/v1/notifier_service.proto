@@ -1,94 +1,87 @@
 syntax = "proto3";
 
-option go_package = "v1";
-option java_package = "io.stackrox.proto.api.v1";
-
-import weak "google/api/annotations.proto";
-import "api/v1/common.proto";
-import "api/v1/empty.proto";
-import "storage/notifier.proto";
-
 package v1;
 
+import "api/v1/common.proto";
+import "api/v1/empty.proto";
+import weak "google/api/annotations.proto";
+import "storage/notifier.proto";
+
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
+
 message GetNotifiersRequest {
-    reserved 1 to 2; // Removed name and type. The API never respected filtering by name or type, so it was removed.
+  reserved 1 to 2; // Removed name and type. The API never respected filtering by name or type, so it was removed.
 }
 
 message GetNotifiersResponse {
-    repeated storage.Notifier notifiers = 1;
+  repeated storage.Notifier notifiers = 1;
 }
 
 message DeleteNotifierRequest {
-    string id  = 1;
-    bool force = 2;
+  string id = 1;
+  bool force = 2;
 }
 
 message UpdateNotifierRequest {
-    storage.Notifier notifier = 1;
-    // When false, use the stored credentials of an existing notifier configuration given its ID.
-    bool update_password = 2;
+  storage.Notifier notifier = 1;
+  // When false, use the stored credentials of an existing notifier configuration given its ID.
+  bool update_password = 2;
 }
 
 service NotifierService {
+  // GetNotifier returns the notifier configuration given its ID.
+  rpc GetNotifier(ResourceByID) returns (storage.Notifier) {
+    option (google.api.http) = {get: "/v1/notifiers/{id}"};
+  }
 
-    // GetNotifier returns the notifier configuration given its ID.
-    rpc GetNotifier (ResourceByID) returns (storage.Notifier) {
-        option (google.api.http) = {
-            get: "/v1/notifiers/{id}"
-        };
-    }
+  // GetNotifiers returns all notifier configurations.
+  rpc GetNotifiers(GetNotifiersRequest) returns (GetNotifiersResponse) {
+    option (google.api.http) = {get: "/v1/notifiers"};
+  }
 
-    // GetNotifiers returns all notifier configurations.
-    rpc GetNotifiers (GetNotifiersRequest) returns (GetNotifiersResponse) {
-        option (google.api.http) = {
-            get: "/v1/notifiers"
-        };
-    }
+  // PutNotifier modifies a given notifier, without using stored credential reconciliation.
+  rpc PutNotifier(storage.Notifier) returns (Empty) {
+    option (google.api.http) = {
+      put: "/v1/notifiers/{id}"
+      body: "*"
+    };
+  }
 
-    // PutNotifier modifies a given notifier, without using stored credential reconciliation.
-    rpc PutNotifier (storage.Notifier) returns (Empty) {
-        option (google.api.http) = {
-            put: "/v1/notifiers/{id}"
-            body: "*"
-        };
-    }
+  // PostNotifier creates a notifier configuration.
+  rpc PostNotifier(storage.Notifier) returns (storage.Notifier) {
+    option (google.api.http) = {
+      post: "/v1/notifiers"
+      body: "*"
+    };
+  }
 
-    // PostNotifier creates a notifier configuration.
-    rpc PostNotifier (storage.Notifier) returns (storage.Notifier) {
-        option (google.api.http) = {
-            post: "/v1/notifiers"
-            body: "*"
-        };
-    }
+  // TestNotifier checks if a notifier is correctly configured.
+  rpc TestNotifier(storage.Notifier) returns (Empty) {
+    option (google.api.http) = {
+      post: "/v1/notifiers/test"
+      body: "*"
+    };
+  }
 
-    // TestNotifier checks if a notifier is correctly configured.
-    rpc TestNotifier (storage.Notifier) returns (Empty) {
-        option (google.api.http) = {
-            post: "/v1/notifiers/test"
-            body: "*"
-        };
-    }
+  // DeleteNotifier removes a notifier configuration given its ID.
+  rpc DeleteNotifier(DeleteNotifierRequest) returns (Empty) {
+    option (google.api.http) = {delete: "/v1/notifiers/{id}"};
+  }
 
-    // DeleteNotifier removes a notifier configuration given its ID.
-    rpc DeleteNotifier (DeleteNotifierRequest) returns (Empty) {
-        option (google.api.http) = {
-            delete: "/v1/notifiers/{id}"
-        };
-    }
+  // UpdateNotifier modifies a given notifier, with optional stored credential reconciliation.
+  rpc UpdateNotifier(UpdateNotifierRequest) returns (Empty) {
+    option (google.api.http) = {
+      patch: "/v1/notifiers/{notifier.id}"
+      body: "*"
+    };
+  }
 
-    // UpdateNotifier modifies a given notifier, with optional stored credential reconciliation.
-    rpc UpdateNotifier (UpdateNotifierRequest) returns (Empty) {
-        option (google.api.http) = {
-            patch: "/v1/notifiers/{notifier.id}"
-            body: "*"
-        };
-    }
-
-    // TestUpdatedNotifier checks if the given notifier is correctly configured, with optional stored credential reconciliation.
-    rpc TestUpdatedNotifier (UpdateNotifierRequest) returns (Empty) {
-        option (google.api.http) = {
-            post: "/v1/notifiers/test/updated"
-            body: "*"
-        };
-    }
+  // TestUpdatedNotifier checks if the given notifier is correctly configured, with optional stored credential reconciliation.
+  rpc TestUpdatedNotifier(UpdateNotifierRequest) returns (Empty) {
+    option (google.api.http) = {
+      post: "/v1/notifiers/test/updated"
+      body: "*"
+    };
+  }
 }

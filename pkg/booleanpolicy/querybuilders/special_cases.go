@@ -26,12 +26,45 @@ func ForK8sRBAC() QueryBuilder {
 
 // ForDropCaps returns a specific query builder for drop capabilities.
 // Note that here, we always negate -- the user specifies a list of capabilities that _must_ be dropped,
-// so we want to find deployments that don't drop these capabilities.
+// so we want to find deployments that don't drop these capabilities. Deployments that DROP ALL capabilities
+// implicitly drop any capabilities that are specified as values in the policy group.
 func ForDropCaps() QueryBuilder {
 	return queryBuilderFunc(func(group *storage.PolicyGroup) []*query.FieldQuery {
-		return []*query.FieldQuery{{
+		// Do the group values already contain "ALL" as a value"?
+		containsAll := false
+		for _, v := range group.GetValues() {
+			if v.GetValue() == "ALL" {
+				containsAll = true
+			}
+		}
+		var queries []*query.FieldQuery
+		// If values do not contain ALL already, add it, for the implicit case.
+		// If a deployment drops ALL, it drops capabilities that are specified in the values and hence
+		// that deployment must not generate a violation
+		if !containsAll {
+			queries = append(queries, &query.FieldQuery{
+				Field:  search.DropCapabilities.String(),
+				Values: []string{"ALL"},
+				Negate: true,
+			})
+		}
+		queries = append(queries, &query.FieldQuery{
 			Field:    search.DropCapabilities.String(),
 			Negate:   true,
+			Values:   mapValues(group, valueToStringExact),
+			Operator: operatorProtoMap[group.GetBooleanOperator()],
+		})
+
+		return queries
+	})
+}
+
+// ForAddCaps returns a specific query builder for add capabilities.
+// We want to find deployments that add these capabilities.
+func ForAddCaps() QueryBuilder {
+	return queryBuilderFunc(func(group *storage.PolicyGroup) []*query.FieldQuery {
+		return []*query.FieldQuery{{
+			Field:    search.AddCapabilities.String(),
 			Values:   mapValues(group, valueToStringExact),
 			Operator: operatorProtoMap[group.GetBooleanOperator()],
 		}}
@@ -43,6 +76,15 @@ func ForCVE() QueryBuilder {
 	return wrapForVulnMgmt(func(group *storage.PolicyGroup) []*query.FieldQuery {
 		return []*query.FieldQuery{
 			fieldQueryFromGroup(group, search.CVE, valueToStringRegex),
+		}
+	})
+}
+
+// ForNvdCVSS returns a query builder for NVD CVSS scores.
+func ForNvdCVSS() QueryBuilder {
+	return wrapForVulnMgmt(func(group *storage.PolicyGroup) []*query.FieldQuery {
+		return []*query.FieldQuery{
+			fieldQueryFromGroup(group, search.NVDCVSS, nil),
 		}
 	})
 }
@@ -115,6 +157,21 @@ func ForWriteableHostMount() QueryBuilder {
 	})
 }
 
+// ForFixable returns a specific query builder for whether a CVE is fixable or not.
+func ForFixable() QueryBuilder {
+	return wrapForVulnMgmt(func(group *storage.PolicyGroup) []*query.FieldQuery {
+		values := mapValues(group, nil)
+		_, err := strconv.ParseBool(values[0])
+		if err != nil {
+			utils.Should(errors.Wrap(err, "invalid value for fixable criterion"))
+			return nil
+		}
+		return []*query.FieldQuery{
+			fieldQueryFromGroup(group, search.FixedBy, mapFixable),
+		}
+	})
+}
+
 // ForFixedBy returns a query builder specific to the FixedBy field. It's a regular regex field,
 // except that for historic reasons, .* is special-cased and translated to .+.
 func ForFixedBy() QueryBuilder {
@@ -123,6 +180,13 @@ func ForFixedBy() QueryBuilder {
 			fieldQueryFromGroup(group, search.FixedBy, mapFixedByValue),
 		}
 	})
+}
+
+func mapFixable(s string) string {
+	if asBool, _ := strconv.ParseBool(s); asBool {
+		return valueToStringRegex(".+")
+	}
+	return valueToStringRegex("^$")
 }
 
 func mapFixedByValue(s string) string {
@@ -139,8 +203,8 @@ func ForImageSignatureVerificationStatus() QueryBuilder {
 		return []*query.FieldQuery{{
 			Field:    search.ImageSignatureVerifiedBy.String(),
 			Values:   mapValues(group, nil),
-			Operator: operatorProtoMap[group.GetBooleanOperator()],
-			Negate:   !group.Negate,
+			Operator: query.Or,
+			Negate:   true,
 		}}
 	}
 	return queryBuilderFunc(qbf)

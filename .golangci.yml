@@ -1,159 +1,206 @@
+version: "2"
 run:
-  timeout: 16m
-  skip-dirs:
-  - pkg/complianceoperator/api
+  timeout: 240m
+  go: "1.24"
   build-tags:
-  - sql_integration
-
+    - integration
+    - scanner_db_integration
+    - sql_integration
+    - test_e2e
+  modules-download-mode: readonly
 output:
-  format: "junit-xml:report.xml,colored-line-number"
-
-issues:
-  exclude-use-default: false
-
-  exclude-rules:
-    - path: "(central|compliance|integration-tests|local|migrator|operator|pkg|sensor|tests|tools|scale)/"
-      linters:
-        - wrapcheck
-        - forbidigo
-    - path: _test\.go
-      linters:
-        - wrapcheck
-        - forbidigo
-    - path: roxctl/common/io/io\.go # io.go will by default use os.Stdin/os.StdErr.
-      linters:
-        - forbidigo
-    - linters:
-        - revive
-      text: "should have a package comment"
-    - linters:
-        - revive
-      text: "should not use dot imports"
-    - linters:
-        - revive
-      text: "returns unexported type .* which can be annoying to use"
-    - linters:
-        - revive
-      text: "error strings should not be capitalized or end with punctuation or a newline"
-    - linters:
-        - revive
-      text: "should omit type int from declaration"
-    - linters:
-        - revive
-      text: "don't use leading k in Go names"
-    - path: .*/bleve@.*/index\.go
-      linters:
-        - staticcheck
-      text: "SA4023" # github.com/blevesearch/bleve.OpenUsing never returns a nil interface value
-
-
-linters-settings:
-  gosec:
-    includes:
-    - G102
-    - G303
-    - G601
-  revive:
-    min-confidence: 0
-  govet:
-    enable-all: true
-    disable:
-      - shadow
-      - fieldalignment
-    settings:
-      printf: # analyzer name, run `go tool vet help` to see all analyzers
-        funcs: # run `go tool vet help printf` to see available settings for `printf` analyzer
-          - Print
-          - Printf
-          - Println
-          - Debug
-          - Debugf
-          - Info
-          - Infof
-          - Warn
-          - Warnf
-          - Error
-          - Errorf
-          - github.com/stackrox/rox/migrator/log.WritetoStderr
-          - github.com/stackrox/rox/migrator/log.WritetoStderrf     -
-  gocritic:
-    enabled-checks:
-      - commentFormatting
-  nolintlint:
-    allow-leading-space: false # require machine-readable nolint directives (i.e. with no leading space)
-    allow-unused: false # report any unused nolint directives
-    require-explanation: false # don't require an explanation for nolint directives
-    require-specific: true # require nolint directives to be specific about which linter is being skipped
-  forbidigo:
-    # Forbid the following identifiers (list of regexp).
-    forbid:
-    - ^print\(.*\)$
-    - 'fmt\.Print.*(# Disallowed function used\. Use environments functions for printing or to a specific writer from environment\.InputOutput\(\)\.)?'
-    - 'os\.Stdout(# Disallowed output streams used\. Use environment\.InputOutput\(\).Out instead\.)?'
-    - 'os\.Stderr(# Disallowed output streams used\. Use environment\.InputOutput\(\).Out instead\.)?'
-    - 'os\.Stdin(# Disallowed output streams used\. Use environment\.InputOutput\(\).Out instead\.)?'
-  staticcheck:
-    go: "1.18"
-    checks: [all,-ST1000,-ST1001,-ST1003,-ST1005,-SA1019,-SA4001,-ST1016]
-  wrapcheck:
-    ignoreSigRegexps:
-      - utils\.Should
-      - errox\..+\.CausedBy(f)?
-      - retry\.MakeRetryable
-      - policy\.NewErr.*
-
+  formats:
+    text:
+      path: stdout
+    junit-xml:
+      path: report.xml
 linters:
   # please, do not use `enable-all`: it's deprecated and will be removed soon.
   # inverted configuration with `enable-all` and `disable` is not scalable during updates of golangci-lint
-  disable-all: true
+  default: none
   enable:
     - asciicheck
-    # - bodyclose
-    # - deadcode
-    # - depguard
-    # - dogsled
-    # - dupl
-    # - errcheck
-    # - funlen
+    - copyloopvar
+    - errcheck
     - forbidigo
-    # - gochecknoglobals
-    # - gochecknoinits
-    # - gocognit
-    # - goconst
-    - exportloopref
     - gocritic
-    # - gocyclo
-    # - godot
-    # - godox
-    # - goerr113
-    - gofmt
-    - goimports
-    - revive # replaces golint
-    # - gomnd
-    # - goprintffuncname
+    - exptostd
     - gosec
-    - gosimple
     - govet
     - ineffassign
-    # - interfacer
-    # - lll
-    # - maligned
-    # - misspell
-    # - nakedret TODO: add in follow-up
-    # - nestif
     - nolintlint
-    # - prealloc
+    - protogetter
+    - revive # replaces golint
     - rowserrcheck
-    # - scopelint
     - staticcheck
-    # - structcheck
-    # - stylecheck
-    # - testpackage
-    # - typecheck
-    # - unconvert TODO: add in follow-up
-    # - unparam TODO: add in follow-up
-    # - unused
-    # - varcheck
-    # - whitespace
     - wrapcheck
-    # - wsl
+  # - nakedret TODO: add in follow-up
+  # - unconvert TODO: add in follow-up
+  # - unparam TODO: add in follow-up
+  # - unused // enabled in Makefile as it fails with release tag
+    - usestdlibvars
+  settings:
+    errcheck:
+      disable-default-exclusions: false
+      check-type-assertions: false
+      check-blank: false
+      exclude-functions:
+        - (*bytes.Buffer).WriteString
+        - (*strings.Builder).WriteByte
+        - (*strings.Builder).WriteRune
+        - (*strings.Builder).WriteString
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
+        - fmt.Print
+        - fmt.Printf
+        - fmt.Println
+        - github.com/stackrox/rox/pkg/utils.Should
+    forbidigo:
+      forbid:
+        - pattern: ^print\(.*\)$
+        - pattern: fmt\.Print.*(# Disallowed function used\. Use environments functions for printing or to a specific writer from environment\.InputOutput\(\)\.)?
+        - pattern: os\.Stdout(# Disallowed output streams used\. Use environment\.InputOutput\(\).Out instead\.)?
+        - pattern: os\.Stderr(# Disallowed output streams used\. Use environment\.InputOutput\(\).ErrOut instead\.)?
+        - pattern: os\.Stdin(# Disallowed output streams used\. Use environment\.InputOutput\(\).In instead\.)?
+    gocritic:
+      disabled-checks:
+        - appendAssign
+        - argOrder
+        - assignOp
+        - captLocal
+        - dupArg
+        - elseif
+        - exitAfterDefer
+        - ifElseChain
+        - mapKey
+        - singleCaseSwitch
+        - unlambda
+        - wrapperFunc
+    gosec:
+      includes:
+        - G101
+        - G102
+        - G103
+        - G104
+        - G106
+        - G108
+        - G109
+        - G111
+        - G113
+        - G201
+        - G202
+        - G203
+        - G303
+        - G307
+        - G403
+        - G502
+        - G503
+        - G504
+        - G601
+    govet:
+      disable:
+        - shadow
+        - fieldalignment
+      enable-all: true
+      settings:
+        printf:
+          funcs:
+            - Print
+            - Printf
+            - Println
+            - Debug
+            - Debugf
+            - Info
+            - Infof
+            - Warn
+            - Warnf
+            - Error
+            - Errorf
+            - github.com/stackrox/rox/migrator/log.WritetoStderr
+            - github.com/stackrox/rox/migrator/log.WritetoStderrf
+    nolintlint:
+      require-explanation: false
+      require-specific: true
+      allow-unused: false
+    revive:
+      rules:
+        - name: package-comments
+          disabled: true
+        - name: error-strings
+          disabled: true
+        - name: unexported-return
+          disabled: true
+    staticcheck:
+      checks:
+      - all
+      - -QF1001
+      - -QF1002
+      - -QF1003
+      - -QF1006
+      - -QF1007
+      - -QF1008
+      - -QF1009
+      - -QF1011
+      - -QF1012
+      - -SA1019
+      - -SA4001
+      - -ST1000
+      - -ST1001
+      - -ST1003
+      - -ST1005
+      - -ST1017
+      - -ST1019
+      - -ST1020
+      - -ST1021
+      - -ST1022
+      - -ST1023
+    wrapcheck:
+      ignore-sig-regexps:
+        - \(\*github\.com\/stackrox\/rox\/pkg\/errorhelpers\.ErrorList\)\.ToError\(\)
+        - backoff.Retry.*
+        - concurrency\.WithLock.*
+        - errox\..+\.CausedBy(f)?
+        - policy\.NewErr.*
+        - retry\.MakeRetryable
+        - retry\.WithRetry
+        - status\.Error
+        - utils\.Should
+  exclusions:
+    generated: lax
+    rules:
+      - linters:
+          - wrapcheck
+        path: ^(central|compliance|integration-tests|local|migrator|operator|pkg|scanner|sensor/tests/helper|tests|tools|scale)/
+      - linters:
+          - forbidigo
+        path: (central/graphql/schema/print|compliance|integration-tests|local|migrator|operator|pkg|scanner|sensor|tests|tools|scale|govulncheck|compliance/virtualmachines/agent)/
+      - linters:
+          - forbidigo
+        path: roxctl/central/generate/interactive.go
+      - linters:
+          - forbidigo
+          - wrapcheck
+        path: _test\.go
+      - linters:
+          - forbidigo
+        path: roxctl/common/io/io\.go # io.go will by default use os.Stdin/os.StdErr.
+    paths:
+      - pkg/complianceoperator/api
+      - third_party$
+      - builtin$
+      - examples$
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - pkg/complianceoperator/api
+      - third_party$
+      - builtin$
+      - examples$

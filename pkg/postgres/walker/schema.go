@@ -6,13 +6,37 @@ import (
 	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
 	log = logging.LoggerForModule()
+
+	// TODO(ROX-28123): Clean up
+	normalizedSkipMap = set.NewStringSet(
+		v1.SearchCategory_IMAGE_VULNERABILITIES.String(),
+		v1.SearchCategory_COMPONENT_VULN_EDGE.String(),
+		v1.SearchCategory_IMAGE_COMPONENTS.String(),
+		v1.SearchCategory_IMAGE_COMPONENT_EDGE.String(),
+		v1.SearchCategory_IMAGE_VULN_EDGE.String())
+
+	flattenedSkipMap = set.NewStringSet(
+		v1.SearchCategory_IMAGE_VULNERABILITIES_V2.String(),
+		v1.SearchCategory_IMAGE_COMPONENTS_V2.String())
+
+	// TODO(ROX-30117): Clean up
+	normalizedImageSkipMap = set.NewStringSet(
+		v1.SearchCategory_IMAGES.String(),
+	)
+
+	flattenedImageSkipMap = set.NewStringSet(
+		v1.SearchCategory_IMAGES_V2.String(),
+	)
 )
 
 func getSerializedField(s *Schema) Field {
@@ -40,12 +64,14 @@ func getIdxField(s *Schema) Field {
 		},
 		Type:       reflect.TypeOf(0).String(),
 		ColumnName: "idx",
-		DataType:   Integer,
+		DataType:   postgres.Integer,
 		SQLType:    "integer",
 		ModelType:  reflect.TypeOf(0).String(),
 		Options: PostgresOptions{
-			Ignored:    false,
-			Index:      "btree",
+			Ignored: false,
+			Index: []*PostgresIndexOptions{
+				{IndexType: "btree"},
+			},
 			PrimaryKey: true,
 		},
 	}
@@ -125,6 +151,8 @@ type Schema struct {
 	// some categories in cases of overlapping search fields.
 	// This is optional.
 	SearchScope map[v1.SearchCategory]struct{}
+
+	ScopingResource permissions.ResourceMetadata
 }
 
 // TableFieldsGroup is the group of table fields. A slice of this struct can be used where the table order is essential,
@@ -145,6 +173,20 @@ func (s *Schema) SetOptionsMap(optionsMap search.OptionsMap) {
 func (s *Schema) SetSearchScope(searchCategories ...v1.SearchCategory) {
 	s.SearchScope = make(map[v1.SearchCategory]struct{})
 	for _, cat := range searchCategories {
+		// The flattened CVE schema and the original interfere with each other.  We only want
+		// to register the proper search tags depending upon the feature flag.
+		if features.FlattenCVEData.Enabled() && normalizedSkipMap.Contains(cat.String()) {
+			continue
+		}
+		if !features.FlattenCVEData.Enabled() && flattenedSkipMap.Contains(cat.String()) {
+			continue
+		}
+		if features.FlattenImageData.Enabled() && normalizedImageSkipMap.Contains(cat.String()) {
+			continue
+		}
+		if !features.FlattenImageData.Enabled() && flattenedImageSkipMap.Contains(cat.String()) {
+			continue
+		}
 		s.SearchScope[cat] = struct{}{}
 	}
 	for _, c := range s.Children {
@@ -153,7 +195,7 @@ func (s *Schema) SetSearchScope(searchCategories ...v1.SearchCategory) {
 }
 
 // AddFieldWithType adds a field to the schema with the specified data type
-func (s *Schema) AddFieldWithType(field Field, dt DataType, opts PostgresOptions) {
+func (s *Schema) AddFieldWithType(field Field, dt postgres.DataType, opts PostgresOptions) {
 	if !field.Include() {
 		return
 	}
@@ -162,10 +204,10 @@ func (s *Schema) AddFieldWithType(field Field, dt DataType, opts PostgresOptions
 	if opts.ColumnType != "" {
 		field.SQLType = opts.ColumnType
 	} else {
-		field.SQLType = DataTypeToSQLType(dt)
+		field.SQLType = postgres.DataTypeToSQLType(dt)
 	}
 
-	field.ModelType = GetToGormModelType(field.Type, field.DataType)
+	field.ModelType = postgres.GetToGormModelType(field.Type, field.DataType)
 	s.Fields = append(s.Fields, field)
 }
 
@@ -348,7 +390,6 @@ func (s *Schema) ResolveReferences(schemaProvider func(messageTypeName string) *
 		otherTable, columnNameInOtherSchema := referencedSchema.findTableAndColumnName(fieldRef.ProtoBufField)
 		if otherTable == nil || columnNameInOtherSchema == "" {
 			log.Panicf("Couldn't resolve reference in field %+v: no field with protobuf name found", f)
-			continue // This continue will not be hit, it's here because the linter doesn't realize that log.Panic panics.
 		}
 		fieldRef.OtherSchema = otherTable
 		fieldRef.ColumnName = columnNameInOtherSchema
@@ -392,6 +433,11 @@ func (s *Schema) NoPrimaryKey() bool {
 	return len(s.PrimaryKeys()) == 0
 }
 
+// MultiplePrimaryKeys returns true if the current schema have more than 1 primary key defined
+func (s *Schema) MultiplePrimaryKeys() bool {
+	return len(s.PrimaryKeys()) > 1
+}
+
 // SearchField is the parsed representation of the search tag on the struct field
 type SearchField struct {
 	FieldName string
@@ -399,11 +445,19 @@ type SearchField struct {
 	Ignored   bool
 }
 
+// PostgresIndexOptions is the parsed representation of the index subpart of the sql tag in the struct field
+type PostgresIndexOptions struct {
+	IndexName     string
+	IndexType     string
+	IndexCategory string
+	IndexPriority string
+}
+
 // PostgresOptions is the parsed representation of the sql tag on the struct field
 type PostgresOptions struct {
 	ID                     bool
 	Ignored                bool
-	Index                  string
+	Index                  []*PostgresIndexOptions
 	PrimaryKey             bool
 	Unique                 bool
 	IgnorePrimaryKey       bool
@@ -417,6 +471,10 @@ type PostgresOptions struct {
 	// IgnoreChildFKs is an option used to tell the walker that
 	// foreign keys of children of this field should be ignored.
 	IgnoreChildFKs bool
+
+	// IgnoreChildIndexes is an option used to tell the walker that
+	// index options of children of this field should be ignored.
+	IgnoreChildIndexes bool
 }
 
 type foreignKeyRef struct {
@@ -438,6 +496,10 @@ type foreignKeyRef struct {
 	// time.
 	OtherSchema *Schema
 	ColumnName  string
+
+	// If true, the constraint on this foreign key allows for NULL meaning the relationship does not
+	// exist for this row
+	Nullable bool
 }
 
 // FieldInOtherSchema returns the `Field` in the other schema that has the specific column name.
@@ -474,7 +536,7 @@ type Field struct {
 	Type string
 
 	// DataType is the internal type
-	DataType  DataType
+	DataType  postgres.DataType
 	SQLType   string
 	ModelType string
 	Options   PostgresOptions
@@ -488,8 +550,9 @@ type Field struct {
 // DerivedSearchField represents a search field that's derived.
 // It includes the name of the derived field, as well as the derivation type.
 type DerivedSearchField struct {
-	FieldName      string
-	DerivationType search.DerivationType
+	DerivedFrom     string
+	DerivationType  search.DerivationType
+	DerivedDataType postgres.DataType
 }
 
 // Getter returns the path to the object. If variable is true, then the value is just

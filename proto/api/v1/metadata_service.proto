@@ -1,63 +1,138 @@
 syntax = "proto3";
 
-option go_package = "v1";
-option java_package = "io.stackrox.proto.api.v1";
-
-import weak "google/api/annotations.proto";
-import "api/v1/empty.proto";
-
 package v1;
 
+import "api/v1/empty.proto";
+import weak "google/api/annotations.proto";
+import "storage/system_info.proto";
+
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
+
 message Metadata {
-    enum LicenseStatus {
-        NONE = 0 [deprecated = true];
-        INVALID = 1 [deprecated = true];
-        EXPIRED = 2 [deprecated = true];
-        RESTARTING = 3 [deprecated = true];
-        VALID = 4;
-    }
+  enum LicenseStatus {
+    NONE = 0 [deprecated = true];
+    INVALID = 1 [deprecated = true];
+    EXPIRED = 2 [deprecated = true];
+    RESTARTING = 3 [deprecated = true];
+    VALID = 4;
+  }
 
-    string version      = 1;
-    string build_flavor = 2;
-    bool release_build  = 3;
+  string version = 1;
+  string build_flavor = 2;
+  bool release_build = 3;
 
-    // Do not use this field. It will always contain "VALID"
-    LicenseStatus license_status = 4 [deprecated = true];
+  // Do not use this field. It will always contain "VALID"
+  LicenseStatus license_status = 4 [deprecated = true];
 }
 
 message TrustInfo {
-    // holds the certificate chain hold by central
-    repeated bytes cert_chain = 1;
-    // sensor challenge string
-    string sensor_challenge = 2;
-    // central challenge string
-    string central_challenge = 3;
-    // additional CA certs configured in central in DER format
-    repeated bytes additional_cas = 4;
+  // holds the certificate chain held by Central
+  repeated bytes cert_chain = 1;
+  // Sensor challenge string
+  string sensor_challenge = 2;
+  // Central challenge string
+  string central_challenge = 3;
+  // additional CA certs configured in Central in DER format
+  repeated bytes additional_cas = 4;
+  // an optional certificate chain, if Central has a secondary CA
+  repeated bytes secondary_cert_chain = 5;
 }
 
 message TLSChallengeResponse {
-    // signed data which is returned to the caller, is validated against the signature
-    bytes trust_info_serialized = 1;
-    bytes signature = 2;
+  // signed data which is returned to the caller, is validated against the signature
+  bytes trust_info_serialized = 1;
+  // primary signature (by key from TrustInfo.cert_chain[0])
+  bytes signature = 2;
+  // optional signature by key from TrustInfo.secondary_cert_chain[0].
+  bytes signature_secondary_ca = 3;
 }
 
 message TLSChallengeRequest {
-    // generated challenge token by the service asking for TLS certs
-    string challenge_token = 1;
+  // generated challenge token by the service asking for TLS certs
+  string challenge_token = 1;
+}
+
+message DatabaseStatus {
+  enum DatabaseType {
+    Hidden = 0;
+    RocksDB = 1;
+    PostgresDB = 2;
+  }
+
+  // indicates whether or not central can communicate with the database
+  bool database_available = 1;
+  // type of database serving central
+  DatabaseType database_type = 2;
+  // version of the database
+  string database_version = 3;
+  bool database_is_external = 4;
+}
+
+message DatabaseBackupStatus {
+  storage.BackupInfo backup_info = 1;
+}
+
+// Provides availability of certain functionality of Central Services in the current configuration.
+// The initial intended use is to disable certain functionality that does not make sense in the Cloud Service context.
+message CentralServicesCapabilities {
+  enum CapabilityStatus {
+    // CapabilityAvailable means that UI and APIs should be available for users to use.
+    // This does not automatically mean that the functionality is 100% available and any calls to APIs will result
+    // in successful execution. Rather it means that users should be allowed to leverage the functionality as
+    // opposed to CapabilityDisabled when functionality should be blocked.
+    CapabilityAvailable = 0;
+
+    // CapabilityDisabled means the corresponding UI should be disabled and attempts to use related APIs
+    // should lead to errors.
+    CapabilityDisabled = 1;
+  }
+
+  // Ability to use container IAM role for scanning images from Amazon ECR using Scanner deployed as part of Central
+  // Services.
+  // Note that CapabilityAvailable status does not mean that Scanner container actually has IAM role attached. Such
+  // check isn't implemented at the moment and an attempt to use the corresponding setting may lead to errors when
+  // the role is not actually there. It's user's responsibility to check the presence of role and integration status
+  // when the corresponding setting is enabled.
+  CapabilityStatus central_scanning_can_use_container_iam_role_for_ecr = 1;
+
+  // Ability to configure and perform Central backups to Amazon S3 or Google Cloud Storage.
+  CapabilityStatus central_can_use_cloud_backup_integrations = 2;
+
+  // Ability to present health of declarative config resources (e.g. auth providers, roles, access scopes, permission
+  // sets, notifiers) to the user.
+  CapabilityStatus central_can_display_declarative_config_health = 3;
+
+  // Ability to trigger generation of new certificates
+  CapabilityStatus central_can_update_cert = 4;
+
+  // Ability to use integration of type acscsEmail
+  CapabilityStatus central_can_use_acscs_email_integration = 5;
 }
 
 service MetadataService {
+  rpc GetMetadata(Empty) returns (Metadata) {
+    option (google.api.http) = {get: "/v1/metadata"};
+  }
 
-    rpc GetMetadata(Empty) returns (Metadata) {
-        option (google.api.http) = {
-            get: "/v1/metadata"
-        };
-    }
+  // TLSChallenge
+  //
+  // Returns all trusted CAs, i.e., secret/additional-ca and Central's cert
+  // chain. This is necessary if Central is running behind a load balancer
+  // with self-signed certificates. Does not require authentication.
+  rpc TLSChallenge(TLSChallengeRequest) returns (TLSChallengeResponse) {
+    option (google.api.http) = {get: "/v1/tls-challenge"};
+  }
 
-    rpc TLSChallenge(TLSChallengeRequest) returns (TLSChallengeResponse) {
-        option(google.api.http) = {
-            get: "/v1/tls-challenge"
-        };
-    }
+  rpc GetDatabaseStatus(Empty) returns (DatabaseStatus) {
+    option (google.api.http) = {get: "/v1/database/status"};
+  }
+
+  rpc GetDatabaseBackupStatus(Empty) returns (DatabaseBackupStatus) {
+    option (google.api.http) = {get: "/v1/backup/status"};
+  }
+
+  rpc GetCentralCapabilities(Empty) returns (CentralServicesCapabilities) {
+    option (google.api.http) = {get: "/v1/central-capabilities"};
+  }
 }

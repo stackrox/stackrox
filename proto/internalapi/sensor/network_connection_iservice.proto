@@ -1,54 +1,54 @@
 syntax = "proto3";
 
-option go_package = "sensor";
-option cc_enable_arenas = true;
+package sensor;
 
 import "internalapi/sensor/collector.proto";
 import "internalapi/sensor/network_connection_info.proto";
 
-package sensor;
+option cc_enable_arenas = true;
+option go_package = "./internalapi/sensor;sensor";
 
 message NetworkConnectionInfoMessage {
-    oneof msg {
-        CollectorRegisterRequest register = 1;
-        NetworkConnectionInfo info = 2;
-    }
+  oneof msg {
+    CollectorRegisterRequest register = 1;
+    NetworkConnectionInfo info = 2;
+  }
 }
 
 message NetworkFlowsControlMessage {
-    IPAddressList public_ip_addresses = 1;
-    IPNetworkList ip_networks         = 2;
+  IPAddressList public_ip_addresses = 1;
+  IPNetworkList ip_networks = 2;
 }
 
 message IPAddressList {
-    // A list of IPv4 addresses, encoded in correct byte order (i.e., 127.0.0.1 is encoded as 0x7f000001). On a
-    // little-endian system, you must convert to big endian to interpret the value as a binary address.
-    repeated fixed32 ipv4_addresses = 1;
+  // A list of IPv4 addresses, encoded in correct byte order (i.e., 127.0.0.1 is encoded as 0x7f000001). On a
+  // little-endian system, you must convert to big endian to interpret the value as a binary address.
+  repeated fixed32 ipv4_addresses = 1;
 
-    // A list of IPv6 addresses, as uint64 pairs. Each pair is ordered in network order (big endian, i.e., first high,
-    // then low); each uint64 is encoded in the correct byte order and may need to be converted to big endian on little
-    // endian System. E.g., the IPv6 address ::1 (local loopback) is encoded as a `0` uint64 followed by a `1` uint64.
-    // This field must always have an even number of values; otherwise it should be discarded.
-    repeated fixed64 ipv6_addresses = 2;
+  // A list of IPv6 addresses, as uint64 pairs. Each pair is ordered in network order (big endian, i.e., first high,
+  // then low); each uint64 is encoded in the correct byte order and may need to be converted to big endian on little
+  // endian System. E.g., the IPv6 address ::1 (local loopback) is encoded as a `0` uint64 followed by a `1` uint64.
+  // This field must always have an even number of values; otherwise it should be discarded.
+  repeated fixed64 ipv6_addresses = 2;
 }
 
 message IPNetworkList {
-    // A list of IPv4 networks, as a sequence of bytes. First four bytes represent IP followed by the byte representing
-    // the network prefix length. Each sequence encoded in correct byte order (i.e., 127.0.0.1/8 is encoded as 0x7f0000018).
-    // On a little-endian system, you must convert to big endian to interpret the value as a binary address.
-    // This field must always have an 5x number of values; otherwise it should be discarded.
-    bytes ipv4_networks  = 1;
+  // A list of IPv4 networks, as a sequence of bytes. First four bytes represent IP followed by the byte representing
+  // the network prefix length. Each sequence encoded in correct byte order (i.e., 127.0.0.1/8 is encoded as 0x7f0000018).
+  // On a little-endian system, you must convert to big endian to interpret the value as a binary address.
+  // This field must always have an 5x number of values; otherwise it should be discarded.
+  bytes ipv4_networks = 1;
 
-    // A list of IPv6 networks, as a sequence of bytes. First 16 bytes representing IP followed by the byte representing
-    // the network prefix length. Each IP sequence is ordered in network order (big endian, i.e., first high, then low).
-    // Each order is encoded in the correct byte order and may need to be converted to big endian on little endian System.
-    // This field must always have an 17x number of values; otherwise it should be discarded.
-    bytes ipv6_networks  = 2;
+  // A list of IPv6 networks, as a sequence of bytes. First 16 bytes representing IP followed by the byte representing
+  // the network prefix length. Each IP sequence is ordered in network order (big endian, i.e., first high, then low).
+  // Each order is encoded in the correct byte order and may need to be converted to big endian on little endian System.
+  // This field must always have an 17x number of values; otherwise it should be discarded.
+  bytes ipv6_networks = 2;
 }
 
 // A Sensor service that allows Collector to send NetworkConnectionInfo messages
 service NetworkConnectionInfoService {
-    // Note: the response is a stream due to a bug in the C++ GRPC client library. The server is not expected to
-    // send anything via this stream.
-    rpc PushNetworkConnectionInfo (stream NetworkConnectionInfoMessage) returns (stream NetworkFlowsControlMessage);
+  // Note: the response is a stream due to a bug in the C++ GRPC client library. The server is not expected to
+  // send anything via this stream.
+  rpc PushNetworkConnectionInfo(stream NetworkConnectionInfoMessage) returns (stream NetworkFlowsControlMessage);
 }

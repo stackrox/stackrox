@@ -1,3 +1,5 @@
+//go:build test_e2e || test_compatibility
+
 package tests
 
 import (
@@ -12,10 +14,11 @@ import (
 	"time"
 
 	"github.com/cloudflare/cfssl/helpers"
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/tlsutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,9 +33,7 @@ import (
 type authMode int
 
 const (
-	timeout = 30 * time.Second
-
-	portOffset = 10000
+	dialRetries = 3
 
 	userPKIProviderName = "test-userpki"
 )
@@ -49,24 +50,20 @@ var (
 	}
 )
 
-func endpointForTargetPort(targetPort uint16, accessViaLoadBalancer bool) string {
-	if accessViaLoadBalancer {
-		endpointHostname := os.Getenv("API_HOSTNAME")
-		if endpointHostname == "" || endpointHostname == "localhost" {
-			panic(errors.Errorf("API_HOSTNAME=%q env variable is not set correctly", endpointHostname))
-		}
-		return fmt.Sprintf("%s:%d", endpointHostname, targetPort)
+func endpointForTargetPort(targetPort uint16) string {
+	endpointHostname := os.Getenv("API_HOSTNAME")
+	if endpointHostname == "" || endpointHostname == "localhost" {
+		panic(errors.Errorf("API_HOSTNAME=%q env variable is not set correctly", endpointHostname))
 	}
-	return fmt.Sprintf("localhost:%d", targetPort+portOffset)
+	return fmt.Sprintf("%s:%d", endpointHostname, targetPort)
 }
 
 type endpointsTestCase struct {
 	targetPort uint16
 
-	accessViaLoadBalancer bool
-	skipTLS               bool
-	clientCert            *tls.Certificate
-	validServerNames      []string
+	skipTLS          bool
+	clientCert       *tls.Certificate
+	validServerNames []string
 
 	expectConnectFailure bool
 	expectGRPCSuccess    bool
@@ -122,7 +119,7 @@ func (c *endpointsTestContext) tlsConfig(clientCert *tls.Certificate, serverName
 }
 
 func (c *endpointsTestCase) endpoint() string {
-	return endpointForTargetPort(c.targetPort, c.accessViaLoadBalancer)
+	return endpointForTargetPort(c.targetPort)
 }
 
 func (c *endpointsTestCase) Run(t *testing.T, testCtx *endpointsTestContext) {
@@ -140,9 +137,13 @@ func (c *endpointsTestCase) Run(t *testing.T, testCtx *endpointsTestContext) {
 func (c *endpointsTestCase) verifyDialResult(t *testing.T, conn *tls.Conn, err error) {
 	if conn != nil {
 		defer utils.IgnoreError(conn.Close)
+	} else {
+		t.Error("conn is nil")
 	}
 	if err == nil {
-		err = conn.Handshake()
+		ctx, cancel := context.WithTimeoutCause(context.Background(), 2*time.Second, errors.New("TLS handshake timeout"))
+		defer cancel()
+		err = conn.HandshakeContext(ctx)
 	}
 
 	if !c.expectConnectFailure {
@@ -154,9 +155,7 @@ func (c *endpointsTestCase) verifyDialResult(t *testing.T, conn *tls.Conn, err e
 		_ = conn.SetReadDeadline(time.Now().Add(timeout))
 		_, err = conn.Read(make([]byte, 1))
 	}
-	if assert.Error(t, err, "expected an error after TLS handshake") {
-		assert.Equalf(t, err.Error(), "remote error: tls: bad certificate", "expected a bad certificate error after handshake, got: %v", err)
-	}
+	assert.EqualErrorf(t, err, "remote error: tls: certificate required", "expected a bad certificate error after handshake")
 }
 
 func (c *endpointsTestCase) runConnectionTest(t *testing.T, testCtx *endpointsTestContext) {
@@ -176,31 +175,48 @@ func (c *endpointsTestCase) runConnectionTest(t *testing.T, testCtx *endpointsTe
 	defaultServerName := c.validServerNames[0]
 
 	tlsConf := testCtx.tlsConfig(c.clientCert, defaultServerName, false)
-	conn, err := tls.DialWithDialer(&dialer, "tcp", c.endpoint(), tlsConf)
+	conn, err := c.tlsDialWithRetry(tlsConf)
 	c.verifyDialResult(t, conn, err)
 
 	// Test connecting with all valid server names
 	for _, serverName := range c.validServerNames {
 		tlsConf := testCtx.tlsConfig(c.clientCert, serverName, true)
-		conn, err := tls.DialWithDialer(&dialer, "tcp", c.endpoint(), tlsConf)
+		conn, err := c.tlsDialWithRetry(tlsConf)
 		c.verifyDialResult(t, conn, err)
 	}
 
 	// Test connecting with all invalid server names
 	invalidServerNames := set.NewStringSet(testCtx.allServerNames...)
 	invalidServerNames.RemoveAll(c.validServerNames...)
+	nameErr := &x509.HostnameError{}
 	for serverName := range invalidServerNames {
-		tlsConf := testCtx.tlsConfig(c.clientCert, serverName, true)
-		conn, err := tls.DialWithDialer(&dialer, "tcp", c.endpoint(), tlsConf)
+		testDialer := tls.Dialer{
+			NetDialer: &dialer,
+			Config:    testCtx.tlsConfig(c.clientCert, serverName, true),
+		}
+		conn, err := tlsutils.DialContextWithRetriesWithDialer(context.Background(), testDialer, "tcp", c.endpoint())
 		if conn != nil {
 			_ = conn.Close()
 		}
-		_, ok := err.(x509.HostnameError)
-		assert.True(t, ok, "expected error to be of type x509.HostnameError, was: %T (%v)", err, err)
+		require.Error(t, err)
+		assert.ErrorAs(t, err, nameErr, "expected error to be of type x509.HostnameError, was: %T (%v)", err, err)
 	}
 }
 
-func (c *endpointsTestCase) verifyAuthStatus(t *testing.T, testCtx *endpointsTestContext, authStatus *v1.AuthStatus) {
+func (c *endpointsTestCase) tlsDialWithRetry(tlsConf *tls.Config) (conn *tls.Conn, err error) {
+	for i := 0; i < dialRetries; i++ {
+		conn, err = tls.DialWithDialer(&dialer, "tcp", c.endpoint(), tlsConf)
+		if err == nil {
+			return
+		}
+		if c.expectConnectFailure {
+			return
+		}
+	}
+	return
+}
+
+func (c *endpointsTestCase) verifyAuthStatus(t *testing.T, _ *endpointsTestContext, authStatus *v1.AuthStatus) {
 	switch id := authStatus.GetId().(type) {
 	case *v1.AuthStatus_ServiceId:
 		assert.Equal(t, serviceAuth, c.expectAuth, "got service ID from auth status, expected this to be a service client")
@@ -228,15 +244,15 @@ func (c *endpointsTestCase) runGRPCTest(t *testing.T, testCtx *endpointsTestCont
 		defer utils.IgnoreError(conn.Close)
 	}
 
-	mdClient := v1.NewMetadataServiceClient(conn)
+	pingClient := v1.NewPingServiceClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	_, err = mdClient.GetMetadata(ctx, &v1.Empty{})
+	_, err = pingClient.Ping(ctx, &v1.Empty{})
 	if !c.expectGRPCSuccess {
-		assert.Error(t, err, "expected GetMetadata request to fail")
+		assert.Error(t, err, "expected Ping request to fail")
 		return
 	}
-	assert.NoError(t, err, "expected GetMetadata request to succeed")
+	assert.NoError(t, err, "expected ping request to succeed")
 
 	authClient := v1.NewAuthServiceClient(conn)
 	ctx, cancel = context.WithTimeout(context.Background(), timeout)
@@ -267,7 +283,7 @@ func (c *endpointsTestCase) runHTTPTest(t *testing.T, testCtx *endpointsTestCont
 		if useHTTP2 {
 			transport = &http2.Transport{
 				AllowHTTP: true,
-				DialTLS: func(network string, _ string, _ *tls.Config) (net.Conn, error) {
+				DialTLSContext: func(ctx context.Context, network string, _ string, _ *tls.Config) (net.Conn, error) {
 					return dialer.Dial(network, c.endpoint())
 				},
 			}
@@ -278,7 +294,7 @@ func (c *endpointsTestCase) runHTTPTest(t *testing.T, testCtx *endpointsTestCont
 		tlsConfig := testCtx.tlsConfig(c.clientCert, targetHost, true)
 		if useHTTP2 {
 			transport = &http2.Transport{
-				DialTLS: func(network string, _ string, tlsConf *tls.Config) (net.Conn, error) {
+				DialTLSContext: func(ctx context.Context, network string, _ string, tlsConf *tls.Config) (net.Conn, error) {
 					return tls.Dial(network, c.endpoint(), tlsConf)
 				},
 				TLSClientConfig: tlsConfig,
@@ -286,7 +302,7 @@ func (c *endpointsTestCase) runHTTPTest(t *testing.T, testCtx *endpointsTestCont
 		} else {
 			transport = &http.Transport{
 				DialTLSContext: func(ctx context.Context, network, _ string) (net.Conn, error) {
-					return (&tls.Dialer{Config: tlsConfig}).DialContext(ctx, network, c.endpoint())
+					return tlsutils.DialContextWithRetries(ctx, network, c.endpoint(), tlsConfig)
 				},
 			}
 		}
@@ -297,23 +313,27 @@ func (c *endpointsTestCase) runHTTPTest(t *testing.T, testCtx *endpointsTestCont
 		Timeout:   timeout,
 	}
 
-	resp, err := client.Get(fmt.Sprintf("%s://%s/v1/metadata", scheme, targetHost))
+	resp, err := client.Get(fmt.Sprintf("%s://%s/v1/ping", scheme, targetHost))
 	if resp != nil {
 		defer utils.IgnoreError(resp.Body.Close)
 	}
 	if !c.expectHTTPSuccess {
 		// If we're in this branch, that means we're speaking to a gRPC-only server, which cannot handle normal HTTP
 		// requests.
-		assert.Error(t, err, "expected HTTP request to fail at the transport level")
+		if resp == nil {
+			assert.Error(t, err, "expected HTTP request to fail at the transport level")
+		} else {
+			assert.Equal(t, http.StatusUnsupportedMediaType, resp.StatusCode, "expected HTTP request to fail")
+		}
 		return
 	}
 	if !assert.NoError(t, err, "expected HTTP request to succeed at the transport level") {
 		return
 	}
 
-	assert.Equal(t, http.StatusOK, resp.StatusCode, "expected 200 status code for metadata request")
-	var md v1.Metadata
-	assert.NoError(t, jsonpb.Unmarshal(resp.Body, &md), "expected response for metadata request to be unmarshalable into metadata PB")
+	assert.Equal(t, http.StatusOK, resp.StatusCode, "expected 200 status code for ping request")
+	var pong v1.PongMessage
+	assert.NoError(t, jsonutil.JSONReaderToProto(resp.Body, &pong), "expected response for ping request to be unmarshalable into Pong protobuf")
 
 	resp, err = client.Get(fmt.Sprintf("%s://%s/v1/auth/status", scheme, targetHost))
 	if !assert.NoError(t, err, "expected HTTP request to succeed at the transport level") {
@@ -327,34 +347,37 @@ func (c *endpointsTestCase) runHTTPTest(t *testing.T, testCtx *endpointsTestCont
 	}
 
 	var authStatus v1.AuthStatus
-	if !assert.NoError(t, jsonpb.Unmarshal(resp.Body, &authStatus), "expected response for auth status request to be unmarshalable into auth status PB") {
+	if !assert.NoError(t, jsonutil.JSONReaderToProto(resp.Body, &authStatus), "expected response for auth status request to be unmarshalable into auth status PB") {
 		return
 	}
 	c.verifyAuthStatus(t, testCtx, &authStatus)
 }
 
 func TestEndpoints(t *testing.T) {
-	userCert, err := tls.LoadX509KeyPair(os.Getenv("CLIENT_CERT_PATH"), os.Getenv("CLIENT_KEY_PATH"))
+	if os.Getenv("ORCHESTRATOR_FLAVOR") == "openshift" {
+		t.Skip("Skipping endpoints test on OCP: TODO(ROX-24688)")
+	}
+	userCert, err := tls.LoadX509KeyPair(mustGetEnv(t, "CLIENT_CERT_PATH"), mustGetEnv(t, "CLIENT_KEY_PATH"))
 	require.NoError(t, err, "failed to load user certificate")
 
-	serviceCert, err := tls.LoadX509KeyPair(os.Getenv("SERVICE_CERT_FILE"), os.Getenv("SERVICE_KEY_FILE"))
+	serviceCert, err := tls.LoadX509KeyPair(mustGetEnv(t, "SERVICE_CERT_FILE"), mustGetEnv(t, "SERVICE_KEY_FILE"))
 	require.NoError(t, err, "failed to load service certificate")
 
 	trustPool := x509.NewCertPool()
-	serviceCAPEMBytes, err := os.ReadFile(os.Getenv("SERVICE_CA_FILE"))
+	serviceCAPEMBytes, err := os.ReadFile(mustGetEnv(t, "SERVICE_CA_FILE"))
 	require.NoError(t, err, "failed to load service CA file")
 	serviceCACert, err := helpers.ParseCertificatePEM(serviceCAPEMBytes)
 	require.NoError(t, err, "failed to parse service CA cert")
 	trustPool.AddCert(serviceCACert)
 
-	defaultCAPEMBytes, err := os.ReadFile(os.Getenv("DEFAULT_CA_FILE"))
+	defaultCAPEMBytes, err := os.ReadFile(mustGetEnv(t, "DEFAULT_CA_FILE"))
 	require.NoError(t, err, "failed to load default CA file")
 	defaultCACert, err := helpers.ParseCertificatePEM(defaultCAPEMBytes)
 	require.NoError(t, err, "failed to parse default CA cert")
 	trustPool.AddCert(defaultCACert)
 
 	defaultCertDNSName := os.Getenv("ROX_TEST_CENTRAL_CN")
-	require.NotEmpty(t, defaultCertDNSName, "missing default certificate DNS name")
+	require.NotEmpty(t, defaultCertDNSName, "missing default certificate DNS name: $ROX_TEST_CENTRAL_CN")
 
 	testCtx := &endpointsTestContext{
 		allServerNames: []string{defaultCertDNSName, "central.stackrox"},
@@ -443,29 +466,26 @@ func TestEndpoints(t *testing.T) {
 			expectHTTPSuccess: true,
 		},
 		"http-only TLS port with no client cert": {
-			targetPort:            8446,
-			validServerNames:      testCtx.allServerNames,
-			expectGRPCSuccess:     false,
-			expectHTTPSuccess:     true,
-			accessViaLoadBalancer: true,
+			targetPort:        8446,
+			validServerNames:  testCtx.allServerNames,
+			expectGRPCSuccess: false,
+			expectHTTPSuccess: true,
 		},
 		"http-only TLS port with service client cert": {
-			targetPort:            8446,
-			validServerNames:      testCtx.allServerNames,
-			clientCert:            &serviceCert,
-			expectAuth:            serviceAuth,
-			expectGRPCSuccess:     false,
-			expectHTTPSuccess:     true,
-			accessViaLoadBalancer: true,
+			targetPort:        8446,
+			validServerNames:  testCtx.allServerNames,
+			clientCert:        &serviceCert,
+			expectAuth:        serviceAuth,
+			expectGRPCSuccess: false,
+			expectHTTPSuccess: true,
 		},
 		"http-only TLS port with user client cert": {
-			targetPort:            8446,
-			validServerNames:      testCtx.allServerNames,
-			clientCert:            &userCert,
-			expectAuth:            userAuth,
-			expectGRPCSuccess:     false,
-			expectHTTPSuccess:     true,
-			accessViaLoadBalancer: true,
+			targetPort:        8446,
+			validServerNames:  testCtx.allServerNames,
+			clientCert:        &userCert,
+			expectAuth:        userAuth,
+			expectGRPCSuccess: false,
+			expectHTTPSuccess: true,
 		},
 		"grpc-only client-auth required TLS port with no client cert": {
 			targetPort:           8447,

@@ -3,8 +3,11 @@ package centralsensor
 import (
 	"context"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+	metautils "github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 const (
@@ -18,14 +21,15 @@ const (
 // legacy sensor info outgoing metadata in the given context. It does *not* indicate that the client wants to send
 // a SensorHello message.
 func AppendSensorHelloInfoToOutgoingMetadata(ctx context.Context, hello *central.SensorHello) (context.Context, error) {
-	ctx = appendCapsInfoToContext(ctx, CapSetFromStringSlice(hello.GetCapabilities()...))
+	ctx = appendCapsInfoToContext(ctx, set.NewSet(sliceutils.
+		FromStringSlice[SensorCapability](hello.GetCapabilities()...)...))
 	return appendSensorVersionInfoToContext(ctx, hello.GetSensorVersion())
 }
 
 // DeriveSensorHelloFromIncomingMetadata derives a SensorHello message from incoming sensor metadata in a legacy
 // fashion (i.e., without an explicit message exchange).
 // Note: Even when this function returns an error, it will still return a partially populated SensorHello message.
-func DeriveSensorHelloFromIncomingMetadata(md metautils.NiceMD) (*central.SensorHello, error) {
+func DeriveSensorHelloFromIncomingMetadata(md metautils.MD) (*central.SensorHello, error) {
 	sensorHello := &central.SensorHello{}
 
 	versionInfo, versionErr := deriveSensorVersionInfo(md)
@@ -33,6 +37,13 @@ func DeriveSensorHelloFromIncomingMetadata(md metautils.NiceMD) (*central.Sensor
 		sensorHello.SensorVersion = versionInfo.MainVersion
 	}
 
-	sensorHello.Capabilities = CapSetToStringSlice(extractCapsFromMD(md))
+	sensorHello.Capabilities = sliceutils.StringSlice(extractCapsFromMD(md).AsSlice()...)
 	return sensorHello, versionErr
+}
+
+// SecuredClusterIsNotManagedManually returns true if the cluster is not manually managed
+// (i.e., it is managed by Helm or by the Operator)
+func SecuredClusterIsNotManagedManually(helmManagedConfig *central.HelmManagedConfigInit) bool {
+	return helmManagedConfig.GetManagedBy() != storage.ManagerType_MANAGER_TYPE_UNKNOWN &&
+		helmManagedConfig.GetManagedBy() != storage.ManagerType_MANAGER_TYPE_MANUAL
 }

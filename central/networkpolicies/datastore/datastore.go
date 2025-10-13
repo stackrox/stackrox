@@ -4,27 +4,18 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store"
-	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/bolt"
-	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/postgres"
+	pgStore "github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore"
 	undoDeploymentPostgres "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore/postgres"
-	undoDeploymentRocksDB "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore/rocksdb"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore"
-	undobolt "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore/bolt"
 	undopostgres "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore/postgres"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
-	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
-	"go.etcd.io/bbolt"
-)
-
-var (
-	log = logging.LoggerForModule()
+	"github.com/stackrox/rox/pkg/postgres"
 )
 
 // UndoDataStore provides storage functionality for the undo records resulting from policy application.
+//
 //go:generate mockgen-wrapper
 type UndoDataStore interface {
 	GetUndoRecord(ctx context.Context, clusterID string) (*storage.NetworkPolicyApplicationUndoRecord, bool, error)
@@ -32,6 +23,7 @@ type UndoDataStore interface {
 }
 
 // DataStore provides storage functionality for network policies.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	GetNetworkPolicy(ctx context.Context, id string) (*storage.NetworkPolicy, bool, error)
@@ -47,13 +39,14 @@ type DataStore interface {
 
 // UndoDeploymentDataStore provides storage functionality for the undo deployment records resulting
 // from policy application.
+//
 //go:generate mockgen-wrapper
 type UndoDeploymentDataStore interface {
 	GetUndoDeploymentRecord(ctx context.Context, deploymentID string) (*storage.NetworkPolicyApplicationUndoDeploymentRecord, bool, error)
 	UpsertUndoDeploymentRecord(ctx context.Context, undoRecord *storage.NetworkPolicyApplicationUndoDeploymentRecord) error
 }
 
-// New returns a new Store instance using the provided bolt DB instance.
+// New returns a new Store instance using the provided DB instance.
 func New(storage store.Store, undoStorage undostore.UndoStore, undoDeploymentStorage undodeploymentstore.UndoDeploymentStore) DataStore {
 	return &datastoreImpl{
 		storage:               storage,
@@ -63,20 +56,9 @@ func New(storage store.Store, undoStorage undostore.UndoStore, undoDeploymentSto
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool *pgxpool.Pool) (DataStore, error) {
-	dbstore := postgres.New(pool)
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error) {
+	dbstore := pgStore.New(pool)
 	undodbstore := undopostgres.New(pool)
 	undodeploymentdbstore := undoDeploymentPostgres.New(pool)
-	return New(dbstore, undodbstore, undodeploymentdbstore), nil
-}
-
-// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveDataStore(_ *testing.T, rocksengine *rocksdbBase.RocksDB, boltengine *bbolt.DB) (DataStore, error) {
-	dbstore := bolt.New(boltengine)
-	undodbstore := undobolt.New(boltengine)
-	undodeploymentdbstore, err := undoDeploymentRocksDB.New(rocksengine)
-	if err != nil {
-		return nil, err
-	}
 	return New(dbstore, undodbstore, undodeploymentdbstore), nil
 }

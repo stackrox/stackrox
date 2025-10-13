@@ -34,19 +34,45 @@ def blank_import(data):
     if blanks[-1] == num - 1:
         blanks.pop(-1)
 
+def check_imports(data):
+    # We only tolerate blank lines between first and third party imports, as well as blank (_) imports
+    s_line = data.get('line', '').lstrip()
+    import_state = data.get('import_state', TPIMPORTS)
+    # ignore . imports, but recognize 3rd party imports of the form github.com/user/proj;
+    # dot imports are stripped of their leading dot.
+    if s_line.startswith('.'):
+        s_line = s_line[1:]
+
+    if '.' in s_line and import_state == FPIMPORTS:
+        data["import_state"] = TPIMPORTS
+        check_blanks(data)
+
+def check_blanks(data):
+    did_run = data.get('check_blanks', False)
+    blanks = data.get('blanks', [])
+    import_state = data.get('import_state', FPIMPORTS)
+
+    if import_state == FPIMPORTS or did_run:
+        return # nothing to do here
+    # If we're in 3rd party imports, we should only ever have one blank separating 1st and 3rd party imports
+    # keep the last blank, as it's likely the correct one, as we're in the transition to 3rd party imports here
+    data['blanks'] = blanks[:-1]
+    data['check_blanks'] = True
+
 def complete(data):
     blanks = data.get('blanks', [])
-    for n in blanks[1:]:
+    for n in blanks:
         print("%s:%d: Too many blank lines in imports" % (data["file"], n))
 
 PREIMPORT, IMPORTS, POSTIMPORT, EXTRACOMMENT, BLANKIMPORT = range(5)
+FPIMPORTS, TPIMPORTS = 1, 3 # We differentiate between first party (FPIMPORTS) and third party (TPIMPORTS) imports
 
 TRANSITIONS = [
     (PREIMPORT, 'import (', IMPORTS),
     (PREIMPORT, '', PREIMPORT),
     (IMPORTS, '\t//', IMPORTS, comment),
     (IMPORTS, '\t_ ', IMPORTS, blank_import),
-    (IMPORTS, '\t', IMPORTS),
+    (IMPORTS, '\t', IMPORTS, check_imports),
     (IMPORTS, '\n', IMPORTS, add_blank),
     (IMPORTS, ')', POSTIMPORT, complete),
     (POSTIMPORT, '', POSTIMPORT),
@@ -67,6 +93,7 @@ def scan(gofile):
         data["num"] = num
         data["line"] = line
         data["state"] = state
+        data["import_state"] = FPIMPORTS # Start with first party imports
         matched = False
         for t in TRANSITIONS:
             if state == t[0] and line.startswith(t[1]):

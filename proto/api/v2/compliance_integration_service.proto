@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package v2;
+
+import "api/v2/search_query.proto";
+import weak "google/api/annotations.proto";
+
+option go_package = "./api/v2;v2";
+option java_package = "io.stackrox.proto.api.v2";
+
+// Represents the status of compliance operator
+enum COStatus {
+  HEALTHY = 0;
+  UNHEALTHY = 1;
+}
+
+enum ClusterProviderType {
+  UNSPECIFIED = 0;
+  AKS = 1;
+  ARO = 2;
+  EKS = 3;
+  GKE = 4;
+  OCP = 5;
+  OSD = 6;
+  ROSA = 7;
+}
+
+enum ClusterPlatformType {
+  GENERIC_CLUSTER = 0;
+  KUBERNETES_CLUSTER = 1;
+  OPENSHIFT_CLUSTER = 2;
+  reserved 3;
+  reserved 4;
+  OPENSHIFT4_CLUSTER = 5;
+}
+
+// Next Tag: 11
+message ComplianceIntegration {
+  string id = 1;
+  string version = 2;
+  string cluster_id = 3;
+  string cluster_name = 4;
+  string namespace = 5;
+  // Collection of errors that occurred while trying to obtain compliance operator health info.
+  repeated string status_errors = 6;
+  bool operator_installed = 7;
+  COStatus status = 8;
+  ClusterPlatformType cluster_platform_type = 9;
+  ClusterProviderType cluster_provider_type = 10;
+}
+
+message ComplianceIntegrationStatusRequest {
+  string cluster_id = 1;
+}
+
+message ListComplianceIntegrationsResponse {
+  repeated ComplianceIntegration integrations = 1;
+  int32 total_count = 2;
+}
+
+service ComplianceIntegrationService {
+  // ListComplianceIntegrations lists all the compliance operator metadata for the secured clusters
+  rpc ListComplianceIntegrations(RawQuery) returns (ListComplianceIntegrationsResponse) {
+    option (google.api.http) = {get: "/v2/compliance/integrations"};
+  }
+}

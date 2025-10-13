@@ -3,18 +3,26 @@
 SHELL := /bin/bash
 
 colon := :
+comma := ,
 
-# GOPATH might actually be a colon-separated list of paths. For the purposes of this makefile,
-# work with the first element only.
+# GOPATH might not be exported in the current shell but is available in the
+# Go environment.
+ifeq ($(GOPATH),)
+    GOPATH=$(shell go env GOPATH)
+    export GOPATH
+endif
 
+# GOPATH might actually be a colon-separated list of paths. For the purposes of
+# this makefile, work with the first element only.
 ifeq ($(findstring :, $(GOPATH)), $(colon))
 GOPATH := $(firstword $(subst :, ,$(GOPATH)))
 endif
 
-export CGO_ENABLED DEFAULT_GOOS GOARCH GOTAGS GO111MODULE GOBIN GOPROXY
-CGO_ENABLED := 1
+export CGO_ENABLED ?= 1
+export DEFAULT_GOOS GOARCH GOTAGS GO111MODULE GOBIN GOPROXY
 
 # Update the arch to arm64 but only for Macs running on Apple Silicon (M1)
+ifeq ($(GOARCH),)
 ifeq ($(shell uname -ms),Darwin arm64)
 	GOARCH := arm64
 else ifeq ($(shell uname -ms),Linux aarch64)
@@ -25,6 +33,7 @@ else ifeq ($(shell uname -ms),Linux s390x)
 	GOARCH := s390x
 else
 	GOARCH := amd64
+endif
 endif
 
 DEFAULT_GOOS := linux
@@ -37,9 +46,42 @@ endif
 
 TAG := # make sure tag is never injectable as an env var
 RELEASE_GOTAGS := release
+
+# Use a release go -tag when CI is targeting a tag
 ifdef CI
-ifneq ($(CIRCLE_TAG),)
-GOTAGS := $(RELEASE_GOTAGS)
-TAG := $(CIRCLE_TAG)
+ifneq ($(BUILD_TAG),)
+# Preserve existing GOTAGS and append release tags
+GOTAGS := $(if $(GOTAGS),$(GOTAGS)$(comma))$(RELEASE_GOTAGS)
 endif
+endif
+
+ifneq ($(BUILD_TAG),)
+TAG := $(BUILD_TAG)
+endif
+
+ifeq ($(TAG),)
+TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
+endif
+
+# Set expiration on Quay.io for non-release tags.
+ifeq ($(findstring x,$(TAG)),x)
+QUAY_TAG_EXPIRATION=13w
+else
+QUAY_TAG_EXPIRATION=never
+endif
+
+ROX_PRODUCT_BRANDING ?= STACKROX_BRANDING
+
+# ROX_IMAGE_FLAVOR is an ARG used in Dockerfiles that defines the default registries for main, scanner, and collector images.
+# ROX_IMAGE_FLAVOR valid values are: development_build, rhacs, opensource.
+ROX_IMAGE_FLAVOR ?= $(shell \
+	if [[ "$(ROX_PRODUCT_BRANDING)" == "STACKROX_BRANDING" ]]; then \
+	  echo "opensource"; \
+	else \
+	  echo "development_build"; \
+	fi)
+
+DEFAULT_IMAGE_REGISTRY := quay.io/stackrox-io
+ifeq ($(ROX_PRODUCT_BRANDING),RHACS_BRANDING)
+	DEFAULT_IMAGE_REGISTRY := quay.io/rhacs-eng
 endif

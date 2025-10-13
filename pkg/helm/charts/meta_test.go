@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -15,14 +14,9 @@ import (
 // are actually present.
 func TestRequiredMetaValuesArePresent(t *testing.T) {
 	testutils.SetExampleVersion(t)
-	restorer := testbuildinfo.SetForTest(t)
-	defer func() {
-		restorer.Restore()
-	}()
 
 	cases := []defaults.ImageFlavor{
 		defaults.DevelopmentBuildImageFlavor(),
-		defaults.StackRoxIOReleaseImageFlavor(),
 		defaults.RHACSReleaseImageFlavor(),
 		defaults.OpenSourceImageFlavor(),
 	}
@@ -33,10 +27,13 @@ func TestRequiredMetaValuesArePresent(t *testing.T) {
 			assert.NotEmpty(t, metaVals.MainRegistry)
 			assert.NotEmpty(t, metaVals.ImageRemote)
 			assert.NotEmpty(t, metaVals.CollectorRegistry)
-			assert.NotEmpty(t, metaVals.CollectorFullImageRemote)
-			assert.NotEmpty(t, metaVals.CollectorSlimImageRemote)
-			assert.NotEmpty(t, metaVals.CollectorFullImageTag)
-			assert.NotEmpty(t, metaVals.CollectorSlimImageTag)
+			assert.NotEmpty(t, metaVals.CollectorImageRemote)
+			assert.NotEmpty(t, metaVals.CollectorImageTag)
+			assert.NotEmpty(t, metaVals.ScannerImageRemote)
+			assert.NotEmpty(t, metaVals.ScannerImageTag)
+			assert.NotEmpty(t, metaVals.ScannerV4ImageRemote)
+			assert.NotEmpty(t, metaVals.ScannerV4DBImageRemote)
+			assert.NotEmpty(t, metaVals.ScannerV4ImageTag)
 			assert.NotEmpty(t, metaVals.ChartRepo.URL)
 			assert.NotNil(t, metaVals.ImagePullSecrets)
 

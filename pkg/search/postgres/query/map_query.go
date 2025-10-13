@@ -3,7 +3,7 @@ package pgsearch
 import (
 	"encoding/json"
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/stackrox/rox/pkg/search"
@@ -11,7 +11,8 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func parseMapQuery(label string) (string, string, bool) {
+// ParseMapQuery parses a label stored in the form k=v.
+func ParseMapQuery(label string) (string, string, bool) {
 	hasEquals := strings.Contains(label, "=")
 	key, value := stringutils.Split2(label, "=")
 	return key, value, hasEquals
@@ -20,8 +21,12 @@ func parseMapQuery(label string) (string, string, bool) {
 func readMapValue(val interface{}) map[string]string {
 	// Maps are stored in a jsonb column, which we get back as a byte array.
 	// We know that supported maps are only map[string]string, so we unmarshal accordingly.
+	v, ok := val.(*[]byte)
+	if !ok || v == nil || *v == nil {
+		return nil
+	}
 	var mapValue map[string]string
-	if err := json.Unmarshal(*val.(*[]byte), &mapValue); err != nil {
+	if err := json.Unmarshal(*v, &mapValue); err != nil {
 		utils.Should(err)
 		return nil
 	}
@@ -54,7 +59,7 @@ func newMapQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
 		}), nil
 	}
 
-	key, value, hasEquals := parseMapQuery(query)
+	key, value, hasEquals := ParseMapQuery(query)
 	keyNegated := stringutils.ConsumePrefix(&key, search.NegationPrefix)
 	// This is a special case where the query we construct becomes a (non) existence query
 	if value == "" && key != "" && hasEquals {
@@ -71,6 +76,9 @@ func newMapQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
 				return []string(nil)
 			}
 			asMap := readMapValue(i)
+			if asMap == nil {
+				return []string(nil)
+			}
 			return []string{fmt.Sprintf("%s=%s", key, asMap[key])}
 		}), nil
 	}
@@ -129,7 +137,7 @@ func newMapQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
 			}
 			out = append(out, fmt.Sprintf("%s=%s", k, v))
 		}
-		sort.Strings(out)
+		slices.Sort(out)
 		return out
 	}), nil
 }

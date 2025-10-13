@@ -44,6 +44,8 @@ type UpgradeContext struct {
 
 	centralHTTPClient *http.Client
 	grpcClientConn    *grpc.ClientConn
+
+	podSecurityPoliciesSupported bool
 }
 
 // Create creates a new upgrader context from the given config.
@@ -104,9 +106,13 @@ func Create(ctx context.Context, config *config.UpgraderConfig) (*UpgradeContext
 	}
 	log.Infof("Server supports %d out of %d relevant state resource types", numStateResources, len(common.StateResourceTypes))
 
+	pspSupported := false
 	for _, gvk := range common.OrderedBundleResourceTypes {
 		if _, ok := resourceMap[gvk]; ok {
 			log.Infof("Resource type %s is SUPPORTED", gvk)
+			if gvk.Kind == "PodSecurityPolicy" {
+				pspSupported = true
+			}
 		} else {
 			log.Infof("Resource type %s is NOT SUPPORTED", gvk)
 		}
@@ -134,12 +140,13 @@ func Create(ctx context.Context, config *config.UpgraderConfig) (*UpgradeContext
 	}
 
 	c := &UpgradeContext{
-		ctx:                    ctx,
-		config:                 *config,
-		resources:              resourceMap,
-		clientSet:              k8sClientSet,
-		dynamicClientGenerator: dynamicClientGenerator,
-		schemaValidator:        schemaValidator,
+		ctx:                          ctx,
+		config:                       *config,
+		resources:                    resourceMap,
+		clientSet:                    k8sClientSet,
+		dynamicClientGenerator:       dynamicClientGenerator,
+		schemaValidator:              schemaValidator,
+		podSecurityPoliciesSupported: pspSupported,
 	}
 
 	if config.CentralEndpoint != "" {
@@ -150,7 +157,7 @@ func Create(ctx context.Context, config *config.UpgraderConfig) (*UpgradeContext
 		c.centralHTTPClient = &http.Client{
 			Transport: transport,
 		}
-		c.grpcClientConn, err = clientconn.AuthenticatedGRPCConnection(config.CentralEndpoint, mtls.CentralSubject, clientconn.UseServiceCertToken(true))
+		c.grpcClientConn, err = clientconn.AuthenticatedGRPCConnection(context.Background(), config.CentralEndpoint, mtls.CentralSubject, clientconn.UseServiceCertToken(true))
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to initialize gRPC connection to Central")
 		}
@@ -266,7 +273,13 @@ func (c *UpgradeContext) DoCentralHTTPRequest(req *http.Request) (*http.Response
 		return nil, errors.New("no HTTP client configured")
 	}
 
-	return c.centralHTTPClient.Do(req)
+	req.Header.Set("User-Agent", clientconn.GetUserAgent())
+
+	resp, err := c.centralHTTPClient.Do(req)
+	if err != nil {
+		return nil, errors.Wrap(err, "performing HTTP request to Central")
+	}
+	return resp, nil
 }
 
 // GetGRPCClient gets the gRPC client that can be used to make requests to Central.
@@ -283,7 +296,7 @@ func (c *UpgradeContext) Validator() validation.Schema {
 func (c *UpgradeContext) ParseAndValidateObject(data []byte) (*unstructured.Unstructured, error) {
 	k8sObj, err := k8sutil.UnstructuredFromYAML(string(data))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "parsing object from YAML")
 	}
 	if err := c.schemaValidator.ValidateBytes(data); err != nil {
 		return nil, errors.Wrap(err, "schema validation failed")
@@ -308,15 +321,16 @@ func (c *UpgradeContext) List(resourcePurpose resources.Purpose, listOpts *metav
 		if resourceMD.Purpose&resourcePurpose != resourcePurpose {
 			continue
 		}
-		resourceClient := c.DynamicClientForResource(resourceMD, common.Namespace)
-		listObj, err := resourceClient.List(c.ctx, *listOpts)
-		if err != nil {
-			return nil, errors.Wrapf(err, "listing relevant objects of type %v", resourceMD)
-		}
+		for _, ns := range common.AllowedNamespaces {
+			resourceClient := c.DynamicClientForResource(resourceMD, ns)
+			listObj, err := resourceClient.List(c.ctx, *listOpts)
+			if err != nil {
+				return nil, errors.Wrapf(err, "listing relevant objects of type %v in namespace %s", resourceMD, ns)
+			}
 
-		for _, item := range listObj.Items {
-			item := item // create a copy to prevent aliasing
-			result = append(result, &item)
+			for _, item := range listObj.Items {
+				result = append(result, &item)
+			}
 		}
 	}
 
@@ -342,4 +356,9 @@ func (c *UpgradeContext) ListCurrentObjects() ([]*unstructured.Unstructured, err
 	common.Filter(&objects, common.Not(common.AdditionalCASecretPredicate))
 
 	return objects, nil
+}
+
+// IsPodSecurityEnabled returns whether or not pod security polices are enabled for this cluster
+func (c *UpgradeContext) IsPodSecurityEnabled() bool {
+	return c.podSecurityPoliciesSupported
 }

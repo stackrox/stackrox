@@ -1,148 +1,207 @@
 syntax = "proto3";
 
-option go_package = "storage";
-option java_package = "io.stackrox.proto.storage";
-
-import "gogoproto/gogo.proto";
-import "storage/common.proto";
-import "storage/policy.proto";
-
 package storage;
 
-message Notifier {
-    string id                  = 1 [(gogoproto.moretags) = 'sql:"pk"'];
-    string name                = 2 [(gogoproto.moretags) = 'sql:"unique"'];
-    string type                = 3;
-    string ui_endpoint         = 4;
-    string label_key           = 8;
-    string label_default       = 9;
-    oneof config {
-        Jira  jira                       = 10;
-        Email email                      = 11;
-        CSCC  cscc                       = 12;
-        Splunk splunk                    = 13;
-        PagerDuty pagerduty              = 14;
-        Generic   generic                = 15;
-        SumoLogic sumologic              = 16;
-        AWSSecurityHub aws_security_hub  = 17;
-        Syslog syslog                    = 18;
-    }
+import "storage/common.proto";
+import "storage/policy.proto";
+import "storage/traits.proto";
 
-    // These fields should be safe to un-reserve after a few releases. evan@
-    // just isn't familiar enough yet to determine whether they can be deleted
-    // outright.
-    reserved 5;          // Deleted 2021-03-18.
-    reserved "enabled";  // Deleted 2021-03-18.
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+// Next Tag: 21
+message Notifier {
+  string id = 1; // @gotags: sql:"pk"
+  string name = 2; // @gotags: sql:"unique"
+  string type = 3;
+  string ui_endpoint = 4;
+  string label_key = 8;
+  string label_default = 9;
+  oneof config {
+    Jira jira = 10;
+    Email email = 11;
+    CSCC cscc = 12;
+    Splunk splunk = 13;
+    PagerDuty pagerduty = 14;
+    Generic generic = 15;
+    SumoLogic sumologic = 16;
+    AWSSecurityHub aws_security_hub = 17;
+    Syslog syslog = 18;
+    MicrosoftSentinel microsoft_sentinel = 20;
+  }
+  string notifier_secret = 19; // @gotags: scrub:"always"
+
+  Traits traits = 50;
+
+  // These fields should be safe to un-reserve after a few releases. evan@
+  // just isn't familiar enough yet to determine whether they can be deleted
+  // outright.
+  reserved 5; // Deleted 2021-03-18.
+  reserved "enabled"; // Deleted 2021-03-18.
 }
 
 message AWSSecurityHub {
-    message Credentials {
-        string access_key_id     = 1 [(gogoproto.moretags) = 'scrub:"always"'];
-        string secret_access_key = 2 [(gogoproto.moretags) = 'scrub:"always"'];
-    }
-    string region             = 1;
-    Credentials credentials   = 2;
-    string account_id         = 3;
+  message Credentials {
+    string access_key_id = 1; // @gotags: scrub:"always"
+    string secret_access_key = 2; // @gotags: scrub:"always"
+    bool sts_enabled = 3;
+  }
+  string region = 1;
+  Credentials credentials = 2;
+  string account_id = 3;
 }
 
 message CSCC {
-    // The service account for the integration. The server will mask the value of this credential in responses and logs.
-    string service_account = 1 [(gogoproto.moretags) = 'scrub:"always"'];
-    reserved                 2; // Formerly gcp_org_id
-    reserved                 3; // Formerly gcp_project
-    string source_id       = 4;
+  // The service account for the integration. The server will mask the value of this credential in responses and logs.
+  string service_account = 1; // @gotags: scrub:"always"
+  reserved 2; // Formerly gcp_org_id
+  reserved 3; // Formerly gcp_project
+  string source_id = 4;
+  bool wif_enabled = 5;
 }
 
 message Jira {
-    string url        = 1 [(gogoproto.moretags) = 'scrub:"dependent" validate:"nolocalendpoint"'];
-    string username   = 2 [(gogoproto.moretags) = 'scrub:"dependent"'];
-    // The password for the integration. The server will mask the value of this credential in responses and logs.
-    string password   = 3 [(gogoproto.moretags) = 'scrub:"always"'];
-    string issue_type = 4;
-    message PriorityMapping {
-        Severity severity      = 1;
-        string   priority_name = 2;
-    }
-    repeated PriorityMapping priority_mappings   = 5;
-    string                   default_fields_json = 6;
+  string url = 1; // @gotags: scrub:"dependent" validate:"nolocalendpoint"
+  string username = 2; // @gotags: scrub:"dependent"
+  // The password for the integration. The server will mask the value of this credential in responses and logs.
+  string password = 3; // @gotags: scrub:"always"
+  string issue_type = 4;
+  message PriorityMapping {
+    Severity severity = 1;
+    string priority_name = 2;
+  }
+  repeated PriorityMapping priority_mappings = 5;
+  string default_fields_json = 6;
+  bool disablePriority = 7;
 }
 
 message Email {
-    string server    = 1 [(gogoproto.moretags) = 'scrub:"dependent"'];
-    string sender    = 2;
-    string username  = 3 [(gogoproto.moretags) = 'scrub:"dependent"'];
-    // The password for the integration. The server will mask the value of this credential in responses and logs.
-    string password  = 4 [(gogoproto.moretags) = 'scrub:"always"'];
-    bool disableTLS  = 5;
-    bool DEPRECATED_useStartTLS = 6; // useStartTLS has been deprecated for startTLSAuthMethod
-    string from      = 7;
-    enum AuthMethod {
-        DISABLED = 0;
-        PLAIN    = 1;
-        LOGIN    = 2;
-    }
-    AuthMethod startTLSAuthMethod = 8;
-    // Set to true to allow unauthenticated SMTP
-    bool allow_unauthenticated_smtp = 9;
+  string server = 1; // @gotags: scrub:"dependent"
+  string sender = 2;
+  string username = 3; // @gotags: scrub:"dependent"
+  // The password for the integration. The server will mask the value of this credential in responses and logs.
+  string password = 4; // @gotags: scrub:"always"
+  bool disableTLS = 5;
+  bool DEPRECATED_useStartTLS = 6; // useStartTLS has been deprecated for startTLSAuthMethod
+  string from = 7;
+  enum AuthMethod {
+    DISABLED = 0;
+    PLAIN = 1;
+    LOGIN = 2;
+  }
+  AuthMethod startTLSAuthMethod = 8;
+  // Set to true to allow unauthenticated SMTP
+  bool allow_unauthenticated_smtp = 9; // @gotags: scrub:"disableDependentIfTrue"
+  bool skipTLSVerify = 10;
+  // the local FQDN sent by the client in the EHLO/HELO command. Optional, if left blank, localhost will be used
+  string hostname_helo_ehlo = 11; // @gotags: scrub:"dependent"
 }
 
 message Splunk {
-    // The HTTP token for the integration. The server will mask the value of this credential in responses and logs.
-    string http_token                 = 1 [(gogoproto.moretags) = 'scrub:"always"'];
-    string http_endpoint              = 2 [(gogoproto.moretags) = 'scrub:"dependent" validate:"nolocalendpoint"'];
-    bool insecure                     = 3;
-    int64 truncate                    = 4;
-    bool audit_logging_enabled        = 5;
-    oneof derived_source_type_deprecated {
-        // derived_source_type is deprecated in lieu of source_types
-        bool derived_source_type      = 6 [deprecated = true];
-    }
-    map<string, string> source_types  = 7;
+  // The HTTP token for the integration. The server will mask the value of this credential in responses and logs.
+  string http_token = 1; // @gotags: scrub:"always"
+  string http_endpoint = 2; // @gotags: scrub:"dependent" validate:"nolocalendpoint"
+  bool insecure = 3;
+  int64 truncate = 4;
+  bool audit_logging_enabled = 5;
+  oneof derived_source_type_deprecated {
+    // derived_source_type is deprecated in lieu of source_types
+    bool derived_source_type = 6 [deprecated = true];
+  }
+  map<string, string> source_types = 7;
 }
 
 message PagerDuty {
-    // The API key for the integration. The server will mask the value of this credential in responses and logs.
-    string api_key = 1 [(gogoproto.moretags) = 'scrub:"always"'];
+  // The API key for the integration. The server will mask the value of this credential in responses and logs.
+  string api_key = 1; // @gotags: scrub:"always"
 }
 
 message Generic {
-    string endpoint                    = 1 [(gogoproto.moretags) = 'scrub:"dependent" validate:"nolocalendpoint"'];
-    bool   skipTLSVerify               = 2;
-    string ca_cert                     = 3;
-    string username                    = 4 [(gogoproto.moretags) = 'scrub:"dependent"'];
-    // The password for the integration. The server will mask the value of this credential in responses and logs.
-    string password                    = 5 [(gogoproto.moretags) = 'scrub:"always"'];
-    repeated KeyValuePair headers      = 6;
-    repeated KeyValuePair extra_fields = 7;
-    bool audit_logging_enabled         = 8;
+  string endpoint = 1; // @gotags: scrub:"dependent" validate:"nolocalendpoint"
+  bool skipTLSVerify = 2;
+  string ca_cert = 3;
+  string username = 4; // @gotags: scrub:"dependent"
+  // The password for the integration. The server will mask the value of this credential in responses and logs.
+  string password = 5; // @gotags: scrub:"always"
+  repeated KeyValuePair headers = 6;
+  repeated KeyValuePair extra_fields = 7;
+  bool audit_logging_enabled = 8;
 }
 
 message SumoLogic {
-    string http_source_address = 1 [(gogoproto.moretags) = 'validate:"nolocalendpoint"'];
-    bool   skipTLSVerify       = 2;
+  string http_source_address = 1; // @gotags: validate:"nolocalendpoint"
+  bool skipTLSVerify = 2;
+}
+
+message MicrosoftSentinel {
+  // log_ingestion_endpoint is the log ingestion endpoint.
+  string log_ingestion_endpoint = 1;
+
+  // directory_tenant_id contains the ID of the Microsoft Directory ID of the selected tenant.
+  string directory_tenant_id = 2;
+
+  // application_client_id contains the ID of the application ID of the service principal.
+  string application_client_id = 3;
+
+  // secret contains the client secret.
+  string secret = 4; // @gotags: scrub:"always"
+
+  // DataCollectionRuleConfig contains information about the data collection rule which is a config per notifier type.
+  message DataCollectionRuleConfig {
+    string stream_name = 1;
+    string data_collection_rule_id = 2;
+    bool enabled = 3;
+  }
+  DataCollectionRuleConfig alert_dcr_config = 5;
+  DataCollectionRuleConfig audit_log_dcr_config = 6;
+
+  // client certificate which is used for authentication
+  message ClientCertAuthConfig {
+    // PEM encoded ASN.1 DER format.
+    string client_cert = 1;
+
+    // PEM encoded PKCS #8, ASN.1 DER format.
+    string private_key = 2; // @gotags: scrub:"always"
+  }
+  ClientCertAuthConfig client_cert_auth_config = 7;
+
+  // Enables authentication with short-lived tokens using Azure managed identities
+  // or Azure workload identities.
+  // The toggle exists to make the use of Azure default credentials explicit rather
+  // than always using them as a fallback. The explicit behavior is more consistent
+  // with other integrations.
+  bool wif_enabled = 8; // @gotags: scrub:"dependent"
 }
 
 message Syslog {
-    enum LocalFacility {
-        LOCAL0 = 0;
-        LOCAL1 = 1;
-        LOCAL2 = 2;
-        LOCAL3 = 3;
-        LOCAL4 = 4;
-        LOCAL5 = 5;
-        LOCAL6 = 6;
-        LOCAL7 = 7;
-    }
-    LocalFacility local_facility = 1;
+  enum LocalFacility {
+    LOCAL0 = 0;
+    LOCAL1 = 1;
+    LOCAL2 = 2;
+    LOCAL3 = 3;
+    LOCAL4 = 4;
+    LOCAL5 = 5;
+    LOCAL6 = 6;
+    LOCAL7 = 7;
+  }
+  LocalFacility local_facility = 1;
 
-    message TCPConfig {
-        string hostname                    = 1 [(gogoproto.moretags) = 'scrub:"dependent"'];
-        int32  port                        = 2;
-        bool   skip_tls_verify             = 3;
-        bool   use_tls                     = 4;
-    }
-    // Eventually this will support TCP, UDP, and local endpoints
-    oneof endpoint {
-        TCPConfig tcp_config = 2;
-    }
+  message TCPConfig {
+    string hostname = 1; // @gotags: scrub:"dependent"
+    int32 port = 2;
+    bool skip_tls_verify = 3;
+    bool use_tls = 4;
+  }
+  // Eventually this will support TCP, UDP, and local endpoints
+  oneof endpoint {
+    TCPConfig tcp_config = 2;
+  }
+  repeated KeyValuePair extra_fields = 3;
+
+  enum MessageFormat {
+    LEGACY = 0;
+    CEF = 1;
+  }
+  MessageFormat message_format = 4;
+  int32 max_message_size = 5;
 }

@@ -1,6 +1,7 @@
 package sensorupgrader
 
 // A Stage represents a stage in the sensor upgrader process.
+//
 //go:generate stringer -type=Stage
 type Stage int
 

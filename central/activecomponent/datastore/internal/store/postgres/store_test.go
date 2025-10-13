@@ -9,19 +9,18 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type ActiveComponentsStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestActiveComponentsStore(t *testing.T) {
@@ -29,28 +28,17 @@ func TestActiveComponentsStore(t *testing.T) {
 }
 
 func (s *ActiveComponentsStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
 
 	s.testDB = pgtest.ForT(s.T())
-	s.store = New(s.testDB.Pool)
+	s.store = New(s.testDB.DB)
 }
 
 func (s *ActiveComponentsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE active_components CASCADE")
 	s.T().Log("active_components", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
-}
-
-func (s *ActiveComponentsStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *ActiveComponentsStoreSuite) TestStore() {
@@ -72,12 +60,12 @@ func (s *ActiveComponentsStoreSuite) TestStore() {
 	foundActiveComponent, exists, err = store.Get(ctx, activeComponent.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(activeComponent, foundActiveComponent)
+	protoassert.Equal(s.T(), activeComponent, foundActiveComponent)
 
-	activeComponentCount, err := store.Count(ctx)
+	activeComponentCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, activeComponentCount)
-	activeComponentCount, err = store.Count(withNoAccessCtx)
+	activeComponentCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(activeComponentCount)
 
@@ -87,11 +75,6 @@ func (s *ActiveComponentsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, activeComponent))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, activeComponent), sac.ErrResourceAccessDenied)
 
-	foundActiveComponent, exists, err = store.Get(ctx, activeComponent.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(activeComponent, foundActiveComponent)
-
 	s.NoError(store.Delete(ctx, activeComponent.GetId()))
 	foundActiveComponent, exists, err = store.Get(ctx, activeComponent.GetId())
 	s.NoError(err)
@@ -100,15 +83,23 @@ func (s *ActiveComponentsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, activeComponent.GetId()))
 
 	var activeComponents []*storage.ActiveComponent
+	var activeComponentIDs []string
 	for i := 0; i < 200; i++ {
 		activeComponent := &storage.ActiveComponent{}
 		s.NoError(testutils.FullInit(activeComponent, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		activeComponents = append(activeComponents, activeComponent)
+		activeComponentIDs = append(activeComponentIDs, activeComponent.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, activeComponents))
 
-	activeComponentCount, err = store.Count(ctx)
+	activeComponentCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, activeComponentCount)
+
+	s.NoError(store.DeleteMany(ctx, activeComponentIDs))
+
+	activeComponentCount, err = store.Count(ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.Equal(0, activeComponentCount)
 }

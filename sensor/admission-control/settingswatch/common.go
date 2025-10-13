@@ -3,7 +3,6 @@ package settingswatch
 import (
 	"os"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/gziputil"
@@ -25,7 +24,7 @@ func decompressAndUnmarshalPolicies(data []byte) (*storage.PolicyList, error) {
 	}
 
 	var policyList storage.PolicyList
-	if err := proto.Unmarshal(runTimePoliciesData, &policyList); err != nil {
+	if err := policyList.UnmarshalVTUnsafe(runTimePoliciesData); err != nil {
 		return nil, errors.Wrap(err, "unmarshaling decompressed policies data")
 	}
 	return &policyList, nil

@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	dbAuthz "github.com/stackrox/rox/central/globaldb/authz"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/manager"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -18,15 +18,15 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(): {
-			"/v1.DBService/GetExportCapabilities",
+		user.Authenticated(): {
+			v1.DBService_GetExportCapabilities_FullMethodName,
 		},
 		dbAuthz.DBReadAccessAuthorizer(): {
-			"/v1.DBService/GetActiveRestoreProcess",
+			v1.DBService_GetActiveRestoreProcess_FullMethodName,
 		},
 		dbAuthz.DBWriteAccessAuthorizer(): {
-			"/v1.DBService/CancelRestoreProcess",
-			"/v1.DBService/InterruptRestoreProcess",
+			v1.DBService_CancelRestoreProcess_FullMethodName,
+			v1.DBService_InterruptRestoreProcess_FullMethodName,
 		},
 	})
 )
@@ -55,14 +55,14 @@ func (s *service) RegisterServiceHandler(ctx context.Context, mux *runtime.Serve
 	return v1.RegisterDBServiceHandler(ctx, mux, conn)
 }
 
-func (s *service) GetExportCapabilities(ctx context.Context, _ *v1.Empty) (*v1.GetDBExportCapabilitiesResponse, error) {
+func (s *service) GetExportCapabilities(_ context.Context, _ *v1.Empty) (*v1.GetDBExportCapabilitiesResponse, error) {
 	return &v1.GetDBExportCapabilitiesResponse{
 		Formats:            s.mgr.GetExportFormats().ToProtos(),
 		SupportedEncodings: s.mgr.GetSupportedFileEncodings(),
 	}, nil
 }
 
-func (s *service) GetActiveRestoreProcess(ctx context.Context, _ *v1.Empty) (*v1.GetActiveDBRestoreProcessResponse, error) {
+func (s *service) GetActiveRestoreProcess(_ context.Context, _ *v1.Empty) (*v1.GetActiveDBRestoreProcessResponse, error) {
 	process := s.mgr.GetActiveRestoreProcess()
 	if process == nil {
 		return &v1.GetActiveDBRestoreProcessResponse{}, nil

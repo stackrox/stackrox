@@ -1,76 +1,143 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
-    Badge,
     Flex,
     FlexItem,
+    Stack,
+    StackItem,
     Tab,
     TabContent,
     Tabs,
     TabTitleText,
     Text,
-    TextContent,
-    TextVariants,
+    Title,
 } from '@patternfly/react-core';
+import uniq from 'lodash/uniq';
 
-import useTabs from 'hooks/patternfly/useTabs';
+import type { QueryValue } from 'hooks/useURLParameter';
+import {
+    getDeploymentNodesInNamespace,
+    getNodeById,
+    getNumDeploymentFlows,
+} from '../utils/networkGraphUtils';
+import type { CustomEdgeModel, CustomNodeModel } from '../types/topology.type';
+
+import { NamespaceIcon } from '../common/NetworkGraphIcons';
 import NamespaceDeployments from './NamespaceDeployments';
+import NetworkPolicies from '../common/NetworkPolicies';
+import { useSidePanelTab } from '../NetworkGraphURLStateContext';
 
-function NamespaceSideBar() {
-    const { activeKeyTab, onSelectTab } = useTabs({
-        defaultTab: 'Deployments',
+type NamespaceSideBarProps = {
+    labelledById: string; // corresponds to aria-labelledby prop of TopologySideBar
+    namespaceId: string;
+    nodes: CustomNodeModel[];
+    edges: CustomEdgeModel[];
+    onNodeSelect: (id: string) => void;
+};
+
+const NAMESPACE_TABS = ['DEPLOYMENTS', 'NETWORK_POLICIES'] as const;
+type NamespaceTabKey = (typeof NAMESPACE_TABS)[number];
+
+const DEFAULT_NAMESPACE_TAB: NamespaceTabKey = 'DEPLOYMENTS';
+
+function isValidNamespaceTab(value: QueryValue): value is NamespaceTabKey {
+    return typeof value === 'string' && NAMESPACE_TABS.some((tab) => tab === value);
+}
+
+function NamespaceSideBar({
+    labelledById,
+    namespaceId,
+    nodes,
+    edges,
+    onNodeSelect,
+}: NamespaceSideBarProps) {
+    const { selectedTabSidePanel, setSelectedTabSidePanel } = useSidePanelTab();
+
+    // derived state
+    const namespaceNode = getNodeById(nodes, namespaceId);
+    const deploymentNodes = getDeploymentNodesInNamespace(nodes, namespaceId);
+    const cluster = namespaceNode?.data.type === 'NAMESPACE' ? namespaceNode.data.cluster : '';
+
+    const deployments = deploymentNodes.map((deploymentNode) => {
+        const numFlows = getNumDeploymentFlows(edges, deploymentNode.id);
+        return {
+            id: deploymentNode.id,
+            name: deploymentNode.label as string,
+            numFlows,
+        };
     });
+    const namespacePolicyIds = deploymentNodes.reduce((acc, curr) => {
+        const policyIds: string[] = curr?.data?.policyIds || [];
+        return [...acc, ...policyIds];
+    }, [] as string[]);
+    const uniqueNamespacePolicyIds = uniq(namespacePolicyIds);
+
+    const activeTab: NamespaceTabKey = isValidNamespaceTab(selectedTabSidePanel)
+        ? selectedTabSidePanel
+        : DEFAULT_NAMESPACE_TAB;
+
+    useEffect(() => {
+        if (selectedTabSidePanel !== undefined && !isValidNamespaceTab(selectedTabSidePanel)) {
+            setSelectedTabSidePanel(DEFAULT_NAMESPACE_TAB, 'replace');
+        }
+    }, [selectedTabSidePanel, setSelectedTabSidePanel]);
 
     return (
-        <Flex direction={{ default: 'column' }} flex={{ default: 'flex_1' }} className="pf-u-h-100">
-            <Flex direction={{ default: 'row' }} className="pf-u-p-md pf-u-mb-0">
-                <FlexItem>
-                    <Badge style={{ backgroundColor: 'rgb(32,79,23)' }}>NS</Badge>
-                </FlexItem>
-                <FlexItem>
-                    <TextContent>
-                        <Text component={TextVariants.h1} className="pf-u-font-size-xl">
-                            stackrox
+        <Stack>
+            <StackItem>
+                <Flex direction={{ default: 'row' }} className="pf-v5-u-p-md pf-v5-u-mb-0">
+                    <FlexItem>
+                        <NamespaceIcon />
+                    </FlexItem>
+                    <FlexItem>
+                        <Title headingLevel="h2" id={labelledById}>
+                            {namespaceNode?.label}
+                        </Title>
+                        <Text className="pf-v5-u-font-size-sm pf-v5-u-color-200">
+                            in &quot;
+                            {cluster}
+                            &quot;
                         </Text>
-                    </TextContent>
-                    <TextContent>
-                        <Text
-                            component={TextVariants.h2}
-                            className="pf-u-font-size-sm pf-u-color-200"
-                        >
-                            in &quot;remote&quot;
-                        </Text>
-                    </TextContent>
-                </FlexItem>
-            </Flex>
-            <FlexItem flex={{ default: 'flex_1' }}>
-                <Tabs activeKey={activeKeyTab} onSelect={onSelectTab}>
+                    </FlexItem>
+                </Flex>
+            </StackItem>
+            <StackItem>
+                <Tabs
+                    activeKey={activeTab}
+                    onSelect={(_e, key) => setSelectedTabSidePanel(key.toString())}
+                >
                     <Tab
-                        eventKey="Deployments"
-                        tabContentId="Deployments"
+                        eventKey="DEPLOYMENTS"
+                        tabContentId="DEPLOYMENTS"
                         title={<TabTitleText>Deployments</TabTitleText>}
                     />
                     <Tab
-                        eventKey="Network policies"
-                        tabContentId="Network policies"
+                        eventKey="NETWORK_POLICIES"
+                        tabContentId="NETWORK_POLICIES"
                         title={<TabTitleText>Network policies</TabTitleText>}
                     />
                 </Tabs>
+            </StackItem>
+            <StackItem isFilled style={{ overflow: 'auto' }}>
                 <TabContent
-                    eventKey="Deployments"
-                    id="Deployments"
-                    hidden={activeKeyTab !== 'Deployments'}
+                    eventKey="DEPLOYMENTS"
+                    id="DEPLOYMENTS"
+                    hidden={activeTab !== 'DEPLOYMENTS'}
                 >
-                    <NamespaceDeployments />
+                    <NamespaceDeployments deployments={deployments} onNodeSelect={onNodeSelect} />
                 </TabContent>
                 <TabContent
-                    eventKey="Network policies"
-                    id="Network policies"
-                    hidden={activeKeyTab !== 'Network policies'}
+                    eventKey="NETWORK_POLICIES"
+                    id="NETWORK_POLICIES"
+                    hidden={activeTab !== 'NETWORK_POLICIES'}
+                    className="pf-v5-u-h-100"
                 >
-                    <div className="pf-u-h-100 pf-u-p-md">TODO: Add Network policies</div>
+                    <NetworkPolicies
+                        entityName={namespaceNode?.label || ''}
+                        policyIds={uniqueNamespacePolicyIds}
+                    />
                 </TabContent>
-            </FlexItem>
-        </Flex>
+            </StackItem>
+        </Stack>
     );
 }
 

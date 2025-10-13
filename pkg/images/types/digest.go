@@ -9,6 +9,8 @@ type Digest struct {
 }
 
 // NewDigest returns an internal representation of a SHA.
+// If an algorithm cannot be determined, it is set to sha256
+// for legacy purposes.
 func NewDigest(sha string) *Digest {
 	if sha == "" {
 		return nil
@@ -32,7 +34,7 @@ func (d *Digest) Algorithm() string {
 	if d == nil {
 		return ""
 	}
-	return d.algorithm + ":" + d.hash
+	return d.algorithm
 }
 
 // Digest returns the entire Digest
@@ -49,4 +51,8 @@ func (d *Digest) Hash() string {
 		return ""
 	}
 	return d.hash
+}
+
+func (d *Digest) String() string {
+	return d.Digest()
 }

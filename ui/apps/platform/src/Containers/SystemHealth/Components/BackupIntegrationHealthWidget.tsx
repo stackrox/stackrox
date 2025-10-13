@@ -2,7 +2,8 @@ import React, { useState, useEffect, ReactElement } from 'react';
 
 import { fetchBackupIntegrationsHealth } from 'services/IntegrationHealthService';
 import { fetchBackupIntegrations } from 'services/BackupIntegrationsService';
-import integrationsList from 'Containers/Integrations/utils/integrationsList';
+import { backupIntegrationsDescriptors } from 'Containers/Integrations/utils/integrationsList';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import IntegrationHealthWidgetVisual from './IntegrationHealthWidgetVisual';
 import { mergeIntegrationResponses, IntegrationMergedItem } from '../utils/integrations';
 
@@ -11,33 +12,39 @@ type WidgetProps = {
 };
 
 const BackupIntegrationHealthWidget = ({ pollingCount }: WidgetProps): ReactElement => {
+    const [isFetching, setIsFetching] = useState(false);
     const [backupsMerged, setBackupsMerged] = useState([] as IntegrationMergedItem[]);
-    const [backupsRequestHasError, setBackupsRequestHasError] = useState(false);
+    const [errorMessageFetching, setErrorMessageFetching] = useState('');
 
     useEffect(() => {
+        setIsFetching(true);
         Promise.all([fetchBackupIntegrationsHealth(), fetchBackupIntegrations()])
             .then(([integrationsHealth, externalBackups]) => {
                 setBackupsMerged(
                     mergeIntegrationResponses(
                         integrationsHealth,
                         externalBackups,
-                        integrationsList.backups
+                        backupIntegrationsDescriptors
                     )
                 );
-                setBackupsRequestHasError(false);
+                setErrorMessageFetching('');
             })
-            .catch(() => {
+            .catch((error) => {
                 setBackupsMerged([]);
-                setBackupsRequestHasError(true);
+                setErrorMessageFetching(getAxiosErrorMessage(error));
+            })
+            .finally(() => {
+                setIsFetching(false);
             });
     }, [pollingCount]);
+    const isFetchingInitialRequest = isFetching && pollingCount === 0;
 
     return (
         <IntegrationHealthWidgetVisual
-            id="backup-integrations"
             integrationText="Backup Integrations"
             integrationsMerged={backupsMerged}
-            requestHasError={backupsRequestHasError}
+            errorMessageFetching={errorMessageFetching}
+            isFetchingInitialRequest={isFetchingInitialRequest}
         />
     );
 };

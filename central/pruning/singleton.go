@@ -2,21 +2,27 @@ package pruning
 
 import (
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
+	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
+	nodeCVEDS "github.com/stackrox/rox/central/cve/node/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	imagesDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageComponentDatastore "github.com/stackrox/rox/central/imagecomponent/datastore"
+	imageComponentV2Datastore "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
+	logimbueStore "github.com/stackrox/rox/central/logimbue/store"
 	networkFlowsDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
-	nodeGlobalDatastore "github.com/stackrox/rox/central/node/globaldatastore"
+	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	processBaselineDatastore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
+	plopDataStore "github.com/stackrox/rox/central/processlisteningonport/datastore"
 	k8sRoleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	k8srolebindingStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
+	snapshotDataStore "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
-	vulnReqDataStore "github.com/stackrox/rox/central/vulnerabilityrequest/datastore"
+	vulnReqDataStore "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -29,7 +35,7 @@ var (
 func Singleton() GarbageCollector {
 	once.Do(func() {
 		gc = newGarbageCollector(alertDatastore.Singleton(),
-			nodeGlobalDatastore.Singleton(),
+			nodeDatastore.Singleton(),
 			imagesDatastore.Singleton(),
 			clusterDatastore.Singleton(),
 			deploymentDatastore.Singleton(),
@@ -39,11 +45,18 @@ func Singleton() GarbageCollector {
 			networkFlowsDataStore.Singleton(),
 			configDatastore.Singleton(),
 			imageComponentDatastore.Singleton(),
+			imageComponentV2Datastore.Singleton(),
 			riskDataStore.Singleton(),
 			vulnReqDataStore.Singleton(),
 			serviceAccountDataStore.Singleton(),
 			k8sRoleDataStore.Singleton(),
-			k8srolebindingStore.Singleton())
+			k8srolebindingStore.Singleton(),
+			logimbueStore.Singleton(),
+			snapshotDataStore.Singleton(),
+			plopDataStore.Singleton(),
+			blobDS.Singleton(),
+			nodeCVEDS.Singleton(),
+		)
 	})
 	return gc
 }

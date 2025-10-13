@@ -4,10 +4,12 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/registries"
+	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/scanners"
 )
 
 // Set provides an interface for reading the active set of image integrations.
+//
 //go:generate mockgen-wrapper
 type Set interface {
 	RegistryFactory() registries.Factory
@@ -22,9 +24,12 @@ type Set interface {
 }
 
 // NewSet returns a new Set instance.
-func NewSet(reporter integrationhealth.Reporter) Set {
-	registryFactory := registries.NewFactory(registries.FactoryOptions{})
-	registrySet := registries.NewSet(registryFactory)
+func NewSet(reporter integrationhealth.Reporter, creatorOpts ...types.CreatorOption) Set {
+	registryFactory := registries.NewFactory(registries.FactoryOptions{
+		CreatorFuncsWithoutRepoList: registries.AllCreatorFuncsWithoutRepoList,
+	})
+
+	registrySet := registries.NewSet(registryFactory, creatorOpts...)
 
 	scannerFactory := scanners.NewFactory(registrySet)
 	scannerSet := scanners.NewSet(scannerFactory)

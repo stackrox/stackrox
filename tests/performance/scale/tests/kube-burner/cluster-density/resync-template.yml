@@ -1,0 +1,147 @@
+---
+global:
+  gc: true
+  indexerConfig:
+    enabled: true
+    {{ if env "ELASTICSEARCH_URL" -}}
+    type: elastic  # "opensearch" can be used in kube-burner >=v1.6
+    esServers: [ {{ env "ELASTICSEARCH_URL" }} ]
+    defaultIndex: kube-burner
+    {{ else -}}
+    type: local
+    metricsDirectory: collected-metrics
+    createTarball: true
+    tarballName: collected-metrics.tar.gz
+    {{ end }}
+  measurements: []
+jobs:
+  {{ $iterations := env "num_iterations" }}
+{{ range $i, $el := untilStep 1 $iterations 1 }}
+  - name: create-sa-{{ $el }}
+    namespace: cluster-density-{{ $el }}
+    jobIterations: {{ env "num_namespaces" }}
+    qps: 100
+    burst: 200
+    namespacedIterations: true
+    podWait: true
+    waitWhenFinished: false
+    preLoadPeriod: 5s
+    churn: false
+    namespaceLabels:
+      security.openshift.io/scc.podSecurityLabelSync: false
+      pod-security.kubernetes.io/enforce: privileged
+      pod-security.kubernetes.io/audit: privileged
+      pod-security.kubernetes.io/warn: privileged
+    objects:
+      - objectTemplate: templates/sa.yml
+        replicas: {{ env "num_deployments" }}
+        inputVars:
+          resourceName: {{ env "resource_name" }}-sa
+      - objectTemplate: templates/secret.yml
+        replicas: {{ env "num_configs" }}
+        inputVars:
+          resourceName: {{ env "resource_name" }}-secret
+      - objectTemplate: templates/configmap.yml
+        replicas: {{ env "num_configs" }}
+        inputVars:
+          resourceName: {{ env "resource_name" }}-cm
+  - name: create-{{ $el }}
+    namespace: cluster-density-{{ $el }}
+    jobIterations: {{ env "num_namespaces" }}
+    qps: 100
+    burst: 200
+    namespacedIterations: true
+    podWait: true
+    waitWhenFinished: true
+    preLoadImages: true
+    preLoadPeriod: 30s
+    churn: false
+    namespaceLabels:
+      security.openshift.io/scc.podSecurityLabelSync: false
+      pod-security.kubernetes.io/enforce: privileged
+      pod-security.kubernetes.io/audit: privileged
+      pod-security.kubernetes.io/warn: privileged
+    objects:
+      - objectTemplate: templates/deployment-with-sa.yml
+        replicas: {{ env "num_deployments" }}
+        inputVars:
+          resourceName: {{ env "resource_name" }}-deployment
+          podName: {{ env "resource_name" }}
+          saName: {{ env "resource_name" }}-sa
+          secretName: {{ env "resource_name" }}-secret
+          cmName: {{ env "resource_name" }}-cm
+          podReplicas: {{ env "num_pods" }}
+          numConfigs: {{ env "num_configs" }}
+      - objectTemplate: templates/service.yml
+        replicas: {{ env "num_deployments" }}
+        inputVars:
+          resourceName: {{ env "resource_name" }}-svc
+          appName: {{ env "resource_name" }}-deployment
+      - objectTemplate: templates/route.yml
+        replicas: {{ env "num_deployments" }}
+        inputVars:
+          resourceName: {{ env "resource_name" }}-route
+          svcName: {{ env "resource_name" }}-svc
+      - objectTemplate: templates/role.yml
+        replicas: {{ env "num_deployments" }}
+        inputVars:
+          resourceName: {{ env "resource_name" }}-role
+      - objectTemplate: templates/role-binding.yml
+        replicas: {{ env "num_deployments" }}
+        inputVars:
+          resourceName: {{ env "resource_name" }}-rolebinding
+          saName: {{ env "resource_name" }}-sa
+          roleName: {{ env "resource_name" }}-role
+          namespace: cluster-density-{{ $el }}
+  - name: patch-{{ $el }}
+    jobType: patch
+    jobIterations: {{ env "num_patches" }}
+    qps: 100
+    burst: 200
+    preLoadPeriod: 5s
+    objects:
+      - kind: Deployment
+        labelSelector: {kube-burner-job: create-{{ $el }}}
+        objectTemplate: templates/deployment-patch-add-label.yml
+        patchType: "application/strategic-merge-patch+json"
+        apiVersion: apps/v1
+  - name: delete-{{ $el }}
+    jobType: delete
+    qps: 100
+    burst: 200
+    preLoadPeriod: 5s
+    objects:
+      - kind: Deployment
+        labelSelector: {kube-burner-job: create-{{ $el }}}
+        apiVersion: apps/v1
+      - kind: Service
+        labelSelector: {kube-burner-job: create-{{ $el }}}
+        apiVersion: v1
+      - kind: Route
+        labelSelector: {kube-burner-job: create-{{ $el }}}
+        apiVersion: route.openshift.io/v1
+      - kind: Role
+        labelSelector: {kube-burner-job: create-{{ $el }}}
+        apiVersion: rbac.authorization.k8s.io/v1
+      - kind: RoleBinding
+        labelSelector: {kube-burner-job: create-{{ $el }}}
+        apiVersion: rbac.authorization.k8s.io/v1
+  - name: delete-sa-{{ $el }}
+    jobType: delete
+    qps: 100
+    burst: 200
+    preLoadPeriod: 5s
+    objects:
+      - kind: Secret
+        labelSelector: {kube-burner-job: create-sa-{{ $el }}}
+        apiVersion: v1
+      - kind: ConfigMap
+        labelSelector: {kube-burner-job: create-sa-{{ $el }}}
+        apiVersion: v1
+      - kind: ServiceAccount
+        labelSelector: {kube-burner-job: create-sa-{{ $el }}}
+        apiVersion: v1
+      - kind: Namespace
+        labelSelector: {kube-burner-job: create-sa-{{ $el }}}
+        apiVersion: v1
+{{ end }}

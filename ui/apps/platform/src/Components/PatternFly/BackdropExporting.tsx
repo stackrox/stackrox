@@ -5,7 +5,7 @@ function BackdropExporting(): ReactElement {
     return (
         <Backdrop>
             <Bullseye>
-                <Spinner isSVG />
+                <Spinner />
             </Bullseye>
         </Backdrop>
     );

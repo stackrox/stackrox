@@ -1,0 +1,60 @@
+values:
+  ca:
+    cert: ""
+    key: ""
+  central:
+    serviceTLS:
+      cert: ""
+      key: ""
+    dbServiceTLS:
+      cert: ""
+      key: ""
+  imagePullSecrets:
+    allowNone: true
+  scannerV4:
+    disable: false
+tests:
+- name: "Helm hook annotation present on central-db PVC by default"
+  expect: |
+    .persistentvolumeclaims["central-db"].metadata.annotations | ."helm.sh/hook" | assertThat(. == "pre-install,pre-upgrade")
+
+- name: "Helm hook annotation can be removed from central-db PVC"
+  values:
+    customize:
+      other:
+        persistentvolumeclaim/central-db:
+          annotations:
+            helm.sh/hook: null
+  expect: |
+    .persistentvolumeclaims["central-db"].metadata.annotations | ."helm.sh/hook" | assertThat(. == null)
+
+- name: "Label present on scanner-v4-db PVC by default"
+  expect: |
+    .persistentvolumeclaims["scanner-v4-db"]a.metadata.labels | ."target.pvc.stackrox.io" | assertThat(. == "scanner-v4-db")
+
+- name: "Label can be removed from scanner-v4-db PVC"
+  values:
+    customize:
+      other:
+        persistentvolumeclaim/scanner-v4-db:
+          target.pvc.stackrox.io: null
+  expect: |
+    .persistentvolumeclaims["scanner-v4-db"].metadata.labels | ."target.pvc.stackrox" | assertThat(. == null)
+
+- name: "Custom metadata can be added"
+  values:
+    customize:
+      other:
+        persistentvolumeclaim/central-db:
+          annotations:
+            foo: bar
+        deployment/central:
+          annotations:
+            hello: world
+  tests:
+  - name: "to central-db PVC"
+    expect: |
+      .persistentvolumeclaims["central-db"].metadata.annotations | ."foo" | assertThat(. == "bar")
+  - name: "to central deployment"
+    expect: |
+      .deployments["central"].metadata.annotations | ."hello" | assertThat(. == "world")

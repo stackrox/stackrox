@@ -1,12 +1,20 @@
 package service
 
 import (
+	"context"
 	"testing"
 
 	openshiftAppsV1 "github.com/openshift/api/apps/v1"
 	openshiftRouteV1 "github.com/openshift/api/route/v1"
+	networkPolicyMockStore "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/images/enricher"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 const listYAML = `
@@ -530,19 +538,44 @@ spec:
   adminPortalCredentialsRef:
     name: asecretname
 `
+const cronYaml = `
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: example
+  namespace: sst-etcd-backup
+spec:
+  schedule: '@daily'
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: hello
+              image: busybox
+              args:
+                - /bin/sh
+                - '-c'
+                - date; echo Hello from the Kubernetes cluster
+          restartPolicy: OnFailure
+`
 
 func TestParseList_Success(t *testing.T) {
-	_, _, err := getObjectsFromYAML(listYAML)
-	require.NoError(t, err)
-
-	_, _, err = getObjectsFromYAML(openshiftDeploymentConfigYaml)
-	require.NoError(t, err)
-
-	_, _, err = getObjectsFromYAML(multiYaml)
-	require.NoError(t, err)
-
-	_, _, err = getObjectsFromYAML(openshiftDeploymentConfigYaml)
-	require.NoError(t, err)
+	for name, yaml := range map[string]string{
+		"listYaml":                          listYAML,
+		"openshiftDeploymentConfigYaml":     openshiftDeploymentConfigYaml,
+		"multiYaml":                         multiYaml,
+		"openshiftDeployConfMultiYaml":      openshiftDeploymentConfigYaml,
+		"operatorCRDMultiYaml":              operatorCRDMultiYaml,
+		"operatorCRDYaml":                   operatorCRDYaml,
+		"openshiftRouteWithOperatorCRDYaml": openshiftRouteWithOperatorCRDYaml,
+		"cronYaml":                          cronYaml,
+	} {
+		t.Run(name, func(t *testing.T) {
+			_, _, err := getObjectsFromYAML(yaml)
+			require.NoError(t, err)
+		})
+	}
 }
 
 func TestParseList_ConversionToOpenshiftObjects(t *testing.T) {
@@ -616,6 +649,91 @@ func TestParseList_IgnoredObjects(t *testing.T) {
 			}
 			assert.Len(t, ignoredObjRefs, len(c.expectedIgnoredObjects))
 			assert.ElementsMatch(t, ignoredObjRefs, c.expectedIgnoredObjects)
+		})
+	}
+}
+
+func TestFetchOptionFromRequest(t *testing.T) {
+	cases := map[string]struct {
+		req         *v1.BuildDetectionRequest
+		err         error
+		fetchOption enricher.FetchOption
+	}{
+		"no external metadata and no force should result in UseCachesIfPossible": {
+			req:         &v1.BuildDetectionRequest{},
+			fetchOption: enricher.UseCachesIfPossible,
+		},
+		"no external metadata set and no force should result in NoExternalMetadata": {
+			req:         &v1.BuildDetectionRequest{NoExternalMetadata: true},
+			fetchOption: enricher.NoExternalMetadata,
+		},
+		"force set and no external metadata should result in ForceRefetch": {
+			req:         &v1.BuildDetectionRequest{Force: true},
+			fetchOption: enricher.UseImageNamesRefetchCachedValues,
+		},
+		"both force and no external metadata set should result in an error": {
+			req:         &v1.BuildDetectionRequest{NoExternalMetadata: true, Force: true},
+			fetchOption: enricher.UseCachesIfPossible,
+			err:         errox.InvalidArgs,
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			fetchOpt, err := getFetchOptionFromRequest(c.req)
+			if c.err != nil {
+				assert.ErrorIs(t, err, c.err)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, c.fetchOption, fetchOpt)
+		})
+	}
+}
+
+func TestGetAppliedNetpolsForDeployment(t *testing.T) {
+	mockClusterID := uuid.NewV4().String()
+	mockCtrl := gomock.NewController(t)
+	mockNetpolDS := networkPolicyMockStore.NewMockDataStore(mockCtrl)
+	mockNetpolDS.EXPECT().GetNetworkPolicies(gomock.Any(), mockClusterID, "ns").Return(
+		[]*storage.NetworkPolicy{
+			{Id: uuid.NewV4().String(), Spec: &storage.NetworkPolicySpec{PodSelector: &storage.LabelSelector{MatchLabels: map[string]string{"app": "match"}}}},
+			{Id: uuid.NewV4().String(), Spec: &storage.NetworkPolicySpec{PodSelector: &storage.LabelSelector{MatchLabels: map[string]string{"nomatch": "nomatch"}}}},
+		}, nil)
+	s := serviceImpl{
+		netpols: mockNetpolDS,
+	}
+	eCtx := enricher.EnrichmentContext{Namespace: "ns", ClusterID: mockClusterID}
+	d := storage.Deployment{Id: uuid.NewV4().String(), PodLabels: map[string]string{"app": "match"}}
+
+	actual, err := s.getAppliedNetpolsForDeployment(context.Background(), eCtx, &d)
+
+	assert.NoError(t, err)
+	assert.Len(t, actual.Policies, 1)
+}
+
+func TestGetPolicyNamesAsSlice(t *testing.T) {
+	cases := map[string]struct {
+		policies map[string]*storage.NetworkPolicy
+		expected []string
+	}{
+		"No policies": {
+			policies: make(map[string]*storage.NetworkPolicy),
+			expected: nil,
+		},
+		"Mutliple policies": {
+			policies: map[string]*storage.NetworkPolicy{"1": {Name: "1"}, "2": {Name: "2"}},
+			expected: []string{"1", "2"},
+		},
+		"Nil policy": {
+			policies: map[string]*storage.NetworkPolicy{"1": {Name: "1"}, "2": nil},
+			expected: []string{"1"},
+		},
+	}
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			actual := getPolicyNamesAsSlice(c.policies)
+			assert.ElementsMatch(t, c.expected, actual)
 		})
 	}
 }

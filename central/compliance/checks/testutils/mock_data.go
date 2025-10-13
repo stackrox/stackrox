@@ -1,9 +1,9 @@
 package testutils
 
 import (
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/framework/mocks"
+	"go.uber.org/mock/gomock"
 )
 
 // SetupMockCtxAndMockData sets up a mock compliance context, and a mock data repository.

@@ -13,7 +13,7 @@ type auditLogSenderImpl struct {
 	clusterID string
 }
 
-func (s *auditLogSenderImpl) Send(ctx context.Context, event *auditEvent) error {
+func (s *auditLogSenderImpl) Send(_ context.Context, event *auditEvent) error {
 	k8sEvent := event.ToKubernetesEvent(s.clusterID)
 
 	return s.client.Send(&sensor.MsgFromCompliance{

@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer/common"
+	"github.com/stackrox/rox/sensor/kubernetes/enforcer/cronjob"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer/daemonset"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer/deployment"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer/deploymentconfig"
@@ -48,6 +49,10 @@ func (e *enforcerImpl) scaleToZero(ctx context.Context, enforcement *central.Sen
 	case pkgKubernetes.StatefulSet:
 		function = func(ctx context.Context) error {
 			return statefulset.EnforceZeroReplica(ctx, e.client.Kubernetes(), deploymentInfo)
+		}
+	case pkgKubernetes.CronJob:
+		function = func(ctx context.Context) error {
+			return cronjob.Suspend(ctx, e.client.Kubernetes(), deploymentInfo)
 		}
 	default:
 		return fmt.Errorf("unknown type: %s", deploymentInfo.GetDeploymentType())

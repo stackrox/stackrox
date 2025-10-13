@@ -4,8 +4,10 @@ import (
 	"io"
 
 	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/renderer"
+	"github.com/olekukonko/tablewriter/tw"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/gjson"
-	"github.com/stackrox/rox/pkg/set"
 )
 
 // TablePrinterOptions is a functional option for the TablePrinter.
@@ -13,11 +15,19 @@ type TablePrinterOptions func(*TablePrinter)
 
 // WithTableHeadersOption is a functional option for setting the headers of the table,
 // which headers to merge and whether to print headers at all.
-func WithTableHeadersOption(headers []string, headersToMerge []string, noHeader bool) TablePrinterOptions {
+func WithTableHeadersOption(headers []string, merge bool, noHeader bool) TablePrinterOptions {
 	return func(p *TablePrinter) {
 		p.headers = headers
-		p.columnIndexesToMerge = indexesToMergeFromColumnNames(p.headers, set.NewStringSet(headersToMerge...))
+		p.mergeHierarchical = merge
 		p.noHeader = noHeader
+	}
+}
+
+// WithTableHideUnpopulatedRowsOption is a functional option for hiding rows of the table,
+// when those rows have an unpopulated spot from a column marked as required.
+func WithTableHideUnpopulatedRowsOption(requiredColumns []string) TablePrinterOptions {
+	return func(p *TablePrinter) {
+		p.columnTreeOptions = []gjson.ColumnTreeOptions{gjson.HideRowsIfColumnNotPopulated(requiredColumns)}
 	}
 }
 
@@ -25,10 +35,9 @@ func WithTableHeadersOption(headers []string, headersToMerge []string, noHeader 
 type TablePrinter struct {
 	headers               []string
 	rowJSONPathExpression string
-	// columnIndexesToMerge set to non nil will instruct the table writer to merge all identical cells.
-	// There will be no precedence in any fashion applied.
-	columnIndexesToMerge []int
-	noHeader             bool
+	mergeHierarchical     bool
+	noHeader              bool
+	columnTreeOptions     []gjson.ColumnTreeOptions
 }
 
 // NewTablePrinter creates a TablePrinter from the options set.
@@ -46,24 +55,29 @@ type TablePrinter struct {
 // GJSON's syntax expression to read more about modifiers.
 // The following example illustrates a JSON compatible structure and its gjson multi path expression
 // JSON structure:
-// type data struct {
-//		Infos 	[]info `json:"infos"`
-//		Name 	string `json:"name"`
-// }
-// type info struct {
-//		info 	string `json:"info"`
-//		topic 	string `json:"topic"`
-// }
+//
+//	type data struct {
+//			Infos 	[]info `json:"infos"`
+//			Name 	string `json:"name"`
+//	}
+//
+//	type info struct {
+//			info 	string `json:"info"`
+//			topic 	string `json:"topic"`
+//	}
+//
 // Data:
-// data := &data{Name: "example", Infos: []info{
-//										{info: "info1", topic: "topic1"},
-//										{info: "info2", topic: "topic2"},
-//										{info: "info3", topic: "topic3"},
-//										}
+//
+//	data := &data{Name: "example", Infos: []info{
+//											{info: "info1", topic: "topic1"},
+//											{info: "info2", topic: "topic2"},
+//											{info: "info3", topic: "topic3"},
+//											}
+//
 // gjson multi path expression: "{name,infos.#.info,infos.#.topic}"
-// 	- bundle multiple gjson expression surrounded by "{}" to form a multi path expression
-// 	- specify "#" to visit each element in the array
-// 	- each expression in the multi path expression is correlated with the given header(s)!
+//   - bundle multiple gjson expression surrounded by "{}" to form a multi path expression
+//   - specify "#" to visit each element in the array
+//   - each expression in the multi path expression is correlated with the given header(s)!
 //
 // headers := []string{"name", "info", "topic"}
 //
@@ -83,32 +97,36 @@ func NewTablePrinter(rowJSONPathExpression string, options ...TablePrinterOption
 	return printer
 }
 
-func indexesToMergeFromColumnNames(headers []string, columnsToMerge set.StringSet) []int {
-	if columnsToMerge.Cardinality() == 0 {
-		return nil
-	}
-	indexesToMerge := make([]int, 0, len(columnsToMerge))
-	for i, header := range headers {
-		if columnsToMerge.Contains(header) {
-			indexesToMerge = append(indexesToMerge, i)
-		}
-	}
-	return indexesToMerge
-}
-
 func (p *TablePrinter) createTableWriter(out io.Writer) *tablewriter.Table {
-	tw := tablewriter.NewWriter(out)
+	mergeMode := tw.MergeNone
+	if p.mergeHierarchical {
+		mergeMode = tw.MergeHierarchical
+	}
+	table := tablewriter.NewTable(out,
+		tablewriter.WithRenderer(renderer.NewBlueprint(tw.Rendition{
+			Symbols: tw.NewSymbols(tw.StyleASCII),
+			Settings: tw.Settings{
+				Separators: tw.Separators{BetweenRows: tw.On},
+				Lines:      tw.Lines{ShowFooterLine: tw.On},
+			},
+		})),
+		tablewriter.WithConfig(tablewriter.Config{
+			Header: tw.CellConfig{
+				Formatting: tw.CellFormatting{Alignment: tw.AlignCenter},
+			},
+			Row: tw.CellConfig{
+				Formatting: tw.CellFormatting{
+					MergeMode: mergeMode,
+					Alignment: tw.AlignCenter,
+					AutoWrap:  tw.WrapNormal,
+				},
+			},
+		}),
+	)
 	if !p.noHeader {
-		tw.SetHeader(p.headers)
+		table.Header(p.headers)
 	}
-	if p.columnIndexesToMerge != nil {
-		tw.SetAutoMergeCellsByColumnIndex(p.columnIndexesToMerge)
-	}
-	tw.SetRowLine(true)
-	tw.SetReflowDuringAutoWrap(false)
-
-	tw.SetAlignment(tablewriter.ALIGN_CENTER)
-	return tw
+	return table
 }
 
 // Print will print the given JSON object as a tabular format to the io.Writer.
@@ -116,25 +134,23 @@ func (p *TablePrinter) createTableWriter(out io.Writer) *tablewriter.Table {
 // it was not possible to write to the io.Writer.
 func (p *TablePrinter) Print(jsonObject interface{}, out io.Writer) error {
 	// create table writer with headers and options.
-	tw := p.createTableWriter(out)
+	table := p.createTableWriter(out)
 
 	// retrieve rows from JSON object via JSON path expression.
-	rowMapper, err := gjson.NewRowMapper(jsonObject, p.rowJSONPathExpression)
+	rowMapper, err := gjson.NewRowMapper(jsonObject, p.rowJSONPathExpression, p.columnTreeOptions...)
 	if err != nil {
 		return err
 	}
 
 	rows, err := rowMapper.CreateRows()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not create rows")
 	}
-	tw.AppendBulk(rows)
-	// TableWriter library does not offer any way to check for errors when rendering.
-	tw.Render()
-
-	// Handle potential writing errors to io.Writer since table library is ignoring errors.
-	if _, err := out.Write(nil); err != nil {
-		return err
+	if err := table.Bulk(rows); err != nil {
+		return errors.Wrap(err, "could not bulk add rows")
+	}
+	if err := table.Render(); err != nil {
+		return errors.Wrap(err, "could not render the table")
 	}
 	return nil
 }

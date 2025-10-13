@@ -1,0 +1,24 @@
+{
+  "alerts": [
+    {
+      "policy": {
+        "name": "CI Test Policy One",
+        "description": "CI policy one that is used for tests",
+        "rationale": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent nec orci bibendum sapien suscipit maximus. Quisque dapibus accumsan tempor. Vivamus at justo tellus. Vivamus vel sem vel mauris cursus ullamcorper.",
+        "remediation": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus cursus convallis lacinia.",
+        "severity": "CRITICAL_SEVERITY",
+        "enforcementActions": [
+          "FAIL_BUILD_ENFORCEMENT"
+        ]
+      },
+      "violations": [
+        {
+          "message": "This is awesome"
+        },
+        {
+          "message": "This is more awesome"
+        }
+      ]
+    }
+  ]
+}

@@ -1,62 +1,77 @@
 package sensor
 
 import (
+	"context"
 	"io"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 )
 
 type centralReceiverImpl struct {
 	receivers []common.SensorComponent
-
-	stopC    concurrency.ErrorSignal
-	stoppedC concurrency.ErrorSignal
+	stopper   concurrency.Stopper
+	finished  *sync.WaitGroup
 }
 
-func (s *centralReceiverImpl) Start(stream central.SensorService_CommunicateClient, onStops ...func(error)) {
+func (s *centralReceiverImpl) Start(stream central.SensorService_CommunicateClient, onStops ...func()) {
 	go s.receive(stream, onStops...)
 }
 
-func (s *centralReceiverImpl) Stop(err error) {
-	s.stopC.SignalWithError(err)
+func (s *centralReceiverImpl) Stop() {
+	log.Debug("Stopping CentralReceiver")
+	s.stopper.Client().Stop()
 }
 
 func (s *centralReceiverImpl) Stopped() concurrency.ReadOnlyErrorSignal {
-	return &s.stoppedC
+	return s.stopper.Client().Stopped()
 }
 
-// Take in data processed by central, run post processing, then send it to the output channel.
-func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateClient, onStops ...func(error)) {
+// Take in data processed by central, run post-processing, then send it to the output channel.
+func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateClient, onStops ...func()) {
+	ctx, cancel := context.WithCancel(stream.Context())
+
+	componentsQueues := make([]*ComponentQueue, 0, len(s.receivers))
+	for _, c := range s.receivers {
+		componentQueue := NewComponentQueue(c)
+		componentQueue.Start(ctx)
+		componentsQueues = append(componentsQueues, componentQueue)
+	}
+
 	defer func() {
-		s.stoppedC.SignalWithError(s.stopC.Err())
-		runAll(s.stopC.Err(), onStops...)
+		cancel()
+		s.stopper.Flow().ReportStopped()
+		runAll(onStops...)
+		s.finished.Done()
 	}()
 
 	for {
 		select {
-		case <-s.stopC.Done():
+		case <-s.stopper.Flow().StopRequested():
+			log.Info("Stop flow requested")
 			return
 
-		case <-stream.Context().Done():
-			s.stopC.SignalWithError(stream.Context().Err())
+		case <-ctx.Done():
+			log.Info("Context done")
+			s.stopper.Flow().StopWithError(ctx.Err())
 			return
 
 		default:
 			msg, err := stream.Recv()
 			if err == io.EOF {
-				s.stopC.Signal()
+				log.Info("EOF on gRPC stream")
+				s.stopper.Flow().StopWithError(nil)
 				return
 			}
 			if err != nil {
-				s.stopC.SignalWithError(err)
+				log.Infof("Stopping with error: %s", err)
+				s.stopper.Flow().StopWithError(err)
 				return
 			}
-			for _, r := range s.receivers {
-				if err := r.ProcessMessage(msg); err != nil {
-					log.Error(err)
-				}
+			for _, q := range componentsQueues {
+				q.Push(msg)
 			}
 		}
 	}

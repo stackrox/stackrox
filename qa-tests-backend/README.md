@@ -25,7 +25,7 @@ need to consider the following environment variables:
 - CLUSTER: Either `OPENSHIFT` or `K8S`. This is inferred from the most recent `deploy/{k8s,openshift}/central-deploy`
   dir, so if you are deploying another way or have more than 1 cluster type deployed then you will
   need to set this appropriately.
-- ROX_PASSWORD: This is inferred from the most recent `deploy/{k8s,openshift}/central-deploy/password` file.
+- ROX_ADMIN_PASSWORD: This is inferred from the most recent `deploy/{k8s,openshift}/central-deploy/password` file.
 
 When deploying using `deploy/{k8s,openshift}/deploy.sh` scripts you may need:
 - MAIN_IMAGE_TAG: If your working directory has not been built and pushed and the output of `make tag` does not
@@ -40,10 +40,10 @@ are inferred from the `deploy/{k8s,openshift}/central-deploy` directory.
 
 ### Tests dependent on integration credentials
 - If your tests depend on an integration password or token in an environment variable such as:
-  `GOOGLE_CREDENTIALS_GCR_SCANNER`, `EMAIL_NOTIFIER_PASSWORD`,
+  `GOOGLE_CREDENTIALS_GCR_SCANNER_V2`, `EMAIL_NOTIFIER_PASSWORD`,
   `MAILGUN_PASSWORD`, `JIRA_TOKEN`, `DTR_REGISTRY_PASSWORD`, `QUAY_PASSWORD`
   - Create a `qa-tests-backend/qa-test-settings.properties` file that contains environment variable assignments.
-  - Copy environment variable settings from the [StackRox 1Password Vault](https://stackrox.1password.com)
+  - Copy environment variable settings from [BitWarden](https://vault.bitwarden.com/#/vault?itemId=da41ea10-15fa-44e2-988e-af260101b26e)
 
 ### Custom configuration
 - If you have deployed the cluster differently or need to use a custom environment variable configuration:
@@ -54,10 +54,11 @@ are inferred from the `deploy/{k8s,openshift}/central-deploy` directory.
   - Environment Variables:
     - `CLUSTER`: Either `OPENSHIFT` or `K8S`
     - `API_HOSTNAME`: hostname central is running; default `localhost`
-    - `PORT`: central port; default `8000`
+    - `API_PORT`: central port; default `8000`
     - `ROX_USERNAME`: default `admin`
-    - `ROX_PASSWORD`: default read from deploy dir based on specified `CLUSTER`
+    - `ROX_ADMIN_PASSWORD`: default read from deploy dir based on specified `CLUSTER`
     - `KUBECONFIG`: kubeconfig file to use
+    - `POD_SECURITY_POLICIES`: set to `false` if the underlying kubernetes cluster does not support pod security policies
 
   - module : `qa-test-backend.test`
 - Save the configuration and run the test.
@@ -79,23 +80,25 @@ To run tests, from within `qa-tests-backend` directory:
 
 ### Custom configuration
 If you have deployed the cluster differently or need to use a custom configuration, set `CLUSTER`, `API_HOSTNAME`,
-`PORT`,`ROX_USERNAME`, `ROX_PASSWORD` and other relevant integration credential environment variables.
+`PORT`,`ROX_USERNAME`, `ROX_ADMIN_PASSWORD` and other relevant integration credential environment variables.
 
-## CircleCI
-### Labels
-Tests runs in CircleCI are controlled by CircleCI labels. Here are the labels relevant to QA tests:
-  - `ci-all-qa-tests` : run ALL QA tests, not just BAT
-  - `ci-no-qa-tests` : skip QA tests
-  - `ci-openshift-tests` : Run tests on Openshift. This label can be combined with the previous two labels
+## Running a single test multiple times
 
-### Spock Reports
-Test outputs are integrated with spock-reports plugin.
-All the reports are added under build/spock-reports folder.
-The report is generated with all the tests executed with asserts for the failed and the steps executed.
+To test for flakiness, you can run a single test multiple times while emulating a CI environment. This is
+achieved by running the following commands:
+
+```sh
+./tests/e2e/run-e2e-tests.sh -t "$MAIN_IMAGE_TAG" -y --config-only qa
+./tests/e2e/run-e2e-tests.sh -d -t "$MAIN_IMAGE_TAG" --spin-cycle=100 -y qa DiagnosticBundleTest
+```
+
+Note that access to the
+[CI vault instance](https://vault.ci.openshift.org/ui/vault/secrets/kv/show/selfservice/stackrox-stackrox-e2e-tests/credentials)
+is required to set up credentials as they are used in CI.
 
 # Adding Tests
 ## Annotations
-New tests are added with a `@Category` annotation to indicate which to which
+New tests are added with a `@Tag` annotation to indicate which to which
 group the test belongs. The default test group that runs in CI is the `BAT`
 group.
 
@@ -124,6 +127,6 @@ We don't use a paid account there and so image pulls get throttled, and
 tests that use such images fail.
 
 If you need a specific image from DockerHub, pull it, retag as
-`quay.io/rhacs-eng/qa:<your-tag-here>` and push. 
+`quay.io/rhacs-eng/qa:<your-tag-here>` and push.
 Then consume the new image from `quay.io/rhacs-eng/qa:<your-tag-here>`
 in tests. Such pulls shouldn't get throttled.

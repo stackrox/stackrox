@@ -9,13 +9,42 @@ defaults:
     registry: [< required "" .MainRegistry >]
 
   env:
+    grpcEnforceALPN: false
     offlineMode: false
 
   central:
     config: "@config/central/config.yaml|config/central/config.yaml.default"
     endpointsConfig: "@config/central/endpoints.yaml|config/central/endpoints.yaml.default"
+    endpoint: "central.{{ required "unknown namespace" .Release.Namespace }}.svc:443"
 
     exposeMonitoring: false
+
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        # Central is single-homed, so avoid preemptible nodes.
+        - weight: 100
+          preference:
+            matchExpressions:
+            - key: cloud.google.com/gke-preemptible
+              operator: NotIn
+              values:
+                - "true"
+        - weight: 50
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/infra
+              operator: Exists
+        - weight: 25
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/compute
+              operator: Exists
+        - weight: 100
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/control-plane
+              operator: DoesNotExist
 
     image:
       name: [< required "" .ImageRemote >]
@@ -35,18 +64,17 @@ defaults:
         port: 443
       nodePort:
         enabled: false
-        port: null
       route:
         enabled: false
+        reencrypt:
+          enabled: false
     db:
-      enabled: false
-
       external: false
 
       source:
         minConns: 10
         maxConns: 90
-        statementTimeoutMs: 60000
+        statementTimeoutMs: 1200000
 
       postgresConfig: "@config/centraldb/postgresql.conf|config/centraldb/postgresql.conf.default"
       hbaConfig: "@config/centraldb/pg_hba.conf|config/centraldb/pg_hba.conf.default"
@@ -57,11 +85,44 @@ defaults:
 
       resources:
         requests:
-          memory: "4Gi"
-          cpu: "2"
-        limits:
           memory: "8Gi"
           cpu: "4"
+        limits:
+          memory: "16Gi"
+          cpu: "8"
+  configController:
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+            - key: cloud.google.com/gke-preemptible
+              operator: NotIn
+              values:
+                - "true"
+        - weight: 50
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/infra
+              operator: Exists
+        - weight: 25
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/compute
+              operator: Exists
+        - weight: 100
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/control-plane
+              operator: DoesNotExist
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "10m"
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
   scanner:
     disable: false
     replicas: 3
@@ -72,6 +133,33 @@ defaults:
       disable: false
       minReplicas: 2
       maxReplicas: 5
+
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app: scanner
+            topologyKey: kubernetes.io/hostname
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 50
+          preference:
+            matchExpressions:
+              - key: node-role.kubernetes.io/infra
+                operator: Exists
+        - weight: 25
+          preference:
+            matchExpressions:
+              - key: node-role.kubernetes.io/compute
+                operator: Exists
+        - weight: 100
+          preference:
+            matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: DoesNotExist
 
     resources:
       requests:
@@ -91,25 +179,157 @@ defaults:
         memory: "4Gi"
       requests:
         cpu: "200m"
-        memory: "200Mi"
+        memory: "512Mi"
 
     dbImage:
       name: [< required "" .ScannerDBImageRemote >]
       tag: [< required "" .ScannerImageTag >]
 
-  system:
-    createSCCs: [< not .Operator >]
+  scannerV4:
+    image:
+      name: [< required "" .ScannerV4ImageRemote >]
+      tag: [< required "" .ScannerV4ImageTag >]
+    indexer:
+      disable: false
+      logLevel: INFO
+      metricsPort: 9090
+      replicas: 3
+      autoscaling:
+        minReplicas: 2
+        maxReplicas: 5
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: scanner-v4-indexer
+              topologyKey: kubernetes.io/hostname
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 50
+            preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/infra
+                operator: Exists
+          - weight: 25
+            preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/compute
+                operator: Exists
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: DoesNotExist
+      resources:
+        requests:
+          memory: "0.5Gi"
+          cpu: "1500m"
+        limits:
+          memory: "3Gi"
+          cpu: "4000m"
+    matcher:
+      logLevel: INFO
+      metricsPort: 9090
+      replicas: 2
+      autoscaling:
+        minReplicas: 2
+        maxReplicas: 3
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: scanner-v4-matcher
+              topologyKey: kubernetes.io/hostname
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 50
+            preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/infra
+                operator: Exists
+          - weight: 25
+            preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/compute
+                operator: Exists
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: DoesNotExist
+      resources:
+        requests:
+          memory: "1.5Gi"
+          cpu: "500m"
+        limits:
+          memory: "3Gi"
+          cpu: "1000m"
+    db:
+      postgresConfig: "@config-templates/scanner-v4-db/postgresql.conf|config-templates/scanner-v4-db/postgresql.conf.default"
+      hbaConfig: "@config-templates/scanner-v4-db/pg_hba.conf|config-templates/scanner-v4-db/pg_hba.conf.default"
+      source:
+        minConns: 5
+        maxConns: 40
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          # Scanner V4 DB is single-homed, so avoid preemptible nodes.
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: cloud.google.com/gke-preemptible
+                operator: NotIn
+                values:
+                  - "true"
+          - weight: 50
+            preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/infra
+                operator: Exists
+          - weight: 25
+            preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/compute
+                operator: Exists
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: DoesNotExist
+      resources:
+        requests:
+          memory: "4Gi"
+          cpu: "1000m"
+        limits:
+          memory: "8Gi"
+          cpu: "4000m"
+      image:
+        name: [< required "" .ScannerV4DBImageRemote >]
+        tag: [< required "" .ScannerV4ImageTag >]
+    exposeMonitoring: false
 
+  configAsCode:
+    enabled: true
+
+  network:
+    enableNetworkPolicies: true
+
+  system:
     [<- if not .AutoSensePodSecurityPolicies >]
     enablePodSecurityPolicies: [< .EnablePodSecurityPolicies >]
     [<- end >]
 
-  enableOpenShiftMonitoring: false
-
-pvcDefaults:
-  claimName: "stackrox-db"
-  size: "100Gi"
-
 dbPVCDefaults:
   claimName: "central-db"
   size: "100Gi"
+
+scannerV4DBPVCDefaults:
+  claimName: "scanner-v4-db"
+  size: "50Gi"
+  createClaim: true

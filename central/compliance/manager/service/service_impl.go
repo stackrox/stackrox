@@ -4,29 +4,29 @@ import (
 	"context"
 	"sort"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/compliance/manager"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
 )
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.ComplianceRuns)): {
-			"/v1.ComplianceManagementService/GetRecentRuns",
-			"/v1.ComplianceManagementService/GetRunStatuses",
+		user.With(permissions.View(resources.Compliance)): {
+			v1.ComplianceManagementService_GetRecentRuns_FullMethodName,
+			v1.ComplianceManagementService_GetRunStatuses_FullMethodName,
 		},
-		user.With(permissions.Modify(resources.ComplianceRuns)): {
-			"/v1.ComplianceManagementService/TriggerRun",
-			"/v1.ComplianceManagementService/TriggerRuns",
+		user.With(permissions.Modify(resources.Compliance)): {
+			v1.ComplianceManagementService_TriggerRuns_FullMethodName,
 		},
 	})
 )
@@ -61,7 +61,7 @@ func (s *service) GetRecentRuns(ctx context.Context, req *v1.GetRecentCompliance
 		return nil, err
 	}
 	sort.Slice(runs, func(i, j int) bool {
-		return runs[i].StartTime.Compare(runs[j].StartTime) < 0
+		return protocompat.CompareTimestamps(runs[i].GetStartTime(), runs[j].GetStartTime()) < 0
 	})
 
 	return &v1.GetRecentComplianceRunsResponse{
@@ -85,6 +85,20 @@ func (s *service) TriggerRuns(ctx context.Context, req *v1.TriggerComplianceRuns
 }
 
 func (s *service) GetRunStatuses(ctx context.Context, req *v1.GetComplianceRunStatusesRequest) (*v1.GetComplianceRunStatusesResponse, error) {
+	if req.GetLatest() && len(req.GetRunIds()) != 0 {
+		return nil, errox.InvalidArgs.New("both latest and run ids cannot be specified")
+	}
+
+	if req.GetLatest() {
+		runs, err := s.manager.GetLatestRunStatuses(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return &v1.GetComplianceRunStatusesResponse{
+			Runs: runs,
+		}, nil
+	}
+
 	runs, err := s.manager.GetRunStatuses(ctx, req.GetRunIds()...)
 	if err != nil {
 		return nil, err

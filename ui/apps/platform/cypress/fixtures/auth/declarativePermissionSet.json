@@ -1,0 +1,48 @@
+{
+  "permissionSets": [
+    {
+      "id": "permission-set-test-id",
+      "name": "permission-set-test-name",
+      "description": "test description",
+      "resourceToAccess": {
+        "Access": "READ_WRITE_ACCESS",
+        "Administration": "READ_WRITE_ACCESS",
+        "Alert": "READ_WRITE_ACCESS",
+        "AllComments": "READ_WRITE_ACCESS",
+        "CVE": "READ_WRITE_ACCESS",
+        "Cluster": "READ_WRITE_ACCESS",
+        "Compliance": "READ_WRITE_ACCESS",
+        "ComplianceRuns": "READ_WRITE_ACCESS",
+        "Config": "READ_WRITE_ACCESS",
+        "DebugLogs": "READ_WRITE_ACCESS",
+        "Deployment": "READ_WRITE_ACCESS",
+        "DeploymentExtension": "READ_WRITE_ACCESS",
+        "Detection": "READ_WRITE_ACCESS",
+        "Image": "READ_WRITE_ACCESS",
+        "Integration": "READ_WRITE_ACCESS",
+        "K8sRole": "READ_WRITE_ACCESS",
+        "K8sRoleBinding": "READ_WRITE_ACCESS",
+        "K8sSubject": "READ_WRITE_ACCESS",
+        "Namespace": "READ_WRITE_ACCESS",
+        "NetworkGraph": "READ_WRITE_ACCESS",
+        "NetworkGraphConfig": "READ_WRITE_ACCESS",
+        "NetworkPolicy": "READ_WRITE_ACCESS",
+        "Node": "READ_WRITE_ACCESS",
+        "ProbeUpload": "READ_WRITE_ACCESS",
+        "ScannerBundle": "READ_WRITE_ACCESS",
+        "ScannerDefinitions": "READ_WRITE_ACCESS",
+        "Secret": "READ_WRITE_ACCESS",
+        "SensorUpgradeConfig": "READ_WRITE_ACCESS",
+        "ServiceAccount": "READ_WRITE_ACCESS",
+        "ServiceIdentity": "READ_WRITE_ACCESS",
+        "VulnerabilityManagementApprovals": "READ_WRITE_ACCESS",
+        "VulnerabilityManagementRequests": "READ_WRITE_ACCESS",
+        "WatchedImage": "READ_WRITE_ACCESS",
+        "WorkflowAdministration": "READ_WRITE_ACCESS"
+      },
+      "traits": {
+        "origin": "DECLARATIVE"
+      }
+    }
+  ]
+}

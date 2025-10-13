@@ -2,23 +2,30 @@ package fake
 
 import (
 	"context"
+	"fmt"
+	"math"
 	"os"
 	"time"
 
+	"github.com/cockroachdb/pebble/v2"
 	appVersioned "github.com/openshift/client-go/apps/clientset/versioned"
 	configVersioned "github.com/openshift/client-go/config/clientset/versioned"
+	operatorVersioned "github.com/openshift/client-go/operator/clientset/versioned"
 	routeVersioned "github.com/openshift/client-go/route/clientset/versioned"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/signal"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/apimachinery/pkg/watch"
 	fakediscovery "k8s.io/client-go/discovery/fake"
 	"k8s.io/client-go/dynamic"
+	fakeDynamic "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 )
@@ -45,7 +52,12 @@ func init() {
 
 // clientSetImpl implements our client.Interface
 type clientSetImpl struct {
-	kubernetes kubernetes.Interface
+	kubernetes        kubernetes.Interface
+	dynamic           dynamic.Interface
+	openshiftApps     appVersioned.Interface
+	openshiftConfig   configVersioned.Interface
+	openshiftRoute    routeVersioned.Interface
+	openshiftOperator operatorVersioned.Interface
 }
 
 // Kubernetes returns the fake Kubernetes clientset
@@ -53,31 +65,45 @@ func (c *clientSetImpl) Kubernetes() kubernetes.Interface {
 	return c.kubernetes
 }
 
-// OpenshiftApps returns nil for the openshift client for config
+// OpenshiftApps returns the fake openshift client for apps
 func (c *clientSetImpl) OpenshiftApps() appVersioned.Interface {
-	return nil
+	return c.openshiftApps
 }
 
-// OpenshiftConfig returns nil for the openshift client for apps
+// OpenshiftConfig returns the fake openshift client for config
 func (c *clientSetImpl) OpenshiftConfig() configVersioned.Interface {
-	return nil
+	return c.openshiftConfig
 }
 
-// Dynamic returns nil
+// Dynamic returns the fake dynamic client
 func (c *clientSetImpl) Dynamic() dynamic.Interface {
-	return nil
+	return c.dynamic
 }
 
-// OpenshiftRoute implements the client interface.
+// OpenshiftRoute returns the fake openshift client for route
 func (c *clientSetImpl) OpenshiftRoute() routeVersioned.Interface {
-	return nil
+	return c.openshiftRoute
+}
+
+// OpenshiftOperator returns the fake openshift client for operator
+func (c *clientSetImpl) OpenshiftOperator() operatorVersioned.Interface {
+	return c.openshiftOperator
 }
 
 // WorkloadManager encapsulates running a fake Kubernetes client
 type WorkloadManager struct {
-	fakeClient *fake.Clientset
-	client     client.Interface
-	workload   *Workload
+	db                        *pebble.DB
+	fakeClient                *fake.Clientset
+	client                    client.Interface
+	processPool               *ProcessPool
+	labelsPool                *labelsPoolPerNamespace
+	endpointPool              *EndpointPool
+	ipPool                    *pool
+	externalIpPool            *pool
+	containerPool             *pool
+	registeredHostConnections []manager.HostNetworkInfo
+	workload                  *Workload
+	originatorCache           *OriginatorCache
 
 	// signals services
 	servicesInitialized concurrency.Signal
@@ -87,19 +113,75 @@ type WorkloadManager struct {
 
 // WorkloadManagerConfig WorkloadManager's configuration
 type WorkloadManagerConfig struct {
-	workloadFile string
+	workloadFile   string
+	labelsPool     *labelsPoolPerNamespace
+	processPool    *ProcessPool
+	endpointPool   *EndpointPool
+	ipPool         *pool
+	externalIpPool *pool
+	containerPool  *pool
+	storagePath    string
 }
 
 // ConfigDefaults default configuration
 func ConfigDefaults() *WorkloadManagerConfig {
 	return &WorkloadManagerConfig{
-		workloadFile: workloadPath,
+		workloadFile:   workloadPath,
+		labelsPool:     newLabelsPool(),
+		processPool:    newProcessPool(),
+		endpointPool:   newEndpointPool(),
+		ipPool:         newPool(),
+		externalIpPool: newPool(),
+		containerPool:  newPool(),
+		storagePath:    env.FakeWorkloadStoragePath.Setting(),
 	}
 }
 
 // WithWorkloadFile configures the WorkloadManagerConfig's WorkloadFile field
 func (c *WorkloadManagerConfig) WithWorkloadFile(file string) *WorkloadManagerConfig {
 	c.workloadFile = file
+	return c
+}
+
+// WithLabelsPool configures the WorkloadManagerConfig's LabelsPool field
+func (c *WorkloadManagerConfig) WithLabelsPool(pool *labelsPoolPerNamespace) *WorkloadManagerConfig {
+	c.labelsPool = pool
+	return c
+}
+
+// WithProcessPool configures the WorkloadManagerConfig's ProcessPool field
+func (c *WorkloadManagerConfig) WithProcessPool(pool *ProcessPool) *WorkloadManagerConfig {
+	c.processPool = pool
+	return c
+}
+
+// WithEndpointPool configures the WorkloadManagerConfig's EndpointPool field
+func (c *WorkloadManagerConfig) WithEndpointPool(pool *EndpointPool) *WorkloadManagerConfig {
+	c.endpointPool = pool
+	return c
+}
+
+// WithIpPool configures the WorkloadManagerConfig's IpPool field
+func (c *WorkloadManagerConfig) WithIpPool(pool *pool) *WorkloadManagerConfig {
+	c.ipPool = pool
+	return c
+}
+
+// WithExternalIpPool configures the WorkloadManagerConfig's ExternalIpPool field
+func (c *WorkloadManagerConfig) WithExternalIpPool(pool *pool) *WorkloadManagerConfig {
+	c.externalIpPool = pool
+	return c
+}
+
+// WithContainerPool configures the WorkloadManagerConfig's ContainerPool field
+func (c *WorkloadManagerConfig) WithContainerPool(pool *pool) *WorkloadManagerConfig {
+	c.containerPool = pool
+	return c
+}
+
+// WithStoragePath configures the WorkloadManagerConfig's StoragePath field
+func (c *WorkloadManagerConfig) WithStoragePath(path string) *WorkloadManagerConfig {
+	c.storagePath = path
 	return c
 }
 
@@ -123,16 +205,46 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 		log.Panicf("could not unmarshal workload from file due to error (%v): %s", err, data)
 	}
 
+	var db *pebble.DB
+	if config.storagePath != "" {
+		db, err = pebble.Open(config.storagePath, &pebble.Options{})
+		if err != nil {
+			log.Panic("could not open id storage")
+		}
+	}
 	mgr := &WorkloadManager{
+		db:                  db,
 		workload:            &workload,
+		originatorCache:     NewOriginatorCache(),
+		labelsPool:          config.labelsPool,
+		endpointPool:        config.endpointPool,
+		ipPool:              config.ipPool,
+		externalIpPool:      config.externalIpPool,
+		containerPool:       config.containerPool,
+		processPool:         config.processPool,
 		servicesInitialized: concurrency.NewSignal(),
 	}
 	mgr.initializePreexistingResources()
 
-	log.Infof("Created Workload manager for workload")
+	if warn := validateWorkload(&workload); warn != nil {
+		log.Warnf("Validaing workload: %s", warn)
+	}
+
+	log.Info("Created Workload manager for workload")
 	log.Infof("Workload: %s", string(data))
 	log.Infof("Rendered workload: %+v", workload)
 	return mgr
+}
+
+func validateWorkload(workload *Workload) error {
+	if workload.NetworkWorkload.OpenPortReuseProbability < 0.0 || workload.NetworkWorkload.OpenPortReuseProbability > 1.0 {
+		corrected := math.Min(1.0, math.Max(0.0, workload.NetworkWorkload.OpenPortReuseProbability))
+		workload.NetworkWorkload.OpenPortReuseProbability = corrected
+		return fmt.Errorf("incorrect probability value %.2f for 'openPortReuseProbability', "+
+			"rounding to %.2f", workload.NetworkWorkload.OpenPortReuseProbability, corrected)
+	}
+	// More validation checks can be added in the future
+	return nil
 }
 
 // SetSignalHandlers sets the handlers that will accept runtime data to be mocked from collector
@@ -159,22 +271,28 @@ func (w *WorkloadManager) initializePreexistingResources() {
 	if num := w.workload.NumNamespaces; num != 0 {
 		numNamespaces = num
 	}
-	for _, n := range getNamespaces(numNamespaces) {
+	for _, n := range getNamespaces(numNamespaces, w.getIDsForPrefix(namespacePrefix)) {
+		w.writeID(namespacePrefix, n.UID)
 		objects = append(objects, n)
 	}
 
-	nodes := w.getNodes(w.workload.NodeWorkload)
+	nodes := w.getNodes(w.workload.NodeWorkload, w.getIDsForPrefix(nodePrefix))
 	for _, node := range nodes {
+		w.writeID(nodePrefix, node.UID)
 		objects = append(objects, node)
 	}
 
-	labelsPool.matchLabels = w.workload.MatchLabels
+	w.labelsPool.matchLabels = w.workload.MatchLabels
 
-	objects = append(objects, getRBAC(w.workload.RBACWorkload)...)
+	objects = append(objects, w.getRBAC(w.workload.RBACWorkload, w.getIDsForPrefix(serviceAccountPrefix), w.getIDsForPrefix(rolesPrefix), w.getIDsForPrefix(rolebindingsPrefix))...)
 	var resources []*deploymentResourcesToBeManaged
+
+	deploymentIDs := w.getIDsForPrefix(deploymentPrefix)
+	replicaSetIDs := w.getIDsForPrefix(replicaSetPrefix)
+	podIDs := w.getIDsForPrefix(podPrefix)
 	for _, deploymentWorkload := range w.workload.DeploymentWorkload {
 		for i := 0; i < deploymentWorkload.NumDeployments; i++ {
-			resource := w.getDeployment(deploymentWorkload)
+			resource := w.getDeployment(deploymentWorkload, i, deploymentIDs, replicaSetIDs, podIDs)
 			resources = append(resources, resource)
 
 			objects = append(objects, resource.deployment, resource.replicaSet)
@@ -184,11 +302,13 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		}
 	}
 
-	objects = append(objects, getService(w.workload.ServiceWorkload)...)
+	objects = append(objects, w.getServices(w.workload.ServiceWorkload, w.getIDsForPrefix(servicePrefix))...)
 	var npResources []*networkPolicyToBeManaged
+	networkPolicyIDs := w.getIDsForPrefix(networkPolicyPrefix)
 	for _, npWorkload := range w.workload.NetworkPolicyWorkload {
 		for i := 0; i < npWorkload.NumNetworkPolicies; i++ {
-			resource := w.getNetworkPolicy(npWorkload)
+			resource := w.getNetworkPolicy(npWorkload, getID(networkPolicyIDs, i))
+			w.writeID(networkPolicyPrefix, resource.networkPolicy.UID)
 			npResources = append(npResources, resource)
 
 			objects = append(objects, resource.networkPolicy)
@@ -207,9 +327,19 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		Compiler:     "gc",
 		Platform:     "linux/amd64",
 	}
-	w.client = &clientSetImpl{
-		kubernetes: w.fakeClient,
+	scheme := runtime.NewScheme()
+	gvr := schema.GroupVersionResource{
+		Group:    "apiextensions.k8s.io",
+		Version:  "v1",
+		Resource: "customresourcedefinitions",
 	}
+
+	clientSet := &clientSetImpl{
+		kubernetes: w.fakeClient,
+		dynamic:    fakeDynamic.NewSimpleDynamicClientWithCustomListKinds(scheme, map[schema.GroupVersionResource]string{gvr: "CustomResourceDefinitionList"}),
+	}
+	initializeOpenshiftClients(clientSet)
+	w.client = clientSet
 
 	go w.clearActions()
 
@@ -223,5 +353,5 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		go w.manageNetworkPolicy(context.Background(), resource)
 	}
 
-	go w.manageFlows(context.Background(), w.workload.NetworkWorkload)
+	go w.manageFlows(context.Background())
 }

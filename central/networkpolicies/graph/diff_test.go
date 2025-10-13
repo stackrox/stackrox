@@ -1,13 +1,12 @@
 package graph
 
 import (
+	"slices"
 	"sort"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,8 +21,8 @@ type nodeSpec struct {
 type nodeSpecMap map[string]nodeSpec
 
 func sortedIDs(ids []string) []string {
-	result := sliceutils.ShallowClone(ids)
-	sort.Strings(result)
+	result := slices.Clone(ids)
+	slices.Sort(result)
 	return result
 }
 
@@ -46,13 +45,15 @@ func (m nodeSpecMap) toGraph() *v1.NetworkGraph {
 			PolicyIds: sortedIDs(spec.policies),
 		})
 	}
-	sort.Slice(result.Nodes, func(i, j int) bool { return result.Nodes[i].Entity.Id < result.Nodes[j].Entity.Id })
-	nodeIDs := make(map[string]int, len(result.Nodes))
-	for idx, node := range result.Nodes {
-		nodeIDs[node.Entity.Id] = idx
+	sort.Slice(result.GetNodes(), func(i, j int) bool {
+		return result.GetNodes()[i].GetEntity().GetId() < result.GetNodes()[j].GetEntity().GetId()
+	})
+	nodeIDs := make(map[string]int, len(result.GetNodes()))
+	for idx, node := range result.GetNodes() {
+		nodeIDs[node.GetEntity().GetId()] = idx
 	}
 	for node, spec := range m {
-		node := result.Nodes[nodeIDs[node]]
+		node := result.GetNodes()[nodeIDs[node]]
 		for _, succ := range spec.adjacencies {
 			node.OutEdges[int32(nodeIDs[succ])] = &v1.NetworkEdgePropertiesBundle{}
 		}
@@ -64,9 +65,9 @@ func (m nodeSpecMap) toDiff(g *v1.NetworkGraph) *v1.NetworkGraphDiff {
 	result := &v1.NetworkGraphDiff{
 		NodeDiffs: make(map[string]*v1.NetworkNodeDiff, len(m)),
 	}
-	nodeIDs := make(map[string]int, len(g.Nodes))
-	for idx, node := range g.Nodes {
-		nodeIDs[node.Entity.Id] = idx
+	nodeIDs := make(map[string]int, len(g.GetNodes()))
+	for idx, node := range g.GetNodes() {
+		nodeIDs[node.GetEntity().GetId()] = idx
 	}
 	for nodeID, spec := range m {
 		diff := &v1.NetworkNodeDiff{
@@ -82,7 +83,6 @@ func (m nodeSpecMap) toDiff(g *v1.NetworkGraph) *v1.NetworkGraphDiff {
 }
 
 func TestGraphDiffMismatchingNodes(t *testing.T) {
-	t.Parallel()
 
 	g1 := nodeSpecMap{
 		"a": {},
@@ -95,7 +95,7 @@ func TestGraphDiffMismatchingNodes(t *testing.T) {
 	removed, added, err := ComputeDiff(g1, g2)
 	assert.NoError(t, err)
 	assert.Empty(t, removed.GetNodeDiffs())
-	assert.True(t, proto.Equal(nodeSpecMap{"b": {}}.toDiff(g2), added))
+	assert.True(t, nodeSpecMap{"b": {}}.toDiff(g2).EqualVT(added))
 
 	g1 = nodeSpecMap{
 		"a": {},
@@ -108,11 +108,10 @@ func TestGraphDiffMismatchingNodes(t *testing.T) {
 	removed, added, err = ComputeDiff(g1, g2)
 	assert.NoError(t, err)
 	assert.Empty(t, added.GetNodeDiffs())
-	assert.True(t, proto.Equal(nodeSpecMap{"b": {}}.toDiff(g1), removed))
+	assert.True(t, nodeSpecMap{"b": {}}.toDiff(g1).EqualVT(removed))
 }
 
 func TestGraphDiffSameGraph(t *testing.T) {
-	t.Parallel()
 
 	g1 := nodeSpecMap{
 		"a": {adjacencies: adjs{"b", "c"}, policies: pols{}},
@@ -128,7 +127,6 @@ func TestGraphDiffSameGraph(t *testing.T) {
 }
 
 func TestGraphDiffOnlyAdded(t *testing.T) {
-	t.Parallel()
 
 	g1 := nodeSpecMap{
 		"a": {adjacencies: adjs{"b", "c"}, policies: pols{}},
@@ -149,11 +147,10 @@ func TestGraphDiffOnlyAdded(t *testing.T) {
 		"b": {adjacencies: adjs{"a"}},
 		"c": {adjacencies: adjs{"b"}, policies: pols{"Pol3"}},
 	}.toDiff(g1)
-	assert.True(t, proto.Equal(expectedAdded, added))
+	assert.True(t, expectedAdded.EqualVT(added))
 }
 
 func TestGraphDiffOnlyRemoved(t *testing.T) {
-	t.Parallel()
 
 	g1 := nodeSpecMap{
 		"a": {adjacencies: adjs{"b", "c"}, policies: pols{}},
@@ -174,11 +171,10 @@ func TestGraphDiffOnlyRemoved(t *testing.T) {
 		"b": {adjacencies: adjs{"a"}},
 		"c": {adjacencies: adjs{"b"}, policies: pols{"Pol3"}},
 	}.toDiff(g1)
-	assert.True(t, proto.Equal(expectedRemoved, removed))
+	assert.True(t, expectedRemoved.EqualVT(removed))
 }
 
 func TestGraphDiffAddedAndRemoved(t *testing.T) {
-	t.Parallel()
 
 	g1 := nodeSpecMap{
 		"a": {adjacencies: adjs{"b", "c"}, policies: pols{}},
@@ -219,6 +215,6 @@ func TestGraphDiffAddedAndRemoved(t *testing.T) {
 		"f": {policies: pols{"Pol4"}},
 		"g": {adjacencies: adjs{"h"}, policies: pols{"Pol3"}},
 	}.toDiff(g1)
-	assert.True(t, proto.Equal(expectedRemoved, removed))
-	assert.True(t, proto.Equal(expectedAdded, added))
+	assert.True(t, expectedRemoved.EqualVT(removed))
+	assert.True(t, expectedAdded.EqualVT(added))
 }

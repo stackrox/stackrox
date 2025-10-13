@@ -1,11 +1,11 @@
 syntax = "proto3";
 
-option go_package = "central";
+package central;
 
 import "storage/cluster.proto";
 
-package central;
+option go_package = "./internalapi/central;central";
 
 message ClusterConfig {
-    storage.DynamicClusterConfig config = 1;
+  storage.DynamicClusterConfig config = 1;
 }

@@ -5,31 +5,33 @@ import groovy.util.logging.Slf4j
 import io.fabric8.kubernetes.client.KubernetesClientException
 import objects.DaemonSet
 import objects.Deployment
-import orchestratormanager.OrchestratorMain
+import orchestratormanager.Kubernetes
 
 @Slf4j
 class ApplicationHealth {
-    OrchestratorMain client
+    Kubernetes client
     Integer waitTimeForHealthiness
     final Integer delayBetweenChecks = 5
     final Map<String, String> readyLogMessages = [
+            "admission-control": "Applied new admission control settings",
             "collector": "Sensor connectivity is successful",
             "sensor": "TLS-enabled multiplexed HTTP/gRPC server listening on",
     ]
 
-    ApplicationHealth(OrchestratorMain client, Integer waitTimeForHealthiness) {
+    ApplicationHealth(Kubernetes client, Integer waitTimeForHealthiness) {
         this.client = client
         this.waitTimeForHealthiness = waitTimeForHealthiness
-    }
-
-    void waitForSensorHealthiness() {
-        Deployment sensor = new Deployment().setNamespace(Constants.STACKROX_NAMESPACE).setName("sensor")
-        waitForHealthiness(sensor)
     }
 
     void waitForCollectorHealthiness() {
         Deployment collector = new DaemonSet().setNamespace(Constants.STACKROX_NAMESPACE).setName("collector")
         waitForHealthiness(collector)
+    }
+
+    void waitForAdmissionControllerHealthiness() {
+        Deployment admissionController = new Deployment().setNamespace(Constants.STACKROX_NAMESPACE)
+            .setName("admission-control")
+        waitForHealthiness(admissionController)
     }
 
     void waitForHealthiness(Deployment deployment) {
@@ -51,6 +53,9 @@ class ApplicationHealth {
                 }
                 else {
                     throw new RuntimeException("Expect DaemonSet or Deployment")
+                }
+                if (replicaCount == null) {
+                    throw new RuntimeException("Expected to get replica count")
                 }
                 log.debug "${replicaCount} ${deployment.name} pods expected"
                 return replicaCount

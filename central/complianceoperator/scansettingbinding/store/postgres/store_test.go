@@ -9,19 +9,18 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type ComplianceOperatorScanSettingBindingsStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestComplianceOperatorScanSettingBindingsStore(t *testing.T) {
@@ -29,28 +28,17 @@ func TestComplianceOperatorScanSettingBindingsStore(t *testing.T) {
 }
 
 func (s *ComplianceOperatorScanSettingBindingsStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
 
 	s.testDB = pgtest.ForT(s.T())
-	s.store = New(s.testDB.Pool)
+	s.store = New(s.testDB.DB)
 }
 
 func (s *ComplianceOperatorScanSettingBindingsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE compliance_operator_scan_setting_bindings CASCADE")
 	s.T().Log("compliance_operator_scan_setting_bindings", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
-}
-
-func (s *ComplianceOperatorScanSettingBindingsStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *ComplianceOperatorScanSettingBindingsStoreSuite) TestStore() {
@@ -72,12 +60,12 @@ func (s *ComplianceOperatorScanSettingBindingsStoreSuite) TestStore() {
 	foundComplianceOperatorScanSettingBinding, exists, err = store.Get(ctx, complianceOperatorScanSettingBinding.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(complianceOperatorScanSettingBinding, foundComplianceOperatorScanSettingBinding)
+	protoassert.Equal(s.T(), complianceOperatorScanSettingBinding, foundComplianceOperatorScanSettingBinding)
 
-	complianceOperatorScanSettingBindingCount, err := store.Count(ctx)
+	complianceOperatorScanSettingBindingCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, complianceOperatorScanSettingBindingCount)
-	complianceOperatorScanSettingBindingCount, err = store.Count(withNoAccessCtx)
+	complianceOperatorScanSettingBindingCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(complianceOperatorScanSettingBindingCount)
 
@@ -87,11 +75,6 @@ func (s *ComplianceOperatorScanSettingBindingsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, complianceOperatorScanSettingBinding))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, complianceOperatorScanSettingBinding), sac.ErrResourceAccessDenied)
 
-	foundComplianceOperatorScanSettingBinding, exists, err = store.Get(ctx, complianceOperatorScanSettingBinding.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(complianceOperatorScanSettingBinding, foundComplianceOperatorScanSettingBinding)
-
 	s.NoError(store.Delete(ctx, complianceOperatorScanSettingBinding.GetId()))
 	foundComplianceOperatorScanSettingBinding, exists, err = store.Get(ctx, complianceOperatorScanSettingBinding.GetId())
 	s.NoError(err)
@@ -100,15 +83,23 @@ func (s *ComplianceOperatorScanSettingBindingsStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, complianceOperatorScanSettingBinding.GetId()), sac.ErrResourceAccessDenied)
 
 	var complianceOperatorScanSettingBindings []*storage.ComplianceOperatorScanSettingBinding
+	var complianceOperatorScanSettingBindingIDs []string
 	for i := 0; i < 200; i++ {
 		complianceOperatorScanSettingBinding := &storage.ComplianceOperatorScanSettingBinding{}
 		s.NoError(testutils.FullInit(complianceOperatorScanSettingBinding, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		complianceOperatorScanSettingBindings = append(complianceOperatorScanSettingBindings, complianceOperatorScanSettingBinding)
+		complianceOperatorScanSettingBindingIDs = append(complianceOperatorScanSettingBindingIDs, complianceOperatorScanSettingBinding.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, complianceOperatorScanSettingBindings))
 
-	complianceOperatorScanSettingBindingCount, err = store.Count(ctx)
+	complianceOperatorScanSettingBindingCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, complianceOperatorScanSettingBindingCount)
+
+	s.NoError(store.DeleteMany(ctx, complianceOperatorScanSettingBindingIDs))
+
+	complianceOperatorScanSettingBindingCount, err = store.Count(ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.Equal(0, complianceOperatorScanSettingBindingCount)
 }

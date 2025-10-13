@@ -5,9 +5,9 @@ import (
 
 	"github.com/pkg/errors"
 	store "github.com/stackrox/rox/central/complianceoperator/scansettingbinding/store"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 var (
@@ -15,6 +15,8 @@ var (
 )
 
 // DataStore defines the possible interactions with compliance operator scan setting bindings
+//
+//go:generate mockgen-wrapper
 type DataStore interface {
 	Walk(ctx context.Context, fn func(result *storage.ComplianceOperatorScanSettingBinding) error) error
 	Upsert(ctx context.Context, binding *storage.ComplianceOperatorScanSettingBinding) error
@@ -36,6 +38,7 @@ func (d *datastoreImpl) Walk(ctx context.Context, fn func(binding *storage.Compl
 	} else if !ok {
 		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator scan setting bindings read")
 	}
+	// Postgres retry in caller.
 	return d.store.Walk(ctx, fn)
 }
 

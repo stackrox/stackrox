@@ -7,10 +7,15 @@ scanner:
   dbNodeSelector: null # string | dict
   tolerations: null # [dict]
   dbTolerations: null # [dict]
+  hostAliases: null # [dict]
+  dbHostAliases: null # [dict]
   autoscaling:
     disable: null # bool
     minReplicas: null # int
     maxReplicas: null # int
+  affinity: null # dict
+  priorityClassName: null # string
+  dbPriorityClassName: null # string
   resources: null # string | dict
   image:
     registry: null # string

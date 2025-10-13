@@ -16,7 +16,7 @@ export type ProcessIndicator = {
 export type ProcessSignal = {
     id: string;
     containerId: string;
-    time: string; // ISO 8601 date string
+    time: string | null; // ISO 8601 date string
     name: string;
     args: string;
     execFilePath: string;

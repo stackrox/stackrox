@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package central;
+
+import "storage/deployment.proto";
+
+option go_package = "./internalapi/central;central";
+
+message DeploymentEnhancementMessage {
+  string id = 1;
+  repeated storage.Deployment deployments = 2;
+}
+
+message DeploymentEnhancementRequest {
+  DeploymentEnhancementMessage msg = 1;
+}
+
+message DeploymentEnhancementResponse {
+  DeploymentEnhancementMessage msg = 1;
+}

@@ -1,39 +1,43 @@
 import FileSaver from 'file-saver';
+import { parseAxiosResponseAttachment } from 'utils/fileUtils';
+
 import axios from './instance';
 
 /**
  * Common download service to download different types of files.
+ * By default, timeout for downloads is removed. To override this behaviour, use timeout parameter.
  */
-export function saveFile({ method, url, data, name = '' }) {
+export function saveFile({ method, url, data, name = '', timeout = 0 }) {
     const options = {
         method,
         url,
         data,
         responseType: 'arraybuffer',
         name,
-        // removing timeout for downloads
-        timeout: 0,
+        timeout,
     };
     return axios(options)
         .then((response) => {
             if (response.data) {
-                const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
-                const matches = filenameRegex.exec(response.headers['content-disposition']);
+                const { file, filename } = parseAxiosResponseAttachment(response);
 
-                const file = new Blob([response.data], {
-                    type: response.headers['content-type'],
-                });
+                // Get file size from Content-Length header or from the actual file blob
+                const fileSizeBytes = response.headers['content-length']
+                    ? parseInt(response.headers['content-length'], 10)
+                    : file.size;
 
                 if (name && typeof name === 'string') {
                     FileSaver.saveAs(file, name);
-                } else if (matches !== null && matches[1]) {
-                    FileSaver.saveAs(file, matches[1].replace(/['"]/g, ''));
+                } else if (filename) {
+                    FileSaver.saveAs(file, filename.replace(/['"]/g, ''));
                 } else {
                     throw new Error('Unable to extract file name');
                 }
-            } else {
-                throw new Error('Expected response to contain "data" property');
+
+                // Return file size for analytics tracking
+                return { fileSizeBytes };
             }
+            return { fileSizeBytes: 0 };
         })
         .catch((err) => {
             // because the responseType of the request is `arraybuffer`,

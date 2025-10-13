@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package scanner.v4;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "internalapi/scanner/v4/common.proto";
+import "internalapi/scanner/v4/vulnerability_report.proto";
+
+option go_package = "./internalapi/scanner/v4;v4";
+
+message GetVulnerabilitiesRequest {
+  string hash_id = 1;
+  Contents contents = 2;
+}
+
+message GetSBOMRequest {
+  // id is a unique identifier (ie: sha256 digest) that represents the contents.
+  // For SPDX 2.3 this will be the document name.
+  string id = 1;
+  // name is the user requested name for the contents (ie: for images this may be the images full name with tag).
+  // For SPDX 2.3 this will be included to the document comment.
+  string name = 2;
+  // uri is a unique absolute Uniform Resource Identifier (URI) for this document (if applicable).
+  // For SPDX 2.3 this will be the document namespace.
+  string uri = 3;
+  // contents is the packages, versions, etc. that will be converted to an SBOM.
+  Contents contents = 4;
+}
+
+message GetSBOMResponse {
+  bytes sbom = 1;
+}
+
+message Metadata {
+  google.protobuf.Timestamp LastVulnerabilityUpdate = 1;
+}
+
+// Matcher finds vulnerabilities in index reports.
+service Matcher {
+  // GetVulnerabilities returns a VulnerabilityReport for a previously indexed manifest.
+  rpc GetVulnerabilities(GetVulnerabilitiesRequest) returns (VulnerabilityReport);
+
+  // GetMetadata returns information on vulnerability metadata, ek.g., last update timestamp.
+  rpc GetMetadata(google.protobuf.Empty) returns (Metadata);
+
+  // GetSBOM returns an SBOM for a previously indexed manifest.
+  rpc GetSBOM(GetSBOMRequest) returns (GetSBOMResponse);
+}

@@ -3,8 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/gogo/protobuf/types"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensor/service/connection/upgradecontroller"
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -62,7 +62,7 @@ func (s *service) UpgradeCheckInFromUpgrader(ctx context.Context, req *central.U
 	return s.connectionManager.ProcessCheckInFromUpgrader(ctx, clusterID, req)
 }
 
-func (s *service) UpgradeCheckInFromSensor(ctx context.Context, req *central.UpgradeCheckInFromSensorRequest) (*types.Empty, error) {
+func (s *service) UpgradeCheckInFromSensor(ctx context.Context, req *central.UpgradeCheckInFromSensorRequest) (*protocompat.Empty, error) {
 	clusterIDFromCert, err := clusterIDFromCtx(ctx)
 	if err != nil {
 		return nil, err
@@ -76,20 +76,20 @@ func (s *service) UpgradeCheckInFromSensor(ctx context.Context, req *central.Upg
 	if err := s.connectionManager.ProcessUpgradeCheckInFromSensor(ctx, clusterID, req); err != nil {
 		if errors.Is(err, upgradecontroller.ErrNoUpgradeInProgress) {
 			s, err := status.New(codes.Internal, err.Error()).WithDetails(&central.UpgradeCheckInResponseDetails_NoUpgradeInProgress{})
-			if utils.Should(err) == nil {
+			if utils.ShouldErr(err) == nil {
 				return nil, s.Err()
 			}
 		}
 		return nil, err
 	}
-	return &types.Empty{}, nil
+	return protocompat.ProtoEmpty(), nil
 }
 
 func (s *service) RegisterServiceServer(server *grpc.Server) {
 	central.RegisterSensorUpgradeControlServiceServer(server, s)
 }
 
-func (s *service) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+func (s *service) RegisterServiceHandler(_ context.Context, _ *runtime.ServeMux, _ *grpc.ClientConn) error {
 	return nil
 }
 

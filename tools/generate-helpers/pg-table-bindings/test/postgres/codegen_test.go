@@ -1,5 +1,4 @@
 //go:build sql_integration
-// +build sql_integration
 
 package postgres
 
@@ -7,9 +6,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -23,9 +23,9 @@ func TestStore(t *testing.T) {
 	ctx := sac.WithAllAccess(context.Background())
 
 	source := pgtest.GetConnectionString(t)
-	config, err := pgxpool.ParseConfig(source)
+	config, err := postgres.ParseConfig(source)
 	require.NoError(t, err)
-	pool, err := pgxpool.ConnectConfig(context.Background(), config)
+	pool, err := postgres.New(context.Background(), config)
 	require.NoError(t, err)
 	t.Cleanup(pool.Close)
 
@@ -35,7 +35,7 @@ func TestStore(t *testing.T) {
 	defer pgtest.CloseGormDB(t, gormDB)
 	store := CreateTableAndNewStore(ctx, pool, gormDB)
 
-	testStruct := singleKey.Clone()
+	testStruct := singleKey.CloneVT()
 	dep, exists, err := store.Get(ctx, testStruct.GetKey())
 	assert.NoError(t, err)
 	assert.False(t, exists)
@@ -45,5 +45,5 @@ func TestStore(t *testing.T) {
 	dep, exists, err = store.Get(ctx, testStruct.GetKey())
 	assert.NoError(t, err)
 	assert.True(t, exists)
-	assert.Equal(t, testStruct, dep)
+	protoassert.Equal(t, testStruct, dep)
 }

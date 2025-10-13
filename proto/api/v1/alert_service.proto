@@ -1,186 +1,155 @@
 syntax = "proto3";
 
-option go_package = "v1";
+package v1;
 
-option java_package = "io.stackrox.proto.api.v1";
-
-import weak "google/api/annotations.proto";
-import "google/protobuf/timestamp.proto";
 import "api/v1/common.proto";
 import "api/v1/empty.proto";
 import "api/v1/pagination.proto";
-import "storage/policy.proto";
-import "storage/alert.proto";
 import "api/v1/search_service.proto";
+import weak "google/api/annotations.proto";
+import "storage/alert.proto";
+import "storage/policy.proto";
 
-package v1;
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
 
 message CountAlertsResponse {
-    int32 count = 1;
+  int32 count = 1;
 }
 
 message ListAlertsRequest {
-    reserved 1 to 9; // Removed individual filtered fields and moved towards querying
-    string     query      = 10;
-    Pagination pagination = 11;
+  reserved 1 to 9; // Removed individual filtered fields and moved towards querying
+  string query = 10;
+  Pagination pagination = 11;
 }
 
 message ResolveAlertRequest {
-    string id            = 1;
-    bool whitelist       = 2 [deprecated = true];
-    bool add_to_baseline = 3;
+  string id = 1;
+  bool whitelist = 2 [deprecated = true];
+  bool add_to_baseline = 3;
 }
 
 message ResolveAlertsRequest {
-    string query = 1;
-}
-
-message SnoozeAlertRequest {
-    string id = 1;
-    google.protobuf.Timestamp snooze_till = 2;
+  string query = 1;
 }
 
 message ListAlertsResponse {
-    repeated storage.ListAlert alerts = 1;
+  repeated storage.ListAlert alerts = 1;
 }
 
 message DeleteAlertsRequest {
-    RawQuery query   = 1;
-    bool     confirm = 2;
+  RawQuery query = 1;
+  bool confirm = 2;
 }
 
 message DeleteAlertsResponse {
-    uint32 num_deleted = 1;
-    bool   dry_run     = 2;
+  uint32 num_deleted = 1;
+  bool dry_run = 2;
 }
 
 message GetAlertsGroupResponse {
-    message PolicyGroup {
-        storage.ListAlertPolicy policy = 1;
-        int64 num_alerts = 2;
-    }
+  message PolicyGroup {
+    storage.ListAlertPolicy policy = 1;
+    int64 num_alerts = 2;
+  }
 
-    repeated PolicyGroup alerts_by_policies = 1;
+  repeated PolicyGroup alerts_by_policies = 1;
 }
 
 message GetAlertsCountsRequest {
-    ListAlertsRequest request   = 1;
-    enum RequestGroup {
-        UNSET       = 0;
-        CATEGORY    = 1;
-        CLUSTER     = 2;
-    }
-    RequestGroup group_by       = 2;
+  ListAlertsRequest request = 1;
+  enum RequestGroup {
+    UNSET = 0;
+    CATEGORY = 1;
+    CLUSTER = 2;
+  }
+  RequestGroup group_by = 2;
 }
 
 message GetAlertsCountsResponse {
-    message AlertGroup {
-        string group                    = 1;
-        message AlertCounts {
-            storage.Severity severity   = 1;
-            int64 count         = 2;
-        }
-        repeated AlertCounts counts     = 2;
+  message AlertGroup {
+    string group = 1;
+    message AlertCounts {
+      storage.Severity severity = 1;
+      int64 count = 2;
     }
-    repeated AlertGroup groups = 1;
+    repeated AlertCounts counts = 2;
+  }
+  repeated AlertGroup groups = 1;
 }
 
 enum Type {
-    CREATED = 0;
-    REMOVED = 1;
+  CREATED = 0;
+  REMOVED = 1;
 }
 
 message AlertEvent {
-    int64 time        = 1;
-    Type type         = 2;
-    string id         = 3;
+  int64 time = 1;
+  Type type = 2;
+  string id = 3;
 }
 
 message GetAlertTimeseriesResponse {
-    message ClusterAlerts {
-        string cluster                   = 1;
-        message AlertEvents {
-            storage.Severity severity          = 1;
-            repeated AlertEvent events = 2;
-        }
-        repeated AlertEvents severities  = 2;
+  message ClusterAlerts {
+    string cluster = 1;
+    message AlertEvents {
+      storage.Severity severity = 1;
+      repeated AlertEvent events = 2;
     }
-    repeated ClusterAlerts clusters = 1;
+    repeated AlertEvents severities = 2;
+  }
+  repeated ClusterAlerts clusters = 1;
 }
 
 // AlertService APIs can be used to manage alerts.
 service AlertService {
+  // GetAlert returns the alert given its id.
+  rpc GetAlert(ResourceByID) returns (storage.Alert) {
+    option (google.api.http) = {get: "/v1/alerts/{id}"};
+  }
 
-    // GetAlert returns the alert given its id.
-    rpc GetAlert (ResourceByID) returns (storage.Alert) {
-        option (google.api.http) = {
-            get: "/v1/alerts/{id}"
-        };
-    }
+  // CountAlerts counts how many alerts match the get request.
+  rpc CountAlerts(RawQuery) returns (CountAlertsResponse) {
+    option (google.api.http) = {get: "/v1/alertscount"};
+  }
 
-    // CountAlerts counts how many alerts match the get request.
-    rpc CountAlerts (RawQuery) returns (CountAlertsResponse) {
-        option (google.api.http) = {
-            get: "/v1/alertscount"
-        };
-    }
+  // List returns the slim list version of the alerts.
+  rpc ListAlerts(ListAlertsRequest) returns (ListAlertsResponse) {
+    option (google.api.http) = {get: "/v1/alerts"};
+  }
 
-    // List returns the slim list version of the alerts.
-    rpc ListAlerts (ListAlertsRequest) returns (ListAlertsResponse) {
-        option (google.api.http) = {
-            get: "/v1/alerts"
-        };
-    }
+  // GetAlertsGroup returns alerts grouped by policy.
+  rpc GetAlertsGroup(ListAlertsRequest) returns (GetAlertsGroupResponse) {
+    option (google.api.http) = {get: "/v1/alerts/summary/groups"};
+  }
 
-    // GetAlertsGroup returns alerts grouped by policy.
-    rpc GetAlertsGroup (ListAlertsRequest) returns (GetAlertsGroupResponse) {
-        option (google.api.http) = {
-            get: "/v1/alerts/summary/groups"
-        };
-    }
+  // GetAlertsCounts returns the number of alerts in the requested cluster or category.
+  rpc GetAlertsCounts(GetAlertsCountsRequest) returns (GetAlertsCountsResponse) {
+    option (google.api.http) = {get: "/v1/alerts/summary/counts"};
+  }
 
-    // GetAlertsCounts returns the number of alerts in the requested cluster or category.
-    rpc GetAlertsCounts (GetAlertsCountsRequest) returns (GetAlertsCountsResponse) {
-        option (google.api.http) = {
-            get: "/v1/alerts/summary/counts"
-        };
-    }
+  // GetAlertTimeseries returns the alerts sorted by time.
+  rpc GetAlertTimeseries(ListAlertsRequest) returns (GetAlertTimeseriesResponse) {
+    option (google.api.http) = {get: "/v1/alerts/summary/timeseries"};
+  }
 
-    // GetAlertTimeseries returns the alerts sorted by time.
-    rpc GetAlertTimeseries (ListAlertsRequest) returns (GetAlertTimeseriesResponse) {
-        option (google.api.http) = {
-            get: "/v1/alerts/summary/timeseries"
-        };
-    }
+  // ResolveAlert marks the given alert (by ID) as resolved.
+  rpc ResolveAlert(ResolveAlertRequest) returns (Empty) {
+    option (google.api.http) = {
+      patch: "/v1/alerts/{id}/resolve"
+      body: "*"
+    };
+  }
 
-    // ResolveAlert marks the given alert (by ID) as resolved.
-    rpc ResolveAlert (ResolveAlertRequest) returns (Empty) {
-        option (google.api.http) = {
-            patch: "/v1/alerts/{id}/resolve"
-            body: "*"
-        };
-    }
+  // ResolveAlertsByQuery marks alerts matching search query as resolved.
+  rpc ResolveAlerts(ResolveAlertsRequest) returns (Empty) {
+    option (google.api.http) = {
+      patch: "/v1/alerts/resolve"
+      body: "*"
+    };
+  }
 
-    // ResolveAlertsByQuery marks alerts matching search query as resolved.
-    rpc ResolveAlerts (ResolveAlertsRequest) returns (Empty) {
-        option (google.api.http) = {
-            patch: "/v1/alerts/resolve"
-            body: "*"
-        };
-    }
-
-    // SnoozeAlert is deprecated.
-    rpc SnoozeAlert (SnoozeAlertRequest) returns (Empty) {
-        option (google.api.http) = {
-            patch: "/v1/alerts/{id}/snooze"
-            body: "*"
-        };
-    }
-
-    rpc DeleteAlerts (DeleteAlertsRequest) returns (DeleteAlertsResponse) {
-        option (google.api.http) = {
-            delete: "/v1/alerts"
-        };
-    }
-
+  rpc DeleteAlerts(DeleteAlertsRequest) returns (DeleteAlertsResponse) {
+    option (google.api.http) = {delete: "/v1/alerts"};
+  }
 }

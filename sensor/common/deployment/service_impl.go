@@ -3,7 +3,7 @@ package deployment
 import (
 	"context"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -48,10 +48,13 @@ func (s *serviceImpl) RegisterServiceHandler(context.Context, *runtime.ServeMux,
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, idcheck.AdmissionControlOnly().Authorized(ctx, fullMethodName)
+	if err := idcheck.AdmissionControlOnly().Authorized(ctx, fullMethodName); err != nil {
+		return ctx, errors.Wrapf(err, "deployment authorization for %q", fullMethodName)
+	}
+	return ctx, nil
 }
 
-func (s *serviceImpl) GetDeploymentForPod(ctx context.Context, req *sensor.GetDeploymentForPodRequest) (*storage.Deployment, error) {
+func (s *serviceImpl) GetDeploymentForPod(_ context.Context, req *sensor.GetDeploymentForPodRequest) (*storage.Deployment, error) {
 	if req.GetPodName() == "" || req.GetNamespace() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "pod namespace and pod name must be provided")
 	}

@@ -1,37 +1,24 @@
+//go:build sql_integration
+
 package globaldb
 
 import (
+	"context"
 	"testing"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
 
 type PostgresUtilitySuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
 }
 
 func TestConfigSetup(t *testing.T) {
 	suite.Run(t, new(PostgresUtilitySuite))
-}
-
-func (s *PostgresUtilitySuite) SetupTest() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
-
-}
-
-func (s *PostgresUtilitySuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
 }
 
 func (s *PostgresUtilitySuite) TestSourceParser() {
@@ -94,4 +81,20 @@ func (s *PostgresUtilitySuite) TestSourceParser() {
 		s.Equal(c.expectedMap, sourceMap)
 	}
 
+}
+
+func (s *PostgresUtilitySuite) TestCollectPostgresStats() {
+	ctx := sac.WithAllAccess(context.Background())
+	tp := pgtest.ForT(s.T())
+
+	stats := CollectPostgresStats(ctx, tp.DB)
+	s.NotNil(stats)
+	s.Equal(true, stats.DatabaseAvailable)
+	s.True(len(stats.Tables) > 0)
+
+	tp.Close()
+
+	stats = CollectPostgresStats(ctx, tp.DB)
+	s.NotNil(stats)
+	s.Equal(false, stats.DatabaseAvailable)
 }

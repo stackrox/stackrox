@@ -1,15 +1,14 @@
 import queryString from 'qs';
 import FileSaver from 'file-saver';
 
-import { ListPolicy, Policy } from 'types/policy.proto';
+import type { ListPolicy, Policy } from 'types/policy.proto';
 import { addBrandedTimestampToString } from 'utils/dateUtils';
 import { transformPolicyCriteriaValuesToStrings } from 'utils/policyUtils';
 
 import axios from './instance';
-import { Empty } from './types';
+import type { Empty } from './types';
 
 const baseUrl = '/v1/policies';
-const policyCategoriesUrl = '/v1/policyCategories';
 
 /*
  * Get a policy. Policy is a superset of ListPolicy.
@@ -26,15 +25,6 @@ export function getPolicies(query = ''): Promise<ListPolicy[]> {
     return axios
         .get<{ policies: Policy[] }>(`${baseUrl}?${params}`)
         .then((response) => response?.data?.policies ?? []);
-}
-
-/*
- * Get policy categories.
- */
-export function getPolicyCategories(): Promise<string[]> {
-    return axios
-        .get<{ categories: string[] }>(policyCategoriesUrl)
-        .then((response) => response?.data?.categories ?? []);
 }
 
 /*
@@ -246,7 +236,11 @@ export type ImportPolicyResponse = {
 export type ImportPolicyError =
     | {
           message: string;
-          type: 'duplicate_id' | 'duplicate_name';
+          type:
+              | 'duplicate_id'
+              | 'duplicate_system_policy_id'
+              | 'duplicate_system_policy_name'
+              | 'duplicate_name';
           duplicateName: string;
       }
     | {

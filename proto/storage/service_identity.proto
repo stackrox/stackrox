@@ -1,50 +1,56 @@
 syntax = "proto3";
 
-option go_package = "storage";
-option java_package = "io.stackrox.proto.storage";
-
-import "gogoproto/gogo.proto";
-
 package storage;
 
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
 message ServiceIdentity {
-    string      serial_str = 4 [(gogoproto.moretags) = 'sql:"pk"']; // The serial number in decimal representation.
-    oneof srl {
-        int64       serial     = 1 [deprecated = true];
-    }
-    string      id             = 2;
-    ServiceType type           = 3;
-    string      init_bundle_id = 5;
+  string serial_str = 4; // The serial number in decimal representation. @gotags: sql:"pk"
+  oneof srl {
+    int64 serial = 1 [deprecated = true];
+  }
+  string id = 2;
+  ServiceType type = 3;
+  string init_bundle_id = 5;
 }
 
-// Next available tag: 13
+// Next available tag: 18
 enum ServiceType {
-    UNKNOWN_SERVICE           = 0;
-    SENSOR_SERVICE            = 1;
-    CENTRAL_SERVICE           = 2;
-    CENTRAL_DB_SERVICE        = 12;
-    REMOTE_SERVICE            = 3;
-    COLLECTOR_SERVICE         = 4;
-    MONITORING_UI_SERVICE     = 5;
-    MONITORING_DB_SERVICE     = 6;
-    MONITORING_CLIENT_SERVICE = 7;
-    BENCHMARK_SERVICE         = 8;
-    SCANNER_SERVICE           = 9;
-    SCANNER_DB_SERVICE        = 10;
-    ADMISSION_CONTROL_SERVICE = 11;
+  UNKNOWN_SERVICE = 0;
+  SENSOR_SERVICE = 1;
+  CENTRAL_SERVICE = 2;
+  CENTRAL_DB_SERVICE = 12;
+  REMOTE_SERVICE = 3;
+  COLLECTOR_SERVICE = 4;
+  MONITORING_UI_SERVICE = 5;
+  MONITORING_DB_SERVICE = 6;
+  MONITORING_CLIENT_SERVICE = 7;
+  BENCHMARK_SERVICE = 8;
+  SCANNER_SERVICE = 9;
+  SCANNER_DB_SERVICE = 10;
+  ADMISSION_CONTROL_SERVICE = 11;
+  SCANNER_V4_INDEXER_SERVICE = 13;
+  SCANNER_V4_MATCHER_SERVICE = 14;
+  SCANNER_V4_DB_SERVICE = 15;
+  // This is used when Scanner V4 is run in combo-mode.
+  SCANNER_V4_SERVICE = 16;
+  REGISTRANT_SERVICE = 17;
 }
 
 message ServiceCertificate {
-    bytes cert_pem = 1;
-    bytes key_pem  = 2;
+  bytes cert_pem = 1;
+  bytes key_pem = 2;
 }
 
 message TypedServiceCertificate {
-    ServiceType service_type = 1;
-    ServiceCertificate cert  = 2;
+  ServiceType service_type = 1;
+  ServiceCertificate cert = 2;
 }
 
 message TypedServiceCertificateSet {
-    bytes ca_pem   = 1;
-    repeated TypedServiceCertificate service_certs = 2;
+  bytes ca_pem = 1;
+  repeated TypedServiceCertificate service_certs = 2;
+  // Optional: all CA certificates that Central trusts (primary + secondary)
+  bytes ca_bundle_pem = 3;
 }

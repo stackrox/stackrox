@@ -4,16 +4,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/networkgraph/config/datastore/internal/store"
-	"github.com/stackrox/rox/central/networkgraph/config/datastore/internal/store/postgres"
-	"github.com/stackrox/rox/central/networkgraph/config/datastore/internal/store/rocksdb"
-	"github.com/stackrox/rox/central/role/resources"
+	pgStore "github.com/stackrox/rox/central/networkgraph/config/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
-	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -22,8 +19,7 @@ const (
 )
 
 var (
-	graphConfigSAC = sac.ForResource(resources.NetworkGraphConfig)
-	log            = logging.LoggerForModule()
+	administrationSAC = sac.ForResource(resources.Administration)
 )
 
 type datastoreImpl struct {
@@ -39,7 +35,7 @@ func New(s store.Store) DataStore {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.NetworkGraphConfig),
+			sac.ResourceScopeKeys(resources.Administration),
 		))
 
 	if err := ds.initDefaultConfig(ctx); err != nil {
@@ -50,15 +46,9 @@ func New(s store.Store) DataStore {
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool *pgxpool.Pool) (DataStore, error) {
-	dbstore := postgres.New(pool)
-	return New(dbstore), nil
-}
-
-// GetTestRocksBleveDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveDataStore(_ *testing.T, rocksengine *rocksdbBase.RocksDB) (DataStore, error) {
-	dbstore := rocksdb.New(rocksengine)
-	return New(dbstore), nil
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
+	dbstore := pgStore.New(pool)
+	return New(dbstore)
 }
 
 func (d *datastoreImpl) initDefaultConfig(ctx context.Context) error {
@@ -80,7 +70,7 @@ func (d *datastoreImpl) initDefaultConfig(ctx context.Context) error {
 }
 
 func (d *datastoreImpl) GetNetworkGraphConfig(ctx context.Context) (*storage.NetworkGraphConfig, error) {
-	if ok, err := graphConfigSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := administrationSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, sac.ErrResourceAccessDenied
@@ -97,7 +87,7 @@ func (d *datastoreImpl) GetNetworkGraphConfig(ctx context.Context) (*storage.Net
 }
 
 func (d *datastoreImpl) UpdateNetworkGraphConfig(ctx context.Context, config *storage.NetworkGraphConfig) error {
-	if ok, err := graphConfigSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := administrationSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied

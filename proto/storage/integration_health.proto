@@ -1,32 +1,32 @@
 syntax = "proto3";
 
-option go_package = "storage";
-option java_package = "io.stackrox.proto.storage";
-
-import "google/protobuf/timestamp.proto";
-import "gogoproto/gogo.proto";
-
 package storage;
 
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
 message IntegrationHealth {
-    enum Status {
-        UNINITIALIZED = 0;
-        UNHEALTHY = 1;
-        HEALTHY = 2;
-    }
-    enum Type {
-        UNKNOWN = 0;
-        IMAGE_INTEGRATION = 1;
-        NOTIFIER = 2;
-        BACKUP = 3;
-    }
+  enum Status {
+    UNINITIALIZED = 0;
+    UNHEALTHY = 1;
+    HEALTHY = 2;
+  }
+  enum Type {
+    UNKNOWN = 0;
+    IMAGE_INTEGRATION = 1;
+    NOTIFIER = 2;
+    BACKUP = 3;
+    DECLARATIVE_CONFIG = 4;
+  }
 
-    string id                                     = 1 [(gogoproto.moretags) = 'sql:"pk"'];
-    string name                                   = 2;
-    Type type                                     = 3;
-    Status status                                 = 4;
-    string error_message                          = 5;
+  string id = 1; // @gotags: sql:"pk"
+  string name = 2;
+  Type type = 3;
+  Status status = 4;
+  string error_message = 5;
 
-    // Timestamp when the status was ascertained
-    google.protobuf.Timestamp last_timestamp      = 6;
+  // Timestamp when the status was ascertained
+  google.protobuf.Timestamp last_timestamp = 6;
 }

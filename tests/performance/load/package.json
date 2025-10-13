@@ -1,0 +1,21 @@
+{
+    "name": "@stackrox/tests-performance",
+    "description": "StackRox performance tests",
+    "version": "0.0.0",
+    "license": "UNLICENSED",
+    "private": true,
+    "scripts": {
+        "test": "k6 run tests/testSacScopes.js",
+        "har-to-k6": "har-to-k6",
+        "format:check": "prettier --check .",
+        "format:fix": "prettier --write .",
+        "lint:check": "eslint .",
+        "lint:fix": "eslint --fix ."
+    },
+    "devDependencies": {
+        "eslint": "^8.27.0",
+        "eslint-config-prettier": "^8.5.0",
+        "har-to-k6": "^0.13.1",
+        "prettier": "^2.7.1"
+    }
+}

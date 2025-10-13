@@ -4,36 +4,44 @@ package awssh
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/securityhub"
-	"github.com/aws/aws-sdk-go/service/securityhub/securityhubiface"
-	"github.com/gogo/protobuf/types"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/securityhub"
+	securityhubTypes "github.com/aws/aws-sdk-go-v2/service/securityhub/types"
+	"github.com/aws/smithy-go"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/notifiers"
+	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events/codes"
+	"github.com/stackrox/rox/pkg/administration/events/option"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
-	"go.uber.org/zap"
 	"golang.org/x/time/rate"
 )
 
 const (
-	heartbeatInterval = 5 * time.Minute
+	heartbeatInterval              = 5 * time.Minute
+	initialConfigurationMaxTimeout = 5 * time.Minute
 )
 
 var (
 	errAlreadyRunning    = errors.New("already running")
 	errNotRunning        = errors.New("not running")
-	log                  = logging.CurrentModule().Logger()
+	log                  = logging.LoggerForModule(option.EnableAdministrationEvents())
 	defaultConfiguration = configuration{
-		upstreamTimeout: 2 * time.Second,
+		upstreamTimeout: env.AWSSHUploadTimeout.DurationSetting(),
 		// From https://docs.aws.amazon.com/securityhub/latest/userguide/finding-update-batchimportfindings.html
 		// It is not clear whether they use Decimal or Binary, so we assume 1 KB = 1000 bytes.
 		// The maximum finding size is 240 KB, the maximum batch size is 6 MB. We assume each
@@ -43,7 +51,7 @@ var (
 		// Forgetting the burst, we allow ourselves up to 10 uploads per second.
 		minUploadDelay: 100 * time.Millisecond,
 		// We set a maximum upload delay to ensure our data stays fresh.
-		maxUploadDelay: 15 * time.Second,
+		maxUploadDelay: env.AWSSHUploadInterval.DurationSetting(),
 	}
 	product = struct {
 		arnFormatter func(string) string
@@ -62,11 +70,22 @@ var (
 )
 
 func init() {
-	notifiers.Add("awsSecurityHub", func(descriptor *storage.Notifier) (notifiers.Notifier, error) {
+	notifiers.Add(notifiers.AWSSecurityHubType, func(descriptor *storage.Notifier) (notifiers.Notifier, error) {
 		ctx, cancel := context.WithCancel(context.Background())
 		configuration := defaultConfiguration
 		configuration.descriptor = descriptor
 		configuration.canceler = cancel
+
+		cryptoKey := ""
+		var err error
+		if env.EncNotifierCreds.BooleanSetting() {
+			cryptoKey, _, err = notifierUtils.GetActiveNotifierEncryptionKey()
+			if err != nil {
+				utils.Should(errors.Wrap(err, "Error reading encryption key, notifier will be unable to send notifications"))
+			}
+		}
+		configuration.cryptoKey = cryptoKey
+		configuration.cryptoCodec = cryptocodec.Singleton()
 
 		notifier, err := newNotifier(configuration)
 		if err != nil {
@@ -78,7 +97,10 @@ func init() {
 			case nil, context.Canceled, context.DeadlineExceeded:
 				log.Debug("ceasing notifier operation", logging.Err(err))
 			default:
-				log.Error("encountered unexpected error", logging.Err(err))
+				log.Errorw("encountered unexpected error",
+					logging.Err(err),
+					logging.NotifierName(notifier.descriptor.GetName()),
+					logging.ErrCode(codes.AWSSHGeneric))
 			}
 		}()
 
@@ -88,28 +110,38 @@ func init() {
 	})
 }
 
-func validateNotifierConfiguration(config *storage.AWSSecurityHub) (*storage.AWSSecurityHub, error) {
-	if config.GetRegion() == "" {
-		return nil, errors.New("AWS region must not be empty")
+// Validate AWSSecurityHub notifier
+func Validate(awssh *storage.AWSSecurityHub, validateSecret bool) error {
+	if awssh == nil {
+		return errors.New("AWSSecurityHub configuration is required")
 	}
 
-	if config.GetAccountId() == "" {
-		return nil, errors.New("AWS account ID must not be empty")
+	if awssh.GetRegion() == "" {
+		return errors.New("AWS region must not be empty")
 	}
 
-	if config.GetCredentials() == nil {
-		return nil, errors.New("AWS credentials must not be empty")
+	if awssh.GetAccountId() == "" {
+		return errors.New("AWS account ID must not be empty")
 	}
 
-	if config.GetCredentials().GetAccessKeyId() == "" {
-		return nil, errors.New("AWS access key ID must not be empty")
+	if validateSecret {
+		if awssh.GetCredentials() == nil {
+			return errors.New("AWS credentials must not be empty")
+		}
+
+		// In case STS is not enabled for the integration, expect static configuration to be enabled.
+		if !awssh.GetCredentials().GetStsEnabled() {
+			if awssh.GetCredentials().GetAccessKeyId() == "" {
+				return errors.New("AWS access key ID must not be empty")
+			}
+
+			if awssh.GetCredentials().GetSecretAccessKey() == "" {
+				return errors.New("AWS secret access key must not be empty")
+			}
+		}
 	}
 
-	if config.GetCredentials().GetSecretAccessKey() == "" {
-		return nil, errors.New("AWS secret access key must not be empty")
-	}
-
-	return config, nil
+	return nil
 }
 
 type configuration struct {
@@ -120,13 +152,35 @@ type configuration struct {
 	minUploadDelay time.Duration
 	maxUploadDelay time.Duration
 
+	cryptoKey   string
+	cryptoCodec cryptocodec.CryptoCodec
+
 	canceler func()
+}
+
+// Returns AccessKeyID and SecretAccessKey from the given awssh notifier
+func (c *configuration) getCredentials() (string, string, error) {
+	if !env.EncNotifierCreds.BooleanSetting() {
+		creds := c.descriptor.GetAwsSecurityHub().GetCredentials()
+		return creds.GetAccessKeyId(), creds.GetSecretAccessKey(), nil
+	}
+
+	decCredsStr, err := c.cryptoCodec.Decrypt(c.cryptoKey, c.descriptor.GetNotifierSecret())
+	if err != nil {
+		return "", "", errors.Errorf("Error decrypting notifier secret for notifier '%s'", c.descriptor.GetName())
+	}
+	creds := &storage.AWSSecurityHub_Credentials{}
+	err = creds.UnmarshalVTUnsafe([]byte(decCredsStr))
+	if err != nil {
+		return "", "", errors.Errorf("Error unmarshalling notifier credentials for notifier '%s'", c.descriptor.GetName())
+	}
+	return creds.GetAccessKeyId(), creds.GetSecretAccessKey(), nil
 }
 
 // notifier is an AlertNotifier implementation.
 type notifier struct {
 	configuration
-	securityHub securityhubiface.SecurityHubAPI
+	securityHub Client
 	account     string
 	arn         string
 	cache       map[string]*storage.Alert
@@ -137,33 +191,41 @@ type notifier struct {
 }
 
 func newNotifier(configuration configuration) (*notifier, error) {
-	config, err := validateNotifierConfiguration(configuration.descriptor.GetAwsSecurityHub())
+	awssh := configuration.descriptor.GetAwsSecurityHub()
+	err := Validate(awssh, !env.EncNotifierCreds.BooleanSetting())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to validate config for AWS SecurityHub")
 	}
 
-	awsConfig := aws.NewConfig().WithLogger(aws.LoggerFunc(log.Debug)).WithLogLevel(aws.LogDebugWithHTTPBody)
-	if region := config.GetRegion(); region != "" {
-		awsConfig = awsConfig.WithRegion(config.GetRegion())
+	accessKeyID, secretAccessKey, err := configuration.getCredentials()
+	if err != nil {
+		return nil, err
 	}
-	if creds := config.GetCredentials(); creds != nil {
-		awsConfig = awsConfig.WithCredentials(credentials.NewStaticCredentials(
-			creds.GetAccessKeyId(),
-			creds.GetSecretAccessKey(),
-			"",
-		))
+	opts := []func(*config.LoadOptions) error{
+		config.WithClientLogMode(aws.LogRequestWithBody),
+		config.WithHTTPClient(&http.Client{Transport: proxy.RoundTripper()}),
+		config.WithRegion(awssh.GetRegion()),
+	}
+	if !configuration.descriptor.GetAwsSecurityHub().GetCredentials().GetStsEnabled() {
+		opts = append(opts,
+			config.WithCredentialsProvider(
+				credentials.NewStaticCredentialsProvider(accessKeyID, secretAccessKey, ""),
+			),
+		)
 	}
 
-	awss, err := session.NewSession(awsConfig)
+	ctx, cancel := context.WithTimeout(context.Background(), initialConfigurationMaxTimeout)
+	defer cancel()
+	awsConfig, err := config.LoadDefaultConfig(ctx, opts...)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create AWS session")
+		return nil, errors.Wrap(err, "unable to load the aws config")
 	}
 
 	return &notifier{
 		configuration: configuration,
-		securityHub:   securityhub.New(awss),
-		account:       config.GetAccountId(),
-		arn:           product.arnFormatter(config.GetRegion()),
+		securityHub:   securityhub.NewFromConfig(awsConfig),
+		account:       awssh.GetAccountId(),
+		arn:           product.arnFormatter(awssh.GetRegion()),
 		cache:         map[string]*storage.Alert{},
 		alertCh:       make(chan *storage.Alert),
 		initDoneSig:   concurrency.NewSignal(),
@@ -175,33 +237,30 @@ func (n *notifier) waitForInitDone() {
 	n.initDoneSig.Wait()
 }
 
-func (n *notifier) sendHeartbeat() {
+func (n *notifier) sendHeartbeat(ctx context.Context) {
 	now := aws.String(time.Now().UTC().Format(iso8601UTC))
-	_, err := n.securityHub.BatchImportFindings(&securityhub.BatchImportFindingsInput{
-
-		Findings: []*securityhub.AwsSecurityFinding{
+	input := &securityhub.BatchImportFindingsInput{
+		Findings: []securityhubTypes.AwsSecurityFinding{
 			{
 				SchemaVersion: aws.String(schemaVersion),
 				AwsAccountId:  aws.String(n.account),
 				ProductArn:    aws.String(n.arn),
-				ProductFields: map[string]*string{
-					"ProviderName":    aws.String(product.name),
-					"ProviderVersion": aws.String(product.version),
+				ProductFields: map[string]string{
+					"ProviderName":    product.name,
+					"ProviderVersion": product.version,
 				},
 				Description: aws.String("Heartbeat message from StackRox"),
 				GeneratorId: aws.String("StackRox"),
 				Id:          aws.String("heartbeat-" + *now),
 				Title:       aws.String("Heartbeat message from StackRox"),
-				Types: []*string{
-					aws.String("Heartbeat"),
-				},
-				CreatedAt: now,
-				UpdatedAt: now,
-				Severity: &securityhub.Severity{
-					Normalized: aws.Int64(0),
+				Types:       []string{"Heartbeat"},
+				CreatedAt:   now,
+				UpdatedAt:   now,
+				Severity: &securityhubTypes.Severity{
+					Normalized: aws.Int32(0),
 					Product:    aws.Float64(0),
 				},
-				Resources: []*securityhub.Resource{
+				Resources: []securityhubTypes.Resource{
 					{
 						Id:   aws.String("heartbeat-" + *now),
 						Type: aws.String(resourceTypeOther),
@@ -209,9 +268,11 @@ func (n *notifier) sendHeartbeat() {
 				},
 			},
 		},
-	})
-	if err != nil {
-		log.Errorf("unable to send heartbeat to AWS SecurityHub: %v", err)
+	}
+	if _, err := n.securityHub.BatchImportFindings(ctx, input); err != nil {
+		log.Errorw("unable to send heartbeat to AWS SecurityHub",
+			logging.Err(err), logging.NotifierName(n.descriptor.GetName()),
+			logging.ErrCode(codes.AWSSHHeartBeat))
 	}
 }
 
@@ -243,7 +304,7 @@ func (n *notifier) run(ctx context.Context) error {
 				n.uploadBatch(ctx)
 			}
 		case <-heartbeatTicker.C:
-			n.sendHeartbeat()
+			n.sendHeartbeat(ctx)
 		case <-uploadTicker.C:
 			if len(n.cache) > 0 && rateLimiter.Allow() {
 				n.uploadBatch(ctx)
@@ -257,14 +318,18 @@ func (n *notifier) run(ctx context.Context) error {
 func (n *notifier) processAlert(alert *storage.Alert) {
 	cached := n.cache[alert.GetId()]
 	if cached != nil {
-		tsAlert, tsAlertErr := types.TimestampFromProto(alert.GetTime())
-		tsCached, tsCachedErr := types.TimestampFromProto(cached.GetTime())
+		tsAlert, tsAlertErr := protocompat.ConvertTimestampToTimeOrError(alert.GetTime())
+		tsCached, tsCachedErr := protocompat.ConvertTimestampToTimeOrError(cached.GetTime())
 
 		switch {
 		case tsCachedErr != nil || tsCached.Before(tsAlert):
 			n.cache[alert.GetId()] = alert
 		case tsAlertErr != nil:
-			log.Warn("dropping incoming alert with invalid timestamp", logging.Err(tsAlertErr))
+			log.Warnw("dropping incoming alert with invalid timestamp",
+				logging.Err(tsAlertErr),
+				logging.NotifierName(n.descriptor.GetName()),
+				logging.ErrCode(codes.AWSSHInvalidTimestamp),
+				logging.AlertID(alert.GetId()))
 		}
 	} else {
 		n.cache[alert.GetId()] = alert
@@ -293,16 +358,22 @@ func (n *notifier) uploadBatch(ctx context.Context) {
 	ctx, cancel := context.WithTimeout(ctx, n.upstreamTimeout)
 	defer cancel()
 
-	result, err := n.securityHub.BatchImportFindingsWithContext(ctx, batch)
+	result, err := n.securityHub.BatchImportFindings(ctx, batch)
 	if err != nil {
-		log.Warn("failed to upload batch", logging.Err(err))
+		log.Warnw("failed to upload batch",
+			logging.Err(err),
+			logging.NotifierName(n.descriptor.GetName()),
+			logging.ErrCode(codes.AWSSHBatchUpload))
 		return
 	}
 
 	// Keep alerts that failed to upload in the cache so they'll retry.
 	// Note that randomized iteration of map will shuffle failures.
 	if result.FailedCount != nil && *result.FailedCount > 0 {
-		log.Warn("failed to upload some or all alerts in batch", zap.Any("failures", result.FailedFindings))
+		log.Warnw("failed to upload some or all alerts in batch",
+			logging.Any("failures", result.FailedFindings),
+			logging.ErrCode(codes.AWSSHBatchUpload),
+			logging.NotifierName(n.descriptor.GetName()))
 
 		for _, finding := range result.FailedFindings {
 			if id := finding.Id; id != nil {
@@ -313,15 +384,18 @@ func (n *notifier) uploadBatch(ctx context.Context) {
 
 	// Remove alerts that successfully uploaded from the cache.
 	if len(alertIds) > 0 {
-		log.Debug("successfully uploaded some or all alerts in batch", zap.Int("successes", len(alertIds)))
+		log.Debug("successfully uploaded some or all alerts in batch",
+			logging.Int("successes", len(alertIds)))
 		for id := range alertIds {
 			delete(n.cache, id)
 		}
 	}
 
 	if len(n.cache) >= 5*n.maxBatchSize {
-		log.Warn("alert backlog is too large; check for failures above, throttling might need adjusting",
-			zap.Int("cacheSize", len(n.cache)))
+		log.Warnw("alert backlog is too large; throttling might need adjusting",
+			logging.Int("cacheSize", len(n.cache)),
+			logging.ErrCode(codes.AWSSHCacheExhausted),
+			logging.NotifierName(n.descriptor.GetName()))
 	}
 }
 
@@ -337,30 +411,31 @@ func (n *notifier) ProtoNotifier() *storage.Notifier {
 }
 
 // Test checks if:
-//   * n is running, i.e., exactly one go routine is executing n.run(...)
-//   * AWS SecurityHub is reachable
+//   - n is running, i.e., exactly one go routine is executing n.run(...)
+//   - AWS SecurityHub is reachable
+//
 // If either of the checks fails, an error is returned.
-func (n *notifier) Test(ctx context.Context) error {
+func (n *notifier) Test(ctx context.Context) *notifiers.NotifierError {
 	if n.stoppedSig.IsDone() {
-		return errNotRunning
+		return notifiers.NewNotifierError(errNotRunning.Error(), nil)
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, n.upstreamTimeout)
 	defer cancel()
 
-	_, err := n.securityHub.GetFindingsWithContext(ctx, &securityhub.GetFindingsInput{
-		Filters: &securityhub.AwsSecurityFindingFilters{
-			ProductArn: []*securityhub.StringFilter{
+	_, err := n.securityHub.GetFindings(ctx, &securityhub.GetFindingsInput{
+		Filters: &securityhubTypes.AwsSecurityFindingFilters{
+			ProductArn: []securityhubTypes.StringFilter{
 				{
-					Comparison: aws.String(securityhub.StringFilterComparisonEquals),
+					Comparison: securityhubTypes.StringFilterComparisonEquals,
 					Value:      aws.String(n.arn),
 				},
 			},
 		},
-		MaxResults: aws.Int64(1),
+		MaxResults: aws.Int32(1),
 	})
 	if err != nil {
-		return createError("error testing AWS Security Hub integration", err)
+		return notifiers.NewNotifierError("get findings from AWS Security Hub failed", createError("error testing AWS Security Hub integration", err, n.descriptor.GetName()))
 	}
 
 	testAlert := &storage.Alert{
@@ -389,19 +464,18 @@ func (n *notifier) Test(ctx context.Context) error {
 				},
 			},
 		}},
-		FirstOccurred: types.TimestampNow(),
-		Time:          types.TimestampNow(),
+		FirstOccurred: protocompat.TimestampNow(),
+		Time:          protocompat.TimestampNow(),
 		// Mark the state as resolved, thus indicating to security hub that all is good and avoiding raising a false alert.
 		State: storage.ViolationState_RESOLVED,
 	}
-	_, err = n.securityHub.BatchImportFindings(&securityhub.BatchImportFindingsInput{
-		Findings: []*securityhub.AwsSecurityFinding{
+	_, err = n.securityHub.BatchImportFindings(ctx, &securityhub.BatchImportFindingsInput{
+		Findings: []securityhubTypes.AwsSecurityFinding{
 			mapAlertToFinding(n.account, n.arn, notifiers.AlertLink(n.ProtoNotifier().GetUiEndpoint(), testAlert), testAlert),
 		},
 	})
-
 	if err != nil {
-		return createError("error testing AWS Security Hub integration", err)
+		return notifiers.NewNotifierError("import test findings to AWS Security Hub failed", createError("error testing AWS Security Hub integration", err, n.descriptor.GetName()))
 	}
 	return nil
 }
@@ -433,14 +507,18 @@ func (n *notifier) ResolveAlert(ctx context.Context, alert *storage.Alert) error
 	return n.AlertNotify(ctx, alert)
 }
 
-func createError(msg string, err error) error {
-	if awsErr, _ := err.(awserr.Error); awsErr != nil {
-		if awsErr.Message() != "" {
-			msg = fmt.Sprintf("%s (code: %s; message: %s)", msg, awsErr.Code(), awsErr.Message())
+func createError(msg string, err error, notifierName string) error {
+	var apiErr smithy.APIError
+	if errors.As(err, &apiErr) {
+		if apiErr.ErrorMessage() != "" {
+			msg = fmt.Sprintf("%s (code: %s; message: %s)", msg, apiErr.ErrorCode(), apiErr.ErrorMessage())
 		} else {
-			msg = fmt.Sprintf("%s (code: %s)", msg, awsErr.Code())
+			msg = fmt.Sprintf("%s (code: %s)", msg, apiErr.ErrorCode())
 		}
 	}
-	log.Errorf("AWS Security hub error: %v", err)
+	log.Error("AWS security hub error",
+		logging.Err(err),
+		logging.NotifierName(notifierName),
+	)
 	return errors.New(msg)
 }

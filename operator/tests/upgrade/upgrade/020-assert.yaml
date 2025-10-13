@@ -1,0 +1,17 @@
+# An assert for healthy Central+SecuredCluster including a check for deployed product version.
+# Since the product version is variable, and kuttl does not natively support such variance,
+# we implement this assert as a nested `kuttl assert` and expand the product version using envsubst.
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+commands:
+- script: |
+    set -eu # shell in CI does not grok -o pipefail
+    assert_file=$(mktemp)
+    env - PATH=$PATH PRODUCT_VERSION=$NEW_PRODUCT_VERSION envsubst < ../../common/upgrade-assert.envsubst.yaml > $assert_file
+    # Note: As of kuttl 0.11.0 the timeout value actually means "the number of attempts".
+    # With 2 objects in the assert file, each attempt typically takes ~8 seconds (including the 1s sleep between attempts),
+    # although it can occasionally take significantly longer, see https://github.com/kudobuilder/kuttl/issues/321
+    # So we specify a timeout value of 37, aiming for under 5 minutes.
+    ${KUTTL:-kubectl-kuttl} assert --namespace $NAMESPACE --timeout 37 $assert_file
+    rm $assert_file
+# The operand health is asserted by the subsequent step.

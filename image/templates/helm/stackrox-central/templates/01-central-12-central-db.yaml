@@ -1,6 +1,5 @@
 {{- include "srox.init" . -}}
 
-{{ if ._rox.central.db.enabled -}}
 {{ if not ._rox.central.db.external -}}
 apiVersion: apps/v1
 kind: Deployment
@@ -27,8 +26,23 @@ spec:
         app: central-db
         {{- include "srox.podLabels" (list . "deployment" "central-db") | nindent 8 }}
       annotations:
-        {{- include "srox.podAnnotations" (list . "deployment" "central-db") | nindent 8 }}
+        {{- $annotations := dict -}}
+        {{- if eq ._rox.env.openshift 4 }}
+          {{- $_ := set $annotations "openshift.io/required-scc" "nonroot-v2" -}}
+        {{- end }}
+        {{- include "srox.podAnnotations" (list . "deployment" "central-db" $annotations) | nindent 8 }}
     spec:
+      {{- if ._rox.central.db._nodeSelector }}
+      nodeSelector:
+        {{- ._rox.central.db._nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if ._rox.central.db.hostAliases }}
+      hostAliases: {{ toYaml ._rox.central.db.hostAliases | nindent 8 }}
+      {{- end }}
+      {{- if ._rox.central.db.tolerations }}
+      tolerations:
+        {{- toYaml ._rox.central.db.tolerations | nindent 8 }}
+      {{- end }}
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -50,19 +64,16 @@ spec:
               matchExpressions:
               - key: node-role.kubernetes.io/compute
                 operator: Exists
-          # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
-          # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
-          - weight: 100
-            preference:
-              matchExpressions:
-              - key: node-role.kubernetes.io/master
-                operator: DoesNotExist
           - weight: 100
             preference:
               matchExpressions:
               - key: node-role.kubernetes.io/control-plane
                 operator: DoesNotExist
+      {{- if ._rox.central.db.priorityClassName }}
+      priorityClassName: {{ quote ._rox.central.db.priorityClassName }}
+      {{- end }}
       serviceAccountName: central-db
+      terminationGracePeriodSeconds: 120
       initContainers:
       - name: init-db
         image: {{ ._rox.central.db.image.fullRef | quote }}
@@ -74,6 +85,11 @@ spec:
         volumeMounts:
         - name: disk
           mountPath: /var/lib/postgresql/data
+        {{- if and (eq ._rox.env.installMethod "operator")
+                    ._rox.central.db.persistence._backup }}
+        - name: backup
+          mountPath: /var/lib/postgresql/backup
+        {{- end }}
         - name: central-db-password
           mountPath: /run/secrets/stackrox.io/secrets
         resources:
@@ -93,6 +109,18 @@ spec:
         - containerPort: 5432
           name: postgresql
           protocol: TCP
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - -e
+            - |
+              exec pg_isready -U "postgres" -h 127.0.0.1 -p 5432
+          failureThreshold: 3
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
         resources:
           {{- ._rox.central.db._resources | nindent 10 }}
         securityContext:
@@ -112,9 +140,14 @@ spec:
       volumes:
       - name: disk
         {{- toYaml ._rox.central.db.persistence._volumeCfg | nindent 8 }}
+      {{- if and (eq ._rox.env.installMethod "operator")
+                  ._rox.central.db.persistence._backup }}
+      - name: backup
+        {{- toYaml ._rox.central.db.persistence._backupVolumeCfg | nindent 8 }}
+      {{- end }}
       - name: config-volume
         configMap:
-          name: central-db-config
+          name: {{ default "central-db-config" ._rox.central.db.configOverride }}
       - name: central-db-password
         secret:
           secretName: central-db-password
@@ -132,7 +165,6 @@ spec:
       - name: shared-memory
         emptyDir:
           medium: Memory
-          {{- /* Keep this in sync with shared_buffers in config/centraldb/postgresql.conf */}}
           sizeLimit: 2Gi
 ---
 apiVersion: v1
@@ -165,13 +197,12 @@ metadata:
   labels:
     {{- include "srox.labels" (list . "secret" "central-db-password") | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "secret" "central-db-password") | nindent 4 }}
-    "helm.sh/hook": "pre-install,pre-upgrade"
-    "helm.sh/resource-policy": keep
+    {{- $annotations := dict -}}
+    {{- $_ := include "srox.getAnnotationTemplate" (list . "helm-hook_secret" $annotations) -}}
+    {{- include "srox.annotations" (list . "secret" "central-db-password" $annotations) | nindent 4 }}
 type: Opaque
 stringData:
   password: |
     {{- ._rox.central.db._password.value | nindent 4 }}
-{{- end }}
 {{- end }}
 {{- end }}

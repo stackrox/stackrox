@@ -1,24 +1,35 @@
 syntax = "proto3";
 
-option go_package = "v1";
-option java_package = "io.stackrox.proto.api.v1";
-
-import weak "google/api/annotations.proto";
-import "api/v1/search_service.proto";
-import "storage/deployment.proto";
-
 package v1;
 
+import "api/v1/search_service.proto";
+import weak "google/api/annotations.proto";
+import "storage/deployment.proto";
+
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
+
 message PodsResponse {
-    repeated storage.Pod pods = 1;
+  repeated storage.Pod pods = 1;
+}
+
+message ExportPodRequest {
+  int32 timeout = 1;
+  string query = 2;
+}
+
+message ExportPodResponse {
+  storage.Pod pod = 1;
 }
 
 // PodService APIs can be used to manage pods.
 service PodService {
-    // GetPods returns the pods.
-    rpc GetPods (RawQuery) returns (PodsResponse) {
-        option (google.api.http) = {
-            get: "/v1/pods"
-        };
-    }
+  // GetPods returns the pods.
+  rpc GetPods(RawQuery) returns (PodsResponse) {
+    option (google.api.http) = {get: "/v1/pods"};
+  }
+
+  rpc ExportPods(ExportPodRequest) returns (stream ExportPodResponse) {
+    option (google.api.http) = {get: "/v1/export/pods"};
+  }
 }

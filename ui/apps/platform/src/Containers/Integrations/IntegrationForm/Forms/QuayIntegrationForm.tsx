@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import {
     Alert,
     Checkbox,
@@ -15,17 +16,16 @@ import {
 import cloneDeep from 'lodash/cloneDeep';
 import * as yup from 'yup';
 
-import { QuayImageIntegration } from 'types/imageIntegration.proto';
+import type { QuayImageIntegration } from 'types/imageIntegration.proto';
 
-import usePageState from 'Containers/Integrations/hooks/usePageState';
 import FormMessage from 'Components/PatternFly/FormMessage';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 
+import usePageState from '../../hooks/usePageState';
 import useIntegrationForm from '../useIntegrationForm';
-import { IntegrationFormProps } from '../integrationFormTypes';
+import type { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';
@@ -79,8 +79,7 @@ export const defaultValues: QuayIntegrationFormValues = {
 
 // Given initial values for an existing integration, return form initial values.
 function computeInitialValues(
-    initialValues: QuayImageIntegration | null,
-    isQuayRobotAccountsEnabled: boolean
+    initialValues: QuayImageIntegration | null
 ): QuayIntegrationFormValues {
     if (initialValues) {
         /*
@@ -96,7 +95,11 @@ function computeInitialValues(
             config.quay.registryRobotCredentials.password = '';
         }
 
+        // Don't assume user wants to change password; that has caused confusing UX.
+        const updatePassword = false;
         /*
+         * DEPRECATED: this is no longer needed
+         *
          * Special case for Quay integration,
          * because unauthenticated is an implicit instead of explicit property.
          * If an existing integration does not have stored credentials,
@@ -104,10 +107,11 @@ function computeInitialValues(
          *
          * However, assignment statement is from positive instead of negative viewpoint.
          */
+        /*
         const hasInitialOauthToken = Boolean(initialValues.quay.oauthToken);
         const hasInitialRobotAccount = Boolean(initialValues.quay.registryRobotCredentials);
-        const updatePassword =
-            hasInitialOauthToken || hasInitialRobotAccount || !isQuayRobotAccountsEnabled;
+        const updatePassword = hasInitialOauthToken || hasInitialRobotAccount;
+        */
 
         // Edit or view existing integration.
         return { config, updatePassword };
@@ -121,9 +125,6 @@ function QuayIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<QuayImageIntegration>): ReactElement {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isQuayRobotAccountsEnabled = isFeatureFlagEnabled('ROX_QUAY_ROBOT_ACCOUNTS');
-
     // Refer to stored token in placeholder only if it exists initially.
     const hasInitialOauthToken = Boolean(initialValues?.quay?.oauthToken);
 
@@ -142,7 +143,7 @@ function QuayIntegrationForm({
         onCancel,
         message,
     } = useIntegrationForm<QuayIntegrationFormValues>({
-        initialValues: computeInitialValues(initialValues, isQuayRobotAccountsEnabled),
+        initialValues: computeInitialValues(initialValues),
         validationSchema,
     });
     const { isCreating } = usePageState();
@@ -200,7 +201,7 @@ function QuayIntegrationForm({
                             id="config.name"
                             placeholder="(ex. Quay)"
                             value={values.config.name}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -249,13 +250,13 @@ function QuayIntegrationForm({
                             id="config.quay.endpoint"
                             placeholder="(ex. quay.io)"
                             value={values.config.quay.endpoint}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    {isEditable && isQuayRobotAccountsEnabled && (
-                        <Alert variant="info" isInline title="Authentication">
+                    {isEditable && (
+                        <Alert variant="info" isInline title="Authentication" component="p">
                             <List>
                                 {values.config.categories.includes('SCANNER') ? (
                                     <ListItem>
@@ -301,7 +302,7 @@ function QuayIntegrationForm({
                                 label="Update stored credentials"
                                 id="updatePassword"
                                 isChecked={values.updatePassword}
-                                onChange={onUpdateCredentialsChange}
+                                onChange={(event, value) => onUpdateCredentialsChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
@@ -317,7 +318,7 @@ function QuayIntegrationForm({
                             type="text"
                             id="config.quay.oauthToken"
                             value={values.config.quay.oauthToken}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable || !values.updatePassword}
                             placeholder={
@@ -327,11 +328,19 @@ function QuayIntegrationForm({
                             }
                         />
                     </FormLabelGroup>
-                    {values.config.categories.includes('REGISTRY') && isQuayRobotAccountsEnabled && (
+                    {values.config.categories.includes('REGISTRY') && (
                         <Grid hasGutter>
+                            <GridItem span={12}>
+                                <Alert
+                                    variant="info"
+                                    isInline
+                                    title="Use your Quay.io or Quay robot account username and password"
+                                    component="p"
+                                />
+                            </GridItem>
                             <GridItem span={12} lg={6}>
                                 <FormLabelGroup
-                                    label="Robot username"
+                                    label="Username"
                                     fieldId="config.quay.registryRobotCredentials.username"
                                     touched={touched}
                                     errors={errors}
@@ -343,7 +352,9 @@ function QuayIntegrationForm({
                                             values.config.quay.registryRobotCredentials?.username ??
                                             ''
                                         }
-                                        onChange={onChangeRobotUsername}
+                                        onChange={(event, value) =>
+                                            onChangeRobotUsername(value, event)
+                                        }
                                         onBlur={handleBlur}
                                         isDisabled={!isEditable || !values.updatePassword}
                                     />
@@ -351,7 +362,7 @@ function QuayIntegrationForm({
                             </GridItem>
                             <GridItem span={12} lg={6}>
                                 <FormLabelGroup
-                                    label="Robot password"
+                                    label="Password"
                                     fieldId="config.quay.registryRobotCredentials.password"
                                     touched={touched}
                                     errors={errors}
@@ -363,7 +374,9 @@ function QuayIntegrationForm({
                                             values.config.quay.registryRobotCredentials?.password ??
                                             ''
                                         }
-                                        onChange={onChangeRobotPassword}
+                                        onChange={(event, value) =>
+                                            onChangeRobotPassword(value, event)
+                                        }
                                         onBlur={handleBlur}
                                         isDisabled={!isEditable || !values.updatePassword}
                                         placeholder={
@@ -383,11 +396,11 @@ function QuayIntegrationForm({
                         errors={errors}
                     >
                         <Checkbox
-                            label="Disable TLS Certificate Validation (Insecure)"
+                            label="Disable TLS certificate validation (insecure)"
                             id="config.quay.insecure"
                             aria-label="disable tls certificate validation"
                             isChecked={values.config.quay.insecure}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -398,11 +411,11 @@ function QuayIntegrationForm({
                         errors={errors}
                     >
                         <Checkbox
-                            label="Create Integration Without Testing"
+                            label="Create integration without testing"
                             id="config.skipTestIntegration"
                             aria-label="skip test integration"
                             isChecked={values.config.skipTestIntegration}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />

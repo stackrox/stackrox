@@ -1,18 +1,21 @@
-import groups.BAT
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.SignatureIntegrationOuterClass
+
 import objects.Deployment
 import objects.GCRImageIntegration
-import services.PolicyService
-import services.SignatureIntegrationService
-
-import org.junit.experimental.categories.Category
 import services.ClusterService
 import services.ImageIntegrationService
-import spock.lang.Shared
+import services.PolicyService
+import services.SignatureIntegrationService
 import util.Timer
 
+import spock.lang.Ignore
+import spock.lang.Shared
+import spock.lang.Tag
+
+@Ignore("ROX-29720 - gcr.io sunset, tests need migrated to Artifacts Registry results.")
+@Tag("PZ")
 class AdmissionControllerNoImageScanTest extends BaseSpecification {
     @Shared
     private List<PolicyOuterClass.EnforcementAction> noImageScansEnforcements
@@ -33,7 +36,7 @@ OqxYbK0Iro6GzSmOzxkn+N2AKawLyXi84WSwJQBK//psATakCgAQKkNTAA==
     private final static String IMAGE_SIGNATURE = "Image Signature Test"
 
     private final static String NON_EXISTENT_IMAGE = "non-existent:image"
-    private final static String IMAGE_WITH_SCANS = "us.gcr.io/stackrox-ci/nginx:1.12"
+    private final static String IMAGE_WITH_SCANS = "us.gcr.io/acs-san-stackroxci/nginx:1.12"
 
     def setupSpec() {
         noImageScansEnforcements = Services.updatePolicyEnforcement(
@@ -68,7 +71,7 @@ OqxYbK0Iro6GzSmOzxkn+N2AKawLyXi84WSwJQBK//psATakCgAQKkNTAA==
         SignatureIntegrationService.deleteSignatureIntegration(imageSignatureIntegrationID)
     }
 
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify Admission Controller Behavior for No Image Scans Policy"() {
         String gcrId
 
@@ -153,12 +156,8 @@ OqxYbK0Iro6GzSmOzxkn+N2AKawLyXi84WSwJQBK//psATakCgAQKkNTAA==
             def timer = new Timer(30, 1)
             def deleted = false
             while (!deleted && timer.IsValid()) {
-                try {
-                    orchestrator.deleteDeployment(deployment)
-                    deleted = true
-                } catch (NullPointerException ignore) {
-                    log.info "Caught NPE while deleting deployment, retrying in 1s..."
-                }
+                orchestrator.deleteDeployment(deployment)
+                deleted = true
             }
             if (!deleted) {
                 log.warn "Failed to delete deployment. Subsequent tests may be affected ..."

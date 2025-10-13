@@ -8,7 +8,7 @@ import (
 )
 
 var insecureHTTPClient = &http.Client{
-	Transport: proxy.RoundTripperWithTLSConfig(&tls.Config{
-		InsecureSkipVerify: true,
-	}),
+	Transport: proxy.RoundTripper(
+		proxy.WithTLSConfig(&tls.Config{InsecureSkipVerify: true}),
+	),
 }

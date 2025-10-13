@@ -1,5 +1,9 @@
-import React, { CSSProperties } from 'react';
+import React from 'react';
+import type { CSSProperties } from 'react';
 import { Divider, Flex, FlexItem, Gallery, PageSection, Text, Title } from '@patternfly/react-core';
+
+import usePermissions from 'hooks/usePermissions';
+
 import SummaryCounts from './SummaryCounts';
 import ScopeBar from './ScopeBar';
 
@@ -15,12 +19,43 @@ import ComplianceLevelsByStandard from './Widgets/ComplianceLevelsByStandard';
 const minWidgetWidth = 510;
 
 function DashboardPage() {
+    const { hasReadAccess } = usePermissions();
+    const hasReadAccessForAlert = hasReadAccess('Alert');
+    const hasReadAccessForCluster = hasReadAccess('Cluster');
+    const hasReadAccessForCompliance = hasReadAccess('Compliance');
+    const hasReadAccessForDeployment = hasReadAccess('Deployment');
+    const hasReadAccessForImage = hasReadAccess('Image');
+    const hasReadAccessForNamespace = hasReadAccess('Namespace');
+    const hasReadAccessForNode = hasReadAccess('Node');
+    const hasReadAccessForSecret = hasReadAccess('Secret');
+
+    const hasReadAccessForSummaryCounts =
+        hasReadAccessForAlert ||
+        hasReadAccessForCluster ||
+        hasReadAccessForDeployment ||
+        hasReadAccessForImage ||
+        hasReadAccessForNode ||
+        hasReadAccessForSecret;
+
     return (
         <>
-            <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <SummaryCounts />
-            </PageSection>
-            <Divider component="div" />
+            {hasReadAccessForSummaryCounts && (
+                <>
+                    <PageSection variant="light" padding={{ default: 'noPadding' }}>
+                        <SummaryCounts
+                            hasReadAccessForResource={{
+                                Alert: hasReadAccessForAlert,
+                                Cluster: hasReadAccessForCluster,
+                                Deployment: hasReadAccessForDeployment,
+                                Image: hasReadAccessForImage,
+                                Node: hasReadAccessForNode,
+                                Secret: hasReadAccessForSecret,
+                            }}
+                        />
+                    </PageSection>
+                    <Divider component="div" />
+                </>
+            )}
             <PageSection variant="light">
                 <Flex
                     direction={{ default: 'column', lg: 'row' }}
@@ -30,12 +65,14 @@ function DashboardPage() {
                         <Title headingLevel="h1">Dashboard</Title>
                         <Text>Review security metrics across all or select resources</Text>
                     </FlexItem>
-                    <FlexItem
-                        grow={{ default: 'grow' }}
-                        className="pf-u-display-flex pf-u-justify-content-flex-end"
-                    >
-                        <ScopeBar />
-                    </FlexItem>
+                    {hasReadAccessForCluster && hasReadAccessForNamespace && (
+                        <FlexItem
+                            grow={{ default: 'grow' }}
+                            className="pf-v5-u-display-flex pf-v5-u-justify-content-flex-end"
+                        >
+                            <ScopeBar />
+                        </FlexItem>
+                    )}
                 </Flex>
             </PageSection>
             <Divider component="div" />
@@ -44,21 +81,21 @@ function DashboardPage() {
                     style={
                         {
                             // Ensure the grid has never grows large enough to show 4 columns
-                            maxWidth: `calc(calc(${minWidgetWidth}px * 4) + calc(var(--pf-l-gallery--m-gutter--GridGap) * 3) - 1px)`,
+                            maxWidth: `calc(calc(${minWidgetWidth}px * 4) + calc(var(--pf-v5-l-gallery--m-gutter--GridGap) * 3) - 1px)`,
                             // Ensure the grid gap matches that of the outside padding of the containing PageSection
-                            '--pf-l-gallery--m-gutter--GridGap':
-                                'var(--pf-c-page__main-section--PaddingTop)',
+                            '--pf-v5-l-gallery--m-gutter--GridGap':
+                                'var(--pf-v5-c-page__main-section--PaddingTop)',
                         } as CSSProperties
                     }
                     hasGutter
                     minWidths={{ default: `${minWidgetWidth}px` }}
                 >
-                    <ViolationsByPolicySeverity />
-                    <ImagesAtMostRisk />
-                    <DeploymentsAtMostRisk />
-                    <AgingImages />
-                    <ViolationsByPolicyCategory />
-                    <ComplianceLevelsByStandard />
+                    {hasReadAccessForAlert && <ViolationsByPolicySeverity />}
+                    {hasReadAccessForImage && <ImagesAtMostRisk />}
+                    {hasReadAccessForDeployment && <DeploymentsAtMostRisk />}
+                    {hasReadAccessForImage && <AgingImages />}
+                    {hasReadAccessForAlert && <ViolationsByPolicyCategory />}
+                    {hasReadAccessForCompliance && <ComplianceLevelsByStandard />}
                 </Gallery>
             </PageSection>
         </>

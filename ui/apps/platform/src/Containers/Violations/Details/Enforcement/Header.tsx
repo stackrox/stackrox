@@ -1,8 +1,9 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import { ENFORCEMENT_ACTIONS, ENFORCEMENT_ACTIONS_AS_STRING } from 'constants/enforcementActions';
-import { LifecycleStage } from '../../types/violationTypes';
+import type { LifecycleStage } from 'types/policy.proto';
 
 function getDeployHeader(count) {
     let message = '';
@@ -37,14 +38,14 @@ function getRuntimeHeader(enforcementAction, enforcementCount) {
 
 type HeaderProps = {
     lifecycleStage: LifecycleStage;
-    enforcementCount?: number;
-    enforcementAction?: string;
+    enforcementCount: number;
+    enforcementAction: string;
 };
 
 function Header({
     lifecycleStage,
-    enforcementCount = 0,
-    enforcementAction = ENFORCEMENT_ACTIONS.UNSET_ENFORCEMENT,
+    enforcementCount,
+    enforcementAction,
 }: HeaderProps): ReactElement {
     let countMessage = '';
     if (lifecycleStage === LIFECYCLE_STAGES.DEPLOY) {
@@ -54,7 +55,7 @@ function Header({
     }
 
     return (
-        <div className="pf-u-p-md" data-testid="enforcement-detail-message">
+        <div className="pf-v5-u-p-md" aria-label="Enforcement detail message">
             Enforcement {countMessage}
         </div>
     );

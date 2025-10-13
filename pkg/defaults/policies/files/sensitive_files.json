@@ -12,6 +12,114 @@
   ],
   "exclusions": [
     {
+      "name": "Don't alert on deployment gcp-cloud-controller-manager in openshift-cloud-controller-manager namespace",
+      "deployment": {
+        "name": "gcp-cloud-controller-manager",
+        "scope": {
+          "namespace": "openshift-cloud-controller-manager"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment haproxy-* in openshift-vsphere-infra namespace",
+      "deployment": {
+        "name": "haproxy-.*",
+        "scope": {
+          "namespace": "openshift-vsphere-infra"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment keepalived-.* in openshift-vsphere-infra namespace",
+      "deployment": {
+        "name": "keepalived-.*",
+        "scope": {
+          "namespace": "openshift-vsphere-infra"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment coredns-* in openshift-vsphere-infra namespace",
+      "deployment": {
+        "name": "coredns-.*",
+        "scope": {
+          "namespace": "openshift-vsphere-infra"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment splunkforwarder-ds in openshift-security namespace",
+      "deployment": {
+        "name": "splunkforwarder-ds",
+        "scope": {
+          "namespace": "openshift-security"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment oauth-openshift in openshift-authentication namespace",
+      "deployment": {
+        "name": "oauth-openshift",
+        "scope": {
+          "namespace": "openshift-authentication"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment cluster-cloud-controller-manager-operator in openshift-cloud-controller-manager-operator namespace",
+      "deployment": {
+        "name": "cluster-cloud-controller-manager-operator",
+        "scope": {
+          "namespace": "openshift-cloud-controller-manager-operator"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment ovnkube-master in  openshift-ovn-kubernetes namespace",
+      "deployment": {
+        "name": "ovnkube-master",
+        "scope": {
+          "namespace": "openshift-ovn-kubernetes"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment ovnkube-node in openshift-ovn-kubernetes namespace",
+      "deployment": {
+        "name": "ovnkube-node",
+        "scope": {
+          "namespace": "openshift-ovn-kubernetes"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment cluster-version-operator in openshift-cluster-version namespace",
+      "deployment": {
+        "name": "cluster-version-operator",
+        "scope": {
+          "namespace": "openshift-cluster-version"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment audit-exporter in openshift-security namespace",
+      "deployment": {
+        "name": "audit-exporter",
+        "scope": {
+          "namespace": "openshift-security"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment mdsd in openshift-azure-logging namespace",
+      "deployment": {
+        "name": "mdsd",
+        "scope": {
+          "namespace": "openshift-azure-logging"
+        }
+      }
+    },
+    {
       "name": "Don't alert on StackRox collector",
       "deployment": {
         "name": "collector",
@@ -166,6 +274,23 @@
       "deployment": {
         "scope": {
           "namespace": "openshift-machine-config-operator"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-logging namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-logging"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment aws-cloud-controller-manager in namespace openshift-cloud-controller-manager",
+      "deployment": {
+        "name": "aws-cloud-controller-manager",
+        "scope": {
+          "namespace": "openshift-cloud-controller-manager"
         }
       }
     }

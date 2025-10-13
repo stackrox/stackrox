@@ -1,7 +1,8 @@
-import React, { ChangeEventHandler, ReactElement } from 'react';
-import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import React from 'react';
+import type { ChangeEventHandler, ReactElement } from 'react';
+import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
-import { PermissionSet } from 'services/RolesService';
+import type { PermissionSet } from 'services/RolesService';
 
 export type PermissionSetsTableProps = {
     fieldId: string;
@@ -19,10 +20,12 @@ function PermissionSetsTable({
     isDisabled,
 }: PermissionSetsTableProps): ReactElement {
     return (
-        <TableComposable variant="compact" isStickyHeader>
+        <Table variant="compact" isStickyHeader>
             <Thead>
                 <Tr>
-                    <Th key="radio" />
+                    <Th>
+                        <span className="pf-v5-screen-reader">Row selection</span>
+                    </Th>
                     <Th width={20}>Name</Th>
                     <Th>Description</Th>
                 </Tr>
@@ -30,7 +33,7 @@ function PermissionSetsTable({
             <Tbody>
                 {permissionSets.map(({ id, name, description }) => (
                     <Tr key={id}>
-                        <Td className="pf-c-table__check">
+                        <Td className="pf-v5-c-table__check">
                             <input
                                 type="radio"
                                 name={fieldId}
@@ -48,7 +51,7 @@ function PermissionSetsTable({
                     </Tr>
                 ))}
             </Tbody>
-        </TableComposable>
+        </Table>
     );
 }
 

@@ -5,12 +5,15 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -35,28 +38,33 @@ var (
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_PROCESS_INDICATORS, "processindicator", (*storage.ProcessIndicator)(nil)))
+		schema.ScopingResource = resources.DeploymentExtension
 		RegisterTable(schema, CreateTableProcessIndicatorsStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_PROCESS_INDICATORS, schema)
 		return schema
 	}()
 )
 
 const (
+	// ProcessIndicatorsTableName specifies the name of the table in postgres.
 	ProcessIndicatorsTableName = "process_indicators"
 )
 
 // ProcessIndicators holds the Gorm model for Postgres table `process_indicators`.
 type ProcessIndicators struct {
-	Id                 string `gorm:"column:id;type:varchar;primaryKey"`
-	DeploymentId       string `gorm:"column:deploymentid;type:varchar;index:processindicators_deploymentid,type:hash"`
-	ContainerName      string `gorm:"column:containername;type:varchar"`
-	PodId              string `gorm:"column:podid;type:varchar"`
-	PodUid             string `gorm:"column:poduid;type:varchar;index:processindicators_poduid,type:hash"`
-	SignalContainerId  string `gorm:"column:signal_containerid;type:varchar"`
-	SignalName         string `gorm:"column:signal_name;type:varchar"`
-	SignalArgs         string `gorm:"column:signal_args;type:varchar"`
-	SignalExecFilePath string `gorm:"column:signal_execfilepath;type:varchar"`
-	SignalUid          uint32 `gorm:"column:signal_uid;type:bigint"`
-	ClusterId          string `gorm:"column:clusterid;type:varchar;index:processindicators_sac_filter,type:btree"`
-	Namespace          string `gorm:"column:namespace;type:varchar;index:processindicators_sac_filter,type:btree"`
-	Serialized         []byte `gorm:"column:serialized;type:bytea"`
+	ID                 string     `gorm:"column:id;type:uuid;primaryKey"`
+	DeploymentID       string     `gorm:"column:deploymentid;type:uuid;index:processindicators_deploymentid,type:hash"`
+	ContainerName      string     `gorm:"column:containername;type:varchar"`
+	PodID              string     `gorm:"column:podid;type:varchar"`
+	PodUID             string     `gorm:"column:poduid;type:uuid;index:processindicators_poduid,type:hash"`
+	SignalContainerID  string     `gorm:"column:signal_containerid;type:varchar"`
+	SignalTime         *time.Time `gorm:"column:signal_time;type:timestamp;index:processindicators_signal_time,type:btree"`
+	SignalName         string     `gorm:"column:signal_name;type:varchar"`
+	SignalArgs         string     `gorm:"column:signal_args;type:varchar"`
+	SignalExecFilePath string     `gorm:"column:signal_execfilepath;type:varchar"`
+	SignalUID          uint32     `gorm:"column:signal_uid;type:bigint"`
+	ClusterID          string     `gorm:"column:clusterid;type:uuid;index:processindicators_sac_filter,type:btree"`
+	Namespace          string     `gorm:"column:namespace;type:varchar;index:processindicators_sac_filter,type:btree"`
+	ContainerStartTime *time.Time `gorm:"column:containerstarttime;type:timestamp"`
+	Serialized         []byte     `gorm:"column:serialized;type:bytea"`
 }

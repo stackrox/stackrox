@@ -1,0 +1,15 @@
+{
+  "groups": [
+    {
+      "props": {
+        "authProviderId": "declarative-auth-provider",
+        "key": "email",
+        "value": "email@stackrox.com",
+        "traits": {
+          "origin": "DECLARATIVE"
+        }
+      },
+      "roleName":"Admin"
+    }
+  ]
+}

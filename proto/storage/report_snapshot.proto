@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package storage;
+
+import "google/protobuf/timestamp.proto";
+import "storage/report_configuration.proto";
+import "storage/report_notifier_configuration.proto";
+import "storage/schedule.proto";
+import "storage/user.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+// ReportSnapshot stores the snapshot of a report job. It stores a projection of ReportConfiguration, collection,
+// vulnerability filters, notifiers, etc used to generate a report. It also stores the final status of the report job.
+message ReportSnapshot {
+  enum ReportType {
+    VULNERABILITY = 0;
+  }
+
+  string report_id = 1; // @gotags: sql:"pk,type(uuid)"
+  string report_configuration_id = 2; // @gotags: search:"Report Configuration ID" sql:"fk(ReportConfiguration:id),allow-null"
+  string name = 3; // @gotags: search:"Report Name"
+  string description = 4;
+  ReportType type = 5;
+  oneof filter {
+    VulnerabilityReportFilters vuln_report_filters = 6;
+    ViewBasedVulnerabilityReportFilters view_based_vuln_report_filters = 12;
+  }
+  CollectionSnapshot collection = 7;
+  storage.Schedule schedule = 8;
+  ReportStatus report_status = 9;
+  repeated NotifierSnapshot notifiers = 10;
+  SlimUser requester = 11;
+  // fields related to view based reports
+  // area_of_concern refers to view from which report is generated - user workload, platform component etc
+  string area_of_concern = 13; // @gotags: search:"Area Of Concern"
+}
+
+message CollectionSnapshot {
+  string id = 1;
+  string name = 2;
+}
+
+message NotifierSnapshot {
+  oneof notifier_config {
+    EmailNotifierConfiguration email_config = 1;
+  }
+  string notifier_name = 2;
+}
+
+message ReportStatus {
+  // TODO: @charmik adjust RunState and postgres/pruning.go
+
+  enum RunState {
+    WAITING = 0;
+    PREPARING = 1;
+    GENERATED = 2;
+    DELIVERED = 3;
+    FAILURE = 4;
+  }
+
+  enum NotificationMethod {
+    EMAIL = 0;
+    DOWNLOAD = 1;
+  }
+
+  enum RunMethod {
+    ON_DEMAND = 0;
+    SCHEDULED = 1;
+    VIEW_BASED = 2;
+  }
+
+  RunState run_state = 1; // @gotags: search:"Report State"
+  google.protobuf.Timestamp queued_at = 2; // @gotags: search:"Report Init Time"
+  google.protobuf.Timestamp completed_at = 3; // @gotags: search:"Report Completion Time"
+  string error_msg = 4;
+  RunMethod report_request_type = 5; // @gotags: search:"Report Request Type"
+  NotificationMethod report_notification_method = 6; // @gotags: search:"Report Notification Method"
+}

@@ -9,7 +9,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -32,33 +34,37 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.K8SRoleBinding)(nil)), "role_bindings")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_ROLEBINDINGS, "k8srolebinding", (*storage.K8SRoleBinding)(nil)))
+		schema.ScopingResource = resources.K8sRoleBinding
 		RegisterTable(schema, CreateTableRoleBindingsStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_ROLEBINDINGS, schema)
 		return schema
 	}()
 )
 
 const (
-	RoleBindingsTableName         = "role_bindings"
+	// RoleBindingsTableName specifies the name of the table in postgres.
+	RoleBindingsTableName = "role_bindings"
+	// RoleBindingsSubjectsTableName specifies the name of the table in postgres.
 	RoleBindingsSubjectsTableName = "role_bindings_subjects"
 )
 
 // RoleBindings holds the Gorm model for Postgres table `role_bindings`.
 type RoleBindings struct {
-	Id          string            `gorm:"column:id;type:varchar;primaryKey"`
+	ID          string            `gorm:"column:id;type:uuid;primaryKey"`
 	Name        string            `gorm:"column:name;type:varchar"`
 	Namespace   string            `gorm:"column:namespace;type:varchar;index:rolebindings_sac_filter,type:btree"`
-	ClusterId   string            `gorm:"column:clusterid;type:varchar;index:rolebindings_sac_filter,type:btree"`
+	ClusterID   string            `gorm:"column:clusterid;type:uuid;index:rolebindings_sac_filter,type:btree"`
 	ClusterName string            `gorm:"column:clustername;type:varchar"`
 	ClusterRole bool              `gorm:"column:clusterrole;type:bool"`
 	Labels      map[string]string `gorm:"column:labels;type:jsonb"`
 	Annotations map[string]string `gorm:"column:annotations;type:jsonb"`
-	RoleId      string            `gorm:"column:roleid;type:varchar"`
+	RoleID      string            `gorm:"column:roleid;type:uuid"`
 	Serialized  []byte            `gorm:"column:serialized;type:bytea"`
 }
 
 // RoleBindingsSubjects holds the Gorm model for Postgres table `role_bindings_subjects`.
 type RoleBindingsSubjects struct {
-	RoleBindingsId  string              `gorm:"column:role_bindings_id;type:varchar;primaryKey"`
+	RoleBindingsID  string              `gorm:"column:role_bindings_id;type:uuid;primaryKey"`
 	Idx             int                 `gorm:"column:idx;type:integer;primaryKey;index:rolebindingssubjects_idx,type:btree"`
 	Kind            storage.SubjectKind `gorm:"column:kind;type:integer"`
 	Name            string              `gorm:"column:name;type:varchar"`

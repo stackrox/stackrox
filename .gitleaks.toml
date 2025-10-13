@@ -1,0 +1,7 @@
+[allowlist]
+  description = "Global Allowlist"
+
+  paths = [
+    # Ignore all testdata cert keys.
+    '''\/testdata.*\.key$''',
+  ]

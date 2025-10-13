@@ -4,18 +4,15 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/framework/mocks"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestCheck(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(suiteImpl))
 }
 
@@ -34,12 +31,12 @@ func (s *suiteImpl) TearDownSuite() {
 }
 
 type testCase struct {
-	cluster         *storage.Cluster
-	nodes           []*storage.Node
-	deployments     []*storage.Deployment
-	networkPolicies []*storage.NetworkPolicy
-	networkGraph    *v1.NetworkGraph
-	expectedStatus  framework.Status
+	cluster                      *storage.Cluster
+	nodes                        []*storage.Node
+	deployments                  []*storage.Deployment
+	networkPolicies              []*storage.NetworkPolicy
+	deploymentsToNetworkPolicies map[string][]*storage.NetworkPolicy
+	expectedStatus               framework.Status
 }
 
 func (s *suiteImpl) TestHostNetwork() {
@@ -58,13 +55,8 @@ func (s *suiteImpl) TestHostNetwork() {
 	}
 
 	// ingress and egress networkpolicies enabled
-	tc.networkGraph = &v1.NetworkGraph{
-		Nodes: []*v1.NetworkNode{
-			{
-				Entity:    networkgraph.EntityForDeployment(tc.deployments[0].GetId()).ToProto(),
-				PolicyIds: []string{tc.networkPolicies[0].GetId(), tc.networkPolicies[1].GetId()},
-			},
-		},
+	tc.deploymentsToNetworkPolicies = map[string][]*storage.NetworkPolicy{
+		tc.deployments[0].GetId(): {tc.networkPolicies[0], tc.networkPolicies[1]},
 	}
 
 	tc.expectedStatus = framework.FailStatus
@@ -85,13 +77,8 @@ func (s *suiteImpl) TestEgress() {
 	}
 
 	// only egress networkpolicies enabled
-	tc.networkGraph = &v1.NetworkGraph{
-		Nodes: []*v1.NetworkNode{
-			{
-				Entity:    networkgraph.EntityForDeployment(tc.deployments[0].GetId()).ToProto(),
-				PolicyIds: []string{tc.networkPolicies[1].GetId()},
-			},
-		},
+	tc.deploymentsToNetworkPolicies = map[string][]*storage.NetworkPolicy{
+		tc.deployments[0].GetId(): {tc.networkPolicies[1]},
 	}
 
 	tc.expectedStatus = framework.PassStatus
@@ -112,13 +99,8 @@ func (s *suiteImpl) TestIngress() {
 	}
 
 	// only ingress networkpolicies enabled
-	tc.networkGraph = &v1.NetworkGraph{
-		Nodes: []*v1.NetworkNode{
-			{
-				Entity:    networkgraph.EntityForDeployment(tc.deployments[0].GetId()).ToProto(),
-				PolicyIds: []string{tc.networkPolicies[0].GetId()},
-			},
-		},
+	tc.deploymentsToNetworkPolicies = map[string][]*storage.NetworkPolicy{
+		tc.deployments[0].GetId(): {tc.networkPolicies[0]},
 	}
 
 	tc.expectedStatus = framework.FailStatus
@@ -140,12 +122,8 @@ func (s *suiteImpl) TestKubeSystem() {
 		},
 	}
 
-	tc.networkGraph = &v1.NetworkGraph{
-		Nodes: []*v1.NetworkNode{
-			{
-				Entity: networkgraph.EntityForDeployment(tc.deployments[0].GetId()).ToProto(),
-			},
-		},
+	tc.deploymentsToNetworkPolicies = map[string][]*storage.NetworkPolicy{
+		tc.deployments[0].GetId(): {},
 	}
 
 	tc.expectedStatus = framework.SkipStatus
@@ -168,17 +146,9 @@ func (s *suiteImpl) TestPass() {
 		},
 	}
 
-	tc.networkGraph = &v1.NetworkGraph{
-		Nodes: []*v1.NetworkNode{
-			{
-				Entity:    networkgraph.EntityForDeployment(tc.deployments[0].GetId()).ToProto(),
-				PolicyIds: []string{tc.networkPolicies[0].GetId(), tc.networkPolicies[1].GetId()},
-			},
-			{
-				Entity:    networkgraph.EntityForDeployment(tc.deployments[1].GetId()).ToProto(),
-				PolicyIds: []string{tc.networkPolicies[0].GetId(), tc.networkPolicies[1].GetId()},
-			},
-		},
+	tc.deploymentsToNetworkPolicies = map[string][]*storage.NetworkPolicy{
+		tc.deployments[0].GetId(): {tc.networkPolicies[0], tc.networkPolicies[1]},
+		tc.deployments[1].GetId(): {tc.networkPolicies[0], tc.networkPolicies[1]},
 	}
 
 	tc.expectedStatus = framework.PassStatus
@@ -198,14 +168,13 @@ func (s *suiteImpl) verifyCheckRegistered() framework.Check {
 func (s *suiteImpl) checkTestCase(tc *testCase) {
 
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
-	data.EXPECT().NetworkPolicies().AnyTimes().Return(toMap(tc.networkPolicies))
-	data.EXPECT().NetworkGraph().AnyTimes().Return(tc.networkGraph)
+	data.EXPECT().DeploymentsToNetworkPolicies().AnyTimes().Return(tc.deploymentsToNetworkPolicies)
 
 	check := s.verifyCheckRegistered()
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
 
-	domain := framework.NewComplianceDomain(tc.cluster, tc.nodes, tc.deployments, nil, nil)
+	domain := framework.NewComplianceDomain(tc.cluster, tc.nodes, tc.deployments, nil)
 	err = run.Run(context.Background(), "standard", domain, data)
 	s.NoError(err)
 
@@ -264,12 +233,4 @@ func (s *suiteImpl) nodes() []*storage.Node {
 			Id: uuid.NewV4().String(),
 		},
 	}
-}
-
-func toMap(in []*storage.NetworkPolicy) map[string]*storage.NetworkPolicy {
-	merp := make(map[string]*storage.NetworkPolicy, len(in))
-	for _, np := range in {
-		merp[np.GetId()] = np
-	}
-	return merp
 }

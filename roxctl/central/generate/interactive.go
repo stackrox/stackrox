@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"slices"
 	"sort"
 	"strings"
 	"unicode"
@@ -14,10 +15,9 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/images/defaults"
-	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/flags"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 const (
@@ -26,15 +26,15 @@ const (
 )
 
 var (
-	orderedFlagGroupNames = []string{"central", "central-db", "scanner"}
+	orderedFlagGroupNames = []string{"central", "central-db", "scanner", "scanner-v4"}
 )
 
 func readUserInput(prompt string) (string, error) {
-	printToStderr(prompt)
+	printToStderr("%s", prompt)
 	reader := bufio.NewReader(os.Stdin)
 	text, err := reader.ReadString('\n')
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "reading user input")
 	}
 	return strings.TrimSpace(text), nil
 }
@@ -80,7 +80,7 @@ func getInteractiveUsage(f *pflag.Flag) string {
 }
 
 func readUserInputFromFlag(f *pflag.Flag) (string, error) {
-	usage := getInteractiveUsage(f)
+	usage := strings.TrimSuffix(getInteractiveUsage(f), ".")
 
 	var prompt string
 	if f.DefValue != "" {
@@ -88,13 +88,13 @@ func readUserInputFromFlag(f *pflag.Flag) (string, error) {
 		if isOptional(f) {
 			optText = ", optional"
 		}
-		prompt = fmt.Sprintf("Enter %s (default: %q%s): ", usage, f.DefValue, optText)
+		prompt = fmt.Sprintf("%s (default: %q%s): ", usage, f.DefValue, optText)
 	} else {
 		optText := ""
 		if isOptional(f) {
 			optText = " (optional)"
 		}
-		prompt = fmt.Sprintf("Enter %s%s: ", usage, optText)
+		prompt = fmt.Sprintf("%s%s: ", usage, optText)
 	}
 
 	var err error
@@ -129,7 +129,7 @@ func readUserString(f *pflag.Flag) string {
 
 func readPassword(prompt string) (string, error) {
 	fd := int(os.Stdin.Fd())
-	if !terminal.IsTerminal(fd) {
+	if !term.IsTerminal(fd) {
 		printlnToStderr("%s", "Warning: Entered password will be echoed in this mode. Use 'roxctl generate central interactive' instead if you would not like the password echoed.")
 	}
 
@@ -140,7 +140,7 @@ func readPassword(prompt string) (string, error) {
 	}
 
 	// Re enter password prompt only for the roxctl case, not for docker run
-	if terminal.IsTerminal(fd) && passwd != "" {
+	if term.IsTerminal(fd) && passwd != "" {
 		printToStderr("Re-%s: ", strings.TrimSpace(strings.ToLower(strings.Split(prompt, "(")[0])))
 		reEnteredPasswd, err := getPassword(fd)
 		if err != nil {
@@ -155,10 +155,10 @@ func readPassword(prompt string) (string, error) {
 }
 
 func getPassword(fd int) (passwd string, err error) {
-	if terminal.IsTerminal(fd) {
-		bytes, err := terminal.ReadPassword(fd)
+	if term.IsTerminal(fd) {
+		bytes, err := term.ReadPassword(fd)
 		if err != nil {
-			return "", err
+			return "", errors.Wrap(err, "reading password from terminal")
 		}
 		passwd = string(bytes)
 		printlnToStderr("")
@@ -166,7 +166,7 @@ func getPassword(fd int) (passwd string, err error) {
 		reader := bufio.NewReader(os.Stdin)
 		passwd, err = reader.ReadString('\n')
 		if err != nil {
-			return "", err
+			return "", errors.Wrap(err, "reading password from stdin")
 		}
 	}
 	return strings.TrimSuffix(passwd, "\n"), nil
@@ -294,8 +294,8 @@ func flagGroups(flags []*pflag.Flag) []*flagGroup {
 		groupsSlice = append(groupsSlice, group)
 	}
 	sort.Slice(groupsSlice, func(i, j int) bool {
-		iPos := sliceutils.Find(orderedFlagGroupNames, groupsSlice[i].name)
-		jPos := sliceutils.Find(orderedFlagGroupNames, groupsSlice[j].name)
+		iPos := slices.Index(orderedFlagGroupNames, groupsSlice[i].name)
+		jPos := slices.Index(orderedFlagGroupNames, groupsSlice[j].name)
 		// If they're both not in the list of ordered flag groups, just sort alphabetically.
 		if iPos == -1 && jPos == -1 {
 			return groupsSlice[i].name < groupsSlice[j].name
@@ -316,8 +316,13 @@ func processFlagWraps(argSlice *argSlice, fws []flagWrap) {
 			continue
 		}
 
-		// set default values for image-{main,scanner,scanner-db} flags
-		if fw.Flag.Name == flags.FlagNameMainImage || fw.Flag.Name == flags.FlagNameScannerImage || fw.Flag.Name == flags.FlagNameScannerDBImage || fw.Flag.Name == flags.FlagNameCentralDBImage {
+		// set default values for image-{main,scanner,scanner-db,scanner-v4,scanner-v4-db} flags
+		if fw.Flag.Name == flags.FlagNameMainImage ||
+			fw.Flag.Name == flags.FlagNameScannerImage ||
+			fw.Flag.Name == flags.FlagNameScannerDBImage ||
+			fw.Flag.Name == flags.FlagNameScannerV4Image ||
+			fw.Flag.Name == flags.FlagNameScannerV4DBImage ||
+			fw.Flag.Name == flags.FlagNameCentralDBImage {
 			imgDefArg := argSlice.findArgByName(flags.FlagNameImageDefaults)
 			if imgDefArg == nil {
 				panic(fmt.Sprintf("unable to find flag '%s'", flags.FlagNameImageDefaults))
@@ -338,6 +343,14 @@ func processFlagWraps(argSlice *argSlice, fws []flagWrap) {
 			case flags.FlagNameScannerDBImage:
 				if fw.Flag.DefValue == "" {
 					fw.Flag.DefValue = flavor.ScannerDBImage()
+				}
+			case flags.FlagNameScannerV4Image:
+				if fw.Flag.DefValue == "" {
+					fw.Flag.DefValue = flavor.ScannerV4Image()
+				}
+			case flags.FlagNameScannerV4DBImage:
+				if fw.Flag.DefValue == "" {
+					fw.Flag.DefValue = flavor.ScannerV4DBImage()
 				}
 			case flags.FlagNameCentralDBImage:
 				if fw.Flag.DefValue == "" {

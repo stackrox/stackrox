@@ -1,46 +1,50 @@
 syntax = "proto3";
 
-option go_package = "v1";
-option java_package = "io.stackrox.proto.api.v1";
-
-import "google/protobuf/timestamp.proto";
-import weak "google/api/annotations.proto";
-import "storage/integration_health.proto";
-import "api/v1/empty.proto";
-
 package v1;
 
+import "api/v1/empty.proto";
+import weak "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "storage/integration_health.proto";
+
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
+
 message GetIntegrationHealthResponse {
-    repeated storage.IntegrationHealth integrationHealth = 1;
+  repeated storage.IntegrationHealth integrationHealth = 1;
+}
+
+message VulnDefinitionsInfoRequest {
+  enum Component {
+    SCANNER = 0;
+    SCANNER_V4 = 1;
+  }
+
+  Component component = 1;
 }
 
 message VulnDefinitionsInfo {
-    google.protobuf.Timestamp last_updated_timestamp = 1;
+  google.protobuf.Timestamp last_updated_timestamp = 1;
 }
 
 service IntegrationHealthService {
+  rpc GetImageIntegrations(Empty) returns (GetIntegrationHealthResponse) {
+    option (google.api.http) = {get: "/v1/integrationhealth/imageintegrations"};
+  }
 
-    rpc GetImageIntegrations(Empty) returns (GetIntegrationHealthResponse) {
-        option (google.api.http) = {
-            get: "/v1/integrationhealth/imageintegrations"
-        };
-    }
+  rpc GetNotifiers(Empty) returns (GetIntegrationHealthResponse) {
+    option (google.api.http) = {get: "/v1/integrationhealth/notifiers"};
+  }
 
-    rpc GetNotifiers(Empty) returns (GetIntegrationHealthResponse) {
-        option (google.api.http) = {
-            get: "/v1/integrationhealth/notifiers"
-        };
-    }
+  rpc GetBackupPlugins(Empty) returns (GetIntegrationHealthResponse) {
+    option (google.api.http) = {get: "/v1/integrationhealth/externalbackups"};
+  }
 
-    rpc GetBackupPlugins(Empty) returns (GetIntegrationHealthResponse) {
-        option (google.api.http) = {
-            get: "/v1/integrationhealth/externalbackups"
-        };
-    }
+  rpc GetDeclarativeConfigs(Empty) returns (GetIntegrationHealthResponse) {
+    option (google.api.http) = {get: "/v1/integrationhealth/declarativeconfigs"};
+  }
 
-    rpc GetVulnDefinitionsInfo(Empty) returns (VulnDefinitionsInfo) {
-        option (google.api.http) = {
-            get: "/v1/integrationhealth/vulndefinitions"
-        };
-    }
+  rpc GetVulnDefinitionsInfo(VulnDefinitionsInfoRequest) returns (VulnDefinitionsInfo) {
+    option (google.api.http) = {get: "/v1/integrationhealth/vulndefinitions"};
+  }
 }

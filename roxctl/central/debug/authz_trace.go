@@ -6,11 +6,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -27,10 +27,12 @@ const (
 // authzTraceCommand allows to download authz trace from Central.
 func authzTraceCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
-		Use: "authz-trace",
+		Use:   "authz-trace",
+		Short: "Stream built-in authorizer traces for all incoming requests",
+		Long: `Stream built-in authorizer traces for all incoming requests.
+The command blocks for the given number of minutes and collects the authorization trace log for all incoming API requests to the Central service.`,
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			timeout := flags.Timeout(c)
-			return writeAuthzTraces(cliEnvironment, timeout)
+			return writeAuthzTraces(cliEnvironment, flags.Timeout(c))
 		}),
 	}
 	flags.AddTimeoutWithDefault(c, authzTraceTimeout)
@@ -40,7 +42,7 @@ func authzTraceCommand(cliEnvironment environment.Environment) *cobra.Command {
 func writeAuthzTraces(cliEnvironment environment.Environment, timeout time.Duration) error {
 	// Write traces directly to stdout without buffering. Sync iff supported,
 	// e.g., stdout is redirected to a file and not attached to the console.
-	traceOutput := os.Stdout
+	traceOutput := os.Stdout //nolint:forbidigo // TODO(ROX-13473)
 	toSync := false
 	if traceOutput.Sync() == nil {
 		toSync = true
@@ -56,7 +58,7 @@ func writeAuthzTraces(cliEnvironment environment.Environment, timeout time.Durat
 		}
 	}
 
-	return multierror.Append(streamErr, syncErr).ErrorOrNil()
+	return errors.Wrap(multierror.Append(streamErr, syncErr).ErrorOrNil(), "writing authorization traces")
 }
 
 func streamAuthzTraces(cliEnvironment environment.Environment, timeout time.Duration, traceOutput io.Writer) error {
@@ -66,7 +68,7 @@ func streamAuthzTraces(cliEnvironment environment.Environment, timeout time.Dura
 
 	conn, err := cliEnvironment.GRPCConnection()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "establishing GRPC connection to retrieve authorization traces")
 	}
 	defer utils.IgnoreError(conn.Close)
 
@@ -74,7 +76,7 @@ func streamAuthzTraces(cliEnvironment environment.Environment, timeout time.Dura
 	client := v1.NewDebugServiceClient(conn)
 	stream, err := client.StreamAuthzTraces(ctx, &v1.Empty{})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "starting authorization trace stream")
 	}
 
 	// Receive authz traces from central, convert them to JSON, and write.
@@ -91,14 +93,14 @@ func streamAuthzTraces(cliEnvironment environment.Environment, timeout time.Dura
 			if errors.Is(recvErr, io.EOF) || status.Code(recvErr) == codes.Canceled || status.Code(recvErr) == codes.DeadlineExceeded {
 				return nil
 			}
-			return recvErr
+			return errors.Wrap(recvErr, "receiving authorization trace")
 		}
 
-		if err := (&jsonpb.Marshaler{}).Marshal(traceOutput, trace); err != nil {
+		if err := jsonutil.Marshal(traceOutput, trace); err != nil {
 			return errors.Wrap(err, "marshaling a trace to JSON")
 		}
 		if _, err := traceOutput.Write([]byte{'\n'}); err != nil {
-			return err
+			return errors.Wrap(err, "finalizing output")
 		}
 	}
 }

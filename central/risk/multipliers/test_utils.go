@@ -71,6 +71,69 @@ func GetMockImages() []*storage.Image {
 	}
 }
 
+// GetMockImagesV2 returns a slice of mock images v2
+func GetMockImagesV2() []*storage.ImageV2 {
+	return []*storage.ImageV2{
+		{
+			Name: &storage.ImageName{
+				FullName: "docker.io/library/nginx:1.10",
+				Registry: "docker.io",
+				Remote:   "library/nginx",
+				Tag:      "1.10",
+			},
+			Scan: &storage.ImageScan{
+				Components: []*storage.EmbeddedImageScanComponent{
+					{
+						Name:    "comp1",
+						Version: "1.1.1",
+						Vulns: []*storage.EmbeddedVulnerability{
+							{
+								Cve:      "CVE-2019-0001",
+								Cvss:     5,
+								Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
+							},
+							{
+								Cve:      "CVE-2019-0002",
+								Cvss:     5,
+								Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+							},
+						},
+					},
+					{
+						Name:    "comp1",
+						Version: "1.1.1",
+						Vulns: []*storage.EmbeddedVulnerability{
+							{
+								Cve:          "CVE-2019-0001",
+								Cvss:         5,
+								ScoreVersion: storage.EmbeddedVulnerability_V3,
+								Severity:     storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+							},
+							{
+								Cve:      "CVE-2019-0002",
+								Cvss:     5,
+								Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+							},
+						},
+					},
+				},
+			},
+			Metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{
+					Created: protoconv.ConvertTimeToTimestamp(time.Now().Add(-(180 * 24 * time.Hour))),
+				},
+			},
+		},
+		{
+			Metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{
+					Created: protoconv.ConvertTimeToTimestamp(time.Now().Add(-(90 * 24 * time.Hour))),
+				},
+			},
+		},
+	}
+}
+
 // GetMockDeployment returns a mock deployment
 func GetMockDeployment() *storage.Deployment {
 	return &storage.Deployment{
@@ -150,6 +213,15 @@ func GetMockNodes() []*storage.Node {
 								Severity:     storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
 							},
 						},
+						Vulnerabilities: []*storage.NodeVulnerability{
+							{
+								CveBaseInfo: &storage.CVEInfo{
+									Cve: "CVE-2020-8558",
+								},
+								Cvss:     5.4,
+								Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+							},
+						},
 					},
 					{
 						Name:    "kube-proxy",
@@ -160,6 +232,15 @@ func GetMockNodes() []*storage.Node {
 								Cvss:         5.4,
 								ScoreVersion: storage.EmbeddedVulnerability_V3,
 								Severity:     storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+							},
+						},
+						Vulnerabilities: []*storage.NodeVulnerability{
+							{
+								CveBaseInfo: &storage.CVEInfo{
+									Cve: "CVE-2020-8558",
+								},
+								Cvss:     5.4,
+								Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
 							},
 						},
 					},

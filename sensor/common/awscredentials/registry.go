@@ -3,17 +3,19 @@
 package awscredentials
 
 import (
+	"context"
+	"net/http"
 	"regexp"
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/ec2metadata"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ecr"
+	awsConfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/feature/ec2/imds"
+	"github.com/aws/aws-sdk-go-v2/service/ecr"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/docker/config"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -22,6 +24,8 @@ var (
 	ecrRegistryRegex     = regexp.MustCompile(`(\d+)\.dkr\.ecr\.([^.]+)\.amazonaws\.com`)
 	ecrRegexAccountGroup = 1
 	ecrRegexRegionGroup  = 2
+
+	clientTimeout = 30 * time.Second
 
 	log = logging.LoggerForModule()
 )
@@ -37,6 +41,7 @@ type RegistryCredentials struct {
 
 // RegistryCredentialsManager is a sensor component that manages
 // credentials for docker registries.
+//
 //go:generate mockgen-wrapper
 type RegistryCredentialsManager interface {
 	// GetRegistryCredentials returns the most recent registry credential for the given
@@ -50,7 +55,7 @@ type RegistryCredentialsManager interface {
 type ecrCredentialsManager struct {
 	dockerConfigEntry *config.DockerConfigEntry
 	dockerConfigLock  sync.RWMutex
-	ecrClient         *ecr.ECR
+	ecrClient         *ecr.Client
 	expiresAt         time.Time
 	stopSignal        concurrency.Signal
 }
@@ -62,17 +67,12 @@ func NewECRCredentialsManager(providerID string) (RegistryCredentialsManager, er
 		return nil, errors.Errorf("node provider is not AWS: %v", providerID)
 	}
 	log.Infof("detected AWS-based node: providerId=%s", providerID)
-	awsS, err := session.NewSession()
+	client, err := createECRClient(context.Background())
 	if err != nil {
-		return nil, errors.Errorf("could not create AWS session: %v", err)
+		return nil, errors.Wrap(err, "creating ECR client")
 	}
-	region, err := ec2metadata.New(awsS).Region()
-	if err != nil {
-		return nil, errors.Errorf("EC2 instance metadata service failed or is not available: %v", err)
-	}
-	log.Infof("EC2 instance metadata service is active: awsRegion=%q", region)
 	return &ecrCredentialsManager{
-		ecrClient:  ecr.New(awsS, &aws.Config{Region: &region}),
+		ecrClient:  client,
 		stopSignal: concurrency.NewSignal(),
 	}, nil
 }
@@ -95,9 +95,10 @@ func (m *ecrCredentialsManager) refreshLoop(refreshInterval time.Duration) {
 	log.Infof("starting ECR credentials manager, refresh interval: %v", refreshInterval)
 	ticker := time.NewTicker(refreshInterval)
 	defer ticker.Stop()
+	ctx := context.Background()
 	for {
 		if m.authWillExpireIn(time.Hour) {
-			err := m.refreshAuthToken()
+			err := m.refreshAuthToken(ctx)
 			if err != nil {
 				log.Warnf("failed to refresh ECR authentication token: %v", err)
 			}
@@ -145,13 +146,13 @@ func findECRURLAccountAndRegion(registry string) (account, region string, ok boo
 }
 
 // refreshAuthToken Contact AWS ECR to get a new auth token.
-func (m *ecrCredentialsManager) refreshAuthToken() error {
-	authToken, err := m.ecrClient.GetAuthorizationToken(&ecr.GetAuthorizationTokenInput{})
+func (m *ecrCredentialsManager) refreshAuthToken(ctx context.Context) error {
+	authToken, err := m.ecrClient.GetAuthorizationToken(ctx, &ecr.GetAuthorizationTokenInput{})
 	if err != nil {
 		return errors.Errorf("failed to get token: %v", err)
 	}
 	if len(authToken.AuthorizationData) == 0 {
-		return errors.Errorf("received empty token: %q", authToken)
+		return errors.Errorf("received empty token: %v", authToken)
 	}
 	authData := authToken.AuthorizationData[0]
 	dockerConfigEntry, err := config.CreateFromAuthString(*authData.AuthorizationToken)
@@ -194,4 +195,46 @@ func (m *ecrCredentialsManager) authIsValid() bool {
 // the given duration.
 func (m *ecrCredentialsManager) authWillExpireIn(duration time.Duration) bool {
 	return time.Now().Add(duration).After(m.expiresAt)
+}
+
+// getRegion reads the EC2 instance region via the AWS metadata service.
+func getRegion(ctx context.Context) (string, error) {
+	imdsConfig, err := awsConfig.LoadDefaultConfig(ctx,
+		awsConfig.WithHTTPClient(&http.Client{
+			Timeout: clientTimeout,
+			// Only EC2 internal network requests are allowed to the metadata service.
+			Transport: proxy.Without(),
+		}),
+	)
+	if err != nil {
+		return "", errors.Wrap(err, "getting region from EC2 metadata service")
+	}
+	imdsClient := imds.NewFromConfig(imdsConfig)
+	regionOutput, err := imdsClient.GetRegion(ctx, &imds.GetRegionInput{})
+	if err != nil {
+		return "", errors.Wrap(err, "getting region from EC2 metadata service")
+	}
+	return regionOutput.Region, nil
+}
+
+// createECRClient creates an AWS ECR SDK client based on the integration config.
+func createECRClient(ctx context.Context) (*ecr.Client, error) {
+	region, err := getRegion(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get the region of the EC2 instance")
+	}
+	log.Infof("EC2 instance metadata service is active: awsRegion=%q", region)
+
+	opts := []func(*awsConfig.LoadOptions) error{
+		awsConfig.WithRegion(region),
+		awsConfig.WithHTTPClient(&http.Client{
+			Timeout:   clientTimeout,
+			Transport: proxy.RoundTripper(),
+		}),
+	}
+	awsConfig, err := awsConfig.LoadDefaultConfig(ctx, opts...)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to load the aws config")
+	}
+	return ecr.NewFromConfig(awsConfig), nil
 }

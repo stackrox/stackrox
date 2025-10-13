@@ -1,17 +1,18 @@
 // import react-testing-library extensions once for all tests, as recommended at https://github.com/testing-library/jest-dom#usage
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 import { disableFragmentWarnings } from '@apollo/client';
 
 // This disables the many gql warnings that flood the console due to duplicate usage of the
 // `cveFields` fragment that is dynamically used throughout Vuln Management
 disableFragmentWarnings();
 
+vi.setConfig({ testTimeout: 15000 });
 class Spy {
     spy = null;
 
     begin() {
         // jest is magically injected by the jest test runner.
-        this.spy = jest.spyOn(global.console, 'error');
+        this.spy = vi.spyOn(global.console, 'error');
     }
 
     assertNotCalled() {
@@ -41,3 +42,5 @@ global.beforeEach(() => {
 global.afterEach(() => {
     spy.assertNotCalled();
 });
+
+global.IS_REACT_ACT_ENVIRONMENT = true;

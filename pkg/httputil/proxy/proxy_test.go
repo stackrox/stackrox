@@ -5,10 +5,12 @@ import (
 	"net/http"
 	"net/url"
 	"testing"
+	"time"
 
-	"github.com/ghodss/yaml"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/net/http/httpproxy"
+	"sigs.k8s.io/yaml"
 )
 
 func TestProxyConfig(t *testing.T) {
@@ -79,13 +81,21 @@ func TestProxyConfig(t *testing.T) {
 }
 
 func TestProxyExcludes(t *testing.T) {
+	t.Setenv("KUBERNETES_SERVICE_HOST", "198.51.100.1")
+	t.Setenv("KUBERNETES_SERVICE_PORT", "443")
 	cases := []struct {
 		OmitDefaultExcludes    bool
 		Excludes               []string
+		NoProxy                string
 		ProxyURLs, NoProxyURLs []string
 	}{
 		{
-			NoProxyURLs: []string{"https://central.stackrox:1234", "http://localhost", "http://[::1]:1234", "https://foobar.local/bla"},
+			NoProxy:     "internal.example.com,internal2.example.com,,\t,\n",
+			NoProxyURLs: []string{"https://internal.example.com:1234", "http://internal2.example.com"},
+			ProxyURLs:   []string{"http://example.com", "http://www.example.com/bla", "http://yes.proxy"},
+		},
+		{
+			NoProxyURLs: []string{"https://central.stackrox:1234", "http://localhost", "http://[::1]:1234", "https://foobar.local/bla", "https://198.51.100.1:443"},
 			ProxyURLs:   []string{"http://example.com", "http://www.example.com/bla"},
 		},
 		{
@@ -99,7 +109,7 @@ func TestProxyExcludes(t *testing.T) {
 		},
 		{
 			OmitDefaultExcludes: true,
-			Excludes:            []string{"*.excluded", "no.proxy"},
+			Excludes:            []string{"*.excluded", "no.proxy", ""},
 			NoProxyURLs:         []string{"https://no.proxy", "https://foo.excluded/foo", "https://bar.excluded"},
 			ProxyURLs:           []string{"https://central.stackrox:1234", "http://localhost.localdomain", "http://scanner.stackrox.svc:1234", "https://foobar.local/bla", "http://yes.proxy/bla"},
 		},
@@ -117,7 +127,7 @@ func TestProxyExcludes(t *testing.T) {
 			}
 			err := cfg.Validate()
 			require.NoError(t, err)
-			compiled := cfg.Compile(environmentConfig{})
+			compiled := cfg.Compile(environmentConfig{Config: httpproxy.Config{NoProxy: tc.NoProxy}})
 
 			for _, u := range tc.NoProxyURLs {
 				req, err := http.NewRequest(http.MethodGet, u, nil)
@@ -133,6 +143,36 @@ func TestProxyExcludes(t *testing.T) {
 				require.NoError(t, err)
 				assert.NotNilf(t, proxyURL, "Expected proxy to be used for URL %v", u)
 			}
+		})
+	}
+}
+
+func TestProxyOptions(t *testing.T) {
+	cases := []struct {
+		name            string
+		options         []Option
+		responseTimeout time.Duration
+	}{
+		{
+			name:            "no options",
+			options:         []Option{},
+			responseTimeout: 0,
+		},
+		{
+			name:            "with response header timeout",
+			options:         []Option{WithResponseHeaderTimeout(10 * time.Second)},
+			responseTimeout: 10 * time.Second,
+		},
+	}
+
+	for _, testCase := range cases {
+		tc := testCase
+		t.Run(tc.name, func(t *testing.T) {
+			transport := Without(tc.options...).(*http.Transport)
+			assert.Equal(t, tc.responseTimeout, transport.ResponseHeaderTimeout)
+
+			transport = RoundTripper(tc.options...).(*http.Transport)
+			assert.Equal(t, tc.responseTimeout, transport.ResponseHeaderTimeout)
 		})
 	}
 }

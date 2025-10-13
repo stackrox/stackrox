@@ -1,6 +1,7 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import pluralize from 'pluralize';
-import { Modal, ModalVariant, Button } from '@patternfly/react-core';
+import { Button, Modal } from '@patternfly/react-core';
 
 import { resolveAlerts } from 'services/AlertsService';
 
@@ -32,7 +33,7 @@ function ResolveConfirmation({
     return (
         <Modal
             isOpen={isOpen}
-            variant={ModalVariant.small}
+            variant="small"
             actions={[
                 <Button key="confirm" variant="primary" onClick={resolveAlertsAction}>
                     Confirm
@@ -42,7 +43,6 @@ function ResolveConfirmation({
                 </Button>,
             ]}
             onClose={cancelModal}
-            data-testid="resolve-confirmation-modal"
             aria-label="Confirm resolving violations"
         >
             {`Are you sure you want to resolve ${numSelectedRows} ${pluralize(

@@ -1,14 +1,17 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement, RefObject } from 'react';
+import { Tooltip } from '@patternfly/react-core';
 
 import { eventTypes } from 'constants/timelineTypes';
-import { Tooltip, DetailedTooltipOverlay } from '@stackrox/ui-components';
-import { Event } from './eventTypes';
+import DetailedTooltipContent from 'Components/DetailedTooltipContent';
+import type { Event } from './eventTypes';
 import ProcessActivityTooltipFields from './EventTooltipFields/ProcessActivityTooltipFields';
 import TerminationTooltipFields from './EventTooltipFields/TerminationTooltipFields';
 import DefaultTooltipFields from './EventTooltipFields/DefaultTooltipFields';
 
 export type EventTooltipProps = Event & {
     children: ReactElement;
+    popoverRef: RefObject<never>;
 };
 
 const EventTooltip = ({
@@ -21,6 +24,7 @@ const EventTooltip = ({
     reason,
     timestamp,
     children,
+    popoverRef,
 }: EventTooltipProps): ReactElement => {
     let tooltipBody: ReactElement;
 
@@ -44,7 +48,11 @@ const EventTooltip = ({
     }
 
     return (
-        <Tooltip content={<DetailedTooltipOverlay title={name} body={tooltipBody} />}>
+        <Tooltip
+            isContentLeftAligned
+            content={<DetailedTooltipContent title={name} body={tooltipBody} />}
+            triggerRef={popoverRef}
+        >
             {children}
         </Tooltip>
     );

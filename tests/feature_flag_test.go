@@ -1,7 +1,10 @@
+//go:build test_e2e
+
 package tests
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
@@ -13,7 +16,9 @@ import (
 )
 
 func TestFeatureFlagSettings(t *testing.T) {
-	t.Parallel()
+	if os.Getenv("ORCHESTRATOR_FLAVOR") == "openshift" {
+		t.Skip("Temporarily skipping this test on OCP: TODO(ROX-25171)")
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

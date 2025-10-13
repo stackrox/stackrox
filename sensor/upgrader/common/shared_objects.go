@@ -2,10 +2,12 @@ package common
 
 import (
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
+	"github.com/stackrox/rox/pkg/pods"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 var (
+	sensorNamespace = pods.GetPodNamespace()
 	// SharedObjects are objects shared with other resource bundles (i.e., central). Not creating these objects is
 	// okay - Central takes precedence here.
 	SharedObjects = []k8sobjects.ObjectRef{
@@ -14,7 +16,7 @@ var (
 				Version: "v1",
 				Kind:    "Secret",
 			},
-			Namespace: Namespace,
+			Namespace: sensorNamespace,
 			Name:      "monitoring-client",
 		},
 		{
@@ -22,7 +24,7 @@ var (
 				Version: "v1",
 				Kind:    "ConfigMap",
 			},
-			Namespace: Namespace,
+			Namespace: sensorNamespace,
 			Name:      "telegraf",
 		},
 	}

@@ -7,4 +7,5 @@ import "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 type upgradeContext interface {
 	ParseAndValidateObject(data []byte) (*unstructured.Unstructured, error)
 	InCertRotationMode() bool
+	IsPodSecurityEnabled() bool
 }

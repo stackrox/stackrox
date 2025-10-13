@@ -9,9 +9,9 @@ from clusters import AutomationFlavorsCluster
 
 # set required test parameters
 os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
-os.environ["SENSOR_HELM_DEPLOY"] = "true"
+os.environ["DEPLOY_STACKROX_VIA_OPERATOR"] = "true"
 
-# don't use postgres
-os.environ["ROX_POSTGRES_DATASTORE"] = "false"
+os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"
+os.environ["ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL"] = "30s"
 
 make_qa_e2e_test_runner(cluster=AutomationFlavorsCluster()).run()

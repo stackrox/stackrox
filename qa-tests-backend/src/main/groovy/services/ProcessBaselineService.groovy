@@ -1,17 +1,21 @@
 package services
 
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+
 import io.stackrox.proto.api.v1.ProcessBaselineServiceGrpc
-import io.stackrox.proto.storage.ProcessBaselineOuterClass
-import io.stackrox.proto.storage.ProcessBaselineOuterClass.ProcessBaselineKey
 import io.stackrox.proto.api.v1.ProcessBaselineServiceOuterClass
 import io.stackrox.proto.api.v1.ProcessBaselineServiceOuterClass.DeleteProcessBaselinesRequest
+import io.stackrox.proto.storage.ProcessBaselineOuterClass
+import io.stackrox.proto.storage.ProcessBaselineOuterClass.ProcessBaselineKey
+
 import objects.Deployment
 import util.Timer
 
 @Slf4j
+@CompileStatic
 class ProcessBaselineService extends BaseService {
-    static getProcessBaselineService() {
+    static ProcessBaselineServiceGrpc.ProcessBaselineServiceBlockingStub getProcessBaselineService() {
         return ProcessBaselineServiceGrpc.newBlockingStub(getChannel())
     }
 

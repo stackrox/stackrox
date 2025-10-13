@@ -2,12 +2,11 @@ package clair
 
 import (
 	"encoding/json"
-	"time"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cvss/cvssv2"
 	"github.com/stackrox/rox/pkg/cvss/cvssv3"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -16,11 +15,6 @@ import (
 	clairConvert "github.com/stackrox/scanner/api/v1/convert"
 	clientMetadata "github.com/stackrox/scanner/pkg/clairify/client/metadata"
 	"github.com/stackrox/scanner/pkg/component"
-)
-
-const (
-	timeFormat         = "2006-01-02T15:04Z"
-	extendedTimeFormat = "2006-01-02T15:04:03Z"
 )
 
 var (
@@ -103,8 +97,8 @@ func ConvertVulnerability(v clairV1.Vulnerability) *storage.EmbeddedVulnerabilit
 	if err := json.Unmarshal(d, &m); err != nil {
 		return vul
 	}
-	vul.PublishedOn = ConvertTime(m.PublishedOn)
-	vul.LastModified = ConvertTime(m.LastModified)
+	vul.PublishedOn = protoconv.ConvertTimeString(m.PublishedOn)
+	vul.LastModified = protoconv.ConvertTimeString(m.LastModified)
 
 	if m.CvssV2 != nil && m.CvssV2.Vectors != "" {
 		if cvssV2, err := cvssv2.ParseCVSSV2(m.CvssV2.Vectors); err == nil {
@@ -156,16 +150,19 @@ func convertFeature(feature clairV1.Feature, os string) *storage.EmbeddedImageSc
 			component.Vulns = append(component.Vulns, convertedVuln)
 		}
 	}
-	executables := make([]*storage.EmbeddedImageScanComponent_Executable, 0, len(feature.Executables))
-	for _, executable := range feature.Executables {
-		imageComponentIds := make([]string, 0, len(executable.RequiredFeatures))
-		for _, f := range executable.RequiredFeatures {
-			imageComponentIds = append(imageComponentIds, scancomponent.ComponentID(f.GetName(), f.GetVersion(), os))
+	// TODO:  Figure out what is happening with Active Vuln Management
+	if features.ActiveVulnMgmt.Enabled() && !features.FlattenCVEData.Enabled() {
+		executables := make([]*storage.EmbeddedImageScanComponent_Executable, 0, len(feature.Executables))
+		for _, executable := range feature.Executables {
+			imageComponentIds := make([]string, 0, len(executable.GetRequiredFeatures()))
+			for _, f := range executable.GetRequiredFeatures() {
+				imageComponentIds = append(imageComponentIds, scancomponent.ComponentID(f.GetName(), f.GetVersion(), os))
+			}
+			exec := &storage.EmbeddedImageScanComponent_Executable{Path: executable.GetPath(), Dependencies: imageComponentIds}
+			executables = append(executables, exec)
 		}
-		exec := &storage.EmbeddedImageScanComponent_Executable{Path: executable.Path, Dependencies: imageComponentIds}
-		executables = append(executables, exec)
+		component.Executables = executables
 	}
-	component.Executables = executables
 
 	return component
 }
@@ -177,12 +174,12 @@ func BuildSHAToIndexMap(metadata *storage.ImageMetadata) map[string]int32 {
 	if metadata.GetV2() != nil {
 		var layerIdx int
 		for i, l := range metadata.GetV1().GetLayers() {
-			if !l.Empty {
-				if layerIdx >= len(metadata.LayerShas) {
+			if !l.GetEmpty() {
+				if layerIdx >= len(metadata.GetLayerShas()) {
 					log.Error("More layers than expected when correlating V2 instructions to V1 layers")
 					break
 				}
-				sha := metadata.LayerShas[layerIdx]
+				sha := metadata.GetLayerShas()[layerIdx]
 				layerSHAToIndex[sha] = int32(i)
 				layerIdx++
 			}
@@ -190,11 +187,11 @@ func BuildSHAToIndexMap(metadata *storage.ImageMetadata) map[string]int32 {
 	} else {
 		// If it's V1 then we should have a 1:1 mapping of layer SHAs to the layerOrdering slice
 		for i := range metadata.GetV1().GetLayers() {
-			if i >= len(metadata.LayerShas) {
+			if i >= len(metadata.GetLayerShas()) {
 				log.Error("More layers than expected when correlating V1 instructions to V1 layers")
 				break
 			}
-			layerSHAToIndex[metadata.LayerShas[i]] = int32(i)
+			layerSHAToIndex[metadata.GetLayerShas()[i]] = int32(i)
 		}
 	}
 	return layerSHAToIndex
@@ -215,17 +212,4 @@ func ConvertFeatures(image *storage.Image, features []clairV1.Feature, os string
 		components = append(components, convertedComponent)
 	}
 	return
-}
-
-// ConvertTime converts a vulnerability time string into a proto timestamp
-func ConvertTime(str string) *timestamp.Timestamp {
-	if str == "" {
-		return nil
-	}
-	if ts, err := time.Parse(timeFormat, str); err == nil {
-		return protoconv.ConvertTimeToTimestamp(ts)
-	} else if ts, err := time.Parse(extendedTimeFormat, str); err == nil {
-		return protoconv.ConvertTimeToTimestamp(ts)
-	}
-	return nil
 }

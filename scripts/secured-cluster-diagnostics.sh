@@ -177,9 +177,9 @@ save_sensor_diagnostics() {
     PID="$(create_port_forward "$pod" "$ns" "$port")"
 
     echo "${pod}: downloading heap profile"
-    get_url "${endp}/debug/heap" > "${output_dir}/${pod}-heap.tar.gz"
+    get_url "${endp}/debug/heap" > "${output_dir}/${pod}-heap.pb.gz"
     echo "${pod}: downloading cpu profile (30 sec)"
-    get_url "${endp}/debug/pprof/profile" > "${output_dir}/${pod}-cpu.tar.gz"
+    get_url "${endp}/debug/pprof/profile" > "${output_dir}/${pod}-cpu.pb.gz"
     shutdown_port_forward "${PID}"
 }
 

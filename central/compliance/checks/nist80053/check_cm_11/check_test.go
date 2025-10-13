@@ -1,15 +1,15 @@
 package checkcm11
 
 import (
+	"slices"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/compliance/checks/testutils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/defaults/policies"
-	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 func TestDefaultPoliciesListUpToDate(t *testing.T) {
@@ -18,7 +18,7 @@ func TestDefaultPoliciesListUpToDate(t *testing.T) {
 
 	for _, checkedPolicy := range defaultRuntimePackageManagementPolicies {
 		t.Run(checkedPolicy, func(t *testing.T) {
-			matchingIdx := sliceutils.FindMatching(defaultPolicies, func(p *storage.Policy) bool {
+			matchingIdx := slices.IndexFunc(defaultPolicies, func(p *storage.Policy) bool {
 				return p.GetId() == checkedPolicy
 			})
 			require.NotEqual(t, -1, matchingIdx, "policy %q is no longer in the default policies list", checkedPolicy)

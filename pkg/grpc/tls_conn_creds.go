@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"net"
+	"time"
 
 	"google.golang.org/grpc/credentials"
 )
@@ -14,7 +15,9 @@ import (
 // Usually, `(*grpc.Server).Serve` expects a raw TCP listener, which is then wrapped into a `tls.Listener` by means of
 // the transport credentials returned by `credentials.NewTLS`. This struct makes it possible to invoke `Serve` with a
 // TLS listener.
-type credsFromConn struct{}
+type credsFromConn struct {
+	tlsHandshakeTimeout time.Duration
+}
 
 func (c credsFromConn) Info() credentials.ProtocolInfo {
 	return credentials.ProtocolInfo{
@@ -23,20 +26,23 @@ func (c credsFromConn) Info() credentials.ProtocolInfo {
 	}
 }
 
-func (c credsFromConn) ClientHandshake(ctx context.Context, authority string, rawConn net.Conn) (net.Conn, credentials.AuthInfo, error) {
+func (c credsFromConn) ClientHandshake(_ context.Context, _ string, _ net.Conn) (net.Conn, credentials.AuthInfo, error) {
 	return nil, nil, errors.New("server use only")
 }
 
 func (c credsFromConn) ServerHandshake(rawConn net.Conn) (net.Conn, credentials.AuthInfo, error) {
 	tlsConn, _ := rawConn.(interface {
 		net.Conn
-		Handshake() error
+		HandshakeContext(ctx context.Context) error
 		ConnectionState() tls.ConnectionState
 	})
 	if tlsConn == nil {
 		return rawConn, nil, nil
 	}
-	if err := tlsConn.Handshake(); err != nil {
+	ctx, cancel := context.WithTimeoutCause(context.Background(), c.tlsHandshakeTimeout,
+		errors.New("TLS handshake timeout"))
+	defer cancel()
+	if err := tlsConn.HandshakeContext(ctx); err != nil {
 		log.Debugf("TLS handshake error from %q: %v", rawConn.RemoteAddr(), err)
 		return nil, nil, err
 	}
@@ -47,6 +53,6 @@ func (c credsFromConn) Clone() credentials.TransportCredentials {
 	return c
 }
 
-func (c credsFromConn) OverrideServerName(serverNameOverride string) error {
+func (c credsFromConn) OverrideServerName(_ string) error {
 	return errors.New("not supported")
 }

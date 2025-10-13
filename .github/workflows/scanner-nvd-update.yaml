@@ -1,0 +1,219 @@
+name: Scanner NVD update
+
+on:
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  fetch-nvd-feeds:
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-nvd'))
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Fetch NVD Feeds
+      run: |
+        set -eu
+        dir=$(mktemp -d)
+        python3 .github/workflows/scripts/scanner-update-nvd-feeds.py "$dir"
+        for f in "$dir"/*.nvd.json; do
+          if jq . "$f" >/dev/null 2>&1; then
+            echo "Validating and adding '$f' to nvd-feeds.zip"
+            zip -j nvd-feeds.zip "$f"
+          else
+            echo "Error: Invalid JSON file '$f'"
+            exit 1
+          fi
+        done
+
+    - uses: ./.github/actions/upload-artifact-with-retry
+      with:
+        name: nvd-feeds
+        path: nvd-feeds.zip
+        if-no-files-found: error
+
+  fetch-nvd-api:
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-nvd'))
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Fetch NVD API
+      env:
+        SCANNER_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        SCANNER_NVD_URL: https://services.nvd.nist.gov/rest/json/cves/2.0
+      run: |
+        set -eu
+        dir=$(mktemp -d)
+        python3 .github/workflows/scripts/scanner-update-nvd-api.py "$dir"
+        for f in "$dir"/*.nvd.json; do
+          if jq . "$f" >/dev/null 2>&1; then
+            echo "Validating and adding '$f' to nvd-api.zip"
+            zip -j nvd-api.zip "$f"
+          else
+            echo "Error: Invalid JSON file '$f'"
+            exit 1
+          fi
+        done
+
+    - uses: ./.github/actions/upload-artifact-with-retry
+      with:
+        name: nvd-api
+        path: nvd-api.zip
+        if-no-files-found: error
+
+  upload-pr-nvd-feeds:
+    needs:
+    - fetch-nvd-feeds
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-nvd')
+    steps:
+    # Checkout master to get the latest local actions
+    - name: Checkout repository
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        free-disk-space: 50
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Checkout specific reference
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Authenticate with test GCS bucket
+      uses: google-github-actions/auth@v3
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v3
+
+    - name: Download NVD
+      uses: ./.github/actions/download-artifact-with-retry
+      with:
+        name: nvd-feeds
+        path: .
+
+    # PR owner is responsible for verifying NVD bundle is generated
+    - name: Upload NVD Feeds to Google Cloud Storage
+      run: |
+        branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
+        # Replace / with -, so the branch name isn't truncated when pushed to GCS.
+        dir=${branch////-}
+        case "$dir" in
+        dev|1.0.0)
+          echo "Error: branch $dir is protected. Choose a different branch name."
+          exit 1
+        esac
+        mkdir -p "$dir"
+        cp nvd-feeds.zip "$dir/"
+        gsutil -m cp -r "$dir" "gs://scanner-v4-test/nvd/"
+
+    # Checkout again to get the latest local actions for cleanup phase
+    - name: Checkout repository
+      uses: actions/checkout@v5
+      if: always()
+      with:
+        fetch-depth: 0
+
+  upload-nvd-feeds:
+    needs:
+    - fetch-nvd-feeds
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+        ref: ${{ github.ref }}
+
+    - uses: ./.github/actions/download-artifact-with-retry
+      with:
+        name: nvd-feeds
+        path: .
+
+    - name: Authenticate with Google Cloud
+      uses: google-github-actions/auth@v3
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v3
+
+    - name: Upload NVD Feeds to Google Cloud Storage
+      run: |
+        gsutil cp nvd-feeds.zip "gs://definitions.stackrox.io/v4/nvd/nvd-feeds.zip"
+
+  upload-nvd-api:
+    needs:
+    - fetch-nvd-api
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+        ref: ${{ github.ref }}
+
+    - uses: ./.github/actions/download-artifact-with-retry
+      with:
+        name: nvd-api
+        path: .
+
+    - name: Authenticate with Google Cloud
+      uses: google-github-actions/auth@v3
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v3
+
+    - name: Upload NVD API to Google Cloud Storage
+      run:
+        gsutil cp nvd-api.zip "gs://definitions.stackrox.io/v4/nvd/nvd-api.zip"
+
+  send-notification:
+    needs:
+      - upload-nvd-feeds
+      - upload-nvd-api
+    runs-on: ubuntu-latest
+    if: ${{ failure() && github.ref_name == 'master' }}
+    steps:
+    - name: Send Slack notification on workflow failure
+      run: |
+        curl -X POST -H 'Content-type: application/json' --data '{"text":"<${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|Workflow ${{ github.workflow }}> failed in repository ${{ github.repository }}: Failed to update NVD CVEs"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}

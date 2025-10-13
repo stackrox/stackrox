@@ -44,9 +44,12 @@ type centralDbRestoreCommand struct {
 func V2Command(cliEnvironment environment.Environment) *cobra.Command {
 	centralDbRestoreCmd := &centralDbRestoreCommand{env: cliEnvironment}
 	c := &cobra.Command{
-		Use: "restore <file>",
+		Use:   "restore <file>",
+		Args:  cobra.ExactArgs(1),
+		Short: "Restore the StackRox database from a previous backup",
+		Long:  "Restore the StackRox database from a backup (.zip file) that you created by using the `roxctl central db backup` command.",
 		RunE: func(c *cobra.Command, args []string) error {
-			if err := validate(c, args); err != nil {
+			if err := validate(c); err != nil {
 				return err
 			}
 			if err := centralDbRestoreCmd.construct(c, args); err != nil {
@@ -64,20 +67,15 @@ func V2Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.AddCommand(v2RestoreStatusCmd(cliEnvironment))
 	c.AddCommand(v2RestoreCancelCommand(cliEnvironment))
 
-	c.Flags().StringVar(&centralDbRestoreCmd.file, "file", "", "file to restore the DB from (deprecated; use positional argument)")
-	c.Flags().BoolVar(&centralDbRestoreCmd.interrupt, "interrupt", false, "interrupt ongoing restore process (if any) to allow resuming")
+	c.Flags().StringVar(&centralDbRestoreCmd.file, "file", "", "File to restore the DB from (deprecated; use positional argument).")
+	c.Flags().BoolVar(&centralDbRestoreCmd.interrupt, "interrupt", false, "Interrupt ongoing restore process (if any) to allow resuming.")
+	utils.Must(c.Flags().MarkDeprecated("file", "use the positional argument instead."))
 	flags.AddForce(c)
 
 	return c
 }
 
-func validate(cbr *cobra.Command, args []string) error {
-	if len(args) == 0 {
-		return cbr.Usage()
-	}
-	if len(args) > 1 {
-		return errox.InvalidArgs.Newf("too many positional arguments (%d given)", len(args))
-	}
+func validate(cbr *cobra.Command) error {
 	if file, _ := cbr.Flags().GetString("file"); file != "" {
 		return errox.InvalidArgs.New("legacy --file flag must not be used in conjunction with a positional argument")
 	}
@@ -99,6 +97,18 @@ func (cmd *centralDbRestoreCommand) validate() error {
 	if cmd.file == "" {
 		return errox.InvalidArgs.New("file to restore from must be specified")
 	}
+	fi, err := os.Stat(cmd.file)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return errox.NotFound.Newf("file %q could not be found", cmd.file)
+		}
+		return errox.InvalidArgs.Newf("opening file %q", cmd.file)
+	}
+
+	if fi.IsDir() {
+		return errox.InvalidArgs.Newf("expected a file not a directory for path %s", cmd.file)
+	}
+
 	return nil
 }
 
@@ -190,11 +200,11 @@ func dataReadersForManifest(file *os.File, manifest *v1.DBExportManifest) ([]fun
 func assembleManifestFromZIP(file *os.File, supportedCompressionTypes map[v1.DBExportManifest_EncodingType]struct{}) (*v1.DBExportManifest, error) {
 	stat, err := file.Stat()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "getting file stats for %s", file.Name())
 	}
 	zipReader, err := zip.NewReader(file, stat.Size())
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "opening file %s as ZIP", file.Name())
 	}
 
 	mf := &v1.DBExportManifest{}
@@ -223,7 +233,7 @@ func assembleManifestFromZIP(file *os.File, supportedCompressionTypes map[v1.DBE
 			manifestFile.EncodedSize = int64(entry.CompressedSize64)
 		} else {
 			manifestFile.Encoding = v1.DBExportManifest_UNCOMPREESSED
-			manifestFile.EncodedSize = manifestFile.DecodedSize
+			manifestFile.EncodedSize = manifestFile.GetDecodedSize()
 		}
 
 		mf.Files = append(mf.Files, manifestFile)

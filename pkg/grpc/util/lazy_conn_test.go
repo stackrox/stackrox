@@ -20,7 +20,7 @@ type helloServer struct {
 	helloworld.UnimplementedGreeterServer
 }
 
-func (s *helloServer) SayHello(ctx context.Context, in *helloworld.HelloRequest) (*helloworld.HelloReply, error) {
+func (s *helloServer) SayHello(_ context.Context, in *helloworld.HelloRequest) (*helloworld.HelloReply, error) {
 	return &helloworld.HelloReply{Message: "Hello " + in.GetName()}, nil
 }
 
@@ -61,7 +61,7 @@ func TestLazyConn(t *testing.T) {
 		resp, err := client.SayHello(ctx, &helloworld.HelloRequest{Name: "Lazy Hazard"})
 
 		require.NoError(t, err)
-		assert.Equal(t, "Hello Lazy Hazard", resp.Message)
+		assert.Equal(t, "Hello Lazy Hazard", resp.GetMessage())
 		successSignal.Signal()
 	}(successCtx)
 

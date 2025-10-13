@@ -3,7 +3,6 @@ package helmconfig
 import (
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
@@ -13,20 +12,19 @@ import (
 func TestLoad(t *testing.T) {
 	clusterConfig := []byte(`
 clusterName: remote
-notHelmManaged: true
 clusterConfig:
   staticConfig:
     type: KUBERNETES_CLUSTER
     mainImage: stackrox/main
     collectorImage: stackrox/collector
     centralApiEndpoint: central.stackrox:443
-    collectionMethod: KERNEL_MODULE
+    collectionMethod: CORE_BPF
     admissionController: true
     admissionControllerUpdates: false
     admissionControllerEvents: true
     tolerationsConfig:
       disabled: false
-    slimCollector: true
+    slimCollector: false
   dynamicConfig:
     disableAuditLogs: true
     admissionControllerConfig:
@@ -61,12 +59,11 @@ clusterConfig:
 			Type:                       storage.ClusterType_KUBERNETES_CLUSTER,
 			MainImage:                  "stackrox/main",
 			CentralApiEndpoint:         "central.stackrox:443",
-			CollectionMethod:           storage.CollectionMethod_KERNEL_MODULE,
+			CollectionMethod:           storage.CollectionMethod_CORE_BPF,
 			CollectorImage:             "stackrox/collector",
 			AdmissionController:        true,
 			AdmissionControllerUpdates: false,
 			TolerationsConfig:          &storage.TolerationsConfig{Disabled: false},
-			SlimCollector:              true,
 			AdmissionControllerEvents:  true,
 		},
 		ConfigFingerprint: "69c6a7ea9452e9dc13aaf7d29e2b9ac4207a53d95b900b3853dce46f47df8407-1",
@@ -74,11 +71,10 @@ clusterConfig:
 	}
 
 	expectedConfig := &central.HelmManagedConfigInit{
-		ClusterConfig:  expectedClusterConfig,
-		ClusterName:    "remote",
-		ClusterId:      "",
-		NotHelmManaged: true,
+		ClusterConfig: expectedClusterConfig,
+		ClusterName:   "remote",
+		ClusterId:     "",
 	}
 
-	assert.True(t, proto.Equal(expectedConfig, config), "Converted proto and expected proto do not match")
+	assert.True(t, expectedConfig.EqualVT(config), "Converted proto and expected proto do not match")
 }

@@ -4,18 +4,17 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/stackrox/rox/central/deployment/cache"
 	graphConfigDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
-	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/postgres"
-	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/rocksdb"
+	pgStore "github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/expiringcache"
-	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/postgres"
 )
 
 // ClusterDataStore stores the network edges per cluster.
+//
 //go:generate mockgen-wrapper
 type ClusterDataStore interface {
 	GetFlowStore(ctx context.Context, clusterID string) (FlowDataStore, error)
@@ -23,7 +22,7 @@ type ClusterDataStore interface {
 }
 
 // NewClusterDataStore returns a new instance of ClusterDataStore using the input storage underneath.
-func NewClusterDataStore(storage store.ClusterStore, graphConfig graphConfigDS.DataStore, networkTreeMgr networktree.Manager, deletedDeploymentsCache expiringcache.Cache) ClusterDataStore {
+func NewClusterDataStore(storage store.ClusterStore, graphConfig graphConfigDS.DataStore, networkTreeMgr networktree.Manager, deletedDeploymentsCache cache.DeletedDeployments) ClusterDataStore {
 	return &clusterDataStoreImpl{
 		storage:                 storage,
 		graphConfig:             graphConfig,
@@ -33,33 +32,14 @@ func NewClusterDataStore(storage store.ClusterStore, graphConfig graphConfigDS.D
 }
 
 // GetTestPostgresClusterDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresClusterDataStore(t *testing.T, pool *pgxpool.Pool) (ClusterDataStore, error) {
-	dbstore := postgres.NewClusterStore(pool)
-	configStore, err := graphConfigDS.GetTestPostgresDataStore(t, pool)
-	if err != nil {
-		return nil, err
-	}
+func GetTestPostgresClusterDataStore(t testing.TB, pool postgres.DB) (ClusterDataStore, error) {
+	dbstore := pgStore.NewClusterStore(pool)
+	configStore := graphConfigDS.GetTestPostgresDataStore(t, pool)
 	networkTreeMgr := networktree.Singleton()
 	entitiesByCluster := map[string][]*storage.NetworkEntityInfo{}
-	err = networkTreeMgr.Initialize(entitiesByCluster)
+	err := networkTreeMgr.Initialize(entitiesByCluster)
 	if err != nil {
 		return nil, err
 	}
-	return NewClusterDataStore(dbstore, configStore, networkTreeMgr, nil), nil
-}
-
-// GetTestRocksBleveClusterDataStore provides a datastore connected to rocksdb and bleve for testing purposes.
-func GetTestRocksBleveClusterDataStore(t *testing.T, rocksengine *rocksdbBase.RocksDB) (ClusterDataStore, error) {
-	dbstore := rocksdb.NewClusterStore(rocksengine)
-	configStore, err := graphConfigDS.GetTestRocksBleveDataStore(t, rocksengine)
-	if err != nil {
-		return nil, err
-	}
-	networkTreeMgr := networktree.Singleton()
-	entitiesByCluster := map[string][]*storage.NetworkEntityInfo{}
-	err = networkTreeMgr.Initialize(entitiesByCluster)
-	if err != nil {
-		return nil, err
-	}
-	return NewClusterDataStore(dbstore, configStore, networkTreeMgr, nil), nil
+	return NewClusterDataStore(dbstore, configStore, networkTreeMgr, cache.DeletedDeploymentsSingleton()), nil
 }

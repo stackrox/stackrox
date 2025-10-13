@@ -1,16 +1,19 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { TextInput, PageSection, Form, FormSelect, Checkbox } from '@patternfly/react-core';
 import * as yup from 'yup';
+import merge from 'lodash/merge';
 
-import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
+import type { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
 
-import usePageState from 'Containers/Integrations/hooks/usePageState';
 import FormMessage from 'Components/PatternFly/FormMessage';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
+
+import usePageState from '../../hooks/usePageState';
 import useIntegrationForm from '../useIntegrationForm';
-import { IntegrationFormProps } from '../integrationFormTypes';
+import type { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';
@@ -23,6 +26,7 @@ export type AwsSecurityHubIntegration = {
         credentials: {
             accessKeyId: string;
             secretAccessKey: string;
+            stsEnabled: boolean;
         };
     };
     type: 'awsSecurityHub';
@@ -43,44 +47,49 @@ export const validationSchema = yup.object().shape({
                 .length(12, 'AWS account numbers must be 12 characters long'),
             region: yup.string().required('An AWS region is required'),
             credentials: yup.object().shape({
-                accessKeyId: yup
-                    .string()
-                    .test(
-                        'accessKeyId-test',
-                        'An access key ID is required',
-                        (value, context: yup.TestContext) => {
-                            const requirePasswordField =
-                                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                                // @ts-ignore
-                                context?.from[3]?.value?.updatePassword || false;
+                stsEnabled: yup.boolean(),
+                accessKeyId: yup.string().when('stsEnabled', {
+                    is: false,
+                    then: (accessKeyIdSchema) =>
+                        accessKeyIdSchema.test(
+                            'accessKeyId-test',
+                            'An access key ID is required',
+                            (value, context: yup.TestContext) => {
+                                const requirePasswordField =
+                                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                                    // @ts-ignore
+                                    context?.from[3]?.value?.updatePassword || false;
 
-                            if (!requirePasswordField) {
-                                return true;
+                                if (!requirePasswordField) {
+                                    return true;
+                                }
+
+                                const trimmedValue = value?.trim();
+                                return !!trimmedValue;
                             }
+                        ),
+                }),
+                secretAccessKey: yup.string().when('stsEnabled', {
+                    is: false,
+                    then: (secretAccessKeySchema) =>
+                        secretAccessKeySchema.test(
+                            'secretAccessKey-test',
+                            'A secret access key is required',
+                            (value, context: yup.TestContext) => {
+                                const requirePasswordField =
+                                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                                    // @ts-ignore
+                                    context?.from[3]?.value?.updatePassword || false;
 
-                            const trimmedValue = value?.trim();
-                            return !!trimmedValue;
-                        }
-                    ),
-                secretAccessKey: yup
-                    .string()
-                    .test(
-                        'secretAccessKey-test',
-                        'A secret access key is required',
-                        (value, context: yup.TestContext) => {
-                            const requirePasswordField =
-                                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                                // @ts-ignore
-                                context?.from[3]?.value?.updatePassword || false;
+                                if (!requirePasswordField) {
+                                    return true;
+                                }
 
-                            if (!requirePasswordField) {
-                                return true;
+                                const trimmedValue = value?.trim();
+                                return !!trimmedValue;
                             }
-
-                            const trimmedValue = value?.trim();
-                            return !!trimmedValue;
-                        }
-                    ),
+                        ),
+                }),
             }),
         }),
         uiEndpoint: yup.string(),
@@ -99,6 +108,7 @@ export const defaultValues: AwsSecurityHubIntegrationFormValues = {
             credentials: {
                 accessKeyId: '',
                 secretAccessKey: '',
+                stsEnabled: false,
             },
         },
         labelDefault: '',
@@ -113,16 +123,17 @@ function AwsSecurityHubIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<AwsSecurityHubIntegration>): ReactElement {
-    const formInitialValues = { ...defaultValues, ...initialValues };
+    const formInitialValues = structuredClone(defaultValues);
     if (initialValues) {
-        formInitialValues.notifier = {
-            ...formInitialValues.notifier,
-            ...initialValues,
-        };
+        merge(formInitialValues.notifier, initialValues);
+
         // We want to clear these values because backend returns '******' to represent that there
         // are currently stored credentials
         formInitialValues.notifier.awsSecurityHub.credentials.accessKeyId = '';
         formInitialValues.notifier.awsSecurityHub.credentials.secretAccessKey = '';
+
+        // Don't assume user wants to change password; that has caused confusing UX.
+        formInitialValues.updatePassword = false;
     }
     const {
         values,
@@ -170,7 +181,7 @@ function AwsSecurityHubIntegrationForm({
                             type="text"
                             id="notifier.name"
                             value={values.notifier.name}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -186,7 +197,7 @@ function AwsSecurityHubIntegrationForm({
                             type="text"
                             id="notifier.awsSecurityHub.accountId"
                             value={values.notifier.awsSecurityHub.accountId}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         />
@@ -201,7 +212,7 @@ function AwsSecurityHubIntegrationForm({
                         <FormSelect
                             id="notifier.awsSecurityHub.region"
                             value={values.notifier.awsSecurityHub.region}
-                            onChange={onChange}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
                             isDisabled={!isEditable}
                         >
@@ -218,56 +229,76 @@ function AwsSecurityHubIntegrationForm({
                                 label="Update stored credentials"
                                 id="updatePassword"
                                 isChecked={values.updatePassword}
-                                onChange={onUpdateCredentialsChange}
+                                onChange={(event, value) => onUpdateCredentialsChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
                     )}
                     <FormLabelGroup
-                        isRequired={values.updatePassword}
-                        label="Access key ID"
-                        fieldId="notifier.awsSecurityHub.credentials.accessKeyId"
+                        fieldId="notifier.awsSecurityHub.credentials.stsEnabled"
                         touched={touched}
                         errors={errors}
                     >
-                        <TextInput
-                            isRequired={values.updatePassword}
-                            type="password"
-                            id="notifier.awsSecurityHub.credentials.accessKeyId"
-                            value={values.notifier.awsSecurityHub.credentials.accessKeyId}
-                            onChange={onChange}
+                        <Checkbox
+                            label="Use container IAM role"
+                            id="notifier.awsSecurityHub.credentials.stsEnabled"
+                            isChecked={values.notifier.awsSecurityHub.credentials.stsEnabled}
+                            onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
-                            isDisabled={!isEditable || !values.updatePassword}
-                            placeholder={
-                                values.updatePassword
-                                    ? ''
-                                    : 'Currently-stored access key ID will be used.'
-                            }
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    <FormLabelGroup
-                        isRequired={values.updatePassword}
-                        label="Secret access key"
-                        fieldId="notifier.awsSecurityHub.credentials.secretAccessKey"
-                        touched={touched}
-                        errors={errors}
-                    >
-                        <TextInput
-                            isRequired={values.updatePassword}
-                            type="password"
-                            id="notifier.awsSecurityHub.credentials.secretAccessKey"
-                            value={values.notifier.awsSecurityHub.credentials.secretAccessKey}
-                            onChange={onChange}
-                            onBlur={handleBlur}
-                            isDisabled={!isEditable || !values.updatePassword}
-                            placeholder={
-                                values.updatePassword
-                                    ? ''
-                                    : 'Currently-stored secret access key will be used.'
-                            }
-                        />
-                    </FormLabelGroup>
+                    {!values.notifier.awsSecurityHub.credentials.stsEnabled && (
+                        <>
+                            <FormLabelGroup
+                                isRequired={values.updatePassword}
+                                label="Access key ID"
+                                fieldId="notifier.awsSecurityHub.credentials.accessKeyId"
+                                touched={touched}
+                                errors={errors}
+                            >
+                                <TextInput
+                                    isRequired={values.updatePassword}
+                                    type="password"
+                                    id="notifier.awsSecurityHub.credentials.accessKeyId"
+                                    value={values.notifier.awsSecurityHub.credentials.accessKeyId}
+                                    onChange={(event, value) => onChange(value, event)}
+                                    onBlur={handleBlur}
+                                    isDisabled={!isEditable || !values.updatePassword}
+                                    placeholder={
+                                        values.updatePassword
+                                            ? ''
+                                            : 'Currently-stored access key ID will be used.'
+                                    }
+                                />
+                            </FormLabelGroup>
+                            <FormLabelGroup
+                                isRequired={values.updatePassword}
+                                label="Secret access key"
+                                fieldId="notifier.awsSecurityHub.credentials.secretAccessKey"
+                                touched={touched}
+                                errors={errors}
+                            >
+                                <TextInput
+                                    isRequired={values.updatePassword}
+                                    type="password"
+                                    id="notifier.awsSecurityHub.credentials.secretAccessKey"
+                                    value={
+                                        values.notifier.awsSecurityHub.credentials.secretAccessKey
+                                    }
+                                    onChange={(event, value) => onChange(value, event)}
+                                    onBlur={handleBlur}
+                                    isDisabled={!isEditable || !values.updatePassword}
+                                    placeholder={
+                                        values.updatePassword
+                                            ? ''
+                                            : 'Currently-stored secret access key will be used.'
+                                    }
+                                />
+                            </FormLabelGroup>
+                        </>
+                    )}
                 </Form>
             </PageSection>
             {isEditable && (

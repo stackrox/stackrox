@@ -12,7 +12,7 @@ metadata:
   annotations:
     {{- include "srox.annotations" (list . "deployment" "admission-control") | nindent 4 }}
 spec:
-  replicas: 3
+  replicas: {{ ._rox.admissionControl.replicas }}
   minReadySeconds: 0
   selector:
     matchLabels:
@@ -24,8 +24,11 @@ spec:
         app: admission-control
         {{- include "srox.podLabels" (list . "deployment" "admission-control") | nindent 8 }}
       annotations:
-        traffic.sidecar.istio.io/excludeInboundPorts: "8443"
-        {{- include "srox.podAnnotations" (list . "deployment" "admission-control") | nindent 8 }}
+        {{- $annotations := dict "traffic.sidecar.istio.io/excludeInboundPorts" "8443" -}}
+        {{- if eq ._rox.env.openshift 4 }}
+          {{- $_ := set $annotations "openshift.io/required-scc" "restricted-v2" -}}
+        {{- end }}
+        {{- include "srox.podAnnotations" (list . "deployment" "admission-control" $annotations) | nindent 8 }}
     spec:
       # Attempt to schedule these on master nodes
       {{- if ._rox.admissionControl.tolerations }}
@@ -33,39 +36,27 @@ spec:
         {{- toYaml ._rox.admissionControl.tolerations | nindent 8 }}
       {{- end }}
       affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            # node-role.kubernetes.io/master is replaced by node-role.kubernetes.io/control-plane from certain version
-            # of k8s. We apply both to be compatible with any k8s version.
-            - weight: 50
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/master
-                    operator: Exists
-            - weight: 50
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/control-plane
-                    operator: Exists
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 60
-              podAffinityTerm:
-                namespaces: ["stackrox"]
-                topologyKey: "kubernetes.io/hostname"
-                labelSelector:
-                  matchLabels:
-                    app: admission-control
+        {{- toYaml ._rox.admissionControl.affinity | nindent 8 }}
       {{- if ._rox.admissionControl._nodeSelector }}
       nodeSelector:
         {{- ._rox.admissionControl._nodeSelector | nindent 8 }}
       {{- end}}
+      {{- if ._rox.admissionControl.priorityClassName }}
+      priorityClassName: {{ ._rox.admissionControl.priorityClassName }}
+      {{- end }}
+      {{- if ._rox.admissionControl.hostAliases }}
+      hostAliases: {{ toYaml ._rox.admissionControl.hostAliases | nindent 8 }}
+      {{- end }}
       {{- if not ._rox.env.openshift }}
       securityContext:
         runAsUser: 4000
         fsGroup: 4000
       {{- end }}
       serviceAccountName: admission-control
+      initContainers:
+      {{- if ._rox._securedClusterCertRefresh }}
+      - {{ include "srox.tlsCertsInitContainer" (list .) | indent 8 | trim }}
+      {{- end }}
       containers:
         - image: {{ quote ._rox.image.main.fullRef }}
           imagePullPolicy: {{ ._rox.admissionControl.imagePullPolicy }}
@@ -89,6 +80,22 @@ spec:
             runAsNonRoot: true
             readOnlyRootFilesystem: true
           env:
+          - name: ROX_MEMLIMIT
+            valueFrom:
+              resourceFieldRef:
+                resource: limits.memory
+          - name: GOMAXPROCS
+            valueFrom:
+              resourceFieldRef:
+                resource: limits.cpu
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
           - name: ROX_SENSOR_ENDPOINT
             value: {{ ._rox.sensor.endpoint }}
           {{- include "srox.envVars" (list . "deployment" "admission-controller" "admission-controller") | nindent 10 }}
@@ -113,17 +120,21 @@ spec:
               readOnly: true
             {{- include "srox.injectedCABundleVolumeMount" . | nindent 12 }}
       volumes:
+        {{- if ._rox._securedClusterCertRefresh }}
+        {{- include "srox.tlsCertsInitContainerVolumes" (list "admission-control") | indent 8 }}
+        {{- else }}
         - name: certs
           secret:
             secretName: admission-control-tls
             optional: true
             items:
-              - key: admission-control-cert.pem
-                path: cert.pem
-              - key: admission-control-key.pem
-                path: key.pem
-              - key: ca.pem
-                path: ca.pem
+            - key: admission-control-cert.pem
+              path: cert.pem
+            - key: admission-control-key.pem
+              path: key.pem
+            - key: ca.pem
+              path: ca.pem
+        {{- end }}
         - name: ca
           secret:
             secretName: service-ca
@@ -205,6 +216,7 @@ webhooks:
         resources:
           - pods
           - deployments
+          - deployments/scale
           - replicasets
           - replicationcontrollers
           - statefulsets
@@ -215,15 +227,19 @@ webhooks:
           - deploymentconfigs
           {{- end }}
     namespaceSelector:
+      {{- if ._rox.admissionControl.namespaceSelector }}
+        {{- toYaml ._rox.admissionControl.namespaceSelector | nindent 6 }}
+      {{- else }}
       matchExpressions:
       - key: namespace.metadata.stackrox.io/name
         operator: NotIn
         values:
-          - stackrox
+          - {{ ._rox._namespace }}
           - kube-system
           - kube-public
           - istio-system
-    failurePolicy: Ignore
+      {{- end }}
+    failurePolicy: {{ ._rox.admissionControl.failurePolicy | quote }}
     clientConfig:
       caBundle: {{ required "The 'ca.cert' config option MUST be set to StackRox's Service CA certificate in order for the admission controller to be usable" ._rox.ca._cert | b64enc }}
       service:
@@ -249,7 +265,7 @@ webhooks:
           - pods
           - pods/exec
           - pods/portforward
-    failurePolicy: Ignore
+    failurePolicy: {{ ._rox.admissionControl.failurePolicy | quote }}
     clientConfig:
       caBundle: {{ required "The 'ca.cert' config option MUST be set to StackRox's Service CA certificate in order for the admission controller to be usable" ._rox.ca._cert | b64enc }}
       service:

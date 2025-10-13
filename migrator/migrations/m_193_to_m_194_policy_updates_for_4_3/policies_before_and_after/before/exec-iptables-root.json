@@ -1,0 +1,126 @@
+{
+  "id": "ed8c7957-14de-40bc-aeab-d27ceeecfa7b",
+  "name": "Iptables Executed in Privileged Container",
+  "description": "Alert on privileged pods that execute iptables",
+  "rationale": "Processes that are running with UID 0 run as the root user. iptables can be used in privileged containers to modify the node's network routing.",
+  "remediation": "Specify the USER instruction in the Docker image or the runAsUser field within the Pod Security Context",
+  "categories": [
+    "Network Tools",
+    "Security Best Practices"
+  ],
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "exclusions": [
+    {
+      "name": "Don't alert on haproxy-* deployment in openshift-vsphere-infra namespace",
+      "deployment": {
+        "name": "haproxy-.*",
+        "scope": {
+          "namespace": "openshift-vsphere-infra"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on keepalived-* deployment in openshift-vsphere-infra namespace",
+      "deployment": {
+        "name": "keepalived-.*",
+        "scope": {
+          "namespace": "openshift-vsphere-infra"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on coredns-* deployment in openshift-vsphere-infra namespace",
+      "deployment": {
+        "name": "coredns-.*",
+        "scope": {
+          "namespace": "openshift-vsphere-infra"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on ovnkube-node deployment in openshift-ovn-kubernetes Namespace",
+      "deployment": {
+        "name": "ovnkube-node",
+        "scope": {
+          "namespace": "openshift-ovn-kubernetes"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on Kube System Namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "kube-system"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on istio-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "istio-system"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-sdn namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-sdn"
+        }
+      }
+    }
+  ],
+  "severity": "CRITICAL_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Privileged Container",
+          "values": [
+            {
+              "value": "true"
+            }
+          ]
+        },
+        {
+          "fieldName": "Process Name",
+          "values": [
+            {
+              "value": "iptables"
+            }
+          ]
+        },
+        {
+          "fieldName": "Process UID",
+          "values": [
+            {
+              "value": "0"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [
+    {
+      "tactic": "TA0004",
+      "techniques": [
+        "T1611"
+      ]
+    },
+    {
+      "tactic": "TA0005",
+      "techniques": [
+        "T1562.004"
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

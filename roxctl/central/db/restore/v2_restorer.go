@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/VividCortex/ewma"
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -30,7 +29,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/vbauerster/mpb/v4"
 	"github.com/vbauerster/mpb/v4/decor"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -86,7 +85,7 @@ func (cmd *centralDbRestoreCommand) newV2Restorer(confirm func() error, retryDea
 	dbClient := v1.NewDBServiceClient(conn)
 	httpClient, err := cmd.env.HTTPClient(0)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "creating HTTP client for central database restore")
 	}
 
 	return &v2Restorer{
@@ -161,13 +160,13 @@ func (r *v2Restorer) Run(ctx context.Context, file *os.File) (*http.Response, er
 	r.statusLine.SetSpinner(waitingSpinner)
 	r.statusLine.SetTextStatic("Initiating restore ...")
 
-	termWidth, _, err := terminal.GetSize(int(os.Stderr.Fd()))
+	termWidth, _, err := term.GetSize(int(os.Stderr.Fd())) //nolint:forbidigo // TODO(ROX-13473)
 	if err == nil && termWidth > 40 {
 		if termWidth > 120 {
 			termWidth = 120
 		}
 
-		progressBarContainer := mpb.NewWithContext(subCtx, mpb.WithOutput(os.Stderr), mpb.WithWidth(termWidth))
+		progressBarContainer := mpb.NewWithContext(subCtx, mpb.WithOutput(r.env.InputOutput().ErrOut()), mpb.WithWidth(termWidth))
 		defer progressBarContainer.Wait()
 		defer cancel() // canceling twice doesn't hurt, but we need to ensure this gets called before Wait() above.
 
@@ -237,7 +236,7 @@ func (r *v2Restorer) Run(ctx context.Context, file *os.File) (*http.Response, er
 			})
 
 			if concurrency.WaitWithDeadline(ctx, continueTime) {
-				return nil, ctx.Err()
+				return nil, errors.Wrap(ctx.Err(), "waiting to retry restore")
 			}
 
 			nextReq, err = r.resumeAfterError(ctx)
@@ -250,14 +249,15 @@ func (r *v2Restorer) Run(ctx context.Context, file *os.File) (*http.Response, er
 		}
 	}
 
-	return nil, ctx.Err()
+	return nil, errors.Wrap(ctx.Err(), "context error during restore")
 }
 
 func (r *v2Restorer) performHTTPRequest(req *http.Request) (*http.Response, error) {
 	if r.transferProgressBar != nil {
 		req.Body = r.transferProgressBar.ProxyReader(req.Body)
 	}
-	return r.httpClient.Do(req)
+	resp, err := r.httpClient.Do(req)
+	return resp, errors.Wrap(err, "executing restore HTTP request")
 }
 
 func (r *v2Restorer) initDataReader(file *os.File, manifest *v1.DBExportManifest) error {
@@ -273,7 +273,7 @@ func (r *v2Restorer) initDataReader(file *os.File, manifest *v1.DBExportManifest
 		readerWindowSize,
 		func() hash.Hash { return crc32.NewIEEE() },
 	)
-	return err
+	return errors.Wrap(err, "creating restore data reader")
 }
 
 func (r *v2Restorer) initResume(ctx context.Context, file *os.File, activeStatus *v1.DBRestoreProcessStatus) (*http.Request, error) {
@@ -335,7 +335,7 @@ func (r *v2Restorer) initNewProcess(ctx context.Context, file *os.File) (*http.R
 
 	format, _, err := v2backuprestore.DetermineFormat(manifest, caps.GetFormats())
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "determining restore format")
 	}
 
 	st, err := file.Stat()
@@ -352,7 +352,7 @@ func (r *v2Restorer) initNewProcess(ctx context.Context, file *os.File) (*http.R
 		},
 	}
 
-	headerBytes, err := proto.Marshal(header)
+	headerBytes, err := header.MarshalVT()
 	if err != nil {
 		return nil, errors.Wrap(err, "could not marshal restore header")
 	}
@@ -408,7 +408,7 @@ func (r *v2Restorer) init(ctx context.Context, file *os.File) (*http.Request, er
 
 func (r *v2Restorer) prepareResumeRequest(resumeInfo *v1.DBRestoreProcessStatus_ResumeInfo) (*http.Request, error) {
 	if pos, err := r.dataReader.Seek(resumeInfo.GetPos(), io.SeekStart); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "seeking to restore resume position")
 	} else if pos != resumeInfo.GetPos() {
 		return nil, errox.NotFound.Newf("could not seek to resume position %d in data: data ends at position %d", resumeInfo.GetPos(), pos)
 	} else if r.transferProgressBar != nil {
@@ -420,7 +420,7 @@ func (r *v2Restorer) prepareResumeRequest(resumeInfo *v1.DBRestoreProcessStatus_
 
 	req, err := r.httpClient.NewReq(http.MethodPost, "/db/v2/resumerestore", io.NopCloser(r.dataReader))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "creating restore resume request")
 	}
 
 	queryValues := req.URL.Query()
@@ -444,9 +444,9 @@ func (r *v2Restorer) resumeAfterError(ctx context.Context) (*http.Request, error
 		// Unavailable and DeadlineExceeded indicate transport failures & timeouts. All other errors (permissions etc.)
 		// are likely permanent.
 		if code := status.Convert(err).Code(); code == codes.Unavailable || code == codes.DeadlineExceeded {
-			err = retry.MakeRetryable(err)
+			err = common.MakeRetryable(err)
 		}
-		return nil, err
+		return nil, errors.Wrap(err, "getting active restore process")
 	}
 
 	activeProcess := resp.GetActiveStatus()
@@ -468,7 +468,7 @@ func (r *v2Restorer) resumeAfterError(ctx context.Context) (*http.Request, error
 			AttemptId: r.lastAttemptID,
 		})
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "interrupting restore process")
 		}
 
 		resumeInfo = interruptResp.GetResumeInfo()

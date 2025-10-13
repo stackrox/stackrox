@@ -1,24 +1,20 @@
 import React, { ReactElement } from 'react';
-import { Message } from '@stackrox/ui-components';
+import { Alert } from '@patternfly/react-core';
 
 import { ScanMessage } from 'messages/vulnMgmt.messages';
 
+// Component props have inconsistent name because ScanMessage is application-specific data structure.
+/* eslint-disable generic/react-props-name */
 function ScanDataMessage({ header = '', body = '' }: ScanMessage): ReactElement | null {
     return header?.length > 0 || body?.length > 0 ? (
         <div className="px-4 pt-4">
-            <Message type="error">
-                <div className="w-full">
-                    <header className="text-lg pb-2 border-b border-alert-300 mb-2 w-full">
-                        <h2 className="mb-1 font-700 tracking-wide uppercase">
-                            CVE Data May Be Inaccurate
-                        </h2>
-                        <span>{header}</span>
-                    </header>
-                    <p>{body}</p>
-                </div>
-            </Message>
+            <Alert variant="warning" isInline title="CVE data may be inaccurate" component="p">
+                {header && <p>{header}</p>}
+                {body && <p>{body}</p>}
+            </Alert>
         </div>
     ) : null;
 }
+/* eslint-enable-next-line generic/react-props-name */
 
 export default ScanDataMessage;

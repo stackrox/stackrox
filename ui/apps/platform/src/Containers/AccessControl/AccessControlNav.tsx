@@ -1,8 +1,9 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import pluralize from 'pluralize';
 
-import TabNav from 'Components/TabNav';
-import { AccessControlEntityType } from 'constants/entityTypes';
+import TabNav from 'Components/TabNav/TabNav';
+import type { AccessControlEntityType } from 'constants/entityTypes';
 import { accessControlLabels } from 'messages/common';
 
 import { entityPathSegment, getEntityPath } from './accessControlPaths';

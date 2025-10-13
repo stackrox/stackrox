@@ -1,14 +1,104 @@
-import { useCallback, useRef } from 'react';
-import { useLocation, useHistory } from 'react-router-dom';
+import { createContext, useCallback, useContext, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat';
+import type { NavigateFunction } from 'react-router-dom-v5-compat';
 import isEqual from 'lodash/isEqual';
+
 import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
 
-export type QueryValue = undefined | string | string[] | qs.ParsedQs | qs.ParsedQs[];
+// https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/qs/index.d.ts#L73
+// undefined | string | qs.ParsedQs | (string | qs.ParsedQs)[]
+export type QueryValue = qs.ParsedQs[string];
 
 // Note that when we upgrade React Router and 'history' we can probably import a more accurate version of this type
-type Action = 'push' | 'replace';
+export type HistoryAction = 'push' | 'replace';
 
-type UseURLParameterResult = [QueryValue, (newValue: QueryValue, historyAction?: Action) => void];
+export type UrlParameterUpdate = {
+    keyPrefix: string;
+    newValue: QueryValue;
+    historyAction: HistoryAction;
+};
+
+/**
+ * Given an array of URL parameter updates, apply them as a single operation to the URL.
+ * If any of the updates in the batch specify a 'push' history action, the overall
+ * action will be 'push', otherwise 'replace'.
+ *
+ * @param updates Url parameter updates that need to be applied to the URL
+ * @param history The history object to use to apply the updates
+ */
+export function applyUpdatesToUrl(
+    updates: UrlParameterUpdate[],
+    search: string,
+    pathname: string,
+    navigate: NavigateFunction
+) {
+    const action = updates.some(({ historyAction }) => historyAction === 'push')
+        ? 'push'
+        : 'replace';
+
+    const previousQuery = getQueryObject(search) || {};
+    const newQuery = { ...previousQuery };
+
+    updates.forEach(({ keyPrefix, newValue }) => {
+        newQuery[keyPrefix] = newValue;
+
+        // If the value passed in is `undefined`, don't display it in the URL at all
+        if (typeof newValue === 'undefined') {
+            delete newQuery[keyPrefix];
+        }
+    });
+
+    // Do not change history states if setter is called with current value
+    if (!isEqual(previousQuery, newQuery)) {
+        if (action === 'push') {
+            navigate(`${pathname}${getQueryString(newQuery)}`);
+        } else if (action === 'replace') {
+            navigate(`${pathname}${getQueryString(newQuery)}`, { replace: true });
+        }
+    }
+}
+
+/**
+ * The default context object for scheduling URL parameter updates. This context
+ * object schedules updates to be applied in a microtask, ensuring that multiple
+ * updates to the same URL parameter are batched together.
+ *
+ * @returns A context object that can be used to schedule URL parameter updates to be applied
+ */
+function makeMicrotaskSchedulingContext() {
+    let updates: UrlParameterUpdate[] = [];
+    let isUpdateScheduled = false;
+
+    function scheduleAndFlushUpdates(search: string, pathname: string, navigate: NavigateFunction) {
+        queueMicrotask(() => {
+            applyUpdatesToUrl(updates, search, pathname, navigate);
+            updates = [];
+            isUpdateScheduled = false;
+        });
+    }
+
+    return {
+        addUrlParameterUpdate: (
+            update: UrlParameterUpdate,
+            search: string,
+            pathname: string,
+            navigate: NavigateFunction
+        ) => {
+            updates = [...updates, update];
+            if (!isUpdateScheduled) {
+                scheduleAndFlushUpdates(search, pathname, navigate);
+            }
+            isUpdateScheduled = true;
+        },
+    };
+}
+
+export const UrlParameterUpdateContext = createContext(makeMicrotaskSchedulingContext());
+
+export type UseURLParameterResult = [
+    QueryValue,
+    (newValue: QueryValue, historyAction?: HistoryAction) => void,
+];
 
 /**
  * Hook to handle reading and writing of a piece of state in the page's URL query parameters.
@@ -26,42 +116,36 @@ type UseURLParameterResult = [QueryValue, (newValue: QueryValue, historyAction?:
  * @returns [value, setterFn]
  */
 function useURLParameter(keyPrefix: string, defaultValue: QueryValue): UseURLParameterResult {
-    const history = useHistory();
+    const { addUrlParameterUpdate } = useContext(UrlParameterUpdateContext);
     const location = useLocation();
+    const navigate = useNavigate();
+
+    // Using `useRef` for `location` to prevent re-creation of the callback on every render,
+    // ensuring the latest `location` value is used without causing unnecessary re-renders.
+    const locationRef = useRef(location);
+    locationRef.current = location;
+
     // We use an internal Ref here so that calling code that depends on the
     // value returned by this hook can detect updates. e.g. When used in the
     // dependency array of a `useEffect`.
     const internalValue = useRef(defaultValue);
     // memoize the setter function to retain referential equality as long
     // as the URL parameters do not change
+
     const setValue = useCallback(
-        (newValue: QueryValue, historyAction: Action = 'push') => {
-            // Note that we use the version of `location` on `history` here, since it is mutable (compared
-            // to the immutable `location` when used directly.) In this case, we aren't looking
-            // for a reference change to trigger a rerender, we are looking for the current up-to-date
-            // location search parameters.
-            //
-            // https://v5.reactrouter.com/web/api/history/history-is-mutable
-            const previousQuery = getQueryObject(history.location.search) || {};
-            const newQuery = {
-                ...previousQuery,
-                [keyPrefix]: newValue,
-            };
-
-            // If the value passed in is `undefined`, don't display it in the URL at all
-            if (typeof newValue === 'undefined') {
-                delete newQuery[keyPrefix];
-            }
-
-            // Do not change history states if setter is called with current value
-            if (!isEqual(previousQuery[keyPrefix], newValue)) {
-                history[historyAction]({ search: getQueryString(newQuery) });
-            }
+        (newValue: QueryValue, historyAction: HistoryAction = 'push') => {
+            const { search, pathname } = locationRef.current;
+            addUrlParameterUpdate(
+                { historyAction, keyPrefix, newValue },
+                search,
+                pathname,
+                navigate
+            );
         },
-        [keyPrefix, history]
+        [addUrlParameterUpdate, keyPrefix, navigate]
     );
 
-    const nextValue = getQueryObject(location.search)[keyPrefix] || defaultValue;
+    const nextValue = getQueryObject(location.search)[keyPrefix] ?? defaultValue;
 
     // If the search filter has changed, replace the object reference.
     if (!isEqual(internalValue.current, nextValue)) {

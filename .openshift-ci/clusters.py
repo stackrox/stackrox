@@ -9,7 +9,13 @@ import signal
 import subprocess
 import time
 
-from common import popen_graceful_kill
+from common import popen_graceful_kill, set_ci_shared_export
+
+OUTCOME_PASSED = "passed"
+OUTCOME_FAILED = "failed"
+CREATE_CLUSTER_OUTCOME_VAR = "CREATE_CLUSTER_OUTCOME"
+DESTROY_CLUSTER_OUTCOME_VAR = "DESTROY_CLUSTER_OUTCOME"
+CLUSTER_FLAVOR_VARIANT_VAR = "CLUSTER_FLAVOR_VARIANT"
 
 
 class NullCluster:
@@ -21,7 +27,9 @@ class NullCluster:
 
 
 class GKECluster:
-    PROVISION_TIMEOUT = 20 * 60
+    # Provisioning timeout is tightly coupled to the time it may take gke.sh to
+    # create a cluster.
+    PROVISION_TIMEOUT = 140 * 60
     WAIT_TIMEOUT = 20 * 60
     TEARDOWN_TIMEOUT = 5 * 60
     # separate script names used for testability - test_clusters.py
@@ -30,27 +38,45 @@ class GKECluster:
     REFRESH_PATH = "scripts/ci/gke.sh"
     TEARDOWN_PATH = "scripts/ci/gke.sh"
 
-    def __init__(self, cluster_id, num_nodes=3, machine_type="e2-standard-4"):
+    def __init__(self, cluster_id, num_nodes=None, machine_type=None, disk_gb=None):
         self.cluster_id = cluster_id
         self.num_nodes = num_nodes
         self.machine_type = machine_type
+        self.disk_gb = disk_gb
         self.refresh_token_cmd = None
 
     def provision(self):
+        set_ci_shared_export(CLUSTER_FLAVOR_VARIANT_VAR, "gke")
+        try:
+            self._provision()
+            set_ci_shared_export(CREATE_CLUSTER_OUTCOME_VAR, OUTCOME_PASSED)
+        except Exception as err:
+            set_ci_shared_export(CREATE_CLUSTER_OUTCOME_VAR, OUTCOME_FAILED)
+            raise err
+
+        return self
+
+    def _provision(self):
+        if self.num_nodes is not None:
+            os.environ["NUM_NODES"] = str(self.num_nodes)
+        if self.machine_type is not None:
+            os.environ["MACHINE_TYPE"] = str(self.machine_type)
+        if self.disk_gb is not None:
+            os.environ["DISK_SIZE_GB"] = str(self.disk_gb)
+
         with subprocess.Popen(
             [
                 GKECluster.PROVISION_PATH,
                 "provision_gke_cluster",
                 self.cluster_id,
-                str(self.num_nodes),
-                self.machine_type,
             ]
         ) as cmd:
 
             try:
                 exitstatus = cmd.wait(GKECluster.PROVISION_TIMEOUT)
                 if exitstatus != 0:
-                    raise RuntimeError(f"Cluster provision failed: exit {exitstatus}")
+                    raise RuntimeError(
+                        f"Cluster provision failed: exit {exitstatus}")
             except subprocess.TimeoutExpired as err:
                 popen_graceful_kill(cmd)
                 raise err
@@ -71,20 +97,34 @@ class GKECluster:
 
         return self
 
-    def teardown(self):
+    def teardown(self, canceled=False):
+        set_ci_shared_export(CLUSTER_FLAVOR_VARIANT_VAR, "gke")
+        try:
+            self._teardown(canceled)
+            set_ci_shared_export(DESTROY_CLUSTER_OUTCOME_VAR, OUTCOME_PASSED)
+        except Exception as err:
+            set_ci_shared_export(DESTROY_CLUSTER_OUTCOME_VAR, OUTCOME_FAILED)
+            raise err
+
+        return self
+
+    def _teardown(self, canceled):
         while os.path.exists("/tmp/hold-cluster"):
             print("Pausing teardown because /tmp/hold-cluster exists")
             time.sleep(60)
 
-        if self.refresh_token_cmd is not None:
+        if self.refresh_token_cmd is not None and not canceled:
             print("Terminating GKE token refresh")
             try:
                 popen_graceful_kill(self.refresh_token_cmd)
             except Exception as err:
                 print(f"Could not terminate the token refresh: {err}")
 
+        args = [GKECluster.TEARDOWN_PATH, "teardown_gke_cluster"]
+        if canceled:
+            args.append("true")
         subprocess.run(
-            [GKECluster.TEARDOWN_PATH, "teardown_gke_cluster"],
+            args,
             check=True,
             timeout=GKECluster.TEARDOWN_TIMEOUT,
         )
@@ -93,7 +133,7 @@ class GKECluster:
 
     def sigint_handler(self, signum, frame):
         print("Tearing down the cluster due to SIGINT", signum, frame)
-        self.teardown()
+        self.teardown(canceled=True)
 
 
 class AutomationFlavorsCluster:

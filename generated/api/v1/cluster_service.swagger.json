@@ -4,6 +4,11 @@
     "title": "api/v1/cluster_service.proto",
     "version": "version not set"
   },
+  "tags": [
+    {
+      "name": "ClustersService"
+    }
+  ],
   "consumes": [
     "application/json"
   ],
@@ -24,7 +29,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -46,7 +51,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -74,7 +79,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -107,7 +112,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -129,7 +134,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -157,7 +162,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -185,7 +190,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -201,7 +206,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/storageCluster"
+              "$ref": "#/definitions/ClustersServicePutClusterBody"
             }
           }
         ],
@@ -246,7 +251,8 @@
           "type": "string"
         },
         "targetVersion": {
-          "type": "string"
+          "type": "string",
+          "title": "only relevant if type == Upgrade"
         },
         "upgraderImage": {
           "type": "string"
@@ -262,6 +268,97 @@
           "$ref": "#/definitions/UpgradeProcessStatusUpgradeProcessType"
         }
       }
+    },
+    "ClustersServicePutClusterBody": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/storageClusterType"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "mainImage": {
+          "type": "string"
+        },
+        "collectorImage": {
+          "type": "string"
+        },
+        "centralApiEndpoint": {
+          "type": "string"
+        },
+        "runtimeSupport": {
+          "type": "boolean"
+        },
+        "collectionMethod": {
+          "$ref": "#/definitions/storageCollectionMethod"
+        },
+        "admissionController": {
+          "type": "boolean"
+        },
+        "admissionControllerUpdates": {
+          "type": "boolean"
+        },
+        "admissionControllerEvents": {
+          "type": "boolean"
+        },
+        "status": {
+          "$ref": "#/definitions/storageClusterStatus"
+        },
+        "dynamicConfig": {
+          "$ref": "#/definitions/storageDynamicClusterConfig"
+        },
+        "tolerationsConfig": {
+          "$ref": "#/definitions/storageTolerationsConfig"
+        },
+        "priority": {
+          "type": "string",
+          "format": "int64"
+        },
+        "healthStatus": {
+          "$ref": "#/definitions/storageClusterHealthStatus"
+        },
+        "slimCollector": {
+          "type": "boolean"
+        },
+        "helmConfig": {
+          "$ref": "#/definitions/storageCompleteClusterConfig",
+          "description": "The Helm configuration of a cluster is only present in case the cluster is Helm- or Operator-managed."
+        },
+        "mostRecentSensorId": {
+          "$ref": "#/definitions/storageSensorDeploymentIdentification",
+          "description": "most_recent_sensor_id is the current or most recent identification of a successfully connected sensor (if any)."
+        },
+        "auditLogState": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/storageAuditLogFileState"
+          },
+          "description": "For internal use only."
+        },
+        "initBundleId": {
+          "type": "string"
+        },
+        "managedBy": {
+          "$ref": "#/definitions/storageManagerType"
+        },
+        "sensorCapabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "admissionControllerFailOnError": {
+          "type": "boolean"
+        }
+      },
+      "title": "Next tag: 33"
     },
     "UpgradeProcessStatusUpgradeProcessType": {
       "type": "string",
@@ -292,27 +389,9 @@
       "default": "UPGRADE_INITIALIZING",
       "description": " - UPGRADER_LAUNCHING: In-progress states.\n - UPGRADE_COMPLETE: The success state.\nPLEASE NUMBER ALL IN-PROGRESS STATES ABOVE THIS\nAND ALL ERROR STATES BELOW THIS.\n - UPGRADE_INITIALIZATION_ERROR: Error states."
     },
-    "protobufAny": {
+    "googlerpcStatus": {
       "type": "object",
       "properties": {
-        "typeUrl": {
-          "type": "string",
-          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. This string must contain at least\none \"/\" character. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
-        },
-        "value": {
-          "type": "string",
-          "format": "byte",
-          "description": "Must be a valid serialized protocol buffer of the above specified type."
-        }
-      },
-      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(\u0026foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n\nExample 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\nExample 4: Pack and unpack a message in Go\n\n     foo := \u0026pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := \u0026pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\n\nJSON\n\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": \u003cstring\u003e,\n      \"lastName\": \u003cstring\u003e\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
-    },
-    "runtimeError": {
-      "type": "object",
-      "properties": {
-        "error": {
-          "type": "string"
-        },
         "code": {
           "type": "integer",
           "format": "int32"
@@ -323,10 +402,22 @@
         "details": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
         }
       }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string",
+          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. This string must contain at least\none \"/\" character. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com. As of May 2023, there are no widely used type server\nimplementations and no plans to implement one.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
+        }
+      },
+      "additionalProperties": {},
+      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(&foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n    // or ...\n    if (any.isSameTypeAs(Foo.getDefaultInstance())) {\n      foo = any.unpack(Foo.getDefaultInstance());\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := &pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := &pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": <string>,\n      \"lastName\": <string>\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
     },
     "storageAWSProviderMetadata": {
       "type": "object",
@@ -355,7 +446,7 @@
           "description": "Collection of errors that occurred while trying to obtain admission control health info."
         }
       },
-      "description": "AdmissionControlHealthInfo carries data about admission control deployment but does not include admission control health status\nderived from this data.\nAggregated admission control health status is not included because it is derived in central and not in the component that\nfirst reports AdmissionControlHealthInfo (sensor)."
+      "description": "AdmissionControlHealthInfo carries data about admission control deployment but does not include admission control health status\nderived from this data.\nAggregated admission control health status is not included because it is derived in central and not in the component that\nfirst reports AdmissionControlHealthInfo (sensor).\n\nThe following fields are made optional/nullable because there can be errors when trying to obtain them and\n the default value of 0 might be confusing with the actual value 0. In case an error happens when trying to obtain\n a certain field, it will be absent (instead of having the default value)."
     },
     "storageAdmissionControllerConfig": {
       "type": "object",
@@ -386,10 +477,20 @@
           "format": "date-time"
         },
         "lastAuditId": {
-          "type": "string"
+          "type": "string",
+          "title": "Previously received audit id. May be empty"
         }
       },
       "title": "AuditLogFileState tracks the last audit log event timestamp and ID that was collected by Compliance\nFor internal use only"
+    },
+    "storageAutoLockProcessBaselinesConfig": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "title": "More fields can be added later to control the feature at the\nnamespace level"
+        }
+      }
     },
     "storageAzureProviderMetadata": {
       "type": "object",
@@ -480,8 +581,18 @@
         },
         "managedBy": {
           "$ref": "#/definitions/storageManagerType"
+        },
+        "sensorCapabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "admissionControllerFailOnError": {
+          "type": "boolean"
         }
-      }
+      },
+      "title": "Next tag: 33"
     },
     "storageClusterCertExpiryStatus": {
       "type": "object",
@@ -531,13 +642,44 @@
         "lastContact": {
           "type": "string",
           "format": "date-time",
-          "title": "For sensors not having health capability, this will be filled with gRPC connection poll. Otherwise,\nthis timestamp will be updated by central pipeline when message is processed"
+          "description": "For sensors not having health capability, this will be filled with gRPC connection poll. Otherwise,\nthis timestamp will be updated by central pipeline when message is processed.\n\nNote: we use this setting to guard against a specific attack vector during CRS-based cluster registration.\nAssuming that a CRS was used to register a cluster A and the CRS is leaked, an attacker shall not be able\nto re-run the CRS-flow which would then equip the attacker with a certificate & key issued to the cluster A.\nAs countermeasure we only allow re-running the CRS-flow only as long as the last_contact field is empty,\nindicating that the legit cluster A's sensor has not yet connected with the CRS-issued service certificates."
         },
         "healthInfoComplete": {
           "type": "boolean",
           "title": "To track cases such as when sensor is healthy, but collector status data is unavailable because the sensor is on an old version"
         }
       }
+    },
+    "storageClusterMetadata": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/storageClusterMetadataType"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name represents the name under which the cluster is registered with the\ncloud provider. In case of self managed OpenShift it is the name chosen\nby the OpenShift installer."
+        },
+        "id": {
+          "type": "string",
+          "description": "Id represents a unique ID under which the cluster is registered with the\ncloud provider. Not all cluster types have an id. For all OpenShift\nclusters, this is the Red Hat `cluster_id` registered with OCM."
+        }
+      },
+      "description": "ClusterMetadata contains metadata information about the cluster infrastructure."
+    },
+    "storageClusterMetadataType": {
+      "type": "string",
+      "enum": [
+        "UNSPECIFIED",
+        "AKS",
+        "ARO",
+        "EKS",
+        "GKE",
+        "OCP",
+        "OSD",
+        "ROSA"
+      ],
+      "default": "UNSPECIFIED"
     },
     "storageClusterStatus": {
       "type": "object",
@@ -595,7 +737,8 @@
         "UNSET_COLLECTION",
         "NO_COLLECTION",
         "KERNEL_MODULE",
-        "EBPF"
+        "EBPF",
+        "CORE_BPF"
       ],
       "default": "UNSET_COLLECTION"
     },
@@ -660,8 +803,12 @@
         },
         "disableAuditLogs": {
           "type": "boolean"
+        },
+        "autoLockProcessBaselinesConfig": {
+          "$ref": "#/definitions/storageAutoLockProcessBaselinesConfig"
         }
-      }
+      },
+      "description": "The difference between Static and Dynamic cluster config is that Dynamic values are sent over the Central to Sensor gRPC connection. This has the benefit of allowing for \"hot reloading\" of values without restarting Secured cluster components."
     },
     "storageGoogleProviderMetadata": {
       "type": "object",
@@ -670,7 +817,8 @@
           "type": "string"
         },
         "clusterName": {
-          "type": "string"
+          "type": "string",
+          "description": "Deprecated in favor of providerMetadata.cluster.name."
         }
       }
     },
@@ -725,6 +873,9 @@
         },
         "verified": {
           "type": "boolean"
+        },
+        "cluster": {
+          "$ref": "#/definitions/storageClusterMetadata"
         }
       }
     },
@@ -755,7 +906,7 @@
           "description": "Collection of errors that occurred while trying to obtain scanner health info."
         }
       },
-      "description": "ScannerHealthInfo represents health info of a scanner instance that is deployed on a secured cluster (so called \"local scanner\").\nWhen the scanner is deployed on a central cluster, the following message is NOT used.\nScannerHealthInfo carries data about scanner deployment but does not include scanner health status\nderived from this data.\nAggregated scanner health status is not included because it is derived in central and not in the component that\nfirst reports ScannerHealthInfo (sensor)."
+      "description": "ScannerHealthInfo represents health info of a scanner instance that is deployed on a secured cluster (so called \"local scanner\").\nWhen the scanner is deployed on a central cluster, the following message is NOT used.\nScannerHealthInfo carries data about scanner deployment but does not include scanner health status\nderived from this data.\nAggregated scanner health status is not included because it is derived in central and not in the component that\nfirst reports ScannerHealthInfo (sensor).\n\nThe following fields are made optional/nullable because there can be errors when trying to obtain them and\n the default value of 0 might be confusing with the actual value 0. In case an error happens when trying to obtain\n a certain field, it will be absent (instead of having the default value)."
     },
     "storageSensorDeploymentIdentification": {
       "type": "object",
@@ -813,8 +964,12 @@
         },
         "admissionControllerEvents": {
           "type": "boolean"
+        },
+        "admissionControllerFailOnError": {
+          "type": "boolean"
         }
-      }
+      },
+      "description": "The difference between Static and Dynamic cluster config is that Static values are not sent over the Central to Sensor gRPC connection. They are used, for example, to generate manifests that can be used to set up the Secured Cluster's k8s components. They are *not* dynamically reloaded."
     },
     "storageTolerationsConfig": {
       "type": "object",
@@ -870,6 +1025,7 @@
         "clusters": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storageCluster"
           }
         },

@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -15,13 +15,12 @@ import (
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	"github.com/stackrox/rox/pkg/jwt"
 	"github.com/stackrox/rox/pkg/services"
-	"github.com/stackrox/rox/sensor/common/clusterid"
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"gopkg.in/square/go-jose.v2/jwt"
 	v1 "k8s.io/api/authentication/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -29,9 +28,6 @@ import (
 )
 
 const (
-	// cacheDir is the directory in which certificates to be distributed are stored.
-	cacheDir = `/var/cache/stackrox/.certificates`
-
 	maxQueryRate rate.Limit = 1.0
 
 	maxBurstRequests = 10
@@ -49,13 +45,16 @@ type service struct {
 	k8sAuthnClient authenticationV1.AuthenticationV1Interface
 
 	rateLimiter *rate.Limiter
+
+	clusterID clusterIDWaiter
 }
 
-func newService(k8sClient kubernetes.Interface, namespace string) *service {
+func newService(clusterID clusterIDWaiter, k8sClient kubernetes.Interface, namespace string) *service {
 	return &service{
 		namespace:      namespace,
 		k8sAuthnClient: k8sClient.AuthenticationV1(),
 		rateLimiter:    rate.NewLimiter(maxQueryRate, maxBurstRequests),
+		clusterID:      clusterID,
 	}
 }
 
@@ -63,12 +62,15 @@ func (s *service) RegisterServiceServer(grpcSrv *grpc.Server) {
 	sensor.RegisterCertDistributionServiceServer(grpcSrv, s)
 }
 
-func (s *service) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, cc *grpc.ClientConn) error {
+func (s *service) RegisterServiceHandler(_ context.Context, _ *runtime.ServeMux, _ *grpc.ClientConn) error {
 	return nil
 }
 
 func (s *service) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, authorizer.Authorized(ctx, fullMethodName)
+	return ctx, errors.Wrapf(
+		authorizer.Authorized(ctx, fullMethodName),
+		"authorization for %q", fullMethodName,
+	)
 }
 
 func (s *service) verifyToken(ctx context.Context, token string, expectedSubject string) error {
@@ -116,8 +118,8 @@ func (s *service) verifyToken(ctx context.Context, token string, expectedSubject
 }
 
 func (s *service) loadCertsForService(serviceName string) (certPEM, keyPEM string, err error) {
-	certFileName := filepath.Join(cacheDir, serviceName+"-cert.pem")
-	keyFileName := filepath.Join(cacheDir, serviceName+"-key.pem")
+	certFileName := filepath.Join(cacheDir.Setting(), serviceName+"-cert.pem")
+	keyFileName := filepath.Join(cacheDir.Setting(), serviceName+"-key.pem")
 
 	if allExist, err := fileutils.AllExist(certFileName, keyFileName); err != nil {
 		return "", "", errors.New("failed to check for existence of certificates")
@@ -144,7 +146,7 @@ func (s *service) verifyRequestViaIdentity(requestingServiceIdentity *storage.Se
 	// The following call will return an error if the explicit ID `clusterid.Get()` (which is always a non-wildcard
 	// id) is incompatible with the ID from cert `requestingServiceIdentity.GetId()`. In effect, the IDs need
 	// to be equal, or the latter (but not the former) needs to be a wildcard ID.
-	if _, err := centralsensor.GetClusterID(clusterid.Get(), requestingServiceIdentity.GetId()); err != nil {
+	if _, err := centralsensor.GetClusterID(s.clusterID.Get(), requestingServiceIdentity.GetId()); err != nil {
 		return false
 	}
 	return true

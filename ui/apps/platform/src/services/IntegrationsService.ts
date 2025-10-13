@@ -1,12 +1,17 @@
 import axios from './instance';
-import { Empty } from './types';
+import type { Empty } from './types';
+import { updateMachineAccessConfig } from './MachineAccessService';
+import type { AuthMachineToMachineConfig } from './MachineAccessService';
+import { updateCloudSource } from './CloudSourceService';
+import type { UpdateCloudSourceRequest } from './CloudSourceService';
 
-type IntegrationSource =
+export type IntegrationSource =
     | 'authProviders'
     | 'backups'
     | 'imageIntegrations'
     | 'notifiers'
-    | 'signatureIntegrations';
+    | 'signatureIntegrations'
+    | 'cloudSources';
 
 function getPath(source: IntegrationSource): string {
     switch (source) {
@@ -18,6 +23,10 @@ function getPath(source: IntegrationSource): string {
             return '/v1/externalbackups';
         case 'signatureIntegrations':
             return '/v1/signatureintegrations';
+        case 'authProviders':
+            return '/v1/auth/m2m';
+        case 'cloudSources':
+            return '/v1/cloud-sources';
         default:
             return '';
     }
@@ -29,6 +38,8 @@ function getJsonFieldBySource(source: IntegrationSource): string {
             return 'notifier';
         case 'backups':
             return 'externalBackup';
+        case 'cloudSources':
+            return 'cloudSource';
         default:
             return 'config';
     }
@@ -97,7 +108,20 @@ export function saveIntegrationV2(
         const config = data[getJsonFieldBySource(source)] as IntegrationBase;
         return axios.patch(`${getPath(source)}/${config.id}`, data);
     }
-    return axios.put(`${getPath(source)}/${(data as IntegrationBase).id}`, data);
+    // Some services expect requests to be wrapped in dedicated proto messages.
+    // In these cases, the top level request payload does not contain the integration id.
+    // Taking cloud source requests as an example, the integration id is accessed as
+    // `data.cloudSource.id` rather than `data.id`.
+    // Additionally, services may differ in whether `put` or `patch` is used to update
+    // existing integrations.
+    switch (source) {
+        case 'authProviders':
+            return updateMachineAccessConfig(data as AuthMachineToMachineConfig);
+        case 'cloudSources':
+            return updateCloudSource(data as UpdateCloudSourceRequest);
+        default:
+            return axios.put(`${getPath(source)}/${(data as IntegrationBase).id}`, data);
+    }
 }
 
 /*

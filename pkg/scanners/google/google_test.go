@@ -1,69 +1,74 @@
-//go:build integration
-// +build integration
-
 package google
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/images/types"
-	"github.com/stackrox/rox/pkg/images/utils"
-	"github.com/stackrox/rox/pkg/registries/google"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 )
 
-const project = "ultra-current-825"
-
-func TestGoogle(t *testing.T) {
-	serviceAccount := os.Getenv("SERVICE_ACCOUNT")
-	if serviceAccount == "" {
-		t.Skip("SERVICE_ACCOUNT is required for Google integration test")
-		return
-	}
-
-	integration := &storage.ImageIntegration{
-		IntegrationConfig: &storage.ImageIntegration_Google{
-			Google: &storage.GoogleConfig{
-				Endpoint:       "us.gcr.io",
-				ServiceAccount: os.Getenv("SERVICE_ACCOUNT"),
-				Project:        project,
+func TestGoogleValidate(t *testing.T) {
+	cases := []struct {
+		name    string
+		config  *storage.GoogleConfig
+		isValid bool
+	}{
+		{
+			name: "static credentials - success",
+			config: &storage.GoogleConfig{
+				Endpoint:       "eu.gcr.io",
+				Project:        "test-project",
+				ServiceAccount: `{"type": "service_account"}`,
 			},
+			isValid: true,
+		},
+		{
+			name: "static credentials - no endpoint",
+			config: &storage.GoogleConfig{
+				Endpoint:       "",
+				Project:        "test-project",
+				ServiceAccount: `{"type": "service_account"}`,
+			},
+			isValid: false,
+		},
+		{
+			name: "static credentials - no project",
+			config: &storage.GoogleConfig{
+				Endpoint:       "eu.gcr.io",
+				Project:        "",
+				ServiceAccount: `{"type": "service_account"}`,
+			},
+			isValid: false,
+		},
+		{
+			name: "static credentials - no service account",
+			config: &storage.GoogleConfig{
+				Endpoint:       "eu.gcr.io",
+				Project:        "test-project",
+				ServiceAccount: "",
+			},
+			isValid: false,
+		},
+		{
+			name: "workload identity - rejected",
+			config: &storage.GoogleConfig{
+				Endpoint:       "eu.gcr.io",
+				Project:        "test-project",
+				ServiceAccount: `{"type": "service_account"}`,
+				WifEnabled:     true,
+			},
+			isValid: false,
 		},
 	}
 
-	_, creator := google.Creator()
-
-	registry, err := creator(integration)
-	require.NoError(t, err)
-
-	scanner, err := newScanner(integration)
-	require.NoError(t, err)
-
-	var images = []string{
-		"us.gcr.io/ultra-current-825/music-nginx:latest",
-		"us.gcr.io/ultra-current-825/nginx:slim",
-		"us.gcr.io/ultra-current-825/ubuntu:latest",
-	}
-
-	for _, i := range images {
-		containerImage, err := utils.GenerateImageFromString(i)
-		require.NoError(t, err)
-
-		img := types.ToImage(containerImage)
-		metadata, err := registry.Metadata(img)
-		require.NoError(t, err)
-		img.Metadata = metadata
-		img.Id = utils.GetSHA(img)
-
-		scan, err := scanner.GetScan(img)
-		require.NoError(t, err)
-		require.NotEmpty(t, scan.GetComponents())
-		for _, c := range scan.GetComponents() {
-			for _, v := range c.Vulns {
-				require.NotEmpty(t, v.Cve)
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			err := validate(c.config)
+			if c.isValid {
+				assert.NoError(t, err)
+			} else {
+				assert.Error(t, err)
 			}
-		}
+		})
 	}
 }

@@ -16,6 +16,14 @@ func With(requiredPermissions ...permissions.ResourceWithAccess) authz.Authorize
 	return &permissionChecker{requiredPermissions}
 }
 
+// Authenticated returns an authorizer that only authorizers authenticated
+// users/tokens regardless what permissions they have.
+func Authenticated() authz.Authorizer {
+	// Relies on With implementation detail: no required permissions,
+	// no checks to perform.
+	return With()
+}
+
 type permissionChecker struct {
 	requiredPermissions []permissions.ResourceWithAccess
 }

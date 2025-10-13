@@ -4,6 +4,11 @@
     "title": "api/v1/auth_service.proto",
     "version": "version not set"
   },
+  "tags": [
+    {
+      "name": "AuthService"
+    }
+  ],
   "consumes": [
     "application/json"
   ],
@@ -11,8 +16,196 @@
     "application/json"
   ],
   "paths": {
+    "/v1/auth/m2m": {
+      "get": {
+        "summary": "ListAuthMachineToMachineConfigs lists the available auth machine to machine configs.",
+        "operationId": "AuthService_ListAuthMachineToMachineConfigs",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListAuthMachineToMachineConfigResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "AuthService"
+        ]
+      },
+      "post": {
+        "summary": "AddAuthMachineToMachineConfig creates a new auth machine to machine config.",
+        "operationId": "AuthService_AddAuthMachineToMachineConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1AddAuthMachineToMachineConfigResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1AddAuthMachineToMachineConfigRequest"
+            }
+          }
+        ],
+        "tags": [
+          "AuthService"
+        ]
+      }
+    },
+    "/v1/auth/m2m/exchange": {
+      "post": {
+        "summary": "ExchangeAuthMachineToMachineToken exchanges a given identity token for a Central access token based on\nconfigured auth machine to machine configs.",
+        "operationId": "AuthService_ExchangeAuthMachineToMachineToken",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ExchangeAuthMachineToMachineTokenResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1ExchangeAuthMachineToMachineTokenRequest"
+            }
+          }
+        ],
+        "tags": [
+          "AuthService"
+        ]
+      }
+    },
+    "/v1/auth/m2m/{config.id}": {
+      "put": {
+        "summary": "UpdateAuthMachineToMachineConfig updates an existing auth machine to machine config.\nIn case the auth machine to machine config does not exist, a new one will be created.",
+        "operationId": "AuthService_UpdateAuthMachineToMachineConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "config.id",
+            "description": "UUID of the config.\nNote that when adding a machine to machine config, this field should not be set.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/AuthServiceUpdateAuthMachineToMachineConfigBody"
+            }
+          }
+        ],
+        "tags": [
+          "AuthService"
+        ]
+      }
+    },
+    "/v1/auth/m2m/{id}": {
+      "get": {
+        "summary": "GetAuthMachineToMachineConfig retrieves the specific auth machine to machine config.",
+        "operationId": "AuthService_GetAuthMachineToMachineConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetAuthMachineToMachineConfigResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "AuthService"
+        ]
+      },
+      "delete": {
+        "summary": "DeleteAuthMachineToMachineConfig deletes the specific auth machine to machine config.\nIn case a specified auth machine to machine config does not exist is deleted, no error will be returned.",
+        "operationId": "AuthService_DeleteAuthMachineToMachineConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "AuthService"
+        ]
+      }
+    },
     "/v1/auth/status": {
       "get": {
+        "summary": "GetAuthStatus returns the status for the current client.",
         "operationId": "AuthService_GetAuthStatus",
         "responses": {
           "200": {
@@ -24,7 +217,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -35,6 +228,24 @@
     }
   },
   "definitions": {
+    "AuthMachineToMachineConfigMapping": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "A key within the identity token's claim value to use."
+        },
+        "valueExpression": {
+          "type": "string",
+          "description": "A regular expression that will be evaluated against values of the identity token claim\nidentified by the specified key.\nThis regular expressions is in RE2 format, see more here:\nhttps://github.com/google/re2/wiki/Syntax."
+        },
+        "role": {
+          "type": "string",
+          "description": "The role which should be issued when the key and value match for a particular identity token."
+        }
+      },
+      "description": "Mappings map an identity token's claim values to a specific role within Central."
+    },
     "AuthProviderRequiredAttribute": {
       "type": "object",
       "properties": {
@@ -47,23 +258,38 @@
       },
       "description": "RequiredAttribute allows to specify a set of attributes which ALL are required to be returned\nby the auth provider.\nIf any attribute is missing within the external claims of the token issued by Central, the\nauthentication request to this IdP is considered failed."
     },
-    "TraitsMutabilityMode": {
-      "type": "string",
-      "enum": [
-        "ALLOW_MUTATE",
-        "ALLOW_MUTATE_FORCED"
-      ],
-      "default": "ALLOW_MUTATE",
-      "description": "EXPERIMENTAL.\n\nMutabilityMode specifies whether and how an object can be modified. Default\nis ALLOW_MUTATE and means there are no modification restrictions; this is equivalent\nto the absence of MutabilityMode specification. ALLOW_MUTATE_FORCED forbids all\nmodifying operations except object removal with force bit on.\n\nBe careful when changing the state of this field. For example, modifying an\nobject from ALLOW_MUTATE to ALLOW_MUTATE_FORCED is allowed but will prohibit any further\nchanges to it, including modifying it back to ALLOW_MUTATE."
-    },
-    "TraitsVisibility": {
-      "type": "string",
-      "enum": [
-        "VISIBLE",
-        "HIDDEN"
-      ],
-      "default": "VISIBLE",
-      "description": "EXPERIMENTAL.\nvisibility allows to specify whether the object should be visible for certain APIs."
+    "AuthServiceUpdateAuthMachineToMachineConfigBody": {
+      "type": "object",
+      "properties": {
+        "config": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "$ref": "#/definitions/v1AuthMachineToMachineConfigType"
+            },
+            "tokenExpirationDuration": {
+              "type": "string",
+              "description": "Sets the expiration of the token returned from the ExchangeAuthMachineToMachineToken API call.\nPossible valid time units are: s, m, h.\nThe maximum allowed expiration duration is 24h.\nAs an example: 2h45m.\nFor additional information on the validation of the duration, see:\nhttps://pkg.go.dev/time#ParseDuration."
+            },
+            "mappings": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "$ref": "#/definitions/AuthMachineToMachineConfigMapping"
+              },
+              "description": "At least one mapping is required to resolve to a valid role for the access token to be successfully generated."
+            },
+            "issuer": {
+              "type": "string",
+              "description": "The issuer of the related OIDC provider issuing the ID tokens to exchange.\n\nMust be non-empty string containing URL when type is GENERIC.\nIn case of GitHub actions, this must be empty or set to https://token.actions.githubusercontent.com.\n\nIssuer is a unique key, therefore there may be at most one GITHUB_ACTIONS config, and each\nGENERIC config must have a distinct issuer."
+            },
+            "traits": {
+              "$ref": "#/definitions/v1Traits"
+            }
+          },
+          "description": "AuthMachineToMachineConfig determines rules for exchanging an identity token from a third party with\na Central access token. The M2M stands for machine to machine, as this is the intended use-case\nfor the config."
+        }
+      }
     },
     "UserInfoResourceToAccess": {
       "type": "object",
@@ -77,27 +303,9 @@
       },
       "description": "ResourceToAccess represents a collection of permissions. It is wire\ncompatible with the old format of storage.Role and replaces it in\nplaces where only aggregated permissions are required."
     },
-    "protobufAny": {
+    "googlerpcStatus": {
       "type": "object",
       "properties": {
-        "typeUrl": {
-          "type": "string",
-          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. This string must contain at least\none \"/\" character. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
-        },
-        "value": {
-          "type": "string",
-          "format": "byte",
-          "description": "Must be a valid serialized protocol buffer of the above specified type."
-        }
-      },
-      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(\u0026foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n\nExample 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\nExample 4: Pack and unpack a message in Go\n\n     foo := \u0026pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := \u0026pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\n\nJSON\n\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": \u003cstring\u003e,\n      \"lastName\": \u003cstring\u003e\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
-    },
-    "runtimeError": {
-      "type": "object",
-      "properties": {
-        "error": {
-          "type": "string"
-        },
         "code": {
           "type": "integer",
           "format": "int32"
@@ -108,10 +316,22 @@
         "details": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
         }
       }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string",
+          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. This string must contain at least\none \"/\" character. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com. As of May 2023, there are no widely used type server\nimplementations and no plans to implement one.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
+        }
+      },
+      "additionalProperties": {},
+      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(&foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n    // or ...\n    if (any.isSameTypeAs(Foo.getDefaultInstance())) {\n      foo = any.unpack(Foo.getDefaultInstance());\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := &pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := &pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": <string>,\n      \"lastName\": <string>\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
     },
     "storageAccess": {
       "type": "string",
@@ -144,7 +364,8 @@
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          }
+          },
+          "description": "Config holds auth provider specific configuration. Each configuration options\nare different based on the given auth provider type.\nOIDC:\n- \"issuer\": the OIDC issuer according to https://openid.net/specs/openid-connect-core-1_0.html#IssuerIdentifier.\n- \"client_id\": the client ID according to https://www.rfc-editor.org/rfc/rfc6749.html#section-2.2.\n- \"client_secret\": the client secret according to https://www.rfc-editor.org/rfc/rfc6749.html#section-2.3.1.\n- \"do_not_use_client_secret\": set to \"true\" if you want to create a configuration with only\n  a client ID and no client secret.\n- \"mode\": the OIDC callback mode, choosing from \"fragment\", \"post\", or \"query\".\n- \"disable_offline_access_scope\": set to \"true\" if no offline tokens shall be issued.\n- \"extra_scopes\": a space-delimited string of additional scopes to request in addition to \"openid profile email\"\n  according to https://www.rfc-editor.org/rfc/rfc6749.html#section-3.3.\n\nOpenShift Auth: supports no extra configuration options.\n\nUser PKI:\n- \"keys\": the trusted certificates PEM encoded.\n\nSAML:\n- \"sp_issuer\": the service provider issuer according to https://datatracker.ietf.org/doc/html/rfc7522#section-3.\n- \"idp_metadata_url\": the metadata URL according to https://docs.oasis-open.org/security/saml/v2.0/saml-metadata-2.0-os.pdf.\n- \"idp_issuer\": the IdP issuer.\n- \"idp_cert_pem\": the cert PEM encoded for the IdP endpoint.\n- \"idp_sso_url\": the IdP SSO URL.\n- \"idp_nameid_format\": the IdP name ID format.\n\nIAP:\n- \"audience\": the audience to use."
         },
         "loginUrl": {
           "type": "string",
@@ -166,20 +387,34 @@
         "requiredAttributes": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/AuthProviderRequiredAttribute"
           }
         },
         "traits": {
           "$ref": "#/definitions/storageTraits"
+        },
+        "claimMappings": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Specifies claims from IdP token that will be copied to Rox token attributes.\n\nEach key in this map contains a path in IdP token we want to map. Path is separated by \".\" symbol.\nFor example, if IdP token payload looks like:\n\n\n{\n\n     \"a\": {\n\n         \"b\" : \"c\",\n\n         \"d\": true,\n\n         \"e\": [ \"val1\", \"val2\", \"val3\" ],\n\n         \"f\": [ true, false, false ],\n\n         \"g\": 123.0,\n\n         \"h\": [ 1, 2, 3]\n\n     }\n\n}\n\n\nthen \"a.b\" would be a valid key and \"a.z\" is not.\n\nWe support the following types of claims:\n* string(path \"a.b\")\n* bool(path \"a.d\")\n* string array(path \"a.e\")\n* bool array (path \"a.f.\")\n\nWe do NOT support the following types of claims:\n* complex claims(path \"a\")\n* float/integer claims(path \"a.g\")\n* float/integer array claims(path \"a.h\")\n\nEach value in this map contains a Rox token attribute name we want to add claim to.\nIf, for example, value is \"groups\", claim would be found in \"external_user.Attributes.groups\" in token.\n\nNote: we only support this feature for OIDC auth provider."
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last updated indicates the last time the auth provider has been updated.\n\nIn case there have been tokens issued by an auth provider _before_ this timestamp, they will be considered\ninvalid. Subsequently, all clients will have to re-issue their tokens (either by refreshing or by an additional\nlogin attempt)."
         }
       },
-      "title": "Next Tag: 13"
+      "description": "Next Tag: 15."
     },
     "storageServiceIdentity": {
       "type": "object",
       "properties": {
         "serialStr": {
-          "type": "string"
+          "type": "string",
+          "title": "The serial number in decimal representation."
         },
         "serial": {
           "type": "string",
@@ -211,22 +446,59 @@
         "BENCHMARK_SERVICE",
         "SCANNER_SERVICE",
         "SCANNER_DB_SERVICE",
-        "ADMISSION_CONTROL_SERVICE"
+        "ADMISSION_CONTROL_SERVICE",
+        "SCANNER_V4_INDEXER_SERVICE",
+        "SCANNER_V4_MATCHER_SERVICE",
+        "SCANNER_V4_DB_SERVICE",
+        "SCANNER_V4_SERVICE",
+        "REGISTRANT_SERVICE"
       ],
       "default": "UNKNOWN_SERVICE",
-      "title": "Next available tag: 13"
+      "description": "- SCANNER_V4_SERVICE: This is used when Scanner V4 is run in combo-mode.",
+      "title": "Next available tag: 18"
     },
     "storageTraits": {
       "type": "object",
       "properties": {
         "mutabilityMode": {
-          "$ref": "#/definitions/TraitsMutabilityMode"
+          "$ref": "#/definitions/storageTraitsMutabilityMode"
         },
         "visibility": {
-          "$ref": "#/definitions/TraitsVisibility"
+          "$ref": "#/definitions/storageTraitsVisibility"
+        },
+        "origin": {
+          "$ref": "#/definitions/storageTraitsOrigin"
         }
-      },
-      "description": "EXPERIMENTAL."
+      }
+    },
+    "storageTraitsMutabilityMode": {
+      "type": "string",
+      "enum": [
+        "ALLOW_MUTATE",
+        "ALLOW_MUTATE_FORCED"
+      ],
+      "default": "ALLOW_MUTATE",
+      "description": "EXPERIMENTAL.\nNOTE: Please refer from using MutabilityMode for the time being. It will be replaced in the future (ROX-14276).\nMutabilityMode specifies whether and how an object can be modified. Default\nis ALLOW_MUTATE and means there are no modification restrictions; this is equivalent\nto the absence of MutabilityMode specification. ALLOW_MUTATE_FORCED forbids all\nmodifying operations except object removal with force bit on.\n\nBe careful when changing the state of this field. For example, modifying an\nobject from ALLOW_MUTATE to ALLOW_MUTATE_FORCED is allowed but will prohibit any further\nchanges to it, including modifying it back to ALLOW_MUTATE."
+    },
+    "storageTraitsOrigin": {
+      "type": "string",
+      "enum": [
+        "IMPERATIVE",
+        "DEFAULT",
+        "DECLARATIVE",
+        "DECLARATIVE_ORPHANED"
+      ],
+      "default": "IMPERATIVE",
+      "description": "Origin specifies the origin of an object.\nObjects can have four different origins:\n- IMPERATIVE: the object was created via the API. This is assumed by default.\n- DEFAULT: the object is a default object, such as default roles, access scopes etc.\n- DECLARATIVE: the object is created via declarative configuration.\n- DECLARATIVE_ORPHANED: the object is created via declarative configuration and then unsuccessfully deleted(for example, because it is referenced by another object)\nBased on the origin, different rules apply to the objects.\nObjects with the DECLARATIVE origin are not allowed to be modified via API, only via declarative configuration.\nAdditionally, they may not reference objects with the IMPERATIVE origin.\nObjects with the DEFAULT origin are not allowed to be modified via either API or declarative configuration.\nThey may be referenced by all other objects.\nObjects with the IMPERATIVE origin are allowed to be modified via API, not via declarative configuration.\nThey may reference all other objects.\nObjects with the DECLARATIVE_ORPHANED origin are not allowed to be modified via either API or declarative configuration.\nDECLARATIVE_ORPHANED resource can become DECLARATIVE again if it is redefined in declarative configuration.\nObjects with this origin will be cleaned up from the system immediately after they are not referenced by other resources anymore.\nThey may be referenced by all other objects."
+    },
+    "storageTraitsVisibility": {
+      "type": "string",
+      "enum": [
+        "VISIBLE",
+        "HIDDEN"
+      ],
+      "default": "VISIBLE",
+      "description": "EXPERIMENTAL.\nvisibility allows to specify whether the object should be visible for certain APIs."
     },
     "storageUserInfo": {
       "type": "object",
@@ -243,6 +515,7 @@
         "roles": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storageUserInfoRole"
           }
         }
@@ -262,6 +535,64 @@
         }
       },
       "description": "Role is wire compatible with the old format of storage.Role and\nhence only includes role name and associated permissions."
+    },
+    "v1AddAuthMachineToMachineConfigRequest": {
+      "type": "object",
+      "properties": {
+        "config": {
+          "$ref": "#/definitions/v1AuthMachineToMachineConfig"
+        }
+      }
+    },
+    "v1AddAuthMachineToMachineConfigResponse": {
+      "type": "object",
+      "properties": {
+        "config": {
+          "$ref": "#/definitions/v1AuthMachineToMachineConfig"
+        }
+      }
+    },
+    "v1AuthMachineToMachineConfig": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "UUID of the config.\nNote that when adding a machine to machine config, this field should not be set."
+        },
+        "type": {
+          "$ref": "#/definitions/v1AuthMachineToMachineConfigType"
+        },
+        "tokenExpirationDuration": {
+          "type": "string",
+          "description": "Sets the expiration of the token returned from the ExchangeAuthMachineToMachineToken API call.\nPossible valid time units are: s, m, h.\nThe maximum allowed expiration duration is 24h.\nAs an example: 2h45m.\nFor additional information on the validation of the duration, see:\nhttps://pkg.go.dev/time#ParseDuration."
+        },
+        "mappings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/AuthMachineToMachineConfigMapping"
+          },
+          "description": "At least one mapping is required to resolve to a valid role for the access token to be successfully generated."
+        },
+        "issuer": {
+          "type": "string",
+          "description": "The issuer of the related OIDC provider issuing the ID tokens to exchange.\n\nMust be non-empty string containing URL when type is GENERIC.\nIn case of GitHub actions, this must be empty or set to https://token.actions.githubusercontent.com.\n\nIssuer is a unique key, therefore there may be at most one GITHUB_ACTIONS config, and each\nGENERIC config must have a distinct issuer."
+        },
+        "traits": {
+          "$ref": "#/definitions/v1Traits"
+        }
+      },
+      "description": "AuthMachineToMachineConfig determines rules for exchanging an identity token from a third party with\na Central access token. The M2M stands for machine to machine, as this is the intended use-case\nfor the config."
+    },
+    "v1AuthMachineToMachineConfigType": {
+      "type": "string",
+      "enum": [
+        "GENERIC",
+        "GITHUB_ACTIONS",
+        "KUBE_SERVICE_ACCOUNT"
+      ],
+      "default": "GENERIC",
+      "description": "The type of the auth machine to machine config.\nCurrently supports GitHub actions or any other generic OIDC provider to use for verifying and\nexchanging the token."
     },
     "v1AuthStatus": {
       "type": "object",
@@ -288,10 +619,99 @@
         "userAttributes": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v1UserAttribute"
+          }
+        },
+        "idpToken": {
+          "type": "string",
+          "description": "Token returned to ACS by the underlying identity provider. This field is set only in a few,\nspecific contexts. Do not rely on this field being present in the response."
+        }
+      }
+    },
+    "v1Empty": {
+      "type": "object"
+    },
+    "v1ExchangeAuthMachineToMachineTokenRequest": {
+      "type": "object",
+      "properties": {
+        "idToken": {
+          "type": "string",
+          "description": "Identity token that is supposed to be exchanged."
+        }
+      }
+    },
+    "v1ExchangeAuthMachineToMachineTokenResponse": {
+      "type": "object",
+      "properties": {
+        "accessToken": {
+          "type": "string",
+          "description": "The exchanged access token."
+        }
+      }
+    },
+    "v1GetAuthMachineToMachineConfigResponse": {
+      "type": "object",
+      "properties": {
+        "config": {
+          "$ref": "#/definitions/v1AuthMachineToMachineConfig"
+        }
+      }
+    },
+    "v1ListAuthMachineToMachineConfigResponse": {
+      "type": "object",
+      "properties": {
+        "configs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1AuthMachineToMachineConfig"
           }
         }
       }
+    },
+    "v1Traits": {
+      "type": "object",
+      "properties": {
+        "mutabilityMode": {
+          "$ref": "#/definitions/v1TraitsMutabilityMode"
+        },
+        "visibility": {
+          "$ref": "#/definitions/v1TraitsVisibility"
+        },
+        "origin": {
+          "$ref": "#/definitions/v1TraitsOrigin"
+        }
+      }
+    },
+    "v1TraitsMutabilityMode": {
+      "type": "string",
+      "enum": [
+        "ALLOW_MUTATE",
+        "ALLOW_MUTATE_FORCED"
+      ],
+      "default": "ALLOW_MUTATE",
+      "description": "EXPERIMENTAL.\nNOTE: Please refer from using MutabilityMode for the time being. It will be replaced in the future (ROX-14276).\nMutabilityMode specifies whether and how an object can be modified. Default\nis ALLOW_MUTATE and means there are no modification restrictions; this is equivalent\nto the absence of MutabilityMode specification. ALLOW_MUTATE_FORCED forbids all\nmodifying operations except object removal with force bit on.\n\nBe careful when changing the state of this field. For example, modifying an\nobject from ALLOW_MUTATE to ALLOW_MUTATE_FORCED is allowed but will prohibit any further\nchanges to it, including modifying it back to ALLOW_MUTATE."
+    },
+    "v1TraitsOrigin": {
+      "type": "string",
+      "enum": [
+        "IMPERATIVE",
+        "DEFAULT",
+        "DECLARATIVE",
+        "DECLARATIVE_ORPHANED"
+      ],
+      "default": "IMPERATIVE",
+      "description": "Origin specifies the origin of an object.\nObjects can have four different origins:\n- IMPERATIVE: the object was created via the API. This is assumed by default.\n- DEFAULT: the object is a default object, such as default roles, access scopes etc.\n- DECLARATIVE: the object is created via declarative configuration.\n- DECLARATIVE_ORPHANED: the object is created via declarative configuration and then unsuccessfully deleted(for example, because it is referenced by another object)\nBased on the origin, different rules apply to the objects.\nObjects with the DECLARATIVE origin are not allowed to be modified via API, only via declarative configuration.\nAdditionally, they may not reference objects with the IMPERATIVE origin.\nObjects with the DEFAULT origin are not allowed to be modified via either API or declarative configuration.\nThey may be referenced by all other objects.\nObjects with the IMPERATIVE origin are allowed to be modified via API, not via declarative configuration.\nThey may reference all other objects.\nObjects with the DECLARATIVE_ORPHANED origin are not allowed to be modified via either API or declarative configuration.\nDECLARATIVE_ORPHANED resource can become DECLARATIVE again if it is redefined in declarative configuration.\nObjects with this origin will be cleaned up from the system immediately after they are not referenced by other resources anymore.\nThey may be referenced by all other objects."
+    },
+    "v1TraitsVisibility": {
+      "type": "string",
+      "enum": [
+        "VISIBLE",
+        "HIDDEN"
+      ],
+      "default": "VISIBLE",
+      "description": "EXPERIMENTAL.\nvisibility allows to specify whether the object should be visible for certain APIs."
     },
     "v1UserAttribute": {
       "type": "object",

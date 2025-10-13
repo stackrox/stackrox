@@ -7,8 +7,13 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/auth"
+	"github.com/stackrox/rox/roxctl/common/config"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	cliIO "github.com/stackrox/rox/roxctl/common/io"
 	"github.com/stackrox/rox/roxctl/common/logger"
@@ -25,6 +30,8 @@ type cliEnvironmentImpl struct {
 var (
 	singleton Environment
 	once      sync.Once
+
+	errInvalidCombination = errox.InvalidArgs.New("cannot use basic and token-based authentication at the same time")
 )
 
 // NewTestCLIEnvironment creates a new CLI environment with the given IO and common.RoxctlHTTPClient.
@@ -49,24 +56,45 @@ func CLIEnvironment() Environment {
 		} else {
 			colorPrinter = printer.DefaultColorPrinter()
 		}
+		environIO := cliIO.DefaultIO()
 		singleton = &cliEnvironmentImpl{
-			io:              cliIO.DefaultIO(),
+			io:              environIO,
 			colorfulPrinter: colorPrinter,
-			logger:          logger.NewLogger(cliIO.DefaultIO(), colorPrinter),
+			logger:          logger.NewLogger(environIO, colorPrinter),
 		}
 	})
 	return singleton
 }
 
 // HTTPClient returns the common.RoxctlHTTPClient associated with the CLI Environment
-func (c *cliEnvironmentImpl) HTTPClient(timeout time.Duration) (common.RoxctlHTTPClient, error) {
-	client, err := common.GetRoxctlHTTPClient(timeout, flags.ForceHTTP1(), flags.UseInsecure(), c.Logger())
+func (c *cliEnvironmentImpl) HTTPClient(timeout time.Duration, options ...common.HttpClientOption) (common.RoxctlHTTPClient, error) {
+	config := common.NewHttpClientConfig(
+		common.WithTimeout(timeout),
+		common.WithLogger(c.Logger()),
+	)
+
+	for _, optFunc := range options {
+		optFunc(config)
+	}
+
+	if config.AuthMethod == nil {
+		var err error
+		config.AuthMethod, err = determineAuthMethod(c)
+		if err != nil {
+			return nil, errors.Wrap(err, "determining auth method")
+		}
+	}
+	client, err := common.GetRoxctlHTTPClient(config)
 	return client, errors.WithStack(err)
 }
 
 // GRPCConnection returns the common.GetGRPCConnection
-func (c *cliEnvironmentImpl) GRPCConnection() (*grpc.ClientConn, error) {
-	connection, err := common.GetGRPCConnection(c.Logger())
+func (c *cliEnvironmentImpl) GRPCConnection(connectionOpts ...common.GRPCOption) (*grpc.ClientConn, error) {
+	am, err := determineAuthMethod(c)
+	if err != nil {
+		return nil, errors.Wrap(err, "determining auth method")
+	}
+	connection, err := common.GetGRPCConnection(am, connectionOpts...)
 	return connection, errors.WithStack(err)
 }
 
@@ -88,8 +116,17 @@ func (c *cliEnvironmentImpl) ColorWriter() io.Writer {
 
 // ConnectNames returns the endpoint and (SNI) server name
 func (c *cliEnvironmentImpl) ConnectNames() (string, string, error) {
-	names, s, err := common.ConnectNames()
+	names, s, _, err := common.ConnectNames()
 	return names, s, errors.Wrap(err, "could not get endpoint")
+}
+
+// ConfigStore returns a config.Store capable of reading / writing configuration for roxctl.
+func (c *cliEnvironmentImpl) ConfigStore() (config.Store, error) {
+	cfgStore, err := config.NewConfigStore()
+	if err != nil {
+		return nil, errors.Wrap(err, "creating config store")
+	}
+	return cfgStore, nil
 }
 
 type colorWriter struct {
@@ -103,4 +140,34 @@ func (w colorWriter) Write(p []byte) (int, error) {
 		return n, errors.Wrap(err, "could not write")
 	}
 	return len(p), nil
+}
+
+func determineAuthMethod(cliEnv Environment) (auth.Method, error) {
+	if method, err := determineAuthMethodExt(
+		flags.APITokenFileChanged(), flags.PasswordChanged(),
+		flags.APITokenFile() == "", flags.Password() == "", env.TokenEnv.Setting() == ""); method != nil || err != nil {
+		return method, err
+	}
+	return ConfigMethod(cliEnv), nil
+}
+
+func determineAuthMethodExt(tokenFileChanged, passwordChanged, tokenFileNameEmpty, passwordEmpty, tokenEmpty bool) (auth.Method, error) {
+	// Prefer command line arguments over environment variables.
+	switch {
+	case tokenFileChanged && tokenFileNameEmpty || passwordChanged && passwordEmpty:
+		utils.Should(errox.InvariantViolation)
+		return nil, nil
+	case tokenFileChanged && passwordChanged:
+		return nil, errInvalidCombination
+	case !(tokenFileChanged || passwordChanged || tokenFileNameEmpty || passwordEmpty):
+		return nil, errInvalidCombination
+	case !(tokenFileChanged || passwordChanged || tokenEmpty || passwordEmpty):
+		return nil, errInvalidCombination
+	case passwordChanged || !(passwordEmpty || tokenFileChanged):
+		return auth.BasicAuth(), nil
+	case tokenFileChanged || !tokenFileNameEmpty || !tokenEmpty:
+		return auth.TokenAuth(), nil
+	default:
+		return nil, nil
+	}
 }

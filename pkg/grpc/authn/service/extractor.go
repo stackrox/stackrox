@@ -6,20 +6,20 @@ import (
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
-)
-
-var (
-	log = logging.LoggerForModule()
+	"github.com/stackrox/rox/pkg/set"
 )
 
 type extractor struct {
-	caFP      string
-	validator authn.ValidateCertChain
+	trustedCAFingerprints set.Set[string]
+	validator             authn.ValidateCertChain
 }
 
-func (e extractor) IdentityForRequest(ctx context.Context, ri requestinfo.RequestInfo) (authn.Identity, error) {
+func getExtractorError(msg string, err error) *authn.ExtractorError {
+	return authn.NewExtractorError("service", msg, err)
+}
+
+func (e extractor) IdentityForRequest(ctx context.Context, ri requestinfo.RequestInfo) (authn.Identity, *authn.ExtractorError) {
 	l := len(ri.VerifiedChains)
 	// For all mTLS communication, there will be exactly one verified chain.
 	// If there are multiple verified chains, no need to send an error -- it just
@@ -30,14 +30,14 @@ func (e extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 	}
 
 	requestCA := ri.VerifiedChains[0][len(ri.VerifiedChains[0])-1]
-	if requestCA.CertFingerprint != e.caFP {
+	if !e.trustedCAFingerprints.Contains(requestCA.CertFingerprint) {
 		return nil, nil
 	}
 
 	if e.validator != nil {
 		err := e.validator.ValidateClientCertificate(ctx, ri.VerifiedChains[0])
 		if err != nil {
-			return nil, err
+			return nil, getExtractorError("client certificate validation failed", err)
 		}
 	}
 
@@ -52,10 +52,17 @@ func NewExtractorWithCertValidation(validator authn.ValidateCertChain) (authn.Id
 		return nil, err
 	}
 
-	caFP := cryptoutils.CertFingerprint(ca)
+	fingerprints := set.NewSet[string]()
+	fingerprints.Add(cryptoutils.CertFingerprint(ca))
+
+	secondaryCA, _, err := mtls.SecondaryCACert()
+	if err == nil {
+		fingerprints.Add(cryptoutils.CertFingerprint(secondaryCA))
+	}
+
 	return extractor{
-		caFP:      caFP,
-		validator: validator,
+		trustedCAFingerprints: fingerprints,
+		validator:             validator,
 	}, nil
 }
 

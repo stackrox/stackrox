@@ -1,0 +1,875 @@
+'use strict';
+
+const path = require('node:path');
+
+const parserTypeScriptESLint = require('@typescript-eslint/parser');
+
+const pluginCypress = require('eslint-plugin-cypress');
+const pluginESLint = require('@eslint/js'); // eslint-disable-line import/no-extraneous-dependencies
+const pluginJSON = require('@eslint/json').default;
+const pluginESLintComments = require('eslint-plugin-eslint-comments');
+const pluginImport = require('eslint-plugin-import');
+const pluginJestDOM = require('eslint-plugin-jest-dom');
+const pluginPrettier = require('eslint-plugin-prettier');
+const pluginReact = require('eslint-plugin-react');
+const pluginReactHooks = require('eslint-plugin-react-hooks');
+const pluginTestingLibrary = require('eslint-plugin-testing-library');
+const pluginTypeScriptESLint = require('@typescript-eslint/eslint-plugin');
+const pluginVitest = require('@vitest/eslint-plugin');
+
+const { browser: browserGlobals, node: nodeGlobals, vitest: vitestGlobals } = require('globals');
+
+const pluginAccessibility = require('./eslint-plugins/pluginAccessibility');
+const pluginGeneric = require('./eslint-plugins/pluginGeneric');
+const pluginLimited = require('./eslint-plugins/pluginLimited');
+const pluginPatternFly = require('./eslint-plugins/pluginPatternFly');
+
+const parserAndOptions = {
+    parser: parserTypeScriptESLint,
+    parserOptions: {
+        project: './tsconfig.eslint.json',
+        tsconfigRootDir: __dirname,
+    },
+};
+
+module.exports = [
+    {
+        // Supersede .eslintignore file.
+        // ESLint provides ["**/node_modules/", ".git/"] as default ignores.
+        ignores: [
+            'build/**',
+            'coverage/**',
+            'scripts/**',
+            'src/setupProxy.js',
+            'src/setupTests.js',
+            'cypress.d.ts',
+        ],
+    },
+    {
+        files: ['*.json', 'cypress/**/*.json', 'src/**/*.json'], // JSON without comments
+        ignores: [
+            'package-lock.json', // ignore because it is auto-generated
+            'tsconfig.eslint.json', // contains comments, see below
+            'cypress/downloads/*.json', // StackRox_Exported_Policies_*.json
+            'cypress/tsconfig.json', // contains comments, see below
+        ],
+
+        language: 'json/json',
+
+        // https://github.com/eslint/json/blob/main/src/index.js
+        ...pluginJSON.configs.recommended,
+    },
+    {
+        files: ['tsconfig.eslint.json', 'cypress/tsconfig.json'], // JSON with comments
+
+        language: 'json/jsonc',
+
+        // https://github.com/eslint/json/blob/main/src/index.js
+        ...pluginJSON.configs.recommended,
+    },
+    {
+        files: ['**/*.{js,jsx,ts,tsx}'], // generic configuration
+
+        // ESLint has cascade for rules (that is, last value for a rule wins).
+        // ESLint only replaces other properties (that is, does not spread nor merge).
+
+        // languageOptions are in specific configuration objects
+
+        linterOptions: {
+            reportUnusedDisableDirectives: 'error',
+            reportUnusedInlineConfigs: 'error',
+        },
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            'eslint-comments': pluginESLintComments,
+            import: pluginImport,
+            prettier: pluginPrettier,
+        },
+        rules: {
+            // https://github.com/eslint/eslint/blob/main/packages/js/src/configs/eslint-recommended.js
+            ...pluginESLint.configs.recommended.rules,
+
+            // Require braces even when block has one statement.
+            curly: ['error', 'all'],
+
+            // Forbid use of console in favor of raven-js for error capturing.
+            'no-console': 'error',
+
+            // https://github.com/mysticatea/eslint-plugin-eslint-comments/blob/master/lib/configs/recommended.js
+            ...pluginESLintComments.configs.recommended.rules,
+
+            // Turn off new rules until after we fix errors in follow-up contributions.
+            'eslint-comments/disable-enable-pair': 'off', // fix more than 50 errors
+
+            // https://github.com/import-js/eslint-plugin-import/blob/main/config/errors.js
+            ...pluginImport.configs.errors.rules, // depends on parsers and resolver in settings
+
+            // Turn off rules from import errors configuration.
+            'import/named': 'off',
+
+            'import/extensions': [
+                'error',
+                'ignorePackages',
+                {
+                    js: 'never',
+                    jsx: 'never',
+                    json: 'always',
+                    ts: 'never',
+                    tsx: 'never',
+                },
+            ],
+
+            // Turn on rules from airbnb best-practices config that are not in ESLint recommended.
+            // https://github.com/airbnb/javascript/blob/master/packages/eslint-config-airbnb-base/rules/best-practices.js
+            'array-callback-return': ['error', { allowImplicit: true }],
+            'block-scoped-var': 'error',
+            // 'class-methods-use-this' is intentional omission
+            'consistent-return': 'error',
+            'default-case': ['error', { commentPattern: '^no default$' }],
+            'default-case-last': 'error',
+            // 'default-param-last' is intentional omission
+            'dot-notation': ['error', { allowKeywords: true }],
+            eqeqeq: ['error', 'always', { null: 'ignore' }],
+            'grouped-accessor-pairs': 'error',
+            'guard-for-in': 'error',
+            'max-classes-per-file': ['error', 1],
+            'no-alert': 'error', // instead of 'warn'
+            'no-caller': 'error',
+            'no-constructor-return': 'error',
+            'no-else-return': ['error', { allowElseIf: false }], // TODO
+            'no-empty-function': [
+                'error',
+                {
+                    allow: ['arrowFunctions', 'functions', 'methods'],
+                },
+            ],
+            'no-eval': 'error',
+            'no-extend-native': 'error',
+            'no-extra-bind': 'error',
+            'no-extra-label': 'error',
+            'no-implied-eval': 'error',
+            'no-iterator': 'error',
+            'no-labels': ['error', { allowLoop: false, allowSwitch: false }],
+            'no-lone-blocks': 'error',
+            'no-loop-func': 'error',
+            'no-multi-str': 'error',
+            'no-new': 'error',
+            'no-new-func': 'error',
+            'no-new-wrappers': 'error',
+            'no-octal-escape': 'error',
+            'no-param-reassign': [
+                'error',
+                {
+                    props: true,
+                    ignorePropertyModificationsFor: [
+                        'acc', // for reduce accumulators
+                        'accumulator', // for reduce accumulators
+                        'e', // for e.returnvalue
+                        'ctx', // for Koa routing
+                        'context', // for Koa routing
+                        'req', // for Express requests
+                        'request', // for Express requests
+                        'res', // for Express responses
+                        'response', // for Express responses
+                        '$scope', // for Angular 1 scopes
+                        'staticContext', // for ReactRouter context
+                    ],
+                },
+            ],
+            'no-proto': 'error',
+            'no-restricted-properties': [
+                'error',
+                {
+                    object: 'arguments',
+                    property: 'callee',
+                    message: 'arguments.callee is deprecated',
+                },
+                {
+                    object: 'global',
+                    property: 'isFinite',
+                    message: 'Please use Number.isFinite instead',
+                },
+                {
+                    object: 'self',
+                    property: 'isFinite',
+                    message: 'Please use Number.isFinite instead',
+                },
+                {
+                    object: 'window',
+                    property: 'isFinite',
+                    message: 'Please use Number.isFinite instead',
+                },
+                {
+                    object: 'global',
+                    property: 'isNaN',
+                    message: 'Please use Number.isNaN instead',
+                },
+                {
+                    object: 'self',
+                    property: 'isNaN',
+                    message: 'Please use Number.isNaN instead',
+                },
+                {
+                    object: 'window',
+                    property: 'isNaN',
+                    message: 'Please use Number.isNaN instead',
+                },
+                {
+                    property: '__defineGetter__',
+                    message: 'Please use Object.defineProperty instead.',
+                },
+                {
+                    property: '__defineSetter__',
+                    message: 'Please use Object.defineProperty instead.',
+                },
+                {
+                    object: 'Math',
+                    property: 'pow',
+                    message: 'Use the exponentiation operator (**) instead.',
+                },
+            ],
+            'no-return-assign': ['error', 'always'],
+            'no-script-url': 'error',
+            'no-self-compare': 'error',
+            'no-sequences': 'error',
+            'no-throw-literal': 'error',
+            'no-unused-expressions': [
+                'error',
+                {
+                    allowShortCircuit: false,
+                    allowTernary: false,
+                    allowTaggedTemplates: false,
+                },
+            ],
+            'no-useless-concat': 'error',
+            'no-useless-return': 'error',
+            'no-void': 'error',
+            'prefer-promise-reject-errors': ['error', { allowEmptyReject: true }],
+            /*
+            'prefer-regex-literals': [
+                'error',
+                {
+                    disallowRedundantWrapping: true,
+                },
+            ],
+            */ // decide either is omitted intentionally, fix 3 errors, or disable comments
+            // radix: 'error', // TODO comment in after making sure no semantic merge conflict
+            'vars-on-top': 'error',
+            yoda: 'error',
+
+            // Turn on rules from airbnb errors config that are not in ESLint recommended.
+            // https://github.com/airbnb/javascript/blob/master/packages/eslint-config-airbnb-base/rules/errors.js
+            'for-direction': 'error',
+            'getter-return': ['error', { allowImplicit: true }],
+            'no-async-promise-executor': 'error',
+            'no-compare-neg-zero': 'error',
+            'no-cond-assign': ['error', 'always'],
+            'no-constant-condition': 'error', // instead of 'warn'
+            'no-control-regex': 'error',
+            'no-debugger': 'error',
+            'no-dupe-args': 'error',
+            'no-dupe-else-if': 'error',
+            'no-dupe-keys': 'error',
+            'no-duplicate-case': 'error',
+            'no-empty': 'error',
+            'no-empty-character-class': 'error',
+            'no-ex-assign': 'error',
+            'no-extra-boolean-cast': 'error',
+            'no-extra-semi': 'error',
+            'no-func-assign': 'error',
+            'no-import-assign': 'error',
+            'no-inner-declarations': 'error',
+            'no-invalid-regexp': 'error',
+            'no-irregular-whitespace': 'error',
+            'no-loss-of-precision': 'error',
+            'no-misleading-character-class': 'error',
+            'no-obj-calls': 'error',
+            'no-prototype-builtins': 'error',
+            'no-regex-spaces': 'error',
+            'no-setter-return': 'error',
+            'no-sparse-arrays': 'error',
+            'no-unexpected-multiline': 'error',
+            'no-unreachable': 'error',
+            'no-unsafe-finally': 'error',
+            'no-unsafe-negation': 'error',
+            'no-unsafe-optional-chaining': ['error', { disallowArithmeticOperators: true }],
+            'no-useless-backreference': 'error',
+            'use-isnan': 'error',
+            'valid-typeof': ['error', { requireStringLiterals: true }],
+
+            'no-await-in-loop': 'error',
+            // 'no-promise-executor-return': 'error', // fix 5 errors
+            'no-template-curly-in-string': 'error',
+            'no-unreachable-loop': [
+                'error',
+                {
+                    ignore: [],
+                },
+            ],
+
+            // Turn on rules from airbnb es6 config that are not in ESLint recommended.
+            // https://github.com/airbnb/javascript/blob/master/packages/eslint-config-airbnb-base/rules/es6.js
+            // 'arrow-body-style' is intentional omission
+            'constructor-super': 'error',
+            'no-class-assign': 'error',
+            'no-const-assign': 'error',
+            'no-dupe-class-members': 'error',
+            'no-new-symbol': 'error',
+            'no-this-before-super': 'error',
+            'require-yield': 'error',
+            // 'no-restricted-exports' is intentional omission
+            'no-useless-computed-key': 'error',
+            'no-useless-constructor': 'error',
+            'no-useless-rename': [
+                'error',
+                {
+                    ignoreDestructuring: false,
+                    ignoreImport: false,
+                    ignoreExport: false,
+                },
+            ],
+            'no-var': 'error',
+            'object-shorthand': [
+                'error',
+                'always',
+                {
+                    ignoreConstructors: false,
+                    avoidQuotes: true,
+                },
+            ],
+            'prefer-arrow-callback': [
+                'error',
+                {
+                    allowNamedFunctions: false,
+                    allowUnboundThis: true,
+                },
+            ],
+            'prefer-const': [
+                'error',
+                {
+                    destructuring: 'any',
+                    ignoreReadBeforeAssign: true,
+                },
+            ],
+            'prefer-destructuring': [
+                'error',
+                {
+                    VariableDeclarator: {
+                        array: false,
+                        object: true,
+                    },
+                    AssignmentExpression: {
+                        array: true,
+                        object: false,
+                    },
+                },
+                {
+                    enforceForRenamedProperties: false,
+                },
+            ],
+            'prefer-numeric-literals': 'error',
+            'prefer-rest-params': 'error',
+            'prefer-spread': 'error',
+            'prefer-template': 'error',
+            'rest-spread-spacing': ['error', 'never'], // deprecated
+            'symbol-description': 'error',
+
+            // Turn on rules from airbnb import config that are not in import errors config.
+            // https://github.com/airbnb/javascript/blob/master/packages/eslint-config-airbnb-base/rules/imports.js
+            'import/first': 'error',
+            'import/newline-after-import': 'error',
+            'import/no-absolute-path': 'error',
+            'import/no-duplicates': 'error',
+            'import/no-dynamic-require': 'error',
+            // 'import/no-extraneous-dependencies' is specified in a more specific configuration
+            'import/no-import-module-exports': ['error', { exceptions: [] }],
+            'import/no-mutable-exports': 'error',
+            // 'import/no-named-as-default' is intentional omission
+            // 'import/no-named-as-default-member' is intentional omission
+            'import/no-named-default': 'error',
+            'import/no-relative-packages': 'error',
+            'import/no-self-import': 'error',
+            'import/no-useless-path-segments': ['error', { commonjs: true }],
+            'import/no-webpack-loader-syntax': 'error',
+            // 'import/prefer-default-export' is intentional omission
+
+            // Turn on rules from airbnb style config that are not in ESLint recommended.
+            // https://github.com/airbnb/javascript/blob/master/packages/eslint-config-airbnb-base/rules/style.js
+            // camelcase is intentional omission
+            /*
+            // Discuss with team whether or not to turn on this rule
+            'max-len': [
+                'error',
+                100,
+                2,
+                {
+                    ignoreUrls: true,
+                    ignoreComments: false,
+                    ignoreRegExpLiterals: true,
+                    ignoreStrings: true,
+                    ignoreTemplateLiterals: true,
+                },
+            ],
+            */
+            'new-cap': [
+                'error',
+                {
+                    newIsCap: true,
+                    newIsCapExceptions: [],
+                    capIsNew: false,
+                    capIsNewExceptions: ['Immutable.Map', 'Immutable.Set', 'Immutable.List'],
+                },
+            ],
+            'no-array-constructor': 'error',
+            'no-bitwise': 'error',
+            'no-continue': 'error',
+            'no-multi-assign': ['error'],
+            'no-plusplus': 'error',
+            'no-restricted-syntax': [
+                'error',
+                {
+                    selector: 'ForInStatement',
+                    message:
+                        'for..in loops iterate over the entire prototype chain, which is virtually never what you want. Use Object.{keys,values,entries}, and iterate over the resulting array.',
+                },
+                {
+                    selector: 'ForOfStatement',
+                    message:
+                        'iterators/generators require regenerator-runtime, which is too heavyweight for this guide to allow them. Separately, loops should be avoided in favor of array iterations.',
+                },
+                {
+                    selector: 'LabeledStatement',
+                    message:
+                        'Labels are a form of GOTO; using them makes code confusing and hard to maintain and understand.',
+                },
+                {
+                    selector: 'WithStatement',
+                    message:
+                        '`with` is disallowed in strict mode because it makes code impossible to predict and optimize.',
+                },
+            ],
+            // 'no-underscore-dangle' is intentional omission
+            'no-unneeded-ternary': ['error', { defaultAssignment: false }],
+            'one-var': ['error', 'never'],
+            'operator-assignment': ['error', 'always'],
+            'prefer-exponentiation-operator': 'error',
+            'prefer-object-spread': 'error',
+            'unicode-bom': ['error', 'never'],
+
+            // Turn on rules from airbnb variables config that are not in ESLint recommended.
+            // https://github.com/airbnb/javascript/blob/master/packages/eslint-config-airbnb-base/rules/variables.js
+            'no-label-var': 'error',
+            'no-restricted-globals': [
+                'error',
+                {
+                    name: 'isFinite',
+                    message: 'Use Number.isFinite instead',
+                },
+                {
+                    name: 'isNaN',
+                    message: 'Use Number.isNaN',
+                },
+            ],
+            // 'no-shadow': 'error', // fix 15 errors
+            'no-undef-init': 'error',
+
+            // Turn on rules not from (or with difference options than) airbnb config.
+            'import/no-empty-named-blocks': 'error',
+            'import/order': [
+                'error',
+                { groups: [['builtin', 'external', 'internal', 'parent', 'sibling']] },
+            ],
+            'prettier/prettier': 'error',
+        },
+
+        settings: {
+            'import/extensions': ['.js', '.jsx', '.ts', '.tsx'],
+            'import/parsers': {
+                '@typescript-eslint/parser': ['.js', '.jsx', '.ts', '.tsx'],
+            },
+            'import/resolver': {
+                typescript: {
+                    alwaysTryTypes: true,
+                    project: 'tsconfig.eslint.json',
+                },
+            },
+            react: {
+                version: 'detect',
+            },
+        },
+    },
+    {
+        files: ['cypress/**/*.{js,ts}'], // helpers (and so on) for integration tests
+
+        languageOptions: {
+            ...parserAndOptions,
+            globals: {
+                // https://github.com/cypress-io/eslint-plugin-cypress/blob/master/lib/flat.js#L32-L43
+                ...pluginCypress.configs.globals.languageOptions.globals,
+                ...nodeGlobals, // mocha.config.js
+            },
+        },
+    },
+    {
+        files: [
+            'cypress/integration/**/*.test.{js,ts}', // integration tests
+            'src/**/*.cy.jsx', // component tests
+        ],
+
+        languageOptions: {
+            ...parserAndOptions,
+            globals: {
+                // https://github.com/cypress-io/eslint-plugin-cypress/blob/master/lib/flat.js#L32-L43
+                ...pluginCypress.configs.globals.languageOptions.globals,
+            },
+        },
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            cypress: pluginCypress,
+            vitest: pluginVitest,
+        },
+        rules: {
+            // Turn off rules from ESLint recommended configuration.
+
+            // Allow chai-style expect(x).to.be.true chain.
+            'no-unused-expressions': 'off',
+
+            // https://github.com/cypress-io/eslint-plugin-cypress/blob/master/lib/flat.js#L45-L62
+            ...pluginCypress.configs.recommended.rules,
+
+            // Turn off new rules until after we fix errors in follow-up contributions.
+            'cypress/no-unnecessary-waiting': 'off', // disable or fix about 8 errors
+
+            'cypress/no-chained-get': 'error',
+            // 'cypress/no-force': 'error', // TODO fix errors
+
+            'vitest/no-focused-tests': 'error',
+        },
+    },
+    {
+        files: ['src/*.{ts,tsx}', 'src/*/**/*.{js,jsx,ts,tsx}'], // product files, except for unit tests (including mockData and test-utils folders)
+
+        languageOptions: {
+            ...parserAndOptions,
+            globals: {
+                ...browserGlobals,
+                process: false, // for JavaScript files which have process.env.NODE_ENV and so on
+            },
+        },
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            accessibility: pluginAccessibility,
+            generic: pluginGeneric,
+            import: pluginImport,
+            patternfly: pluginPatternFly,
+            react: pluginReact,
+            'react-hooks': pluginReactHooks,
+        },
+        rules: {
+            ...pluginAccessibility.configs.recommended.rules,
+            ...pluginGeneric.configs.recommended.rules,
+            ...pluginPatternFly.configs.recommended.rules,
+
+            'no-restricted-imports': [
+                'error',
+                {
+                    paths: [
+                        {
+                            name: 'axios',
+                            importNames: ['default'],
+                            message:
+                                "Please use the axios exported from 'src/services/instance.js' since we've made modifications to it there.",
+                        },
+                    ],
+                },
+            ],
+
+            // Turn on rules from airbnb strict config that are not in ESLint recommended.
+            // https://github.com/airbnb/javascript/blob/master/packages/eslint-config-airbnb-base/rules/strict.js
+            strict: ['error', 'never'], // babel inserts `'use strict';` for us
+
+            'import/no-extraneous-dependencies': [
+                'error',
+                {
+                    devDependencies: [
+                        path.join(__dirname, 'src/test-utils/*'), // TODO delete renderWithRedux.js
+                    ],
+                },
+            ],
+
+            // https://github.com/jsx-eslint/eslint-plugin-react/blob/master/configs/recommended.js
+            ...pluginReact.configs.recommended.rules,
+
+            // Turn off new rules until after we fix errors in follow-up contributions.
+            'react/jsx-key': 'off', // more that 30 errors
+
+            // Turn on rules from airbnb react config that are not in eslint-plugin-react recommended.
+            'react/button-has-type': [
+                'error',
+                {
+                    button: true,
+                    submit: true,
+                    reset: false,
+                },
+            ],
+            'react/forbid-prop-types': [
+                'error',
+                {
+                    forbid: ['any', 'array'], // allow object
+                },
+            ],
+            'react/jsx-boolean-value': ['error', 'never', { always: [] }],
+            'react/jsx-filename-extension': [
+                'error',
+                {
+                    extensions: ['.jsx', '.tsx'],
+                },
+            ],
+            'react/jsx-no-bind': [
+                'error',
+                {
+                    allowArrowFunctions: true,
+                    allowBind: false,
+                    allowFunctions: true,
+                    ignoreDOMComponents: true,
+                    ignoreRefs: true,
+                },
+            ],
+            'react/jsx-no-script-url': [
+                'error',
+                [
+                    {
+                        name: 'Link',
+                        props: ['to'],
+                    },
+                ],
+            ],
+            'react/jsx-pascal-case': [
+                'error',
+                {
+                    allowAllCaps: true,
+                    ignore: [],
+                },
+            ],
+            'react/no-array-index-key': 'error',
+            'react/no-danger': 'error',
+            'react/no-invalid-html-attribute': 'error',
+            'react/no-unused-prop-types': [
+                'error',
+                {
+                    customValidators: [],
+                    skipShapeProps: true,
+                },
+            ],
+            'react/no-unused-state': 'error',
+            'react/prop-types': [
+                'error',
+                {
+                    skipUndeclared: true, // more specific than eslint-plugin-react
+                },
+            ],
+            'react/static-property-placement': ['error', 'static public field'],
+            'react/style-prop-object': 'error',
+            'react/void-dom-elements-no-children': 'error',
+
+            // https://github.com/facebook/react/blob/main/packages/eslint-plugin-react-hooks/src/index.js
+            ...pluginReactHooks.configs.recommended.rules,
+
+            'react-hooks/exhaustive-deps': 'error', // instead of 'warn'
+        },
+    },
+    {
+        files: ['src/**/*.{ts,tsx}'], // product files, except for unit tests (including test-utils folder)
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            '@typescript-eslint': pluginTypeScriptESLint,
+            import: pluginImport,
+        },
+        rules: {
+            // https://github.com/typescript-eslint/typescript-eslint/blob/main/packages/eslint-plugin/src/configs/eslint-recommended.ts
+            ...pluginTypeScriptESLint.configs['eslint-recommended'].overrides[0].rules,
+            // https://github.com/typescript-eslint/typescript-eslint/blob/main/packages/eslint-plugin/src/configs/eslint-recommended.ts
+            ...pluginTypeScriptESLint.configs.recommended.rules,
+            // https://github.com/typescript-eslint/typescript-eslint/blob/main/packages/eslint-plugin/src/configs/recommended-type-checked.ts
+            ...pluginTypeScriptESLint.configs['recommended-type-checked'].rules,
+
+            // Turn off rules from recommended-type-checked configuration because of
+            // irrelevant problems when TypeScript modules import from JavaScript modules.
+            '@typescript-eslint/no-unsafe-assignment': 'off',
+            '@typescript-eslint/no-unsafe-call': 'off',
+            '@typescript-eslint/no-unsafe-member-access': 'off',
+
+            // Turn off new rules until after we fix errors in follow-up contributions.
+            '@typescript-eslint/no-misused-promises': 'off', // more than 100 errors
+            '@typescript-eslint/no-unsafe-argument': 'off', // more than 300 errors
+            '@typescript-eslint/prefer-promise-reject-errors': 'off', // 9 errors
+            '@typescript-eslint/require-await': 'off', // about 20 errors
+
+            '@typescript-eslint/array-type': 'error',
+            '@typescript-eslint/consistent-type-exports': 'error',
+
+            'import/consistent-type-specifier-style': ['error', 'prefer-top-level'],
+        },
+    },
+    // Limited rules have ignores for specific files or folders.
+    // When ESLint plugin for Visual Studio Code has support for suppressions, they might supersede limited rules.
+    {
+        files: ['src/*/**/*.{jsx,ts,tsx}'], // product files, except for unit tests (including test-utils folder)
+        ignores: ['src/Containers/Compliance/**'],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'import/no-cycle': ['error', { maxDepth: '∞' }], // classic compliance has 7 errors
+            'limited/react-export-default': 'error',
+        },
+    },
+    {
+        files: ['**/*.{js,jsx,ts,tsx}'], // generic configuration
+        ignores: [
+            'cypress/integration/**',
+            'src/Components/**',
+            'src/Containers/AccessControl/**',
+            'src/Containers/Clusters/**',
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/ConfigManagement/**',
+            'src/Containers/Integrations/**',
+            'src/Containers/MainPage/**',
+            'src/Containers/NetworkGraph/**',
+            'src/Containers/Policies/**',
+            'src/Containers/PolicyCategories/**',
+            'src/Containers/Risk/**',
+            'src/Containers/SystemConfig/**',
+            'src/Containers/SystemHealth/**',
+            'src/Containers/Violations/**',
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/Containers/Vulnerabilities/**',
+        ],
+
+        // Separate from the following configuration to limit size of contributions.
+        rules: {
+            'sort-imports': ['error', { ignoreDeclarationSort: true }],
+        },
+    },
+    {
+        files: ['src/*/**/*.{js,jsx,ts,tsx}'], // product files, except for unit tests (including test-utils folder)
+        ignores: [
+            'src/Components/**',
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/MitreAttackVectors/**',
+            'src/Containers/Policies/**',
+            'src/Containers/PolicyCategories/**',
+            'src/Containers/PolicyManagement/**',
+            'src/Containers/Risk/**',
+            'src/Containers/Search/**',
+            'src/Containers/SystemConfig/**',
+            'src/Containers/SystemHealth/**',
+            'src/Containers/User/**',
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/Containers/Vulnerabilities/**',
+            'src/Containers/Workflow/**', // deprecated
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            '@typescript-eslint': pluginTypeScriptESLint,
+            limited: pluginLimited,
+        },
+        rules: {
+            '@typescript-eslint/consistent-type-imports': 'error',
+            'limited/no-qualified-name-react': 'error',
+            'limited/no-absolute-path-within-container-in-import': 'error',
+            'limited/no-relative-path-to-src-in-import': 'error',
+        },
+    },
+    {
+        files: ['*.js', 'tailwind-plugins/*.js'], // non-product files
+
+        languageOptions: {
+            ...parserAndOptions,
+            globals: {
+                ...nodeGlobals,
+            },
+            sourceType: 'commonjs',
+        },
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            import: pluginImport,
+        },
+        rules: {
+            'import/no-extraneous-dependencies': [
+                'error',
+                {
+                    devDependencies: [
+                        path.join(__dirname, 'eslint.config.js'),
+                        path.join(__dirname, 'postcss.config.js'),
+                        path.join(__dirname, 'tailwind.config.js'), // only for @tailwindcss/forms
+                        path.join(__dirname, 'webpack.ocp-plugin.config.js'),
+                        path.join(__dirname, 'vite.config.js'),
+                    ],
+                },
+            ],
+        },
+    },
+    {
+        files: ['src/**/*.test.{js,jsx,ts,tsx}'], // unit tests
+
+        languageOptions: {
+            ...parserAndOptions,
+            globals: {
+                ...vitestGlobals,
+            },
+        },
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            import: pluginImport,
+            'jest-dom': pluginJestDOM,
+            'testing-library': pluginTestingLibrary,
+            vitest: pluginVitest,
+        },
+        rules: {
+            'import/no-extraneous-dependencies': [
+                'error',
+                {
+                    devDependencies: [path.join(__dirname, 'src/**/*.test.*')],
+                },
+            ],
+
+            ...pluginVitest.configs.recommended.rules,
+
+            'vitest/expect-expect': [
+                'error',
+                {
+                    assertFunctionNames: ['expect', 'expectSaga'], // authSagas.test.js integrationSagas.test.js
+                },
+            ],
+
+            ...pluginJestDOM.configs.recommended.rules,
+
+            // https://github.com/testing-library/eslint-plugin-testing-library/blob/main/lib/configs/react.ts
+            ...pluginTestingLibrary.configs.react.rules,
+
+            // TODO remove data-testid attributes from unit tests
+            'testing-library/consistent-data-testid': [
+                'error',
+                {
+                    testIdPattern: '^[A-Za-z]+[\\w\\-\\.]*$',
+                },
+            ],
+        },
+    },
+];

@@ -5,19 +5,17 @@ import (
 
 	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
-	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
 	complianceDS "github.com/stackrox/rox/central/compliance/datastore"
 	complianceDSTypes "github.com/stackrox/rox/central/compliance/datastore/types"
 	"github.com/stackrox/rox/central/compliance/standards"
 	standardsIndex "github.com/stackrox/rox/central/compliance/standards/index"
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	namespaceStore "github.com/stackrox/rox/central/namespace/datastore"
-	namespaceMappings "github.com/stackrox/rox/central/namespace/index/mappings"
-	nodeDatastore "github.com/stackrox/rox/central/node/globaldatastore"
-	nodeMappings "github.com/stackrox/rox/central/node/index/mappings"
+	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/options/deployments"
 	"github.com/stackrox/rox/pkg/set"
@@ -89,7 +87,7 @@ func New(compliance complianceDS.DataStore,
 	standards standards.Repository,
 	clusters clusterDatastore.DataStore,
 	namespaces namespaceStore.DataStore,
-	nodes nodeDatastore.GlobalDataStore,
+	nodes nodeDatastore.DataStore,
 	deployments deploymentStore.DataStore) Aggregator {
 	return &aggregatorImpl{
 		compliance:  compliance,
@@ -106,7 +104,7 @@ type aggregatorImpl struct {
 	standards   standards.Repository
 	clusters    clusterDatastore.DataStore
 	namespaces  namespaceStore.DataStore
-	nodes       nodeDatastore.GlobalDataStore
+	nodes       nodeDatastore.DataStore
 	deployments deploymentStore.DataStore
 }
 
@@ -212,7 +210,7 @@ func getSpecifiedFieldsFromQuery(q *v1.Query) []string {
 		if bq == nil {
 			return
 		}
-		asMFQ, ok := bq.Query.(*v1.BaseQuery_MatchFieldQuery)
+		asMFQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
 		if !ok {
 			return
 		}
@@ -241,7 +239,7 @@ func (a *aggregatorImpl) filterOnRunResult(runResults *storage.ComplianceRunResu
 		}
 	}
 	for d, controlResults := range runResults.GetDeploymentResults() {
-		deployment, ok := domain.Deployments[d]
+		deployment, ok := domain.GetDeployments()[d]
 		if !ok {
 			log.Error("Okay that's not good, we have a result for a deployment that isn't even in the domain?")
 			continue
@@ -387,13 +385,8 @@ func getAggregationKeys(groupByKey groupByKey) []*storage.ComplianceAggregation_
 func (a *aggregatorImpl) getCategoryID(controlID string) string {
 	// Controls can now be removed with the addition of the compliance operator
 	// All controls should have categories if they exist
-	if control := a.standards.Control(controlID); control == nil {
-		return ""
-	}
-
 	category := a.standards.GetCategoryByControl(controlID)
 	if category == nil {
-		utils.Should(errors.Errorf("no category found for control %q", controlID))
 		return ""
 	}
 	return category.QualifiedID()
@@ -431,7 +424,7 @@ func handleResult(groups map[groupByKey]*groupByValue, key groupByKey, unitKey s
 		pfCounts = new(passFailCounts)
 		groupByValue.unitMap[unitKey] = pfCounts
 	}
-	switch r.OverallState {
+	switch r.GetOverallState() {
 	case storage.ComplianceState_COMPLIANCE_STATE_SUCCESS:
 		pfCounts.pass++
 	case storage.ComplianceState_COMPLIANCE_STATE_FAILURE, storage.ComplianceState_COMPLIANCE_STATE_ERROR, storage.ComplianceState_COMPLIANCE_STATE_UNKNOWN:
@@ -511,7 +504,7 @@ func (a *aggregatorImpl) aggregateFromDeployments(runResults *storage.Compliance
 	domain := runResults.GetDomain()
 	if deploymentSet := mask.get(storage.ComplianceAggregation_DEPLOYMENT); deploymentSet != nil {
 		for deploymentID := range deploymentSet {
-			deployment := domain.Deployments[deploymentID]
+			deployment := domain.GetDeployments()[deploymentID]
 			if deployment == nil {
 				continue
 			}
@@ -527,7 +520,7 @@ func (a *aggregatorImpl) aggregateFromDeployments(runResults *storage.Compliance
 	}
 
 	for d, controlResults := range runResults.GetDeploymentResults() {
-		deployment, ok := domain.Deployments[d]
+		deployment, ok := domain.GetDeployments()[d]
 		if !ok {
 			log.Errorf("result for deployment %s exists, but it is not included in the domain", d)
 			continue
@@ -618,17 +611,17 @@ func (a *aggregatorImpl) getSearchFuncs() map[storage.ComplianceAggregation_Scop
 		storage.ComplianceAggregation_CLUSTER: {
 			searchFunc: a.clusters.Search,
 			countFunc:  a.clusters.Count,
-			optionsMap: clusterMappings.OptionsMap,
+			optionsMap: schema.ClustersSchema.OptionsMap,
 		},
 		storage.ComplianceAggregation_NODE: {
 			searchFunc: a.nodes.Search,
 			countFunc:  a.nodes.Count,
-			optionsMap: nodeMappings.OptionsMap,
+			optionsMap: schema.NodesSchema.OptionsMap,
 		},
 		storage.ComplianceAggregation_NAMESPACE: {
 			searchFunc: a.namespaces.Search,
 			countFunc:  a.namespaces.Count,
-			optionsMap: namespaceMappings.OptionsMap,
+			optionsMap: schema.NamespacesSchema.OptionsMap,
 		},
 		storage.ComplianceAggregation_CONTROL: {
 			searchFunc: wrapContextLessSearchFunc(a.standards.SearchControls),

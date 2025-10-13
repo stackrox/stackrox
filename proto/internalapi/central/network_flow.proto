@@ -1,21 +1,21 @@
 syntax = "proto3";
 
-option go_package = "central";
+package central;
 
 import "google/protobuf/timestamp.proto";
 import "storage/network_flow.proto";
 
-package central;
+option go_package = "./internalapi/central;central";
 
 message NetworkFlowUpdate {
-    // Network flows that were added or removed from the last time state was sent to Central.
-    repeated storage.NetworkFlow updated               = 1;
-    repeated storage.NetworkEndpoint updated_endpoints = 3;
+  // Network flows that were added or removed from the last time state was sent to Central.
+  repeated storage.NetworkFlow updated = 1;
+  repeated storage.NetworkEndpoint updated_endpoints = 3;
 
-    google.protobuf.Timestamp time     = 2;
+  google.protobuf.Timestamp time = 2;
 }
 
 message PushNetworkEntitiesRequest {
-    repeated storage.NetworkEntityInfo entities = 1;
-    int64                              seqID    = 2;
+  repeated storage.NetworkEntityInfo entities = 1;
+  int64 seqID = 2;
 }

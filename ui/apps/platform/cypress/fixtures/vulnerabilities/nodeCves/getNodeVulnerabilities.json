@@ -1,0 +1,34 @@
+{
+    "data": {
+        "node": {
+            "id": "1",
+            "nodeVulnerabilityCount": 100,
+            "nodeVulnerabilities": [
+                {
+                    "cve": "CYPRESS-CVE-2022-1996",
+                    "summary": "[Cypress] This is mocked CVE data for automated testing",
+                    "cvss": 9.100000381469727,
+                    "scoreVersion": "V3",
+                    "nodeComponents": [
+                        {
+                            "name": "openshift-clients",
+                            "source": "INFRASTRUCTURE",
+                            "version": "4.14.0-202401111553.p0.g286cfa5.assembly.stream.el9.x86_64",
+                            "nodeVulnerabilities": [
+                                {
+                                    "severity": "IMPORTANT_VULNERABILITY_SEVERITY",
+                                    "isFixable": false,
+                                    "fixedByVersion": "",
+                                    "__typename": "NodeVulnerability"
+                                }
+                            ],
+                            "__typename": "NodeComponent"
+                        }
+                    ],
+                    "__typename": "NodeVulnerability"
+                }
+            ],
+            "__typename": "Node"
+        }
+    }
+}

@@ -1,4 +1,7 @@
 # This file applies default environment configuration, based on available API server resources.
+env:
+  grpcEnforceALPN: false
+---
 {{- if kindIs "invalid" ._rox.env.istio }}
 env:
   {{- if has "networking.istio.io/v1alpha3" ._rox._apiServer.apiResources }}
@@ -8,6 +11,7 @@ env:
   istio: false
   {{- end }}
 {{- end }}
+---
 system:
   [<- if not .AutoSensePodSecurityPolicies >]
   enablePodSecurityPolicies: [< .EnablePodSecurityPolicies >]

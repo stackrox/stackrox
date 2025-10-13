@@ -2,14 +2,9 @@ package datastore
 
 import (
 	"context"
-	"testing"
+	"time"
 
-	"github.com/gogo/protobuf/types"
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/cve/cluster/datastore/index"
-	"github.com/stackrox/rox/central/cve/cluster/datastore/search"
 	"github.com/stackrox/rox/central/cve/cluster/datastore/store"
-	"github.com/stackrox/rox/central/cve/cluster/datastore/store/postgres"
 	"github.com/stackrox/rox/central/cve/common"
 	"github.com/stackrox/rox/central/cve/converter/v2"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -18,10 +13,11 @@ import (
 )
 
 // DataStore is an intermediary to cluster CVE storage.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
-	SearchCVEs(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
+	SearchClusterCVEs(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 	SearchRawCVEs(ctx context.Context, q *v1.Query) ([]*storage.ClusterCVE, error)
 
 	Exists(ctx context.Context, id string) (bool, error)
@@ -29,7 +25,7 @@ type DataStore interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	GetBatch(ctx context.Context, id []string) ([]*storage.ClusterCVE, error)
 
-	Suppress(ctx context.Context, start *types.Timestamp, duration *types.Duration, cves ...string) error
+	Suppress(ctx context.Context, start *time.Time, duration *time.Duration, cves ...string) error
 	Unsuppress(ctx context.Context, cves ...string) error
 
 	// UpsertInternal and DeleteInternal provide functionality to add and remove k8s, openshift and istio vulnerabilities.
@@ -40,11 +36,9 @@ type DataStore interface {
 }
 
 // New returns a new instance of a DataStore.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (DataStore, error) {
+func New(storage store.Store) (DataStore, error) {
 	ds := &datastoreImpl{
-		storage:  storage,
-		indexer:  indexer,
-		searcher: searcher,
+		storage: storage,
 
 		cveSuppressionCache: make(common.CVESuppressionCache),
 	}
@@ -52,12 +46,4 @@ func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (
 		return nil, err
 	}
 	return ds, nil
-}
-
-// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool *pgxpool.Pool) (DataStore, error) {
-	dbstore := postgres.NewFullStore(pool)
-	indexer := postgres.NewIndexer(pool)
-	searcher := search.New(dbstore, indexer)
-	return New(dbstore, indexer, searcher)
 }

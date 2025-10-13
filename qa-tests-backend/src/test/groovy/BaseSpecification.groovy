@@ -1,49 +1,56 @@
-import com.jayway.restassured.RestAssured
-import common.Constants
+import static util.Helpers.withRetry
 
-import io.stackrox.proto.api.v1.ApiTokenService
-import io.stackrox.proto.storage.ImageIntegrationOuterClass
-import io.stackrox.proto.storage.RoleOuterClass
 import java.security.SecureRandom
 import java.util.concurrent.TimeUnit
-import objects.K8sServiceAccount
-import objects.Secret
-import orchestratormanager.OrchestratorMain
+
+import io.restassured.RestAssured
+import orchestratormanager.Kubernetes
 import orchestratormanager.OrchestratorType
 import orchestratormanager.OrchestratorTypes
 import org.javers.core.Javers
 import org.javers.core.JaversBuilder
 import org.javers.core.diff.Diff
 import org.javers.core.diff.ListCompareAlgorithm
-import org.junit.Rule
-import org.junit.rules.TestName
-import org.junit.rules.Timeout
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.slf4j.MDC
+
+import io.stackrox.annotations.Retry
+import io.stackrox.proto.api.v1.ApiTokenService
+import io.stackrox.proto.storage.ClusterOuterClass
+import io.stackrox.proto.storage.ImageIntegrationOuterClass
+import io.stackrox.proto.storage.RoleOuterClass
+
+import common.Constants
+import objects.K8sServiceAccount
+import objects.Secret
 import services.BaseService
 import services.ClusterService
 import services.ImageIntegrationService
 import services.MetadataService
 import services.RoleService
-
-import spock.lang.Retry
-import spock.lang.Shared
-import spock.lang.Specification
 import util.Env
 import util.Helpers
 import util.OnFailure
 
-@Retry(condition = { Helpers.determineRetry(failure) })
+import org.junit.Rule
+import org.junit.rules.TestName
+import org.junit.rules.Timeout
+import spock.lang.Shared
+import spock.lang.Specification
+
 @OnFailure(handler = { Helpers.collectDebugForFailure(delegate as Throwable) })
 class BaseSpecification extends Specification {
 
     static final Logger LOG = LoggerFactory.getLogger("test." + BaseSpecification.getSimpleName())
 
-    static final String TEST_IMAGE = "quay.io/rhacs-eng/qa:nginx-1-7-9"
+    static final String TEST_IMAGE = "quay.io/rhacs-eng/qa-multi-arch:nginx-1.12@$TEST_IMAGE_SHA"
+    static final String TEST_IMAGE_NAME_WITH_SHA = TEST_IMAGE
+    static final String TEST_IMAGE_SHA = "sha256:72daaf46f11cc753c4eab981cbf869919bd1fee3d2170a2adeac12400f494728"
 
     static final String RUN_ID
 
-    public static final String UNRESTRICTED_SCOPE_ID = "io.stackrox.authz.accessscope.unrestricted"
+    public static final String UNRESTRICTED_SCOPE_ID = "ffffffff-ffff-fff4-f5ff-ffffffffffff"
 
     static {
         String idStr
@@ -62,7 +69,15 @@ class BaseSpecification extends Specification {
 
     public static strictIntegrationTesting = false
 
-    Map<String, List<String>> resourceRecord = [:]
+    private static Map<String, List<String>> resourceRecord = [:]
+
+    public static String coreImageIntegrationId = null
+
+    private static synchronizedGlobalSetup() {
+        synchronized(BaseSpecification) {
+            globalSetup()
+        }
+    }
 
     private static globalSetup() {
         if (globalSetupDone) {
@@ -71,22 +86,23 @@ class BaseSpecification extends Specification {
 
         LOG.info "Performing global setup"
 
-        if (!Env.IN_CI || Env.get("CIRCLE_TAG")) {
+        if (!Env.IN_CI || Env.get("BUILD_TAG")) {
             // Strictly test integration with external services when running in
             // a dev environment or in CI against tagged builds (e.g. nightly builds).
             LOG.info "Will perform strict integration testing (if any is required)"
             strictIntegrationTesting = true
         }
 
-        OrchestratorMain orchestrator = OrchestratorType.create(
+        Kubernetes orchestrator = OrchestratorType.create(
                 Env.mustGetOrchestratorType(),
                 Constants.ORCHESTRATOR_NAMESPACE
         )
 
         orchestrator.createNamespace(Constants.ORCHESTRATOR_NAMESPACE)
 
-        addStackroxImagePullSecret()
-        addGCRImagePullSecret()
+        addStackroxImagePullSecret(orchestrator)
+        addGCRImagePullSecret(orchestrator)
+        addRedHatImagePullSecret(orchestrator)
 
         RoleOuterClass.Role testRole = null
         ApiTokenService.GenerateTokenResponse tokenResp = null
@@ -102,8 +118,8 @@ class BaseSpecification extends Specification {
                 LOG.info metadata.toString()
                 LOG.info "isGKE: ${orchestrator.isGKE()}"
                 LOG.info "isEKS: ${ClusterService.isEKS()}"
-                LOG.info "isOpenShift3: ${ClusterService.isOpenShift3()}"
                 LOG.info "isOpenShift4: ${ClusterService.isOpenShift4()}"
+                LOG.info "testTarget: ${Env.getTestTarget()}"
             }
             catch (Exception ex) {
                 LOG.info "Cannot connect to central : ${ex.message}"
@@ -112,7 +128,7 @@ class BaseSpecification extends Specification {
             }
         }
 
-        if (ClusterService.isOpenShift3() || ClusterService.isOpenShift4()) {
+        if (ClusterService.isOpenShift4()) {
             assert Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT,
                     "Set CLUSTER=OPENSHIFT when testing OpenShift"
         }
@@ -129,13 +145,34 @@ class BaseSpecification extends Specification {
 
             String testRoleName = "Test Automation Role - ${RUN_ID}"
 
-            RoleService.deleteRole(testRoleName)
-            RoleService.createRoleWithScopeAndPermissionSet(testRoleName, UNRESTRICTED_SCOPE_ID, resourceAccess)
+            if (RoleService.checkRoleExists(testRoleName)) {
+                RoleService.deleteRole(testRoleName)
+            }
+            testRole = RoleService.createRoleWithScopeAndPermissionSet(
+                testRoleName, UNRESTRICTED_SCOPE_ID, resourceAccess)
 
             tokenResp = services.ApiTokenService.generateToken("allAccessToken-${RUN_ID}", testRoleName)
         }
 
+        assert tokenResp
         allAccessToken = tokenResp.token
+        assert allAccessToken
+
+        setupCoreImageIntegration()
+
+        RestAssured.useRelaxedHTTPSValidation()
+
+        try {
+            orchestrator.setup()
+        } catch (Exception e) {
+            LOG.error("Error setting up orchestrator", e)
+            throw e
+        }
+
+        // ROX-9950 Limit to GKE due to issues on other providers.
+        if (orchestrator.isGKE()) {
+            recordResourcesAtRunStart(orchestrator)
+        }
 
         addShutdownHook {
             LOG.info "Performing global shutdown"
@@ -147,14 +184,28 @@ class BaseSpecification extends Specification {
                     RoleService.deleteRole(testRole.name)
                 }
             }
+
+            LOG.info "Removing core image registry integration"
+            if (coreImageIntegrationId != null) {
+                ImageIntegrationService.deleteImageIntegration(coreImageIntegrationId)
+            }
+
+            // ROX-9950 Limit to GKE due to issues on other providers.
+            if (orchestrator.isGKE()) {
+                compareResourcesAtRunEnd(orchestrator)
+            }
         }
 
         globalSetupDone = true
     }
 
+    // `globalTimeout` serves to stop stuck tests hogging clusters. A side
+    // effect is that it can abort tests legitimately taking longer. Reaching
+    // `globalTimeout` is to be avoided because it upsets Spock and generates
+    // confusing junit reports.
     @Rule
     Timeout globalTimeout = new Timeout(
-            isRaceBuild() ? 2500 : 800,
+            isRaceBuild() ? 6000 : 2000,
             TimeUnit.SECONDS
     )
     @Rule
@@ -164,7 +215,7 @@ class BaseSpecification extends Specification {
     Logger log = LoggerFactory.getLogger("test." + this.getClass().getSimpleName())
 
     @Shared
-    OrchestratorMain orchestrator = OrchestratorType.create(
+    Kubernetes orchestrator = OrchestratorType.create(
             Env.mustGetOrchestratorType(),
             Constants.ORCHESTRATOR_NAMESPACE
     )
@@ -173,38 +224,26 @@ class BaseSpecification extends Specification {
     long orchestratorCreateTime = System.currentTimeSeconds()
 
     @Shared
-    String coreImageIntegrationId = null
-
-    @Shared
-    private long testStartTimeMillis
+    private long testSpecStartTimeMillis
 
     def setupSpec() {
+        MDC.put("logFileName", this.class.getSimpleName())
+        MDC.put("specification", this.class.getSimpleName())
         log.info("Starting testsuite")
 
-        testStartTimeMillis = System.currentTimeMillis()
+        testSpecStartTimeMillis = System.currentTimeMillis()
 
-        RestAssured.useRelaxedHTTPSValidation()
-        globalSetup()
+        synchronizedGlobalSetup()
 
-        try {
-            orchestrator.setup()
-        } catch (Exception e) {
-            log.error("Error setting up orchestrator", e)
-            throw e
-        }
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
-
-        setupCoreImageIntegration()
-
-        recordResourcesAtSpecStart()
     }
 
-    protected void setupCoreImageIntegration() {
+    static setupCoreImageIntegration() {
         coreImageIntegrationId = ImageIntegrationService.getImageIntegrationByName(
-                Constants.CORE_IMAGE_INTEGRATION_NAME)
+                Constants.CORE_IMAGE_INTEGRATION_NAME)?.id
         if (!coreImageIntegrationId) {
-            log.info "Adding core image integration"
+            LOG.info "Adding core image registry integration"
             coreImageIntegrationId = ImageIntegrationService.createImageIntegration(
                     ImageIntegrationOuterClass.ImageIntegration.newBuilder()
                             .setName(Constants.CORE_IMAGE_INTEGRATION_NAME)
@@ -220,12 +259,12 @@ class BaseSpecification extends Specification {
             )
         }
         if (!coreImageIntegrationId) {
-            log.warn "Could not create the core image integration."
-            log.warn "Check that REGISTRY_USERNAME and REGISTRY_PASSWORD are valid for quay.io."
+            LOG.warn "Could not create the core image integration."
+            LOG.warn "Check that REGISTRY_USERNAME and REGISTRY_PASSWORD are valid for quay.io."
         }
     }
 
-    def recordResourcesAtSpecStart() {
+    private static void recordResourcesAtRunStart(Kubernetes orchestrator) {
         resourceRecord = [
                 "namespaces": orchestrator.getNamespaces(),
                 "deployments": orchestrator.getDeployments("default") +
@@ -233,28 +272,43 @@ class BaseSpecification extends Specification {
         ]
     }
 
-    def resetAuth() {
+    // useDesiredServiceAuth() - configure the central gRPC connection auth as
+    // desired for test.
+    def useDesiredServiceAuth() {
         BaseService.setUseClientCert(false)
-        if (allAccessToken) {
-            BaseService.useApiToken(allAccessToken)
-        } else {
-            BaseService.useBasicAuth()
-        }
+        useTokenServiceAuth()
+    }
+
+    // useTokenServiceAuth() - configure the central gRPC connection auth to
+    // use an all access token.
+    def useTokenServiceAuth() {
+        assert allAccessToken
+        BaseService.useApiToken(allAccessToken)
     }
 
     def setup() {
-        log.info("Starting testcase")
+        // These .puts() have to be repeated here or else the key is cleared.
+        MDC.put("logFileName", this.class.getSimpleName())
+        MDC.put("specification", this.class.getSimpleName())
+        log.info("Starting testcase: ${name.getMethodName()}")
 
-        //Always make sure to revert back to the allAccessToken before each test
-        resetAuth()
+        // Make sure to use or revert back to the desired central gRPC auth
+        // before each test.
+        useDesiredServiceAuth()
 
-        if (ClusterService.isEKS() && System.currentTimeSeconds() > orchestratorCreateTime + 600) {
+        if (ClusterService.isEKS()) {
             // Avoid EKS k8s client time out which occurs at approx. 15 minutes.
-            orchestrator = OrchestratorType.create(
-                    Env.mustGetOrchestratorType(),
-                    Constants.ORCHESTRATOR_NAMESPACE
-            )
-            orchestratorCreateTime = System.currentTimeSeconds()
+            synchronized(orchestrator) {
+                // synchronized() because orchestrator would be shared amongst
+                // concurrent feature threads.
+                if (System.currentTimeSeconds() > orchestratorCreateTime + 600) {
+                    orchestrator = OrchestratorType.create(
+                            Env.mustGetOrchestratorType(),
+                            Constants.ORCHESTRATOR_NAMESPACE
+                    )
+                    orchestratorCreateTime = System.currentTimeSeconds()
+                }
+            }
         }
     }
 
@@ -263,26 +317,16 @@ class BaseSpecification extends Specification {
 
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
-
-        log.info "Removing integration"
-        if (coreImageIntegrationId != null) {
-            ImageIntegrationService.deleteImageIntegration(coreImageIntegrationId)
+        //TODO(ROX-30946): figure out why Sensor is unhealthy at the end of UpgradesTest
+        if (Env.IN_CI && this.class.simpleName != "UpgradesTest") {
+            log.info("Checking if cluster is healthy after test")
+            waitForClusterHealthy()
         }
 
-        try {
-            orchestrator.cleanup()
-        } catch (Exception e) {
-            log.error("Failed to clean up orchestrator", e)
-            throw e
-        }
-
-        // https://issues.redhat.com/browse/ROX-9950 -- fails on OSD-on-AWS
-        if (orchestrator.isGKE()) {
-            compareResourcesAtSpecEnd()
-        }
+        MDC.remove("specification")
     }
 
-    def compareResourcesAtSpecEnd() {
+    private static void compareResourcesAtRunEnd(Kubernetes orchestrator) {
         Javers javers = JaversBuilder.javers()
                 .withListCompareAlgorithm(ListCompareAlgorithm.AS_SET)
                 .build()
@@ -290,8 +334,8 @@ class BaseSpecification extends Specification {
         List<String> namespaces = orchestrator.getNamespaces()
         Diff diff = javers.compare(resourceRecord["namespaces"], namespaces)
         if (diff.hasChanges()) {
-            log.info "There is a difference in namespaces between the start and end of this test spec:"
-            log.info diff.prettyPrint()
+            LOG.info "There is a difference in namespaces between the start and end of this test run:"
+            LOG.info diff.prettyPrint()
             throw new TestSpecRuntimeException("Namespaces have changed. Ensure that any namespace created " +
                     "in a test spec is deleted in that test spec.")
         }
@@ -300,8 +344,8 @@ class BaseSpecification extends Specification {
                 orchestrator.getDeployments(Constants.ORCHESTRATOR_NAMESPACE)
         diff = javers.compare(resourceRecord["deployments"], deployments)
         if (diff.hasChanges()) {
-            log.info "There is a difference in deployments between the start and end of this test spec"
-            log.info diff.prettyPrint()
+            LOG.info "There is a difference in deployments between the start and end of this test run"
+            LOG.info diff.prettyPrint()
             throw new TestSpecRuntimeException("Deployments have changed. Ensure that any deployments created " +
                     "in a test spec are destroyed in that test spec.")
         }
@@ -309,11 +353,9 @@ class BaseSpecification extends Specification {
 
     def cleanup() {
         log.info("Ending testcase")
-
-        Helpers.resetRetryAttempts()
     }
 
-    static addStackroxImagePullSecret(ns = Constants.ORCHESTRATOR_NAMESPACE) {
+    static addStackroxImagePullSecret(Kubernetes orchestrator, String ns = Constants.ORCHESTRATOR_NAMESPACE) {
         // Add an image pull secret to the qa namespace and also the default service account so the qa namespace can
         // pull stackrox images from dockerhub
 
@@ -326,10 +368,6 @@ class BaseSpecification extends Specification {
             return
         }
 
-        OrchestratorMain orchestrator = OrchestratorType.create(
-                Env.mustGetOrchestratorType(),
-                ns
-        )
         orchestrator.createImagePullSecret(
                 "quay",
                 Env.mustGetInCI("REGISTRY_USERNAME", "fakeUsername"),
@@ -352,24 +390,19 @@ class BaseSpecification extends Specification {
         orchestrator.createServiceAccount(sa)
     }
 
-    static addGCRImagePullSecret(ns = Constants.ORCHESTRATOR_NAMESPACE) {
-        if (!Env.IN_CI && Env.get("GOOGLE_CREDENTIALS_GCR_SCANNER", null) == null) {
+    static addGCRImagePullSecret(Kubernetes orchestrator, String ns = Constants.ORCHESTRATOR_NAMESPACE) {
+        if (!Env.IN_CI && Env.get("GOOGLE_CREDENTIALS_GCR_SCANNER_V2", null) == null) {
             // Arguably this should be fatal but for tests that don't pull from us.gcr.io it is not strictly necessary
-            LOG.warn "The GOOGLE_CREDENTIALS_GCR_SCANNER env var is missing. "+
+            LOG.warn "The GOOGLE_CREDENTIALS_GCR_SCANNER_V2 env var is missing. "+
                     "(this is ok if your test does not use images on us.gcr.io)"
             return
         }
-
-        OrchestratorMain orchestrator = OrchestratorType.create(
-                Env.mustGetOrchestratorType(),
-                ns
-        )
 
         orchestrator.createImagePullSecret(new Secret(
                 name: "gcr-image-pull-secret",
                 server: "https://us.gcr.io",
                 username: "_json_key",
-                password: Env.mustGetInCI("GOOGLE_CREDENTIALS_GCR_SCANNER", "{}"),
+                password: Env.mustGetInCI("GOOGLE_CREDENTIALS_GCR_SCANNER_V2", "{}"),
                 namespace: ns
         ))
 
@@ -388,14 +421,38 @@ class BaseSpecification extends Specification {
         orchestrator.deleteSecret("gcr-image-pull-secret", Constants.ORCHESTRATOR_NAMESPACE)
     }
 
-    static Boolean isPostgresRun() {
-        return Env.CI_JOBNAME.contains("postgres")
+    static addRedHatImagePullSecret(Kubernetes orchestrator, String ns = Constants.ORCHESTRATOR_NAMESPACE) {
+        if (!Env.IN_CI && (Env.get("REDHAT_USERNAME") == null ||
+                           Env.get("REDHAT_PASSWORD") == null)) {
+            LOG.warn "The REDHAT_USERNAME and/or REDHAT_PASSWORD env var is missing. " +
+                    "(this is ok if your test does not use images from registry.redhat.io)"
+            return
+        }
+
+        orchestrator.createImagePullSecret(new Secret(
+                name: "redhat-image-pull-secret",
+                server: "https://registry.redhat.io",
+                username: Env.mustGetInCI("REDHAT_USERNAME", "{}"),
+                password: Env.mustGetInCI("REDHAT_PASSWORD", "{}"),
+                namespace: ns
+        ))
+
+        orchestrator.addServiceAccountImagePullSecret(
+                "default",
+                "redhat-image-pull-secret",
+                ns
+        )
     }
 
     static Boolean isRaceBuild() {
-        return Env.get("IS_RACE_BUILD", null) == "true" || Env.CI_JOBNAME == "race-condition-tests"
+        return Env.get("IS_RACE_BUILD", null) == "true" || Env.CI_JOB_NAME == "race-condition-qa-e2e-tests"
     }
 
+    @Retry(attempts = 30, delay = 3)
+    static void waitForClusterHealthy() {
+        ClusterOuterClass.ClusterHealthStatus status = ClusterService.getCluster().healthStatus
+        assert status.overallHealthStatus == ClusterOuterClass.ClusterHealthStatus.HealthStatusLabel.HEALTHY
+    }
 }
 
 class TestSpecRuntimeException extends RuntimeException {

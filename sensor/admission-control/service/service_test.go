@@ -36,8 +36,7 @@ func TestExecIntoPodNameEventPolicy(t *testing.T) {
 		managerTesting.TestManagerOptions{Policy: policy},
 	)
 
-	err = mgr.Start()
-	require.NoError(t, err)
+	mgr.Start()
 	defer mgr.Stop()
 
 	const deploymentID = "f3237faf-8350-4c39-b045-ff4c493ddb71"
@@ -108,8 +107,7 @@ func TestLatestTagPolicyAdmissionReview(t *testing.T) {
 		},
 	})
 
-	err = mgr.Start()
-	require.NoError(t, err)
+	mgr.Start()
 	defer mgr.Stop()
 
 	runv1 := serviceTestRun{
@@ -121,7 +119,7 @@ func TestLatestTagPolicyAdmissionReview(t *testing.T) {
 			require.Len(t, alerts, 1)
 			assert.Equal(t, LatestTagPolicyName, alerts[0].GetPolicy().GetName())
 			require.Len(t, alerts[0].GetViolations(), 1)
-			assert.Equal(t, "Container 'nginx' has image with tag 'latest'", alerts[0].GetViolations()[0].Message)
+			assert.Equal(t, "Container 'nginx' has image with tag 'latest'", alerts[0].GetViolations()[0].GetMessage())
 
 			review := readV1AdmissionReview(t, resp)
 			assert.Equal(t, admissionv1.SchemeGroupVersion.String(), review.APIVersion)
@@ -139,7 +137,7 @@ func TestLatestTagPolicyAdmissionReview(t *testing.T) {
 			require.Len(t, alerts, 1)
 			assert.Equal(t, LatestTagPolicyName, alerts[0].GetPolicy().GetName())
 			require.Len(t, alerts[0].GetViolations(), 1)
-			assert.Equal(t, latestTagErrMessage, alerts[0].GetViolations()[0].Message)
+			assert.Equal(t, latestTagErrMessage, alerts[0].GetViolations()[0].GetMessage())
 
 			review := readV1beta1AdmissionReview(t, resp)
 			assert.Contains(t, review.Response.Result.Message, latestTagErrMessage)

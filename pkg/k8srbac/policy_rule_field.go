@@ -1,10 +1,10 @@
 package k8srbac
 
 import (
+	"slices"
 	"sort"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 // PolicyRuleField represents a field of a PolicyRule.
@@ -88,5 +88,5 @@ func (f *policyRuleField) Grants(first, second *storage.PolicyRule) bool {
 }
 
 func (f *policyRuleField) hasValue(rule *storage.PolicyRule, value string) bool {
-	return sliceutils.Find(f.accessor(rule), value) >= 0
+	return slices.Index(f.accessor(rule), value) >= 0
 }

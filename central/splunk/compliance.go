@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/jsonutil"
-	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (
@@ -25,8 +24,6 @@ var (
 		storage.ComplianceState_COMPLIANCE_STATE_FAILURE: "Fail",
 		storage.ComplianceState_COMPLIANCE_STATE_ERROR:   "Error",
 	}
-
-	log = logging.LoggerForModule()
 )
 
 type splunkComplianceResult struct {
@@ -98,7 +95,7 @@ func newComplianceHandler(complianceDS datastore.DataStore, getClusterIDs func(c
 						}
 					}
 
-					for controlID, clusterValue := range d.ClusterResults.GetControlResults() {
+					for controlID, clusterValue := range d.GetClusterResults().GetControlResults() {
 						controlName := controlID
 						if control, ok := controls[controlID]; ok {
 							controlName = control.GetName()
@@ -109,7 +106,7 @@ func newComplianceHandler(complianceDS datastore.DataStore, getClusterIDs func(c
 							ObjectType: "Cluster",
 							ObjectName: d.GetDomain().GetCluster().GetName(),
 							Control:    controlName,
-							State:      stateToString(clusterValue.OverallState),
+							State:      stateToString(clusterValue.GetOverallState()),
 							Evidence:   getMessageLines(clusterValue.GetEvidence()),
 						}
 						if err := arrayWriter.WriteObject(res); err != nil {
@@ -132,7 +129,7 @@ func newComplianceHandler(complianceDS datastore.DataStore, getClusterIDs func(c
 								ObjectType: "Deployment",
 								ObjectName: deployment.GetName(),
 								Control:    controlName,
-								State:      stateToString(result.OverallState),
+								State:      stateToString(result.GetOverallState()),
 								Evidence:   getMessageLines(result.GetEvidence()),
 							}
 							if err := arrayWriter.WriteObject(res); err != nil {
@@ -155,7 +152,7 @@ func newComplianceHandler(complianceDS datastore.DataStore, getClusterIDs func(c
 								ObjectType: "Node",
 								ObjectName: node.GetName(),
 								Control:    controlName,
-								State:      stateToString(result.OverallState),
+								State:      stateToString(result.GetOverallState()),
 								Evidence:   getMessageLines(result.GetEvidence()),
 							}
 							if err := arrayWriter.WriteObject(res); err != nil {
@@ -176,7 +173,7 @@ func newComplianceHandler(complianceDS datastore.DataStore, getClusterIDs func(c
 								ObjectType: "Machine Config",
 								ObjectName: machineKey,
 								Control:    controlName,
-								State:      stateToString(result.OverallState),
+								State:      stateToString(result.GetOverallState()),
 								Evidence:   getMessageLines(result.GetEvidence()),
 							}
 							if err := arrayWriter.WriteObject(res); err != nil {

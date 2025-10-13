@@ -1,6 +1,7 @@
 package metrics
 
 // Resource represents the resource that we want to time.
+//
 //go:generate stringer -type=Resource
 type Resource int
 
@@ -9,11 +10,13 @@ const (
 	Alert Resource = iota
 	Deployment
 	ProcessIndicator
+	ProcessListeningOnPort
 	Image
 	Secret
 	Namespace
 	NetworkPolicy
 	Node
+	NodeInventory
 	ProviderMetadata
 	ComplianceReturn
 	ImageIntegration
@@ -28,4 +31,14 @@ const (
 	ComplianceOperatorScanSettingBinding
 	ComplianceOperatorRule
 	ComplianceOperatorScan
+	ComplianceOperatorInfo
+	ComplianceOperatorCheckResultV2
+	ComplianceOperatorRuleV2
+	ComplianceOperatorProfileV2
+	ComplianceOperatorScanV2
+	ComplianceOperatorSuiteV2
+	ComplianceOperatorRemediationV2
+	NodeIndex
+	VirtualMachineIndex
+	VirtualMachine
 )

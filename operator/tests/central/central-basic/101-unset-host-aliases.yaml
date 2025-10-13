@@ -1,0 +1,28 @@
+# Make kuttl ignore this file unless running against openshift.
+apiVersion: kuttl.dev/v1beta1
+kind: TestFile
+testRunSelector:
+  matchLabels:
+    openshift: "true"
+---
+apiVersion: platform.stackrox.io/v1alpha1
+kind: Central
+metadata:
+  name: stackrox-central-services
+spec:
+  central:
+    hostAliases: []
+    db:
+      hostAliases: []
+  scanner:
+    analyzer:
+      hostAliases: []
+    db:
+      hostAliases: []
+  scannerV4:
+    indexer:
+      hostAliases: []
+    matcher:
+      hostAliases: []
+    db:
+      hostAliases: []

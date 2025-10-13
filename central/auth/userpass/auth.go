@@ -5,12 +5,12 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/role"
 	roleDatastore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/mapper"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	basicAuthProvider "github.com/stackrox/rox/pkg/auth/authproviders/basic"
+	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	basicAuthn "github.com/stackrox/rox/pkg/grpc/authn/basic"
@@ -36,7 +36,7 @@ var (
 // CreateManager creates and returns a manager for user/password authentication.
 func CreateManager(store roleDatastore.DataStore) (*basicAuthn.Manager, error) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
-	adminRole, found, err := store.GetRole(ctx, role.Admin)
+	adminRole, found, err := store.GetRole(ctx, accesscontrol.Admin)
 	if err != nil || !found || adminRole == nil {
 		return nil, errors.Wrap(err, "Could not look up admin role")
 	}
@@ -103,7 +103,7 @@ func RegisterAuthProviderOrPanic(ctx context.Context, mgr *basicAuthn.Manager, r
 // IdentityExtractorOrPanic creates and returns the identity extractor for basic authentication.
 func IdentityExtractorOrPanic(store roleDatastore.DataStore, mgr *basicAuthn.Manager, authProvider authproviders.Provider) authn.IdentityExtractor {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
-	adminRole, found, err := store.GetRole(ctx, role.Admin)
+	adminRole, found, err := store.GetRole(ctx, accesscontrol.Admin)
 	if err != nil || !found || adminRole == nil {
 		log.Panic("Could not look up admin role")
 	}

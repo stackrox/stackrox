@@ -4,6 +4,7 @@ set -euo pipefail
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
+# shellcheck source=../../scripts/lib.sh
 source "$TEST_ROOT/scripts/lib.sh"
 
 setup_certs() {
@@ -37,7 +38,7 @@ keyUsage = critical, digitalSignature, cRLSign, keyCertSign
   basicConstraints=CA:TRUE,pathlen:1
   "
     # Root CA
-    openssl req -nodes -config <(echo "$root_ca_exts") -new -x509 -keyout ca.key -out ca.crt -subj "/CN=Root ${ca_name}"
+    openssl req -quiet -nodes -config <(echo "$root_ca_exts") -new -x509 -keyout ca.key -out ca.crt -subj "/CN=Root ${ca_name}"
 
     # Intermediate CA
     openssl genrsa -out intermediate.key 4096
@@ -59,13 +60,20 @@ keyUsage = critical, digitalSignature, cRLSign, keyCertSign
     popd
 }
 
+# shellcheck disable=SC2120
 setup_default_TLS_certs() {
     info "Setting up default certs for tests"
 
     local cert_dir
-    cert_dir="$(mktemp -d)"
+    cert_dir="${1:-$(mktemp -d)}"
     setup_certs "$cert_dir" custom-tls-cert.central.stackrox.local "Server CA"
 
+    export_default_TLS_certs "${cert_dir}"
+}
+
+export_default_TLS_certs() {
+    local cert_dir="$1"
+    
     export ROX_DEFAULT_TLS_CERT_FILE="${cert_dir}/tls.crt"
     export ROX_DEFAULT_TLS_KEY_FILE="${cert_dir}/tls.key"
     export DEFAULT_CA_FILE="${cert_dir}/ca.crt"
@@ -78,13 +86,20 @@ setup_default_TLS_certs() {
     ls -al "${cert_dir}"
 }
 
+# shellcheck disable=SC2120
 setup_client_TLS_certs() {
     info "Setting up client certs for tests"
 
     local cert_dir
-    cert_dir="$(mktemp -d)"
+    cert_dir="${1:-$(mktemp -d)}"
     setup_certs "$cert_dir" "Client Certificate User" "Client CA"
 
+    export_client_TLS_certs "${cert_dir}"
+}
+
+export_client_TLS_certs() {
+    local cert_dir="$1"
+    
     export KEYSTORE_PATH="$cert_dir/keystore.p12"
     export CLIENT_CA_PATH="$cert_dir/ca.crt"
     export CLIENT_CERT_PATH="$cert_dir/tls.crt"

@@ -8,31 +8,34 @@ set -eo pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+# shellcheck source=../deploy/common/k8sbased.sh
 source "${DIR}"/../deploy/common/k8sbased.sh
 
 if [[ -z "$1" ]]; then
-  echo "Expected component as the first arg"
-  echo "Available [sensor, central, migrator, admission]"
+  echo "Usage: $0 <component> [ <namespace> ]"
+  echo "Available components: sensor, central, migrator, admission"
   exit 1
 fi
 
 component="$1"
+namespace=${2:-stackrox}
+
 case "${component}" in
 "sensor")
-  hotload_binary bin/kubernetes-sensor kubernetes sensor
+  hotload_binary bin/kubernetes-sensor kubernetes sensor "${namespace}"
   ;;
 "central")
-  hotload_binary central central central
+  hotload_binary central central central "${namespace}"
   ;;
 "migrator")
-  hotload_binary bin/migrator migrator central
+  hotload_binary bin/migrator migrator central "${namespace}"
   ;;
 "admission"|"admission-control"|"admission-controller")
-  hotload_binary admission-control admission-control admission-control
+  hotload_binary admission-control admission-control admission-control "${namespace}"
   ;;
 *)
-  echo "Invalid input: ${component}"
-  echo "Available [sensor, central, migrator, admission]"
+  echo "Invalid component: ${component}"
+  echo "Available components: sensor, central, migrator, admission"
   exit 1
   ;;
 esac

@@ -1,0 +1,20 @@
+{
+    "collections": [
+        {
+            "id": "34e57a20-c630-4767-baa9-0cb26c1274b9",
+            "name": "Security Cluster Collection (CYPRESS)",
+            "description": "Test collection for Cypress e2e tests",
+            "resourceSelectors": [
+                {
+                    "rules": [
+                        {
+                            "operator": "OR",
+                            "fieldName": "Cluster",
+                            "values": [{ "value": "security" }]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

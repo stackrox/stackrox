@@ -10,7 +10,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -41,29 +43,33 @@ var (
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_ACTIVE_COMPONENT, "activecomponent", (*storage.ActiveComponent)(nil)))
+		schema.ScopingResource = resources.Deployment
 		RegisterTable(schema, CreateTableActiveComponentsStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_ACTIVE_COMPONENT, schema)
 		return schema
 	}()
 )
 
 const (
-	ActiveComponentsTableName                     = "active_components"
+	// ActiveComponentsTableName specifies the name of the table in postgres.
+	ActiveComponentsTableName = "active_components"
+	// ActiveComponentsActiveContextsSlicesTableName specifies the name of the table in postgres.
 	ActiveComponentsActiveContextsSlicesTableName = "active_components_active_contexts_slices"
 )
 
 // ActiveComponents holds the Gorm model for Postgres table `active_components`.
 type ActiveComponents struct {
-	Id           string `gorm:"column:id;type:varchar;primaryKey"`
-	DeploymentId string `gorm:"column:deploymentid;type:varchar;index:activecomponents_deploymentid,type:hash"`
-	ComponentId  string `gorm:"column:componentid;type:varchar"`
+	ID           string `gorm:"column:id;type:varchar;primaryKey"`
+	DeploymentID string `gorm:"column:deploymentid;type:uuid;index:activecomponents_deploymentid,type:hash"`
+	ComponentID  string `gorm:"column:componentid;type:varchar"`
 	Serialized   []byte `gorm:"column:serialized;type:bytea"`
 }
 
 // ActiveComponentsActiveContextsSlices holds the Gorm model for Postgres table `active_components_active_contexts_slices`.
 type ActiveComponentsActiveContextsSlices struct {
-	ActiveComponentsId  string           `gorm:"column:active_components_id;type:varchar;primaryKey"`
+	ActiveComponentsID  string           `gorm:"column:active_components_id;type:varchar;primaryKey"`
 	Idx                 int              `gorm:"column:idx;type:integer;primaryKey;index:activecomponentsactivecontextsslices_idx,type:btree"`
 	ContainerName       string           `gorm:"column:containername;type:varchar"`
-	ImageId             string           `gorm:"column:imageid;type:varchar"`
+	ImageID             string           `gorm:"column:imageid;type:varchar"`
 	ActiveComponentsRef ActiveComponents `gorm:"foreignKey:active_components_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

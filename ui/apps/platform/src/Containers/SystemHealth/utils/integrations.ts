@@ -1,11 +1,4 @@
-import {
-    styleHealthy,
-    styleUnhealthy,
-    styleUninitialized,
-} from 'Containers/Clusters/cluster.helpers';
 import { IntegrationBase } from 'services/IntegrationsService';
-
-import { CategoryStyle } from './health';
 
 interface IdNameInterface {
     id: string;
@@ -27,27 +20,13 @@ interface IntegrationsListItem {
     label: string;
 }
 
-export type IntegrationStatus = 'HEALTHY' | 'UNINITIALIZED' | 'UNHEALTHY';
-
-export const integrationLabelMap: Record<IntegrationStatus, string> = {
-    HEALTHY: 'Healthy',
-    UNINITIALIZED: 'Uninitialized',
-    UNHEALTHY: 'Unhealthy',
-};
-
-export const integrationStyleMap: Record<IntegrationStatus, CategoryStyle> = {
-    HEALTHY: styleHealthy,
-    UNINITIALIZED: styleUninitialized,
-    UNHEALTHY: styleUnhealthy,
-};
-
 /*
  * Replace integration health type with integration type and add corresponding label.
  */
 export const mergeIntegrationResponses = (
     integrationsHealth: IntegrationHealthItem[],
     integrations: IntegrationBase[],
-    integrationsList: IntegrationsListItem[]
+    descriptors: IntegrationsListItem[]
 ): IntegrationMergedItem[] => {
     const typeMap: Record<string, string> = {};
     const labelMap: Record<string, string> = {};
@@ -55,7 +34,7 @@ export const mergeIntegrationResponses = (
     integrations.forEach(({ id, type }) => {
         typeMap[id] = type;
     });
-    integrationsList.forEach(({ type, label }) => {
+    descriptors.forEach(({ type, label }) => {
         labelMap[type] = label;
     });
 

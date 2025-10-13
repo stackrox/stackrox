@@ -5,18 +5,21 @@ import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceSta
 import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceStandardMetadata
 import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.GetComplianceRunResultsRequest
 import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.GetComplianceRunResultsResponse
-import groovy.util.logging.Slf4j
+
 import java.nio.charset.StandardCharsets
 import javax.net.ssl.HostnameVerifier
 import javax.net.ssl.SSLContext
 
 import groovy.transform.CompileStatic
+import groovy.util.logging.Slf4j
 import org.apache.http.client.methods.CloseableHttpResponse
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.conn.ssl.NoopHostnameVerifier
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory
 import org.apache.http.conn.ssl.TrustAllStrategy
 import org.apache.http.impl.client.CloseableHttpClient
+import org.apache.http.impl.client.DefaultHttpRequestRetryHandler
+import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy
 import org.apache.http.impl.client.HttpClients
 import org.apache.http.ssl.SSLContextBuilder
 
@@ -115,8 +118,14 @@ class ComplianceService extends BaseService {
                 .build()
         HostnameVerifier allowAllHosts = new NoopHostnameVerifier()
         SSLConnectionSocketFactory connectionFactory = new SSLConnectionSocketFactory(sslContext, allowAllHosts)
+        int maxRetryCount = 3
+        int retryIntervalMs = 5000
         CloseableHttpClient client = HttpClients
                 .custom()
+                .setRetryHandler(
+                        new DefaultHttpRequestRetryHandler(maxRetryCount, true))
+                .setServiceUnavailableRetryStrategy(
+                        new DefaultServiceUnavailableRetryStrategy(maxRetryCount, retryIntervalMs))
                 .setSSLSocketFactory(connectionFactory)
                 .build()
 

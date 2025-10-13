@@ -6,6 +6,13 @@ import { WorkflowState } from 'utils/WorkflowState';
 
 import { getFilteredComponentColumns } from './ListComponents.utils';
 
+function mockIsFeatureFlagEnabled(flag) {
+    if (flag === 'ROX_ACTIVE_VULN_MGMT') {
+        return true;
+    }
+    return false;
+}
+
 describe('ListComponents.utils', () => {
     describe('getFilteredComponentColumns', () => {
         it('should return all the components columns when in a context that allows them', () => {
@@ -16,7 +23,11 @@ describe('ListComponents.utils', () => {
             const workflowState = new WorkflowState(useCases.VULN_MANAGEMENT, stateStack);
             const tableColumns = getComponentTableColumns(workflowState);
 
-            const filteredColumns = getFilteredComponentColumns(tableColumns, workflowState);
+            const filteredColumns = getFilteredComponentColumns(
+                tableColumns,
+                workflowState,
+                mockIsFeatureFlagEnabled
+            );
 
             expect(filteredColumns).toEqual(tableColumns);
         });
@@ -26,7 +37,11 @@ describe('ListComponents.utils', () => {
             const workflowState = new WorkflowState(useCases.VULN_MANAGEMENT, stateStack);
             const tableColumns = getComponentTableColumns(workflowState);
 
-            const filteredColumns = getFilteredComponentColumns(tableColumns, workflowState);
+            const filteredColumns = getFilteredComponentColumns(
+                tableColumns,
+                workflowState,
+                mockIsFeatureFlagEnabled
+            );
 
             const sourceColumnPresent = filteredColumns.find((col) => col.accessor === 'source');
             expect(sourceColumnPresent).toBeUndefined();
@@ -44,7 +59,11 @@ describe('ListComponents.utils', () => {
             const workflowState = new WorkflowState(useCases.VULN_MANAGEMENT, stateStack);
             const tableColumns = getComponentTableColumns(workflowState);
 
-            const filteredColumns = getFilteredComponentColumns(tableColumns, workflowState);
+            const filteredColumns = getFilteredComponentColumns(
+                tableColumns,
+                workflowState,
+                mockIsFeatureFlagEnabled
+            );
 
             const sourceColumnPresent = filteredColumns.find((col) => col.accessor === 'source');
             expect(sourceColumnPresent).toBeUndefined();
@@ -62,7 +81,11 @@ describe('ListComponents.utils', () => {
             const workflowState = new WorkflowState(useCases.VULN_MANAGEMENT, stateStack);
             const tableColumns = getComponentTableColumns(workflowState);
 
-            const filteredColumns = getFilteredComponentColumns(tableColumns, workflowState);
+            const filteredColumns = getFilteredComponentColumns(
+                tableColumns,
+                workflowState,
+                mockIsFeatureFlagEnabled
+            );
 
             const sourceColumnPresent = filteredColumns.find((col) => col.accessor === 'source');
             expect(sourceColumnPresent).toBeUndefined();

@@ -6,7 +6,7 @@ out_dir=""
 
 setup_file() {
   # remove binaries from the previous runs
-  [[ -n "$NO_BATS_ROXCTL_REBUILD" ]] || rm -f "${tmp_roxctl}"/roxctl*
+  delete-outdated-binaries "$(roxctl-release version)"
 
   echo "Testing roxctl version: '$(roxctl-release version)'" >&3
   command -v yq > /dev/null || skip "Tests in this file require yq"
@@ -23,7 +23,7 @@ teardown() {
 @test "roxctl-release helm output help-text should state default value for --image-defaults flag" {
   run roxctl-release helm output central-services -h
   assert_success
-  assert_line --regexp "--image-defaults.*\(rhacs, opensource\).*default \"rhacs\""
+  assert_line --regexp "--image-defaults='rhacs'"
 }
 
 @test "roxctl-release helm output central-services should use registry.redhat.io registry by default" {
@@ -39,13 +39,6 @@ teardown() {
   assert_output --partial "Written Helm chart central-services to directory"
   has_deprecation_warning
   assert_helm_template_central_registry "$out_dir" 'registry.redhat.io' "$any_version" 'main' 'scanner' 'scanner-db'
-}
-
-@test "roxctl-release helm output central-services --image-defaults=stackrox.io should use stackrox.io registry" {
-  run roxctl-release helm output central-services --image-defaults=stackrox.io --output-dir "$out_dir"
-  assert_success
-  assert_output --partial "Written Helm chart central-services to directory"
-  assert_helm_template_central_registry "$out_dir" 'stackrox.io' "$any_version" 'main' 'scanner' 'scanner-db'
 }
 
 @test "roxctl-release helm output central-services --image-defaults=rhacs should use registry.redhat.io registry" {
@@ -75,8 +68,8 @@ teardown() {
   assert_line --regexp "ERROR:[[:space:]]+unable to get chart meta values: '--image-defaults': unexpected value '', allowed values are \[rhacs opensource\]"
 }
 
-@test "roxctl-release helm output central-services --rhacs --image-defaults=stackrox.io should return error about --rhacs colliding with --image-defaults" {
-  run roxctl-release helm output central-services --rhacs --image-defaults=stackrox.io --output-dir "$out_dir"
+@test "roxctl-release helm output central-services --rhacs --image-defaults=opensource should return error about --rhacs colliding with --image-defaults" {
+  run roxctl-release helm output central-services --rhacs --image-defaults=opensource --output-dir "$out_dir"
   assert_failure
   has_deprecation_warning
   has_flag_collision_warning

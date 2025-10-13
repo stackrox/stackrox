@@ -1,19 +1,18 @@
+//go:build sql_integration
+
 package clone
 
 import (
 	"fmt"
 	"math/rand"
-	"os"
-	"strconv"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/migrator/clone/metadata"
-	"github.com/stackrox/rox/migrator/clone/postgres"
 	"github.com/stackrox/rox/migrator/clone/rocksdb"
 	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/migrations"
 	migrationtestutils "github.com/stackrox/rox/pkg/migrations/testutils"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -22,23 +21,26 @@ import (
 )
 
 var (
-	preHistoryVer = versionPair{version: "3.0.56.0", seqNum: 62}
-	preVer        = versionPair{version: "3.0.57.0", seqNum: 65}
-	currVer       = versionPair{version: "3.0.58.0", seqNum: 65}
-	futureVer     = versionPair{version: "10001.0.0.0", seqNum: 6533}
-	moreFutureVer = versionPair{version: "10002.0.0.0", seqNum: 7533}
+	preHistoryVer         = versionPair{version: "3.0.56.0", seqNum: 62, minSeqNum: 0}
+	preVer                = versionPair{version: "3.0.57.0", seqNum: 64, minSeqNum: 62}
+	currVer               = versionPair{version: "3.0.58.0", seqNum: 65, minSeqNum: 62}
+	lastLegacyDBVer       = versionPair{version: "3.74.0", seqNum: migrations.LastRocksDBVersionSeqNum()}
+	postgresDBVer         = versionPair{version: "4.0.0", seqNum: 175, minSeqNum: 62}
+	futureVerDifferentMin = versionPair{version: "10001.0.0.0", seqNum: 6533, minSeqNum: 185}
+	futureVer             = versionPair{version: "10001.0.0.0", seqNum: 6533, minSeqNum: 62}
 
 	// Current versions
-	rcVer      = versionPair{version: "3.0.58.0-rc.1", seqNum: 65}
-	releaseVer = versionPair{version: "3.0.58.0", seqNum: 65}
-	devVer     = versionPair{version: "3.0.58.x-19-g6bd31dae22-dirty", seqNum: 65}
-	nightlyVer = versionPair{version: "3.0.58.x-nightly-20210407", seqNum: 65}
+	rcVer      = versionPair{version: "3.0.58.0-rc.1", seqNum: 65, minSeqNum: 62}
+	releaseVer = versionPair{version: "3.0.58.0", seqNum: 65, minSeqNum: 62}
+	devVer     = versionPair{version: "3.0.58.x-19-g6bd31dae22-dirty", seqNum: 65, minSeqNum: 62}
+	nightlyVer = versionPair{version: "3.0.58.x-nightly-20210407", seqNum: 65, minSeqNum: 62}
 )
 
 func setVersion(t *testing.T, ver *versionPair) {
 	log.Infof("setVersion => %v", ver)
 	testutils.SetMainVersion(t, ver.version)
 	migrationtestutils.SetCurrentDBSequenceNumber(t, ver.seqNum)
+	migrationtestutils.SetCurrentMinDBSequenceNumber(t, ver.minSeqNum)
 }
 
 func TestCloneMigration(t *testing.T) {
@@ -52,23 +54,9 @@ func TestCloneMigration(t *testing.T) {
 	doTestCloneMigration(t, false)
 }
 
-func TestCloneMigrationRocksToPostgres(t *testing.T) {
-	// Run tests with both Rocks and Postgres to make sure migration clone is correctly determined.
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		currVer = releaseVer
-		doTestCloneMigrationToPostgres(t, true)
-		currVer = devVer
-		doTestCloneMigrationToPostgres(t, true)
-		currVer = rcVer
-		doTestCloneMigrationToPostgres(t, true)
-		currVer = nightlyVer
-		doTestCloneMigrationToPostgres(t, true)
-	}
-}
-
 func doTestCloneMigration(t *testing.T, runBoth bool) {
 	if buildinfo.ReleaseBuild {
-		return
+		t.Skip("Skipping on release as we can't modify version there")
 	}
 	testCases := []struct {
 		description      string
@@ -108,62 +96,9 @@ func doTestCloneMigration(t *testing.T, runBoth bool) {
 
 			defer mock.destroyCentral()
 			mock.setVersion = setVersion
-			mock.upgradeCentral(c.toVersion, "")
+			require.NoError(t, mock.upgradeCentral(c.toVersion, ""))
 			if c.furtherToVersion != nil {
-				mock.upgradeCentral(c.furtherToVersion, "")
-			}
-		})
-	}
-}
-
-func doTestCloneMigrationToPostgres(t *testing.T, runBoth bool) {
-	if buildinfo.ReleaseBuild {
-		return
-	}
-	testCases := []struct {
-		description          string
-		fromVersion          *versionPair
-		toVersion            *versionPair
-		furtherToVersion     *versionPair
-		moreFurtherToVersion *versionPair
-	}{
-		{
-			description:          "Upgrade from version 57 to current with rollback enabled",
-			fromVersion:          &preVer,
-			toVersion:            &currVer,
-			furtherToVersion:     &futureVer,
-			moreFurtherToVersion: &moreFutureVer,
-		},
-		{
-			description: "Upgrade from current to future with rollback enabled",
-			fromVersion: &currVer,
-			toVersion:   &futureVer,
-		},
-	}
-
-	// Test normal upgrade
-	for _, c := range testCases {
-		t.Run(c.description, func(t *testing.T) {
-			log.Infof("Test = %q", c.description)
-			mock := createAndRunCentralStartRocks(t, c.fromVersion, runBoth)
-
-			defer mock.destroyCentral()
-			mock.setVersion = setVersion
-
-			mock.upgradeCentral(c.toVersion, "")
-			if c.furtherToVersion != nil {
-				mock.upgradeCentral(c.furtherToVersion, "")
-				if c.moreFurtherToVersion != nil {
-					mock.upgradeCentral(c.moreFurtherToVersion, "")
-
-					// Now try to go back to Rocks and make sure that fails
-					// Turn Postgres back off
-					require.NoError(t, os.Setenv(env.PostgresDatastoreEnabled.EnvVar(), strconv.FormatBool(false)))
-					mock.runMigrator("", "", true)
-
-					// Turn Postgres back on
-					require.NoError(t, os.Setenv(env.PostgresDatastoreEnabled.EnvVar(), strconv.FormatBool(true)))
-				}
+				require.NoError(t, mock.upgradeCentral(c.furtherToVersion, ""))
 			}
 		})
 	}
@@ -173,25 +108,8 @@ func createAndRunCentral(t *testing.T, ver *versionPair, runBoth bool) *mockCent
 	mock := createCentral(t, runBoth)
 	mock.setVersion = setVersion
 	mock.setVersion(t, ver)
-	mock.runMigrator("", "", false)
+	require.NoError(t, mock.runMigrator("", ""))
 	mock.runCentral()
-	return mock
-}
-
-// createAndRunCentralStartRocks - creates a central that has both Rocks and Postgres but it only
-// starts Rocks to help simulate the condition of having a Rocks and then upgrading to Postgres.
-func createAndRunCentralStartRocks(t *testing.T, ver *versionPair, runBoth bool) *mockCentral {
-	mock := createCentral(t, runBoth)
-	mock.setVersion = setVersion
-	mock.setVersion(t, ver)
-	// First get a Rocks up and current.  This way when we do the next upgrade we should get a previous rocks.
-	require.NoError(t, os.Setenv(env.PostgresDatastoreEnabled.EnvVar(), strconv.FormatBool(false)))
-
-	mock.runMigrator("", "", false)
-	mock.runCentral()
-
-	// Turn Postgres back on
-	require.NoError(t, os.Setenv(env.PostgresDatastoreEnabled.EnvVar(), strconv.FormatBool(true)))
 	return mock
 }
 
@@ -208,7 +126,7 @@ func TestCloneMigrationFailureAndReentry(t *testing.T) {
 
 func doTestCloneMigrationFailureAndReentry(t *testing.T) {
 	if buildinfo.ReleaseBuild {
-		return
+		t.Skip("Skipping on release as we modify version")
 	}
 	testCases := []struct {
 		description      string
@@ -238,9 +156,9 @@ func doTestCloneMigrationFailureAndReentry(t *testing.T) {
 		},
 	}
 	// For the parameters that should not matter, run pseudo random to get coverage on different cases
-	rand.Seed(8181818)
+	r := rand.New(rand.NewSource(8181818))
 	for _, c := range testCases {
-		reboot := rand.Intn(2) == 1
+		reboot := r.Intn(2) == 1
 		if reboot {
 			c.description = c.description + " with reboot"
 		}
@@ -250,27 +168,34 @@ func doTestCloneMigrationFailureAndReentry(t *testing.T) {
 			defer mock.destroyCentral()
 			mock.setVersion = setVersion
 			// Migration aborted
-			mock.upgradeCentral(c.toVersion, c.breakPoint)
+			require.NoError(t, mock.upgradeCentral(c.toVersion, c.breakPoint))
 			if reboot {
-				mock.rebootCentral()
+				require.NoError(t, mock.rebootCentral())
 			}
 			if c.furtherToVersion != nil {
 				// Run migrator multiple times
-				mock.runMigrator("", "", false)
-				mock.upgradeCentral(c.furtherToVersion, "")
+				require.NoError(t, mock.runMigrator("", ""))
+				require.NoError(t, mock.upgradeCentral(c.furtherToVersion, ""))
 			}
 		})
 	}
 }
 
 func TestCloneRestore(t *testing.T) {
+	// This will test restore for Rocks -> Rocks or Postgres -> Postgres depending on
+	// the test is executed with the Postgres env variable set or not.
+	testCloneRestore(t)
+}
+
+func testCloneRestore(t *testing.T) {
 	if buildinfo.ReleaseBuild {
-		return
+		t.Skip("Skipping on release as we modify version")
 	}
 	testCases := []struct {
-		description string
-		toVersion   *versionPair
-		breakPoint  string
+		description     string
+		toVersion       *versionPair
+		breakPoint      string
+		rocksToPostgres bool
 	}{
 		{
 			description: "Restore to earlier version",
@@ -310,6 +235,11 @@ func TestCloneRestore(t *testing.T) {
 			toVersion:   &currVer,
 			breakPoint:  breakBeforePersist,
 		},
+		{
+			description:     "Restore to earlier RocksDB version",
+			toVersion:       &preHistoryVer,
+			rocksToPostgres: true,
+		},
 	}
 
 	for _, c := range testCases {
@@ -320,141 +250,38 @@ func TestCloneRestore(t *testing.T) {
 
 		t.Run(c.description, func(t *testing.T) {
 			log.Infof("Test = %q", c.description)
-			mock := createAndRunCentral(t, &preHistoryVer, false)
+			mock := createAndRunCentral(t, &preHistoryVer, c.rocksToPostgres)
 			defer mock.destroyCentral()
 			mock.setVersion = setVersion
-			mock.upgradeCentral(&currVer, "")
-			mock.restoreCentral(c.toVersion, c.breakPoint)
+			require.NoError(t, mock.upgradeCentral(&currVer, ""))
+			err := mock.restoreCentral(c.toVersion, c.breakPoint, c.rocksToPostgres)
+			if c.rocksToPostgres {
+				require.EqualError(t, err, "Effective release 4.5, restores from pre-4.0 releases are no longer supported.")
+				return
+			}
+
 			if reboot {
-				mock.rebootCentral()
+				require.NoError(t, mock.rebootCentral())
 			}
-			mock.upgradeCentral(&futureVer, "")
-		})
-	}
-}
-
-func TestForceRollbackFailure(t *testing.T) {
-	currVer = releaseVer
-	doTestForceRollbackFailure(t)
-	currVer = devVer
-	doTestForceRollbackFailure(t)
-	currVer = rcVer
-	doTestForceRollbackFailure(t)
-	currVer = nightlyVer
-	doTestForceRollbackFailure(t)
-}
-
-func doTestForceRollbackFailure(t *testing.T) {
-	if buildinfo.ReleaseBuild {
-		return
-	}
-	var forceRollbackClone string
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		forceRollbackClone = postgres.CurrentClone
-	} else {
-		forceRollbackClone = rocksdb.CurrentClone
-	}
-	testCases := []struct {
-		description          string
-		forceRollback        string
-		withPrevious         bool
-		expectedErrorMessage string
-		wrongVersion         bool
-	}{
-		{
-			description:          "without force rollback without previous",
-			withPrevious:         false,
-			forceRollback:        "",
-			expectedErrorMessage: metadata.ErrNoPrevious,
-		},
-		{
-			description:          "with force rollback without previous",
-			withPrevious:         false,
-			forceRollback:        forceRollbackClone,
-			expectedErrorMessage: metadata.ErrNoPrevious,
-		},
-		{
-			description:          "with force rollback with previous",
-			withPrevious:         true,
-			forceRollback:        currVer.version,
-			expectedErrorMessage: "",
-		},
-		{
-			description:          "without force rollback with previous",
-			withPrevious:         true,
-			forceRollback:        "",
-			expectedErrorMessage: metadata.ErrForceUpgradeDisabled,
-		},
-		{
-			description:          "with force rollback with wrong previous clone",
-			withPrevious:         true,
-			forceRollback:        currVer.version,
-			expectedErrorMessage: fmt.Sprintf(metadata.ErrPreviousMismatchWithVersions, preVer.version, currVer.version),
-			wrongVersion:         true,
-		},
-	}
-	for _, c := range testCases {
-		t.Run(c.description, func(t *testing.T) {
-			log.Infof("Test = %q", c.description)
-			ver := &currVer
-			if c.wrongVersion {
-				ver = &preVer
-			}
-			mock := createAndRunCentral(t, ver, false)
-			defer mock.destroyCentral()
-			mock.upgradeCentral(&futureVer, "")
-			if !c.withPrevious {
-				mock.removePreviousClone()
-			}
-			// Force rollback
-			setVersion(t, &currVer)
-
-			var dbm DBCloneManager
-
-			if env.PostgresDatastoreEnabled.BooleanSetting() {
-				source := pgtest.GetConnectionString(t)
-				sourceMap, _ := pgconfig.ParseSource(source)
-				config, err := pgxpool.ParseConfig(source)
-				require.NoError(t, err)
-
-				dbm = NewPostgres(mock.mountPath, c.forceRollback, config, sourceMap)
-			} else {
-				dbm = New(mock.mountPath, c.forceRollback)
-			}
-
-			err := dbm.Scan()
-			if c.expectedErrorMessage != "" {
-				assert.EqualError(t, err, c.expectedErrorMessage)
-			} else {
-				assert.NoError(t, err)
-				mock.rollbackCentral(&currVer, "", c.forceRollback)
-			}
+			require.NoError(t, mock.upgradeCentral(&futureVer, ""))
 		})
 	}
 }
 
 func TestForceRollbackRocksToPostgresFailure(t *testing.T) {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		currVer = releaseVer
-		doTestForceRollbackRocksToPostgresFailure(t)
-		currVer = devVer
-		doTestForceRollbackRocksToPostgresFailure(t)
-		currVer = rcVer
-		doTestForceRollbackRocksToPostgresFailure(t)
-		currVer = nightlyVer
-		doTestForceRollbackRocksToPostgresFailure(t)
-	}
+	currVer = releaseVer
+	doTestForceRollbackRocksToPostgresFailure(t)
+	currVer = devVer
+	doTestForceRollbackRocksToPostgresFailure(t)
+	currVer = rcVer
+	doTestForceRollbackRocksToPostgresFailure(t)
+	currVer = nightlyVer
+	doTestForceRollbackRocksToPostgresFailure(t)
 }
 
 func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 	if buildinfo.ReleaseBuild {
-		return
-	}
-	var forceRollbackClone string
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		forceRollbackClone = postgres.CurrentClone
-	} else {
-		forceRollbackClone = rocksdb.CurrentClone
+		t.Skip("Skipping on release as we modify version")
 	}
 	testCases := []struct {
 		description          string
@@ -462,36 +289,43 @@ func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 		withPrevious         bool
 		expectedErrorMessage string
 		wrongVersion         bool
+		toVersion            versionPair
 	}{
 		{
 			description:          "without force rollback without previous",
 			withPrevious:         false,
 			forceRollback:        "",
-			expectedErrorMessage: metadata.ErrNoPrevious,
+			toVersion:            futureVerDifferentMin,
+			expectedErrorMessage: fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, currVer.seqNum, futureVerDifferentMin.minSeqNum),
 		},
 		{
-			description:          "with force rollback without previous",
+			// Any rollbacks to 4.1 or later will only use central_active
+			description:          "with force rollback without previous min sequence not supported",
 			withPrevious:         false,
-			forceRollback:        forceRollbackClone,
-			expectedErrorMessage: metadata.ErrNoPrevious,
+			forceRollback:        currVer.version,
+			toVersion:            futureVerDifferentMin,
+			expectedErrorMessage: fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, currVer.seqNum, futureVerDifferentMin.minSeqNum),
 		},
 		{
 			description:          "force rollback with previous",
 			withPrevious:         true,
 			forceRollback:        currVer.version,
+			toVersion:            futureVer,
 			expectedErrorMessage: "",
 		},
 		{
 			description:          "without force rollback with previous",
 			withPrevious:         true,
 			forceRollback:        "",
-			expectedErrorMessage: metadata.ErrForceUpgradeDisabled,
+			toVersion:            futureVerDifferentMin,
+			expectedErrorMessage: fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, currVer.seqNum, futureVerDifferentMin.minSeqNum),
 		},
 		{
-			description:          "with force rollback with wrong previous clone",
+			description:          "with force rollback code does not support min sequence in DB",
 			withPrevious:         true,
 			forceRollback:        currVer.version,
-			expectedErrorMessage: fmt.Sprintf(metadata.ErrPreviousMismatchWithVersions, preVer.version, currVer.version),
+			toVersion:            futureVerDifferentMin,
+			expectedErrorMessage: fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, currVer.seqNum, futureVerDifferentMin.minSeqNum),
 			wrongVersion:         true,
 		},
 	}
@@ -504,7 +338,7 @@ func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 			}
 			mock := createAndRunCentral(t, ver, false)
 			defer mock.destroyCentral()
-			mock.upgradeCentral(&futureVer, "")
+			require.NoError(t, mock.upgradeCentral(&c.toVersion, ""))
 			if !c.withPrevious {
 				mock.removePreviousClone()
 			}
@@ -513,23 +347,21 @@ func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 
 			var dbm DBCloneManager
 
-			if env.PostgresDatastoreEnabled.BooleanSetting() {
-				source := pgtest.GetConnectionString(t)
-				sourceMap, _ := pgconfig.ParseSource(source)
-				config, err := pgxpool.ParseConfig(source)
-				require.NoError(t, err)
+			expectedError := c.expectedErrorMessage
 
-				dbm = NewPostgres(mock.mountPath, c.forceRollback, config, sourceMap)
-			} else {
-				dbm = New(mock.mountPath, c.forceRollback)
-			}
+			source := pgtest.GetConnectionString(t)
+			sourceMap, _ := pgconfig.ParseSource(source)
+			config, err := postgres.ParseConfig(source)
+			require.NoError(t, err)
 
-			err := dbm.Scan()
-			if c.expectedErrorMessage != "" {
-				assert.EqualError(t, err, c.expectedErrorMessage)
+			dbm = NewPostgres(mock.mountPath, c.forceRollback, config, sourceMap)
+
+			err = dbm.Scan()
+			if expectedError != "" {
+				assert.EqualError(t, err, expectedError)
 			} else {
 				assert.NoError(t, err)
-				mock.rollbackCentral(&currVer, "", c.forceRollback)
+				require.NoError(t, mock.rollbackCentral(&currVer, "", c.forceRollback))
 			}
 
 		})
@@ -549,7 +381,7 @@ func TestRollback(t *testing.T) {
 
 func doTestRollback(t *testing.T) {
 	if buildinfo.ReleaseBuild {
-		return
+		t.Skip("Skipping on release as we modify version")
 	}
 	testCases := []struct {
 		description string
@@ -604,9 +436,9 @@ func doTestRollback(t *testing.T) {
 			breakPoint:  breakAfterGetClone,
 		},
 	}
-	rand.Seed(8056)
+	r := rand.New(rand.NewSource(8056))
 	for _, c := range testCases {
-		reboot := rand.Intn(2) == 1
+		reboot := r.Intn(2) == 1
 		if reboot {
 			c.description = c.description + " with reboot"
 		}
@@ -616,110 +448,9 @@ func doTestRollback(t *testing.T) {
 			mock := createAndRunCentral(t, c.toVersion, false)
 			defer mock.destroyCentral()
 			mock.setVersion = setVersion
-			mock.migrateWithVersion(c.fromVersion, c.breakPoint, "")
-			mock.migrateWithVersion(c.fromVersion, c.breakPoint, "")
-			mock.rollbackCentral(c.toVersion, "", "")
-			mock.upgradeCentral(c.fromVersion, "")
-		})
-	}
-}
-
-// TestRollbackPostgresToRocks - set of tests that will test rolling back to Rocks from Postgres.
-func TestRollbackPostgresToRocks(t *testing.T) {
-	// Run tests with both Rocks and Postgres to make sure migration clone is correctly determined.
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		currVer = releaseVer
-		doTestRollbackPostgresToRocks(t)
-		currVer = devVer
-		doTestRollbackPostgresToRocks(t)
-		currVer = rcVer
-		doTestRollbackPostgresToRocks(t)
-		currVer = nightlyVer
-		doTestRollbackPostgresToRocks(t)
-	}
-}
-
-func doTestRollbackPostgresToRocks(t *testing.T) {
-	if buildinfo.ReleaseBuild {
-		return
-	}
-	testCases := []struct {
-		description string
-		fromVersion *versionPair
-		toVersion   *versionPair // version to failback to
-		breakPoint  string
-	}{
-		{
-			description: "Rollback to current",
-			fromVersion: &futureVer,
-			toVersion:   &currVer,
-		},
-		{
-			description: "Rollback to version 57",
-			fromVersion: &currVer,
-			toVersion:   &preVer,
-		},
-		{
-			description: "Rollback to current break before persist",
-			fromVersion: &futureVer,
-			toVersion:   &currVer,
-			breakPoint:  breakBeforePersist,
-		},
-		{
-			description: "Rollback to version 57 break before persist",
-			fromVersion: &currVer,
-			toVersion:   &preVer,
-			breakPoint:  breakBeforePersist,
-		},
-		{
-			description: "Rollback to current break after scan",
-			fromVersion: &futureVer,
-			toVersion:   &currVer,
-			breakPoint:  breakAfterScan,
-		},
-		{
-			description: "Rollback to version 57 break after scan",
-			fromVersion: &currVer,
-			toVersion:   &preVer,
-			breakPoint:  breakAfterScan,
-		},
-		{
-			description: "Rollback to current break after get clone",
-			fromVersion: &futureVer,
-			toVersion:   &currVer,
-			breakPoint:  breakAfterGetClone,
-		},
-		{
-			description: "Rollback to version 57 break after get clone",
-			fromVersion: &currVer,
-			toVersion:   &preVer,
-			breakPoint:  breakAfterGetClone,
-		},
-	}
-	rand.Seed(8056)
-	for _, c := range testCases {
-		reboot := rand.Intn(2) == 1
-		if reboot {
-			c.description = c.description + " with reboot"
-		}
-		log.Infof("Test = %q", c.description)
-
-		t.Run(c.description, func(t *testing.T) {
-			mock := createAndRunCentralStartRocks(t, c.toVersion, true)
-			defer mock.destroyCentral()
-			mock.setVersion = setVersion
-			mock.migrateWithVersion(c.fromVersion, c.breakPoint, "")
-			mock.migrateWithVersion(c.fromVersion, c.breakPoint, "")
-
-			// Turn Postgres back off so we will rollback to Rocks
-			require.NoError(t, os.Setenv(env.PostgresDatastoreEnabled.EnvVar(), strconv.FormatBool(false)))
-
-			mock.rollbackCentral(c.toVersion, "", "")
-			mock.upgradeCentral(c.fromVersion, "")
-
-			// We turned off Postgres.  That means we are testing
-			// rollback from Postgres to Rocks.  So we need to turn Postgres back on for the next run.
-			require.NoError(t, os.Setenv(env.PostgresDatastoreEnabled.EnvVar(), strconv.FormatBool(true)))
+			require.NoError(t, mock.upgradeCentral(c.fromVersion, c.breakPoint))
+			require.NoError(t, mock.rollbackCentral(c.toVersion, "", c.toVersion.version))
+			require.NoError(t, mock.upgradeCentral(c.fromVersion, ""))
 		})
 	}
 }
@@ -728,7 +459,7 @@ func doTestRollbackPostgresToRocks(t *testing.T) {
 // These conditions are theoretically possible but chance is very slim but we should handle that.
 func TestRacingConditionInPersist(t *testing.T) {
 	if buildinfo.ReleaseBuild {
-		return
+		t.Skip("Skipping on release as we modify version")
 	}
 	testCases := []struct {
 		description string
@@ -737,7 +468,7 @@ func TestRacingConditionInPersist(t *testing.T) {
 		{
 			description: "Restore breaks in persist",
 			preRun: func(m *mockCentral) {
-				m.restore(&preVer)
+				m.restore(&preVer, false)
 			},
 		},
 		{
@@ -749,7 +480,7 @@ func TestRacingConditionInPersist(t *testing.T) {
 		{
 			description: "Rollback breaks in persist",
 			preRun: func(m *mockCentral) {
-				m.migrateWithVersion(&futureVer, breakBeforePersist, "")
+				require.NoError(t, m.migrateWithVersion(&futureVer, breakBeforePersist, ""))
 				setVersion(t, &currVer)
 			},
 		},
@@ -760,10 +491,10 @@ func TestRacingConditionInPersist(t *testing.T) {
 				log.Infof("Test = %q", c.description)
 				mock := createAndRunCentral(t, &preVer, false)
 				defer mock.destroyCentral()
-				mock.upgradeCentral(&currVer, "")
+				require.NoError(t, mock.upgradeCentral(&currVer, ""))
 				c.preRun(mock)
 				mock.runMigratorWithBreaksInPersist(breakpoint)
-				mock.rebootCentral()
+				require.NoError(t, mock.rebootCentral())
 			})
 		}
 
@@ -771,5 +502,89 @@ func TestRacingConditionInPersist(t *testing.T) {
 			desc := c.description + " at " + breakpoint
 			run(desc, breakpoint)
 		}
+	}
+}
+
+func TestUpgradeFromLastRocksDB(t *testing.T) {
+	if buildinfo.ReleaseBuild {
+		t.Skip("Skipping on release as we modify version")
+	}
+	testCases := []struct {
+		description    string
+		previousVerion *versionPair
+		fromVersion    *versionPair
+		toVersion      *versionPair
+		fromRocks      bool
+	}{
+		{
+			description:    "Upgrade from fresh install of 3.74",
+			previousVerion: nil,
+			fromVersion:    &lastLegacyDBVer, // versionPair{version: "3.74.0", seqNum: migrations.LastRocksDBVersionSeqNum()}
+			toVersion:      &postgresDBVer,   // versionPair{version: "4.0.0", seqNum: 175}
+			fromRocks:      false,
+		},
+		{
+			description:    "Upgrade from 3.74 with previous",
+			previousVerion: &preVer,          // versionPair{version: "3.0.57.0", seqNum: 64}
+			fromVersion:    &lastLegacyDBVer, // versionPair{version: "3.74.0", seqNum: migrations.LastRocksDBVersionSeqNum()}
+			toVersion:      &postgresDBVer,   // versionPair{version: "4.0.0", seqNum: 175}
+			fromRocks:      true,
+		},
+		{
+			// We require upgrade from 3.74 to Postgres. This is not a recommended upgrade path, but
+			// internally we still need to test the data on stackrox-db PVC is in valid state,
+			// so we can recover from it.
+			description: "Upgrade directly from earlier versions",
+			fromVersion: &preVer,        // versionPair{version: "3.0.57.0", seqNum: 64}
+			toVersion:   &postgresDBVer, // versionPair{version: "4.0.0", seqNum: 175}
+			fromRocks:   true,
+		},
+	}
+
+	for _, c := range testCases {
+		t.Run(c.description, func(t *testing.T) {
+			startVer := c.fromVersion
+			if c.previousVerion != nil {
+				startVer = c.previousVerion
+			}
+			mock := createCentral(t, true)
+			defer mock.destroyCentral()
+			mock.setVersion = setVersion
+			mock.setVersion(t, startVer)
+
+			// Doesn't make sense to run this on the fresh install case
+			if c.fromRocks {
+				// With the flag permanently set now we are no longer able to toggle it.
+				// So we need to explicitly update RocksDB
+				// if we want tests to work as if RocksDB was the original DB.
+				mock.legacyUpgrade(t, c.fromVersion, c.previousVerion)
+			}
+
+			mock.setVersion(t, c.toVersion)
+			err := mock.runMigrator("", "")
+			if c.fromRocks && err != nil {
+				require.EqualError(t, err, "Effective release 4.5, upgrades from pre-4.0 releases are no longer supported.")
+				return
+			}
+
+			require.NoError(t, err)
+
+			mock.runCentral()
+			err = mock.upgradeCentral(c.toVersion, "")
+			if c.fromRocks {
+				require.EqualError(t, err, "Effective release 4.5, upgrades from pre-4.0 releases are no longer supported.")
+				return
+			}
+			require.NoError(t, err)
+
+			mock.verifyCurrent()
+
+			// Again on the fresh install case we don't touch rocks so it won't be updated.
+			if c.fromRocks && err == nil {
+				require.Fail(t, "This case is not valid")
+			}
+			// Rocks should have then empty version if we fresh installed Postgres.
+			mock.verifyClone(rocksdb.CurrentClone, &versionPair{version: "0", seqNum: 0})
+		})
 	}
 }

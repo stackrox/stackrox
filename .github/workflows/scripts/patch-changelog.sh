@@ -20,6 +20,7 @@ check_not_empty \
     main_branch
 
 create_pr() {
+    # shellcheck disable=SC2154
     gh pr create \
     --title "$TITLE" \
     --base "$main_branch" \
@@ -33,7 +34,7 @@ if grep "^## \[${VERSION}\]$" CHANGELOG.md; then
 fi
 
 CHANGELOG_BRANCH="automation/changelog-$VERSION"
-TITLE="Advance \`CHANGELOG.md\` to the next release"
+TITLE="chore(release): Advance \`CHANGELOG.md\` to the next release"
 
 if git ls-remote --quiet --exit-code origin "$CHANGELOG_BRANCH"; then
     gh_summary "Branch \`$CHANGELOG_BRANCH\` already exists."
@@ -52,7 +53,7 @@ if git ls-remote --quiet --exit-code origin "$CHANGELOG_BRANCH"; then
 fi
 
 git switch --create "$CHANGELOG_BRANCH"
-sed -i "s/## \[NEXT RELEASE\]/\\0\n\n## [$VERSION]/" CHANGELOG.md
+sed -i "s/## \[NEXT RELEASE\]/\\0\n\n### Added Features\n\n### Removed Features\n\n### Deprecated Features\n\n### Technical Changes\n\n## [$VERSION]\n\n/" CHANGELOG.md
 git add CHANGELOG.md
 
 if ! git diff-index --quiet HEAD; then

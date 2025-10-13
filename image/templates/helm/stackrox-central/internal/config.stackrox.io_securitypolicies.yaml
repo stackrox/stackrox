@@ -1,0 +1,293 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.15.0
+  name: securitypolicies.config.stackrox.io
+spec:
+  group: config.stackrox.io
+  names:
+    kind: SecurityPolicy
+    listKind: SecurityPolicyList
+    plural: securitypolicies
+    shortNames:
+    - sp
+    singular: securitypolicy
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: SecurityPolicy is the Schema for the policies API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: SecurityPolicySpec defines the desired state of SecurityPolicy
+            properties:
+              categories:
+                description: Categories is a list of categories that this policy falls
+                  under.  Category names must already exist in Central.
+                items:
+                  type: string
+                minItems: 1
+                type: array
+              criteriaLocked:
+                description: CriteriaLocked is unused and deprecated
+                type: boolean
+              description:
+                description: Description is a free-form text description of this policy.
+                pattern: ^[^\$]{0,800}$
+                type: string
+              disabled:
+                description: Disabled toggles whether or not this policy will be executing
+                  and actively firing alerts.
+                type: boolean
+              enforcementActions:
+                description: Enforcement lists the enforcement actions to take when
+                  a violation from this policy is identified.  Possible value are
+                  UNSET_ENFORCEMENT, SCALE_TO_ZERO_ENFORCEMENT, UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT,
+                  KILL_POD_ENFORCEMENT, FAIL_BUILD_ENFORCEMENT, FAIL_KUBE_REQUEST_ENFORCEMENT,
+                  FAIL_DEPLOYMENT_CREATE_ENFORCEMENT, and. FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT.
+                items:
+                  enum:
+                  - UNSET_ENFORCEMENT
+                  - SCALE_TO_ZERO_ENFORCEMENT
+                  - UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT
+                  - KILL_POD_ENFORCEMENT
+                  - FAIL_BUILD_ENFORCEMENT
+                  - FAIL_KUBE_REQUEST_ENFORCEMENT
+                  - FAIL_DEPLOYMENT_CREATE_ENFORCEMENT
+                  - FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT
+                  type: string
+                type: array
+              eventSource:
+                description: EventSource describes which events should trigger execution
+                  of this policy
+                enum:
+                - NOT_APPLICABLE
+                - DEPLOYMENT_EVENT
+                - AUDIT_LOG_EVENT
+                type: string
+              exclusions:
+                description: Exclusions define deployments or images that should be
+                  excluded from this policy.
+                items:
+                  properties:
+                    deployment:
+                      properties:
+                        name:
+                          type: string
+                        scope:
+                          properties:
+                            cluster:
+                              description: Cluster is either the name or the ID of
+                                the cluster that this scope applies to
+                              type: string
+                            label:
+                              properties:
+                                key:
+                                  type: string
+                                value:
+                                  type: string
+                              type: object
+                            namespace:
+                              type: string
+                          type: object
+                      type: object
+                    expiration:
+                      format: date-time
+                      type: string
+                    image:
+                      properties:
+                        name:
+                          type: string
+                      type: object
+                    name:
+                      type: string
+                  type: object
+                type: array
+              isDefault:
+                description: IsDefault is unused
+                type: boolean
+              lifecycleStages:
+                description: LifecycleStages describes which policy lifecylce stages
+                  this policy applies to.  Choices are DEPLOY, BUILD, and RUNTIME.
+                items:
+                  enum:
+                  - DEPLOY
+                  - BUILD
+                  - RUNTIME
+                  type: string
+                minItems: 1
+                type: array
+              mitreAttackVectors:
+                items:
+                  properties:
+                    tactic:
+                      type: string
+                    techniques:
+                      items:
+                        type: string
+                      type: array
+                  type: object
+                type: array
+              mitreVectorsLocked:
+                description: MitreVetorsLocked is unused and deprecated
+                type: boolean
+              notifiers:
+                description: Notifiers is a list of IDs or names of the notifiers
+                  that should be triggered when a violation from this policy is identified.  IDs
+                  should be in the form of a UUID and are found through the Central
+                  API.
+                items:
+                  type: string
+                type: array
+              policyName:
+                description: PolicyName is the name of the policy as it appears in
+                  the API and UI.  Note that changing this value will rename the policy
+                  as stored in the database.  This field must be unique.
+                pattern: ^[^\n\r\$]{5,128}$
+                type: string
+              policySections:
+                description: PolicySections define the violation criteria for this
+                  policy.
+                items:
+                  properties:
+                    policyGroups:
+                      description: PolicyGroups is the set of policies groups that
+                        make up this section.  Each group can be considered an individual
+                        criterion.
+                      items:
+                        properties:
+                          booleanOperator:
+                            description: BooleanOperator determines if the values
+                              are combined with an OR or an AND.  Defaults to OR.
+                            enum:
+                            - OR
+                            - AND
+                            type: string
+                          fieldName:
+                            description: FieldName defines which field on a deployment
+                              or image this PolicyGroup evaluates.  See https://docs.openshift.com/acs/operating/manage-security-policies.html#policy-criteria_manage-security-policies
+                              for a complete list of possible values.
+                            type: string
+                          negate:
+                            description: Negate determines if the evaluation of this
+                              PolicyGroup is negated.  Default to false.
+                            type: boolean
+                          values:
+                            description: Values is the list of values for the specified
+                              field
+                            items:
+                              properties:
+                                value:
+                                  description: Value is simply the string value
+                                  type: string
+                              type: object
+                            type: array
+                        required:
+                        - fieldName
+                        type: object
+                      type: array
+                    sectionName:
+                      description: SectionName is a user-friendly name for this section
+                        of policies
+                      type: string
+                  required:
+                  - policyGroups
+                  type: object
+                minItems: 1
+                type: array
+              rationale:
+                type: string
+              remediation:
+                description: Remediation describes how to remediate a violation of
+                  this policy.
+                type: string
+              scope:
+                description: Scope defines clusters, namespaces, and deployments that
+                  should be included in this policy.  No scopes defined includes everything.
+                items:
+                  properties:
+                    cluster:
+                      description: Cluster is either the name or the ID of the cluster
+                        that this scope applies to
+                      type: string
+                    label:
+                      properties:
+                        key:
+                          type: string
+                        value:
+                          type: string
+                      type: object
+                    namespace:
+                      type: string
+                  type: object
+                type: array
+              severity:
+                description: Severity defines how severe a violation from this policy
+                  is.  Possible values are UNSET_SEVERITY, LOW_SEVERITY, MEDIUM_SEVERITY,
+                  HIGH_SEVERITY, and CRITICAL_SEVERITY.
+                enum:
+                - UNSET_SEVERITY
+                - LOW_SEVERITY
+                - MEDIUM_SEVERITY
+                - HIGH_SEVERITY
+                - CRITICAL_SEVERITY
+                type: string
+            required:
+            - categories
+            - lifecycleStages
+            - policyName
+            - policySections
+            - severity
+            type: object
+          status:
+            properties:
+              accepted:
+                description: Accepted is deprecated in favor of conditions
+                type: boolean
+              conditions:
+                items:
+                  description: SecurityPolicyCondition defines the observed state
+                    of SecurityPolicy
+                  properties:
+                    lastTransitionTime:
+                      format: date-time
+                      type: string
+                    message:
+                      type: string
+                    status:
+                      type: string
+                    type:
+                      type: string
+                  type: object
+                type: array
+              message:
+                description: Message is deprecated in favor of conditions
+                type: string
+              policyId:
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

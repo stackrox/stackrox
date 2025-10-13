@@ -94,12 +94,12 @@ func populate(ctx context.Context, storageNamespace *storage.NamespaceMetadata, 
 		AddExactMatches(search.ClusterID, storageNamespace.GetClusterId()).
 		AddExactMatches(search.Namespace, storageNamespace.GetName()).
 		ProtoQuery()
-	deploymentResults, err := deploymentDataStore.Search(ctx, q.Clone())
+	deploymentCount, err := deploymentDataStore.Count(ctx, q.CloneVT())
 	if err != nil {
 		return nil, errors.Wrap(err, "searching deployments")
 	}
 
-	secretResults, err := secretDataStore.Search(ctx, q)
+	secretCount, err := secretDataStore.Count(ctx, q)
 	if err != nil {
 		return nil, errors.Wrap(err, "searching secrets")
 	}
@@ -115,8 +115,8 @@ func populate(ctx context.Context, storageNamespace *storage.NamespaceMetadata, 
 
 	return &v1.Namespace{
 		Metadata:           storageNamespace,
-		NumDeployments:     int32(len(deploymentResults)),
-		NumSecrets:         int32(len(secretResults)),
+		NumDeployments:     int32(deploymentCount),
+		NumSecrets:         int32(secretCount),
 		NumNetworkPolicies: int32(networkPolicyCount),
 	}, nil
 }

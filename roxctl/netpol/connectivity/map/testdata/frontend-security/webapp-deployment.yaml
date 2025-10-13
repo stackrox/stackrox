@@ -1,0 +1,59 @@
+# Deployment named "webapp"
+# Listens on :8080
+# Has SSH keys mounted
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp
+  namespace: frontend
+  labels:
+    app: webapp
+    exposed: "true"
+    app.kubernetes.io/part-of: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webapp
+  template:
+    metadata:
+      labels:
+        app: webapp
+    spec:
+      containers:
+        - image: quay.io/vuln/rce-webapp:latest
+          command: ["/bin/entrypoint"]
+          args:
+            [
+              "-listen",
+              ":8080",
+              "-connect",
+              "$(CHECKOUT_ADDR):$(CHECKOUT_PORT),$(REPORT_GENERATOR_SERVICE_ADDR):$(REPORT_GENERATOR_SERVICE_PORT),$(RECOMMENDATION_ADDR):$(RECOMMENDATION_PORT),$(SHIPPING_ADDR):$(SHIPPING_PORT)",
+            ]
+          imagePullPolicy: Always
+          name: webapp
+          envFrom:
+            - configMapRef:
+                name: webapp-endpoint-config
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+---
+# Service named "webapp-service"
+# Listens on :8080
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: webapp
+  name: webapp-service
+  namespace: frontend
+spec:
+  ports:
+    - port: 8080
+      protocol: TCP
+      targetPort: 8080
+      name: http
+  selector:
+    app: webapp
+  type: ClusterIP

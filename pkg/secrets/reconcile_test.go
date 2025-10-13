@@ -16,6 +16,9 @@ type config struct {
 	Name       string
 	Channel    string `scrub:"dependent"`
 	OauthToken string `scrub:"always"`
+	Map        map[string]string
+	ScrubMap   map[string]string `scrub:"map-values"`
+	SkipAuth   bool              `scrub:"disableDependentIfTrue"`
 }
 
 type toplevel struct {
@@ -26,6 +29,9 @@ type toplevel struct {
 	DependInt int    `scrub:"dependent"`
 	Config    config
 	ConfigPtr *config
+	Map       map[string]string
+	ScrubMap  map[string]string `scrub:"map-values"`
+	SkipAuth  bool              `scrub:"disableDependentIfTrue"`
 }
 
 func getTopLevelClone(obj *toplevel) *toplevel {
@@ -69,8 +75,8 @@ func TestReconcileUpdatedStruct(t *testing.T) {
 		Endpoint:  "endpoint",
 		Username:  "username",
 		DependInt: -1,
-		Config:    config{"configName", "channel", tokenValue},
-		ConfigPtr: &config{"ptrConfigName", "ptrChannel", tokenPtrValue},
+		Config:    config{"configName", "channel", tokenValue, nil, nil, false},
+		ConfigPtr: &config{"ptrConfigName", "ptrChannel", tokenPtrValue, nil, nil, false},
 		Password:  passwordValue,
 	}
 
@@ -103,6 +109,37 @@ func TestReconcileUpdatedStruct(t *testing.T) {
 
 	dependentIntUpdate := getScrubbedToplevelClone(existing)
 	dependentIntUpdate.DependInt = 42
+
+	disableDependentIfTrueEnabled := func(obj *toplevel) *toplevel {
+		obj.SkipAuth = true
+		return obj
+	}
+
+	disableDependentIfTrueUpdate := getScrubbedToplevelClone(existing)
+	disableDependentIfTrueUpdate.Password = "updatedPassword"
+	disableDependentIfTrueUpdate.SkipAuth = true
+
+	disableDependentIfTrueDependentUpdate := getScrubbedToplevelClone(existing)
+	disableDependentIfTrueDependentUpdate.Endpoint = "updatedEndpoint"
+	disableDependentIfTrueDependentUpdate.SkipAuth = true
+
+	disableDependentIfTrueDependentConfigUpdate := getScrubbedToplevelClone(existing)
+	disableDependentIfTrueDependentConfigUpdate.Config.Channel = "updatedChannel"
+	disableDependentIfTrueDependentConfigUpdate.Config.SkipAuth = true
+
+	disableDependentIfTrueDependentConfigPtrUpdate := getScrubbedToplevelClone(existing)
+	disableDependentIfTrueDependentConfigPtrUpdate.ConfigPtr.Channel = "updatedPtrChannel"
+	disableDependentIfTrueDependentConfigPtrUpdate.ConfigPtr.SkipAuth = true
+
+	disableDependentIfTrueDependentConfigUpdateWithCreds := getScrubbedToplevelClone(existing)
+	disableDependentIfTrueDependentConfigUpdateWithCreds.Config.OauthToken = "updatedPtrToken"
+	disableDependentIfTrueDependentConfigUpdateWithCreds.Config.Channel = "updatedPtrChannel"
+	disableDependentIfTrueDependentConfigUpdateWithCreds.Config.SkipAuth = true
+
+	disableDependentIfTrueDependentUpdateWithCreds := getScrubbedToplevelClone(existing)
+	disableDependentIfTrueDependentUpdateWithCreds.Password = "updatedPassword"
+	disableDependentIfTrueDependentUpdateWithCreds.Endpoint = "updatedEndpoint"
+	disableDependentIfTrueDependentUpdateWithCreds.SkipAuth = true
 
 	cases := []struct {
 		name              string
@@ -181,6 +218,54 @@ func TestReconcileUpdatedStruct(t *testing.T) {
 			dependentIntUpdate,
 			false,
 			false,
+		},
+		{
+			"no update, scrubbed creds, disableDependentIfTrue is true, passes",
+			disableDependentIfTrueEnabled(getScrubbedToplevelClone(existing)),
+			true,
+			false,
+		},
+		{
+			"no update, with all creds, disableDependentIfTrue is true, fails",
+			disableDependentIfTrueEnabled(getTopLevelClone(existing)),
+			false,
+			true,
+		},
+		{
+			"update cred, disableDependentIfTrue is true, fails",
+			disableDependentIfTrueUpdate,
+			false,
+			true,
+		},
+		{
+			"update dependent field, disableDependentIfTrue is true, passes",
+			disableDependentIfTrueDependentUpdate,
+			true,
+			false,
+		},
+		{
+			"update dependent field, password is not empty and skip disableDependentIfTrue is true, fails",
+			disableDependentIfTrueDependentUpdateWithCreds,
+			false,
+			true,
+		},
+		{
+			"update nested dependent field, disableDependentIfTrue is true, passes",
+			disableDependentIfTrueDependentConfigUpdate,
+			true,
+			false,
+		},
+		{
+			"update nested ptr dependent field, disableDependentIfTrue is true, passes",
+			disableDependentIfTrueDependentConfigPtrUpdate,
+			true,
+			false,
+		},
+		{
+			"update nested dependent field, password is not empty and skip disableDependentIfTrue is true, fails",
+			disableDependentIfTrueDependentConfigUpdateWithCreds,
+			false,
+			true,
 		},
 	}
 	for _, c := range cases {

@@ -3,14 +3,16 @@ package tree
 import (
 	"testing"
 
+	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph/testutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/require"
 )
 
 func BenchmarkNetworkTreeWrapper(b *testing.B) {
-	entities, err := testutils.GenRandomExtSrcNetworkEntityInfo(32, 15000)
+	entities, err := testutils.GenRandomExtSrcNetworkEntityInfo(net.IPv4, 15000)
 	require.NoError(b, err)
-	ipv6Entities, err := testutils.GenRandomExtSrcNetworkEntityInfo(128, 5000)
+	ipv6Entities, err := testutils.GenRandomExtSrcNetworkEntityInfo(net.IPv6, 5000)
 	require.NoError(b, err)
 	entities = append(entities, ipv6Entities...)
 
@@ -23,7 +25,7 @@ func BenchmarkNetworkTreeWrapper(b *testing.B) {
 
 	b.Run("NetworkTreeWrapper:Get", func(b *testing.B) {
 		for _, e := range entities {
-			require.Equal(b, e, tree.Get(e.GetId()))
+			protoassert.Equal(b, e, tree.Get(e.GetId()))
 		}
 	})
 

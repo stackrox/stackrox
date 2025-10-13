@@ -1,7 +1,10 @@
-import { all, call, fork, put, takeLatest, select } from 'redux-saga/effects';
-import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
-import { accessControlPath } from 'routePaths';
-import * as service from 'services/RolesService';
+import { all, call, fork, put, select, takeLatest } from 'redux-saga/effects';
+import {
+    createRole as serviceCreateRole,
+    deleteRole as serviceDeleteRole,
+    fetchRoles as serviceFetchRoles,
+    updateRole as serviceUpdateRole,
+} from 'services/RolesService';
 import { actions, types } from 'reducers/roles';
 import { selectors } from 'reducers';
 
@@ -10,9 +13,9 @@ import { actions as notificationActions } from 'reducers/notifications';
 
 function* getRoles() {
     try {
-        const result = yield call(service.fetchRoles);
+        const result = yield call(serviceFetchRoles);
         yield put(actions.fetchRoles.success(result?.response || []));
-    } catch (error) {
+    } catch {
         // do nothing
     }
 }
@@ -23,10 +26,10 @@ function* saveRole(action) {
         const roles = yield select(selectors.getRoles);
         const isNewRole = !roles.filter((currRole) => currRole.name === role.name).length;
         if (isNewRole) {
-            yield call(service.createRole, role);
+            yield call(serviceCreateRole, role);
             yield put(actions.selectRole(role));
         } else {
-            yield call(service.updateRole, role);
+            yield call(serviceUpdateRole, role);
             yield put(actions.selectRole(role));
         }
         yield call(getRoles);
@@ -40,7 +43,7 @@ function* saveRole(action) {
 function* deleteRole(action) {
     const { id } = action;
     try {
-        yield call(service.deleteRole, id);
+        yield call(serviceDeleteRole, id);
         yield put(actions.fetchRoles.request());
     } catch (error) {
         yield put(notificationActions.addNotification(error.response.data.error));
@@ -75,7 +78,6 @@ function* watchSelectRole() {
 
 export default function* integrations() {
     yield all([
-        takeEveryNewlyMatchedLocation(accessControlPath, getRoles),
         takeLatest(types.FETCH_ROLES.REQUEST, getRoles),
         fork(watchSaveRole),
         fork(watchDeleteRole),

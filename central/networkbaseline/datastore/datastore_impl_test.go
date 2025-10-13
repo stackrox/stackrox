@@ -1,20 +1,21 @@
+//go:build sql_integration
+
 package datastore
 
 import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/central/networkbaseline/store"
 	pgStore "github.com/stackrox/rox/central/networkbaseline/store/postgres"
-	rdbStore "github.com/stackrox/rox/central/networkbaseline/store/rocksdb"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/sac/testconsts"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -32,8 +33,7 @@ type NetworkBaselineDataStoreTestSuite struct {
 
 	datastore DataStore
 	storage   store.Store
-	pool      *pgxpool.Pool
-	engine    *rocksdb.RocksDB
+	pool      postgres.DB
 }
 
 var _ interface {
@@ -42,33 +42,21 @@ var _ interface {
 } = (*NetworkBaselineDataStoreTestSuite)(nil)
 
 func (suite *NetworkBaselineDataStoreTestSuite) SetupSuite() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		ctx := context.Background()
-		source := pgtest.GetConnectionString(suite.T())
-		config, err := pgxpool.ParseConfig(source)
-		suite.NoError(err)
-		suite.pool, err = pgxpool.ConnectConfig(ctx, config)
-		suite.NoError(err)
-		pgStore.Destroy(ctx, suite.pool)
-		gormDB := pgtest.OpenGormDB(suite.T(), source)
-		defer pgtest.CloseGormDB(suite.T(), gormDB)
-		suite.storage = pgStore.CreateTableAndNewStore(ctx, suite.pool, gormDB)
-	} else {
-		var err error
-		suite.engine, err = rocksdb.NewTemp(suite.T().Name())
-		suite.Require().NoError(err)
-		suite.storage = rdbStore.New(suite.engine)
-	}
+	ctx := context.Background()
+	source := pgtest.GetConnectionString(suite.T())
+	config, err := postgres.ParseConfig(source)
+	suite.NoError(err)
+	suite.pool, err = postgres.New(ctx, config)
+	suite.NoError(err)
+	pgStore.Destroy(ctx, suite.pool)
+	gormDB := pgtest.OpenGormDB(suite.T(), source)
+	defer pgtest.CloseGormDB(suite.T(), gormDB)
+	suite.storage = pgStore.CreateTableAndNewStore(ctx, suite.pool, gormDB)
 	suite.datastore = newNetworkBaselineDataStore(suite.storage)
 }
 
 func (suite *NetworkBaselineDataStoreTestSuite) TearDownSuite() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		suite.pool.Close()
-	} else {
-		err := rocksdb.CloseAndRemove(suite.engine)
-		suite.NoError(err)
-	}
+	suite.pool.Close()
 }
 
 func (suite *NetworkBaselineDataStoreTestSuite) mustGetBaseline(ctx context.Context, deploymentID string) (*storage.NetworkBaseline, bool) {
@@ -91,7 +79,7 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestNoAccessAllowed() {
 
 	suite.Error(suite.datastore.DeleteNetworkBaseline(ctx, expectedBaseline.GetDeploymentId()), "permission denied")
 	// BTW if we try to delete non-existent/already deleted baseline, it should just return nil
-	suite.Nil(suite.datastore.DeleteNetworkBaseline(ctx, "non-existent deployment ID"))
+	suite.Nil(suite.datastore.DeleteNetworkBaseline(ctx, uuid.Nil.String()))
 }
 
 func (suite *NetworkBaselineDataStoreTestSuite) TestNetworkBaselines() {
@@ -129,15 +117,15 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestSAC() {
 			context.Background(),
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-				sac.ResourceScopeKeys(resources.NetworkBaseline),
-				sac.ClusterScopeKeys("a-wrong-cluster")))
+				sac.ResourceScopeKeys(resources.DeploymentExtension),
+				sac.ClusterScopeKeys(testconsts.Cluster3)))
 
 	ctxWithReadAccess :=
 		sac.WithGlobalAccessScopeChecker(
 			context.Background(),
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-				sac.ResourceScopeKeys(resources.NetworkBaseline),
+				sac.ResourceScopeKeys(resources.DeploymentExtension),
 				sac.ClusterScopeKeys(expectedBaseline.GetClusterId()),
 				sac.NamespaceScopeKeys(expectedBaseline.GetNamespace())))
 
@@ -146,15 +134,15 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestSAC() {
 			context.Background(),
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-				sac.ResourceScopeKeys(resources.NetworkBaseline),
-				sac.ClusterScopeKeys("a-wrong-cluster")))
+				sac.ResourceScopeKeys(resources.DeploymentExtension),
+				sac.ClusterScopeKeys(testconsts.Cluster3)))
 
 	ctxWithWriteAccess :=
 		sac.WithGlobalAccessScopeChecker(
 			context.Background(),
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-				sac.ResourceScopeKeys(resources.NetworkBaseline),
+				sac.ResourceScopeKeys(resources.DeploymentExtension),
 				sac.ClusterScopeKeys(expectedBaseline.GetClusterId()),
 				sac.NamespaceScopeKeys(expectedBaseline.GetNamespace())))
 
@@ -162,11 +150,11 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestSAC() {
 		sac.WithGlobalAccessScopeChecker(context.Background(),
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-				sac.ResourceScopeKeys(resources.NetworkBaseline)))
+				sac.ResourceScopeKeys(resources.DeploymentExtension)))
 
 	// Test Update
 	{
-		expectedBaseline.Locked = !expectedBaseline.Locked
+		expectedBaseline.Locked = !expectedBaseline.GetLocked()
 		suite.Error(suite.datastore.UpsertNetworkBaselines(ctxWithWrongClusterReadAccess, []*storage.NetworkBaseline{expectedBaseline}), "permission denied")
 		suite.Error(suite.datastore.UpsertNetworkBaselines(ctxWithReadAccess, []*storage.NetworkBaseline{expectedBaseline}), "permission denied")
 		suite.Error(suite.datastore.UpsertNetworkBaselines(ctxWithWrongClusterWriteAccess, []*storage.NetworkBaseline{expectedBaseline}), "permission denied")
@@ -174,7 +162,7 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestSAC() {
 		// Check updated value
 		result, found := suite.mustGetBaseline(allAllowedCtx, expectedBaseline.GetDeploymentId())
 		suite.True(found)
-		suite.Equal(expectedBaseline.Locked, result.Locked)
+		suite.Equal(expectedBaseline.GetLocked(), result.GetLocked())
 	}
 
 	// Test Get

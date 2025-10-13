@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/testutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -42,12 +43,12 @@ func TestMultiTree(t *testing.T) {
 
 	*/
 
-	e1 := testutils.GetExtSrcNetworkEntityInfo("1", "1", "35.187.144.0/20", true)
-	e2 := testutils.GetExtSrcNetworkEntityInfo("2", "2", "35.187.144.0/16", false)
-	e3 := testutils.GetExtSrcNetworkEntityInfo("3", "3", "35.187.144.0/8", false)
-	e4 := testutils.GetExtSrcNetworkEntityInfo("4", "4", "35.187.144.0/23", true)
-	e5 := testutils.GetExtSrcNetworkEntityInfo("5", "5", "36.188.144.0/30", false)
-	e6 := testutils.GetExtSrcNetworkEntityInfo("6", "6", "36.188.144.0/16", true)
+	e1 := testutils.GetExtSrcNetworkEntityInfo("1", "1", "35.187.144.0/20", true, false)
+	e2 := testutils.GetExtSrcNetworkEntityInfo("2", "2", "35.187.144.0/16", false, false)
+	e3 := testutils.GetExtSrcNetworkEntityInfo("3", "3", "35.187.144.0/8", false, false)
+	e4 := testutils.GetExtSrcNetworkEntityInfo("4", "4", "35.187.144.0/23", true, false)
+	e5 := testutils.GetExtSrcNetworkEntityInfo("5", "5", "36.188.144.0/30", false, false)
+	e6 := testutils.GetExtSrcNetworkEntityInfo("6", "6", "36.188.144.0/16", true, false)
 
 	tree1, err := NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{e2, e3, e5})
 	assert.NoError(t, err)
@@ -56,22 +57,22 @@ func TestMultiTree(t *testing.T) {
 
 	multiTree := NewMultiNetworkTree(tree1, tree2)
 
-	assert.Equal(t, e1, multiTree.Get("1"))
+	protoassert.Equal(t, e1, multiTree.Get("1"))
 
-	assert.Equal(t, e2, multiTree.GetSupernet("1"))
-	assert.Equal(t, e6, multiTree.GetSupernet("5"))
+	protoassert.Equal(t, e2, multiTree.GetSupernet("1"))
+	protoassert.Equal(t, e6, multiTree.GetSupernet("5"))
 
 	assert.Equal(t, networkgraph.InternetExternalSourceID, multiTree.GetMatchingSupernet("5", func(entity *storage.NetworkEntityInfo) bool {
 		return entity.GetId() != e6.GetId()
 	}).GetId())
 
-	assert.Equal(t, e6, multiTree.GetSupernetForCIDR("36.188.144.0/24"))
+	protoassert.Equal(t, e6, multiTree.GetSupernetForCIDR("36.188.144.0/24"))
 
 	assert.Equal(t, networkgraph.InternetExternalSourceID, multiTree.GetMatchingSupernetForCIDR("36.188.144.0/24", func(entity *storage.NetworkEntityInfo) bool {
 		return entity.GetId() != e6.GetId()
 	}).GetId())
 
-	assert.ElementsMatch(t, []*storage.NetworkEntityInfo{e3, e6}, multiTree.GetSubnets(networkgraph.InternetExternalSourceID))
+	protoassert.ElementsMatch(t, []*storage.NetworkEntityInfo{e3, e6}, multiTree.GetSubnets(networkgraph.InternetExternalSourceID))
 
-	assert.ElementsMatch(t, []*storage.NetworkEntityInfo{e3, e6}, multiTree.GetSubnetsForCIDR("32.0.0.0/5"))
+	protoassert.ElementsMatch(t, []*storage.NetworkEntityInfo{e3, e6}, multiTree.GetSubnetsForCIDR("32.0.0.0/5"))
 }

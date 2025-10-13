@@ -5,14 +5,10 @@ import (
 
 	"github.com/stackrox/rox/central/watchedimage/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // DataStore returns a datastore for watched images.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Exists(ctx context.Context, name string) (bool, error)

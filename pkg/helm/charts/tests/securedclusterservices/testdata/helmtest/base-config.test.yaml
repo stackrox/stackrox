@@ -1,3 +1,6 @@
+values:
+  imagePullSecrets:
+    allowNone: true
 tests:
 - name: default release
   expect: |
@@ -20,6 +23,12 @@ tests:
     expect: |
       verifySensorEndpoint("sensor.stackrox.svc:443")
       verifyCentralEndpoint("stackrox-central.example.com:8443")
+  - name: central endpoint without explicit port
+    set:
+      centralEndpoint: "https://stackrox-central.example.com"
+    expect: |
+      verifyCentralEndpoint("https://stackrox-central.example.com:443")
+      .notes | assertThat(contains("Specified centralEndpoint https://stackrox-central.example.com does not contain a port"))
 
 - name: different namespace
   release:
@@ -52,3 +61,20 @@ tests:
       my-label2: my value 2
   expect: |
     helmClusterConfig | .clusterConfig.clusterLabels | assertThat(length == 2)
+
+- name: fails with cluster labels being a string
+  values:
+    clusterLabels: a-string-even-though-a-dict-is-expected
+  expectError: true
+
+- name: fails with cluster labels being a dict with a numeric value
+  values:
+    clusterLabels:
+      pi: 3
+  expectError: true
+
+- name: fails with cluster labels being a dict with a boolean value
+  values:
+    clusterLabels:
+      pi-is-rational: false
+  expectError: true

@@ -4,15 +4,15 @@ import (
 	"context"
 	"io"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/externalbackups/plugins/types"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globaldb/export"
+	"github.com/stackrox/rox/central/systeminfo/listener"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sync"
 	"gopkg.in/robfig/cron.v2"
 )
@@ -33,27 +33,24 @@ type scheduler struct {
 	lock              sync.Mutex
 	cron              *cron.Cron
 	reporter          integrationhealth.Reporter
+	backupListener    listener.BackupListener
 	pluginsToEntryIDs map[string]cron.EntryID
 }
 
 // New instantiates a new cron scheduler and accounts for adding and removing external backups
-func New(reporter integrationhealth.Reporter) Scheduler {
+func New(reporter integrationhealth.Reporter, backupListener listener.BackupListener) Scheduler {
 	cronScheduler := cron.New()
 	cronScheduler.Start()
 	return &scheduler{
 		pluginsToEntryIDs: make(map[string]cron.EntryID),
 		cron:              cronScheduler,
 		reporter:          reporter,
+		backupListener:    backupListener,
 	}
 }
 
 func (s *scheduler) backup(w *io.PipeWriter, includeCerts bool) {
-	var err error
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		err = export.BackupPostgres(context.Background(), globaldb.GetPostgres(), includeCerts, w)
-	} else {
-		err = export.Backup(context.Background(), globaldb.GetGlobalDB(), globaldb.GetRocksDB(), includeCerts, w)
-	}
+	err := export.BackupPostgres(context.Background(), globaldb.GetPostgres(), s.backupListener, includeCerts, w)
 	if err != nil {
 		log.Errorf("Failed to write backup to io.writer: %v", err)
 		if err := w.CloseWithError(err); err != nil {
@@ -84,21 +81,21 @@ func (s *scheduler) RunBackup(backup types.ExternalBackup, plugin *storage.Exter
 
 	if err != nil {
 		s.reporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
-			Id:            plugin.Id,
-			Name:          plugin.Name,
+			Id:            plugin.GetId(),
+			Name:          plugin.GetName(),
 			Type:          storage.IntegrationHealth_BACKUP,
 			Status:        storage.IntegrationHealth_UNHEALTHY,
-			LastTimestamp: timestamp.TimestampNow(),
+			LastTimestamp: protocompat.TimestampNow(),
 			ErrorMessage:  err.Error(),
 		})
 		return err
 	}
 	s.reporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
-		Id:            plugin.Id,
-		Name:          plugin.Name,
+		Id:            plugin.GetId(),
+		Name:          plugin.GetName(),
 		Type:          storage.IntegrationHealth_BACKUP,
 		Status:        storage.IntegrationHealth_HEALTHY,
-		LastTimestamp: timestamp.TimestampNow(),
+		LastTimestamp: protocompat.TimestampNow(),
 		ErrorMessage:  "",
 	})
 	log.Infof("Successfully ran backup to %T", backup)

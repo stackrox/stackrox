@@ -1,0 +1,15 @@
+{{- include "srox.init" . -}}
+{{- if ._rox.scannerV4._matcherEnabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scanner-v4-matcher-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "configmap" "scanner-v4-matcher-config") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "configmap" "scanner-v4-matcher-config") | nindent 4 }}
+data:
+  config.yaml: |
+    {{- tpl (.Files.Get "config-templates/scanner-v4/matcher-config.yaml.tpl") . | nindent 4 }}
+{{- end }}

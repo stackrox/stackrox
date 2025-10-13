@@ -1,3 +1,4 @@
+import acscsEmail from 'images/acsEmailNotifier.svg';
 import artifactory from 'images/artifactory.svg';
 import aws from 'images/aws.svg';
 import awsSecurityHub from 'images/aws-security-hub.svg';
@@ -5,60 +6,56 @@ import azure from 'images/azure.svg';
 import clair from 'images/clair.svg';
 import docker from 'images/docker.svg';
 import email from 'images/email.svg';
+import ghcr from 'images/ghcr.svg';
 import google from 'images/google-cloud.svg';
-import googleregistry from 'images/google-container.svg';
 import googleartifact from 'images/google-artifact.svg';
+import googleregistry from 'images/google-container.svg';
 import ibm from 'images/ibm-ccr.svg';
 import jira from 'images/jira.svg';
 import logo from 'images/StackRox-integration-logo.svg';
+import microsoftSentinel from 'images/microsoft_sentinel.svg';
 import nexus from 'images/nexus.svg';
+import pagerduty from 'images/pagerduty.svg';
 import quay from 'images/quay.svg';
 import redhat from 'images/redhat.svg';
+import signature from 'images/signature.svg';
 import slack from 'images/slack.svg';
 import splunk from 'images/splunk.svg';
 import sumologic from 'images/sumologic.svg';
 import s3 from 'images/s3.svg';
+import s3compatible from 'images/s3-compatible.svg';
 import syslog from 'images/syslog.svg';
 import teams from 'images/teams.svg';
-import pagerduty from 'images/pagerduty.svg';
-import signature from 'images/signature.svg';
+import paladinCloud from 'images/paladinCloud.svg';
+import { integrationsPath } from 'routePaths';
 
 /*
  * To add an integration tile behind a feature flag:
  * 1. Add to string union type in types/featureFlag.ts file.
  * 2. Add the following property to the integration descriptor:
- *    featureFlagDependency: 'ROX_WHATEVER',
+ *    featureFlagDependency: ['ROX_WHATEVER_1', 'ROX_WHATEVER_2'],
  */
 
-import { FeatureFlagEnvVar } from 'types/featureFlag';
-import {
+import type { FeatureFlagEnvVar } from 'types/featureFlag';
+import type {
     AuthProviderType,
     BackupIntegrationType,
+    CloudSourceIntegrationType,
     ImageIntegrationType,
     IntegrationSource,
     NotifierIntegrationType,
     SignatureIntegrationType,
 } from 'types/integration';
 
-export type IntegrationDescriptor =
-    | AuthProviderDescriptor
-    | BackupIntegrationDescriptor
-    | ImageIntegrationDescriptor
-    | NotifierIntegrationDescriptor
-    | SignatureIntegrationDescriptor;
-
 export type AuthProviderDescriptor = {
-    source: 'authProviders';
     type: AuthProviderType;
 } & BaseIntegrationDescriptor;
 
 export type BackupIntegrationDescriptor = {
-    source: 'backups';
     type: BackupIntegrationType;
 } & BaseIntegrationDescriptor;
 
 export type ImageIntegrationDescriptor = {
-    source: 'imageIntegrations';
     type: ImageIntegrationType;
     categories: ImageIntegrationCategories;
 } & BaseIntegrationDescriptor;
@@ -70,222 +67,276 @@ export type ImageIntegrationCategories =
     | 'Scanner';
 
 export type NotifierIntegrationDescriptor = {
-    source: 'notifiers';
     type: NotifierIntegrationType;
 } & BaseIntegrationDescriptor;
 
 export type SignatureIntegrationDescriptor = {
-    source: 'signatureIntegrations';
     type: SignatureIntegrationType;
 } & BaseIntegrationDescriptor;
 
+export type CloudSourceDescriptor = {
+    type: CloudSourceIntegrationType;
+} & BaseIntegrationDescriptor;
+
 export type BaseIntegrationDescriptor = {
-    source: IntegrationSource;
     type: string;
     label: string;
     image: string;
-    featureFlagDependency?: FeatureFlagEnvVar;
+    featureFlagDependency?: FeatureFlagEnvVar[];
 };
 
-type IntegrationDescriptorMap = {
-    authProviders: AuthProviderDescriptor[];
-    backups: BackupIntegrationDescriptor[];
-    imageIntegrations: ImageIntegrationDescriptor[];
-    notifiers: NotifierIntegrationDescriptor[];
-    signatureIntegrations: SignatureIntegrationDescriptor[];
+export const imageIntegrationsSource: IntegrationSource = 'imageIntegrations';
+
+export const imageIntegrationsDescriptors: ImageIntegrationDescriptor[] = [
+    {
+        categories: 'Image Scanner + Node Scanner',
+        image: logo,
+        label: '[DEPRECATED] StackRox Scanner',
+        type: 'clairify',
+    },
+    {
+        categories: 'Image Scanner + Node Scanner',
+        image: logo,
+        label: 'Scanner V4',
+        type: 'scannerv4',
+        featureFlagDependency: ['ROX_SCANNER_V4'],
+    },
+    {
+        categories: 'Registry',
+        image: docker,
+        label: 'Generic Docker Registry',
+        type: 'docker',
+    },
+    {
+        categories: 'Registry',
+        image: aws,
+        label: 'Amazon ECR',
+        type: 'ecr',
+    },
+    {
+        categories: 'Registry + Scanner',
+        image: googleregistry,
+        label: '[DEPRECATED] Google Container Registry',
+        type: 'google',
+    },
+    {
+        categories: 'Registry',
+        image: googleartifact,
+        label: 'Google Artifact Registry',
+        type: 'artifactregistry',
+    },
+    {
+        categories: 'Registry',
+        image: azure,
+        label: 'Microsoft ACR',
+        type: 'azure',
+    },
+    {
+        categories: 'Registry',
+        image: artifactory,
+        label: 'JFrog Artifactory',
+        type: 'artifactory',
+    },
+    {
+        categories: 'Registry + Scanner',
+        image: quay,
+        label: 'Quay.io',
+        type: 'quay',
+    },
+    {
+        categories: 'Scanner',
+        image: clair,
+        label: '[DEPRECATED] CoreOS Clair',
+        type: 'clair',
+    },
+    {
+        categories: 'Scanner',
+        image: clair,
+        label: 'Clair v4',
+        type: 'clairV4',
+    },
+    {
+        categories: 'Registry',
+        image: nexus,
+        label: 'Sonatype Nexus',
+        type: 'nexus',
+    },
+    {
+        categories: 'Registry',
+        image: ibm,
+        label: 'IBM Cloud',
+        type: 'ibm',
+    },
+    {
+        categories: 'Registry',
+        image: redhat,
+        label: 'Red Hat',
+        type: 'rhel',
+    },
+    {
+        categories: 'Registry',
+        image: ghcr,
+        label: 'GitHub Container Registry',
+        type: 'ghcr',
+    },
+];
+
+export const signatureIntegrationsSource = 'signatureIntegrations';
+
+export const signatureIntegrationDescriptor: SignatureIntegrationDescriptor = {
+    image: signature,
+    label: 'Signature',
+    type: 'signature',
 };
 
-const integrationsList: IntegrationDescriptorMap = {
-    authProviders: [
-        {
-            label: 'API Token',
-            type: 'apitoken',
-            source: 'authProviders',
-            image: logo,
-        },
-        {
-            label: 'Cluster Init Bundle',
-            type: 'clusterInitBundle',
-            source: 'authProviders',
-            image: logo,
-        },
-    ],
-    imageIntegrations: [
-        {
-            label: 'StackRox Scanner',
-            type: 'clairify',
-            categories: 'Image Scanner + Node Scanner',
-            source: 'imageIntegrations',
-            image: logo,
-        },
-        {
-            label: 'Generic Docker Registry',
-            type: 'docker',
-            categories: 'Registry',
-            source: 'imageIntegrations',
-            image: docker,
-        },
-        {
-            label: 'Amazon ECR',
-            type: 'ecr',
-            categories: 'Registry',
-            source: 'imageIntegrations',
-            image: aws,
-        },
-        {
-            label: 'Google Container Registry',
-            type: 'google',
-            categories: 'Registry + Scanner',
-            source: 'imageIntegrations',
-            image: googleregistry,
-        },
-        {
-            label: 'Google Artifact Registry',
-            type: 'artifactregistry',
-            categories: 'Registry',
-            source: 'imageIntegrations',
-            image: googleartifact,
-        },
-        {
-            label: 'Microsoft ACR',
-            type: 'azure',
-            categories: 'Registry',
-            source: 'imageIntegrations',
-            image: azure,
-        },
-        {
-            label: 'JFrog Artifactory',
-            type: 'artifactory',
-            categories: 'Registry',
-            source: 'imageIntegrations',
-            image: artifactory,
-        },
-        {
-            label: 'Quay.io',
-            type: 'quay',
-            categories: 'Registry + Scanner',
-            source: 'imageIntegrations',
-            image: quay,
-        },
-        {
-            label: 'CoreOS Clair',
-            type: 'clair',
-            categories: 'Scanner',
-            source: 'imageIntegrations',
-            image: clair,
-        },
-        {
-            label: 'Sonatype Nexus',
-            type: 'nexus',
-            categories: 'Registry',
-            source: 'imageIntegrations',
-            image: nexus,
-        },
-        {
-            label: 'IBM Cloud',
-            type: 'ibm',
-            categories: 'Registry',
-            source: 'imageIntegrations',
-            image: ibm,
-        },
-        {
-            label: 'Red Hat',
-            type: 'rhel',
-            categories: 'Registry',
-            source: 'imageIntegrations',
-            image: redhat,
-        },
-    ],
-    signatureIntegrations: [
-        {
-            label: 'Signature',
-            type: 'signature',
-            source: 'signatureIntegrations',
-            image: signature,
-        },
-    ],
-    notifiers: [
-        {
-            label: 'Slack',
-            type: 'slack',
-            source: 'notifiers',
-            image: slack,
-        },
-        {
-            label: 'Generic Webhook',
-            type: 'generic',
-            source: 'notifiers',
-            image: logo,
-        },
-        {
-            label: 'Jira',
-            type: 'jira',
-            source: 'notifiers',
-            image: jira,
-        },
-        {
-            label: 'Email',
-            type: 'email',
-            source: 'notifiers',
-            image: email,
-        },
-        {
-            label: 'Google Cloud SCC',
-            type: 'cscc',
-            source: 'notifiers',
-            image: google,
-        },
-        {
-            label: 'Splunk',
-            type: 'splunk',
-            source: 'notifiers',
-            image: splunk,
-        },
-        {
-            label: 'PagerDuty',
-            type: 'pagerduty',
-            source: 'notifiers',
-            image: pagerduty,
-        },
-        {
-            label: 'Sumo Logic',
-            type: 'sumologic',
-            source: 'notifiers',
-            image: sumologic,
-        },
-        {
-            label: 'Microsoft Teams',
-            type: 'teams',
-            source: 'notifiers',
-            image: teams,
-        },
-        {
-            label: 'AWS Security Hub',
-            type: 'awsSecurityHub',
-            source: 'notifiers',
-            image: awsSecurityHub,
-        },
-        {
-            label: 'Syslog',
-            type: 'syslog',
-            source: 'notifiers',
-            image: syslog,
-        },
-    ],
-    backups: [
-        {
-            label: 'Amazon S3',
-            type: 's3',
-            source: 'backups',
-            image: s3,
-        },
-        {
-            label: 'Google Cloud Storage',
-            type: 'gcs',
-            source: 'backups',
-            image: google,
-        },
-    ],
+const signatureIntegrationsDescriptors = [signatureIntegrationDescriptor];
+
+export const notifierIntegrationsSource = 'notifiers';
+
+export const notifierIntegrationsDescriptors: NotifierIntegrationDescriptor[] = [
+    {
+        image: slack,
+        label: 'Slack',
+        type: 'slack',
+    },
+    {
+        image: logo,
+        label: 'Generic Webhook',
+        type: 'generic',
+    },
+    {
+        image: jira,
+        label: 'Jira',
+        type: 'jira',
+    },
+    {
+        image: email,
+        label: 'Email',
+        type: 'email',
+    },
+    {
+        image: acscsEmail,
+        label: 'RHACS Cloud Service',
+        type: 'acscsEmail',
+    },
+    {
+        image: google,
+        label: 'Google Cloud SCC',
+        type: 'cscc',
+    },
+    {
+        image: splunk,
+        label: 'Splunk',
+        type: 'splunk',
+    },
+    {
+        image: pagerduty,
+        label: 'PagerDuty',
+        type: 'pagerduty',
+    },
+    {
+        image: sumologic,
+        label: 'Sumo Logic',
+        type: 'sumologic',
+    },
+    {
+        image: teams,
+        label: 'Microsoft Teams',
+        type: 'teams',
+    },
+    {
+        image: awsSecurityHub,
+        label: 'AWS Security Hub',
+        type: 'awsSecurityHub',
+    },
+    {
+        image: syslog,
+        label: 'Syslog',
+        type: 'syslog',
+    },
+    {
+        image: microsoftSentinel,
+        label: 'Microsoft Sentinel',
+        type: 'microsoftSentinel',
+    },
+];
+
+export const backupIntegrationsSource = 'backups';
+
+export const backupIntegrationsDescriptors: BackupIntegrationDescriptor[] = [
+    {
+        image: s3,
+        label: 'Amazon S3',
+        type: 's3',
+    },
+    {
+        image: s3compatible,
+        label: 'S3 API Compatible',
+        type: 's3compatible',
+    },
+    {
+        image: google,
+        label: 'Google Cloud Storage',
+        type: 'gcs',
+    },
+];
+
+export const authenticationTokensSource = 'authProviders';
+
+export const apiTokenDescriptor: AuthProviderDescriptor = {
+    image: logo,
+    label: 'API Token',
+    type: 'apitoken',
 };
 
-export default integrationsList;
+export const machineAccessDescriptor: AuthProviderDescriptor = {
+    image: logo,
+    label: 'Machine access configuration',
+    type: 'machineAccess',
+};
+
+const authenticationTokensDescriptors = [apiTokenDescriptor, machineAccessDescriptor];
+
+export const cloudSourcesSource = 'cloudSources';
+
+export const paladinCloudDescriptor: CloudSourceDescriptor = {
+    image: paladinCloud,
+    label: 'Paladin Cloud',
+    type: 'paladinCloud',
+};
+
+export const ocmDescriptor: CloudSourceDescriptor = {
+    image: redhat,
+    label: 'OpenShift Cluster Manager',
+    type: 'ocm',
+};
+
+const cloudSourceDescriptors = [paladinCloudDescriptor, ocmDescriptor];
+
+function getDescriptors(source: string): BaseIntegrationDescriptor[] {
+    switch (source) {
+        case 'imageIntegrations':
+            return imageIntegrationsDescriptors;
+        case 'signatureIntegrations':
+            return signatureIntegrationsDescriptors;
+        case 'notifiers':
+            return notifierIntegrationsDescriptors;
+        case 'backups':
+            return backupIntegrationsDescriptors;
+        case 'authProviders':
+            return authenticationTokensDescriptors;
+        case 'cloudSources':
+            return cloudSourceDescriptors;
+        default:
+            return [];
+    }
+}
+
+export function getIntegrationLabel(source: string, type: string): string {
+    const descriptorFound = getDescriptors(source).find((descriptor) => descriptor.type === type);
+    return descriptorFound ? descriptorFound.label : '';
+}
+
+export function getIntegrationsListPath(source: IntegrationSource, type: string) {
+    return `${integrationsPath}/${source}/${type}`;
+}

@@ -1,6 +1,9 @@
 defs: |
   def labels(resource):
     resource.metadata.labels;
+values:
+  imagePullSecrets:
+    allowNone: true
 
 name: "Test default labels"
 tests:

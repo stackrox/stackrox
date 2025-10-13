@@ -1,39 +1,38 @@
 syntax = "proto3";
 
-option go_package = "storage";
-option java_package = "io.stackrox.proto.storage";
-
 package storage;
 
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
 message Schedule {
-    enum IntervalType {
-        UNSET           = 0;
-        DAILY           = 1;
-        WEEKLY          = 2;
-        MONTHLY         = 3;
-    }
+  enum IntervalType {
+    UNSET = 0;
+    DAILY = 1;
+    WEEKLY = 2;
+    MONTHLY = 3;
+  }
 
-    message WeeklyInterval {
-        int32 day = 1;
-    }
+  message WeeklyInterval {
+    int32 day = 1;
+  }
 
-    // Sunday = 0, Monday = 1, .... Saturday =  6
-    message DaysOfWeek {
-        repeated int32 days = 1;
-    }
-    // 1 for 1st, 2 for 2nd .... 31 for 31st
-    message DaysOfMonth {
-        repeated int32 days = 1;
-    }
+  // Sunday = 0, Monday = 1, .... Saturday =  6
+  message DaysOfWeek {
+    repeated int32 days = 1;
+  }
+  // 1 for 1st, 2 for 2nd .... 31 for 31st
+  message DaysOfMonth {
+    repeated int32 days = 1;
+  }
 
-    IntervalType interval_type = 1;
-    int32        hour          = 2;
-    int32        minute        = 3;
+  IntervalType interval_type = 1;
+  int32 hour = 2;
+  int32 minute = 3;
 
-    oneof Interval {
-        WeeklyInterval weekly       = 4;
-        DaysOfWeek days_of_week     = 5;
-        DaysOfMonth days_of_month   = 6;
-    }
-
+  oneof Interval {
+    WeeklyInterval weekly = 4;
+    DaysOfWeek days_of_week = 5;
+    DaysOfMonth days_of_month = 6;
+  }
 }

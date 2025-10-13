@@ -1,0 +1,8 @@
+# This image stream is be used to build and push images
+# into the OCP internal registry
+
+kind: ImageStream
+apiVersion: image.openshift.io/v1
+metadata:
+  name: {{index . "name"}}
+  namespace: {{index . "namespace"}}

@@ -1,4 +1,4 @@
-import { ImageIntegrationType } from './integration';
+import type { ImageIntegrationType } from './integration';
 
 export type BaseImageIntegration = {
     id: string;
@@ -14,6 +14,8 @@ export type ImageIntegrationCategory = 'REGISTRY' | 'SCANNER' | 'NODE_SCANNER';
 
 // For strict type checking of frontend code, although not specified in proto.
 export type CategoriesForClairifyScanner = 'SCANNER' | 'NODE_SCANNER';
+// Scanner v4 currently only supports 'SCANNER' so this is disabled in the form
+export type CategoriesForScannerV4 = 'SCANNER' | 'NODE_SCANNER';
 export type CategoriesForRegistryScanner = 'REGISTRY' | 'SCANNER';
 
 export type ImageIntegration =
@@ -21,14 +23,17 @@ export type ImageIntegration =
     | ArtifactRegistryImageIntegration
     | AzureImageIntegration
     | ClairImageIntegration
+    | ClairV4ImageIntegration
     | ClairifyImageIntegration
     | DockerImageIntegration
     | EcrImageIntegration
+    | GhcrImageIntegration
     | GoogleImageIntegration
     | IbmImageIntegration
     | NexusImageIntegration
     | QuayImageIntegration
-    | RhelImageIntegration;
+    | RhelImageIntegration
+    | ScannerV4ImageIntegration;
 
 export type ArtifactoryImageIntegration = {
     type: 'artifactory';
@@ -40,7 +45,15 @@ export type ArtifactRegistryImageIntegration = {
 
 export type AzureImageIntegration = {
     type: 'azure';
+    azure: AzureConfig;
 } & BaseImageIntegration;
+
+export type AzureConfig = {
+    endpoint: string; // scrub: dependent
+    username: string; // scrub: dependent
+    password: string; // scrub: always
+    wifEnabled: boolean; // scrub: dependent
+};
 
 export type ClairImageIntegration = {
     type: 'clair';
@@ -48,6 +61,16 @@ export type ClairImageIntegration = {
 } & BaseImageIntegration;
 
 export type ClairConfig = {
+    endpoint: string;
+    insecure: boolean;
+};
+
+export type ClairV4ImageIntegration = {
+    type: 'clairV4';
+    clairV4: ClairV4Config;
+} & BaseImageIntegration;
+
+export type ClairV4Config = {
     endpoint: string;
     insecure: boolean;
 };
@@ -103,6 +126,10 @@ export type EcrAuthorizationData = {
     expiresAt: string; // ISO 8601 date string
 };
 
+export type GhcrImageIntegration = {
+    type: 'ghcr';
+} & BaseImageIntegration;
+
 export type GoogleImageIntegration = {
     type: 'google';
     categories: CategoriesForRegistryScanner[];
@@ -114,6 +141,7 @@ export type GoogleConfig = {
     // The service account for the integration. The server will mask the value of this credential in responses and logs.
     serviceAccount: string; // scrub: always
     project: string;
+    wifEnabled: boolean;
 };
 
 export type IbmImageIntegration = {
@@ -156,4 +184,17 @@ export type QuayRobotAccount = {
 
 export type RhelImageIntegration = {
     type: 'rhel';
+} & BaseImageIntegration;
+
+export const scannerV4ImageIntegrationType = 'scannerv4';
+
+export type ScannerV4ImageIntegration = {
+    type: typeof scannerV4ImageIntegrationType;
+    scannerV4: {
+        numConcurrentScans: number;
+        indexerEndpoint: string;
+        matcherEndpoint: string;
+    };
+    source: null;
+    categories: CategoriesForScannerV4[];
 } & BaseImageIntegration;

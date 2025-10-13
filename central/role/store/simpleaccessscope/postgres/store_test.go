@@ -9,19 +9,18 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type SimpleAccessScopesStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestSimpleAccessScopesStore(t *testing.T) {
@@ -29,28 +28,17 @@ func TestSimpleAccessScopesStore(t *testing.T) {
 }
 
 func (s *SimpleAccessScopesStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
 
 	s.testDB = pgtest.ForT(s.T())
-	s.store = New(s.testDB.Pool)
+	s.store = New(s.testDB.DB)
 }
 
 func (s *SimpleAccessScopesStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE simple_access_scopes CASCADE")
 	s.T().Log("simple_access_scopes", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
-}
-
-func (s *SimpleAccessScopesStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *SimpleAccessScopesStoreSuite) TestStore() {
@@ -72,12 +60,12 @@ func (s *SimpleAccessScopesStoreSuite) TestStore() {
 	foundSimpleAccessScope, exists, err = store.Get(ctx, simpleAccessScope.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(simpleAccessScope, foundSimpleAccessScope)
+	protoassert.Equal(s.T(), simpleAccessScope, foundSimpleAccessScope)
 
-	simpleAccessScopeCount, err := store.Count(ctx)
+	simpleAccessScopeCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, simpleAccessScopeCount)
-	simpleAccessScopeCount, err = store.Count(withNoAccessCtx)
+	simpleAccessScopeCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(simpleAccessScopeCount)
 
@@ -87,11 +75,6 @@ func (s *SimpleAccessScopesStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, simpleAccessScope))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, simpleAccessScope), sac.ErrResourceAccessDenied)
 
-	foundSimpleAccessScope, exists, err = store.Get(ctx, simpleAccessScope.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(simpleAccessScope, foundSimpleAccessScope)
-
 	s.NoError(store.Delete(ctx, simpleAccessScope.GetId()))
 	foundSimpleAccessScope, exists, err = store.Get(ctx, simpleAccessScope.GetId())
 	s.NoError(err)
@@ -100,15 +83,23 @@ func (s *SimpleAccessScopesStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, simpleAccessScope.GetId()), sac.ErrResourceAccessDenied)
 
 	var simpleAccessScopes []*storage.SimpleAccessScope
+	var simpleAccessScopeIDs []string
 	for i := 0; i < 200; i++ {
 		simpleAccessScope := &storage.SimpleAccessScope{}
 		s.NoError(testutils.FullInit(simpleAccessScope, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		simpleAccessScopes = append(simpleAccessScopes, simpleAccessScope)
+		simpleAccessScopeIDs = append(simpleAccessScopeIDs, simpleAccessScope.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, simpleAccessScopes))
 
-	simpleAccessScopeCount, err = store.Count(ctx)
+	simpleAccessScopeCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, simpleAccessScopeCount)
+
+	s.NoError(store.DeleteMany(ctx, simpleAccessScopeIDs))
+
+	simpleAccessScopeCount, err = store.Count(ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.Equal(0, simpleAccessScopeCount)
 }

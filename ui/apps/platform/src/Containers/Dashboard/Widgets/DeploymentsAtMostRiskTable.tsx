@@ -1,18 +1,13 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import { Truncate } from '@patternfly/react-core';
-import { TableComposable, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
-import { ListDeployment } from 'types/deployment.proto';
-import { networkBasePath, riskBasePath } from 'routePaths';
-import { SearchFilter } from 'types/search';
+import type { ListDeployment } from 'types/deployment.proto';
+import { riskBasePath } from 'routePaths';
+import type { SearchFilter } from 'types/search';
 import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
-
-const columnNames = {
-    deployment: 'Deployment',
-    resourceLocation: 'Resource location',
-    riskPriority: 'Risk priority',
-};
+import { getURLLinkToDeployment } from 'Containers/NetworkGraph/utils/networkGraphURLUtils';
 
 function riskPageLinkToDeployment(id: string, name: string, searchFilter: SearchFilter): string {
     const query = getUrlQueryStringForSearchFilter({
@@ -32,44 +27,49 @@ function DeploymentsAtMostRiskTable({
     searchFilter,
 }: DeploymentsAtMostRiskTableProps) {
     return (
-        <TableComposable aria-label="Deployments at most risk" variant="compact" borders={false}>
+        <Table aria-label="Deployments at most risk" variant="compact" borders={false}>
             <Thead>
                 <Tr>
-                    <Th className="pf-u-pl-0">{columnNames.deployment}</Th>
-                    <Th>{columnNames.resourceLocation}</Th>
-                    <Th className="pf-u-pr-0 pf-u-text-align-center-on-md">
-                        {columnNames.riskPriority}
-                    </Th>
+                    <Th className="pf-v5-u-pl-0">Deployment</Th>
+                    <Th>Resource location</Th>
+                    <Th className="pf-v5-u-pr-0 pf-v5-u-text-align-center-on-md">Risk priority</Th>
                 </Tr>
             </Thead>
             <Tbody>
-                {deployments.map(({ id, name, cluster, namespace, priority }) => (
-                    <Tr key={id}>
-                        <Td className="pf-u-pl-0" dataLabel={columnNames.deployment}>
-                            <Link to={riskPageLinkToDeployment(id, name, searchFilter)}>
-                                <Truncate position="middle" content={name} />
-                            </Link>
-                        </Td>
-                        <Td width={45} dataLabel={columnNames.resourceLocation}>
-                            <span>
-                                in &ldquo;
+                {deployments.map(({ id: deploymentId, name, cluster, namespace, priority }) => {
+                    const networkGraphLink = getURLLinkToDeployment({
+                        cluster,
+                        namespace,
+                        deploymentId,
+                    });
+                    return (
+                        <Tr key={deploymentId}>
+                            <Td className="pf-v5-u-pl-0" dataLabel="Deployment">
                                 <Link
-                                    to={`${networkBasePath}/${id}`}
-                                >{`${cluster} / ${namespace}`}</Link>
-                                &rdquo;
-                            </span>
-                        </Td>
-                        <Td
-                            width={20}
-                            className="pf-u-pr-0 pf-u-text-align-center-on-md"
-                            dataLabel={columnNames.riskPriority}
-                        >
-                            {priority}
-                        </Td>
-                    </Tr>
-                ))}
+                                    to={riskPageLinkToDeployment(deploymentId, name, searchFilter)}
+                                >
+                                    <Truncate position="middle" content={name} />
+                                </Link>
+                            </Td>
+                            <Td width={45} dataLabel="Resource location">
+                                <span>
+                                    in &ldquo;
+                                    <Link to={networkGraphLink}>{`${cluster} / ${namespace}`}</Link>
+                                    &rdquo;
+                                </span>
+                            </Td>
+                            <Td
+                                width={20}
+                                className="pf-v5-u-pr-0 pf-v5-u-text-align-center-on-md"
+                                dataLabel="Risk priority"
+                            >
+                                {priority}
+                            </Td>
+                        </Tr>
+                    );
+                })}
             </Tbody>
-        </TableComposable>
+        </Table>
     );
 }
 

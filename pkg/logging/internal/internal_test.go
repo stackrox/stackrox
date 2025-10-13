@@ -12,10 +12,10 @@ func TestCurrentModule(t *testing.T) {
 }
 
 func TestLoggerForModule(t *testing.T) {
-	assert.Equal(t, "pkg/logging/internal", logging.LoggerForModule().Module().Name())
+	assert.Equal(t, "pkg/logging/internal", logging.CurrentModule().Logger().Module().Name())
 }
 
-func TestLoggerCreationSite(t *testing.T) {
+func TestLoggerCreationSite(_ *testing.T) {
 	logging.CurrentModule().Logger().Info("CurrentModule().Logger()")
 	logging.LoggerForModule().Info("LoggerForModule()")
 }

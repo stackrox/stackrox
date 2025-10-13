@@ -1,38 +1,62 @@
 import React, { ReactElement } from 'react';
 import { SelectOption } from '@patternfly/react-core';
 
-import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import SelectSingle from 'Components/SelectSingle';
 
 export type RepeatScheduleDropdownProps = {
-    label: string;
     fieldId: string;
     value: string;
     handleSelect: (id, selection) => void;
     isEditable?: boolean;
-    isRequired?: boolean;
+    showNoResultsOption?: boolean;
+    includeDailyOption?: boolean;
+    onBlur?: React.FocusEventHandler<HTMLDivElement>;
 };
 
 function RepeatScheduleDropdown({
-    label,
     fieldId,
     value,
     handleSelect,
     isEditable = true,
-    isRequired = false,
+    showNoResultsOption = false,
+    includeDailyOption = false,
+    onBlur,
 }: RepeatScheduleDropdownProps): ReactElement {
+    let options = [
+        ...(includeDailyOption
+            ? [
+                  <SelectOption key="daily" value="DAILY">
+                      Daily
+                  </SelectOption>,
+              ]
+            : []),
+        <SelectOption key="weekly" value="WEEKLY">
+            Weekly
+        </SelectOption>,
+        <SelectOption key="monthly" value="MONTHLY">
+            Monthly
+        </SelectOption>,
+    ];
+    if (showNoResultsOption) {
+        options = [
+            <SelectOption key="none" value="">
+                None
+            </SelectOption>,
+            ...options,
+        ];
+    }
     return (
-        <FormLabelGroup isRequired={isRequired} label={label} fieldId={fieldId} errors={{}}>
-            <SelectSingle
-                id={fieldId}
-                value={value}
-                handleSelect={handleSelect}
-                isDisabled={!isEditable}
-            >
-                <SelectOption value="WEEKLY">Weekly</SelectOption>
-                <SelectOption value="MONTHLY">Monthly</SelectOption>
-            </SelectSingle>
-        </FormLabelGroup>
+        <SelectSingle
+            id={fieldId}
+            value={value}
+            handleSelect={handleSelect}
+            isDisabled={!isEditable}
+            placeholderText="Select frequency"
+            menuAppendTo={() => document.body}
+            onBlur={onBlur}
+        >
+            {options}
+        </SelectSingle>
     );
 }
 

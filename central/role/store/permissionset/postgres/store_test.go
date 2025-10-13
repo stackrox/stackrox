@@ -9,19 +9,18 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type PermissionSetsStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestPermissionSetsStore(t *testing.T) {
@@ -29,28 +28,17 @@ func TestPermissionSetsStore(t *testing.T) {
 }
 
 func (s *PermissionSetsStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
 
 	s.testDB = pgtest.ForT(s.T())
-	s.store = New(s.testDB.Pool)
+	s.store = New(s.testDB.DB)
 }
 
 func (s *PermissionSetsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE permission_sets CASCADE")
 	s.T().Log("permission_sets", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
-}
-
-func (s *PermissionSetsStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *PermissionSetsStoreSuite) TestStore() {
@@ -72,12 +60,12 @@ func (s *PermissionSetsStoreSuite) TestStore() {
 	foundPermissionSet, exists, err = store.Get(ctx, permissionSet.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(permissionSet, foundPermissionSet)
+	protoassert.Equal(s.T(), permissionSet, foundPermissionSet)
 
-	permissionSetCount, err := store.Count(ctx)
+	permissionSetCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, permissionSetCount)
-	permissionSetCount, err = store.Count(withNoAccessCtx)
+	permissionSetCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(permissionSetCount)
 
@@ -87,11 +75,6 @@ func (s *PermissionSetsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, permissionSet))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, permissionSet), sac.ErrResourceAccessDenied)
 
-	foundPermissionSet, exists, err = store.Get(ctx, permissionSet.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(permissionSet, foundPermissionSet)
-
 	s.NoError(store.Delete(ctx, permissionSet.GetId()))
 	foundPermissionSet, exists, err = store.Get(ctx, permissionSet.GetId())
 	s.NoError(err)
@@ -100,15 +83,23 @@ func (s *PermissionSetsStoreSuite) TestStore() {
 	s.ErrorIs(store.Delete(withNoAccessCtx, permissionSet.GetId()), sac.ErrResourceAccessDenied)
 
 	var permissionSets []*storage.PermissionSet
+	var permissionSetIDs []string
 	for i := 0; i < 200; i++ {
 		permissionSet := &storage.PermissionSet{}
 		s.NoError(testutils.FullInit(permissionSet, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		permissionSets = append(permissionSets, permissionSet)
+		permissionSetIDs = append(permissionSetIDs, permissionSet.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, permissionSets))
 
-	permissionSetCount, err = store.Count(ctx)
+	permissionSetCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, permissionSetCount)
+
+	s.NoError(store.DeleteMany(ctx, permissionSetIDs))
+
+	permissionSetCount, err = store.Count(ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.Equal(0, permissionSetCount)
 }

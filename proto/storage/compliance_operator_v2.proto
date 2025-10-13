@@ -1,0 +1,369 @@
+syntax = "proto3";
+
+package storage;
+
+import "google/protobuf/timestamp.proto";
+import "storage/report_notifier_configuration.proto";
+import "storage/schedule.proto";
+import "storage/user.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+// Represents the role of the node within the cluster
+enum NodeRole {
+  INFRA = 0;
+  WORKER = 1;
+  MASTER = 2;
+}
+
+// Represents the scan type whether a node or platform scan.
+enum ScanType {
+  UNSET_SCAN_TYPE = 0;
+  NODE_SCAN = 1;
+  PLATFORM_SCAN = 2;
+}
+
+// Represents the severity of the rule
+enum RuleSeverity {
+  UNSET_RULE_SEVERITY = 0;
+  UNKNOWN_RULE_SEVERITY = 1;
+  INFO_RULE_SEVERITY = 2;
+  LOW_RULE_SEVERITY = 3;
+  MEDIUM_RULE_SEVERITY = 4;
+  HIGH_RULE_SEVERITY = 5;
+}
+
+message ProfileShim {
+  string profile_id = 1;
+  string profile_ref_id = 2; // @gotags: search:"Profile Ref ID,hidden" sql:"fk(ComplianceOperatorProfileV2:profile_ref_id),no-fk-constraint,type(uuid)"
+}
+
+// Next Tag: 15
+message ComplianceOperatorProfileV2 {
+  // The primary key is name-profile_version as that is guaranteed unique in the operator and how
+  // the profile is referenced in scans and settings
+  string id = 1; // @gotags: sql:"pk"
+  string profile_id = 2; // @gotags: search:"Compliance Profile ID,hidden"
+  string name = 3; // @gotags: search:"Compliance Profile Name,hidden"
+  string profile_version = 4; // @gotags: search:"Compliance Profile Version,hidden"
+  string product_type = 5; // @gotags: search:"Compliance Profile Product Type,hidden"
+  string standard = 6; // @gotags: search:"Compliance Standard,hidden"
+  map<string, string> labels = 7;
+  map<string, string> annotations = 8;
+  string description = 9;
+  message Rule {
+    string rule_name = 1; // @gotags: search:"-" sql:"fk(ComplianceOperatorRuleV2:name),no-fk-constraint"
+  }
+  repeated Rule rules = 10;
+  string product = 11;
+  string title = 12;
+  repeated string values = 13;
+  string cluster_id = 14; // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
+  string profile_ref_id = 15; // @gotags: search:"Profile Ref ID,hidden" sql:"type(uuid)"
+}
+
+message ComplianceOperatorRuleV2 {
+  string id = 1; // @gotags: sql:"pk"
+  string rule_id = 2;
+  string name = 3; // @gotags: search:"Compliance Rule Name,hidden"
+  string rule_type = 4; // @gotags: search:"Compliance Rule Type,hidden"
+  RuleSeverity severity = 5; // @gotags: search:"Compliance Rule Severity,hidden"
+  map<string, string> labels = 6;
+  map<string, string> annotations = 7;
+  string title = 8;
+  string description = 9;
+  string rationale = 10;
+  message Fix {
+    string platform = 1;
+    string disruption = 2;
+  }
+  repeated Fix fixes = 11;
+  string warning = 12;
+  repeated RuleControls controls = 13;
+  string cluster_id = 14; // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
+  string rule_ref_id = 15; // @gotags: search:"Rule Ref ID,hidden" sql:"type(uuid)"
+  string parent_rule = 16;
+  string instructions = 17;
+}
+
+// Next Tag: 4
+message RuleControls {
+  string standard = 1; // @gotags: search:"Compliance Standard,hidden"
+  repeated string controls = 2 [deprecated = true];
+  string control = 3; // @gotags: search:"Compliance Control,hidden"
+}
+
+// Next Tag: 18
+message ComplianceOperatorScanConfigurationV2 {
+  string id = 1; // @gotags: search:"Compliance Scan Config ID,hidden" sql:"pk,type(uuid)"
+  string scan_config_name = 2; // @gotags: search:"Compliance Scan Config Name" sql:"unique"
+  bool auto_apply_remediations = 3;
+  bool auto_update_remediations = 4;
+  bool one_time_scan = 5;
+  map<string, string> labels = 6;
+  map<string, string> annotations = 7;
+  message ProfileName {
+    string profile_name = 1; // @gotags: search:"Compliance Config Profile Name,hidden" sql:"fk(ComplianceOperatorProfileV2:name),no-fk-constraint"
+  }
+  repeated ProfileName profiles = 8;
+  repeated NodeRole node_roles = 9;
+  // Will be configurable via env var
+  bool strict_node_scan = 10;
+  // Starting point for schedule will probably have to build upon it
+  storage.Schedule schedule = 11;
+  google.protobuf.Timestamp created_time = 12;
+  google.protobuf.Timestamp last_updated_time = 13;
+  // Most recent user to update the scan configurations
+  SlimUser modified_by = 14; // @gotags: sql:"ignore_labels(User ID)"
+  string description = 15;
+  message Cluster {
+    string cluster_id = 1; // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
+  }
+  repeated Cluster clusters = 16;
+  repeated NotifierConfiguration notifiers = 17;
+}
+
+// Next Tag: 7
+// Cluster and an error if necessary to handle cases where the scan configuration is
+// unable to be applied to a cluster for whatever reason.
+message ComplianceOperatorClusterScanConfigStatus {
+  string id = 6; // @gotags: sql:"pk,type(uuid)"
+  string cluster_id = 1; // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
+  string scan_config_id = 2; // @gotags: search:"Compliance Scan Config ID,hidden" sql:"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint,type(uuid)"
+  repeated string errors = 3;
+  google.protobuf.Timestamp last_updated_time = 4; // @gotags: search:"Compliance Scan Config Last Updated Time,hidden"
+  string cluster_name = 5;
+}
+
+// Next Tag: 7
+message ComplianceOperatorBenchmarkV2 {
+  string id = 1; // @gotags: sql:"pk,id,type(uuid)"
+  string name = 2; // @gotags: search:"Compliance Benchmark Name,hidden"
+  string version = 3; // @gotags: search:"Compliance Benchmark Version,hidden"
+  string description = 4;
+  string provider = 5;
+  // This is extracted from the annotation.
+  // Example: from https://control.compliance.openshift.io/CIS-OCP we should have CIS-OCP
+  string short_name = 7; // @gotags: search:"Compliance Benchmark Short Name,hidden"
+
+  message Profile {
+    string profile_name = 1; // @gotags: search:"Compliance Profile Name" sql:"fk(ComplianceOperatorProfileV2:name),no-fk-constraint"
+    string profile_version = 2; // @gotags: search:"Compliance Profile Version" sql:"fk(ComplianceOperatorProfileV2:profile_version),no-fk-constraint"
+  }
+
+  repeated Profile profiles = 8;
+}
+
+// Next Tag: 21
+// This object has been flattened vs joining with rule.  The rationale is to spend the time to query rule
+// while processing results vs reporting them to the user.  Additionally, flattening it helps with the historical data
+// as the rules can change without impacting the historical result.
+message ComplianceOperatorCheckResultV2 {
+  enum CheckStatus {
+    UNSET = 0;
+    PASS = 1;
+    FAIL = 2;
+    ERROR = 3;
+    INFO = 4;
+    MANUAL = 5;
+    NOT_APPLICABLE = 6;
+    INCONSISTENT = 7;
+  }
+  string id = 1; // @gotags: search:"Compliance Check UID,hidden" sql:"pk"
+  string check_id = 2; // @gotags: search:"Compliance Check ID,hidden"
+  string check_name = 3; // @gotags: search:"Compliance Check Name,hidden"
+  string cluster_id = 4; // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
+  CheckStatus status = 5; // @gotags: search:"Compliance Check Status,hidden"
+  RuleSeverity severity = 6; // @gotags: search:"Compliance Rule Severity,hidden"
+  string description = 7;
+  string instructions = 8;
+  map<string, string> labels = 9;
+  map<string, string> annotations = 10;
+  google.protobuf.Timestamp created_time = 11; // @gotags: search:"Compliance Check Result Created Time,hidden"
+  repeated string valuesUsed = 12;
+  repeated string warnings = 13;
+  string scan_name = 14;
+  string cluster_name = 15;
+  string scan_config_name = 16; // @gotags: search:"Compliance Scan Config Name" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint"
+  string rationale = 17; // @gotags: search:"Compliance Check Rationale,hidden"
+  string scan_ref_id = 18; // @gotags: search:"Scan Ref ID,hidden" sql:"fk(ComplianceOperatorScanV2:scan_ref_id),no-fk-constraint,type(uuid)"
+  string rule_ref_id = 19; // @gotags: search:"Rule Ref ID,hidden" sql:"fk(ComplianceOperatorRuleV2:rule_ref_id),no-fk-constraint,type(uuid)"
+  // last_started_time is the last time the Scan resource was triggered
+  google.protobuf.Timestamp last_started_time = 20; // @gotags: search:"Compliance Check Last Started Time,hidden"
+}
+
+//Next Tag: 4
+//Scan Status object
+message ScanStatus {
+  string phase = 1;
+  string result = 2; // @gotags: search:"Compliance Scan Result"
+  string warnings = 3;
+}
+
+// Next Tag: 18
+// Scan object per cluster
+message ComplianceOperatorScanV2 {
+  string id = 1; // @gotags: sql:"pk"
+  string scan_config_name = 2; // @gotags: search:"Compliance Scan Config Name" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint"
+  string cluster_id = 3; // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
+  string errors = 4;
+  ProfileShim profile = 5;
+  map<string, string> labels = 6;
+  map<string, string> annotations = 7;
+  ScanType scan_type = 8;
+  NodeRole node_selector = 9;
+  ScanStatus status = 10;
+  google.protobuf.Timestamp created_time = 11;
+  google.protobuf.Timestamp last_executed_time = 12; // @gotags: search:"Compliance Scan Last Executed Time,hidden"
+  string scan_name = 13; // @gotags: search:"Compliance Scan Name,hidden"
+  string warnings = 14;
+  string product_type = 15;
+  string scan_ref_id = 16; // @gotags: search:"Scan Ref ID,hidden" sql:"type(uuid)"
+  // last_started_time is the last time the Scan resource was triggered
+  google.protobuf.Timestamp last_started_time = 17; // @gotags: search:"Compliance Scan Last Started Time,hidden"
+}
+
+// ComplianceOperatorScanSettingBindingV2 associates a scan setting with one or more compliance profiles
+// Next Tag: 9
+message ComplianceOperatorScanSettingBindingV2 {
+  string id = 1; // @gotags: sql:"pk,id"
+  string name = 2; // @gotags: search:"Compliance Scan Setting Binding Name"
+  string cluster_id = 3; // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
+
+  repeated string profile_names = 4;
+  string scan_setting_name = 5; // @gotags: search:"Compliance Scan Config Name"
+
+  reserved 6;
+  map<string, string> labels = 7;
+  map<string, string> annotations = 8;
+  ComplianceOperatorStatus status = 9;
+}
+
+// Next Tag: 6
+// ComplianceOperatorCondition represents an observation of status conditions.
+message ComplianceOperatorCondition {
+  string type = 1;
+  string status = 2;
+  string reason = 3;
+  string message = 4;
+  google.protobuf.Timestamp last_transition_time = 5;
+}
+
+// Next Tag: 5
+// ComplianceOperatorStatus represents an observation of an object's status.
+message ComplianceOperatorStatus {
+  string phase = 1;
+  string result = 2;
+  string error_message = 3;
+  repeated ComplianceOperatorCondition conditions = 4;
+}
+
+// Next Tag: 5
+// ComplianceOperatorSuiteV2 represents scan status
+message ComplianceOperatorSuiteV2 {
+  string id = 1; // @gotags: sql:"pk,id,type(uuid)"
+  string name = 2; // @gotags: search:"Compliance Suite Name,hidden"
+  string cluster_id = 3; // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
+
+  ComplianceOperatorStatus status = 4;
+}
+
+// Next Tag: 9
+message ComplianceOperatorRemediationV2 {
+  string id = 1; // @gotags: sql:"pk,id,type(uuid)"
+  string name = 2; // @gotags: search:"Compliance Remediation Name,hidden"
+  string compliance_check_result_name = 3; // @gotags: search:"Compliance Check Name,hidden"
+  // apply is used by the compliance operator to apply a remediation
+  bool apply = 4;
+  // current holds the object which currently remediates the check result. It is saved in a "current" field because
+  // Compliance Operator can ship new remediations in a following versions.
+  // See: https://docs.openshift.com/container-platform/4.15/security/compliance_operator/co-scans/compliance-operator-remediation.html#compliance-updating_compliance-remediation
+  string current_object = 5;
+  // outdated is an old remediation object when a new remediation was added to the "current" field in the compliance operator.
+  // See: https://docs.openshift.com/container-platform/4.15/security/compliance_operator/co-scans/compliance-operator-remediation.html#compliance-updating_compliance-remediation
+  string outdated_object = 6;
+  string enforcement_type = 7;
+  string cluster_id = 8; // @gotags: search:"Cluster ID,hidden"
+}
+
+// Next Tag: 9
+message ComplianceOperatorReportSnapshotV2 {
+  string report_id = 1; // @gotags: sql:"pk,id,type(uuid)"
+  string scan_configuration_id = 2; // @gotags: search:"Compliance Scan Config ID" sql:"fk(ComplianceOperatorScanConfigurationV2:id)"
+  string name = 3; // @gotags: search:"Compliance Report Name"
+  string description = 4;
+  ComplianceOperatorReportStatus report_status = 5;
+  SlimUser user = 6;
+
+  message Scan {
+    string scan_ref_id = 1; // @gotags: search:"Scan Ref ID,hidden" sql:"fk(ComplianceOperatorScanV2:scan_ref_id),no-fk-constraint"
+    google.protobuf.Timestamp last_started_time = 2; // @gotags: search:"Compliance Scan Last Started Time,hidden" sql:"fk(ComplianceOperatorScanV2:last_started_time),no-fk-constraint"
+  }
+
+  repeated Scan scans = 7;
+
+  ComplianceOperatorReportData report_data = 8; // @gotags: search:"-"
+
+  message FailedCluster {
+    string cluster_id = 1;
+    string cluster_name = 2;
+    repeated string reasons = 3;
+    string operator_version = 4;
+    repeated string scanNames = 5;
+  }
+
+  repeated FailedCluster failed_clusters = 9;
+}
+
+// Next available tag: 4
+message ComplianceOperatorReportData {
+  // Next available tag: 5
+  message SuiteStatus {
+    string phase = 1;
+    string result = 2;
+    string error_message = 3;
+    google.protobuf.Timestamp last_transition_time = 4;
+  }
+
+  // Next available tag: 5
+  message ClusterStatus {
+    string cluster_id = 1;
+    repeated string errors = 2;
+    string cluster_name = 3;
+
+    SuiteStatus suite_status = 4;
+  }
+
+  ComplianceOperatorScanConfigurationV2 scan_configuration = 1; // @gotags: search:"-" sql:"-"
+  repeated ClusterStatus cluster_status = 2;
+  google.protobuf.Timestamp last_executed_time = 3;
+}
+
+// Next Tag: 7
+message ComplianceOperatorReportStatus {
+  enum RunState {
+    WAITING = 0;
+    PREPARING = 1;
+    GENERATED = 2;
+    DELIVERED = 3;
+    FAILURE = 4;
+    PARTIAL_ERROR = 5;
+    PARTIAL_SCAN_ERROR_DOWNLOAD = 6;
+    PARTIAL_SCAN_ERROR_EMAIL = 7;
+  }
+  enum NotificationMethod {
+    EMAIL = 0;
+    DOWNLOAD = 1;
+  }
+  enum RunMethod {
+    ON_DEMAND = 0;
+    SCHEDULED = 1;
+  }
+  RunState run_state = 1; // @gotags: search:"Compliance Report State"
+  google.protobuf.Timestamp started_at = 2; // @gotags: search:"Compliance Report Started Time"
+  google.protobuf.Timestamp completed_at = 3; // @gotags: search:"Compliance Report Completed Time"
+  string error_msg = 4;
+  RunMethod report_request_type = 5; // @gotags: search:"Compliance Report Request Type"
+  NotificationMethod report_notification_method = 6; // @gotags: search:"Compliance Report Notification Method"
+}

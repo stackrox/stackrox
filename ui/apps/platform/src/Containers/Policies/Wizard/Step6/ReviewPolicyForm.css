@@ -1,0 +1,11 @@
+/*
+ * Separate Review policy at the left from Preview violations at the right.
+ *
+ * Assume alignSelfStretch (in .tsx file) so columns have equal height for border.
+ */
+#policy-page .pf-v5-l-flex.pf-m-row > .review-policy {
+    margin-right: var(
+        --pf-v5-global--spacer--lg
+    ); /* override --pf-v5-l-flex--spacer which has md value */
+    padding-right: var(--pf-v5-global--spacer--lg);
+}

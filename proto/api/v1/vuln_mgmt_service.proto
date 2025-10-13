@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package v1;
+
+import weak "google/api/annotations.proto";
+import "storage/deployment.proto";
+import "storage/image.proto";
+
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+message VulnMgmtExportWorkloadsRequest {
+  // Request timeout in seconds.
+  int32 timeout = 1;
+  // Query to constrain the deployments for which vulnerability data is returned.
+  // The queries contain pairs of `Search Option:Value` separated by `+` signs.
+  // For HTTP requests the query should be quoted. For example
+  // > curl "$ROX_ENDPOINT/v1/export/vuln-mgmt/workloads?query=Deployment%3Ascanner%2BNamespace%3Astackrox"
+  // queries vulnerability data for all scanner deployments in the stackrox namespace.
+  // See https://docs.openshift.com/acs/operating/search-filter.html for more information.
+  string query = 2;
+}
+
+// The workloads response contains the full image details including the
+// vulnerability data.
+message VulnMgmtExportWorkloadsResponse {
+  storage.Deployment deployment = 1;
+  repeated storage.Image images = 2;
+  int32 live_pods = 3;
+}
+
+// VulnMgmtService APIs are used to manage workload vulnerabilities.
+service VulnMgmtService {
+  // Streams vulnerability data upon request. Each entry consists of a deployment and the associated container images.
+  //
+  // The response is structured as:
+  // {"result": {"deployment": {...}, "images": [...]}}
+  // ...
+  // {"result": {"deployment": {...}, "images": [...]}}
+  rpc VulnMgmtExportWorkloads(VulnMgmtExportWorkloadsRequest) returns (stream VulnMgmtExportWorkloadsResponse) {
+    option (google.api.http) = {get: "/v1/export/vuln-mgmt/workloads"};
+  }
+}

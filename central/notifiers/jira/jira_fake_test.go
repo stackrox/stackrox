@@ -7,17 +7,18 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
+	"strings"
 	"testing"
 
 	jiraLib "github.com/andygrunwald/go-jira"
-	"github.com/gogo/protobuf/types"
-	"github.com/golang/mock/gomock"
-	mitreMocks "github.com/stackrox/rox/central/mitre/datastore/mocks"
-	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
+	mitreMocks "github.com/stackrox/rox/pkg/mitre/datastore/mocks"
+	notifierMocks "github.com/stackrox/rox/pkg/notifiers/mocks"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 // fakeJira is a fake JIRA backend that implements exactly the APIs that the JIRA notifier needs (and only to the extent
@@ -25,8 +26,9 @@ import (
 // This is in no way intended to be a realistic model of the JIRA API, it only allows us to exercise notifier code paths
 // in this test.
 type fakeJira struct {
-	t                  *testing.T
-	username, password string
+	cloud                     bool
+	t                         *testing.T
+	username, password, token string
 
 	priorities []jiraLib.Priority
 	project    jiraLib.MetaProject
@@ -36,17 +38,21 @@ type fakeJira struct {
 
 func (j *fakeJira) Handler() http.Handler {
 	mux := http.NewServeMux()
+	mux.HandleFunc("/rest/api/2/configuration", j.handleConfiguration)
+	mux.HandleFunc("/rest/api/2/mypermissions/", j.handleMyPermissions)
 	mux.HandleFunc("/rest/api/2/priority", j.handlePriority)
-	mux.HandleFunc("/rest/api/2/issue/createmeta", j.handleCreateMeta)
+	mux.HandleFunc("/rest/api/2/issue/createmeta/FJ/issuetypes", j.handleIssueType)
+	mux.HandleFunc("/rest/api/2/issue/createmeta/FJ/issuetypes/25", j.handleIssueTypeFields)
 	mux.HandleFunc("/rest/api/2/issue", j.handleCreateIssue)
 
 	if j.username == "" && j.password == "" {
 		return mux
 	}
 
-	expectedAuthHeader := fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", j.username, j.password))))
+	basicAuthHeader := fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", j.username, j.password))))
+	tokenAuthHeader := fmt.Sprintf("Bearer %s", j.token)
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		if req.Header.Get("Authorization") != expectedAuthHeader {
+		if req.Header.Get("Authorization") != basicAuthHeader && req.Header.Get("Authorization") != tokenAuthHeader {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -54,26 +60,79 @@ func (j *fakeJira) Handler() http.Handler {
 	})
 }
 
-func (j *fakeJira) handlePriority(w http.ResponseWriter, req *http.Request) {
+func (j *fakeJira) handleConfiguration(w http.ResponseWriter, _ *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
+
+func (j *fakeJira) handleIssueTypeFields(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	targetIssueType := j.project.GetIssueTypeWithName("IssueWithPrio")
+	result := issueFieldsResult{
+		Total: len(targetIssueType.Fields),
+	}
+
+	iFields := []*issueField{{
+		Name: "Priority",
+	}}
+
+	if j.cloud {
+		result.IssueFieldsCloud = iFields
+	} else {
+		result.IssueFields = iFields
+	}
+
+	require.NoError(j.t, json.NewEncoder(w).Encode(result))
+}
+
+func (j *fakeJira) handleMyPermissions(w http.ResponseWriter, r *http.Request) {
+	if projectKey := r.URL.Query().Get("projectKey"); projectKey == "" {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	require.NoError(j.t, json.NewEncoder(w).Encode(permissionResult{
+		Permissions: map[string]struct {
+			HavePermission bool
+		}{
+			"CREATE_ISSUES": {HavePermission: true},
+		},
+	}))
+}
+
+func (j *fakeJira) handlePriority(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	require.NoError(j.t, json.NewEncoder(w).Encode(j.priorities))
 }
 
-func (j *fakeJira) handleCreateMeta(w http.ResponseWriter, req *http.Request) {
-	queryVals := req.URL.Query()
-	expectedQueryVals := url.Values{
-		"expand":      []string{"projects.issuetypes.fields"},
-		"projectKeys": []string{j.project.Key},
+func (j *fakeJira) handleIssueType(w http.ResponseWriter, req *http.Request) {
+	pathSuffix, found := strings.CutPrefix(req.URL.Path, "/rest/api/2/issue/createmeta/")
+
+	if !found {
+		w.WriteHeader(http.StatusNotFound)
+		return
 	}
-	if !assert.Equal(j.t, expectedQueryVals, queryVals) {
+
+	projectKey := strings.Split(pathSuffix, "/")
+
+	if projectKey[0] != j.project.Key || projectKey[1] != "issuetypes" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+
 	w.Header().Set("Content-Type", "application/json")
-	cmi := jiraLib.CreateMetaInfo{
-		Projects: []*jiraLib.MetaProject{&j.project},
+
+	issueTypes := &issueTypeResult{
+		Total: len(j.project.IssueTypes),
 	}
-	require.NoError(j.t, json.NewEncoder(w).Encode(&cmi))
+
+	if j.cloud {
+		issueTypes.IssueTypesCloud = j.project.IssueTypes
+	} else {
+		issueTypes.IssueTypes = j.project.IssueTypes
+	}
+
+	require.NoError(j.t, json.NewEncoder(w).Encode(&issueTypes))
 }
 
 func (j *fakeJira) handleCreateIssue(w http.ResponseWriter, req *http.Request) {
@@ -95,9 +154,18 @@ func (j *fakeJira) handleCreateIssue(w http.ResponseWriter, req *http.Request) {
 }
 
 func TestWithFakeJira(t *testing.T) {
+	testWithFakeJira(t, false)
+}
+
+func TestWithFakeJiraCloud(t *testing.T) {
+	testWithFakeJira(t, true)
+}
+
+func testWithFakeJira(t *testing.T, cloud bool) {
 	const (
 		username = "fakejirauser"
 		password = "fakejirapassword"
+		token    = "faketoken"
 
 		projectKey = "FJ"
 	)
@@ -131,9 +199,11 @@ func TestWithFakeJira(t *testing.T) {
 		IssueTypes: []*jiraLib.MetaIssueType{
 			{
 				Name: "IssueWithoutPrio",
+				Id:   "24",
 			},
 			{
 				Name: "IssueWithPrio",
+				Id:   "25",
 				Fields: map[string]interface{}{
 					"priority": true,
 				},
@@ -142,9 +212,11 @@ func TestWithFakeJira(t *testing.T) {
 	}
 
 	fj := fakeJira{
+		cloud:      cloud,
 		t:          t,
 		username:   username,
 		password:   password,
+		token:      token,
 		priorities: priorities,
 		project:    project,
 	}
@@ -152,31 +224,62 @@ func TestWithFakeJira(t *testing.T) {
 	testSrv := httptest.NewServer(fj.Handler())
 	defer testSrv.Close()
 
+	fakeJiraStorageConfig := storage.Jira{
+		Url:       testSrv.URL,
+		Username:  "fakejirauser",
+		Password:  "badpassword",
+		IssueType: "IssueWithPrio",
+		PriorityMappings: []*storage.Jira_PriorityMapping{
+			{
+				Severity:     storage.Severity_CRITICAL_SEVERITY,
+				PriorityName: "P0",
+			},
+			{
+				Severity:     storage.Severity_HIGH_SEVERITY,
+				PriorityName: "P1",
+			},
+			{
+				Severity:     storage.Severity_MEDIUM_SEVERITY,
+				PriorityName: "P2",
+			},
+			{
+				Severity:     storage.Severity_LOW_SEVERITY,
+				PriorityName: "P3",
+			},
+		},
+	}
 	fakeJiraConfig := &storage.Notifier{
 		Name:         "FakeJIRA",
 		UiEndpoint:   "https://central.stackrox",
 		Type:         "jira",
 		LabelDefault: projectKey,
 		Config: &storage.Notifier_Jira{
-			Jira: &storage.Jira{
-				Url:       testSrv.URL,
-				Username:  "fakejirauser",
-				Password:  "fakejirapassword",
-				IssueType: "IssueWithPrio",
-			},
+			Jira: &fakeJiraStorageConfig,
 		},
 	}
 
 	mockCtrl := gomock.NewController(t)
-	nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
-	mitreStore := mitreMocks.NewMockMitreAttackReadOnlyDataStore(mockCtrl)
+	mitreStore := mitreMocks.NewMockAttackReadOnlyDataStore(mockCtrl)
+	metadataGetter := notifierMocks.NewMockMetadataGetter(mockCtrl)
+	metadataGetter.EXPECT().GetAnnotationValue(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(projectKey).AnyTimes()
 	mitreStore.EXPECT().Get(gomock.Any()).Return(&storage.MitreAttackVector{}, nil).AnyTimes()
-	j, err := newJira(fakeJiraConfig, nsStore, mitreStore)
 	defer mockCtrl.Finish()
 
+	// Test with invalid password
+	_, err := newJira(fakeJiraConfig, metadataGetter, mitreStore, cryptocodec.Singleton(), "stackrox")
+	assert.Contains(t, err.Error(), "Status code: 401")
+
+	// Test with valid username/password combo
+	fakeJiraStorageConfig.Password = password
+	_, err = newJira(fakeJiraConfig, metadataGetter, mitreStore, cryptocodec.Singleton(), "stackrox")
 	require.NoError(t, err)
 
-	assert.NoError(t, j.Test(context.Background()))
+	// Test with valid bearer token
+	fakeJiraStorageConfig.Password = token
+	j, err := newJira(fakeJiraConfig, metadataGetter, mitreStore, cryptocodec.Singleton(), "stackrox")
+	require.NoError(t, err)
+
+	assert.Nil(t, j.Test(context.Background()))
 	require.Len(t, fj.createdIssues, 1)
 	issue := fj.createdIssues[0]
 	assert.Equal(t, "StackRox Test Issue", issue.Fields.Description)
@@ -197,7 +300,7 @@ func TestWithFakeJira(t *testing.T) {
 			Name: "myDeployment",
 			Id:   "myDeploymentID",
 		}},
-		Time: types.TimestampNow(),
+		Time: protocompat.TimestampNow(),
 	}
 	assert.NoError(t, j.AlertNotify(context.Background(), testAlert))
 	require.Len(t, fj.createdIssues, 2)

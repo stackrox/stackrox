@@ -4,42 +4,41 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/types"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cluster/datastore"
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
 	"github.com/stackrox/rox/central/probesources"
 	"github.com/stackrox/rox/central/risk/manager"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/maputil"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/timeutil"
 	"google.golang.org/grpc"
 )
 
 var (
-	authorizer = or.SensorOrAuthorizer(perrpc.FromMap(map[authz.Authorizer][]string{
+	authorizer = or.SensorOr(perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Cluster)): {
-			"/v1.ClustersService/GetClusters",
-			"/v1.ClustersService/GetCluster",
-			"/v1.ClustersService/GetKernelSupportAvailable",
-			"/v1.ClustersService/GetClusterDefaultValues",
+			v1.ClustersService_GetClusters_FullMethodName,
+			v1.ClustersService_GetCluster_FullMethodName,
+			v1.ClustersService_GetKernelSupportAvailable_FullMethodName,
+			v1.ClustersService_GetClusterDefaultValues_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Cluster)): {
-			"/v1.ClustersService/PostCluster",
-			"/v1.ClustersService/PutCluster",
-			"/v1.ClustersService/DeleteCluster",
+			v1.ClustersService_PostCluster_FullMethodName,
+			v1.ClustersService_PutCluster_FullMethodName,
+			v1.ClustersService_DeleteCluster_FullMethodName,
 		},
 	}))
 )
@@ -111,12 +110,6 @@ func (s *serviceImpl) getCluster(ctx context.Context, id string) (*v1.ClusterRes
 		return nil, errors.Wrap(errox.NotFound, "Not found")
 	}
 
-	if !features.DecommissionedClusterRetention.Enabled() {
-		return &v1.ClusterResponse{
-			Cluster: cluster,
-		}, nil
-	}
-
 	clusterRetentionInfo, err := s.getClusterRetentionInfo(ctx, cluster)
 	if err != nil {
 		return nil, err
@@ -133,18 +126,18 @@ func (s *serviceImpl) getClusterRetentionInfo(ctx context.Context, cluster *stor
 		return nil, nil
 	}
 
-	sysConfig, err := s.sysConfigDatastore.GetConfig(ctx)
+	systemPrivateConfig, err := s.sysConfigDatastore.GetPrivateConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	clusterRetentionConfig := sysConfig.GetPrivateConfig().GetDecommissionedClusterRetention()
+	clusterRetentionConfig := systemPrivateConfig.GetDecommissionedClusterRetention()
 	if clusterRetentionConfig == nil || clusterRetentionConfig.GetRetentionDurationDays() == 0 {
 		// If retention is disabled, there is no "days remaining" calculation to be done.
 		return nil, nil
 	}
 
-	if sliceutils.MapsIntersect(clusterRetentionConfig.GetIgnoreClusterLabels(), cluster.GetLabels()) {
+	if maputil.MapsIntersect(clusterRetentionConfig.GetIgnoreClusterLabels(), cluster.GetLabels()) {
 		return &v1.DecommissionedClusterRetentionInfo{
 			RetentionInfo: &v1.DecommissionedClusterRetentionInfo_IsExcluded{
 				IsExcluded: true,
@@ -155,12 +148,12 @@ func (s *serviceImpl) getClusterRetentionInfo(ctx context.Context, cluster *stor
 	timeNow := time.Now()
 	retentionDays := clusterRetentionConfig.GetRetentionDurationDays()
 
-	configCreateTime, err := types.TimestampFromProto(clusterRetentionConfig.GetCreatedAt())
+	configCreateTime, err := protocompat.ConvertTimestampToTimeOrError(clusterRetentionConfig.GetCreatedAt())
 	if err != nil {
 		return nil, err
 	}
 
-	lastContactTime, err := types.TimestampFromProto(cluster.GetHealthStatus().GetLastContact())
+	lastContactTime, err := protocompat.ConvertTimestampToTimeOrError(cluster.GetHealthStatus().GetLastContact())
 	if err != nil {
 		return nil, err
 	}
@@ -189,12 +182,6 @@ func (s *serviceImpl) GetClusters(ctx context.Context, req *v1.GetClustersReques
 	clusters, err := s.datastore.SearchRawClusters(ctx, q)
 	if err != nil {
 		return nil, err
-	}
-
-	if !features.DecommissionedClusterRetention.Enabled() {
-		return &v1.ClustersList{
-			Clusters: clusters,
-		}, nil
 	}
 
 	clusterIDToRetentionInfoMap, err := s.getClusterIDToRetentionInfoMap(ctx, clusters)
@@ -258,7 +245,7 @@ func (s *serviceImpl) GetClusterDefaultValues(ctx context.Context, _ *v1.Empty) 
 	flavor := defaults.GetImageFlavorFromEnv()
 	defaults := &v1.ClusterDefaultsResponse{
 		MainImageRepository:      flavor.MainImageNoTag(),
-		CollectorImageRepository: flavor.CollectorFullImageNoTag(),
+		CollectorImageRepository: flavor.CollectorImageNoTag(),
 		KernelSupportAvailable:   kernelSupport,
 	}
 	return defaults, nil

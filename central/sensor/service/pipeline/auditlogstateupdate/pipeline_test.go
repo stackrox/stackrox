@@ -4,12 +4,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gogo/protobuf/types"
-	"github.com/golang/mock/gomock"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestPipeline(t *testing.T) {
@@ -38,7 +38,7 @@ func (suite *PipelineTestSuite) TestRun() {
 	statusInfo := &central.AuditLogStatusInfo{
 		NodeAuditLogFileStates: map[string]*storage.AuditLogFileState{
 			"node-a": {
-				CollectLogsSince: types.TimestampNow(),
+				CollectLogsSince: protocompat.TimestampNow(),
 				LastAuditId:      "last-id",
 			},
 		},

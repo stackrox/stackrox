@@ -4,11 +4,13 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"net"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/alpn"
 	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
 	"github.com/stackrox/rox/pkg/grpc/client/authn/servicecerttoken"
@@ -20,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/tlscheck"
 	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -58,7 +61,10 @@ type Options struct {
 	InsecureAllowCredsViaPlaintext bool
 	PerRPCCreds                    credentials.PerRPCCredentials
 
-	DialTLS DialTLSFunc
+	DialTLS     DialTLSFunc
+	DialOptions []grpc.DialOption
+
+	MaxMsgRecvSize int
 }
 
 func (o *Options) dialTLSFunc() DialTLSFunc {
@@ -87,8 +93,9 @@ type TLSConfigOptions struct {
 	UseClientCert      UseClientCertSetting
 	ServerName         string
 	InsecureSkipVerify bool
-	CustomCertVerifier TLSCertVerifier
+	CustomCertVerifier tlscheck.TLSCertVerifier
 	RootCAs            *x509.CertPool
+	DialContext        func(ctx context.Context, addr string) (net.Conn, error)
 
 	GRPCOnly bool
 }
@@ -149,7 +156,7 @@ func TLSConfig(server mtls.Subject, opts TLSConfigOptions) (*tls.Config, error) 
 	}
 
 	if customVerifier != nil {
-		conf.VerifyPeerCertificate = verifyPeerCertFunc(conf, customVerifier)
+		conf.VerifyPeerCertificate = tlscheck.VerifyPeerCertFunc(conf, customVerifier)
 		conf.InsecureSkipVerify = true
 	}
 
@@ -165,8 +172,12 @@ func TLSConfig(server mtls.Subject, opts TLSConfigOptions) (*tls.Config, error) 
 
 type connectionOptions struct {
 	useServiceCertToken bool
+	useInsecureNoTLS    bool
 	dialTLSFunc         DialTLSFunc
+	dialOptions         []grpc.DialOption
 	rootCAs             *x509.CertPool
+	serverName          string
+	maxMsgRecvSize      int
 }
 
 // ConnectionOption allows specifying additional options when establishing GRPC connections.
@@ -198,10 +209,38 @@ func AddRootCAs(certs ...*x509.Certificate) ConnectionOption {
 	})
 }
 
-// UseServiceCertToken specifies whether or not a `ServiceCert` token should be used.
+// ServerName sets the server name to verify against on the returned certificate
+// unless UseInsecureNoTLS(true) is called.
+//
+// The server name defaults to the host name found in the destination endpoint, unless
+// it's an IP address. In that case, the name is derived from the mtls.Subject.
+func ServerName(server string) ConnectionOption {
+	return connectOptFunc(func(opts *connectionOptions) error {
+		opts.serverName = server
+		return nil
+	})
+}
+
+// MaxMsgReceiveSize overrides the default 4MB max receive size for gRPC client.
+func MaxMsgReceiveSize(size int) ConnectionOption {
+	return connectOptFunc(func(opts *connectionOptions) error {
+		opts.maxMsgRecvSize = size
+		return nil
+	})
+}
+
+// UseServiceCertToken specifies whether a `ServiceCert` token should be used.
 func UseServiceCertToken(use bool) ConnectionOption {
 	return connectOptFunc(func(opts *connectionOptions) error {
 		opts.useServiceCertToken = use
+		return nil
+	})
+}
+
+// UseInsecureNoTLS specifies whether to use insecure, non-TLS connections.
+func UseInsecureNoTLS(use bool) ConnectionOption {
+	return connectOptFunc(func(opts *connectionOptions) error {
+		opts.useInsecureNoTLS = use
 		return nil
 	})
 }
@@ -210,6 +249,14 @@ func UseServiceCertToken(use bool) ConnectionOption {
 func UseDialTLSFunc(fn DialTLSFunc) ConnectionOption {
 	return connectOptFunc(func(opts *connectionOptions) error {
 		opts.dialTLSFunc = fn
+		return nil
+	})
+}
+
+// WithDialOptions sets the gRPC dial options to use.
+func WithDialOptions(options ...grpc.DialOption) ConnectionOption {
+	return connectOptFunc(func(opts *connectionOptions) error {
+		opts.dialOptions = options
 		return nil
 	})
 }
@@ -223,18 +270,24 @@ func OptionsForEndpoint(endpoint string, extraConnOpts ...ConnectionOption) (Opt
 		}
 	}
 
-	host, _, _, err := netutil.ParseEndpoint(endpoint)
-	if err != nil {
-		return Options{}, errors.Wrapf(err, "could not parse endpoint %q", endpoint)
+	host := connOpts.serverName
+	if host == "" {
+		var err error
+		host, _, _, err = netutil.ParseEndpoint(endpoint)
+		if err != nil {
+			return Options{}, errors.Wrapf(err, "could not parse endpoint %q", endpoint)
+		}
 	}
 
 	clientConnOpts := Options{
+		InsecureNoTLS: connOpts.useInsecureNoTLS,
 		TLS: TLSConfigOptions{
 			UseClientCert: MustUseClientCert,
 			ServerName:    host,
 			RootCAs:       connOpts.rootCAs,
 		},
-		DialTLS: connOpts.dialTLSFunc,
+		DialTLS:     connOpts.dialTLSFunc,
+		DialOptions: connOpts.dialOptions,
 	}
 
 	if connOpts.useServiceCertToken {
@@ -245,12 +298,14 @@ func OptionsForEndpoint(endpoint string, extraConnOpts ...ConnectionOption) (Opt
 		clientConnOpts.PerRPCCreds = servicecerttoken.NewServiceCertClientCreds(&leafCert)
 	}
 
+	clientConnOpts.MaxMsgRecvSize = connOpts.maxMsgRecvSize
+
 	return clientConnOpts, nil
 }
 
 // AuthenticatedGRPCConnection returns a grpc.ClientConn object that uses
 // client certificates found on the local file system.
-func AuthenticatedGRPCConnection(endpoint string, server mtls.Subject, extraConnOpts ...ConnectionOption) (conn *grpc.ClientConn, err error) {
+func AuthenticatedGRPCConnection(ctx context.Context, endpoint string, server mtls.Subject, extraConnOpts ...ConnectionOption) (conn *grpc.ClientConn, err error) {
 	if strings.HasPrefix(endpoint, "ws://") || strings.HasPrefix(endpoint, "wss://") {
 		_, endpoint = stringutils.Split2(endpoint, "://")
 		extraConnOpts = append(extraConnOpts, UseDialTLSFunc(DialTLSWebSocket))
@@ -260,7 +315,21 @@ func AuthenticatedGRPCConnection(endpoint string, server mtls.Subject, extraConn
 		return nil, err
 	}
 
-	return GRPCConnection(context.Background(), server, endpoint, clientConnOpts, keepAliveDialOption())
+	dialOpts := make([]grpc.DialOption, 0, 2+len(clientConnOpts.DialOptions))
+	// To avoid getting 'Client received GoAway with error code ENHANCE_YOUR_CALM and debug data equal to ASCII "too_many_pings"'
+	// from Sensor in Compliance, we must match the client and server settings for keepalive
+	// See: https://github.com/grpc/grpc/blob/master/doc/keepalive.md#faq
+	dialOpts = append(dialOpts, grpc.WithKeepaliveParams(keepalive.ClientParameters{
+		Time:                10 * time.Second,
+		Timeout:             40 * time.Second,
+		PermitWithoutStream: false,
+	}))
+	if clientConnOpts.MaxMsgRecvSize > 0 {
+		dialOpts = append(dialOpts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(clientConnOpts.MaxMsgRecvSize)))
+	}
+	dialOpts = append(dialOpts, clientConnOpts.DialOptions...)
+
+	return GRPCConnection(ctx, server, endpoint, clientConnOpts, dialOpts...)
 }
 
 // HTTPTransport returns a RoundTripper for talking to the specified endpoint. The RoundTripper accepts requests with
@@ -355,9 +424,10 @@ func AuthenticatedHTTPTransport(endpoint string, server mtls.Subject, baseTransp
 
 // GRPCConnection establishes a gRPC connection to the given server, using the given connection options.
 func GRPCConnection(dialCtx context.Context, server mtls.Subject, endpoint string, clientConnOpts Options, dialOpts ...grpc.DialOption) (*grpc.ClientConn, error) {
-	allDialOpts := make([]grpc.DialOption, 0, len(dialOpts)+2)
+	allDialOpts := make([]grpc.DialOption, 0, len(dialOpts)+3)
 
 	clientConnOpts.TLS.GRPCOnly = true
+	clientConnOpts.MaxMsgRecvSize = env.MaxMsgSizeSetting.IntegerSetting()
 
 	var tlsConf *tls.Config
 	if !clientConnOpts.InsecureNoTLS {
@@ -376,12 +446,20 @@ func GRPCConnection(dialCtx context.Context, server mtls.Subject, endpoint strin
 		}
 		allDialOpts = append(allDialOpts, grpc.WithPerRPCCredentials(perRPCCreds))
 	}
+	if clientConnOpts.MaxMsgRecvSize > 0 {
+		allDialOpts = append(allDialOpts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(clientConnOpts.MaxMsgRecvSize)))
+	}
 	allDialOpts = append(allDialOpts, dialOpts...)
+	allDialOpts = append(allDialOpts, grpc.WithUserAgent(GetUserAgent()))
 	return clientConnOpts.dialTLSFunc()(dialCtx, endpoint, tlsConf, allDialOpts...)
 }
 
 // NewHTTPClient creates an HTTP client for the given service using the client
 // certificate of the calling service.
+// When specifying the url.URL for the *http.Request for the returned *http.Client to complete,
+// there is no need to specify the Host nor Scheme; however,
+// if provided, they both must match the expected values.
+// See AuthenticatedHTTPTransport for more information.
 func NewHTTPClient(serviceIdentity mtls.Subject, serviceEndpoint string, timeout time.Duration) (*http.Client, error) {
 	transport, err := AuthenticatedHTTPTransport(
 		serviceEndpoint, serviceIdentity, nil, UseServiceCertToken(true))
@@ -392,17 +470,4 @@ func NewHTTPClient(serviceIdentity mtls.Subject, serviceEndpoint string, timeout
 		Timeout:   timeout,
 		Transport: transport,
 	}, nil
-}
-
-// Parameters for keep alive.
-func keepAliveDialOption() grpc.DialOption {
-	// Since we are holding open a GRPC stream, enable keep alive.
-	// Ping every minute of inactivity, and wait 30 seconds. Do this even when no streams are open (though
-	// one should always be open with central.)
-	params := keepalive.ClientParameters{
-		Time:                10 * time.Second,
-		Timeout:             30 * time.Second,
-		PermitWithoutStream: true,
-	}
-	return grpc.WithKeepaliveParams(params)
 }

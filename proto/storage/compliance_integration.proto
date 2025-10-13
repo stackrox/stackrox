@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package storage;
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+// Represents the status of compliance operator
+enum COStatus {
+  HEALTHY = 0;
+  UNHEALTHY = 1;
+}
+
+// Next Tag: 8
+message ComplianceIntegration {
+  string id = 1; // @gotags: search:"Compliance Operator Integration ID,hidden,store" sql:"pk,type(uuid)"
+  string version = 2; // @gotags: search:"Compliance Operator Version,hidden,store"
+  string cluster_id = 3; // @gotags: search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid),index=category:unique;name:compliance_unique_indicator"
+  string compliance_namespace = 4;
+  // Collection of errors that occurred while trying to obtain compliance health info.
+  repeated string status_errors = 5;
+  bool operator_installed = 6; // @gotags: search:"Compliance Operator Installed,hidden"
+  COStatus operator_status = 7; //@gotags: search:"Compliance Operator Status"
+}

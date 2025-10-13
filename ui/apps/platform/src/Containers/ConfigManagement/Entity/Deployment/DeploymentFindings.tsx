@@ -1,0 +1,29 @@
+import React from 'react';
+import ViolationsAcrossThisDeployment from 'Containers/Workflow/widgets/ViolationsAcrossThisDeployment';
+import entityTypes from 'constants/entityTypes';
+
+import FailedPoliciesAcrossDeployment from '../widgets/FailedPoliciesAcrossDeployment';
+
+export type DeploymentFindingsProps = {
+    deploymentID: string;
+    entityContext?: Partial<Record<string, string>>;
+};
+
+function DeploymentFindings({ entityContext = {}, deploymentID }: DeploymentFindingsProps) {
+    if (entityContext[entityTypes.POLICY]) {
+        return (
+            <ViolationsAcrossThisDeployment
+                deploymentID={deploymentID}
+                policyID={entityContext[entityTypes.POLICY]}
+                message="No policies failed across this deployment"
+            />
+        );
+    }
+    return (
+        <div className="mx-4 w-full">
+            <FailedPoliciesAcrossDeployment deploymentID={deploymentID} />
+        </div>
+    );
+}
+
+export default DeploymentFindings;

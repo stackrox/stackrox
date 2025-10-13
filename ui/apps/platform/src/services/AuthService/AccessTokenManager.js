@@ -1,6 +1,8 @@
 import store from 'store';
+/* eslint-disable import/no-duplicates */
 import differenceInMilliSeconds from 'date-fns/difference_in_milliseconds';
 import subSeconds from 'date-fns/sub_seconds';
+/* eslint-enable import/no-duplicates */
 import EventEmitter from 'events';
 
 import RefreshTokenTimeout from './RefreshTokenTimeout';

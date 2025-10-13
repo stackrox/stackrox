@@ -6,6 +6,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -22,17 +23,21 @@ func init() {
 // but in practice nobody uses them and they're not implemented in the store.
 func (resolver *Resolver) Notifiers(ctx context.Context) ([]*notifierResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Notifiers")
-	if err := readNotifiers(ctx); err != nil {
+	if err := readIntegrations(ctx); err != nil {
 		return nil, err
 	}
-	return resolver.wrapNotifiers(
-		resolver.NotifierStore.GetScrubbedNotifiers(ctx))
+	var notifiers []*notifierResolver
+	err := resolver.NotifierStore.ForEachScrubbedNotifier(ctx, func(n *storage.Notifier) error {
+		notifiers = append(notifiers, &notifierResolver{root: resolver, data: n})
+		return nil
+	})
+	return notifiers, err
 }
 
 // Notifier gets a single notifier by ID
 func (resolver *Resolver) Notifier(ctx context.Context, args struct{ graphql.ID }) (*notifierResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Notifier")
-	if err := readNotifiers(ctx); err != nil {
+	if err := readIntegrations(ctx); err != nil {
 		return nil, err
 	}
 	return resolver.wrapNotifier(

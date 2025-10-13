@@ -6,18 +6,20 @@ import (
 
 	"github.com/pkg/errors"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/signatureintegration/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
-	signatureSAC = sac.ForResource(resources.SignatureIntegration)
+	integrationSAC = sac.ForResource(resources.Integration)
 )
 
 const (
@@ -35,7 +37,7 @@ type datastoreImpl struct {
 }
 
 func (d *datastoreImpl) GetSignatureIntegration(ctx context.Context, id string) (*storage.SignatureIntegration, bool, error) {
-	if ok, err := signatureSAC.ReadAllowed(ctx); !ok || err != nil {
+	if ok, err := integrationSAC.ReadAllowed(ctx); !ok || err != nil {
 		return nil, false, err
 	}
 
@@ -43,29 +45,41 @@ func (d *datastoreImpl) GetSignatureIntegration(ctx context.Context, id string) 
 }
 
 func (d *datastoreImpl) GetAllSignatureIntegrations(ctx context.Context) ([]*storage.SignatureIntegration, error) {
-	if ok, err := signatureSAC.ReadAllowed(ctx); !ok || err != nil {
+	if ok, err := integrationSAC.ReadAllowed(ctx); !ok || err != nil {
 		return nil, err
 	}
 
 	var integrations []*storage.SignatureIntegration
-	err := d.storage.Walk(ctx, func(integration *storage.SignatureIntegration) error {
-		integrations = append(integrations, integration)
-		return nil
-	})
-	if err != nil {
+	walkFn := func() error {
+		integrations = integrations[:0]
+		return d.storage.Walk(ctx, func(integration *storage.SignatureIntegration) error {
+			integrations = append(integrations, integration)
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err
 	}
 	return integrations, nil
 }
 
+func (d *datastoreImpl) CountSignatureIntegrations(ctx context.Context) (int, error) {
+	if ok, err := integrationSAC.ReadAllowed(ctx); !ok || err != nil {
+		return 0, err
+	}
+
+	return d.storage.Count(ctx, search.EmptyQuery())
+}
+
 func (d *datastoreImpl) AddSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration) (*storage.SignatureIntegration, error) {
-	if err := sac.VerifyAuthzOK(signatureSAC.WriteAllowed(ctx)); err != nil {
+	if err := sac.VerifyAuthzOK(integrationSAC.WriteAllowed(ctx)); err != nil {
 		return nil, err
 	}
 	if integration.GetId() != "" {
 		return nil, errox.InvalidArgs.Newf("id should be empty but %q provided", integration.GetId())
 	}
 	integration.Id = GenerateSignatureIntegrationID()
+	applyDefaultValues(integration)
 	if err := ValidateSignatureIntegration(integration); err != nil {
 		return nil, errox.InvalidArgs.CausedBy(err)
 	}
@@ -89,9 +103,10 @@ func (d *datastoreImpl) AddSignatureIntegration(ctx context.Context, integration
 }
 
 func (d *datastoreImpl) UpdateSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration) (bool, error) {
-	if err := sac.VerifyAuthzOK(signatureSAC.WriteAllowed(ctx)); err != nil {
+	if err := sac.VerifyAuthzOK(integrationSAC.WriteAllowed(ctx)); err != nil {
 		return false, err
 	}
+	applyDefaultValues(integration)
 	if err := ValidateSignatureIntegration(integration); err != nil {
 		return false, errox.InvalidArgs.CausedBy(err)
 	}
@@ -100,24 +115,30 @@ func (d *datastoreImpl) UpdateSignatureIntegration(ctx context.Context, integrat
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
-	hasUpdatedPublicKeys, err := d.verifyIntegrationIDAndUpdates(ctx, integration)
+	hasUpdates, err := d.verifyIntegrationIDAndUpdates(ctx, integration)
 	if err != nil {
 		return false, err
 	}
 
-	return hasUpdatedPublicKeys, d.storage.Upsert(ctx, integration)
+	return hasUpdates, d.storage.Upsert(ctx, integration)
 }
 
 func (d *datastoreImpl) RemoveSignatureIntegration(ctx context.Context, id string) error {
-	if err := sac.VerifyAuthzOK(signatureSAC.WriteAllowed(ctx)); err != nil {
+	if err := sac.VerifyAuthzOK(integrationSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
 
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
-	if err := d.verifyIntegrationIDExists(ctx, id); err != nil {
+	// Get the integration to check its origin
+	integration, err := d.getSignatureIntegrationByID(ctx, id)
+	if err != nil {
 		return err
+	}
+
+	if isBuiltInSignatureIntegration(integration) {
+		return errox.InvalidArgs.New("built-in signature integrations cannot be deleted")
 	}
 
 	// We want to avoid deleting a signature integration which is referenced by any policy. If that is the case,
@@ -127,14 +148,6 @@ func (d *datastoreImpl) RemoveSignatureIntegration(ctx context.Context, id strin
 	}
 
 	return d.storage.Delete(ctx, id)
-}
-
-func (d *datastoreImpl) verifyIntegrationIDExists(ctx context.Context, id string) error {
-	_, err := d.getSignatureIntegrationByID(ctx, id)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (d *datastoreImpl) getSignatureIntegrationByID(ctx context.Context, id string) (*storage.SignatureIntegration, error) {
@@ -153,7 +166,12 @@ func (d *datastoreImpl) verifyIntegrationIDAndUpdates(ctx context.Context,
 	if err != nil {
 		return false, err
 	}
-	return !getPublicKeyPEMSet(existingIntegration).Equal(getPublicKeyPEMSet(updatedIntegration)), nil
+
+	hasUpdates := !getPublicKeyPEMSet(existingIntegration).Equal(getPublicKeyPEMSet(updatedIntegration)) ||
+		!protoutils.SlicesEqual(existingIntegration.GetCosignCertificates(), updatedIntegration.GetCosignCertificates()) ||
+		!existingIntegration.GetTransparencyLog().EqualVT(updatedIntegration.GetTransparencyLog())
+
+	return hasUpdates, nil
 }
 
 func (d *datastoreImpl) verifyIntegrationIDDoesNotExist(ctx context.Context, id string) error {
@@ -167,11 +185,11 @@ func (d *datastoreImpl) verifyIntegrationIDDoesNotExist(ctx context.Context, id 
 }
 
 func (d *datastoreImpl) verifyIntegrationIDIsNotInPolicy(ctx context.Context, id string) error {
-	policyCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+	workflowAdministrationCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Policy)))
+			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
 
-	policies, err := d.policyStore.GetAllPolicies(policyCtx)
+	policies, err := d.policyStore.GetAllPolicies(workflowAdministrationCtx)
 	if err != nil {
 		return errors.Wrap(err, "retrieving all policies")
 	}
@@ -255,4 +273,10 @@ func getPublicKeyPEMSet(integration *storage.SignatureIntegration) set.StringSet
 		publicKeySet.Add(key.GetPublicKeyPemEnc())
 	}
 	return publicKeySet
+}
+
+// isBuiltInSignatureIntegration returns whether the signature integration is built-in (has DEFAULT origin).
+// Built-in integrations cannot be created, modified or deleted.
+func isBuiltInSignatureIntegration(integration *storage.SignatureIntegration) bool {
+	return integration.GetTraits().GetOrigin() == storage.Traits_DEFAULT
 }

@@ -1,22 +1,26 @@
 package networkpolicy
 
 import (
+	"context"
+	"log"
 	"testing"
 
-	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/sensor/tests/resource"
+	"github.com/stackrox/rox/sensor/tests/helper"
+	"github.com/stackrox/rox/sensor/testutils"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 )
 
 var (
-	NginxDeployment = resource.YamlTestFile{Kind: "Deployment", File: "nginx.yaml"}
-	NetpolAllow443  = resource.YamlTestFile{Kind: "NetworkPolicy", File: "netpol-allow-443.yaml"}
+	NginxDeployment            = helper.K8sResourceInfo{Kind: "Deployment", YamlFile: "nginx.yaml"}
+	IngressPolicyAllow443      = helper.K8sResourceInfo{Kind: "NetworkPolicy", YamlFile: "netpol-allow-443.yaml"}
+	EgressPolicyBlockAllEgress = helper.K8sResourceInfo{Kind: "NetworkPolicy", YamlFile: "netpol-block-egress.yaml"}
 )
 
 type NetworkPolicySuite struct {
-	testContext *resource.TestContext
+	testContext *helper.TestContext
 	suite.Suite
 }
 
@@ -28,7 +32,14 @@ var _ suite.SetupAllSuite = &NetworkPolicySuite{}
 var _ suite.TearDownTestSuite = &NetworkPolicySuite{}
 
 func (s *NetworkPolicySuite) SetupSuite() {
-	if testContext, err := resource.NewContext(s.T()); err != nil {
+	policies, err := testutils.GetPoliciesFromFile("data/policies.json")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	cfg := helper.DefaultConfig()
+	cfg.InitialSystemPolicies = policies
+
+	if testContext, err := helper.NewContextWithConfig(s.T(), cfg); err != nil {
 		s.Fail("failed to setup test context: %s", err)
 	} else {
 		s.testContext = testContext
@@ -41,51 +52,31 @@ func (s *NetworkPolicySuite) TearDownTest() {
 
 var (
 	ingressNetpolViolationName = "Deployments should have at least one ingress Network Policy"
+	egressNetpolViolationName  = "Deployments should have at least one egress Network Policy"
 )
 
-func checkIfAlertsHaveViolation(result *central.AlertResults, name string) bool {
-	if result == nil {
-		return false
-	}
+func (s *NetworkPolicySuite) Test_NetworkPolicyViolations() {
+	s.testContext.RunTest(s.T(),
+		helper.WithTestCase(func(t *testing.T, tc *helper.TestContext, objects map[string]k8s.Object) {
+			ctx := context.Background()
+			k8sDeployment := &appsv1.Deployment{}
+			_, err := tc.ApplyResourceAndWait(ctx, t, helper.DefaultNamespace, &NginxDeployment, k8sDeployment, nil)
+			require.NoError(t, err)
 
-	alerts := result.GetAlerts()
-	if len(alerts) == 0 {
-		return false
-	}
-	for _, alert := range result.GetAlerts() {
-		if alert.GetPolicy().GetName() == name {
-			return true
-		}
-	}
-	return false
-}
+			deploymentID := string(k8sDeployment.GetUID())
 
-func (s *NetworkPolicySuite) Test_DeploymentShouldNotHaveViolation() {
-	s.testContext.RunWithResources([]resource.YamlTestFile{
-		NginxDeployment, NetpolAllow443,
-	}, func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
-		// There's a caveat to this test: the state HAS a violation at the beginning, but
-		// it disappears once re-sync kicks-in and processes the relationship betwee the network policy
-		// and this deployment. Therefore, this test passes as is, but the opposite assertion would also
-		// pass. e.g. "check if there IS an alert", because there will be a state where the alert is there.
-		testC.LastViolationState("nginx-deployment", func(result *central.AlertResults) error {
-			if checkIfAlertsHaveViolation(result, ingressNetpolViolationName) {
-				return errors.Errorf("violation found for deployment %s and violation name %s", result.GetSource().String(), ingressNetpolViolationName)
-			}
-			return nil
-		}, "Should not have a violation")
-	})
-}
+			tc.LastViolationStateByID(t, deploymentID, helper.AssertViolationsMatch(egressNetpolViolationName, ingressNetpolViolationName), "", false)
+			tc.AssertViolationStateByID(t, deploymentID, helper.AssertNoEmptyAlertResults(), "Should not have received empty AlertResults", false)
 
-func (s *NetworkPolicySuite) Test_DeploymentShouldHaveViolation() {
-	s.testContext.RunWithResources([]resource.YamlTestFile{
-		NginxDeployment,
-	}, func(t *testing.T, testC *resource.TestContext, _ map[string]k8s.Object) {
-		testC.LastViolationState("nginx-deployment", func(result *central.AlertResults) error {
-			if !checkIfAlertsHaveViolation(result, ingressNetpolViolationName) {
-				return errors.Errorf("violation not found for deployment %s and violation name %s", result.GetSource().String(), ingressNetpolViolationName)
-			}
-			return nil
-		}, "Should have a violation")
-	})
+			_, err = tc.ApplyResourceAndWaitNoObject(ctx, t, helper.DefaultNamespace, EgressPolicyBlockAllEgress, nil)
+			require.NoError(t, err)
+
+			tc.LastViolationStateByID(t, deploymentID, helper.AssertViolationsMatch(ingressNetpolViolationName), "", false)
+			tc.AssertViolationStateByID(t, deploymentID, helper.AssertNoEmptyAlertResults(), "Should not have received empty AlertResults", false)
+
+			_, err = tc.ApplyResourceAndWaitNoObject(ctx, t, helper.DefaultNamespace, IngressPolicyAllow443, nil)
+			require.NoError(t, err)
+
+			tc.LastViolationStateByID(t, deploymentID, helper.AssertNoViolations(), "", true)
+		}))
 }

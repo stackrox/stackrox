@@ -10,25 +10,24 @@ import {
     Text,
     TextContent,
 } from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import usePagination from 'hooks/patternfly/usePagination';
 
-const columnNames = {
-    DEPLOYMENT: 'Deployment',
-    ACTIVE_TRAFFIC: 'Active traffic',
+type NamespaceDeploymentsProps = {
+    deployments: { id: string; name: string; numFlows: number }[];
+    onNodeSelect: (id: string) => void;
 };
 
-const deployments = [
-    { name: 'Sensor', numFlows: '1' },
-    { name: 'Central', numFlows: '1' },
-];
-
-function NamespaceDeployments() {
+function NamespaceDeployments({ deployments, onNodeSelect }: NamespaceDeploymentsProps) {
     const [searchValue, setSearchValue] = React.useState('');
     const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
 
-    const onChange = (newValue: string) => {
-        setSearchValue(newValue);
+    function onSearchInputChange(_event, value) {
+        setSearchValue(value);
+    }
+
+    const onNodeSelectHandler = (deployment) => () => {
+        onNodeSelect(deployment.id);
     };
 
     const filteredDeployments = deployments.filter((deployment) => {
@@ -36,8 +35,16 @@ function NamespaceDeployments() {
     });
 
     return (
-        <div className="pf-u-h-100 pf-u-p-md">
+        <div className="pf-v5-u-h-100 pf-v5-u-p-md">
             <Stack hasGutter>
+                <StackItem>
+                    <SearchInput
+                        placeholder="Find by deployment name"
+                        value={searchValue}
+                        onChange={onSearchInputChange}
+                        onClear={() => onSearchInputChange(null, '')}
+                    />
+                </StackItem>
                 <StackItem>
                     <Flex
                         direction={{ default: 'row' }}
@@ -45,12 +52,13 @@ function NamespaceDeployments() {
                     >
                         <FlexItem flex={{ default: 'flex_1' }}>
                             <TextContent>
-                                <Text component="h2">6 results found</Text>
+                                <Text component="h2">
+                                    {filteredDeployments.length} results found
+                                </Text>
                             </TextContent>
                         </FlexItem>
                         <FlexItem>
                             <Pagination
-                                perPageComponent="button"
                                 itemCount={deployments.length}
                                 perPage={perPage}
                                 page={page}
@@ -63,36 +71,30 @@ function NamespaceDeployments() {
                     </Flex>
                 </StackItem>
                 <StackItem>
-                    <SearchInput
-                        placeholder="Find by deployment name"
-                        value={searchValue}
-                        onChange={onChange}
-                        onClear={() => onChange('')}
-                    />
-                </StackItem>
-                <StackItem>
-                    <TableComposable aria-label="Simple table" variant="compact">
+                    <Table aria-label="Simple table" variant="compact">
                         <Thead>
                             <Tr>
-                                <Th>{columnNames.DEPLOYMENT}</Th>
-                                <Th>{columnNames.ACTIVE_TRAFFIC}</Th>
+                                <Th>Deployment</Th>
+                                <Th modifier="fitContent">Active traffic</Th>
                             </Tr>
                         </Thead>
                         <Tbody>
                             {filteredDeployments.map((deployment) => (
-                                <Tr key={deployment.name}>
-                                    <Td dataLabel={columnNames.DEPLOYMENT}>
-                                        <Button variant="link" isInline>
+                                <Tr key={deployment.id}>
+                                    <Td dataLabel="Deployment">
+                                        <Button
+                                            variant="link"
+                                            isInline
+                                            onClick={onNodeSelectHandler(deployment)}
+                                        >
                                             {deployment.name}
                                         </Button>
                                     </Td>
-                                    <Td dataLabel={columnNames.ACTIVE_TRAFFIC}>
-                                        {deployment.numFlows} flows
-                                    </Td>
+                                    <Td dataLabel="Active traffic">{deployment.numFlows} flows</Td>
                                 </Tr>
                             ))}
                         </Tbody>
-                    </TableComposable>
+                    </Table>
                 </StackItem>
             </Stack>
         </div>

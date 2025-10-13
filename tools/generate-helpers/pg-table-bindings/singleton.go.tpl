@@ -1,11 +1,5 @@
-{{ $inMigration := ne (index . "Migration") nil}}
 {{define "schemaVar"}}pkgSchema.{{.Table|upperCamelCase}}Schema{{end}}
-{{define "paramList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.ColumnName|lowerCamelCase}} {{$pk.Type}}{{end}}{{end}}
-{{define "argList"}}{{range $idx, $pk := .}}{{if $idx}}, {{end}}{{$pk.ColumnName|lowerCamelCase}}{{end}}{{end}}
-{{define "whereMatch"}}{{range $idx, $pk := .}}{{if $idx}} AND {{end}}{{$pk.ColumnName}} = ${{add $idx 1}}{{end}}{{end}}
-{{define "commaSeparatedColumns"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.ColumnName}}{{end}}{{end}}
-{{define "commandSeparatedRefs"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.Reference}}{{end}}{{end}}
-{{define "updateExclusions"}}{{range $idx, $field := .}}{{if $idx}}, {{end}}{{$field.ColumnName}} = EXCLUDED.{{$field.ColumnName}}{{end}}{{end}}
+{{define "commaSeparatedColumns"}}{{range $index, $field := .}}{{if $index}}, {{end}}{{$field.ColumnName}}{{end}}{{end}}
 
 {{- $ := . }}
 
@@ -14,13 +8,9 @@ import (
     "strings"
     "time"
 
-    "github.com/jackc/pgx/v4"
-    "github.com/jackc/pgx/v4/pgxpool"
+    "github.com/stackrox/rox/pkg/postgres"
     "github.com/pkg/errors"
-    {{- if not $inMigration}}
     "github.com/stackrox/rox/central/metrics"
-    "github.com/stackrox/rox/central/role/resources"
-    {{- end}}
     pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
     v1 "github.com/stackrox/rox/generated/api/v1"
     "github.com/stackrox/rox/generated/storage"
@@ -28,10 +18,13 @@ import (
     "github.com/stackrox/rox/pkg/logging"
     ops "github.com/stackrox/rox/pkg/metrics"
     "github.com/stackrox/rox/pkg/postgres/pgutils"
+    "github.com/stackrox/rox/pkg/protocompat"
     "github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
     "github.com/stackrox/rox/pkg/search"
-    "github.com/stackrox/rox/pkg/search/postgres"
+    pgSearch "github.com/stackrox/rox/pkg/search/postgres"
     "github.com/stackrox/rox/pkg/sync"
+    "github.com/stackrox/rox/pkg/uuid"
 )
 
 const (
@@ -44,11 +37,12 @@ const (
 var (
     log = logging.LoggerForModule()
     schema = {{ template "schemaVar" .Schema}}
-    {{ if and (not $inMigration) (or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped)) -}}
+    {{ if and (or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped)) -}}
     targetResource = resources.{{.Type | storageToResource}}
     {{- end }}
 )
 
+// Store is the interface to interact with the storage for {{.Type}}
 type Store interface {
     Get(ctx context.Context) (*{{.Type}}, bool, error)
     Upsert(ctx context.Context, obj *{{.Type}}) error
@@ -56,14 +50,14 @@ type Store interface {
 }
 
 type storeImpl struct {
-    db *pgxpool.Pool
+    db postgres.DB
     mutex sync.Mutex
 }
 
 {{ define "defineScopeChecker" }}scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_{{ . }}_ACCESS).Resource(targetResource){{ end }}
 
 // New returns a new Store instance using the provided sql instance.
-func New(db *pgxpool.Pool) Store {
+func New(db postgres.DB) Store {
     return &storeImpl{
         db: db,
     }
@@ -74,8 +68,8 @@ func New(db *pgxpool.Pool) Store {
 
 {{- define "insertObject"}}
 {{- $schema := .schema }}
-func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
-    serialized, marshalErr := obj.Marshal()
+func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx *postgres.Tx, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
+    serialized, marshalErr := obj.MarshalVT()
     if marshalErr != nil {
         return marshalErr
     }
@@ -84,7 +78,9 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx,
         // parent primary keys start
         {{- range $field := $schema.DBColumnFields -}}
         {{- if eq $field.DataType "datetime" }}
-        pgutils.NilOrTime({{$field.Getter "obj"}}),
+        protocompat.NilOrTime({{$field.Getter "obj"}}),
+        {{- else if eq $field.SQLType "uuid" }}
+        pgutils.NilOrUUID({{$field.Getter "obj"}}),
         {{- else }}
         {{$field.Getter "obj"}},{{end}}
         {{- end}}
@@ -101,16 +97,16 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx pgx.Tx,
 
 {{ template "insertObject" dict "schema" .Schema "joinTable" .JoinTable }}
 
+// Upsert saves the current state of an object in storage.
 func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
-    {{- if not $inMigration}}
     defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "{{.TrimmedType}}")
 
     {{ template "defineScopeChecker" "READ_WRITE" }}
     if !scopeChecker.IsAllowed() {
         return sac.ErrResourceAccessDenied
     }
-    {{ end }}
-    return pgutils.Retry(func() error {
+
+    return pgutils.Retry(ctx, func() error {
         return s.retryableUpsert(ctx, obj)
     })
 }
@@ -143,17 +139,16 @@ func (s *storeImpl) retryableUpsert(ctx context.Context, obj *{{.Type}}) error {
     return nil
 }
 
-// Get returns the object, if it exists from the store
+// Get returns the object, if it exists from the store.
 func (s *storeImpl) Get(ctx context.Context) (*{{.Type}}, bool, error) {
-    {{- if not $inMigration}}
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "{{.TrimmedType}}")
 
     {{ template "defineScopeChecker" "READ" }}
     if !scopeChecker.IsAllowed() {
         return nil, false, nil
     }
-    {{ end}}
-    return pgutils.Retry3(func()(*{{.Type}}, bool, error) {
+
+    return pgutils.Retry3(ctx, func()(*{{.Type}}, bool, error) {
         return s.retryableGet(ctx)
     })
 }
@@ -172,16 +167,14 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*{{.Type}}, bool, error) 
 	}
 
 	var msg {{.Type}}
-	if err := msg.Unmarshal(data); err != nil {
+	if err := msg.UnmarshalVTUnsafe(data); err != nil {
         return nil, false, err
 	}
 	return &msg, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pgxpool.Conn, func(), error) {
-    {{- if not $inMigration}}
+func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
 	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
-    {{- end}}
 	conn, err := s.db.Acquire(ctx)
 	if err != nil {
 	    return nil, nil, err
@@ -191,15 +184,14 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*pg
 
 // Delete removes the singleton from the store
 func (s *storeImpl) Delete(ctx context.Context) error {
-    {{- if not $inMigration}}
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "{{.TrimmedType}}")
 
     {{ template "defineScopeChecker" "READ_WRITE" }}
     if !scopeChecker.IsAllowed() {
         return sac.ErrResourceAccessDenied
     }
-    {{ end}}
-    return pgutils.Retry(func() error {
+
+    return pgutils.Retry(ctx, func() error {
         return s.retryableDelete(ctx)
     })
 }
@@ -219,6 +211,7 @@ func (s *storeImpl) retryableDelete(ctx context.Context) error {
 
 // Used for Testing
 
-func Destroy(ctx context.Context, db *pgxpool.Pool) {
+// Destroy drops the tables associated with the target object type.
+func Destroy(ctx context.Context, db postgres.DB) {
     _, _ = db.Exec(ctx, "DROP TABLE IF EXISTS {{.Schema.Table}} CASCADE")
 }

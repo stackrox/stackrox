@@ -1,5 +1,6 @@
-import React, { ReactElement } from 'react';
-import { Tooltip } from '@patternfly/react-core';
+import React from 'react';
+import type { ReactElement } from 'react';
+import { Icon, Tooltip } from '@patternfly/react-core';
 import {
     BanIcon,
     CheckIcon,
@@ -8,17 +9,21 @@ import {
     LongArrowAltUpIcon,
 } from '@patternfly/react-icons';
 
-import { EffectiveAccessScopeState } from 'services/AccessScopesService';
+import type { EffectiveAccessScopeState } from 'services/AccessScopesService';
 
-const notAllowedColor = 'var(--pf-global--danger-color--100)';
-const allowedColor = 'var(--pf-global--success-color--100)';
-const unknownColor = 'var(--pf-global--warning-color--100)';
+const notAllowedColor = 'var(--pf-v5-global--danger-color--100)';
+const allowedColor = 'var(--pf-v5-global--success-color--100)';
+const unknownColor = 'var(--pf-v5-global--warning-color--100)';
 
 /*
  * Tooltip has key prop to replace the previous tooltip if status changes.
  */
 
-const notAllowedIcon = <BanIcon color={notAllowedColor} />;
+const notAllowedIcon = (
+    <Icon>
+        <BanIcon color={notAllowedColor} />
+    </Icon>
+);
 const notAllowedCluster = (
     <Tooltip
         key="notAllowedCluster"
@@ -40,7 +45,11 @@ const notAllowedNamespace = (
     </Tooltip>
 );
 
-const allowedIcon = <CheckIcon color={allowedColor} />;
+const allowedIcon = (
+    <Icon>
+        <CheckIcon color={allowedColor} />
+    </Icon>
+);
 const allowedCluster = (
     <Tooltip
         key="allowedCluster"
@@ -55,7 +64,12 @@ const allowedCluster = (
     >
         <span>
             {allowedIcon}
-            <LongArrowAltDownIcon color={allowedColor} style={{ transform: 'rotate(-45deg)' }} />
+            <Icon>
+                <LongArrowAltDownIcon
+                    color={allowedColor}
+                    style={{ transform: 'rotate(-45deg)' }}
+                />
+            </Icon>
         </span>
     </Tooltip>
 );
@@ -79,18 +93,22 @@ const partialCluster = (
     >
         <span>
             {allowedIcon}
-            <LongArrowAltUpIcon color={allowedColor} style={{ transform: 'rotate(-45deg)' }} />
+            <Icon>
+                <LongArrowAltUpIcon color={allowedColor} style={{ transform: 'rotate(-45deg)' }} />
+            </Icon>
         </span>
     </Tooltip>
 );
 
 const unknownState = (
     <Tooltip key="unknownState" content="Unknown">
-        <ExclamationTriangleIcon color={unknownColor} />
+        <Icon color={unknownColor}>
+            <ExclamationTriangleIcon />
+        </Icon>
     </Tooltip>
 );
 
-export type EffectiveAccessScopeStateProps = {
+export type EffectiveAccessScopeStateIconProps = {
     state: EffectiveAccessScopeState;
     isCluster: boolean;
 };
@@ -98,7 +116,7 @@ export type EffectiveAccessScopeStateProps = {
 function EffectiveAccessScopeStateIcon({
     state,
     isCluster,
-}: EffectiveAccessScopeStateProps): ReactElement {
+}: EffectiveAccessScopeStateIconProps): ReactElement {
     switch (state) {
         case 'EXCLUDED':
             return isCluster ? notAllowedCluster : notAllowedNamespace;

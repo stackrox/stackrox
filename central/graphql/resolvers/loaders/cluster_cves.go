@@ -9,7 +9,6 @@ import (
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -17,11 +16,9 @@ import (
 var clusterCveLoaderType = reflect.TypeOf(storage.ClusterCVE{})
 
 func init() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		RegisterTypeFactory(reflect.TypeOf(storage.ClusterCVE{}), func() interface{} {
-			return NewClusterCVELoader(clusterCVEDataStore.Singleton())
-		})
-	}
+	RegisterTypeFactory(reflect.TypeOf(storage.ClusterCVE{}), func() interface{} {
+		return NewClusterCVELoader(clusterCVEDataStore.Singleton())
+	})
 }
 
 // NewClusterCVELoader creates a new loader for cluster cve data.

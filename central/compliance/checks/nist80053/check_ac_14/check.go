@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	pkgCommon "github.com/stackrox/rox/pkg/compliance/checks/common"
 	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
+	"github.com/stackrox/rox/pkg/k8srbac"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -74,9 +75,9 @@ func checkNoExtraPrivilegesForUnauthenticated(ctx framework.ComplianceContext) {
 	clusterRoleIDs := set.NewStringSet()
 	namespaceRoleIDs := make(map[string]set.StringSet)
 	for _, binding := range k8sRoleBindings {
-		for _, subject := range binding.GetSubjects() {
+		for _, subject := range k8srbac.GetSubjectsAdjustedByKind(binding) {
 			if subject.GetName() == systemUnauthenticatedSubject && subject.GetKind() == storage.SubjectKind_GROUP {
-				if binding.GetClusterRole() {
+				if k8srbac.IsClusterRoleBinding(binding) {
 					clusterRoleIDs.Add(binding.GetRoleId())
 				} else {
 					namespacedRoleIDSet, found := namespaceRoleIDs[binding.GetNamespace()]

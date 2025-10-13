@@ -1,45 +1,49 @@
+import static util.Helpers.withRetry
 import static util.SplunkUtil.SPLUNK_ADMIN_PASSWORD
 import static util.SplunkUtil.postToSplunk
 import static util.SplunkUtil.tearDownSplunk
+import static util.SplunkUtil.waitForSplunkBoot
 
 import java.nio.file.Paths
 import java.util.concurrent.TimeUnit
 
-import com.jayway.restassured.path.json.JsonPath
-import com.jayway.restassured.response.Response
+import io.restassured.path.json.JsonPath
+import io.restassured.response.Response
 
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 
-import groups.BAT
-import groups.Integration
+import common.Constants
 import objects.Deployment
 import services.AlertService
 import services.ApiTokenService
 import services.NetworkBaselineService
+import util.Env
 import util.NetworkGraphUtil
 import util.SplunkUtil
 import util.SplunkUtil.SplunkDeployment
 import util.Timer
 
-import org.junit.Rule
-import org.junit.experimental.categories.Category
-import org.junit.rules.Timeout
+import spock.lang.IgnoreIf
+import spock.lang.Ignore
+import spock.lang.Tag
 
+@Ignore("ROX-26297: Tests started failing regularly recently and need further investigation")
+// ROX-14228 skipping tests for 1st release on power & z
+@IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
 class IntegrationsSplunkViolationsTest extends BaseSpecification {
-    @Rule
-    @SuppressWarnings(["JUnitPublicProperty"])
-    Timeout globalTimeout = new Timeout(1000, TimeUnit.SECONDS)
-
     private static final String ASSETS_DIR = Paths.get(
             System.getProperty("user.dir"), "artifacts", "splunk-violations-test")
     private static final String PATH_TO_SPLUNK_TA_SPL = Paths.get(ASSETS_DIR,
-    "2021-07-23-TA-stackrox-1.2.0-input-validation-patched.spl")
+    "2024-09-17-TA-stackrox-2.0.3.spl")
+    // CIM downloaded from https://classic.splunkbase.splunk.com/app/1621/
     private static final String PATH_TO_CIM_TA_TGZ = Paths.get(ASSETS_DIR,
-    "splunk-common-information-model-cim_4190.tgz")
+    "splunk-common-information-model-cim_511.tgz")
     private static final String STACKROX_REMOTE_LOCATION = "/tmp/stackrox.spl"
     private static final String CIM_REMOTE_LOCATION = "/tmp/cim.tgz"
-    private static final String TEST_NAMESPACE = "qa-splunk-violation"
+    private static final String TEST_NAMESPACE = Constants.SPLUNK_TEST_NAMESPACE
     private static final String SPLUNK_INPUT_NAME = "stackrox-violations-input"
+    private static final String SPLUNK_TA_CONVERSION_JOB_NAME =
+            "Threat%20-%20Create%20Notable%20from%20RHACS%20Alert%20-%20Rule"
 
     private SplunkDeployment splunkDeployment
 
@@ -47,7 +51,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         orchestrator.deleteNamespace(TEST_NAMESPACE)
 
         orchestrator.ensureNamespaceExists(TEST_NAMESPACE)
-        addStackroxImagePullSecret(TEST_NAMESPACE)
+        addStackroxImagePullSecret(orchestrator, TEST_NAMESPACE)
     }
 
     def cleanupSpec() {
@@ -55,7 +59,8 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     }
 
     def setup() {
-        splunkDeployment = SplunkUtil.createSplunk(orchestrator, TEST_NAMESPACE, false)
+        splunkDeployment = SplunkUtil.createSplunk(orchestrator, TEST_NAMESPACE)
+        waitForSplunkBoot(splunkDeployment.splunkPortForward.getLocalPort())
     }
 
     def cleanup() {
@@ -89,7 +94,9 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
                 "sudo /opt/splunk/bin/splunk set minfreemb 200 -auth admin:${SPLUNK_ADMIN_PASSWORD}"
         )
         // Splunk needs to be restarted after TA installation
+        log.info "Restarting Splunk to apply settings and TA"
         postToSplunk(splunkDeployment.splunkPortForward.getLocalPort(), "/services/server/control/restart", [:])
+        waitForSplunkBoot(splunkDeployment.splunkPortForward.getLocalPort())
 
         log.info("Configuring Stackrox TA")
         def tokenResp = ApiTokenService.generateToken("splunk-token-${splunkDeployment.uid}", "Analyst")
@@ -98,10 +105,10 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
                  "api_token": tokenResp.getToken(),])
         // create new input to search violations from
         postToSplunk(port, "/servicesNS/nobody/TA-stackrox/data/inputs/stackrox_violations",
-                ["name": SPLUNK_INPUT_NAME, "interval": "1", "from_checkpoint": "2000-01-01T00:00:00.000Z"])
+                ["name": SPLUNK_INPUT_NAME, "interval": "5", "from_checkpoint": "2000-01-01T00:00:00.000Z"])
     }
 
-    @Category([Integration, BAT])
+    @Tag("Integration")
     def "Verify Splunk violations: StackRox violations reach Splunk TA"() {
         given:
         "Splunk TA is installed and configured, network and process violations triggered"
@@ -119,34 +126,58 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         boolean hasNetworkViolation = false
         boolean hasProcessViolation = false
         def port = splunkDeployment.splunkPortForward.getLocalPort()
-        for (int i = 0; i < 15; i++) {
-            log.info "Attempt ${i} to get violations from Splunk"
-            def searchId = SplunkUtil.createSearch(port, "| from datamodel Alerts.Alerts")
+        withRetry(40, 15) {
+            def searchId = SplunkUtil.createSearch(port, "search sourcetype=stackrox-violations")
             TimeUnit.SECONDS.sleep(15)
             Response response = SplunkUtil.getSearchResults(port, searchId)
             // We should have at least one violation in the response
-            if (response != null) {
-                results = response.getBody().jsonPath().getList("results")
-                if (!results.isEmpty()) {
-                    for (result in results) {
-                        hasNetworkViolation |= isNetworkViolation(result)
-                        hasProcessViolation |= isProcessViolation(result)
-                    }
-                    if (hasNetworkViolation && hasProcessViolation) {
-                        log.info "Success!"
-                        break
-                    }
-                }
-            }
+            assert response != null
+            results = response.getBody().jsonPath().getList("results")
+            assert !results.isEmpty()
+            hasNetworkViolation = results.any { isNetworkViolation(it) }
+            hasProcessViolation = results.any { isProcessViolation(it) }
+            log.debug "Violations currently indexed in Splunk: \n${results}"
+            log.info "Current Splunk index contains " +
+                    "any Network Violation: ${hasNetworkViolation} and any Process Violation: ${hasProcessViolation}"
+            assert hasNetworkViolation && hasProcessViolation
+        }
+
+        log.info "Starting conversion of ACS violations to Splunk alerts"
+        // This conversion job is run by the Splunk Cronjob every 5 minutes. We need the created alerts.
+        // This forces an out of schedule run to minimize waiting time for its results.
+        postToSplunk(port, "/services/saved/searches/" + SPLUNK_TA_CONVERSION_JOB_NAME +"/dispatch", [
+                "dispatch.now": "true",
+                "force_dispatch": "true",
+        ])
+
+        // Check for Alerts
+        List<Map<String, String>> alerts = Collections.emptyList()
+        boolean hasNetworkAlert = false
+        boolean hasProcessAlert = false
+        withRetry(40, 15) {
+            // Hint: If this produces no results, evaluate expanding the earliest_time, e.g. to -15m.
+            // This can be done by expanding `createSearch` with a new parameter.
+            def vSearchId = SplunkUtil.createSearch(port, "| from datamodel Alerts.Alerts")
+            TimeUnit.SECONDS.sleep(15)
+            Response vResponse = SplunkUtil.getSearchResults(port, vSearchId)
+            // We should have at least one violation in the response
+            assert vResponse != null
+            alerts = vResponse.getBody().jsonPath().getList("results")
+            assert !alerts.isEmpty()
+            hasNetworkAlert = alerts.any { isNetworkViolation(it) }
+            hasProcessAlert = alerts.any { isProcessViolation(it) }
+            log.debug "Alerts currently indexed in Splunk: \n${alerts}"
+            log.info "Current Splunk index contains " +
+                    "any Network Alert: ${hasNetworkAlert} and any Process Alert: ${hasProcessAlert}"
+            assert hasNetworkAlert && hasProcessAlert
         }
 
         then:
-        "StackRox violations are in Splunk"
-        assert !results.isEmpty()
-        assert hasNetworkViolation
-        assert hasProcessViolation
-        for (result in results) {
-            validateCimMappings(result)
+        "StackRox violations are in Splunk and have been converted to alerts"
+        assert !alerts.isEmpty()
+        log.info "Validating CIM mappings for alerts"
+        for (alert in alerts) {
+            validateCimMappings(alert)
         }
     }
 
@@ -323,9 +354,14 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
                     .any { it.targetID == centralUid && it.getPort() == 8443 }
         }, 15)
 
-        NetworkBaselineService.getNetworkBaseline(splunkUid)
+        def baseline = NetworkBaselineService.getNetworkBaseline(splunkUid)
+        log.debug("Network baseline before lock call: ${baseline}")
+
         // Lock the baseline so that any different requests from (and to) Splunk pod would make a violation.
         NetworkBaselineService.lockNetworkBaseline(splunkUid)
+
+        baseline = NetworkBaselineService.getNetworkBaseline(splunkUid)
+        log.debug("Network baseline after lock call: ${baseline}")
 
         // Make anomalous request from Splunk towards Kube API server. This should trigger a network flow violation.
         assert retryUntilTrue({

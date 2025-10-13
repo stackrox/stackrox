@@ -4,7 +4,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -81,7 +80,7 @@ func (p *persister) loadExisting() (*sensor.AdmissionControlSettings, error) {
 	}
 
 	var settings sensor.AdmissionControlSettings
-	if err := proto.Unmarshal(bytes, &settings); err != nil {
+	if err := settings.UnmarshalVTUnsafe(bytes); err != nil {
 		return nil, errors.Wrapf(err, "unmarshaling initial admission control settings from %s", settingsPath)
 	}
 
@@ -97,7 +96,7 @@ func (p *persister) persistCurrent() error {
 		return nil
 	}
 
-	bytes, err := proto.Marshal(settings)
+	bytes, err := settings.MarshalVT()
 	if err != nil {
 		return errors.Wrap(err, "marshaling settings proto")
 	}

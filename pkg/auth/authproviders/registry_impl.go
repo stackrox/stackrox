@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/errox"
@@ -23,7 +24,7 @@ var (
 // NewStoreBackedRegistry creates a new auth provider registry that is backed by a store. It also can handle HTTP requests,
 // where every incoming HTTP request URL is expected to refer to a path under `urlPathPrefix`. The redirect URL for
 // clients upon successful/failed authentication is `clientRedirectURL`.
-func NewStoreBackedRegistry(urlPathPrefix string, redirectURL string, store Store, tokenIssuerFactory tokens.IssuerFactory, roleMapperFactory permissions.RoleMapperFactory) (Registry, error) {
+func NewStoreBackedRegistry(urlPathPrefix string, redirectURL string, store Store, tokenIssuerFactory tokens.IssuerFactory, roleMapperFactory permissions.RoleMapperFactory) Registry {
 	urlPathPrefix = strings.TrimRight(urlPathPrefix, "/") + "/"
 	registry := &registryImpl{
 		ServeMux:      http.NewServeMux(),
@@ -38,7 +39,7 @@ func NewStoreBackedRegistry(urlPathPrefix string, redirectURL string, store Stor
 		roleMapperFactory: roleMapperFactory,
 	}
 
-	return registry, nil
+	return registry
 }
 
 type registryImpl struct {
@@ -58,13 +59,8 @@ type registryImpl struct {
 }
 
 func (r *registryImpl) Init() error {
-	providerDefs, err := r.store.GetAllAuthProviders(sac.WithAllAccess(context.Background()))
-	if err != nil {
-		return err
-	}
-
-	r.providers = make(map[string]Provider, len(providerDefs))
-	for _, storedValue := range providerDefs {
+	r.providers = make(map[string]Provider)
+	err := r.store.ForEachAuthProvider(sac.WithAllAccess(context.Background()), func(storedValue *storage.AuthProvider) error {
 		// Construct the options for the provider, using the stored definition, and the defaults for previously stored objects.
 		options := []ProviderOption{
 			WithStorageView(storedValue),
@@ -78,6 +74,10 @@ func (r *registryImpl) Init() error {
 			panic(err)
 		}
 		r.addProvider(provider)
+		return nil
+	})
+	if err != nil {
+		return err
 	}
 
 	r.initHTTPMux()
@@ -366,7 +366,7 @@ func (r *registryImpl) issueTokenForResponse(ctx context.Context, provider Provi
 			log.Errorf("failed to encode refresh token cookie data: %v", err)
 		} else {
 			refreshCookie = &http.Cookie{
-				Name:     refreshTokenCookieName,
+				Name:     RefreshTokenCookieName,
 				Value:    encodedData,
 				Path:     r.sessionURLPrefix(),
 				HttpOnly: true,

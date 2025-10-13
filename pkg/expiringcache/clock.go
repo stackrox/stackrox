@@ -5,6 +5,7 @@ import (
 )
 
 // Clock is an interface that provides the current time.s
+//
 //go:generate mockgen-wrapper
 type Clock interface {
 	Now() time.Time

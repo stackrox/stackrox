@@ -8,6 +8,7 @@ function setup() {
     unset OPENSHIFT_CI
     unset PULL_NUMBER
     unset CLONEREFS_OPTIONS
+    unset GITHUB_ACTION
     source "${BATS_TEST_DIRNAME}/../lib.sh"
 }
 

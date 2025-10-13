@@ -4,18 +4,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
-	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/sensor/common/detector/mocks"
 	mocksStore "github.com/stackrox/rox/sensor/common/store/mocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 	networkingV1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -33,8 +31,6 @@ type NetworkPolicyDispatcherSuite struct {
 	deploymentStore *DeploymentStore
 	detector        *mocks.MockDetector
 	dispatcher      *networkPolicyDispatcher
-
-	envIsolator *envisolator.EnvIsolator
 }
 
 var _ suite.SetupTestSuite = (*NetworkPolicyDispatcherSuite)(nil)
@@ -46,9 +42,7 @@ func (suite *NetworkPolicyDispatcherSuite) SetupTest() {
 	suite.deploymentStore = newDeploymentStore()
 	suite.detector = mocks.NewMockDetector(suite.mockCtrl)
 
-	suite.dispatcher = newNetworkPolicyDispatcher(suite.netpolStore, suite.deploymentStore, suite.detector)
-
-	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
+	suite.dispatcher = newNetworkPolicyDispatcher(suite.netpolStore, suite.deploymentStore)
 
 	// TODO(ROX-9990): Use the DeploymentStore mock
 	deployments := []*deploymentWrap{
@@ -97,13 +91,10 @@ func (suite *NetworkPolicyDispatcherSuite) SetupTest() {
 	for _, d := range deployments {
 		suite.deploymentStore.addOrUpdateDeployment(d)
 	}
-
-	suite.envIsolator.Setenv(features.NetworkPolicySystemPolicy.EnvVar(), "true")
 }
 
 func (suite *NetworkPolicyDispatcherSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
-	suite.envIsolator.RestoreAll()
 }
 
 func createNetworkPolicy(id, namespace string, podSelector map[string]string) *networkingV1.NetworkPolicy {
@@ -145,10 +136,6 @@ func createSensorEvent(np *networkingV1.NetworkPolicy, action central.ResourceAc
 }
 
 func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
-	if !features.NetworkPolicySystemPolicy.Enabled() {
-		suite.T().Skipf("Skipping test since the %s variable is not set", features.NetworkPolicySystemPolicy.EnvVar())
-	}
-
 	cases := map[string]struct {
 		netpol              interface{}
 		oldNetpol           interface{}
@@ -392,10 +379,6 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 	for name, c := range cases {
 		suite.T().Run(name, func(t *testing.T) {
 			c.expectedEvents = createSensorEvent(c.netpol.(*networkingV1.NetworkPolicy), c.action)
-			deps := set.NewStringSet()
-			reprocessDeploymentMock := suite.detector.EXPECT().ReprocessDeployments(gomock.Any()).DoAndReturn(func(ids ...string) {
-				deps.AddAll(ids...)
-			})
 			upsertMock := suite.netpolStore.EXPECT().Upsert(gomock.Any()).Return()
 			deleteMock := suite.netpolStore.EXPECT().Delete(gomock.Any(), gomock.Any()).Return()
 			if c.action == central.ResourceAction_REMOVE_RESOURCE {
@@ -406,14 +389,10 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 				deleteMock.Times(0)
 			}
 			events := suite.dispatcher.ProcessEvent(c.netpol, c.oldNetpol, c.action)
-			reprocessDeploymentMock.Times(1)
-			for _, d := range c.expectedDeployments {
-				_, ok := deps[d.GetId()]
-				assert.Truef(t, ok, "Expected call to ProcessDeployment with Deployment Id %s not found", d.GetId())
-			}
-			for _, e := range events {
-				_, ok := c.expectedEvents[e.Id]
-				assert.Truef(t, ok, "Expected SensorEvent with NetworkPolicy Id %s not found", e.Id)
+			require.NotNil(t, events)
+			for _, e := range events.ForwardMessages {
+				_, ok := c.expectedEvents[e.GetId()]
+				assert.Truef(t, ok, "Expected SensorEvent with NetworkPolicy Id %s not found", e.GetId())
 			}
 		})
 	}

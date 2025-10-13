@@ -70,7 +70,7 @@ func (resolver *Resolver) Subjects(ctx context.Context, args PaginatedQuery) ([]
 		subjectResolvers = append(subjectResolvers, &subjectResolver{root: resolver, data: subject})
 	}
 
-	return paginate(query.Pagination, subjectResolvers, nil)
+	return paginate(query.GetPagination(), subjectResolvers, nil)
 }
 
 // SubjectCount returns count of all subjects across infrastructure
@@ -170,7 +170,7 @@ func (resolver *subjectResolver) K8sRoles(ctx context.Context, args PaginatedQue
 	if err != nil {
 		return nil, err
 	}
-	return paginate(filterQ.Pagination, roleResolvers, nil)
+	return paginate(filterQ.GetPagination(), roleResolvers, nil)
 }
 
 func (resolver *subjectResolver) getRolesForSubject(ctx context.Context, filterQ *v1.Query) ([]*storage.K8SRole, error) {
@@ -250,7 +250,7 @@ func (resolver *subjectResolver) getEvaluators(ctx context.Context) (map[string]
 	return evaluators, nil
 }
 
-func (resolver *subjectResolver) getClusterEvaluator(ctx context.Context) k8srbac.EvaluatorForContext {
+func (resolver *subjectResolver) getClusterEvaluator(_ context.Context) k8srbac.EvaluatorForContext {
 	rootResolver := resolver.root
 	return rbacUtils.NewClusterPermissionEvaluator(resolver.data.GetClusterId(),
 		rootResolver.K8sRoleStore, rootResolver.K8sRoleBindingStore)

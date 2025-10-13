@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/scopecomp"
 	"github.com/stackrox/rox/pkg/set"
@@ -48,10 +47,8 @@ func newPolicyValidator(notifierStorage notifierDataStore.DataStore) *policyVali
 		notifierStorage:            notifierStorage,
 		nonEnforceablePolicyFields: make(map[string]struct{}),
 	}
-	if features.NetworkPolicySystemPolicy.Enabled() {
-		pv.nonEnforceablePolicyFields[augmentedobjs.HasIngressPolicyCustomTag] = struct{}{}
-		pv.nonEnforceablePolicyFields[augmentedobjs.HasEgressPolicyCustomTag] = struct{}{}
-	}
+	pv.nonEnforceablePolicyFields[augmentedobjs.HasIngressPolicyCustomTag] = struct{}{}
+	pv.nonEnforceablePolicyFields[augmentedobjs.HasEgressPolicyCustomTag] = struct{}{}
 	return pv
 }
 
@@ -119,6 +116,7 @@ func (s *policyValidator) validateVersion(policy *storage.Policy) error {
 }
 
 func (s *policyValidator) validateName(policy *storage.Policy) error {
+	policy.Name = strings.TrimSpace(policy.GetName())
 	return nameValidator.Validate(policy.GetName())
 }
 
@@ -210,7 +208,7 @@ func (s *policyValidator) getCaps(policy *storage.Policy, capsTypes string) []*s
 	for _, section := range policy.GetPolicySections() {
 		for _, group := range section.GetPolicyGroups() {
 			if group.GetFieldName() == capsTypes {
-				capsValues = append(capsValues, group.Values...)
+				capsValues = append(capsValues, group.GetValues()...)
 			}
 		}
 	}
@@ -340,13 +338,21 @@ func (s *policyValidator) compilesForDeployTime(policy *storage.Policy, options 
 		return errors.Wrap(err, "policy configuration is invalid for deploy time")
 	}
 	if booleanpolicy.ContainsRuntimeFields(policy) {
-		return errors.New("deploy time policy cannot contain runtime fields")
+		return errors.New("deploy time policy cannot contain runtime criteria")
 	}
 	return nil
 }
 
 func (s *policyValidator) compilesForRunTime(policy *storage.Policy, options ...booleanpolicy.ValidateOption) error {
-	// Runtime policies must contain one or more runtime fields, but can have deploy time fields as well
+	// Runtime policies must contain one category of runtime criteria, but can have deploy time criteria as well
+	if !booleanpolicy.ContainsRuntimeFields(policy) {
+		return errors.New("A runtime policy must contain at least one policy criterion from process, network flow, audit log events, or Kubernetes events criteria categories")
+	}
+
+	if !booleanpolicy.ContainsDiscreteRuntimeFieldCategorySections(policy) {
+		return errors.New("A runtime policy section must contain only one criterion from process, network flow, audit log events, or Kubernetes events criteria categories")
+	}
+
 	var err error
 	if s.isAuditEventPolicy(policy) {
 		_, err = booleanpolicy.BuildAuditLogEventMatcher(policy, booleanpolicy.ValidateSourceIsAuditLogEvents())
@@ -358,13 +364,6 @@ func (s *policyValidator) compilesForRunTime(policy *storage.Policy, options ...
 		return errors.Wrap(err, "policy configuration is invalid for runtime")
 	}
 
-	if !booleanpolicy.ContainsRuntimeFields(policy) {
-		return errors.New("run time policy must contain runtime specific constraints")
-	}
-
-	if !booleanpolicy.ContainsDiscreteRuntimeFieldCategorySections(policy) {
-		return errors.New("a run time policy section must not contain both process and kubernetes event constraints")
-	}
 	return nil
 }
 
@@ -391,7 +390,7 @@ var enforcementToLifecycle = map[storage.EnforcementAction]storage.LifecycleStag
 }
 
 func removeEnforcementForLifecycle(policy *storage.Policy, stage storage.LifecycleStage) {
-	newActions := policy.EnforcementActions[:0]
+	newActions := policy.GetEnforcementActions()[:0]
 	for _, ea := range policy.GetEnforcementActions() {
 		if enforcementToLifecycle[ea] != stage {
 			newActions = append(newActions, ea)

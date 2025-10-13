@@ -3,18 +3,19 @@ package upgrade
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/namespaces"
+	"github.com/stackrox/rox/pkg/pods"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
-	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
+	"github.com/stackrox/rox/sensor/common/message"
 	"google.golang.org/grpc"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -27,6 +28,10 @@ var (
 	_   common.SensorComponent      = (*commandHandler)(nil)
 )
 
+type clusterIDWaiter interface {
+	Get() string
+}
+
 type commandHandler struct {
 	stopSig concurrency.Signal
 
@@ -37,10 +42,16 @@ type commandHandler struct {
 	checkInClient       central.SensorUpgradeControlServiceClient
 
 	configHandler config.Handler
+
+	clusterID clusterIDWaiter
+}
+
+func (h *commandHandler) Name() string {
+	return "upgrade.commandHandler"
 }
 
 // NewCommandHandler returns a new upgrade command handler for Kubernetes.
-func NewCommandHandler(configHandler config.Handler) (common.SensorComponent, error) {
+func NewCommandHandler(clusterID clusterIDWaiter, configHandler config.Handler) (common.SensorComponent, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "obtaining in-cluster Kubernetes config")
@@ -55,6 +66,7 @@ func NewCommandHandler(configHandler config.Handler) (common.SensorComponent, er
 		baseK8sRESTConfig: config,
 		k8sClient:         k8sClientSet,
 		configHandler:     configHandler,
+		clusterID:         clusterID,
 	}, nil
 }
 
@@ -68,15 +80,17 @@ func (h *commandHandler) Start() error {
 	return nil
 }
 
-func (h *commandHandler) Stop(err error) {
+func (h *commandHandler) Stop() {
 	h.stopSig.Signal()
 }
+
+func (h *commandHandler) Notify(common.SensorComponentEvent) {}
 
 func (h *commandHandler) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (h *commandHandler) ResponsesC() <-chan *central.MsgFromSensor {
+func (h *commandHandler) ResponsesC() <-chan *message.ExpiringMessage {
 	return nil
 }
 
@@ -102,7 +116,11 @@ func (h *commandHandler) waitForTermination(proc *process) {
 	}
 }
 
-func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
+func (h *commandHandler) Accepts(msg *central.MsgToSensor) bool {
+	return msg.GetSensorUpgradeTrigger() != nil
+}
+
+func (h *commandHandler) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
 	trigger := msg.GetSensorUpgradeTrigger()
 	if trigger == nil {
 		return nil
@@ -112,7 +130,7 @@ func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
 	defer h.currentProcessMutex.Unlock()
 
 	if h.stopSig.IsDone() {
-		return errors.Errorf("unable to send command: %s", proto.MarshalTextString(trigger))
+		return errors.Errorf("unable to send command: %s", protocompat.MarshalTextString(trigger))
 	}
 
 	oldProcess := h.currentProcess
@@ -122,7 +140,7 @@ func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
 		}
 
 		// If we receive a trigger with a different ID (or no ID), we should always terminate the current process,
-		// regardless of whether or not we can successfully launch a new one.
+		// regardless of whether we can successfully launch a new one.
 		oldProcess.Terminate(errors.New("upgrade process is no longer current"))
 	}
 
@@ -133,15 +151,15 @@ func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
 		return nil
 	}
 
-	if h.configHandler.GetHelmManagedConfig() != nil && !h.configHandler.GetHelmManagedConfig().GetNotHelmManaged() {
-		upgradesNotSupportedErr := errors.New("Cluster is Helm-managed and does not support auto-upgrades")
-		go h.rejectUpgradeRequest(trigger, upgradesNotSupportedErr)
+	// Stop and cleanup the upgrader early if upgrades are not supported by the current installation method.
+	if err := upgradesSupported(h.configHandler.GetHelmManagedConfig()); err != nil {
+		go h.rejectUpgradeRequest(trigger, err)
 		go h.deleteUpgraderDeployments()
 		h.currentProcess = nil
-		return upgradesNotSupportedErr
+		return err
 	}
 
-	newProc, err := newProcess(trigger, h.checkInClient, h.baseK8sRESTConfig)
+	newProc, err := newProcess(h.clusterID, trigger, h.checkInClient, h.baseK8sRESTConfig)
 	if err != nil {
 		return errors.Wrap(err, "error creating new upgrade process")
 	}
@@ -154,10 +172,23 @@ func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
 	return nil
 }
 
+// upgradesSupported returns nil if upgrades are supported, otherwise it returns an error with a reason.
+func upgradesSupported(helmManagedConfig *central.HelmManagedConfigInit) error {
+	if helmManagedConfig != nil {
+		switch helmManagedConfig.GetManagedBy() {
+		case storage.ManagerType_MANAGER_TYPE_HELM_CHART:
+			return errors.New("Cluster is Helm-managed and does not support auto-upgrades")
+		case storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR:
+			return errors.New("Cluster is Operator-managed and does not support auto-upgrades")
+		}
+	}
+	return nil
+}
+
 func (h *commandHandler) deleteUpgraderDeployments() {
 	// Only try deleting once. There's no big issue if these linger around as the upgrader doesn't do anything without
 	// being told to by central, so we don't go out of our way to make sure they are gone.
-	err := h.k8sClient.AppsV1().Deployments(namespaces.StackRox).DeleteCollection(
+	err := h.k8sClient.AppsV1().Deployments(pods.GetPodNamespace()).DeleteCollection(
 		h.ctx(), pkgKubernetes.DeleteBackgroundOption, v1.ListOptions{
 			LabelSelector: v1.FormatLabelSelector(&v1.LabelSelector{
 				MatchExpressions: []v1.LabelSelectorRequirement{
@@ -178,7 +209,7 @@ func (h *commandHandler) ctx() context.Context {
 func (h *commandHandler) rejectUpgradeRequest(trigger *central.SensorUpgradeTrigger, errReason error) {
 	checkInReq := &central.UpgradeCheckInFromSensorRequest{
 		UpgradeProcessId: trigger.GetUpgradeProcessId(),
-		ClusterId:        clusterid.Get(), // will definitely be available at this point
+		ClusterId:        h.clusterID.Get(), // will definitely be available at this point
 		State: &central.UpgradeCheckInFromSensorRequest_LaunchError{
 			LaunchError: errReason.Error(),
 		},

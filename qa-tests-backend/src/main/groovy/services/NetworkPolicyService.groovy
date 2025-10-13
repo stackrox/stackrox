@@ -1,27 +1,33 @@
 package services
 
+import static util.Helpers.evaluateWithRetry
+
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import io.grpc.StatusRuntimeException
+
 import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkGraphScope
 import io.stackrox.proto.api.v1.NetworkPolicyServiceGrpc
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.ApplyNetworkPolicyYamlRequest
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.GenerateNetworkPoliciesRequest
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.GenerateNetworkPoliciesRequest.DeleteExistingPoliciesMode
-import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.GetNetworkPoliciesRequest
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.GetNetworkGraphRequest
+import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.GetNetworkPoliciesRequest
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.GetUndoModificationRequest
+import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.SendNetworkPolicyYamlRequest
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.SimulateNetworkGraphRequest
+import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicy
 import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyModification
 import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyReference
-import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.SendNetworkPolicyYamlRequest
-import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicy
+
 import util.Timer
 
 @Slf4j
+@CompileStatic
 class NetworkPolicyService extends BaseService {
 
-    static getNetworkPolicyClient() {
+    static NetworkPolicyServiceGrpc.NetworkPolicyServiceBlockingStub getNetworkPolicyClient() {
         return NetworkPolicyServiceGrpc.newBlockingStub(getChannel())
     }
 
@@ -101,7 +107,7 @@ class NetworkPolicyService extends BaseService {
 
     static waitForNetworkPolicy(String id, int timeoutSeconds = 30) {
         int intervalSeconds = 1
-        int retries = timeoutSeconds / intervalSeconds
+        int retries = (timeoutSeconds / intervalSeconds) as int
         try {
             evaluateWithRetry(retries, intervalSeconds) {
                 getNetworkPolicyClient().getNetworkPolicy(ResourceByID.newBuilder().setId(id).build())

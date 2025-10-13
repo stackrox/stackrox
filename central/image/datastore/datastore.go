@@ -3,27 +3,16 @@ package datastore
 import (
 	"context"
 
-	"github.com/blevesearch/bleve"
-	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
-	cveIndexer "github.com/stackrox/rox/central/cve/index"
-	deploymentIndexer "github.com/stackrox/rox/central/deployment/index"
-	"github.com/stackrox/rox/central/image/datastore/search"
 	"github.com/stackrox/rox/central/image/datastore/store"
-	dackBoxStore "github.com/stackrox/rox/central/image/datastore/store/dackbox"
-	imageIndexer "github.com/stackrox/rox/central/image/index"
-	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
-	imageComponentEdgeIndexer "github.com/stackrox/rox/central/imagecomponentedge/index"
-	imageCVEEdgeIndexer "github.com/stackrox/rox/central/imagecveedge/index"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/dackbox/concurrency"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
 // DataStore is an intermediary to AlertStorage.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	SearchListImages(ctx context.Context, q *v1.Query) ([]*storage.ListImage, error)
@@ -39,6 +28,7 @@ type DataStore interface {
 	GetImageMetadata(ctx context.Context, id string) (*storage.Image, bool, error)
 	GetManyImageMetadata(ctx context.Context, ids []string) ([]*storage.Image, error)
 	GetImagesBatch(ctx context.Context, shas []string) ([]*storage.Image, error)
+	WalkByQuery(ctx context.Context, q *v1.Query, fn func(image *storage.Image) error) error
 
 	UpsertImage(ctx context.Context, image *storage.Image) error
 	UpdateVulnerabilityState(ctx context.Context, cve string, images []string, state storage.VulnerabilityState) error
@@ -47,38 +37,11 @@ type DataStore interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
-func newDatastore(dacky *dackbox.DackBox, storage store.Store, bleveIndex bleve.Index, processIndex bleve.Index, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) DataStore {
-	indexer := imageIndexer.New(bleveIndex)
-
-	searcher := search.New(storage,
-		dacky,
-		cveIndexer.New(bleveIndex),
-		componentCVEEdgeIndexer.New(bleveIndex),
-		componentIndexer.New(bleveIndex),
-		imageComponentEdgeIndexer.New(bleveIndex),
-		imageIndexer.New(bleveIndex),
-		deploymentIndexer.New(bleveIndex, processIndex),
-		imageCVEEdgeIndexer.New(bleveIndex),
-	)
-	ds := newDatastoreImpl(storage, indexer, searcher, risks, imageRanker, imageComponentRanker)
-	ds.initializeRankers()
-
-	return ds
-}
-
-// New returns a new instance of DataStore using the input store, indexer, and searcher.
+// NewWithPostgres returns a new instance of DataStore using the input store, and searcher.
 // noUpdateTimestamps controls whether timestamps are automatically updated when upserting images.
 // This should be set to `false` except for some tests.
-func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, bleveIndex bleve.Index, processIndex bleve.Index, noUpdateTimestamps bool, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) DataStore {
-	storage := dackBoxStore.New(dacky, keyFence, noUpdateTimestamps)
-	return newDatastore(dacky, storage, bleveIndex, processIndex, risks, imageRanker, imageComponentRanker)
-}
-
-// NewWithPostgres returns a new instance of DataStore using the input store, indexer, and searcher.
-// noUpdateTimestamps controls whether timestamps are automatically updated when upserting images.
-// This should be set to `false` except for some tests.
-func NewWithPostgres(storage store.Store, index imageIndexer.Indexer, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) DataStore {
-	ds := newDatastoreImpl(storage, index, search.NewV2(storage, index), risks, imageRanker, imageComponentRanker)
-	ds.initializeRankers()
+func NewWithPostgres(storage store.Store, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) DataStore {
+	ds := newDatastoreImpl(storage, risks, imageRanker, imageComponentRanker)
+	go ds.initializeRankers()
 	return ds
 }

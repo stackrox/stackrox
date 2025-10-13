@@ -35,10 +35,9 @@ func (d *deduper) addDeployment(deployment *storage.Deployment) {
 func (d *deduper) needsProcessing(deployment *storage.Deployment) bool {
 	hashValue := deployment.GetHash()
 
-	var noUpdate bool
-	concurrency.WithRLock(&d.hashLock, func() {
+	noUpdate := concurrency.WithRLock1(&d.hashLock, func() bool {
 		oldHashValue, exists := d.hash[deployment.GetId()]
-		noUpdate = exists && hashValue == oldHashValue
+		return exists && hashValue == oldHashValue
 	})
 	if noUpdate {
 		return false

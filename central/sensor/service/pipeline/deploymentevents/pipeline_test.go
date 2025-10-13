@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	aggregatorMocks "github.com/stackrox/rox/central/activecomponent/updater/aggregator/mocks"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
@@ -15,8 +14,8 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestPipeline(t *testing.T) {
@@ -25,7 +24,6 @@ func TestPipeline(t *testing.T) {
 
 type PipelineTestSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
 
 	clusters          *clusterMocks.MockDataStore
 	deployments       *deploymentMocks.MockDataStore
@@ -58,11 +56,9 @@ func (suite *PipelineTestSuite) SetupTest() {
 			suite.reprocessor,
 			suite.networkBaselines,
 			suite.processAggregator).(*pipelineImpl)
-	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
 }
 
 func (suite *PipelineTestSuite) TearDownTest() {
-	suite.envIsolator.RestoreAll()
 	suite.mockCtrl.Finish()
 }
 
@@ -80,6 +76,27 @@ func (suite *PipelineTestSuite) TestDeploymentRemovePipeline() {
 				Action: central.ResourceAction_REMOVE_RESOURCE,
 				Resource: &central.SensorEvent_Deployment{
 					Deployment: deployment,
+				},
+			},
+		},
+	}, nil)
+	suite.NoError(err)
+}
+
+func (suite *PipelineTestSuite) TestSensorReconcileDeploymentRemove() {
+	deployment := fixtures.GetDeployment()
+
+	suite.deployments.EXPECT().RemoveDeployment(context.Background(), deployment.GetClusterId(), deployment.GetId())
+	suite.graphEvaluator.EXPECT().IncrementEpoch(deployment.GetClusterId())
+	suite.networkBaselines.EXPECT().ProcessDeploymentDelete(gomock.Any()).Return(nil)
+
+	err := suite.pipeline.Run(context.Background(), deployment.GetClusterId(), &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     deployment.GetId(),
+				Action: central.ResourceAction_REMOVE_RESOURCE,
+				Resource: &central.SensorEvent_Deployment{
+					Deployment: &storage.Deployment{Id: deployment.GetId()},
 				},
 			},
 		},

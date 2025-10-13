@@ -4,9 +4,9 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
+	"slices"
 
 	"github.com/stackrox/rox/pkg/gjson"
-	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 // CSVPrinterOption is a functional option for the CSVPrinter.
@@ -15,7 +15,15 @@ type CSVPrinterOption func(*CSVPrinter)
 // WithCSVColumnHeaders is a functional option for setting the CSV column headers.
 func WithCSVColumnHeaders(headers []string) CSVPrinterOption {
 	return func(p *CSVPrinter) {
-		p.columnHeaders = sliceutils.ShallowClone(headers)
+		p.columnHeaders = slices.Clone(headers)
+	}
+}
+
+// WithCSVHideUnpopulatedRowsOption is a functional option for hiding rows of the table,
+// when those rows have an unpopulated spot from a column marked as required.
+func WithCSVHideUnpopulatedRowsOption(requiredColumns []string) CSVPrinterOption {
+	return func(p *CSVPrinter) {
+		p.columnTreeOptions = []gjson.ColumnTreeOptions{gjson.HideRowsIfColumnNotPopulated(requiredColumns)}
 	}
 }
 
@@ -51,6 +59,7 @@ type CSVPrinter struct {
 	columnHeaders         []string
 	rowJSONPathExpression string
 	headerPrintOption     headerPrintOption
+	columnTreeOptions     []gjson.ColumnTreeOptions
 }
 
 // NewCSVPrinter creates a CSVPrinter from the options set.
@@ -68,24 +77,29 @@ type CSVPrinter struct {
 // GJSON's syntax expression to read more about modifiers.
 // The following example illustrates a JSON compatible structure and its gjson multi path expression
 // JSON structure:
-// type data struct {
-//		Infos 	[]info `json:"infos"`
-//		Name 	string `json:"name"`
-// }
-// type info struct {
-//		info 	string `json:"info"`
-//		topic 	string `json:"topic"`
-// }
+//
+//	type data struct {
+//			Infos 	[]info `json:"infos"`
+//			Name 	string `json:"name"`
+//	}
+//
+//	type info struct {
+//			info 	string `json:"info"`
+//			topic 	string `json:"topic"`
+//	}
+//
 // Data:
-// data := &data{Name: "example", Infos: []info{
-//										{info: "info1", topic: "topic1"},
-//										{info: "info2", topic: "topic2"},
-//										{info: "info3", topic: "topic3"},
-//										}
+//
+//	data := &data{Name: "example", Infos: []info{
+//											{info: "info1", topic: "topic1"},
+//											{info: "info2", topic: "topic2"},
+//											{info: "info3", topic: "topic3"},
+//											}
+//
 // gjson multi path expression: "{name,infos.#.info,infos.#.topic}"
-// 	- bundle multiple gjson expression surrounded by "{}" to form a multi path expression
-// 	- specify "#" to visit each element in the array
-// 	- each expression in the multi path expression is correlated with the given header(s)!
+//   - bundle multiple gjson expression surrounded by "{}" to form a multi path expression
+//   - specify "#" to visit each element in the array
+//   - each expression in the multi path expression is correlated with the given header(s)!
 //
 // headers := []string{"name", "info", "topic"}
 //
@@ -111,7 +125,7 @@ func NewCSVPrinter(rowJSONPathExpression string, options ...CSVPrinterOption) *C
 func (c *CSVPrinter) Print(jsonObject interface{}, out io.Writer) error {
 	csvWriter := csv.NewWriter(out)
 
-	rowMapper, err := gjson.NewRowMapper(jsonObject, c.rowJSONPathExpression)
+	rowMapper, err := gjson.NewRowMapper(jsonObject, c.rowJSONPathExpression, c.columnTreeOptions...)
 	if err != nil {
 		return err
 	}

@@ -7,7 +7,6 @@ const panel = {
     nextButton: '[data-testid="next-button"]',
     saveButton: '[data-testid="save-button"]',
     form: '[data-testid="side-panel"] form',
-    closeButton: '[data-testid="cancel"]',
 };
 
 export default panel;

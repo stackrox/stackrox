@@ -1,5 +1,8 @@
 package orchestratormanager
 
+import static util.Helpers.withRetry
+
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import io.fabric8.kubernetes.client.KubernetesClientException
 import io.fabric8.openshift.api.model.ProjectRequest
@@ -12,6 +15,7 @@ import util.Env
 import util.Timer
 
 @Slf4j
+@CompileStatic
 class OpenShift extends Kubernetes {
     OpenShiftClient oClient
 
@@ -21,11 +25,11 @@ class OpenShift extends Kubernetes {
     }
 
     OpenShift() {
-        OpenShift("default")
+        this('default')
     }
 
     @Override
-    def ensureNamespaceExists(String ns) {
+    void ensureNamespaceExists(String ns) {
         ProjectRequest projectRequest = new ProjectRequestBuilder()
                 .withNewMetadata()
                 .withName(ns)
@@ -35,19 +39,18 @@ class OpenShift extends Kubernetes {
 
         try {
             oClient.projectrequests().create(projectRequest)
-            log.debug "Created namespace ${ns}"
+            log.info "Created namespace ${ns}"
             provisionDefaultServiceAccount(ns)
         } catch (KubernetesClientException kce) {
             if (kce.code != 409) {
                 throw kce
-            } else {
-                log.info("namespace already exists", kce)
             }
+            log.debug("Namespace ${ns} already exists")
         }
 
         try {
             String sccName = "anyuid"
-            if (Env.CI_JOBNAME =~ /^(rosa|aro)-/ || Env.CI_JOBNAME =~ /^osd-/) {
+            if (Env.CI_JOB_NAME =~ /^(rosa|aro)-/ || Env.CI_JOB_NAME =~ /^osd-/) {
                 log.debug "Using a non default SCC"
                 sccName = "qatest-anyuid"
             }
@@ -82,7 +85,7 @@ class OpenShift extends Kubernetes {
     */
 
     @Override
-    def getDeploymentCount(String ns) {
+    List<String> getDeploymentCount(String ns) {
         return oClient.apps().deployments().inNamespace(ns).list().getItems().collect { it.metadata.name } +
                 oClient.deploymentConfigs().inNamespace(ns).list().getItems().collect { it.metadata.name }
     }
@@ -92,7 +95,8 @@ class OpenShift extends Kubernetes {
     */
 
     @Override
-    def createRoute(String routeName, String namespace) {
+    @SuppressWarnings('BuilderMethodWithSideEffects')
+    void createRoute(String routeName, String namespace) {
         log.debug "Creating a route: " + routeName
         withRetry(2, 3) {
             Route route = new RouteBuilder().withNewMetadata().withName(routeName).endMetadata()
@@ -102,7 +106,7 @@ class OpenShift extends Kubernetes {
     }
 
     @Override
-    def deleteRoute(String routeName, String namespace) {
+    void deleteRoute(String routeName, String namespace) {
         log.debug "Deleting a route: " + routeName
         withRetry(2, 3) {
             Route route = new RouteBuilder().withNewMetadata().withName(routeName).endMetadata().build()

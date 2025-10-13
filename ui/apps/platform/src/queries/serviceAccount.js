@@ -13,6 +13,7 @@ export const SERVICE_ACCOUNT_FRAGMENT = gql`
         }
         clusterName
         clusterId
+        clusterAdmin
         deploymentCount
         deployments {
             id
@@ -43,7 +44,7 @@ export const SERVICE_ACCOUNT_FRAGMENT = gql`
     }
 `;
 export const SERVICE_ACCOUNTS_QUERY = gql`
-    query serviceAccounts($query: String, $pagination: Pagination) {
+    query serviceaccounts($query: String, $pagination: Pagination) {
         results: serviceAccounts(query: $query, pagination: $pagination) {
             id
             name
@@ -74,13 +75,4 @@ export const SERVICE_ACCOUNT_NAME = gql`
             name
         }
     }
-`;
-
-export const SERVICE_ACCOUNT_QUERY = gql`
-    query serviceAccount($id: ID!) {
-        serviceAccount(id: $id) {
-            ...serviceAccountFields
-        }
-    }
-    ${SERVICE_ACCOUNT_FRAGMENT}
 `;

@@ -2,7 +2,6 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  creationTimestamp: null
   name: manager-role
 rules:
 - apiGroups:
@@ -15,31 +14,6 @@ rules:
   - platform.stackrox.io
   resources:
   - centrals
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - platform.stackrox.io
-  resources:
-  - centrals/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - platform.stackrox.io
-  resources:
-  - centrals/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - platform.stackrox.io
-  resources:
   - securedclusters
   verbs:
   - create
@@ -52,12 +26,14 @@ rules:
 - apiGroups:
   - platform.stackrox.io
   resources:
+  - centrals/finalizers
   - securedclusters/finalizers
   verbs:
   - update
 - apiGroups:
   - platform.stackrox.io
   resources:
+  - centrals/status
   - securedclusters/status
   verbs:
   - get

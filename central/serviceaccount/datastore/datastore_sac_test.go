@@ -1,20 +1,18 @@
+//go:build sql_integration
+
 package datastore
 
 import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/serviceaccount/mappings"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -31,10 +29,7 @@ type serviceAccountSACSuite struct {
 
 	datastore DataStore
 
-	pool *pgxpool.Pool
-
-	engine *rocksdb.RocksDB
-	index  bleve.Index
+	pool postgres.DB
 
 	optionsMap searchPkg.OptionsMap
 
@@ -43,36 +38,18 @@ type serviceAccountSACSuite struct {
 }
 
 func (s *serviceAccountSACSuite) SetupSuite() {
-	var err error
-
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pgtestbase := pgtest.ForT(s.T())
-		s.Require().NotNil(pgtestbase)
-		s.pool = pgtestbase.Pool
-		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
-		s.Require().NoError(err)
-		s.optionsMap = schema.ServiceAccountsSchema.OptionsMap
-	} else {
-		s.engine, err = rocksdb.NewTemp("serviceAccountSACTest")
-		s.Require().NoError(err)
-		s.index, err = globalindex.MemOnlyIndex()
-		s.Require().NoError(err)
-		s.datastore, err = GetTestRocksBleveDataStore(s.T(), s.engine, s.index)
-		s.Require().NoError(err)
-		s.optionsMap = mappings.OptionsMap
-	}
+	pgtestbase := pgtest.ForT(s.T())
+	s.Require().NotNil(pgtestbase)
+	s.pool = pgtestbase.DB
+	s.datastore = GetTestPostgresDataStore(s.T(), s.pool)
+	s.optionsMap = schema.ServiceAccountsSchema.OptionsMap
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
 		resources.ServiceAccount)
 }
 
 func (s *serviceAccountSACSuite) TearDownSuite() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pool.Close()
-	} else {
-		s.Require().NoError(rocksdb.CloseAndRemove(s.engine))
-		s.Require().NoError(s.index.Close())
-	}
+	s.pool.Close()
 }
 
 func (s *serviceAccountSACSuite) SetupTest() {
@@ -137,7 +114,7 @@ func (s *serviceAccountSACSuite) TestGetServiceAccount() {
 			s.Require().NoError(err)
 			if c.ExpectedFound {
 				s.True(found)
-				s.Equal(*account, *res)
+				protoassert.Equal(s.T(), account, res)
 			} else {
 				s.False(found)
 				s.Nil(res)
@@ -179,7 +156,7 @@ func (s *serviceAccountSACSuite) TestSearchServiceAccount() {
 		})
 	}
 
-	for name, c := range testutils.GenericUnrestrictedSACSearchTestCases(s.T()) {
+	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runSearchServiceAccountTest(c)
 		})
@@ -190,7 +167,14 @@ func (s *serviceAccountSACSuite) runSearchServiceAccountTest(c testutils.SACSear
 	ctx := s.testContexts[c.ScopeKey]
 	results, err := s.datastore.SearchServiceAccounts(ctx, nil)
 	s.Require().NoError(err)
-	resultCounts := testutils.CountSearchResultsPerClusterAndNamespace(s.T(), results, s.optionsMap)
+	resultObjects := make([]sac.NamespaceScopedObject, 0, len(results))
+	for _, r := range results {
+		obj, found, err := s.datastore.GetServiceAccount(s.testContexts[testutils.UnrestrictedReadCtx], r.GetId())
+		if found && err == nil {
+			resultObjects = append(resultObjects, obj)
+		}
+	}
+	resultCounts := testutils.CountSearchResultObjectsPerClusterAndNamespace(s.T(), resultObjects)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, c.Results, resultCounts)
 
 }
@@ -211,8 +195,44 @@ func (s *serviceAccountSACSuite) runSearchTest(c testutils.SACSearchTestCase) {
 	ctx := s.testContexts[c.ScopeKey]
 	results, err := s.datastore.Search(ctx, nil)
 	s.Require().NoError(err)
-	resultCounts := testutils.CountResultsPerClusterAndNamespace(s.T(), results, s.optionsMap)
+	resultObjects := make([]sac.NamespaceScopedObject, 0, len(results))
+	for _, r := range results {
+		obj, found, err := s.datastore.GetServiceAccount(s.testContexts[testutils.UnrestrictedReadCtx], r.ID)
+		if found && err == nil {
+			resultObjects = append(resultObjects, obj)
+		}
+	}
+	resultCounts := testutils.CountSearchResultObjectsPerClusterAndNamespace(s.T(), resultObjects)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, c.Results, resultCounts)
+}
+
+func (s *serviceAccountSACSuite) runCountTest(c testutils.SACSearchTestCase) {
+	ctx := s.testContexts[c.ScopeKey]
+	count, err := s.datastore.Count(ctx, nil)
+	s.Require().NoError(err)
+	expectedCount := 0
+	for _, clusterData := range c.Results {
+		for _, namespaceResultCount := range clusterData {
+			expectedCount += namespaceResultCount
+		}
+	}
+	s.Equal(expectedCount, count)
+}
+
+func (s *serviceAccountSACSuite) TestScopedCount() {
+	for name, c := range testutils.GenericScopedSACSearchTestCases(s.T()) {
+		s.Run(name, func() {
+			s.runCountTest(c)
+		})
+	}
+}
+
+func (s *serviceAccountSACSuite) TestUnrestrictedCount() {
+	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
+		s.Run(name, func() {
+			s.runCountTest(c)
+		})
+	}
 }
 
 func (s *serviceAccountSACSuite) TestScopedSearch() {
@@ -224,7 +244,7 @@ func (s *serviceAccountSACSuite) TestScopedSearch() {
 }
 
 func (s *serviceAccountSACSuite) TestUnrestrictedSearch() {
-	for name, c := range testutils.GenericUnrestrictedSACSearchTestCases(s.T()) {
+	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runSearchTest(c)
 		})

@@ -1,9 +1,10 @@
-import React, { ReactElement, useRef, useState } from 'react';
-import { Button, TextInput, Tooltip, ValidatedOptions } from '@patternfly/react-core';
+import React, { useRef, useState } from 'react';
+import type { ReactElement } from 'react';
+import { Button, Icon, TextInput, Tooltip, ValidatedOptions } from '@patternfly/react-core';
 import { PlusCircleIcon, TimesCircleIcon } from '@patternfly/react-icons';
-import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
-import { ClusterLabels } from 'services/ClustersService';
+import type { ClusterLabels } from 'services/ClustersService';
 import { getIsValidLabelKey, getIsValidLabelValue } from 'utils/labels';
 
 export type ClusterLabelsTableProps = {
@@ -72,12 +73,12 @@ function ClusterLabelsTable({
     }
 
     return (
-        <TableComposable variant="compact">
+        <Table variant="compact">
             <Thead>
                 <Tr>
                     <Th>Key</Th>
                     <Th>Value</Th>
-                    {hasAction && <Th aria-label="Action" />}
+                    {hasAction && <Th>Action</Th>}
                 </Tr>
             </Thead>
             <Tbody>
@@ -87,7 +88,7 @@ function ClusterLabelsTable({
                         style={{
                             backgroundColor:
                                 key === keyInput
-                                    ? 'var(--pf-global--warning-color--100)'
+                                    ? 'var(--pf-v5-global--warning-color--100)'
                                     : 'transparent',
                         }}
                     >
@@ -106,7 +107,7 @@ function ClusterLabelsTable({
                                         style={{ padding: 0 }}
                                         onClick={() => onDeleteLabel(key)}
                                     >
-                                        <TimesCircleIcon color="var(--pf-global--danger-color--100)" />
+                                        <TimesCircleIcon color="var(--pf-v5-global--danger-color--100)" />
                                     </Button>
                                 </Tooltip>
                             </Td>
@@ -120,16 +121,16 @@ function ClusterLabelsTable({
                                 aria-label="Type a label key"
                                 value={keyInput}
                                 validated={validatedKey}
-                                onChange={setKeyInput}
+                                onChange={(_event, val) => setKeyInput(val)}
                                 ref={refKeyInput}
                             />
                             {validatedKey === ValidatedOptions.error && (
-                                <p className="pf-u-font-size-sm pf-u-danger-color-100">
+                                <p className="pf-v5-u-font-size-sm pf-v5-u-danger-color-100">
                                     Invalid label key
                                 </p>
                             )}
                             {validatedKey === ValidatedOptions.warning && (
-                                <p className="pf-u-font-size-sm pf-u-warning-color-100">
+                                <p className="pf-v5-u-font-size-sm pf-v5-u-warning-color-100">
                                     You will replace an existing label which has the same key
                                 </p>
                             )}
@@ -139,11 +140,11 @@ function ClusterLabelsTable({
                                 aria-label="Type a label value"
                                 value={valueInput}
                                 validated={validatedValue}
-                                onChange={setValueInput}
+                                onChange={(_event, val) => setValueInput(val)}
                                 onKeyPress={onKeyPressValue}
                             />
                             {validatedValue === ValidatedOptions.error && (
-                                <p className="pf-u-font-size-sm pf-u-danger-color-100">
+                                <p className="pf-v5-u-font-size-sm pf-v5-u-danger-color-100">
                                     {valueInput.length === 0
                                         ? 'Label value is required'
                                         : 'Invalid label value'}
@@ -159,20 +160,22 @@ function ClusterLabelsTable({
                                     isDisabled={!isValid}
                                     onClick={() => onAddLabel()}
                                 >
-                                    <PlusCircleIcon
-                                        color={
-                                            isReplace
-                                                ? 'var(--pf-global--warning-color--100)'
-                                                : 'var(--pf-global--success-color--100)'
-                                        }
-                                    />
+                                    <Icon>
+                                        <PlusCircleIcon
+                                            color={
+                                                isReplace
+                                                    ? 'var(--pf-v5-global--warning-color--100)'
+                                                    : 'var(--pf-v5-global--success-color--100)'
+                                            }
+                                        />
+                                    </Icon>
                                 </Button>
                             </Tooltip>
                         </Td>
                     </Tr>
                 )}
             </Tbody>
-        </TableComposable>
+        </Table>
     );
 }
 

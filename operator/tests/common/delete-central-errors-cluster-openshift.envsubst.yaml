@@ -1,0 +1,10 @@
+# The following resources are obtained by following the instructions in delete-central-errors-cluster.envsubst.yaml.
+apiVersion: authorization.openshift.io/v1
+kind: ClusterRole
+metadata:
+  name: stackrox-${NAMESPACE}-central-psp
+---
+apiVersion: authorization.openshift.io/v1
+kind: ClusterRole
+metadata:
+  name: stackrox-${NAMESPACE}-scanner-psp

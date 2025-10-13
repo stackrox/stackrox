@@ -1,20 +1,32 @@
-import groups.BAT
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawSearchRequest
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.SearchCategory
-import org.junit.experimental.categories.Category
+
 import services.SearchService
+import util.Env
+
+import spock.lang.Tag
 import spock.lang.Unroll
 
+@Tag("PZ")
 class AutocompleteTest extends BaseSpecification {
-    private static final SearchCategory VULNERABILITY_SEARCH_CATEGORY =
-        isPostgresRun() ?
-            SearchCategory.IMAGE_VULNERABILITIES :
-            SearchCategory.VULNERABILITIES
+    private static final String GROUP_AUTOCOMPLETE = "GROUP"
 
-    private static final String GROUP_AUTOCOMPLETE = isPostgresRun() ? "GROUP" : "group"
+    SearchCategory getVulnSearchCategory() {
+        if (Env.get("ROX_FLATTEN_CVE_DATA") == "true") {
+            return SearchCategory.IMAGE_VULNERABILITIES_V2
+        }
+        return SearchCategory.IMAGE_VULNERABILITIES
+    }
 
-    @Category([BAT])
+    SearchCategory getComponentSearchCategory() {
+        if (Env.get("ROX_FLATTEN_CVE_DATA") == "true") {
+            return SearchCategory.IMAGE_COMPONENTS_V2
+        }
+        return SearchCategory.IMAGE_COMPONENTS
+    }
+
+    @Tag("BAT")
     def "Verify Autocomplete: #query #category #contains"() {
         when:
         SearchServiceOuterClass.AutocompleteResponse resp = SearchService.autocomplete(
@@ -39,7 +51,7 @@ class AutocompleteTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify #category search options contains #options"() {
         when:
         def resp = SearchService.options(category)
@@ -56,9 +68,9 @@ class AutocompleteTest extends BaseSpecification {
                                                 "Image Tag", "Dockerfile Instruction Keyword", "CVE", "Component"]
         SearchCategory.IMAGES                | ["Cluster", "Deployment",
                                                 "Image Tag", "Dockerfile Instruction Keyword", "CVE", "Component"]
-        VULNERABILITY_SEARCH_CATEGORY        | ["Cluster", "Deployment",
+        getVulnSearchCategory()              | ["Cluster", "Deployment",
                                                 "Image Tag", "Dockerfile Instruction Keyword", "CVE", "Component"]
-        SearchCategory.IMAGE_COMPONENTS      | ["Cluster", "Deployment",
+        getComponentSearchCategory()         | ["Cluster", "Deployment",
                                                 "Image Tag", "Dockerfile Instruction Keyword", "CVE", "Component"]
         SearchCategory.PODS                  | ["Namespace"]
         SearchCategory.POLICIES              | ["Policy"]

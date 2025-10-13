@@ -10,7 +10,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -44,22 +46,25 @@ var (
 			v1.SearchCategory_NODES,
 			v1.SearchCategory_CLUSTERS,
 		}...)
+		schema.ScopingResource = resources.Node
 		RegisterTable(schema, CreateTableNodeComponentsCvesEdgesStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_NODE_COMPONENT_CVE_EDGE, schema)
 		return schema
 	}()
 )
 
 const (
+	// NodeComponentsCvesEdgesTableName specifies the name of the table in postgres.
 	NodeComponentsCvesEdgesTableName = "node_components_cves_edges"
 )
 
 // NodeComponentsCvesEdges holds the Gorm model for Postgres table `node_components_cves_edges`.
 type NodeComponentsCvesEdges struct {
-	Id                string         `gorm:"column:id;type:varchar;primaryKey"`
+	ID                string         `gorm:"column:id;type:varchar;primaryKey"`
 	IsFixable         bool           `gorm:"column:isfixable;type:bool"`
 	FixedBy           string         `gorm:"column:fixedby;type:varchar"`
-	NodeComponentId   string         `gorm:"column:nodecomponentid;type:varchar;index:nodecomponentscvesedges_nodecomponentid,type:hash"`
-	NodeCveId         string         `gorm:"column:nodecveid;type:varchar;index:nodecomponentscvesedges_nodecveid,type:hash"`
+	NodeComponentID   string         `gorm:"column:nodecomponentid;type:varchar;index:nodecomponentscvesedges_nodecomponentid,type:hash"`
+	NodeCveID         string         `gorm:"column:nodecveid;type:varchar;index:nodecomponentscvesedges_nodecveid,type:hash"`
 	Serialized        []byte         `gorm:"column:serialized;type:bytea"`
 	NodeComponentsRef NodeComponents `gorm:"foreignKey:nodecomponentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

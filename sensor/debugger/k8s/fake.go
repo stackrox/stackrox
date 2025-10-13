@@ -4,12 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"reflect"
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -102,79 +100,6 @@ var actionToOptions = map[string]interface{}{
 	removeAction: metav1.DeleteOptions{},
 }
 
-var sensorEventCompareFunctions = map[string]func(interface{}, *central.SensorEvent) bool{
-	"*central.SensorEvent_NetworkPolicy": func(expected interface{}, event *central.SensorEvent) bool {
-		resource := expected.(*central.SensorEvent_NetworkPolicy)
-		if event.GetNetworkPolicy() == nil {
-			return false
-		}
-		return event.GetNetworkPolicy().GetId() == resource.NetworkPolicy.GetId()
-	},
-	"*central.SensorEvent_Deployment": func(expected interface{}, event *central.SensorEvent) bool {
-		resource := expected.(*central.SensorEvent_Deployment)
-		if event.GetDeployment() == nil {
-			return false
-		}
-		return event.GetDeployment().GetId() == resource.Deployment.GetId()
-	},
-	"*central.SensorEvent_Pod": func(expected interface{}, event *central.SensorEvent) bool {
-		resource := expected.(*central.SensorEvent_Pod)
-		if event.GetPod() == nil {
-			return false
-		}
-		return event.GetPod().GetId() == resource.Pod.GetId()
-	},
-	"*central.SensorEvent_Namespace": func(expected interface{}, event *central.SensorEvent) bool {
-		resource := expected.(*central.SensorEvent_Namespace)
-		if event.GetNamespace() == nil {
-			return false
-		}
-		return event.GetNamespace().GetId() == resource.Namespace.GetId()
-	},
-	"*central.SensorEvent_Secret": func(expected interface{}, event *central.SensorEvent) bool {
-		resource := expected.(*central.SensorEvent_Secret)
-		if event.GetSecret() == nil {
-			return false
-		}
-		return event.GetSecret().GetId() == resource.Secret.GetId()
-	},
-	"*central.SensorEvent_Node": func(expected interface{}, event *central.SensorEvent) bool {
-		resource := expected.(*central.SensorEvent_Node)
-		if event.GetNode() == nil {
-			return false
-		}
-		return event.GetNode().GetId() == resource.Node.GetId()
-	},
-	"*central.SensorEvent_ServiceAccount": func(expected interface{}, event *central.SensorEvent) bool {
-		resource := expected.(*central.SensorEvent_ServiceAccount)
-		if event.GetServiceAccount() == nil {
-			return false
-		}
-		return event.GetServiceAccount().GetId() == resource.ServiceAccount.GetId()
-	},
-	"*central.SensorEvent_Role": func(expected interface{}, event *central.SensorEvent) bool {
-		resource := expected.(*central.SensorEvent_Role)
-		if event.GetRole() == nil {
-			return false
-		}
-		return event.GetRole().GetId() == resource.Role.GetId()
-	},
-	"*central.SensorEvent_Binding": func(expected interface{}, event *central.SensorEvent) bool {
-		resource := expected.(*central.SensorEvent_Binding)
-		if event.GetBinding() == nil {
-			return false
-		}
-		return event.GetBinding().GetId() == resource.Binding.GetId()
-	},
-	"*central.SensorEvent_ImageIntegration": func(expected interface{}, event *central.SensorEvent) bool {
-		resource := expected.(*central.SensorEvent_ImageIntegration)
-		if event.GetImageIntegration() == nil {
-			return false
-		}
-		return event.GetImageIntegration().GetId() == resource.ImageIntegration.GetId()
-	},
-}
-
 // Init initializes the FakeEventsManager
 func (f *FakeEventsManager) Init() {
 	f.clientMap = map[string]func(string) interface{}{
@@ -225,28 +150,19 @@ func (f *FakeEventsManager) Init() {
 
 // CreateEvents creates the k8s events from a given jsonl file
 // It returns a concurrency.Signal that will be triggered if we reach the minimum number of resources needed to start sensor
-// and an error channel
-func (f *FakeEventsManager) CreateEvents(ctx context.Context) (*concurrency.Signal, <-chan error) {
-	min, errCh := f.handleEventsCreation(ctx)
-	errorCh := make(chan error)
-	go func() {
-		defer close(errorCh)
-		for err := range errCh {
-			errorCh <- err
-		}
-	}()
-	return min, errorCh
+// and an error signal
+func (f *FakeEventsManager) CreateEvents(ctx context.Context) (*concurrency.Signal, *concurrency.ErrorSignal) {
+	return f.handleEventsCreation(ctx)
 }
 
 // handleEventsCreation handles the creation of the events
-// It returns a concurrency.Signal indicating that we reached the minimum number of resources needed and an error channel
-func (f *FakeEventsManager) handleEventsCreation(ctx context.Context) (*concurrency.Signal, <-chan error) {
+// It returns a concurrency.Signal indicating that we reached the minimum number of resources needed and an error signal
+func (f *FakeEventsManager) handleEventsCreation(ctx context.Context) (*concurrency.Signal, *concurrency.ErrorSignal) {
 	minimumResources := concurrency.NewSignal()
-	errorCh := make(chan error)
+	doneSignal := concurrency.NewErrorSignal()
 	events, errCh := f.eventsCreation()
 	go func() {
 		count := 0
-		defer close(errorCh)
 		for {
 			select {
 			case e, more := <-events:
@@ -262,20 +178,22 @@ func (f *FakeEventsManager) handleEventsCreation(ctx context.Context) (*concurre
 						}
 					}
 				} else {
+					doneSignal.Signal()
 					return
 				}
 			case err, more := <-errCh:
 				if more {
-					errorCh <- err
+					doneSignal.SignalWithError(err)
 					return
 				}
 			case <-ctx.Done():
+				doneSignal.Signal()
 				return
 			}
 
 		}
 	}()
-	return &minimumResources, errorCh
+	return &minimumResources, &doneSignal
 }
 
 // eventsCreation creates the k8s events.
@@ -302,14 +220,14 @@ func (f *FakeEventsManager) eventsCreation() (<-chan string, <-chan error) {
 				return
 			}
 			if f.Verbose {
-				log.Printf("%s Event: %s", msg.Action, msg.ObjectType)
+				log.Infof("%s Event: %s", msg.Action, msg.ObjectType)
 			}
 			if err := f.createEvent(msg, ch); err != nil {
 				errorCh <- errors.Wrapf(err, "cannot create event for %s", msg.ObjectType)
 				return
 			}
 			if err = f.waitOnMode(msg.EventsOutput); err != nil {
-				errorCh <- err
+				errorCh <- errors.Wrapf(err, " InformerK8sMsg: %+v", msg)
 				return
 			}
 		}
@@ -420,27 +338,15 @@ func (f *FakeEventsManager) waitOnMode(events []string) error {
 		if len(events) == 0 {
 			return nil
 		}
-		unmarshalledEvents, err := toSensorEventSlice(events)
-		if err != nil {
-			return err
-		}
-		receivedEvents := 0
 		for {
 			timeout := time.After(5 * time.Second)
 			select {
 			case <-timeout:
 				return errors.New("timeout reached waiting for event")
-			case event := <-f.AckChannel:
-				eventFound, err := isEventInSlice(event, unmarshalledEvents)
-				if err != nil {
-					return err
-				}
-				if eventFound {
-					receivedEvents++
-				}
-				if receivedEvents == len(events) {
-					return nil
-				}
+			case <-f.AckChannel:
+				// if we received an event we do not need to wait anymore.
+				// Receiving an event in this channel signals the processing of the resource.
+				return nil
 			}
 		}
 	}
@@ -473,7 +379,7 @@ func (f *FakeEventsManager) forEachResource(client reflect.Value, execFunc func(
 			errorList.AddError(err)
 		}
 	}
-	return errorList.ToError()
+	return errors.Wrap(errorList.ToError(), "iterating resources")
 }
 
 // getNameFromObjectMeta returns the name of the resource
@@ -516,9 +422,7 @@ func (f *FakeEventsManager) DeleteAllResources() error {
 		secretKind,
 		serviceAccountsKind,
 		roleKind,
-		clusterRoleKind,
 		roleBindingKind,
-		clusterRoleBindingKind,
 		networkPolicyKind,
 		serviceKind,
 		jobKind,
@@ -529,8 +433,6 @@ func (f *FakeEventsManager) DeleteAllResources() error {
 		deploymentKind,
 		statefulSetKind,
 		cronJobKind,
-		namespaceKind,
-		nodeKind,
 	}
 	for _, kind := range resourcesList {
 		clFunc, ok := f.clientMap[kind]
@@ -559,36 +461,36 @@ func (f *FakeEventsManager) DeleteAllResources() error {
 			}
 		}
 	}
-	return errorList.ToError()
-}
-
-// isEventInSlice checks whether a SensorEvent is in a slice of events or not
-func isEventInSlice(event *central.SensorEvent, events []*central.SensorEvent) (bool, error) {
-	for _, sensorEvent := range events {
-		resource := reflect.TypeOf(sensorEvent.GetResource())
-		compareFunc, ok := sensorEventCompareFunctions[resource.String()]
+	clusterWideResources := []string{
+		clusterRoleKind,
+		clusterRoleBindingKind,
+		namespaceKind,
+		nodeKind,
+	}
+	for _, kind := range clusterWideResources {
+		clFunc, ok := f.clientMap[kind]
 		if !ok {
-			return false, fmt.Errorf("compare function for resource '%s' not found", resource.String())
+			errorList.AddStringf("kind %s not found", kind)
+			continue
 		}
-		if compareFunc(sensorEvent.GetResource(), event) {
-			return true, nil
+		cl = reflect.ValueOf(clFunc(""))
+		if err := f.forEachResource(cl, func(resource reflect.Value) error {
+			name, err := getNameFromObjectMeta(resource)
+			if err != nil {
+				return err
+			}
+			retVals := runOp(removeAction, cl, reflect.ValueOf(name))
+			if len(retVals) < 1 || len(retVals) > 2 {
+				return fmt.Errorf("expected 1 or 2 values from %s. Received: %d", removeAction, len(retVals))
+			}
+			errI := retVals[len(retVals)-1].Interface()
+			if errI == nil {
+				return nil
+			}
+			return errI.(error)
+		}); err != nil {
+			errorList.AddError(err)
 		}
 	}
-	return false, nil
-}
-
-// toSensorEventSlice transforms a slice of strings representing SensorEvents into a slice of SensorEvents
-func toSensorEventSlice(events []string) ([]*central.SensorEvent, error) {
-	var unmarshalledEvents []*central.SensorEvent
-	for _, e := range events {
-		sensorEvent := &central.SensorEvent{}
-		if err := jsonpb.UnmarshalString(e, sensorEvent); err != nil {
-			return nil, fmt.Errorf("error unmarshaling '%s'", e)
-		}
-		if sensorEvent.GetResource() == nil {
-			return nil, fmt.Errorf("resource not found in sensor event '%s'", e)
-		}
-		unmarshalledEvents = append(unmarshalledEvents, sensorEvent)
-	}
-	return unmarshalledEvents, nil
+	return errors.Wrap(errorList.ToError(), "deleting all resources")
 }

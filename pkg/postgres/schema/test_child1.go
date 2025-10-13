@@ -9,7 +9,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -26,19 +28,22 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.TestChild1)(nil)), "test_child1")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory(63), "testchild1", (*storage.TestChild1)(nil)))
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory(102), "testchild1", (*storage.TestChild1)(nil)))
+		schema.ScopingResource = resources.Namespace
 		RegisterTable(schema, CreateTableTestChild1Stmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory(102), schema)
 		return schema
 	}()
 )
 
 const (
+	// TestChild1TableName specifies the name of the table in postgres.
 	TestChild1TableName = "test_child1"
 )
 
 // TestChild1 holds the Gorm model for Postgres table `test_child1`.
 type TestChild1 struct {
-	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	ID         string `gorm:"column:id;type:varchar;primaryKey"`
 	Val        string `gorm:"column:val;type:varchar"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

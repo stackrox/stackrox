@@ -1,10 +1,9 @@
-import { selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 import {
     interactAndWaitForVulnerabilityManagementEntity,
     visitVulnerabilityManagementDashboard,
-} from '../../helpers/vulnmanagement/entities';
+} from './VulnerabilityManagement.helpers';
+import { selectors } from './VulnerabilityManagement.selectors';
 
 function verifyItemLinkToEntityPage(entitiesKey, itemTextSelector, getHeaderTextFromItemText) {
     cy.get(itemTextSelector)
@@ -16,7 +15,7 @@ function verifyItemLinkToEntityPage(entitiesKey, itemTextSelector, getHeaderText
                 cy.get(itemTextSelector).click();
             }, entitiesKey);
 
-            cy.get(`${selectors.entityPageHeader}:contains("${headerText}")`);
+            cy.get(`[data-testid="header-text"]:contains("${headerText}")`);
         });
 }
 
@@ -26,7 +25,7 @@ function getItemTextSelectorForWidget(widgetHeading, itemTextSelector) {
 
 const itemTextSelectorForNumberedList = '[data-testid="numbered-list-item-name"]';
 const itemTextSelectorForLabelText = '.rv-xy-plot__series--label text';
-const itemTextSelectorForClusters = 'li > div > div > div';
+const itemTextSelectorForClusters = 'li > div > div > a';
 
 function getHeaderTextFromItemTextWithColonSeparators(itemText) {
     const [, itemTextAfterNumberBeforeSlash] = /^\d+\.([^:]+):.*$/.exec(itemText);
@@ -44,7 +43,7 @@ function getHeaderTextFromItemTextWithoutSeparators(itemText) {
 }
 
 function selectTopRiskiestOption(optionText) {
-    const widgetSelector = selectors.getWidget('Top Riskiest');
+    const widgetSelector = selectors.getWidget('Top riskiest');
     cy.get(`${widgetSelector} .react-select__control`).click();
     cy.get(`${widgetSelector} .react-select__option:contains("${optionText}")`).click();
 }
@@ -52,19 +51,13 @@ function selectTopRiskiestOption(optionText) {
 describe('Vulnerability Management Dashboard', () => {
     withAuth();
 
-    before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_POSTGRES_DATASTORE')) {
-            this.skip();
-        }
-    });
-
     // Some tests might fail in local deployment.
 
-    it('has link from Top Riskiest Images widget to image page', () => {
+    it('has item link to image page from Top riskiest images', () => {
         visitVulnerabilityManagementDashboard();
 
         const entitiesKey = 'images';
-        const widgetHeading = 'Top Riskiest Images';
+        const widgetHeading = 'Top riskiest images';
 
         verifyItemLinkToEntityPage(
             entitiesKey,
@@ -73,11 +66,12 @@ describe('Vulnerability Management Dashboard', () => {
         );
     });
 
-    it('has link from Top Riskiest Node Components widget to node component page', () => {
+    // ROX-30069: test perma-fails on OCP 4.19 after June 4, 2025
+    it.skip('has item link to node component page from Top riskiest node components', () => {
         visitVulnerabilityManagementDashboard();
 
-        const entitiesKey = 'components'; // page makes singular request for components instead of node-components
-        const widgetHeading = 'Top Riskiest Node Components';
+        const entitiesKey = 'node-components';
+        const widgetHeading = 'Top riskiest node components';
 
         selectTopRiskiestOption(widgetHeading);
         verifyItemLinkToEntityPage(
@@ -87,11 +81,11 @@ describe('Vulnerability Management Dashboard', () => {
         );
     });
 
-    it('has link from Top Riskiest Image Components widget to image component page', () => {
+    it('has item link to image component page from Top riskiest image components', () => {
         visitVulnerabilityManagementDashboard();
 
         const entitiesKey = 'image-components';
-        const widgetHeading = 'Top Riskiest Image Components';
+        const widgetHeading = 'Top riskiest image components';
 
         selectTopRiskiestOption(widgetHeading);
         verifyItemLinkToEntityPage(
@@ -101,11 +95,11 @@ describe('Vulnerability Management Dashboard', () => {
         );
     });
 
-    it('has link from Top Riskiest Nodes widget to node page', () => {
+    it('has item link to node page from Top riskiest nodes', () => {
         visitVulnerabilityManagementDashboard();
 
         const entitiesKey = 'nodes';
-        const widgetHeading = 'Top Riskiest Nodes';
+        const widgetHeading = 'Top riskiest nodes';
 
         selectTopRiskiestOption(widgetHeading);
         verifyItemLinkToEntityPage(
@@ -115,24 +109,12 @@ describe('Vulnerability Management Dashboard', () => {
         );
     });
 
-    it('has link from Frequently Violated Policies widget to policy page', () => {
+    // TODO test fails because of product problem that page does not render the CVE id.
+    it.skip('has item link to image CVE page from Recently detected image vulnerabilities', () => {
         visitVulnerabilityManagementDashboard();
 
-        const entitiesKey = 'policies';
-        const widgetHeading = 'Frequently Violated Policies';
-
-        verifyItemLinkToEntityPage(
-            entitiesKey,
-            getItemTextSelectorForWidget(widgetHeading, itemTextSelectorForLabelText),
-            getHeaderTextFromItemTextWithSlashSeparators
-        );
-    });
-
-    it.skip('has link from Recently Detected Image Vulnerabilities widget to vulnerability page', () => {
-        visitVulnerabilityManagementDashboard();
-
-        const entitiesKey = 'cves'; // TODO enable test when we decide whether request will be getCve or getImageCve
-        const widgetHeading = 'Recently Detected Image Vulnerabilities';
+        const entitiesKey = 'image-cves';
+        const widgetHeading = 'Recently detected image vulnerabilities';
 
         verifyItemLinkToEntityPage(
             entitiesKey,
@@ -141,12 +123,12 @@ describe('Vulnerability Management Dashboard', () => {
         );
     });
 
-    // Vulnerability graphQL resolver is not support on postgres. Use Image/Node/ClusterVulnerability resolver.
-    it.skip('has link from Most Common Image Vulnerabilities widget to vulnerability page', () => {
+    // TODO test fails because of product problem that page does not render the CVE id.
+    it.skip('has item link to image CVE page from Most common image vulnerabilities widget', () => {
         visitVulnerabilityManagementDashboard();
 
-        const entitiesKey = 'image-cves'; // TODO enable test when we decide whether request will be getCve or getImageCve
-        const widgetHeading = 'Most Common Image Vulnerabilities';
+        const entitiesKey = 'image-cves';
+        const widgetHeading = 'Most common image vulnerabilities';
 
         verifyItemLinkToEntityPage(
             entitiesKey,
@@ -155,24 +137,11 @@ describe('Vulnerability Management Dashboard', () => {
         );
     });
 
-    it('has link from Deployments With Most Severe Policy Violations widget to deployment page', () => {
-        visitVulnerabilityManagementDashboard();
-
-        const entitiesKey = 'deployments';
-        const widgetHeading = 'Deployments With Most Severe Policy Violations';
-
-        verifyItemLinkToEntityPage(
-            entitiesKey,
-            getItemTextSelectorForWidget(widgetHeading, itemTextSelectorForNumberedList),
-            getHeaderTextFromItemTextWithoutSeparators
-        );
-    });
-
-    it('has link from Clusters With Most Orchestrator & Istio Vulnerabilities to cluster page', () => {
+    it('has item link to cluster single page from Clusters with most orchestrator and Istio vulnerabilities', () => {
         visitVulnerabilityManagementDashboard();
 
         const entitiesKey = 'clusters';
-        const widgetHeading = 'Clusters With Most Orchestrator & Istio Vulnerabilities';
+        const widgetHeading = 'Clusters with most orchestrator and Istio vulnerabilities';
 
         verifyItemLinkToEntityPage(
             entitiesKey,

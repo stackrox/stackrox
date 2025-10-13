@@ -1,24 +1,22 @@
-import static org.junit.Assume.assumeFalse
-
 import org.apache.commons.lang3.StringUtils
 
-import groups.BAT
-import groups.GraphQL
 import objects.Deployment
 import services.GraphQLService
-import util.Env
 import util.Timer
 
-import org.junit.experimental.categories.Category
+import spock.lang.IgnoreIf
 import spock.lang.Shared
+import spock.lang.Tag
 import spock.lang.Unroll
 
-@Category([BAT, GraphQL])
+@Tag("BAT")
+@Tag("GraphQL")
+@Tag("PZ")
 class VulnScanWithGraphQLTest extends BaseSpecification {
     static final private String STRUTSDEPLOYMENT_VULN_SCAN = "qastruts"
     static final private Deployment STRUTS_DEP = new Deployment()
             .setName (STRUTSDEPLOYMENT_VULN_SCAN)
-            .setImage ("quay.io/rhacs-eng/qa:struts-app")
+            .setImage ("quay.io/rhacs-eng/qa-multi-arch:struts-app")
             .addLabel ("app", "test" )
     static final private List<Deployment> DEPLOYMENTS = [
     STRUTS_DEP,
@@ -63,39 +61,6 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
     }"""
 
     private static final String GET_IMAGE_INFO_FROM_VULN_QUERY = """
-    query getCve(\$id: ID!) {
-        result: vulnerability(id: \$id) {
-        cve
-        cvss
-        scoreVersion
-        link
-        vectors {
-          __typename
-          ... on CVSSV2 {
-            impactScore
-            exploitabilityScore
-            vector
-          }
-          ... on CVSSV3 {
-            impactScore
-            exploitabilityScore
-            vector
-          }
-        }
-        summary
-        fixedByVersion
-        isFixable
-        lastScanned
-        componentCount
-        imageCount
-        deploymentCount
-        images {
-            id  name {fullName} scan {
-                scanTime
-            }}}
-    }"""
-
-    private static final String GET_POSTGRES_IMAGE_INFO_FROM_VULN_QUERY = """
     query getCve(\$id: ID!) {
         result: imageVulnerability(id: \$id) {
         cve
@@ -143,8 +108,6 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
     private  gqlService = new GraphQLService()
 
     def setupSpec() {
-        assumeFalse("This test is skipped in this evironment", skipThisTest())
-
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         for (Deployment deployment : DEPLOYMENTS) {
             assert Services.waitForDeployment(deployment)
@@ -152,8 +115,6 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        assumeFalse("This test is skipped in this evironment", skipThisTest())
-
         for (Deployment deployment : DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
         }
@@ -181,10 +142,12 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
         where:
         "Data inputs are :"
         depName | vuln_cve
-        STRUTSDEPLOYMENT_VULN_SCAN | 219
+        STRUTSDEPLOYMENT_VULN_SCAN | 138
     }
 
     @Unroll
+    // TODO(ROX-29221): Fix the test for fixable image info from CVEID
+    @IgnoreIf({ Env.get("ROX_FLATTEN_CVE_DATA") == "true" })
     def "Verify image info from #CVEID in GraphQL"() {
         when:
         "Fetch the results of the CVE,image from GraphQL "
@@ -198,14 +161,14 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
         where:
         "Data inputs are :"
         CVEID            | OS         | imageToBeVerified
-        "CVE-2017-18190" | "debian:8" | STRUTS_DEP.getImage()
+        "CVE-2017-5638" | "ubuntu:20.04" | STRUTS_DEP.getImage()
     }
 
     private GraphQLService.Response waitForImagesTobeFetched(String cveId, String os,
      int retries = 30, int interval = 4) {
         Timer t = new Timer(retries, interval)
-        def objId = isPostgresRun() ? cveId + "#" + os : cveId
-        def graphQLQuery = isPostgresRun() ? GET_POSTGRES_IMAGE_INFO_FROM_VULN_QUERY : GET_IMAGE_INFO_FROM_VULN_QUERY
+        def objId = cveId + "#" + os
+        def graphQLQuery = GET_IMAGE_INFO_FROM_VULN_QUERY
         while (t.IsValid()) {
             def result2Ret = gqlService.Call(graphQLQuery, [id: objId])
             assert result2Ret.getCode() == 200
@@ -260,11 +223,5 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
         }
         log.info "could not find  imageID from  ${depID} in ${t.SecondsSince()} seconds"
         return ""
-    }
-
-    private static Boolean skipThisTest() {
-        // This test consistently fails with RHEL -race (ROX-6584)
-        return Env.get("IS_RACE_BUILD", null) == "true" &&
-                Env.CI_JOBNAME && Env.CI_JOBNAME.contains("-rhel")
     }
 }

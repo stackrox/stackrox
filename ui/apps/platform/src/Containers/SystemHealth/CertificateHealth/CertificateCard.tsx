@@ -1,0 +1,181 @@
+import React, { ReactElement, useEffect, useState } from 'react';
+import {
+    Alert,
+    Button,
+    Card,
+    CardBody,
+    CardHeader,
+    CardTitle,
+    Flex,
+    FlexItem,
+} from '@patternfly/react-core';
+import { DownloadIcon } from '@patternfly/react-icons';
+
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
+import useMetadata from 'hooks/useMetadata';
+import usePermissions from 'hooks/usePermissions';
+import { generateCertSecretForComponent } from 'services/CertGenerationService';
+import { fetchCertExpiryForComponent } from 'services/CredentialExpiryService';
+import { CertExpiryComponent } from 'types/credentialExpiryService.proto';
+import {
+    getCredentialExpiryPhrase,
+    getCredentialExpiryVariant,
+    nameOfComponent,
+} from 'utils/credentialExpiry';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import { getVersionedDocs } from 'utils/versioning';
+
+import { ErrorIcon, healthIconMap, SpinnerIcon } from '../CardHeaderIcons';
+
+type CertificateCardProps = {
+    component: CertExpiryComponent;
+    pollingCount: number;
+};
+
+function CertificateCard({ component, pollingCount }: CertificateCardProps): ReactElement {
+    const [isFetching, setIsFetching] = useState(false);
+    const [errorMessageFetching, setErrorMessageFetching] = useState('');
+    const [expirationDate, setExpirationDate] = useState('');
+
+    const [currentDatetime, setCurrentDatetime] = useState<Date | null>(null);
+
+    const [isDownloading, setIsDownloading] = useState(false);
+    const [errorMessageDownloading, setErrorMessageDownloading] = useState('');
+
+    const { hasReadWriteAccess } = usePermissions();
+    const hasAdministrationWritePermission = hasReadWriteAccess('Administration');
+
+    const { version } = useMetadata();
+
+    useEffect(() => {
+        setIsFetching(true);
+        fetchCertExpiryForComponent(component)
+            .then((expiry) => {
+                setErrorMessageFetching('');
+                setExpirationDate(expiry);
+                setCurrentDatetime(new Date());
+            })
+            .catch((error) => {
+                setErrorMessageFetching(getAxiosErrorMessage(error));
+                setExpirationDate('');
+                setCurrentDatetime(null);
+            })
+            .finally(() => {
+                setIsFetching(false);
+            });
+    }, [component, pollingCount]);
+
+    function onDownload() {
+        setIsDownloading(true);
+        generateCertSecretForComponent(component)
+            .then(() => {
+                setErrorMessageDownloading('');
+            })
+            .catch((error) => {
+                setErrorMessageDownloading(getAxiosErrorMessage(error));
+            })
+            .finally(() => {
+                setIsDownloading(false);
+            });
+    }
+
+    const title = `${nameOfComponent[component]} certificate`;
+
+    /*
+     * Wait for isFetching only until response to the initial request.
+     * Otherwise phrase temporarily disappears during each subsequent request.
+     */
+    const isFetchingInitialRequest = isFetching && pollingCount === 0;
+
+    const icon = isFetchingInitialRequest
+        ? SpinnerIcon
+        : !expirationDate || !currentDatetime
+          ? ErrorIcon
+          : healthIconMap[getCredentialExpiryVariant(expirationDate, currentDatetime)];
+
+    return (
+        <Card isCompact>
+            <CardHeader>
+                <Flex className="pf-v5-u-flex-grow-1">
+                    <FlexItem>{icon}</FlexItem>
+                    <FlexItem>
+                        <CardTitle component="h2">{title}</CardTitle>
+                    </FlexItem>
+                    {currentDatetime && expirationDate && (
+                        <FlexItem>
+                            {getCredentialExpiryPhrase(expirationDate, currentDatetime)}
+                        </FlexItem>
+                    )}
+                </Flex>
+            </CardHeader>
+            <CardBody>
+                {hasAdministrationWritePermission &&
+                // if the DB is external, the expiry will be returned as null, and we do not want to show renewal
+                (component !== 'CENTRAL_DB' || expirationDate) ? (
+                    <Flex>
+                        <FlexItem>
+                            To update the certificate, download the YAML file and apply it to your
+                            cluster
+                        </FlexItem>
+                        <FlexItem>
+                            <Button
+                                variant="secondary"
+                                icon={<DownloadIcon />}
+                                isDisabled={isDownloading}
+                                isLoading={isDownloading}
+                                size="sm"
+                                onClick={onDownload}
+                            >
+                                Download YAML
+                            </Button>
+                        </FlexItem>
+                        {version && (
+                            <FlexItem align={{ default: 'alignRight' }}>
+                                <ExternalLink>
+                                    <a
+                                        href={getVersionedDocs(
+                                            version,
+                                            'configuring/reissue-internal-certificates'
+                                        )}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        Reissuing internal certificates
+                                    </a>
+                                </ExternalLink>
+                            </FlexItem>
+                        )}
+                    </Flex>
+                ) : expirationDate &&
+                  currentDatetime &&
+                  getCredentialExpiryVariant(expirationDate, currentDatetime) !== 'success' ? (
+                    <Flex>
+                        <FlexItem>
+                            To update the certificate, please contact your administrator
+                        </FlexItem>
+                    </Flex>
+                ) : null}
+                {errorMessageFetching && (
+                    <Alert
+                        isInline
+                        variant="warning"
+                        title={errorMessageFetching}
+                        component="p"
+                        className="pf-v5-u-mt-md"
+                    />
+                )}
+                {errorMessageDownloading && (
+                    <Alert
+                        isInline
+                        variant="danger"
+                        title={errorMessageDownloading}
+                        component="p"
+                        className="pf-v5-u-mt-md"
+                    />
+                )}
+            </CardBody>
+        </Card>
+    );
+}
+
+export default CertificateCard;

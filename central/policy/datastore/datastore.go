@@ -5,16 +5,15 @@ import (
 
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
-	"github.com/stackrox/rox/central/policy/index"
-	"github.com/stackrox/rox/central/policy/search"
 	"github.com/stackrox/rox/central/policy/store"
-	"github.com/stackrox/rox/central/policy/store/boltdb"
+	categoriesDataStore "github.com/stackrox/rox/central/policycategory/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
 // DataStore is an intermediary to PolicyStorage.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
@@ -29,35 +28,34 @@ type DataStore interface {
 
 	AddPolicy(context.Context, *storage.Policy) (string, error)
 	UpdatePolicy(context.Context, *storage.Policy) error
-	RemovePolicy(ctx context.Context, id string) error
+	RemovePolicy(ctx context.Context, policy *storage.Policy) error
 	// This method is allowed to return a v1 proto because it is in the allowed list in
 	// "tools/storedprotos/storeinterface/storeinterface.go".
 	ImportPolicies(ctx context.Context, policies []*storage.Policy, overwrite bool) (responses []*v1.ImportPolicyResponse, allSucceeded bool, err error)
 }
 
-// New returns a new instance of DataStore using the input store, indexer, and searcher.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, clusterDatastore clusterDS.DataStore, notifierDatastore notifierDS.DataStore) DataStore {
+// New returns a new instance of DataStore using the input store, and searcher.
+func New(storage store.Store,
+	clusterDatastore clusterDS.DataStore,
+	notifierDatastore notifierDS.DataStore,
+	categoriesDatastore categoriesDataStore.DataStore) DataStore {
 	ds := &datastoreImpl{
-		storage:           storage,
-		indexer:           indexer,
-		searcher:          searcher,
-		clusterDatastore:  clusterDatastore,
-		notifierDatastore: notifierDatastore,
-	}
-
-	if err := ds.buildIndex(); err != nil {
-		panic("unable to load search index for policies")
+		storage:             storage,
+		clusterDatastore:    clusterDatastore,
+		notifierDatastore:   notifierDatastore,
+		categoriesDatastore: categoriesDatastore,
 	}
 	return ds
 }
 
 // newWithoutDefaults should be used only for testing purposes.
-func newWithoutDefaults(storage boltdb.Store, indexer index.Indexer, searcher search.Searcher, clusterDatastore clusterDS.DataStore, notifierDatastore notifierDS.DataStore) DataStore {
+func newWithoutDefaults(storage store.Store,
+	clusterDatastore clusterDS.DataStore, notifierDatastore notifierDS.DataStore,
+	categoriesDatastore categoriesDataStore.DataStore) DataStore {
 	return &datastoreImpl{
-		storage:           storage,
-		indexer:           indexer,
-		searcher:          searcher,
-		clusterDatastore:  clusterDatastore,
-		notifierDatastore: notifierDatastore,
+		storage:             storage,
+		clusterDatastore:    clusterDatastore,
+		notifierDatastore:   notifierDatastore,
+		categoriesDatastore: categoriesDatastore,
 	}
 }

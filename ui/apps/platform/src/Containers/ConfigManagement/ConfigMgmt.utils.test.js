@@ -1,3 +1,8 @@
+/**
+ * Reference Error: TextEncoder is not defined
+ * Maybe because of ReactDOMRenderer.renderToString in pdfUtils.js file.
+ */
+
 import entityTypes from 'constants/entityTypes';
 import { getConfigMgmtCountQuery } from './ConfigMgmt.utils';
 

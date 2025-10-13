@@ -6,13 +6,11 @@ import (
 	"time"
 
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
-	legacyImageCVEDataStore "github.com/stackrox/rox/central/cve/datastore"
 	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
 	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/cve"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -42,14 +40,8 @@ type vulnsStore interface {
 
 // Singleton returns the singleton reprocessor loop
 func Singleton() CVEUnsuppressLoop {
-
 	once.Do(func() {
-		if env.PostgresDatastoreEnabled.BooleanSetting() {
-			// TODO: Attach cluster CVE store.
-			loop = NewLoop(imageCVEDataStore.Singleton(), nodeCVEDataStore.Singleton(), clusterCVEDataStore.Singleton())
-		} else {
-			loop = NewLoop(legacyImageCVEDataStore.Singleton())
-		}
+		loop = NewLoop(imageCVEDataStore.Singleton(), nodeCVEDataStore.Singleton(), clusterCVEDataStore.Singleton())
 	})
 	return loop
 }
@@ -68,8 +60,7 @@ func newLoopWithDuration(tickerDuration time.Duration, cveStores ...vulnsStore) 
 		cveStores:                 cveStores,
 		cveSuppressTickerDuration: tickerDuration,
 
-		stopChan: concurrency.NewSignal(),
-		stopped:  concurrency.NewSignal(),
+		stopper: concurrency.NewStopper(),
 	}
 }
 
@@ -79,8 +70,7 @@ type cveUnsuppressLoopImpl struct {
 
 	cveStores []vulnsStore
 
-	stopChan concurrency.Signal
-	stopped  concurrency.Signal
+	stopper concurrency.Stopper
 }
 
 // Start starts the CVE unsuppress loop.
@@ -91,13 +81,15 @@ func (l *cveUnsuppressLoopImpl) Start() {
 
 // Stop stops the CVE unsuppress loop.
 func (l *cveUnsuppressLoopImpl) Stop() {
-	l.stopChan.Signal()
-	l.stopped.Wait()
+	l.stopper.Client().Stop()
+	_ = l.stopper.Client().Stopped().Wait()
 }
 
 func (l *cveUnsuppressLoopImpl) unsuppressCVEsWithExpiredSuppressState() {
-	if l.stopped.IsDone() {
+	select {
+	case <-l.stopper.Flow().StopRequested():
 		return
+	default:
 	}
 
 	totalUnsuppressedCVEs := 0
@@ -130,25 +122,22 @@ func getCVEsWithExpiredSuppressState(cveStore vulnsStore) ([]string, error) {
 		return nil, err
 	}
 
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		cves := make([]string, 0, len(results))
-		for _, res := range results {
-			cve, _ := cve.IDToParts(res.ID)
-			cves = append(cves, cve)
-		}
-		return cves, nil
+	cves := make([]string, 0, len(results))
+	for _, res := range results {
+		cve, _ := cve.IDToParts(res.ID)
+		cves = append(cves, cve)
 	}
-	return search.ResultsToIDs(results), nil
+	return cves, nil
 }
 
 func (l *cveUnsuppressLoopImpl) loop() {
-	defer l.stopped.Signal()
+	defer l.stopper.Flow().ReportStopped()
 	defer l.cveSuppressTicker.Stop()
 
 	go l.unsuppressCVEsWithExpiredSuppressState()
 	for {
 		select {
-		case <-l.stopChan.Done():
+		case <-l.stopper.Flow().StopRequested():
 			return
 		case <-l.cveSuppressTicker.C:
 			l.unsuppressCVEsWithExpiredSuppressState()

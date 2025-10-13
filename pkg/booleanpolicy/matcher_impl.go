@@ -53,7 +53,7 @@ func (p *processMatcherImpl) MatchDeploymentWithProcess(cache *CacheReceptacle, 
 	}
 
 	violations, err := p.matcherImpl.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
-		return augmentedobjs.ConstructDeploymentWithProcess(enhancedDeployment.Deployment, enhancedDeployment.Images, indicator, processNotInBaseline)
+		return augmentedobjs.ConstructDeploymentWithProcess(enhancedDeployment.Deployment, enhancedDeployment.Images, enhancedDeployment.NetworkPoliciesApplied, indicator, processNotInBaseline)
 	}, indicator, nil, nil, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err
@@ -88,7 +88,7 @@ type auditLogEventMatcherImpl struct {
 
 func (m *auditLogEventMatcherImpl) MatchAuditLogEvent(cache *CacheReceptacle, event *storage.KubernetesEvent) (Violations, error) {
 	violations, err := m.matcherImpl.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
-		return augmentedobjs.ConstructAuditEvent(event, event.ImpersonatedUser != nil)
+		return augmentedobjs.ConstructAuditEvent(event, event.GetImpersonatedUser() != nil)
 	}, nil, event, nil, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err
@@ -171,7 +171,7 @@ func (m *networkFlowMatcherImpl) MatchDeploymentWithNetworkFlowInfo(
 	}
 
 	violations, err := m.matcherImpl.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
-		return augmentedobjs.ConstructDeploymentWithNetworkFlowInfo(enhancedDeployment.Deployment, enhancedDeployment.Images, flow)
+		return augmentedobjs.ConstructDeploymentWithNetworkFlowInfo(enhancedDeployment.Deployment, enhancedDeployment.Images, enhancedDeployment.NetworkPoliciesApplied, flow)
 	}, nil, nil, flow, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err
@@ -193,7 +193,7 @@ func matchWithEvaluator(sectionAndEval sectionAndEvaluator, obj *pathutil.Augmen
 
 func (m *matcherImpl) MatchImage(cache *CacheReceptacle, image *storage.Image) (Violations, error) {
 	violations, err := m.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
-		return augmentedobjs.ConstructImage(image)
+		return augmentedobjs.ConstructImage(image, image.GetName().GetFullName())
 	}, nil, nil, nil, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err

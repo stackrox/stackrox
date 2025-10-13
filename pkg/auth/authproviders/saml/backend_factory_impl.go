@@ -42,7 +42,7 @@ func NewFactory(urlPathPrefix string) authproviders.BackendFactory {
 	return f
 }
 
-func (f *factory) CreateBackend(ctx context.Context, id string, uiEndpoints []string, config map[string]string) (authproviders.Backend, error) {
+func (f *factory) CreateBackend(ctx context.Context, id string, uiEndpoints []string, config map[string]string, _ map[string]string) (authproviders.Backend, error) {
 	be, err := newBackend(ctx, f.urlPathPrefix+acsRelativePath, id, uiEndpoints, config)
 	if err != nil {
 		return nil, err
@@ -112,7 +112,7 @@ func (f *factory) UnregisterBackend(be *backendImpl) {
 	}
 }
 
-func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (string, string, error) {
+func (f *factory) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (string, string, error) {
 	if !strings.HasPrefix(r.URL.Path, f.urlPathPrefix) {
 		return "", "", httputil.NewError(http.StatusInternalServerError, "received invalid request")
 	}
@@ -171,7 +171,7 @@ func (f *factory) RedactConfig(config map[string]string) map[string]string {
 	return config
 }
 
-func (f *factory) MergeConfig(newCfg, oldCfg map[string]string) map[string]string {
+func (f *factory) MergeConfig(newCfg, _ map[string]string) map[string]string {
 	return newCfg
 }
 

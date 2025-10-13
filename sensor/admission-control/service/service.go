@@ -6,7 +6,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -67,7 +67,7 @@ func (s *service) CustomRoutes() []routes.CustomRoute {
 	}
 }
 
-func (s *service) handleReady(w http.ResponseWriter, req *http.Request) {
+func (s *service) handleReady(w http.ResponseWriter, _ *http.Request) {
 	if !s.mgr.IsReady() {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		_, _ = fmt.Fprintln(w, "not ready")

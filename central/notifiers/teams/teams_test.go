@@ -6,12 +6,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/golang/mock/gomock"
-	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
-	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/notifiers"
+	notifierMocks "github.com/stackrox/rox/pkg/notifiers/mocks"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 const testWebhookEnv = "TEAMS_WEBHOOK"
@@ -26,10 +26,10 @@ func skip(t *testing.T) string {
 
 func getTeamsWithMock(t *testing.T, notifier *storage.Notifier) (*teams, *gomock.Controller) {
 	mockCtrl := gomock.NewController(t)
-	nsStore := namespaceMocks.NewMockDataStore(mockCtrl)
-	nsStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return([]*storage.NamespaceMetadata{}, nil).AnyTimes()
+	metadataGetter := notifierMocks.NewMockMetadataGetter(mockCtrl)
+	metadataGetter.EXPECT().GetAnnotationValue(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return("").AnyTimes()
 
-	s, err := newTeams(notifier, nsStore)
+	s, err := NewTeams(notifier, metadataGetter)
 	assert.NoError(t, err)
 
 	return s, mockCtrl

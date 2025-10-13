@@ -3,9 +3,9 @@ package deploytime
 import (
 	"fmt"
 
-	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -24,9 +24,9 @@ func PolicyDeploymentAndViolationsToAlert(policy *storage.Policy, deployment *st
 		Id:             uuid.NewV4().String(),
 		LifecycleStage: storage.LifecycleStage_DEPLOY,
 		Entity:         convert.ToAlertDeployment(deployment),
-		Policy:         policy.Clone(),
+		Policy:         policy.CloneVT(),
 		Violations:     violations,
-		Time:           ptypes.TimestampNow(),
+		Time:           protocompat.TimestampNow(),
 	}
 	if action, msg := buildEnforcement(policy, deployment); action != storage.EnforcementAction_UNSET_ENFORCEMENT {
 		alert.Enforcement = &storage.Alert_Enforcement{

@@ -1,20 +1,17 @@
+//go:build sql_integration
+
 package datastore
 
 import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/rbac/k8srolebinding/mappings"
-	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -31,49 +28,24 @@ type k8sRoleBindingSACSuite struct {
 
 	datastore DataStore
 
-	pool *pgxpool.Pool
-
-	engine *rocksdb.RocksDB
-	index  bleve.Index
-
-	optionsMap searchPkg.OptionsMap
+	testPostgres *pgtest.TestPostgres
+	optionsMap   searchPkg.OptionsMap
 
 	testContexts          map[string]context.Context
 	testK8sRoleBindingIDs []string
 }
 
 func (s *k8sRoleBindingSACSuite) SetupSuite() {
-	var err error
-
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pgtestbase := pgtest.ForT(s.T())
-		s.Require().NotNil(pgtestbase)
-		s.pool = pgtestbase.Pool
-		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
-		s.Require().NoError(err)
-		s.optionsMap = schema.RoleBindingsSchema.OptionsMap
-	} else {
-		s.engine, err = rocksdb.NewTemp("k8sRoleBindingSACTest")
-		s.Require().NoError(err)
-		s.index, err = globalindex.MemOnlyIndex()
-		s.Require().NoError(err)
-
-		s.datastore, err = GetTestRocksBleveDataStore(s.T(), s.engine, s.index)
-		s.Require().NoError(err)
-		s.optionsMap = mappings.OptionsMap
-	}
+	s.testPostgres = pgtest.ForT(s.T())
+	s.datastore = GetTestPostgresDataStore(s.T(), s.testPostgres.DB)
+	s.optionsMap = schema.RoleBindingsSchema.OptionsMap
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
 		resources.K8sRoleBinding)
 }
 
 func (s *k8sRoleBindingSACSuite) TearDownSuite() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pool.Close()
-	} else {
-		s.Require().NoError(rocksdb.CloseAndRemove(s.engine))
-		s.Require().NoError(s.index.Close())
-	}
+	s.testPostgres.Close()
 }
 
 func (s *k8sRoleBindingSACSuite) SetupTest() {
@@ -138,7 +110,7 @@ func (s *k8sRoleBindingSACSuite) TestGetRoleBinding() {
 			s.Require().NoError(err)
 			if c.ExpectedFound {
 				s.True(found)
-				s.Equal(*roleBinding, *res)
+				protoassert.Equal(s.T(), roleBinding, res)
 			} else {
 				s.False(found)
 				s.Nil(res)
@@ -188,8 +160,59 @@ func (s *k8sRoleBindingSACSuite) runSearchTest(c testutils.SACSearchTestCase) {
 	ctx := s.testContexts[c.ScopeKey]
 	results, err := s.datastore.Search(ctx, nil)
 	s.Require().NoError(err)
-	resultCounts := testutils.CountResultsPerClusterAndNamespace(s.T(), results, s.optionsMap)
+	resultObjects := make([]sac.NamespaceScopedObject, 0, len(results))
+	for _, r := range results {
+		obj, found, err := s.datastore.GetRoleBinding(s.testContexts[testutils.UnrestrictedReadCtx], r.ID)
+		if found && err == nil {
+			resultObjects = append(resultObjects, obj)
+		}
+	}
+	resultCounts := testutils.CountSearchResultObjectsPerClusterAndNamespace(s.T(), resultObjects)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, c.Results, resultCounts)
+}
+
+func (s *k8sRoleBindingSACSuite) runSearchRoleBindingsTest(c testutils.SACSearchTestCase) {
+	ctx := s.testContexts[c.ScopeKey]
+	results, err := s.datastore.SearchRoleBindings(ctx, nil)
+	s.Require().NoError(err)
+	resultObjects := make([]sac.NamespaceScopedObject, 0, len(results))
+	for _, r := range results {
+		obj, found, err := s.datastore.GetRoleBinding(s.testContexts[testutils.UnrestrictedReadCtx], r.GetId())
+		if found && err == nil {
+			resultObjects = append(resultObjects, obj)
+		}
+	}
+	resultCounts := testutils.CountSearchResultObjectsPerClusterAndNamespace(s.T(), resultObjects)
+	testutils.ValidateSACSearchResultDistribution(&s.Suite, c.Results, resultCounts)
+}
+
+func (s *k8sRoleBindingSACSuite) runCountTest(c testutils.SACSearchTestCase) {
+	ctx := s.testContexts[c.ScopeKey]
+	count, err := s.datastore.Count(ctx, nil)
+	s.Require().NoError(err)
+	expectedCount := 0
+	for _, clusterData := range c.Results {
+		for _, namespaceItemCount := range clusterData {
+			expectedCount += namespaceItemCount
+		}
+	}
+	s.Equal(expectedCount, count)
+}
+
+func (s *k8sRoleBindingSACSuite) TestScopedCount() {
+	for name, c := range testutils.GenericScopedSACSearchTestCases(s.T()) {
+		s.Run(name, func() {
+			s.runCountTest(c)
+		})
+	}
+}
+
+func (s *k8sRoleBindingSACSuite) TestUnrestrictedCount() {
+	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
+		s.Run(name, func() {
+			s.runCountTest(c)
+		})
+	}
 }
 
 func (s *k8sRoleBindingSACSuite) TestScopedSearch() {
@@ -201,7 +224,7 @@ func (s *k8sRoleBindingSACSuite) TestScopedSearch() {
 }
 
 func (s *k8sRoleBindingSACSuite) TestUnrestrictedSearch() {
-	for name, c := range testutils.GenericUnrestrictedSACSearchTestCases(s.T()) {
+	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runSearchTest(c)
 		})
@@ -220,6 +243,22 @@ func (s *k8sRoleBindingSACSuite) TestUnrestrictedSearchRaw() {
 	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runSearchRawTest(c)
+		})
+	}
+}
+
+func (s *k8sRoleBindingSACSuite) TestScopedSearchRoleBindings() {
+	for name, c := range testutils.GenericScopedSACSearchTestCases(s.T()) {
+		s.Run(name, func() {
+			s.runSearchRoleBindingsTest(c)
+		})
+	}
+}
+
+func (s *k8sRoleBindingSACSuite) TestUnrestrictedSearchRoleBindings() {
+	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
+		s.Run(name, func() {
+			s.runSearchRoleBindingsTest(c)
 		})
 	}
 }

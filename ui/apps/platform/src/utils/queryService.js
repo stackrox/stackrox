@@ -2,11 +2,10 @@ import pluralize from 'pluralize';
 
 import entityTypes from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
-import decodeBase64 from 'utils/decodeBase64/decodeBase64';
 import { NODE_FRAGMENT } from 'queries/node';
 import { DEPLOYMENT_FRAGMENT } from 'queries/deployment';
 import { NAMESPACE_FRAGMENT } from 'queries/namespace';
-import { SUBJECT_WITH_CLUSTER_FRAGMENT, SUBJECT_FRAGMENT } from 'queries/subject';
+import { SUBJECT_FRAGMENT, SUBJECT_WITH_CLUSTER_FRAGMENT } from 'queries/subject';
 import { K8S_ROLE_FRAGMENT } from 'queries/role';
 import { SECRET_FRAGMENT } from 'queries/secret';
 import { SERVICE_ACCOUNT_FRAGMENT } from 'queries/serviceAccount';
@@ -14,24 +13,16 @@ import { CONTROL_FRAGMENT } from 'queries/controls';
 import { POLICY_FRAGMENT } from 'queries/policy';
 import { IMAGE_FRAGMENT } from 'queries/image';
 import {
-    VULN_COMPONENT_LIST_FRAGMENT,
-    VULN_CVE_LIST_FRAGMENT,
-    OLD_IMAGE_LIST_FRAGMENT as OLD_VULN_IMAGE_LIST_FRAGMENT,
-    IMAGE_LIST_FRAGMENT as VULN_IMAGE_LIST_FRAGMENT,
-    CLUSTER_LIST_FRAGMENT as VULN_CLUSTER_LIST_FRAGMENT,
-    CLUSTER_LIST_FRAGMENT_UPDATED as VULN_CLUSTER_LIST_FRAGMENT_UPDATED,
-    DEPLOYMENT_LIST_FRAGMENT as VULN_DEPLOYMENT_LIST_FRAGMENT,
-    DEPLOYMENT_LIST_FRAGMENT_UPDATED as VULN_DEPLOYMENT_LIST_FRAGMENT_UPDATED,
-    NAMESPACE_LIST_FRAGMENT as VULN_NAMESPACE_LIST_FRAGMENT,
-    NAMESPACE_LIST_FRAGMENT_UPDATED as VULN_NAMESPACE_LIST_FRAGMENT_UPDATED,
-    NODE_LIST_FRAGMENT as VULN_NODE_LIST_FRAGMENT,
-    NODE_LIST_FRAGMENT_UPDATED as VULN_NODE_LIST_FRAGMENT_UPDATED,
-    POLICY_LIST_FRAGMENT as VULN_POLICY_LIST_FRAGMENT,
-    VULN_IMAGE_COMPONENT_LIST_FRAGMENT,
-    VULN_NODE_COMPONENT_LIST_FRAGMENT,
-    NODE_CVE_LIST_FRAGMENT,
-    VULN_IMAGE_CVE_LIST_FRAGMENT,
     CLUSTER_CVE_LIST_FRAGMENT,
+    NODE_CVE_LIST_FRAGMENT,
+    CLUSTER_LIST_FRAGMENT_UPDATED as VULN_CLUSTER_LIST_FRAGMENT_UPDATED,
+    DEPLOYMENT_LIST_FRAGMENT_UPDATED as VULN_DEPLOYMENT_LIST_FRAGMENT_UPDATED,
+    VULN_IMAGE_COMPONENT_LIST_FRAGMENT,
+    VULN_IMAGE_CVE_LIST_FRAGMENT,
+    IMAGE_LIST_FRAGMENT as VULN_IMAGE_LIST_FRAGMENT,
+    NAMESPACE_LIST_FRAGMENT_UPDATED as VULN_NAMESPACE_LIST_FRAGMENT_UPDATED,
+    VULN_NODE_COMPONENT_LIST_FRAGMENT,
+    NODE_LIST_FRAGMENT_UPDATED as VULN_NODE_LIST_FRAGMENT_UPDATED,
 } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 
@@ -67,23 +58,12 @@ function entityContextToQueryObject(entityContext) {
         return {};
     }
 
-    // TODO: waiting for backend to use COMPONENT ID instead of NAME and VERSION. workaround for now
     return Object.keys(entityContext).reduce((acc, key) => {
         const entityQueryObj = {};
         if (key === entityTypes.IMAGE) {
             entityQueryObj[`${key} SHA`] = entityContext[key];
-        } else if (
-            // TODO: remove the plain COMPONENT option after migration to Postgres
-            key === entityTypes.COMPONENT
-        ) {
-            const parsedComponentID = entityContext[key].split(':').map(decodeBase64);
-            // eslint-disable-next-line dot-notation
-            [entityQueryObj['COMPONENT'], entityQueryObj[`COMPONENT VERSION`]] = parsedComponentID;
         } else if (key === entityTypes.IMAGE_COMPONENT || key === entityTypes.NODE_COMPONENT) {
             entityQueryObj['COMPONENT ID'] = entityContext[key];
-        } else if (key === entityTypes.CVE) {
-            // TODO: remove the plain CVE option after migration to Postgres
-            entityQueryObj.CVE = entityContext[key];
         } else if (
             key === entityTypes.IMAGE_CVE ||
             key === entityTypes.NODE_CVE ||
@@ -211,7 +191,7 @@ function getListFieldName(entityType, listType, useCase) {
     return parts.join('');
 }
 
-function getFragmentName(entityType, listType) {
+function getFragmentName(listType) {
     switch (listType) {
         case entityTypes.CLUSTER:
             return 'clusterFields';
@@ -235,22 +215,12 @@ function getFragmentName(entityType, listType) {
             return 'serviceAccountFields';
         case entityTypes.CONTROL:
             return 'controlFields';
-        case entityTypes.CVE:
-            if (entityType === entityTypes.NODE_COMPONENT) {
-                return 'nodeCVEFields';
-            }
-            if (entityType === entityTypes.IMAGE_COMPONENT) {
-                return 'imageCVEFields';
-            }
-            return 'cveFields';
         case entityTypes.IMAGE_CVE:
             return 'imageCVEFields';
         case entityTypes.NODE_CVE:
             return 'nodeCVEFields';
         case entityTypes.CLUSTER_CVE:
             return 'clusterCVEFields';
-        case entityTypes.COMPONENT:
-            return 'componentFields';
         case entityTypes.NODE_COMPONENT:
             return 'nodeComponentFields';
         case entityTypes.IMAGE_COMPONENT:
@@ -260,7 +230,7 @@ function getFragmentName(entityType, listType) {
     }
 }
 
-function getFragment(entityType, listType, useCase, showVMUpdates = false) {
+function getFragment(entityType, listType, useCase) {
     const defaultFragments = {
         [entityTypes.IMAGE]: IMAGE_FRAGMENT,
         [entityTypes.NODE]: NODE_FRAGMENT,
@@ -282,29 +252,16 @@ function getFragment(entityType, listType, useCase, showVMUpdates = false) {
         },
         [useCases.VULN_MANAGEMENT]: {
             ...defaultFragments,
-            [entityTypes.COMPONENT]: VULN_COMPONENT_LIST_FRAGMENT,
             [entityTypes.NODE_COMPONENT]: VULN_NODE_COMPONENT_LIST_FRAGMENT,
             [entityTypes.IMAGE_COMPONENT]: VULN_IMAGE_COMPONENT_LIST_FRAGMENT,
-            [entityTypes.CVE]: VULN_CVE_LIST_FRAGMENT,
             [entityTypes.CLUSTER_CVE]: CLUSTER_CVE_LIST_FRAGMENT,
             [entityTypes.NODE_CVE]: NODE_CVE_LIST_FRAGMENT,
             [entityTypes.IMAGE_CVE]: VULN_IMAGE_CVE_LIST_FRAGMENT,
-            [entityTypes.IMAGE]: showVMUpdates
-                ? VULN_IMAGE_LIST_FRAGMENT
-                : OLD_VULN_IMAGE_LIST_FRAGMENT,
-            [entityTypes.CLUSTER]: showVMUpdates
-                ? VULN_CLUSTER_LIST_FRAGMENT_UPDATED
-                : VULN_CLUSTER_LIST_FRAGMENT,
-            [entityTypes.NAMESPACE]: showVMUpdates
-                ? VULN_NAMESPACE_LIST_FRAGMENT_UPDATED
-                : VULN_NAMESPACE_LIST_FRAGMENT,
-            [entityTypes.POLICY]: VULN_POLICY_LIST_FRAGMENT,
-            [entityTypes.DEPLOYMENT]: showVMUpdates
-                ? VULN_DEPLOYMENT_LIST_FRAGMENT_UPDATED
-                : VULN_DEPLOYMENT_LIST_FRAGMENT,
-            [entityTypes.NODE]: showVMUpdates
-                ? VULN_NODE_LIST_FRAGMENT_UPDATED
-                : VULN_NODE_LIST_FRAGMENT,
+            [entityTypes.IMAGE]: VULN_IMAGE_LIST_FRAGMENT,
+            [entityTypes.CLUSTER]: VULN_CLUSTER_LIST_FRAGMENT_UPDATED,
+            [entityTypes.NAMESPACE]: VULN_NAMESPACE_LIST_FRAGMENT_UPDATED,
+            [entityTypes.DEPLOYMENT]: VULN_DEPLOYMENT_LIST_FRAGMENT_UPDATED,
+            [entityTypes.NODE]: VULN_NODE_LIST_FRAGMENT_UPDATED,
         },
     };
 
@@ -330,10 +287,10 @@ function getFragment(entityType, listType, useCase, showVMUpdates = false) {
     return fragmentMap[listType];
 }
 
-function getFragmentInfo(entityType, listType, useCase, showVMUpdates = false) {
+function getFragmentInfo(entityType, listType, useCase) {
     const listFieldName = getListFieldName(entityType, listType, useCase);
-    const fragmentName = getFragmentName(entityType, listType);
-    const fragment = getFragment(entityType, listType, useCase, showVMUpdates);
+    const fragmentName = getFragmentName(listType);
+    const fragment = getFragment(entityType, listType, useCase);
 
     return {
         listFieldName,

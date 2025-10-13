@@ -9,19 +9,18 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
 type TestShortCircuitsStoreSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-	store       Store
-	testDB      *pgtest.TestPostgres
+	store  Store
+	testDB *pgtest.TestPostgres
 }
 
 func TestTestShortCircuitsStore(t *testing.T) {
@@ -29,28 +28,17 @@ func TestTestShortCircuitsStore(t *testing.T) {
 }
 
 func (s *TestShortCircuitsStoreSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.T().Skip("Skip postgres store tests")
-		s.T().SkipNow()
-	}
 
 	s.testDB = pgtest.ForT(s.T())
-	s.store = New(s.testDB.Pool)
+	s.store = New(s.testDB.DB)
 }
 
 func (s *TestShortCircuitsStoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
 	tag, err := s.testDB.Exec(ctx, "TRUNCATE test_short_circuits CASCADE")
 	s.T().Log("test_short_circuits", tag)
+	s.store = New(s.testDB.DB)
 	s.NoError(err)
-}
-
-func (s *TestShortCircuitsStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-	s.envIsolator.RestoreAll()
 }
 
 func (s *TestShortCircuitsStoreSuite) TestStore() {
@@ -72,12 +60,12 @@ func (s *TestShortCircuitsStoreSuite) TestStore() {
 	foundTestShortCircuit, exists, err = store.Get(ctx, testShortCircuit.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(testShortCircuit, foundTestShortCircuit)
+	protoassert.Equal(s.T(), testShortCircuit, foundTestShortCircuit)
 
-	testShortCircuitCount, err := store.Count(ctx)
+	testShortCircuitCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, testShortCircuitCount)
-	testShortCircuitCount, err = store.Count(withNoAccessCtx)
+	testShortCircuitCount, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero(testShortCircuitCount)
 
@@ -87,11 +75,6 @@ func (s *TestShortCircuitsStoreSuite) TestStore() {
 	s.NoError(store.Upsert(ctx, testShortCircuit))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, testShortCircuit), sac.ErrResourceAccessDenied)
 
-	foundTestShortCircuit, exists, err = store.Get(ctx, testShortCircuit.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(testShortCircuit, foundTestShortCircuit)
-
 	s.NoError(store.Delete(ctx, testShortCircuit.GetId()))
 	foundTestShortCircuit, exists, err = store.Get(ctx, testShortCircuit.GetId())
 	s.NoError(err)
@@ -100,15 +83,23 @@ func (s *TestShortCircuitsStoreSuite) TestStore() {
 	s.NoError(store.Delete(withNoAccessCtx, testShortCircuit.GetId()))
 
 	var testShortCircuits []*storage.TestShortCircuit
+	var testShortCircuitIDs []string
 	for i := 0; i < 200; i++ {
 		testShortCircuit := &storage.TestShortCircuit{}
 		s.NoError(testutils.FullInit(testShortCircuit, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		testShortCircuits = append(testShortCircuits, testShortCircuit)
+		testShortCircuitIDs = append(testShortCircuitIDs, testShortCircuit.GetId())
 	}
 
 	s.NoError(store.UpsertMany(ctx, testShortCircuits))
 
-	testShortCircuitCount, err = store.Count(ctx)
+	testShortCircuitCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(200, testShortCircuitCount)
+
+	s.NoError(store.DeleteMany(ctx, testShortCircuitIDs))
+
+	testShortCircuitCount, err = store.Count(ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.Equal(0, testShortCircuitCount)
 }

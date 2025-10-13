@@ -3,14 +3,13 @@ package service
 import (
 	"context"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	namespaceStore "github.com/stackrox/rox/central/namespace/datastore"
 	roleDatastore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	bindingDatastore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	"github.com/stackrox/rox/central/rbac/utils"
-	"github.com/stackrox/rox/central/role/resources"
 	saDatastore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -20,15 +19,21 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/k8srbac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"google.golang.org/grpc"
+)
+
+const (
+	maxServiceAccountsReturned = 1000
 )
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.ServiceAccount)): {
-			"/v1.ServiceAccountService/GetServiceAccount",
-			"/v1.ServiceAccountService/ListServiceAccounts",
+			v1.ServiceAccountService_GetServiceAccount_FullMethodName,
+			v1.ServiceAccountService_ListServiceAccounts_FullMethodName,
 		},
 	})
 )
@@ -91,6 +96,10 @@ func (s *serviceImpl) ListServiceAccounts(ctx context.Context, rawQuery *v1.RawQ
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
+
+	// Fill in pagination.
+	paginated.FillPagination(q, rawQuery.GetPagination(), maxServiceAccountsReturned)
+
 	serviceAccounts, err := s.serviceAccounts.SearchRawServiceAccounts(ctx, q)
 
 	if err != nil {
@@ -133,8 +142,8 @@ func (s *serviceImpl) getDeploymentRelationships(ctx context.Context, sa *storag
 	deployments := make([]*v1.SADeploymentRelationship, 0, len(deploymentResults))
 	for _, r := range deploymentResults {
 		deployments = append(deployments, &v1.SADeploymentRelationship{
-			Id:   r.Id,
-			Name: r.Name,
+			Id:   r.GetId(),
+			Name: r.GetName(),
 		})
 	}
 
@@ -147,7 +156,7 @@ func (s *serviceImpl) getRoles(ctx context.Context, sa *storage.ServiceAccount) 
 	clusterEvaluator := utils.NewClusterPermissionEvaluator(sa.GetClusterId(), s.roles, s.bindings)
 	clusterRoles := clusterEvaluator.RolesForSubject(ctx, subject)
 
-	namespaceQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, sa.ClusterId).ProtoQuery()
+	namespaceQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, sa.GetClusterId()).ProtoQuery()
 	namespaces, err := s.namespaces.SearchNamespaces(ctx, namespaceQuery)
 	if err != nil {
 		return clusterRoles, nil, err
@@ -155,7 +164,7 @@ func (s *serviceImpl) getRoles(ctx context.Context, sa *storage.ServiceAccount) 
 
 	scopedRoles := make([]*v1.ScopedRoles, 0)
 	for _, namespace := range namespaces {
-		namespaceEvaluator := utils.NewNamespacePermissionEvaluator(sa.ClusterId, namespace.GetName(), s.roles, s.bindings)
+		namespaceEvaluator := utils.NewNamespacePermissionEvaluator(sa.GetClusterId(), namespace.GetName(), s.roles, s.bindings)
 		namespaceRoles := namespaceEvaluator.RolesForSubject(ctx, subject)
 
 		if len(namespaceRoles) != 0 {

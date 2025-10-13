@@ -5,61 +5,33 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
-	"reflect"
-	"strings"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
-	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
+	descriptor "google.golang.org/protobuf/types/descriptorpb"
 )
-
-// FileDescLookupFn is a function that resolves the raw data of a gzipped serialized FileDescriptorProto for a given
-// file name.
-type FileDescLookupFn func(string) []byte
 
 var (
 	fileDescCache      = make(map[sliceIdentity]*descriptor.FileDescriptorProto)
 	fileDescCacheMutex sync.RWMutex
-
-	fileDescLookupFns          []FileDescLookupFn
-	fileDescLookupFnIdentities map[uintptr]struct{}
-	fileDescLookupFnsMutex     sync.RWMutex
 )
-
-// RegisterFileDescriptorLookup registers a function for looking up file descriptor data. Its primary purpose is to
-// allow resolving file descriptor for alternative protobuf implementations (i.e., gogo protobuf) without introducing
-// an explicit dependency.
-func RegisterFileDescriptorLookup(fn FileDescLookupFn) {
-	addr := reflect.ValueOf(fn).Pointer()
-	if addr == reflect.ValueOf(proto.FileDescriptor).Pointer() {
-		return // no need to register `proto.FileDescriptor`.
-	}
-	fileDescLookupFnsMutex.Lock()
-	defer fileDescLookupFnsMutex.Unlock()
-
-	if _, ok := fileDescLookupFnIdentities[addr]; ok {
-		return
-	}
-
-	fileDescLookupFns = append(fileDescLookupFns, fn)
-	fileDescLookupFnIdentities[addr] = struct{}{}
-}
 
 // ProtoEnum is an interface implemented by all protobuf enums.
 type ProtoEnum interface {
 	EnumDescriptor() ([]byte, []int)
 }
 
-// ParseFileDescriptor takes a gzipped serialized file descriptor proto, and returns the parsed proto object or an
+// parseFileDescriptor takes a gzipped serialized file descriptor proto, and returns the parsed proto object or an
 // error.
-func ParseFileDescriptor(data []byte) (*descriptor.FileDescriptorProto, error) {
+func parseFileDescriptor(data []byte) (*descriptor.FileDescriptorProto, error) {
 	dataSliceID := identityOfSlice(data)
 
-	fileDescCacheMutex.RLock()
-	desc := fileDescCache[dataSliceID]
-	fileDescCacheMutex.RUnlock()
+	desc := concurrency.WithRLock1(&fileDescCacheMutex, func() *descriptor.FileDescriptorProto {
+		d := fileDescCache[dataSliceID]
+		return d
+	})
 
 	if desc != nil {
 		return desc, nil
@@ -78,41 +50,11 @@ func ParseFileDescriptor(data []byte) (*descriptor.FileDescriptorProto, error) {
 		return nil, errors.Wrap(err, "unmarshalling file descriptor")
 	}
 
-	fileDescCacheMutex.Lock()
-	fileDescCache[dataSliceID] = desc
-	fileDescCacheMutex.Unlock()
+	concurrency.WithLock(&fileDescCacheMutex, func() {
+		fileDescCache[dataSliceID] = desc
+	})
 
 	return desc, nil
-}
-
-// LookupFileDescriptorData attempts to retrieve the data (gzipped proto) of a FileDescriptorProto. In addition to the
-// official protobuf library, it will consult any lookup functions registered via RegisterFileDescriptorLookup.
-func LookupFileDescriptorData(fileName string) []byte {
-	data := proto.FileDescriptor(fileName)
-	if data != nil {
-		return data
-	}
-
-	fileDescLookupFnsMutex.RLock()
-	defer fileDescLookupFnsMutex.RUnlock()
-
-	for _, fn := range fileDescLookupFns {
-		data = fn(fileName)
-		if data != nil {
-			break
-		}
-	}
-	return data
-}
-
-// GetFileDescriptor returns the file descriptor proto for the given file name, or an error if the file descriptor was
-// not found.
-func GetFileDescriptor(fileName string) (*descriptor.FileDescriptorProto, error) {
-	data := LookupFileDescriptorData(fileName)
-	if data == nil {
-		return nil, fmt.Errorf("no descriptor registered for %s", fileName)
-	}
-	return ParseFileDescriptor(data)
 }
 
 // scope is an interface for unifying descriptors that may have nested types (i.e., FileDescriptorProto and
@@ -148,7 +90,7 @@ func traverse(start scope, path []int) (scope, error) {
 // GetEnumDescriptor returns the EnumDescriptorProto for an enum type.
 func GetEnumDescriptor(e ProtoEnum) (*descriptor.EnumDescriptorProto, error) {
 	fileDescData, path := e.EnumDescriptor()
-	fileDesc, err := ParseFileDescriptor(fileDescData)
+	fileDesc, err := parseFileDescriptor(fileDescData)
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing enum descriptor")
 	}
@@ -173,7 +115,7 @@ type ProtoMessage interface {
 // be determined.
 func GetMessageDescriptor(pb ProtoMessage) (*descriptor.DescriptorProto, error) {
 	fileDescData, path := pb.Descriptor()
-	fileDesc, err := ParseFileDescriptor(fileDescData)
+	fileDesc, err := parseFileDescriptor(fileDescData)
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing message descriptor")
 	}
@@ -186,34 +128,4 @@ func GetMessageDescriptor(pb ProtoMessage) (*descriptor.DescriptorProto, error) 
 		return nil, fmt.Errorf("innermost scope is not a DescriptorProto but %T", innermost)
 	}
 	return messageDesc, nil
-}
-
-// GetServiceDescriptor returns the ServiceDescriptorProto for a given service, or an error if the descriptor
-// could not be retrieved.
-func GetServiceDescriptor(serviceName string, info grpc.ServiceInfo) (*descriptor.ServiceDescriptorProto, error) {
-	if info.Metadata == nil {
-		return nil, fmt.Errorf("service info for %s has no metadata", serviceName)
-	}
-
-	switch md := info.Metadata.(type) {
-	case string:
-		fileDesc, err := GetFileDescriptor(md)
-		if err != nil {
-			return nil, err
-		}
-		serviceBaseName := serviceName
-		if dotIdx := strings.LastIndex(serviceName, "."); dotIdx != -1 {
-			serviceBaseName = serviceName[dotIdx+1:]
-		}
-		for _, serviceDesc := range fileDesc.GetService() {
-			if serviceDesc.GetName() == serviceBaseName {
-				return serviceDesc, nil
-			}
-		}
-
-		return nil, fmt.Errorf("service %s not found in descriptor for %s", serviceBaseName, md)
-
-	default:
-		return nil, fmt.Errorf("unsupported metadata type %T for service %s", md, serviceName)
-	}
 }

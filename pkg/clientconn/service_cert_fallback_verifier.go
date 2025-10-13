@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/tlscheck"
 )
 
 type serviceCertFallbackVerifier struct {
@@ -28,7 +29,7 @@ func isServiceCert(cert *x509.Certificate, subj mtls.Subject) bool {
 }
 
 func (v *serviceCertFallbackVerifier) VerifyPeerCertificate(leaf *x509.Certificate, chainRest []*x509.Certificate, conf *tls.Config) error {
-	intermediates := NewCertPool(chainRest...)
+	intermediates := tlscheck.NewCertPool(chainRest...)
 
 	systemVerifyOpts := x509.VerifyOptions{
 		DNSName:       conf.ServerName,

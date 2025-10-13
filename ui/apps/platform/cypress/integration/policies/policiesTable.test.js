@@ -66,8 +66,8 @@ describe('Policies table', () => {
         visitPolicies();
 
         cy.get('th[scope="col"]:contains("Policy")');
-        cy.get('th[scope="col"]:contains("Description")');
         cy.get('th[scope="col"]:contains("Status")');
+        cy.get('th[scope="col"]:contains("Origin")');
         cy.get('th[scope="col"]:contains("Notifiers")');
         cy.get('th[scope="col"]:contains("Severity")');
         cy.get('th[scope="col"]:contains("Lifecycle")');
@@ -82,12 +82,23 @@ describe('Policies table', () => {
         // 0. Initial table state is sorted by the Policy column.
         cy.get(thSelector).should('have.attr', 'aria-sort', 'none');
 
-        // 1. Sort ascending by the Severity column.
+        // 1. Sort descending by the Severity column.
         cy.get(thSelector).click();
-        // TODO Move sort order from invisible page state to visible query parameters in page address.
-        /*
-        cy.location('search').should('eq', '?sort[id]=Severity&sort[desc]=false');
-        */
+        cy.location('search').should(
+            'eq',
+            '?sortOption[field]=Severity&sortOption[direction]=desc'
+        );
+
+        cy.wait(1000);
+
+        cy.get(thSelector).should('have.attr', 'aria-sort', 'descending');
+        cy.get(tdSelector).then((items) => {
+            assertSortedItems(items, callbackForPairOfDescendingPolicySeverityValuesFromElements);
+        });
+
+        // 2. Sort ascending by the Severity column.
+        cy.get(thSelector).click();
+        cy.location('search').should('eq', '?sortOption[field]=Severity&sortOption[direction]=asc');
 
         // There is no request because front-end sorting.
         cy.wait(1000);
@@ -97,32 +108,14 @@ describe('Policies table', () => {
             assertSortedItems(items, callbackForPairOfAscendingPolicySeverityValuesFromElements);
         });
 
-        // 2. Sort descending by the Severity column.
+        // 3. Sort descending by the Severity column.
         cy.get(thSelector).click();
-        // TODO Move sort order from invisible page state to visible query parameters in page address.
-        /*
         cy.location('search').should(
             'eq',
-            '?sort[id]=Severity&sort[desc]=true'
+            '?sortOption[field]=Severity&sortOption[direction]=desc'
         );
-        */
-
-        // There is no request because front-end sorting.
-        cy.wait(1000);
 
         cy.get(thSelector).should('have.attr', 'aria-sort', 'descending');
-        cy.get(tdSelector).then((items) => {
-            assertSortedItems(items, callbackForPairOfDescendingPolicySeverityValuesFromElements);
-        });
-
-        // 3. Sort ascending by the Severity column.
-        cy.get(thSelector).click();
-        // TODO Move sort order from invisible page state to visible query parameters in page address.
-        /*
-        cy.location('search').should('eq', '?sort[id]=Severity&sort[desc]=false');
-        */
-
-        cy.get(thSelector).should('have.attr', 'aria-sort', 'ascending');
     });
 
     it('should have expected status values', () => {
@@ -131,6 +124,15 @@ describe('Policies table', () => {
         // The following assertions assume that the table is not paginated.
         cy.get(`${selectors.table.statusCell}:contains("Disabled")`);
         cy.get(`${selectors.table.statusCell}:contains("Enabled")`);
+    });
+
+    it('should have expected origin values', () => {
+        visitPolicies();
+
+        // The following assertions assume that the table is not paginated.
+        cy.get(`${selectors.table.originCell}:contains("System")`);
+
+        // TODO: create a User policy and check for its presence in the table
     });
 
     it('should filter policies by disabled status', () => {
@@ -220,8 +222,8 @@ describe('Policies table', () => {
 
         // Policy table
         cy.location('search').should('eq', '');
-        cy.get(`.pf-c-title:contains('Policy management')`);
-        cy.get(`.pf-c-nav__link.pf-m-current:contains("Policies")`);
+        cy.get(`.pf-v5-c-title:contains('Policy management')`);
+        cy.get(`.pf-v5-c-nav__link.pf-m-current:contains("Policies")`);
     });
 
     it('should have row action to clone policy and then cancel', () => {
@@ -231,8 +233,8 @@ describe('Policies table', () => {
 
         // Policy table
         cy.location('search').should('eq', '');
-        cy.get(`.pf-c-title:contains('Policy management')`);
-        cy.get(`.pf-c-nav__link.pf-m-current:contains("Policies")`);
+        cy.get(`.pf-v5-c-title:contains('Policy management')`);
+        cy.get(`.pf-v5-c-nav__link.pf-m-current:contains("Policies")`);
     });
 
     it('should have row action to disable policy that has enabled status and then enable it again', () => {
@@ -268,7 +270,7 @@ describe('Policies table', () => {
         cy.get(`${trSelector} ${selectors.table.actionsToggleButton}`).click();
         cy.get(
             `${trSelector} ${selectors.table.actionsItemButton}:contains("Cannot delete a default policy")`
-        ).should('have.attr', 'aria-disabled', 'true');
+        ).should('have.attr', 'disabled', 'disabled');
     });
 
     it('should have enabled row action to delete user generated policy', () => {
@@ -277,21 +279,31 @@ describe('Policies table', () => {
 
         const policyName = generateNameWithDate('A test policy');
 
-        // getInputByLabel('Name').clear().type(policyName);
-        cy.get('input#name').clear().type(policyName);
+        // getInputByLabel('Name')
+        cy.get('input#name').clear();
+        cy.get('input#name').type(policyName);
 
         cy.intercept('POST', `${api.policies.policies}?enableStrictValidation=true`).as(
             'POST_policies'
         );
-        cy.get(selectors.wizardBtns.step5).click();
+        cy.get(selectors.wizardBtns.step6).click();
         cy.get('button:contains("Save")').click();
         cy.wait('@POST_policies');
         cy.get(`${selectors.table.policyLink}:contains("${policyName}")`).should('exist');
 
         deletePolicyInTable({ policyName, actionText: 'Delete policy' });
 
-        cy.get(`.pf-c-title:contains('Policy management')`);
-        cy.get(`.pf-c-nav__link.pf-m-current:contains("Policies")`);
+        cy.get(`.pf-v5-c-title:contains('Policy management')`);
+        cy.get(`.pf-v5-c-nav__link.pf-m-current:contains("Policies")`);
         cy.get(`${selectors.table.policyLink}:contains("${policyName}")`).should('not.exist');
+    });
+
+    it('should have no detectable accessibility violations', () => {
+        visitPolicies();
+
+        cy.get('table .pf-v5-c-table__toggle-icon').first().click();
+        cy.get('table .pf-v5-c-menu-toggle').first().click();
+
+        cy.checkAccessibility();
     });
 });

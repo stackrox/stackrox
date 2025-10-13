@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package v1;
+
+import "api/v1/empty.proto";
+import weak "google/api/annotations.proto";
+
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+message Preferences {
+  uint64 max_grpc_receive_size_bytes = 1;
+}
+
+service GRPCPreferencesService {
+  rpc Get(Empty) returns (Preferences) {
+    option (google.api.http) = {get: "/v1/grpc-preferences"};
+  }
+}

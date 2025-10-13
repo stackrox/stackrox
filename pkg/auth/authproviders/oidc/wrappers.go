@@ -24,6 +24,7 @@ type wrappedOIDCProvider struct {
 type providerFactoryFunc func(ctx context.Context, issuer string) (oidcProvider, error)
 
 func newWrappedOIDCProvider(ctx context.Context, issuer string) (oidcProvider, error) {
+	log.Infof("Querying %q discovery endpoint", issuer)
 	provider, err := oidc.NewProvider(ctx, issuer)
 	if err != nil {
 		return nil, err
@@ -62,8 +63,8 @@ type wrappedOIDCIDTokenVerifier struct {
 	verifier *oidc.IDTokenVerifier
 }
 
-func (w wrappedOIDCIDTokenVerifier) Verify(client context.Context, token string) (oidcIDToken, error) {
-	idToken, err := w.verifier.Verify(client, token)
+func (w wrappedOIDCIDTokenVerifier) Verify(ctx context.Context, token string) (oidcIDToken, error) {
+	idToken, err := w.verifier.Verify(ctx, token)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +74,7 @@ func (w wrappedOIDCIDTokenVerifier) Verify(client context.Context, token string)
 // oidcIDToken is an abstraction of oidc.IDToken which adds a level of indirection used in testing.
 type oidcIDToken interface {
 	GetNonce() string
-	Claims(u *userInfoType) error
+	Claims(v interface{}) error
 	GetExpiry() time.Time
 }
 
@@ -86,8 +87,8 @@ func (w wrappedOIDCIDToken) GetNonce() string {
 	return w.token.Nonce
 }
 
-func (w wrappedOIDCIDToken) Claims(u *userInfoType) error {
-	return w.token.Claims(u)
+func (w wrappedOIDCIDToken) Claims(v interface{}) error {
+	return w.token.Claims(v)
 }
 
 func (w wrappedOIDCIDToken) GetExpiry() time.Time {

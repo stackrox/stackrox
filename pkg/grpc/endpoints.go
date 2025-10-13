@@ -1,6 +1,7 @@
 package grpc
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"io"
@@ -10,7 +11,10 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/alpn"
+	"github.com/stackrox/rox/pkg/grpc/metrics"
+	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -20,6 +24,22 @@ import (
 	downgradingServer "golang.stackrox.io/grpc-http1/server"
 	"google.golang.org/grpc"
 )
+
+const (
+	defaultMaxHTTP2ConcurrentStreams = 100 // HTTP/2 spec recommendation for minimum value
+)
+
+var (
+	maxHTTP2ConcurrentStreamsSetting = env.RegisterIntegerSetting("ROX_HTTP2_MAX_CONCURRENT_STREAMS", defaultMaxHTTP2ConcurrentStreams)
+)
+
+func maxHTTP2ConcurrentStreams() uint32 {
+	if maxHTTP2ConcurrentStreamsSetting.IntegerSetting() <= 0 {
+		return defaultMaxHTTP2ConcurrentStreams
+	}
+
+	return uint32(maxHTTP2ConcurrentStreamsSetting.IntegerSetting())
+}
 
 // EndpointConfig configures an endpoint through which the server is exposed.
 type EndpointConfig struct {
@@ -120,7 +140,7 @@ func denyMisdirectedRequest(next http.Handler) http.Handler {
 	})
 }
 
-func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Server) (net.Addr, []serverAndListener, error) {
+func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Server, sub pkgMetrics.Subsystem) (net.Addr, []serverAndListener, error) {
 	lis, err := net.Listen("tcp", asEndpoint(c.ListenEndpoint))
 	if err != nil {
 		return nil, nil, err
@@ -155,7 +175,17 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 				"":                      &httpLis,
 			}
 
-			tlsutils.ALPNDemux(lis, protoMap, tlsutils.ALPNDemuxConfig{OnHandshakeError: tlsHandshakeErrorHandler})
+			tlsutils.ALPNDemux(lis, protoMap, tlsutils.ALPNDemuxConfig{
+				OnHandshakeError: tlsHandshakeErrorHandler,
+				OnHandshakeComplete: func(conn net.Conn, proto string) {
+					remoteIP := "unknown"
+					if host, _, err := net.SplitHostPort(conn.RemoteAddr().String()); err == nil {
+						remoteIP = host
+					}
+					metrics.ObserveALPN(sub.String(), c.ListenEndpoint, remoteIP, proto)
+				},
+				TLSHandshakeTimeout: env.TLSHandshakeTimeout.DurationSetting(),
+			})
 		}
 	}
 
@@ -178,7 +208,9 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 			ErrorLog:  golog.New(httpErrorLogger{}, "", golog.LstdFlags),
 		}
 		if !c.NoHTTP2 {
-			var h2Srv http2.Server
+			h2Srv := http2.Server{
+				MaxConcurrentStreams: maxHTTP2ConcurrentStreams(),
+			}
 			if err := http2.ConfigureServer(httpSrv, &h2Srv); err != nil {
 				log.Warnf("Failed to instantiate endpoint listening at %q for HTTP/2", c.ListenEndpoint)
 			} else {
@@ -196,6 +228,13 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 			srv:      httpSrv,
 			listener: httpLis,
 			endpoint: c,
+			stopper: func() bool {
+				errShutdown := httpSrv.Shutdown(context.Background())
+				if errShutdown != nil {
+					log.Warnf("Stopping HTTP listener: %s", errShutdown)
+				}
+				return errShutdown == nil
+			},
 		})
 	}
 	if grpcLis != nil {

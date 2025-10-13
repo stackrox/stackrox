@@ -1,210 +1,227 @@
 syntax = "proto3";
 
-option go_package = "v1";
-option java_package = "io.stackrox.proto.api.v1";
-
-import weak "google/api/annotations.proto";
-import "api/v1/search_service.proto";
-import "api/v1/empty.proto";
-import "scanner/api/v1/component.proto";
-import "scanner/api/v1/note.proto";
-import "storage/image.proto";
-import "storage/deployment.proto";
-
 package v1;
 
+import "api/v1/empty.proto";
+import "api/v1/search_service.proto";
+import weak "google/api/annotations.proto";
+import "internalapi/scanner/v4/common.proto";
+import "scanner/api/v1/component.proto";
+import "scanner/api/v1/note.proto";
+import "storage/deployment.proto";
+import "storage/image.proto";
+
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
+
 message GetImageRequest {
-    string id                = 1;
-    bool   include_snoozed   = 2;
-    bool   strip_description = 3;
+  string id = 1;
+  bool include_snoozed = 2;
+  bool strip_description = 3;
 }
 
 message ListImagesResponse {
-    repeated storage.ListImage images = 1;
+  repeated storage.ListImage images = 1;
 }
 
 message CountImagesResponse {
-    int32 count = 1;
+  int32 count = 1;
 }
 
 message ScanImageRequest {
-    string image_name      = 1;
-    bool   force           = 2;
-    bool   include_snoozed = 3;
+  string image_name = 1;
+  bool force = 2;
+  bool include_snoozed = 3;
+  // Cluster to delegate scan to, may be the cluster's name or ID.
+  string cluster = 4;
+  // Namespace on the secured cluster from which to read context information
+  // when delegating image scans, specifically pull secrets to access the image
+  // registry.
+  string namespace = 5;
 }
 
 message ScanImageInternalRequest {
-    message Source {
-        string          cluster_id         = 1;
-        string          namespace          = 2;
-        repeated string image_pull_secrets = 3;
-    }
+  message Source {
+    string cluster_id = 1;
+    string namespace = 2;
+    repeated string image_pull_secrets = 3;
+  }
 
-    storage.ContainerImage image              = 1;
-    reserved                                    2;
-    bool                   cached_only        = 3;
-    Source                 source             = 4;
+  storage.ContainerImage image = 1;
+  reserved 2;
+  bool cached_only = 3;
+  Source source = 4;
 }
 
 message ScanImageInternalResponse {
-    storage.Image image = 1;
+  storage.Image image = 1;
 }
 
 message GetImageVulnerabilitiesInternalRequest {
-    string                  image_id         = 1;
-    storage.ImageName       image_name       = 2;
-    storage.ImageMetadata   metadata         = 3;
-    bool                    is_cluster_local = 6;
-    scannerV1.Components    components       = 4;
-    repeated scannerV1.Note notes            = 5;
+  string image_id = 1;
+  storage.ImageName image_name = 2;
+  storage.ImageMetadata metadata = 3;
+  bool is_cluster_local = 6;
+  scannerV1.Components components = 4;
+  repeated scannerV1.Note notes = 5;
 }
 
 message EnrichLocalImageInternalRequest {
-    string                  image_id         = 1;
-    storage.ImageName       image_name       = 2;
-    storage.ImageMetadata   metadata         = 3;
-    storage.ImageSignature  image_signature  = 4;
-    scannerV1.Components    components       = 5;
-    repeated scannerV1.Note notes            = 6;
+  string indexer_version = 12;
+  string image_id = 1;
+  storage.ImageName image_name = 2;
+  storage.ImageMetadata metadata = 3;
+  storage.ImageSignature image_signature = 4;
+  scannerV1.Components components = 5;
+  repeated scannerV1.Note notes = 6;
+  repeated storage.Image.Note image_notes = 7;
+  string error = 8;
+  string request_id = 9;
+  bool force = 10;
+  scanner.v4.Contents v4_contents = 11;
+}
+
+message UpdateLocalScanStatusInternalRequest {
+  string request_id = 1;
+  string error = 2;
 }
 
 message DeleteImagesRequest {
-    RawQuery query   = 1;
-    bool     confirm = 2;
+  RawQuery query = 1;
+  bool confirm = 2;
 }
 
 message DeleteImagesResponse {
-    uint32 num_deleted = 1;
-    bool   dry_run     = 2;
+  uint32 num_deleted = 1;
+  bool dry_run = 2;
 }
 
 message WatchImageRequest {
-    // The name of the image.
-    // This must be fully qualified, including a tag,
-    // but must NOT include a SHA.
-    string name = 1;
+  // The name of the image.
+  // This must be fully qualified, including a tag,
+  // but must NOT include a SHA.
+  string name = 1;
 }
 
 message WatchImageResponse {
-    // If the image was scanned successfully, this returns the normalized name of the image.
-    // This depends on what we get from the registry.
-    // For example, "docker.io/wordpress:latest" -> "docker.io/library/wordpress:latest"
-    string normalized_name = 1;
+  // If the image was scanned successfully, this returns the normalized name of the image.
+  // This depends on what we get from the registry.
+  // For example, "docker.io/wordpress:latest" -> "docker.io/library/wordpress:latest"
+  string normalized_name = 1;
 
-    enum ErrorType {
-      NO_ERROR              = 0;
-      INVALID_IMAGE_NAME    = 1;
-      NO_VALID_INTEGRATION  = 2;
-      SCAN_FAILED           = 3;
-    };
+  enum ErrorType {
+    NO_ERROR = 0;
+    INVALID_IMAGE_NAME = 1;
+    NO_VALID_INTEGRATION = 2;
+    SCAN_FAILED = 3;
+  }
 
-    ErrorType error_type  = 2;
+  ErrorType error_type = 2;
 
-    // Only set if error_type is NOT equal to "NO_ERROR".
-    string error_message  = 3;
-
+  // Only set if error_type is NOT equal to "NO_ERROR".
+  string error_message = 3;
 }
 
 message UnwatchImageRequest {
-    // The name of the image to unwatch.
-    // Should match the name of a previously watched image.
-    string name = 1;
+  // The name of the image to unwatch.
+  // Should match the name of a previously watched image.
+  string name = 1;
 }
 
 message GetWatchedImagesResponse {
-    repeated storage.WatchedImage watched_images = 1;
+  repeated storage.WatchedImage watched_images = 1;
 }
 
 // ScanImageInternalResponseDetails contains proto messages that are added to details
 // when returning errors from the ScanImageInternal endpoint.
 message ScanImageInternalResponseDetails {
-    // TooManyParallelScans tells sensor that there are too many parallel scans, and that it will need to
-    // retry later.
-    message TooManyParallelScans {
-    }
+  // TooManyParallelScans tells sensor that there are too many parallel scans, and that it will need to
+  // retry later.
+  message TooManyParallelScans {}
 }
 
+message ExportImageRequest {
+  int32 timeout = 1;
+  string query = 2;
+}
+
+message ExportImageResponse {
+  storage.Image image = 1;
+}
 
 // ImageService APIs manages image metadata.
 service ImageService {
+  // GetImage returns the image given its ID.
+  rpc GetImage(GetImageRequest) returns (storage.Image) {
+    option (google.api.http) = {get: "/v1/images/{id}"};
+  }
 
-    // GetImage returns the image given its ID.
-    rpc GetImage (GetImageRequest) returns (storage.Image) {
-        option (google.api.http) = {
-            get: "/v1/images/{id}"
-        };
-    }
+  // CountImages returns a count of images that match the input query.
+  rpc CountImages(RawQuery) returns (CountImagesResponse) {
+    option (google.api.http) = {get: "/v1/imagescount"};
+  }
 
-    // ListImages returns all the images.
-    rpc CountImages (RawQuery) returns (CountImagesResponse) {
-        option (google.api.http) = {
-            get: "/v1/imagescount"
-        };
-    }
+  // ListImages returns all the images that match the input query.
+  rpc ListImages(RawQuery) returns (ListImagesResponse) {
+    option (google.api.http) = {get: "/v1/images"};
+  }
 
-    // ListImages returns all the images.
-    rpc ListImages (RawQuery) returns (ListImagesResponse) {
-        option (google.api.http) = {
-            get: "/v1/images"
-        };
-    }
-
-    // ScanImage scans a single image and returns the result
-    rpc ScanImage (ScanImageRequest) returns (storage.Image) {
-        option (google.api.http) = {
-            post: "/v1/images/scan"
-            body: "*"
-        };
-    }
-
-    // ScanImageInternal is used solely by the Sensor and Admission Controller to send scan requests
-    rpc ScanImageInternal (ScanImageInternalRequest) returns (ScanImageInternalResponse);
-
-    // Deprecated: GetImageVulnerabilities is used solely by the Sensor to send vulnerability matching requests.
-    rpc GetImageVulnerabilitiesInternal (GetImageVulnerabilitiesInternalRequest) returns (ScanImageInternalResponse) {
-        option deprecated = true;
+  // ScanImage scans a single image and returns the result
+  rpc ScanImage(ScanImageRequest) returns (storage.Image) {
+    option (google.api.http) = {
+      post: "/v1/images/scan"
+      body: "*"
     };
+  }
 
-    // EnrichLocalImageInternal is used solely by the Sensor to send enrichment requests for local images. This
-    // includes the image's vulnerabilities as well as the signature verification data.
-    rpc EnrichLocalImageInternal (EnrichLocalImageInternalRequest) returns (ScanImageInternalResponse);
-    // InvalidateScanAndRegistryCaches removes the image metadata cache.
-    rpc InvalidateScanAndRegistryCaches (Empty) returns (Empty) {
-        option (google.api.http) = {
-            get: "/v1/images/cache/invalidate"
-        };
-    }
+  // ScanImageInternal is used solely by the Sensor and Admission Controller to send scan requests
+  rpc ScanImageInternal(ScanImageInternalRequest) returns (ScanImageInternalResponse);
 
-    // DeleteImage removes the images based on a query
-    rpc DeleteImages (DeleteImagesRequest) returns (DeleteImagesResponse) {
-        option (google.api.http) = {
-            delete: "/v1/images"
-        };
-    }
+  // Deprecated: GetImageVulnerabilities is used solely by the Sensor to send vulnerability matching requests.
+  rpc GetImageVulnerabilitiesInternal(GetImageVulnerabilitiesInternalRequest) returns (ScanImageInternalResponse) {
+    option deprecated = true;
+  }
 
-    // WatchImage marks an image name as to be watched.
-    rpc WatchImage (WatchImageRequest) returns (WatchImageResponse) {
-      option (google.api.http) = {
-          post: "/v1/watchedimages"
-          body: "*"
-      };
-    }
+  // EnrichLocalImageInternal is used solely by the Sensor to send enrichment requests for local images. This
+  // includes the image's vulnerabilities as well as the signature verification data.
+  rpc EnrichLocalImageInternal(EnrichLocalImageInternalRequest) returns (ScanImageInternalResponse);
 
-    // UnwatchImage marks an image name to no longer be watched.
-    // It returns successfully if the image is no longer being watched
-    // after the call, irrespective of whether the image was already being watched.
-    rpc UnwatchImage (UnwatchImageRequest) returns (Empty) {
-        option (google.api.http) = {
-            delete: "/v1/watchedimages"
-        };
-    }
+  // UpdateLocalScanStatusInternal is used solely by Sensor to send delegated scanning errors to central that
+  // prevent local enrichment from occurring (such as no scanner, throttled, etc.).
+  rpc UpdateLocalScanStatusInternal(UpdateLocalScanStatusInternalRequest) returns (Empty);
 
-    // GetWatchedImages returns the list of image names that are currently
-    // being watched.
-    rpc GetWatchedImages (Empty) returns (GetWatchedImagesResponse) {
-        option (google.api.http) = {
-            get: "/v1/watchedimages"
-        };
-    }
+  // InvalidateScanAndRegistryCaches removes the image metadata cache.
+  rpc InvalidateScanAndRegistryCaches(Empty) returns (Empty) {
+    option (google.api.http) = {get: "/v1/images/cache/invalidate"};
+  }
 
+  // DeleteImage removes the images based on a query
+  rpc DeleteImages(DeleteImagesRequest) returns (DeleteImagesResponse) {
+    option (google.api.http) = {delete: "/v1/images"};
+  }
+
+  // WatchImage marks an image name as to be watched.
+  rpc WatchImage(WatchImageRequest) returns (WatchImageResponse) {
+    option (google.api.http) = {
+      post: "/v1/watchedimages"
+      body: "*"
+    };
+  }
+
+  // UnwatchImage marks an image name to no longer be watched.
+  // It returns successfully if the image is no longer being watched
+  // after the call, irrespective of whether the image was already being watched.
+  rpc UnwatchImage(UnwatchImageRequest) returns (Empty) {
+    option (google.api.http) = {delete: "/v1/watchedimages"};
+  }
+
+  // GetWatchedImages returns the list of image names that are currently
+  // being watched.
+  rpc GetWatchedImages(Empty) returns (GetWatchedImagesResponse) {
+    option (google.api.http) = {get: "/v1/watchedimages"};
+  }
+
+  rpc ExportImages(ExportImageRequest) returns (stream ExportImageResponse) {
+    option (google.api.http) = {get: "/v1/export/images"};
+  }
 }

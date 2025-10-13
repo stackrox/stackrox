@@ -1,32 +1,53 @@
-import React, { ReactElement, useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import type { ReactElement } from 'react';
+import { useParams } from 'react-router-dom-v5-compat';
+import startCase from 'lodash/startCase';
 import {
-    TabTitleText,
-    Tabs,
-    Tab,
-    Title,
+    Bullseye,
     Divider,
+    Label,
+    LabelGroup,
     PageSection,
     Spinner,
-    Bullseye,
+    Tab,
+    TabTitleText,
+    Tabs,
+    Title,
 } from '@patternfly/react-core';
 
-import { fetchAlert } from 'services/AlertsService';
 import PolicyDetailContent from 'Containers/Policies/Detail/PolicyDetailContent';
 import { getClientWizardPolicy } from 'Containers/Policies/policies.utils';
-import DeploymentDetails from './DeploymentDetails';
+import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
+import usePermissions from 'hooks/usePermissions';
+import { fetchAlert } from 'services/AlertsService';
+import { isDeploymentAlert, isResourceAlert } from 'types/alert.proto';
+import type { Alert } from 'types/alert.proto';
+import { getDateTime } from 'utils/dateUtils';
+import { VIOLATION_STATE_LABELS } from 'constants/violationStates';
+
+import useFilteredWorkflowViewURLState from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
+import DeploymentTabWithReadAccessForDeployment from './Deployment/DeploymentTabWithReadAccessForDeployment';
+import DeploymentTabWithoutReadAccessForDeployment from './Deployment/DeploymentTabWithoutReadAccessForDeployment';
+import NetworkPolicies from './NetworkPolicies/NetworkPoliciesTab';
 import EnforcementDetails from './EnforcementDetails';
-import { Alert } from '../types/violationTypes';
 import ViolationNotFoundPage from '../ViolationNotFoundPage';
 import ViolationDetails from './ViolationDetails';
 import ViolationsBreadcrumbs from '../ViolationsBreadcrumbs';
 
 function ViolationDetailsPage(): ReactElement {
+    const isRouteEnabled = useIsRouteEnabled();
+    const { hasReadAccess } = usePermissions();
+    const hasReadAccessForDeployment = hasReadAccess('Deployment');
+    const hasReadAccessForNetworkPolicy = hasReadAccess('NetworkPolicy');
+    const isRouteEnabledForPolicy = isRouteEnabled('policy-management');
+
     const [activeTabKey, setActiveTabKey] = useState(0);
-    const [alert, setAlert] = useState<Alert>();
+    const [alert, setAlert] = useState<Alert | null>(null);
     const [isFetchingSelectedAlert, setIsFetchingSelectedAlert] = useState(false);
 
-    const { alertId } = useParams();
+    const { alertId } = useParams() as { alertId: string };
+
+    const { filteredWorkflowView } = useFilteredWorkflowViewURLState('Full view');
 
     function handleTabClick(_, tabIndex) {
         setActiveTabKey(tabIndex);
@@ -41,7 +62,7 @@ function ViolationDetailsPage(): ReactElement {
                 setIsFetchingSelectedAlert(false);
             },
             () => {
-                setAlert(undefined);
+                setAlert(null);
                 setIsFetchingSelectedAlert(false);
             }
         );
@@ -51,35 +72,51 @@ function ViolationDetailsPage(): ReactElement {
         if (isFetchingSelectedAlert) {
             return (
                 <Bullseye>
-                    <Spinner isSVG />
+                    <Spinner />
                 </Bullseye>
             );
         }
         return <ViolationNotFoundPage />;
     }
 
-    const { policy, deployment, resource, commonEntityInfo } = alert;
+    const { policy, enforcement } = alert;
     const title = policy.name || 'Unknown violation';
-    const { name: entityName } = resource || deployment || {};
-    const resourceType = resource?.resourceType || commonEntityInfo?.resourceType || 'deployment';
+
+    const entityName = isResourceAlert(alert)
+        ? alert.resource.clusterName
+        : isDeploymentAlert(alert)
+          ? alert.deployment.name
+          : '';
+
+    const resourceType = isResourceAlert(alert) ? alert.resource.resourceType : 'deployment';
+
+    const displayedResourceType = startCase(resourceType.toLowerCase());
 
     return (
         <>
-            <ViolationsBreadcrumbs current={title} />
+            <ViolationsBreadcrumbs current={title} filteredWorkflowView={filteredWorkflowView} />
             <PageSection variant="light">
                 <Title headingLevel="h1">{title}</Title>
-                <Title headingLevel="h2">{`in "${entityName as string}" ${resourceType}`}</Title>
+                <Title
+                    headingLevel="h2"
+                    className="pf-v5-u-mb-sm"
+                >{`in "${entityName}" ${displayedResourceType}`}</Title>
+                <LabelGroup numLabels={2} aria-label="Violation state and resolution">
+                    <Label>State: {VIOLATION_STATE_LABELS[alert.state]}</Label>
+                    {alert.state === 'RESOLVED' && (
+                        <Label>
+                            Resolved on:{' '}
+                            {alert.resolvedAt ? getDateTime(alert.resolvedAt) : 'Not available'}
+                        </Label>
+                    )}
+                </LabelGroup>
             </PageSection>
-            <PageSection
-                variant="default"
-                padding={{ default: 'noPadding' }}
-                data-testid="violation-details-page"
-            >
+            <PageSection variant="default" padding={{ default: 'noPadding' }}>
                 <Tabs
                     mountOnEnter
                     activeKey={activeTabKey}
                     onSelect={handleTabClick}
-                    className="pf-u-background-color-100 pf-u-pl-lg"
+                    className="pf-v5-u-background-color-100 pf-v5-u-pl-lg"
                 >
                     <Tab eventKey={0} title={<TabTitleText>Violation</TabTitleText>}>
                         <PageSection variant="default">
@@ -90,31 +127,49 @@ function ViolationDetailsPage(): ReactElement {
                             />
                         </PageSection>
                     </Tab>
-                    {alert?.enforcement && (
+                    {enforcement && (
                         <Tab eventKey={1} title={<TabTitleText>Enforcement</TabTitleText>}>
                             <PageSection variant="default">
-                                <EnforcementDetails alert={alert} />
+                                <EnforcementDetails alert={alert} enforcement={enforcement} />
                             </PageSection>
                         </Tab>
                     )}
-                    {alert?.deployment && (
+                    {isDeploymentAlert(alert) && (
                         <Tab eventKey={2} title={<TabTitleText>Deployment</TabTitleText>}>
                             <PageSection variant="default">
-                                <DeploymentDetails deployment={alert.deployment} />
+                                {hasReadAccessForDeployment ? (
+                                    <DeploymentTabWithReadAccessForDeployment
+                                        alertDeployment={alert.deployment}
+                                    />
+                                ) : (
+                                    <DeploymentTabWithoutReadAccessForDeployment
+                                        alertDeployment={alert.deployment}
+                                    />
+                                )}
                             </PageSection>
                         </Tab>
                     )}
-                    <Tab eventKey={3} title={<TabTitleText>Policy</TabTitleText>}>
-                        <PageSection variant="default">
-                            <>
-                                <Title headingLevel="h3" className="pf-u-mb-md">
+                    {isRouteEnabledForPolicy && (
+                        <Tab eventKey={3} title={<TabTitleText>Policy</TabTitleText>}>
+                            <PageSection variant="default">
+                                <Title headingLevel="h3" className="pf-v5-u-mb-md">
                                     Policy overview
                                 </Title>
-                                <Divider component="div" className="pf-u-pb-md" />
+                                <Divider component="div" className="pf-v5-u-pb-md" />
                                 <PolicyDetailContent policy={getClientWizardPolicy(policy)} />
-                            </>
-                        </PageSection>
-                    </Tab>
+                            </PageSection>
+                        </Tab>
+                    )}
+                    {isDeploymentAlert(alert) && hasReadAccessForNetworkPolicy && (
+                        <Tab eventKey={4} title={<TabTitleText>Network policies</TabTitleText>}>
+                            <PageSection variant="default">
+                                <NetworkPolicies
+                                    clusterId={alert.deployment.clusterId}
+                                    namespaceName={alert.deployment.namespace}
+                                />
+                            </PageSection>
+                        </Tab>
+                    )}
                 </Tabs>
             </PageSection>
         </>

@@ -11,7 +11,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -36,18 +38,21 @@ var (
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_CLUSTER_HEALTH, "clusterhealthstatus", (*storage.ClusterHealthStatus)(nil)))
+		schema.ScopingResource = resources.Cluster
 		RegisterTable(schema, CreateTableClusterHealthStatusesStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_CLUSTER_HEALTH, schema)
 		return schema
 	}()
 )
 
 const (
+	// ClusterHealthStatusesTableName specifies the name of the table in postgres.
 	ClusterHealthStatusesTableName = "cluster_health_statuses"
 )
 
 // ClusterHealthStatuses holds the Gorm model for Postgres table `cluster_health_statuses`.
 type ClusterHealthStatuses struct {
-	Id                           string                                        `gorm:"column:id;type:varchar;primaryKey"`
+	ID                           string                                        `gorm:"column:id;type:uuid;primaryKey"`
 	SensorHealthStatus           storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:sensorhealthstatus;type:integer"`
 	CollectorHealthStatus        storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:collectorhealthstatus;type:integer"`
 	OverallHealthStatus          storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:overallhealthstatus;type:integer"`

@@ -1,0 +1,172 @@
+# API server
+
+- query: irate(apiserver_request_total{verb="POST", resource="pods", subresource="binding",code="201"}[2m]) > 0
+  metricName: schedulingThroughput
+
+- query: histogram_quantile(0.99, sum(irate(apiserver_request_duration_seconds_bucket{apiserver="kube-apiserver", verb=~"LIST|GET", subresource!~"log|exec|portforward|attach|proxy"}[2m])) by (le, resource, verb, scope)) > 0
+  metricName: readOnlyAPICallsLatency
+
+- query: histogram_quantile(0.99, sum(irate(apiserver_request_duration_seconds_bucket{apiserver="kube-apiserver", verb=~"POST|PUT|DELETE|PATCH", subresource!~"log|exec|portforward|attach|proxy"}[2m])) by (le, resource, verb, scope)) > 0
+  metricName: mutatingAPICallsLatency
+
+- query: sum(irate(apiserver_request_total{apiserver="kube-apiserver",verb!="WATCH"}[2m])) by (verb,resource,code) > 0
+  metricName: APIRequestRate
+
+# Containers & pod metrics
+
+- query: (sum(irate(container_cpu_usage_seconds_total{name!="",container!="POD",namespace=~"openshift-(etcd|oauth-apiserver|sdn|ovn-kubernetes|network-node-identity|multus|.*apiserver|authentication|.*controller-manager|.*scheduler|image-registry|operator-lifecycle-manager)|cilium|stackrox|calico.*|tigera.*"}[2m]) * 100) by (container, pod, namespace, node) and on (node) kube_node_role{role="master"}) > 0
+  metricName: containerCPU-Masters
+
+- query: (avg(irate(container_cpu_usage_seconds_total{name!="",container!="POD",namespace=~"openshift-(sdn|ovn-kubernetes|multus|ingress)|cilium|stackrox|calico.*|tigera.*"}[2m]) * 100 and on (node) kube_node_role{role="worker"}) by (namespace, container)) > 0
+  metricName: containerCPU-AggregatedWorkers
+
+- query: (sum(irate(container_cpu_usage_seconds_total{name!="",container!="POD",namespace=~"openshift-(monitoring|sdn|ovn-kubernetes|multus|ingress)|stackrox"}[2m]) * 100) by (container, pod, namespace, node) and on (node) kube_node_role{role="infra"}) > 0
+  metricName: containerCPU-Infra
+
+- query: (sum(container_memory_rss{name!="",container!="POD",namespace=~"openshift-(etcd|oauth-apiserver|.*apiserver|ovn-kubernetes|network-node-identity|sdn|multus|ingress|authentication|.*controller-manager|.*scheduler|image-registry|operator-lifecycle-manager)|cilium|stackrox|calico.*|tigera.*"}) by (container, pod, namespace, node) and on (node) kube_node_role{role="master"}) > 0
+  metricName: containerMemory-Masters
+
+- query: avg(container_memory_rss{name!="",container!="POD",namespace=~"openshift-(sdn|ovn-kubernetes|multus|ingress)|cilium|stackrox|calico.*|tigera.*"} and on (node) kube_node_role{role="worker"}) by (container, namespace)
+  metricName: containerMemory-AggregatedWorkers
+
+- query: (sum(container_memory_rss{name!="",container!="POD",namespace=~"openshift-(sdn|ovn-kubernetes|multus|ingress|monitoring|image-registry)|cilium|stackrox|calico.*|tigera.*"}) by (container, pod, namespace, node) and on (node) kube_node_role{role="infra"}) > 0
+  metricName: containerMemory-Infra
+
+# Node metrics: CPU & Memory
+
+- query: (sum(irate(node_cpu_seconds_total[2m])) by (mode,instance) and on (instance) label_replace(kube_node_role{role="master"}, "instance", "$1", "node", "(.+)")) > 0
+  metricName: nodeCPU-Masters
+
+- query: (avg((sum(irate(node_cpu_seconds_total[2m])) by (mode,instance) and on (instance) label_replace(kube_node_role{role="worker"}, "instance", "$1", "node", "(.+)"))) by (mode)) > 0
+  metricName: nodeCPU-AggregatedWorkers
+
+- query: (sum(irate(node_cpu_seconds_total[2m])) by (mode,instance) and on (instance) label_replace(kube_node_role{role="infra"}, "instance", "$1", "node", "(.+)")) > 0
+  metricName: nodeCPU-Infra
+
+# We compute memory utilization by substrating available memory to the total
+#
+- query: avg((node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) and on (instance) label_replace(kube_node_role{role="worker"}, "instance", "$1", "node", "(.+)"))
+  metricName: nodeMemoryUtilization-AggregatedWorkers
+
+- query: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) and on (instance) label_replace(kube_node_role{role="master"}, "instance", "$1", "node", "(.+)")
+  metricName: nodeMemoryUtilization-Masters
+
+- query: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) and on (instance) label_replace(kube_node_role{role="infra"}, "instance", "$1", "node", "(.+)")
+  metricName: nodeMemoryUtilization-Infra
+
+# Kubelet & CRI-O runtime metrics
+
+- query: irate(process_cpu_seconds_total{service="kubelet",job="kubelet"}[2m]) * 100 and on (node) topk(3,avg_over_time(irate(process_cpu_seconds_total{service="kubelet",job="kubelet"}[2m])[{{ .elapsed }}:]) and on (node) kube_node_role{role="worker"})
+  metricName: kubeletCPU
+
+- query: process_resident_memory_bytes{service="kubelet",job="kubelet"} and on (node) topk(3,max_over_time(irate(process_resident_memory_bytes{service="kubelet",job="kubelet"}[2m])[{{ .elapsed }}:]) and on (node) kube_node_role{role="worker"})
+  metricName: kubeletMemory
+
+- query: irate(process_cpu_seconds_total{service="kubelet",job="crio"}[2m]) * 100 and on (node) topk(3,avg_over_time(irate(process_cpu_seconds_total{service="kubelet",job="crio"}[2m])[{{ .elapsed }}:]) and on (node) kube_node_role{role="worker"})
+  metricName: crioCPU
+
+- query: process_resident_memory_bytes{service="kubelet",job="crio"} and on (node) topk(3,max_over_time(irate(process_resident_memory_bytes{service="kubelet",job="crio"}[2m])[{{ .elapsed }}:]) and on (node) kube_node_role{role="worker"})
+  metricName: crioMemory
+
+# Etcd metrics
+
+- query: sum(rate(etcd_server_leader_changes_seen_total[2m]))
+  metricName: etcdLeaderChangesRate
+
+- query: histogram_quantile(0.99, rate(etcd_disk_backend_commit_duration_seconds_bucket[2m]))
+  metricName: 99thEtcdDiskBackendCommitDurationSeconds
+
+- query: histogram_quantile(0.99, rate(etcd_disk_wal_fsync_duration_seconds_bucket[2m]))
+  metricName: 99thEtcdDiskWalFsyncDurationSeconds
+
+- query: histogram_quantile(0.99, rate(etcd_network_peer_round_trip_time_seconds_bucket[5m]))
+  metricName: 99thEtcdRoundTripTimeSeconds
+
+- query: sum by (cluster_version)(etcd_cluster_version)
+  metricName: etcdVersion
+  instant: true
+
+# Cluster metrics
+
+- query: sum(kube_namespace_status_phase) by (phase) > 0
+  metricName: namespaceCount
+
+- query: sum(kube_pod_status_phase{}) by (phase)
+  metricName: podStatusCount
+
+- query: count(kube_secret_info{})
+  metricName: secretCount
+  instant: true
+
+- query: count(kube_deployment_labels{})
+  metricName: deploymentCount
+  instant: true
+
+- query: count(kube_configmap_info{})
+  metricName: configmapCount
+  instant: true
+
+- query: count(kube_service_info{})
+  metricName: serviceCount
+  instant: true
+
+- query: count(openshift_route_created{})
+  metricName: routeCount
+  instant: true
+
+- query: kube_node_role
+  metricName: nodeRoles
+
+- query: sum(kube_node_status_condition{status="true"}) by (condition)
+  metricName: nodeStatus
+
+- query: count(kube_replicaset_labels{})
+  metricName: replicaSetCount
+  instant: true
+
+- query: count(kube_pod_info{} AND ON (pod) kube_pod_status_phase{phase="Running"}==1) by (node)
+  metricName: podDistribution
+
+# Prometheus metrics
+
+- query: openshift:prometheus_tsdb_head_series:sum{job="prometheus-k8s"}
+  metricName: prometheus-timeseriestotal
+
+- query: openshift:prometheus_tsdb_head_samples_appended_total:sum{job="prometheus-k8s"}
+  metricName: prometheus-ingestionrate
+
+# Retain the raw CPU seconds totals for comparison
+- query: sum( node_cpu_seconds_total and on (instance) label_replace(kube_node_role{role="worker",role!="infra"}, "instance", "$1", "node", "(.+)") ) by (mode)
+  metricName: nodeCPUSeconds-Workers
+  instant: true
+  captureStart: true
+
+- query: sum( node_cpu_seconds_total and on (instance) label_replace(kube_node_role{role="master"}, "instance", "$1", "node", "(.+)") ) by (mode)
+  metricName: nodeCPUSeconds-Masters
+  instant: true
+  captureStart: true
+
+- query: sum( node_cpu_seconds_total and on (instance) label_replace(kube_node_role{role="infra"}, "instance", "$1", "node", "(.+)") ) by (mode)
+  metricName: nodeCPUSeconds-Infra
+  instant: true
+  captureStart: true
+
+- query: sum (  container_cpu_usage_seconds_total {  id =~ "/system.slice|/system.slice/kubelet.service|/system.slice/ovs-vswitchd.service|/system.slice/crio.service|/kubepods.slice" } and on (node) kube_node_role{ role = "worker",role != "infra" } )  by   (   id  )
+  metricName: cgroupCPUSeconds-Workers
+  instant: true
+  captureStart: true
+
+- query: sum (  container_cpu_usage_seconds_total {  id =~ "/system.slice|/system.slice/kubelet.service|/system.slice/ovs-vswitchd.service|/system.slice/crio.service|/kubepods.slice" }  and on (node) kube_node_role{ role = "master" } )  by   (   id  )
+  metricName: cgroupCPUSeconds-Masters
+  instant: true
+  captureStart: true
+
+- query: sum (  container_cpu_usage_seconds_total {  id =~ "/system.slice|/system.slice/kubelet.service|/system.slice/ovs-vswitchd.service|/system.slice/crio.service|/kubepods.slice" }  and on (node) kube_node_role{ role = "infra" } )  by   (   id  )
+  metricName: cgroupCPUSeconds-Infra
+  instant: true
+  captureStart: true
+
+- query: sum( container_cpu_usage_seconds_total{container!~"POD|",namespace=~"openshift-.*"} )  by (namespace)
+  metricName: cgroupCPUSeconds-namespaces
+  instant: true
+  captureStart: true

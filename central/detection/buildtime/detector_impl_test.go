@@ -1,17 +1,16 @@
 package buildtime
 
 import (
-	"strings"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/policy/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/defaults/policies"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 func getPolicy(defaultPolicies []*storage.Policy, name string, t *testing.T) *storage.Policy {
@@ -34,7 +33,7 @@ func TestDetector(t *testing.T) {
 
 	// Load the latest tag policy since that has image fields, and add the BUILD lifecycle so it gets compiled for the
 	// buildtime policy set.
-	policyToTest := getPolicy(defaultPolicies, "Latest tag", t).Clone()
+	policyToTest := getPolicy(defaultPolicies, "Latest tag", t).CloneVT()
 	policyToTest.LifecycleStages = append(policyToTest.LifecycleStages, storage.LifecycleStage_BUILD)
 
 	require.NoError(t, policySet.UpsertPolicy(policyToTest))
@@ -69,15 +68,11 @@ func TestDetector(t *testing.T) {
 			expectedAlerts:    1,
 		},
 	} {
-		t.Run(proto.MarshalTextString(testCase.image), func(t *testing.T) {
+		t.Run(protocompat.MarshalTextString(testCase.image), func(t *testing.T) {
 			filter, getUnusedCategories := detection.MakeCategoryFilter(testCase.allowedCategories)
 			alerts, err := detector.Detect(testCase.image, filter)
 			require.NoError(t, err)
-			lowercaseCategories := make([]string, len(testCase.expectedUnusedCategories))
-			for i, category := range testCase.expectedUnusedCategories {
-				lowercaseCategories[i] = strings.ToLower(category)
-			}
-			require.ElementsMatch(t, lowercaseCategories, getUnusedCategories())
+			require.ElementsMatch(t, testCase.expectedUnusedCategories, getUnusedCategories())
 			assert.Len(t, alerts, testCase.expectedAlerts)
 		})
 

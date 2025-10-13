@@ -1,37 +1,37 @@
-import React, { useState, useCallback } from 'react';
-import { useHistory } from 'react-router-dom';
+import React, { useCallback, useState } from 'react';
+import { useNavigate } from 'react-router-dom-v5-compat';
 import {
     Chart,
     ChartAxis,
-    ChartStack,
     ChartBar,
-    ChartTooltip,
-    ChartLabelProps,
+    ChartContainer,
     ChartLegend,
+    ChartStack,
+    ChartTooltip,
     getInteractiveLegendEvents,
     getInteractiveLegendItemStyles,
 } from '@patternfly/react-charts';
+import type { ChartLabelProps } from '@patternfly/react-charts';
 import sortBy from 'lodash/sortBy';
 
+import { filteredWorkflowViewKey } from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
+import { fullWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
 import { LinkableChartLabel } from 'Components/PatternFly/Charts/LinkableChartLabel';
-import { AlertGroup } from 'services/AlertsService';
+import type { AlertGroup } from 'services/AlertsService';
 import { severityLabels } from 'messages/common';
 import {
-    navigateOnClickEvent,
-    patternflySeverityTheme,
     defaultChartHeight as chartHeight,
     defaultChartBarWidth,
+    navigateOnClickEvent,
+    patternflySeverityTheme,
 } from 'utils/chartUtils';
 import { getQueryString } from 'utils/queryStringUtils';
 import { violationsBasePath } from 'routePaths';
 import useResizeObserver from 'hooks/useResizeObserver';
-import {
-    LifecycleStage,
-    policySeverities as severitiesLowToCritical,
-    PolicySeverity,
-} from 'types/policy.proto';
+import { policySeverities as severitiesLowToCritical } from 'types/policy.proto';
+import type { LifecycleStage, PolicySeverity } from 'types/policy.proto';
 
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 
 /**
  * This function iterates an array of AlertGroups and zeros out severities that
@@ -118,6 +118,7 @@ function linkForViolationsCategory(
     const queryString = getQueryString({
         s: search,
         sortOption: { field: 'Severity', direction: 'desc' },
+        [filteredWorkflowViewKey]: fullWorkflowView,
     });
     return `${violationsBasePath}${queryString}`;
 }
@@ -142,7 +143,7 @@ type LifecycleOption = 'ALL' | Exclude<LifecycleStage, 'BUILD'>;
 export type Config = {
     sortType: SortTypeOption;
     lifecycle: LifecycleOption;
-    hiddenSeverities: Readonly<PolicySeverity[]>;
+    hiddenSeverities: readonly PolicySeverity[];
 };
 
 type ViolationsByPolicyCategoryChartProps = {
@@ -162,7 +163,7 @@ function ViolationsByPolicyCategoryChart({
     setHiddenSeverities,
     searchFilter,
 }: ViolationsByPolicyCategoryChartProps) {
-    const history = useHistory();
+    const navigate = useNavigate();
     const [widgetContainer, setWidgetContainer] = useState<HTMLDivElement | null>(null);
     const widgetContainerResizeEntry = useResizeObserver(widgetContainer);
 
@@ -197,7 +198,9 @@ function ViolationsByPolicyCategoryChart({
                 data={data}
                 labelComponent={<ChartTooltip constrainToVisibleArea />}
                 events={[
-                    navigateOnClickEvent(history, (targetProps) => {
+                    // TS2339: Property 'xName' does not exist on type '{}'.
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    navigateOnClickEvent(navigate, (targetProps: any) => {
                         const category = targetProps?.datum?.xName;
                         return linkForViolationsCategory(
                             category,
@@ -237,7 +240,7 @@ function ViolationsByPolicyCategoryChart({
         <div ref={setWidgetContainer}>
             <Chart
                 ariaDesc="Number of violations by policy category, grouped by severity"
-                animate={{ duration: 300 }}
+                ariaTitle="Policy violations by category"
                 domainPadding={{ x: [20, 20] }}
                 events={getInteractiveLegendEvents({
                     chartNames: [Object.values(severityLabels)],
@@ -245,6 +248,7 @@ function ViolationsByPolicyCategoryChart({
                     legendName: 'legend',
                     onLegendClick,
                 })}
+                containerComponent={<ChartContainer role="figure" />}
                 legendComponent={<ChartLegend name="legend" data={getLegendData()} />}
                 legendPosition="bottom"
                 height={chartHeight}
@@ -260,7 +264,7 @@ function ViolationsByPolicyCategoryChart({
                 <ChartAxis
                     tickLabelComponent={<LinkableChartLabel linkWith={labelLinkCallback} />}
                 />
-                <ChartAxis dependentAxis tickFormat={String} />
+                <ChartAxis dependentAxis fixLabelOverlap tickFormat={String} />
                 <ChartStack horizontal>{bars}</ChartStack>
             </Chart>
         </div>

@@ -61,6 +61,15 @@ func TestSubject(t *testing.T) {
 				OU: "ADMISSION_CONTROL_SERVICE",
 			},
 		},
+		{
+			input:    Subject{ServiceType: storage.ServiceType_CENTRAL_DB_SERVICE, Identifier: "Central DB/serialNumber=14079776202872467048"},
+			cn:       "CENTRAL_DB_SERVICE: Central DB/serialNumber=14079776202872467048",
+			hostname: "central-db.stackrox",
+			ou:       "CENTRAL_DB_SERVICE",
+			name: cfcsr.Name{
+				OU: "CENTRAL_DB_SERVICE",
+			},
+		},
 	}
 
 	for _, c := range cases {

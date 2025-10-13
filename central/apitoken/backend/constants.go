@@ -1,8 +1,12 @@
 package backend
 
-import "time"
+import (
+	"time"
+
+	"github.com/stackrox/rox/pkg/timeutil"
+)
 
 // These constants are used in the signed JWTs Central produces.
 const (
-	defaultTTL = 365 * 24 * time.Hour
+	defaultTTL = 365 * timeutil.HoursInDay * time.Hour
 )

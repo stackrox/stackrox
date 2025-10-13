@@ -20,10 +20,19 @@ class TestGKECluster(unittest.TestCase):
         GKECluster.PROVISION_TIMEOUT = 0.1
         GKECluster.WAIT_TIMEOUT = 0.1
         GKECluster.TEARDOWN_TIMEOUT = 0.1
-        GKECluster.PROVISION_PATH = os.path.join(_dirname, "fixtures", "null.sh")
+        GKECluster.PROVISION_PATH = os.path.join(
+            _dirname, "fixtures", "null.sh")
         GKECluster.WAIT_PATH = os.path.join(_dirname, "fixtures", "null.sh")
         GKECluster.REFRESH_PATH = os.path.join(_dirname, "fixtures", "null.sh")
-        GKECluster.TEARDOWN_PATH = os.path.join(_dirname, "fixtures", "null.sh")
+        GKECluster.TEARDOWN_PATH = os.path.join(
+            _dirname, "fixtures", "null.sh")
+
+        # pylint: disable=consider-using-with
+        self._osci_shared_dir = tempfile.TemporaryDirectory()
+        os.environ["SHARED_DIR"] = self._osci_shared_dir.name
+
+    def tearDown(self):
+        self._osci_shared_dir.cleanup()
 
     def test_pass(self):
         GKECluster("test").provision().teardown()
@@ -38,7 +47,8 @@ class TestGKECluster(unittest.TestCase):
         return os.path.join(_dirname, "fixtures", "timeout.sh")
 
     def prepare_for_timeout_termination(self, tmp_dir):
-        os.environ["TEST_TERM_PIDFILE"] = os.path.join(tmp_dir, "TEST_TERM_PIDFILE")
+        os.environ["TEST_TERM_PIDFILE"] = os.path.join(
+            tmp_dir, "TEST_TERM_PIDFILE")
         return os.environ["TEST_TERM_PIDFILE"]
 
     def prepare_for_timeout_kill(self, tmp_dir):

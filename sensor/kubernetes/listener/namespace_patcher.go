@@ -3,6 +3,8 @@ package listener
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/namespaces"
 	v1 "k8s.io/api/core/v1"
@@ -24,7 +26,10 @@ func patchNamespaces(client kubernetes.Interface, stopCond concurrency.Waitable)
 		nsClient: nsClient,
 		ctx:      concurrency.AsContext(stopCond),
 	}
-	nsInformer.AddEventHandler(patchHandler)
+
+	if _, err := nsInformer.AddEventHandler(patchHandler); err != nil {
+		log.Warnf("could not add event handler: %+v", err)
+	}
 	go nsInformer.Run(stopCond.Done())
 }
 
@@ -33,15 +38,15 @@ type namespacePatchHandler struct {
 	ctx      context.Context
 }
 
-func (h *namespacePatchHandler) OnAdd(obj interface{}) {
+func (h *namespacePatchHandler) OnAdd(obj interface{}, _ bool) {
 	h.checkAndPatchNamespace(obj)
 }
 
-func (h *namespacePatchHandler) OnUpdate(oldObj, newObj interface{}) {
+func (h *namespacePatchHandler) OnUpdate(_, newObj interface{}) {
 	h.checkAndPatchNamespace(newObj)
 }
 
-func (h *namespacePatchHandler) OnDelete(obj interface{}) {}
+func (h *namespacePatchHandler) OnDelete(_ interface{}) {}
 
 func (h *namespacePatchHandler) checkAndPatchNamespace(obj interface{}) {
 	ns, ok := obj.(*v1.Namespace)
@@ -80,5 +85,8 @@ func (h *namespacePatchHandler) patchNamespaceLabels(ns *v1.Namespace, desiredLa
 	patchedNS.Annotations[modifiedByAnnotation] = "true"
 
 	_, err := h.nsClient.Update(h.ctx, patchedNS, metav1.UpdateOptions{})
-	return err
+	if err != nil {
+		return errors.Wrap(err, "patching namespace labels")
+	}
+	return nil
 }

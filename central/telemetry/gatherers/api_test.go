@@ -3,10 +3,10 @@ package gatherers
 import (
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/pkg/grpc/metrics/mocks"
 	"github.com/stackrox/rox/pkg/telemetry/data"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/codes"
 )
 

@@ -10,7 +10,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -41,22 +43,25 @@ var (
 			v1.SearchCategory_CLUSTER_VULN_EDGE,
 			v1.SearchCategory_CLUSTERS,
 		}...)
+		schema.ScopingResource = resources.Cluster
 		RegisterTable(schema, CreateTableClusterCveEdgesStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_CLUSTER_VULN_EDGE, schema)
 		return schema
 	}()
 )
 
 const (
+	// ClusterCveEdgesTableName specifies the name of the table in postgres.
 	ClusterCveEdgesTableName = "cluster_cve_edges"
 )
 
 // ClusterCveEdges holds the Gorm model for Postgres table `cluster_cve_edges`.
 type ClusterCveEdges struct {
-	Id          string   `gorm:"column:id;type:varchar;primaryKey"`
+	ID          string   `gorm:"column:id;type:varchar;primaryKey"`
 	IsFixable   bool     `gorm:"column:isfixable;type:bool"`
 	FixedBy     string   `gorm:"column:fixedby;type:varchar"`
-	ClusterId   string   `gorm:"column:clusterid;type:varchar"`
-	CveId       string   `gorm:"column:cveid;type:varchar;index:clustercveedges_cveid,type:hash"`
+	ClusterID   string   `gorm:"column:clusterid;type:uuid"`
+	CveID       string   `gorm:"column:cveid;type:varchar;index:clustercveedges_cveid,type:hash"`
 	Serialized  []byte   `gorm:"column:serialized;type:bytea"`
 	ClustersRef Clusters `gorm:"foreignKey:clusterid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

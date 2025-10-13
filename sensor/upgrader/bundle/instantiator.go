@@ -2,7 +2,6 @@ package bundle
 
 import (
 	"bufio"
-	"bytes"
 	"io"
 	"strings"
 
@@ -56,6 +55,12 @@ func (i *instantiator) Instantiate(bundleContents Contents) ([]*unstructured.Uns
 	if i.ctx.InCertRotationMode() {
 		common.Filter(&allObjects, common.CertObjectPredicate)
 	}
+
+	// Remove the psps if not enabled
+	if !i.ctx.IsPodSecurityEnabled() {
+		common.Filter(&allObjects, common.Not(common.PSPObjectPredicate))
+	}
+
 	return allObjects, nil
 }
 
@@ -83,14 +88,9 @@ func (i *instantiator) loadObjectsFromYAML(openFn func() (io.ReadCloser, error))
 	}
 	defer utils.IgnoreError(reader.Close)
 
-	contents, err := io.ReadAll(reader)
-	if err != nil {
-		return nil, err
-	}
-
 	var objects []*unstructured.Unstructured
 
-	yamlReader := yaml.NewYAMLReader(bufio.NewReader(bytes.NewBuffer(contents)))
+	yamlReader := yaml.NewYAMLReader(bufio.NewReader(reader))
 	yamlDoc, err := yamlReader.Read()
 	for ; err == nil; yamlDoc, err = yamlReader.Read() {
 		// First, test if the document is empty. We cannot simply trim spaces and check for an empty slice,
@@ -113,7 +113,7 @@ func (i *instantiator) loadObjectsFromYAML(openFn func() (io.ReadCloser, error))
 	}
 
 	if err != io.EOF {
-		return nil, err
+		return nil, errors.Wrap(err, "reading YAML bundle data")
 	}
 
 	return objects, nil
@@ -127,5 +127,8 @@ func validateMetadata(objs []*unstructured.Unstructured) error {
 			errs.AddStringf("upgrade label %s of object %s has invalid value %q, expected: %q", common.UpgradeResourceLabelKey, k8sobjects.RefOf(obj), labelVal, common.UpgradeResourceLabelValue)
 		}
 	}
-	return errs.ToError()
+	if err := errs.ToError(); err != nil {
+		return errors.Wrap(err, "validating object metadata")
+	}
+	return nil
 }

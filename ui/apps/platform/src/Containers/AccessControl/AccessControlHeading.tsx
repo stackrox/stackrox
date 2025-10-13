@@ -1,7 +1,8 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Divider, PageSection, Title } from '@patternfly/react-core';
 
-import { AccessControlEntityType } from 'constants/entityTypes';
+import type { AccessControlEntityType } from 'constants/entityTypes';
 import AccessControlNav from './AccessControlNav';
 
 export type AccessControlHeadingProps = {
@@ -24,7 +25,7 @@ function AccessControlHeading({
                 <Title headingLevel="h1">Access Control</Title>
             </PageSection>
             {isNavHidden || (
-                <PageSection variant="light" className="pf-u-px-sm pf-u-py-0">
+                <PageSection variant="light" className="pf-v5-u-px-sm pf-v5-u-py-0">
                     <AccessControlNav entityType={entityType} />
                 </PageSection>
             )}

@@ -1,21 +1,20 @@
 import qs from 'qs';
 
-import { ListDeployment } from 'types/deployment.proto';
-import { SearchFilter, ApiSortOption } from 'types/search';
-import { SelectorField } from 'Containers/Collections/types';
-import { getListQueryParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
+import type { ListDeployment } from 'types/deployment.proto';
+import type { ApiSortOption, SearchFilter } from 'types/search';
+import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { makeCancellableAxiosRequest } from './cancellationUtils';
+import type { CancellableRequest } from './cancellationUtils';
 import axios from './instance';
-import { Empty, Pagination } from './types';
+import type { Empty, FilterQuery } from './types';
 
 export const collectionsBaseUrl = '/v1/collections';
-export const collectionsCountUrl = '/v1/collections/count';
+export const collectionsCountUrl = '/v1/collectionscount';
 export const collectionsDryRunUrl = '/v1/collections/dryrun';
-export const collectionsAutocompleteUrl = '/v1/collections/autocomplete';
 
 export type SelectorRule = {
-    fieldName: SelectorField;
-    values: { value: string }[];
+    fieldName: string;
+    values: { value: string; matchType: string }[];
     operator: 'AND' | 'OR';
 };
 
@@ -30,14 +29,15 @@ export type CollectionRequest = {
     embeddedCollectionIds: string[];
 };
 
-export type CollectionResponse = {
+export type Collection = {
     id: string;
     name: string;
     description: string;
-    inUse: boolean;
     resourceSelectors: ResourceSelector[];
     embeddedCollections: { id: string }[];
 };
+
+export type CollectionSlim = Pick<Collection, 'id' | 'name' | 'description'>;
 
 /**
  * Fetch a paginated list of Collection objects
@@ -45,14 +45,18 @@ export type CollectionResponse = {
 export function listCollections(
     searchFilter: SearchFilter,
     sortOption: ApiSortOption,
-    page: number,
-    pageSize: number
-): CancellableRequest<CollectionResponse[]> {
-    const params = getListQueryParams(searchFilter, sortOption, page, pageSize);
+    page = 0, // TODO replace zero-based with one-based?
+    perPage = 0
+): CancellableRequest<Collection[]> {
+    const query = {
+        query: getRequestQueryStringForSearchFilter(searchFilter),
+        pagination: getPaginationParams({ page: page + 1, perPage, sortOption }),
+    };
+    const params = qs.stringify({ query }, { allowDots: true });
     return makeCancellableAxiosRequest((signal) =>
         axios
             .get<{
-                collections: CollectionResponse[];
+                collections: Collection[];
             }>(`${collectionsBaseUrl}?${params}`, { signal })
             .then((response) => response.data.collections)
     );
@@ -65,13 +69,16 @@ export function getCollectionCount(searchFilter: SearchFilter): CancellableReque
     const query = getRequestQueryStringForSearchFilter(searchFilter);
     return makeCancellableAxiosRequest((signal) =>
         axios
-            .get<{ count: number }>(`${collectionsCountUrl}?query=${query}`, { signal })
+            .get<{ count: number }>(`${collectionsCountUrl}?query.query=${query}`, { signal })
             .then((response) => response.data.count)
     );
 }
 
-export type ResolvedCollectionResponse = {
-    collection: CollectionResponse;
+export type CollectionResponse = {
+    collection: Collection;
+};
+
+export type CollectionResponseWithMatches = CollectionResponse & {
     deployments: ListDeployment[];
 };
 
@@ -87,18 +94,16 @@ export type ResolvedCollectionResponse = {
 export function getCollection(
     id: string,
     options: { withMatches: boolean } = { withMatches: false }
-): CancellableRequest<ResolvedCollectionResponse> {
+): CancellableRequest<CollectionResponseWithMatches> {
     const params = qs.stringify(options);
     return makeCancellableAxiosRequest((signal) =>
         axios
-            .get<ResolvedCollectionResponse>(`${collectionsBaseUrl}/${id}?${params}`, { signal })
+            .get<CollectionResponseWithMatches>(`${collectionsBaseUrl}/${id}?${params}`, {
+                signal,
+            })
             .then((response) => response.data)
     );
 }
-
-export type GetCollectionSelectorsResponse = {
-    selectors: SelectorField[];
-};
 
 /**
  * Create a new collection
@@ -108,13 +113,11 @@ export type GetCollectionSelectorsResponse = {
  * @returns
  *      The created collection object, with ID
  */
-export function createCollection(
-    collection: CollectionRequest
-): CancellableRequest<CollectionResponse> {
+export function createCollection(collection: CollectionRequest): CancellableRequest<Collection> {
     return makeCancellableAxiosRequest((signal) =>
         axios
             .post<CollectionResponse>(collectionsBaseUrl, collection, { signal })
-            .then((response) => response.data)
+            .then((response) => response.data.collection)
     );
 }
 
@@ -132,11 +135,13 @@ export function createCollection(
 export function updateCollection(
     id: string,
     collection: CollectionRequest
-): CancellableRequest<CollectionResponse> {
+): CancellableRequest<Collection> {
     return makeCancellableAxiosRequest((signal) =>
         axios
-            .put<CollectionResponse>(`${collectionsBaseUrl}/${id}`, collection, { signal })
-            .then((response) => response.data)
+            .patch<CollectionResponse>(`${collectionsBaseUrl}/${id}`, collection, {
+                signal,
+            })
+            .then((response) => response.data.collection)
     );
 }
 
@@ -156,8 +161,8 @@ export function deleteCollection(id: string): CancellableRequest<Empty> {
 
 export type CollectionDryRunRequest = CollectionRequest & {
     options: {
-        pagination: Pagination;
-        skipDeploymentMatching: boolean;
+        filterQuery: FilterQuery;
+        withMatches: boolean;
     };
 };
 
@@ -175,9 +180,11 @@ export type CollectionDryRunResponse = {
  * @param dryRunRequest.embeddedCollectionIds
  *      An array of collection ids whose matching deployments should
  *      be added to the result set.
- * @param dryRunRequest.options.pagination
+ * @param dryRunRequest.options.filterQuery.query
+ *      A search query used to filter matching deployments
+ * @param dryRunRequest.options.filterQuery.pagination
  *      Pagination options for the dry run deployment results
- * @param dryRunRequest.options.skipDeploymentMatching
+ * @param dryRunRequest.options.withMatches
  *      This flag will skip the resolution of matching deployments on the back end
  *      in order to do more efficient error checking. Used in order to determine if
  *      a config is valid, without returning a full data payload.
@@ -185,44 +192,32 @@ export type CollectionDryRunResponse = {
  * @returns A list of deployments that are resolved by the collection.
  */
 export function dryRunCollection(
-    dryRunRequest: CollectionDryRunRequest
-    // TODO `ListDeployment` will make this impossible to paginate without loading the entire
-    // dataset client side. Ask [BE] if there is an efficient way to aggregate namespaces/clusters
-    // under a matching deployment name similar to the graphql query. An alternative might be to
-    // change the rendering of the list to not group deployments, but to sort alphabetically.
+    collectionRequest: CollectionRequest,
+    searchFilter: SearchFilter,
+    page: number, // TODO replace zero-based with one-based?
+    perPage: number,
+    sortOption?: ApiSortOption
 ): CancellableRequest<ListDeployment[]> {
+    const query = getRequestQueryStringForSearchFilter(searchFilter);
+    const dryRunRequest: CollectionDryRunRequest = {
+        ...collectionRequest,
+        options: {
+            filterQuery: {
+                query,
+                pagination: getPaginationParams({
+                    page: page + 1, // one-based page for compatibility with PatternFly Pagination element
+                    perPage,
+                    sortOption,
+                }),
+            },
+            withMatches: true,
+        },
+    };
     return makeCancellableAxiosRequest((signal) =>
         axios
             .post<CollectionDryRunResponse>(collectionsDryRunUrl, dryRunRequest, {
                 signal,
             })
             .then((response) => response.data.deployments)
-    );
-}
-
-/**
- * Function that returns a list of autocomplete suggestions for selector fields based on resources
- * that match the provided resource selectors.
- *
- * @param resourceSelectors
- *      The resource selectors used to scope the autocomplete search
- * @param searchCategory
- *      The field that autocomplete results should be returned for
- * @param searchLabel
- *      The user provided search text
- */
-export function getCollectionAutoComplete(
-    resourceSelectors: ResourceSelector[],
-    searchCategory: SelectorField,
-    searchLabel: string
-): CancellableRequest<string[]> {
-    const params = qs.stringify(
-        { resourceSelectors, searchCategory, searchLabel },
-        { arrayFormat: 'repeat' }
-    );
-    return makeCancellableAxiosRequest((signal) =>
-        axios
-            .get<{ values: string[] }>(`${collectionsAutocompleteUrl}?${params}`, { signal })
-            .then((response) => response.data.values)
     );
 }

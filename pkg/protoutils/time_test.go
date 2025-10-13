@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestSub(t *testing.T) {
@@ -37,4 +38,59 @@ func TestAfter(t *testing.T) {
 
 	assert.True(t, After(afterTs, nowTs), "After() should return true for a time that is 1s after now")
 	assert.True(t, After(rightAfterTs, nowTs), "After() should return true for a time that is 1ns after now")
+}
+
+func TestMustGetProtoTimestampFromRFC3339NanoString(t *testing.T) {
+	timeString := "2017-11-16T19:35:32.012345678Z"
+
+	ts1 := MustGetProtoTimestampFromRFC3339NanoString(timeString)
+	assert.Equal(t, int64(1510860932), ts1.GetSeconds())
+	assert.Equal(t, int32(12345678), ts1.GetNanos())
+
+	invalidTimeString1 := "0000-12-24T23:59:59.999999999Z"
+	assert.Panics(t, func() { MustGetProtoTimestampFromRFC3339NanoString(invalidTimeString1) })
+
+	invalidTimeString2 := "0000-12-2AT23:59:59.999999999Z"
+	assert.Panics(t, func() { MustGetProtoTimestampFromRFC3339NanoString(invalidTimeString2) })
+}
+
+func TestRoundTimestamp(t *testing.T) {
+	tsInvalid := &timestamppb.Timestamp{
+		Seconds: -62235596800,
+		Nanos:   123456789,
+	}
+	notRounded := RoundTimestamp(tsInvalid, time.Microsecond)
+	assert.Equal(t, tsInvalid.AsTime(), notRounded.AsTime())
+
+	ts1 := &timestamppb.Timestamp{
+		Seconds: 1510860932,
+		Nanos:   123456789,
+	}
+	rounded1 := RoundTimestamp(ts1, time.Microsecond)
+	assert.Equal(t, ts1.GetSeconds(), rounded1.GetSeconds())
+	assert.Equal(t, int32(123457000), rounded1.GetNanos())
+
+	ts2 := &timestamppb.Timestamp{
+		Seconds: 1510860932,
+		Nanos:   987654321,
+	}
+	rounded2 := RoundTimestamp(ts2, time.Microsecond)
+	assert.Equal(t, ts2.GetSeconds(), rounded2.GetSeconds())
+	assert.Equal(t, int32(987654000), rounded2.GetNanos())
+
+	ts3 := &timestamppb.Timestamp{
+		Seconds: 1520860932,
+		Nanos:   987654321,
+	}
+	rounded3 := RoundTimestamp(ts3, time.Millisecond)
+	assert.Equal(t, ts3.GetSeconds(), rounded3.GetSeconds())
+	assert.Equal(t, int32(988000000), rounded3.GetNanos())
+
+	ts4 := &timestamppb.Timestamp{
+		Seconds: 1510860932,
+		Nanos:   123456789,
+	}
+	rounded4 := RoundTimestamp(ts4, time.Millisecond)
+	assert.Equal(t, ts4.GetSeconds(), rounded4.GetSeconds())
+	assert.Equal(t, int32(123000000), rounded4.GetNanos())
 }

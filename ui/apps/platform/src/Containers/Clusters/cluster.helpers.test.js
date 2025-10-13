@@ -1,11 +1,206 @@
 import {
     findUpgradeState,
     formatSensorVersion,
+    formatBuildDate,
+    formatKubernetesVersion,
+    formatCloudProvider,
     getCredentialExpirationStatus,
     getUpgradeableClusters,
 } from './cluster.helpers';
 
 describe('cluster helpers', () => {
+    describe('formatKubernetesVersion', () => {
+        it('should return version of Kubernetes from the orchestrator metadata response', () => {
+            const orchestratorMetadata = {
+                version: 'v1.24.7-gke.900',
+                buildDate: '2022-10-26T09:25:34Z',
+                apiVersions: [
+                    'admissionregistration.k8s.io/v1',
+                    'apiextensions.k8s.io/v1',
+                    'apiregistration.k8s.io/v1',
+                    'apps/v1',
+                    'authentication.k8s.io/v1',
+                    'authorization.k8s.io/v1',
+                    'auto.gke.io/v1',
+                    'auto.gke.io/v1alpha1',
+                    'autoscaling/v1',
+                    'autoscaling/v2',
+                    'autoscaling/v2beta1',
+                    'autoscaling/v2beta2',
+                    'batch/v1',
+                    'batch/v1beta1',
+                    'certificates.k8s.io/v1',
+                    'cloud.google.com/v1',
+                    'cloud.google.com/v1beta1',
+                    'coordination.k8s.io/v1',
+                    'crd.projectcalico.org/v1',
+                    'discovery.k8s.io/v1',
+                    'discovery.k8s.io/v1beta1',
+                    'events.k8s.io/v1',
+                    'flowcontrol.apiserver.k8s.io/v1beta1',
+                    'flowcontrol.apiserver.k8s.io/v1beta2',
+                    'hub.gke.io/v1',
+                    'internal.autoscaling.gke.io/v1alpha1',
+                    'metrics.k8s.io/v1beta1',
+                    'migration.k8s.io/v1alpha1',
+                    'networking.gke.io/v1',
+                    'networking.gke.io/v1beta1',
+                    'networking.gke.io/v1beta2',
+                    'networking.k8s.io/v1',
+                    'node.k8s.io/v1',
+                    'node.k8s.io/v1beta1',
+                    'nodemanagement.gke.io/v1alpha1',
+                    'policy/v1',
+                    'policy/v1beta1',
+                    'rbac.authorization.k8s.io/v1',
+                    'scheduling.k8s.io/v1',
+                    'snapshot.storage.k8s.io/v1',
+                    'snapshot.storage.k8s.io/v1beta1',
+                    'storage.k8s.io/v1',
+                    'storage.k8s.io/v1beta1',
+                    'v1',
+                ],
+            };
+
+            const displayValue = formatKubernetesVersion(orchestratorMetadata);
+
+            expect(displayValue).toEqual('v1.24.7-gke.900');
+        });
+
+        it('should return appropriate message if orchestrator metadata response not available', () => {
+            const orchestratorMetadata = null;
+
+            const displayValue = formatKubernetesVersion(orchestratorMetadata);
+
+            expect(displayValue).toEqual('Not available');
+        });
+    });
+
+    describe('formatBuildDate', () => {
+        it('should return formatted build date from the orchestrator metadata response', () => {
+            const orchestratorMetadata = {
+                version: 'v1.24.7-gke.900',
+                buildDate: '2022-10-26T09:25:34Z',
+                apiVersions: [
+                    'admissionregistration.k8s.io/v1',
+                    'apiextensions.k8s.io/v1',
+                    'apiregistration.k8s.io/v1',
+                    'apps/v1',
+                    'authentication.k8s.io/v1',
+                    'authorization.k8s.io/v1',
+                    'auto.gke.io/v1',
+                    'auto.gke.io/v1alpha1',
+                    'autoscaling/v1',
+                    'autoscaling/v2',
+                    'autoscaling/v2beta1',
+                    'autoscaling/v2beta2',
+                    'batch/v1',
+                    'batch/v1beta1',
+                    'certificates.k8s.io/v1',
+                    'cloud.google.com/v1',
+                    'cloud.google.com/v1beta1',
+                    'coordination.k8s.io/v1',
+                    'crd.projectcalico.org/v1',
+                    'discovery.k8s.io/v1',
+                    'discovery.k8s.io/v1beta1',
+                    'events.k8s.io/v1',
+                    'flowcontrol.apiserver.k8s.io/v1beta1',
+                    'flowcontrol.apiserver.k8s.io/v1beta2',
+                    'hub.gke.io/v1',
+                    'internal.autoscaling.gke.io/v1alpha1',
+                    'metrics.k8s.io/v1beta1',
+                    'migration.k8s.io/v1alpha1',
+                    'networking.gke.io/v1',
+                    'networking.gke.io/v1beta1',
+                    'networking.gke.io/v1beta2',
+                    'networking.k8s.io/v1',
+                    'node.k8s.io/v1',
+                    'node.k8s.io/v1beta1',
+                    'nodemanagement.gke.io/v1alpha1',
+                    'policy/v1',
+                    'policy/v1beta1',
+                    'rbac.authorization.k8s.io/v1',
+                    'scheduling.k8s.io/v1',
+                    'snapshot.storage.k8s.io/v1',
+                    'snapshot.storage.k8s.io/v1beta1',
+                    'storage.k8s.io/v1',
+                    'storage.k8s.io/v1beta1',
+                    'v1',
+                ],
+            };
+
+            const displayValue = formatBuildDate(orchestratorMetadata);
+
+            expect(displayValue).toEqual('Oct 26, 2022');
+        });
+
+        it('should return appropriate message if orchestrator metadata response not available', () => {
+            const orchestratorMetadata = null;
+
+            const displayValue = formatBuildDate(orchestratorMetadata);
+
+            expect(displayValue).toEqual('Not available');
+        });
+    });
+
+    describe('formatCloudProvider', () => {
+        it('should return GCP from the provider metadata response', () => {
+            const providerMetadata = {
+                region: 'us-central1',
+                zone: 'us-central1-b',
+                google: {
+                    project: 'ultra-current-825',
+                    clusterName: 'dyjkitia-prod',
+                },
+                verified: true,
+            };
+
+            const displayValue = formatCloudProvider(providerMetadata);
+
+            expect(displayValue).toEqual('GCP us-central1');
+        });
+
+        it('should return Azure from the provider metadata response', () => {
+            const providerMetadata = {
+                region: 'us-central2',
+                zone: 'us-central2-c',
+                azure: {
+                    project: 'ultra-current-825',
+                    clusterName: 'dyjkitia-prod',
+                },
+                verified: true,
+            };
+
+            const displayValue = formatCloudProvider(providerMetadata);
+
+            expect(displayValue).toEqual('Azure us-central2');
+        });
+
+        it('should return AWX from the provider metadata response', () => {
+            const providerMetadata = {
+                region: 'us-east1',
+                zone: 'us-east1-c',
+                aws: {
+                    project: 'ultra-current-825',
+                    clusterName: 'dyjkitia-prod',
+                },
+                verified: true,
+            };
+
+            const displayValue = formatCloudProvider(providerMetadata);
+
+            expect(displayValue).toEqual('AWS us-east1');
+        });
+
+        it('should return appropriate message if provider metadata response not available', () => {
+            const providerMetadata = null;
+
+            const displayValue = formatCloudProvider(providerMetadata);
+
+            expect(displayValue).toEqual('Not available');
+        });
+    });
+
     describe('formatSensorVersion', () => {
         it('should return sensor version string if passed a status object with a sensorVersion field', () => {
             const sensorVersion = 'sensorVersion';
@@ -143,14 +338,32 @@ describe('cluster helpers', () => {
             expect(received).toEqual(expected);
         });
 
-        it('should return "Manual upgrade required" if upgradeStatus -> upgradability is MANUAL_UPGRADE_REQUIRED', () => {
+        it(`should return "Sensor is not running the same version as Central" if upgradeStatus -> upgradability is MANUAL_UPGRADE_REQUIRED`, () => {
             const testUpgradeStatus = {
                 upgradability: 'MANUAL_UPGRADE_REQUIRED',
             };
 
             const received = findUpgradeState(testUpgradeStatus);
 
-            const expected = { displayValue: 'Manual upgrade required', type: 'intervention' };
+            const expected = {
+                displayValue: 'Sensor is not running the same version as Central',
+                type: 'intervention',
+            };
+            expect(received).toEqual(expected);
+        });
+
+        it('should return "Downgrade possible" if there is no mostRecentProcess', () => {
+            const testUpgradeStatus = {
+                upgradability: 'SENSOR_VERSION_HIGHER',
+            };
+
+            const received = findUpgradeState(testUpgradeStatus);
+
+            const expected = {
+                displayValue: 'Downgrade possible',
+                type: 'download',
+                actionText: 'Downgrade sensor',
+            };
             expect(received).toEqual(expected);
         });
 
@@ -162,8 +375,9 @@ describe('cluster helpers', () => {
             const received = findUpgradeState(testUpgradeStatus);
 
             const expected = {
+                displayValue: 'Upgrade available',
                 type: 'download',
-                actionText: 'Upgrade available',
+                actionText: 'Upgrade sensor',
             };
             expect(received).toEqual(expected);
         });
@@ -182,8 +396,9 @@ describe('cluster helpers', () => {
             const received = findUpgradeState(testUpgradeStatus);
 
             const expected = {
+                displayValue: 'Upgrade available',
                 type: 'download',
-                actionText: 'Upgrade available',
+                actionText: 'Upgrade sensor',
             };
             expect(received).toEqual(expected);
         });

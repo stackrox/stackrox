@@ -7,7 +7,6 @@ import (
 	helmTest "github.com/stackrox/helmtest/pkg/framework"
 	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	helmChartTestUtils "github.com/stackrox/rox/pkg/helm/charts/testutils"
 	"github.com/stackrox/rox/pkg/images/defaults"
@@ -17,14 +16,12 @@ import (
 const testDir = "testdata/helmtest"
 
 func TestOverriddenTagsAreRenderedInTheChart(t *testing.T) {
-	testbuildinfo.SetForTest(t)
 	testutils.SetVersion(t, testutils.GetExampleVersion(t))
 	helmChartTestUtils.RunHelmTestSuite(t, testDir, image.SecuredClusterServicesChartPrefix, helmChartTestUtils.RunHelmTestSuiteOpts{
 		MetaValuesOverridesFunc: func(values *charts.MetaValues) {
 			values.ClusterName = "test"
 			values.ImageTag = "custom-main"
-			values.CollectorFullImageTag = "custom-collector-full"
-			values.CollectorSlimImageTag = "custom-collector-slim"
+			values.CollectorImageTag = "custom-collector"
 			values.ScannerImageTag = "custom-scanner"
 		},
 		HelmTestOpts: []helmTest.LoaderOpt{helmTest.WithAdditionalTestDirs(path.Join(testDir, "override"))},
@@ -32,11 +29,9 @@ func TestOverriddenTagsAreRenderedInTheChart(t *testing.T) {
 }
 
 func TestWithDifferentImageFlavors(t *testing.T) {
-	testbuildinfo.SetForTest(t)
 	testutils.SetVersion(t, testutils.GetExampleVersion(t))
 	imageFlavorCases := map[string]defaults.ImageFlavor{
-		"stackrox": defaults.StackRoxIOReleaseImageFlavor(),
-		"rhacs":    defaults.RHACSReleaseImageFlavor(),
+		"rhacs": defaults.RHACSReleaseImageFlavor(),
 	}
 	if buildinfo.ReleaseBuild {
 		imageFlavorCases["development_build-release"] = defaults.DevelopmentBuildImageFlavor()

@@ -3,15 +3,19 @@ package scan
 import (
 	"context"
 	"io"
+	"slices"
+	"strings"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/gjson"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/jsonutil"
+	"github.com/stackrox/rox/pkg/printers"
 	"github.com/stackrox/rox/pkg/retry"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
@@ -29,19 +33,66 @@ const (
 )
 
 var (
-	// default headers to use when printing tabular output
-	defaultImageScanHeaders = []string{"COMPONENT", "VERSION", "CVE", "SEVERITY", "LINK"}
-	columnsToMerge          = []string{"COMPONENT", "VERSION"}
-	// default JSON path expression representing a row within tabular output
-	defaultImageScanJSONPathExpression = "{" +
-		"result.vulnerabilities.#.componentName," +
-		"result.vulnerabilities.#.componentVersion," +
-		"result.vulnerabilities.#.cveId," +
-		"result.vulnerabilities.#.cveSeverity," +
-		"result.vulnerabilities.#.cveInfo}"
+	// JSON Path expressions to use for sarif report generation
+	sarifJSONPathExpressions = map[string]string{
+		printers.SarifRuleJSONPathExpressionKey: gjson.MultiPathExpression(
+			`@text:{"printKeys":"false","customSeparator":"_"}`,
+			gjson.Expression{
+				Expression: "result.vulnerabilities.#.cveId",
+			},
+			gjson.Expression{
+				Expression: "result.vulnerabilities.#.componentName",
+			},
+			gjson.Expression{
+				Expression: "result.vulnerabilities.#.componentVersion",
+			},
+		),
+		printers.SarifHelpJSONPathExpressionKey: gjson.MultiPathExpression(
+			"@text",
+			gjson.Expression{
+				Key:        "Vulnerability",
+				Expression: "result.vulnerabilities.#.cveId",
+			},
+			gjson.Expression{
+				Key:        "Link",
+				Expression: "result.vulnerabilities.#.cveInfo",
+			},
+			gjson.Expression{
+				Key:        "Severity",
+				Expression: "result.vulnerabilities.#.cveSeverity",
+			},
+			gjson.Expression{
+				Key:        "CVSS",
+				Expression: "result.vulnerabilities.#.cveCvss",
+			},
+			gjson.Expression{
+				Key:        "Component",
+				Expression: "result.vulnerabilities.#.componentName",
+			},
+			gjson.Expression{
+				Key:        "Version",
+				Expression: "result.vulnerabilities.#.componentVersion",
+			},
+			gjson.Expression{
+				Key:        "Fixed Version",
+				Expression: "result.vulnerabilities.#.componentFixedVersion",
+			},
+			gjson.Expression{
+				Key:        "Advisory",
+				Expression: "result.vulnerabilities.#.advisoryId",
+			},
+			gjson.Expression{
+				Key:        "Advisory Link",
+				Expression: "result.vulnerabilities.#.advisoryInfo",
+			},
+		),
+		printers.SarifSeverityJSONPathExpressionKey: "result.vulnerabilities.#.cveSeverity",
+		printers.SarifHelpLinkJSONPathExpressionKey: "result.vulnerabilities.#.cveInfo",
+	}
+
 	// supported output formats with default values
 	supportedObjectPrinters = []printer.CustomPrinterFactory{
-		printer.NewTabularPrinterFactoryWithAutoMerge(defaultImageScanHeaders, columnsToMerge, defaultImageScanJSONPathExpression),
+		printer.NewTabularPrinterFactoryWithAutoMerge(),
 		printer.NewJSONPrinterFactory(false, false),
 	}
 )
@@ -50,7 +101,9 @@ var (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	imageScanCmd := &imageScanCommand{env: cliEnvironment}
 
-	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", supportedObjectPrinters...)
+	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table",
+		append(supportedObjectPrinters,
+			printer.NewSarifPrinterFactory(printers.SarifVulnerabilityReport, sarifJSONPathExpressions, &imageScanCmd.image))...)
 	// should not happen when using default values, must be a programming error
 	utils.Must(err)
 	// Set the Output Format to empty, so by default the new output format will not be used and the legacy one will be
@@ -59,7 +112,9 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	objectPrinterFactory.OutputFormat = ""
 
 	c := &cobra.Command{
-		Use: "scan",
+		Use:   "scan",
+		Short: "Scan the specified image, and return scan results",
+		Long:  "Scan the specified image and return the fully enriched image. Optionally, force a rescan of the image. You must have write permissions for the `Image` resource.",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			if err := imageScanCmd.Construct(nil, c, objectPrinterFactory); err != nil {
 				return err
@@ -75,17 +130,26 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	objectPrinterFactory.AddFlags(c)
 
-	c.Flags().StringVarP(&imageScanCmd.image, "image", "i", "", "image name and reference. (e.g. nginx:latest or nginx@sha256:...)")
-	c.Flags().BoolVarP(&imageScanCmd.force, "force", "f", false, "the --force flag ignores Central's cache for the scan and forces a fresh re-pull from Scanner")
-	c.Flags().BoolVarP(&imageScanCmd.includeSnoozed, "include-snoozed", "a", false, "the --include-snoozed flag returns both snoozed and unsnoozed CVEs if set")
-	c.Flags().IntVarP(&imageScanCmd.retryDelay, "retry-delay", "d", 3, "set time to wait between retries in seconds")
-	c.Flags().IntVarP(&imageScanCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error")
+	c.Flags().StringVarP(&imageScanCmd.image, "image", "i", "", "Image name and reference. (e.g. nginx:latest or nginx@sha256:...).")
+	c.Flags().BoolVarP(&imageScanCmd.force, "force", "f", false, "Bypass Central's cache for the image and force a new pull from the Scanner.")
+	c.Flags().BoolVarP(&imageScanCmd.includeSnoozed, "include-snoozed", "a", false, "The --include-snoozed flag returns both snoozed and unsnoozed CVEs if set.")
+	c.Flags().IntVarP(&imageScanCmd.retryDelay, "retry-delay", "d", 3, "Set time to wait between retries in seconds.")
+	c.Flags().IntVarP(&imageScanCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error.")
+	c.Flags().StringVar(&imageScanCmd.cluster, "cluster", "", "Cluster name or ID to delegate image scan to.")
+	c.Flags().StringVar(&imageScanCmd.namespace, "namespace", "", "Namespace on the secured cluster from which to read context information when delegating image scans, specifically pull secrets to access the image registry.")
+	c.Flags().StringSliceVar(&imageScanCmd.severities, "severity", []string{
+		lowCVESeverity.String(),
+		moderateCVESeverity.String(),
+		importantCVESeverity.String(),
+		criticalCVESeverity.String(),
+	}, "List of severities to include in the output. Use this to filter for specific severities.")
+	c.Flags().BoolVarP(&imageScanCmd.failOnFinding, "fail", "", false, "Fail if vulnerabilities have been found.")
 
 	// Deprecated flag
-	// TODO(ROX-8303): Remove this once we have fully deprecated the old output format and are sure we do not break existing customer scripts
-	// The error message will be prefixed by "command <command-name> has been deprecated,"
-	// Fully deprecated "pretty" format, since we can assume no customer has built scripting around its loose format
-	c.Flags().StringVarP(&imageScanCmd.format, "format", "", "json", "format of the output. Choose output format from json and csv.")
+	// The error message will be prefixed by "command <command-name> has been deprecated".
+	//
+	// TODO(ROX-29120): This may NOT be removed until we find another place to put this or we replace this with another equivalent format.
+	c.Flags().StringVarP(&imageScanCmd.format, "format", "", "json", "Format of the output. Choose output format from json and csv.")
 	utils.Must(c.Flags().MarkDeprecated("format", deprecationNote))
 
 	utils.Must(c.MarkFlagRequired("image"))
@@ -102,6 +166,10 @@ type imageScanCommand struct {
 	retryDelay     int
 	retryCount     int
 	timeout        time.Duration
+	cluster        string
+	namespace      string
+	severities     []string
+	failOnFinding  bool
 
 	// injected or constructed values
 	env                environment.Environment
@@ -110,7 +178,7 @@ type imageScanCommand struct {
 }
 
 // Construct will enhance the struct with other values coming either from os.Args, other, global flags or environment variables
-func (i *imageScanCommand) Construct(args []string, cmd *cobra.Command, f *printer.ObjectPrinterFactory) error {
+func (i *imageScanCommand) Construct(_ []string, cmd *cobra.Command, f *printer.ObjectPrinterFactory) error {
 	i.timeout = flags.Timeout(cmd)
 
 	if err := imageUtils.IsValidImageString(i.image); err != nil {
@@ -153,23 +221,44 @@ func (i *imageScanCommand) Validate() error {
 				"only specify json or csv", i.format)
 		}
 	}
+
+	validSeverities := []string{
+		lowCVESeverity.String(),
+		moderateCVESeverity.String(),
+		importantCVESeverity.String(),
+		criticalCVESeverity.String(),
+	}
+
+	for _, severity := range i.severities {
+		severity := strings.ToUpper(severity)
+		if !slices.Contains(validSeverities, severity) {
+			return errox.InvalidArgs.Newf("invalid severity %q used. Choose one of [%s]", severity,
+				strings.Join(validSeverities, ", "))
+		}
+	}
+
 	return nil
 }
 
 // Scan will execute the image scan with retry functionality
 func (i *imageScanCommand) Scan() error {
+	var failedAttempts int
 	err := retry.WithRetry(func() error {
 		return i.scanImage()
 	},
 		retry.Tries(i.retryCount+1),
 		retry.OnlyRetryableErrors(),
 		retry.OnFailedAttempts(func(err error) {
+			failedAttempts++
 			i.env.Logger().ErrfLn("Scanning image failed: %v. Retrying after %v seconds...", err, i.retryDelay)
 			time.Sleep(time.Duration(i.retryDelay) * time.Second)
 		}),
 	)
 	if err != nil {
-		return errors.Wrapf(err, "scaning image failed after %d retries", i.retryCount)
+		if failedAttempts > 0 {
+			return errors.Wrapf(err, "image scan failed after %d retries", failedAttempts)
+		}
+		return errors.Wrap(err, "image scan failed")
 	}
 	return nil
 }
@@ -177,9 +266,8 @@ func (i *imageScanCommand) Scan() error {
 // scanImage will retrieve scan results from central and print them afterwards
 func (i *imageScanCommand) scanImage() error {
 	imageResult, err := i.getImageResultFromService()
-
 	if err != nil {
-		return retry.MakeRetryable(err)
+		return errors.Wrap(common.MakeRetryable(err), "retrieving image scan result")
 	}
 
 	return i.printImageResult(imageResult)
@@ -203,6 +291,8 @@ func (i *imageScanCommand) getImageResultFromService() (*storage.Image, error) {
 		ImageName:      i.image,
 		Force:          i.force,
 		IncludeSnoozed: i.includeSnoozed,
+		Cluster:        i.cluster,
+		Namespace:      i.namespace,
 	})
 	return image, errors.Wrapf(err, "could not scan image: %q", i.image)
 }
@@ -214,7 +304,7 @@ func (i *imageScanCommand) printImageResult(imageResult *storage.Image) error {
 		return legacyPrintFormat(imageResult, i.format, i.env.InputOutput().Out(), i.env.Logger())
 	}
 
-	cveSummary := newCVESummaryForPrinting(imageResult.GetScan())
+	cveSummary := newCVESummaryForPrinting(imageResult.GetScan(), i.severities)
 
 	if !i.standardizedFormat {
 		printCVESummary(i.image, cveSummary.Result.Summary, i.env.Logger())
@@ -225,9 +315,11 @@ func (i *imageScanCommand) printImageResult(imageResult *storage.Image) error {
 	}
 
 	if !i.standardizedFormat {
-		printCVEWarning(cveSummary.Result.Summary[totalVulnerabilitiesMapKey],
-			cveSummary.Result.Summary[totalComponentsMapKey],
-			i.env.Logger())
+		printCVEWarning(cveSummary.CountVulnerabilities(), cveSummary.CountComponents(), i.env.Logger())
+	}
+
+	if cveCount := cveSummary.CountVulnerabilities(); i.failOnFinding && cveCount > 0 {
+		return newErrVulnerabilityFound(cveCount)
 	}
 	return nil
 }
@@ -238,16 +330,16 @@ func printCVESummary(image string, cveSummary map[string]int, out logger.Logger)
 	out.PrintfLn("(%s: %d, %s: %d, %s: %d, %s: %d, %s: %d, %s: %d)\n",
 		totalComponentsMapKey, cveSummary[totalComponentsMapKey],
 		totalVulnerabilitiesMapKey, cveSummary[totalVulnerabilitiesMapKey],
-		lowCVESeverity, cveSummary["LOW"],
-		moderateCVESeverity, cveSummary["MEDIUM"],
-		importantCVESeverity, cveSummary["IMPORTANT"],
-		criticalCVESeverity, cveSummary["CRITICAL"])
+		lowCVESeverity, cveSummary[lowCVESeverity.String()],
+		moderateCVESeverity, cveSummary[moderateCVESeverity.String()],
+		importantCVESeverity, cveSummary[importantCVESeverity.String()],
+		criticalCVESeverity, cveSummary[criticalCVESeverity.String()])
 }
 
 // print warning with amount of CVEs found in components
 func printCVEWarning(numOfVulns int, numOfComponents int, out logger.Logger) {
 	if numOfVulns != 0 {
-		out.WarnfLn("A total of %d vulnerabilities were found in %d components",
+		out.WarnfLn("A total of %d unique vulnerabilities were found in %d components",
 			numOfVulns, numOfComponents)
 	}
 }
@@ -259,10 +351,7 @@ func legacyPrintFormat(imageResult *storage.Image, format string, out io.Writer,
 	case "csv":
 		return PrintCSV(imageResult, out)
 	default:
-		marshaller := &jsonpb.Marshaler{
-			Indent: "  ",
-		}
-		jsonResult, err := marshaller.MarshalToString(imageResult)
+		jsonResult, err := jsonutil.MarshalToString(imageResult)
 		if err != nil {
 			return errors.Wrap(err, "could not marshal image result")
 		}

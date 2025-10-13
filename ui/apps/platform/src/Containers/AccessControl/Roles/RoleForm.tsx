@@ -1,12 +1,15 @@
-import React, { ReactElement, useState } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 import {
     Alert,
-    AlertVariant,
     Button,
     Form,
     FormGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
     Label,
     TextInput,
     Title,
@@ -16,10 +19,12 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
-import { AccessScope } from 'services/AccessScopesService';
-import { PermissionSet, Role } from 'services/RolesService';
+import TraitsOriginLabel from 'Components/TraitsOriginLabel';
+import usePermissions from 'hooks/usePermissions';
+import type { AccessScope } from 'services/AccessScopesService';
+import type { PermissionSet, Role } from 'services/RolesService';
 
-import { AccessControlQueryAction } from '../accessControlPaths';
+import type { AccessControlQueryAction } from '../accessControlPaths';
 
 import AccessScopesTable from './AccessScopesTable';
 import PermissionSetsTable from './PermissionSetsTable';
@@ -51,6 +56,8 @@ function RoleForm({
 }: RoleFormProps): ReactElement {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [alertSubmit, setAlertSubmit] = useState<ReactElement | null>(null);
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForPage = hasReadWriteAccess('Access');
 
     const { dirty, errors, handleChange, isValid, resetForm, values } = useFormik({
         initialValues: role,
@@ -85,7 +92,7 @@ function RoleForm({
         handleSubmit(values)
             .catch((error) => {
                 setAlertSubmit(
-                    <Alert title="Failed to save role" variant={AlertVariant.danger} isInline>
+                    <Alert title="Failed to save role" component="p" variant="danger" isInline>
                         {error.message}
                     </Alert>
                 );
@@ -108,22 +115,27 @@ function RoleForm({
 
     return (
         <Form id="role-form">
-            <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pt-0">
+            <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pt-0">
                 <ToolbarContent>
                     <ToolbarItem>
-                        <Title headingLevel="h2">
+                        <Title headingLevel="h1">
                             {action === 'create' ? 'Create role' : role.name}
                         </Title>
                     </ToolbarItem>
                     {action !== 'create' && (
-                        <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
+                        <ToolbarItem>
+                            <TraitsOriginLabel traits={role.traits} />
+                        </ToolbarItem>
+                    )}
+                    {action !== 'create' && (
+                        <ToolbarGroup variant="button-group" align={{ default: 'alignRight' }}>
                             <ToolbarItem>
                                 {isActionable ? (
                                     <Button
                                         variant="primary"
                                         onClick={handleEdit}
-                                        isDisabled={action === 'edit'}
-                                        isSmall
+                                        isDisabled={!hasWriteAccessForPage || action === 'edit'}
+                                        size="sm"
                                     >
                                         Edit role
                                     </Button>
@@ -136,31 +148,31 @@ function RoleForm({
                 </ToolbarContent>
             </Toolbar>
             {alertSubmit}
-            <FormGroup
-                label="Name"
-                fieldId="name"
-                isRequired
-                validated={nameValidatedState}
-                helperTextInvalid={nameErrorMessage}
-                className="pf-m-horizontal"
-            >
+            <FormGroup label="Name" fieldId="name" isRequired className="pf-m-horizontal">
                 <TextInput
                     type="text"
                     id="name"
                     value={values.name}
                     validated={nameValidatedState}
-                    onChange={onChange}
+                    onChange={(event, _value) => onChange(_value, event)}
                     isDisabled={isViewing || action === 'edit'}
                     isRequired
                     className="pf-m-limit-width"
                 />
+                <FormHelperText>
+                    <HelperText>
+                        <HelperTextItem variant={nameValidatedState}>
+                            {nameErrorMessage}
+                        </HelperTextItem>
+                    </HelperText>
+                </FormHelperText>
             </FormGroup>
             <FormGroup label="Description" fieldId="description" className="pf-m-horizontal">
                 <TextInput
                     type="text"
                     id="description"
                     value={values.description}
-                    onChange={onChange}
+                    onChange={(event, _value) => onChange(_value, event)}
                     isDisabled={isViewing}
                 />
             </FormGroup>
@@ -196,13 +208,13 @@ function RoleForm({
                                     onClick={onClickSubmit}
                                     isDisabled={!dirty || !isValid || isSubmitting}
                                     isLoading={isSubmitting}
-                                    isSmall
+                                    size="sm"
                                 >
                                     Save
                                 </Button>
                             </ToolbarItem>
                             <ToolbarItem>
-                                <Button variant="tertiary" onClick={onClickCancel} isSmall>
+                                <Button variant="tertiary" onClick={onClickCancel} size="sm">
                                     Cancel
                                 </Button>
                             </ToolbarItem>

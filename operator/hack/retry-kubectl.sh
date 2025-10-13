@@ -1,0 +1,1 @@
+../../scripts/retry-kubectl.sh

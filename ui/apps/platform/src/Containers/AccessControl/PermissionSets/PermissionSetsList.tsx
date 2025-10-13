@@ -1,17 +1,11 @@
-import React, { ReactElement, useState } from 'react';
-import {
-    Alert,
-    AlertVariant,
-    Button,
-    Modal,
-    ModalVariant,
-    PageSection,
-    pluralize,
-    Title,
-} from '@patternfly/react-core';
-import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
+import { Alert, Button, Modal, PageSection, pluralize, Title } from '@patternfly/react-core';
+import { ActionsColumn, Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
-import { PermissionSet, Role } from 'services/RolesService';
+import usePermissions from 'hooks/usePermissions';
+import type { PermissionSet, Role } from 'services/RolesService';
+import { getOriginLabel, isUserResource } from 'utils/traits.utils';
 
 import { AccessControlEntityLink, RolesLink } from '../AccessControlLinks';
 
@@ -20,7 +14,6 @@ const entityType = 'PERMISSION_SET';
 export type PermissionSetsListProps = {
     permissionSets: PermissionSet[];
     roles: Role[];
-    handleCreate: () => void;
     handleDelete: (id: string) => Promise<void>;
 };
 
@@ -32,6 +25,8 @@ function PermissionSetsList({
     const [idDeleting, setIdDeleting] = useState('');
     const [nameConfirmingDelete, setNameConfirmingDelete] = useState<string | null>(null);
     const [alertDelete, setAlertDelete] = useState<ReactElement | null>(null);
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForPage = hasReadWriteAccess('Access');
 
     function onClickDelete(id: string) {
         setIdDeleting(id);
@@ -48,7 +43,8 @@ function PermissionSetsList({
                 setAlertDelete(
                     <Alert
                         title="Delete permission set failed"
-                        variant={AlertVariant.danger}
+                        component="p"
+                        variant="danger"
                         isInline
                     >
                         {error.message}
@@ -70,17 +66,20 @@ function PermissionSetsList({
             <Title headingLevel="h2">{pluralize(permissionSets.length, 'result')} found</Title>
             {alertDelete}
             {permissionSets.length !== 0 && (
-                <TableComposable variant="compact" isStickyHeader>
+                <Table variant="compact" isStickyHeader>
                     <Thead>
                         <Tr>
-                            <Th width={20}>Name</Th>
-                            <Th width={30}>Description</Th>
-                            <Th width={40}>Roles</Th>
-                            <Th width={10} aria-label="Row actions" />
+                            <Th width={15}>Name</Th>
+                            <Th width={15}>Origin</Th>
+                            <Th width={25}>Description</Th>
+                            <Th width={35}>Roles</Th>
+                            <Th width={10}>
+                                <span className="pf-v5-screen-reader">Row actions</span>
+                            </Th>
                         </Tr>
                     </Thead>
                     <Tbody>
-                        {permissionSets.map(({ id, name, description }) => (
+                        {permissionSets.map(({ id, name, description, traits }) => (
                             <Tr key={id}>
                                 <Td dataLabel="Name">
                                     <AccessControlEntityLink
@@ -89,6 +88,7 @@ function PermissionSetsList({
                                         entityName={name}
                                     />
                                 </Td>
+                                <Td dataLabel="Origin">{getOriginLabel(traits)}</Td>
                                 <Td dataLabel="Description">{description}</Td>
                                 <Td dataLabel="Roles">
                                     <RolesLink
@@ -99,29 +99,31 @@ function PermissionSetsList({
                                         entityId={id}
                                     />
                                 </Td>
-                                <Td
-                                    actions={{
-                                        disable:
+                                <Td isActionCell>
+                                    <ActionsColumn
+                                        isDisabled={
+                                            !hasWriteAccessForPage ||
                                             idDeleting === id ||
+                                            !isUserResource(traits) ||
                                             roles.some(
                                                 ({ permissionSetId }) => permissionSetId === id
-                                            ),
-                                        items: [
+                                            )
+                                        }
+                                        items={[
                                             {
                                                 title: 'Delete permission set',
                                                 onClick: () => onClickDelete(id),
                                             },
-                                        ],
-                                    }}
-                                    className="pf-u-text-align-right"
-                                />
+                                        ]}
+                                    />
+                                </Td>
                             </Tr>
                         ))}
                     </Tbody>
-                </TableComposable>
+                </Table>
             )}
             <Modal
-                variant={ModalVariant.small}
+                variant="small"
                 title="Permanently delete permission set?"
                 isOpen={typeof nameConfirmingDelete === 'string'}
                 onClose={onCancelDelete}

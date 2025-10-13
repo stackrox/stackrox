@@ -7,12 +7,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/nxadm/tail"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -26,37 +25,51 @@ var (
 	stagesAllowList = set.NewFrozenStringSet("ResponseComplete", "Panic")
 
 	// resourceTypesAllowList is set of resources that will be sent.
-	resourceTypesAllowList = set.NewFrozenStringSet("secrets", "configmaps")
+	resourceTypesAllowList = set.NewFrozenStringSet("secrets", "configmaps", "clusterrolebindings", "clusterroles", "networkpolicies", "securitycontextconstraints", "egressfirewalls")
 
 	// verbsDenyList is the set of verbs that will NOT be sent if encountered.
 	verbsDenyList = set.NewFrozenStringSet("WATCH", "LIST")
+
+	// verbsDenyListWithGet is the set of verbs that will NOT be sent if encountered.
+	verbsDenyListWithGet = set.NewFrozenStringSet("WATCH", "LIST", "GET")
+
+	// verbsDenyListPerResource is the set of verbs that will NOT be sent if encountered.
+	verbsDenyListPerResource = map[string]set.FrozenStringSet{
+		"secrets":                    verbsDenyList,
+		"configmaps":                 verbsDenyList,
+		"clusterrolebindings":        verbsDenyListWithGet,
+		"clusterroles":               verbsDenyListWithGet,
+		"networkpolicies":            verbsDenyListWithGet,
+		"securitycontextconstraints": verbsDenyListWithGet,
+		"egressfirewalls":            verbsDenyListWithGet,
+	}
 )
 
 type auditLogReaderImpl struct {
 	logPath    string
-	stopC      concurrency.Signal
+	stopper    concurrency.Stopper
 	sender     auditLogSender
 	startState *storage.AuditLogFileState
 }
 
 func (s *auditLogReaderImpl) StartReader(ctx context.Context) (bool, error) {
-	if s.stopC.IsDone() {
-		return false, errors.New("Cannot start reader because stopC is already done. Reader might have already been stopped")
-	}
-
 	t, err := tail.TailFile(s.logPath, tail.Config{
-		ReOpen:    true,
-		MustExist: true,
-		Follow:    true,
+		ReOpen:        true,
+		MustExist:     true,
+		Follow:        true,
+		CompleteLines: true,
 	})
 
 	if err != nil {
 		if os.IsNotExist(err) {
 			log.Errorf("Audit log file %s doesn't exist on this compliance node", s.logPath)
-			return false, nil
+			err = nil
+		} else {
+			// handle other errors
+			log.Errorf("Failed to open file: %v", err)
 		}
-		// handle other errors
-		log.Errorf("Failed to open file: %v", err)
+		s.stopper.Flow().StopWithError(err)
+		s.stopper.Flow().ReportStopped()
 		return false, err
 	}
 
@@ -64,18 +77,20 @@ func (s *auditLogReaderImpl) StartReader(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
-func (s *auditLogReaderImpl) StopReader() bool {
-	return s.stopC.Signal()
+func (s *auditLogReaderImpl) StopReader() {
+	s.stopper.Client().Stop()
+	_ = s.stopper.Client().Stopped().Wait()
 }
 
 func (s *auditLogReaderImpl) readAndForwardAuditLogs(ctx context.Context, tailer *tail.Tail) {
+	defer s.stopper.Flow().ReportStopped()
 	defer s.cleanupTailOnStop(tailer)
 
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-s.stopC.Done():
+		case <-s.stopper.Flow().StopRequested():
 			return
 		case line := <-tailer.Lines:
 			if line == nil {
@@ -105,20 +120,14 @@ func (s *auditLogReaderImpl) readAndForwardAuditLogs(ctx context.Context, tailer
 				continue // just move on
 			}
 
-			eventTS, err := auditLine.getEventTime()
-			if err != nil {
-				log.Errorf("Unable to parse timestamp from audit log: %v", err)
-				continue
-			}
-
-			if !s.shouldSendEvent(&auditLine, eventTS) {
+			if !s.shouldSendEvent(&auditLine) {
 				continue
 			}
 
 			if err := s.sender.Send(ctx, &auditLine); err != nil {
 				// It's very likely that this failure is due to Sensor being unavailable
 				// In that case when Sensor next comes available it will ask to restart from the last
-				// message it got. Therefore this event will end up being sent at that point.
+				// message it got. Therefore, this event will end up being sent at that point.
 				// Therefore, we skip retrying at this point in time.
 				log.Errorf("Failed sending event to Sensor: %v", err)
 				continue
@@ -127,12 +136,26 @@ func (s *auditLogReaderImpl) readAndForwardAuditLogs(ctx context.Context, tailer
 	}
 }
 
-func (s *auditLogReaderImpl) shouldSendEvent(event *auditEvent, eventTS *types.Timestamp) bool {
+func (s *auditLogReaderImpl) shouldSendEvent(event *auditEvent) bool {
 	if s.startState != nil {
-		if !protoutils.After(eventTS, s.startState.CollectLogsSince) {
+		protoTime, err := protocompat.ParseRFC3339NanoTimestamp(event.StageTimestamp)
+		if err != nil {
+			log.Errorf("Failed to parse stage time %s from audit log, so falling back to received time: %v", event.StageTimestamp, err)
+			// If StageTimestamp (which is the time for this particular stage) is not parsable, try the RequestReceivedTimestamp
+			// While it's not as accurate it should be relatively close. This should also be a rare occurrence.
+			protoTime, err = protocompat.ParseRFC3339NanoTimestamp(event.RequestReceivedTimestamp)
+			if err != nil {
+				protoTime = nil
+			}
+		}
+		if err != nil {
+			log.Errorf("Unable to parse timestamp from audit log: %v", err)
+			return false
+		}
+		if !protoutils.After(protoTime, s.startState.GetCollectLogsSince()) {
 			// don't send since time hasn't matched yet
 			// but if the id matches then we're in the same time and everything after can be sent
-			if event.AuditID == s.startState.LastAuditId {
+			if event.AuditID == s.startState.GetLastAuditId() {
 				s.startState = nil
 			}
 			// in either case don't send
@@ -142,15 +165,15 @@ func (s *auditLogReaderImpl) shouldSendEvent(event *auditEvent, eventTS *types.T
 		s.startState = nil
 	}
 
-	// Only send when both the stage and resource type are in their corresponding allow list
+	// Only send when both the stage and resource type are in their corresponding allow-list
 	// and when verb is not disallowed
 	return stagesAllowList.Contains(event.Stage) &&
 		resourceTypesAllowList.Contains(event.ObjectRef.Resource) &&
-		!verbsDenyList.Contains(strings.ToUpper(event.Verb))
+		!verbsDenyListPerResource[event.ObjectRef.Resource].Contains(strings.ToUpper(event.Verb))
 }
 
 func (s *auditLogReaderImpl) cleanupTailOnStop(tailer *tail.Tail) {
-	// Only want to call tailer.Stop here as that stops the tailing. However do _not_ call tailer.Cleanup() because as the docs mention
+	// Only want to call tailer.Stop here as that stops the tailing. However, do _not_ call tailer.Cleanup() because as the docs mention
 	// "If you plan to re-read a file, don't call Cleanup in between."
 	// Cleanup is recommended for after the process exits, but that's not strictly necessary as if the process exits the container will be restarted anyway
 	// See https://pkg.go.dev/github.com/nxadm/tail#Tail.Cleanup for details on Cleanup()

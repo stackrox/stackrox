@@ -1,0 +1,122 @@
+values:
+  imagePullSecrets:
+    allowNone: true
+tests:
+- name: "with default settings"
+  values:
+    scannerV4:
+      disable: false
+  expect: |
+    .deployments.central.spec.template.spec.hostAliases | assertThat(. == null)
+    .deployments["config-controller"].spec.template.spec.hostAliases | assertThat(. == null)
+    .deployments["central-db"].spec.template.spec.hostAliases | assertThat(. == null)
+    .deployments.scanner.spec.template.spec.hostAliases | assertThat(. == null)
+    .deployments["scanner-db"].spec.template.spec.hostAliases | assertThat(. == null)
+    .deployments["scanner-v4-indexer"].spec.template.spec.hostAliases | assertThat(. == null)
+    .deployments["scanner-v4-matcher"].spec.template.spec.hostAliases | assertThat(. == null)
+    .deployments["scanner-v4-db"].spec.template.spec.hostAliases | assertThat(. == null)
+- name: "with central host aliases"
+  values:
+    central:
+      hostAliases:
+      - ip: "127.0.0.1"
+        hostnames: ["foo.local", "bar.local"]
+  expect: |
+    .deployments.central.spec.template.spec.hostAliases | assertThat(length == 1)
+    .deployments.central.spec.template.spec.hostAliases[0].ip | assertThat(. == "127.0.0.1")
+    .deployments.central.spec.template.spec.hostAliases[0].hostnames | assertThat(length == 2)
+    .deployments.central.spec.template.spec.hostAliases[0].hostnames[0] | assertThat(. == "foo.local")
+    .deployments.central.spec.template.spec.hostAliases[0].hostnames[1] | assertThat(. == "bar.local")
+- name: "with central db host aliases"
+  values:
+    central:
+      db:
+        hostAliases:
+        - ip: "127.0.0.1"
+          hostnames: ["foo.local", "bar.local"]
+  expect: |
+    .deployments.central.spec.template.spec.hostAliases | assertThat(. == null)
+    .deployments["central-db"].spec.template.spec.hostAliases | assertThat(length == 1)
+    .deployments["central-db"].spec.template.spec.hostAliases[0].ip | assertThat(. == "127.0.0.1")
+    .deployments["central-db"].spec.template.spec.hostAliases[0].hostnames | assertThat(length == 2)
+    .deployments["central-db"].spec.template.spec.hostAliases[0].hostnames[0] | assertThat(. == "foo.local")
+    .deployments["central-db"].spec.template.spec.hostAliases[0].hostnames[1] | assertThat(. == "bar.local")
+- name: "with config controller host aliases"
+  values:
+    configController:
+      hostAliases:
+      - ip: "127.0.0.1"
+        hostnames: ["foo.local", "bar.local"]
+  expect: |
+    .deployments["config-controller"].spec.template.spec.hostAliases | assertThat(length == 1)
+    .deployments["config-controller"].spec.template.spec.hostAliases[0].ip | assertThat(. == "127.0.0.1")
+    .deployments["config-controller"].spec.template.spec.hostAliases[0].hostnames | assertThat(length == 2)
+    .deployments["config-controller"].spec.template.spec.hostAliases[0].hostnames[0] | assertThat(. == "foo.local")
+    .deployments["config-controller"].spec.template.spec.hostAliases[0].hostnames[1] | assertThat(. == "bar.local")
+- name: "with scanner host aliases"
+  values:
+    scanner:
+      hostAliases:
+      - ip: "127.0.0.1"
+        hostnames: ["foo.local", "bar.local"]
+  expect: |
+    .deployments.scanner.spec.template.spec.hostAliases | assertThat(length == 1)
+    .deployments.scanner.spec.template.spec.hostAliases[0].ip | assertThat(. == "127.0.0.1")
+    .deployments.scanner.spec.template.spec.hostAliases[0].hostnames | assertThat(length == 2)
+    .deployments.scanner.spec.template.spec.hostAliases[0].hostnames[0] | assertThat(. == "foo.local")
+    .deployments.scanner.spec.template.spec.hostAliases[0].hostnames[1] | assertThat(. == "bar.local")
+- name: "with scanner db host aliases"
+  values:
+    scanner:
+      dbHostAliases:
+      - ip: "127.0.0.1"
+        hostnames: [ "foo.local", "bar.local" ]
+  expect: |
+    .deployments.scanner.spec.template.spec.hostAliases | assertThat(. == null)
+    .deployments["scanner-db"].spec.template.spec.hostAliases | assertThat(length == 1)
+    .deployments["scanner-db"].spec.template.spec.hostAliases[0].ip | assertThat(. == "127.0.0.1")
+    .deployments["scanner-db"].spec.template.spec.hostAliases[0].hostnames | assertThat(length == 2)
+    .deployments["scanner-db"].spec.template.spec.hostAliases[0].hostnames[0] | assertThat(. == "foo.local")
+    .deployments["scanner-db"].spec.template.spec.hostAliases[0].hostnames[1] | assertThat(. == "bar.local")
+- name: "with scannerV4 indexer host aliases"
+  values:
+    scannerV4:
+      disable: false
+      indexer:
+          hostAliases:
+          - ip: "127.0.0.1"
+            hostnames: [ "foo.local", "bar.local" ]
+  expect: |
+    .deployments["scanner-v4-indexer"].spec.template.spec.hostAliases | assertThat(length == 1)
+    .deployments["scanner-v4-indexer"].spec.template.spec.hostAliases[0].ip | assertThat(. == "127.0.0.1")
+    .deployments["scanner-v4-indexer"].spec.template.spec.hostAliases[0].hostnames | assertThat(length == 2)
+    .deployments["scanner-v4-indexer"].spec.template.spec.hostAliases[0].hostnames[0] | assertThat(. == "foo.local")
+    .deployments["scanner-v4-indexer"].spec.template.spec.hostAliases[0].hostnames[1] | assertThat(. == "bar.local")
+- name: "with scannerV4 matcher host aliases"
+  values:
+    scannerV4:
+      disable: false
+      matcher:
+        hostAliases:
+        - ip: "127.0.0.1"
+          hostnames: [ "foo.local", "bar.local" ]
+  expect: |
+    .deployments["scanner-v4-matcher"].spec.template.spec.hostAliases | assertThat(length == 1)
+    .deployments["scanner-v4-matcher"].spec.template.spec.hostAliases[0].ip | assertThat(. == "127.0.0.1")
+    .deployments["scanner-v4-matcher"].spec.template.spec.hostAliases[0].hostnames | assertThat(length == 2)
+    .deployments["scanner-v4-matcher"].spec.template.spec.hostAliases[0].hostnames[0] | assertThat(. == "foo.local")
+    .deployments["scanner-v4-matcher"].spec.template.spec.hostAliases[0].hostnames[1] | assertThat(. == "bar.local")
+- name: "with scannerV4 db host aliases"
+  values:
+    scannerV4:
+      disable: false
+      db:
+        hostAliases:
+        - ip: "127.0.0.1"
+          hostnames: [ "foo.local", "bar.local" ]
+  expect: |
+    .deployments["scanner-v4-db"].spec.template.spec.hostAliases | assertThat(length == 1)
+    .deployments["scanner-v4-db"].spec.template.spec.hostAliases[0].ip | assertThat(. == "127.0.0.1")
+    .deployments["scanner-v4-db"].spec.template.spec.hostAliases[0].hostnames | assertThat(length == 2)
+    .deployments["scanner-v4-db"].spec.template.spec.hostAliases[0].hostnames[0] | assertThat(. == "foo.local")
+    .deployments["scanner-v4-db"].spec.template.spec.hostAliases[0].hostnames[1] | assertThat(. == "bar.local")

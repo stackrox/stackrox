@@ -1,13 +1,12 @@
 package categories
 
 import (
-	"bytes"
 	"embed"
 	"path/filepath"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -31,7 +30,7 @@ func DefaultPolicyCategories() ([]*storage.PolicyCategory, error) {
 
 	var categories []*storage.PolicyCategory
 
-	errList := errorhelpers.NewErrorList("Default policy validation")
+	errList := errorhelpers.NewErrorList("Default policy category validation")
 	for _, f := range files {
 		c, err := readCategoryFile(filepath.Join(categoriesDir, f.Name()))
 		if err != nil {
@@ -55,7 +54,7 @@ func readCategoryFile(path string) (*storage.PolicyCategory, error) {
 	utils.CrashOnError(err)
 
 	var category storage.PolicyCategory
-	err = jsonpb.Unmarshal(bytes.NewReader(contents), &category)
+	err = jsonutil.JSONBytesToProto(contents, &category)
 	if err != nil {
 		log.Errorf("Unable to unmarshal category (%s) json: %s", path, err)
 		return nil, err

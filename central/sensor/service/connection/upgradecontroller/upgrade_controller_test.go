@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sensorupgrader"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -44,17 +45,17 @@ type fakeClusterStorage struct {
 	values map[string]*storage.ClusterUpgradeStatus
 }
 
-func (f *fakeClusterStorage) UpdateClusterUpgradeStatus(ctx context.Context, clusterID string, status *storage.ClusterUpgradeStatus) error {
+func (f *fakeClusterStorage) UpdateClusterUpgradeStatus(_ context.Context, clusterID string, status *storage.ClusterUpgradeStatus) error {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	if _, ok := f.values[clusterID]; !ok {
 		return errors.Errorf("WRITE TO UNEXPECTED ID %s", clusterID)
 	}
-	f.values[clusterID] = status.Clone()
+	f.values[clusterID] = status.CloneVT()
 	return nil
 }
 
-func (f *fakeClusterStorage) GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error) {
+func (f *fakeClusterStorage) GetCluster(_ context.Context, id string) (*storage.Cluster, bool, error) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	if value, ok := f.values[id]; ok {
@@ -82,15 +83,17 @@ func (*recordingConn) CheckAutoUpgradeSupport() error {
 	return nil
 }
 
-func (r *recordingConn) InjectMessage(ctx concurrency.Waitable, msg *central.MsgToSensor) error {
+func (r *recordingConn) InjectMessage(_ concurrency.Waitable, msg *central.MsgToSensor) error {
 	if r.returnErr {
 		return errors.New("RETURNING FAKE ERR FROM INJECTMESSAGE ON REQUEST")
 	}
 	r.lock.Lock()
 	defer r.lock.Unlock()
-	r.triggers = append(r.triggers, msg.GetSensorUpgradeTrigger().Clone())
+	r.triggers = append(r.triggers, msg.GetSensorUpgradeTrigger().CloneVT())
 	return nil
 }
+
+func (r *recordingConn) InjectMessageIntoQueue(_ *central.MsgFromSensor) {}
 
 func (r *recordingConn) getSentTriggers() []*central.SensorUpgradeTrigger {
 	r.lock.Lock()
@@ -253,7 +256,7 @@ func (suite *UpgradeCtrlTestSuite) TestWithUpToDateSensor() {
 	suite.upgradabilityMustBe(storage.ClusterUpgradeStatus_UP_TO_DATE)
 	// It should send an empty trigger to the sensor of the current version,
 	// which is a signal to clean up the upgrade process if it isn't cleaned up yet.
-	suite.Equal(&central.SensorUpgradeTrigger{}, suite.waitForTriggerNumber(1))
+	protoassert.Equal(suite.T(), &central.SensorUpgradeTrigger{}, suite.waitForTriggerNumber(1))
 }
 
 func (suite *UpgradeCtrlTestSuite) TestWithOldSensorNoAutoUpgradeFlag() {
@@ -262,7 +265,7 @@ func (suite *UpgradeCtrlTestSuite) TestWithOldSensorNoAutoUpgradeFlag() {
 	suite.upgradabilityMustBe(storage.ClusterUpgradeStatus_AUTO_UPGRADE_POSSIBLE)
 
 	// It should send an empty trigger, since we don't want the sensor to auto-upgrade
-	suite.Equal(&central.SensorUpgradeTrigger{}, suite.waitForTriggerNumber(1))
+	protoassert.Equal(suite.T(), &central.SensorUpgradeTrigger{}, suite.waitForTriggerNumber(1))
 
 	// Now, trigger an upgrade.
 	suite.NoError(suite.upgradeCtrl.Trigger(context.Background()))
@@ -370,7 +373,7 @@ func (suite *UpgradeCtrlTestSuite) TestSensorGoesAwayAndComesBackInTheMiddle() {
 	suite.upgradabilityMustBe(storage.ClusterUpgradeStatus_AUTO_UPGRADE_POSSIBLE)
 
 	// It should send an empty trigger, since we don't want the sensor to auto-upgrade
-	suite.Equal(&central.SensorUpgradeTrigger{}, suite.waitForTriggerNumber(1))
+	protoassert.Equal(suite.T(), &central.SensorUpgradeTrigger{}, suite.waitForTriggerNumber(1))
 
 	// Now, trigger an upgrade.
 	suite.NoError(suite.upgradeCtrl.Trigger(context.Background()))

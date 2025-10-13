@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/standards"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	namespaceStore "github.com/stackrox/rox/central/namespace/datastore"
-	nodeDatastore "github.com/stackrox/rox/central/node/globaldatastore"
+	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 )
 

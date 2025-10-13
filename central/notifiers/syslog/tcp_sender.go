@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
+	"net/url"
 	"strconv"
 	"sync/atomic"
 	"time"
@@ -13,16 +14,20 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 const (
-	// Dial timeout.  Otherwise we'll wait TCPs default 30 second timeout for things like waiting for a TLS handshake.
-	timeout = 5 * time.Second
-
 	initialBackoff             = 1 * time.Second
 	maxBackoff                 = 5 * time.Minute
 	backoffRandomizationFactor = .8
+)
+
+var (
+	// Dial timeout.  Otherwise we'll wait TCPs default 30 second timeout for things like waiting for a TLS handshake.
+	timeout = env.SyslogUploadTimeout.DurationSetting()
 )
 
 type connWrapper struct {
@@ -82,7 +87,17 @@ func validateRemoteConfig(endpointConfig *storage.Syslog_TCPConfig) (string, err
 		return "", errors.Errorf("invalid port number %d must be between 1 and 65535", port)
 	}
 
-	return fmt.Sprintf("%s:%d", endpointConfig.GetHostname(), endpointConfig.GetPort()), nil
+	hostName := fmt.Sprintf("%s:%d", endpointConfig.GetHostname(), endpointConfig.GetPort())
+
+	sysURL := fmt.Sprintf("tcp://%s", hostName)
+
+	_, err := url.ParseRequestURI(sysURL)
+
+	if err != nil {
+		return "", errors.New("invalid host name")
+	}
+
+	return hostName, nil
 }
 
 func (s *tcpSender) dialWithRetry() (net.Conn, error) {
@@ -184,7 +199,7 @@ func (s *tcpSender) SendSyslog(syslogBytes []byte) error {
 	_, err := conn.conn.Write(syslogFrame)
 	if err != nil {
 		conn.failed.Signal()
-		log.Errorf("failed to write syslog with error %v", err)
+		log.Errorw("Failed to write to Syslog", logging.Err(err))
 	}
 	return err
 }

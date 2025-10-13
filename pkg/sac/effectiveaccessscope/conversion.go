@@ -94,9 +94,9 @@ func sortScopesInEffectiveAccessScope(msg *storage.EffectiveAccessScope) {
 }
 
 // convertRulesToLabelSelectors:
-//   * converts included_clusters rules to a single cluster label selector,
-//   * converts included_namespaces rules to a single namespace label selector,
-//   * converts all label selectors to standard ones with matching support.
+//   - converts included_clusters rules to a single cluster label selector,
+//   - converts included_namespaces rules to a single namespace label selector,
+//   - converts all label selectors to standard ones with matching support.
 func convertRulesToLabelSelectors(scopeRules *storage.SimpleAccessScope_Rules) (clusterSelectors, namespaceSelectors []labels.Selector, err error) {
 	// Convert each selector to labels.Selector.
 	clusterSelectors, err = convertEachSetBasedLabelSelectorToK8sLabelSelector(scopeRules.GetClusterLabelSelectors())
@@ -178,8 +178,9 @@ func convertEachRulesNamespaceToFQSN(namespaces []*storage.SimpleAccessScope_Rul
 
 // newUnvalidatedRequirement is like labels.NewRequirement() but without label
 // key and values validation. Fully qualified scope names:
-//   * contain a separator which must be forbidden in label values;
-//   * might exceed 63 length limit.
+//   - contain a separator which must be forbidden in label values;
+//   - might exceed 63 length limit.
+//
 // The hacks below enable us to create labels.Requirement for FQSN and hence
 // embed the by-name inclusions into the general selector matching approach.
 func newUnvalidatedRequirement(key string, op selection.Operator, values []string) (*labels.Requirement, error) {
@@ -188,6 +189,7 @@ func newUnvalidatedRequirement(key string, op selection.Operator, values []strin
 
 	setValue := func(fieldName string, value interface{}) {
 		field := reqUnleashed.FieldByName(fieldName)
+		//#nosec G103
 		field = reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem()
 		field.Set(reflect.ValueOf(value).Elem())
 	}

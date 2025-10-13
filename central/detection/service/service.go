@@ -9,11 +9,15 @@ import (
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
-	"github.com/stackrox/rox/central/notifier/processor"
+	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
+	"github.com/stackrox/rox/central/role/sachelper"
+	"github.com/stackrox/rox/central/sensor/enhancement"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/images/enricher"
+	"github.com/stackrox/rox/pkg/notifier"
 )
 
 // Service provides the interface for running detection on images and containers.
@@ -26,8 +30,21 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(clusters clusterDatastore.DataStore, imageEnricher enricher.ImageEnricher, imageDatastore imageDatastore.DataStore, riskManager manager.Manager,
-	deploymentEnricher enrichment.Enricher, buildTimeDetector buildTimeDetection.Detector, notifications processor.Processor, detector deploytime.Detector, policySet detection.PolicySet) Service {
+func New(
+	clusters clusterDatastore.DataStore,
+	imageEnricher enricher.ImageEnricher,
+	imageDatastore imageDatastore.DataStore,
+	riskManager manager.Manager,
+	deploymentEnricher enrichment.Enricher,
+	buildTimeDetector buildTimeDetection.Detector,
+	notifications notifier.Processor,
+	detector deploytime.Detector,
+	policySet detection.PolicySet,
+	clusterSACHelper sachelper.ClusterSacHelper,
+	connManager connection.Manager,
+	broker *enhancement.Broker,
+	netpols networkPolicyDS.DataStore,
+) Service {
 	return &serviceImpl{
 		clusters:           clusters,
 		imageEnricher:      imageEnricher,
@@ -38,5 +55,9 @@ func New(clusters clusterDatastore.DataStore, imageEnricher enricher.ImageEnrich
 		detector:           detector,
 		policySet:          policySet,
 		notifications:      notifications,
+		clusterSACHelper:   clusterSACHelper,
+		connManager:        connManager,
+		enhancementWatcher: broker,
+		netpols:            netpols,
 	}
 }

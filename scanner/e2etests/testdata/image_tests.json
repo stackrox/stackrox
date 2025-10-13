@@ -1,0 +1,2089 @@
+[
+    {
+        "image": "ubuntu:16.04",
+        "registry": "https://registry-1.docker.io",
+        "username": "DOCKER_USERNAME",
+        "password": "DOCKER_PASSWORD",
+        "source": "NVD",
+        "namespace": "ubuntu:16.04",
+        "expected_features": [
+            {
+                "Name": "liblz4-1",
+                "NamespaceName": "ubuntu:16.04",
+                "Version": "0.0~r131-2ubuntu2",
+                "Arch": "amd64",
+                "Vulnerabilities": [
+                    {
+                        "Name": "CVE-2021-3520",
+                        "NamespaceName": "ubuntu:16.04",
+                        "Description": "There's a flaw in lz4. An attacker who submits a crafted file to anapplication linked with lz4 may be able to trigger an integer overflow,leading to calling of memmove() on a negative size argument, causing anout-of-bounds write and/or a crash. The greatest impact of this flaw is toavailability, with some potential impact to confidentiality and integrityas well.\n\n    Update Instructions:\n\n    Run `sudo pro fix CVE-2021-3520` to fix the vulnerability. The problem can be corrected\n    by updating your system to the following package versions:\n\nliblz4-1 - 0.0~r131-2ubuntu2+esm1\nliblz4-tool - 0.0~r131-2ubuntu2+esm1\nAvailable with Ubuntu Pro (Infra-only): https://ubuntu.com/pro",
+                        "Link": "https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=987856",
+                        "Severity": "Moderate",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv2": {
+                                    "Score": 7.5,
+                                    "Vectors": "AV:N/AC:L/Au:N/C:P/I:P/A:P"
+                                },
+                                "CVSSv3": {
+                                    "Score": 9.8,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "0:0.0~r131-2ubuntu2+esm1"
+                    }
+                ],
+                "AddedBy": "sha256:58690f9b18fca6469a14da4e212c96849469f9b1be6661d2342a4bf01774aa50",
+                "FixedBy": "0:0.0~r131-2ubuntu2+esm1",
+                "Location": "var/lib/dpkg/status"
+            }
+        ],
+        "unexpected_features": null,
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "quay.io/rhacs-eng/qa:apache-server-scannerci",
+        "registry": "https://quay.io",
+        "username": "QUAY_RHACS_ENG_RO_USERNAME",
+        "password": "QUAY_RHACS_ENG_RO_PASSWORD",
+        "source": "NVD",
+        "namespace": "ubuntu:14.04",
+        "expected_features": [
+            {
+                "Name": "cron",
+                "NamespaceName": "ubuntu:14.04",
+                "Version": "3.0pl1-124ubuntu2",
+                "Arch": "amd64",
+                "Vulnerabilities": [
+                    {
+                        "Name": "CVE-2017-9525",
+                        "NamespaceName": "ubuntu:14.04",
+                        "Description": "In the cron package through 3.0pl1-128 on Debian, and through3.0pl1-128ubuntu2 on Ubuntu, the postinst maintainer script allows forgroup-crontab-to-root privilege escalation via symlink attacks againstunsafe usage of the chown and chmod programs.",
+                        "Link": "https://ubuntu.com/security/CVE-2017-9525",
+                        "Severity": "Low",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv2": {
+                                    "Score": 6.9,
+                                    "Vectors": "AV:L/AC:M/Au:N/C:C/I:C/A:C"
+                                },
+                                "CVSSv3": {
+                                    "Score": 6.7,
+                                    "Vectors": "CVSS:3.1/AV:L/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "Name": "CVE-2019-9704",
+                        "NamespaceName": "ubuntu:14.04",
+                        "Description": "Vixie Cron before the 3.0pl1-133 Debian package allows local users to causea denial of service (daemon crash) via a large crontab file because thecalloc return value is not checked.",
+                        "Link": "https://ubuntu.com/security/CVE-2019-9704",
+                        "Severity": "Low",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv2": {
+                                    "Score": 2.1,
+                                    "Vectors": "AV:L/AC:L/Au:N/C:N/I:N/A:P"
+                                },
+                                "CVSSv3": {
+                                    "Score": 5.5,
+                                    "Vectors": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "Name": "CVE-2019-9705",
+                        "NamespaceName": "ubuntu:14.04",
+                        "Description": "Vixie Cron before the 3.0pl1-133 Debian package allows local users to causea denial of service (memory consumption) via a large crontab file becausean unlimited number of lines is accepted.",
+                        "Link": "https://ubuntu.com/security/CVE-2019-9705",
+                        "Severity": "Low",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv2": {
+                                    "Score": 2.1,
+                                    "Vectors": "AV:L/AC:L/Au:N/C:N/I:N/A:P"
+                                },
+                                "CVSSv3": {
+                                    "Score": 5.5,
+                                    "Vectors": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "Name": "CVE-2019-9706",
+                        "NamespaceName": "ubuntu:14.04",
+                        "Description": "Vixie Cron before the 3.0pl1-133 Debian package allows local users to causea denial of service (use-after-free and daemon crash) because of aforce_rescan_user error.",
+                        "Link": "https://ubuntu.com/security/CVE-2019-9706",
+                        "Severity": "Low",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv2": {
+                                    "Score": 2.1,
+                                    "Vectors": "AV:L/AC:L/Au:N/C:N/I:N/A:P"
+                                },
+                                "CVSSv3": {
+                                    "Score": 5.5,
+                                    "Vectors": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "AddedBy": "sha256:bae382666908fd87a3a3646d7eb7176fa42226027d3256cac38ee0b79bdb0491",
+                "Location": "var/lib/dpkg/status"
+            }
+        ],
+        "unexpected_features": null,
+        "only_check_specified_vulns": false
+    },
+    {
+        "image": "quay.io/rhacs-eng/qa:sandbox-scannerremovejar",
+        "registry": "https://quay.io",
+        "username": "QUAY_RHACS_ENG_RO_USERNAME",
+        "password": "QUAY_RHACS_ENG_RO_PASSWORD",
+        "source": "NVD",
+        "namespace": "ubuntu:14.04",
+        "expected_features": [
+            {
+                "Name": "com.fasterxml.jackson.core:jackson-databind",
+                "Version": "2.9.10.4",
+                "Arch": "",
+                "Vulnerabilities": [
+                    {
+                        "Name": "CVE-2020-14060",
+                        "Description": "Deserialization of untrusted data in Jackson Databind",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2020-14060",
+                        "Severity": "Important",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv3": {
+                                    "Score": 8.1,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "2.9.10.5"
+                    },
+                    {
+                        "Name": "CVE-2020-14061",
+                        "Description": "Deserialization of untrusted data in Jackson Databind",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2020-14061",
+                        "Severity": "Important",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv3": {
+                                    "Score": 8.1,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "2.9.10.5"
+                    },
+                    {
+                        "Name": "CVE-2020-14062",
+                        "Description": "Deserialization of untrusted data in Jackson Databind",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2020-14062",
+                        "Severity": "Important",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv3": {
+                                    "Score": 8.1,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "2.9.10.5"
+                    },
+                    {
+                        "Name": "CVE-2020-14195",
+                        "Description": "Deserialization of untrusted data in Jackson Databind",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2020-14195",
+                        "Severity": "Important",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv3": {
+                                    "Score": 8.1,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "2.9.10.5"
+                    },
+                    {
+                        "Name": "CVE-2020-24616",
+                        "Description": "Code Injection in jackson-databind",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2020-24616",
+                        "Severity": "Important",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv3": {
+                                    "Score": 8.1,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "2.9.10.6"
+                    },
+                    {
+                        "Name": "CVE-2020-24750",
+                        "Description": "Unsafe Deserialization in jackson-databind",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2020-24750",
+                        "Severity": "Important",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv3": {
+                                    "Score": 8.1,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "2.9.10.6"
+                    },
+                    {
+                        "Name": "CVE-2020-25649",
+                        "Description": "XML External Entity (XXE) Injection in Jackson Databind",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2020-25649",
+                        "Severity": "Important",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv3": {
+                                    "Score": 7.5,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N"
+                                }
+                            }
+                        },
+                        "FixedBy": "2.9.10.7"
+                    },
+                    {
+                        "Name": "CVE-2020-35490",
+                        "Description": "Serialization gadgets exploit in jackson-databind",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2020-35490",
+                        "Severity": "Important",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv3": {
+                                    "Score": 8.1,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "2.9.10.8"
+                    },
+                    {
+                        "Name": "CVE-2020-35491",
+                        "Description": "Serialization gadgets exploit in jackson-databind",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2020-35491",
+                        "Severity": "Important",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv3": {
+                                    "Score": 8.1,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "2.9.10.8"
+                    },
+                    {
+                        "Name": "CVE-2020-36518",
+                        "Description": "Deeply nested json in jackson-databind",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2020-36518",
+                        "Severity": "Important",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv3": {
+                                    "Score": 7.5,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "2.12.6.1"
+                    }
+                ],
+                "AddedBy": "sha256:36e8e9714b9a509fae9e515ff16237928c3d809f5ae228b14d2f7d7605c02623",
+                "Location": "maven:jars/jackson-databind-2.9.10.4.jar",
+                "FixedBy": "2.12.7.1"
+            }
+        ],
+        "unexpected_features": [
+            {
+                "Name": "jackson-databind",
+                "Version": "2.6.6"
+            }
+        ],
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "quay.io/rhacs-eng/qa:sandbox-zookeeper-fatjar-remove",
+        "registry": "https://quay.io",
+        "username": "QUAY_RHACS_ENG_RO_USERNAME",
+        "password": "QUAY_RHACS_ENG_RO_PASSWORD",
+        "source": "NVD",
+        "namespace": "alpine:3.8",
+        "expected_features": null,
+        "unexpected_features": [
+            {
+                "Name": "zookeeper",
+                "Version": "3.4.13"
+            },
+            {
+                "Name": "guava",
+                "Version": "18.0"
+            },
+            {
+                "Name": "netty",
+                "Version": "3.10.6.final"
+            }
+        ],
+        "only_check_specified_vulns": false
+    },
+    {
+        "image": "quay.io/rhacs-eng/qa:sandbox-oci-manifest",
+        "registry": "https://quay.io",
+        "username": "QUAY_RHACS_ENG_RO_USERNAME",
+        "password": "QUAY_RHACS_ENG_RO_PASSWORD",
+        "source": "NVD",
+        "namespace": "ubuntu:16.04",
+        "expected_features": null,
+        "unexpected_features": null,
+        "only_check_specified_vulns": false
+    },
+    {
+        "image": "quay.io/rhacs-eng/qa:sandbox-jenkins-agent-maven-35-rhel7",
+        "registry": "https://quay.io",
+        "username": "QUAY_RHACS_ENG_RO_USERNAME",
+        "password": "QUAY_RHACS_ENG_RO_PASSWORD",
+        "source": "Red Hat",
+        "namespace": "rhel:7",
+        "expected_features": [
+            {
+                "Name": "rh-maven35-log4j12",
+                "NamespaceName": "rhel:7",
+                "Version": "1.2.17-19.2.el7",
+                "Arch": "noarch",
+                "AddedBy": "sha256:4b4eac8c1d679c473379a42d37ec83b98bbafd8bb316200f53123f72d53bbb84",
+                "Location": "bdb:var/lib/rpm"
+            },
+            {
+                "Name": "rh-maven35-jackson-databind",
+                "NamespaceName": "rhel:7",
+                "Version": "2.7.6-2.10.el7",
+                "Arch": "noarch",
+                "Vulnerabilities": [
+                    {
+                        "Name": "RHSA-2020:4173",
+                        "NamespaceName": "rhel:7",
+                        "Description": "Red Hat Security Advisory: rh-maven35-jackson-databind security update",
+                        "Link": "https://access.redhat.com/errata/RHSA-2020:4173",
+                        "Severity": "Important",
+                        "Metadata": {
+                            "Red Hat": {
+                                "CVSSv3": {
+                                    "Score": 8.1,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "0:2.7.6-2.11.el7"
+                    }
+                ],
+                "AddedBy": "sha256:4b4eac8c1d679c473379a42d37ec83b98bbafd8bb316200f53123f72d53bbb84",
+                "FixedBy": "0:2.7.6-2.12.el7",
+                "Location": "bdb:var/lib/rpm"
+            },
+            {
+                "Name": "vim-minimal",
+                "NamespaceName": "rhel:7",
+                "Version": "2:7.4.629-6.el7",
+                "Arch": "x86_64",
+                "Vulnerabilities": [
+                    {
+                        "Name": "CVE-2017-1000382",
+                        "NamespaceName": "rhel:7",
+                        "Description": "It was found that vim applies the opened file read permissions to the swap file, overriding the process' umask. An attacker might search for vim swap files that were not deleted properly, in order to retrieve sensitive data.",
+                        "Link": "https://access.redhat.com/security/cve/CVE-2017-1000382",
+                        "Severity": "Low",
+                        "Metadata": {
+                            "Red Hat": {
+                                "CVSSv3": {
+                                    "Score": 5.5,
+                                    "Vectors": "CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "AddedBy": "sha256:e20f387c7bf5a184eeef83f7e5626661f593ca05c788f377a01e2df62f613e44",
+                "Location": "bdb:var/lib/rpm"
+            }
+        ],
+        "unexpected_features": [
+            {
+                "Name": "jackson-databind",
+                "Version": "2.7.6"
+            }
+        ],
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "quay.io/rhacs-eng/qa:sandbox-jenkins-agent-maven-35-rhel7-chown",
+        "registry": "https://quay.io",
+        "username": "QUAY_RHACS_ENG_RO_USERNAME",
+        "password": "QUAY_RHACS_ENG_RO_PASSWORD",
+        "source": "Red Hat",
+        "namespace": "rhel:7",
+        "expected_features": [
+            {
+                "Name": "rh-maven35-log4j12",
+                "NamespaceName": "rhel:7",
+                "Version": "1.2.17-19.2.el7",
+                "Arch": "noarch",
+                "AddedBy": "sha256:4b4eac8c1d679c473379a42d37ec83b98bbafd8bb316200f53123f72d53bbb84",
+                "Location": "bdb:var/lib/rpm"
+            },
+            {
+                "Name": "rh-maven35-jackson-databind",
+                "NamespaceName": "rhel:7",
+                "Version": "2.7.6-2.10.el7",
+                "Arch": "noarch",
+                "Vulnerabilities": [
+                    {
+                        "Name": "RHSA-2020:4173",
+                        "NamespaceName": "rhel:7",
+                        "Description": "Red Hat Security Advisory: rh-maven35-jackson-databind security update",
+                        "Link": "https://access.redhat.com/errata/RHSA-2020:4173",
+                        "Severity": "Important",
+                        "Metadata": {
+                            "Red Hat": {
+                                "CVSSv3": {
+                                    "Score": 8.1,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "0:2.7.6-2.11.el7"
+                    }
+                ],
+                "AddedBy": "sha256:4b4eac8c1d679c473379a42d37ec83b98bbafd8bb316200f53123f72d53bbb84",
+                "FixedBy": "0:2.7.6-2.12.el7",
+                "Location": "bdb:var/lib/rpm"
+            },
+            {
+                "Name": "vim-minimal",
+                "NamespaceName": "rhel:7",
+                "Version": "2:7.4.629-6.el7",
+                "Arch": "x86_64",
+                "Vulnerabilities": [
+                    {
+                        "Name": "CVE-2017-1000382",
+                        "NamespaceName": "rhel:7",
+                        "Description": "It was found that vim applies the opened file read permissions to the swap file, overriding the process' umask. An attacker might search for vim swap files that were not deleted properly, in order to retrieve sensitive data.",
+                        "Link": "https://access.redhat.com/security/cve/CVE-2017-1000382",
+                        "Severity": "Low",
+                        "Metadata": {
+                            "Red Hat": {
+                                "CVSSv3": {
+                                    "Score": 5.5,
+                                    "Vectors": "CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "AddedBy": "sha256:e20f387c7bf5a184eeef83f7e5626661f593ca05c788f377a01e2df62f613e44",
+                "Location": "bdb:var/lib/rpm"
+            }
+        ],
+        "unexpected_features": [
+            {
+                "Name": "jackson-databind",
+                "Version": "2.7.6"
+            }
+        ],
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "quay.io/rhacs-eng/qa:sandbox-nodejs-10",
+        "registry": "https://quay.io",
+        "username": "QUAY_RHACS_ENG_RO_USERNAME",
+        "password": "QUAY_RHACS_ENG_RO_PASSWORD",
+        "source": "Red Hat",
+        "namespace": "rhel:8",
+        "expected_features": [
+            {
+                "Name": "nodejs-full-i18n",
+                "NamespaceName": "rhel:8",
+                "Version": "1:10.21.0-3.module+el8.2.0+7071+d2377ea3",
+                "Arch": "x86_64",
+                "Vulnerabilities": [
+                    {
+                        "Name": "RHSA-2021:0548",
+                        "NamespaceName": "rhel:8",
+                        "Description": "Red Hat Security Advisory: nodejs:10 security update",
+                        "Link": "https://access.redhat.com/errata/RHSA-2021:0548",
+                        "Severity": "Moderate",
+                        "Metadata": {
+                            "Red Hat": {
+                                "CVSSv3": {
+                                    "Score": 8.1,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "1:10.23.1-1.module+el8.3.0+9502+012d8a97"
+                    },
+                    {
+                        "Name": "RHSA-2021:0735",
+                        "NamespaceName": "rhel:8",
+                        "Description": "Red Hat Security Advisory: nodejs:10 security update",
+                        "Link": "https://access.redhat.com/errata/RHSA-2021:0735",
+                        "Severity": "Important",
+                        "Metadata": {
+                            "Red Hat": {
+                                "CVSSv3": {
+                                    "Score": 7.5,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "1:10.24.0-1.module+el8.3.0+10166+b07ac28e"
+                    }
+                ],
+                "AddedBy": "sha256:35ad9b4fba1fa6b00a6f266303348dc0cf9a7c341616e800c2738030c0f64167",
+                "FixedBy": "1:10.24.0-1.module+el8.3.0+10166+b07ac28e",
+                "Location": "bdb:var/lib/rpm"
+            },
+            {
+                "Name": "freetype",
+                "NamespaceName": "rhel:8",
+                "Version": "2.9.1-4.el8",
+                "Arch": "x86_64",
+                "Vulnerabilities": [
+                    {
+                        "Name": "RHSA-2020:4952",
+                        "NamespaceName": "rhel:8",
+                        "Description": "Red Hat Security Advisory: freetype security update",
+                        "Link": "https://access.redhat.com/errata/RHSA-2020:4952",
+                        "Severity": "Important",
+                        "Metadata": {
+                            "Red Hat": {
+                                "CVSSv3": {
+                                    "Score": 8.6,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "0:2.9.1-4.el8_3.1"
+                    }
+                ],
+                "AddedBy": "sha256:35ad9b4fba1fa6b00a6f266303348dc0cf9a7c341616e800c2738030c0f64167",
+                "FixedBy": "0:2.9.1-10.el8_10",
+                "Location": "bdb:var/lib/rpm"
+            },
+            {
+                "Name": "libsolv",
+                "NamespaceName": "rhel:8",
+                "Version": "0.7.7-1.el8",
+                "Arch": "x86_64",
+                "Vulnerabilities": [
+                    {
+                        "Name": "RHSA-2020:4508",
+                        "NamespaceName": "rhel:8",
+                        "Description": "Red Hat Security Advisory: libsolv security, bug fix, and enhancement update",
+                        "Link": "https://access.redhat.com/errata/RHSA-2020:4508",
+                        "Severity": "Moderate",
+                        "Metadata": {
+                            "Red Hat": {
+                                "CVSSv3": {
+                                    "Score": 7.5,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "0:0.7.11-1.el8"
+                    },
+                    {
+                        "Name": "RHSA-2021:4060",
+                        "NamespaceName": "rhel:8",
+                        "Description": "Red Hat Security Advisory: libsolv security update",
+                        "Link": "https://access.redhat.com/errata/RHSA-2021:4060",
+                        "Severity": "Moderate",
+                        "Metadata": {
+                            "Red Hat": {
+                                "CVSSv3": {
+                                    "Score": 7.5,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "0:0.7.16-3.el8_4"
+                    },
+                    {
+                        "Name": "RHSA-2021:4408",
+                        "NamespaceName": "rhel:8",
+                        "Description": "Red Hat Security Advisory: libsolv security and bug fix update",
+                        "Link": "https://access.redhat.com/errata/RHSA-2021:4408",
+                        "Severity": "Low",
+                        "Metadata": {
+                            "Red Hat": {
+                                "CVSSv3": {
+                                    "Score": 3.3,
+                                    "Vectors": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L"
+                                }
+                            }
+                        },
+                        "FixedBy": "0:0.7.19-1.el8"
+                    }
+                ],
+                "AddedBy": "sha256:ec1681b6a383e4ecedbeddd5abc596f3de835aed6db39a735f62395c8edbff30",
+                "FixedBy": "0:0.7.19-1.el8",
+                "Location": "bdb:var/lib/rpm"
+            }
+        ],
+        "unexpected_features": null,
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "registry.redhat.io/advanced-cluster-security/rhacs-collector-slim-rhel8:3.74.1@sha256:8e455c6f7ee571cc8c565b2f2b1ff712f05ade5cef0c34d528d2955253469992",
+        "registry": "https://registry.redhat.io",
+        "username": "REDHAT_USERNAME",
+        "password": "REDHAT_PASSWORD",
+        "source": "",
+        "namespace": "rhel:8",
+        "expected_features": null,
+        "unexpected_features": null,
+        "only_check_specified_vulns": false
+    },
+    {
+        "image": "quay.io/rhacs-eng/qa:sandbox-alpine-jq-1.6-r1",
+        "registry": "https://quay.io",
+        "username": "QUAY_RHACS_ENG_RO_USERNAME",
+        "password": "QUAY_RHACS_ENG_RO_PASSWORD",
+        "source": "NVD",
+        "namespace": "alpine:3.13",
+        "expected_features": [
+            {
+                "Name": "jq",
+                "NamespaceName": "alpine:v3.13",
+                "Version": "1.6-r1",
+                "Arch": "x86_64",
+                "AddedBy": "sha256:51c25658727f8bc3a4ef7c039257e136d23995bfdcfdc52dfb24104b5dc64720",
+                "Location": "lib/apk/db/installed"
+            }
+        ],
+        "unexpected_features": null,
+        "only_check_specified_vulns": false
+    },
+    {
+        "image": "alpine:3.13.0",
+        "registry": "https://registry-1.docker.io",
+        "username": "DOCKER_USERNAME",
+        "password": "DOCKER_PASSWORD",
+        "source": "NVD",
+        "namespace": "alpine:3.13",
+        "expected_features": [
+            {
+                "Name": "apk-tools",
+                "NamespaceName": "alpine:v3.13",
+                "Version": "2.12.0-r4",
+                "Arch": "x86_64",
+                "Vulnerabilities": [
+                    {
+                        "Name": "CVE-2021-30139",
+                        "NamespaceName": "alpine:v3.13",
+                        "Description": "In Alpine Linux apk-tools before 2.12.5, the tarball parser allows a buffer overflow and crash.",
+                        "Link": "https://security.alpinelinux.org/vuln/CVE-2021-30139",
+                        "Severity": "Unspecified",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv2": {
+                                    "Score": 5,
+                                    "Vectors": "AV:N/AC:L/Au:N/C:N/I:N/A:P"
+                                },
+                                "CVSSv3": {
+                                    "Score": 7.5,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "2.12.5-r0"
+                    },
+                    {
+                        "Name": "CVE-2021-36159",
+                        "NamespaceName": "alpine:v3.13",
+                        "Description": "libfetch before 2021-07-26, as used in apk-tools, xbps, and other products, mishandles numeric strings for the FTP and HTTP protocols. The FTP passive mode implementation allows an out-of-bounds read because strtol is used to parse the relevant numbers into address bytes. It does not check if the line ends prematurely. If it does, the for-loop condition checks for the '\\0' terminator one byte too late.",
+                        "Link": "https://security.alpinelinux.org/vuln/CVE-2021-36159",
+                        "Severity": "Unspecified",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv2": {
+                                    "Score": 6.4,
+                                    "Vectors": "AV:N/AC:L/Au:N/C:P/I:N/A:P"
+                                },
+                                "CVSSv3": {
+                                    "Score": 9.1,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "2.12.6-r0"
+                    }
+                ],
+                "AddedBy": "sha256:596ba82af5aaa3e2fd9d6f955b8b94f0744a2b60710e3c243ba3e4a467f051d1",
+                "FixedBy": "2.12.6-r0",
+                "Location": "lib/apk/db/installed"
+            },
+            {
+                "Name": "busybox",
+                "NamespaceName": "alpine:v3.13",
+                "Version": "1.32.1-r0",
+                "Arch": "x86_64",
+                "Vulnerabilities": [
+                    {
+                        "Name": "CVE-2021-28831",
+                        "NamespaceName": "alpine:v3.13",
+                        "Description": "decompress_gunzip.c in BusyBox through 1.32.1 mishandles the error bit on the huft_build result pointer, with a resultant invalid free or segmentation fault, via malformed gzip data.",
+                        "Link": "https://security.alpinelinux.org/vuln/CVE-2021-28831",
+                        "Severity": "Unspecified",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv2": {
+                                    "Score": 5,
+                                    "Vectors": "AV:N/AC:L/Au:N/C:N/I:N/A:P"
+                                },
+                                "CVSSv3": {
+                                    "Score": 7.5,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "1.32.1-r4"
+                    }
+                ],
+                "AddedBy": "sha256:596ba82af5aaa3e2fd9d6f955b8b94f0744a2b60710e3c243ba3e4a467f051d1",
+                "FixedBy": "1.32.1-r9",
+                "Location": "lib/apk/db/installed"
+            }
+        ],
+        "unexpected_features": null,
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "alpine:3.14.0",
+        "registry": "https://registry-1.docker.io",
+        "username": "DOCKER_USERNAME",
+        "password": "DOCKER_PASSWORD",
+        "source": "NVD",
+        "namespace": "alpine:3.14",
+        "expected_features": [
+            {
+                "Name": "apk-tools",
+                "NamespaceName": "alpine:v3.14",
+                "Version": "2.12.5-r1",
+                "Arch": "x86_64",
+                "Vulnerabilities": [
+                    {
+                        "Name": "CVE-2021-36159",
+                        "NamespaceName": "alpine:v3.14",
+                        "Description": "libfetch before 2021-07-26, as used in apk-tools, xbps, and other products, mishandles numeric strings for the FTP and HTTP protocols. The FTP passive mode implementation allows an out-of-bounds read because strtol is used to parse the relevant numbers into address bytes. It does not check if the line ends prematurely. If it does, the for-loop condition checks for the '\\0' terminator one byte too late.",
+                        "Link": "https://security.alpinelinux.org/vuln/CVE-2021-36159",
+                        "Severity": "Unspecified",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv2": {
+                                    "Score": 6.4,
+                                    "Vectors": "AV:N/AC:L/Au:N/C:P/I:N/A:P"
+                                },
+                                "CVSSv3": {
+                                    "Score": 9.1,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "2.12.6-r0"
+                    }
+                ],
+                "AddedBy": "sha256:5843afab387455b37944e709ee8c78d7520df80f8d01cf7f861aae63beeddb6b",
+                "FixedBy": "2.12.6-r0",
+                "Location": "lib/apk/db/installed"
+            },
+            {
+                "Name": "busybox",
+                "NamespaceName": "alpine:v3.14",
+                "Version": "1.33.1-r2",
+                "Arch": "x86_64",
+                "AddedBy": "sha256:5843afab387455b37944e709ee8c78d7520df80f8d01cf7f861aae63beeddb6b",
+                "FixedBy": "1.33.1-r7",
+                "Location": "lib/apk/db/installed"
+            }
+        ],
+        "unexpected_features": null,
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "alpine:3.15.0",
+        "registry": "https://registry-1.docker.io",
+        "username": "DOCKER_USERNAME",
+        "password": "DOCKER_PASSWORD",
+        "source": "NVD",
+        "namespace": "alpine:3.15",
+        "expected_features": [
+            {
+                "Name": "apk-tools",
+                "NamespaceName": "alpine:v3.15",
+                "Version": "2.12.7-r3",
+                "Arch": "x86_64",
+                "AddedBy": "sha256:59bf1c3509f33515622619af21ed55bbe26d24913cedbca106468a5fb37a50c3",
+                "Location": "lib/apk/db/installed"
+            },
+            {
+                "Name": "busybox",
+                "NamespaceName": "alpine:v3.15",
+                "Version": "1.34.1-r3",
+                "Arch": "x86_64",
+                "AddedBy": "sha256:59bf1c3509f33515622619af21ed55bbe26d24913cedbca106468a5fb37a50c3",
+                "FixedBy": "1.34.1-r5",
+                "Location": "lib/apk/db/installed"
+            }
+        ],
+        "unexpected_features": null,
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "alpine:3.16.0",
+        "registry": "https://registry-1.docker.io",
+        "username": "DOCKER_USERNAME",
+        "password": "DOCKER_PASSWORD",
+        "source": "NVD",
+        "namespace": "alpine:3.16",
+        "expected_features": [
+            {
+                "Name": "apk-tools",
+                "NamespaceName": "alpine:v3.16",
+                "Version": "2.12.9-r3",
+                "Arch": "x86_64",
+                "AddedBy": "sha256:2408cc74d12b6cd092bb8b516ba7d5e290f485d3eb9672efc00f0583730179e8",
+                "Location": "lib/apk/db/installed"
+            },
+            {
+                "Name": "busybox",
+                "NamespaceName": "alpine:v3.16",
+                "Version": "1.35.0-r13",
+                "Arch": "x86_64",
+                "Vulnerabilities": [
+                    {
+                        "Name": "CVE-2022-30065",
+                        "NamespaceName": "alpine:v3.16",
+                        "Description": "A use-after-free in Busybox 1.35-x's awk applet leads to denial of service and possibly code execution when processing a crafted awk pattern in the copyvar function.",
+                        "Link": "https://security.alpinelinux.org/vuln/CVE-2022-30065",
+                        "Severity": "Unspecified",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv2": {
+                                    "Score": 6.8,
+                                    "Vectors": "AV:N/AC:M/Au:N/C:P/I:P/A:P"
+                                },
+                                "CVSSv3": {
+                                    "Score": 7.8,
+                                    "Vectors": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "1.35.0-r15"
+                    }
+                ],
+                "AddedBy": "sha256:2408cc74d12b6cd092bb8b516ba7d5e290f485d3eb9672efc00f0583730179e8",
+                "FixedBy": "1.35.0-r18",
+                "Location": "lib/apk/db/installed"
+            },
+            {
+                "Name": "libssl1.1",
+                "NamespaceName": "alpine:v3.16",
+                "Version": "1.1.1o-r0",
+                "Arch": "x86_64",
+                "Vulnerabilities": [
+                    {
+                        "Name": "CVE-2022-2097",
+                        "NamespaceName": "alpine:v3.16",
+                        "Description": "AES OCB mode for 32-bit x86 platforms using the AES-NI assembly optimised implementation will not encrypt the entirety of the data under some circumstances. This could reveal sixteen bytes of data that was preexisting in the memory that wasn't written. In the special case of \"in place\" encryption, sixteen bytes of the plaintext would be revealed. Since OpenSSL does not support OCB based cipher suites for TLS and DTLS, they are both unaffected. Fixed in OpenSSL 3.0.5 (Affected 3.0.0-3.0.4). Fixed in OpenSSL 1.1.1q (Affected 1.1.1-1.1.1p).",
+                        "Link": "https://security.alpinelinux.org/vuln/CVE-2022-2097",
+                        "Severity": "Unspecified",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv2": {
+                                    "Score": 5,
+                                    "Vectors": "AV:N/AC:L/Au:N/C:P/I:N/A:N"
+                                },
+                                "CVSSv3": {
+                                    "Score": 5.3,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N"
+                                }
+                            }
+                        },
+                        "FixedBy": "1.1.1q-r0"
+                    }
+                ],
+                "AddedBy": "sha256:2408cc74d12b6cd092bb8b516ba7d5e290f485d3eb9672efc00f0583730179e8",
+                "FixedBy": "1.1.1w-r1",
+                "Location": "lib/apk/db/installed"
+            }
+        ],
+        "unexpected_features": null,
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "alpine:3.17.0",
+        "registry": "https://registry-1.docker.io",
+        "username": "DOCKER_USERNAME",
+        "password": "DOCKER_PASSWORD",
+        "source": "NVD",
+        "namespace": "alpine:3.17",
+        "expected_features": [
+            {
+                "Name": "apk-tools",
+                "NamespaceName": "alpine:v3.17",
+                "Version": "2.12.10-r1",
+                "Arch": "x86_64",
+                "AddedBy": "sha256:c158987b05517b6f2c5913f3acef1f2182a32345a304fe357e3ace5fadcad715",
+                "Location": "lib/apk/db/installed"
+            }
+        ],
+        "unexpected_features": null,
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "quay.io/rhacs-eng/qa:debian-package-removal",
+        "registry": "https://quay.io",
+        "username": "QUAY_RHACS_ENG_RO_USERNAME",
+        "password": "QUAY_RHACS_ENG_RO_PASSWORD",
+        "source": "NVD",
+        "namespace": "debian:11",
+        "expected_features": [
+            {
+                "Name": "dash",
+                "NamespaceName": "debian:11",
+                "Version": "0.5.11+git20200708+dd9ef66-5",
+                "Arch": "amd64",
+                "AddedBy": "sha256:4c25b3090c2685271afcffc2a4db73f15ab11a0124bfcde6085c934a4e6f4a51",
+                "Location": "var/lib/dpkg/status"
+            },
+            {
+                "Name": "diffutils",
+                "NamespaceName": "debian:11",
+                "Version": "1:3.7-5",
+                "Arch": "amd64",
+                "AddedBy": "sha256:4c25b3090c2685271afcffc2a4db73f15ab11a0124bfcde6085c934a4e6f4a51",
+                "Location": "var/lib/dpkg/status"
+            }
+        ],
+        "unexpected_features": null,
+        "only_check_specified_vulns": false
+    },
+    {
+        "image": "anchore/anchore-engine:v0.9.4",
+        "registry": "https://registry-1.docker.io",
+        "username": "DOCKER_USERNAME",
+        "password": "DOCKER_PASSWORD",
+        "source": "NVD",
+        "namespace": "rhel:8",
+        "expected_features": null,
+        "unexpected_features": [
+            {
+                "Name": "netaddr",
+                "Version": "0.8.0"
+            }
+        ],
+        "only_check_specified_vulns": false
+    },
+    {
+        "image": "quay.io/rhacs-eng/qa:sandbox-log4j-2-12-2",
+        "registry": "https://quay.io",
+        "username": "QUAY_RHACS_ENG_RO_USERNAME",
+        "password": "QUAY_RHACS_ENG_RO_PASSWORD",
+        "source": "NVD",
+        "namespace": "ubuntu:20.04",
+        "expected_features": [
+            {
+                "Name": "org.apache.logging.log4j:log4j-core",
+                "Version": "2.12.2",
+                "Arch": "",
+                "Vulnerabilities": [
+                    {
+                        "Name": "CVE-2020-9488",
+                        "Description": "Improper validation of certificate with host mismatch in Apache Log4j SMTP appender",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2020-9488",
+                        "Severity": "Low",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv3": {
+                                    "Score": 3.7,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:N/A:N"
+                                }
+                            }
+                        },
+                        "FixedBy": "2.12.3"
+                    },
+                    {
+                        "Name": "CVE-2021-44832",
+                        "Description": "Improper Input Validation and Injection in Apache Log4j2",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2021-44832",
+                        "Severity": "Moderate",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv3": {
+                                    "Score": 6.6,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:H/I:H/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "2.12.4"
+                    },
+                    {
+                        "Name": "CVE-2021-45105",
+                        "Description": "Apache Log4j2 vulnerable to Improper Input Validation and Uncontrolled Recursion",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2021-45105",
+                        "Severity": "Important",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv3": {
+                                    "Score": 8.6,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:N/I:N/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "2.12.3"
+                    }
+                ],
+                "AddedBy": "sha256:d84ba7ea7803fa43fca06730523d264b31c562968cfd7020f0584f5ec1b26225",
+                "Location": "maven:log4j-core-2.12.2.jar",
+                "FixedBy": "2.12.4"
+            }
+        ],
+        "unexpected_features": null,
+        "only_check_specified_vulns": false
+    },
+    {
+        "image": "quay.io/rhacs-eng/qa:sandbox-springboot-2.6.5",
+        "registry": "https://quay.io",
+        "username": "QUAY_RHACS_ENG_RO_USERNAME",
+        "password": "QUAY_RHACS_ENG_RO_PASSWORD",
+        "source": "NVD",
+        "namespace": "alpine:3.15",
+        "expected_features": [
+            {
+                "Name": "spring-webmvc",
+                "NamespaceName": "alpine:3.15",
+                "Version": "5.3.17",
+                "Arch": "",
+                "Vulnerabilities": [
+                    {
+                        "Name": "CVE-2022-22965",
+                        "Description": "Remote Code Execution in Spring Framework",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2022-22965",
+                        "Severity": "Critical",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv3": {
+                                    "Score": 9.8,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "5.3.18"
+                    }
+                ],
+                "AddedBy": "sha256:bb57a75650ced8dd9ff54ca55ab34a150a7cb7b68258064056e65e0b2a9c3320",
+                "Location": "jar:app/demo-0.0.1-SNAPSHOT.war",
+                "FixedBy": "5.3.18"
+            }
+        ],
+        "unexpected_features": null,
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "quay.io/rhacs-eng/qa:sandbox-springboot-2.6.5-flux",
+        "registry": "https://quay.io",
+        "username": "QUAY_RHACS_ENG_RO_USERNAME",
+        "password": "QUAY_RHACS_ENG_RO_PASSWORD",
+        "source": "NVD",
+        "namespace": "alpine:3.15",
+        "expected_features": [
+            {
+                "Name": "spring-webflux",
+                "NamespaceName": "alpine:3.15",
+                "Version": "5.3.17",
+                "Arch": "",
+                "Vulnerabilities": [
+                    {
+                        "Name": "CVE-2022-22965",
+                        "Description": "Remote Code Execution in Spring Framework",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2022-22965",
+                        "Severity": "Critical",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv3": {
+                                    "Score": 9.8,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "5.3.18"
+                    }
+                ],
+                "AddedBy": "sha256:f7edbdbbb0752d6ec06c7098cc966e7b36edf216a72c4d8c074ecf0d3a363b85",
+                "Location": "jar:app/demo-0.0.1-SNAPSHOT.war",
+                "FixedBy": "5.3.18"
+            }
+        ],
+        "unexpected_features": null,
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "quay.io/rhacs-eng/qa:sandbox-springboot-web-cloud-function-2.6.6",
+        "registry": "https://quay.io",
+        "username": "QUAY_RHACS_ENG_RO_USERNAME",
+        "password": "QUAY_RHACS_ENG_RO_PASSWORD",
+        "source": "NVD",
+        "namespace": "alpine:3.15",
+        "expected_features": [
+            {
+                "Name": "org.springframework.cloud:spring-cloud-function-context",
+                "NamespaceName": "alpine:3.15",
+                "Version": "3.2.2",
+                "Arch": "",
+                "Vulnerabilities": [
+                    {
+                        "Name": "CVE-2022-22963",
+                        "Description": "Spring Cloud Function Code Injection with a specially crafted SpEL as a routing expression",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2022-22963",
+                        "Severity": "Critical",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv3": {
+                                    "Score": 9.8,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "3.2.3"
+                    }
+                ],
+                "AddedBy": "sha256:f26cc7bc44e4f9b8969a0a95040d484ab301b3e56d1fb1eda8a79bf7e089f24e",
+                "Location": "maven:app/demo-0.0.1-SNAPSHOT.war",
+                "FixedBy": "3.2.3"
+            }
+        ],
+        "unexpected_features": null,
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "ubuntu:22.04@sha256:cd3d86f1fb368c6a53659d467560010ab9e0695528127ea336fe32f68f7ba09f",
+        "registry": "https://registry-1.docker.io",
+        "username": "DOCKER_USERNAME",
+        "password": "DOCKER_PASSWORD",
+        "source": "NVD",
+        "namespace": "ubuntu:22.04",
+        "expected_features": [
+            {
+                "Name": "adduser",
+                "NamespaceName": "ubuntu:22.04",
+                "Version": "3.118ubuntu5",
+                "Arch": "all",
+                "AddedBy": "sha256:6fa1296f44090f6150dfb96d6ae217a58b9d66c56d7a986c35657df6bd1a89f0",
+                "Location": "var/lib/dpkg/status"
+            },
+            {
+                "Name": "apt",
+                "Arch": "s390x",
+                "NamespaceName": "ubuntu:22.04",
+                "Version": "2.4.5",
+                "AddedBy": "sha256:6fa1296f44090f6150dfb96d6ae217a58b9d66c56d7a986c35657df6bd1a89f0",
+                "Location": "var/lib/dpkg/status"
+            }
+        ],
+        "unexpected_features": null,
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "ubuntu:22.10@sha256:4f9ec2c0aa321966bfe625bc485aa1d6e96549679cfdf98bb404dfcb8e141a7f",
+        "registry": "https://registry-1.docker.io",
+        "username": "DOCKER_USERNAME",
+        "password": "DOCKER_PASSWORD",
+        "source": "NVD",
+        "namespace": "ubuntu:22.10",
+        "expected_features": [
+            {
+                "Name": "adduser",
+                "Arch": "all",
+                "NamespaceName": "ubuntu:22.10",
+                "Version": "3.121ubuntu1",
+                "Arch": "all",
+                "AddedBy": "sha256:bcd446fbf8a137bbf135b63332ebcd0c3e9880060bc5b41962fbbb07e94062b7",
+                "Location": "var/lib/dpkg/status"
+            },
+            {
+                "Name": "apt",
+                "Arch": "amd64",
+                "NamespaceName": "ubuntu:22.10",
+                "Version": "2.5.3",
+                "Arch": "amd64",
+                "AddedBy": "sha256:bcd446fbf8a137bbf135b63332ebcd0c3e9880060bc5b41962fbbb07e94062b7",
+                "Location": "var/lib/dpkg/status"
+            }
+        ],
+        "unexpected_features": null,
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "registry.access.redhat.com/ubi9/ubi:9.0.0-1576@sha256:f22a438f4967419bd477c648d25ed0627f54b81931d0143dc45801c8356bd379",
+        "registry": "https://registry.access.redhat.com",
+        "username": "DOCKER_USERNAME",
+        "password": "DOCKER_PASSWORD",
+        "source": "Red Hat",
+        "namespace": "rhel:9",
+        "expected_features": [
+            {
+                "Name": "openssl",
+                "NamespaceName": "rhel:9",
+                "Version": "1:3.0.1-23.el9_0",
+                "Arch": "x86_64",
+                "Vulnerabilities": [
+                    {
+                        "Name": "RHSA-2022:7288",
+                        "Description": "Red Hat Security Advisory: openssl security update",
+                        "Link": "https://access.redhat.com/errata/RHSA-2022:7288",
+                        "Severity": "Important",
+                        "Metadata": {
+                            "Red Hat": {
+                                "CVSSv3": {
+                                    "Score": 7.5,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "1:3.0.1-43.el9_0"
+                    }
+                ],
+                "AddedBy": "sha256:2412e60e610160d090f7e974a208c6ffd26b2d530361b7c9aa8967e160ac7996",
+                "FixedBy": "1:3.2.2-6.el9_5.1",
+                "Location": "sqlite:var/lib/rpm"
+            },
+            {
+                "Name": "openssl-libs",
+                "NamespaceName": "rhel:9",
+                "Version": "1:3.0.1-23.el9_0",
+                "Arch": "x86_64",
+                "Vulnerabilities": [
+                    {
+                        "Name": "RHSA-2022:7288",
+                        "Description": "Red Hat Security Advisory: openssl security update",
+                        "Link": "https://access.redhat.com/errata/RHSA-2022:7288",
+                        "Severity": "Important",
+                        "Metadata": {
+                            "Red Hat": {
+                                "CVSSv3": {
+                                    "Score": 7.5,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "1:3.0.1-43.el9_0"
+                    }
+                ],
+                "AddedBy": "sha256:2412e60e610160d090f7e974a208c6ffd26b2d530361b7c9aa8967e160ac7996",
+                "FixedBy": "1:3.2.2-6.el9_5.1",
+                "Location": "sqlite:var/lib/rpm"
+            },
+            {
+                "Name": "python3-urllib3",
+                "NamespaceName": "rhel:9",
+                "Version": "1.26.5-3.el9",
+                "Arch": "noarch",
+                "AddedBy": "sha256:2412e60e610160d090f7e974a208c6ffd26b2d530361b7c9aa8967e160ac7996",
+                "FixedBy": "0:1.26.5-5.el9_4.1",
+                "Location": "sqlite:var/lib/rpm"
+            },
+            {
+                "Name": "vim-minimal",
+                "NamespaceName": "rhel:9",
+                "Version": "2:8.2.2637-16.el9_0.2",
+                "Arch": "x86_64",
+                "Vulnerabilities": [
+                    {
+                        "Name": "RHSA-2022:5942",
+                        "Description": "Red Hat Security Advisory: vim security update",
+                        "Link": "https://access.redhat.com/errata/RHSA-2022:5942",
+                        "Severity": "Moderate",
+                        "Metadata": {
+                            "Red Hat": {
+                                "CVSSv3": {
+                                    "Score": 7.8,
+                                    "Vectors": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "2:8.2.2637-16.el9_0.3"
+                    }
+                ],
+                "AddedBy": "sha256:2412e60e610160d090f7e974a208c6ffd26b2d530361b7c9aa8967e160ac7996",
+                "FixedBy": "2:8.2.2637-21.el9",
+                "Location": "sqlite:var/lib/rpm"
+            }
+        ],
+        "unexpected_features": [
+            {
+                "Name": "urllib3",
+                "Version": "9.0-2.17",
+                "Location": "usr/lib/python3.9/site-packages/urllib3-1.26.5-py3.9.egg-info/PKG-INFO"
+            }
+        ],
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "quay.io/rhacs-eng/qa:sandbox-dotnet-60-runtime-6.0-15.20220620151726",
+        "registry": "https://quay.io",
+        "username": "QUAY_RHACS_ENG_RO_USERNAME",
+        "password": "QUAY_RHACS_ENG_RO_PASSWORD",
+        "source": "Red Hat",
+        "namespace": "rhel:8",
+        "expected_features": [
+            {
+                "Name": "aspnetcore-runtime-6.0",
+                "NamespaceName": "rhel:8",
+                "Version": "6.0.6-1.el8_6",
+                "Arch": "x86_64",
+                "Vulnerabilities": [
+                    {
+                        "Name": "RHBA-2022:5747",
+                        "Description": "Red Hat Bug Fix Advisory: .NET 6.0 bugfix update",
+                        "Link": "https://access.redhat.com/errata/RHBA-2022:5747",
+                        "Severity": "Moderate",
+                        "Metadata": {
+                            "Red Hat": {
+                                "CVSSv3": {
+                                    "Score": 9.3,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:H/I:H/A:N"
+                                }
+                            }
+                        },
+                        "FixedBy": "0:6.0.7-1.el8_6"
+                    }
+                ],
+                "AddedBy": "sha256:16e1dc59de605089610e3be2c77f3cde5eed99b523a0d7a3e3a2f65fa7c60723",
+                "FixedBy": "0:6.0.27-1.el8_9",
+                "Location": "bdb:var/lib/rpm"
+            },
+            {
+                "Name": "dotnet-runtime-6.0",
+                "NamespaceName": "rhel:8",
+                "Version": "6.0.6-1.el8_6",
+                "Arch": "x86_64",
+                "Vulnerabilities": [
+                    {
+                        "Name": "RHBA-2022:5747",
+                        "Description": "Red Hat Bug Fix Advisory: .NET 6.0 bugfix update",
+                        "Link": "https://access.redhat.com/errata/RHBA-2022:5747",
+                        "Severity": "Moderate",
+                        "Metadata": {
+                            "Red Hat": {
+                                "CVSSv3": {
+                                    "Score": 9.3,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:H/I:H/A:N"
+                                }
+                            }
+                        },
+                        "FixedBy": "0:6.0.7-1.el8_6"
+                    }
+                ],
+                "AddedBy": "sha256:16e1dc59de605089610e3be2c77f3cde5eed99b523a0d7a3e3a2f65fa7c60723",
+                "FixedBy": "0:6.0.27-1.el8_9",
+                "Location": "bdb:var/lib/rpm"
+            }
+        ],
+        "unexpected_features": null,
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "quay.io/rhacs-eng/qa:spring-CVE-2022-22978",
+        "registry": "https://quay.io",
+        "username": "QUAY_RHACS_ENG_RO_USERNAME",
+        "password": "QUAY_RHACS_ENG_RO_PASSWORD",
+        "source": "NVD",
+        "namespace": "rhel:8",
+        "expected_features": [
+            {
+                "Name": "spring-security-core",
+                "Version": "5.5.5",
+                "Arch": "",
+                "Vulnerabilities": [
+                    {
+                        "Name": "CVE-2022-22978",
+                        "Description": "Authorization bypass in Spring Security",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2022-22978",
+                        "Severity": "Critical",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv3": {
+                                    "Score": 9.8,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "5.5.7"
+                    }
+                ],
+                "AddedBy": "sha256:5b6e3ce9721946e142ba43e488385ee4d323204a6052e0f20352d89ac00cafa2",
+                "Location": "jar:application/app.jar",
+                "FixedBy": "5.5.7"
+            }
+        ],
+        "unexpected_features": null,
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "quay.io/rhacs-eng/qa:ubuntu-22.04-openssl",
+        "registry": "https://quay.io",
+        "username": "QUAY_RHACS_ENG_RO_USERNAME",
+        "password": "QUAY_RHACS_ENG_RO_PASSWORD",
+        "source": "NVD",
+        "namespace": "ubuntu:22.04",
+        "expected_features": [
+            {
+                "Name": "openssl",
+                "NamespaceName": "ubuntu:22.04",
+                "Version": "3.0.2-0ubuntu1.6",
+                "Arch": "amd64",
+                "Vulnerabilities": [
+                    {
+                        "Name": "CVE-2022-3602",
+                        "NamespaceName": "ubuntu:22.04",
+                        "Description": "A buffer overrun can be triggered in X.509 certificate verification,specifically in name constraint checking. Note that this occurs aftercertificate chain signature verification and requires either a CA to havesigned the malicious certificate or for the application to continuecertificate verification despite failure to construct a path to a trustedissuer. An attacker can craft a malicious email address to overflow fourattacker-controlled bytes on the stack. This buffer overflow could resultin a crash (causing a denial of service) or potentially remote codeexecution. Many platforms implement stack overflow protections which wouldmitigate against the risk of remote code execution. The risk may be furthermitigated based on stack layout for any given platform/compiler.Pre-announcements of CVE-2022-3602 described this issue as CRITICAL.Further analysis based on some of the mitigating factors described abovehave led this to be downgraded to HIGH. Users are still encouraged toupgrade to a new version as soon as possible. In a TLS client, this can betriggered by connecting to a malicious server. In a TLS server, this can betriggered if the server requests client authentication and a maliciousclient connects. Fixed in OpenSSL 3.0.7 (Affected3.0.0,3.0.1,3.0.2,3.0.3,3.0.4,3.0.5,3.0.6).\n\n    Update Instructions:\n\n    Run `sudo pro fix CVE-2022-3602` to fix the vulnerability. The problem can be corrected\n    by updating your system to the following package versions:\n\nlibssl3 - 3.0.2-0ubuntu1.7\nopenssl - 3.0.2-0ubuntu1.7\nNo subscription required",
+                        "Link": "https://ubuntu.com/security/CVE-2022-3602",
+                        "Severity": "Important",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv3": {
+                                    "Score": 7.5,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "0:3.0.2-0ubuntu1.7"
+                    },
+                    {
+                        "Name": "CVE-2022-3786",
+                        "NamespaceName": "ubuntu:22.04",
+                        "Description": "A buffer overrun can be triggered in X.509 certificate verification,specifically in name constraint checking. Note that this occurs aftercertificate chain signature verification and requires either a CA to havesigned a malicious certificate or for an application to continuecertificate verification despite failure to construct a path to a trustedissuer. An attacker can craft a malicious email address in a certificate tooverflow an arbitrary number of bytes containing the `.' character (decimal46) on the stack. This buffer overflow could result in a crash (causing adenial of service). In a TLS client, this can be triggered by connecting toa malicious server. In a TLS server, this can be triggered if the serverrequests client authentication and a malicious client connects.\n\n    Update Instructions:\n\n    Run `sudo pro fix CVE-2022-3786` to fix the vulnerability. The problem can be corrected\n    by updating your system to the following package versions:\n\nlibssl3 - 3.0.2-0ubuntu1.7\nopenssl - 3.0.2-0ubuntu1.7\nNo subscription required",
+                        "Link": "https://ubuntu.com/security/CVE-2022-3786",
+                        "Severity": "Important",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv3": {
+                                    "Score": 7.5,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "0:3.0.2-0ubuntu1.7"
+                    }
+                ],
+                "AddedBy": "sha256:8862c07555c9317d3dd31b6d8a755244a5e215737e45f67fa4c4ec7e03ca3b37",
+                "Location": "var/lib/dpkg/status",
+                "FixedBy": "0:3.0.2-0ubuntu1.19"
+            }
+        ],
+        "unexpected_features": null,
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "quay.io/rhacs-eng/qa:ubuntu-22.10-openssl",
+        "registry": "https://quay.io",
+        "username": "QUAY_RHACS_ENG_RO_USERNAME",
+        "password": "QUAY_RHACS_ENG_RO_PASSWORD",
+        "source": "NVD",
+        "namespace": "ubuntu:22.10",
+        "expected_features": [
+            {
+                "Name": "openssl",
+                "Arch": "amd64",
+                "NamespaceName": "ubuntu:22.10",
+                "Version": "3.0.5-2ubuntu2",
+                "AddedBy": "sha256:2b441754735ea7decb684ef19d54115fc309c270fe7b87ed36aa3773ce50b78b",
+                "Location": "var/lib/dpkg/status"
+            }
+        ],
+        "unexpected_features": null,
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "quay.io/rhacs-eng/qa:ose-jenkins",
+        "registry": "https://quay.io",
+        "username": "QUAY_RHACS_ENG_RO_USERNAME",
+        "password": "QUAY_RHACS_ENG_RO_PASSWORD",
+        "source": "Red Hat",
+        "namespace": "rhel:8",
+        "expected_features": [
+            {
+                "Name": "jenkins-2-plugins",
+                "NamespaceName": "rhel:8",
+                "Version": "4.10.1650890594-1.el8",
+                "Arch": "noarch",
+                "Vulnerabilities": [
+                    {
+                        "Name": "CVE-2021-26291",
+                        "NamespaceName": "rhel:8",
+                        "Description": "A flaw was found in maven. Repositories that are defined in a dependency’s Project Object Model (pom), which may be unknown to users, are used by default resulting in potential risk if a malicious actor takes over that repository or is able to insert themselves into a position to pretend to be that repository. The highest threat from this vulnerability is to data confidentiality and integrity.",
+                        "Link": "https://access.redhat.com/security/cve/CVE-2021-26291",
+                        "Severity": "Moderate",
+                        "Metadata": {
+                            "Red Hat": {
+                                "CVSSv3": {
+                                    "Score": 7.4,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "Name": "RHSA-2022:6531",
+                        "NamespaceName": "rhel:8",
+                        "Description": "Red Hat Security Advisory: OpenShift Container Platform 4.10.33 packages and security update",
+                        "Link": "https://access.redhat.com/errata/RHSA-2022:6531",
+                        "Severity": "Important",
+                        "Metadata": {
+                            "Red Hat": {
+                                "CVSSv3": {
+                                    "Score": 7.5,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N"
+                                }
+                            }
+                        },
+                        "FixedBy": "0:4.10.1663147786-1.el8"
+                    }
+                ],
+                "AddedBy": "sha256:3fa3f612bdcb92746bf76be1b9c9e1c1c80de777aedaf48b7068f4a129ded3c2",
+                "Location": "bdb:var/lib/rpm",
+                "FixedBy": "0:4.10.1685679861-1.el8"
+            }
+        ],
+        "unexpected_features": null,
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "gcr.io/distroless/static-debian11@sha256:a01d47d4036cae5a67a9619e3d06fa14a6811a2247b4da72b4233ece4efebd57",
+        "registry": "https://gcr.io",
+        "username": "",
+        "password": "",
+        "source": "NVD",
+        "namespace": "debian:11",
+        "expected_features": [
+            {
+                "Name": "tzdata",
+                "NamespaceName": "debian:11",
+                "Version": "2021a-1+deb11u9",
+                "Arch": "all",
+                "AddedBy": "sha256:fff4e558ad3a0d44f9ec0bf32771df4a102c6d93fce253dd3eb6657865b78a49",
+                "Location": "var/lib/dpkg/status.d/tzdata"
+            }
+        ],
+        "unexpected_features": null,
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "quay.io/rhacs-eng/qa:drools-CVE-2021-41411",
+        "registry": "https://quay.io",
+        "username": "QUAY_RHACS_ENG_RO_USERNAME",
+        "password": "QUAY_RHACS_ENG_RO_PASSWORD",
+        "source": "NVD",
+        "namespace": "rhel:8",
+        "expected_features": [
+            {
+                "Name": "org.drools:drools-core",
+                "NamespaceName": "rhel:8",
+                "Version": "6.4.0.Final",
+                "Arch": "",
+                "Vulnerabilities": [
+                    {
+                        "Name": "CVE-2021-41411",
+                        "Description": "XML External Entity Reference in drools",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2021-41411",
+                        "Severity": "Critical",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv3": {
+                                    "Score": 9.8,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "7.60.0.Final"
+                    }
+                ],
+                "AddedBy": "sha256:3078c14ffbc62cd9a56f8951d08d6b55a45394fbb5a0aa8f9eca1b1472e3f21d",
+                "Location": "maven:org.drools.drools-core-6.4.0.Final.jar",
+                "FixedBy": "7.69.0.Final"
+            }
+        ],
+        "unexpected_features": null,
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "quay.io/rhacs-eng/qa:tomcat-9.0.59",
+        "registry": "https://quay.io",
+        "username": "QUAY_RHACS_ENG_RO_USERNAME",
+        "password": "QUAY_RHACS_ENG_RO_PASSWORD",
+        "source": "NVD",
+        "namespace": "alpine:3.15",
+        "expected_features": [
+            {
+                "Name": "org.apache.tomcat-embed-core:tomcat-embed-core",
+                "NamespaceName": "alpine:3.15",
+                "Version": "9.0.59",
+                "Arch": "",
+                "Vulnerabilities": [
+                    {
+                        "Name": "CVE-2022-29885",
+                        "Description": "The documentation of Apache Tomcat 10.1.0-M1 to 10.1.0-M14, 10.0.0-M1 to 10.0.20, 9.0.13 to 9.0.62 and 8.5.38 to 8.5.78 for the EncryptInterceptor incorrectly stated it enabled Tomcat clustering to run over an untrusted network. This was not correct. While the EncryptInterceptor does provide confidentiality and integrity protection, it does not protect against all risks associated with running over any untrusted network, particularly DoS risks.",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2022-29885",
+                        "Severity": "Unspecified",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv3": {
+                                    "Score": 7.5,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "introduced=9.0.13&lastAffected=9.0.62"
+                    },
+                    {
+                        "Name": "CVE-2023-28708",
+                        "Description": "When using the RemoteIpFilter with requests received from a reverse proxy via HTTP that include the X-Forwarded-Proto header set to https, session cookies created by Apache Tomcat 11.0.0-M1 to 11.0.0.-M2, 10.1.0-M1 to 10.1.5, 9.0.0-M1 to 9.0.71 and 8.5.0 to 8.5.85 did not include the secure attribute. This could result in the user agent transmitting the session cookie over an insecure channel.",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2023-28708",
+                        "Severity": "Moderate",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv3": {
+                                    "Score": 4.3,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:N/A:N"
+                                }
+                            }
+                        },
+                        "FixedBy": "9.0.72"
+                    }
+                ],
+                "AddedBy": "sha256:97444f2bde8fa4fdfb6ec630b24fbdf95017c6813f4b5e68e64a4280b276eff2",
+                "Location": "jar:tomcat-embed-core-9.0.59.jar",
+                "FixedBy": "9.0.72"
+            }
+        ],
+        "unexpected_features": null,
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "alpine:3.18.3",
+        "registry": "https://registry-1.docker.io",
+        "username": "DOCKER_USERNAME",
+        "password": "DOCKER_PASSWORD",
+        "source": "NVD",
+        "namespace": "alpine:3.18",
+        "expected_features": [
+            {
+                "Name": "apk-tools",
+                "NamespaceName": "alpine:3.18",
+                "Version": "2.14.0-r2",
+                "Arch": "x86_64",
+                "AddedBy": "sha256:7264a8db6415046d36d16ba98b79778e18accee6ffa71850405994cffa9be7de",
+                "Location": "lib/apk/db/installed"
+            }
+        ],
+        "unexpected_features": null,
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "docker.io/library/debian:12.0",
+        "registry": "https://registry-1.docker.io",
+        "username": "DOCKER_USERNAME",
+        "password": "DOCKER_PASSWORD",
+        "source": "NVD",
+        "namespace": "debian:12",
+        "expected_features": [
+            {
+                "Name": "base-files",
+                "NamespaceName": "debian:12",
+                "Version": "12.4",
+                "Arch": "amd64",
+                "AddedBy": "sha256:d52e4f012db158bb7c0fe215b98af1facaddcbaee530efd69b1bae07d597b711",
+                "Location": "var/lib/dpkg/status"
+            }
+        ],
+        "unexpected_features": null,
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "quay.io/rhacs-eng/qa:ubuntu-23.04",
+        "registry": "https://quay.io",
+        "username": "QUAY_RHACS_ENG_RO_USERNAME",
+        "password": "QUAY_RHACS_ENG_RO_PASSWORD",
+        "source": "NVD",
+        "namespace": "ubuntu:23.04",
+        "expected_features": [
+            {
+                "Name": "base-files",
+                "Arch": "amd64",
+                "NamespaceName": "ubuntu:23.04",
+                "Version": "12.3ubuntu2",
+                "AddedBy": "sha256:b631a20f124dbf4ef89945623fa5c94460561f9c7b119e17fd3c1a4bb50ced01",
+                "Location": "var/lib/dpkg/status"
+            }
+        ],
+        "unexpected_features": null,
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "quay.io/rhacs-eng/qa:ubuntu-23.10",
+        "registry": "https://quay.io",
+        "username": "QUAY_RHACS_ENG_RO_USERNAME",
+        "password": "QUAY_RHACS_ENG_RO_PASSWORD",
+        "source": "NVD",
+        "namespace": "ubuntu:23.10",
+        "expected_features": [
+            {
+                "Name": "base-files",
+                "Arch": "amd64",
+                "NamespaceName": "ubuntu:23.10",
+                "Version": "13ubuntu1",
+                "AddedBy": "sha256:316675922a661ce4c35389bdeea6e9ec8d4708e41f08671b586c7aaea469b2c1",
+                "Location": "var/lib/dpkg/status"
+            }
+        ],
+        "unexpected_features": null,
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "nginx:1.25.0-alpine",
+        "registry": "https://registry-1.docker.io",
+        "username": "DOCKER_USERNAME",
+        "password": "DOCKER_PASSWORD",
+        "source": "NVD",
+        "namespace": "alpine:3.17",
+        "expected_features": [
+            {
+                "Name": "libx11",
+                "NamespaceName": "alpine:v3.17",
+                "Version": "1.8.4-r0",
+                "Arch": "x86_64",
+                "Vulnerabilities": [
+                    {
+                        "Name": "CVE-2023-3138",
+                        "NamespaceName": "alpine:v3.17",
+                        "Description": "A vulnerability was found in libX11. The security flaw occurs because the functions in src/InitExt.c in libX11 do not check that the values provided for the Request, Event, or Error IDs are within the bounds of the arrays that those functions write to, using those IDs as array indexes. They trust that they were called with values provided by an Xserver adhering to the bounds specified in the X11 protocol, as all X servers provided by X.Org do. As the protocol only specifies a single byte for these values, an out-of-bounds value provided by a malicious server (or a malicious proxy-in-the-middle) can only overwrite other portions of the Display structure and not write outside the bounds of the Display structure itself, possibly causing the client to crash with this memory corruption.",
+                        "Link": "https://security.alpinelinux.org/vuln/CVE-2023-3138",
+                        "Severity": "Unspecified",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv3": {
+                                    "Score": 7.5,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "1.8.4-r1"
+                    }
+                ],
+                "AddedBy": "sha256:4aacde79cec42c8d0c5886185e70a16b107ae8c6b1a67d63d6efdb6d6978ed97",
+                "Location": "lib/apk/db/installed",
+                "FixedBy": "1.8.7-r0"
+            },
+            {
+                "Name": "nghttp2-libs",
+                "NamespaceName": "alpine:v3.17",
+                "Version": "1.51.0-r0",
+                "Arch": "x86_64",
+                "Vulnerabilities": [
+                    {
+                        "Name": "CVE-2023-35945",
+                        "NamespaceName": "alpine:v3.17",
+                        "Description": "Envoy is a cloud-native high-performance edge/middle/service proxy. Envoy’s HTTP/2 codec may leak a header map and bookkeeping structures upon receiving `RST_STREAM` immediately followed by the `GOAWAY` frames from an upstream server. In nghttp2, cleanup of pending requests due to receipt of the `GOAWAY` frame skips de-allocation of the bookkeeping structure and pending compressed header. The error return [code path] is taken if connection is already marked for not sending more requests due to `GOAWAY` frame. The clean-up code is right after the return statement, causing memory leak. Denial of service through memory exhaustion. This vulnerability was patched in versions(s) 1.26.3, 1.25.8, 1.24.9, 1.23.11.",
+                        "Link": "https://security.alpinelinux.org/vuln/CVE-2023-35945",
+                        "Severity": "Unspecified",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv3": {
+                                    "Score": 7.5,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "1.51.0-r1"
+                    }
+                ],
+                "AddedBy": "sha256:4aacde79cec42c8d0c5886185e70a16b107ae8c6b1a67d63d6efdb6d6978ed97",
+                "Location": "lib/apk/db/installed",
+                "FixedBy": "1.51.0-r2"
+            }
+        ],
+        "unexpected_features": null,
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "docker.io/library/amazonlinux:2.0.20240131.0",
+        "username": "DOCKER_USERNAME",
+        "password": "DOCKER_PASSWORD",
+        "namespace": "amzn:2",
+        "expected_features": [
+            {
+                "Name": "nss-sysinit",
+                "Version": "3.90.0-2.amzn2.0.1",
+                "Arch": "x86_64",
+                "Location": "bdb:var/lib/rpm",
+                "AddedBy": "sha256:7c46e61fc0317cccadde1288fd50789f5fcc06bddf47082f5ba5894613f35b38",
+                "FixedBy": "3.90.0-2.amzn2.0.2",
+                "Vulnerabilities": [
+                    {
+                        "Name": "ALAS2-2024-2442",
+                        "Description": "Package updates are available for Amazon Linux 2 that fix the following vulnerabilities:\nCVE-2023-7104:\n\tA vulnerability was found in SQLite SQLite3 up to 3.43.0 and classified as critical. This issue affects the function sessionReadRecord of the file ext/session/sqlite3session.c of the component make alltest Handler. The manipulation leads to heap-based buffer overflow. It is recommended to apply a patch to fix this issue. The associated identifier of this vulnerability is VDB-248999.\n\nNOTE: https://sqlite.org/forum/forumpost/5bcbf4571c\nNOTE: Fixed by: https://sqlite.org/src/info/0e4e7a05c4204b47\n",
+                        "Link": "http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-7104",
+                        "Severity": "Important",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv3": {
+                                    "Score": 7.3,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:L"
+                                }
+                            }
+                        },
+                        "FixedBy": "3.90.0-2.amzn2.0.2"
+                    }
+                ]
+            }
+        ],
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "quay.io/stackrox-io/scanner:4.3.0",
+        "namespace": "rhel:8",
+        "expected_features": [
+            {
+                "Name": "golang.org/x/crypto",
+                "Version": "v0.14.0",
+                "Location": "go:scanner",
+                "AddedBy": "sha256:46ad2a8a3b7838accbc76931558700cb013aa77cb3a65e4bafcae30fad23eb80",
+                "FixedBy": "0.35.0",
+                "Vulnerabilities": [
+                    {
+                        "Name": "CVE-2023-48795",
+                        "Description": "Prefix Truncation Attack against ChaCha20-Poly1305 and Encrypt-then-MAC aka Terrapin",
+                        "Link": "https://github.com/warp-tech/russh/security/advisories/GHSA-45x7-px36-x8w8",
+                        "Severity": "Moderate",
+                        "FixedBy": "0.17.0",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv3": {
+                                    "Score": 5.9,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:H/A:N"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "Name": "GO-2023-2402",
+                        "Description": "Man-in-the-middle attacker can compromise integrity of secure channel in golang.org/x/crypto",
+                        "Link": "https://go.dev/issue/64784",
+                        "Severity": "Unspecified",
+                        "FixedBy": "0.17.0"
+                    },
+                    {
+                        "Name": "GO-2025-3487",
+                        "Description": "Potential denial of service in golang.org/x/crypto",
+                        "Link": "https://go.dev/cl/652135",
+                        "Severity": "Unspecified",
+                        "Metadata": null,
+                        "FixedBy": "0.35.0"
+                    },
+                    {
+                        "Name": "CVE-2024-45337",
+                        "Description": "Misuse of ServerConfig.PublicKeyCallback may cause authorization bypass in golang.org/x/crypto",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2024-45337",
+                        "Severity": "Critical",
+                        "Metadata": {
+                            "": {
+                                "CVSSv3": {
+                                    "Score": 9.1,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N"
+                                }
+                            }
+                        },
+                        "FixedBy": "0.31.0"
+                    },
+                    {
+                        "Name": "GO-2024-3321",
+                        "Description": "Misuse of connection.serverAuthenticate may cause authorization bypass in golang.org/x/crypto",
+                        "Link": "https://github.com/golang/crypto/commit/b4f1988a35dee11ec3e05d6bf3e90b695fbd8909",
+                        "Severity": "Unspecified",
+                        "Metadata": null,
+                        "FixedBy": "0.31.0"
+                    },
+                    {
+                        "Name": "CVE-2025-22869",
+                        "Description": "golang.org/x/crypto Vulnerable to Denial of Service (DoS) via Slow or Incomplete Key Exchange",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2025-22869",
+                        "Severity": "Important",
+                        "Metadata": {
+                            "": {
+                                "CVSSv3": {
+                                    "Score": 7.5,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "0.35.0"
+                    }
+                ]
+            },
+            {
+                "Location": "root/buildinfo/Dockerfile-ubi8-minimal-8.8-1072.1697626218",
+                "Name": "ubi8-minimal-container",
+                "Version": "8.8-1072.1697626218",
+                "Arch": "x86_64",
+                "AddedBy": "sha256:01858fc5b53815a5246d56955a83c921bd53ca283cc1bfb67ea13a4fca0120fa"
+            }
+        ]
+    },
+    {
+        "image": "docker.io/library/mongo-express:1.0.0-alpha.4",
+        "namespace": "alpine:3.11",
+        "expected_features": [
+            {
+                "Name": "express-fileupload",
+                "Version": "0.4.0",
+                "Location": "nodejs:node_modules/express-fileupload/package.json",
+                "AddedBy": "sha256:ab4078090382b279408fc5dea2aa5c2684848edf89522cf0d5fc7838aefbfadc",
+                "Vulnerabilities": [
+                    {
+                        "Name": "CVE-2020-7699",
+                        "Severity": "Critical",
+                        "Description": "Prototype Pollution in express-fileupload",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2020-7699",
+                        "Severity": "Critical",
+                        "Metadata": {
+                            "": {
+                                "CVSSv3": {
+                                    "Score": 9.8,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                                }
+                            }
+                        },
+                        "FixedBy": "1.1.9"
+                    },
+                    {
+                        "Name": "CVE-2022-27261",
+                        "Severity": "Important",
+                        "Description": "Express-FileUpload Arbitrary File Overwrite",
+                        "Link": "https://nvd.nist.gov/vuln/detail/CVE-2022-27261",
+                        "Metadata": {
+                            "": {
+                                "CVSSv3": {
+                                    "Score": 7.5,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N"
+                                }
+                            }
+                        },
+                        "FixedBy": "0:1.26.5-5.el9_4.1"
+                    }
+                ],
+                "FixedBy": "1.1.9"
+            }
+        ],
+        "only_check_specified_vulns": true
+    },
+    {
+        "image": "docker.io/library/oraclelinux:8",
+        "namespace": "ol:8",
+        "expected_features": [
+            {
+                "Name": "libgcrypt",
+                "Version": "1.8.5-7.el8_6",
+                "Arch": "x86_64",
+                "Location": "bdb:var/lib/rpm",
+                "AddedBy": "sha256:e198ceced898a56d9a661e15048ed0ee31744f30be88f061bcf4455493edda67",
+                "FixedBy": "10:1.8.5-7.el8_6_fips",
+                "Vulnerabilities": [
+                    {
+                        "Name": "CVE-2021-40528",
+                        "Description": "\n[ 1.8.5-7_fips]\n- Add API to provide hash calculation in RSA/DSA/ECDSA signature\n  operations [Orabug: 33081130]\n- Change Epoch from 1 to 10\n\n[1.8.5-7]\n- Fix CVE-2021-33560 (#2018525)\n\n",
+                        "FixedBy": "10:1.8.5-7.el8_6_fips",
+                        "Link": "https://linux.oracle.com/errata/ELSA-2022-9564.html",
+                        "Severity": "Important",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv2": {
+                                    "Score": 2.6,
+                                    "Vectors": "AV:N/AC:H/Au:N/C:P/I:N/A:N"
+                                },
+                                "CVSSv3": {
+                                    "Score": 5.9,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "Name": "CVE-2021-33560",
+                        "Description": "\n[1.8.5-6_fips]\n- Add API to provide hash calculation in RSA/DSA/ECDSA signature\n  operations [Orabug: 33081130]\n- Change Epoch from 1 to 10\n\n[1.8.5-6]\n- Fix for CVE-2021-33560 (#1971421)\n- Enable HW optimizations in FIPS (#1976137)\n- Performance enchancements for ChaCha20 and Poly1305 (#1855231)\n\n[1.8.5-5]\n- Performance enchancements for AES-GCM, CRC32 and SHA2 (#1855231)\n\n",
+                        "FixedBy": "10:1.8.5-6.el8_fips",
+                        "Link": "https://linux.oracle.com/errata/ELSA-2022-9263.html",
+                        "Severity": "Moderate",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv2": {
+                                    "Score": 5,
+                                    "Vectors": "AV:N/AC:L/Au:N/C:P/I:N/A:N"
+                                },
+                                "CVSSv3": {
+                                    "Score": 7.5,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N"
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "image": "docker.io/library/photon:3.0-20230923",
+        "namespace": "photon:3.0",
+        "expected_features": [
+            {
+                "Name": "curl",
+                "Version":  "8.1.2-3.ph3",
+                "Arch": "x86_64",
+                "Location": "bdb:var/lib/rpm",
+                "AddedBy": "sha256:4be30f5be508559f08c9a9556dbd73f57848151885a1c5d912d9ed227a9b206a",
+                "FixedBy": "0:8.1.2-4.ph3",
+                "Vulnerabilities": [
+                    {
+                        "Name": "CVE-2023-38546",
+                        "Description": "This update upgrade curl-libs to 8.1.2-4.ph3 #Fixes {'CVE-2023-38546', 'CVE-2023-38545'}",
+                        "FixedBy": "0:8.1.2-4.ph3",
+                        "Severity": "Critical",
+                        "Link": "https://github.com/vmware/photon/wiki/Security-Updates-3.0-667",
+                        "Metadata": {
+                            "NVD": {
+                                "CVSSv3": {
+                                    "Score": 3.7,
+                                    "Vectors": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:N"
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+]

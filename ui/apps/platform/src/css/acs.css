@@ -1,73 +1,76 @@
-:root {
-    /*
-    * Global color variables for resource icons based on openshift console styles.
-    * An incomplete list, but should track colors defined in
-    * https://github.com/openshift/console/blob/b3cf77721f1c588fbbb6c795423958c9bd92325b/frontend/public/style/_vars.scss and
-    * https://github.com/openshift/console/blob/7f866284272db0d5898384ff116cea18351c9957/frontend/public/components/_resource.scss
-    * until we are able to share code across projects.
-    */
-    --color-resource-default: var(--pf-global--palette--blue-300);
-    --color-resource-cluster: var(--pf-global--palette--purple-600);
-    --color-resource-namespace: var(--pf-global--palette--green-600);
-    --color-resource-deployment: var(--pf-global--palette--blue-500);
-
-    --color-severity-low: var(--pf-global--palette--black-500);
-    --color-severity-medium: var(--pf-global--palette--gold-300);
-    --color-severity-important: var(--pf-global--palette--orange-300);
-    --color-severity-critical: var(--pf-global--palette--red-100);
-}
-
 /*
  * A button with small font size like `isSmall` and reduced padding:
  * 4px instead of 6px vertical
  * 8px instead of 16px horizontal
  */
-.pf-c-button.pf-m-smaller {
-    --pf-c-button--FontSize: var(--pf-global--FontSize--sm);
-    --pf-c-button--PaddingTop: var(--pf-global--spacer--xs);
-    --pf-c-button--PaddingRight: var(--pf-global--spacer--sm);
-    --pf-c-button--PaddingBottom: var(--pf-global--spacer--xs);
-    --pf-c-button--PaddingLeft: var(--pf-global--spacer--sm);
+.pf-v5-c-button.pf-m-smaller {
+    --pf-v5-c-button--FontSize: var(--pf-v5-global--FontSize--sm);
+    --pf-v5-c-button--PaddingTop: var(--pf-v5-global--spacer--xs);
+    --pf-v5-c-button--PaddingRight: var(--pf-v5-global--spacer--sm);
+    --pf-v5-c-button--PaddingBottom: var(--pf-v5-global--spacer--xs);
+    --pf-v5-c-button--PaddingLeft: var(--pf-v5-global--spacer--sm);
 }
 
 /*
  * Dropdown has (via className) font size compatible with Button (see above).
  */
-.pf-c-dropdown.pf-m-smaller {
-    --pf-c-dropdown__toggle--FontSize: var(--pf-global--FontSize--sm);
-    --pf-c-dropdown__toggle--PaddingTop: var(--pf-global--spacer--xs);
-    --pf-c-dropdown__toggle--PaddingRight: var(--pf-global--spacer--sm);
-    --pf-c-dropdown__toggle--PaddingBottom: var(--pf-global--spacer--xs);
-    --pf-c-dropdown__toggle--PaddingLeft: var(--pf-global--spacer--sm);
-    --pf-c-dropdown__toggle-icon--MarginLeft: var(--pf-global--spacer--sm);
-    --pf-c-dropdown__toggle-icon--MarginRight: 0;
-    --pf-c-dropdown__menu-item--FontSize: var(--pf-global--FontSize--sm);
-    --pf-c-dropdown__menu-item--PaddingTop: calc(var(--pf-global--spacer--sm) / 2);
-    --pf-c-dropdown__menu-item--PaddingRight: var(--pf-global--spacer--sm);
-    --pf-c-dropdown__menu-item--PaddingBottom: calc(var(--pf-global--spacer--sm) / 2);
-    --pf-c-dropdown__menu-item--PaddingLeft: var(--pf-global--spacer--sm);
+.pf-v5-c-dropdown.pf-m-smaller {
+    --pf-v5-c-dropdown__toggle--FontSize: var(--pf-v5-global--FontSize--sm);
+    --pf-v5-c-dropdown__toggle--PaddingTop: var(--pf-v5-global--spacer--xs);
+    --pf-v5-c-dropdown__toggle--PaddingRight: var(--pf-v5-global--spacer--sm);
+    --pf-v5-c-dropdown__toggle--PaddingBottom: var(--pf-v5-global--spacer--xs);
+    --pf-v5-c-dropdown__toggle--PaddingLeft: var(--pf-v5-global--spacer--sm);
+    --pf-v5-c-dropdown__toggle-icon--MarginLeft: var(--pf-v5-global--spacer--sm);
+    --pf-v5-c-dropdown__toggle-icon--MarginRight: 0;
+    --pf-v5-c-dropdown__menu-item--FontSize: var(--pf-v5-global--FontSize--sm);
+    --pf-v5-c-dropdown__menu-item--PaddingTop: calc(var(--pf-v5-global--spacer--sm) / 2);
+    --pf-v5-c-dropdown__menu-item--PaddingRight: var(--pf-v5-global--spacer--sm);
+    --pf-v5-c-dropdown__menu-item--PaddingBottom: calc(var(--pf-v5-global--spacer--sm) / 2);
+    --pf-v5-c-dropdown__menu-item--PaddingLeft: var(--pf-v5-global--spacer--sm);
 }
-
-/*
- * Disabled primary Dropdown needs same colors as Button.
- */
-.pf-c-dropdown__toggle.pf-m-primary[disabled] {
-    background-color: var(--pf-global--disabled-color--200);
-    color: var(--pf-global--disabled-color--100);
-}
-
-/* See also style rule to override classic opacity. */
 
 /*
  * ToggleGroupItem button that is disabled needs lighter background like any other form control.
  */
- button.pf-c-toggle-group__button:disabled {
-    background-color: var(--pf-global--disabled-color--300);
+ button.pf-v5-c-toggle-group__button:disabled {
+    background-color: var(--pf-v5-global--disabled-color--300);
 }
 
 /*
  * ToggleGroupItem button that is disabled and selected needs more contrast to distinguish from unselected button.
  */
-button.pf-c-toggle-group__button.pf-m-selected:disabled {
-    background-color: var(--pf-c-toggle-group__button--m-selected--BackgroundColor);
+button.pf-v5-c-toggle-group__button.pf-m-selected:disabled {
+    background-color: var(--pf-v5-c-toggle-group__button--m-selected--BackgroundColor);
+}
+
+/*
+ * Inherit same color as rest of masthead, instead of blue.
+ */
+a[href="/main/search"] {
+    color: inherit;
+}
+
+/*
+ * Popover baseline style rule has .pf-v5-c-popover__close + * selector.
+ *
+ * Adjust padding for bodyContent={<PopoverBodyContent headerContent={…} />} prop,
+ * because accessibility work-around renders header as child of body instead of sibling preceding body.
+ *
+ * https://developer.mozilla.org/en-US/docs/Web/CSS/:has#browser_compatibility
+ */
+
+.pf-v5-c-popover__close + .pf-v5-c-popover__body:has(> .pf-v5-c-popover__header) {
+    padding-inline-end: 0;
+}
+
+.pf-v5-c-popover__close + .pf-v5-c-popover__body > .pf-v5-c-popover__header {
+    padding-inline-end: var(--pf-v5-c-popover__close--sibling--PaddingRight);
+}
+
+/*
+ * Fix lack of color contrast in label of ChromePicker element.
+ */
+.chrome-picker input,
+.chrome-picker label {
+    color: var(--pf-v5-global--Color--100) !important; /* instead of #969696 */
 }

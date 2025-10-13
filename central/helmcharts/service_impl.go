@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -37,7 +37,7 @@ func (s *service) CustomRoutes() []routes.CustomRoute {
 	return []routes.CustomRoute{
 		{
 			Route:         "/api/extensions/helm-charts/",
-			Authorizer:    user.With(),
+			Authorizer:    user.Authenticated(),
 			ServerHandler: http.StripPrefix("/api/extensions/helm-charts", http.HandlerFunc(s.serveChart)),
 			Compression:   false,
 		},

@@ -29,7 +29,7 @@ func TestNoDowngraderLeftBehind(t *testing.T) {
 
 func SetupDowngradersForTest(_ *testing.T) {
 	simpleDowngrader := func(policy *storage.Policy) {
-		v, _ := strconv.ParseFloat(policy.PolicyVersion, 64)
+		v, _ := strconv.ParseFloat(policy.GetPolicyVersion(), 64)
 		policy.PolicyVersion = fmt.Sprintf("%.1f", v-1.0)
 	}
 
@@ -157,7 +157,7 @@ func TestOrganizeByVersionRank(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			actual := organizeByVersionRank(tc.downgraders, versions[:])
+			actual := organizeByVersionRank(tc.downgraders, versions)
 			require.Len(t, actual, len(versions))
 
 			// Since func values are deeply equal iff both are nil,

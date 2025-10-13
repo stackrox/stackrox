@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: proxy-config
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: stackrox-db
+  ownerReferences:
+  - apiVersion: platform.stackrox.io/v1alpha1
+    kind: Central
+    name: stackrox-central-services
+    controller: true
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi

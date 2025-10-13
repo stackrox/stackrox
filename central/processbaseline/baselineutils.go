@@ -3,10 +3,10 @@ package processbaseline
 import (
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/processindicator/views"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -25,23 +25,21 @@ const (
 	ContainerStartupDuration = time.Minute
 )
 
-var (
-	log = logging.LoggerForModule()
-)
-
 // locked checks whether a timestamp represents a locked process baseline true = locked, false = unlocked
-func locked(lockTime *types.Timestamp) bool {
-	return lockTime != nil && types.TimestampNow().Compare(lockTime) >= 0
+func locked(lockTime *time.Time) bool {
+	return lockTime != nil && time.Now().Compare(*lockTime) >= 0
 }
 
 // IsRoxLocked checks whether a process baseline is StackRox locked.
 func IsRoxLocked(baseline *storage.ProcessBaseline) bool {
-	return locked(baseline.GetStackRoxLockedTimestamp())
+	stackroxLockedTimestamp := protocompat.ConvertTimestampToTimeOrNil(baseline.GetStackRoxLockedTimestamp())
+	return locked(stackroxLockedTimestamp)
 }
 
 // IsUserLocked checks whether a process baseline is user locked.
 func IsUserLocked(baseline *storage.ProcessBaseline) bool {
-	return locked(baseline.GetUserLockedTimestamp())
+	userLockedTimestamp := protocompat.ConvertTimestampToTimeOrNil(baseline.GetUserLockedTimestamp())
+	return locked(userLockedTimestamp)
 }
 
 // LockedUnderMode checks whether a process baseline is locked under the given evaluation mode.
@@ -78,9 +76,29 @@ func Processes(baseline *storage.ProcessBaseline, mode EvaluationMode) *set.Stri
 // A process is considered a startup process if it happens within the first ContainerStartupDuration and was not scraped
 // but instead pulled from exec
 func IsStartupProcess(process *storage.ProcessIndicator) bool {
+	if process.GetContainerStartTime() == nil {
+		return false
+	}
+	// TODO(ROX-31107): Determine if nil SignalTime should be considered startup task.  By this logic it is.
+	durationBetweenProcessAndContainerStart := protoutils.Sub(process.GetSignal().GetTime(), process.GetContainerStartTime())
+	return durationBetweenProcessAndContainerStart < ContainerStartupDuration
+}
+
+// IsStartupProcessView determines if the process is a startup process
+// A process is considered a startup process if it happens within the first ContainerStartupDuration and was not scraped
+// but instead pulled from exec
+func IsStartupProcessView(process *views.ProcessIndicatorRiskView) bool {
 	if process.ContainerStartTime == nil {
 		return false
 	}
-	durationBetweenProcessAndContainerStart := protoutils.Sub(process.GetSignal().GetTime(), process.GetContainerStartTime())
+	// TODO(ROX-31107): Determine if nil SignalTime should be considered startup task.  By this logic it is.
+	durationBetweenProcessAndContainerStart := protoutils.Sub(protocompat.ConvertTimeToTimestampOrNil(process.SignalTime),
+		protocompat.ConvertTimeToTimestampOrNil(process.ContainerStartTime))
 	return durationBetweenProcessAndContainerStart < ContainerStartupDuration
+}
+
+// BaselineItemFromProcessView returns what we baseline for a given process.
+// It exists to make sure that we're using the same thing in every place (name vs execfilepath).
+func BaselineItemFromProcessView(process *views.ProcessIndicatorRiskView) string {
+	return process.ExecFilePath
 }

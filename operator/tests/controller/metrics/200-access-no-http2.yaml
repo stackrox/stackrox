@@ -1,0 +1,44 @@
+# Ensure that the metrics server correctly refuses to talk HTTP/2 (Rapid Reset mitigation).
+# This pod definition should match its siblings, except for the name, serviceAccount and command.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: operator-metrics-no-http2
+  labels:
+    test: metrics-access
+spec:
+  restartPolicy: Never
+  containers:
+  - name: run
+    # PREFETCH-THIS-IMAGE <-- a CI script looks for this marker
+    image: registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:0d7cfb0704f6d389942150a01a20cb182dc8ca872004ebf19010e2b622818926
+    args:
+    - bash
+    - "-c"
+    # TODO(ROX-22287): use $TEST_NAMESPACE from Makefile once templating is supported
+    - >-
+        operator_ns="stackrox-operator"
+        url="https://rhacs-operator-controller-manager-metrics-service.$operator_ns.svc.cluster.local:8443/metrics";
+        set -u;
+        curl --version;
+        for attempt in $(seq 5); do
+          echo Attempt $attempt:;
+          curl --http2 --insecure --dump-header /tmp/headers "$url";
+          echo response:;
+          head -n 1 /tmp/headers;
+          echo checking response headers:;
+          if grep -Ei "^HTTP/1" /tmp/headers; then exit 0; fi;
+          sleep 1;
+        done;
+        exit 1
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+  serviceAccount: operator-metrics-unprivileged
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    seccompProfile:
+      type: RuntimeDefault

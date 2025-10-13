@@ -1,17 +1,17 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom-v5-compat';
 import {
+    Button,
+    Checkbox,
     Flex,
     FlexItem,
-    Title,
-    Button,
     Form,
     FormGroup,
-    Checkbox,
     TextInput,
+    Title,
     ValidatedOptions,
 } from '@patternfly/react-core';
-import { useQuery, gql } from '@apollo/client';
+import { gql, useQuery } from '@apollo/client';
 import cloneDeep from 'lodash/cloneDeep';
 import isEqual from 'lodash/isEqual';
 import pluralize from 'pluralize';
@@ -20,17 +20,12 @@ import LinkShim from 'Components/PatternFly/LinkShim';
 import useURLSearch from 'hooks/useURLSearch';
 import useWidgetConfig from 'hooks/useWidgetConfig';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 import { vulnManagementImagesPath } from 'routePaths';
 import { getQueryString } from 'utils/queryStringUtils';
-import WidgetCard from './WidgetCard';
-import AgingImagesChart, {
-    TimeRangeCounts,
-    TimeRangeTupleIndex,
-    TimeRangeTuple,
-    timeRangeTupleIndices,
-    getTimeFilterOption,
-} from './AgingImagesChart';
+import WidgetCard from 'Components/PatternFly/WidgetCard';
+import AgingImagesChart, { getTimeFilterOption, timeRangeTupleIndices } from './AgingImagesChart';
+import type { TimeRangeCounts, TimeRangeTuple, TimeRangeTupleIndex } from './AgingImagesChart';
 import isResourceScoped from '../utils';
 import NoDataEmptyState from './NoDataEmptyState';
 import WidgetOptionsMenu from './WidgetOptionsMenu';
@@ -230,7 +225,7 @@ function AgingImages() {
                                                     aria-label="Toggle image time range"
                                                     id={`${fieldIdPrefix}-time-range-${index}`}
                                                     name={`${fieldIdPrefix}-time-range-${index}`}
-                                                    className="pf-u-mb-sm pf-u-display-flex pf-u-align-items-center"
+                                                    className="pf-v5-u-mb-sm pf-v5-u-display-flex pf-v5-u-align-items-center"
                                                     isChecked={timeRanges[index].enabled}
                                                     onChange={() =>
                                                         dispatch({ type: 'toggle', index })
@@ -238,7 +233,7 @@ function AgingImages() {
                                                     label={
                                                         <TextInput
                                                             aria-label="Image age in days"
-                                                            onChange={async (val) => {
+                                                            onChange={async (_event, val) => {
                                                                 const value = parseInt(val, 10);
                                                                 if (!(value >= maxTimeRange)) {
                                                                     await dispatch({

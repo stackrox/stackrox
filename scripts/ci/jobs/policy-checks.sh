@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. && pwd)"
+# shellcheck source=../../../scripts/ci/lib.sh
 source "$ROOT/scripts/ci/lib.sh"
 
 set -euo pipefail
@@ -13,7 +14,7 @@ check_policy_files() {
     make deps
     make policyutil
     policyutil upgrade -d pkg/defaults/policies/files -o /tmp/policies-in-standard-form --ensure-read-only mitre --ensure-read-only criteria
-    diff pkg/defaults/policies/files /tmp/policies-in-standard-form > /tmp/policies-diff || true
+    diff --ignore-space-change pkg/defaults/policies/files /tmp/policies-in-standard-form > /tmp/policies-diff || true
 
     store_test_results /tmp/policies-diff policies-diff
 

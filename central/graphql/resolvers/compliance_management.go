@@ -3,9 +3,9 @@ package resolvers
 import (
 	"context"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -15,36 +15,55 @@ func init() {
 		schema.AddQuery("complianceRecentRuns(clusterId:ID, standardId:ID, since:Time): [ComplianceRun!]!"),
 		schema.AddQuery("complianceRun(id:ID!): ComplianceRun"),
 		schema.AddMutation("complianceTriggerRuns(clusterId:ID!,standardId:ID!): [ComplianceRun!]!"),
-		schema.AddQuery("complianceRunStatuses(ids: [ID!]!): GetComplianceRunStatusesResponse!"),
+		schema.AddQuery("complianceRunStatuses(ids: [ID!], latest: Boolean): GetComplianceRunStatusesResponse!"),
 	)
 }
 
 // ComplianceTriggerRuns is a mutation to trigger compliance runs on a specific cluster and standard (or all clusters/all standards)
 func (resolver *Resolver) ComplianceTriggerRuns(ctx context.Context, args struct{ ClusterID, StandardID graphql.ID }) ([]*complianceRunResolver, error) {
-	if err := writeComplianceRuns(ctx); err != nil {
+	if err := writeCompliance(ctx); err != nil {
 		return nil, err
 	}
-	resp, err := resolver.ComplianceManagementService.TriggerRuns(ctx, &v1.TriggerComplianceRunsRequest{
-		Selection: &v1.ComplianceRunSelection{
-			ClusterId:  string(args.ClusterID),
-			StandardId: string(args.StandardID),
-		},
+
+	resp, err := resolver.processWithAuditLog(ctx, args, "ComplianceTriggerRuns", func() (interface{}, error) {
+		resp, err := resolver.ComplianceManagementService.TriggerRuns(ctx, &v1.TriggerComplianceRunsRequest{
+			Selection: &v1.ComplianceRunSelection{
+				ClusterId:  string(args.ClusterID),
+				StandardId: string(args.StandardID),
+			},
+		})
+
+		return resolver.wrapComplianceRuns(resp.GetStartedRuns(), err)
 	})
-	return resolver.wrapComplianceRuns(resp.GetStartedRuns(), err)
+
+	if resp == nil {
+		return nil, err
+	}
+
+	return resp.([]*complianceRunResolver), err
 }
 
 // ComplianceRunStatuses is a query to obtain the statuses of a list of compliance runs.
-func (resolver *Resolver) ComplianceRunStatuses(ctx context.Context, args struct{ Ids []graphql.ID }) (*getComplianceRunStatusesResponseResolver, error) {
-	if err := readComplianceRuns(ctx); err != nil {
+func (resolver *Resolver) ComplianceRunStatuses(ctx context.Context, args struct {
+	Ids    *[]graphql.ID
+	Latest *bool
+}) (*getComplianceRunStatusesResponseResolver, error) {
+	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
-	idStrings := make([]string, len(args.Ids))
-	for i, id := range args.Ids {
-		idStrings[i] = string(id)
+	var request v1.GetComplianceRunStatusesRequest
+	if args.Ids != nil {
+		ids := *args.Ids
+		idStrings := make([]string, len(ids))
+		for i, id := range ids {
+			idStrings[i] = string(id)
+		}
+		request.RunIds = idStrings
 	}
-	resp, err := resolver.ComplianceManagementService.GetRunStatuses(ctx, &v1.GetComplianceRunStatusesRequest{
-		RunIds: idStrings,
-	})
+	if args.Latest != nil {
+		request.Latest = *args.Latest
+	}
+	resp, err := resolver.ComplianceManagementService.GetRunStatuses(ctx, &request)
 	return resolver.wrapGetComplianceRunStatusesResponse(resp, resp != nil, err)
 }
 
@@ -55,7 +74,7 @@ func (resolver *Resolver) ComplianceRecentRuns(
 		ClusterID, StandardID *graphql.ID
 		Since                 *graphql.Time
 	}) ([]*complianceRunResolver, error) {
-	if err := readComplianceRuns(ctx); err != nil {
+	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
 	req := &v1.GetRecentComplianceRunsRequest{}
@@ -66,7 +85,7 @@ func (resolver *Resolver) ComplianceRecentRuns(
 		req.StandardIdOpt = &v1.GetRecentComplianceRunsRequest_StandardId{StandardId: string(*args.StandardID)}
 	}
 	if args.Since != nil {
-		t, err := types.TimestampProto(args.Since.Time)
+		t, err := protocompat.ConvertTimeToTimestampOrError(args.Since.Time)
 		if err != nil {
 			return nil, err
 		}
@@ -81,7 +100,7 @@ func (resolver *Resolver) ComplianceRecentRuns(
 
 // ComplianceRun returns a specific compliance run, if it exists
 func (resolver *Resolver) ComplianceRun(ctx context.Context, args struct{ graphql.ID }) (*complianceRunResolver, error) {
-	if err := readComplianceRuns(ctx); err != nil {
+	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
 	run, err := resolver.ComplianceManager.GetRecentRun(ctx, string(args.ID))

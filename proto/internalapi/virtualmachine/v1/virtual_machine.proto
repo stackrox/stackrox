@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package virtualmachine.v1;
+
+option go_package = "./internalapi/virtualmachine/v1;v1";
+
+// VirtualMachine represents kube-virt k8s virtual machine resources.
+message VirtualMachine {
+  string id = 1;
+  string namespace = 2;
+  string name = 3;
+  string cluster_id = 4;
+  map<string, string> facts = 5;
+  int32 vsock_cid = 6;
+  bool vsock_cid_set = 7;
+  enum State {
+    UNKNOWN = 0;
+    STOPPED = 1;
+    RUNNING = 2;
+  }
+  State state = 8;
+}

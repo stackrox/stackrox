@@ -1,109 +1,98 @@
 syntax = "proto3";
 
-option go_package = "v1";
-option java_package = "io.stackrox.proto.api.v1";
-
-import weak "google/api/annotations.proto";
-import "api/v1/common.proto";
-import "api/v1/empty.proto";
-import "storage/cluster.proto";
-
 package v1;
 
+import "api/v1/common.proto";
+import "api/v1/empty.proto";
+import weak "google/api/annotations.proto";
+import "storage/cluster.proto";
+
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
+
 enum DeploymentFormat {
-    KUBECTL     = 0;
-    HELM        = 1;
-    HELM_VALUES = 2;
+  KUBECTL = 0;
+  HELM = 1;
+  HELM_VALUES = 2;
 }
 
 enum LoadBalancerType {
-    NONE          = 0;
-    LOAD_BALANCER = 1;
-    NODE_PORT     = 2;
-    ROUTE         = 3;
+  NONE = 0;
+  LOAD_BALANCER = 1;
+  NODE_PORT = 2;
+  ROUTE = 3;
 }
 
 // next available tag: 3
 message DecommissionedClusterRetentionInfo {
-    oneof RetentionInfo {
-        // indicates whether a cluster is protected from deletion
-        bool is_excluded           = 1;
-        // days after which cluster will be deleted if sensor health remains UNHEALTHY
-        int32 days_until_deletion  = 2;
-    }
+  oneof RetentionInfo {
+    // indicates whether a cluster is protected from deletion
+    bool is_excluded = 1;
+    // days after which cluster will be deleted if sensor health remains UNHEALTHY
+    int32 days_until_deletion = 2;
+  }
 }
 
 message ClusterResponse {
-    storage.Cluster cluster                                    = 1;
-    DecommissionedClusterRetentionInfo cluster_retention_info  = 2;
+  storage.Cluster cluster = 1;
+  DecommissionedClusterRetentionInfo cluster_retention_info = 2;
 }
 
 message ClusterDefaultsResponse {
-    string main_image_repository = 1;
-    string collector_image_repository = 2;
-    bool kernel_support_available = 3;
+  string main_image_repository = 1;
+  string collector_image_repository = 2;
+  bool kernel_support_available = 3;
 }
 
 message ClustersList {
-    repeated storage.Cluster clusters                                            = 1;
-    // Maps 'UNHEALTHY' clusters' IDs to their retention info
-    map<string, DecommissionedClusterRetentionInfo> cluster_id_to_retention_info = 2;
+  repeated storage.Cluster clusters = 1;
+  // Maps 'UNHEALTHY' clusters' IDs to their retention info
+  map<string, DecommissionedClusterRetentionInfo> cluster_id_to_retention_info = 2;
 }
 
 message GetClustersRequest {
-    string query = 1;
+  string query = 1;
 }
 
 message KernelSupportAvailableResponse {
-    option deprecated = true;
-    bool kernel_support_available = 1;
+  option deprecated = true;
+  bool kernel_support_available = 1;
 }
 
 service ClustersService {
+  rpc GetClusters(GetClustersRequest) returns (ClustersList) {
+    option (google.api.http) = {get: "/v1/clusters"};
+  }
 
-    rpc GetClusters (GetClustersRequest) returns (ClustersList) {
-        option (google.api.http) = {
-            get: "/v1/clusters"
-        };
-    }
+  rpc GetCluster(ResourceByID) returns (ClusterResponse) {
+    option (google.api.http) = {get: "/v1/clusters/{id}"};
+  }
 
-    rpc GetCluster (ResourceByID) returns (ClusterResponse) {
-        option (google.api.http) = {
-            get: "/v1/clusters/{id}"
-        };
-    }
+  rpc PostCluster(storage.Cluster) returns (ClusterResponse) {
+    option (google.api.http) = {
+      post: "/v1/clusters"
+      body: "*"
+    };
+  }
 
-    rpc PostCluster (storage.Cluster) returns (ClusterResponse) {
-        option (google.api.http) = {
-            post: "/v1/clusters"
-            body: "*"
-        };
-    }
+  rpc PutCluster(storage.Cluster) returns (ClusterResponse) {
+    option (google.api.http) = {
+      put: "/v1/clusters/{id}"
+      body: "*"
+    };
+  }
 
-    rpc PutCluster (storage.Cluster) returns (ClusterResponse) {
-        option (google.api.http) = {
-            put: "/v1/clusters/{id}"
-            body: "*"
-        };
-    }
+  rpc DeleteCluster(ResourceByID) returns (Empty) {
+    option (google.api.http) = {delete: "/v1/clusters/{id}"};
+  }
 
-    rpc DeleteCluster (ResourceByID) returns (Empty) {
-        option (google.api.http) = {
-            delete: "/v1/clusters/{id}"
-        };
-    }
+  // GetKernelSupportAvailable is deprecated in favor of GetClusterDefaultValues.
+  rpc GetKernelSupportAvailable(Empty) returns (KernelSupportAvailableResponse) {
+    option deprecated = true;
+    option (google.api.http) = {get: "/v1/clusters-env/kernel-support-available"};
+  }
 
-    // GetKernelSupportAvailable is deprecated in favor of GetClusterDefaultValues.
-    rpc GetKernelSupportAvailable(Empty) returns (KernelSupportAvailableResponse) {
-        option deprecated = true;
-        option (google.api.http) = {
-            get: "/v1/clusters-env/kernel-support-available"
-        };
-    }
-
-    rpc GetClusterDefaultValues(Empty) returns (ClusterDefaultsResponse) {
-        option (google.api.http) = {
-            get: "/v1/cluster-defaults"
-        };
-    }
+  rpc GetClusterDefaultValues(Empty) returns (ClusterDefaultsResponse) {
+    option (google.api.http) = {get: "/v1/cluster-defaults"};
+  }
 }

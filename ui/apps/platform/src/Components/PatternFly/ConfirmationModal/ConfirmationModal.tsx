@@ -1,7 +1,5 @@
 import React, { ReactElement, ReactNode } from 'react';
-import { Modal, ModalVariant, Button, ButtonVariant } from '@patternfly/react-core';
-
-import './ConfirmationModal.css';
+import { Button, Modal } from '@patternfly/react-core';
 
 type ConfirmationModalProps = {
     ariaLabel: string;
@@ -31,12 +29,13 @@ function ConfirmationModal({
     return (
         <Modal
             isOpen={isOpen}
-            variant={ModalVariant.small}
+            variant="small"
             title={title || ''}
+            titleIconVariant="warning"
             actions={[
                 <Button
                     key="confirm"
-                    variant={isDestructive ? ButtonVariant.danger : ButtonVariant.primary}
+                    variant={isDestructive ? 'danger' : 'primary'}
                     onClick={onConfirm}
                     className="pf-confirmation-modal-confirm-btn"
                     isDisabled={isConfirmDisabled || isLoading}

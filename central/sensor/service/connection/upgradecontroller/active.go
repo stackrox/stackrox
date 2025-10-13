@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -38,19 +37,22 @@ func (u *upgradeController) makeProcessActive(cluster *storage.Cluster, processS
 }
 
 func (u *upgradeController) maybeTimeoutUpgrade(processID string) error {
+	if u == nil {
+		return errors.New("upgrade controller is nil")
+	}
 	currState := u.active.status.GetProgress().GetUpgradeState()
-	var relevantTimestamp *types.Timestamp
-	if currState == storage.UpgradeProgress_UPGRADE_INITIALIZING {
-		relevantTimestamp = u.active.status.GetInitiatedAt()
+	var relevantGoTime time.Time
+	if u.active == nil || u.active.status == nil {
+		return errors.Errorf("got no relevant timestamp for upgrade controller with status: %+v", u.upgradeStatus)
 	}
-	if relevantTimestamp == nil {
-		relevantTimestamp = u.active.status.GetProgress().GetSince()
-	}
-	if relevantTimestamp == nil {
+	if currState == storage.UpgradeProgress_UPGRADE_INITIALIZING && u.active.status.GetInitiatedAt() != nil {
+		relevantGoTime = protoconv.ConvertTimestampToTimeOrNow(u.active.status.GetInitiatedAt())
+	} else if u.active.status.GetProgress().GetSince() != nil {
+		relevantGoTime = protoconv.ConvertTimestampToTimeOrNow(u.active.status.GetProgress().GetSince())
+	} else {
 		// This should never happen -- it violates one of our invariants.
 		return errors.Errorf("got no relevant timestamp for upgrade controller with status: %+v", u.upgradeStatus)
 	}
-	relevantGoTime := protoconv.ConvertTimestampToTimeOrNow(relevantTimestamp)
 	if time.Since(relevantGoTime) > u.timeouts.AbsoluteNoProgressTimeout() {
 		return u.setUpgradeProgress(processID, storage.UpgradeProgress_UPGRADE_TIMED_OUT, fmt.Sprintf("The upgrade has been aborted due to timeout -- it was stuck in the %s state for too long.", currState))
 	}
@@ -65,7 +67,7 @@ func (u *upgradeController) maybeReconcileStateWithActiveConnInfo(processID stri
 	}
 
 	// If it's a cert rotation, then we don't need to do any state reconciliation.
-	if u.active.status.Type == storage.ClusterUpgradeStatus_UpgradeProcessStatus_CERT_ROTATION {
+	if u.active.status.GetType() == storage.ClusterUpgradeStatus_UpgradeProcessStatus_CERT_ROTATION {
 		return false, nil
 	}
 	// We check relative to the target version, not central's current version, because we might have upgraded central since

@@ -6,7 +6,7 @@ out_dir=""
 
 setup_file() {
   # remove binaries from the previous runs
-  [[ -n "$NO_BATS_ROXCTL_REBUILD" ]] || rm -f "${tmp_roxctl}"/roxctl*
+  delete-outdated-binaries "$(roxctl-development version)"
 
   echo "Testing roxctl version: '$(roxctl-development version)'" >&3
   command -v yq > /dev/null || skip "Tests in this file require yq"
@@ -28,14 +28,14 @@ teardown() {
 }
 
 @test "roxctl-development helm output should support --image-defaults flag" {
-  run roxctl-development helm output central-services --image-defaults="stackrox.io" --output-dir "$out_dir"
+  run roxctl-development helm output central-services --image-defaults="opensource" --output-dir "$out_dir"
   assert_success
 }
 
 @test "roxctl-development helm output help-text should state default value for --image-defaults flag" {
   run roxctl-development helm output central-services -h
   assert_success
-  assert_line --regexp "--image-defaults.*\(development_build, stackrox.io, rhacs, opensource\).*default \"development_build\""
+  assert_line --regexp "--image-defaults='development_build'"
 }
 
 @test "roxctl-development helm output central-services should use quay.io/rhacs-eng registry by default" {
@@ -56,14 +56,7 @@ teardown() {
 @test "roxctl-development helm output central-services --image-defaults=dummy should fail" {
   run roxctl-development helm output central-services --image-defaults=dummy --output-dir "$out_dir"
   assert_failure
-  assert_line --regexp "ERROR:[[:space:]]+unable to get chart meta values: '--image-defaults': unexpected value 'dummy', allowed values are \[development_build stackrox.io rhacs opensource\]"
-}
-
-@test "roxctl-development helm output central-services --image-defaults=stackrox.io should use stackrox.io registry" {
-  run roxctl-development helm output central-services --image-defaults=stackrox.io --output-dir "$out_dir"
-  assert_success
-  assert_output --partial "Written Helm chart central-services to directory"
-  assert_helm_template_central_registry "$out_dir" 'stackrox.io' "$any_version" 'main' 'scanner' 'scanner-db'
+  assert_line --regexp "ERROR:[[:space:]]+unable to get chart meta values: '--image-defaults': unexpected value 'dummy', allowed values are \[development_build rhacs opensource\]"
 }
 
 @test "roxctl-development helm output central-services --image-defaults=rhacs should use registry.redhat.io registry" {
@@ -94,8 +87,8 @@ teardown() {
   has_flag_collision_warning
 }
 
-@test "roxctl-development helm output central-services --rhacs --image-defaults=stackrox.io should return error about --rhacs colliding with --image-defaults" {
-  run roxctl-development helm output central-services --rhacs --image-defaults=stackrox.io --output-dir "$out_dir"
+@test "roxctl-development helm output central-services --rhacs --image-defaults=opensource should return error about --rhacs colliding with --image-defaults" {
+  run roxctl-development helm output central-services --rhacs --image-defaults=opensource --output-dir "$out_dir"
   assert_failure
   has_deprecation_warning
   has_flag_collision_warning

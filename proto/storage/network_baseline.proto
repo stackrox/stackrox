@@ -1,60 +1,59 @@
 syntax = "proto3";
 
-option go_package = "storage";
-option java_package = "io.stackrox.proto.storage";
+package storage;
 
 import "google/protobuf/timestamp.proto";
 import "storage/network_flow.proto";
-import "gogoproto/gogo.proto";
 
-package storage;
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
 
 // NetworkBaselineConnectionProperties represents information about a baseline connection
 // next available tag: 4
 message NetworkBaselineConnectionProperties {
-    // Whether this connection is an ingress/egress, from the PoV
-    // of the deployment whose baseline this is in
-    bool ingress        = 1;
+  // Whether this connection is an ingress/egress, from the PoV
+  // of the deployment whose baseline this is in
+  bool ingress = 1;
 
-    // May be 0 if not applicable (e.g., icmp), and denotes the destination port
-    uint32 port         = 2;
-    L4Protocol protocol = 3;
+  // May be 0 if not applicable (e.g., icmp), and denotes the destination port
+  uint32 port = 2;
+  L4Protocol protocol = 3;
 }
 
 // NetworkBaselinePeer represents a baseline peer.
 // next available tag: 3
 message NetworkBaselinePeer {
-    NetworkEntity entity                                    = 1;
+  NetworkEntity entity = 1;
 
-    // Will always have at least one element
-    repeated NetworkBaselineConnectionProperties properties = 2;
+  // Will always have at least one element
+  repeated NetworkBaselineConnectionProperties properties = 2;
 }
 
 // NetworkBaseline represents a network baseline of a deployment. It contains all
 // the baseline peers and their respective connections.
 // next available tag: 8
 message NetworkBaseline {
-    // This is the ID of the baseline.
-    string deployment_id                             = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+  // This is the ID of the baseline.
+  string deployment_id = 1; // @gotags: sql:"pk,type(uuid)"
 
-    string cluster_id                                = 2 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store"'];
-    string namespace                                 = 3 [(gogoproto.moretags) = 'search:"Namespace,hidden,store"'];
+  string cluster_id = 2; // @gotags: search:"Cluster ID,hidden,store" sql:"type(uuid)"
+  string namespace = 3; // @gotags: search:"Namespace,hidden,store"
 
-    repeated NetworkBaselinePeer peers               = 4 [(gogoproto.moretags) = 'search:"-"'];
+  repeated NetworkBaselinePeer peers = 4; // @gotags: search:"-"
 
-    // A list of peers that will never be added to the baseline.
-    // For now, this contains peers that the user has manually removed.
-    // This is used to ensure we don't add it back in the event
-    // we see the flow again.
-    repeated NetworkBaselinePeer forbidden_peers     = 5 [(gogoproto.moretags) = 'search:"-"'];
+  // A list of peers that will never be added to the baseline.
+  // For now, this contains peers that the user has manually removed.
+  // This is used to ensure we don't add it back in the event
+  // we see the flow again.
+  repeated NetworkBaselinePeer forbidden_peers = 5; // @gotags: search:"-"
 
-    google.protobuf.Timestamp observation_period_end = 6;
+  google.protobuf.Timestamp observation_period_end = 6;
 
-    // Indicates if this baseline has been locked by user.
-    // Here locking means:
-    //   1: Do not let system automatically add any allowed peer to baseline
-    //   2: Start reporting violations on flows that are not in the baseline
-    bool locked                                      = 7;
+  // Indicates if this baseline has been locked by user.
+  // Here locking means:
+  //   1: Do not let system automatically add any allowed peer to baseline
+  //   2: Start reporting violations on flows that are not in the baseline
+  bool locked = 7;
 
-    string deployment_name                           = 8;
+  string deployment_name = 8;
 }

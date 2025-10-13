@@ -1,11 +1,11 @@
 syntax = "proto3";
 
-option go_package = "central";
+package central;
 
 import "storage/network_baseline.proto";
 
-package central;
+option go_package = "./internalapi/central;central";
 
 message NetworkBaselineSync {
-    repeated storage.NetworkBaseline network_baselines = 1;
+  repeated storage.NetworkBaseline network_baselines = 1;
 }

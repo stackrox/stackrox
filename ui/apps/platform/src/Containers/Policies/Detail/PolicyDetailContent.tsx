@@ -2,18 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Formik } from 'formik';
 import { Flex, Title, Divider, Grid } from '@patternfly/react-core';
 
-import { fetchClustersAsArray } from 'services/ClustersService';
 import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
-import { Cluster } from 'types/cluster.proto';
 import { NotifierIntegration } from 'types/notifier.proto';
-import { Policy } from 'types/policy.proto';
+import { BasePolicy } from 'types/policy.proto';
 import PolicyOverview from './PolicyOverview';
 import BooleanPolicyLogicSection from '../Wizard/Step3/BooleanPolicyLogicSection';
 import PolicyScopeSection from './PolicyScopeSection';
 import PolicyBehaviorSection from './PolicyBehaviorSection';
 
 type PolicyDetailContentProps = {
-    policy: Policy;
+    policy: BasePolicy;
     isReview?: boolean;
 };
 
@@ -21,18 +19,7 @@ function PolicyDetailContent({
     policy,
     isReview = false,
 }: PolicyDetailContentProps): React.ReactElement {
-    const [clusters, setClusters] = useState<Cluster[]>([]);
     const [notifiers, setNotifiers] = useState<NotifierIntegration[]>([]);
-
-    useEffect(() => {
-        fetchClustersAsArray()
-            .then((data) => {
-                setClusters(data as Cluster[]);
-            })
-            .catch(() => {
-                // TODO
-            });
-    }, []);
 
     useEffect(() => {
         fetchNotifierIntegrations()
@@ -49,10 +36,10 @@ function PolicyDetailContent({
         <div data-testid="policy-details">
             <Flex direction={{ default: 'column' }}>
                 <PolicyOverview policy={policy} notifiers={notifiers} isReview={isReview} />
-                <Title headingLevel="h3" className="pf-u-mb-md pf-u-pt-lg">
+                <Title headingLevel="h3" className="pf-v5-u-mb-md pf-v5-u-pt-lg">
                     Policy behavior
                 </Title>
-                <Divider component="div" className="pf-u-mb-md" />
+                <Divider component="div" className="pf-v5-u-mb-md" />
                 <PolicyBehaviorSection
                     lifecycleStages={lifecycleStages}
                     eventSource={eventSource}
@@ -61,7 +48,7 @@ function PolicyDetailContent({
                 <Formik initialValues={policy} onSubmit={() => {}}>
                     {() => (
                         <>
-                            <Title headingLevel="h3" className="pf-u-mb-md pf-u-pt-lg">
+                            <Title headingLevel="h3" className="pf-v5-u-mb-md pf-v5-u-pt-lg">
                                 Policy criteria
                             </Title>
                             <Divider component="div" />
@@ -74,15 +61,11 @@ function PolicyDetailContent({
                 </Formik>
                 {(scope?.length > 0 || exclusions?.length > 0) && (
                     <>
-                        <Title headingLevel="h3" className="pf-u-mb-md pf-u-pt-lg">
+                        <Title headingLevel="h3" className="pf-v5-u-mb-md pf-v5-u-pt-lg">
                             Policy scope
                         </Title>
                         <Divider component="div" />
-                        <PolicyScopeSection
-                            scope={scope}
-                            exclusions={exclusions}
-                            clusters={clusters}
-                        />
+                        <PolicyScopeSection scope={scope} exclusions={exclusions} />
                     </>
                 )}
             </Flex>

@@ -8,7 +8,6 @@ metadata:
   labels:
     operators.coreos.com/compliance-operator.openshift-compliance: ""
   name: tailoredprofiles.compliance.openshift.io
-  resourceVersion: "126510"
   uid: 769c2661-aaf1-4678-aaa3-63d63552c78a
 spec:
   conversion:

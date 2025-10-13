@@ -3,7 +3,7 @@ div.or-divider-container {
 }
 
 div.or-divider {
-    background-color: var(--pf-global--BorderColor--100);
+    background-color: var(--pf-v5-global--BorderColor--100);
     height: 1px;
     width: 100%;
 }

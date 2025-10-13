@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 var (
@@ -24,18 +25,20 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.PermissionSet)(nil)), "permission_sets")
+		schema.ScopingResource = resources.Access
 		RegisterTable(schema, CreateTablePermissionSetsStmt)
 		return schema
 	}()
 )
 
 const (
+	// PermissionSetsTableName specifies the name of the table in postgres.
 	PermissionSetsTableName = "permission_sets"
 )
 
 // PermissionSets holds the Gorm model for Postgres table `permission_sets`.
 type PermissionSets struct {
-	Id         string `gorm:"column:id;type:varchar;primaryKey"`
+	ID         string `gorm:"column:id;type:uuid;primaryKey"`
 	Name       string `gorm:"column:name;type:varchar;unique"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }

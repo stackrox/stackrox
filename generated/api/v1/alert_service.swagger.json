@@ -4,6 +4,11 @@
     "title": "api/v1/alert_service.proto",
     "version": "version not set"
   },
+  "tags": [
+    {
+      "name": "AlertService"
+    }
+  ],
   "consumes": [
     "application/json"
   ],
@@ -25,7 +30,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -61,6 +66,25 @@
             "in": "query",
             "required": false,
             "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -79,7 +103,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -117,6 +141,25 @@
             "type": "boolean"
           },
           {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
             "name": "confirm",
             "in": "query",
             "required": false,
@@ -142,7 +185,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -175,7 +218,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -213,6 +256,25 @@
             "type": "boolean"
           },
           {
+            "name": "request.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "request.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
             "name": "groupBy",
             "in": "query",
             "required": false,
@@ -244,7 +306,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -277,6 +339,25 @@
           },
           {
             "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -301,7 +382,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -337,6 +418,25 @@
             "in": "query",
             "required": false,
             "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -358,7 +458,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -389,7 +489,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -405,46 +505,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v1ResolveAlertRequest"
-            }
-          }
-        ],
-        "tags": [
-          "AlertService"
-        ]
-      }
-    },
-    "/v1/alerts/{id}/snooze": {
-      "patch": {
-        "summary": "SnoozeAlert is deprecated.",
-        "operationId": "AlertService_SnoozeAlert",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1Empty"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v1SnoozeAlertRequest"
+              "$ref": "#/definitions/AlertServiceResolveAlertBody"
             }
           }
         ],
@@ -467,7 +528,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -500,6 +561,25 @@
           },
           {
             "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -534,6 +614,16 @@
         }
       }
     },
+    "AlertEntityType": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "DEPLOYMENT",
+        "CONTAINER_IMAGE",
+        "RESOURCE"
+      ],
+      "default": "UNSET"
+    },
     "AlertGroupAlertCounts": {
       "type": "object",
       "properties": {
@@ -555,43 +645,36 @@
         "processes": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storageProcessIndicator"
           }
         }
       }
-    },
-    "AlertResource": {
-      "type": "object",
-      "properties": {
-        "resourceType": {
-          "$ref": "#/definitions/AlertResourceResourceType"
-        },
-        "name": {
-          "type": "string"
-        },
-        "clusterId": {
-          "type": "string"
-        },
-        "clusterName": {
-          "type": "string"
-        },
-        "namespace": {
-          "type": "string"
-        },
-        "namespaceId": {
-          "type": "string"
-        }
-      },
-      "title": "Represents an alert on a kubernetes resource (configmaps, secrets, etc.)"
     },
     "AlertResourceResourceType": {
       "type": "string",
       "enum": [
         "UNKNOWN",
         "SECRETS",
-        "CONFIGMAPS"
+        "CONFIGMAPS",
+        "CLUSTER_ROLES",
+        "CLUSTER_ROLE_BINDINGS",
+        "NETWORK_POLICIES",
+        "SECURITY_CONTEXT_CONSTRAINTS",
+        "EGRESS_FIREWALLS"
       ],
       "default": "UNKNOWN"
+    },
+    "AlertServiceResolveAlertBody": {
+      "type": "object",
+      "properties": {
+        "whitelist": {
+          "type": "boolean"
+        },
+        "addToBaseline": {
+          "type": "boolean"
+        }
+      }
     },
     "AlertViolation": {
       "type": "object",
@@ -635,6 +718,7 @@
         "events": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v1AlertEvent"
           }
         }
@@ -649,6 +733,7 @@
         "severities": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/ClusterAlertsAlertEvents"
           }
         }
@@ -672,6 +757,7 @@
         "counts": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/AlertGroupAlertCounts"
           }
         }
@@ -778,6 +864,7 @@
         "attrs": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/KeyValueAttrsKeyValueAttr"
           }
         }
@@ -797,27 +884,9 @@
         }
       }
     },
-    "protobufAny": {
+    "googlerpcStatus": {
       "type": "object",
       "properties": {
-        "typeUrl": {
-          "type": "string",
-          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. This string must contain at least\none \"/\" character. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
-        },
-        "value": {
-          "type": "string",
-          "format": "byte",
-          "description": "Must be a valid serialized protocol buffer of the above specified type."
-        }
-      },
-      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(\u0026foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n\nExample 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\nExample 4: Pack and unpack a message in Go\n\n     foo := \u0026pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := \u0026pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\n\nJSON\n\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": \u003cstring\u003e,\n      \"lastName\": \u003cstring\u003e\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
-    },
-    "runtimeError": {
-      "type": "object",
-      "properties": {
-        "error": {
-          "type": "string"
-        },
         "code": {
           "type": "integer",
           "format": "int32"
@@ -828,10 +897,22 @@
         "details": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
         }
       }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string",
+          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. This string must contain at least\none \"/\" character. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com. As of May 2023, there are no widely used type server\nimplementations and no plans to implement one.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
+        }
+      },
+      "additionalProperties": {},
+      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(&foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n    // or ...\n    if (any.isSameTypeAs(Foo.getDefaultInstance())) {\n      foo = any.unpack(Foo.getDefaultInstance());\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := &pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := &pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": <string>,\n      \"lastName\": <string>\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
     },
     "storageAlert": {
       "type": "object",
@@ -866,12 +947,13 @@
           "title": "Represents an alert on a container image.\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
         },
         "resource": {
-          "$ref": "#/definitions/AlertResource",
+          "$ref": "#/definitions/storageAlertResource",
           "title": "Represents an alert on a kubernetes resource (configmaps, secrets, etc.)\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
         },
         "violations": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/AlertViolation"
           },
           "description": "For run-time phase alert, a maximum of 40 violations are retained."
@@ -898,11 +980,14 @@
         "state": {
           "$ref": "#/definitions/storageViolationState"
         },
-        "snoozeTill": {
-          "type": "string",
-          "format": "date-time"
+        "platformComponent": {
+          "type": "boolean"
+        },
+        "entityType": {
+          "$ref": "#/definitions/AlertEntityType"
         }
-      }
+      },
+      "title": "Next available tag: 24"
     },
     "storageAlertDeployment": {
       "type": "object",
@@ -917,10 +1002,12 @@
           "type": "string"
         },
         "namespace": {
-          "type": "string"
+          "type": "string",
+          "description": "This field has to be duplicated in Alert for scope management and search."
         },
         "namespaceId": {
-          "type": "string"
+          "type": "string",
+          "description": "This field has to be duplicated in Alert for scope management and search."
         },
         "labels": {
           "type": "object",
@@ -929,14 +1016,17 @@
           }
         },
         "clusterId": {
-          "type": "string"
+          "type": "string",
+          "description": "This field has to be duplicated in Alert for scope management and search."
         },
         "clusterName": {
-          "type": "string"
+          "type": "string",
+          "description": "This field has to be duplicated in Alert for scope management and search."
         },
         "containers": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/AlertDeploymentContainer"
           }
         },
@@ -950,6 +1040,34 @@
           "type": "boolean"
         }
       }
+    },
+    "storageAlertResource": {
+      "type": "object",
+      "properties": {
+        "resourceType": {
+          "$ref": "#/definitions/AlertResourceResourceType"
+        },
+        "name": {
+          "type": "string"
+        },
+        "clusterId": {
+          "type": "string",
+          "description": "This field has to be duplicated in Alert for scope management and search."
+        },
+        "clusterName": {
+          "type": "string",
+          "description": "This field has to be duplicated in Alert for scope management and search."
+        },
+        "namespace": {
+          "type": "string",
+          "description": "This field has to be duplicated in Alert for scope management and search."
+        },
+        "namespaceId": {
+          "type": "string",
+          "description": "This field has to be duplicated in Alert for scope management and search."
+        }
+      },
+      "title": "Represents an alert on a kubernetes resource other than a deployment (configmaps, secrets, etc.)"
     },
     "storageBooleanOperator": {
       "type": "string",
@@ -973,9 +1091,12 @@
         },
         "isClusterLocal": {
           "type": "boolean"
+        },
+        "idV2": {
+          "type": "string"
         }
       },
-      "title": "Next tag: 12"
+      "title": "Next tag: 13"
     },
     "storageEnforcementAction": {
       "type": "string",
@@ -1127,22 +1248,25 @@
         },
         "clusterName": {
           "type": "string",
-          "description": "This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release."
+          "description": "This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.\n\nThis field has moved to CommonEntityInfo"
         },
         "namespace": {
           "type": "string",
-          "description": "This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release."
+          "description": "This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.\n\nThis field has moved to CommonEntityInfo"
         },
         "clusterId": {
           "type": "string",
-          "description": "This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release."
+          "description": "This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.\n\nThis field has moved to CommonEntityInfo"
         },
         "inactive": {
           "type": "boolean"
         },
         "namespaceId": {
           "type": "string",
-          "description": "This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release."
+          "description": "This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.\n\nThis field has moved to CommonEntityInfo"
+        },
+        "deploymentType": {
+          "type": "string"
         }
       }
     },
@@ -1178,7 +1302,12 @@
       "enum": [
         "DEPLOYMENT",
         "SECRETS",
-        "CONFIGMAPS"
+        "CONFIGMAPS",
+        "CLUSTER_ROLES",
+        "CLUSTER_ROLE_BINDINGS",
+        "NETWORK_POLICIES",
+        "SECURITY_CONTEXT_CONSTRAINTS",
+        "EGRESS_FIREWALLS"
       ],
       "default": "DEPLOYMENT",
       "title": "A special ListAlert-only enumeration of all resource types. Unlike Alert.Resource.ResourceType this also includes deployment as a type\nThis must be kept in sync with Alert.Resource.ResourceType (excluding the deployment value)"
@@ -1190,9 +1319,11 @@
         "DEPLOYMENT",
         "INTERNET",
         "LISTEN_ENDPOINT",
-        "EXTERNAL_SOURCE"
+        "EXTERNAL_SOURCE",
+        "INTERNAL_ENTITIES"
       ],
-      "default": "UNKNOWN_TYPE"
+      "default": "UNKNOWN_TYPE",
+      "title": "- INTERNAL_ENTITIES: INTERNAL_ENTITIES is for grouping all internal entities under a single network graph node"
     },
     "storagePolicy": {
       "type": "object",
@@ -1201,62 +1332,75 @@
           "type": "string"
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "Name of the policy.  Must be unique."
         },
         "description": {
-          "type": "string"
+          "type": "string",
+          "description": "Free-form text description of this policy."
         },
         "rationale": {
           "type": "string"
         },
         "remediation": {
-          "type": "string"
+          "type": "string",
+          "description": "Describes how to remediate a violation of this policy."
         },
         "disabled": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Toggles whether or not this policy will be executing and actively firing alerts."
         },
         "categories": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "List of categories that this policy falls under.  Category names must already exist in Central."
         },
         "lifecycleStages": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/storageLifecycleStage"
-          }
+          },
+          "description": "Describes which policy lifecylce stages this policy applies to.  Choices are DEPLOY, BUILD, and RUNTIME."
         },
         "eventSource": {
-          "$ref": "#/definitions/storageEventSource"
+          "$ref": "#/definitions/storageEventSource",
+          "title": "Describes which events should trigger execution of this policy"
         },
         "exclusions": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storageExclusion"
-          }
+          },
+          "description": "Define deployments or images that should be excluded from this policy."
         },
         "scope": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storageScope"
-          }
+          },
+          "description": "Defines clusters, namespaces, and deployments that should be included in this policy.  No scopes defined includes everything."
         },
         "severity": {
-          "$ref": "#/definitions/storageSeverity"
+          "$ref": "#/definitions/storageSeverity",
+          "description": "Defines how severe a violation from this policy is.  Possible values are UNSET_SEVERITY, LOW_SEVERITY, MEDIUM_SEVERITY, HIGH_SEVERITY, and CRITICAL_SEVERITY."
         },
         "enforcementActions": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/storageEnforcementAction"
           },
-          "description": "FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.\nFAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.\nFAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates."
+          "description": "FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.\nFAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.\nFAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates.\nLists the enforcement actions to take when a violation from this policy is identified.  Possible value are UNSET_ENFORCEMENT, SCALE_TO_ZERO_ENFORCEMENT, UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT, KILL_POD_ENFORCEMENT, FAIL_BUILD_ENFORCEMENT, FAIL_KUBE_REQUEST_ENFORCEMENT, FAIL_DEPLOYMENT_CREATE_ENFORCEMENT, and. FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT."
         },
         "notifiers": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "List of IDs of the notifiers that should be triggered when a violation from this policy is identified.  IDs should be in the form of a UUID and are found through the Central API."
         },
         "lastUpdated": {
           "type": "string",
@@ -1280,12 +1424,15 @@
         "policySections": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storagePolicySection"
-          }
+          },
+          "description": "PolicySections define the violation criteria for this policy."
         },
         "mitreAttackVectors": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/PolicyMitreAttackVectors"
           }
         },
@@ -1295,31 +1442,40 @@
         },
         "mitreVectorsLocked": {
           "type": "boolean",
-          "description": "Read-only field. If true, the policy's MITRE ATT\u0026CK fields are rendered read-only."
+          "description": "Read-only field. If true, the policy's MITRE ATT&CK fields are rendered read-only."
         },
         "isDefault": {
           "type": "boolean",
           "description": "Read-only field. Indicates the policy is a default policy if true and a custom policy if false."
+        },
+        "source": {
+          "$ref": "#/definitions/storagePolicySource"
         }
-      }
+      },
+      "title": "Next tag: 28"
     },
     "storagePolicyGroup": {
       "type": "object",
       "properties": {
         "fieldName": {
-          "type": "string"
+          "type": "string",
+          "description": "Defines which field on a deployment or image this PolicyGroup evaluates.  See https://docs.openshift.com/acs/operating/manage-security-policies.html#policy-criteria_manage-security-policies for a complete list of possible values."
         },
         "booleanOperator": {
-          "$ref": "#/definitions/storageBooleanOperator"
+          "$ref": "#/definitions/storageBooleanOperator",
+          "description": "Determines if the values are combined with an OR or an AND.  Defaults to OR."
         },
         "negate": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Determines if the evaluation of this PolicyGroup is negated.  Default to false."
         },
         "values": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storagePolicyValue"
-          }
+          },
+          "title": "List of values for the specified field"
         }
       }
     },
@@ -1332,10 +1488,20 @@
         "policyGroups": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storagePolicyGroup"
-          }
+          },
+          "description": "The set of policies groups that make up this section.  Each group can be considered an individual criterion."
         }
       }
+    },
+    "storagePolicySource": {
+      "type": "string",
+      "enum": [
+        "IMPERATIVE",
+        "DECLARATIVE"
+      ],
+      "default": "IMPERATIVE"
     },
     "storagePolicyValue": {
       "type": "object",
@@ -1350,7 +1516,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "title": "A unique uuid for the Indicator message"
+          "title": "A unique UUID for the Indicator message"
         },
         "deploymentId": {
           "type": "string"
@@ -1442,6 +1608,7 @@
         "lineageInfo": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/ProcessSignalLineageInfo"
           },
           "title": "Process LineageInfo"
@@ -1488,11 +1655,31 @@
       "type": "string",
       "enum": [
         "ACTIVE",
-        "SNOOZED",
         "RESOLVED",
         "ATTEMPTED"
       ],
       "default": "ACTIVE"
+    },
+    "v1AggregateBy": {
+      "type": "object",
+      "properties": {
+        "aggrFunc": {
+          "$ref": "#/definitions/v1Aggregation"
+        },
+        "distinct": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1Aggregation": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "COUNT",
+        "MIN",
+        "MAX"
+      ],
+      "default": "UNSET"
     },
     "v1AlertEvent": {
       "type": "object",
@@ -1539,6 +1726,7 @@
         "clusters": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/GetAlertTimeseriesResponseClusterAlerts"
           }
         }
@@ -1550,6 +1738,7 @@
         "groups": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/GetAlertsCountsResponseAlertGroup"
           }
         }
@@ -1561,6 +1750,7 @@
         "alertsByPolicies": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v1GetAlertsGroupResponsePolicyGroup"
           }
         }
@@ -1595,6 +1785,7 @@
         "alerts": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/storageListAlert"
           }
         }
@@ -1613,6 +1804,14 @@
         },
         "sortOption": {
           "$ref": "#/definitions/v1SortOption"
+        },
+        "sortOptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1SortOption"
+          },
+          "description": "This field is under development. It is not supported on any REST APIs."
         }
       }
     },
@@ -1626,39 +1825,13 @@
           "$ref": "#/definitions/v1Pagination"
         }
       },
-      "description": "RawQuery represents the search query string.\nThe format of the query string is \"\u003cfield name\u003e:\u003cvalue,value,...\u003e+\u003cfield name\u003e:\u003cvalue, value,...\u003e+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
-    },
-    "v1ResolveAlertRequest": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "whitelist": {
-          "type": "boolean"
-        },
-        "addToBaseline": {
-          "type": "boolean"
-        }
-      }
+      "description": "RawQuery represents the search query string.\nThe format of the query string is \"<field name>:<value,value,...>+<field name>:<value, value,...>+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
     },
     "v1ResolveAlertsRequest": {
       "type": "object",
       "properties": {
         "query": {
           "type": "string"
-        }
-      }
-    },
-    "v1SnoozeAlertRequest": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "snoozeTill": {
-          "type": "string",
-          "format": "date-time"
         }
       }
     },
@@ -1670,6 +1843,10 @@
         },
         "reversed": {
           "type": "boolean"
+        },
+        "aggregateBy": {
+          "$ref": "#/definitions/v1AggregateBy",
+          "description": "This field is under development. It is not supported on any REST APIs."
         }
       }
     },

@@ -6,8 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -16,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/gziputil"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 const (
@@ -62,7 +61,7 @@ func (m *mountSettingsWatch) OnChange(dir string) (interface{}, error) {
 	}
 
 	var clusterConfig storage.DynamicClusterConfig
-	if err := proto.Unmarshal(configData, &clusterConfig); err != nil {
+	if err := clusterConfig.UnmarshalVTUnsafe(configData); err != nil {
 		return nil, errors.Wrapf(err, "unmarshaling decompressed cluster config data from file %s", configPath)
 	}
 
@@ -86,7 +85,7 @@ func (m *mountSettingsWatch) OnChange(dir string) (interface{}, error) {
 		return nil, errors.Wrapf(err, "parsing last update timestamp from file %s", timestampPath)
 	}
 
-	tsProto, err := types.TimestampProto(timestamp)
+	tsProto, err := protocompat.ConvertTimeToTimestampOrError(timestamp)
 	if err != nil {
 		return nil, errors.Wrapf(err, "timestamp in file %s is invalid", timestampPath)
 	}
@@ -151,8 +150,10 @@ func (m *mountSettingsWatch) OnWatchError(err error) {
 }
 
 func (m *mountSettingsWatch) start() error {
-	if err := k8scfgwatch.WatchConfigMountDir(m.ctx, settingsMountPath, k8scfgwatch.DeduplicateWatchErrors(m), k8scfgwatch.Options{Force: true}); err != nil {
-		return err
+	if err := k8scfgwatch.WatchConfigMountDir(m.ctx, settingsMountPath,
+		k8scfgwatch.DeduplicateWatchErrors(m), k8scfgwatch.Options{Force: true}); err != nil {
+		return errors.Wrapf(err,
+			"watching config mount directory %q", settingsMountPath)
 	}
 	return nil
 }

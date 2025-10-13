@@ -6,17 +6,16 @@ templated_fragment='"{{ printf "%s" ._thing.image }}"'
 
 setup_file() {
     command -v yq >/dev/null || skip "Tests in this file require yq"
-    echo "Using yq version: '$(yq4.16 --version)'" >&3
+    echo "Using yq version: '$(yq --version)'" >&3
     # as of Aug 2022, we run yq version 4.16.2
     # remove binaries from the previous runs
-    [[ -n "$NO_BATS_ROXCTL_REBUILD" ]] || rm -f "${tmp_roxctl}"/roxctl*
+    delete-outdated-binaries "$(roxctl-development version)"
     echo "Testing roxctl version: '$(roxctl-development version)'" >&3
 }
 
 setup() {
   out_dir="$(mktemp -d -u)"
   ofile="$(mktemp)"
-  export ROX_ROXCTL_NETPOL_GENERATE='true'
 }
 
 teardown() {
@@ -24,107 +23,213 @@ teardown() {
   rm -f "$ofile"
 }
 
-@test "roxctl-development generate netpol should respect ROX_ROXCTL_NETPOL_GENERATE feature-flag at runtime" {
-  export ROX_ROXCTL_NETPOL_GENERATE=false
-  run roxctl-development generate netpol "$out_dir"
-  assert_failure
-  assert_line --partial 'unknown command "generate"'
+@test "roxctl-development netpol generate should not show deprecation info" {
+    run roxctl-development netpol generate
+    refute_line --partial "is deprecated"
 }
 
+@test "roxctl-development netpol generate should return error on empty or non-existing directory" {
+    run roxctl-development netpol generate "$out_dir"
+    assert_failure
+    assert_output --regexp 'ERROR:.*the path.*does not exist'
+    assert_output --regexp 'ERROR:.*error generating network policies: could not find any Kubernetes workload resources'
+    assert_output --regexp 'ERROR:.*generating netpols: there were errors during execution'
 
-@test "roxctl-development generate netpol should return error on empty or non-existing directory" {
-  run roxctl-development generate netpol "$out_dir"
-  assert_failure
-  assert_line --partial "error generating network policies"
-  assert_line --partial "no such file or directory"
-
-  run roxctl-development generate netpol
-  assert_failure
-  assert_line --partial "accepts 1 arg(s), received 0"
+    run roxctl-development netpol generate
+    assert_failure
+    assert_line --partial "accepts 1 arg(s), received 0"
 }
 
-@test "roxctl-development generate netpol generates network policies" {
-  assert_file_exist "${test_data}/np-guard/scenario-minimal-service/frontend.yaml"
-  assert_file_exist "${test_data}/np-guard/scenario-minimal-service/backend.yaml"
-  echo "Writing network policies to ${ofile}" >&3
-  run roxctl-development generate netpol "${test_data}/np-guard/scenario-minimal-service"
-  assert_success
+@test "roxctl-development netpol generate generates network policies" {
+    assert_file_exist "${test_data}/np-guard/scenario-minimal-service/frontend.yaml"
+    assert_file_exist "${test_data}/np-guard/scenario-minimal-service/backend.yaml"
+    echo "Writing network policies to ${ofile}" >&3
+    run roxctl-development netpol generate "${test_data}/np-guard/scenario-minimal-service"
+    assert_success
 
-  echo "$output" > "$ofile"
-  assert_file_exist "$ofile"
-  yaml_valid "$ofile"
+    echo "$output" > "$ofile"
+    assert_file_exist "$ofile"
+    yaml_valid "$ofile"
 
-  # There must be at least 2 yaml documents in the output
-  # yq version 4.16.2 has problems with handling 'document_index', thus we use 'di'
-  run yq e 'di' "${ofile}"
-  assert_line '0'
-  assert_line '1'
+    # There must be at least 3 yaml documents in the output
+    # yq version 4.16.2 has problems with handling 'document_index', thus we use 'di'
+    run yq e 'di' "${ofile}"
+    assert_line '0'
+    assert_line '1'
+    assert_line '2'
 
-  # Ensure that both yaml docs are of kind 'NetworkPolicy'
-  run yq e '.kind | ({"match": ., "doc": di})' "${ofile}"
-  assert_line --index 0 'match: NetworkPolicy'
-  assert_line --index 1 'doc: 0'
-  assert_line --index 2 'match: NetworkPolicy'
-  assert_line --index 3 'doc: 1'
+    # Ensure that all yaml docs are of kind 'NetworkPolicy'
+    run yq e '.kind | ({"match": ., "doc": di})' "${ofile}"
+    assert_line --index 0 'match: NetworkPolicy'
+    assert_line --index 1 'doc: 0'
+    assert_line --index 2 'match: NetworkPolicy'
+    assert_line --index 3 'doc: 1'
+    assert_line --index 4 'match: NetworkPolicy'
+    assert_line --index 5 'doc: 2'
+
+    # Ensure that all NetworkPolicies have the generated-by-stackrox label
+    run yq e '.metadata.labels | ({"match": ."network-policy-buildtime-generator.stackrox.io/generated", "doc": di})' "${ofile}"
+    assert_line --index 0 'match: "true"'
+    assert_line --index 1 'doc: 0'
+    assert_line --index 2 'match: "true"'
+    assert_line --index 3 'doc: 1'
+    assert_line --index 4 'match: "true"'
+    assert_line --index 5 'doc: 2'
 }
 
-@test "roxctl-development generate netpol produces no output when all yamls are templated" {
-  mkdir -p "$out_dir"
-  write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-XXXXXX.yaml")"
+@test "roxctl-development netpol generate generates network policies with custom dns port" {
+    assert_file_exist "${test_data}/np-guard/scenario-minimal-service/frontend.yaml"
+    assert_file_exist "${test_data}/np-guard/scenario-minimal-service/backend.yaml"
+    echo "Writing network policies to ${ofile}" >&3
+    dns_port="5353"
+    run roxctl-development netpol generate "${test_data}/np-guard/scenario-minimal-service" --dnsport ${dns_port}
+    assert_success
 
-  echo "Analyzing a corrupted yaml file '$templatedYaml'" >&3
-  run roxctl-development generate netpol "$out_dir/"
-  assert_failure
-  assert_output --partial 'YAML document is malformed'
-  assert_output --partial 'no relevant Kubernetes resources found'
+    echo "$output" > "$ofile"
+    assert_file_exist "$ofile"
+    yaml_valid "$ofile"
+
+    # There must be at least 3 yaml documents in the output
+    # yq version 4.16.2 has problems with handling 'document_index', thus we use 'di'
+    run yq e 'di' "${ofile}"
+    assert_line '0'
+    assert_line '1'
+    assert_line '2'
+
+    # Ensure that all yaml docs are of kind 'NetworkPolicy'
+    run yq e '.kind | ({"match": ., "doc": di})' "${ofile}"
+    assert_line --index 0 'match: NetworkPolicy'
+    assert_line --index 1 'doc: 0'
+    assert_line --index 2 'match: NetworkPolicy'
+    assert_line --index 3 'doc: 1'
+    assert_line --index 4 'match: NetworkPolicy'
+    assert_line --index 5 'doc: 2'
+
+    # Ensure that dns ports are properly set
+    run yq e '.spec.egress[1].ports[0].port | ({"match": ., "doc": di})' "${ofile}"
+    assert_line --index 0 'match: null'
+    assert_line --index 1 'doc: 0'
+    assert_line --index 2 'match: '${dns_port}
+    assert_line --index 3 'doc: 1'
+    assert_line --index 4 'match: null'
+    assert_line --index 5 'doc: 2'
 }
 
-@test "roxctl-development generate netpol produces errors when some yamls are templated" {
-  mkdir -p "$out_dir"
-  write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-XXXXXX.yaml")"
+@test "roxctl-development netpol generate generates network policies with custom dns named port" {
+    assert_file_exist "${test_data}/np-guard/scenario-minimal-service/frontend.yaml"
+    assert_file_exist "${test_data}/np-guard/scenario-minimal-service/backend.yaml"
+    echo "Writing network policies to ${ofile}" >&3
+    dns_port="dns"
+    run roxctl-development netpol generate "${test_data}/np-guard/scenario-minimal-service" --dnsport ${dns_port}
+    assert_success
 
-  assert_file_exist "${test_data}/np-guard/scenario-minimal-service/frontend.yaml"
-  assert_file_exist "${test_data}/np-guard/scenario-minimal-service/backend.yaml"
-  cp "${test_data}/np-guard/scenario-minimal-service/frontend.yaml" "$out_dir/frontend.yaml"
-  cp "${test_data}/np-guard/scenario-minimal-service/backend.yaml" "$out_dir/backend.yaml"
+    echo "$output" > "$ofile"
+    assert_file_exist "$ofile"
+    yaml_valid "$ofile"
 
-  echo "Analyzing a directory where 1/3 of yaml files are templated '$out_dir/'" >&3
-  run roxctl-development generate netpol "$out_dir/" --remove --output-file=/dev/null
-  assert_failure
-  assert_output --partial 'YAML document is malformed'
-  refute_output --partial 'no relevant Kubernetes resources found'
+    # Ensure that dns ports are properly set
+    run yq e '.spec.egress[1].ports[0].port | ({"match": ., "doc": di})' "${ofile}"
+    assert_line --index 0 'match: null'
+    assert_line --index 1 'doc: 0'
+    assert_line --index 2 'match: '${dns_port}
+    assert_line --index 3 'doc: 1'
+    assert_line --index 4 'match: null'
+    assert_line --index 5 'doc: 2'
 }
 
-@test "roxctl-development generate netpol produces warnings (or errors for --strict) when yamls are not K8s resources" {
-  mkdir -p "$out_dir"
-  assert_file_exist "${test_data}/np-guard/empty-yamls/empty.yaml"
-  assert_file_exist "${test_data}/np-guard/empty-yamls/empty2.yaml"
-  cp "${test_data}/np-guard/empty-yamls/empty.yaml" "$out_dir/empty.yaml"
-  cp "${test_data}/np-guard/empty-yamls/empty2.yaml" "$out_dir/empty2.yaml"
-
-  run roxctl-development generate netpol "$out_dir/" --remove --output-file=/dev/null
-  assert_success
-  assert_output --partial 'Yaml document is not a K8s resource'
-  assert_output --partial 'no relevant Kubernetes resources found'
-
-  run roxctl-development generate netpol "$out_dir/" --remove --output-file=/dev/null --strict
-  assert_failure
-  assert_output --partial 'Yaml document is not a K8s resource'
-  assert_output --partial 'no relevant Kubernetes resources found'
-  assert_output --partial 'ERROR:'
-  assert_output --partial 'there were warnings during execution'
+@test "roxctl-development netpol generate fails with dns port set to 0" {
+    assert_file_exist "${test_data}/np-guard/scenario-minimal-service/frontend.yaml"
+    assert_file_exist "${test_data}/np-guard/scenario-minimal-service/backend.yaml"
+    run roxctl-development netpol generate "${test_data}/np-guard/scenario-minimal-service" --dnsport 0
+    assert_failure
+    assert_output --regexp 'ERROR:.*illegal port number'
 }
 
-@test "roxctl-development generate netpol stops on first error when run with --fail" {
-  mkdir -p "$out_dir"
-  write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-01-XXXXXX-file1.yaml")"
-  write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-02-XXXXXX-file2.yaml")"
+@test "roxctl-development netpol generate fails with dns port set to empty string" {
+    assert_file_exist "${test_data}/np-guard/scenario-minimal-service/frontend.yaml"
+    assert_file_exist "${test_data}/np-guard/scenario-minimal-service/backend.yaml"
+    run roxctl-development netpol generate "${test_data}/np-guard/scenario-minimal-service" --dnsport ""
+    assert_failure
+    assert_output --regexp 'ERROR:.*illegal port name'
+}
 
-  run roxctl-development generate netpol "$out_dir/" --remove --output-file=/dev/null --fail
-  assert_failure
-  assert_output --partial 'YAML document is malformed'
-  assert_output --partial 'file1.yaml'
-  refute_output --partial 'file2.yaml'
+@test "roxctl-development netpol generate produces no output when all yamls are templated" {
+    mkdir -p "$out_dir"
+    write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-XXXXXX.yaml")"
+
+    echo "Analyzing a corrupted yaml file '$templatedYaml'" >&3
+    run roxctl-development netpol generate "$out_dir/"
+    assert_failure
+    assert_output --regexp 'WARN:.*error parsing .*templated-.*.yaml'
+    assert_output --regexp 'ERROR:.*error generating network policies: could not find any Kubernetes workload resources'
+    assert_output --regexp 'ERROR:.*generating netpols: there were errors during execution'
+}
+
+@test "roxctl-development netpol generate produces warnings when some yamls are templated" {
+    mkdir -p "$out_dir"
+    write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-XXXXXX.yaml")"
+
+    assert_file_exist "${test_data}/np-guard/scenario-minimal-service/frontend.yaml"
+    assert_file_exist "${test_data}/np-guard/scenario-minimal-service/backend.yaml"
+    cp "${test_data}/np-guard/scenario-minimal-service/frontend.yaml" "$out_dir/frontend.yaml"
+    cp "${test_data}/np-guard/scenario-minimal-service/backend.yaml" "$out_dir/backend.yaml"
+
+    echo "Analyzing a directory where 1/3 of yaml files are templated '$out_dir/'" >&3
+    run roxctl-development netpol generate "$out_dir/" --remove --output-file=/dev/null
+    assert_success
+    assert_output --regexp 'WARN:.*error parsing .*templated-.*.yaml'
+}
+
+@test "roxctl-development netpol generate parameter --strict" {
+    mkdir -p "$out_dir"
+    assert_file_exist "${test_data}/np-guard/empty-yamls/empty.yaml"
+    assert_file_exist "${test_data}/np-guard/empty-yamls/empty2.yaml"
+    cp "${test_data}/np-guard/empty-yamls/empty.yaml" "$out_dir/empty.yaml"
+    cp "${test_data}/np-guard/empty-yamls/empty2.yaml" "$out_dir/empty2.yaml"
+
+    run roxctl-development netpol generate "$out_dir/" --remove --output-file=/dev/null
+    assert_failure
+    assert_output --regexp 'WARN:.*unable to decode.*empty.yaml'
+    assert_output --regexp 'WARN:.*unable to decode.*empty2.yaml'
+    assert_output --regexp 'ERROR:.*error generating network policies: could not find any Kubernetes workload resources'
+    assert_output --regexp 'ERROR:.*generating netpols: there were errors during execution'
+
+    run roxctl-development netpol generate "$out_dir/" --remove --output-file=/dev/null --strict
+    assert_failure
+    assert_output --regexp 'WARN:.*unable to decode.*empty.yaml'
+    assert_output --regexp 'WARN:.*unable to decode.*empty2.yaml'
+    assert_output --regexp 'ERROR:.*error generating network policies: could not find any Kubernetes workload resources'
+    assert_output --regexp 'ERROR:.*generating netpols: there were errors during execution'
+}
+
+@test "roxctl-development netpol generate parameter --fail" {
+    mkdir -p "$out_dir"
+    write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-01-XXXXXX-file1.yaml")"
+    write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-02-XXXXXX-file2.yaml")"
+
+    run roxctl-development netpol generate "$out_dir/" --remove --output-file=/dev/null --fail
+    assert_failure
+    assert_output --regexp 'WARN:.*error parsing.*-file1.yaml'
+    assert_output --regexp 'WARN:.*error parsing.*-file2.yaml'
+    assert_output --regexp 'ERROR:.*error generating network policies: could not find any Kubernetes workload resources'
+    assert_output --regexp 'ERROR:.*generating netpols: there were errors during execution'
+}
+
+@test "roxctl-development netpol generate parameter --fail and --strict" {
+    mkdir -p "$out_dir"
+    assert_file_exist "${test_data}/np-guard/scenario-minimal-service/frontend.yaml"
+    assert_file_exist "${test_data}/np-guard/scenario-minimal-service/backend.yaml"
+    cp "${test_data}/np-guard/scenario-minimal-service/frontend.yaml" "$out_dir/frontend.yaml"
+    cp "${test_data}/np-guard/scenario-minimal-service/backend.yaml" "$out_dir/backend.yaml"
+    write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-01-XXXXXX-file1.yaml")"
+    write_yaml_to_file "$templated_fragment" "$(mktemp "$out_dir/templated-02-XXXXXX-file2.yaml")"
+
+    run roxctl-development netpol generate "$out_dir/" --fail --strict
+    assert_failure
+    assert_output --regexp 'ERROR:.*generating netpols: there were warnings during execution'
+    assert_output --regexp 'WARN:.*error parsing.*-file1.yaml'
+    # should fail fast before trying to decode file2 due to warnings when processing file1
+    refute_output --regexp 'WARN:.*error parsing.*-file2.yaml'
 }
 
 write_yaml_to_file() {

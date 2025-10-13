@@ -1,0 +1,82 @@
+{
+    "id": "",
+    "name": "Latest tag (COPY)",
+    "description": "Alert on deployments with images using tag 'latest'",
+    "rationale": "Using latest tag can result in running heterogeneous versions of code. Many Docker hosts cache the Docker images, which means newer versions of the latest tag will not be picked up. See https://docs.docker.com/develop/dev-best-practices for more best practices.",
+    "remediation": "Consider moving to semantic versioning based on code releases (semver.org) or using the first 12 characters of the source control SHA. This will allow you to tie the Docker image to the code.",
+    "disabled": false,
+    "categories": [
+        "DevOps Best Practices"
+    ],
+    "lifecycleStages": [
+        "BUILD",
+        "DEPLOY"
+    ],
+    "eventSource": "NOT_APPLICABLE",
+    "exclusions": [
+        {
+            "name": "Don't alert on kube-system namespace",
+            "deployment": {
+                "name": "",
+                "scope": {
+                    "cluster": "",
+                    "namespace": "kube-system",
+                    "label": null
+                }
+            },
+            "image": null,
+            "expiration": null
+        },
+        {
+            "name": "Don't alert on istio-system namespace",
+            "deployment": {
+                "name": "",
+                "scope": {
+                    "cluster": "",
+                    "namespace": "istio-system",
+                    "label": null
+                }
+            },
+            "image": null,
+            "expiration": null
+        },
+        {
+            "name": "Exclude samba deployment in this policy",
+            "deployment": {
+                "name": "samba",
+                "scope": null
+            },
+            "image": null,
+            "expiration": null
+        }
+    ],
+    "scope": [],
+    "severity": "LOW_SEVERITY",
+    "enforcementActions": [],
+    "notifiers": [],
+    "SORTName": "",
+    "SORTLifecycleStage": "",
+    "SORTEnforcement": false,
+    "policyVersion": "1.1",
+    "policySections": [
+        {
+            "sectionName": "",
+            "policyGroups": [
+                {
+                    "fieldName": "Image Tag",
+                    "booleanOperator": "OR",
+                    "negate": false,
+                    "values": [
+                        {
+                            "value": "latest"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "mitreAttackVectors": [],
+    "criteriaLocked": true,
+    "mitreVectorsLocked": true,
+    "isDefault": true
+}

@@ -1,37 +1,32 @@
 syntax = "proto3";
 
-option go_package = "v1";
-
-option java_package = "io.stackrox.proto.api.v1";
-
-import weak "google/api/annotations.proto";
-import "api/v1/common.proto";
-import "api/v1/empty.proto";
-import "storage/mitre.proto";
-
 package v1;
 
+import "api/v1/common.proto";
+import "api/v1/empty.proto";
+import weak "google/api/annotations.proto";
+import "storage/mitre.proto";
+
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
+
 message ListMitreAttackVectorsResponse {
-    repeated storage.MitreAttackVector mitre_attack_vectors = 1;
+  repeated storage.MitreAttackVector mitre_attack_vectors = 1;
 }
 
 message GetMitreVectorResponse {
-    storage.MitreAttackVector mitre_attack_vector = 1;
+  storage.MitreAttackVector mitre_attack_vector = 1;
 }
 
 // MitreAttackService can be used to retrieve information about MITRE ATT&CK matrix.
 service MitreAttackService {
-    // ListMitreAttackVectors returns all MITRE ATT&CK vectors.
-    rpc ListMitreAttackVectors (Empty) returns (ListMitreAttackVectorsResponse) {
-        option (google.api.http) = {
-            get: "/v1/mitreattackvectors"
-        };
-    }
+  // ListMitreAttackVectors returns all MITRE ATT&CK vectors.
+  rpc ListMitreAttackVectors(Empty) returns (ListMitreAttackVectorsResponse) {
+    option (google.api.http) = {get: "/v1/mitreattackvectors"};
+  }
 
-    // GetMitreAttackVector returns the full MITRE ATT&CK vector for a tactic with all its techniques.
-    rpc GetMitreAttackVector (ResourceByID) returns (GetMitreVectorResponse) {
-        option (google.api.http) = {
-            get: "/v1/mitreattackvectors/{id}"
-        };
-    }
+  // GetMitreAttackVector returns the full MITRE ATT&CK vector for a tactic with all its techniques.
+  rpc GetMitreAttackVector(ResourceByID) returns (GetMitreVectorResponse) {
+    option (google.api.http) = {get: "/v1/mitreattackvectors/{id}"};
+  }
 }

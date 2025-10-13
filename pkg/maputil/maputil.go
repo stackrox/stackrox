@@ -1,6 +1,7 @@
 package maputil
 
 import (
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -13,17 +14,24 @@ func ShallowClone[K comparable, V any](inputMap map[K]V) map[K]V {
 	return cloned
 }
 
-// Equal compares if two maps of the given type are equal.
-func Equal[K, V comparable](a, b map[K]V) bool {
-	if len(a) != len(b) {
+// MapsIntersect returns true if there is at least one key-value pair that is present in both maps
+// If both, or either maps are empty, it returns false
+func MapsIntersect[K, V comparable](m1 map[K]V, m2 map[K]V) bool {
+	if len(m2) == 0 {
 		return false
 	}
-	for k, aV := range a {
-		if bV, ok := b[k]; !ok || aV != bV {
-			return false
+	if len(m1) > len(m2) {
+		// Range over smaller map
+		m1, m2 = m2, m1
+	}
+	for k, v := range m1 {
+		if val, exists := m2[k]; exists {
+			if v == val {
+				return true
+			}
 		}
 	}
-	return true
+	return false
 }
 
 // FastRMap is a thread-safe map from K to V that is optimized for read-heavy access patterns.
@@ -121,6 +129,6 @@ func (m *FastRMap[K, V]) cloneAndMutateWithInitialPtr(initialMapPtr *map[K]V, mu
 
 		// our work was for nothing, another goroutine beat us to the write!
 		initialMapPtr = m.m
-		m.lock.Unlock()
+		concurrency.UnsafeUnlock(&m.lock)
 	}
 }

@@ -1,0 +1,11 @@
+apiVersion: platform.stackrox.io/v1alpha1
+kind: Central
+metadata:
+  name: stackrox-central-services
+spec:
+  central:
+    telemetry:
+      enabled: false
+      storage:
+        endpoint: https://telemetry.endpoint
+        key: my-api-key

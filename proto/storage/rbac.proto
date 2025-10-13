@@ -1,84 +1,84 @@
 syntax = "proto3";
 
-option go_package = "storage";
-option java_package = "io.stackrox.proto.storage";
-
-import "google/protobuf/timestamp.proto";
-import "gogoproto/gogo.proto";
-
 package storage;
 
-option (gogoproto.equal_all) = true;
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
 
 enum SubjectKind {
-    UNSET_KIND              = 0;
-    SERVICE_ACCOUNT         = 1;
-    USER                    = 2;
-    GROUP                   = 3;
+  UNSET_KIND = 0;
+  SERVICE_ACCOUNT = 1;
+  USER = 2;
+  GROUP = 3;
 }
 
 // Properties of an individual k8s Role or ClusterRole.
 //////////////////////////////////////////
 message K8sRole {
-    string id                               = 1 [(gogoproto.moretags) = 'search:"Role ID,hidden" sql:"pk"'];
-    string name                             = 2 [(gogoproto.moretags) = 'search:"Role"'];
-    string namespace                        = 3 [(gogoproto.moretags) = 'search:"Namespace,store"'];
-    string cluster_id                       = 4 [(gogoproto.moretags) = 'search:"Cluster ID,store,hidden"'];
-    string cluster_name                     = 5 [(gogoproto.moretags) = 'search:"Cluster"'];
-    bool cluster_role                       = 6 [(gogoproto.moretags) = 'search:"Cluster Role"'];
-    map<string, string> labels              = 7 [(gogoproto.moretags) = 'search:"Role Label"'];
-    map<string, string> annotations         = 8 [(gogoproto.moretags) = 'search:"Role Annotation"'];
-    google.protobuf.Timestamp created_at    = 9;
+  string id = 1; // @gotags: search:"Role ID,hidden" sql:"pk,type(uuid)"
+  string name = 2; // @gotags: search:"Role"
+  string namespace = 3; // @gotags: search:"Namespace,store"
+  string cluster_id = 4; // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
+  string cluster_name = 5; // @gotags: search:"Cluster"
+  bool cluster_role = 6; // @gotags: search:"Cluster Role"
+  map<string, string> labels = 7; // @gotags: search:"Role Label"
+  map<string, string> annotations = 8; // @gotags: search:"Role Annotation"
+  google.protobuf.Timestamp created_at = 9;
 
-    repeated PolicyRule rules               = 10;
+  repeated PolicyRule rules = 10; // @gotags: sensorhash:"set"
 }
 
 // Properties of an individual rules that grant permissions to resources.
 //////////////////////////////////////////
 message PolicyRule {
-    repeated string verbs             = 1;
-    repeated string api_groups        = 2;
-    repeated string resources         = 3;
-    repeated string non_resource_urls = 4;
-    repeated string resource_names    = 5;
+  repeated string verbs = 1;
+  repeated string api_groups = 2;
+  repeated string resources = 3;
+  repeated string non_resource_urls = 4;
+  repeated string resource_names = 5;
 }
 
 // Properties of an individual k8s RoleBinding or ClusterRoleBinding.
 //////////////////////////////////////////
 message K8sRoleBinding {
-    string id                               = 1 [(gogoproto.moretags) = 'search:"Role Binding ID,hidden" sql:"pk"'];
-    string name                             = 2 [(gogoproto.moretags) = 'search:"Role Binding"'];
-    string namespace                        = 3 [(gogoproto.moretags) = 'search:"Namespace,store"'];
-    string cluster_id                       = 4 [(gogoproto.moretags) = 'search:"Cluster ID,store,hidden"'];
-    string cluster_name                     = 5 [(gogoproto.moretags) = 'search:"Cluster"'];
-    bool cluster_role                       = 6 [(gogoproto.moretags) = 'search:"Cluster Role"'];
-    map<string, string> labels              = 7 [(gogoproto.moretags) = 'search:"Role Binding Label"'];
-    map<string, string> annotations         = 8 [(gogoproto.moretags) = 'search:"Role Binding Annotation"'];
-    google.protobuf.Timestamp created_at    = 9;
+  string id = 1; // @gotags: search:"Role Binding ID,hidden" sql:"pk,type(uuid)"
+  string name = 2; // @gotags: search:"Role Binding"
+  string namespace = 3; // @gotags: search:"Namespace,store"
+  string cluster_id = 4; // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
+  string cluster_name = 5; // @gotags: search:"Cluster"
+  // ClusterRole specifies whether the binding binds a cluster role. However, it cannot be used to determine whether
+  // the binding is a cluster role binding. This can be done in conjunction with the namespace. If the namespace is
+  // empty and cluster role is true, the binding is a cluster role binding.
+  bool cluster_role = 6; // @gotags: search:"Cluster Role"
+  map<string, string> labels = 7; // @gotags: search:"Role Binding Label"
+  map<string, string> annotations = 8; // @gotags: search:"Role Binding Annotation"
+  google.protobuf.Timestamp created_at = 9;
 
-    repeated Subject subjects               = 10;
-    string role_id                          = 11 [(gogoproto.moretags) = 'search:"Role ID"'];
+  repeated Subject subjects = 10;
+  string role_id = 11; // @gotags: search:"Role ID" sql:"type(uuid)"
 }
 
 // Properties of an individual subjects who are granted roles via role bindings.
 //////////////////////////////////////////
 message Subject {
-    string id           = 4; // ID is derived from base64 of cluster id and name
-    SubjectKind kind    = 1 [(gogoproto.moretags) = 'search:"Subject Kind"'];
-    string name         = 2 [(gogoproto.moretags) = 'search:"Subject"'];
-    string namespace    = 3;
-    string cluster_id   = 5;
-    string cluster_name = 6;
+  string id = 4; // ID is derived from base64 of cluster id and name
+  SubjectKind kind = 1; // @gotags: search:"Subject Kind"
+  string name = 2; // @gotags: search:"Subject"
+  string namespace = 3;
+  string cluster_id = 5;
+  string cluster_name = 6;
 }
 
 // For any update to PermissionLevel, also update:
 // - pkg/searchbasedpolicies/builders/k8s_rbac.go
 // - ui/src/messages/common.js
 enum PermissionLevel {
-    UNSET = 0;
-    NONE = 1;
-    DEFAULT = 2;
-    ELEVATED_IN_NAMESPACE = 3;
-    ELEVATED_CLUSTER_WIDE = 4;
-    CLUSTER_ADMIN = 5;
+  UNSET = 0;
+  NONE = 1;
+  DEFAULT = 2;
+  ELEVATED_IN_NAMESPACE = 3;
+  ELEVATED_CLUSTER_WIDE = 4;
+  CLUSTER_ADMIN = 5;
 }

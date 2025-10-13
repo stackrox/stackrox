@@ -1,30 +1,34 @@
 syntax = "proto3";
 
-option go_package = "storage";
-option java_package = "io.stackrox.proto.storage";
-
-import "google/protobuf/timestamp.proto";
-import "gogoproto/gogo.proto";
-
 package storage;
 
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
 message NetworkFlow {
-    NetworkFlowProperties props                     = 1;
+  NetworkFlowProperties props = 1;
 
-    google.protobuf.Timestamp last_seen_timestamp   = 2 [(gogoproto.moretags) = 'sql:"index=brin"'];
+  google.protobuf.Timestamp last_seen_timestamp = 2; // @gotags: sql:"index=brin"
 
-    // Need the clusterID as that is part of the key in RocksDB
-    string cluster_id = 3 [(gogoproto.moretags) = 'sql:"pk"'];
+  // Need the clusterID as that is part of the key in RocksDB
+  string cluster_id = 3; // @gotags: sql:"pk,type(uuid)"
+
+  // This field is set by Central everytime a flow is upserted.
+  // This should not be set by Sensor.
+  // For more context: https://github.com/stackrox/stackrox/pull/14483
+  google.protobuf.Timestamp updated_at = 4; // @gotags: sql:"index=brin"
 }
 
 message NetworkFlowProperties {
-    // The source deployment ID of the network flow
-    NetworkEntityInfo src_entity = 1;
-    // The destination deployment ID of the network flow
-    NetworkEntityInfo dst_entity = 2;
-    // may be 0 if not applicable (e.g., icmp).
-    uint32 dst_port              = 3 [(gogoproto.moretags) = 'sql:"pk"'];
-    L4Protocol l4protocol        = 4 [(gogoproto.moretags) = 'sql:"pk"'];
+  // The source deployment ID of the network flow
+  NetworkEntityInfo src_entity = 1;
+  // The destination deployment ID of the network flow
+  NetworkEntityInfo dst_entity = 2;
+  // may be 0 if not applicable (e.g., icmp).
+  uint32 dst_port = 3; // @gotags: sql:"pk"
+  L4Protocol l4protocol = 4; // @gotags: sql:"pk"
 }
 
 message NetworkEndpoint {
@@ -35,70 +39,74 @@ message NetworkEndpoint {
 
 message NetworkEndpointProperties {
   NetworkEntityInfo entity = 1;
-  uint32 port              = 2;
-  L4Protocol l4protocol    = 3;
+  uint32 port = 2;
+  L4Protocol l4protocol = 3;
 }
 
 message NetworkEntity {
-    message Scope {
-        string cluster_id = 1;
-    }
+  message Scope {
+    string cluster_id = 1;
+  }
 
-    NetworkEntityInfo info  = 1;
-    // `scope` represents known cluster network peers to which the flows must be scoped. In future, to restrict flows
-    // to more granular entities, such as deployment, scope could include deployment ID.
-    // Note: The highest scope level is cluster.
-    Scope             scope = 2;
+  NetworkEntityInfo info = 1;
+  // `scope` represents known cluster network peers to which the flows must be scoped. In future, to restrict flows
+  // to more granular entities, such as deployment, scope could include deployment ID.
+  // Note: The highest scope level is cluster.
+  Scope scope = 2;
 }
 
 message NetworkEntityInfo {
-    enum Type {
-        UNKNOWN_TYPE    = 0;
-        DEPLOYMENT      = 1;
-        INTERNET        = 2;
-        LISTEN_ENDPOINT = 3;
-        EXTERNAL_SOURCE = 4;
+  enum Type {
+    UNKNOWN_TYPE = 0;
+    DEPLOYMENT = 1;
+    INTERNET = 2;
+    LISTEN_ENDPOINT = 3;
+    EXTERNAL_SOURCE = 4;
+    // INTERNAL_ENTITIES is for grouping all internal entities under a single network graph node
+    INTERNAL_ENTITIES = 5;
+  }
+
+  message Deployment {
+    message ListenPort {
+      uint32 port = 1;
+      L4Protocol l4protocol = 2;
     }
 
-    message Deployment {
-        message ListenPort {
-            uint32 port           = 1;
-            L4Protocol l4protocol = 2;
-        }
+    string name = 1;
+    string namespace = 2;
+    string cluster = 3 [deprecated = true];
 
-        string name      = 1;
-        string namespace = 2;
-        string cluster   = 3 [deprecated = true];
+    repeated ListenPort listen_ports = 4;
+  }
 
-        repeated ListenPort listen_ports = 4;
+  // Update normalizeDupNameExtSrcs(...) in `central/networkgraph/aggregator/aggregator.go` whenever this message is updated.
+  message ExternalSource {
+    string name = 1;
+    oneof source {
+      string cidr = 2; // @gotags: sql:"type(cidr),index" search:"External Source Address,hidden"
     }
+    // `default` indicates whether the external source is user-generated or system-generated.
+    bool default = 3; // @gotags: search:"Default External Source,hidden"
+    // `discovered` indicates whether the external source is harvested from monitored traffic.
+    bool discovered = 4; // @gotags: search:"Discovered External Source,hidden"
+  }
 
-    // Update normalizeDupNameExtSrcs(...) in `central/networkgraph/aggregator/aggregator.go` whenever this message is updated.
-    message ExternalSource {
-       string     name     = 1;
-        oneof source {
-            string cidr     = 2;
-        }
-        // `default` indicates whether the external source is user-generated or system-generated.
-        bool       default  = 3 [(gogoproto.moretags) = 'search:"Default External Source,hidden"'];
-    }
+  Type type = 1; // @gotags: sql:"index"
+  string id = 2; // @gotags: sql:"pk"
 
-    Type               type            = 1 [(gogoproto.moretags) = 'sql:"index"'];
-    string             id              = 2 [(gogoproto.moretags) = 'sql:"pk"'];
-
-    oneof desc {
-        Deployment     deployment      = 3;
-        ExternalSource external_source = 4;
-    }
+  oneof desc {
+    Deployment deployment = 3;
+    ExternalSource external_source = 4;
+  }
 }
 
 enum L4Protocol {
-	L4_PROTOCOL_UNKNOWN = 0;
-	L4_PROTOCOL_TCP     = 1;
-	L4_PROTOCOL_UDP     = 2;
-	L4_PROTOCOL_ICMP    = 3;
-	L4_PROTOCOL_RAW     = 4;
-	L4_PROTOCOL_SCTP    = 5;
+  L4_PROTOCOL_UNKNOWN = 0;
+  L4_PROTOCOL_TCP = 1;
+  L4_PROTOCOL_UDP = 2;
+  L4_PROTOCOL_ICMP = 3;
+  L4_PROTOCOL_RAW = 4;
+  L4_PROTOCOL_SCTP = 5;
 
-	L4_PROTOCOL_ANY     = -1;
+  L4_PROTOCOL_ANY = -1;
 }

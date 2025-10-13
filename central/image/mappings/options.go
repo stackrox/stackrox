@@ -6,11 +6,11 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-// OptionsMap defines the search options for Image.
-var OptionsMap = search.Walk(v1.SearchCategory_IMAGES, "image", (*storage.Image)(nil))
-
 // VulnerabilityOptionsMap defines the search options for Vulnerabilities stored in images.
 var VulnerabilityOptionsMap = search.Walk(v1.SearchCategory_VULNERABILITIES, "image.scan.components.vulns", (*storage.EmbeddedVulnerability)(nil))
 
 // ComponentOptionsMap defines the search options for image components stored in images.
 var ComponentOptionsMap = search.Walk(v1.SearchCategory_IMAGE_COMPONENTS, "image.scan.components", (*storage.EmbeddedImageScanComponent)(nil))
+
+// ComponentV2OptionsMap defines the search options for image components stored in images.
+var ComponentV2OptionsMap = search.Walk(v1.SearchCategory_IMAGE_COMPONENTS_V2, "image.scan.components", (*storage.EmbeddedImageScanComponent)(nil))

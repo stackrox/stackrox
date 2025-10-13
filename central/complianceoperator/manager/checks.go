@@ -3,9 +3,9 @@ package manager
 import (
 	"fmt"
 
+	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/complianceoperator/api/v1alpha1"
 )
 
 func formatEvidence(status string, result *storage.ComplianceOperatorCheckResult) string {
@@ -57,7 +57,7 @@ func machineConfigCheckFunc(rule string) func(ctx framework.ComplianceContext) {
 				return
 			}
 			for _, r := range rules {
-				if r.Labels[v1alpha1.ComplianceScanLabel] == machine {
+				if r.GetLabels()[v1alpha1.ComplianceScanLabel] == machine {
 					status, evidence := statusToEvidence(r)
 					framework.RecordEvidence(ctx, status, evidence)
 					return

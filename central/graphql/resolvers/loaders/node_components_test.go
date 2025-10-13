@@ -4,12 +4,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/nodecomponent/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 const (
@@ -54,7 +55,7 @@ func (suite *NodeComponentLoaderTestSuite) TestFromID() {
 	// Get a preloaded component from id.
 	component, err := loader.FromID(suite.ctx, nodeComponent1)
 	suite.NoError(err)
-	suite.Equal(loader.loaded[nodeComponent1], component)
+	protoassert.Equal(suite.T(), loader.loaded[nodeComponent1], component)
 
 	// Get a non-preloaded component from id.
 	thirdComponent := &storage.NodeComponent{Id: nodeComponent3}
@@ -63,12 +64,12 @@ func (suite *NodeComponentLoaderTestSuite) TestFromID() {
 
 	component, err = loader.FromID(suite.ctx, nodeComponent3)
 	suite.NoError(err)
-	suite.Equal(thirdComponent, component)
+	protoassert.Equal(suite.T(), thirdComponent, component)
 
 	// Above call should now be preloaded.
 	component, err = loader.FromID(suite.ctx, nodeComponent3)
 	suite.NoError(err)
-	suite.Equal(loader.loaded[nodeComponent3], component)
+	protoassert.Equal(suite.T(), loader.loaded[nodeComponent3], component)
 }
 
 func (suite *NodeComponentLoaderTestSuite) TestFromIDs() {
@@ -83,7 +84,7 @@ func (suite *NodeComponentLoaderTestSuite) TestFromIDs() {
 	// Get preloaded components from ids.
 	components, err := loader.FromIDs(suite.ctx, []string{nodeComponent1, nodeComponent2})
 	suite.NoError(err)
-	suite.Equal([]*storage.NodeComponent{
+	protoassert.SlicesEqual(suite.T(), []*storage.NodeComponent{
 		loader.loaded[nodeComponent1],
 		loader.loaded[nodeComponent2],
 	}, components)
@@ -95,7 +96,7 @@ func (suite *NodeComponentLoaderTestSuite) TestFromIDs() {
 
 	components, err = loader.FromIDs(suite.ctx, []string{nodeComponent1, nodeComponent2, nodeComponent3})
 	suite.NoError(err)
-	suite.Equal([]*storage.NodeComponent{
+	protoassert.SlicesEqual(suite.T(), []*storage.NodeComponent{
 		loader.loaded[nodeComponent1],
 		loader.loaded[nodeComponent2],
 		thirdComponent,
@@ -104,7 +105,7 @@ func (suite *NodeComponentLoaderTestSuite) TestFromIDs() {
 	// Above call should now be preloaded.
 	components, err = loader.FromIDs(suite.ctx, []string{nodeComponent1, nodeComponent2, nodeComponent3})
 	suite.NoError(err)
-	suite.Equal([]*storage.NodeComponent{
+	protoassert.SlicesEqual(suite.T(), []*storage.NodeComponent{
 		loader.loaded[nodeComponent1],
 		loader.loaded[nodeComponent2],
 		loader.loaded[nodeComponent3],
@@ -133,7 +134,7 @@ func (suite *NodeComponentLoaderTestSuite) TestFromQuery() {
 
 	components, err := loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.NodeComponent{
+	protoassert.SlicesEqual(suite.T(), []*storage.NodeComponent{
 		loader.loaded[nodeComponent1],
 		loader.loaded[nodeComponent2],
 	}, components)
@@ -158,7 +159,7 @@ func (suite *NodeComponentLoaderTestSuite) TestFromQuery() {
 
 	components, err = loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.NodeComponent{
+	protoassert.SlicesEqual(suite.T(), []*storage.NodeComponent{
 		loader.loaded[nodeComponent1],
 		loader.loaded[nodeComponent2],
 		thirdComponent,
@@ -180,7 +181,7 @@ func (suite *NodeComponentLoaderTestSuite) TestFromQuery() {
 
 	components, err = loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
-	suite.Equal([]*storage.NodeComponent{
+	protoassert.SlicesEqual(suite.T(), []*storage.NodeComponent{
 		loader.loaded[nodeComponent1],
 		loader.loaded[nodeComponent2],
 		loader.loaded[nodeComponent3],

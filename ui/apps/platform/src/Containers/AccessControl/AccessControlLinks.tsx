@@ -1,10 +1,10 @@
-import React, { ReactElement } from 'react';
-import { Button, ButtonVariant } from '@patternfly/react-core';
+import React from 'react';
+import type { ReactElement } from 'react';
+import { Link } from 'react-router-dom-v5-compat';
 import pluralize from 'pluralize';
 
-import LinkShim from 'Components/PatternFly/LinkShim';
-import { AccessControlEntityType } from 'constants/entityTypes';
-import { Role } from 'services/RolesService';
+import type { AccessControlEntityType } from 'constants/entityTypes';
+import type { Role } from 'services/RolesService';
 
 import { getEntityPath } from './accessControlPaths';
 
@@ -19,16 +19,7 @@ export function AccessControlEntityLink({
     entityId,
     entityName,
 }: AccessControlEntityLinkProps): ReactElement {
-    return (
-        <Button
-            variant={ButtonVariant.link}
-            isInline
-            component={LinkShim}
-            href={getEntityPath(entityType, entityId)}
-        >
-            {entityName}
-        </Button>
-    );
+    return <Link to={getEntityPath(entityType, entityId)}>{entityName}</Link>;
 }
 
 export type RolesLinkProps = {
@@ -51,9 +42,5 @@ export function RolesLink({ roles, entityType, entityId }: RolesLinkProps): Reac
     const count = roles.length;
     const url = getEntityPath('ROLE', '', { s: { [entityType]: entityId } });
     const text = `${count} ${pluralize('role', count)}`;
-    return (
-        <Button variant={ButtonVariant.link} isInline component={LinkShim} href={url}>
-            {text}
-        </Button>
-    );
+    return <Link to={url}>{text}</Link>;
 }

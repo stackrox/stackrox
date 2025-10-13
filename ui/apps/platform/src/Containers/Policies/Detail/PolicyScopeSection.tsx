@@ -1,7 +1,7 @@
 import React from 'react';
 import { Title, Grid, GridItem, Card, CardBody, List, ListItem } from '@patternfly/react-core';
 
-import { Cluster } from 'types/cluster.proto';
+import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
 import { PolicyScope, PolicyExclusion } from 'types/policy.proto';
 import Restriction from './Restriction';
 import ExcludedDeployment from './ExcludedDeployment';
@@ -10,21 +10,18 @@ import { getExcludedDeployments, getExcludedImageNames } from '../policies.utils
 type PolicyScopeSectionProps = {
     scope: PolicyScope[];
     exclusions: PolicyExclusion[];
-    clusters: Cluster[];
 };
 
-function PolicyScopeSection({
-    scope,
-    exclusions,
-    clusters,
-}: PolicyScopeSectionProps): React.ReactElement {
+function PolicyScopeSection({ scope, exclusions }: PolicyScopeSectionProps): React.ReactElement {
+    const { clusters } = useFetchClustersForPermissions(['Deployment']);
+
     const excludedDeploymentScopes = getExcludedDeployments(exclusions);
     const excludedImageNames = getExcludedImageNames(exclusions);
     return (
         <>
             {scope?.length !== 0 && (
                 <>
-                    <Title headingLevel="h3" className="pf-u-pt-md pf-u-pb-sm">
+                    <Title headingLevel="h3" className="pf-v5-u-pt-md pf-v5-u-pb-sm">
                         Scope inclusions
                     </Title>
                     <Grid hasGutter md={12} xl={6}>
@@ -46,7 +43,7 @@ function PolicyScopeSection({
             )}
             {excludedDeploymentScopes?.length !== 0 && (
                 <>
-                    <Title headingLevel="h3" className="pf-u-pt-md pf-u-pb-sm">
+                    <Title headingLevel="h3" className="pf-v5-u-pt-md pf-v5-u-pb-sm">
                         Scope exclusions
                     </Title>
                     <Grid hasGutter md={12} xl={6}>
@@ -68,7 +65,7 @@ function PolicyScopeSection({
             )}
             {excludedImageNames?.length !== 0 && (
                 <>
-                    <Title headingLevel="h3" className="pf-u-pt-md pf-u-pb-sm">
+                    <Title headingLevel="h3" className="pf-v5-u-pt-md pf-v5-u-pb-sm">
                         Image exclusions
                     </Title>
                     <List isPlain>

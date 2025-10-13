@@ -6,16 +6,16 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/graphql/resolvers/deploymentctx"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/policy/matcher"
 	"github.com/stackrox/rox/central/processindicator/service"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -40,6 +40,7 @@ func init() {
 			"imageComponentCount(query: String): Int!",
 			"imageComponents(query: String, pagination: Pagination): [ImageComponent!]!",
 			"imageCount(query: String): Int!",
+			"imageCVECountBySeverity(query: String): ResourceCountByCVESeverity!",
 			"images(query: String, pagination: Pagination): [Image!]!",
 			"imageVulnerabilityCount(query: String): Int!",
 			"imageVulnerabilityCounter(query: String): VulnerabilityCounter!",
@@ -58,21 +59,6 @@ func init() {
 			"serviceAccountObject: ServiceAccount",
 			"unusedVarSink(query: String): Int",
 		}),
-		// deprecated fields
-		schema.AddExtraResolvers("Deployment", []string{
-			"vulnCount(query: String): Int! " +
-				"@deprecated(reason: \"use 'imageVulnerabilityCount'\")",
-			"vulnCounter(query: String): VulnerabilityCounter! " +
-				"@deprecated(reason: \"use 'imageVulnerabilityCounter'\")",
-			"vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability]! " +
-				"@deprecated(reason: \"use 'imageVulnerabilities'\")",
-			"componentCount(query: String): Int!" +
-				"@deprecated(reason: \"use 'imageComponentCount'\")",
-			"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!" +
-				"@deprecated(reason: \"use 'imageComponents'\")",
-			"plottedVulns(query: String): PlottedVulnerabilities!" +
-				"@deprecated(reason: \"use 'plottedImageVulnerabilities'\")",
-		}),
 		schema.AddQuery("deployment(id: ID): Deployment"),
 		schema.AddQuery("deployments(query: String, pagination: Pagination): [Deployment!]!"),
 		schema.AddQuery("deploymentCount(query: String): Int!"),
@@ -85,8 +71,12 @@ func (resolver *Resolver) Deployment(ctx context.Context, args struct{ *graphql.
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
-	deployment, ok, err := resolver.DeploymentDataStore.GetDeployment(ctx, string(*args.ID))
-	return resolver.wrapDeploymentWithContext(ctx, deployment, ok, err)
+	deploymentLoader, err := loaders.GetDeploymentLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	deployment, err := deploymentLoader.FromID(ctx, string(*args.ID))
+	return resolver.wrapDeploymentWithContext(ctx, deployment, deployment != nil, err)
 }
 
 // Deployments returns GraphQL resolvers all deployments
@@ -99,7 +89,11 @@ func (resolver *Resolver) Deployments(ctx context.Context, args PaginatedQuery) 
 	if err != nil {
 		return nil, err
 	}
-	deployments, err := resolver.DeploymentDataStore.SearchRawDeployments(ctx, q)
+	deploymentLoader, err := loaders.GetDeploymentLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	deployments, err := deploymentLoader.FromQuery(ctx, q)
 	return resolver.wrapDeploymentsWithContext(ctx, deployments, err)
 }
 
@@ -113,45 +107,23 @@ func (resolver *Resolver) DeploymentCount(ctx context.Context, args RawQuery) (i
 	if err != nil {
 		return 0, err
 	}
-	count, err := resolver.DeploymentDataStore.Count(ctx, q)
+	deploymentLoader, err := loaders.GetDeploymentLoader(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return int32(count), nil
+	return deploymentLoader.CountFromQuery(ctx, q)
 }
 
 // Cluster returns a GraphQL resolver for the cluster where this deployment runs
 func (resolver *deploymentResolver) Cluster(ctx context.Context) (*clusterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "Cluster")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := readClusters(ctx); err != nil {
-			return nil, err
-		}
-
-		clusterID := graphql.ID(resolver.data.GetClusterId())
-		return resolver.root.Cluster(ctx, struct{ graphql.ID }{clusterID})
-	}
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.Cluster(resolver.deploymentScopeContext(), struct{ graphql.ID }{graphql.ID(resolver.data.GetClusterId())})
+	return resolver.root.Cluster(resolver.withDeploymentScopeContext(ctx), struct{ graphql.ID }{graphql.ID(resolver.data.GetClusterId())})
 }
 
 // NamespaceObject returns a GraphQL resolver for the namespace where this deployment runs
 func (resolver *deploymentResolver) NamespaceObject(ctx context.Context) (*namespaceResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "NamespaceObject")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := readNamespaces(ctx); err != nil {
-			return nil, err
-		}
-
-		namespaceID := graphql.ID(resolver.data.GetNamespaceId())
-		return resolver.root.Namespace(ctx, struct{ graphql.ID }{namespaceID})
-	}
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.Namespace(resolver.deploymentScopeContext(), struct{ graphql.ID }{graphql.ID(resolver.data.GetNamespaceId())})
+	return resolver.root.Namespace(resolver.withDeploymentScopeContext(ctx), struct{ graphql.ID }{graphql.ID(resolver.data.GetNamespaceId())})
 }
 
 // ServiceAccountObject returns a GraphQL resolver for the service account associated with this deployment
@@ -177,7 +149,7 @@ func (resolver *deploymentResolver) ServiceAccountObject(ctx context.Context) (*
 func (resolver *deploymentResolver) GroupedProcesses(ctx context.Context) ([]*processNameGroupResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "GroupedProcesses")
 
-	if err := readIndicators(ctx); err != nil {
+	if err := readDeploymentExtensions(ctx); err != nil {
 		return nil, err
 	}
 	query := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, resolver.data.GetId()).ProtoQuery()
@@ -207,8 +179,9 @@ func (resolver *deploymentResolver) DeployAlerts(ctx context.Context, args Pagin
 
 	nested.Pagination = pagination
 
+	nested = paginated.FillDefaultSortOption(nested, paginated.GetViolationTimeSortOption())
 	return resolver.root.wrapAlerts(
-		resolver.root.ViolationsDataStore.SearchRawAlerts(ctx, nested))
+		resolver.root.ViolationsDataStore.SearchRawAlerts(ctx, nested, true))
 }
 
 func (resolver *deploymentResolver) DeployAlertCount(ctx context.Context, args RawQuery) (int32, error) {
@@ -228,7 +201,7 @@ func (resolver *deploymentResolver) DeployAlertCount(ctx context.Context, args R
 		return 0, err
 	}
 
-	count, err := resolver.root.ViolationsDataStore.Count(ctx, q)
+	count, err := resolver.root.ViolationsDataStore.Count(ctx, q, true)
 	if err != nil {
 		return 0, err
 	}
@@ -238,7 +211,7 @@ func (resolver *deploymentResolver) DeployAlertCount(ctx context.Context, args R
 func (resolver *deploymentResolver) Policies(ctx context.Context, args PaginatedQuery) ([]*policyResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "Policies")
 
-	if err := readPolicies(ctx); err != nil {
+	if err := readWorkflowAdministration(ctx); err != nil {
 		return nil, err
 	}
 
@@ -260,7 +233,7 @@ func (resolver *deploymentResolver) Policies(ctx context.Context, args Paginated
 	for _, policyResolver := range policyResolvers {
 		policyResolver.ctx = scoped.Context(ctx, scoped.Scope{
 			Level: v1.SearchCategory_DEPLOYMENTS,
-			ID:    resolver.data.GetId(),
+			IDs:   []string{resolver.data.GetId()},
 		})
 	}
 
@@ -319,7 +292,8 @@ func (resolver *deploymentResolver) FailingPolicies(ctx context.Context, args Pa
 	pagination := q.GetPagination()
 	q.Pagination = &v1.QueryPagination{SortOptions: pagination.GetSortOptions()}
 
-	alerts, err := resolver.root.ViolationsDataStore.SearchRawAlerts(ctx, q)
+	q = paginated.FillDefaultSortOption(q, paginated.GetViolationTimeSortOption())
+	alerts, err := resolver.root.ViolationsDataStore.SearchRawAlerts(ctx, q, true)
 	if err != nil {
 		return nil, err
 	}
@@ -339,7 +313,7 @@ func (resolver *deploymentResolver) FailingPolicies(ctx context.Context, args Pa
 	for _, policyResolver := range policyResolvers {
 		policyResolver.ctx = scoped.Context(ctx, scoped.Scope{
 			Level: v1.SearchCategory_DEPLOYMENTS,
-			ID:    resolver.data.GetId(),
+			IDs:   []string{resolver.data.GetId()},
 		})
 	}
 
@@ -360,15 +334,11 @@ func (resolver *deploymentResolver) FailingPolicyCount(ctx context.Context, args
 	if err != nil {
 		return 0, err
 	}
-	alerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, query)
+	count, err := resolver.root.ViolationsDataStore.Count(ctx, query, true)
 	if err != nil {
 		return 0, nil
 	}
-	set := set.NewStringSet()
-	for _, alert := range alerts {
-		set.Add(alert.GetPolicy().GetId())
-	}
-	return int32(set.Cardinality()), nil
+	return int32(count), nil
 }
 
 // FailingRuntimePolicyCount returns count of all runtime policies failing on this deployment (not just unique)
@@ -387,11 +357,11 @@ func (resolver *deploymentResolver) FailingRuntimePolicyCount(ctx context.Contex
 	}
 	query = search.ConjunctionQuery(query,
 		search.NewQueryBuilder().AddExactMatches(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).ProtoQuery())
-	alerts, err := resolver.root.ViolationsDataStore.Search(ctx, query)
+	count, err := resolver.root.ViolationsDataStore.Count(ctx, query, true)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(alerts)), nil
+	return int32(count), nil
 }
 
 // FailingPolicyCounter returns a policy counter for all the failed policies.
@@ -411,7 +381,7 @@ func (resolver *deploymentResolver) FailingPolicyCounter(ctx context.Context, ar
 		return nil, err
 	}
 
-	alerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q)
+	alerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q, true)
 	if err != nil {
 		return nil, nil
 	}
@@ -455,7 +425,7 @@ func (resolver *deploymentResolver) SecretCount(ctx context.Context, args RawQue
 	return int32(len(secrets)), nil
 }
 
-func (resolver *deploymentResolver) getDeploymentSecrets(ctx context.Context, q *v1.Query) ([]*secretResolver, error) {
+func (resolver *deploymentResolver) getDeploymentSecrets(ctx context.Context, _ *v1.Query) ([]*secretResolver, error) {
 	if err := readSecrets(ctx); err != nil {
 		return nil, err
 	}
@@ -485,8 +455,12 @@ func (resolver *deploymentResolver) getDeploymentSecrets(ctx context.Context, q 
 }
 
 func (resolver *Resolver) getDeployment(ctx context.Context, id string) *storage.Deployment {
-	deployment, ok, err := resolver.DeploymentDataStore.GetDeployment(ctx, id)
-	if err != nil || !ok {
+	deploymentLoader, err := loaders.GetDeploymentLoader(ctx)
+	if err != nil {
+		return nil
+	}
+	deployment, err := deploymentLoader.FromID(ctx, id)
+	if err != nil {
 		return nil
 	}
 	return deployment
@@ -537,141 +511,72 @@ func (resolver *deploymentResolver) ServiceAccountID(ctx context.Context) (strin
 	return results[0].ID, nil
 }
 
-func (resolver *deploymentResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
+func (resolver *deploymentResolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "Images")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := readImages(ctx); err != nil {
-			return nil, err
-		}
-	}
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
 	if !resolver.hasImages() {
 		return nil, nil
 	}
-	return resolver.root.Images(resolver.deploymentScopeContext(), args)
+	return resolver.root.Images(resolver.withDeploymentScopeContext(ctx), args)
 }
 
 func (resolver *deploymentResolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageCount")
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		if err := readImages(ctx); err != nil {
-			return 0, err
+	return resolver.root.ImageCount(resolver.withDeploymentScopeContext(ctx), args)
+}
+
+func (resolver *deploymentResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageComponents")
+	return resolver.root.ImageComponents(resolver.withDeploymentScopeContext(ctx), args)
+}
+
+func (resolver *deploymentResolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageComponentCount")
+	return resolver.root.ImageComponentCount(resolver.withDeploymentScopeContext(ctx), args)
+}
+
+func (resolver *deploymentResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageVulnerabilities")
+	return resolver.root.ImageVulnerabilities(resolver.withDeploymentScopeContext(ctx), args)
+}
+
+func (resolver *deploymentResolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageVulnerabilityCount")
+	return resolver.root.ImageVulnerabilityCount(resolver.withDeploymentScopeContext(ctx), args)
+}
+
+func (resolver *deploymentResolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageVulnerabilityCounter")
+	return resolver.root.ImageVulnerabilityCounter(resolver.withDeploymentScopeContext(ctx), args)
+}
+
+func (resolver *deploymentResolver) ImageCVECountBySeverity(ctx context.Context, q RawQuery) (*resourceCountBySeverityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageCVECountBySeverity")
+
+	if err := readImages(ctx); err != nil {
+		return nil, err
+	}
+	query, err := q.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+	val, err := resolver.root.ImageCVEView.CountBySeverity(resolver.withDeploymentScopeContext(ctx), query)
+	return resolver.root.wrapResourceCountByCVESeverityWithContext(ctx, val, err)
+}
+
+func (resolver *deploymentResolver) withDeploymentScopeContext(ctx context.Context) context.Context {
+	if ctx == nil {
+		err := utils.ShouldErr(errors.New("argument 'ctx' is nil"))
+		if err != nil {
+			log.Error(err)
 		}
 	}
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
-	return resolver.root.ImageCount(resolver.deploymentScopeContext(), args)
-}
-
-func (resolver *deploymentResolver) Components(ctx context.Context, args PaginatedQuery) ([]ComponentResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "Components")
-
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getDeploymentRawQuery())
-
-	ctx = deploymentctx.Context(ctx, resolver.data.GetId())
-	return resolver.root.Components(scoped.Context(ctx, scoped.Scope{
-		Level: v1.SearchCategory_DEPLOYMENTS,
-		ID:    resolver.data.GetId(),
-	}), PaginatedQuery{Query: &query, Pagination: args.Pagination})
-}
-
-func (resolver *deploymentResolver) ComponentCount(ctx context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ComponentCount")
-
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getDeploymentRawQuery())
-
-	return resolver.root.ComponentCount(scoped.Context(ctx, scoped.Scope{
-		Level: v1.SearchCategory_DEPLOYMENTS,
-		ID:    resolver.data.GetId(),
-	}), RawQuery{Query: &query})
-}
-
-func (resolver *deploymentResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageComponents")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.ImageComponents(resolver.deploymentScopeContext(), args)
-}
-
-func (resolver *deploymentResolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageComponentCount")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.ImageComponentCount(resolver.deploymentScopeContext(), args)
-}
-
-func (resolver *deploymentResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageVulnerabilities")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.ImageVulnerabilities(resolver.deploymentScopeContext(), args)
-}
-
-func (resolver *deploymentResolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageVulnerabilityCount")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.ImageVulnerabilityCount(resolver.deploymentScopeContext(), args)
-}
-
-func (resolver *deploymentResolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageVulnerabilityCounter")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.ImageVulnerabilityCounter(resolver.deploymentScopeContext(), args)
-}
-
-func (resolver *deploymentResolver) deploymentScopeContext() context.Context {
-	if resolver.ctx == nil {
-		log.Errorf("attempted to scope context on nil")
-		return nil
-	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_DEPLOYMENTS,
-		ID:    resolver.data.GetId(),
+		IDs:   []string{resolver.data.GetId()},
 	})
-}
-
-func (resolver *deploymentResolver) Vulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "Vulns")
-
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getDeploymentRawQuery())
-
-	ctx = deploymentctx.Context(ctx, resolver.data.GetId())
-	return resolver.root.Vulnerabilities(scoped.Context(ctx, scoped.Scope{
-		Level: v1.SearchCategory_DEPLOYMENTS,
-		ID:    resolver.data.GetId(),
-	}), PaginatedQuery{Query: &query, Pagination: args.Pagination})
-}
-
-func (resolver *deploymentResolver) VulnCount(ctx context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "VulnCount")
-
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getDeploymentRawQuery())
-
-	return resolver.root.VulnerabilityCount(scoped.Context(ctx, scoped.Scope{
-		Level: v1.SearchCategory_DEPLOYMENTS,
-		ID:    resolver.data.GetId(),
-	}), RawQuery{Query: &query})
-}
-
-func (resolver *deploymentResolver) VulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "VulnCounter")
-
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getDeploymentRawQuery())
-
-	return resolver.root.VulnCounter(scoped.Context(ctx, scoped.Scope{
-		Level: v1.SearchCategory_DEPLOYMENTS,
-		ID:    resolver.data.GetId(),
-	}), RawQuery{Query: &query})
 }
 
 func (resolver *deploymentResolver) PolicyStatus(ctx context.Context, args RawQuery) (string, error) {
@@ -681,7 +586,7 @@ func (resolver *deploymentResolver) PolicyStatus(ctx context.Context, args RawQu
 	var err error
 	var q *v1.Query
 	if scope, hasScope := scoped.GetScope(resolver.ctx); hasScope && scope.Level == v1.SearchCategory_POLICIES {
-		q = search.NewQueryBuilder().AddExactMatches(search.PolicyID, scope.ID).ProtoQuery()
+		q = search.NewQueryBuilder().AddExactMatches(search.PolicyID, scope.IDs...).ProtoQuery()
 	} else {
 		if q, err = args.AsV1QueryOrEmpty(); err != nil {
 			return "", err
@@ -702,7 +607,7 @@ func (resolver *deploymentResolver) PolicyStatus(ctx context.Context, args RawQu
 func (resolver *deploymentResolver) ProcessActivityCount(ctx context.Context) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ProcessActivityCount")
 
-	if err := readIndicators(ctx); err != nil {
+	if err := readDeploymentExtensions(ctx); err != nil {
 		return 0, err
 	}
 	query := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, resolver.data.GetId()).ProtoQuery()
@@ -758,8 +663,14 @@ func (resolver *deploymentResolver) ContainerTerminationCount(ctx context.Contex
 
 func (resolver *deploymentResolver) hasImages() bool {
 	for _, c := range resolver.data.GetContainers() {
-		if c.GetImage().GetId() != "" {
-			return true
+		if features.FlattenImageData.Enabled() {
+			if c.GetImage().GetIdV2() != "" {
+				return true
+			}
+		} else {
+			if c.GetImage().GetId() != "" {
+				return true
+			}
 		}
 	}
 	return false
@@ -775,7 +686,7 @@ func (resolver *deploymentResolver) unresolvedAlertsExists(ctx context.Context, 
 		return false, err
 	}
 	q.Pagination = &v1.QueryPagination{Limit: 1}
-	results, err := resolver.root.ViolationsDataStore.Search(ctx, q)
+	results, err := resolver.root.ViolationsDataStore.Search(ctx, q, true)
 	if err != nil {
 		return false, err
 	}
@@ -809,7 +720,7 @@ func (resolver *deploymentResolver) LatestViolation(ctx context.Context, args Ra
 	var err error
 	var q *v1.Query
 	if scope, hasScope := scoped.GetScope(resolver.ctx); hasScope && scope.Level == v1.SearchCategory_POLICIES {
-		q = search.NewQueryBuilder().AddExactMatches(search.PolicyID, scope.ID).ProtoQuery()
+		q = search.NewQueryBuilder().AddExactMatches(search.PolicyID, scope.IDs...).ProtoQuery()
 	} else {
 		if q, err = args.AsV1QueryOrEmpty(); err != nil {
 			return nil, err
@@ -824,22 +735,10 @@ func (resolver *deploymentResolver) LatestViolation(ctx context.Context, args Ra
 	return getLatestViolationTime(ctx, resolver.root, q)
 }
 
-func (resolver *deploymentResolver) PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "PlottedVulns")
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		return nil, errors.New("PlottedVulns resolver is not support on postgres. Use PlottedImageVulnerabilities.")
-	}
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getDeploymentRawQuery())
-	return newPlottedVulnerabilitiesResolver(ctx, resolver.root, RawQuery{Query: &query})
-}
-
 // PlottedImageVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
 func (resolver *deploymentResolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "PlottedImageVulnerabilities")
-	if resolver.ctx == nil {
-		resolver.ctx = ctx
-	}
-	return resolver.root.PlottedImageVulnerabilities(resolver.deploymentScopeContext(), args)
+	return resolver.root.PlottedImageVulnerabilities(resolver.withDeploymentScopeContext(ctx), args)
 }
 
 func (resolver *deploymentResolver) UnusedVarSink(_ context.Context, _ RawQuery) *int32 {

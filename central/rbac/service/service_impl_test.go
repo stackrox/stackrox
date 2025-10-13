@@ -5,13 +5,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
 	bindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestRbacService(t *testing.T) {
@@ -51,7 +52,7 @@ func (suite *RbacServiceTestSuite) TestGetRole() {
 
 	response, err := suite.service.GetRole((context.Context)(nil), &v1.ResourceByID{Id: roleID})
 	suite.NoError(err)
-	suite.Equal(response.GetRole(), expectedRole)
+	protoassert.Equal(suite.T(), response.GetRole(), expectedRole)
 }
 
 // Test that when we fail to find a k8s role, an error is returned.
@@ -111,7 +112,7 @@ func (suite *RbacServiceTestSuite) TestGetRoleBinding() {
 
 	response, err := suite.service.GetRoleBinding((context.Context)(nil), &v1.ResourceByID{Id: bindingID})
 	suite.NoError(err)
-	suite.Equal(expectedRoleBinding, response.GetBinding())
+	protoassert.Equal(suite.T(), expectedRoleBinding, response.GetBinding())
 }
 
 // Test that when we fail to find a k8s role binding, an error is returned.

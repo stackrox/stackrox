@@ -3,6 +3,8 @@ package certgen
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
+	"time"
 
 	"github.com/cloudflare/cfssl/helpers"
 	"github.com/pkg/errors"
@@ -31,43 +33,51 @@ func IssueServiceCert(fileMap map[string][]byte, ca mtls.CA, subject mtls.Subjec
 
 // IssueOtherServiceCerts issues certificates for the given subjects, and stores them in the given file
 // map. The file name prefix is chosen as the slug-case of the service type plus a trailing hyphen.
-func IssueOtherServiceCerts(fileMap map[string][]byte, ca mtls.CA, subjs ...mtls.Subject) error {
+func IssueOtherServiceCerts(fileMap map[string][]byte, ca mtls.CA, subjs []mtls.Subject, opts ...mtls.IssueCertOption) error {
 	for _, subj := range subjs {
-		if err := IssueServiceCert(fileMap, ca, subj, services.ServiceTypeToSlugName(subj.ServiceType)+"-"); err != nil {
+		if err := IssueServiceCert(fileMap, ca, subj, services.ServiceTypeToSlugName(subj.ServiceType)+"-", opts...); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// VerifyServiceCert verifies that the service certificate (stored with the given fileNamePrefix in the file
+// VerifyServiceCertAndKey verifies that the service certificate (stored with the given fileNamePrefix in the file
 // map) is a valid service certificate for the given serviceType, relative to the given CA.
-func VerifyServiceCert(fileMap map[string][]byte, ca mtls.CA, serviceType storage.ServiceType, fileNamePrefix string) error {
-	return VerifyCert(fileMap, fileNamePrefix, GetValidateServiceCertFunc(ca, serviceType))
-}
-
-// ValidateCertFunc is a function which validates the passed certificate and returns error, if any.
-type ValidateCertFunc func(certificate *x509.Certificate) error
-
-// VerifyCert verifies that the certificate (stored with the given fileNamePrefix in the file
-// map) is a valid certificate by using a given validate function.
-func VerifyCert(fileMap map[string][]byte, fileNamePrefix string, validate ValidateCertFunc) error {
+// It also verifies that the associated private key in the file map also matches the certificate.
+// If currentTime is non-nil, it is used as the reference time for certificate validity; otherwise, the current system time is used.
+func VerifyServiceCertAndKey(fileMap map[string][]byte, fileNamePrefix string, ca mtls.CA, serviceType storage.ServiceType,
+	currentTime *time.Time, extraValidations ...func(certificate *x509.Certificate) error) error {
 	certPEM := fileMap[fileNamePrefix+mtls.ServiceCertFileName]
 	if len(certPEM) == 0 {
-		return errors.New("no service certificate in file map")
+		return fmt.Errorf("no service certificate for %s in file map", serviceType.String())
 	}
 	cert, err := helpers.ParseCertificatePEM(certPEM)
 	if err != nil {
 		return errors.New("unparseable certificate in file map")
 	}
 
-	if err := validate(cert); err != nil {
-		return errors.Wrap(err, "failed to validate certificate")
+	verifyOpts := make([]mtls.VerifyCertOption, 0, 1)
+	if currentTime != nil {
+		verifyOpts = append(verifyOpts, mtls.WithCurrentTime(*currentTime))
+	}
+	subjFromCert, err := ca.ValidateAndExtractSubject(cert, verifyOpts...)
+	if err != nil {
+		return errors.Wrap(err, "failed to validate certificate and extract subject")
+	}
+	if subjFromCert.ServiceType != serviceType {
+		return errors.Errorf("unexpected certificate service type: got %s, expected %s", subjFromCert.ServiceType, serviceType)
+	}
+
+	for _, validation := range extraValidations {
+		if err := validation(cert); err != nil {
+			return errors.Wrap(err, "failed to validate certificate")
+		}
 	}
 
 	keyPEM := fileMap[fileNamePrefix+mtls.ServiceKeyFileName]
 	if len(keyPEM) == 0 {
-		return errors.New("no service private key in file map")
+		return fmt.Errorf("no service private key for %s in file map", serviceType.String())
 	}
 
 	if _, err := tls.X509KeyPair(certPEM, keyPEM); err != nil {
@@ -75,18 +85,4 @@ func VerifyCert(fileMap map[string][]byte, fileNamePrefix string, validate Valid
 	}
 
 	return nil
-}
-
-// GetValidateServiceCertFunc returns a function which checks whether the service certificate for the given serviceType is valid.
-func GetValidateServiceCertFunc(ca mtls.CA, serviceType storage.ServiceType) ValidateCertFunc {
-	return func(cert *x509.Certificate) error {
-		subjFromCert, err := ca.ValidateAndExtractSubject(cert)
-		if err != nil {
-			return errors.Wrap(err, "failed to validate certificate and extract subject")
-		}
-		if subjFromCert.ServiceType != serviceType {
-			return errors.Errorf("unexpected certificate service type: got %s, expected %s", subjFromCert.ServiceType, serviceType)
-		}
-		return nil
-	}
 }

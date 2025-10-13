@@ -1,34 +1,41 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import {
-    TextInput,
-    PageSection,
-    Form,
+    DatePicker,
     DescriptionList,
-    DescriptionListTerm,
-    DescriptionListGroup,
     DescriptionListDescription,
+    DescriptionListGroup,
+    DescriptionListTerm,
+    Form,
+    PageSection,
+    TextInput,
+    yyyyMMddFormat,
     SelectOption,
 } from '@patternfly/react-core';
 
 import * as yup from 'yup';
 
-import { ApiToken } from 'types/apiToken.proto';
+import type { ApiToken } from 'types/apiToken.proto';
 
 import SelectSingle from 'Components/SelectSingle';
-import usePageState from 'Containers/Integrations/hooks/usePageState';
 import { getDateTime } from 'utils/dateUtils';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
+
+import usePageState from '../../../hooks/usePageState';
 import useIntegrationForm from '../../useIntegrationForm';
-import IntegrationFormActions from '../../IntegrationFormActions';
-import ApiTokenFormMessageAlert, { ApiTokenFormResponseMessage } from './ApiTokenFormMessageAlert';
 import FormLabelGroup from '../../FormLabelGroup';
-import useFetchRoles from './useFetchRoles';
+import IntegrationFormActions from '../../IntegrationFormActions';
+
+import ApiTokenFormMessageAlert from './ApiTokenFormMessageAlert';
+import type { ApiTokenFormResponseMessage } from './ApiTokenFormMessageAlert';
+import useAllowedRoles from './useAllowedRoles';
 
 export type ApiTokenIntegrationFormValues = {
     name: string;
     roles: string[];
+    expiration?: string;
 };
 
 export type ApiTokenIntegrationFormProps = {
@@ -43,6 +50,14 @@ export const validationSchema = yup.object().shape({
         .of(yup.string().trim())
         .min(1, 'Must have a role selected')
         .required('A role is required'),
+    expiration: yup
+        .string()
+        .test('Future date test', 'Expiration date should not be in the past', (value) => {
+            if (!value) {
+                return true;
+            }
+            return new Date(value) > new Date();
+        }),
 });
 
 export const defaultValues: ApiTokenIntegrationFormValues = {
@@ -73,7 +88,7 @@ function ApiTokenIntegrationForm({
         validationSchema,
     });
     const { isEditing, isViewingDetails } = usePageState();
-    const { roles, isLoading: isRolesLoading } = useFetchRoles();
+    const { roleNames, isLoading: isRolesLoading } = useAllowedRoles();
     const isGenerated = Boolean((message as ApiTokenFormResponseMessage)?.responseData);
 
     function onChange(value, event) {
@@ -88,7 +103,7 @@ function ApiTokenIntegrationForm({
     if (isEditing) {
         return (
             <NotFoundMessage
-                title="This API Token can not be edited"
+                title="This API Token cannot be edited"
                 message="Create a new API Token or delete an existing one"
             />
         );
@@ -97,7 +112,7 @@ function ApiTokenIntegrationForm({
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
-                <div id="form-message-alert" className="pf-u-pb-md">
+                <div id="form-message-alert" className="pf-v5-u-pb-md">
                     {message && <ApiTokenFormMessageAlert message={message} />}
                 </div>
 
@@ -147,7 +162,7 @@ function ApiTokenIntegrationForm({
                                 type="text"
                                 id="name"
                                 value={values.name}
-                                onChange={onChange}
+                                onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable || isGenerated}
                             />
@@ -166,15 +181,42 @@ function ApiTokenIntegrationForm({
                                 isDisabled={!isEditable || isRolesLoading || isGenerated}
                                 placeholderText="Choose role..."
                             >
-                                {roles.map((role) => {
+                                {roleNames.map((roleName) => {
                                     return (
-                                        <SelectOption key={role.name} value={role.name}>
-                                            {role.name}
+                                        <SelectOption key={roleName} value={roleName}>
+                                            {roleName}
                                         </SelectOption>
                                     );
                                 })}
                             </SelectSingle>
                         </FormLabelGroup>
+                        {isEditable && !isGenerated && (
+                            <FormLabelGroup
+                                label="Expiration date"
+                                fieldId="expiration"
+                                touched={touched}
+                                helperText="when left unset, the value defaults to 1 year from the generation date"
+                                errors={errors}
+                            >
+                                <DatePicker
+                                    id="expiration"
+                                    inputProps={{ id: 'expiration' }}
+                                    onBlur={handleBlur}
+                                    value={
+                                        values.expiration
+                                            ? yyyyMMddFormat(new Date(values.expiration))
+                                            : ''
+                                    }
+                                    onChange={(event, value, date) => {
+                                        if (date) {
+                                            setFieldValue('expiration', date.toISOString());
+                                        } else {
+                                            setFieldValue('expiration', undefined);
+                                        }
+                                    }}
+                                />
+                            </FormLabelGroup>
+                        )}
                     </Form>
                 )}
             </PageSection>

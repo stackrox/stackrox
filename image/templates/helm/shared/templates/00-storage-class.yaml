@@ -1,0 +1,26 @@
+{{- include "srox.init" . -}}
+
+
+{{- $name := "stackrox-gke-ssd" -}}
+{{- if has $name ._rox._state.referencedStorageClasses }}
+  {{- $lookupOut := dict -}}
+  {{- $globalName := include "srox.globalResourceName" (list . $name) -}}
+  {{- $_ := include "srox.safeLookup" (list . $lookupOut "storage.k8s.io/v1" "StorageClass" "" $globalName) -}}
+  {{- if and (not $lookupOut.result) (or .Release.IsInstall $lookupOut.reliable) (not ._rox.meta.noCreateStorageClass) }}
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ $globalName }}
+  labels:
+    {{- include "srox.labels" (list . "storageclass" $name) | nindent 4 }}
+  annotations:
+    {{- $annotations := dict -}}
+    {{- $_ := include "srox.getAnnotationTemplate" (list . "helm-hook_storage" $annotations) -}}
+    {{- include "srox.annotations" (list . "storageclass" $name $annotations) | nindent 4 }}
+provisioner: kubernetes.io/gce-pd
+parameters:
+  type: pd-ssd
+
+  {{- end }}
+{{- end }}

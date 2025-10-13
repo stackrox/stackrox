@@ -33,7 +33,7 @@ function PolicyCriteriaFieldValue({
                     <Button
                         onClick={handleRemoveValue}
                         variant="tertiary"
-                        data-testid="delete-policy-criteria-value-btn"
+                        title="Delete value of policy field"
                     >
                         <TimesIcon />
                     </Button>

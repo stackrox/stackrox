@@ -11,12 +11,15 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
-	"github.com/stackrox/rox/central/notifiers"
+	"github.com/stackrox/rox/central/notifiers/metadatagetter"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events/codes"
+	"github.com/stackrox/rox/pkg/administration/events/option"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
@@ -28,14 +31,15 @@ const (
 )
 
 var (
-	log = logging.LoggerForModule()
+	log     = logging.LoggerForModule(option.EnableAdministrationEvents())
+	timeout = env.TeamsTimeout.DurationSetting()
 )
 
-// teams notifier plugin
+// teams notifier plugin.
 type teams struct {
 	*storage.Notifier
 
-	namespaces namespaceDataStore.DataStore
+	metadataGetter notifiers.MetadataGetter
 }
 
 type section struct {
@@ -48,7 +52,7 @@ type fact struct {
 	Value string `json:"value"`
 }
 
-// notification json struct for richly-formatted notifications
+// notification json struct for richly-formatted notifications.
 type notification struct {
 	Color    string    `json:"themeColor"`
 	Title    string    `json:"title"`
@@ -64,12 +68,12 @@ func (t *teams) getAlertSection(alert *storage.Alert) section {
 		facts = append(facts, fact{Name: "ID", Value: alertID})
 	}
 
-	alertLink := notifiers.AlertLink(t.Notifier.UiEndpoint, alert)
+	alertLink := notifiers.AlertLink(t.Notifier.GetUiEndpoint(), alert)
 	if len(alertLink) > 0 {
 		facts = append(facts, fact{Name: "URL", Value: alertLink})
 	}
 
-	alertTime := alert.GetTime().String()
+	alertTime := alert.GetTime().AsTime().Format(time.RFC3339Nano)
 	if len(alertTime) > 0 {
 		facts = append(facts, fact{Name: "Time", Value: alertTime})
 	}
@@ -131,12 +135,16 @@ func (t *teams) getEntitySection(alert *storage.Alert) section {
 }
 
 func (t *teams) getResourceSection(resource *storage.Alert_Resource) section {
-	return section{Title: "Resource Details",
-		Facts: []fact{{Name: "Resource Name", Value: resource.GetName()},
-			{Name: "Type", Value: resource.GetResourceType().String()},
-			{Name: "Namespace", Value: resource.GetNamespace()},
-			{Name: "Cluster Id", Value: resource.GetClusterId()},
-			{Name: "Cluster Name", Value: resource.GetClusterName()}}}
+	facts := []fact{{Name: "Resource Name", Value: resource.GetName()},
+		{Name: "Type", Value: resource.GetResourceType().String()},
+		{Name: "Cluster Id", Value: resource.GetClusterId()},
+		{Name: "Cluster Name", Value: resource.GetClusterName()}}
+
+	if resource.GetNamespace() != "" {
+		facts = append(facts, fact{Name: "Namespace", Value: resource.GetNamespace()})
+	}
+
+	return section{Title: "Resource Details", Facts: facts}
 }
 
 func (t *teams) getImageSection(image *storage.ContainerImage) section {
@@ -247,11 +255,11 @@ func valueListToString(values []*storage.PolicyValue, opString string) string {
 	return strings.Join(valueList, joinWithWhitespace)
 }
 
-func (*teams) Close(ctx context.Context) error {
+func (*teams) Close(_ context.Context) error {
 	return nil
 }
 
-// AlertNotify takes in an alert and generates the Teams message
+// AlertNotify takes in an alert and generates the Teams message.
 func (t *teams) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	var sections []section
 	title := notifiers.SummaryForAlert(alert)
@@ -286,12 +294,12 @@ func (t *teams) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		return errors.Wrapf(err, "Could not marshal notification for alert %v", alert.GetId())
 	}
 
-	webhookURL := notifiers.GetAnnotationValue(ctx, alert, t.GetLabelKey(), t.GetLabelDefault(), t.namespaces)
+	webhookURL := t.metadataGetter.GetAnnotationValue(ctx, alert, t.GetLabelKey(), t.GetLabelDefault())
 	webhook := urlfmt.FormatURL(webhookURL, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 
 	return retry.WithRetry(
 		func() error {
-			return postMessage(ctx, webhook, jsonPayload)
+			return t.postMessage(ctx, webhook, jsonPayload)
 		},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
@@ -301,7 +309,7 @@ func (t *teams) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	)
 }
 
-// YamlNotify takes in a yaml file and generates the teams message
+// NetworkPolicyYAMLNotify takes in a yaml file and generates the teams message.
 func (t *teams) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, clusterName string) error {
 	tagLine := fmt.Sprintf("Network policy YAML applied on cluster %q", clusterName)
 
@@ -332,7 +340,7 @@ func (t *teams) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, cluste
 
 	return retry.WithRetry(
 		func() error {
-			return postMessage(ctx, webhook, jsonPayload)
+			return t.postMessage(ctx, webhook, jsonPayload)
 		},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
@@ -340,10 +348,11 @@ func (t *teams) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, cluste
 	)
 }
 
-func newTeams(notifier *storage.Notifier, namespaces namespaceDataStore.DataStore) (*teams, error) {
+// NewTeams exported to allow for usage in various components.
+func NewTeams(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter) (*teams, error) {
 	return &teams{
-		Notifier:   notifier,
-		namespaces: namespaces,
+		Notifier:       notifier,
+		metadataGetter: metadataGetter,
 	}, nil
 }
 
@@ -351,44 +360,53 @@ func (t *teams) ProtoNotifier() *storage.Notifier {
 	return t.Notifier
 }
 
-func (t *teams) Test(ctx context.Context) error {
+func (t *teams) Test(ctx context.Context) *notifiers.NotifierError {
 	n := notification{
 		Text: "This is a test message created to test teams integration with StackRox.",
 	}
 	jsonPayload, err := json.Marshal(&n)
 	if err != nil {
-		return errors.New("Could not marshal test notification")
+		return notifiers.NewNotifierError("create test message failed", errors.New("Could not marshal test notification"))
 	}
 
 	webhook := urlfmt.FormatURL(t.GetLabelDefault(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 
-	return retry.WithRetry(
+	err = retry.WithRetry(
 		func() error {
-			return postMessage(ctx, webhook, jsonPayload)
+			return t.postMessage(ctx, webhook, jsonPayload)
 		},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
 		retry.BetweenAttempts(backOff),
 	)
+
+	if err != nil {
+		return notifiers.NewNotifierError("send test message failed", err)
+	}
+
+	return nil
 }
 
-func postMessage(ctx context.Context, url string, jsonPayload []byte) error {
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonPayload))
+func (t *teams) postMessage(ctx context.Context, url string, jsonPayload []byte) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	client := &http.Client{
-		Timeout:   notifiers.Timeout,
+		Timeout:   timeout,
 		Transport: proxy.RoundTripper(),
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Errorf("Error posting to teams: %v", err)
+		log.Errorw("Error posting message to teams",
+			logging.Err(err),
+			logging.ErrCode(codes.TeamsGeneric),
+			logging.NotifierName(t.GetName()))
 		return errors.Wrap(err, "Error posting to teams")
 	}
 	defer utils.IgnoreError(resp.Body.Close)
-	return notifiers.CreateError("Teams", resp)
+	return notifiers.CreateError(t.GetName(), resp, codes.TeamsGeneric)
 }
 
 func backOff(previousAttempt int) {
@@ -396,8 +414,8 @@ func backOff(previousAttempt int) {
 }
 
 func init() {
-	notifiers.Add("teams", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		s, err := newTeams(notifier, namespaceDataStore.Singleton())
+	notifiers.Add(notifiers.TeamsType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
+		s, err := NewTeams(notifier, metadatagetter.Singleton())
 		return s, err
 	})
 }

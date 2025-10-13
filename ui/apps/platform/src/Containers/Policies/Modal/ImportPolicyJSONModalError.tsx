@@ -7,6 +7,7 @@ import { Policy } from 'types/policy.proto';
 import {
     MIN_POLICY_NAME_LENGTH,
     hasDuplicateIdOnly,
+    policyOverwriteAllowed,
     checkForBlockedSubmit,
     PolicyImportError,
     PolicyResolution,
@@ -15,7 +16,7 @@ import DuplicatePolicyForm from './DuplicatePolicyForm';
 
 const RESOLUTION = { resolution: '', newName: '' };
 
-type ImportPolicyJSONErrorProps = {
+type ImportPolicyJSONModalErrorProps = {
     handleCancelModal: () => void;
     startImportPolicies: () => void;
     policies: Policy[];
@@ -25,7 +26,7 @@ type ImportPolicyJSONErrorProps = {
     setDuplicateResolution: (duplicateResolution) => void;
 };
 
-function ImportPolicyJSONError({
+function ImportPolicyJSONModalError({
     handleCancelModal,
     startImportPolicies,
     policies,
@@ -33,13 +34,14 @@ function ImportPolicyJSONError({
     duplicateResolution,
     setDuplicateResolution,
     errorMessages,
-}: ImportPolicyJSONErrorProps): ReactElement {
+}: ImportPolicyJSONModalErrorProps): ReactElement {
     function updateResolution(key, value) {
         setDuplicateResolution({ ...duplicateResolution, [key]: value });
     }
 
     const duplicateErrorsOnly = duplicateErrors.length > 0;
     const showKeepBothPolicies = hasDuplicateIdOnly(duplicateErrors);
+    const allowOverwriteOption = policyOverwriteAllowed(duplicateErrors);
     const isBlocked = checkForBlockedSubmit({
         numPolicies: policies?.length ?? 0,
         messageType: 'error',
@@ -66,15 +68,18 @@ function ImportPolicyJSONError({
         >
             <>
                 <ModalBoxBody>
-                    Address the errors below to continue importing policies
+                    {duplicateErrorsOnly
+                        ? 'Address the errors below to continue importing policies'
+                        : 'Correct the errors that are listed, and then try to import again.'}
                     <Alert
                         title={
                             duplicateErrorsOnly
-                                ? 'Policies already exist'
-                                : 'Errors trying to import policies'
+                                ? 'Policy already exists'
+                                : 'Policy errors causing import failure'
                         }
+                        component="p"
                         variant="danger"
-                        className="pf-u-mt-md"
+                        className="pf-v5-u-mt-md"
                         isInline
                     >
                         <ul>
@@ -88,6 +93,7 @@ function ImportPolicyJSONError({
                             <DuplicatePolicyForm
                                 updateResolution={updateResolution}
                                 showKeepBothPolicies={showKeepBothPolicies}
+                                allowOverwriteOption={allowOverwriteOption}
                             />
                         )}
                     </Alert>
@@ -112,4 +118,4 @@ function ImportPolicyJSONError({
     );
 }
 
-export default ImportPolicyJSONError;
+export default ImportPolicyJSONModalError;

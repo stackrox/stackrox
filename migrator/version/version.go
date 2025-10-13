@@ -6,11 +6,13 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/log"
-	migSchema "github.com/stackrox/rox/migrator/migrations/postgreshelper/schema"
 	migGorm "github.com/stackrox/rox/migrator/postgres/gorm"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
@@ -21,7 +23,7 @@ import (
 func ReadVersionPostgres(t context.Context, dbName string) (*migrations.MigrationVersion, error) {
 	gc := migGorm.GetConfig()
 
-	ver := migrations.MigrationVersion{MainVersion: "0", SeqNum: 0}
+	ver := migrations.MigrationVersion{MainVersion: "0"}
 	db, err := gc.ConnectWithRetries(dbName)
 	if err != nil {
 		return &ver, nil
@@ -34,13 +36,13 @@ func ReadVersionPostgres(t context.Context, dbName string) (*migrations.Migratio
 func ReadVersionGormDB(ctx context.Context, db *gorm.DB) (*migrations.MigrationVersion, error) {
 	pkgSchema.ApplySchemaForTable(ctx, db, pkgSchema.VersionsSchema.Table)
 	var modelVersion pkgSchema.Versions
-	ver := migrations.MigrationVersion{MainVersion: "0", SeqNum: 0}
+	ver := migrations.MigrationVersion{MainVersion: "0"}
 	result := db.WithContext(ctx).Table(pkgSchema.VersionsSchema.Table).First(&modelVersion)
 	if result.Error != nil {
 		return &ver, nil
 	}
 
-	protoVersion, err := migSchema.ConvertVersionToProto(&modelVersion)
+	protoVersion, err := ConvertVersionToProto(&modelVersion)
 	if err != nil {
 		return &ver, nil
 	}
@@ -49,8 +51,23 @@ func ReadVersionGormDB(ctx context.Context, db *gorm.DB) (*migrations.MigrationV
 
 	ver.MainVersion = protoVersion.GetVersion()
 	ver.SeqNum = int(protoVersion.GetSeqNum())
+	ver.MinimumSeqNum = int(protoVersion.GetMinSeqNum())
 	ver.LastPersisted = timestamp.FromProtobuf(protoVersion.GetLastPersisted()).GoTime()
 	return &ver, nil
+}
+
+// UpdateVersionPostgres - updates the version allowing for outer transaction
+func UpdateVersionPostgres(ctx context.Context, db postgres.DB, updatedVersion *storage.Version) {
+	err := pgutils.Retry(ctx, func() error {
+		_, err := db.Exec(ctx, "DELETE FROM versions")
+		if err != nil {
+			return err
+		}
+
+		_, err = db.Exec(ctx, "INSERT INTO versions (seqnum, version, minseqnum, lastpersisted) VALUES($1, $2, $3, $4)", updatedVersion.GetSeqNum(), updatedVersion.GetVersion(), updatedVersion.GetMinSeqNum(), protocompat.NilOrTime(updatedVersion.GetLastPersisted()))
+		return err
+	})
+	utils.Must(errors.Wrap(err, "failed to write migration version"))
 }
 
 // SetVersionPostgres - sets the version in the named postgres database
@@ -68,13 +85,18 @@ func SetVersionGormDB(ctx context.Context, db *gorm.DB, updatedVersion *storage.
 	if ensureSchema {
 		pkgSchema.ApplySchemaForTable(ctx, db, pkgSchema.VersionsSchema.Table)
 	}
-	modelVersion, err := migSchema.ConvertVersionFromProto(updatedVersion)
-	if err != nil {
-		utils.Must(errors.Wrapf(err, "failed to write migration version to %s", "name"))
-	}
-	err = pgutils.Retry(func() error {
-		result := db.Table(pkgSchema.VersionsSchema.Table).WithContext(ctx).Save(modelVersion)
-		return result.Error
+
+	err := pgutils.Retry(ctx, func() error {
+		return db.Transaction(func(tx *gorm.DB) error {
+			// Gorm broke Save, so we have to do delete/insert:  https://github.com/go-gorm/gorm/pull/6149/files
+			result := tx.Exec("DELETE FROM versions")
+			if err := result.Error; err != nil {
+				return err
+			}
+
+			result = tx.Exec("INSERT INTO versions (seqnum, version, minseqnum, lastpersisted) VALUES($1, $2, $3, $4)", updatedVersion.GetSeqNum(), updatedVersion.GetVersion(), updatedVersion.GetMinSeqNum(), protocompat.NilOrTime(updatedVersion.GetLastPersisted()))
+			return result.Error
+		})
 	})
 	if err != nil {
 		utils.Must(errors.Wrapf(err, "failed to write migration version to %s", "name"))
@@ -86,7 +108,8 @@ func SetCurrentVersionPostgres(ctx context.Context) {
 	newVersion := &storage.Version{
 		SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
 		Version:       version.GetMainVersion(),
-		LastPersisted: timestamp.Now().GogoProtobuf(),
+		MinSeqNum:     int32(migrations.MinimumSupportedDBVersionSeqNum()),
+		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
 	}
 	SetVersionPostgres(ctx, migrations.GetCurrentClone(), newVersion)
 }

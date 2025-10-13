@@ -4,19 +4,19 @@ import (
 	"context"
 	"testing"
 
-	timestamp "github.com/gogo/protobuf/types"
-	"github.com/golang/mock/gomock"
 	storeMocks "github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/mocks"
 	undoDeploymentStoreMocks "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore/mocks"
 	undoStoreMocks "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore/mocks"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestNetPolDataStore(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(netPolDataStoreTestSuite))
 }
 
@@ -114,7 +114,7 @@ func (s *netPolDataStoreTestSuite) TestGetNetworkPolicies() {
 	result, found, err := s.dataStore.GetNetworkPolicy(s.hasNS1ReadCtx, FakeID1)
 	s.NoError(err)
 	s.True(found)
-	s.Equal(result, netPolNm1)
+	protoassert.Equal(s.T(), result, netPolNm1)
 
 	// Test we can get with NS2 permissions.
 	s.storage.EXPECT().Get(gomock.Any(), FakeID2).Return(netPolNm2, true, nil)
@@ -122,16 +122,16 @@ func (s *netPolDataStoreTestSuite) TestGetNetworkPolicies() {
 	result, found, err = s.dataStore.GetNetworkPolicy(s.hasNS2ReadCtx, FakeID2)
 	s.NoError(err)
 	s.True(found)
-	s.Equal(result, netPolNm2)
+	protoassert.Equal(s.T(), result, netPolNm2)
 
 	// Test we cannot do the opposite.
-	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil)
+	s.storage.EXPECT().GetByQuery(gomock.Any(), gomock.Any()).Return(nil, nil)
 
 	netPols, err := s.dataStore.GetNetworkPolicies(s.hasNS1ReadCtx, FakeClusterID, FakeNamespace2)
 	s.NoError(err)
 	s.Equal(0, len(netPols))
 
-	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil)
+	s.storage.EXPECT().GetByQuery(gomock.Any(), gomock.Any()).Return(nil, nil)
 
 	netPols, err = s.dataStore.GetNetworkPolicies(s.hasNS2ReadCtx, FakeClusterID, FakeNamespace1)
 	s.NoError(err)
@@ -219,17 +219,17 @@ func (s *netPolDataStoreTestSuite) TestAllowUpdateUndo() {
 }
 
 func (s *netPolDataStoreTestSuite) TestAllowUpdateUndoNewer() {
-	oldCluster := &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID, ApplyTimestamp: timestamp.TimestampNow()}
+	oldCluster := &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID, ApplyTimestamp: protocompat.TimestampNow()}
 	s.undoStorage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(oldCluster, true, nil)
 	s.undoStorage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil)
 
-	err := s.dataStore.UpsertUndoRecord(s.hasWriteCtx, &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID, ApplyTimestamp: timestamp.TimestampNow()})
+	err := s.dataStore.UpsertUndoRecord(s.hasWriteCtx, &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID, ApplyTimestamp: protocompat.TimestampNow()})
 	s.NoError(err, "expected an error trying to write without permissions")
 }
 
 func (s *netPolDataStoreTestSuite) TestDisallowUpdateUndoOlder() {
-	oldTS := timestamp.TimestampNow()
-	newTS := timestamp.TimestampNow()
+	oldTS := protocompat.TimestampNow()
+	newTS := protocompat.TimestampNow()
 	// Ensure the timestamps differ
 	newTS.Nanos += 1000
 	oldCluster := &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID, ApplyTimestamp: newTS}

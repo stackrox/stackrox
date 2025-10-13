@@ -1,22 +1,22 @@
 import React from 'react';
-import { Flex, FlexItem, Title, Button } from '@patternfly/react-core';
+import { Button, Flex, FlexItem, Title } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
+import WidgetCard from 'Components/PatternFly/WidgetCard';
 import useURLSearch from 'hooks/useURLSearch';
 import { riskBasePath } from 'routePaths';
 import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
 import DeploymentsAtMostRiskTable from './DeploymentsAtMostRiskTable';
-import WidgetCard from './WidgetCard';
 import useDeploymentsAtRisk from '../hooks/useDeploymentsAtRisk';
 import NoDataEmptyState from './NoDataEmptyState';
 
 function DeploymentsAtMostRisk() {
     const { searchFilter } = useURLSearch();
-    const { data: deployments, loading, error } = useDeploymentsAtRisk(searchFilter);
+    const { data: deployments, isLoading, error } = useDeploymentsAtRisk(searchFilter);
     const urlQueryString = getUrlQueryStringForSearchFilter(searchFilter);
     return (
         <WidgetCard
-            isLoading={loading}
+            isLoading={isLoading}
             error={error}
             header={
                 <Flex direction={{ default: 'row' }}>

@@ -8,30 +8,32 @@ import (
 )
 
 // Cache implements a cache where the elements expire after a specific time
-type Cache interface {
-	Add(key, value interface{})
-	Get(key interface{}) interface{}
-	GetAll() []interface{}
-	GetOrSet(key interface{}, value interface{}) interface{}
-	Remove(key ...interface{})
+//
+//go:generate mockgen-wrapper
+type Cache[K comparable, V any] interface {
+	Add(key K, value V)
+	Get(key K) (V, bool)
+	GetAll() []V
+	GetOrSet(key K, value V) V
+	Remove(key ...K)
 	RemoveAll()
 }
 
-type opts func(*expiringCacheImpl)
+type opts[K comparable, V any] func(*expiringCacheImpl[K, V])
 
 // UpdateExpirationOnGets resets the clock for a specific object when it is retrieved
-func UpdateExpirationOnGets(e *expiringCacheImpl) {
+func UpdateExpirationOnGets[K comparable, V any](e *expiringCacheImpl[K, V]) {
 	e.updateOnGets = true
 }
 
 // NewExpiringCache returns a new lru Cache with time based expiration on values.
-func NewExpiringCache(expiry time.Duration, options ...opts) Cache {
-	return NewExpiringCacheWithClock(realClock{}, expiry, options...)
+func NewExpiringCache[K comparable, V any](expiry time.Duration, options ...opts[K, V]) Cache[K, V] {
+	return NewExpiringCacheWithClock[K, V](realClock{}, expiry, options...)
 }
 
 // NewExpiringCacheWithClock returns a new lru Cache with time based expiration on values, using the input clock.
-func NewExpiringCacheWithClock(clock Clock, expiry time.Duration, options ...opts) Cache {
-	e := &expiringCacheImpl{
+func NewExpiringCacheWithClock[K comparable, V any](clock Clock, expiry time.Duration, options ...opts[K, V]) Cache[K, V] {
+	e := &expiringCacheImpl[K, V]{
 		mq: newMappedQueue(),
 
 		clock:  clock,
@@ -43,7 +45,7 @@ func NewExpiringCacheWithClock(clock Clock, expiry time.Duration, options ...opt
 	return e
 }
 
-type expiringCacheImpl struct {
+type expiringCacheImpl[K comparable, V any] struct {
 	lock sync.Mutex
 
 	mq mappedQueue
@@ -56,14 +58,14 @@ type expiringCacheImpl struct {
 }
 
 // Add adds a new key/value pair to the cache.
-func (e *expiringCacheImpl) Add(key, value interface{}) {
+func (e *expiringCacheImpl[K, V]) Add(key K, value V) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
 	e.addNoLock(key, value)
 }
 
-func (e *expiringCacheImpl) addNoLock(key, value interface{}) {
+func (e *expiringCacheImpl[K, V]) addNoLock(key K, value interface{}) {
 	now := e.clock.Now()
 	e.cleanNoLock(now)
 
@@ -96,47 +98,48 @@ func (e *expiringCacheImpl) addNoLock(key, value interface{}) {
 }
 
 // Get takes in a key and returns nil if the item doesn't exist or if the item has expired
-func (e *expiringCacheImpl) Get(key interface{}) interface{} {
+func (e *expiringCacheImpl[K, V]) Get(key K) (V, bool) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
 	e.cleanNoLock(e.clock.Now())
 	value := e.getValue(key)
 	if value == nil {
-		return nil
+		var empty V
+		return empty, false
 	}
 
 	if e.updateOnGets {
 		e.removeNoLock(key)
 		e.addNoLock(key, value)
 	}
-	return value
+	return value.(V), true
 }
 
 // GetAll returns all non-expired values in the cache.
-func (e *expiringCacheImpl) GetAll() []interface{} {
+func (e *expiringCacheImpl[K, V]) GetAll() []V {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
 	e.cleanNoLock(e.clock.Now())
 
 	cachedValues := e.mq.getAllValues()
-	actualValues := make([]interface{}, 0, len(cachedValues))
+	actualValues := make([]V, 0, len(cachedValues))
 	for _, cv := range cachedValues {
-		v, _ := unwrap(cv)
+		v, _ := unwrap[V](cv)
 		actualValues = append(actualValues, v)
 	}
 	return actualValues
 }
 
-func (e *expiringCacheImpl) removeNoLock(keys ...interface{}) {
+func (e *expiringCacheImpl[K, V]) removeNoLock(keys ...K) {
 	for _, key := range keys {
 		e.mq.remove(key)
 	}
 }
 
 // Remove removes a key in the cache if present. Returns if it was present.
-func (e *expiringCacheImpl) Remove(keys ...interface{}) {
+func (e *expiringCacheImpl[K, V]) Remove(keys ...K) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
@@ -145,7 +148,7 @@ func (e *expiringCacheImpl) Remove(keys ...interface{}) {
 }
 
 // RemoveAll removes all values from the cache.
-func (e *expiringCacheImpl) RemoveAll() {
+func (e *expiringCacheImpl[K, V]) RemoveAll() {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
@@ -154,7 +157,7 @@ func (e *expiringCacheImpl) RemoveAll() {
 
 // GetOrSet returns the value for the key if it exists or sets the value if it does not
 // In the case of setting the value, it will return the passed value
-func (e *expiringCacheImpl) GetOrSet(key, value interface{}) interface{} {
+func (e *expiringCacheImpl[K, V]) GetOrSet(key K, value V) V {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
@@ -164,14 +167,14 @@ func (e *expiringCacheImpl) GetOrSet(key, value interface{}) interface{} {
 			e.removeNoLock(key)
 			e.addNoLock(key, currValue)
 		}
-		return currValue
+		return currValue.(V)
 	}
 
 	e.addNoLock(key, value)
 	return value
 }
 
-func (e *expiringCacheImpl) getValue(key interface{}) interface{} {
+func (e *expiringCacheImpl[K, V]) getValue(key interface{}) interface{} {
 	value := e.mq.get(key)
 	if value == nil {
 		return nil
@@ -193,16 +196,16 @@ func wrap(value interface{}, at time.Time) *cacheValue {
 	}
 }
 
-func unwrap(value interface{}) (interface{}, time.Time) {
+func unwrap[V any](value interface{}) (V, time.Time) {
 	cv := value.(*cacheValue)
-	return cv.value, cv.at
+	return cv.value.(V), cv.at
 }
 
 // Intermittent clean up of expired values.
 // Called during Add or Get when needed.
 ////////////////////////////////////////
 
-func (e *expiringCacheImpl) cleanNoLock(at time.Time) {
+func (e *expiringCacheImpl[K, V]) cleanNoLock(at time.Time) {
 	for {
 		key, value := e.mq.front()
 		if key == nil {

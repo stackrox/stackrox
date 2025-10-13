@@ -2,22 +2,17 @@ package deploymentenvs
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/deploymentenvs"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/providers"
-	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 const (
 	fetchMetadataTimeout = 60 * time.Second
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 type manager struct {
@@ -102,7 +97,7 @@ func (m *manager) GetDeploymentEnvironmentsByClusterID(block bool) map[string][]
 	result := make(map[string][]string, len(m.deploymentEnvsByClusterID))
 
 	for clusterID, envs := range m.deploymentEnvsByClusterID {
-		result[clusterID] = sliceutils.ShallowClone(envs)
+		result[clusterID] = slices.Clone(envs)
 	}
 
 	return result

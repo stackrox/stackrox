@@ -1,0 +1,31 @@
+apiVersion: platform.stackrox.io/v1alpha1
+kind: SecuredCluster
+metadata:
+  name: stackrox-secured-cluster-services
+spec:
+  centralEndpoint: $central_endpoint
+  clusterName: remote
+  perNode:
+    collector:
+      collection: $collection_method
+  scanner:
+    scannerComponent: $scanner_component_setting
+    analyzer:
+      scaling:
+        autoScaling: Disabled
+        replicas: 1
+      resources:
+        requests:
+          memory: 500Mi
+          cpu: 500m
+        limits:
+          memory: 2500Mi
+          cpu: 1000m
+    db:
+      resources:
+        requests:
+          cpu: 400m
+          memory: 512Mi
+        limits:
+          cpu: 1000m
+          memory: 4Gi

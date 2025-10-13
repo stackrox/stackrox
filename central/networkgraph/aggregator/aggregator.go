@@ -8,6 +8,7 @@ import (
 )
 
 // NetworkConnsAggregator provides functionality to aggregate supplied network connections into a new slice.
+//
 //go:generate mockgen-wrapper
 type NetworkConnsAggregator interface {
 	Aggregate(conns []*storage.NetworkFlow) []*storage.NetworkFlow
@@ -44,4 +45,8 @@ func NewDefaultToCustomExtSrcConnAggregator(networkTree tree.ReadOnlyNetworkTree
 // connections with same external endpoint, as determined by name, into a single connection.
 func NewDuplicateNameExtSrcConnAggregator() NetworkConnsAggregator {
 	return &aggregateExternalConnByNameImpl{}
+}
+
+func NewLatestTimestampAggregator() NetworkConnsAggregator {
+	return &aggregateLatestTimestampImpl{}
 }

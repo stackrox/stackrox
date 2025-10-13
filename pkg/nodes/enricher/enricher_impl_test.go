@@ -3,14 +3,14 @@ package enricher
 import (
 	"testing"
 
-	"github.com/golang/mock/gomock"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/scanners/types"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 	"golang.org/x/sync/semaphore"
 )
 
@@ -71,6 +71,27 @@ func (f *fakeNodeScanner) GetNodeScan(*storage.Node) (*storage.NodeScan, error) 
 	}, nil
 }
 
+func (f *fakeNodeScanner) GetNodeInventoryScan(*storage.Node, *storage.NodeInventory, *v4.IndexReport) (*storage.NodeScan, error) {
+	f.requestedScan = true
+	return &storage.NodeScan{
+		Components: []*storage.EmbeddedNodeScanComponent{
+			{
+				Vulns: []*storage.EmbeddedVulnerability{
+					{
+						Cve: "CVE-2020-1234",
+					},
+					{
+						Cve: "CVE-2021-1234",
+					},
+					{
+						Cve: "CVE-2022-1234",
+					},
+				},
+			},
+		},
+	}, nil
+}
+
 func (*fakeNodeScanner) TestNodeScanner() error {
 	return nil
 }
@@ -88,8 +109,15 @@ type fakeCVESuppressor struct{}
 func (*fakeCVESuppressor) EnrichNodeWithSuppressedCVEs(node *storage.Node) {
 	for _, c := range node.GetScan().GetComponents() {
 		for _, v := range c.GetVulns() {
-			if v.Cve == "CVE-2020-1234" {
+			if v.GetCve() == "CVE-2020-1234" {
 				v.Suppressed = true
+			}
+		}
+
+		// Data moved from Vulns to Vulnerabilities in Postgres.  So simply add the data here.
+		for _, v := range c.GetVulnerabilities() {
+			if v.GetCveBaseInfo().GetCve() == "CVE-2020-1234" {
+				v.Snoozed = true
 			}
 		}
 	}
@@ -105,7 +133,7 @@ func TestEnricherFlow(t *testing.T) {
 		{
 			name: "node already has scan",
 			node: &storage.Node{
-				Id:   "id",
+				Id:   fixtureconsts.Node1,
 				Scan: &storage.NodeScan{},
 			},
 			fns: newFakeNodeScannerWithDataSource(opts{
@@ -115,7 +143,7 @@ func TestEnricherFlow(t *testing.T) {
 		{
 			name: "node does not have scan",
 			node: &storage.Node{
-				Id: "id",
+				Id: fixtureconsts.Node1,
 			},
 			fns: newFakeNodeScannerWithDataSource(opts{
 				requestedScan: true,
@@ -147,14 +175,6 @@ func TestEnricherFlow(t *testing.T) {
 }
 
 func TestEnricherFlowWithPostgres(t *testing.T) {
-	envIsolator := envisolator.NewEnvIsolator(t)
-	envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-	defer envIsolator.RestoreAll()
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		t.Skip("Skip postgres store tests")
-		t.SkipNow()
-	}
 
 	cases := []struct {
 		name string
@@ -165,7 +185,7 @@ func TestEnricherFlowWithPostgres(t *testing.T) {
 		{
 			name: "node already has scan",
 			node: &storage.Node{
-				Id:   "id",
+				Id:   fixtureconsts.Node1,
 				Scan: &storage.NodeScan{},
 			},
 			fns: newFakeNodeScannerWithDataSource(opts{
@@ -214,10 +234,14 @@ func TestCVESuppression(t *testing.T) {
 		metrics: newMetrics(pkgMetrics.CentralSubsystem),
 	}
 
-	node := &storage.Node{Id: "id"}
+	node := &storage.Node{Id: fixtureconsts.Node1}
 	err := enricherImpl.EnrichNode(node)
 	require.NoError(t, err)
-	assert.True(t, node.Scan.Components[0].Vulns[0].Suppressed)
+
+	for _, c := range node.GetScan().GetComponents() {
+		// `vulnerabilities` is the new field.
+		assert.NotNil(t, c.GetVulnerabilities()[0].GetSnoozed())
+	}
 }
 
 func TestZeroIntegrations(t *testing.T) {
@@ -230,131 +254,14 @@ func TestZeroIntegrations(t *testing.T) {
 		metrics:  newMetrics(pkgMetrics.CentralSubsystem),
 	}
 
-	node := &storage.Node{Id: "id", ClusterName: "cluster", Name: "node"}
+	node := &storage.Node{Id: fixtureconsts.Node1, ClusterName: "cluster", Name: "node"}
 	err := enricherImpl.EnrichNode(node)
 	assert.Error(t, err)
 	expectedErrMsg := "error scanning node cluster:node error: no node scanners are integrated"
 	assert.Equal(t, expectedErrMsg, err.Error())
 }
 
-func TestFillScanStats(t *testing.T) {
-	cases := []struct {
-		node                 *storage.Node
-		expectedVulns        int32
-		expectedFixableVulns int32
-	}{
-		{
-			node: &storage.Node{
-				Id: "node-1",
-				Scan: &storage.NodeScan{
-					Components: []*storage.EmbeddedNodeScanComponent{
-						{
-							Vulns: []*storage.EmbeddedVulnerability{
-								{
-									Cve: "cve-1",
-									SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-										FixedBy: "blah",
-									},
-								},
-							},
-						},
-						{
-							Vulns: []*storage.EmbeddedVulnerability{
-								{
-									Cve: "cve-1",
-								},
-							},
-						},
-					},
-				},
-			},
-			expectedVulns:        1,
-			expectedFixableVulns: 1,
-		},
-		{
-			node: &storage.Node{
-				Id: "node-1",
-				Scan: &storage.NodeScan{
-					Components: []*storage.EmbeddedNodeScanComponent{
-						{
-							Vulns: []*storage.EmbeddedVulnerability{
-								{
-									Cve: "cve-1",
-									SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-										FixedBy: "blah",
-									},
-								},
-							},
-						},
-						{
-							Vulns: []*storage.EmbeddedVulnerability{
-								{
-									Cve: "cve-2",
-									SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-										FixedBy: "blah",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			expectedVulns:        2,
-			expectedFixableVulns: 2,
-		},
-		{
-			node: &storage.Node{
-				Id: "node-1",
-				Scan: &storage.NodeScan{
-					Components: []*storage.EmbeddedNodeScanComponent{
-						{
-							Vulns: []*storage.EmbeddedVulnerability{
-								{
-									Cve: "cve-1",
-								},
-							},
-						},
-						{
-							Vulns: []*storage.EmbeddedVulnerability{
-								{
-									Cve: "cve-2",
-								},
-							},
-						},
-						{
-							Vulns: []*storage.EmbeddedVulnerability{
-								{
-									Cve: "cve-3",
-								},
-							},
-						},
-					},
-				},
-			},
-			expectedVulns:        3,
-			expectedFixableVulns: 0,
-		},
-	}
-
-	for _, c := range cases {
-		t.Run(t.Name(), func(t *testing.T) {
-			FillScanStats(c.node)
-			assert.Equal(t, c.expectedVulns, c.node.GetCves())
-			assert.Equal(t, c.expectedFixableVulns, c.node.GetFixableCves())
-		})
-	}
-}
-
 func TestFillScanStatsWithPostgres(t *testing.T) {
-	envIsolator := envisolator.NewEnvIsolator(t)
-	envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-	defer envIsolator.RestoreAll()
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		t.Skip("Skip postgres store tests")
-		t.SkipNow()
-	}
-
 	cases := []struct {
 		node                 *storage.Node
 		expectedVulns        int32
@@ -362,7 +269,7 @@ func TestFillScanStatsWithPostgres(t *testing.T) {
 	}{
 		{
 			node: &storage.Node{
-				Id: "node-1",
+				Id: fixtureconsts.Node1,
 				Scan: &storage.NodeScan{
 					Components: []*storage.EmbeddedNodeScanComponent{
 						{
@@ -385,7 +292,7 @@ func TestFillScanStatsWithPostgres(t *testing.T) {
 		},
 		{
 			node: &storage.Node{
-				Id: "node-1",
+				Id: fixtureconsts.Node1,
 				Scan: &storage.NodeScan{
 					Components: []*storage.EmbeddedNodeScanComponent{
 						{
@@ -420,7 +327,7 @@ func TestFillScanStatsWithPostgres(t *testing.T) {
 		},
 		{
 			node: &storage.Node{
-				Id: "node-1",
+				Id: fixtureconsts.Node1,
 				Scan: &storage.NodeScan{
 					Components: []*storage.EmbeddedNodeScanComponent{
 						{

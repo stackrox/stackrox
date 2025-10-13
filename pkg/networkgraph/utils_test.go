@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 )
@@ -47,8 +49,52 @@ func TestGetQueries(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			actualDepQ, actualScopeQ, err := GetFilterAndScopeQueries("c1", tc.rawQ, tc.scope)
 			assert.NoError(t, err)
-			assert.Equal(t, tc.depQ, actualDepQ)
-			assert.Equal(t, tc.scopeQ, actualScopeQ)
+			protoassert.Equal(t, tc.depQ, actualDepQ)
+			protoassert.Equal(t, tc.scopeQ, actualScopeQ)
 		})
+	}
+}
+
+func TestIsExternalDiscovered(t *testing.T) {
+	for _, tc := range []struct {
+		info     *storage.NetworkEntityInfo
+		expected bool
+	}{
+		// is external and discovered
+		{
+			info: &storage.NetworkEntityInfo{
+				Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+				Desc: &storage.NetworkEntityInfo_ExternalSource_{
+					ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+						Discovered: true,
+					},
+				},
+			},
+			expected: true,
+		},
+
+		// is external but not discovered
+		{
+			info: &storage.NetworkEntityInfo{
+				Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+				Desc: &storage.NetworkEntityInfo_ExternalSource_{
+					ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+						Discovered: false,
+					},
+				},
+			},
+			expected: false,
+		},
+
+		// neither external or discovered
+		{
+			info: &storage.NetworkEntityInfo{
+				Type: storage.NetworkEntityInfo_DEPLOYMENT,
+				Desc: &storage.NetworkEntityInfo_Deployment_{},
+			},
+			expected: false,
+		},
+	} {
+		assert.Equal(t, tc.expected, IsExternalDiscovered(tc.info))
 	}
 }

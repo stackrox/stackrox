@@ -8,11 +8,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/mapeval"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/readable"
 	"github.com/stackrox/rox/pkg/search"
@@ -20,10 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
-)
-
-var (
-	timestampPtrType = reflect.TypeOf((*types.Timestamp)(nil))
 )
 
 // A baseEvaluator is an evaluator that operates on an individual field at the leaf of an object.
@@ -241,7 +238,7 @@ func generateSliceMatcher(value string, fieldType reflect.Type, matchAll bool) (
 }
 
 func generateTimestampMatcher(value string, matchAll bool) (baseMatcherAndExtractor, error) {
-	var baseMatcher func(*types.Timestamp) bool
+	var baseMatcher func(*protocompat.Timestamp) bool
 	if matchAll && value != "" {
 		return nil, errors.New("non-empty value for matchAll")
 	}
@@ -255,7 +252,7 @@ func generateTimestampMatcher(value string, matchAll bool) (baseMatcherAndExtrac
 		}
 	}
 	return func(instance reflect.Value) []valueMatchedPair {
-		ts, ok := instance.Interface().(*types.Timestamp)
+		ts, ok := instance.Interface().(*protocompat.Timestamp)
 		if !ok {
 			return nil
 		}
@@ -265,13 +262,13 @@ func generateTimestampMatcher(value string, matchAll bool) (baseMatcherAndExtrac
 			}
 			return nil
 		}
-		return []valueMatchedPair{{value: readable.ProtoTime(ts), matched: matchAll || (value != "-" && baseMatcher(ts))}}
+		return []valueMatchedPair{{value: protoconv.ReadableTime(ts), matched: matchAll || (value != "-" && baseMatcher(ts))}}
 	}, nil
 }
 
 func generatePtrMatcher(value string, fieldType reflect.Type, matchAll bool) (baseMatcherAndExtractor, error) {
 	// Special case for pointer to timestamp.
-	if fieldType == timestampPtrType {
+	if fieldType == protocompat.TimestampPtrType {
 		return generateTimestampMatcher(value, matchAll)
 	}
 	if matchAll && value != "" {

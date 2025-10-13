@@ -1,28 +1,36 @@
-import static Services.waitForViolation
 import static Services.waitForSuspiciousProcessInRiskIndicators
+import static Services.waitForViolation
+import static util.Helpers.evaluateWithRetry
+import static util.Helpers.trueWithin
 
-import io.stackrox.proto.storage.RiskOuterClass
-import io.stackrox.proto.api.v1.AlertServiceOuterClass
-import io.stackrox.proto.storage.AlertOuterClass
-import services.AlertService
-import services.ClusterService
-
-import groups.BAT
-
-import io.stackrox.proto.storage.ProcessBaselineOuterClass
-import objects.Deployment
-
+import com.google.protobuf.util.Timestamps
 import org.apache.commons.lang3.StringUtils
 
-import org.junit.experimental.categories.Category
+import io.stackrox.proto.api.v1.AlertServiceOuterClass
+import io.stackrox.proto.storage.AlertOuterClass
+import io.stackrox.proto.storage.PolicyOuterClass.Policy
+import io.stackrox.proto.storage.ProcessBaselineOuterClass
+import io.stackrox.proto.storage.RiskOuterClass
 
+import objects.Deployment
+import services.AlertService
+import services.ClusterService
+import services.PolicyService
 import services.ProcessBaselineService
-import spock.lang.Shared
-import spock.lang.Unroll
 
+import spock.lang.Shared
+import spock.lang.Tag
+import spock.lang.Unroll
+import spock.lang.IgnoreIf
+
+@Tag("Parallel")
+@Tag("PZ")
+@IgnoreIf({ Env.COLLECTION_METHOD == "NO_COLLECTION"  })
 class ProcessBaselinesTest extends BaseSpecification {
     @Shared
     private String clusterId
+
+    static final private String TEST_NAMESPACE = "qa-process-baselines"
 
     static final private String DEPLOYMENTNGINX = "pb-deploymentnginx"
     static final private String DEPLOYMENTNGINX_RESOLVE_VIOLATION = "pb-deploymentnginx-violation-resolve"
@@ -32,77 +40,51 @@ class ProcessBaselinesTest extends BaseSpecification {
     static final private String DEPLOYMENTNGINX_DELETE = "pb-deploymentnginx-delete"
     static final private String DEPLOYMENTNGINX_DELETE_API = "pb-deploymentnginx-delete-api"
     static final private String DEPLOYMENTNGINX_POST_DELETE_API = "pb-deploymentnginx-post-delete-api"
-
     static final private String DEPLOYMENTNGINX_REMOVEPROCESS = "pb-deploymentnginx-removeprocess"
+
+    static final private Integer RISK_WAIT_TIME = 240
+
     static final private List<Deployment> DEPLOYMENTS =
             [
-                    new Deployment()
-                     .setName(DEPLOYMENTNGINX)
-                     .setImage(TEST_IMAGE)
-                     .addPort(22, "TCP")
-                     .addAnnotation("test", "annotation")
-                     .setEnv(["CLUSTER_NAME": "main"])
-                     .addLabel("app", "test"),
-             new Deployment()
-                     .setName(DEPLOYMENTNGINX_RESOLVE_VIOLATION)
-                     .setImage(TEST_IMAGE)
-                     .addPort(22, "TCP")
-                     .addAnnotation("test", "annotation")
-                     .setEnv(["CLUSTER_NAME": "main"])
-                     .addLabel("app", "test"),
-             new Deployment()
-                     .setName(DEPLOYMENTNGINX_RESOLVE_AND_BASELINE_VIOLATION)
-                     .setImage(TEST_IMAGE)
-                     .addPort(22, "TCP")
-                     .addAnnotation("test", "annotation")
-                     .setEnv(["CLUSTER_NAME": "main"])
-                     .addLabel("app", "test"),
-             new Deployment()
-                     .setName(DEPLOYMENTNGINX_LOCK)
-                     .setImage(TEST_IMAGE)
-                     .addPort(22, "TCP")
-                     .addAnnotation("test", "annotation")
-                     .setEnv(["CLUSTER_NAME": "main"])
-                     .addLabel("app", "test"),
-             new Deployment()
-                     .setName(DEPLOYMENTNGINX_DELETE)
-                     .setImage(TEST_IMAGE)
-                     .addPort(22, "TCP")
-                     .addAnnotation("test", "annotation")
-                     .setEnv(["CLUSTER_NAME": "main"])
-                     .addLabel("app", "test"),
-             new Deployment()
-                     .setName(DEPLOYMENTNGINX_DELETE_API)
-                     .setImage(TEST_IMAGE)
-                     .addPort(22, "TCP")
-                     .addAnnotation("test", "annotation")
-                     .setEnv(["CLUSTER_NAME": "main"])
-                     .addLabel("app", "test"),
-             new Deployment()
-                      .setName(DEPLOYMENTNGINX_POST_DELETE_API)
-                      .setImage(TEST_IMAGE)
-                      .addPort(22, "TCP")
-                      .addAnnotation("test", "annotation")
-                      .setEnv(["CLUSTER_NAME": "main"])
-                      .addLabel("app", "test"),
-             new Deployment()
-                     .setName(DEPLOYMENTNGINX_REMOVEPROCESS)
-                     .setImage(TEST_IMAGE)
-                     .addPort(22, "TCP")
-                     .addAnnotation("test", "annotation")
-                     .setEnv(["CLUSTER_NAME": "main"])
-                     .addLabel("app", "test"),
+                DEPLOYMENTNGINX,
+                DEPLOYMENTNGINX_RESOLVE_VIOLATION,
+                DEPLOYMENTNGINX_RESOLVE_AND_BASELINE_VIOLATION,
+                DEPLOYMENTNGINX_LOCK,
+                DEPLOYMENTNGINX_DELETE,
+                DEPLOYMENTNGINX_DELETE_API,
+                DEPLOYMENTNGINX_POST_DELETE_API,
+                DEPLOYMENTNGINX_REMOVEPROCESS,
             ]
+            .collect { String name -> new Deployment()
+                .setName(name)
+                .setNamespace(TEST_NAMESPACE)
+                .setImage(TEST_IMAGE)
+                .addPort(22, "TCP")
+                .addAnnotation("test", "annotation")
+                .setEnv(["CLUSTER_NAME": "main"])
+                .addLabel("app", "test")
+            }
+
+    @Shared
+    private Policy unauthorizedProcessExecution
 
     def setupSpec() {
         clusterId = ClusterService.getClusterId()
+
+        unauthorizedProcessExecution = PolicyService.clonePolicyAndScopeByNamespace(
+            "Unauthorized Process Execution",
+            TEST_NAMESPACE
+        )
+        assert unauthorizedProcessExecution
     }
 
     def cleanupSpec() {
+        PolicyService.deletePolicy(unauthorizedProcessExecution.getId())
+        orchestrator.deleteNamespace(TEST_NAMESPACE)
     }
 
     @Unroll
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify processes risk indicators for the given key after lock on #deploymentName"() {
         when:
         "exec into the container and run a process and wait for lock to kick in"
@@ -134,7 +116,7 @@ class ProcessBaselinesTest extends BaseSpecification {
 
         log.info "Baseline Before after observation: ${baseline}"
 
-        // sleep 10 seconds to allow for propagation to sensor
+        // wait for propagation to sensor
         sleep 10000
         orchestrator.execInContainer(deployment, "pwd")
 
@@ -162,7 +144,7 @@ class ProcessBaselinesTest extends BaseSpecification {
 
     /* TODO(ROX-3108)
     @Unroll
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify baseline processes for the given key before and after locking "() {
         when:
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
@@ -199,7 +181,8 @@ class ProcessBaselinesTest extends BaseSpecification {
     */
 
     @Unroll
-    @Category(BAT)
+    @Tag("BAT")
+    @Tag("COMPATIBILITY")
     def "Verify baseline process violation after resolve baseline on #deploymentName"() {
                /*
                     a)Lock the processes in the baseline for the key
@@ -216,6 +199,7 @@ class ProcessBaselinesTest extends BaseSpecification {
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
         assert deployment != null
         orchestrator.createDeployment(deployment)
+        assert Services.waitForDeployment(deployment)
         String deploymentId = deployment.getDeploymentUid()
         assert deploymentId != null
 
@@ -242,32 +226,32 @@ class ProcessBaselinesTest extends BaseSpecification {
                  lockProcessBaselines(clusterId, deployment, containerName, true)
         assert (!StringUtils.isEmpty(lockProcessBaselines.get(0).getElements(0).getElement().processName))
 
-        // sleep 5 seconds to allow for propagation to sensor
-        sleep 5000
+        // wait for propagation to sensor
+        sleep 10000
         orchestrator.execInContainer(deployment, "pwd")
 
         log.info "Locked Process Baseline after pwd: ${lockProcessBaselines}"
 
         // check for process baseline violation
-        assert waitForViolation(containerName, "Unauthorized Process Execution", 240)
+        assert waitForViolation(containerName, unauthorizedProcessExecution.getName(), RISK_WAIT_TIME)
         List<AlertOuterClass.ListAlert> alertList = AlertService.getViolations(AlertServiceOuterClass.ListAlertsRequest
                  .newBuilder().build())
         String alertId
         for (AlertOuterClass.ListAlert alert : alertList) {
-            if (alert.getPolicy().name.equalsIgnoreCase("Unauthorized Process Execution") &&
+            if (alert.getPolicy().name.equalsIgnoreCase(unauthorizedProcessExecution.getName()) &&
                      alert.deployment.id.equalsIgnoreCase(deploymentId)) {
                 alertId = alert.id
                 AlertService.resolveAlert(alertId, addToBaseline)
                 // again, allow the new baseline that contains pwd to propagate
-                sleep 5000
+                sleep 10000
             }
          }
         orchestrator.execInContainer(deployment, "pwd")
         if (addToBaseline) {
-            waitForViolation(containerName, "Unauthorized Process Execution", 15)
+            waitForViolation(containerName, unauthorizedProcessExecution.getName(), 15)
         }
         else {
-            assert waitForViolation(containerName, "Unauthorized Process Execution", 15)
+            assert waitForViolation(containerName, unauthorizedProcessExecution.getName(), 15)
         }
         then:
         "Verify for violation or no violation after resolve/resolve and baseline"
@@ -277,7 +261,7 @@ class ProcessBaselinesTest extends BaseSpecification {
 
         int numAlertsAfterResolve = 0
         for (AlertOuterClass.ListAlert alert : alertListAnother) {
-            if (alert.getPolicy().name.equalsIgnoreCase("Unauthorized Process Execution")
+            if (alert.getPolicy().name.equalsIgnoreCase(unauthorizedProcessExecution.getName())
                      && alert.deployment.id.equalsIgnoreCase(deploymentId)) {
                 numAlertsAfterResolve++
                 AlertService.resolveAlert(alert.id, false)
@@ -297,9 +281,9 @@ class ProcessBaselinesTest extends BaseSpecification {
         DEPLOYMENTNGINX_RESOLVE_VIOLATION              | "/usr/sbin/nginx" | false         | 1
 
         DEPLOYMENTNGINX_RESOLVE_AND_BASELINE_VIOLATION | "/usr/sbin/nginx" | true          | 0
-     }
+    }
 
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify baselines are deleted when their deployment is deleted"() {
         /*
                 a)get all baselines
@@ -335,7 +319,7 @@ class ProcessBaselinesTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify removed baseline process not getting added back to baseline after rerun on #deploymentName"() {
         /*
                 1.run a process and verify if it exists in the baseline
@@ -399,10 +383,9 @@ class ProcessBaselinesTest extends BaseSpecification {
         DEPLOYMENTNGINX_REMOVEPROCESS           |   "nginx"
     }
 
-    @Category(BAT)
     def "Delete process baselines via API"() {
         given:
-        "a baseline is deleted"
+        "a baseline is created"
         // Get all baselines for our deployment and assert they exist
         def deployment = DEPLOYMENTS.find { it.name == DEPLOYMENTNGINX_DELETE_API }
         assert deployment != null
@@ -411,6 +394,12 @@ class ProcessBaselinesTest extends BaseSpecification {
         def baselinesCreated = ProcessBaselineService.
                 waitForDeploymentBaselinesCreated(clusterId, deployment, containerName)
         assert(baselinesCreated)
+        def baselineBeforeDelete = null
+        assert trueWithin(70, 5) {
+            baselineBeforeDelete = ProcessBaselineService.getProcessBaseline(clusterId, deployment, containerName)
+            assert baselineBeforeDelete
+            baselineBeforeDelete.elementsList.size() > 0
+        }
 
         when:
         "delete the baselines"
@@ -421,8 +410,12 @@ class ProcessBaselinesTest extends BaseSpecification {
         "Verify that all baselines with that deployment ID have been deleted (i.e. the baseline contents cleared)"
         ProcessBaselineOuterClass.ProcessBaseline baselineAfterDelete = ProcessBaselineService.
                             getProcessBaseline(clusterId, deployment, containerName)
-        // Baseline should still exist but have no elements associated.  Essentially cleared out.
-        assert  ( baselineAfterDelete.elementsList == [] )
+        // Baseline should still exist but have no elements associated. Essentially cleared out.
+        log.info "baselineBeforeDelete processes ${baselineBeforeDelete.elementsList*.element.processName}"
+        assert Timestamps.compare(
+                baselineBeforeDelete.getStackRoxLockedTimestamp(),
+                baselineAfterDelete.getStackRoxLockedTimestamp()) < 0
+        assert ( baselineAfterDelete.elementsList == [] )
 
         cleanup:
         "Remove deployment"
@@ -430,7 +423,7 @@ class ProcessBaselinesTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(BAT)
+    @Tag("BAT")
     def "Processes come in after baseline deleted by API for #deploymentName"() {
         when:
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
@@ -483,13 +476,13 @@ class ProcessBaselinesTest extends BaseSpecification {
 
         log.info "Process Baseline before pwd: ${baselineAfterDelete}"
 
-        // sleep 10 seconds to allow for propagation to sensor
+        // wait for propagation to sensor
         sleep 10000
         orchestrator.execInContainer(deployment, "pwd")
 
         then:
         "verify for suspicious process in risk indicator"
-        RiskOuterClass.Risk.Result result = waitForSuspiciousProcessInRiskIndicators(deploymentId, 240)
+        RiskOuterClass.Risk.Result result = waitForSuspiciousProcessInRiskIndicators(deploymentId, RISK_WAIT_TIME)
         assert (result != null)
         // Check that pwd is a risky process
         RiskOuterClass.Risk.Result.Factor pwdFactor =  result.factorsList.find { it.message.contains("pwd") }

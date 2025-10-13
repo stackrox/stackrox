@@ -23,14 +23,14 @@ func TestScopeQueries(t *testing.T) {
 			stc: map[string][]string{
 				"prodCluster": {"*"},
 			},
-			expectedScopeQueries: []string{"Cluster:prodCluster"},
+			expectedScopeQueries: []string{`Cluster:"prodCluster"`},
 		},
 		{
 			desc: "single cluster scope tree with specific namespaces",
 			stc: map[string][]string{
 				"prodCluster": {"webserver", "db"},
 			},
-			expectedScopeQueries: []string{"Cluster:prodCluster+Namespace:webserver", "Cluster:prodCluster+Namespace:db"},
+			expectedScopeQueries: []string{`Cluster:"prodCluster"+Namespace:"webserver"`, `Cluster:"prodCluster"+Namespace:"db"`},
 		},
 		{
 			desc: "multiple cluster scope tree with specific namespaces",
@@ -38,10 +38,10 @@ func TestScopeQueries(t *testing.T) {
 				"prodCluster": {"webserver", "db"},
 				"testCluster": {"test1", "test2"},
 			},
-			expectedScopeQueries: []string{"Cluster:prodCluster+Namespace:webserver",
-				"Cluster:prodCluster+Namespace:db",
-				"Cluster:testCluster+Namespace:test1",
-				"Cluster:testCluster+Namespace:test2",
+			expectedScopeQueries: []string{`Cluster:"prodCluster"+Namespace:"webserver"`,
+				`Cluster:"prodCluster"+Namespace:"db"`,
+				`Cluster:"testCluster"+Namespace:"test1"`,
+				`Cluster:"testCluster"+Namespace:"test2"`,
 			},
 		},
 	}

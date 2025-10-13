@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"strings"
 	"unicode"
+
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 type schemaEntry struct {
@@ -63,9 +65,6 @@ func makeSchemaEntries(data []typeData) []schemaEntry {
 }
 
 func schemaType(fd fieldData) string {
-	if strings.HasPrefix(fd.Name, "XXX_") {
-		return ""
-	}
 	if strings.ToLower(fd.Name) == "id" && fd.Type.Kind() == reflect.String {
 		return "ID!"
 	}
@@ -102,7 +101,7 @@ func schemaExpand(p reflect.Type) string {
 			return "[Label!]!"
 		}
 	case reflect.Ptr:
-		if p == timestampType {
+		if p == protocompat.TimestampPtrType {
 			return "Time"
 		}
 		elem := p.Elem()

@@ -1,47 +1,50 @@
 syntax = "proto3";
 
-option go_package = "v1";
-option java_package = "io.stackrox.proto.api.v1";
-
-import weak "google/api/annotations.proto";
-import "api/v1/empty.proto";
-import "api/v1/common.proto";
-import "storage/sensor_upgrade.proto";
-
 package v1;
 
+import "api/v1/common.proto";
+import "api/v1/empty.proto";
+import weak "google/api/annotations.proto";
+import "storage/sensor_upgrade.proto";
+
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
+
 message UpdateSensorUpgradeConfigRequest {
-    storage.SensorUpgradeConfig config = 1;
+  storage.SensorUpgradeConfig config = 1;
 }
 
 message GetSensorUpgradeConfigResponse {
-    storage.SensorUpgradeConfig config = 1;
+  enum SensorAutoUpgradeFeatureStatus {
+    NOT_SUPPORTED = 0;
+    SUPPORTED = 1;
+  }
+
+  message UpgradeConfig {
+    bool enable_auto_upgrade = 1;
+    SensorAutoUpgradeFeatureStatus auto_upgrade_feature = 2;
+  }
+
+  UpgradeConfig config = 1;
 }
 
 service SensorUpgradeService {
+  rpc GetSensorUpgradeConfig(Empty) returns (GetSensorUpgradeConfigResponse) {
+    option (google.api.http) = {get: "/v1/sensorupgrades/config"};
+  }
 
-    rpc GetSensorUpgradeConfig(Empty) returns (GetSensorUpgradeConfigResponse) {
-        option (google.api.http) = {
-            get: "/v1/sensorupgrades/config"
-        };
-    }
+  rpc UpdateSensorUpgradeConfig(UpdateSensorUpgradeConfigRequest) returns (Empty) {
+    option (google.api.http) = {
+      post: "/v1/sensorupgrades/config"
+      body: "*"
+    };
+  }
 
-    rpc UpdateSensorUpgradeConfig(UpdateSensorUpgradeConfigRequest) returns (Empty) {
-        option (google.api.http) = {
-            post: "/v1/sensorupgrades/config"
-            body: "*"
-        };
-    }
+  rpc TriggerSensorUpgrade(ResourceByID) returns (Empty) {
+    option (google.api.http) = {post: "/v1/sensorupgrades/cluster/{id}"};
+  }
 
-    rpc TriggerSensorUpgrade(ResourceByID) returns (Empty) {
-        option (google.api.http) = {
-            post: "/v1/sensorupgrades/cluster/{id}"
-        };
-    }
-
-    rpc TriggerSensorCertRotation(ResourceByID) returns (Empty) {
-        option (google.api.http) = {
-            post: "/v1/sensorupgrades/rotateclustercerts/{id}"
-        };
-    }
+  rpc TriggerSensorCertRotation(ResourceByID) returns (Empty) {
+    option (google.api.http) = {post: "/v1/sensorupgrades/rotateclustercerts/{id}"};
+  }
 }

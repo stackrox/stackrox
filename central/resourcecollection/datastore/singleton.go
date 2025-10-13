@@ -2,29 +2,27 @@ package datastore
 
 import (
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/resourcecollection/datastore/search"
-	"github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
-	"github.com/stackrox/rox/pkg/features"
+	pgStore "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
 	once sync.Once
 
 	ds DataStore
+	qr QueryResolver
 )
 
 func initialize() {
-	storage := postgres.New(globaldb.GetPostgres())
-	indexer := postgres.NewIndexer(globaldb.GetPostgres())
-	ds = New(storage, indexer, search.New(storage, indexer))
+	var err error
+	storage := pgStore.New(globaldb.GetPostgres())
+	ds, qr, err = New(storage)
+	utils.CrashOnError(err)
 }
 
 // Singleton returns a singleton instance of cve datastore
-func Singleton() DataStore {
-	if !features.ObjectCollections.Enabled() {
-		return nil
-	}
+func Singleton() (DataStore, QueryResolver) {
 	once.Do(initialize)
-	return ds
+	return ds, qr
 }

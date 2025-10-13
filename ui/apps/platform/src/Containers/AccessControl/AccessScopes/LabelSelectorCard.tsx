@@ -1,9 +1,9 @@
-import React, { ReactElement, useState } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import {
     Badge,
     Button,
     Card,
-    CardActions,
     CardBody,
     CardHeader,
     CardTitle,
@@ -16,11 +16,12 @@ import {
     Tooltip,
 } from '@patternfly/react-core';
 import { OutlinedQuestionCircleIcon, PlusCircleIcon } from '@patternfly/react-icons';
-import { TableComposable, Tbody, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Th, Thead, Tr } from '@patternfly/react-table';
 
-import { LabelSelectorRequirement, LabelSelectorsKey } from 'services/AccessScopesService';
+import type { LabelSelectorRequirement, LabelSelectorsKey } from 'services/AccessScopesService';
 
-import { Activity, getIsValidRequirements, getRequirementActivity } from './accessScopes.utils';
+import { getIsValidRequirements, getRequirementActivity } from './accessScopes.utils';
+import type { Activity } from './accessScopes.utils';
 import RequirementRow from './RequirementRow';
 import RequirementRowAddKey from './RequirementRowAddKey';
 
@@ -30,7 +31,7 @@ const labelIconClusterLabelSelector = (
         isContentLeftAligned
         maxWidth="24rem"
     >
-        <div className="pf-c-button pf-m-plain pf-m-smallest pf-u-ml-sm">
+        <div className="pf-v5-c-button pf-m-plain pf-m-smallest pf-v5-u-ml-sm">
             <OutlinedQuestionCircleIcon />
         </div>
     </Tooltip>
@@ -44,7 +45,7 @@ const labelIconNamespaceLabelSelector = (
         isContentLeftAligned
         maxWidth="24rem"
     >
-        <div className="pf-c-button pf-m-plain pf-m-smallest pf-u-ml-sm">
+        <div className="pf-v5-c-button pf-m-plain pf-m-smallest pf-v5-u-ml-sm">
             <OutlinedQuestionCircleIcon />
         </div>
     </Tooltip>
@@ -165,26 +166,33 @@ function LabelSelectorCard({
 
     return (
         <Card isCompact isFlat>
-            <CardHeader>
-                <CardTitle className="pf-u-font-size-sm">
+            <CardHeader
+                {...(hasAction && {
+                    actions: {
+                        actions: (
+                            <>
+                                <Button
+                                    variant="danger"
+                                    className="pf-m-smaller"
+                                    isDisabled={activity !== 'ENABLED'}
+                                    onClick={handleLabelSelectorDelete}
+                                >
+                                    Delete label selector
+                                </Button>
+                            </>
+                        ),
+                        hasNoOffset: false,
+                        className: undefined,
+                    },
+                })}
+            >
+                <CardTitle className="pf-v5-u-font-size-sm">
                     {title}
                     {labelIconLabelSelector}
                 </CardTitle>
-                {hasAction && (
-                    <CardActions>
-                        <Button
-                            variant="danger"
-                            className="pf-m-smaller"
-                            isDisabled={activity !== 'ENABLED'}
-                            onClick={handleLabelSelectorDelete}
-                        >
-                            Delete label selector
-                        </Button>
-                    </CardActions>
-                )}
             </CardHeader>
             <CardBody>
-                <Flex spaceItems={{ default: 'spaceItemsSm' }} className="pf-u-pb-sm">
+                <Flex spaceItems={{ default: 'spaceItemsSm' }} className="pf-v5-u-pb-sm">
                     <FlexItem>
                         <strong>Rules</strong>
                     </FlexItem>
@@ -193,11 +201,13 @@ function LabelSelectorCard({
                     </FlexItem>
                 </Flex>
                 {(requirements.length !== 0 || hasAddKey) && (
-                    <TableComposable variant="compact">
+                    <Table variant="compact">
                         <Thead>
                             <Tr>
                                 <Th width={40}>Key</Th>
-                                <Th />
+                                <Th>
+                                    <span className="pf-v5-screen-reader">Operator</span>
+                                </Th>
                                 <Th width={40}>Values</Th>
                                 {isLabelSelectorActive && <Th modifier="fitContent">Action</Th>}
                             </Tr>
@@ -205,7 +215,7 @@ function LabelSelectorCard({
                         <Tbody
                             className={
                                 labelSelectorsKey === 'namespaceLabelSelectors'
-                                    ? 'pf-u-background-color-200'
+                                    ? 'pf-v5-u-background-color-200'
                                     : ''
                             }
                         >
@@ -241,10 +251,10 @@ function LabelSelectorCard({
                                 />
                             )}
                         </Tbody>
-                    </TableComposable>
+                    </Table>
                 )}
                 {hasAction && (
-                    <Toolbar className="pf-u-pb-0" inset={{ default: 'insetNone' }}>
+                    <Toolbar className="pf-v5-u-pb-0" inset={{ default: 'insetNone' }}>
                         {isLabelSelectorActive ? (
                             <ToolbarContent>
                                 <ToolbarItem>
@@ -252,14 +262,14 @@ function LabelSelectorCard({
                                         key="Add rule"
                                         variant="link"
                                         isInline
-                                        icon={<PlusCircleIcon className="pf-u-mr-sm" />}
+                                        icon={<PlusCircleIcon className="pf-v5-u-mr-sm" />}
                                         onClick={onAddRequirement}
                                         isDisabled={indexRequirementActive !== -1}
                                     >
                                         Add rule
                                     </Button>
                                 </ToolbarItem>
-                                <ToolbarGroup alignment={{ default: 'alignRight' }}>
+                                <ToolbarGroup align={{ default: 'alignRight' }}>
                                     <ToolbarItem>
                                         <Button
                                             variant="primary"

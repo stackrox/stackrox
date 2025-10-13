@@ -1,11 +1,8 @@
 import intersection from 'lodash/intersection';
 
-import entityTypes from 'constants/entityTypes';
-import relationshipTypes from 'constants/relationshipTypes';
-import useCaseTypes from 'constants/useCaseTypes';
 import entityRelationships, {
     entityGroupMap,
-    getEntityTypesByRelationship,
+    getVulnerabilityManagementEntityTypesByRelationship as getEntityTypesByRelationship,
 } from './entityRelationships';
 
 describe('entityRelationshipMap', () => {
@@ -84,107 +81,49 @@ describe('entityRelationshipMap', () => {
     });
 });
 
-it('gets Matches relationships', () => {
-    let matches = getEntityTypesByRelationship(
-        entityTypes.CLUSTER,
-        relationshipTypes.MATCHES,
-        useCaseTypes.CONFIG_MANAGEMENT
-    );
-    expect(matches).toContain(entityTypes.CONTROL);
+it('gets Matches relationships for Cluster', () => {
+    const matchesForCluster = getEntityTypesByRelationship('CLUSTER', 'MATCHES');
+    expect(matchesForCluster).not.toContain('CONTROL');
+});
 
-    matches = getEntityTypesByRelationship(
-        entityTypes.CLUSTER,
-        relationshipTypes.MATCHES,
-        useCaseTypes.VULN_MANAGEMENT
-    );
-    expect(matches).not.toContain(entityTypes.CONTROL);
-
+it('gets Matches relationships for Image CVE', () => {
     // should also get extended matches
-    matches = getEntityTypesByRelationship(
-        entityTypes.CVE,
-        relationshipTypes.MATCHES,
-        useCaseTypes.VULN_MANAGEMENT
-    );
-    expect(matches).toContain(entityTypes.IMAGE);
-    expect(matches).toContain(entityTypes.COMPONENT);
-    expect(matches).toContain(entityTypes.DEPLOYMENT);
-    expect(matches).not.toContain(entityTypes.NAMESPACE);
+    const matchesForImageCVE = getEntityTypesByRelationship('IMAGE_CVE', 'MATCHES');
+    expect(matchesForImageCVE).toContain('IMAGE');
+    expect(matchesForImageCVE).toContain('IMAGE_COMPONENT');
+    expect(matchesForImageCVE).toContain('DEPLOYMENT');
+    expect(matchesForImageCVE).not.toContain('NAMESPACE');
 });
 
-it('gets direct Children relationships', () => {
-    let children = getEntityTypesByRelationship(
-        entityTypes.CLUSTER,
-        relationshipTypes.CHILDREN,
-        useCaseTypes.CONFIG_MANAGEMENT
-    );
-    expect(children).toContain(entityTypes.NODE);
-    expect(children).toContain(entityTypes.NAMESPACE);
-    expect(children).toContain(entityTypes.ROLE);
-
-    children = getEntityTypesByRelationship(
-        entityTypes.CLUSTER,
-        relationshipTypes.CHILDREN,
-        useCaseTypes.VULN_MANAGEMENT
-    );
-    expect(children).toContain(entityTypes.NODE);
-    expect(children).toContain(entityTypes.NAMESPACE);
-    expect(children).not.toContain(entityTypes.ROLE);
+it('gets direct Children relationships for Cluster', () => {
+    const childrenOfCluster = getEntityTypesByRelationship('CLUSTER', 'CHILDREN');
+    expect(childrenOfCluster).toContain('NODE');
+    expect(childrenOfCluster).toContain('NAMESPACE');
+    expect(childrenOfCluster).not.toContain('ROLE');
 });
 
-it('gets direct Parents relationships', () => {
-    const parents = getEntityTypesByRelationship(
-        entityTypes.CLUSTER,
-        relationshipTypes.PARENTS,
-        useCaseTypes.CONFIG_MANAGEMENT
-    );
-    expect(parents).toEqual([]);
-});
-
-it('gets Contain relationships', () => {
-    let contains = getEntityTypesByRelationship(
-        entityTypes.CLUSTER,
-        relationshipTypes.CONTAINS,
-        useCaseTypes.CONFIG_MANAGEMENT
-    );
+it('gets Contains relationships for Cluster', () => {
+    const containsForCluster = getEntityTypesByRelationship('CLUSTER', 'CONTAINS');
 
     // should have direct child
-    expect(contains).toContain(entityTypes.ROLE);
+    expect(containsForCluster).not.toContain('ROLE');
+    expect(containsForCluster).toContain('NAMESPACE');
     // should have direct child's matches
-    expect(contains).toContain(entityTypes.SERVICE_ACCOUNT);
+    expect(containsForCluster).not.toContain('SERVICE_ACCOUNT');
     // should have grandchild
-    expect(contains).toContain(entityTypes.DEPLOYMENT);
+    expect(containsForCluster).toContain('DEPLOYMENT');
     // should have grandchild's matches
-    expect(contains).toContain(entityTypes.POLICY);
-    expect(contains).toContain(entityTypes.CONTROL);
+    expect(containsForCluster).not.toContain('CONTROL');
+});
 
-    contains = getEntityTypesByRelationship(
-        entityTypes.CLUSTER,
-        relationshipTypes.CONTAINS,
-        useCaseTypes.VULN_MANAGEMENT
-    );
-
+it('gets Contains relationships for Image', () => {
+    const containsForImage = getEntityTypesByRelationship('IMAGE', 'CONTAINS');
     // should have direct child
-    expect(contains).not.toContain(entityTypes.ROLE);
-    expect(contains).toContain(entityTypes.NAMESPACE);
-    // should have direct child's matches
-    expect(contains).not.toContain(entityTypes.SERVICE_ACCOUNT);
-    // should have grandchild
-    expect(contains).toContain(entityTypes.DEPLOYMENT);
-    // should have grandchild's matches
-    expect(contains).toContain(entityTypes.POLICY);
-    expect(contains).not.toContain(entityTypes.CONTROL);
-
-    contains = getEntityTypesByRelationship(
-        entityTypes.IMAGE,
-        relationshipTypes.CONTAINS,
-        useCaseTypes.VULN_MANAGEMENT
-    );
-    // should have direct child
-    expect(contains).toContain(entityTypes.COMPONENT);
+    expect(containsForImage).toContain('IMAGE_COMPONENT');
     // should not contain itself
-    expect(contains).not.toContain(entityTypes.IMAGE);
+    expect(containsForImage).not.toContain('IMAGE');
     // should have grandchild
-    expect(contains).toContain(entityTypes.CVE);
+    expect(containsForImage).toContain('IMAGE_CVE');
     // should not have granchild's extended matches
-    expect(contains).not.toContain(entityTypes.DEPLOYMENT);
+    expect(containsForImage).not.toContain('DEPLOYMENT');
 });

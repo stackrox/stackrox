@@ -6,24 +6,34 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"maps"
+	"slices"
+	"time"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	centralDetection "github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/detection/buildtime"
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
-	"github.com/stackrox/rox/central/notifier/processor"
+	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
-	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/role/sachelper"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
+	"github.com/stackrox/rox/pkg/booleanpolicy/networkpolicy"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/detection"
 	deploytimePkg "github.com/stackrox/rox/pkg/detection/deploytime"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
@@ -36,8 +46,11 @@ import (
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/notifier"
 	resourcesConv "github.com/stackrox/rox/pkg/protoconv/resources"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/grpc"
 	coreV1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -51,11 +64,11 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Detection)): {
-			"/v1.DetectionService/DetectBuildTime",
-			"/v1.DetectionService/DetectDeployTimeFromYAML",
+			apiV1.DetectionService_DetectBuildTime_FullMethodName,
+			apiV1.DetectionService_DetectDeployTimeFromYAML_FullMethodName,
 		},
-		or.SensorOrAuthorizer(user.With(permissions.Modify(resources.Detection))): {
-			"/v1.DetectionService/DetectDeployTime",
+		or.SensorOr(user.With(permissions.Modify(resources.Detection))): {
+			apiV1.DetectionService_DetectDeployTime_FullMethodName,
 		},
 	})
 
@@ -64,7 +77,14 @@ var (
 	workloadScheme = k8sRuntime.NewScheme()
 
 	workloadDeserializer = k8sSerializer.NewCodecFactory(workloadScheme).UniversalDeserializer()
+
+	delegateScanPermissions = []string{"Image"}
 )
+
+// EnhancementRequestWatcher is the interface to send deployments for enhancement to Sensor
+type EnhancementRequestWatcher interface {
+	SendAndWaitForEnhancedDeployments(ctx context.Context, conn connection.SensorConnection, deployments []*storage.Deployment, timeout time.Duration) ([]*storage.Deployment, error)
+}
 
 func init() {
 	metav1.AddToGroupVersion(workloadScheme, k8sSchema.GroupVersion{Version: "v1"})
@@ -83,10 +103,16 @@ type serviceImpl struct {
 	deploymentEnricher enrichment.Enricher
 	buildTimeDetector  buildtime.Detector
 	clusters           clusterDatastore.DataStore
+	connManager        connection.Manager
 
-	notifications processor.Processor
+	netpols            networkPolicyDS.DataStore
+	enhancementWatcher EnhancementRequestWatcher
+
+	notifications notifier.Processor
 
 	detector deploytime.Detector
+
+	clusterSACHelper sachelper.ClusterSacHelper
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -135,16 +161,32 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 
 	img := types.ToImage(image)
 
-	enrichmentContext := enricher.EnrichmentContext{}
-	if req.GetNoExternalMetadata() {
-		enrichmentContext.FetchOpt = enricher.NoExternalMetadata
+	fetchOpt, err := getFetchOptionFromRequest(req)
+	if err != nil {
+		return nil, err
 	}
+	enrichmentContext := enricher.EnrichmentContext{
+		Delegable: true,
+		FetchOpt:  fetchOpt,
+		Namespace: req.GetNamespace(),
+	}
+
+	if req.GetCluster() != "" {
+		// The request indicates enrichment should be delegated to a specific cluster.
+		clusterID, err := clusterUtil.GetClusterIDFromNameOrID(ctx, s.clusterSACHelper, req.GetCluster(), delegateScanPermissions)
+		if err != nil {
+			return nil, err
+		}
+
+		enrichmentContext.ClusterID = clusterID
+	}
+
 	enrichResult, err := s.imageEnricher.EnrichImage(ctx, enrichmentContext, img)
 	if err != nil {
 		return nil, err
 	}
 	if enrichResult.ImageUpdated {
-		img.Id = utils.GetImageID(img)
+		img.Id = utils.GetSHA(img)
 		if img.GetId() != "" {
 			if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
 				return nil, err
@@ -176,7 +218,7 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 	}
 	for _, idx := range updatedIndices {
 		img := images[idx]
-		img.Id = utils.GetImageID(img)
+		img.Id = utils.GetSHA(img)
 		if err := s.riskManager.CalculateRiskAndUpsertImage(images[idx]); err != nil {
 			return nil, err
 		}
@@ -189,10 +231,21 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 		EnforcementOnly: enrichmentContext.EnforcementOnly,
 	}
 
+	var appliedNetpols *augmentedobjs.NetworkPoliciesApplied
+	if enrichmentContext.ClusterID != "" {
+		appliedNetpols, err = s.getAppliedNetpolsForDeployment(ctx, enrichmentContext, deployment)
+		if err != nil {
+			log.Warnf("Could not find applied network policies for deployment %s. Continuing with deployment enrichment. Error: %s", deployment.GetName(), err)
+		} else {
+			log.Debugf("Found applied network policies for deployment %s: %+v", deployment.GetName(), appliedNetpols)
+		}
+	}
+
 	filter, getUnusedCategories := centralDetection.MakeCategoryFilter(policyCategories)
 	alerts, err := s.detector.Detect(detectionCtx, booleanpolicy.EnhancedDeployment{
-		Deployment: deployment,
-		Images:     images,
+		Deployment:             deployment,
+		Images:                 images,
+		NetworkPoliciesApplied: appliedNetpols,
 	}, filter)
 	if err != nil {
 		return nil, err
@@ -208,15 +261,29 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 	}, nil
 }
 
-func (s *serviceImpl) runDeployTimeDetect(ctx context.Context, enrichmentContext enricher.EnrichmentContext, obj k8sRuntime.Object, policyCategories []string) (*apiV1.DeployDetectionResponse_Run, error) {
+func (s *serviceImpl) getAppliedNetpolsForDeployment(ctx context.Context, enrichmentContext enricher.EnrichmentContext, deployment *storage.Deployment) (*augmentedobjs.NetworkPoliciesApplied, error) {
+	storedPolicies, err := s.netpols.GetNetworkPolicies(ctx, enrichmentContext.ClusterID, enrichmentContext.Namespace)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to find network policies for cluster %s and namespace %s", enrichmentContext.ClusterID, enrichmentContext.Namespace)
+	}
+	matchedPolicies := networkpolicy.FilterForDeployment(storedPolicies, deployment)
+	return networkpolicy.GenerateNetworkPoliciesAppliedObj(matchedPolicies), nil
+}
+
+func convertK8sResource(obj k8sRuntime.Object) (*storage.Deployment, error) {
 	if !kubernetes.IsDeploymentResource(obj.GetObjectKind().GroupVersionKind().Kind) {
 		return nil, nil
 	}
 
-	deployment, err := resourcesConv.NewDeploymentFromStaticResource(obj, obj.GetObjectKind().GroupVersionKind().Kind, "", "")
-	if err != nil {
-		return nil, errox.InvalidArgs.New("could not convert to deployment from resource").CausedBy(err)
-	}
+	return resourcesConv.NewDeploymentFromStaticResource(obj, obj.GetObjectKind().GroupVersionKind().Kind, "", "")
+}
+
+func (s *serviceImpl) runDeployTimeDetect(ctx context.Context, enrichmentContext enricher.EnrichmentContext, deployment *storage.Deployment, policyCategories []string) (*apiV1.DeployDetectionResponse_Run, error) {
+	// Deployment ID is empty because the processed yaml comes from roxctl and therefore doesn't
+	// get a Kubernetes generated ID. This is a temporary ID only required for roxctl to distinguish
+	// between different generated deployments.
+	deployment.Id = uuid.NewV4().String()
+
 	return s.enrichAndDetect(ctx, enrichmentContext, deployment, policyCategories...)
 }
 
@@ -288,7 +355,7 @@ func getObjectsFromList(list *coreV1.List) ([]k8sRuntime.Object, []string, error
 // DetectDeployTimeFromYAML runs detection on a deployment.
 func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.DeployYAMLDetectionRequest) (*apiV1.DeployDetectionResponse, error) {
 	if req.GetYaml() == "" {
-		return nil, errox.InvalidArgs.CausedBy("yaml field must be specified in detection request")
+		return nil, errox.InvalidArgs.New("yaml field must be specified in detection request")
 	}
 
 	resources, ignoredObjectRefs, err := getObjectsFromYAML(req.GetYaml())
@@ -298,25 +365,118 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 
 	eCtx := enricher.EnrichmentContext{
 		EnforcementOnly: req.GetEnforcementOnly(),
+		Delegable:       true,
+		Namespace:       "default",
 	}
-	if req.GetNoExternalMetadata() {
-		eCtx.FetchOpt = enricher.NoExternalMetadata
+	fetchOpt, err := getFetchOptionFromRequest(req)
+	if err != nil {
+		return nil, err
 	}
+	eCtx.FetchOpt = fetchOpt
+
+	if req.GetCluster() != "" {
+		// The request indicates enrichment should be delegated to a specific cluster.
+		clusterID, err := clusterUtil.GetClusterIDFromNameOrID(ctx, s.clusterSACHelper, req.GetCluster(), delegateScanPermissions)
+		if err != nil {
+			return nil, err
+		}
+
+		eCtx.ClusterID = clusterID
+	}
+
+	if ns := req.GetNamespace(); ns != "" {
+		eCtx.Namespace = ns
+	}
+
+	remarks := make(map[string]*apiV1.DeployDetectionRemark)
+
+	var deployments []*storage.Deployment
+	errorList := errorhelpers.NewErrorList("error parsing YAML files")
 
 	var runs []*apiV1.DeployDetectionResponse_Run
 	for _, r := range resources {
-		run, err := s.runDeployTimeDetect(ctx, eCtx, r, req.GetPolicyCategories())
+		d, err := convertK8sResource(r)
 		if err != nil {
-			return nil, errox.InvalidArgs.New("unable to convert object").CausedBy(err)
+			errorList.AddError(err)
+			continue
+		}
+		if d == nil {
+			continue
+		}
+		deployments = append(deployments, d)
+	}
+	errs := errorList.ToError()
+
+	if len(deployments) == 0 && errs != nil {
+		return nil, errox.InvalidArgs.New("every deployment YAML failed to parse - aborting").CausedBy(errs)
+	}
+	if len(deployments) > 0 && errs != nil {
+		log.Warnf("Deployment YAMLs failed to parse: %v", errs)
+	}
+
+	// If a cluster is provided and Sensor has the capability, enhance deployments with additional info from Sensor
+	if eCtx.ClusterID != "" {
+		conn := s.connManager.GetConnection(eCtx.ClusterID)
+		if conn == nil {
+			return nil, errox.InvalidArgs.New("connection to cluster is not ready - try again later")
+		}
+		if conn.HasCapability(centralsensor.SensorEnhancedDeploymentCheckCap) {
+			deployments, err = s.enhancementWatcher.SendAndWaitForEnhancedDeployments(ctx, conn, deployments, env.CentralDeploymentEnhancementTimeout.DurationSetting())
+		}
+		if err != nil {
+			return nil, errors.Wrap(err, "failed waiting for augmented deployment response")
+		}
+		for _, d := range deployments {
+			remarks[d.GetName()] = &apiV1.DeployDetectionRemark{
+				Name:                   d.GetName(),
+				PermissionLevel:        d.GetServiceAccountPermissionLevel().String(),
+				AppliedNetworkPolicies: nil,
+			}
+		}
+	}
+
+	for _, d := range deployments {
+		run, err := s.runDeployTimeDetect(ctx, eCtx, d, req.GetPolicyCategories())
+
+		if err != nil {
+			return nil, errox.InvalidArgs.New("unable to add additional information to deployment").CausedBy(err)
 		}
 		if run != nil {
 			runs = append(runs, run)
 		}
+
+		if eCtx.ClusterID == "" {
+			// Skip adding Network Policies to remarks, as we cannot find the right ones without a cluster provided
+			continue
+		}
+
+		an, err := s.getAppliedNetpolsForDeployment(ctx, eCtx, d)
+		if err != nil {
+			log.Warnf("Failed to get Network Policies for deployment %s, continuing without. Error: %v", d.GetName(), err)
+			continue
+		}
+
+		if remarks[d.GetName()] == nil {
+			remarks[d.GetName()] = &apiV1.DeployDetectionRemark{Name: d.GetName()}
+		}
+		remarks[d.GetName()].AppliedNetworkPolicies = getPolicyNamesAsSlice(an.Policies)
 	}
+
 	return &apiV1.DeployDetectionResponse{
 		Runs:              runs,
 		IgnoredObjectRefs: ignoredObjectRefs,
+		Remarks:           slices.Collect(maps.Values(remarks)),
 	}, nil
+}
+
+func getPolicyNamesAsSlice(policies map[string]*storage.NetworkPolicy) (policyNames []string) {
+	for _, p := range policies {
+		if p == nil {
+			continue
+		}
+		policyNames = append(policyNames, p.GetName())
+	}
+	return
 }
 
 func isDeployTimeEnforcement(actions []storage.EnforcementAction) bool {
@@ -400,4 +560,25 @@ func getIgnoredObjectRefFromYAML(yaml string) (string, error) {
 		return "", err
 	}
 	return k8sobjects.RefOf(unstructured).String(), nil
+}
+
+// getFetchOptionFromRequest will return the associated enricher.FetchOption based on whether force or no external
+// metadata is given.
+// If both are specified, it will return an error since the combination is considered invalid (we cannot force a refetch
+// and at the same time not take external metadata into account).
+func getFetchOptionFromRequest(request interface {
+	GetForce() bool
+	GetNoExternalMetadata() bool
+}) (enricher.FetchOption, error) {
+	if request.GetForce() && request.GetNoExternalMetadata() {
+		return enricher.UseCachesIfPossible, errox.InvalidArgs.New(
+			"force option is incompatible with not fetching metadata from external sources")
+	}
+	if request.GetNoExternalMetadata() {
+		return enricher.NoExternalMetadata, nil
+	}
+	if request.GetForce() {
+		return enricher.UseImageNamesRefetchCachedValues, nil
+	}
+	return enricher.UseCachesIfPossible, nil
 }

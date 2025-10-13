@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
-import { useHistory } from 'react-router-dom';
-import { Chart, ChartAxis, ChartBar, ChartLabelProps } from '@patternfly/react-charts';
+import { useNavigate } from 'react-router-dom-v5-compat';
+import { Chart, ChartAxis, ChartBar, ChartContainer } from '@patternfly/react-charts';
+import type { ChartLabelProps } from '@patternfly/react-charts';
 
 import useResizeObserver from 'hooks/useResizeObserver';
 import {
-    defaultChartHeight,
     defaultChartBarWidth,
-    patternflySeverityTheme,
+    defaultChartHeight,
     navigateOnClickEvent,
+    patternflySeverityTheme,
     severityColorScale,
 } from 'utils/chartUtils';
 import { LinkableChartLabel } from 'Components/PatternFly/Charts/LinkableChartLabel';
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 import { vulnManagementImagesPath } from 'routePaths';
 import { getQueryString } from 'utils/queryStringUtils';
 import isResourceScoped from '../utils';
@@ -21,7 +22,7 @@ import isResourceScoped from '../utils';
 export type TimeRange = { enabled: boolean; value: number };
 export type TimeRangeTuple = [TimeRange, TimeRange, TimeRange, TimeRange];
 export const timeRangeTupleIndices = [0, 1, 2, 3] as const;
-export type TimeRangeTupleIndex = typeof timeRangeTupleIndices[number];
+export type TimeRangeTupleIndex = (typeof timeRangeTupleIndices)[number];
 export type TimeRangeCounts = Record<`timeRange${TimeRangeTupleIndex}`, number>;
 
 export type ChartData = {
@@ -60,11 +61,11 @@ function yAxisTitle(searchFilter: SearchFilter) {
 // `datum` for these callbacks will refer to the index number of the bar in the chart. This index
 // value matches the index of the target `ChartData` item passed to the chart component.
 const labelLinkCallback = ({ datum }: ChartLabelProps, chartData: ChartData[]) => {
-    return typeof datum === 'number' ? chartData[datum - 1]?.labelLink ?? '' : '';
+    return typeof datum === 'number' ? (chartData[datum - 1]?.labelLink ?? '') : '';
 };
 
-const labelTextCallback = ({ datum }: ChartLabelProps, chartData: ChartData[]) => {
-    return typeof datum === 'number' ? chartData[datum - 1]?.labelText ?? '' : '';
+const labelTextCallback = ({ datum }: { datum?: number }, chartData: ChartData[]) => {
+    return typeof datum === 'number' ? (chartData[datum - 1]?.labelText ?? '') : '';
 };
 
 function makeChartData(
@@ -109,7 +110,7 @@ function makeChartData(
 }
 
 function AgingImagesChart({ searchFilter, timeRanges, timeRangeCounts }: AgingImagesChartProps) {
-    const history = useHistory();
+    const navigate = useNavigate();
     const [widgetContainer, setWidgetContainer] = useState<HTMLDivElement | null>(null);
     const widgetContainerResizeEntry = useResizeObserver(widgetContainer);
     const chartData = makeChartData(searchFilter, timeRanges, timeRangeCounts);
@@ -119,7 +120,7 @@ function AgingImagesChart({ searchFilter, timeRanges, timeRangeCounts }: AgingIm
             <Chart
                 ariaDesc="Aging images grouped by date of last update"
                 ariaTitle="Aging images"
-                animate={{ duration: 300 }}
+                containerComponent={<ChartContainer role="figure" />}
                 domainPadding={{ x: [50, 50] }}
                 height={defaultChartHeight}
                 width={widgetContainerResizeEntry?.contentRect.width} // Victory defaults to 450
@@ -157,7 +158,7 @@ function AgingImagesChart({ searchFilter, timeRanges, timeRangeCounts }: AgingIm
                             data={barData}
                             labels={({ datum }) => `${Math.round(parseInt(datum.y, 10))}`}
                             style={{ data: { fill } }}
-                            events={[navigateOnClickEvent(history, () => labelLink)]}
+                            events={[navigateOnClickEvent(navigate, () => labelLink)]}
                         />
                     );
                 })}

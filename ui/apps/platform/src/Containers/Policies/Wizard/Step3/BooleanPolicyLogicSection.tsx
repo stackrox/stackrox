@@ -4,7 +4,7 @@ import { useFormikContext } from 'formik';
 
 import { Policy } from 'types/policy.proto';
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import { policyConfigurationDescriptor, auditLogDescriptor } from './policyCriteriaDescriptors';
+import { getPolicyDescriptors } from 'Containers/Policies/policies.utils';
 import PolicySection from './PolicySection';
 
 import './BooleanPolicyLogicSection.css';
@@ -17,16 +17,11 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
     const { values } = useFormikContext<Policy>();
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
-    const unfilteredDescriptors =
-        values.eventSource === 'AUDIT_LOG_EVENT'
-            ? auditLogDescriptor
-            : policyConfigurationDescriptor;
-    const descriptors = unfilteredDescriptors.filter((unfilteredDescriptor) => {
-        if (typeof unfilteredDescriptor.featureFlagDependency === 'string') {
-            return isFeatureFlagEnabled(unfilteredDescriptor.featureFlagDependency);
-        }
-        return true;
-    });
+    const filteredDescriptors = getPolicyDescriptors(
+        isFeatureFlagEnabled,
+        values.eventSource,
+        values.lifecycleStages
+    );
 
     return (
         <>
@@ -38,7 +33,7 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
                         <GridItem>
                             <PolicySection
                                 sectionIndex={sectionIndex}
-                                descriptors={descriptors}
+                                descriptors={filteredDescriptors}
                                 readOnly={readOnly}
                             />
                         </GridItem>
@@ -54,7 +49,7 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
                                     className="or-divider-container"
                                 >
                                     <div className="or-divider" />
-                                    <div className="pf-u-align-self-center">OR</div>
+                                    <div className="pf-v5-u-align-self-center">OR</div>
                                     <div className="or-divider" />
                                 </Flex>
                             )}
@@ -65,7 +60,7 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
                     <React.Fragment key={sectionIndex}>
                         <PolicySection
                             sectionIndex={sectionIndex}
-                            descriptors={descriptors}
+                            descriptors={filteredDescriptors}
                             readOnly={readOnly}
                         />
                         {sectionIndex !== values.policySections.length - 1 && (
@@ -78,7 +73,7 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
                                 className="or-divider-container"
                             >
                                 <div className="or-divider" />
-                                <div className="pf-u-align-self-center">OR</div>
+                                <div className="pf-v5-u-align-self-center">OR</div>
                                 <div className="or-divider" />
                             </Flex>
                         )}

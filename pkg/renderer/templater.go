@@ -30,8 +30,7 @@ type ExternalPersistenceInstance struct {
 
 // ExternalPersistence is wrapper around the definitions for data held in a volume
 type ExternalPersistence struct {
-	Central *ExternalPersistenceInstance
-	DB      *ExternalPersistenceInstance
+	DB *ExternalPersistenceInstance
 }
 
 // HostPathPersistenceInstance describes the parameters for a bind mount
@@ -41,10 +40,9 @@ type HostPathPersistenceInstance struct {
 	NodeSelectorValue string
 }
 
-// HostPathPersistence wraps the instances of bind mounts for Central and Central DB
+// HostPathPersistence wraps the instances of bind mounts for Central DB
 type HostPathPersistence struct {
-	Central *HostPathPersistenceInstance
-	DB      *HostPathPersistenceInstance
+	DB *HostPathPersistenceInstance
 }
 
 // WithNodeSelector is a helper function for the templater that returns if node selectors are used
@@ -59,32 +57,45 @@ func (h *HostPathPersistenceInstance) WithNodeSelector() bool {
 // Image is an example as it can be parameterized per orchestrator with different defaults so it cannot be placed
 // at the top level
 type CommonConfig struct {
-	MainImage      string
-	CentralDBImage string
-	ScannerImage   string
-	ScannerDBImage string
+	MainImage        string
+	CentralDBImage   string
+	ScannerImage     string
+	ScannerDBImage   string
+	ScannerV4Image   string
+	ScannerV4DBImage string
 }
 
-// PersistenceType describes the type of persistence
-type PersistenceType string
-
-// StringToPersistentTypes is a map from the persistenttype string value to its object
-var StringToPersistentTypes = make(map[string]PersistenceType)
-
-func newPersistentType(t string) PersistenceType {
-	pt := PersistenceType(t)
-	StringToPersistentTypes[t] = pt
-	return pt
+// TelemetryConfig contains config to set up the transimission of telemtry and diagnostic data.
+type TelemetryConfig struct {
+	Enabled         bool
+	StorageEndpoint string
+	StorageKey      string
 }
 
-// String returns the string form of the enum
-func (m PersistenceType) String() string {
-	return string(m)
+// MonitoringConfig contains config to set up monitoring infrastructure.
+type MonitoringConfig struct {
+	OpenShiftMonitoring *bool
+}
+
+// DeclarativeConfigMounts contains mounts to config maps holding configuration to create resources in a declarative
+// manner.
+type DeclarativeConfigMounts struct {
+	ConfigMaps []string
+	Secrets    []string
 }
 
 // K8sConfig contains k8s fields
 type K8sConfig struct {
 	CommonConfig
+
+	// Telemetry holds the configuration for telemetry.
+	Telemetry TelemetryConfig
+
+	// Monitoring holds the monitoring configuration.
+	Monitoring MonitoringConfig
+
+	// DeclarativeConfigMounts holds the mounts for specifying resources to be created in a declarative manner.
+	DeclarativeConfigMounts DeclarativeConfigMounts
 
 	// ImageFlavorName is the name of the flavor selected by the user with CLI parameters
 	ImageFlavorName string
@@ -111,8 +122,6 @@ type K8sConfig struct {
 
 	OfflineMode bool
 
-	EnableTelemetry bool
-
 	// IstioVersion is the version of Istio to render for (if any)
 	IstioVersion string
 
@@ -131,8 +140,9 @@ type Config struct {
 	External *ExternalPersistence
 	HostPath *HostPathPersistence
 
-	Password     string
-	PasswordAuto bool
+	Password         string
+	PasswordAuto     bool
+	PasswordDisabled bool
 
 	LicenseData []byte
 
@@ -155,19 +165,9 @@ type Config struct {
 	EnablePodSecurityPolicies bool
 }
 
-// HasCentralHostPath returns if a Central is configured with host path
-func (c Config) HasCentralHostPath() bool {
-	return c.HostPath != nil && c.HostPath.Central != nil
-}
-
 // HasCentralDBHostPath returns if a Central DB is configured with host path
 func (c Config) HasCentralDBHostPath() bool {
 	return c.HostPath != nil && c.HostPath.DB != nil
-}
-
-// HasCentralExternal returns if a Central is configured with an external volume
-func (c Config) HasCentralExternal() bool {
-	return c.External != nil && c.External.Central != nil
 }
 
 // HasCentralDBExternal returns if a Central DB is configured with an external volume

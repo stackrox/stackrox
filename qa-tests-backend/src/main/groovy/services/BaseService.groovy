@@ -1,6 +1,10 @@
 package services
 
+import java.util.concurrent.TimeUnit
+
+import groovy.transform.CompileStatic
 import groovy.transform.EqualsAndHashCode
+import groovy.util.logging.Slf4j
 import io.grpc.CallOptions
 import io.grpc.Channel
 import io.grpc.ClientCall
@@ -14,17 +18,21 @@ import io.grpc.netty.NegotiationType
 import io.grpc.netty.NettyChannelBuilder
 import io.netty.handler.ssl.SslContextBuilder
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory
+
 import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.EmptyOuterClass
+
 import util.Env
 import util.Keys
 
+@CompileStatic
+@Slf4j
 class BaseService {
 
-    static final BASIC_AUTH_USERNAME = Env.mustGetUsername()
-    static final BASIC_AUTH_PASSWORD = Env.mustGetPassword()
+    static final String BASIC_AUTH_USERNAME = Env.mustGetUsername()
+    static final String BASIC_AUTH_PASSWORD = Env.mustGetPassword()
 
-    static final EMPTY = EmptyOuterClass.Empty.newBuilder().build()
+    static final EmptyOuterClass.Empty EMPTY = EmptyOuterClass.Empty.newBuilder().build()
 
     static ResourceByID getResourceByID(String id) {
         return ResourceByID.newBuilder().setId(id).build()
@@ -42,27 +50,30 @@ class BaseService {
         updateAuthConfig(useClientCert, null)
     }
 
-    static setUseClientCert(boolean use) {
+    static setUseClientCert(Boolean use) {
         updateAuthConfig(use, authInterceptor)
     }
 
-    private static updateAuthConfig(boolean newUseClientCert, ClientInterceptor newAuthInterceptor) {
-        if (useClientCert == newUseClientCert && authInterceptor == newAuthInterceptor) {
-            return
-        }
-        if (useClientCert != newUseClientCert) {
-            if (transportChannel != null) {
-                transportChannel.shutdownNow()
-                transportChannel = null
+    private static updateAuthConfig(Boolean newUseClientCert, ClientInterceptor newAuthInterceptor) {
+        synchronized(BaseService) {
+            if (useClientCert == newUseClientCert && authInterceptor == newAuthInterceptor) {
+                return
+            }
+            if (useClientCert != newUseClientCert) {
+                if (transportChannel != null) {
+                    transportChannel.shutdownNow()
+                    transportChannel = null
+                    effectiveChannel = null
+                    log.debug("The gRPC channel to central was closed")
+                }
+            }
+            if (authInterceptor != newAuthInterceptor) {
                 effectiveChannel = null
             }
-        }
-        if (authInterceptor != newAuthInterceptor) {
-            effectiveChannel = null
-        }
 
-        useClientCert = newUseClientCert
-        authInterceptor = newAuthInterceptor
+            useClientCert = newUseClientCert
+            authInterceptor = newAuthInterceptor
+        }
     }
 
     private static class CallWithAuthorizationHeader<ReqT, RespT>
@@ -104,10 +115,10 @@ class BaseService {
         }
     }
 
-    static ManagedChannel transportChannel = null
-    static ClientInterceptor authInterceptor = null
-    static Channel effectiveChannel = null
-    private static boolean useClientCert = false
+    private static ManagedChannel transportChannel = null
+    private static ClientInterceptor authInterceptor = null
+    private static Channel effectiveChannel = null
+    private static Boolean useClientCert = false
 
     static initializeChannel() {
         if (transportChannel == null) {
@@ -121,10 +132,21 @@ class BaseService {
 
             transportChannel = NettyChannelBuilder
                     .forAddress(Env.mustGetHostname(), Env.mustGetPort())
+                    // Here be dragons.
+                    // Enabling retries in grpc java lib is more complicated then we thought.
+                    // Tried:
+                    // - https://github.com/stackrox/stackrox/pull/11652
+                    // - https://github.com/stackrox/stackrox/pull/7636
+                    // - https://github.com/stackrox/stackrox/pull/4921
+                    // .enableRetry()
                     .negotiationType(NegotiationType.TLS)
                     .sslContext(sslContext)
+                    .keepAliveTime(1, TimeUnit.SECONDS)
+                    .idleTimeout(1, TimeUnit.MINUTES)
                     .build()
             effectiveChannel = null
+
+            log.debug("The gRPC channel to central was opened (useClientCert: ${useClientCert})")
         }
 
         if (authInterceptor == null) {
@@ -136,7 +158,9 @@ class BaseService {
 
     static Channel getChannel() {
         if (effectiveChannel == null) {
-            initializeChannel()
+            synchronized(BaseService) {
+                initializeChannel()
+            }
         }
         return effectiveChannel
     }

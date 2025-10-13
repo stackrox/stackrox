@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/net"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -47,7 +48,7 @@ func TestExternalSrcsHandler(t *testing.T) {
 			},
 		},
 	}
-	require.NoError(t, handler.ProcessMessage(req))
+	require.NoError(t, handler.ProcessMessage(t.Context(), req))
 
 	require.True(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 	vs = vs.TryNext()
@@ -89,7 +90,7 @@ func TestExternalSrcsHandler(t *testing.T) {
 			},
 		},
 	}
-	require.NoError(t, handler.ProcessMessage(req))
+	require.NoError(t, handler.ProcessMessage(t.Context(), req))
 
 	require.True(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 	vs = vs.TryNext()
@@ -131,7 +132,7 @@ func TestExternalSrcsHandler(t *testing.T) {
 			},
 		},
 	}
-	require.NoError(t, handler.ProcessMessage(req))
+	require.NoError(t, handler.ProcessMessage(t.Context(), req))
 
 	require.False(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 	require.Nil(t, vs.TryNext())
@@ -168,7 +169,7 @@ func TestExternalSrcsHandler(t *testing.T) {
 			},
 		},
 	}
-	require.NoError(t, handler.ProcessMessage(req))
+	require.NoError(t, handler.ProcessMessage(t.Context(), req))
 
 	assert.True(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 	vs = vs.TryNext()
@@ -187,7 +188,7 @@ func TestExternalSrcsHandler(t *testing.T) {
 			},
 		},
 	}
-	require.NoError(t, handler.ProcessMessage(req))
+	require.NoError(t, handler.ProcessMessage(t.Context(), req))
 
 	assert.False(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 	assert.Nil(t, vs.TryNext())
@@ -260,12 +261,12 @@ func TestExternalSourcesLookup(t *testing.T) {
 			},
 		},
 	}
-	require.NoError(t, handler.ProcessMessage(req))
+	require.NoError(t, handler.ProcessMessage(t.Context(), req))
 	require.True(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 
 	expected := req.GetPushNetworkEntitiesRequest().GetEntities()[1]
-	assert.Equal(t, expected, handler.LookupByNetwork(net.IPNetworkFromCIDRBytes([]byte{192, 10, 0, 0, 16})))
+	protoassert.Equal(t, expected, handler.LookupByNetwork(net.IPNetworkFromCIDRBytes([]byte{192, 10, 0, 0, 16})))
 
 	expected = req.GetPushNetworkEntitiesRequest().GetEntities()[3]
-	assert.Equal(t, expected, handler.LookupByNetwork(net.IPNetworkFromCIDRBytes([]byte{0, 0, 0, 0, 0})))
+	protoassert.Equal(t, expected, handler.LookupByNetwork(net.IPNetworkFromCIDRBytes([]byte{0, 0, 0, 0, 0})))
 }

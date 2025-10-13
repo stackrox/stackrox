@@ -2,19 +2,25 @@ package search
 
 import (
 	"fmt"
-	"sort"
+	"math"
+	"slices"
 	"strings"
+	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/conv"
 	"github.com/stackrox/rox/pkg/generic"
+	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/set"
 )
 
 const (
 	// RegexPrefix is the prefix for regex queries.
 	RegexPrefix = "r/"
+
+	// ContainsPrefix is the prefix for regex contained queries.
+	ContainsPrefix = "c/"
 
 	// WildcardString represents the string we use for wildcard queries.
 	WildcardString = "*"
@@ -30,6 +36,12 @@ const (
 
 	// EqualityPrefixSuffix is the prefix for an exact match
 	EqualityPrefixSuffix = `"`
+
+	// TimeRangePrefix is the prefix for a time range query
+	TimeRangePrefix = "tr/"
+
+	// MaxQueryParameters is the maximum number of query parameters for a single statement
+	MaxQueryParameters = math.MaxUint16
 )
 
 var (
@@ -73,14 +85,68 @@ type fieldValue struct {
 	highlighted bool
 }
 
-// NewPagination create a new pagination object
+// Select defines the select field to be used with the query.
+type Select struct {
+	qs *v1.QuerySelect
+}
+
+// NewQuerySelect creates a new query select.
+func NewQuerySelect(field FieldLabel) *Select {
+	return &Select{
+		qs: &v1.QuerySelect{
+			Field: &v1.QueryField{
+				Name: field.String(),
+			},
+		},
+	}
+}
+
+// AggrFunc sets aggregate function to be applied on the select field.
+func (s *Select) AggrFunc(aggr aggregatefunc.AggrFunc) *Select {
+	s.qs.Field.AggregateFunc = aggr.Name()
+	return s
+}
+
+// Distinct sets query select to distinct.
+func (s *Select) Distinct() *Select {
+	s.qs.Field.Distinct = true
+	return s
+}
+
+// Filter sets filter on the select field.
+func (s *Select) Filter(name string, q *v1.Query) *Select {
+	s.qs.Filter = &v1.QuerySelectFilter{
+		Name:  name,
+		Query: q,
+	}
+	return s
+}
+
+// Proto returns the select clause as *v1.QuerySelect.
+func (s *Select) Proto() *v1.QuerySelect {
+	return s.qs
+}
+
+// NewGroupBy creates a new *GroupBy object.
+func NewGroupBy() *GroupBy {
+	return &GroupBy{
+		grpBy: &v1.QueryGroupBy{},
+	}
+}
+
+// GroupBy defines the group by clause to be used with the query.
+type GroupBy struct {
+	grpBy *v1.QueryGroupBy
+}
+
+// NewPagination creates a new *Pagination object.
 func NewPagination() *Pagination {
 	return &Pagination{
 		qp: &v1.QueryPagination{},
 	}
 }
 
-// Pagination defines the pagination to be used with the query
+// Pagination defines the pagination to be used with the query.
 type Pagination struct {
 	qp *v1.QueryPagination
 }
@@ -97,9 +163,33 @@ func (p *Pagination) Offset(offset int32) *Pagination {
 	return p
 }
 
+// AddSortOption adds the sort option to the pagination object
+func (p *Pagination) AddSortOption(so *SortOption) *Pagination {
+	opt := &v1.QuerySortOption{
+		Field:    string(so.field),
+		Reversed: so.reversed,
+	}
+	if so.aggregateBy.aggrFunc != aggregatefunc.Unset {
+		opt.AggregateBy = so.aggregateBy.Proto()
+	}
+	if so.searchAfter != "" {
+		opt.SearchAfterOpt = &v1.QuerySortOption_SearchAfter{
+			SearchAfter: so.searchAfter,
+		}
+	}
+	p.qp.SortOptions = append(p.qp.SortOptions, opt)
+	return p
+}
+
+// Proto returns the pagination as *v1.QueryPagination
+func (p *Pagination) Proto() *v1.QueryPagination {
+	return p.qp
+}
+
 // SortOption describes the way to sort the query
 type SortOption struct {
 	field       FieldLabel
+	aggregateBy aggregateBy
 	reversed    bool
 	searchAfter string
 }
@@ -123,19 +213,26 @@ func (s *SortOption) SearchAfter(searchAfter string) *SortOption {
 	return s
 }
 
-// AddSortOption adds the sort option to the pagination object
-func (p *Pagination) AddSortOption(so *SortOption) *Pagination {
-	opt := &v1.QuerySortOption{
-		Field:    string(so.field),
-		Reversed: so.reversed,
+// AggregateBy describes the aggregateBy that should be applied to base sort option. When aggregateBy is set,
+// the sorting happens on the aggregateBy of base field not directly on the base field. For example, sort by count(x)
+func (s *SortOption) AggregateBy(aggrFunc aggregatefunc.AggrFunc, distinct bool) *SortOption {
+	s.aggregateBy = aggregateBy{
+		aggrFunc: aggrFunc,
+		distinct: distinct,
 	}
-	if so.searchAfter != "" {
-		opt.SearchAfterOpt = &v1.QuerySortOption_SearchAfter{
-			SearchAfter: so.searchAfter,
-		}
+	return s
+}
+
+type aggregateBy struct {
+	aggrFunc aggregatefunc.AggrFunc
+	distinct bool
+}
+
+func (a *aggregateBy) Proto() *v1.AggregateBy {
+	return &v1.AggregateBy{
+		AggrFunc: a.aggrFunc.Proto(),
+		Distinct: a.distinct,
 	}
-	p.qp.SortOptions = append(p.qp.SortOptions, opt)
-	return p
 }
 
 // QueryBuilder builds a search query
@@ -144,8 +241,11 @@ type QueryBuilder struct {
 	ids            *[]string
 	linkedFields   [][]fieldValue
 
+	selectFields []*Select
+	// TODO(mandar): Deprecate highlighted and replace with selects.
 	highlightedFields map[FieldLabel]struct{}
 
+	groupBy    *GroupBy
 	pagination *Pagination
 }
 
@@ -155,6 +255,34 @@ func NewQueryBuilder() *QueryBuilder {
 		fieldsToValues:    make(map[FieldLabel][]string),
 		highlightedFields: make(map[FieldLabel]struct{}),
 	}
+}
+
+// WithSelectFields sets fields to select.
+func (qb *QueryBuilder) WithSelectFields(selects ...*Select) *QueryBuilder {
+	qb.selectFields = selects
+	return qb
+}
+
+// AddSelectFields adds fields to select.
+func (qb *QueryBuilder) AddSelectFields(selects ...*Select) *QueryBuilder {
+	qb.selectFields = append(qb.selectFields, selects...)
+	return qb
+}
+
+// WithGroupBy sets query group by.
+func (qb *QueryBuilder) WithGroupBy(grpBy *GroupBy) *QueryBuilder {
+	qb.groupBy = grpBy
+	return qb
+}
+
+// AddGroupBy adds fields to groups query results on.
+func (qb *QueryBuilder) AddGroupBy(fields ...FieldLabel) *QueryBuilder {
+	gb := NewGroupBy()
+	for _, field := range fields {
+		gb.grpBy.Fields = append(gb.grpBy.Fields, field.String())
+	}
+	qb.groupBy = gb
+	return qb
 }
 
 // WithPagination applies pagination to the query
@@ -244,7 +372,7 @@ func (qb *QueryBuilder) AddStringsHighlighted(k FieldLabel, v ...string) *QueryB
 	return qb.AddStrings(k, v...).MarkHighlighted(k)
 }
 
-// AddNullField adds a very for documents that don't contain the specified field.
+// AddNullField adds a query for documents that don't contain the specified field.
 func (qb *QueryBuilder) AddNullField(k FieldLabel) *QueryBuilder {
 	return qb.AddStrings(k, NullString)
 }
@@ -295,6 +423,13 @@ func (qb *QueryBuilder) AddBools(k FieldLabel, v ...bool) *QueryBuilder {
 	return qb
 }
 
+// AddTimeRangeField adds a range query between two times for the specific field.
+func (qb *QueryBuilder) AddTimeRangeField(field FieldLabel, from, to time.Time) *QueryBuilder {
+	value := fmt.Sprintf("%s%d-%d", TimeRangePrefix, from.UnixMilli(), to.UnixMilli())
+	qb.fieldsToValues[field] = append(qb.fieldsToValues[field], value)
+	return qb
+}
+
 // AddNumericField adds a numeric field.
 func (qb *QueryBuilder) AddNumericField(k FieldLabel, comparator storage.Comparator, value float32) *QueryBuilder {
 	return qb.AddStrings(k, NumericQueryString(comparator, value))
@@ -329,7 +464,7 @@ func (qb *QueryBuilder) Query() string {
 	for k, values := range qb.fieldsToValues {
 		pairs = append(pairs, fmt.Sprintf("%s:%s", k, strings.Join(values, ",")))
 	}
-	sort.Strings(pairs)
+	slices.Sort(pairs)
 	return strings.Join(pairs, "+")
 }
 
@@ -344,6 +479,11 @@ func (qb *QueryBuilder) ProtoQuery() *v1.Query {
 	// Sort the queries by field value, to ensure consistency of output.
 	fields := qb.getSortedFields()
 
+	var qSelects []*v1.QuerySelect
+	for _, sf := range qb.selectFields {
+		qSelects = append(qSelects, sf.qs)
+	}
+
 	for _, field := range fields {
 		_, highlighted := qb.highlightedFields[field]
 		queries = append(queries, queryFromFieldValues(field.String(), qb.fieldsToValues[field], highlighted))
@@ -354,6 +494,13 @@ func (qb *QueryBuilder) ProtoQuery() *v1.Query {
 	}
 
 	cq := ConjunctionQuery(queries...)
+	if qSelects != nil {
+		cq.Selects = qSelects
+	}
+
+	if qb.groupBy != nil {
+		cq.GroupBy = qb.groupBy.grpBy
+	}
 	if qb.pagination != nil {
 		cq.Pagination = qb.pagination.qp
 	}

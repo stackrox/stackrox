@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es5",
+  "target": "es2020",
     "lib": [
       "dom",
       "dom.iterable",
@@ -21,10 +21,8 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "types": ["vitest/globals"]
   },
-  "include": [
-    "src/**/*",
-    "setupTests.js"
-  ]
+  "include": ["src/**/*"]
 }

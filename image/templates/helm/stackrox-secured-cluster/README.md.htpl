@@ -2,7 +2,9 @@
 
 This Helm chart allows you to deploy the necessary services on a StackRox
 secured cluster: StackRox Sensor, StackRox Collector, and StackRox Admission
-Control.
+Control. Optionally StackRox Scanner can be deployed, either alone or together
+with the new Scanner V4.
+
 If you want to install Secured Cluster Services for Red Hat Advanced Cluster Security,
 refer to [Installing the secured-cluster-services Helm chart](https://docs.openshift.com/acs/installing/installing_helm/install-helm-quick.html#installing-secured-cluster-services-quickly_acs-install-helm-quick).
 
@@ -49,6 +51,19 @@ clusters by providing it as an input to the `helm install` command.
 
 ### Generate cluster init bundle
 
+[<- if .FeatureFlags.ROX_CLUSTER_REGISTRATION_SECRETS >]
+> **NOTE**: Beginning with StackRox/ACS 4.6 there exists a modern alternative to init bundles which goes
+> by the name of cluster registration secrets (or 'CRS' for short) and will at some point replace
+> init bundles entirely. Cluster registration secrets and init bundles differ in their specific usage
+> semantics, please consult the RHACS documentation for details.
+>
+> Feel free to skip this section and continue with the next one ("Generate cluster
+> registration secret (CRS)") if you want to try out the new CRS-style of bootstrapping a new secured
+> cluster.
+>
+> In any case, you only need an init bundle *or* a CRS, not both.
+[<- end >]
+
 Run the following command to generate a **cluster init bundle**:
 ```sh
 roxctl central init-bundles generate <cluster init bundle name> --output cluster-init-bundle.yaml
@@ -59,14 +74,35 @@ roxctl central init-bundles generate <cluster init bundle name> --output cluster
 - Make sure that you store this bundle securely as it contains secrets. You can
   use the same bundle to set up multiple StackRox secured clusters.
 
-### Deploy Secured Cluster Services 
+[<- if .FeatureFlags.ROX_CLUSTER_REGISTRATION_SECRETS >]
+### Generate cluster registration secret (CRS)
 
-You can use the following command to deploy secured cluster services by using
+> **NOTE**: Skip this section if you have already created an init bundle.
+> You only need an init bundle *or* a CRS, not both.
+
+Run the following command to generate a **cluster registration secret**:
+```sh
+roxctl central crs generate <CRS name> --output crs.yaml
+```
+
+- This command creates a **cluster registration secret** and stores it in the file
+  `crs.yaml`.
+- Make sure that you store this file securely as it contains secrets. You can
+  use the same CRS to set up multiple StackRox secured clusters.
+[<- end >]
+
+### Deploy Secured Cluster Services
+
+You can use the following command to deploy secured cluster services using
 this Helm chart:
 ```sh
 helm install -n stackrox --create-namespace \
     stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
+[<- if .FeatureFlags.ROX_CLUSTER_REGISTRATION_SECRETS >]
+    [ -f <path to cluster-init-bundle.yaml> | --set-file crs.file=<path to crs.yaml> ] \
+[<- else >]
     -f <path to cluster-init-bundle.yaml> \
+[<- end >]
     --set clusterName=<name of the secured cluster> \
     --set centralEndpoint=<endpoint of Central service>
 ```
@@ -80,7 +116,7 @@ helm install -n stackrox --create-namespace \
 After you deploy the StackRox Kubernetes Security Platform Secured Cluster
 Services using the `helm install` command, you will see informative notes and
 warnings related to the installation. The new cluster automatically registers
-itself to StackRox Central, and it is visible in the StackRox portal as a
+itself to StackRox Central, and is visible in the StackRox portal as a
 Helm-managed cluster. If the provided cluster name is already associated with
 an existing secured cluster, the name will be reused and associated with the
 cluster on which the chart is installed.
@@ -125,10 +161,6 @@ For example,
   ```sh
   --set env.openshift=true
   ```
-- **Configure collection method**:
-  ```sh
-  --set collector.collectionMethod=EBPF
-  ```
 
 #### Using configuration YAML files and the `-f` command-line option
 
@@ -137,6 +169,10 @@ We recommended that you store all custom configuration options in persisted file
 The Secured Cluster Services Helm chart contains example configuration files
 (called `values-public.yaml.example` and `values-private.yaml.example`), that list
 all the available configuration options, along with documentation.
+
+Furthermore, the files `values-scanner.yaml.example`, `values-public-scanner-v4.yaml.example`
+and `values-private-scanner-v4.yaml.example` list the most commonly used configuration options
+for StackRox Scanner and Scanner V4.
 
 The following sample configuration file (`secured-cluster.yaml`) uses a few of
 the options which you can configure:
@@ -147,21 +183,21 @@ the options which you can configure:
 
   env:
     istio: true  # enable istio support
-  
+
   sensor:
     # Use custom resource overrides for sensor
     resources:
       requests:
-        cpu: "1"
-        memory: "1Gi"
-      limits:
         cpu: "2"
         memory: "4Gi"
-  
+      limits:
+        cpu: "4"
+        memory: "8Gi"
+
   admissionControl:
     dynamic:
       disableBypass: true # Disable bypassing of Admission Controller
-  
+
   customize:
     # Apply the important-service=true label for all objects managed by this chart.
     labels:
@@ -236,30 +272,24 @@ chart and their default values:
 |`clusterName`| Name of your cluster. | |
 |`confirmNewClusterName`| You don't need to change this unless you upgrade and change the value for `clusterName`. In this case, set it to the new value of `clusterName`. This option exists to prevent you from [accidentally creating a new cluster with a different name](#changing-cluster-after-deployment). | `null` |
 |`centralEndpoint`| Address of the Central endpoint, including the port number (without a trailing slash). If you are using a non-gRPC capable LoadBalancer, use the WebSocket protocol by prefixing the endpoint address with `wss://`. |`central.stackrox.svc:443` |
-|`clusterLabels`| Custom labels associated with a secured cluster | `{}` |
+|`clusterLabels`| Custom labels associated with a secured cluster. Must be a dictionary where both keys and values are strings. | `{}` |
 |`additionalCAs`| Use it to add (named) PEM-encoded CA certificates for Sensor. | `{}` |
 |`imagePullSecrets.username`| Specify username for accessing image registry. |`null`|
 |`imagePullSecrets.password`| Specify password for accessing image registry. |`null`|
 |`imagePullSecrets.useExisting`| Specify existing Kubernetes image pull secrets that should be used for trying to pull StackRox images. |`[]`|
 |`imagePullSecrets.useFromDefaultServiceAccount`| This setting controls whether image pull secrets from a default service account in the target namespace should be used for image pulls. |`true`|
-|`imagePullSecrets.useExisting`| Specify existing Kubernetes image pull secrets that should be used for trying to pull StackRox images. |`[]`|
 |`imagePullSecrets.allowNone`| Enabling this setting indicates that no image pull secrets are required to be configured upon initial deployment. Use this setting if you are using a cluster-private registry that does not require authentication. |`false`|
 |`image.main.name`|Repository from which to download the main image. |`main` |
 |`image.collector.name`|Repository from which to download the collector image.  |`collector` |
 |`image.main.registry`| Address of the registry you are using for main image.|`[< required "" .MainRegistry >]` |
 |`image.collector.registry`| Address of the registry you are using for collector image.|`[< required "" .CollectorRegistry >]` |
 |`sensor.endpoint`| Address of the Sensor endpoint including port number. No trailing slash.|`sensor.stackrox.svc:443` |
-|`collector.collectionMethod`|Either `EBPF`, `KERNEL_MODULE`, or `NO_COLLECTION`. |`EBPF` |
+|`collector.forceCollectionMethod`|Deprecated. This value has no effect. |`false` |
+|`collector.collectionMethod`|Either `CORE_BPF`, or `NO_COLLECTION`. |`CORE_BPF` |
 |`collector.disableTaintTolerations`|If you specify `false`, tolerations are applied to collector, and the collector pods can schedule onto all nodes with taints. If you specify it as `true`, no tolerations are applied, and the collector pods won't scheduled onto nodes with taints. |`false` |
-|`collector.slimMode`| Specify `true` if you want to use a slim Collector image for deploying Collector. Using slim Collector images requires Central to provide the matching kernel module or eBPF probe. If you are running the StackRox Kubernetes Security Platform in offline mode, you must download a kernel support package from [stackrox.io](https://install.stackrox.io/collector/support-packages/index.html) and upload it to Central for slim Collectors to function. Otherwise, you must ensure that Central can access the online probe repository hosted at https://collector-modules.stackrox.io/.|`false` |
-|`admissionControl.listenOnCreates`| This setting controls whether the cluster is configured to contact the StackRox Kubernetes Security Platform with `AdmissionReview` requests for `create` events on Kubernetes objects. |`false` |
-|`admissionControl.listenOnUpdates`|This setting controls whether the cluster is configured to contact the StackRox Kubernetes Security Platform with `AdmissionReview` requests for `update` events on Kubernetes objects.|`false` |
-|`admissionControl.listenOnEvents`|This setting controls whether the cluster is configured to contact the StackRox Kubernetes Security Platform with `AdmissionReview` requests for `update` Kubernetes events like `exec` and `portforward`.|`false` on OpenShift, `true` otherwise.|
-|`admissionControl.dynamic.enforceOnCreates`| It controls whether the StackRox Kubernetes Security Platform evaluates policies; if it’s disabled, all `AdmissionReview` requests are automatically accepted. You must specify `listenOnCreates` as `true` for this to work. |`false` |
-|`admissionControl.dynamic.enforceOnUpdates`| It controls whether the StackRox Kubernetes Security Platform evaluates policies for object updates; if it’s disabled, all `AdmissionReview` requests are automatically accepted. You must specify `listenOnUpdates` as `true` for this to work. |`false`|
-|`admissionControl.dynamic.scanInline`| |`false` |
+|`admissionControl.enforce`| This setting controls whether the admission controller enforces security policies that have been configured for enforcement in StackRox Kubernetes Security Platform. |`true` |
+|`admissionControl.failurePolicy`| This setting controls the failure policy for the ValidatingWebhookConfiguration. Can be "Ignore" or "Fail". |"Ignore" |
 |`admissionControl.dynamic.disableBypass`|Set it to `true` to disable [bypassing the admission controller](https://help.stackrox.com/docs/manage-security-policies/use-admission-controller-enforcement/). |`false` |
-|`admissionControl.dynamic.timeout`|The maximum time in seconds, the StackRox Kubernetes Security Platform should wait while evaluating admission review requests. Use it to set request timeouts when you enable image scanning. If the image scan runs longer than the specified time, the StackRox Kubernetes Security Platform accepts the request. Other enforcement options, such as scaling the deployment to zero replicas, are still applied later if the image violates applicable policies.|`3` |
 |`registryOverride`|Use this parameter to override the default `docker.io` registry. Specify the name of your registry if you are using some other registry.| |
 |`createUpgraderServiceAccount`| Specify `true` to create the `sensor-upgrader` account. By default, the StackRox Kubernetes Security Platform creates a service account called `sensor-upgrader` in each secured cluster. This account is highly privileged but is only used during upgrades. If you don’t create this account, you will have to complete future upgrades manually if the Sensor doesn’t have enough permissions. See [Enable automatic upgrades for secured clusters](https://help.stackrox.com/docs/configure-stackrox/enable-automatic-upgrades/) for more information.|`false` |
 |`createSecrets`| Specify `false` to skip the orchestrator secret creation for the sensor, collector, and admission controller. | `true` |
@@ -278,11 +308,13 @@ non-standard environments:
 |`image.main.tag`| Tag of `main` image to use.|`null` |
 |`image.collector.tag`| Tag of `collector` image to use.| `null` |
 |`image.main.pullPolicy`| Image pull policy for `main` images.|`IfNotPresent`|
-|`image.collector.pullPolicy`| Image pull policy for `collector` images.| `IfNotPresent` if `slimCollector` is enabled, `Always` otherwise.|
+|`image.collector.pullPolicy`| Image pull policy for `collector` images.|`IfNotPresent`|
 |`sensor.resources`|Resource specification for Sensor.|See below.|
 |`collector.resources`|Resource specification for Collector.|See below.|
 |`collector.complianceResources`|Resource specification for Collector's Compliance container.|See below.|
+|`collector.nodeScanningResources`|Resource specification for Collector's Node Inventory container.|See below.|
 |`collector.nodeSelector` | Node selector for Collector pods placement. | `null` (no placement constraints) |
+|`collector.priorityClassName` | Name of a cluster's PriorityClass object to assign to Collector pods. | `null` (no PriorityClass assignment) |
 |`admissionControl.resources`|Resource specification for Admission Control.|See below.|
 |`sensor.imagePullPolicy`| Kubernetes image pull policy for Sensor. | `IfNotPresent` |
 |`sensor.nodeSelector` | Node selector for Sensor pod placement. | `null` (no placement constraints) |
@@ -293,20 +325,24 @@ non-standard environments:
 |`exposeMonitoring`| This setting controls whether the monitoring port (TCP 9090) should be exposed on the services. | `false` |
 |`env.openshift`| The StackRox Kubernetes Security Platform automatically detects the OpenShift version (`3.x` or `4.x`). Use this parameter to override the automatically detected version number, for example `4`. | `null` |
 |`env.istio`| This setting can be used for overwriting the auto-sensing of Istio environments. If enabled, the cluster is set up for an Istio environment. | Auto-sensed, depends on environment. |
-|`scanner.disable`| Scan images stored in the cluster's local registries. This variable is only available for the OpenShift Container Platform. | `true` |
-
+|`scanner.disable`| Scan images stored in the cluster's local registries. | `true` |
+|`scannerV4.disable`| Enable Scanner V4. StackRox Scanner must be enabled as well (`scanner.disable=false``). | `true` |
 ### Default resources
 
-Each container's default resource settings are defined in the
-`internal/defaults.yaml` file in this chart. The following table lists the YAML
+Each of the baseline container's default resource settings are defined in the
+`internal/defaults/40-resources.yaml` file in this chart. The following table lists the YAML
 paths to the respective defaults for each container that this chart deploys:
 
-|Container        |Path in `internal/defaults.yaml`        |
-|:----------------|:---------------------------------------|
-|Sensor           |`defaults.sensor.resources`             |
-|Collector        |`defaults.collector.resources`          |
-|Compliance       |`defaults.collector.complianceResources`|
-|Admission Control|`defaults.admissionControl.resources`   |
+|Container        |Path in `internal/defaults/40-resources.yaml` |
+|:----------------|:---------------------------------------------|
+|Sensor           |`sensor.resources`                            |
+|Collector        |`collector.resources`                         |
+|Compliance       |`collector.complianceResources`               |
+|NodeInventory    |`collector.nodeScanningResources`             |
+|Admission Control|`admissionControl.resources`                  |
+
+Furthermore, default resource settings for StackRox Scanner and Scanner V4 can be
+found in the files `internal/defaults/70-scanner.yaml` and `internal/defaults/70-scanner-v4.yaml`.
 
 ### Customization settings
 

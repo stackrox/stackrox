@@ -4,31 +4,32 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
-	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	identityMocks "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/grpc/authz/interceptor"
+	notifierMocks "github.com/stackrox/rox/pkg/notifier/mocks"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
 )
 
 type AuditLogTestSuite struct {
 	suite.Suite
 
-	mockCtrl     *gomock.Controller
 	notifierMock *notifierMocks.MockProcessor
+	identityMock *identityMocks.MockIdentity
 }
 
 func (suite *AuditLogTestSuite) SetupTest() {
-	suite.mockCtrl = gomock.NewController(suite.T())
-	suite.notifierMock = notifierMocks.NewMockProcessor(suite.mockCtrl)
-}
-
-func (suite *AuditLogTestSuite) TearDownTest() {
-	suite.mockCtrl.Finish()
+	suite.notifierMock = notifierMocks.NewMockProcessor(gomock.NewController(suite.T()))
+	suite.identityMock = identityMocks.NewMockIdentity(gomock.NewController(suite.T()))
 }
 
 func TestAuditLog(t *testing.T) {
@@ -58,27 +59,75 @@ func (suite *AuditLogTestSuite) TestCalculateAuditStatus() {
 	wg.Add(1)
 	_, _ = interceptorFunc(ctxWithNoAuth, nil, serverInfo, handler(nil))
 	wg.Wait()
-	suite.Equal(v1.Audit_AUTH_FAILED, auditMessage.Status)
+	suite.Equal(v1.Audit_AUTH_FAILED, auditMessage.GetStatus())
 
 	// request error --> REQUEST_FAILED
 	wg.Add(1)
 	err := errors.New("test error")
 	_, _ = interceptorFunc(ctxAuthorised, nil, serverInfo, handler(err))
 	wg.Wait()
-	suite.Equal(v1.Audit_REQUEST_FAILED, auditMessage.Status)
-	suite.Equal("test error", auditMessage.StatusReason)
+	suite.Equal(v1.Audit_REQUEST_FAILED, auditMessage.GetStatus())
+	suite.Equal("test error", auditMessage.GetStatusReason())
 
 	// rejected by SAC --> AUTH_FAILED
 	wg.Add(1)
 	_, _ = interceptorFunc(ctxAuthorised, nil, serverInfo, handler(sac.ErrResourceAccessDenied))
 	wg.Wait()
-	suite.Equal(v1.Audit_AUTH_FAILED, auditMessage.Status)
+	suite.Equal(v1.Audit_AUTH_FAILED, auditMessage.GetStatus())
 
 	// no error --> REQUEST_SUCCEEDED
 	wg.Add(1)
 	_, _ = interceptorFunc(ctxAuthorised, nil, serverInfo, handler(nil))
 	wg.Wait()
-	suite.Equal(v1.Audit_REQUEST_SUCCEEDED, auditMessage.Status)
+	suite.Equal(v1.Audit_REQUEST_SUCCEEDED, auditMessage.GetStatus())
+}
+
+func (suite *AuditLogTestSuite) TestPermissionsRemoval() {
+	userInfo := &storage.UserInfo{
+		Username:     "sample-user",
+		FriendlyName: "friendly-sample-user",
+		Permissions: &storage.UserInfo_ResourceToAccess{
+			ResourceToAccess: map[string]storage.Access{
+				resources.Administration.String(): storage.Access_READ_ACCESS,
+				resources.Integration.String():    storage.Access_READ_WRITE_ACCESS,
+				resources.Access.String():         storage.Access_NO_ACCESS,
+			},
+		},
+		Roles: []*storage.UserInfo_Role{
+			{
+				Name: "sample-role",
+				ResourceToAccess: map[string]storage.Access{
+					resources.Administration.String(): storage.Access_READ_ACCESS,
+				},
+			},
+			{
+				Name: "yet-another-sample-role",
+				ResourceToAccess: map[string]storage.Access{
+					resources.Integration.String(): storage.Access_READ_WRITE_ACCESS,
+				},
+			},
+		},
+	}
+	suite.identityMock.EXPECT().Service().Return(nil).AnyTimes()
+	suite.identityMock.EXPECT().User().Return(userInfo).AnyTimes()
+
+	ctxWithMockIdentity := authn.ContextWithIdentity(context.Background(), suite.identityMock,
+		suite.T())
+
+	a := &audit{}
+	withPermissions := a.newAuditMessage(ctxWithMockIdentity, "this is a test", "/v1./Test",
+		interceptor.AuthStatus{Error: nil}, nil)
+
+	protoassert.Equal(suite.T(), userInfo, withPermissions.GetUser())
+
+	a = &audit{withoutPermissions: true}
+	withoutPermissions := a.newAuditMessage(ctxWithMockIdentity, "this is a test", "/v1./Test",
+		interceptor.AuthStatus{Error: nil}, nil)
+	protoassert.NotEqual(suite.T(), userInfo, withoutPermissions.GetUser())
+	suite.Empty(withoutPermissions.GetUser().GetPermissions())
+	for _, userRole := range withoutPermissions.GetUser().GetRoles() {
+		suite.Empty(userRole.GetResourceToAccess())
+	}
 }
 
 func handler(err error) func(ctx context.Context, req interface{}) (interface{}, error) {

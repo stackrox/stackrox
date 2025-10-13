@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import { PermissionsMap } from 'services/RolesService';
 
@@ -7,6 +7,11 @@ import {
     ReadAccessIcon,
     WriteAccessIcon,
 } from 'Containers/AccessControl/PermissionSets/AccessIcons';
+import {
+    deprecatedResourceRowStyle,
+    resourceRemovalReleaseVersions,
+} from '../../constants/accessControl';
+import { ResourceName } from '../../types/roleResources';
 
 export type UserPermissionsTableProps = {
     permissions: PermissionsMap;
@@ -14,7 +19,7 @@ export type UserPermissionsTableProps = {
 
 function UserPermissionsTable({ permissions }: UserPermissionsTableProps): ReactElement {
     return (
-        <TableComposable aria-label="Permissions" variant="compact">
+        <Table aria-label="Permissions" variant="compact">
             <Thead>
                 <Tr>
                     <Th key="resourceName">Resource</Th>
@@ -24,7 +29,14 @@ function UserPermissionsTable({ permissions }: UserPermissionsTableProps): React
             </Thead>
             <Tbody>
                 {Object.entries(permissions).map(([resource, accessLevel]) => (
-                    <Tr key={resource}>
+                    <Tr
+                        key={resource}
+                        style={
+                            resourceRemovalReleaseVersions.has(resource as ResourceName)
+                                ? deprecatedResourceRowStyle
+                                : {}
+                        }
+                    >
                         <Td key="resourceName" dataLabel="Resource">
                             {resource}
                         </Td>
@@ -37,7 +49,7 @@ function UserPermissionsTable({ permissions }: UserPermissionsTableProps): React
                     </Tr>
                 ))}
             </Tbody>
-        </TableComposable>
+        </Table>
     );
 }
 

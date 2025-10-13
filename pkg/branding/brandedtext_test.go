@@ -3,7 +3,6 @@ package branding
 import (
 	"testing"
 
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -12,24 +11,12 @@ const (
 	brandedProductNameStackrox = "StackRox"
 )
 
-var _ suite.SetupAllSuite = (*BrandedTextTestSuite)(nil)
-var _ suite.TearDownTestSuite = (*BrandedTextTestSuite)(nil)
-
 func TestBrandedText(t *testing.T) {
 	suite.Run(t, new(BrandedTextTestSuite))
 }
 
 type BrandedTextTestSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-}
-
-func (s *BrandedTextTestSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-}
-
-func (s *BrandedTextTestSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
 }
 
 func (s *BrandedTextTestSuite) TestGetBrandedProductName() {
@@ -52,7 +39,7 @@ func (s *BrandedTextTestSuite) TestGetBrandedProductName() {
 	}
 	for name, tt := range tests {
 		s.Run(name, func() {
-			s.envIsolator.Setenv("ROX_PRODUCT_BRANDING", tt.productBrandingEnv)
+			s.T().Setenv("ROX_PRODUCT_BRANDING", tt.productBrandingEnv)
 			receivedProductName := GetProductName()
 			s.Equal(tt.brandedProductName, receivedProductName)
 		})
@@ -79,7 +66,7 @@ func (s *BrandedTextTestSuite) TestGetBrandedProductNameShort() {
 	}
 	for name, tt := range tests {
 		s.Run(name, func() {
-			s.envIsolator.Setenv("ROX_PRODUCT_BRANDING", tt.productBrandingEnv)
+			s.T().Setenv("ROX_PRODUCT_BRANDING", tt.productBrandingEnv)
 			receivedProductNameShort := GetProductNameShort()
 			s.Equal(tt.brandedProductNameShort, receivedProductNameShort)
 		})

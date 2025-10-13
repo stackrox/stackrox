@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. && pwd)"
+# shellcheck source=../../../scripts/ci/lib.sh
 source "$ROOT/scripts/ci/lib.sh"
 
 set -euo pipefail
@@ -8,8 +9,9 @@ set -euo pipefail
 make_test_bin() {
     info "Making test-bin"
 
-    make cli-build upgrader
-    install_built_roxctl_in_gopath
+    make cli_host-arch upgrader
+    make cli-install
+    (cd ./tools/check-workflow-run && go install .)
 }
 
 make_test_bin "$*"

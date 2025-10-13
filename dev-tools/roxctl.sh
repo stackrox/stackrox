@@ -28,12 +28,19 @@ fi
 
 cache=""
 if [[ -n "${KUBECONFIG}" ]]; then
-  cache="/tmp/$(md5 -q ${KUBECONFIG})"
+  if command -v md5sum &> /dev/null; then
+    cache="/tmp/$(md5sum ${KUBECONFIG} | awk '{print $1}')"
+  elif command -v md5 &> /dev/null; then
+    cache="/tmp/$(md5 -q ${KUBECONFIG})"
+  else
+    echo "Programs md5 or md5sum were not found. Exiting."
+    exit 1
+  fi
 fi
 endpoint="localhost:8000"
 password="$(cat "$DIR/../deploy/k8s/central-deploy/password")"
 
-if [[ -n "$cache" ]]; then
+if [[ -f "$cache" ]]; then
   endpoint=$(cat "${cache}" | awk '{print $1}')
   password=$(cat "${cache}" | awk '{print $2}')
 elif is_operator_on_openshift; then

@@ -26,13 +26,13 @@ ruleset {
     DuplicateMapKey 
     DuplicateSetValue 
     EmptyCatchBlock 
-    // EmptyClass
+    EmptyClass
     EmptyElseBlock 
     EmptyFinallyBlock 
     EmptyForStatement 
     EmptyIfStatement 
     EmptyInstanceInitializer 
-    // EmptyMethod
+    EmptyMethod
     EmptyStaticInitializer 
     EmptySwitchStatement 
     EmptySynchronizedStatement 
@@ -110,7 +110,7 @@ ruleset {
     AbstractClassWithoutAbstractMethod 
     AssignmentToStaticFieldFromInstanceMethod 
     BooleanMethodReturnsNull 
-    // BuilderMethodWithSideEffects
+    BuilderMethodWithSideEffects
     CloneableWithoutClone 
     CloseWithoutCloseable 
     CompareToWithoutComparable 
@@ -120,7 +120,7 @@ ruleset {
     ImplementationAsType 
     // Instanceof
     LocaleSetDefault 
-    // NestedForLoop
+    NestedForLoop
     PrivateFieldCouldBeFinal 
     PublicInstanceField 
     ReturnsNullInsteadOfEmptyArray 
@@ -147,7 +147,7 @@ ruleset {
     // CatchException
     CatchIllegalMonitorStateException 
     CatchIndexOutOfBoundsException
-//    CatchNullPointerException
+    CatchNullPointerException
     CatchRuntimeException 
     CatchThrowable 
     ConfusingClassNamedException 
@@ -176,8 +176,7 @@ ruleset {
     // ClosureStatementOnOpeningLineOfMultipleLineClosure
     ConsecutiveBlankLines 
     FileEndsWithoutNewline
-    //TODO(ROX-7771): Re-enable indentation checks and fix indentation
-    //Indentation
+    Indentation
 
     LineLength 
     MissingBlankLineAfterImports 
@@ -397,8 +396,7 @@ ruleset {
     UnnecessarySemicolon 
     // UnnecessarySetter
     UnnecessaryStringInstantiation 
-    UnnecessarySubstring 
-    UnnecessaryTernaryExpression 
+    UnnecessaryTernaryExpression
     UnnecessaryToString 
     UnnecessaryTransientModifier 
     
@@ -406,7 +404,8 @@ ruleset {
     UnusedArray 
     // UnusedMethodParameter
     UnusedObject 
-    UnusedPrivateField 
+    // ROX-29720 - disable gcr.io until tests are fixed for metadata failures after migration to artifacts registry
+    //UnusedPrivateField
     UnusedPrivateMethod 
     UnusedPrivateMethodParameter 
     UnusedVariable 

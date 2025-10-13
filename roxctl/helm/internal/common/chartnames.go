@@ -1,7 +1,7 @@
 package common
 
 import (
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/stackrox/rox/image"
@@ -27,7 +27,7 @@ const (
 
 // MakePrettyChartNameList forms a pretty printed string listing multiple chart names.
 func MakePrettyChartNameList(chartNames ...string) string {
-	sort.Strings(chartNames)
+	slices.Sort(chartNames)
 	return strings.Join(chartNames, " | ")
 }
 

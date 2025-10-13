@@ -12,7 +12,17 @@ resources:
 # Comment the following 4 lines if you want to disable
 # the auth proxy (https://github.com/brancz/kube-rbac-proxy)
 # which protects your /metrics endpoint.
+# The authentication is now done by controller-runtime in-process,
+# so these resources are still useful even though we do not use the proxy sidecar.
 - auth_proxy_service.yaml
 - auth_proxy_role.yaml
 - auth_proxy_role_binding.yaml
 - auth_proxy_client_clusterrole.yaml
+# For each CRD, "Editor" and "Viewer" roles are scaffolded by
+# default, aiding admins in cluster management. Those roles are
+# not used by the Project itself. You can comment the following lines
+# if you do not want those helpers be installed with your Project.
+#- securedcluster_editor_role.yaml
+#- securedcluster_viewer_role.yaml
+#- central_editor_role.yaml
+#- central_viewer_role.yaml

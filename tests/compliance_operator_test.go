@@ -1,3 +1,5 @@
+//go:build test_e2e
+
 package tests
 
 import (
@@ -12,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,8 +23,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-var (
-	namespace = "openshift-compliance"
+const (
+	coNamespace = "openshift-compliance"
 
 	// rhcos4 constants
 	rhcosProfileName    = "rhcos4-moderate"
@@ -43,7 +46,11 @@ var (
 	unusedProfile = "rhcos4-anssi-bp28-high"
 )
 
-func getCurrentComplianceResults(t *testing.T) (rhcos, ocp *storage.ComplianceRunResults) {
+const defaultWaitTime = 600 * time.Second
+const defaultSleepTime = 10 * time.Second
+const defaultTickTime = 2 * time.Second
+
+func getCurrentComplianceResults(t testutils.T) (rhcos, ocp *storage.ComplianceRunResults) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	managementService := v1.NewComplianceManagementServiceClient(conn)
 
@@ -56,7 +63,7 @@ func getCurrentComplianceResults(t *testing.T) (rhcos, ocp *storage.ComplianceRu
 	require.NoError(t, err)
 
 	var rhcosRun, ocpRun *v1.ComplianceRun
-	for _, run := range resp.StartedRuns {
+	for _, run := range resp.GetStartedRuns() {
 		// Ensure the profile not referenced by a scan setting binding is not run
 		assert.NotEqual(t, unusedProfile, run.GetStandardId())
 		switch run.GetStandardId() {
@@ -88,7 +95,7 @@ func getCurrentComplianceResults(t *testing.T) (rhcos, ocp *storage.ComplianceRu
 		}
 		return errors.New("not all runs are finished")
 	}, retry.BetweenAttempts(func(previousAttemptNumber int) {
-		time.Sleep(2 * time.Second)
+		time.Sleep(5 * time.Second)
 	}), retry.Tries(10))
 	assert.NoError(t, err)
 
@@ -110,31 +117,33 @@ func getCurrentComplianceResults(t *testing.T) (rhcos, ocp *storage.ComplianceRu
 	return rhcosResults.GetResults(), ocpResults.GetResults()
 }
 
-func checkResult(t *testing.T, results map[string]*storage.ComplianceResultValue, rule string, state storage.ComplianceState) {
-	assert.Equal(t, state, results[rule].GetOverallState())
+func checkResult(t assert.TestingT, results map[string]*storage.ComplianceResultValue, rule string, state storage.ComplianceState) {
+	assert.Equal(t, state.String(), results[rule].GetOverallState().String(), "expected result states did not match")
 }
 
-func checkMachineConfigResult(t *testing.T, entityResults map[string]*storage.ComplianceRunResults_EntityResults, machineConfig, rule string, state storage.ComplianceState) {
+func checkMachineConfigResult(t assert.TestingT, entityResults map[string]*storage.ComplianceRunResults_EntityResults, machineConfig, rule string, state storage.ComplianceState) {
 	checkResult(t, entityResults[machineConfig].GetControlResults(), rule, state)
 }
 
 func checkBaseResults(t *testing.T) {
-	rhcosResults, ocpResults := getCurrentComplianceResults(t)
-	require.NotNil(t, rhcosResults)
-	require.NotNil(t, ocpResults)
+	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+		rhcosResults, ocpResults := getCurrentComplianceResults(wrapCollectT(t, c))
+		require.NotNil(c, rhcosResults)
+		require.NotNil(c, ocpResults)
 
-	machineConfigResults := rhcosResults.GetMachineConfigResults()
-	checkMachineConfigResult(t, machineConfigResults, masterMachineConfig, chmodControl, storage.ComplianceState_COMPLIANCE_STATE_FAILURE)
-	checkMachineConfigResult(t, machineConfigResults, masterMachineConfig, chownControl, storage.ComplianceState_COMPLIANCE_STATE_FAILURE)
-	checkMachineConfigResult(t, machineConfigResults, masterMachineConfig, uidControl, storage.ComplianceState_COMPLIANCE_STATE_FAILURE)
+		machineConfigResults := rhcosResults.GetMachineConfigResults()
+		checkMachineConfigResult(c, machineConfigResults, masterMachineConfig, chmodControl, storage.ComplianceState_COMPLIANCE_STATE_FAILURE)
+		checkMachineConfigResult(c, machineConfigResults, masterMachineConfig, chownControl, storage.ComplianceState_COMPLIANCE_STATE_FAILURE)
+		checkMachineConfigResult(c, machineConfigResults, masterMachineConfig, uidControl, storage.ComplianceState_COMPLIANCE_STATE_FAILURE)
 
-	checkMachineConfigResult(t, machineConfigResults, workerMachineConfig, chmodControl, storage.ComplianceState_COMPLIANCE_STATE_FAILURE)
-	checkMachineConfigResult(t, machineConfigResults, workerMachineConfig, chownControl, storage.ComplianceState_COMPLIANCE_STATE_SKIP)
-	checkMachineConfigResult(t, machineConfigResults, workerMachineConfig, uidControl, storage.ComplianceState_COMPLIANCE_STATE_SUCCESS)
+		checkMachineConfigResult(c, machineConfigResults, workerMachineConfig, chmodControl, storage.ComplianceState_COMPLIANCE_STATE_FAILURE)
+		checkMachineConfigResult(c, machineConfigResults, workerMachineConfig, chownControl, storage.ComplianceState_COMPLIANCE_STATE_SKIP)
+		checkMachineConfigResult(c, machineConfigResults, workerMachineConfig, uidControl, storage.ComplianceState_COMPLIANCE_STATE_SUCCESS)
 
-	clusterResults := ocpResults.GetClusterResults().GetControlResults()
-	checkResult(t, clusterResults, envVarControl, storage.ComplianceState_COMPLIANCE_STATE_SUCCESS)
-	checkResult(t, clusterResults, externalStorageControl, storage.ComplianceState_COMPLIANCE_STATE_SKIP)
+		clusterResults := ocpResults.GetClusterResults().GetControlResults()
+		checkResult(c, clusterResults, envVarControl, storage.ComplianceState_COMPLIANCE_STATE_SUCCESS)
+		checkResult(c, clusterResults, externalStorageControl, storage.ComplianceState_COMPLIANCE_STATE_SKIP)
+	}, defaultWaitTime, defaultTickTime)
 }
 
 func TestComplianceOperatorResults(t *testing.T) {
@@ -160,37 +169,39 @@ func TestDeleteAndAddRule(t *testing.T) {
 
 	dynamicClientGenerator := getDynamicClientGenerator(t)
 	// Remove a rule from the profile and verify it's gone from the results
-	ruleClient := dynamicClientGenerator.Resource(complianceoperator.RuleGVR).Namespace(namespace)
+	ruleClient := dynamicClientGenerator.Resource(complianceoperator.Rule.GroupVersionResource()).Namespace(coNamespace)
 	rule, err := ruleClient.Get(context.Background(), envVarRule, metav1.GetOptions{})
 	assert.NoError(t, err)
 
 	err = ruleClient.Delete(context.Background(), envVarRule, metav1.DeleteOptions{})
 	assert.NoError(t, err)
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(defaultSleepTime)
 
-	rhcosResults, ocpResults := getCurrentComplianceResults(t)
-	require.NotNil(t, rhcosResults)
-	require.NotNil(t, ocpResults)
+	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+		rhcosResults, ocpResults := getCurrentComplianceResults(wrapCollectT(t, c))
+		require.NotNil(c, rhcosResults)
+		require.NotNil(c, ocpResults)
 
-	machineConfigResults := rhcosResults.GetMachineConfigResults()
-	checkMachineConfigResult(t, machineConfigResults, masterMachineConfig, chmodControl, storage.ComplianceState_COMPLIANCE_STATE_FAILURE)
-	checkMachineConfigResult(t, machineConfigResults, masterMachineConfig, chownControl, storage.ComplianceState_COMPLIANCE_STATE_FAILURE)
-	checkMachineConfigResult(t, machineConfigResults, masterMachineConfig, uidControl, storage.ComplianceState_COMPLIANCE_STATE_FAILURE)
+		machineConfigResults := rhcosResults.GetMachineConfigResults()
+		checkMachineConfigResult(c, machineConfigResults, masterMachineConfig, chmodControl, storage.ComplianceState_COMPLIANCE_STATE_FAILURE)
+		checkMachineConfigResult(c, machineConfigResults, masterMachineConfig, chownControl, storage.ComplianceState_COMPLIANCE_STATE_FAILURE)
+		checkMachineConfigResult(c, machineConfigResults, masterMachineConfig, uidControl, storage.ComplianceState_COMPLIANCE_STATE_FAILURE)
 
-	checkMachineConfigResult(t, machineConfigResults, workerMachineConfig, chmodControl, storage.ComplianceState_COMPLIANCE_STATE_FAILURE)
-	checkMachineConfigResult(t, machineConfigResults, workerMachineConfig, chownControl, storage.ComplianceState_COMPLIANCE_STATE_SKIP)
-	checkMachineConfigResult(t, machineConfigResults, workerMachineConfig, uidControl, storage.ComplianceState_COMPLIANCE_STATE_SUCCESS)
+		checkMachineConfigResult(c, machineConfigResults, workerMachineConfig, chmodControl, storage.ComplianceState_COMPLIANCE_STATE_FAILURE)
+		checkMachineConfigResult(c, machineConfigResults, workerMachineConfig, chownControl, storage.ComplianceState_COMPLIANCE_STATE_SKIP)
+		checkMachineConfigResult(c, machineConfigResults, workerMachineConfig, uidControl, storage.ComplianceState_COMPLIANCE_STATE_SUCCESS)
 
-	clusterResults := ocpResults.GetClusterResults().GetControlResults()
-	checkResult(t, clusterResults, externalStorageControl, storage.ComplianceState_COMPLIANCE_STATE_SKIP)
-	assert.Nil(t, clusterResults[envVarControl])
+		clusterResults := ocpResults.GetClusterResults().GetControlResults()
+		checkResult(c, clusterResults, externalStorageControl, storage.ComplianceState_COMPLIANCE_STATE_SKIP)
+		assert.Nil(c, clusterResults[envVarControl])
+	}, defaultWaitTime, 2*time.Second)
 
 	rule.SetResourceVersion("")
 	_, err = ruleClient.Create(context.Background(), rule, metav1.CreateOptions{})
 	assert.NoError(t, err)
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(defaultSleepTime)
 
 	checkBaseResults(t)
 }
@@ -201,28 +212,30 @@ func TestDeleteAndAddScanSettingBinding(t *testing.T) {
 	dynamicClientGenerator := getDynamicClientGenerator(t)
 
 	// Delete a scansettingbinding
-	ssbClient := dynamicClientGenerator.Resource(complianceoperator.ScanSettingBindingGVR).Namespace(namespace)
+	ssbClient := dynamicClientGenerator.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(coNamespace)
 	ssb, err := ssbClient.Get(context.Background(), rhcosProfileName, metav1.GetOptions{})
 	assert.NoError(t, err)
 
 	err = ssbClient.Delete(context.Background(), rhcosProfileName, metav1.DeleteOptions{})
 	assert.NoError(t, err)
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(defaultSleepTime)
 
-	rhcosResults, ocpResults := getCurrentComplianceResults(t)
-	assert.Nil(t, rhcosResults)
-	require.NotNil(t, ocpResults)
+	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+		rhcosResults, ocpResults := getCurrentComplianceResults(wrapCollectT(t, c))
+		assert.Nil(c, rhcosResults)
+		require.NotNil(c, ocpResults)
 
-	clusterResults := ocpResults.GetClusterResults().GetControlResults()
-	checkResult(t, clusterResults, envVarControl, storage.ComplianceState_COMPLIANCE_STATE_SUCCESS)
-	checkResult(t, clusterResults, externalStorageControl, storage.ComplianceState_COMPLIANCE_STATE_SKIP)
+		clusterResults := ocpResults.GetClusterResults().GetControlResults()
+		checkResult(c, clusterResults, envVarControl, storage.ComplianceState_COMPLIANCE_STATE_SUCCESS)
+		checkResult(c, clusterResults, externalStorageControl, storage.ComplianceState_COMPLIANCE_STATE_SKIP)
+	}, defaultWaitTime, defaultTickTime)
 
 	ssb.SetResourceVersion("")
 	_, err = ssbClient.Create(context.Background(), ssb, metav1.CreateOptions{})
 	assert.NoError(t, err)
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(defaultSleepTime)
 
 	checkBaseResults(t)
 }
@@ -233,28 +246,30 @@ func TestDeleteAndAddProfile(t *testing.T) {
 	dynamicClientGenerator := getDynamicClientGenerator(t)
 
 	// Remove a profile and verify that the profile is gone
-	profileClient := dynamicClientGenerator.Resource(complianceoperator.ProfileGVR).Namespace(namespace)
+	profileClient := dynamicClientGenerator.Resource(complianceoperator.Profile.GroupVersionResource()).Namespace(coNamespace)
 	profile, err := profileClient.Get(context.Background(), rhcosProfileName, metav1.GetOptions{})
 	assert.NoError(t, err)
 
 	err = profileClient.Delete(context.Background(), rhcosProfileName, metav1.DeleteOptions{})
 	require.NoError(t, err)
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(defaultSleepTime)
 
-	rhcosResults, ocpResults := getCurrentComplianceResults(t)
-	assert.Nil(t, rhcosResults)
-	require.NotNil(t, ocpResults)
+	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+		rhcosResults, ocpResults := getCurrentComplianceResults(wrapCollectT(t, c))
+		assert.Nil(c, rhcosResults)
+		require.NotNil(c, ocpResults)
 
-	clusterResults := ocpResults.GetClusterResults().GetControlResults()
-	checkResult(t, clusterResults, envVarControl, storage.ComplianceState_COMPLIANCE_STATE_SUCCESS)
-	checkResult(t, clusterResults, externalStorageControl, storage.ComplianceState_COMPLIANCE_STATE_SKIP)
+		clusterResults := ocpResults.GetClusterResults().GetControlResults()
+		checkResult(c, clusterResults, envVarControl, storage.ComplianceState_COMPLIANCE_STATE_SUCCESS)
+		checkResult(c, clusterResults, externalStorageControl, storage.ComplianceState_COMPLIANCE_STATE_SKIP)
+	}, defaultWaitTime, defaultTickTime)
 
 	profile.SetResourceVersion("")
 	_, err = profileClient.Create(context.Background(), profile, metav1.CreateOptions{})
 	assert.NoError(t, err)
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(defaultSleepTime)
 
 	checkBaseResults(t)
 }
@@ -265,7 +280,7 @@ func TestUpdateProfile(t *testing.T) {
 	dynamicClientGenerator := getDynamicClientGenerator(t)
 
 	// Remove a profile and verify that the profile is gone
-	profileClient := dynamicClientGenerator.Resource(complianceoperator.ProfileGVR).Namespace(namespace)
+	profileClient := dynamicClientGenerator.Resource(complianceoperator.Profile.GroupVersionResource()).Namespace(coNamespace)
 	profileObj, err := profileClient.Get(context.Background(), rhcosProfileName, metav1.GetOptions{})
 	assert.NoError(t, err)
 
@@ -278,28 +293,30 @@ func TestUpdateProfile(t *testing.T) {
 	profileObj, err = profileClient.Update(context.Background(), profileObj, metav1.UpdateOptions{})
 	assert.NoError(t, err)
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(defaultSleepTime)
 
-	rhcosResults, ocpResults := getCurrentComplianceResults(t)
-	require.NotNil(t, rhcosResults)
-	require.NotNil(t, ocpResults)
+	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+		rhcosResults, ocpResults := getCurrentComplianceResults(wrapCollectT(t, c))
+		require.NotNil(c, rhcosResults)
+		require.NotNil(c, ocpResults)
 
-	machineConfigResults := rhcosResults.GetMachineConfigResults()
-	checkMachineConfigResult(t, machineConfigResults, masterMachineConfig, chmodControl, storage.ComplianceState_COMPLIANCE_STATE_FAILURE)
-	checkMachineConfigResult(t, machineConfigResults, masterMachineConfig, chownControl, storage.ComplianceState_COMPLIANCE_STATE_FAILURE)
+		machineConfigResults := rhcosResults.GetMachineConfigResults()
+		checkMachineConfigResult(c, machineConfigResults, masterMachineConfig, chmodControl, storage.ComplianceState_COMPLIANCE_STATE_FAILURE)
+		checkMachineConfigResult(c, machineConfigResults, masterMachineConfig, chownControl, storage.ComplianceState_COMPLIANCE_STATE_FAILURE)
 
-	checkMachineConfigResult(t, machineConfigResults, workerMachineConfig, chmodControl, storage.ComplianceState_COMPLIANCE_STATE_FAILURE)
-	checkMachineConfigResult(t, machineConfigResults, workerMachineConfig, chownControl, storage.ComplianceState_COMPLIANCE_STATE_SKIP)
+		checkMachineConfigResult(c, machineConfigResults, workerMachineConfig, chmodControl, storage.ComplianceState_COMPLIANCE_STATE_FAILURE)
+		checkMachineConfigResult(c, machineConfigResults, workerMachineConfig, chownControl, storage.ComplianceState_COMPLIANCE_STATE_SKIP)
 
-	clusterResults := ocpResults.GetClusterResults().GetControlResults()
-	checkResult(t, clusterResults, envVarControl, storage.ComplianceState_COMPLIANCE_STATE_SUCCESS)
-	checkResult(t, clusterResults, externalStorageControl, storage.ComplianceState_COMPLIANCE_STATE_SKIP)
+		clusterResults := ocpResults.GetClusterResults().GetControlResults()
+		checkResult(c, clusterResults, envVarControl, storage.ComplianceState_COMPLIANCE_STATE_SUCCESS)
+		checkResult(c, clusterResults, externalStorageControl, storage.ComplianceState_COMPLIANCE_STATE_SKIP)
+	}, defaultWaitTime, defaultTickTime)
 
 	profileObj.Object["rules"] = originalRules
 	_, err = profileClient.Update(context.Background(), profileObj, metav1.UpdateOptions{})
 	assert.NoError(t, err)
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(defaultSleepTime)
 
 	checkBaseResults(t)
 }

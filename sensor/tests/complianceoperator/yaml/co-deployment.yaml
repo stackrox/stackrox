@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: compliance-operator
+  labels:
+    owner: compliance-operator.1.4.0
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      owner: compliance-operator.1.4.0
+  template:
+    metadata:
+      labels:
+        owner: compliance-operator.1.4.0
+    spec:
+      containers:
+      - name: compliance-operator
+        image: busybox
+        command:
+          - tail
+          - -f
+          - /dev/null

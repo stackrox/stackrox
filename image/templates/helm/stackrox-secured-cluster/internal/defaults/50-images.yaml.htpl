@@ -8,16 +8,26 @@ image:
     name: [< required "" .ImageRemote >]
     pullPolicy: IfNotPresent
   collector:
-    name: [< required "" .CollectorFullImageRemote >]
-    slimName: [< required "" .CollectorSlimImageRemote >]
-  [< if (not .KubectlOutput) >]
+    name: [< required "" .CollectorImageRemote >]
+  [<- if .FeatureFlags.ROX_SENSITIVE_FILE_ACTIVITY >]
+  fact:
+    name: [< required "" .FactImageRemote >]
+    tag: [< required "" .FactImageTag >]
+  [<- end >]
   scanner:
     name: [< required "" .ScannerSlimImageRemote >]
     tag: [< required "" .ScannerImageTag >]
+  [<- if not .KubectlOutput >]
   scannerDb:
     name: [< required "" .ScannerDBSlimImageRemote >]
     tag: [< required "" .ScannerImageTag >]
-  [< end >]
+  scannerV4:
+    name: [< required "" .ScannerV4ImageRemote >]
+    tag: [< required "" .ScannerV4ImageTag >]
+  scannerV4DB:
+    name: [< required "" .ScannerV4DBImageRemote >]
+    tag: [< required "" .ScannerV4ImageTag >]
+  [<- end >]
 ---
 # Add registry defaults
 image:
@@ -25,42 +35,41 @@ image:
     registry: {{ ._rox.image.registry }}
   collector:
     registry: {{ if or (eq ._rox.image.registry "stackrox.io") (eq ._rox.image.registry "registry.connect.redhat.com") }}collector.stackrox.io{{ else }}{{ ._rox.image.registry }}{{ end }}
-  [< if (not .KubectlOutput) >]
+  [<- if .FeatureFlags.ROX_SENSITIVE_FILE_ACTIVITY >]
+  fact:
+    registry: {{ ._rox.image.registry }}
+  [<- end >]
   scanner:
     registry: {{ ._rox.image.registry }}
+  [<- if not .KubectlOutput >]
   scannerDb:
     registry: {{ ._rox.image.registry }}
-  [< end >]
----
-# Default to collector slim mode. If configured registry equals the default we can assume the cluster has internet connectivity.
-collector:
-  slimMode: {{ eq ._rox.image.collector.registry "[< required "" .CollectorRegistry >]" }}
+  scannerV4:
+    registry: {{ ._rox.image.registry }}
+  scannerV4DB:
+    registry: {{ ._rox.image.registry }}
+  [<- end >]
 ---
 # Configure repository (registry + name)
 image:
   main:
     repository: {{ list ._rox.image.main.registry ._rox.image.main.name | compact | join "/" }}
   collector:
-    {{- if ._rox.collector.slimMode }}
-    repository: {{ list ._rox.image.collector.registry ._rox.image.collector.slimName | compact | join "/" }}
-    {{- else }}
     repository: {{ list ._rox.image.collector.registry ._rox.image.collector.name | compact | join "/" }}
-    {{- end }}
-  [< if (not .KubectlOutput) >]
+  [<- if .FeatureFlags.ROX_SENSITIVE_FILE_ACTIVITY >]
+  fact:
+    repository: {{ list ._rox.image.fact.registry ._rox.image.fact.name | compact | join "/" }}
+  [<- end >]
   scanner:
     repository: {{ list ._rox.image.scanner.registry ._rox.image.scanner.name | compact | join "/" }}
+  [<- if not .KubectlOutput >]
   scannerDb:
     repository: {{ list ._rox.image.scannerDb.registry ._rox.image.scannerDb.name | compact | join "/" }}
-  [< end >]
----
-# Configure collector slim image full ref
-image:
-  collector:
-    {{- if and ._rox.collector.slimMode ._rox.image.collector.slim.fullRef }}
-    fullRef: {{ ._rox.image.collector.slim.fullRef }}
-    {{- else if and (not ._rox.collector.slimMode) ._rox.image.collector.full.fullRef }}
-    fullRef: {{ ._rox.image.collector.full.fullRef }}
-    {{- end }}
+  scannerV4:
+    repository: {{ list ._rox.image.scannerV4.registry ._rox.image.scannerV4.name | compact | join "/" }}
+  scannerV4DB:
+    repository: {{ list ._rox.image.scannerV4DB.registry ._rox.image.scannerV4DB.name | compact | join "/" }}
+  [<- end >]
 ---
 # Apply fullRef and configurations to images
 image:
@@ -74,9 +83,6 @@ image:
   collector:
     {{- if or ._rox.image.collector.tag ._rox.image.collector.fullRef }}
       {{- include "srox.warn" (list . "You have specified an explicit collector image tag. This will prevent the collector image from being updated correctly when upgrading to a newer version of this chart.") }}
-      {{- if ._rox.collector.slimMode }}
-        {{- include "srox.warn" (list . "You have specified an explicit collector image tag. The slim collector setting will not have any effect.") }}
-      {{- end }}
     {{- else }}
     _abbrevImageRef: {{ ._rox.image.collector.repository }}
     {{- end }}
@@ -84,30 +90,46 @@ image:
 # Configure tags and pull policies
 image:
   collector:
-    {{- if ._rox.collector.slimMode }}
-    tag: "[< required "" .CollectorSlimImageTag >]"
+    tag: "[< required "" .CollectorImageTag >]"
     pullPolicy: IfNotPresent
-    {{- else }}
-    tag: "[< required "" .CollectorFullImageTag >]"
-    pullPolicy: Always
-    {{- end }}
+
+[<- if .FeatureFlags.ROX_SENSITIVE_FILE_ACTIVITY >]
+---
+# Configure pull policy
+image:
+  fact:
+    pullPolicy: IfNotPresent
+[<- end >]
+
 ---
 # Add fullRef references to images
 # TODO(ROX-9261): Add support for image pull policy to scanner slim
 image:
   main:
-    fullRef: {{ printf "%s:%s" ._rox.image.main.repository ._rox.image.main.tag }}
+    fullRef: "{{ printf "%s:%s" ._rox.image.main.repository ._rox.image.main.tag }}"
   collector:
-    fullRef: {{ printf "%s:%s" ._rox.image.collector.repository ._rox.image.collector.tag }}
-  [< if (not .KubectlOutput) >]
+    fullRef: "{{ printf "%s:%s" ._rox.image.collector.repository ._rox.image.collector.tag }}"
+  [<- if .FeatureFlags.ROX_SENSITIVE_FILE_ACTIVITY >]
+  fact:
+    fullRef: "{{ printf "%s:%s" ._rox.image.fact.repository ._rox.image.fact.tag }}"
+  [<- end >]
   scanner:
-    fullRef: {{ printf "%s:%s" ._rox.image.scanner.repository ._rox.image.scanner.tag }}
+    fullRef: "{{ printf "%s:%s" ._rox.image.scanner.repository ._rox.image.scanner.tag }}"
+  [<- if not .KubectlOutput >]
   scannerDb:
-    fullRef: {{ printf "%s:%s" ._rox.image.scannerDb.repository ._rox.image.scannerDb.tag }}
-  [< end >]
+    fullRef: "{{ printf "%s:%s" ._rox.image.scannerDb.repository ._rox.image.scannerDb.tag }}"
+  scannerV4:
+    fullRef: "{{ printf "%s:%s" ._rox.image.scannerV4.repository ._rox.image.scannerV4.tag }}"
+  scannerV4DB:
+    fullRef: "{{ printf "%s:%s" ._rox.image.scannerV4DB.repository ._rox.image.scannerV4DB.tag }}"
+  [<- end >]
 collector:
   imagePullPolicy: {{ ._rox.image.collector.pullPolicy }}
   complianceImagePullPolicy: {{ ._rox.image.main.pullPolicy }}
+[<- if .FeatureFlags.ROX_SENSITIVE_FILE_ACTIVITY >]
+fact:
+  imagePullPolicy: {{ ._rox.image.fact.pullPolicy }}
+[<- end >]
 sensor:
   imagePullPolicy: {{ ._rox.image.main.pullPolicy }}
 admissionControl:

@@ -5,6 +5,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -12,13 +13,16 @@ import (
 )
 
 func TestScoping(t *testing.T) {
-	mapping.RegisterCategoryToTable(v1.SearchCategory_CLUSTERS, schema.ClustersSchema)
-	mapping.RegisterCategoryToTable(v1.SearchCategory_NAMESPACES, schema.NamespacesSchema)
-
+	if mapping.GetTableFromCategory(v1.SearchCategory_CLUSTERS) == nil {
+		mapping.RegisterCategoryToTable(v1.SearchCategory_CLUSTERS, schema.ClustersSchema)
+	}
+	if mapping.GetTableFromCategory(v1.SearchCategory_NAMESPACES) == nil {
+		mapping.RegisterCategoryToTable(v1.SearchCategory_NAMESPACES, schema.NamespacesSchema)
+	}
 	query := search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "dep").ProtoQuery()
 	scopes := []scoped.Scope{
 		{
-			ID:    "c1",
+			IDs:   []string{"c1"},
 			Level: v1.SearchCategory_CLUSTERS,
 		},
 	}
@@ -28,24 +32,24 @@ func TestScoping(t *testing.T) {
 	)
 	actual, err := scopeQuery(query, scopes)
 	assert.NoError(t, err)
-	assert.Equal(t, expected, actual)
+	protoassert.Equal(t, expected, actual)
 
 	scopes = []scoped.Scope{
 		{
-			ID:    "c1",
+			IDs:   []string{"c1"},
 			Level: v1.SearchCategory_CLUSTERS,
 		},
 		{
-			ID:    "n1",
+			IDs:   []string{"n1", "n2"},
 			Level: v1.SearchCategory_NAMESPACES,
 		},
 	}
 	expected = search.ConjunctionQuery(
 		query,
 		search.NewQueryBuilder().AddExactMatches(search.ClusterID, "c1").ProtoQuery(),
-		search.NewQueryBuilder().AddExactMatches(search.NamespaceID, "n1").ProtoQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.NamespaceID, "n1", "n2").ProtoQuery(),
 	)
 	actual, err = scopeQuery(query, scopes)
 	assert.NoError(t, err)
-	assert.Equal(t, expected, actual)
+	protoassert.Equal(t, expected, actual)
 }

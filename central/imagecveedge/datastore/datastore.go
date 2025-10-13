@@ -3,15 +3,14 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/imagecveedge/search"
 	"github.com/stackrox/rox/central/imagecveedge/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
 // DataStore is an intermediary to Image/CVE edge storage.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
@@ -21,10 +20,8 @@ type DataStore interface {
 }
 
 // New returns a new instance of a DataStore.
-func New(graphProvider graph.Provider, storage store.Store, searcher search.Searcher) DataStore {
+func New(storage store.Store) DataStore {
 	return &datastoreImpl{
-		graphProvider: graphProvider,
-		storage:       storage,
-		searcher:      searcher,
+		storage: storage,
 	}
 }

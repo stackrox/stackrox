@@ -10,14 +10,14 @@ errecho() {
   echo >&2 -e "$@"
 }
 
-if [[ -n "${CIRCLE_TAG}" && "${DEBUG_BUILD}" == "yes" ]]; then
-  errecho "CIRCLE_TAG environment variable is set. DEBUG_BUILD-s are not supported with tagged, e.g. release or nightly, builds."
+if [[ -n "${BUILD_TAG}" && "${DEBUG_BUILD}" == "yes" ]]; then
+  errecho "BUILD_TAG environment variable is set. DEBUG_BUILD-s are not supported with tagged, e.g. release or nightly, builds."
   errecho "Failing the build. Please make sure DEBUG_BUILD variable is not manually overridden to \"yes\"."
   exit 2
 fi
 
 # This searches for a file in the image without running the container.
-container=$(docker create stackrox/main:${TAG})
+container=$(docker create stackrox/main:"${TAG}")
 docker export "${container}" | tar t | grep 'bin/dlv$' && found_dlv="yes" || found_dlv="no"
 docker rm "${container}" &>/dev/null
 

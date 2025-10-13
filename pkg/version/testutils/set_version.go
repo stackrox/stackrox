@@ -1,12 +1,10 @@
 //go:build !release || test
-// +build !release test
 
 package testutils
 
 import (
 	"runtime"
 	"testing"
-	"time"
 
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/version"
@@ -36,13 +34,13 @@ func SetVersion(t *testing.T, version version.Versions) {
 	internal.ScannerVersion = version.ScannerVersion
 	internal.CollectorVersion = version.CollectorVersion
 	internal.GitShortSha = version.GitCommit
+	internal.FactVersion = version.FactVersion
 }
 
 // GetExampleVersion returns an example version, only intended for usage in testing.
 func GetExampleVersion(t *testing.T) version.Versions {
 	testutils.MustBeInTest(t)
 	return version.Versions{
-		BuildDate:        time.Unix(0, 0),
 		CollectorVersion: "99.9.9",
 		GitCommit:        "45b4a8ac",
 		GoVersion:        runtime.Version(),
@@ -50,5 +48,6 @@ func GetExampleVersion(t *testing.T) version.Versions {
 		Platform:         runtime.GOOS + "/" + runtime.GOARCH,
 		ScannerVersion:   "99.9.9",
 		ChartVersion:     "3.99.0",
+		FactVersion:      "0.1.0",
 	}
 }

@@ -1,5 +1,4 @@
 //go:build integration
-// +build integration
 
 package ibm
 
@@ -14,11 +13,14 @@ import (
 
 const (
 	testImage = "us.icr.io/sr-testing/nginx:1.10"
-	apiToken  = "Z_t3ZI1AcDB_513s91kHw_RXpGVcY-GFUQLLx-UwZqzB"
+	apiToken  = "Z_t3ZI1AcDB_513s91kHw_RXpGVcY-GFUQLLx-UwZqzB" //#nosec G101
 )
 
 func TestIBM(t *testing.T) {
 	t.Skip("This registry is currently broken (ROX-3589)")
+	t.Setenv("ROX_REGISTRY_RESPONSE_TIMEOUT", "90s")
+	t.Setenv("ROX_REGISTRY_CLIENT_TIMEOUT", "120s")
+
 	reg, err := newRegistry(&storage.ImageIntegration{
 		IntegrationConfig: &storage.ImageIntegration_Ibm{
 			Ibm: &storage.IBMRegistryConfig{
@@ -26,7 +28,7 @@ func TestIBM(t *testing.T) {
 				ApiKey:   apiToken,
 			},
 		},
-	})
+	}, false, nil)
 	require.NoError(t, err)
 
 	image, err := utils.GenerateImageFromString(testImage)

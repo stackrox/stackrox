@@ -1,21 +1,22 @@
+//go:build sql_integration
+
 package datastore
 
 import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/pod/mappings"
-	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/pkg/env"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -29,45 +30,24 @@ type podDatastoreSACSuite struct {
 
 	datastore DataStore
 
-	pool *pgxpool.Pool
-
-	engine *rocksdb.RocksDB
-	index  bleve.Index
+	pool postgres.DB
 
 	testContexts map[string]context.Context
 	testPodIDs   []string
 }
 
 func (s *podDatastoreSACSuite) SetupSuite() {
-	var err error
-
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		pgtestbase := pgtest.ForT(s.T())
-		s.Require().NotNil(pgtestbase)
-		s.pool = pgtestbase.Pool
-		s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
-		s.Require().NoError(err)
-	} else {
-		s.engine, err = rocksdb.NewTemp("podSACTest")
-		s.Require().NoError(err)
-		s.index, err = globalindex.MemOnlyIndex()
-		s.Require().NoError(err)
-
-		s.datastore, err = GetTestRocksBleveDataStore(s.T(), s.engine, s.index)
-		s.Require().NoError(err)
-	}
+	pgtestbase := pgtest.ForT(s.T())
+	s.Require().NotNil(pgtestbase)
+	s.pool = pgtestbase.DB
+	s.datastore = GetTestPostgresDataStore(s.T(), s.pool)
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
 		resources.Deployment)
 }
 
 func (s *podDatastoreSACSuite) TearDownSuite() {
-	if env.PostgresDatastoreEnabled.BooleanSetting() {
-		s.pool.Close()
-	} else {
-		s.Require().NoError(rocksdb.CloseAndRemove(s.engine))
-		s.Require().NoError(s.index.Close())
-	}
+	s.pool.Close()
 }
 
 func (s *podDatastoreSACSuite) SetupTest() {
@@ -128,7 +108,7 @@ func (s *podDatastoreSACSuite) TestGetPod() {
 			s.Require().NoError(err)
 			if c.ExpectedFound {
 				s.True(found)
-				s.Equal(*pod, *res)
+				protoassert.Equal(s.T(), pod, res)
 			} else {
 				s.False(found)
 				s.Nil(res)
@@ -177,7 +157,14 @@ func (s *podDatastoreSACSuite) runSearchTest(c testutils.SACSearchTestCase) {
 	ctx := s.testContexts[c.ScopeKey]
 	results, err := s.datastore.Search(ctx, nil)
 	s.Require().NoError(err)
-	resultCounts := testutils.CountResultsPerClusterAndNamespace(s.T(), results, mappings.OptionsMap)
+	resultObjects := make([]sac.NamespaceScopedObject, 0, len(results))
+	for _, r := range results {
+		obj, found, err := s.datastore.GetPod(s.testContexts[testutils.UnrestrictedReadCtx], r.ID)
+		if found && err == nil {
+			resultObjects = append(resultObjects, obj)
+		}
+	}
+	resultCounts := testutils.CountSearchResultObjectsPerClusterAndNamespace(s.T(), resultObjects)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, c.Results, resultCounts)
 }
 
@@ -190,7 +177,7 @@ func (s *podDatastoreSACSuite) TestScopedSearch() {
 }
 
 func (s *podDatastoreSACSuite) TestUnrestrictedSearch() {
-	for name, c := range testutils.GenericUnrestrictedSACSearchTestCases(s.T()) {
+	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runSearchTest(c)
 		})
@@ -211,4 +198,38 @@ func (s *podDatastoreSACSuite) TestUnrestrictedSearchRaw() {
 			s.runSearchRawTest(c)
 		})
 	}
+}
+
+func (s *podDatastoreSACSuite) TestScopedWalkByQuery() {
+	for name, c := range testutils.GenericScopedSACSearchTestCases(s.T()) {
+		s.Run(name, func() {
+			s.runWalkByQueryTest(c, nil)
+			s.runWalkByQueryTest(c, search.NewQueryBuilder().AddRegexes(search.PodID, ".*").ProtoQuery())
+		})
+	}
+}
+
+func (s *podDatastoreSACSuite) TestUnrestrictedWalkByQuery() {
+	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
+		s.Run(name, func() {
+			s.runWalkByQueryTest(c, nil)
+			s.runWalkByQueryTest(c, search.NewQueryBuilder().AddRegexes(search.PodID, ".*").ProtoQuery())
+		})
+	}
+}
+
+func (s *podDatastoreSACSuite) runWalkByQueryTest(c testutils.SACSearchTestCase, query *v1.Query) {
+	ctx := s.testContexts[c.ScopeKey]
+	var results []*storage.Pod
+	err := s.datastore.WalkByQuery(ctx, query, func(p *storage.Pod) error {
+		results = append(results, p)
+		return nil
+	})
+	s.Require().NoError(err)
+	resultObjs := make([]sac.NamespaceScopedObject, 0, len(results))
+	for i := range results {
+		resultObjs = append(resultObjs, results[i])
+	}
+	resultCounts := testutils.CountSearchResultObjectsPerClusterAndNamespace(s.T(), resultObjs)
+	testutils.ValidateSACSearchResultDistribution(&s.Suite, c.Results, resultCounts)
 }

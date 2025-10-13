@@ -1,15 +1,16 @@
 package compliance
 
 import (
-	"github.com/stackrox/rox/generated/internalapi/central"
+	"time"
+
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common"
-	"github.com/stackrox/rox/sensor/common/clusterid"
+	"github.com/stackrox/rox/sensor/common/message"
 )
 
-//go:generate mockgen-wrapper AuditLogCollectionManager
+//go:generate mockgen-wrapper
 
 // AuditLogCollectionManager manages all aspects of the audit log collection states. Given the stream of audit events via the AuditMessages channel, it saves, keeps track and updates Central
 // of the latest read audit log event per compliance node. It also provides an API for sensor to use to use to add eligible nodes, enable/disable/restart collection.
@@ -40,18 +41,23 @@ type AuditLogCollectionManager interface {
 	common.SensorComponent
 }
 
+type clusterIDWaiter interface {
+	Get() string
+}
+
 // NewAuditLogCollectionManager creates a new instance of AuditLogCollectionManager, which provides an API to manage the lifecycle of audit log collection within the cluster
-func NewAuditLogCollectionManager() AuditLogCollectionManager {
+func NewAuditLogCollectionManager(clusterID clusterIDWaiter) AuditLogCollectionManager {
 	return &auditLogCollectionManagerImpl{
 		// Need to use a getter instead of directly calling clusterid.Get because it may block if the communication with central is not yet finished
 		// Putting it as a getter so it can be overridden in tests
-		clusterIDGetter:         clusterid.Get,
+		clusterID:               clusterID,
 		eligibleComplianceNodes: make(map[string]sensor.ComplianceService_CommunicateServer),
 		fileStates:              make(map[string]*storage.AuditLogFileState),
 		auditEventMsgs:          make(chan *sensor.MsgFromCompliance),
-		fileStateUpdates:        make(chan *central.MsgFromSensor),
-		stopSig:                 concurrency.NewSignal(),
+		fileStateUpdates:        make(chan *message.ExpiringMessage),
+		stopper:                 concurrency.NewStopper(),
 		forceUpdateSig:          concurrency.NewSignal(),
-		updateInterval:          defaultInterval,
+		centralReady:            concurrency.NewSignal(),
+		updaterTicker:           time.NewTicker(defaultInterval),
 	}
 }

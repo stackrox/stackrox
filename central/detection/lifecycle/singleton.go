@@ -3,9 +3,11 @@ package lifecycle
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/activecomponent/updater/aggregator"
+	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/deployment/cache"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/alertmanager"
+	"github.com/stackrox/rox/central/detection/buildtime"
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/detection/runtime"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
@@ -13,6 +15,7 @@ import (
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/processindicator/filter"
 	"github.com/stackrox/rox/central/reprocessor"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -24,16 +27,19 @@ var (
 
 func initialize() {
 	manager = newManager(
+		buildtime.SingletonDetector(),
 		deploytime.SingletonDetector(),
 		runtime.SingletonDetector(),
+		clusterDatastore.Singleton(),
 		deploymentDatastore.Singleton(),
 		processDatastore.Singleton(),
 		baselineDataStore.Singleton(),
 		alertmanager.Singleton(),
 		reprocessor.Singleton(),
-		cache.DeletedDeploymentCacheSingleton(),
+		cache.DeletedDeploymentsSingleton(),
 		filter.Singleton(),
 		aggregator.Singleton(),
+		connection.ManagerSingleton(),
 	)
 
 	policies, err := policyDataStore.Singleton().GetAllPolicies(lifecycleMgrCtx)

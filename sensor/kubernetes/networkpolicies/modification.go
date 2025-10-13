@@ -24,7 +24,7 @@ func parseModification(mod *storage.NetworkPolicyModification) ([]*networkingV1.
 	return policies, toDelete, nil
 }
 
-func validateModification(policies []*networkingV1.NetworkPolicy, toDelete map[k8sutil.NSObjRef]struct{}) error {
+func validateModification(policies []*networkingV1.NetworkPolicy, _ map[k8sutil.NSObjRef]struct{}) error {
 	var errList errorhelpers.ErrorList
 
 	uniqueRefs := make(map[k8sutil.NSObjRef]struct{})
@@ -46,5 +46,8 @@ func validateModification(policies []*networkingV1.NetworkPolicy, toDelete map[k
 		uniqueRefs[ref] = struct{}{}
 	}
 
-	return errList.ToError()
+	if err := errList.ToError(); err != nil {
+		return errors.Wrap(err, "invalid network policy modification")
+	}
+	return nil
 }

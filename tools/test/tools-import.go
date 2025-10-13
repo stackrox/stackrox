@@ -1,5 +1,4 @@
 //go:build tools
-// +build tools
 
 package tools
 
@@ -10,4 +9,6 @@ package tools
 import (
 	// Tool dependencies, not used anywhere in the code.
 	_ "github.com/jstemmer/go-junit-report/v2"
+	_ "github.com/stackrox/image-prefetcher/deploy"
+	_ "github.com/stackrox/prometheus-metric-parser"
 )

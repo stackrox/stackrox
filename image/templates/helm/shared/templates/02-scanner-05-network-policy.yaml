@@ -1,5 +1,6 @@
 {{- include "srox.init" . -}}
 
+{{- if ._rox.network.enableNetworkPolicies -}}
 {{- if not ._rox.scanner.disable -}}
 
 apiVersion: networking.k8s.io/v1
@@ -20,12 +21,15 @@ spec:
     - podSelector:
         matchLabels:
           app: central
-{{ if or (eq ._rox.scanner.mode "slim") ._rox.env.openshift }}
+    ports:
+    - port: 8080
+      protocol: TCP
+    - port: 8443
+      protocol: TCP
   - from:
     - podSelector:
         matchLabels:
           app: sensor
-{{ end }}
     ports:
     - port: 8080
       protocol: TCP
@@ -83,4 +87,5 @@ spec:
       app: scanner
   policyTypes:
     - Ingress
+{{ end }}
 {{ end }}

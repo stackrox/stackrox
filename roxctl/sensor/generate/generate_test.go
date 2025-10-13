@@ -10,12 +10,10 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
-	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/stackrox/rox/roxctl/common/logger"
-	"github.com/stackrox/rox/roxctl/common/mocks"
+	"github.com/stackrox/rox/roxctl/common/environment/mocks"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -33,7 +31,7 @@ type mockClustersServiceServer struct {
 	postClusterInjectedFn      postClusterFn
 
 	// spy properties
-	clusterSent                     []storage.Cluster
+	clusterSent                     []*storage.Cluster
 	getClusterCalled                bool
 	getKernelSupportAvailableCalled bool
 }
@@ -42,21 +40,21 @@ type getKernelSupportFn func() (*v1.KernelSupportAvailableResponse, error)
 type postClusterFn func(cluster *storage.Cluster) (*v1.ClusterResponse, error)
 type getDefaultsFn func() (*v1.ClusterDefaultsResponse, error)
 
-func (m *mockClustersServiceServer) GetClusterDefaultValues(ctx context.Context, in *v1.Empty) (*v1.ClusterDefaultsResponse, error) {
+func (m *mockClustersServiceServer) GetClusterDefaultValues(_ context.Context, _ *v1.Empty) (*v1.ClusterDefaultsResponse, error) {
 	return m.getDefaultsInjectedFn()
 }
 
-func (m *mockClustersServiceServer) GetKernelSupportAvailable(ctx context.Context, in *v1.Empty) (*v1.KernelSupportAvailableResponse, error) {
+func (m *mockClustersServiceServer) GetKernelSupportAvailable(_ context.Context, _ *v1.Empty) (*v1.KernelSupportAvailableResponse, error) {
 	m.getKernelSupportAvailableCalled = true
 	return m.getKernelSupportInjectedFn()
 }
 
-func (m *mockClustersServiceServer) PostCluster(ctx context.Context, cluster *storage.Cluster) (*v1.ClusterResponse, error) {
-	m.clusterSent = append(m.clusterSent, *cluster)
+func (m *mockClustersServiceServer) PostCluster(_ context.Context, cluster *storage.Cluster) (*v1.ClusterResponse, error) {
+	m.clusterSent = append(m.clusterSent, cluster)
 	return m.postClusterInjectedFn(cluster)
 }
 
-func (m *mockClustersServiceServer) GetClusters(ctx context.Context, in *v1.GetClustersRequest) (*v1.ClustersList, error) {
+func (m *mockClustersServiceServer) GetClusters(_ context.Context, _ *v1.GetClustersRequest) (*v1.ClustersList, error) {
 	m.getClusterCalled = true
 	return &v1.ClustersList{
 		Clusters: []*storage.Cluster{
@@ -70,11 +68,6 @@ func (m *mockClustersServiceServer) GetClusters(ctx context.Context, in *v1.GetC
 
 type sensorGenerateTestSuite struct {
 	suite.Suite
-	cmd sensorGenerateCommand
-}
-
-type expectedWarning struct {
-	messageTemplate string
 }
 
 func TestSensorGenerateCommand(t *testing.T) {
@@ -122,17 +115,18 @@ func (s *sensorGenerateTestSuite) newTestMockEnvironmentWithConn(conn *grpc.Clie
 func (s *sensorGenerateTestSuite) createMockedCommand(getDefaultsF getDefaultsFn, postClusterF postClusterFn) (*bytes.Buffer, *bytes.Buffer, closeFunction, sensorGenerateCommand, *mockClustersServiceServer) {
 	var out, errOut *bytes.Buffer
 	conn, closeF, mock := s.createGRPCMockClustersService(getDefaultsF, postClusterF)
-	cmd := s.cmd
+	cmd := sensorGenerateCommand{
+		cluster: &storage.Cluster{},
+	}
 	cmd.env, out, errOut = s.newTestMockEnvironmentWithConn(conn)
 	return out, errOut, closeF, cmd, mock
 }
 
 func (s *sensorGenerateTestSuite) SetupTest() {
-	testbuildinfo.SetForTest(s.T())
 	testutils.SetExampleVersion(s.T())
 }
 
-var emptyGetBundle = func(params apiparams.ClusterZip, _ string, _ time.Duration, _ logger.Logger) error {
+var emptyGetBundle = func(params apiparams.ClusterZip, _ string, _ time.Duration, _ environment.Environment) error {
 	return nil
 }
 
@@ -167,7 +161,7 @@ func postClusterFake(cluster *storage.Cluster) (*v1.ClusterResponse, error) {
 }
 
 // postClusterAlreadyExistsFake fake function for service.PostCluster that always returns error codes.AlreadyExists
-func postClusterAlreadyExistsFake(cluster *storage.Cluster) (*v1.ClusterResponse, error) {
+func postClusterAlreadyExistsFake(_ *storage.Cluster) (*v1.ClusterResponse, error) {
 	return nil, status.Error(codes.AlreadyExists, "Cluster Exists")
 }
 
@@ -227,7 +221,7 @@ func (s *sensorGenerateTestSuite) TestHandleClusterAlreadyExists() {
 			generateCmd.continueIfExists = testCase.continueIfExistsFlag
 			generateCmd.cluster.Name = testCase.clusterName
 			getBundleCalled := false
-			generateCmd.getBundleFn = func(_ apiparams.ClusterZip, _ string, _ time.Duration, _ logger.Logger) error {
+			generateCmd.getBundleFn = func(_ apiparams.ClusterZip, _ string, _ time.Duration, _ environment.Environment) error {
 				getBundleCalled = true
 				return nil
 			}
@@ -285,7 +279,7 @@ func (s *sensorGenerateTestSuite) TestMainImageDefaultAndOverride() {
 
 			// Check that correct main image was posted
 			s.Require().Len(mock.clusterSent, 1)
-			s.Require().Equal(testCase.expectPostedClusterMainImage, mock.clusterSent[0].MainImage)
+			s.Require().Equal(testCase.expectPostedClusterMainImage, mock.clusterSent[0].GetMainImage())
 		})
 	}
 }
@@ -305,82 +299,4 @@ func (s *sensorGenerateTestSuite) TestLegacyAPICalledIfGetClustersUnimplemented(
 
 	// Check that legacy API was called
 	s.Require().True(mock.getKernelSupportAvailableCalled)
-}
-
-func (s *sensorGenerateTestSuite) TestSlimCollectorSelection() {
-	type slimFlag struct {
-		value bool
-	}
-
-	var testCases = map[string]struct {
-		serverHasKernelSupport bool
-		slimCollectorFlag      *slimFlag
-
-		// expectations
-		warning        *expectedWarning
-		expectSlimMode bool
-	}{
-		"No flags and kernel support in central: default to slim collector": {
-			serverHasKernelSupport: true,
-			slimCollectorFlag:      nil,
-			warning:                nil,
-			expectSlimMode:         true,
-		},
-		"No flags and no kernel support in central: default to full collector": {
-			serverHasKernelSupport: false,
-			slimCollectorFlag:      nil,
-			warning:                nil,
-			expectSlimMode:         false,
-		},
-		"--slim-collector=true and support in central: slim collector": {
-			serverHasKernelSupport: true,
-			slimCollectorFlag:      &slimFlag{true},
-			warning:                nil,
-			expectSlimMode:         true,
-		},
-		"--slim-collector=true and no kernel support in central: slim collector + warning": {
-			serverHasKernelSupport: false,
-			slimCollectorFlag:      &slimFlag{true},
-			warning:                &expectedWarning{"The deployment bundle will reference a slim collector image"},
-			expectSlimMode:         true,
-		},
-		"--slim-collector=false: collector full": {
-			serverHasKernelSupport: true,
-			slimCollectorFlag:      &slimFlag{false},
-			warning:                nil,
-			expectSlimMode:         false,
-		},
-	}
-
-	for name, testCase := range testCases {
-		s.Run(name, func() {
-			_, errOut, closeF, generateCmd, mock := s.createMockedCommand(getDefaultsFake(testCase.serverHasKernelSupport), postClusterFake)
-			defer closeF()
-
-			// Setup generateCmd
-			if testCase.slimCollectorFlag != nil {
-				generateCmd.slimCollectorP = &testCase.slimCollectorFlag.value
-			}
-			generateCmd.timeout = time.Duration(5) * time.Second
-			var slimCollectorRequested *bool
-			generateCmd.getBundleFn = func(params apiparams.ClusterZip, _ string, _ time.Duration, _ logger.Logger) error {
-				slimCollectorRequested = params.SlimCollector
-				return nil
-			}
-
-			// Create cluster
-			err := generateCmd.fullClusterCreation()
-
-			// Assertions
-			s.Require().NoError(err)
-
-			if testCase.warning != nil {
-				s.Assert().Contains(errOut.String(), testCase.warning.messageTemplate)
-			}
-
-			s.Require().Len(mock.clusterSent, 1)
-			s.Assert().Equal(mock.clusterSent[0].SlimCollector, testCase.expectSlimMode)
-			s.Assert().Equal(*slimCollectorRequested, testCase.expectSlimMode)
-		})
-	}
 }

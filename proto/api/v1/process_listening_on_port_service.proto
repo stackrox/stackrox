@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package v1;
+
+import "api/v1/pagination.proto";
+import weak "google/api/annotations.proto";
+import "storage/process_listening_on_port.proto";
+
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+message GetProcessesListeningOnPortsRequest {
+  string deployment_id = 1;
+  Pagination pagination = 2;
+}
+
+message GetProcessesListeningOnPortsResponse {
+  repeated storage.ProcessListeningOnPort listening_endpoints = 1;
+  int32 total_listening_endpoints = 2;
+}
+
+// ListeningEndpointsService API can be used to list listening endpoints and the processes that opened them.
+service ListeningEndpointsService {
+  // GetListeningEndpoints returns the listening endpoints and the processes that opened them for a given deployment
+  rpc GetListeningEndpoints(GetProcessesListeningOnPortsRequest) returns (GetProcessesListeningOnPortsResponse) {
+    option (google.api.http) = {get: "/v1/listening_endpoints/deployment/{deployment_id}"};
+  }
+}

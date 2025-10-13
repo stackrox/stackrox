@@ -9,3 +9,29 @@ unexpected status code 520 when retrieving image scan
 FATAL:  terminating autovacuum process due to administrator command
 # fetching signature was unsuccessful due to issues with contacting registry, i.e. quay outage.
 Error: Fetching signature for image .* unexpected status code 500
+# postgres trying to send data on a connection closed by the client (ROX-13258)
+FATAL:  connection to client lost
+# postgres can terminate these if we upgrade central during the middle of operations
+FATAL:  terminating connection because protocol synchronization was lost
+# with operator installs, sensor logs contain this error w.r.t. refreshing a cert for local scanning.
+# TODO: check if this is benign and/or if sensor is configured appropriately for test.
+unexpected owner for certificate secrets
+# By design, we keep installing PodSecurityPolicy objects as long as the server supports them.
+# We detect if they are not supported and in that case do not apply them, so these warnings are not useful at this point.
+# See ROX-17796 ROX-17766 ROX-17734 for related work.
+policy/v1beta1 PodSecurityPolicy is deprecated in v1.21., unavailable in v1.25.
+# This prevents false-positives when testing on OCP 4.14.
+# DeploymentConfigs are deprecated but there are no plans to remove them as this is written.
+# See: https://issues.redhat.com/browse/OCPSTRAT-118
+apps\.openshift\.io\/v1 DeploymentConfig is deprecated in v4\.14\+, unavailable in v4\.10000\+
+# Image enrichment errors are expected in some test (i.e. testing for non-existing images).
+# Skip those specifically.
+Error: Error enriching image
+# Network flakiness can lead to this error occurring in Sensor k8s libraries. All tests pass and it is not
+# an indication of a Sensor issue
+request.go:1116] Unexpected error when reading response body: context deadline exceeded
+# Collector downloading a probe while Sensor is Offline (http.StatusServiceUnavailable -- ROX-19018)
+Unexpected HTTP request failure (HTTP 503)
+# 502 errors should be ignored (this is especially happening in image enrichment
+http: non-successful response (status=502
+unexpected status code 502 Bad Gateway

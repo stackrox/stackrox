@@ -7,6 +7,8 @@ import (
 
 // Detector provides an interface for running build time policy violations.
 type Detector interface {
+	PolicySet() detection.PolicySet
+
 	Detect(image *storage.Image, policyFilters ...detection.FilterOption) ([]*storage.Alert, error)
 }
 

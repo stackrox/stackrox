@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
@@ -23,17 +22,15 @@ import (
 
 const (
 	requestTimeout = 10 * time.Second
-	typeString     = "clair"
 )
 
 var (
-	log          = logging.LoggerForModule()
 	errNotExists = errors.New("Layer does not exist")
 )
 
 // Creator provides the type an scanners.Creator to add to the scanners Registry.
 func Creator() (string, func(integration *storage.ImageIntegration) (types.Scanner, error)) {
-	return typeString, func(integration *storage.ImageIntegration) (types.Scanner, error) {
+	return types.Clair, func(integration *storage.ImageIntegration) (types.Scanner, error) {
 		scan, err := newScanner(integration)
 		return scan, err
 	}
@@ -56,7 +53,7 @@ func validate(clair *storage.ClairConfig) error {
 }
 
 func newScanner(integration *storage.ImageIntegration) (*clair, error) {
-	clairConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Clair)
+	clairConfig, ok := integration.GetIntegrationConfig().(*storage.ImageIntegration_Clair)
 	if !ok {
 		return nil, errors.New("Clair configuration required")
 	}
@@ -156,12 +153,12 @@ func (c *clair) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 }
 
 // Match decides if the image is contained within this scanner
-func (c *clair) Match(image *storage.ImageName) bool {
+func (c *clair) Match(_ *storage.ImageName) bool {
 	return true
 }
 
 func (c *clair) Type() string {
-	return typeString
+	return types.Clair
 }
 
 func (c *clair) Name() string {

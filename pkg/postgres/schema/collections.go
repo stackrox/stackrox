@@ -9,7 +9,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -32,19 +34,23 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ResourceCollection)(nil)), "collections")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COLLECTIONS, "resourcecollection", (*storage.ResourceCollection)(nil)))
+		schema.ScopingResource = resources.WorkflowAdministration
 		RegisterTable(schema, CreateTableCollectionsStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_COLLECTIONS, schema)
 		return schema
 	}()
 )
 
 const (
-	CollectionsTableName                    = "collections"
+	// CollectionsTableName specifies the name of the table in postgres.
+	CollectionsTableName = "collections"
+	// CollectionsEmbeddedCollectionsTableName specifies the name of the table in postgres.
 	CollectionsEmbeddedCollectionsTableName = "collections_embedded_collections"
 )
 
 // Collections holds the Gorm model for Postgres table `collections`.
 type Collections struct {
-	Id            string `gorm:"column:id;type:varchar;primaryKey"`
+	ID            string `gorm:"column:id;type:varchar;primaryKey"`
 	Name          string `gorm:"column:name;type:varchar;unique"`
 	CreatedByName string `gorm:"column:createdby_name;type:varchar"`
 	UpdatedByName string `gorm:"column:updatedby_name;type:varchar"`
@@ -53,9 +59,9 @@ type Collections struct {
 
 // CollectionsEmbeddedCollections holds the Gorm model for Postgres table `collections_embedded_collections`.
 type CollectionsEmbeddedCollections struct {
-	CollectionsId       string      `gorm:"column:collections_id;type:varchar;primaryKey"`
+	CollectionsID       string      `gorm:"column:collections_id;type:varchar;primaryKey"`
 	Idx                 int         `gorm:"column:idx;type:integer;primaryKey;index:collectionsembeddedcollections_idx,type:btree"`
-	Id                  string      `gorm:"column:id;type:varchar"`
+	ID                  string      `gorm:"column:id;type:varchar"`
 	CollectionsRef      Collections `gorm:"foreignKey:collections_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	CollectionsCycleRef Collections `gorm:"foreignKey:id;references:id;belongsTo;constraint:OnDelete:RESTRICT"`
 }

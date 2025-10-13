@@ -4,6 +4,11 @@
     "title": "api/v1/config_service.proto",
     "version": "version not set"
   },
+  "tags": [
+    {
+      "name": "ConfigService"
+    }
+  ],
   "consumes": [
     "application/json"
   ],
@@ -24,7 +29,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -44,7 +49,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -63,6 +68,81 @@
         ]
       }
     },
+    "/v1/config/platformcomponent": {
+      "get": {
+        "operationId": "ConfigService_GetPlatformComponentConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/storagePlatformComponentConfig"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "ConfigService"
+        ]
+      },
+      "put": {
+        "operationId": "ConfigService_UpdatePlatformComponentConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/storagePlatformComponentConfig"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1PutPlatformComponentConfigRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ConfigService"
+        ]
+      }
+    },
+    "/v1/config/platformcomponent/rhlp/default": {
+      "get": {
+        "summary": "GetDefaultRedHatLayeredProductsRegex returns a static string containing the default Red Hat Layered Products regex.",
+        "operationId": "ConfigService_GetDefaultRedHatLayeredProductsRegex",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetDefaultRedHatLayeredProductsRegexResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "ConfigService"
+        ]
+      }
+    },
     "/v1/config/private": {
       "get": {
         "operationId": "ConfigService_GetPrivateConfig",
@@ -76,10 +156,62 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
+        "tags": [
+          "ConfigService"
+        ]
+      }
+    },
+    "/v1/config/private/exception/vulnerabilities": {
+      "get": {
+        "operationId": "ConfigService_GetVulnerabilityExceptionConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetVulnerabilityExceptionConfigResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "ConfigService"
+        ]
+      },
+      "put": {
+        "operationId": "ConfigService_UpdateVulnerabilityExceptionConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateVulnerabilityExceptionConfigResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1UpdateVulnerabilityExceptionConfigRequest"
+            }
+          }
+        ],
         "tags": [
           "ConfigService"
         ]
@@ -98,7 +230,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/googlerpcStatus"
             }
           }
         },
@@ -119,27 +251,39 @@
       ],
       "default": "UNSET"
     },
-    "protobufAny": {
+    "GroupLabels": {
       "type": "object",
       "properties": {
-        "typeUrl": {
-          "type": "string",
-          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. This string must contain at least\none \"/\" character. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
-        },
-        "value": {
-          "type": "string",
-          "format": "byte",
-          "description": "Must be a valid serialized protocol buffer of the above specified type."
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
-      },
-      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(\u0026foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n\nExample 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\nExample 4: Pack and unpack a message in Go\n\n     foo := \u0026pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := \u0026pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\n\nJSON\n\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": \u003cstring\u003e,\n      \"lastName\": \u003cstring\u003e\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
+      }
     },
-    "runtimeError": {
+    "PlatformComponentConfigRule": {
       "type": "object",
       "properties": {
-        "error": {
+        "name": {
           "type": "string"
         },
+        "namespaceRule": {
+          "$ref": "#/definitions/RuleNamespaceRule"
+        }
+      }
+    },
+    "RuleNamespaceRule": {
+      "type": "object",
+      "properties": {
+        "regex": {
+          "type": "string"
+        }
+      }
+    },
+    "googlerpcStatus": {
+      "type": "object",
+      "properties": {
         "code": {
           "type": "integer",
           "format": "int32"
@@ -150,8 +294,29 @@
         "details": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string",
+          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. This string must contain at least\none \"/\" character. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com. As of May 2023, there are no widely used type server\nimplementations and no plans to implement one.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
+        }
+      },
+      "additionalProperties": {},
+      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(&foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n    // or ...\n    if (any.isSameTypeAs(Foo.getDefaultInstance())) {\n      foo = any.unpack(Foo.getDefaultInstance());\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := &pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := &pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": <string>,\n      \"lastName\": <string>\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
+    },
+    "storageAdministrationEventsConfig": {
+      "type": "object",
+      "properties": {
+        "retentionDurationDays": {
+          "type": "integer",
+          "format": "int64"
         }
       }
     },
@@ -211,6 +376,21 @@
         },
         "privateConfig": {
           "$ref": "#/definitions/storagePrivateConfig"
+        },
+        "platformComponentConfig": {
+          "$ref": "#/definitions/storagePlatformComponentConfig"
+        }
+      }
+    },
+    "storageDayOption": {
+      "type": "object",
+      "properties": {
+        "numDays": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "enabled": {
+          "type": "boolean"
         }
       }
     },
@@ -249,6 +429,21 @@
         }
       }
     },
+    "storagePlatformComponentConfig": {
+      "type": "object",
+      "properties": {
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/PlatformComponentConfigRule"
+          }
+        },
+        "needsReevaluation": {
+          "type": "boolean"
+        }
+      }
+    },
     "storagePrivateConfig": {
       "type": "object",
       "properties": {
@@ -270,9 +465,54 @@
         },
         "decommissionedClusterRetention": {
           "$ref": "#/definitions/storageDecommissionedClusterRetentionConfig"
+        },
+        "reportRetentionConfig": {
+          "$ref": "#/definitions/storageReportRetentionConfig"
+        },
+        "vulnerabilityExceptionConfig": {
+          "$ref": "#/definitions/storageVulnerabilityExceptionConfig"
+        },
+        "administrationEventsConfig": {
+          "$ref": "#/definitions/storageAdministrationEventsConfig"
+        },
+        "metrics": {
+          "$ref": "#/definitions/storagePrometheusMetrics",
+          "description": "This field defines groups of custom Prometheus metrics to be exposed by the\nbackend on the API endpoint."
         }
       },
-      "title": "next available tag: 6"
+      "title": "next available tag: 10"
+    },
+    "storagePrometheusMetrics": {
+      "type": "object",
+      "properties": {
+        "imageVulnerabilities": {
+          "$ref": "#/definitions/storagePrometheusMetricsGroup"
+        },
+        "policyViolations": {
+          "$ref": "#/definitions/storagePrometheusMetricsGroup"
+        },
+        "nodeVulnerabilities": {
+          "$ref": "#/definitions/storagePrometheusMetricsGroup"
+        }
+      },
+      "title": "next available tag: 4"
+    },
+    "storagePrometheusMetricsGroup": {
+      "type": "object",
+      "properties": {
+        "gatheringPeriodMinutes": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "descriptors": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/GroupLabels"
+          },
+          "description": "Metric descriptors is a map of metric names to the list of allowed\nlabels."
+        }
+      },
+      "description": "A group is a collection of metrics that are computed by the same\naggregator. Metrics in a group may use different subsets of a complete list\nof labels supported by the aggregator."
     },
     "storagePublicConfig": {
       "type": "object",
@@ -285,6 +525,107 @@
         },
         "footer": {
           "$ref": "#/definitions/storageBannerConfig"
+        },
+        "telemetry": {
+          "$ref": "#/definitions/storageTelemetryConfiguration"
+        }
+      }
+    },
+    "storageReportRetentionConfig": {
+      "type": "object",
+      "properties": {
+        "historyRetentionDurationDays": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "downloadableReportRetentionDays": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "downloadableReportGlobalRetentionBytes": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "title": "next available tag: 4"
+    },
+    "storageTelemetryConfiguration": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "lastSetTime": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "storageVulnerabilityExceptionConfig": {
+      "type": "object",
+      "properties": {
+        "expiryOptions": {
+          "$ref": "#/definitions/storageVulnerabilityExceptionConfigExpiryOptions"
+        }
+      }
+    },
+    "storageVulnerabilityExceptionConfigExpiryOptions": {
+      "type": "object",
+      "properties": {
+        "dayOptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageDayOption"
+          }
+        },
+        "fixableCveOptions": {
+          "$ref": "#/definitions/storageVulnerabilityExceptionConfigFixableCVEOptions"
+        },
+        "customDate": {
+          "type": "boolean"
+        },
+        "indefinite": {
+          "type": "boolean"
+        }
+      }
+    },
+    "storageVulnerabilityExceptionConfigFixableCVEOptions": {
+      "type": "object",
+      "properties": {
+        "allFixable": {
+          "type": "boolean"
+        },
+        "anyFixable": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1DayOption": {
+      "type": "object",
+      "properties": {
+        "numDays": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1GetDefaultRedHatLayeredProductsRegexResponse": {
+      "type": "object",
+      "properties": {
+        "regex": {
+          "type": "string"
+        }
+      }
+    },
+    "v1GetVulnerabilityExceptionConfigResponse": {
+      "type": "object",
+      "properties": {
+        "config": {
+          "$ref": "#/definitions/v1VulnerabilityExceptionConfig"
         }
       }
     },
@@ -293,6 +634,79 @@
       "properties": {
         "config": {
           "$ref": "#/definitions/storageConfig"
+        }
+      }
+    },
+    "v1PutPlatformComponentConfigRequest": {
+      "type": "object",
+      "properties": {
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/PlatformComponentConfigRule"
+          }
+        }
+      }
+    },
+    "v1UpdateVulnerabilityExceptionConfigRequest": {
+      "type": "object",
+      "properties": {
+        "config": {
+          "$ref": "#/definitions/v1VulnerabilityExceptionConfig"
+        }
+      }
+    },
+    "v1UpdateVulnerabilityExceptionConfigResponse": {
+      "type": "object",
+      "properties": {
+        "config": {
+          "$ref": "#/definitions/v1VulnerabilityExceptionConfig"
+        }
+      }
+    },
+    "v1VulnerabilityExceptionConfig": {
+      "type": "object",
+      "properties": {
+        "expiryOptions": {
+          "$ref": "#/definitions/v1VulnerabilityExceptionConfigExpiryOptions"
+        }
+      }
+    },
+    "v1VulnerabilityExceptionConfigExpiryOptions": {
+      "type": "object",
+      "properties": {
+        "dayOptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1DayOption"
+          },
+          "description": "This allows users to set expiry interval based on number of days."
+        },
+        "fixableCveOptions": {
+          "$ref": "#/definitions/v1VulnerabilityExceptionConfigFixableCVEOptions",
+          "description": "This allows users to set vulnerability request expiry based on the CVEs."
+        },
+        "customDate": {
+          "type": "boolean",
+          "description": "This option, if true, allows UI to show a custom date picker for setting expiry date."
+        },
+        "indefinite": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1VulnerabilityExceptionConfigFixableCVEOptions": {
+      "type": "object",
+      "properties": {
+        "allFixable": {
+          "type": "boolean",
+          "description": "This options allows users to expire the vulnerability deferral request if and only if **all** vulnerabilities\nin the requests become fixable."
+        },
+        "anyFixable": {
+          "type": "boolean",
+          "description": "This options allows users to expire the vulnerability deferral request if **any** vulnerability\nin the requests become fixable."
         }
       }
     }

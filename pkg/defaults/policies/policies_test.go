@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/mitre"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -21,18 +20,13 @@ func Test_DefaultPolicies_FilterByFeatureFlag(t *testing.T) {
 
 	// This is required here to be able to check if the policy is present in the final list of default policies
 	// since the feature flag filtering is done by filename other than policy name.
-	fileToPolicyName := map[string]string{
-		"deployment_has_ingress_network_policy.json": "Deployments should have at least one ingress Network Policy",
-	}
+	fileToPolicyName := map[string]string{}
 
-	isolator := envisolator.NewEnvIsolator(t)
-	defer isolator.RestoreAll()
 	for filename, ff := range featureFlagFileGuard {
-		isolator.Setenv(ff.EnvVar(), "false")
+		t.Setenv(ff.EnvVar(), "false")
 		require.False(t, checkPoliciesContain(t, fileToPolicyName[filename]))
-		isolator.Setenv(ff.EnvVar(), "true")
+		t.Setenv(ff.EnvVar(), "true")
 		require.True(t, checkPoliciesContain(t, fileToPolicyName[filename]))
-		isolator.RestoreAll()
 	}
 }
 
@@ -40,7 +34,7 @@ func checkPoliciesContain(t *testing.T, policyNameToCheck string) bool {
 	policies, err := DefaultPolicies()
 	require.NoError(t, err)
 	for _, p := range policies {
-		if p.Name == policyNameToCheck {
+		if p.GetName() == policyNameToCheck {
 			return true
 		}
 	}

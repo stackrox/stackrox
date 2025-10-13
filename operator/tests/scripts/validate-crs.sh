@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
 
 set -euo pipefail
+
+OPERATOR_ROOT_DIR="$(dirname "${BASH_SOURCE[0]}")/../.."
+readonly OPERATOR_ROOT_DIR
+
 FAILED=0
 CRS_VALIDATED=0
+YQ="${YQ:-yq}"
 
 die() {
     echo "$@" >&2
@@ -23,7 +28,7 @@ echo
 # Extract kind names for the CRDs.
 CRD_KINDS=$(
     for crd in "${CRDS[@]}"; do
-        if kubectl get crd "$crd" -o jsonpath='{.spec.names.kind}'; then
+        if "${OPERATOR_ROOT_DIR}/hack/retry-kubectl.sh" < /dev/null get crd "$crd" -o jsonpath='{.spec.names.kind}'; then
             echo
         else
             die "Failed to lookup kind name for CRD $crd. Make sure CRDs are applied (make install) before validation is attempted."
@@ -40,8 +45,9 @@ CRS=$(
 
 # Validate CRs.
 for cr in $CRS; do
-    echo -n "Validating custom resource $cr with kubectl... "
-    if output=$(kubectl apply --dry-run=client --validate=true -f "$cr" 2>&1); then
+    echo -n "Validating stackrox custom resources in $cr with kubectl... "
+    if output=$("${YQ}" eval '. | select(.apiVersion | test("^platform.stackrox.io/"))' "$cr" | \
+      "${OPERATOR_ROOT_DIR}/hack/retry-kubectl.sh" apply --dry-run=client --validate=true -f - 2>&1); then
         echo PASSED
     else
         FAILED=1

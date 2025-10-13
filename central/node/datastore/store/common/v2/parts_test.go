@@ -3,27 +3,17 @@ package common
 import (
 	"testing"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scancomponent"
-	"github.com/stackrox/rox/pkg/search/postgres"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSplitAndMergeNode(t *testing.T) {
-	envIsolator := envisolator.NewEnvIsolator(t)
-	envIsolator.Setenv(env.PostgresDatastoreEnabled.EnvVar(), "true")
-	defer envIsolator.RestoreAll()
-
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		t.Skip("Skip postgres tests")
-		t.SkipNow()
-	}
-
-	ts := timestamp.TimestampNow()
+	ts := protocompat.TimestampNow()
 	node := &storage.Node{
 		Id:   "id",
 		Name: "name",
@@ -112,7 +102,7 @@ func TestSplitAndMergeNode(t *testing.T) {
 					Version: "ver1",
 				},
 				Edge: &storage.NodeComponentEdge{
-					Id:              postgres.IDFromPks([]string{"id", scancomponent.ComponentID("comp1", "ver1", "")}),
+					Id:              pgSearch.IDFromPks([]string{"id", scancomponent.ComponentID("comp1", "ver1", "")}),
 					NodeId:          "id",
 					NodeComponentId: scancomponent.ComponentID("comp1", "ver1", ""),
 				},
@@ -125,7 +115,7 @@ func TestSplitAndMergeNode(t *testing.T) {
 					Version: "ver2",
 				},
 				Edge: &storage.NodeComponentEdge{
-					Id:              postgres.IDFromPks([]string{"id", scancomponent.ComponentID("comp1", "ver2", "")}),
+					Id:              pgSearch.IDFromPks([]string{"id", scancomponent.ComponentID("comp1", "ver2", "")}),
 					NodeId:          "id",
 					NodeComponentId: scancomponent.ComponentID("comp1", "ver2", ""),
 				},
@@ -138,7 +128,7 @@ func TestSplitAndMergeNode(t *testing.T) {
 							},
 						},
 						Edge: &storage.NodeComponentCVEEdge{
-							Id:              postgres.IDFromPks([]string{scancomponent.ComponentID("comp1", "ver2", ""), cve.ID("cve1", "")}),
+							Id:              pgSearch.IDFromPks([]string{scancomponent.ComponentID("comp1", "ver2", ""), cve.ID("cve1", "")}),
 							NodeComponentId: scancomponent.ComponentID("comp1", "ver2", ""),
 							NodeCveId:       cve.ID("cve1", ""),
 						},
@@ -151,7 +141,7 @@ func TestSplitAndMergeNode(t *testing.T) {
 							},
 						},
 						Edge: &storage.NodeComponentCVEEdge{
-							Id: postgres.IDFromPks([]string{scancomponent.ComponentID("comp1", "ver2", ""), cve.ID("cve2", "")}),
+							Id: pgSearch.IDFromPks([]string{scancomponent.ComponentID("comp1", "ver2", ""), cve.ID("cve2", "")}),
 							HasFixedBy: &storage.NodeComponentCVEEdge_FixedBy{
 								FixedBy: "ver3",
 							},
@@ -169,7 +159,7 @@ func TestSplitAndMergeNode(t *testing.T) {
 					Version: "ver1",
 				},
 				Edge: &storage.NodeComponentEdge{
-					Id:              postgres.IDFromPks([]string{"id", scancomponent.ComponentID("comp2", "ver1", "")}),
+					Id:              pgSearch.IDFromPks([]string{"id", scancomponent.ComponentID("comp2", "ver1", "")}),
 					NodeId:          "id",
 					NodeComponentId: scancomponent.ComponentID("comp2", "ver1", ""),
 				},
@@ -182,7 +172,7 @@ func TestSplitAndMergeNode(t *testing.T) {
 							},
 						},
 						Edge: &storage.NodeComponentCVEEdge{
-							Id: postgres.IDFromPks([]string{scancomponent.ComponentID("comp2", "ver1", ""), cve.ID("cve1", "")}),
+							Id: pgSearch.IDFromPks([]string{scancomponent.ComponentID("comp2", "ver1", ""), cve.ID("cve1", "")}),
 							HasFixedBy: &storage.NodeComponentCVEEdge_FixedBy{
 								FixedBy: "ver2",
 							},
@@ -199,7 +189,7 @@ func TestSplitAndMergeNode(t *testing.T) {
 							},
 						},
 						Edge: &storage.NodeComponentCVEEdge{
-							Id:              postgres.IDFromPks([]string{scancomponent.ComponentID("comp2", "ver1", ""), cve.ID("cve2", "")}),
+							Id:              pgSearch.IDFromPks([]string{scancomponent.ComponentID("comp2", "ver1", ""), cve.ID("cve2", "")}),
 							NodeComponentId: scancomponent.ComponentID("comp2", "ver1", ""),
 							NodeCveId:       cve.ID("cve2", ""),
 						},
@@ -210,8 +200,22 @@ func TestSplitAndMergeNode(t *testing.T) {
 	}
 
 	splitActual := Split(node, true)
-	assert.Equal(t, splitExpected, splitActual)
+	protoassert.Equal(t, splitExpected.Node, splitActual.Node)
+
+	assert.Len(t, splitActual.Children, len(splitExpected.Children))
+	for i, expected := range splitExpected.Children {
+		actual := splitActual.Children[i]
+		protoassert.Equal(t, expected.Component, actual.Component)
+		protoassert.Equal(t, expected.Edge, actual.Edge)
+
+		assert.Len(t, actual.Children, len(expected.Children))
+		for i, e := range expected.Children {
+			a := actual.Children[i]
+			protoassert.Equal(t, e.Edge, a.Edge)
+			protoassert.Equal(t, e.CVE, a.CVE)
+		}
+	}
 
 	nodeActual := Merge(splitActual)
-	assert.Equal(t, node, nodeActual)
+	protoassert.Equal(t, node, nodeActual)
 }

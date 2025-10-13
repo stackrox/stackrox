@@ -16,6 +16,7 @@ import (
 type Options struct {
 	ReleaseOptions chartutil.ReleaseOptions
 	KubeVersion    string
+	HelmVersion    string
 
 	APIVersions chartutil.VersionSet
 }
@@ -34,6 +35,7 @@ func Render(c *chart.Chart, values chartutil.Values, opts Options) (map[string]s
 	caps := &chartutil.Capabilities{
 		APIVersions: chartutil.DefaultVersionSet,
 		KubeVersion: chartutil.DefaultCapabilities.KubeVersion,
+		HelmVersion: chartutil.DefaultCapabilities.HelmVersion,
 	}
 
 	if opts.APIVersions != nil {
@@ -43,11 +45,15 @@ func Render(c *chart.Chart, values chartutil.Values, opts Options) (map[string]s
 	if opts.KubeVersion != "" {
 		kv, verErr := semver.NewVersion(opts.KubeVersion)
 		if verErr != nil {
-			return nil, errors.Errorf("could not parse a kubernetes version: %v", verErr)
+			return nil, errors.Errorf("could not parse Kubernetes version: %v", verErr)
 		}
 		caps.KubeVersion.Major = fmt.Sprint(kv.Major())
 		caps.KubeVersion.Minor = fmt.Sprint(kv.Minor())
 		caps.KubeVersion.Version = fmt.Sprintf("v%d.%d.0", kv.Major(), kv.Minor())
+	}
+
+	if opts.HelmVersion != "" {
+		caps.HelmVersion.Version = opts.HelmVersion
 	}
 
 	vals, err := chartutil.ToRenderValues(c, values, opts.ReleaseOptions, caps)

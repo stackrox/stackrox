@@ -1,18 +1,29 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import pluralize from 'pluralize';
-import { Modal, ModalVariant, Button } from '@patternfly/react-core';
+import { Alert, Button, Flex, Modal, Text } from '@patternfly/react-core';
 
 import { excludeDeployments } from 'services/PoliciesService';
-import { ListAlert } from '../types/violationTypes';
+import type { DeploymentListAlert, ListAlert } from 'types/alert.proto';
+import useRestMutation from 'hooks/useRestMutation';
+import type { Empty } from 'services/types';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 // Filter the excludableAlerts displayed down to the ones checked, and group them into a map from policy ID to a list of
 // deployment names, then exclude every policy ID, deployment name pair in the map.
-function excludeAlerts(checkedAlertIds, excludableAlerts) {
-    const checkedAlertsSet = new Set(checkedAlertIds);
+function excludeAlerts({
+    selectedAlertIds,
+    excludableAlerts,
+}: {
+    selectedAlertIds: string[];
+    excludableAlerts: ListAlert[];
+}): Promise<Empty[]> {
+    const checkedAlertsSet = new Set(selectedAlertIds);
 
     const policyToDeployments = {};
     excludableAlerts
         .filter(({ id }) => checkedAlertsSet.has(id))
+        .filter((alert): alert is DeploymentListAlert => 'deployment' in alert)
         .forEach(({ policy, deployment }) => {
             if (!policyToDeployments[policy.id]) {
                 policyToDeployments[policy.id] = [deployment.name];
@@ -43,31 +54,56 @@ function ExcludeConfirmation({
     cancelModal,
     isOpen,
 }: ExcludeConfirmationProps): ReactElement {
-    function excludeDeploymentsAction() {
-        excludeAlerts(selectedAlertIds, excludableAlerts).then(closeModal, closeModal);
-    }
+    const { mutate, isLoading, error, reset } = useRestMutation(excludeAlerts, {
+        onSuccess: () => {
+            closeModal();
+            reset();
+        },
+    });
 
     const numSelectedRows = selectedAlertIds.length;
     return (
         <Modal
             isOpen={isOpen}
-            variant={ModalVariant.small}
+            variant="medium"
             actions={[
-                <Button key="confirm" variant="primary" onClick={excludeDeploymentsAction}>
+                <Button
+                    key="confirm"
+                    variant="primary"
+                    isDisabled={isLoading}
+                    isLoading={isLoading}
+                    onClick={() => mutate({ selectedAlertIds, excludableAlerts })}
+                >
                     Confirm
                 </Button>,
                 <Button key="cancel" variant="link" onClick={cancelModal}>
                     Cancel
                 </Button>,
             ]}
-            onClose={cancelModal}
-            data-testid="exclude-confirmation-modal"
+            onClose={() => {
+                cancelModal();
+                reset();
+            }}
             aria-label="Confirm excluding violations"
         >
-            {`Are you sure you want to exclude ${numSelectedRows} ${pluralize(
-                'violation',
-                numSelectedRows
-            )}?`}
+            <Flex direction={{ default: 'column' }}>
+                <Text>
+                    {`Are you sure you want to exclude deployments from ${numSelectedRows} policy ${pluralize(
+                        'violation',
+                        numSelectedRows
+                    )}?`}
+                </Text>
+                {!!error && (
+                    <Alert
+                        variant="danger"
+                        title="There was an error excluding one or more deployments"
+                        component="p"
+                        isInline
+                    >
+                        {getAxiosErrorMessage(error)}
+                    </Alert>
+                )}
+            </Flex>
         </Modal>
     );
 }

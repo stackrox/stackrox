@@ -12,8 +12,6 @@ const (
 	adminUsername = basic.DefaultUsername
 
 	autogenPasswordLength = 25
-
-	pwCharacters = `abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789`
 )
 
 // GenerateHtpasswd creates a password for admin user if it was not created during the install
@@ -38,9 +36,5 @@ func CreateHtpasswd(password string) ([]byte, error) {
 
 // CreatePassword generates an alphanumeric password
 func CreatePassword() string {
-	password, err := random.GenerateString(autogenPasswordLength, random.AlphanumericCharacters)
-	if err != nil {
-		panic(err)
-	}
-	return password
+	return random.GenerateString(autogenPasswordLength, random.AlphanumericCharacters)
 }

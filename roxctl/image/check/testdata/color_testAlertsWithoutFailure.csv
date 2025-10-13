@@ -11,4 +11,4 @@ policy 5,[33mMEDIUM[0m,-,policy 5 for testing,"- test violation 1
 - test violation 3
 - test violation 1",policy 5 for testing
 policy 6,[33mMEDIUM[0m,-,policy 6 for testing,- test violation 1,policy 6 for testing
-policy 7,[34;2mLOW[0m,-,policy 7 for testing,- test violation 1,policy 7 for testing
+policy 7,[34;2mLOW[0;22m,-,policy 7 for testing,- test violation 1,policy 7 for testing

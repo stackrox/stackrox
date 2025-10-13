@@ -1,4 +1,3 @@
-import { selectors } from '../../constants/SystemHealth';
 import withAuth from '../../helpers/basicAuth';
 import {
     integrationHealthVulnDefinitionsAlias,
@@ -6,7 +5,8 @@ import {
     visitSystemHealth,
 } from '../../helpers/systemHealth';
 
-const nbsp = '\u00A0';
+const statusSelector =
+    'div:has(.pf-v5-c-card__header:contains("StackRox Scanner Vulnerability Definitions"))';
 
 describe('System Health Vulnerability Definitions', () => {
     withAuth();
@@ -22,12 +22,7 @@ describe('System Health Vulnerability Definitions', () => {
         setClock(currentDatetime); // call before visit
         visitSystemHealth(staticResponseMap);
 
-        const { vulnDefinitions } = selectors;
-        cy.get(vulnDefinitions.header).should('have.text', 'Vulnerability Definitions');
-        cy.get(vulnDefinitions.text).should(
-            'have.text',
-            `Vulnerability definitions are up${nbsp}to${nbsp}date`
-        );
+        cy.get(`${statusSelector}:contains("up to date")`);
     });
 
     it('should have widget and out of date text and time', () => {
@@ -41,11 +36,6 @@ describe('System Health Vulnerability Definitions', () => {
         setClock(currentDatetime); // call before visit
         visitSystemHealth(staticResponseMap);
 
-        const { vulnDefinitions } = selectors;
-        cy.get(vulnDefinitions.header).should('have.text', 'Vulnerability Definitions');
-        cy.get(vulnDefinitions.text).should(
-            'have.text',
-            `Vulnerability definitions are out${nbsp}of${nbsp}date`
-        );
+        cy.get(`${statusSelector}:contains("out of date")`);
     });
 });

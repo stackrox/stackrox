@@ -1,3 +1,5 @@
+import type { AggregateFunc } from './table';
+
 /*
  * Examples of search filter object properties parsed from search query string:
  * 'Lifecycle Stage': 'BUILD' from 's[Lifecycle Stage]=BUILD
@@ -18,12 +20,25 @@ export type SearchEntry = {
     label: string; // an option ends with a colon
 };
 
-export type ApiSortOption = {
+export type ApiSortOptionSingle = {
     field: string;
+    aggregateBy?: {
+        aggregateFunc: AggregateFunc;
+        distinct?: boolean;
+    };
     reversed: boolean;
 };
+
+export type ApiSortOption = ApiSortOptionSingle | ApiSortOptionSingle[];
 
 export type GraphQLSortOption = {
     id: string;
     desc: boolean;
+};
+
+export type SearchQueryOptions = {
+    searchFilter?: SearchFilter;
+    sortOption?: ApiSortOption;
+    page: number;
+    perPage: number;
 };

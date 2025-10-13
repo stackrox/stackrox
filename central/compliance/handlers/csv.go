@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/compliance/datastore"
@@ -13,6 +14,8 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/csv"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 type options struct {
@@ -104,7 +107,7 @@ func (c *csvResults) addRow(row complianceRow) {
 		row.objectName,
 		row.controlName,
 		row.controlDescription,
-		stateToString(row.result.OverallState),
+		stateToString(row.result.GetOverallState()),
 	}
 
 	lines := make([]string, 0, len(row.result.GetEvidence()))
@@ -123,7 +126,7 @@ func CSVHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		options, err := parseOptions(r)
 		if err != nil {
-			csv.WriteError(w, http.StatusBadRequest, err)
+			csv.WriteError(w, errox.InvalidArgs.CausedBy(err))
 			return
 		}
 
@@ -134,7 +137,7 @@ func CSVHandler() http.HandlerFunc {
 			var unsupported []string
 			options.standardIDs, unsupported = standards.FilterSupported(options.standardIDs)
 			if len(unsupported) > 0 {
-				csv.WriteError(w, http.StatusBadRequest, standards.UnSupportedStandardsErr(unsupported...))
+				csv.WriteError(w, standards.UnSupportedStandardsErr(unsupported...))
 				return
 			}
 		}
@@ -142,7 +145,7 @@ func CSVHandler() http.HandlerFunc {
 		if len(options.clusterIDs) == 0 {
 			clusterIDs, err := getClusterIDs(r.Context())
 			if err != nil {
-				csv.WriteError(w, http.StatusInternalServerError, err)
+				csv.WriteError(w, errox.ServerError.CausedBy(err))
 				return
 			}
 			options.clusterIDs = clusterIDs
@@ -150,7 +153,7 @@ func CSVHandler() http.HandlerFunc {
 
 		data, err := complianceDS.GetLatestRunResultsBatch(r.Context(), options.clusterIDs, options.standardIDs, complianceDSTypes.WithMessageStrings)
 		if err != nil {
-			csv.WriteError(w, http.StatusInternalServerError, err)
+			csv.WriteError(w, errox.ServerError.CausedBy(err))
 			return
 		}
 		validResults, _ := datastore.ValidResultsAndSources(data)
@@ -159,7 +162,7 @@ func CSVHandler() http.HandlerFunc {
 		for _, d := range validResults {
 			controls := make(map[string]*v1.ComplianceControl)
 			standardName := d.GetRunMetadata().GetStandardId()
-			timestamp := csv.FromTimestamp(d.GetRunMetadata().GetFinishTimestamp())
+			timestamp := protocompat.ConvertTimestampToString(d.GetRunMetadata().GetFinishTimestamp(), time.RFC1123)
 			standard, ok, _ := standards.Standard(standardName)
 			if ok {
 				standardName = standard.GetMetadata().GetName()
@@ -199,7 +202,7 @@ func CSVHandler() http.HandlerFunc {
 				output.addAll(mcRow, controls, mcValue.GetControlResults())
 			}
 		}
-		output.Write(w, "compliance_export")
+		output.Write(w, "compliance_export.csv")
 	}
 }
 

@@ -1,4 +1,4 @@
-# # NOTE: Both central and scanner should be restarted if this secret is changed.
+# # NOTE: Central, Scanner, Scanner v4 Indexer, and Scanner v4 Matcher should be restarted if this secret is changed.
 # # While it is possible that some components will pick up the new proxy configuration
 # # without a restart, it cannot be guaranteed that this will apply to every possible
 # # integration etc.
@@ -9,6 +9,7 @@
 # # - *.stackrox, *.stackrox.svc
 # # - localhost, localhost.localdomain, 127.0.0.0/8, ::1
 # # - *.local
+# # - $KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT
 # omitDefaultExcludes: false
 # excludes:  # hostnames (may include * components) for which not to use a proxy, like in-cluster repositories.
 # - some.domain

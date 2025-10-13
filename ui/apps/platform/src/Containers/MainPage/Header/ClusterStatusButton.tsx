@@ -1,12 +1,13 @@
-import React, { CSSProperties, ReactElement } from 'react';
+import React from 'react';
+import type { CSSProperties, ReactElement } from 'react';
 import { Activity } from 'react-feather';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom-v5-compat';
 import { Tooltip } from '@patternfly/react-core';
 
 import { clustersBasePath } from 'routePaths';
 
-const thClassName = 'font-400 pf-u-pr-md pf-u-text-align-left';
-const tdClassName = 'pf-u-text-align-right';
+const thClassName = 'font-400 pf-v5-u-pr-md pf-v5-u-text-align-left';
+const tdClassName = 'pf-v5-u-text-align-right';
 
 type ClusterStatusButtonProps = {
     degraded?: number;
@@ -23,7 +24,7 @@ const ClusterStatusButton = ({
     degraded = 0,
     unhealthy = 0,
 }: ClusterStatusButtonProps): ReactElement => {
-    const history = useHistory();
+    const navigate = useNavigate();
     const hasDegradedClusters = degraded > 0;
     const hasUnhealthyClusters = unhealthy > 0;
     const hasProblems = hasDegradedClusters || hasUnhealthyClusters;
@@ -56,34 +57,31 @@ const ClusterStatusButton = ({
     let styleProblems: CSSProperties | undefined;
     /*
      * Explicit white background because the following did not work:
-     * `backgroundColor: var(--pf-global--BackgroundColor--100)`
+     * `backgroundColor: var(--pf-v5-global--BackgroundColor--100)`
      */
     if (hasUnhealthyClusters) {
         styleProblems = {
             backgroundColor: '#ffffff',
-            color: 'var(--pf-global--danger-color--100)',
+            color: 'var(--pf-v5-global--danger-color--100)',
         };
     } else if (hasDegradedClusters) {
         styleProblems = {
             backgroundColor: '#ffffff',
-            color: 'var(--pf-global--warning-color--100)',
+            color: 'var(--pf-v5-global--warning-color--100)',
         };
     }
 
     const onClick = () => {
-        history.push({
-            pathname: clustersBasePath,
-            search: '',
-            // TODO after ClustersPage sets search filter according to search query string in URL:
-            // If any clusters have problems, then Clusters list has search filter.
-            // search: hasUnhealthyClusters || hasDegradedClusters ? '?s[Cluster Health][0]=UNHEALTHY&s[Cluster Health][1]=DEGRADED' : '',
-        });
+        navigate(`${clustersBasePath}`);
+        // TODO after ClustersPage sets search filter according to search query string in URL:
+        // If any clusters have problems, then Clusters list has search filter.
+        // search: hasUnhealthyClusters || hasDegradedClusters ? '?s[Cluster Health][0]=UNHEALTHY&s[Cluster Health][1]=DEGRADED' : '',
     };
 
     // On masthead, black text on white background like a dropdown menu.
     const styleTooltip = {
-        '--pf-c-tooltip__content--Color': 'var(--pf-global--Color--100)',
-        '--pf-c-tooltip__content--BackgroundColor': 'var(--pf-global--BackgroundColor--100)',
+        '--pf-v5-c-tooltip__content--Color': 'var(--pf-v5-global--Color--100)',
+        '--pf-v5-c-tooltip__content--BackgroundColor': 'var(--pf-v5-global--BackgroundColor--100)',
     } as CSSProperties;
 
     // Using aria-label for accessibility instead of title to avoid two tooltips.

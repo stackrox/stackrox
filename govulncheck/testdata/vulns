@@ -1,0 +1,493 @@
+{
+  "config": {
+    "protocol_version": "v1.0.0",
+    "scanner_name": "govulncheck",
+    "scanner_version": "v1.1.0",
+    "db": "https://vuln.go.dev",
+    "db_last_modified": "2024-04-19T19:31:38Z",
+    "scan_level": "symbol",
+    "scan_mode": "binary"
+  }
+}
+{
+  "progress": {
+    "message": "Scanning your binary for known vulnerabilities..."
+  }
+}
+{
+  "osv": {
+    "schema_version": "1.3.1",
+    "id": "GO-2024-2610",
+    "modified": "2024-03-05T22:15:40Z",
+    "published": "2024-03-05T22:15:40Z",
+    "aliases": [
+      "CVE-2024-24785"
+    ],
+    "summary": "Errors returned from JSON marshaling may break template escaping in html/template",
+    "details": "If errors returned from MarshalJSON methods contain user controlled data, they may be used to break the contextual auto-escaping behavior of the html/template package, allowing for subsequent actions to inject unexpected content into templates.",
+    "affected": [
+      {
+        "package": {
+          "name": "stdlib",
+          "ecosystem": "Go"
+        },
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              },
+              {
+                "fixed": "1.21.8"
+              },
+              {
+                "introduced": "1.22.0-0"
+              },
+              {
+                "fixed": "1.22.1"
+              }
+            ]
+          }
+        ],
+        "ecosystem_specific": {
+          "imports": [
+            {
+              "path": "html/template",
+              "symbols": [
+                "Template.Execute",
+                "Template.ExecuteTemplate",
+                "escaper.commit",
+                "jsValEscaper"
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "references": [
+      {
+        "type": "REPORT",
+        "url": "https://go.dev/issue/65697"
+      },
+      {
+        "type": "FIX",
+        "url": "https://go.dev/cl/564196"
+      },
+      {
+        "type": "WEB",
+        "url": "https://groups.google.com/g/golang-announce/c/5pwGVUPoMbg"
+      }
+    ],
+    "credits": [
+      {
+        "name": "RyotaK (https://ryotak.net)"
+      }
+    ],
+    "database_specific": {
+      "url": "https://pkg.go.dev/vuln/GO-2024-2610"
+    }
+  }
+}
+{
+  "osv": {
+    "schema_version": "1.3.1",
+    "id": "GO-2024-2687",
+    "modified": "2024-04-16T21:40:19Z",
+    "published": "2024-04-03T21:12:01Z",
+    "aliases": [
+      "CVE-2023-45288",
+      "GHSA-4v7x-pqxf-cx7m"
+    ],
+    "summary": "HTTP/2 CONTINUATION flood in net/http",
+    "details": "An attacker may cause an HTTP/2 endpoint to read arbitrary amounts of header data by sending an excessive number of CONTINUATION frames.\n\nMaintaining HPACK state requires parsing and processing all HEADERS and CONTINUATION frames on a connection. When a request's headers exceed MaxHeaderBytes, no memory is allocated to store the excess headers, but they are still parsed.\n\nThis permits an attacker to cause an HTTP/2 endpoint to read arbitrary amounts of header data, all associated with a request which is going to be rejected. These headers can include Huffman-encoded data which is significantly more expensive for the receiver to decode than for an attacker to send.\n\nThe fix sets a limit on the amount of excess header frames we will process before closing a connection.",
+    "affected": [
+      {
+        "package": {
+          "name": "stdlib",
+          "ecosystem": "Go"
+        },
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              },
+              {
+                "fixed": "1.21.9"
+              },
+              {
+                "introduced": "1.22.0-0"
+              },
+              {
+                "fixed": "1.22.2"
+              }
+            ]
+          }
+        ],
+        "ecosystem_specific": {
+          "imports": [
+            {
+              "path": "net/http",
+              "symbols": [
+                "CanonicalHeaderKey",
+                "Client.CloseIdleConnections",
+                "Client.Do",
+                "Client.Get",
+                "Client.Head",
+                "Client.Post",
+                "Client.PostForm",
+                "Cookie.String",
+                "Cookie.Valid",
+                "Dir.Open",
+                "Error",
+                "Get",
+                "HandlerFunc.ServeHTTP",
+                "Head",
+                "Header.Add",
+                "Header.Del",
+                "Header.Get",
+                "Header.Set",
+                "Header.Values",
+                "Header.Write",
+                "Header.WriteSubset",
+                "ListenAndServe",
+                "ListenAndServeTLS",
+                "NewRequest",
+                "NewRequestWithContext",
+                "NotFound",
+                "ParseTime",
+                "Post",
+                "PostForm",
+                "ProxyFromEnvironment",
+                "ReadRequest",
+                "ReadResponse",
+                "Redirect",
+                "Request.AddCookie",
+                "Request.BasicAuth",
+                "Request.FormFile",
+                "Request.FormValue",
+                "Request.MultipartReader",
+                "Request.ParseForm",
+                "Request.ParseMultipartForm",
+                "Request.PostFormValue",
+                "Request.Referer",
+                "Request.SetBasicAuth",
+                "Request.UserAgent",
+                "Request.Write",
+                "Request.WriteProxy",
+                "Response.Cookies",
+                "Response.Location",
+                "Response.Write",
+                "ResponseController.EnableFullDuplex",
+                "ResponseController.Flush",
+                "ResponseController.Hijack",
+                "ResponseController.SetReadDeadline",
+                "ResponseController.SetWriteDeadline",
+                "Serve",
+                "ServeContent",
+                "ServeFile",
+                "ServeMux.ServeHTTP",
+                "ServeTLS",
+                "Server.Close",
+                "Server.ListenAndServe",
+                "Server.ListenAndServeTLS",
+                "Server.Serve",
+                "Server.ServeTLS",
+                "Server.SetKeepAlivesEnabled",
+                "Server.Shutdown",
+                "SetCookie",
+                "Transport.CancelRequest",
+                "Transport.Clone",
+                "Transport.CloseIdleConnections",
+                "Transport.RoundTrip",
+                "body.Close",
+                "body.Read",
+                "bodyEOFSignal.Close",
+                "bodyEOFSignal.Read",
+                "bodyLocked.Read",
+                "bufioFlushWriter.Write",
+                "cancelTimerBody.Close",
+                "cancelTimerBody.Read",
+                "checkConnErrorWriter.Write",
+                "chunkWriter.Write",
+                "connReader.Read",
+                "connectMethodKey.String",
+                "expectContinueReader.Close",
+                "expectContinueReader.Read",
+                "extraHeader.Write",
+                "fileHandler.ServeHTTP",
+                "fileTransport.RoundTrip",
+                "globalOptionsHandler.ServeHTTP",
+                "gzipReader.Close",
+                "gzipReader.Read",
+                "http2ClientConn.Close",
+                "http2ClientConn.Ping",
+                "http2ClientConn.RoundTrip",
+                "http2ClientConn.Shutdown",
+                "http2ConnectionError.Error",
+                "http2ErrCode.String",
+                "http2FrameHeader.String",
+                "http2FrameType.String",
+                "http2FrameWriteRequest.String",
+                "http2Framer.ReadFrame",
+                "http2Framer.WriteContinuation",
+                "http2Framer.WriteData",
+                "http2Framer.WriteDataPadded",
+                "http2Framer.WriteGoAway",
+                "http2Framer.WriteHeaders",
+                "http2Framer.WritePing",
+                "http2Framer.WritePriority",
+                "http2Framer.WritePushPromise",
+                "http2Framer.WriteRSTStream",
+                "http2Framer.WriteRawFrame",
+                "http2Framer.WriteSettings",
+                "http2Framer.WriteSettingsAck",
+                "http2Framer.WriteWindowUpdate",
+                "http2Framer.readMetaFrame",
+                "http2GoAwayError.Error",
+                "http2Server.ServeConn",
+                "http2Setting.String",
+                "http2SettingID.String",
+                "http2SettingsFrame.ForeachSetting",
+                "http2StreamError.Error",
+                "http2Transport.CloseIdleConnections",
+                "http2Transport.NewClientConn",
+                "http2Transport.RoundTrip",
+                "http2Transport.RoundTripOpt",
+                "http2bufferedWriter.Flush",
+                "http2bufferedWriter.Write",
+                "http2chunkWriter.Write",
+                "http2clientConnPool.GetClientConn",
+                "http2connError.Error",
+                "http2dataBuffer.Read",
+                "http2duplicatePseudoHeaderError.Error",
+                "http2gzipReader.Close",
+                "http2gzipReader.Read",
+                "http2headerFieldNameError.Error",
+                "http2headerFieldValueError.Error",
+                "http2noDialClientConnPool.GetClientConn",
+                "http2noDialH2RoundTripper.RoundTrip",
+                "http2pipe.Read",
+                "http2priorityWriteScheduler.CloseStream",
+                "http2priorityWriteScheduler.OpenStream",
+                "http2pseudoHeaderError.Error",
+                "http2requestBody.Close",
+                "http2requestBody.Read",
+                "http2responseWriter.Flush",
+                "http2responseWriter.FlushError",
+                "http2responseWriter.Push",
+                "http2responseWriter.SetReadDeadline",
+                "http2responseWriter.SetWriteDeadline",
+                "http2responseWriter.Write",
+                "http2responseWriter.WriteHeader",
+                "http2responseWriter.WriteString",
+                "http2roundRobinWriteScheduler.OpenStream",
+                "http2serverConn.CloseConn",
+                "http2serverConn.Flush",
+                "http2stickyErrWriter.Write",
+                "http2transportResponseBody.Close",
+                "http2transportResponseBody.Read",
+                "http2writeData.String",
+                "initALPNRequest.ServeHTTP",
+                "loggingConn.Close",
+                "loggingConn.Read",
+                "loggingConn.Write",
+                "maxBytesReader.Close",
+                "maxBytesReader.Read",
+                "onceCloseListener.Close",
+                "persistConn.Read",
+                "persistConnWriter.ReadFrom",
+                "persistConnWriter.Write",
+                "populateResponse.Write",
+                "populateResponse.WriteHeader",
+                "readTrackingBody.Close",
+                "readTrackingBody.Read",
+                "readWriteCloserBody.Read",
+                "redirectHandler.ServeHTTP",
+                "response.Flush",
+                "response.FlushError",
+                "response.Hijack",
+                "response.ReadFrom",
+                "response.Write",
+                "response.WriteHeader",
+                "response.WriteString",
+                "serverHandler.ServeHTTP",
+                "socksDialer.DialWithConn",
+                "socksUsernamePassword.Authenticate",
+                "stringWriter.WriteString",
+                "timeoutHandler.ServeHTTP",
+                "timeoutWriter.Write",
+                "timeoutWriter.WriteHeader",
+                "transportReadFromServerError.Error"
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "package": {
+          "name": "golang.org/x/net",
+          "ecosystem": "Go"
+        },
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              },
+              {
+                "fixed": "0.23.0"
+              }
+            ]
+          }
+        ],
+        "ecosystem_specific": {
+          "imports": [
+            {
+              "path": "golang.org/x/net/http2",
+              "symbols": [
+                "ClientConn.Close",
+                "ClientConn.Ping",
+                "ClientConn.RoundTrip",
+                "ClientConn.Shutdown",
+                "ConfigureServer",
+                "ConfigureTransport",
+                "ConfigureTransports",
+                "ConnectionError.Error",
+                "ErrCode.String",
+                "FrameHeader.String",
+                "FrameType.String",
+                "FrameWriteRequest.String",
+                "Framer.ReadFrame",
+                "Framer.WriteContinuation",
+                "Framer.WriteData",
+                "Framer.WriteDataPadded",
+                "Framer.WriteGoAway",
+                "Framer.WriteHeaders",
+                "Framer.WritePing",
+                "Framer.WritePriority",
+                "Framer.WritePushPromise",
+                "Framer.WriteRSTStream",
+                "Framer.WriteRawFrame",
+                "Framer.WriteSettings",
+                "Framer.WriteSettingsAck",
+                "Framer.WriteWindowUpdate",
+                "Framer.readMetaFrame",
+                "GoAwayError.Error",
+                "ReadFrameHeader",
+                "Server.ServeConn",
+                "Setting.String",
+                "SettingID.String",
+                "SettingsFrame.ForeachSetting",
+                "StreamError.Error",
+                "Transport.CloseIdleConnections",
+                "Transport.NewClientConn",
+                "Transport.RoundTrip",
+                "Transport.RoundTripOpt",
+                "bufferedWriter.Flush",
+                "bufferedWriter.Write",
+                "chunkWriter.Write",
+                "clientConnPool.GetClientConn",
+                "connError.Error",
+                "dataBuffer.Read",
+                "duplicatePseudoHeaderError.Error",
+                "gzipReader.Close",
+                "gzipReader.Read",
+                "headerFieldNameError.Error",
+                "headerFieldValueError.Error",
+                "noDialClientConnPool.GetClientConn",
+                "noDialH2RoundTripper.RoundTrip",
+                "pipe.Read",
+                "priorityWriteScheduler.CloseStream",
+                "priorityWriteScheduler.OpenStream",
+                "pseudoHeaderError.Error",
+                "requestBody.Close",
+                "requestBody.Read",
+                "responseWriter.Flush",
+                "responseWriter.FlushError",
+                "responseWriter.Push",
+                "responseWriter.SetReadDeadline",
+                "responseWriter.SetWriteDeadline",
+                "responseWriter.Write",
+                "responseWriter.WriteHeader",
+                "responseWriter.WriteString",
+                "roundRobinWriteScheduler.OpenStream",
+                "serverConn.CloseConn",
+                "serverConn.Flush",
+                "stickyErrWriter.Write",
+                "transportResponseBody.Close",
+                "transportResponseBody.Read",
+                "writeData.String"
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "references": [
+      {
+        "type": "REPORT",
+        "url": "https://go.dev/issue/65051"
+      },
+      {
+        "type": "FIX",
+        "url": "https://go.dev/cl/576155"
+      },
+      {
+        "type": "WEB",
+        "url": "https://groups.google.com/g/golang-announce/c/YgW0sx8mN3M"
+      }
+    ],
+    "credits": [
+      {
+        "name": "Bartek Nowotarski (https://nowotarski.info/)"
+      }
+    ],
+    "database_specific": {
+      "url": "https://pkg.go.dev/vuln/GO-2024-2687"
+    }
+  }
+}
+{
+  "finding": {
+    "osv": "GO-2024-2687",
+    "fixed_version": "v1.21.9",
+    "trace": [
+      {
+        "module": "stdlib",
+        "version": "v1.21.8"
+      }
+    ]
+  }
+}
+{
+  "finding": {
+    "osv": "GO-2024-2687",
+    "fixed_version": "v1.21.9",
+    "trace": [
+      {
+        "module": "stdlib",
+        "version": "v1.21.8",
+        "package": "net/http"
+      }
+    ]
+  }
+}
+{
+  "finding": {
+    "osv": "GO-2024-2687",
+    "fixed_version": "v1.21.9",
+    "trace": [
+      {
+        "module": "stdlib",
+        "version": "v1.21.8",
+        "package": "net/http",
+        "function": "Flush",
+        "receiver": "ResponseController"
+      }
+    ]
+  }
+}

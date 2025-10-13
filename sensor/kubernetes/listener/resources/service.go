@@ -4,6 +4,10 @@ import (
 	routeV1 "github.com/openshift/api/route/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/sensor/common/selector"
+	"github.com/stackrox/rox/sensor/common/service"
+	"github.com/stackrox/rox/sensor/common/store/resolver"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -15,13 +19,13 @@ type serviceWithRoutes struct {
 
 type serviceWrap struct {
 	*v1.Service
-	selector selector
+	selector selector.Selector
 }
 
 func wrapService(svc *v1.Service) *serviceWrap {
 	return &serviceWrap{
 		Service:  svc,
-		selector: createSelector(svc.Spec.Selector, emptyMatchesNothing()),
+		selector: selector.CreateSelector(svc.Spec.Selector, selector.EmptyMatchesNothing()),
 	}
 }
 
@@ -39,13 +43,13 @@ func getPortMatchFunc(port intstr.IntOrString) func(servicePort *v1.ServicePort)
 }
 
 func exposureInfoFromPort(template *storage.PortConfig_ExposureInfo, port v1.ServicePort) *storage.PortConfig_ExposureInfo {
-	out := template.Clone()
+	out := template.CloneVT()
 	out.ServicePort = port.Port
 	out.NodePort = port.NodePort
 	return out
 }
 
-func (s *serviceWithRoutes) exposure() map[portRef][]*storage.PortConfig_ExposureInfo {
+func (s *serviceWithRoutes) exposure() map[service.PortRef][]*storage.PortConfig_ExposureInfo {
 	if s.Spec.Type == v1.ServiceTypeExternalName {
 		return nil
 	}
@@ -71,9 +75,9 @@ func (s *serviceWithRoutes) exposure() map[portRef][]*storage.PortConfig_Exposur
 		}
 	}
 
-	result := make(map[portRef][]*storage.PortConfig_ExposureInfo, len(s.Spec.Ports))
+	result := make(map[service.PortRef][]*storage.PortConfig_ExposureInfo, len(s.Spec.Ports))
 	for _, port := range s.Spec.Ports {
-		ref := portRefOf(port)
+		ref := service.PortRefOf(port)
 		exposureInfo := exposureInfoFromPort(exposureTemplate, port)
 		result[ref] = append(result[ref], exposureInfo)
 	}
@@ -97,7 +101,7 @@ func (s *serviceWithRoutes) exposure() map[portRef][]*storage.PortConfig_Exposur
 				if !matchFunc(&s.Spec.Ports[i]) {
 					continue
 				}
-				ref := portRefOf(port)
+				ref := service.PortRefOf(port)
 				exposureInfo := exposureInfoFromPort(routeExposureTemplate, port)
 				result[ref] = append(result[ref], exposureInfo)
 				break // Only one port will ever match
@@ -106,7 +110,7 @@ func (s *serviceWithRoutes) exposure() map[portRef][]*storage.PortConfig_Exposur
 			// This is the case where route.Spec.Port is not specified, in which case
 			// the route targets all ports on the service.
 			for _, port := range s.Spec.Ports {
-				ref := portRefOf(port)
+				ref := service.PortRefOf(port)
 				exposureInfo := exposureInfoFromPort(routeExposureTemplate, port)
 				result[ref] = append(result[ref], exposureInfo)
 			}
@@ -116,7 +120,7 @@ func (s *serviceWithRoutes) exposure() map[portRef][]*storage.PortConfig_Exposur
 	return result
 }
 
-// serviceDispatcher handles servidce resource events.
+// serviceDispatcher handles service resource events.
 type serviceDispatcher struct {
 	serviceStore           *serviceStore
 	deploymentStore        *DeploymentStore
@@ -134,13 +138,13 @@ func newServiceDispatcher(serviceStore *serviceStore, deploymentStore *Deploymen
 	}
 }
 
-// Process processes a service resource event, and returns the sensor events to emit in response.
-func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) []*central.SensorEvent {
+// ProcessEvent processes a service resource event, and returns the sensor events to emit in response.
+func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
 	svc := obj.(*v1.Service)
 	if action == central.ResourceAction_CREATE_RESOURCE {
 		return sh.processCreate(svc)
 	}
-	var sel selector
+	var sel selector.Selector
 	oldWrap := sh.serviceStore.getService(svc.Namespace, svc.Name)
 	if oldWrap != nil {
 		sel = oldWrap.selector
@@ -149,7 +153,7 @@ func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.Res
 		newWrap := wrapService(svc)
 		sh.serviceStore.addOrUpdateService(newWrap)
 		if sel != nil {
-			sel = or(sel, newWrap.selector)
+			sel = selector.Or(sel, newWrap.selector)
 		} else {
 			sel = newWrap.selector
 		}
@@ -164,19 +168,16 @@ func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.Res
 	return sh.updateDeploymentsFromStore(svc.Namespace, sel)
 }
 
-func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sel selector) []*central.SensorEvent {
-	events := sh.portExposureReconciler.UpdateExposuresForMatchingDeployments(namespace, sel)
-	sh.endpointManager.OnServiceUpdateOrRemove(namespace, sel)
-	return events
+func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sel selector.Selector) *component.ResourceEvent {
+	var message component.ResourceEvent
+	message.AddDeploymentReference(resolver.ResolveDeploymentLabels(namespace, sel))
+	return &message
 }
 
-func (sh *serviceDispatcher) processCreate(svc *v1.Service) []*central.SensorEvent {
+func (sh *serviceDispatcher) processCreate(svc *v1.Service) *component.ResourceEvent {
 	svcWrap := wrapService(svc)
 	sh.serviceStore.addOrUpdateService(svcWrap)
-	events := sh.portExposureReconciler.UpdateExposureOnServiceCreate(serviceWithRoutes{
-		serviceWrap: svcWrap,
-		routes:      sh.serviceStore.getRoutesForService(svcWrap),
-	})
-	sh.endpointManager.OnServiceCreate(svcWrap)
-	return events
+	var message component.ResourceEvent
+	message.AddDeploymentReference(resolver.ResolveDeploymentLabels(svc.GetNamespace(), svcWrap.selector))
+	return &message
 }

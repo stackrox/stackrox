@@ -1,4 +1,4 @@
-name: Cut RC
+name: "RELEASE: Cut RC"
 on:
   milestone:
     types:
@@ -31,6 +31,11 @@ on:
         required: true
         default: true
         type: boolean
+      check-jira-issues:
+        description: Check Jira issues for current release
+        required: true
+        default: true
+        type: boolean
 
 env:
   main_branch: ${{github.event.repository.default_branch}}
@@ -39,18 +44,19 @@ env:
   ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
   GH_TOKEN: ${{ github.token }}
   GH_NO_UPDATE_NOTIFIER: 1
+  TIMEOUT_WAIT_FOR_IMAGES_SECONDS: 3600
 
 run-name: >-
   ${{
     format('Cut {0}{1}{2}',
       github.event.milestone.title,
       inputs.version,
-      fromJSON('[" (dry-run)", ""]')[inputs.dry-run != true]
+      fromJSON('[" (dry-run)", ""]')[github.event.inputs.dry-run != 'true']
     )
   }}
 
-# Ensure that only a single release automation workflow can run at a time.
-concurrency: Release automation
+# Ensure that only a single automation workflow can run at a time for each release.
+concurrency: Release automation ${{ inputs.version }}
 
 jobs:
   properties:
@@ -85,6 +91,7 @@ jobs:
     uses: ./.github/workflows/variables.yml
     with:
       version: ${{format('{0}{1}', github.event.milestone.title, github.event.inputs.version)}}
+      assert-format: A.B.C[-N]-rc.D
 
   check-jira:
     name: Check Jira tickets for release
@@ -92,6 +99,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Query JIRA
+        # Checking unequal with "false" because closed milestones have unset input values.
+        if: github.event.inputs.check-jira-issues != 'false'
         env:
           JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
         run: |
@@ -101,7 +110,7 @@ jobs:
             "${{needs.properties.outputs.jira-projects}}" \
             "${{needs.variables.outputs.release}}" \
             "${{needs.variables.outputs.patch}}" \
-            "${{needs.variables.outputs.release-patch}}"
+            "${{needs.variables.outputs.named-release-patch}}"
 
   postpone-prs:
     name: Postpone open PRs
@@ -166,10 +175,10 @@ jobs:
     needs: [variables, properties, postpone-prs, check-jira]
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
         with:
           ref: ${{needs.variables.outputs.branch}}
-          token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+          token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
       - name: Initialize mandatory git config
         run: |
           git config user.name "${{github.event.sender.login}}"
@@ -185,52 +194,49 @@ jobs:
             cherry-pick \
             "${{needs.variables.outputs.milestone}}" \
             "${{needs.variables.outputs.branch}}" \
-            "${{needs.variables.outputs.release-patch}}"
+            "${{needs.variables.outputs.named-release-patch}}"
 
       - name: Post to Slack about picked cherries
         if: failure() && steps.cherry-pick.outputs.bad-cherries != ''
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: slackapi/slack-github-action@v1.23.0
+        uses: slackapi/slack-github-action@v2.1.1
         with:
-          channel-id: ${{ needs.properties.outputs.slack-channel }}
-          payload: >-
-            { "blocks": [
-
-            { "type": "section", "text": { "type": "mrkdwn", "text":
-            ":${{ fromJSON('["desert", "red_circle"]')[github.event.inputs.dry-run != 'true'] }}:
-            *Couldn't close upstream milestone ${{needs.variables.outputs.milestone}} on <${{github.server_url}}/${{github.repository}}|${{github.repository}}>.*" }},
-
-            { "type": "section", "text": { "type": "mrkdwn", "text":
-            "*Couldn't cherry-pick the following PRs
-            to the release branch:*\n\n${{steps.cherry-pick.outputs.bad-cherries}}" }},
-
-            { "type": "divider" },
-
-            { "type": "section", "text": { "type": "mrkdwn", "text":
-            ":arrow_right: *Please assist the PR assignees in merging their changes to `${{needs.variables.outputs.branch}}` branch
-            and then re-run failed jobs of the <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|workflow run>.*" }},
-
-            { "type": "section", "text": { "type": "mrkdwn", "text":
-            ">
-            Repository: <${{github.server_url}}/${{github.repository}}|${{github.repository}}>\n>
-            Milestone: <${{github.event.milestone.html_url}}|${{needs.variables.outputs.milestone}}>\n>
-            Workflow: <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>" }}
-            ]}
-
-      - name: Update docs submodule
-        run: |
-          git submodule update --init --remote -- docs/content
-          git add docs/content
-          if ! git diff-index --quiet HEAD; then
-            git commit -m "Update docs submodule for milestone ${{needs.variables.outputs.milestone}}"
-            echo "Documentation submodule has been updated" >> "$GITHUB_STEP_SUMMARY"
-          fi
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: |
+            channel: "${{ needs.properties.outputs.slack-channel }}"
+            text: "Couldn't close upstream milestone ${{needs.variables.outputs.milestone}} on <${{github.server_url}}/${{github.repository}}|${{github.repository}}>. See workflow run <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}> for details."
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: |
+                    :${{ fromJSON('["desert", "red_circle"]')[github.event.inputs.dry-run != 'true'] }}:
+                    *Couldn't close upstream milestone ${{needs.variables.outputs.milestone}} on <${{github.server_url}}/${{github.repository}}|${{github.repository}}>.*
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: |
+                    *Couldn't cherry-pick the following PRs to the release branch:*
+                    ${{steps.cherry-pick.outputs.bad-cherries}}
+              - type: "divider"
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: |
+                    :arrow_right: *Please assist the PR assignees in merging their changes to `${{needs.variables.outputs.branch}}` branch
+                    and then re-run failed jobs of the <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|workflow run>.*
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: |
+                    > Repository: <${{github.server_url}}/${{github.repository}}|${{github.repository}}>
+                    > Milestone: <${{github.event.milestone.html_url}}|${{needs.variables.outputs.milestone}}>
+                    > Workflow: <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>
 
       - name: Tag release branch with "${{needs.variables.outputs.milestone}}"
         id: tag
         env:
-          GH_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
         run: |
           set -uo pipefail
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
@@ -240,7 +246,7 @@ jobs:
       - name: Create next milestone
         if: env.DRY_RUN == 'false'
         env:
-          GH_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
         run: |
           set -u
           if ! http_code=$(gh api --silent -X POST \
@@ -262,415 +268,75 @@ jobs:
         id: pre-release
         if: env.DRY_RUN == 'false'
         env:
-          GH_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
         run: |
           set -uo pipefail
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
-            draft-release-notes \
-            "${{ needs.variables.outputs.release-patch }}" \
-            "${{ needs.variables.outputs.branch }}" \
-            "RELEASE_NOTES_GENERATED.md"
-          URL=$(gh release create "${{needs.variables.outputs.milestone}}" \
-            --prerelease \
-            --notes-file RELEASE_NOTES_GENERATED.md \
-            --repo "${{ github.repository }}" \
-            --target "${{ needs.variables.outputs.branch }}")
-          echo "url=$URL" >> "$GITHUB_OUTPUT"
+            create-release \
+            "${{ needs.variables.outputs.milestone }}" \
+            "true"
 
       - run: |
           echo "Created GitHub pre-release [${{needs.variables.outputs.milestone}}](${{steps.pre-release.outputs.url}})" >> "$GITHUB_STEP_SUMMARY"
       - name: Post to Slack
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: slackapi/slack-github-action@v1.23.0
+        uses: slackapi/slack-github-action@v2.1.1
         with:
-          channel-id: ${{ needs.properties.outputs.slack-channel }}
-          payload: >-
-            { "blocks": [
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: |
+            channel: "${{ needs.properties.outputs.slack-channel }}"
+            text: "Upstream release candidate <${{steps.pre-release.outputs.url}}|${{needs.variables.outputs.milestone}}> of <${{github.server_url}}/${{github.repository}}|${{github.repository}}> has been published on GitHub"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: |
+                    :${{ fromJSON('["desert", "white_check_mark"]')[github.event.inputs.dry-run != 'true'] }}: *Upstream release candidate <${{steps.pre-release.outputs.url}}|${{needs.variables.outputs.milestone}}> of <${{github.server_url}}/${{github.repository}}|${{github.repository}}> has been published on GitHub*
+              - type: "divider"
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: |
+                    :arrow_right: Once all checks pass and you're ready for release, run the <${{ github.server_url }}/${{ github.repository }}/actions/workflows/finish-release.yml|Finish Release> workflow and delete the `${{ needs.variables.outputs.next-milestone }}` milestone to avoid confusion.
 
-            { "type": "section", "text": { "type": "mrkdwn", "text":
-            ":${{ fromJSON('["desert", "white_check_mark"]')[github.event.inputs.dry-run != 'true'] }}:
-            *Upstream release candidate <${{steps.pre-release.outputs.url}}|${{needs.variables.outputs.rc}}>
-            of <${{github.server_url}}/${{github.repository}}|${{github.repository}}> has been published on GitHub*" }},
-
-            { "type": "divider" },
-
-            { "type": "section", "text": { "type": "mrkdwn", "text":
-            ":arrow_right: Once all checks pass and you're ready for release,
-            run the <${{ github.server_url }}/${{ github.repository }}/actions/workflows/finish-release.yml|Finish Release>
-            workflow and delete the `${{ needs.variables.outputs.next-milestone }}`
-            milestone to avoid confusion." }}
-            ]}
-
-  wait-for-images:
-    name: Wait for images on Quay.io
-    needs: [variables, cut-rc]
+  trim-cluster-names:
     runs-on: ubuntu-latest
-    if: >- # Skip if no clusters are going to be created.
+    outputs:
+      cluster-with-fake-load-name-cleaned: ${{ steps.cluster-names.outputs.cluster-with-fake-load-name-cleaned }}
+      cluster-with-real-load-name-cleaned: ${{ steps.cluster-names.outputs.cluster-with-real-load-name-cleaned }}
+    env:
+      CLUSTER_WITH_FAKE_LOAD_NAME: lfl-${{format('{0}{1}', github.event.milestone.title, github.event.inputs.version)}}
+      CLUSTER_WITH_REAL_LOAD_NAME: lrl-${{format('{0}{1}', github.event.milestone.title, github.event.inputs.version)}}
+    steps:
+      - name: Trim and clean cluster names
+        id: cluster-names
+        run: |
+          # Cluster names are cropped to infra's max length and dots replaced with dashes.
+          # Latter is to avoid informing release engineers of incorrect cluster names.
+          CLEANED_CLUSTER_WITH_FAKE_LOAD_NAME="$(echo "${CLUSTER_WITH_FAKE_LOAD_NAME:0:28}" | tr '.' '-')"
+          echo "cluster-with-fake-load-name-cleaned=${CLEANED_CLUSTER_WITH_FAKE_LOAD_NAME}" >> "${GITHUB_OUTPUT}"
+
+          CLEANED_CLUSTER_WITH_REAL_LOAD_NAME="$(echo "${CLUSTER_WITH_REAL_LOAD_NAME:0:28}" | tr '.' '-')"
+          echo "cluster-with-real-load-name-cleaned=${CLEANED_CLUSTER_WITH_REAL_LOAD_NAME}" >> "${GITHUB_OUTPUT}"
+
+  clusters:
+    name: Setup demo clusters
+    secrets: inherit
+    needs: [variables, cut-rc, trim-cluster-names]
+    uses: stackrox/actions/.github/workflows/create-demo-clusters.yml@v1
+    if: >- # Skip if no clusters are going to be created. Checking unequal with "false" because closed milestones have unset input values.
       github.event.inputs.create-k8s-cluster != 'false' ||
       github.event.inputs.create-os4-cluster != 'false' ||
       needs.variables.outputs.rc == '1' &&
       github.event.inputs.create-long-cluster != 'false'
-    strategy:
-      matrix:
-        image: [main, scanner, scanner-db, collector]
-    steps:
-      - name: Wait for the ${{matrix.image}} image
-        uses: stackrox/actions/release/wait-for-image@v1
-        with:
-          token: "${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}"
-          image: "rhacs-eng/${{ matrix.image }}:${{ needs.variables.outputs.milestone }}"
-          # Do not wait if running dry
-          interval: ${{ fromJSON('["30", "0"]')[env.DRY_RUN == 'true'] }}
-
-  create-k8s-cluster:
-    name: Create k8s cluster
-    needs: [variables, wait-for-images]
-    # Cannot use env.DRY_RUN here. `github.event.inputs.*` can be 'true', 'false' or empty.
-    if: github.event.inputs.dry-run != 'true' && github.event.inputs.create-k8s-cluster != 'false'
-    runs-on: ubuntu-latest
-    steps:
-    - uses: stackrox/actions/infra/create-cluster@v1
-      with:
-        token: ${{ secrets.INFRA_TOKEN }}
-        flavor: qa-demo
-        name: qa-k8s-${{ needs.variables.outputs.milestone }}
-        args: main-image=quay.io/rhacs-eng/main:${{ needs.variables.outputs.milestone }}
-        lifespan: 48h
-
-  notify-k8s-cluster:
-    name: Notify about K8s cluster creation
-    needs: [variables, properties, create-k8s-cluster]
-    runs-on: ubuntu-latest
-    env:
-      NAME: qa-k8s-${{ needs.variables.outputs.milestone }}
-    steps:
-      - name: Determine demo url and cluster name
-        id: get_demo_artifacts
-        run: |
-          echo "cluster-name=${NAME//./-}" >> "$GITHUB_OUTPUT"
-          echo "url=https://${NAME//[.-]/}.demo.stackrox.com/login" >> "$GITHUB_OUTPUT"
-      - name: Post to Slack
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: slackapi/slack-github-action@v1.23.0
-        with:
-          channel-id: ${{ needs.properties.outputs.slack-channel }}
-          payload: >-
-            {
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": ":tada: *<https://infra.rox.systems/cluster/${{ steps.get_demo_artifacts.outputs.cluster-name }}|QA demo cluster> `${{ steps.get_demo_artifacts.outputs.cluster-name }}` is being created for ${{ needs.variables.outputs.milestone }} milestone of <${{ github.server_url }}/${{ github.repository }}|${{ github.repository }}>.*"
-                  }
-                },
-                {
-                  "type": "divider"
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": ":arrow_right: When it is ready in ca. 20 minutes, a notification will be posted in #infra-notifications channel, and the cluster will be accessible at ${{ steps.get_demo_artifacts.outputs.url }} with your @stackrox.com Google account."
-                  }
-                }
-              ]
-            }
-
-  create-os4-cluster:
-    name: Create OS4 cluster
-    needs: [variables, wait-for-images]
-    # Cannot use env.DRY_RUN here. `github.event.inputs.*` can be 'true', 'false' or empty.
-    if: github.event.inputs.dry-run != 'true' && github.event.inputs.create-os4-cluster != 'false'
-    runs-on: ubuntu-latest
-    steps:
-    - uses: stackrox/actions/infra/create-cluster@v1
-      with:
-        token: ${{ secrets.INFRA_TOKEN }}
-        flavor: openshift-4-demo
-        name: openshift-4-demo-${{ needs.variables.outputs.milestone }}
-        args: openshift-version=ocp/stable-4.10
-        lifespan: 48h
-        wait: true
-
-  patch-os4-cluster:
-    name: Patch OS4 cluster
-    needs: [variables, create-os4-cluster]
-    runs-on: ubuntu-latest
-    env:
-      NAME: openshift-4-demo-${{needs.variables.outputs.milestone}}
-      TAG: ${{needs.variables.outputs.milestone}}
-      KUBECONFIG: artifacts/kubeconfig
-      INFRA_TOKEN: ${{secrets.INFRA_TOKEN}}
-    steps:
-      - uses: stackrox/actions/infra/install-infractl@v1
-      - name: Test readiness
-        run: |
-          STATUS=$(infractl get "${NAME//./-}" --json | jq -r .Status)
-          if [ "$STATUS" != "READY" ]; then
-            exit 1
-          fi
-      - name: Download artifacts
-        id: artifacts
-        run: |
-          infractl artifacts "${NAME//./-}" -d artifacts >> "$GITHUB_STEP_SUMMARY"
-      - name: Download Openshift CLI
-        run: |
-          URL=$(sed "s/console-/downloads-/" artifacts/url-openshift)
-          curl --fail -o oc.tar -k -L "$URL/amd64/linux/oc.tar"
-          tar xf oc.tar
-      - name: Patch central
-        run: |
-          ./oc -n stackrox set image deploy/central central="quay.io/rhacs-eng/main:$TAG"
-      - name: Patch scanner
-        run: |
-          ./oc -n stackrox patch hpa/scanner -p '{"spec":{"minReplicas":2}}'
-          ./oc -n stackrox set image deploy/scanner scanner="quay.io/rhacs-eng/scanner:$TAG"
-          ./oc -n stackrox set image deploy/scanner-db db="quay.io/rhacs-eng/scanner-db:$TAG"
-          ./oc -n stackrox set image deploy/scanner-db init-db="quay.io/rhacs-eng/scanner-db:$TAG"
-      - name: Patch sensor
-        env:
-          PATCH: >-
-            {
-              "spec": {
-                "template": {
-                  "spec": {
-                    "containers": [ {
-                      "name":"sensor",
-                      "env": [ {
-                        "name": "POD_NAMESPACE",
-                        "valueFrom": { "fieldRef": { "fieldPath": "metadata.namespace"}}
-                      } ],
-                      "volumeMounts": [
-                        { "name": "cache", "mountPath": "/var/cache/stackrox" }
-                      ]
-                    } ],
-                    "volumes": [ {
-                      "name": "cache","emptyDir": {}
-                    } ]
-                  }
-                }
-              }
-            }
-        run: |
-          ./oc -n stackrox patch deploy/sensor -p '${{env.PATCH}}'
-          ./oc -n stackrox set image deploy/sensor sensor="quay.io/rhacs-eng/main:$TAG"
-      - name: Patch collector
-        run: |
-          ./oc -n stackrox set image ds/collector compliance="quay.io/rhacs-eng/main:$TAG"
-          ./oc -n stackrox set image ds/collector collector="quay.io/rhacs-eng/collector:$TAG"
-          ./oc -n stackrox set image deploy/admission-control admission-control="quay.io/rhacs-eng/main:$TAG"
-
-  notify-os4-cluster:
-    name: Notify about Openshift cluster creation
-    needs: [variables, properties, patch-os4-cluster]
-    runs-on: ubuntu-latest
-    env:
-      NAME: openshift-4-demo-${{ needs.variables.outputs.milestone }}
-    steps:
-      - name: Determine demo url and cluster name
-        id: get_demo_artifacts
-        run: |
-          echo "cluster-name=${NAME//./-}" >> "$GITHUB_OUTPUT"
-          echo "url=https://central-stackrox.apps.${NAME//./-}.openshift.infra.rox.systems/login" >> "$GITHUB_OUTPUT"
-      - name: Post to Slack
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: slackapi/slack-github-action@v1.23.0
-        with:
-          channel-id: ${{ needs.properties.outputs.slack-channel }}
-          payload: >-
-            {
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": ":tada: *<https://infra.rox.systems/cluster/${{ steps.get_demo_artifacts.outputs.cluster-name }}|Openshift 4 Demo cluster> `${{ steps.get_demo_artifacts.outputs.cluster-name }}` was created for ${{ needs.variables.outputs.milestone }} milestone of <${{ github.server_url }}/${{ github.repository }}|${{ github.repository }}>.*"
-                  }
-                },
-                {
-                  "type": "divider"
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": ":arrow_right: The cluster is accessible at ${{ steps.get_demo_artifacts.outputs.url }}. You can find the admin password and kubeconfig with `infractl artifacts ${{ steps.get_demo_artifacts.outputs.cluster-name }}`."
-                  }
-                }
-              ]
-            }
-
-  create-long-running-cluster:
-    name: Create GKE long-running cluster
-    needs: [variables, wait-for-images]
-    # Cannot use env.DRY_RUN here. `github.event.inputs.*` can be 'true', 'false' or empty.
-    if: >-
-      github.event.inputs.dry-run != 'true' &&
-      needs.variables.outputs.rc == '1' &&
-      github.event.inputs.create-long-cluster != 'false'
-    runs-on: ubuntu-latest
-    steps:
-    - uses: stackrox/actions/infra/create-cluster@v1
-      with:
-        token: ${{ secrets.INFRA_TOKEN }}
-        flavor: gke-default
-        name: gke-long-running-${{ needs.variables.outputs.milestone }}
-        lifespan: 168h
-        args: nodes=5,machine-type=e2-standard-8
-        wait: true
-
-  patch-long-running-cluster:
-    name: Patch long-running cluster
-    needs: [variables, properties, create-long-running-cluster]
-    runs-on: ubuntu-latest
-    env:
-      NAME: gke-long-running-${{ needs.variables.outputs.milestone }}
-      TAG: ${{needs.variables.outputs.milestone}}
-      KUBECONFIG: artifacts/kubeconfig
-      INFRA_TOKEN: ${{secrets.INFRA_TOKEN}}
-    steps:
-      - uses: stackrox/actions/infra/install-infractl@v1
-      - name: Test readiness
-        run: |
-          STATUS=$(infractl get "${NAME//./-}" --json | jq -r .Status)
-          if [ "$STATUS" != "READY" ]; then
-            exit 1
-          fi
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v2.0
-      - name: Check out code
-        uses: actions/checkout@v3
-        with:
-          ref: ${{needs.variables.outputs.milestone}}
-          repository: stackrox/stackrox
-      - uses: 'google-github-actions/auth@v0'
-        with:
-          credentials_json: '${{ secrets.GCP_RELEASE_AUTOMATION_SA }}'
-      - name: Download artifacts
-        id: artifacts
-        run: |
-          infractl artifacts "${NAME//./-}" -d artifacts >> "$GITHUB_STEP_SUMMARY"
-      - name: Launch central
-        id: launch_central
-        env:
-          MAIN_IMAGE_TAG: ${{needs.variables.outputs.milestone}} # Release version, e.g. 3.63.0-rc.2.
-          API_ENDPOINT: localhost:8000
-          STORAGE: pvc # Backing storage
-          STORAGE_CLASS: faster # Runs on an SSD type
-          STORAGE_SIZE: 100 # 100G
-          MONITORING_SUPPORT: true # Runs monitoring
-          LOAD_BALANCER: lb
-          ROX_ADMIN_USERNAME: admin
-          PAGERDUTY_INTEGRATION_KEY: ${{ secrets.RELEASE_MANAGEMENT_PAGERDUTY_INTEGRATION_KEY }}
-          REGISTRY_USERNAME: ${{ secrets.QUAY_REGISTRY_USERNAME_RO }}
-          REGISTRY_PASSWORD: ${{ secrets.QUAY_REGISTRY_PASSWORD_RO }}
-        run: |
-          set -uo pipefail
-          ./deploy/k8s/central.sh
-          kubectl -n stackrox port-forward deploy/central 8000:8443 > /dev/null 2>&1 &
-          sleep 20
-
-          ./deploy/k8s/sensor.sh
-
-          kubectl -n stackrox set env deploy/sensor MUTEX_WATCHDOG_TIMEOUT_SECS=0
-          kubectl -n stackrox set env deploy/sensor ROX_FAKE_KUBERNETES_WORKLOAD=long-running
-          kubectl -n stackrox patch deploy/sensor -p '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"requests":{"memory":"3Gi","cpu":"2"},"limits":{"memory":"12Gi","cpu":"4"}}}]}}}}'
-
-          kubectl -n stackrox set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=0
-          kubectl -n stackrox patch deploy/central -p '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"requests":{"memory":"3Gi","cpu":"2"},"limits":{"memory":"12Gi","cpu":"4"}}}]}}}}'
-
-          ROX_ADMIN_PASSWORD=$(cat deploy/k8s/central-deploy/password)
-          echo "::add-mask::$ROX_ADMIN_PASSWORD"
-          CENTRAL_IP=$(kubectl -n stackrox get svc/central-loadbalancer -o json | jq -r '.status.loadBalancer.ingress[0] | .ip // .hostname')
-          kubectl -n stackrox create secret generic access-rhacs --from-literal="username=${ROX_ADMIN_USERNAME}" --from-literal="password=${ROX_ADMIN_PASSWORD}" --from-literal="central_url=https://${CENTRAL_IP}"
-          echo "rox_password=${ROX_ADMIN_PASSWORD}" >> "$GITHUB_OUTPUT"
-          echo "cluster_name=${NAME//./-}" >> "$GITHUB_OUTPUT"
-
-          printf "Long-running GKE cluster %s has been patched.\nAccess it by running \`./scripts/release-tools/setup-central-access.sh %s\` from your local machine." "${NAME//./-}" "${NAME//./-}" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Post to Slack
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: slackapi/slack-github-action@v1.23.0
-        with:
-          channel-id: ${{ needs.properties.outputs.slack-channel }}
-          payload: >-
-            {
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": ":tada: *Long-running cluster `${{ steps.launch_central.outputs.cluster_name }}` created for ${{ needs.variables.outputs.milestone }} milestone of <${{ github.server_url }}/${{ github.repository }}|${{ github.repository }}>.*"
-                  }
-                },
-                {
-                  "type": "divider"
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": ":arrow_right: Setup your local access to Central by running:\n```curl -L https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/scripts/release-tools/setup-central-access.sh | bash -s -- ${{ steps.launch_central.outputs.cluster_name }}```"
-                  }
-                }
-              ]
-            }
-
-      - name: Start fake workload
-        env:
-          API_ENDPOINT: localhost:8000
-          ROX_PASSWORD: ${{ steps.launch_central.outputs.rox_password }}
-        run: |
-          echo "::add-mask::$ROX_PASSWORD"
-          kubectl -n stackrox port-forward deploy/central 8000:8443 > /dev/null 2>&1 &
-          sleep 20
-          ./scale/launch_workload.sh np-load
-          echo "Fake workload has been deployed to the long-running cluster" >> "$GITHUB_STEP_SUMMARY"
-
-  notify-failed-clusters:
-    name: Notify about failed cluster creation
-    needs:
-      [
-        variables,
-        properties,
-        create-k8s-cluster,
-        create-os4-cluster,
-        create-long-running-cluster,
-      ]
-    if: >- # Required as create-*-cluster jobs could be skipped while other jobs could fail.
-      always() && (
-        needs.create-k8s-cluster.result == 'failure' ||
-        needs.create-os4-cluster.result == 'failure' ||
-        needs.create-long-running-cluster.result == 'failure'
-      )
-    runs-on: ubuntu-latest
-    steps:
-      - name: Post to Slack
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: slackapi/slack-github-action@v1.23.0
-        with:
-          channel-id: ${{ needs.properties.outputs.slack-channel }}
-          payload: >-
-            { "blocks": [
-              { "type": "section", "text": { "type": "mrkdwn", "text":
-              ":red_circle: *Couldn't create test clusters for ${{needs.variables.outputs.milestone}} milestone of <${{github.server_url}}/${{github.repository}}|${{github.repository}}>.*" }},
-
-            { "type": "divider" },
-
-            { "type": "section", "text": { "type": "mrkdwn", "text":
-            ":arrow_right: *Please investigate the output of the
-            <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>
-            workflow run and then restart the workflow.*" }},
-
-            { "type": "section", "text": { "type": "mrkdwn", "text":
-            ">
-            Repository: <${{github.server_url}}/${{github.repository}}|${{github.repository}}>\n>
-            Milestone: ${{needs.variables.outputs.milestone}}\n>
-            Workflow: <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>" }}
-            ]}
+    with:
+      version: ${{needs.variables.outputs.milestone}}
+      create-k8s-cluster: ${{github.event.inputs.create-k8s-cluster != 'false'}}
+      create-os4-cluster: ${{github.event.inputs.create-os4-cluster != 'false'}}
+      create-long-cluster: ${{needs.variables.outputs.rc == '1' && github.event.inputs.create-long-cluster != 'false'}}
+      dry-run: ${{github.event.inputs.dry-run == 'true'}}
+      workflow-ref: v1
+      kube-burner-config-ref: ${{needs.variables.outputs.milestone}}
+      kube-burner-config-repo: stackrox
+      cluster-with-fake-load-name: ${{ needs.trim-cluster-names.outputs.cluster-with-fake-load-name-cleaned }}
+      cluster-with-real-load-name: ${{ needs.trim-cluster-names.outputs.cluster-with-real-load-name-cleaned }}

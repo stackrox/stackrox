@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package storage;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+message NotificationSchedule {
+  reserved 1; // id, future field
+  google.protobuf.Timestamp last_run = 2;
+}

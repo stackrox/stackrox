@@ -3,6 +3,8 @@ package testutils
 import (
 	"testing"
 
+	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -23,6 +25,10 @@ type nestedStruct3 struct {
 	x complex64
 }
 
+type times struct {
+	d *protocompat.Timestamp
+}
+
 type testStruct struct {
 	x int
 	y string
@@ -33,6 +39,8 @@ type testStruct struct {
 
 	nestedStruct2
 	*nestedStruct3
+
+	t times
 }
 
 func TestFullInit(t *testing.T) {
@@ -41,17 +49,17 @@ func TestFullInit(t *testing.T) {
 
 	expected := testStruct{
 		x: 1,
-		y: "a",
+		y: uuid.NewDummy().String(),
 		z: true,
 		v: &[]float32{1.0}[0],
 		w: []*nestedStruct{
 			{
 				x: [3]int{1, 1, 1},
 				y: []*string{
-					&[]string{"a"}[0],
+					&[]string{uuid.NewDummy().String()}[0],
 				},
 				z: map[string]int{
-					"a": 1,
+					uuid.NewDummy().String(): 1,
 				},
 				w: nil,
 			},
@@ -61,6 +69,13 @@ func TestFullInit(t *testing.T) {
 		},
 		nestedStruct3: &nestedStruct3{
 			x: 1.0i,
+		},
+		t: times{
+			//1970-01-01T00:00:01.000000001Z
+			d: &protocompat.Timestamp{
+				Seconds: 1,
+				Nanos:   1,
+			},
 		},
 	}
 

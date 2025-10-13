@@ -3,9 +3,9 @@ package servicecerttoken
 import (
 	"context"
 	"crypto/x509"
+	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
 	"github.com/stackrox/rox/pkg/grpc/common/authn/servicecerttoken"
@@ -14,17 +14,17 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
-
 type extractor struct {
 	verifyOpts x509.VerifyOptions
 	maxLeeway  time.Duration
 	validator  authn.ValidateCertChain
 }
 
-func (e extractor) IdentityForRequest(ctx context.Context, ri requestinfo.RequestInfo) (authn.Identity, error) {
+func getExtractorError(msg string, err error) *authn.ExtractorError {
+	return authn.NewExtractorError("service-cert-token", msg, err)
+}
+
+func (e extractor) IdentityForRequest(ctx context.Context, ri requestinfo.RequestInfo) (authn.Identity, *authn.ExtractorError) {
 	token := authn.ExtractToken(ri.Metadata, servicecerttoken.TokenType)
 	if token == "" {
 		return nil, nil
@@ -32,32 +32,30 @@ func (e extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 
 	cert, err := servicecerttoken.ParseToken(token, e.maxLeeway)
 	if err != nil {
-		log.Warnf("Could not parse service cert token: %v", err)
-		return nil, errors.New("could not parse service cert token")
+		return nil, getExtractorError("could not parse service cert token", err)
 	}
 
 	verifiedChains, err := cert.Verify(e.verifyOpts)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not verify certificate")
+		return nil, getExtractorError("could not verify certificate", err)
 	}
 
 	if len(verifiedChains) != 1 {
-		return nil, errors.Errorf("UNEXPECTED: %d verified chains found", len(verifiedChains))
+		return nil, getExtractorError(fmt.Sprintf("UNEXPECTED: %d verified chains found", len(verifiedChains)), nil)
 	}
 
 	if len(verifiedChains[0]) == 0 {
-		return nil, errors.New("UNEXPECTED: verified chain is empty")
+		return nil, getExtractorError("UNEXPECTED: verified chain is empty", nil)
 	}
 
 	chain := requestinfo.ExtractCertInfoChains(verifiedChains)
 	if e.validator != nil {
 		if err := e.validator.ValidateClientCertificate(ctx, chain[0]); err != nil {
-			log.Errorf("Could not validate client certificate from service cert token: %v", err)
-			return nil, errors.New("could not validate client certificate from service cert token")
+			return nil, getExtractorError("could not validate client certificate from service cert token", err)
 		}
 	}
 
-	log.Debugf("Woot! Someone (%s) is authenticating with a service cert token", verifiedChains[0][0].Subject)
+	logging.GetRateLimitedLogger().DebugL(ri.Hostname, "%q is authenticating with a service cert token", verifiedChains[0][0].Subject)
 
 	return service.WrapMTLSIdentity(mtls.IdentityFromCert(chain[0][0])), nil
 }
@@ -70,6 +68,11 @@ func NewExtractorWithCertValidation(maxLeeway time.Duration, validator authn.Val
 	}
 	trustPool := x509.NewCertPool()
 	trustPool.AddCert(ca)
+
+	secondaryCA, _, err := mtls.SecondaryCACert()
+	if err == nil {
+		trustPool.AddCert(secondaryCA)
+	}
 
 	verifyOpts := x509.VerifyOptions{
 		Roots: trustPool,

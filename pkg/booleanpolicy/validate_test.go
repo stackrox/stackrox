@@ -70,10 +70,16 @@ func (s *PolicyValueValidator) TestRegex() {
 			r:       stringValueRegex,
 		},
 		{
-			name:    "capabilities",
+			name:    "addCapabilities",
 			valid:   []string{"SYS_ADMIN"},
 			invalid: []string{"", "CAP_N_CRUNCH", "CAP_SYS_ADMIN", "N_CRUNCH"},
-			r:       capabilitiesValueRegex,
+			r:       addCapabilitiesValueRegex,
+		},
+		{
+			name:    "dropCapabilities",
+			valid:   []string{"ALL"},
+			invalid: []string{"", "CAP_N_CRUNCH", "CAP_SYS_ADMIN", "N_CRUNCH"},
+			r:       dropCapabilitiesValueRegex,
 		},
 		{
 			name:    "cve",

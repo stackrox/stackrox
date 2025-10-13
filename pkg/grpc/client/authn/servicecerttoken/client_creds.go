@@ -5,12 +5,12 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/grpc/common/authn/servicecerttoken"
 	"github.com/stackrox/rox/pkg/httputil"
-	"github.com/stackrox/rox/pkg/sliceutils"
 	"google.golang.org/grpc/credentials"
 )
 
@@ -43,7 +43,7 @@ func NewServiceCertInjectingRoundTripper(cert *tls.Certificate, rt http.RoundTri
 		reqShallowCopy := *req
 		newHeader := make(http.Header)
 		for k, vs := range req.Header {
-			newHeader[k] = sliceutils.ShallowClone(vs)
+			newHeader[k] = slices.Clone(vs)
 		}
 
 		newHeader.Set("authorization", fmt.Sprintf("%s %s", servicecerttoken.TokenType, token))
@@ -53,7 +53,7 @@ func NewServiceCertInjectingRoundTripper(cert *tls.Certificate, rt http.RoundTri
 	})
 }
 
-func (i *serviceCertClientCreds) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
+func (i *serviceCertClientCreds) GetRequestMetadata(_ context.Context, _ ...string) (map[string]string, error) {
 	// There is no way to derived from the TLS connection state whether a client certificate is in use, so just inject
 	// the authorization header in any case to be on the safe side.
 	token, err := servicecerttoken.CreateToken(i.cert, time.Now())

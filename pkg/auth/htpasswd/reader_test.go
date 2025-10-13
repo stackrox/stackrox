@@ -13,6 +13,7 @@ func TestCannedHtpasswd(t *testing.T) {
 	// htpasswd utility:
 	// https://httpd.apache.org/docs/2.4/programs/htpasswd.html
 	// You must use bcrypt (-B).
+	//#nosec G101 -- This is a false positive
 	const htpasswd = `user:$2y$05$zOuqmZyoE82NGG4iitj91OrOQBoCrn0d/LiyHL833EvBzm0Wyy85.
 other:$2y$05$b9mSdCSh6OnHhRDG/DAXee8USMpWYMK5XZcBZwFjQnCD5xQOu.F8y
 admin:$2y$05$l.sGXGtYVWaoywFO06gDZeIHME8BFKWRuNv5PG4RLGUk0Yq/M4c86`

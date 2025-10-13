@@ -1,68 +1,69 @@
 syntax = "proto3";
 
-option go_package = "v1";
-
-option java_package = "io.stackrox.proto.api.v1";
-
-import weak "google/api/annotations.proto";
+package v1;
 
 import "api/v1/common.proto";
 import "api/v1/empty.proto";
+import weak "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
 import "storage/api_token.proto";
 
-package v1;
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
 
 message GenerateTokenRequest {
-    string name  = 1;
-    string role  = 2 [deprecated = true];
-    repeated string roles = 3;
+  string name = 1;
+  string role = 2 [deprecated = true];
+  repeated string roles = 3;
+  google.protobuf.Timestamp expiration = 4;
 }
 
 message GenerateTokenResponse {
-    string token                   = 1;
-    storage.TokenMetadata metadata = 2;
+  string token = 1;
+  storage.TokenMetadata metadata = 2;
 }
 
 message GetAPITokensRequest {
-    oneof revoked_oneof {
-        bool revoked = 1;
-    }
+  oneof revoked_oneof {
+    bool revoked = 1;
+  }
 }
 
 message GetAPITokensResponse {
-    repeated storage.TokenMetadata tokens = 1;
+  repeated storage.TokenMetadata tokens = 1;
+}
+
+message ListAllowedTokenRolesResponse {
+  repeated string roleNames = 1;
 }
 
 // APITokenService APIs can be used to manage API tokens.
 service APITokenService {
+  // GetAPIToken returns API token metadata for a given id.
+  rpc GetAPIToken(ResourceByID) returns (storage.TokenMetadata) {
+    option (google.api.http) = {get: "/v1/apitokens/{id}"};
+  }
 
-    // GetAPIToken returns API token metadata for a given id.
-    rpc GetAPIToken (ResourceByID) returns (storage.TokenMetadata) {
-        option (google.api.http) = {
-            get: "/v1/apitokens/{id}"
-        };
-    }
+  // GetAPITokens returns all the API tokens.
+  rpc GetAPITokens(GetAPITokensRequest) returns (GetAPITokensResponse) {
+    option (google.api.http) = {get: "/v1/apitokens"};
+  }
 
-    // GetAPITokens returns all the API tokens.
-    rpc GetAPITokens (GetAPITokensRequest) returns (GetAPITokensResponse) {
-        option (google.api.http) = {
-            get: "/v1/apitokens"
-        };
-    }
+  // GenerateToken generates API token for a given user and role.
+  rpc GenerateToken(GenerateTokenRequest) returns (GenerateTokenResponse) {
+    option (google.api.http) = {
+      post: "/v1/apitokens/generate"
+      body: "*"
+    };
+  }
 
-    // GenerateToken generates API token for a given user and role.
-    rpc GenerateToken (GenerateTokenRequest) returns (GenerateTokenResponse) {
-        option (google.api.http) = {
-            post: "/v1/apitokens/generate"
-            body: "*"
-        };
-    }
+  // RevokeToken removes the API token for a given id.
+  rpc RevokeToken(ResourceByID) returns (Empty) {
+    option (google.api.http) = {patch: "/v1/apitokens/revoke/{id}"};
+  }
 
-    // RevokeToken removes the API token for a given id.
-    rpc RevokeToken (ResourceByID) returns (Empty) {
-        option (google.api.http) = {
-            patch: "/v1/apitokens/revoke/{id}"
-        };
-    }
-
+  // GetAllowedTokenRoles return roles that user is allowed to request for API token.
+  rpc ListAllowedTokenRoles(Empty) returns (ListAllowedTokenRolesResponse) {
+    option (google.api.http) = {get: "/v1/apitokens/generate/allowed-roles"};
+  }
 }

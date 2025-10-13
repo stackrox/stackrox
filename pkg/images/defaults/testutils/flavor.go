@@ -2,7 +2,6 @@ package testutils
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -21,14 +20,18 @@ func MakeImageFlavorForTest(t *testing.T) defaults.ImageFlavor {
 		CentralDBImageName:     "central-db",
 		CollectorRegistry:      "test.registry",
 		CollectorImageName:     "collector",
-		CollectorImageTag:      "3.2.1-latest",
-		CollectorSlimImageName: "collector",
-		CollectorSlimImageTag:  "3.2.1-slim",
+		CollectorImageTag:      "3.2.1",
+		FactRegistry:           "test.registry",
+		FactImageName:          "fact",
+		FactImageTag:           "0.1.0",
 		ScannerImageName:       "scanner",
 		ScannerSlimImageName:   "scanner-slim",
 		ScannerImageTag:        "2.2.2",
 		ScannerDBImageName:     "scanner-db",
 		ScannerDBSlimImageName: "scanner-db-slim",
+		ScannerV4ImageName:     "scanner-v4",
+		ScannerV4DBImageName:   "scanner-v4-db",
+		ScannerV4ImageTag:      "1.2.3", // Match MainVersion
 		ChartRepo: defaults.ChartRepo{
 			URL:     "some.url/path/to/chart",
 			IconURL: "some.url/path/to/icon.png",
@@ -37,11 +40,11 @@ func MakeImageFlavorForTest(t *testing.T) defaults.ImageFlavor {
 			AllowNone: false,
 		},
 		Versions: version.Versions{
-			BuildDate:        time.Now(),
 			CollectorVersion: "3.2.1",
 			MainVersion:      "1.2.3",
 			ScannerVersion:   "2.2.2",
 			ChartVersion:     "1.23.4",
+			FactVersion:      "0.1.0",
 		},
 	}
 }

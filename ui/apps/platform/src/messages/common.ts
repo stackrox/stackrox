@@ -1,11 +1,11 @@
-import { AccessControlEntityType, RbacConfigType } from 'constants/entityTypes';
-import { VulnerabilitySeverity } from 'types/cve.proto';
-import {
+import type { AccessControlEntityType, RbacConfigType } from 'constants/entityTypes';
+import type {
     EnforcementAction,
     LifecycleStage,
     PolicyEventSource,
     PolicySeverity,
 } from 'types/policy.proto';
+import type { ValueOf } from 'utils/type.utils';
 
 export const severityLabels: Record<PolicySeverity, string> = Object.freeze({
     CRITICAL_SEVERITY: 'Critical',
@@ -14,12 +14,13 @@ export const severityLabels: Record<PolicySeverity, string> = Object.freeze({
     LOW_SEVERITY: 'Low',
 });
 
-export const vulnerabilitySeverityLabels: Record<VulnerabilitySeverity, string> = Object.freeze({
+export const vulnerabilitySeverityLabels = {
     CRITICAL_VULNERABILITY_SEVERITY: 'Critical',
     IMPORTANT_VULNERABILITY_SEVERITY: 'Important',
     MODERATE_VULNERABILITY_SEVERITY: 'Moderate',
     LOW_VULNERABILITY_SEVERITY: 'Low',
-});
+    UNKNOWN_VULNERABILITY_SEVERITY: 'Unknown',
+} as const;
 
 export const clusterTypeLabels = Object.freeze({
     KUBERNETES_CLUSTER: 'Kubernetes Clusters',
@@ -33,14 +34,6 @@ export const clusterVersionLabels = Object.freeze({
     SWARM_CLUSTER: 'Swarm Version',
     OPENSHIFT_CLUSTER: 'OpenShift Version',
     OPENSHIFT4_CLUSTER: 'OpenShift Version',
-});
-
-export const healthStatusLabels = Object.freeze({
-    UNINITIALIZED: 'Uninitialized',
-    UNAVAILABLE: 'Unavailable',
-    UNHEALTHY: 'Unhealthy',
-    DEGRADED: 'Degraded',
-    HEALTHY: 'Healthy',
 });
 
 export const lifecycleStageLabels: Record<LifecycleStage, string> = Object.freeze({
@@ -106,14 +99,6 @@ export const accessControlLabels: Record<AccessControlEntityType, string> = {
     ROLE: 'Role',
 };
 
-export const stackroxSupport = Object.freeze({
-    phoneNumber: {
-        withSpaces: '1 (650) 385-8329',
-        withDashes: '1-650-385-8329',
-    },
-    email: 'support@stackrox.com',
-});
-
 export const portExposureLabels = Object.freeze({
     ROUTE: 'Route',
     EXTERNAL: 'LoadBalancer',
@@ -125,7 +110,8 @@ export const portExposureLabels = Object.freeze({
 
 export const mountPropagationLabels = Object.freeze({
     NONE: 'None',
-    HOST_TO_CONTAINER: 'Host to Container',
+    // TODO: change to HOST_TO_CONTAINER. Talk to backend team.
+    HOSTTOCONTAINER: 'Host to Container',
     BIDIRECTIONAL: 'Bidirectional',
 });
 
@@ -155,14 +141,20 @@ export const envVarSrcLabels = Object.freeze({
 export const policyCriteriaCategories = Object.freeze({
     IMAGE_REGISTRY: 'Image registry',
     IMAGE_CONTENTS: 'Image contents',
+    IMAGE_SCANNING: 'Image scanning',
     CONTAINER_CONFIGURATION: 'Container configuration',
     DEPLOYMENT_METADATA: 'Deployment metadata',
     STORAGE: 'Storage',
     NETWORKING: 'Networking',
     PROCESS_ACTIVITY: 'Process activity',
-    KUBERNETES_ACCESS: 'Kubernetes access',
-    KUBERNETES_EVENTS: 'Kubernetes events',
+    BASELINE_DEVIATION: 'Baseline deviation',
+    ACCESS_CONTROL: 'Access control',
+    USER_ISSUED_CONTAINER_COMMANDS: 'User issued container commands',
+    RESOURCE_OPERATION: 'Resource operation (Required)',
+    RESOURCE_ATTRIBUTES: 'Resource attributes',
 });
+
+export type PolicyCriteriaCategoryKey = ValueOf<typeof policyCriteriaCategories>;
 
 // For any update to severityRatings, please also update cve.proto,
 // pkg/booleanpolicy/value_regex.go, and Containers/Policies/Wizard/Form/utils.js.

@@ -2,7 +2,6 @@ package sortfields
 
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -74,24 +73,3 @@ var (
 		},
 	}
 )
-
-func init() {
-	if !env.PostgresDatastoreEnabled.BooleanSetting() {
-		SortFieldsMap[search.LifecycleStage] = func(option *v1.QuerySortOption) []*v1.QuerySortOption {
-			return []*v1.QuerySortOption{
-				{
-					Field:    search.SORTLifecycleStage.String(),
-					Reversed: option.GetReversed(),
-				},
-			}
-		}
-		SortFieldsMap[search.PolicyName] = func(option *v1.QuerySortOption) []*v1.QuerySortOption {
-			return []*v1.QuerySortOption{
-				{
-					Field:    search.SORTPolicyName.String(),
-					Reversed: option.GetReversed(),
-				},
-			}
-		}
-	}
-}

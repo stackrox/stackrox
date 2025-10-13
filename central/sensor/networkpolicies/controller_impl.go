@@ -91,12 +91,11 @@ func (c *controller) ApplyNetworkPolicies(ctx context.Context, mod *storage.Netw
 }
 
 func (c *controller) ProcessNetworkPoliciesResponse(resp *central.NetworkPoliciesResponse) error {
-	var retC chan *central.NetworkPoliciesResponse_Payload
-
 	seqID := resp.GetSeqId()
-	concurrency.WithLock(&c.returnChansMutex, func() {
-		retC = c.returnChans[seqID]
+	retC := concurrency.WithLock1(&c.returnChansMutex, func() chan *central.NetworkPoliciesResponse_Payload {
+		retC := c.returnChans[seqID]
 		delete(c.returnChans, seqID)
+		return retC
 	})
 
 	if retC == nil {

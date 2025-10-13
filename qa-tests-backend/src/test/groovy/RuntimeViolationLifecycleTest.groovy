@@ -3,25 +3,32 @@ import static Services.getViolationsByDeploymentID
 import static Services.roxDetectedDeployment
 import static Services.updatePolicy
 import static Services.updatePolicyToExclusionDeployment
-import groups.BAT
+
+import java.util.stream.Collectors
+
 import io.stackrox.proto.storage.AlertOuterClass.ViolationState
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ProcessIndicatorOuterClass.ProcessIndicator
-import java.util.stream.Collectors
+
 import objects.Deployment
-import org.junit.experimental.categories.Category
 import services.AlertService
 import util.Timer
 
+import spock.lang.Tag
+import spock.lang.IgnoreIf
+
+@Tag("PZ")
+@IgnoreIf({ Env.COLLECTION_METHOD == "NO_COLLECTION" })
 class RuntimeViolationLifecycleTest extends BaseSpecification  {
     static final private String APTGETPOLICY = "Ubuntu Package Manager Execution"
 
     static final private String DEPLOYMENTNAME = "runtimeviolationlifecycle"
     static final private Deployment DEPLOYMENT = new Deployment()
         .setName(DEPLOYMENTNAME)
-        .setImage ("quay.io/rhacs-eng/qa:nginx-204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad")
+        .setImage ("quay.io/rhacs-eng/qa-multi-arch:nginx-" +
+                "204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad")
         .addLabel ("app", DEPLOYMENTNAME)
-        .setCommand(["sh" , "-c" , "apt-get -y update && sleep 600"])
+        .setCommand(["sh" , "-c" , "apt-get -y update || true && sleep 600"])
 
     def checkPolicyExists(String policyName) {
         assert getPolicies().stream()
@@ -60,7 +67,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
 
 /*
     TODO(ROX-3101)
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify runtime resolution lifecycle"() {
         setup:
         "Create the deployment, verify that policy exists"
@@ -107,7 +114,8 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
     }
 */
 
-    @Category(BAT)
+    @Tag("BAT")
+    @Tag("COMPATIBILITY")
     def "Verify runtime excluded scope lifecycle"() {
         setup:
         "Create the deployment, verify that policy exists"
@@ -168,7 +176,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
 
         cleanup:
         if (deploymentCreated) {
-            orchestrator.deleteDeployment(DEPLOYMENT)
+            orchestrator.deleteAndWaitForDeploymentDeletion(DEPLOYMENT)
         }
 
         // Restore the original policy.
@@ -177,7 +185,8 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
         }
     }
 
-    @Category(BAT)
+    @Tag("BAT")
+    @Tag("COMPATIBILITY")
     def "Verify runtime alert remains after deletion"() {
         setup:
         "Create the deployment, verify that policy exists"
@@ -213,7 +222,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
 
         cleanup:
         if (!deploymentDeleted) {
-            orchestrator.deleteDeployment(DEPLOYMENT)
+            orchestrator.deleteAndWaitForDeploymentDeletion(DEPLOYMENT)
         }
     }
 }

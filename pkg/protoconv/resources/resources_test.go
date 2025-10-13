@@ -12,13 +12,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	appsV1 "k8s.io/api/apps/v1"
 	appsV1beta2 "k8s.io/api/apps/v1beta2"
+	batchV1 "k8s.io/api/batch/v1"
+	batchV1beta1 "k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	extV1beta1 "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestGetVolumeSourceMap(t *testing.T) {
-	t.Parallel()
 
 	secretVol := v1.Volume{
 		Name: "secret",
@@ -103,6 +104,58 @@ func TestDaemonSetReplicas(t *testing.T) {
 	assert.Equal(t, int(deploymentWrap.Replicas), 0)
 }
 
+func TestCronJobPopulateSpec(t *testing.T) {
+	deploymentWrap := &DeploymentWrap{
+		Deployment: &storage.Deployment{
+			Type: kubernetes.CronJob,
+		},
+	}
+
+	cronJob1 := &batchV1.CronJob{
+		Spec: batchV1.CronJobSpec{
+			JobTemplate: batchV1.JobTemplateSpec{
+				Spec: batchV1.JobSpec{
+					Template: v1.PodTemplateSpec{
+						Spec: v1.PodSpec{Containers: []v1.Container{{Name: "container1"}}},
+					},
+				},
+			},
+		},
+	}
+	deploymentWrap.populateFields(cronJob1)
+	assert.Equal(t, deploymentWrap.Containers[0].GetName(), "container1")
+
+	cronJob2 := &batchV1beta1.CronJob{
+		Spec: batchV1beta1.CronJobSpec{
+			JobTemplate: batchV1beta1.JobTemplateSpec{
+				Spec: batchV1.JobSpec{
+					Template: v1.PodTemplateSpec{
+						Spec: v1.PodSpec{Containers: []v1.Container{{Name: "container2"}}},
+					},
+				},
+			},
+		},
+	}
+	deploymentWrap.populateFields(cronJob2)
+	assert.Equal(t, deploymentWrap.Containers[0].GetName(), "container2")
+}
+
+func TestNewDeploymentFromStaticResourcePopulatesPodLabels(t *testing.T) {
+	deployment := &appsV1.Deployment{
+		Spec: appsV1.DeploymentSpec{
+			Template: v1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{"app": "nginx"},
+				},
+				Spec: v1.PodSpec{Containers: []v1.Container{{Name: "nginx"}}},
+			},
+		},
+	}
+	d, err := NewDeploymentFromStaticResource(deployment, "Deployment", "", "")
+	assert.NoError(t, err)
+	assert.Equal(t, map[string]string{"app": "nginx"}, d.GetPodLabels())
+}
+
 func TestIsTrackedReference(t *testing.T) {
 	cases := []struct {
 		ref       metav1.OwnerReference
@@ -182,7 +235,7 @@ func TestContainerLivenessProbePopulation(t *testing.T) {
 			deploymentWrap.populateProbes(spec)
 
 			livenessProbe := deploymentWrap.GetContainers()[0].GetLivenessProbe()
-			assert.Equal(t, livenessProbe.Defined, testCase.livenessProbeDefined)
+			assert.Equal(t, livenessProbe.GetDefined(), testCase.livenessProbeDefined)
 		})
 	}
 }
@@ -216,7 +269,7 @@ func TestContainerLivenessProbeFromJSON(t *testing.T) {
 
 			assert.NoError(t, err)
 			livenessProbe := deploymentWrap.GetContainers()[0].GetLivenessProbe()
-			assert.Equal(t, livenessProbe.Defined, testCase.livenessProbeDefined)
+			assert.Equal(t, livenessProbe.GetDefined(), testCase.livenessProbeDefined)
 		})
 	}
 }
@@ -252,7 +305,7 @@ func TestContainerReadinessProbePopulation(t *testing.T) {
 			deploymentWrap.populateProbes(spec)
 
 			readinessProbe := deploymentWrap.GetContainers()[0].GetReadinessProbe()
-			assert.Equal(t, readinessProbe.Defined, testCase.readinessProbeDefined)
+			assert.Equal(t, readinessProbe.GetDefined(), testCase.readinessProbeDefined)
 		})
 	}
 }
@@ -286,7 +339,49 @@ func TestContainerReadinessProbeFromJSON(t *testing.T) {
 
 			assert.NoError(t, err)
 			readinessProbe := deploymentWrap.GetContainers()[0].GetReadinessProbe()
-			assert.Equal(t, readinessProbe.Defined, testCase.readinessProbeDefined)
+			assert.Equal(t, readinessProbe.GetDefined(), testCase.readinessProbeDefined)
+		})
+	}
+}
+
+func TestSecurityContext(t *testing.T) {
+
+	trueBool := true
+	falseBool := false
+	for _, testCase := range []struct {
+		caseName                       string
+		allowPrivilegeEscalationInSpec *bool
+		result                         bool
+	}{
+		{
+			caseName:                       "Allow privilege escalation explicitly set to true",
+			allowPrivilegeEscalationInSpec: &trueBool,
+			result:                         true,
+		},
+		{
+			caseName:                       "Allow privilege escalation explicitly set to false",
+			allowPrivilegeEscalationInSpec: &falseBool,
+			result:                         false,
+		},
+		{
+			caseName:                       "Allow privilege escalation is nil",
+			allowPrivilegeEscalationInSpec: nil,
+			result:                         true,
+		},
+	} {
+
+		t.Run(testCase.caseName, func(t *testing.T) {
+
+			emptyContainer := &storage.Container{}
+			containers := []*storage.Container{emptyContainer}
+			deploymentWrap := &DeploymentWrap{Deployment: &storage.Deployment{Containers: containers}}
+			spec := v1.PodSpec{Containers: []v1.Container{{SecurityContext: &v1.SecurityContext{}}}}
+			if testCase.allowPrivilegeEscalationInSpec != nil {
+				spec.Containers[0].SecurityContext.AllowPrivilegeEscalation = testCase.allowPrivilegeEscalationInSpec
+			}
+			deploymentWrap.populateSecurityContext(spec)
+			actualAllowPrivilegeEscalationValue := deploymentWrap.GetContainers()[0].GetSecurityContext().GetAllowPrivilegeEscalation()
+			assert.Equal(t, testCase.result, actualAllowPrivilegeEscalationValue)
 		})
 	}
 }

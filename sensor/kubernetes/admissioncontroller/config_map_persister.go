@@ -3,10 +3,9 @@ package admissioncontroller
 import (
 	"compress/gzip"
 	"context"
+	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/admissioncontrol"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -15,6 +14,8 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
+	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/unimplemented"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,11 +33,17 @@ var (
 )
 
 type configMapPersister struct {
+	unimplemented.Receiver
+
 	stopSig concurrency.ErrorSignal
 
 	client v1client.ConfigMapInterface
 
 	settingsStreamIt concurrency.ValueStreamIter[*sensor.AdmissionControlSettings]
+}
+
+func (p *configMapPersister) Name() string {
+	return "admissioncontroller.configMapPersister"
 }
 
 // NewConfigMapSettingsPersister creates a config persister object for the admission controller.
@@ -56,19 +63,17 @@ func (p *configMapPersister) Start() error {
 	return nil
 }
 
-func (p *configMapPersister) Stop(err error) {
-	p.stopSig.SignalWithError(err)
+func (p *configMapPersister) Stop() {
+	p.stopSig.Signal()
 }
+
+func (p *configMapPersister) Notify(common.SensorComponentEvent) {}
 
 func (p *configMapPersister) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (p *configMapPersister) ProcessMessage(msg *central.MsgToSensor) error {
-	return nil
-}
-
-func (p *configMapPersister) ResponsesC() <-chan *central.MsgFromSensor {
+func (p *configMapPersister) ResponsesC() <-chan *message.ExpiringMessage {
 	return nil
 }
 
@@ -128,16 +133,16 @@ func settingsToConfigMap(settings *sensor.AdmissionControlSettings) (*v1.ConfigM
 		return nil, nil
 	}
 
-	configBytes, err := proto.Marshal(clusterConfig)
+	configBytes, err := clusterConfig.MarshalVT()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "marshaling cluster config")
 	}
 	configBytesGZ, err := gziputil.Compress(configBytes, gzip.BestCompression)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "compressing cluster config")
 	}
 
-	deployTimePoliciesBytes, err := proto.Marshal(enforcedDeployTimePolicies)
+	deployTimePoliciesBytes, err := enforcedDeployTimePolicies.MarshalVT()
 	if err != nil {
 		return nil, errors.Wrap(err, "encoding deploy-time policies")
 	}
@@ -146,7 +151,7 @@ func settingsToConfigMap(settings *sensor.AdmissionControlSettings) (*v1.ConfigM
 		return nil, errors.Wrap(err, "compressing deploy-time policies")
 	}
 
-	runTimePoliciesBytes, err := proto.Marshal(runtimePolicies)
+	runTimePoliciesBytes, err := runtimePolicies.MarshalVT()
 	if err != nil {
 		return nil, errors.Wrap(err, "encoding run-time policies")
 	}
@@ -167,7 +172,7 @@ func settingsToConfigMap(settings *sensor.AdmissionControlSettings) (*v1.ConfigM
 			},
 		},
 		Data: map[string]string{
-			admissioncontrol.LastUpdateTimeDataKey:  settings.GetTimestamp().String(),
+			admissioncontrol.LastUpdateTimeDataKey:  settings.GetTimestamp().AsTime().Format(time.RFC3339Nano),
 			admissioncontrol.CacheVersionDataKey:    settings.GetCacheVersion(),
 			admissioncontrol.CentralEndpointDataKey: settings.GetCentralEndpoint(),
 			admissioncontrol.ClusterIDDataKey:       settings.GetClusterId(),

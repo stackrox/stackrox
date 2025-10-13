@@ -1,9 +1,9 @@
-import React, { ReactElement, useState } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 import {
     Alert,
-    AlertVariant,
     Button,
     Label,
     Title,
@@ -13,13 +13,16 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
-import { AccessScope, defaultAccessScopeIds } from 'services/AccessScopesService';
+import TraitsOriginLabel from 'Components/TraitsOriginLabel';
+import usePermissions from 'hooks/usePermissions';
+import { getIsUnrestrictedAccessScopeId } from 'services/AccessScopesService';
+import type { AccessScope } from 'services/AccessScopesService';
 
-import { AccessControlQueryAction } from '../accessControlPaths';
+import type { AccessControlQueryAction } from '../accessControlPaths';
 
 import {
-    LabelSelectorsEditingState,
-    getIsEditingLabelSelectors,
+    // LabelSelectorsEditingState,
+    // getIsEditingLabelSelectors,
     getIsValidRules,
 } from './accessScopes.utils';
 import AccessScopeForm from './AccessScopeForm';
@@ -45,13 +48,18 @@ function AccessScopeFormWrapper({
 }: AccessScopeFormWrapperProps): ReactElement {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [alertSubmit, setAlertSubmit] = useState<ReactElement | null>(null);
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForPage = hasReadWriteAccess('Access');
 
+    /*
+    // See comment below about labelSelectorEditingState.
     // Disable Save button while editing label selectors.
     const [labelSelectorsEditingState, setLabelSelectorsEditingState] =
         useState<LabelSelectorsEditingState>({
             clusterLabelSelectors: -1,
             namespaceLabelSelectors: -1,
         });
+    */
 
     const formik = useFormik({
         initialValues: accessScope,
@@ -79,7 +87,7 @@ function AccessScopeFormWrapper({
      * before its first requirement or value has been added.
      */
     const isValidRules =
-        values.id !== defaultAccessScopeIds.Unrestricted && getIsValidRules(values.rules);
+        !getIsUnrestrictedAccessScopeId(values.id) && getIsValidRules(values.rules);
 
     function onClickSubmit() {
         // TODO submit through Formik, especially to update its initialValue.
@@ -91,7 +99,8 @@ function AccessScopeFormWrapper({
                 setAlertSubmit(
                     <Alert
                         title="Failed to save access scope"
-                        variant={AlertVariant.danger}
+                        component="p"
+                        variant="danger"
                         isInline
                     >
                         {error.message}
@@ -113,22 +122,27 @@ function AccessScopeFormWrapper({
 
     return (
         <>
-            <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pt-0">
+            <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pt-0">
                 <ToolbarContent>
                     <ToolbarItem>
-                        <Title headingLevel="h2">
+                        <Title headingLevel="h1">
                             {action === 'create' ? 'Create access scope' : accessScope.name}
                         </Title>
                     </ToolbarItem>
                     {action !== 'create' && (
-                        <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
+                        <ToolbarItem>
+                            <TraitsOriginLabel traits={accessScope.traits} />
+                        </ToolbarItem>
+                    )}
+                    {action !== 'create' && (
+                        <ToolbarGroup variant="button-group" align={{ default: 'alignRight' }}>
                             <ToolbarItem>
                                 {isActionable ? (
                                     <Button
                                         variant="primary"
                                         onClick={handleEdit}
-                                        isDisabled={action === 'edit'}
-                                        isSmall
+                                        isDisabled={!hasWriteAccessForPage || action === 'edit'}
+                                        size="sm"
                                     >
                                         Edit access scope
                                     </Button>
@@ -144,11 +158,11 @@ function AccessScopeFormWrapper({
                 hasAction={hasAction}
                 alertSubmit={alertSubmit}
                 formik={formik}
-                labelSelectorsEditingState={labelSelectorsEditingState}
-                setLabelSelectorsEditingState={setLabelSelectorsEditingState}
+                // labelSelectorsEditingState={labelSelectorsEditingState}
+                // setLabelSelectorsEditingState={setLabelSelectorsEditingState}
             />
             {hasAction && (
-                <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pb-0">
+                <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pb-0">
                     <ToolbarContent>
                         <ToolbarGroup variant="button-group">
                             <ToolbarItem>
@@ -159,17 +173,19 @@ function AccessScopeFormWrapper({
                                         !dirty ||
                                         !isValid ||
                                         !isValidRules ||
-                                        getIsEditingLabelSelectors(labelSelectorsEditingState) ||
+                                        // Separating FormWrapper from Form might have caused a bug here.
+                                        // Now that reports use collections, merge components to be parallel with permission sets and roles.
+                                        // getIsEditingLabelSelectors(labelSelectorsEditingState) ||
                                         isSubmitting
                                     }
                                     isLoading={isSubmitting}
-                                    isSmall
+                                    size="sm"
                                 >
                                     Save
                                 </Button>
                             </ToolbarItem>
                             <ToolbarItem>
-                                <Button variant="tertiary" onClick={onClickCancel} isSmall>
+                                <Button variant="tertiary" onClick={onClickCancel} size="sm">
                                     Cancel
                                 </Button>
                             </ToolbarItem>

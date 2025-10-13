@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+	metautils "github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
@@ -24,7 +24,7 @@ func TestVersionInfoClientToServer(t *testing.T) {
 }
 
 func TestVersionInfoOldSensors(t *testing.T) {
-	derived, err := deriveSensorVersionInfo(metautils.NiceMD{})
+	derived, err := deriveSensorVersionInfo(metautils.MD{})
 	assert.NoError(t, err)
 	assert.Nil(t, derived)
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/stackrox/rox/pkg/errox"
 	errox_grpc "github.com/stackrox/rox/pkg/errox/grpc"
 	"github.com/stackrox/rox/pkg/logging"
@@ -62,7 +62,7 @@ func logErrorIfInternal(err error) {
 }
 
 // ErrorToGrpcCodeInterceptor translates common errors defined in errorhelpers to GRPC codes.
-func ErrorToGrpcCodeInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+func ErrorToGrpcCodeInterceptor(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	resp, err := handler(ctx, req)
 	grpcStatus := ErrToGrpcStatus(err)
 	return resp, grpcStatus.Err()

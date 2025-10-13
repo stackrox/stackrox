@@ -3,37 +3,34 @@ package service
 import (
 	"context"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/integrationhealth/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/scanners"
+	"github.com/stackrox/rox/pkg/scanners/types"
 	"google.golang.org/grpc"
 )
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.ImageIntegration)): {
-			"/v1.IntegrationHealthService/GetImageIntegrations",
+		user.With(permissions.View(resources.Integration)): {
+			v1.IntegrationHealthService_GetBackupPlugins_FullMethodName,
+			v1.IntegrationHealthService_GetImageIntegrations_FullMethodName,
+			v1.IntegrationHealthService_GetNotifiers_FullMethodName,
+			v1.IntegrationHealthService_GetDeclarativeConfigs_FullMethodName,
 		},
-		user.With(permissions.View(resources.Notifier)): {
-			"/v1.IntegrationHealthService/GetNotifiers",
-		},
-		user.With(permissions.View(resources.BackupPlugins)): {
-			"/v1.IntegrationHealthService/GetBackupPlugins",
-		},
-		user.With(permissions.View(resources.ScannerDefinitions)): {
-			"/v1.IntegrationHealthService/GetVulnDefinitionsInfo",
+		user.With(permissions.View(resources.Administration)): {
+			v1.IntegrationHealthService_GetVulnDefinitionsInfo_FullMethodName,
 		},
 	})
 )
 
-// ImageIntegrationService is the struct that manages the ImageIntegration API
 type serviceImpl struct {
 	v1.UnimplementedIntegrationHealthServiceServer
 
@@ -57,7 +54,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // GetImageIntegrations returns the health status for all configured registries and scanners.
-func (s *serviceImpl) GetImageIntegrations(ctx context.Context, empty *v1.Empty) (*v1.GetIntegrationHealthResponse, error) {
+func (s *serviceImpl) GetImageIntegrations(ctx context.Context, _ *v1.Empty) (*v1.GetIntegrationHealthResponse, error) {
 	healthData, err := s.datastore.GetRegistriesAndScanners(ctx)
 	if err != nil {
 		return nil, err
@@ -68,7 +65,7 @@ func (s *serviceImpl) GetImageIntegrations(ctx context.Context, empty *v1.Empty)
 }
 
 // GetNotifiers returns the health status for all configured notifiers.
-func (s *serviceImpl) GetNotifiers(ctx context.Context, empty *v1.Empty) (*v1.GetIntegrationHealthResponse, error) {
+func (s *serviceImpl) GetNotifiers(ctx context.Context, _ *v1.Empty) (*v1.GetIntegrationHealthResponse, error) {
 	healthData, err := s.datastore.GetNotifierPlugins(ctx)
 	if err != nil {
 		return nil, err
@@ -78,8 +75,8 @@ func (s *serviceImpl) GetNotifiers(ctx context.Context, empty *v1.Empty) (*v1.Ge
 	}, nil
 }
 
-// GetBackups returns the health status for all configured external backup integrations.
-func (s *serviceImpl) GetBackupPlugins(ctx context.Context, empty *v1.Empty) (*v1.GetIntegrationHealthResponse, error) {
+// GetBackupPlugins returns the health status for all configured external backup integrations.
+func (s *serviceImpl) GetBackupPlugins(ctx context.Context, _ *v1.Empty) (*v1.GetIntegrationHealthResponse, error) {
 	healthData, err := s.datastore.GetBackupPlugins(ctx)
 	if err != nil {
 		return nil, err
@@ -89,8 +86,22 @@ func (s *serviceImpl) GetBackupPlugins(ctx context.Context, empty *v1.Empty) (*v
 	}, nil
 }
 
-func (s *serviceImpl) GetVulnDefinitionsInfo(ctx context.Context, empty *v1.Empty) (*v1.VulnDefinitionsInfo, error) {
-	info, err := s.vulnDefsInfoProvider.GetVulnDefsInfo()
+// GetDeclarativeConfigs returns the health status for all declarative configurations.
+func (s *serviceImpl) GetDeclarativeConfigs(ctx context.Context, _ *v1.Empty) (*v1.GetIntegrationHealthResponse, error) {
+	healthData, err := s.datastore.GetDeclarativeConfigs(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &v1.GetIntegrationHealthResponse{IntegrationHealth: healthData}, nil
+}
+
+func (s *serviceImpl) GetVulnDefinitionsInfo(_ context.Context, req *v1.VulnDefinitionsInfoRequest) (*v1.VulnDefinitionsInfo, error) {
+	scannerType := types.Clairify
+	if req.GetComponent() == v1.VulnDefinitionsInfoRequest_SCANNER_V4 {
+		scannerType = types.ScannerV4
+	}
+
+	info, err := s.vulnDefsInfoProvider.GetVulnDefsInfo(scannerType)
 	if err != nil {
 		return nil, errors.Errorf("failed to obtain vulnerability definitions information: %v", err)
 	}
