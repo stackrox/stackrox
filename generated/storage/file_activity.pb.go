@@ -84,16 +84,16 @@ func (FileActivity_Operation) EnumDescriptor() ([]byte, []int) {
 }
 
 type FileActivity struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	File      *FileActivity_File     `protobuf:"bytes,1,opt,name=file,proto3" json:"file,omitempty"`
+	Operation FileActivity_Operation `protobuf:"varint,2,opt,name=operation,proto3,enum=storage.FileActivity_Operation" json:"operation,omitempty" search:"File Operation"` // @gotags: search:"File Operation"
+	// specific to `RENAME` activity, the new location / metadata of the file.
+	Moved *FileActivity_File `protobuf:"bytes,3,opt,name=moved,proto3,oneof" json:"moved,omitempty" search:"-"` // @gotags: search:"-"
 	// When the file activity happened
-	Timestamp *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	Timestamp *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// The process that performed the action. May contain deployment/namespace
 	// information.
-	Process   *ProcessIndicator      `protobuf:"bytes,2,opt,name=process,proto3" json:"process,omitempty"`
-	Operation FileActivity_Operation `protobuf:"varint,3,opt,name=operation,proto3,enum=storage.FileActivity_Operation" json:"operation,omitempty" search:"File Operation"` // @gotags: search:"File Operation"
-	File      *FileActivity_File     `protobuf:"bytes,4,opt,name=file,proto3" json:"file,omitempty"`
-	// specific to `RENAME` activity, the new location / metadata of the file.
-	Moved         *FileActivity_File `protobuf:"bytes,5,opt,name=moved,proto3,oneof" json:"moved,omitempty" search:"-"` // @gotags: search:"-"
+	Process       *ProcessIndicator `protobuf:"bytes,5,opt,name=process,proto3" json:"process,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -128,16 +128,9 @@ func (*FileActivity) Descriptor() ([]byte, []int) {
 	return file_storage_file_activity_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *FileActivity) GetTimestamp() *timestamppb.Timestamp {
+func (x *FileActivity) GetFile() *FileActivity_File {
 	if x != nil {
-		return x.Timestamp
-	}
-	return nil
-}
-
-func (x *FileActivity) GetProcess() *ProcessIndicator {
-	if x != nil {
-		return x.Process
+		return x.File
 	}
 	return nil
 }
@@ -149,16 +142,23 @@ func (x *FileActivity) GetOperation() FileActivity_Operation {
 	return FileActivity_CREATE
 }
 
-func (x *FileActivity) GetFile() *FileActivity_File {
+func (x *FileActivity) GetMoved() *FileActivity_File {
 	if x != nil {
-		return x.File
+		return x.Moved
 	}
 	return nil
 }
 
-func (x *FileActivity) GetMoved() *FileActivity_File {
+func (x *FileActivity) GetTimestamp() *timestamppb.Timestamp {
 	if x != nil {
-		return x.Moved
+		return x.Timestamp
+	}
+	return nil
+}
+
+func (x *FileActivity) GetProcess() *ProcessIndicator {
+	if x != nil {
+		return x.Process
 	}
 	return nil
 }
@@ -304,12 +304,12 @@ var File_storage_file_activity_proto protoreflect.FileDescriptor
 const file_storage_file_activity_proto_rawDesc = "" +
 	"\n" +
 	"\x1bstorage/file_activity.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/process_indicator.proto\"\x8b\x05\n" +
-	"\fFileActivity\x128\n" +
-	"\ttimestamp\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x123\n" +
-	"\aprocess\x18\x02 \x01(\v2\x19.storage.ProcessIndicatorR\aprocess\x12=\n" +
-	"\toperation\x18\x03 \x01(\x0e2\x1f.storage.FileActivity.OperationR\toperation\x12.\n" +
-	"\x04file\x18\x04 \x01(\v2\x1a.storage.FileActivity.FileR\x04file\x125\n" +
-	"\x05moved\x18\x05 \x01(\v2\x1a.storage.FileActivity.FileH\x00R\x05moved\x88\x01\x01\x1ax\n" +
+	"\fFileActivity\x12.\n" +
+	"\x04file\x18\x01 \x01(\v2\x1a.storage.FileActivity.FileR\x04file\x12=\n" +
+	"\toperation\x18\x02 \x01(\x0e2\x1f.storage.FileActivity.OperationR\toperation\x125\n" +
+	"\x05moved\x18\x03 \x01(\v2\x1a.storage.FileActivity.FileH\x00R\x05moved\x88\x01\x01\x128\n" +
+	"\ttimestamp\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x123\n" +
+	"\aprocess\x18\x05 \x01(\v2\x19.storage.ProcessIndicatorR\aprocess\x1ax\n" +
 	"\fFileMetadata\x12\x10\n" +
 	"\x03uid\x18\x01 \x01(\rR\x03uid\x12\x10\n" +
 	"\x03gid\x18\x02 \x01(\rR\x03gid\x12\x12\n" +
@@ -357,11 +357,11 @@ var file_storage_file_activity_proto_goTypes = []any{
 	(*ProcessIndicator)(nil),          // 5: storage.ProcessIndicator
 }
 var file_storage_file_activity_proto_depIdxs = []int32{
-	4, // 0: storage.FileActivity.timestamp:type_name -> google.protobuf.Timestamp
-	5, // 1: storage.FileActivity.process:type_name -> storage.ProcessIndicator
-	0, // 2: storage.FileActivity.operation:type_name -> storage.FileActivity.Operation
-	3, // 3: storage.FileActivity.file:type_name -> storage.FileActivity.File
-	3, // 4: storage.FileActivity.moved:type_name -> storage.FileActivity.File
+	3, // 0: storage.FileActivity.file:type_name -> storage.FileActivity.File
+	0, // 1: storage.FileActivity.operation:type_name -> storage.FileActivity.Operation
+	3, // 2: storage.FileActivity.moved:type_name -> storage.FileActivity.File
+	4, // 3: storage.FileActivity.timestamp:type_name -> google.protobuf.Timestamp
+	5, // 4: storage.FileActivity.process:type_name -> storage.ProcessIndicator
 	2, // 5: storage.FileActivity.File.meta:type_name -> storage.FileActivity.FileMetadata
 	6, // [6:6] is the sub-list for method output_type
 	6, // [6:6] is the sub-list for method input_type

@@ -33,17 +33,17 @@ message FileActivity {
     OPEN = 6;
   }
 
+  File file = 1;
+  Operation operation = 2; // @gotags: search:"File Operation"
+
+  // specific to `RENAME` activity, the new location / metadata of the file.
+  optional File moved = 3; // @gotags: search:"-"
+
+
   // When the file activity happened
-  google.protobuf.Timestamp timestamp = 1;
+  google.protobuf.Timestamp timestamp = 4;
 
   // The process that performed the action. May contain deployment/namespace
   // information.
-  ProcessIndicator process = 2;
-
-  Operation operation = 3; // @gotags: search:"File Operation"
-
-  File file = 4;
-
-  // specific to `RENAME` activity, the new location / metadata of the file.
-  optional File moved = 5; // @gotags: search:"-"
+  ProcessIndicator process = 5;
 }
