@@ -1,6 +1,7 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 
-import { ProcessViolation, Violation } from 'types/alert.proto';
+import type { ProcessViolation, Violation } from 'types/alert.proto';
 import ProcessCard from './ProcessCard';
 import NetworkFlowCard from './NetworkFlowCard';
 import K8sCard from './K8sCard';

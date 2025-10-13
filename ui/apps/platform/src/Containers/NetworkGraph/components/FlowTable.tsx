@@ -1,13 +1,14 @@
 import React from 'react';
 import { ToolbarContent, ToolbarItem, Pagination } from '@patternfly/react-core';
-import { Table, Thead, Tbody, Tr, Th, Td, ActionsColumn, IAction } from '@patternfly/react-table';
+import { Table, Thead, Tbody, Tr, Th, Td, ActionsColumn } from '@patternfly/react-table';
+import type { IAction } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import { UseURLPaginationResult } from 'hooks/useURLPagination';
-import { NetworkBaselinePeerStatus } from 'types/networkBaseline.proto';
-import { TableUIState } from 'utils/getTableUIState';
+import type { UseURLPaginationResult } from 'hooks/useURLPagination';
+import type { NetworkBaselinePeerStatus } from 'types/networkBaseline.proto';
+import type { TableUIState } from 'utils/getTableUIState';
 
-import { BaselineStatusType } from '../types/flow.type';
+import type { BaselineStatusType } from '../types/flow.type';
 import { getFlowKey } from '../utils/flowUtils';
 
 import { useSearchFilterSidePanel } from '../NetworkGraphURLStateContext';

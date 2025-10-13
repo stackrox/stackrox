@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import React, { useMemo } from 'react';
 import type { ComponentClass, FunctionComponent, PropsWithChildren, ReactNode } from 'react';
-import {
+import { observer, ScaleDetailsLevel } from '@patternfly/react-topology';
+import type {
     Node,
-    observer,
-    ScaleDetailsLevel,
     ShapeProps,
     WithDragNodeProps,
     WithSelectionProps,
@@ -12,7 +11,7 @@ import {
 import AlternateIcon from '@patternfly/react-icons/dist/esm/icons/regions-icon';
 import DefaultIcon from '@patternfly/react-icons/dist/esm/icons/builder-image-icon';
 import useDetailsLevel from '@patternfly/react-topology/dist/esm/hooks/useDetailsLevel';
-import { SVGIconProps } from '@patternfly/react-icons/dist/js/createIcon';
+import type { SVGIconProps } from '@patternfly/react-icons/dist/js/createIcon';
 import DefaultFakeGroup from './DefaultFakeGroup';
 
 const ICON_PADDING = 20;

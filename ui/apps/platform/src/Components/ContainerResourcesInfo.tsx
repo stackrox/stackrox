@@ -9,7 +9,7 @@ import {
     DescriptionListTerm,
 } from '@patternfly/react-core';
 
-import { ContainerResources } from 'types/deployment.proto';
+import type { ContainerResources } from 'types/deployment.proto';
 
 type ContainerResourcesInfoProps = {
     resources: ContainerResources;

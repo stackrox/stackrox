@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import type { ReactElement, Ref } from 'react';
 import {
     Badge,
     Button,
@@ -13,14 +14,14 @@ import {
     MenuItem,
     MenuList,
     MenuToggle,
-    MenuToggleElement,
     SearchInput,
     MenuSearchInput,
     Select,
 } from '@patternfly/react-core';
+import type { MenuToggleElement } from '@patternfly/react-core';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import { NamespaceWithDeployments } from 'hooks/useFetchNamespaceDeployments';
+import type { NamespaceWithDeployments } from 'hooks/useFetchNamespaceDeployments';
 import { removeNullValues } from 'utils/removeNullValues';
 import { DeploymentIcon } from '../common/NetworkGraphIcons';
 
@@ -36,7 +37,7 @@ function DeploymentSelector({
     selectedDeployments = [],
     searchFilter,
     setSearchFilter,
-}: DeploymentSelectorProps) {
+}: DeploymentSelectorProps): ReactElement {
     const { isOpen: isDeploymentOpen, toggleSelect: toggleIsDeploymentOpen } = useSelectToggle();
     const [input, setInput] = React.useState('');
 
@@ -136,7 +137,7 @@ function DeploymentSelector({
         </Menu>
     );
 
-    const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
+    const toggle = (toggleRef: Ref<MenuToggleElement>) => (
         <MenuToggle
             ref={toggleRef}
             onClick={() => toggleIsDeploymentOpen(!isDeploymentOpen)}

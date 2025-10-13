@@ -1,9 +1,11 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Button, Modal, Tab, TabTitleText, Tabs } from '@patternfly/react-core';
 import { useFormik } from 'formik';
 import isEmpty from 'lodash/isEmpty';
 
-import { EmailTemplateFormData, emailTemplateValidationSchema } from './EmailTemplate.utils';
+import { emailTemplateValidationSchema } from './EmailTemplate.utils';
+import type { EmailTemplateFormData } from './EmailTemplate.utils';
 import EmailTemplateForm from './EmailTemplateForm';
 
 export type TemplatePreviewArgs = {

@@ -10,7 +10,7 @@ import {
     EmptyState,
 } from '@patternfly/react-core';
 
-import { ContainerSecurityContext } from 'types/deployment.proto';
+import type { ContainerSecurityContext } from 'types/deployment.proto';
 import { getFilteredSecurityContextMap } from 'utils/securityContextUtils';
 
 type SecurityContextProps = {

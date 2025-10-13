@@ -1,13 +1,14 @@
 import React from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { Bullseye } from '@patternfly/react-core';
 import { Tbody, Tr, Td } from '@patternfly/react-table';
 
 export type TbodyFullCenteredProps = {
     colSpan: number;
-    children: React.ReactNode;
+    children: ReactNode;
 };
 
-export function TbodyFullCentered({ colSpan, children }: TbodyFullCenteredProps) {
+export function TbodyFullCentered({ colSpan, children }: TbodyFullCenteredProps): ReactElement {
     return (
         <Tbody>
             <Tr>

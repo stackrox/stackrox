@@ -1,5 +1,6 @@
 import React from 'react';
-import { DropdownItem, DropEvent, Split, SplitItem } from '@patternfly/react-core';
+import { DropdownItem, Split, SplitItem } from '@patternfly/react-core';
+import type { DropEvent } from '@patternfly/react-core';
 
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import UploadYAMLButton from './UploadYAMLButton';

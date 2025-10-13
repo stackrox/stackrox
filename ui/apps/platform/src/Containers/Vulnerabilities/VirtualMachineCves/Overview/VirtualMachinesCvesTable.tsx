@@ -26,20 +26,24 @@ import { listVirtualMachines } from 'services/VirtualMachineService';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getHasSearchApplied } from 'utils/searchUtils';
 
-import { getVirtualMachineSeveritiesCount } from '../aggregateUtils';
+import {
+    getVirtualMachineScannedPackagesCount,
+    getVirtualMachineSeveritiesCount,
+} from '../aggregateUtils';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { getVirtualMachineEntityPagePath } from '../../utils/searchUtils';
+import { VIRTUAL_MACHINE_SORT_FIELD } from '../../utils/sortFields';
 
 const searchFilterConfig = [
     virtualMachinesSearchFilterConfig,
     virtualMachinesClusterSearchFilterConfig,
 ];
 
-export const sortFields = ['Virtual Machine Name'];
+export const sortFields = [VIRTUAL_MACHINE_SORT_FIELD];
 
-export const defaultSortOption = { field: 'Virtual Machine Name', direction: 'asc' } as const;
+export const defaultSortOption = { field: VIRTUAL_MACHINE_SORT_FIELD, direction: 'asc' } as const;
 
 function VirtualMachinesCvesTable() {
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
@@ -169,7 +173,11 @@ function VirtualMachinesCvesTable() {
                                             <Td dataLabel="Namespace">
                                                 {virtualMachine.namespace}
                                             </Td>
-                                            <Td dataLabel="Scanned packages">?</Td>
+                                            <Td dataLabel="Scanned packages">
+                                                {getVirtualMachineScannedPackagesCount(
+                                                    virtualMachine
+                                                )}
+                                            </Td>
                                             <Td dataLabel="Last updated">
                                                 <DateDistance date={virtualMachine.lastUpdated} />
                                             </Td>
