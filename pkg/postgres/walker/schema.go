@@ -40,10 +40,6 @@ var (
 )
 
 func getSerializedField(s *Schema) Field {
-	SQLType := "bytea"
-	if s.Json {
-		SQLType = "jsonb"
-	}
 	return Field{
 		ObjectGetter: ObjectGetter{
 			variable: true,
@@ -51,7 +47,7 @@ func getSerializedField(s *Schema) Field {
 		},
 		Name:       "serialized",
 		ColumnName: "serialized",
-		SQLType:    SQLType,
+		SQLType:    "bytea",
 		Type:       "[]byte",
 		ModelType:  "[]byte",
 		Schema:     s,
