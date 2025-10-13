@@ -49,7 +49,7 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
                     type
                     url
                 }
-                vulns {
+                imageVulnerabilities {
                     cve
                     cvss
                     link

@@ -55,7 +55,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
     const fixableCves = [];
 
     // If we have a scan, then we can try and assume we have layers
-    if (scan) {
+    if (scan && scan.imageComponents) {
         layers.forEach((layer, i) => {
             layers[i].components = [];
             layers[i].cvesCount = 0;
