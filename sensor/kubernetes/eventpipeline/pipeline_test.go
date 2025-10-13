@@ -102,7 +102,7 @@ func (s *eventPipelineSuite) Test_OfflineModeCases() {
 	s.outputQueue.EXPECT().Start().Times(1)
 	s.resolver.EXPECT().Start().Times(1)
 	s.listener.EXPECT().StartWithContext(gomock.Any()).AnyTimes()
-	s.listener.EXPECT().Stop(gomock.Any()).AnyTimes()
+	s.listener.EXPECT().Stop().AnyTimes()
 
 	s.Require().NoError(s.pipeline.Start())
 	s.pipeline.Notify(common.SensorComponentEventCentralReachable)
@@ -136,7 +136,7 @@ func (s *eventPipelineSuite) Test_OfflineMode() {
 
 	// Expect listener to be reset (i.e. started twice and stopped once)
 	s.listener.EXPECT().StartWithContext(gomock.Any()).Times(2)
-	s.listener.EXPECT().Stop(gomock.Any()).Times(2)
+	s.listener.EXPECT().Stop().Times(2)
 
 	s.Require().NoError(s.pipeline.Start())
 	s.pipeline.Notify(common.SensorComponentEventCentralReachable)
@@ -183,7 +183,7 @@ func (s *eventPipelineSuite) Test_ReprocessDeployments() {
 		assert.True(s.T(), resourceEvent.DeploymentReferences[0].ForceDetection)
 	})
 
-	err := s.pipeline.ProcessMessage(msgFromCentral)
+	err := s.pipeline.ProcessMessage(s.T().Context(), msgFromCentral)
 	s.NoError(err)
 
 	messageReceived.Wait()
@@ -204,38 +204,7 @@ func (s *eventPipelineSuite) Test_PolicySync() {
 		defer messageReceived.Done()
 	})
 
-	err := s.pipeline.ProcessMessage(msgFromCentral)
-	s.NoError(err)
-
-	messageReceived.Wait()
-}
-
-func (s *eventPipelineSuite) Test_ReassessPolicies() {
-	messageReceived := sync.WaitGroup{}
-	messageReceived.Add(2)
-
-	msgFromCentral := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_ReassessPolicies{
-			ReassessPolicies: &central.ReassessPolicies{},
-		},
-	}
-	s.detector.EXPECT().ProcessReassessPolicies().Times(1).Do(func() {
-		defer messageReceived.Done()
-	})
-
-	s.resolver.EXPECT().Send(gomock.Any()).Times(1).Do(func(msg interface{}) {
-		defer messageReceived.Done()
-		resourceEvent, ok := msg.(*component.ResourceEvent)
-		assert.True(s.T(), ok)
-		assert.NotNil(s.T(), resourceEvent.DeploymentReferences)
-		assert.Equal(s.T(), 1, len(resourceEvent.DeploymentReferences))
-		assert.NotNil(s.T(), resourceEvent.DeploymentReferences[0].Reference)
-		assert.Equal(s.T(), central.ResourceAction_UPDATE_RESOURCE, resourceEvent.DeploymentReferences[0].ParentResourceAction)
-		assert.False(s.T(), resourceEvent.DeploymentReferences[0].SkipResolving)
-		assert.True(s.T(), resourceEvent.DeploymentReferences[0].ForceDetection)
-	})
-
-	err := s.pipeline.ProcessMessage(msgFromCentral)
+	err := s.pipeline.ProcessMessage(s.T().Context(), msgFromCentral)
 	s.NoError(err)
 
 	messageReceived.Wait()
@@ -264,7 +233,7 @@ func (s *eventPipelineSuite) Test_UpdatedImage() {
 		assertResourceEvent(s.T(), resourceEvent)
 	})
 
-	err := s.pipeline.ProcessMessage(msgFromCentral)
+	err := s.pipeline.ProcessMessage(s.T().Context(), msgFromCentral)
 	s.NoError(err)
 
 	messageReceived.Wait()
@@ -293,7 +262,7 @@ func (s *eventPipelineSuite) Test_ReprocessDeployment() {
 		assertResourceEvent(s.T(), resourceEvent)
 	})
 
-	err := s.pipeline.ProcessMessage(msgFromCentral)
+	err := s.pipeline.ProcessMessage(s.T().Context(), msgFromCentral)
 	s.NoError(err)
 
 	messageReceived.Wait()
@@ -322,7 +291,7 @@ func (s *eventPipelineSuite) Test_InvalidateImageCache() {
 		assertResourceEvent(s.T(), resourceEvent)
 	})
 
-	err := s.pipeline.ProcessMessage(msgFromCentral)
+	err := s.pipeline.ProcessMessage(s.T().Context(), msgFromCentral)
 	s.NoError(err)
 
 	messageReceived.Wait()

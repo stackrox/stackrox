@@ -12,7 +12,7 @@ import {
     Title,
     pluralize,
 } from '@patternfly/react-core';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom-v5-compat';
 
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
@@ -64,6 +64,7 @@ const defaultNodeCveSummary = {
         important: { total: 0 },
         moderate: { total: 0 },
         low: { total: 0 },
+        unknown: { total: 0 },
     },
     distroTuples: [],
 };

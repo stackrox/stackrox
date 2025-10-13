@@ -1,13 +1,15 @@
 package services
 
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 
 import io.stackrox.proto.api.v1.PolicyCategoryServiceGrpc
 import io.stackrox.proto.api.v1.PolicyCategoryServiceOuterClass
 
 @Slf4j
+@CompileStatic
 class PolicyCategoryService extends BaseService {
-    static getPolicyCategoryClient() {
+    static PolicyCategoryServiceGrpc.PolicyCategoryServiceBlockingStub getPolicyCategoryClient() {
         return PolicyCategoryServiceGrpc.newBlockingStub(getChannel())
     }
 

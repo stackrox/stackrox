@@ -24,20 +24,26 @@ import (
 )
 
 {{- define "createTableStmt" }}
-{{- $schema := . }}
+{{- $singleton := .Singleton }}
+{{- $schema := .Schema }}
 &postgres.CreateStmts{
     GormModel: (*{{$schema.Table|upperCamelCase}})(nil),
     Children: []*postgres.CreateStmts{
      {{- range $index, $child := $schema.Children }}
-        {{- template "createTableStmt" $child }},
+        {{- template "createTableStmt" dict "Schema" $child "Singleton" $singleton }},
     {{- end }}
     },
+    {{- if $singleton }}
+    PostStmts: []string{
+        "ALTER TABLE {{$schema.Table|lowerCase}} REPLICA IDENTITY FULL",
+    },
+    {{- end }}
 }
 {{- end}}
 
 var (
     // {{template "createTableStmtVar" .Schema }} holds the create statement for table `{{.Schema.Table|lowerCase}}`.
-    {{template "createTableStmtVar" .Schema }} = {{template "createTableStmt" .Schema }}
+    {{template "createTableStmtVar" .Schema }} = {{template "createTableStmt" dict "Schema" .Schema "Singleton" .Singleton }}
 
     // {{template "schemaVar" .Schema.Table}} is the go schema for table `{{.Schema.Table|lowerCase}}`.
     {{template "schemaVar" .Schema.Table}} = func() *walker.Schema {
@@ -76,8 +82,6 @@ var (
 
         {{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
             schema.ScopingResource = resources.{{.Type | storageToResource}}
-        {{- else if .PermissionChecker }}
-            schema.PermissionChecker = {{ .PermissionChecker }}
         {{- end }}
         {{- if .RegisterSchema }}
         RegisterTable(schema, {{template "createTableStmtVar" .Schema }}{{ if .FeatureFlag }}, features.{{.FeatureFlag}}.Enabled {{ end }})

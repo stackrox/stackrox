@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sync"
@@ -30,7 +31,7 @@ func (s *clusterStoreImpl) GetFlowStore(clusterID string) store.FlowStore {
 
 	flowStore, found := s.flowStore[clusterID]
 	if !found || flowStore == nil {
-		flowStore = New(s.db, clusterID)
+		flowStore = New(s.db, clusterID, networktree.Singleton())
 		s.flowStore[clusterID] = flowStore
 	}
 	return flowStore

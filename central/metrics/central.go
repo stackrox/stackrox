@@ -112,6 +112,13 @@ var (
 		Help:      "A counter of the total number of network endpoints received by Central from Sensor",
 	}, []string{"ClusterID"})
 
+	totalExternalPoliciesGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "total_external_policies_count",
+		Help:      "A gauge of the total number of policy as code CRs that have been accepted by Central from Config Controller",
+	})
+
 	riskProcessingHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
@@ -263,6 +270,26 @@ var (
 		Name:      "signature_verification_reprocessor_duration_seconds",
 		Help:      "Duration of the signature verification reprocessor loop in seconds",
 	})
+
+	msgToSensorNotSentCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "msg_to_sensor_not_sent_count",
+		Help:      "Total messages not sent to Sensor due to errors or other reasons",
+	}, []string{"ClusterID", "type", "reason"})
+)
+
+// Reasons for a message not being sent.
+var (
+	// NotSentError indicates that an attempt was made to send the message
+	// but an error was encountered.
+	NotSentError = "error"
+	// NotSentSignal indicates that a signal prevented the message from being
+	// sent, such as a timeout.
+	NotSentSignal = "signal"
+	// NotSentSkip indicates that no attempt was made to send the message,
+	// perhaps due to prior errors.
+	NotSentSkip = "skip"
 )
 
 func startTimeToMS(t time.Time) float64 {
@@ -392,6 +419,14 @@ func IncrementTotalNetworkEndpointsReceivedCounter(clusterID string, numberOfEnd
 	totalNetworkEndpointsReceivedCounter.With(prometheus.Labels{"ClusterID": clusterID}).Add(float64(numberOfEndpoints))
 }
 
+func IncrementTotalExternalPoliciesGauge() {
+	totalExternalPoliciesGauge.Inc()
+}
+
+func DecrementTotalExternalPoliciesGauge() {
+	totalExternalPoliciesGauge.Dec()
+}
+
 // ObserveRiskProcessingDuration adds an observation for risk processing duration.
 func ObserveRiskProcessingDuration(startTime time.Time, riskObjectType string) {
 	riskProcessingHistogramVec.With(prometheus.Labels{"Risk_Reprocessor": riskObjectType}).
@@ -451,6 +486,16 @@ func IncSensorEventsDeduper(deduped bool, msg *central.MsgFromSensor) {
 // SetReprocessorDuration registers how long a reprocessing step took.
 func SetReprocessorDuration(start time.Time) {
 	reprocessorDurationGauge.Set(time.Since(start).Seconds())
+}
+
+// IncrementMsgToSensorNotSentCounter increments the count of messages not sent to Sensor due to
+// errors or other reasons.
+func IncrementMsgToSensorNotSentCounter(clusterID string, msg *central.MsgToSensor, reason string) {
+	if msg.GetMsg() == nil {
+		return
+	}
+	typ := event.GetEventTypeWithoutPrefix(msg.GetMsg())
+	msgToSensorNotSentCounter.With(prometheus.Labels{"ClusterID": clusterID, "type": typ, "reason": reason}).Inc()
 }
 
 // SetSignatureVerificationReprocessorDuration registers how long a signature verification reprocessing step took.

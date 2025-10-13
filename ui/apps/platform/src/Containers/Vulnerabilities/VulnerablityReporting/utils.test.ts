@@ -83,6 +83,7 @@ describe('utils', () => {
                 imageType: [],
                 includeAdvisory: false,
                 includeEpssProbability: false,
+                // Ross CISA KEV includeExploitable
                 includeNvdCvss: false,
                 cvesDiscoveredSince: 'ALL_VULN',
                 cvesDiscoveredStartDate: undefined,
@@ -103,6 +104,7 @@ describe('utils', () => {
                 imageType: [],
                 includeAdvisory: false,
                 includeEpssProbability: false,
+                // Ross CISA KEV includeExploitable
                 includeNvdCvss: false,
                 cvesDiscoveredSince: 'SINCE_LAST_REPORT',
                 cvesDiscoveredStartDate: undefined,
@@ -123,6 +125,7 @@ describe('utils', () => {
                 imageType: [],
                 includeAdvisory: false,
                 includeEpssProbability: false,
+                // Ross CISA KEV includeExploitable
                 includeNvdCvss: false,
                 cvesDiscoveredSince: 'START_DATE',
                 cvesDiscoveredStartDate: '2023-10-02',
@@ -131,7 +134,7 @@ describe('utils', () => {
 
             const text = getCVEsDiscoveredSinceText(reportParameters);
 
-            expect(text).toBe('10/02/2023');
+            expect(text).toBe('Oct 02, 2023');
         });
     });
 });

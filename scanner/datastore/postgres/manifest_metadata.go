@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/quay/claircore"
 	"github.com/quay/zlog"
 )
@@ -90,8 +90,8 @@ func (i *indexerMetadataStore) ManifestExists(ctx context.Context, manifestID st
 	return value == 1, nil
 }
 
-func (i *indexerMetadataStore) GCManifests(ctx context.Context, expiration time.Time, opts ...GCManifestsOption) ([]string, error) {
-	o := makeGCManifestsOpts(opts)
+func (i *indexerMetadataStore) GCManifests(ctx context.Context, expiration time.Time, opts ...ReindexGCOption) ([]string, error) {
+	o := makeReindexGCOpts(opts)
 
 	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/indexerMetadataStore.GCManifests")
 

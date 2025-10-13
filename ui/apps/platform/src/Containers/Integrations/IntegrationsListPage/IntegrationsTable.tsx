@@ -1,4 +1,5 @@
 import React from 'react';
+import type { ReactElement } from 'react';
 import {
     Button,
     Divider,
@@ -9,7 +10,7 @@ import {
     Title,
 } from '@patternfly/react-core';
 import { ActionsColumn, Table, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom-v5-compat';
 import pluralize from 'pluralize';
 
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
@@ -18,19 +19,16 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import useTableSelection from 'hooks/useTableSelection';
 import { allEnabled } from 'utils/featureFlagUtils';
 import TableCellValue from 'Components/TableCellValue/TableCellValue';
-import { isUserResource } from 'Containers/AccessControl/traits';
+import { isUserResource } from 'utils/traits.utils';
 import useIntegrationPermissions from '../hooks/useIntegrationPermissions';
 import usePageState from '../hooks/usePageState';
-import { Integration, getIsAPIToken, getIsClusterInitBundle } from '../utils/integrationUtils';
+import { getIsAPIToken } from '../utils/integrationUtils';
+import type { Integration, IntegrationSource, IntegrationType } from '../utils/integrationUtils';
 import tableColumnDescriptor from '../utils/tableColumnDescriptor';
-import DownloadCAConfigBundle from './DownloadCAConfigBundle';
 
 function getNewButtonText(type) {
     if (type === 'apitoken') {
         return 'Generate token';
-    }
-    if (type === 'clusterInitBundle') {
-        return 'Generate bundle';
     }
     if (type === 'machineAccess') {
         return 'Create configuration';
@@ -52,9 +50,9 @@ function IntegrationsTable({
     onDeleteIntegrations,
     onTriggerBackup,
     isReadOnly,
-}: IntegrationsTableProps): React.ReactElement {
+}: IntegrationsTableProps): ReactElement {
     const permissions = useIntegrationPermissions();
-    const { source, type } = useParams();
+    const { source, type } = useParams() as { source: IntegrationSource; type: IntegrationType };
     const { getPathToCreate, getPathToEdit, getPathToViewDetails } = usePageState();
     const {
         selected,
@@ -76,7 +74,6 @@ function IntegrationsTable({
     });
 
     const isAPIToken = getIsAPIToken(source, type);
-    const isClusterInitBundle = getIsClusterInitBundle(source, type);
 
     function onDeleteIntegrationHandler() {
         const ids = getSelectedIds();
@@ -110,11 +107,6 @@ function IntegrationsTable({
                                         </Button>
                                     </FlexItem>
                                 )}
-                            {isClusterInitBundle && (
-                                <FlexItem>
-                                    <DownloadCAConfigBundle />
-                                </FlexItem>
-                            )}
                             {permissions[source].write && !isReadOnly && (
                                 <FlexItem>
                                     <Button
@@ -180,7 +172,7 @@ function IntegrationsTable({
                                                 Edit integration
                                             </Link>
                                         ),
-                                        isHidden: isAPIToken || isClusterInitBundle,
+                                        isHidden: isAPIToken,
                                     },
                                     {
                                         title: (

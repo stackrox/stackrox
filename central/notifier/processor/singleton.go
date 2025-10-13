@@ -50,7 +50,11 @@ func initialize() {
 	pr = New(ns, reporter.Singleton())
 
 	notifierDatastore := datastore.Singleton()
-	protoNotifiers, err := notifierDatastore.GetNotifiers(ctx)
+	var protoNotifiers []*storage.Notifier
+	err := notifierDatastore.ForEachNotifier(ctx, func(obj *storage.Notifier) error {
+		protoNotifiers = append(protoNotifiers, obj)
+		return nil
+	})
 	if err != nil {
 		log.Panicf("unable to fetch notifiers: %v", err)
 	}

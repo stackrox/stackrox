@@ -142,10 +142,6 @@ func (s *complianceScanConfigDataStoreTestSuite) SetupTest() {
 	s.testContexts[noAccessCtx] = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
 }
 
-func (s *complianceScanConfigDataStoreTestSuite) TearDownTest() {
-	s.db.Teardown(s.T())
-}
-
 func (s *complianceScanConfigDataStoreTestSuite) TestGetScanConfiguration() {
 	configID := uuid.NewV4().String()
 
@@ -155,8 +151,8 @@ func (s *complianceScanConfigDataStoreTestSuite) TestGetScanConfiguration() {
 	// Add a record so we have something to find
 	s.Require().NoError(s.storage.Upsert(s.testContexts[unrestrictedReadWriteCtx], scanConfig))
 
-	for _, cluster := range scanConfig.Clusters {
-		s.Require().NoError(s.dataStore.UpdateClusterStatus(s.testContexts[unrestrictedReadWriteCtx], configID, cluster.ClusterId, "testing status", ""))
+	for _, cluster := range scanConfig.GetClusters() {
+		s.Require().NoError(s.dataStore.UpdateClusterStatus(s.testContexts[unrestrictedReadWriteCtx], configID, cluster.GetClusterId(), "testing status", ""))
 	}
 
 	testCases := []struct {
@@ -232,15 +228,15 @@ func (s *complianceScanConfigDataStoreTestSuite) TestRemoveClusterFromScanConfig
 	s.Require().NoError(s.storage.Upsert(s.testContexts[unrestrictedReadWriteCtx], scanConfig1))
 	s.Require().NoError(s.storage.Upsert(s.testContexts[unrestrictedReadWriteCtx], scanConfig2))
 
-	for _, cluster := range scanConfig1.Clusters {
-		s.Require().NoError(s.dataStore.UpdateClusterStatus(s.testContexts[unrestrictedReadWriteCtx], configID1, cluster.ClusterId, "testing status", ""))
+	for _, cluster := range scanConfig1.GetClusters() {
+		s.Require().NoError(s.dataStore.UpdateClusterStatus(s.testContexts[unrestrictedReadWriteCtx], configID1, cluster.GetClusterId(), "testing status", ""))
 	}
 
-	for _, cluster := range scanConfig2.Clusters {
-		s.Require().NoError(s.dataStore.UpdateClusterStatus(s.testContexts[unrestrictedReadWriteCtx], configID2, cluster.ClusterId, "testing status", ""))
+	for _, cluster := range scanConfig2.GetClusters() {
+		s.Require().NoError(s.dataStore.UpdateClusterStatus(s.testContexts[unrestrictedReadWriteCtx], configID2, cluster.GetClusterId(), "testing status", ""))
 	}
 
-	err := s.dataStore.RemoveClusterFromScanConfig(s.testContexts[unrestrictedReadWriteCtx], scanConfig1.Clusters[0].GetClusterId())
+	err := s.dataStore.RemoveClusterFromScanConfig(s.testContexts[unrestrictedReadWriteCtx], scanConfig1.GetClusters()[0].GetClusterId())
 	s.Require().NoError(err)
 
 	newscanConfig, exists, err := s.dataStore.GetScanConfiguration(s.testContexts[unrestrictedReadWriteCtx], scanConfig1.GetId())
@@ -252,7 +248,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestRemoveClusterFromScanConfig
 	s.Require().NoError(err)
 	s.Require().Equal(len(newscanConfig.GetClusters()), len(scanConfigStatus))
 
-	err = s.dataStore.RemoveClusterFromScanConfig(s.testContexts[unrestrictedReadWriteCtx], scanConfig2.Clusters[0].GetClusterId())
+	err = s.dataStore.RemoveClusterFromScanConfig(s.testContexts[unrestrictedReadWriteCtx], scanConfig2.GetClusters()[0].GetClusterId())
 	s.Require().NoError(err)
 	newscanConfig, exists, err = s.dataStore.GetScanConfiguration(s.testContexts[unrestrictedReadWriteCtx], scanConfig2.GetId())
 	s.Require().NoError(err)
@@ -273,11 +269,11 @@ func (s *complianceScanConfigDataStoreTestSuite) TestGetScanConfigurations() {
 	s.Require().NoError(s.storage.Upsert(s.testContexts[unrestrictedReadWriteCtx], scanConfig1))
 	s.Require().NoError(s.storage.Upsert(s.testContexts[unrestrictedReadWriteCtx], scanConfig2))
 
-	for _, cluster := range scanConfig1.Clusters {
-		s.Require().NoError(s.dataStore.UpdateClusterStatus(s.testContexts[unrestrictedReadWriteCtx], configID1, cluster.ClusterId, "testing status", ""))
+	for _, cluster := range scanConfig1.GetClusters() {
+		s.Require().NoError(s.dataStore.UpdateClusterStatus(s.testContexts[unrestrictedReadWriteCtx], configID1, cluster.GetClusterId(), "testing status", ""))
 	}
-	for _, cluster := range scanConfig2.Clusters {
-		s.Require().NoError(s.dataStore.UpdateClusterStatus(s.testContexts[unrestrictedReadWriteCtx], configID2, cluster.ClusterId, "testing status", ""))
+	for _, cluster := range scanConfig2.GetClusters() {
+		s.Require().NoError(s.dataStore.UpdateClusterStatus(s.testContexts[unrestrictedReadWriteCtx], configID2, cluster.GetClusterId(), "testing status", ""))
 	}
 
 	testCases := []struct {
@@ -749,9 +745,9 @@ func (s *complianceScanConfigDataStoreTestSuite) TestGetProfilesNames() {
 		} else {
 			s.Require().ElementsMatch(tc.expectedRecord, profiles)
 		}
-		count, err := s.dataStore.CountDistinctProfiles(tc.testContext, tc.countQuery)
+		count, err := s.dataStore.DistinctProfiles(tc.testContext, tc.countQuery)
 		s.Require().NoError(err)
-		s.Require().Equal(tc.expectedCount, count)
+		s.Require().Len(count, tc.expectedCount)
 	}
 }
 

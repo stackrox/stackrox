@@ -1,10 +1,13 @@
 package matcher
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestPlatformMatcher(t *testing.T) {
@@ -14,14 +17,17 @@ func TestPlatformMatcher(t *testing.T) {
 type platformMatcherTestSuite struct {
 	suite.Suite
 
-	matcher PlatformMatcher
+	mockCtrl *gomock.Controller
+	matcher  PlatformMatcher
 }
 
 func (s *platformMatcherTestSuite) SetupSuite() {
-	s.matcher = New()
+	s.mockCtrl = gomock.NewController(s.T())
+	s.matcher = GetTestPlatformMatcherWithDefaultPlatformComponentConfig(s.mockCtrl)
 }
 
 func (s *platformMatcherTestSuite) TestMatchAlert() {
+	s.matcher = GetTestPlatformMatcherWithDefaultPlatformComponentConfig(s.mockCtrl)
 	// case: nil alert
 	match, err := s.matcher.MatchAlert(nil)
 	s.Require().Error(err)
@@ -171,5 +177,50 @@ func (s *platformMatcherTestSuite) TestMatchDeployment() {
 	dep.Namespace = "nvidia-gpu-operator"
 	match, err = s.matcher.MatchDeployment(dep)
 	s.Require().NoError(err)
+	s.Require().False(match)
+}
+
+func (s *platformMatcherTestSuite) TestCustomPlatformComponentRegexes() {
+	// Try to enable Customizable Platform Components feature
+	if !features.CustomizablePlatformComponents.Enabled() {
+		s.T().Setenv(features.CustomizablePlatformComponents.EnvVar(), "true")
+	}
+	// If we weren't able to set the environment variable for some reason, skip this test
+	if !features.CustomizablePlatformComponents.Enabled() {
+		s.T().Skip("Customized platform components was not enabled")
+	}
+	regexes := []*regexp.Regexp{
+		regexp.MustCompile("kube.*"),
+		regexp.MustCompile("openshift.*"),
+		regexp.MustCompile("bad-namespace.*"),
+	}
+	s.matcher.SetRegexes(regexes)
+	dep := &storage.Deployment{
+		Name:        "dep1",
+		Namespace:   "my-namespace",
+		ClusterName: "cluster-1",
+	}
+	match, err := s.matcher.MatchDeployment(dep)
+	s.Require().NoError(err)
+	s.Require().False(match)
+
+	dep.Namespace = "kube-system"
+	match, err = s.matcher.MatchDeployment(dep)
+	s.Require().NoError(err)
 	s.Require().True(match)
+
+	dep.Namespace = "openshift"
+	match, err = s.matcher.MatchDeployment(dep)
+	s.Require().NoError(err)
+	s.Require().True(match)
+
+	dep.Namespace = "bad-namespace"
+	match, err = s.matcher.MatchDeployment(dep)
+	s.Require().NoError(err)
+	s.Require().True(match)
+
+	dep.Namespace = "happy-namespace"
+	match, err = s.matcher.MatchDeployment(dep)
+	s.Require().NoError(err)
+	s.Require().False(match)
 }

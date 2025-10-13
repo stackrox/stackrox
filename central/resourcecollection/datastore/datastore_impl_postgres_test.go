@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/heimdalr/dag"
-	"github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	pgStore "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -41,7 +40,7 @@ func (s *CollectionPostgresDataStoreTestSuite) SetupSuite() {
 	s.testDB = pgtest.ForT(s.T())
 
 	s.store = pgStore.New(s.testDB)
-	ds, qs, err := New(s.store, search.New(s.store))
+	ds, qs, err := New(s.store)
 	s.NoError(err)
 	s.datastore = ds
 	s.qr = qs
@@ -50,10 +49,6 @@ func (s *CollectionPostgresDataStoreTestSuite) SetupSuite() {
 // SetupTest removes the local graph before every test
 func (s *CollectionPostgresDataStoreTestSuite) SetupTest() {
 	s.NoError(resetLocalGraph(s.datastore.(*datastoreImpl)))
-}
-
-func (s *CollectionPostgresDataStoreTestSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
 }
 
 func (s *CollectionPostgresDataStoreTestSuite) TestGraphInit() {
@@ -145,7 +140,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	objA := getTestCollection("a", nil)
 	err = s.datastore.DryRunAddCollection(ctx, objA)
 	assert.NoError(s.T(), err)
-	assert.Equal(s.T(), "", objA.Id)
+	assert.Equal(s.T(), "", objA.GetId())
 	count, err := s.datastore.Count(ctx, nil)
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), 0, count)
@@ -153,7 +148,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	// add 'a', verify present
 	_, err = s.datastore.AddCollection(ctx, objA)
 	assert.NoError(s.T(), err)
-	assert.NotEqual(s.T(), "", objA.Id)
+	assert.NotEqual(s.T(), "", objA.GetId())
 	obj, ok, err := s.datastore.Get(ctx, objA.GetId())
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), ok)
@@ -163,18 +158,18 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	objADup := getTestCollection("a", nil)
 	err = s.datastore.DryRunAddCollection(ctx, objADup)
 	assert.Error(s.T(), err)
-	assert.Equal(s.T(), "", objADup.Id)
+	assert.Equal(s.T(), "", objADup.GetId())
 
 	// add duplicate 'a'
 	_, err = s.datastore.AddCollection(ctx, objADup)
 	assert.Error(s.T(), err)
-	assert.Equal(s.T(), "", objADup.Id)
+	assert.Equal(s.T(), "", objADup.GetId())
 
 	// dryrun add 'b' which points to 'a', verify not present
 	objB := getTestCollection("b", []string{objA.GetId()})
 	err = s.datastore.DryRunAddCollection(ctx, objB)
 	assert.NoError(s.T(), err)
-	assert.Equal(s.T(), "", objB.Id)
+	assert.Equal(s.T(), "", objB.GetId())
 	count, err = s.datastore.Count(ctx, nil)
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), 1, count)
@@ -182,7 +177,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	// add 'b' which points to 'a', verify present
 	_, err = s.datastore.AddCollection(ctx, objB)
 	assert.NoError(s.T(), err)
-	assert.NotEqual(s.T(), "", objB.Id)
+	assert.NotEqual(s.T(), "", objB.GetId())
 	obj, ok, err = s.datastore.Get(ctx, objB.GetId())
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), ok)
@@ -251,7 +246,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	objE := getTestCollection("e", []string{objB.GetId()})
 	_, err = s.datastore.AddCollection(ctx, objE)
 	assert.NoError(s.T(), err)
-	assert.NotEqual(s.T(), "", objE.Id)
+	assert.NotEqual(s.T(), "", objE.GetId())
 	obj, ok, err = s.datastore.Get(ctx, objE.GetId())
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), ok)

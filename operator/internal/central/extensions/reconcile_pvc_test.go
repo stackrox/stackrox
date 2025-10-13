@@ -2,19 +2,23 @@ package extensions
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/central/common"
+	"github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -24,14 +28,22 @@ const (
 	testPVCName       = "central-db-test"
 )
 
+// DefaultPVCValues specifies a set of default values used when reconciling the PVC.
+type DefaultPVCValues struct {
+	ClaimName string
+	Size      resource.Quantity
+}
+
 type pvcReconciliationTestCase struct {
 	Central      *platform.Central
 	Target       PVCTarget
-	DefaultClaim string
+	Defaults     DefaultPVCValues
 	ExistingPVCs []*corev1.PersistentVolumeClaim
 
 	ExpectedPVCs  map[string]pvcVerifyFunc
 	ExpectedError string
+
+	DefaultStorageClass bool
 }
 
 type pvcVerifyFunc func(t *testing.T, pvc *corev1.PersistentVolumeClaim)
@@ -126,42 +138,62 @@ func TestReconcilePVCExtension(t *testing.T) {
 
 	cases := map[string]pvcReconciliationTestCase{
 		"empty-state-not-create-new-default-central-pvc": {
-			Central:      emptyCentral,
-			DefaultClaim: DefaultCentralPVCName,
+			DefaultStorageClass: true,
+			Central:             emptyCentral,
+			Defaults: DefaultPVCValues{
+				ClaimName: DefaultCentralPVCName,
+				Size:      DefaultPVCSize,
+			},
 			Target:       PVCTargetCentral,
 			ExistingPVCs: nil,
 			ExpectedPVCs: nil,
 		},
 		"empty-state-obsolete-default-central-pvc": {
-			Central:      emptyCentral,
-			DefaultClaim: DefaultCentralPVCName,
+			DefaultStorageClass: true,
+			Central:             emptyCentral,
+			Defaults: DefaultPVCValues{
+				ClaimName: DefaultCentralPVCName,
+				Size:      DefaultPVCSize,
+			},
 			Target:       PVCTargetCentral,
-			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(emptyCentral, DefaultCentralPVCName, defaultPVCSize, emptyStorageClass, nil)},
+			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(emptyCentral, DefaultCentralPVCName, DefaultPVCSize, emptyStorageClass, nil)},
 			ExpectedPVCs: map[string]pvcVerifyFunc{
-				DefaultCentralPVCName: verifyMultiple(notOwnedBy(emptyCentral), withSize(defaultPVCSize), withStorageClass(emptyStorageClass)),
+				DefaultCentralPVCName: verifyMultiple(notOwnedBy(emptyCentral), withSize(DefaultPVCSize), withStorageClass(emptyStorageClass)),
 			},
 		},
 		"empty-state-obsolete-default-central-pvc-with-obsolete-annotation": {
-			Central:      emptyCentralWithPvcObsoletedAnnotation,
-			DefaultClaim: DefaultCentralPVCName,
+			DefaultStorageClass: true,
+			Central:             emptyCentralWithPvcObsoletedAnnotation,
+			Defaults: DefaultPVCValues{
+				ClaimName: DefaultCentralPVCName,
+				Size:      DefaultPVCSize,
+			},
 			Target:       PVCTargetCentral,
-			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(emptyCentralWithPvcObsoletedAnnotation, DefaultCentralPVCName, defaultPVCSize, emptyStorageClass, nil)},
+			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(emptyCentralWithPvcObsoletedAnnotation, DefaultCentralPVCName, DefaultPVCSize, emptyStorageClass, nil)},
 			ExpectedPVCs: map[string]pvcVerifyFunc{
-				DefaultCentralPVCName: verifyMultiple(notOwnedBy(emptyCentral), withSize(defaultPVCSize), withStorageClass(emptyStorageClass)),
+				DefaultCentralPVCName: verifyMultiple(notOwnedBy(emptyCentral), withSize(DefaultPVCSize), withStorageClass(emptyStorageClass)),
 			},
 		},
 		"central-pvc-should-lose-owner-refs": {
-			Central:      emptyCentral,
-			DefaultClaim: DefaultCentralPVCName,
+			DefaultStorageClass: true,
+			Central:             emptyCentral,
+			Defaults: DefaultPVCValues{
+				ClaimName: DefaultCentralPVCName,
+				Size:      DefaultPVCSize,
+			},
 			Target:       PVCTargetCentral,
-			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(emptyCentral, DefaultCentralPVCName, defaultPVCSize, emptyStorageClass, centralTargetLabels)},
+			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(emptyCentral, DefaultCentralPVCName, DefaultPVCSize, emptyStorageClass, centralTargetLabels)},
 			ExpectedPVCs: map[string]pvcVerifyFunc{
 				DefaultCentralPVCName: notOwnedBy(emptyCentral),
 			},
 		},
 		"given-hostpath-should-not-create-default-central-db-pvc": {
-			Central:      makeCentral(&platform.DBPersistence{HostPath: makeHostPathSpec("/tmp/hostpath")}),
-			DefaultClaim: DefaultCentralDBPVCName,
+			DefaultStorageClass: true,
+			Central:             makeCentral(&platform.DBPersistence{HostPath: makeHostPathSpec("/tmp/hostpath")}),
+			Defaults: DefaultPVCValues{
+				ClaimName: DefaultCentralDBPVCName,
+				Size:      DefaultPVCSize,
+			},
 			Target:       PVCTargetCentralDB,
 			ExistingPVCs: nil,
 			ExpectedPVCs: map[string]pvcVerifyFunc{
@@ -170,8 +202,12 @@ func TestReconcilePVCExtension(t *testing.T) {
 		},
 
 		"given-pvc-should-create-default-central-db-pvc-with-config": {
-			Central:      changedPVCConfigCentral,
-			DefaultClaim: DefaultCentralDBPVCName,
+			DefaultStorageClass: true,
+			Central:             changedPVCConfigCentral,
+			Defaults: DefaultPVCValues{
+				ClaimName: DefaultCentralDBPVCName,
+				Size:      DefaultPVCSize,
+			},
 			Target:       PVCTargetCentralDB,
 			ExistingPVCs: nil,
 			ExpectedPVCs: map[string]pvcVerifyFunc{
@@ -180,39 +216,55 @@ func TestReconcilePVCExtension(t *testing.T) {
 		},
 
 		"given-pvc-should-keep-central-db-pvc-with-config": {
-			Central:      changedPVCConfigCentral,
-			DefaultClaim: DefaultCentralDBPVCName,
+			DefaultStorageClass: true,
+			Central:             changedPVCConfigCentral,
+			Defaults: DefaultPVCValues{
+				ClaimName: DefaultCentralDBPVCName,
+				Size:      DefaultPVCSize,
+			},
 			Target:       PVCTargetCentralDB,
-			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(changedPVCConfigCentral, testPVCName, defaultPVCSize, emptyStorageClass, nil)},
+			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(changedPVCConfigCentral, testPVCName, DefaultPVCSize, emptyStorageClass, nil)},
 			ExpectedPVCs: map[string]pvcVerifyFunc{
 				testPVCName: verifyMultiple(ownedBy(changedPVCConfigCentral), withSize(resource.MustParse("500Gi")), withStorageClass("new-storage-class")),
 			},
 		},
 
 		"existing-pvc-should-be-reconciled-with-no-labels": {
-			Central:      changedPVCConfigCentral,
-			DefaultClaim: DefaultCentralDBPVCName,
+			DefaultStorageClass: true,
+			Central:             changedPVCConfigCentral,
+			Defaults: DefaultPVCValues{
+				ClaimName: DefaultCentralDBPVCName,
+				Size:      DefaultPVCSize,
+			},
 			Target:       PVCTargetCentralDB,
-			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(changedPVCConfigCentral, testPVCName, defaultPVCSize, emptyStorageClass, nil)},
+			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(changedPVCConfigCentral, testPVCName, DefaultPVCSize, emptyStorageClass, nil)},
 			ExpectedPVCs: map[string]pvcVerifyFunc{
 				testPVCName: verifyMultiple(ownedBy(changedPVCConfigCentral), withSize(resource.MustParse("500Gi")), withStorageClass("new-storage-class")),
 			},
 		},
 		"existing-pvc-should-be-reconciled-with-labels": {
-			Central:      changedPVCConfigCentral,
-			DefaultClaim: DefaultCentralDBPVCName,
+			DefaultStorageClass: true,
+			Central:             changedPVCConfigCentral,
+			Defaults: DefaultPVCValues{
+				ClaimName: DefaultCentralDBPVCName,
+				Size:      DefaultPVCSize,
+			},
 			Target:       PVCTargetCentralDB,
-			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(changedPVCConfigCentral, testPVCName, defaultPVCSize, emptyStorageClass, centralDBTargetLabels)},
+			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(changedPVCConfigCentral, testPVCName, DefaultPVCSize, emptyStorageClass, centralDBTargetLabels)},
 			ExpectedPVCs: map[string]pvcVerifyFunc{
 				testPVCName: verifyMultiple(ownedBy(changedPVCConfigCentral), withSize(resource.MustParse("500Gi")), withStorageClass("new-storage-class")),
 			},
 		},
 
 		"only-one-pvc-with-owner-ref-is-allowed": {
-			Central:       changedPVCNameCentral,
-			DefaultClaim:  DefaultCentralDBPVCName,
+			DefaultStorageClass: true,
+			Central:             changedPVCNameCentral,
+			Defaults: DefaultPVCValues{
+				ClaimName: DefaultCentralDBPVCName,
+				Size:      DefaultPVCSize,
+			},
 			Target:        PVCTargetCentralDB,
-			ExistingPVCs:  []*corev1.PersistentVolumeClaim{makePVC(changedPVCNameCentral, DefaultCentralDBPVCName, defaultPVCSize, emptyStorageClass, centralDBTargetLabels)},
+			ExistingPVCs:  []*corev1.PersistentVolumeClaim{makePVC(changedPVCNameCentral, DefaultCentralDBPVCName, DefaultPVCSize, emptyStorageClass, centralDBTargetLabels)},
 			ExpectedError: `Could not create PVC "central-db-test" because the operator can only manage 1 PVC for central-db. To fix this either reference a manually created PVC or remove the OwnerReference of the "central-db" PVC.`,
 			ExpectedPVCs: map[string]pvcVerifyFunc{
 				DefaultCentralDBPVCName: verifyMultiple(ownedBy(changedPVCNameCentral)),
@@ -221,8 +273,12 @@ func TestReconcilePVCExtension(t *testing.T) {
 		},
 
 		"config-changes-on-pvcs-not-owned-by-the-operator-should-fail": {
-			Central:       changedPVCSizeAndStorageClassCentral,
-			DefaultClaim:  DefaultCentralDBPVCName,
+			DefaultStorageClass: true,
+			Central:             changedPVCSizeAndStorageClassCentral,
+			Defaults: DefaultPVCValues{
+				ClaimName: DefaultCentralDBPVCName,
+				Size:      DefaultPVCSize,
+			},
 			Target:        PVCTargetCentralDB,
 			ExistingPVCs:  []*corev1.PersistentVolumeClaim{{ObjectMeta: metav1.ObjectMeta{Name: DefaultCentralDBPVCName, Namespace: "stackrox"}}},
 			ExpectedError: `Failed reconciling PVC "central-db". Please remove the storageClassName and size properties from your spec, or change the name to allow the operator to create a new one with a different name.`,
@@ -232,11 +288,15 @@ func TestReconcilePVCExtension(t *testing.T) {
 		},
 
 		"change-claim-name-to-a-not-operator-managed-pvc-should-be-reconciled": {
-			Central:      changedPVCNameCentral,
-			DefaultClaim: DefaultCentralDBPVCName,
-			Target:       PVCTargetCentralDB,
+			DefaultStorageClass: true,
+			Central:             changedPVCNameCentral,
+			Defaults: DefaultPVCValues{
+				ClaimName: DefaultCentralDBPVCName,
+				Size:      DefaultPVCSize,
+			},
+			Target: PVCTargetCentralDB,
 			ExistingPVCs: []*corev1.PersistentVolumeClaim{
-				makePVC(changedPVCNameCentral, DefaultCentralDBPVCName, defaultPVCSize, emptyStorageClass, centralDBTargetLabels),
+				makePVC(changedPVCNameCentral, DefaultCentralDBPVCName, DefaultPVCSize, emptyStorageClass, centralDBTargetLabels),
 				{ObjectMeta: metav1.ObjectMeta{
 					Name:      testPVCName,
 					Namespace: "stackrox",
@@ -249,74 +309,174 @@ func TestReconcilePVCExtension(t *testing.T) {
 		},
 
 		"delete-central-should-remove-owner-reference": {
-			Central:      deletedCentral,
-			DefaultClaim: DefaultCentralDBPVCName,
+			DefaultStorageClass: true,
+			Central:             deletedCentral,
+			Defaults: DefaultPVCValues{
+				ClaimName: DefaultCentralDBPVCName,
+				Size:      DefaultPVCSize,
+			},
 			Target:       PVCTargetCentralDB,
-			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(deletedCentral, DefaultCentralDBPVCName, defaultPVCSize, emptyStorageClass, centralDBTargetLabels)},
+			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(deletedCentral, DefaultCentralDBPVCName, DefaultPVCSize, emptyStorageClass, centralDBTargetLabels)},
 			ExpectedPVCs: map[string]pvcVerifyFunc{
 				DefaultCentralDBPVCName: verifyMultiple(notOwnedBy(deletedCentral)),
 			},
 		},
 
 		"external central-db provided and no pvc should be created": {
-			Central:      externalCentralWithDB,
-			DefaultClaim: DefaultCentralDBPVCName,
+			DefaultStorageClass: true,
+			Central:             externalCentralWithDB,
+			Defaults: DefaultPVCValues{
+				ClaimName: DefaultCentralDBPVCName,
+				Size:      DefaultPVCSize,
+			},
 			Target:       PVCTargetCentralDB,
 			ExistingPVCs: nil,
 			ExpectedPVCs: nil,
 		},
 		"central-db-empty-state-create-new-default-central-db-pvc": {
-			Central:      emptyCentral,
-			DefaultClaim: DefaultCentralDBPVCName,
+			DefaultStorageClass: true,
+			Central:             emptyCentral,
+			Defaults: DefaultPVCValues{
+				ClaimName: DefaultCentralDBPVCName,
+				Size:      DefaultPVCSize,
+			},
 			Target:       PVCTargetCentralDB,
 			ExistingPVCs: nil,
 			ExpectedPVCs: map[string]pvcVerifyFunc{
-				DefaultCentralDBPVCName: verifyMultiple(ownedBy(emptyCentral), withSize(defaultPVCSize), withStorageClass(emptyStorageClass)),
+				DefaultCentralDBPVCName: verifyMultiple(ownedBy(emptyCentral), withSize(DefaultPVCSize), withStorageClass(emptyStorageClass)),
 			},
 		},
 
 		"central-db-empty-state-create-new-default-pvc-no-labels-pvc": {
-			Central:      emptyCentral,
-			DefaultClaim: DefaultCentralDBPVCName,
-			Target:       PVCTargetCentralDB,
+			DefaultStorageClass: true,
+			Central:             emptyCentral,
+			Defaults: DefaultPVCValues{
+				ClaimName: DefaultCentralDBPVCName,
+				Size:      DefaultPVCSize,
+			},
+			Target: PVCTargetCentralDB,
 			ExistingPVCs: []*corev1.PersistentVolumeClaim{
-				makePVC(emptyCentral, DefaultCentralPVCName, defaultPVCSize, emptyStorageClass, nil),
+				makePVC(emptyCentral, DefaultCentralPVCName, DefaultPVCSize, emptyStorageClass, nil),
 			},
 			ExpectedPVCs: map[string]pvcVerifyFunc{
-				DefaultCentralPVCName:   verifyMultiple(ownedBy(emptyCentral), withSize(defaultPVCSize), withStorageClass(emptyStorageClass)),
-				DefaultCentralDBPVCName: verifyMultiple(ownedBy(emptyCentral), withSize(defaultPVCSize), withStorageClass(emptyStorageClass)),
+				DefaultCentralPVCName:   verifyMultiple(ownedBy(emptyCentral), withSize(DefaultPVCSize), withStorageClass(emptyStorageClass)),
+				DefaultCentralDBPVCName: verifyMultiple(ownedBy(emptyCentral), withSize(DefaultPVCSize), withStorageClass(emptyStorageClass)),
 			},
 		},
 
 		"central-db-empty-state-create-new-default-pvc-with-central-annotation-pvc": {
-			Central:      emptyCentral,
-			DefaultClaim: DefaultCentralDBPVCName,
-			Target:       PVCTargetCentralDB,
+			DefaultStorageClass: true,
+			Central:             emptyCentral,
+			Defaults: DefaultPVCValues{
+				ClaimName: DefaultCentralDBPVCName,
+				Size:      DefaultPVCSize,
+			},
+			Target: PVCTargetCentralDB,
 			ExistingPVCs: []*corev1.PersistentVolumeClaim{
-				makePVC(emptyCentral, DefaultCentralPVCName, defaultPVCSize, emptyStorageClass, centralTargetLabels),
+				makePVC(emptyCentral, DefaultCentralPVCName, DefaultPVCSize, emptyStorageClass, centralTargetLabels),
 			},
 			ExpectedPVCs: map[string]pvcVerifyFunc{
-				DefaultCentralPVCName:   verifyMultiple(ownedBy(emptyCentral), withSize(defaultPVCSize), withStorageClass(emptyStorageClass)),
-				DefaultCentralDBPVCName: verifyMultiple(ownedBy(emptyCentral), withSize(defaultPVCSize), withStorageClass(emptyStorageClass)),
+				DefaultCentralPVCName:   verifyMultiple(ownedBy(emptyCentral), withSize(DefaultPVCSize), withStorageClass(emptyStorageClass)),
+				DefaultCentralDBPVCName: verifyMultiple(ownedBy(emptyCentral), withSize(DefaultPVCSize), withStorageClass(emptyStorageClass)),
 			},
 		},
 		"central-db-existing-pvc-should-be-reconciled-with-labels": {
-			Central:      changedPVCConfigCentral,
-			DefaultClaim: DefaultCentralDBPVCName,
+			DefaultStorageClass: true,
+			Central:             changedPVCConfigCentral,
+			Defaults: DefaultPVCValues{
+				ClaimName: DefaultCentralDBPVCName,
+				Size:      DefaultPVCSize,
+			},
 			Target:       PVCTargetCentralDB,
-			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(changedPVCConfigCentral, testPVCName, defaultPVCSize, emptyStorageClass, centralDBTargetLabels)},
+			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(changedPVCConfigCentral, testPVCName, DefaultPVCSize, emptyStorageClass, centralDBTargetLabels)},
 			ExpectedPVCs: map[string]pvcVerifyFunc{
 				testPVCName: verifyMultiple(ownedBy(changedPVCConfigCentral), withSize(resource.MustParse("500Gi")), withStorageClass("new-storage-class")),
 			},
 		},
 		"central-pvc-should-not-lose-owner-refs": {
-			Central:      emptyCentral,
-			DefaultClaim: DefaultCentralDBPVCName,
+			DefaultStorageClass: true,
+			Central:             emptyCentral,
+			Defaults: DefaultPVCValues{
+				ClaimName: DefaultCentralDBPVCName,
+				Size:      DefaultPVCSize,
+			},
 			Target:       PVCTargetCentralDB,
-			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(emptyCentral, testPVCName, defaultPVCSize, emptyStorageClass, nil)},
+			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(emptyCentral, testPVCName, DefaultPVCSize, emptyStorageClass, nil)},
 			ExpectedPVCs: map[string]pvcVerifyFunc{
-				DefaultCentralDBPVCName: verifyMultiple(ownedBy(emptyCentral), withSize(defaultPVCSize), withStorageClass(emptyStorageClass)),
+				DefaultCentralDBPVCName: verifyMultiple(ownedBy(emptyCentral), withSize(DefaultPVCSize), withStorageClass(emptyStorageClass)),
 				testPVCName:             ownedBy(emptyCentral),
+			},
+		},
+
+		// Test that a backup volume is created, happy path
+		"central-db-empty-state-create-new-default-central-db-backup-pvc": {
+			DefaultStorageClass: true,
+			Central:             emptyCentral,
+			Defaults: DefaultPVCValues{
+				ClaimName: common.DefaultCentralDBBackupPVCName,
+				Size:      DefaultBackupPVCSize,
+			},
+			Target:       PVCTargetCentralDBBackup,
+			ExistingPVCs: nil,
+			ExpectedPVCs: map[string]pvcVerifyFunc{
+				common.DefaultCentralDBBackupPVCName: verifyMultiple(
+					ownedBy(emptyCentral),
+					withSize(DefaultBackupPVCSize),
+					withStorageClass(emptyStorageClass)),
+			},
+		},
+
+		// Test that in absense of a default storage class and explicit storage
+		// class in the pvc config, no backup volume will be created
+		"central-db-no-default-storage-class-no-pvc": {
+			DefaultStorageClass: false,
+			Central:             emptyCentral,
+			Defaults: DefaultPVCValues{
+				ClaimName: common.DefaultCentralDBBackupPVCName,
+				Size:      DefaultBackupPVCSize,
+			},
+			Target:       PVCTargetCentralDBBackup,
+			ExistingPVCs: nil,
+			ExpectedPVCs: nil,
+		},
+
+		// Test that an expicitely specified storage class will be used to
+		// create a backup volume, even if there is no default storage class.
+		// As a side effect, verify that the size is set correctly (it should
+		// be double as much as the data volume).
+		"central-db-custom-storage-class-no-pvc": {
+			DefaultStorageClass: false,
+			Central:             changedPVCSizeAndStorageClassCentral,
+			Defaults: DefaultPVCValues{
+				ClaimName: common.DefaultCentralDBBackupPVCName,
+				Size:      DefaultBackupPVCSize,
+			},
+			Target:       PVCTargetCentralDBBackup,
+			ExistingPVCs: nil,
+			ExpectedPVCs: map[string]pvcVerifyFunc{
+				common.DefaultCentralDBBackupPVCName: verifyMultiple(
+					ownedBy(changedPVCSizeAndStorageClassCentral),
+					withSize(resource.MustParse("1000Gi")),
+					withStorageClass("new-storage-class")),
+			},
+		},
+
+		// Verify that the backup volume ClaimName is defined from the main
+		// data volume ClaimName
+		"central-db-changed-pvc-claim-name": {
+			DefaultStorageClass: true,
+			Central:             changedPVCNameCentral,
+			Defaults: DefaultPVCValues{
+				ClaimName: common.DefaultCentralDBBackupPVCName,
+				Size:      DefaultBackupPVCSize,
+			},
+			Target:       PVCTargetCentralDBBackup,
+			ExistingPVCs: nil,
+			ExpectedPVCs: map[string]pvcVerifyFunc{
+				fmt.Sprintf("%s-backup", testPVCName): verifyMultiple(
+					ownedBy(changedPVCNameCentral),
+					withSize(DefaultBackupPVCSize),
+					withStorageClass(emptyStorageClass)),
 			},
 		},
 	}
@@ -330,13 +490,26 @@ func TestReconcilePVCExtension(t *testing.T) {
 				allExisting = append(allExisting, existingPVC)
 			}
 
+			// Add the default storage class if requested
+			if tc.DefaultStorageClass {
+				allExisting = append(allExisting, &storagev1.StorageClass{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "stackrox",
+						Name:      "new-storage-class",
+						Annotations: map[string]string{
+							utils.DefaultStorageClassAnnotationKey: "true",
+						},
+					},
+				})
+			}
+
 			client := fake.NewClientBuilder().WithObjects(allExisting...).Build()
 
-			rFirstRun := newReconcilePVCExtensionRun(testCase, client)
+			rFirstRun := newReconcilePVCExtensionRun(t, testCase, client)
 			executeAndVerify(t, testCase, rFirstRun)
 
 			// Run it a second time to verify cluster state does not change after first reconciliation was executed
-			rSecondRun := newReconcilePVCExtensionRun(testCase, client)
+			rSecondRun := newReconcilePVCExtensionRun(t, testCase, client)
 			executeAndVerify(t, testCase, rSecondRun)
 		})
 	}
@@ -409,15 +582,19 @@ func makePVC(owner *platform.Central, name string, size resource.Quantity, stora
 	}
 }
 
-func newReconcilePVCExtensionRun(testCase pvcReconciliationTestCase, client ctrlClient.Client) reconcilePVCExtensionRun {
+func newReconcilePVCExtensionRun(t *testing.T, testCase pvcReconciliationTestCase, client ctrlClient.Client) reconcilePVCExtensionRun {
+	persistence, err := getPersistenceByTarget(testCase.Central.Spec.Central, testCase.Target)
+	require.NoError(t, err)
+
 	return reconcilePVCExtensionRun{
 		ctx:              context.Background(),
 		namespace:        "stackrox",
 		client:           client,
 		centralObj:       testCase.Central,
 		target:           testCase.Target,
-		defaultClaimName: testCase.DefaultClaim,
-		persistence:      getPersistenceByTarget(testCase.Central, testCase.Target),
+		defaultClaimName: testCase.Defaults.ClaimName,
+		defaultClaimSize: testCase.Defaults.Size,
+		persistence:      persistence,
 		log:              logr.Discard(),
 	}
 }
@@ -425,5 +602,351 @@ func newReconcilePVCExtensionRun(testCase pvcReconciliationTestCase, client ctrl
 func makeHostPathSpec(path string) *platform.HostPathSpec {
 	return &platform.HostPathSpec{
 		Path: &path,
+	}
+}
+
+func Test_getPersistenceByTarget(t *testing.T) {
+	tests := map[string]struct {
+		central *platform.CentralComponentSpec
+		target  PVCTarget
+		want    *platform.DBPersistence
+		wantErr assert.ErrorAssertionFunc
+	}{
+		"stackrox-db with nil central component spec": {
+			central: nil,
+			target:  PVCTargetCentral,
+			want:    nil,
+			wantErr: assert.NoError,
+		},
+		"stackrox-db with nil DB": {
+			central: &platform.CentralComponentSpec{},
+			target:  PVCTargetCentral,
+			want:    nil,
+			wantErr: assert.NoError,
+		},
+		"stackrox-db with nil persistence": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{},
+			},
+			target:  PVCTargetCentral,
+			want:    nil,
+			wantErr: assert.NoError,
+		},
+		"stackrox-db with empty persistence": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{},
+				},
+			},
+			target:  PVCTargetCentral,
+			want:    nil,
+			wantErr: assert.NoError,
+		},
+		"stackrox-db with empty hostPath": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{
+						HostPath: &platform.HostPathSpec{},
+					},
+				},
+			},
+			target:  PVCTargetCentral,
+			want:    nil,
+			wantErr: assert.NoError,
+		},
+		"stackrox-db with hostPath": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{
+						HostPath: &platform.HostPathSpec{
+							Path: ptr.To("/foo/bar"),
+						},
+					},
+				},
+			},
+			target:  PVCTargetCentral,
+			want:    nil,
+			wantErr: assert.NoError,
+		},
+		"stackrox-db with hostPath and pvc": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{
+						HostPath: &platform.HostPathSpec{
+							Path: ptr.To("/foo/bar"),
+						},
+						PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
+							ClaimName: ptr.To(DefaultCentralDBPVCName),
+						},
+					},
+				},
+			},
+			target:  PVCTargetCentral,
+			want:    nil,
+			wantErr: assert.NoError,
+		},
+		"stackrox-db with pvc": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{},
+				},
+			},
+			target:  PVCTargetCentral,
+			want:    nil,
+			wantErr: assert.NoError,
+		},
+
+		"central-db with nil central component spec": {
+			central: nil,
+			target:  PVCTargetCentralDB,
+			want:    &platform.DBPersistence{},
+			wantErr: assert.NoError,
+		},
+		"central-db with nil DB": {
+			central: &platform.CentralComponentSpec{},
+			target:  PVCTargetCentralDB,
+			want:    &platform.DBPersistence{},
+			wantErr: assert.NoError,
+		},
+		"central-db with nil persistence": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{},
+			},
+			target:  PVCTargetCentralDB,
+			want:    &platform.DBPersistence{},
+			wantErr: assert.NoError,
+		},
+		"central-db with empty persistence": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{},
+				},
+			},
+			target:  PVCTargetCentralDB,
+			want:    &platform.DBPersistence{},
+			wantErr: assert.NoError,
+		},
+		"central-db with empty hostPath": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{
+						HostPath: &platform.HostPathSpec{},
+					},
+				},
+			},
+			target: PVCTargetCentralDB,
+			want: &platform.DBPersistence{
+				HostPath: &platform.HostPathSpec{},
+			},
+			wantErr: assert.NoError,
+		},
+		"central-db with hostPath": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{
+						HostPath: &platform.HostPathSpec{
+							Path: ptr.To("/foo/bar"),
+						},
+					},
+				},
+			},
+			target: PVCTargetCentralDB,
+			want: &platform.DBPersistence{
+				HostPath: &platform.HostPathSpec{
+					Path: ptr.To("/foo/bar"),
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		"central-db with hostPath and pvc": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{
+						HostPath: &platform.HostPathSpec{
+							Path: ptr.To("/foo/bar"),
+						},
+						PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
+							ClaimName: ptr.To(DefaultCentralDBPVCName),
+						},
+					},
+				},
+			},
+			target: PVCTargetCentralDB,
+			want: &platform.DBPersistence{HostPath: &platform.HostPathSpec{
+				Path: ptr.To("/foo/bar"),
+			}},
+			wantErr: assert.NoError,
+		},
+		"central-db with empty pvc": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{},
+				},
+			},
+			target:  PVCTargetCentralDB,
+			want:    &platform.DBPersistence{},
+			wantErr: assert.NoError,
+		},
+		"central-db with pvc": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{
+						PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
+							ClaimName: ptr.To(DefaultCentralDBPVCName),
+							Size:      ptr.To("100Gi"),
+						},
+					},
+				},
+			},
+			target: PVCTargetCentralDB,
+			want: &platform.DBPersistence{
+				PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
+					ClaimName: ptr.To(DefaultCentralDBPVCName),
+					Size:      ptr.To("100Gi"),
+				},
+			},
+			wantErr: assert.NoError,
+		},
+
+		"central-db-backup with nil central component spec": {
+			central: nil,
+			target:  PVCTargetCentralDBBackup,
+			want:    &platform.DBPersistence{},
+			wantErr: assert.NoError,
+		},
+		"central-db-backup with nil DB": {
+			central: &platform.CentralComponentSpec{},
+			target:  PVCTargetCentralDBBackup,
+			want:    &platform.DBPersistence{},
+			wantErr: assert.NoError,
+		},
+		"central-db-backup with nil persistence": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{},
+			},
+			target:  PVCTargetCentralDBBackup,
+			want:    &platform.DBPersistence{},
+			wantErr: assert.NoError,
+		},
+		"central-db-backup with empty persistence": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{},
+				},
+			},
+			target:  PVCTargetCentralDBBackup,
+			want:    &platform.DBPersistence{},
+			wantErr: assert.NoError,
+		},
+		"central-db-backup with empty hostPath": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{
+						HostPath: &platform.HostPathSpec{},
+					},
+				},
+			},
+			target: PVCTargetCentralDBBackup,
+			want: &platform.DBPersistence{
+				HostPath: &platform.HostPathSpec{},
+			},
+			wantErr: assert.NoError,
+		},
+		"central-db-backup with hostPath": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{
+						HostPath: &platform.HostPathSpec{
+							Path: ptr.To("/foo/bar"),
+						},
+					},
+				},
+			},
+			target: PVCTargetCentralDBBackup,
+			want: &platform.DBPersistence{
+				HostPath: &platform.HostPathSpec{
+					Path: ptr.To("/foo/bar"),
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		"central-db-backup with hostPath and pvc": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{
+						HostPath: &platform.HostPathSpec{
+							Path: ptr.To("/foo/bar"),
+						},
+						PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
+							ClaimName: ptr.To(DefaultCentralDBPVCName),
+						},
+					},
+				},
+			},
+			target: PVCTargetCentralDBBackup,
+			want: &platform.DBPersistence{HostPath: &platform.HostPathSpec{
+				Path: ptr.To("/foo/bar"),
+			}},
+			wantErr: assert.NoError,
+		},
+		"central-db-backup with empty pvc": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{
+						PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{},
+					},
+				},
+			},
+			target: PVCTargetCentralDBBackup,
+			want: &platform.DBPersistence{
+				PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{},
+			},
+			wantErr: assert.NoError,
+		},
+		"central-db-backup with pvc": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{
+						PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
+							ClaimName: ptr.To(DefaultCentralDBPVCName),
+							Size:      ptr.To("100Gi"),
+						},
+					},
+				},
+			},
+			target: PVCTargetCentralDBBackup,
+			want: &platform.DBPersistence{
+				PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
+					ClaimName: ptr.To("central-db-backup"),
+					Size:      ptr.To("200Gi"),
+				},
+			},
+			wantErr: assert.NoError,
+		},
+		"central-db-backup with pvc with broken size": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{
+						PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
+							ClaimName: ptr.To(DefaultCentralDBPVCName),
+							Size:      ptr.To("1 Badger"),
+						},
+					},
+				},
+			},
+			target: PVCTargetCentralDBBackup,
+			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
+				return assert.ErrorContains(t, err, "failed to calculate backup volume size: parsing main central-db PVC size \"1 Badger\" failed", i)
+			},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, err := getPersistenceByTarget(tt.central, tt.target)
+			if !tt.wantErr(t, err, fmt.Sprintf("getPersistenceByTarget(%v, %v)", tt.central, tt.target)) {
+				return
+			}
+			assert.Equalf(t, tt.want, got, "getPersistenceByTarget(%v, %v)", tt.central, tt.target)
+		})
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -71,7 +72,7 @@ func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img
 			CachedOnly: !s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline(),
 		})
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "scanning image via central")
 		}
 		return resp.GetImage(), nil
 	}
@@ -83,7 +84,7 @@ func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img
 		Namespace:  deployment.GetNamespace(),
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "getting image from sensor")
 	}
 	return resp.GetImage(), nil
 }
@@ -153,6 +154,14 @@ func hasModifiedImages(s *state, deployment *storage.Deployment, req *admission.
 		return true
 	}
 
+	if req.SubResource != "" && req.SubResource == ScaleSubResource {
+		// TODO: We could consider returning false here since when the admission review request is for the scale
+		// subresource, I do not believe it is possible for a user to change the image on the deployment at the same
+		// time as updating the scale subresource However, the contract of this function as designed was to be
+		// conservative and return true.
+		return true
+	}
+
 	oldK8sObj, err := unmarshalK8sObject(req.Kind, req.OldObject.Raw)
 	if err != nil {
 		log.Errorf("Failed to unmarshal old object into K8s object: %v", err)
@@ -164,7 +173,6 @@ func hasModifiedImages(s *state, deployment *storage.Deployment, req *admission.
 		log.Errorf("Failed to convert old K8s object into StackRox deployment: %v", err)
 		return true
 	}
-
 	if oldDeployment == nil {
 		return true
 	}

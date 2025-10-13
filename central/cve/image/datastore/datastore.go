@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/cve/common"
-	"github.com/stackrox/rox/central/cve/image/datastore/search"
 	"github.com/stackrox/rox/central/cve/image/datastore/store"
 	pgStore "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -38,13 +37,17 @@ type DataStore interface {
 	RevertException(ctx context.Context, cves ...string) error
 
 	EnrichImageWithSuppressedCVEs(image *storage.Image)
+
+	// TODO(ROX-30117): This is normalized CVE model datastore, which is deprecated.
+	// Had to add this to make it satisfy the changes to the CVESupressor interface.
+	// This will be removed when the normalized CVE model is deleted
+	EnrichImageV2WithSuppressedCVEs(image *storage.ImageV2)
 }
 
 // New returns a new instance of a DataStore.
-func New(storage store.Store, searcher search.Searcher, kf concurrency.KeyFence) DataStore {
+func New(storage store.Store, kf concurrency.KeyFence) DataStore {
 	ds := &datastoreImpl{
-		storage:  storage,
-		searcher: searcher,
+		storage: storage,
 
 		cveSuppressionCache: make(common.CVESuppressionCache),
 		keyFence:            kf,
@@ -54,8 +57,7 @@ func New(storage store.Store, searcher search.Searcher, kf concurrency.KeyFence)
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) DataStore {
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
 	dbstore := pgStore.New(pool)
-	searcher := search.New(dbstore)
-	return New(dbstore, searcher, concurrency.NewKeyFence())
+	return New(dbstore, concurrency.NewKeyFence())
 }

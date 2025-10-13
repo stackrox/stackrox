@@ -37,5 +37,5 @@ func (s *factoryImpl) GetFragment(ctx context.Context, clusterID string) (pipeli
 			return nil, errors.Wrapf(err, "creating flow store for cluster %s", clusterID)
 		}
 	}
-	return NewPipeline(clusterID, newFlowPersister(flowStore, s.networkBaselines, entityDataStore.Singleton())), nil
+	return NewPipeline(clusterID, newFlowPersister(flowStore, s.networkBaselines, entityDataStore.Singleton(), clusterID)), nil
 }

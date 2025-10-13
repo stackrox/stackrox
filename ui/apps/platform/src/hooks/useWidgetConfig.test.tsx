@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 import React from 'react';
-import { render, renderHook, act } from '@testing-library/react';
+import { act, render, renderHook } from '@testing-library/react';
 import useWidgetConfig, { defaultStorageKey } from 'hooks/useWidgetConfig';
 
 beforeEach(() => {
@@ -122,7 +122,7 @@ describe('useWidgetConfig hook', () => {
     it('should handle multiple unrelated widget configs simultaneously', () => {
         const idA = 'widgetA';
         const idB = 'widgetB';
-        const renderSpies = { [idA]: jest.fn(), [idB]: jest.fn() };
+        const renderSpies = { [idA]: vi.fn(), [idB]: vi.fn() };
         const hookReturns = { [idA]: {}, [idB]: {} };
 
         const defaultConfig = { sort: 'asc', filter: '' };

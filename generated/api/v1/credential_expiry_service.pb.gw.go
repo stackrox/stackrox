@@ -42,6 +42,9 @@ func request_CredentialExpiryService_GetCertExpiry_0(ctx context.Context, marsha
 		protoReq GetCertExpiry_Request
 		metadata runtime.ServerMetadata
 	)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}

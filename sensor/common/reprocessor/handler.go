@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/image/cache"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/unimplemented"
 )
 
 var (
@@ -37,18 +38,24 @@ func NewHandler(admCtrlSettingsMgr admissioncontroller.SettingsManager, detector
 }
 
 type handlerImpl struct {
+	unimplemented.Receiver
+
 	admCtrlSettingsMgr admissioncontroller.SettingsManager
 	detector           detector.Detector
 	imageCache         cache.Image
 	stopSig            concurrency.ErrorSignal
 }
 
+func (h *handlerImpl) Name() string {
+	return "reprocessor.handlerImpl"
+}
+
 func (h *handlerImpl) Start() error {
 	return nil
 }
 
-func (h *handlerImpl) Stop(err error) {
-	h.stopSig.SignalWithError(err)
+func (h *handlerImpl) Stop() {
+	h.stopSig.Signal()
 }
 
 func (h *handlerImpl) Notify(common.SensorComponentEvent) {}
@@ -56,10 +63,6 @@ func (h *handlerImpl) Notify(common.SensorComponentEvent) {}
 func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 	// A new sensor capability to reprocess deployment has not been added. In case of mismatched upgrades,
 	// the re-processing is discarded, which is fine.
-	return nil
-}
-
-func (h *handlerImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 

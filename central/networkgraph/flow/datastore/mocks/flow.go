@@ -148,11 +148,12 @@ func (mr *MockFlowDataStoreMockRecorder) RemoveStaleFlows(ctx any) *gomock.Call 
 }
 
 // UpsertFlows mocks base method.
-func (m *MockFlowDataStore) UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
+func (m *MockFlowDataStore) UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) ([]*storage.NetworkFlow, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertFlows", ctx, flows, lastUpdateTS)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].([]*storage.NetworkFlow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // UpsertFlows indicates an expected call of UpsertFlows.

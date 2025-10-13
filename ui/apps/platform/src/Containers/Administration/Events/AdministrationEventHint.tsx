@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { List, ListItem, Text } from '@patternfly/react-core';
 
 /*
@@ -40,7 +41,6 @@ export type AdministrationEventHintProps = {
 };
 
 function AdministrationEventHint({ hint }: AdministrationEventHintProps): ReactElement {
-    /* eslint-disable no-nested-ternary */
     /* eslint-disable react/no-array-index-key */
     // Remove default PatternFly margin-top for li + li to conserve vertical space.
     return (
@@ -63,7 +63,6 @@ function AdministrationEventHint({ hint }: AdministrationEventHintProps): ReactE
         </div>
     );
     /* eslint-enable react/no-array-index-key */
-    /* eslint-enable no-nested-ternary */
 }
 
 export default AdministrationEventHint;

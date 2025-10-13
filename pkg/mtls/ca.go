@@ -34,7 +34,7 @@ type CA interface {
 	IssueCertForSubject(subj Subject, opts ...IssueCertOption) (*IssuedCert, error)
 	// ValidateAndExtractSubject validates that the given certificate is a service certificate issued by this CA,
 	// and extracts the subject information.
-	ValidateAndExtractSubject(cert *x509.Certificate) (Subject, error)
+	ValidateAndExtractSubject(cert *x509.Certificate, opts ...VerifyCertOption) (Subject, error)
 }
 
 type ca struct {
@@ -48,50 +48,46 @@ type ca struct {
 // Note: this function does not verify that the given certificate is actually a valid
 // StackRox service CA. To check for this, call `Validate()`.
 func LoadCAForSigning(certPEM, keyPEM []byte) (CA, error) {
-	return loadCA(certPEM, keyPEM, true)
+	ca := &ca{
+		certPEM: slices.Clone(certPEM),
+		keyPEM:  slices.Clone(keyPEM),
+	}
+
+	var err error
+	ca.tlsCert, err = tls.X509KeyPair(certPEM, keyPEM)
+	if err != nil {
+		return nil, err
+	}
+
+	ca.tlsCert.Leaf, _ = x509.ParseCertificate(ca.tlsCert.Certificate[0])
+
+	priv, err := helpers.ParsePrivateKeyPEM(keyPEM)
+	if err != nil {
+		return nil, err
+	}
+
+	ca.signer, err = local.NewSigner(priv, ca.tlsCert.Leaf, cfsslSigner.DefaultSigAlgo(priv), createSigningPolicy())
+	if err != nil {
+		return nil, err
+	}
+
+	return ca, nil
 }
 
 // LoadCAForValidation loads a CA certificate to be used for certificate validation
 // only. It can not be used to sign/issue new certificates, and invoking the respective
 // methods will result in an error.
 func LoadCAForValidation(certPEM []byte) (CA, error) {
-	return loadCA(certPEM, nil, false)
-}
-
-func loadCA(certPEM, keyPEM []byte, forSigning bool) (CA, error) {
 	ca := &ca{
 		certPEM: slices.Clone(certPEM),
-		keyPEM:  slices.Clone(keyPEM),
 	}
 
-	if forSigning {
-		// certificate issuance and validation mode
-		var err error
-		ca.tlsCert, err = tls.X509KeyPair(certPEM, keyPEM)
-		if err != nil {
-			return nil, err
-		}
-
-		ca.tlsCert.Leaf, _ = x509.ParseCertificate(ca.tlsCert.Certificate[0])
-
-		priv, err := helpers.ParsePrivateKeyPEM(keyPEM)
-		if err != nil {
-			return nil, err
-		}
-
-		ca.signer, err = local.NewSigner(priv, ca.tlsCert.Leaf, cfsslSigner.DefaultSigAlgo(priv), createSigningPolicy())
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		// CA without key, can be used for validation only, not cert issuing.
-		var err error
-		ca.tlsCert.Leaf, err = helpers.ParseCertificatePEM(certPEM)
-		if err != nil {
-			return nil, err
-		}
-		ca.tlsCert.Certificate = [][]byte{ca.tlsCert.Leaf.Raw}
+	var err error
+	ca.tlsCert.Leaf, err = helpers.ParseCertificatePEM(certPEM)
+	if err != nil {
+		return nil, err
 	}
+	ca.tlsCert.Certificate = [][]byte{ca.tlsCert.Leaf.Raw}
 
 	return ca, nil
 }
@@ -136,8 +132,16 @@ func (c *ca) IssueCertForSubject(subj Subject, opts ...IssueCertOption) (*Issued
 	return issueNewCertFromSigner(subj, c.signer, opts)
 }
 
-func (c *ca) ValidateAndExtractSubject(cert *x509.Certificate) (Subject, error) {
-	if _, err := cert.Verify(x509.VerifyOptions{Roots: c.CertPool()}); err != nil {
+func (c *ca) ValidateAndExtractSubject(cert *x509.Certificate, opts ...VerifyCertOption) (Subject, error) {
+	vo := &verificationOptions{}
+	vo.apply(opts)
+
+	verifyOpts := x509.VerifyOptions{
+		Roots:       c.CertPool(),
+		CurrentTime: vo.currentTime,
+	}
+
+	if _, err := cert.Verify(verifyOpts); err != nil {
 		return Subject{}, err
 	}
 	return SubjectFromCommonName(cert.Subject.CommonName), nil

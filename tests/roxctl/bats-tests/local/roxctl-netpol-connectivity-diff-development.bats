@@ -411,6 +411,31 @@ added,0.0.0.0-255.255.255.255,default/backend[Deployment],No Connections,TCP 909
     assert_line --regexp "INFO:.*No connections diff"
 }
 
+@test "roxctl-development netpol connectivity diff generates conns diff report between resources from directories with admin network policies txt output" {
+    dir1="${test_data}/np-guard/anp_banp_demo"
+    dir2="${test_data}/np-guard/anp_banp_diff_demo"
+    # assert files exist in dir1
+    assert_file_exist "${dir1}/ns.yaml"
+    assert_file_exist "${dir1}/workloads.yaml"
+    assert_file_exist "${dir1}/policies.yaml"
+    # assert files exist in dir2
+    assert_file_exist "${dir2}/ns.yaml"
+    assert_file_exist "${dir2}/workloads.yaml"
+    assert_file_exist "${dir2}/policies.yaml"
+    echo "Writing diff report to ${ofile}" >&3
+    run roxctl-development netpol connectivity diff --dir1="${dir1}" --dir2="${dir2}" --output-format=txt
+    assert_success
+
+    echo "$output" > "$ofile"
+    assert_file_exist "$ofile"
+    # partial is used to filter WARN and INFO messages
+    assert_line --regexp "INFO:.*Found connections diffs"
+    assert_output --partial 'Connectivity diff:
+diff-type: added, source: baz/mybaz[Pod], destination: bar/mybar[Pod], dir1: No Connections, dir2: All Connections
+diff-type: added, source: foo/myfoo[Pod], destination: bar/mybar[Pod], dir1: No Connections, dir2: All Connections
+diff-type: removed, source: monitoring/mymonitoring[Pod], destination: foo/myfoo[Pod], dir1: All Connections, dir2: No Connections'
+}
+
 check_acs_security_demos_files() {
   dir="${1}"
   assert_file_exist "${dir}/backend/catalog/deployment.yaml"

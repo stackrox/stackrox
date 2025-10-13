@@ -1,308 +1,190 @@
 import React, { useState } from 'react';
-import { Button, TextInput } from '@patternfly/react-core';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import type { ReactElement, Ref } from 'react';
 import {
-    Table,
-    Tbody,
-    // TbodyProps,
-    Td,
-    Th,
-    Thead,
-    Tr,
-    // TrProps,
-} from '@patternfly/react-table';
-// import styles from '@patternfly/react-styles/css/components/Table/table';
-import MinusCircleIcon from '@patternfly/react-icons/dist/esm/icons/minus-circle-icon';
+    Button,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
+    MenuToggle,
+    Select,
+    SelectOption,
+    TextInput,
+} from '@patternfly/react-core';
+import type { MenuToggleElement } from '@patternfly/react-core';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { MinusCircleIcon } from '@patternfly/react-icons';
+import type { FormikContextType } from 'formik';
+import get from 'lodash/get';
+import * as yup from 'yup';
 
-import {
+import type {
     DelegatedRegistry,
     DelegatedRegistryCluster,
+    DelegatedRegistryConfig,
 } from 'services/DelegatedRegistryConfigService';
 
+import { getClusterName } from '../cluster';
+
+export const pathRequiredMessage = 'Source registry is required';
+
+// Limit validation to property that corresponds to TextInput element.
+export const registriesSchema = yup.array().of(
+    yup.object({
+        path: yup.string().trim().required(pathRequiredMessage),
+    })
+);
+
 type DelegatedRegistriesTableProps = {
-    registries: DelegatedRegistry[];
     clusters: DelegatedRegistryCluster[];
-    selectedClusterId: string;
-    handlePathChange: (number, string) => void;
-    handleClusterChange: (number, string) => void;
-    deleteRow: (number) => void;
-    // TODO: re-enable next type after @typescript-eslint deps can be resolved to ^5.2.x
-    // updateRegistriesOrder: (DelegatedRegistry[]) => void;
+    defaultClusterId: string;
+    deleteRegistry: (indexToDelete: number) => void;
+    formik: FormikContextType<DelegatedRegistryConfig>;
+    isEditing: boolean;
+    registries: DelegatedRegistry[];
+    setRegistryClusterId: (indexToSet: number, clusterId: string) => void;
+    setRegistryPath: (indexToSet: number, path: string) => void;
 };
 
 function DelegatedRegistriesTable({
-    // TODO: remove lint override after @typescript-eslint deps can be resolved to ^5.2.x
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    // updateRegistriesOrder,
-    registries,
     clusters,
-    selectedClusterId,
-    handlePathChange,
-    handleClusterChange,
-    deleteRow,
-}: DelegatedRegistriesTableProps) {
-    // const [draggedItemId, setDraggedItemId] = React.useState<string | null>(null);
-    // const [draggingToItemIndex, setDraggingToItemIndex] = React.useState<number | null>(null);
-    // const [isDragging, setIsDragging] = React.useState(false);
-
-    // const initialOrderIds = registries.map((reg) => reg.uuid as string);
-    // const [itemOrder, setItemOrder] = React.useState(initialOrderIds);
-    // const [tempItemOrder, setTempItemOrder] = React.useState<string[]>([]);
-
+    defaultClusterId,
+    deleteRegistry,
+    formik,
+    isEditing,
+    registries,
+    setRegistryClusterId,
+    setRegistryPath,
+}: DelegatedRegistriesTableProps): ReactElement {
     const [openRow, setRowOpen] = useState<number>(-1);
     function toggleSelect(rowToToggle: number) {
         setRowOpen((prev) => (rowToToggle === prev ? -1 : rowToToggle));
     }
     function onSelect(rowIndex, value) {
-        handleClusterChange(rowIndex, value);
+        setRegistryClusterId(rowIndex, value);
         setRowOpen(-1);
     }
 
-    // useEffect(() => {
-    //     const orderIds = registries.map((reg) => reg.uuid as string);
-    //     setItemOrder(orderIds);
-    // }, [registries]);
+    const defaultClusterName =
+        defaultClusterId === '' ? 'None' : getClusterName(clusters, defaultClusterId);
+    const defaultClusterItem = `Default cluster: ${defaultClusterName}`;
 
-    const clusterSelectOptions: JSX.Element[] = clusters.map((cluster) => {
-        const optionLabel =
-            cluster.id === selectedClusterId ? `${cluster.name} (default)` : cluster.name;
-        return (
-            <SelectOption key={cluster.id} value={cluster.id}>
-                <span>{optionLabel}</span>
-            </SelectOption>
-        );
-    });
-
-    // TODO (https://issues.redhat.com/browse/ROX-19275):
-    // Temporarily disabling reordering because of buggy behavior in PF drag-and-drop table variant
-    // Start PatternFly template for drag and drop
-    const bodyRef = React.useRef<HTMLTableSectionElement>();
-
-    // const onDragStart: TrProps['onDragStart'] = (evt) => {
-    //     evt.dataTransfer.effectAllowed = 'move';
-    //     evt.dataTransfer.setData('text/plain', evt.currentTarget.id);
-    //     // eslint-disable-next-line @typescript-eslint/no-shadow
-    //     const draggedItemId = evt.currentTarget.id;
-
-    //     evt.currentTarget.classList.add(styles.modifiers.ghostRow);
-    //     evt.currentTarget.setAttribute('aria-pressed', 'true');
-
-    //     setDraggedItemId(draggedItemId);
-    //     setIsDragging(true);
-    // };
-
-    // const moveItem = (arr: string[], i1: string, toIndex: number) => {
-    //     const fromIndex = arr.indexOf(i1);
-    //     if (fromIndex === toIndex) {
-    //         return arr;
-    //     }
-    //     const temp = arr.splice(fromIndex, 1);
-    //     arr.splice(toIndex, 0, temp[0]);
-
-    //     return arr;
-    // };
-
-    // const move = (itemOrder: string[]) => {
-    //     const ulNode = bodyRef.current;
-    //     if (ulNode?.children) {
-    //         const nodes = Array.from(ulNode.children);
-    //         if (nodes.map((node) => node.id).every((id, i) => id === itemOrder[i])) {
-    //             return;
-    //         }
-    //         while (ulNode?.firstChild) {
-    //             if (ulNode.lastChild) {
-    //                 ulNode.removeChild(ulNode.lastChild);
-    //             }
-    //         }
-
-    //         itemOrder.forEach((id) => {
-    //             if (nodes.find((n) => n.id === id)) {
-    //                 ulNode.appendChild(nodes.find((n) => n.id === id) as Element);
-    //             }
-    //         });
-    //     }
-    // };
-
-    // const onDragCancel = () => {
-    //     if (bodyRef?.current?.children) {
-    //         Array.from(bodyRef.current.children).forEach((el) => {
-    //             el.classList.remove(styles.modifiers.ghostRow);
-    //             el.setAttribute('aria-pressed', 'false');
-    //         });
-    //         setDraggedItemId(null);
-    //         setDraggingToItemIndex(null);
-    //         setIsDragging(false);
-    //     }
-    // };
-
-    // const onDragLeave: TbodyProps['onDragLeave'] = (evt) => {
-    //     if (!isValidDrop(evt)) {
-    //         move(itemOrder);
-    //         setDraggingToItemIndex(null);
-    //     }
-    // };
-
-    // function isValidDrop(evt: React.DragEvent<HTMLTableSectionElement | HTMLTableRowElement>) {
-    //     if (bodyRef?.current?.getBoundingClientRect()) {
-    //         const ulRect = bodyRef.current.getBoundingClientRect();
-    //         return (
-    //             evt.clientX > ulRect.x &&
-    //             evt.clientX < ulRect.x + ulRect.width &&
-    //             evt.clientY > ulRect.y &&
-    //             evt.clientY < ulRect.y + ulRect.height
-    //         );
-    //     }
-    //     return false;
-    // }
-
-    // const onDrop: TrProps['onDrop'] = (evt) => {
-    //     if (isValidDrop(evt)) {
-    //         setItemOrder(tempItemOrder);
-
-    //         // the rest of this block was added to the PF drag and drop paradigm,
-    //         // in order to keep the form data in sync with PF's visual drop order
-    //         const newRegistries: DelegatedRegistry[] = tempItemOrder.map((tempItem) => {
-    //             const newIndex = registries.findIndex((reg) => reg.uuid === tempItem) || 0;
-    //             return registries[newIndex];
-    //         });
-
-    //        updateRegistriesOrder(newRegistries);
-    //     } else {
-    //         onDragCancel();
-    //     }
-    // };
-
-    // function onDragOver(evt): TbodyProps['onDragOver'] {
-    //     evt.preventDefault();
-
-    //     const curListItem = (evt.target as HTMLTableSectionElement).closest('tr');
-    //     if (
-    //         !curListItem ||
-    //         !bodyRef?.current?.contains(curListItem) ||
-    //         curListItem.id === draggedItemId
-    //     ) {
-    //         return undefined;
-    //     }
-    //     const dragId = curListItem.id;
-    //     const newDraggingToItemIndex = Array.from(bodyRef.current.children).findIndex(
-    //         (item) => item.id === dragId
-    //     );
-    //     if (newDraggingToItemIndex !== draggingToItemIndex) {
-    //         const tempItemOrder = moveItem(
-    //             [...itemOrder],
-    //             draggedItemId || '',
-    //             newDraggingToItemIndex
-    //         );
-    //         move(tempItemOrder);
-    //         setDraggingToItemIndex(newDraggingToItemIndex);
-    //         setTempItemOrder(tempItemOrder);
-    //     }
-
-    //     return undefined;
-    // }
-
-    // const onDragEnd: TrProps['onDragEnd'] = (evt) => {
-    //     const target = evt.target as HTMLTableRowElement;
-    //     target.classList.remove(styles.modifiers.ghostRow);
-    //     target.setAttribute('aria-pressed', 'false');
-    //     setDraggedItemId(null);
-    //     setDraggingToItemIndex(null);
-    //     setIsDragging(false);
-    // };
-    // End PatternFly template for drag and drop
-    // end of TODO section (https://issues.redhat.com/browse/ROX-19275):
+    const { errors, handleBlur, touched } = formik;
 
     return (
-        <Table
-            aria-label="Delegated registry exceptions table"
-            // className={(isDragging && styles.modifiers.dragOver) || ''}
-        >
+        <Table aria-label="Delegated registry exceptions table">
             <Thead>
                 <Tr>
-                    {/* <Th>Order</Th> */}
                     <Th width={40}>Source registry</Th>
                     <Th width={40}>Destination cluster (CLI/API only)</Th>
-                    <Th>
-                        <span className="pf-v5-screen-reader">Row action</span>
-                    </Th>
+                    {isEditing && (
+                        <Th>
+                            <span className="pf-v5-screen-reader">Row action</span>
+                        </Th>
+                    )}
                 </Tr>
             </Thead>
-            <Tbody
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                ref={bodyRef}
-                // onDragOver={onDragOver}
-                // onDrop={onDragOver}
-                // onDragLeave={onDragLeave}
-            >
+            <Tbody>
                 {registries.map((registry, rowIndex) => {
                     const selectedClusterName =
-                        clusters.find((cluster) => registry.clusterId === cluster.id)?.name ??
-                        'None';
+                        registry.clusterId === ''
+                            ? defaultClusterItem
+                            : getClusterName(clusters, registry.clusterId);
 
+                    // Options consist of valid clusters, plus destination cluster (in unlikely case that it is not valid).
+                    const clusterSelectOptions: JSX.Element[] = clusters
+                        .filter((cluster) => cluster.isValid || cluster.id === registry.clusterId)
+                        .map((cluster) => {
+                            return (
+                                <SelectOption key={cluster.id} value={cluster.id}>
+                                    {getClusterName(clusters, cluster.id)}
+                                </SelectOption>
+                            );
+                        });
+
+                    // Source reqistry helper text:
+                    // no text if TextInput has valid (non-empty trimmed) value.
+                    // pathErrorMessage with default validation variant if not yet touched
+                    // pathErrorMessage with error validation variant if has been touched
+                    // theoretical: any other validation error independent of touched
+                    //
+                    // Why lodash get instead of optional chaining?
+                    // Unlike touched below, errors has TS2339 error (pardon pun) for array of objects.
+                    const pathErrorMessage = get(errors, `registries[${rowIndex}].path`);
+                    const pathValidatedVariant =
+                        pathErrorMessage &&
+                        (pathErrorMessage !== pathRequiredMessage ||
+                            touched.registries?.[rowIndex]?.path)
+                            ? 'error'
+                            : 'default';
+
+                    // Even path and clusterId combined is not a unique key.
+                    /* eslint-disable react/no-array-index-key */
                     return (
-                        <Tr
-                            key={registry.uuid}
-                            id={registry.uuid}
-                            // draggable
-                            // onDrop={onDrop}
-                            // onDragEnd={onDragEnd}
-                            // onDragStart={onDragStart}
-                        >
-                            {/* <Td
-                                draggableRow={{
-                                    id: `draggable-row-${registry.path}`,
-                                }}
-                            /> */}
+                        <Tr key={rowIndex}>
                             <Td dataLabel="Source registry">
                                 <TextInput
+                                    aria-label="registry"
                                     isRequired
+                                    isDisabled={!isEditing}
+                                    name={`registries[${rowIndex}].path`}
                                     type="text"
-                                    id={`${registry.uuid as string}-path-input`}
-                                    name={`${registry.uuid as string}-path-input`}
+                                    validated={pathValidatedVariant}
                                     value={registry.path}
-                                    onChange={(_event, value) => handlePathChange(rowIndex, value)}
+                                    onBlur={handleBlur}
+                                    onChange={(_event, value) => setRegistryPath(rowIndex, value)}
                                 />
+                                <FormHelperText>
+                                    <HelperText>
+                                        <HelperTextItem variant={pathValidatedVariant}>
+                                            {pathErrorMessage}
+                                        </HelperTextItem>
+                                    </HelperText>
+                                </FormHelperText>
                             </Td>
                             <Td dataLabel="Destination cluster (CLI/API only)">
                                 <Select
-                                    className="cluster-select"
-                                    placeholderText={
-                                        <span style={{ position: 'relative', top: '1px' }}>
-                                            None
-                                        </span>
-                                    }
-                                    toggleAriaLabel="Select a cluster"
-                                    onToggle={() => toggleSelect(rowIndex)}
                                     onSelect={(_, value) => onSelect(rowIndex, value)}
                                     isOpen={openRow === rowIndex}
-                                    selections={selectedClusterName}
+                                    selected={registry.clusterId}
+                                    toggle={(toggleRef: Ref<MenuToggleElement>) => (
+                                        <MenuToggle
+                                            aria-label="Select destination cluster"
+                                            ref={toggleRef}
+                                            onClick={() => toggleSelect(rowIndex)}
+                                            isDisabled={!isEditing}
+                                            isExpanded={openRow === rowIndex}
+                                        >
+                                            {selectedClusterName}
+                                        </MenuToggle>
+                                    )}
                                 >
-                                    <SelectOption key="no-cluster-selected" value="" isPlaceholder>
-                                        <span>None</span>
+                                    <SelectOption key="" value="">
+                                        {defaultClusterItem}
                                     </SelectOption>
                                     <>{clusterSelectOptions}</>
                                 </Select>
                             </Td>
-                            <Td dataLabel="Row action" className="pf-v5-u-text-align-right">
-                                <Button
-                                    variant="link"
-                                    isInline
-                                    icon={
-                                        <MinusCircleIcon color="var(--pf-v5-global--danger-color--100)" />
-                                    }
-                                    onClick={() => deleteRow(rowIndex)}
-                                >
-                                    Delete row
-                                </Button>
-                            </Td>
+                            {isEditing && (
+                                <Td dataLabel="Row action" className="pf-v5-u-text-align-right">
+                                    <Button
+                                        variant="link"
+                                        isInline
+                                        icon={
+                                            <MinusCircleIcon color="var(--pf-v5-global--danger-color--100)" />
+                                        }
+                                        onClick={() => deleteRegistry(rowIndex)}
+                                    >
+                                        Delete row
+                                    </Button>
+                                </Td>
+                            )}
                         </Tr>
                     );
                 })}
             </Tbody>
         </Table>
     );
+    /* eslint-enable react/no-array-index-key */
 }
 
 export default DelegatedRegistriesTable;

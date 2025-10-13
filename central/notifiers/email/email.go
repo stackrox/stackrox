@@ -144,7 +144,7 @@ func Validate(emailConf *storage.Email, validateSecret bool) error {
 		errorList.AddString("Sender must be specified")
 	}
 	// username and password are optional for unauthenticated smtp
-	if !emailConf.AllowUnauthenticatedSmtp {
+	if !emailConf.GetAllowUnauthenticatedSmtp() {
 		if emailConf.GetUsername() == "" {
 			errorList.AddString("Username must be specified")
 		}
@@ -305,7 +305,7 @@ func (*email) Close(context.Context) error {
 // AlertNotify takes in an alert and generates the email.
 func (e *email) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	subject := notifiers.SummaryForAlert(alert)
-	body, err := PlainTextAlert(alert, e.notifier.UiEndpoint, e.mitreStore)
+	body, err := PlainTextAlert(alert, e.notifier.GetUiEndpoint(), e.mitreStore)
 	if err != nil {
 		return err
 	}
@@ -379,6 +379,14 @@ func (e *email) send(ctx context.Context, m *Message) error {
 	if err != nil {
 		return createError("SMTP client creation failed", err, e.notifier.GetName())
 	}
+
+	if e.config.GetHostnameHeloEhlo() != "" {
+		err := client.Hello(e.config.GetHostnameHeloEhlo())
+		if err != nil {
+			return createError("SMTP client hello failed", err, e.notifier.GetName())
+		}
+	}
+
 	defer func() {
 		if err := client.Quit(); err != nil {
 			log.Error("Failed to quit client cleanly", logging.Err(err))
@@ -511,7 +519,8 @@ func (e *email) startTLSConn(dialCtx context.Context) (conn net.Conn, auth smtp.
 
 func (e *email) tlsConfig() *tls.Config {
 	return &tls.Config{
-		ServerName: e.smtpServer.host,
+		ServerName:         e.smtpServer.host,
+		InsecureSkipVerify: e.config.GetSkipTLSVerify(),
 	}
 }
 

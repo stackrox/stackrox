@@ -57,7 +57,7 @@ func (a *aggregateToSupernetImpl) Aggregate(conns []*storage.NetworkFlow) []*sto
 		}
 
 		// Move the connections to supernet.
-		a.mapToSupernetIfNotfound(supernetCache, conn.Props.SrcEntity, conn.Props.DstEntity)
+		a.mapToSupernetIfNotfound(supernetCache, conn.GetProps().GetSrcEntity(), conn.GetProps().GetDstEntity())
 
 		connID := networkgraph.GetNetworkConnIndicator(conn)
 		if storedFlow := normalizedConns[connID]; storedFlow != nil {
@@ -125,9 +125,9 @@ func (a *aggregateDefaultToCustomExtSrcsImpl) Aggregate(conns []*storage.Network
 
 		// Move the connection from default external network to non-default supernet. If none is found, it gets mapped to INTERNET.
 		if networkgraph.IsKnownDefaultExternal(conn.GetProps().GetSrcEntity()) {
-			mapToSupernet(a.networkTree, supernetCache, a.supernetPred, conn.Props.SrcEntity)
+			mapToSupernet(a.networkTree, supernetCache, a.supernetPred, conn.GetProps().GetSrcEntity())
 		} else if networkgraph.IsKnownDefaultExternal(conn.GetProps().GetDstEntity()) {
-			mapToSupernet(a.networkTree, supernetCache, a.supernetPred, conn.Props.DstEntity)
+			mapToSupernet(a.networkTree, supernetCache, a.supernetPred, conn.GetProps().GetDstEntity())
 		}
 
 		connID := networkgraph.GetNetworkConnIndicator(conn)
@@ -175,19 +175,6 @@ func (a *aggregateExternalConnByNameImpl) Aggregate(flows []*storage.NetworkFlow
 
 		flow = flow.CloneVT()
 
-		flowProps := flow.GetProps()
-		if flowProps == nil {
-			continue
-		}
-
-		// If the entity is discovered, anonymize it to avoid overloading
-		// the graph with many nodes (external IP details are still accessible
-		// via other APIs)
-		flowProps.SrcEntity = anonymizeDiscoveredEntity(flowProps.SrcEntity)
-		flowProps.DstEntity = anonymizeDiscoveredEntity(flowProps.DstEntity)
-
-		srcEntity, dstEntity = flowProps.SrcEntity, flowProps.DstEntity
-
 		// If both endpoints are not known external sources, skip processing.
 		if !networkgraph.IsKnownExternalSrc(srcEntity) && !networkgraph.IsKnownExternalSrc(dstEntity) {
 			ret = append(ret, flow)
@@ -219,6 +206,43 @@ func (a *aggregateExternalConnByNameImpl) Aggregate(flows []*storage.NetworkFlow
 			normalizeDupNameExtSrcs(conn.GetProps().GetDstEntity())
 		}
 
+		ret = append(ret, conn)
+	}
+
+	return ret
+}
+
+type aggregateLatestTimestampImpl struct{}
+
+// Aggregate aggregates flows by their latest timestamp. For one or more similar flows,
+// only the most recent is returned.
+func (a *aggregateLatestTimestampImpl) Aggregate(flows []*storage.NetworkFlow) []*storage.NetworkFlow {
+	normalizedConns := make(map[networkgraph.NetworkConnIndicator]*storage.NetworkFlow)
+	ret := make([]*storage.NetworkFlow, 0, len(flows))
+
+	for _, flow := range flows {
+		if flow.GetProps() == nil {
+			continue
+		}
+
+		srcEntity, dstEntity := flow.GetProps().GetSrcEntity(), flow.GetProps().GetDstEntity()
+		// This is essentially an invalid connection.
+		if srcEntity == nil || dstEntity == nil {
+			utils.Should(errors.Errorf("network flow %s without endpoints is unexpected", networkgraph.GetNetworkConnIndicator(flow).String()))
+			continue
+		}
+
+		connID := networkgraph.GetNetworkConnIndicator(flow)
+		if storedFlow := normalizedConns[connID]; storedFlow != nil {
+			if protocompat.CompareTimestamps(storedFlow.GetLastSeenTimestamp(), flow.GetLastSeenTimestamp()) < 0 {
+				storedFlow.LastSeenTimestamp = flow.GetLastSeenTimestamp()
+			}
+		} else {
+			normalizedConns[connID] = flow
+		}
+	}
+
+	for _, conn := range normalizedConns {
 		ret = append(ret, conn)
 	}
 
@@ -327,13 +351,4 @@ func normalizeDupNameExtSrcs(entity *storage.NetworkEntityInfo) {
 			},
 		},
 	}
-}
-
-// Return NetworkEntityInfo_INTERNET if entity is a 'discovered' external entity
-// Otherwise, return entity.
-func anonymizeDiscoveredEntity(entity *storage.NetworkEntityInfo) *storage.NetworkEntityInfo {
-	if networkgraph.IsExternalDiscovered(entity) {
-		return networkgraph.InternetEntity().ToProto()
-	}
-	return entity
 }

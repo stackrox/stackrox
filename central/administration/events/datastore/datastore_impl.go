@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/administration/events/datastore/internal/search"
 	"github.com/stackrox/rox/central/administration/events/datastore/internal/store"
 	"github.com/stackrox/rox/central/administration/events/datastore/internal/writer"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -21,8 +20,7 @@ var (
 )
 
 type datastoreImpl struct {
-	searcher search.Searcher
-	store    store.Store
+	store store.Store
 	// Buffered writer. Flush to initiate batched upsert.
 	writer writer.Writer
 }
@@ -42,7 +40,7 @@ func (ds *datastoreImpl) AddEvent(ctx context.Context, event *events.Administrat
 }
 
 func (ds *datastoreImpl) CountEvents(ctx context.Context, query *v1.Query) (int, error) {
-	count, err := ds.searcher.Count(ctx, query)
+	count, err := ds.store.Count(ctx, query)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to count administration events")
 	}

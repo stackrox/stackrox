@@ -54,7 +54,7 @@ func (c *backendImpl) RevokeToken(ctx context.Context, tokenID string) (bool, er
 	if t == nil {
 		return false, nil
 	}
-	if t.Revoked {
+	if t.GetRevoked() {
 		return true, nil
 	}
 

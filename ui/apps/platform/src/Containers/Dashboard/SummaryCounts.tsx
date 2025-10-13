@@ -1,4 +1,5 @@
-import React, { ReactElement, useState } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import { gql, useQuery } from '@apollo/client';
 import Raven from 'raven-js';
 import { Alert, Skeleton, Split, SplitItem } from '@patternfly/react-core';
@@ -8,9 +9,10 @@ import {
     configManagementPath,
     urlEntityListTypes,
     violationsFullViewPath,
-    vulnerabilitiesWorkloadCvesPath,
+    vulnerabilitiesAllImagesPath,
 } from 'routePaths';
 import { resourceTypes } from 'constants/entityTypes';
+import { getDateTime } from 'utils/dateUtils';
 import { generatePathWithQuery } from 'utils/searchUtils';
 
 import SummaryCount from './SummaryCount';
@@ -45,10 +47,6 @@ const tileNouns: Record<TileResource, string> = {
     Secret: 'Secret',
 };
 
-const locale = window.navigator.language ?? 'en-US';
-const dateFormatter = new Intl.DateTimeFormat(locale);
-const timeFormatter = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: 'numeric' });
-
 export type SummaryCountsProps = {
     hasReadAccessForResource: Record<TileResource, boolean>;
 };
@@ -61,7 +59,7 @@ function SummaryCounts({ hasReadAccessForResource }: SummaryCountsProps): ReactE
         Alert: violationsFullViewPath,
         Deployment: `${configManagementPath}/${urlEntityListTypes[resourceTypes.DEPLOYMENT]}`,
         Image: generatePathWithQuery(
-            vulnerabilitiesWorkloadCvesPath,
+            vulnerabilitiesAllImagesPath,
             {},
             { customParams: { entityTab: 'Image' } }
         ),
@@ -131,9 +129,7 @@ function SummaryCounts({ hasReadAccessForResource }: SummaryCountsProps): ReactE
                 </Split>
             </SplitItem>
             <div className="pf-v5-u-color-200 pf-v5-u-font-size-sm pf-v5-u-mr-md pf-v5-u-mr-lg-on-lg">
-                {`Last updated ${dateFormatter.format(lastUpdate)} at ${timeFormatter.format(
-                    lastUpdate
-                )}`}
+                {`Last updated ${getDateTime(lastUpdate)}`}
             </div>
         </Split>
     );

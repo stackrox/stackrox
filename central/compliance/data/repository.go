@@ -173,15 +173,15 @@ func policiesByName(policies []*storage.Policy) map[string]*storage.Policy {
 func policyCategories(policies []*storage.Policy) map[string]set.StringSet {
 	result := make(map[string]set.StringSet, len(policies))
 	for _, policy := range policies {
-		if policy.Disabled {
+		if policy.GetDisabled() {
 			continue
 		}
-		for _, category := range policy.Categories {
+		for _, category := range policy.GetCategories() {
 			policySet, ok := result[category]
 			if !ok {
 				policySet = set.NewStringSet()
 			}
-			policySet.Add(policy.Name)
+			policySet.Add(policy.GetName())
 			result[category] = policySet
 		}
 	}
@@ -274,7 +274,11 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 		return err
 	}
 
-	r.notifiers, err = f.notifierDataStore.GetNotifiers(ctx)
+	r.notifiers = []*storage.Notifier{}
+	err = f.notifierDataStore.ForEachNotifier(ctx, func(n *storage.Notifier) error {
+		r.notifiers = append(r.notifiers, n)
+		return nil
+	})
 	if err != nil {
 		return err
 	}
@@ -306,7 +310,7 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 			if c.GetClusterId() != clusterID {
 				return nil
 			}
-			rule := c.Annotations[v1alpha1.RuleIDAnnotationKey]
+			rule := c.GetAnnotations()[v1alpha1.RuleIDAnnotationKey]
 			if rule == "" {
 				log.Errorf("Expected rule annotation for %+v", c)
 				return nil

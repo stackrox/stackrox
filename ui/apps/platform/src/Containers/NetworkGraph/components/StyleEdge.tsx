@@ -1,19 +1,18 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-import * as React from 'react';
+import React, { useMemo } from 'react';
+import type { FunctionComponent, PropsWithChildren } from 'react';
 import { observer } from 'mobx-react';
-import { Edge, DefaultEdge } from '@patternfly/react-topology';
+import { DefaultEdge } from '@patternfly/react-topology';
+import type { Edge } from '@patternfly/react-topology';
 
 type StyleEdgeProps = {
     element: Edge;
 };
 
-const StyleEdge: React.FunctionComponent<React.PropsWithChildren<StyleEdgeProps>> = ({
-    element,
-    ...rest
-}) => {
+const StyleEdge: FunctionComponent<PropsWithChildren<StyleEdgeProps>> = ({ element, ...rest }) => {
     const data = element.getData();
 
-    const passedData = React.useMemo(() => {
+    const passedData = useMemo(() => {
         const newData = { ...data };
         Object.keys(newData).forEach((key) => {
             if (newData[key] === undefined) {

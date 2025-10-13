@@ -28,9 +28,6 @@ const (
 	// AuditLogEventsCap identifies the capability to handle audit log event detection.
 	AuditLogEventsCap SensorCapability = "AuditLogEvents"
 
-	// LocalScannerCredentialsRefresh identifies the capability to maintain the Local scanner TLS credentials refreshed.
-	LocalScannerCredentialsRefresh SensorCapability = "LocalScannerCredentialsRefresh"
-
 	// ScopedImageIntegrations identifies the capability to have image integrations with sources from image pull secrets
 	ScopedImageIntegrations SensorCapability = "ScopedImageIntegrations"
 
@@ -67,7 +64,14 @@ const (
 	// SecuredClusterCertificatesRefresh identifies the capability to maintain the Secured Cluster TLS certificates refreshed
 	SecuredClusterCertificatesRefresh SensorCapability = "SecuredClusterCertificatesRefresh"
 
+	// SensorCARotationSupported identifies the capability of Sensor to connect to a Central that presents a TLS certificate signed
+	// by a different CA than the one that signed Sensor's certificate.
+	SensorCARotationSupported SensorCapability = "SensorCARotationSupported"
+
 	// ClusterRegistrationSecretSupported identifies the capability of Central to register new secured clusters
 	// using a Cluster Registration Secret (CRS).
 	ClusterRegistrationSecretSupported = "ClusterRegistrationSecretSupported"
+
+	// VirtualMachinesSupported identifies the capability of Central to receive virtual machine requests.
+	VirtualMachinesSupported = "VirtualMachinesSupported"
 )

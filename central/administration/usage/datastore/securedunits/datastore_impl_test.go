@@ -17,6 +17,10 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+const (
+	page = 1000
+)
+
 func TestUsageDataStore(t *testing.T) {
 	suite.Run(t, new(UsageDataStoreTestSuite))
 }
@@ -109,8 +113,8 @@ func (suite *UsageDataStoreTestSuite) TestWalk() {
 
 	var totalNodes, totalCPUUnits int64
 	fn := func(su *storage.SecuredUnits) error {
-		totalNodes += su.NumNodes
-		totalCPUUnits += su.NumCpuUnits
+		totalNodes += su.GetNumNodes()
+		totalCPUUnits += su.GetNumCpuUnits()
 		return nil
 	}
 
@@ -144,17 +148,17 @@ func (suite *UsageDataStoreTestSuite) TestGetMax() {
 	// Overall maximum (last entry):
 	units, err := suite.datastore.GetMaxNumNodes(suite.hasReadCtx, first, last)
 	suite.NoError(err)
-	suite.Equal(last.Add(-5*time.Minute).Unix(), units.Timestamp.Seconds)
-	suite.Equal(int64(N-1), units.NumNodes)
-	suite.Equal(int64((N-1)*2), units.NumCpuUnits)
+	suite.Equal(last.Add(-5*time.Minute).Unix(), units.GetTimestamp().GetSeconds())
+	suite.Equal(int64(N-1), units.GetNumNodes())
+	suite.Equal(int64((N-1)*2), units.GetNumCpuUnits())
 
 	// Maximum in a range:
 	last = first.Add(3 * 5 * time.Minute)
 	units, err = suite.datastore.GetMaxNumCPUUnits(suite.hasReadCtx, first, last)
 	suite.NoError(err)
-	suite.Equal(last.Add(-5*time.Minute).Unix(), units.Timestamp.Seconds)
-	suite.Equal(int64(3-1), units.NumNodes)
-	suite.Equal(int64((3-1)*2), units.NumCpuUnits)
+	suite.Equal(last.Add(-5*time.Minute).Unix(), units.GetTimestamp().GetSeconds())
+	suite.Equal(int64(3-1), units.GetNumNodes())
+	suite.Equal(int64((3-1)*2), units.GetNumCpuUnits())
 }
 
 func (suite *UsageDataStoreTestSuite) TestAdd() {

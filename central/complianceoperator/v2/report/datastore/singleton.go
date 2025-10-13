@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -44,19 +43,7 @@ func initialize() {
 	// This can only happen if central is restarted while reports are still running.
 	// Sensor will send the Scan and CheckResult resources again and Central will
 	// regenerate the Reports, so there isn't any data loss by doing this.
-	searchQuery := search.NewQueryBuilder().
-		AddExactMatches(search.ComplianceOperatorReportState,
-			storage.ComplianceOperatorReportStatus_WAITING.String(),
-			storage.ComplianceOperatorReportStatus_PREPARING.String(),
-			storage.ComplianceOperatorReportStatus_GENERATED.String(),
-		).ProtoQuery()
-	orphanSnapshots, err := dataStore.SearchSnapshots(complianceOperatorSnapshotAdministrationCtx, searchQuery)
-	if err != nil {
-		log.Errorf("unable to search for orphan snapshots: %v", orphanSnapshots)
-	}
-	for _, snapshot := range orphanSnapshots {
-		if err := dataStore.DeleteSnapshot(complianceOperatorSnapshotAdministrationCtx, snapshot.GetReportId()); err != nil {
-			log.Errorf("unable to delete snapshot %s", snapshot.GetReportId())
-		}
+	if err := DeleteOrphanedReportSnapshots(complianceOperatorSnapshotAdministrationCtx, dataStore); err != nil {
+		log.Errorf("DeleteOrphanedReportSnapshots failed: %v", err)
 	}
 }

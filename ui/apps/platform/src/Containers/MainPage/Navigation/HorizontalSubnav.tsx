@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
-import { matchPath, useHistory, useLocation } from 'react-router-dom';
+import type { MouseEvent as ReactMouseEvent, ReactElement, Ref } from 'react';
+import { matchPath, useLocation, useNavigate } from 'react-router-dom-v5-compat';
 import {
     Nav,
     Dropdown,
     DropdownItem,
     DropdownList,
     MenuToggle,
-    MenuToggleElement,
     NavItemSeparator,
     NavItem,
     NavList,
 } from '@patternfly/react-core';
+import type { MenuToggleElement } from '@patternfly/react-core';
 
 import {
     vulnerabilitiesNodeCvesPath,
@@ -23,12 +24,15 @@ import {
     violationsPlatformViewPath,
     violationsUserWorkloadsViewPath,
     vulnerabilitiesPlatformCvesPath,
+    vulnerabilitiesVirtualMachineCvesPath,
 } from 'routePaths';
-import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
-import { HasReadAccess } from 'hooks/usePermissions';
+import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
+import type { HasReadAccess } from 'hooks/usePermissions';
+import { hasSearchKeyValue } from 'utils/searchUtils';
 import { ensureExhaustive } from 'utils/type.utils';
 import NavigationItem from './NavigationItem';
-import { filterNavDescriptions, isActiveLink, NavDescription } from './utils';
+import { filterNavDescriptions, isActiveLink } from './utils';
+import type { NavDescription } from './utils';
 
 import './HorizontalSubnav.css';
 
@@ -39,98 +43,110 @@ type SubnavParentKey = 'violations' | 'vulnerabilities';
  * of sub-navigation description items.
  */
 function getSubnavDescriptionGroups(
-    isFeatureFlagEnabled: IsFeatureFlagEnabled
+    isFeatureFlagEnabled: IsFeatureFlagEnabled // eslint-disable-line @typescript-eslint/no-unused-vars
 ): Record<SubnavParentKey, NavDescription[]> {
     return {
-        violations: isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')
-            ? [
-                  {
-                      type: 'link',
-                      content: 'User Workloads',
-                      path: violationsUserWorkloadsViewPath,
-                      isActive: (location) =>
-                          location.search.includes(`filteredWorkflowView=Applications view`),
-                      routeKey: 'violations',
-                  },
-                  {
-                      type: 'link',
-                      content: 'Platform',
-                      path: violationsPlatformViewPath,
-                      isActive: (location) =>
-                          location.search.includes(`filteredWorkflowView=Platform view`),
-                      routeKey: 'violations',
-                  },
-                  {
-                      type: 'link',
-                      content: 'All Violations',
-                      path: violationsFullViewPath,
-                      isActive: (location) =>
-                          location.search.includes(`filteredWorkflowView=Full view`),
-                      routeKey: 'violations',
-                  },
-              ]
-            : [],
-        vulnerabilities: isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')
-            ? [
-                  {
-                      type: 'link',
-                      content: 'User Workloads',
-                      path: vulnerabilitiesUserWorkloadsPath,
-                      routeKey: 'vulnerabilities/user-workloads',
-                  },
-                  {
-                      type: 'link',
-                      content: 'Platform',
-                      path: vulnerabilitiesPlatformPath,
-                      routeKey: 'vulnerabilities/platform',
-                  },
-                  {
-                      type: 'link',
-                      content: 'Nodes',
-                      path: vulnerabilitiesNodeCvesPath,
-                      routeKey: 'vulnerabilities/node-cves',
-                  },
-                  {
-                      type: 'parent',
-                      key: 'More Views',
-                      title: 'More Views',
-                      children: [
-                          {
-                              type: 'link',
-                              content: 'All vulnerable images',
-                              description:
-                                  'Findings for user, platform, and inactive images simultaneously',
-                              path: vulnerabilitiesAllImagesPath,
-                              routeKey: 'vulnerabilities/all-images',
-                          },
-                          {
-                              type: 'link',
-                              content: 'Inactive images',
-                              description:
-                                  'Findings for watched images and images not currently deployed as workloads based on your image retention settings',
-                              path: vulnerabilitiesInactiveImagesPath,
-                              routeKey: 'vulnerabilities/inactive-images',
-                          },
-                          {
-                              type: 'link',
-                              content: 'Images without CVEs',
-                              description:
-                                  'Images and workloads without observed CVEs (results might include false negatives due to scanner limitations, such as unsupported operating systems)',
-                              path: vulnerabilitiesImagesWithoutCvesPath,
-                              routeKey: 'vulnerabilities/images-without-cves',
-                          },
-                          {
-                              type: 'link',
-                              content: 'Kubernetes components',
-                              description:
-                                  'Vulnerabilities affecting the underlying Kubernetes infrastructure',
-                              path: vulnerabilitiesPlatformCvesPath,
-                              routeKey: 'vulnerabilities/platform-cves',
-                          },
-                      ],
-                  },
-              ]
-            : [],
+        violations: [
+            {
+                type: 'link',
+                content: 'User Workloads',
+                path: violationsUserWorkloadsViewPath,
+                isActive: (location) => {
+                    const search: string = location.search || '';
+                    return (
+                        hasSearchKeyValue(search, 'filteredWorkflowView', 'Applications view') ||
+                        hasSearchKeyValue(search, 'filteredWorkflowView', null)
+                    );
+                },
+                routeKey: 'violations',
+            },
+            {
+                type: 'link',
+                content: 'Platform',
+                path: violationsPlatformViewPath,
+                isActive: (location) => {
+                    const search: string = location.search || '';
+                    return hasSearchKeyValue(search, 'filteredWorkflowView', 'Platform view');
+                },
+                routeKey: 'violations',
+            },
+            {
+                type: 'link',
+                content: 'All Violations',
+                path: violationsFullViewPath,
+                isActive: (location) => {
+                    const search: string = location.search || '';
+                    return hasSearchKeyValue(search, 'filteredWorkflowView', 'Full view');
+                },
+                routeKey: 'violations',
+            },
+        ],
+
+        vulnerabilities: [
+            {
+                type: 'link',
+                content: 'User Workloads',
+                path: vulnerabilitiesUserWorkloadsPath,
+                routeKey: 'vulnerabilities/user-workloads',
+            },
+            {
+                type: 'link',
+                content: 'Platform',
+                path: vulnerabilitiesPlatformPath,
+                routeKey: 'vulnerabilities/platform',
+            },
+            {
+                type: 'link',
+                content: 'Nodes',
+                path: vulnerabilitiesNodeCvesPath,
+                routeKey: 'vulnerabilities/node-cves',
+            },
+            {
+                type: 'link',
+                content: 'Virtual Machines',
+                path: vulnerabilitiesVirtualMachineCvesPath,
+                routeKey: 'vulnerabilities/virtual-machine-cves',
+            },
+            {
+                type: 'parent',
+                key: 'More Views',
+                title: 'More Views',
+                children: [
+                    {
+                        type: 'link',
+                        content: 'All vulnerable images',
+                        description:
+                            'Findings for user, platform, and inactive images simultaneously',
+                        path: vulnerabilitiesAllImagesPath,
+                        routeKey: 'vulnerabilities/all-images',
+                    },
+                    {
+                        type: 'link',
+                        content: 'Inactive images',
+                        description:
+                            'Findings for watched images and images not currently deployed as workloads based on your image retention settings',
+                        path: vulnerabilitiesInactiveImagesPath,
+                        routeKey: 'vulnerabilities/inactive-images',
+                    },
+                    {
+                        type: 'link',
+                        content: 'Images without CVEs',
+                        description:
+                            'Images and workloads without observed CVEs (results might include false negatives due to scanner limitations, such as unsupported operating systems)',
+                        path: vulnerabilitiesImagesWithoutCvesPath,
+                        routeKey: 'vulnerabilities/images-without-cves',
+                    },
+                    {
+                        type: 'link',
+                        content: 'Kubernetes components',
+                        description:
+                            'Vulnerabilities affecting the underlying Kubernetes infrastructure',
+                        path: vulnerabilitiesPlatformCvesPath,
+                        routeKey: 'vulnerabilities/platform-cves',
+                    },
+                ],
+            },
+        ],
     };
 }
 
@@ -146,7 +162,7 @@ function matchBasePath({
     descriptionPath: string;
 }): boolean {
     const basePath = descriptionPath.split('?')[0] ?? '';
-    return Boolean(matchPath(pathname, basePath));
+    return Boolean(matchPath({ path: `${basePath}/*` }, pathname));
 }
 
 /*
@@ -178,8 +194,11 @@ export type HorizontalSubnavProps = {
     isFeatureFlagEnabled: IsFeatureFlagEnabled;
 };
 
-function HorizontalSubnav({ hasReadAccess, isFeatureFlagEnabled }: HorizontalSubnavProps) {
-    const history = useHistory();
+function HorizontalSubnav({
+    hasReadAccess,
+    isFeatureFlagEnabled,
+}: HorizontalSubnavProps): ReactElement | null {
+    const navigate = useNavigate();
     const location = useLocation();
     const routePredicates = { hasReadAccess, isFeatureFlagEnabled };
 
@@ -200,10 +219,12 @@ function HorizontalSubnav({ hasReadAccess, isFeatureFlagEnabled }: HorizontalSub
     };
 
     const onSelect = (
-        _event: React.MouseEvent<Element, MouseEvent> | undefined,
+        _event: ReactMouseEvent<Element, MouseEvent> | undefined,
         value: string | number | undefined
     ) => {
-        history.push(value);
+        if (value !== undefined) {
+            navigate(value.toString());
+        }
         setOpenDropdownKey(null);
     };
 
@@ -246,7 +267,7 @@ function HorizontalSubnav({ hasReadAccess, isFeatureFlagEnabled }: HorizontalSub
                                     onOpenChange={(isOpen: boolean) =>
                                         setOpenDropdownKey(isOpen ? key : null)
                                     }
-                                    toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
+                                    toggle={(toggleRef: Ref<MenuToggleElement>) => (
                                         <NavItem
                                             isActive={Boolean(activeChildLink)}
                                             onClick={() => onToggleClick(key)}

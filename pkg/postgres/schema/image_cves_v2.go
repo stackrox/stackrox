@@ -34,6 +34,7 @@ var (
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Image":            ImagesSchema,
 			"storage.ImageComponentV2": ImageComponentV2Schema,
+			"storage.ImageV2":          ImagesV2Schema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -44,6 +45,7 @@ var (
 			v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 			v1.SearchCategory_IMAGE_COMPONENTS_V2,
 			v1.SearchCategory_IMAGES,
+			v1.SearchCategory_IMAGES_V2,
 			v1.SearchCategory_DEPLOYMENTS,
 			v1.SearchCategory_NAMESPACES,
 			v1.SearchCategory_CLUSTERS,
@@ -68,7 +70,6 @@ type ImageCvesV2 struct {
 	CveBaseInfoPublishedOn         *time.Time                    `gorm:"column:cvebaseinfo_publishedon;type:timestamp"`
 	CveBaseInfoCreatedAt           *time.Time                    `gorm:"column:cvebaseinfo_createdat;type:timestamp"`
 	CveBaseInfoEpssEpssProbability float32                       `gorm:"column:cvebaseinfo_epss_epssprobability;type:numeric"`
-	OperatingSystem                string                        `gorm:"column:operatingsystem;type:varchar"`
 	Cvss                           float32                       `gorm:"column:cvss;type:numeric"`
 	Severity                       storage.VulnerabilitySeverity `gorm:"column:severity;type:integer;index:imagecvesv2_severity,type:btree"`
 	ImpactScore                    float32                       `gorm:"column:impactscore;type:numeric"`
@@ -78,7 +79,11 @@ type ImageCvesV2 struct {
 	IsFixable                      bool                          `gorm:"column:isfixable;type:bool"`
 	FixedBy                        string                        `gorm:"column:fixedby;type:varchar"`
 	ComponentID                    string                        `gorm:"column:componentid;type:varchar;index:imagecvesv2_componentid,type:btree"`
+	AdvisoryName                   string                        `gorm:"column:advisory_name;type:varchar"`
+	AdvisoryLink                   string                        `gorm:"column:advisory_link;type:varchar"`
+	ImageIDV2                      string                        `gorm:"column:imageidv2;type:varchar;index:imagecvesv2_imageidv2,type:btree"`
 	Serialized                     []byte                        `gorm:"column:serialized;type:bytea"`
 	ImagesRef                      Images                        `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	ImageComponentV2Ref            ImageComponentV2              `gorm:"foreignKey:componentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+	ImagesV2Ref                    ImagesV2                      `gorm:"foreignKey:imageidv2;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

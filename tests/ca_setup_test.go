@@ -24,11 +24,10 @@ func centralIsReleaseBuild(conn *grpc.ClientConn, t *testing.T) bool {
 	defer cancel()
 	metadata, err := client.GetMetadata(ctx, &v1.Empty{})
 	require.NoError(t, err)
-	return metadata.ReleaseBuild
+	return metadata.GetReleaseBuild()
 }
 
 func TestCASetup(t *testing.T) {
-	t.Parallel()
 
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := central.NewDevelopmentServiceClient(conn)

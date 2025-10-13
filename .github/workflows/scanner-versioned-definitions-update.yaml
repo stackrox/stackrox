@@ -10,6 +10,20 @@ on:
     - synchronize
   workflow_dispatch:
     inputs:
+      stream:
+        description: "Vulnerability bundle version stream to build (typically vN, eg. v2)."
+        required: false
+      ga_ref:
+        description: >
+          WARNING - THIS WLL UPDATE A GA BUNDLE STREAM: Sets the git reference
+          to build a bundle that will be uploaded to the GA version stream.
+        required: false
+      rc_ref:
+        description: >
+          Sets the git reference to build a bundle that will be uploaded to the
+          release candidate version stream, appending `-rc` to the version
+          stream vN (eg. v2-rc).
+        required: false
       job:
         type: choice
         description: "Choose the NVD source"
@@ -27,13 +41,49 @@ jobs:
       versions: ${{ steps.set-versions.outputs.versions }}
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
     - name: Parse VULNERABILITY_BUNDLE_VERSION
       id: set-versions
+      env:
+        INPUT_GA_REF: ${{ github.event.inputs.ga_ref || '' }}
+        INPUT_RC_REF: ${{ github.event.inputs.rc_ref || '' }}
+        INPUT_STREAM: ${{ github.event.inputs.stream || '' }}
       run: |
         set -o pipefail
+
+        if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            # Validate input.
+            if [ -n "$INPUT_GA_REF" ] && [ -n "$INPUT_RC_REF" ]; then
+                echo >&2 "abort: invalid input: you cannot provide both 'ga_ref' and 'rc_ref'"
+                exit 1
+            fi
+            if [ -z "$INPUT_GA_REF" ] && [ -z "$INPUT_RC_REF" ] && [ -n "$INPUT_STREAM" ]; then
+                echo >&2 "abort: invalid input: when specifying 'stream', you must set 'ga_ref' or 'rc_ref'"
+                exit 1
+            fi
+
+            # Determine the reference.
+            if [ -n "$INPUT_GA_REF" ]; then
+                ref="$INPUT_GA_REF"
+            fi
+            if [ -n "$INPUT_RC_REF" ]; then
+                ref="$INPUT_RC_REF"
+                allow_rc=true
+            fi
+            if [ -z "$ref" ]; then
+                echo >&2 "abort: invalid input: could not determine the reference"
+                exit 1
+            fi
+
+            # Configure environment to generate the matrix with versions and
+            # references.
+            export SCANNER_BUNDLE_STREAM="$INPUT_STREAM"
+            export SCANNER_BUNDLE_REFERENCE="$ref"
+            export SCANNER_RELEASE_ALLOW_RC="$allow_rc"
+        fi
+
         EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
         echo "versions<<$EOF" >> "$GITHUB_OUTPUT"
         ./.github/workflows/scripts/scanner-get-released-tags.sh | tee -a "$GITHUB_OUTPUT"
@@ -46,11 +96,43 @@ jobs:
       manual_url: ${{ steps.set-manual-url.outputs.manual_url }}
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
+    - name: Download NVD PR
+      if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-nvd')
+      run: |
+        set -eu
+        since_time=$(date -u -d '24 hours ago' '+%a, %d %b %Y %H:%M:%S GMT')
+        NVD_BUNDLE_TYPE=${{ github.event.inputs.job || 'nvd-feeds' }}
+        case "$NVD_BUNDLE_TYPE" in
+            nvd-api)
+                nvd_file=nvd-api.zip
+                ;;
+            nvd-feeds)
+                nvd_file=nvd-feeds.zip
+                ;;
+            *)
+                echo >&2 "Warning: invalid NVD bundle type '$NVD_BUNDLE_TYPE'"
+                exit 1
+        esac
+        branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
+        # Replace / with -, so the branch name isn't truncated when pushed to GCS.
+        dir=${branch////-}
+        url="https://storage.googleapis.com/scanner-v4-test/nvd/$dir/$nvd_file"
+
+        code=$(curl \
+            -o nvd.zip \
+            -w "%{http_code}" \
+            -H "If-Modified-Since: $since_time" \
+            "$url")
+
+        echo "code: $code"
+        echo "$code" | grep -q 200
+
     - name: Download NVD
+      if: github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-nvd')
       run: |
         set -eu
         since_time=$(date -u -d '24 hours ago' '+%a, %d %b %Y %H:%M:%S GMT')
@@ -108,7 +190,7 @@ jobs:
     - prepare-environment
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.5
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.9
       volumes:
       # The updater makes heavy use of /tmp files.
       - /tmp:/tmp
@@ -123,26 +205,22 @@ jobs:
       SCANNER_BUNDLE_VERSION: ${{ matrix.version }}
       ROX_GIT_REF: ${{ matrix.ref }}
     steps:
-    - name: Free up disk space
-      shell: bash
-      run: |
-        set +e
-        set -x
-        df -h
-        for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL; do
-          rm -rf "/mnt${delete:?}"
-        done
-        df -h
-
-    - name: Checkout specific reference
-      uses: actions/checkout@v4
+    # Checkout master to get the latest local actions
+    - name: Checkout repository
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
-        ref: ${{ env.ROX_GIT_REF }}
 
     - uses: ./.github/actions/job-preamble
       with:
+        free-disk-space: 50
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Checkout specific reference
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+        ref: ${{ env.ROX_GIT_REF }}
 
     - name: Download NVD
       uses: ./.github/actions/download-artifact-with-retry
@@ -173,8 +251,17 @@ jobs:
 
     - name: Run updater (multi bundle)
       run: |
-        scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
-        zip definitions/${{ env.SCANNER_BUNDLE_VERSION }}/vulnerabilities.zip bundles/*.json.zst
+        tag=$(make -s --no-print-directory tag)
+        # In pre-4.9, the exporter requires --split to generate multi-bundles.
+        case "$tag" in
+            4.[0-8].*)
+                scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
+                ;;
+            *)
+                scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" bundles
+                ;;
+        esac
+        zip definitions/"$SCANNER_BUNDLE_VERSION"/vulnerabilities.zip bundles/*.json.zst
 
     - name: Upload definitions artifacts
       uses: actions/upload-artifact@v4
@@ -182,48 +269,51 @@ jobs:
         name: artifact_${{ env.SCANNER_BUNDLE_VERSION }}
         path: definitions
 
+    # Checkout again to get the latest local actions for cleanup phase
+    - name: Checkout repository
+      uses: actions/checkout@v5
+      if: always()
+      with:
+        fetch-depth: 0
+
   build-upload-pr-vulnerabilities:
     if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
     needs:
     - prepare-environment
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.5
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.9
       volumes:
       # The updater makes heavy use of /tmp files.
       - /tmp:/tmp
       - /usr:/mnt/usr
       - /opt:/mnt/opt
     steps:
-    - name: Free up disk space
-      shell: bash
-      run: |
-        set +e
-        set -x
-        df -h
-        for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL; do
-          rm -rf "/mnt${delete:?}"
-        done
-        df -h
-
+    # Checkout master to get the latest local actions
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        free-disk-space: 50
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Checkout specific reference
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
     - name: Authenticate with test GCS bucket
       if: github.event_name == 'pull_request'
-      uses: google-github-actions/auth@v2
+      uses: google-github-actions/auth@v3
       with:
         credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
 
     - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v2
+      uses: google-github-actions/setup-gcloud@v3
 
     - name: Download NVD
       uses: ./.github/actions/download-artifact-with-retry
@@ -249,7 +339,7 @@ jobs:
 
     - name: Run updater (multi bundle)
       run: |
-        scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
+        scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" bundles
         zip definitions/${{ github.event.pull_request.number }}/vulnerabilities.zip bundles/*.json.zst
 
     # PR owner is responsible for verifying vulnerability bundles are generated
@@ -267,49 +357,102 @@ jobs:
         cp -r "definitions/${{ github.event.pull_request.number }}/." "$dir/"
         gsutil -m cp -r "$dir" "gs://scanner-v4-test/vulnerability-bundles/"
 
-  upload-definitions:
-    needs:
-    - build-and-run
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    steps:
-    # Checkout to run ./.github/actions/download-artifact-with-retry
-    - uses: actions/checkout@v4
+    # Checkout again to get the latest local actions for cleanup phase
+    - name: Checkout repository
+      uses: actions/checkout@v5
+      if: always()
       with:
         fetch-depth: 0
 
-    - uses: ./.github/actions/download-artifact-with-retry
+  upload-definitions:
+    needs:
+    - build-and-run
+    if: ${{ (failure() || success()) && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
+    runs-on: ubuntu-latest
+    steps:
+    # Checkout to run ./.github/actions/download-artifact-with-retry
+    - uses: actions/checkout@v5
       with:
-        # Only download vulnerability bundles.
-        # This avoids accidentally downloading nvd.zip.
-        pattern: "artifact_*"
-        path: downloaded_artifacts
+        fetch-depth: 0
 
-    - name: Move files artifacts
-      run: rsync -av downloaded_artifacts/*/ definitions_files/
+    - uses: actions/download-artifact@v5
+      with:
+        # Vulnerability bundles are named `artifact_${{ env.SCANNER_BUNDLE_VERSION }}`.
+        pattern: "artifact_*"
+        path: definitions_files
+        # Merge all artifacts (`<version>/<files>`) into the directory.
+        merge-multiple: true
+
+    - name: Check vulnerability bundles
+      working-directory: ./definitions_files
+      run: |
+        set -eu
+
+        empty() {
+            find "${1:-.}" -maxdepth 0 -type d -empty | grep -q .
+        }
+
+        error() {
+            echo >&2 "error: $*"
+            exit 1
+        }
+
+        echo "Listing definitions files:"
+        pwd
+        ls -l
+        empty && error "definitions directory (current directory) is empty"
+
+        # Look for version dirs (use globbing, dot files included).
+        shopt -s dotglob
+        for d in *; do
+            echo "Listing bundle version directory '$d':"
+            ls -l "$d"
+            [ -d "$d" ] || error "found a non-directory in definitions_files/: $d"
+            [[ "$d" = .* ]] && error "version directory name not allowed (starts with dot): $d"
+            empty "$d" && error "bundle version directory is empty"
+            for f in "$d"/*; do
+                case "$f" in
+                    */vulnerabilities.zip) ;;
+                    */vulns.json.zst) ;;
+                    *) error "found unexpected file name in bundle version '$d/': $f" ;;
+                esac
+                [ -f "$f" ] || error "non-regular file in bundle version '$d/': $f"
+                [ -s "$f" ] || error "empty file in bundle version '$d/': $f"
+            done
+        done
 
     - name: Authenticate with Google Cloud
-      uses: google-github-actions/auth@v2
+      uses: google-github-actions/auth@v3
       with:
         credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
 
     - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v2
+      uses: google-github-actions/setup-gcloud@v3
 
-    - name: Upload to GCS
+    - name: Upload vulnerability bundles to GCS
+      working-directory: ./definitions_files
       run: |
-        ls -lr definitions_files
-        for dir in definitions_files/*; do
-          if [ -d "$dir" ]; then
-            echo "Copy $dir"
-            gsutil -m cp -r "$dir" gs://definitions.stackrox.io/v4/vulnerability-bundles/
-          fi
-        done
+        # Upload all bundle directories (preserving the `<verions>/<file>` structure).
+        bucket="gs://definitions.stackrox.io/v4/vulnerability-bundles"
+        echo "Uploading all dir(s) to $bucket/"
+        gsutil -m cp -r . "$bucket/"
+
+    - name: Update downstream dev
+      # Run on schedule or when dispatched to build "dev" (only possible if RC was not requested).
+      if: github.event_name == 'schedule' || (github.event.inputs.rc_ref == '' && github.event.inputs.stream == 'dev')
+      run: |
         echo "Copy upstream dev (dev) to downstream dev (1.0.0)"
         gsutil cp -r gs://definitions.stackrox.io/v4/vulnerability-bundles/dev/* gs://definitions.stackrox.io/v4/vulnerability-bundles/1.0.0/
 
     - name: Copy v1 to pre-versioned bundles
+      # Run on schedule or when dispatched to build "GA" (only possible if RC was not requested).
+      if: github.event.inputs.rc_ref == ''
       run: |
+        # Only execute if v1 files were created by the build job.
+        if ! [ -d "definitions_files/v1" ]; then
+           echo "error: no definition files for v1 were created: skipping..."
+           exit 0
+        fi
         # Using v1 bundle for released versions listed in RELEASE_VERSION.
         single=gs://definitions.stackrox.io/v4/vulnerability-bundles/v1/vulns.json.zst
         multi=gs://definitions.stackrox.io/v4/vulnerability-bundles/v1/vulnerabilities.zip

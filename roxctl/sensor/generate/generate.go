@@ -18,29 +18,22 @@ import (
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
-	"github.com/stackrox/rox/roxctl/pflag/autobool"
 	"github.com/stackrox/rox/roxctl/sensor/util"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/utils/pointer"
 )
 
 const (
-	infoDefaultingToSlimCollector          = `Defaulting to slim collector image since kernel probes seem to be available for central.`
-	infoDefaultingToComprehensiveCollector = `Defaulting to comprehensive collector image since kernel probes seem to be unavailable for central.`
-
-	warningDeprecatedAdmControllerCreateSet = `The --create-admission-controller flag has been deprecated and will be removed in future versions of roxctl.
-Please use --admission-controller-listen-on-creates instead to suppress this warning text and avoid breakages in the future.`
-
-	warningDeprecatedAdmControllerEnableSet = `The --admission-controller-enabled flag has been deprecated and will be removed in future versions of roxctl.
-Please use --admission-controller-enforce-on-creates instead to suppress this warning text and avoid breakages in the future.`
-
-	warningSlimCollectorModeSet = `The --slim-collector flag has been deprecated and will be removed in future versions of roxctl. It will be ignored from version 4.7 onwards.`
-
 	mainImageRepository = "main-image-repository"
-	slimCollector       = "slim-collector"
 
 	warningCentralEnvironmentError = "It was not possible to retrieve Central's runtime environment information: %v. Will use fallback defaults for " + mainImageRepository + " setting."
+
+	warningAdmissionControllerListenOnCreatesSet  = `The --admission-controller-listen-on-creates will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
+	warningAdmissionControllerListenOnUpdatesSet  = `The --admission-controller-listen-on-updates will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
+	warningAdmissionControllerScanInlineSet       = `The --admission-controller-scan-inline will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
+	warningAdmissionControllerEnforceOnCreatesSet = `The --admission-controller-enforce-on-creates flag will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
+	warningAdmissionControllerEnforceOnUpdatesSet = `The --admission-controller-enforce-on-updates flag will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
+	warningAdmissionControllerTimeoutSet          = `The --admission-controller-timeout flag will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
 )
 
 type sensorGenerateCommand struct {
@@ -49,7 +42,6 @@ type sensorGenerateCommand struct {
 	createUpgraderSA bool
 	istioVersion     string
 	outputDir        string
-	slimCollectorP   *bool
 	timeout          time.Duration
 
 	enablePodSecurityPolicies bool
@@ -62,50 +54,36 @@ type sensorGenerateCommand struct {
 
 func defaultCluster() *storage.Cluster {
 	return &storage.Cluster{
+		AdmissionController:            true,
+		AdmissionControllerEvents:      true,
+		AdmissionControllerUpdates:     true,
+		AdmissionControllerFailOnError: false,
 		TolerationsConfig: &storage.TolerationsConfig{
 			Disabled: false,
 		},
 		DynamicConfig: &storage.DynamicClusterConfig{
-			AdmissionControllerConfig: &storage.AdmissionControllerConfig{},
+			AdmissionControllerConfig: &storage.AdmissionControllerConfig{
+				Enabled:          true,
+				ScanInline:       true,
+				DisableBypass:    false,
+				EnforceOnUpdates: true,
+				TimeoutSeconds:   0,
+			},
+			AutoLockProcessBaselinesConfig: &storage.AutoLockProcessBaselinesConfig{
+				Enabled: false,
+			},
 		},
 	}
 }
 
 func (s *sensorGenerateCommand) Construct(cmd *cobra.Command) error {
 	s.timeout = flags.Timeout(cmd)
-	// Migration process for renaming "--create-admission-controller" parameter to "--admission-controller-listen-on-creates".
-	// Can be removed in a future release.
-	if cmd.PersistentFlags().Lookup("create-admission-controller").Changed && cmd.PersistentFlags().Lookup("admission-controller-listen-on-creates").Changed {
-		return common.ErrDeprecatedFlag("--create-admission-controller", "--admission-controller-listen-on-creates")
-	}
-	if cmd.PersistentFlags().Lookup("create-admission-controller").Changed {
-		s.env.Logger().WarnfLn(warningDeprecatedAdmControllerCreateSet)
-	}
-
-	// Migration process for renaming "--admission-controller-enabled" parameter to "--admission-controller-enforce-on-creates".
-	// Can be removed in a future release.
-	if cmd.PersistentFlags().Lookup("admission-controller-enabled").Changed && cmd.PersistentFlags().Lookup("admission-controller-enforce-on-creates").Changed {
-		return common.ErrDeprecatedFlag("--admission-controller-enabled", "--admission-controller-enforce-on-creates")
-	}
-	if cmd.PersistentFlags().Lookup("admission-controller-enabled").Changed {
-		s.env.Logger().WarnfLn(warningDeprecatedAdmControllerEnableSet)
-	}
-
 	s.getBundleFn = util.GetBundle
 	return nil
 }
 
 func (s *sensorGenerateCommand) setClusterDefaults(envDefaults *util.CentralEnv) {
-	// Here we only set the cluster property, which will be persisted by central.
-	// This is not directly related to fetching the bundle.
-	// It should only be used when the request to download a bundle does not contain a `slimCollector` setting.
-	if s.slimCollectorP != nil {
-		s.cluster.SlimCollector = *s.slimCollectorP
-	} else {
-		s.cluster.SlimCollector = envDefaults.KernelSupportAvailable
-	}
-
-	if s.cluster.MainImage == "" {
+	if s.cluster.GetMainImage() == "" {
 		// If no override was provided, use a possible default value from `envDefaults`. If this is a legacy central,
 		// envDefaults.MainImage will hold a local default (from Release Flag). If env.Defaults.MainImage is empty it
 		// means that roxctl is talking to newer version of Central which will accept empty MainImage values.
@@ -116,7 +94,7 @@ func (s *sensorGenerateCommand) setClusterDefaults(envDefaults *util.CentralEnv)
 func (s *sensorGenerateCommand) fullClusterCreation() error {
 	conn, err := s.env.GRPCConnection()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to create GRPC connection")
 	}
 	service := v1.NewClustersServiceClient(conn)
 
@@ -133,6 +111,15 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 	s.setClusterDefaults(env)
 
 	common.LogInfoPsp(s.env.Logger(), s.enablePodSecurityPolicies)
+
+	acc := s.cluster.GetDynamicConfig().GetAdmissionControllerConfig()
+	if acc != nil {
+		// This ensures the new --admission-controller-enforcement flag value "wins". The Enabled value is
+		// used in admission controller business logic as "enforce on creates". The line below ensures we have
+		// enforcement "on" for both operations, or "off" for both, in line with the new design based on
+		// customer expectations.
+		acc.Enabled = acc.GetEnforceOnUpdates()
+	}
 
 	id, err := s.createCluster(ctx, service)
 	// If the error is not explicitly AlreadyExists or it is AlreadyExists AND continueIfExists isn't set
@@ -162,7 +149,6 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 	params := apiparams.ClusterZip{
 		ID:               id,
 		CreateUpgraderSA: &s.createUpgraderSA,
-		SlimCollector:    pointer.Bool(s.cluster.GetSlimCollector()),
 		IstioVersion:     s.istioVersion,
 
 		DisablePodSecurityPolicies: !s.enablePodSecurityPolicies,
@@ -171,84 +157,79 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 		return errors.Wrap(err, "error getting cluster zip file")
 	}
 
-	if s.slimCollectorP != nil {
-		if s.cluster.SlimCollector && !env.KernelSupportAvailable {
-			s.env.Logger().WarnfLn(util.WarningSlimCollectorModeWithoutKernelSupport)
-		}
-	} else if s.cluster.GetSlimCollector() {
-		s.env.Logger().InfofLn(infoDefaultingToSlimCollector)
-	} else {
-		s.env.Logger().InfofLn(infoDefaultingToComprehensiveCollector)
-	}
-
 	return nil
 }
 
 func (s *sensorGenerateCommand) createCluster(ctx context.Context, svc v1.ClustersServiceClient) (string, error) {
-	if !s.cluster.GetAdmissionController() && s.cluster.GetDynamicConfig().GetAdmissionControllerConfig() != nil {
-		s.cluster.DynamicConfig.AdmissionControllerConfig = nil
-	}
-
 	response, err := svc.PostCluster(ctx, s.cluster)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "error creating cluster")
 	}
 	return response.GetCluster().GetId(), nil
 }
 
 // Command defines the sensor generate command tree
 func Command(cliEnvironment environment.Environment) *cobra.Command {
+	var ignoredBoolFlag bool
+	var ignoredInt32Flag int32
+
 	generateCmd := &sensorGenerateCommand{env: cliEnvironment, cluster: defaultCluster()}
 	c := &cobra.Command{
 		Use:   "generate",
-		Short: "Commands that generate files to deploy StackRox services into secured clusters.",
+		Short: "Commands that generate files to deploy StackRox services into secured clusters",
 		PersistentPreRunE: func(c *cobra.Command, _ []string) error {
 			return generateCmd.Construct(c)
 		},
 	}
 
-	c.PersistentFlags().StringVar(&generateCmd.outputDir, "output-dir", "", "Output directory for bundle contents (default: auto-generated directory name inside the current directory)")
-	c.PersistentFlags().BoolVar(&generateCmd.continueIfExists, "continue-if-exists", false, "Continue with downloading the sensor bundle even if the cluster already exists")
-	c.PersistentFlags().StringVar(&generateCmd.cluster.Name, "name", "", "Cluster name to identify the cluster")
-	c.PersistentFlags().StringVar(&generateCmd.cluster.CentralApiEndpoint, "central", "central.stackrox:443", "Endpoint that sensor should connect to")
-	c.PersistentFlags().StringVar(&generateCmd.cluster.MainImage, mainImageRepository, "", "Image repository sensor should be deployed with (if unset, a default will be used)")
-	c.PersistentFlags().StringVar(&generateCmd.cluster.CollectorImage, "collector-image-repository", "", "Image repository collector should be deployed with (if unset, a default will be derived according to the effective --"+mainImageRepository+" value)")
+	c.PersistentFlags().StringVar(&generateCmd.outputDir, "output-dir", "", "Output directory for bundle contents (default: auto-generated directory name inside the current directory).")
+	c.PersistentFlags().BoolVar(&generateCmd.continueIfExists, "continue-if-exists", false, "Continue with downloading the sensor bundle even if the cluster already exists.")
+	c.PersistentFlags().StringVar(&generateCmd.cluster.Name, "name", "", "Cluster name to identify the cluster.")
+	c.PersistentFlags().StringVar(&generateCmd.cluster.CentralApiEndpoint, "central", "central.stackrox:443", "Endpoint that sensor should connect to.")
+	c.PersistentFlags().StringVar(&generateCmd.cluster.MainImage, mainImageRepository, "", "Image repository sensor should be deployed with (if unset, a default will be used).")
+	c.PersistentFlags().StringVar(&generateCmd.cluster.CollectorImage, "collector-image-repository", "", "Image repository collector should be deployed with (if unset, a default will be derived according to the effective --"+mainImageRepository+" value).")
 
-	c.PersistentFlags().Var(&collectionTypeWrapper{CollectionMethod: &generateCmd.cluster.CollectionMethod}, "collection-method", "Which collection method to use for runtime support (none, default, core_bpf)")
+	c.PersistentFlags().Var(&collectionTypeWrapper{CollectionMethod: &generateCmd.cluster.CollectionMethod}, "collection-method", "Which collection method to use for runtime support (none, default, core_bpf).")
 
-	c.PersistentFlags().BoolVar(&generateCmd.createUpgraderSA, "create-upgrader-sa", true, "Whether to create the upgrader service account, with cluster-admin privileges, to facilitate automated sensor upgrades")
+	c.PersistentFlags().BoolVar(&generateCmd.createUpgraderSA, "create-upgrader-sa", true, "Whether to create the upgrader service account, with cluster-admin privileges, to facilitate automated sensor upgrades.")
 
 	c.PersistentFlags().StringVar(&generateCmd.istioVersion, "istio-support", "",
 		fmt.Sprintf(
-			"Generate deployment files supporting the given Istio version. Valid versions: %s",
+			"Generate deployment files supporting the given Istio version. Valid versions: %s.",
 			strings.Join(istioutils.ListKnownIstioVersions(), ", ")))
 
-	c.PersistentFlags().BoolVar(&generateCmd.cluster.GetTolerationsConfig().Disabled, "disable-tolerations", false, "Disable tolerations for tainted nodes")
+	c.PersistentFlags().BoolVar(&generateCmd.cluster.GetTolerationsConfig().Disabled, "disable-tolerations", false, "Disable tolerations for tainted nodes.")
+	c.PersistentFlags().BoolVar(&generateCmd.enablePodSecurityPolicies, "enable-pod-security-policies", false, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes).")
 
-	autobool.NewFlag(c.PersistentFlags(), &generateCmd.slimCollectorP, slimCollector, "Use slim collector in deployment bundle.")
-	utils.Must(c.PersistentFlags().MarkDeprecated(slimCollector, warningSlimCollectorModeSet))
-
-	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionController, "create-admission-controller", false, "Whether or not to use an admission controller for enforcement (WARNING: deprecated; admission controller will be deployed by default")
-	utils.Must(c.PersistentFlags().MarkHidden("create-admission-controller"))
-
-	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionController, "admission-controller-listen-on-creates", false, "Whether or not to configure the admission controller webhook to listen on deployment creates")
-	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionControllerUpdates, "admission-controller-listen-on-updates", false, "Whether or not to configure the admission controller webhook to listen on deployment updates")
-	c.PersistentFlags().BoolVar(&generateCmd.enablePodSecurityPolicies, "enable-pod-security-policies", false, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes)")
+	// Note: If you need to change the default values for any of the flags below this comment, please change the defaults in the defaultCluster function above
+	c.PersistentFlags().BoolVar(&ignoredBoolFlag, "admission-controller-listen-on-creates", true, "Whether or not to configure the admission controller webhook to listen on deployment creates.")
+	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-listen-on-creates", warningAdmissionControllerListenOnCreatesSet))
+	c.PersistentFlags().BoolVar(&ignoredBoolFlag, "admission-controller-listen-on-updates", true, "Whether or not to configure the admission controller webhook to listen on deployment updates.")
+	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-listen-on-updates", warningAdmissionControllerListenOnUpdatesSet))
 
 	// Admission controller config
-	ac := generateCmd.cluster.DynamicConfig.AdmissionControllerConfig
-	c.PersistentFlags().BoolVar(&ac.Enabled, "admission-controller-enabled", false, "Dynamic enable for the admission controller (WARNING: deprecated; use --admission-controller-enforce-on-creates instead")
-	utils.Must(c.PersistentFlags().MarkHidden("admission-controller-enabled"))
+	ac := generateCmd.cluster.GetDynamicConfig().GetAdmissionControllerConfig()
 
-	// TODO(ROX-24956): As part of ROX-21288 this default timeout should be adjusted as well. On the other hand it is questionable to have this default timeout set
-	// in multiple places (the Helm chart defaults, on central side, within roxctl). It might be a better approach to have roxctl not propagate a default
-	// timeout to central, allowing central to inject a default timeout. This could, in principle, be achieved by having a default timeout of 0 here. But, due to
-	// the bug described in ROX-24956, this is currently not testable. Hence, we should pick this up again when that ticket has been taken care of.
-	c.PersistentFlags().Int32Var(&ac.TimeoutSeconds, "admission-controller-timeout", 3, "Timeout in seconds for the admission controller")
-	c.PersistentFlags().BoolVar(&ac.ScanInline, "admission-controller-scan-inline", false, "Get scans inline when using the admission controller")
-	c.PersistentFlags().BoolVar(&ac.DisableBypass, "admission-controller-disable-bypass", false, "Disable the bypass annotations for the admission controller")
-	c.PersistentFlags().BoolVar(&ac.Enabled, "admission-controller-enforce-on-creates", false, "Dynamic enable for enforcing on object creates in the admission controller")
-	c.PersistentFlags().BoolVar(&ac.EnforceOnUpdates, "admission-controller-enforce-on-updates", false, "Dynamic enable for enforcing on object updates in the admission controller")
+	c.PersistentFlags().Int32Var(&ignoredInt32Flag, "admission-controller-timeout", 0, "Timeout in seconds for the admission controller.")
+	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-timeout", warningAdmissionControllerTimeoutSet))
+
+	c.PersistentFlags().BoolVar(&ignoredBoolFlag, "admission-controller-scan-inline", true, "Get scans inline when using the admission controller.")
+	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-scan-inline", warningAdmissionControllerScanInlineSet))
+
+	c.PersistentFlags().BoolVar(&ac.DisableBypass, "admission-controller-disable-bypass", false, "Disable the bypass annotations for the admission controller.")
+
+	c.PersistentFlags().BoolVar(&ignoredBoolFlag, "admission-controller-enforce-on-creates", true, "Dynamic enable for enforcing on object creates in the admission controller.")
+	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-enforce-on-creates", warningAdmissionControllerEnforceOnCreatesSet))
+
+	c.PersistentFlags().BoolVar(&ignoredBoolFlag, "admission-controller-enforce-on-updates", true, "Dynamic enable for enforcing on object updates in the admission controller.")
+	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-enforce-on-updates", warningAdmissionControllerEnforceOnUpdatesSet))
+
+	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionControllerFailOnError, "admission-controller-fail-on-error", false, "Fail the admission review request in case of errors or timeouts in request evaluation.")
+	c.PersistentFlags().BoolVar(&generateCmd.cluster.DynamicConfig.AutoLockProcessBaselinesConfig.Enabled, "auto-lock-process-baselines", false, "Locks process baselines when their deployments leave the observation period.")
+	c.PersistentFlags().BoolVar(&ac.EnforceOnUpdates, "admission-controller-enforcement", true, "Enforce security policies on the admission review request.")
+
+	c.MarkFlagsMutuallyExclusive("admission-controller-enforce-on-creates", "admission-controller-enforcement")
+	c.MarkFlagsMutuallyExclusive("admission-controller-enforce-on-updates", "admission-controller-enforcement")
 
 	flags.AddTimeoutWithDefault(c, 5*time.Minute)
 

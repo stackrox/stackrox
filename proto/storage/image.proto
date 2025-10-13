@@ -8,8 +8,10 @@ import "storage/vulnerability.proto";
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
+// This proto is deprecated and replaced by ImageV2.
 // Next Tag: 19
 message Image {
+  option deprecated = true;
   string id = 4; // @gotags: search:"Image Sha,store,hidden" sql:"pk"
   ImageName name = 1;
   // This should deprecate the ImageName field long-term, allowing images with the same digest to be associated with
@@ -115,7 +117,7 @@ message ImageSignatureVerificationResult {
   repeated string verified_image_references = 5;
 }
 
-// Next Tag: 13
+// Next Tag: 14
 message EmbeddedImageScanComponent {
   string name = 1; // @gotags: search:"Component,store"
   string version = 2; // @gotags: search:"Component Version,store"
@@ -130,7 +132,7 @@ message EmbeddedImageScanComponent {
   oneof set_top_cvss {
     float top_cvss = 9;
   }
-  float risk_score = 10; // @gotags: search:"Component Risk Score,hidden"
+  float risk_score = 10; // @gotags: search:"Component Risk Score,hidden" hash:"ignore"
   // Component version that fixes all the fixable vulnerabilities in this component.
   string fixed_by = 11;
   message Executable {
@@ -139,6 +141,7 @@ message EmbeddedImageScanComponent {
   }
   // Values are cleared after moving to cache, remove them from the grpc return as well
   repeated Executable executables = 12; // @gotags: json:"-"
+  string architecture = 13;
 }
 
 enum SourceType {
@@ -193,6 +196,7 @@ message CosignSignature {
   bytes signature_payload = 2;
   bytes cert_pem = 3;
   bytes cert_chain_pem = 4;
+  bytes rekor_bundle = 5;
 }
 
 message V2Metadata {

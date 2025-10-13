@@ -2,7 +2,6 @@ package compliance
 
 import (
 	"context"
-	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/compliance/collection/compliance_checks"
 	cmetrics "github.com/stackrox/rox/compliance/collection/metrics"
 	"github.com/stackrox/rox/compliance/node"
+	"github.com/stackrox/rox/compliance/virtualmachines/relay"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -61,9 +61,6 @@ func (c *Compliance) Start() {
 	log.Infof("Running StackRox Version: %s", version.GetMainVersion())
 	clientconn.SetUserAgent(clientconn.Compliance)
 
-	// Set the random seed based on the current time.
-	rand.Seed(time.Now().UnixNano())
-
 	// Start the prometheus metrics server
 	metrics.NewServer(metrics.ComplianceSubsystem, metrics.NewTLSConfigurerFromEnv()).RunForever()
 	metrics.GatherThrottleMetricsForever(metrics.ComplianceSubsystem.String())
@@ -97,7 +94,7 @@ func (c *Compliance) Start() {
 	}()
 
 	var wg concurrency.WaitGroup
-	wg.Add(2)
+	wg.Add(3)
 
 	go func(ctx context.Context) {
 		defer wg.Add(-1)
@@ -119,6 +116,20 @@ func (c *Compliance) Start() {
 			// sending node indexes into output toSensorC
 			for n := range nodeIndexesC {
 				toSensorC <- n
+			}
+		}
+	}(ctx)
+
+	// The virtual machine relay (ROX-30476), which reads VM index reports from vsock connections and forwards them to
+	// sensor, is currently started and run in the compliance container. This enables reusing the existing connection to
+	// sensor and accelerates initial development.
+	go func(ctx context.Context) {
+		defer wg.Add(-1)
+		if features.VirtualMachines.Enabled() {
+			log.Infof("Virtual machine relay enabled")
+			vmRelay := relay.NewRelay(conn)
+			if err := vmRelay.Run(ctx); err != nil {
+				log.Errorf("Error running virtual machine relay: %v", err)
 			}
 		}
 	}(ctx)
@@ -297,7 +308,7 @@ func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceServic
 		if err != nil {
 			return errors.Wrap(err, "receiving msg from sensor")
 		}
-		switch t := msg.Msg.(type) {
+		switch t := msg.GetMsg().(type) {
 		case *sensor.MsgToCompliance_Trigger:
 			if err := compliance_checks.RunChecks(client, config, t.Trigger, c.nodeNameProvider); err != nil {
 				return errors.Wrap(err, "running compliance checks")
@@ -423,13 +434,13 @@ func (c *Compliance) initialClientAndConfig(ctx context.Context, cli sensor.Comp
 		return nil, nil, errors.New("initial msg has a nil config")
 	}
 	config := initialMsg.GetConfig()
-	if config.ContainerRuntime == storage.ContainerRuntime_UNKNOWN_CONTAINER_RUNTIME {
+	if config.GetContainerRuntime() == storage.ContainerRuntime_UNKNOWN_CONTAINER_RUNTIME {
 		log.Error("Didn't receive container runtime from sensor. Trying to infer container runtime from cgroups...")
 		config.ContainerRuntime, err = k8sutil.InferContainerRuntime()
 		if err != nil {
 			log.Errorf("Could not infer container runtime from cgroups: %v", err)
 		} else {
-			log.Infof("Inferred container runtime as %s", config.ContainerRuntime.String())
+			log.Infof("Inferred container runtime as %s", config.GetContainerRuntime().String())
 		}
 	}
 	return client, config, nil

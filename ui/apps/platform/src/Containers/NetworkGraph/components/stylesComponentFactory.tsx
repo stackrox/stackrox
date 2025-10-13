@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
-    ComponentFactory,
     withDragNode,
     withSelection,
     ModelKind,
@@ -11,6 +10,7 @@ import {
     graphDropTargetSpec,
     NODE_DRAG_TYPE,
 } from '@patternfly/react-topology';
+import type { ComponentFactory } from '@patternfly/react-topology';
 import StyleNode from './StyleNode';
 import StyleGroup from './StyleGroup';
 import StyleEdge from './StyleEdge';

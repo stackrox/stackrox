@@ -54,7 +54,7 @@ func (r *resolverImpl) Start() error {
 }
 
 // Stop the resolverImpl component
-func (r *resolverImpl) Stop(_ error) {
+func (r *resolverImpl) Stop() {
 	if !r.stopper.Client().Stopped().IsDone() {
 		defer func() {
 			_ = r.stopper.Client().Stopped().Wait()

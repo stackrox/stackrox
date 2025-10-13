@@ -60,10 +60,6 @@ func (s *GraphQLNodeComponentTestSuite) SetupSuite() {
 	}
 }
 
-func (s *GraphQLNodeComponentTestSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 // permission checks
 
 func (s *GraphQLNodeComponentTestSuite) TestUnauthorizedNodeComponentEndpoint() {
@@ -256,7 +252,7 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentLastScanned() {
 	// Component queried with node scope
 	scopedCtx := scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_NODES,
-		ID:    fixtureconsts.Node1,
+		IDs:   []string{fixtureconsts.Node1},
 	})
 	comp = getNodeComponentResolver(scopedCtx, s.T(), s.resolver, componentID)
 	node = getNodeResolver(ctx, s.T(), s.resolver, fixtureconsts.Node1)

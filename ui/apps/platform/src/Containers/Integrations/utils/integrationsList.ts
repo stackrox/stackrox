@@ -36,8 +36,8 @@ import { integrationsPath } from 'routePaths';
  *    featureFlagDependency: ['ROX_WHATEVER_1', 'ROX_WHATEVER_2'],
  */
 
-import { FeatureFlagEnvVar } from 'types/featureFlag';
-import {
+import type { FeatureFlagEnvVar } from 'types/featureFlag';
+import type {
     AuthProviderType,
     BackupIntegrationType,
     CloudSourceIntegrationType,
@@ -289,23 +289,13 @@ export const apiTokenDescriptor: AuthProviderDescriptor = {
     type: 'apitoken',
 };
 
-export const clusterInitBundleDescriptor: AuthProviderDescriptor = {
-    image: logo,
-    label: 'Cluster Init Bundle',
-    type: 'clusterInitBundle',
-};
-
 export const machineAccessDescriptor: AuthProviderDescriptor = {
     image: logo,
     label: 'Machine access configuration',
     type: 'machineAccess',
 };
 
-const authenticationTokensDescriptors = [
-    apiTokenDescriptor,
-    clusterInitBundleDescriptor,
-    machineAccessDescriptor,
-];
+const authenticationTokensDescriptors = [apiTokenDescriptor, machineAccessDescriptor];
 
 export const cloudSourcesSource = 'cloudSources';
 

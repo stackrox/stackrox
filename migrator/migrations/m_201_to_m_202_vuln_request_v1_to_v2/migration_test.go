@@ -69,10 +69,6 @@ func (s *migrationTestSuite) SetupSuite() {
 	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), schema.CreateTableVulnerabilityRequestsStmt)
 }
 
-func (s *migrationTestSuite) TearDownSuite() {
-	s.db.Teardown(s.T())
-}
-
 func (s *migrationTestSuite) TestMigration() {
 	oldRequests := map[string]*storage.VulnerabilityRequest{
 		"1": fakeOldVulnReq(&requestParams{
@@ -327,7 +323,7 @@ func (s *migrationTestSuite) verify(expected map[string]*storage.VulnerabilityRe
 		protoassert.Equal(s.T(), expectedReq.GetUpdatedDeferralReq(), actualReq.GetUpdatedDeferralReq())
 		protoassert.Equal(s.T(), expectedReq.GetDeferralUpdate(), actualReq.GetDeferralUpdate())
 		protoassert.Equal(s.T(), expectedReq.GetFalsePositiveUpdate(), actualReq.GetFalsePositiveUpdate())
-		protoassert.Equal(s.T(), expectedReq.Scope, actualReq.Scope)
+		protoassert.Equal(s.T(), expectedReq.GetScope(), actualReq.GetScope())
 	}
 }
 

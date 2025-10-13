@@ -66,8 +66,6 @@ type properties struct {
 	Singular       string
 	WriteOptions   bool
 
-	PermissionChecker string
-
 	// Refs indicate the additional referentiol relationships. Each string is [<table_name>:]<proto_type>.
 	// These are non-embedding relations, that is, this table is not embedded into referenced table to
 	// construct the proto message.
@@ -82,9 +80,6 @@ type properties struct {
 
 	// Indicates the directory in which the generated schema file must go.
 	SchemaDirectory string
-
-	// Indicates that we want to generate a GetAll function. Defaults to false because this can be dangerous on high cardinality stores.
-	GetAll bool
 
 	// Indicates that we should just generate the singleton store.
 	SingletonStore bool
@@ -107,6 +102,15 @@ type properties struct {
 
 	// Indicates the store should be mirrored in memory.
 	CachedStore bool
+
+	// Provides default sort option field
+	DefaultSortField string
+
+	// Informs to reverse the default sort option
+	ReverseDefaultSort bool
+
+	// Provides options map for sort option transforms
+	TransformSortOptions string
 }
 
 type parsedReference struct {
@@ -130,16 +134,17 @@ func main() {
 
 	c.Flags().StringVar(&props.Singular, "singular", "", "the singular name of the object")
 	c.Flags().StringVar(&props.SearchCategory, "search-category", "", "the search category to index under")
-	c.Flags().StringVar(&props.PermissionChecker, "permission-checker", "", "the permission checker that should be used")
 	c.Flags().StringSliceVar(&props.Refs, "references", []string{}, "additional foreign key references, comma seperated of <[table_name:]type>")
 	c.Flags().BoolVar(&props.JoinTable, "read-only-store", false, "if set to true, creates read-only store")
 	c.Flags().BoolVar(&props.NoCopyFrom, "no-copy-from", false, "if true, indicates that the store should not use Postgres copyFrom operation")
 	c.Flags().BoolVar(&props.SchemaOnly, "schema-only", false, "if true, generates only the schema and not store and index")
-	c.Flags().BoolVar(&props.GetAll, "get-all-func", false, "if true, generates a GetAll function (can be dangerous on high cardinality stores, use with care)")
 	c.Flags().StringVar(&props.SchemaDirectory, "schema-directory", "", "the directory in which to generate the schema")
 	c.Flags().BoolVar(&props.SingletonStore, "singleton", false, "indicates that we should just generate the singleton store")
 	c.Flags().StringSliceVar(&props.SearchScope, "search-scope", []string{}, "if set, the search is scoped to specified search categories. comma seperated of search categories")
 	c.Flags().BoolVar(&props.CachedStore, "cached-store", false, "if true, ensure the store is mirrored in a memory cache (can be dangerous on high cardinality stores, use with care)")
+	c.Flags().StringVar(&props.DefaultSortField, "default-sort", "", "if set, provides a default sort for search if one is not present")
+	c.Flags().BoolVar(&props.ReverseDefaultSort, "reverse-default-sort", false, "if true, reverses the default sort")
+	c.Flags().StringVar(&props.TransformSortOptions, "transform-sort-options", "", "if set, provides an option map for sort transforms")
 	utils.Must(c.MarkFlagRequired("schema-directory"))
 
 	c.Flags().StringVar(&props.Cycle, "cycle", "", "indicates that there is a cyclical foreign key reference, should be the path to the embedded foreign key")
@@ -159,31 +164,10 @@ func main() {
 		if schema.NoPrimaryKey() && !props.SingletonStore {
 			log.Fatal("No primary key defined, please check relevant proto file and ensure a primary key is specified using the \"sql:\"pk\"\" tag")
 		}
-
-		parsedReferences := parseReferencesAndInjectPeerSchemas(schema, props.Refs)
-		if len(schema.PrimaryKeys()) > 1 {
-			for _, pk := range schema.PrimaryKeys() {
-				// We need all primary keys to be searchable unless they are ID fields, or if they are a foreign key.
-				if pk.Search.FieldName == "" && !pk.Options.ID {
-					var isValid bool
-					if ref := pk.Options.Reference; ref != nil {
-						referencedField, err := ref.FieldInOtherSchema()
-						if err != nil {
-							log.Fatalf("Error getting referenced field for pk %+v in schema %s: %v", pk, schema.Table, err)
-						}
-						// If the referenced field is searchable, then this field is searchable, so we don't need to enforce anything.
-						if referencedField.Search.FieldName != "" {
-							isValid = true
-						}
-					}
-					if !isValid {
-						log.Fatalf("%s:%s is not searchable and is a primary key that is not a foreign key reference", props.Type, pk.Name)
-					}
-				}
-			}
+		if schema.MultiplePrimaryKeys() {
+			log.Fatal("Multiple primary keys defined, please check relevant proto file and ensure a primary key is specified once using the \"sql:\"pk\"\" tag")
 		}
 
-		permissionCheckerEnabled := props.PermissionChecker != ""
 		var searchCategory string
 		if props.SearchCategory != "" {
 			if asInt, err := strconv.Atoi(props.SearchCategory); err == nil {
@@ -200,12 +184,15 @@ func main() {
 			}
 		}
 
+		defaultSort := props.DefaultSortField
+
 		var embeddedFK string
 		if props.Cycle != "" {
 			embeddedFK = props.Cycle
 		}
 
 		// remove any self references
+		parsedReferences := parseReferencesAndInjectPeerSchemas(schema, props.Refs)
 		filteredReferences := make([]parsedReference, 0, len(parsedReferences))
 		for _, ref := range parsedReferences {
 			if ref.Table != props.Table {
@@ -214,27 +201,30 @@ func main() {
 		}
 
 		templateMap := map[string]interface{}{
-			"Type":              props.Type,
-			"TrimmedType":       trimmedType,
-			"Table":             props.Table,
-			"Schema":            schema,
-			"SearchCategory":    searchCategory,
-			"JoinTable":         props.JoinTable,
-			"PermissionChecker": props.PermissionChecker,
-			"GetAll":            props.GetAll,
+			"Type":           props.Type,
+			"TrimmedType":    trimmedType,
+			"Table":          props.Table,
+			"Schema":         schema,
+			"SearchCategory": searchCategory,
+			"JoinTable":      props.JoinTable,
 			"Obj": object{
-				storageType:              props.Type,
-				permissionCheckerEnabled: permissionCheckerEnabled,
-				schema:                   schema,
+				storageType: props.Type,
+				schema:      schema,
 			},
-			"NoCopyFrom":     props.NoCopyFrom,
-			"Cycle":          embeddedFK != "",
-			"EmbeddedFK":     embeddedFK,
-			"References":     filteredReferences,
-			"SearchScope":    searchScope,
-			"RegisterSchema": !props.ConversionFuncs,
-			"FeatureFlag":    props.FeatureFlag,
-			"CachedStore":    props.CachedStore,
+			"NoCopyFrom":           props.NoCopyFrom,
+			"Cycle":                embeddedFK != "",
+			"EmbeddedFK":           embeddedFK,
+			"References":           filteredReferences,
+			"SearchScope":          searchScope,
+			"RegisterSchema":       !props.ConversionFuncs,
+			"FeatureFlag":          props.FeatureFlag,
+			"CachedStore":          props.CachedStore,
+			"DefaultSortStore":     defaultSort != "",
+			"DefaultSort":          defaultSort,
+			"ReverseDefaultSort":   props.ReverseDefaultSort,
+			"TransformSortOptions": props.TransformSortOptions,
+			"DefaultTransform":     props.TransformSortOptions != "",
+			"Singleton":            props.SingletonStore,
 		}
 
 		if err := common.RenderFile(templateMap, schemaTemplate, getSchemaFileName(props.SchemaDirectory, schema.Table)); err != nil {
@@ -242,7 +232,7 @@ func main() {
 		}
 
 		if props.ConversionFuncs {
-			if err := generateConverstionFuncs(schema, props.SchemaDirectory); err != nil {
+			if err := generateConversionFuncs(schema, props.SchemaDirectory); err != nil {
 				return err
 			}
 		}
@@ -272,7 +262,7 @@ func main() {
 	}
 }
 
-func generateConverstionFuncs(s *walker.Schema, dir string) error {
+func generateConversionFuncs(s *walker.Schema, dir string) error {
 	templateMap := map[string]interface{}{
 		"Schema": s,
 	}

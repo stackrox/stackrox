@@ -55,6 +55,20 @@ func (mr *MockDataStoreMockRecorder) Add(ctx, group any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockDataStore)(nil).Add), ctx, group)
 }
 
+// ForEach mocks base method.
+func (m *MockDataStore) ForEach(ctx context.Context, fn func(*storage.Group) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ForEach", ctx, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ForEach indicates an expected call of ForEach.
+func (mr *MockDataStoreMockRecorder) ForEach(ctx, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForEach", reflect.TypeOf((*MockDataStore)(nil).ForEach), ctx, fn)
+}
+
 // Get mocks base method.
 func (m *MockDataStore) Get(ctx context.Context, props *storage.GroupProperties) (*storage.Group, error) {
 	m.ctrl.T.Helper()
@@ -68,21 +82,6 @@ func (m *MockDataStore) Get(ctx context.Context, props *storage.GroupProperties)
 func (mr *MockDataStoreMockRecorder) Get(ctx, props any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockDataStore)(nil).Get), ctx, props)
-}
-
-// GetAll mocks base method.
-func (m *MockDataStore) GetAll(ctx context.Context) ([]*storage.Group, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAll", ctx)
-	ret0, _ := ret[0].([]*storage.Group)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAll indicates an expected call of GetAll.
-func (mr *MockDataStoreMockRecorder) GetAll(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockDataStore)(nil).GetAll), ctx)
 }
 
 // GetFiltered mocks base method.

@@ -1,35 +1,9 @@
-ARG FINAL_STAGE_PATH="/mnt/final"
-
-# TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
-FROM registry.access.redhat.com/ubi8/ubi:latest AS ubi-base
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS final-base
+ARG PG_VERSION=15
 
 
-# TODO(ROX-20651): use content sets instead of subscription manager for access to RHEL RPMs once available. Move dnf commands to respective stages.
-FROM ubi-base AS rpm-installer
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.24@sha256:beed4519c775d6123c11351048be29e6f93ab0adaea2c7d55977b445966f5b27 AS go-builder
 
-ARG FINAL_STAGE_PATH
-COPY --from=final-base / "$FINAL_STAGE_PATH"
-
-COPY ./.konflux/scripts/subscription-manager/* /tmp/.konflux/
-RUN /tmp/.konflux/subscription-manager-bro.sh register "$FINAL_STAGE_PATH"
-
-# Install packages for the final stage.
-RUN dnf -y --installroot="$FINAL_STAGE_PATH" upgrade --nobest && \
-    dnf -y --installroot="$FINAL_STAGE_PATH" module enable postgresql:13 && \
-    # find is used in /stackrox/import-additional-cas \
-    dnf -y --installroot="$FINAL_STAGE_PATH" install findutils postgresql && \
-    # We can do usual cleanup while we're here: remove packages that would trigger violations. \
-    dnf -y --installroot="$FINAL_STAGE_PATH" clean all && \
-    rpm --root="$FINAL_STAGE_PATH" --verbose -e --nodeps $(rpm --root="$FINAL_STAGE_PATH" -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
-    rm -rf "$FINAL_STAGE_PATH/var/cache/dnf" "$FINAL_STAGE_PATH/var/cache/yum"
-
-RUN /tmp/.konflux/subscription-manager-bro.sh cleanup
-
-
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.23 AS go-builder
-
-RUN dnf -y install --allowerasing make automake gcc gcc-c++ coreutils binutils diffutils zlib-devel bzip2-devel lz4-devel cmake jq
+RUN dnf -y install --allowerasing jq
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -40,24 +14,30 @@ RUN if [[ "$BUILD_TAG" == "" ]]; then >&2 echo "error: required BUILD_TAG arg is
 ENV BUILD_TAG="$BUILD_TAG"
 
 ENV GOFLAGS=""
-ENV CGO_ENABLED=1
 # TODO(ROX-20240): enable non-release development builds.
+ENV GOTAGS="release"
+ENV CI=1
+
+# TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy.
+# CLI builds are without strictfipsruntime (and CGO_ENABLED is set to 0) because these binaries are for user download and use outside the cluster.
+RUN make cli-build
+
+ENV CGO_ENABLED=1
 # TODO(ROX-27054): Remove the redundant strictfipsruntime option if one is found to be so.
 ENV GOTAGS="release,strictfipsruntime"
 ENV GOEXPERIMENT=strictfipsruntime
-ENV CI=1
 
-RUN # TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy. \
-    make main-build-nodeps cli-build && \
-    mkdir -p image/rhel/docs/api/v1 && \
-    ./scripts/mergeswag.sh generated/api/v1 1 >image/rhel/docs/api/v1/swagger.json && \
+RUN make main-build-nodeps
+
+RUN mkdir -p image/rhel/docs/api/v1 && \
+    ./scripts/mergeswag.sh 1 generated/api/v1 central/docs/api_custom_routes >image/rhel/docs/api/v1/swagger.json && \
     mkdir -p image/rhel/docs/api/v2 && \
-    ./scripts/mergeswag.sh generated/api/v2 2 >image/rhel/docs/api/v2/swagger.json
+    ./scripts/mergeswag.sh 2 generated/api/v2 >image/rhel/docs/api/v2/swagger.json
 
 RUN make copy-go-binaries-to-image-dir
 
 
-FROM registry.access.redhat.com/ubi8/nodejs-20:latest AS ui-builder
+FROM registry.access.redhat.com/ubi9/nodejs-20:latest@sha256:7cb51b71a6ef9004a86fbccbe55297bb365afd56c3be192bd97f2f8ffed426a1 AS ui-builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -79,10 +59,16 @@ ENV UI_PKG_INSTALL_EXTRA_ARGS="--ignore-scripts"
 RUN make -C ui build
 
 
-FROM scratch
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:43dde01be4e94afd22d8d95ee8abcc9f610b4e50aff5bcc141b558c74d4c68b5
 
-ARG FINAL_STAGE_PATH
-COPY --from=rpm-installer "$FINAL_STAGE_PATH" /
+ARG PG_VERSION
+
+RUN microdnf -y module enable postgresql:${PG_VERSION} && \
+    # find is used in /stackrox/import-additional-cas \
+    microdnf -y install findutils postgresql && \
+    microdnf -y clean all && \
+    rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
+    rm -rf /var/cache/dnf /var/cache/yum
 
 COPY --from=ui-builder /go/src/github.com/stackrox/rox/app/ui/build /ui/
 

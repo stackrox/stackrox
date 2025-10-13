@@ -1,6 +1,6 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Text, Bullseye, Flex, FlexItem, PageSection } from '@patternfly/react-core';
+import { Link } from 'react-router-dom-v5-compat';
+import { Bullseye, Flex, FlexItem, PageSection, Text } from '@patternfly/react-core';
 import { CubesIcon } from '@patternfly/react-icons';
 
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';

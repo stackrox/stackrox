@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
@@ -124,8 +125,7 @@ func (h sbomHttpHandler) enrichImage(ctx context.Context, enrichmentCtx enricher
 // getSBOM generates an SBOM for the specified parameters.
 func (h sbomHttpHandler) getSBOM(ctx context.Context, params apiparams.SBOMRequestBody) ([]byte, error) {
 	enrichmentCtx := enricher.EnrichmentContext{
-		// TODO(ROX-27920): re-introduce cluster flag when SBOM generation from delegated scans is implemented.
-		// Delegable:       true,
+		Delegable:       true,
 		FetchOpt:        enricher.UseCachesIfPossible,
 		ScannerTypeHint: scannerTypes.ScannerV4,
 	}
@@ -134,15 +134,15 @@ func (h sbomHttpHandler) getSBOM(ctx context.Context, params apiparams.SBOMReque
 		addForceToEnrichmentContext(&enrichmentCtx)
 	}
 
-	// TODO(ROX-27920): re-introduce cluster flag when SBOM generation from delegated scans is implemented.
-	// if params.Cluster != "" {
-	//	// The request indicates enrichment should be delegated to a specific cluster.
-	//	clusterID, err := clusterUtil.GetClusterIDFromNameOrID(ctx, h.clusterSACHelper, params.Cluster, delegateScanPermissions)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	enrichmentCtx.ClusterID = clusterID
-	// }
+	if params.Cluster != "" {
+		// The request indicates enrichment should be delegated to a specific cluster.
+		clusterID, err := clusterUtil.GetClusterIDFromNameOrID(ctx, h.clusterSACHelper, params.Cluster, delegateScanPermissions)
+		if err != nil {
+			return nil, err
+		}
+		enrichmentCtx.ClusterID = clusterID
+		enrichmentCtx.Namespace = params.Namespace
+	}
 
 	img, alreadyForcedEnrichment, err := h.enrichImage(ctx, enrichmentCtx, params.ImageName)
 	if err != nil {
@@ -212,7 +212,7 @@ func (h sbomHttpHandler) saveImage(img *storage.Image) error {
 	}
 
 	if err := h.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
-		log.Errorw("Error upserting image", logging.ImageName(img.GetName().GetFullName()), logging.Err(err))
+		log.Errorw("Error upserting image", logging.ImageName(img.GetName().GetFullName()), logging.ImageID(img.GetId()), logging.Err(err))
 		return fmt.Errorf("saving image: %w", err)
 	}
 	return nil

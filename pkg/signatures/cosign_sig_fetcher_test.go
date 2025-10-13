@@ -41,6 +41,8 @@ const (
 		"yA5A0K7BntXwPwFqDNI1otReqFZr6BrgDFpzhJ5l2od/u+6KrcvIFT/7R1TnnpF87peJXP" +
 		"Nwxd6kyuhNCZw0YcP31X41YD+PDb3AntnydyXlI7Arzr66ib5dnZB/DefDNFibFIgwLIRU" +
 		"CSVxi8WM1FUbpsnNFr1tMsy+UUGgkYzfjmqnMq4epvVGQA=="
+	// Signature signed using Fulcio and Rekor. Proof of inclusion is in `bundle.json`.
+	sig4 = "MEQCID1AIJK4aJYJpbBVaFmoQfC4wMTJnBW/hsaCQobGoiBqAiBcfLS81tDBMhyON0jZpizle8XIzYWE2wou4CCPilVlBA=="
 
 	payload1 = "eyJjcml0aWNhbCI6eyJpZGVudGl0eSI6eyJkb2NrZXItcmVmZXJlbmNlIjoidHRsLnNoL2E1NDIzODZlLTFiMjItNDQ5" +
 		"ZC1hYWZkLWIxMjMzZjFhOWEzYyJ9LCJpbWFnZSI6eyJkb2NrZXItbWFuaWZlc3QtZGlnZXN0Ijoic2hhMjU2OmJiMTI5YTcxMmM" +
@@ -57,6 +59,10 @@ const (
 		"xNmU4MDdmODMxMGVjYzEwYzY4NzM4NSJ9LCJ0eXBlIjoiY29zaW" +
 		"duIGNvbnRhaW5lciBpbWFnZSBzaWduYXR1cmUifSwib3B0aW9uY" +
 		"WwiOm51bGx9Cg=="
+	payload4 = "eyJjcml0aWNhbCI6eyJpZGVudGl0eSI6eyJkb2NrZXItcmVmZXJlbmNlIjoidHRsLnNoLzRkM2VjYTdmLWQyNGUtNDI5N" +
+		"C1hYzExLWZhNzE0Y2U4Nzc5YiJ9LCJpbWFnZSI6eyJkb2NrZXItbWFuaWZlc3QtZGlnZXN0Ijoic2hhMjU2OjBlMWFjN2YxMmQ5M" +
+		"DRhNWNlMDc3ZDFiNWM3NjNiNTc1MGM3OTg1ZTUyNGY2MDgzZTVlYWE3ZTczMTM4MzM0NDAifSwidHlwZSI6ImNvc2lnbiBjb250Y" +
+		"WluZXIgaW1hZ2Ugc2lnbmF0dXJlIn0sIm9wdGlvbmFsIjpudWxsfQ=="
 )
 
 type mockRegistry struct {
@@ -99,8 +105,18 @@ func registryServerWithImage(imgName string) (*httptest.Server, string, error) {
 }
 
 // uploadSignatureForImage will upload the given signature and payload for the specified image reference.
-func uploadSignatureForImage(imgRef string, b64Sig string, sigPayload, certPEM, chainPEM []byte) error {
-	sig, err := static.NewSignature(sigPayload, b64Sig, static.WithCertChain(certPEM, chainPEM))
+func uploadSignatureForImage(imgRef string, b64Sig string, sigPayload, certPEM, chainPEM, byteBundle []byte) error {
+	sigOpts := []static.Option{static.WithCertChain(certPEM, chainPEM)}
+
+	rekorBundle, err := unmarshalRekorBundle(byteBundle)
+	if err != nil {
+		return err
+	}
+	if rekorBundle != nil {
+		sigOpts = append(sigOpts, static.WithBundle(rekorBundle))
+	}
+
+	sig, err := static.NewSignature(sigPayload, b64Sig, sigOpts...)
 	if err != nil {
 		return err
 	}
@@ -147,11 +163,15 @@ func TestCosignSignatureFetcher_FetchSignature_Success(t *testing.T) {
 	require.NoError(t, err, "decoding signature")
 	rawSig3, err := base64.StdEncoding.DecodeString(sig3)
 	require.NoError(t, err, "decoding signature")
+	rawSig4, err := base64.StdEncoding.DecodeString(sig4)
+	require.NoError(t, err, "decoding signature")
 	sigPayload1, err := base64.StdEncoding.DecodeString(payload1)
 	require.NoError(t, err, "decoding signature")
 	sigPayload2, err := base64.StdEncoding.DecodeString(payload2)
 	require.NoError(t, err, "decoding signature")
 	sigPayload3, err := base64.StdEncoding.DecodeString(payload3)
+	require.NoError(t, err, "decoding signature")
+	sigPayload4, err := base64.StdEncoding.DecodeString(payload4)
 	require.NoError(t, err, "decoding signature")
 
 	certPEM, err := os.ReadFile("testdata/cert.pem")
@@ -159,11 +179,21 @@ func TestCosignSignatureFetcher_FetchSignature_Success(t *testing.T) {
 	chainPEM, err := os.ReadFile("testdata/chain.pem")
 	require.NoError(t, err)
 
-	require.NoError(t, uploadSignatureForImage(imgRef, sig1, sigPayload1, nil, nil),
+	certPEMWithTlog, err := os.ReadFile("testdata/cert_with_tlog.pem")
+	require.NoError(t, err)
+	chainPEMWithTlog, err := os.ReadFile("testdata/chain_with_tlog.pem")
+	require.NoError(t, err)
+
+	bundle, err := os.ReadFile("testdata/bundle.json")
+	require.NoError(t, err)
+
+	require.NoError(t, uploadSignatureForImage(imgRef, sig1, sigPayload1, nil, nil, nil),
 		"uploading signature")
-	require.NoError(t, uploadSignatureForImage(imgRef, sig2, sigPayload2, nil, nil),
+	require.NoError(t, uploadSignatureForImage(imgRef, sig2, sigPayload2, nil, nil, nil),
 		"uploading signature")
-	require.NoError(t, uploadSignatureForImage(imgRef, sig3, sigPayload3, certPEM, chainPEM),
+	require.NoError(t, uploadSignatureForImage(imgRef, sig3, sigPayload3, certPEM, chainPEM, nil),
+		"uploading signature")
+	require.NoError(t, uploadSignatureForImage(imgRef, sig4, sigPayload4, certPEMWithTlog, chainPEMWithTlog, bundle),
 		"uploading signature")
 
 	expectedSignatures := []*storage.Signature{
@@ -190,6 +220,17 @@ func TestCosignSignatureFetcher_FetchSignature_Success(t *testing.T) {
 					SignaturePayload: sigPayload3,
 					CertPem:          certPEM,
 					CertChainPem:     chainPEM,
+				},
+			},
+		},
+		{
+			Signature: &storage.Signature_Cosign{
+				Cosign: &storage.CosignSignature{
+					RawSignature:     rawSig4,
+					SignaturePayload: sigPayload4,
+					CertPem:          certPEMWithTlog,
+					CertChainPem:     chainPEMWithTlog,
+					RekorBundle:      bundle,
 				},
 			},
 		},

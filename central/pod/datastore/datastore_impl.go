@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
-	podSearch "github.com/stackrox/rox/central/pod/datastore/internal/search"
 	podStore "github.com/stackrox/rox/central/pod/datastore/internal/store"
 	piDS "github.com/stackrox/rox/central/processindicator/datastore"
 	plopDS "github.com/stackrox/rox/central/processlisteningonport/datastore"
@@ -32,8 +31,7 @@ var (
 )
 
 type datastoreImpl struct {
-	podStore    podStore.Store
-	podSearcher podSearch.Searcher
+	podStore podStore.Store
 
 	indicators    piDS.DataStore
 	plops         plopDS.DataStore
@@ -42,10 +40,9 @@ type datastoreImpl struct {
 	keyedMutex *concurrency.KeyedMutex
 }
 
-func newDatastoreImpl(storage podStore.Store, searcher podSearch.Searcher, indicators piDS.DataStore, plops plopDS.DataStore, processFilter filter.Filter) *datastoreImpl {
+func newDatastoreImpl(storage podStore.Store, indicators piDS.DataStore, plops plopDS.DataStore, processFilter filter.Filter) *datastoreImpl {
 	return &datastoreImpl{
 		podStore:      storage,
-		podSearcher:   searcher,
 		indicators:    indicators,
 		plops:         plops,
 		processFilter: processFilter,
@@ -54,17 +51,26 @@ func newDatastoreImpl(storage podStore.Store, searcher podSearch.Searcher, indic
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
-	return ds.podSearcher.Search(ctx, q)
+	return ds.podStore.Search(ctx, q)
 }
 
 func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return ds.podSearcher.Count(ctx, q)
+	return ds.podStore.Count(ctx, q)
 }
 
 func (ds *datastoreImpl) SearchRawPods(ctx context.Context, q *v1.Query) ([]*storage.Pod, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "SearchRawPods")
 
-	return ds.podSearcher.SearchRawPods(ctx, q)
+	var pods []*storage.Pod
+	err := ds.podStore.WalkByQuery(ctx, q, func(pod *storage.Pod) error {
+		pods = append(pods, pod)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return pods, nil
 }
 
 func (ds *datastoreImpl) GetPod(ctx context.Context, id string) (*storage.Pod, bool, error) {
@@ -118,7 +124,7 @@ func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error 
 
 // mergeContainerInstances merges container instances from oldPod into newPod.
 func mergeContainerInstances(newPod *storage.Pod, oldPod *storage.Pod) {
-	newPod.TerminatedInstances = oldPod.TerminatedInstances
+	newPod.TerminatedInstances = oldPod.GetTerminatedInstances()
 
 	idxByContainerName := make(map[string]int)
 	for i, instanceList := range newPod.GetTerminatedInstances() {
@@ -137,7 +143,7 @@ func mergeContainerInstances(newPod *storage.Pod, oldPod *storage.Pod) {
 			if idx, exists := idxByContainerName[instance.GetContainerName()]; exists {
 				deadInstancesList := newPod.GetTerminatedInstances()[idx]
 				var startIdx int
-				if len(deadInstancesList.Instances) == maxNumberOfDeadContainers {
+				if len(deadInstancesList.GetInstances()) == maxNumberOfDeadContainers {
 					// Remove the oldest entry.
 					startIdx = 1
 				}
@@ -149,7 +155,7 @@ func mergeContainerInstances(newPod *storage.Pod, oldPod *storage.Pod) {
 			}
 		}
 	}
-	newPod.LiveInstances = newPod.LiveInstances[:endIdx]
+	newPod.LiveInstances = newPod.GetLiveInstances()[:endIdx]
 }
 
 // RemovePod removes a pod from the podStore

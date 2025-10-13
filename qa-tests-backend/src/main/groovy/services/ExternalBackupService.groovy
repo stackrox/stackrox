@@ -2,13 +2,15 @@ package services
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+
 import io.stackrox.proto.api.v1.ExternalBackupServiceGrpc
 import io.stackrox.proto.storage.ExternalBackupOuterClass.ExternalBackup
-import io.stackrox.proto.storage.ExternalBackupOuterClass.S3Config
-import io.stackrox.proto.storage.ExternalBackupOuterClass.S3Compatible
-import io.stackrox.proto.storage.ExternalBackupOuterClass.S3URLStyle
 import io.stackrox.proto.storage.ExternalBackupOuterClass.GCSConfig
+import io.stackrox.proto.storage.ExternalBackupOuterClass.S3Compatible
+import io.stackrox.proto.storage.ExternalBackupOuterClass.S3Config
+import io.stackrox.proto.storage.ExternalBackupOuterClass.S3URLStyle
 import io.stackrox.proto.storage.ScheduleOuterClass.Schedule
+
 import util.Env
 
 @CompileStatic

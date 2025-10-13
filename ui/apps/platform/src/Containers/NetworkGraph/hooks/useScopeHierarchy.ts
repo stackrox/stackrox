@@ -1,9 +1,10 @@
 import cloneDeep from 'lodash/cloneDeep';
 
-import useURLSearch from 'hooks/useURLSearch';
-import { ClusterScopeObject } from 'services/RolesService';
-import { SearchFilter } from 'types/search';
-import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
+import type { ClusterScopeObject } from 'services/RolesService';
+import type { SearchFilter } from 'types/search';
+import type { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
+
+import { useSearchFilter } from '../NetworkGraphURLStateContext';
 
 export function getScopeHierarchyFromSearch(
     searchFilter: SearchFilter,
@@ -60,7 +61,7 @@ const emptyScopeHierarchy = {
  * Returns the current scope hierarchy from the URL search params.
  */
 export function useScopeHierarchy(availableClusters: ClusterScopeObject[]): NetworkScopeHierarchy {
-    const { searchFilter } = useURLSearch();
+    const { searchFilter } = useSearchFilter();
 
     return (
         getScopeHierarchyFromSearch(searchFilter, availableClusters) ??

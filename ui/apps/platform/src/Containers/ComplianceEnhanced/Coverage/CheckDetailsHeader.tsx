@@ -1,8 +1,8 @@
 import React from 'react';
-import { Flex, FlexItem, Title, Skeleton, Alert, Label, LabelGroup } from '@patternfly/react-core';
+import { Alert, Flex, FlexItem, Label, LabelGroup, Skeleton, Title } from '@patternfly/react-core';
 
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { ComplianceCheckResultStatusCount } from 'services/ComplianceCommon';
+import type { ComplianceCheckResultStatusCount } from 'services/ComplianceCommon';
 
 import { getClusterResultsStatusObject, sortCheckStats } from './compliance.coverage.utils';
 import ControlLabels from './components/ControlLabels';
@@ -72,11 +72,7 @@ function CheckDetailsHeader({
     }
 
     return (
-        <Flex
-            direction={{ default: 'column' }}
-            spaceItems={{ default: 'spaceItemsSm' }}
-            className="pf-u-w-50"
-        >
+        <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
             <FlexItem>
                 <Title headingLevel="h1" className="pf-v5-u-w-100">
                     {checkName}

@@ -176,7 +176,6 @@ func TestMasterConfigChecks(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(strings.ReplaceAll(c.name, ":", "-"), func(t *testing.T) {
-			t.Parallel()
 
 			standard := standards.NodeChecks[standards.CISKubernetes]
 			require.NotNil(t, standard)
@@ -191,7 +190,7 @@ func TestMasterConfigChecks(t *testing.T) {
 			checkResults := check.CheckFunc(mockNodeData)
 			require.Len(t, checkResults, c.numResults)
 			for _, checkResult := range checkResults {
-				assert.Equal(t, c.status, checkResult.State)
+				assert.Equal(t, c.status, checkResult.GetState())
 			}
 		})
 	}

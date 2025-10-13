@@ -46,7 +46,6 @@ function SensorUpgradeCard({
      * for table of counts if not healthy: HEALTHY === 0 || UNHEALTHY !== 0 || DEGRADED !== 0
      */
 
-    /* eslint-disable no-nested-ternary */
     return (
         <Card isCompact>
             <ClustersHealthCardHeader
@@ -86,7 +85,6 @@ function SensorUpgradeCard({
             ) : null}
         </Card>
     );
-    /* eslint-enable no-nested-ternary */
 }
 
 export default SensorUpgradeCard;

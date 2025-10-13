@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
 )
@@ -21,6 +22,7 @@ type flowPersisterImpl struct {
 	flowStore       flowDataStore.FlowDataStore
 	firstUpdateSeen bool
 	entityStore     entityDataStore.EntityDataStore
+	clusterID       string
 }
 
 // update updates the FlowStore with the given network flow updates.
@@ -28,11 +30,11 @@ func (s *flowPersisterImpl) update(ctx context.Context, newFlows []*storage.Netw
 	if features.ExternalIPs.Enabled() {
 		// Sensor may have forwarded unknown NetworkEntities that we want to learn
 		for _, newFlow := range newFlows {
-			err := s.updateExternalNetworkEntityIfDiscovered(ctx, newFlow.GetProps().DstEntity)
+			err := s.fixupExternalNetworkEntityIdIfDiscovered(ctx, newFlow.GetProps().GetDstEntity())
 			if err != nil {
 				return err
 			}
-			err = s.updateExternalNetworkEntityIfDiscovered(ctx, newFlow.GetProps().SrcEntity)
+			err = s.fixupExternalNetworkEntityIdIfDiscovered(ctx, newFlow.GetProps().GetSrcEntity())
 			if err != nil {
 				return err
 			}
@@ -70,7 +72,26 @@ func (s *flowPersisterImpl) update(ctx context.Context, newFlows []*storage.Netw
 		s.firstUpdateSeen = true
 	}
 
-	return s.flowStore.UpsertFlows(ctx, convertToFlows(flowsByIndicator), now)
+	upsertedFlows, err := s.flowStore.UpsertFlows(ctx, convertToFlows(flowsByIndicator), now)
+	if err != nil {
+		return err
+	}
+
+	if features.ExternalIPs.Enabled() {
+		for _, newFlow := range upsertedFlows {
+			props := newFlow.GetProps()
+			err := s.updateExternalNetworkEntityIfDiscovered(ctx, props.GetDstEntity())
+			if err != nil {
+				return err
+			}
+			err = s.updateExternalNetworkEntityIfDiscovered(ctx, props.GetSrcEntity())
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func (s *flowPersisterImpl) markExistingFlowsAsTerminatedIfNotSeen(ctx context.Context, currentFlows map[networkgraph.NetworkConnIndicator]timestamp.MicroTS) error {
@@ -106,8 +127,8 @@ func getFlowsByIndicator(newFlows []*storage.NetworkFlow, updateTS, now timestam
 	out := make(map[networkgraph.NetworkConnIndicator]timestamp.MicroTS, len(newFlows))
 	tsOffset := now - updateTS
 	for _, newFlow := range newFlows {
-		t := timestamp.FromProtobuf(newFlow.LastSeenTimestamp)
-		if newFlow.LastSeenTimestamp != nil {
+		t := timestamp.FromProtobuf(newFlow.GetLastSeenTimestamp())
+		if newFlow.GetLastSeenTimestamp() != nil {
 			t = t + tsOffset
 		}
 		out[networkgraph.GetNetworkConnIndicator(newFlow)] = t
@@ -134,10 +155,30 @@ func (s *flowPersisterImpl) updateExternalNetworkEntityIfDiscovered(ctx context.
 		return nil
 	}
 
+	// Discovered entities are stored
 	entity := &storage.NetworkEntity{
 		Info: entityInfo,
-		// Scope.ClusterId defaults to "", which is the default cluster
+		Scope: &storage.NetworkEntity_Scope{
+			ClusterId: s.clusterID,
+		},
 	}
 
 	return s.entityStore.UpdateExternalNetworkEntity(ctx, entity, true)
+}
+
+// Sensor cannot put the correct clusterId in discovered entities, but we have the necessary information.
+// In the particular case of discovered, we replace the entity ID with a scoped ID matching the cluster
+// we received this entity from.
+func (s *flowPersisterImpl) fixupExternalNetworkEntityIdIfDiscovered(ctx context.Context, entityInfo *storage.NetworkEntityInfo) error {
+	if !entityInfo.GetExternalSource().GetDiscovered() {
+		return nil
+	}
+
+	id, err := externalsrcs.NewClusterScopedID(s.clusterID, entityInfo.GetExternalSource().GetCidr())
+
+	if err == nil {
+		entityInfo.Id = id.String()
+	}
+
+	return err
 }

@@ -21,7 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 // Grab the backup DB and open it, ensuring that there are values for deployments
@@ -68,7 +68,7 @@ func doTestBackup(t *testing.T, includeCerts bool, certsOnly bool) {
 	ctx, cancel := context.WithTimeout(context.Background(), backupTimeout)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, "GET", endpoint, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	require.NoError(t, err)
 	resp, err := client.Do(req)
 	require.NoError(t, err)

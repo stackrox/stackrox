@@ -26,7 +26,7 @@ func listInitBundles(cliEnvironment environment.Environment, timeout time.Durati
 
 	conn, err := cliEnvironment.GRPCConnection(common.WithRetryTimeout(retryTimeout))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "establishing GRPC connection to list init bundles")
 	}
 	defer utils.IgnoreError(conn.Close)
 	svc := v1.NewClusterInitServiceClient(conn)
@@ -70,7 +70,7 @@ func listCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "list",
 		Short: "List cluster init bundles",
-		Long:  "List all previously generated init bundles for bootstrapping new StackRox secured clusters",
+		Long:  "List all previously generated init bundles for bootstrapping new StackRox secured clusters.",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			return listInitBundles(cliEnvironment, flags.Timeout(c), flags.RetryTimeout(c))
 		}),

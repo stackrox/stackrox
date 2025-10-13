@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	userPkg "github.com/stackrox/rox/pkg/auth/user"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -136,10 +135,11 @@ func authStatusForID(id authn.Identity) (*v1.AuthStatus, error) {
 }
 
 func (s *serviceImpl) ListAuthMachineToMachineConfigs(ctx context.Context, _ *v1.Empty) (*v1.ListAuthMachineToMachineConfigResponse, error) {
-	if !features.AuthMachineToMachine.Enabled() {
-		return nil, m2mFeatureDisabledError()
-	}
-	storageConfigs, err := s.authDataStore.ListAuthM2MConfigs(ctx)
+	var storageConfigs []*storage.AuthMachineToMachineConfig
+	err := s.authDataStore.ForEachAuthM2MConfig(ctx, func(c *storage.AuthMachineToMachineConfig) error {
+		storageConfigs = append(storageConfigs, c)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -148,9 +148,6 @@ func (s *serviceImpl) ListAuthMachineToMachineConfigs(ctx context.Context, _ *v1
 }
 
 func (s *serviceImpl) GetAuthMachineToMachineConfig(ctx context.Context, id *v1.ResourceByID) (*v1.GetAuthMachineToMachineConfigResponse, error) {
-	if !features.AuthMachineToMachine.Enabled() {
-		return nil, m2mFeatureDisabledError()
-	}
 	config, exists, err := s.authDataStore.GetAuthM2MConfig(ctx, id.GetId())
 	if err != nil {
 		return nil, err
@@ -162,9 +159,6 @@ func (s *serviceImpl) GetAuthMachineToMachineConfig(ctx context.Context, id *v1.
 }
 
 func (s *serviceImpl) AddAuthMachineToMachineConfig(ctx context.Context, request *v1.AddAuthMachineToMachineConfigRequest) (*v1.AddAuthMachineToMachineConfigResponse, error) {
-	if !features.AuthMachineToMachine.Enabled() {
-		return nil, m2mFeatureDisabledError()
-	}
 	config := request.GetConfig()
 	resolveGitHubActionsIssuer(config)
 	if err := s.validateAuthMachineToMachineConfig(config, true); err != nil {
@@ -180,9 +174,6 @@ func (s *serviceImpl) AddAuthMachineToMachineConfig(ctx context.Context, request
 }
 
 func (s *serviceImpl) UpdateAuthMachineToMachineConfig(ctx context.Context, request *v1.UpdateAuthMachineToMachineConfigRequest) (*v1.Empty, error) {
-	if !features.AuthMachineToMachine.Enabled() {
-		return nil, m2mFeatureDisabledError()
-	}
 	config := request.GetConfig()
 	resolveGitHubActionsIssuer(config)
 	if err := s.validateAuthMachineToMachineConfig(config, false); err != nil {
@@ -197,9 +188,6 @@ func (s *serviceImpl) UpdateAuthMachineToMachineConfig(ctx context.Context, requ
 }
 
 func (s *serviceImpl) DeleteAuthMachineToMachineConfig(ctx context.Context, id *v1.ResourceByID) (*v1.Empty, error) {
-	if !features.AuthMachineToMachine.Enabled() {
-		return nil, m2mFeatureDisabledError()
-	}
 	if err := s.authDataStore.RemoveAuthM2MConfig(ctx, id.GetId()); err != nil {
 		return nil, errox.InvalidArgs.
 			Newf("could not delete auth machine to machine config with id %q", id.GetId()).CausedBy(err)
@@ -209,10 +197,6 @@ func (s *serviceImpl) DeleteAuthMachineToMachineConfig(ctx context.Context, id *
 
 func (s *serviceImpl) ExchangeAuthMachineToMachineToken(ctx context.Context,
 	req *v1.ExchangeAuthMachineToMachineTokenRequest) (*v1.ExchangeAuthMachineToMachineTokenResponse, error) {
-	if !features.AuthMachineToMachine.Enabled() {
-		return nil, m2mFeatureDisabledError()
-	}
-
 	rawIDToken := req.GetIdToken()
 
 	issuer, err := m2m.IssuerFromRawIDToken(rawIDToken)
@@ -306,9 +290,4 @@ func resolveGitHubActionsIssuer(config *v1.AuthMachineToMachineConfig) {
 	if config != nil && config.GetType() == v1.AuthMachineToMachineConfig_GITHUB_ACTIONS && config.GetIssuer() == "" {
 		config.Issuer = githubActionsIssuer
 	}
-}
-
-func m2mFeatureDisabledError() error {
-	return errox.InvariantViolation.New("auth machine to machine feature is not currently not " +
-		"enabled, set ROX_AUTH_MACHINE_TO_MACHINE=true to enable it")
 }

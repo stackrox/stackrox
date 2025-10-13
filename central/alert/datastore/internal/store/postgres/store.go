@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"slices"
 	"strings"
 	"time"
 
@@ -36,14 +37,18 @@ var (
 	targetResource = resources.Alert
 )
 
-type storeType = storage.Alert
+type (
+	storeType = storage.Alert
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.Alert
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, id string) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
+	DeleteByQuery(ctx context.Context, q *v1.Query) error
+	DeleteByQueryWithIDs(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
 	PruneMany(ctx context.Context, identifiers []string) error
 
@@ -52,12 +57,14 @@ type Store interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 
 	Get(ctx context.Context, id string) (*storeType, bool, error)
+	// Deprecated: use GetByQueryFn instead
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn callback) error
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
-	Walk(ctx context.Context, fn func(obj *storeType) error) error
-	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storeType) error) error
+	Walk(ctx context.Context, fn callback) error
+	WalkByQuery(ctx context.Context, query *v1.Query, fn callback) error
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -72,6 +79,8 @@ func New(db postgres.DB) Store {
 		metricsSetPostgresOperationDurationTime,
 		isUpsertAllowed,
 		targetResource,
+		nil,
+		nil,
 	)
 }
 
@@ -140,6 +149,7 @@ func insertIntoAlerts(batch *pgx.Batch, obj *storage.Alert) error {
 		obj.GetImage().GetName().GetRemote(),
 		obj.GetImage().GetName().GetTag(),
 		obj.GetImage().GetName().GetFullName(),
+		obj.GetImage().GetIdV2(),
 		obj.GetResource().GetResourceType(),
 		obj.GetResource().GetName(),
 		obj.GetEnforcement().GetAction(),
@@ -150,17 +160,17 @@ func insertIntoAlerts(batch *pgx.Batch, obj *storage.Alert) error {
 		serialized,
 	}
 
-	finalStr := "INSERT INTO alerts (Id, Policy_Id, Policy_Name, Policy_Description, Policy_Disabled, Policy_Categories, Policy_Severity, Policy_EnforcementActions, Policy_LastUpdated, Policy_SORTName, Policy_SORTLifecycleStage, Policy_SORTEnforcement, LifecycleStage, ClusterId, ClusterName, Namespace, NamespaceId, Deployment_Id, Deployment_Name, Deployment_Inactive, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, Resource_ResourceType, Resource_Name, Enforcement_Action, Time, State, PlatformComponent, EntityType, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Policy_Id = EXCLUDED.Policy_Id, Policy_Name = EXCLUDED.Policy_Name, Policy_Description = EXCLUDED.Policy_Description, Policy_Disabled = EXCLUDED.Policy_Disabled, Policy_Categories = EXCLUDED.Policy_Categories, Policy_Severity = EXCLUDED.Policy_Severity, Policy_EnforcementActions = EXCLUDED.Policy_EnforcementActions, Policy_LastUpdated = EXCLUDED.Policy_LastUpdated, Policy_SORTName = EXCLUDED.Policy_SORTName, Policy_SORTLifecycleStage = EXCLUDED.Policy_SORTLifecycleStage, Policy_SORTEnforcement = EXCLUDED.Policy_SORTEnforcement, LifecycleStage = EXCLUDED.LifecycleStage, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Namespace = EXCLUDED.Namespace, NamespaceId = EXCLUDED.NamespaceId, Deployment_Id = EXCLUDED.Deployment_Id, Deployment_Name = EXCLUDED.Deployment_Name, Deployment_Inactive = EXCLUDED.Deployment_Inactive, Image_Id = EXCLUDED.Image_Id, Image_Name_Registry = EXCLUDED.Image_Name_Registry, Image_Name_Remote = EXCLUDED.Image_Name_Remote, Image_Name_Tag = EXCLUDED.Image_Name_Tag, Image_Name_FullName = EXCLUDED.Image_Name_FullName, Resource_ResourceType = EXCLUDED.Resource_ResourceType, Resource_Name = EXCLUDED.Resource_Name, Enforcement_Action = EXCLUDED.Enforcement_Action, Time = EXCLUDED.Time, State = EXCLUDED.State, PlatformComponent = EXCLUDED.PlatformComponent, EntityType = EXCLUDED.EntityType, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO alerts (Id, Policy_Id, Policy_Name, Policy_Description, Policy_Disabled, Policy_Categories, Policy_Severity, Policy_EnforcementActions, Policy_LastUpdated, Policy_SORTName, Policy_SORTLifecycleStage, Policy_SORTEnforcement, LifecycleStage, ClusterId, ClusterName, Namespace, NamespaceId, Deployment_Id, Deployment_Name, Deployment_Inactive, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, Image_IdV2, Resource_ResourceType, Resource_Name, Enforcement_Action, Time, State, PlatformComponent, EntityType, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Policy_Id = EXCLUDED.Policy_Id, Policy_Name = EXCLUDED.Policy_Name, Policy_Description = EXCLUDED.Policy_Description, Policy_Disabled = EXCLUDED.Policy_Disabled, Policy_Categories = EXCLUDED.Policy_Categories, Policy_Severity = EXCLUDED.Policy_Severity, Policy_EnforcementActions = EXCLUDED.Policy_EnforcementActions, Policy_LastUpdated = EXCLUDED.Policy_LastUpdated, Policy_SORTName = EXCLUDED.Policy_SORTName, Policy_SORTLifecycleStage = EXCLUDED.Policy_SORTLifecycleStage, Policy_SORTEnforcement = EXCLUDED.Policy_SORTEnforcement, LifecycleStage = EXCLUDED.LifecycleStage, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Namespace = EXCLUDED.Namespace, NamespaceId = EXCLUDED.NamespaceId, Deployment_Id = EXCLUDED.Deployment_Id, Deployment_Name = EXCLUDED.Deployment_Name, Deployment_Inactive = EXCLUDED.Deployment_Inactive, Image_Id = EXCLUDED.Image_Id, Image_Name_Registry = EXCLUDED.Image_Name_Registry, Image_Name_Remote = EXCLUDED.Image_Name_Remote, Image_Name_Tag = EXCLUDED.Image_Name_Tag, Image_Name_FullName = EXCLUDED.Image_Name_FullName, Image_IdV2 = EXCLUDED.Image_IdV2, Resource_ResourceType = EXCLUDED.Resource_ResourceType, Resource_Name = EXCLUDED.Resource_Name, Enforcement_Action = EXCLUDED.Enforcement_Action, Time = EXCLUDED.Time, State = EXCLUDED.State, PlatformComponent = EXCLUDED.PlatformComponent, EntityType = EXCLUDED.EntityType, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
 func copyFromAlerts(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Alert) error {
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
+	if len(objs) == 0 {
+		return nil
 	}
+	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	// This is a copy so first we must delete the rows and re-add them
@@ -193,6 +203,7 @@ func copyFromAlerts(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 		"image_name_remote",
 		"image_name_tag",
 		"image_name_fullname",
+		"image_idv2",
 		"resource_resourcetype",
 		"resource_name",
 		"enforcement_action",
@@ -203,73 +214,73 @@ func copyFromAlerts(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 		"serialized",
 	}
 
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-			"to simply use the object.  %s", obj)
+	for objBatch := range slices.Chunk(objs, batchSize) {
+		for _, obj := range objBatch {
+			// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+			log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
+				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
+				"to simply use the object.  %s", obj)
 
-		serialized, marshalErr := obj.MarshalVT()
-		if marshalErr != nil {
-			return marshalErr
+			serialized, marshalErr := obj.MarshalVT()
+			if marshalErr != nil {
+				return marshalErr
+			}
+
+			inputRows = append(inputRows, []interface{}{
+				pgutils.NilOrUUID(obj.GetId()),
+				obj.GetPolicy().GetId(),
+				obj.GetPolicy().GetName(),
+				obj.GetPolicy().GetDescription(),
+				obj.GetPolicy().GetDisabled(),
+				obj.GetPolicy().GetCategories(),
+				obj.GetPolicy().GetSeverity(),
+				obj.GetPolicy().GetEnforcementActions(),
+				protocompat.NilOrTime(obj.GetPolicy().GetLastUpdated()),
+				obj.GetPolicy().GetSORTName(),
+				obj.GetPolicy().GetSORTLifecycleStage(),
+				obj.GetPolicy().GetSORTEnforcement(),
+				obj.GetLifecycleStage(),
+				pgutils.NilOrUUID(obj.GetClusterId()),
+				obj.GetClusterName(),
+				obj.GetNamespace(),
+				pgutils.NilOrUUID(obj.GetNamespaceId()),
+				pgutils.NilOrUUID(obj.GetDeployment().GetId()),
+				obj.GetDeployment().GetName(),
+				obj.GetDeployment().GetInactive(),
+				obj.GetImage().GetId(),
+				obj.GetImage().GetName().GetRegistry(),
+				obj.GetImage().GetName().GetRemote(),
+				obj.GetImage().GetName().GetTag(),
+				obj.GetImage().GetName().GetFullName(),
+				obj.GetImage().GetIdV2(),
+				obj.GetResource().GetResourceType(),
+				obj.GetResource().GetName(),
+				obj.GetEnforcement().GetAction(),
+				protocompat.NilOrTime(obj.GetTime()),
+				obj.GetState(),
+				obj.GetPlatformComponent(),
+				obj.GetEntityType(),
+				serialized,
+			})
+
+			// Add the ID to be deleted.
+			deletes = append(deletes, obj.GetId())
 		}
 
-		inputRows = append(inputRows, []interface{}{
-			pgutils.NilOrUUID(obj.GetId()),
-			obj.GetPolicy().GetId(),
-			obj.GetPolicy().GetName(),
-			obj.GetPolicy().GetDescription(),
-			obj.GetPolicy().GetDisabled(),
-			obj.GetPolicy().GetCategories(),
-			obj.GetPolicy().GetSeverity(),
-			obj.GetPolicy().GetEnforcementActions(),
-			protocompat.NilOrTime(obj.GetPolicy().GetLastUpdated()),
-			obj.GetPolicy().GetSORTName(),
-			obj.GetPolicy().GetSORTLifecycleStage(),
-			obj.GetPolicy().GetSORTEnforcement(),
-			obj.GetLifecycleStage(),
-			pgutils.NilOrUUID(obj.GetClusterId()),
-			obj.GetClusterName(),
-			obj.GetNamespace(),
-			pgutils.NilOrUUID(obj.GetNamespaceId()),
-			pgutils.NilOrUUID(obj.GetDeployment().GetId()),
-			obj.GetDeployment().GetName(),
-			obj.GetDeployment().GetInactive(),
-			obj.GetImage().GetId(),
-			obj.GetImage().GetName().GetRegistry(),
-			obj.GetImage().GetName().GetRemote(),
-			obj.GetImage().GetName().GetTag(),
-			obj.GetImage().GetName().GetFullName(),
-			obj.GetResource().GetResourceType(),
-			obj.GetResource().GetName(),
-			obj.GetEnforcement().GetAction(),
-			protocompat.NilOrTime(obj.GetTime()),
-			obj.GetState(),
-			obj.GetPlatformComponent(),
-			obj.GetEntityType(),
-			serialized,
-		})
+		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+		// delete for the top level parent
 
-		// Add the ID to be deleted.
-		deletes = append(deletes, obj.GetId())
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			if err := s.DeleteMany(ctx, deletes); err != nil {
-				return err
-			}
-			// clear the inserts and vals for the next batch
-			deletes = deletes[:0]
-
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"alerts"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-				return err
-			}
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
+		if err := s.DeleteMany(ctx, deletes); err != nil {
+			return err
 		}
+		// clear the inserts and vals for the next batch
+		deletes = deletes[:0]
+
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"alerts"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+			return err
+		}
+		// clear the input rows for the next batch
+		inputRows = inputRows[:0]
 	}
 
 	return nil

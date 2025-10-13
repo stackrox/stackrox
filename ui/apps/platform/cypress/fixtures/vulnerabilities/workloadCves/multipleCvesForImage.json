@@ -24,6 +24,11 @@
             "__typename": "Image",
             "imageVulnerabilityCount": 2,
             "imageCVECountBySeverity": {
+                "unknown": {
+                    "total": 0,
+                    "fixable": 0,
+                    "__typename": "ResourceCountByFixability"
+                },
                 "low": {
                     "total": 0,
                     "fixable": 0,

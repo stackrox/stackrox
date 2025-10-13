@@ -25,10 +25,21 @@ func wrapExtension(runFn func(ctx context.Context, securedCluster *platform.Secu
 			return errUnexpectedGVK
 		}
 
-		c := platform.SecuredCluster{}
-		err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &c)
+		// Convert unstructured object into SecuredCluster.
+		securedCluster := platform.SecuredCluster{}
+		err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &securedCluster)
 		if err != nil {
 			return errors.Wrap(err, "converting object to SecuredCluster")
+		}
+		// For translation purposes, enrich SecuredCluster with defaults, which are not implicitly marshalled/unmarshaled.
+		// and merge into spec to make them visible to the extensions (e.g. for creating scanner-v4-db-password).
+		if err := platform.AddUnstructuredDefaultsToSecuredCluster(&securedCluster, u); err != nil {
+			return err
+		}
+
+		// Merge the defaults into spec for convenience of extensions (e.g. for creating scanner-v4-db-password).
+		if err := platform.MergeSecuredClusterDefaultsIntoSpec(&securedCluster); err != nil {
+			return err
 		}
 
 		wrappedStatusUpdater := func(typedUpdateStatus updateStatusFunc) {
@@ -43,6 +54,11 @@ func wrapExtension(runFn func(ctx context.Context, securedCluster *platform.Secu
 				return true
 			})
 		}
-		return runFn(ctx, &c, client, direct, wrappedStatusUpdater, log)
+		err = runFn(ctx, &securedCluster, client, direct, wrappedStatusUpdater, log)
+		if err != nil {
+			return err
+		}
+
+		return nil
 	}
 }

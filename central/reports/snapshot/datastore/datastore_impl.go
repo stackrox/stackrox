@@ -6,7 +6,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/reports/snapshot/datastore/search"
 	pgStore "github.com/stackrox/rox/central/reports/snapshot/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -25,8 +24,7 @@ var (
 )
 
 type datastoreImpl struct {
-	storage  pgStore.Store
-	searcher search.Searcher
+	storage pgStore.Store
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
@@ -34,7 +32,7 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.R
 	if ok, err := workflowSAC.ReadAllowed(ctx); !ok || err != nil {
 		return nil, err
 	}
-	return ds.searcher.Search(ctx, q)
+	return ds.storage.Search(ctx, q)
 }
 
 // Count returns the number of search results from the query
@@ -43,7 +41,7 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	if ok, err := workflowSAC.ReadAllowed(ctx); !ok || err != nil {
 		return 0, err
 	}
-	return ds.searcher.Count(ctx, q)
+	return ds.storage.Count(ctx, q)
 }
 
 func (ds *datastoreImpl) SearchReportSnapshots(ctx context.Context, q *v1.Query) ([]*storage.ReportSnapshot, error) {
@@ -51,7 +49,18 @@ func (ds *datastoreImpl) SearchReportSnapshots(ctx context.Context, q *v1.Query)
 	if ok, err := workflowSAC.ReadAllowed(ctx); !ok || err != nil {
 		return nil, err
 	}
-	return ds.searcher.SearchReportSnapshots(ctx, q)
+
+	var snapshots []*storage.ReportSnapshot
+	// Using WalkByQuery as risk could potentially return a large amount of data
+	err := ds.storage.GetByQueryFn(ctx, q, func(snapshot *storage.ReportSnapshot) error {
+		snapshots = append(snapshots, snapshot)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return snapshots, nil
 }
 
 func (ds *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
@@ -59,7 +68,28 @@ func (ds *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.
 	if ok, err := workflowSAC.ReadAllowed(ctx); !ok || err != nil {
 		return nil, err
 	}
-	return ds.searcher.SearchResults(ctx, q)
+
+	// TODO(ROX-29943): remove 2 pass database queries
+	results, err := ds.Search(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	snaps, missingIndices, err := ds.storage.GetMany(ctx, pkgSearch.ResultsToIDs(results))
+	if err != nil {
+		return nil, err
+	}
+
+	results = pkgSearch.RemoveMissingResults(results, missingIndices)
+	if len(snaps) != len(results) {
+		return nil, errors.Errorf("expected %d report snapshots but got %d", len(results), len(snaps))
+	}
+
+	protoResults := make([]*v1.SearchResult, 0, len(snaps))
+	for i, snap := range snaps {
+		protoResults = append(protoResults, convertOne(snap, results[i]))
+	}
+	return protoResults, nil
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ReportSnapshot, bool, error) {
@@ -104,14 +134,14 @@ func (ds *datastoreImpl) AddReportSnapshot(ctx context.Context, snap *storage.Re
 	if err := sac.VerifyAuthzOK(workflowSAC.WriteAllowed(ctx)); err != nil {
 		return "", err
 	}
-	if snap.ReportId != "" {
+	if snap.GetReportId() != "" {
 		return "", errors.New("New report snapshot must have an empty report id")
 	}
 	snap.ReportId = uuid.NewV4().String()
 	if err := ds.storage.Upsert(ctx, snap); err != nil {
 		return "", err
 	}
-	return snap.ReportId, nil
+	return snap.GetReportId(), nil
 }
 
 func (ds *datastoreImpl) UpdateReportSnapshot(ctx context.Context, snap *storage.ReportSnapshot) error {
@@ -119,7 +149,7 @@ func (ds *datastoreImpl) UpdateReportSnapshot(ctx context.Context, snap *storage
 	if err := sac.VerifyAuthzOK(workflowSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
-	if snap.ReportId == "" {
+	if snap.GetReportId() == "" {
 		return errors.New("Report snapshot must have a non-empty report id")
 	}
 	if err := ds.storage.Upsert(ctx, snap); err != nil {
@@ -145,4 +175,14 @@ func (ds *datastoreImpl) Walk(ctx context.Context, fn func(report *storage.Repor
 		return err
 	}
 	return ds.storage.Walk(ctx, fn)
+}
+
+func convertOne(report *storage.ReportSnapshot, result pkgSearch.Result) *v1.SearchResult {
+	return &v1.SearchResult{
+		Category:       v1.SearchCategory_REPORT_SNAPSHOT,
+		Id:             report.GetReportId(),
+		Name:           report.GetReportId(),
+		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
+		Score:          result.Score,
+	}
 }

@@ -16,29 +16,28 @@ import {
 import useDeepCompareEffect from 'use-deep-compare-effect';
 
 import { nonGlobalResourceNamesForNetworkGraph } from 'routePaths';
-import { timeWindows } from 'constants/timeWindows';
 import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
 import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
 import usePermissions from 'hooks/usePermissions';
 import useAnalytics, { CIDR_BLOCK_FORM_OPENED } from 'hooks/useAnalytics';
-import useURLSearch from 'hooks/useURLSearch';
-import { fetchNetworkFlowGraph, fetchNodeUpdates } from 'services/NetworkService';
+import { fetchNetworkFlowGraph } from 'services/NetworkService';
 import queryService from 'utils/queryService';
-import timeWindowToDate from 'utils/timeWindows';
 import { isCompleteSearchFilter } from 'utils/searchUtils';
 
+import { CodeViewerThemeProvider } from 'Components/CodeViewer';
 import PageTitle from 'Components/PageTitle';
-import useInterval from 'hooks/useInterval';
 import useURLParameter from 'hooks/useURLParameter';
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 
-import NetworkGraphContainer, { Models } from './NetworkGraphContainer';
+import NetworkGraphContainer from './NetworkGraphContainer';
+import type { Models } from './NetworkGraphContainer';
 import NetworkBreadcrumbs from './components/NetworkBreadcrumbs';
 import NodeUpdateSection from './components/NodeUpdateSection';
 import NetworkSearch from './components/NetworkSearch';
 import SimulateNetworkPolicyButton from './simulation/SimulateNetworkPolicyButton';
-import EdgeStateSelect, { EdgeState } from './components/EdgeStateSelect';
-import DisplayOptionsSelect, { DisplayOption } from './components/DisplayOptionsSelect';
+import EdgeStateSelect from './components/EdgeStateSelect';
+import DisplayOptionsSelect from './components/DisplayOptionsSelect';
+import type { DisplayOption } from './components/DisplayOptionsSelect';
 import TimeWindowSelector from './components/TimeWindowSelector';
 import { useScopeHierarchy } from './hooks/useScopeHierarchy';
 import {
@@ -50,7 +49,14 @@ import {
 import { getPropertiesForAnalytics } from './utils/networkGraphURLUtils';
 import getSimulation from './utils/getSimulation';
 import { getSearchFilterFromScopeHierarchy } from './utils/simulatorUtils';
+import { timeWindowToISO } from './utils/timeWindow';
 import CIDRFormModal from './components/CIDRFormModal';
+import {
+    NetworkGraphURLStateProvider,
+    useEdgeState,
+    useSearchFilter,
+    useTimeWindow,
+} from './NetworkGraphURLStateContext';
 
 import './NetworkGraphPage.css';
 
@@ -74,14 +80,13 @@ const ALWAYS_SHOW_ORCHESTRATOR_COMPONENTS = true;
 // This is a query param used to add policy data in the response for the network graph data
 const INCLUDE_POLICIES = true;
 
-function NetworkGraphPage() {
+function NetworkGraphPageContent() {
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForBlocks =
         hasReadAccess('Administration') && hasReadWriteAccess('NetworkGraph');
-    const hasReadAccessForGenerator =
-        hasReadAccess('Integration') && hasReadAccess('NetworkPolicy');
+    const hasReadAccessForNetworkPolicy = hasReadAccess('NetworkPolicy');
 
-    const [edgeState, setEdgeState] = useState<EdgeState>('active');
+    const { edgeState, setEdgeState } = useEdgeState();
     const [displayOptions, setDisplayOptions] = useState<DisplayOption[]>([
         'policyStatusBadge',
         'externalBadge',
@@ -95,13 +100,13 @@ function NetworkGraphPage() {
     );
 
     const [isLoading, setIsLoading] = useState(false);
-    const [timeWindow, setTimeWindow] = useState<(typeof timeWindows)[number]>(timeWindows[0]);
     const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('');
     const [isCIDRBlockFormOpen, setIsCIDRBlockFormOpen] = useState(false);
     const [isBannerDismissed, setIsBannerDismissed] = useState(false);
 
     const { analyticsTrack } = useAnalytics();
-    const { searchFilter, setSearchFilter } = useURLSearch();
+    const { searchFilter, setSearchFilter } = useSearchFilter();
+    const { timeWindow, setTimeWindow } = useTimeWindow();
     const [simulationQueryValue] = useURLParameter('simulation', undefined);
     const simulation = getSimulation(simulationQueryValue);
 
@@ -163,19 +168,6 @@ function NetworkGraphPage() {
 
     const nodeUpdatesCount = currentEpochCount - prevEpochCount;
 
-    // We will update the poll epoch after 30 seconds to update the node count for a cluster
-    useInterval(() => {
-        if (selectedClusterId && namespacesFromUrl.length > 0) {
-            fetchNodeUpdates(selectedClusterId)
-                .then((result) => {
-                    setCurrentEpochCount(result?.response?.epoch || 0);
-                })
-                .catch(() => {
-                    // failure to update the node count is not critical
-                });
-        }
-    }, 30000);
-
     function updateNetworkNodes() {
         // check that user is finished adding a complete filter
         const isQueryFilterComplete = isCompleteSearchFilter(remainingQuery);
@@ -189,7 +181,7 @@ function NetworkGraphPage() {
             setIsLoading(true);
 
             const queryToUse = queryService.objectToWhereClause(remainingQuery);
-            const timestampToUse = timeWindowToDate(timeWindow);
+            const sinceTimestamp = timeWindowToISO(timeWindow);
 
             Promise.all([
                 // fetch the network graph data used for the active graph
@@ -198,7 +190,7 @@ function NetworkGraphPage() {
                     namespacesFromUrl,
                     deploymentsFromUrl,
                     queryToUse,
-                    timestampToUse || undefined,
+                    sinceTimestamp,
                     includePorts,
                     ALWAYS_SHOW_ORCHESTRATOR_COMPONENTS
                 ),
@@ -293,7 +285,7 @@ function NetworkGraphPage() {
     }
 
     return (
-        <>
+        <CodeViewerThemeProvider>
             {!isBannerDismissed && (
                 <Alert
                     variant="info"
@@ -331,7 +323,7 @@ function NetworkGraphPage() {
                                 onScopeChange={clearGraphOnEmptyScope}
                             />
                         </ToolbarGroup>
-                        {(hasWriteAccessForBlocks || hasReadAccessForGenerator) && (
+                        {(hasWriteAccessForBlocks || hasReadAccessForNetworkPolicy) && (
                             <ToolbarGroup
                                 variant="button-group"
                                 align={{ default: 'alignRight' }}
@@ -348,7 +340,7 @@ function NetworkGraphPage() {
                                         </Button>
                                     </ToolbarItem>
                                 )}
-                                {hasReadAccessForGenerator && (
+                                {hasReadAccessForNetworkPolicy && (
                                     <ToolbarItem>
                                         <SimulateNetworkPolicyButton
                                             simulation={simulation}
@@ -377,8 +369,8 @@ function NetworkGraphPage() {
                                     </ToolbarItem>
                                     <ToolbarItem>
                                         <TimeWindowSelector
-                                            activeTimeWindow={timeWindow}
-                                            setActiveTimeWindow={setTimeWindow}
+                                            timeWindow={timeWindow}
+                                            setTimeWindow={setTimeWindow}
                                             isDisabled={isLoading || !hasClusterNamespaceSelected}
                                         />
                                     </ToolbarItem>
@@ -401,23 +393,28 @@ function NetworkGraphPage() {
                                         />
                                     </ToolbarItem>
                                 </ToolbarGroup>
-                                <ToolbarGroup
-                                    align={{ default: 'alignRight' }}
-                                    className="pf-v5-u-align-self-center"
-                                >
-                                    <Divider
-                                        component="div"
-                                        orientation={{ default: 'vertical' }}
-                                    />
-                                    <ToolbarItem className="pf-v5-u-color-200">
-                                        <NodeUpdateSection
-                                            isLoading={isLoading}
-                                            lastUpdatedTime={lastUpdatedTime}
-                                            nodeUpdatesCount={nodeUpdatesCount}
-                                            updateNetworkNodes={updateNetworkNodes}
+                                {hasReadAccessForNetworkPolicy && (
+                                    <ToolbarGroup
+                                        align={{ default: 'alignRight' }}
+                                        className="pf-v5-u-align-self-center"
+                                    >
+                                        <Divider
+                                            component="div"
+                                            orientation={{ default: 'vertical' }}
                                         />
-                                    </ToolbarItem>
-                                </ToolbarGroup>
+                                        <ToolbarItem className="pf-v5-u-color-200">
+                                            <NodeUpdateSection
+                                                isLoading={isLoading}
+                                                lastUpdatedTime={lastUpdatedTime}
+                                                namespacesFromUrl={namespacesFromUrl}
+                                                nodeUpdatesCount={nodeUpdatesCount}
+                                                selectedClusterId={selectedClusterId}
+                                                setCurrentEpochCount={setCurrentEpochCount}
+                                                updateNetworkNodes={updateNetworkNodes}
+                                            />
+                                        </ToolbarItem>
+                                    </ToolbarGroup>
+                                )}
                             </ToolbarContent>
                         </Toolbar>
                     </PageSection>
@@ -446,8 +443,14 @@ function NetworkGraphPage() {
                     onClose={toggleCIDRBlockForm}
                 />
             </PageSection>
-        </>
+        </CodeViewerThemeProvider>
     );
 }
 
-export default NetworkGraphPage;
+export default function NetworkGraphPage() {
+    return (
+        <NetworkGraphURLStateProvider>
+            <NetworkGraphPageContent />
+        </NetworkGraphURLStateProvider>
+    );
+}

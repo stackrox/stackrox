@@ -1,4 +1,4 @@
-import React, { ReactElement, ReactNode, useState } from 'react';
+import React, { ReactElement, ReactNode, useCallback, useState } from 'react';
 import {
     Alert,
     Breadcrumb,
@@ -18,7 +18,7 @@ import {
     Tooltip,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom-v5-compat';
 import { gql, useQuery } from '@apollo/client';
 import isEmpty from 'lodash/isEmpty';
 
@@ -28,17 +28,21 @@ import useURLStringUnion from 'hooks/useURLStringUnion';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
+import usePermissions from 'hooks/usePermissions';
 import useURLPagination from 'hooks/useURLPagination';
+import useURLSearch from 'hooks/useURLSearch';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import type { ColumnConfigOverrides } from 'hooks/useManagedColumns';
+import type { VulnerabilityState } from 'types/cve.proto';
 
 import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
 import GenerateSbomModal, {
     getSbomGenerationStatusMessage,
 } from '../../components/GenerateSbomModal';
-import { getOverviewPagePath } from '../../utils/searchUtils';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
-import useHasGenerateSbomAbility from '../../hooks/useHasGenerateSBOMAbility';
 import ImagePageVulnerabilities from './ImagePageVulnerabilities';
 import ImagePageResources from './ImagePageResources';
+import ImagePageSignatureVerification from './ImagePageSignatureVerification';
 import { detailsTabValues } from '../../types';
 import ImageDetailBadges, {
     ImageDetails,
@@ -47,7 +51,11 @@ import ImageDetailBadges, {
 import getImageScanMessage from '../utils/getImageScanMessage';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { getImageBaseNameDisplay } from '../utils/images';
+import { parseQuerySearchFilter, getVulnStateScopedQueryString } from '../../utils/searchUtils';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
+import { defaultColumns as deploymentResourcesDefaultColumns } from './DeploymentResourceTable';
+import CreateReportDropdown from '../components/CreateReportDropdown';
+import CreateViewBasedReportModal from '../components/CreateViewBasedReportModal';
 
 export const imageDetailsQuery = gql`
     ${imageDetailsFragment}
@@ -78,9 +86,21 @@ function OptionalSbomButtonTooltip({
     return <Tooltip content={message}>{children}</Tooltip>;
 }
 
-function ImagePage() {
-    const { imageId } = useParams();
-    const { getAbsoluteUrl, pageTitle } = useWorkloadCveViewContext();
+export type ImagePageProps = {
+    vulnerabilityState: VulnerabilityState;
+    showVulnerabilityStateTabs: boolean;
+    deploymentResourceColumnOverrides: ColumnConfigOverrides<
+        keyof typeof deploymentResourcesDefaultColumns
+    >;
+};
+
+function ImagePage({
+    vulnerabilityState,
+    showVulnerabilityStateTabs,
+    deploymentResourceColumnOverrides,
+}: ImagePageProps) {
+    const { urlBuilder, pageTitle, baseSearchFilter, viewContext } = useWorkloadCveViewContext();
+    const { imageId } = useParams() as { imageId: string };
     const { data, error } = useQuery<
         {
             image: {
@@ -104,9 +124,38 @@ function ImagePage() {
 
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
-    const hasGenerateSbomAbility = useHasGenerateSbomAbility();
+    // Search filter management
+    const { searchFilter, setSearchFilter } = useURLSearch();
+    const querySearchFilter = parseQuerySearchFilter(searchFilter);
+
+    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForImage = hasReadWriteAccess('Image'); // SBOM Generation mutates image scan state.
+    const hasWorkflowAdminAccess = hasReadAccess('WorkflowAdministration');
     const isScannerV4Enabled = useIsScannerV4Enabled();
     const [sbomTargetImage, setSbomTargetImage] = useState<string>();
+
+    // Report-specific functionality
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isViewBasedReportsEnabled =
+        isFeatureFlagEnabled('ROX_VULNERABILITY_VIEW_BASED_REPORTS') &&
+        hasWorkflowAdminAccess &&
+        (viewContext === 'User workloads' ||
+            viewContext === 'Platform' ||
+            viewContext === 'All vulnerable images' ||
+            viewContext === 'Inactive images');
+    const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] = useState(false);
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const onReportSelect = (_value: string | number | undefined) => {
+        setIsCreateViewBasedReportModalOpen(true);
+    };
+
+    const getImageQueryForReport = useCallback(() => {
+        // Create a scoped query that includes the image SHA filter plus any applied search filters
+        const imageScopedFilter = { 'Image SHA': [imageId] };
+        const combinedFilter = { ...baseSearchFilter, ...imageScopedFilter, ...querySearchFilter };
+        return getVulnStateScopedQueryString(combinedFilter, vulnerabilityState);
+    }, [imageId, baseSearchFilter, querySearchFilter, vulnerabilityState]);
 
     const imageData = data && data.image;
     const imageName = imageData?.name;
@@ -117,12 +166,7 @@ function ImagePage() {
     const scanMessage = getImageScanMessage(imageData?.notes || [], imageData?.scanNotes || []);
     const hasScanMessage = !isEmpty(scanMessage);
 
-    const workloadCveOverviewImagePath = getAbsoluteUrl(
-        getOverviewPagePath('Workload', {
-            vulnerabilityState: 'OBSERVED',
-            entityTab: 'Image',
-        })
-    );
+    const workloadCveOverviewImagePath = urlBuilder.imageList('OBSERVED');
 
     let mainContent: ReactNode | null = null;
 
@@ -167,7 +211,7 @@ function ImagePage() {
                                     )}
                                     <ImageDetailBadges imageData={imageData} />
                                 </Flex>
-                                {hasGenerateSbomAbility && (
+                                {hasWriteAccessForImage && (
                                     <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
                                         <OptionalSbomButtonTooltip
                                             message={getSbomGenerationStatusMessage({
@@ -227,7 +271,7 @@ function ImagePage() {
                 >
                     <Tabs
                         activeKey={activeTabKey}
-                        onSelect={(e, key) => {
+                        onSelect={(_e, key) => {
                             setActiveTabKey(key);
                             pagination.setPage(1);
                         }}
@@ -251,6 +295,15 @@ function ImagePage() {
                                 }
                                 refetchAll={refetchAll}
                                 pagination={pagination}
+                                vulnerabilityState={vulnerabilityState}
+                                showVulnerabilityStateTabs={showVulnerabilityStateTabs}
+                                searchFilter={searchFilter}
+                                setSearchFilter={setSearchFilter}
+                                additionalToolbarItems={
+                                    isViewBasedReportsEnabled && (
+                                        <CreateReportDropdown onSelect={onReportSelect} />
+                                    )
+                                }
                             />
                         </Tab>
                         <Tab
@@ -258,7 +311,22 @@ function ImagePage() {
                             eventKey="Resources"
                             title={<TabTitleText>Resources</TabTitleText>}
                         >
-                            <ImagePageResources imageId={imageId} pagination={pagination} />
+                            <ImagePageResources
+                                imageId={imageId}
+                                pagination={pagination}
+                                deploymentResourceColumnOverrides={
+                                    deploymentResourceColumnOverrides
+                                }
+                            />
+                        </Tab>
+                        <Tab
+                            className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
+                            eventKey="Signature verification"
+                            title={<TabTitleText>Signature verification</TabTitleText>}
+                        >
+                            <ImagePageSignatureVerification
+                                results={imageData?.signatureVerificationData?.results}
+                            />
                         </Tab>
                     </Tabs>
                 </PageSection>
@@ -287,6 +355,14 @@ function ImagePage() {
             </PageSection>
             <Divider component="div" />
             {mainContent}
+            {isViewBasedReportsEnabled && isCreateViewBasedReportModalOpen && (
+                <CreateViewBasedReportModal
+                    isOpen={isCreateViewBasedReportModalOpen}
+                    setIsOpen={setIsCreateViewBasedReportModalOpen}
+                    query={getImageQueryForReport()}
+                    areaOfConcern={viewContext}
+                />
+            )}
         </>
     );
 }

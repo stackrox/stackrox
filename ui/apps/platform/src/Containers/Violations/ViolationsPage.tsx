@@ -1,24 +1,18 @@
-import React, { ReactElement } from 'react';
-import { Route, Switch } from 'react-router-dom';
+import React from 'react';
+import type { ReactElement } from 'react';
+import { Route, Routes } from 'react-router-dom-v5-compat';
 
-import { violationsBasePath, violationsPath } from 'routePaths';
 import ViolationsTablePage from './ViolationsTablePage';
 import ViolationDetailsPage from './Details/ViolationDetailsPage';
 import ViolationNotFoundPage from './ViolationNotFoundPage';
 
 function ViolationsPage(): ReactElement {
     return (
-        <Switch>
-            <Route exact path={violationsBasePath}>
-                <ViolationsTablePage />
-            </Route>
-            <Route path={violationsPath}>
-                <ViolationDetailsPage />
-            </Route>
-            <Route>
-                <ViolationNotFoundPage />
-            </Route>
-        </Switch>
+        <Routes>
+            <Route index element={<ViolationsTablePage />} />
+            <Route path=":alertId" element={<ViolationDetailsPage />} />
+            <Route path="*" element={<ViolationNotFoundPage />} />
+        </Routes>
     );
 }
 

@@ -1,10 +1,12 @@
-import React, { ReactElement, useState } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import { Alert, Bullseye, Button, PageSection, Spinner } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import useAnalytics, { CREATE_INIT_BUNDLE_CLICKED } from 'hooks/useAnalytics';
 import useRestQuery from 'hooks/useRestQuery';
-import { ClusterInitBundle, fetchClusterInitBundles } from 'services/ClustersService';
+import { fetchClusterInitBundles } from 'services/ClustersService';
+import type { ClusterInitBundle } from 'services/ClustersService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { clustersInitBundlesPath } from 'routePaths';
 
@@ -49,7 +51,6 @@ function InitBundlesPage({ hasWriteAccessForInitBundles }: InitBundlesPageProps)
         }
     }
 
-    /* eslint-disable no-nested-ternary */
     return (
         <>
             <InitBundlesHeader headerActions={headerActions} title={titleInitBundles} />
@@ -85,7 +86,6 @@ function InitBundlesPage({ hasWriteAccessForInitBundles }: InitBundlesPageProps)
             </PageSection>
         </>
     );
-    /* eslint-enable no-nested-ternary */
 }
 
 export default InitBundlesPage;

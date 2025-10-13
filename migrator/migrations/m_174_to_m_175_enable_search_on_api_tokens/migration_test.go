@@ -118,10 +118,6 @@ func (s *apiTokenMigrationTestSuite) SetupTest() {
 	pgutils.CreateTableFromModel(context.Background(), s.db.GetGormDB(), oldSchema.CreateTableAPITokensStmt)
 }
 
-func (s *apiTokenMigrationTestSuite) TearDownTest() {
-	s.db.Teardown(s.T())
-}
-
 func getTimestampLookupQuery(label search.FieldLabel, date time.Time) *v1.Query {
 	oneSecondLater := date.Add(1 * time.Second)
 	fmt.Println(date.Format(timestampLayout))

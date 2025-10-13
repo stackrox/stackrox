@@ -9,11 +9,13 @@ defaults:
     registry: [< required "" .MainRegistry >]
 
   env:
+    grpcEnforceALPN: false
     offlineMode: false
 
   central:
     config: "@config/central/config.yaml|config/central/config.yaml.default"
     endpointsConfig: "@config/central/endpoints.yaml|config/central/endpoints.yaml.default"
+    endpoint: "central.{{ required "unknown namespace" .Release.Namespace }}.svc:443"
 
     exposeMonitoring: false
 
@@ -38,13 +40,6 @@ defaults:
             matchExpressions:
             - key: node-role.kubernetes.io/compute
               operator: Exists
-        # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
-        # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
-        - weight: 100
-          preference:
-            matchExpressions:
-            - key: node-role.kubernetes.io/master
-              operator: DoesNotExist
         - weight: 100
           preference:
             matchExpressions:
@@ -69,9 +64,10 @@ defaults:
         port: 443
       nodePort:
         enabled: false
-        port: null
       route:
         enabled: false
+        reencrypt:
+          enabled: false
     db:
       external: false
 
@@ -94,6 +90,39 @@ defaults:
         limits:
           memory: "16Gi"
           cpu: "8"
+  configController:
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+            - key: cloud.google.com/gke-preemptible
+              operator: NotIn
+              values:
+                - "true"
+        - weight: 50
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/infra
+              operator: Exists
+        - weight: 25
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/compute
+              operator: Exists
+        - weight: 100
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/control-plane
+              operator: DoesNotExist
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "10m"
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
   scanner:
     disable: false
     replicas: 3
@@ -126,13 +155,6 @@ defaults:
             matchExpressions:
               - key: node-role.kubernetes.io/compute
                 operator: Exists
-        # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
-        # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
-        - weight: 100
-          preference:
-            matchExpressions:
-              - key: node-role.kubernetes.io/master
-                operator: DoesNotExist
         - weight: 100
           preference:
             matchExpressions:
@@ -164,7 +186,6 @@ defaults:
       tag: [< required "" .ScannerImageTag >]
 
   scannerV4:
-    disable: true
     image:
       name: [< required "" .ScannerV4ImageRemote >]
       tag: [< required "" .ScannerV4ImageTag >]
@@ -197,13 +218,6 @@ defaults:
               matchExpressions:
               - key: node-role.kubernetes.io/compute
                 operator: Exists
-          # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
-          # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
-          - weight: 100
-            preference:
-              matchExpressions:
-              - key: node-role.kubernetes.io/master
-                operator: DoesNotExist
           - weight: 100
             preference:
               matchExpressions:
@@ -211,11 +225,11 @@ defaults:
                 operator: DoesNotExist
       resources:
         requests:
-          memory: "1500Mi"
-          cpu: "1000m"
+          memory: "0.5Gi"
+          cpu: "1500m"
         limits:
           memory: "3Gi"
-          cpu: "2000m"
+          cpu: "4000m"
     matcher:
       logLevel: INFO
       metricsPort: 9090
@@ -244,13 +258,6 @@ defaults:
               matchExpressions:
               - key: node-role.kubernetes.io/compute
                 operator: Exists
-          # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
-          # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
-          - weight: 100
-            preference:
-              matchExpressions:
-              - key: node-role.kubernetes.io/master
-                operator: DoesNotExist
           - weight: 100
             preference:
               matchExpressions:
@@ -258,11 +265,11 @@ defaults:
                 operator: DoesNotExist
       resources:
         requests:
-          memory: "500Mi"
-          cpu: "1000m"
+          memory: "1.5Gi"
+          cpu: "500m"
         limits:
-          memory: "2Gi"
-          cpu: "2000m"
+          memory: "3Gi"
+          cpu: "1000m"
     db:
       postgresConfig: "@config-templates/scanner-v4-db/postgresql.conf|config-templates/scanner-v4-db/postgresql.conf.default"
       hbaConfig: "@config-templates/scanner-v4-db/pg_hba.conf|config-templates/scanner-v4-db/pg_hba.conf.default"
@@ -290,13 +297,6 @@ defaults:
               matchExpressions:
               - key: node-role.kubernetes.io/compute
                 operator: Exists
-          # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
-          # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
-          - weight: 100
-            preference:
-              matchExpressions:
-              - key: node-role.kubernetes.io/master
-                operator: DoesNotExist
           - weight: 100
             preference:
               matchExpressions:
@@ -304,11 +304,11 @@ defaults:
                 operator: DoesNotExist
       resources:
         requests:
-          cpu: "200m"
-          memory: "3Gi"
-        limits:
-          cpu: "2000m"
           memory: "4Gi"
+          cpu: "1000m"
+        limits:
+          memory: "8Gi"
+          cpu: "4000m"
       image:
         name: [< required "" .ScannerV4DBImageRemote >]
         tag: [< required "" .ScannerV4ImageTag >]

@@ -1,31 +1,46 @@
 package services
 
-import common.Constants
+import static util.Helpers.getStackRoxEndpoint
+
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+
 import io.stackrox.proto.api.v1.NotifierServiceGrpc
 import io.stackrox.proto.api.v1.NotifierServiceOuterClass
 import io.stackrox.proto.storage.Common
 import io.stackrox.proto.storage.NotifierOuterClass
+
+import common.Constants
 import util.Env
+import util.Helpers
 import util.MailServer
+import io.stackrox.annotations.Retry
 
 @Slf4j
+@CompileStatic
 class NotifierService extends BaseService {
     // FIXME(ROX-7589): this should be secret
     // private static final PAGERDUTY_API_KEY = Env.mustGetPagerdutyApiKey()
     private static final String PAGERDUTY_API_KEY = null
 
-    static getNotifierClient() {
+    static NotifierServiceGrpc.NotifierServiceBlockingStub getNotifierClient() {
         return NotifierServiceGrpc.newBlockingStub(getChannel())
     }
 
+    @Retry
     static addNotifier(NotifierOuterClass.Notifier notifier) {
         return getNotifierClient().postNotifier(notifier)
     }
 
+    static getNotifiers() {
+        return getNotifierClient().getNotifiers(NotifierServiceOuterClass.GetNotifiersRequest.newBuilder().build())
+    }
+
     static testNotifier(NotifierOuterClass.Notifier notifier) {
         try {
-            getNotifierClient().testNotifier(notifier)
+            Helpers.withRetry(3, 1) {
+                getNotifierClient().testNotifier(notifier)
+            }
             return true
         } catch (Exception e) {
             log.error("error testing notifier", e)

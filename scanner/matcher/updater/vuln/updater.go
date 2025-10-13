@@ -23,9 +23,8 @@ import (
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/updates"
-	"github.com/quay/claircore/pkg/ctxlock"
+	"github.com/quay/claircore/pkg/ctxlock/v2"
 	"github.com/quay/zlog"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/updater/jsonblob"
@@ -34,8 +33,6 @@ import (
 const (
 	ifModifiedSinceHeader = `If-Modified-Since`
 	lastModifiedHeader    = `Last-Modified`
-
-	updateName = `scanner-v4-updater`
 
 	updateFilePattern = `updates-*.json.zst`
 
@@ -68,7 +65,7 @@ type Opts struct {
 	MetadataStore postgres.MatcherMetadataStore
 
 	Client         *http.Client
-	URL            string
+	URLs           []string
 	Root           string
 	UpdateInterval time.Duration
 
@@ -91,7 +88,7 @@ type Updater struct {
 	metadataStore postgres.MatcherMetadataStore
 
 	client         *http.Client
-	url            string
+	urls           []string
 	root           string
 	updateInterval time.Duration
 	initialized    atomic.Bool
@@ -129,7 +126,7 @@ func New(ctx context.Context, opts Opts) (*Updater, error) {
 		metadataStore: opts.MetadataStore,
 
 		client:         opts.Client,
-		url:            opts.URL,
+		urls:           opts.URLs,
 		root:           opts.Root,
 		updateInterval: opts.UpdateInterval,
 
@@ -188,8 +185,13 @@ func validate(opts Opts) error {
 	if opts.Store == nil || opts.Locker == nil || opts.MetadataStore == nil {
 		return errors.New("must provide a Store, a Locker, and a MetadataStore")
 	}
-	if _, err := url.Parse(opts.URL); err != nil {
-		return fmt.Errorf("invalid URL: %q", opts.URL)
+	if len(opts.URLs) == 0 {
+		return errors.New("must provide at least one URL")
+	}
+	for _, u := range opts.URLs {
+		if _, err := url.Parse(u); err != nil {
+			return fmt.Errorf("invalid URL: %q", u)
+		}
 	}
 	return nil
 }
@@ -366,11 +368,7 @@ func (u *Updater) Update(ctx context.Context) error {
 		updated bool
 		err     error
 	)
-	if features.ScannerV4MultiBundle.Enabled() {
-		updated, err = u.runMultiBundleUpdate(ctx)
-	} else {
-		updated, err = u.runSingleBundleUpdate(ctx)
-	}
+	updated, err = u.runMultiBundleUpdate(ctx)
 	if err != nil {
 		return err
 	}
@@ -385,75 +383,6 @@ func (u *Updater) Update(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-// runSingleBundleUpdate updates the vulnerability data with one single bundle and
-// returns a bool indicating if any updates actually happened.
-func (u *Updater) runSingleBundleUpdate(ctx context.Context) (bool, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/vuln/Updater.runSingleBundleUpdate")
-
-	// Use TryLock instead of Lock to prevent simultaneous updates.
-	ctx, done := u.locker.TryLock(ctx, updateName)
-	defer done()
-	if err := ctx.Err(); err != nil {
-		zlog.Info(ctx).
-			Str("lock", updateName).
-			Msg("did not obtain lock, skipping update run")
-		return false, nil
-	}
-
-	prevTimestamp, err := u.metadataStore.GetLastVulnerabilityUpdate(ctx)
-	if err != nil {
-		zlog.Debug(ctx).
-			Err(err).
-			Msg("did not get previous vuln update timestamp")
-		return false, err
-	}
-	zlog.Info(ctx).
-		Str("timestamp", prevTimestamp.Format(http.TimeFormat)).
-		Msg("previous vuln update")
-
-	f, timestamp, err := u.fetch(ctx, prevTimestamp)
-	if err != nil {
-		return false, err
-	}
-	if f == nil {
-		// Nothing to update at this time.
-		zlog.Info(ctx).Msg("no new vulnerability update")
-		return false, nil
-	}
-	defer func() {
-		if err := f.Close(); err != nil {
-			zlog.Error(ctx).Err(err).Msg("closing temp update file")
-		}
-		if err := os.Remove(f.Name()); err != nil {
-			zlog.Error(ctx).Err(err).Msgf("removing temp update file %q", f.Name())
-		}
-	}()
-
-	dec, err := zstd.NewReader(f)
-	if err != nil {
-		return false, fmt.Errorf("creating zstd reader: %w", err)
-	}
-	defer dec.Close()
-
-	if err := u.importFunc(ctx, dec); err != nil {
-		return false, err
-	}
-
-	if err := u.metadataStore.SetLastVulnerabilityUpdate(ctx, postgres.SingleBundleUpdateKey, timestamp); err != nil {
-		return false, err
-	}
-
-	if err := u.distManager.update(ctx); err != nil {
-		return false, fmt.Errorf("updating known-distributions: %w", err)
-	}
-
-	if u.initialized.CompareAndSwap(false, true) {
-		zlog.Info(ctx).Msg("finished initial updater run: setting updater to initialized")
-	}
-
-	return true, nil
 }
 
 // runMultiBundleUpdate updates the vulnerability data with a multi-bundle and
@@ -589,40 +518,24 @@ func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File,
 	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/vuln/Updater.fetch")
 
 	var resp *http.Response
-	defer closeResponse(resp)
-	// After this loop, either resp != nil or we will have returned an error.
-	for attempt := 1; attempt <= u.retryMax; attempt++ {
-		zlog.Info(ctx).
-			Str("url", u.url).
-			Int("attempt", attempt).
-			Msg("fetching vuln update")
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.url, nil)
+	var err error
+	for i, vulnURL := range u.urls {
+		resp, err = u.fetchFromURL(ctx, vulnURL, prevTimestamp)
 		if err != nil {
 			return nil, time.Time{}, err
 		}
-		req.Header.Set(ifModifiedSinceHeader, prevTimestamp.Format(http.TimeFormat))
-		// Request multi-bundle if multi-bundle is enabled.
-		if features.ScannerV4MultiBundle.Enabled() {
-			req.Header.Set("X-Scanner-V4-Accept", "application/vnd.stackrox.scanner-v4.multi-bundle+zip")
+		if resp.StatusCode != http.StatusNotFound {
+			// It's intentional to stop on other http statuses, contract is to continue
+			// trying only on 404s.
+			break
 		}
-		resp, err = u.client.Do(req)
-		// If we haven't exhausted our connection refused attempts and the vuln URL is unavailable, retry.
-		if attempt < u.retryMax && isConnectionRefused(err) {
-			zlog.Error(ctx).
-				Err(err).
-				Str("delay", u.retryDelay.String()).
-				Msg("retrying...")
-			time.Sleep(u.retryDelay) // Wait for retryDelay before retrying
-			continue
-		}
-		// If we have exhausted our retry attempts or there is some other kind of error, do not retry.
-		if err != nil {
-			return nil, time.Time{}, err
-		}
-
-		break // No errors, so don't retry.
+		zlog.Info(ctx).Msgf("skipping vuln URL #%d (%s): it does not exist (404)", i, vulnURL)
+		closeResponse(resp)
 	}
-
+	if resp == nil {
+		panic("this should never happen")
+	}
+	defer closeResponse(resp)
 	switch resp.StatusCode {
 	case http.StatusOK:
 	case http.StatusNotModified:
@@ -665,6 +578,33 @@ func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File,
 	}
 	succeeded = true
 	return f, timestamp, nil
+}
+
+func (u *Updater) fetchFromURL(ctx context.Context, url string, prevTimestamp time.Time) (*http.Response, error) {
+	var resp *http.Response
+	for attempt := 1; attempt <= u.retryMax; attempt++ {
+		zlog.Info(ctx).
+			Str("url", url).
+			Int("attempt", attempt).
+			Msg("fetching vuln update")
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set(ifModifiedSinceHeader, prevTimestamp.Format(http.TimeFormat))
+		req.Header.Set("X-Scanner-V4-Accept", "application/vnd.stackrox.scanner-v4.multi-bundle+zip")
+		resp, err = u.client.Do(req)
+		if attempt < u.retryMax && isConnectionRefused(err) {
+			zlog.Error(ctx).
+				Err(err).
+				Str("delay", u.retryDelay.String()).
+				Msg("retrying...")
+			time.Sleep(u.retryDelay)
+			continue
+		}
+		return resp, err
+	}
+	return resp, nil
 }
 
 func jitter() time.Duration {

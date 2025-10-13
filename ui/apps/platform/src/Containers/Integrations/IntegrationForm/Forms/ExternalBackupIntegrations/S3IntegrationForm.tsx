@@ -1,5 +1,6 @@
 /* eslint-disable no-void */
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Checkbox, Form, FormSelect, PageSection, Text, TextInput } from '@patternfly/react-core';
 import * as yup from 'yup';
 import merge from 'lodash/merge';
@@ -9,20 +10,21 @@ import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
-import usePageState from 'Containers/Integrations/hooks/usePageState';
 import useMetadata from 'hooks/useMetadata';
-import { BackupIntegrationBase } from 'services/BackupIntegrationsService';
+import type { BackupIntegrationBase } from 'services/BackupIntegrationsService';
 import { getVersionedDocs } from 'utils/versioning';
 
-import IntegrationHelpIcon from '../Components/IntegrationHelpIcon';
+import usePageState from '../../../hooks/usePageState';
 import useIntegrationForm from '../../useIntegrationForm';
-import { IntegrationFormProps } from '../../integrationFormTypes';
+import type { IntegrationFormProps } from '../../integrationFormTypes';
 
 import IntegrationFormActions from '../../IntegrationFormActions';
 import FormLabelGroup from '../../FormLabelGroup';
 import ScheduleIntervalOptions from '../../FormSchedule/ScheduleIntervalOptions';
 import ScheduleWeeklyOptions from '../../FormSchedule/ScheduleWeeklyOptions';
 import ScheduleDailyOptions from '../../FormSchedule/ScheduleDailyOptions';
+
+import IntegrationHelpIcon from '../Components/IntegrationHelpIcon';
 
 export type S3Integration = {
     s3: {

@@ -1,8 +1,9 @@
-import React, { useState, useEffect, ReactElement } from 'react';
+import React, { useState, useEffect } from 'react';
+import type { ReactElement } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { Alert, Button, Modal, ModalBoxBody, ModalBoxFooter, Text } from '@patternfly/react-core';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 
@@ -13,13 +14,14 @@ import { actions as authActions } from 'reducers/auth';
 import { actions as groupActions } from 'reducers/groups';
 import { actions as roleActions } from 'reducers/roles';
 import { accessControlBasePath } from 'routePaths';
-import { AuthProvider } from 'services/AuthService';
+import type { AuthProvider } from 'services/AuthService';
 import { updateOrAddGroup } from 'services/GroupsService';
 import { dedupeDelimitedString } from 'utils/textUtils';
 import { mergeGroupsWithAuthProviders } from '../../AccessControl/AuthProviders/authProviders.utils';
 import InviteUsersForm from './InviteUsersForm';
 import InviteUsersConfirmationNoEmail from './InviteUsersConfirmationNoEmail';
-import { splitEmailsIntoNewAndExisting, BucketsForNewAndExistingEmails } from './InviteUsers.utils';
+import { splitEmailsIntoNewAndExisting } from './InviteUsers.utils';
+import type { BucketsForNewAndExistingEmails } from './InviteUsers.utils';
 
 type InviteFormValues = {
     emails: string;

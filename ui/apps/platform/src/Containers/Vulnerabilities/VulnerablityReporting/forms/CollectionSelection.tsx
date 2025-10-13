@@ -19,7 +19,7 @@ import { ReportScope } from 'Containers/Vulnerabilities/VulnerablityReporting/fo
 
 import CollectionsFormModal, {
     CollectionFormModalAction,
-} from 'Containers/Collections/CollectionFormModal';
+} from 'Containers/Collections/CollectionsFormModal';
 import useRestQuery from 'hooks/useRestQuery';
 import useAnalytics, { COLLECTION_CREATED } from 'hooks/useAnalytics';
 

@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/unimplemented"
 )
 
 var (
@@ -23,9 +24,15 @@ type AlertHandler interface {
 }
 
 type alertHandlerImpl struct {
+	unimplemented.Receiver
+
 	output       chan *message.ExpiringMessage
 	stopSig      concurrency.Signal
 	centralReady concurrency.Signal
+}
+
+func (h *alertHandlerImpl) Name() string {
+	return "admissioncontroller.alertHandlerImpl"
 }
 
 func (h *alertHandlerImpl) Start() error {
@@ -33,7 +40,7 @@ func (h *alertHandlerImpl) Start() error {
 	return nil
 }
 
-func (h *alertHandlerImpl) Stop(_ error) {
+func (h *alertHandlerImpl) Stop() {
 	h.stopSig.Signal()
 }
 
@@ -48,10 +55,6 @@ func (h *alertHandlerImpl) Notify(e common.SensorComponentEvent) {
 }
 
 func (h *alertHandlerImpl) Capabilities() []centralsensor.SensorCapability {
-	return nil
-}
-
-func (h *alertHandlerImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 

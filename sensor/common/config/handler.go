@@ -1,6 +1,8 @@
 package config
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -54,11 +56,15 @@ type configHandlerImpl struct {
 	stopC                     concurrency.ErrorSignal
 }
 
+func (c *configHandlerImpl) Name() string {
+	return "config.configHandlerImpl"
+}
+
 func (c *configHandlerImpl) Start() error {
 	return nil
 }
 
-func (c *configHandlerImpl) Stop(_ error) {
+func (c *configHandlerImpl) Stop() {
 	c.stopC.Signal()
 }
 
@@ -72,7 +78,11 @@ func (c *configHandlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return nil
 }
 
-func (c *configHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (c *configHandlerImpl) Accepts(msg *central.MsgToSensor) bool {
+	return msg.GetAuditLogSync() != nil || msg.GetClusterConfig() != nil
+}
+
+func (c *configHandlerImpl) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
 	if msg.GetAuditLogSync() != nil {
 		err := c.parseMessage(func() {
 			log.Infof("Received audit log sync state from Central: %s", protoutils.NewWrapper(msg.GetAuditLogSync()))
@@ -89,12 +99,12 @@ func (c *configHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 			log.Infof("Received configuration from Central: %s", protoutils.NewWrapper(config))
 			c.lock.Lock()
 			defer c.lock.Unlock()
-			c.config = config.Config
+			c.config = config.GetConfig()
 			if c.admCtrlSettingsMgr != nil {
 				c.admCtrlSettingsMgr.UpdateConfig(config.GetConfig())
 			}
 
-			if c.config.DisableAuditLogs {
+			if c.config.GetDisableAuditLogs() {
 				log.Info("Stopping audit log collection")
 				c.auditLogCollectionManager.DisableCollection()
 			} else {

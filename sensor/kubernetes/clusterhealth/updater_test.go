@@ -199,7 +199,7 @@ func (s *UpdaterTestSuite) TestExpiredMessages() {
 	fakeTicker := make(chan time.Time)
 	defer close(fakeTicker)
 	go updater.run(fakeTicker)
-	defer updater.Stop(nil)
+	defer updater.Stop()
 	var expiredMessages []*message.ExpiringMessage
 	for _, state := range states {
 		updater.Notify(state)
@@ -315,14 +315,14 @@ func (s *UpdaterTestSuite) getHealthInfo(times int) *storage.CollectorHealthInfo
 	updater.Notify(common.SensorComponentEventCentralReachable)
 	err := updater.Start()
 	s.Require().NoError(err)
-	defer updater.Stop(nil)
+	defer updater.Stop()
 
 	var healthInfo *storage.CollectorHealthInfo
 
 	for i := 0; i < times; i++ {
 		select {
 		case response := <-updater.ResponsesC():
-			healthInfo = response.Msg.(*central.MsgFromSensor_ClusterHealthInfo).ClusterHealthInfo.CollectorHealthInfo
+			healthInfo = response.Msg.(*central.MsgFromSensor_ClusterHealthInfo).ClusterHealthInfo.GetCollectorHealthInfo()
 		case <-timer.C:
 			s.Fail("Timed out while waiting for cluster health update")
 		}
@@ -405,53 +405,53 @@ func (s *UpdaterTestSuite) assertHealthInfo(actual *storage.CollectorHealthInfo,
 }
 
 func (s *UpdaterTestSuite) assertVersion(health *storage.CollectorHealthInfo, expected string) {
-	s.Equal(expected, health.Version)
+	s.Equal(expected, health.GetVersion())
 }
 
 func (s *UpdaterTestSuite) assertTotalDesiredPods(health *storage.CollectorHealthInfo, expected int32) {
 	var actual int32
-	switch v := health.TotalDesiredPodsOpt.(type) {
+	switch v := health.GetTotalDesiredPodsOpt().(type) {
 	case *storage.CollectorHealthInfo_TotalDesiredPods:
 		actual = v.TotalDesiredPods
 	case nil:
 		actual = -1
 	default:
-		s.FailNowf("Unexpected total desired pods value type", "actual value: %#v", health.TotalDesiredPodsOpt)
+		s.FailNowf("Unexpected total desired pods value type", "actual value: %#v", health.GetTotalDesiredPodsOpt())
 	}
-	s.Equalf(expected, actual, "Unexpected value of total desired pods %#v", health.TotalDesiredPodsOpt)
+	s.Equalf(expected, actual, "Unexpected value of total desired pods %#v", health.GetTotalDesiredPodsOpt())
 }
 
 func (s *UpdaterTestSuite) assertTotalReadyPods(health *storage.CollectorHealthInfo, expected int32) {
 	var actual int32
-	switch v := health.TotalReadyPodsOpt.(type) {
+	switch v := health.GetTotalReadyPodsOpt().(type) {
 	case *storage.CollectorHealthInfo_TotalReadyPods:
 		actual = v.TotalReadyPods
 	case nil:
 		actual = -1
 	default:
-		s.FailNowf("Unexpected total ready pods value type", "actual value: %#v", health.TotalReadyPodsOpt)
+		s.FailNowf("Unexpected total ready pods value type", "actual value: %#v", health.GetTotalReadyPodsOpt())
 	}
-	s.Equalf(expected, actual, "Unexpected value of total ready pods %#v", health.TotalReadyPodsOpt)
+	s.Equalf(expected, actual, "Unexpected value of total ready pods %#v", health.GetTotalReadyPodsOpt())
 }
 
 func (s *UpdaterTestSuite) assertTotalRegisteredNodes(health *storage.CollectorHealthInfo, expected int32) {
 	var actual int32
-	switch v := health.TotalRegisteredNodesOpt.(type) {
+	switch v := health.GetTotalRegisteredNodesOpt().(type) {
 	case *storage.CollectorHealthInfo_TotalRegisteredNodes:
 		actual = v.TotalRegisteredNodes
 	case nil:
 		actual = -1
 	default:
-		s.FailNowf("Unexpected total registered nodes value type", "actual value: %#v", health.TotalRegisteredNodesOpt)
+		s.FailNowf("Unexpected total registered nodes value type", "actual value: %#v", health.GetTotalRegisteredNodesOpt())
 	}
-	s.Equalf(expected, actual, "Unexpected value of total registered nodes %#v", health.TotalReadyPodsOpt)
+	s.Equalf(expected, actual, "Unexpected value of total registered nodes %#v", health.GetTotalReadyPodsOpt())
 }
 
 func (s *UpdaterTestSuite) assertStatusErrors(health *storage.CollectorHealthInfo, expected ...string) {
-	s.Len(health.StatusErrors, len(expected))
+	s.Len(health.GetStatusErrors(), len(expected))
 	for _, e := range expected {
 		var found int
-		for _, s := range health.StatusErrors {
+		for _, s := range health.GetStatusErrors() {
 			if strings.Contains(s, e) {
 				found++
 			}
@@ -461,7 +461,7 @@ func (s *UpdaterTestSuite) assertStatusErrors(health *storage.CollectorHealthInf
 				"Did not find expected error",
 				"Expected to find exactly 1 substring %#v in %#v, found %d",
 				e,
-				health.StatusErrors,
+				health.GetStatusErrors(),
 				found)
 		}
 	}

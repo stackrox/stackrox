@@ -123,21 +123,25 @@ func (s *watcherSuite) Test_CreateDeleteCRD() {
 		s.Run(tName, func() {
 			s.setupDynamicClient()
 			stopSig := concurrency.NewSignal()
-			callbackC := make(chan *watcher.Status)
-			defer func() {
-				stopSig.Done()
-				close(callbackC)
-			}()
 			// Create fake CRDs before starting the watcher
 			s.createFakeCRDs(tCase.resourcesToCreateBeforeWatch...)
 			w := s.createWatcher(&stopSig)
+			defer func() {
+				stopSig.Signal()
+				w.sif.Shutdown()
+			}()
 			for _, rName := range tCase.resourcesToCreateBeforeWatch {
-				s.Assert().NoError(w.AddResourceToWatch(rName))
+				s.NoError(w.AddResourceToWatch(rName))
 			}
 			for _, rName := range tCase.resourcesToCreateAfterWatch {
-				s.Assert().NoError(w.AddResourceToWatch(rName))
+				s.NoError(w.AddResourceToWatch(rName))
 			}
-			s.Assert().NoError(w.Watch(callbackC))
+			callbackC := make(chan *watcher.Status)
+			defer close(callbackC)
+			err := w.Watch(func(st *watcher.Status) {
+				callbackC <- st
+			})
+			s.NoError(err)
 
 			// Create fake CRDs after starting the watcher
 			s.createFakeCRDs(tCase.resourcesToCreateAfterWatch...)
@@ -146,16 +150,12 @@ func (s *watcherSuite) Test_CreateDeleteCRD() {
 
 			select {
 			case <-time.NewTimer(defaultTimeout).C:
-				s.Fail("timeout reached waiting for watcher to report")
+				s.FailNow("timeout reached waiting for watcher to report")
 			case st, ok := <-callbackC:
-				s.Assert().True(ok)
-				s.Assert().True(st.Available)
-				for _, rName := range tCase.resourcesToCreateBeforeWatch {
-					s.Assert().Contains(st.Resources, rName)
-				}
-				for _, rName := range tCase.resourcesToCreateAfterWatch {
-					s.Assert().Contains(st.Resources, rName)
-				}
+				s.True(ok)
+				s.True(st.Available)
+				s.Subset(st.Resources.AsSlice(), tCase.resourcesToCreateBeforeWatch)
+				s.Subset(st.Resources.AsSlice(), tCase.resourcesToCreateAfterWatch)
 			}
 
 			s.removeFakeCRDs(tCase.resourcesToCreateBeforeWatch...)
@@ -165,16 +165,12 @@ func (s *watcherSuite) Test_CreateDeleteCRD() {
 
 			select {
 			case <-time.NewTimer(defaultTimeout).C:
-				s.Fail("timeout reached waiting for watcher to report")
+				s.FailNow("timeout reached waiting for watcher to report")
 			case st, ok := <-callbackC:
-				s.Assert().True(ok)
-				s.Assert().False(st.Available)
-				for _, rName := range tCase.resourcesToCreateBeforeWatch {
-					s.Assert().Contains(st.Resources, rName)
-				}
-				for _, rName := range tCase.resourcesToCreateAfterWatch {
-					s.Assert().Contains(st.Resources, rName)
-				}
+				s.True(ok)
+				s.False(st.Available)
+				s.Subset(st.Resources.AsSlice(), tCase.resourcesToCreateBeforeWatch)
+				s.Subset(st.Resources.AsSlice(), tCase.resourcesToCreateAfterWatch)
 			}
 		})
 	}
@@ -183,12 +179,26 @@ func (s *watcherSuite) Test_CreateDeleteCRD() {
 func (s *watcherSuite) Test_AddResourceAfterWatchFails() {
 	s.setupDynamicClient()
 	stopSig := concurrency.NewSignal()
-	callbackC := make(chan *watcher.Status)
-	defer func() {
-		stopSig.Done()
-		close(callbackC)
-	}()
 	w := s.createWatcher(&stopSig)
-	s.Assert().NoError(w.Watch(callbackC))
-	s.Assert().Error(w.AddResourceToWatch(crdName))
+	defer func() {
+		stopSig.Signal()
+		w.sif.Shutdown()
+	}()
+	err := w.Watch(nil)
+	s.NoError(err)
+	s.Error(w.AddResourceToWatch(crdName))
+}
+
+func (s *watcherSuite) Test_WatchAfterWatchFails() {
+	s.setupDynamicClient()
+	stopSig := concurrency.NewSignal()
+	w := s.createWatcher(&stopSig)
+	defer func() {
+		stopSig.Signal()
+		w.sif.Shutdown()
+	}()
+	err := w.Watch(nil)
+	s.NoError(err)
+	err = w.Watch(nil)
+	s.Error(err)
 }

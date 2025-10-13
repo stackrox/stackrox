@@ -24,7 +24,7 @@ func NewJSONPrinterFactory(compact bool, escapeHTML bool) *JSONPrinterFactory {
 
 // AddFlags will add all JSONPrinter specific flags to the cobra.Command
 func (j *JSONPrinterFactory) AddFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().BoolVar(&j.Compact, "compact-output", j.Compact, "Print JSON output compact")
+	cmd.PersistentFlags().BoolVar(&j.Compact, "compact-output", j.Compact, "Print JSON output compact.")
 }
 
 // SupportedFormats returns the supported printer format that can be created by JSONPrinterFactory

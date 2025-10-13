@@ -3,14 +3,19 @@ import { createStructuredSelector } from 'reselect';
 
 import { selectors } from 'reducers';
 import { getHasReadPermission, getHasReadWritePermission } from 'reducers/roles';
-import { IntegrationSource } from '../utils/integrationUtils';
+import type { PermissionsMap } from 'services/RolesService';
+import type { IntegrationSource } from '../utils/integrationUtils';
 
 type UseIntegrationPermissionsResponse = Record<
     IntegrationSource,
     { read: boolean; write: boolean }
 >;
 
-const authProviderState = createStructuredSelector({
+type AuthProviderState = {
+    userRolePermissions: { resourceToAccess: PermissionsMap };
+};
+
+const authProviderState = createStructuredSelector<AuthProviderState>({
     userRolePermissions: selectors.getUserRolePermissions,
 });
 

@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useState, useCallback } from 'react';
-import { generatePath, Link, useHistory } from 'react-router-dom';
+import React, { useCallback, useState } from 'react';
+import type { ReactElement } from 'react';
+import { Link, generatePath } from 'react-router-dom-v5-compat';
 import pluralize from 'pluralize';
 
 import {
@@ -31,20 +31,19 @@ import { complianceEnhancedSchedulesPath } from 'routePaths';
 import DeleteModal from 'Components/PatternFly/DeleteModal';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import PageTitle from 'Components/PageTitle';
-import TabNavSubHeader from 'Components/TabNav/TabNavSubHeader';
 import useAlert from 'hooks/useAlert';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import {
     complianceReportDownloadURL,
-    ComplianceScanConfigurationStatus,
     deleteComplianceScanConfiguration,
     listComplianceScanConfigurations,
     runComplianceReport,
     runComplianceScanConfiguration,
 } from 'services/ComplianceScanConfigurationService';
-import { SortOption } from 'types/table';
+import type { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
+import type { SortOption } from 'types/table';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { displayOnlyItemOrItemCount } from 'utils/textUtils';
 
@@ -64,7 +63,6 @@ import useWatchLastSnapshotForComplianceReports from './hooks/useWatchLastSnapsh
 
 type ScanConfigsTablePageProps = {
     hasWriteAccessForCompliance: boolean;
-    isReportJobsEnabled: boolean;
 };
 
 const CreateScanConfigButton = () => {
@@ -83,8 +81,7 @@ const defaultSortOption = {
 
 function ScanConfigsTablePage({
     hasWriteAccessForCompliance,
-    isReportJobsEnabled,
-}: ScanConfigsTablePageProps): React.ReactElement {
+}: ScanConfigsTablePageProps): ReactElement {
     const { currentUser } = useAuthStatus();
     const { analyticsTrack } = useAnalytics();
 
@@ -110,11 +107,8 @@ function ScanConfigsTablePage({
 
     const { alertObj, setAlertObj, clearAlertObj } = useAlert();
 
-    let colSpan = 5;
+    let colSpan = 6;
     if (hasWriteAccessForCompliance) {
-        colSpan += 1;
-    }
-    if (isReportJobsEnabled) {
         colSpan += 1;
     }
 
@@ -251,16 +245,14 @@ function ScanConfigsTablePage({
                     <Td dataLabel="Profiles">
                         {displayOnlyItemOrItemCount(scanConfig.profiles, 'profiles')}
                     </Td>
-                    {isReportJobsEnabled && (
-                        <Td dataLabel="My last job status">
-                            <MyLastJobStatus
-                                snapshot={snapshot}
-                                isLoadingSnapshots={isLoadingSnapshots}
-                                currentUserId={currentUser.userId}
-                                baseDownloadURL={complianceReportDownloadURL}
-                            />
-                        </Td>
-                    )}
+                    <Td dataLabel="My last job status">
+                        <MyLastJobStatus
+                            snapshot={snapshot}
+                            isLoadingSnapshots={isLoadingSnapshots}
+                            currentUserId={currentUser.userId}
+                            baseDownloadURL={complianceReportDownloadURL}
+                        />
+                    </Td>
                     {hasWriteAccessForCompliance && (
                         <Td isActionCell>
                             <ScanConfigActionsColumn
@@ -270,7 +262,6 @@ function ScanConfigsTablePage({
                                 handleGenerateDownload={handleGenerateDownload}
                                 scanConfigResponse={scanSchedule}
                                 isSnapshotStatusPending={isSnapshotStatusPending}
-                                isReportJobsEnabled={isReportJobsEnabled}
                             />
                         </Td>
                     )}
@@ -387,11 +378,23 @@ function ScanConfigsTablePage({
                                 <Th>Last scanned</Th>
                                 <Th>Clusters</Th>
                                 <Th>Profiles</Th>
-                                {isReportJobsEnabled && (
-                                    <HelpIconTh popoverContent={<JobStatusPopoverContent />}>
-                                        My last job status
-                                    </HelpIconTh>
-                                )}
+                                <HelpIconTh
+                                    popoverContent={
+                                        <JobStatusPopoverContent
+                                            statuses={[
+                                                'WAITING',
+                                                'PREPARING',
+                                                'DOWNLOAD_GENERATED',
+                                                'PARTIAL_SCAN_ERROR_DOWNLOAD',
+                                                'EMAIL_DELIVERED',
+                                                'PARTIAL_SCAN_ERROR_EMAIL',
+                                                'ERROR',
+                                            ]}
+                                        />
+                                    }
+                                >
+                                    My last job status
+                                </HelpIconTh>
                                 {hasWriteAccessForCompliance && (
                                     <Th>
                                         <span className="pf-v5-screen-reader">Row actions</span>

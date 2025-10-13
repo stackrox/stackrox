@@ -20,20 +20,20 @@ func checkClusterName(_ context.Context, sc *platform.SecuredCluster, _ ctrlClie
 	if sc.DeletionTimestamp != nil {
 		return nil // doesn't matter on deletion
 	}
-	if sc.Spec.ClusterName == "" {
+	if sc.Spec.ClusterName == nil || *sc.Spec.ClusterName == "" {
 		return errors.New("spec.clusterName is a required field")
 	}
-	if sc.Spec.ClusterName == sc.Status.ClusterName {
+	if *sc.Spec.ClusterName == sc.Status.ClusterName {
 		return nil
 	}
 	if sc.Status.ClusterName != "" {
 		return errors.Errorf("SecuredCluster instance was initially created with clusterName %q, but current value is %q. "+
 			"Renaming clusters is not supported - you need to delete this object, and then recreate one with the correct cluster name.",
-			sc.Status.ClusterName, sc.Spec.ClusterName)
+			sc.Status.ClusterName, *sc.Spec.ClusterName)
 	}
 
 	statusUpdater(func(status *platform.SecuredClusterStatus) bool {
-		status.ClusterName = sc.Spec.ClusterName
+		status.ClusterName = *sc.Spec.ClusterName
 		return true
 	})
 	return nil

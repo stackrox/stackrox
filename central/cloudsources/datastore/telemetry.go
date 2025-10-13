@@ -43,9 +43,7 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 		}
 
 		// Can safely ignore the error here since we already fetched integrations.
-		_ = phonehome.AddTotal(ctx, props, propertyName, func(_ context.Context) (int, error) {
-			return len(cloudSources), nil
-		})
+		_ = phonehome.AddTotal(ctx, props, propertyName, phonehome.Len(cloudSources))
 
 		totalCount := map[string]int{}
 		for csType := range storage.CloudSource_Type_value {
@@ -56,9 +54,11 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 			totalCount[trimPrefix(cs.GetType().String())]++
 		}
 
+		titleCase := cases.Title(language.English, cases.Compact).String
+
 		for csType, count := range totalCount {
 			props[fmt.Sprintf("Total %s %s",
-				cases.Title(language.English, cases.Compact).String(csType), propertyName)] = count
+				titleCase(csType), propertyName)] = count
 		}
 
 		return props, nil

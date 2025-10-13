@@ -114,7 +114,7 @@ func (resolver *serviceAccountResolver) K8sRoles(ctx context.Context, args Pagin
 	if err != nil {
 		return nil, err
 	}
-	pagination := q.Pagination
+	pagination := q.GetPagination()
 	q.Pagination = nil
 
 	bindings, roles, err := resolver.getRolesAndBindings(ctx, q)
@@ -246,7 +246,7 @@ func (resolver *serviceAccountResolver) getEvaluators(ctx context.Context) (map[
 
 	ctx = scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_CLUSTERS,
-		ID:    saClusterID,
+		IDs:   []string{saClusterID},
 	})
 
 	namespaces, err := resolver.root.Namespaces(ctx, PaginatedQuery{})
@@ -275,7 +275,7 @@ func (resolver *serviceAccountResolver) ImagePullSecretCount(ctx context.Context
 	if err := readSecrets(ctx); err != nil {
 		return 0, err
 	}
-	return int32(len(resolver.data.ImagePullSecrets)), nil
+	return int32(len(resolver.data.GetImagePullSecrets())), nil
 }
 
 func (resolver *serviceAccountResolver) ImagePullSecretObjects(ctx context.Context, args RawQuery) ([]*secretResolver, error) {

@@ -17,6 +17,7 @@ var (
 	ContainerMemLimit              = newFieldName("Container Memory Limit")
 	ContainerMemRequest            = newFieldName("Container Memory Request")
 	ContainerName                  = newFieldName("Container Name")
+	DaysSincePublished             = newFieldName("Days Since CVE Was Published")
 	DaysSinceImageFirstDiscovered  = newFieldName("Days Since CVE Was First Discovered In Image")
 	DaysSinceSystemFirstDiscovered = newFieldName("Days Since CVE Was First Discovered In System")
 	DisallowedAnnotation           = newFieldName("Disallowed Annotation")

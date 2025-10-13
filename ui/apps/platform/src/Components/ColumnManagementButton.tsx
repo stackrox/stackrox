@@ -2,32 +2,35 @@ import React, { useState } from 'react';
 
 import { ColumnManagementModal } from '@patternfly/react-component-groups';
 import { Button } from '@patternfly/react-core';
-
-import { ColumnConfig, ManagedColumns } from 'hooks/useManagedColumns';
 import { CogIcon } from '@patternfly/react-icons';
 
+import type { ColumnConfig } from 'hooks/useManagedColumns';
+
 export type ColumnManagementButtonProps<ColumnKey extends string> = {
-    managedColumnState: ManagedColumns<ColumnKey>;
+    columnConfig: Record<ColumnKey, ColumnConfig>;
+    onApplyColumns: (columns: Record<string, boolean>) => void;
 };
 
 function ColumnManagementButton<ColumnKey extends string>({
-    managedColumnState,
+    columnConfig,
+    onApplyColumns,
 }: ColumnManagementButtonProps<ColumnKey>) {
     const [isOpen, setOpen] = useState(false);
-    const { columns, setVisibility } = managedColumnState;
-    const enabledColumnCount = Object.values<ColumnConfig>(columns).filter(
-        ({ isShown }) => isShown
+    const enabledColumnCount = Object.values<ColumnConfig>(columnConfig).filter(
+        ({ isShown, isUntoggleAble }) => isShown && !isUntoggleAble
     ).length;
 
     return (
         <>
             <ColumnManagementModal
-                appliedColumns={Object.values(columns)}
+                appliedColumns={Object.values<ColumnConfig>(columnConfig).filter(
+                    (c) => !c.isUntoggleAble
+                )}
                 applyColumns={(newColumns) => {
                     const nextState = Object.fromEntries(
                         newColumns.map(({ key, isShown }) => [key, isShown ?? false])
                     );
-                    setVisibility(nextState);
+                    onApplyColumns(nextState);
                 }}
                 isOpen={isOpen}
                 onClose={() => setOpen(false)}

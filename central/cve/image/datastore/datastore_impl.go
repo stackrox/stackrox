@@ -7,7 +7,6 @@ import (
 	"github.com/cloudflare/cfssl/log"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cve/common"
-	"github.com/stackrox/rox/central/cve/image/datastore/search"
 	"github.com/stackrox/rox/central/cve/image/datastore/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -33,8 +32,7 @@ var (
 )
 
 type datastoreImpl struct {
-	storage  store.Store
-	searcher search.Searcher
+	storage store.Store
 
 	cveSuppressionLock  sync.RWMutex
 	cveSuppressionCache common.CVESuppressionCache
@@ -51,7 +49,7 @@ func getSuppressionCacheEntry(cve *storage.ImageCVE) common.SuppressionCacheEntr
 
 func (ds *datastoreImpl) buildSuppressedCache() {
 	query := pkgSearch.NewQueryBuilder().AddBools(pkgSearch.CVESuppressed, true).ProtoQuery()
-	suppressedCVEs, err := ds.searcher.SearchRawImageCVEs(accessAllCtx, query)
+	suppressedCVEs, err := ds.SearchRawImageCVEs(accessAllCtx, query)
 	if err != nil {
 		log.Error(errors.Wrap(err, "Vulnerability exception management may not function correctly. Failed to build cache of CVE exceptions."))
 		return
@@ -65,18 +63,33 @@ func (ds *datastoreImpl) buildSuppressedCache() {
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
-	return ds.searcher.Search(ctx, q)
+	return ds.storage.Search(ctx, q)
 }
 
 func (ds *datastoreImpl) SearchImageCVEs(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	return ds.searcher.SearchImageCVEs(ctx, q)
-}
-
-func (ds *datastoreImpl) SearchRawImageCVEs(ctx context.Context, q *v1.Query) ([]*storage.ImageCVE, error) {
-	cves, err := ds.searcher.SearchRawImageCVEs(ctx, q)
+	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return nil, err
 	}
+
+	cves, missingIndices, err := ds.storage.GetMany(ctx, pkgSearch.ResultsToIDs(results))
+	if err != nil {
+		return nil, err
+	}
+	results = pkgSearch.RemoveMissingResults(results, missingIndices)
+	return convertMany(cves, results)
+}
+
+func (ds *datastoreImpl) SearchRawImageCVEs(ctx context.Context, q *v1.Query) ([]*storage.ImageCVE, error) {
+	var cves []*storage.ImageCVE
+	err := ds.storage.GetByQueryFn(ctx, q, func(cve *storage.ImageCVE) error {
+		cves = append(cves, cve)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	return cves, nil
 }
 
@@ -84,7 +97,7 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	if q == nil {
 		q = pkgSearch.EmptyQuery()
 	}
-	return ds.searcher.Count(ctx, q)
+	return ds.storage.Count(ctx, q)
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ImageCVE, bool, error) {
@@ -123,7 +136,7 @@ func (ds *datastoreImpl) Suppress(ctx context.Context, start *time.Time, duratio
 		return err
 	}
 
-	vulns, err := ds.searcher.SearchRawImageCVEs(ctx, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, cves...).ProtoQuery())
+	vulns, err := ds.SearchRawImageCVEs(ctx, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, cves...).ProtoQuery())
 	if err != nil {
 		return err
 	}
@@ -151,7 +164,7 @@ func (ds *datastoreImpl) Unsuppress(ctx context.Context, cves ...string) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	vulns, err := ds.searcher.SearchRawImageCVEs(ctx, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, cves...).ProtoQuery())
+	vulns, err := ds.SearchRawImageCVEs(ctx, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, cves...).ProtoQuery())
 	if err != nil {
 		return err
 	}
@@ -179,7 +192,7 @@ func (ds *datastoreImpl) ApplyException(ctx context.Context, start, expiry *time
 		return sac.ErrResourceAccessDenied
 	}
 
-	vulns, err := ds.searcher.SearchRawImageCVEs(ctx,
+	vulns, err := ds.SearchRawImageCVEs(ctx,
 		pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, cves...).ProtoQuery())
 	if err != nil {
 		return err
@@ -202,7 +215,7 @@ func (ds *datastoreImpl) RevertException(ctx context.Context, cves ...string) er
 		return sac.ErrResourceAccessDenied
 	}
 
-	vulns, err := ds.searcher.SearchRawImageCVEs(ctx,
+	vulns, err := ds.SearchRawImageCVEs(ctx,
 		pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, cves...).ProtoQuery())
 	if err != nil {
 		return err
@@ -232,6 +245,11 @@ func (ds *datastoreImpl) EnrichImageWithSuppressedCVEs(image *storage.Image) {
 			}
 		}
 	}
+}
+
+func (ds *datastoreImpl) EnrichImageV2WithSuppressedCVEs(image *storage.ImageV2) {
+	// do nothing, this is a no-op for the normalized CVE datastore.
+	// Had to add this to satisfy the changes to the CVESuppressor interface.
 }
 
 func getSuppressExpiry(start *time.Time, duration *time.Duration) (*time.Time, error) {
@@ -270,4 +288,26 @@ func gatherKeys(vulns []*storage.ImageCVE) [][]byte {
 		keys = append(keys, []byte(vuln.GetId()))
 	}
 	return keys
+}
+
+func convertMany(cves []*storage.ImageCVE, results []pkgSearch.Result) ([]*v1.SearchResult, error) {
+	if len(cves) != len(results) {
+		return nil, errors.Errorf("expected %d CVEs but got %d", len(results), len(cves))
+	}
+
+	outputResults := make([]*v1.SearchResult, len(cves))
+	for index, sar := range cves {
+		outputResults[index] = convertOne(sar, &results[index])
+	}
+	return outputResults, nil
+}
+
+func convertOne(cve *storage.ImageCVE, result *pkgSearch.Result) *v1.SearchResult {
+	return &v1.SearchResult{
+		Category:       v1.SearchCategory_IMAGE_VULNERABILITIES,
+		Id:             cve.GetId(),
+		Name:           cve.GetCveBaseInfo().GetCve(),
+		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
+		Score:          result.Score,
+	}
 }

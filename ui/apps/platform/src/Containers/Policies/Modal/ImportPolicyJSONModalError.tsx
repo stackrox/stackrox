@@ -16,7 +16,7 @@ import DuplicatePolicyForm from './DuplicatePolicyForm';
 
 const RESOLUTION = { resolution: '', newName: '' };
 
-type ImportPolicyJSONErrorProps = {
+type ImportPolicyJSONModalErrorProps = {
     handleCancelModal: () => void;
     startImportPolicies: () => void;
     policies: Policy[];
@@ -26,7 +26,7 @@ type ImportPolicyJSONErrorProps = {
     setDuplicateResolution: (duplicateResolution) => void;
 };
 
-function ImportPolicyJSONError({
+function ImportPolicyJSONModalError({
     handleCancelModal,
     startImportPolicies,
     policies,
@@ -34,7 +34,7 @@ function ImportPolicyJSONError({
     duplicateResolution,
     setDuplicateResolution,
     errorMessages,
-}: ImportPolicyJSONErrorProps): ReactElement {
+}: ImportPolicyJSONModalErrorProps): ReactElement {
     function updateResolution(key, value) {
         setDuplicateResolution({ ...duplicateResolution, [key]: value });
     }
@@ -118,4 +118,4 @@ function ImportPolicyJSONError({
     );
 }
 
-export default ImportPolicyJSONError;
+export default ImportPolicyJSONModalError;

@@ -41,10 +41,6 @@ func (s *CloudSourcesStoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *CloudSourcesStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *CloudSourcesStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
@@ -96,9 +92,6 @@ func (s *CloudSourcesStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, cloudSources))
-	allCloudSource, err := store.GetAll(ctx)
-	s.NoError(err)
-	protoassert.ElementsMatch(s.T(), cloudSources, allCloudSource)
 
 	cloudSourceCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

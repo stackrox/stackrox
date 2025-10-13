@@ -1,10 +1,11 @@
-import React, { FunctionComponent, ReactElement } from 'react';
-import { useHistory } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import type { FunctionComponent, PropsWithChildren, ReactElement } from 'react';
+import { useNavigate } from 'react-router-dom-v5-compat';
 
-import { isUserResource } from 'Containers/AccessControl/traits';
+import { isUserResource } from 'utils/traits.utils';
 import useCentralCapabilities from 'hooks/useCentralCapabilities';
 import { integrationsPath } from 'routePaths';
-import { Integration, IntegrationSource, IntegrationType } from '../utils/integrationUtils';
+import type { Integration, IntegrationSource, IntegrationType } from '../utils/integrationUtils';
 
 // image integrations
 import ArtifactRegistryIntegrationForm from './Forms/ArtifactRegistryIntegrationForm';
@@ -23,13 +24,13 @@ import QuayIntegrationForm from './Forms/QuayIntegrationForm';
 import RhelIntegrationForm from './Forms/RhelIntegrationForm';
 import ScannerV4IntegrationForm from './Forms/ScannerV4IntegrationForm';
 // notifiers
-import ACSCSEmailIntegrationForm from './Forms/AcscsEmailIntegrationForm';
+import AcscsEmailIntegrationForm from './Forms/AcscsEmailIntegrationForm';
 import AwsSecurityHubIntegrationForm from './Forms/AwsSecurityHubIntegrationForm';
 import EmailIntegrationForm from './Forms/EmailIntegrationForm';
 import GenericWebhookIntegrationForm from './Forms/GenericWebhookIntegrationForm';
 import GoogleCloudSccIntegrationForm from './Forms/GoogleCloudSccIntegrationForm';
 import JiraIntegrationForm from './Forms/JiraIntegrationForm';
-import MicrosoftSentinelForm from './Forms/MicrosoftSentinelForm';
+import MicrosoftSentinelIntegrationForm from './Forms/MicrosoftSentinelIntegrationForm';
 import PagerDutyIntegrationForm from './Forms/PagerDutyIntegrationForm';
 import SlackIntegrationForm from './Forms/SlackIntegrationForm';
 import SplunkIntegrationForm from './Forms/SplunkIntegrationForm';
@@ -96,13 +97,13 @@ const ComponentFormMap = {
         scannerv4: ScannerV4IntegrationForm,
     },
     notifiers: {
-        acscsEmail: ACSCSEmailIntegrationForm,
+        acscsEmail: AcscsEmailIntegrationForm,
         awsSecurityHub: AwsSecurityHubIntegrationForm,
         cscc: GoogleCloudSccIntegrationForm,
         email: EmailIntegrationForm,
         generic: GenericWebhookIntegrationForm,
         jira: JiraIntegrationForm,
-        microsoftSentinel: MicrosoftSentinelForm,
+        microsoftSentinel: MicrosoftSentinelIntegrationForm,
         pagerduty: PagerDutyIntegrationForm,
         slack: SlackIntegrationForm,
         splunk: SplunkIntegrationForm,
@@ -115,7 +116,7 @@ const ComponentFormMap = {
     },
 } as Record<
     IntegrationSource,
-    Record<IntegrationType, FunctionComponent<React.PropsWithChildren<FormProps>>>
+    Record<IntegrationType, FunctionComponent<PropsWithChildren<FormProps>>>
 >;
 
 function IntegrationForm({
@@ -124,17 +125,19 @@ function IntegrationForm({
     initialValues,
     isEditable,
 }: IntegrationFormProps): ReactElement {
-    const history = useHistory();
+    const navigate = useNavigate();
 
     const { isCentralCapabilityAvailable } = useCentralCapabilities();
     const canUseCloudBackupIntegrations = isCentralCapabilityAvailable(
         'centralCanUseCloudBackupIntegrations'
     );
-    if (!canUseCloudBackupIntegrations && source === 'backups') {
-        history.replace(integrationsPath);
-    }
+    useEffect(() => {
+        if (!canUseCloudBackupIntegrations && source === 'backups') {
+            navigate(integrationsPath, { replace: true });
+        }
+    }, [canUseCloudBackupIntegrations, source, navigate]);
 
-    const Form: FunctionComponent<React.PropsWithChildren<FormProps>> =
+    const Form: FunctionComponent<PropsWithChildren<FormProps>> =
         ComponentFormMap?.[source]?.[type];
     if (!Form) {
         throw new Error(

@@ -53,16 +53,18 @@ message Deployment {
   bool platform_component = 35; // @gotags: search:"Platform Component"
 }
 
-// Next tag: 12
+// Next tag: 13
 message ContainerImage {
   // These tags maintain backwards compatibility with the previously embedded storage.Image
   // Tags after 10 may be used as needed
   reserved 2, 3, 5, 6, 7, 8, 9;
-  string id = 4; // @gotags: search:"Image Sha,store,hidden" sql:"fk(Image:id),no-fk-constraint,index=hash"
+  string id = 4 [deprecated = true]; // @gotags: search:"Image Sha,store,hidden" sql:"fk(Image:id),no-fk-constraint,index=hash"
   ImageName name = 1;
   bool not_pullable = 10;
 
   bool is_cluster_local = 11;
+
+  string id_v2 = 12; // @gotags: search:"Image ID,hidden" sql:"fk(ImageV2:id),no-fk-constraint,index=btree,allow-null"
 }
 
 message Container {

@@ -1,23 +1,18 @@
 import React from 'react';
-import { useQuery } from '@apollo/client';
 import { Divider, ToolbarItem } from '@patternfly/react-core';
 
 import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
 
 import { getTableUIState } from 'utils/getTableUIState';
-import { getPaginationParams } from 'utils/searchUtils';
 import { SearchFilter } from 'types/search';
-import { useManagedColumns } from 'hooks/useManagedColumns';
+import { overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
+import type { ColumnConfigOverrides } from 'hooks/useManagedColumns';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
-import DeploymentsTable, {
-    defaultColumns,
-    Deployment,
-    deploymentListQuery,
-    tableId,
-} from '../Tables/DeploymentOverviewTable';
+import DeploymentsTable, { defaultColumns, tableId } from '../Tables/DeploymentOverviewTable';
 import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
 import { VulnerabilitySeverityLabel } from '../../types';
+import { useDeployments } from './useDeployments';
 
 type DeploymentsTableContainerProps = {
     searchFilter: SearchFilter;
@@ -29,7 +24,7 @@ type DeploymentsTableContainerProps = {
     sort: ReturnType<typeof useURLSort>;
     workloadCvesScopedQueryString: string;
     isFiltered: boolean;
-    showCveDetailFields: boolean;
+    deploymentTableColumnOverrides: ColumnConfigOverrides<keyof typeof defaultColumns>;
 };
 
 function DeploymentsTableContainer({
@@ -42,18 +37,14 @@ function DeploymentsTableContainer({
     sort,
     workloadCvesScopedQueryString,
     isFiltered,
-    showCveDetailFields,
+    deploymentTableColumnOverrides,
 }: DeploymentsTableContainerProps) {
-    const { page, perPage } = pagination;
     const { sortOption, getSortParams } = sort;
 
-    const { error, loading, data } = useQuery<{
-        deployments: Deployment[];
-    }>(deploymentListQuery, {
-        variables: {
-            query: workloadCvesScopedQueryString,
-            pagination: getPaginationParams({ page, perPage, sortOption }),
-        },
+    const { error, loading, data } = useDeployments({
+        query: workloadCvesScopedQueryString,
+        pagination,
+        sortOption,
     });
 
     const tableState = getTableUIState({
@@ -65,6 +56,11 @@ function DeploymentsTableContainer({
 
     const managedColumnState = useManagedColumns(tableId, defaultColumns);
 
+    const columnConfig = overrideManagedColumns(
+        managedColumnState.columns,
+        deploymentTableColumnOverrides
+    );
+
     return (
         <>
             <TableEntityToolbar
@@ -75,12 +71,15 @@ function DeploymentsTableContainer({
                 isFiltered={isFiltered}
             >
                 <ToolbarItem align={{ default: 'alignRight' }}>
-                    <ColumnManagementButton managedColumnState={managedColumnState} />
+                    <ColumnManagementButton
+                        columnConfig={columnConfig}
+                        onApplyColumns={managedColumnState.setVisibility}
+                    />
                 </ToolbarItem>
             </TableEntityToolbar>
             <Divider component="div" />
             <div
-                className="workload-cves-table-container"
+                style={{ overflowX: 'auto' }}
                 aria-live="polite"
                 aria-busy={loading ? 'true' : 'false'}
             >
@@ -89,12 +88,11 @@ function DeploymentsTableContainer({
                     getSortParams={getSortParams}
                     isFiltered={isFiltered}
                     filteredSeverities={searchFilter.SEVERITY as VulnerabilitySeverityLabel[]}
-                    showCveDetailFields={showCveDetailFields}
                     onClearFilters={() => {
                         onFilterChange({});
                         pagination.setPage(1);
                     }}
-                    columnVisibilityState={managedColumnState.columns}
+                    columnVisibilityState={columnConfig}
                 />
             </div>
         </>

@@ -1,8 +1,12 @@
 package clusterentities
 
 import (
+	"slices"
+	"sort"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/net"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -71,7 +75,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryWhenGoingOffline() {
 	}
 	for name, tc := range cases {
 		s.Run(name, func() {
-			entityStore := NewStoreWithMemory(tc.numTicksToRemember, true)
+			entityStore := NewStore(tc.numTicksToRemember, nil, true)
 			entityStore.Apply(tc.initialState, true)
 			// We start online
 			s.Len(entityStore.podIPsStore.ipMap, tc.wantMapSizeOnline)
@@ -94,6 +98,151 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryWhenGoingOffline() {
 			s.Len(entityStore.podIPsStore.historicalIPs, tc.wantHistorySizeOffline, "error in historical IPs after cleanup")
 			s.Len(entityStore.endpointsStore.historicalEndpoints, tc.wantHistorySizeOffline, "error in historical endpoints after cleanup")
 			s.Len(entityStore.containerIDsStore.historicalContainerIDs, tc.wantHistorySizeOffline, "error in historical container IDs after cleanup")
+		})
+	}
+}
+
+func TestEntityData_GetContainerIDs(t *testing.T) {
+	tests := map[string]struct {
+		edFun              func() *EntityData
+		containerNameQuery string
+		wantContainerIDs   []string
+	}{
+		"Single containerID with matching name": {
+			edFun: func() *EntityData {
+				ed := &EntityData{}
+				ed.AddContainerID("abc", ContainerMetadata{
+					ContainerName: "container-abc",
+				})
+				return ed
+			},
+			containerNameQuery: "container-abc",
+			wantContainerIDs:   []string{"abc"},
+		},
+		"Single containerID with no match in name": {
+			edFun: func() *EntityData {
+				ed := &EntityData{}
+				ed.AddContainerID("abc", ContainerMetadata{
+					ContainerName: "container-123",
+				})
+				return ed
+			},
+			containerNameQuery: "container-abc",
+			wantContainerIDs:   []string{},
+		},
+		"Multiple containers sorted by name": {
+			edFun: func() *EntityData {
+				ed := &EntityData{}
+				ed.AddContainerID("abc", ContainerMetadata{
+					ContainerName: "container-abc",
+				})
+				ed.AddContainerID("def", ContainerMetadata{
+					ContainerName: "container-def",
+				})
+				return ed
+			},
+			containerNameQuery: "container-abc",
+			wantContainerIDs:   []string{"abc"},
+		},
+		"Multiple containers unsorted by name": {
+			edFun: func() *EntityData {
+				ed := &EntityData{}
+				ed.AddContainerID("def", ContainerMetadata{
+					ContainerName: "container-def",
+				})
+				ed.AddContainerID("abc", ContainerMetadata{
+					ContainerName: "container-abc",
+				})
+				return ed
+			},
+			containerNameQuery: "container-abc",
+			wantContainerIDs:   []string{"abc"},
+		},
+		"Multiple container IDs for the same container name (impossible in prod)": {
+			edFun: func() *EntityData {
+				ed := &EntityData{}
+				ed.AddContainerID("def", ContainerMetadata{
+					ContainerName: "container-def",
+				})
+				ed.AddContainerID("xyz", ContainerMetadata{
+					ContainerName: "container-def",
+				})
+				return ed
+			},
+			containerNameQuery: "container-def",
+			wantContainerIDs:   []string{"def", "xyz"},
+		},
+		"No Container ID": {
+			edFun: func() *EntityData {
+				ed := &EntityData{}
+				return ed
+			},
+			containerNameQuery: "container-abc",
+			wantContainerIDs:   []string{},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			ed := tt.edFun()
+			gotContainerIDs := ed.GetContainerIDs(tt.containerNameQuery)
+			// Sort as GetDetails is not guaranteed to return sorted data.
+			slices.Sort(gotContainerIDs)
+			assert.ElementsMatch(t, tt.wantContainerIDs, gotContainerIDs)
+		})
+	}
+}
+
+func TestEntityData_GetPodIPs(t *testing.T) {
+	tests := map[string]struct {
+		edFun      func() *EntityData
+		wantPodIPs []net.IPAddress
+	}{
+		"Single values": {
+			edFun: func() *EntityData {
+				ed := &EntityData{}
+				ed.AddIP(net.ParseIP("10.0.0.1"))
+				return ed
+			},
+			wantPodIPs: []net.IPAddress{net.ParseIP("10.0.0.1")},
+		},
+		"Multiple sorted values": {
+			edFun: func() *EntityData {
+				ed := &EntityData{}
+				ed.AddIP(net.ParseIP("10.0.0.1"))
+				ed.AddIP(net.ParseIP("10.0.0.2"))
+				return ed
+			},
+			wantPodIPs: []net.IPAddress{net.ParseIP("10.0.0.1"), net.ParseIP("10.0.0.2")},
+		},
+		"Multiple unsorted values": {
+			edFun: func() *EntityData {
+				ed := &EntityData{}
+				ed.AddIP(net.ParseIP("10.0.0.9"))
+				ed.AddIP(net.ParseIP("10.0.0.2"))
+				return ed
+			},
+			wantPodIPs: []net.IPAddress{net.ParseIP("10.0.0.9"), net.ParseIP("10.0.0.2")},
+		},
+		"Invalid IP": {
+			edFun: func() *EntityData {
+				ed := &EntityData{}
+				ed.AddIP(net.ParseIP("foo.bar.baz.boom"))
+				ed.AddIP(net.ParseIP("10.0.0.2"))
+				ed.AddContainerID("abc", ContainerMetadata{})
+				return ed
+			},
+			wantPodIPs: []net.IPAddress{net.ParseIP("10.0.0.2")},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			ed := tt.edFun()
+			gotPodIPs := ed.GetValidIPs()
+			// Sort as GetDetails is not guaranteed to return sorted data.
+			sort.Slice(gotPodIPs, func(i, j int) bool {
+				return net.IPAddressLess(gotPodIPs[i], gotPodIPs[j])
+			})
+			assert.ElementsMatch(t, tt.wantPodIPs, gotPodIPs)
 		})
 	}
 }

@@ -132,6 +132,8 @@ func MatchFieldQuery(dbField *walker.Field, derivedMetadata *walker.DerivedSearc
 			dataType = postgres.Integer
 		case search.MaxDerivationType:
 			qualifiedColName = fmt.Sprintf("max(%s)", qualifiedColName)
+		case search.MinDerivationType:
+			qualifiedColName = fmt.Sprintf("min(%s)", qualifiedColName)
 		default:
 			return nil, errors.Errorf("unsupported derivation type %s", derivedMetadata.DerivationType)
 		}

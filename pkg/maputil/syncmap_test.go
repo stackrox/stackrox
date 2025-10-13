@@ -7,13 +7,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSyncMapStoreLoad(t *testing.T) {
+func TestSyncMapStoreLoadContains(t *testing.T) {
 	m := NewSyncMap[string, int]()
 	m.Store("a", 1)
 	m.Store("a", 2)
 	v, ok := m.Load("a")
 	assert.True(t, ok)
 	assert.Equal(t, 2, v)
+	assert.True(t, m.Contains("a"))
+	assert.False(t, m.Contains("b"))
 }
 
 func TestSyncMap(t *testing.T) {

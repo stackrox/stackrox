@@ -1,17 +1,16 @@
 import React from 'react';
-import { Route, Switch, Redirect } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom-v5-compat';
 
 import usePageAction from 'hooks/usePageAction';
 import usePermissions from 'hooks/usePermissions';
-import { vulnerabilityReportsPath } from 'routePaths';
 
-import VulnReportsPage from './VulnReports/VulnReportsPage';
 import CreateVulnReportPage from './ModifyVulnReport/CreateVulnReportPage';
 import EditVulnReportPage from './ModifyVulnReport/EditVulnReportPage';
 import CloneVulnReportPage from './ModifyVulnReport/CloneVulnReportPage';
 import ViewVulnReportPage from './ViewVulnReport/ViewVulnReportPage';
-
-import { vulnerabilityReportPath } from './pathsForVulnerabilityReporting';
+import ConfigReportsTab from './VulnReports/ConfigReportsTab';
+import ViewBasedReportsTab from './VulnReports/ViewBasedReportsTab';
+import VulnReportingLayout from './VulnReports/VulnReportingLayout';
 
 import './VulnReportingPage.css';
 
@@ -26,35 +25,35 @@ function VulnReportingPage() {
         hasReadAccess('Image') && // for vulnerabilities
         hasReadAccess('Integration'); // for notifiers
 
+    // TODO: Modify routing for edge cases - https://github.com/stackrox/stackrox/pull/14873#discussion_r2042672432
     return (
-        <Switch>
+        <Routes>
             <Route
-                exact
-                path={vulnerabilityReportsPath}
-                render={() => {
-                    if (pageAction === 'create' && hasWriteAccessForReport) {
-                        return <CreateVulnReportPage />;
-                    }
-                    if (pageAction === undefined) {
-                        return <VulnReportsPage />;
-                    }
-                    return <Redirect to={vulnerabilityReportsPath} />;
-                }}
-            />
+                element={
+                    pageAction === 'create' && hasWriteAccessForReport ? (
+                        <CreateVulnReportPage />
+                    ) : (
+                        <VulnReportingLayout />
+                    )
+                }
+            >
+                <Route index element={<Navigate to="configuration" replace />} />
+                <Route path="configuration" element={<ConfigReportsTab />} />
+                <Route path="view-based" element={<ViewBasedReportsTab />} />
+            </Route>
             <Route
-                exact
-                path={vulnerabilityReportPath}
-                render={() => {
-                    if (pageAction === 'edit' && hasWriteAccessForReport) {
-                        return <EditVulnReportPage />;
-                    }
-                    if (pageAction === 'clone' && hasWriteAccessForReport) {
-                        return <CloneVulnReportPage />;
-                    }
-                    return <ViewVulnReportPage />;
-                }}
+                path="/configuration/:reportId"
+                element={
+                    pageAction === 'edit' && hasWriteAccessForReport ? (
+                        <EditVulnReportPage />
+                    ) : pageAction === 'clone' && hasWriteAccessForReport ? (
+                        <CloneVulnReportPage />
+                    ) : (
+                        <ViewVulnReportPage />
+                    )
+                }
             />
-        </Switch>
+        </Routes>
     );
 }
 

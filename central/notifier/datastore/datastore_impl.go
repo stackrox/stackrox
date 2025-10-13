@@ -86,15 +86,15 @@ func (b *datastoreImpl) GetNotifiersFiltered(ctx context.Context, filter func(no
 		return nil, err
 	}
 	// TODO: ROX-16071 add ability to pass filter to storage
-	notifiers, err := b.storage.GetAll(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "getting notifiers from storage")
-	}
-	result := make([]*storage.Notifier, 0, len(notifiers))
-	for _, n := range notifiers {
+	var result []*storage.Notifier
+	err := b.storage.Walk(ctx, func(n *storage.Notifier) error {
 		if filter(n) {
 			result = append(result, n)
 		}
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "getting notifiers from storage")
 	}
 	return result, nil
 }
@@ -120,14 +120,14 @@ func (b *datastoreImpl) GetScrubbedNotifier(ctx context.Context, id string) (*st
 	return notifier, exists, err
 }
 
-func (b *datastoreImpl) GetNotifiers(ctx context.Context) ([]*storage.Notifier, error) {
+func (b *datastoreImpl) ForEachNotifier(ctx context.Context, fn func(obj *storage.Notifier) error) error {
 	if ok, err := integrationSAC.ReadAllowed(ctx); err != nil {
-		return nil, err
+		return err
 	} else if !ok {
-		return nil, nil
+		return nil
 	}
 
-	return b.storage.GetAll(ctx)
+	return b.storage.Walk(ctx, fn)
 }
 
 func (b *datastoreImpl) GetManyNotifiers(ctx context.Context, notifierIDs []string) ([]*storage.Notifier, error) {
@@ -138,17 +138,14 @@ func (b *datastoreImpl) GetManyNotifiers(ctx context.Context, notifierIDs []stri
 	return notifiers, nil
 }
 
-func (b *datastoreImpl) GetScrubbedNotifiers(ctx context.Context) ([]*storage.Notifier, error) {
-	notifiers, err := b.GetNotifiers(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, notifier := range notifiers {
+func (b *datastoreImpl) ForEachScrubbedNotifier(ctx context.Context, fn func(obj *storage.Notifier) error) error {
+	return b.ForEachNotifier(ctx, func(notifier *storage.Notifier) error {
 		secrets.ScrubSecretsFromStructWithReplacement(notifier, secrets.ScrubReplacementStr)
-	}
-
-	return notifiers, nil
+		if err := fn(notifier); err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 func (b *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {

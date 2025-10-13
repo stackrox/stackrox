@@ -33,13 +33,15 @@ describe('Vulnerability Management Image Components', () => {
         ]);
     });
 
-    it('should sort the Risk Priority column', () => {
+    // TODO - re-enable this test once the 4.8 release has been cut https://issues.redhat.com/browse/ROX-29614
+    it.skip('should sort the Risk Priority column', () => {
         visitVulnerabilityManagementEntities(entitiesKey);
 
         const thSelector = '.rt-th:contains("Risk Priority")';
         const tdSelector = '.rt-td:nth-child(9)';
 
         // 0. Initial table state indicates that the column is sorted ascending.
+        cy.get('.rt-table').scrollTo('bottom', { duration: 5000 });
         cy.get(thSelector).should('have.class', '-sort-asc');
         cy.get(tdSelector).then((items) => {
             assertSortedItems(items, callbackForPairOfAscendingNumberValuesFromElements);

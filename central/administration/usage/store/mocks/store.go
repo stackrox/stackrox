@@ -42,21 +42,6 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// GetByQuery mocks base method.
-func (m *MockStore) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.SecuredUnits, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByQuery", ctx, query)
-	ret0, _ := ret[0].([]*storage.SecuredUnits)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetByQuery indicates an expected call of GetByQuery.
-func (mr *MockStoreMockRecorder) GetByQuery(ctx, query any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByQuery", reflect.TypeOf((*MockStore)(nil).GetByQuery), ctx, query)
-}
-
 // Upsert mocks base method.
 func (m *MockStore) Upsert(ctx context.Context, obj *storage.SecuredUnits) error {
 	m.ctrl.T.Helper()
@@ -69,4 +54,18 @@ func (m *MockStore) Upsert(ctx context.Context, obj *storage.SecuredUnits) error
 func (mr *MockStoreMockRecorder) Upsert(ctx, obj any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), ctx, obj)
+}
+
+// WalkByQuery mocks base method.
+func (m *MockStore) WalkByQuery(ctx context.Context, query *v1.Query, fn func(*storage.SecuredUnits) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WalkByQuery", ctx, query, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WalkByQuery indicates an expected call of WalkByQuery.
+func (mr *MockStoreMockRecorder) WalkByQuery(ctx, query, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkByQuery", reflect.TypeOf((*MockStore)(nil).WalkByQuery), ctx, query, fn)
 }

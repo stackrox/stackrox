@@ -52,10 +52,6 @@ func (s *migrationTestSuite) SetupSuite() {
 	}
 }
 
-func (s *migrationTestSuite) TearDownSuite() {
-	s.db.Teardown(s.T())
-}
-
 func (s *migrationTestSuite) TestMigration() {
 	// Insert the policies to be migrated
 	for _, diff := range policyDiffs {
@@ -79,8 +75,8 @@ func (s *migrationTestSuite) TestMigration() {
 			s.Require().NoError(result.Error)
 			migratedPolicy, err := conversion.ConvertPolicyToProto(&foundPolicies[0])
 			s.Require().NoError(err)
-			protoassert.ElementsMatch(s.T(), migratedPolicy.Exclusions, afterPolicy.Exclusions, "exclusion do not match after migration")
-			protoassert.ElementsMatch(s.T(), migratedPolicy.PolicySections, afterPolicy.PolicySections, "policy sections do not match after migration")
+			protoassert.ElementsMatch(s.T(), migratedPolicy.GetExclusions(), afterPolicy.GetExclusions(), "exclusion do not match after migration")
+			protoassert.ElementsMatch(s.T(), migratedPolicy.GetPolicySections(), afterPolicy.GetPolicySections(), "policy sections do not match after migration")
 		})
 	}
 }

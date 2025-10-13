@@ -1,4 +1,5 @@
-import React, { ReactElement, ReactNode } from 'react';
+import React from 'react';
+import type { ReactElement, ReactNode } from 'react';
 
 /*
  * Display the contents of a health status cell in Clusters list or Cluster side panel

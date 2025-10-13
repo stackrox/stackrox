@@ -195,11 +195,11 @@ func TestConvertWithRegistryOverride(t *testing.T) {
 		},
 	}
 
-	storeProvider := InitializeStore()
+	storeProvider := InitializeStore(nil)
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			testutils.MustUpdateFeature(t, features.UnqualifiedSearchRegistries, c.enableUnqualifiedFeature)
-			for i, container := range base.expectedDeployment.Containers {
+			for i, container := range base.expectedDeployment.GetContainers() {
 				container.Image.Name = c.expectedImageNames[i]
 			}
 

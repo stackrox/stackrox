@@ -16,6 +16,8 @@ deploymentWorkload:
 networkWorkload:
   batchSize: 500
   flowInterval: 24h
+  generateUnclosedEndpoints: true
+  openPortReuseProbability: 0.05
 nodeWorkload:
   numNodes: 1000
 rbacWorkload:

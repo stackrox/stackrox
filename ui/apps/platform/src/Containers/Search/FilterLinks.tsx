@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import { Flex, FlexItem } from '@patternfly/react-core';
 
 import { SearchResultCategory } from 'services/SearchService';

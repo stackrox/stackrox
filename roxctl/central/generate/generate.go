@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/backup"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/certgen"
-	"github.com/stackrox/rox/pkg/containers"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
@@ -47,7 +46,7 @@ func generateJWTSigningKey(fileMap map[string][]byte) error {
 func restoreJWTSigningKey(fileMap map[string][]byte, backupBundle string) error {
 	z, err := zip.NewReader(backupBundle)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "opening JWT key backup bundle")
 	}
 	defer utils.IgnoreError(z.Close)
 
@@ -61,7 +60,7 @@ func restoreJWTSigningKey(fileMap map[string][]byte, backupBundle string) error 
 	case z.ContainsFile(path.Join(backup.KeysBaseFolder, backup.JwtKeyInPem)):
 		jwtKeyPem, err := z.ReadFrom(path.Join(backup.KeysBaseFolder, backup.JwtKeyInPem))
 		if err != nil {
-			return err
+			return errors.Wrap(err, "reading JWT key from backup bundle")
 		}
 		fileMap[certgen.JWTKeyPEMFileName] = jwtKeyPem
 		decode, _ := pem.Decode(jwtKeyPem)
@@ -78,27 +77,28 @@ func restoreJWTSigningKey(fileMap map[string][]byte, backupBundle string) error 
 func restoreCA(backupBundle string) (mtls.CA, error) {
 	z, err := zip.NewReader(backupBundle)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "opening CA backup bundle")
 	}
 	defer utils.IgnoreError(z.Close)
 
 	caCert, err := z.ReadFrom(path.Join(backup.KeysBaseFolder, backup.CaCertPem))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "reading CA certificate from backup bundle")
 	}
 
 	caKey, err := z.ReadFrom(path.Join(backup.KeysBaseFolder, backup.CaKeyPem))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "reading CA key from backup bundle")
 	}
 
-	return mtls.LoadCAForSigning(caCert, caKey)
+	ca, err := mtls.LoadCAForSigning(caCert, caKey)
+	return ca, errors.Wrap(err, "loading CA for signing")
 }
 
 func restoreCentralDBPassword(fileMap map[string][]byte, backupBundle string) error {
 	z, err := zip.NewReader(backupBundle)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "opening central DB credential backup bundle")
 	}
 	defer utils.IgnoreError(z.Close)
 
@@ -111,7 +111,7 @@ func restoreCentralDBPassword(fileMap map[string][]byte, backupBundle string) er
 
 	centralDBPass, err := z.ReadFrom(passPath)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "reading central DB password from backup bundle")
 	}
 
 	fileMap["central-db-password"] = centralDBPass
@@ -125,29 +125,29 @@ func populateMTLSFiles(fileMap map[string][]byte, backupBundle string) error {
 	switch backupBundle {
 	case "":
 		if ca, err = certgen.GenerateCA(); err != nil {
-			return err
+			return errors.Wrap(err, "generating CA")
 		}
 	default:
 		if ca, err = restoreCA(backupBundle); err != nil {
-			return err
+			return errors.Wrap(err, "restoring CA from backup bundle")
 		}
 
 		if err = restoreCentralDBPassword(fileMap, backupBundle); err != nil {
-			return err
+			return errors.Wrap(err, "restoring central DB password")
 		}
 	}
 	certgen.AddCAToFileMap(fileMap, ca)
 
 	if err := certgen.IssueCentralCert(fileMap, ca); err != nil {
-		return err
+		return errors.Wrap(err, "issuing central certificate")
 	}
 	if err := certgen.IssueOtherServiceCerts(fileMap, ca, []mtls.Subject{mtls.CentralDBSubject}); err != nil {
-		return err
+		return errors.Wrap(err, "issuing other service certificates")
 	}
 	fileMap["central-db-password"] = []byte(renderer.CreatePassword())
 
 	if err := certgen.IssueScannerCerts(fileMap, ca); err != nil {
-		return err
+		return errors.Wrap(err, "issuing scanner certificates for MTLS")
 	}
 
 	fileMap["scanner-db-password"] = []byte(renderer.CreatePassword())
@@ -195,7 +195,7 @@ func updateConfig(config *renderer.Config) error {
 	if !config.PasswordDisabled {
 		htpasswd, err := renderer.GenerateHtpasswd(config)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "generating htpasswd")
 		}
 		config.SecretsByteMap["htpasswd"] = htpasswd
 	}
@@ -253,9 +253,9 @@ func createBundle(config *renderer.Config) (*zip.Wrapper, error) {
 	return wrapper, nil
 }
 
-// OutputZip renders a deployment bundle. The deployment bundle can either be
+// outputZip renders a deployment bundle. The deployment bundle can either be
 // written directly into a directory, or as a zipfile to STDOUT.
-func OutputZip(logger logger.Logger, io io2.IO, config renderer.Config) error {
+func outputZip(logger logger.Logger, io io2.IO, config renderer.Config) error {
 	logger.InfofLn("Generating deployment bundle...")
 
 	common.LogInfoPsp(logger, config.EnablePodSecurityPolicies)
@@ -278,7 +278,7 @@ func OutputZip(logger logger.Logger, io io2.IO, config renderer.Config) error {
 	}
 
 	var outputPath string
-	if roxctl.InMainImage() || !containers.IsRunningInContainer() {
+	if roxctl.InMainImage() || config.OutputDir == "" {
 		bytes, err := wrapper.Zip()
 		if err != nil {
 			return errors.Wrap(err, "error generating zip file")
@@ -302,7 +302,7 @@ func OutputZip(logger logger.Logger, io io2.IO, config renderer.Config) error {
 	}
 
 	if err := config.WriteInstructions(io.ErrOut()); err != nil {
-		return err
+		return errors.Wrap(err, "writing instructions")
 	}
 	return nil
 }
@@ -310,7 +310,7 @@ func OutputZip(logger logger.Logger, io io2.IO, config renderer.Config) error {
 func (cmd *centralGenerateCommand) interactive() *cobra.Command {
 	return &cobra.Command{
 		Use:   "interactive",
-		Short: "Run the command in interactive mode where it prompts you to provide additional information.",
+		Short: "Run the command in interactive mode where it prompts you to provide additional information",
 		Long:  "Run the command in interactive mode where it prompts you to provide additional information. You can press `Enter` to accept the default value for the prompts.",
 		RunE: util.RunENoArgs(func(*cobra.Command) error {
 			c := Command(cmd.env)
@@ -336,28 +336,28 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c := &cobra.Command{
 		Use:   "generate",
-		Short: "Generate the required YAML configuration files containing the orchestrator objects to deploy StackRox Central.",
+		Short: "Generate the required YAML configuration files containing the orchestrator objects to deploy StackRox Central",
 	}
 
 	c.PersistentFlags().BoolVar(&centralGenerateCmd.rendererConfig.PasswordDisabled, "disable-admin-password", false,
-		"Disable the administrator password (only use this if you have already configured an IdP for your instance)")
+		"Disable the administrator password (only use this if you have already configured an IdP for your instance).")
 
-	c.PersistentFlags().StringVarP(&centralGenerateCmd.rendererConfig.Password, "password", "p", "", "Administrator password (default: autogenerated)")
+	c.PersistentFlags().StringVarP(&centralGenerateCmd.rendererConfig.Password, "password", "p", "", "Administrator password (default: autogenerated).")
 	utils.Must(c.PersistentFlags().SetAnnotation("password", flags.PasswordKey, []string{"true"}))
 
 	c.PersistentFlags().Var(&flags.FileContentsVar{
 		Data: &centralGenerateCmd.rendererConfig.DefaultTLSCertPEM,
-	}, "default-tls-cert", "PEM cert bundle file")
+	}, "default-tls-cert", "PEM cert bundle file.")
 	utils.Must(c.PersistentFlags().SetAnnotation("default-tls-cert", flags.OptionalKey, []string{"true"}))
 
 	c.PersistentFlags().Var(&flags.FileContentsVar{
 		Data: &centralGenerateCmd.rendererConfig.DefaultTLSKeyPEM,
-	}, "default-tls-key", "PEM private key file")
+	}, "default-tls-key", "PEM private key file.")
 	utils.Must(
 		c.PersistentFlags().SetAnnotation("default-tls-key", flags.DependenciesKey, []string{"default-tls-cert"}),
 		c.PersistentFlags().SetAnnotation("default-tls-key", flags.MandatoryKey, []string{"true"}),
 	)
-	c.PersistentFlags().StringVar(&centralGenerateCmd.rendererConfig.BackupBundle, "backup-bundle", "", "Path to the backup bundle from which to restore keys and certificates")
+	c.PersistentFlags().StringVar(&centralGenerateCmd.rendererConfig.BackupBundle, "backup-bundle", "", "Path to the backup bundle from which to restore keys and certificates.")
 	utils.Must(
 		c.PersistentFlags().SetAnnotation("backup-bundle", flags.OptionalKey, []string{"true"}),
 	)
@@ -370,14 +370,14 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c.PersistentFlags().Var(&flags.FileMapVar{
 		FileMap: &centralGenerateCmd.rendererConfig.ConfigFileOverrides,
-	}, "with-config-file", "Use the given local file(s) to override default config files")
+	}, "with-config-file", "Use the given local file(s) to override default config files.")
 	utils.Must(
 		c.PersistentFlags().MarkHidden("with-config-file"))
 
 	if !buildinfo.ReleaseBuild {
 		flags.AddHelmChartDebugSetting(c)
 	}
-	c.PersistentFlags().BoolVar(&centralGenerateCmd.rendererConfig.EnablePodSecurityPolicies, "enable-pod-security-policies", false, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes)")
+	c.PersistentFlags().BoolVar(&centralGenerateCmd.rendererConfig.EnablePodSecurityPolicies, "enable-pod-security-policies", false, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes).")
 
 	c.AddCommand(centralGenerateCmd.interactive())
 	c.AddCommand(k8s(cliEnvironment))
@@ -389,5 +389,5 @@ func runInteractive(cmd *cobra.Command) error {
 	mode.SetInteractiveMode()
 	// Overwrite os.Args because cobra uses them
 	os.Args = walkTree(cmd)
-	return cmd.Execute()
+	return errors.Wrap(cmd.Execute(), "executing command")
 }

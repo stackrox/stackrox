@@ -1,0 +1,47 @@
+# Make kuttl ignore this file unless running against openshift.
+apiVersion: kuttl.dev/v1beta1
+kind: TestFile
+testRunSelector:
+  matchLabels:
+    openshift: "true"
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: central
+spec:
+  host: custom-route.host
+  to:
+    kind: Service
+    name: central
+  port:
+    targetPort: https
+  tls:
+    termination: passthrough
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: central-mtls
+spec:
+  to:
+    kind: Service
+    name: central
+  port:
+    targetPort: https
+  tls:
+    termination: passthrough
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: central-reencrypt
+spec:
+  host: custom-reencrypt-route.host
+  to:
+    kind: Service
+    name: central
+  port:
+    targetPort: https
+  tls:
+    termination: reencrypt

@@ -1,16 +1,26 @@
 import queryString from 'qs';
 
 import {
+    isConfiguredReportSnapshot,
+    isViewBasedReportSnapshot,
+} from 'services/ReportsService.types';
+import type {
+    ConfiguredReportSnapshot,
     ReportConfiguration,
     ReportHistoryResponse,
-    ReportSnapshot,
+    ReportRequestViewBased,
     RunReportResponse,
+    RunReportResponseViewBased,
+    ViewBasedReportSnapshot,
 } from 'services/ReportsService.types';
-import { ApiSortOption } from 'types/search';
-import { getPaginationParams } from 'utils/searchUtils';
-import { ReportNotificationMethod, ReportStatus } from 'types/reportJob';
+import type { ApiSortOption, SearchFilter } from 'types/search';
+import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import type { ReportNotificationMethod, ReportStatus } from 'types/reportJob';
+import { sanitizeFilename } from 'utils/fileUtils';
+
 import axios from './instance';
-import { Empty } from './types';
+import type { Empty } from './types';
+import { saveFile } from './DownloadService';
 
 // The following functions are built around the new VM Reporting Enhancements
 export const reportDownloadURL = '/api/reports/jobs/download';
@@ -83,7 +93,7 @@ export function fetchReportLastRunStatus(id: string): Promise<ReportStatus | nul
         });
 }
 
-export type FetchReportHistoryServiceProps = {
+export type FetchReportHistoryServiceParams = {
     id: string;
     query: string;
     page: number;
@@ -99,7 +109,7 @@ export function fetchReportHistory({
     perPage,
     sortOption,
     showMyHistory,
-}: FetchReportHistoryServiceProps): Promise<ReportSnapshot[]> {
+}: FetchReportHistoryServiceParams): Promise<ConfiguredReportSnapshot[]> {
     const params = queryString.stringify(
         {
             reportParamQuery: {
@@ -114,8 +124,44 @@ export function fetchReportHistory({
             `/v2/reports/configurations/${id}/${showMyHistory ? 'my-history' : 'history'}?${params}`
         )
         .then((response) => {
-            return response.data?.reportSnapshots ?? [];
+            const snapshots = response.data?.reportSnapshots ?? [];
+            return snapshots.filter(isConfiguredReportSnapshot);
         });
+}
+
+export type FetchViewBasedReportHistoryServiceParams = {
+    searchFilter: SearchFilter;
+    page: number;
+    perPage: number;
+    sortOption: ApiSortOption;
+    showMyHistory: boolean;
+};
+
+export function fetchViewBasedReportHistory({
+    searchFilter,
+    page,
+    perPage,
+    sortOption,
+    showMyHistory,
+}: FetchViewBasedReportHistoryServiceParams): Promise<ViewBasedReportSnapshot[]> {
+    const params = queryString.stringify(
+        {
+            reportParamQuery: {
+                query: getRequestQueryStringForSearchFilter(searchFilter),
+                pagination: getPaginationParams({ page, perPage, sortOption }),
+            },
+        },
+        { arrayFormat: 'repeat', allowDots: true }
+    );
+
+    const endpoint = showMyHistory
+        ? '/v2/reports/view-based/my-history'
+        : '/v2/reports/view-based/history';
+
+    return axios.get<ReportHistoryResponse>(`${endpoint}?${params}`).then((response) => {
+        const snapshots = response.data?.reportSnapshots ?? [];
+        return snapshots.filter(isViewBasedReportSnapshot);
+    });
 }
 
 export function createReportConfiguration(
@@ -169,5 +215,49 @@ export function downloadReport(reportId: string) {
 export function deleteDownloadableReport(reportId: string) {
     return axios.delete<Empty>(`/v2/reports/jobs/${reportId}/delete`).then((response) => {
         return response.data;
+    });
+}
+
+export function runViewBasedReport({
+    query,
+    areaOfConcern,
+}: {
+    query: string;
+    areaOfConcern: string;
+}): Promise<RunReportResponseViewBased> {
+    const requestBody: ReportRequestViewBased = {
+        type: 'VULNERABILITY',
+        viewBasedVulnReportFilters: {
+            query,
+        },
+        areaOfConcern,
+    };
+
+    return axios
+        .post<RunReportResponseViewBased>('/v2/reports/view-based/run', requestBody)
+        .then((response) => response.data);
+}
+
+/**
+ * Downloads a report file by job ID and saves it to the user's device with a sanitized filename
+ * Returns file size in bytes for analytics tracking
+ */
+export function downloadReportByJobId({
+    reportJobId,
+    filename,
+    fileExtension,
+}: {
+    reportJobId: string;
+    filename: string;
+    fileExtension: string;
+}): Promise<{ fileSizeBytes?: number }> {
+    const sanitizedFilename = sanitizeFilename(filename);
+
+    return saveFile({
+        method: 'get',
+        url: `/api/reports/jobs/download?id=${reportJobId}`,
+        data: null,
+        timeout: 300000,
+        name: `${sanitizedFilename}.${fileExtension}`,
     });
 }

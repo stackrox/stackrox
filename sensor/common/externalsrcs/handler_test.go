@@ -48,7 +48,7 @@ func TestExternalSrcsHandler(t *testing.T) {
 			},
 		},
 	}
-	require.NoError(t, handler.ProcessMessage(req))
+	require.NoError(t, handler.ProcessMessage(t.Context(), req))
 
 	require.True(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 	vs = vs.TryNext()
@@ -90,7 +90,7 @@ func TestExternalSrcsHandler(t *testing.T) {
 			},
 		},
 	}
-	require.NoError(t, handler.ProcessMessage(req))
+	require.NoError(t, handler.ProcessMessage(t.Context(), req))
 
 	require.True(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 	vs = vs.TryNext()
@@ -132,7 +132,7 @@ func TestExternalSrcsHandler(t *testing.T) {
 			},
 		},
 	}
-	require.NoError(t, handler.ProcessMessage(req))
+	require.NoError(t, handler.ProcessMessage(t.Context(), req))
 
 	require.False(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 	require.Nil(t, vs.TryNext())
@@ -169,7 +169,7 @@ func TestExternalSrcsHandler(t *testing.T) {
 			},
 		},
 	}
-	require.NoError(t, handler.ProcessMessage(req))
+	require.NoError(t, handler.ProcessMessage(t.Context(), req))
 
 	assert.True(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 	vs = vs.TryNext()
@@ -188,7 +188,7 @@ func TestExternalSrcsHandler(t *testing.T) {
 			},
 		},
 	}
-	require.NoError(t, handler.ProcessMessage(req))
+	require.NoError(t, handler.ProcessMessage(t.Context(), req))
 
 	assert.False(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 	assert.Nil(t, vs.TryNext())
@@ -261,7 +261,7 @@ func TestExternalSourcesLookup(t *testing.T) {
 			},
 		},
 	}
-	require.NoError(t, handler.ProcessMessage(req))
+	require.NoError(t, handler.ProcessMessage(t.Context(), req))
 	require.True(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 
 	expected := req.GetPushNetworkEntitiesRequest().GetEntities()[1]

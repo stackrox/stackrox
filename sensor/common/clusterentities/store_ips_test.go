@@ -3,7 +3,6 @@ package clusterentities
 import (
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
-	"golang.org/x/exp/maps"
 )
 
 func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastIPs() {
@@ -342,7 +341,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastIPs() {
 	}
 	for name, tCase := range cases {
 		s.Run(name, func() {
-			store := NewStoreWithMemory(tCase.numTicksToRemember, true)
+			store := NewStore(tCase.numTicksToRemember, nil, true)
 			ipListener := newTestPublicIPsListener(s.T())
 			store.RegisterPublicIPsListener(ipListener)
 			// Set up the cleanup-assertions
@@ -370,11 +369,11 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastIPs() {
 				s.T().Logf("IP listener (tick %d): %s", tickNo, ipListener.String())
 				// convert to slice of strings to enable using Contains assertion
 				var historicalIPs []string
-				for _, address := range maps.Keys(store.podIPsStore.historicalIPs) {
+				for address := range store.podIPsStore.historicalIPs {
 					historicalIPs = append(historicalIPs, address.String())
 				}
 				var currentIPs []string
-				for _, address := range maps.Keys(store.podIPsStore.ipMap) {
+				for address := range store.podIPsStore.ipMap {
 					currentIPs = append(currentIPs, address.String())
 				}
 				for endpointIP, whereFound := range expect {
@@ -421,7 +420,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastIPs() {
 }
 
 func (s *ClusterEntitiesStoreTestSuite) TestChangingIPsAndExternalEntities() {
-	entityStore := NewStore()
+	entityStore := NewStore(0, nil, false)
 	type expectation struct {
 		ip           string
 		port         uint16

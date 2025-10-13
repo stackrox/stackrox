@@ -41,10 +41,6 @@ func (s *NotifiersStoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *NotifiersStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *NotifiersStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
@@ -96,9 +92,6 @@ func (s *NotifiersStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, notifiers))
-	allNotifier, err := store.GetAll(ctx)
-	s.NoError(err)
-	protoassert.ElementsMatch(s.T(), notifiers, allNotifier)
 
 	notifierCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

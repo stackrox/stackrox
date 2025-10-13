@@ -64,20 +64,13 @@ spec:
               matchExpressions:
               - key: node-role.kubernetes.io/compute
                 operator: Exists
-          # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
-          # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
-          - weight: 100
-            preference:
-              matchExpressions:
-              - key: node-role.kubernetes.io/master
-                operator: DoesNotExist
           - weight: 100
             preference:
               matchExpressions:
               - key: node-role.kubernetes.io/control-plane
                 operator: DoesNotExist
       {{- if ._rox.central.db.priorityClassName }}
-      priorityClassName: {{ ._rox.central.db.priorityClassName }}
+      priorityClassName: {{ quote ._rox.central.db.priorityClassName }}
       {{- end }}
       serviceAccountName: central-db
       terminationGracePeriodSeconds: 120
@@ -92,6 +85,11 @@ spec:
         volumeMounts:
         - name: disk
           mountPath: /var/lib/postgresql/data
+        {{- if and (eq ._rox.env.installMethod "operator")
+                    ._rox.central.db.persistence._backup }}
+        - name: backup
+          mountPath: /var/lib/postgresql/backup
+        {{- end }}
         - name: central-db-password
           mountPath: /run/secrets/stackrox.io/secrets
         resources:
@@ -142,6 +140,11 @@ spec:
       volumes:
       - name: disk
         {{- toYaml ._rox.central.db.persistence._volumeCfg | nindent 8 }}
+      {{- if and (eq ._rox.env.installMethod "operator")
+                  ._rox.central.db.persistence._backup }}
+      - name: backup
+        {{- toYaml ._rox.central.db.persistence._backupVolumeCfg | nindent 8 }}
+      {{- end }}
       - name: config-volume
         configMap:
           name: {{ default "central-db-config" ._rox.central.db.configOverride }}
@@ -162,7 +165,6 @@ spec:
       - name: shared-memory
         emptyDir:
           medium: Memory
-          {{- /* Keep this in sync with shared_buffers in config/centraldb/postgresql.conf */}}
           sizeLimit: 2Gi
 ---
 apiVersion: v1

@@ -42,6 +42,9 @@ func request_DebugService_GetLogLevel_0(ctx context.Context, marshaler runtime.M
 		protoReq GetLogLevelRequest
 		metadata runtime.ServerMetadata
 	)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -75,6 +78,9 @@ func request_DebugService_SetLogLevel_0(ctx context.Context, marshaler runtime.M
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
 	msg, err := client.SetLogLevel(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }
@@ -96,6 +102,9 @@ func request_DebugService_StreamAuthzTraces_0(ctx context.Context, marshaler run
 		protoReq Empty
 		metadata runtime.ServerMetadata
 	)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
 	stream, err := client.StreamAuthzTraces(ctx, &protoReq)
 	if err != nil {
 		return nil, metadata, err
@@ -113,6 +122,9 @@ func request_DebugService_ResetDBStats_0(ctx context.Context, marshaler runtime.
 		protoReq Empty
 		metadata runtime.ServerMetadata
 	)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
 	msg, err := client.ResetDBStats(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }

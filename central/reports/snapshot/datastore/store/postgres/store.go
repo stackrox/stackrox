@@ -4,6 +4,7 @@ package postgres
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -33,14 +34,18 @@ var (
 	targetResource = resources.WorkflowAdministration
 )
 
-type storeType = storage.ReportSnapshot
+type (
+	storeType = storage.ReportSnapshot
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.ReportSnapshot
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, reportID string) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
+	DeleteByQuery(ctx context.Context, q *v1.Query) error
+	DeleteByQueryWithIDs(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
 	PruneMany(ctx context.Context, identifiers []string) error
 
@@ -49,17 +54,19 @@ type Store interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 
 	Get(ctx context.Context, reportID string) (*storeType, bool, error)
+	// Deprecated: use GetByQueryFn instead
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn callback) error
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
-	Walk(ctx context.Context, fn func(obj *storeType) error) error
-	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storeType) error) error
+	Walk(ctx context.Context, fn callback) error
+	WalkByQuery(ctx context.Context, query *v1.Query, fn callback) error
 }
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	return pgSearch.NewGenericStore[storeType, *storeType](
+	return pgSearch.NewGloballyScopedGenericStore[storeType, *storeType](
 		db,
 		schema,
 		pkGetter,
@@ -67,8 +74,9 @@ func New(db postgres.DB) Store {
 		copyFromReportSnapshots,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
-		pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
 		targetResource,
+		pgSearch.GetDefaultSort(search.ReportCompletionTime.String(), true),
+		nil,
 	)
 }
 
@@ -96,7 +104,7 @@ func insertIntoReportSnapshots(batch *pgx.Batch, obj *storage.ReportSnapshot) er
 	values := []interface{}{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetReportId()),
-		obj.GetReportConfigurationId(),
+		pgutils.NilOrString(obj.GetReportConfigurationId()),
 		obj.GetName(),
 		obj.GetReportStatus().GetRunState(),
 		protocompat.NilOrTime(obj.GetReportStatus().GetQueuedAt()),
@@ -105,20 +113,21 @@ func insertIntoReportSnapshots(batch *pgx.Batch, obj *storage.ReportSnapshot) er
 		obj.GetReportStatus().GetReportNotificationMethod(),
 		obj.GetRequester().GetId(),
 		obj.GetRequester().GetName(),
+		obj.GetAreaOfConcern(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO report_snapshots (ReportId, ReportConfigurationId, Name, ReportStatus_RunState, ReportStatus_QueuedAt, ReportStatus_CompletedAt, ReportStatus_ReportRequestType, ReportStatus_ReportNotificationMethod, Requester_Id, Requester_Name, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(ReportId) DO UPDATE SET ReportId = EXCLUDED.ReportId, ReportConfigurationId = EXCLUDED.ReportConfigurationId, Name = EXCLUDED.Name, ReportStatus_RunState = EXCLUDED.ReportStatus_RunState, ReportStatus_QueuedAt = EXCLUDED.ReportStatus_QueuedAt, ReportStatus_CompletedAt = EXCLUDED.ReportStatus_CompletedAt, ReportStatus_ReportRequestType = EXCLUDED.ReportStatus_ReportRequestType, ReportStatus_ReportNotificationMethod = EXCLUDED.ReportStatus_ReportNotificationMethod, Requester_Id = EXCLUDED.Requester_Id, Requester_Name = EXCLUDED.Requester_Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO report_snapshots (ReportId, ReportConfigurationId, Name, ReportStatus_RunState, ReportStatus_QueuedAt, ReportStatus_CompletedAt, ReportStatus_ReportRequestType, ReportStatus_ReportNotificationMethod, Requester_Id, Requester_Name, AreaOfConcern, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT(ReportId) DO UPDATE SET ReportId = EXCLUDED.ReportId, ReportConfigurationId = EXCLUDED.ReportConfigurationId, Name = EXCLUDED.Name, ReportStatus_RunState = EXCLUDED.ReportStatus_RunState, ReportStatus_QueuedAt = EXCLUDED.ReportStatus_QueuedAt, ReportStatus_CompletedAt = EXCLUDED.ReportStatus_CompletedAt, ReportStatus_ReportRequestType = EXCLUDED.ReportStatus_ReportRequestType, ReportStatus_ReportNotificationMethod = EXCLUDED.ReportStatus_ReportNotificationMethod, Requester_Id = EXCLUDED.Requester_Id, Requester_Name = EXCLUDED.Requester_Name, AreaOfConcern = EXCLUDED.AreaOfConcern, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
 func copyFromReportSnapshots(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ReportSnapshot) error {
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
+	if len(objs) == 0 {
+		return nil
 	}
+	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	// This is a copy so first we must delete the rows and re-add them
@@ -136,54 +145,55 @@ func copyFromReportSnapshots(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		"reportstatus_reportnotificationmethod",
 		"requester_id",
 		"requester_name",
+		"areaofconcern",
 		"serialized",
 	}
 
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-			"to simply use the object.  %s", obj)
+	for objBatch := range slices.Chunk(objs, batchSize) {
+		for _, obj := range objBatch {
+			// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+			log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
+				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
+				"to simply use the object.  %s", obj)
 
-		serialized, marshalErr := obj.MarshalVT()
-		if marshalErr != nil {
-			return marshalErr
+			serialized, marshalErr := obj.MarshalVT()
+			if marshalErr != nil {
+				return marshalErr
+			}
+
+			inputRows = append(inputRows, []interface{}{
+				pgutils.NilOrUUID(obj.GetReportId()),
+				pgutils.NilOrString(obj.GetReportConfigurationId()),
+				obj.GetName(),
+				obj.GetReportStatus().GetRunState(),
+				protocompat.NilOrTime(obj.GetReportStatus().GetQueuedAt()),
+				protocompat.NilOrTime(obj.GetReportStatus().GetCompletedAt()),
+				obj.GetReportStatus().GetReportRequestType(),
+				obj.GetReportStatus().GetReportNotificationMethod(),
+				obj.GetRequester().GetId(),
+				obj.GetRequester().GetName(),
+				obj.GetAreaOfConcern(),
+				serialized,
+			})
+
+			// Add the ID to be deleted.
+			deletes = append(deletes, obj.GetReportId())
 		}
 
-		inputRows = append(inputRows, []interface{}{
-			pgutils.NilOrUUID(obj.GetReportId()),
-			obj.GetReportConfigurationId(),
-			obj.GetName(),
-			obj.GetReportStatus().GetRunState(),
-			protocompat.NilOrTime(obj.GetReportStatus().GetQueuedAt()),
-			protocompat.NilOrTime(obj.GetReportStatus().GetCompletedAt()),
-			obj.GetReportStatus().GetReportRequestType(),
-			obj.GetReportStatus().GetReportNotificationMethod(),
-			obj.GetRequester().GetId(),
-			obj.GetRequester().GetName(),
-			serialized,
-		})
+		// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+		// delete for the top level parent
 
-		// Add the ID to be deleted.
-		deletes = append(deletes, obj.GetReportId())
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			if err := s.DeleteMany(ctx, deletes); err != nil {
-				return err
-			}
-			// clear the inserts and vals for the next batch
-			deletes = deletes[:0]
-
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"report_snapshots"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-				return err
-			}
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
+		if err := s.DeleteMany(ctx, deletes); err != nil {
+			return err
 		}
+		// clear the inserts and vals for the next batch
+		deletes = deletes[:0]
+
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"report_snapshots"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+			return err
+		}
+		// clear the input rows for the next batch
+		inputRows = inputRows[:0]
 	}
 
 	return nil

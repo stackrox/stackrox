@@ -2,12 +2,12 @@ import React, { render, screen } from '@testing-library/react';
 import { cloneDeep } from 'lodash';
 import '@testing-library/jest-dom';
 
-import { ReportSnapshot } from 'services/ReportsService.types';
-import { ReportStatus } from 'types/reportJob';
+import type { ConfiguredReportSnapshot } from 'services/ReportsService.types';
+import type { ReportStatus } from 'types/reportJob';
 
 import MyLastJobStatus from './MyLastJobStatus';
 
-const baseReportSnapshot: Omit<ReportSnapshot, 'reportStatus' | 'isDownloadAvailable'> = {
+const baseReportSnapshot: Omit<ConfiguredReportSnapshot, 'reportStatus' | 'isDownloadAvailable'> = {
     reportConfigId: 'report-config-id-1',
     reportJobId: 'report-job-id-1',
     name: 'test-name-1',
@@ -42,7 +42,7 @@ describe('MyLastJobStatus', () => {
             reportRequestType: 'ON_DEMAND',
             reportNotificationMethod: 'DOWNLOAD',
         };
-        const snapshot: ReportSnapshot = cloneDeep({
+        const snapshot: ConfiguredReportSnapshot = cloneDeep({
             ...baseReportSnapshot,
             reportStatus,
             isDownloadAvailable: false,
@@ -72,7 +72,7 @@ describe('MyLastJobStatus', () => {
             reportRequestType: 'ON_DEMAND',
             reportNotificationMethod: 'DOWNLOAD',
         };
-        const snapshot: ReportSnapshot = cloneDeep({
+        const snapshot: ConfiguredReportSnapshot = cloneDeep({
             ...baseReportSnapshot,
             reportStatus,
             isDownloadAvailable: false,
@@ -102,7 +102,7 @@ describe('MyLastJobStatus', () => {
             reportRequestType: 'ON_DEMAND',
             reportNotificationMethod: 'DOWNLOAD',
         };
-        const snapshot: ReportSnapshot = cloneDeep({
+        const snapshot: ConfiguredReportSnapshot = cloneDeep({
             ...baseReportSnapshot,
             reportStatus,
             isDownloadAvailable: true,
@@ -117,7 +117,7 @@ describe('MyLastJobStatus', () => {
             />
         );
 
-        const statusTextElement = screen.getByText('Ready for download');
+        const statusTextElement = screen.getByText('Report ready for download');
         const statusIconElement = screen.getByTitle('Report download was successfully prepared');
 
         expect(statusTextElement).toBeInTheDocument();
@@ -132,7 +132,7 @@ describe('MyLastJobStatus', () => {
             reportRequestType: 'ON_DEMAND',
             reportNotificationMethod: 'DOWNLOAD',
         };
-        const snapshot: ReportSnapshot = cloneDeep({
+        const snapshot: ConfiguredReportSnapshot = cloneDeep({
             ...baseReportSnapshot,
             reportStatus,
             isDownloadAvailable: true,
@@ -147,7 +147,7 @@ describe('MyLastJobStatus', () => {
             />
         );
 
-        const statusTextElement = screen.getByText('Error');
+        const statusTextElement = screen.getByText('Report failed to generate');
         const statusIconElement = screen.getByRole('img', { name: 'Report run was unsuccessful' });
 
         expect(statusTextElement).toBeInTheDocument();

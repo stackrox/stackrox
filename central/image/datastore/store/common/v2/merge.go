@@ -8,6 +8,9 @@ import (
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
+// TODO(ROX-28123): Remove file
+
+// Deprecated: replaced with equivalent functions using flattened data model
 // Merge merges the images parts into an image.
 func Merge(parts ImageParts) *storage.Image {
 	mergeComponents(parts, parts.Image)
@@ -49,8 +52,8 @@ func mergeComponents(parts ImageParts, image *storage.Image) {
 		return compI.GetVersion() < compJ.GetVersion()
 	})
 	for _, comp := range image.GetScan().GetComponents() {
-		sort.SliceStable(comp.Vulns, func(i, j int) bool {
-			return comp.Vulns[i].GetCve() < comp.Vulns[j].GetCve()
+		sort.SliceStable(comp.GetVulns(), func(i, j int) bool {
+			return comp.GetVulns()[i].GetCve() < comp.GetVulns()[j].GetCve()
 		})
 	}
 }
@@ -98,7 +101,7 @@ func generateEmbeddedComponent(_ string, cp ComponentParts, imageCVEEdges map[st
 
 func generateEmbeddedCVE(cp CVEParts, imageCVEEdge *storage.ImageCVEEdge) *storage.EmbeddedVulnerability {
 	ret := utils.ImageCVEToEmbeddedVulnerability(cp.CVE)
-	if cp.Edge.IsFixable {
+	if cp.Edge.GetIsFixable() {
 		ret.SetFixedBy = &storage.EmbeddedVulnerability_FixedBy{
 			FixedBy: cp.Edge.GetFixedBy(),
 		}

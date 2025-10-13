@@ -1,4 +1,4 @@
-import { RestSearchOption } from 'services/searchOptionsToQuery';
+import type { RestSearchOption } from 'services/searchOptionsToQuery';
 
 export const orchestratorComponentsOption: RestSearchOption[] = [
     {

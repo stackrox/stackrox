@@ -7,26 +7,35 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/printers"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
 	// Default headers to use when printing tabular output.
-	defaultImageScanHeaders = []string{"COMPONENT", "VERSION", "CVE", "SEVERITY", "LINK", "FIXED_VERSION"}
-	defaultColumnsToMerge   = []string{"COMPONENT", "VERSION"}
+	defaultImageScanHeaders = []string{"COMPONENT", "VERSION", "CVE", "SEVERITY", "CVSS", "LINK", "FIXED_VERSION", "ADVISORY", "ADVISORY_LINK"}
 
 	imageScanHeaderToJSONPathMap = map[string]string{
 		"COMPONENT":     "result.vulnerabilities.#.componentName",
 		"VERSION":       "result.vulnerabilities.#.componentVersion",
 		"CVE":           "result.vulnerabilities.#.cveId",
 		"SEVERITY":      "result.vulnerabilities.#.cveSeverity",
+		"CVSS":          "result.vulnerabilities.#.cveCVSS",
 		"LINK":          "result.vulnerabilities.#.cveInfo",
 		"FIXED_VERSION": "result.vulnerabilities.#.componentFixedVersion",
+		"ADVISORY":      "result.vulnerabilities.#.advisoryId",
+		"ADVISORY_LINK": "result.vulnerabilities.#.advisoryInfo",
 	}
 
 	// Default JSON path expression representing a row within tabular output, based on the mapping above.
-	defaultImageScanJSONPathExpression, _ = createImageScanJSONPathExpression(defaultImageScanHeaders)
+	defaultImageScanJSONPathExpression = "{result.vulnerabilities.#.componentName," +
+		"result.vulnerabilities.#.componentVersion," +
+		"result.vulnerabilities.#.cveId," +
+		"result.vulnerabilities.#.cveSeverity," +
+		"result.vulnerabilities.#.cveCVSS," +
+		"result.vulnerabilities.#.cveInfo," +
+		"result.vulnerabilities.#.componentFixedVersion," +
+		"result.vulnerabilities.#.advisoryId," +
+		"result.vulnerabilities.#.advisoryInfo}"
 )
 
 // TabularPrinterFactory holds all configuration options of tabular printers, specifically CSVPrinter and TablePrinter
@@ -35,18 +44,17 @@ type TabularPrinterFactory struct {
 	// Merge only applies to the "table" format and merges certain cells within the output
 	Merge                 bool
 	Headers               []string
+	RequiredHeaders       []string
 	RowJSONPathExpression string
 	NoHeader              bool
 	// HeaderAsComment only applies to the "csv" format and prints headers as comment lines in the CSV output
 	HeaderAsComment bool
-	// columnsToMerge is a slice of columns names to merge. Names must match with headers.
-	// If set to nil and Merge set to true then all columns will be merged.
-	columnsToMerge []string
 }
 
 // NewTabularPrinterFactory creates new TabularPrinterFactory with the injected default values
 func NewTabularPrinterFactory(headers []string, rowJSONPathExpression string) *TabularPrinterFactory {
 	return &TabularPrinterFactory{
+		Merge:                 true,
 		Headers:               headers,
 		RowJSONPathExpression: rowJSONPathExpression,
 	}
@@ -58,27 +66,24 @@ func NewTabularPrinterFactoryWithAutoMerge() *TabularPrinterFactory {
 		Merge:                 true,
 		Headers:               defaultImageScanHeaders,
 		RowJSONPathExpression: defaultImageScanJSONPathExpression,
-		columnsToMerge:        defaultColumnsToMerge,
 	}
 }
 
 // AddFlags will add all tabular printer specific flags to the cobra.Command
 func (t *TabularPrinterFactory) AddFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().BoolVar(&t.Merge, "merge-output", t.Merge, "Merge duplicate cells in prettified tabular output")
-	cmd.PersistentFlags().StringSliceVar(&t.Headers, "headers", defaultImageScanHeaders, "Headers to print in tabular output"+
+	cmd.PersistentFlags().BoolVar(&t.Merge, "merge-output", t.Merge, "Merge duplicate cells in prettified tabular output.")
+	cmd.PersistentFlags().StringSliceVar(&t.Headers, "headers", t.Headers, "Headers to print in tabular output. "+
 		"Will propagate headers to the table unless --row-jsonpath-expressions is also set.")
+	cmd.PersistentFlags().StringSliceVar(&t.RequiredHeaders, "required-headers", []string{}, "Headers denoted as required "+
+		"must be present in a row of the output table, or that row will not be displayed.")
 	cmd.PersistentFlags().StringVar(&t.RowJSONPathExpression, "row-jsonpath-expressions", t.RowJSONPathExpression,
 		"JSON Path expression to create a row from the JSON object. This leverages gJSON (https://github.com/tidwall/gjson)."+
 			" NOTE: The amount of expressions within the multi-path has to match the amount of provided headers.")
-	err := t.propagateCustomHeaders()
-	if err != nil {
-		cmd.PrintErrf("%v", err)
-	}
-	cmd.PersistentFlags().BoolVar(&t.NoHeader, "no-header", t.NoHeader, "Print no headers for tabular output")
+	cmd.PersistentFlags().BoolVar(&t.NoHeader, "no-header", t.NoHeader, "Print no headers for tabular output.")
 	cmd.PersistentFlags().BoolVar(&t.HeaderAsComment, "headers-as-comments", t.HeaderAsComment, "Print headers "+
-		"as comments in CSV tabular output")
+		"as comments in CSV tabular output.")
 
-	utils.Must(cmd.PersistentFlags().MarkDeprecated("row-jsonpath-expressions", "Use only --headers instead and"+
+	utils.Must(cmd.PersistentFlags().MarkDeprecated("row-jsonpath-expressions", "Use only --headers instead and "+
 		"the content of the output table will be generated by a json path expression matching the headers."))
 }
 
@@ -138,18 +143,23 @@ func (t *TabularPrinterFactory) CreatePrinter(format string) (ObjectPrinter, err
 	if err := t.validate(); err != nil {
 		return nil, err
 	}
-	// If not column is specified by merge is enabled then set all columns to merge.
-	if t.columnsToMerge == nil && t.Merge {
-		t.columnsToMerge = t.Headers
+	requiredHeadersJSON, err := t.mapRequiredHeadersToJson()
+	if err != nil {
+		return nil, errox.InvalidArgs.Newf("Failed to map required headers to JSON: %v", err)
+	}
+	err = t.propagateCustomHeaders()
+	if err != nil {
+		return nil, errox.InvalidArgs.Newf("Failed to propagate custom headers: %v", err)
 	}
 	switch strings.ToLower(format) {
 	case "table":
-
 		return printers.NewTablePrinter(t.RowJSONPathExpression,
-			printers.WithTableHeadersOption(t.Headers, t.columnsToMerge, t.NoHeader)), nil
+			printers.WithTableHeadersOption(t.Headers, t.Merge, t.NoHeader),
+			printers.WithTableHideUnpopulatedRowsOption(requiredHeadersJSON)), nil
 	case "csv":
 		return printers.NewCSVPrinter(t.RowJSONPathExpression,
-			printers.WithCSVColumnHeaders(t.Headers), printers.WithCSVHeaderOptions(t.NoHeader, t.HeaderAsComment)), nil
+			printers.WithCSVColumnHeaders(t.Headers), printers.WithCSVHeaderOptions(t.NoHeader, t.HeaderAsComment),
+			printers.WithCSVHideUnpopulatedRowsOption(requiredHeadersJSON)), nil
 	default:
 		return nil, errox.InvalidArgs.Newf("invalid output format used for Tabular Printer: %q", format)
 	}
@@ -162,17 +172,23 @@ func (t *TabularPrinterFactory) validate() error {
 		return errox.InvalidArgs.New("cannot specify both --no-header as well as " +
 			"--headers-as-comment flags. Choose only one of them")
 	}
-	headers := set.NewStringSet(t.Headers...)
-	columnsToMerge := set.NewStringSet(t.columnsToMerge...)
-	intersect := headers.Intersect(columnsToMerge)
-	if !intersect.Equal(columnsToMerge) {
-		return errox.InvalidArgs.Newf("undefined columns to merge: %s", columnsToMerge.Difference(intersect).ElementsString(", "))
-	}
 	return nil
 }
 
+func (t *TabularPrinterFactory) mapRequiredHeadersToJson() ([]string, error) {
+	if !validateImageScanHeaders(t.RequiredHeaders) {
+		return nil, errox.InvalidArgs.Newf("Invalid headers, supported headers: [%s]",
+			strings.Join(defaultImageScanHeaders, ", "))
+	}
+	var headersJson []string
+	for _, h := range t.RequiredHeaders {
+		headersJson = append(headersJson, imageScanHeaderToJSONPathMap[h])
+	}
+	return headersJson, nil
+}
+
 func (t *TabularPrinterFactory) propagateCustomHeaders() error {
-	// If --headers is default OR --row-jsonpath-expressions is unset do nothing
+	// If --headers is default OR --row-jsonpath-expressions is set do nothing
 	if slices.Equal(t.Headers, defaultImageScanHeaders) || (t.RowJSONPathExpression != defaultImageScanJSONPathExpression) {
 		return nil
 	}

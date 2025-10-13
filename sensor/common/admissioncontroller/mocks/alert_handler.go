@@ -10,6 +10,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	central "github.com/stackrox/rox/generated/internalapi/central"
@@ -44,6 +45,20 @@ func (m *MockAlertHandler) EXPECT() *MockAlertHandlerMockRecorder {
 	return m.recorder
 }
 
+// Accepts mocks base method.
+func (m *MockAlertHandler) Accepts(msg *central.MsgToSensor) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Accepts", msg)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Accepts indicates an expected call of Accepts.
+func (mr *MockAlertHandlerMockRecorder) Accepts(msg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Accepts", reflect.TypeOf((*MockAlertHandler)(nil).Accepts), msg)
+}
+
 // Capabilities mocks base method.
 func (m *MockAlertHandler) Capabilities() []centralsensor.SensorCapability {
 	m.ctrl.T.Helper()
@@ -56,6 +71,20 @@ func (m *MockAlertHandler) Capabilities() []centralsensor.SensorCapability {
 func (mr *MockAlertHandlerMockRecorder) Capabilities() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Capabilities", reflect.TypeOf((*MockAlertHandler)(nil).Capabilities))
+}
+
+// Name mocks base method.
+func (m *MockAlertHandler) Name() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Name")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// Name indicates an expected call of Name.
+func (mr *MockAlertHandlerMockRecorder) Name() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Name", reflect.TypeOf((*MockAlertHandler)(nil).Name))
 }
 
 // Notify mocks base method.
@@ -85,17 +114,17 @@ func (mr *MockAlertHandlerMockRecorder) ProcessAlerts(alerts any) *gomock.Call {
 }
 
 // ProcessMessage mocks base method.
-func (m *MockAlertHandler) ProcessMessage(msg *central.MsgToSensor) error {
+func (m *MockAlertHandler) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessMessage", msg)
+	ret := m.ctrl.Call(m, "ProcessMessage", ctx, msg)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ProcessMessage indicates an expected call of ProcessMessage.
-func (mr *MockAlertHandlerMockRecorder) ProcessMessage(msg any) *gomock.Call {
+func (mr *MockAlertHandlerMockRecorder) ProcessMessage(ctx, msg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessMessage", reflect.TypeOf((*MockAlertHandler)(nil).ProcessMessage), msg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessMessage", reflect.TypeOf((*MockAlertHandler)(nil).ProcessMessage), ctx, msg)
 }
 
 // ResponsesC mocks base method.
@@ -127,13 +156,13 @@ func (mr *MockAlertHandlerMockRecorder) Start() *gomock.Call {
 }
 
 // Stop mocks base method.
-func (m *MockAlertHandler) Stop(err error) {
+func (m *MockAlertHandler) Stop() {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Stop", err)
+	m.ctrl.Call(m, "Stop")
 }
 
 // Stop indicates an expected call of Stop.
-func (mr *MockAlertHandlerMockRecorder) Stop(err any) *gomock.Call {
+func (mr *MockAlertHandlerMockRecorder) Stop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockAlertHandler)(nil).Stop), err)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockAlertHandler)(nil).Stop))
 }

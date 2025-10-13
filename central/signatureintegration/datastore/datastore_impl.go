@@ -79,6 +79,7 @@ func (d *datastoreImpl) AddSignatureIntegration(ctx context.Context, integration
 		return nil, errox.InvalidArgs.Newf("id should be empty but %q provided", integration.GetId())
 	}
 	integration.Id = GenerateSignatureIntegrationID()
+	applyDefaultValues(integration)
 	if err := ValidateSignatureIntegration(integration); err != nil {
 		return nil, errox.InvalidArgs.CausedBy(err)
 	}
@@ -105,6 +106,7 @@ func (d *datastoreImpl) UpdateSignatureIntegration(ctx context.Context, integrat
 	if err := sac.VerifyAuthzOK(integrationSAC.WriteAllowed(ctx)); err != nil {
 		return false, err
 	}
+	applyDefaultValues(integration)
 	if err := ValidateSignatureIntegration(integration); err != nil {
 		return false, errox.InvalidArgs.CausedBy(err)
 	}
@@ -113,12 +115,12 @@ func (d *datastoreImpl) UpdateSignatureIntegration(ctx context.Context, integrat
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
-	hasUpdatedPublicKeys, err := d.verifyIntegrationIDAndUpdates(ctx, integration)
+	hasUpdates, err := d.verifyIntegrationIDAndUpdates(ctx, integration)
 	if err != nil {
 		return false, err
 	}
 
-	return hasUpdatedPublicKeys, d.storage.Upsert(ctx, integration)
+	return hasUpdates, d.storage.Upsert(ctx, integration)
 }
 
 func (d *datastoreImpl) RemoveSignatureIntegration(ctx context.Context, id string) error {
@@ -129,8 +131,14 @@ func (d *datastoreImpl) RemoveSignatureIntegration(ctx context.Context, id strin
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
-	if err := d.verifyIntegrationIDExists(ctx, id); err != nil {
+	// Get the integration to check its origin
+	integration, err := d.getSignatureIntegrationByID(ctx, id)
+	if err != nil {
 		return err
+	}
+
+	if isBuiltInSignatureIntegration(integration) {
+		return errox.InvalidArgs.New("built-in signature integrations cannot be deleted")
 	}
 
 	// We want to avoid deleting a signature integration which is referenced by any policy. If that is the case,
@@ -140,14 +148,6 @@ func (d *datastoreImpl) RemoveSignatureIntegration(ctx context.Context, id strin
 	}
 
 	return d.storage.Delete(ctx, id)
-}
-
-func (d *datastoreImpl) verifyIntegrationIDExists(ctx context.Context, id string) error {
-	_, err := d.getSignatureIntegrationByID(ctx, id)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (d *datastoreImpl) getSignatureIntegrationByID(ctx context.Context, id string) (*storage.SignatureIntegration, error) {
@@ -168,7 +168,8 @@ func (d *datastoreImpl) verifyIntegrationIDAndUpdates(ctx context.Context,
 	}
 
 	hasUpdates := !getPublicKeyPEMSet(existingIntegration).Equal(getPublicKeyPEMSet(updatedIntegration)) ||
-		!protoutils.SlicesEqual(existingIntegration.GetCosignCertificates(), updatedIntegration.GetCosignCertificates())
+		!protoutils.SlicesEqual(existingIntegration.GetCosignCertificates(), updatedIntegration.GetCosignCertificates()) ||
+		!existingIntegration.GetTransparencyLog().EqualVT(updatedIntegration.GetTransparencyLog())
 
 	return hasUpdates, nil
 }
@@ -272,4 +273,10 @@ func getPublicKeyPEMSet(integration *storage.SignatureIntegration) set.StringSet
 		publicKeySet.Add(key.GetPublicKeyPemEnc())
 	}
 	return publicKeySet
+}
+
+// isBuiltInSignatureIntegration returns whether the signature integration is built-in (has DEFAULT origin).
+// Built-in integrations cannot be created, modified or deleted.
+func isBuiltInSignatureIntegration(integration *storage.SignatureIntegration) bool {
+	return integration.GetTraits().GetOrigin() == storage.Traits_DEFAULT
 }

@@ -2,6 +2,7 @@ package preflight
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/stackrox/rox/sensor/upgrader/plan"
 	"github.com/stackrox/rox/sensor/upgrader/resources"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
-	"golang.org/x/exp/maps"
 	v1 "k8s.io/api/authorization/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -121,10 +121,9 @@ func (c accessCheck) Check(ctx *upgradectx.UpgradeContext, execPlan *plan.Execut
 			"Troubleshooting: %s", upgraderTroubleshootingLink)
 
 		affected := maps.Keys(actionResourceErr)
-		slices.Sort(affected)
 		log.Warnf("Kubernetes authorizer did not explicitly allow or deny "+
 			"access to perform the following actions on the following resources: %s."+
-			"This usually means that access is denied.", strings.Join(affected, ", "))
+			"This usually means that access is denied.", strings.Join(slices.Sorted(affected), ", "))
 		issues := c.auxiliaryInfoOnPermissionDenied(ctx)
 		for i, issue := range issues {
 			log.Warnf("Discovered issue (%d of %d): %s", i+1, len(issues), issue)
@@ -167,7 +166,7 @@ func (c accessCheck) getUpgraderSAName(ctx *upgradectx.UpgradeContext) (string, 
 	deplClient := ctx.ClientSet().AppsV1().Deployments(pods.GetPodNamespace())
 	depl, err := deplClient.Get(ctx.Context(), "sensor-upgrader", metav1.GetOptions{})
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "retrieving sensor-upgrader deployment")
 	}
 	return depl.Spec.Template.Spec.ServiceAccountName, nil
 }

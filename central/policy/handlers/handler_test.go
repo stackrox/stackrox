@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -24,7 +25,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/tidwall/gjson"
 	gomock "go.uber.org/mock/gomock"
-	"golang.org/x/exp/maps"
 )
 
 var (
@@ -33,7 +33,6 @@ var (
 )
 
 func TestPolicyHTTPTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(PolicyHandlerTestSuite))
 }
 
@@ -69,7 +68,7 @@ func (s *PolicyHandlerTestSuite) performRequest(body interface{}) *httptest.Resp
 		reqBody, err = json.Marshal(body)
 		s.NoError(err)
 	}
-	req := httptest.NewRequest("POST", "/url", bytes.NewBuffer(reqBody))
+	req := httptest.NewRequest(http.MethodPost, "/url", bytes.NewBuffer(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	s.handler.ServeHTTP(s.mockRecorder, req)
 	return s.mockRecorder
@@ -105,17 +104,25 @@ func (s *PolicyHandlerTestSuite) TestSaveAsValidIDSucceeds() {
 	}
 	mockRequest := &apiparams.SaveAsCustomResourcesRequest{IDs: []string{"valid-id"}}
 
-	s.policyStore.EXPECT().GetPolicies(ctx, mockRequest.IDs).Return(maps.Values(expectedNameToPolicies), nil, nil)
-	s.notifierStore.EXPECT().GetNotifiers(s.ctx).Return([]*storage.Notifier{
-		{
-			Id:   emailNotifierUuid,
-			Name: "email-notifier",
-		},
-		{
-			Id:   jiraNotifierUuid,
-			Name: "jira-notifier",
-		},
-	}, nil)
+	s.policyStore.EXPECT().GetPolicies(ctx, mockRequest.IDs).Return(slices.Collect(maps.Values(expectedNameToPolicies)), nil, nil)
+	s.notifierStore.EXPECT().ForEachNotifier(s.ctx, gomock.Any()).DoAndReturn(
+		func(_ context.Context, fn func(obj *storage.Notifier) error) error {
+			for _, n := range []*storage.Notifier{
+				{
+					Id:   emailNotifierUuid,
+					Name: "email-notifier",
+				},
+				{
+					Id:   jiraNotifierUuid,
+					Name: "jira-notifier",
+				},
+			} {
+				if err := fn(n); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
 
 	resp := s.performRequest(mockRequest)
 	s.Equal(http.StatusOK, resp.Code)
@@ -143,19 +150,26 @@ func (s *PolicyHandlerTestSuite) TestSaveAsMultipleValidIDSucceeds() {
 	}
 	mockRequest := &apiparams.SaveAsCustomResourcesRequest{IDs: []string{"id1", "id2"}}
 
-	policies := maps.Values(expectedNameToPolicies)
-	slices.SortFunc(policies, func(a, b *storage.Policy) int { return strings.Compare(a.GetId(), b.GetId()) })
+	policies := slices.SortedFunc(maps.Values(expectedNameToPolicies), func(a, b *storage.Policy) int { return strings.Compare(a.GetId(), b.GetId()) })
 	s.policyStore.EXPECT().GetPolicies(ctx, mockRequest.IDs).Return(policies, nil, nil)
-	s.notifierStore.EXPECT().GetNotifiers(s.ctx).Return([]*storage.Notifier{
-		{
-			Id:   emailNotifierUuid,
-			Name: "email-notifier",
-		},
-		{
-			Id:   jiraNotifierUuid,
-			Name: "jira-notifier",
-		},
-	}, nil)
+	s.notifierStore.EXPECT().ForEachNotifier(s.ctx, gomock.Any()).DoAndReturn(
+		func(_ context.Context, fn func(obj *storage.Notifier) error) error {
+			for _, n := range []*storage.Notifier{
+				{
+					Id:   emailNotifierUuid,
+					Name: "email-notifier",
+				},
+				{
+					Id:   jiraNotifierUuid,
+					Name: "jira-notifier",
+				},
+			} {
+				if err := fn(n); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
 	resp := s.performRequest(mockRequest)
 	s.Equal(http.StatusOK, resp.Code)
 

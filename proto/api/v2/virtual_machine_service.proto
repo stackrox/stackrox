@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package v2;
+
+import "api/v2/scan_component.proto";
+import "api/v2/search_query.proto";
+import weak "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./api/v2;v2";
+option java_package = "io.stackrox.proto.api.v2";
+
+message VirtualMachine {
+  string id = 1;
+  string namespace = 2;
+  string name = 3;
+  string cluster_id = 4;
+  string cluster_name = 5;
+  map<string, string> facts = 6;
+
+  google.protobuf.Timestamp last_updated = 7;
+
+  int32 vsock_cid = 8;
+  enum State {
+    UNKNOWN = 0;
+    STOPPED = 1;
+    RUNNING = 2;
+  }
+  State state = 9;
+
+  VirtualMachineScan scan = 10;
+}
+
+message VirtualMachineScan {
+  google.protobuf.Timestamp scan_time = 1;
+  string operating_system = 2;
+  enum Note {
+    UNSET = 0;
+    OS_UNKNOWN = 1;
+    OS_UNSUPPORTED = 2;
+  }
+  repeated Note notes = 3;
+  repeated ScanComponent components = 4;
+}
+
+message GetVirtualMachineRequest {
+  string id = 1;
+  bool strip_description = 2;
+}
+
+message ListVirtualMachinesResponse {
+  repeated VirtualMachine virtual_machines = 1;
+  int32 total_count = 2;
+}
+
+message ListVirtualMachinesRequest {
+  RawQuery query = 1;
+}
+
+service VirtualMachineService {
+  rpc GetVirtualMachine(GetVirtualMachineRequest) returns (VirtualMachine) {
+    option (google.api.http) = {get: "/v2/virtualmachines/{id}"};
+  }
+
+  rpc ListVirtualMachines(ListVirtualMachinesRequest) returns (ListVirtualMachinesResponse) {
+    option (google.api.http) = {get: "/v2/virtualmachines"};
+  }
+}

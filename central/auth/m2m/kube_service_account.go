@@ -3,8 +3,9 @@ package m2m
 import (
 	"os"
 
-	jwt "github.com/go-jose/go-jose/v3/jwt"
+	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/pkg/errors"
+	pkgjwt "github.com/stackrox/rox/pkg/jwt"
 )
 
 //go:generate mockgen-wrapper
@@ -27,7 +28,7 @@ func (k kubeServiceAccountIssuerFetcher) GetServiceAccountIssuer() (string, erro
 		return "", errors.Wrap(err, "Failed to read kube service account token")
 	}
 
-	parsedJwt, err := jwt.ParseSigned(token)
+	parsedJwt, err := pkgjwt.ParseSigned(token)
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to parse service account JWT")
 	}

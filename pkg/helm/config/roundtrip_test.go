@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image"
@@ -20,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stretchr/testify/suite"
 	"helm.sh/helm/v3/pkg/chartutil"
+	"sigs.k8s.io/yaml"
 )
 
 var (
@@ -43,6 +43,7 @@ func TestBase(t *testing.T) {
 }
 
 func (h *helmConfigSuite) TestHelmConfigRoundTrip() {
+	h.T().Setenv("ROX_ADMISSION_CONTROLLER_CONFIG", "true") // Can be removed once this feature is on by default.
 	testDataFiles := []string{
 		"simple.yaml",
 	}

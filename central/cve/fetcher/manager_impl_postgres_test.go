@@ -468,10 +468,6 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) SetupSuite() {
 	}
 }
 
-func (s *TestClusterCVEOpsInPostgresTestSuite) TearDownSuite() {
-	s.testPostgres.Teardown(s.T())
-}
-
 func (s *TestClusterCVEOpsInPostgresTestSuite) TestBasicOps() {
 	// Upsert cluster.
 	c1ID, err := s.clusterDataStore.AddCluster(s.ctx, &storage.Cluster{

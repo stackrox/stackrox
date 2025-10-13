@@ -47,10 +47,10 @@ type streamImpl struct {
 	queue *queue.Queue[*events.AdministrationEvent]
 }
 
-// Consume returns an event.
-// Note that this is blocking and waits for events to be emitted before returning.
-func (s *streamImpl) Consume(waitable concurrency.Waitable) *events.AdministrationEvent {
-	return s.queue.PullBlocking(waitable)
+// Consume returns an events iterator.
+// Note that this is blocking and waits for all events (or waitable) to be emitted before returning.
+func (s *streamImpl) Consume(waitable concurrency.Waitable) func(yield func(*events.AdministrationEvent) bool) {
+	return s.queue.Seq(waitable)
 }
 
 // Produce adds an event to the stream.

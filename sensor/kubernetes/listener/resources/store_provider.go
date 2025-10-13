@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
+	vmStore "github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/store"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 )
 
@@ -24,6 +25,7 @@ type StoreProvider struct {
 	registryStore          *registry.Store
 	registryMirrorStore    registrymirror.Store
 	nsStore                *namespaceStore
+	vmStore                *vmStore.VirtualMachineStore
 
 	cleanableStores []CleanableStore
 }
@@ -34,7 +36,7 @@ type CleanableStore interface {
 }
 
 // InitializeStore creates the store instances
-func InitializeStore() *StoreProvider {
+func InitializeStore(hm clusterentities.HeritageManager) *StoreProvider {
 	memSizeSetting := pastClusterEntitiesMemorySize.IntegerSetting()
 	if memSizeSetting < 0 {
 		memSizeSetting = pastClusterEntitiesMemorySize.DefaultValue()
@@ -44,7 +46,7 @@ func InitializeStore() *StoreProvider {
 	podStore := newPodStore()
 	svcStore := newServiceStore()
 	nodeStore := newNodeStore()
-	entityStore := clusterentities.NewStoreWithMemory(uint16(memSizeSetting), debugClusterEntitiesStore.BooleanSetting())
+	entityStore := clusterentities.NewStore(uint16(memSizeSetting), hm, debugClusterEntitiesStore.BooleanSetting())
 	if debugClusterEntitiesStore.BooleanSetting() {
 		go entityStore.StartDebugServer()
 	}
@@ -64,6 +66,7 @@ func InitializeStore() *StoreProvider {
 		registryStore:          registry.NewRegistryStore(nil),
 		registryMirrorStore:    registrymirror.NewFileStore(),
 		nsStore:                newNamespaceStore(),
+		vmStore:                vmStore.NewVirtualMachineStore(),
 	}
 
 	p.cleanableStores = []CleanableStore{
@@ -79,6 +82,7 @@ func InitializeStore() *StoreProvider {
 		p.registryStore,
 		p.registryMirrorStore,
 		p.nsStore,
+		p.vmStore,
 	}
 
 	return p
@@ -144,4 +148,9 @@ func (p *StoreProvider) Nodes() store.NodeStore {
 // RegistryMirrors returns the RegistryMirror store public interface.
 func (p *StoreProvider) RegistryMirrors() registrymirror.Store {
 	return p.registryMirrorStore
+}
+
+// VirtualMachines returns the VirtualMachine store
+func (p *StoreProvider) VirtualMachines() *vmStore.VirtualMachineStore {
+	return p.vmStore
 }

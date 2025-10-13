@@ -1,6 +1,7 @@
 package common
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -18,6 +19,8 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/auth"
 	"golang.org/x/net/http2"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -58,7 +61,7 @@ func getURL(path string) (string, error) {
 
 // GetRoxctlHTTPClient returns a new instance of RoxctlHTTPClient with the given configuration
 func GetRoxctlHTTPClient(config *HttpClientConfig) (RoxctlHTTPClient, error) {
-	tlsConf, err := tlsConfigForCentral(config.Logger)
+	tlsConf, err := tlsConfigForCentral()
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating TLS configuration for central")
 	}
@@ -75,6 +78,20 @@ func GetRoxctlHTTPClient(config *HttpClientConfig) (RoxctlHTTPClient, error) {
 	}
 
 	retryClient := retryablehttp.NewClient()
+	retryClient.CheckRetry = func(ctx context.Context, resp *http.Response, err error) (bool, error) {
+		retry, err := retryablehttp.ErrorPropagatedRetryPolicy(ctx, resp, err)
+		if !retry || status.Code(err) == codes.PermissionDenied {
+			return false, nil
+		}
+		if err != nil {
+			config.Logger.WarnfLn(err.Error())
+		}
+		return true, nil
+	}
+	// Allows callers to extract the error message from response body.
+	// Without this only a generic message "request failed after X attempts"
+	// is surfaced.
+	retryClient.ErrorHandler = retryablehttp.PassthroughErrorHandler
 	retryClient.RetryMax = config.RetryCount
 	retryClient.HTTPClient.Transport = transport
 	retryClient.HTTPClient.Timeout = config.Timeout
@@ -86,13 +103,6 @@ func GetRoxctlHTTPClient(config *HttpClientConfig) (RoxctlHTTPClient, error) {
 		// Disable the exponential backoff, in some scenarios the backoff makes roxctl appear
 		// stuck (partially due to the logger being disabled).
 		retryClient.Backoff = func(min, max time.Duration, attemptNum int, resp *http.Response) time.Duration { return min }
-	}
-
-	if config.ReturnRespBodyOnError {
-		// Allows callers to extract the error message from response body.
-		// Without this only a generic message "request failed after X attempts"
-		// is surfaced.
-		retryClient.ErrorHandler = retryablehttp.PassthroughErrorHandler
 	}
 
 	client := retryClient.StandardClient()

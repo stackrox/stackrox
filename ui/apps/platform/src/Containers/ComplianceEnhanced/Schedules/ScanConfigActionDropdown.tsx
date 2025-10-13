@@ -1,14 +1,10 @@
-import React, { ReactElement, useState } from 'react';
-import { generatePath, useHistory } from 'react-router-dom';
-import {
-    Dropdown,
-    DropdownItem,
-    DropdownSeparator,
-    DropdownToggle,
-} from '@patternfly/react-core/deprecated';
-import { CaretDownIcon } from '@patternfly/react-icons';
+import React from 'react';
+import type { ReactElement } from 'react';
+import { Divider, DropdownItem } from '@patternfly/react-core';
+import { generatePath, useNavigate } from 'react-router-dom-v5-compat';
 
-import { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
+import type { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 
 import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
 
@@ -24,7 +20,6 @@ export type ScanConfigActionDropdownProps = {
     isScanning: boolean;
     isReportStatusPending: boolean;
     scanConfigResponse: ComplianceScanConfigurationStatus;
-    isReportJobsEnabled: boolean;
 };
 
 function ScanConfigActionDropdown({
@@ -34,11 +29,8 @@ function ScanConfigActionDropdown({
     isScanning,
     isReportStatusPending,
     scanConfigResponse,
-    isReportJobsEnabled,
 }: ScanConfigActionDropdownProps): ReactElement {
-    const history = useHistory();
-
-    const [isOpen, setIsOpen] = useState(false);
+    const navigate = useNavigate();
 
     const { id, scanConfig } = scanConfigResponse;
     const { notifiers } = scanConfig;
@@ -47,62 +39,50 @@ function ScanConfigActionDropdown({
     });
     const isProcessing = isScanning || isReportStatusPending;
 
-    function onToggle() {
-        setIsOpen((prevValue) => !prevValue);
-    }
-
-    function onSelect() {
-        setIsOpen(false);
-    }
-
-    const dropdownItems = [
-        <DropdownItem
-            key="Edit scan schedule"
-            component="button"
-            // description={isScanning ? 'Edit is disabled while scan is running' : ''}
-            isDisabled={isProcessing}
-            onClick={() => {
-                history.push({
-                    pathname: scanConfigUrl,
-                    search: 'action=edit',
-                });
+    return (
+        <MenuDropdown
+            toggleText="Actions"
+            popperProps={{
+                position: 'end',
             }}
         >
-            Edit scan schedule
-        </DropdownItem>,
-        <DropdownSeparator key="Separator" />,
-        <DropdownItem
-            key="Run scan"
-            component="button"
-            description={isScanning ? 'Run is disabled while scan is already running' : ''}
-            isDisabled={isProcessing}
-            onClick={() => {
-                handleRunScanConfig(scanConfigResponse);
-            }}
-        >
-            Run scan
-        </DropdownItem>,
-        <DropdownItem
-            key="Send report"
-            component="button"
-            description={
-                notifiers.length === 0
-                    ? 'Send is disabled if no delivery destinations'
-                    : /* : isScanning
+            <DropdownItem
+                key="Edit scan schedule"
+                // description={isScanning ? 'Edit is disabled while scan is running' : ''}
+                isDisabled={isProcessing}
+                onClick={() => {
+                    navigate(`${scanConfigUrl}?action=edit`);
+                }}
+            >
+                Edit scan schedule
+            </DropdownItem>
+            <Divider component="li" key="separator" />
+            <DropdownItem
+                key="Run scan"
+                description={isScanning ? 'Run is disabled while scan is already running' : ''}
+                isDisabled={isProcessing}
+                onClick={() => {
+                    handleRunScanConfig(scanConfigResponse);
+                }}
+            >
+                Run scan
+            </DropdownItem>
+            <DropdownItem
+                key="Send report"
+                description={
+                    notifiers.length === 0
+                        ? 'Send is disabled if no delivery destinations'
+                        : /* : isScanning
                         ? 'Send is disabled while scan is running' */
-                      ''
-            }
-            isDisabled={notifiers.length === 0 || isProcessing}
-            onClick={() => {
-                handleSendReport(scanConfigResponse);
-            }}
-        >
-            Send report
-        </DropdownItem>,
-    ];
-
-    if (isReportJobsEnabled) {
-        dropdownItems.push(
+                          ''
+                }
+                isDisabled={notifiers.length === 0 || isProcessing}
+                onClick={() => {
+                    handleSendReport(scanConfigResponse);
+                }}
+            >
+                Send report
+            </DropdownItem>
             <DropdownItem
                 key="Generate download"
                 component="button"
@@ -113,21 +93,7 @@ function ScanConfigActionDropdown({
             >
                 Generate download
             </DropdownItem>
-        );
-    }
-
-    return (
-        <Dropdown
-            onSelect={onSelect}
-            position="right"
-            toggle={
-                <DropdownToggle onToggle={onToggle} toggleIndicator={CaretDownIcon}>
-                    Actions
-                </DropdownToggle>
-            }
-            isOpen={isOpen}
-            dropdownItems={dropdownItems}
-        />
+        </MenuDropdown>
     );
 }
 

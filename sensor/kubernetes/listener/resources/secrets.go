@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/cloudflare/cfssl/certinfo"
 	"github.com/pkg/errors"
@@ -22,7 +23,6 @@ import (
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/managedcentral"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/store/resolver"
@@ -133,20 +133,22 @@ func populateTypeData(secret *storage.Secret, dataFiles map[string][]byte) {
 		}
 		secret.Files = append(secret.Files, file)
 	}
-	sort.Slice(secret.Files, func(i, j int) bool {
-		return secret.Files[i].Name < secret.Files[j].Name
+	sort.Slice(secret.GetFiles(), func(i, j int) bool {
+		return secret.GetFiles()[i].GetName() < secret.GetFiles()[j].GetName()
 	})
 }
 
 // secretDispatcher handles secret resource events.
 type secretDispatcher struct {
-	regStore *registry.Store
+	regStore  *registry.Store
+	clusterID string
 }
 
 // newSecretDispatcher creates and returns a new secret handler.
-func newSecretDispatcher(regStore *registry.Store) *secretDispatcher {
+func newSecretDispatcher(clusterID string, regStore *registry.Store) *secretDispatcher {
 	return &secretDispatcher{
-		regStore: regStore,
+		regStore:  regStore,
+		clusterID: clusterID,
 	}
 }
 
@@ -161,7 +163,7 @@ func deriveIDFromSecret(secret *v1.Secret, registry string) (string, error) {
 
 // DockerConfigToImageIntegration creates an image integration for a given
 // registry URL and docker config.
-func DockerConfigToImageIntegration(secret *v1.Secret, registry string, dce config.DockerConfigEntry) (*storage.ImageIntegration, error) {
+func DockerConfigToImageIntegration(clusterID string, secret *v1.Secret, registry string, dce config.DockerConfigEntry) (*storage.ImageIntegration, error) {
 	registryType := types.DockerType
 	if rhel.RedHatRegistryEndpoints.Contains(urlfmt.TrimHTTPPrefixes(registry)) {
 		registryType = types.RedHatType
@@ -195,7 +197,7 @@ func DockerConfigToImageIntegration(secret *v1.Secret, registry string, dce conf
 
 	if sourcedIntegration {
 		ii.Source = &storage.ImageIntegration_Source{
-			ClusterId:           clusterid.Get(),
+			ClusterId:           clusterID,
 			Namespace:           secret.GetNamespace(),
 			ImagePullSecretName: secret.GetName(),
 		}
@@ -260,6 +262,19 @@ func shouldCreateSourcedIntegration(secret *v1.Secret) bool {
 		(env.AutogenerateGlobalPullSecRegistries.BooleanSetting() && openshift.GlobalPullSecret(secret.GetNamespace(), secret.GetName()))
 }
 
+func validateSecret(registryAddr string, dce config.DockerConfigEntry) error {
+	if !utf8.ValidString(registryAddr) {
+		return fmt.Errorf("registry address %q contains invalid UTF-8 characters", registryAddr)
+	}
+	if !utf8.ValidString(dce.Username) {
+		return fmt.Errorf("registry username %q contains invalid UTF-8 characters", dce.Username)
+	}
+	if !utf8.ValidString(dce.Password) {
+		return errors.New("registry password contains invalid UTF-8 characters")
+	}
+	return nil
+}
+
 func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret, action central.ResourceAction) *component.ResourceEvent {
 	dockerConfig := getDockerConfigFromSecret(secret)
 	if len(dockerConfig) == 0 {
@@ -290,6 +305,13 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 				registryAddress, secret.GetNamespace(), secret.GetName())
 		}
 
+		if err := validateSecret(registryAddr, dce); err != nil {
+			log.Warnf("Not processing the registry with address %q found in secret %q from namespace %q: %v.",
+				secret.GetName(), secret.GetNamespace(), registryAddr, err)
+			continue
+		}
+		// Only add to registries if the secret data contain credentials with valid UTF-8 characters.
+		// Processing auth data containing non-UTF-8 may lead to GRPC connection crashes during (un)marshaling.
 		registries = append(registries, &storage.ImagePullSecret_Registry{
 			Name:     registryAddr,
 			Username: dce.Username,
@@ -313,7 +335,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 			continue
 		}
 
-		ii, err := DockerConfigToImageIntegration(secret, registryAddr, dce)
+		ii, err := DockerConfigToImageIntegration(s.clusterID, secret, registryAddr, dce)
 		if err != nil {
 			log.Errorf("unable to create docker config for secret %s: %v", secret.GetName(), err)
 			continue
@@ -352,7 +374,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 							// if this integrations is from the OCP global pull secret if
 							// needed.
 							Source: &storage.ImageIntegration_Source{
-								ClusterId:           clusterid.Get(),
+								ClusterId:           s.clusterID,
 								Namespace:           secret.GetNamespace(),
 								ImagePullSecretName: secret.GetName(),
 							},
@@ -362,8 +384,13 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 			}
 		}
 	}
+	// No need to send event if there are 0 valid registries
+	if len(registries) == 0 {
+		return nil
+	}
+
 	sort.SliceStable(registries, func(i, j int) bool {
-		if registries[i].Name != registries[j].Name {
+		if registries[i].GetName() != registries[j].GetName() {
 			return registries[i].GetName() < registries[j].GetName()
 		}
 		return registries[i].GetUsername() < registries[j].GetUsername()

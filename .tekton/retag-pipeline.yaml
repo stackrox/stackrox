@@ -21,7 +21,21 @@ spec:
       - name: name
         value: slack-webhook-notification
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-slack-webhook-notification:0.1@sha256:dc17b70633363d78414b8c06dc1660d25742935f106a6116995638e1210c2730
+        value: quay.io/konflux-ci/tekton-catalog/task-slack-webhook-notification:0.1@sha256:4e68fe2225debc256d403b828ed358345bb56d03327b46d55cb6c42911375750
+      - name: kind
+        value: task
+      resolver: bundles
+
+  - name: post-metric-end
+    params:
+    - name: AGGREGATE_TASKS_STATUS
+      value: $(tasks.status)
+    taskRef: &post-bigquery-metrics-ref
+      params:
+      - name: name
+        value: post-bigquery-metrics
+      - name: bundle
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:1ec052cfe55faa372e38a16eee8456a78ade9e2865aaad6f18994092f0a590e3
       - name: kind
         value: task
       resolver: bundles
@@ -81,6 +95,9 @@ spec:
 
   tasks:
 
+  - name: post-metric-start
+    taskRef: *post-bigquery-metrics-ref
+
   - name: clone-repository
     params:
     - name: url
@@ -100,7 +117,7 @@ spec:
       - name: name
         value: git-clone-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:aab5f0f4906ba2c2a64a67b591c7ecf57018d066f1206ebc56158476e29f2cf3
+        value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:3f1b468066b301083d8550e036f5a654fcb064810bd29eb06fec6d8ad3e35b9c
       - name: kind
         value: task
       resolver: bundles
@@ -114,14 +131,12 @@ spec:
       value: $(params.image-tag-suffix)
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
-    - name: SOURCE_BRANCH
-      value: '{{source_branch}}'
     taskRef:
       params:
       - name: name
         value: determine-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:0c6cd49c7cab12f611986efd494ac5f5ca8a77993129612bdbce9cf9833a5fa6
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:1ec052cfe55faa372e38a16eee8456a78ade9e2865aaad6f18994092f0a590e3
       - name: kind
         value: task
       resolver: bundles
@@ -136,15 +151,36 @@ spec:
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     taskRef:
       params:
-        - name: name
-          value: determine-dependency-image-tag
-        - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:0c6cd49c7cab12f611986efd494ac5f5ca8a77993129612bdbce9cf9833a5fa6
-        - name: kind
-          value: task
+      - name: name
+        value: determine-dependency-image-tag
+      - name: bundle
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:1ec052cfe55faa372e38a16eee8456a78ade9e2865aaad6f18994092f0a590e3
+      - name: kind
+        value: task
       resolver: bundles
 
+    # We only check the input image is ready and otherwise fail the retag pipeline early and with a meaningful error.
+    # This confirms that the image is present and that it has successfully passed its build pipeline.
+  - name: wait-for-image
+    params:
+    - name: IMAGE
+      value: "$(params.input-image-repo):$(tasks.determine-input-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      params:
+      - name: name
+        value: wait-for-image
+      - name: bundle
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:1ec052cfe55faa372e38a16eee8456a78ade9e2865aaad6f18994092f0a590e3
+      - name: kind
+        value: task
+      resolver: bundles
+    timeout: 5m
+
   - name: retag-image
+    # runAfter needs to be specified, because there is no implicit dependency on wait-for-image's
+    # results, but we still need it to run before.
+    runAfter:
+    - wait-for-image
     params:
     - name: INPUT_IMAGE_REPO
       value: $(params.input-image-repo)
@@ -159,7 +195,7 @@ spec:
       - name: name
         value: retag-image
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:0c6cd49c7cab12f611986efd494ac5f5ca8a77993129612bdbce9cf9833a5fa6
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:1ec052cfe55faa372e38a16eee8456a78ade9e2865aaad6f18994092f0a590e3
       - name: kind
         value: task
       resolver: bundles

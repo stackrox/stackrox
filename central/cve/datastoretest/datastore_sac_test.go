@@ -11,6 +11,7 @@ import (
 	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
@@ -25,6 +26,10 @@ var (
 )
 
 func TestCVEDataStoreSAC(t *testing.T) {
+	// TODO(ROX-28123): Remove deprecated datastore and tests
+	if features.FlattenCVEData.Enabled() {
+		t.Skip("This test is deprecated per ROX-25570.")
+	}
 	suite.Run(t, new(cveDataStoreSACTestSuite))
 }
 
@@ -49,10 +54,6 @@ func (s *cveDataStoreSACTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	s.imageTestContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Image)
 	s.nodeTestContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Node)
-}
-
-func (s *cveDataStoreSACTestSuite) TearDownSuite() {
-	s.testGraphDatastore.Cleanup(s.T())
 }
 
 // Vulnerability identifiers have been modified in the migration to Postgres to hold
@@ -470,7 +471,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetSingleScopeOnly() {
 		if c.expectedCVEFound[cveName] {
 			s.Require().NotNil(imageCVE)
 			s.Equal(cveName, imageCVE.GetCveBaseInfo().GetCve())
-			s.Equal(cvss, imageCVE.Cvss)
+			s.Equal(cvss, imageCVE.GetCvss())
 		} else {
 			s.Nil(imageCVE)
 		}
@@ -491,7 +492,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetSharedAcrossComponents() {
 		if c.expectedCVEFound[cveName] {
 			s.Require().NotNil(imageCVE)
 			s.Equal(cveName, imageCVE.GetCveBaseInfo().GetCve())
-			s.Equal(cvss, imageCVE.Cvss)
+			s.Equal(cvss, imageCVE.GetCvss())
 		} else {
 			s.Nil(imageCVE)
 		}
@@ -512,7 +513,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetFromSharedComponent() {
 		if c.expectedCVEFound[cveName] {
 			s.Require().NotNil(imageCVE)
 			s.Equal(cveName, imageCVE.GetCveBaseInfo().GetCve())
-			s.Equal(cvss, imageCVE.Cvss)
+			s.Equal(cvss, imageCVE.GetCvss())
 		} else {
 			s.Nil(imageCVE)
 		}
@@ -722,7 +723,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetSingleScopeOnly() {
 		if c.expectedCVEFound[cveName] {
 			s.Require().NotNil(nodeCVE)
 			s.Equal(cveName, nodeCVE.GetCveBaseInfo().GetCve())
-			s.Equal(cvss, nodeCVE.Cvss)
+			s.Equal(cvss, nodeCVE.GetCvss())
 		} else {
 			s.Nil(nodeCVE)
 		}
@@ -743,7 +744,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetSharedAcrossComponents() {
 		if c.expectedCVEFound[cveName] {
 			s.Require().NotNil(nodeCVE)
 			s.Equal(cveName, nodeCVE.GetCveBaseInfo().GetCve())
-			s.Equal(cvss, nodeCVE.Cvss)
+			s.Equal(cvss, nodeCVE.GetCvss())
 		} else {
 			s.Nil(nodeCVE)
 		}
@@ -764,7 +765,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetFromSharedComponent() {
 		if c.expectedCVEFound[cveName] {
 			s.Require().NotNil(nodeCVE)
 			s.Equal(cveName, nodeCVE.GetCveBaseInfo().GetCve())
-			s.Equal(cvss, nodeCVE.Cvss)
+			s.Equal(cvss, nodeCVE.GetCvss())
 		} else {
 			s.Nil(nodeCVE)
 		}

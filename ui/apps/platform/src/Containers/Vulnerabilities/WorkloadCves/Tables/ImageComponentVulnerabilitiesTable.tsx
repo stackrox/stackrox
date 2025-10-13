@@ -3,8 +3,9 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import useTableSort from 'hooks/patternfly/useTableSort';
+import useTableSort from 'hooks/useTableSort';
 
+import AdvisoryLinkOrText from '../../components/AdvisoryLinkOrText';
 import {
     ImageComponentVulnerability,
     ImageMetadataContext,
@@ -12,11 +13,9 @@ import {
     imageMetadataContextFragment,
     sortTableData,
 } from './table.utils';
-import FixedByVersion from '../components/FixedByVersion';
 import DockerfileLayer from '../components/DockerfileLayer';
 import ComponentLocation from '../components/ComponentLocation';
-
-import AdvisoryLinkOrText from './AdvisoryLinkOrText';
+import FixedByVersion from '../../components/FixedByVersion';
 
 export { imageMetadataContextFragment };
 export type { ImageMetadataContext, ImageComponentVulnerability };
@@ -31,6 +30,10 @@ export const imageComponentVulnerabilitiesFragment = gql`
         imageVulnerabilities(query: $query) {
             severity
             fixedByVersion
+            advisory {
+                name
+                link
+            }
             pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
         }
     }
@@ -50,9 +53,9 @@ function ImageComponentVulnerabilitiesTable({
     componentVulnerabilities,
 }: ImageComponentVulnerabilitiesTableProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isAdvisoryColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') &&
-        isFeatureFlagEnabled('ROX_CVE_ADVISORY_SEPARATION');
+    const isAdvisoryColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+
+    const colSpanForDockerfileLayer = 5 + (isAdvisoryColumnEnabled ? 1 : 0);
 
     const { sortOption, getSortParams } = useTableSort({ sortFields, defaultSortOption });
     const componentVulns = flattenImageComponentVulns(
@@ -79,9 +82,8 @@ function ImageComponentVulnerabilitiesTable({
                 </Tr>
             </Thead>
             {sortedComponentVulns.map((componentVuln, index) => {
-                const { image, name, version, fixedByVersion, location, source, layer } =
+                const { image, name, version, fixedByVersion, advisory, location, source, layer } =
                     componentVuln;
-                const advisory = undefined; // placeholder until response includes property
                 // No border on the last row
                 const style =
                     index !== componentVulns.length - 1
@@ -107,7 +109,7 @@ function ImageComponentVulnerabilitiesTable({
                             </Td>
                         </Tr>
                         <Tr>
-                            <Td colSpan={5} className="pf-v5-u-pt-0">
+                            <Td colSpan={colSpanForDockerfileLayer} className="pf-v5-u-pt-0">
                                 <DockerfileLayer layer={layer} />
                             </Td>
                         </Tr>

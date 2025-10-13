@@ -1,4 +1,4 @@
-/* eslint jest/expect-expect: ["error", { "assertFunctionNames": ["expectColumnsToContain", "expectColumnsNotToContain"] }] */
+/* eslint vitest/expect-expect: ["error", { "assertFunctionNames": ["expectColumnsToContain", "expectColumnsNotToContain"] }] */
 
 import { resourceTypes, standardTypes } from 'constants/entityTypes';
 import { getColumnsByEntity, getColumnsByStandard } from './tableColumns';

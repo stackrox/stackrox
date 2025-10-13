@@ -4,6 +4,10 @@ package codes
 // The error codes may be used for filtering within logs as well as rendering
 // specific hints for the related administration events.
 const (
+	// API Token codes.
+	APITokenCreated = "api-token-created"
+	APITokenExpired = "api-token-expired"
+
 	// Backup codes.
 	GCSGeneric          = "gcs-generic"
 	S3CompatibleGeneric = "s3compatible-generic"

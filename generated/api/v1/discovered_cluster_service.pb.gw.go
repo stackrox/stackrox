@@ -42,6 +42,9 @@ func request_DiscoveredClustersService_CountDiscoveredClusters_0(ctx context.Con
 		protoReq CountDiscoveredClustersRequest
 		metadata runtime.ServerMetadata
 	)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
@@ -73,6 +76,9 @@ func request_DiscoveredClustersService_GetDiscoveredCluster_0(ctx context.Contex
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
 	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
@@ -110,6 +116,9 @@ func request_DiscoveredClustersService_ListDiscoveredClusters_0(ctx context.Cont
 		protoReq ListDiscoveredClustersRequest
 		metadata runtime.ServerMetadata
 	)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}

@@ -116,6 +116,20 @@ func (mr *MockEntityStoreMockRecorder) GetByQuery(ctx, query any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByQuery", reflect.TypeOf((*MockEntityStore)(nil).GetByQuery), ctx, query)
 }
 
+// GetByQueryFn mocks base method.
+func (m *MockEntityStore) GetByQueryFn(ctx context.Context, query *v1.Query, fn func(*storage.NetworkEntity) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByQueryFn", ctx, query, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// GetByQueryFn indicates an expected call of GetByQueryFn.
+func (mr *MockEntityStoreMockRecorder) GetByQueryFn(ctx, query, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByQueryFn", reflect.TypeOf((*MockEntityStore)(nil).GetByQueryFn), ctx, query, fn)
+}
+
 // GetIDs mocks base method.
 func (m *MockEntityStore) GetIDs(ctx context.Context) ([]string, error) {
 	m.ctrl.T.Helper()

@@ -2,6 +2,10 @@ BASE_PATH ?= $(CURDIR)
 # Set to empty string to echo some command lines which are hidden by default.
 SILENT ?= @
 
+# Set the container runtime command - prefer docker, fallback to podman.
+# If none of them are available, fallback to docker.
+DOCKER_CMD = $(shell command -v docker >/dev/null 2>&1 && echo docker || (command -v podman >/dev/null 2>&1 && echo podman || echo docker))
+
 # GENERATED_API_XXX and PROTO_API_XXX variables contain standard paths used to
 # generate gRPC proto messages, services, and gateways for the API.
 PROTO_BASE_PATH = $(CURDIR)/proto
@@ -16,6 +20,8 @@ API_SERVICE_PROTOS_V2 = $(filter api/v2/%, $(SERVICE_PROTOS_REL))
 
 STORAGE_PROTOS = $(filter storage/%, $(ALL_PROTOS_REL))
 
+CUSTOM_SWAGGER_SRCS = central/docs/api_custom_routes
+CUSTOM_SWAGGER_SPECS = $(shell find $(CUSTOM_SWAGGER_SRCS) -name "*.swagger.json")
 GENERATED_BASE_PATH = $(BASE_PATH)/generated
 GENERATED_DOC_PATH = image/rhel/docs
 MERGED_API_SWAGGER_SPEC = $(GENERATED_DOC_PATH)/api/v1/swagger.json
@@ -55,7 +61,7 @@ endif
 ifeq ($(UNAME_S),Darwin)
 PROTOC_OS = osx
 endif
-PROTOC_ARCH=$(shell case $$(uname -m) in (arm64) echo aarch_64 ;; (s390x) echo s390_64 ;; (*) uname -m ;; esac)
+PROTOC_ARCH=$(shell case $$(uname -m) in (arm64|aarch64) echo aarch_64 ;; (s390x) echo s390_64 ;; (*) uname -m ;; esac)
 
 PROTO_PRIVATE_DIR := $(BASE_PATH)/.proto
 
@@ -288,20 +294,20 @@ endif
 		$(dir $<)/*.proto
 
 # Generate the docs from the merged swagger specs. Dependency cleanup-swagger-json-gotags should execute the last.
-$(MERGED_API_SWAGGER_SPEC): $(BASE_PATH)/scripts/mergeswag.sh $(GENERATED_API_SWAGGER_SPECS) cleanup-swagger-json-gotags
+$(MERGED_API_SWAGGER_SPEC): $(BASE_PATH)/scripts/mergeswag.sh $(GENERATED_API_SWAGGER_SPECS) cleanup-swagger-json-gotags $(CUSTOM_SWAGGER_SPECS)
 	@echo "+ $@"
 	$(SILENT)mkdir -p "$(dir $@)"
-	$(BASE_PATH)/scripts/mergeswag.sh "$(GENERATED_BASE_PATH)/api/v1" "1" >"$@"
+	$(BASE_PATH)/scripts/mergeswag.sh "1" "$(GENERATED_BASE_PATH)/api/v1" "$(CUSTOM_SWAGGER_SRCS)" >"$@"
 
 $(MERGED_API_SWAGGER_SPEC_V2): $(BASE_PATH)/scripts/mergeswag.sh $(GENERATED_API_SWAGGER_SPECS_V2) cleanup-swagger-json-gotags
 	@echo "+ $@"
 	$(SILENT)mkdir -p "$(dir $@)"
-	$(BASE_PATH)/scripts/mergeswag.sh "$(GENERATED_BASE_PATH)/api/v2" "2" >"$@"
+	$(BASE_PATH)/scripts/mergeswag.sh "2" "$(GENERATED_BASE_PATH)/api/v2" >"$@"
 
 # Generate the docs from the merged swagger specs.
 $(GENERATED_API_DOCS): $(MERGED_API_SWAGGER_SPEC) $(MERGED_API_SWAGGER_SPEC_V2)
 	@echo "+ $@"
-	docker run $(DOCKER_OPTS) --rm -v $(CURDIR)/$(GENERATED_DOC_PATH):/tmp/$(GENERATED_DOC_PATH) swaggerapi/swagger-codegen-cli generate -l html2 -i /tmp/$< -o /tmp/$@
+	$(DOCKER_CMD) run $(DOCKER_OPTS) --rm -v $(CURDIR)/$(GENERATED_DOC_PATH):/tmp/$(GENERATED_DOC_PATH) swaggerapi/swagger-codegen-cli generate -l html2 -i /tmp/$< -o /tmp/$@
 
 # Nukes pretty much everything that goes into building protos.
 # You should not have to run this day-to-day, but it occasionally is useful

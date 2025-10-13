@@ -1,12 +1,12 @@
 import { useCallback } from 'react';
-import { useSelector } from 'react-redux';
 import Raven from 'raven-js';
 import mapValues from 'lodash/mapValues';
 
-import { Telemetry } from 'types/config.proto';
-import { selectors } from 'reducers';
-import { UnionFrom, ensureExhaustive, tupleTypeGuard } from 'utils/type.utils';
+import type { Telemetry } from 'types/config.proto';
+import { ensureExhaustive, tupleTypeGuard } from 'utils/type.utils';
+import type { UnionFrom } from 'utils/type.utils';
 import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
+import usePublicConfig from './usePublicConfig';
 
 // Event Name Constants
 
@@ -22,6 +22,8 @@ export const CLUSTER_LEVEL_SIMULATOR_OPENED = 'Network Graph: Cluster Level Simu
 export const GENERATE_NETWORK_POLICIES = 'Network Graph: Generate Network Policies';
 export const DOWNLOAD_NETWORK_POLICIES = 'Network Graph: Download Network Policies';
 export const CIDR_BLOCK_FORM_OPENED = 'Network Graph: CIDR Block Form Opened';
+export const EXTERNAL_IPS_SIDE_PANEL = 'External IPs Side Panel Opened';
+export const DEPLOYMENT_FLOWS_TOGGLE_CLICKED = 'External Flows Toggle Clicked';
 
 // watch images
 export const WATCH_IMAGE_MODAL_OPENED = 'Watch Image Modal Opened';
@@ -39,6 +41,10 @@ export const COLLECTION_CREATED = 'Collection Created';
 export const VULNERABILITY_REPORT_CREATED = 'Vulnerability Report Created';
 export const VULNERABILITY_REPORT_DOWNLOAD_GENERATED = 'Vulnerability Report Download Generated';
 export const VULNERABILITY_REPORT_SENT_MANUALLY = 'Vulnerability Report Sent Manually';
+export const VIEW_BASED_REPORT_GENERATED = 'View Based Report Generated';
+export const VIEW_BASED_REPORT_FILTER_APPLIED = 'View Based Report Filter Applied';
+export const VIEW_BASED_REPORT_DOWNLOAD_ATTEMPTED = 'View Based Report Download Attempted';
+export const VIEW_BASED_REPORT_JOB_DETAILS_VIEWED = 'View Based Report Job Details Viewed';
 export const IMAGE_SBOM_GENERATED = 'Image SBOM Generated';
 
 // node and platform CVEs
@@ -52,10 +58,17 @@ export const PLATFORM_CVE_ENTITY_CONTEXT_VIEWED = 'Platform CVE Entity Context V
 export const CREATE_INIT_BUNDLE_CLICKED = 'Create Init Bundle Clicked';
 export const SECURE_A_CLUSTER_LINK_CLICKED = 'Secure a Cluster Link Clicked';
 export const LEGACY_SECURE_A_CLUSTER_LINK_CLICKED = 'Legacy Secure a Cluster Link Clicked';
+export const CRS_SECURE_A_CLUSTER_LINK_CLICKED = 'CRS Secure a Cluster Link Clicked';
 export const DOWNLOAD_INIT_BUNDLE = 'Download Init Bundle';
 export const REVOKE_INIT_BUNDLE = 'Revoke Init Bundle';
 export const LEGACY_CLUSTER_DOWNLOAD_YAML = 'Legacy Cluster Download YAML';
 export const LEGACY_CLUSTER_DOWNLOAD_HELM_VALUES = 'Legacy Cluster Download Helm Values';
+
+// cluster-registration-secrets
+export const CREATE_CLUSTER_REGISTRATION_SECRET_CLICKED =
+    'Create Cluster Registration Secret Clicked';
+export const DOWNLOAD_CLUSTER_REGISTRATION_SECRET = 'Download Cluster Registration Secret';
+export const REVOKE_CLUSTER_REGISTRATION_SECRET = 'Revoke Cluster Registration Secret';
 
 // policy violations
 
@@ -156,6 +169,19 @@ export type AnalyticsEvent =
               deployments: number;
           };
       }
+    | {
+          event: typeof EXTERNAL_IPS_SIDE_PANEL;
+          properties: {
+              isEmptyTable: boolean;
+              isFilteredTable: boolean;
+          };
+      }
+    | {
+          event: typeof DEPLOYMENT_FLOWS_TOGGLE_CLICKED;
+          properties: {
+              view: 'External Flows' | 'Internal Flows';
+          };
+      }
     /** Tracks each time the user opens the "Watched Images" modal */
     | typeof WATCH_IMAGE_MODAL_OPENED
     /** Tracks each time the user submits a request to watch an image */
@@ -194,6 +220,7 @@ export type AnalyticsEvent =
               SEVERITY_IMPORTANT: AnalyticsBoolean;
               SEVERITY_MODERATE: AnalyticsBoolean;
               SEVERITY_LOW: AnalyticsBoolean;
+              SEVERITY_UNKNOWN: AnalyticsBoolean;
               CVE_STATUS_FIXABLE: AnalyticsBoolean;
               CVE_STATUS_NOT_FIXABLE: AnalyticsBoolean;
           };
@@ -244,6 +271,46 @@ export type AnalyticsEvent =
      */
     | typeof VULNERABILITY_REPORT_SENT_MANUALLY
     /**
+     * Tracks each time the user generates a view-based CSV report.
+     */
+    | {
+          event: typeof VIEW_BASED_REPORT_GENERATED;
+          properties: {
+              areaOfConcern: string;
+              hasFilters: AnalyticsBoolean;
+              filterCount: number;
+          };
+      }
+    /**
+     * Tracks when filters are applied to the view-based reports table.
+     */
+    | {
+          event: typeof VIEW_BASED_REPORT_FILTER_APPLIED;
+          properties: { category: string; filter: string } | { category: string };
+      }
+    /**
+     * Tracks download attempts for view-based reports.
+     */
+    | {
+          event: typeof VIEW_BASED_REPORT_DOWNLOAD_ATTEMPTED;
+          properties: {
+              success: AnalyticsBoolean;
+              reportAgeInDays?: number;
+              fileSizeBytes?: number;
+              errorType?: string;
+          };
+      }
+    /**
+     * Tracks when users view job details for view-based reports.
+     */
+    | {
+          event: typeof VIEW_BASED_REPORT_JOB_DETAILS_VIEWED;
+          properties: {
+              reportStatus: string;
+              isOwnReport: AnalyticsBoolean;
+          };
+      }
+    /**
      * Tracks each time the user generates an SBOM for an image.
      */
     | typeof IMAGE_SBOM_GENERATED
@@ -290,10 +357,28 @@ export type AnalyticsEvent =
           };
       }
     /**
+     * Tracks each time the user clicks the "Create Cluster Registration Secrets" button
+     */
+    | {
+          event: typeof CREATE_CLUSTER_REGISTRATION_SECRET_CLICKED;
+          properties: {
+              source: 'No Clusters' | 'Cluster Registration Secrets';
+          };
+      }
+    /**
      * Tracks each time the user clicks a link to visit the "Secure a Cluster" page
      */
     | {
           event: typeof SECURE_A_CLUSTER_LINK_CLICKED;
+          properties: {
+              source: 'No Clusters' | 'Secure a Cluster Dropdown';
+          };
+      }
+    /**
+     * Tracks each time the user clicks a link to visit the "CRS Secure a Cluster" page
+     */
+    | {
+          event: typeof CRS_SECURE_A_CLUSTER_LINK_CLICKED;
           properties: {
               source: 'No Clusters' | 'Secure a Cluster Dropdown';
           };
@@ -312,9 +397,17 @@ export type AnalyticsEvent =
      */
     | typeof DOWNLOAD_INIT_BUNDLE
     /**
+     * Tracks each time the user downloads a cluster registration secret
+     */
+    | typeof DOWNLOAD_CLUSTER_REGISTRATION_SECRET
+    /**
      * Tracks each time the user revokes an init bundle
      */
     | typeof REVOKE_INIT_BUNDLE
+    /**
+     * Tracks each time the user revokes cluster registration secret
+     */
+    | typeof REVOKE_CLUSTER_REGISTRATION_SECRET
     /**
      * Tracks each time the user downloads a cluster's YAML file and keys
      */
@@ -385,7 +478,8 @@ export type AnalyticsEvent =
                   | 'DOWNLOAD_GENERATED'
                   | 'EMAIL_DELIVERED'
                   | 'ERROR'
-                  | 'PARTIAL_ERROR'
+                  | 'PARTIAL_SCAN_ERROR_DOWNLOAD'
+                  | 'PARTIAL_SCAN_ERROR_EMAIL'
               )[];
           };
       }
@@ -485,8 +579,8 @@ export function getRedactedOriginProperties(location: string) {
 }
 
 const useAnalytics = () => {
-    const telemetry = useSelector(selectors.publicConfigTelemetrySelector);
-    const { enabled: isTelemetryEnabled } = telemetry || ({} as Telemetry);
+    const { publicConfig } = usePublicConfig();
+    const { enabled: isTelemetryEnabled } = publicConfig?.telemetry || ({} as Telemetry);
 
     const analyticsPageVisit = useCallback(
         (type: string, name: string, additionalProperties = {}): void => {

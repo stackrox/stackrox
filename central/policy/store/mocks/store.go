@@ -15,6 +15,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
+	postgres "github.com/stackrox/rox/pkg/postgres"
 	search "github.com/stackrox/rox/pkg/search"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -41,6 +42,22 @@ func NewMockStore(ctrl *gomock.Controller) *MockStore {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
+}
+
+// Begin mocks base method.
+func (m *MockStore) Begin(ctx context.Context) (context.Context, *postgres.Tx, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Begin", ctx)
+	ret0, _ := ret[0].(context.Context)
+	ret1, _ := ret[1].(*postgres.Tx)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// Begin indicates an expected call of Begin.
+func (mr *MockStoreMockRecorder) Begin(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Begin", reflect.TypeOf((*MockStore)(nil).Begin), ctx)
 }
 
 // Count mocks base method.
@@ -102,19 +119,18 @@ func (mr *MockStoreMockRecorder) Get(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx, id)
 }
 
-// GetAll mocks base method.
-func (m *MockStore) GetAll(ctx context.Context) ([]*storage.Policy, error) {
+// GetByQueryFn mocks base method.
+func (m *MockStore) GetByQueryFn(ctx context.Context, query *v1.Query, fn func(*storage.Policy) error) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAll", ctx)
-	ret0, _ := ret[0].([]*storage.Policy)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "GetByQueryFn", ctx, query, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// GetAll indicates an expected call of GetAll.
-func (mr *MockStoreMockRecorder) GetAll(ctx any) *gomock.Call {
+// GetByQueryFn indicates an expected call of GetByQueryFn.
+func (mr *MockStoreMockRecorder) GetByQueryFn(ctx, query, fn any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockStore)(nil).GetAll), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByQueryFn", reflect.TypeOf((*MockStore)(nil).GetByQueryFn), ctx, query, fn)
 }
 
 // GetIDs mocks base method.
@@ -189,4 +205,18 @@ func (m *MockStore) UpsertMany(ctx context.Context, objs []*storage.Policy) erro
 func (mr *MockStoreMockRecorder) UpsertMany(ctx, objs any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertMany", reflect.TypeOf((*MockStore)(nil).UpsertMany), ctx, objs)
+}
+
+// Walk mocks base method.
+func (m *MockStore) Walk(ctx context.Context, fn func(*storage.Policy) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Walk", ctx, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Walk indicates an expected call of Walk.
+func (mr *MockStoreMockRecorder) Walk(ctx, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockStore)(nil).Walk), ctx, fn)
 }

@@ -5,10 +5,45 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. && pwd)"
 source "$ROOT/scripts/ci/lib.sh"
 
 set -euo pipefail
+export SHELLOPTS
 
 go mod tidy
 
 FAIL_FLAG="/tmp/fail"
+
+# This scripts consists of separate checks, each implemented in the form of a separate shell functions.
+# After execution of each step we might need to handle errors.
+#
+# But unfortunately simply doing
+#
+#   set -e
+#
+#   function some_check() {
+#       do_foo()
+#       do_bar() # Only do this when do_foo() succeeded
+#   }
+#   some_check || handle_errors
+#
+# doesn't work as expected, because the `... || handle_errors` construct disables errexit (`set -e`), which means
+# that `do_bar()` will be executed irregardless of whether `do_foo()` succeeded or failed, which is not the behavior
+# we want at this point -- instead we want to terminate early and propagate a failure in a sequence of commands.
+#
+# Therefore we are using the following slightly more complex pattern here:
+#
+#   set -e
+#   export SHELLOPTS # Propagate errexit to sub-shells.
+#
+#   function some_check() {
+#       do_foo()
+#       do_bar() # Only do this when do_foo() succeeded
+#   }
+#   export -f some_check
+#   bash -c some_check || handle_errors
+#
+# This way we get both:
+#
+#   1. errexit behavior throughout the script.
+#   2. a single point for handling errors after each check.
 
 # shellcheck disable=SC2016
 info 'Ensure that generated files are up to date. (If this fails, run `make proto-generated-srcs && make go-generated-srcs` and commit the result.)'
@@ -33,7 +68,8 @@ function generated_files-are-up-to-date() {
         return 1
     fi
 }
-generated_files-are-up-to-date || {
+export -f generated_files-are-up-to-date
+bash -c generated_files-are-up-to-date || {
     save_junit_failure "Check_Generated_Files" \
         "Found new untracked files after running \`make proto-generated-srcs\` and \`make go-generated-srcs\`" \
         "$(cat /tmp/untracked-new)"
@@ -54,7 +90,8 @@ function check-operator-generated-files-up-to-date() {
     echo 'needs to change due to formatting changes in the generated files.'
     git diff --exit-code HEAD
 }
-check-operator-generated-files-up-to-date || {
+export -f check-operator-generated-files-up-to-date
+bash -c check-operator-generated-files-up-to-date || {
     save_junit_failure "Check_Operator_Generated_Files" \
         "Operator generated files are not up to date" \
         "$(git diff HEAD || true)"
@@ -69,7 +106,8 @@ function check-config-controller-generated-files-up-to-date() {
     echo 'Checking for diffs after making config-controller-gen...'
     git diff --exit-code HEAD
 }
-check-config-controller-generated-files-up-to-date || {
+export -f check-config-controller-generated-files-up-to-date
+bash -c check-config-controller-generated-files-up-to-date || {
     save_junit_failure "Check_Config_Controller_Generated_Files" \
         "Config controller generated files are not up to date" \
         "$(git diff HEAD || true)"
@@ -86,7 +124,8 @@ function check-containerignore-is-in-sync() {
         <(grep -vF -e '/.git/' -e '/image/' -e '/qa-tests-backend/' .dockerignore) \
     > diff.txt
 }
-check-containerignore-is-in-sync || {
+export -f check-containerignore-is-in-sync
+bash -c check-containerignore-is-in-sync || {
     save_junit_failure "Check_Containerignore_File" \
         ".containerignore file is not in sync with .dockerignore" \
         "$(cat diff.txt)"
@@ -105,7 +144,8 @@ function check-shellcheck-failing-list() {
             && git reset --hard HEAD
     fi
 }
-check-shellcheck-failing-list || {
+export -f check-shellcheck-failing-list
+bash -c check-shellcheck-failing-list || {
     save_junit_failure "Check_Shellcheck_Skip_List" \
         "Check if a script that is listed in scripts/style/shellcheck_skip.txt is now free from shellcheck errors" \
         "$(git diff HEAD || true)"

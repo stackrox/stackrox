@@ -2,13 +2,17 @@ package service
 
 import (
 	"context"
+	"regexp"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/config/datastore"
 	"github.com/stackrox/rox/central/convert/storagetov1"
 	"github.com/stackrox/rox/central/convert/v1tostorage"
-	"github.com/stackrox/rox/central/telemetry/centralclient"
+	customMetrics "github.com/stackrox/rox/central/metrics/custom"
+	"github.com/stackrox/rox/central/platform/matcher"
+	"github.com/stackrox/rox/central/platform/reprocessor"
+	phonehome "github.com/stackrox/rox/central/telemetry/centralclient"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -42,10 +46,13 @@ var (
 		user.With(permissions.View(resources.Administration)): {
 			v1.ConfigService_GetConfig_FullMethodName,
 			v1.ConfigService_GetPrivateConfig_FullMethodName,
+			v1.ConfigService_GetPlatformComponentConfig_FullMethodName,
+			v1.ConfigService_GetDefaultRedHatLayeredProductsRegex_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Administration)): {
 			v1.ConfigService_PutConfig_FullMethodName,
 			v1.ConfigService_UpdateVulnerabilityExceptionConfig_FullMethodName,
+			v1.ConfigService_UpdatePlatformComponentConfig_FullMethodName,
 		},
 	})
 )
@@ -60,16 +67,18 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(datastore datastore.DataStore) Service {
+func New(datastore datastore.DataStore, ar customMetrics.Runner) Service {
 	return &serviceImpl{
-		datastore: datastore,
+		datastore:  datastore,
+		aggregator: ar,
 	}
 }
 
 type serviceImpl struct {
 	v1.UnimplementedConfigServiceServer
 
-	datastore datastore.DataStore
+	datastore  datastore.DataStore
+	aggregator customMetrics.Runner
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -125,6 +134,9 @@ func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*storage.Conf
 
 // PutConfig updates Central's config
 func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (*storage.Config, error) {
+
+	// Validation:
+
 	if req.GetConfig() == nil {
 		return nil, errors.Wrap(errox.InvalidArgs, "config must be specified")
 	}
@@ -141,14 +153,43 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 		}
 	}
 
+	regexes := make([]*regexp.Regexp, 0)
+	if platformConfig := req.GetConfig().GetPlatformComponentConfig(); platformConfig != nil {
+		for _, rule := range platformConfig.GetRules() {
+			if len(rule.GetNamespaceRule().GetRegex()) == 0 || len(rule.GetName()) == 0 {
+				return nil, errors.New("invalid regex for rule " + rule.GetName() + " in platform component config")
+			}
+			regex, compileErr := regexp.Compile(rule.GetNamespaceRule().GetRegex())
+			if compileErr != nil {
+				return nil, compileErr
+			}
+			regexes = append(regexes, regex)
+		}
+	}
+
+	customMetricsCfg, err := s.aggregator.ValidateConfiguration(
+		req.GetConfig().GetPrivateConfig().GetMetrics())
+	if err != nil {
+		return nil, err
+	}
+
+	// Store:
+
 	if err := s.datastore.UpsertConfig(ctx, req.GetConfig()); err != nil {
 		return nil, err
 	}
+
+	// Application:
+
 	if req.GetConfig().GetPublicConfig().GetTelemetry().GetEnabled() {
-		centralclient.Enable()
+		phonehome.Singleton().Enable()
 	} else {
-		centralclient.Disable()
+		phonehome.Singleton().Disable()
 	}
+	matcher.Singleton().SetRegexes(regexes)
+	go reprocessor.Singleton().RunReprocessor()
+	s.aggregator.Reconfigure(customMetricsCfg)
+
 	return req.GetConfig(), nil
 }
 
@@ -197,6 +238,47 @@ func (s *serviceImpl) UpdateVulnerabilityExceptionConfig(ctx context.Context, re
 
 	return &v1.UpdateVulnerabilityExceptionConfigResponse{
 		Config: req.GetConfig(),
+	}, nil
+}
+
+func (s *serviceImpl) GetPlatformComponentConfig(ctx context.Context, _ *v1.Empty) (*storage.PlatformComponentConfig, error) {
+	if !features.CustomizablePlatformComponents.Enabled() {
+		return nil, errors.Errorf("Cannot fulfill request. Environment variable %s=false", features.CustomizablePlatformComponents.EnvVar())
+	}
+	config, found, err := s.datastore.GetPlatformComponentConfig(ctx)
+	if !found || err != nil {
+		return nil, err
+	}
+	return config, nil
+}
+
+func (s *serviceImpl) UpdatePlatformComponentConfig(ctx context.Context, req *v1.PutPlatformComponentConfigRequest) (*storage.PlatformComponentConfig, error) {
+	if !features.CustomizablePlatformComponents.Enabled() {
+		return nil, errors.Errorf("Cannot fulfill request. Environment variable %s=false", features.CustomizablePlatformComponents.EnvVar())
+	}
+	regexes := make([]*regexp.Regexp, 0)
+	for _, rule := range req.GetRules() {
+		if len(rule.GetNamespaceRule().GetRegex()) == 0 || len(rule.GetName()) == 0 {
+			return nil, errors.New("invalid regex for rule " + rule.GetName() + " in platform component config")
+		}
+		regex, compileErr := regexp.Compile(rule.GetNamespaceRule().GetRegex())
+		if compileErr != nil {
+			return nil, compileErr
+		}
+		regexes = append(regexes, regex)
+	}
+	config, err := s.datastore.UpsertPlatformComponentConfigRules(ctx, req.GetRules())
+	if err != nil {
+		return nil, err
+	}
+	matcher.Singleton().SetRegexes(regexes)
+	go reprocessor.Singleton().RunReprocessor()
+	return config, nil
+}
+
+func (s *serviceImpl) GetDefaultRedHatLayeredProductsRegex(_ context.Context, _ *v1.Empty) (*v1.GetDefaultRedHatLayeredProductsRegexResponse, error) {
+	return &v1.GetDefaultRedHatLayeredProductsRegexResponse{
+		Regex: datastore.PlatformComponentLayeredProductsDefaultRegex,
 	}, nil
 }
 

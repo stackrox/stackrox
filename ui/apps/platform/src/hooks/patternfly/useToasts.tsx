@@ -1,5 +1,6 @@
-import { AlertProps } from '@patternfly/react-core';
-import { ReactNode, useState } from 'react';
+import { useState } from 'react';
+import type { ReactNode } from 'react';
+import type { AlertProps } from '@patternfly/react-core';
 
 export type AlertVariantType = AlertProps['variant'];
 

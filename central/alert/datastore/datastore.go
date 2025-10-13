@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	pgStore "github.com/stackrox/rox/central/alert/datastore/internal/store/postgres"
 	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
@@ -13,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/postgres"
 	searchPkg "github.com/stackrox/rox/pkg/search"
+	"go.uber.org/mock/gomock"
 )
 
 var (
@@ -30,7 +30,6 @@ type DataStore interface {
 	SearchRawAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.Alert, error)
 	SearchListAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.ListAlert, error)
 
-	GetByQuery(ctx context.Context, q *v1.Query) ([]*storage.Alert, error)
 	WalkByQuery(ctx context.Context, q *v1.Query, db func(d *storage.Alert) error) error
 	WalkAll(ctx context.Context, fn func(alert *storage.ListAlert) error) error
 	GetAlert(ctx context.Context, id string) (*storage.Alert, bool, error)
@@ -45,21 +44,20 @@ type DataStore interface {
 }
 
 // New returns a new soleInstance of DataStore using the input store, and searcher.
-func New(alertStore store.Store, searcher search.Searcher, platformMatcher platformmatcher.PlatformMatcher) (DataStore, error) {
+func New(alertStore store.Store, platformMatcher platformmatcher.PlatformMatcher) DataStore {
 	ds := &datastoreImpl{
 		storage:         alertStore,
-		searcher:        searcher,
 		keyedMutex:      concurrency.NewKeyedMutex(mutexPoolSize),
 		keyFence:        concurrency.NewKeyFence(),
 		platformMatcher: platformMatcher,
 	}
-	return ds, nil
+	return ds
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) DataStore {
 	alertStore := pgStore.New(pool)
-	searcher := search.New(alertStore)
+	mockCtrl := gomock.NewController(t)
 
-	return New(alertStore, searcher, platformmatcher.Singleton())
+	return New(alertStore, platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl))
 }

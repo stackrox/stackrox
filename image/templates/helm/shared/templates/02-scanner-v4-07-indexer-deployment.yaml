@@ -68,6 +68,13 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        {{- if ._rox.env.centralServices }}
+        - name: ROX_CENTRAL_ENDPOINT
+          value: "{{ ._rox.central.endpoint }}"
+        {{- else }}
+        - name: ROX_SENSOR_ENDPOINT
+          value: "{{ ._rox.sensor.endpoint }}"
+        {{- end }}
         {{- if ._rox.env.openshift }}
         - name: ROX_OPENSHIFT_API
           value: "true"
@@ -157,7 +164,16 @@ spec:
       - name: etc-pki-volume
         emptyDir: {}
       {{- if ._rox._securedClusterCertRefresh }}
-      {{- include "srox.tlsCertsInitContainerVolumes" (list "scanner-v4-indexer") | indent 6 }}
+      - name: certs
+        emptyDir: {}
+      - name: certs-legacy
+        secret:
+          secretName: scanner-v4-indexer-tls
+          optional: true
+      - name: certs-new
+        secret:
+          secretName: tls-cert-scanner-v4-indexer
+          optional: true
       {{- else }}
       - name: certs
         secret:

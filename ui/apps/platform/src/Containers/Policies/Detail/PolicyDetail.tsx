@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom-v5-compat';
 import {
     Alert,
     AlertActionCloseButton,
@@ -15,15 +15,10 @@ import {
     PageSection,
     Flex,
     FlexItem,
-} from '@patternfly/react-core';
-import {
-    Dropdown,
     DropdownItem,
-    DropdownSeparator,
-    DropdownToggle,
-} from '@patternfly/react-core/deprecated';
-import { CaretDownIcon } from '@patternfly/react-icons';
+} from '@patternfly/react-core';
 
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
@@ -51,11 +46,10 @@ function PolicyDetail({
     hasWriteAccessForPolicy,
     policy,
 }: PolicyDetailProps): ReactElement {
-    const history = useHistory();
+    const navigate = useNavigate();
 
     const [isRequesting, setIsRequesting] = useState(false);
     const [requestError, setRequestError] = useState<ReactElement | null>(null);
-    const [isActionsOpen, setIsActionsOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [isSaveAsCustomResourceOpen, setIsSaveAsCustomResourceOpen] = useState(false);
 
@@ -63,26 +57,12 @@ function PolicyDetail({
 
     const { disabled, id, isDefault, name } = policy;
 
-    function onSelectActions() {
-        setIsActionsOpen(false);
-    }
-
-    function onToggleActions(isOpen) {
-        setIsActionsOpen(isOpen);
-    }
-
     function onEditPolicy() {
-        history.push({
-            pathname: `${policiesBasePath}/${id}`,
-            search: 'action=edit',
-        });
+        navigate(`${policiesBasePath}/${id}?action=edit`);
     }
 
     function onClonePolicy() {
-        history.push({
-            pathname: `${policiesBasePath}/${id}`,
-            search: 'action=clone',
-        });
+        navigate(`${policiesBasePath}/${id}?action=clone`);
     }
 
     function onExportPolicy() {
@@ -151,7 +131,7 @@ function PolicyDetail({
         deletePolicy(id)
             .then(() => {
                 // Route change causes policy table page to request policies.
-                history.goBack();
+                navigate(-1);
             })
             .catch((error) => {
                 setRequestError(
@@ -198,100 +178,64 @@ function PolicyDetail({
                             )}
                         </ToolbarItem>
                         <ToolbarItem align={{ default: 'alignRight' }}>
-                            <Dropdown
-                                onSelect={onSelectActions}
-                                position="right"
-                                toggle={
-                                    <DropdownToggle
-                                        isDisabled={isRequesting}
-                                        toggleVariant="primary"
-                                        onToggle={(_event, isOpen) => onToggleActions(isOpen)}
-                                        toggleIndicator={CaretDownIcon}
+                            <MenuDropdown
+                                popperProps={{
+                                    position: 'end',
+                                }}
+                                toggleText="Actions"
+                                toggleVariant="primary"
+                                isDisabled={isRequesting}
+                            >
+                                {hasWriteAccessForPolicy && (
+                                    <DropdownItem key="Edit policy" onClick={onEditPolicy}>
+                                        Edit policy
+                                    </DropdownItem>
+                                )}
+                                {hasWriteAccessForPolicy && (
+                                    <DropdownItem key="Clone policy" onClick={onClonePolicy}>
+                                        Clone policy
+                                    </DropdownItem>
+                                )}
+                                <DropdownItem key="Export policy to JSON" onClick={onExportPolicy}>
+                                    Export policy to JSON
+                                </DropdownItem>
+                                <DropdownItem
+                                    key="Save as Custom Resource"
+                                    isDisabled={isDefault}
+                                    description={
+                                        isDefault
+                                            ? 'Default policies cannot be saved as Custom Resource'
+                                            : ''
+                                    }
+                                    onClick={() => setIsSaveAsCustomResourceOpen(true)}
+                                >
+                                    {isDefault
+                                        ? 'Cannot save as Custom Resource'
+                                        : 'Save as Custom Resource'}
+                                </DropdownItem>
+                                {hasWriteAccessForPolicy && (
+                                    <DropdownItem
+                                        key="Enable/Disable policy"
+                                        onClick={onUpdateDisabledState}
                                     >
-                                        Actions
-                                    </DropdownToggle>
-                                }
-                                isOpen={isActionsOpen}
-                                dropdownItems={
-                                    hasWriteAccessForPolicy
-                                        ? [
-                                              <DropdownItem
-                                                  key="Edit policy"
-                                                  component="button"
-                                                  onClick={onEditPolicy}
-                                              >
-                                                  Edit policy
-                                              </DropdownItem>,
-                                              <DropdownItem
-                                                  key="Clone policy"
-                                                  component="button"
-                                                  onClick={onClonePolicy}
-                                              >
-                                                  Clone policy
-                                              </DropdownItem>,
-                                              <DropdownItem
-                                                  key="Export policy to JSON"
-                                                  component="button"
-                                                  onClick={onExportPolicy}
-                                              >
-                                                  Export policy to JSON
-                                              </DropdownItem>,
-                                              !isDefault ? (
-                                                  <DropdownItem
-                                                      key="Save as Custom Resource"
-                                                      component="button"
-                                                      onClick={() =>
-                                                          setIsSaveAsCustomResourceOpen(true)
-                                                      }
-                                                  >
-                                                      Save as Custom Resource
-                                                  </DropdownItem>
-                                              ) : (
-                                                  <React.Fragment key="Save as Custom Resource"></React.Fragment>
-                                              ),
-                                              <DropdownItem
-                                                  key="Enable/Disable policy"
-                                                  component="button"
-                                                  onClick={onUpdateDisabledState}
-                                              >
-                                                  {formatUpdateDisabledStateAction(disabled)}
-                                              </DropdownItem>,
-                                              <DropdownSeparator key="Separator" />,
-                                              <DropdownItem
-                                                  key="Delete policy"
-                                                  component="button"
-                                                  isDisabled={isDefault}
-                                                  onClick={() => setIsDeleteOpen(true)}
-                                              >
-                                                  {isDefault
-                                                      ? 'Cannot delete a default policy'
-                                                      : 'Delete policy'}
-                                              </DropdownItem>,
-                                          ]
-                                        : [
-                                              <DropdownItem
-                                                  key="Export policy to JSON"
-                                                  component="button"
-                                                  onClick={onExportPolicy}
-                                              >
-                                                  Export policy to JSON
-                                              </DropdownItem>,
-                                              !isDefault ? (
-                                                  <DropdownItem
-                                                      key="Save as Custom Resource"
-                                                      component="button"
-                                                      onClick={() =>
-                                                          setIsSaveAsCustomResourceOpen(true)
-                                                      }
-                                                  >
-                                                      Save as Custom Resource
-                                                  </DropdownItem>
-                                              ) : (
-                                                  <React.Fragment key="Save as Custom Resource"></React.Fragment>
-                                              ),
-                                          ]
-                                }
-                            />
+                                        {formatUpdateDisabledStateAction(disabled)}
+                                    </DropdownItem>
+                                )}
+                                {hasWriteAccessForPolicy && (
+                                    <Divider component="li" key="separator" />
+                                )}
+                                {hasWriteAccessForPolicy && (
+                                    <DropdownItem
+                                        key="Delete policy"
+                                        isDisabled={isDefault}
+                                        onClick={() => setIsDeleteOpen(true)}
+                                    >
+                                        {isDefault
+                                            ? 'Cannot delete a default policy'
+                                            : 'Delete policy'}
+                                    </DropdownItem>
+                                )}
+                            </MenuDropdown>
                         </ToolbarItem>
                     </ToolbarContent>
                 </Toolbar>

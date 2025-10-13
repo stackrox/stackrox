@@ -1,5 +1,6 @@
-import React, { ReactElement, useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
+import { useNavigate } from 'react-router-dom-v5-compat';
 import { Alert, Bullseye, Button, PageSection, Spinner } from '@patternfly/react-core';
 
 import useRestQuery from 'hooks/useRestQuery';
@@ -16,7 +17,7 @@ export type InitBundlePageProps = {
 };
 
 function InitBundlePage({ hasWriteAccessForInitBundles, id }: InitBundlePageProps): ReactElement {
-    const history = useHistory();
+    const navigate = useNavigate();
     const [isRevoking, setIsRevoking] = useState(false);
 
     const {
@@ -36,7 +37,7 @@ function InitBundlePage({ hasWriteAccessForInitBundles, id }: InitBundlePageProp
     function onCloseModal(wasRevoked: boolean) {
         setIsRevoking(false);
         if (wasRevoked) {
-            history.goBack(); // to table
+            navigate(-1); // to table
         }
     }
 
@@ -52,7 +53,6 @@ function InitBundlePage({ hasWriteAccessForInitBundles, id }: InitBundlePageProp
             </Button>
         ) : null;
 
-    /* eslint-disable no-nested-ternary */
     return (
         <>
             <InitBundlesHeader headerActions={headerActions} title="Cluster init bundle" />
@@ -91,7 +91,6 @@ function InitBundlePage({ hasWriteAccessForInitBundles, id }: InitBundlePageProp
             </PageSection>
         </>
     );
-    /* eslint-enable no-nested-ternary */
 }
 
 export default InitBundlePage;

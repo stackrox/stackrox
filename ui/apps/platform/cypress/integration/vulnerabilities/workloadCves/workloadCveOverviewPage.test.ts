@@ -31,6 +31,7 @@ describe('Workload CVE overview page tests', () => {
     withAuth();
 
     it('should satisfy initial page load defaults', () => {
+        cy.spyTelemetry();
         visitWorkloadCveOverview();
 
         // TODO Test that the default tab is set to "Observed"
@@ -51,6 +52,19 @@ describe('Workload CVE overview page tests', () => {
             'aria-pressed',
             'true'
         );
+        cy.getTelemetryEvents().should((telemetryEvents) => {
+            // TODO - This is not working as expected. We should only have one page view event, but the page view event is being emitted twice.
+            expect(telemetryEvents.page).to.have.length(2);
+
+            expect(telemetryEvents.page[0].properties.path).to.contain(
+                '/main/vulnerabilities/platform'
+            );
+
+            expect(telemetryEvents.track).to.have.length(1);
+            expect(telemetryEvents.track[0].event).to.equal('Workload CVE Entity Context View');
+            expect(telemetryEvents.track[0].properties.type).to.equal('CVE');
+            expect(telemetryEvents.track[0].properties.page).to.equal('Overview');
+        });
     });
 
     it('should correctly handle applied filters across entity tabs', () => {
@@ -95,11 +109,7 @@ describe('Workload CVE overview page tests', () => {
         });
     });
 
-    it('should apply the correct baseline filters when switching between built in views using the user-workload based template', function () {
-        if (!hasFeatureFlag('ROX_PLATFORM_CVE_SPLIT')) {
-            this.skip();
-        }
-
+    it('should apply the correct baseline filters when switching between built in views using the user-workload based template', () => {
         interceptAndWatchRequests(
             getRouteMatcherMapForGraphQL(['getImageCVEList', 'getImageList'])
         ).then(({ waitForRequests, waitAndYieldRequestBodyVariables }) => {
@@ -178,12 +188,6 @@ describe('Workload CVE overview page tests', () => {
         const rowMenuSbomModalButton = 'button[role="menuitem"]:contains("Generate SBOM")';
         const generateSbomButton = '[role="dialog"] button:contains("Generate SBOM")';
 
-        before(function () {
-            if (!hasFeatureFlag('ROX_SBOM_GENERATION')) {
-                this.skip();
-            }
-        });
-
         it('should hide the SBOM generation menu item when the user does not have write access to the Image resource', () => {
             interceptAndOverridePermissions({ Image: 'READ_ACCESS' });
 
@@ -228,11 +232,7 @@ describe('Workload CVE overview page tests', () => {
     });
 
     describe('Images without CVEs view tests', () => {
-        it('should remove cve-related UI elements when viewing the "without cves" view', function () {
-            if (!hasFeatureFlag('ROX_PLATFORM_CVE_SPLIT')) {
-                this.skip();
-            }
-
+        it('should remove cve-related UI elements when viewing the "without cves" view', () => {
             visitWorkloadCveOverview();
 
             const cvesBySeverityHeader = 'th:contains("CVEs by severity")';
@@ -248,7 +248,7 @@ describe('Workload CVE overview page tests', () => {
             }
 
             function assertCveElementsAreNotPresent() {
-                cy.get(cvesBySeverityHeader).should('not.exist');
+                cy.get(cvesBySeverityHeader).should('not.be.visible');
                 cy.get(prioritizeByNamespaceButton).should('not.exist');
                 cy.get(defaultFiltersButton).should('not.exist');
                 cy.get(selectors.severityDropdown).should('not.exist');

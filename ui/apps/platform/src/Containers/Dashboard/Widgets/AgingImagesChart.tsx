@@ -1,23 +1,18 @@
 import React, { useState } from 'react';
-import { useHistory } from 'react-router-dom';
-import {
-    Chart,
-    ChartAxis,
-    ChartBar,
-    ChartContainer,
-    ChartLabelProps,
-} from '@patternfly/react-charts';
+import { useNavigate } from 'react-router-dom-v5-compat';
+import { Chart, ChartAxis, ChartBar, ChartContainer } from '@patternfly/react-charts';
+import type { ChartLabelProps } from '@patternfly/react-charts';
 
 import useResizeObserver from 'hooks/useResizeObserver';
 import {
-    defaultChartHeight,
     defaultChartBarWidth,
-    patternflySeverityTheme,
+    defaultChartHeight,
     navigateOnClickEvent,
+    patternflySeverityTheme,
     severityColorScale,
 } from 'utils/chartUtils';
 import { LinkableChartLabel } from 'Components/PatternFly/Charts/LinkableChartLabel';
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 import { vulnManagementImagesPath } from 'routePaths';
 import { getQueryString } from 'utils/queryStringUtils';
 import isResourceScoped from '../utils';
@@ -115,7 +110,7 @@ function makeChartData(
 }
 
 function AgingImagesChart({ searchFilter, timeRanges, timeRangeCounts }: AgingImagesChartProps) {
-    const history = useHistory();
+    const navigate = useNavigate();
     const [widgetContainer, setWidgetContainer] = useState<HTMLDivElement | null>(null);
     const widgetContainerResizeEntry = useResizeObserver(widgetContainer);
     const chartData = makeChartData(searchFilter, timeRanges, timeRangeCounts);
@@ -163,7 +158,7 @@ function AgingImagesChart({ searchFilter, timeRanges, timeRangeCounts }: AgingIm
                             data={barData}
                             labels={({ datum }) => `${Math.round(parseInt(datum.y, 10))}`}
                             style={{ data: { fill } }}
-                            events={[navigateOnClickEvent(history, () => labelLink)]}
+                            events={[navigateOnClickEvent(navigate, () => labelLink)]}
                         />
                     );
                 })}

@@ -1,5 +1,6 @@
-import React, { ReactElement } from 'react';
-import { useParams } from 'react-router-dom';
+import React from 'react';
+import type { ReactElement } from 'react';
+import { useParams } from 'react-router-dom-v5-compat';
 import { useQuery } from '@apollo/client';
 
 import { searchCategories } from 'constants/entityTypes';
@@ -9,7 +10,7 @@ import ClustersTablePanel from './ClustersTablePanel';
 import ClusterPage from './ClusterPage';
 
 function ClustersPage(): ReactElement {
-    const { clusterId } = useParams(); // see routePaths for parameter
+    const { clusterId } = useParams() as { clusterId: string }; // see routePaths for parameter
 
     const searchQueryOptions = {
         variables: {

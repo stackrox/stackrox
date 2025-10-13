@@ -3,6 +3,7 @@ package signatures
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -10,11 +11,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Signatures have been generated via cosign:
+// $ cosign generate-key-pair
+// $ cosign sign -y ttl.sh/88795dd4-270c-4eb7-b3d4-50241d5bc04c@sha256:f2e98ad37e4970f48e85946972ac4acb5574c39f27c624efbd9b17a3a402bfe4 --key=cosign.key
 const (
 	// pemMatchingPubKey matches the b64Signature.
 	pemMatchingPubKey = `-----BEGIN PUBLIC KEY-----
-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE04soAoNygRhaytCtygPcwsP+6Ein
-YoDv/BJx1T9WmtsANh2HplRR66Fbm+3OjFuah2IhFufPhDl6a85I3ymVYw==
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEwz6a8oxByJq9s8kCxvk7RStygmDV
+0uXX5qYHbN5sxY8lblhLk9uOr1nFOhNAJua95zL6EwCI2wFykRwqgF1BLg==
 -----END PUBLIC KEY-----
 `
 	// pemNonMatchingPubKey does not match b64Signature.
@@ -24,20 +28,22 @@ MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWi3tSxvBH7S/WUmv408nKPxNSJx6
 -----END PUBLIC KEY-----
 `
 	// b64Signature is a cosign signature b64 encoded.
-	b64Signature = "MEUCIDGMmJyxVKGPxvPk/QlRzMSGzcI8pYCy+MB7RTTpegzTAiEArssqWntVN8oJOMV0Aey0zhsNqRmEVQAYZNkn8h" +
-		"kAnXI="
+	b64Signature = "MEQCIDsFckfIg/uxqSGvf4UC4c9MzAVhuHwzq3NnYovbobYfAiAw31/xz56hS9xRl/xhRV7+RqOl3hXYi7UKO+q7q+" +
+		"kOxQ=="
 	// b64SignaturePayload is the payload associated with the cosign signature, it references the imgString.
-	b64SignaturePayload = "eyJjcml0aWNhbCI6eyJpZGVudGl0eSI6eyJkb2NrZXItcmVmZXJlbmNlIjoidHRsLnNoL2Q4ZDM4OTJkLTQ" +
-		"4YmQtNDY3MS1hNTQ2LTJlNzBhOTAwYjcwMiJ9LCJpbWFnZSI6eyJkb2NrZXItbWFuaWZlc3QtZGlnZXN0Ijoic2hhMjU2OmVlODli" +
-		"MDA1MjhmZjRmMDJmMjQwNWU0ZWUyMjE3NDNlYmMzZjhlOGRkMGJmZDVjNGMyMGEyZmEyYWFhN2VkZTMifSwidHlwZSI6ImNvc2lnb" +
+	b64SignaturePayload = "eyJjcml0aWNhbCI6eyJpZGVudGl0eSI6eyJkb2NrZXItcmVmZXJlbmNlIjoidHRsLnNoLzg4Nzk1ZGQ0LTI" +
+		"3MGMtNGViNy1iM2Q0LTUwMjQxZDViYzA0YyJ9LCJpbWFnZSI6eyJkb2NrZXItbWFuaWZlc3QtZGlnZXN0Ijoic2hhMjU2OmYyZTk4" +
+		"YWQzN2U0OTcwZjQ4ZTg1OTQ2OTcyYWM0YWNiNTU3NGMzOWYyN2M2MjRlZmJkOWIxN2EzYTQwMmJmZTQifSwidHlwZSI6ImNvc2lnb" +
 		"iBjb250YWluZXIgaW1hZ2Ugc2lnbmF0dXJlIn0sIm9wdGlvbmFsIjpudWxsfQ=="
 	// imgString points to a temporary available docker image reference, which was used to create the b64signature.
-	imgString = "ttl.sh/d8d3892d-48bd-4671-a546-2e70a900b702@sha256:ee89b00528ff4f02f2405e4ee221743ebc3f8e8dd0" +
-		"bfd5c4c20a2fa2aaa7ede3"
+	imgString = "ttl.sh/88795dd4-270c-4eb7-b3d4-50241d5bc04c@sha256:f2e98ad37e4970f48e85946972ac4acb5574c39f27" +
+		"c624efbd9b17a3a402bfe4"
 )
 
 func TestVerifyAgainstSignatureIntegration(t *testing.T) {
-	testImg, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil)
+	bundle, err := os.ReadFile("testdata/bundle_bench_test.json")
+	require.NoError(t, err)
+	testImg, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil, bundle)
 	require.NoError(t, err, "creating test image")
 
 	successfulCosignConfig := &storage.CosignPublicKeyVerification{
@@ -65,6 +71,10 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 			integration: &storage.SignatureIntegration{
 				Id:     "successful",
 				Cosign: successfulCosignConfig,
+				TransparencyLog: &storage.TransparencyLogVerification{
+					Enabled:         true,
+					ValidateOffline: true,
+				},
 			},
 			result: &storage.ImageSignatureVerificationResult{
 				VerifierId:              "successful",
@@ -88,48 +98,36 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			result := VerifyAgainstSignatureIntegration(context.Background(), c.integration, testImg)
-			assert.Equal(t, c.result.VerifierId, result.VerifierId)
-			assert.Equal(t, c.result.Status, result.Status)
-			assert.Contains(t, result.Description, c.result.Description)
-			assert.ElementsMatch(t, c.result.VerifiedImageReferences, result.VerifiedImageReferences)
+			assert.Equal(t, c.result.GetVerifierId(), result.GetVerifierId())
+			assert.Equal(t, c.result.GetStatus(), result.GetStatus())
+			assert.Contains(t, result.GetDescription(), c.result.GetDescription())
+			assert.ElementsMatch(t, c.result.GetVerifiedImageReferences(), result.GetVerifiedImageReferences())
 		})
 	}
 }
 
-func BenchmarkVerifyAgainstSignatureIntegrations_1Integration(b *testing.B) {
-	integrations := createSignatureIntegration(1)
-	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil)
+func BenchmarkVerifyAgainstSignatureIntegrations(b *testing.B) {
+	numIntegrations := []int{1, 5, 10, 100}
+	numSignatures := []int{1, 5, 10, 100}
+	bundle, err := os.ReadFile("testdata/bundle_bench_test.json")
 	require.NoError(b, err)
+	withBundle := [][]byte{nil, bundle}
 
-	b.ResetTimer()
-	benchmarkVerifyAgainstSignatureIntegrations(integrations, img, b)
-}
+	for _, numInt := range numIntegrations {
+		for _, numSig := range numSignatures {
+			for _, bundle := range withBundle {
+				verifyBundle := len(bundle) > 0
+				b.Run(fmt.Sprintf("numInt=%d, numSig=%d, verifyBundle=%v", numInt, numSig, verifyBundle), func(b *testing.B) {
+					integrations := createSignatureIntegration(numInt, verifyBundle)
+					img, err := generateImageWithManySignatures(numSig, imgString, bundle)
+					require.NoError(b, err)
 
-func BenchmarkVerifyAgainstSignatureIntegrations_10Integrations(b *testing.B) {
-	integrations := createSignatureIntegration(10)
-	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil)
-	require.NoError(b, err)
-
-	b.ResetTimer()
-	benchmarkVerifyAgainstSignatureIntegrations(integrations, img, b)
-}
-
-func BenchmarkVerifyAgainstSignatureIntegrations_100Integrations(b *testing.B) {
-	integrations := createSignatureIntegration(100)
-	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil)
-	require.NoError(b, err)
-
-	b.ResetTimer()
-	benchmarkVerifyAgainstSignatureIntegrations(integrations, img, b)
-}
-
-func BenchmarkVerifyAgainstSignatureIntegrations_200Integrations(b *testing.B) {
-	integrations := createSignatureIntegration(200)
-	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil)
-	require.NoError(b, err)
-
-	b.ResetTimer()
-	benchmarkVerifyAgainstSignatureIntegrations(integrations, img, b)
+					b.ResetTimer()
+					benchmarkVerifyAgainstSignatureIntegrations(integrations, img, b)
+				})
+			}
+		}
+	}
 }
 
 func benchmarkVerifyAgainstSignatureIntegrations(integrations []*storage.SignatureIntegration, img *storage.Image, b *testing.B) {
@@ -138,7 +136,15 @@ func benchmarkVerifyAgainstSignatureIntegrations(integrations []*storage.Signatu
 	}
 }
 
-func createSignatureIntegration(numberOfIntegrations int) []*storage.SignatureIntegration {
+func generateImageWithManySignatures(numberOfSignatures int, imgString string, byteBundle []byte) (*storage.Image, error) {
+	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil, byteBundle)
+	for range numberOfSignatures - 1 {
+		img.GetSignature().Signatures = append(img.GetSignature().Signatures, img.GetSignature().GetSignatures()[0])
+	}
+	return img, err
+}
+
+func createSignatureIntegration(numberOfIntegrations int, verifyBundle bool) []*storage.SignatureIntegration {
 	successfulCosignConfig := &storage.CosignPublicKeyVerification{
 		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
 			{
@@ -168,6 +174,10 @@ func createSignatureIntegration(numberOfIntegrations int) []*storage.SignatureIn
 		integrations = append(integrations, &storage.SignatureIntegration{
 			Id:     fmt.Sprintf("sig-integration-%d", i),
 			Cosign: cosignConfig,
+			TransparencyLog: &storage.TransparencyLogVerification{
+				Enabled:         verifyBundle,
+				ValidateOffline: true,
+			},
 		})
 	}
 

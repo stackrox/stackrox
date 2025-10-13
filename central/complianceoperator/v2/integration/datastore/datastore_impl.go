@@ -88,7 +88,7 @@ func (ds *datastoreImpl) AddComplianceIntegration(ctx context.Context, integrati
 	if err != nil {
 		return "", err
 	}
-	return integration.Id, nil
+	return integration.GetId(), nil
 }
 
 // UpdateComplianceIntegration is pass-through to the underlying store.
@@ -99,7 +99,7 @@ func (ds *datastoreImpl) UpdateComplianceIntegration(ctx context.Context, integr
 		return sac.ErrResourceAccessDenied
 	}
 
-	if integration.Id == "" {
+	if integration.GetId() == "" {
 		return errors.New("Unable to update compliance integration without an ID")
 	}
 
@@ -124,9 +124,8 @@ func (ds *datastoreImpl) RemoveComplianceIntegrationByCluster(ctx context.Contex
 		return sac.ErrResourceAccessDenied
 	}
 
-	_, storeErr := ds.storage.DeleteByQuery(ctx, search.NewQueryBuilder().
+	return ds.storage.DeleteByQuery(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, clusterID).ProtoQuery())
-	return storeErr
 }
 
 // CountIntegrations returns count of integrations matching query

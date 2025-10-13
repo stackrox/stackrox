@@ -4,10 +4,10 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/policycategory/search"
 	policyCategoryStore "github.com/stackrox/rox/central/policycategory/store"
 	policyCategoryPostgres "github.com/stackrox/rox/central/policycategory/store/postgres"
 	policyCategoryEdgeDS "github.com/stackrox/rox/central/policycategoryedge/datastore"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/defaults/categories"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
@@ -24,8 +24,7 @@ var (
 func initialize() {
 	store := policyCategoryPostgres.New(globaldb.GetPostgres())
 	addDefaults(store)
-	searcher := search.New(store)
-	ad = New(store, searcher, policyCategoryEdgeDS.Singleton())
+	ad = New(store, policyCategoryEdgeDS.Singleton())
 
 }
 
@@ -41,16 +40,15 @@ func addDefaults(s policyCategoryStore.Store) {
 	// Hard panic here is okay, since we can always guarantee that we will be able to get the default policy categories out.
 	utils.CrashOnError(err)
 
-	existingCategories, err := s.GetAll(sac.WithAllAccess(context.Background()))
+	var existingCategoriesSet set.StringSet
+	err = s.Walk(sac.WithAllAccess(context.Background()), func(category *storage.PolicyCategory) error {
+		existingCategoriesSet.Add(category.GetName())
+		return nil
+	})
 	utils.CrashOnError(err)
 
-	var existingCategoriesSet set.StringSet
-	for _, category := range existingCategories {
-		existingCategoriesSet.Add(category.GetName())
-	}
-
 	for _, dc := range defaultCategories {
-		if existingCategoriesSet.Contains(dc.Name) {
+		if existingCategoriesSet.Contains(dc.GetName()) {
 			continue
 		}
 		if err := s.Upsert(policyCategoryCtx, dc); err != nil {

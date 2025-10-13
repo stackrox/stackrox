@@ -7,6 +7,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/search"
@@ -121,7 +122,7 @@ func collectFields(q *v1.Query) (set.StringSet, set.StringSet) {
 	nullableFields := set.NewStringSet()
 	switch sub := q.GetQuery().(type) {
 	case *v1.Query_BaseQuery:
-		switch subBQ := q.GetBaseQuery().Query.(type) {
+		switch subBQ := q.GetBaseQuery().GetQuery().(type) {
 		case *v1.BaseQuery_DocIdQuery, *v1.BaseQuery_MatchNoneQuery:
 			// nothing to do
 		case *v1.BaseQuery_MatchFieldQuery:
@@ -130,7 +131,7 @@ func collectFields(q *v1.Query) (set.StringSet, set.StringSet) {
 				nullableFields.Add(subBQ.MatchFieldQuery.GetField())
 			}
 		case *v1.BaseQuery_MatchLinkedFieldsQuery:
-			for _, q := range subBQ.MatchLinkedFieldsQuery.Query {
+			for _, q := range subBQ.MatchLinkedFieldsQuery.GetQuery() {
 				collectedFields.Add(q.GetField())
 				if q.GetValue() == search.NullString {
 					nullableFields.Add(q.GetField())
@@ -140,12 +141,12 @@ func collectFields(q *v1.Query) (set.StringSet, set.StringSet) {
 			panic("unsupported")
 		}
 	case *v1.Query_Conjunction:
-		queries = append(queries, sub.Conjunction.Queries...)
+		queries = append(queries, sub.Conjunction.GetQueries()...)
 	case *v1.Query_Disjunction:
-		queries = append(queries, sub.Disjunction.Queries...)
+		queries = append(queries, sub.Disjunction.GetQueries()...)
 	case *v1.Query_BooleanQuery:
-		queries = append(queries, sub.BooleanQuery.Must.Queries...)
-		queries = append(queries, sub.BooleanQuery.MustNot.Queries...)
+		queries = append(queries, sub.BooleanQuery.GetMust().GetQueries()...)
+		queries = append(queries, sub.BooleanQuery.GetMustNot().GetQueries()...)
 	}
 
 	for _, query := range queries {
@@ -176,7 +177,7 @@ type searchFieldMetadata struct {
 func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]Join, map[string]searchFieldMetadata) {
 	unreachedFields, nullableFields := collectFields(q)
 
-	if env.ImageCVEEdgeCustomJoin.BooleanSetting() {
+	if env.ImageCVEEdgeCustomJoin.BooleanSetting() && !features.FlattenCVEData.Enabled() {
 		// Step 1: If ImageCveEdgesSchema is going to be a part of joins, we want to ensure that we are able to join on both
 		//  ImageId and ImageCveId fields
 		if src != schema.ImageCveEdgesSchema &&
@@ -206,7 +207,7 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]Join, map[string]sear
 		currElem := queue[0]
 		queue = queue[1:]
 
-		if env.ImageCVEEdgeCustomJoin.BooleanSetting() {
+		if env.ImageCVEEdgeCustomJoin.BooleanSetting() && !features.FlattenCVEData.Enabled() {
 			// Step 2: Avoid using ImageCveEdgesSchema unless there is no other way to get to the required fields.
 			// If ImageCveEdgesSchema is root schema, then it is unavoidable.
 			if currElem.schema == schema.ImageCveEdgesSchema && currElem.schema != src {
@@ -268,7 +269,7 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]Join, map[string]sear
 				}
 			}
 
-			if env.ImageCVEEdgeCustomJoin.BooleanSetting() {
+			if env.ImageCVEEdgeCustomJoin.BooleanSetting() && !features.FlattenCVEData.Enabled() {
 				// We want to make sure ImageCveEdgesSchema gets added only once to queue. If there are multiple copies of
 				// ImageCveEdgesSchema in the queue, then we can enter an infinite loop trying to push one copy after another
 				// to the end of queue.

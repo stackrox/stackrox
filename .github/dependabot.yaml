@@ -17,8 +17,6 @@ updates:
       - "dependencies"
       - "area/ui"
       - "auto-retest"
-    reviewers:
-      - "stackrox/ui-dep-updaters"
     commit-message:
       include: scope
       prefix: chore
@@ -33,8 +31,6 @@ updates:
       - "dependencies"
       - "auto-merge"
       - "auto-retest"
-    reviewers:
-      - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
       prefix: chore
@@ -49,8 +45,6 @@ updates:
       - "dependencies"
       - "auto-merge"
       - "auto-retest"
-    reviewers:
-      - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
       prefix: chore
@@ -64,6 +58,9 @@ updates:
       # so we ensure Scanner V4 does not have any unexpected changes.
       - dependency-name: "github.com/quay/claircore"
     groups:
+      golang.org/x:
+        patterns:
+          - "golang.org/x/*"
       k8s.io:
         update-types:
           - "patch"
@@ -84,8 +81,6 @@ updates:
     - "dependencies"
     - "auto-merge"
     - "auto-retest"
-    reviewers:
-      - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
       prefix: chore
@@ -100,8 +95,6 @@ updates:
     - "dependencies"
     - "auto-merge"
     - "auto-retest"
-    reviewers:
-    - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
       prefix: chore
@@ -116,8 +109,6 @@ updates:
     - "dependencies"
     - "auto-merge"
     - "auto-retest"
-    reviewers:
-      - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
       prefix: chore
@@ -132,8 +123,6 @@ updates:
     - "dependencies"
     - "auto-merge"
     - "auto-retest"
-    reviewers:
-    - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
       prefix: chore
@@ -149,8 +138,6 @@ updates:
     - "area/operator"
     - "auto-merge"
     - "auto-retest"
-    reviewers:
-    - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
       prefix: chore
@@ -166,8 +153,6 @@ updates:
     - "area/operator"
     - "auto-merge"
     - "auto-retest"
-    reviewers:
-    - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
       prefix: chore
@@ -183,8 +168,6 @@ updates:
     - "area/operator"
     - "auto-merge"
     - "auto-retest"
-    reviewers:
-    - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
       prefix: chore
@@ -200,8 +183,6 @@ updates:
     - "area/operator"
     - "auto-merge"
     - "auto-retest"
-    reviewers:
-    - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
       prefix: chore
@@ -217,8 +198,6 @@ updates:
     - "area/operator"
     - "auto-merge"
     - "auto-retest"
-    reviewers:
-    - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
       prefix: chore
@@ -238,8 +217,6 @@ updates:
     - "area/operator"
     - "auto-merge"
     - "auto-retest"
-    reviewers:
-    - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
       prefix: chore
@@ -255,8 +232,6 @@ updates:
     - "area/scanner"
     - "auto-merge"
     - "auto-retest"
-    reviewers:
-    - "stackrox/scanner"
     commit-message:
       include: scope
       prefix: chore
@@ -272,8 +247,20 @@ updates:
     - "area/operator"
     - "auto-merge"
     - "auto-retest"
-    reviewers:
-    - "stackrox/backend-dep-updaters"
+    commit-message:
+      include: scope
+      prefix: chore
+
+  - package-ecosystem: 'docker'
+    directory: 'operator/tests/controller/metrics'
+    schedule:
+      interval: 'monthly'
+    open-pull-requests-limit: 3
+    labels:
+    - "dependencies"
+    - "area/operator"
+    - "auto-merge-any" # these images do not follow semver
+    - "auto-retest"
     commit-message:
       include: scope
       prefix: chore
@@ -287,8 +274,6 @@ updates:
     labels:
     - "ci-all-qa-tests"
     - "dependencies"
-    reviewers:
-    - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
       prefix: chore
@@ -302,8 +287,6 @@ updates:
     labels:
     - "ci-all-qa-tests"
     - "dependencies"
-    reviewers:
-    - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
       prefix: chore
@@ -317,8 +300,6 @@ updates:
     labels:
     - "ci-all-qa-tests"
     - "dependencies"
-    reviewers:
-    - "stackrox/scanner"
     commit-message:
       include: scope
       prefix: chore
@@ -332,8 +313,6 @@ updates:
     labels:
     - "ci-all-qa-tests"
     - "dependencies"
-    reviewers:
-    - "stackrox/scanner"
     commit-message:
       include: scope
       prefix: chore
@@ -344,8 +323,6 @@ updates:
       interval: 'weekly'
       day: 'wednesday'
     open-pull-requests-limit: 3
-    reviewers:
-    - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
       prefix: chore
@@ -364,8 +341,6 @@ updates:
       interval: 'weekly'
       day: 'wednesday'
     open-pull-requests-limit: 3
-    reviewers:
-    - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
       prefix: chore
@@ -380,8 +355,6 @@ updates:
       interval: 'weekly'
       day: 'wednesday'
     open-pull-requests-limit: 3
-    reviewers:
-    - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
       prefix: chore
@@ -396,8 +369,6 @@ updates:
       interval: 'weekly'
       day: 'wednesday'
     open-pull-requests-limit: 3
-    reviewers:
-    - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
       prefix: chore
@@ -412,8 +383,6 @@ updates:
       interval: 'weekly'
       day: 'wednesday'
     open-pull-requests-limit: 3
-    reviewers:
-    - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
       prefix: chore
@@ -428,8 +397,6 @@ updates:
       interval: 'weekly'
       day: 'wednesday'
     open-pull-requests-limit: 3
-    reviewers:
-    - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
       prefix: chore
@@ -445,8 +412,6 @@ updates:
       interval: 'weekly'
       day: 'wednesday'
     open-pull-requests-limit: 3
-    reviewers:
-    - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
       prefix: chore
@@ -461,8 +426,6 @@ updates:
       interval: 'weekly'
       day: 'wednesday'
     open-pull-requests-limit: 3
-    reviewers:
-    - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
       prefix: chore
@@ -477,8 +440,6 @@ updates:
       interval: 'weekly'
       day: 'wednesday'
     open-pull-requests-limit: 3
-    reviewers:
-    - "stackrox/backend-dep-updaters"
     commit-message:
       include: scope
       prefix: chore

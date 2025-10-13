@@ -1,4 +1,5 @@
-import React, { useState, ReactElement } from 'react';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
 import {
     Alert,
     AlertActionCloseButton,
@@ -22,16 +23,16 @@ import TableCell from 'Components/PatternFly/TableCell';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import useTableSelection from 'hooks/useTableSelection';
-import { GetSortParams } from 'hooks/useURLSort';
+import type { GetSortParams } from 'hooks/useURLSort';
 import useRestMutation from 'hooks/useRestMutation';
 import useToasts from 'hooks/patternfly/useToasts';
 import { resolveAlert } from 'services/AlertsService';
 import { excludeDeployments } from 'services/PoliciesService';
-import { ListAlert } from 'types/alert.proto';
-import { TableColumn } from 'types/table';
+import type { ListAlert } from 'types/alert.proto';
+import type { TableColumn } from 'types/table';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { SearchFilter } from 'types/search';
-import { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
+import type { SearchFilter } from 'types/search';
+import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
 import ResolveConfirmation from './Modals/ResolveConfirmation';
 import ExcludeConfirmation from './Modals/ExcludeConfirmation';
 import ViolationsTableSearchFilter from './ViolationsTableSearchFilter';
@@ -59,6 +60,7 @@ type ViolationsTablePanelProps = {
     onSearch: OnSearchCallback;
     additionalContextFilter: SearchFilter;
     hasActiveViolations: boolean;
+    isTableDataUpdating: boolean;
 };
 
 function ViolationsTablePanel({
@@ -77,6 +79,7 @@ function ViolationsTablePanel({
     onSearch,
     additionalContextFilter,
     hasActiveViolations,
+    isTableDataUpdating,
 }: ViolationsTablePanelProps): ReactElement {
     const isRouteEnabled = useIsRouteEnabled();
     const { hasReadWriteAccess } = usePermissions();
@@ -283,7 +286,7 @@ function ViolationsTablePanel({
                             )}
                         </Tr>
                     </Thead>
-                    <Tbody>
+                    <Tbody aria-live="polite" aria-busy={isTableDataUpdating ? 'true' : 'false'}>
                         {violations.map((violation, rowIndex) => {
                             const { state, lifecycleStage, enforcementAction, policy, id } =
                                 violation;

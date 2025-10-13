@@ -1,17 +1,15 @@
-import { CollectionRequest, Collection, SelectorRule } from 'services/CollectionsService';
+import type { Collection, CollectionRequest, SelectorRule } from 'services/CollectionsService';
 import { ensureExhaustive, isNonEmptyArray } from 'utils/type.utils';
 import {
-    ClientCollection,
-    SelectorField,
-    SelectorEntityType,
-    isSupportedSelectorField,
-    isByNameField,
     isByLabelField,
-    selectorEntityTypes,
-    isSelectorField,
+    isByNameField,
     isLabelMatchValue,
     isNameMatchValue,
+    isSelectorField,
+    isSupportedSelectorField,
+    selectorEntityTypes,
 } from './types';
+import type { ClientCollection, SelectorEntityType, SelectorField } from './types';
 
 const fieldToEntityMap: Record<SelectorField, SelectorEntityType> = {
     Deployment: 'Deployment',

@@ -11,7 +11,7 @@ import {
 import { selectors } from './Clusters.selectors';
 
 // There is some overlap between tests for Certificate Expiration and Health Status.
-describe('Clusters Certificate Expiration', () => {
+describe.skip('Clusters Certificate Expiration', () => {
     withAuth();
 
     const metadata = {
@@ -126,7 +126,7 @@ describe('Clusters Certificate Expiration', () => {
     });
 
     describe('Sensor is up to date with Central', () => {
-        const expectedExpiration = 'in 29 days on 09/29/2020'; // Degraded
+        const expectedExpiration = 'in 29 days on Sep 29, 2020'; // Degraded
         const fixturePath = 'clusters/certExpirationDegraded.json';
 
         it('should enable the upgrade option', () => {

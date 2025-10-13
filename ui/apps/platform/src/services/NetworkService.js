@@ -216,7 +216,7 @@ export function fetchNetworkPolicyGraph(
  * @param {String[]} namespaces
  * @param {String[]} deployments
  * @param {String} query
- * @param {Date} date
+ * @param {String} sinceTimestamp
  * @param {boolean} includePorts
  * @param {boolean} includeOrchestratorComponents
  *
@@ -227,7 +227,7 @@ export function fetchNetworkFlowGraph(
     namespaces,
     deployments,
     query = '',
-    date = null,
+    sinceTimestamp = '',
     includePorts = false,
     includeOrchestratorComponents = false,
     includePolicies = false
@@ -241,8 +241,8 @@ export function fetchNetworkFlowGraph(
             : '';
     urlParams.query = query ? `${query}+${namespaceQuery}` : namespaceQuery;
     urlParams.query = deploymentQuery ? `${urlParams.query}+${deploymentQuery}` : urlParams.query;
-    if (date) {
-        urlParams.since = date.toISOString();
+    if (sinceTimestamp) {
+        urlParams.since = sinceTimestamp;
     }
     if (includePorts) {
         urlParams.includePorts = true;
@@ -467,6 +467,7 @@ export function getExternalNetworkFlows(
     entityId,
     namespaces,
     deployments,
+    sinceTimestamp,
     { sortOption, page, perPage, advancedFilters }
 ) {
     const searchFilter = {
@@ -481,7 +482,7 @@ export function getExternalNetworkFlows(
     const params = getListQueryParams({ searchFilter, sortOption, page, perPage });
     return axios
         .get(
-            `${networkFlowBaseUrl}/cluster/${clusterId}/externalentities/${entityId}/flows?${params}`
+            `${networkFlowBaseUrl}/cluster/${clusterId}/externalentities/${entityId}/flows?since=${sinceTimestamp}&${params}`
         )
         .then((response) => response.data);
 }
@@ -496,6 +497,7 @@ export function getExternalIpsFlowsMetadata(
     clusterId,
     namespaces,
     deployments,
+    sinceTimestamp,
     { sortOption, page, perPage, advancedFilters }
 ) {
     const searchFilter = {
@@ -511,7 +513,22 @@ export function getExternalIpsFlowsMetadata(
     };
     const params = getListQueryParams({ searchFilter, sortOption, page, perPage });
     return axios
-        .get(`${networkFlowBaseUrl}/cluster/${clusterId}/externalentities/metadata?${params}`)
+        .get(
+            `${networkFlowBaseUrl}/cluster/${clusterId}/externalentities/metadata?since=${sinceTimestamp}&${params}`
+        )
+        .then((response) => response.data);
+}
+
+export function getNetworkBaselineExternalStatus(
+    deploymentId,
+    sinceTimestamp,
+    { sortOption, page, perPage, searchFilter }
+) {
+    const params = getListQueryParams({ searchFilter, sortOption, page, perPage });
+    return axios
+        .get(
+            `${networkBaselineBaseUrl}/${deploymentId}/status/external?since=${sinceTimestamp}&${params}`
+        )
         .then((response) => response.data);
 }
 

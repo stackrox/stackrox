@@ -55,15 +55,6 @@ export const IMAGE_NAME = gql`
     }
 `;
 
-export const IMAGE_QUERY = gql`
-    query image($id: ID!) {
-        image(id: $id) {
-            ...imageFields
-        }
-    }
-    ${IMAGE_FRAGMENT}
-`;
-
 export const IMAGES_QUERY = gql`
     query images($query: String, $pagination: Pagination) {
         images(query: $query, pagination: $pagination) {

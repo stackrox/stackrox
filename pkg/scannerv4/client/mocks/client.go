@@ -59,9 +59,13 @@ func (mr *MockScannerMockRecorder) Close() *gomock.Call {
 }
 
 // GetImageIndex mocks base method.
-func (m *MockScanner) GetImageIndex(ctx context.Context, hashID string) (*v4.IndexReport, bool, error) {
+func (m *MockScanner) GetImageIndex(ctx context.Context, hashID string, callOpts ...client.CallOption) (*v4.IndexReport, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetImageIndex", ctx, hashID)
+	varargs := []any{ctx, hashID}
+	for _, a := range callOpts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetImageIndex", varargs...)
 	ret0, _ := ret[0].(*v4.IndexReport)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -69,45 +73,60 @@ func (m *MockScanner) GetImageIndex(ctx context.Context, hashID string) (*v4.Ind
 }
 
 // GetImageIndex indicates an expected call of GetImageIndex.
-func (mr *MockScannerMockRecorder) GetImageIndex(ctx, hashID any) *gomock.Call {
+func (mr *MockScannerMockRecorder) GetImageIndex(ctx, hashID any, callOpts ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageIndex", reflect.TypeOf((*MockScanner)(nil).GetImageIndex), ctx, hashID)
+	varargs := append([]any{ctx, hashID}, callOpts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageIndex", reflect.TypeOf((*MockScanner)(nil).GetImageIndex), varargs...)
 }
 
 // GetMatcherMetadata mocks base method.
-func (m *MockScanner) GetMatcherMetadata(arg0 context.Context) (*v4.Metadata, error) {
+func (m *MockScanner) GetMatcherMetadata(arg0 context.Context, arg1 ...client.CallOption) (*v4.Metadata, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetMatcherMetadata", arg0)
+	varargs := []any{arg0}
+	for _, a := range arg1 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetMatcherMetadata", varargs...)
 	ret0, _ := ret[0].(*v4.Metadata)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetMatcherMetadata indicates an expected call of GetMatcherMetadata.
-func (mr *MockScannerMockRecorder) GetMatcherMetadata(arg0 any) *gomock.Call {
+func (mr *MockScannerMockRecorder) GetMatcherMetadata(arg0 any, arg1 ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMatcherMetadata", reflect.TypeOf((*MockScanner)(nil).GetMatcherMetadata), arg0)
+	varargs := append([]any{arg0}, arg1...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMatcherMetadata", reflect.TypeOf((*MockScanner)(nil).GetMatcherMetadata), varargs...)
 }
 
 // GetOrCreateImageIndex mocks base method.
-func (m *MockScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator, opt client.ImageRegistryOpt) (*v4.IndexReport, error) {
+func (m *MockScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator, opt client.ImageRegistryOpt, callOpts ...client.CallOption) (*v4.IndexReport, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetOrCreateImageIndex", ctx, ref, auth, opt)
+	varargs := []any{ctx, ref, auth, opt}
+	for _, a := range callOpts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetOrCreateImageIndex", varargs...)
 	ret0, _ := ret[0].(*v4.IndexReport)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetOrCreateImageIndex indicates an expected call of GetOrCreateImageIndex.
-func (mr *MockScannerMockRecorder) GetOrCreateImageIndex(ctx, ref, auth, opt any) *gomock.Call {
+func (mr *MockScannerMockRecorder) GetOrCreateImageIndex(ctx, ref, auth, opt any, callOpts ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrCreateImageIndex", reflect.TypeOf((*MockScanner)(nil).GetOrCreateImageIndex), ctx, ref, auth, opt)
+	varargs := append([]any{ctx, ref, auth, opt}, callOpts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrCreateImageIndex", reflect.TypeOf((*MockScanner)(nil).GetOrCreateImageIndex), varargs...)
 }
 
 // GetSBOM mocks base method.
-func (m *MockScanner) GetSBOM(ctx context.Context, name string, ref name.Digest, uri string) ([]byte, bool, error) {
+func (m *MockScanner) GetSBOM(ctx context.Context, arg1 string, ref name.Digest, uri string, callOpts ...client.CallOption) ([]byte, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSBOM", ctx, name, ref, uri)
+	varargs := []any{ctx, arg1, ref, uri}
+	for _, a := range callOpts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetSBOM", varargs...)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -115,37 +134,67 @@ func (m *MockScanner) GetSBOM(ctx context.Context, name string, ref name.Digest,
 }
 
 // GetSBOM indicates an expected call of GetSBOM.
-func (mr *MockScannerMockRecorder) GetSBOM(ctx, name, ref, uri any) *gomock.Call {
+func (mr *MockScannerMockRecorder) GetSBOM(ctx, arg1, ref, uri any, callOpts ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSBOM", reflect.TypeOf((*MockScanner)(nil).GetSBOM), ctx, name, ref, uri)
+	varargs := append([]any{ctx, arg1, ref, uri}, callOpts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSBOM", reflect.TypeOf((*MockScanner)(nil).GetSBOM), varargs...)
 }
 
 // GetVulnerabilities mocks base method.
-func (m *MockScanner) GetVulnerabilities(ctx context.Context, ref name.Digest, contents *v4.Contents) (*v4.VulnerabilityReport, error) {
+func (m *MockScanner) GetVulnerabilities(ctx context.Context, ref name.Digest, contents *v4.Contents, callOpts ...client.CallOption) (*v4.VulnerabilityReport, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetVulnerabilities", ctx, ref, contents)
+	varargs := []any{ctx, ref, contents}
+	for _, a := range callOpts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetVulnerabilities", varargs...)
 	ret0, _ := ret[0].(*v4.VulnerabilityReport)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetVulnerabilities indicates an expected call of GetVulnerabilities.
-func (mr *MockScannerMockRecorder) GetVulnerabilities(ctx, ref, contents any) *gomock.Call {
+func (mr *MockScannerMockRecorder) GetVulnerabilities(ctx, ref, contents any, callOpts ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVulnerabilities", reflect.TypeOf((*MockScanner)(nil).GetVulnerabilities), ctx, ref, contents)
+	varargs := append([]any{ctx, ref, contents}, callOpts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVulnerabilities", reflect.TypeOf((*MockScanner)(nil).GetVulnerabilities), varargs...)
 }
 
 // IndexAndScanImage mocks base method.
-func (m *MockScanner) IndexAndScanImage(arg0 context.Context, arg1 name.Digest, arg2 authn.Authenticator, arg3 client.ImageRegistryOpt) (*v4.VulnerabilityReport, error) {
+func (m *MockScanner) IndexAndScanImage(arg0 context.Context, arg1 name.Digest, arg2 authn.Authenticator, arg3 client.ImageRegistryOpt, arg4 ...client.CallOption) (*v4.VulnerabilityReport, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IndexAndScanImage", arg0, arg1, arg2, arg3)
+	varargs := []any{arg0, arg1, arg2, arg3}
+	for _, a := range arg4 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "IndexAndScanImage", varargs...)
 	ret0, _ := ret[0].(*v4.VulnerabilityReport)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // IndexAndScanImage indicates an expected call of IndexAndScanImage.
-func (mr *MockScannerMockRecorder) IndexAndScanImage(arg0, arg1, arg2, arg3 any) *gomock.Call {
+func (mr *MockScannerMockRecorder) IndexAndScanImage(arg0, arg1, arg2, arg3 any, arg4 ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexAndScanImage", reflect.TypeOf((*MockScanner)(nil).IndexAndScanImage), arg0, arg1, arg2, arg3)
+	varargs := append([]any{arg0, arg1, arg2, arg3}, arg4...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexAndScanImage", reflect.TypeOf((*MockScanner)(nil).IndexAndScanImage), varargs...)
+}
+
+// StoreImageIndex mocks base method.
+func (m *MockScanner) StoreImageIndex(ctx context.Context, ref name.Digest, indexerVersion string, contents *v4.Contents, callOpts ...client.CallOption) error {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, ref, indexerVersion, contents}
+	for _, a := range callOpts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "StoreImageIndex", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// StoreImageIndex indicates an expected call of StoreImageIndex.
+func (mr *MockScannerMockRecorder) StoreImageIndex(ctx, ref, indexerVersion, contents any, callOpts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, ref, indexerVersion, contents}, callOpts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreImageIndex", reflect.TypeOf((*MockScanner)(nil).StoreImageIndex), varargs...)
 }

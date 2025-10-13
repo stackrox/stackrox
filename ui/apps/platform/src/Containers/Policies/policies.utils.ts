@@ -32,6 +32,7 @@ import { SearchFilter } from 'types/search';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
 import { checkArrayContainsArray } from 'utils/arrayUtils';
 import { allEnabled } from 'utils/featureFlagUtils';
+import isEqual from 'lodash/isEqual';
 
 function isValidAction(action: unknown): action is ExtendedPageAction {
     return action === 'clone' || action === 'create' || action === 'edit' || action === 'generate';
@@ -337,7 +338,7 @@ export function parseNumericComparisons(str): [string, string] {
     return [matches[1], matches[2]];
 }
 
-export function parseValueStr(value, fieldName): ValueObj {
+export function parseValueStr(value: string, fieldName: string): ValueObj {
     // TODO: work with API to update contract for returning number comparison fields
     //   until that improves, we short-circuit those fields here
 
@@ -356,19 +357,23 @@ export function parseValueStr(value, fieldName): ValueObj {
     if (typeof value === 'string' && isCompoundField(fieldName)) {
         // handle all other string fields
         const valueArr = value.split('=');
-        // for nested policy criteria fields
-        if (valueArr.length === 2) {
+
+        // for the Environment Variable policy criteria
+        if (fieldName === 'Environment Variable') {
+            const [source, key, ...values] = valueArr;
             return {
-                key: valueArr[0],
-                value: valueArr[1],
+                source,
+                key,
+                value: values.join('='),
             };
         }
-        // for the Environment Variable policy criteria
-        if (valueArr.length === 3) {
+
+        // for nested policy criteria fields
+        if (valueArr.length > 1) {
+            const [key, ...values] = valueArr;
             return {
-                source: valueArr[0],
-                key: valueArr[1],
-                value: valueArr[2],
+                key,
+                value: values.join('='),
             };
         }
     }
@@ -501,6 +506,7 @@ function trimPolicyScope(scope: PolicyScope) {
     if (typeof scope.namespace === 'string') {
         scope.namespace = scope.namespace.trim();
     }
+    /* eslint-enable no-param-reassign */
 
     // TODO label key and value: make sure about empty string versus undefined.
     /*
@@ -514,7 +520,6 @@ function trimPolicyScope(scope: PolicyScope) {
         }
     }
     */
-    /* eslint-enable no-param-reassign */
 
     return scope;
 }
@@ -629,33 +634,56 @@ export function getServerPolicy(policyUntrimmed: ClientPolicy): Policy {
     return serverPolicy;
 }
 
-export function getLifeCyclesUpdates(
-    values: ClientPolicy,
-    lifecycleStage: LifecycleStage,
-    isChecked: boolean
-) {
+export type ValidPolicyLifeCycle = ['BUILD'] | ['DEPLOY'] | ['BUILD', 'DEPLOY'] | ['RUNTIME'];
+
+export function isBuildPolicy(stages: LifecycleStage[]): stages is ['BUILD'] {
+    return isEqual(stages, ['BUILD']);
+}
+
+export function isDeployPolicy(lifecycleStages: LifecycleStage[]): lifecycleStages is ['DEPLOY'] {
+    return isEqual(lifecycleStages, ['DEPLOY']);
+}
+
+export function isBuildAndDeployPolicy(
+    lifecycleStages: LifecycleStage[]
+): lifecycleStages is ['BUILD', 'DEPLOY'] {
+    return isEqual(lifecycleStages, ['BUILD', 'DEPLOY']);
+}
+
+export function isRuntimePolicy(lifecycleStages: LifecycleStage[]): lifecycleStages is ['RUNTIME'] {
+    return isEqual(lifecycleStages, ['RUNTIME']);
+}
+
+export function getLifeCyclesUpdates<
+    T extends Pick<
+        ClientPolicy,
+        'lifecycleStages' | 'eventSource' | 'excludedImageNames' | 'enforcementActions'
+    >,
+>(values: T, selectedStages: ValidPolicyLifeCycle): T {
     /*
      * Set all changed values at once, because separate setFieldValue calls
      * for lifecycleStages and eventSource cause inconsistent incorrect validation.
      */
     const changedValues = cloneDeep(values);
-    if (isChecked) {
-        changedValues.lifecycleStages = [...values.lifecycleStages, lifecycleStage];
-    } else {
-        changedValues.lifecycleStages = values.lifecycleStages.filter(
-            (stage) => stage !== lifecycleStage
-        );
-        if (lifecycleStage === 'RUNTIME') {
-            changedValues.eventSource = 'NOT_APPLICABLE';
-        }
-        if (lifecycleStage === 'BUILD') {
-            changedValues.excludedImageNames = [];
-        }
-        changedValues.enforcementActions = filterEnforcementActionsForRemovedLifecycleStage(
-            lifecycleStage,
-            values.enforcementActions
-        );
+
+    if (!isRuntimePolicy(selectedStages)) {
+        changedValues.eventSource = 'NOT_APPLICABLE';
     }
+
+    if (!isBuildPolicy(selectedStages) && !isBuildAndDeployPolicy(selectedStages)) {
+        changedValues.excludedImageNames = [];
+    }
+
+    values.lifecycleStages.forEach((stage) => {
+        if (!selectedStages.some((validStage) => validStage === stage)) {
+            changedValues.enforcementActions = filterEnforcementActionsForRemovedLifecycleStage(
+                stage,
+                values.enforcementActions
+            );
+        }
+    });
+
+    changedValues.lifecycleStages = [...selectedStages];
     return changedValues;
 }
 

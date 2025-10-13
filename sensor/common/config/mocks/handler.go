@@ -10,6 +10,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	central "github.com/stackrox/rox/generated/internalapi/central"
@@ -42,6 +43,20 @@ func NewMockHandler(ctrl *gomock.Controller) *MockHandler {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockHandler) EXPECT() *MockHandlerMockRecorder {
 	return m.recorder
+}
+
+// Accepts mocks base method.
+func (m *MockHandler) Accepts(msg *central.MsgToSensor) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Accepts", msg)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Accepts indicates an expected call of Accepts.
+func (mr *MockHandlerMockRecorder) Accepts(msg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Accepts", reflect.TypeOf((*MockHandler)(nil).Accepts), msg)
 }
 
 // Capabilities mocks base method.
@@ -100,6 +115,20 @@ func (mr *MockHandlerMockRecorder) GetHelmManagedConfig() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHelmManagedConfig", reflect.TypeOf((*MockHandler)(nil).GetHelmManagedConfig))
 }
 
+// Name mocks base method.
+func (m *MockHandler) Name() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Name")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// Name indicates an expected call of Name.
+func (mr *MockHandlerMockRecorder) Name() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Name", reflect.TypeOf((*MockHandler)(nil).Name))
+}
+
 // Notify mocks base method.
 func (m *MockHandler) Notify(e common.SensorComponentEvent) {
 	m.ctrl.T.Helper()
@@ -113,17 +142,17 @@ func (mr *MockHandlerMockRecorder) Notify(e any) *gomock.Call {
 }
 
 // ProcessMessage mocks base method.
-func (m *MockHandler) ProcessMessage(msg *central.MsgToSensor) error {
+func (m *MockHandler) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessMessage", msg)
+	ret := m.ctrl.Call(m, "ProcessMessage", ctx, msg)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ProcessMessage indicates an expected call of ProcessMessage.
-func (mr *MockHandlerMockRecorder) ProcessMessage(msg any) *gomock.Call {
+func (mr *MockHandlerMockRecorder) ProcessMessage(ctx, msg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessMessage", reflect.TypeOf((*MockHandler)(nil).ProcessMessage), msg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessMessage", reflect.TypeOf((*MockHandler)(nil).ProcessMessage), ctx, msg)
 }
 
 // ResponsesC mocks base method.
@@ -155,13 +184,13 @@ func (mr *MockHandlerMockRecorder) Start() *gomock.Call {
 }
 
 // Stop mocks base method.
-func (m *MockHandler) Stop(err error) {
+func (m *MockHandler) Stop() {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Stop", err)
+	m.ctrl.Call(m, "Stop")
 }
 
 // Stop indicates an expected call of Stop.
-func (mr *MockHandlerMockRecorder) Stop(err any) *gomock.Call {
+func (mr *MockHandlerMockRecorder) Stop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockHandler)(nil).Stop), err)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockHandler)(nil).Stop))
 }

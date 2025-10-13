@@ -238,7 +238,6 @@ func fromYAML(t *testing.T, yamlStr string) *unstructured.Unstructured {
 }
 
 func TestNormalizeObjects_EqualAfterNormalize(t *testing.T) {
-	t.Parallel()
 
 	liveSA := fromYAML(t, liveServiceAccountYAML)
 	saFromBundle := fromYAML(t, serviceAccountFromBundleYAML)
@@ -249,7 +248,6 @@ func TestNormalizeObjects_EqualAfterNormalize(t *testing.T) {
 }
 
 func TestNormalizeObjects_NotEqualAfterNormalize(t *testing.T) {
-	t.Parallel()
 
 	liveSA := fromYAML(t, liveServiceAccountYAML)
 	modifiedSAFromBundle := fromYAML(t, modifiedServiceAccountFromBundleYAML)
@@ -260,7 +258,6 @@ func TestNormalizeObjects_NotEqualAfterNormalize(t *testing.T) {
 }
 
 func TestNormalizeAdmissionController(t *testing.T) {
-	t.Parallel()
 
 	baseKeys := []string{"clientConfig", "failurePolicy", "name", "namespaceSelector", "rules"}
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import {
     Pagination,
     Toolbar,
@@ -10,25 +10,29 @@ import {
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import { UseURLPaginationResult } from 'hooks/useURLPagination';
-import { UseURLSortResult } from 'hooks/useURLSort';
-import { ClusterCheckStatus } from 'services/ComplianceResultsService';
-import { TableUIState } from 'utils/getTableUIState';
+import type { UseURLPaginationResult } from 'hooks/useURLPagination';
+import type { UseURLSortResult } from 'hooks/useURLSort';
+import type { ClusterCheckStatus } from 'services/ComplianceResultsService';
+import type { TableUIState } from 'utils/getTableUIState';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
+import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
-import { CompoundSearchFilterConfig, OnSearchPayload } from 'Components/CompoundSearchFilter/types';
-import { SearchFilter } from 'types/search';
+import type {
+    CompoundSearchFilterConfig,
+    OnSearchPayload,
+} from 'Components/CompoundSearchFilter/types';
+import type { SearchFilter } from 'types/search';
 
 import { coverageClusterDetailsPath } from './compliance.coverage.routes';
 import {
     getClusterResultsStatusObject,
     getTimeDifferenceAsPhrase,
 } from './compliance.coverage.utils';
-import { CHECK_STATUS_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
 import CheckStatusDropdown from './components/CheckStatusDropdown';
 import StatusIcon from './components/StatusIcon';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
+import { complianceStatusFilterChipDescriptors } from '../searchFilterConfig';
 
 export const tabContentIdForResults = 'check-details-Results-tab-section';
 
@@ -68,6 +72,8 @@ function CheckDetailsTable({
     const { generatePathWithScanConfig } = useScanConfigRouter();
     const { page, perPage, setPage, setPerPage } = pagination;
 
+    const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
+
     return (
         <div id={tabContentIdForResults}>
             <Toolbar>
@@ -101,14 +107,8 @@ function CheckDetailsTable({
                             searchFilter={searchFilter}
                             onFilterChange={onFilterChange}
                             filterChipGroupDescriptors={[
-                                {
-                                    displayName: 'Cluster',
-                                    searchFilterName: CLUSTER_QUERY,
-                                },
-                                {
-                                    displayName: 'Compliance Status',
-                                    searchFilterName: CHECK_STATUS_QUERY,
-                                },
+                                ...filterChipGroupDescriptors,
+                                complianceStatusFilterChipDescriptors,
                             ]}
                         />
                     </ToolbarGroup>

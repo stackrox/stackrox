@@ -105,7 +105,7 @@ func (s *serviceImpl) getCentralDBCertExpiry() (*v1.GetCertExpiry_Response, erro
 	if !ok {
 		return nil, errors.Wrap(errox.InvalidArgs, "'port' parameter not defined in central db config")
 	}
-	endpoint := fmt.Sprintf("%s:%s", host, port)
+	endpoint := net.JoinHostPort(host, port)
 
 	conn, err := net.Dial("tcp", endpoint)
 	if err != nil {

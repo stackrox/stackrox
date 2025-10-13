@@ -312,8 +312,8 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 
 	// Sort the w.Deployment.Containers by name and p.Status.ContainerStatuses by name
 	// This is because the order is not guaranteed
-	sort.SliceStable(w.Deployment.Containers, func(i, j int) bool {
-		return w.Deployment.GetContainers()[i].Name < w.Deployment.GetContainers()[j].Name
+	sort.SliceStable(w.GetDeployment().GetContainers(), func(i, j int) bool {
+		return w.GetDeployment().GetContainers()[i].GetName() < w.GetDeployment().GetContainers()[j].GetName()
 	})
 
 	// Sort the pods by time created as that pod will be most likely to have the most updated spec
@@ -330,18 +330,18 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 			return p.Spec.Containers[i].Name < p.Spec.Containers[j].Name
 		})
 		for i, c := range p.Status.ContainerStatuses {
-			if i >= len(w.Deployment.Containers) || i >= len(p.Spec.Containers) {
+			if i >= len(w.GetDeployment().GetContainers()) || i >= len(p.Spec.Containers) {
 				// This should not happen, but could happen if w.Deployment.Containers and container status are out of sync
 				break
 			}
 
-			image := w.Deployment.Containers[i].Image
+			image := w.GetDeployment().GetContainers()[i].GetImage()
 
 			var runtimeImageName *storage.ImageName
 			if features.UnqualifiedSearchRegistries.Enabled() && c.ImageID != "" {
 				var err error
 				if runtimeImageName, _, err = imageUtils.GenerateImageNameFromString(imageUtils.RemoveScheme(c.ImageID)); err != nil {
-					log.Warnf("Error parsing image ID %q, will not sync image names with runtime for deploy %q, pod %q: %v", c.ImageID, w.Deployment.GetName(), p.GetName(), err)
+					log.Warnf("Error parsing image ID %q, will not sync image names with runtime for deploy %q, pod %q: %v", c.ImageID, w.GetDeployment().GetName(), p.GetName(), err)
 				}
 			}
 
@@ -350,8 +350,13 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 			// If the ID already exists populate NotPullable, IsClusterLocal, and sync the registry
 			// and remote with the container runtime.
 			if image.GetId() != "" {
-				// Use the image ID from the pod's ContainerStatus.
-				image.NotPullable = !imageUtils.IsPullable(c.ImageID)
+				// If the image ID is populated then determine if the image is pullable,
+				// otherwise assume the image is pullable. An Image ID may be empty when a
+				// container is not ready yet per the container runtime.
+				if c.ImageID != "" {
+					image.NotPullable = !imageUtils.IsPullable(c.ImageID)
+				}
+
 				image.IsClusterLocal = localImages.Contains(image.GetName().GetFullName())
 				updateImageWithNewerImageName(image, runtimeImageName, true)
 				continue
@@ -450,9 +455,9 @@ func (w *deploymentWrap) populatePorts() {
 	w.portConfigs = make(map[service.PortRef]*storage.PortConfig)
 	for _, c := range w.GetContainers() {
 		for _, p := range c.GetPorts() {
-			w.portConfigs[service.PortRef{Port: intstr.FromInt(int(p.ContainerPort)), Protocol: v1.Protocol(p.Protocol)}] = p
-			if p.Name != "" {
-				w.portConfigs[service.PortRef{Port: intstr.FromString(p.Name), Protocol: v1.Protocol(p.Protocol)}] = p
+			w.portConfigs[service.PortRef{Port: intstr.FromInt(int(p.GetContainerPort())), Protocol: v1.Protocol(p.GetProtocol())}] = p
+			if p.GetName() != "" {
+				w.portConfigs[service.PortRef{Port: intstr.FromString(p.GetName()), Protocol: v1.Protocol(p.GetProtocol())}] = p
 			}
 		}
 	}
@@ -466,7 +471,7 @@ func (w *deploymentWrap) toEvent(action central.ResourceAction) *central.SensorE
 		Id:     w.GetId(),
 		Action: action,
 		Resource: &central.SensorEvent_Deployment{
-			Deployment: w.Deployment.CloneVT(),
+			Deployment: w.GetDeployment().CloneVT(),
 		},
 	}
 }
@@ -478,7 +483,7 @@ func (w *deploymentWrap) anyNonHostPort() bool {
 	defer w.mutex.RUnlock()
 
 	for _, portCfg := range w.portConfigs {
-		for _, exposureInfo := range portCfg.ExposureInfos {
+		for _, exposureInfo := range portCfg.GetExposureInfos() {
 			if exposureInfo.GetLevel() != storage.PortConfig_HOST {
 				return true
 			}
@@ -503,7 +508,7 @@ func filterHostExposure(exposureInfos []*storage.PortConfig_ExposureInfo) (
 
 func (w *deploymentWrap) resetPortExposureNoLock() {
 	for _, portCfg := range w.portConfigs {
-		portCfg.ExposureInfos, portCfg.Exposure = filterHostExposure(portCfg.ExposureInfos)
+		portCfg.ExposureInfos, portCfg.Exposure = filterHostExposure(portCfg.GetExposureInfos())
 	}
 }
 
@@ -548,19 +553,19 @@ func (w *deploymentWrap) updatePortExposureUncheckedNoLock(portExposure map[serv
 		portCfg.ExposureInfos = append(portCfg.ExposureInfos, exposureInfos...)
 
 		for _, exposureInfo := range exposureInfos {
-			if containers.CompareExposureLevel(portCfg.Exposure, exposureInfo.GetLevel()) < 0 {
+			if containers.CompareExposureLevel(portCfg.GetExposure(), exposureInfo.GetLevel()) < 0 {
 				portCfg.Exposure = exposureInfo.GetLevel()
 			}
 		}
 	}
 	for _, portCfg := range w.portConfigs {
-		sort.Slice(portCfg.ExposureInfos, func(i, j int) bool {
-			return portCfg.ExposureInfos[i].ServiceName < portCfg.ExposureInfos[j].ServiceName
+		sort.Slice(portCfg.GetExposureInfos(), func(i, j int) bool {
+			return portCfg.GetExposureInfos()[i].GetServiceName() < portCfg.GetExposureInfos()[j].GetServiceName()
 		})
 	}
 
 	sort.Slice(w.Ports, func(i, j int) bool {
-		return w.Ports[i].ContainerPort < w.Ports[j].ContainerPort
+		return w.Ports[i].GetContainerPort() < w.Ports[j].GetContainerPort()
 	})
 	return false
 }

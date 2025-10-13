@@ -95,7 +95,7 @@ describe('Workload CVE Image Single page', () => {
         // Check that no severities are hidden by default
         cy.get(vulnSelectors.summaryCard('CVEs by severity'))
             .find('p')
-            .contains(new RegExp('(Critical|Important|Moderate|Low) hidden'))
+            .contains(new RegExp('(Critical|Important|Moderate|Low|Unknown) hidden'))
             .should('not.exist');
 
         const severityFilter = 'Critical';
@@ -107,6 +107,7 @@ describe('Workload CVE Image Single page', () => {
         cy.get(`*:contains("Important hidden")`);
         cy.get(`*:contains("Moderate hidden")`);
         cy.get(`*:contains("Low hidden")`);
+        cy.get(`*:contains("Unknown hidden")`);
 
         // Check that table rows are filtered
         cy.get(selectors.filteredViewLabel);
@@ -177,6 +178,11 @@ describe('Workload CVE Image Single page', () => {
                     },
                     __typename: 'Image',
                     imageCVECountBySeverity: {
+                        unknown: {
+                            total: 0,
+                            fixable: 0,
+                            __typename: 'ResourceCountByFixability',
+                        },
                         low: {
                             total: 0,
                             fixable: 0,
@@ -371,12 +377,6 @@ describe('Workload CVE Image Single page', () => {
     describe('SBOM generation tests', () => {
         const headerSbomModalButton = 'section:has(h1) button:contains("Generate SBOM")';
         const generateSbomButton = '[role="dialog"] button:contains("Generate SBOM")';
-
-        before(function () {
-            if (!hasFeatureFlag('ROX_SBOM_GENERATION')) {
-                this.skip();
-            }
-        });
 
         it('should hide the SBOM generation button when the user does not have write access to the Image resource', () => {
             interceptAndOverridePermissions({ Image: 'READ_ACCESS' });

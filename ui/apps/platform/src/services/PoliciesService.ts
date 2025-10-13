@@ -1,12 +1,12 @@
 import queryString from 'qs';
 import FileSaver from 'file-saver';
 
-import { ListPolicy, Policy } from 'types/policy.proto';
+import type { ListPolicy, Policy } from 'types/policy.proto';
 import { addBrandedTimestampToString } from 'utils/dateUtils';
 import { transformPolicyCriteriaValuesToStrings } from 'utils/policyUtils';
 
 import axios from './instance';
-import { Empty } from './types';
+import type { Empty } from './types';
 
 const baseUrl = '/v1/policies';
 

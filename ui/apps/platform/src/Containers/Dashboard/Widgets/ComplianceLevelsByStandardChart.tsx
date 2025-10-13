@@ -1,22 +1,16 @@
 import React, { useState } from 'react';
-import { useHistory } from 'react-router-dom';
-import {
-    Chart,
-    ChartAxis,
-    ChartBar,
-    ChartContainer,
-    ChartGroup,
-    ChartLabelProps,
-} from '@patternfly/react-charts';
+import { useNavigate } from 'react-router-dom-v5-compat';
+import { Chart, ChartAxis, ChartBar, ChartContainer, ChartGroup } from '@patternfly/react-charts';
+import type { ChartLabelProps } from '@patternfly/react-charts';
 
 import { LinkableChartLabel } from 'Components/PatternFly/Charts/LinkableChartLabel';
 import useResizeObserver from 'hooks/useResizeObserver';
 import {
-    defaultChartHeight,
     defaultChartBarWidth,
+    defaultChartHeight,
     navigateOnClickEvent,
-    solidBlueChartColor,
     patternflySeverityTheme,
+    solidBlueChartColor,
 } from 'utils/chartUtils';
 
 const labelLinkCallback = ({ datum }: ChartLabelProps, data: ComplianceLevelByStandard[]) => {
@@ -36,7 +30,7 @@ type ComplianceLevelsByStandardChartProps = {
 function ComplianceLevelsByStandardChart({
     complianceLevelsByStandard,
 }: ComplianceLevelsByStandardChartProps) {
-    const history = useHistory();
+    const navigate = useNavigate();
     const [widgetContainer, setWidgetContainer] = useState<HTMLDivElement | null>(null);
     const widgetContainerResizeEntry = useResizeObserver(widgetContainer);
 
@@ -80,7 +74,7 @@ function ComplianceLevelsByStandardChart({
                             barWidth={defaultChartBarWidth}
                             data={[{ x: name, y: passing, link }]}
                             labels={({ datum }) => `${Math.round(parseInt(datum.y, 10))}%`}
-                            events={[navigateOnClickEvent(history, () => link)]}
+                            events={[navigateOnClickEvent(navigate, () => link)]}
                         />
                     ))}
                 </ChartGroup>

@@ -1,11 +1,12 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import { Flex, Title, Truncate } from '@patternfly/react-core';
-import { Table, Tbody, Tr, Td } from '@patternfly/react-table';
+import { Table, Tbody, Td, Tr } from '@patternfly/react-table';
 
 import ResourceIcon from 'Components/PatternFly/ResourceIcon';
 import { policySeverityIconMap } from 'Components/PatternFly/SeverityIcons';
-import { Alert, isDeploymentAlert, isResourceAlert } from 'types/alert.proto';
+import { isDeploymentAlert, isResourceAlert } from 'types/alert.proto';
+import type { Alert } from 'types/alert.proto';
 import { getDateTime } from 'utils/dateUtils';
 import { violationsBasePath } from 'routePaths';
 import NoDataEmptyState from './NoDataEmptyState';
@@ -70,7 +71,7 @@ function MostRecentViolations({ alerts }: MostRecentViolationsProps) {
                                         </Flex>
                                     </Td>
                                     <Td
-                                        width={35}
+                                        modifier="nowrap"
                                         className="pf-v5-u-pr-0 pf-v5-u-text-align-right-on-md"
                                         dataLabel="Time of last violation occurrence"
                                     >

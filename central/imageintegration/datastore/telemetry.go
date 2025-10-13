@@ -34,9 +34,7 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 	}
 
 	// Can safely ignore the error here since we already fetched integrations.
-	_ = phonehome.AddTotal(ctx, props, "Image Integrations", func(_ context.Context) (int, error) {
-		return len(integrations), nil
-	})
+	_ = phonehome.AddTotal(ctx, props, "Image Integrations", phonehome.Len(integrations))
 
 	totalCount := map[string]int{
 		types.ArtifactoryType:      0,
@@ -70,14 +68,16 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 		}
 	}
 
+	titleCase := cases.Title(language.English, cases.Compact).String
+
 	for iiType, count := range totalCount {
 		props[fmt.Sprintf("Total %s Image Integrations",
-			cases.Title(language.English, cases.Compact).String(iiType))] = count
+			titleCase(iiType))] = count
 	}
 
 	for iiType, count := range stsCount {
 		props[fmt.Sprintf("Total STS enabled %s Image Integrations",
-			cases.Title(language.English, cases.Compact).String(iiType))] = count
+			titleCase(iiType))] = count
 	}
 
 	return props, nil

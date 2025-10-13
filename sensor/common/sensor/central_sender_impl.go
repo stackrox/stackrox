@@ -21,12 +21,12 @@ type centralSenderImpl struct {
 	initialDeduperState map[deduperkey.Key]uint64
 }
 
-func (s *centralSenderImpl) Start(stream central.SensorService_CommunicateClient, sendUnchangedIDs bool, initialDeduperState map[deduperkey.Key]uint64, onStops ...func(error)) {
+func (s *centralSenderImpl) Start(stream central.SensorService_CommunicateClient, sendUnchangedIDs bool, initialDeduperState map[deduperkey.Key]uint64, onStops ...func()) {
 	s.initialDeduperState = initialDeduperState
 	go s.send(stream, sendUnchangedIDs, onStops...)
 }
 
-func (s *centralSenderImpl) Stop(_ error) {
+func (s *centralSenderImpl) Stop() {
 	s.stopper.Client().Stop()
 }
 
@@ -52,16 +52,30 @@ func (s *centralSenderImpl) forwardResponses(from <-chan *message.ExpiringMessag
 	}
 }
 
-func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient, sendUnchangedIDs bool, onStops ...func(error)) {
+func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient, sendUnchangedIDs bool, onStops ...func()) {
+	var onBufferedStreamStop func() error
 	defer func() {
 		s.stopper.Flow().ReportStopped()
-		runAll(s.stopper.Client().Stopped().Err(), onStops...)
+		runAll(onStops...)
+		// This will block until the buffered stream is stopped
+		if onBufferedStreamStop != nil {
+			if err := onBufferedStreamStop(); err != nil {
+				log.Warn(err)
+			}
+		}
+		// We need to wait for the buffered stream to stop (errC is closed)
+		// before signaling that the centralSender is finished. Otherwise,
+		// we can have a race between CloseSend and Send.
+		// CentralCommunication closes the inner gRPC stream (CloseSend) once
+		// centralSender and centralReceiver are finished. If this happens
+		// before the buffered stream is stopped,  the buffered stream could
+		// call Send after CloseSend is called.
 		s.finished.Done()
 	}()
 
 	bufferedC := make(chan *central.MsgFromSensor, env.ResponsesChannelBufferSize.IntegerSetting())
 	defer close(bufferedC)
-	wrappedStream, streamErrC := NewBufferedStream(stream, bufferedC, s.stopper.LowLevel().GetStopRequestSignal())
+	wrappedStream, streamErrC, onBufferedStreamStop := NewBufferedStream(stream, bufferedC, s.stopper.LowLevel().GetStopRequestSignal())
 	wrappedStream = metrics.NewSizingEventStream(wrappedStream)
 	wrappedStream = metrics.NewCountingEventStream(wrappedStream, "unique")
 	wrappedStream = metrics.NewTimingEventStream(wrappedStream, "unique")
@@ -121,7 +135,10 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 			}
 
 			if err := wrappedStream.Send(msg.MsgFromSensor); err != nil {
-				log.Errorf("unable to send to stream: %s", err)
+				log.Errorf("unable to send to stream: %s. Triggered by message type: %T. "+
+					"Enable debug logging to print the entire problematic message "+
+					"(it may contain sensitive information)", err, msg.MsgFromSensor.GetMsg())
+				log.Debugf("Message that triggered the send to stream problem: %+v", msg.MsgFromSensor)
 				s.stopper.Flow().StopWithError(err)
 				return
 			}

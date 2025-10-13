@@ -42,7 +42,10 @@ var (
 		&central.SensorEvent_ComplianceOperatorScanSettingBindingV2{},
 		&central.SensorEvent_ComplianceOperatorScan{},
 		&central.SensorEvent_ComplianceOperatorScanV2{},
+		&central.SensorEvent_ComplianceOperatorSuiteV2{},
 		&central.SensorEvent_AlertResults{},
+		&central.SensorEvent_VirtualMachine{},
+		&central.SensorEvent_VirtualMachineIndexReport{},
 	}
 )
 

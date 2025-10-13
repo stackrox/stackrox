@@ -96,7 +96,11 @@ type deletePolicy struct {
 }
 
 func (a *deletePolicy) Execute(ctx context.Context, client networkingV1Client.NetworkingV1Interface) error {
-	return client.NetworkPolicies(a.namespace).Delete(ctx, a.name, kubernetes.DeleteBackgroundOption)
+	err := client.NetworkPolicies(a.namespace).Delete(ctx, a.name, kubernetes.DeleteBackgroundOption)
+	if err != nil {
+		return errors.Wrapf(err, "deleting network policy %s/%s", a.namespace, a.name)
+	}
+	return nil
 }
 
 func (a *deletePolicy) Record(mod *storage.NetworkPolicyModification) {
@@ -113,11 +117,14 @@ type restorePolicy struct {
 
 func (a *restorePolicy) Execute(ctx context.Context, client networkingV1Client.NetworkingV1Interface) error {
 	_, err := client.NetworkPolicies(a.oldPolicy.Namespace).Update(ctx, a.oldPolicy, metav1.UpdateOptions{})
-	return err
+	if err != nil {
+		return errors.Wrap(err, "restoring network policy")
+	}
+	return nil
 }
 
 func (a *restorePolicy) Record(mod *storage.NetworkPolicyModification) {
-	if mod.ApplyYaml != "" {
+	if mod.GetApplyYaml() != "" {
 		mod.ApplyYaml += yamlSep
 	}
 	yaml, err := networkpolicy.KubernetesNetworkPolicyWrap{NetworkPolicy: a.oldPolicy}.ToYaml()
@@ -141,7 +148,10 @@ func (t *applyTx) Rollback(ctx context.Context) error {
 	for i := len(t.rollbackActions) - 1; i >= 0; i-- {
 		errList.AddError(t.rollbackActions[i].Execute(ctx, t.networkingClient))
 	}
-	return errList.ToError()
+	if err := errList.ToError(); err != nil {
+		return errors.Wrap(err, "reverting network policy modifications")
+	}
+	return nil
 }
 
 func (t *applyTx) createNetworkPolicy(ctx context.Context, policy *networkingV1.NetworkPolicy) error {
@@ -154,7 +164,7 @@ func (t *applyTx) createNetworkPolicy(ctx context.Context, policy *networkingV1.
 
 	_, err := nsClient.Create(ctx, policy, metav1.CreateOptions{})
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "creating network policy %s/%s", policy.Namespace, policy.Name)
 	}
 	t.rollbackActions = append(t.rollbackActions, &deletePolicy{
 		namespace: policy.Namespace,

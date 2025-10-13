@@ -87,7 +87,7 @@ func TestPopulateNonStaticFieldWithPod(t *testing.T) {
 			expectedAction: central.ResourceAction_REMOVE_RESOURCE,
 		},
 	}
-	storeProvider := InitializeStore()
+	storeProvider := InitializeStore(nil)
 	for _, c := range cases {
 		ph := references.NewParentHierarchy()
 		newDeploymentEventFromResource(c.inputObj, &c.action, "Pod", testClusterID, nil,
@@ -195,6 +195,48 @@ func TestPopulateImageMetadata(t *testing.T) {
 				{
 					expectedID:          "sha256:88c7e66e637f46e6bc0b95ddb1e755d616d9d76568b89af7c75c4b4aa7cfa4e3",
 					expectedNotPullable: true,
+				},
+			},
+		},
+		{
+			name: "Image with latest tag, empty status, pullable",
+			wrap: []wrapContainer{
+				{
+					image: "stackrox.io/main:latest",
+				},
+			},
+			pods: []pod{
+				{
+					images: []string{"stackrox.io/main:latest"},
+					imageIDsInStatus: []string{
+						"",
+					},
+				},
+			},
+			expectedMetadata: []metadata{
+				{
+					expectedID: "",
+				},
+			},
+		},
+		{
+			name: "Image with ID, empty status, pullable",
+			wrap: []wrapContainer{
+				{
+					image: "stackrox.io/main@sha256:88c7e66e637f46e6bc0b95ddb1e755d616d9d76568b89af7c75c4b4aa7cfa4e3",
+				},
+			},
+			pods: []pod{
+				{
+					images: []string{"stackrox.io/main:latest"},
+					imageIDsInStatus: []string{
+						"",
+					},
+				},
+			},
+			expectedMetadata: []metadata{
+				{
+					expectedID: "sha256:88c7e66e637f46e6bc0b95ddb1e755d616d9d76568b89af7c75c4b4aa7cfa4e3",
 				},
 			},
 		},
@@ -372,9 +414,9 @@ func TestPopulateImageMetadata(t *testing.T) {
 
 			wrap.populateImageMetadata(localImages, pods...)
 			for i, m := range c.expectedMetadata {
-				assert.Equal(t, m.expectedID, wrap.Deployment.Containers[i].Image.Id)
-				assert.Equal(t, m.expectedNotPullable, wrap.Deployment.Containers[i].Image.NotPullable)
-				assert.Equal(t, m.expectedIsClusterLocal, wrap.Deployment.Containers[i].Image.IsClusterLocal)
+				assert.Equal(t, m.expectedID, wrap.GetDeployment().GetContainers()[i].GetImage().GetId())
+				assert.Equal(t, m.expectedNotPullable, wrap.GetDeployment().GetContainers()[i].GetImage().GetNotPullable())
+				assert.Equal(t, m.expectedIsClusterLocal, wrap.GetDeployment().GetContainers()[i].GetImage().GetIsClusterLocal())
 			}
 		})
 	}
@@ -527,15 +569,14 @@ func TestPopulateImageMetadataWithUnqualified(t *testing.T) {
 
 			wrap.populateImageMetadata(localImages, pods...)
 			for i, m := range c.expectedMetadata {
-				assert.Equal(t, m.expectedID, wrap.Deployment.Containers[i].Image.Id)
-				protoassert.Equal(t, m.expectedImageName, wrap.Deployment.Containers[i].Image.Name)
+				assert.Equal(t, m.expectedID, wrap.GetDeployment().GetContainers()[i].GetImage().GetId())
+				protoassert.Equal(t, m.expectedImageName, wrap.GetDeployment().GetContainers()[i].GetImage().GetName())
 			}
 		})
 	}
 }
 
 func TestConvert(t *testing.T) {
-	t.Parallel()
 
 	cases := []struct {
 		name               string
@@ -837,6 +878,7 @@ func TestConvert(t *testing.T) {
 							},
 						},
 						SecurityContext: &storage.SecurityContext{
+							AllowPrivilegeEscalation: true,
 							Selinux: &storage.SecurityContext_SELinux{
 								User:  "user",
 								Role:  "role",
@@ -1200,6 +1242,7 @@ func TestConvert(t *testing.T) {
 							},
 						},
 						SecurityContext: &storage.SecurityContext{
+							AllowPrivilegeEscalation: true,
 							Selinux: &storage.SecurityContext_SELinux{
 								User:  "user",
 								Role:  "role",
@@ -1290,7 +1333,7 @@ func TestConvert(t *testing.T) {
 		},
 	}
 
-	storeProvider := InitializeStore()
+	storeProvider := InitializeStore(nil)
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, testClusterID,

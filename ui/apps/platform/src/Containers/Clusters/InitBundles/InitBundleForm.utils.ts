@@ -1,6 +1,6 @@
 import FileSaver from 'file-saver';
 
-import { GenerateClusterInitBundleResponse } from 'services/ClustersService';
+import type { GenerateClusterInitBundleResponse } from 'services/ClustersService';
 
 export const installationOptions: Record<string, string> = {
     Operator: 'Operator (recommended)',
@@ -25,8 +25,7 @@ export function downloadBundle(
 ) {
     const { helmValuesBundle, kubectlBundle } = response;
     const bundle = installation === 'Helm' ? helmValuesBundle : kubectlBundle;
-    // TODO atob is deprecated
-    const decoded = typeof bundle === 'string' ? atob(bundle) : '';
+    const decoded = typeof bundle === 'string' ? window.atob(bundle) : '';
 
     const file = new Blob([decoded], {
         type: 'application/x-yaml',

@@ -44,6 +44,10 @@ func verifyNumBackups(t *testing.T, numBackups int, numExpected int) {
 }
 
 func TestGCSExternalBackup(t *testing.T) {
+	if os.Getenv("BYODB_TEST") == "true" {
+		t.Skip("Backup service is not available with external db")
+	}
+
 	serviceAccount := os.Getenv("GOOGLE_GCS_BACKUP_SERVICE_ACCOUNT_V2")
 	require.NotEmpty(t, serviceAccount)
 

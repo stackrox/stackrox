@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/cve/converter/v2"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -18,6 +19,7 @@ import (
 	nodeConverter "github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/utils"
@@ -607,11 +609,11 @@ func testClustersWithNodes(includeCVEsToOrphan bool) ([]*storage.Cluster, []*sto
 	}
 
 	nodes := testNodes(includeCVEsToOrphan)
-	nodes[0].ClusterId = clusters[0].Id
-	nodes[0].ClusterName = clusters[0].Name
+	nodes[0].ClusterId = clusters[0].GetId()
+	nodes[0].ClusterName = clusters[0].GetName()
 
-	nodes[1].ClusterId = clusters[1].Id
-	nodes[1].ClusterName = clusters[1].Name
+	nodes[1].ClusterId = clusters[1].GetId()
+	nodes[1].ClusterName = clusters[1].GetName()
 
 	return clusters, nodes
 }
@@ -638,7 +640,7 @@ func getIDList(ctx context.Context, resolvers interface{}) []string {
 		for _, r := range res {
 			list = append(list, string(r.Id(ctx)))
 		}
-	case []*imageResolver:
+	case []ImageResolver:
 		for _, r := range res {
 			list = append(list, string(r.Id(ctx)))
 		}
@@ -749,4 +751,18 @@ func contextWithClusterPerm(t testing.TB, ctrl *gomock.Controller) context.Conte
 	id := mockIdentity.NewMockIdentity(ctrl)
 	id.EXPECT().Permissions().Return(map[string]storage.Access{"Cluster": storage.Access_READ_ACCESS}).AnyTimes()
 	return authn.ContextWithIdentity(sac.WithAllAccess(loaders.WithLoaderContext(context.Background())), id, t)
+}
+
+func getTestComponentID(t *testing.T, testComponent *storage.EmbeddedImageScanComponent, imageID string) string {
+	id, err := scancomponent.ComponentIDV2(testComponent, imageID)
+	require.NoError(t, err)
+
+	return id
+}
+
+func getTestCVEID(t *testing.T, testCVE *storage.EmbeddedVulnerability, componentID string) string {
+	id, err := cve.IDV2(testCVE, componentID)
+	require.NoError(t, err)
+
+	return id
 }

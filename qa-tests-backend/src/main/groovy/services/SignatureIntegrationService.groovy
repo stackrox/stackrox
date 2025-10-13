@@ -4,9 +4,42 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
+
 import io.stackrox.proto.api.v1.SignatureIntegrationServiceGrpc
 import io.stackrox.proto.storage.SignatureIntegrationOuterClass
+
 import util.Timer
+
+@CompileStatic
+class CertificateVerificationArgs {
+    Boolean ctlogEnabled
+    String ctlogPublicKey
+    String chain
+    String identity
+    String issuer
+
+    CertificateVerificationArgs(String chain = "", String identity = "", String issuer = "",
+        Boolean ctlogEnabled = false, String ctlogPublicKey = "") {
+        this.ctlogEnabled = ctlogEnabled
+        this.ctlogPublicKey = ctlogPublicKey
+        this.chain = chain
+        this.identity = identity
+        this.issuer = issuer
+    }
+}
+
+@CompileStatic
+class TransparencyLogVerificationArgs {
+    Boolean enabled
+    String publicKey
+    String url
+
+    TransparencyLogVerificationArgs(Boolean enabled = false, String publicKey = "", String url = "") {
+        this.enabled = enabled
+        this.publicKey = publicKey
+        this.url = url
+    }
+}
 
 @CompileStatic
 @Slf4j

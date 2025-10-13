@@ -17,12 +17,12 @@ import (
 	"github.com/facebookincubator/nvdtools/cvss3"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/enricher/epss"
+	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/rhel/vex"
 	"github.com/quay/claircore/toolkit/types/cpe"
 	"github.com/quay/zlog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -41,6 +41,8 @@ const (
 	redhatCVEURLPrefix = "https://access.redhat.com/security/cve/"
 	// TODO(ROX-26672): Remove this when we stop tracking RHSAs as the vuln name.
 	redhatErrataURLPrefix = "https://access.redhat.com/errata/"
+
+	rhelRepositoryKey = "rhel-cpe-repository"
 )
 
 var (
@@ -82,6 +84,13 @@ var (
 		// Catchall
 		regexp.MustCompile(`[A-Z]+-\d{4}[-:]\d+`),
 	}
+
+	// vexUpdater is the name of the Red Hat VEX updater used by Claircore.
+	vexUpdater = (*vex.Updater)(nil).Name()
+	// rhccRepoName is the name of the "Gold Repository".
+	rhccRepoName = rhcc.GoldRepo.Name
+	// rhccRepoURI is the URI of the "Gold Repository".
+	rhccRepoURI = rhcc.GoldRepo.URI
 )
 
 // ToProtoV4IndexReport maps claircore.IndexReport to v4.IndexReport.
@@ -106,7 +115,8 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 	if r == nil {
 		return nil, nil
 	}
-	filterPackages(r.Packages, r.Environments, r.PackageVulnerabilities)
+	filterPackages(r)
+	filterVulnerabilities(r)
 	nvdVulns, err := nvdVulnerabilities(r.Enrichments)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: parsing nvd vulns: %w", err)
@@ -147,36 +157,27 @@ func ToClairCoreIndexReport(contents *v4.Contents) (*claircore.IndexReport, erro
 	if contents == nil {
 		return nil, errors.New("internal error: empty contents")
 	}
-	pkgs, err := convertSliceToMap(contents.GetPackages(), toClairCorePackage)
+	pkgs, err := v4ToClaircore(contents.GetPackages(), contents.GetPackagesDEPRECATED(), ccPackage)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
 	}
-	dists, err := convertSliceToMap(contents.GetDistributions(), toClairCoreDistribution)
+	dists, err := v4ToClaircore(contents.GetDistributions(), contents.GetDistributionsDEPRECATED(), ccDistribution)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
 	}
-	repos, err := convertSliceToMap(contents.GetRepositories(), toClairCoreRepository)
+	repos, err := v4ToClaircore(contents.GetRepositories(), contents.GetRepositoriesDEPRECATED(), ccRepository)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
 	}
-	var environments map[string][]*claircore.Environment
-	if envs := contents.GetEnvironments(); envs != nil {
-		environments = make(map[string][]*claircore.Environment, len(envs))
-		for k, v := range envs {
-			for _, env := range v.GetEnvironments() {
-				ccEnv, err := toClairCoreEnvironment(env)
-				if err != nil {
-					return nil, err
-				}
-				environments[k] = append(environments[k], ccEnv)
-			}
-		}
+	envs, err := ccEnvironments(contents)
+	if err != nil {
+		return nil, fmt.Errorf("internal error: %w", err)
 	}
 	return &claircore.IndexReport{
 		Packages:      pkgs,
 		Distributions: dists,
 		Repositories:  repos,
-		Environments:  environments,
+		Environments:  envs,
 	}, nil
 }
 
@@ -187,38 +188,50 @@ func toProtoV4Contents(
 	envs map[string][]*claircore.Environment,
 	pkgFixedBy map[string]string,
 ) (*v4.Contents, error) {
-	var environments map[string]*v4.Environment_List
-	if len(envs) > 0 {
-		environments = make(map[string]*v4.Environment_List, len(envs))
+	packages, deprecatedPackages, err := v4Packages(pkgs, pkgFixedBy)
+	if err != nil {
+		return nil, err
 	}
-	for k, v := range envs {
-		l, ok := environments[k]
-		if !ok {
-			l = &v4.Environment_List{}
-			environments[k] = l
-		}
-		for _, e := range v {
-			l.Environments = append(l.Environments, toProtoV4Environment(e))
-		}
+	distributions, deprecatedDistributions, err := claircoreToV4(dists, v4Distribution)
+	if err != nil {
+		return nil, err
 	}
-	var packages []*v4.Package
-	for _, ccP := range pkgs {
-		pkg, err := toProtoV4Package(ccP)
-		if err != nil {
-			return nil, err
-		}
-		pkg.FixedInVersion = pkgFixedBy[pkg.GetId()]
-		packages = append(packages, pkg)
+	repositories, deprecatedRepositories, err := claircoreToV4(repos, v4Repository)
+	if err != nil {
+		return nil, err
 	}
+	environments, deprecatedEnrivonments := v4Environments(envs, repos)
 	return &v4.Contents{
-		Packages:      packages,
-		Distributions: convertMapToSlice(toProtoV4Distribution, dists),
-		Repositories:  convertMapToSlice(toProtoV4Repository, repos),
-		Environments:  environments,
+		Packages:                packages,
+		PackagesDEPRECATED:      deprecatedPackages,
+		Distributions:           distributions,
+		DistributionsDEPRECATED: deprecatedDistributions,
+		Repositories:            repositories,
+		RepositoriesDEPRECATED:  deprecatedRepositories,
+		Environments:            environments,
+		EnvironmentsDEPRECATED:  deprecatedEnrivonments,
 	}, nil
 }
 
-func toProtoV4Package(p *claircore.Package) (*v4.Package, error) {
+func v4Packages(ccPkgs map[string]*claircore.Package, pkgFixedBy map[string]string) (map[string]*v4.Package, []*v4.Package, error) {
+	if len(ccPkgs) == 0 {
+		return nil, nil, nil
+	}
+	packages := make(map[string]*v4.Package, len(ccPkgs))
+	deprecatedPackages := make([]*v4.Package, 0, len(ccPkgs))
+	for id, ccPkg := range ccPkgs {
+		v4Pkg, err := v4Package(ccPkg)
+		if err != nil {
+			return nil, nil, err
+		}
+		v4Pkg.FixedInVersion = pkgFixedBy[id]
+		packages[id] = v4Pkg
+		deprecatedPackages = append(deprecatedPackages, v4Pkg)
+	}
+	return packages, deprecatedPackages, nil
+}
+
+func v4Package(p *claircore.Package) (*v4.Package, error) {
 	if p == nil {
 		return nil, nil
 	}
@@ -233,7 +246,7 @@ func toProtoV4Package(p *claircore.Package) (*v4.Package, error) {
 			V:    version.V[:],
 		}
 	}
-	srcPkg, err := toProtoV4Package(p.Source)
+	srcPkg, err := v4Package(p.Source)
 	if err != nil {
 		return nil, err
 	}
@@ -268,9 +281,26 @@ func VersionID(d *claircore.Distribution) string {
 	return vID
 }
 
-func toProtoV4Distribution(d *claircore.Distribution) *v4.Distribution {
+func claircoreToV4[K comparable, V1, V2 any](cc map[K]V1, f func(V1) (V2, error)) (map[K]V2, []V2, error) {
+	if len(cc) == 0 {
+		return nil, nil, nil
+	}
+	v4Map := make(map[K]V2, len(cc))
+	v4Slice := make([]V2, 0, len(cc))
+	for k, v := range cc {
+		v4Resource, err := f(v)
+		if err != nil {
+			return nil, nil, err
+		}
+		v4Map[k] = v4Resource
+		v4Slice = append(v4Slice, v4Resource)
+	}
+	return v4Map, v4Slice, nil
+}
+
+func v4Distribution(d *claircore.Distribution) (*v4.Distribution, error) {
 	if d == nil {
-		return nil
+		return nil, nil
 	}
 	return &v4.Distribution{
 		Id:              d.ID,
@@ -282,12 +312,12 @@ func toProtoV4Distribution(d *claircore.Distribution) *v4.Distribution {
 		Arch:            d.Arch,
 		Cpe:             toCPEString(d.CPE),
 		PrettyName:      d.PrettyName,
-	}
+	}, nil
 }
 
-func toProtoV4Repository(r *claircore.Repository) *v4.Repository {
+func v4Repository(r *claircore.Repository) (*v4.Repository, error) {
 	if r == nil {
-		return nil
+		return nil, nil
 	}
 	return &v4.Repository{
 		Id:   r.ID,
@@ -295,10 +325,33 @@ func toProtoV4Repository(r *claircore.Repository) *v4.Repository {
 		Key:  r.Key,
 		Uri:  r.URI,
 		Cpe:  toCPEString(r.CPE),
-	}
+	}, nil
 }
 
-func toProtoV4Environment(e *claircore.Environment) *v4.Environment {
+func v4Environments(ccEnvs map[string][]*claircore.Environment, ccRepos map[string]*claircore.Repository) (map[string]*v4.Environment_List, map[string]*v4.Environment_List) {
+	if len(ccEnvs) == 0 {
+		return nil, nil
+	}
+	environments := make(map[string]*v4.Environment_List, len(ccEnvs))
+	environmentsDeprecated := make(map[string]*v4.Environment_List, len(ccEnvs))
+	for id, envs := range ccEnvs {
+		l, ok := environments[id]
+		lDeprecated := environmentsDeprecated[id]
+		if !ok {
+			l = &v4.Environment_List{}
+			environments[id] = l
+			lDeprecated = &v4.Environment_List{}
+			environmentsDeprecated[id] = lDeprecated
+		}
+		for _, env := range envs {
+			l.Environments = append(l.Environments, v4Environment(env))
+			lDeprecated.Environments = append(lDeprecated.Environments, v4EnvironmentDeprecated(env, ccRepos))
+		}
+	}
+	return environments, environmentsDeprecated
+}
+
+func v4Environment(e *claircore.Environment) *v4.Environment {
 	if e == nil {
 		return nil
 	}
@@ -307,6 +360,35 @@ func toProtoV4Environment(e *claircore.Environment) *v4.Environment {
 		IntroducedIn:   toDigestString(e.IntroducedIn),
 		DistributionId: e.DistributionID,
 		RepositoryIds:  append([]string(nil), e.RepositoryIDs...),
+	}
+}
+
+func v4EnvironmentDeprecated(e *claircore.Environment, repos map[string]*claircore.Repository) *v4.Environment {
+	if e == nil {
+		return nil
+	}
+	repoIDs := make([]string, 0, len(e.RepositoryIDs))
+	for _, id := range e.RepositoryIDs {
+		repo, ok := repos[id]
+		if !ok {
+			continue
+		}
+		// In Claircore v1.5.40+, the repositories are no longer all keyed by ID.
+		// RPMs in RHEL-based containers are now keyed by name.
+		// In older ACS versions, we assumed all repos were keyed by ID,
+		// so if the key is not the ID, we check if it's actually the name
+		// and this is, in fact, a RHEL RPM.
+		if repo.Key == rhelRepositoryKey {
+			repoIDs = append(repoIDs, repo.ID)
+			continue
+		}
+		repoIDs = append(repoIDs, id)
+	}
+	return &v4.Environment{
+		PackageDb:      e.PackageDB,
+		IntroducedIn:   toDigestString(e.IntroducedIn),
+		DistributionId: e.DistributionID,
+		RepositoryIds:  repoIDs,
 	}
 }
 
@@ -513,12 +595,12 @@ func toProtoV4VulnerabilitiesMap(
 
 		name := vulnerabilityName(v)
 		// TODO(ROX-26672): Remove this line.
-		advisory, advisoryExists := csafAdvisories[v.ID]
+		csafAdvisory, csafAdvisoryExists := csafAdvisories[v.ID]
 
 		normalizedSeverity := toProtoV4VulnerabilitySeverity(ctx, v.NormalizedSeverity)
-		if advisoryExists {
+		if csafAdvisoryExists {
 			// Replace the normalized severity for the CVE with the severity of the related Red Hat advisory.
-			normalizedSeverity = toProtoV4VulnerabilitySeverityFromString(ctx, advisory.Severity)
+			normalizedSeverity = toProtoV4VulnerabilitySeverityFromString(ctx, csafAdvisory.Severity)
 		}
 
 		// Determine the related CVE for this vulnerability. This is necessary, as NVD and EPSS are CVE-based.
@@ -531,7 +613,7 @@ func toProtoV4VulnerabilitiesMap(
 				nvdVuln = *v
 			}
 		}
-		metrics, err := cvssMetrics(ctx, v, name, &nvdVuln, advisory)
+		metrics, err := cvssMetrics(ctx, v, name, &nvdVuln, csafAdvisory)
 		if err != nil {
 			zlog.Debug(ctx).
 				Err(err).
@@ -548,9 +630,9 @@ func toProtoV4VulnerabilitiesMap(
 		}
 
 		description := v.Description
-		if advisoryExists {
+		if csafAdvisoryExists {
 			// Replace the description for the CVE with the description of the related Red Hat advisory.
-			description = advisory.Description
+			description = csafAdvisory.Description
 		}
 		if description == "" {
 			// No description provided, so fall back to NVD.
@@ -560,9 +642,9 @@ func toProtoV4VulnerabilitiesMap(
 		}
 
 		vulnPublished := v.Issued
-		if advisoryExists {
+		if csafAdvisoryExists {
 			// Replace the published date for the CVE with the published date of the related Red Hat advisory.
-			vulnPublished = advisory.ReleaseDate
+			vulnPublished = csafAdvisory.ReleaseDate
 		}
 		issued := issuedTime(vulnPublished, nvdVuln.Published)
 		if issued == nil {
@@ -570,10 +652,10 @@ func toProtoV4VulnerabilitiesMap(
 				Str("vuln_id", v.ID).
 				Str("vuln_name", v.Name).
 				Str("vuln_updater", v.Updater).
-				Bool("advisory_exists", advisoryExists).
+				Bool("csaf_advisory_exists", csafAdvisoryExists).
 				// Use Str instead of Time because the latter will format the time into
 				// RFC3339 form, which may not be valid for this.
-				Str("advisory_release_date", advisory.ReleaseDate.String()).
+				Str("csaf_advisory_release_date", csafAdvisory.ReleaseDate.String()).
 				Str("claircore_issued", v.Issued.String()).
 				Str("nvd_published", nvdVuln.Published).
 				Msg("issued time invalid: leaving empty")
@@ -595,6 +677,7 @@ func toProtoV4VulnerabilitiesMap(
 		vulnerabilities[k] = &v4.VulnerabilityReport_Vulnerability{
 			Id:                 v.ID,
 			Name:               name,
+			Advisory:           advisory(v),
 			Description:        description,
 			Issued:             issued,
 			Link:               v.Links,
@@ -679,7 +762,44 @@ func toClairCoreCPE(s string) (cpe.WFN, error) {
 	return c, nil
 }
 
-func toClairCorePackage(p *v4.Package) (string, *claircore.Package, error) {
+func v4ToClaircore[V1, V2 any](m map[string]*V1, s []*V1, f func(*V1) (string, *V2, error)) (map[string]*V2, error) {
+	ccVs := make(map[string]*V2, len(m))
+	// If the map is empty, fallback to the deprecated slice.
+	if len(m) == 0 {
+		if len(s) == 0 {
+			return nil, nil
+		}
+		for _, v := range s {
+			if v == nil {
+				continue
+			}
+			k, ccV, err := f(v)
+			if err != nil {
+				return nil, err
+			}
+			if ccV == nil {
+				continue
+			}
+			ccVs[k] = ccV
+		}
+		return ccVs, nil
+	}
+	for k, v := range m {
+		_, ccV, err := f(v)
+		if err != nil {
+			return nil, err
+		}
+		if ccV == nil {
+			continue
+		}
+		ccVs[k] = ccV
+	}
+	return ccVs, nil
+}
+
+// ccPackage converts the given package into its Claircore equivalent.
+// The first return is the package's ID.
+func ccPackage(p *v4.Package) (string, *claircore.Package, error) {
 	if p == nil {
 		return "", nil, nil
 	}
@@ -698,7 +818,7 @@ func toClairCorePackage(p *v4.Package) (string, *claircore.Package, error) {
 		return "", nil, fmt.Errorf("package %q: invalid source package %q: source specifies source",
 			p.GetId(), p.GetSource().GetId())
 	}
-	_, src, err := toClairCorePackage(p.GetSource())
+	_, src, err := ccPackage(p.GetSource())
 	if err != nil {
 		return "", nil, err
 	}
@@ -717,7 +837,7 @@ func toClairCorePackage(p *v4.Package) (string, *claircore.Package, error) {
 	}, nil
 }
 
-func toClairCoreDistribution(d *v4.Distribution) (string, *claircore.Distribution, error) {
+func ccDistribution(d *v4.Distribution) (string, *claircore.Distribution, error) {
 	if d == nil {
 		return "", nil, nil
 	}
@@ -738,7 +858,7 @@ func toClairCoreDistribution(d *v4.Distribution) (string, *claircore.Distributio
 	}, nil
 }
 
-func toClairCoreRepository(r *v4.Repository) (string, *claircore.Repository, error) {
+func ccRepository(r *v4.Repository) (string, *claircore.Repository, error) {
 	if r == nil {
 		return "", nil, nil
 	}
@@ -747,15 +867,37 @@ func toClairCoreRepository(r *v4.Repository) (string, *claircore.Repository, err
 		return "", nil, fmt.Errorf("repository %q: %w", r.GetId(), err)
 	}
 	return r.GetId(), &claircore.Repository{
-		ID:   r.Id,
-		Name: r.Name,
-		Key:  r.Key,
-		URI:  r.Uri,
+		ID:   r.GetId(),
+		Name: r.GetName(),
+		Key:  r.GetKey(),
+		URI:  r.GetUri(),
 		CPE:  ccCPE,
 	}, nil
 }
 
-func toClairCoreEnvironment(env *v4.Environment) (*claircore.Environment, error) {
+func ccEnvironments(contents *v4.Contents) (map[string][]*claircore.Environment, error) {
+	environments := contents.GetEnvironments()
+	if len(environments) == 0 {
+		environments = contents.GetEnvironmentsDEPRECATED()
+		if len(environments) == 0 {
+			return nil, nil
+		}
+	}
+	ccEnvironments := make(map[string][]*claircore.Environment, len(environments))
+	for id, envs := range environments {
+		ccEnvironments[id] = make([]*claircore.Environment, 0, len(envs.GetEnvironments()))
+		for _, env := range envs.GetEnvironments() {
+			ccEnv, err := ccEnvironment(env)
+			if err != nil {
+				return nil, err
+			}
+			ccEnvironments[id] = append(ccEnvironments[id], ccEnv)
+		}
+	}
+	return ccEnvironments, nil
+}
+
+func ccEnvironment(env *v4.Environment) (*claircore.Environment, error) {
 	introducedIn, err := claircore.ParseDigest(env.GetIntroducedIn())
 	if err != nil {
 		return nil, err
@@ -768,50 +910,26 @@ func toClairCoreEnvironment(env *v4.Environment) (*claircore.Environment, error)
 	}, nil
 }
 
-// convertSliceToMap converts a slice of pointers of a generic type to a map
-// based on the returned value of a conversion function that returns a string
-// key, the pointer to the converted value, or error if the conversion failed.
-// Nils in the slice are ignored.
-func convertSliceToMap[IN any, OUT any](in []*IN, convF func(*IN) (string, *OUT, error)) (map[string]*OUT, error) {
-	if len(in) == 0 {
-		return nil, nil
-	}
-	m := make(map[string]*OUT, len(in))
-	for _, v := range in {
-		if v == nil {
-			continue
-		}
-		k, ccV, err := convF(v)
-		if err != nil {
-			return nil, err
-		}
-		if ccV == nil {
-			continue
-		}
-		m[k] = ccV
-	}
-	return m, nil
-}
-
-// convertMapToSlice converts generic maps keyed by strings to a slice using a
-// provided conversion function.
-func convertMapToSlice[IN any, OUT any](convF func(*IN) *OUT, in map[string]*IN) (out []*OUT) {
-	for _, i := range in {
-		out = append(out, convF(i))
-	}
-	return out
-}
-
 // fixedInVersion returns the fixed in string, typically provided the report's
 // `FixedInVersion` as a plain string, but, in some OSV updaters, it can be an
 // urlencoded string.
 func fixedInVersion(v *claircore.Vulnerability) string {
-	fixedIn := v.FixedInVersion
-	// Try to parse url encoded params; if expected values are not found leave it.
-	if q, err := url.ParseQuery(fixedIn); err == nil && q.Has("fixed") {
-		fixedIn = q.Get("fixed")
+	if v.FixedInVersion == "0" {
+		return ""
 	}
-	return fixedIn
+	// Try to parse url encoded params; if expected values are not found, leave it.
+	q, err := url.ParseQuery(v.FixedInVersion)
+	switch {
+	case err != nil:
+		// v.FixedInVersion is not url encoded, so just return it as-is.
+		return v.FixedInVersion
+	case q.Has("fixed"):
+		return q.Get("fixed")
+	case q.Has("introduced"), q.Has("lastAffected"):
+		return ""
+	default:
+		return v.FixedInVersion
+	}
 }
 
 // nvdVulnerabilities look for NVD CVSS in the vulnerability report enrichments and
@@ -891,14 +1009,14 @@ func redhatCSAFAdvisories(ctx context.Context, enrichments map[string][]json.Raw
 	return ret, nil
 }
 
-// filterPackages filters out packages from the given map.
-func filterPackages(packages map[string]*claircore.Package, environments map[string][]*claircore.Environment, packageVulns map[string][]string) {
+// filterPackages filters out packages from the given vulnerability report.
+func filterPackages(report *claircore.VulnerabilityReport) {
 	// We only filter out Node.js packages with no known vulnerabilities (if configured to do so) at this time.
-	if !env.ScannerV4PartialNodeJSSupport.BooleanSetting() {
+	if !features.ScannerV4PartialNodeJSSupport.Enabled() {
 		return
 	}
-	for pkgID := range packages {
-		envs := environments[pkgID]
+	for pkgID := range report.Packages {
+		envs := report.Environments[pkgID]
 		// This is unexpected, but check here to be safe.
 		if len(envs) == 0 {
 			continue
@@ -906,12 +1024,112 @@ func filterPackages(packages map[string]*claircore.Package, environments map[str
 		if srcType, _ := scannerv4.ParsePackageDB(envs[0].PackageDB); srcType != storage.SourceType_NODEJS {
 			continue
 		}
-		if len(packageVulns[pkgID]) == 0 {
-			delete(packages, pkgID)
-			delete(environments, pkgID)
-			delete(packageVulns, pkgID)
+		if len(report.PackageVulnerabilities[pkgID]) == 0 {
+			delete(report.Packages, pkgID)
+			delete(report.Environments, pkgID)
+			delete(report.PackageVulnerabilities, pkgID)
 		}
 	}
+}
+
+// filterVulnerabilities filters out vulnerabilities from the given vulnerability report.
+// Note: This function only modifies the report's PackageVulnerabilities map.
+// It is non-trivial to remove all unreferenced vulnerabilities from the report's
+// Vulnerabilities map, so we leave it untouched and accept we may send Scanner V4 clients
+// extra vulnerabilities. It is up to the client to handle this.
+func filterVulnerabilities(report *claircore.VulnerabilityReport) {
+	// We only filter out non-Red Hat vulnerabilities found in Red Hat layers (if configured to do so) at this time.
+	if !features.ScannerV4RedHatLayers.Enabled() {
+		return
+	}
+
+	redhatLayers := rhccLayers(report)
+	if redhatLayers.IsEmpty() {
+		// This image is neither an official Red Hat image nor based on one, so nothing to do here.
+		return
+	}
+	for pkgID, pkg := range report.Packages {
+		// Sanity check.
+		if pkg == nil {
+			continue
+		}
+
+		envs, found := report.Environments[pkgID]
+		if !found {
+			// Did not find a related environment, so we cannot determine the layer.
+			continue
+		}
+
+		// Just use the first environment.
+		// It is possible there are multiple environments associated with this package;
+		// however, for our purposes, we only need the first one,
+		// as the layer index will always be the same between different environments.
+		// Quay does this, too: https://github.com/quay/quay/blob/v3.10.3/data/secscan_model/secscan_v4_model.py#L583.
+		// We also do this in our own client code.
+		env := envs[0]
+		// If this package was introduced in a non-Red Hat layer, skip it.
+		if !redhatLayers.Contains(env.IntroducedIn.String()) {
+			continue
+		}
+
+		var n int
+		for _, vulnID := range report.PackageVulnerabilities[pkgID] {
+			vuln := report.Vulnerabilities[vulnID]
+			// Sanity check.
+			if vuln == nil {
+				continue
+			}
+
+			// If the vulnerability did not come from Red Hat's VEX data, then skip it.
+			if vuln.Updater != vexUpdater {
+				continue
+			}
+
+			report.PackageVulnerabilities[pkgID][n] = vulnID
+			n++
+		}
+
+		// Hint to the GC the filtered vulnerabilities are no longer needed.
+		clear(report.PackageVulnerabilities[pkgID][n:])
+		report.PackageVulnerabilities[pkgID] = report.PackageVulnerabilities[pkgID][:n:n]
+
+		// If there aren't any vulnerabilities from Red Hat's VEX data,
+		// then delete the whole entry.
+		if n == 0 {
+			delete(report.PackageVulnerabilities, pkgID)
+		}
+	}
+}
+
+// rhccLayers returns a set of SHAs for the layers in official Red Hat images.
+// TODO(ROX-29158): account for images built via Konflux, as they do not contain the same identifiers
+// as the old build system.
+func rhccLayers(report *claircore.VulnerabilityReport) set.FrozenStringSet {
+	layers := set.NewStringSet()
+
+	var rhccID string
+	for id, repo := range report.Repositories {
+		if repo.Name == rhccRepoName && repo.URI == rhccRepoURI {
+			rhccID = id
+			break
+		}
+	}
+	if rhccID == "" {
+		// Not an official Red Hat image nor based on one.
+		return layers.Freeze()
+	}
+
+	for _, envs := range report.Environments {
+		for _, env := range envs {
+			for _, repoID := range env.RepositoryIDs {
+				if repoID == rhccID {
+					layers.Add(env.IntroducedIn.String())
+				}
+			}
+		}
+	}
+
+	return layers.Freeze()
 }
 
 // pkgFixedBy unmarshals and returns the package-fixed-by enrichment, if it exists.
@@ -1216,6 +1434,36 @@ func FindName(vuln *claircore.Vulnerability, p *regexp.Regexp) (string, bool) {
 		return v, true
 	}
 	return "", false
+}
+
+// advisory returns the vulnerability's related advisory.
+//
+// Only Red Hat advisories (RHSA/RHBA/RHEA) are supported at this time.
+func advisory(vuln *claircore.Vulnerability) *v4.VulnerabilityReport_Advisory {
+	// Do not return an advisory if we do not want to separate
+	// CVEs and Red Hat advisories.
+	if !features.ScannerV4RedHatCVEs.Enabled() {
+		return nil
+	}
+
+	// If the vulnerability is not from Red Hat's VEX data,
+	// then it's definitely not an advisory we support at this time.
+	if !strings.EqualFold(vuln.Updater, RedHatUpdaterName) {
+		return nil
+	}
+
+	// The advisory name will be found in the vulnerability's links,
+	// if it exists, so just return what we get when looking for
+	// valid Red Hat advisory patterns in the links.
+	name := RedHatAdvisoryPattern.FindString(vuln.Links)
+	if name == "" {
+		return nil
+	}
+
+	return &v4.VulnerabilityReport_Advisory{
+		Name: name,
+		Link: redhatErrataURLPrefix + name,
+	}
 }
 
 // dedupeVulns deduplicates repeat vulnerabilities out of vulnIDs and returns the result.

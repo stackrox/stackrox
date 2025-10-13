@@ -7,6 +7,8 @@ export const timeWindows = [
     'All time',
 ] as const;
 
+export type TimeWindow = (typeof timeWindows)[number];
+
 export const snoozeDurations = {
     DAY: '1 Day',
     WEEK: '1 Week',

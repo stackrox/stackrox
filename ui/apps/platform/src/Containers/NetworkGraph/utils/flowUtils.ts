@@ -1,15 +1,17 @@
 import uniq from 'lodash/uniq';
 
-import {
+import type { NetworkBaselinePeerStatus } from 'types/networkBaseline.proto';
+import type {
     ExternalNetworkFlowProperties,
     L4Protocol,
     NetworkEntityInfoType as EntityType,
     DeploymentNetworkEntityInfo,
 } from 'types/networkFlow.proto';
-import { GroupedDiffFlows } from 'types/networkPolicyService';
-import { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
-import { BaselineSimulationDiffState, Flow, FlowEntityType, Peer } from '../types/flow.type';
-import {
+import type { GroupedDiffFlows } from 'types/networkPolicyService';
+
+import type { AdvancedFlowsFilterType } from '../common/AdvancedFlowsFilter/types';
+import type { BaselineSimulationDiffState, Flow, FlowEntityType, Peer } from '../types/flow.type';
+import type {
     CustomEdgeModel,
     CustomNodeModel,
     CustomSingleNodeData,
@@ -358,4 +360,15 @@ export function getDeploymentInfoForExternalEntity(
     }
 
     return null;
+}
+
+// Unique key used for tracking flow selection across pages
+export function getFlowKey(flow: NetworkBaselinePeerStatus): string {
+    const {
+        entity: { id },
+        port,
+        protocol,
+        ingress,
+    } = flow.peer;
+    return `${id}_${port}_${protocol}_${ingress ? 'ingress' : 'egress'}`;
 }

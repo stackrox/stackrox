@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"encoding/pem"
+	"net/url"
 	"regexp"
 	"strings"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -42,6 +44,13 @@ func ValidateSignatureIntegration(integration *storage.SignatureIntegration) err
 	if err := validateCosignCertificateVerification(integration.GetCosignCertificates()); err != nil {
 		multiErr = multierror.Append(multiErr, err)
 	}
+	if err := validateTransparencyLogVerification(integration.GetTransparencyLog()); err != nil {
+		multiErr = multierror.Append(multiErr, err)
+	}
+
+	if err := validateTraits(integration); err != nil {
+		multiErr = multierror.Append(multiErr, err)
+	}
 
 	return multiErr
 }
@@ -51,7 +60,7 @@ func validateCosignKeyVerification(config *storage.CosignPublicKeyVerification) 
 
 	for _, publicKey := range config.GetPublicKeys() {
 		if publicKey.GetName() == "" {
-			err := errors.New("public key name should be filled")
+			err := errors.New("public key name must be filled")
 			multiErr = multierror.Append(multiErr, err)
 		}
 
@@ -91,7 +100,73 @@ func validateCosignCertificateVerification(configs []*storage.CosignCertificateV
 		if _, err := cryptoutils.UnmarshalCertificatesFromPEM([]byte(config.GetCertificatePemEnc())); err != nil {
 			multiErr = multierror.Append(multiErr, errors.Wrap(err, "unmarshalling certificate PEM"))
 		}
+
+		ctlog := config.GetCertificateTransparencyLog()
+		ctlogPubKey := ctlog.GetPublicKeyPemEnc()
+		if ctlog.GetEnabled() && ctlogPubKey != "" {
+			ctlogKeyBlock, rest := pem.Decode([]byte(ctlogPubKey))
+			if !signatures.IsValidPublicKeyPEMBlock(ctlogKeyBlock, rest) {
+				multiErr = multierror.Append(multiErr, errors.New("failed to decode PEM block containing ctlog key"))
+			}
+		}
 	}
 
 	return multiErr
+}
+
+func validateTransparencyLogURL(config *storage.TransparencyLogVerification) error {
+	if config.GetValidateOffline() {
+		return nil
+	}
+	if config.GetUrl() == "" {
+		return errors.New("transparency log url must be filled when online validation is enabled")
+	}
+	if u, err := url.Parse(config.GetUrl()); err != nil {
+		return err
+	} else if u.Host == "" {
+		return errors.New("transparency log url must have a valid host")
+	}
+	return nil
+}
+
+func validateTransparencyLogVerification(config *storage.TransparencyLogVerification) error {
+	if !config.GetEnabled() {
+		return nil
+	}
+
+	var multiErr error
+
+	// The Rekor URL should never be empty at this point because of the applied default value.
+	// Still, we include this check to encode the expectation here.
+	if err := validateTransparencyLogURL(config); err != nil {
+		multiErr = multierror.Append(multiErr, errors.Wrap(err, "failed to validate transparency log url"))
+	}
+
+	if rekorPubKey := config.GetPublicKeyPemEnc(); rekorPubKey != "" {
+		rekorKeyBlock, rest := pem.Decode([]byte(rekorPubKey))
+		if !signatures.IsValidPublicKeyPEMBlock(rekorKeyBlock, rest) {
+			multiErr = multierror.Append(multiErr,
+				errors.New("failed to decode PEM block containing rekor public key"))
+		}
+	}
+
+	return multiErr
+}
+
+// validateTraits validates the traits on a signature integration.
+//
+// We use the DEFAULT origin trait internally to protect built-in signature integrations, however
+// declarative configuration is not supported for signature integrations. To avoid user confusion
+// and potential issues when/if declarative configuration support is added, traits are rejected for
+// user-provided integrations.
+func validateTraits(integration *storage.SignatureIntegration) error {
+	if integration.GetTraits() == nil {
+		return nil
+	}
+
+	if integration.GetTraits().GetOrigin() == storage.Traits_DEFAULT {
+		return errox.InvalidArgs.New("built-in signature integrations cannot be created or modified")
+	}
+
+	return errox.InvalidArgs.New("user-provided traits are not supported")
 }

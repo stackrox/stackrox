@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
@@ -10,8 +11,10 @@ import (
 	"github.com/stackrox/rox/central/clusterinit/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -134,7 +137,47 @@ func (s *serviceImpl) GenerateCRS(ctx context.Context, request *v1.CRSGenRequest
 		return nil, status.Error(codes.Unimplemented, "support for generating Cluster Registration Secrets (CRS) is not enabled")
 	}
 
-	generated, err := s.backend.IssueCRS(ctx, request.GetName())
+	generated, err := s.backend.IssueCRS(ctx, request.GetName(), time.Time{})
+	if err != nil {
+		if errors.Is(err, store.ErrInitBundleDuplicateName) {
+			return nil, status.Errorf(codes.AlreadyExists, "generating new CRS: %s", err)
+		}
+		return nil, errors.Errorf("generating new CRS: %s", err)
+	}
+	meta := crsMetaStorageToV1(generated.Meta)
+
+	bundleK8sManifest, err := generated.RenderAsK8sSecret()
+	if err != nil {
+		return nil, errors.Errorf("rendering as Kubernetes secrets: %s", err)
+	}
+
+	return &v1.CRSGenResponse{
+		Crs:  bundleK8sManifest,
+		Meta: meta,
+	}, nil
+}
+
+func (s *serviceImpl) GenerateCRSExtended(ctx context.Context, request *v1.CRSGenRequestExtended) (*v1.CRSGenResponse, error) {
+	if !features.ClusterRegistrationSecrets.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "support for generating Cluster Registration Secrets (CRS) is not enabled")
+	}
+
+	if request.GetMaxRegistrations() != 0 {
+		return nil, errox.NotImplemented.CausedBy("max-registration limits not supported")
+	}
+
+	reqValidUntil := request.GetValidUntil()
+	reqValidFor := request.GetValidFor()
+	if reqValidUntil != nil && reqValidFor != nil {
+		return nil, errox.InvalidArgs.CausedBy("cannot specify validUntil and validFor at the same time")
+	}
+
+	validUntil := time.Time{}
+	if reqValidUntil != nil || reqValidFor != nil {
+		validUntil = protocompat.NilOrNow(reqValidUntil).Add(reqValidFor.AsDuration())
+	}
+
+	generated, err := s.backend.IssueCRS(ctx, request.GetName(), validUntil)
 	if err != nil {
 		if errors.Is(err, store.ErrInitBundleDuplicateName) {
 			return nil, status.Errorf(codes.AlreadyExists, "generating new CRS: %s", err)

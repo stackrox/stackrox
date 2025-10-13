@@ -1,6 +1,6 @@
-import { BaseBackupIntegration } from 'types/externalBackup.proto';
-import { FeatureFlagEnvVar } from 'types/featureFlag';
-import {
+import type { BaseBackupIntegration } from 'types/externalBackup.proto';
+import type { FeatureFlagEnvVar } from 'types/featureFlag';
+import type {
     BaseImageIntegration,
     AzureImageIntegration,
     ClairifyImageIntegration,
@@ -8,7 +8,7 @@ import {
     GoogleImageIntegration,
     QuayImageIntegration,
 } from 'types/imageIntegration.proto';
-import {
+import type {
     AuthProviderIntegration,
     AuthProviderType,
     BackupIntegrationType,
@@ -17,16 +17,16 @@ import {
     NotifierIntegrationType,
     SignatureIntegrationType,
 } from 'types/integration';
-import {
+import type {
     BaseNotifierIntegration,
     SumoLogicNotifierIntegration,
     SyslogNotifierIntegration,
 } from 'types/notifier.proto';
-import { SignatureIntegration } from 'types/signatureIntegration.proto';
+import type { SignatureIntegration } from 'types/signatureIntegration.proto';
 
-import { getOriginLabel } from 'Containers/AccessControl/traits';
-import { AuthMachineToMachineConfig } from 'services/MachineAccessService';
-import { CloudSourceIntegration } from 'services/CloudSourceService';
+import { getOriginLabel } from 'utils/traits.utils';
+import type { AuthMachineToMachineConfig } from 'services/MachineAccessService';
+import type { CloudSourceIntegration } from 'services/CloudSourceService';
 import {
     backupScheduleDescriptor,
     categoriesUtilsForClairifyScanner,
@@ -98,7 +98,6 @@ const originColumnDescriptor = {
 
 const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
     authProviders: {
-        clusterInitBundle: [{ accessor: 'name', Header: 'Name' }],
         apitoken: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'role', Header: 'Role' },
@@ -113,10 +112,14 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
                     if (type === 'GITHUB_ACTIONS') {
                         return 'GitHub action';
                     }
+                    if (type === 'KUBE_SERVICE_ACCOUNT') {
+                        return 'Kubernetes service account';
+                    }
                     return 'Unknown';
                 },
                 Header: 'Configuration',
             },
+            originColumnDescriptor,
             { accessor: 'issuer', Header: 'Issuer' },
             {
                 accessor: (config) => {

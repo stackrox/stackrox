@@ -42,12 +42,13 @@ func (m *MockEntityStore) EXPECT() *MockEntityStoreMockRecorder {
 }
 
 // LookupByContainerID mocks base method.
-func (m *MockEntityStore) LookupByContainerID(arg0 string) (clusterentities.ContainerMetadata, bool) {
+func (m *MockEntityStore) LookupByContainerID(arg0 string) (clusterentities.ContainerMetadata, bool, bool) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "LookupByContainerID", arg0)
 	ret0, _ := ret[0].(clusterentities.ContainerMetadata)
 	ret1, _ := ret[1].(bool)
-	return ret0, ret1
+	ret2, _ := ret[2].(bool)
+	return ret0, ret1, ret2
 }
 
 // LookupByContainerID indicates an expected call of LookupByContainerID.

@@ -1,5 +1,6 @@
 /* eslint-disable no-void */
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import {
     Checkbox,
     Form,
@@ -17,14 +18,14 @@ import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
-import usePageState from 'Containers/Integrations/hooks/usePageState';
 import useMetadata from 'hooks/useMetadata';
-import { BackupIntegrationBase } from 'services/BackupIntegrationsService';
+import type { BackupIntegrationBase } from 'services/BackupIntegrationsService';
 import { getVersionedDocs } from 'utils/versioning';
 
-import IntegrationHelpIcon from '../Components/IntegrationHelpIcon';
+import usePageState from '../../../hooks/usePageState';
+import { getGoogleCredentialsPlaceholder } from '../../../utils/integrationUtils';
 import useIntegrationForm from '../../useIntegrationForm';
-import { IntegrationFormProps } from '../../integrationFormTypes';
+import type { IntegrationFormProps } from '../../integrationFormTypes';
 
 import IntegrationFormActions from '../../IntegrationFormActions';
 import FormLabelGroup from '../../FormLabelGroup';
@@ -32,7 +33,7 @@ import ScheduleIntervalOptions from '../../FormSchedule/ScheduleIntervalOptions'
 import ScheduleWeeklyOptions from '../../FormSchedule/ScheduleWeeklyOptions';
 import ScheduleDailyOptions from '../../FormSchedule/ScheduleDailyOptions';
 
-import { getGoogleCredentialsPlaceholder } from '../../../utils/integrationUtils';
+import IntegrationHelpIcon from '../Components/IntegrationHelpIcon';
 
 export type GcsIntegration = {
     gcs: {

@@ -2,15 +2,18 @@ package compliancemanager
 
 import (
 	"context"
-	"slices"
+	"fmt"
 	"strings"
 
 	"github.com/adhocore/gronx"
 	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	resultsDatastore "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	compIntegration "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	compScanSetting "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
+	scansDatastore "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
+	"github.com/stackrox/rox/central/convert/internaltov2storage"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -43,6 +47,8 @@ type managerImpl struct {
 	scanSettingDS compScanSetting.DataStore
 	clusterDS     clusterDatastore.DataStore
 	profileDS     profileDatastore.DataStore
+	scansDS       scansDatastore.DataStore
+	resultsDS     resultsDatastore.DataStore
 
 	// Map used to correlate requests to a sensor with a response.  Each request will generate
 	// a unique entry in the map
@@ -51,7 +57,7 @@ type managerImpl struct {
 }
 
 // New returns on instance of Manager interface that provides functionality to process compliance requests and forward them to Sensor.
-func New(sensorConnMgr connection.Manager, integrationDS compIntegration.DataStore, scanSettingDS compScanSetting.DataStore, clusterDS clusterDatastore.DataStore, profileDS profileDatastore.DataStore) Manager {
+func New(sensorConnMgr connection.Manager, integrationDS compIntegration.DataStore, scanSettingDS compScanSetting.DataStore, clusterDS clusterDatastore.DataStore, profileDS profileDatastore.DataStore, scansDS scansDatastore.DataStore, resultsDS resultsDatastore.DataStore) Manager {
 	return &managerImpl{
 		sensorConnMgr:   sensorConnMgr,
 		integrationDS:   integrationDS,
@@ -59,6 +65,8 @@ func New(sensorConnMgr connection.Manager, integrationDS compIntegration.DataSto
 		runningRequests: make(map[string]clusterScan),
 		clusterDS:       clusterDS,
 		profileDS:       profileDS,
+		scansDS:         scansDS,
+		resultsDS:       resultsDS,
 	}
 }
 
@@ -165,27 +173,89 @@ func (m *managerImpl) UpdateScanRequest(ctx context.Context, scanRequest *storag
 		return nil, errors.Errorf("Scan configuration with ID %q does not exist.", scanRequest.GetId())
 	}
 
-	// Use the old config to determine which clusters were deleted from the configuration
-	// TODO(ROX-22398): if we restrict cluster deletion, this is where we would do it before any updates are done.
-	var deletedClusters []string
-	for _, oldCluster := range oldScanConfig.GetClusters() {
-		if slices.Index(clusters, oldCluster.GetClusterId()) == -1 {
-			deletedClusters = append(deletedClusters, oldCluster.ClusterId)
-		}
+	// We are using scan schedule name as FK in scan results. Changing name would break relation.
+	if oldScanConfig.GetScanConfigName() != scanRequest.GetScanConfigName() {
+		return nil, errors.New("Changing the scan schedule name is not allowed.")
 	}
+
+	// TODO(ROX-22398): if we restrict cluster deletion, this is where we would do it before any updates are done.
+	m.removeObsoleteResultsByClusters(ctx, oldScanConfig, scanRequest)
+	m.removeObsoleteResultsByProfiles(ctx, oldScanConfig, scanRequest)
 
 	// Use the created time from the DB
 	scanRequest.CreatedTime = oldScanConfig.GetCreatedTime()
-
 	scanRequest, err = m.processRequestToSensor(ctx, scanRequest, cron, clusters, false)
 	if err != nil {
 		return nil, err
 	}
 
-	// Send delete to sensor for any clusters that were deleted
-	m.processClusterDelete(ctx, scanRequest, deletedClusters)
-
 	return scanRequest, nil
+}
+
+// removeObsoleteResultsByClusters removes existing results related to removed clusters from scheduler configuration
+func (m *managerImpl) removeObsoleteResultsByClusters(ctx context.Context, oldScanConfig *storage.ComplianceOperatorScanConfigurationV2, newScanConfig *storage.ComplianceOperatorScanConfigurationV2) {
+	oldClusterIDs := set.NewStringSet()
+	for _, oldCluster := range oldScanConfig.GetClusters() {
+		oldClusterIDs.Add(oldCluster.GetClusterId())
+	}
+
+	newClusterIDs := set.NewStringSet()
+	for _, newCluster := range newScanConfig.GetClusters() {
+		newClusterIDs.Add(newCluster.GetClusterId())
+	}
+
+	removedClusterIDs := oldClusterIDs.Difference(newClusterIDs).AsSlice()
+	if len(removedClusterIDs) == 0 {
+		return
+	}
+
+	// Send delete to sensor for any clusters that were deleted
+	m.processClusterDelete(ctx, newScanConfig, removedClusterIDs)
+
+	err := m.resultsDS.DeleteResultsByScanConfigAndCluster(ctx, oldScanConfig.GetScanConfigName(), removedClusterIDs)
+	if err != nil {
+		log.Errorf("removing obsolete scan results for clusters %v: %v", removedClusterIDs, err)
+	}
+}
+
+// removeObsoleteResultsByProfiles removes existing results related to removed profiles from scheduler configuration
+func (m *managerImpl) removeObsoleteResultsByProfiles(ctx context.Context, oldScanConfig *storage.ComplianceOperatorScanConfigurationV2, newScanConfig *storage.ComplianceOperatorScanConfigurationV2) {
+	oldProfileNames := set.NewStringSet()
+	for _, oldProfile := range oldScanConfig.GetProfiles() {
+		oldProfileNames.Add(oldProfile.GetProfileName())
+	}
+
+	newProfileNames := set.NewStringSet()
+	for _, newProfile := range newScanConfig.GetProfiles() {
+		newProfileNames.Add(newProfile.GetProfileName())
+	}
+
+	removedProfileNames := oldProfileNames.Difference(newProfileNames).AsSlice()
+	if len(removedProfileNames) == 0 {
+		return
+	}
+
+	oldClusters := oldScanConfig.GetClusters()
+	scanRefIds := make([]string, 0)
+	for _, profileName := range removedProfileNames {
+		for _, oldCluster := range oldClusters {
+			query := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfigName, oldScanConfig.GetScanConfigName()).AddExactMatches(search.ClusterID, oldCluster.GetClusterId()).AddExactMatches(search.ComplianceOperatorProfileName, profileName).ProtoQuery()
+			scans, err := m.scansDS.SearchScans(ctx, query)
+			if err != nil {
+				log.Error(errors.Wrapf(err, "unable scan for cluster %q and profile %q", oldCluster.GetClusterId(), profileName))
+				return
+			}
+
+			for _, scan := range scans {
+				scanRefIds = append(scanRefIds, internaltov2storage.BuildNameRefID(oldCluster.GetClusterId(), scan.GetScanName()))
+			}
+		}
+	}
+
+	err := m.resultsDS.DeleteResultsByScans(ctx, scanRefIds)
+	if err != nil {
+		log.Error(errors.Wrapf(err, "removing obsolete scan results for profiles %v", removedProfileNames))
+	}
 }
 
 func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *storage.ComplianceOperatorScanConfigurationV2, cron string, clusters []string, createScanRequest bool) (*storage.ComplianceOperatorScanConfigurationV2, error) {
@@ -213,10 +283,6 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 
 	if len(returnedProfiles) != len(profiles) {
 		return nil, errors.Errorf("Unable to find all profiles for scan configuration named %q.", scanRequest.GetScanConfigName())
-	}
-	err = validateProfiles(returnedProfiles)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 
 	err = m.scanSettingDS.UpsertScanConfiguration(ctx, scanRequest)
@@ -300,24 +366,6 @@ func (m *managerImpl) removeSensorRequestForCluster(scanConfigID, clusterID stri
 	}
 }
 
-// validateProfiles checks if the profiles are compatible and returns an error if not.
-// Check if node profiles have more than one product
-// ex. we can not have rhcos node profile and ocp node profile in the same scan configuration
-// as this is not allowed on Compliance Operator ScanSettingBinding
-func validateProfiles(profiles []*storage.ComplianceOperatorProfileV2) error {
-	var product string
-	for _, profile := range profiles {
-		if strings.Contains(strings.ToLower(profile.GetProductType()), "node") {
-			if product == "" {
-				product = profile.GetProduct()
-			} else if product != profile.GetProduct() {
-				return errors.New("Node profiles must have the same product")
-			}
-		}
-	}
-	return nil
-}
-
 // trackSensorRequest adds sensor request to a map with cluster and scan config that was sent for correlating responses.
 func (m *managerImpl) trackSensorRequest(sensorRequestID, clusterID, scanConfigID string) {
 	m.runningRequestsLock.Lock()
@@ -389,6 +437,7 @@ func (m *managerImpl) ProcessRescanRequest(ctx context.Context, scanID string) e
 		return err
 	}
 
+	errList := make([]string, 0)
 	for _, c := range clusters {
 		msg := &central.MsgToSensor{
 			Msg: &central.MsgToSensor_ComplianceRequest{
@@ -406,16 +455,17 @@ func (m *managerImpl) ProcessRescanRequest(ctx context.Context, scanID string) e
 				},
 			},
 		}
-		err := m.sensorConnMgr.SendMessage(c.GetClusterId(), msg)
-		if err != nil {
-			log.Errorf("Unable to rescan cluster %s due to message failure: %s", c.GetClusterId(), err)
-			// Update status in DB
-			err = m.updateClusterStatus(ctx, scanConfig.GetId(), c.GetClusterId(), err.Error())
-			if err != nil {
-				log.Error(err)
-				return errors.Errorf("Unable to save scan configuration status for scan configuration %q.", scanConfig.GetScanConfigName())
-			}
+
+		errSendMessage := m.sensorConnMgr.SendMessage(c.GetClusterId(), msg)
+		if errSendMessage != nil {
+			errMsg := fmt.Sprintf("Unable to rescan cluster %s due to message failure: %s", c.GetClusterId(), errSendMessage)
+			log.Error(errMsg)
+			errList = append(errList, errMsg)
 		}
+	}
+
+	if len(errList) > 0 {
+		return errors.New(strings.Join(errList, "\n"))
 	}
 
 	return nil

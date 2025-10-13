@@ -12,6 +12,7 @@ package mocks
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	central "github.com/stackrox/rox/generated/internalapi/central"
@@ -57,6 +58,21 @@ func (m *MockManager) CreateNetworkBaseline(deploymentID string) error {
 func (mr *MockManagerMockRecorder) CreateNetworkBaseline(deploymentID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNetworkBaseline", reflect.TypeOf((*MockManager)(nil).CreateNetworkBaseline), deploymentID)
+}
+
+// GetExternalNetworkPeers mocks base method.
+func (m *MockManager) GetExternalNetworkPeers(ctx context.Context, deploymentID, query string, since *time.Time) ([]*v1.NetworkBaselineStatusPeer, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetExternalNetworkPeers", ctx, deploymentID, query, since)
+	ret0, _ := ret[0].([]*v1.NetworkBaselineStatusPeer)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetExternalNetworkPeers indicates an expected call of GetExternalNetworkPeers.
+func (mr *MockManagerMockRecorder) GetExternalNetworkPeers(ctx, deploymentID, query, since any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetExternalNetworkPeers", reflect.TypeOf((*MockManager)(nil).GetExternalNetworkPeers), ctx, deploymentID, query, since)
 }
 
 // ProcessBaselineLockUpdate mocks base method.

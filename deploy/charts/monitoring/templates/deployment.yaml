@@ -39,13 +39,6 @@ spec:
                 matchExpressions:
                   - key: node-role.kubernetes.io/infra
                     operator: DoesNotExist
-            # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
-            # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/master
-                    operator: DoesNotExist
             - weight: 100
               preference:
                 matchExpressions:
@@ -80,6 +73,11 @@ spec:
             readOnly: true
           - name: grafana-dashboards-volume
             mountPath: /etc/grafana/provisioning/dashboards
+            readOnly: true
+          - name: grafana-plugins-volume
+            mountPath: /etc/grafana/provisioning/plugins
+          - name: grafana-notifiers-volume
+            mountPath: /etc/grafana/provisioning/notifiers
             readOnly: true
           - name: monitoring-ui-volume
             mountPath: /run/secrets/stackrox.io/monitoring/certs/
@@ -128,6 +126,12 @@ spec:
           name: grafana-dashboards
       - name: grafana-var-volume
         emptyDir: {}
+      - name: grafana-notifiers-volume
+        emptyDir: {}
+      - name: grafana-plugins-volume
+        configMap:
+          defaultMode: 420
+          name: grafana-plugins
       - name: prometheus-config-volume
         configMap:
           name: prometheus

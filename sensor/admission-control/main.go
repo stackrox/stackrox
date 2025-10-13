@@ -8,6 +8,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/continuousprofiling"
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -44,6 +45,10 @@ func init() {
 func main() {
 	log.Infof("StackRox Sensor Admission Control Service, version %s", version.GetMainVersion())
 	features.LogFeatureFlags()
+
+	if err := continuousprofiling.SetupClient(continuousprofiling.DefaultConfig()); err != nil {
+		log.Errorf("unable to start continuous profiling: %v", err)
+	}
 
 	utils.Must(mainCmd())
 }

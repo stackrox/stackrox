@@ -2,10 +2,10 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
-	checkResultSearch "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/search"
 	store "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
 	complianceUtils "github.com/stackrox/rox/central/complianceoperator/v2/utils"
 	"github.com/stackrox/rox/central/metrics"
@@ -13,22 +13,28 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/utils"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (
 	complianceSAC = sac.ForResource(resources.Compliance)
 )
 
+const (
+	lastStartedTimestampColumnName = "laststartedtime"
+	scanRefIDColumnName            = "scanrefid"
+)
+
 type datastoreImpl struct {
-	store    store.Store
-	db       postgres.DB
-	searcher checkResultSearch.Searcher
+	store store.Store
+	db    postgres.DB
 }
 
 // UpsertResult adds the result to the database  If enabling the use of this
@@ -357,13 +363,30 @@ func (d *datastoreImpl) countByConfiguration(ctx context.Context, query *v1.Quer
 }
 
 func (d *datastoreImpl) CountCheckResults(ctx context.Context, q *v1.Query) (int, error) {
-	return d.searcher.Count(ctx, q)
+	return d.store.Count(ctx, q)
 }
 
 func (d *datastoreImpl) DeleteResultsByCluster(ctx context.Context, clusterID string) error {
 	query := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID).ProtoQuery()
-	_, err := d.store.DeleteByQuery(ctx, query)
-	return err
+	return d.store.DeleteByQuery(ctx, query)
+}
+
+func (d *datastoreImpl) DeleteResultsByScanConfigAndCluster(ctx context.Context, scanConfigName string, clusterIDs []string) error {
+	if scanConfigName == "" || len(clusterIDs) == 0 {
+		return nil
+	}
+
+	query := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfigName, scanConfigName).AddExactMatches(search.ClusterID, clusterIDs...).ProtoQuery()
+	return d.store.DeleteByQuery(ctx, query)
+}
+
+func (d *datastoreImpl) DeleteResultsByScans(ctx context.Context, scanRefIds []string) error {
+	if len(scanRefIds) == 0 {
+		return nil
+	}
+
+	query := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanRef, scanRefIds...).ProtoQuery()
+	return d.store.DeleteByQuery(ctx, query)
 }
 
 func withCountQuery(q *v1.Query, field search.FieldLabel) *v1.Query {
@@ -442,4 +465,25 @@ func (d *datastoreImpl) withCountByResultSelectQuery(q *v1.Query, countOn search
 			).Proto(),
 	)
 	return cloned
+}
+
+func (d *datastoreImpl) DeleteOldResults(ctx context.Context, lastStartedTimestamp *timestamppb.Timestamp, scanRefID string, includeCurrent bool) error {
+	if scanRefID == "" || lastStartedTimestamp == nil {
+		return nil
+	}
+	if err := lastStartedTimestamp.CheckValid(); err != nil {
+		return err
+	}
+	deleteFmt := "DELETE FROM %s WHERE %s = $1 AND (%s < $2 OR %s IS NULL)"
+	if includeCurrent {
+		deleteFmt = "DELETE FROM %s WHERE %s = $1 AND (%s <= $2 OR %s IS NULL)"
+	}
+	deleteStmt := fmt.Sprintf(deleteFmt,
+		schema.ComplianceOperatorCheckResultV2TableName,
+		scanRefIDColumnName,
+		lastStartedTimestampColumnName,
+		lastStartedTimestampColumnName,
+	)
+	_, err := d.db.Exec(ctx, deleteStmt, scanRefID, protocompat.NilOrTime(lastStartedTimestamp))
+	return err
 }

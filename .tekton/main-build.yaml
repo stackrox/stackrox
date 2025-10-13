@@ -16,9 +16,12 @@ metadata:
         event == "pull_request" && (
           target_branch.startsWith("release-") ||
           source_branch.matches("(konflux|renovate|appstudio|rhtap)") ||
-          body.pull_request.labels.exists(l, l.name == "konflux-build")
-        )
+          (has(body.pull_request) && has(body.pull_request.labels) && body.pull_request.labels.exists(l, l.name == "konflux-build"))
+        ) && body.action != "ready_for_review"
       )
+    # The empty `on-label` annotation is a workaround to make sure the pipeline gets triggered when the label gets first
+    # added to the PR. See the Slack tread linked from ROX-30580.
+    pipelinesascode.tekton.dev/on-label: "[]"
   labels:
     appstudio.openshift.io/application: acs
     appstudio.openshift.io/component: main
@@ -36,21 +39,21 @@ spec:
   - name: image-expires-after
     value: '13w'
   - name: output-image-repo
-    value: quay.io/rhacs-eng/main
+    value: quay.io/rhacs-eng/release-main
   - name: path-context
     value: .
   - name: revision
     value: '{{revision}}'
   - name: rebuild
     value: 'true'
-  # TODO(ROX-20234): Enable hermetic builds
-  # - name: hermetic
-  #   value: "true"
+  - name: hermetic
+    value: "true"
   - name: prefetch-input
     value: |
       [
         { "type": "npm", "path": "ui/apps/platform" },
-        { "type": "gomod", "path": "." }
+        { "type": "gomod", "path": "." },
+        { "type": "rpm", "path": "." }
       ]
   - name: build-source-image
     value: 'true'
@@ -59,10 +62,68 @@ spec:
   - name: clone-fetch-tags
     value: 'true'
 
-  workspaces:
-  - name: git-auth
-    secret:
-      secretName: '{{ git_auth_secret }}'
+  pipelineRef:
+    name: main-pipeline
+
+  taskRunSpecs:
+  - pipelineTaskName: prefetch-dependencies
+    stepSpecs:
+    # Limit CPU for Go dependencies prefetch, as it tends to be OOM-killed when it gets lots of it without OOTB limit.
+    - name: prefetch-dependencies
+      computeResources:
+        limits:
+          cpu: 2
+        requests:
+          cpu: 2
+  # For all sbom-syft-generate steps:
+  # Memory is increased for the syft command to succeed. Otherwise, there's an error like this in log and container
+  # exits with 137 (OOMKilled):
+  # /tekton/scripts/script-2-h7nll: line 7:    33 Killed                  syft dir:$(cat /shared/container_path) --output cyclonedx-json=/var/workdir/sbom-image.json
+  - pipelineTaskName: build-container-amd64
+    stepSpecs:
+    - name: build
+      # CPU requests are increased to speed up builds compared to the defaults.
+      # Defaults: https://github.com/konflux-ci/build-definitions/blob/main/task/buildah-oci-ta/0.5/buildah-oci-ta.yaml#L921
+      #
+      # Memory is increased for UI builds to succeed. Otherwise, there's an error like this in logs:
+      # [build] @stackrox/platform-app: The build failed because the process exited too early. This probably means the system ran out of memory or someone called `kill -9` on the process.
+      computeResources:
+        limits:
+          cpu: 4
+          memory: 7Gi
+        requests:
+          cpu: 4
+          memory: 7Gi
+    - name: sbom-syft-generate
+      computeResources: &sbom-syft-resources
+        limits:
+          memory: 3Gi
+        requests:
+          memory: 3Gi
+  - pipelineTaskName: build-container-s390x
+    stepSpecs:
+    - name: sbom-syft-generate
+      computeResources: *sbom-syft-resources
+  - pipelineTaskName: build-container-ppc64le
+    stepSpecs:
+    - name: sbom-syft-generate
+      computeResources: *sbom-syft-resources
+  - pipelineTaskName: build-container-arm64
+    stepSpecs:
+    - name: sbom-syft-generate
+      computeResources: *sbom-syft-resources
+  - pipelineTaskName: build-source-image
+    stepSpecs:
+    # Bump memory for source image build because the one with defaults tends to get sometimes OOM-killed.
+    - name: build
+      computeResources:
+        limits:
+          memory: 3Gi
+        requests:
+          memory: 3Gi
+
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-main
 
   # IMPORTANT: when changing timeouts here, read and follow timeout instructions in operator-bundle-build.yaml.
   timeouts:
@@ -72,59 +133,7 @@ spec:
     finally: 10m
     pipeline: 2h40m
 
-  pipelineRef:
-    name: main-pipeline
-
-  taskRunSpecs:
-  # For all sbom-syft-generate steps:
-  # Memory is increased for the syft command to succeed. Otherwise, there's an error like this in log and container
-  # exits with 137 (OOMKilled):
-  # /tekton/scripts/script-2-h7nll: line 7:    33 Killed                  syft dir:$(cat /shared/container_path) --output cyclonedx-json=/var/workdir/sbom-image.json
-  - pipelineTaskName: build-container-amd64
-    stepSpecs:
-    - name: build
-      # CPU requests are increased to speed up builds compared to the defaults.
-      # Defaults: https://github.com/konflux-ci/build-definitions/blob/main/task/buildah/0.1/buildah.yaml#L147
-      #
-      # Memory is increased for UI builds to succeed. Otherwise, there's an error like this in logs:
-      # [build] @stackrox/platform-app: The build failed because the process exited too early. This probably means the system ran out of memory or someone called `kill -9` on the process.
-      #
-      # Not using buildah-6gb/-8gb/... because these don't have memory requests equal to limits which still occasionally
-      # leads to failing builds.
-      computeResources:
-        limits:
-          cpu: 4
-          memory: 7Gi
-        requests:
-          cpu: 4
-          memory: 7Gi
-    - name: sbom-syft-generate
-      computeResources:
-        limits:
-          memory: 3Gi
-        requests:
-          memory: 3Gi
-  - pipelineTaskName: build-container-s390x
-    stepSpecs:
-    - name: sbom-syft-generate
-      computeResources:
-        limits:
-          memory: 3Gi
-        requests:
-          memory: 3Gi
-  - pipelineTaskName: build-container-ppc64le
-    stepSpecs:
-    - name: sbom-syft-generate
-      computeResources:
-        limits:
-          memory: 3Gi
-        requests:
-          memory: 3Gi
-  - pipelineTaskName: build-container-arm64
-    stepSpecs:
-    - name: sbom-syft-generate
-      computeResources:
-        limits:
-          memory: 3Gi
-        requests:
-          memory: 3Gi
+  workspaces:
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'

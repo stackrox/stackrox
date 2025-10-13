@@ -1,13 +1,14 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import {
     Bullseye,
     EmptyState,
     EmptyStateBody,
+    EmptyStateHeader,
     EmptyStateIcon,
     Flex,
     Text,
     Title,
-    EmptyStateHeader,
 } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
 import { Tbody, Td, Tr } from '@patternfly/react-table';

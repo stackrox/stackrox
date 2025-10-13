@@ -21,7 +21,7 @@ import (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "images",
-		Short: "(Technology Preview) Exports all images from Central.",
+		Short: "(Technology Preview) Exports all images from Central",
 		Long:  "Exports all images from Central." + common.TechPreviewLongText,
 	}
 

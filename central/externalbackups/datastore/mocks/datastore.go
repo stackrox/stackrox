@@ -41,6 +41,20 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
+// ForEachBackup mocks base method.
+func (m *MockDataStore) ForEachBackup(ctx context.Context, fn func(*storage.ExternalBackup) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ForEachBackup", ctx, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ForEachBackup indicates an expected call of ForEachBackup.
+func (mr *MockDataStoreMockRecorder) ForEachBackup(ctx, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForEachBackup", reflect.TypeOf((*MockDataStore)(nil).ForEachBackup), ctx, fn)
+}
+
 // GetBackup mocks base method.
 func (m *MockDataStore) GetBackup(ctx context.Context, id string) (*storage.ExternalBackup, bool, error) {
 	m.ctrl.T.Helper()
@@ -55,21 +69,6 @@ func (m *MockDataStore) GetBackup(ctx context.Context, id string) (*storage.Exte
 func (mr *MockDataStoreMockRecorder) GetBackup(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBackup", reflect.TypeOf((*MockDataStore)(nil).GetBackup), ctx, id)
-}
-
-// ListBackups mocks base method.
-func (m *MockDataStore) ListBackups(ctx context.Context) ([]*storage.ExternalBackup, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListBackups", ctx)
-	ret0, _ := ret[0].([]*storage.ExternalBackup)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListBackups indicates an expected call of ListBackups.
-func (mr *MockDataStoreMockRecorder) ListBackups(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListBackups", reflect.TypeOf((*MockDataStore)(nil).ListBackups), ctx)
 }
 
 // RemoveBackup mocks base method.

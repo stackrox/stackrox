@@ -6,7 +6,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 source "${DIR}/detect.sh"
 
 if is_openshift; then
-    "${DIR}/openshift/deploy.sh"
+    source "${DIR}/openshift/deploy.sh"
 else
-    "${DIR}/k8s/deploy.sh"
+    source "${DIR}/k8s/deploy.sh"
 fi

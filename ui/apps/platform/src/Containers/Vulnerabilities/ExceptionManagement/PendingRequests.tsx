@@ -38,7 +38,7 @@ const defaultSortOption = {
     direction: 'desc',
 } as const;
 
-function PendingApprovals() {
+function PendingRequests() {
     const { searchFilter, setSearchFilter } = useURLSearch();
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const { sortOption, getSortParams } = useURLSort({
@@ -188,4 +188,4 @@ function PendingApprovals() {
     );
 }
 
-export default PendingApprovals;
+export default PendingRequests;

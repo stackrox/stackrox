@@ -168,7 +168,8 @@ describe('Notifier Integrations', () => {
                 parseSpecialCharSequences: false,
             });
             getInputByLabel('Annotation key for recipient').clear().type('email');
-            getInputByLabel('Disable TLS certificate validation (insecure)').click();
+            getInputByLabel('Disable TLS (insecure)').click();
+            getInputByLabel('Hostname for SMTP HELO/EHLO').type('client.example.com');
 
             testIntegrationInFormWithStoredCredentials(
                 integrationSource,

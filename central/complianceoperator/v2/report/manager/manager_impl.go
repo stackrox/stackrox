@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	checkResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report"
@@ -21,7 +22,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
@@ -46,6 +46,8 @@ type reportRequest struct {
 	ctx                context.Context
 	snapshotID         string
 	notificationMethod storage.ComplianceOperatorReportStatus_NotificationMethod
+	clusterData        map[string]*report.ClusterData
+	numFailedClusters  int
 }
 
 type managerImpl struct {
@@ -56,6 +58,7 @@ type managerImpl struct {
 	integrationDataStore complianceIntegrationDS.DataStore
 	suiteDataStore       suiteDS.DataStore
 	bindingsDataStore    bindingsDS.DataStore
+	checkResultDataStore checkResults.DataStore
 
 	runningReportConfigs map[string]*reportRequest
 	// channel for report job requests
@@ -75,6 +78,8 @@ type managerImpl struct {
 	watchingScansLock sync.Mutex
 	// watchingScans a map holding the ScanWatchers
 	watchingScans map[string]watcher.ScanWatcher
+	// watchingScansStartTime records when a given watcher was started (for the metrics)
+	watchingScansStartTime map[string]time.Time
 	// readyQueue holds the scan that are ready to be reported
 	readyQueue *queue.Queue[*watcher.ScanWatcherResults]
 
@@ -84,27 +89,45 @@ type managerImpl struct {
 	watchingScanConfigs map[string]watcher.ScanConfigWatcher
 	// scanConfigReadyQueue holds the scan configurations that are ready to be reported
 	scanConfigReadyQueue *queue.Queue[*watcher.ScanConfigWatcherResults]
+
+	metricsTicker  *time.Ticker
+	metricsTickerC <-chan time.Time
+	// maxScansInParallel stores the maximum number of scans running in parallel between the ticks of metricsTicker.
+	maxScansInParallel atomic.Int32
 }
 
-func New(scanConfigDS scanConfigurationDS.DataStore, scanDataStore scanDS.DataStore, profileDataStore profileDatastore.DataStore, snapshotDatastore snapshotDS.DataStore, complianceIntegration complianceIntegrationDS.DataStore, suiteDataStore suiteDS.DataStore, bindingsDataStore bindingsDS.DataStore, reportGen reportGen.ComplianceReportGenerator) Manager {
+func New(scanConfigDS scanConfigurationDS.DataStore,
+	scanDataStore scanDS.DataStore,
+	profileDataStore profileDatastore.DataStore,
+	snapshotDatastore snapshotDS.DataStore,
+	complianceIntegration complianceIntegrationDS.DataStore,
+	suiteDataStore suiteDS.DataStore,
+	bindingsDataStore bindingsDS.DataStore,
+	checkResultDataStore checkResults.DataStore,
+	reportGen reportGen.ComplianceReportGenerator) Manager {
+	gmt := time.NewTicker(env.ComplianceScansRunningInParallelMetricObservationPeriod.DurationSetting())
 	return &managerImpl{
-		scanConfigDataStore:   scanConfigDS,
-		scanDataStore:         scanDataStore,
-		profileDataStore:      profileDataStore,
-		snapshotDataStore:     snapshotDatastore,
-		integrationDataStore:  complianceIntegration,
-		suiteDataStore:        suiteDataStore,
-		bindingsDataStore:     bindingsDataStore,
-		stopper:               concurrency.NewStopper(),
-		runningReportConfigs:  make(map[string]*reportRequest, maxRequests),
-		reportRequests:        make(chan *reportRequest, maxRequests),
-		concurrencySem:        semaphore.NewWeighted(int64(env.ReportExecutionMaxConcurrency.IntegerSetting())),
-		reportGen:             reportGen,
-		automaticReportingCtx: sac.WithAllAccess(context.Background()),
-		watchingScans:         make(map[string]watcher.ScanWatcher),
-		readyQueue:            queue.NewQueue[*watcher.ScanWatcherResults](),
-		watchingScanConfigs:   make(map[string]watcher.ScanConfigWatcher),
-		scanConfigReadyQueue:  queue.NewQueue[*watcher.ScanConfigWatcherResults](),
+		scanConfigDataStore:    scanConfigDS,
+		scanDataStore:          scanDataStore,
+		profileDataStore:       profileDataStore,
+		snapshotDataStore:      snapshotDatastore,
+		integrationDataStore:   complianceIntegration,
+		suiteDataStore:         suiteDataStore,
+		bindingsDataStore:      bindingsDataStore,
+		checkResultDataStore:   checkResultDataStore,
+		stopper:                concurrency.NewStopper(),
+		runningReportConfigs:   make(map[string]*reportRequest, maxRequests),
+		reportRequests:         make(chan *reportRequest, maxRequests),
+		concurrencySem:         semaphore.NewWeighted(int64(env.ReportExecutionMaxConcurrency.IntegerSetting())),
+		reportGen:              reportGen,
+		automaticReportingCtx:  sac.WithAllAccess(context.Background()),
+		watchingScans:          make(map[string]watcher.ScanWatcher),
+		watchingScansStartTime: make(map[string]time.Time),
+		readyQueue:             queue.NewQueue[*watcher.ScanWatcherResults](),
+		watchingScanConfigs:    make(map[string]watcher.ScanConfigWatcher),
+		scanConfigReadyQueue:   queue.NewQueue[*watcher.ScanConfigWatcherResults](),
+		metricsTicker:          gmt,
+		metricsTickerC:         gmt.C,
 	}
 }
 
@@ -151,9 +174,11 @@ func (m *managerImpl) Start() {
 	go m.runReports()
 	go m.handleReadyScan()
 	go m.handleReadyScanConfig()
+	go m.updateMetrics()
 }
 
 func (m *managerImpl) Stop() {
+	m.metricsTicker.Stop()
 	if m.isStarted.Load() {
 		log.Error("Compliance report manager not started")
 		return
@@ -170,6 +195,7 @@ func (m *managerImpl) Stop() {
 			<-scanWatcher.Finished().Done()
 		}
 		m.watchingScans = make(map[string]watcher.ScanWatcher)
+		m.watchingScansStartTime = make(map[string]time.Time)
 	})
 	concurrency.WithLock(&m.watchingScanConfigsLock, func() {
 		for _, scanConfigWatcher := range m.watchingScanConfigs {
@@ -208,6 +234,8 @@ func (m *managerImpl) generateReportNoLock(req *reportRequest) {
 		Ctx:                req.ctx,
 		SnapshotID:         req.snapshotID,
 		NotificationMethod: req.notificationMethod,
+		ClusterData:        req.clusterData,
+		NumFailedClusters:  req.numFailedClusters,
 	}
 	log.Infof("Executing report request for scan config %q", req.scanConfig.GetId())
 	if err := m.reportGen.ProcessReportRequest(repRequest); err != nil {
@@ -286,6 +314,24 @@ func (m *managerImpl) handleReportRequest(request *reportRequest) (bool, error) 
 			return false, errors.Wrap(err, "unable to upsert snapshot on report preparation")
 		}
 		request.snapshotID = snapshot.GetReportId()
+		failedClusters, err := helpers.GetFailedClusters(m.automaticReportingCtx, request.scanConfig.GetId(), m.snapshotDataStore, m.scanDataStore)
+		if err != nil {
+			log.Warnf("unable to retrieve failed clusters: %v", err)
+		}
+		request.numFailedClusters = len(failedClusters)
+		request.clusterData, err = helpers.GetClusterData(m.automaticReportingCtx, snapshot.GetReportData(), failedClusters, m.scanDataStore)
+		if err != nil {
+			log.Errorf("unable to get clusters information: %v", err)
+			if dbErr := helpers.UpdateSnapshotOnError(request.ctx, snapshot, report.ErrReportGeneration, m.snapshotDataStore); dbErr != nil {
+				return false, errors.Wrap(dbErr, "unable to upsert snapshot on generation failure")
+			}
+			return false, errors.Wrap(err, "unable to get clusters information")
+		}
+		// Add failed clusters to the report snapshot
+		if _, err = m.addFailedClustersToTheSnapshot(failedClusters, snapshot); err != nil {
+			log.Errorf("unable to updata snapshot with failed clusters: %v", err)
+			return false, err
+		}
 		m.generateReportNoLock(request)
 		return true, nil
 	}
@@ -315,7 +361,7 @@ func (m *managerImpl) HandleScan(sensorCtx context.Context, scan *storage.Compli
 	id, err := watcher.GetWatcherIDFromScan(m.automaticReportingCtx, scan, m.snapshotDataStore, m.scanConfigDataStore, nil)
 	if err != nil {
 		if errors.Is(err, watcher.ErrComplianceOperatorScanMissingLastStartedFiled) {
-			log.Debugf("The scan is missing the LastStartedField: %v", err)
+			log.Debug("The scan is missing the LastStartedTime field")
 			return nil
 		}
 		if errors.Is(err, watcher.ErrScanAlreadyHandled) {
@@ -324,7 +370,42 @@ func (m *managerImpl) HandleScan(sensorCtx context.Context, scan *storage.Compli
 		}
 		return err
 	}
-	return m.getWatcher(sensorCtx, id).PushScan(scan)
+	numChecks, err := watcher.GetExpectedNumChecks(scan)
+	if err != nil {
+		log.Warnf("Failed to get expected number of checks from annotations for %s: %v", scan.GetScanName(), err)
+	}
+	w := m.getWatcher(sensorCtx, id, numChecks)
+	if w != nil {
+		return w.PushScan(scan)
+	}
+	log.Debugf("Received scan update after removing the watcher %+v", scan)
+	return nil
+}
+
+func (m *managerImpl) updateMetrics() {
+	for {
+		select {
+		case <-m.stopper.Flow().StopRequested():
+			return
+		case <-m.metricsTickerC:
+			nRunning := concurrency.WithLock1(&m.watchingScansLock, func() int {
+				return len(m.watchingScans)
+			})
+			numWatchers.Set(float64(nRunning))
+			// Reset the maximum value on tick and set to the current number
+			prevVal := m.maxScansInParallel.Swap(int32(nRunning))
+			log.Debugf("Updating maxScansInParallel from %d to %d (tick)", prevVal, nRunning)
+			if prevVal > 0 {
+				scansRunningInParallel.Observe(float64(prevVal))
+			}
+		}
+	}
+}
+
+func (m *managerImpl) updateMaxNumScansRunningInParallelNoLock() {
+	newVal := max(m.maxScansInParallel.Load(), int32(len(m.watchingScans)))
+	prevVal := m.maxScansInParallel.Swap(newVal)
+	log.Debugf("Updating maxScansInParallel from %d to %d", prevVal, newVal)
 }
 
 func (m *managerImpl) HandleScanRemove(scanID string) error {
@@ -347,13 +428,20 @@ func (m *managerImpl) HandleScanRemove(scanID string) error {
 	return nil
 }
 
-func (m *managerImpl) getWatcher(sensorCtx context.Context, id string) watcher.ScanWatcher {
+func (m *managerImpl) getWatcher(sensorCtx context.Context, id string, numChecks int) watcher.ScanWatcher {
 	var scanWatcher watcher.ScanWatcher
 	concurrency.WithLock(&m.watchingScansLock, func() {
 		var found bool
-		if scanWatcher, found = m.watchingScans[id]; !found {
+		// The check for `numChecks == 0` is here to prevent starting a watcher twice per scan.
+		// It may happen that additional status updates (e.g., state) from CO arrive
+		// after the watcher is removed from the watchingScans (i.e., we have all the checks).
+		// Not checking that would cause a new watcher to be created here and in some circumstances
+		// (when no e-mail is provided for notification), the watcher would time-out and delete the data from DB.
+		if scanWatcher, found = m.watchingScans[id]; !found && numChecks == 0 {
 			scanWatcher = watcher.NewScanWatcher(m.automaticReportingCtx, sensorCtx, id, m.readyQueue)
 			m.watchingScans[id] = scanWatcher
+			m.watchingScansStartTime[id] = time.Now()
+			m.updateMaxNumScansRunningInParallelNoLock()
 		}
 	})
 	return scanWatcher
@@ -368,19 +456,24 @@ func (m *managerImpl) HandleResult(sensorCtx context.Context, result *storage.Co
 	if err != nil {
 		if errors.Is(err, watcher.ErrComplianceOperatorReceivedOldCheckResult) {
 			log.Debugf("The CheckResult is older than the current scan in the store")
-			return nil
+			return err
 		}
 		if errors.Is(err, watcher.ErrComplianceOperatorScanMissingLastStartedFiled) {
-			log.Debugf("The scan is missing the LastStartedField: %v", err)
-			return nil
+			log.Debug("The scan is missing the LastStartedTime field")
+			return err
 		}
 		if errors.Is(err, watcher.ErrScanAlreadyHandled) {
 			log.Debugf("The scan linked to the check result %s is already handled", result.GetCheckName())
-			return nil
+			return err
 		}
 		return err
 	}
-	return m.getWatcher(sensorCtx, id).PushCheckResult(result)
+	w := m.getWatcher(sensorCtx, id, 0)
+	if w != nil {
+		return w.PushCheckResult(result)
+	}
+	log.Debugf("Received check result update after removing the watcher %+v", result)
+	return nil
 }
 
 // handleReadyScan pulls scans that are ready to be reported
@@ -388,39 +481,41 @@ func (m *managerImpl) handleReadyScan() {
 	if !features.ComplianceReporting.Enabled() || !features.ScanScheduleReportJobs.Enabled() {
 		return
 	}
-	for {
-		select {
-		case <-m.stopper.Flow().StopRequested():
-			return
-		default:
-			if scanWatcherResult := m.readyQueue.PullBlocking(m.stopper.LowLevel().GetStopRequestSignal()); scanWatcherResult != nil {
-				concurrency.WithLock(&m.watchingScansLock, func() {
-					delete(m.watchingScans, scanWatcherResult.WatcherID)
-				})
-				if errors.Is(scanWatcherResult.Error, watcher.ErrScanRemoved) {
-					log.Debugf("Scan %s was removed", scanWatcherResult.Scan.GetScanName())
-					continue
-				}
-				log.Debugf("Scan %s done with %d checks", scanWatcherResult.Scan.GetScanName(), len(scanWatcherResult.CheckResults))
-				w, scanConfig, wasAlreadyRunning, err := m.getOrCreateScanConfigWatcher(scanWatcherResult.SensorCtx, scanWatcherResult, m.scanConfigDataStore, m.scanConfigReadyQueue)
-				if errors.Is(err, watcher.ErrScanAlreadyHandled) {
-					continue
-				}
-				if err != nil {
-					log.Errorf("Unable to create the ScanConfigWatcher: %v", err)
-					continue
-				}
-				if !wasAlreadyRunning {
-					// if there are no notifiers configured we need to still push the results as they might be on-demand request
-					if err := m.createAutomaticSnapshotAndSubscribe(m.automaticReportingCtx, scanConfig, w); err != nil && !errors.Is(err, report.ErrNoNotifiersConfigured) {
-						log.Errorf("Unable to create the snapshot: %v", err)
-						continue
-					}
-				}
-				if err := w.PushScanResults(scanWatcherResult); err != nil {
-					log.Errorf("Unable to push scan %s: %v", scanWatcherResult.Scan.GetScanName(), err)
-				}
+	for scanWatcherResult := range m.readyQueue.Seq(m.stopper.LowLevel().GetStopRequestSignal()) {
+		concurrency.WithLock(&m.watchingScansLock, func() {
+			delete(m.watchingScans, scanWatcherResult.WatcherID)
+
+			m.maxScansInParallel.Store(int32(len(m.watchingScans)))
+			timeActive := time.Since(m.watchingScansStartTime[scanWatcherResult.WatcherID])
+			scanWatcherActiveTimeMinutes.WithLabelValues(scanWatcherResult.Scan.GetScanName()).
+				Observe(timeActive.Minutes())
+			delete(m.watchingScansStartTime, scanWatcherResult.WatcherID)
+		})
+		if err := watcher.DeleteOldResults(m.automaticReportingCtx, scanWatcherResult, m.checkResultDataStore); err != nil {
+			log.Errorf("unable to delete old CheckResults: %v", err)
+		}
+		if errors.Is(scanWatcherResult.Error, watcher.ErrScanRemoved) {
+			log.Debugf("Scan %s was removed", scanWatcherResult.Scan.GetScanName())
+			continue
+		}
+		log.Debugf("Scan %s done with %d checks", scanWatcherResult.Scan.GetScanName(), len(scanWatcherResult.CheckResults))
+		w, scanConfig, wasAlreadyRunning, err := m.getOrCreateScanConfigWatcher(scanWatcherResult.SensorCtx, scanWatcherResult, m.scanConfigDataStore, m.scanConfigReadyQueue)
+		if errors.Is(err, watcher.ErrScanAlreadyHandled) {
+			continue
+		}
+		if err != nil {
+			log.Errorf("Unable to create the ScanConfigWatcher: %v", err)
+			continue
+		}
+		if !wasAlreadyRunning {
+			// if there are no notifiers configured we need to still push the results as they might be on-demand request
+			if err := m.createAutomaticSnapshotAndSubscribe(m.automaticReportingCtx, scanConfig, w); err != nil && !errors.Is(err, report.ErrNoNotifiersConfigured) {
+				log.Errorf("Unable to create the snapshot: %v", err)
+				continue
 			}
+		}
+		if err := w.PushScanResults(scanWatcherResult); err != nil {
+			log.Errorf("Unable to push scan %s: %v", scanWatcherResult.Scan.GetScanName(), err)
 		}
 	}
 }
@@ -503,19 +598,15 @@ func (m *managerImpl) handleReadyScanConfig() {
 	if !features.ComplianceReporting.Enabled() || !features.ScanScheduleReportJobs.Enabled() {
 		return
 	}
-	for {
-		select {
-		case <-m.stopper.Flow().StopRequested():
-			return
-		default:
-			if scanConfigWatcherResult := m.scanConfigReadyQueue.PullBlocking(m.stopper.LowLevel().GetStopRequestSignal()); scanConfigWatcherResult != nil {
-				log.Debugf("Scan Config %s done with %d scans and %d reports", scanConfigWatcherResult.ScanConfig.GetScanConfigName(), len(scanConfigWatcherResult.ScanResults), len(scanConfigWatcherResult.ReportSnapshot))
-				concurrency.WithLock(&m.watchingScanConfigsLock, func() {
-					delete(m.watchingScanConfigs, scanConfigWatcherResult.WatcherID)
-				})
-				m.generateReportsFromWatcherResults(scanConfigWatcherResult)
-			}
+	for scanConfigWatcherResult := range m.scanConfigReadyQueue.Seq(m.stopper.LowLevel().GetStopRequestSignal()) {
+		log.Debugf("Scan Config %s done with %d scans and %d reports", scanConfigWatcherResult.ScanConfig.GetScanConfigName(), len(scanConfigWatcherResult.ScanResults), len(scanConfigWatcherResult.ReportSnapshot))
+		concurrency.WithLock(&m.watchingScanConfigsLock, func() {
+			delete(m.watchingScanConfigs, scanConfigWatcherResult.WatcherID)
+		})
+		if err := watcher.DeleteOldResultsFromMissingScans(m.automaticReportingCtx, scanConfigWatcherResult, m.profileDataStore, m.scanDataStore, m.checkResultDataStore); err != nil {
+			log.Errorf("unable to delete old CheckResults: %v", err)
 		}
+		m.generateReportsFromWatcherResults(scanConfigWatcherResult)
 	}
 }
 
@@ -535,29 +626,66 @@ func (m *managerImpl) generateReportsFromWatcherResults(result *watcher.ScanConf
 }
 
 func (m *managerImpl) generateSingleReportFromWatcherResults(result *watcher.ScanConfigWatcherResults, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
-	if err := m.validateScanConfigResults(result); err != nil {
-		if dbErr := helpers.UpdateSnapshotOnError(m.automaticReportingCtx, snapshot, err, m.snapshotDataStore); dbErr != nil {
-			return errors.Errorf("%v; %v", err, errors.Wrapf(dbErr, "unable to upsert the snapshot %s", snapshot.GetReportId()))
-		}
-		return err
-	}
+	failedClusters, err := watcher.ValidateScanConfigResults(m.automaticReportingCtx, result, m.integrationDataStore)
 	snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_PREPARING
+	if err != nil {
+		snapshot.GetReportStatus().ErrorMsg = err.Error()
+	}
+	log.Infof("Snapshot for ScanConfig %s: %+v -- %+v", result.ScanConfig.GetScanConfigName(), snapshot.GetReportStatus(), snapshot.GetFailedClusters())
 	// Update ReportData
 	snapshot.ReportData = m.getReportData(result.ScanConfig)
-	if err := m.snapshotDataStore.UpsertSnapshot(m.automaticReportingCtx, snapshot); err != nil {
-		return errors.Wrapf(err, "unable to upsert the snapshot %s", snapshot.GetReportId())
+	// Populate ClusterData
+	clusterData, err := helpers.GetClusterData(m.automaticReportingCtx, snapshot.GetReportData(), failedClusters, m.scanDataStore)
+	if err != nil {
+		log.Errorf("unable to populate cluster data: %v", err)
+		if dbErr := helpers.UpdateSnapshotOnError(m.automaticReportingCtx, snapshot, report.ErrReportGeneration, m.snapshotDataStore); dbErr != nil {
+			return errors.Wrap(dbErr, "unable to update snapshot on populate cluster data error")
+		}
+		return errors.Wrap(err, "unable to populate cluster data")
+	}
+	// Add failed clusters to the report snapshot
+	snapshot, err = m.addFailedClustersToTheSnapshot(failedClusters, snapshot)
+	if err != nil {
+		return err
 	}
 	generateReportReq := &reportRequest{
 		ctx:                m.automaticReportingCtx,
 		scanConfig:         result.ScanConfig,
 		snapshotID:         snapshot.GetReportId(),
 		notificationMethod: snapshot.GetReportStatus().GetReportNotificationMethod(),
+		numFailedClusters:  len(failedClusters),
+		clusterData:        clusterData,
 	}
 	isOnDemand := snapshot.GetReportStatus().GetReportRequestType() == storage.ComplianceOperatorReportStatus_ON_DEMAND
 	if err := m.handleReportScheduled(generateReportReq, isOnDemand); err != nil {
 		return errors.Wrap(err, "unable to handle the report")
 	}
 	return nil
+}
+
+func (m *managerImpl) addFailedClustersToTheSnapshot(failedClusters map[string]*report.FailedCluster, snapshot *storage.ComplianceOperatorReportSnapshotV2) (*storage.ComplianceOperatorReportSnapshotV2, error) {
+	if len(failedClusters) == 0 {
+		return snapshot, nil
+	}
+	failedClustersSlice := make([]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster, 0, len(failedClusters))
+	for _, failedCluster := range failedClusters {
+		scans := make([]string, 0, len(failedCluster.FailedScans))
+		for _, scan := range failedCluster.FailedScans {
+			scans = append(scans, scan.GetScanName())
+		}
+		failedClustersSlice = append(failedClustersSlice, &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
+			ClusterId:       failedCluster.ClusterId,
+			ClusterName:     failedCluster.ClusterName,
+			OperatorVersion: failedCluster.OperatorVersion,
+			Reasons:         failedCluster.Reasons,
+			ScanNames:       scans,
+		})
+	}
+	snapshot.FailedClusters = failedClustersSlice
+	if err := m.snapshotDataStore.UpsertSnapshot(m.automaticReportingCtx, snapshot); err != nil {
+		return snapshot, errors.Wrapf(err, "unable to upsert the snapshot %s", snapshot.GetReportId())
+	}
+	return snapshot, nil
 }
 
 func (m *managerImpl) handleReportScheduled(request *reportRequest, isOnDemand bool) error {
@@ -575,47 +703,6 @@ func (m *managerImpl) handleReportScheduled(request *reportRequest, isOnDemand b
 		}
 	}()
 	return nil
-}
-
-func (m *managerImpl) validateScanConfigResults(result *watcher.ScanConfigWatcherResults) error {
-	if result.Error != nil {
-		if errors.Is(result.Error, watcher.ErrScanConfigTimeout) {
-			return report.ErrScanConfigWatcherTimeout
-		}
-		return report.ErrScanWatchersFailed
-	}
-
-	errList := errorhelpers.NewErrorList("Scan result errors")
-	for _, scanResult := range result.ScanResults {
-		if scanResult.Error != nil {
-			// To not overwhelm the UI we only report a max number of errors
-			if len(errList.Errors()) > env.ComplianceMaxNumberOfErrorsInReport.IntegerSetting() {
-				break
-			}
-			err := errors.Errorf("The report for the scan %s in cluster %s could not be generated.", scanResult.Scan.GetScanName(), scanResult.Scan.GetClusterId())
-			if errors.Is(scanResult.Error, watcher.ErrScanTimeout) {
-				healthErr := watcher.IsComplianceOperatorHealthy(m.automaticReportingCtx, scanResult.Scan.GetClusterId(), m.integrationDataStore)
-				if errors.Is(healthErr, watcher.ErrComplianceOperatorNotInstalled) {
-					errList.AddError(errors.Wrap(err, watcher.ErrComplianceOperatorNotInstalled.Error()))
-					continue
-				}
-				if errors.Is(healthErr, watcher.ErrComplianceOperatorVersion) {
-					errList.AddError(errors.Wrap(err, "compliance operator version is not 1.6.0 or greater"))
-					continue
-				}
-
-				err = errors.Wrap(err, "scan timeout")
-				select {
-				case <-scanResult.SensorCtx.Done():
-					err = errors.Wrap(err, "Sensor disconnected during the scan")
-				default:
-				}
-			}
-			errList.AddErrors(err)
-		}
-	}
-
-	return errList.ToError()
 }
 
 func (m *managerImpl) getReportData(scanConfig *storage.ComplianceOperatorScanConfigurationV2) *storage.ComplianceOperatorReportData {

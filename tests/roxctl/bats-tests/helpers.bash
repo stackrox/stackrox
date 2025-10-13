@@ -48,7 +48,7 @@ roxctl-development-cmd() {
 
 # roxctl-development runs roxctl built with GOTAGS=''. It builds the binary if needed
 roxctl-development() {
-   "$(roxctl-development-cmd)" "$@"
+   "$(roxctl-development-cmd)" --ca "" --insecure-skip-tls-verify "$@"
 }
 
 # roxctl-release-cmd prints the path to roxctl built with GOTAGS='release'. It builds the binary if needed
@@ -64,7 +64,7 @@ roxctl-release-cmd() {
 
 # roxctl-release runs roxctl built with GOTAGS='release'. It builds the binary if needed
 roxctl-release() {
-  "$(roxctl-release-cmd)" "$@"
+  "$(roxctl-release-cmd)" --ca "" --insecure-skip-tls-verify "$@"
 }
 
 helm_template_central() {
@@ -343,7 +343,7 @@ has_flag_collision_warning() {
 }
 
 roxctl_authenticated() {
-  roxctl-development --insecure-skip-tls-verify -e "$API_ENDPOINT" "$@"
+  roxctl-development -e "$API_ENDPOINT" "$@"
 }
 
 yaml_valid() {

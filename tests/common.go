@@ -8,12 +8,14 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"net/http"
 	"os"
 	"os/exec"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/hashicorp/go-retryablehttp"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -22,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -275,7 +278,7 @@ func setImage(t *testing.T, deploymentName string, deploymentID string, containe
 }
 
 func createPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	log.Infof("Creating pod %s %s", pod.GetNamespace(), pod.GetName())
@@ -286,7 +289,7 @@ func createPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
 }
 
 func teardownPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	err := client.CoreV1().Pods(pod.GetNamespace()).Delete(ctx, pod.GetName(), metaV1.DeleteOptions{GracePeriodSeconds: pointers.Int64(0)})
@@ -312,7 +315,7 @@ func teardownDeploymentWithoutCheck(t *testing.T, deploymentName string) {
 	}
 }
 
-func getConfig(t *testing.T) *rest.Config {
+func getConfig(t testutils.T) *rest.Config {
 	config, err := clientcmd.NewDefaultClientConfigLoadingRules().Load()
 	require.NoError(t, err, "could not load default Kubernetes client config")
 
@@ -322,12 +325,51 @@ func getConfig(t *testing.T) *rest.Config {
 	return restCfg
 }
 
-func createK8sClient(t *testing.T) kubernetes.Interface {
-	restCfg := getConfig(t)
+func createK8sClient(t T) kubernetes.Interface {
+	return createK8sClientWithConfig(t, getConfig(t))
+}
+
+func createK8sClientWithConfig(t T, restCfg *rest.Config) kubernetes.Interface {
+	// Configure retryable HTTP client for network resilience
+	retryClient := retryablehttp.NewClient()
+	retryClient.RetryMax = 3
+	retryClient.RetryWaitMin = 500 * time.Millisecond
+	retryClient.RetryWaitMax = 2 * time.Second
+	retryClient.Logger = logWrapper{t: t}
+	if restCfg.Timeout == 0 {
+		restCfg.Timeout = 10 * time.Second
+	}
+	// Set retryable timeout to 90% of rest config timeout to allow retries
+	retryClient.HTTPClient.Timeout = (9 * restCfg.Timeout) / 10
+
+	// Wrap the transport with retryable client
+	oldWrapTransport := restCfg.WrapTransport
+	restCfg.WrapTransport = func(rt http.RoundTripper) http.RoundTripper {
+		if oldWrapTransport != nil {
+			rt = oldWrapTransport(rt)
+		}
+
+		retryClient.HTTPClient.Transport = rt
+		return retryClient.StandardClient().Transport
+	}
+
 	k8sClient, err := kubernetes.NewForConfig(restCfg)
 	require.NoError(t, err, "creating Kubernetes client from REST config")
 
 	return k8sClient
+}
+
+type T interface {
+	testutils.T
+	Logf(string, ...interface{})
+}
+
+type logWrapper struct {
+	t T
+}
+
+func (l logWrapper) Printf(format string, values ...interface{}) {
+	l.t.Logf(format, values...)
 }
 
 func waitForCondition(t testutils.T, condition func() bool, desc string, timeout time.Duration, frequency time.Duration) {
@@ -579,9 +621,12 @@ func waitUntilCentralSensorConnectionIs(t *testing.T, ctx context.Context, statu
 func (ks *KubernetesSuite) mustSetDeploymentEnvVal(ctx context.Context, namespace string, deployment string, container string, envVar string, value string) {
 	patch := []byte(fmt.Sprintf(`{"spec":{"template":{"spec":{"containers":[{"name":%q,"env":[{"name":%q,"value":%q}]}]}}}}`,
 		container, envVar, value))
-	ks.logf("Setting variable %q on deployment %q in namespace %q to %q", envVar, deployment, namespace, value)
-	_, err := ks.k8s.AppsV1().Deployments(namespace).Patch(ctx, deployment, types.StrategicMergePatchType, patch, metaV1.PatchOptions{})
-	ks.Require().NoError(err, "cannot patch deployment %q in namespace %q", deployment, namespace)
+	whatVar := fmt.Sprintf("variable %q on deployment %q in namespace %q to %q", envVar, deployment, namespace, value)
+	ks.logf("Setting %s", whatVar)
+	mustEventually(ks.T(), ctx, func() error {
+		_, err := ks.k8s.AppsV1().Deployments(namespace).Patch(ctx, deployment, types.StrategicMergePatchType, patch, metaV1.PatchOptions{})
+		return err
+	}, 5*time.Second, fmt.Sprintf("cannot set %s", whatVar))
 }
 
 // mustGetDeploymentEnvVal retrieves the value of environment variable in a deployment, or fails the test.
@@ -592,9 +637,15 @@ func (ks *KubernetesSuite) mustGetDeploymentEnvVal(ctx context.Context, namespac
 }
 
 // getDeploymentEnvVal returns the value of an environment variable or the empty string if not found.
+// Fails the test if deployment or container are missing, or API call fails repeatedly.
+// Please use mustGetDeploymentEnvVal instead, unless you must tolerate a missing env var definition in the container.
 func (ks *KubernetesSuite) getDeploymentEnvVal(ctx context.Context, namespace string, deployment string, container string, envVar string) (string, error) {
-	d, err := ks.k8s.AppsV1().Deployments(namespace).Get(ctx, deployment, metaV1.GetOptions{})
-	ks.Require().NoError(err, "cannot retrieve deployment %q in namespace %q", deployment, namespace)
+	var d *appsV1.Deployment
+	mustEventually(ks.T(), ctx, func() error {
+		var err error
+		d, err = ks.k8s.AppsV1().Deployments(namespace).Get(ctx, deployment, metaV1.GetOptions{})
+		return err
+	}, 5*time.Second, fmt.Sprintf("cannot retrieve deployment %q in namespace %q", deployment, namespace))
 	c, err := getContainer(d, container)
 	ks.Require().NoError(err, "cannot find container %q in deployment %q in namespace %q", container, deployment, namespace)
 	return getEnvVal(c, envVar)
@@ -733,6 +784,19 @@ func deleteRole(t *testing.T, ctx context.Context, name string) {
 	}
 }
 
+type EnvVarNotFound []string
+
+func (e EnvVarNotFound) Error() string {
+	return fmt.Sprintf("actual vars are: %q", []string(e))
+}
+
+func requireNoErrorOrEnvVarNotFound(t require.TestingT, err error) {
+	if err == nil {
+		return
+	}
+	require.ErrorAs(t, err, &EnvVarNotFound{})
+}
+
 // getEnvVal returns the value of envVar from a given container or returns a helpful error.
 func getEnvVal(c *coreV1.Container, envVar string) (string, error) {
 	var vars []string
@@ -742,7 +806,7 @@ func getEnvVal(c *coreV1.Container, envVar string) (string, error) {
 		}
 		vars = append(vars, v.Name)
 	}
-	return "", fmt.Errorf("actual vars are %q", vars)
+	return "", EnvVarNotFound(vars)
 }
 
 // getContainer returns the given container from a deployment or returns a helpful error.
@@ -792,13 +856,49 @@ func getCluster(ctx context.Context, conn *grpc.ClientConn) (*storage.Cluster, e
 		return nil, fmt.Errorf("failed to retrieve clusters from central: %w", err)
 	}
 
-	if len(clusters.Clusters) != 1 {
+	if len(clusters.GetClusters()) != 1 {
 		var clusterNames []string
-		for _, cluster := range clusters.Clusters {
-			clusterNames = append(clusterNames, cluster.Name)
+		for _, cluster := range clusters.GetClusters() {
+			clusterNames = append(clusterNames, cluster.GetName())
 		}
-		return nil, fmt.Errorf("expected one cluster, found %d: %+v", len(clusters.Clusters), clusterNames)
+		return nil, fmt.Errorf("expected one cluster, found %d: %+v", len(clusters.GetClusters()), clusterNames)
 	}
 
-	return clusters.Clusters[0], nil
+	return clusters.GetClusters()[0], nil
+}
+
+type collectT struct {
+	t *testing.T
+	c *assert.CollectT
+}
+
+func (c *collectT) Fatalf(format string, args ...interface{}) {
+	if c.t != nil {
+		c.t.Fatalf(format, args...)
+	}
+}
+
+func (c *collectT) Errorf(format string, args ...interface{}) {
+	if c.c != nil {
+		c.c.Errorf(format, args...)
+	}
+}
+
+func (c *collectT) FailNow() {
+	if c.c != nil {
+		c.c.FailNow()
+	}
+}
+
+func (c *collectT) Logf(format string, values ...interface{}) {
+	if c.t != nil {
+		c.t.Logf(format, values...)
+	}
+}
+
+func wrapCollectT(t *testing.T, c *assert.CollectT) *collectT {
+	return &collectT{
+		t: t,
+		c: c,
+	}
 }

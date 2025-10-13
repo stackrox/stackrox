@@ -1,7 +1,8 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Alert } from '@patternfly/react-core';
 import { useSelector } from 'react-redux';
-import { CloudSourceIntegration } from 'services/CloudSourceService';
+import type { CloudSourceIntegration } from 'services/CloudSourceService';
 
 import { selectors } from 'reducers';
 
@@ -13,7 +14,7 @@ function ocmDeprecatedCounter(integrations: CloudSourceIntegration[]) {
         ).length;
 }
 
-function OcmDeprecatedTokenBanner(): ReactElement | null {
+function OcmDeprecatedToken(): ReactElement | null {
     const integrations = useSelector(selectors.getCloudSources);
     const countIntegrations = ocmDeprecatedCounter(integrations);
 
@@ -35,4 +36,4 @@ function OcmDeprecatedTokenBanner(): ReactElement | null {
     );
 }
 
-export default OcmDeprecatedTokenBanner;
+export default OcmDeprecatedToken;

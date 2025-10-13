@@ -4,16 +4,17 @@ import (
 	"slices"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/glob"
 )
 
 // APICallCampaignCriterion defines a criterion for an API interception of a
 // telemetry campaign. Requests parameters need to match all fields for the
 // request to be tracked. Any request matches empty criterion.
 type APICallCampaignCriterion struct {
-	Path    *Pattern           `json:"path,omitempty"`
-	Method  *Pattern           `json:"method,omitempty"`
-	Codes   []int32            `json:"codes,omitempty"`
-	Headers map[string]Pattern `json:"headers,omitempty"`
+	Path    *glob.Pattern           `json:"path,omitempty"`
+	Method  *glob.Pattern           `json:"method,omitempty"`
+	Codes   []int32                 `json:"codes,omitempty"`
+	Headers map[string]glob.Pattern `json:"headers,omitempty"`
 }
 
 // APICallCampaign defines an API interception telemetry campaign as a list of
@@ -27,14 +28,14 @@ func (c *APICallCampaignCriterion) Compile() error {
 		return nil
 	}
 	for _, pattern := range c.Headers {
-		if err := pattern.compile(); err != nil {
+		if err := pattern.Compile(); err != nil {
 			return errors.WithMessage(err, "error parsing header pattern")
 		}
 	}
-	if err := c.Path.compile(); err != nil {
+	if err := c.Path.Compile(); err != nil {
 		return errors.WithMessage(err, "error parsing path pattern")
 	}
-	if err := c.Method.compile(); err != nil {
+	if err := c.Method.Compile(); err != nil {
 		return errors.WithMessage(err, "error parsing methods pattern")
 	}
 	return nil
@@ -68,4 +69,28 @@ func (c APICallCampaign) CountFulfilled(rp *RequestParams, f func(cc *APICallCam
 		}
 	}
 	return fulfilled
+}
+
+// Codes builds a codes list criterion.
+func Codes(codes ...int32) *APICallCampaignCriterion {
+	return &APICallCampaignCriterion{Codes: codes}
+}
+
+// MethodPattern builds a method pattern criterion.
+func MethodPattern(pattern string) *APICallCampaignCriterion {
+	return &APICallCampaignCriterion{Method: glob.Pattern(pattern).Ptr()}
+}
+
+// PathPattern builds a path pattern criterion.
+func PathPattern(pattern string) *APICallCampaignCriterion {
+	return &APICallCampaignCriterion{Path: glob.Pattern(pattern).Ptr()}
+}
+
+// HeaderPattern builds a header pattern criterion.
+func HeaderPattern(header string, pattern string) *APICallCampaignCriterion {
+	return &APICallCampaignCriterion{
+		Headers: map[string]glob.Pattern{
+			header: glob.Pattern(pattern),
+		},
+	}
 }

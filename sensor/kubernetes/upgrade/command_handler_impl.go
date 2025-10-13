@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
-	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/message"
 	"google.golang.org/grpc"
@@ -29,6 +28,10 @@ var (
 	_   common.SensorComponent      = (*commandHandler)(nil)
 )
 
+type clusterIDWaiter interface {
+	Get() string
+}
+
 type commandHandler struct {
 	stopSig concurrency.Signal
 
@@ -39,10 +42,16 @@ type commandHandler struct {
 	checkInClient       central.SensorUpgradeControlServiceClient
 
 	configHandler config.Handler
+
+	clusterID clusterIDWaiter
+}
+
+func (h *commandHandler) Name() string {
+	return "upgrade.commandHandler"
 }
 
 // NewCommandHandler returns a new upgrade command handler for Kubernetes.
-func NewCommandHandler(configHandler config.Handler) (common.SensorComponent, error) {
+func NewCommandHandler(clusterID clusterIDWaiter, configHandler config.Handler) (common.SensorComponent, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "obtaining in-cluster Kubernetes config")
@@ -57,6 +66,7 @@ func NewCommandHandler(configHandler config.Handler) (common.SensorComponent, er
 		baseK8sRESTConfig: config,
 		k8sClient:         k8sClientSet,
 		configHandler:     configHandler,
+		clusterID:         clusterID,
 	}, nil
 }
 
@@ -70,7 +80,7 @@ func (h *commandHandler) Start() error {
 	return nil
 }
 
-func (h *commandHandler) Stop(_ error) {
+func (h *commandHandler) Stop() {
 	h.stopSig.Signal()
 }
 
@@ -106,7 +116,11 @@ func (h *commandHandler) waitForTermination(proc *process) {
 	}
 }
 
-func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
+func (h *commandHandler) Accepts(msg *central.MsgToSensor) bool {
+	return msg.GetSensorUpgradeTrigger() != nil
+}
+
+func (h *commandHandler) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
 	trigger := msg.GetSensorUpgradeTrigger()
 	if trigger == nil {
 		return nil
@@ -145,7 +159,7 @@ func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
 		return err
 	}
 
-	newProc, err := newProcess(trigger, h.checkInClient, h.baseK8sRESTConfig)
+	newProc, err := newProcess(h.clusterID, trigger, h.checkInClient, h.baseK8sRESTConfig)
 	if err != nil {
 		return errors.Wrap(err, "error creating new upgrade process")
 	}
@@ -195,7 +209,7 @@ func (h *commandHandler) ctx() context.Context {
 func (h *commandHandler) rejectUpgradeRequest(trigger *central.SensorUpgradeTrigger, errReason error) {
 	checkInReq := &central.UpgradeCheckInFromSensorRequest{
 		UpgradeProcessId: trigger.GetUpgradeProcessId(),
-		ClusterId:        clusterid.Get(), // will definitely be available at this point
+		ClusterId:        h.clusterID.Get(), // will definitely be available at this point
 		State: &central.UpgradeCheckInFromSensorRequest_LaunchError{
 			LaunchError: errReason.Error(),
 		},

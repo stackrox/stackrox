@@ -6,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	baselineSearch "github.com/stackrox/rox/central/processbaseline/search"
 	"github.com/stackrox/rox/central/processbaseline/store"
 	postgresStore "github.com/stackrox/rox/central/processbaseline/store/postgres"
 	"github.com/stackrox/rox/central/processbaselineresults/datastore/mocks"
@@ -24,7 +23,6 @@ import (
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -38,7 +36,6 @@ type ProcessBaselineDataStoreTestSuite struct {
 	requestContext     context.Context
 	datastore          DataStore
 	storage            store.Store
-	searcher           baselineSearch.Searcher
 	indicatorMockStore *indicatorMocks.MockDataStore
 
 	pool postgres.DB
@@ -55,22 +52,17 @@ func (suite *ProcessBaselineDataStoreTestSuite) SetupTest() {
 			sac.ResourceScopeKeys(resources.DeploymentExtension),
 		),
 	)
-	var err error
 
 	pgtestbase := pgtest.ForT(suite.T())
 	suite.Require().NotNil(pgtestbase)
 	suite.pool = pgtestbase.DB
 	suite.storage = postgresStore.New(suite.pool)
-	require.NoError(suite.T(), err)
-
-	suite.searcher, err = baselineSearch.New(suite.storage)
-	suite.NoError(err)
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 
 	suite.baselineResultsStore = mocks.NewMockDataStore(suite.mockCtrl)
 	suite.indicatorMockStore = indicatorMocks.NewMockDataStore(suite.mockCtrl)
-	suite.datastore = New(suite.storage, suite.searcher, suite.baselineResultsStore, suite.indicatorMockStore)
+	suite.datastore = New(suite.storage, suite.baselineResultsStore, suite.indicatorMockStore)
 }
 
 func (suite *ProcessBaselineDataStoreTestSuite) TearDownTest() {
@@ -91,12 +83,12 @@ func (suite *ProcessBaselineDataStoreTestSuite) createAndStoreBaseline(key *stor
 	id, err := suite.datastore.AddProcessBaseline(suite.requestContext, baseline)
 	suite.NoError(err)
 	suite.NotNil(id)
-	suite.NotNil(baseline.Created)
-	suite.Equal(baseline.Created.AsTime(), baseline.LastUpdate.AsTime())
-	suite.True(protocompat.CompareTimestamps(baseline.StackRoxLockedTimestamp, baseline.Created) >= 0)
+	suite.NotNil(baseline.GetCreated())
+	suite.Equal(baseline.GetCreated().AsTime(), baseline.GetLastUpdate().AsTime())
+	suite.True(protocompat.CompareTimestamps(baseline.GetStackRoxLockedTimestamp(), baseline.GetCreated()) >= 0)
 
 	suite.Equal(suite.mustSerializeKey(key), id)
-	suite.Equal(id, baseline.Id)
+	suite.Equal(id, baseline.GetId())
 	return baseline
 }
 
@@ -138,10 +130,10 @@ func (suite *ProcessBaselineDataStoreTestSuite) testUpdate(key *storage.ProcessB
 	suite.NoError(err)
 	suite.NotNil(updated)
 	suite.True(protocompat.CompareTimestamps(updated.GetLastUpdate(), updated.GetCreated()) > 0)
-	suite.NotNil(updated.Elements)
-	suite.Equal(expectedResults.Cardinality(), len(updated.Elements))
+	suite.NotNil(updated.GetElements())
+	suite.Equal(expectedResults.Cardinality(), len(updated.GetElements()))
 	actualResults := set.NewStringSet()
-	for _, process := range updated.Elements {
+	for _, process := range updated.GetElements() {
 		actualResults.Add(process.GetElement().GetProcessName())
 	}
 	suite.Equal(expectedResults, actualResults)
@@ -202,19 +194,19 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestUpdateProcessBaseline() {
 	otherProcess := []string{"Some other process"}
 	otherProcessSet := set.NewStringSet(otherProcess...)
 	updated := suite.testUpdate(key, processName, nil, true, processNameSet)
-	suite.True(updated.Elements[0].Auto)
+	suite.True(updated.GetElements()[0].GetAuto())
 
 	updated = suite.testUpdate(key, processName, nil, false, processNameSet)
-	suite.False(updated.Elements[0].Auto)
+	suite.False(updated.GetElements()[0].GetAuto())
 
 	updated = suite.testUpdate(key, otherProcess, processName, true, otherProcessSet)
-	suite.True(updated.Elements[0].Auto)
+	suite.True(updated.GetElements()[0].GetAuto())
 
 	multiAdd := []string{"a", "b", "c"}
 	multiAddExpected := set.NewStringSet(multiAdd...)
 	updated = suite.testUpdate(key, multiAdd, otherProcess, false, multiAddExpected)
-	for _, process := range updated.Elements {
-		suite.False(process.Auto)
+	for _, process := range updated.GetElements() {
+		suite.False(process.GetAuto())
 	}
 }
 
@@ -357,7 +349,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaseline
 
 	protoassert.Equal(suite.T(), key, baseline.GetKey())
 	suite.True(protocompat.CompareTimestamps(baseline.GetLastUpdate(), baseline.GetCreated()) == 0)
-	suite.True(baseline.UserLockedTimestamp == nil)
+	suite.True(baseline.GetUserLockedTimestamp() == nil)
 	suite.True(baseline.Elements != nil)
 
 }
@@ -410,9 +402,9 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaseline
 
 	protoassert.Equal(suite.T(), key, baseline.GetKey())
 	suite.True(protocompat.CompareTimestamps(baseline.GetLastUpdate(), baseline.GetCreated()) == 0)
-	suite.True(baseline.UserLockedTimestamp == nil)
+	suite.True(baseline.GetUserLockedTimestamp() == nil)
 	suite.True(baseline.Elements != nil)
-	suite.True(len(baseline.Elements) == len(indicators)-2)
+	suite.True(len(baseline.GetElements()) == len(indicators)-2)
 
 }
 
@@ -426,8 +418,8 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaseline
 
 	protoassert.Equal(suite.T(), key, baseline.GetKey())
 	suite.True(protocompat.CompareTimestamps(baseline.GetLastUpdate(), baseline.GetCreated()) == 0)
-	suite.True(baseline.UserLockedTimestamp == nil)
-	suite.True(len(baseline.Elements) == 0)
+	suite.True(baseline.GetUserLockedTimestamp() == nil)
+	suite.True(len(baseline.GetElements()) == 0)
 
 }
 
@@ -436,7 +428,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestClearProcessBaselines() {
 	baseline := suite.createAndStoreBaseline(key)
 	suite.True(baseline.Elements != nil)
 
-	ids := []string{baseline.Id}
+	ids := []string{baseline.GetId()}
 	err := suite.datastore.ClearProcessBaselines(suite.requestContext, ids)
 	suite.True(err == nil)
 	baseline, exists, err := suite.datastore.GetProcessBaseline(suite.requestContext, key)

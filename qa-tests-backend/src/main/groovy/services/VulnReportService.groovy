@@ -1,5 +1,6 @@
 package services
 
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 
 import io.stackrox.proto.api.v1.Common
@@ -8,25 +9,27 @@ import io.stackrox.proto.api.v1.ReportConfigurationServiceOuterClass
 import io.stackrox.proto.api.v1.ReportServiceGrpc
 import io.stackrox.proto.storage.Cve
 import io.stackrox.proto.storage.ReportConfigurationOuterClass
+import io.stackrox.proto.storage.ReportNotifierConfiguration
 import io.stackrox.proto.storage.ScheduleOuterClass
 
 import common.Constants
 
 @Slf4j
+@CompileStatic
 class VulnReportService extends BaseService {
 
-    private static final ALL_SEVERITIES = [
+    private static final List<Cve.VulnerabilitySeverity> ALL_SEVERITIES = [
             Cve.VulnerabilitySeverity.CRITICAL_VULNERABILITY_SEVERITY,
             Cve.VulnerabilitySeverity.IMPORTANT_VULNERABILITY_SEVERITY,
             Cve.VulnerabilitySeverity.MODERATE_VULNERABILITY_SEVERITY,
             Cve.VulnerabilitySeverity.LOW_VULNERABILITY_SEVERITY,
     ]
 
-    static getConfigClient() {
+    static ReportConfigurationServiceGrpc.ReportConfigurationServiceBlockingStub getConfigClient() {
         return ReportConfigurationServiceGrpc.newBlockingStub(getChannel())
     }
 
-    static getReportSvcClient() {
+    static ReportServiceGrpc.ReportServiceBlockingStub getReportSvcClient() {
         return ReportServiceGrpc.newBlockingStub(getChannel())
     }
 
@@ -44,7 +47,7 @@ class VulnReportService extends BaseService {
                     .setSinceLastReport(false)
                     .addAllSeverities(ALL_SEVERITIES))
                 .setScopeId(collectionId)
-                .setEmailConfig(ReportConfigurationOuterClass.EmailNotifierConfiguration.newBuilder()
+                .setEmailConfig(ReportNotifierConfiguration.EmailNotifierConfiguration.newBuilder()
                     .setNotifierId(notifierId)
                     .addMailingLists(Constants.EMAIL_NOTIFER_SENDER))
                 .setSchedule(ScheduleOuterClass.Schedule.newBuilder()

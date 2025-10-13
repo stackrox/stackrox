@@ -1,5 +1,6 @@
-import React, { ReactElement } from 'react';
-import { useLocation } from 'react-router-dom';
+import React from 'react';
+import type { ReactElement } from 'react';
+import { useLocation } from 'react-router-dom-v5-compat';
 import { Flex, FlexItem } from '@patternfly/react-core';
 
 import useCases from 'constants/useCaseTypes';

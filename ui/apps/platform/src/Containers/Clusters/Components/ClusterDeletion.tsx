@@ -1,6 +1,7 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 
-import { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
+import type { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
 
 import HealthStatusNotApplicable from './HealthStatusNotApplicable';
 
@@ -23,14 +24,13 @@ function ClusterDeletion({ clusterRetentionInfo }: ClusterDeletionProps): ReactE
         const { daysUntilDeletion } = clusterRetentionInfo;
         // const healthStatus = getClusterDeletionStatus(daysUntilDeletion);
         // TODO IconText with something like SystemHealth/CardHeaderIcons? But what about Not applicable? MinusIcon?
-        /* eslint-disable no-nested-ternary */
+
         const text =
             daysUntilDeletion < 1
                 ? 'Imminent'
                 : daysUntilDeletion === 1
                   ? 'in 1 day'
                   : `in ${daysUntilDeletion} days`;
-        /* eslint-enable no-nested-ternary */
 
         return <span>{text}</span>;
     }

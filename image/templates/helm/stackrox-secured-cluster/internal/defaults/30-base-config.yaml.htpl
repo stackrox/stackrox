@@ -29,8 +29,6 @@ imagePullSecrets:
 
 sensor:
   endpoint: "sensor.{{ required "unknown namespace" ._rox._namespace }}.svc:443"
-  localImageScanning:
-    enabled: false
   affinity:
     nodeAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
@@ -52,13 +50,6 @@ sensor:
             matchExpressions:
             - key: node-role.kubernetes.io/compute
               operator: Exists
-        # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
-        # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
-        - weight: 100
-          preference:
-            matchExpressions:
-            - key: node-role.kubernetes.io/master
-              operator: DoesNotExist
         - weight: 100
           preference:
             matchExpressions:
@@ -66,28 +57,35 @@ sensor:
               operator: DoesNotExist
 
 admissionControl:
+[<- if .FeatureFlags.ROX_ADMISSION_CONTROLLER_CONFIG >]
+  listenOnCreates: true
+  listenOnUpdates: true
+  {{/* At this point, when defaults are applied, we can expect env.openshift to be false or a major version number (3, 4). */}}
+  {{- if or (not ._rox.env.openshift) (gt ._rox.env.openshift 3) }}
+  listenOnEvents: true
+  {{- else }}
+  {{/* OpenShift 3.x does not support this. */}}
+  listenOnEvents: false
+  {{- end }}
+[<- else >]
   listenOnCreates: false
   listenOnUpdates: false
   listenOnEvents: {{ not ._rox.env.openshift }}
+[<- end >]
   dynamic:
-    enforceOnCreates: false
+[<- if .FeatureFlags.ROX_ADMISSION_CONTROLLER_CONFIG >]
+    scanInline: true
+[<- else >]
     scanInline: false
+[<- end >]
     disableBypass: false
     timeout: 10
-    enforceOnUpdates: false
   replicas: 3
   failurePolicy: Ignore
 
   affinity:
     nodeAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
-        # node-role.kubernetes.io/master is replaced by node-role.kubernetes.io/control-plane from certain version
-        # of k8s. We apply both to be compatible with any k8s version.
-        - weight: 50
-          preference:
-            matchExpressions:
-            - key: node-role.kubernetes.io/master
-              operator: Exists
         - weight: 50
           preference:
             matchExpressions:
@@ -117,8 +115,18 @@ collector:
     enabled: true
   [<- end >]
 
+[<- if .FeatureFlags.ROX_SENSITIVE_FILE_ACTIVITY >]
+fact:
+  exposeMonitoring: {{ ._rox.exposeMonitoring }}
+[<- end >]
+
 auditLogs:
   disableCollection: {{ ne ._rox.env.openshift 4 }}
+
+[<- if .FeatureFlags.ROX_AUTO_LOCK_PROCESS_BASELINES >]
+autoLockProcessBaselines:
+  enabled: false
+[<- end >]
 
 network:
   enableNetworkPolicies: true

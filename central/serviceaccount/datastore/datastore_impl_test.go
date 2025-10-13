@@ -8,7 +8,6 @@ import (
 
 	"github.com/stackrox/rox/central/serviceaccount/internal/store"
 	pgStore "github.com/stackrox/rox/central/serviceaccount/internal/store/postgres"
-	serviceAccountSearch "github.com/stackrox/rox/central/serviceaccount/search"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -30,7 +29,6 @@ type ServiceAccountDataStoreTestSuite struct {
 	suite.Suite
 
 	pool      postgres.DB
-	searcher  serviceAccountSearch.Searcher
 	storage   store.Store
 	datastore DataStore
 
@@ -38,14 +36,11 @@ type ServiceAccountDataStoreTestSuite struct {
 }
 
 func (suite *ServiceAccountDataStoreTestSuite) SetupSuite() {
-	var err error
 	pgtestbase := pgtest.ForT(suite.T())
 	suite.Require().NotNil(pgtestbase)
 	suite.pool = pgtestbase.DB
 	suite.storage = pgStore.New(suite.pool)
-	suite.searcher = serviceAccountSearch.New(suite.storage)
-	suite.datastore, err = New(suite.storage, suite.searcher)
-	suite.Require().NoError(err)
+	suite.datastore = New(suite.storage)
 
 	suite.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(

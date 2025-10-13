@@ -1,6 +1,7 @@
 package common
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -63,12 +64,28 @@ type Notifiable interface {
 // as well as sending messages back to central.
 type SensorComponent interface {
 	Notifiable
-	Start() error
-	Stop(err error) // TODO: get rid of err argument as it always seems to be effectively nil.
-	Capabilities() []centralsensor.SensorCapability
+	CentralSender
+	CentralReceiver
+	Component
+}
 
-	ProcessMessage(msg *central.MsgToSensor) error
+type Component interface {
+	Start() error
+	Stop()
+	Capabilities() []centralsensor.SensorCapability
+	Name() string
+}
+
+type CentralSender interface {
 	ResponsesC() <-chan *message.ExpiringMessage
+}
+
+type CentralReceiver interface {
+	// ProcessMessage processes the `msg` message from Central.
+	// The `ctx` is used to cancel processing of the message being currently processed.
+	ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error
+	// Accepts decides weather messages should be processed at all
+	Accepts(msg *central.MsgToSensor) bool
 }
 
 // MessageToComplianceWithAddress adds the Hostname to sensor.MsgToCompliance so we know where to send it to.

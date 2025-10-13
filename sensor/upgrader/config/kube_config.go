@@ -10,7 +10,11 @@ import (
 func loadKubeConfig() (*rest.Config, error) {
 	switch cs := *flags.KubeConfigSource; cs {
 	case "in-cluster":
-		return rest.InClusterConfig()
+		cfg, err := rest.InClusterConfig()
+		if err != nil {
+			return nil, errors.Wrap(err, "loading in-cluster Kubernetes config")
+		}
+		return cfg, nil
 	case "kubectl":
 		return loadKubeCtlConfig()
 	default:
@@ -24,5 +28,9 @@ func loadKubeCtlConfig() (*rest.Config, error) {
 		return nil, errors.Wrap(err, "loading default Kubernetes client config")
 	}
 
-	return clientcmd.NewDefaultClientConfig(*config, &clientcmd.ConfigOverrides{}).ClientConfig()
+	cfg, err := clientcmd.NewDefaultClientConfig(*config, &clientcmd.ConfigOverrides{}).ClientConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "creating Kubernetes client config from kubeconfig")
+	}
+	return cfg, nil
 }

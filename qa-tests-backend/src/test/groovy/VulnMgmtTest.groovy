@@ -2,7 +2,9 @@ import io.stackrox.proto.storage.Cve.VulnerabilitySeverity
 
 import services.GraphQLService
 import services.ImageService
+import util.Env
 
+import spock.lang.IgnoreIf
 import spock.lang.Tag
 import spock.lang.Unroll
 
@@ -140,20 +142,24 @@ fragment cveFields on ImageVulnerability {
     }
 
     def getRHELComponentID() {
-        return "ncurses-base#5.9-14.20130511.el7_4#centos:7"
+        return "glib2#2.54.2-2.el7#centos:7"
     }
 
     def getUbuntuComponentID() {
-        return "ncurses#5.9+20140118-1ubuntu1#ubuntu:14.04"
+        return "glib2.0#2.40.2-0ubuntu1#ubuntu:14.04"
     }
 
     @Unroll
+    // TODO(ROX-29222): Fix the test for getting cves by component
+    @IgnoreIf({ Env.ROX_FLATTEN_CVE_DATA == "true" })
     def "Verify severities and CVSS #imageDigest #component #severity #cvss"() {
         when:
         def gqlService = new GraphQLService()
 
+        def query="CVE:CVE-2019-13012"
+
         def embeddedImageRes = gqlService.Call(getEmbeddedImageQuery(),
-                [id: imageDigest, query: "CVE:CVE-2017-10684"])
+                [id: imageDigest, query: query])
 
         // Expanded instead of using hasErrors() for easier debugging if there are errors
         // as the test framework will actually print out the errors now
@@ -165,22 +171,22 @@ fragment cveFields on ImageVulnerability {
         def embeddedImageResVuln = embeddedImageRes.value.result.scan.components[0].vulns[0]
 
         def topLevelImageRes = gqlService.Call(getTopLevelImageQuery(),
-                [id: imageDigest, query: "CVE:CVE-2017-10684"])
+                [id: imageDigest, query: query])
         assert topLevelImageRes.hasNoErrors()
         def topLevelImageResVuln =  topLevelImageRes.value.result.vulns[0]
 
         def fixableCVEImageRes = gqlService.Call(getImageFixableCVEQuery(),
-                [id: imageDigest, vulnQuery: "CVE:CVE-2017-10684", scopeQuery: "Image SHA:${imageDigest}"])
+                [id: imageDigest, vulnQuery: query, scopeQuery: "Image SHA:${imageDigest}"])
         assert fixableCVEImageRes.hasNoErrors()
         def fixableCVEImageResVuln = fixableCVEImageRes.value.result.vulnerabilities[0]
 
         def fixableCVEComponentRes = gqlService.Call(getComponentFixableCVEQuery(),
-                [id: componentID, vulnQuery: "CVE:CVE-2017-10684", scopeQuery: "Image SHA:${imageDigest}"])
+                [id: componentID, vulnQuery: query, scopeQuery: "Image SHA:${imageDigest}"])
         assert fixableCVEComponentRes.hasNoErrors()
         def fixableCVEComponentResVuln = fixableCVEComponentRes.value.result.vulnerabilities[0]
 
         def subCVEComponentRes = gqlService.Call(getComponentSubCVEQuery(),
-                [id: componentID, query: "CVE:CVE-2017-10684", scopeQuery: "Image SHA:${imageDigest}"])
+                [id: componentID, query: query, scopeQuery: "Image SHA:${imageDigest}"])
         assert subCVEComponentRes.hasNoErrors()
         def subCVEComponentResVuln = subCVEComponentRes.value.result.vulns[0]
 
@@ -203,9 +209,9 @@ fragment cveFields on ImageVulnerability {
         where:
         "Data inputs are: "
         imageDigest | component | componentID | severity | cvss
-        RHEL_IMAGE_DIGEST   | "ncurses-base" | getRHELComponentID()   |
-                VulnerabilitySeverity.MODERATE_VULNERABILITY_SEVERITY | 5.3
-        UBUNTU_IMAGE_DIGEST | "ncurses"      | getUbuntuComponentID() |
-                VulnerabilitySeverity.LOW_VULNERABILITY_SEVERITY      | 9.8
+        RHEL_IMAGE_DIGEST   | "glib2" | getRHELComponentID()   |
+                VulnerabilitySeverity.LOW_VULNERABILITY_SEVERITY | 4.4
+        UBUNTU_IMAGE_DIGEST | "glib2.0"      | getUbuntuComponentID() |
+                VulnerabilitySeverity.MODERATE_VULNERABILITY_SEVERITY      | 7.5
     }
 }

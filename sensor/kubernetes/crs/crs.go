@@ -20,7 +20,6 @@ import (
 	grpcUtil "github.com/stackrox/rox/pkg/grpc/util"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/maputils"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/pods"
 	protoconv "github.com/stackrox/rox/pkg/protoconv/certs"
@@ -114,8 +113,7 @@ func registerCluster() error {
 
 	// Store certificates+keys contained in Central's centralHello response as
 	// Kubernetes secrets named `tls-cert-<service slug name>`.
-	certBundle := maputils.ConvertStringMapToBytes(centralHello.GetCertBundle())
-	err = persistCertificates(ctx, certBundle, k8sClient)
+	err = persistCertificates(ctx, centralHello.GetCertBundle(), k8sClient)
 	if err != nil {
 		return errors.Wrap(err, "persisting certificates")
 	}
@@ -150,6 +148,17 @@ func temporarilyStoreRegistrantSecret(crs *crs.CRS) error {
 	return nil
 }
 
+// dummyClusterIDPeekSetter is a dummy clusterid.handlerImpl
+// This is needed because SetCentralConnectionWithRetries expects it,
+// but it is not really used in the CRD container
+type dummyClusterIDPeekSetter struct{}
+
+func (d *dummyClusterIDPeekSetter) GetNoWait() string {
+	return ""
+}
+
+func (d *dummyClusterIDPeekSetter) Set(_ string) {}
+
 func openCentralConnection() (*grpcUtil.LazyClientConn, error) {
 	// Create central client.
 	centralEndpoint := env.CentralEndpoint.Setting()
@@ -161,7 +170,7 @@ func openCentralConnection() (*grpcUtil.LazyClientConn, error) {
 	centralConnFactory := centralclient.NewCentralConnectionFactory(centralClient)
 	centralConnection := grpcUtil.NewLazyClientConn()
 	certLoader := centralclient.RemoteCertLoader(centralClient)
-	go centralConnFactory.SetCentralConnectionWithRetries(centralConnection, certLoader)
+	go centralConnFactory.SetCentralConnectionWithRetries(&dummyClusterIDPeekSetter{}, centralConnection, certLoader)
 
 	log.Infof("Connecting to Central server %s", centralEndpoint)
 
@@ -242,7 +251,7 @@ func centralHandshake(ctx context.Context, k8sClient kubernetes.Interface, centr
 }
 
 // persistCertificates persists as Kubernetes Secrets the certificates and keys retrieved from Central during the cluster-registration handshake.
-func persistCertificates(ctx context.Context, certsFileMap map[string][]byte, k8sClient kubernetes.Interface) error {
+func persistCertificates(ctx context.Context, certsFileMap map[string]string, k8sClient kubernetes.Interface) error {
 	for fileName := range certsFileMap {
 		log.Debugf("Received certificate from Central named %s.", fileName)
 	}
@@ -282,7 +291,7 @@ func persistCertificates(ctx context.Context, certsFileMap map[string][]byte, k8
 func getServiceTypeNames(serviceCertificates []*storage.TypedServiceCertificate) []string {
 	serviceTypeNames := make([]string, 0, len(serviceCertificates))
 	for _, c := range serviceCertificates {
-		serviceTypeNames = append(serviceTypeNames, c.ServiceType.String())
+		serviceTypeNames = append(serviceTypeNames, c.GetServiceType().String())
 	}
 	return serviceTypeNames
 }

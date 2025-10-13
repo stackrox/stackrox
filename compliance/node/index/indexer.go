@@ -17,7 +17,6 @@ import (
 	ccindexer "github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/indexer/controller"
 	"github.com/quay/claircore/rhel"
-	"github.com/quay/claircore/rpm"
 	"github.com/quay/zlog"
 	"github.com/rs/zerolog"
 	"github.com/stackrox/rox/compliance/node"
@@ -29,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/scannerv4/mappers"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/urlfmt"
 	pkgutils "github.com/stackrox/rox/pkg/utils"
 	"go.uber.org/zap/zapcore"
 )
@@ -37,6 +37,11 @@ const (
 	layerMediaType = "application/vnd.claircore.filesystem"
 
 	rhcosPackageDB = "sqlite:usr/share/rpm"
+
+	// scannerDefinitionsRouteInSensor should be in sync with `scannerDefinitionsRoute` in sensor/sensor.go
+	// Direct import is prohibited by import rules
+	scannerDefinitionsRouteInSensor = "/scanner/definitions"
+	sensorMappingsFile              = "repo2cpe"
 )
 
 var (
@@ -106,15 +111,31 @@ type NodeIndexerConfig struct {
 	Repo2CPEMappingURL string
 	// Timeout controls the timeout for any remote API calls.
 	Timeout time.Duration
+	// PackageDBFilter removes irrelevant packages. For node scanning, we are
+	// currently only interested in the RHCOS RPM database.
+	// Filters out all packages whose packageDB does not match the filter.
+	// Empty string corresponds to no filtering.
+	PackageDBFilter string
 }
 
-// DefaultNodeIndexerConfig is the default configuration for a node indexer.
-var DefaultNodeIndexerConfig = NodeIndexerConfig{
-	HostPath: env.NodeIndexHostPath.Setting(),
-	// The default, mTLS-capable client will be used.
-	Client:             nil,
-	Repo2CPEMappingURL: env.NodeIndexMappingURL.Setting(),
-	Timeout:            10 * time.Second,
+// DefaultNodeIndexerConfig provides the default configuration for a node indexer.
+func DefaultNodeIndexerConfig() NodeIndexerConfig {
+	return NodeIndexerConfig{
+		HostPath: env.NodeIndexHostPath.Setting(),
+		// The default, mTLS-capable client will be used.
+		Client:             nil,
+		Repo2CPEMappingURL: buildMappingURL(),
+		Timeout:            10 * time.Second,
+		PackageDBFilter:    rhcosPackageDB,
+	}
+}
+
+func buildMappingURL() string {
+	if len(env.NodeIndexMappingURL.Setting()) > 0 {
+		return urlfmt.FormatURL(env.NodeIndexMappingURL.Setting(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+	}
+	u := env.AdvertisedEndpoint.Setting() + scannerDefinitionsRouteInSensor + "?file=" + sensorMappingsFile
+	return urlfmt.FormatURL(u, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 }
 
 type localNodeIndexer struct {
@@ -134,6 +155,11 @@ func (l *localNodeIndexer) GetIntervals() *utils.NodeScanIntervals {
 
 // IndexNode indexes a node at the configured host path mount.
 func (l *localNodeIndexer) IndexNode(ctx context.Context) (*v4.IndexReport, error) {
+	// claircore no longer returns an error if the host path does not exist.
+	if _, err := os.Stat(l.cfg.HostPath); err != nil {
+		return nil, errors.Wrapf(err, "host path %q does not exist", l.cfg.HostPath)
+	}
+
 	layer, err := layer(ctx, layerDigest, l.cfg.HostPath)
 	if err != nil {
 		return nil, err
@@ -145,7 +171,7 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (*v4.IndexReport, erro
 		return nil, errors.Wrap(err, "failed to run repository scanner")
 	}
 
-	pkgs, err := runPackageScanner(ctx, layer)
+	pkgs, err := runPackageScanner(ctx, l.cfg.PackageDBFilter, layer)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to run package scanner")
 	}
@@ -217,19 +243,21 @@ func runRepositoryScanner(ctx context.Context, cfg NodeIndexerConfig, l *clairco
 	return repos, nil
 }
 
-func runPackageScanner(ctx context.Context, layer *claircore.Layer) ([]*claircore.Package, error) {
-	scanner := rpm.Scanner{}
+func runPackageScanner(ctx context.Context, packageDBFilter string, layer *claircore.Layer) ([]*claircore.Package, error) {
+	scanner := rhel.PackageScanner{}
 	pkgs, err := scanner.Scan(ctx, layer)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to invoke RPM scanner")
+		return nil, errors.Wrap(err, "failed to invoke RHEL scanner")
 	}
 
 	// Filter out packages in which we are not interested.
-	// At this time, we are only interested in the RHCOS RPM database.
-	filtered := pkgs[:0]
-	for _, pkg := range pkgs {
-		if pkg.PackageDB == rhcosPackageDB {
-			filtered = append(filtered, pkg)
+	filtered := pkgs
+	if packageDBFilter != "" {
+		filtered = pkgs[:0]
+		for _, pkg := range pkgs {
+			if pkg.PackageDB == packageDBFilter {
+				filtered = append(filtered, pkg)
+			}
 		}
 	}
 	for i, p := range filtered {

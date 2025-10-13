@@ -22,6 +22,9 @@ const nodeListQuery = gql`
                 low {
                     total
                 }
+                unknown {
+                    total
+                }
             }
             cluster {
                 name
@@ -46,6 +49,9 @@ type Node = {
             total: number;
         };
         low: {
+            total: number;
+        };
+        unknown: {
             total: number;
         };
     };

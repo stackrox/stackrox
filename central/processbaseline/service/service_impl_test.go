@@ -10,12 +10,10 @@ import (
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	lifecycleMocks "github.com/stackrox/rox/central/detection/lifecycle/mocks"
 	"github.com/stackrox/rox/central/processbaseline/datastore"
-	baselineSearch "github.com/stackrox/rox/central/processbaseline/search"
 	postgresStore "github.com/stackrox/rox/central/processbaseline/store/postgres"
 	resultsMocks "github.com/stackrox/rox/central/processbaselineresults/datastore/mocks"
 	indicatorMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	"github.com/stackrox/rox/central/reprocessor/mocks"
-	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -23,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/set"
@@ -51,6 +50,19 @@ func emptyDB(t *testing.T, ds datastore.DataStore, baselines []*storage.ProcessB
 	for _, baseline := range baselines {
 		assert.NoError(t, ds.RemoveProcessBaseline(hasWriteCtx, baseline.GetKey()))
 	}
+}
+
+func (suite *ProcessBaselineServiceTestSuite) getAllProcessBaselinesFromDB(t *testing.T, ds datastore.DataStore) []*storage.ProcessBaseline {
+	baselines := []*storage.ProcessBaseline{}
+	err := suite.datastore.WalkAll(hasReadCtx,
+		func(baseline *storage.ProcessBaseline) error {
+			baselines = append(baselines, baseline)
+			return nil
+		})
+
+	suite.NoError(err)
+
+	return baselines
 }
 
 func getIndicators(key *storage.ProcessBaselineKey) []*storage.ProcessIndicator {
@@ -93,7 +105,6 @@ type ProcessBaselineServiceTestSuite struct {
 	reprocessor        *mocks.MockLoop
 	resultDatastore    *resultsMocks.MockDataStore
 	indicatorMockStore *indicatorMocks.MockDataStore
-	connectionMgr      *connectionMocks.MockManager
 	mockCtrl           *gomock.Controller
 	deployments        *deploymentMocks.MockDataStore
 	lifecycleManager   *lifecycleMocks.MockManager
@@ -104,20 +115,17 @@ func (suite *ProcessBaselineServiceTestSuite) SetupTest() {
 	suite.Require().NotNil(pgtestbase)
 	suite.pool = pgtestbase.DB
 	store := postgresStore.New(suite.pool)
-	searcher, err := baselineSearch.New(store)
-	suite.NoError(err)
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.resultDatastore = resultsMocks.NewMockDataStore(suite.mockCtrl)
 	suite.resultDatastore.EXPECT().DeleteBaselineResults(gomock.Any(), gomock.Any()).AnyTimes()
 
 	suite.indicatorMockStore = indicatorMocks.NewMockDataStore(suite.mockCtrl)
-	suite.datastore = datastore.New(store, searcher, suite.resultDatastore, suite.indicatorMockStore)
+	suite.datastore = datastore.New(store, suite.resultDatastore, suite.indicatorMockStore)
 	suite.reprocessor = mocks.NewMockLoop(suite.mockCtrl)
-	suite.connectionMgr = connectionMocks.NewMockManager(suite.mockCtrl)
 	suite.deployments = deploymentMocks.NewMockDataStore(suite.mockCtrl)
 	suite.lifecycleManager = lifecycleMocks.NewMockManager(suite.mockCtrl)
-	suite.service = New(suite.datastore, suite.reprocessor, suite.connectionMgr, suite.deployments, suite.lifecycleManager)
+	suite.service = New(suite.datastore, suite.reprocessor, suite.deployments, suite.lifecycleManager)
 }
 
 func (suite *ProcessBaselineServiceTestSuite) TearDownTest() {
@@ -308,15 +316,15 @@ func (suite *ProcessBaselineServiceTestSuite) TestUpdateProcessBaseline() {
 			}
 			suite.reprocessor.EXPECT().ReprocessRiskForDeployments(gomock.Any())
 			for range c.expectedSuccessKeys {
-				suite.connectionMgr.EXPECT().SendMessage(gomock.Any(), gomock.Any())
+				suite.lifecycleManager.EXPECT().SendBaselineToSensor(gomock.Any())
 			}
 			response, err := suite.service.UpdateProcessBaselines(hasWriteCtx, request)
 			assert.NoError(t, err)
 			var successKeys []*storage.ProcessBaselineKey
-			for _, wl := range response.Baselines {
+			for _, wl := range response.GetBaselines() {
 				successKeys = append(successKeys, wl.GetKey())
 				processes := set.NewStringSet()
-				for _, process := range wl.Elements {
+				for _, process := range wl.GetElements() {
 					processes.Add(process.GetElement().GetProcessName())
 				}
 				for _, add := range c.toAdd {
@@ -333,10 +341,181 @@ func (suite *ProcessBaselineServiceTestSuite) TestUpdateProcessBaseline() {
 			}
 			protoassert.ElementsMatch(t, c.expectedSuccessKeys, successKeys)
 			var errorKeys []*storage.ProcessBaselineKey
-			for _, err := range response.Errors {
+			for _, err := range response.GetErrors() {
 				errorKeys = append(errorKeys, err.GetKey())
 			}
 			protoassert.ElementsMatch(t, c.expectedErrorKeys, errorKeys)
+		})
+	}
+}
+
+func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespace() {
+	allBaselines := []*storage.ProcessBaseline{
+		{
+			Key: &storage.ProcessBaselineKey{
+				DeploymentId:  fixtureconsts.Deployment1,
+				ContainerName: "container",
+				ClusterId:     fixtureconsts.Cluster1,
+				Namespace:     "namespace",
+			},
+		},
+		{
+			Key: &storage.ProcessBaselineKey{
+				DeploymentId:  fixtureconsts.Deployment2,
+				ContainerName: "container",
+				ClusterId:     fixtureconsts.Cluster1,
+				Namespace:     "namespace",
+			},
+		},
+		{
+			Key: &storage.ProcessBaselineKey{
+				DeploymentId:  fixtureconsts.Deployment3,
+				ContainerName: "container",
+				ClusterId:     fixtureconsts.Cluster1,
+				Namespace:     "default",
+			},
+		},
+		{
+			Key: &storage.ProcessBaselineKey{
+				DeploymentId:  fixtureconsts.Deployment4,
+				ContainerName: "container",
+				ClusterId:     fixtureconsts.Cluster2,
+				Namespace:     "namespace",
+			},
+		},
+		{
+			Key: &storage.ProcessBaselineKey{
+				DeploymentId:  fixtureconsts.Deployment1,
+				ContainerName: "container",
+				ClusterId:     fixtureconsts.Cluster1,
+				Namespace:     "namespace",
+			},
+			UserLockedTimestamp: protocompat.TimestampNow(),
+		},
+	}
+
+	cases := []struct {
+		name           string
+		clusterId      string
+		namespaces     []string
+		locked         bool
+		baselines      []*storage.ProcessBaseline
+		expectedLocked []*storage.ProcessBaselineKey
+		expectError    bool
+	}{
+		{
+			name:           "Lock multiple process baselines",
+			clusterId:      fixtureconsts.Cluster1,
+			namespaces:     []string{"namespace"},
+			locked:         true,
+			baselines:      allBaselines[0:4],
+			expectedLocked: []*storage.ProcessBaselineKey{allBaselines[0].GetKey(), allBaselines[1].GetKey()},
+			expectError:    false,
+		},
+		{
+			name:           "Lock process baselines in other cluster",
+			clusterId:      fixtureconsts.Cluster2,
+			namespaces:     []string{"namespace"},
+			locked:         true,
+			baselines:      allBaselines[0:4],
+			expectedLocked: []*storage.ProcessBaselineKey{allBaselines[3].GetKey()},
+			expectError:    false,
+		},
+		{
+			name:           "Lock multiple namespaces",
+			clusterId:      fixtureconsts.Cluster1,
+			namespaces:     []string{"namespace", "default"},
+			locked:         true,
+			baselines:      allBaselines[0:4],
+			expectedLocked: []*storage.ProcessBaselineKey{allBaselines[0].GetKey(), allBaselines[1].GetKey(), allBaselines[2].GetKey()},
+			expectError:    false,
+		},
+		{
+			name:           "Lock non existant namespace",
+			clusterId:      fixtureconsts.Cluster1,
+			namespaces:     []string{"querty"},
+			locked:         true,
+			baselines:      allBaselines[0:4],
+			expectedLocked: []*storage.ProcessBaselineKey{},
+			expectError:    false,
+		},
+		{
+			name:           "Unlock already unlocked baselines",
+			clusterId:      fixtureconsts.Cluster1,
+			namespaces:     []string{"namespace"},
+			locked:         false,
+			baselines:      allBaselines[0:4],
+			expectedLocked: []*storage.ProcessBaselineKey{},
+			expectError:    false,
+		},
+		{
+			name:           "Unlock a locked baseline",
+			clusterId:      fixtureconsts.Cluster1,
+			namespaces:     []string{"namespace"},
+			locked:         false,
+			baselines:      allBaselines[1:5],
+			expectedLocked: []*storage.ProcessBaselineKey{},
+			expectError:    false,
+		},
+		{
+			name:           "Lock all baselines in cluster 1",
+			clusterId:      fixtureconsts.Cluster1,
+			namespaces:     []string{},
+			locked:         true,
+			baselines:      allBaselines[0:4],
+			expectedLocked: []*storage.ProcessBaselineKey{allBaselines[0].GetKey(), allBaselines[1].GetKey(), allBaselines[2].GetKey()},
+			expectError:    false,
+		},
+		{
+			name:           "Not specifying a cluster results in an error",
+			clusterId:      "",
+			namespaces:     []string{"namespace"},
+			locked:         true,
+			baselines:      allBaselines[0:4],
+			expectedLocked: []*storage.ProcessBaselineKey{},
+			expectError:    true,
+		},
+	}
+
+	for _, c := range cases {
+		suite.T().Run(c.name, func(t *testing.T) {
+			fillDB(t, suite.datastore, c.baselines)
+			defer emptyDB(t, suite.datastore, c.baselines)
+
+			suite.reprocessor.EXPECT().ReprocessRiskForDeployments(gomock.Any())
+			suite.lifecycleManager.EXPECT().SendBaselineToSensor(gomock.Any()).AnyTimes()
+
+			request := &v1.BulkProcessBaselinesRequest{
+				ClusterId:  c.clusterId,
+				Namespaces: c.namespaces,
+			}
+
+			var response *v1.BulkUpdateProcessBaselinesResponse
+			var err error
+			if c.locked {
+				response, err = suite.service.BulkLockProcessBaselines(hasWriteCtx, request)
+			} else {
+				response, err = suite.service.BulkUnlockProcessBaselines(hasWriteCtx, request)
+			}
+
+			if !c.expectError {
+				suite.NoError(err)
+				suite.True(response.GetSuccess())
+			} else {
+				suite.Error(err)
+				suite.False(response.GetSuccess())
+			}
+
+			baselinesFromDB := suite.getAllProcessBaselinesFromDB(t, suite.datastore)
+			locked := make([]*storage.ProcessBaselineKey, 0)
+			for _, baseline := range baselinesFromDB {
+				if baseline.GetUserLockedTimestamp() != nil {
+					locked = append(locked, baseline.GetKey())
+				}
+			}
+
+			protoassert.ElementsMatch(suite.T(), c.expectedLocked, locked)
+
 		})
 	}
 }
@@ -406,9 +585,9 @@ func (suite *ProcessBaselineServiceTestSuite) TestDeleteProcessBaselines() {
 		DryRun:     true,
 	}, resp)
 
-	requestByKey := &v1.GetProcessBaselineRequest{Key: baselines[0].Key}
+	requestByKey := &v1.GetProcessBaselineRequest{Key: baselines[0].GetKey()}
 	baseline, _ := suite.service.GetProcessBaseline(hasReadCtx, requestByKey)
-	suite.NotNil(baseline.Elements)
+	suite.NotNil(baseline.GetElements())
 
 	// Delete d1
 	request.Confirm = true
@@ -420,9 +599,9 @@ func (suite *ProcessBaselineServiceTestSuite) TestDeleteProcessBaselines() {
 	}, resp)
 
 	// Make sure the baseline exists, but it is empty i.e. no elements
-	requestByKey = &v1.GetProcessBaselineRequest{Key: baselines[0].Key}
+	requestByKey = &v1.GetProcessBaselineRequest{Key: baselines[0].GetKey()}
 	baseline, _ = suite.service.GetProcessBaseline(hasReadCtx, requestByKey)
-	suite.Empty(baseline.Elements)
+	suite.Empty(baseline.GetElements())
 
 	// Delete d2 with a generic wildcard on deployment id
 	request = &v1.DeleteProcessBaselinesRequest{

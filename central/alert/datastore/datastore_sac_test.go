@@ -44,12 +44,10 @@ type alertDatastoreSACTestSuite struct {
 }
 
 func (s *alertDatastoreSACTestSuite) SetupSuite() {
-	var err error
 	pgtestbase := pgtest.ForT(s.T())
 	s.Require().NotNil(pgtestbase)
 	s.pool = pgtestbase.DB
-	s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
-	s.Require().NoError(err)
+	s.datastore = GetTestPostgresDataStore(s.T(), s.pool)
 	s.optionsMap = schema.AlertsSchema.OptionsMap
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Alert)
@@ -90,8 +88,8 @@ func (s *alertDatastoreSACTestSuite) cleanupAlert(ID string) {
 func (s *alertDatastoreSACTestSuite) TestUpsertAlert() {
 	alert1 := fixtures.GetScopedDeploymentAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
 	alert2 := fixtures.GetScopedResourceAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
-	s.testAlertIDs = append(s.testAlertIDs, alert1.Id)
-	s.testAlertIDs = append(s.testAlertIDs, alert2.Id)
+	s.testAlertIDs = append(s.testAlertIDs, alert1.GetId())
+	s.testAlertIDs = append(s.testAlertIDs, alert2.GetId())
 
 	cases := testutils.GenericNamespaceSACUpsertTestCases(s.T(), testutils.VerbUpsert)
 
@@ -100,14 +98,14 @@ func (s *alertDatastoreSACTestSuite) TestUpsertAlert() {
 			ctx := s.testContexts[c.ScopeKey]
 			var err error
 			err = s.datastore.UpsertAlert(ctx, alert1)
-			defer s.cleanupAlert(alert1.Id)
+			defer s.cleanupAlert(alert1.GetId())
 			if !c.ExpectError {
 				s.NoError(err)
 			} else {
 				s.Equal(c.ExpectedError, err)
 			}
 			err = s.datastore.UpsertAlert(ctx, alert2)
-			defer s.cleanupAlert(alert2.Id)
+			defer s.cleanupAlert(alert2.GetId())
 			if !c.ExpectError {
 				s.NoError(err)
 			} else {
@@ -166,14 +164,14 @@ func (s *alertDatastoreSACTestSuite) TestMarkAlertResolved() {
 		s.Run(name, func() {
 			var err error
 			alert1 := fixtures.GetScopedDeploymentAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
-			s.testAlertIDs = append(s.testAlertIDs, alert1.Id)
+			s.testAlertIDs = append(s.testAlertIDs, alert1.GetId())
 			err = s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert1)
-			defer s.cleanupAlert(alert1.Id)
+			defer s.cleanupAlert(alert1.GetId())
 			s.NoError(err)
 			alert2 := fixtures.GetScopedResourceAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
-			s.testAlertIDs = append(s.testAlertIDs, alert2.Id)
+			s.testAlertIDs = append(s.testAlertIDs, alert2.GetId())
 			err = s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert2)
-			defer s.cleanupAlert(alert2.Id)
+			defer s.cleanupAlert(alert2.GetId())
 			s.NoError(err)
 
 			ctx := s.testContexts[c.scopeKey]
@@ -200,11 +198,11 @@ func (s *alertDatastoreSACTestSuite) TestGetAlert() {
 	var err error
 	alert1 := fixtures.GetScopedDeploymentAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
 	err = s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert1)
-	s.testAlertIDs = append(s.testAlertIDs, alert1.Id)
+	s.testAlertIDs = append(s.testAlertIDs, alert1.GetId())
 	s.NoError(err)
 	alert2 := fixtures.GetScopedResourceAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
 	err = s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert2)
-	s.testAlertIDs = append(s.testAlertIDs, alert2.Id)
+	s.testAlertIDs = append(s.testAlertIDs, alert2.GetId())
 	s.NoError(err)
 
 	cases := testutils.GenericNamespaceSACGetTestCases(s.T())
@@ -251,11 +249,11 @@ func (s *alertDatastoreSACTestSuite) TestDeleteAlert() {
 			var err error
 			alert1 := fixtures.GetScopedDeploymentAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
 			err = s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert1)
-			s.testAlertIDs = append(s.testAlertIDs, alert1.Id)
+			s.testAlertIDs = append(s.testAlertIDs, alert1.GetId())
 			s.NoError(err)
 			alert2 := fixtures.GetScopedResourceAlert(uuid.NewV4().String(), testconsts.Cluster2, testconsts.NamespaceB)
 			err = s.datastore.UpsertAlert(s.testContexts[testutils.UnrestrictedReadWriteCtx], alert2)
-			s.testAlertIDs = append(s.testAlertIDs, alert2.Id)
+			s.testAlertIDs = append(s.testAlertIDs, alert2.GetId())
 			s.NoError(err)
 			ctx := s.testContexts[c.ScopeKey]
 			err1 := s.datastore.DeleteAlerts(ctx, alert1.GetId())
@@ -646,7 +644,7 @@ func countSearchRawAlertsResultsPerClusterAndNamespace(results []*storage.Alert)
 	for _, result := range results {
 		var clusterID string
 		var namespace string
-		switch entity := result.Entity.(type) {
+		switch entity := result.GetEntity().(type) {
 		case *storage.Alert_Deployment_:
 			if entity.Deployment != nil {
 				clusterID = entity.Deployment.GetClusterId()

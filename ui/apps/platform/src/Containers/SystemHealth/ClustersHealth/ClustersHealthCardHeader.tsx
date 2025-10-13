@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import { CardHeader, CardTitle, Flex, FlexItem } from '@patternfly/react-core';
 
 import { clustersBasePath } from 'routePaths';
@@ -23,13 +23,11 @@ function ClustersHealthCardHeader({
     isFetchingInitialRequest,
     title,
 }: ClustersHealthCardHeaderProps): ReactElement {
-    /* eslint-disable no-nested-ternary */
     const icon = isFetchingInitialRequest
         ? SpinnerIcon
         : !counts
           ? ErrorIcon
           : healthIconMap[getClustersHealthVariant(counts)];
-    /* eslint-enable no-nested-ternary */
 
     const phrase = counts === null ? '' : getClustersHealthPhrase(counts);
 

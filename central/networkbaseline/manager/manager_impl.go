@@ -9,7 +9,9 @@ import (
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/deployment/queue"
 	"github.com/stackrox/rox/central/networkbaseline/datastore"
+	"github.com/stackrox/rox/central/networkgraph/aggregator"
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
+	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	networkFlowDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -23,8 +25,10 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
+	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -56,6 +60,7 @@ type manager struct {
 	networkPolicyDS   networkPolicyDS.DataStore
 	clusterFlows      networkFlowDS.ClusterDataStore
 	connectionManager connection.Manager
+	treeManager       networktree.Manager
 
 	baselinesByDeploymentID map[string]*networkbaseline.BaselineInfo
 	seenNetworkPolicies     set.Set[uint64]
@@ -252,11 +257,12 @@ func (m *manager) processFlowUpdate(flows map[networkgraph.NetworkConnIndicator]
 			continue
 		}
 		if conn.SrcEntity.Type == storage.NetworkEntityInfo_DEPLOYMENT {
-			peer := m.lookUpPeerInfo(conn.DstEntity)
+			anonymizedDst := networkbaseline.AnonymizeExternalDiscoveredEntity(conn.DstEntity)
+			peer := m.lookUpPeerInfo(anonymizedDst)
 			if peer.name != "" {
 				m.maybeAddPeer(conn.SrcEntity.ID, &networkbaseline.Peer{
 					IsIngress: false,
-					Entity:    conn.DstEntity,
+					Entity:    anonymizedDst,
 					Name:      peer.name,
 					DstPort:   conn.DstPort,
 					Protocol:  conn.Protocol,
@@ -265,11 +271,12 @@ func (m *manager) processFlowUpdate(flows map[networkgraph.NetworkConnIndicator]
 			}
 		}
 		if conn.DstEntity.Type == storage.NetworkEntityInfo_DEPLOYMENT {
-			peer := m.lookUpPeerInfo(conn.SrcEntity)
+			anonymizedSrc := networkbaseline.AnonymizeExternalDiscoveredEntity(conn.SrcEntity)
+			peer := m.lookUpPeerInfo(anonymizedSrc)
 			if peer.name != "" {
 				m.maybeAddPeer(conn.DstEntity.ID, &networkbaseline.Peer{
 					IsIngress: true,
-					Entity:    conn.SrcEntity,
+					Entity:    anonymizedSrc,
 					Name:      peer.name,
 					DstPort:   conn.DstPort,
 					Protocol:  conn.Protocol,
@@ -463,12 +470,11 @@ func (m *manager) ProcessBaselineStatusUpdate(ctx context.Context, modifyRequest
 	modifiedDeploymentIDs := set.NewStringSet()
 	for _, peerAndStatus := range modifyRequest.GetPeers() {
 		v1Peer := peerAndStatus.GetPeer()
-		info := m.lookUpPeerInfo(
-			networkgraph.Entity{
-				Type: v1Peer.GetEntity().GetType(),
-				ID:   v1Peer.GetEntity().GetId(),
-			})
+
+		entity := networkbaseline.AnonymizeExternalDiscoveredPeer(v1Peer.GetEntity())
+		info := m.lookUpPeerInfo(entity)
 		peer := networkbaseline.PeerFromV1Peer(v1Peer, info.name, info.cidrBlock)
+
 		_, inBaseline := baseline.BaselinePeers[peer]
 		_, inForbidden := baseline.ForbiddenPeers[peer]
 		switch peerAndStatus.GetStatus() {
@@ -749,7 +755,7 @@ func (m *manager) initFromStore() error {
 				// Mark seen
 				seenClusterAndNamespace[curPair] = struct{}{}
 
-				policies, err := m.networkPolicyDS.GetNetworkPolicies(managerCtx, baseline.ClusterId, baseline.Namespace)
+				policies, err := m.networkPolicyDS.GetNetworkPolicies(managerCtx, baseline.GetClusterId(), baseline.GetNamespace())
 				if err != nil {
 					return err
 				}
@@ -848,6 +854,15 @@ func (m *manager) addBaseline(deploymentID, deploymentName, clusterID, namespace
 		return err
 	}
 
+	listDeployment := &storage.ListDeployment{
+		Name:      deploymentName,
+		Id:        deploymentID,
+		ClusterId: clusterID,
+		Namespace: namespace,
+	}
+
+	flows = m.enrichFlows(listDeployment, flows)
+
 	// If we have flows then process them.  If we don't persist an empty baseline
 	if len(flows) > 0 {
 		// package them into a map of flows like comes in
@@ -910,18 +925,174 @@ func (m *manager) CreateNetworkBaseline(deploymentID string) error {
 	return nil
 }
 
+func (m *manager) GetExternalNetworkPeers(ctx context.Context, deploymentID string, query string, since *time.Time) ([]*v1.NetworkBaselineStatusPeer, error) {
+	deployment, found, err := m.deploymentDS.GetDeployment(ctx, deploymentID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !found {
+		return nil, errors.Wrapf(errox.NotFound, "deployment with id %q does not exist", deploymentID)
+	}
+
+	entities, err := m.getEntitiesByQuery(ctx, deployment.GetClusterId(), query)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get matching entities")
+	}
+
+	entityFilter := set.NewStringSet()
+	for _, entity := range entities {
+		info := entity.GetInfo()
+		entityFilter.Add(info.GetId())
+	}
+
+	pred := func(props *storage.NetworkFlowProperties) bool {
+		src := props.GetSrcEntity()
+		dst := props.GetDstEntity()
+
+		if src.GetId() != deploymentID && dst.GetId() != deploymentID {
+			return false
+		}
+
+		if !networkgraph.AnyExternal(src, dst) || networkgraph.AllExternal(src, dst) {
+			// only looking for external flows, and not external pairs
+			return false
+		}
+
+		if !networkgraph.AnyExternalInFilter(src, dst, entityFilter) {
+			return false
+		}
+
+		return true
+	}
+
+	flowStore, err := m.getFlowStore(ctx, deployment.GetClusterId())
+	if err != nil {
+		return nil, err
+	}
+
+	flows, _, err := flowStore.GetMatchingFlows(ctx, pred, since)
+	if err != nil {
+		return nil, err
+	}
+
+	networkTree := tree.NewMultiNetworkTree(
+		m.treeManager.GetReadOnlyNetworkTree(managerCtx, deployment.GetClusterId()),
+		m.treeManager.GetDefaultNetworkTree(managerCtx),
+	)
+
+	listDeployment := &storage.ListDeployment{
+		Name:      deployment.GetName(),
+		Id:        deploymentID,
+		ClusterId: deployment.GetClusterId(),
+		Namespace: deployment.GetNamespace(),
+	}
+
+	flows = m.enrichFlows(listDeployment, flows)
+
+	aggr, err := aggregator.NewSubnetToSupernetConnAggregator(networkTree)
+	utils.Should(err)
+
+	flows = aggr.Aggregate(flows)
+	flows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
+	flows = aggregator.NewLatestTimestampAggregator().Aggregate(flows)
+
+	peers := make([]*v1.NetworkBaselineStatusPeer, 0, len(flows))
+
+	for _, flow := range flows {
+		peers = append(peers, m.mapFlowToPeer(flow))
+	}
+
+	return peers, nil
+}
+
+func (m *manager) mapFlowToPeer(flow *storage.NetworkFlow) *v1.NetworkBaselineStatusPeer {
+	var entity *v1.NetworkBaselinePeerEntity
+	ingress := false
+
+	props := flow.GetProps()
+	src, dst := props.GetSrcEntity(), props.GetDstEntity()
+
+	if src.GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
+		entity = &v1.NetworkBaselinePeerEntity{
+			Id:         dst.GetId(),
+			Type:       dst.GetType(),
+			Name:       dst.GetExternalSource().GetName(),
+			Discovered: dst.GetExternalSource().GetDiscovered(),
+		}
+	} else {
+		entity = &v1.NetworkBaselinePeerEntity{
+			Id:         src.GetId(),
+			Type:       src.GetType(),
+			Name:       src.GetExternalSource().GetName(),
+			Discovered: src.GetExternalSource().GetDiscovered(),
+		}
+		ingress = true
+	}
+
+	return &v1.NetworkBaselineStatusPeer{
+		Entity:   entity,
+		Port:     props.GetDstPort(),
+		Protocol: props.GetL4Protocol(),
+		Ingress:  ingress,
+	}
+}
+
+func (m *manager) getEntitiesByQuery(ctx context.Context, clusterId, query string) ([]*storage.NetworkEntity, error) {
+	q, err := search.ParseQuery(query, search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+
+	// Retrieves entities where the cluster ID matches the request cluster OR where the cluster ID is empty indicating global entities.
+	clusterMatch := search.DisjunctionQuery(
+		search.NewQueryBuilder().AddNullField(search.ClusterID).ProtoQuery(),
+		search.MatchFieldQuery(search.ClusterID.String(), search.ExactMatchString(clusterId), false),
+	)
+
+	q = search.ConjunctionQuery(q, clusterMatch)
+
+	q, _ = search.FilterQueryWithMap(q, schema.NetworkEntitiesSchema.OptionsMap)
+
+	return m.networkEntities.GetEntityByQuery(ctx, q)
+}
+
 func (m *manager) putFlowsInMap(newFlows []*storage.NetworkFlow) map[networkgraph.NetworkConnIndicator]timestamp.MicroTS {
 	out := make(map[networkgraph.NetworkConnIndicator]timestamp.MicroTS, len(newFlows))
 	now := timestamp.Now()
 	for _, newFlow := range newFlows {
-		t := timestamp.FromProtobuf(newFlow.LastSeenTimestamp)
-		if newFlow.LastSeenTimestamp == nil {
+		t := timestamp.FromProtobuf(newFlow.GetLastSeenTimestamp())
+		if newFlow.GetLastSeenTimestamp() == nil {
 			t = now
 		}
 
 		out[networkgraph.GetNetworkConnIndicator(newFlow)] = t
 	}
 	return out
+}
+
+func (m *manager) enrichFlows(listDeployment *storage.ListDeployment, flows []*storage.NetworkFlow) []*storage.NetworkFlow {
+	networkTree := tree.NewMultiNetworkTree(
+		m.treeManager.GetReadOnlyNetworkTree(managerCtx, listDeployment.GetClusterId()),
+		m.treeManager.GetDefaultNetworkTree(managerCtx),
+	)
+
+	listDeploymentMap := map[string]*storage.ListDeployment{
+		listDeployment.GetId(): listDeployment,
+	}
+
+	flows, missingInfoFlows := networkgraph.UpdateFlowsWithEntityDesc(flows, listDeploymentMap,
+		func(id string) *storage.NetworkEntityInfo {
+			if networkTree == nil {
+				return nil
+			}
+			return networkTree.Get(id)
+		},
+	)
+
+	// There's not a lot we can do about flows with no info, so just process them
+	// as normal
+	return append(flows, missingInfoFlows...)
 }
 
 // New returns an initialized manager, and starts the manager's processing loop in the background.
@@ -932,6 +1103,7 @@ func New(
 	networkPolicyDS networkPolicyDS.DataStore,
 	clusterFlows networkFlowDS.ClusterDataStore,
 	connectionManager connection.Manager,
+	treeManager networktree.Manager,
 ) (Manager, error) {
 	m := &manager{
 		ds:                         ds,
@@ -940,6 +1112,7 @@ func New(
 		networkPolicyDS:            networkPolicyDS,
 		clusterFlows:               clusterFlows,
 		connectionManager:          connectionManager,
+		treeManager:                treeManager,
 		seenNetworkPolicies:        set.NewSet[uint64](),
 		deploymentObservationQueue: queue.New(),
 		baselineFlushTicker:        time.NewTicker(baselineFlushTickerDuration),
@@ -956,15 +1129,12 @@ func New(
 }
 
 // GetTestPostgresManager provides a network baseline manager connected to postgres for testing purposes.
-func GetTestPostgresManager(t *testing.T, pool postgres.DB) (Manager, error) {
+func GetTestPostgresManager(t testing.TB, pool postgres.DB) (Manager, error) {
 	networkBaselineStore, err := datastore.GetTestPostgresDataStore(t, pool)
 	if err != nil {
 		return nil, err
 	}
-	networkEntityStore, err := networkEntityDS.GetTestPostgresDataStore(t, pool)
-	if err != nil {
-		return nil, err
-	}
+	networkEntityStore := networkEntityDS.GetTestPostgresDataStore(t, pool)
 	deploymentStore, err := deploymentDS.GetTestPostgresDataStore(t, pool)
 	if err != nil {
 		return nil, err
@@ -978,5 +1148,5 @@ func GetTestPostgresManager(t *testing.T, pool postgres.DB) (Manager, error) {
 		return nil, err
 	}
 	sensorCnxMgr := connection.ManagerSingleton()
-	return New(networkBaselineStore, networkEntityStore, deploymentStore, networkPolicyStore, networkFlowClusterStore, sensorCnxMgr)
+	return New(networkBaselineStore, networkEntityStore, deploymentStore, networkPolicyStore, networkFlowClusterStore, sensorCnxMgr, networktree.Singleton())
 }

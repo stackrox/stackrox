@@ -19,18 +19,21 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ReportService_PostReportConfiguration_FullMethodName   = "/v2.ReportService/PostReportConfiguration"
-	ReportService_UpdateReportConfiguration_FullMethodName = "/v2.ReportService/UpdateReportConfiguration"
-	ReportService_ListReportConfigurations_FullMethodName  = "/v2.ReportService/ListReportConfigurations"
-	ReportService_CountReportConfigurations_FullMethodName = "/v2.ReportService/CountReportConfigurations"
-	ReportService_GetReportConfiguration_FullMethodName    = "/v2.ReportService/GetReportConfiguration"
-	ReportService_DeleteReportConfiguration_FullMethodName = "/v2.ReportService/DeleteReportConfiguration"
-	ReportService_GetReportStatus_FullMethodName           = "/v2.ReportService/GetReportStatus"
-	ReportService_GetReportHistory_FullMethodName          = "/v2.ReportService/GetReportHistory"
-	ReportService_GetMyReportHistory_FullMethodName        = "/v2.ReportService/GetMyReportHistory"
-	ReportService_RunReport_FullMethodName                 = "/v2.ReportService/RunReport"
-	ReportService_CancelReport_FullMethodName              = "/v2.ReportService/CancelReport"
-	ReportService_DeleteReport_FullMethodName              = "/v2.ReportService/DeleteReport"
+	ReportService_PostReportConfiguration_FullMethodName     = "/v2.ReportService/PostReportConfiguration"
+	ReportService_UpdateReportConfiguration_FullMethodName   = "/v2.ReportService/UpdateReportConfiguration"
+	ReportService_ListReportConfigurations_FullMethodName    = "/v2.ReportService/ListReportConfigurations"
+	ReportService_CountReportConfigurations_FullMethodName   = "/v2.ReportService/CountReportConfigurations"
+	ReportService_GetReportConfiguration_FullMethodName      = "/v2.ReportService/GetReportConfiguration"
+	ReportService_DeleteReportConfiguration_FullMethodName   = "/v2.ReportService/DeleteReportConfiguration"
+	ReportService_GetReportStatus_FullMethodName             = "/v2.ReportService/GetReportStatus"
+	ReportService_GetReportHistory_FullMethodName            = "/v2.ReportService/GetReportHistory"
+	ReportService_GetMyReportHistory_FullMethodName          = "/v2.ReportService/GetMyReportHistory"
+	ReportService_RunReport_FullMethodName                   = "/v2.ReportService/RunReport"
+	ReportService_CancelReport_FullMethodName                = "/v2.ReportService/CancelReport"
+	ReportService_DeleteReport_FullMethodName                = "/v2.ReportService/DeleteReport"
+	ReportService_PostViewBasedReport_FullMethodName         = "/v2.ReportService/PostViewBasedReport"
+	ReportService_GetViewBasedMyReportHistory_FullMethodName = "/v2.ReportService/GetViewBasedMyReportHistory"
+	ReportService_GetViewBasedReportHistory_FullMethodName   = "/v2.ReportService/GetViewBasedReportHistory"
 )
 
 // ReportServiceClient is the client API for ReportService service.
@@ -63,6 +66,9 @@ type ReportServiceClient interface {
 	CancelReport(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
 	// Deletes a generated report for the given report id
 	DeleteReport(ctx context.Context, in *DeleteReportRequest, opts ...grpc.CallOption) (*Empty, error)
+	PostViewBasedReport(ctx context.Context, in *ReportRequestViewBased, opts ...grpc.CallOption) (*RunReportResponseViewBased, error)
+	GetViewBasedMyReportHistory(ctx context.Context, in *GetViewBasedReportHistoryRequest, opts ...grpc.CallOption) (*ReportHistoryResponse, error)
+	GetViewBasedReportHistory(ctx context.Context, in *GetViewBasedReportHistoryRequest, opts ...grpc.CallOption) (*ReportHistoryResponse, error)
 }
 
 type reportServiceClient struct {
@@ -193,6 +199,36 @@ func (c *reportServiceClient) DeleteReport(ctx context.Context, in *DeleteReport
 	return out, nil
 }
 
+func (c *reportServiceClient) PostViewBasedReport(ctx context.Context, in *ReportRequestViewBased, opts ...grpc.CallOption) (*RunReportResponseViewBased, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RunReportResponseViewBased)
+	err := c.cc.Invoke(ctx, ReportService_PostViewBasedReport_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reportServiceClient) GetViewBasedMyReportHistory(ctx context.Context, in *GetViewBasedReportHistoryRequest, opts ...grpc.CallOption) (*ReportHistoryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReportHistoryResponse)
+	err := c.cc.Invoke(ctx, ReportService_GetViewBasedMyReportHistory_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reportServiceClient) GetViewBasedReportHistory(ctx context.Context, in *GetViewBasedReportHistoryRequest, opts ...grpc.CallOption) (*ReportHistoryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReportHistoryResponse)
+	err := c.cc.Invoke(ctx, ReportService_GetViewBasedReportHistory_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ReportServiceServer is the server API for ReportService service.
 // All implementations should embed UnimplementedReportServiceServer
 // for forward compatibility.
@@ -223,6 +259,9 @@ type ReportServiceServer interface {
 	CancelReport(context.Context, *ResourceByID) (*Empty, error)
 	// Deletes a generated report for the given report id
 	DeleteReport(context.Context, *DeleteReportRequest) (*Empty, error)
+	PostViewBasedReport(context.Context, *ReportRequestViewBased) (*RunReportResponseViewBased, error)
+	GetViewBasedMyReportHistory(context.Context, *GetViewBasedReportHistoryRequest) (*ReportHistoryResponse, error)
+	GetViewBasedReportHistory(context.Context, *GetViewBasedReportHistoryRequest) (*ReportHistoryResponse, error)
 }
 
 // UnimplementedReportServiceServer should be embedded to have
@@ -267,6 +306,15 @@ func (UnimplementedReportServiceServer) CancelReport(context.Context, *ResourceB
 }
 func (UnimplementedReportServiceServer) DeleteReport(context.Context, *DeleteReportRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteReport not implemented")
+}
+func (UnimplementedReportServiceServer) PostViewBasedReport(context.Context, *ReportRequestViewBased) (*RunReportResponseViewBased, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PostViewBasedReport not implemented")
+}
+func (UnimplementedReportServiceServer) GetViewBasedMyReportHistory(context.Context, *GetViewBasedReportHistoryRequest) (*ReportHistoryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetViewBasedMyReportHistory not implemented")
+}
+func (UnimplementedReportServiceServer) GetViewBasedReportHistory(context.Context, *GetViewBasedReportHistoryRequest) (*ReportHistoryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetViewBasedReportHistory not implemented")
 }
 func (UnimplementedReportServiceServer) testEmbeddedByValue() {}
 
@@ -504,6 +552,60 @@ func _ReportService_DeleteReport_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ReportService_PostViewBasedReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportRequestViewBased)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReportServiceServer).PostViewBasedReport(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReportService_PostViewBasedReport_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReportServiceServer).PostViewBasedReport(ctx, req.(*ReportRequestViewBased))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReportService_GetViewBasedMyReportHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetViewBasedReportHistoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReportServiceServer).GetViewBasedMyReportHistory(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReportService_GetViewBasedMyReportHistory_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReportServiceServer).GetViewBasedMyReportHistory(ctx, req.(*GetViewBasedReportHistoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReportService_GetViewBasedReportHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetViewBasedReportHistoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReportServiceServer).GetViewBasedReportHistory(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReportService_GetViewBasedReportHistory_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReportServiceServer).GetViewBasedReportHistory(ctx, req.(*GetViewBasedReportHistoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ReportService_ServiceDesc is the grpc.ServiceDesc for ReportService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -558,6 +660,18 @@ var ReportService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteReport",
 			Handler:    _ReportService_DeleteReport_Handler,
+		},
+		{
+			MethodName: "PostViewBasedReport",
+			Handler:    _ReportService_PostViewBasedReport_Handler,
+		},
+		{
+			MethodName: "GetViewBasedMyReportHistory",
+			Handler:    _ReportService_GetViewBasedMyReportHistory_Handler,
+		},
+		{
+			MethodName: "GetViewBasedReportHistory",
+			Handler:    _ReportService_GetViewBasedReportHistory_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -1,5 +1,6 @@
-import React, { ReactElement, useRef, useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import React, { useRef, useState } from 'react';
+import type { ReactElement } from 'react';
+import { useNavigate } from 'react-router-dom-v5-compat';
 import {
     Alert,
     AlertActionCloseButton,
@@ -9,6 +10,7 @@ import {
     Bullseye,
     Button,
     Divider,
+    DropdownItem,
     Flex,
     FlexItem,
     PageSection,
@@ -17,28 +19,24 @@ import {
     Tooltip,
     Truncate,
 } from '@patternfly/react-core';
-import {
-    Dropdown,
-    DropdownItem,
-    DropdownSeparator,
-    DropdownToggle,
-} from '@patternfly/react-core/deprecated';
 import { useMediaQuery } from 'react-responsive';
 
 import { deleteCollection } from 'services/CollectionsService';
-import { CaretDownIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
+import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { collectionsBasePath } from 'routePaths';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import useToasts from 'hooks/patternfly/useToasts';
 import PageTitle from 'Components/PageTitle';
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useAnalytics, { COLLECTION_CREATED } from 'hooks/useAnalytics';
-import { CollectionPageAction } from './collections.utils';
-import CollectionFormDrawer, { CollectionFormDrawerProps } from './CollectionFormDrawer';
+import type { CollectionPageAction } from './collections.utils';
+import CollectionFormDrawer from './CollectionFormDrawer';
+import type { CollectionFormDrawerProps } from './CollectionFormDrawer';
 import useCollection from './hooks/useCollection';
-import CollectionsFormModal from './CollectionFormModal';
+import CollectionsFormModal from './CollectionsFormModal';
 import CollectionLoadError from './CollectionLoadError';
 import { useCollectionFormSubmission } from './hooks/useCollectionFormSubmission';
 
@@ -65,7 +63,7 @@ function CollectionsFormPage({
     hasWriteAccessForCollections,
     pageAction,
 }: CollectionsFormPageProps) {
-    const history = useHistory();
+    const navigate = useNavigate();
     const isXLargeScreen = useMediaQuery({ query: '(min-width: 1200px)' }); // --pf-v5-global--breakpoint--xl
     const collectionId = pageAction.type !== 'create' ? pageAction.collectionId : undefined;
 
@@ -83,12 +81,6 @@ function CollectionsFormPage({
     const configErrorAlertElem = useRef<HTMLDivElement | null>(null);
 
     const {
-        isOpen: menuIsOpen,
-        toggleSelect: toggleMenu,
-        closeSelect: closeMenu,
-    } = useSelectToggle();
-
-    const {
         isOpen: isDrawerOpen,
         toggleSelect: toggleDrawer,
         closeSelect: closeDrawer,
@@ -96,17 +88,11 @@ function CollectionsFormPage({
     } = useSelectToggle(isXLargeScreen);
 
     function onEditCollection(id: string) {
-        history.push({
-            pathname: `${collectionsBasePath}/${id}`,
-            search: 'action=edit',
-        });
+        navigate(`${collectionsBasePath}/${id}?action=edit`);
     }
 
     function onCloneCollection(id: string) {
-        history.push({
-            pathname: `${collectionsBasePath}/${id}`,
-            search: 'action=clone',
-        });
+        navigate(`${collectionsBasePath}/${id}?action=clone`);
     }
 
     function onConfirmDeleteCollection() {
@@ -115,7 +101,7 @@ function CollectionsFormPage({
         }
         setIsDeleting(true);
         deleteCollection(deleteId)
-            .request.then(history.goBack)
+            .request.then(() => navigate(-1))
             .catch((err) => {
                 const message = getAxiosErrorMessage(err);
                 addToast(
@@ -210,7 +196,7 @@ function CollectionsFormPage({
                 onSubmit={(collection) =>
                     onSubmit(collection)
                         .then(() => {
-                            history.push({ pathname: `${collectionsBasePath}` });
+                            navigate(`${collectionsBasePath}`);
                             if (pageAction.type === 'create') {
                                 analyticsTrack({
                                     event: COLLECTION_CREATED,
@@ -224,7 +210,7 @@ function CollectionsFormPage({
                         })
                 }
                 onCancel={() => {
-                    history.push({ pathname: `${collectionsBasePath}` });
+                    navigate(`${collectionsBasePath}`);
                 }}
                 configError={configError}
                 setConfigError={setConfigError}
@@ -249,49 +235,34 @@ function CollectionsFormPage({
                             <FlexItem align={{ default: 'alignLeft', md: 'alignRight' }}>
                                 {pageAction.type === 'view' && hasWriteAccessForCollections && (
                                     <>
-                                        <Dropdown
-                                            onSelect={closeMenu}
-                                            toggle={
-                                                <DropdownToggle
-                                                    toggleVariant="primary"
-                                                    onToggle={(_e, v) => toggleMenu(v)}
-                                                    toggleIndicator={CaretDownIcon}
-                                                >
-                                                    Actions
-                                                </DropdownToggle>
-                                            }
-                                            isOpen={menuIsOpen}
-                                            dropdownItems={[
-                                                <DropdownItem
-                                                    key="Edit collection"
-                                                    component="button"
-                                                    onClick={() =>
-                                                        onEditCollection(pageAction.collectionId)
-                                                    }
-                                                >
-                                                    Edit collection
-                                                </DropdownItem>,
-                                                <DropdownItem
-                                                    key="Clone collection"
-                                                    component="button"
-                                                    onClick={() =>
-                                                        onCloneCollection(pageAction.collectionId)
-                                                    }
-                                                >
-                                                    Clone collection
-                                                </DropdownItem>,
-                                                <DropdownSeparator key="Separator" />,
-                                                <DropdownItem
-                                                    key="Delete collection"
-                                                    component="button"
-                                                    onClick={() =>
-                                                        setDeleteId(pageAction.collectionId)
-                                                    }
-                                                >
-                                                    Delete collection
-                                                </DropdownItem>,
-                                            ]}
-                                        />
+                                        <MenuDropdown toggleText="Actions" toggleVariant="primary">
+                                            <DropdownItem
+                                                key="Edit collection"
+                                                component="button"
+                                                onClick={() =>
+                                                    onEditCollection(pageAction.collectionId)
+                                                }
+                                            >
+                                                Edit collection
+                                            </DropdownItem>
+                                            <DropdownItem
+                                                key="Clone collection"
+                                                component="button"
+                                                onClick={() =>
+                                                    onCloneCollection(pageAction.collectionId)
+                                                }
+                                            >
+                                                Clone collection
+                                            </DropdownItem>
+                                            <Divider component="li" key="separator" />
+                                            <DropdownItem
+                                                key="Delete collection"
+                                                component="button"
+                                                onClick={() => setDeleteId(pageAction.collectionId)}
+                                            >
+                                                Delete collection
+                                            </DropdownItem>
+                                        </MenuDropdown>
                                         <Divider
                                             className="pf-v5-u-px-xs"
                                             orientation={{ default: 'vertical' }}

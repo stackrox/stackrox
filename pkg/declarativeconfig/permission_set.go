@@ -1,12 +1,13 @@
 package declarativeconfig
 
 import (
+	"maps"
+	"slices"
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
-	"golang.org/x/exp/maps"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 // PermissionSet is representation of storage.PermissionSet that supports transformation from YAML.
@@ -45,7 +46,7 @@ func (a *Access) UnmarshalYAML(value *yaml.Node) error {
 	i, ok := storage.Access_value[v]
 	if !ok {
 		return errox.InvalidArgs.Newf("access %s is invalid, valid values are: [%s]", v, strings.Join(
-			maps.Keys(storage.Access_value), ","))
+			slices.Collect(maps.Keys(storage.Access_value)), ","))
 	}
 	*a = Access(i)
 	return nil

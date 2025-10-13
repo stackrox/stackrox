@@ -13,22 +13,18 @@ import (
 
 func TestGetResourceType(t *testing.T) {
 	for _, tc := range []struct {
-		resourceType      ResourceType
-		typ               protocompat.Message
-		permissionChecker bool
-		joinTable         bool
+		resourceType ResourceType
+		typ          protocompat.Message
+		joinTable    bool
 	}{
 		{typ: &storage.NamespaceMetadata{}, resourceType: directlyScoped},
 		{typ: &storage.NamespaceMetadata{}, resourceType: joinTable, joinTable: true},
-		{typ: &storage.NamespaceMetadata{}, resourceType: joinTable, joinTable: true, permissionChecker: true},
-		{typ: &storage.NamespaceMetadata{}, resourceType: permissionChecker, joinTable: false, permissionChecker: true},
 		{typ: &storage.Cluster{}, resourceType: directlyScoped},
 		{typ: &storage.Deployment{}, resourceType: directlyScoped},
 		{typ: &storage.Image{}, resourceType: indirectlyScoped},
 		{typ: &storage.CVE{}, resourceType: indirectlyScoped},
 		{typ: &storage.Policy{}, resourceType: globallyScoped},
 		{typ: &storage.Email{}, resourceType: joinTable, joinTable: true},
-		{typ: &storage.Email{}, resourceType: permissionChecker, permissionChecker: true},
 		// Evaluate types of the various stores
 		{typ: &storage.ActiveComponent{}, resourceType: indirectlyScoped},
 		{typ: &storage.Alert{}, resourceType: directlyScoped},
@@ -72,14 +68,14 @@ func TestGetResourceType(t *testing.T) {
 		{typ: &storage.ImageCVE{}, resourceType: indirectlyScoped},
 		{typ: &storage.ImageCVEEdge{}, resourceType: indirectlyScoped},
 		{typ: &storage.ImageIntegration{}, resourceType: globallyScoped},
-		{typ: &storage.InitBundleMeta{}, resourceType: permissionChecker, permissionChecker: true}, // globallyScoped
+		{typ: &storage.InitBundleMeta{}, resourceType: globallyScoped},
 		{typ: &storage.IntegrationHealth{}, resourceType: globallyScoped},
 		{typ: &storage.K8SRole{}, resourceType: directlyScoped},
 		{typ: &storage.K8SRoleBinding{}, resourceType: directlyScoped},
 		{typ: &storage.LogImbue{}, resourceType: globallyScoped},
 		{typ: &storage.NamespaceMetadata{}, resourceType: directlyScoped},
 		{typ: &storage.NetworkBaseline{}, resourceType: directlyScoped},
-		{typ: &storage.NetworkEntity{}, resourceType: indirectlyScoped},
+		{typ: &storage.NetworkEntity{}, resourceType: globallyScoped},
 		{typ: &storage.NetworkFlow{}, resourceType: indirectlyScoped},
 		{typ: &storage.NetworkGraphConfig{}, resourceType: globallyScoped},
 		{typ: &storage.NetworkPolicy{}, resourceType: directlyScoped},
@@ -117,11 +113,10 @@ func TestGetResourceType(t *testing.T) {
 		{typ: &storage.User{}, resourceType: globallyScoped},
 		{typ: &storage.WatchedImage{}, resourceType: globallyScoped},
 	} {
-		t.Run(fmt.Sprintf("%T (join: %t, perm: %t) -> %d", tc.typ, tc.joinTable, tc.permissionChecker, tc.resourceType), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%T (join: %t) -> %d", tc.typ, tc.joinTable, tc.resourceType), func(t *testing.T) {
 			actual := getResourceType(
 				fmt.Sprintf("%T", tc.typ),
 				walker.Walk(reflect.TypeOf(tc.typ), ""),
-				tc.permissionChecker,
 				tc.joinTable,
 			)
 			assert.Equal(t, tc.resourceType, actual)
@@ -131,7 +126,7 @@ func TestGetResourceType(t *testing.T) {
 	t.Run("panics on unknown resource", func(t *testing.T) {
 		email := &storage.Email{}
 		assert.Panics(t, func() {
-			getResourceType(fmt.Sprintf("%T", email), walker.Walk(reflect.TypeOf(email), ""), false, false)
+			getResourceType(fmt.Sprintf("%T", email), walker.Walk(reflect.TypeOf(email), ""), false)
 		})
 	})
 }

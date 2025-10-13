@@ -18,7 +18,9 @@ type Store interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 
 	Get(ctx context.Context, id string) (*storage.TokenMetadata, bool, error)
+	// Deprecated: use GetByQueryFn instead
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.TokenMetadata, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.TokenMetadata) error) error
 	Walk(context.Context, func(*storage.TokenMetadata) error) error
 	Upsert(context.Context, *storage.TokenMetadata) error
 }

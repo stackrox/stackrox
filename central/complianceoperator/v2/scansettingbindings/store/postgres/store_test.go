@@ -51,10 +51,6 @@ func (s *ComplianceOperatorScanSettingBindingV2StoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *ComplianceOperatorScanSettingBindingV2StoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *ComplianceOperatorScanSettingBindingV2StoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
@@ -282,6 +278,25 @@ func (s *ComplianceOperatorScanSettingBindingV2StoreSuite) TestSACWalk() {
 				return nil
 			}
 			err := s.store.Walk(testCase.context, getIDs)
+			assert.NoError(t, err)
+			assert.ElementsMatch(t, testCase.expectedIdentifiers, identifiers)
+		})
+	}
+}
+
+func (s *ComplianceOperatorScanSettingBindingV2StoreSuite) TestSACGetByQueryFn() {
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS)
+	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
+	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
+
+	for name, testCase := range testCases {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			identifiers := []string{}
+			getIDs := func(obj *storage.ComplianceOperatorScanSettingBindingV2) error {
+				identifiers = append(identifiers, obj.GetId())
+				return nil
+			}
+			err := s.store.GetByQueryFn(testCase.context, nil, getIDs)
 			assert.NoError(t, err)
 			assert.ElementsMatch(t, testCase.expectedIdentifiers, identifiers)
 		})

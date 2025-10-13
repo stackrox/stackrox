@@ -52,12 +52,12 @@ type netpolGenerateCmd struct {
 
 // AddFlags binds command flags to parameters
 func (cmd *netpolGenerateCmd) AddFlags(c *cobra.Command) *cobra.Command {
-	c.Flags().BoolVar(&cmd.Options.TreatWarningsAsErrors, "strict", false, "Treat warnings as errors")
-	c.Flags().BoolVar(&cmd.Options.StopOnFirstError, "fail", false, "Fail on the first encountered error")
-	c.Flags().BoolVar(&cmd.Options.RemoveOutputPath, "remove", false, "Remove the output path if it already exists")
-	c.Flags().StringVarP(&cmd.Options.DNSPort, "dnsport", "", "", "Set the DNS port (port number or port name) to be used in egress rules of synthesized NetworkPolicies")
-	c.Flags().StringVarP(&cmd.Options.OutputFolderPath, "output-dir", "d", "", "Save generated policies into target folder - one file per policy")
-	c.Flags().StringVarP(&cmd.Options.OutputFilePath, "output-file", "f", "", "Save and merge generated policies into a single yaml file")
+	c.Flags().BoolVar(&cmd.Options.TreatWarningsAsErrors, "strict", false, "Treat warnings as errors.")
+	c.Flags().BoolVar(&cmd.Options.StopOnFirstError, "fail", false, "Fail on the first encountered error.")
+	c.Flags().BoolVar(&cmd.Options.RemoveOutputPath, "remove", false, "Remove the output path if it already exists.")
+	c.Flags().StringVarP(&cmd.Options.DNSPort, "dnsport", "", "", "Set the DNS port (port number or port name) to be used in egress rules of synthesized NetworkPolicies.")
+	c.Flags().StringVarP(&cmd.Options.OutputFolderPath, "output-dir", "d", "", "Save generated policies into target folder - one file per policy.")
+	c.Flags().StringVarP(&cmd.Options.OutputFilePath, "output-file", "f", "", "Save and merge generated policies into a single yaml file.")
 	return c
 }
 

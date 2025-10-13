@@ -137,22 +137,22 @@ func Test_apiCall(t *testing.T) {
 		},
 	}
 	require.NoError(t, permanentTelemetryCampaign.Compile())
-	anyTestEndpoint := &phonehome.APICallCampaignCriterion{
-		Path: phonehome.Pattern("*test*").Ptr(),
-	}
-	appendRuntimeCampaign(&phonehome.RuntimeConfig{
-		APICallCampaign: phonehome.APICallCampaign{anyTestEndpoint},
-	})
+	anyTestEndpoint := phonehome.PathPattern("*test*")
+	c := newCentralClient("test-id")
+	c.appendRuntimeCampaign(phonehome.APICallCampaign{anyTestEndpoint})
+	apiCallInterceptor := c.apiCallInterceptor()
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			props := make(map[string]any)
-			assert.Equal(t, c.expected, apiCall(c.rp, props))
+			assert.Equal(t, c.expected, apiCallInterceptor(c.rp, props))
 			assert.Equal(t, c.expectedProps, props)
 		})
 	}
 }
 
 func Test_addCustomHeaders(t *testing.T) {
+	tc := permanentTelemetryCampaign
+	require.NoError(t, tc.Compile())
 	t.Run(snowIntegrationHeader, func(t *testing.T) {
 		rp := &phonehome.RequestParams{
 			Method: "GET",
@@ -166,7 +166,7 @@ func Test_addCustomHeaders(t *testing.T) {
 			},
 		}
 		props := map[string]any{}
-		addCustomHeaders(rp, telemetryCampaign[1], props)
+		addCustomHeaders(rp, tc[1], props)
 		assert.Equal(t, map[string]any{
 			userAgentHeaderKey:    "RHACS Integration ServiceNow client",
 			snowIntegrationHeader: "v1.0.3; beta",
@@ -185,7 +185,7 @@ func Test_addCustomHeaders(t *testing.T) {
 			},
 		}
 		props := map[string]any{}
-		addCustomHeaders(rp, telemetryCampaign[1], props)
+		addCustomHeaders(rp, tc[1], props)
 		assert.Equal(t, map[string]any{
 			userAgentHeaderKey: "ServiceNow",
 		}, props)
@@ -205,7 +205,7 @@ func Test_addCustomHeaders(t *testing.T) {
 			},
 		}
 		props := map[string]any{}
-		addCustomHeaders(rp, telemetryCampaign[0], props)
+		addCustomHeaders(rp, tc[0], props)
 		assert.Equal(t, map[string]any{
 			userAgentHeaderKey:                  "roxctl",
 			clientconn.RoxctlCommandHeader:      "central",
@@ -214,11 +214,8 @@ func Test_addCustomHeaders(t *testing.T) {
 		}, props)
 	})
 	t.Run("add header from the single criterion", func(t *testing.T) {
-		previousCampaign := telemetryCampaign
-		telemetryCampaign = append(telemetryCampaign, &phonehome.APICallCampaignCriterion{
-			Headers: map[string]phonehome.Pattern{"Custom-Header": ""},
-		})
-		require.NoError(t, telemetryCampaign.Compile())
+		tc = append(tc, phonehome.HeaderPattern("Custom-Header", ""))
+		require.NoError(t, tc.Compile())
 		rp := &phonehome.RequestParams{
 			Method: "GET",
 			Path:   "/v1/config",
@@ -230,10 +227,9 @@ func Test_addCustomHeaders(t *testing.T) {
 			},
 		}
 		props := map[string]any{}
-		addCustomHeaders(rp, telemetryCampaign[0], props)
+		addCustomHeaders(rp, tc[0], props)
 		assert.Equal(t, map[string]any{
 			userAgentHeaderKey: "roxctl",
 		}, props)
-		telemetryCampaign = previousCampaign
 	})
 }

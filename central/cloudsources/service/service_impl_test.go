@@ -14,7 +14,6 @@ func TestAuthz(t *testing.T) {
 }
 
 func TestCloudSourcesQueryBuilder(t *testing.T) {
-	t.Parallel()
 	filter := &v1.CloudSourcesFilter{
 		Names: []string{"my-integration"},
 		Types: []v1.CloudSource_Type{v1.CloudSource_TYPE_PALADIN_CLOUD, v1.CloudSource_TYPE_OCM},
@@ -29,7 +28,6 @@ func TestCloudSourcesQueryBuilder(t *testing.T) {
 }
 
 func TestCloudSourcesQueryBuilderNilFilter(t *testing.T) {
-	t.Parallel()
 	queryBuilder := getQueryBuilderFromFilter(nil)
 
 	rawQuery, err := queryBuilder.RawQuery()

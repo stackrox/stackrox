@@ -33,6 +33,9 @@ central:
     password:
       value: true
     resources: true
+configController:
+  nodeSelector: true
+  resources: true
 scanner:
   resources: true
   dbResources: true

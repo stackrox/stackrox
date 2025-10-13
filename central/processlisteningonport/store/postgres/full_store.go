@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -155,6 +156,35 @@ func (s *fullStoreImpl) retryableGetPLOP(
 	return results, rows.Err()
 }
 
+func plopComparison(plop1 *storage.ProcessListeningOnPort, plop2 *storage.ProcessListeningOnPort) bool {
+	if plop1.GetPodId() != plop2.GetPodId() {
+		return plop1.GetPodId() < plop2.GetPodId()
+	}
+
+	filePath1 := plop1.GetSignal().GetExecFilePath()
+	filePath2 := plop2.GetSignal().GetExecFilePath()
+
+	if filePath1 != filePath2 {
+		return filePath1 < filePath2
+	}
+
+	port1 := plop1.GetEndpoint().GetPort()
+	port2 := plop2.GetEndpoint().GetPort()
+
+	if port1 != port2 {
+		return port1 < port2
+	}
+
+	protocol1 := plop1.GetEndpoint().GetProtocol()
+	protocol2 := plop2.GetEndpoint().GetProtocol()
+
+	return protocol1 < protocol2
+}
+
+func sortPlops(plops []*storage.ProcessListeningOnPort) {
+	sort.Slice(plops, func(i, j int) bool { return plopComparison(plops[i], plops[j]) })
+}
+
 // Manual converting of raw data from SQL query to ProcessListeningOnPort (not
 // ProcessListeningOnPortStorage) object enriched with ProcessIndicator info.
 func (s *fullStoreImpl) readRows(
@@ -257,10 +287,12 @@ func (s *fullStoreImpl) readRows(
 			ImageId:            procMsg.GetImageId(),
 		}
 
-		if ok, err := plopSAC.ReadAllowed(ctx, sac.ClusterScopeKey(plop.ClusterId), sac.NamespaceScopeKey(plop.Namespace)); err == nil && ok {
+		if ok, err := plopSAC.ReadAllowed(ctx, sac.ClusterScopeKey(plop.GetClusterId()), sac.NamespaceScopeKey(plop.GetNamespace())); err == nil && ok {
 			plops = append(plops, plop)
 		}
 	}
+
+	sortPlops(plops)
 
 	log.Debugf("Read returned %+v plops", len(plops))
 	if len(plops) == 0 {

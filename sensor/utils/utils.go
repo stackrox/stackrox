@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"github.com/pkg/errors"
+	commonLabels "github.com/stackrox/rox/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -22,7 +24,9 @@ func GetSensorKubernetesLabels() map[string]string {
 
 func GetTLSSecretLabels() map[string]string {
 	labels := GetSensorKubernetesLabels()
-	labels["rhacs.redhat.com/tls"] = "true"
+	labels[commonLabels.TLSSecretLabelKey] = "true"
+	// Add the StackRox managed-by label so Operator can watch these secrets for CA rotation
+	labels[commonLabels.ManagedByLabelKey] = commonLabels.ManagedBySensor
 	return labels
 }
 
@@ -37,7 +41,7 @@ func GetSensorKubernetesAnnotations() map[string]string {
 func HasAPI(client kubernetes.Interface, groupVersion, kind string) (bool, error) {
 	apiResourceList, err := client.Discovery().ServerResourcesForGroupVersion(groupVersion)
 	if err != nil {
-		return false, err
+		return false, errors.Wrap(err, "checking API support for groupVersion "+groupVersion)
 	}
 	for _, apiResource := range apiResourceList.APIResources {
 		if apiResource.Kind == kind {

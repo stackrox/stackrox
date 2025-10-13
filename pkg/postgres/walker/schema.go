@@ -1,7 +1,6 @@
 package walker
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"reflect"
@@ -29,6 +28,15 @@ var (
 	flattenedSkipMap = set.NewStringSet(
 		v1.SearchCategory_IMAGE_VULNERABILITIES_V2.String(),
 		v1.SearchCategory_IMAGE_COMPONENTS_V2.String())
+
+	// TODO(ROX-30117): Clean up
+	normalizedImageSkipMap = set.NewStringSet(
+		v1.SearchCategory_IMAGES.String(),
+	)
+
+	flattenedImageSkipMap = set.NewStringSet(
+		v1.SearchCategory_IMAGES_V2.String(),
+	)
 )
 
 func getSerializedField(s *Schema) Field {
@@ -111,12 +119,6 @@ func (s *SchemaRelationship) OtherSchemaColumnNames() []string {
 	return seq
 }
 
-// PermissionChecker is a permission checker that could be used by GenericStore
-type PermissionChecker interface {
-	ReadAllowed(ctx context.Context) (bool, error)
-	WriteAllowed(ctx context.Context) (bool, error)
-}
-
 // Schema is the go representation of the schema for a table
 // This is derived from walking the go struct
 type Schema struct {
@@ -150,8 +152,7 @@ type Schema struct {
 	// This is optional.
 	SearchScope map[v1.SearchCategory]struct{}
 
-	ScopingResource   permissions.ResourceMetadata
-	PermissionChecker PermissionChecker
+	ScopingResource permissions.ResourceMetadata
 }
 
 // TableFieldsGroup is the group of table fields. A slice of this struct can be used where the table order is essential,
@@ -178,6 +179,12 @@ func (s *Schema) SetSearchScope(searchCategories ...v1.SearchCategory) {
 			continue
 		}
 		if !features.FlattenCVEData.Enabled() && flattenedSkipMap.Contains(cat.String()) {
+			continue
+		}
+		if features.FlattenImageData.Enabled() && normalizedImageSkipMap.Contains(cat.String()) {
+			continue
+		}
+		if !features.FlattenImageData.Enabled() && flattenedImageSkipMap.Contains(cat.String()) {
 			continue
 		}
 		s.SearchScope[cat] = struct{}{}
@@ -426,6 +433,11 @@ func (s *Schema) NoPrimaryKey() bool {
 	return len(s.PrimaryKeys()) == 0
 }
 
+// MultiplePrimaryKeys returns true if the current schema have more than 1 primary key defined
+func (s *Schema) MultiplePrimaryKeys() bool {
+	return len(s.PrimaryKeys()) > 1
+}
+
 // SearchField is the parsed representation of the search tag on the struct field
 type SearchField struct {
 	FieldName string
@@ -484,6 +496,10 @@ type foreignKeyRef struct {
 	// time.
 	OtherSchema *Schema
 	ColumnName  string
+
+	// If true, the constraint on this foreign key allows for NULL meaning the relationship does not
+	// exist for this row
+	Nullable bool
 }
 
 // FieldInOtherSchema returns the `Field` in the other schema that has the specific column name.

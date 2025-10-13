@@ -14,7 +14,8 @@ import { selectors } from './Compliance.selectors';
 describe('Compliance entities list', () => {
     withAuth();
 
-    it('should filter namespaces table with passing controls', () => {
+    // TODO: ROX-30939: fix test for OCP4.20 "1 namespace" (openshift-cloud-credential-operator)
+    it.skip('should filter namespaces table with passing controls', () => {
         triggerScan(); // in case complianceDashboard.test.js is skipped
         visitComplianceEntities('namespaces');
 
@@ -54,6 +55,25 @@ describe('Compliance entities list', () => {
                 cy.get('[data-testid="side-panel"] [aria-label="Close"]').click();
                 cy.get('[data-testid="side-panel"]').should('not.exist');
                 cy.get('[data-testid="panel-header"]').should('contain', 'cluster');
+            });
+    });
+
+    it('should have the same percentage from list to entity widget', () => {
+        visitComplianceEntities('clusters');
+
+        cy.get(selectors.list.table.firstRow).click();
+        cy.get(selectors.list.table.firstStandard)
+            .invoke('text')
+            .then((firstStandard) => {
+                cy.get(selectors.list.table.firstPercentage)
+                    .invoke('text')
+                    .then((firstTablePercentage) => {
+                        cy.get(`[data-testid="${firstStandard}-compliance"] div.rv-sunburst text`)
+                            .invoke('text')
+                            .then((firstWidgetPercentage) =>
+                                expect(firstTablePercentage).to.equal(firstWidgetPercentage)
+                            );
+                    });
             });
     });
 

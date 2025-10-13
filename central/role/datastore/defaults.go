@@ -136,6 +136,7 @@ var defaultPermissionSets = map[string]permSetAttributes{
 		resourceWithAccess: []permissions.ResourceWithAccess{
 			permissions.Modify(resources.WorkflowAdministration),
 			permissions.View(resources.Integration),
+			permissions.View(resources.Cluster),
 		},
 	},
 }
@@ -162,7 +163,7 @@ func getDefaultRoles() []*storage.Role {
 			Traits: &storage.Traits{
 				Origin: storage.Traits_DEFAULT,
 			},
-			PermissionSetId: permissionSet.Id,
+			PermissionSetId: permissionSet.GetId(),
 		}
 		roles = append(roles, role)
 	}

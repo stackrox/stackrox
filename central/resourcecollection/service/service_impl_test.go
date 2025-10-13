@@ -53,7 +53,6 @@ func (suite *CollectionServiceTestSuite) SetupSuite() {
 }
 
 func (suite *CollectionServiceTestSuite) TearDownSuite() {
-	suite.testDB.Teardown(suite.T())
 	suite.mockCtrl.Finish()
 }
 
@@ -87,7 +86,7 @@ func (suite *CollectionServiceTestSuite) TestGetCollection() {
 	}
 
 	// successful get
-	suite.dataStore.EXPECT().Get(gomock.Any(), request.Id).Times(1).Return(collection, true, nil)
+	suite.dataStore.EXPECT().Get(gomock.Any(), request.GetId()).Times(1).Return(collection, true, nil)
 
 	expected := &v1.GetCollectionResponse{
 		Collection:  collection,
@@ -99,14 +98,14 @@ func (suite *CollectionServiceTestSuite) TestGetCollection() {
 	protoassert.Equal(suite.T(), expected, result)
 
 	// collection not present
-	suite.dataStore.EXPECT().Get(gomock.Any(), request.Id).Times(1).Return(nil, false, nil)
+	suite.dataStore.EXPECT().Get(gomock.Any(), request.GetId()).Times(1).Return(nil, false, nil)
 
 	result, err = suite.collectionService.GetCollection(context.Background(), request)
 	suite.NotNil(err)
 	suite.Nil(result)
 
 	// error
-	suite.dataStore.EXPECT().Get(gomock.Any(), request.Id).Times(1).Return(nil, false, errors.New("test error"))
+	suite.dataStore.EXPECT().Get(gomock.Any(), request.GetId()).Times(1).Return(nil, false, errors.New("test error"))
 
 	result, err = suite.collectionService.GetCollection(context.Background(), request)
 	suite.NotNil(err)
@@ -198,7 +197,7 @@ func (suite *CollectionServiceTestSuite) TestCreateCollection() {
 	resp, err = suite.collectionService.CreateCollection(ctx, request)
 	suite.NoError(err)
 	suite.NotNil(resp.GetCollection())
-	suite.Equal(request.Name, resp.GetCollection().GetName())
+	suite.Equal(request.GetName(), resp.GetCollection().GetName())
 	suite.Equal(request.GetDescription(), resp.GetCollection().GetDescription())
 	protoassert.SlicesEqual(suite.T(), request.GetResourceSelectors(), resp.GetCollection().GetResourceSelectors())
 	suite.NotNil(resp.GetCollection().GetEmbeddedCollections())
@@ -294,7 +293,7 @@ func (suite *CollectionServiceTestSuite) TestUpdateCollection() {
 	suite.NoError(err)
 	suite.NotNil(resp.GetCollection())
 	suite.Equal(request.GetId(), resp.GetCollection().GetId())
-	suite.Equal(request.Name, resp.GetCollection().GetName())
+	suite.Equal(request.GetName(), resp.GetCollection().GetName())
 	suite.Equal(request.GetDescription(), resp.GetCollection().GetDescription())
 	protoassert.SlicesEqual(suite.T(), request.GetResourceSelectors(), resp.GetCollection().GetResourceSelectors())
 	suite.Equal(request.GetEmbeddedCollectionIds(), suite.embeddedCollectionsToIds(resp.GetCollection().GetEmbeddedCollections()))
@@ -402,7 +401,7 @@ func (suite *CollectionServiceTestSuite) TestListCollections() {
 	}
 
 	// test success
-	suite.dataStore.EXPECT().SearchCollections(allAccessCtx, gomock.Any()).Times(1).Return(expectedResp.Collections, nil)
+	suite.dataStore.EXPECT().SearchCollections(allAccessCtx, gomock.Any()).Times(1).Return(expectedResp.GetCollections(), nil)
 	resp, err := suite.collectionService.ListCollections(allAccessCtx, &v1.ListCollectionsRequest{})
 	suite.NoError(err)
 	protoassert.Equal(suite.T(), expectedResp, resp)
@@ -509,7 +508,7 @@ func (suite *CollectionServiceTestSuite) TestDryRunCollection() {
 	ctx = authn.ContextWithIdentity(allAccessCtx, mockID, suite.T())
 	suite.dataStore.EXPECT().DryRunUpdateCollection(ctx, gomock.Any()).Times(1).Return(nil)
 	suite.queryResolver.EXPECT().ResolveCollectionQuery(ctx, gomock.Any()).Times(1).Return(search.EmptyQuery(), nil)
-	suite.deploymentDS.EXPECT().SearchListDeployments(ctx, gomock.Any()).Times(1).Return(expectedResp.Deployments, nil)
+	suite.deploymentDS.EXPECT().SearchListDeployments(ctx, gomock.Any()).Times(1).Return(expectedResp.GetDeployments(), nil)
 	resp, err = suite.collectionService.DryRunCollection(ctx, request)
 	suite.NoError(err)
 	protoassert.Equal(suite.T(), expectedResp, resp)

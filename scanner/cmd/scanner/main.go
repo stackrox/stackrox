@@ -15,6 +15,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/continuousprofiling"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -34,6 +35,7 @@ import (
 	"github.com/stackrox/rox/scanner/matcher"
 	"github.com/stackrox/rox/scanner/services"
 	"golang.org/x/sys/unix"
+	gogrpc "google.golang.org/grpc"
 )
 
 // Backends holds the backend engines the scanner may use depending on the
@@ -80,6 +82,11 @@ func main() {
 	if err != nil {
 		golog.Fatalf("failed to initialize logging: %v", err)
 	}
+
+	if err := continuousprofiling.SetupClient(continuousprofiling.DefaultConfig()); err != nil {
+		zlog.Error(ctx).Err(err).Msg("unable to start continuous profiling")
+	}
+
 	ctx = zlog.ContextWithValues(ctx, "component", "main")
 	zlog.Info(ctx).Str("version", version.Version).Str("build_flavor", buildinfo.BuildFlavor).Msg("starting scanner")
 
@@ -180,6 +187,7 @@ func createGRPCService(backends *Backends, cfg *config.Config) (grpc.API, error)
 		IdentityExtractors: []authn.IdentityExtractor{identityExtractor},
 		GRPCMetrics:        grpcmetrics.NewGRPCMetrics(),
 		HTTPMetrics:        grpcmetrics.NewHTTPMetrics(),
+		UnaryInterceptors:  []gogrpc.UnaryServerInterceptor{version.UnaryServerInterceptor()},
 		Endpoints: []*grpc.EndpointConfig{
 			{
 				ListenEndpoint: cfg.GRPCListenAddr,

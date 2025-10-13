@@ -37,14 +37,8 @@ type violationSerializationTestSuite struct {
 
 func (s *violationSerializationTestSuite) SetupTest() {
 	s.pool = pgtest.ForT(s.T())
-	alertStore, err := alertDataStore.GetTestPostgresDataStore(s.T(), s.pool)
-	s.Require().NoError(err)
+	alertStore := alertDataStore.GetTestPostgresDataStore(s.T(), s.pool)
 	s.alertStore = alertStore
-}
-
-func (s *violationSerializationTestSuite) TearDownTest() {
-	s.pool.Teardown(s.T())
-	s.pool.Close()
 }
 
 func (s *violationSerializationTestSuite) TestViolationSerialization() {

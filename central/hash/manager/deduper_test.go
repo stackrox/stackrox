@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	eventPkg "github.com/stackrox/rox/pkg/sensor/event"
 	"github.com/stackrox/rox/pkg/sensor/hash"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -272,11 +273,10 @@ func TestDeduper(t *testing.T) {
 			},
 		},
 	}
-	t.Parallel()
 	for _, c := range cases {
 		testCase := c
 		t.Run(c.testName, func(t *testing.T) {
-			deduper := NewDeduper(make(map[string]uint64)).(*deduperImpl)
+			deduper := NewDeduper(make(map[string]uint64), uuid.NewV4().String()).(*deduperImpl)
 			for _, testEvent := range testCase.testEvents {
 				assert.Equal(t, testEvent.result, deduper.ShouldProcess(testEvent.event))
 			}
@@ -287,7 +287,7 @@ func TestDeduper(t *testing.T) {
 }
 
 func TestReconciliation(t *testing.T) {
-	deduper := NewDeduper(make(map[string]uint64)).(*deduperImpl)
+	deduper := NewDeduper(make(map[string]uint64), uuid.NewV4().String()).(*deduperImpl)
 
 	d1 := getDeploymentEvent(central.ResourceAction_SYNC_RESOURCE, "1", "1", 0)
 	d2 := getDeploymentEvent(central.ResourceAction_SYNC_RESOURCE, "2", "2", 0)
@@ -510,7 +510,7 @@ func TestReconciliationOnDisconnection(t *testing.T) {
 func newConnection(initialHashes map[string]uint64) testEvents {
 	return func(_ *testing.T, deduper **deduperImpl) {
 		if *deduper == nil {
-			*deduper = NewDeduper(initialHashes).(*deduperImpl)
+			*deduper = NewDeduper(initialHashes, uuid.NewV4().String()).(*deduperImpl)
 		}
 		(*deduper).StartSync()
 	}

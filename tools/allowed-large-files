@@ -1,4 +1,5 @@
 **/go.sum
+**/zz_generated.deepcopy.go
 CHANGELOG.md
 central/alert/datastore/internal/store/postgres/store.go
 central/cluster/datastore/datastore_impl_test.go
@@ -11,8 +12,10 @@ central/networkgraph/service/service_impl_test.go
 central/networkpolicies/graph/evaluator_test.go
 central/processlisteningonport/datastore/datastore_impl_test.go
 central/pruning/pruning_test.go
+central/reports/service/v2/service_impl_test.go
 central/splunk/violations_test.go
 central/testutils/testdata/imgdata.json.gz
+central/vulnmgmt/vulnerabilityrequest/datastore/datastore_impl_postgres_test.go
 compliance/node/index/testdata/usr/share/rpm/rpmdb.sqlite
 deploy/charts/monitoring/dashboards/dataplane.json
 generated/**/*.pb.go
@@ -30,9 +33,13 @@ pkg/docker/types/types_easyjson.go
 pkg/fixtures/graph.go
 pkg/fixtures/image.go
 pkg/fixtures/image/files/*
+pkg/images/enricher/enricher_impl_test.go
+pkg/images/enricher/enricher_v2_impl_test.go
 pkg/mitre/files/mitre.json
 pkg/mocks/github.com/aws/aws-sdk-go/service/securityhub/securityhubiface/mocks/mocks.go
+pkg/scannerv4/mappers/mappers.go
 pkg/scannerv4/mappers/mappers_test.go
+pkg/search/postgres/common_test.go
 pkg/sliceutils/gen-builtins-generic.go
 proto/storage/proto.lock
 qa-tests-backend/artifacts/**/*
@@ -41,6 +48,7 @@ qa-tests-backend/src/main/**/*.groovy
 qa-tests-backend/src/test/**/*.groovy
 qa-tests-backend/test-images/registry-image/tomcat-files/web.xml
 roxctl/helm/derivelocalvalues/testdata/k8s-resources/*.yaml
+rpms.lock.yaml
 scale/image/fixtures/scrape.json
 scanner/cmd/scannerctl/fixtures/images.json
 scanner/e2etests/testdata/image_tests.json
@@ -51,6 +59,7 @@ scripts/ci/lib.sh
 sensor/tests/data/policies.json
 sensor/upgrader/preflight/testdata/k8s-1.22.json.gz
 tests/e2e/lib.sh
+tests/e2e/run-scanner-v4-install.bats
 tests/performance/load/package-lock.json
 tests/performance/scale/config/metrics-acs.yml
 tests/performance/scale/config/metrics-full.yml

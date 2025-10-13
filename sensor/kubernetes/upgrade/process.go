@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/sensor/common/clusterid"
 	"google.golang.org/grpc/status"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -54,15 +53,18 @@ type process struct {
 	checkInReqC chan *central.UpgradeCheckInFromSensorRequest
 
 	checkInClient central.SensorUpgradeControlServiceClient
+
+	clusterID clusterIDWaiter
 }
 
-func newProcess(trigger *central.SensorUpgradeTrigger, checkInClient central.SensorUpgradeControlServiceClient, baseConfig *rest.Config) (*process, error) {
+func newProcess(clusterID clusterIDWaiter, trigger *central.SensorUpgradeTrigger, checkInClient central.SensorUpgradeControlServiceClient, baseConfig *rest.Config) (*process, error) {
 	config := *baseConfig
 	p := &process{
 		trigger:       trigger,
 		doneSig:       concurrency.NewErrorSignal(),
 		checkInClient: checkInClient,
 		checkInReqC:   make(chan *central.UpgradeCheckInFromSensorRequest, 1),
+		clusterID:     clusterID,
 	}
 	baseWrapTransport := baseConfig.WrapTransport
 	config.WrapTransport = func(rt http.RoundTripper) http.RoundTripper {
@@ -145,7 +147,7 @@ func (p *process) sendCheckInRequestSingle(req *central.UpgradeCheckInFromSensor
 
 	_, err := p.checkInClient.UpgradeCheckInFromSensor(ctx, req)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "sending upgrade check-in request")
 	}
 	return nil
 }
@@ -153,7 +155,7 @@ func (p *process) sendCheckInRequestSingle(req *central.UpgradeCheckInFromSensor
 // checkInWithCentral schedules a check in request for being sent to central. This is done on a best-effort basis; if
 // it fails, NBD. We will keep retrying though while the upgrade process is in progress.
 func (p *process) checkInWithCentral(req *central.UpgradeCheckInFromSensorRequest) {
-	req.ClusterId = clusterid.Get()
+	req.ClusterId = p.clusterID.Get()
 	req.UpgradeProcessId = p.GetID()
 
 	// If there is a currently pending request, remove it from the channel - it is now obsolete.
@@ -206,7 +208,7 @@ func (p *process) waitForDeploymentDeletionOnce(ctx context.Context, name string
 
 	deploymentsList, err := deploymentsClient.List(ctx, listOpts)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "listing upgrader deployments for deletion")
 	}
 
 	if len(deploymentsList.Items) == 0 || deploymentsList.Items[0].UID != uid {
@@ -219,7 +221,7 @@ func (p *process) waitForDeploymentDeletionOnce(ctx context.Context, name string
 	log.Infof("Deployment %s with UID %s is still present, watching for changes ...", name, uid)
 	watcher, err := deploymentsClient.Watch(ctx, watchOpts)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "watching deployment deletion")
 	}
 	defer watcher.Stop()
 	for {
@@ -286,7 +288,7 @@ func (p *process) deleteUpgraderDeploymentIfNecessary(ctx context.Context, force
 func (p *process) createUpgraderDeploymentIfNecessary() error {
 	if err := p.deleteUpgraderDeploymentIfNecessary(p.ctx(), false); err != nil {
 		if p.doneSig.IsDone() {
-			return p.doneSig.Err()
+			return errors.Wrap(p.doneSig.Err(), "signal errored")
 		}
 		return err
 	}
@@ -379,7 +381,7 @@ func (p *process) pollAndUpdateProgress() ([]*central.UpgradeCheckInFromSensorRe
 	})
 	if err != nil {
 		errs.AddWrap(err, "upgrader pods")
-		return nil, false, errs.ToError()
+		return nil, false, errors.Wrap(errs.ToError(), "polling upgrader pods")
 	}
 
 	podStates := make([]*central.UpgradeCheckInFromSensorRequest_UpgraderPodState, 0, len(pods.Items))

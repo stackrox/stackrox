@@ -1,7 +1,13 @@
-import React, { ReactNode } from 'react';
-import { MemoryRouter, Route, RouteComponentProps } from 'react-router-dom';
-import { renderHook, act } from '@testing-library/react';
+import React from 'react';
+import type { ReactNode } from 'react';
+// import { createMemoryHistory } from 'history';
+import { Route, MemoryRouter as Router } from 'react-router-dom';
+import type { RouteComponentProps } from 'react-router-dom';
+// import { HistoryRouter as Router } from 'redux-first-history/rr6';
+import { CompatRouter, MemoryRouter, useLocation } from 'react-router-dom-v5-compat';
+import { renderHook } from '@testing-library/react';
 
+import actAndFlushTaskQueue from 'test-utils/flushTaskQueue';
 import { URLSearchParams } from 'url';
 import useURLPagination from './useURLPagination';
 
@@ -13,13 +19,15 @@ type WrapperProps = {
 
 function Wrapper({ children, onRouteRender, initialEntries = [] }: WrapperProps) {
     return (
-        <MemoryRouter
+        <Router
             initialEntries={initialEntries}
             initialIndex={Math.max(0, initialEntries.length - 1)}
         >
-            <Route path="*" render={onRouteRender} />
-            {children}
-        </MemoryRouter>
+            <CompatRouter>
+                <Route path="*" render={onRouteRender} />
+                {children}
+            </CompatRouter>
+        </Router>
     );
 }
 
@@ -29,30 +37,21 @@ const createWrapper = (props) => {
     };
 };
 
-beforeAll(() => {
-    jest.useFakeTimers();
-});
-
-function actAndRunTicks(callback) {
-    return act(() => {
-        callback();
-        jest.runAllTicks();
-    });
-}
-
 test('should update pagination parameters in the URL', async () => {
     let params;
     let testLocation;
 
-    const { result } = renderHook(() => useURLPagination(10), {
-        wrapper: createWrapper({
-            children: [],
-            onRouteRender: ({ location }) => {
-                testLocation = location;
-            },
-            initialEntries: [''],
-        }),
-    });
+    const { result } = renderHook(
+        () => {
+            testLocation = useLocation();
+            return useURLPagination(10);
+        },
+        {
+            wrapper: ({ children }) => (
+                <MemoryRouter initialEntries={['']}>{children}</MemoryRouter>
+            ),
+        }
+    );
 
     // Check new and existing values before setter function is called
     params = new URLSearchParams(testLocation.search);
@@ -63,7 +62,7 @@ test('should update pagination parameters in the URL', async () => {
     expect(params.get('perPage')).toBe(null);
 
     // Check new and existing values when URL parameter is set
-    actAndRunTicks(() => {
+    await actAndFlushTaskQueue(() => {
         const { setPage } = result.current;
         setPage(2);
     });
@@ -73,15 +72,15 @@ test('should update pagination parameters in the URL', async () => {
     expect(params.get('page')).toBe('2');
     expect(params.get('perPage')).toBe(null);
 
-    // Check that updating the perPage parameter also resets the page parameter to 1
-    actAndRunTicks(() => {
+    // Check that updating the perPage parameter also resets the page parameter
+    await actAndFlushTaskQueue(() => {
         const { setPerPage } = result.current;
         setPerPage(20);
     });
     params = new URLSearchParams(testLocation.search);
     expect(result.current.page).toBe(1);
     expect(result.current.perPage).toBe(20);
-    expect(params.get('page')).toBe('1');
+    expect(params.get('page')).toBe(null);
     expect(params.get('perPage')).toBe('20');
 });
 
@@ -100,7 +99,6 @@ test('should not add history states when setting values with a "replace" action'
             initialEntries: [''],
         }),
     });
-
     // Check the length of the initial history stack
     params = new URLSearchParams(testLocation.search);
     expect(historyLength).toBe(1);
@@ -108,7 +106,7 @@ test('should not add history states when setting values with a "replace" action'
     expect(params.get('perPage')).toBe(null);
 
     // Update the page parameter with a 'replace' action
-    actAndRunTicks(() => {
+    await actAndFlushTaskQueue(() => {
         const { setPage } = result.current;
         setPage(2, 'replace');
     });
@@ -120,7 +118,7 @@ test('should not add history states when setting values with a "replace" action'
     expect(params.get('perPage')).toBe(null);
 
     // Update the perPage parameter with a 'replace' action
-    actAndRunTicks(() => {
+    await actAndFlushTaskQueue(() => {
         const { setPerPage } = result.current;
         setPerPage(20, 'replace');
     });
@@ -128,7 +126,7 @@ test('should not add history states when setting values with a "replace" action'
     // Check the length of the history stack after updating the perPage parameter
     params = new URLSearchParams(testLocation.search);
     expect(historyLength).toBe(1);
-    expect(params.get('page')).toBe('1');
+    expect(params.get('page')).toBe(null);
     expect(params.get('perPage')).toBe('20');
 });
 
@@ -155,7 +153,7 @@ test('should only add a single history state when setting perPage without an act
     expect(params.get('perPage')).toBe(null);
 
     // Update the page parameter
-    actAndRunTicks(() => {
+    await actAndFlushTaskQueue(() => {
         const { setPage } = result.current;
         setPage(2);
     });
@@ -167,7 +165,7 @@ test('should only add a single history state when setting perPage without an act
     expect(params.get('perPage')).toBe(null);
 
     // Update the perPage parameter and check the length of the history stack
-    actAndRunTicks(() => {
+    await actAndFlushTaskQueue(() => {
         const { setPerPage } = result.current;
         setPerPage(20);
     });
@@ -175,6 +173,6 @@ test('should only add a single history state when setting perPage without an act
     // Check the length of the history stack after updating the perPage parameter
     params = new URLSearchParams(testLocation.search);
     expect(historyLength).toBe(3);
-    expect(params.get('page')).toBe('1');
+    expect(params.get('page')).toBe(null);
     expect(params.get('perPage')).toBe('20');
 });

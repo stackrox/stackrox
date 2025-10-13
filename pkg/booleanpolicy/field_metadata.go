@@ -282,6 +282,15 @@ func initializeFieldMetadata() FieldMetadata {
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
 
+	f.registerFieldMetadata(fieldnames.DaysSincePublished,
+		querybuilders.ForDays(search.CVEPublishedOn),
+		violationmessages.VulnContextFields,
+		func(*validateConfiguration) *regexp.Regexp {
+			return integerValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
+
 	f.registerFieldMetadata(fieldnames.DisallowedAnnotation,
 		querybuilders.ForFieldLabelMap(search.DeploymentAnnotation, query.MapShouldContain),
 		nil,
@@ -541,7 +550,7 @@ func initializeFieldMetadata() FieldMetadata {
 		[]RuntimeFieldType{Process})
 
 	f.registerFieldMetadata(fieldnames.ProcessArguments,
-		querybuilders.ForFieldLabelRegex(search.ProcessArguments),
+		querybuilders.ForFieldLabelContainsRegex(search.ProcessArguments),
 		nil,
 		func(*validateConfiguration) *regexp.Regexp {
 			return stringValueRegex

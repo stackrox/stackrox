@@ -16,9 +16,12 @@ metadata:
         event == "pull_request" && (
           target_branch.startsWith("release-") ||
           source_branch.matches("(konflux|renovate|appstudio|rhtap)") ||
-          body.pull_request.labels.exists(l, l.name == "konflux-build")
-        )
+          (has(body.pull_request) && has(body.pull_request.labels) && body.pull_request.labels.exists(l, l.name == "konflux-build"))
+        ) && body.action != "ready_for_review"
       )
+    # The empty `on-label` annotation is a workaround to make sure the pipeline gets triggered when the label gets first
+    # added to the PR. See the Slack tread linked from ROX-30580.
+    pipelinesascode.tekton.dev/on-label: "[]"
   labels:
     appstudio.openshift.io/application: acs
   name: retag-scanner
@@ -31,23 +34,26 @@ spec:
     value: '{{source_url}}'
   - name: revision
     value: '{{revision}}'
-  - name: output-image-repo
-    value: quay.io/rhacs-eng/scanner
   - name: input-image-repo
-    value: quay.io/rhacs-eng/scanner
+    value: quay.io/rhacs-eng/release-scanner
   - name: input-image-tag-makefile-target
     value: scanner-tag
-
-  workspaces:
-  - name: git-auth
-    secret:
-      secretName: '{{ git_auth_secret }}'
+  - name: output-image-repo
+    value: quay.io/rhacs-eng/release-scanner
 
   pipelineRef:
     name: retag-pipeline
+
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-scanner
 
   timeouts:
     tasks: 30m
     # Reserve time for final tasks to run.
     finally: 10m
     pipeline: 40m
+
+  workspaces:
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'

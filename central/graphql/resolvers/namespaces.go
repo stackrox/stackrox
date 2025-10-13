@@ -68,14 +68,14 @@ func init() {
 func (resolver *namespaceResolver) getClusterNamespaceRawQuery() string {
 	return search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
-		AddExactMatches(search.Namespace, resolver.data.Metadata.GetName()).
+		AddExactMatches(search.Namespace, resolver.data.GetMetadata().GetName()).
 		Query()
 }
 
 func (resolver *namespaceResolver) getClusterNamespaceQuery() *v1.Query {
 	return search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
-		AddExactMatches(search.Namespace, resolver.data.Metadata.GetName()).
+		AddExactMatches(search.Namespace, resolver.data.GetMetadata().GetName()).
 		ProtoQuery()
 }
 
@@ -304,7 +304,7 @@ func (resolver *namespaceResolver) K8sRoles(ctx context.Context, args PaginatedQ
 	return resolver.root.K8sRoles(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
-func (resolver *namespaceResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
+func (resolver *namespaceResolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Images")
 	return resolver.root.Images(resolver.namespaceScopeContext(ctx), args)
 }
@@ -325,7 +325,7 @@ func (resolver *namespaceResolver) getApplicablePolicies(ctx context.Context, q 
 		return nil, err
 	}
 
-	applicable, _ := matcher.NewNamespaceMatcher(resolver.data.Metadata).FilterApplicablePolicies(policies)
+	applicable, _ := matcher.NewNamespaceMatcher(resolver.data.GetMetadata()).FilterApplicablePolicies(policies)
 	return applicable, nil
 }
 
@@ -372,7 +372,7 @@ func (resolver *namespaceResolver) Policies(ctx context.Context, args PaginatedQ
 	for _, policyResolver := range policyResolvers {
 		policyResolver.ctx = scoped.Context(ctx, scoped.Scope{
 			Level: v1.SearchCategory_NAMESPACES,
-			ID:    resolver.data.GetMetadata().GetId(),
+			IDs:   []string{resolver.data.GetMetadata().GetId()},
 		})
 	}
 
@@ -423,7 +423,7 @@ func (resolver *namespaceResolver) PolicyStatus(ctx context.Context, args RawQue
 
 	scopedCtx := scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_NAMESPACES,
-		ID:    resolver.data.GetMetadata().GetId(),
+		IDs:   []string{resolver.data.GetMetadata().GetId()},
 	})
 
 	if len(alerts) == 0 {
@@ -505,7 +505,7 @@ func (resolver *namespaceResolver) namespaceScopeContext(ctx context.Context) co
 	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_NAMESPACES,
-		ID:    resolver.data.GetMetadata().GetId(),
+		IDs:   []string{resolver.data.GetMetadata().GetId()},
 	})
 }
 
@@ -569,7 +569,7 @@ func (resolver *namespaceResolver) NetworkPolicyCount(ctx context.Context, _ Raw
 	networkPolicyCount, err := resolver.root.NetworkPoliciesStore.CountMatchingNetworkPolicies(
 		ctx,
 		resolver.data.GetMetadata().GetClusterId(),
-		resolver.data.Metadata.GetName(),
+		resolver.data.GetMetadata().GetName(),
 	)
 	if err != nil {
 		return 0, errors.Wrap(err, "counting network policies")

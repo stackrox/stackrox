@@ -124,7 +124,42 @@ spec:
         - mountPath: "/etc/stackrox"
           name: collector-config
           readOnly: true
+        - mountPath: /var/profiles
+          name: collector-profiles
       {{- end }}
+
+      [<- if .FeatureFlags.ROX_SENSITIVE_FILE_ACTIVITY >]
+      - name: fact
+        image: {{ quote ._rox.image.fact.fullRef }}
+        imagePullPolicy: {{ ._rox.fact.imagePullPolicy }}
+        {{- if ._rox.fact.exposeMonitoring }}
+        ports:
+          - containerPort: 9001
+            name: monitoring
+        {{- end }}
+        command: ["/usr/local/bin/fact", "--skip-pre-flight"]
+        env:
+        - name: FACT_LOGLEVEL
+          value: 'debug'
+        {{- include "srox.envVars" (list . "daemonset" "fact" "fact") | nindent 8 }}
+        resources:
+          {{- ._rox.fact._resources | nindent 10 }}
+        securityContext:
+          capabilities:
+            drop:
+            - NET_RAW
+          privileged: true
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /sys
+          name: sys-ro
+          readOnly: true
+          mountPropagation: HostToContainer
+        - mountPath: /run/secrets/stackrox.io/certs/
+          name: certs
+          readOnly: true
+      [<- end >]
+
       - command:
         - stackrox/compliance
         env:
@@ -136,6 +171,14 @@ spec:
           valueFrom:
             resourceFieldRef:
               resource: limits.cpu
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         - name: ROX_CALL_NODE_INVENTORY_ENABLED
           value: {{ if eq ._rox.env.openshift 4 }}"true"{{ else }}"false"{{ end }}
       {{- if eq ._rox.env.openshift 4 }}
@@ -212,6 +255,14 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         {{- include "srox.envVars" (list . "daemonset" "collector" "node-inventory") | nindent 8 }}
         volumeMounts:
          - mountPath: /host
@@ -269,6 +320,8 @@ spec:
       - name: etc-pki-volume
         emptyDir: {}
       - name: tmp-volume
+        emptyDir: {}
+      - name: collector-profiles
         emptyDir: {}
       - name: cache-volume
         emptyDir:

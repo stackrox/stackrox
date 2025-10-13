@@ -6,15 +6,19 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
+	"github.com/google/uuid"
 	reportStorage "github.com/stackrox/rox/central/complianceoperator/v2/report/store/postgres"
 	scanConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -73,10 +77,6 @@ func (s *complianceReportSnapshotDataStoreSuite) SetupTest() {
 	s.scanConfigDB = scanConfigDS.GetTestPostgresDataStore(s.T(), s.db)
 	require.NoError(s.T(), s.scanConfigDB.UpsertScanConfiguration(s.hasWriteCtx, &storage.ComplianceOperatorScanConfigurationV2{Id: uuidScanConfigStub1, ScanConfigName: uuidScanConfigStub1}))
 	require.NoError(s.T(), s.scanConfigDB.UpsertScanConfiguration(s.hasWriteCtx, &storage.ComplianceOperatorScanConfigurationV2{Id: uuidScanConfigStub2, ScanConfigName: uuidScanConfigStub2}))
-}
-
-func (s *complianceReportSnapshotDataStoreSuite) TearDownTest() {
-	s.db.Teardown(s.T())
 }
 
 func (s *complianceReportSnapshotDataStoreSuite) TestUpsertReport() {
@@ -177,6 +177,112 @@ func (s *complianceReportSnapshotDataStoreSuite) TestGetReports() {
 	_, found, err = s.datastore.GetSnapshot(s.hasReadCtx, uuidNonExisting)
 	s.Require().NoError(err)
 	s.Require().False(found)
+}
+
+func (s *complianceReportSnapshotDataStoreSuite) TestDeleteOrphaned() {
+	// make sure we have nothing
+	reportIDs, err := s.storage.GetIDs(s.hasReadCtx)
+	s.Require().NoError(err)
+	s.Require().Empty(reportIDs)
+
+	user := getUser("u-1", "user-1")
+	runStates := []storage.ComplianceOperatorReportStatus_RunState{
+		storage.ComplianceOperatorReportStatus_WAITING,
+		storage.ComplianceOperatorReportStatus_PREPARING,
+		storage.ComplianceOperatorReportStatus_GENERATED,
+		storage.ComplianceOperatorReportStatus_DELIVERED,
+		storage.ComplianceOperatorReportStatus_FAILURE,
+		storage.ComplianceOperatorReportStatus_PARTIAL_ERROR,
+	}
+	var reports []*storage.ComplianceOperatorReportSnapshotV2
+	for _, state := range runStates {
+		id, _ := uuid.NewUUID()
+		reports = append(reports, getTestReport(id.String(),
+			uuidScanConfigStub1,
+			getStatus(state, timestamp.Now().Protobuf(), nil, "", storage.ComplianceOperatorReportStatus_SCHEDULED, storage.ComplianceOperatorReportStatus_EMAIL),
+			user))
+		id, _ = uuid.NewUUID()
+		reports = append(reports, getTestReport(id.String(),
+			uuidScanConfigStub1,
+			getStatus(state, timestamp.Now().Protobuf(), nil, "", storage.ComplianceOperatorReportStatus_SCHEDULED, storage.ComplianceOperatorReportStatus_DOWNLOAD),
+			user))
+	}
+	id, _ := uuid.NewUUID()
+	reports = append(reports, getTestReport(id.String(),
+		uuidScanConfigStub1,
+		getStatus(storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_EMAIL, timestamp.Now().Protobuf(), nil, "", storage.ComplianceOperatorReportStatus_SCHEDULED, storage.ComplianceOperatorReportStatus_EMAIL),
+		user))
+	id, _ = uuid.NewUUID()
+	reports = append(reports, getTestReport(id.String(),
+		uuidScanConfigStub1,
+		getStatus(storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_DOWNLOAD, timestamp.Now().Protobuf(), nil, "", storage.ComplianceOperatorReportStatus_SCHEDULED, storage.ComplianceOperatorReportStatus_DOWNLOAD),
+		user))
+
+	for _, r := range reports {
+		s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, r))
+	}
+	s.Assert().NoError(DeleteOrphanedReportSnapshots(s.hasWriteCtx, s.datastore))
+
+	expectedEmailStates := set.NewSet[storage.ComplianceOperatorReportStatus_RunState](
+		storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_EMAIL,
+		storage.ComplianceOperatorReportStatus_PARTIAL_ERROR,
+		storage.ComplianceOperatorReportStatus_FAILURE,
+		storage.ComplianceOperatorReportStatus_DELIVERED,
+	)
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorReportNotificationMethod, storage.ComplianceOperatorReportStatus_EMAIL.String()).
+		ProtoQuery()
+	searchResults, err := s.datastore.SearchSnapshots(s.hasReadCtx, query)
+	s.Require().NoError(err)
+	s.Assert().Len(searchResults, len(expectedEmailStates))
+	for _, report := range searchResults {
+		s.Assert().True(expectedEmailStates.Contains(report.GetReportStatus().GetRunState()))
+	}
+
+	expectedDownloadStates := set.NewSet[storage.ComplianceOperatorReportStatus_RunState](
+		storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_DOWNLOAD,
+		storage.ComplianceOperatorReportStatus_PARTIAL_ERROR,
+		storage.ComplianceOperatorReportStatus_FAILURE,
+		storage.ComplianceOperatorReportStatus_DELIVERED,
+		storage.ComplianceOperatorReportStatus_GENERATED,
+	)
+	query = search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorReportNotificationMethod, storage.ComplianceOperatorReportStatus_DOWNLOAD.String()).
+		ProtoQuery()
+	searchResults, err = s.datastore.SearchSnapshots(s.hasReadCtx, query)
+	s.Require().NoError(err)
+	s.Assert().Len(searchResults, len(expectedDownloadStates))
+	for _, report := range searchResults {
+		s.Assert().True(expectedDownloadStates.Contains(report.GetReportStatus().GetRunState()))
+	}
+}
+
+func (s *complianceReportSnapshotDataStoreSuite) TestGetLastSnapshot() {
+	// make sure we have nothing
+	reportIDs, err := s.storage.GetIDs(s.hasReadCtx)
+	s.Require().NoError(err)
+	s.Require().Empty(reportIDs)
+
+	timeNow := time.Now()
+	oldTime := timeNow.Add(-time.Hour)
+	timestampNow, err := protocompat.ConvertTimeToTimestampOrError(timeNow)
+	s.Require().NoError(err)
+	oldTimestamp, err := protocompat.ConvertTimeToTimestampOrError(oldTime)
+	s.Require().NoError(err)
+
+	status1 := getStatus(storage.ComplianceOperatorReportStatus_PREPARING, oldTimestamp, timestampNow, "", storage.ComplianceOperatorReportStatus_SCHEDULED, storage.ComplianceOperatorReportStatus_EMAIL)
+	status2 := getStatus(storage.ComplianceOperatorReportStatus_PREPARING, oldTimestamp, oldTimestamp, "", storage.ComplianceOperatorReportStatus_SCHEDULED, storage.ComplianceOperatorReportStatus_EMAIL)
+	user := getUser("u-1", "user-1")
+	reports := []*storage.ComplianceOperatorReportSnapshotV2{
+		getTestReport(uuidStub1, uuidScanConfigStub1, status1, user),
+		getTestReport(uuidStub2, uuidScanConfigStub1, status2, user),
+	}
+	for _, r := range reports {
+		s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, r))
+	}
+	snapshot, err := s.datastore.GetLastSnapshotFromScanConfig(s.hasReadCtx, uuidScanConfigStub1)
+	s.Assert().NoError(err)
+	s.Assert().Equal(uuidStub1, snapshot.GetReportId())
 }
 
 func getTestReport(id string, scanConfigID string, status *storage.ComplianceOperatorReportStatus, user *storage.SlimUser) *storage.ComplianceOperatorReportSnapshotV2 {

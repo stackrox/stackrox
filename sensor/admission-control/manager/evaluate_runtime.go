@@ -121,7 +121,7 @@ func (m *manager) evaluatePodEvent(s *state, req *admission.AdmissionRequest, ev
 
 		alerts, err := m.kickOffImgScansAndDetect(fetchImgCtx, s, getAlertsFunc, deployment)
 		if err != nil {
-			return nil, false, err
+			return nil, false, errors.Wrap(err, "runtime detection for deployment and event")
 		}
 		return alerts, true, nil
 	}
@@ -138,7 +138,7 @@ func (m *manager) evaluatePodEvent(s *state, req *admission.AdmissionRequest, ev
 
 	alerts, err := s.runtimeDetectorForPoliciesWithoutDeployFields.DetectForDeploymentAndKubeEvent(booleanpolicy.EnhancedDeployment{}, event)
 	if err != nil {
-		return nil, false, err
+		return nil, false, errors.Wrap(err, "runtime detection without deployment enrichment")
 	}
 	return alerts, false, nil
 }

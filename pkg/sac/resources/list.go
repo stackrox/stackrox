@@ -67,6 +67,7 @@ var (
 
 	Secret                           = newResourceMetadata("Secret", permissions.NamespaceScope)
 	ServiceAccount                   = newResourceMetadata("ServiceAccount", permissions.NamespaceScope)
+	VirtualMachine                   = newResourceMetadata("VirtualMachine", permissions.NamespaceScope)
 	VulnerabilityManagementApprovals = newResourceMetadata("VulnerabilityManagementApprovals",
 		permissions.GlobalScope)
 	VulnerabilityManagementRequests = newResourceMetadata("VulnerabilityManagementRequests",
@@ -79,11 +80,14 @@ var (
 	WorkflowAdministration = newResourceMetadata("WorkflowAdministration", permissions.GlobalScope)
 
 	// Internal Resources.
-	ComplianceOperator = newInternalResourceMetadata("ComplianceOperator", permissions.GlobalScope)
-	InstallationInfo   = newInternalResourceMetadata("InstallationInfo", permissions.GlobalScope)
-	Notifications      = newInternalResourceMetadata("Notifications", permissions.GlobalScope)
-	Version            = newInternalResourceMetadata("Version", permissions.GlobalScope)
-	Hash               = newInternalResourceMetadata("Hash", permissions.GlobalScope)
+	ComplianceOperator   = newInternalResourceMetadata("ComplianceOperator", permissions.GlobalScope)
+	Hash                 = newInternalResourceMetadata("Hash", permissions.GlobalScope)
+	InitBundleMeta       = newInternalResourceMetadata("InitBundleMeta", permissions.GlobalScope)
+	InstallationInfo     = newInternalResourceMetadata("InstallationInfo", permissions.GlobalScope)
+	Notifications        = newInternalResourceMetadata("Notifications", permissions.GlobalScope)
+	NetworkEntity        = newInternalResourceMetadata("NetworkEntity", permissions.GlobalScope)
+	Version              = newInternalResourceMetadata("Version", permissions.GlobalScope)
+	VulnerabilityRequest = newInternalResourceMetadata("VulnerabilityRequest", permissions.GlobalScope)
 
 	resourceToMetadata         = make(map[permissions.Resource]permissions.ResourceMetadata)
 	disabledResourceToMetadata = make(map[permissions.Resource]permissions.ResourceMetadata)

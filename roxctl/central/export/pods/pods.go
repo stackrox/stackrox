@@ -19,7 +19,7 @@ import (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "pods",
-		Short: "(Technology Preview) Exports all pods from Central.",
+		Short: "(Technology Preview) Exports all pods from Central",
 		Long:  "Exports all pods from Central." + common.TechPreviewLongText,
 	}
 

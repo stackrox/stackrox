@@ -1,5 +1,5 @@
-import * as yup from 'yup';
-import React, { ReactElement, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import {
     Alert,
     Button,
@@ -14,11 +14,12 @@ import {
     PageSection,
     Popover,
     TextInput,
+    SelectOption,
 } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
 import { FieldArray, FormikProvider } from 'formik';
 import { ArrowRightIcon, HelpIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 import merge from 'lodash/merge';
+import * as yup from 'yup';
 
 import FormMessage from 'Components/PatternFly/FormMessage';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
@@ -26,14 +27,15 @@ import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import PopoverBodyContent from 'Components/PopoverBodyContent';
 import SelectSingle from 'Components/SelectSingle';
-import { fetchRolesAsArray, Role } from 'services/RolesService';
-import { MachineConfigType } from 'services/MachineAccessService';
+import { fetchRolesAsArray } from 'services/RolesService';
+import type { Role } from 'services/RolesService';
+import type { MachineConfigType } from 'services/MachineAccessService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-import { IntegrationFormProps } from 'Containers/Integrations/IntegrationForm/integrationFormTypes';
-import useIntegrationForm from 'Containers/Integrations/IntegrationForm/useIntegrationForm';
-import FormLabelGroup from 'Containers/Integrations/IntegrationForm/FormLabelGroup';
-import IntegrationFormActions from 'Containers/Integrations/IntegrationForm/IntegrationFormActions';
+import type { IntegrationFormProps } from '../integrationFormTypes';
+import useIntegrationForm from '../useIntegrationForm';
+import FormLabelGroup from '../FormLabelGroup';
+import IntegrationFormActions from '../IntegrationFormActions';
 
 export type MachineAccessConfig = {
     id: string;
@@ -317,7 +319,9 @@ function MachineAccessIntegrationForm({
                                                                     <SelectOption
                                                                         key={name}
                                                                         value={name}
-                                                                    />
+                                                                    >
+                                                                        {name}
+                                                                    </SelectOption>
                                                                 ))}
                                                             </SelectSingle>
                                                             <FormHelperText>

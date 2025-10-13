@@ -46,18 +46,11 @@ type testDataStore struct {
 func makeDS(t *testing.T, alerts []*storage.Alert) testDataStore {
 	testDB := pgtest.ForT(t)
 	assert.NotNil(t, testDB)
-	alertsDS, err := datastore.GetTestPostgresDataStore(t, testDB.DB)
-	require.NoError(t, err)
+	alertsDS := datastore.GetTestPostgresDataStore(t, testDB.DB)
 
-	err = alertsDS.UpsertAlerts(sac.WithAllAccess(context.Background()), alerts)
-	require.NoError(t, err)
+	require.NoError(t, alertsDS.UpsertAlerts(sac.WithAllAccess(context.Background()), alerts))
 
 	return testDataStore{testDB: testDB, alertsDS: alertsDS}
-}
-
-// teardown cleans up test datastore.
-func (d *testDataStore) teardown(t *testing.T) {
-	d.testDB.Teardown(t)
 }
 
 // these simply converts varargs to slice for slightly less typing (pun intended).
@@ -68,7 +61,6 @@ func these(alerts ...*storage.Alert) []*storage.Alert {
 // withAlerts runs action in a scope of test datastore.DataStore that contains given alerts.
 func (s *violationsTestSuite) withAlerts(alerts []*storage.Alert, action func(alertsDS datastore.DataStore)) {
 	ds := makeDS(s.T(), alerts)
-	defer ds.teardown(s.T())
 	action(ds.alertsDS)
 }
 
@@ -85,8 +77,8 @@ func (s *violationsTestSuite) TestQueryReturnsAlertsWithAllStates() {
 	})
 
 	s.Len(alertIDs, 2)
-	s.Contains(alertIDs, s.k8sAlert.Id)
-	s.Contains(alertIDs, s.deployAlert.Id)
+	s.Contains(alertIDs, s.k8sAlert.GetId())
+	s.Contains(alertIDs, s.deployAlert.GetId())
 }
 
 func (s *violationsTestSuite) TestQueryAlertsWithTimestamp() {
@@ -98,19 +90,19 @@ func (s *violationsTestSuite) TestQueryAlertsWithTimestamp() {
 		{
 			name:      "More than a day earlier",
 			timestamp: "2021-01-31T00:00:00Z",
-			ids:       []string{s.processAlert.Id, s.k8sAlert.Id, s.deployAlert.Id},
+			ids:       []string{s.processAlert.GetId(), s.k8sAlert.GetId(), s.deployAlert.GetId()},
 		}, {
 			name:      "Earlier same day",
 			timestamp: "2021-02-01T16:05:00Z",
-			ids:       []string{s.processAlert.Id, s.k8sAlert.Id, s.deployAlert.Id},
+			ids:       []string{s.processAlert.GetId(), s.k8sAlert.GetId(), s.deployAlert.GetId()},
 		}, {
 			name:      "Between two, within a day",
 			timestamp: "2021-02-01T17:00:00Z",
-			ids:       []string{s.processAlert.Id, s.k8sAlert.Id},
+			ids:       []string{s.processAlert.GetId(), s.k8sAlert.GetId()},
 		}, {
 			name:      "Between two, different days",
 			timestamp: "2021-02-05T00:00:00Z",
-			ids:       []string{s.k8sAlert.Id},
+			ids:       []string{s.k8sAlert.GetId()},
 		}, {
 			name:      "After last, the same day",
 			timestamp: "2021-02-15T19:04:37Z",
@@ -143,7 +135,7 @@ func (s *violationsTestSuite) TestQueryAlertsAreSortedByAlertID() {
 	// sorting by ID really works.
 	for _, a := range alerts {
 		a.Id = uuid.NewV4().String()
-		sortedIDs = append(sortedIDs, a.Id)
+		sortedIDs = append(sortedIDs, a.GetId())
 	}
 	sort.Slice(sortedIDs, func(i, j int) bool {
 		return sortedIDs[i] < sortedIDs[j]
@@ -212,7 +204,7 @@ func (s *violationsTestSuite) queryAlertsWithCheckpoint(alertsDS datastore.DataS
 
 	alertIDs := make([]string, 0, len(returnedAlerts))
 	for _, a := range returnedAlerts {
-		alertIDs = append(alertIDs, a.Id)
+		alertIDs = append(alertIDs, a.GetId())
 	}
 
 	return alertIDs

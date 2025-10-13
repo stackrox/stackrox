@@ -1,5 +1,6 @@
-import React, { ReactElement } from 'react';
-import { Link } from 'react-router-dom';
+import React from 'react';
+import type { ReactElement } from 'react';
+import { Link } from 'react-router-dom-v5-compat';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
 

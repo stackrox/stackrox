@@ -3,6 +3,7 @@ import { differenceInDays, differenceInMinutes } from 'date-fns';
 import get from 'lodash/get';
 import { DownloadCloud } from 'react-feather';
 import {
+    BanIcon,
     CheckCircleIcon,
     ExclamationCircleIcon,
     ExclamationTriangleIcon,
@@ -10,12 +11,18 @@ import {
     InProgressIcon,
     MinusCircleIcon,
     ResourcesEmptyIcon,
+    UnknownIcon,
 } from '@patternfly/react-icons';
 
-import { Cluster, ClusterProviderMetadata } from 'types/cluster.proto';
-import { getDate } from 'utils/dateUtils';
-import { getProductBranding } from 'constants/productBranding';
-import { CertExpiryStatus } from './clusterTypes';
+import type {
+    Cluster,
+    ClusterHealthStatusLabel,
+    ClusterProviderMetadata,
+} from 'types/cluster.proto';
+import { getDate, getDistanceStrict } from 'utils/dateUtils';
+
+import { healthStatusLabels } from './cluster.constants';
+import type { CertExpiryStatus } from './clusterTypes';
 
 export const runtimeOptions = [
     {
@@ -66,7 +73,8 @@ const defaultNewClusterType = 'KUBERNETES_CLUSTER';
 const defaultCollectionMethod = 'CORE_BPF';
 
 export const newClusterDefault = {
-    id: undefined,
+    // TODO Add Cluster type and add missing properties?
+    id: undefined, // TODO empty string?
     name: '',
     type: defaultNewClusterType,
     mainImage: 'stackrox/main',
@@ -74,24 +82,25 @@ export const newClusterDefault = {
     centralApiEndpoint: 'central.stackrox:443',
     runtimeSupport: false,
     collectionMethod: defaultCollectionMethod,
-    DEPRECATEDProviderMetadata: null,
     admissionControllerEvents: true,
-    admissionController: false,
-    admissionControllerUpdates: false,
-    DEPRECATEDOrchestratorMetadata: null,
-    status: undefined,
+    admissionController: true, // default changed in 4.9
+    admissionControllerUpdates: true, // default changed in 4.9
+    admissionControllerFailOnError: false, // property added in 4.9 false means Fail open
+    status: null,
     tolerationsConfig: {
         disabled: false,
     },
     dynamicConfig: {
         admissionControllerConfig: {
-            enabled: false,
-            enforceOnUpdates: false,
-            timeoutSeconds: 3,
-            scanInline: false,
+            enabled: true, // default changed in 4.9
+            enforceOnUpdates: true, // default changed in 4.9
+            timeoutSeconds: 0, // default changed in 4.9
+            scanInline: true, // default changed in 4.9
             disableBypass: false,
         },
         registryOverride: '',
+        disableAuditLogs: false,
+        autoLockProcessBaselinesConfig: null,
     },
     healthStatus: undefined,
     slimCollector: false,
@@ -109,34 +118,52 @@ const MinusCircleRotate45 = ({ className }: MinusCircleRotate45Props) => (
     <MinusCircleIcon className={`${className} transform rotate-45`} />
 );
 
-export const styleUninitialized = {
+const styleUninitializedLegacy = {
     Icon: MinusCircleRotate45,
     fgColor: '',
 };
 
-export const styleHealthy = {
+const styleUninitialized = {
+    Icon: BanIcon,
+    fgColor: '',
+};
+
+const styleHealthy = {
     Icon: CheckCircleIcon,
     fgColor: 'pf-v5-u-success-color-100',
 };
 
-export const styleDegraded = {
+const styleDegraded = {
     Icon: ExclamationTriangleIcon,
     fgColor: 'pf-v5-u-warning-color-100',
 };
 
-export const styleUnhealthy = {
+const styleUnhealthy = {
     Icon: ExclamationCircleIcon,
     fgColor: 'pf-v5-u-danger-color-100',
 };
 
+const styleUnavailable = {
+    Icon: UnknownIcon,
+    fgColor: '',
+};
+
 // Styles for ClusterStatus, SensorStatus, CollectorStatus.
 // Colors are similar to LabelChip, but fgColor is slightly lighter 700 instead of 800.
-export const healthStatusStyles = {
-    UNINITIALIZED: styleUninitialized,
+export const healthStatusStylesLegacy = {
+    UNINITIALIZED: styleUninitializedLegacy,
     UNAVAILABLE: {
         Icon: ResourcesEmptyIcon,
         fgColor: '',
     },
+    UNHEALTHY: styleUnhealthy,
+    DEGRADED: styleDegraded,
+    HEALTHY: styleHealthy,
+};
+
+export const healthStatusStyles = {
+    UNINITIALIZED: styleUninitialized,
+    UNAVAILABLE: styleUnavailable,
     UNHEALTHY: styleUnhealthy,
     DEGRADED: styleDegraded,
     HEALTHY: styleHealthy,
@@ -175,7 +202,7 @@ export const sensorUpgradeStyles = {
 };
 
 type UpgradeState = {
-    displayValue?: string;
+    displayValue: string;
     type: string;
     actionText?: string;
 };
@@ -188,16 +215,18 @@ const upgradeStates: UpgradeStates = {
         type: 'current',
     },
     MANUAL_UPGRADE_REQUIRED: {
-        displayValue: `Secured cluster version is not managed by ${getProductBranding().shortName}.`,
+        displayValue: 'Sensor is not running the same version as Central',
         type: 'intervention',
     },
     UPGRADE_AVAILABLE: {
+        displayValue: 'Upgrade available',
         type: 'download',
-        actionText: 'Upgrade available',
+        actionText: 'Upgrade sensor',
     },
     DOWNGRADE_POSSIBLE: {
+        displayValue: 'Downgrade possible',
         type: 'download',
-        actionText: 'Downgrade possible',
+        actionText: 'Downgrade sensor',
     },
     UPGRADE_INITIALIZING: {
         displayValue: 'Upgrade initializing',
@@ -515,6 +544,23 @@ export function getUpgradeableClusters(clusters: Cluster[] = []): Cluster[] {
 
         return upgradeStateObject?.actionText; // if property exists, you can try or retry an upgrade
     });
+}
+
+export function buildStatusMessage(
+    healthStatus: ClusterHealthStatusLabel,
+    lastContact: string | null | undefined,
+    sensorHealthStatus: ClusterHealthStatusLabel,
+    formatDelayedText: (distance: string) => string = (distance) => `${distance} ago`
+): string {
+    let message = healthStatusLabels[healthStatus];
+
+    const isDelayed = !!(lastContact && isDelayedSensorHealthStatus(sensorHealthStatus));
+
+    if (isDelayed && lastContact) {
+        const distance = getDistanceStrict(lastContact, new Date());
+        message += ` ${formatDelayedText(distance)}`;
+    }
+    return message;
 }
 
 export default {

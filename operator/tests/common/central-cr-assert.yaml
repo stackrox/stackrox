@@ -13,28 +13,36 @@ collectors:
 - type: pod
   selector: app=scanner-db
   tail: -1
+- type: pod
+  selector: app=scanner-v4-indexer
+  tail: -1
+- type: pod
+  selector: app=scanner-v4-matcher
+  tail: -1
+- type: pod
+  selector: app=scanner-v4-db
+  tail: -1
 - command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=central
 - command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=central-db
 - command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner
 - command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner-db
-timeout: 1500
----
-apiVersion: platform.stackrox.io/v1alpha1
-kind: Central
-metadata:
+- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner-v4-indexer
+- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner-v4-matcher
+- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner-v4-db
+# Please keep the above lists in sync with pods-debug.yaml
+- command: retry-kubectl.sh describe central.platform.stackrox.io -n $NAMESPACE stackrox-central-services
+resourceRefs:
+- apiVersion: platform.stackrox.io/v1alpha1
+  kind: Central
   name: stackrox-central-services
-status:
-  conditions:
-  - status: "True"
-    type: Deployed
-  - status: "True"
-    type: Initialized
-  - status: "False"
-    type: Irreconcilable
-  - status: "False"
-    type: ProxyConfigFailed
-  - status: "False"
-    type: ReleaseFailed
+  ref: central_cr
+assertAll:
+- celExpr: "central_cr.status.conditions.filter(c, c.type=='Deployed').exists(c, c.status=='True')"
+- celExpr: "central_cr.status.conditions.filter(c, c.type=='Initialized').exists(c, c.status=='True')"
+- celExpr: "central_cr.status.conditions.filter(c, c.type=='Irreconcilable').exists(c, c.status=='False')"
+- celExpr: "central_cr.status.conditions.filter(c, c.type=='ProxyConfigFailed').exists(c, c.status=='False')"
+- celExpr: "central_cr.status.conditions.filter(c, c.type=='ReleaseFailed').exists(c, c.status=='False')"
+timeout: 1500
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -64,6 +72,27 @@ metadata:
 status:
   availableReplicas: 1
 ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner-v4-indexer
+status:
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner-v4-matcher
+status:
+  availableReplicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner-v4-db
+status:
+  availableReplicas: 1
+---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -74,3 +103,11 @@ spec:
   resources:
     requests:
       storage: 100Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: scanner-v4-db
+spec:
+  accessModes:
+  - ReadWriteOnce

@@ -16,14 +16,15 @@ import (
 	"github.com/stackrox/rox/config-controller/api/v1alpha1"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"go.yaml.in/yaml/v3"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"gopkg.in/yaml.v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -43,8 +44,9 @@ var (
 )
 
 const (
-	server = "smtp.mailgun.org"
-	user   = "postmaster@sandboxd6576ea8be3c477989eba2c14735d2e6.mailgun.org"
+	server      = "smtp.mailgun.org"
+	user        = "postmaster@sandboxd6576ea8be3c477989eba2c14735d2e6.mailgun.org"
+	clusterName = fixtureconsts.ClusterName1
 )
 
 func TestPolicyAsCode(t *testing.T) {
@@ -55,11 +57,13 @@ type PolicyAsCodeSuite struct {
 	suite.Suite
 	policyClient      v1.PolicyServiceClient
 	notifierClient    v1.NotifierServiceClient
+	clusterClient     v1.ClustersServiceClient
 	centralHTTPClient *http.Client
 	k8sClient         dynamic.ResourceInterface
 	informerfactory   dynamicinformer.DynamicSharedInformerFactory
 	informer          informers.GenericInformer
 	policies          []*storage.Policy
+	cluster           *storage.Cluster
 	notifier          *storage.Notifier
 	ctx               context.Context
 	cleanupCtx        context.Context
@@ -73,6 +77,8 @@ func (pc *PolicyAsCodeSuite) SetupSuite() {
 	conn := centralgrpc.GRPCConnectionToCentral(pc.T())
 	pc.policyClient = v1.NewPolicyServiceClient(conn)
 	pc.notifierClient = v1.NewNotifierServiceClient(conn)
+	pc.clusterClient = v1.NewClustersServiceClient(conn)
+	pc.cluster = pc.createClusterInCentral()
 	pc.notifier = pc.createNotifierInCentral()
 
 	pc.centralHTTPClient = centralgrpc.HTTPClientForCentral(pc.T())
@@ -97,9 +103,9 @@ func (pc *PolicyAsCodeSuite) TestSaveAsCRUpdateDelete() {
 	k8sPolicy = pc.createPolicyInK8s(k8sPolicy)
 
 	// Make sure the ID from Central is used to ensure controller didn't create a duplicate
-	pc.checkPolicyIsDeclarative(policy.Id)
-	pc.updateCRandObserveInCentral(k8sPolicy, policy.Id)
-	pc.deleteCRandObserveInCentral(k8sPolicy, policy.Id)
+	pc.checkPolicyIsDeclarative(policy.GetId())
+	pc.updateCRandObserveInCentral(k8sPolicy, policy.GetId())
+	pc.deleteCRandObserveInCentral(k8sPolicy, policy.GetId())
 }
 
 func createBasePolicyStruct(name string) *v1alpha1.SecurityPolicy {
@@ -155,6 +161,26 @@ func (pc *PolicyAsCodeSuite) TestCreateCR() {
 	pc.policies = append(pc.policies, policy)
 }
 
+func (pc *PolicyAsCodeSuite) TestClusterIDResolution() {
+	k8sPolicy := createBasePolicyStruct("test-cluster-id-resolution")
+	k8sPolicy.Spec.Notifiers = []string{pc.notifier.GetName()}
+	k8sPolicy.Spec.Scope = []v1alpha1.Scope{{
+		Cluster: clusterName,
+	}}
+
+	id := pc.createCRAndObserveInCentral(k8sPolicy)
+	pc.Require().NotEmpty(id)
+	pc.checkPolicyIsDeclarative(id)
+
+	policy, err := pc.policyClient.GetPolicy(pc.ctx, &v1.ResourceByID{
+		Id: id,
+	})
+	pc.Require().NoError(err)
+	pc.policies = append(pc.policies, policy)
+
+	pc.Equal(pc.cluster.GetId(), policy.GetScope()[0].GetCluster())
+}
+
 func (pc *PolicyAsCodeSuite) TestCreateDefaultCR() {
 	k8sPolicy := createBasePolicyStruct("90-Day Image Age")
 	k8sPolicy.SetName("90-day-image-age")
@@ -170,10 +196,10 @@ func (pc *PolicyAsCodeSuite) TestCreateDefaultCR() {
 		case <-timer.C:
 			pc.FailNowf("Policy never marked as rejected as duplicate of default policy", message+": %s", k8sPolicy.Spec.PolicyName)
 		case p := <-ch:
-			if !p.Status.Accepted && strings.Contains(p.Status.Message, "existing default policy with the same name") {
+			if condition := p.Status.Conditions.GetCondition(v1alpha1.PolicyValidated); !p.Status.Conditions.IsPolicyValidated() && strings.Contains(condition.Message, "existing default policy with the same name") {
 				return
 			}
-			message = p.Status.Message
+			message = p.Status.Conditions.GetCondition(v1alpha1.PolicyValidated).Message
 		}
 	}
 }
@@ -195,8 +221,9 @@ func (pc *PolicyAsCodeSuite) TestRenameToDefaultCR() {
 		case <-timer.C:
 			pc.FailNowf("Policy never marked as accepted", message+": %s", k8sPolicy.Spec.PolicyName)
 		case p := <-ch:
-			accepted = p.Status.Accepted
-			message = p.Status.Message
+			acceptedCondition := p.Status.Conditions.GetCondition(v1alpha1.AcceptedByCentral)
+			accepted = acceptedCondition.Status == "True"
+			message = acceptedCondition.Message
 		}
 
 		if accepted {
@@ -223,7 +250,7 @@ func (pc *PolicyAsCodeSuite) TestRenameToDefaultCR() {
 			policy = p
 		}
 
-		if !policy.Status.Accepted && strings.Contains(policy.Status.Message, "existing default policy with the same name") {
+		if condition := policy.Status.Conditions.GetCondition(v1alpha1.PolicyValidated); !policy.Status.Conditions.IsPolicyValidated() && strings.Contains(condition.Message, "existing default policy with the same name") {
 			break
 		}
 	}
@@ -255,6 +282,13 @@ func (pc *PolicyAsCodeSuite) createPolicyInCentral() *storage.Policy {
 	return policy
 }
 
+func (pc *PolicyAsCodeSuite) createClusterInCentral() *storage.Cluster {
+	log.Infof("Adding cluster with name \"%s\"", clusterName)
+	cluster, err := pc.clusterClient.PostCluster(pc.ctx, &storage.Cluster{Name: fixtureconsts.ClusterName1, MainImage: "docker.io/stackrox/rox:latest", CentralApiEndpoint: "central.stackrox:443"})
+	pc.NoError(err)
+	return cluster.GetCluster()
+}
+
 func (pc *PolicyAsCodeSuite) createNotifierInCentral() *storage.Notifier {
 	notifierName := "email-notifier"
 	log.Infof("Adding notifier with name \"%s\"", notifierName)
@@ -276,7 +310,7 @@ func (pc *PolicyAsCodeSuite) createNotifierInCentral() *storage.Notifier {
 }
 
 func (pc *PolicyAsCodeSuite) saveAsCustomResource(policy *storage.Policy) *v1alpha1.SecurityPolicy {
-	req := map[string][]string{"ids": {policy.Id}}
+	req := map[string][]string{"ids": {policy.GetId()}}
 	jsonReq, err := json.Marshal(req)
 	pc.Require().NoError(err)
 
@@ -327,10 +361,10 @@ func (pc *PolicyAsCodeSuite) createPolicyInK8s(toCreate *v1alpha1.SecurityPolicy
 		case <-timer.C:
 			pc.FailNowf("Policy never marked as accepted", message+": %s", toCreate.Spec.PolicyName)
 		case p := <-ch:
-			if p.Status.Accepted && p.Status.PolicyId != "" {
+			if p.Status.Conditions.IsAcceptedByCentral() && p.Status.PolicyId != "" {
 				return p
 			}
-			message = p.Status.Message
+			message = p.Status.Conditions.GetCondition(v1alpha1.AcceptedByCentral).Message
 		}
 	}
 }
@@ -377,7 +411,7 @@ func (pc *PolicyAsCodeSuite) checkPolicyIsDeclarative(id string) {
 		if err != nil {
 			collect.Errorf("Failed to get policy: %s", err.Error())
 		}
-		if policy.Source != storage.PolicySource_DECLARATIVE {
+		if policy.GetSource() != storage.PolicySource_DECLARATIVE {
 			collect.Errorf("Policy %s was not marked as declarative in Central", id)
 		}
 	}, time.Second*5, time.Millisecond*30)
@@ -393,7 +427,7 @@ func (pc *PolicyAsCodeSuite) updateCRandObserveInCentral(k8sPolicy *v1alpha1.Sec
 		if err != nil {
 			collect.Errorf("Failed to get policy: %s", err.Error())
 		}
-		criteriaValue := policy.PolicySections[0].PolicyGroups[0].Values[0].Value
+		criteriaValue := policy.GetPolicySections()[0].GetPolicyGroups()[0].GetValues()[0].GetValue()
 		if criteriaValue != "3" {
 			collect.Errorf("Policy criteria not updated in Central. Expected 3 but got %s", criteriaValue)
 		}
@@ -440,18 +474,26 @@ func (pc *PolicyAsCodeSuite) createCRAndObserveInCentral(policyCR *v1alpha1.Secu
 func (pc *PolicyAsCodeSuite) TearDownSuite() {
 	// TODO: Don't double delete
 	for _, policy := range pc.policies {
-		log.Infof("Deleting policy with name \"%s\"", policy.Name)
+		log.Infof("Deleting policy with name \"%s\"", policy.GetName())
 		_, err := pc.policyClient.DeletePolicy(pc.ctx, &v1.ResourceByID{
-			Id: policy.Id,
+			Id: policy.GetId(),
 		})
 		pc.Require().NoError(err)
 	}
 
 	if pc.notifier != nil {
-		log.Infof("Deleting notifier with name \"%s\"", pc.notifier.Name)
+		log.Infof("Deleting notifier with name \"%s\"", pc.notifier.GetName())
 		_, err := pc.notifierClient.DeleteNotifier(pc.ctx, &v1.DeleteNotifierRequest{
-			Id:    pc.notifier.Id,
+			Id:    pc.notifier.GetId(),
 			Force: true,
+		})
+		pc.Require().NoError(err)
+	}
+
+	if pc.cluster != nil {
+		log.Infof("Deleting cluster with name \"%s\"", pc.cluster.GetName())
+		_, err := pc.clusterClient.DeleteCluster(pc.ctx, &v1.ResourceByID{
+			Id: pc.cluster.GetId(),
 		})
 		pc.Require().NoError(err)
 	}

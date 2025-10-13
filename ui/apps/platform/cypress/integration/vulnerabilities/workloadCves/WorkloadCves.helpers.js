@@ -1,5 +1,4 @@
 import { addDays, format } from 'date-fns';
-import { hasFeatureFlag } from '../../../helpers/features';
 import { getDescriptionListGroup } from '../../../helpers/formHelpers';
 import {
     interactAndWaitForResponses,
@@ -8,9 +7,10 @@ import {
 import { visit } from '../../../helpers/visit';
 import { selectors } from './WorkloadCves.selectors';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
+import { compoundFiltersSelectors } from '../../../helpers/compoundFilters';
 
 export function getDateString(date) {
-    return format(date, 'MM/DD/YYYY');
+    return format(date, 'MMM DD, YYYY');
 }
 
 /**
@@ -25,15 +25,10 @@ export function getFutureDateByDays(days) {
 export function visitWorkloadCveOverview({ clearFiltersOnVisit = true, urlSearch = '' } = {}) {
     // With Workload CVEs split between User and Platform components, we can only reliably expect
     // CVEs to be present for the built-in (Platform) components during CI
-    const basePath = hasFeatureFlag('ROX_PLATFORM_CVE_SPLIT')
-        ? '/main/vulnerabilities/platform/'
-        : '/main/vulnerabilities/workload-cves/';
+    const basePath = '/main/vulnerabilities/platform/';
     visit(basePath + urlSearch);
 
-    const pageTitle = hasFeatureFlag('ROX_PLATFORM_CVE_SPLIT')
-        ? 'Platform vulnerabilities'
-        : 'Workload CVEs';
-    cy.get(`h1:contains("${pageTitle}")`);
+    cy.get(`h1:contains("Platform vulnerabilities")`);
     cy.location('pathname').should('eq', basePath);
 
     // Wait for the initial table load to begin and complete
@@ -232,7 +227,7 @@ export function selectSingleCveForException(exceptionType) {
 }
 
 /**
- * Selects the first CVE on each of two pages for the table and opens the exception modal
+ * Selects all cves on the current table page and opens the exception modal
  * @param {('DEFERRAL' | 'FALSE_POSITIVE')} exceptionType
  */
 export function selectMultipleCvesForException(exceptionType) {
@@ -242,31 +237,18 @@ export function selectMultipleCvesForException(exceptionType) {
             ? selectors.deferCveModal
             : selectors.markCveFalsePositiveModal;
 
-    const cveNames = [];
-
-    // Select the first CVE on the first page and the first CVE on the second page
-    // to test multi-deferral flows
+    // Select all visible CVEs to test multi-cve exceptions
     return cy
-        .get(selectors.nthTableRow(1))
-        .then(($row) => {
-            cveNames.push($row.find('td[data-label="CVE"]').text());
-            cy.wrap($row).then(($rowElement) => {
-                const checkbox = $rowElement.find(selectors.tableRowSelectCheckbox);
-                cy.wrap(checkbox).click();
+        .get(`${selectors.allTableRows} td[data-label="CVE"]`)
+        .then(($cells) => $cells.map((_i, cell) => cell.innerText).get())
+        .then((cveNames) => {
+            cy.get(`${selectors.allTableRows} ${selectors.tableRowSelectCheckbox}`).click({
+                multiple: true,
             });
-            return cy.get(selectors.nthTableRow(2));
-        })
-        .then(($nextRow) => {
-            cveNames.push($nextRow.find('td[data-label="CVE"]').text());
-            cy.wrap($nextRow).then(($rowElement) => {
-                const checkbox = $rowElement.find(selectors.tableRowSelectCheckbox);
-                cy.wrap(checkbox).click();
-            });
-
             cy.get(selectors.bulkActionMenuToggle).click();
             cy.get(selectors.menuOption(menuOption)).click();
             cy.get('button:contains("CVE selections")').click();
-            // TODO - Update this code when modal form is completed
+
             cveNames.forEach((name) => {
                 cy.get(`${modalSelector}:contains("${name}")`);
             });
@@ -491,15 +473,23 @@ export function interactAndWaitForDeploymentList(callback) {
     return interactAndWaitForResponses(callback, deploymentListRouteMatcherMap);
 }
 
-export function waitForTableLoadCompleteIndicator() {
-    cy.get(`table ${selectors.loadingSpinner}`);
-    cy.get(`table ${selectors.loadingSpinner}`).should('not.exist');
-}
-
 export function visitNamespaceView() {
-    cy.get('a:contains("Prioritize by namespace view")').click();
+    interactAndWaitForResponses(
+        () => {
+            cy.get('a:contains("Prioritize by namespace view")').click();
+        },
+        getRouteMatcherMapForGraphQL(['getNamespaceViewNamespaces'])
+    );
 }
 
 export function viewCvesByObservationState(observationState) {
     cy.get('button[role="tab"]').contains(observationState).click();
+}
+
+export function assertSearchEntities(entities) {
+    cy.get(compoundFiltersSelectors.entityMenuToggle).click();
+    cy.get(compoundFiltersSelectors.entityMenuItem).should('have.length', entities.length);
+    entities.forEach((entity) => {
+        cy.get(compoundFiltersSelectors.entityMenuItem).contains(entity);
+    });
 }

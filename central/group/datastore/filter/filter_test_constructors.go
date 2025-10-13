@@ -16,7 +16,7 @@ type RetrieverFactory interface {
 
 // GetTestPostgresGroupFilterGenerator returns a generator for filtered group
 // retrieval connected to a postgres database.
-func GetTestPostgresGroupFilterGenerator(_ *testing.T, db postgres.DB) RetrieverFactory {
+func GetTestPostgresGroupFilterGenerator(_ testing.TB, db postgres.DB) RetrieverFactory {
 	groupStore := postgresStore.New(db)
 	return &factoryImpl{
 		store: groupStore,

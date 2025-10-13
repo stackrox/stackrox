@@ -161,7 +161,7 @@ func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.Msg
 		return
 	}
 
-	typ := reflectutils.Type(msg.Msg)
+	typ := reflectutils.Type(msg.GetMsg())
 	queue := queues[typ]
 	if queue == nil {
 		concurrency.WithLock(&c.queuesMutex, func() {
@@ -243,6 +243,7 @@ func (c *sensorConnection) runSend(server central.SensorService_CommunicateServe
 			return
 		case msg := <-c.sendC:
 			if err := wrappedStream.Send(msg); err != nil {
+				metrics.IncrementMsgToSensorNotSentCounter(c.clusterID, msg, metrics.NotSentError)
 				c.stopSig.SignalWithError(errors.Wrap(err, "send error"))
 				return
 			}
@@ -275,14 +276,19 @@ func (c *sensorConnection) InjectMessage(ctx concurrency.Waitable, msg *central.
 	case c.sendC <- msg:
 		return nil
 	case <-ctx.Done():
+		metrics.IncrementMsgToSensorNotSentCounter(c.clusterID, msg, metrics.NotSentSignal)
+		if errCtx, ok := ctx.(concurrency.ErrorWaitable); ok {
+			return errors.Wrap(errCtx.Err(), "context aborted")
+		}
 		return errors.New("context aborted")
 	case <-c.stopSig.Done():
+		metrics.IncrementMsgToSensorNotSentCounter(c.clusterID, msg, metrics.NotSentSignal)
 		return errors.Wrap(c.stopSig.Err(), "could not send message as sensor connection was stopped")
 	}
 }
 
 func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFromSensor) error {
-	switch m := msg.Msg.(type) {
+	switch m := msg.GetMsg().(type) {
 	case *central.MsgFromSensor_ScrapeUpdate:
 		return c.scrapeCtrl.ProcessScrapeUpdate(m.ScrapeUpdate)
 	case *central.MsgFromSensor_NetworkPoliciesResponse:
@@ -319,7 +325,8 @@ func shallDedupe(msg *central.MsgFromSensor) bool {
 	// the vulnerabilities database in scanner may get updated and new vulnerabilities may affect those packages.
 	ev := msg.GetEvent()
 	if ev.GetAction() != central.ResourceAction_REMOVE_RESOURCE {
-		if ev.GetNodeInventory() != nil || ev.GetIndexReport() != nil {
+		if ev.GetNodeInventory() != nil || ev.GetIndexReport() != nil ||
+			ev.GetVirtualMachine() != nil || ev.GetVirtualMachineIndexReport() != nil {
 			return false
 		}
 	}
@@ -327,7 +334,7 @@ func shallDedupe(msg *central.MsgFromSensor) bool {
 }
 
 func (c *sensorConnection) processComplianceResponse(ctx context.Context, msg *central.ComplianceResponse) error {
-	switch m := msg.Response.(type) {
+	switch m := msg.GetResponse().(type) {
 	case *central.ComplianceResponse_ApplyComplianceScanConfigResponse_:
 		return c.complianceOperatorMgr.HandleScanRequestResponse(ctx, m.ApplyComplianceScanConfigResponse.GetId(), c.clusterID, m.ApplyComplianceScanConfigResponse.GetError())
 	case *central.ComplianceResponse_DeleteComplianceScanConfigResponse_:
@@ -336,7 +343,7 @@ func (c *sensorConnection) processComplianceResponse(ctx context.Context, msg *c
 	default:
 		log.Infof("Unimplemented compliance response  %T", m)
 	}
-	return errors.Errorf("Unimplemented compliance response  %T", msg.Response)
+	return errors.Errorf("Unimplemented compliance response  %T", msg.GetResponse())
 }
 
 func (c *sensorConnection) processIssueLocalScannerCertsRequest(ctx context.Context, request *central.IssueLocalScannerCertsRequest) error {
@@ -394,7 +401,9 @@ func (c *sensorConnection) processIssueSecuredClusterCertsRequest(ctx context.Co
 		err = errors.New("requestID is required to issue the certificates for a Secured Cluster")
 	} else {
 		var certificates *storage.TypedServiceCertificateSet
-		certificates, err = securedclustercertgen.IssueSecuredClusterCerts(namespace, clusterID)
+		sensorSupportsRotation := c.capabilities.Contains(centralsensor.SensorCARotationSupported)
+		caFingerprint := request.GetCaFingerprint()
+		certificates, err = securedclustercertgen.IssueSecuredClusterCerts(namespace, clusterID, sensorSupportsRotation, caFingerprint)
 		response = &central.IssueSecuredClusterCertsResponse{
 			RequestId: requestID,
 			Response: &central.IssueSecuredClusterCertsResponse_Certificates{
@@ -678,6 +687,9 @@ func (c *sensorConnection) getImageIntegrationMsg(ctx context.Context) (*central
 		Msg: &central.MsgToSensor_ImageIntegrations{
 			ImageIntegrations: &central.ImageIntegrations{
 				UpdatedIntegrations: imageIntegrations,
+				// On initial/repeat connections to Sensor any previous stored image integrations
+				// should be replaced by these (potentially) new ones.
+				Refresh: true,
 			},
 		},
 	}, nil

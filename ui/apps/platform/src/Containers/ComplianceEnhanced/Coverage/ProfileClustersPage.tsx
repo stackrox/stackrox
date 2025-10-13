@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom-v5-compat';
 
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
@@ -16,7 +16,7 @@ import ProfileClustersTable from './ProfileClustersTable';
 import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
 
 function ProfileClustersPage() {
-    const { profileName } = useParams();
+    const { profileName } = useParams() as { profileName: string };
     const { selectedScanConfigName } = useContext(ScanConfigurationsContext);
     const [currentDatetime, setCurrentDatetime] = useState<Date>(new Date());
     const pagination = useURLPagination(DEFAULT_COMPLIANCE_PAGE_SIZE);

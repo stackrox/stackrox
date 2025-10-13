@@ -1,4 +1,5 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import {
     Alert,
     Breadcrumb,
@@ -13,7 +14,8 @@ import {
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
-import { AdministrationEvent, getAdministrationEvent } from 'services/AdministrationEventsService';
+import { getAdministrationEvent } from 'services/AdministrationEventsService';
+import type { AdministrationEvent } from 'services/AdministrationEventsService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { administrationEventsBasePath } from 'routePaths';
 
@@ -46,7 +48,6 @@ function AdministrationEventPage({ id }: AdministrationEventPageProps): ReactEle
 
     const h1 = event ? event.domain : 'Administration event';
 
-    /* eslint-disable no-nested-ternary */
     return (
         <>
             <PageTitle title={`Administration events - ${h1}`} />
@@ -82,7 +83,6 @@ function AdministrationEventPage({ id }: AdministrationEventPageProps): ReactEle
             </PageSection>
         </>
     );
-    /* eslint-enable no-nested-ternary */
 }
 
 export default AdministrationEventPage;

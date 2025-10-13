@@ -31,7 +31,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/utils"
-	"golang.org/x/exp/maps"
 )
 
 const (
@@ -72,15 +71,6 @@ type managerImpl struct {
 	updaters map[reflect.Type]updater.ResourceUpdater
 
 	numberOfWatchHandlers atomic.Int32
-}
-
-var protoTypesOrder = []reflect.Type{
-	types.AccessScopeType,
-	types.PermissionSetType,
-	types.RoleType,
-	types.AuthProviderType,
-	types.GroupType,
-	types.NotifierType,
 }
 
 // New creates a new instance of Manager.
@@ -245,7 +235,7 @@ func (m *managerImpl) runReconciliation() {
 }
 
 func (m *managerImpl) reconcileTransformedMessages(transformedMessagesByHandler map[string]protoMessagesByType) {
-	log.Debugf("Run reconciliation for the next handlers: %v", maps.Keys(transformedMessagesByHandler))
+	log.Debugf("Run reconciliation for the next handlers: %d", len(transformedMessagesByHandler))
 
 	hasChanges := m.calculateHashAndIndicateChanges(transformedMessagesByHandler)
 
@@ -272,7 +262,8 @@ func (m *managerImpl) reconcileTransformedMessages(transformedMessagesByHandler 
 
 func (m *managerImpl) doUpsert(transformedMessagesByHandler map[string]protoMessagesByType) {
 	var failureInUpsert bool
-	for _, protoType := range protoTypesOrder {
+	orderedProtoTypes := types.GetSupportedProtobufTypesInProcessingOrder()
+	for _, protoType := range orderedProtoTypes {
 		for handler, protoMessagesByType := range transformedMessagesByHandler {
 			messages, hasMessages := protoMessagesByType[protoType]
 			if !hasMessages {
@@ -292,7 +283,8 @@ func (m *managerImpl) doUpsert(transformedMessagesByHandler map[string]protoMess
 }
 
 func (m *managerImpl) doDeletion(transformedMessagesByHandler map[string]protoMessagesByType) {
-	reversedProtoTypes := sliceutils.Reversed(protoTypesOrder)
+	orderedProtoTypes := types.GetSupportedProtobufTypesInProcessingOrder()
+	reversedProtoTypes := sliceutils.Reversed(orderedProtoTypes)
 	var failureInDeletion bool
 	var allProtoIDsToSkip []string
 	for _, protoType := range reversedProtoTypes {
@@ -390,7 +382,7 @@ func (m *managerImpl) removeStaleHealthStatuses(idsToSkip []string) error {
 }
 
 func (m *managerImpl) verifyUpdaters() error {
-	for _, protoType := range protoTypesOrder {
+	for _, protoType := range types.GetSupportedProtobufTypesInProcessingOrder() {
 		if updater, ok := m.updaters[protoType]; !ok {
 			return errox.InvariantViolation.Newf("found no updater for proto type %v", protoType)
 		} else if updater == nil {

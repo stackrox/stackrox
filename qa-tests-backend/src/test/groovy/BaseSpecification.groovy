@@ -4,7 +4,7 @@ import java.security.SecureRandom
 import java.util.concurrent.TimeUnit
 
 import io.restassured.RestAssured
-import orchestratormanager.OrchestratorMain
+import orchestratormanager.Kubernetes
 import orchestratormanager.OrchestratorType
 import orchestratormanager.OrchestratorTypes
 import org.javers.core.Javers
@@ -15,7 +15,9 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
+import io.stackrox.annotations.Retry
 import io.stackrox.proto.api.v1.ApiTokenService
+import io.stackrox.proto.storage.ClusterOuterClass
 import io.stackrox.proto.storage.ImageIntegrationOuterClass
 import io.stackrox.proto.storage.RoleOuterClass
 
@@ -91,15 +93,16 @@ class BaseSpecification extends Specification {
             strictIntegrationTesting = true
         }
 
-        OrchestratorMain orchestrator = OrchestratorType.create(
+        Kubernetes orchestrator = OrchestratorType.create(
                 Env.mustGetOrchestratorType(),
                 Constants.ORCHESTRATOR_NAMESPACE
         )
 
         orchestrator.createNamespace(Constants.ORCHESTRATOR_NAMESPACE)
 
-        addStackroxImagePullSecret()
-        addGCRImagePullSecret()
+        addStackroxImagePullSecret(orchestrator)
+        addGCRImagePullSecret(orchestrator)
+        addRedHatImagePullSecret(orchestrator)
 
         RoleOuterClass.Role testRole = null
         ApiTokenService.GenerateTokenResponse tokenResp = null
@@ -212,7 +215,7 @@ class BaseSpecification extends Specification {
     Logger log = LoggerFactory.getLogger("test." + this.getClass().getSimpleName())
 
     @Shared
-    OrchestratorMain orchestrator = OrchestratorType.create(
+    Kubernetes orchestrator = OrchestratorType.create(
             Env.mustGetOrchestratorType(),
             Constants.ORCHESTRATOR_NAMESPACE
     )
@@ -261,7 +264,7 @@ class BaseSpecification extends Specification {
         }
     }
 
-    private static void recordResourcesAtRunStart(OrchestratorMain orchestrator) {
+    private static void recordResourcesAtRunStart(Kubernetes orchestrator) {
         resourceRecord = [
                 "namespaces": orchestrator.getNamespaces(),
                 "deployments": orchestrator.getDeployments("default") +
@@ -314,11 +317,16 @@ class BaseSpecification extends Specification {
 
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
+        //TODO(ROX-30946): figure out why Sensor is unhealthy at the end of UpgradesTest
+        if (Env.IN_CI && this.class.simpleName != "UpgradesTest") {
+            log.info("Checking if cluster is healthy after test")
+            waitForClusterHealthy()
+        }
 
         MDC.remove("specification")
     }
 
-    private static void compareResourcesAtRunEnd(OrchestratorMain orchestrator) {
+    private static void compareResourcesAtRunEnd(Kubernetes orchestrator) {
         Javers javers = JaversBuilder.javers()
                 .withListCompareAlgorithm(ListCompareAlgorithm.AS_SET)
                 .build()
@@ -347,7 +355,7 @@ class BaseSpecification extends Specification {
         log.info("Ending testcase")
     }
 
-    static addStackroxImagePullSecret(ns = Constants.ORCHESTRATOR_NAMESPACE) {
+    static addStackroxImagePullSecret(Kubernetes orchestrator, String ns = Constants.ORCHESTRATOR_NAMESPACE) {
         // Add an image pull secret to the qa namespace and also the default service account so the qa namespace can
         // pull stackrox images from dockerhub
 
@@ -360,10 +368,6 @@ class BaseSpecification extends Specification {
             return
         }
 
-        OrchestratorMain orchestrator = OrchestratorType.create(
-                Env.mustGetOrchestratorType(),
-                ns
-        )
         orchestrator.createImagePullSecret(
                 "quay",
                 Env.mustGetInCI("REGISTRY_USERNAME", "fakeUsername"),
@@ -386,18 +390,13 @@ class BaseSpecification extends Specification {
         orchestrator.createServiceAccount(sa)
     }
 
-    static addGCRImagePullSecret(ns = Constants.ORCHESTRATOR_NAMESPACE) {
+    static addGCRImagePullSecret(Kubernetes orchestrator, String ns = Constants.ORCHESTRATOR_NAMESPACE) {
         if (!Env.IN_CI && Env.get("GOOGLE_CREDENTIALS_GCR_SCANNER_V2", null) == null) {
             // Arguably this should be fatal but for tests that don't pull from us.gcr.io it is not strictly necessary
             LOG.warn "The GOOGLE_CREDENTIALS_GCR_SCANNER_V2 env var is missing. "+
                     "(this is ok if your test does not use images on us.gcr.io)"
             return
         }
-
-        OrchestratorMain orchestrator = OrchestratorType.create(
-                Env.mustGetOrchestratorType(),
-                ns
-        )
 
         orchestrator.createImagePullSecret(new Secret(
                 name: "gcr-image-pull-secret",
@@ -422,8 +421,37 @@ class BaseSpecification extends Specification {
         orchestrator.deleteSecret("gcr-image-pull-secret", Constants.ORCHESTRATOR_NAMESPACE)
     }
 
+    static addRedHatImagePullSecret(Kubernetes orchestrator, String ns = Constants.ORCHESTRATOR_NAMESPACE) {
+        if (!Env.IN_CI && (Env.get("REDHAT_USERNAME") == null ||
+                           Env.get("REDHAT_PASSWORD") == null)) {
+            LOG.warn "The REDHAT_USERNAME and/or REDHAT_PASSWORD env var is missing. " +
+                    "(this is ok if your test does not use images from registry.redhat.io)"
+            return
+        }
+
+        orchestrator.createImagePullSecret(new Secret(
+                name: "redhat-image-pull-secret",
+                server: "https://registry.redhat.io",
+                username: Env.mustGetInCI("REDHAT_USERNAME", "{}"),
+                password: Env.mustGetInCI("REDHAT_PASSWORD", "{}"),
+                namespace: ns
+        ))
+
+        orchestrator.addServiceAccountImagePullSecret(
+                "default",
+                "redhat-image-pull-secret",
+                ns
+        )
+    }
+
     static Boolean isRaceBuild() {
         return Env.get("IS_RACE_BUILD", null) == "true" || Env.CI_JOB_NAME == "race-condition-qa-e2e-tests"
+    }
+
+    @Retry(attempts = 30, delay = 3)
+    static void waitForClusterHealthy() {
+        ClusterOuterClass.ClusterHealthStatus status = ClusterService.getCluster().healthStatus
+        assert status.overallHealthStatus == ClusterOuterClass.ClusterHealthStatus.HealthStatusLabel.HEALTHY
     }
 }
 

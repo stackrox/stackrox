@@ -34,13 +34,10 @@ func NewClusterDataStore(storage store.ClusterStore, graphConfig graphConfigDS.D
 // GetTestPostgresClusterDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresClusterDataStore(t testing.TB, pool postgres.DB) (ClusterDataStore, error) {
 	dbstore := pgStore.NewClusterStore(pool)
-	configStore, err := graphConfigDS.GetTestPostgresDataStore(t, pool)
-	if err != nil {
-		return nil, err
-	}
+	configStore := graphConfigDS.GetTestPostgresDataStore(t, pool)
 	networkTreeMgr := networktree.Singleton()
 	entitiesByCluster := map[string][]*storage.NetworkEntityInfo{}
-	err = networkTreeMgr.Initialize(entitiesByCluster)
+	err := networkTreeMgr.Initialize(entitiesByCluster)
 	if err != nil {
 		return nil, err
 	}

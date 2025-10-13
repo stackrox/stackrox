@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 func TestWatchHandler_CompareHashesForChanges(t *testing.T) {
@@ -296,7 +296,7 @@ func TestWatchHandler_WithRemovedFiles(t *testing.T) {
 	}, 500*time.Millisecond, 100*time.Millisecond)
 
 	// 4.Set the expected calls to the updater.
-	updaterMock.EXPECT().UpdateDeclarativeConfigContents("removed-files", [][]byte{})
+	updaterMock.EXPECT().UpdateDeclarativeConfigContents("removed-files", nil)
 
 	// 5. Remove the previously added YAML file.
 	err = os.Remove(filePath)

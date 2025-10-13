@@ -181,6 +181,10 @@
 - query: (sum(irate(container_cpu_usage_seconds_total{name!="",container!="POD",namespace="stackrox"}[2m]) * 100) by (container, pod, namespace))
   metricName: stackrox_container_cpu
 
+# Replacement for "stackrox_container_cpu".
+- query: (sum(irate(container_cpu_usage_seconds_total{name!="",container!="POD",namespace="stackrox"}[2m]) * 1000) by (container, pod, namespace))
+  metricName: stackrox_container_cpu_mcores
+
 - query: (sum(container_memory_rss{name!="",container!="POD",namespace="stackrox"}) by (container, pod, namespace))
   metricName: stackrox_container_memory
 

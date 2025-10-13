@@ -14,10 +14,10 @@ jobs:
   report-e2e-failures-to-slack:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.5
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Report
       env:
         GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
@@ -36,3 +36,4 @@ jobs:
         slack_top_n_failures ${n} "operator-e2e" ":operator: Top ${n} Operator E2E Test failures in this and previous week" "${{github.event.inputs.test}}"
         slack_top_n_failures ${n} "ui-e2e" ":computer: Top ${n} UI E2E Test failures in this and previous week" "${{github.event.inputs.test}}"
         slack_top_n_failures ${n} "nongroovy-e2e" ":go: Top ${n} NonGroovy E2E Test failures in this and previous week" "${{github.event.inputs.test}}"
+        slack_top_n_failures ${n} "go" ":github: Top ${n} unit test failures in this and previous week" "${{github.event.inputs.test}}"

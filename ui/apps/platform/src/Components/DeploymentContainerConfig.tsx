@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { ExpandableSection, Stack, StackItem } from '@patternfly/react-core';
 
-import { Container } from 'types/deployment.proto';
+import type { Container } from 'types/deployment.proto';
 import ContainerImageInfo from 'Components/ContainerImageInfo';
-import ContainerResourcesInfo from 'Components/ContainerResouresInfo';
+import ContainerResourcesInfo from 'Components/ContainerResourcesInfo';
 import ContainerVolumesInfo from 'Components/ContainerVolumesInfo';
 import ContainerSecretsInfo from 'Components/ContainerSecretsInfo';
 import ContainerArgumentsInfo from 'Components/ContainerArgumentsInfo';

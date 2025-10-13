@@ -7,7 +7,6 @@ import (
 )
 
 func TestClusterInitValidation(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(clusterInitValidationTestSuite))
 }
 

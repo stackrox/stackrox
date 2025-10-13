@@ -143,13 +143,13 @@ func ConvertPeersToProto(peerSet map[Peer]struct{}) ([]*storage.NetworkBaselineP
 	for entity, properties := range propertiesByEntity {
 		connectionProperties := properties.ConnectionProperties
 		sort.Slice(connectionProperties, func(i, j int) bool {
-			if connectionProperties[i].Ingress != connectionProperties[j].Ingress {
-				return connectionProperties[i].Ingress
+			if connectionProperties[i].GetIngress() != connectionProperties[j].GetIngress() {
+				return connectionProperties[i].GetIngress()
 			}
-			if connectionProperties[i].Protocol != connectionProperties[j].Protocol {
-				return connectionProperties[i].Protocol < connectionProperties[j].Protocol
+			if connectionProperties[i].GetProtocol() != connectionProperties[j].GetProtocol() {
+				return connectionProperties[i].GetProtocol() < connectionProperties[j].GetProtocol()
 			}
-			return connectionProperties[i].Port < connectionProperties[j].Port
+			return connectionProperties[i].GetPort() < connectionProperties[j].GetPort()
 		})
 		properties.ConnectionProperties = connectionProperties
 		propertiesByEntity[entity] = properties
@@ -182,10 +182,7 @@ func ConvertPeersToProto(peerSet map[Peer]struct{}) ([]*storage.NetworkBaselineP
 func PeerFromV1Peer(v1Peer *v1.NetworkBaselineStatusPeer, peerName, cidrBlock string) Peer {
 	return Peer{
 		IsIngress: v1Peer.GetIngress(),
-		Entity: networkgraph.Entity{
-			Type: v1Peer.GetEntity().GetType(),
-			ID:   v1Peer.GetEntity().GetId(),
-		},
+		Entity:    AnonymizeExternalDiscoveredPeer(v1Peer.GetEntity()),
 		Name:      peerName,
 		DstPort:   v1Peer.GetPort(),
 		Protocol:  v1Peer.GetProtocol(),
@@ -201,15 +198,27 @@ func PeerFromNetworkEntityInfo(
 	protocol storage.L4Protocol,
 	isIngressToBaselineEntity bool,
 ) Peer {
+	entity := networkgraph.Entity{
+		Type: info.GetType(),
+		ID:   info.GetId(),
+	}
+	return PeerFromNetworkEntity(entity, peerName, dstPort, protocol, isIngressToBaselineEntity)
+}
+
+// PeerFromNetworkEntity converts peer from networkgraph.Entity
+func PeerFromNetworkEntity(
+	entity networkgraph.Entity,
+	peerName string,
+	dstPort uint32,
+	protocol storage.L4Protocol,
+	isIngressToBaselineEntity bool,
+) Peer {
 	return Peer{
 		IsIngress: isIngressToBaselineEntity,
-		Entity: networkgraph.Entity{
-			Type: info.GetType(),
-			ID:   info.GetId(),
-		},
-		Name:     peerName,
-		DstPort:  dstPort,
-		Protocol: protocol,
+		Entity:    entity,
+		Name:      peerName,
+		DstPort:   dstPort,
+		Protocol:  protocol,
 	}
 }
 
@@ -227,4 +236,23 @@ func ReversePeerView(referenceDeploymentID, referenceDeploymentName string, p *P
 		DstPort:  p.DstPort,
 		Protocol: p.Protocol,
 	}
+}
+
+// AnonymizeExternalDiscoveredPeer anonymizes a given baseline peer to the Internet
+// if it a discovered external entity
+func AnonymizeExternalDiscoveredPeer(peer *v1.NetworkBaselinePeerEntity) networkgraph.Entity {
+	return AnonymizeExternalDiscoveredEntity(networkgraph.Entity{
+		ID:         peer.GetId(),
+		Type:       peer.GetType(),
+		Discovered: peer.GetDiscovered(),
+	})
+}
+
+// AnonymizeExternalDiscoveredEntity anonymizes a given graph entity to the Internet
+// if it a discovered external entity
+func AnonymizeExternalDiscoveredEntity(entity networkgraph.Entity) networkgraph.Entity {
+	if entity.Type == storage.NetworkEntityInfo_EXTERNAL_SOURCE && entity.Discovered {
+		return networkgraph.InternetEntity()
+	}
+	return entity
 }

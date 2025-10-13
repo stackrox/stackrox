@@ -1,15 +1,13 @@
-import React, { useState, CSSProperties } from 'react';
+import React from 'react';
+import type { CSSProperties, ReactElement } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
+import { Divider, DropdownItem } from '@patternfly/react-core';
 import initials from 'initials';
-import {
-    Dropdown,
-    DropdownItem,
-    DropdownSeparator,
-    DropdownToggle,
-} from '@patternfly/react-core/deprecated';
+import { useNavigate } from 'react-router-dom-v5-compat';
 
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import useAnalytics, { INVITE_USERS_MODAL_OPENED } from 'hooks/useAnalytics';
 import usePermissions from 'hooks/usePermissions';
 import { selectors } from 'reducers';
@@ -23,15 +21,11 @@ const userMenuStyleConstant = {
     pointerEvents: 'none',
 } as CSSProperties;
 
-function UserMenu({ logout, setInviteModalVisibility, userData }) {
-    const [isOpen, setIsOpen] = useState(false);
+function UserMenu({ logout, setInviteModalVisibility, userData }): ReactElement {
+    const navigate = useNavigate();
     const { analyticsTrack } = useAnalytics();
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForInviting = hasReadWriteAccess('Access');
-
-    function onSelect() {
-        setIsOpen(false);
-    }
 
     function onClickInviteUsers() {
         // track request to invite
@@ -53,59 +47,34 @@ function UserMenu({ logout, setInviteModalVisibility, userData }) {
     );
     const displayRoles = Array.isArray(roles) ? roles.map((role) => role.name).join(',') : '';
 
-    const startOfUserMenu = [
-        <DropdownItem
-            key="user"
-            description={<span data-testid="menu-user-roles">{displayRoles}</span>}
-            className="pf-v5-u-min-width"
-            style={userMenuStyleConstant}
-        >
-            {displayName}
-        </DropdownItem>,
-        <DropdownSeparator key="separator-1" />,
-        <DropdownItem key="profile" href={userBasePath}>
-            My profile
-        </DropdownItem>,
-    ];
-
-    const endOfUserMenu = [
-        <DropdownSeparator key="separator-2" />,
-        <DropdownItem key="logout" component="button" onClick={logout}>
-            Log out
-        </DropdownItem>,
-    ];
-
-    const inviteMenuItem = (
-        <DropdownItem key="open-invite" onClick={onClickInviteUsers}>
-            Invite users
-        </DropdownItem>
-    );
-
-    const dropdownItems = hasWriteAccessForInviting
-        ? [...startOfUserMenu, inviteMenuItem, ...endOfUserMenu]
-        : [...startOfUserMenu, ...endOfUserMenu];
-
-    const toggle = (
-        <DropdownToggle
-            aria-label="User menu"
-            onToggle={(_event, val) => setIsOpen(val)}
-            toggleIndicator={null}
-        >
-            <span className="h-10 w-10 flex items-center justify-center leading-none text-xl border border-base-400 rounded-full">
-                {name ? initials(name) : '--'}
-            </span>
-        </DropdownToggle>
-    );
-
     return (
-        <Dropdown
-            dropdownItems={dropdownItems}
-            isOpen={isOpen}
-            isPlain
-            onSelect={onSelect}
-            position="right"
-            toggle={toggle}
-        />
+        <MenuDropdown
+            popperProps={{ position: 'end' }}
+            toggleText={name ? initials(name) : '--'}
+            toggleVariant="plainText"
+            ariaLabel="User menu"
+        >
+            <DropdownItem
+                key="user"
+                description={<span data-testid="menu-user-roles">{displayRoles}</span>}
+                className="pf-v5-u-min-width"
+                style={userMenuStyleConstant}
+            >
+                {displayName}
+            </DropdownItem>
+            <Divider component="li" key="separator" />
+            <DropdownItem key="profile" onClick={() => navigate(userBasePath)}>
+                My profile
+            </DropdownItem>
+            {hasWriteAccessForInviting && (
+                <DropdownItem key="open-invite" onClick={onClickInviteUsers}>
+                    Invite users
+                </DropdownItem>
+            )}
+            <DropdownItem key="logout" component="button" onClick={logout}>
+                Log out
+            </DropdownItem>
+        </MenuDropdown>
     );
 }
 

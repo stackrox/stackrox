@@ -5,27 +5,27 @@ import {
     Stack,
     StackItem,
     EmptyStateHeader,
-    DropEvent,
+    SelectOption,
 } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
-import { NetworkPolicy } from 'types/networkPolicy.proto';
+import type { DropEvent } from '@patternfly/react-core';
+import type { NetworkPolicy } from 'types/networkPolicy.proto';
 import SelectSingle from 'Components/SelectSingle';
 import NetworkPoliciesYAML from './NetworkPoliciesYAML';
 import NetworkSimulatorActions from './NetworkSimulatorActions';
 
-type ViewActiveYamlsProps = {
+type ViewActiveYAMLsProps = {
     networkPolicies: NetworkPolicy[];
     generateNetworkPolicies: () => void;
     undoNetworkPolicies: () => void;
     onFileInputChange: (_event: DropEvent, file: File) => void;
 };
 
-function ViewActiveYamls({
+function ViewActiveYAMLs({
     networkPolicies,
     generateNetworkPolicies,
     undoNetworkPolicies,
     onFileInputChange,
-}: ViewActiveYamlsProps) {
+}: ViewActiveYAMLsProps) {
     const [selectedNetworkPolicy, setSelectedNetworkPolicy] = React.useState<
         NetworkPolicy | undefined
     >(networkPolicies?.[0]);
@@ -97,4 +97,4 @@ function ViewActiveYamls({
     );
 }
 
-export default ViewActiveYamls;
+export default ViewActiveYAMLs;

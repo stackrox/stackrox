@@ -50,11 +50,6 @@ func (s *datastorePostgresTestSuite) SetupTest() {
 	s.datastore = GetTestPostgresDataStore(s.T(), s.postgresTest.DB)
 }
 
-func (s *datastorePostgresTestSuite) TearDownTest() {
-	s.postgresTest.Teardown(s.T())
-	s.postgresTest.Close()
-}
-
 func (s *datastorePostgresTestSuite) TestCountDiscoveredClusters() {
 	count, err := s.datastore.CountDiscoveredClusters(s.readCtx, &v1.Query{})
 	s.Require().NoError(err)
@@ -82,7 +77,7 @@ func (s *datastorePostgresTestSuite) TestUpsertAndGetDiscoveredCluster() {
 	expectedCluster := typetostorage.DiscoveredCluster(fakeCluster)
 	roundtripCluster, err := s.datastore.GetDiscoveredCluster(s.readCtx, expectedCluster.GetId())
 	s.Require().NoError(err)
-	expectedCluster.LastUpdatedAt = roundtripCluster.LastUpdatedAt
+	expectedCluster.LastUpdatedAt = roundtripCluster.GetLastUpdatedAt()
 	protoassert.Equal(s.T(), expectedCluster, roundtripCluster)
 }
 
@@ -121,9 +116,8 @@ func (s *datastorePostgresTestSuite) TestUpsertDiscoveredClusters_InvalidArgumen
 func (s *datastorePostgresTestSuite) TestDeleteDiscoveredCluster() {
 	s.addDiscoveredClusters(100)
 
-	result, err := s.datastore.DeleteDiscoveredClusters(s.writeCtx, &v1.Query{})
+	err := s.datastore.DeleteDiscoveredClusters(s.writeCtx, &v1.Query{})
 	s.Require().NoError(err)
-	s.Assert().Len(result, 100)
 
 	count, err := s.datastore.CountDiscoveredClusters(s.readCtx, &v1.Query{})
 	s.Require().NoError(err)

@@ -1,14 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { ReactElement, useState } from 'react';
-import { Alert, Checkbox, Form, PageSection, Popover, TextInput } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
+import React, { useState } from 'react';
+import type { FocusEvent, ReactElement } from 'react';
+import {
+    Alert,
+    Checkbox,
+    Form,
+    PageSection,
+    Popover,
+    SelectOption,
+    TextInput,
+} from '@patternfly/react-core';
 import { HelpIcon } from '@patternfly/react-icons';
-import { FormikErrors, FormikTouched } from 'formik';
+import type { FormikErrors, FormikTouched } from 'formik';
 
 import SelectSingle from 'Components/SelectSingle';
 import AnnotationKeyLabelIcon from 'Containers/Integrations/IntegrationForm//AnnotationKeyLabelIcon';
 import FormLabelGroup from 'Containers/Integrations/IntegrationForm/FormLabelGroup';
-import { EmailIntegrationFormValues } from 'Containers/Integrations/IntegrationForm/Forms/EmailIntegrationForm';
+import type { EmailIntegrationFormValues } from 'Containers/Integrations/IntegrationForm/Forms/EmailIntegrationForm';
 
 const startTLSAuthMethods = [
     {
@@ -28,7 +36,7 @@ const startTLSAuthMethods = [
 export type EmailNotifierFormProps = {
     values: EmailIntegrationFormValues;
     setFieldValue: (field: string, value: any, shouldValidate?: boolean) => void;
-    handleBlur: (e: React.FocusEvent<any, Element>) => void;
+    handleBlur: (e: FocusEvent<any, Element>) => void;
     errors: FormikErrors<any>;
     touched: FormikTouched<any>;
 };
@@ -268,7 +276,7 @@ function EmailNotifierForm({
                     </FormLabelGroup>
                     <FormLabelGroup label="" fieldId="notifier.email.disableTLS" errors={errors}>
                         <Checkbox
-                            label="Disable TLS certificate validation (insecure)"
+                            label="Disable TLS (insecure)"
                             id="notifier.email.disableTLS"
                             isChecked={values.notifier.email.disableTLS}
                             onChange={(event, value) =>
@@ -295,6 +303,38 @@ function EmailNotifierForm({
                                 </SelectOption>
                             ))}
                         </SelectSingle>
+                    </FormLabelGroup>
+                    <FormLabelGroup label="" fieldId="notifier.email.skipTLSVerify" errors={errors}>
+                        <Checkbox
+                            label="Skip TLS verification"
+                            id="notifier.email.skipTLSVerify"
+                            isChecked={values.notifier.email.skipTLSVerify}
+                            onBlur={handleBlur}
+                            isDisabled={
+                                values.notifier.email.disableTLS &&
+                                values.notifier.email.startTLSAuthMethod === 'DISABLED'
+                            }
+                        />
+                    </FormLabelGroup>
+                    <FormLabelGroup
+                        label="Hostname for SMTP HELO/EHLO"
+                        fieldId="notifier.email.hostnameHeloEhlo"
+                        helperText={
+                            <span className="pf-v5-u-font-size-sm">
+                                If left blank, localhost will be used
+                            </span>
+                        }
+                        touched={touched}
+                        errors={errors}
+                    >
+                        <TextInput
+                            type="text"
+                            id="notifier.email.hostnameHeloEhlo"
+                            value={values.notifier.email.hostnameHeloEhlo}
+                            placeholder="example, smtp.client.com"
+                            onChange={(event, value) => onChange(value, event)}
+                            onBlur={handleBlur}
+                        />
                     </FormLabelGroup>
                 </Form>
             </PageSection>

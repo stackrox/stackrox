@@ -53,7 +53,7 @@ func (suite *FlowStoreUpdaterTestSuite) SetupTest() {
 	suite.mockFlows = nfDSMocks.NewMockFlowDataStore(suite.mockCtrl)
 	suite.mockBaselines = baselineMocks.NewMockManager(suite.mockCtrl)
 	suite.mockEntities = entityMocks.NewMockEntityDataStore(suite.mockCtrl)
-	suite.tested = newFlowPersister(suite.mockFlows, suite.mockBaselines, suite.mockEntities)
+	suite.tested = newFlowPersister(suite.mockFlows, suite.mockBaselines, suite.mockEntities, "cluster")
 }
 
 func (suite *FlowStoreUpdaterTestSuite) TearDownTest() {
@@ -260,7 +260,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateNoExternalIPs() {
 			}
 		}
 		return len(used) == len(expectedUpdateProps)
-	}), gomock.Any()).Return(nil)
+	}), gomock.Any()).Return(newFlows, nil)
 
 	suite.mockEntities.EXPECT().UpdateExternalNetworkEntity(suite.hasWriteCtx, gomock.Any(), true).Times(0)
 
@@ -277,6 +277,10 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateWithExternalIPs() {
 
 	discoveredEntity1 := networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{1, 2, 3, 4, 32})).ToProto()
 	discoveredEntity2 := networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{2, 3, 4, 5, 32})).ToProto()
+	discoveredEntity3 := networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{3, 4, 5, 6, 32})).ToProto()
+	fixedupDiscoveredEntity1 := networkgraph.DiscoveredExternalEntityClusterScoped("cluster", net.IPNetworkFromCIDRBytes([]byte{1, 2, 3, 4, 32})).ToProto()
+	fixedupDiscoveredEntity2 := networkgraph.DiscoveredExternalEntityClusterScoped("cluster", net.IPNetworkFromCIDRBytes([]byte{2, 3, 4, 5, 32})).ToProto()
+	fixedupDiscoveredEntity3 := networkgraph.DiscoveredExternalEntityClusterScoped("cluster", net.IPNetworkFromCIDRBytes([]byte{3, 4, 5, 6, 32})).ToProto()
 
 	secondTimestamp := time.Now()
 	newFlows := []*storage.NetworkFlow{
@@ -298,18 +302,55 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateWithExternalIPs() {
 			},
 			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(secondTimestamp),
 		},
+		{
+			Props: &storage.NetworkFlowProperties{
+				SrcEntity:  discoveredEntity3,
+				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+				DstPort:    4,
+				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			},
+			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(secondTimestamp),
+		},
+	}
+
+	actuallyUpsertedFlows := []*storage.NetworkFlow{
+		{
+			Props: &storage.NetworkFlowProperties{
+				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+				DstEntity:  discoveredEntity1,
+				DstPort:    3,
+				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			},
+			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(secondTimestamp),
+		},
+		{
+			Props: &storage.NetworkFlowProperties{
+				SrcEntity:  discoveredEntity2,
+				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+				DstPort:    4,
+				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			},
+			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(secondTimestamp),
+		},
+		// We simulate that the third flow was filtered out during Upsert().
 	}
 
 	// The properties of the flows we expect updates to. Properties identify flows uniquely.
 	expectedUpdateProps := []*storage.NetworkFlowProperties{
 		{
 			SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
-			DstEntity:  discoveredEntity1,
+			DstEntity:  fixedupDiscoveredEntity1,
 			DstPort:    3,
 			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 		},
 		{
-			SrcEntity:  discoveredEntity2,
+			SrcEntity:  fixedupDiscoveredEntity2,
+			DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+			DstPort:    4,
+			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+		},
+		{
+			SrcEntity:  fixedupDiscoveredEntity3,
 			DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
 			DstPort:    4,
 			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
@@ -328,7 +369,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateWithExternalIPs() {
 				},
 				DstEntity: networkgraph.Entity{
 					Type:                  storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-					ID:                    "__MS4yLjMuNC8zMg",
+					ID:                    "cluster__MS4yLjMuNC8zMg",
 					ExternalEntityAddress: net.IPNetworkFromCIDRBytes([]byte{1, 2, 3, 4, 32}),
 					Discovered:            true,
 				},
@@ -338,8 +379,22 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateWithExternalIPs() {
 			{
 				SrcEntity: networkgraph.Entity{
 					Type:                  storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-					ID:                    "__Mi4zLjQuNS8zMg",
+					ID:                    "cluster__Mi4zLjQuNS8zMg",
 					ExternalEntityAddress: net.IPNetworkFromCIDRBytes([]byte{2, 3, 4, 5, 32}),
+					Discovered:            true,
+				},
+				DstEntity: networkgraph.Entity{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					ID:   "someNode1",
+				},
+				DstPort:  4,
+				Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			}: timestamp.FromGoTime(secondTimestamp),
+			{
+				SrcEntity: networkgraph.Entity{
+					Type:                  storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+					ID:                    "cluster__My40LjUuNi8zMg",
+					ExternalEntityAddress: net.IPNetworkFromCIDRBytes([]byte{3, 4, 5, 6, 32}),
 					Discovered:            true,
 				},
 				DstEntity: networkgraph.Entity{
@@ -392,12 +447,13 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateWithExternalIPs() {
 			}
 		}
 		return len(used) == len(expectedUpdateProps)
-	}), gomock.Any()).Return(nil)
+	}), gomock.Any()).Return(actuallyUpsertedFlows, nil)
 
 	suite.mockEntities.EXPECT().UpdateExternalNetworkEntity(suite.hasWriteCtx, testutils.PredMatcher("matches an external entity", func(updatedEntity *storage.NetworkEntity) bool {
 		expectedEntities := []*storage.NetworkEntityInfo{
 			discoveredEntity1,
 			discoveredEntity2,
+			// not discoveredEntity3 since the flow was filtered
 		}
 
 		for i := range expectedEntities {

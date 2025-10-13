@@ -3,6 +3,8 @@ package listener
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/namespaces"
 	v1 "k8s.io/api/core/v1"
@@ -83,5 +85,8 @@ func (h *namespacePatchHandler) patchNamespaceLabels(ns *v1.Namespace, desiredLa
 	patchedNS.Annotations[modifiedByAnnotation] = "true"
 
 	_, err := h.nsClient.Update(h.ctx, patchedNS, metav1.UpdateOptions{})
-	return err
+	if err != nil {
+		return errors.Wrap(err, "patching namespace labels")
+	}
+	return nil
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/declarativeconfig/types"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -16,20 +17,24 @@ import (
 )
 
 type groupUpdater struct {
-	groupDS       groupDataStore.DataStore
-	healthDS      declarativeConfigHealth.DataStore
-	idExtractor   types.IDExtractor
-	nameExtractor types.NameExtractor
+	authProviderRegistry authproviders.Registry
+	groupDS              groupDataStore.DataStore
+	healthDS             declarativeConfigHealth.DataStore
+	idExtractor          types.IDExtractor
+	nameExtractor        types.NameExtractor
 }
 
 var _ ResourceUpdater = (*groupUpdater)(nil)
 
-func newGroupUpdater(datastore groupDataStore.DataStore, healthDS declarativeConfigHealth.DataStore) ResourceUpdater {
+func newGroupUpdater(authProviderRegistry authproviders.Registry, datastore groupDataStore.DataStore,
+	healthDS declarativeConfigHealth.DataStore,
+) ResourceUpdater {
 	return &groupUpdater{
-		groupDS:       datastore,
-		healthDS:      healthDS,
-		idExtractor:   types.UniversalIDExtractor(),
-		nameExtractor: types.UniversalNameExtractor(),
+		authProviderRegistry: authProviderRegistry,
+		groupDS:              datastore,
+		healthDS:             healthDS,
+		idExtractor:          types.UniversalIDExtractor(),
+		nameExtractor:        types.UniversalNameExtractor(),
 	}
 }
 

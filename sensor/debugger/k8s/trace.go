@@ -49,18 +49,24 @@ var delimiter = []byte{'\n'}
 
 // Write a slice of bytes in the Destination file
 func (tw *TraceWriter) Write(b []byte) (int, error) {
-	return concurrency.WithLock2(&tw.mu, func() (int, error) {
+	total, err := concurrency.WithLock2(&tw.mu, func() (int, error) {
 		n, err := tw.f.Write(b)
 		if err != nil {
-			return n, err
+			return n, errors.Wrap(err, "writing trace data")
 		}
 		m, err := tw.f.Write(delimiter)
 		if err != nil {
-			return n + m, err
+			return n + m, errors.Wrap(err, "writing trace delimiter")
 		}
-		err = tw.f.Sync()
-		return n + m, err
+		if err := tw.f.Sync(); err != nil {
+			return n + m, errors.Wrap(err, "syncing trace file")
+		}
+		return n + m, nil
 	})
+	if err != nil {
+		return total, errors.Wrap(err, "writing trace under lock")
+	}
+	return total, nil
 }
 
 // TraceReader reads a file containing k8s events
@@ -72,14 +78,14 @@ type TraceReader struct {
 // Init initializes the reader
 func (tw *TraceReader) Init() error {
 	_, err := os.Stat(path.Dir(tw.Source))
-	return err
+	return errors.Wrap(err, "stat trace source directory")
 }
 
 // ReadFile reads the entire file and returns a slice of objects
 func (tw *TraceReader) ReadFile() ([][]byte, error) {
 	data, err := os.ReadFile(tw.Source)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "reading trace file %s", tw.Source)
 	}
 	objs := bytes.Split(data, delimiter)
 	return objs, nil

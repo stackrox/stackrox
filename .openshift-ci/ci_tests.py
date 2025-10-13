@@ -40,6 +40,7 @@ class NullTest(BaseTest):
 class UpgradeTest(BaseTest):
     TEST_TIMEOUT = 60 * 60 * 2
     TEST_OUTPUT_DIR = "/tmp/postgres-upgrade-test-logs"
+    TEST_PG_UPGRADE_OUTPUT_DIR = "/tmp/postgres-version-upgrade-test-logs"
     TEST_SENSOR_OUTPUT_DIR = "/tmp/postgres-sensor-upgrade-test-logs"
 
     def run(self):
@@ -50,6 +51,7 @@ class UpgradeTest(BaseTest):
             self.test_outputs = [
                 UpgradeTest.TEST_SENSOR_OUTPUT_DIR,
                 UpgradeTest.TEST_OUTPUT_DIR,
+                UpgradeTest.TEST_PG_UPGRADE_OUTPUT_DIR,
             ]
 
         self.run_with_graceful_kill(
@@ -63,6 +65,12 @@ class UpgradeTest(BaseTest):
 
         self.run_with_graceful_kill(
             ["tests/upgrade/postgres_run.sh", UpgradeTest.TEST_OUTPUT_DIR],
+            UpgradeTest.TEST_TIMEOUT,
+            post_start_hook=set_dirs_after_start,
+        )
+
+        self.run_with_graceful_kill(
+            ["tests/upgrade/postgres_upgrade_run.sh", UpgradeTest.TEST_OUTPUT_DIR],
             UpgradeTest.TEST_TIMEOUT,
             post_start_hook=set_dirs_after_start,
         )
@@ -269,6 +277,7 @@ class SensorIntegration(BaseTest):
 
 class SensorIntegrationOCP(SensorIntegration):
     def run(self):
+        # TODO(ROX-17875): make them work on OCP.
         print("Skipping the Sensor Integration Tests for OCP")
 
 
@@ -309,11 +318,31 @@ class ScannerV4InstallTest(BaseTest):
 
 
 class CustomSetTest(BaseTest):
-    TEST_TIMEOUT = 240 * 60
+    TEST_TIMEOUT = 420 * 60
 
     def run(self):
-        print("Executing a sub set of qa-tests-backend tests for power and s390x")
+        print("Executing a sub set of qa-tests-backend tests for ppc64le and s390x")
 
         self.run_with_graceful_kill(
             ["qa-tests-backend/scripts/run-custom-pz.sh"], CustomSetTest.TEST_TIMEOUT
+        )
+
+
+class BYODBTest(BaseTest):
+    TEST_TIMEOUT = 60 * 60 * 2
+    TEST_OUTPUT_DIR = "/tmp/byodb-test-logs"
+
+    def run(self):
+        print("Executing the BYODB Test")
+
+        def set_dirs_after_start():
+            # let post test know where logs are
+            self.test_outputs = [
+                BYODBTest.TEST_OUTPUT_DIR,
+            ]
+
+        self.run_with_graceful_kill(
+            ["tests/byodb/run.sh", BYODBTest.TEST_OUTPUT_DIR],
+            BYODBTest.TEST_TIMEOUT,
+            post_start_hook=set_dirs_after_start,
         )

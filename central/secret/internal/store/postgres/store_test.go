@@ -44,10 +44,6 @@ func (s *SecretsStoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *SecretsStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *SecretsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
@@ -276,6 +272,25 @@ func (s *SecretsStoreSuite) TestSACWalk() {
 				return nil
 			}
 			err := s.store.Walk(testCase.context, getIDs)
+			assert.NoError(t, err)
+			assert.ElementsMatch(t, testCase.expectedIdentifiers, identifiers)
+		})
+	}
+}
+
+func (s *SecretsStoreSuite) TestSACGetByQueryFn() {
+	objA, objB, testCases := s.getTestData(storage.Access_READ_ACCESS)
+	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objA))
+	s.Require().NoError(s.store.Upsert(withAllAccessCtx, objB))
+
+	for name, testCase := range testCases {
+		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
+			identifiers := []string{}
+			getIDs := func(obj *storage.Secret) error {
+				identifiers = append(identifiers, obj.GetId())
+				return nil
+			}
+			err := s.store.GetByQueryFn(testCase.context, nil, getIDs)
 			assert.NoError(t, err)
 			assert.ElementsMatch(t, testCase.expectedIdentifiers, identifiers)
 		})

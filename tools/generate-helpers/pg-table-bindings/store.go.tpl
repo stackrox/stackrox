@@ -1,31 +1,17 @@
 {{define "schemaVar"}}pkgSchema.{{.Table|upperCamelCase}}Schema{{end}}
-{{define "paramList"}}{{range $index, $pk := .}}{{if $index}}, {{end}}{{$pk.ColumnName|lowerCamelCase}} {{$pk.Type}}{{end}}{{end}}
-{{define "argList"}}{{range $index, $pk := .}}{{if $index}}, {{end}}{{$pk.ColumnName|lowerCamelCase}}{{end}}{{end}}
-{{define "whereMatch"}}{{range $index, $pk := .}}{{if $index}} AND {{end}}{{$pk.ColumnName}} = ${{add $index 1}}{{end}}{{end}}
 {{define "commaSeparatedColumns"}}{{range $index, $field := .}}{{if $index}}, {{end}}{{$field.ColumnName}}{{end}}{{end}}
-{{define "commandSeparatedRefs"}}{{range $index, $field := .}}{{if $index}}, {{end}}{{$field.Reference}}{{end}}{{end}}
 {{define "updateExclusions"}}{{range $index, $field := .}}{{if $index}}, {{end}}{{$field.ColumnName}} = EXCLUDED.{{$field.ColumnName}}{{end}}{{end}}
-{{define "matchQuery" -}}
-    {{- $pks := index . 0 -}}
-    {{- $singlePK := index . 1 -}}
-    {{- range $index, $pk := $pks -}}
-    {{- if eq $pk.Name $singlePK.Name -}}
-        search.NewQueryBuilder().AddDocIDs({{ $singlePK.ColumnName|lowerCamelCase }}).ProtoQuery(),
-    {{- else }}
-        search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ searchFieldNameInOtherSchema $pk }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery(),
-    {{- end -}}
-    {{- end -}}
-{{end}}
 
 {{- $ := . }}
-{{- $pks := .Schema.PrimaryKeys }}
-
-{{ $singlePK := index $pks 0 }}
+{{ $singlePK := index .Schema.PrimaryKeys 0 }}
+{{ $primaryKeyName := $singlePK.ColumnName|lowerCamelCase }}
+{{ $primaryKeyType := $singlePK.Type }}
 
 package postgres
 
 import (
     "context"
+    "slices"
     "strings"
     "time"
 
@@ -64,44 +50,47 @@ var (
     {{- end }}
 )
 
-type storeType = {{ .Type }}
+type (
+    storeType = {{ .Type }}
+    callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for {{ .Type }}
 type Store interface {
 {{- if not .JoinTable }}
     Upsert(ctx context.Context, obj *storeType) error
     UpsertMany(ctx context.Context, objs []*storeType) error
-    Delete(ctx context.Context, {{template "paramList" $pks}}) error
-    DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
-    DeleteMany(ctx context.Context, identifiers []{{$singlePK.Type}}) error
-    PruneMany(ctx context.Context, identifiers []{{$singlePK.Type}}) error
+    Delete(ctx context.Context, {{$primaryKeyName}} {{$primaryKeyType}}) error
+    DeleteByQuery(ctx context.Context, q *v1.Query) error
+    DeleteByQueryWithIDs(ctx context.Context, q *v1.Query) ([]string, error)
+    DeleteMany(ctx context.Context, identifiers []{{$primaryKeyType}}) error
+    PruneMany(ctx context.Context, identifiers []{{$primaryKeyType}}) error
 {{- end }}
 
     Count(ctx context.Context, q *v1.Query) (int, error)
-    Exists(ctx context.Context, {{template "paramList" $pks}}) (bool, error)
+    Exists(ctx context.Context, {{$primaryKeyName}} {{$primaryKeyType}}) (bool, error)
     Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 
-    Get(ctx context.Context, {{template "paramList" $pks}}) (*storeType, bool, error)
+    Get(ctx context.Context, {{$primaryKeyName}} {{$primaryKeyType}}) (*storeType, bool, error)
 {{- if .SearchCategory }}
+    // Deprecated: use GetByQueryFn instead
     GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
+    GetByQueryFn(ctx context.Context, query *v1.Query, fn callback) error
 {{- end }}
-    GetMany(ctx context.Context, identifiers []{{$singlePK.Type}}) ([]*storeType, []int, error)
-    GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error)
-{{- if .GetAll }}
-    GetAll(ctx context.Context) ([]*storeType, error)
-{{- end }}
+    GetMany(ctx context.Context, identifiers []{{$primaryKeyType}}) ([]*storeType, []int, error)
+    GetIDs(ctx context.Context) ([]{{$primaryKeyType}}, error)
 
-    Walk(ctx context.Context, fn func(obj *storeType) error) error
-    WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storeType) error) error
+    Walk(ctx context.Context, fn callback) error
+    WalkByQuery(ctx context.Context, query *v1.Query, fn callback) error
 }
 
 {{ define "defineScopeChecker" }}scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_{{ . }}_ACCESS).Resource(targetResource){{ end }}
 
 {{ define "storeCreator" -}}
-    {{- if and (.PermissionChecker) (.CachedStore) -}}
-        pgSearch.NewGenericStoreWithCacheAndPermissionChecker
-    {{- else if (.PermissionChecker) -}}
-        pgSearch.NewGenericStoreWithPermissionChecker
+    {{- if and (.CachedStore) (not .Obj.IsDirectlyScoped) -}}
+        pgSearch.NewGloballyScopedGenericStoreWithCache
+    {{- else if and (not .CachedStore) (not .Obj.IsDirectlyScoped) -}}
+        pgSearch.NewGloballyScopedGenericStore
     {{- else if .CachedStore -}}
         pgSearch.NewGenericStoreWithCache
     {{- else -}}
@@ -135,19 +124,27 @@ func New(db postgres.DB) Store {
             metricsSetPostgresOperationDurationTime,
             {{- if .CachedStore }}
             metricsSetCacheOperationDurationTime,
-            {{ end -}}
-            {{- if or (.Obj.IsGloballyScoped) (.Obj.IsIndirectlyScoped) }}
-            pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
-            {{- else if .Obj.IsDirectlyScoped }}
+            {{- end }}
+            {{- if .Obj.IsDirectlyScoped }}
             isUpsertAllowed,
             {{- end }}
-            {{ if .PermissionChecker }}{{ .PermissionChecker }}{{ else }}targetResource{{ end }},
+            targetResource,
+            {{- if .DefaultSortStore }}
+            pgSearch.GetDefaultSort({{.DefaultSort}}, {{.ReverseDefaultSort}}),
+            {{- else }}
+            nil,
+            {{- end }}
+            {{- if .DefaultTransform }}
+            pkgSchema.{{.TransformSortOptions}},
+            {{- else }}
+            nil,
+            {{- end }}
     )
 }
 
 // region Helper functions
 
-func pkGetter(obj *storeType) {{$singlePK.Type}} {
+func pkGetter(obj *storeType) {{$primaryKeyType}} {
     return {{ $singlePK.Getter "obj" }}
 }
 
@@ -203,6 +200,8 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
         pgutils.NilOrCIDR({{$field.Getter "obj"}}),
     {{- else if eq $field.DataType "map" }}
         pgutils.EmptyOrMap({{$field.Getter "obj"}}),
+    {{- else if and (eq $field.DataType "string") ($field.Options.Reference) ($field.Options.Reference.Nullable) }}
+        pgutils.NilOrString({{$field.Getter "obj"}}),
     {{- else }}
         {{$field.Getter "obj"}},{{end}}
 {{- end}}
@@ -256,10 +255,10 @@ func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, obj {{$schema
 {{- define "copyObject"}}
 {{- $schema := .schema }}
 func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, {{ range $index, $field := $schema.FieldsReferringToParent }} {{$field.Name}} {{$field.Type}},{{end}} objs ...{{$schema.Type}}) error {
-    batchSize := pgSearch.MaxBatchSize
-    if len(objs) < batchSize {
-        batchSize = len(objs)
+    if len(objs) == 0 {
+        return nil
     }
+    batchSize := min(len(objs), pgSearch.MaxBatchSize)
     inputRows := make([][]interface{}, 0, batchSize)
     {{if not $schema.Parent }}
     // This is a copy so first we must delete the rows and re-add them
@@ -273,51 +272,52 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
     {{- end }}
     }
 
-    for idx, obj := range objs {
-        // Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-        log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-		"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-		"to simply use the object.  %s", obj)
-        {{/* If embedded, the top-level has the full serialized object */}}
-        {{if not $schema.Parent }}
-        serialized, marshalErr := obj.MarshalVT()
-        if marshalErr != nil {
-            return marshalErr
-        }
-        {{end}}
-
-        inputRows = append(inputRows, []interface{}{
-            {{- template "insertValues" $schema }}
-        })
-
-        {{ if not $schema.Parent }}
-        // Add the ID to be deleted.
-        deletes = append(deletes, {{ range $field := $schema.PrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
-        {{end}}
-
-        // if we hit our batch size we need to push the data
-        if (idx + 1) % batchSize == 0 || idx == len(objs) - 1  {
-            // copy does not upsert so have to delete first.  parent deletion cascades so only need to
-            // delete for the top level parent
+    {{ $idx := false }}{{ range $field := $schema.DBColumnFields }}{{if eq "idx" ($field.Getter "obj") -}}{{ $idx = true }}{{end}}{{ end -}}
+    {{ if $idx }}idx := 0{{ end }}
+    for objBatch := range slices.Chunk(objs, batchSize) {
+        for _, obj := range objBatch {
+            // Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+            log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
+            "in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
+            "to simply use the object.  %s", obj)
+            {{/* If embedded, the top-level has the full serialized object */}}
             {{if not $schema.Parent }}
-            if err := s.DeleteMany(ctx, deletes); err != nil {
-                return err
+            serialized, marshalErr := obj.MarshalVT()
+            if marshalErr != nil {
+                return marshalErr
             }
-            // clear the inserts and vals for the next batch
-            deletes = deletes[:0]
             {{end}}
-            if _, err := tx.CopyFrom(ctx, pgx.Identifier{"{{$schema.Table|lowerCase}}"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-                return err
-            }
-            // clear the input rows for the next batch
-            inputRows = inputRows[:0]
+
+            inputRows = append(inputRows, []interface{}{
+                {{- template "insertValues" $schema }}
+            })
+
+            {{ if not $schema.Parent }}
+            // Add the ID to be deleted.
+            deletes = append(deletes, {{ range $field := $schema.PrimaryKeys }}{{$field.Getter "obj"}}, {{end}})
+            {{end}}
+            {{- if $idx }}idx++{{ end -}}
         }
+
+        // copy does not upsert so have to delete first.  parent deletion cascades so only need to
+        // delete for the top level parent
+        {{if not $schema.Parent }}
+        if err := s.DeleteMany(ctx, deletes); err != nil {
+            return err
+        }
+        // clear the inserts and vals for the next batch
+        deletes = deletes[:0]
+        {{end}}
+        if _, err := tx.CopyFrom(ctx, pgx.Identifier{"{{$schema.Table|lowerCase}}"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+            return err
+        }
+        // clear the input rows for the next batch
+        inputRows = inputRows[:0]
     }
 
     {{if $schema.Children }}
-    for idx, obj := range objs {
-        _ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
-        {{range $child := $schema.Children }}
+    for {{ if $idx }}idx{{else}}_{{ end }}, obj := range objs {
+        {{- range $child := $schema.Children }}
         if err := {{ template "copyFunctionName" $child }}(ctx, s, tx{{ range $index, $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, obj.{{$child.ObjectGetter}}...); err != nil {
             return err
         }

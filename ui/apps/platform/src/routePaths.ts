@@ -2,7 +2,7 @@
  * Application route paths constants.
  */
 
-import { resourceTypes, standardEntityTypes, rbacConfigTypes } from 'constants/entityTypes';
+import { rbacConfigTypes, resourceTypes, standardEntityTypes } from 'constants/entityTypes';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { HasReadAccess } from 'hooks/usePermissions';
 import { ResourceName } from 'types/roleResources';
@@ -29,11 +29,14 @@ export const clustersDelegatedScanningPath = `${clustersBasePath}/delegated-imag
 export const clustersDiscoveredClustersPath = `${clustersBasePath}/discovered-clusters`;
 export const clustersInitBundlesPath = `${clustersBasePath}/init-bundles`;
 export const clustersInitBundlesPathWithParam = `${clustersInitBundlesPath}/:id?`;
+export const clustersClusterRegistrationSecretsPath = `${clustersBasePath}/cluster-registration-secrets`;
+export const clustersClusterRegistrationSecretsPathWithParam = `${clustersClusterRegistrationSecretsPath}/:id?`;
+
 export const clustersSecureClusterPath = `${clustersBasePath}/secure-a-cluster`;
+export const clustersSecureClusterCrsPath = `${clustersBasePath}/secure-a-cluster-crs`;
 export const collectionsBasePath = `${mainPath}/collections`;
 export const collectionsPath = `${mainPath}/collections/:collectionId?`;
 export const complianceBasePath = `${mainPath}/compliance`;
-export const compliancePath = `${mainPath}/:context(compliance)`;
 export const complianceEnhancedBasePath = `${mainPath}/compliance`;
 export const complianceEnhancedCoveragePath = `${complianceEnhancedBasePath}/coverage`;
 export const complianceEnhancedSchedulesPath = `${complianceEnhancedBasePath}/schedules`;
@@ -65,7 +68,7 @@ export const systemHealthPath = `${mainPath}/system-health`;
 export const userBasePath = `${mainPath}/user`;
 export const userRolePath = `${userBasePath}/roles/:roleName`;
 export const violationsBasePath = `${mainPath}/violations`;
-export const violationsUserWorkloadsViewPath = `${mainPath}/violations?filteredWorkflowView=Application view`;
+export const violationsUserWorkloadsViewPath = `${mainPath}/violations?filteredWorkflowView=Applications view`;
 export const violationsPlatformViewPath = `${mainPath}/violations?filteredWorkflowView=Platform view`;
 export const violationsFullViewPath = `${mainPath}/violations?filteredWorkflowView=Full view`;
 export const violationsPath = `${violationsBasePath}/:alertId?`;
@@ -78,6 +81,7 @@ export const vulnerabilitiesPlatformCvesPath = `${vulnerabilitiesBasePath}/platf
 export const vulnerabilitiesUserWorkloadsPath = `${vulnerabilitiesBasePath}/user-workloads`;
 export const vulnerabilitiesPlatformPath = `${vulnerabilitiesBasePath}/platform`;
 export const vulnerabilitiesNodeCvesPath = `${vulnerabilitiesBasePath}/node-cves`;
+export const vulnerabilitiesVirtualMachineCvesPath = `${vulnerabilitiesBasePath}/virtual-machine-cves`;
 // System defined "views"
 export const vulnerabilitiesAllImagesPath = `${vulnerabilitiesBasePath}/all-images`;
 export const vulnerabilitiesInactiveImagesPath = `${vulnerabilitiesBasePath}/inactive-images`;
@@ -86,6 +90,8 @@ export const vulnerabilitiesImagesWithoutCvesPath = `${vulnerabilitiesBasePath}/
 export const vulnerabilitiesViewPath = `${vulnerabilitiesBasePath}/results/:viewTemplate/:viewId`;
 
 export const vulnerabilityReportsPath = `${vulnerabilitiesBasePath}/reports`;
+export const vulnerabilityConfigurationReportsPath = `${vulnerabilityReportsPath}/configuration`;
+export const vulnerabilityViewBasedReportsPath = `${vulnerabilityReportsPath}/view-based`;
 
 // Vulnerability Management 1.0 path for links from Dashboard:
 
@@ -148,12 +154,17 @@ export type RouteKey =
     | 'clusters/discovered-clusters'
     // Cluster init bundles must precede generic Clusters in Body and so here for consistency.
     | 'clusters/init-bundles'
+    // Cluster registration secrets must precede generic Clusters in Body and so here for consistency.
+    | 'clusters/cluster-registration-secrets'
     // Cluster secure-a-cluster must precede generic Clusters in Body and so here for consistency.
     | 'clusters/secure-a-cluster'
+    // Cluster secure-a-cluster-crs must precede generic Clusters in Body and so here for consistency.
+    | 'clusters/secure-a-cluster-crs'
     | 'clusters'
     | 'collections'
     | 'compliance'
-    | 'compliance-enhanced'
+    | 'compliance-coverage'
+    | 'compliance-schedules'
     | 'configmanagement'
     | 'dashboard'
     | 'exception-configuration'
@@ -176,7 +187,7 @@ export type RouteKey =
     | 'vulnerabilities/inactive-images'
     | 'vulnerabilities/images-without-cves'
     | 'vulnerabilities/platform-cves'
-    | 'vulnerabilities/workload-cves'
+    | 'vulnerabilities/virtual-machine-cves'
     | 'vulnerability-management'
     ;
 
@@ -206,8 +217,16 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     'clusters/init-bundles': {
         resourceAccessRequirements: everyResource(['Administration', 'Integration']),
     },
+    // Cluster registration secrets must precede generic Clusters in Body and so here for consistency.
+    'clusters/cluster-registration-secrets': {
+        resourceAccessRequirements: everyResource(['Administration', 'Integration']),
+    },
     // Clusters secure-a-cluster must precede generic Clusters in Body and so here for consistency.
     'clusters/secure-a-cluster': {
+        resourceAccessRequirements: everyResource([]),
+    },
+    // Clusters secure-a-cluster-crs must precede generic Clusters in Body and so here for consistency.
+    'clusters/secure-a-cluster-crs': {
         resourceAccessRequirements: everyResource([]),
     },
     clusters: {
@@ -234,13 +253,16 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
             // 'ServiceAccount', // for Cluster and Deployment
         ]),
     },
-    'compliance-enhanced': {
-        resourceAccessRequirements: everyResource(['Compliance']),
+    'compliance-coverage': {
+        resourceAccessRequirements: everyResource(['Compliance', 'Cluster']),
+    },
+    'compliance-schedules': {
+        resourceAccessRequirements: everyResource(['Compliance', 'Cluster']),
     },
     configmanagement: {
         // Require at least one resource for a dashboard widget.
         resourceAccessRequirements: someResource([
-            'Alert',
+            everyResource(['Alert', 'WorkflowAdministration']), // PolicyViolationsBySeverity
             // 'Cluster',
             'Compliance',
             // 'Deployment',
@@ -326,28 +348,24 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     'vulnerabilities/reports': {
         resourceAccessRequirements: everyResource(['WorkflowAdministration']),
     },
-    'vulnerabilities/workload-cves': {
-        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
-    },
     'vulnerabilities/user-workloads': {
-        featureFlagRequirements: allEnabled(['ROX_PLATFORM_CVE_SPLIT']),
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
     'vulnerabilities/platform': {
-        featureFlagRequirements: allEnabled(['ROX_PLATFORM_CVE_SPLIT']),
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
     'vulnerabilities/all-images': {
-        featureFlagRequirements: allEnabled(['ROX_PLATFORM_CVE_SPLIT']),
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
     'vulnerabilities/inactive-images': {
-        featureFlagRequirements: allEnabled(['ROX_PLATFORM_CVE_SPLIT']),
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
     'vulnerabilities/images-without-cves': {
-        featureFlagRequirements: allEnabled(['ROX_PLATFORM_CVE_SPLIT']),
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
+    },
+    'vulnerabilities/virtual-machine-cves': {
+        featureFlagRequirements: allEnabled(['ROX_VIRTUAL_MACHINES']),
+        resourceAccessRequirements: everyResource(['Cluster']),
     },
     'vulnerability-management': {
         resourceAccessRequirements: everyResource([
@@ -435,7 +453,6 @@ const vulnManagementPathToLabelMap: Record<string, string> = {
 
 const vulnerabilitiesPathToLabelMap: Record<string, string> = {
     [vulnerabilitiesBasePath]: 'Vulnerabilities',
-    [vulnerabilitiesWorkloadCvesPath]: 'Workload CVEs',
     [vulnerabilitiesPlatformCvesPath]: 'Platform CVEs',
     [vulnerabilitiesNodeCvesPath]: 'Node CVEs',
     [vulnerabilityReportsPath]: 'Vulnerability Reporting',
@@ -469,11 +486,11 @@ export const basePathToLabelMap: Record<string, string> = {
     [userBasePath]: 'User Profile',
 };
 
-const entityListTypeMatcher = `(${Object.values(urlEntityListTypes).join('|')})`;
-const entityTypeMatcher = `(${Object.values(urlEntityTypes).join('|')})`;
+export const validPageEntityListTypes = Object.values(urlEntityListTypes);
+export const validPageEntityTypes = Object.values(urlEntityTypes);
 
 export const workflowPaths = {
     DASHBOARD: `${mainPath}/:context`,
-    LIST: `${mainPath}/:context/:pageEntityListType${entityListTypeMatcher}/:entityId1?/:entityType2?/:entityId2?`,
-    ENTITY: `${mainPath}/:context/:pageEntityType${entityTypeMatcher}/:pageEntityId?/:entityType1?/:entityId1?/:entityType2?/:entityId2?`,
+    LIST: `${mainPath}/:context/:pageEntityListType/:entityId1?/:entityType2?/:entityId2?`,
+    ENTITY: `${mainPath}/:context/:pageEntityType/:pageEntityId?/:entityType1?/:entityId1?/:entityType2?/:entityId2?`,
 };

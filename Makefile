@@ -36,33 +36,6 @@ SILENT ?= @
 # TODO: [ROX-19070] Update postgres store test generation to work for foreign keys
 UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests|stackrox/rox/operator/tests|stackrox/rox/central/reports/config/store/postgres|stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres|stackrox/rox/central/auth/store/postgres|stackrox/rox/scanner/e2etests"
 
-ifeq ($(TAG),)
-TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
-endif
-
-# Set expiration on Quay.io for non-release tags.
-ifeq ($(findstring x,$(TAG)),x)
-QUAY_TAG_EXPIRATION=13w
-else
-QUAY_TAG_EXPIRATION=never
-endif
-
-ROX_PRODUCT_BRANDING ?= STACKROX_BRANDING
-
-# ROX_IMAGE_FLAVOR is an ARG used in Dockerfiles that defines the default registries for main, scanner, and collector images.
-# ROX_IMAGE_FLAVOR valid values are: development_build, rhacs, opensource.
-ROX_IMAGE_FLAVOR ?= $(shell \
-	if [[ "$(ROX_PRODUCT_BRANDING)" == "STACKROX_BRANDING" ]]; then \
-	  echo "opensource"; \
-	else \
-	  echo "development_build"; \
-	fi)
-
-DEFAULT_IMAGE_REGISTRY := quay.io/stackrox-io
-ifeq ($(ROX_PRODUCT_BRANDING),RHACS_BRANDING)
-	DEFAULT_IMAGE_REGISTRY := quay.io/rhacs-eng
-endif
-
 GOBUILD := $(CURDIR)/scripts/go-build.sh
 DOCKERBUILD := $(CURDIR)/scripts/docker-build.sh
 GO_TEST_OUTPUT_PATH=$(CURDIR)/test-output/test.log
@@ -85,7 +58,8 @@ UNAME_M := $(shell uname -m)
 
 BUILD_IMAGE := quay.io/stackrox-io/apollo-ci:$(shell sed 's/\s*\#.*//' BUILD_IMAGE_VERSION)
 ifneq ($(UNAME_M),x86_64)
-	BUILD_IMAGE = docker.io/library/golang:1.22
+	GO_VERSION := $(shell sed -n 's/^go \([0-9]*\.[0-9]*\)\..*/\1/p' go.mod)
+	BUILD_IMAGE = docker.io/library/golang:$(GO_VERSION)
 endif
 
 CENTRAL_DB_DOCKER_ARGS :=
@@ -125,6 +99,7 @@ GOPATH_VOLUME_SRC := $(GOPATH_VOLUME_NAME)
 endif
 
 LOCAL_VOLUME_ARGS := -v $(CURDIR):/src:delegated -v $(GOCACHE_VOLUME_SRC):/linux-gocache:delegated -v $(GOPATH_VOLUME_SRC):/go:delegated
+LOCAL_VOLUME_ARGS += $(EXTRA_LOCAL_VOLUME_ARGS)
 GOPATH_WD_OVERRIDES := -w /src -e GOPATH=/go -e GOCACHE=/linux-gocache -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0='/src'
 
 null :=
@@ -141,7 +116,7 @@ all: deps style test image
 include make/gotools.mk
 
 $(call go-tool, BUF_BIN, github.com/bufbuild/buf/cmd/buf, tools/proto)
-$(call go-tool, GOLANGCILINT_BIN, github.com/golangci/golangci-lint/cmd/golangci-lint, tools/linters)
+$(call go-tool, GOLANGCILINT_BIN, github.com/golangci/golangci-lint/v2/cmd/golangci-lint, tools/linters)
 $(call go-tool, EASYJSON_BIN, github.com/mailru/easyjson/easyjson)
 $(call go-tool, ROXVET_BIN, ./tools/roxvet)
 $(call go-tool, STRINGER_BIN, golang.org/x/tools/cmd/stringer)
@@ -362,7 +337,7 @@ clean-proto-generated-srcs:
 config-controller-gen:
 	make -C config-controller/ manifests
 	make -C config-controller/ generate
-	cp config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml image/templates/helm/stackrox-central/crds
+	cp config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml image/templates/helm/stackrox-central/internal
 
 .PHONY: generated-srcs
 generated-srcs: go-generated-srcs config-controller-gen
@@ -376,13 +351,12 @@ deps: $(shell find $(BASE_DIR) -name "go.sum")
 	@echo "+ $@"
 	$(SILENT)$(eval GOMOCK_REFLECT_DIRS=`find . -type d -name 'gomock_reflect_*'`)
 	$(SILENT)test -z $(GOMOCK_REFLECT_DIRS) || { echo "Found leftover gomock directories. Please remove them and rerun make deps!"; echo $(GOMOCK_REFLECT_DIRS); exit 1; }
-	$(SILENT)go mod tidy
 ifdef CI
 	$(SILENT)GOTOOLCHAIN=local go mod tidy || { >&2 echo "Go toolchain does not match with installed Go version. This is a compatibility check that prevents breaking downstream builds. If you really need to update the toolchain version, ask in #forum-acs-golang" ; exit 1 ; }
 	$(SILENT)git diff --exit-code -- go.mod go.sum || { echo "go.mod/go.sum files were updated after running 'go mod tidy', run this command on your local machine and commit the results." ; exit 1 ; }
-	go mod verify
+else
+	$(SILENT)go mod tidy
 endif
-	$(SILENT)go mod download
 	$(SILENT)touch $@
 
 .PHONY: clean-deps
@@ -483,10 +457,16 @@ main-build-dockerized: build-volumes
 	docker run $(DOCKER_OPTS) -i -e RACE -e CI -e BUILD_TAG -e SHORTCOMMIT -e GOTAGS -e DEBUG_BUILD -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
 
 .PHONY: main-build-nodeps
-main-build-nodeps: central-build-nodeps migrator-build-nodeps config-controller-build-nodeps
-	$(GOBUILD) sensor/kubernetes sensor/admission-control compliance/cmd/compliance
-	$(GOBUILD) sensor/upgrader
-	$(GOBUILD) sensor/init-tls-certs
+main-build-nodeps:
+	$(GOBUILD) \
+		central \
+		compliance/cmd/compliance \
+		config-controller \
+		migrator \
+		sensor/admission-control \
+		sensor/init-tls-certs \
+		sensor/kubernetes \
+		sensor/upgrader
 ifndef CI
 	CGO_ENABLED=0 $(GOBUILD) roxctl
 endif
@@ -539,29 +519,28 @@ go-unit-tests: build-prep test-prep
 
 .PHONY: sensor-integration-test
 sensor-integration-test: build-prep test-prep
-	set -eo pipefail ; \
-	rm -rf  $(GO_TEST_OUTPUT_PATH); \
-	for package in $(shell git ls-files ./sensor/tests | grep '_test.go' | xargs -n 1 dirname | uniq | sort | sed -e 's/sensor\/tests\///'); do \
-		CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 LOGLEVEL=debug GOTAGS=$(GOTAGS),test scripts/go-test.sh -p 4 -race -cover -coverprofile test-output/coverage.out -v ./sensor/tests/$$package \
-		| tee -a $(GO_TEST_OUTPUT_PATH); \
-	done \
+	set -o pipefail ; \
+	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 LOGLEVEL=debug GOTAGS=$(GOTAGS),test scripts/go-test.sh -timeout 15m -race -v -p 1 ./sensor/tests/... | tee $(GO_TEST_OUTPUT_PATH)
 
 sensor-pipeline-benchmark: build-prep test-prep
 	LOGLEVEL="panic" go test -bench=. -run=^# -benchtime=30s -count=5 ./sensor/tests/pipeline | tee $(CURDIR)/test-output/pipeline.results.txt
 
 .PHONY: go-postgres-unit-tests
 go-postgres-unit-tests: build-prep test-prep
+	set -o pipefail ; \
+	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -timeout 15m  -race -cover -coverprofile test-output/coverage.out -v \
+		$(shell git grep -rl "//go:build sql_integration" central pkg tools | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
+		| tee $(GO_TEST_OUTPUT_PATH)
 	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
-	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/coverage.out -v \
-		$(shell git grep -rl "//go:build sql_integration" central pkg migrator tools | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
-		| tee $(GO_TEST_OUTPUT_PATH)
+	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/migrator-coverage.out -v \
+		$(shell git grep -rl "//go:build sql_integration" migrator | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
+		| tee -a $(GO_TEST_OUTPUT_PATH)
 
 .PHONY: go-postgres-bench-tests
 go-postgres-bench-tests: build-prep test-prep
-	@# The -p 1 passed to go test is required to ensure that tests of different packages are not run in parallel, so as to avoid conflicts when interacting with the DB.
 	set -o pipefail ; \
-	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -run=nonthing -bench=. -benchtime=$(BENCHTIME) -benchmem -timeout $(BENCHTIMEOUT) -count $(BENCHCOUNT) -v \
+	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -run=nonthing -bench=. -benchtime=$(BENCHTIME) -benchmem -timeout $(BENCHTIMEOUT) -count $(BENCHCOUNT) -v \
   $(shell git grep -rl "testing.B" central pkg migrator tools | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
 		| tee $(GO_TEST_OUTPUT_PATH)
 
@@ -782,6 +761,10 @@ ossls-notice: deps
 .PHONY: collector-tag
 collector-tag:
 	@echo "$$(cat COLLECTOR_VERSION)"
+
+.PHONY: fact-tag
+fact-tag:
+	@echo "$$(cat FACT_VERSION)"
 
 .PHONY: scanner-tag
 scanner-tag:

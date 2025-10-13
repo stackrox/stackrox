@@ -30,6 +30,7 @@ import services.ClusterService
 import services.ExternalBackupService
 import services.ImageIntegrationService
 import services.NetworkPolicyService
+import services.NotifierService
 import services.PolicyService
 import util.Env
 import util.MailServer
@@ -267,6 +268,12 @@ class IntegrationsTest extends BaseSpecification {
             notifier.validateNetpolNotification(orchestrator.generateYaml(policy), strictIntegrationTesting)
         }
 
+        and:
+        "check notifier is scrubbed"
+        NotifierService.getNotifiers().notifiersList.each {
+            it.getNotifierSecret() == "******"
+        }
+
         cleanup:
         "delete notifiers"
         for (Notifier notifier : notifierTypes) {
@@ -489,6 +496,20 @@ class IntegrationsTest extends BaseSpecification {
 
     @Unroll
     @Tag("Integration")
+    @IgnoreIf({ !Env.IS_BYODB })
+    def "Verify external backup errors on external DB"() {
+        when:
+        def backup = ExternalBackupService.getS3IntegrationConfig("this shall not work")
+        ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
+
+        then:
+        def exception = thrown(StatusRuntimeException)
+        assert exception.message.contains('Please manage backups directly with your database provider.')
+    }
+
+    @Unroll
+    @Tag("Integration")
+    @IgnoreIf(reason = "Backup service is not available with external db", value = { Env.IS_BYODB })
     def "Verify AWS S3 Integration: #integrationName"() {
         when:
         "the integration is tested"
@@ -514,13 +535,11 @@ class IntegrationsTest extends BaseSpecification {
         "S3 without endpoint" | Env.mustGetAWSS3BucketName() | Env.mustGetAWSS3BucketRegion() |
                 ""                                                   | Env.mustGetAWSAccessKeyID() |
                 Env.mustGetAWSSecretAccessKey()
-        "GCS"                 | Env.mustGetGCSBucketName()   | "us-east-1"                    |
-                "storage.googleapis.com"                             | Env.mustGetGCPAccessKeyID() |
-                Env.mustGetGCPAccessKey()
     }
 
     @Unroll
     @Tag("Integration")
+    @IgnoreIf(reason = "Backup service is not available with external db", value = { Env.IS_BYODB })
     def "Verify S3 Compatible Integration: #integrationName"() {
         when:
         "the integration is tested"
@@ -552,6 +571,7 @@ class IntegrationsTest extends BaseSpecification {
 
     @Unroll
     @Tag("Integration")
+    @IgnoreIf(reason = "Backup service is not available with external db", value = { Env.IS_BYODB })
     def "Verify GCS Integration: #integrationName"() {
         setup:
         Assume.assumeTrue(!useWorkloadId || Env.HAS_WORKLOAD_IDENTITIES)

@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	views "github.com/stackrox/rox/central/processindicator/views"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	concurrency "github.com/stackrox/rox/pkg/concurrency"
@@ -108,6 +109,20 @@ func (m *MockDataStore) GetProcessIndicators(ctx context.Context, ids []string) 
 func (mr *MockDataStoreMockRecorder) GetProcessIndicators(ctx, ids any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProcessIndicators", reflect.TypeOf((*MockDataStore)(nil).GetProcessIndicators), ctx, ids)
+}
+
+// IterateOverProcessIndicatorsRiskView mocks base method.
+func (m *MockDataStore) IterateOverProcessIndicatorsRiskView(ctx context.Context, q *v1.Query, fn func(*views.ProcessIndicatorRiskView) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IterateOverProcessIndicatorsRiskView", ctx, q, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IterateOverProcessIndicatorsRiskView indicates an expected call of IterateOverProcessIndicatorsRiskView.
+func (mr *MockDataStoreMockRecorder) IterateOverProcessIndicatorsRiskView(ctx, q, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IterateOverProcessIndicatorsRiskView", reflect.TypeOf((*MockDataStore)(nil).IterateOverProcessIndicatorsRiskView), ctx, q, fn)
 }
 
 // PruneProcessIndicators mocks base method.
@@ -209,16 +224,16 @@ func (mr *MockDataStoreMockRecorder) Wait(cancelWhen any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Wait", reflect.TypeOf((*MockDataStore)(nil).Wait), cancelWhen)
 }
 
-// WalkAll mocks base method.
-func (m *MockDataStore) WalkAll(ctx context.Context, fn func(*storage.ProcessIndicator) error) error {
+// WalkByQuery mocks base method.
+func (m *MockDataStore) WalkByQuery(ctx context.Context, query *v1.Query, fn func(*storage.ProcessIndicator) error) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "WalkAll", ctx, fn)
+	ret := m.ctrl.Call(m, "WalkByQuery", ctx, query, fn)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// WalkAll indicates an expected call of WalkAll.
-func (mr *MockDataStoreMockRecorder) WalkAll(ctx, fn any) *gomock.Call {
+// WalkByQuery indicates an expected call of WalkByQuery.
+func (mr *MockDataStoreMockRecorder) WalkByQuery(ctx, query, fn any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkAll", reflect.TypeOf((*MockDataStore)(nil).WalkAll), ctx, fn)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkByQuery", reflect.TypeOf((*MockDataStore)(nil).WalkByQuery), ctx, query, fn)
 }

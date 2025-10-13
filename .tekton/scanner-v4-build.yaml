@@ -16,9 +16,12 @@ metadata:
         event == "pull_request" && (
           target_branch.startsWith("release-") ||
           source_branch.matches("(konflux|renovate|appstudio|rhtap)") ||
-          body.pull_request.labels.exists(l, l.name == "konflux-build")
-        )
+          (has(body.pull_request) && has(body.pull_request.labels) && body.pull_request.labels.exists(l, l.name == "konflux-build"))
+        ) && body.action != "ready_for_review"
       )
+    # The empty `on-label` annotation is a workaround to make sure the pipeline gets triggered when the label gets first
+    # added to the PR. See the Slack tread linked from ROX-30580.
+    pipelinesascode.tekton.dev/on-label: "[]"
   labels:
     appstudio.openshift.io/application: acs
     appstudio.openshift.io/component: scanner-v4
@@ -36,16 +39,15 @@ spec:
   - name: image-expires-after
     value: '13w'
   - name: output-image-repo
-    value: quay.io/rhacs-eng/scanner-v4
+    value: quay.io/rhacs-eng/release-scanner-v4
   - name: path-context
     value: .
   - name: revision
     value: '{{revision}}'
   - name: rebuild
     value: 'true'
-  # TODO(ROX-20234): Enable hermetic builds
-  # - name: hermetic
-  #   value: "true"
+  - name: hermetic
+    value: "true"
   - name: prefetch-input
     value: '{"type": "gomod", "path": "."}'
   - name: build-source-image
@@ -55,25 +57,41 @@ spec:
   - name: clone-fetch-tags
     value: 'true'
 
-  workspaces:
-  - name: git-auth
-    secret:
-      secretName: '{{ git_auth_secret }}'
-
   pipelineRef:
     name: scanner-v4-pipeline
 
   taskRunSpecs:
-  - pipelineTaskName: build-container-amd64
+  - pipelineTaskName: prefetch-dependencies
     stepSpecs:
-    - name: build
-      # CPU requests are increased to speed up builds compared to the defaults.
-      # Defaults: https://github.com/konflux-ci/build-definitions/blob/main/task/buildah/0.1/buildah.yaml#L147
+    # Limit CPU for Go dependencies prefetch, as it tends to be OOM-killed when it gets lots of it without OOTB limit.
+    - name: prefetch-dependencies
       computeResources:
         limits:
           cpu: 2
         requests:
           cpu: 2
+  - pipelineTaskName: build-container-amd64
+    stepSpecs:
+    - name: build
+      # CPU requests are increased to speed up builds compared to the defaults.
+      # Defaults: https://github.com/konflux-ci/build-definitions/blob/main/task/buildah-oci-ta/0.5/buildah-oci-ta.yaml#L921
+      computeResources:
+        limits:
+          cpu: 2
+        requests:
+          cpu: 2
+  - pipelineTaskName: build-source-image
+    stepSpecs:
+    # Bump memory for source image build because the one with defaults tends to get sometimes OOM-killed.
+    - name: build
+      computeResources:
+        limits:
+          memory: 3Gi
+        requests:
+          memory: 3Gi
+
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-scanner-v4
 
   # IMPORTANT: when changing timeouts here, read and follow timeout instructions in operator-bundle-build.yaml.
   timeouts:
@@ -82,3 +100,8 @@ spec:
     # Reserve time for final tasks to run.
     finally: 10m
     pipeline: 1h10m
+
+  workspaces:
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'

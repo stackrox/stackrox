@@ -3,9 +3,12 @@ import { useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 
-import { Integration, IntegrationSource, IntegrationType } from '../utils/integrationUtils';
+import type { Integration, IntegrationSource, IntegrationType } from '../utils/integrationUtils';
 
-const selectIntegrations = createStructuredSelector({
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SelectIntegrationsState = Record<string, any[]>;
+
+const selectIntegrations = createStructuredSelector<SelectIntegrationsState>({
     apiTokens: selectors.getAPITokens,
     machineAccessConfigs: selectors.getMachineAccessConfigs,
     notifiers: selectors.getNotifiers,

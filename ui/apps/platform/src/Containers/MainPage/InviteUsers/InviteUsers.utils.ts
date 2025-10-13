@@ -1,4 +1,4 @@
-import { AuthProvider } from 'services/AuthService';
+import type { AuthProvider } from 'services/AuthService';
 
 export type BucketsForNewAndExistingEmails = {
     newEmails: string[];

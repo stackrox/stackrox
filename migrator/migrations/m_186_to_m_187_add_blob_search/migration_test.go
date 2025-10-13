@@ -37,10 +37,6 @@ func (s *blobMigrationTestSuite) SetupTest() {
 	s.gormDB = s.db.GetGormDB().WithContext(s.ctx)
 }
 
-func (s *blobMigrationTestSuite) TearDownTest() {
-	s.db.Teardown(s.T())
-}
-
 func (s *blobMigrationTestSuite) TestMigration() {
 	pgutils.CreateTableFromModel(s.ctx, s.gormDB, beforeSchema.CreateTableBlobsStmt)
 	batchSize = 9
@@ -60,8 +56,8 @@ func (s *blobMigrationTestSuite) TestMigration() {
 	for i, nb := range newBlobs {
 		s.Contains(blobs, nb.Name)
 		blob := blobs[nb.Name]
-		s.Equal(blob.Length, nb.Length)
-		s.Equal(protocompat.NilOrTime(blob.ModifiedTime), nb.ModifiedTime)
+		s.Equal(blob.GetLength(), nb.Length)
+		s.Equal(protocompat.NilOrTime(blob.GetModifiedTime()), nb.ModifiedTime)
 		converted, err := afterSchema.ConvertBlobToProto(&newBlobs[i])
 		s.Require().NoError(err)
 		protoassert.Equal(s.T(), blob, converted)

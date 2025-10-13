@@ -38,7 +38,7 @@ func (s *certRefresherSuite) SetupTest() {
 	s.dependenciesMock = &dependenciesMock{}
 	s.refreshCertificates = func() (timeToNextRefresh time.Duration, err error) {
 		return refreshCertificates(ctx, "test certificates", s.dependenciesMock.requestCertificates, s.dependenciesMock.getCertsRenewalTime,
-			s.dependenciesMock)
+			s.dependenciesMock, nil)
 	}
 }
 
@@ -48,7 +48,7 @@ func (s *certRefresherSuite) TearDownTest() {
 
 func (s *certRefresherSuite) TestNewCertificatesRefresherSmokeTest() {
 	s.NotNil(newCertificatesRefresher("test certificates", s.dependenciesMock.requestCertificates, s.dependenciesMock,
-		time.Second, retry.DefaultBackoff))
+		time.Second, retry.DefaultBackoff, nil))
 }
 
 func (s *certRefresherSuite) TestRefreshCertificatesImmediateRefresh() {
@@ -263,7 +263,7 @@ func (m *dependenciesMock) GetServiceCertificates(ctx context.Context) (*storage
 
 func (m *dependenciesMock) EnsureServiceCertificates(ctx context.Context, certificates *storage.TypedServiceCertificateSet) ([]*storage.TypedServiceCertificate, error) {
 	args := m.Called(ctx, certificates)
-	return certificates.ServiceCerts, args.Error(0)
+	return certificates.GetServiceCerts(), args.Error(0)
 }
 
 func (m *dependenciesMock) getCertsRenewalTime(certificates *storage.TypedServiceCertificateSet) (time.Time, error) {

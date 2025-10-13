@@ -3,6 +3,11 @@
         "node": {
             "id": "1",
             "nodeCVECountBySeverity": {
+                "unknown": {
+                    "total": 2,
+                    "fixable": 2,
+                    "__typename": "ResourceCountByFixability"
+                },
                 "low": {
                     "total": 15,
                     "fixable": 0,

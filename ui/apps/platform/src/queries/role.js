@@ -26,17 +26,6 @@ export const K8S_ROLE_FRAGMENT = gql`
         clusterId
     }
 `;
-export const K8S_ROLE_QUERY = gql`
-    query k8sRole($id: ID!) {
-        clusters {
-            id
-            k8sRole(role: $id) {
-                ...k8RoleFields
-            }
-        }
-    }
-    ${K8S_ROLE_FRAGMENT}
-`;
 
 export const ROLE_NAME = gql`
     query k8sRole($id: ID!) {

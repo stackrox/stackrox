@@ -13,7 +13,7 @@ import (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "deployment",
-		Short: "Commands related to deployments.",
+		Short: "Commands related to deployments",
 	}
 
 	c.AddCommand(check.Command(cliEnvironment))

@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/processindicator/service"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -70,8 +71,12 @@ func (resolver *Resolver) Deployment(ctx context.Context, args struct{ *graphql.
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
-	deployment, ok, err := resolver.DeploymentDataStore.GetDeployment(ctx, string(*args.ID))
-	return resolver.wrapDeploymentWithContext(ctx, deployment, ok, err)
+	deploymentLoader, err := loaders.GetDeploymentLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	deployment, err := deploymentLoader.FromID(ctx, string(*args.ID))
+	return resolver.wrapDeploymentWithContext(ctx, deployment, deployment != nil, err)
 }
 
 // Deployments returns GraphQL resolvers all deployments
@@ -84,7 +89,11 @@ func (resolver *Resolver) Deployments(ctx context.Context, args PaginatedQuery) 
 	if err != nil {
 		return nil, err
 	}
-	deployments, err := resolver.DeploymentDataStore.SearchRawDeployments(ctx, q)
+	deploymentLoader, err := loaders.GetDeploymentLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	deployments, err := deploymentLoader.FromQuery(ctx, q)
 	return resolver.wrapDeploymentsWithContext(ctx, deployments, err)
 }
 
@@ -98,11 +107,11 @@ func (resolver *Resolver) DeploymentCount(ctx context.Context, args RawQuery) (i
 	if err != nil {
 		return 0, err
 	}
-	count, err := resolver.DeploymentDataStore.Count(ctx, q)
+	deploymentLoader, err := loaders.GetDeploymentLoader(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return int32(count), nil
+	return deploymentLoader.CountFromQuery(ctx, q)
 }
 
 // Cluster returns a GraphQL resolver for the cluster where this deployment runs
@@ -224,7 +233,7 @@ func (resolver *deploymentResolver) Policies(ctx context.Context, args Paginated
 	for _, policyResolver := range policyResolvers {
 		policyResolver.ctx = scoped.Context(ctx, scoped.Scope{
 			Level: v1.SearchCategory_DEPLOYMENTS,
-			ID:    resolver.data.GetId(),
+			IDs:   []string{resolver.data.GetId()},
 		})
 	}
 
@@ -304,7 +313,7 @@ func (resolver *deploymentResolver) FailingPolicies(ctx context.Context, args Pa
 	for _, policyResolver := range policyResolvers {
 		policyResolver.ctx = scoped.Context(ctx, scoped.Scope{
 			Level: v1.SearchCategory_DEPLOYMENTS,
-			ID:    resolver.data.GetId(),
+			IDs:   []string{resolver.data.GetId()},
 		})
 	}
 
@@ -446,8 +455,12 @@ func (resolver *deploymentResolver) getDeploymentSecrets(ctx context.Context, _ 
 }
 
 func (resolver *Resolver) getDeployment(ctx context.Context, id string) *storage.Deployment {
-	deployment, ok, err := resolver.DeploymentDataStore.GetDeployment(ctx, id)
-	if err != nil || !ok {
+	deploymentLoader, err := loaders.GetDeploymentLoader(ctx)
+	if err != nil {
+		return nil
+	}
+	deployment, err := deploymentLoader.FromID(ctx, id)
+	if err != nil {
 		return nil
 	}
 	return deployment
@@ -498,7 +511,7 @@ func (resolver *deploymentResolver) ServiceAccountID(ctx context.Context) (strin
 	return results[0].ID, nil
 }
 
-func (resolver *deploymentResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
+func (resolver *deploymentResolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "Images")
 	if !resolver.hasImages() {
 		return nil, nil
@@ -562,7 +575,7 @@ func (resolver *deploymentResolver) withDeploymentScopeContext(ctx context.Conte
 	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_DEPLOYMENTS,
-		ID:    resolver.data.GetId(),
+		IDs:   []string{resolver.data.GetId()},
 	})
 }
 
@@ -573,7 +586,7 @@ func (resolver *deploymentResolver) PolicyStatus(ctx context.Context, args RawQu
 	var err error
 	var q *v1.Query
 	if scope, hasScope := scoped.GetScope(resolver.ctx); hasScope && scope.Level == v1.SearchCategory_POLICIES {
-		q = search.NewQueryBuilder().AddExactMatches(search.PolicyID, scope.ID).ProtoQuery()
+		q = search.NewQueryBuilder().AddExactMatches(search.PolicyID, scope.IDs...).ProtoQuery()
 	} else {
 		if q, err = args.AsV1QueryOrEmpty(); err != nil {
 			return "", err
@@ -650,8 +663,14 @@ func (resolver *deploymentResolver) ContainerTerminationCount(ctx context.Contex
 
 func (resolver *deploymentResolver) hasImages() bool {
 	for _, c := range resolver.data.GetContainers() {
-		if c.GetImage().GetId() != "" {
-			return true
+		if features.FlattenImageData.Enabled() {
+			if c.GetImage().GetIdV2() != "" {
+				return true
+			}
+		} else {
+			if c.GetImage().GetId() != "" {
+				return true
+			}
 		}
 	}
 	return false
@@ -701,7 +720,7 @@ func (resolver *deploymentResolver) LatestViolation(ctx context.Context, args Ra
 	var err error
 	var q *v1.Query
 	if scope, hasScope := scoped.GetScope(resolver.ctx); hasScope && scope.Level == v1.SearchCategory_POLICIES {
-		q = search.NewQueryBuilder().AddExactMatches(search.PolicyID, scope.ID).ProtoQuery()
+		q = search.NewQueryBuilder().AddExactMatches(search.PolicyID, scope.IDs...).ProtoQuery()
 	} else {
 		if q, err = args.AsV1QueryOrEmpty(); err != nil {
 			return nil, err

@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageComponentDatastore "github.com/stackrox/rox/central/imagecomponent/datastore"
+	imageComponentV2Datastore "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
 	logimbueDataStore "github.com/stackrox/rox/central/logimbue/store"
 	"github.com/stackrox/rox/central/metrics"
 	networkFlowDatastore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
@@ -35,6 +36,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/maputil"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
@@ -67,11 +69,12 @@ const (
 )
 
 var (
-	log                   = logging.LoggerForModule()
-	pruningCtx            = sac.WithAllAccess(context.Background())
-	lastClusterPruneTime  time.Time
-	lastLogImbuePruneTime time.Time
-	pruningTimeout        = env.PostgresDefaultPruningStatementTimeout.DurationSetting()
+	log                       = logging.LoggerForModule()
+	pruningCtx                = sac.WithAllAccess(context.Background())
+	lastClusterPruneTime      time.Time
+	lastLogImbuePruneTime     time.Time
+	pruningTimeout            = env.PostgresDefaultPruningStatementTimeout.DurationSetting()
+	prunedPLOPsWithoutPodUIDs = false
 
 	pruneInterval = env.PruneInterval.DurationSetting()
 	orphanWindow  = env.PruneOrphanedWindow.DurationSetting()
@@ -94,6 +97,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	networkflows networkFlowDatastore.ClusterDataStore,
 	config configDatastore.DataStore,
 	imageComponents imageComponentDatastore.DataStore,
+	imageComponentsV2 imageComponentV2Datastore.DataStore,
 	risks riskDataStore.DataStore,
 	vulnReqs vulnReqDataStore.DataStore,
 	serviceAccts serviceAccountDataStore.DataStore,
@@ -106,57 +110,59 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	nodeCVEStore nodeCVEDS.DataStore,
 ) GarbageCollector {
 	return &garbageCollectorImpl{
-		alerts:          alerts,
-		clusters:        clusters,
-		nodes:           nodes,
-		images:          images,
-		imageComponents: imageComponents,
-		deployments:     deployments,
-		pods:            pods,
-		processes:       processes,
-		processbaseline: processbaseline,
-		networkflows:    networkflows,
-		config:          config,
-		risks:           risks,
-		vulnReqs:        vulnReqs,
-		serviceAccts:    serviceAccts,
-		k8sRoles:        k8sRoles,
-		k8sRoleBindings: k8sRoleBindings,
-		logimbueStore:   logimbueStore,
-		stopper:         concurrency.NewStopper(),
-		postgres:        globaldb.GetPostgres(),
-		reportSnapshot:  reportSnapshotDS,
-		plops:           plops,
-		blobStore:       blobStore,
-		nodeCVEStore:    nodeCVEStore,
+		alerts:            alerts,
+		clusters:          clusters,
+		nodes:             nodes,
+		images:            images,
+		imageComponents:   imageComponents,
+		imageComponentsV2: imageComponentsV2,
+		deployments:       deployments,
+		pods:              pods,
+		processes:         processes,
+		processbaseline:   processbaseline,
+		networkflows:      networkflows,
+		config:            config,
+		risks:             risks,
+		vulnReqs:          vulnReqs,
+		serviceAccts:      serviceAccts,
+		k8sRoles:          k8sRoles,
+		k8sRoleBindings:   k8sRoleBindings,
+		logimbueStore:     logimbueStore,
+		stopper:           concurrency.NewStopper(),
+		postgres:          globaldb.GetPostgres(),
+		reportSnapshot:    reportSnapshotDS,
+		plops:             plops,
+		blobStore:         blobStore,
+		nodeCVEStore:      nodeCVEStore,
 	}
 }
 
 type garbageCollectorImpl struct {
 	postgres pgPkg.DB
 
-	alerts          alertDatastore.DataStore
-	clusters        clusterDatastore.DataStore
-	nodes           nodeDatastore.DataStore
-	images          imageDatastore.DataStore
-	imageComponents imageComponentDatastore.DataStore
-	deployments     deploymentDatastore.DataStore
-	pods            podDatastore.DataStore
-	processes       processDatastore.DataStore
-	processbaseline processBaselineDatastore.DataStore
-	networkflows    networkFlowDatastore.ClusterDataStore
-	config          configDatastore.DataStore
-	risks           riskDataStore.DataStore
-	vulnReqs        vulnReqDataStore.DataStore
-	serviceAccts    serviceAccountDataStore.DataStore
-	k8sRoles        k8sRoleDataStore.DataStore
-	k8sRoleBindings roleBindingDataStore.DataStore
-	logimbueStore   logimbueDataStore.Store
-	stopper         concurrency.Stopper
-	reportSnapshot  snapshotDS.DataStore
-	plops           plopDataStore.DataStore
-	blobStore       blobDatastore.Datastore
-	nodeCVEStore    nodeCVEDS.DataStore
+	alerts            alertDatastore.DataStore
+	clusters          clusterDatastore.DataStore
+	nodes             nodeDatastore.DataStore
+	images            imageDatastore.DataStore
+	imageComponents   imageComponentDatastore.DataStore
+	imageComponentsV2 imageComponentV2Datastore.DataStore
+	deployments       deploymentDatastore.DataStore
+	pods              podDatastore.DataStore
+	processes         processDatastore.DataStore
+	processbaseline   processBaselineDatastore.DataStore
+	networkflows      networkFlowDatastore.ClusterDataStore
+	config            configDatastore.DataStore
+	risks             riskDataStore.DataStore
+	vulnReqs          vulnReqDataStore.DataStore
+	serviceAccts      serviceAccountDataStore.DataStore
+	k8sRoles          k8sRoleDataStore.DataStore
+	k8sRoleBindings   roleBindingDataStore.DataStore
+	logimbueStore     logimbueDataStore.Store
+	stopper           concurrency.Stopper
+	reportSnapshot    snapshotDS.DataStore
+	plops             plopDataStore.DataStore
+	blobStore         blobDatastore.Datastore
+	nodeCVEStore      nodeCVEDS.DataStore
 }
 
 func (g *garbageCollectorImpl) Start() {
@@ -185,6 +191,7 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	g.removeOldReportBlobs(pvtConfig)
 	g.removeExpiredAdministrationEvents(pvtConfig)
 	g.removeExpiredDiscoveredClusters()
+	g.removeInvalidAPITokens()
 	postgres.PruneActiveComponents(pruningCtx, g.postgres)
 	postgres.PruneClusterHealthStatuses(pruningCtx, g.postgres)
 
@@ -495,7 +502,8 @@ func (g *garbageCollectorImpl) removeOrphanedProcessBaselines(deployments set.Fr
 }
 
 // removeOrphanedPLOPs: cleans up ProcessListeningOnPort objects that are expired
-// or have a PodUid and belong to a deployment or pod that does not exist.
+// or have a PodUid and belong to a deployment or pod that does not exist or have
+// no PodUid.
 func (g *garbageCollectorImpl) removeOrphanedPLOPs() {
 	defer metrics.SetPruningDuration(time.Now(), "PLOPs")
 	prunedCount := g.plops.PruneOrphanedPLOPs(pruningCtx, orphanWindow)
@@ -507,6 +515,15 @@ func (g *garbageCollectorImpl) removeOrphanedPLOPs() {
 		log.Errorf("error removing PLOPs with no matching process indicator or process information: %v", err)
 	}
 	log.Infof("[PLOP pruning] Pruning of %d orphaned PLOPs with no matching process indicator or process information complete", prunedCount)
+
+	// Only run once since we don't expect any new PLOPs without poduids.
+	if !prunedPLOPsWithoutPodUIDs {
+		prunedCount, err = g.plops.RemovePLOPsWithoutPodUID(pruningCtx)
+		if err != nil {
+			log.Errorf("error removing PLOPs without poduid: %v", err)
+		}
+		log.Infof("[PLOP pruning] Prunned %d orphaned PLOPs with no poduid", prunedCount)
+	}
 }
 
 func (g *garbageCollectorImpl) removeExpiredAdministrationEvents(config *storage.PrivateConfig) {
@@ -518,6 +535,11 @@ func (g *garbageCollectorImpl) removeExpiredAdministrationEvents(config *storage
 func (g *garbageCollectorImpl) removeExpiredDiscoveredClusters() {
 	defer metrics.SetPruningDuration(time.Now(), "DiscoveredClusters")
 	postgres.PruneDiscoveredClusters(pruningCtx, g.postgres, env.DiscoveredClustersRetentionTime.DurationSetting())
+}
+
+func (g *garbageCollectorImpl) removeInvalidAPITokens() {
+	defer metrics.SetPruningDuration(time.Now(), "InvalidAPITokens")
+	postgres.PruneInvalidAPITokens(pruningCtx, g.postgres, env.APITokenInvalidRetentionTime.DurationSetting())
 }
 
 func (g *garbageCollectorImpl) getOrphanedAlerts(ctx context.Context) ([]string, error) {
@@ -589,6 +611,10 @@ func (g *garbageCollectorImpl) removeOrphanedNetworkFlows(clusters set.FrozenStr
 func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 	defer metrics.SetPruningDuration(time.Now(), "Images")
 	pruneImageAfterDays := config.GetImageRetentionDurationDays()
+	if pruneImageAfterDays == 0 {
+		log.Info("[Image Pruning] pruning is disabled.")
+		return
+	}
 	qb := search.NewQueryBuilder().AddDays(search.LastUpdatedTime, int64(pruneImageAfterDays)).ProtoQuery()
 	imageResults, err := g.images.Search(pruningCtx, qb)
 	if err != nil {
@@ -977,14 +1003,26 @@ func (g *garbageCollectorImpl) removeOrphanedImageRisks() {
 
 func (g *garbageCollectorImpl) removeOrphanedImageComponentRisks() {
 	defer metrics.SetPruningDuration(time.Now(), "ImageCompositionRisks")
+	var prunable []string
+	var results []search.Result
+	var err error
 	componentsWithRisk := g.getRisks(storage.RiskSubjectType_IMAGE_COMPONENT)
-	results, err := g.imageComponents.Search(pruningCtx, search.EmptyQuery())
-	if err != nil {
-		log.Errorf("[Risk pruning] Searching image components: %v", err)
-		return
+
+	if features.FlattenCVEData.Enabled() {
+		results, err = g.imageComponentsV2.Search(pruningCtx, search.EmptyQuery())
+		if err != nil {
+			log.Errorf("[Risk pruning] Searching image components: %v", err)
+			return
+		}
+	} else {
+		results, err = g.imageComponents.Search(pruningCtx, search.EmptyQuery())
+		if err != nil {
+			log.Errorf("[Risk pruning] Searching image components: %v", err)
+			return
+		}
 	}
 
-	prunable := componentsWithRisk.Difference(search.ResultsToIDSet(results)).AsSlice()
+	prunable = componentsWithRisk.Difference(search.ResultsToIDSet(results)).AsSlice()
 	log.Infof("[Risk pruning] Removing %d image component risks", len(prunable))
 	g.removeRisks(storage.RiskSubjectType_IMAGE_COMPONENT, prunable...)
 }

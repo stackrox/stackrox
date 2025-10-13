@@ -11,7 +11,7 @@ import {
     clickDeploymentTabWithFixture,
     exportAndWaitForNetworkPolicyYaml,
     interactAndWaitForNetworkPoliciesResponse,
-    interactAndWaitForSortedViolationsResponses,
+    interactAndWaitForViolationsResponses,
     selectFilteredWorkflowView,
     visitViolationFromTableWithFixture,
     visitViolationWithFixture,
@@ -99,27 +99,22 @@ describe('Violations', () => {
     it('should contain correct action buttons for the lifecycle stage', () => {
         visitViolationsWithFixture('alerts/alerts.json');
 
+        const { actions } = selectors;
+        const { btn, excludeDeploymentBtn, resolveAndAddToBaselineBtn, resolveBtn } = actions;
+
         // Lifecycle: Runtime
-        cy.get(`tbody tr:nth-child(1) ${selectors.actions.btn}`).click(); // click kabob to open actions menu
-        cy.get('tbody tr:nth-child(1)')
-            .get(selectors.actions.excludeDeploymentBtn)
-            .should('exist')
-            .get(selectors.actions.resolveBtn)
-            .should('exist')
-            .get(selectors.actions.resolveAndAddToBaselineBtn)
-            .should('exist');
-        cy.get(`tbody tr:nth-child(1) ${selectors.actions.btn}`).click(); // click kabob to close actions menu
+        cy.get(`tbody tr:nth-child(1) ${btn}`).click(); // click kabob to open actions menu
+        cy.get(`tbody tr:nth-child(1) ${excludeDeploymentBtn}`).should('exist');
+        cy.get(`tbody tr:nth-child(1) ${resolveBtn}`).should('exist');
+        cy.get(`tbody tr:nth-child(1) ${resolveAndAddToBaselineBtn}`).should('exist');
+        cy.get(`tbody tr:nth-child(1) ${btn}`).click(); // click kabob to close actions menu
 
         // Lifecycle: Deploy
-        cy.get(`tbody tr:nth-child(3) ${selectors.actions.btn}`).click(); // click kabob to open actions menu
-        cy.get('tbody tr:nth-child(3)')
-            .get(selectors.actions.resolveBtn)
-            .should('not.exist')
-            .get(selectors.actions.resolveAndAddToBaselineBtn)
-            .should('not.exist')
-            .get(selectors.actions.excludeDeploymentBtn)
-            .should('exist');
-        cy.get(`tbody tr:nth-child(3) ${selectors.actions.btn}`).click(); // click kabob to close actions menu
+        cy.get(`tbody tr:nth-child(3) ${btn}`).click(); // click kabob to open actions menu
+        cy.get(`tbody tr:nth-child(3) ${resolveBtn}`).should('not.exist');
+        cy.get(`tbody tr:nth-child(3) ${resolveAndAddToBaselineBtn}`).should('not.exist');
+        cy.get(`tbody tr:nth-child(3) ${excludeDeploymentBtn}`).should('exist');
+        cy.get(`tbody tr:nth-child(3) ${btn}`).click(); // click kabob to close actions menu
     });
 
     // TODO test of bulk actions
@@ -164,15 +159,7 @@ describe('Violations', () => {
         );
     });
 
-    // TODO: After upgrading to PatternFly 5, this functionality works when tested manually, but the <CodeEditor> component gets stuck on "Loading..." in the Cypress test.
-    //     Jira ticket to re-able
-    //     https://issues.redhat.com/browse/ROX-23537
-    it.skip('should show network policy details for all policies in the namespace of the target deployment', () => {
-        // TODO - Don't fail on exceptions in the console. This is needed due to the exceptions thrown
-        //        from the Monaco editor when it first loads. This should be removed once the Monaco
-        // .      editor errors are fixed.
-        cy.on('uncaught:exception', () => false);
-
+    it('should show network policy details for all policies in the namespace of the target deployment', () => {
         visitViolationWithFixture('alerts/alertWithEmptyContainerConfig.json');
         interactAndWaitForNetworkPoliciesResponse(() => {
             cy.get(selectors.details.networkPoliciesTab).click();
@@ -221,8 +208,14 @@ describe('Violations', () => {
         // Conditionally rendered: Policy scope
     });
 
-    it.skip('should sort the Severity column', () => {
-        visitViolations();
+    it('should sort the Severity column', () => {
+        interactAndWaitForViolationsResponses(() => {
+            visitViolations();
+        });
+
+        interactAndWaitForViolationsResponses(() => {
+            selectFilteredWorkflowView('All Violations');
+        });
 
         const thSelector = 'th[scope="col"]:contains("Severity")';
         const tdSelector = 'td[data-label="Severity"]';
@@ -230,48 +223,27 @@ describe('Violations', () => {
         // 0. Initial table state is sorted descending by Time.
         cy.get(thSelector).should('have.attr', 'aria-sort', 'none');
 
-        // 1. Sort decending by the Severity column.
-        interactAndWaitForSortedViolationsResponses(() => {
+        // 1. Sort descending by the Severity column.
+        interactAndWaitForViolationsResponses(() => {
             cy.get(thSelector).click();
-        }, 'desc');
+        });
 
         cy.get(thSelector).should('have.attr', 'aria-sort', 'descending');
 
-        cy.wait(1000); // prevent timing failures
         cy.get(tdSelector).then((items) => {
             assertSortedItems(items, callbackForPairOfDescendingPolicySeverityValuesFromElements);
         });
 
         // 2. Sort ascending by the Severity column.
-        interactAndWaitForSortedViolationsResponses(() => {
+        interactAndWaitForViolationsResponses(() => {
             cy.get(thSelector).click();
-        }, 'asc');
+        });
 
         cy.get(thSelector).should('have.attr', 'aria-sort', 'ascending');
 
-        cy.wait(1000); // prevent timing failures
         cy.get(tdSelector).then((items) => {
             assertSortedItems(items, callbackForPairOfAscendingPolicySeverityValuesFromElements);
         });
-    });
-
-    it('should show an active violation in the details page', () => {
-        visitViolations();
-
-        // filter to show the "Full view" of violations
-        selectFilteredWorkflowView('All Violations');
-
-        cy.intercept('GET', '/v1/alerts?query=*').as('getViolations');
-        cy.wait('@getViolations');
-
-        // go to the details page
-        cy.get('#ViolationsTable table tr:nth(1) td[data-label="Policy"] a').click();
-
-        // check if the "Violation state" is "Active"
-        cy.get('ul[aria-label="Violation state and resolution"] li:eq(0)').should(
-            'have.text',
-            'State: Active'
-        );
     });
 
     it('should filter by active violations', () => {

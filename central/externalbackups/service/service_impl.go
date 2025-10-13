@@ -7,39 +7,17 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/externalbackups/datastore"
 	"github.com/stackrox/rox/central/externalbackups/manager"
+	"github.com/stackrox/rox/central/externalbackups/service/internal"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/endpoints"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/grpc/authz"
-	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
-	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
-	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/secrets"
 	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/grpc"
-)
-
-var (
-	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.Integration)): {
-			v1.ExternalBackupService_GetExternalBackup_FullMethodName,
-			v1.ExternalBackupService_GetExternalBackups_FullMethodName,
-		},
-		user.With(permissions.Modify(resources.Integration)): {
-			v1.ExternalBackupService_PutExternalBackup_FullMethodName,
-			v1.ExternalBackupService_PostExternalBackup_FullMethodName,
-			v1.ExternalBackupService_TestExternalBackup_FullMethodName,
-			v1.ExternalBackupService_DeleteExternalBackup_FullMethodName,
-			v1.ExternalBackupService_TriggerExternalBackup_FullMethodName,
-			v1.ExternalBackupService_UpdateExternalBackup_FullMethodName,
-			v1.ExternalBackupService_TestUpdatedExternalBackup_FullMethodName,
-		},
-	})
 )
 
 // serviceImpl is the struct that manages the external backups API
@@ -63,7 +41,7 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, authorizer.Authorized(ctx, fullMethodName)
+	return ctx, internal.Authorizer.Authorized(ctx, fullMethodName)
 }
 
 // GetExternalBackup retrieves the external backup based on the id passed
@@ -84,12 +62,14 @@ func (s *serviceImpl) GetExternalBackup(ctx context.Context, request *v1.Resourc
 
 // GetExternalBackups retrieves all external backups
 func (s *serviceImpl) GetExternalBackups(ctx context.Context, _ *v1.Empty) (*v1.GetExternalBackupsResponse, error) {
-	backups, err := s.dataStore.ListBackups(ctx)
+	backups := make([]*storage.ExternalBackup, 0)
+	err := s.dataStore.ForEachBackup(ctx, func(b *storage.ExternalBackup) error {
+		secrets.ScrubSecretsFromStructWithReplacement(b, secrets.ScrubReplacementStr)
+		backups = append(backups, b)
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-	for _, b := range backups {
-		secrets.ScrubSecretsFromStructWithReplacement(b, secrets.ScrubReplacementStr)
 	}
 	return &v1.GetExternalBackupsResponse{
 		ExternalBackups: backups,
@@ -99,7 +79,7 @@ func (s *serviceImpl) GetExternalBackups(ctx context.Context, _ *v1.Empty) (*v1.
 func validateBackup(backup *storage.ExternalBackup) error {
 	errorList := errorhelpers.NewErrorList("external backup validation")
 
-	err := endpoints.ValidateEndpoints(backup.Config)
+	err := endpoints.ValidateEndpoints(backup.GetConfig())
 	if err != nil {
 		errorList.AddWrap(err, "invalid endpoint")
 	}
@@ -195,7 +175,7 @@ func (s *serviceImpl) PostExternalBackup(ctx context.Context, request *storage.E
 		return nil, err
 	}
 
-	if err := s.reporter.Register(request.Id, request.Name, storage.IntegrationHealth_BACKUP); err != nil {
+	if err := s.reporter.Register(request.GetId(), request.GetName(), storage.IntegrationHealth_BACKUP); err != nil {
 		return nil, err
 	}
 

@@ -78,6 +78,14 @@ func NilOrUUID(value string) *uuid.UUID {
 	return &id
 }
 
+// NilOrString allows for a proto string to be stored as a null in Postgres
+func NilOrString(value string) *string {
+	if value == "" {
+		return nil
+	}
+	return &value
+}
+
 // NilOrCIDR allows for a proto string to be stored as a CIDR type in Postgres
 func NilOrCIDR(value string) *net.IPNet {
 	if value == "" {

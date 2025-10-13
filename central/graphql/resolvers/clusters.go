@@ -513,7 +513,7 @@ func (resolver *clusterResolver) Subject(ctx context.Context, args struct{ Name 
 	return resolver.root.wrapSubject(k8srbac.GetSubject(subjectName, bindings))
 }
 
-func (resolver *clusterResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
+func (resolver *clusterResolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Images")
 	return resolver.root.Images(resolver.clusterScopeContext(ctx), args)
 }
@@ -584,7 +584,7 @@ func (resolver *clusterResolver) clusterScopeContext(ctx context.Context) contex
 	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_CLUSTERS,
-		ID:    resolver.data.GetId(),
+		IDs:   []string{resolver.data.GetId()},
 	})
 }
 
@@ -673,7 +673,7 @@ func (resolver *clusterResolver) Policies(ctx context.Context, args PaginatedQue
 	for _, policyResolver := range policyResolvers {
 		policyResolver.ctx = scoped.Context(ctx, scoped.Scope{
 			Level: v1.SearchCategory_CLUSTERS,
-			ID:    resolver.data.GetId(),
+			IDs:   []string{resolver.data.GetId()},
 		})
 	}
 	return paginate(pagination, policyResolvers, nil)
@@ -739,7 +739,7 @@ func (resolver *clusterResolver) PolicyStatus(ctx context.Context, args RawQuery
 
 	scopedCtx := scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_CLUSTERS,
-		ID:    resolver.data.GetId(),
+		IDs:   []string{resolver.data.GetId()},
 	})
 
 	if len(alerts) == 0 {

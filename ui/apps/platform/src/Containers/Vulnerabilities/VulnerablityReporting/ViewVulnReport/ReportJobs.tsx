@@ -19,6 +19,7 @@ import {
     Flex,
     FlexItem,
     Pagination,
+    SelectOption,
     Spinner,
     Switch,
     Text,
@@ -26,12 +27,10 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
 import { ExclamationCircleIcon, FilterIcon } from '@patternfly/react-icons';
 
-import { ReportConfiguration } from 'services/ReportsService.types';
+import { ConfiguredReportSnapshot, ReportConfiguration } from 'services/ReportsService.types';
 import { getDateTime } from 'utils/dateUtils';
-import { sanitizeFilename } from 'utils/fileUtils';
 import { getReportFormValuesFromConfiguration } from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
 import useSet from 'hooks/useSet';
 import useURLPagination from 'hooks/useURLPagination';
@@ -39,7 +38,7 @@ import useInterval from 'hooks/useInterval';
 import useFetchReportHistory from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReportHistory';
 import { getRequestQueryString } from 'Containers/Vulnerabilities/VulnerablityReporting/api/apiUtils';
 import useURLSort from 'hooks/useURLSort';
-import { saveFile } from 'services/DownloadService';
+import { downloadReportByJobId, deleteDownloadableReport } from 'services/ReportsService';
 import useDeleteDownloadModal from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/useDeleteDownloadModal';
 import useAuthStatus from 'hooks/useAuthStatus';
 
@@ -50,7 +49,6 @@ import { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal
 import NotifierConfigurationView from 'Components/NotifierConfiguration/NotifierConfigurationView';
 
 import { RunState, runStates } from 'types/reportJob';
-import { deleteDownloadableReport } from 'services/ReportsService';
 import ReportJobStatus from 'Components/ReportJob/ReportJobStatus';
 import EmailTemplatePreview from '../components/EmailTemplatePreview';
 import ReportParametersDetails from '../components/ReportParametersDetails';
@@ -58,7 +56,7 @@ import ScheduleDetails from '../components/ScheduleDetails';
 import { defaultEmailBody, getDefaultEmailSubject } from '../forms/emailTemplateFormUtils';
 import JobDetails from './JobDetails';
 
-export type RunHistoryProps = {
+export type ReportJobsProps = {
     reportId: string;
 };
 
@@ -69,7 +67,18 @@ const sortOptions = {
 
 const headingLevel = 'h2';
 
-function ReportJobs({ reportId }: RunHistoryProps) {
+const onDownload = (snapshot: ConfiguredReportSnapshot) => () => {
+    const { reportJobId, name, reportStatus } = snapshot;
+    const { completedAt } = reportStatus;
+    const filename = `${name}-${completedAt}`;
+    return downloadReportByJobId({
+        reportJobId,
+        filename,
+        fileExtension: 'zip',
+    });
+};
+
+function ReportJobs({ reportId }: ReportJobsProps) {
     const { currentUser } = useAuthStatus();
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { sortOption, getSortParams } = useURLSort(sortOptions);
@@ -115,7 +124,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                 <ToolbarContent>
                     <ToolbarItem>
                         <CheckboxSelect
-                            ariaLabel="CVE severity checkbox select"
+                            ariaLabel="Report status filter"
                             toggleIcon={<FilterIcon />}
                             selections={filteredStatuses}
                             onChange={(selection) => {
@@ -131,10 +140,14 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                             <SelectOption value={runStates.PREPARING}>Preparing</SelectOption>
                             <SelectOption value={runStates.WAITING}>Waiting</SelectOption>
                             <SelectOption value={runStates.GENERATED}>
-                                Download generated
+                                Report download is ready
                             </SelectOption>
-                            <SelectOption value={runStates.DELIVERED}>Email delivered</SelectOption>
-                            <SelectOption value={runStates.FAILURE}>Error</SelectOption>
+                            <SelectOption value={runStates.DELIVERED}>
+                                Report successfully sent
+                            </SelectOption>
+                            <SelectOption value={runStates.FAILURE}>
+                                Report failed to generate
+                            </SelectOption>
                         </CheckboxSelect>
                     </ToolbarItem>
                     <ToolbarItem className="pf-v5-u-flex-grow-1">
@@ -259,19 +272,6 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                             getReportFormValuesFromConfiguration(reportConfiguration);
                         const areDownloadActionsDisabled = currentUser.userId !== user.id;
 
-                        function onDownload() {
-                            const { completedAt } = reportStatus;
-                            const filename = `${name}-${completedAt}`;
-                            const sanitizedFilename = sanitizeFilename(filename);
-                            return saveFile({
-                                method: 'get',
-                                url: `/api/reports/jobs/download?id=${reportJobId}`,
-                                data: null,
-                                timeout: 300000,
-                                name: `${sanitizedFilename}.zip`,
-                            });
-                        }
-
                         const rowActions = [
                             {
                                 title: (
@@ -306,7 +306,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                             reportStatus={reportSnapshot.reportStatus}
                                             isDownloadAvailable={reportSnapshot.isDownloadAvailable}
                                             areDownloadActionsDisabled={areDownloadActionsDisabled}
-                                            onDownload={onDownload}
+                                            onDownload={onDownload(reportSnapshot)}
                                         />
                                     </Td>
                                     <Td dataLabel="Requester">{user.name}</Td>

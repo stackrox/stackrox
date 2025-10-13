@@ -147,16 +147,21 @@ func (mr *MockCAMockRecorder) PrivateKey() *gomock.Call {
 }
 
 // ValidateAndExtractSubject mocks base method.
-func (m *MockCA) ValidateAndExtractSubject(cert *x509.Certificate) (mtls.Subject, error) {
+func (m *MockCA) ValidateAndExtractSubject(cert *x509.Certificate, opts ...mtls.VerifyCertOption) (mtls.Subject, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ValidateAndExtractSubject", cert)
+	varargs := []any{cert}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ValidateAndExtractSubject", varargs...)
 	ret0, _ := ret[0].(mtls.Subject)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ValidateAndExtractSubject indicates an expected call of ValidateAndExtractSubject.
-func (mr *MockCAMockRecorder) ValidateAndExtractSubject(cert any) *gomock.Call {
+func (mr *MockCAMockRecorder) ValidateAndExtractSubject(cert any, opts ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateAndExtractSubject", reflect.TypeOf((*MockCA)(nil).ValidateAndExtractSubject), cert)
+	varargs := append([]any{cert}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateAndExtractSubject", reflect.TypeOf((*MockCA)(nil).ValidateAndExtractSubject), varargs...)
 }

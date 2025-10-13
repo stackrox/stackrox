@@ -30,13 +30,7 @@ func newNetworkBaselineDataStore(storage store.Store) DataStore {
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) (DataStore, error) {
-	dbstore := pgStore.New(pool)
-	return newNetworkBaselineDataStore(dbstore), nil
-}
-
-// GetBenchPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetBenchPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error) {
 	dbstore := pgStore.New(pool)
 	return newNetworkBaselineDataStore(dbstore), nil
 }
@@ -117,8 +111,8 @@ func (ds *dataStoreImpl) validateClusterAndNamespaceAgainstExistingBaseline(
 		existingBaseline.GetNamespace() != baseline.GetNamespace() {
 		return true, errors.Errorf(
 			"cluster ID %s and namespace %s do not match with existing network baseline",
-			baseline.ClusterId,
-			baseline.Namespace)
+			baseline.GetClusterId(),
+			baseline.GetNamespace())
 	}
 	return true, nil
 }

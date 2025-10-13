@@ -390,6 +390,10 @@ func (t *nRadixTree) findCIDRNoLock(ipNet *net.IPNet) (*nRadixNode, error) {
 			node = node.left
 		}
 
+		if node == nil {
+			break
+		}
+
 		// All network bits are traversed. If a supernet was found along the way, `ret` holds it,
 		// else there does not exist any supernet containing the search network/address.
 		if ipNet.Mask[i]&bit == 0 {
@@ -410,6 +414,175 @@ func (t *nRadixTree) findCIDRNoLock(ipNet *net.IPNet) (*nRadixNode, error) {
 	return ret, nil
 }
 
+// Checks that all leaf nodes have values. All leaves
+// should have nodes since paths represent values.
+func validateLeavesHaveValues(node *nRadixNode) bool {
+	if node == nil {
+		return true
+	}
+
+	if node.left == nil && node.right == nil && node.value == nil {
+		return false
+	}
+
+	if node.left != nil && !validateLeavesHaveValues(node.left) {
+		return false
+	}
+
+	if node.right != nil && !validateLeavesHaveValues(node.right) {
+		return false
+	}
+
+	return true
+}
+
+func getCardinalityByValues(node *nRadixNode) int {
+	if node == nil {
+		return 0
+	}
+
+	cardinality := 0
+
+	if node.value != nil {
+		cardinality = 1
+	}
+
+	if node.left != nil {
+		cardinality += getCardinalityByValues(node.left)
+	}
+
+	if node.right != nil {
+		cardinality += getCardinalityByValues(node.right)
+	}
+
+	return cardinality
+}
+
+// Checks that the number of values in the network tree
+// matches the number of keys in valueNodes.
+func (t *nRadixTree) validateCardinality() bool {
+	return getCardinalityByValues(t.root) == t.Cardinality()
+}
+
+func cloneIPNet(ipNet *net.IPNet) *net.IPNet {
+	ip := make(net.IP, len(ipNet.IP))
+	copy(ip, ipNet.IP)
+
+	mask := make(net.IPMask, len(ipNet.Mask))
+	copy(mask, ipNet.Mask)
+
+	return &net.IPNet{
+		IP:   ip,
+		Mask: mask,
+	}
+}
+
+func equalValueIpNet(value *storage.NetworkEntityInfo, ipNet *net.IPNet) bool {
+	valueCidr := value.GetExternalSource().GetCidr()
+	ipNetCidr := ipNet.String()
+	return valueCidr == ipNetCidr
+}
+
+func validateValuesRecursive(ipNet *net.IPNet, octetIdx int, bit byte, node *nRadixNode) bool {
+	if node.value != nil {
+		if !equalValueIpNet(node.value, ipNet) {
+			return false
+		}
+	}
+
+	if octetIdx >= len(ipNet.IP) && node.value == nil {
+		return false
+	}
+
+	newBit := bit >> 1
+	newOctetIdx := octetIdx
+	if newBit == 0 {
+		newOctetIdx = octetIdx + 1
+		newBit = byte(0x80)
+	}
+
+	if node.right != nil {
+		newIpNet := cloneIPNet(ipNet)
+		newIpNet.IP[octetIdx] |= bit
+		newIpNet.Mask[octetIdx] |= bit
+		valid := validateValuesRecursive(newIpNet, newOctetIdx, newBit, node.right)
+		if !valid {
+			return false
+		}
+	}
+
+	if node.left != nil {
+		newIpNet := cloneIPNet(ipNet)
+		newIpNet.Mask[octetIdx] |= bit
+		valid := validateValuesRecursive(newIpNet, newOctetIdx, newBit, node.left)
+		if !valid {
+			return false
+		}
+	}
+
+	return true
+}
+
+// Checks that the values of nodes correspond to the paths taken from
+// the root to the nodes.
+func (t *nRadixTree) validateValues() bool {
+	ip := make(net.IP, 4)
+	mask := make(net.IPMask, 4)
+
+	ipNet := &net.IPNet{
+		IP:   ip,
+		Mask: mask,
+	}
+
+	octetIdx := 0
+	bit := byte(0x80)
+	return validateValuesRecursive(ipNet, octetIdx, bit, t.root)
+}
+
+func (t *nRadixTree) ValidateNetworkTree() bool {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+
+	if t.root == nil {
+		return false
+	}
+
+	if !validateLeavesHaveValues(t.root) {
+		log.Errorf("Found a leaf without a value")
+		return false
+	}
+
+	if !t.validateCardinality() {
+		log.Errorf("The number of values in the tree doesn't match the number of keys")
+		return false
+	}
+
+	if !t.validateValues() {
+		log.Errorf("Values do not match tree path")
+		return false
+	}
+
+	return true
+}
+
+func removeRecursively(node *nRadixNode) {
+	// Do not remove the root.
+	if node.parent == nil {
+		return
+	}
+
+	parent := node.parent
+
+	if node.left == nil && node.right == nil && node.value == nil {
+		if parent.right == node {
+			parent.right = nil
+		} else {
+			parent.left = nil
+		}
+		removeRecursively(parent)
+	}
+}
+
 func (t *nRadixTree) Remove(key string) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
@@ -426,8 +599,7 @@ func (t *nRadixTree) Remove(key string) {
 	}
 
 	node.value = nil
-	if node.left == nil && node.right == nil {
-		node = nil
-	}
+	removeRecursively(node)
+
 	delete(t.valueNodes, key)
 }

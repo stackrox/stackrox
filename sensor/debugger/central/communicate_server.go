@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	metautils "github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -156,8 +157,7 @@ func (s *FakeService) Communicate(stream central.SensorService_CommunicateServer
 	md.Set(centralsensor.SensorHelloMetadataKey, "true")
 	err := stream.SetHeader(metadata.MD(md))
 	if err != nil {
-		s.t.Errorf("setting sensor hello metadata key: %s", err)
-		return err
+		return errors.Wrap(err, "setting sensor hello metadata key")
 	}
 
 	for _, msg := range s.initialMessages {
@@ -170,8 +170,7 @@ func (s *FakeService) Communicate(stream central.SensorService_CommunicateServer
 		if err := stream.Send(&central.MsgToSensor{
 			Msg: &central.MsgToSensor_DeduperState{DeduperState: s.deduperState},
 		}); err != nil {
-			s.t.Errorf("sending deduper state to sensor")
-			return err
+			return errors.Wrap(err, "sending deduper state to sensor")
 		}
 	}
 

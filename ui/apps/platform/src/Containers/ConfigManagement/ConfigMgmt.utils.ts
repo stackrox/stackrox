@@ -1,16 +1,17 @@
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
-import { defaultClusterSort } from 'Containers/ConfigManagement/List/Clusters';
-import { defaultNamespaceSort } from 'Containers/ConfigManagement/List/Namespaces';
-import { defaultDeploymentSort } from 'Containers/ConfigManagement/List/Deployments';
-import { defaultImageSort } from 'Containers/ConfigManagement/List/Images';
-import { defaultNodeSort } from 'Containers/ConfigManagement/List/Nodes';
-import { defaultPolicyrSort } from 'Containers/ConfigManagement/List/Policies';
-import { defaultRoleSort } from 'Containers/ConfigManagement/List/Roles';
-import { defaultSecretSort } from 'Containers/ConfigManagement/List/Secrets';
-import { defaultServiceAccountSort } from 'Containers/ConfigManagement/List/ServiceAccounts';
-import { defaultSubjectSort } from 'Containers/ConfigManagement/List/Subjects';
-import { GraphQLSortOption } from 'types/search';
-import { ConfigurationManagementEntityType } from 'utils/entityRelationships';
+import type { GraphQLSortOption } from 'types/search';
+import type { ConfigurationManagementEntityType } from 'utils/entityRelationships';
+
+import { defaultClusterSort } from './List/ConfigManagementListClusters';
+import { defaultDeploymentSort } from './List/ConfigManagementListDeployments';
+import { defaultImageSort } from './List/ConfigManagementListImages';
+import { defaultNamespaceSort } from './List/ConfigManagementListNamespaces';
+import { defaultNodeSort } from './List/ConfigManagementListNodes';
+import { defaultPolicySort } from './List/ConfigManagementListPolicies';
+import { defaultRoleSort } from './List/ConfigManagementListRoles';
+import { defaultSecretSort } from './List/ConfigManagementListSecrets';
+import { defaultServiceAccountSort } from './List/ConfigManagementListServiceAccounts';
+import { defaultSubjectSort } from './List/ConfigManagementListSubjects';
 
 const defaultSortFieldMap: Record<ConfigurationManagementEntityType, GraphQLSortOption[]> = {
     CLUSTER: defaultClusterSort,
@@ -19,7 +20,7 @@ const defaultSortFieldMap: Record<ConfigurationManagementEntityType, GraphQLSort
     IMAGE: defaultImageSort,
     NAMESPACE: defaultNamespaceSort,
     NODE: defaultNodeSort,
-    POLICY: defaultPolicyrSort,
+    POLICY: defaultPolicySort,
     ROLE: defaultRoleSort,
     SECRET: defaultSecretSort,
     SERVICE_ACCOUNT: defaultServiceAccountSort,

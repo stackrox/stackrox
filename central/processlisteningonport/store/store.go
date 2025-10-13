@@ -15,7 +15,8 @@ type Store interface {
 	Upsert(ctx context.Context, obj *storage.ProcessListeningOnPortStorage) error
 	UpsertMany(ctx context.Context, objs []*storage.ProcessListeningOnPortStorage) error
 	Delete(ctx context.Context, id string) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
+	DeleteByQuery(ctx context.Context, q *v1.Query) error
+	DeleteByQueryWithIDs(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
 	PruneMany(ctx context.Context, identifiers []string) error
 
@@ -24,7 +25,9 @@ type Store interface {
 	Exists(ctx context.Context, id string) (bool, error)
 
 	Get(ctx context.Context, id string) (*storage.ProcessListeningOnPortStorage, bool, error)
+	// Deprecated: use GetByQueryFn instead
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.ProcessListeningOnPortStorage, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.ProcessListeningOnPortStorage) error) error
 	GetMany(ctx context.Context, identifiers []string) ([]*storage.ProcessListeningOnPortStorage, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 

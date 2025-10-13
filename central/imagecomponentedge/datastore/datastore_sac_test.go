@@ -8,6 +8,7 @@ import (
 
 	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
@@ -26,6 +27,10 @@ var (
 )
 
 func TestImageComponentEdgeDatastoreSAC(t *testing.T) {
+	// TODO(ROX-28123): Remove deprecated datastore and tests
+	if features.FlattenCVEData.Enabled() {
+		t.Skip("This test is deprecated per ROX-25570.")
+	}
 	suite.Run(t, new(imageComponentEdgeDatastoreSACTestSuite))
 }
 
@@ -43,13 +48,8 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) SetupSuite() {
 	s.testGraphDatastore, err = graphDBTestUtils.NewTestGraphDataStore(s.T())
 	s.Require().NoError(err)
 	pool := s.testGraphDatastore.GetPostgresPool()
-	s.datastore, err = GetTestPostgresDataStore(s.T(), pool)
-	s.Require().NoError(err)
+	s.datastore = GetTestPostgresDataStore(s.T(), pool)
 	s.testContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Image)
-}
-
-func (s *imageComponentEdgeDatastoreSACTestSuite) TearDownSuite() {
-	s.testGraphDatastore.Cleanup(s.T())
 }
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) cleanImageToVulnerabilityGraph() {

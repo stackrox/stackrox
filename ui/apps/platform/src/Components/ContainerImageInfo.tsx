@@ -1,16 +1,16 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import { Card, CardBody, CardTitle } from '@patternfly/react-core';
 
-import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
-import { ContainerImage } from 'types/deployment.proto';
+import { vulnerabilitiesAllImagesPath } from 'routePaths';
+import type { ContainerImage } from 'types/deployment.proto';
 
 type ContainerImageInfoProps = {
     image: ContainerImage; // note: the k8s API, and our data of it, use singular "command" for this array
 };
 
 function ContainerImageInfo({ image }: ContainerImageInfoProps) {
-    const imageDetailsPageURL = `${vulnerabilitiesWorkloadCvesPath}/images/${image.id}`;
+    const imageDetailsPageURL = `${vulnerabilitiesAllImagesPath}/${image.id}`;
 
     if (image.id === '' || image.notPullable) {
         const unavailableText = image.notPullable

@@ -1,5 +1,5 @@
 import React, { useCallback, useContext } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom-v5-compat';
 import {
     Alert,
     Breadcrumb,
@@ -17,7 +17,7 @@ import {
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
-import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
+import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import PageTitle from 'Components/PageTitle';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
@@ -34,8 +34,8 @@ import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
 import ProfileDetailsHeader from './components/ProfileDetailsHeader';
 import { CHECK_NAME_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
 import {
-    coverageProfileClustersPath,
     coverageClusterDetailsPath,
+    coverageProfileClustersPath,
 } from './compliance.coverage.routes';
 import { createScanConfigFilter, isScanConfigurationDisabled } from './compliance.coverage.utils';
 import ScanConfigurationSelect from './components/ScanConfigurationSelect';
@@ -49,7 +49,7 @@ const searchFilterConfig = [profileCheckSearchFilterConfig];
 function ClusterDetailsPage() {
     const { scanConfigurationsQuery, selectedScanConfigName, setSelectedScanConfigName } =
         useContext(ScanConfigurationsContext);
-    const { clusterId, profileName } = useParams();
+    const { clusterId, profileName } = useParams() as { clusterId: string; profileName: string };
     const { generatePathWithScanConfig, navigateWithScanConfigQuery } = useScanConfigRouter();
     const pagination = useURLPagination(DEFAULT_COMPLIANCE_PAGE_SIZE);
     const { page, perPage, setPage } = pagination;

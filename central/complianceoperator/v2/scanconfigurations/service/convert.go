@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strings"
 
 	"github.com/pkg/errors"
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
@@ -15,6 +16,8 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	types "github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -42,11 +45,14 @@ var (
 	}
 
 	storageReportRunStateToV2 = map[storage.ComplianceOperatorReportStatus_RunState]v2.ComplianceReportStatus_RunState{
-		storage.ComplianceOperatorReportStatus_WAITING:   v2.ComplianceReportStatus_WAITING,
-		storage.ComplianceOperatorReportStatus_PREPARING: v2.ComplianceReportStatus_PREPARING,
-		storage.ComplianceOperatorReportStatus_GENERATED: v2.ComplianceReportStatus_GENERATED,
-		storage.ComplianceOperatorReportStatus_DELIVERED: v2.ComplianceReportStatus_DELIVERED,
-		storage.ComplianceOperatorReportStatus_FAILURE:   v2.ComplianceReportStatus_FAILURE,
+		storage.ComplianceOperatorReportStatus_WAITING:                     v2.ComplianceReportStatus_WAITING,
+		storage.ComplianceOperatorReportStatus_PREPARING:                   v2.ComplianceReportStatus_PREPARING,
+		storage.ComplianceOperatorReportStatus_GENERATED:                   v2.ComplianceReportStatus_GENERATED,
+		storage.ComplianceOperatorReportStatus_DELIVERED:                   v2.ComplianceReportStatus_DELIVERED,
+		storage.ComplianceOperatorReportStatus_FAILURE:                     v2.ComplianceReportStatus_FAILURE,
+		storage.ComplianceOperatorReportStatus_PARTIAL_ERROR:               v2.ComplianceReportStatus_PARTIAL_ERROR,
+		storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_DOWNLOAD: v2.ComplianceReportStatus_PARTIAL_SCAN_ERROR_DOWNLOAD,
+		storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_EMAIL:    v2.ComplianceReportStatus_PARTIAL_SCAN_ERROR_EMAIL,
 	}
 
 	storageReportRequestTypeToV2 = map[storage.ComplianceOperatorReportStatus_RunMethod]v2.ComplianceReportStatus_ReportMethod{
@@ -194,7 +200,7 @@ func ConvertV2ScheduleToProto(schedule *v2.Schedule) *storage.Schedule {
 		Hour:         schedule.GetHour(),
 		Minute:       schedule.GetMinute(),
 	}
-	switch schedule.Interval.(type) {
+	switch schedule.GetInterval().(type) {
 	case *v2.Schedule_DaysOfWeek_:
 		ret.Interval = &storage.Schedule_DaysOfWeek_{
 			DaysOfWeek: &storage.Schedule_DaysOfWeek{Days: schedule.GetDaysOfWeek().GetDays()},
@@ -219,7 +225,7 @@ func convertProtoScheduleToV2(schedule *storage.Schedule) *v2.Schedule {
 		Minute:       schedule.GetMinute(),
 	}
 
-	switch schedule.Interval.(type) {
+	switch schedule.GetInterval().(type) {
 	case *storage.Schedule_DaysOfWeek_:
 		ret.Interval = &v2.Schedule_DaysOfWeek_{
 			DaysOfWeek: &v2.Schedule_DaysOfWeek{Days: schedule.GetDaysOfWeek().GetDays()},
@@ -367,17 +373,17 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 		}
 		conditions := suite.GetStatus().GetConditions()
 		for _, c := range conditions {
-			if suiteStatus.LastTransitionTime == nil || protoutils.After(c.LastTransitionTime, suiteStatus.LastTransitionTime) {
-				suiteStatus.LastTransitionTime = c.LastTransitionTime
+			if suiteStatus.GetLastTransitionTime() == nil || protoutils.After(c.GetLastTransitionTime(), suiteStatus.GetLastTransitionTime()) {
+				suiteStatus.LastTransitionTime = c.GetLastTransitionTime()
 			}
 		}
 
 		// If the suite is complete, set the last scan time
-		if suite.GetStatus().GetPhase() == suiteComplete && (lastScanTime == nil || protoutils.After(suiteStatus.LastTransitionTime, lastScanTime)) {
-			lastScanTime = suiteStatus.LastTransitionTime
+		if suite.GetStatus().GetPhase() == suiteComplete && (lastScanTime == nil || protoutils.After(suiteStatus.GetLastTransitionTime(), lastScanTime)) {
+			lastScanTime = suiteStatus.GetLastTransitionTime()
 		}
 
-		clusterToSuiteMap[suite.ClusterId] = suiteStatus
+		clusterToSuiteMap[suite.GetClusterId()] = suiteStatus
 	}
 
 	return &v2.ComplianceScanConfigurationStatus{
@@ -389,14 +395,14 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 				var errors []string
 				bindings, err := bindingsDS.GetScanSettingBindings(ctx, search.NewQueryBuilder().
 					AddExactMatches(search.ComplianceOperatorScanConfigName, scanConfig.GetScanConfigName()).
-					AddExactMatches(search.ClusterID, cluster.ClusterId).ProtoQuery())
+					AddExactMatches(search.ClusterID, cluster.GetClusterId()).ProtoQuery())
 				if err != nil {
 					continue
 				}
 
 				// We may not have received any bindings from sensor
 				if len(bindings) != 0 {
-					bindingError := getLatestBindingError(bindings[0].Status)
+					bindingError := getLatestBindingError(bindings[0].GetStatus())
 					if bindingError != "" {
 						errors = append(errors, bindingError)
 					}
@@ -471,7 +477,27 @@ func convertStorageSnapshotsToV2Snapshots(ctx context.Context, snapshots []*stor
 func shallCheckDownload(reportStatus *storage.ComplianceOperatorReportStatus) bool {
 	runState := reportStatus.GetRunState()
 	return reportStatus.GetReportNotificationMethod() == storage.ComplianceOperatorReportStatus_DOWNLOAD &&
-		(runState == storage.ComplianceOperatorReportStatus_GENERATED || runState == storage.ComplianceOperatorReportStatus_DELIVERED)
+		(runState == storage.ComplianceOperatorReportStatus_GENERATED ||
+			runState == storage.ComplianceOperatorReportStatus_DELIVERED ||
+			runState == storage.ComplianceOperatorReportStatus_PARTIAL_ERROR ||
+			runState == storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_DOWNLOAD)
+}
+
+func failedClusterReasonsJoinFunc(reasons []string) string {
+	return strings.Join(reasons, "; ")
+}
+
+func convertStorageFailedClustersToV2FailedClusters(failedClusters []*storage.ComplianceOperatorReportSnapshotV2_FailedCluster) []*v2.FailedCluster {
+	ret := make([]*v2.FailedCluster, 0, len(failedClusters))
+	for _, cluster := range failedClusters {
+		ret = append(ret, &v2.FailedCluster{
+			ClusterId:       cluster.GetClusterId(),
+			ClusterName:     cluster.GetClusterName(),
+			OperatorVersion: cluster.GetOperatorVersion(),
+			Reason:          failedClusterReasonsJoinFunc(cluster.GetReasons()),
+		})
+	}
+	return ret
 }
 
 func convertStorageSnapshotToV2Snapshot(ctx context.Context, snapshot *storage.ComplianceOperatorReportSnapshotV2,
@@ -500,7 +526,14 @@ func convertStorageSnapshotToV2Snapshot(ctx context.Context, snapshot *storage.C
 	if shallCheckDownload(snapshot.GetReportStatus()) {
 		blobName := common.GetComplianceReportBlobPath(snapshot.GetScanConfigurationId(), snapshot.GetReportId())
 		query := search.NewQueryBuilder().AddExactMatches(search.BlobName, blobName).ProtoQuery()
-		blobResults, err := blobDS.Search(ctx, query)
+		// We need to add the Administration access to read from the BlobStore
+		blobCtx := sac.WithGlobalAccessScopeChecker(ctx,
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Administration),
+			),
+		)
+		blobResults, err := blobDS.Search(blobCtx, query)
 		if err != nil {
 			log.Errorf("unable to retrieve blob from the DataStore: %v", err)
 		}
@@ -519,6 +552,7 @@ func convertStorageSnapshotToV2Snapshot(ctx context.Context, snapshot *storage.C
 			ErrorMsg:                 snapshot.GetReportStatus().GetErrorMsg(),
 			ReportRequestType:        storageReportRequestTypeToV2[snapshot.GetReportStatus().GetReportRequestType()],
 			ReportNotificationMethod: storageReportNotificationMethodToV2[snapshot.GetReportStatus().GetReportNotificationMethod()],
+			FailedClusters:           convertStorageFailedClustersToV2FailedClusters(snapshot.GetFailedClusters()),
 		},
 		ReportData: configStatus,
 		User: &v2.SlimUser{

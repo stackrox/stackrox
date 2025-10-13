@@ -51,7 +51,8 @@ fi
 
 git switch --create "$UPDATE_BRANCH"
 
-echo "${VERSION}" >> "${CONFIG_FILE}"
+echo "${VERSION}" | sort -o "${CONFIG_FILE}" -m - "${CONFIG_FILE}"
+git diff
 git add "${CONFIG_FILE}"
 
 if ! git diff-index --quiet HEAD; then

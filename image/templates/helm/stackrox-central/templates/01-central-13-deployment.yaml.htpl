@@ -42,7 +42,7 @@ spec:
       affinity:
         {{- toYaml ._rox.central.affinity | nindent 8 }}
       {{- if ._rox.central.priorityClassName }}
-      priorityClassName: {{ ._rox.central.priorityClassName }}
+      priorityClassName: {{ quote ._rox.central.priorityClassName }}
       {{- end }}
       {{- if ._rox.central.hostAliases }}
       hostAliases: {{ toYaml ._rox.central.hostAliases | nindent 8 }}
@@ -82,6 +82,12 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: GRPC_ENFORCE_ALPN_ENABLED
+          value: {{ quote ._rox.env.grpcEnforceALPN }}
         {{- if ne (._rox.central.telemetry.enabled | toString) "false" }}
         {{- /* If telemetry.enabled is true or null, configure the endpoint and
                the key, if provided. Also, configure additional listening endpoints.*/}}

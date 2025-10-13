@@ -52,10 +52,10 @@ func checkIfShouldUpdate(
 	existingPLOP *storage.ProcessListeningOnPortStorage,
 	newPLOP *storage.ProcessListeningOnPortFromSensor) bool {
 
-	return existingPLOP.CloseTimestamp != newPLOP.CloseTimestamp ||
-		(existingPLOP.PodUid == "" && newPLOP.PodUid != "") ||
-		(existingPLOP.ClusterId == "" && newPLOP.ClusterId != "") ||
-		(existingPLOP.Namespace == "" && newPLOP.Namespace != "")
+	return existingPLOP.GetCloseTimestamp() != newPLOP.GetCloseTimestamp() ||
+		(existingPLOP.GetPodUid() == "" && newPLOP.GetPodUid() != "") ||
+		(existingPLOP.GetClusterId() == "" && newPLOP.GetClusterId() != "") ||
+		(existingPLOP.GetNamespace() == "" && newPLOP.GetNamespace() != "")
 }
 
 func getIndicatorIDForPlop(plop *storage.ProcessListeningOnPortFromSensor) string {
@@ -64,12 +64,12 @@ func getIndicatorIDForPlop(plop *storage.ProcessListeningOnPortFromSensor) strin
 		return ""
 	}
 
-	if plop.Process == nil {
+	if plop.GetProcess() == nil {
 		log.Warnf("Plop process is nil. Unable to set process indicator id. Plop will not appear in the API. plop: %s", plopToNoSecretsString(plop))
 		return ""
 	}
 
-	return id.GetIndicatorIDFromProcessIndicatorUniqueKey(plop.Process)
+	return id.GetIndicatorIDFromProcessIndicatorUniqueKey(plop.GetProcess())
 }
 
 func getIndicatorIdsForPlops(plops []*storage.ProcessListeningOnPortFromSensor) []string {
@@ -100,7 +100,7 @@ func plopToNoSecretsString(plop *storage.ProcessListeningOnPortFromSensor) strin
 		return ""
 	}
 
-	return fmt.Sprintf("%d_%d_%s", plop.GetProtocol(), plop.GetPort(), processToNoSecretsString(plop.Process))
+	return fmt.Sprintf("%d_%d_%s", plop.GetProtocol(), plop.GetPort(), processToNoSecretsString(plop.GetProcess()))
 }
 
 func plopStorageToNoSecretsString(plop *storage.ProcessListeningOnPortStorage) string {
@@ -108,7 +108,7 @@ func plopStorageToNoSecretsString(plop *storage.ProcessListeningOnPortStorage) s
 		return ""
 	}
 
-	return fmt.Sprintf("%d_%d_%s", plop.GetProtocol(), plop.GetPort(), processToNoSecretsString(plop.Process))
+	return fmt.Sprintf("%d_%d_%s", plop.GetProtocol(), plop.GetPort(), processToNoSecretsString(plop.GetProcess()))
 }
 
 func (ds *datastoreImpl) AddProcessListeningOnPort(
@@ -187,11 +187,11 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 			log.Debugf("Got existing PLOP: %s", plopStorageToNoSecretsString(existingPLOP))
 
 			// Update the timestamp and PodUid
-			existingPLOP.CloseTimestamp = val.CloseTimestamp
-			existingPLOP.Closed = existingPLOP.CloseTimestamp != nil
-			existingPLOP.PodUid = val.PodUid
-			existingPLOP.ClusterId = val.ClusterId
-			existingPLOP.Namespace = val.Namespace
+			existingPLOP.CloseTimestamp = val.GetCloseTimestamp()
+			existingPLOP.Closed = existingPLOP.GetCloseTimestamp() != nil
+			existingPLOP.PodUid = val.GetPodUid()
+			existingPLOP.ClusterId = val.GetClusterId()
+			existingPLOP.Namespace = val.GetNamespace()
 			updatePlopObjects = append(updatePlopObjects, existingPLOP)
 		}
 
@@ -233,17 +233,17 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 			log.Debugf("Got existing PLOP: %s", plopStorageToNoSecretsString(existingPLOP))
 
 			// Update the timestamp and PodUid
-			if existingPLOP.Closed {
-				existingPLOP.CloseTimestamp = val.CloseTimestamp
+			if existingPLOP.GetClosed() {
+				existingPLOP.CloseTimestamp = val.GetCloseTimestamp()
 			}
-			existingPLOP.PodUid = val.PodUid
-			existingPLOP.ClusterId = val.ClusterId
-			existingPLOP.Namespace = val.Namespace
+			existingPLOP.PodUid = val.GetPodUid()
+			existingPLOP.ClusterId = val.GetClusterId()
+			existingPLOP.Namespace = val.GetNamespace()
 			updatePlopObjects = append(updatePlopObjects, existingPLOP)
 		}
 
 		if !prevExists {
-			if val.CloseTimestamp == nil {
+			if val.GetCloseTimestamp() == nil {
 				// This events should always be closing by definition
 				log.Warnf("Found active PLOP completed in the batch %s", plopToNoSecretsString(val))
 			}
@@ -476,11 +476,11 @@ func getProcessUniqueKeyFromParts(containerName string,
 
 func getPlopProcessUniqueKey(plop *storage.ProcessListeningOnPortFromSensor) string {
 	return getProcessUniqueKeyFromParts(
-		plop.Process.ContainerName,
-		plop.Process.PodId,
-		plop.Process.ProcessName,
-		plop.Process.ProcessArgs,
-		plop.Process.ProcessExecFilePath,
+		plop.GetProcess().GetContainerName(),
+		plop.GetProcess().GetPodId(),
+		plop.GetProcess().GetProcessName(),
+		plop.GetProcess().GetProcessArgs(),
+		plop.GetProcess().GetProcessExecFilePath(),
 	)
 }
 
@@ -516,16 +516,16 @@ func addNewPLOP(plopObjects []*storage.ProcessListeningOnPortStorage,
 		// XXX, ResignatingFacepalm: Use regular GENERATE ALWAYS AS
 		// IDENTITY, which would require changes in store generator
 		Id:                 uuid.NewV4().String(),
-		Port:               value.Port,
-		Protocol:           value.Protocol,
+		Port:               value.GetPort(),
+		Protocol:           value.GetProtocol(),
 		ProcessIndicatorId: indicatorID,
 		Process:            processInfo,
-		DeploymentId:       value.DeploymentId,
-		PodUid:             value.PodUid,
-		ClusterId:          value.ClusterId,
-		Namespace:          value.Namespace,
-		Closed:             value.CloseTimestamp != nil,
-		CloseTimestamp:     value.CloseTimestamp,
+		DeploymentId:       value.GetDeploymentId(),
+		PodUid:             value.GetPodUid(),
+		ClusterId:          value.GetClusterId(),
+		Namespace:          value.GetNamespace(),
+		Closed:             value.GetCloseTimestamp() != nil,
+		CloseTimestamp:     value.GetCloseTimestamp(),
 	}
 
 	return append(plopObjects, newPLOP)
@@ -542,8 +542,7 @@ func (ds *datastoreImpl) RemovePlopsByPod(ctx context.Context, id string) error 
 	defer ds.mutex.Unlock()
 
 	q := search.NewQueryBuilder().AddExactMatches(search.PodUID, id).ProtoQuery()
-	_, storeErr := ds.storage.DeleteByQuery(ctx, q)
-	return storeErr
+	return ds.storage.DeleteByQuery(ctx, q)
 }
 
 // PruneOrphanedPLOPs prunes old closed PLOPs and those without deployments or pods
@@ -645,4 +644,90 @@ func (ds *datastoreImpl) RemovePLOPsWithoutProcessIndicatorOrProcessInfo(ctx con
 	}
 
 	return int64(len(plopsToDelete)), nil
+}
+
+// Removes PLOPs without poduids between a range of ids.
+func (ds *datastoreImpl) removePLOPsWithoutPodUIDOnePage(ctx context.Context, prevId string, nextId string) (int64, error) {
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
+
+	query := fmt.Sprintf(deletePLOPsWithoutPoduidInPage, prevId, nextId)
+	commandTag, err := ds.pool.Exec(ctx, query)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return commandTag.RowsAffected(), nil
+}
+
+// Given a set of rows with ids, returns the id of the last row. This is useful for pagination.
+func (ds *datastoreImpl) getLastIdFromRows(ctx context.Context, rows pgx.Rows) (string, error) {
+	id := ""
+
+	for rows.Next() {
+		if err := rows.Scan(&id); err != nil {
+			return "", pgutils.ErrNilIfNoRows(err)
+		}
+	}
+
+	return id, rows.Err()
+}
+
+// Given an id and a limit, returns the id a limit number of rows after the given id. This is useful
+// for efficient pagination.
+func (ds *datastoreImpl) getNextPageId(ctx context.Context, prevId string, limit int) (string, error) {
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
+
+	query := fmt.Sprintf(getLastIdFromPage, prevId, limit)
+	rows, err := ds.pool.Query(ctx, query)
+
+	if err != nil {
+		// Do not be alarmed if the error is simply NoRows
+		err = pgutils.ErrNilIfNoRows(err)
+		if err != nil {
+			log.Warnf("%s: %s", query, err)
+		}
+		return "", err
+	}
+	defer rows.Close()
+
+	nextId, err := ds.getLastIdFromRows(ctx, rows)
+
+	if err != nil {
+		return "", err
+	}
+
+	return nextId, nil
+}
+
+func (ds *datastoreImpl) retryableRemovePLOPsWithoutPodUID(ctx context.Context) (int64, error) {
+	limit := 10000
+	totalRows := int64(0)
+
+	prevId := "00000000-0000-0000-0000-000000000000"
+	for {
+		nextId, err := ds.getNextPageId(ctx, prevId, limit)
+		if err != nil {
+			return totalRows, err
+		}
+		if nextId == "" {
+			break
+		}
+		nrows, err := ds.removePLOPsWithoutPodUIDOnePage(ctx, prevId, nextId)
+		if err != nil {
+			return totalRows, err
+		}
+		totalRows += nrows
+		prevId = nextId
+	}
+
+	return totalRows, nil
+}
+
+func (ds *datastoreImpl) RemovePLOPsWithoutPodUID(ctx context.Context) (int64, error) {
+	return pgutils.Retry2(ctx, func() (int64, error) {
+		return ds.retryableRemovePLOPsWithoutPodUID(ctx)
+	})
 }

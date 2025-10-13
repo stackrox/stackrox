@@ -6,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/administration/events/datastore/internal/search"
 	pgStore "github.com/stackrox/rox/central/administration/events/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/administration/events/datastore/internal/writer"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -52,14 +51,8 @@ func (s *datastorePostgresTestSuite) SetupTest() {
 	s.postgresTest = pgtest.ForT(s.T())
 	s.Require().NotNil(s.postgresTest)
 	s.store = pgStore.New(s.postgresTest.DB)
-	searcher := search.New(s.store)
 	s.writer = writer.New(s.store)
-	s.datastore = newDataStore(searcher, s.store, s.writer)
-}
-
-func (s *datastorePostgresTestSuite) TearDownTest() {
-	s.postgresTest.Teardown(s.T())
-	s.postgresTest.Close()
+	s.datastore = newDataStore(s.store, s.writer)
 }
 
 func (s *datastorePostgresTestSuite) assertEventsEqual(

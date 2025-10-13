@@ -1,4 +1,4 @@
-import { SlimUser } from 'types/user.proto';
+import type { SlimUser } from 'types/user.proto';
 
 export type Snapshot = {
     reportJobId: string;
@@ -24,7 +24,8 @@ export const runStates = {
     GENERATED: 'GENERATED',
     DELIVERED: 'DELIVERED',
     FAILURE: 'FAILURE',
-    PARTIAL_ERROR: 'PARTIAL_ERROR',
+    PARTIAL_SCAN_ERROR_DOWNLOAD: 'PARTIAL_SCAN_ERROR_DOWNLOAD',
+    PARTIAL_SCAN_ERROR_EMAIL: 'PARTIAL_SCAN_ERROR_EMAIL',
 } as const;
 
 export type RunState = (typeof runStates)[keyof typeof runStates];

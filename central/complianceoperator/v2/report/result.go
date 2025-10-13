@@ -15,10 +15,11 @@ type ResultRow struct {
 
 // Results struct which holds the results of a report.
 type Results struct {
-	ResultCSVs map[string][]*ResultRow // map of cluster id to slice of *resultRow
-	TotalPass  int
-	TotalFail  int
-	TotalMixed int
-	Profiles   []string
-	Clusters   int
+	ResultCSVs   map[string][]*ResultRow // map of cluster id to slice of *resultRow
+	TotalPass    int
+	TotalFail    int
+	TotalMixed   int
+	Profiles     []string
+	Clusters     int
+	ClustersData map[string]*ClusterData
 }

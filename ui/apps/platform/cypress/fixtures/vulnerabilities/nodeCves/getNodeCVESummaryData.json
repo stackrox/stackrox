@@ -30,6 +30,10 @@
                     "total": 0,
                     "__typename": "ResourceCountByFixability"
                 },
+                "unknown": {
+                    "total": 0,
+                    "__typename": "ResourceCountByFixability"
+                },
                 "__typename": "ResourceCountByCVESeverity"
             },
             "__typename": "NodeCVECore"

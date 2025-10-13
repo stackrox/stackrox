@@ -1,6 +1,6 @@
 import React from 'react';
 import { gql, useQuery } from '@apollo/client';
-import { Flex, FlexItem, Title, Button, Divider, Stack, StackItem } from '@patternfly/react-core';
+import { Button, Divider, Flex, FlexItem, Stack, StackItem, Title } from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import WidgetCard from 'Components/PatternFly/WidgetCard';
@@ -8,14 +8,14 @@ import { filteredWorkflowViewKey } from 'Components/FilteredWorkflowViewSelector
 import { fullWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
 import useURLSearch from 'hooks/useURLSearch';
 import { violationsBasePath } from 'routePaths';
-import { SearchFilter } from 'types/search';
-import { Alert } from 'types/alert.proto';
+import type { SearchFilter } from 'types/search';
+import type { Alert } from 'types/alert.proto';
 import { getQueryString } from 'utils/queryStringUtils';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 import { severities } from 'constants/severities';
 import pluralize from 'pluralize';
-import { ValueOf } from 'utils/type.utils';
+import type { ValueOf } from 'utils/type.utils';
 import MostRecentViolations from './MostRecentViolations';
 import PolicyViolationTiles from './PolicyViolationTiles';
 

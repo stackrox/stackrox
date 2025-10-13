@@ -19,24 +19,29 @@ import { InnerScrollContainer, Table, Tbody, Td, Th, Thead, Tr } from '@patternf
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useRestQuery from 'hooks/useRestQuery';
-import { UseURLPaginationResult } from 'hooks/useURLPagination';
-import { UseUrlSearchReturn } from 'hooks/useURLSearch';
+import type { QueryValue } from 'hooks/useURLParameter';
 import { getExternalNetworkFlows } from 'services/NetworkService';
 import { getTableUIState } from 'utils/getTableUIState';
-import { ExternalNetworkFlowsResponse } from 'types/networkFlow.proto';
+import type { ExternalNetworkFlowsResponse } from 'types/networkFlow.proto';
 
-import { getDeploymentInfoForExternalEntity, protocolLabel } from '../utils/flowUtils';
-import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 import { ExternalEntitiesIcon } from '../common/NetworkGraphIcons';
+import { EXTERNAL_SOURCE_ADDRESS_QUERY } from '../NetworkGraph.constants';
+import type { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
+import {
+    SIDE_PANEL_SEARCH_PREFIX,
+    usePagination,
+    useSearchFilterSidePanel,
+    useTimeWindow,
+} from '../NetworkGraphURLStateContext';
+import { getDeploymentInfoForExternalEntity, protocolLabel } from '../utils/flowUtils';
+import { timeWindowToISO } from '../utils/timeWindow';
 
 export type EntityDetailsProps = {
     labelledById: string;
     entityName: string;
     entityId: string;
     scopeHierarchy: NetworkScopeHierarchy;
-    urlPagination: UseURLPaginationResult;
-    urlSearchFiltering: UseUrlSearchReturn;
-    onNodeSelect: (id: string) => void;
+    onNodeSelect: (id: string, parametersQuery?: QueryValue, searchFilter?: qs.ParsedQs) => void;
     onExternalIPSelect: (externalIP: string | undefined) => void;
 };
 
@@ -53,23 +58,32 @@ function EntityDetails({
     entityName,
     entityId,
     scopeHierarchy,
-    urlPagination,
-    urlSearchFiltering,
     onNodeSelect,
     onExternalIPSelect,
 }: EntityDetailsProps) {
-    const { page, perPage, setPage, setPerPage } = urlPagination;
-    const { searchFilter } = urlSearchFiltering;
+    const { page, perPage, setPage, setPerPage } = usePagination();
+    const { searchFilter } = useSearchFilterSidePanel();
+    const { timeWindow } = useTimeWindow();
+
     const clusterId = scopeHierarchy.cluster.id;
     const { deployments, namespaces } = scopeHierarchy;
+
     const fetchExternalNetworkFlows = useCallback((): Promise<ExternalNetworkFlowsResponse> => {
-        return getExternalNetworkFlows(clusterId, entityId, namespaces, deployments, {
-            sortOption: {},
-            page,
-            perPage,
-            advancedFilters: searchFilter,
-        });
-    }, [page, perPage, clusterId, deployments, entityId, namespaces, searchFilter]);
+        const fromTimestamp = timeWindowToISO(timeWindow);
+        return getExternalNetworkFlows(
+            clusterId,
+            entityId,
+            namespaces,
+            deployments,
+            fromTimestamp,
+            {
+                sortOption: {},
+                page,
+                perPage,
+                advancedFilters: searchFilter,
+            }
+        );
+    }, [page, perPage, clusterId, deployments, entityId, namespaces, searchFilter, timeWindow]);
 
     const {
         data: externalNetworkFlows,
@@ -155,7 +169,20 @@ function EntityDetails({
                                             const { deployment, id } = entity;
 
                                             const onEntitySelect = () => {
-                                                onNodeSelect(id);
+                                                onNodeSelect(
+                                                    id,
+                                                    {
+                                                        sidePanelTabState: 'FLOWS',
+                                                        sidePanelToggleState: 'EXTERNAL_FLOWS',
+                                                    },
+                                                    {
+                                                        [SIDE_PANEL_SEARCH_PREFIX]: {
+                                                            [EXTERNAL_SOURCE_ADDRESS_QUERY]: [
+                                                                `${externalIPName}/32`,
+                                                            ],
+                                                        },
+                                                    }
+                                                );
                                             };
 
                                             return (

@@ -12,6 +12,8 @@ import (
 	"github.com/stackrox/rox/central/deployment/datastore/mocks"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imageStoreMock "github.com/stackrox/rox/central/image/datastore/mocks"
+	imageV2DS "github.com/stackrox/rox/central/imagev2/datastore"
+	imageV2StoreMock "github.com/stackrox/rox/central/imagev2/datastore/mocks"
 	nodeDatastoreMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
 	riskStoreMock "github.com/stackrox/rox/central/risk/datastore/mocks"
@@ -97,6 +99,7 @@ func Test_ThreePipelines_Run(t *testing.T) {
 		cveDatastore      *nodeCVEDataStoreMocks.MockDataStore
 		deploymentStorage datastore.DataStore
 		imageStorage      imageDS.DataStore
+		imageV2Storage    imageV2DS.DataStore
 		riskStorage       *riskStoreMock.MockDataStore
 		updater           updater.Updater
 	}
@@ -296,6 +299,7 @@ func Test_ThreePipelines_Run(t *testing.T) {
 				cveDatastore:      nodeCVEDataStoreMocks.NewMockDataStore(ctrl),
 				deploymentStorage: mocks.NewMockDataStore(ctrl),
 				imageStorage:      imageStoreMock.NewMockDataStore(ctrl),
+				imageV2Storage:    imageV2StoreMock.NewMockDataStore(ctrl),
 				riskStorage:       riskStoreMock.NewMockDataStore(ctrl),
 				updater:           updaterMocks.NewMockUpdater(ctrl),
 			}
@@ -303,12 +307,13 @@ func Test_ThreePipelines_Run(t *testing.T) {
 				tt.mocks.nodeDatastore,
 				tt.mocks.deploymentStorage,
 				tt.mocks.imageStorage,
+				tt.mocks.imageV2Storage,
 				tt.mocks.riskStorage,
 				&mockNodeScorer{},
 				&mockComponentScorer{},
 				&mockDeploymentScorer{},
 				&mockImageScorer{},
-				&mockComponentScorer{},
+				&mockImageComponentScorer{},
 
 				ranking.ClusterRanker(),
 				ranking.NamespaceRanker(),
@@ -389,8 +394,8 @@ func createIndexReportWithKernel(kernelV string) *v4.IndexReport {
 		State:   "7", // IndexFinished
 		Success: true,
 		Contents: &v4.Contents{
-			Packages: []*v4.Package{
-				{
+			Packages: map[string]*v4.Package{
+				"1": {
 					Id:      "1",
 					Name:    kernelComponentName,
 					Version: kernelV,
@@ -408,8 +413,8 @@ func createIndexReportWithKernel(kernelV string) *v4.IndexReport {
 					Cpe:            "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
 				},
 			},
-			Repositories: []*v4.Repository{
-				{
+			Repositories: map[string]*v4.Repository{
+				"cpe:/o:redhat:enterprise_linux:9::fastdatapath": {
 					Id:   "1",
 					Name: "cpe:/o:redhat:enterprise_linux:9::fastdatapath",
 					Key:  "rhel-cpe-repository",
@@ -601,6 +606,12 @@ func (m *mockComponentScorer) Score(_ context.Context, _ scancomponent.ScanCompo
 	return getDummyRisk()
 }
 
+type mockImageComponentScorer struct{}
+
+func (m *mockImageComponentScorer) Score(_ context.Context, _ scancomponent.ScanComponent, _ string, _ *storage.EmbeddedImageScanComponent, _ string) *storage.Risk {
+	return getDummyRisk()
+}
+
 type mockDeploymentScorer struct{}
 
 func (m *mockDeploymentScorer) Score(_ context.Context, _ *storage.Deployment, _ []*storage.Risk) *storage.Risk {
@@ -610,5 +621,9 @@ func (m *mockDeploymentScorer) Score(_ context.Context, _ *storage.Deployment, _
 type mockImageScorer struct{}
 
 func (m *mockImageScorer) Score(_ context.Context, _ *storage.Image) *storage.Risk {
+	return getDummyRisk()
+}
+
+func (m *mockImageScorer) ScoreV2(_ context.Context, _ *storage.ImageV2) *storage.Risk {
 	return getDummyRisk()
 }

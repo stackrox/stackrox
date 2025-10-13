@@ -7,6 +7,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/postgres/walker"
@@ -19,11 +20,13 @@ import (
 )
 
 var (
-	deploymentBaseSchema = schema.DeploymentsSchema
-	imagesSchema         = schema.ImagesSchema
-	imageCVEsSchema      = schema.ImageCvesSchema
-	alertSchema          = schema.AlertsSchema
-	_                    = schema.ImageCveEdgesSchema
+	deploymentBaseSchema   = schema.DeploymentsSchema
+	imagesSchema           = schema.ImagesSchema
+	imageCVEsSchema        = schema.ImageCvesSchema
+	alertSchema            = schema.AlertsSchema
+	_                      = schema.ImageCveEdgesSchema
+	imageComponentV2Schema = schema.ImageComponentV2Schema
+	imageCVEV2Schema       = schema.ImageCvesV2Schema
 )
 
 func TestReplaceVars(t *testing.T) {
@@ -70,18 +73,19 @@ func BenchmarkReplaceVars(b *testing.B) {
 }
 
 func TestMultiTableQueries(t *testing.T) {
-	t.Parallel()
 
 	for _, c := range []struct {
-		desc                 string
-		q                    *v1.Query
-		schema               *walker.Schema
-		expectedQueryPortion string
-		expectedFrom         string
-		expectedWhere        string
-		expectedData         []interface{}
-		expectedJoinTables   map[string]JoinType
-		expectedError        string
+		desc                        string
+		q                           *v1.Query
+		schema                      *walker.Schema
+		expectedQueryPortion        string
+		expectedFrom                string
+		expectedWhere               string
+		expectedData                []interface{}
+		expectedJoinTables          map[string]JoinType
+		expectedError               string
+		expectedFlattenedWhere      string
+		expectedFlattenedJoinTables map[string]JoinType
 	}{
 		{
 			desc:          "base schema query",
@@ -235,7 +239,13 @@ func TestMultiTableQueries(t *testing.T) {
 				"deployments_containers":    Left,
 				"deployments":               Left,
 			},
-			expectedData: []interface{}{"false", "0"},
+			expectedData:           []interface{}{"false", "0"},
+			expectedFlattenedWhere: "((deployments.PlatformComponent = $$ or deployments.PlatformComponent is null) and image_cves_v2.State = $$)",
+			expectedFlattenedJoinTables: map[string]JoinType{
+				"image_cves_v2":          Inner,
+				"deployments_containers": Left,
+				"deployments":            Left,
+			},
 		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
@@ -246,7 +256,11 @@ func TestMultiTableQueries(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, c.expectedFrom, actual.From)
-				assert.Equal(t, c.expectedWhere, actual.Where)
+				expectedWhere := c.expectedWhere
+				if features.FlattenCVEData.Enabled() && c.expectedFlattenedWhere != "" {
+					expectedWhere = c.expectedFlattenedWhere
+				}
+				assert.Equal(t, expectedWhere, actual.Where)
 				assert.ElementsMatch(t, c.expectedData, actual.Data)
 
 				var actualJoins map[string]JoinType
@@ -256,7 +270,11 @@ func TestMultiTableQueries(t *testing.T) {
 						actualJoins[join.rightTable] = join.joinType
 					}
 				}
-				assert.Equal(t, c.expectedJoinTables, actualJoins)
+				expectedJoinTables := c.expectedJoinTables
+				if features.FlattenCVEData.Enabled() && c.expectedFlattenedJoinTables != nil {
+					expectedJoinTables = c.expectedFlattenedJoinTables
+				}
+				assert.Equal(t, expectedJoinTables, actualJoins)
 			}
 		})
 	}
@@ -265,13 +283,14 @@ func TestMultiTableQueries(t *testing.T) {
 func TestCountQueries(t *testing.T) {
 	baseCtx := sac.WithAllAccess(context.Background())
 	for _, c := range []struct {
-		desc              string
-		ctx               context.Context
-		q                 *v1.Query
-		schema            *walker.Schema
-		expectedStatement string
-		expectedData      []interface{}
-		expectedError     string
+		desc                       string
+		ctx                        context.Context
+		q                          *v1.Query
+		schema                     *walker.Schema
+		expectedStatement          string
+		expectedData               []interface{}
+		expectedError              string
+		expectedFlattenedStatement string
 	}{
 		{
 			desc:              "base schema query",
@@ -483,6 +502,11 @@ func TestCountQueries(t *testing.T) {
 				inner join image_cve_edges on(images.Id = image_cve_edges.ImageId and image_component_cve_edges.ImageCveId = image_cve_edges.ImageCveId)
 				where ((deployments.PlatformComponent = $1 or deployments.PlatformComponent is null) and image_cve_edges.State = $2)`),
 			expectedData: []interface{}{"false", "0"},
+			expectedFlattenedStatement: normalizeStatement(`select count(distinct(images.Id)) from images
+				left join deployments_containers on images.Id = deployments_containers.Image_Id
+				left join deployments on deployments_containers.deployments_Id = deployments.Id
+				inner join image_cves_v2 on images.Id = image_cves_v2.ImageId
+				where ((deployments.PlatformComponent = $1 or deployments.PlatformComponent is null) and image_cves_v2.State = $2)`),
 		},
 	} {
 		t.Run(c.desc, func(it *testing.T) {
@@ -491,7 +515,11 @@ func TestCountQueries(t *testing.T) {
 				assert.Error(it, err, c.expectedError)
 			} else {
 				assert.NoError(it, err)
-				assert.Equal(it, c.expectedStatement, actual.AsSQL())
+				expectedStatement := c.expectedStatement
+				if features.FlattenCVEData.Enabled() && c.expectedFlattenedStatement != "" {
+					expectedStatement = c.expectedFlattenedStatement
+				}
+				assert.Equal(it, expectedStatement, actual.AsSQL())
 				assert.Equal(it, c.expectedData, actual.Data)
 			}
 		})
@@ -499,15 +527,16 @@ func TestCountQueries(t *testing.T) {
 }
 
 func TestSelectQueries(t *testing.T) {
-	t.Parallel()
 
 	for _, c := range []struct {
-		desc          string
-		ctx           context.Context
-		q             *v1.Query
-		schema        *walker.Schema
-		expectedError string
-		expectedQuery string
+		desc                   string
+		ctx                    context.Context
+		q                      *v1.Query
+		schema                 *walker.Schema
+		flattenedSchema        *walker.Schema
+		expectedError          string
+		expectedQuery          string
+		expectedFlattenedQuery string
 	}{
 		{
 			desc: "base schema; no select",
@@ -678,7 +707,7 @@ func TestSelectQueries(t *testing.T) {
 		{
 			desc: "base schema; select w/ where; image scope",
 			ctx: scoped.Context(context.Background(), scoped.Scope{
-				ID:    "fake-image",
+				IDs:   []string{"fake-image"},
 				Level: v1.SearchCategory_IMAGES,
 			}),
 			q: search.NewQueryBuilder().
@@ -692,10 +721,10 @@ func TestSelectQueries(t *testing.T) {
 		{
 			desc: "base schema; select w/ multiple scopes",
 			ctx: scoped.Context(context.Background(), scoped.Scope{
-				ID:    uuid.NewV4().String(),
+				IDs:   []string{uuid.NewV4().String()},
 				Level: v1.SearchCategory_NAMESPACES,
 				Parent: &scoped.Scope{
-					ID:    uuid.NewV4().String(),
+					IDs:   []string{uuid.NewV4().String()},
 					Level: v1.SearchCategory_CLUSTERS,
 				},
 			}),
@@ -718,7 +747,8 @@ func TestSelectQueries(t *testing.T) {
 				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).
 				AddStrings(search.PlatformComponent, "true", "-").
 				ProtoQuery(),
-			schema: imageCVEsSchema,
+			schema:          imageCVEsSchema,
+			flattenedSchema: imageComponentV2Schema,
 			expectedQuery: normalizeStatement(`select image_cves.CveBaseInfo_Cve as cve,
 				distinct(image_cves.Id) as cve_id, max(image_cves.Cvss) as cvss_max,
 				count(distinct(images.Id)) as image_sha_count
@@ -729,6 +759,15 @@ func TestSelectQueries(t *testing.T) {
 				left join deployments on deployments_containers.deployments_Id = deployments.Id
 				inner join image_cve_edges on(image_component_edges.ImageId = image_cve_edges.ImageId and image_cves.Id = image_cve_edges.ImageCveId)
 				where ((deployments.PlatformComponent = $1 or deployments.PlatformComponent is null) and image_cve_edges.State = $2)`),
+			expectedFlattenedQuery: "select image_cves_v2.CveBaseInfo_Cve as cve, " +
+				"distinct(image_cves_v2.Id) as cve_id, max(image_cves_v2.Cvss) as cvss_max, " +
+				"count(distinct(images.Id)) as image_sha_count " +
+				"from image_component_v2 " +
+				"inner join image_cves_v2 on image_component_v2.Id = image_cves_v2.ComponentId " +
+				"inner join images on image_component_v2.ImageId = images.Id " +
+				"left join deployments_containers on images.Id = deployments_containers.Image_Id " +
+				"left join deployments on deployments_containers.deployments_Id = deployments.Id " +
+				"where ((deployments.PlatformComponent = $1 or deployments.PlatformComponent is null) and image_cves_v2.State = $2)",
 		},
 		{
 			desc: "select with multiple enum values with IN operator",
@@ -738,7 +777,8 @@ func TestSelectQueries(t *testing.T) {
 				).
 				AddRegexes(search.VulnerabilityState, ".+ED").
 				ProtoQuery(),
-			schema: imageCVEsSchema,
+			schema:          imageCVEsSchema,
+			flattenedSchema: imageCVEV2Schema,
 			expectedQuery: normalizeStatement(`select image_cves.CveBaseInfo_Cve as cve
 				from image_cves
 				inner join image_component_cve_edges on image_cves.Id = image_component_cve_edges.ImageCveId
@@ -746,6 +786,9 @@ func TestSelectQueries(t *testing.T) {
 				inner join images on image_component_edges.ImageId = images.Id
 				inner join image_cve_edges on(image_component_edges.ImageId = image_cve_edges.ImageId and image_cves.Id = image_cve_edges.ImageCveId)
 				where image_cve_edges.State IN ($1, $2)`),
+			expectedFlattenedQuery: "select image_cves_v2.CveBaseInfo_Cve as cve " +
+				"from image_cves_v2 " +
+				"where image_cves_v2.State IN ($1, $2)",
 		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
@@ -753,8 +796,11 @@ func TestSelectQueries(t *testing.T) {
 			if c.ctx == nil {
 				ctx = context.Background()
 			}
-
-			actualQ, err := standardizeSelectQueryAndPopulatePath(ctx, c.q, c.schema, SELECT)
+			testSchema := c.schema
+			if features.FlattenCVEData.Enabled() && c.flattenedSchema != nil {
+				testSchema = c.flattenedSchema
+			}
+			actualQ, err := standardizeSelectQueryAndPopulatePath(ctx, c.q, testSchema, SELECT)
 			if c.expectedError != "" {
 				assert.Error(t, err, c.expectedError)
 				return
@@ -767,14 +813,17 @@ func TestSelectQueries(t *testing.T) {
 				return
 			}
 
+			expectedQuery := c.expectedQuery
+			if features.FlattenCVEData.Enabled() && c.expectedFlattenedQuery != "" {
+				expectedQuery = c.expectedFlattenedQuery
+			}
 			actual := actualQ.AsSQL()
-			assert.Equal(t, c.expectedQuery, actual)
+			assert.Equal(t, expectedQuery, actual)
 		})
 	}
 }
 
 func TestDeleteQueries(t *testing.T) {
-	t.Parallel()
 
 	for _, c := range []struct {
 		desc          string
@@ -881,30 +930,32 @@ func TestDeleteQueries(t *testing.T) {
 		{
 			desc: "base schema; delete w/ where; image scope",
 			ctx: scoped.Context(context.Background(), scoped.Scope{
-				ID:    "fake-image",
+				IDs:   []string{"fake-image"},
 				Level: v1.SearchCategory_IMAGES,
 			}),
 			q: search.NewQueryBuilder().
 				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
 			expectedQuery: normalizeStatement(`delete from deployments
-				where deployments.Name = $1`),
+				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
+				where (deployments.Name = $1 and deployments_containers.Image_Id = $2)`),
 		},
 		{
 			desc: "base schema; delete w/ multiple scopes",
 			ctx: scoped.Context(context.Background(), scoped.Scope{
-				ID:    uuid.NewV4().String(),
+				IDs:   []string{uuid.NewV4().String()},
 				Level: v1.SearchCategory_NAMESPACES,
 				Parent: &scoped.Scope{
-					ID:    uuid.NewV4().String(),
+					IDs:   []string{uuid.NewV4().String()},
 					Level: v1.SearchCategory_CLUSTERS,
 				},
 			}),
 			q: search.NewQueryBuilder().
 				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
-			expectedQuery: normalizeStatement(`delete from deployments
-				where deployments.Name = $1`),
+			expectedQuery: normalizeStatement(`delete
+				from deployments where (deployments.Name = $1 and (deployments.NamespaceId = $2
+				and deployments.ClusterId = $3))`),
 		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
@@ -929,7 +980,6 @@ func TestDeleteQueries(t *testing.T) {
 }
 
 func TestDeleteReturningIDsQueries(t *testing.T) {
-	t.Parallel()
 
 	for _, c := range []struct {
 		desc          string
@@ -1046,31 +1096,33 @@ func TestDeleteReturningIDsQueries(t *testing.T) {
 		{
 			desc: "base schema; delete w/ where; image scope",
 			ctx: scoped.Context(context.Background(), scoped.Scope{
-				ID:    "fake-image",
+				IDs:   []string{"fake-image"},
 				Level: v1.SearchCategory_IMAGES,
 			}),
 			q: search.NewQueryBuilder().
 				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
 			expectedQuery: normalizeStatement(`delete from deployments
-				where deployments.Name = $1
-				returning deployments.Id::text as Deployment_ID`),
+				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
+				where (deployments.Name = $1 and deployments_containers.Image_Id = $2)
+				returning distinct(deployments.Id::text) as Deployment_ID`),
 		},
 		{
 			desc: "base schema; delete w/ multiple scopes",
 			ctx: scoped.Context(context.Background(), scoped.Scope{
-				ID:    uuid.NewV4().String(),
+				IDs:   []string{uuid.NewV4().String()},
 				Level: v1.SearchCategory_NAMESPACES,
 				Parent: &scoped.Scope{
-					ID:    uuid.NewV4().String(),
+					IDs:   []string{uuid.NewV4().String()},
 					Level: v1.SearchCategory_CLUSTERS,
 				},
 			}),
 			q: search.NewQueryBuilder().
 				AddSelectFields(search.NewQuerySelect(search.DeploymentName)).
 				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
-			expectedQuery: normalizeStatement(`delete from deployments
-				where deployments.Name = $1
+			expectedQuery: normalizeStatement(`delete
+				from deployments where (deployments.Name = $1 and (deployments.NamespaceId = $2
+				and deployments.ClusterId = $3))
 				returning deployments.Id::text as Deployment_ID`),
 		},
 	} {
@@ -1091,6 +1143,243 @@ func TestDeleteReturningIDsQueries(t *testing.T) {
 
 			actual := actualQ.AsSQL()
 			assert.Equal(t, c.expectedQuery, actual)
+		})
+	}
+}
+
+func TestGetQueries(t *testing.T) {
+	t.Parallel()
+
+	for _, c := range []struct {
+		desc          string
+		ctx           context.Context
+		q             *v1.Query
+		schema        *walker.Schema
+		expectedQuery string
+		expectedData  []interface{}
+		expectedError string
+	}{
+		{
+			desc:          "base schema query - simple GET",
+			ctx:           sac.WithAllAccess(context.Background()),
+			q:             search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			schema:        deploymentBaseSchema,
+			expectedQuery: `select deployments.serialized from deployments where deployments.Name = $1`,
+			expectedData:  []interface{}{"central"},
+		},
+		{
+			desc:          "nil query - GET",
+			ctx:           sac.WithAllAccess(context.Background()),
+			q:             nil,
+			schema:        deploymentBaseSchema,
+			expectedQuery: `select deployments.serialized from deployments`,
+			expectedData:  []interface{}(nil),
+		},
+		{
+			desc:   "child schema query - GET with joins",
+			ctx:    sac.WithAllAccess(context.Background()),
+			q:      search.NewQueryBuilder().AddExactMatches(search.ImageName, "stackrox").ProtoQuery(),
+			schema: deploymentBaseSchema,
+			expectedQuery: normalizeStatement(`select deployments.serialized from deployments
+				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
+				where deployments_containers.Image_Name_FullName = $1
+				group by deployments.Id, deployments.serialized`),
+			expectedData: []interface{}{"stackrox"},
+		},
+		{
+			desc: "base schema and child schema conjunction query - GET",
+			ctx:  sac.WithAllAccess(context.Background()),
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.ImageName, "stackrox").
+				AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			schema: deploymentBaseSchema,
+			expectedQuery: normalizeStatement(`select deployments.serialized from deployments
+				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
+				where (deployments.Name = $1 and deployments_containers.Image_Name_FullName = $2)
+				group by deployments.Id, deployments.serialized`),
+			expectedData: []interface{}{"central", "stackrox"},
+		},
+		{
+			desc: "multiple child schema query - GET",
+			ctx:  sac.WithAllAccess(context.Background()),
+			q: search.ConjunctionQuery(
+				search.NewQueryBuilder().AddExactMatches(search.ImageName, "stackrox").ProtoQuery(),
+				search.NewQueryBuilder().AddExactMatches(search.PortProtocol, "tcp").ProtoQuery(),
+			),
+			schema: deploymentBaseSchema,
+			expectedQuery: normalizeStatement(`select deployments.serialized from deployments
+				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
+				inner join deployments_ports on deployments.Id = deployments_ports.deployments_Id
+				where (deployments_containers.Image_Name_FullName = $1 and deployments_ports.Protocol = $2)
+				group by deployments.Id, deployments.serialized`),
+			expectedData: []interface{}{"stackrox", "tcp"},
+		},
+		{
+			desc: "base schema and child schema disjunction query - GET",
+			ctx:  sac.WithAllAccess(context.Background()),
+			q: search.DisjunctionQuery(
+				search.NewQueryBuilder().AddExactMatches(search.ImageName, "stackrox").ProtoQuery(),
+				search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "central").ProtoQuery(),
+			),
+			schema: deploymentBaseSchema,
+			expectedQuery: normalizeStatement(`select deployments.serialized from deployments
+				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
+				where (deployments_containers.Image_Name_FullName = $1 or deployments.Name = $2)
+				group by deployments.Id, deployments.serialized`),
+			expectedData: []interface{}{"stackrox", "central"},
+		},
+		{
+			desc:   "negated child schema query - GET",
+			ctx:    sac.WithAllAccess(context.Background()),
+			q:      search.NewQueryBuilder().AddStrings(search.ImageName, "!central").ProtoQuery(),
+			schema: deploymentBaseSchema,
+			expectedQuery: normalizeStatement(`select deployments.serialized from deployments
+				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
+				where NOT (deployments_containers.Image_Name_FullName ilike $1)
+				group by deployments.Id, deployments.serialized`),
+			expectedData: []interface{}{"central%"},
+		},
+		{
+			desc: "id query - GET",
+			ctx:  sac.WithAllAccess(context.Background()),
+			q: search.ConjunctionQuery(
+				search.NewQueryBuilder().AddDocIDs("123").ProtoQuery(),
+				search.MatchNoneQuery(),
+			),
+			schema:        deploymentBaseSchema,
+			expectedQuery: `select deployments.serialized from deployments where (deployments.Id = ANY($1::uuid[]) and false)`,
+			expectedData:  []interface{}{[]string{"123"}},
+		},
+		{
+			desc: "base schema and child schema conjunction query on base ID - GET",
+			ctx:  sac.WithAllAccess(context.Background()),
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.ImageName, "stackrox").
+				AddExactMatches(search.DeploymentID, uuid.NewDummy().String()).ProtoQuery(),
+			schema: deploymentBaseSchema,
+			expectedQuery: normalizeStatement(`select deployments.serialized from deployments
+				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
+				where (deployments.Id = $1 and deployments_containers.Image_Name_FullName = $2)
+				group by deployments.Id, deployments.serialized`),
+			expectedData: []interface{}{uuid.NewDummy(), "stackrox"},
+		},
+		{
+			desc: "base schema and child schema conjunction query on base invalid ID - GET",
+			ctx:  sac.WithAllAccess(context.Background()),
+			q: search.NewQueryBuilder().
+				AddExactMatches(search.ImageName, "stackrox").
+				AddExactMatches(search.DeploymentID, "not a uuid").ProtoQuery(),
+			schema: deploymentBaseSchema,
+			expectedError: `uuid: incorrect UUID length 10 in string "not a uuid"
+							value "not a uuid" in search query must be valid UUID`,
+		},
+		{
+			desc: "child schema multiple results query - GET",
+			ctx:  sac.WithAllAccess(context.Background()),
+			q: search.NewQueryBuilder().AddLinkedFieldsHighlighted(
+				[]search.FieldLabel{search.ImageName, search.EnvironmentKey},
+				[]string{search.WildcardString, search.WildcardString}).
+				ProtoQuery(),
+			schema: deploymentBaseSchema,
+			expectedQuery: normalizeStatement(`select deployments.serialized from deployments
+				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
+				inner join deployments_containers_envs on deployments_containers.deployments_Id = deployments_containers_envs.deployments_Id
+				and deployments_containers.idx = deployments_containers_envs.deployments_containers_idx
+				where (deployments_containers.Image_Name_FullName is not null and deployments_containers_envs.Key is not null)
+				group by deployments.Id, deployments.serialized`),
+		},
+		{
+			desc: "child schema multiple results query order by parent schema - GET",
+			ctx:  sac.WithAllAccess(context.Background()),
+			q: search.NewQueryBuilder().AddLinkedFieldsHighlighted(
+				[]search.FieldLabel{search.ImageName, search.EnvironmentKey},
+				[]string{search.WildcardString, search.WildcardString}).WithPagination(search.NewPagination().AddSortOption(search.NewSortOption(search.DeploymentName))).
+				ProtoQuery(),
+			schema: deploymentBaseSchema,
+			expectedQuery: normalizeStatement(`select deployments.serialized from deployments
+				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
+				inner join deployments_containers_envs on deployments_containers.deployments_Id = deployments_containers_envs.deployments_Id
+				and deployments_containers.idx = deployments_containers_envs.deployments_containers_idx
+				where (deployments_containers.Image_Name_FullName is not null and deployments_containers_envs.Key is not null)
+				group by deployments.Id, deployments.serialized, deployments.Name
+				order by deployments.Name asc nulls last`),
+		},
+		{
+			desc: "query with pagination that would trigger subquery approach - GET",
+			ctx:  sac.WithAllAccess(context.Background()),
+			q: func() *v1.Query {
+				// Create a query with joined table ordering to trigger subquery logic
+				query := search.NewQueryBuilder().AddExactMatches(search.ImageName, "test").ProtoQuery()
+				query.Pagination = &v1.QueryPagination{
+					SortOptions: []*v1.QuerySortOption{
+						{
+							Field:    search.ImageName.String(),
+							Reversed: false,
+						},
+					},
+					Limit: 10,
+				}
+				return query
+			}(),
+			schema: deploymentBaseSchema,
+			expectedQuery: normalizeStatement(`select deployments.serialized from deployments
+				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
+				where deployments_containers.Image_Name_FullName = $1
+				group by deployments.Id, deployments.serialized
+				order by MIN(deployments_containers.Image_Name_FullName) asc nulls last LIMIT 10`),
+			expectedData: []interface{}{"test"},
+		},
+		{
+			desc: "images ordered by CVE severity using join to ImageCVEV2 - GET",
+			ctx:  sac.WithAllAccess(context.Background()),
+			q: func() *v1.Query {
+				// Create a query for images ordered by CVE severity (CVSS score)
+				// This searches for images that have CVEs and orders them by severity
+				query := search.NewQueryBuilder().AddStrings(search.CVE, "*").ProtoQuery()
+				query.Pagination = &v1.QueryPagination{
+					SortOptions: []*v1.QuerySortOption{
+						{
+							Field:    search.CVSS.String(),
+							Reversed: true, // Highest severity first
+						},
+					},
+					Limit: 20,
+				}
+				return query
+			}(),
+			schema: imagesSchema,
+			expectedQuery: normalizeStatement(`select images.serialized from images
+				inner join image_cves_v2 on images.Id = image_cves_v2.ImageId
+				where image_cves_v2.CveBaseInfo_Cve is not null
+				group by images.Id, images.serialized
+				order by MAX(image_cves_v2.Cvss) desc nulls last LIMIT 20`),
+			expectedData: []interface{}(nil),
+		},
+	} {
+		t.Run(c.desc, func(t *testing.T) {
+			ctx := c.ctx
+			if ctx == nil {
+				ctx = sac.WithAllAccess(context.Background())
+			}
+			actual, err := standardizeQueryAndPopulatePath(ctx, c.q, c.schema, GET)
+			if c.expectedError != "" {
+				assert.Error(t, err, c.expectedError)
+				return
+			}
+
+			assert.NoError(t, err)
+
+			if c.q == nil {
+				if actual == nil {
+					// nil query should result in nil query object
+					return
+				}
+			}
+
+			assert.NotNil(t, actual)
+			assert.Equal(t, GET, actual.QueryType)
+			assert.Equal(t, c.expectedQuery, actual.AsSQL())
+			assert.Equal(t, c.expectedData, actual.Data)
 		})
 	}
 }

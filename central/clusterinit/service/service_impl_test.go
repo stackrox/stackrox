@@ -3,15 +3,20 @@ package service
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 	dsMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	"github.com/stackrox/rox/central/clusterinit/backend"
 	"github.com/stackrox/rox/central/clusterinit/backend/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/crs"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestGetInitBundlesWithBackendError(t *testing.T) {
@@ -44,6 +49,139 @@ func TestGetInitBundlesWithClusterStoreError(t *testing.T) {
 	bundles, err := service.GetInitBundles(context.Background(), nil)
 	assert.Error(t, err)
 	assert.Empty(t, bundles.GetItems())
+}
+
+// Test service call for CRS generation with neither validUntil nor validFor specified.
+// In this case the backend shall receive a zero validUntil timestamp.
+func TestGenerateCRS(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	mockStore := dsMocks.NewMockDataStore(mockCtrl)
+	mockBackend := mocks.NewMockBackend(mockCtrl)
+	service := New(mockBackend, mockStore)
+
+	mockBackend.EXPECT().IssueCRS(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
+		func(_ context.Context, _ string, validUntil time.Time) (*backend.CRSWithMeta, error) {
+			assert.True(t, validUntil.IsZero())
+			crsWithMeta := &backend.CRSWithMeta{
+				CRS:  &crs.CRS{},
+				Meta: &storage.InitBundleMeta{},
+			}
+			return crsWithMeta, nil
+		},
+	)
+	request := &v1.CRSGenRequest{
+		Name: "secured-cluster",
+	}
+	_, err := service.GenerateCRS(context.Background(), request)
+	assert.NoError(t, err, "GenerateCRS failed")
+}
+
+// Test service call for CRS generation with neither validUntil nor validFor specified.
+// In this case the backend shall receive a zero validUntil timestamp.
+func TestGenerateCRSWithoutValidity(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	mockStore := dsMocks.NewMockDataStore(mockCtrl)
+	mockBackend := mocks.NewMockBackend(mockCtrl)
+	service := New(mockBackend, mockStore)
+
+	mockBackend.EXPECT().IssueCRS(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
+		func(_ context.Context, _ string, validUntil time.Time) (*backend.CRSWithMeta, error) {
+			assert.True(t, validUntil.IsZero())
+			crsWithMeta := &backend.CRSWithMeta{
+				CRS:  &crs.CRS{},
+				Meta: &storage.InitBundleMeta{},
+			}
+			return crsWithMeta, nil
+		},
+	)
+	request := &v1.CRSGenRequestExtended{
+		Name: "secured-cluster",
+	}
+	_, err := service.GenerateCRSExtended(context.Background(), request)
+	assert.NoError(t, err, "GenerateCRS failed")
+}
+
+// Test service call for CRS generation with validUntil specified.
+func TestGenerateCRSWithValidUntil(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	mockStore := dsMocks.NewMockDataStore(mockCtrl)
+	mockBackend := mocks.NewMockBackend(mockCtrl)
+	service := New(mockBackend, mockStore)
+
+	reqValidUntil, err := time.Parse(time.RFC3339, "2100-01-02T13:04:05Z")
+	assert.NoError(t, err, "parsing RFC3339 timestamp failed")
+
+	mockBackend.EXPECT().IssueCRS(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
+		// Verify that the validUntil timestamp passed to the backend matches what is specified
+		// in the service request.
+		func(_ context.Context, _ string, validUntil time.Time) (*backend.CRSWithMeta, error) {
+			assert.True(t, validUntil.Equal(reqValidUntil))
+			crsWithMeta := &backend.CRSWithMeta{
+				CRS:  &crs.CRS{},
+				Meta: &storage.InitBundleMeta{},
+			}
+			return crsWithMeta, nil
+		},
+	)
+	request := &v1.CRSGenRequestExtended{
+		Name:       "secured-cluster",
+		ValidUntil: timestamppb.New(reqValidUntil),
+	}
+	_, err = service.GenerateCRSExtended(context.Background(), request)
+	assert.NoError(t, err, "GenerateCRS failed")
+}
+
+// Test service call for CRS generation with validFor specified.
+func TestGenerateCRSWithValidFor(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	mockStore := dsMocks.NewMockDataStore(mockCtrl)
+	mockBackend := mocks.NewMockBackend(mockCtrl)
+	service := New(mockBackend, mockStore)
+
+	reqValidFor := 10 * time.Minute
+	expectedValidUntil := time.Now().Add(reqValidFor)
+	epsilon := 10 * time.Second
+
+	mockBackend.EXPECT().IssueCRS(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
+		func(_ context.Context, _ string, validUntil time.Time) (*backend.CRSWithMeta, error) {
+			// Verify that the validUntil passed to the backend matches now() + validFor.
+			timeDelta := validUntil.Sub(expectedValidUntil)
+			assert.Less(t, timeDelta, epsilon, "CRS valid for longer than expected")
+			crsWithMeta := &backend.CRSWithMeta{
+				CRS:  &crs.CRS{},
+				Meta: &storage.InitBundleMeta{},
+			}
+			return crsWithMeta, nil
+		},
+	)
+	request := &v1.CRSGenRequestExtended{
+		Name:     "secured-cluster",
+		ValidFor: durationpb.New(reqValidFor),
+	}
+	_, err := service.GenerateCRSExtended(context.Background(), request)
+	assert.NoError(t, err, "GenerateCRS failed")
+}
+
+// Test service call for CRS generation with validUntil and validFor specified simultanously.
+func TestGenerateCRSWithValidForAndValidUntil(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	mockStore := dsMocks.NewMockDataStore(mockCtrl)
+	mockBackend := mocks.NewMockBackend(mockCtrl)
+	service := New(mockBackend, mockStore)
+
+	reqValidUntil, err := time.Parse(time.RFC3339, "2100-01-02T13:04:05Z")
+	assert.NoError(t, err, "parsing RFC3339 timestamp failed")
+	reqValidFor := 10 * time.Minute
+
+	mockBackend.EXPECT().IssueCRS(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+
+	request := &v1.CRSGenRequestExtended{
+		Name:       "secured-cluster",
+		ValidUntil: timestamppb.New(reqValidUntil),
+		ValidFor:   durationpb.New(reqValidFor),
+	}
+	_, err = service.GenerateCRSExtended(context.Background(), request)
+	assert.Error(t, err, "GenerateCRS succeeded, but failure expected")
 }
 
 func TestGetInitBundlesShouldReturnBundlesWithImpactedClusters(t *testing.T) {
@@ -80,7 +218,7 @@ func TestGetInitBundlesShouldReturnBundlesWithImpactedClusters(t *testing.T) {
 	for i, bundle := range bundles.GetItems() {
 		assert.Equal(t, expected[i].GetId(), bundle.GetId())
 		assert.Equal(t, expected[i].GetName(), bundle.GetName())
-		protoassert.ElementsMatch(t, expected[i].ImpactedClusters, bundle.ImpactedClusters)
+		protoassert.ElementsMatch(t, expected[i].GetImpactedClusters(), bundle.GetImpactedClusters())
 	}
 }
 

@@ -1,6 +1,6 @@
-import { CollectionRequest, Collection } from 'services/CollectionsService';
+import type { Collection, CollectionRequest } from 'services/CollectionsService';
 import { generateRequest, isCollectionParseError, parseCollection } from './converter';
-import { ClientCollection } from './types';
+import type { ClientCollection } from './types';
 
 describe('Collection parser', () => {
     it('should convert between BE CollectionResponse and FE Collection', () => {

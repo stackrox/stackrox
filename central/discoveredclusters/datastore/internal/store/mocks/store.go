@@ -59,12 +59,11 @@ func (mr *MockStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 }
 
 // DeleteByQuery mocks base method.
-func (m *MockStore) DeleteByQuery(ctx context.Context, query *v1.Query) ([]string, error) {
+func (m *MockStore) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteByQuery", ctx, query)
-	ret0, _ := ret[0].([]string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // DeleteByQuery indicates an expected call of DeleteByQuery.
@@ -102,6 +101,20 @@ func (m *MockStore) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 func (mr *MockStoreMockRecorder) GetByQuery(ctx, query any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByQuery", reflect.TypeOf((*MockStore)(nil).GetByQuery), ctx, query)
+}
+
+// GetByQueryFn mocks base method.
+func (m *MockStore) GetByQueryFn(ctx context.Context, query *v1.Query, fn func(*storage.DiscoveredCluster) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByQueryFn", ctx, query, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// GetByQueryFn indicates an expected call of GetByQueryFn.
+func (mr *MockStoreMockRecorder) GetByQueryFn(ctx, query, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByQueryFn", reflect.TypeOf((*MockStore)(nil).GetByQueryFn), ctx, query, fn)
 }
 
 // Search mocks base method.

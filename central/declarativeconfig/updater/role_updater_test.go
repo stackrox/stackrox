@@ -11,8 +11,12 @@ import (
 	declarativeConfigUtils "github.com/stackrox/rox/central/declarativeconfig/utils"
 	groupDS "github.com/stackrox/rox/central/group/datastore"
 	roleDS "github.com/stackrox/rox/central/role/datastore"
+	roleMapper "github.com/stackrox/rox/central/role/mapper"
+	userDS "github.com/stackrox/rox/central/user/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	openshiftAuth "github.com/stackrox/rox/pkg/auth/authproviders/openshift"
+	authTokenMocks "github.com/stackrox/rox/pkg/auth/tokens/mocks"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -20,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestRoleUpdater(t *testing.T) {
@@ -28,15 +33,18 @@ func TestRoleUpdater(t *testing.T) {
 
 type roleUpdaterTestSuite struct {
 	suite.Suite
+	mockCtrl *gomock.Controller
 
-	ctx     context.Context
-	pgTest  *pgtest.TestPostgres
-	updater *roleUpdater
-	gds     groupDS.DataStore
-	ads     authproviders.Store
+	ctx                  context.Context
+	pgTest               *pgtest.TestPostgres
+	updater              *roleUpdater
+	gds                  groupDS.DataStore
+	authProviderRegistry authproviders.Registry
 }
 
 func (s *roleUpdaterTestSuite) SetupTest() {
+	s.mockCtrl = gomock.NewController(s.T())
+
 	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
@@ -47,17 +55,30 @@ func (s *roleUpdaterTestSuite) SetupTest() {
 
 	s.pgTest = pgtest.ForT(s.T())
 	s.Require().NotNil(s.pgTest)
-	rds, err := roleDS.GetTestPostgresDataStore(s.T(), s.pgTest.DB)
-	s.Require().NoError(err)
-	s.ads = authProviderDS.GetTestPostgresDataStore(s.T(), s.pgTest.DB)
-	s.gds = groupDS.GetTestPostgresDataStore(s.T(), s.pgTest.DB, rds, s.ads)
+	rds := roleDS.GetTestPostgresDataStore(s.T(), s.pgTest.DB)
+	ads := authProviderDS.GetTestPostgresDataStore(s.T(), s.pgTest.DB)
+	s.gds = groupDS.GetTestPostgresDataStore(s.T(), s.pgTest.DB, rds, func() authproviders.Registry {
+		return s.authProviderRegistry
+	})
+	tokenIssuerFactory := authTokenMocks.NewMockIssuerFactory(s.mockCtrl)
+	tokenIssuerFactory.EXPECT().CreateIssuer(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+	uds := userDS.GetTestDataStore(s.T())
+	mapperFactory := roleMapper.NewStoreBasedMapperFactory(s.gds, rds, uds)
+	s.authProviderRegistry = authproviders.NewStoreBackedRegistry(
+		"/sso/",
+		"/auth/response/generic",
+		ads,
+		tokenIssuerFactory,
+		mapperFactory,
+	)
+	s.Require().NoError(s.authProviderRegistry.RegisterBackendFactory(
+		s.ctx,
+		openshiftAuth.TypeName,
+		openshiftAuth.NewTestFactoryCreator(s.T()),
+	))
+
 	s.updater = newRoleUpdater(
 		rds, declarativeConfigHealth.GetTestPostgresDataStore(s.T(), s.pgTest.DB)).(*roleUpdater)
-}
-
-func (s *roleUpdaterTestSuite) TearDownTest() {
-	s.pgTest.Teardown(s.T())
-	s.pgTest.Close()
 }
 
 func (s *roleUpdaterTestSuite) TestUpsert() {
@@ -163,13 +184,12 @@ func (s *roleUpdaterTestSuite) TestDelete_Error() {
 		AccessScopeId:   "61a68f2a-2599-5a9f-a98a-8fc83e2c06cf",
 		Traits:          &storage.Traits{Origin: storage.Traits_DECLARATIVE},
 	}))
-	s.Require().NoError(s.ads.AddAuthProvider(s.ctx, &storage.AuthProvider{
-		Id:         "4df1b98c-24ed-4073-a9ad-356aec6bb62d",
-		Name:       "basic",
-		Type:       "basic",
-		UiEndpoint: "http://localhost",
-		LoginUrl:   "sso/something",
-	}))
+	_, err := s.authProviderRegistry.CreateProvider(s.ctx,
+		authproviders.WithID("4df1b98c-24ed-4073-a9ad-356aec6bb62d"),
+		authproviders.WithName("openshift"),
+		authproviders.WithType(openshiftAuth.TypeName),
+	)
+	s.Require().NoError(err)
 	s.Require().NoError(s.gds.Add(s.ctx, &storage.Group{
 		Props: &storage.GroupProperties{
 			AuthProviderId: "4df1b98c-24ed-4073-a9ad-356aec6bb62d",

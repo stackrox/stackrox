@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
+	resultsDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	snapshotDS "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
 	scanConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
@@ -60,23 +61,34 @@ type ScanWatcherResults struct {
 	Error        error
 }
 
+// DeleteOldResults associated with the Scan of the given ScanWatcherResults
+func DeleteOldResults(ctx context.Context, results *ScanWatcherResults, store resultsDS.DataStore) error {
+	if results == nil {
+		return errors.New("unable to delete old CheckResults from an nil ScanWatcherResults")
+	}
+	// If the scan failed we remove old and current results
+	includeCurrentResults := results.Error != nil
+	scan := results.Scan
+	return store.DeleteOldResults(ctx, scan.GetLastStartedTime(), scan.GetScanRefId(), includeCurrentResults)
+}
+
 // IsComplianceOperatorHealthy indicates whether Compliance Operator is ready for automatic reporting
-func IsComplianceOperatorHealthy(ctx context.Context, clusterID string, complianceIntegrationDataStore complianceIntegrationDS.DataStore) error {
+func IsComplianceOperatorHealthy(ctx context.Context, clusterID string, complianceIntegrationDataStore complianceIntegrationDS.DataStore) (*storage.ComplianceIntegration, error) {
 	coStatus, err := complianceIntegrationDataStore.GetComplianceIntegrationByCluster(ctx, clusterID)
 	if err != nil {
-		return errors.Wrap(err, ErrComplianceOperatorIntegrationDataStore.Error())
+		return nil, errors.Wrap(ErrComplianceOperatorIntegrationDataStore, err.Error())
 	}
 	if len(coStatus) == 0 {
 		log.Errorf("No compliance integrations retrieved from cluster %s", clusterID)
-		return ErrComplianceOperatorIntegrationZeroIntegrations
+		return nil, ErrComplianceOperatorIntegrationZeroIntegrations
 	}
 	if !coStatus[0].GetOperatorInstalled() {
-		return ErrComplianceOperatorNotInstalled
+		return coStatus[0], ErrComplianceOperatorNotInstalled
 	}
 	if semver.Compare(coStatus[0].GetVersion(), minimumComplianceOperatorVersion) < 0 {
-		return ErrComplianceOperatorVersion
+		return coStatus[0], ErrComplianceOperatorVersion
 	}
-	return nil
+	return coStatus[0], nil
 }
 
 // GetWatcherIDFromScan given a Scan, returns a unique ID for the watcher
@@ -205,7 +217,7 @@ func NewScanWatcher(ctx, sensorCtx context.Context, watcherID string, queue read
 		stopped:    &finishedSignal,
 		readyQueue: queue,
 		scanResults: &ScanWatcherResults{
-			SensorCtx:    ctx,
+			SensorCtx:    sensorCtx,
 			WatcherID:    watcherID,
 			CheckResults: set.NewStringSet(),
 		},
@@ -265,12 +277,14 @@ func (s *scanWatcherImpl) run() {
 				}
 			})
 			s.readyQueue.Push(s.scanResults)
+			watcherFinishType.WithLabelValues(s.scanResults.Scan.GetScanName(), "stop requested").Inc()
 			return
 		case <-s.timeout.C():
 			concurrency.WithLock(&s.resultsLock, func() {
 				log.Warnf("Timeout waiting for the scan %s to finish", s.scanResults.Scan.GetScanName())
 				s.scanResults.Error = ErrScanTimeout
 			})
+			watcherFinishType.WithLabelValues(s.scanResults.Scan.GetScanName(), "timeout").Inc()
 			s.readyQueue.Push(s.scanResults)
 			return
 		case scan := <-s.scanC:
@@ -286,22 +300,39 @@ func (s *scanWatcherImpl) run() {
 		concurrency.WithLock(&s.resultsLock, func() {
 			numCheckResults = len(s.scanResults.CheckResults)
 		})
+		log.Debugf("Checking whether %s is finished. TotalChecks=%d, numCheckResults=%d (watcher id: %s)",
+			s.scanResults.Scan.GetScanName(), s.totalChecks, numCheckResults, s.scanResults.WatcherID)
 		if s.totalChecks != 0 && s.totalChecks == numCheckResults {
 			s.readyQueue.Push(s.scanResults)
+			watcherFinishType.WithLabelValues(s.scanResults.Scan.GetScanName(), "done").Inc()
 			return
 		}
 	}
 }
 
-func (s *scanWatcherImpl) handleScan(scan *storage.ComplianceOperatorScanV2) error {
-	if checkCountAnnotation, found := scan.GetAnnotations()[CheckCountAnnotationKey]; found {
-		var numChecks int
-		var err error
-		if numChecks, err = strconv.Atoi(checkCountAnnotation); err != nil {
-			return errors.Wrap(err, "unable to convert the check count annotation to int")
-		}
-		s.totalChecks = numChecks
+func GetExpectedNumChecks(scan *storage.ComplianceOperatorScanV2) (int, error) {
+	annotationsMap := scan.GetAnnotations()
+	if len(annotationsMap) == 0 {
+		return 0, nil // It can happen that the annotation is not available and this is okay.
 	}
+	checkCountAnnotation, found := annotationsMap[CheckCountAnnotationKey]
+	if !found {
+		return 0, nil // It can happen that the annotation is not available and this is okay.
+	}
+	var numChecks int
+	var err error
+	if numChecks, err = strconv.Atoi(checkCountAnnotation); err != nil {
+		return 0, errors.Wrap(err, "unable to convert the check count annotation to int")
+	}
+	return numChecks, nil
+}
+
+func (s *scanWatcherImpl) handleScan(scan *storage.ComplianceOperatorScanV2) error {
+	numChecks, err := GetExpectedNumChecks(scan)
+	if err != nil {
+		return err
+	}
+	s.totalChecks = numChecks
 
 	s.resultsLock.Lock()
 	defer s.resultsLock.Unlock()

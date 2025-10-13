@@ -37,7 +37,7 @@ func (q *outputQueueImpl) Start() error {
 }
 
 // Stop the outputQueueImpl component
-func (q *outputQueueImpl) Stop(_ error) {
+func (q *outputQueueImpl) Stop() {
 	if !q.stopper.Client().Stopped().IsDone() {
 		defer func() {
 			_ = q.stopper.Client().Stopped().Wait()

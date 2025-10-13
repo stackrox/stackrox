@@ -79,10 +79,8 @@ func TestGetPods(t *testing.T) {
 			pgtestbase := pgtest.ForT(t)
 			require.NotNil(t, pgtestbase)
 			pool := pgtestbase.DB
-			defer pgtestbase.Teardown(t)
 
-			podsDS, err := datastore.NewPostgresDB(pool, mockIndicators, mockPlops, mockFilter)
-			require.NoError(t, err)
+			podsDS := datastore.NewPostgresDB(pool, mockIndicators, mockPlops, mockFilter)
 
 			for _, pod := range c.pods {
 				assert.NoError(t, podsDS.UpsertPod(ctx, pod))
@@ -94,7 +92,7 @@ func TestGetPods(t *testing.T) {
 
 			results, err := service.GetPods(ctx, &v1.RawQuery{})
 			assert.NoError(t, err)
-			protoassert.ElementsMatch(t, results.Pods, c.pods)
+			protoassert.ElementsMatch(t, results.GetPods(), c.pods)
 		})
 	}
 }

@@ -1,9 +1,13 @@
 package resources
 
 import (
+	"slices"
+
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/containerid"
 	"github.com/stackrox/rox/pkg/net"
+	"github.com/stackrox/rox/pkg/pods"
 	podUtils "github.com/stackrox/rox/pkg/pods/utils"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
@@ -158,7 +162,7 @@ func addEndpointDataForServicePort(deployment *deploymentWrap, serviceIPs []net.
 		PortName: port.Name,
 	}
 	if portCfg := deployment.portConfigs[service.PortRefOf(port)]; portCfg != nil {
-		targetInfo.ContainerPort = uint16(portCfg.ContainerPort)
+		targetInfo.ContainerPort = uint16(portCfg.GetContainerPort())
 	} else {
 		targetInfo.ContainerPort = uint16(port.TargetPort.IntValue())
 	}
@@ -239,11 +243,78 @@ func (m *endpointManagerImpl) OnDeploymentCreateOrUpdateByID(id string) {
 	m.onDeploymentCreateOrUpdate(deployment)
 }
 
+func isSensorDeployment(deployment *deploymentWrap) bool {
+	return deployment.GetName() == "sensor" && deployment.GetNamespace() == pods.GetPodNamespace()
+}
+func isSensorContainer(data *clusterentities.EntityData) bool {
+	return len(data.GetContainerIDs("sensor")) > 0
+}
+
 func (m *endpointManagerImpl) onDeploymentCreateOrUpdate(deployment *deploymentWrap) {
+	data := m.endpointDataForDeployment(deployment)
+	deploymentID := deployment.GetId()
 	updates := map[string]*clusterentities.EntityData{
-		deployment.GetId(): m.endpointDataForDeployment(deployment),
+		deploymentID: data,
+	}
+	if isSensorDeployment(deployment) && isSensorContainer(data) {
+		// Scenario: Current Sensor data from informers is written to Heritage config map.
+		// Also: Remember the container ID and podIPs of the current sensor.
+		if err := m.storeCurrentDataIntoHeritage(deploymentID, data); err != nil {
+			log.Warnf("Error updating Sensor heritage data: %v", err)
+		} else {
+			// Scenario: data from the Heritage config map is added to the ClusterEntitiesStore.
+			// Will succeed only after the data for the current Sensor are already in the store.
+			m.entityStore.ApplyDataFromHeritageOnce()
+		}
 	}
 	m.entityStore.Apply(updates, false, "OnDeploymentCreateOrUpdateByID")
+}
+
+func (m *endpointManagerImpl) storeCurrentDataIntoHeritage(deploymentID string, data *clusterentities.EntityData) error {
+	hm := m.entityStore.GetHeritageManager()
+	if hm == nil {
+		// Feature may be disabled, no need to raise an error.
+		return nil
+	}
+	sensorContainerID, sensorPodIP, err := extractHeritageData(data)
+	if err != nil {
+		return err
+	}
+	log.Debugf("Discovered podIP=%q and containerID=%q for Sensor heritage", sensorPodIP, sensorContainerID)
+	hm.SetCurrentSensorData(sensorPodIP, sensorContainerID)
+	// This must be remembered in the entity store to later allow correct insertion of the heritage data into store.
+	m.entityStore.RememberCurrentSensorMetadata(deploymentID, data)
+	return nil
+}
+
+func extractHeritageData(data *clusterentities.EntityData) (sensorContainerID, sensorPodIP string, err error) {
+	if data == nil {
+		return sensorContainerID, sensorPodIP, errors.New("Empty entity data")
+	}
+	sensorContainerIDs := data.GetContainerIDs("sensor")
+	if len(sensorContainerIDs) == 0 {
+		return sensorContainerID, sensorPodIP, errors.New("No container IDs found in entity data for Sensor")
+	}
+	sensorPodIPs := data.GetValidIPs()
+	if len(sensorPodIPs) == 0 {
+		return sensorContainerID, sensorPodIP, errors.New("No pod IPs found in entity data for Sensor")
+	}
+
+	// In normal conditions, this should always have length 1.
+	// More IDs can be observed when this is called after other set of heritage data was applied before.
+	if len(sensorContainerIDs) > 1 {
+		// Sort for repeatable behavior.
+		slices.Sort(sensorContainerIDs)
+	}
+	sensorContainerID = sensorContainerIDs[0]
+
+	if len(sensorPodIPs) > 1 {
+		// Sort, as GetDetails is not guaranteed to return sorted data.
+		slices.SortFunc(sensorPodIPs, net.IPAddressCompare)
+	}
+	// Deliberately choosing only the first IP from potentially many.
+	sensorPodIP = sensorPodIPs[0].String()
+	return sensorContainerID, sensorPodIP, nil
 }
 
 func (m *endpointManagerImpl) OnDeploymentRemove(deployment *deploymentWrap) {

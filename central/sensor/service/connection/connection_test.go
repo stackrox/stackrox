@@ -164,8 +164,8 @@ func (s *testSuite) TestGetPolicySyncMsgFromPoliciesDoesntDowngradeBelowMinimumV
 
 	policySync := msg.GetPolicySync()
 	s.Require().NotNil(policySync)
-	s.NotEmpty(policySync.Policies)
-	s.Equal(policyversion.CurrentVersion().String(), policySync.Policies[0].GetPolicyVersion())
+	s.NotEmpty(policySync.GetPolicies())
+	s.Equal(policyversion.CurrentVersion().String(), policySync.GetPolicies()[0].GetPolicyVersion())
 }
 
 func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
@@ -337,8 +337,8 @@ func (s *testSuite) TestGetPolicySyncMsgFromPoliciesDoesntDowngradeInvalidVersio
 
 	policySync := msg.GetPolicySync()
 	s.Require().NotNil(policySync)
-	s.NotEmpty(policySync.Policies)
-	s.Equal(policyversion.CurrentVersion().String(), policySync.Policies[0].GetPolicyVersion())
+	s.NotEmpty(policySync.GetPolicies())
+	s.Equal(policyversion.CurrentVersion().String(), policySync.GetPolicies()[0].GetPolicyVersion())
 }
 
 func (s *testSuite) TestSendsAuditLogSyncMessageIfEnabledOnRun() {
@@ -573,7 +573,7 @@ func (s *testSuite) TestDelegatedRegistryConfigOnRun() {
 
 		for _, msg := range server.sentList {
 			if deleConfig := msg.GetDelegatedRegistryConfig(); deleConfig != nil {
-				s.Equal(central.DelegatedRegistryConfig_ALL, deleConfig.EnabledFor)
+				s.Equal(central.DelegatedRegistryConfig_ALL, deleConfig.GetEnabledFor())
 				return
 			}
 		}
@@ -668,10 +668,11 @@ func (s *testSuite) TestImageIntegrationsOnRun() {
 		s.NoError(sensorMockConn.Run(ctx, server, withCap))
 		for _, msg := range server.sentList {
 			if imgInts := msg.GetImageIntegrations(); imgInts != nil {
-				s.Len(imgInts.DeletedIntegrationIds, 0)
-				s.Len(imgInts.UpdatedIntegrations, 1)
-				s.Equal(imgInts.UpdatedIntegrations[0].Name, "valid")
-				s.Equal(imgInts.UpdatedIntegrations[0].Id, "id1")
+				s.Len(imgInts.GetDeletedIntegrationIds(), 0)
+				s.Len(imgInts.GetUpdatedIntegrations(), 1)
+				s.Equal(imgInts.GetUpdatedIntegrations()[0].GetName(), "valid")
+				s.Equal(imgInts.GetUpdatedIntegrations()[0].GetId(), "id1")
+				s.True(imgInts.GetRefresh())
 				return
 			}
 		}

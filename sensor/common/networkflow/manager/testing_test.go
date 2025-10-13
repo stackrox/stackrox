@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"testing"
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -13,26 +14,30 @@ import (
 	mocksDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
 	mocksExternalSrc "github.com/stackrox/rox/sensor/common/externalsrcs/mocks"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
 	mocksManager "github.com/stackrox/rox/sensor/common/networkflow/manager/mocks"
+	"github.com/stackrox/rox/sensor/common/networkflow/updatecomputer"
+	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
 
-func createManager(mockCtrl *gomock.Controller) (*networkFlowManager, *mocksManager.MockEntityStore, *mocksExternalSrc.MockStore, *mocksDetector.MockDetector) {
+func createManager(mockCtrl *gomock.Controller, enrichTicker <-chan time.Time) (*networkFlowManager, *mocksManager.MockEntityStore, *mocksExternalSrc.MockStore, *mocksDetector.MockDetector) {
 	mockEntityStore := mocksManager.NewMockEntityStore(mockCtrl)
 	mockExternalStore := mocksExternalSrc.NewMockStore(mockCtrl)
 	mockDetector := mocksDetector.NewMockDetector(mockCtrl)
-	ticker := time.NewTicker(100 * time.Millisecond)
 	mgr := &networkFlowManager{
 		clusterEntities:   mockEntityStore,
 		externalSrcs:      mockExternalStore,
 		policyDetector:    mockDetector,
+		updateComputer:    updatecomputer.New(),
 		connectionsByHost: make(map[string]*hostConnections),
 		sensorUpdates:     make(chan *message.ExpiringMessage, 5),
 		publicIPs:         newPublicIPsManager(),
 		centralReady:      concurrency.NewSignal(),
-		enricherTicker:    ticker,
-		activeConnections: make(map[connection]*networkConnIndicator),
-		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicator),
+		enricherTicker:    time.NewTicker(time.Hour),
+		enricherTickerC:   enrichTicker,
+		activeConnections: make(map[connection]*networkConnIndicatorWithAge),
+		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
 		stopper:           concurrency.NewStopper(),
 	}
 	return mgr, mockEntityStore, mockExternalStore, mockDetector
@@ -46,10 +51,30 @@ func (f expectFn) runIfSet() {
 	}
 }
 
-func expectEntityLookupContainerHelper(mockEntityStore *mocksManager.MockEntityStore, times int, containerMetadata clusterentities.ContainerMetadata, found bool) expectFn {
+func expectationsEndpointPurger(mockEntityStore *mocksManager.MockEntityStore, isKnownEndpoint, containerIDfound, historical bool) {
+	mockEntityStore.EXPECT().LookupByContainerID(gomock.Any()).AnyTimes().DoAndReturn(
+		func(_ any) (clusterentities.ContainerMetadata, bool, bool) {
+			return clusterentities.ContainerMetadata{}, containerIDfound, historical
+		})
+	mockEntityStore.EXPECT().LookupByEndpoint(gomock.Any()).AnyTimes().DoAndReturn(
+		func(_ any) []clusterentities.LookupResult {
+			if isKnownEndpoint {
+				return []clusterentities.LookupResult{{
+					Entity:         networkgraph.Entity{},
+					ContainerPorts: []uint16{80},
+					PortNames:      []string{"http"},
+				}}
+			}
+			return []clusterentities.LookupResult{}
+		})
+	mockEntityStore.EXPECT().RegisterPublicIPsListener(gomock.Any()).AnyTimes()
+
+}
+
+func expectEntityLookupContainerHelper(mockEntityStore *mocksManager.MockEntityStore, times int, containerMetadata clusterentities.ContainerMetadata, found, historical bool) expectFn {
 	return func() {
-		mockEntityStore.EXPECT().LookupByContainerID(gomock.Any()).Times(times).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool) {
-			return containerMetadata, found
+		mockEntityStore.EXPECT().LookupByContainerID(gomock.Any()).Times(times).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool, bool) {
+			return containerMetadata, found, historical
 		})
 	}
 }
@@ -68,6 +93,22 @@ func expectDetectorHelper(mockDetector *mocksDetector.MockDetector, times int) e
 	}
 }
 
+// createEndpoint creates a NumericEndpoint with the given IP address and port
+func createEndpoint(ipAddr string, port uint16) net.NumericEndpoint {
+	return createEndpointWithAddress(net.ParseIP(ipAddr), port)
+}
+
+// createEndpointWithAddress creates a NumericEndpoint with the given address and port
+func createEndpointWithAddress(addr net.IPAddress, port uint16) net.NumericEndpoint {
+	return net.NumericEndpoint{
+		IPAndPort: net.NetworkPeerID{
+			Address: addr,
+			Port:    port,
+		},
+		L4Proto: net.TCP,
+	}
+}
+
 type connectionPair struct {
 	conn   *connection
 	status *connStatus
@@ -78,18 +119,17 @@ func createConnectionPair() *connectionPair {
 		conn: &connection{
 			containerID: "container-id",
 			incoming:    false,
-			remote: net.NumericEndpoint{
-				IPAndPort: net.NetworkPeerID{
-					Address: net.ParseIP("0.0.0.0"),
-					Port:    80,
-				},
-				L4Proto: net.TCP,
-			},
+			remote:      createEndpoint("0.0.0.0", 80),
 		},
 		status: &connStatus{
 			firstSeen: timestamp.Now(),
 		},
 	}
+}
+
+func (c *connectionPair) tsAdded(tsAdded timestamp.MicroTS) *connectionPair {
+	c.status.tsAdded = tsAdded
+	return c
 }
 
 func (c *connectionPair) lastSeen(lastSeen timestamp.MicroTS) *connectionPair {
@@ -130,7 +170,11 @@ type endpointPair struct {
 	status   *connStatus
 }
 
-func createEndpointPair(firstSeen timestamp.MicroTS) *endpointPair {
+func createEndpointPair(firstSeen, tsAdded timestamp.MicroTS) *endpointPair {
+	return createEndpointPairWithProcess(firstSeen, tsAdded, 0, indicator.ProcessInfo{})
+}
+
+func createEndpointPairWithProcess(firstSeen, tsAdded, lastSeen timestamp.MicroTS, processKey indicator.ProcessInfo) *endpointPair {
 	return &endpointPair{
 		endpoint: &containerEndpoint{
 			endpoint: net.NumericEndpoint{
@@ -141,9 +185,12 @@ func createEndpointPair(firstSeen timestamp.MicroTS) *endpointPair {
 				L4Proto: net.TCP,
 			},
 			containerID: "container-id",
+			processKey:  processKey,
 		},
 		status: &connStatus{
 			firstSeen: firstSeen,
+			tsAdded:   tsAdded,
+			lastSeen:  lastSeen,
 		},
 	}
 }
@@ -153,38 +200,42 @@ func (ep *endpointPair) containerID(id string) *endpointPair {
 	return ep
 }
 
+func (ep *endpointPair) processListeningIndicator() *indicator.ProcessListening {
+	// Assumption: The container/deployment IDs are empty in the test
+	return &indicator.ProcessListening{
+		Process:  ep.endpoint.processKey,
+		Port:     ep.endpoint.endpoint.IPAndPort.Port,
+		Protocol: ep.endpoint.endpoint.L4Proto.ToProtobuf(),
+	}
+}
+
+func (ep *endpointPair) endpointIndicator(deplID string) *indicator.ContainerEndpoint {
+	// Assumption: The container/deployment IDs are empty in the test
+	return &indicator.ContainerEndpoint{
+		Entity:   networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: deplID},
+		Port:     ep.endpoint.endpoint.IPAndPort.Port,
+		Protocol: ep.endpoint.endpoint.L4Proto.ToProtobuf(),
+	}
+}
+
 func (ep *endpointPair) lastSeen(lastSeen timestamp.MicroTS) *endpointPair {
 	ep.status.lastSeen = lastSeen
 	return ep
 }
 
-type containerPair struct {
-	endpoint *containerEndpoint
-	status   *connStatus
-}
-
-func defaultProcessKey() processInfo {
-	return processInfo{
-		processName: "process-name",
-		processArgs: "process-args",
-		processExec: "process-exec",
+func defaultProcessKey() indicator.ProcessInfo {
+	return indicator.ProcessInfo{
+		ProcessName: "process-name",
+		ProcessArgs: "process-args",
+		ProcessExec: "process-exec",
 	}
 }
 
-func createContainerPair(firstSeen timestamp.MicroTS) *containerPair {
-	return &containerPair{
-		endpoint: &containerEndpoint{
-			endpoint: net.NumericEndpoint{
-				IPAndPort: net.NetworkPeerID{
-					Address: net.ParseIP("8.8.8.8"),
-					Port:    80,
-				},
-			},
-			processKey: defaultProcessKey(),
-		},
-		status: &connStatus{
-			firstSeen: firstSeen,
-		},
+func anotherProcessKey() indicator.ProcessInfo {
+	return indicator.ProcessInfo{
+		ProcessName: "another-process-name",
+		ProcessArgs: "another-process-args",
+		ProcessExec: "another-process-exec",
 	}
 }
 
@@ -217,21 +268,23 @@ func addHostConnection(mgr *networkFlowManager, connectionsHostPair *HostnameAnd
 	if !ok {
 		h = &hostConnections{}
 	}
-	if connectionsHostPair.connPair != nil {
-		if h.connections == nil {
-			h.connections = make(map[connection]*connStatus)
+	concurrency.WithLock(&h.mutex, func() {
+		if connectionsHostPair.connPair != nil {
+			if h.connections == nil {
+				h.connections = make(map[connection]*connStatus)
+			}
+			conn := *connectionsHostPair.connPair.conn
+			h.connections[conn] = connectionsHostPair.connPair.status
 		}
-		conn := *connectionsHostPair.connPair.conn
-		h.connections[conn] = connectionsHostPair.connPair.status
-	}
-	if connectionsHostPair.endpointPair != nil {
-		if h.endpoints == nil {
-			h.endpoints = make(map[containerEndpoint]*connStatus)
+		if connectionsHostPair.endpointPair != nil {
+			if h.endpoints == nil {
+				h.endpoints = make(map[containerEndpoint]*connStatus)
+			}
+			ep := *connectionsHostPair.endpointPair.endpoint
+			h.endpoints[ep] = connectionsHostPair.endpointPair.status
 		}
-		ep := *connectionsHostPair.endpointPair.endpoint
-		h.endpoints[ep] = connectionsHostPair.endpointPair.status
-	}
-	mgr.connectionsByHost[connectionsHostPair.hostname] = h
+		mgr.connectionsByHost[connectionsHostPair.hostname] = h
+	})
 }
 
 type expectedEntitiesPair struct {
@@ -290,7 +343,7 @@ func (s *NetworkFlowManagerTestSuite) assertSensorMessageConnectionIDs(expectedU
 				break
 			}
 		}
-		s.Assert().True(found, "expected flow with srcID %s and dstID %s not found", exp.Props.SrcEntity.Id, exp.Props.DstEntity.Id)
+		s.Assert().True(found, "expected flow with srcID %s and dstID %s not found", exp.GetProps().GetSrcEntity().GetId(), exp.GetProps().GetDstEntity().GetId())
 	}
 }
 
@@ -304,5 +357,142 @@ func (s *NetworkFlowManagerTestSuite) assertSensorMessageEndpointIDs(expectedUpd
 			}
 		}
 		s.Assert().True(found, "expected endpoint  with ID %s not found", exp.GetProps().GetEntity().GetId())
+	}
+}
+
+// mockExpectations encapsulates common mock expectation patterns
+type mockExpectations struct {
+	entityStore   *mocksManager.MockEntityStore
+	externalStore *mocksExternalSrc.MockStore
+}
+
+// newMockExpectations creates mock expectation helpers
+func newMockExpectations(entityStore *mocksManager.MockEntityStore, externalStore *mocksExternalSrc.MockStore) *mockExpectations {
+	return &mockExpectations{
+		entityStore:   entityStore,
+		externalStore: externalStore,
+	}
+}
+
+// expectContainerFound configures the container lookup to return found container
+func (me *mockExpectations) expectContainerFound(deploymentID string) *mockExpectations {
+	me.entityStore.EXPECT().LookupByContainerID(gomock.Any()).Times(1).DoAndReturn(
+		func(_ any) (clusterentities.ContainerMetadata, bool, bool) {
+			return clusterentities.ContainerMetadata{DeploymentID: deploymentID}, true, false
+		})
+	return me
+}
+
+// expectContainerNotFound configures the container lookup to return not found
+func (me *mockExpectations) expectContainerNotFound() *mockExpectations {
+	me.entityStore.EXPECT().LookupByContainerID(gomock.Any()).Times(1).DoAndReturn(
+		func(_ any) (clusterentities.ContainerMetadata, bool, bool) {
+			return clusterentities.ContainerMetadata{}, false, false
+		})
+	return me
+}
+
+// expectEndpointFound configures endpoint lookup to return found entity
+func (me *mockExpectations) expectEndpointFound(entityID string, ports ...uint16) *mockExpectations {
+	if len(ports) == 0 {
+		ports = []uint16{80}
+	}
+	me.entityStore.EXPECT().LookupByEndpoint(gomock.Any()).Times(1).DoAndReturn(
+		func(_ any) []clusterentities.LookupResult {
+			return []clusterentities.LookupResult{
+				{
+					Entity:         networkgraph.Entity{ID: entityID},
+					ContainerPorts: ports,
+				},
+			}
+		})
+	return me
+}
+
+// expectEndpointNotFound configures endpoint lookup to return empty results
+func (me *mockExpectations) expectEndpointNotFound() *mockExpectations {
+	me.entityStore.EXPECT().LookupByEndpoint(gomock.Any()).Times(1).DoAndReturn(
+		func(_ any) []clusterentities.LookupResult {
+			return nil
+		})
+	return me
+}
+
+// expectExternalFound configures external lookup to return network entity
+func (me *mockExpectations) expectExternalFound(entityID string) *mockExpectations {
+	me.externalStore.EXPECT().LookupByNetwork(gomock.Any()).Times(1).DoAndReturn(
+		func(_ any) *storage.NetworkEntityInfo {
+			return &storage.NetworkEntityInfo{Id: entityID}
+		})
+	return me
+}
+
+// expectExternalNotFound configures external lookup to return nil
+func (me *mockExpectations) expectExternalNotFound() *mockExpectations {
+	me.externalStore.EXPECT().LookupByNetwork(gomock.Any()).Times(1).DoAndReturn(
+		func(_ any) *storage.NetworkEntityInfo {
+			return nil
+		})
+	return me
+}
+
+// enrichmentAssertion encapsulates common assertion patterns for enrichment results
+type enrichmentAssertion struct {
+	t *testing.T
+}
+
+// newEnrichmentAssertion creates a new assertion helper
+func newEnrichmentAssertion(t *testing.T) *enrichmentAssertion {
+	return &enrichmentAssertion{t: t}
+}
+
+// assertConnectionEnrichment validates connection enrichment results
+func (ea *enrichmentAssertion) assertConnectionEnrichment(
+	actualResult EnrichmentResult,
+	actualAction PostEnrichmentAction,
+	enrichedConnections map[indicator.NetworkConn]timestamp.MicroTS,
+	expected struct {
+		result    EnrichmentResult
+		action    PostEnrichmentAction
+		indicator *indicator.NetworkConn
+	},
+) {
+	ea.t.Helper()
+	assert.Equal(ea.t, expected.result, actualResult, "Enrichment result mismatch")
+	assert.Equal(ea.t, expected.action, actualAction, "Post-enrichment action mismatch")
+
+	if expected.indicator != nil {
+		_, found := enrichedConnections[*expected.indicator]
+		assert.True(ea.t, found, "Expected indicator not found in enriched connections")
+	} else {
+		assert.Len(ea.t, enrichedConnections, 0, "Expected no enriched connections")
+	}
+}
+
+// assertEndpointEnrichment validates endpoint enrichment results
+func (ea *enrichmentAssertion) assertEndpointEnrichment(
+	actualResultNG, actualResultPLOP EnrichmentResult,
+	actualReasonNG, actualReasonPLOP EnrichmentReasonEp,
+	actualAction PostEnrichmentAction,
+	enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp,
+	expected struct {
+		resultNG   EnrichmentResult
+		resultPLOP EnrichmentResult
+		reasonNG   EnrichmentReasonEp
+		reasonPLOP EnrichmentReasonEp
+		action     PostEnrichmentAction
+		endpoint   *indicator.ContainerEndpoint
+	},
+) {
+	ea.t.Helper()
+	assert.Equal(ea.t, expected.resultNG, actualResultNG, "Network graph result mismatch. Reason: %s", actualReasonNG)
+	assert.Equal(ea.t, expected.resultPLOP, actualResultPLOP, "PLOP result mismatch. Reason: %s", actualReasonPLOP)
+	assert.Equal(ea.t, expected.reasonNG, actualReasonNG, "Network graph reason mismatch")
+	assert.Equal(ea.t, expected.reasonPLOP, actualReasonPLOP, "PLOP reason mismatch")
+	assert.Equal(ea.t, expected.action, actualAction, "Action mismatch")
+
+	if expected.endpoint != nil {
+		_, found := enrichedEndpointsProcesses[*expected.endpoint]
+		assert.True(ea.t, found, "Expected endpoint not found in enriched endpoints")
 	}
 }

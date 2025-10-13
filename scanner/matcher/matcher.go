@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/alpine"
 	"github.com/quay/claircore/aws"
@@ -21,7 +21,7 @@ import (
 	"github.com/quay/claircore/nodejs"
 	"github.com/quay/claircore/oracle"
 	"github.com/quay/claircore/photon"
-	"github.com/quay/claircore/pkg/ctxlock"
+	"github.com/quay/claircore/pkg/ctxlock/v2"
 	"github.com/quay/claircore/python"
 	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/rhel/rhcc"
@@ -89,6 +89,8 @@ type matcherImpl struct {
 
 	vulnUpdater *vuln.Updater
 	sbomer      *sbom.SBOMer
+
+	readyWithVulns bool
 }
 
 // NewMatcher creates a new matcher.
@@ -169,6 +171,8 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		}
 	}()
 
+	// Using http.DefaultTransport instead of httputil.DefaultTransport, as the Matcher
+	// should never have a need to reach out to a server with untrusted certificates.
 	// Note: http.DefaultTransport has already been modified to handle configured proxies.
 	// See scanner/cmd/scanner/main.go.
 	defaultTransport := http.DefaultTransport
@@ -190,7 +194,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		Locker:        locker,
 		MetadataStore: metadataStore,
 		Client:        client,
-		URL:           cfg.VulnerabilitiesURL,
+		URLs:          cfg.VulnerabilitiesURLs,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("creating vuln updater: %w", err)
@@ -218,6 +222,8 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 
 		vulnUpdater: vulnUpdater,
 		sbomer:      sbomer,
+
+		readyWithVulns: cfg.Readiness == config.ReadinessVulnerability,
 	}, nil
 }
 
@@ -262,6 +268,9 @@ func (m *matcherImpl) Initialized(ctx context.Context) error {
 func (m *matcherImpl) Ready(ctx context.Context) error {
 	if err := m.pool.Ping(ctx); err != nil {
 		return fmt.Errorf("matcher vulnerability store cannot be reached: %w", err)
+	}
+	if m.readyWithVulns && !m.vulnUpdater.Initialized(ctx) {
+		return errors.New("initial load for the vulnerability store is in progress")
 	}
 	return nil
 }

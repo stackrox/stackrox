@@ -75,7 +75,7 @@ const (
 			AND (snapshots.reportstatus_completedat < now() AT time zone 'utc' - INTERVAL '%d MINUTES')
 		)`
 
-	// (snapshots.reportstatus_runstate = 2 OR snapshots.reportstatus_runstate = 3 OR snapshots.reportstatus_runstate = 4)
+	// (snapshots.reportstatus_runstate = 2 OR snapshots.reportstatus_runstate = 3 OR snapshots.reportstatus_runstate = 4 OR snapshots.reportstatus_runstate = 5 OR snapshots.reportstatus_runstate = 6 OR snapshots.reportstatus_runstate = 7)
 	// ...gives us the report jobs that are in final state.
 	//
 	// (SELECT MAX(latest.reportstatus_completedat) FROM ` + schema.ReportSnapshotsTableName + ` latest
@@ -94,7 +94,7 @@ const (
 	pruneOldComplianceReportHistory = `DELETE FROM ` + schema.ComplianceOperatorReportSnapshotV2TableName + ` WHERE reportid IN
 		(
 			SELECT snapshots.reportid FROM ` + schema.ComplianceOperatorReportSnapshotV2TableName + ` snapshots
-			WHERE (snapshots.reportstatus_runstate = 2 OR snapshots.reportstatus_runstate = 3 OR snapshots.reportstatus_runstate = 4)
+			WHERE (snapshots.reportstatus_runstate IN (2, 3, 4, 5, 6, 7))
 			AND snapshots.reportstatus_completedat NOT IN
 			(
 				SELECT MAX(latest.reportstatus_completedat) FROM ` + schema.ComplianceOperatorReportSnapshotV2TableName + ` latest
@@ -117,6 +117,12 @@ const (
 	pruneAdministrationEvents = `DELETE FROM %s WHERE lastoccurredat < now() at time zone 'utc' - INTERVAL '%d MINUTES'`
 
 	pruneDiscoveredClusters = `DELETE FROM %s WHERE lastupdatedat < now() at time zone 'utc' - INTERVAL '%d MINUTES'`
+
+	pruneInvalidAPITokens = `DELETE FROM %s WHERE
+		(
+			revoked = TRUE OR
+			expiration < now() at time zone 'utc' - INTERVAL '%d MINUTES'
+		)` // #nosec G101
 )
 
 var (
@@ -150,20 +156,11 @@ func PruneClusterHealthStatuses(ctx context.Context, pool postgres.DB) {
 }
 
 func getOrphanedIDs(ctx context.Context, pool postgres.DB, query string) ([]string, error) {
-	var ids []string
 	rows, err := pool.Query(ctx, query)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get orphaned alerts")
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, errors.Wrap(err, "getting ids from orphaned alerts query")
-		}
-		ids = append(ids, id)
-	}
-	return ids, rows.Err()
+	return pgutils.ScanStrings(rows)
 }
 
 // GetOrphanedAlertIDs returns the alert IDs for alerts that are orphaned, so they can be resolved.
@@ -270,5 +267,19 @@ func PruneDiscoveredClusters(ctx context.Context, pool postgres.DB, retentionDur
 		int(retentionDuration.Minutes()))
 	if _, err := pool.Exec(pruneCtx, query); err != nil {
 		log.Errorf("failed to prune discovered clusters: %v", err)
+	}
+}
+
+// PruneInvalidAPITokens prunes expired or revoked API tokens.
+func PruneInvalidAPITokens(ctx context.Context, pool postgres.DB, retentionDuration time.Duration) {
+	pruneCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, pruningTimeout)
+	defer cancel()
+
+	query := fmt.Sprintf(pruneInvalidAPITokens,
+		schema.APITokensTableName,
+		int(retentionDuration.Minutes()),
+	)
+	if _, err := pool.Exec(pruneCtx, query); err != nil {
+		log.Errorf("failed to prune invalid api tokens: %v", err)
 	}
 }

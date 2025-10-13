@@ -2,6 +2,7 @@ package resources
 
 import (
 	"context"
+	"encoding/base64"
 	"strconv"
 	"testing"
 
@@ -18,9 +19,11 @@ import (
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 var (
+	clusterID                      = "cluster-id"
 	openshift311DockerConfigSecret = &v1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Secret",
@@ -83,7 +86,7 @@ func TestOpenShiftRegistrySecret_311(t *testing.T) {
 	t.Setenv(env.LocalImageScanningEnabled.EnvVar(), "true")
 
 	regStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
-	d := newSecretDispatcher(regStore)
+	d := newSecretDispatcher(clusterID, regStore)
 
 	_ = d.ProcessEvent(openshift311DockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
 
@@ -128,7 +131,7 @@ func TestOpenShiftRegistrySecret_4x(t *testing.T) {
 	t.Setenv(env.LocalImageScanningEnabled.EnvVar(), "true")
 
 	regStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
-	d := newSecretDispatcher(regStore)
+	d := newSecretDispatcher(clusterID, regStore)
 
 	_ = d.ProcessEvent(openshift4xDockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
 
@@ -200,7 +203,7 @@ func TestForceLocalScanning(t *testing.T) {
 
 	// with feature disabled, registry secret should NOT be stored
 	regStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
-	d := newSecretDispatcher(regStore)
+	d := newSecretDispatcher(clusterID, regStore)
 
 	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
 	regs, err := regStore.GetPullSecretRegistries(fakeImage, fakeNamespace, nil)
@@ -212,7 +215,7 @@ func TestForceLocalScanning(t *testing.T) {
 
 	// with delegated scanning disabled, registry secret should NOT be stored
 	regStore = registry.NewRegistryStore(alwaysInsecureCheckTLS)
-	d = newSecretDispatcher(regStore)
+	d = newSecretDispatcher(clusterID, regStore)
 
 	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
 	regs, err = regStore.GetPullSecretRegistries(fakeImage, fakeNamespace, nil)
@@ -231,7 +234,7 @@ func TestForceLocalScanning(t *testing.T) {
 	assert.Equal(t, regs[0].Config(context.Background()).Username, "hello")
 
 	regStore = registry.NewRegistryStore(alwaysInsecureCheckTLS)
-	d = newSecretDispatcher(regStore)
+	d = newSecretDispatcher(clusterID, regStore)
 
 	// secrets with an k8s service-account.name other than default should not be stored
 	dockerConfigSecret.Annotations = map[string]string{ocpSAAnnotations[0]: "something"}
@@ -298,7 +301,7 @@ func TestLocalScanningSecretDelete(t *testing.T) {
 	}
 
 	regStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
-	d := newSecretDispatcher(regStore)
+	d := newSecretDispatcher(clusterID, regStore)
 
 	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
 	regs, err := regStore.GetPullSecretRegistries(fakeImage, fakeNamespace, nil)
@@ -324,7 +327,7 @@ func TestLocalScanningSecretDelete(t *testing.T) {
 func TestSAAnnotationImageIntegrationEvents(t *testing.T) {
 	defaultSA := "default"
 	regStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
-	d := newSecretDispatcher(regStore)
+	d := newSecretDispatcher(clusterID, regStore)
 
 	// a secret w/ the `default` k8s sa annotation should trigger no imageintegration events
 	secret := openshift4xDockerConfigSecret.DeepCopy()
@@ -363,7 +366,7 @@ func TestSAAnnotationImageIntegrationEvents(t *testing.T) {
 func getImageIntegrationEvents(events *component.ResourceEvent) []*central.SensorEvent_ImageIntegration {
 	var iiEvents []*central.SensorEvent_ImageIntegration
 	for _, e := range events.ForwardMessages {
-		msg, ok := e.Resource.(*central.SensorEvent_ImageIntegration)
+		msg, ok := e.GetResource().(*central.SensorEvent_ImageIntegration)
 		if ok {
 			iiEvents = append(iiEvents, msg)
 		}
@@ -429,4 +432,72 @@ func TestSkipIntegrationCreate(t *testing.T) {
 		assert.True(t, skipIntegrationCreate(globalPullSecretDupe))
 		assert.False(t, skipIntegrationCreate(someOtherSecret))
 	})
+}
+
+// parseSecretYAML parses YAML into a Kubernetes *v1.Secret object.
+func parseSecretYAML(t *testing.T, yamlData []byte) *v1.Secret {
+	var secret v1.Secret
+	err := yaml.Unmarshal(yamlData, &secret)
+	require.NoError(t, err)
+	return &secret
+}
+
+func buildSecretYaml(base64data string) []byte {
+	return []byte(`
+apiVersion: v1
+data:
+  .dockercfg: ` + base64data + `
+kind: Secret
+metadata:
+  name: secret1
+type: kubernetes.io/dockercfg
+`)
+}
+
+func Test_secretDispatcher_processDockerConfigEvent(t *testing.T) {
+	tests := map[string]struct {
+		secretData    string
+		action        central.ResourceAction
+		wantNumEvents int
+	}{
+		"bad secret with non-utf auth (nu\\x00Op\\x07pZQ)": {
+			secretData:    `{"example.com":{"auth":"nullOp7pZQ=="}}`,
+			action:        central.ResourceAction_CREATE_RESOURCE,
+			wantNumEvents: 0,
+		},
+		"secret containing one correct and one broken auth entry": {
+			secretData:    `{"bad.example.com":{"auth":"nullOp7pZQ=="}, "good.example.com":{"auth":"dXNlcjE6cXdmcGI="}}`,
+			action:        central.ResourceAction_CREATE_RESOURCE,
+			wantNumEvents: 2, // 1 secret + 1 image integration
+		},
+		"bad secret with non-utf in auth (user\\xc5name)": {
+			secretData:    `{"example.com":{"auth":"dXNlcspuYW1lOnBhc3N3b3Jk"}}`,
+			action:        central.ResourceAction_CREATE_RESOURCE,
+			wantNumEvents: 0,
+		},
+		"good secret": {
+			secretData:    `{"auths":{"example.com":{"auth":"dXNlcjE6cXdmcGI="}}}`,
+			action:        central.ResourceAction_CREATE_RESOURCE,
+			wantNumEvents: 2, // 1 secret + 1 image integration
+		},
+		"secret containing two good registries": {
+			secretData:    `{"1.example.com":{"auth":"dXNlcjE6cXdmcGI="}, "2.example.com":{"auth":"dXNlcjE6cXdmcGI="}}`,
+			action:        central.ResourceAction_CREATE_RESOURCE,
+			wantNumEvents: 3, // 1 secret + 2 image integrations
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			s := newSecretDispatcher(clusterID, registry.NewRegistryStore(func(ctx context.Context, origAddr string) (bool, error) {
+				return true, nil
+			}))
+			secret := parseSecretYAML(t, buildSecretYaml(base64.StdEncoding.EncodeToString([]byte(tt.secretData))))
+			got := s.processDockerConfigEvent(secret, nil, tt.action)
+			if tt.wantNumEvents == 0 {
+				assert.Nil(t, got)
+			} else {
+				assert.Len(t, got.ForwardMessages, tt.wantNumEvents)
+			}
+		})
+	}
 }

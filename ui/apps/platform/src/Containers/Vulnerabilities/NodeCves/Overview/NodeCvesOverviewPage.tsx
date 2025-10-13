@@ -4,17 +4,17 @@ import {
     Card,
     CardBody,
     Divider,
+    DropdownItem,
     Flex,
     FlexItem,
     PageSection,
     Title,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { DropdownItem } from '@patternfly/react-core/deprecated';
 import { useApolloClient } from '@apollo/client';
 
 import PageTitle from 'Components/PageTitle';
-import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import useMap from 'hooks/useMap';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
@@ -37,7 +37,7 @@ import {
     nodeSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
-import SnoozeCveToggleButton from '../../components/SnoozedCveToggleButton';
+import SnoozedCveToggleButton from '../../components/SnoozedCveToggleButton';
 import SnoozeCvesModal from '../../components/SnoozeCvesModal/SnoozeCvesModal';
 import useSnoozeCveModal from '../../components/SnoozeCvesModal/useSnoozeCveModal';
 import useHasLegacySnoozeAbility from '../../hooks/useHasLegacySnoozeAbility';
@@ -109,9 +109,13 @@ function NodeCvesOverviewPage() {
     }
 
     // Track the current entity tab when the page is initially visited.
+    /* eslint-disable react-hooks/exhaustive-deps */
     useEffect(() => {
         onEntityTabChange(activeEntityTabKey);
     }, []);
+    // activeEntityTabKey
+    // onEntityTabChange
+    /* eslint-enable react-hooks/exhaustive-deps */
 
     function onClearFilters() {
         setSearchFilter({});
@@ -178,7 +182,7 @@ function NodeCvesOverviewPage() {
                         <FlexItem>Prioritize and manage scanned CVEs across nodes</FlexItem>
                     </Flex>
                     <FlexItem>
-                        <SnoozeCveToggleButton
+                        <SnoozedCveToggleButton
                             searchFilter={searchFilter}
                             setSearchFilter={setSearchFilter}
                             snoozedCveCount={snoozedCveCount}
@@ -198,7 +202,7 @@ function NodeCvesOverviewPage() {
                             <a
                                 href={getVersionedDocs(
                                     version,
-                                    'operating/manage-vulnerabilities/scan-rhcos-node-host#understanding-node-cves-scanner-v4_scan-rhcos-node-host'
+                                    'operating/managing-vulnerabilities#understanding-node-cves-scanner-v4_scan-rhcos-node-host'
                                 )}
                                 target="_blank"
                                 rel="noopener noreferrer"
@@ -227,10 +231,12 @@ function NodeCvesOverviewPage() {
                             >
                                 {hasLegacySnoozeAbility && (
                                     <ToolbarItem align={{ default: 'alignRight' }}>
-                                        <BulkActionsDropdown isDisabled={selectedCves.size === 0}>
+                                        <MenuDropdown
+                                            toggleText="Bulk actions"
+                                            isDisabled={selectedCves.size === 0}
+                                        >
                                             <DropdownItem
                                                 key="bulk-snooze-cve"
-                                                component="button"
                                                 onClick={() =>
                                                     setSnoozeModalOptions({
                                                         action: isViewingSnoozedCves
@@ -245,7 +251,7 @@ function NodeCvesOverviewPage() {
                                                     ? 'Unsnooze CVEs'
                                                     : 'Snooze CVEs'}
                                             </DropdownItem>
-                                        </BulkActionsDropdown>
+                                        </MenuDropdown>
                                     </ToolbarItem>
                                 )}
                             </TableEntityToolbar>

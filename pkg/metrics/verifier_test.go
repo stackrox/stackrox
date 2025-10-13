@@ -43,7 +43,6 @@ func TestClientCertVerifier(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 			certFile, err := os.ReadFile(c.certFilePath)
 			require.NoError(t, err)
 			certs, err := helpers.ParseCertificatesPEM(certFile)

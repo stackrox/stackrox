@@ -1,6 +1,9 @@
 package services
 
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+
+import io.stackrox.annotations.Retry
 import io.stackrox.proto.api.v1.GroupServiceGrpc
 import io.stackrox.proto.api.v1.GroupServiceOuterClass
 import io.stackrox.proto.api.v1.GroupServiceOuterClass.GetGroupsRequest
@@ -8,8 +11,9 @@ import io.stackrox.proto.storage.GroupOuterClass.Group
 import io.stackrox.proto.storage.GroupOuterClass.GroupProperties
 
 @Slf4j
+@CompileStatic
 class GroupService extends BaseService {
-    static getGroupService() {
+    static GroupServiceGrpc.GroupServiceBlockingStub getGroupService() {
         return GroupServiceGrpc.newBlockingStub(getChannel())
     }
 
@@ -32,33 +36,29 @@ class GroupService extends BaseService {
         }
     }
 
+    @Retry
     static createGroup(Group group) {
-        try {
-            return getGroupService().createGroup(group)
-        } catch (Exception e) {
-            log.error("Error creating new Group", e)
-        }
+        return getGroupService().createGroup(group)
     }
 
+    @Retry
     static deleteGroup(GroupProperties props) {
-        try {
-            return getGroupService().deleteGroup(GroupServiceOuterClass.DeleteGroupRequest.newBuilder()
-                    .setAuthProviderId(props.authProviderId)
-                    .setId(props.id)
-                    .setKey(props.key)
-                    .setValue(props.value)
-                    .build()
-            )
-        } catch (Exception e) {
-            log.error("Error deleting group", e)
-        }
+        return getGroupService().deleteGroup(GroupServiceOuterClass.DeleteGroupRequest.newBuilder()
+                .setAuthProviderId(props.authProviderId)
+                .setId(props.id)
+                .setKey(props.key)
+                .setValue(props.value)
+                .build()
+        )
     }
 
-    static getGroup(GroupProperties props) {
+    @Retry
+    static Group getGroup(GroupProperties props) {
         return getGroupService().getGroup(props)
     }
 
-    static getGroups(GetGroupsRequest req) {
+    @Retry
+    static GroupServiceOuterClass.GetGroupsResponse getGroups(GetGroupsRequest req) {
         return getGroupService().getGroups(req)
     }
 }

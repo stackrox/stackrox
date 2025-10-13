@@ -130,12 +130,12 @@ func (evr *EmbeddedVulnerabilityResolver) CreatedAt(_ context.Context) (*graphql
 
 // DiscoveredAtImage is the first time the vulnerability was discovered in the parent image.
 func (evr *EmbeddedVulnerabilityResolver) DiscoveredAtImage(_ context.Context, _ RawQuery) (*graphql.Time, error) {
-	return protocompat.ConvertTimestampToGraphqlTimeOrError(evr.data.FirstImageOccurrence)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(evr.data.GetFirstImageOccurrence())
 }
 
 // VulnerabilityType returns the type of vulnerability
 func (evr *EmbeddedVulnerabilityResolver) VulnerabilityType() string {
-	return evr.data.VulnerabilityType.String()
+	return evr.data.GetVulnerabilityType().String()
 }
 
 // VulnerabilityTypes returns the types of the vulnerability
@@ -148,9 +148,9 @@ func (evr *EmbeddedVulnerabilityResolver) VulnerabilityTypes() []string {
 }
 
 // Images are the images that contain the CVE/Vulnerability.
-func (evr *EmbeddedVulnerabilityResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
+func (evr *EmbeddedVulnerabilityResolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	if err := readImages(ctx); err != nil {
-		return []*imageResolver{}, nil
+		return []ImageResolver{}, nil
 	}
 	// Convert to query, but link the fields for the search.
 	query, err := args.AsV1QueryOrEmpty()
@@ -169,15 +169,22 @@ func (evr *EmbeddedVulnerabilityResolver) ImageCount(ctx context.Context, args R
 	if err := readImages(ctx); err != nil {
 		return 0, nil
 	}
-	imageLoader, err := loaders.GetImageLoader(ctx)
-	if err != nil {
-		return 0, err
-	}
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return 0, err
 	}
 	query, err = search.AddAsConjunction(evr.vulnQuery(), query)
+	if err != nil {
+		return 0, err
+	}
+	if features.FlattenImageData.Enabled() {
+		imageLoader, err := loaders.GetImageV2Loader(ctx)
+		if err != nil {
+			return 0, err
+		}
+		return imageLoader.CountFromQuery(ctx, query)
+	}
+	imageLoader, err := loaders.GetImageLoader(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -307,7 +314,7 @@ func (evr *EmbeddedVulnerabilityResolver) getEnvImpactComponentsForPerClusterVul
 	if err != nil {
 		return 0, 0, err
 	}
-	affectedClusters, err := evr.root.orchestratorIstioCVEManager.GetAffectedClusters(ctx, evr.data.Cve, ct, evr.root.cveMatcher)
+	affectedClusters, err := evr.root.orchestratorIstioCVEManager.GetAffectedClusters(ctx, evr.data.GetCve(), ct, evr.root.cveMatcher)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -354,7 +361,7 @@ func (evr *EmbeddedVulnerabilityResolver) getEnvImpactComponentsForNodes(ctx con
 
 func (evr *EmbeddedVulnerabilityResolver) scopeContext(ctx context.Context) context.Context {
 	return scoped.Context(ctx, scoped.Scope{
-		ID:    evr.data.GetCve(),
+		IDs:   []string{evr.data.GetCve()},
 		Level: v1.SearchCategory_VULNERABILITIES,
 	})
 }
@@ -427,8 +434,12 @@ func (evr *EmbeddedVulnerabilityResolver) UnusedVarSink(_ context.Context, _ Raw
 	return nil
 }
 
-func (evr *EmbeddedVulnerabilityResolver) loadImages(ctx context.Context, query *v1.Query) ([]*imageResolver, error) {
+func (evr *EmbeddedVulnerabilityResolver) loadImages(ctx context.Context, query *v1.Query) ([]ImageResolver, error) {
 	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	imageV2Loader, err := loaders.GetImageV2Loader(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -443,7 +454,20 @@ func (evr *EmbeddedVulnerabilityResolver) loadImages(ctx context.Context, query 
 
 	query.Pagination = pagination
 
-	return evr.root.wrapImages(imageLoader.FromQuery(ctx, query))
+	if features.FlattenImageData.Enabled() {
+		resolvers, err := evr.root.wrapImageV2s(imageV2Loader.FromQuery(ctx, query))
+		res := make([]ImageResolver, 0, len(resolvers))
+		for _, resolver := range resolvers {
+			res = append(res, resolver)
+		}
+		return res, err
+	}
+	resolvers, err := evr.root.wrapImages(imageLoader.FromQuery(ctx, query))
+	res := make([]ImageResolver, 0, len(resolvers))
+	for _, resolver := range resolvers {
+		res = append(res, resolver)
+	}
+	return res, err
 }
 
 func (evr *EmbeddedVulnerabilityResolver) loadDeployments(ctx context.Context, query *v1.Query) ([]*deploymentResolver, error) {
@@ -510,13 +534,22 @@ func (evr *EmbeddedVulnerabilityResolver) VulnerabilityState(_ context.Context) 
 
 func (evr *EmbeddedVulnerabilityResolver) getDeploymentBaseQuery(ctx context.Context) (*v1.Query, error) {
 	imageQuery := evr.vulnQuery()
-	results, err := evr.root.ImageDataStore.Search(ctx, imageQuery)
+	var results []search.Result
+	var err error
+	var searchField search.FieldLabel
+	if features.FlattenImageData.Enabled() {
+		results, err = evr.root.ImageV2DataStore.Search(ctx, imageQuery)
+		searchField = search.ImageID
+	} else {
+		results, err = evr.root.ImageDataStore.Search(ctx, imageQuery)
+		searchField = search.ImageSHA
+	}
 	if err != nil || len(results) == 0 {
 		return nil, err
 	}
 
 	// Create a query that finds all of the deployments that contain at least one of the infected images.
-	return search.NewQueryBuilder().AddExactMatches(search.ImageSHA, search.ResultsToIDs(results)...).ProtoQuery(), nil
+	return search.NewQueryBuilder().AddExactMatches(searchField, search.ResultsToIDs(results)...).ProtoQuery(), nil
 }
 
 func (evr *EmbeddedVulnerabilityResolver) vulnQuery() *v1.Query {

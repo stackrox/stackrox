@@ -18,9 +18,9 @@ fi
 
 function cli() {
   if [[ -z $ROX_API_TOKEN ]]; then
-    roxctl --insecure-skip-tls-verify -e $ENDPOINT -p $PASSPHRASE $@
+    roxctl --ca "" --insecure-skip-tls-verify -e "$ENDPOINT" -p "$PASSPHRASE" "$@"
   else
-    roxctl --insecure-skip-tls-verify -e $ENDPOINT $@
+    roxctl --ca "" --insecure-skip-tls-verify -e "$ENDPOINT" "$@"
   fi
 }
 

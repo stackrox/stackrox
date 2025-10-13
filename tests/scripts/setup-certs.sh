@@ -38,7 +38,7 @@ keyUsage = critical, digitalSignature, cRLSign, keyCertSign
   basicConstraints=CA:TRUE,pathlen:1
   "
     # Root CA
-    openssl req -nodes -config <(echo "$root_ca_exts") -new -x509 -keyout ca.key -out ca.crt -subj "/CN=Root ${ca_name}"
+    openssl req -quiet -nodes -config <(echo "$root_ca_exts") -new -x509 -keyout ca.key -out ca.crt -subj "/CN=Root ${ca_name}"
 
     # Intermediate CA
     openssl genrsa -out intermediate.key 4096

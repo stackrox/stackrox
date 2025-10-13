@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"maps"
 	"slices"
 	"sort"
 	"time"
@@ -15,6 +16,7 @@ import (
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	networkFlowDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
+	"github.com/stackrox/rox/central/networkgraph/transformer"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	deploymentMatcher "github.com/stackrox/rox/central/networkpolicies/deployment"
 	"github.com/stackrox/rox/central/role/sachelper"
@@ -22,6 +24,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -37,7 +40,6 @@ import (
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
-	"golang.org/x/exp/maps"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -178,12 +180,9 @@ func (s *serviceImpl) GetExternalNetworkFlowsMetadata(ctx context.Context, reque
 
 	// To ensure pagination is consistent/deterministic, sort the keys
 	// and construct the list of metadata objects in order of key (entity ID)
-	keys := maps.Keys(entityMeta)
-	slices.Sort(keys)
+	values := make([]*v1.ExternalNetworkFlowMetadata, 0, len(entityMeta))
 
-	values := make([]*v1.ExternalNetworkFlowMetadata, 0, len(keys))
-
-	for _, key := range keys {
+	for _, key := range slices.Sorted(maps.Keys(entityMeta)) {
 		values = append(values, entityMeta[key])
 	}
 
@@ -433,7 +432,7 @@ func (s *serviceImpl) enhanceWithNetworkPolicyIsolationInfo(ctx context.Context,
 		return errors.Wrap(err, "building deployment matcher")
 	}
 
-	for _, node := range graph.Nodes {
+	for _, node := range graph.GetNodes() {
 		if node.GetEntity().GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
 			deploymentID := node.GetEntity().GetId()
 			if deployment, ok := deploymentMap[deploymentID]; ok {
@@ -537,9 +536,26 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(
 		},
 	)
 
+	// If aggressive aggregation is enabled, first transform all external discovered
+	// entities into Internet entities. Subsequent aggregation will combine these
+	// based on name and timestamp.
+	if features.NetworkGraphAggregateExternalIPs.Enabled() {
+		flows = transformer.NewExternalDiscoveredTransformer().Transform(flows)
+	}
+
 	// Aggregate all external flows by node names to control the number of external nodes.
 	flows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
 	missingInfoFlows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(missingInfoFlows)
+
+	flows = aggregator.NewLatestTimestampAggregator().Aggregate(flows)
+	missingInfoFlows = aggregator.NewLatestTimestampAggregator().Aggregate(missingInfoFlows)
+
+	// If aggressive aggregation is disabled, transform the external discovered flows
+	// at the end, so previous aggregation steps do not combine them into a single edge.
+	if !features.NetworkGraphAggregateExternalIPs.Enabled() {
+		flows = transformer.NewExternalDiscoveredTransformer().Transform(flows)
+	}
+
 	graphBuilder.AddFlows(flows)
 
 	filteredFlows, visibleNeighbors, maskedDeployments, err := filterFlowsAndMaskScopeAlienDeployments(ctx,

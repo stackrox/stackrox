@@ -8,7 +8,7 @@ export const selectors = {
         importButton: 'button:contains("Import policy")',
         searchInput: '.react-select__input > input',
         bulkActionsDropdownButton: 'button:contains("Bulk actions")',
-        bulkActionsDropdownItem: 'button:contains("Bulk actions") + ul[role="menu"] li',
+        bulkActionsDropdownItem: 'button:contains("Bulk actions") + div ul[role="menu"] li',
         reassessButton: 'button:contains("Reassess all")',
         policyLink: 'td[data-label="Policy"] a',
         statusCell: 'td[data-label="Status"]',
@@ -22,9 +22,9 @@ export const selectors = {
         rows: '[data-testid="policies-table"] tbody tr',
     },
     page: {
-        actionsToggleButton: 'button.pf-v5-c-dropdown__toggle:contains("Actions")',
+        actionsToggleButton: 'button.pf-v5-c-menu-toggle:contains("Actions")',
         actionsItemButton:
-            'button.pf-v5-c-dropdown__toggle:contains("Actions") + ul li button[role="menuitem"]',
+            'button.pf-v5-c-menu-toggle:contains("Actions") + div ul li button[role="menuitem"]',
     },
     toast: {
         title: 'ul.pf-v5-c-alert-group .pf-v5-c-alert__title',
@@ -64,8 +64,6 @@ export const selectors = {
                 radioGroupStringItem:
                     '[data-testid="policy-criteria-value-radio-group-string-item"]',
                 negateCheckbox: '[data-testid="policy-criteria-value-negate-checkbox"]',
-                multiselect: '[data-testid="policy-criteria-value-multiselect"]',
-                multiselectOption: '[data-testid="policy-criteria-value-multiselect-option"]',
                 tableModal: {
                     textInput: '[data-testid="table-modal-text-input"]',
                     openButton: '[data-testid="table-modal-open-button"]',

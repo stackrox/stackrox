@@ -187,6 +187,108 @@ func GetPlopStorage6() *storage.ProcessListeningOnPortStorage {
 	}
 }
 
+// GetPlopStorage7 Return a plop for the database
+func GetPlopStorage7() *storage.ProcessListeningOnPortStorage {
+	return &storage.ProcessListeningOnPortStorage{
+		Id:                 fixtureconsts.PlopUID1,
+		Port:               1234,
+		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
+		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID1,
+		CloseTimestamp:     nil,
+		Closed:             false,
+		DeploymentId:       fixtureconsts.Deployment1,
+		PodUid:             fixtureconsts.PodUID1,
+	}
+}
+
+// GetPlopStorage8 Return a plop for the database
+func GetPlopStorage8() *storage.ProcessListeningOnPortStorage {
+	return &storage.ProcessListeningOnPortStorage{
+		Id:                 fixtureconsts.PlopUID2,
+		Port:               4321,
+		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
+		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID2,
+		CloseTimestamp:     nil,
+		Closed:             false,
+		DeploymentId:       fixtureconsts.Deployment1,
+		PodUid:             fixtureconsts.PodUID3,
+	}
+}
+
+// GetPlopStorage9 Return a plop for the database
+func GetPlopStorage9() *storage.ProcessListeningOnPortStorage {
+	return &storage.ProcessListeningOnPortStorage{
+		Id:                 fixtureconsts.PlopUID3,
+		Port:               80,
+		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
+		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID3,
+		CloseTimestamp:     nil,
+		Closed:             false,
+		DeploymentId:       fixtureconsts.Deployment1,
+		PodUid:             fixtureconsts.PodUID3,
+	}
+}
+
+func GetPlop7() *storage.ProcessListeningOnPort {
+	return &storage.ProcessListeningOnPort{
+		ContainerName: "test_container1",
+		PodId:         fixtureconsts.PodName1,
+		PodUid:        fixtureconsts.PodUID1,
+		DeploymentId:  fixtureconsts.Deployment1,
+		ClusterId:     fixtureconsts.Cluster1,
+		Namespace:     fixtureconsts.Namespace1,
+		Endpoint: &storage.ProcessListeningOnPort_Endpoint{
+			Port:     1234,
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+		},
+		Signal: &storage.ProcessSignal{
+			Name:         "test_process1",
+			Args:         "test_arguments1",
+			ExecFilePath: "test_path1",
+		},
+	}
+}
+
+func GetPlop8() *storage.ProcessListeningOnPort {
+	return &storage.ProcessListeningOnPort{
+		ContainerName: "test_container2",
+		PodId:         fixtureconsts.PodName3,
+		PodUid:        fixtureconsts.PodUID3,
+		DeploymentId:  fixtureconsts.Deployment1,
+		ClusterId:     fixtureconsts.Cluster1,
+		Namespace:     fixtureconsts.Namespace1,
+		Endpoint: &storage.ProcessListeningOnPort_Endpoint{
+			Port:     4321,
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+		},
+		Signal: &storage.ProcessSignal{
+			Name:         "test_process2",
+			Args:         "test_arguments2",
+			ExecFilePath: "test_path2",
+		},
+	}
+}
+
+func GetPlop9() *storage.ProcessListeningOnPort {
+	return &storage.ProcessListeningOnPort{
+		ContainerName: "test_container2",
+		PodId:         fixtureconsts.PodName3,
+		PodUid:        fixtureconsts.PodUID3,
+		DeploymentId:  fixtureconsts.Deployment1,
+		ClusterId:     fixtureconsts.Cluster1,
+		Namespace:     fixtureconsts.Namespace1,
+		Endpoint: &storage.ProcessListeningOnPort_Endpoint{
+			Port:     80,
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+		},
+		Signal: &storage.ProcessSignal{
+			Name:         "test_process3",
+			Args:         "test_arguments3",
+			ExecFilePath: "test_path3",
+		},
+	}
+}
+
 // GetPlopStorageExpired1 Return an expired plop for the database
 func GetPlopStorageExpired1() *storage.ProcessListeningOnPortStorage {
 	return &storage.ProcessListeningOnPortStorage{

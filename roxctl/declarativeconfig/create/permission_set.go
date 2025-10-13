@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 
@@ -17,8 +18,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/lint"
-	"golang.org/x/exp/maps"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 func permissionSetCommand(cliEnvironment environment.Environment) *cobra.Command {
@@ -39,9 +39,9 @@ func permissionSetCommand(cliEnvironment environment.Environment) *cobra.Command
 		Short: "Create a declarative configuration for a permission set",
 	}
 
-	cmd.Flags().StringVar(&permSetCmd.permissionSet.Name, "name", "", "Name of the permission set")
+	cmd.Flags().StringVar(&permSetCmd.permissionSet.Name, "name", "", "Name of the permission set.")
 	cmd.Flags().StringVar(&permSetCmd.permissionSet.Description, "description", "",
-		"Description of the permission set")
+		"Description of the permission set.")
 	cmd.Flags().StringToStringVar(&permSetCmd.resourceWithAccess, "resource-with-access", map[string]string{},
 		`List of resources with the respective access, e.g. --resource-with-access Access=READ_ACCESS,Administration=READ_WRITE_ACCESS
 Note: Capitalization matters!`)
@@ -81,17 +81,16 @@ func (p *permissionSetCmd) Validate() error {
 
 	// Keep an alphabetic order within the resources.
 	resources := maps.Keys(accessMap)
-	slices.Sort(resources)
 
 	// TODO(ROX-16330): Resources are currently defined within central/role/resources, and hence cannot be reused here yet.
 	// There are plans to move the resource definition to a shared place however, in which case we can reuse them here.
 	var invalidAccessErrors *multierror.Error
-	for _, resource := range resources {
+	for _, resource := range slices.Sorted(resources) {
 		accessVal, ok := storage.Access_value[strings.ToUpper(accessMap[resource])]
 		if !ok {
 			invalidAccessErrors = multierror.Append(invalidAccessErrors, errox.InvalidArgs.
 				Newf("invalid access specified for resource %s: %s. The allowed values for access are: [%s]",
-					resource, accessMap[resource], strings.Join(maps.Keys(storage.Access_value), ",")))
+					resource, accessMap[resource], strings.Join(slices.Collect(maps.Keys(storage.Access_value)), ",")))
 			continue
 		}
 		resourceWithAccess = append(resourceWithAccess, declarativeconfig.ResourceWithAccess{

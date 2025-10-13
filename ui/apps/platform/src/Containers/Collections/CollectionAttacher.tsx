@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { Alert, Button, Flex, SearchInput } from '@patternfly/react-core';
 
-import BacklogListSelector, {
-    BacklogListSelectorProps,
-} from 'Components/PatternFly/BacklogListSelector';
-import { Collection } from 'services/CollectionsService';
+import BacklogListSelector from 'Components/PatternFly/BacklogListSelector';
+import type { BacklogListSelectorProps } from 'Components/PatternFly/BacklogListSelector';
+import type { Collection } from 'services/CollectionsService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useEmbeddedCollections from './hooks/useEmbeddedCollections';
 

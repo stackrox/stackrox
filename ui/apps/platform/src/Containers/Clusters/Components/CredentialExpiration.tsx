@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { differenceInDays } from 'date-fns';
 import { Tooltip } from '@patternfly/react-core';
 
@@ -8,8 +9,8 @@ import useMetadata from 'hooks/useMetadata';
 import { getVersionedDocs } from 'utils/versioning';
 import HealthStatus from './HealthStatus';
 import HealthStatusNotApplicable from './HealthStatusNotApplicable';
-import { getCredentialExpirationStatus, healthStatusStyles } from '../cluster.helpers';
-import { CertExpiryStatus } from '../clusterTypes';
+import { getCredentialExpirationStatus, healthStatusStylesLegacy } from '../cluster.helpers';
+import type { CertExpiryStatus } from '../clusterTypes';
 
 const testId = 'credentialExpiration';
 
@@ -35,7 +36,7 @@ function CredentialExpiration({
 
     // Adapt health status categories to certificate expiration.
     const healthStatus = getCredentialExpirationStatus(certExpiryStatus, currentDatetime);
-    const { Icon, fgColor } = healthStatusStyles[healthStatus];
+    const { Icon, fgColor } = healthStatusStylesLegacy[healthStatus];
     const icon = <Icon className="h-4 w-4" />;
 
     // Order arguments according to date-fns@2 convention:

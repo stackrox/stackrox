@@ -41,10 +41,6 @@ func (s *ClusterInitBundlesStoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *ClusterInitBundlesStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *ClusterInitBundlesStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 

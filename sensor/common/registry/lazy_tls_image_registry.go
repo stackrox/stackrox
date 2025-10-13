@@ -10,8 +10,11 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/tlscheckcache"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
+
+	pkgerrors "github.com/pkg/errors"
 )
 
 // lazyTLSCheckRegistry is a wrapper around a registry that performs
@@ -35,7 +38,7 @@ type lazyTLSCheckRegistry struct {
 	registry types.Registry
 
 	// tlsCheckCache performs and caches registry TLS checks.
-	tlsCheckCache *tlsCheckCacheImpl
+	tlsCheckCache tlscheckcache.Cache
 
 	// initialized tracks whether lazy initialization has completed.
 	initialized      atomic.Uint32
@@ -91,11 +94,15 @@ func (l *lazyTLSCheckRegistry) Metadata(image *storage.Image) (*storage.ImageMet
 		return l.initError
 	})
 	if err != nil {
-		return nil, err
+		return nil, pkgerrors.Wrap(err, "lazy TLS registry initialization")
 	}
 
 	// At this point lazy init has successfully completed.
-	return l.registry.Metadata(image)
+	meta, err := l.registry.Metadata(image)
+	if err != nil {
+		return nil, pkgerrors.Wrapf(err, "fetching metadata for image %s", image.GetName())
+	}
+	return meta, nil
 }
 
 func (l *lazyTLSCheckRegistry) Name() string {

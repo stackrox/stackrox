@@ -1,5 +1,6 @@
-import React, { ReactElement } from 'react';
-import { NavLink } from 'react-router-dom';
+import React from 'react';
+import type { ReactElement } from 'react';
+import { NavLink } from 'react-router-dom-v5-compat';
 import { NavItem } from '@patternfly/react-core';
 
 export type NavigationItemProps = {
@@ -11,7 +12,7 @@ export type NavigationItemProps = {
 function NavigationItem({ isActive, path, content }: NavigationItemProps): ReactElement {
     return (
         <NavItem isActive={isActive}>
-            <NavLink exact to={path} className={isActive ? 'pf-m-current' : ''}>
+            <NavLink to={path} className={({ isActive }) => (isActive ? 'pf-m-current' : '')} end>
                 {content}
             </NavLink>
         </NavItem>

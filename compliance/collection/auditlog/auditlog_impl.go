@@ -152,10 +152,10 @@ func (s *auditLogReaderImpl) shouldSendEvent(event *auditEvent) bool {
 			log.Errorf("Unable to parse timestamp from audit log: %v", err)
 			return false
 		}
-		if !protoutils.After(protoTime, s.startState.CollectLogsSince) {
+		if !protoutils.After(protoTime, s.startState.GetCollectLogsSince()) {
 			// don't send since time hasn't matched yet
 			// but if the id matches then we're in the same time and everything after can be sent
-			if event.AuditID == s.startState.LastAuditId {
+			if event.AuditID == s.startState.GetLastAuditId() {
 				s.startState = nil
 			}
 			// in either case don't send

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import {
     Pagination,
     Text,
@@ -12,23 +12,28 @@ import {
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import { CompoundSearchFilterConfig, OnSearchPayload } from 'Components/CompoundSearchFilter/types';
+import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
+import type {
+    CompoundSearchFilterConfig,
+    OnSearchPayload,
+} from 'Components/CompoundSearchFilter/types';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import { UseURLPaginationResult } from 'hooks/useURLPagination';
-import { UseURLSortResult } from 'hooks/useURLSort';
-import { ComplianceCheckResult } from 'services/ComplianceResultsService';
-import { TableUIState } from 'utils/getTableUIState';
-import { SearchFilter } from 'types/search';
+import type { UseURLPaginationResult } from 'hooks/useURLPagination';
+import type { UseURLSortResult } from 'hooks/useURLSort';
+import type { ComplianceCheckResult } from 'services/ComplianceResultsService';
+import type { TableUIState } from 'utils/getTableUIState';
+import type { SearchFilter } from 'types/search';
 
 import { DETAILS_TAB, TAB_NAV_QUERY } from './CheckDetailsPage';
-import { CHECK_NAME_QUERY, CHECK_STATUS_QUERY } from './compliance.coverage.constants';
+import { CHECK_NAME_QUERY } from './compliance.coverage.constants';
 import { coverageCheckDetailsPath } from './compliance.coverage.routes';
 import { getClusterResultsStatusObject } from './compliance.coverage.utils';
 import CheckStatusDropdown from './components/CheckStatusDropdown';
 import ControlLabels from './components/ControlLabels';
 import StatusIcon from './components/StatusIcon';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
+import { complianceStatusFilterChipDescriptors } from '../searchFilterConfig';
 
 export type ClusterDetailsTableProps = {
     checkResultsCount: number;
@@ -61,7 +66,6 @@ function ClusterDetailsTable({
     onCheckStatusSelect,
     onClearFilters,
 }: ClusterDetailsTableProps) {
-    /* eslint-disable no-nested-ternary */
     const { page, perPage, setPage, setPerPage } = pagination;
     const { generatePathWithScanConfig } = useScanConfigRouter();
     const [expandedRows, setExpandedRows] = useState<number[]>([]);
@@ -76,6 +80,8 @@ function ClusterDetailsTable({
     useEffect(() => {
         setExpandedRows([]);
     }, [page, perPage, tableState]);
+
+    const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
 
     return (
         <>
@@ -110,14 +116,8 @@ function ClusterDetailsTable({
                             searchFilter={searchFilter}
                             onFilterChange={onFilterChange}
                             filterChipGroupDescriptors={[
-                                {
-                                    displayName: 'Profile Check',
-                                    searchFilterName: CHECK_NAME_QUERY,
-                                },
-                                {
-                                    displayName: 'Compliance Status',
-                                    searchFilterName: CHECK_STATUS_QUERY,
-                                },
+                                ...filterChipGroupDescriptors,
+                                complianceStatusFilterChipDescriptors,
                             ]}
                         />
                     </ToolbarGroup>

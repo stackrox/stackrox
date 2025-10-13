@@ -73,39 +73,49 @@ spec:
         path: central.db.persistence.persistentVolumeClaim
       - description: |-
           The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be
-          created. Defaults to "central-db" if not set.
+          created.
+          The default is: central-db.
         displayName: Claim Name
         path: central.db.persistence.persistentVolumeClaim.claimName
-      - displayName: Enabled
+      - description: 'The default is: false.'
+        displayName: Enabled
         path: central.exposure.loadBalancer.enabled
-      - displayName: Enabled
+      - description: 'The default is: false.'
+        displayName: Enabled
         path: central.exposure.nodePort.enabled
       - description: Expose Central through an OpenShift route.
         displayName: Route
         path: central.exposure.route
-      - displayName: Enabled
+      - description: |-
+          Expose Central with a passthrough route.
+          The default is: false.
+        displayName: Enabled
         path: central.exposure.route.enabled
+      - description: |-
+          Expose Central with a reencrypt route.
+          Should not be used for sensor communication.
+          The default is: false.
+        displayName: Enabled
+        path: central.exposure.route.reencrypt.enabled
+      - description: |-
+          The PEM encoded certificate chain that may be used to establish a complete chain of trust.
+          Defaults to the OpenShift certificate authority.
+        displayName: CA Certificate
+        path: central.exposure.route.reencrypt.tls.caCertificate
       - description: |-
           Expose the monitoring endpoint. A new service, "monitoring",
           with port 9090, will be created as well as a network policy allowing
           inbound connections to the port.
         displayName: Expose Endpoint
         path: central.monitoring.exposeEndpoint
-      - description: Enables the encryption of notifier secrets stored in the Central
-          DB.
+      - description: |-
+          Enables the encryption of notifier secrets stored in the Central DB.
+          The default is: false.
         displayName: Enabled
         path: central.notifierSecretsEncryption.enabled
       - description: |-
-          Uses a Kubernetes persistent volume claim (PVC) to manage the storage location of persistent data.
-          Recommended for most users.
-        displayName: Persistent volume claim
-        path: central.persistence.persistentVolumeClaim
-      - description: |-
-          The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be
-          created. Defaults to "stackrox-db" if not set.
-        displayName: Claim Name
-        path: central.persistence.persistentVolumeClaim.claimName
-      - description: Specifies if Telemetry is enabled.
+          Specifies if Telemetry is enabled.
+          The default is: true.
         displayName: Enabled
         path: central.telemetry.enabled
         x-descriptors:
@@ -113,8 +123,9 @@ spec:
       - description: Storage API endpoint.
         displayName: Endpoint
         path: central.telemetry.storage.endpoint
-      - description: If you want to deploy the Config as Code component, set this
-          to "Enabled"
+      - description: |-
+          If you want to deploy the Config as Code component, set this to "Enabled"
+          The default is: Enabled.
         displayName: Config as Code component
         path: configAsCode.configAsCodeComponent
       - description: Custom labels to set on all managed objects.
@@ -123,6 +134,7 @@ spec:
       - description: |-
           Configures whether Red Hat Advanced Cluster Security should run in online or offline (disconnected) mode.
           In offline mode, automatic updates of vulnerability definitions and kernel modules are disabled.
+          The default is: Online.
         displayName: Connectivity Policy
         path: egress.connectivityPolicy
       - description: |-
@@ -133,13 +145,14 @@ spec:
         path: misc.createSCCs
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - displayName: Enabled
+      - description: 'The default is: true.'
+        displayName: Enabled
         path: monitoring.openshift.enabled
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: To provide security at the network level the ACS Operator creates
-          NetworkPolicy resources by default. If you want to manage your own NetworkPolicy
-          objects then set this to "Disabled".
+      - description: |-
+          To provide security at the network level the ACS Operator creates NetworkPolicy resources by default. If you want to manage your own NetworkPolicy objects then set this to "Disabled".
+          The default is: Enabled.
         displayName: Network Policies
         path: network.policies
       - description: Resource API version.
@@ -158,6 +171,7 @@ spec:
       - description: |-
           When enabled, the number of component replicas is managed dynamically based on the load, within the limits
           specified below.
+          The default is: Enabled.
         displayName: Autoscaling
         path: scanner.analyzer.scaling.autoScaling
       - description: |-
@@ -185,7 +199,8 @@ spec:
         path: scannerV4.db.persistence.persistentVolumeClaim
       - description: |-
           The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be
-          created. Defaults to "scanner-v4-db" if not set.
+          created.
+          The default is: scanner-v4-db.
         displayName: Claim Name
         path: scannerV4.db.persistence.persistentVolumeClaim.claimName
       - description: Controls the number of replicas and autoscaling for this component.
@@ -194,6 +209,7 @@ spec:
       - description: |-
           When enabled, the number of component replicas is managed dynamically based on the load, within the limits
           specified below.
+          The default is: Enabled.
         displayName: Autoscaling
         path: scannerV4.indexer.scaling.autoScaling
       - description: Controls the number of replicas and autoscaling for this component.
@@ -202,6 +218,7 @@ spec:
       - description: |-
           When enabled, the number of component replicas is managed dynamically based on the load, within the limits
           specified below.
+          The default is: Enabled.
         displayName: Autoscaling
         path: scannerV4.matcher.scaling.autoScaling
       - description: |-
@@ -210,7 +227,11 @@ spec:
           inbound connections to the port.
         displayName: Expose Endpoint
         path: scannerV4.monitoring.exposeEndpoint
-      - description: If you want to deploy Scanner V4 components set this to "Enabled"
+      - description: |-
+          Can be specified as "Enabled" or "Disabled".
+          If this field is not specified, the following defaulting takes place:
+          * for new installations, Scanner V4 is enabled starting with ACS 4.8;
+          * for upgrades to 4.8 from previous releases, Scanner V4 is disabled.
         displayName: Scanner V4 component
         path: scannerV4.scannerComponent
       - description: |-
@@ -235,7 +256,7 @@ spec:
       - description: Expose Central through a load balancer service.
         displayName: Load Balancer
         path: central.exposure.loadBalancer
-      - description: Defaults to 443 if not set.
+      - description: 'The default is: 443.'
         displayName: Port
         path: central.exposure.loadBalancer.port
         x-descriptors:
@@ -247,18 +268,21 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.enabled:true
       - description: |-
-          Specify a custom hostname for the central route.
-          If unspecified, an appropriate default value will be automatically chosen by OpenShift route operator.
+          Specify a custom hostname for the Central route.
+          If unspecified, an appropriate default value will be automatically chosen by the OpenShift route operator.
         displayName: Host
         path: central.exposure.route.host
       - description: |-
-          The size of the persistent volume when created through the claim. If a claim was automatically created,
-          this can be used after the initial deployment to resize (grow) the volume (only supported by some
-          storage class controllers).
-        displayName: Size
-        path: central.persistence.persistentVolumeClaim.size
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
+          Specify a custom hostname for the Central reencrypt route.
+          If unspecified, an appropriate default value will be automatically chosen by the OpenShift route operator.
+        displayName: Host
+        path: central.exposure.route.reencrypt.host
+      - description: |-
+          The PEM encoded certificate that is served on the route. Must be a single serving
+          certificate instead of a certificate chain.
+          Defaults to a certificate signed by the OpenShift certificate authority.
+        displayName: Certificate
+        path: central.exposure.route.reencrypt.tls.certificate
       - description: Defines the telemetry storage backend for Central.
         displayName: Storage
         path: central.telemetry.storage
@@ -291,8 +315,9 @@ spec:
         path: scanner.analyzer
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled
-      - description: When autoscaling is disabled, the number of replicas will always
-          be configured to match this value.
+      - description: |-
+          When autoscaling is disabled, the number of replicas will always be configured to match this value.
+          The default is: 3.
         displayName: Default Replicas
         path: scanner.analyzer.scaling.replicas
       - description: |-
@@ -308,12 +333,14 @@ spec:
         path: scannerV4.indexer
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled
-      - description: When autoscaling is disabled, the number of replicas will always
-          be configured to match this value.
+      - description: |-
+          When autoscaling is disabled, the number of replicas will always be configured to match this value.
+          The default is: 3.
         displayName: Default Replicas
         path: scannerV4.indexer.scaling.replicas
-      - description: When autoscaling is disabled, the number of replicas will always
-          be configured to match this value.
+      - description: |-
+          When autoscaling is disabled, the number of replicas will always be configured to match this value.
+          The default is: 3.
         displayName: Default Replicas
         path: scannerV4.matcher.scaling.replicas
       - description: |-
@@ -345,19 +372,35 @@ spec:
         displayName: Node Port
         path: central.exposure.nodePort
       - description: |-
-          The name of the storage class to use for the PVC. If your cluster is not configured with a default storage
-          class, you must select a value here.
-        displayName: Storage Class
-        path: central.persistence.persistentVolumeClaim.storageClassName
-        x-descriptors:
-        - urn:alm:descriptor:io.kubernetes:StorageClass
+          Set up a Central route with reencrypt TLS termination.
+          For reencrypt routes, the request is terminated on the OpenShift router with a custom certificate.
+          The request is then reencrypted by the OpenShift router and sent to Central.
+          [user] --TLS--> [OpenShift router] --TLS--> [Central]
+        displayName: Re-Encrypt Route
+        path: central.exposure.route.reencrypt
+      - description: TLS settings for exposing Central via a reencrypt Route.
+        displayName: TLS Settings
+        path: central.exposure.route.reencrypt.tls
+      - description: |-
+          The CA certificate of the final destination, i.e. of Central.
+          Used by the OpenShift router for health checks on the secure connection.
+          Defaults to the Central certificate authority.
+        displayName: Destination CA Certificate
+        path: central.exposure.route.reencrypt.tls.destinationCACertificate
       - description: Custom environment variables to set on managed pods' containers.
         displayName: Environment Variables
         path: customize.envVars
       - description: Name of resource.
         displayName: Name
         path: overlays[0].name
-      - displayName: Autoscaling Minimum Replicas
+      - description: |-
+          Verbatim value to add, delete or replace.
+          Same as Value, however the content is not interpreted as YAML, but treated as literal string instead.
+          At least one of Value and Verbatim must be empty.
+        displayName: Verbatim
+        path: overlays[0].patches[0].verbatim
+      - description: 'The default is: 2.'
+        displayName: Autoscaling Minimum Replicas
         path: scanner.analyzer.scaling.minReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled
@@ -378,7 +421,8 @@ spec:
         path: scannerV4.db.persistence.persistentVolumeClaim.storageClassName
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:StorageClass
-      - displayName: Autoscaling Minimum Replicas
+      - description: 'The default is: 2.'
+        displayName: Autoscaling Minimum Replicas
         path: scannerV4.indexer.scaling.minReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled
@@ -387,7 +431,8 @@ spec:
         path: scannerV4.matcher
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled
-      - displayName: Autoscaling Minimum Replicas
+      - description: 'The default is: 2.'
+        displayName: Autoscaling Minimum Replicas
         path: scannerV4.matcher.scaling.minReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled
@@ -395,6 +440,11 @@ spec:
           be used if modifications need to be applied.
         displayName: Config map that will override postgresql.conf and pg_hba.conf
         path: central.db.configOverride
+      - description: |-
+          The PEM encoded private key of the certificate that is served on the route.
+          Defaults to a certificate signed by the OpenShift certificate authority.
+        displayName: Private Key
+        path: central.exposure.route.reencrypt.tls.key
       - description: |-
           Configures monitoring endpoint for Central. The monitoring endpoint
           allows other services to collect metrics from Central, provided in
@@ -410,7 +460,8 @@ spec:
           When Optional is false, and the specified resource does not exist in the output manifests, an error will be thrown.
         displayName: Optional
         path: overlays[0].optional
-      - displayName: Autoscaling Maximum Replicas
+      - description: 'The default is: 5.'
+        displayName: Autoscaling Maximum Replicas
         path: scanner.analyzer.scaling.maxReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled
@@ -425,11 +476,13 @@ spec:
         path: scannerV4.db
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled
-      - displayName: Autoscaling Maximum Replicas
+      - description: 'The default is: 5.'
+        displayName: Autoscaling Maximum Replicas
         path: scannerV4.indexer.scaling.maxReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled
-      - displayName: Autoscaling Maximum Replicas
+      - description: 'The default is: 5.'
+        displayName: Autoscaling Maximum Replicas
         path: scannerV4.matcher.scaling.maxReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled
@@ -450,7 +503,8 @@ spec:
         path: scannerV4.monitoring
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled
-      - description: Allows you to specify additional trusted Root CAs.
+      - description: Settings related to Transport Layer Security, such as Certificate
+          Authorities.
         displayName: TLS
         path: tls
       - description: |-
@@ -510,11 +564,6 @@ spec:
       - description: The path on the host running Central.
         displayName: Path
         path: central.db.persistence.hostPath.path
-      - description: |-
-          Stores persistent data on a directory on the host. This is not recommended, and should only
-          be used together with a node selector (only available in YAML view).
-        displayName: Host path
-        path: central.persistence.hostPath
       - description: The path on the host running Central.
         displayName: Path
         path: central.persistence.hostPath.path
@@ -690,16 +739,19 @@ spec:
         path: central.db.configOverride.name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:ConfigMap
-      - description: Maximum number of connections in the connection pool.
+      - description: |-
+          Maximum number of connections in the connection pool.
+          The default is: 90.
         displayName: Maximum Connections
         path: central.db.connectionPoolSize.maxConnections
-      - description: Minimum number of connections in the connection pool.
+      - description: |-
+          Minimum number of connections in the connection pool.
+          The default is: 10.
         displayName: Minimum Connections
         path: central.db.connectionPoolSize.minConnections
       - description: |-
-          Deprecated field. It is no longer necessary to specify it.
+          Obsolete field.
           This field will be removed in a future release.
-          Central is configured to use PostgreSQL by default.
         displayName: Is Enabled
         path: central.db.isEnabled
         x-descriptors:
@@ -736,6 +788,31 @@ spec:
         path: central.persistence
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Obsolete unused field.
+        displayName: Host Path
+        path: central.persistence.hostPath
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Obsolete unused field.
+        displayName: Persistent Volume Claim
+        path: central.persistence.persistentVolumeClaim
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Obsolete unused field.
+        displayName: Claim Name
+        path: central.persistence.persistentVolumeClaim.claimName
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Obsolete unused field.
+        displayName: Size
+        path: central.persistence.persistentVolumeClaim.size
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Obsolete unused field.
+        displayName: Storage Class Name
+        path: central.persistence.persistentVolumeClaim.storageClassName
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: The name of the referenced secret.
         displayName: Name
         path: imagePullSecrets[0].name
@@ -748,7 +825,8 @@ spec:
         path: misc
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - displayName: Additional CAs
+      - description: Allows you to specify additional trusted Root CAs.
+        displayName: Additional CAs
         path: tls.additionalCAs
       statusDescriptors:
       - description: Info stores information on how to obtain the admin password.
@@ -783,14 +861,17 @@ spec:
         name: ""
         version: v1
       specDescriptors:
-      - description: Set this to 'true' to enable preventive policy enforcement for
-          object creations.
-        displayName: Listen On Creates
-        path: admissionControl.listenOnCreates
+      - description: |-
+          Set to false to disable policy enforcement for the admission controller. This is not recommended.
+          On new deployments starting with version 4.9, defaults to true.
+          On old deployments, defaults to true if at least one of listenOnCreates or listenOnUpdates is true.
+        displayName: Enforce
+        path: admissionControl.enforce
       - description: |-
           Whether collection of Kubernetes audit logs should be enabled or disabled. Currently, this is only
           supported on OpenShift 4, and trying to enable it on non-OpenShift 4 clusters will result in an error.
           Use the 'Auto' setting to enable it on compatible environments, and disable it elsewhere.
+          The default is: Auto.
         displayName: Collection
         path: auditLogs.collection
       - description: |-
@@ -810,13 +891,14 @@ spec:
         path: misc.createSCCs
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - displayName: Enabled
+      - description: 'The default is: true.'
+        displayName: Enabled
         path: monitoring.openshift.enabled
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: To provide security at the network level the ACS Operator creates
-          NetworkPolicy resources by default. If you want to manage your own NetworkPolicy
-          objects then set this to "Disabled".
+      - description: |-
+          To provide security at the network level the ACS Operator creates NetworkPolicy resources by default. If you want to manage your own NetworkPolicy objects then set this to "Disabled".
+          The default is: Enabled.
         displayName: Network Policies
         path: network.policies
       - description: Resource API version.
@@ -840,23 +922,34 @@ spec:
           and process executions. The remaining settings in these section will not have any effect.
           The value is a subject of conversion by the operator if needed, e.g. to
           remove deprecated methods.
+          The default is: CORE_BPF.
         displayName: Collection
         path: perNode.collector.collection
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:select:CORE_BPF
         - urn:alm:descriptor:com.tectonic.ui:select:NoCollection
+      - description: |-
+          Should process baselines be automatically locked when the observation period (1 hour by default) ends.
+          The default is: Disabled.
+        displayName: Auto Lock
+        path: processBaselines.autoLock
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:select:Enabled
+        - urn:alm:descriptor:com.tectonic.ui:select:Disabled
       - description: Controls the number of analyzer replicas and autoscaling.
         displayName: Scaling
         path: scanner.analyzer.scaling
       - description: |-
           When enabled, the number of component replicas is managed dynamically based on the load, within the limits
           specified below.
+          The default is: Enabled.
         displayName: Autoscaling
         path: scanner.analyzer.scaling.autoScaling
       - description: |-
           If you do not want to deploy the Red Hat Advanced Cluster Security Scanner, you can disable it here
           (not recommended).
           If you do so, all the settings in this section will have no effect.
+          The default is: AutoSense.
         displayName: Scanner Component
         path: scanner.scannerComponent
       - description: |-
@@ -872,7 +965,8 @@ spec:
         path: scannerV4.db.persistence.persistentVolumeClaim
       - description: |-
           The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be
-          created. Defaults to "scanner-v4-db" if not set.
+          created.
+          The default is: scanner-v4-db.
         displayName: Claim Name
         path: scannerV4.db.persistence.persistentVolumeClaim.claimName
       - description: Controls the number of replicas and autoscaling for this component.
@@ -881,6 +975,7 @@ spec:
       - description: |-
           When enabled, the number of component replicas is managed dynamically based on the load, within the limits
           specified below.
+          The default is: Enabled.
         displayName: Autoscaling
         path: scannerV4.indexer.scaling.autoScaling
       - description: |-
@@ -889,15 +984,18 @@ spec:
           inbound connections to the port.
         displayName: Expose Endpoint
         path: scannerV4.monitoring.exposeEndpoint
-      - description: If you want to enable the Scanner V4 component set this to "AutoSense"
+      - description: |-
+          If you want to enable the Scanner V4 component set this to "AutoSense"
+          If this field is not specified or set to "Default", the following defaulting takes place:
+          * for new installations, Scanner V4 is enabled starting with ACS 4.8;
+          * for upgrades to 4.8 from previous releases, Scanner V4 is disabled.
         displayName: Scanner V4 component
         path: scannerV4.scannerComponent
       - description: |-
-          Set this to 'true' to enable preventive policy enforcement for object updates.
-
-          Note: this will not have any effect unless 'Listen On Creates' is set to 'true' as well.
-        displayName: Listen On Updates
-        path: admissionControl.listenOnUpdates
+          Enables teams to bypass admission control in a monitored manner in the event of an emergency.
+          The default is: BreakGlassAnnotation.
+        displayName: Bypass
+        path: admissionControl.bypass
       - description: |-
           The endpoint of the Red Hat Advanced Cluster Security Central instance to connect to,
           including the port number. If no port is specified and the endpoint contains an https://
@@ -922,7 +1020,7 @@ spec:
           All values are strings but are converted into appropriate type based on schema.
         displayName: Value
         path: overlays[0].patches[0].value
-      - description: Deprecated field.
+      - description: Obsolete field.
         displayName: Image Flavor
         path: perNode.collector.imageFlavor
         x-descriptors:
@@ -934,8 +1032,9 @@ spec:
       - description: Settings pertaining to the analyzer deployment, such as for autoscaling.
         displayName: Analyzer
         path: scanner.analyzer
-      - description: When autoscaling is disabled, the number of replicas will always
-          be configured to match this value.
+      - description: |-
+          When autoscaling is disabled, the number of replicas will always be configured to match this value.
+          The default is: 3.
         displayName: Default Replicas
         path: scanner.analyzer.scaling.replicas
       - description: |-
@@ -951,21 +1050,30 @@ spec:
         path: scannerV4.indexer
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:AutoSense
-      - description: When autoscaling is disabled, the number of replicas will always
-          be configured to match this value.
+      - description: |-
+          When autoscaling is disabled, the number of replicas will always be configured to match this value.
+          The default is: 3.
         displayName: Default Replicas
         path: scannerV4.indexer.scaling.replicas
-      - description: Set this to 'true' to enable monitoring and enforcement for Kubernetes
-          events (port-forward and exec).
-        displayName: Listen On Events
-        path: admissionControl.listenOnEvents
+      - description: |-
+          If set to "Fail", the admission controller's webhooks are configured to fail-closed in case admission controller
+          fails to respond in time. A failure policy "Ignore" configures the webhooks to fail-open.
+          The default is: Ignore.
+        displayName: Failure Policy
+        path: admissionControl.failurePolicy
       - description: Custom environment variables to set on managed pods' containers.
         displayName: Environment Variables
         path: customize.envVars
       - description: Name of resource.
         displayName: Name
         path: overlays[0].name
-      - description: Deprecated field. This field will be removed in a future release.
+      - description: |-
+          Verbatim value to add, delete or replace.
+          Same as Value, however the content is not interpreted as YAML, but treated as literal string instead.
+          At least one of Value and Verbatim must be empty.
+        displayName: Verbatim
+        path: overlays[0].patches[0].verbatim
+      - description: Obsolete field. This field will be removed in a future release.
         displayName: Force Collection
         path: perNode.collector.forceCollection
         x-descriptors:
@@ -974,7 +1082,8 @@ spec:
           for scanning the Nodes' filesystem.
         displayName: Node Scanning Settings
         path: perNode.nodeInventory
-      - displayName: Autoscaling Minimum Replicas
+      - description: 'The default is: 2.'
+        displayName: Autoscaling Minimum Replicas
         path: scanner.analyzer.scaling.minReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled
@@ -994,7 +1103,8 @@ spec:
         path: scannerV4.db.persistence.persistentVolumeClaim.storageClassName
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:StorageClass
-      - displayName: Autoscaling Minimum Replicas
+      - description: 'The default is: 2.'
+        displayName: Autoscaling Minimum Replicas
         path: scannerV4.indexer.scaling.minReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled
@@ -1006,10 +1116,6 @@ spec:
           and for Kubernetes event monitoring.
         displayName: Admission Control Settings
         path: admissionControl
-      - description: Should inline scanning be performed on previously unscanned images
-          during a deployments admission review.
-        displayName: Contact Image Scanners
-        path: admissionControl.contactImageScanners
       - description: |-
           Optional marks the overlay as optional.
           When Optional is true, and the specified resource does not exist in the output manifests, the overlay will be skipped, and a warning will be logged.
@@ -1020,13 +1126,16 @@ spec:
           To ensure comprehensive monitoring of your cluster activity, Red Hat Advanced Cluster Security
           will run services on every node in the cluster, including tainted nodes by default. If you do
           not want this behavior, please select 'AvoidTaints' here.
+          The default is: TolerateTaints.
         displayName: Taint Toleration
         path: perNode.taintToleration
-      - displayName: Autoscaling Maximum Replicas
+      - description: 'The default is: 5.'
+        displayName: Autoscaling Maximum Replicas
         path: scanner.analyzer.scaling.maxReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled
-      - displayName: Autoscaling Maximum Replicas
+      - description: 'The default is: 5.'
+        displayName: Autoscaling Maximum Replicas
         path: scannerV4.indexer.scaling.maxReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled
@@ -1039,12 +1148,10 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:AutoSense
       - description: |-
-          Maximum timeout period for admission review, upon which admission review will fail open.
-          Use it to set request timeouts when you enable inline image scanning.
-          The default kubectl timeout is 30 seconds; taking padding into account, this should not exceed 25 seconds.
-          On OpenShift webhook timeouts cannot exceed 13 seconds, hence with padding this value shall not exceed 10 seconds.
-        displayName: Timeout Seconds
-        path: admissionControl.timeoutSeconds
+          The number of replicas of the admission control pod.
+          The default is: 3.
+        displayName: Replicas
+        path: admissionControl.replicas
       - description: List of patches to apply to resource.
         displayName: Patches
         path: overlays[0].patches
@@ -1056,26 +1163,23 @@ spec:
           in the pod's hosts file.
         displayName: Host Aliases
         path: perNode.hostAliases
-      - description: Enables teams to bypass admission control in a monitored manner
-          in the event of an emergency.
-        displayName: Bypass
-        path: admissionControl.bypass
       - description: Settings relating to the ingestion of Kubernetes audit logs.
         displayName: Kubernetes Audit Logs Ingestion Settings
         path: auditLogs
+      - description: Settings relating to process baselines.
+        displayName: Process Baselines Settings
+        path: processBaselines
       - description: |-
           Settings for the Scanner component, which is responsible for vulnerability scanning of container
           images stored in a cluster-local image repository.
         displayName: Scanner Component Settings
         path: scanner
-      - description: The number of replicas of the admission control pod.
-        displayName: Replicas
-        path: admissionControl.replicas
       - description: Settings for the Scanner V4 components, which can run in addition
           to the previously existing Scanner components
         displayName: Scanner V4 Component Settings
         path: scannerV4
-      - description: Allows you to specify additional trusted Root CAs.
+      - description: Settings related to Transport Layer Security, such as Certificate
+          Authorities.
         displayName: TLS
         path: tls
       - description: Additional image pull secrets to be taken into account for pulling
@@ -1265,6 +1369,31 @@ spec:
           in the pod's hosts file.
         displayName: Host Aliases
         path: sensor.hostAliases
+      - description: Deprecated field. This field will be removed in a future release.
+        displayName: Contact Image Scanners
+        path: admissionControl.contactImageScanners
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Deprecated field. This field will be removed in a future release.
+        displayName: Listen On Creates
+        path: admissionControl.listenOnCreates
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Deprecated field. This field will be removed in a future release.
+        displayName: Listen On Events
+        path: admissionControl.listenOnEvents
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Deprecated field. This field will be removed in a future release.
+        displayName: Listen On Updates
+        path: admissionControl.listenOnUpdates
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Deprecated field. This field will be removed in a future release.
+        displayName: Timeout Seconds
+        path: admissionControl.timeoutSeconds
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: The name of the referenced secret.
         displayName: Name
         path: imagePullSecrets[0].name
@@ -1277,7 +1406,8 @@ spec:
         path: misc
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - displayName: Additional CAs
+      - description: Allows you to specify additional trusted Root CAs.
+        displayName: Additional CAs
         path: tls.additionalCAs
       statusDescriptors:
       - description: The deployed version of the product.

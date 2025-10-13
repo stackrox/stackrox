@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/quay/claircore/pkg/ctxlock"
+	"github.com/quay/claircore/pkg/ctxlock/v2"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/matcher/updater/vuln"
 )
@@ -37,7 +37,7 @@ func Load(ctx context.Context, connString, vulnsURL string) error {
 		Store:         store,
 		Locker:        locker,
 		MetadataStore: metadataStore,
-		URL:           vulnsURL,
+		URLs:          []string{vulnsURL},
 		SkipGC:        true,
 	})
 	if err != nil {

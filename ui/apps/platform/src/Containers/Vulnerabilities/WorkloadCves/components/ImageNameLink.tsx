@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import { Button, Flex, FlexItem, Tooltip, Truncate } from '@patternfly/react-core';
 import { OutlinedCopyIcon } from '@patternfly/react-icons';
+import useClipboardCopy from 'hooks/useClipboardCopy';
 
-import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import { getImageBaseNameDisplay } from '../utils/images';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
@@ -15,13 +15,13 @@ export type ImageNameLinkProps = {
         tag: string;
     };
     id: string;
-    children?: React.ReactNode;
 };
 
-function ImageNameLink({ name, id, children }: ImageNameLinkProps) {
-    const { getAbsoluteUrl } = useWorkloadCveViewContext();
+function ImageNameLink({ name, id }: ImageNameLinkProps) {
+    const { urlBuilder } = useWorkloadCveViewContext();
     const vulnerabilityState = useVulnerabilityState();
     const [copyIconTooltip, setCopyIconTooltip] = useState('Copy image name');
+    const { copyToClipboard } = useClipboardCopy();
 
     const { registry } = name;
 
@@ -29,10 +29,7 @@ function ImageNameLink({ name, id, children }: ImageNameLinkProps) {
     const baseName = getImageBaseNameDisplay(id, name);
 
     function copyImageName() {
-        navigator?.clipboard
-            ?.writeText(`${registry}/${baseName}`)
-            .then(() => setCopyIconTooltip('Copied!'))
-            .catch(() => {}); /* Nothing to do */
+        return copyToClipboard(`${registry}/${baseName}`).then(() => setCopyIconTooltip('Copied!'));
     }
 
     return (
@@ -43,13 +40,10 @@ function ImageNameLink({ name, id, children }: ImageNameLinkProps) {
             spaceItems={{ default: 'spaceItemsNone' }}
         >
             <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsNone' }}>
-                <Link
-                    to={getAbsoluteUrl(getWorkloadEntityPagePath('Image', id, vulnerabilityState))}
-                >
+                <Link to={urlBuilder.imageDetails(id, vulnerabilityState)}>
                     <Truncate position="middle" content={baseName} />
                 </Link>{' '}
                 <span className="pf-v5-u-color-200 pf-v5-u-font-size-sm">in {registry}</span>
-                <div>{children}</div>
             </Flex>
             <FlexItem>
                 <Tooltip

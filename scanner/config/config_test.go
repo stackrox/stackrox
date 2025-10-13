@@ -2,10 +2,12 @@ package config
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,19 +19,24 @@ func Test_Load(t *testing.T) {
 		yaml    string
 		want    *Config
 		wantErr string
+		env     map[string]string
 	}{
 		{
 			name: "when yaml is empty then use defaults",
 			yaml: `---
 `,
-			want: &defaultConfiguration,
+			want: func() *Config {
+				cfg := defaultConfiguration
+				cfg.Matcher.VulnerabilitiesURLs = []string{cfg.Matcher.VulnerabilitiesURL}
+				return &cfg
+			}(),
 		},
 		{
 			name: "when yaml contains invalid key then error",
 			yaml: `---
 something: unexpected
 `,
-			wantErr: "field something not found",
+			wantErr: "has invalid keys: something",
 		},
 		{
 			name: "when stackrox_services is enabled then set it for indexer and matcher",
@@ -41,13 +48,76 @@ stackrox_services: true
 				cfg.StackRoxServices = true
 				cfg.Indexer.StackRoxServices = true
 				cfg.Matcher.StackRoxServices = true
+				cfg.Matcher.VulnerabilitiesURLs = []string{cfg.Matcher.VulnerabilitiesURL}
+				return &cfg
+			}(),
+		},
+		{
+			name: "when env var is set it overwrites the config",
+			yaml: `---
+stackrox_services: true
+`,
+			env: map[string]string{
+				"SCANNER_V4_STACKROX_SERVICES":         "false",
+				"SCANNER_V4_INDEXER_GET_LAYER_TIMEOUT": "69m",
+			},
+			want: func() *Config {
+				cfg := defaultConfiguration
+				cfg.Indexer.GetLayerTimeout = 69 * time.Minute
+				cfg.Matcher.VulnerabilitiesURLs = []string{cfg.Matcher.VulnerabilitiesURL}
+				return &cfg
+			}(),
+		},
+		{
+			name: "when env var is set without any config",
+			env: map[string]string{
+				"SCANNER_V4_STACKROX_SERVICES":         "true",
+				"SCANNER_V4_INDEXER_GET_LAYER_TIMEOUT": "69m",
+			},
+			want: func() *Config {
+				cfg := defaultConfiguration
+				cfg.StackRoxServices = true
+				cfg.Indexer.StackRoxServices = true
+				cfg.Matcher.StackRoxServices = true
+				cfg.Indexer.GetLayerTimeout = 69 * time.Minute
+				cfg.Matcher.VulnerabilitiesURLs = []string{cfg.Matcher.VulnerabilitiesURL}
+				return &cfg
+			}(),
+		},
+		{
+			name: "when rc bundle env var is set then rc url is prepended",
+			yaml: `---
+matcher:
+  enable: true
+  vulnerabilities_url: https://definitions.stackrox.io/v4/vulnerability-bundles/ROX_VULNERABILITY_VERSION/vulnerabilities.zip
+`,
+			env: map[string]string{
+				"SCANNER_V4_MATCHER_ENABLE_RC_VULN_BUNDLE": "true",
+			},
+			want: func() *Config {
+				mc := MatcherConfig{}
+				_, v := mc.resolveVersions()
+				cfg := defaultConfiguration
+				cfg.Matcher.EnableRCVulnBundle = true
+				cfg.Matcher.VulnerabilitiesURL = "https://definitions.stackrox.io/v4/vulnerability-bundles/ROX_VULNERABILITY_VERSION/vulnerabilities.zip"
+				cfg.Matcher.VulnerabilitiesURLs = []string{
+					fmt.Sprintf("https://definitions.stackrox.io/v4/vulnerability-bundles/%s-rc/vulnerabilities.zip", v),
+					fmt.Sprintf("https://definitions.stackrox.io/v4/vulnerability-bundles/%s/vulnerabilities.zip", v),
+				}
 				return &cfg
 			}(),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Load(strings.NewReader(tt.yaml))
+			for k, v := range tt.env {
+				t.Setenv(k, v)
+			}
+			var r io.Reader
+			if tt.yaml != "" {
+				r = strings.NewReader(tt.yaml)
+			}
+			got, err := Load(r)
 			if tt.wantErr != "" {
 				assert.ErrorContains(t, err, tt.wantErr)
 			} else {
@@ -146,32 +216,107 @@ func Test_MatcherConfig_validate(t *testing.T) {
 	})
 	t.Run("when valid addr then remote addr is set", func(t *testing.T) {
 		for _, addr := range []string{":8443", "localhost:443", "127.0.0.1:80"} {
-			c := MatcherConfig{Enable: true, IndexerAddr: addr, Database: Database{ConnString: "host=foobar"}, VulnerabilitiesURL: "test.com"}
+			c := MatcherConfig{
+				Enable:             true,
+				IndexerAddr:        addr,
+				Database:           Database{ConnString: "host=foobar"},
+				VulnerabilitiesURL: "test.com",
+				Readiness:          ReadinessVulnerability,
+			}
 			err := c.validate()
 			assert.NoError(t, err)
 			assert.True(t, c.RemoteIndexerEnabled)
 		}
 	})
 	t.Run("when addr is empty then remote addr is not set", func(t *testing.T) {
-		c := MatcherConfig{Enable: true, IndexerAddr: "", Database: Database{ConnString: "host=foobar"}, VulnerabilitiesURL: "test.com"}
+		c := MatcherConfig{
+			Enable:             true,
+			IndexerAddr:        "",
+			Database:           Database{ConnString: "host=foobar"},
+			VulnerabilitiesURL: "test.com",
+			Readiness:          ReadinessVulnerability,
+		}
 		err := c.validate()
 		assert.NoError(t, err)
 		assert.False(t, c.RemoteIndexerEnabled)
 	})
 	t.Run("when URL is replaceable, replace it", func(t *testing.T) {
-		c := MatcherConfig{Enable: true, Database: Database{ConnString: "host=foobar"}, VulnerabilitiesURL: "https://central.stackrox.svc/api/extensions/scannerdefinitions?rox_version=ROX_VERSION&vuln_version=ROX_VULNERABILITY_VERSION"}
+		c := MatcherConfig{
+			Enable:             true,
+			Database:           Database{ConnString: "host=foobar"},
+			VulnerabilitiesURL: "https://central.stackrox.svc/api/extensions/scannerdefinitions?rox_version=ROX_VERSION&vuln_version=ROX_VULNERABILITY_VERSION",
+			Readiness:          ReadinessVulnerability,
+		}
 		err := c.validate()
 		assert.NoError(t, err)
 		roxVer, vulnVer := c.resolveVersions()
 		expectedURL := fmt.Sprintf("https://central.stackrox.svc/api/extensions/scannerdefinitions?rox_version=%s&vuln_version=%s", roxVer, vulnVer)
-		assert.Equal(t, expectedURL, c.VulnerabilitiesURL)
+		assert.Equal(t,
+			"https://central.stackrox.svc/api/extensions/scannerdefinitions?rox_version=ROX_VERSION&vuln_version=ROX_VULNERABILITY_VERSION",
+			c.VulnerabilitiesURL)
+		assert.Equal(t, 1, len(c.VulnerabilitiesURLs))
+		assert.Equal(t, expectedURL, c.VulnerabilitiesURLs[0])
 	})
+	t.Run("when URL is replaceable with RC enabled, replace it", func(t *testing.T) {
+		c := MatcherConfig{
+			Enable:             true,
+			EnableRCVulnBundle: true,
+			Database:           Database{ConnString: "host=foobar"},
+			VulnerabilitiesURL: "https://central.stackrox.svc/api/extensions/scannerdefinitions?rox_version=ROX_VERSION&vuln_version=ROX_VULNERABILITY_VERSION",
+			Readiness:          ReadinessVulnerability,
+		}
+		err := c.validate()
+		assert.NoError(t, err)
+		roxVer, vulnVer := c.resolveVersions()
+		expectedURL := fmt.Sprintf("https://central.stackrox.svc/api/extensions/scannerdefinitions?rox_version=%s&vuln_version=%s", roxVer, vulnVer)
+		expectedRCURL := fmt.Sprintf("https://central.stackrox.svc/api/extensions/scannerdefinitions?rox_version=%s&vuln_version=%s-rc", roxVer, vulnVer)
+		assert.Equal(t,
+			"https://central.stackrox.svc/api/extensions/scannerdefinitions?rox_version=ROX_VERSION&vuln_version=ROX_VULNERABILITY_VERSION",
+			c.VulnerabilitiesURL)
+		assert.Equal(t, 2, len(c.VulnerabilitiesURLs))
+		assert.Equal(t, expectedRCURL, c.VulnerabilitiesURLs[0])
+		assert.Equal(t, expectedURL, c.VulnerabilitiesURLs[1])
+	})
+
 	t.Run("when URL is static, do not replace it", func(t *testing.T) {
-		c := MatcherConfig{Enable: true, Database: Database{ConnString: "host=foobar"}, VulnerabilitiesURL: "https://myvulnsrox_version.com"}
+		c := MatcherConfig{
+			Enable:             true,
+			Database:           Database{ConnString: "host=foobar"},
+			VulnerabilitiesURL: "https://myvulnsrox_version.com",
+			Readiness:          ReadinessVulnerability,
+		}
 		err := c.validate()
 		assert.NoError(t, err)
 		expectedURL := "https://myvulnsrox_version.com"
 		assert.Equal(t, expectedURL, c.VulnerabilitiesURL)
+	})
+	t.Run("when rc bundle enabled then urls include rc", func(t *testing.T) {
+		c := MatcherConfig{
+			Enable:               true,
+			Database:             Database{ConnString: "host=foobar"},
+			VulnerabilitiesURL:   "https://example.com/ROX_VULNERABILITY_VERSION/vuln.zip",
+			Readiness:            ReadinessVulnerability,
+			EnableRCVulnBundle:   true,
+			VulnerabilityVersion: "v1",
+		}
+		err := c.validate()
+		assert.NoError(t, err)
+		assert.Equal(t, []string{
+			"https://example.com/v1-rc/vuln.zip",
+			"https://example.com/v1/vuln.zip",
+		}, c.VulnerabilitiesURLs)
+	})
+	t.Run("when rc bundle disabled then only ga url", func(t *testing.T) {
+		c := MatcherConfig{
+			Enable:               true,
+			Database:             Database{ConnString: "host=foobar"},
+			VulnerabilitiesURL:   "https://example.com/ROX_VULNERABILITY_VERSION/vuln.zip",
+			Readiness:            ReadinessVulnerability,
+			VulnerabilityVersion: "v1",
+		}
+		err := c.validate()
+		assert.NoError(t, err)
+		assert.Equal(t, []string{"https://example.com/v1/vuln.zip"}, c.VulnerabilitiesURLs)
 	})
 }
 

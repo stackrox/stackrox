@@ -64,12 +64,8 @@ func (s *GraphQLClusterVulnerabilityTestSuite) SetupSuite() {
 	}
 
 	clusterCVEParts := testClusterCVEParts(s.clusterIDs)
-	err := s.resolver.ClusterCVEDataStore.UpsertClusterCVEsInternal(s.ctx, clusterCVEParts[0].CVE.Type, clusterCVEParts...)
+	err := s.resolver.ClusterCVEDataStore.UpsertClusterCVEsInternal(s.ctx, clusterCVEParts[0].CVE.GetType(), clusterCVEParts...)
 	s.NoError(err)
-}
-
-func (s *GraphQLClusterVulnerabilityTestSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
 }
 
 func (s *GraphQLClusterVulnerabilityTestSuite) TestUnauthorizedClusterVulnerabilityEndpoint() {

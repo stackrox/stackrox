@@ -1,10 +1,8 @@
 import React from 'react';
 import { Button, Flex, pluralize } from '@patternfly/react-core';
 
-import useURLSearch from 'hooks/useURLSearch';
-
 import DeploymentScopeModal from './DeploymentScopeModal';
-import { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
+import type { NetworkScopeHierarchy } from '../types/networkScopeHierarchy';
 import { ClusterIcon, DeploymentIcon, NamespaceIcon } from '../common/NetworkGraphIcons';
 
 import './NetworkPoliciesGenerationScope.css';
@@ -18,7 +16,6 @@ function NetworkPoliciesGenerationScope({
     scopeHierarchy,
     scopeDeploymentCount,
 }: NetworkPoliciesGenerationScopeProps) {
-    const { searchFilter } = useURLSearch();
     const isOnlyClusterScope =
         scopeHierarchy.namespaces.length === 0 && scopeHierarchy.deployments.length === 0;
     const [showDeploymentModal, setShowDeploymentModal] = React.useState(false);
@@ -45,7 +42,6 @@ function NetworkPoliciesGenerationScope({
     return (
         <>
             <DeploymentScopeModal
-                searchFilter={searchFilter}
                 scopeDeploymentCount={scopeDeploymentCount}
                 isOpen={showDeploymentModal}
                 onClose={() => setShowDeploymentModal(false)}

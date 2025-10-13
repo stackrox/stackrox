@@ -1,6 +1,7 @@
 package compliance
 
 import (
+	"context"
 	"sync/atomic"
 
 	"github.com/pkg/errors"
@@ -44,11 +45,16 @@ func (c *commandHandlerImpl) Start() error {
 	return nil
 }
 
-func (c *commandHandlerImpl) Stop(_ error) {
+func (c *commandHandlerImpl) Name() string {
+	return "compliance.commandHandlerImpl"
+}
+
+func (c *commandHandlerImpl) Stop() {
 	c.stopper.Client().Stop()
 }
 
 func (c *commandHandlerImpl) Notify(e common.SensorComponentEvent) {
+	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		c.centralReachable.Store(true)
@@ -61,12 +67,19 @@ func (c *commandHandlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {
 	return c.stopper.Client().Stopped()
 }
 
-func (c *commandHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (c *commandHandlerImpl) Accepts(msg *central.MsgToSensor) bool {
+	return msg.GetScrapeCommand() != nil
+}
+
+func (c *commandHandlerImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	command := msg.GetScrapeCommand()
 	if command == nil {
 		return nil
 	}
 	select {
+	case <-ctx.Done():
+		// TODO(ROX-30333): Pass this context together with `msg` to `c.commands`
+		return errors.Wrapf(ctx.Err(), "message processing in component %s", c.Name())
 	case c.commands <- command:
 		return nil
 	case <-c.stopper.Flow().StopRequested():
@@ -108,7 +121,7 @@ func (c *commandHandlerImpl) run() {
 }
 
 func (c *commandHandlerImpl) runCommand(command *central.ScrapeCommand) []*central.ScrapeUpdate {
-	switch command.Command.(type) {
+	switch command.GetCommand().(type) {
 	case *central.ScrapeCommand_StartScrape:
 		return c.startScrape(command.GetScrapeId(), command.GetStartScrape().GetHostnames(), command.GetStartScrape().GetStandards())
 	case *central.ScrapeCommand_KillScrape:

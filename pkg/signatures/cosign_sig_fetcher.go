@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -24,6 +25,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	imgUtils "github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/protoutils"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/retry"
 	"golang.org/x/time/rate"
@@ -43,9 +45,7 @@ func newCosignSignatureFetcher() *cosignSignatureFetcher {
 	}
 }
 
-var (
-	insecureDefaultTransport *http.Transport
-)
+var insecureDefaultTransport *http.Transport
 
 func init() {
 	insecureDefaultTransport = gcrRemote.DefaultTransport.(*http.Transport).Clone()
@@ -57,7 +57,8 @@ func init() {
 // It will return the storage.ImageSignature and an error that indicated whether the fetching should be retried or not.
 // NOTE: No error will be returned when the image has no signature available. All occurring errors will be logged.
 func (c *cosignSignatureFetcher) FetchSignatures(ctx context.Context, image *storage.Image,
-	fullImageName string, registry registryTypes.Registry) ([]*storage.Signature, error) {
+	fullImageName string, registry registryTypes.Registry,
+) ([]*storage.Signature, error) {
 	// Short-circuit for images that do not have V2 metadata associated with them. These would be older images manifest
 	// schemes that are not supported by cosign, like the docker v1 manifest.
 	if image.GetMetadata().GetV2() == nil {
@@ -124,6 +125,14 @@ func (c *cosignSignatureFetcher) FetchSignatures(ctx context.Context, image *sto
 				fullImageName, err)
 		}
 
+		var rekorBundle []byte
+		if signedPayload.Bundle != nil {
+			rekorBundle, err = json.Marshal(signedPayload.Bundle)
+			if err != nil {
+				log.Errorf("Error during marshalling rekor bundle for image %q: %v", fullImageName, err)
+			}
+		}
+
 		// Since we are only focusing on public keys and certificates, we are ignoring the rekor bundles associated with
 		// the signature.
 		cosignSignatures = append(cosignSignatures, &storage.Signature{
@@ -133,6 +142,7 @@ func (c *cosignSignatureFetcher) FetchSignatures(ctx context.Context, image *sto
 					SignaturePayload: signedPayload.Payload,
 					CertPem:          certPEM,
 					CertChainPem:     chainPEM,
+					RekorBundle:      rekorBundle,
 				},
 			},
 		})
@@ -143,7 +153,7 @@ func (c *cosignSignatureFetcher) FetchSignatures(ctx context.Context, image *sto
 		return nil, nil
 	}
 
-	return cosignSignatures, nil
+	return protoutils.SliceUnique(cosignSignatures), nil
 }
 
 func certificateFromSignedPayload(sp cosign.SignedPayload) ([]byte, error) {
@@ -277,9 +287,7 @@ func checkIfErrorContainsCode(err error, codes ...int) bool {
 	return false
 }
 
-var (
-	_ oci.SignedEntity = (*localSignedEntity)(nil)
-)
+var _ oci.SignedEntity = (*localSignedEntity)(nil)
 
 // localSignedEntity is an implementation of oci.SignedEntity used for fetching signatures.
 // This implementation skips fetching the manifest of the signed image, since within the image enriching, we already

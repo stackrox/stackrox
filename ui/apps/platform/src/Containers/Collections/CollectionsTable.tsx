@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useHistory } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom-v5-compat';
 import {
     Button,
     Pagination,
@@ -13,10 +13,10 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import LinkShim from 'Components/PatternFly/LinkShim';
-import { UseURLPaginationResult } from 'hooks/useURLPagination';
-import { GetSortParams } from 'hooks/useURLSort';
-import { Collection } from 'services/CollectionsService';
-import { SearchFilter } from 'types/search';
+import type { UseURLPaginationResult } from 'hooks/useURLPagination';
+import type { GetSortParams } from 'hooks/useURLSort';
+import type { Collection } from 'services/CollectionsService';
+import type { SearchFilter } from 'types/search';
 import { collectionsBasePath } from 'routePaths';
 import { getTableUIState } from 'utils/getTableUIState';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
@@ -46,7 +46,7 @@ function CollectionsTable({
     onCollectionDelete,
     hasWriteAccess,
 }: CollectionsTableProps) {
-    const history = useHistory();
+    const navigate = useNavigate();
     const { page, perPage, setPage, setPerPage } = pagination;
     const [isDeleting, setIsDeleting] = useState(false);
     const [collectionToDelete, setCollectionToDelete] = useState<Collection | null>(null);
@@ -65,17 +65,11 @@ function CollectionsTable({
     }
 
     function onEditCollection(id: string) {
-        history.push({
-            pathname: `${collectionsBasePath}/${id}`,
-            search: 'action=edit',
-        });
+        navigate(`${collectionsBasePath}/${id}?action=edit`);
     }
 
     function onCloneCollection(id: string) {
-        history.push({
-            pathname: `${collectionsBasePath}/${id}`,
-            search: 'action=clone',
-        });
+        navigate(`${collectionsBasePath}/${id}?action=clone`);
     }
 
     function onConfirmDeleteCollection(collection: Collection) {

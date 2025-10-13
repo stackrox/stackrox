@@ -23,7 +23,9 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/search/sortfields"
 	"github.com/stackrox/rox/pkg/set"
 	"gorm.io/gorm"
 )
@@ -41,8 +43,6 @@ const (
 	// to deal with failures if we just sent it all.  Something to think about as we
 	// proceed and move into more e2e and larger performance testing
 	batchSize = 500
-
-	cursorBatchSize = 50
 )
 
 var (
@@ -531,7 +531,7 @@ func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, er
 	// We skip rewriting components and vulnerabilities if the node scan is older.
 	scanUpdated := protocompat.CompareTimestamps(oldNode.GetScan().GetScanTime(), node.GetScan().GetScanTime()) <= 0
 	if !scanUpdated {
-		node.Scan = oldNode.Scan
+		node.Scan = oldNode.GetScan()
 		node.RiskScore = oldNode.GetRiskScore()
 		node.SetComponents = oldNode.GetSetComponents()
 		node.SetCves = oldNode.GetSetCves()
@@ -602,6 +602,8 @@ func (s *storeImpl) retryableCount(ctx context.Context, q *v1.Query) (int, error
 // Search returns the result matching the query.
 func (s *storeImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Search, "Node")
+
+	q = applyDefaultSort(q)
 
 	return pgutils.Retry2(ctx, func() ([]search.Result, error) {
 		return s.retryableSearch(ctx, q)
@@ -919,6 +921,8 @@ func (s *storeImpl) retryableGetMany(ctx context.Context, ids []string) ([]*stor
 func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(node *storage.Node) error) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.WalkByQuery, "Node")
 
+	q = applyDefaultSort(q)
+
 	conn, release, err := s.acquireConn(ctx, ops.WalkByQuery, "Node")
 	if err != nil {
 		return err
@@ -935,29 +939,20 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(node *
 		}
 	}()
 
-	ctxWithTx := postgres.ContextWithTx(ctx, tx)
-	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.Node, *storage.Node](ctxWithTx, pkgSchema.NodesSchema, q, s.db)
-	if err != nil {
-		return err
-	}
-	defer closer()
-	for {
-		rows, err := fetcher(cursorBatchSize)
+	callback := func(node *storage.Node) error {
+		err := s.populateNode(ctx, tx, node)
 		if err != nil {
-			return pgutils.ErrNilIfNoRows(err)
+			return errors.Wrap(err, "populate node")
 		}
-		for _, node := range rows {
-			err := s.populateNode(ctx, tx, node)
-			if err != nil {
-				return err
-			}
-			if err := fn(node); err != nil {
-				return err
-			}
+		if err := fn(node); err != nil {
+			return errors.Wrap(err, "failed to process node")
 		}
-		if len(rows) != cursorBatchSize {
-			break
-		}
+		return nil
+	}
+
+	err = pgSearch.RunCursorQueryForSchemaFn(ctx, pkgSchema.NodesSchema, q, s.db, callback)
+	if err != nil {
+		return errors.Wrap(err, "cursor by query")
 	}
 	return nil
 }
@@ -1133,4 +1128,14 @@ func gatherKeys(parts *nodePartsAsSlice) [][]byte {
 		keys = append(keys, []byte(vuln.GetId()))
 	}
 	return keys
+}
+
+func applyDefaultSort(q *v1.Query) *v1.Query {
+	q = sortfields.TransformSortOptions(q, pkgSchema.NodesSchema.OptionsMap)
+
+	defaultSortOption := &v1.QuerySortOption{
+		Field: search.LastUpdatedTime.String(),
+	}
+	// Add pagination sort order if needed.
+	return paginated.FillDefaultSortOption(q, defaultSortOption.CloneVT())
 }

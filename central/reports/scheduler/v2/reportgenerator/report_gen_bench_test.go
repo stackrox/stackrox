@@ -13,11 +13,12 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	namespaceDSMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
-	collectionSearch "github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	collectionPostgres "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
+	deploymentsView "github.com/stackrox/rox/central/views/deployments"
 	imagesView "github.com/stackrox/rox/central/views/images"
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -43,9 +44,12 @@ type ReportGeneratorBenchmarkTestSuite struct {
 }
 
 func BenchmarkReportGenerator(b *testing.B) {
+	if features.FlattenCVEData.Enabled() {
+		b.Skip()
+	}
+
 	bts := &ReportGeneratorBenchmarkTestSuite{b: b}
 	bts.setupTestSuite()
-	defer bts.teardownTestSuite()
 
 	clusters := []*storage.Cluster{
 		{Id: uuid.NewV4().String(), Name: "c1"},
@@ -76,20 +80,9 @@ func BenchmarkReportGenerator(b *testing.B) {
 		storage.VulnerabilityReportFilters_WATCHED,
 	}
 
-	expectedRowCount := 5000
-	expectedDeploymentCount := 2000
-	expectedWatchedImageCount := 500
+	expectedRowCount := 5002
 
 	reportSnap := testReportSnapshot(collection.GetId(), fixability, severities, imageTypes, nil)
-
-	b.Run("GetReportDataGraphQL", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			deployedImgResults, watchedImgResults, err := bts.reportGenerator.getReportData(reportSnap, collection, time.Time{})
-			require.NoError(b, err)
-			require.Equal(b, expectedDeploymentCount, len(deployedImgResults[0].Deployments))
-			require.Equal(b, expectedWatchedImageCount, len(watchedImgResults[0].Images))
-		}
-	})
 
 	b.Run("GetReportDataSQF", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
@@ -101,6 +94,9 @@ func BenchmarkReportGenerator(b *testing.B) {
 }
 
 func (bts *ReportGeneratorBenchmarkTestSuite) setupTestSuite() {
+	if features.FlattenCVEData.Enabled() {
+		bts.b.Skip()
+	}
 	bts.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	bts.mockCtrl = gomock.NewController(bts.b)
 	bts.testDB = resolvers.SetupTestPostgresConn(bts.b)
@@ -115,11 +111,12 @@ func (bts *ReportGeneratorBenchmarkTestSuite) setupTestSuite() {
 		resolvers.CreateTestImageComponentCVEEdgeDatastore(bts.b, bts.testDB),
 		resolvers.CreateTestImageCVEEdgeDatastore(bts.b, bts.testDB),
 		resolvers.CreateTestDeploymentDatastore(bts.b, bts.testDB, bts.mockCtrl, imageDataStore),
+		deploymentsView.NewDeploymentView(bts.testDB.DB),
 	)
 
 	var err error
 	collectionStore := collectionPostgres.CreateTableAndNewStore(bts.ctx, bts.testDB.DB, bts.testDB.GetGormDB(bts.b))
-	_, bts.collectionQueryResolver, err = collectionDS.New(collectionStore, collectionSearch.New(collectionStore))
+	_, bts.collectionQueryResolver, err = collectionDS.New(collectionStore)
 	require.NoError(bts.b, err)
 
 	bts.watchedImageDatastore = watchedImageDS.GetTestPostgresDataStore(bts.b, bts.testDB.DB)
@@ -128,11 +125,7 @@ func (bts *ReportGeneratorBenchmarkTestSuite) setupTestSuite() {
 
 	bts.reportGenerator = newReportGeneratorImpl(bts.testDB, nil, bts.resolver.DeploymentDataStore,
 		bts.watchedImageDatastore, bts.collectionQueryResolver, nil, nil, bts.clusterDatastore,
-		bts.namespaceDatastore, imageCVEDatastore, bts.schema)
-}
-
-func (bts *ReportGeneratorBenchmarkTestSuite) teardownTestSuite() {
-	bts.testDB.Teardown(bts.b)
+		bts.namespaceDatastore, imageCVEDatastore, bts.resolver.ImageCVEV2DataStore, bts.schema)
 }
 
 func (bts *ReportGeneratorBenchmarkTestSuite) upsertManyImages(images []*storage.Image) {
@@ -144,7 +137,7 @@ func (bts *ReportGeneratorBenchmarkTestSuite) upsertManyImages(images []*storage
 
 func (bts *ReportGeneratorBenchmarkTestSuite) upsertManyWatchedImages(images []*storage.Image) {
 	for _, img := range images {
-		err := bts.watchedImageDatastore.UpsertWatchedImage(bts.ctx, img.Name.FullName)
+		err := bts.watchedImageDatastore.UpsertWatchedImage(bts.ctx, img.GetName().GetFullName())
 		require.NoError(bts.b, err)
 	}
 }

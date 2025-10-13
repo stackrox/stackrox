@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { useHistory, useParams, generatePath } from 'react-router-dom';
+import { useNavigate, useParams, generatePath } from 'react-router-dom-v5-compat';
 import {
     Alert,
     AlertActionCloseButton,
@@ -18,17 +18,11 @@ import {
     TabTitleText,
     Card,
     CardBody,
-} from '@patternfly/react-core';
-import {
-    Dropdown,
-    DropdownToggle,
     DropdownItem,
-    DropdownSeparator,
-} from '@patternfly/react-core/deprecated';
-import { CaretDownIcon } from '@patternfly/react-icons';
+} from '@patternfly/react-core';
 
-import { vulnerabilityReportPath } from 'Containers/Vulnerabilities/VulnerablityReporting/pathsForVulnerabilityReporting';
-import { vulnerabilityReportsPath } from 'routePaths';
+import { vulnerabilityConfigurationReportDetailsPath } from 'Containers/Vulnerabilities/VulnerablityReporting/pathsForVulnerabilityReporting';
+import { vulnerabilityConfigurationReportsPath } from 'routePaths';
 import { getReportFormValuesFromConfiguration } from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
 import useFetchReport from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReport';
 import useDeleteModal, {
@@ -44,6 +38,7 @@ import NotFoundMessage from 'Components/NotFoundMessage/NotFoundMessage';
 import usePermissions from 'hooks/usePermissions';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import ReportJobsHelpAction from 'Components/ReportJob/ReportJobsHelpAction';
 import { JobContextTab } from 'Components/ReportJob/types';
 import { ensureJobContextTab } from 'Components/ReportJob/utils';
@@ -66,9 +61,8 @@ const allReportJobsTabId = 'VulnReportsConfigReportJobs';
 const headingLevel = 'h2';
 
 function ViewVulnReportPage() {
-    const history = useHistory();
-    const { reportId } = useParams();
-    const [isActionsDropdownOpen, setIsActionsDropdownOpen] = useState(false);
+    const navigate = useNavigate();
+    const { reportId } = useParams() as { reportId: string };
     const [selectedTab, setSelectedTab] = useState<JobContextTab>('CONFIGURATION_DETAILS');
 
     const { hasReadWriteAccess, hasReadAccess } = usePermissions();
@@ -90,7 +84,7 @@ function ViewVulnReportPage() {
         deleteResults,
     } = useDeleteModal({
         onCompleted: () => {
-            history.push(vulnerabilityReportsPath);
+            navigate(vulnerabilityConfigurationReportsPath);
         },
     });
 
@@ -109,14 +103,6 @@ function ViewVulnReportPage() {
         },
     });
 
-    function onToggleActionsDropdown() {
-        setIsActionsDropdownOpen((prevValue) => !prevValue);
-    }
-
-    function onSelectAction() {
-        setIsActionsDropdownOpen(false);
-    }
-
     if (isLoading) {
         return (
             <Bullseye>
@@ -131,14 +117,14 @@ function ViewVulnReportPage() {
                 title="Error fetching the report configuration"
                 message={fetchError || 'No data available'}
                 actionText="Go to reports"
-                url={vulnerabilityReportsPath}
+                url={vulnerabilityConfigurationReportsPath}
             />
         );
     }
 
-    const vulnReportPageURL = generatePath(vulnerabilityReportPath, {
+    const vulnReportPageURL = generatePath(vulnerabilityConfigurationReportDetailsPath, {
         reportId: reportConfiguration.id,
-    }) as string;
+    });
 
     const reportFormValues = getReportFormValuesFromConfiguration(reportConfiguration);
 
@@ -173,7 +159,7 @@ function ViewVulnReportPage() {
             <PageTitle title="View vulnerability report" />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
-                    <BreadcrumbItemLink to={vulnerabilityReportsPath}>
+                    <BreadcrumbItemLink to={vulnerabilityConfigurationReportsPath}>
                         Vulnerability reporting
                     </BreadcrumbItemLink>
                     <BreadcrumbItem isActive>{reportConfiguration.name}</BreadcrumbItem>
@@ -187,78 +173,65 @@ function ViewVulnReportPage() {
                     </FlexItem>
                     {hasWriteAccessForReport && (
                         <FlexItem>
-                            <Dropdown
-                                onSelect={onSelectAction}
-                                position="right"
-                                toggle={
-                                    <DropdownToggle
-                                        onToggle={onToggleActionsDropdown}
-                                        toggleIndicator={CaretDownIcon}
-                                    >
-                                        Actions
-                                    </DropdownToggle>
-                                }
-                                isOpen={isActionsDropdownOpen}
-                                dropdownItems={[
-                                    <DropdownItem
-                                        key="Edit report"
-                                        component="button"
-                                        onClick={() => {
-                                            history.push(`${vulnReportPageURL}?action=edit`);
-                                        }}
-                                        isDisabled={isReportStatusPending || isRunning}
-                                    >
-                                        Edit report
-                                    </DropdownItem>,
-                                    <DropdownSeparator key="separator" />,
-                                    <DropdownItem
-                                        key="Send report"
-                                        component="button"
-                                        onClick={() => runReport(reportId, 'EMAIL')}
-                                        isDisabled={
-                                            isReportStatusPending ||
-                                            isRunning ||
-                                            reportConfiguration.notifiers.length === 0
-                                        }
-                                        description={
-                                            reportConfiguration.notifiers.length === 0
-                                                ? 'No delivery destinations set'
-                                                : ''
-                                        }
-                                    >
-                                        Send report
-                                    </DropdownItem>,
-                                    <DropdownItem
-                                        key="Generate download"
-                                        component="button"
-                                        onClick={() => runReport(reportId, 'DOWNLOAD')}
-                                        isDisabled={isReportStatusPending || isRunning}
-                                    >
-                                        Generate download
-                                    </DropdownItem>,
-                                    <DropdownItem
-                                        key="Clone report"
-                                        component="button"
-                                        onClick={() => {
-                                            history.push(`${vulnReportPageURL}?action=clone`);
-                                        }}
-                                    >
-                                        Clone report
-                                    </DropdownItem>,
-                                    <DropdownSeparator key="Separator" />,
-                                    <DropdownItem
-                                        key="Delete report"
-                                        className="pf-v5-u-danger-color-100"
-                                        component="button"
-                                        onClick={() => {
-                                            openDeleteModal([reportConfiguration.id]);
-                                        }}
-                                        isDisabled={isReportStatusPending || isRunning}
-                                    >
-                                        Delete report
-                                    </DropdownItem>,
-                                ]}
-                            />
+                            <MenuDropdown
+                                toggleText="Actions"
+                                popperProps={{
+                                    position: 'end',
+                                }}
+                            >
+                                <DropdownItem
+                                    key="Edit report"
+                                    onClick={() => {
+                                        navigate(`${vulnReportPageURL}?action=edit`);
+                                    }}
+                                    isDisabled={isReportStatusPending || isRunning}
+                                >
+                                    Edit report
+                                </DropdownItem>
+                                <Divider component="li" key="edit-execution-separator" />
+                                <DropdownItem
+                                    key="Send report"
+                                    onClick={() => runReport(reportId, 'EMAIL')}
+                                    isDisabled={
+                                        isReportStatusPending ||
+                                        isRunning ||
+                                        reportConfiguration.notifiers.length === 0
+                                    }
+                                    description={
+                                        reportConfiguration.notifiers.length === 0
+                                            ? 'No delivery destinations set'
+                                            : ''
+                                    }
+                                >
+                                    Send report
+                                </DropdownItem>
+                                <DropdownItem
+                                    key="Generate download"
+                                    onClick={() => runReport(reportId, 'DOWNLOAD')}
+                                    isDisabled={isReportStatusPending || isRunning}
+                                >
+                                    Generate download
+                                </DropdownItem>
+                                <DropdownItem
+                                    key="Clone report"
+                                    onClick={() => {
+                                        navigate(`${vulnReportPageURL}?action=clone`);
+                                    }}
+                                >
+                                    Clone report
+                                </DropdownItem>
+                                <Divider component="li" key="execution-danger-separator" />
+                                <DropdownItem
+                                    key="Delete report"
+                                    className="pf-v5-u-danger-color-100"
+                                    onClick={() => {
+                                        openDeleteModal([reportConfiguration.id]);
+                                    }}
+                                    isDisabled={isReportStatusPending || isRunning}
+                                >
+                                    Delete report
+                                </DropdownItem>
+                            </MenuDropdown>
                         </FlexItem>
                     )}
                 </Flex>

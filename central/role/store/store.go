@@ -40,6 +40,7 @@ type SimpleAccessScopeStore interface {
 //go:generate mockgen-wrapper
 type RoleStore interface {
 	Get(ctx context.Context, id string) (*storage.Role, bool, error)
+	GetMany(ctx context.Context, identifiers []string) ([]*storage.Role, []int, error)
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	Upsert(ctx context.Context, obj *storage.Role) error

@@ -9,18 +9,19 @@ const pluginESLint = require('@eslint/js'); // eslint-disable-line import/no-ext
 const pluginJSON = require('@eslint/json').default;
 const pluginESLintComments = require('eslint-plugin-eslint-comments');
 const pluginImport = require('eslint-plugin-import');
-const pluginJest = require('eslint-plugin-jest');
 const pluginJestDOM = require('eslint-plugin-jest-dom');
 const pluginPrettier = require('eslint-plugin-prettier');
 const pluginReact = require('eslint-plugin-react');
 const pluginReactHooks = require('eslint-plugin-react-hooks');
 const pluginTestingLibrary = require('eslint-plugin-testing-library');
 const pluginTypeScriptESLint = require('@typescript-eslint/eslint-plugin');
+const pluginVitest = require('@vitest/eslint-plugin');
 
-const { browser: browserGlobals, jest: jestGlobals, node: nodeGlobals } = require('globals');
+const { browser: browserGlobals, node: nodeGlobals, vitest: vitestGlobals } = require('globals');
 
 const pluginAccessibility = require('./eslint-plugins/pluginAccessibility');
 const pluginGeneric = require('./eslint-plugins/pluginGeneric');
+const pluginLimited = require('./eslint-plugins/pluginLimited');
 const pluginPatternFly = require('./eslint-plugins/pluginPatternFly');
 
 const parserAndOptions = {
@@ -38,7 +39,6 @@ module.exports = [
         ignores: [
             'build/**',
             'coverage/**',
-            'react-app-rewired/**',
             'scripts/**',
             'src/setupProxy.js',
             'src/setupTests.js',
@@ -77,6 +77,7 @@ module.exports = [
 
         linterOptions: {
             reportUnusedDisableDirectives: 'error',
+            reportUnusedInlineConfigs: 'error',
         },
 
         // Key of plugin is namespace of its rules.
@@ -112,6 +113,7 @@ module.exports = [
                 'ignorePackages',
                 {
                     js: 'never',
+                    jsx: 'never',
                     json: 'always',
                     ts: 'never',
                     tsx: 'never',
@@ -132,7 +134,7 @@ module.exports = [
             'grouped-accessor-pairs': 'error',
             'guard-for-in': 'error',
             'max-classes-per-file': ['error', 1],
-            'no-alert': 'warn',
+            'no-alert': 'error', // instead of 'warn'
             'no-caller': 'error',
             'no-constructor-return': 'error',
             'no-else-return': ['error', { allowElseIf: false }], // TODO
@@ -263,7 +265,7 @@ module.exports = [
             'no-async-promise-executor': 'error',
             'no-compare-neg-zero': 'error',
             'no-cond-assign': ['error', 'always'],
-            'no-constant-condition': 'warn',
+            'no-constant-condition': 'error', // instead of 'warn'
             'no-control-regex': 'error',
             'no-debugger': 'error',
             'no-dupe-args': 'error',
@@ -378,7 +380,6 @@ module.exports = [
             'import/first': 'error',
             'import/newline-after-import': 'error',
             'import/no-absolute-path': 'error',
-            'import/no-cycle': ['error', { maxDepth: '∞' }],
             'import/no-duplicates': 'error',
             'import/no-dynamic-require': 'error',
             // 'import/no-extraneous-dependencies' is specified in a more specific configuration
@@ -391,7 +392,6 @@ module.exports = [
             'import/no-self-import': 'error',
             'import/no-useless-path-segments': ['error', { commonjs: true }],
             'import/no-webpack-loader-syntax': 'error',
-            'import/order': ['error', { groups: [['builtin', 'external', 'internal']] }],
             // 'import/prefer-default-export' is intentional omission
 
             // Turn on rules from airbnb style config that are not in ESLint recommended.
@@ -425,7 +425,6 @@ module.exports = [
             'no-bitwise': 'error',
             'no-continue': 'error',
             'no-multi-assign': ['error'],
-            'no-nested-ternary': 'error',
             'no-plusplus': 'error',
             'no-restricted-syntax': [
                 'error',
@@ -475,13 +474,19 @@ module.exports = [
             // 'no-shadow': 'error', // fix 15 errors
             'no-undef-init': 'error',
 
+            // Turn on rules not from (or with difference options than) airbnb config.
+            'import/no-empty-named-blocks': 'error',
+            'import/order': [
+                'error',
+                { groups: [['builtin', 'external', 'internal', 'parent', 'sibling']] },
+            ],
             'prettier/prettier': 'error',
         },
 
         settings: {
-            'import/extensions': ['.js', '.ts', '.tsx'],
+            'import/extensions': ['.js', '.jsx', '.ts', '.tsx'],
             'import/parsers': {
-                '@typescript-eslint/parser': ['.js', '.ts', '.tsx'],
+                '@typescript-eslint/parser': ['.js', '.jsx', '.ts', '.tsx'],
             },
             'import/resolver': {
                 typescript: {
@@ -500,8 +505,8 @@ module.exports = [
         languageOptions: {
             ...parserAndOptions,
             globals: {
-                // https://github.com/cypress-io/eslint-plugin-cypress/blob/master/index.js
-                ...pluginCypress.environments.globals.globals,
+                // https://github.com/cypress-io/eslint-plugin-cypress/blob/master/lib/flat.js#L32-L43
+                ...pluginCypress.configs.globals.languageOptions.globals,
                 ...nodeGlobals, // mocha.config.js
             },
         },
@@ -515,15 +520,15 @@ module.exports = [
         languageOptions: {
             ...parserAndOptions,
             globals: {
-                // https://github.com/cypress-io/eslint-plugin-cypress/blob/master/index.js
-                ...pluginCypress.environments.globals.globals,
+                // https://github.com/cypress-io/eslint-plugin-cypress/blob/master/lib/flat.js#L32-L43
+                ...pluginCypress.configs.globals.languageOptions.globals,
             },
         },
 
         // Key of plugin is namespace of its rules.
         plugins: {
             cypress: pluginCypress,
-            jest: pluginJest,
+            vitest: pluginVitest,
         },
         rules: {
             // Turn off rules from ESLint recommended configuration.
@@ -531,19 +536,20 @@ module.exports = [
             // Allow chai-style expect(x).to.be.true chain.
             'no-unused-expressions': 'off',
 
-            // https://github.com/cypress-io/eslint-plugin-cypress/blob/master/lib/config/recommended.js
+            // https://github.com/cypress-io/eslint-plugin-cypress/blob/master/lib/flat.js#L45-L62
             ...pluginCypress.configs.recommended.rules,
 
             // Turn off new rules until after we fix errors in follow-up contributions.
             'cypress/no-unnecessary-waiting': 'off', // disable or fix about 8 errors
 
+            'cypress/no-chained-get': 'error',
             // 'cypress/no-force': 'error', // TODO fix errors
 
-            'jest/no-focused-tests': 'error',
+            'vitest/no-focused-tests': 'error',
         },
     },
     {
-        files: ['src/*.{ts,tsx}', 'src/*/**/*.{js,ts,tsx}'], // product files, except for unit tests (including mockData and test-utils folders)
+        files: ['src/*.{ts,tsx}', 'src/*/**/*.{js,jsx,ts,tsx}'], // product files, except for unit tests (including mockData and test-utils folders)
 
         languageOptions: {
             ...parserAndOptions,
@@ -619,7 +625,7 @@ module.exports = [
             'react/jsx-filename-extension': [
                 'error',
                 {
-                    extensions: ['.js', '.tsx'], // allow JSX in .js files
+                    extensions: ['.jsx', '.tsx'],
                 },
             ],
             'react/jsx-no-bind': [
@@ -672,7 +678,7 @@ module.exports = [
             // https://github.com/facebook/react/blob/main/packages/eslint-plugin-react-hooks/src/index.js
             ...pluginReactHooks.configs.recommended.rules,
 
-            // 'react-hooks/exhaustive-deps': 'warn', // TODO fix errors and then change from default warn to error?
+            'react-hooks/exhaustive-deps': 'error', // instead of 'warn'
         },
     },
     {
@@ -683,6 +689,7 @@ module.exports = [
         // Key of plugin is namespace of its rules.
         plugins: {
             '@typescript-eslint': pluginTypeScriptESLint,
+            import: pluginImport,
         },
         rules: {
             // https://github.com/typescript-eslint/typescript-eslint/blob/main/packages/eslint-plugin/src/configs/eslint-recommended.ts
@@ -705,6 +712,86 @@ module.exports = [
             '@typescript-eslint/require-await': 'off', // about 20 errors
 
             '@typescript-eslint/array-type': 'error',
+            '@typescript-eslint/consistent-type-exports': 'error',
+
+            'import/consistent-type-specifier-style': ['error', 'prefer-top-level'],
+        },
+    },
+    // Limited rules have ignores for specific files or folders.
+    // When ESLint plugin for Visual Studio Code has support for suppressions, they might supersede limited rules.
+    {
+        files: ['src/*/**/*.{jsx,ts,tsx}'], // product files, except for unit tests (including test-utils folder)
+        ignores: ['src/Containers/Compliance/**'],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'import/no-cycle': ['error', { maxDepth: '∞' }], // classic compliance has 7 errors
+            'limited/react-export-default': 'error',
+        },
+    },
+    {
+        files: ['**/*.{js,jsx,ts,tsx}'], // generic configuration
+        ignores: [
+            'cypress/integration/**',
+            'src/Components/**',
+            'src/Containers/AccessControl/**',
+            'src/Containers/Clusters/**',
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/ConfigManagement/**',
+            'src/Containers/Integrations/**',
+            'src/Containers/MainPage/**',
+            'src/Containers/NetworkGraph/**',
+            'src/Containers/Policies/**',
+            'src/Containers/PolicyCategories/**',
+            'src/Containers/Risk/**',
+            'src/Containers/SystemConfig/**',
+            'src/Containers/SystemHealth/**',
+            'src/Containers/Violations/**',
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/Containers/Vulnerabilities/**',
+        ],
+
+        // Separate from the following configuration to limit size of contributions.
+        rules: {
+            'sort-imports': ['error', { ignoreDeclarationSort: true }],
+        },
+    },
+    {
+        files: ['src/*/**/*.{js,jsx,ts,tsx}'], // product files, except for unit tests (including test-utils folder)
+        ignores: [
+            'src/Components/**',
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/MitreAttackVectors/**',
+            'src/Containers/Policies/**',
+            'src/Containers/PolicyCategories/**',
+            'src/Containers/PolicyManagement/**',
+            'src/Containers/Risk/**',
+            'src/Containers/Search/**',
+            'src/Containers/SystemConfig/**',
+            'src/Containers/SystemHealth/**',
+            'src/Containers/User/**',
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/Containers/Vulnerabilities/**',
+            'src/Containers/Workflow/**', // deprecated
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            '@typescript-eslint': pluginTypeScriptESLint,
+            limited: pluginLimited,
+        },
+        rules: {
+            '@typescript-eslint/consistent-type-imports': 'error',
+            'limited/no-qualified-name-react': 'error',
+            'limited/no-absolute-path-within-container-in-import': 'error',
+            'limited/no-relative-path-to-src-in-import': 'error',
         },
     },
     {
@@ -730,27 +817,29 @@ module.exports = [
                         path.join(__dirname, 'eslint.config.js'),
                         path.join(__dirname, 'postcss.config.js'),
                         path.join(__dirname, 'tailwind.config.js'), // only for @tailwindcss/forms
+                        path.join(__dirname, 'webpack.ocp-plugin.config.js'),
+                        path.join(__dirname, 'vite.config.js'),
                     ],
                 },
             ],
         },
     },
     {
-        files: ['src/**/*.test.{js,ts,tsx}'], // unit tests
+        files: ['src/**/*.test.{js,jsx,ts,tsx}'], // unit tests
 
         languageOptions: {
             ...parserAndOptions,
             globals: {
-                ...jestGlobals,
+                ...vitestGlobals,
             },
         },
 
         // Key of plugin is namespace of its rules.
         plugins: {
             import: pluginImport,
-            jest: pluginJest,
             'jest-dom': pluginJestDOM,
             'testing-library': pluginTestingLibrary,
+            vitest: pluginVitest,
         },
         rules: {
             'import/no-extraneous-dependencies': [
@@ -760,9 +849,9 @@ module.exports = [
                 },
             ],
 
-            ...pluginJest.configs.recommended.rules,
+            ...pluginVitest.configs.recommended.rules,
 
-            'jest/expect-expect': [
+            'vitest/expect-expect': [
                 'error',
                 {
                     assertFunctionNames: ['expect', 'expectSaga'], // authSagas.test.js integrationSagas.test.js

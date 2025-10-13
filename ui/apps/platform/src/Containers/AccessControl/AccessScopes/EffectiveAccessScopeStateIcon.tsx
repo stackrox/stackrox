@@ -1,4 +1,5 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Icon, Tooltip } from '@patternfly/react-core';
 import {
     BanIcon,
@@ -8,7 +9,7 @@ import {
     LongArrowAltUpIcon,
 } from '@patternfly/react-icons';
 
-import { EffectiveAccessScopeState } from 'services/AccessScopesService';
+import type { EffectiveAccessScopeState } from 'services/AccessScopesService';
 
 const notAllowedColor = 'var(--pf-v5-global--danger-color--100)';
 const allowedColor = 'var(--pf-v5-global--success-color--100)';
@@ -107,7 +108,7 @@ const unknownState = (
     </Tooltip>
 );
 
-export type EffectiveAccessScopeStateProps = {
+export type EffectiveAccessScopeStateIconProps = {
     state: EffectiveAccessScopeState;
     isCluster: boolean;
 };
@@ -115,7 +116,7 @@ export type EffectiveAccessScopeStateProps = {
 function EffectiveAccessScopeStateIcon({
     state,
     isCluster,
-}: EffectiveAccessScopeStateProps): ReactElement {
+}: EffectiveAccessScopeStateIconProps): ReactElement {
     switch (state) {
         case 'EXCLUDED':
             return isCluster ? notAllowedCluster : notAllowedNamespace;

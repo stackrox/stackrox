@@ -98,12 +98,12 @@ func (p *pruneImpl) RemoveComplianceResourcesByCluster(ctx context.Context, clus
 // Testing
 
 // GetTestPruner provides a pruner connected to postgres for testing purposes.
-func GetTestPruner(t *testing.T, pool postgres.DB) Pruner {
+func GetTestPruner(t testing.TB, pool postgres.DB) Pruner {
 	scanSettingDataStore := compScanSetting.GetTestPostgresDataStore(t, pool)
 	integrationDataStore := compIntegration.GetTestPostgresDataStore(t, pool)
 	scanResultDataStore := scanResult.GetTestPostgresDataStore(t, pool)
 	compRuleDataStore := compRule.GetTestPostgresDataStore(t, pool)
-	profileDataStore := profile.GetTestPostgresDataStore(t, pool, nil)
+	profileDataStore := profile.GetTestPostgresDataStore(t, pool)
 	scanSettingsBindingsDataStore := scanSettingBinding.GetTestPostgresDataStore(t, pool)
 	scanDataStore := scan.GetTestPostgresDataStore(t, pool)
 	suitesDataStore := suites.GetTestPostgresDataStore(t, pool)

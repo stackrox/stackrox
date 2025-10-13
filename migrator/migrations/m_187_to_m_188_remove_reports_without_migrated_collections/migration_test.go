@@ -61,10 +61,6 @@ func (s *migrationTestSuite) createCollectionInDB(id string) {
 	s.Require().NoError(s.gormDB.Create(c).Error)
 }
 
-func (s *migrationTestSuite) TearDownSuite() {
-	s.db.Teardown(s.T())
-}
-
 func (s *migrationTestSuite) TestMigration() {
 	var validV1Reports []string
 	var validV2Reports []string

@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/go-jose/go-jose/v3/jwt"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -16,8 +15,8 @@ import (
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	"github.com/stackrox/rox/pkg/jwt"
 	"github.com/stackrox/rox/pkg/services"
-	"github.com/stackrox/rox/sensor/common/clusterid"
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -46,13 +45,16 @@ type service struct {
 	k8sAuthnClient authenticationV1.AuthenticationV1Interface
 
 	rateLimiter *rate.Limiter
+
+	clusterID clusterIDWaiter
 }
 
-func newService(k8sClient kubernetes.Interface, namespace string) *service {
+func newService(clusterID clusterIDWaiter, k8sClient kubernetes.Interface, namespace string) *service {
 	return &service{
 		namespace:      namespace,
 		k8sAuthnClient: k8sClient.AuthenticationV1(),
 		rateLimiter:    rate.NewLimiter(maxQueryRate, maxBurstRequests),
+		clusterID:      clusterID,
 	}
 }
 
@@ -65,7 +67,10 @@ func (s *service) RegisterServiceHandler(_ context.Context, _ *runtime.ServeMux,
 }
 
 func (s *service) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, authorizer.Authorized(ctx, fullMethodName)
+	return ctx, errors.Wrapf(
+		authorizer.Authorized(ctx, fullMethodName),
+		"authorization for %q", fullMethodName,
+	)
 }
 
 func (s *service) verifyToken(ctx context.Context, token string, expectedSubject string) error {
@@ -141,7 +146,7 @@ func (s *service) verifyRequestViaIdentity(requestingServiceIdentity *storage.Se
 	// The following call will return an error if the explicit ID `clusterid.Get()` (which is always a non-wildcard
 	// id) is incompatible with the ID from cert `requestingServiceIdentity.GetId()`. In effect, the IDs need
 	// to be equal, or the latter (but not the former) needs to be a wildcard ID.
-	if _, err := centralsensor.GetClusterID(clusterid.Get(), requestingServiceIdentity.GetId()); err != nil {
+	if _, err := centralsensor.GetClusterID(s.clusterID.Get(), requestingServiceIdentity.GetId()); err != nil {
 		return false
 	}
 	return true

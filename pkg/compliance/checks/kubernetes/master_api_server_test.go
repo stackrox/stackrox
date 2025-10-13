@@ -81,7 +81,6 @@ func TestMasterAPIServerChecks(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(strings.ReplaceAll(c.name, ":", "-"), func(t *testing.T) {
-			t.Parallel()
 
 			standard := standards.NodeChecks[standards.CISKubernetes]
 			require.NotNil(t, standard)
@@ -94,7 +93,7 @@ func TestMasterAPIServerChecks(t *testing.T) {
 
 			checkResults := check.CheckFunc(mockNodeData)
 			require.Len(t, checkResults, 1)
-			assert.Equal(t, c.status, checkResults[0].State)
+			assert.Equal(t, c.status, checkResults[0].GetState())
 		})
 	}
 }

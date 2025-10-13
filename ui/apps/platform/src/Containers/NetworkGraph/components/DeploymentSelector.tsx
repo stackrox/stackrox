@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import type { ReactElement, Ref } from 'react';
 import {
     Badge,
     Button,
@@ -12,13 +13,15 @@ import {
     MenuSearch,
     MenuItem,
     MenuList,
+    MenuToggle,
     SearchInput,
     MenuSearchInput,
+    Select,
 } from '@patternfly/react-core';
-import { Select } from '@patternfly/react-core/deprecated';
+import type { MenuToggleElement } from '@patternfly/react-core';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import { NamespaceWithDeployments } from 'hooks/useFetchNamespaceDeployments';
+import type { NamespaceWithDeployments } from 'hooks/useFetchNamespaceDeployments';
 import { removeNullValues } from 'utils/removeNullValues';
 import { DeploymentIcon } from '../common/NetworkGraphIcons';
 
@@ -34,7 +37,7 @@ function DeploymentSelector({
     selectedDeployments = [],
     searchFilter,
     setSearchFilter,
-}: DeploymentSelectorProps) {
+}: DeploymentSelectorProps): ReactElement {
     const { isOpen: isDeploymentOpen, toggleSelect: toggleIsDeploymentOpen } = useSelectToggle();
     const [input, setInput] = React.useState('');
 
@@ -96,14 +99,15 @@ function DeploymentSelector({
         setSearchFilter(modifiedSearchObject);
     };
 
+    // @TODO: DeploymentSelector and NamespaceSelector have identical menu structures.
+    // Consider refactoring to avoid code duplication.
     const deploymentSelectMenu = (
-        <Menu onSelect={onDeploymentSelect} selected={selectedDeployments} isScrollable>
+        <Menu onSelect={onDeploymentSelect} selected={selectedDeployments}>
             <MenuSearch>
                 <MenuSearchInput>
                     <SearchInput
                         value={input}
                         aria-label="Filter deployments"
-                        type="search"
                         placeholder="Filter deployments..."
                         onChange={(_event, value) => handleTextInputChange(value)}
                     />
@@ -111,7 +115,7 @@ function DeploymentSelector({
             </MenuSearch>
             <Divider className="pf-v5-u-m-0" />
             <MenuContent>
-                <MenuList>
+                <MenuList className="network-graph-menu-list">
                     {filteredDeploymentSelectMenuItems.length === 0 && (
                         <MenuItem isDisabled key="no result">
                             No deployments found
@@ -133,34 +137,47 @@ function DeploymentSelector({
         </Menu>
     );
 
+    const toggle = (toggleRef: Ref<MenuToggleElement>) => (
+        <MenuToggle
+            ref={toggleRef}
+            onClick={() => toggleIsDeploymentOpen(!isDeploymentOpen)}
+            isExpanded={isDeploymentOpen}
+            isDisabled={deploymentsByNamespace.length === 0}
+            aria-label="Select deployments"
+            className="deployment-select"
+            variant="plainText"
+        >
+            <Flex alignSelf={{ default: 'alignSelfCenter' }}>
+                <FlexItem
+                    spacer={{ default: 'spacerSm' }}
+                    alignSelf={{ default: 'alignSelfCenter' }}
+                >
+                    <DeploymentIcon />
+                </FlexItem>
+                <FlexItem spacer={{ default: 'spacerSm' }}>
+                    <span style={{ position: 'relative', top: '1px' }}>Deployments</span>
+                </FlexItem>
+                {selectedDeployments.length !== 0 && (
+                    <FlexItem spacer={{ default: 'spacerSm' }}>
+                        <Badge isRead>{selectedDeployments.length}</Badge>
+                    </FlexItem>
+                )}
+            </Flex>
+        </MenuToggle>
+    );
+
     return (
         <Select
             isOpen={isDeploymentOpen}
-            onToggle={(_e, v) => toggleIsDeploymentOpen(v)}
-            className="deployment-select"
-            placeholderText={
-                <Flex alignSelf={{ default: 'alignSelfCenter' }}>
-                    <FlexItem
-                        spacer={{ default: 'spacerSm' }}
-                        alignSelf={{ default: 'alignSelfCenter' }}
-                    >
-                        <DeploymentIcon />
-                    </FlexItem>
-                    <FlexItem spacer={{ default: 'spacerSm' }}>
-                        <span style={{ position: 'relative', top: '1px' }}>Deployments</span>
-                    </FlexItem>
-                    {selectedDeployments.length !== 0 && (
-                        <FlexItem spacer={{ default: 'spacerSm' }}>
-                            <Badge isRead>{selectedDeployments.length}</Badge>
-                        </FlexItem>
-                    )}
-                </Flex>
-            }
-            toggleAriaLabel="Select deployments"
-            isDisabled={deploymentsByNamespace.length === 0}
-            isPlain
-            customContent={deploymentSelectMenu}
-        />
+            onOpenChange={(nextOpen: boolean) => toggleIsDeploymentOpen(nextOpen)}
+            toggle={toggle}
+            popperProps={{
+                maxWidth: '400px',
+                direction: 'down',
+            }}
+        >
+            {deploymentSelectMenu}
+        </Select>
     );
 }
 

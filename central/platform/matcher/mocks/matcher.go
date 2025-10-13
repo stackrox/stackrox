@@ -11,6 +11,7 @@ package mocks
 
 import (
 	reflect "reflect"
+	regexp "regexp"
 
 	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
@@ -68,4 +69,16 @@ func (m *MockPlatformMatcher) MatchDeployment(deployment *storage.Deployment) (b
 func (mr *MockPlatformMatcherMockRecorder) MatchDeployment(deployment any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MatchDeployment", reflect.TypeOf((*MockPlatformMatcher)(nil).MatchDeployment), deployment)
+}
+
+// SetRegexes mocks base method.
+func (m *MockPlatformMatcher) SetRegexes(regexes []*regexp.Regexp) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetRegexes", regexes)
+}
+
+// SetRegexes indicates an expected call of SetRegexes.
+func (mr *MockPlatformMatcherMockRecorder) SetRegexes(regexes any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRegexes", reflect.TypeOf((*MockPlatformMatcher)(nil).SetRegexes), regexes)
 }

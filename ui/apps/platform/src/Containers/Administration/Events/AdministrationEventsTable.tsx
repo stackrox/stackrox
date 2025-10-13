@@ -1,16 +1,17 @@
-import React, { ReactElement } from 'react';
-import { Link } from 'react-router-dom';
+import React from 'react';
+import type { ReactElement } from 'react';
+import { Link } from 'react-router-dom-v5-compat';
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import IconText from 'Components/PatternFly/IconText/IconText';
-import { UseURLSortResult } from 'hooks/useURLSort';
+import type { UseURLSortResult } from 'hooks/useURLSort';
 import {
-    AdministrationEvent,
     hasAdministrationEventsFilter,
     lastOccurredAtField,
     numOccurrencesField,
 } from 'services/AdministrationEventsService';
-import { SearchFilter } from 'types/search';
+import type { AdministrationEvent } from 'services/AdministrationEventsService';
+import type { SearchFilter } from 'types/search';
 
 import { getLevelIcon, getLevelText } from './AdministrationEvent';
 import AdministrationEventHintMessage from './AdministrationEventHintMessage';

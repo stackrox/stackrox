@@ -13,7 +13,6 @@ import (
 )
 
 func TestKernelSupportAvailableApi(t *testing.T) {
-	t.Parallel()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -26,5 +25,5 @@ func TestKernelSupportAvailableApi(t *testing.T) {
 	// Central in CI is deployed in online mode, hence the expectation is
 	// that kernel support is available via the HTTP download site.
 	assert.NoError(t, err)
-	assert.True(t, resp.KernelSupportAvailable)
+	assert.True(t, resp.GetKernelSupportAvailable())
 }

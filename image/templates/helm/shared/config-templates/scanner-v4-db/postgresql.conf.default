@@ -30,11 +30,10 @@ ssl_key_file = '/run/secrets/stackrox.io/certs/server.key'
 
 # - Memory -
 
-# Keep this in sync with the shared-memory volume in the
-# templates/02-scanner-v4-07-db-deployment.yaml
 shared_buffers = 750MB
 work_mem = 16MB
 maintenance_work_mem = 128MB
+autovacuum_work_mem = 256MB
 dynamic_shared_memory_type = posix
 
 #------------------------------------------------------------------------------
@@ -47,11 +46,28 @@ max_wal_size = 3GB
 min_wal_size = 80MB
 
 #------------------------------------------------------------------------------
+# AUTOMATIC VACUUMING
+#------------------------------------------------------------------------------
+
+autovacuum_max_workers = 2
+
+#------------------------------------------------------------------------------
 # REPORTING AND LOGGING
 #------------------------------------------------------------------------------
 
+# - When to Log -
+
+log_min_duration_statement = 1min
+
 # - What to Log -
 
+log_autovacuum_min_duration = 500ms
+log_checkpoints = 'on'
+log_connections = 'on'
+log_disconnections = 'on'
+log_lock_waits = 'on'
+log_parameter_max_length = 0
+log_temp_files = 1024
 log_timezone = 'Etc/UTC'
 
 #------------------------------------------------------------------------------

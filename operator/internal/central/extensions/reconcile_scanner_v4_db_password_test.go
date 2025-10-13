@@ -2,6 +2,7 @@ package extensions
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/operator/internal/common/extensions"
 	"github.com/stackrox/rox/operator/internal/types"
@@ -11,7 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func verifyScannerV4DBPassword(t *testing.T, data types.SecretDataMap) {
+func verifyScannerV4DBPassword(t *testing.T, data types.SecretDataMap, _ *time.Time) {
 	assert.NotEmpty(t, data[extensions.ScannerV4DBPasswordKey])
 }
 
@@ -90,7 +91,6 @@ func TestReconcileScannerV4DBPassword(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 
 			testSecretReconciliation(t, reconcileScannerV4DBPassword, c)
 		})

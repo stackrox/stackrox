@@ -394,7 +394,7 @@ func (resolver *nodeResolver) nodeScopeContext(ctx context.Context) context.Cont
 	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_NODES,
-		ID:    resolver.data.GetId(),
+		IDs:   []string{resolver.data.GetId()},
 	})
 }
 

@@ -30,7 +30,7 @@ message ProcessIndicator {
   string cluster_id = 7; // @gotags: search:"Cluster ID,store,hidden" policy:",prefer-parent" sql:"type(uuid)"
   string namespace = 8; // @gotags: search:"Namespace,store,hidden" policy:",prefer-parent"
 
-  google.protobuf.Timestamp container_start_time = 9;
+  google.protobuf.Timestamp container_start_time = 9; // @gotags: search:"Process Container Start Time"
 
   string image_id = 12;
 }

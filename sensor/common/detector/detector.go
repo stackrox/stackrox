@@ -65,13 +65,12 @@ type Detector interface {
 	ProcessIndicator(ctx context.Context, indicator *storage.ProcessIndicator)
 	ProcessNetworkFlow(ctx context.Context, flow *storage.NetworkFlow)
 	ProcessPolicySync(ctx context.Context, sync *central.PolicySync) error
-	ProcessReassessPolicies() error
 	ProcessReprocessDeployments() error
 	ProcessUpdatedImage(image *storage.Image) error
 }
 
 // New returns a new detector
-func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.SettingsManager,
+func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.SettingsManager,
 	deploymentStore store.DeploymentStore, serviceAccountStore store.ServiceAccountStore, cache cache.Image, auditLogEvents chan *sensor.AuditEvents,
 	auditLogUpdater updater.Component, networkPolicyStore store.NetworkPolicyStore, registryStore *registry.Store, localScan *scan.LocalScan) Detector {
 	detectorStopper := concurrency.NewStopper()
@@ -115,7 +114,7 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 		deploymentAlertOutputChan: make(chan outputResult),
 		deploymentProcessingMap:   make(map[string]int64),
 
-		enricher:            newEnricher(cache, serviceAccountStore, registryStore, localScan),
+		enricher:            newEnricher(clusterID, cache, serviceAccountStore, registryStore, localScan),
 		serviceAccountStore: serviceAccountStore,
 		deploymentStore:     deploymentStore,
 		extSrcsStore:        externalsrcs.StoreInstance(),
@@ -178,6 +177,10 @@ type detectorImpl struct {
 	networkFlowsQueue *queue.Queue[*queue.FlowQueueItem]
 	indicatorsQueue   *queue.Queue[*queue.IndicatorQueueItem]
 	deploymentsQueue  queue.SimpleQueue[*queue.DeploymentQueueItem]
+}
+
+func (d *detectorImpl) Name() string {
+	return "detector.detectorImpl"
 }
 
 func (d *detectorImpl) Start() error {
@@ -255,7 +258,7 @@ func (d *detectorImpl) serializeDeployTimeOutput() {
 	}
 }
 
-func (d *detectorImpl) Stop(_ error) {
+func (d *detectorImpl) Stop() {
 	d.detectorStopper.Client().Stop()
 	d.auditStopper.Client().Stop()
 	d.serializerStopper.Client().Stop()
@@ -274,6 +277,7 @@ func (d *detectorImpl) Notify(e common.SensorComponentEvent) {
 	if !features.SensorCapturesIntermediateEvents.Enabled() {
 		return
 	}
+	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		d.indicatorsQueue.Resume()
@@ -308,18 +312,6 @@ func (d *detectorImpl) ProcessPolicySync(ctx context.Context, sync *central.Poli
 	return nil
 }
 
-// ProcessReassessPolicies clears the image caches and resets the deduper
-func (d *detectorImpl) ProcessReassessPolicies() error {
-	log.Debug("Reassess Policies triggered")
-	// Clear the image caches and make all the deployments flow back through by clearing out the hash
-	d.enricher.imageCache.RemoveAll()
-	if d.admCtrlSettingsMgr != nil {
-		d.admCtrlSettingsMgr.FlushCache()
-	}
-	d.deduper.reset()
-	return nil
-}
-
 func (d *detectorImpl) processBaselineSync(sync *central.BaselineSync) error {
 	for _, b := range sync.GetBaselines() {
 		d.baselineEval.AddBaseline(b)
@@ -336,7 +328,10 @@ func (d *detectorImpl) processNetworkBaselineSync(sync *central.NetworkBaselineS
 			errs.AddError(err)
 		}
 	}
-	return errs.ToError()
+	if err := errs.ToError(); err != nil {
+		return errors.Wrap(err, "processing network baseline sync")
+	}
+	return nil
 }
 
 // ProcessUpdatedImage updates the imageCache with a new value
@@ -365,7 +360,11 @@ func (d *detectorImpl) ProcessReprocessDeployments() error {
 	return nil
 }
 
-func (d *detectorImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (d *detectorImpl) Accepts(msg *central.MsgToSensor) bool {
+	return msg.GetBaselineSync() != nil || msg.GetNetworkBaselineSync() != nil
+}
+
+func (d *detectorImpl) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
 	switch {
 	case msg.GetBaselineSync() != nil:
 		return d.processBaselineSync(msg.GetBaselineSync())
@@ -497,19 +496,11 @@ func (d *detectorImpl) ProcessDeployment(ctx context.Context, deployment *storag
 }
 
 func (d *detectorImpl) processDeployment() {
-	for {
-		select {
-		case <-d.detectorStopper.Flow().StopRequested():
-			return
-		default:
-			item := d.deploymentsQueue.PullBlocking(d.detectorStopper.LowLevel().GetStopRequestSignal())
-			if item == nil {
-				continue
-			}
-			concurrency.WithLock(&d.deploymentDetectionLock, func() {
-				d.processDeploymentNoLock(item.Ctx, item.Deployment, item.Action)
-			})
-		}
+	ctx := d.detectorStopper.LowLevel().GetStopRequestSignal()
+	for item := range d.deploymentsQueue.Seq(ctx) {
+		concurrency.WithLock(&d.deploymentDetectionLock, func() {
+			d.processDeploymentNoLock(item.Ctx, item.Deployment, item.Action)
+		})
 	}
 }
 
@@ -678,6 +669,15 @@ func (d *detectorImpl) getNetworkFlowEntityDetails(info *storage.NetworkEntityIn
 	case storage.NetworkEntityInfo_EXTERNAL_SOURCE:
 		extsrc := d.extSrcsStore.LookupByID(info.GetId())
 		if extsrc == nil {
+			if info.GetExternalSource().GetDiscovered() {
+				// extSrcStore will contain entities provided by Central
+				// but for discovered entities, they may not exist in this store
+				// yet. In this case, we can still perform detection, but using
+				// the live data from the flow
+				return networkEntityDetails{
+					name: info.GetExternalSource().GetName(),
+				}, nil
+			}
 			return networkEntityDetails{}, errors.Wrapf(externalEntityNotFoundErr, "External source with ID: %q not found while trying to run network flow policy", info.GetId())
 		}
 		return networkEntityDetails{

@@ -27,6 +27,7 @@ func (m *GetProcessesListeningOnPortsRequest) CloneVT() *GetProcessesListeningOn
 	}
 	r := new(GetProcessesListeningOnPortsRequest)
 	r.DeploymentId = m.DeploymentId
+	r.Pagination = m.Pagination.CloneVT()
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -43,6 +44,7 @@ func (m *GetProcessesListeningOnPortsResponse) CloneVT() *GetProcessesListeningO
 		return (*GetProcessesListeningOnPortsResponse)(nil)
 	}
 	r := new(GetProcessesListeningOnPortsResponse)
+	r.TotalListeningEndpoints = m.TotalListeningEndpoints
 	if rhs := m.ListeningEndpoints; rhs != nil {
 		tmpContainer := make([]*storage.ProcessListeningOnPort, len(rhs))
 		for k, v := range rhs {
@@ -74,6 +76,9 @@ func (this *GetProcessesListeningOnPortsRequest) EqualVT(that *GetProcessesListe
 		return false
 	}
 	if this.DeploymentId != that.DeploymentId {
+		return false
+	}
+	if !this.Pagination.EqualVT(that.Pagination) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -115,6 +120,9 @@ func (this *GetProcessesListeningOnPortsResponse) EqualVT(that *GetProcessesList
 			}
 		}
 	}
+	if this.TotalListeningEndpoints != that.TotalListeningEndpoints {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -154,6 +162,16 @@ func (m *GetProcessesListeningOnPortsRequest) MarshalToSizedBufferVT(dAtA []byte
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Pagination != nil {
+		size, err := m.Pagination.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x12
 	}
 	if len(m.DeploymentId) > 0 {
 		i -= len(m.DeploymentId)
@@ -195,6 +213,11 @@ func (m *GetProcessesListeningOnPortsResponse) MarshalToSizedBufferVT(dAtA []byt
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.TotalListeningEndpoints != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.TotalListeningEndpoints))
+		i--
+		dAtA[i] = 0x10
+	}
 	if len(m.ListeningEndpoints) > 0 {
 		for iNdEx := len(m.ListeningEndpoints) - 1; iNdEx >= 0; iNdEx-- {
 			if vtmsg, ok := interface{}(m.ListeningEndpoints[iNdEx]).(interface {
@@ -232,6 +255,10 @@ func (m *GetProcessesListeningOnPortsRequest) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
+	if m.Pagination != nil {
+		l = m.Pagination.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -253,6 +280,9 @@ func (m *GetProcessesListeningOnPortsResponse) SizeVT() (n int) {
 			}
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
+	}
+	if m.TotalListeningEndpoints != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.TotalListeningEndpoints))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -318,6 +348,42 @@ func (m *GetProcessesListeningOnPortsRequest) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.DeploymentId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Pagination", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Pagination == nil {
+				m.Pagination = &Pagination{}
+			}
+			if err := m.Pagination.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -412,6 +478,25 @@ func (m *GetProcessesListeningOnPortsResponse) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TotalListeningEndpoints", wireType)
+			}
+			m.TotalListeningEndpoints = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.TotalListeningEndpoints |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -498,6 +583,42 @@ func (m *GetProcessesListeningOnPortsRequest) UnmarshalVTUnsafe(dAtA []byte) err
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
 			m.DeploymentId = stringValue
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Pagination", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Pagination == nil {
+				m.Pagination = &Pagination{}
+			}
+			if err := m.Pagination.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -592,6 +713,25 @@ func (m *GetProcessesListeningOnPortsResponse) UnmarshalVTUnsafe(dAtA []byte) er
 				}
 			}
 			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TotalListeningEndpoints", wireType)
+			}
+			m.TotalListeningEndpoints = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.TotalListeningEndpoints |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

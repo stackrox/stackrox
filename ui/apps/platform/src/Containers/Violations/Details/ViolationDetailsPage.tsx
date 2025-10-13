@@ -1,5 +1,6 @@
-import React, { ReactElement, useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import type { ReactElement } from 'react';
+import { useParams } from 'react-router-dom-v5-compat';
 import startCase from 'lodash/startCase';
 import {
     Bullseye,
@@ -19,7 +20,8 @@ import { getClientWizardPolicy } from 'Containers/Policies/policies.utils';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import { fetchAlert } from 'services/AlertsService';
-import { Alert, isDeploymentAlert, isResourceAlert } from 'types/alert.proto';
+import { isDeploymentAlert, isResourceAlert } from 'types/alert.proto';
+import type { Alert } from 'types/alert.proto';
 import { getDateTime } from 'utils/dateUtils';
 import { VIOLATION_STATE_LABELS } from 'constants/violationStates';
 
@@ -43,7 +45,7 @@ function ViolationDetailsPage(): ReactElement {
     const [alert, setAlert] = useState<Alert | null>(null);
     const [isFetchingSelectedAlert, setIsFetchingSelectedAlert] = useState(false);
 
-    const { alertId } = useParams();
+    const { alertId } = useParams() as { alertId: string };
 
     const { filteredWorkflowView } = useFilteredWorkflowViewURLState('Full view');
 
@@ -79,13 +81,13 @@ function ViolationDetailsPage(): ReactElement {
 
     const { policy, enforcement } = alert;
     const title = policy.name || 'Unknown violation';
-    /* eslint-disable no-nested-ternary */
+
     const entityName = isResourceAlert(alert)
         ? alert.resource.clusterName
         : isDeploymentAlert(alert)
           ? alert.deployment.name
           : '';
-    /* eslint-enable no-nested-ternary */
+
     const resourceType = isResourceAlert(alert) ? alert.resource.resourceType : 'deployment';
 
     const displayedResourceType = startCase(resourceType.toLowerCase());

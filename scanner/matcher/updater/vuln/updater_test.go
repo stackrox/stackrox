@@ -21,7 +21,6 @@ import (
 	"github.com/quay/claircore/test"
 	"github.com/quay/zlog"
 	"github.com/rs/zerolog"
-	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/datastore/postgres/mocks"
 	"github.com/stackrox/rox/scanner/updater/jsonblob"
 	"github.com/stretchr/testify/assert"
@@ -64,80 +63,6 @@ func testHTTPServer(t *testing.T, content func(r *http.Request) io.ReadSeeker) (
 	return srv, now
 }
 
-func TestSingleBundleUpdate(t *testing.T) {
-	t.Setenv("ROX_SCANNER_V4_MULTI_BUNDLE", "false")
-
-	srv, now := testHTTPServer(t, func(r *http.Request) io.ReadSeeker {
-		accept := r.Header.Get("X-Scanner-V4-Accept")
-		if accept != "" {
-			t.Fatalf("X-Scanner-V4-Accept header should not be set for single-bundle")
-		}
-		return strings.NewReader("test")
-	})
-
-	locker := &testLocker{
-		locker: updates.NewLocalLockSource(),
-		fail:   true,
-	}
-	store := mocks.NewMockMatcherStore(gomock.NewController(t))
-	metadataStore := mocks.NewMockMatcherMetadataStore(gomock.NewController(t))
-	u := &Updater{
-		locker:        locker,
-		store:         store,
-		metadataStore: metadataStore,
-		client:        srv.Client(),
-		url:           srv.URL,
-		root:          t.TempDir(),
-		skipGC:        false,
-		importFunc: func(_ context.Context, _ io.Reader) error {
-			return nil
-		},
-		retryDelay:  1 * time.Second,
-		retryMax:    1,
-		distManager: newDistManager(store),
-	}
-
-	// Skip update when locking fails.
-	err := u.Update(context.Background())
-	assert.NoError(t, err)
-
-	locker.fail = false
-
-	dists := []claircore.Distribution{
-		{
-			ID: "0",
-		},
-		{
-			ID: "1",
-		},
-	}
-
-	// Successful update.
-	metadataStore.EXPECT().
-		GetLastVulnerabilityUpdate(gomock.Any()).
-		Return(now.Add(-time.Minute), nil)
-	metadataStore.EXPECT().
-		SetLastVulnerabilityUpdate(gomock.Any(), gomock.Eq(postgres.SingleBundleUpdateKey), now).
-		Return(nil)
-	store.EXPECT().
-		GC(gomock.Any(), gomock.Any()).
-		Return(int64(0), nil)
-	store.EXPECT().
-		Distributions(gomock.Any()).
-		Return(dists, nil)
-	err = u.Update(context.Background())
-	assert.NoError(t, err)
-	assert.Equal(t, dists, u.KnownDistributions())
-
-	// No update.
-	metadataStore.EXPECT().
-		GetLastVulnerabilityUpdate(gomock.Any()).
-		Return(now.Add(time.Minute), nil)
-	err = u.Update(context.Background())
-	assert.NoError(t, err)
-	assert.Equal(t, dists, u.KnownDistributions())
-}
-
 func TestMultiBundleUpdate(t *testing.T) {
 	t.Setenv("ROX_SCANNER_V4_MULTI_BUNDLE", "true")
 
@@ -167,7 +92,7 @@ func TestMultiBundleUpdate(t *testing.T) {
 		store:         store,
 		metadataStore: metadataStore,
 		client:        srv.Client(),
-		url:           srv.URL,
+		urls:          []string{srv.URL},
 		root:          t.TempDir(),
 		skipGC:        false,
 		importFunc:    func(_ context.Context, _ io.Reader) error { return nil },
@@ -229,7 +154,7 @@ func TestFetch(t *testing.T) {
 
 	u := &Updater{
 		client:     srv.Client(),
-		url:        srv.URL,
+		urls:       []string{srv.URL},
 		root:       t.TempDir(),
 		retryDelay: 1 * time.Second,
 		retryMax:   1,
@@ -252,6 +177,67 @@ func TestFetch(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, f)
 	assert.Equal(t, time.Time{}, timestamp)
+}
+
+func TestFetchRCBundle(t *testing.T) {
+	var paths []string
+	now, err := http.ParseTime(time.Now().UTC().Format(http.TimeFormat))
+	require.NoError(t, err)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		paths = append(paths, r.URL.Path)
+		if r.URL.Path == "/v1-rc/vulnerabilities.zip" {
+			http.ServeContent(w, r, "test-file", now, strings.NewReader("rc"))
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	t.Cleanup(srv.Close)
+
+	u := &Updater{
+		client:     srv.Client(),
+		urls:       []string{srv.URL + "/v1-rc/vulnerabilities.zip", srv.URL + "/v1/vulnerabilities.zip"},
+		root:       t.TempDir(),
+		retryDelay: 1 * time.Second,
+		retryMax:   1,
+	}
+
+	f, timestamp, err := u.fetch(context.Background(), time.Time{})
+	require.NoError(t, err)
+	assert.NotNil(t, f)
+	assert.Equal(t, now, timestamp)
+	assert.Equal(t, []string{"/v1-rc/vulnerabilities.zip"}, paths)
+}
+
+func TestFetchRCBundleFallback(t *testing.T) {
+	var paths []string
+	now, err := http.ParseTime(time.Now().UTC().Format(http.TimeFormat))
+	require.NoError(t, err)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		paths = append(paths, r.URL.Path)
+		switch r.URL.Path {
+		case "/v1-rc/vulnerabilities.zip":
+			http.NotFound(w, r)
+		case "/v1/vulnerabilities.zip":
+			http.ServeContent(w, r, "test-file", now, strings.NewReader("ga"))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	u := &Updater{
+		client:     srv.Client(),
+		urls:       []string{srv.URL + "/v1-rc/vulnerabilities.zip", srv.URL + "/v1/vulnerabilities.zip"},
+		root:       t.TempDir(),
+		retryDelay: 1 * time.Second,
+		retryMax:   1,
+	}
+
+	f, timestamp, err := u.fetch(context.Background(), time.Time{})
+	require.NoError(t, err)
+	assert.NotNil(t, f)
+	assert.Equal(t, now, timestamp)
+	assert.Equal(t, []string{"/v1-rc/vulnerabilities.zip", "/v1/vulnerabilities.zip"}, paths)
 }
 
 func TestUpdater_Initialized(t *testing.T) {

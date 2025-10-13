@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync/atomic"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -39,18 +40,24 @@ type eventPipeline struct {
 	cancelContext context.CancelFunc
 }
 
+func (p *eventPipeline) Name() string {
+	return "eventpipeline.eventPipeline"
+}
+
 // Capabilities implements common.SensorComponent
 func (*eventPipeline) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
+func (p *eventPipeline) Accepts(msg *central.MsgToSensor) bool {
+	return msg.GetPolicySync() != nil || msg.GetUpdatedImage() != nil || msg.GetReprocessDeployments() != nil || msg.GetReprocessDeployment() != nil || msg.GetInvalidateImageCache() != nil
+}
+
 // ProcessMessage implements common.SensorComponent
-func (p *eventPipeline) ProcessMessage(msg *central.MsgToSensor) error {
+func (p *eventPipeline) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
 	switch {
 	case msg.GetPolicySync() != nil:
 		return p.processPolicySync(msg.GetPolicySync())
-	case msg.GetReassessPolicies() != nil:
-		return p.processReassessPolicies()
 	case msg.GetUpdatedImage() != nil:
 		return p.processUpdatedImage(msg.GetUpdatedImage())
 	case msg.GetReprocessDeployments() != nil:
@@ -93,11 +100,11 @@ func (p *eventPipeline) Start() error {
 	// The order is important here, we need to start the components
 	// that receive messages from other components first
 	if err := p.output.Start(); err != nil {
-		return err
+		return errors.Wrap(err, "starting output component")
 	}
 
 	if err := p.resolver.Start(); err != nil {
-		return err
+		return errors.Wrap(err, "starting resolver component")
 	}
 
 	go p.forwardMessages()
@@ -105,7 +112,7 @@ func (p *eventPipeline) Start() error {
 }
 
 // Stop implements common.SensorComponent
-func (p *eventPipeline) Stop(_ error) {
+func (p *eventPipeline) Stop() {
 	if !p.stopper.Client().Stopped().IsDone() {
 		defer func() {
 			_ = p.stopper.Client().Stopped().Wait()
@@ -113,9 +120,9 @@ func (p *eventPipeline) Stop(_ error) {
 	}
 	// The order is important here, we need to stop the components
 	// that send messages to other components first
-	p.listener.Stop(nil)
-	p.resolver.Stop(nil)
-	p.output.Stop(nil)
+	p.listener.Stop()
+	p.resolver.Stop()
+	p.output.Stop()
 	p.stopper.Client().Stop()
 }
 
@@ -128,7 +135,7 @@ func (p *eventPipeline) Notify(e common.SensorComponentEvent) {
 			log.Info("Connection established: Starting Kubernetes listener")
 			// Stopping the listener here will allow Sensor to maintain the stores populated while offline.
 			// This is needed to capture runtime events in offline mode.
-			p.listener.Stop(nil)
+			p.listener.Stop()
 			// TODO(ROX-18613): use contextProvider to provide context for listener
 			p.createNewContext()
 			if err := p.listener.StartWithContext(p.context); err != nil {
@@ -163,27 +170,16 @@ func (p *eventPipeline) forwardMessages() {
 
 func (p *eventPipeline) processPolicySync(sync *central.PolicySync) error {
 	log.Debug("PolicySync message received from central")
-	return p.detector.ProcessPolicySync(p.getCurrentContext(), sync)
-}
-
-func (p *eventPipeline) processReassessPolicies() error {
-	log.Debug("ReassessPolicies message received from central")
-	if err := p.detector.ProcessReassessPolicies(); err != nil {
-		return err
+	if err := p.detector.ProcessPolicySync(p.getCurrentContext(), sync); err != nil {
+		return errors.Wrap(err, "processing policy sync")
 	}
-	msg := component.NewEvent()
-	// TODO(ROX-14310): Add WithSkipResolving to the DeploymentResolution (Revert: https://github.com/stackrox/stackrox/pull/5551)
-	msg.AddDeploymentReference(resolver.ResolveAllDeployments(),
-		component.WithForceDetection())
-	msg.Context = p.getCurrentContext()
-	p.resolver.Send(msg)
 	return nil
 }
 
 func (p *eventPipeline) processReprocessDeployments() error {
 	log.Debug("ReprocessDeployments message received from central")
 	if err := p.detector.ProcessReprocessDeployments(); err != nil {
-		return err
+		return errors.Wrap(err, "reprocessing deployments")
 	}
 	msg := component.NewEvent()
 	// TODO(ROX-14310): Add WithSkipResolving to the DeploymentResolution (Revert: https://github.com/stackrox/stackrox/pull/5551)
@@ -197,7 +193,7 @@ func (p *eventPipeline) processReprocessDeployments() error {
 func (p *eventPipeline) processUpdatedImage(image *storage.Image) error {
 	log.Debugf("UpdatedImage message received from central: image name: %s, number of components: %d", image.GetName().GetFullName(), image.GetComponents())
 	if err := p.detector.ProcessUpdatedImage(image); err != nil {
-		return err
+		return errors.Wrap(err, "updating image")
 	}
 	msg := component.NewEvent()
 	msg.AddDeploymentReference(resolver.ResolveDeploymentsByImages(image),
@@ -211,7 +207,7 @@ func (p *eventPipeline) processUpdatedImage(image *storage.Image) error {
 func (p *eventPipeline) processReprocessDeployment(req *central.ReprocessDeployment) error {
 	log.Debug("ReprocessDeployment message received from central")
 	if err := p.reprocessor.ProcessReprocessDeployments(req); err != nil {
-		return err
+		return errors.Wrap(err, "reprocessing deployment")
 	}
 	msg := component.NewEvent()
 	msg.AddDeploymentReference(resolver.ResolveDeploymentIds(req.GetDeploymentIds()...),
@@ -225,7 +221,7 @@ func (p *eventPipeline) processReprocessDeployment(req *central.ReprocessDeploym
 func (p *eventPipeline) processInvalidateImageCache(req *central.InvalidateImageCache) error {
 	log.Debug("InvalidateImageCache message received from central")
 	if err := p.reprocessor.ProcessInvalidateImageCache(req); err != nil {
-		return err
+		return errors.Wrap(err, "invalidating image cache")
 	}
 	keys := make([]*storage.Image, len(req.GetImageKeys()))
 	for i, image := range req.GetImageKeys() {

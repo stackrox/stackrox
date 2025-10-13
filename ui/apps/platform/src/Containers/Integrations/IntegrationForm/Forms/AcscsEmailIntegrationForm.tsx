@@ -1,16 +1,17 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { Form, PageSection, TextInput } from '@patternfly/react-core';
 import * as yup from 'yup';
 import merge from 'lodash/merge';
 
-import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
+import type { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
 
 import FormMessage from 'Components/PatternFly/FormMessage';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import useIntegrationForm from '../useIntegrationForm';
-import { IntegrationFormProps } from '../integrationFormTypes';
+import type { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';
@@ -41,7 +42,7 @@ export const defaultValues: ACSCSEmailIntegrationFormValues = {
     uiEndpoint: window.location.origin,
 };
 
-function EmailIntegrationForm({
+function AcscsEmailIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<ACSCSEmailIntegration>): ReactElement {
@@ -157,4 +158,4 @@ function EmailIntegrationForm({
     );
 }
 
-export default EmailIntegrationForm;
+export default AcscsEmailIntegrationForm;

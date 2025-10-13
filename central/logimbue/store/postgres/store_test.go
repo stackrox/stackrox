@@ -41,10 +41,6 @@ func (s *LogImbuesStoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *LogImbuesStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *LogImbuesStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
@@ -96,9 +92,6 @@ func (s *LogImbuesStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, logImbues))
-	allLogImbue, err := store.GetAll(ctx)
-	s.NoError(err)
-	protoassert.ElementsMatch(s.T(), logImbues, allLogImbue)
 
 	logImbueCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

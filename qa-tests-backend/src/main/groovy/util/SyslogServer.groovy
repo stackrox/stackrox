@@ -5,7 +5,7 @@ import io.fabric8.kubernetes.client.LocalPortForward
 
 import objects.Deployment
 import objects.Service
-import orchestratormanager.OrchestratorMain
+import orchestratormanager.Kubernetes
 
 @Slf4j
 class SyslogServer {
@@ -16,7 +16,7 @@ class SyslogServer {
     private Deployment deployment
     private LocalPortForward syslogPortForward
 
-    static SyslogServer createRsyslog(OrchestratorMain orchestrator, String namespace) {
+    static SyslogServer createRsyslog(Kubernetes orchestrator, String namespace) {
         def deploymentName = "syslog-${UUID.randomUUID()}"
         def rsyslog = new SyslogServer()
         try {
@@ -65,7 +65,7 @@ class SyslogServer {
         return res
     }
 
-    void tearDown(OrchestratorMain orchestrator) {
+    void tearDown(Kubernetes orchestrator) {
         if (syslogSvc) {
             orchestrator.deleteService(syslogSvc.name, syslogSvc.namespace)
         }

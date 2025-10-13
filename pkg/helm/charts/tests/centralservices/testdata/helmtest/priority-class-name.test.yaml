@@ -6,6 +6,7 @@ tests:
   expect: |
     .deployments.central.spec.template.spec.priorityClassName | assertThat(. == null)
     .deployments["central-db"].spec.template.spec.priorityClassName | assertThat(. == null)
+    .deployments["config-controller"].spec.template.spec.priorityClassName | assertThat(. == null)
     .deployments.scanner.spec.template.spec.priorityClassName | assertThat(. == null)
     .deployments["scanner-db"].spec.template.spec.priorityClassName | assertThat(. == null)
 
@@ -15,12 +16,15 @@ tests:
       priorityClassName: ""
       db:
         priorityClassName: ""
+    configController:
+      priorityClassName: ""
     scanner:
       priorityClassName: ""
       dbPriorityClassName: ""
   expect: |
     .deployments.central.spec.template.spec.priorityClassName | assertThat(. == null)
     .deployments["central-db"].spec.template.spec.priorityClassName | assertThat(. == null)
+    .deployments["config-controller"].spec.template.spec.priorityClassName | assertThat(. == null)
     .deployments.scanner.spec.template.spec.priorityClassName | assertThat(. == null)
     .deployments["scanner-db"].spec.template.spec.priorityClassName | assertThat(. == null)
 
@@ -30,11 +34,14 @@ tests:
       priorityClassName: "central"
       db:
         priorityClassName: "central-db"
+    configController:
+      priorityClassName: "config-controller"
     scanner:
       priorityClassName: "scanner"
       dbPriorityClassName: "scanner-db"
   expect: |
     .deployments.central.spec.template.spec.priorityClassName | assertThat(. == "central")
     .deployments["central-db"].spec.template.spec.priorityClassName | assertThat(. == "central-db")
+    .deployments["config-controller"].spec.template.spec.priorityClassName | assertThat(. == "config-controller")
     .deployments.scanner.spec.template.spec.priorityClassName | assertThat(. == "scanner")
     .deployments["scanner-db"].spec.template.spec.priorityClassName | assertThat(. == "scanner-db")

@@ -18,10 +18,6 @@ var (
 	usageSAC = sac.ForResource(resources.Administration)
 )
 
-const (
-	page = 1000
-)
-
 type dataStoreImpl struct {
 	store     store.Store
 	clusterDS clusterDataStore
@@ -44,25 +40,14 @@ func (ds *dataStoreImpl) Walk(ctx context.Context, from time.Time, to time.Time,
 	}
 
 	pagination := search.NewPagination().
-		AddSortOption(search.NewSortOption(search.AdministrationUsageTimestamp)).Limit(page)
+		AddSortOption(search.NewSortOption(search.AdministrationUsageTimestamp))
 
 	query := search.NewQueryBuilder().AddTimeRangeField(
 		search.AdministrationUsageTimestamp, from, to).WithPagination(pagination).ProtoQuery()
 
-	for offset := 0; ; offset += page {
-		pagination.Offset(int32(offset))
-		units, err := ds.store.GetByQuery(ctx, query)
-		if err != nil {
-			return errors.Wrap(err, "failed to walk through usage data")
-		}
-		for _, u := range units {
-			if err := fn(u); err != nil {
-				return errors.Wrap(err, "error while processing usage data")
-			}
-		}
-		if len(units) < page {
-			break
-		}
+	err := ds.store.WalkByQuery(ctx, query, fn)
+	if err != nil {
+		return errors.Wrap(err, "error while walking through usage data")
 	}
 	return nil
 }
@@ -94,14 +79,15 @@ func (ds *dataStoreImpl) getMax(ctx context.Context, label search.FieldLabel, fr
 	query := search.NewQueryBuilder().AddTimeRangeField(
 		search.AdministrationUsageTimestamp, from, to).WithPagination(pagination).ProtoQuery()
 
-	units, err := ds.store.GetByQuery(ctx, query)
+	var unit *storage.SecuredUnits
+	err := ds.store.WalkByQuery(ctx, query, func(obj *storage.SecuredUnits) error {
+		unit = obj
+		return nil
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get maximum of usage data")
 	}
-	if len(units) == 0 {
-		return nil, nil
-	}
-	return units[0], nil
+	return unit, nil
 }
 
 // Add saves the current state of an object in storage.
@@ -109,7 +95,7 @@ func (ds *dataStoreImpl) Add(ctx context.Context, obj *storage.SecuredUnits) err
 	if err := sac.VerifyAuthzOK(usageSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
-	if obj.Id == "" {
+	if obj.GetId() == "" {
 		obj.Id = uuid.NewV4().String()
 	}
 	return errors.Wrap(ds.store.Upsert(ctx, obj), "failed to upsert usage record")

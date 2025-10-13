@@ -1,7 +1,8 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
+import type { ReactElement } from 'react';
 import { CodeBlock, CodeBlockCode, Flex } from '@patternfly/react-core';
 
-import { AdministrationEvent } from 'services/AdministrationEventsService';
+import type { AdministrationEvent } from 'services/AdministrationEventsService';
 
 import AdministrationEventHint from './AdministrationEventHint';
 

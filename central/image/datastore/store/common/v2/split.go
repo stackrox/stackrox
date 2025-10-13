@@ -8,14 +8,15 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
+// TODO(ROX-28123): Remove file
+
 // Split splits the input image into a set of parts.
-func Split(image *storage.Image, withComponents bool) ImageParts {
+func Split(image *storage.Image, withComponents bool) (ImageParts, error) {
 	parts := ImageParts{
 		Image:         image.CloneVT(),
 		ImageCVEEdges: make(map[string]*storage.ImageCVEEdge),
 	}
 
-	// These need to be called in order.
 	if withComponents {
 		parts.Children = splitComponents(parts)
 	}
@@ -24,7 +25,7 @@ func Split(image *storage.Image, withComponents bool) ImageParts {
 	if parts.Image.GetScan() != nil {
 		parts.Image.Scan.Components = nil
 	}
-	return parts
+	return parts, nil
 }
 
 func splitComponents(parts ImageParts) []ComponentParts {
@@ -75,7 +76,7 @@ func generateComponentCVEEdge(convertedComponent *storage.ImageComponent, conver
 		ImageComponentId: convertedComponent.GetId(),
 	}
 
-	if ret.IsFixable {
+	if ret.GetIsFixable() {
 		ret.HasFixedBy = &storage.ComponentCVEEdge_FixedBy{
 			FixedBy: embedded.GetFixedBy(),
 		}
@@ -83,6 +84,7 @@ func generateComponentCVEEdge(convertedComponent *storage.ImageComponent, conver
 	return ret
 }
 
+// Deprecated: replaced with equivalent functions using storage.ImageComponentV2
 // GenerateImageComponent returns top-level image component from embedded component.
 func GenerateImageComponent(os string, from *storage.EmbeddedImageScanComponent) *storage.ImageComponent {
 	ret := &storage.ImageComponent{

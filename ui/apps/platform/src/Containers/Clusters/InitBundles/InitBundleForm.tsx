@@ -1,5 +1,6 @@
-import React, { ReactElement, useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
+import { useNavigate } from 'react-router-dom-v5-compat';
 import {
     ActionGroup,
     Alert,
@@ -27,13 +28,8 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import InitBundlesHeader from './InitBundlesHeader';
 
-import {
-    InstallationKey,
-    PlatformKey,
-    downloadBundle,
-    installationOptions,
-    platformOptions,
-} from './InitBundleForm.utils';
+import { downloadBundle, installationOptions, platformOptions } from './InitBundleForm.utils';
+import type { InstallationKey, PlatformKey } from './InitBundleForm.utils';
 
 export type InitBundleFormValues = {
     installation: InstallationKey;
@@ -65,7 +61,7 @@ const validationSchema: yup.ObjectSchema<InitBundleFormValues> = yup.object().sh
 
 function InitBundleForm(): ReactElement {
     const { analyticsTrack } = useAnalytics();
-    const history = useHistory();
+    const navigate = useNavigate();
     const [errorMessage, setErrorMessage] = useState('');
     const {
         errors,
@@ -100,7 +96,7 @@ function InitBundleForm(): ReactElement {
     const { isOpen, onToggle } = useSelectToggle();
 
     function goBack() {
-        history.goBack(); // to InputBundlesTable or NoClustersPage
+        navigate(-1); // to InputBundlesTable or NoClustersPage
     }
 
     // return setWhatever solves problem reported by typescript-eslint no-floating-promises

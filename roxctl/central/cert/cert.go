@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/ioutils"
@@ -35,7 +36,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	centralCertCommand := &centralCertCommand{env: cliEnvironment}
 	cbr := &cobra.Command{
 		Use:   "cert",
-		Short: "Download certificate chain for the Central service.",
+		Short: "Download certificate chain for the Central service",
 		Long:  "Download certificate chain for the Central service or its associated ingress or load balancer, if one exists.",
 		RunE: util.RunENoArgs(func(cmd *cobra.Command) error {
 			if err := centralCertCommand.construct(cmd); err != nil {
@@ -45,7 +46,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		}),
 	}
 
-	cbr.Flags().StringVar(&centralCertCommand.filename, "output", "-", "Filename to output PEM certificate to; '-' for stdout")
+	cbr.Flags().StringVar(&centralCertCommand.filename, "output", "-", "Filename to output PEM certificate to; '-' for stdout.")
 	flags.AddTimeout(cbr)
 	flags.AddRetryTimeout(cbr)
 	return cbr
@@ -60,7 +61,7 @@ func (cmd *centralCertCommand) certs() error {
 	// Parse out the endpoint and server name for connecting to.
 	endpoint, serverName, err := cmd.env.ConnectNames()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "getting endpoint and server names")
 	}
 
 	// Connect to the given server. We're not expecting the endpoint be
@@ -71,9 +72,9 @@ func (cmd *centralCertCommand) certs() error {
 	}
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), cmd.timeout)
 	defer cancel()
-	conn, err := tlsutils.DialContext(ctx, "tcp", endpoint, &config)
+	conn, err := tlsutils.DialContextWithRetries(ctx, "tcp", endpoint, &config)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "connecting to server to retrieve central certificates")
 	}
 	defer utils.IgnoreError(conn.Close)
 
@@ -94,7 +95,7 @@ func (cmd *centralCertCommand) certs() error {
 		// Open the given filename.
 		handle, err = os.Create(cmd.filename)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "creating central certificate output file %q", cmd.filename)
 		}
 	}
 
@@ -103,9 +104,9 @@ func (cmd *centralCertCommand) certs() error {
 
 	// Write out the leaf cert in PEM format.
 	if err := writeCertPEM(handle, certs[0]); err != nil {
-		return err
+		return errors.Wrap(err, "writing certificate")
 	}
-	return handle.Close()
+	return errors.Wrap(handle.Close(), "closing certificate file")
 }
 
 func skipTLSValidation() bool {
@@ -121,7 +122,7 @@ func writeCertPEM(writer io.Writer, cert *x509.Certificate) error {
 		Bytes: cert.Raw,
 	}
 	if err := pem.Encode(writer, pemkey); err != nil {
-		return err
+		return errors.Wrap(err, "encoding certificate")
 	}
 	return nil
 }

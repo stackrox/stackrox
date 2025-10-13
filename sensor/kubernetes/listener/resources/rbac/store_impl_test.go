@@ -1010,23 +1010,20 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		name := fmt.Sprintf("%q in namespace %q should have %q permision level",
-			tc.deployment.ServiceAccount, tc.deployment.Namespace, tc.expected)
+			tc.deployment.GetServiceAccount(), tc.deployment.GetNamespace(), tc.expected)
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 			assert.Equal(t, tc.expected.String(), store.GetPermissionLevelForDeployment(tc.deployment).String())
 		})
 
 		name = fmt.Sprintf("%q in namespace %q should have NO permisions after removing roles but keeping bindings",
-			tc.deployment.ServiceAccount, tc.deployment.Namespace)
+			tc.deployment.GetServiceAccount(), tc.deployment.GetNamespace())
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 			assert.Equal(t, storage.PermissionLevel_NONE.String(), storeWithNoRoles.GetPermissionLevelForDeployment(tc.deployment).String())
 		})
 
 		name = fmt.Sprintf("%q in namespace %q should have NO permisions after removing bindings but keeping roles",
-			tc.deployment.ServiceAccount, tc.deployment.Namespace)
+			tc.deployment.GetServiceAccount(), tc.deployment.GetNamespace())
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 			assert.Equal(t, storage.PermissionLevel_NONE.String(), storeWithNoBindings.GetPermissionLevelForDeployment(tc.deployment).String())
 		})
 	}

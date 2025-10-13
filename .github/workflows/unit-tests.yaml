@@ -11,19 +11,25 @@ on:
     - opened
     - reopened
     - synchronize
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   go:
     strategy:
+      fail-fast: false
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.5
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
@@ -80,6 +86,7 @@ jobs:
 
   go-postgres:
     strategy:
+      fail-fast: false
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
         pg: [ '13', '15' ]
@@ -87,14 +94,14 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.6
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
     - name: Set Postgres version
       run: |
         echo "/usr/pgsql-${{ matrix.pg }}/bin" >> "${GITHUB_PATH}"
 
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
@@ -144,10 +151,14 @@ jobs:
   go-bench:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.5
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
+    - name: Set Postgres version
+      run: |
+        echo "/usr/pgsql-15/bin" >> "${GITHUB_PATH}"
+
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
@@ -187,10 +198,10 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.5
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -218,15 +229,58 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'ui/apps/platform/test-results/reports'
 
+  ui-component:
+    runs-on: ubuntu-latest
+    outputs:
+      new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.4.9
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v5
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Cache UI dependencies
+      uses: ./.github/actions/cache-ui-dependencies
+
+    - name: UI Component Tests
+      run: make ui-component-tests
+
+    - name: Upload Cypress test result artifacts
+      uses: ./.github/actions/upload-artifact-with-retry
+      if: always()
+      with:
+        name: Cypress test results
+        path: ui/apps/platform/cypress/test-results/
+
+    - name: Publish Test Report
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        paths: 'ui/apps/platform/cypress/test-results/reports/**/*.xml'
+
+    - name: Report junit failures in jira
+      if: (!cancelled())
+      id: junit2jira
+      uses: ./.github/actions/junit2jira
+      with:
+        create-jiras: ${{ github.event_name == 'push' }}
+        jira-token: ${{ secrets.JIRA_TOKEN }}
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+        directory: 'ui/apps/platform/cypress/test-results/reports'
+
   local-roxctl-tests:
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.5
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -264,10 +318,10 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.5
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -298,10 +352,10 @@ jobs:
   openshift-ci-unit-tests:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.5
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
@@ -312,6 +366,53 @@ jobs:
 
       - name: OpenShift CI Wrapper Unit Tests
         run: make -C .openshift-ci test
+
+  sensor-integration-tests:
+    env:
+      KUBECONFIG: "/tmp/kubeconfig"
+    runs-on: ubuntu-latest
+    outputs:
+      new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+
+    - name: Create k8s Kind Cluster
+      uses: helm/kind-action@v1
+      with:
+        kubeconfig: "${{ env.KUBECONFIG }}"
+
+    - name: Run sensor integration tests
+      run: make sensor-integration-test
+
+    - name: Generate junit report
+      if: always()
+      run: make generate-junit-reports
+
+    - name: Publish Test Report
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        paths: 'junit-reports/report.xml'
+
+    - name: Report junit failures in jira
+      if: (!cancelled())
+      id: junit2jira
+      uses: ./.github/actions/junit2jira
+      with:
+        create-jiras: ${{ github.event_name == 'push' }}
+        jira-token: ${{ secrets.JIRA_TOKEN }}
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+        directory: 'junit-reports'
 
   slack-on-unit-tests-failure:
     env:
@@ -331,18 +432,20 @@ jobs:
       - go-postgres
       - local-roxctl-tests
       - openshift-ci-unit-tests
+      - sensor-integration-tests
       - shell-unit-tests
       - ui
+      - ui-component
     permissions:
       actions: read
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Slack message
       env:
         GITHUB_CONTEXT: ${{ toJSON(github) }}
-        mention_author: ${{ needs.go.outputs.new-jiras || needs.go-postgres.outputs.new-jiras || needs.local-roxctl-tests.outputs.new-jiras || needs.ui.outputs.new-jiras || needs.go.outputs.new-jiras || needs.shell-unit-tests.outputs.new-jiras }}
+        mention_author: ${{ needs.go.outputs.new-jiras || needs.go-postgres.outputs.new-jiras || needs.local-roxctl-tests.outputs.new-jiras || needs.ui.outputs.new-jiras || needs.go.outputs.new-jiras || needs.shell-unit-tests.outputs.new-jiras || needs.sensor-integration-tests.outputs.new-jiras }}
       run: |
         source scripts/ci/lib.sh
         slack_workflow_failure

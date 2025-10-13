@@ -1,9 +1,10 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
 import { Banner, Button } from '@patternfly/react-core';
 
 import { generateCertSecretForComponent } from 'services/CertGenerationService';
 import { fetchCertExpiryForComponent } from 'services/CredentialExpiryService';
-import { CertExpiryComponent } from 'types/credentialExpiryService.proto';
+import type { CertExpiryComponent } from 'types/credentialExpiryService.proto';
 import {
     getBannerVariant,
     getCredentialExpiryPhrase,
@@ -11,7 +12,7 @@ import {
     nameOfComponent,
 } from 'utils/credentialExpiry';
 
-type CredentialExpiryProps = {
+type CredentialExpiryBannerProps = {
     component: CertExpiryComponent;
     showCertGenerateAction: boolean;
 };
@@ -19,7 +20,7 @@ type CredentialExpiryProps = {
 function CredentialExpiryBanner({
     component,
     showCertGenerateAction,
-}: CredentialExpiryProps): ReactElement | null {
+}: CredentialExpiryBannerProps): ReactElement | null {
     const [expirationDate, setExpirationDate] = useState('');
     useEffect(() => {
         fetchCertExpiryForComponent(component)

@@ -8,6 +8,7 @@ import (
 
 	cveStore "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -23,6 +24,9 @@ type ImagesStoreSuite struct {
 }
 
 func TestImagesStore(t *testing.T) {
+	if features.FlattenCVEData.Enabled() {
+		t.Skip("Flattened CVE data model is enabled.  Test is obsolete.")
+	}
 	suite.Run(t, new(ImagesStoreSuite))
 }
 
@@ -42,6 +46,14 @@ func (s *ImagesStoreSuite) TestStore() {
 	defer pgtest.CloseGormDB(s.T(), gormDB)
 	store := CreateTableAndNewStore(ctx, pool, gormDB, false)
 
+	metadata, err := store.GetManyImageMetadata(ctx, nil)
+	s.NoError(err)
+	s.Empty(metadata)
+
+	metadata, err = store.GetManyImageMetadata(ctx, []string{"missing id"})
+	s.NoError(err)
+	s.Empty(metadata)
+
 	image := fixtures.GetImage()
 	s.NoError(testutils.FullInit(image, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 	for _, comp := range image.GetScan().GetComponents() {
@@ -49,6 +61,7 @@ func (s *ImagesStoreSuite) TestStore() {
 			vuln.NvdCvss = 0
 			vuln.Epss = nil
 		}
+		comp.Architecture = ""
 	}
 
 	foundImage, exists, err := store.Get(ctx, image.GetId())
@@ -66,6 +79,7 @@ func (s *ImagesStoreSuite) TestStore() {
 			vuln.FirstSystemOccurrence = foundImage.GetLastUpdated()
 			vuln.FirstImageOccurrence = foundImage.GetLastUpdated()
 			vuln.Epss = nil
+			vuln.Advisory = nil
 		}
 	}
 
@@ -85,7 +99,7 @@ func (s *ImagesStoreSuite) TestStore() {
 	s.True(exists)
 
 	// Reconcile the timestamps that are set during upsert.
-	cloned.LastUpdated = foundImage.LastUpdated
+	cloned.LastUpdated = foundImage.GetLastUpdated()
 	protoassert.Equal(s.T(), cloned, foundImage)
 
 	s.NoError(store.Delete(ctx, image.GetId()))

@@ -1,6 +1,6 @@
-/* eslint-disable no-nested-ternary */
-import React, { ReactElement, useEffect, useState } from 'react';
-import { useHistory, useLocation, useParams } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import type { ReactElement } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom-v5-compat';
 import {
     Alert,
     AlertActionCloseButton,
@@ -12,9 +12,8 @@ import {
 } from '@patternfly/react-core';
 
 import NotFoundMessage from 'Components/NotFoundMessage';
+import usePermissions from 'hooks/usePermissions';
 import {
-    PermissionSet,
-    Role,
     createPermissionSet,
     deletePermissionSet,
     fetchPermissionSets,
@@ -22,6 +21,8 @@ import {
     fetchRolesAsArray,
     updatePermissionSet,
 } from 'services/RolesService';
+import type { PermissionSet, Role } from 'services/RolesService';
+import { isUserResource } from 'utils/traits.utils';
 
 import AccessControlDescription from '../AccessControlDescription';
 import AccessControlPageTitle from '../AccessControlPageTitle';
@@ -33,15 +34,13 @@ import { getNewPermissionSet, getCompletePermissionSet } from './permissionSets.
 import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
 import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
 import AccessControlHeading from '../AccessControlHeading';
-import usePermissions from '../../../hooks/usePermissions';
-import { isUserResource } from '../traits';
 
 const entityType = 'PERMISSION_SET';
 
 function PermissionSets(): ReactElement {
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForPage = hasReadWriteAccess('Access');
-    const history = useHistory();
+    const navigate = useNavigate();
     const { search } = useLocation();
     const queryObject = getQueryObject(search);
     const { action } = queryObject;
@@ -134,7 +133,7 @@ function PermissionSets(): ReactElement {
     }, []);
 
     function handleCreate() {
-        history.push(getEntityPath(entityType, undefined, { action: 'create' }));
+        navigate(getEntityPath(entityType, undefined, { action: 'create' }));
     }
 
     function handleDelete(idDelete: string) {
@@ -145,12 +144,12 @@ function PermissionSets(): ReactElement {
     }
 
     function handleEdit() {
-        history.push(getEntityPath(entityType, entityId, { action: 'edit' }));
+        navigate(getEntityPath(entityType, entityId, { action: 'edit' }));
     }
 
     function handleCancel() {
         // Go back from action=create to list or go back from action=update to entity.
-        history.goBack();
+        navigate(-1);
     }
 
     function handleSubmit(values: PermissionSet): Promise<null> {
@@ -160,7 +159,7 @@ function PermissionSets(): ReactElement {
                   setPermissionSets([...permissionSets, entityCreated]);
 
                   // Go back from action=create to list.
-                  history.goBack();
+                  navigate(-1);
 
                   return null; // because the form has only catch and finally
               })
@@ -171,7 +170,7 @@ function PermissionSets(): ReactElement {
                   );
 
                   // Replace path which had action=update with plain entity path.
-                  history.replace(getEntityPath(entityType, entityId));
+                  navigate(getEntityPath(entityType, entityId), { replace: true });
 
                   return null; // because the form has only catch and finally
               });

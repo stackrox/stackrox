@@ -252,7 +252,6 @@ func TestContentBytes(t *testing.T) {
 }
 
 func TestApplyRfc5322LineLengthLimit(t *testing.T) {
-	t.Parallel()
 
 	cases := map[string]struct {
 		in       string
@@ -296,7 +295,6 @@ func TestApplyRfc5322LineLengthLimit(t *testing.T) {
 }
 
 func TestApplyRfc5322TextWordWrap(t *testing.T) {
-	t.Parallel()
 
 	cases := map[string]struct {
 		in       string

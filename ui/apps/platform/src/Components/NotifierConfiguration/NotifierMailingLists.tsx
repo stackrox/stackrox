@@ -1,15 +1,13 @@
-import React, { useState, ReactElement } from 'react';
-import { Button, Flex, FlexItem, TextInput } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
-import { FormikErrors } from 'formik';
+import React, { useState } from 'react';
+import type { ReactElement } from 'react';
+import { Button, Flex, FlexItem, TextInput, SelectOption } from '@patternfly/react-core';
+import type { FormikErrors } from 'formik';
 
 import EmailNotifierModal from 'Components/EmailNotifier/EmailNotifierModal';
 import SelectSingle from 'Components/SelectSingle';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
-import {
-    NotifierIntegrationBase,
-    fetchNotifierIntegrations,
-} from 'services/NotifierIntegrationsService';
+import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
+import type { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
 
 function isEmailNotifier(notifier: NotifierIntegrationBase) {
     return notifier.type === 'email';

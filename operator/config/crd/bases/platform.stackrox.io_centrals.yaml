@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.5
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: centrals.platform.stackrox.io
 spec:
   group: platform.stackrox.io
@@ -80,16 +80,16 @@ spec:
                         description: Configures the database connection pool size.
                         properties:
                           maxConnections:
-                            default: 90
-                            description: Maximum number of connections in the connection
-                              pool.
+                            description: |-
+                              Maximum number of connections in the connection pool.
+                              The default is: 90.
                             format: int32
                             minimum: 1
                             type: integer
                           minConnections:
-                            default: 10
-                            description: Minimum number of connections in the connection
-                              pool.
+                            description: |-
+                              Minimum number of connections in the connection pool.
+                              The default is: 10.
                             format: int32
                             minimum: 1
                             type: integer
@@ -125,11 +125,9 @@ spec:
                           type: object
                         type: array
                       isEnabled:
-                        default: Default
                         description: |-
-                          Deprecated field. It is no longer necessary to specify it.
+                          Obsolete field.
                           This field will be removed in a future release.
-                          Central is configured to use PostgreSQL by default.
                         enum:
                         - Default
                         - Enabled
@@ -173,10 +171,10 @@ spec:
                               Recommended for most users.
                             properties:
                               claimName:
-                                default: central-db
                                 description: |-
                                   The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be
-                                  created. Defaults to "central-db" if not set.
+                                  created.
+                                  The default is: central-db.
                                 type: string
                               size:
                                 description: |-
@@ -347,15 +345,14 @@ spec:
                         description: Expose Central through a load balancer service.
                         properties:
                           enabled:
-                            default: false
+                            description: 'The default is: false.'
                             type: boolean
                           ip:
                             description: If you have a static IP address reserved
                               for your load balancer, you can enter it here.
                             type: string
                           port:
-                            default: 443
-                            description: Defaults to 443 if not set.
+                            description: 'The default is: 443.'
                             format: int32
                             maximum: 65535
                             minimum: 1
@@ -365,7 +362,7 @@ spec:
                         description: Expose Central through a node port.
                         properties:
                           enabled:
-                            default: false
+                            description: 'The default is: false.'
                             type: boolean
                           port:
                             description: Use this to specify an explicit node port.
@@ -379,13 +376,61 @@ spec:
                         description: Expose Central through an OpenShift route.
                         properties:
                           enabled:
-                            default: false
+                            description: |-
+                              Expose Central with a passthrough route.
+                              The default is: false.
                             type: boolean
                           host:
                             description: |-
-                              Specify a custom hostname for the central route.
-                              If unspecified, an appropriate default value will be automatically chosen by OpenShift route operator.
+                              Specify a custom hostname for the Central route.
+                              If unspecified, an appropriate default value will be automatically chosen by the OpenShift route operator.
                             type: string
+                          reencrypt:
+                            description: |-
+                              Set up a Central route with reencrypt TLS termination.
+                              For reencrypt routes, the request is terminated on the OpenShift router with a custom certificate.
+                              The request is then reencrypted by the OpenShift router and sent to Central.
+                              [user] --TLS--> [OpenShift router] --TLS--> [Central]
+                            properties:
+                              enabled:
+                                description: |-
+                                  Expose Central with a reencrypt route.
+                                  Should not be used for sensor communication.
+                                  The default is: false.
+                                type: boolean
+                              host:
+                                description: |-
+                                  Specify a custom hostname for the Central reencrypt route.
+                                  If unspecified, an appropriate default value will be automatically chosen by the OpenShift route operator.
+                                type: string
+                              tls:
+                                description: TLS settings for exposing Central via
+                                  a reencrypt Route.
+                                properties:
+                                  caCertificate:
+                                    description: |-
+                                      The PEM encoded certificate chain that may be used to establish a complete chain of trust.
+                                      Defaults to the OpenShift certificate authority.
+                                    type: string
+                                  certificate:
+                                    description: |-
+                                      The PEM encoded certificate that is served on the route. Must be a single serving
+                                      certificate instead of a certificate chain.
+                                      Defaults to a certificate signed by the OpenShift certificate authority.
+                                    type: string
+                                  destinationCACertificate:
+                                    description: |-
+                                      The CA certificate of the final destination, i.e. of Central.
+                                      Used by the OpenShift router for health checks on the secure connection.
+                                      Defaults to the Central certificate authority.
+                                    type: string
+                                  key:
+                                    description: |-
+                                      The PEM encoded private key of the certificate that is served on the route.
+                                      Defaults to a certificate signed by the OpenShift certificate authority.
+                                    type: string
+                                type: object
+                            type: object
                         type: object
                     type: object
                   hostAliases:
@@ -436,9 +481,9 @@ spec:
                       in the Central DB.
                     properties:
                       enabled:
-                        default: false
-                        description: Enables the encryption of notifier secrets stored
-                          in the Central DB.
+                        description: |-
+                          Enables the encryption of notifier secrets stored in the Central DB.
+                          The default is: false.
                         type: boolean
                     type: object
                   persistence:
@@ -446,36 +491,23 @@ spec:
                       compatibility starting from version v4.6.0.
                     properties:
                       hostPath:
-                        description: |-
-                          Stores persistent data on a directory on the host. This is not recommended, and should only
-                          be used together with a node selector (only available in YAML view).
+                        description: Obsolete unused field.
                         properties:
                           path:
                             description: The path on the host running Central.
                             type: string
                         type: object
                       persistentVolumeClaim:
-                        description: |-
-                          Uses a Kubernetes persistent volume claim (PVC) to manage the storage location of persistent data.
-                          Recommended for most users.
+                        description: Obsolete unused field.
                         properties:
                           claimName:
-                            default: stackrox-db
-                            description: |-
-                              The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be
-                              created. Defaults to "stackrox-db" if not set.
+                            description: Obsolete unused field.
                             type: string
                           size:
-                            description: |-
-                              The size of the persistent volume when created through the claim. If a claim was automatically created,
-                              this can be used after the initial deployment to resize (grow) the volume (only supported by some
-                              storage class controllers).
-                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            description: Obsolete unused field.
                             type: string
                           storageClassName:
-                            description: |-
-                              The name of the storage class to use for the PVC. If your cluster is not configured with a default storage
-                              class, you must select a value here.
+                            description: Obsolete unused field.
                             type: string
                         type: object
                     type: object
@@ -546,8 +578,9 @@ spec:
                       data to a remote storage backend.
                     properties:
                       enabled:
-                        default: true
-                        description: Specifies if Telemetry is enabled.
+                        description: |-
+                          Specifies if Telemetry is enabled.
+                          The default is: true.
                         type: boolean
                       storage:
                         description: Defines the telemetry storage backend for Central.
@@ -606,9 +639,9 @@ spec:
                 description: Config-as-Code configuration.
                 properties:
                   configAsCodeComponent:
-                    default: Enabled
-                    description: If you want to deploy the Config as Code component,
-                      set this to "Enabled"
+                    description: |-
+                      If you want to deploy the Config as Code component, set this to "Enabled"
+                      The default is: Enabled.
                     enum:
                     - Enabled
                     - Disabled
@@ -753,10 +786,10 @@ spec:
                 description: Settings related to outgoing network traffic.
                 properties:
                   connectivityPolicy:
-                    default: Online
                     description: |-
                       Configures whether Red Hat Advanced Cluster Security should run in online or offline (disconnected) mode.
                       In offline mode, automatic updates of vulnerability definitions and kernel modules are disabled.
+                      The default is: Online.
                     enum:
                     - Online
                     - Offline
@@ -796,7 +829,7 @@ spec:
                       Monitoring
                     properties:
                       enabled:
-                        default: true
+                        description: 'The default is: true.'
                         type: boolean
                     required:
                     - enabled
@@ -806,11 +839,9 @@ spec:
                 description: Network configuration.
                 properties:
                   policies:
-                    default: Enabled
-                    description: To provide security at the network level the ACS
-                      Operator creates NetworkPolicy resources by default. If you
-                      want to manage your own NetworkPolicy objects then set this
-                      to "Disabled".
+                    description: |-
+                      To provide security at the network level the ACS Operator creates NetworkPolicy resources by default. If you want to manage your own NetworkPolicy objects then set this to "Disabled".
+                      The default is: Enabled.
                     enum:
                     - Enabled
                     - Disabled
@@ -834,7 +865,7 @@ spec:
                     spec.ingress[-1]\n\t  value: |\n\t    ports:\n\t    - port: 999\n\t
                     \     protocol: TCP\n\n## Changing the value of a configMap\n\n\tapiVersion:
                     v1\n\tkind: ConfigMap\n\tname: central-endpoints\n\tpatches:\n\t-
-                    path: data\n\t  value: |\n\t    endpoints.yaml: |\n\t    disableDefault:
+                    path: data.endpoints\\.yaml:\n\t  verbatim: |\n\t    disableDefault:
                     false\n\n## Adding a container to a deployment\n\n\tapiVersion:
                     apps/v1\n\tkind: Deployment\n\tname: central\n\tpatches:\n\t  -
                     path: spec.template.spec.containers[-1]\n\t    value: |\n\t      name:
@@ -876,6 +907,12 @@ spec:
                               For delete, value should be unset.
                               For replace, path should reference an existing node.
                               All values are strings but are converted into appropriate type based on schema.
+                            type: string
+                          verbatim:
+                            description: |-
+                              Verbatim value to add, delete or replace.
+                              Same as Value, however the content is not interpreted as YAML, but treated as literal string instead.
+                              At least one of Value and Verbatim must be empty.
                             type: string
                         type: object
                       type: array
@@ -983,29 +1020,28 @@ spec:
                           autoscaling.
                         properties:
                           autoScaling:
-                            default: Enabled
                             description: |-
                               When enabled, the number of component replicas is managed dynamically based on the load, within the limits
                               specified below.
+                              The default is: Enabled.
                             enum:
                             - Enabled
                             - Disabled
                             type: string
                           maxReplicas:
-                            default: 5
+                            description: 'The default is: 5.'
                             format: int32
                             minimum: 1
                             type: integer
                           minReplicas:
-                            default: 2
+                            description: 'The default is: 2.'
                             format: int32
                             minimum: 1
                             type: integer
                           replicas:
-                            default: 3
-                            description: When autoscaling is disabled, the number
-                              of replicas will always be configured to match this
-                              value.
+                            description: |-
+                              When autoscaling is disabled, the number of replicas will always be configured to match this value.
+                              The default is: 3.
                             format: int32
                             minimum: 1
                             type: integer
@@ -1211,8 +1247,6 @@ spec:
                     type: string
                 type: object
               scannerV4:
-                default:
-                  scannerComponent: Default
                 description: Settings for the Scanner V4 component, which can run
                   in addition to the previously existing Scanner components
                 properties:
@@ -1267,10 +1301,10 @@ spec:
                               Recommended for most users.
                             properties:
                               claimName:
-                                default: scanner-v4-db
                                 description: |-
                                   The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be
-                                  created. Defaults to "scanner-v4-db" if not set.
+                                  created.
+                                  The default is: scanner-v4-db.
                                 type: string
                               size:
                                 description: |-
@@ -1484,29 +1518,28 @@ spec:
                           for this component.
                         properties:
                           autoScaling:
-                            default: Enabled
                             description: |-
                               When enabled, the number of component replicas is managed dynamically based on the load, within the limits
                               specified below.
+                              The default is: Enabled.
                             enum:
                             - Enabled
                             - Disabled
                             type: string
                           maxReplicas:
-                            default: 5
+                            description: 'The default is: 5.'
                             format: int32
                             minimum: 1
                             type: integer
                           minReplicas:
-                            default: 2
+                            description: 'The default is: 2.'
                             format: int32
                             minimum: 1
                             type: integer
                           replicas:
-                            default: 3
-                            description: When autoscaling is disabled, the number
-                              of replicas will always be configured to match this
-                              value.
+                            description: |-
+                              When autoscaling is disabled, the number of replicas will always be configured to match this value.
+                              The default is: 3.
                             format: int32
                             minimum: 1
                             type: integer
@@ -1648,29 +1681,28 @@ spec:
                           for this component.
                         properties:
                           autoScaling:
-                            default: Enabled
                             description: |-
                               When enabled, the number of component replicas is managed dynamically based on the load, within the limits
                               specified below.
+                              The default is: Enabled.
                             enum:
                             - Enabled
                             - Disabled
                             type: string
                           maxReplicas:
-                            default: 5
+                            description: 'The default is: 5.'
                             format: int32
                             minimum: 1
                             type: integer
                           minReplicas:
-                            default: 2
+                            description: 'The default is: 2.'
                             format: int32
                             minimum: 1
                             type: integer
                           replicas:
-                            default: 3
-                            description: When autoscaling is disabled, the number
-                              of replicas will always be configured to match this
-                              value.
+                            description: |-
+                              When autoscaling is disabled, the number of replicas will always be configured to match this value.
+                              The default is: 3.
                             format: int32
                             minimum: 1
                             type: integer
@@ -1733,9 +1765,11 @@ spec:
                         type: string
                     type: object
                   scannerComponent:
-                    default: Default
-                    description: If you want to deploy Scanner V4 components set this
-                      to "Enabled"
+                    description: |-
+                      Can be specified as "Enabled" or "Disabled".
+                      If this field is not specified, the following defaulting takes place:
+                      * for new installations, Scanner V4 is enabled starting with ACS 4.8;
+                      * for upgrades to 4.8 from previous releases, Scanner V4 is disabled.
                     enum:
                     - Default
                     - Enabled
@@ -1743,9 +1777,11 @@ spec:
                     type: string
                 type: object
               tls:
-                description: Allows you to specify additional trusted Root CAs.
+                description: Settings related to Transport Layer Security, such as
+                  Certificate Authorities.
                 properties:
                   additionalCAs:
+                    description: Allows you to specify additional trusted Root CAs.
                     items:
                       description: AdditionalCA defines a certificate for an additional
                         Certificate Authority.

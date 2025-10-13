@@ -47,6 +47,9 @@ func (cmd *Cmd) construct(args []string) (netpolAnalyzer, error) {
 	if cmd.exposure {
 		opts = append(opts, npguard.WithExposureAnalysis())
 	}
+	if cmd.explain {
+		opts = append(opts, npguard.WithExplanation())
+	}
 	return npguard.NewConnlistAnalyzer(opts...), nil
 }
 

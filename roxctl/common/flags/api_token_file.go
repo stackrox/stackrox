@@ -23,7 +23,7 @@ func AddAPITokenFile(c *cobra.Command) {
 		"",
 		"Use the API token in the provided file to authenticate. "+
 			"Alternatively, set the path via the ROX_API_TOKEN_FILE environment variable or "+
-			"set the token via the ROX_API_TOKEN environment variable")
+			"set the token via the ROX_API_TOKEN environment variable.")
 	apiTokenFileChanged = &c.PersistentFlags().Lookup("token-file").Changed
 }
 

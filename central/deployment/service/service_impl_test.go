@@ -28,7 +28,6 @@ func TestAuthz(t *testing.T) {
 }
 
 func TestLabelsMap(t *testing.T) {
-	t.Parallel()
 
 	cases := []struct {
 		name           string
@@ -133,7 +132,7 @@ func setupPostgresDatastore(t *testing.T) (datastore.DataStore, func()) {
 
 	mockCtrl := gomock.NewController(t)
 	riskDataStore := riskMocks.NewMockDataStore(mockCtrl)
-	ds, err := datastore.New(pool, nil, nil, nil, riskDataStore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), platformmatcher.Singleton())
+	ds, err := datastore.New(pool, nil, nil, nil, riskDataStore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl))
 	require.NoError(t, err)
 
 	closer := func() {

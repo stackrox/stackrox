@@ -25,8 +25,7 @@ import (
 func BenchmarkAlertDatabaseOps(b *testing.B) {
 	testDB := pgtest.ForT(b)
 	ctx := sac.WithAllAccess(context.Background())
-	datastore, err := GetTestPostgresDataStore(b, testDB.DB)
-	require.NoError(b, err)
+	datastore := GetTestPostgresDataStore(b, testDB.DB)
 
 	var ids []string
 	sevToCount := make(map[storage.Severity]int)
@@ -36,10 +35,9 @@ func BenchmarkAlertDatabaseOps(b *testing.B) {
 		ids = append(ids, id)
 		a := fixtures.GetAlertWithID(id)
 		a.Policy.Severity = storage.Severity(rand.Intn(5))
-		sevToCount[a.Policy.Severity]++
+		sevToCount[a.GetPolicy().GetSeverity()]++
 		require.NoError(b, datastore.UpsertAlert(ctx, a))
 	}
-	log.Info("Successfully loaded the DB")
 
 	var expected []*violationsBySeverity
 	for sev, count := range sevToCount {

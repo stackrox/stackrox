@@ -25,7 +25,7 @@ func listCRSs(cliEnvironment environment.Environment, timeout time.Duration, ret
 
 	conn, err := cliEnvironment.GRPCConnection(common.WithRetryTimeout(retryTimeout))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "establishing GRPC connection to list Cluster Registration Secrets")
 	}
 	defer utils.IgnoreError(conn.Close)
 	svc := v1.NewClusterInitServiceClient(conn)
@@ -63,7 +63,7 @@ func listCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "list",
 		Short: "List Cluster Registration Secrets",
-		Long:  "List all previously generated Cluster Registration Secrets (CRSs) for bootstrapping new Secured Clusters",
+		Long:  "List all previously generated Cluster Registration Secrets (CRSs) for bootstrapping new Secured Clusters.",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			return listCRSs(cliEnvironment, flags.Timeout(c), flags.RetryTimeout(c))
 		}),

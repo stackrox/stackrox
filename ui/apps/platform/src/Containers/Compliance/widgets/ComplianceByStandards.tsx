@@ -41,13 +41,11 @@ function ComplianceByStandards({
         );
     }
 
-    /* eslint-disable no-nested-ternary */
     const standards = !data?.results
         ? []
         : !entityType
           ? data.results
           : data.results.filter(({ scopes }) => scopes.includes(entityType));
-    /* eslint-enable no-nested-ternary */
 
     return (
         <>

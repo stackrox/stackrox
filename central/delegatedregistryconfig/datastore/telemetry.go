@@ -27,18 +27,14 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 			"Delegated Scanning Config Enabled For":                  cfg.GetEnabledFor().String(),
 			"Delegated Scanning Config Default Cluster ID Populated": cfg.GetDefaultClusterId() != "",
 		}
-		_ = phonehome.AddTotal(ctx, props, "Delegated Scanning Config Registries", func(ctx context.Context) (int, error) {
-			return len(cfg.GetRegistries()), nil
-		})
+		_ = phonehome.AddTotal(ctx, props, "Delegated Scanning Config Registries", phonehome.Len(cfg.GetRegistries()))
 		numRegistriesWithCluster := 0
 		for _, reg := range cfg.GetRegistries() {
 			if reg.GetClusterId() != "" {
 				numRegistriesWithCluster++
 			}
 		}
-		_ = phonehome.AddTotal(ctx, props, "Delegated Scanning Config Registries Cluster ID Populated", func(ctx context.Context) (int, error) {
-			return numRegistriesWithCluster, nil
-		})
+		_ = phonehome.AddTotal(ctx, props, "Delegated Scanning Config Registries Cluster ID Populated", phonehome.Constant(numRegistriesWithCluster))
 		return props, nil
 	}
 }

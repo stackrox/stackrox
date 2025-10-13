@@ -1,4 +1,4 @@
-import { AuthMachineToMachineConfig } from 'services/MachineAccessService';
+import type { AuthMachineToMachineConfig } from 'services/MachineAccessService';
 
 export type IntegrationSource =
     | 'authProviders'
@@ -16,7 +16,7 @@ export type IntegrationType =
     | SignatureIntegrationType
     | CloudSourceIntegrationType;
 
-export type AuthProviderType = 'apitoken' | 'clusterInitBundle' | 'machineAccess';
+export type AuthProviderType = 'apitoken' | 'machineAccess';
 
 // Investigate why the following occur in tableColumnDescriptor but not in integrationsList:
 /*

@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/util"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/sensor/common/trace"
 )
 
 // CentralConnectionFactory is responsible for establishing a gRPC connection between sensor
@@ -18,9 +19,14 @@ import (
 // a gRPC stream internally. This factory is now passed to sensor creation, and it can be
 // more easily mocked when writing unit/integration tests.
 type CentralConnectionFactory interface {
-	SetCentralConnectionWithRetries(ptr *util.LazyClientConn, certLoader CertLoader)
+	SetCentralConnectionWithRetries(clusterID ClusterIDPeekWriter, ptr *util.LazyClientConn, certLoader CertLoader)
 	StopSignal() concurrency.ReadOnlyErrorSignal
 	OkSignal() concurrency.ReadOnlySignal
+}
+
+type ClusterIDPeekWriter interface {
+	Set(string)
+	GetNoWait() string
 }
 
 type centralConnectionFactoryImpl struct {
@@ -73,7 +79,7 @@ func (f *centralConnectionFactoryImpl) getCentralGRPCPreferences() (*v1.Preferen
 // connection setup failed. Hence, both signals are reset here.
 // There is no guarantee that the connection to central will be ready when this function finishes!
 // Connection setup involves the configuration of certificates, parameters, and the endpoint.
-func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *util.LazyClientConn, certLoader CertLoader) {
+func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(clusterIDHandler ClusterIDPeekWriter, conn *util.LazyClientConn, certLoader CertLoader) {
 	// Both signals should not be in a triggered state at the same time.
 	// If we run into this situation something went wrong with the handling of these signals.
 	if f.stopSignal.IsDone() && f.okSignal.IsDone() {
@@ -114,7 +120,7 @@ func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *uti
 
 	// This returns a dial function, but does not call dial!
 	// Thus, we cannot treat the connection as established and ready at this point.
-	centralConnection, err := clientconn.AuthenticatedGRPCConnection(context.Background(), env.CentralEndpoint.Setting(), mtls.CentralSubject, opts...)
+	centralConnection, err := clientconn.AuthenticatedGRPCConnection(trace.Background(clusterIDHandler), env.CentralEndpoint.Setting(), mtls.CentralSubject, opts...)
 	if err != nil {
 		log.Errorf("creating the gRPC client: %v", err)
 		f.stopSignal.SignalWithErrorWrap(err, "creating the gRPC client")

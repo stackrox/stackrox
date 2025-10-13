@@ -5,7 +5,8 @@ import (
 	"reflect"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/image/datastore"
+	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	"github.com/stackrox/rox/central/imagev2/datastore/mapper/datastore"
 	imagesView "github.com/stackrox/rox/central/views/images"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,7 +23,7 @@ func init() {
 }
 
 // NewImageLoader creates a new loader for image data. If postgres is enabled, this loader holds images without scan data—components and vulns.
-func NewImageLoader(ds datastore.DataStore, imageView imagesView.ImageView) ImageLoader {
+func NewImageLoader(ds imageDatastore.DataStore, imageView imagesView.ImageView) ImageLoader {
 	return &imageLoaderImpl{
 		loaded:    make(map[string]*storage.Image),
 		ds:        ds,
@@ -55,7 +56,7 @@ type imageLoaderImpl struct {
 	lock   sync.RWMutex
 	loaded map[string]*storage.Image
 
-	ds        datastore.DataStore
+	ds        imageDatastore.DataStore
 	imageView imagesView.ImageView
 }
 
@@ -111,7 +112,7 @@ func (idl *imageLoaderImpl) FromQuery(ctx context.Context, query *v1.Query) ([]*
 	if err != nil {
 		return nil, err
 	}
-	return idl.FromIDs(ctx, responsesToIDs(responses))
+	return idl.FromIDs(ctx, responsesToImageIDs(responses))
 }
 
 func (idl *imageLoaderImpl) CountFromQuery(ctx context.Context, query *v1.Query) (int32, error) {
@@ -170,7 +171,7 @@ func (idl *imageLoaderImpl) readAll(ids []string) (images []*storage.Image, miss
 	return
 }
 
-func responsesToIDs(responses []imagesView.ImageCore) []string {
+func responsesToImageIDs(responses []imagesView.ImageCore) []string {
 	ids := make([]string, 0, len(responses))
 	for _, r := range responses {
 		ids = append(ids, r.GetImageID())

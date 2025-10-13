@@ -21,13 +21,13 @@ import (
 func applyRevokeCRSs(ctx context.Context, cliEnvironment environment.Environment, svc v1.ClusterInitServiceClient, idsOrNames set.StringSet) error {
 	resp, err := svc.GetCRSs(ctx, &v1.Empty{})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "getting Cluster Registration Secrets")
 	}
 
 	var revokeIds []string
 	idNames := make(map[string]string)
 
-	for _, meta := range resp.Items {
+	for _, meta := range resp.GetItems() {
 		idNames[meta.GetId()] = meta.GetName()
 		if idsOrNames.Remove(meta.GetId()) || idsOrNames.Remove(meta.GetName()) {
 			revokeIds = append(revokeIds, meta.GetId())
@@ -53,7 +53,7 @@ func printResponseResult(logger logger.Logger, idNames map[string]string, revoke
 	}
 	for _, revokeErr := range resp.GetCrsRevocationErrors() {
 		id := revokeErr.GetId()
-		logger.ErrfLn("Error revoking %s (%q): %s", id, idNames[id], revokeErr.Error)
+		logger.ErrfLn("Error revoking %s (%q): %s", id, idNames[id], revokeErr.GetError())
 	}
 
 	if len(resp.GetCrsRevocationErrors()) == 0 {
@@ -71,7 +71,7 @@ func revokeCRSs(cliEnvironment environment.Environment, idsOrNames []string,
 
 	conn, err := cliEnvironment.GRPCConnection(common.WithRetryTimeout(retryTimeout))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "establishing GRPC connection to revoke Cluster Registration Secret")
 	}
 	defer utils.IgnoreError(conn.Close)
 	svc := v1.NewClusterInitServiceClient(conn)
@@ -85,7 +85,7 @@ func revokeCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "revoke <CRS ID or name> [<CRS ID or name> ...]",
 		Short: "Revoke a Cluster Registration Secret",
-		Long:  "Revoke a Cluster Registration Secret (CRS) for bootstrapping new Secured Clusters",
+		Long:  "Revoke a Cluster Registration Secret (CRS) for bootstrapping new Secured Clusters.",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return revokeCRSs(cliEnvironment, args, flags.Timeout(cmd), flags.RetryTimeout(cmd))

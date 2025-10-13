@@ -119,7 +119,7 @@ export const callbackForPairOfDescendingPolicySeverityValuesFromElements =
         isPairOfDescendingPolicySeverityValues
     );
 
-const vulnerabilitySeverityValues = ['Low', 'Moderate', 'Important', 'Critical'];
+const vulnerabilitySeverityValues = ['Unknown', 'Low', 'Moderate', 'Important', 'Critical'];
 
 export function isValidVulnerabilitySeverityValue(value) {
     return typeof value === 'string' && vulnerabilitySeverityValues.includes(value);

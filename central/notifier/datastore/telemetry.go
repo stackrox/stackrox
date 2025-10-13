@@ -25,16 +25,6 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 			sac.ResourceScopeKeys(resources.Integration)))
 	props := make(map[string]any)
 
-	notifiers, err := Singleton().GetNotifiers(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get notifiers")
-	}
-
-	// Can safely ignore the error here since we already fetched notifiers.
-	_ = phonehome.AddTotal(ctx, props, "Notifiers", func(_ context.Context) (int, error) {
-		return len(notifiers), nil
-	})
-
 	notifierTypesCount := map[string]int{
 		pkgNotifiers.AWSSecurityHubType:    0,
 		pkgNotifiers.CSCCType:              0,
@@ -56,7 +46,9 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 		pkgNotifiers.MicrosoftSentinelType: 0,
 	}
 
-	for _, notifier := range notifiers {
+	count := 0
+	err := Singleton().ForEachNotifier(ctx, func(notifier *storage.Notifier) error {
+		count++
 		notifierTypesCount[notifier.GetType()]++
 
 		if notifier.GetType() == pkgNotifiers.AWSSecurityHubType && notifier.GetAwsSecurityHub().GetCredentials().GetStsEnabled() {
@@ -70,16 +62,23 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 		if notifier.GetType() == pkgNotifiers.MicrosoftSentinelType && notifier.GetMicrosoftSentinel().GetWifEnabled() {
 			cloudCredentialsEnabledNotifiersCount[pkgNotifiers.MicrosoftSentinelType]++
 		}
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get notifiers")
 	}
 
+	// Can safely ignore the error here since we already fetched notifiers.
+	_ = phonehome.AddTotal(ctx, props, "Notifiers", phonehome.Constant(count))
+
+	titleCase := cases.Title(language.English, cases.Compact).String
+
 	for notifierType, count := range notifierTypesCount {
-		props[fmt.Sprintf("Total %s Notifiers",
-			cases.Title(language.English, cases.Compact).String(notifierType))] = count
+		props[fmt.Sprintf("Total %s Notifiers", titleCase(notifierType))] = count
 	}
 
 	for cloudCredentialsType, count := range cloudCredentialsEnabledNotifiersCount {
-		props[fmt.Sprintf("Total STS enabled %s Notifiers",
-			cases.Title(language.English, cases.Compact).String(cloudCredentialsType))] = count
+		props[fmt.Sprintf("Total STS enabled %s Notifiers", titleCase(cloudCredentialsType))] = count
 	}
 
 	return props, nil
