@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"runtime/debug"
 	"strconv"
@@ -31,6 +30,8 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -1127,10 +1128,10 @@ func handleRowsWithCallback[T any, PT pgutils.Unmarshaler[T]](ctx context.Contex
 		msg := new(T)
 		if errUnmarshal := PT(msg).UnmarshalVTUnsafe(data); errUnmarshal != nil {
 			errList := errorhelpers.NewErrorList("Unmarshalling error")
-			errList.AddError(errUnmarshal)
-			jsonUnmarshalErr := json.Unmarshal(data, &msg)
+			errList.AddError(errors.Wrap(errUnmarshal, "Unmarshalling from bytes"))
+			jsonUnmarshalErr := protojson.Unmarshal(data, interface{}(msg).(proto.Message))
 			if jsonUnmarshalErr != nil {
-				errList.AddError(jsonUnmarshalErr)
+				errList.AddError(errors.Wrap(jsonUnmarshalErr, "Unmarshalling from json"))
 				return errList
 			}
 		}

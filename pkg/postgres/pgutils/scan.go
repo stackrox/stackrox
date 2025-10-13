@@ -1,11 +1,11 @@
 package pgutils
 
 import (
-	"encoding/json"
-
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
 // Unmarshaler is a generic interface type wrapping around types that implement protobuf Unmarshaler.
@@ -45,10 +45,10 @@ func Unmarshal[T any, PT Unmarshaler[T]](row pgx.Row) (*T, error) {
 	msg := new(T)
 	if err := PT(msg).UnmarshalVTUnsafe(data); err != nil {
 		errList := errorhelpers.NewErrorList("Unmarshalling error")
-		errList.AddError(err)
-		jsonUnmarshalErr := json.Unmarshal(data, &msg)
+		errList.AddError(errors.Wrap(err, "Unmarshalling from bytes"))
+		jsonUnmarshalErr := protojson.Unmarshal(data, interface{}(msg).(proto.Message))
 		if jsonUnmarshalErr != nil {
-			errList.AddError(jsonUnmarshalErr)
+			errList.AddError(errors.Wrap(jsonUnmarshalErr, "Unmarshalling from json"))
 			return nil, errList
 		}
 	}
