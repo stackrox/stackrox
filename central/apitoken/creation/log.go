@@ -19,9 +19,9 @@ func LogTokenCreation(id authn.Identity, md *storage.TokenMetadata) {
 
 	fields := []any{
 		logging.ErrCode(codes.APITokenCreated),
-		logging.APITokenName(md.Name),
-		logging.APITokenID(md.Id),
-		logging.Strings("roles", md.Roles),
+		logging.APITokenName(md.GetName()),
+		logging.APITokenID(md.GetId()),
+		logging.Strings("roles", md.GetRoles()),
 		logging.String("user_id", id.UID()),
 	}
 	if ap := id.ExternalAuthProvider(); ap != nil {

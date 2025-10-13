@@ -16,7 +16,7 @@ func genericKubernetesCommandlineCheck(processName string, key, target, defaultV
 			if !exists {
 				return common.NoteListf("Process %q not found on host, therefore check is not applicable", processName)
 			}
-			values := common.GetValuesForCommandFromFlagsAndConfig(process.Args, nil, key)
+			values := common.GetValuesForCommandFromFlagsAndConfig(process.GetArgs(), nil, key)
 			return evalFunc(values, key, target, defaultVal, failOverride...)
 		},
 	}
@@ -31,7 +31,7 @@ func multipleFlagsSetCheck(processName string, override common.FailOverride, key
 			}
 			var results []*storage.ComplianceResultValue_Evidence
 			for _, k := range keys {
-				values := common.GetValuesForCommandFromFlagsAndConfig(process.Args, nil, k)
+				values := common.GetValuesForCommandFromFlagsAndConfig(process.GetArgs(), nil, k)
 				if len(values) == 0 {
 					msg := fmt.Sprintf("%q is unset", k)
 					if override == nil {

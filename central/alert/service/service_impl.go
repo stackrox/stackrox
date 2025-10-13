@@ -317,7 +317,7 @@ func (s *serviceImpl) ResolveAlert(ctx context.Context, req *v1.ResolveAlertRequ
 		}
 	}
 
-	if alert.State == storage.ViolationState_ATTEMPTED || alert.LifecycleStage == storage.LifecycleStage_RUNTIME {
+	if alert.GetState() == storage.ViolationState_ATTEMPTED || alert.GetLifecycleStage() == storage.LifecycleStage_RUNTIME {
 		if err := s.changeAlertState(ctx, alert, storage.ViolationState_RESOLVED); err != nil {
 			err = errors.Wrap(err, "could not change alert state to RESOLVED")
 			log.Error(err)
@@ -425,8 +425,8 @@ func (s *serviceImpl) DeleteAlerts(ctx context.Context, request *v1.DeleteAlerts
 			return
 		}
 		if matchFieldQuery.MatchFieldQuery.GetField() == search.ViolationState.String() {
-			if matchFieldQuery.MatchFieldQuery.Value != storage.ViolationState_RESOLVED.String() {
-				err = errors.Wrapf(errox.InvalidArgs, "invalid value for violation state: %q. Only resolved alerts can be deleted", matchFieldQuery.MatchFieldQuery.Value)
+			if matchFieldQuery.MatchFieldQuery.GetValue() != storage.ViolationState_RESOLVED.String() {
+				err = errors.Wrapf(errox.InvalidArgs, "invalid value for violation state: %q. Only resolved alerts can be deleted", matchFieldQuery.MatchFieldQuery.GetValue())
 				return
 			}
 			specified = true
@@ -482,8 +482,8 @@ func alertsGroupResponseFrom(alerts []*storage.ListAlert) (output *v1.GetAlertsG
 		})
 	}
 
-	sort.Slice(output.AlertsByPolicies, func(i, j int) bool {
-		return output.AlertsByPolicies[i].GetPolicy().GetName() < output.AlertsByPolicies[j].GetPolicy().GetName()
+	sort.Slice(output.GetAlertsByPolicies(), func(i, j int) bool {
+		return output.GetAlertsByPolicies()[i].GetPolicy().GetName() < output.GetAlertsByPolicies()[j].GetPolicy().GetName()
 	})
 
 	return
@@ -514,10 +514,14 @@ func alertTimeseriesResponseFrom(alerts []*storage.ListAlert) *v1.GetAlertTimese
 				Events:   alertEvents,
 			})
 		}
-		sort.Slice(alertCluster.Severities, func(i, j int) bool { return alertCluster.Severities[i].Severity < alertCluster.Severities[j].Severity })
+		sort.Slice(alertCluster.GetSeverities(), func(i, j int) bool {
+			return alertCluster.GetSeverities()[i].GetSeverity() < alertCluster.GetSeverities()[j].GetSeverity()
+		})
 		response.Clusters = append(response.Clusters, alertCluster)
 	}
-	sort.SliceStable(response.Clusters, func(i, j int) bool { return response.Clusters[i].Cluster < response.Clusters[j].Cluster })
+	sort.SliceStable(response.GetClusters(), func(i, j int) bool {
+		return response.GetClusters()[i].GetCluster() < response.GetClusters()[j].GetCluster()
+	})
 	return response
 }
 
@@ -538,7 +542,7 @@ func countAlerts(alerts []search.Result, groupByFunc func(result search.Result) 
 		}
 
 		sort.Slice(bySeverity, func(i, j int) bool {
-			return bySeverity[i].Severity < bySeverity[j].Severity
+			return bySeverity[i].GetSeverity() < bySeverity[j].GetSeverity()
 		})
 
 		output.Groups = append(output.Groups, &v1.GetAlertsCountsResponse_AlertGroup{
@@ -547,8 +551,8 @@ func countAlerts(alerts []search.Result, groupByFunc func(result search.Result) 
 		})
 	}
 
-	sort.Slice(output.Groups, func(i, j int) bool {
-		return output.Groups[i].Group < output.Groups[j].Group
+	sort.Slice(output.GetGroups(), func(i, j int) bool {
+		return output.GetGroups()[i].GetGroup() < output.GetGroups()[j].GetGroup()
 	})
 
 	return

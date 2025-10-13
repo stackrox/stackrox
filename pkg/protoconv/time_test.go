@@ -58,8 +58,8 @@ func TestTimeBeforeDays(t *testing.T) {
 
 	threeDaysAgo := TimeBeforeDays(3)
 
-	nowMinusThreeDaysSeconds := now.Seconds - int64(3*24*3600)
-	deltaSeconds := threeDaysAgo.Seconds - nowMinusThreeDaysSeconds
+	nowMinusThreeDaysSeconds := now.GetSeconds() - int64(3*24*3600)
+	deltaSeconds := threeDaysAgo.GetSeconds() - nowMinusThreeDaysSeconds
 	assert.True(t, deltaSeconds >= 0)
 	assert.True(t, deltaSeconds < 3)
 }
@@ -68,8 +68,8 @@ func TestConvertMicroTSToProtobufTS(t *testing.T) {
 	time0 := timestamp.MicroTS(0)
 	timestamp0 := ConvertMicroTSToProtobufTS(time0)
 	assert.NotNil(t, timestamp0)
-	assert.Equal(t, int64(0), timestamp0.Seconds)
-	assert.Equal(t, int32(0), timestamp0.Nanos)
+	assert.Equal(t, int64(0), timestamp0.GetSeconds())
+	assert.Equal(t, int32(0), timestamp0.GetNanos())
 
 	timestamp1 := &timestamppb.Timestamp{
 		Seconds: 1518046140,
@@ -78,8 +78,8 @@ func TestConvertMicroTSToProtobufTS(t *testing.T) {
 	time1 := timestamp.FromProtobuf(timestamp1)
 	convertedTimestamp1 := ConvertMicroTSToProtobufTS(time1)
 	assert.NotNil(t, convertedTimestamp1)
-	assert.Equal(t, timestamp1.Seconds, convertedTimestamp1.Seconds)
-	assert.Equal(t, int32(123456000), convertedTimestamp1.Nanos)
+	assert.Equal(t, timestamp1.GetSeconds(), convertedTimestamp1.GetSeconds())
+	assert.Equal(t, int32(123456000), convertedTimestamp1.GetNanos())
 }
 
 func TestConvertTimestampToTimeOrDefault(t *testing.T) {

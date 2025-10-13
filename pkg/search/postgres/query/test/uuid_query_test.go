@@ -89,7 +89,7 @@ func (s *UUIDTestSuite) TestRemovePLOPsWithoutPodUID() {
 
 			expectedIDs := make([]string, 0, len(testCase.expectedResults))
 			for _, s := range testCase.expectedResults {
-				expectedIDs = append(expectedIDs, s.Id)
+				expectedIDs = append(expectedIDs, s.GetId())
 			}
 			s.ElementsMatch(actualIDs, expectedIDs)
 		})

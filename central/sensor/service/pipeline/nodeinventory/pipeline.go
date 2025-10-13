@@ -123,7 +123,7 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 func shouldDiscardMsg(node *storage.Node) bool {
 	// In a mixed environment, there might be v2-only clusters, so there is no Scanner v4 scan available for that cluster.
 	// If a cluster only ever produces v2 NodeScans, they need to be processed and persisted, even if Node Indexing is enabled.
-	if node.GetScan() == nil || node.GetScan().ScannerVersion != storage.NodeScan_SCANNER_V4 {
+	if node.GetScan() == nil || node.GetScan().GetScannerVersion() != storage.NodeScan_SCANNER_V4 {
 		return false
 	}
 	// Discard this v2 message if NodeScanning v4 and v2 are running in parallel on the same cluster.

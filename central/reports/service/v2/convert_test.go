@@ -197,7 +197,7 @@ func setAllNotifierNamesToFixedValue(reportConfig *apiV2.ReportConfiguration, na
 }
 
 func setCollectionName(reportConfig *apiV2.ReportConfiguration, name string) {
-	if reportConfig.ResourceScope != nil && reportConfig.ResourceScope.GetCollectionScope() != nil {
+	if reportConfig.GetResourceScope() != nil && reportConfig.GetResourceScope().GetCollectionScope() != nil {
 		reportConfig.ResourceScope.GetCollectionScope().CollectionName = name
 	}
 }

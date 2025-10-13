@@ -75,13 +75,13 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 	}
 
 	indexerEndpoint := DefaultIndexerEndpoint
-	if conf.IndexerEndpoint != "" {
-		indexerEndpoint = conf.IndexerEndpoint
+	if conf.GetIndexerEndpoint() != "" {
+		indexerEndpoint = conf.GetIndexerEndpoint()
 	}
 
 	matcherEndpoint := DefaultMatcherEndpoint
-	if conf.MatcherEndpoint != "" {
-		matcherEndpoint = conf.MatcherEndpoint
+	if conf.GetMatcherEndpoint() != "" {
+		matcherEndpoint = conf.GetMatcherEndpoint()
 	}
 
 	numConcurrentScans := defaultMaxConcurrentScans
@@ -306,7 +306,7 @@ func (s *scannerv4) GetNodeInventoryScan(node *storage.Node, inv *storage.NodeIn
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to create vulnerability report")
 	}
-	log.Debugf("Received Vulnerability Report with %d packages containing %d vulnerabilities", len(vr.GetContents().GetPackages()), len(vr.Vulnerabilities))
+	log.Debugf("Received Vulnerability Report with %d packages containing %d vulnerabilities", len(vr.GetContents().GetPackages()), len(vr.GetVulnerabilities()))
 	return toNodeScan(vr, node.GetOsImage()), nil
 }
 
@@ -332,13 +332,13 @@ func newNodeScanner(integration *storage.NodeIntegration) (*scannerv4, error) {
 		return nil, errors.New("scanner v4 configuration required")
 	}
 	indexerEndpoint := DefaultIndexerEndpoint
-	if conf.IndexerEndpoint != "" {
-		indexerEndpoint = conf.IndexerEndpoint
+	if conf.GetIndexerEndpoint() != "" {
+		indexerEndpoint = conf.GetIndexerEndpoint()
 	}
 
 	matcherEndpoint := DefaultMatcherEndpoint
-	if conf.MatcherEndpoint != "" {
-		matcherEndpoint = conf.MatcherEndpoint
+	if conf.GetMatcherEndpoint() != "" {
+		matcherEndpoint = conf.GetMatcherEndpoint()
 	}
 
 	numConcurrentScans := defaultMaxConcurrentScans

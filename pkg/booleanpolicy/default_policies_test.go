@@ -158,7 +158,7 @@ func (suite *DefaultPoliciesTestSuite) TestNVDCVSSCriteria() {
 	violations, err := depMatcher.MatchDeployment(nil, enhancedDeployment(deployment, suite.getImagesForDeployment(deployment)))
 	require.Len(suite.T(), violations.AlertViolations, 1)
 	require.NoError(suite.T(), err)
-	require.Contains(suite.T(), violations.AlertViolations[0].Message, "NVD CVSS")
+	require.Contains(suite.T(), violations.AlertViolations[0].GetMessage(), "NVD CVSS")
 
 }
 
@@ -358,7 +358,7 @@ func deploymentWithImage(id string, img *storage.Image) *storage.Deployment {
 	containerName := alphaOnly.ReplaceAllString(remoteSplit[len(remoteSplit)-1], "")
 	return &storage.Deployment{
 		Id:         id,
-		Containers: []*storage.Container{{Id: img.Id, Name: containerName, Image: types.ToContainerImage(img)}},
+		Containers: []*storage.Container{{Id: img.GetId(), Name: containerName, Image: types.ToContainerImage(img)}},
 	}
 }
 
@@ -964,7 +964,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	registryAccessRedhatComUnverifiedImg := suite.imageWithSignatureVerificationResults("registry.access.redhat.com/redhat/ubi8:latest",
 		[]*storage.ImageSignatureVerificationResult{
 			{
-				VerifierId: signatures.DefaultRedHatSignatureIntegration.Id,
+				VerifierId: signatures.DefaultRedHatSignatureIntegration.GetId(),
 				Status:     storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
 			},
 		},
@@ -972,7 +972,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	registryRedHatIoUnverifiedImg := suite.imageWithSignatureVerificationResults("registry.redhat.io/redhat/ubi8:latest",
 		[]*storage.ImageSignatureVerificationResult{
 			{
-				VerifierId: signatures.DefaultRedHatSignatureIntegration.Id,
+				VerifierId: signatures.DefaultRedHatSignatureIntegration.GetId(),
 				Status:     storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
 			},
 		},
@@ -981,7 +981,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	quayOCPReleaseUnverifiedImg := suite.imageWithSignatureVerificationResults("quay.io/openshift-release-dev/ocp-release:latest",
 		[]*storage.ImageSignatureVerificationResult{
 			{
-				VerifierId: signatures.DefaultRedHatSignatureIntegration.Id,
+				VerifierId: signatures.DefaultRedHatSignatureIntegration.GetId(),
 				Status:     storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
 			},
 		},
@@ -989,7 +989,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	quayOCPArtDevUnverifiedImg := suite.imageWithSignatureVerificationResults("quay.io/openshift-release-dev/ocp-v4.0-art-dev:latest",
 		[]*storage.ImageSignatureVerificationResult{
 			{
-				VerifierId: signatures.DefaultRedHatSignatureIntegration.Id,
+				VerifierId: signatures.DefaultRedHatSignatureIntegration.GetId(),
 				Status:     storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
 			},
 		},
@@ -2355,9 +2355,9 @@ func (suite *DefaultPoliciesTestSuite) TestImageOS() {
 				violations, err := depMatcher.MatchDeployment(nil, enhancedDeployment(dep, []*storage.Image{img}))
 				require.NoError(t, err)
 				if len(violations.AlertViolations) > 0 {
-					depMatched.Add(img.Scan.OperatingSystem)
+					depMatched.Add(img.GetScan().GetOperatingSystem())
 					require.Len(t, violations.AlertViolations, 1)
-					assert.Equal(t, fmt.Sprintf("Container '%s' has image with base OS '%s'", dep.Containers[0].Name, img.Scan.OperatingSystem), violations.AlertViolations[0].GetMessage())
+					assert.Equal(t, fmt.Sprintf("Container '%s' has image with base OS '%s'", dep.GetContainers()[0].GetName(), img.GetScan().GetOperatingSystem()), violations.AlertViolations[0].GetMessage())
 				}
 			}
 			assert.ElementsMatch(t, depMatched.AsSlice(), c.expectedMatches, "Got %v for policy %v; expected: %v", depMatched.AsSlice(), c.value, c.expectedMatches)
@@ -2371,9 +2371,9 @@ func (suite *DefaultPoliciesTestSuite) TestImageOS() {
 				violations, err := imgMatcher.MatchImage(nil, img)
 				require.NoError(t, err)
 				if len(violations.AlertViolations) > 0 {
-					imgMatched.Add(img.Scan.OperatingSystem)
+					imgMatched.Add(img.GetScan().GetOperatingSystem())
 					require.Len(t, violations.AlertViolations, 1)
-					assert.Equal(t, fmt.Sprintf("Image has base OS '%s'", img.Scan.OperatingSystem), violations.AlertViolations[0].GetMessage())
+					assert.Equal(t, fmt.Sprintf("Image has base OS '%s'", img.GetScan().GetOperatingSystem()), violations.AlertViolations[0].GetMessage())
 				}
 			}
 			assert.ElementsMatch(t, imgMatched.AsSlice(), c.expectedMatches, "Got %v for policy %v; expected: %v", imgMatched.AsSlice(), c.value, c.expectedMatches)
@@ -2655,9 +2655,9 @@ func (suite *DefaultPoliciesTestSuite) TestContainerName() {
 				require.NoError(t, err)
 				// No match in case we are testing for doesnotexist
 				if len(violations.AlertViolations) > 0 {
-					containerNameMatched.Add(dep.Containers[0].GetName())
+					containerNameMatched.Add(dep.GetContainers()[0].GetName())
 					require.Len(t, violations.AlertViolations, 1)
-					assert.Equal(t, fmt.Sprintf("Container has name '%s'", dep.Containers[0].GetName()), violations.AlertViolations[0].GetMessage())
+					assert.Equal(t, fmt.Sprintf("Container has name '%s'", dep.GetContainers()[0].GetName()), violations.AlertViolations[0].GetMessage())
 				}
 			}
 			assert.ElementsMatch(t, containerNameMatched.AsSlice(), c.expectedMatches, "Got %v for policy %v; expected: %v", containerNameMatched.AsSlice(), c.value, c.expectedMatches)
@@ -2717,12 +2717,12 @@ func (suite *DefaultPoliciesTestSuite) TestAllowPrivilegeEscalationPolicyCriteri
 				violations, err := depMatcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
 				require.NoError(t, err)
 				if len(violations.AlertViolations) > 0 {
-					containerNameMatched.Add(dep.Containers[0].GetName())
+					containerNameMatched.Add(dep.GetContainers()[0].GetName())
 					require.Len(t, violations.AlertViolations, 1)
 					if c.value == "true" {
-						assert.Equal(t, fmt.Sprintf("Container '%s' allows privilege escalation", dep.Containers[0].GetName()), violations.AlertViolations[0].GetMessage())
+						assert.Equal(t, fmt.Sprintf("Container '%s' allows privilege escalation", dep.GetContainers()[0].GetName()), violations.AlertViolations[0].GetMessage())
 					} else {
-						assert.Equal(t, fmt.Sprintf("Container '%s' does not allow privilege escalation", dep.Containers[0].GetName()), violations.AlertViolations[0].GetMessage())
+						assert.Equal(t, fmt.Sprintf("Container '%s' does not allow privilege escalation", dep.GetContainers()[0].GetName()), violations.AlertViolations[0].GetMessage())
 					}
 				}
 			}
@@ -2761,7 +2761,7 @@ func (suite *DefaultPoliciesTestSuite) TestAutomountServiceAccountToken() {
 		dep.Name = d.DeploymentName
 		dep.ServiceAccount = d.ServiceAccountName
 		dep.AutomountServiceAccountToken = d.AutomountServiceAccountTokens
-		deployments[dep.Name] = dep
+		deployments[dep.GetName()] = dep
 	}
 
 	automountServiceAccountTokenPolicyGroup := &storage.PolicyGroup{
@@ -2939,9 +2939,9 @@ func (suite *DefaultPoliciesTestSuite) TestNamespace() {
 				require.NoError(t, err)
 				// No match in case we are testing for doesnotexist
 				if len(violations.AlertViolations) > 0 {
-					namespacesMatched.Add(dep.Namespace)
+					namespacesMatched.Add(dep.GetNamespace())
 					require.Len(t, violations.AlertViolations, 1)
-					assert.Equal(t, fmt.Sprintf("Namespace has name '%s'", dep.Namespace), violations.AlertViolations[0].GetMessage())
+					assert.Equal(t, fmt.Sprintf("Namespace has name '%s'", dep.GetNamespace()), violations.AlertViolations[0].GetMessage())
 				}
 			}
 			assert.ElementsMatch(t, namespacesMatched.AsSlice(), c.expectedMatches, "Got %v for policy %v; expected: %v", namespacesMatched.AsSlice(), c.value, c.expectedMatches)
@@ -2959,7 +2959,7 @@ func (suite *DefaultPoliciesTestSuite) TestDropCaps() {
 		for _, idx := range idxs {
 			dep.Containers[0].SecurityContext.DropCapabilities = append(dep.Containers[0].SecurityContext.DropCapabilities, testCaps[idx])
 		}
-		deployments[strings.ReplaceAll(strings.Join(dep.Containers[0].SecurityContext.DropCapabilities, ","), "SYS_", "")] = dep
+		deployments[strings.ReplaceAll(strings.Join(dep.GetContainers()[0].GetSecurityContext().GetDropCapabilities(), ","), "SYS_", "")] = dep
 	}
 
 	assertMessageMatches := func(t *testing.T, depRef string, violations []*storage.Alert_Violation) {
@@ -3037,7 +3037,7 @@ func (suite *DefaultPoliciesTestSuite) TestAddCaps() {
 		for _, idx := range idxs {
 			dep.Containers[0].SecurityContext.AddCapabilities = append(dep.Containers[0].SecurityContext.AddCapabilities, testCaps[idx])
 		}
-		deployments[strings.ReplaceAll(strings.Join(dep.Containers[0].SecurityContext.AddCapabilities, ","), "SYS_", "")] = dep
+		deployments[strings.ReplaceAll(strings.Join(dep.GetContainers()[0].GetSecurityContext().GetAddCapabilities(), ","), "SYS_", "")] = dep
 	}
 
 	for _, testCase := range []struct {
@@ -3669,8 +3669,8 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 
 			allAlerts := append(v1.AlertViolations, v2.AlertViolations...)
 			for i, expected := range testCase.alerts {
-				suite.Equal(expected.GetType(), allAlerts[i].Type)
-				suite.Equal(expected.GetMessage(), allAlerts[i].Message)
+				suite.Equal(expected.GetType(), allAlerts[i].GetType())
+				suite.Equal(expected.GetMessage(), allAlerts[i].GetMessage())
 				protoassert.Equal(suite.T(), expected.GetKeyValueAttrs(), allAlerts[i].GetKeyValueAttrs())
 				// We do not want to compare time, as the violation timestamp uses now()
 				suite.NotNil(allAlerts[i].GetTime())

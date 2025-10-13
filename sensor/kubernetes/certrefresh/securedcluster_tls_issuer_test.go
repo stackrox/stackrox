@@ -735,7 +735,7 @@ func (m *certsRepoMock) GetServiceCertificates(ctx context.Context) (*storage.Ty
 
 func (m *certsRepoMock) EnsureServiceCertificates(ctx context.Context, certificates *storage.TypedServiceCertificateSet) ([]*storage.TypedServiceCertificate, error) {
 	args := m.Called(ctx, certificates)
-	return certificates.ServiceCerts, args.Error(0)
+	return certificates.GetServiceCerts(), args.Error(0)
 }
 
 func verifySecrets(ctx context.Context, t require.TestingT,

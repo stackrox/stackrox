@@ -64,7 +64,7 @@ func (e *enricherImpl) RemoveNodeIntegration(id string) {
 func (e *enricherImpl) EnrichNodeWithVulnerabilities(node *storage.Node, nodeInventory *storage.NodeInventory, indexReport *v4.IndexReport) error {
 	// Clear any pre-existing notes, as it will all be filled here.
 	// Note: this is valid even if node.Notes is nil.
-	node.Notes = node.Notes[:0]
+	node.Notes = node.GetNotes()[:0]
 
 	err := e.enrichWithScan(node, nodeInventory, indexReport)
 	if err != nil {

@@ -389,7 +389,7 @@ func (s *EnhancedReportingTestSuite) upsertManyImages(images []*storage.Image) {
 
 func (s *EnhancedReportingTestSuite) upsertManyWatchedImages(images []*storage.Image) {
 	for _, img := range images {
-		err := s.watchedImageDatastore.UpsertWatchedImage(s.ctx, img.Name.FullName)
+		err := s.watchedImageDatastore.UpsertWatchedImage(s.ctx, img.GetName().GetFullName())
 		s.NoError(err)
 	}
 }

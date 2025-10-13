@@ -65,7 +65,7 @@ func (e Entity) ToProto() *storage.NetworkEntityInfo {
 
 // EntityFromProto converts a storage.NetworkEntityInfo proto to an Entity struct.
 func EntityFromProto(protoEnt *storage.NetworkEntityInfo) Entity {
-	discovered := protoEnt.Type == storage.NetworkEntityInfo_EXTERNAL_SOURCE && protoEnt.GetExternalSource().GetDiscovered()
+	discovered := protoEnt.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE && protoEnt.GetExternalSource().GetDiscovered()
 	extAddr := net.IPNetwork{}
 	if discovered {
 		extAddr = net.IPNetworkFromCIDR(protoEnt.GetExternalSource().GetCidr())

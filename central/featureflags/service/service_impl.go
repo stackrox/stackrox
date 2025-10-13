@@ -39,8 +39,8 @@ func (s *serviceImpl) GetFeatureFlags(context.Context, *v1.Empty) (*v1.GetFeatur
 		})
 	}
 
-	sort.Slice(resp.FeatureFlags, func(i, j int) bool {
-		return resp.FeatureFlags[i].GetName() < resp.FeatureFlags[j].GetName()
+	sort.Slice(resp.GetFeatureFlags(), func(i, j int) bool {
+		return resp.GetFeatureFlags()[i].GetName() < resp.GetFeatureFlags()[j].GetName()
 	})
 	return resp, nil
 }

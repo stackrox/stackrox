@@ -25,5 +25,5 @@ func TestKernelSupportAvailableApi(t *testing.T) {
 	// Central in CI is deployed in online mode, hence the expectation is
 	// that kernel support is available via the HTTP download site.
 	assert.NoError(t, err)
-	assert.True(t, resp.KernelSupportAvailable)
+	assert.True(t, resp.GetKernelSupportAvailable())
 }
