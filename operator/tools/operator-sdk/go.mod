@@ -3,7 +3,7 @@ module github.com/stackrox/rox/operator/tools/operator-sdk
 go 1.24.4
 
 require (
-	github.com/operator-framework/operator-lifecycle-manager v0.34.0
+	github.com/operator-framework/operator-lifecycle-manager v0.30.0
 	github.com/operator-framework/operator-sdk v1.41.1
 )
 
