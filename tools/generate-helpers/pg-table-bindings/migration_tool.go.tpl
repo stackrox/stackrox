@@ -19,7 +19,7 @@
     func Convert{{$schema.TypeName}}FromProto(obj {{$schema.Type}}{{if $schema.Parent}}, idx int{{end}}{{ range $index, $field := $schema.FieldsReferringToParent }}, {{$field.Name}} {{$field.Type}}{{end}}) (*{{$schema.Table|upperCamelCase}}, error) {
         {{- if not $schema.Parent }}
         {{if $schema.Json -}}
-        serialized, err := json.Marshal(obj)
+        serialized, err := protojson.Marshal(obj)
         {{- else -}}
         serialized, err := obj.MarshalVT()
         {{- end }}
@@ -57,10 +57,17 @@
 package schema
 
 import (
+    {{if .Schema.Json -}}
+	"encoding/json"
+
+    {{ end -}}
 	"github.com/lib/pq"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protocompat"
+    {{if .Schema.Json -}}
+	"google.golang.org/protobuf/encoding/protojson"
+    {{ end -}}
 )
 
 {{- template "convertProtoToModel" .Schema }}

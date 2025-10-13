@@ -4,7 +4,6 @@ package postgres
 
 import (
 	"context"
-	"encoding/json"
 	"slices"
 	"strings"
 	"time"
@@ -24,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"google.golang.org/protobuf/encoding/protojson"
 	"gorm.io/gorm"
 )
 
@@ -118,7 +118,7 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 
 func insertIntoAlerts(batch *pgx.Batch, obj *storage.Alert) error {
 
-	serialized, marshalErr := json.Marshal(obj)
+	serialized, marshalErr := protojson.Marshal(obj)
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -222,7 +222,7 @@ func copyFromAlerts(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 				"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
 				"to simply use the object.  %s", obj)
 
-			serialized, marshalErr := json.Marshal(obj)
+			serialized, marshalErr := protojson.Marshal(obj)
 			if marshalErr != nil {
 				return marshalErr
 			}

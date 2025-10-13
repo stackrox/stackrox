@@ -35,6 +35,9 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
     "github.com/stackrox/rox/pkg/search"
     pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+    {{if .Schema.Json -}}
+	"google.golang.org/protobuf/encoding/protojson"
+    {{ end -}}
     "github.com/stackrox/rox/pkg/utils"
     "github.com/stackrox/rox/pkg/uuid"
     "gorm.io/gorm"
@@ -216,7 +219,7 @@ func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, obj {{$schema
     {{if not $schema.Parent }}
 
     {{if $schema.Json -}}
-    serialized, marshalErr := json.Marshal(obj)
+    serialized, marshalErr := protojson.Marshal(obj)
     {{- else -}}
     serialized, marshalErr := obj.MarshalVT()
     {{- end }}
@@ -291,7 +294,7 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
             {{/* If embedded, the top-level has the full serialized object */}}
             {{if not $schema.Parent }}
             {{if $schema.Json }}
-            serialized, marshalErr := json.Marshal(obj)
+            serialized, marshalErr := protojson.Marshal(obj)
             {{- else -}}
             serialized, marshalErr := obj.MarshalVT()
             {{- end }}

@@ -26,6 +26,9 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
     "github.com/stackrox/rox/pkg/search"
     pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+    {{if .Schema.Json -}}
+	"google.golang.org/protobuf/encoding/protojson"
+    {{ end -}}
     "github.com/stackrox/rox/pkg/sync"
     "github.com/stackrox/rox/pkg/uuid"
 )
@@ -73,7 +76,7 @@ func New(db postgres.DB) Store {
 {{- $schema := .schema }}
 func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx *postgres.Tx, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
     {{if $schema.Json -}}
-    serialized, marshalErr := json.Marshal(obj)
+    serialized, marshalErr := protojson.Marshal(obj)
     {{- else -}}
     serialized, marshalErr := obj.MarshalVT()
     {{- end }}
