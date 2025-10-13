@@ -136,8 +136,8 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
         then:
         assert resultRet.getValue() != null
         def image = resultRet.getValue().image
-        assert image?.scan?.components?.vulns != null
-        int cve =  getCVEs(image.scan.components.vulns)
+        assert image?.scan?.imageComponents?.imageVulnerabilities != null
+        int cve =  getCVEs(image.scan.imageComponents.imageVulnerabilities)
         assert cve >= vuln_cve
         where:
         "Data inputs are :"
