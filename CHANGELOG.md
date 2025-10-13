@@ -9,7 +9,7 @@ Put an entry in this file if your change is user-visible and you consider it _pa
 
 Changes should still be described appropriately in JIRA/doc input pages, for inclusion in downstream release notes.
 
-## [NEXT RELEASE]
+## [4.9.0]
 
 ### Added Features
 
