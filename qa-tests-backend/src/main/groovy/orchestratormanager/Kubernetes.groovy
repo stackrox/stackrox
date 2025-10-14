@@ -526,7 +526,7 @@ class Kubernetes {
         Timer t = new Timer(30, 5)
         while (t.IsValid()) {
             try {
-                client.apps().deployments().inNamespace(ns).withName(name).scale(replicas)
+                client.apps().deployments().inNamespace(ns).withName(name).scale(replicas, true)
                 mostRecentException = null
                 break
             } catch (Exception e) {
