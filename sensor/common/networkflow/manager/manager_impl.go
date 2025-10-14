@@ -216,7 +216,6 @@ type networkFlowManager struct {
 	activeEndpoints map[containerEndpoint]*containerEndpointIndicatorWithAge
 
 	sensorUpdates chan *message.ExpiringMessage
-	centralReady  concurrency.Signal
 
 	initialSync *atomic.Bool
 
