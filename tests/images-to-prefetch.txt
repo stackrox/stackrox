@@ -25,4 +25,3 @@ quay.io/rhacs-eng/qa-multi-arch:nginx-1-17-1
 # - quay.io/rhacs-eng/qa:dele-scan-* (delegated_scanning_test.go, requires QUAY_RHACS_ENG_RO_* credentials)
 #
 # These tests may fail in CI environments without proper credentials configured.
-
