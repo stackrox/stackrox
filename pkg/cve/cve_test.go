@@ -41,7 +41,7 @@ func TestConsistentIDV2(t *testing.T) {
 		cID, err := scancomponent.ComponentIDV2(c, imageID)
 		require.NoError(t, err, "failed to hash component")
 
-		for _, vuln := range c.Vulns {
+		for _, vuln := range c.GetVulns() {
 			vID, err := IDV2(vuln, cID)
 			require.NoError(t, err, "failed to hash vulnerability")
 			vulnIDs = append(vulnIDs, vID)
