@@ -2,8 +2,8 @@ package indicator
 
 import (
 	"hash"
-	"hash/fnv"
 
+	"github.com/cespare/xxhash"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -11,9 +11,8 @@ import (
 // Assumption: Two NetworkConn's are identical (for the network-graph purposes) when their keys are identical.
 // This is memory-optimized implementation that is slower than `keyString`, but the resulting string takes less memory.
 func (i *NetworkConn) keyHash() string {
-	h := fnv.New64a()
-	// For a collection of length 10^N, the 64bit FNV-1a hash has approximate collision probability of 2.71x10^(N-4).
-	// For example: for 100M uniformly distributed items, the collision probability is 2.71x10^4 = 0.027.
+	h := xxhash.New()
+	// Collision probability example: for 100M uniformly distributed items, the collision probability is 2.71x10^4 = 0.027.
 	// For lower collision probabilities, one needs to use a fast 128bit hash, for example: XXH3_128 (LLM recommendation).
 	hashStrings(h, i.SrcEntity.ID, i.DstEntity.ID)
 	hashPortAndProtocol(h, i.DstPort, i.Protocol)
@@ -23,7 +22,7 @@ func (i *NetworkConn) keyHash() string {
 // Common hash computation utilities
 func hashPortAndProtocol(h hash.Hash64, port uint16, protocol storage.L4Protocol) {
 	portBytes := [2]byte{byte(port >> 8), byte(port)}
-	_, _ = h.Write(portBytes[:]) // FNV never returns errors, but being explicit
+	_, _ = h.Write(portBytes[:]) // xxhash never returns errors, but being explicit
 
 	protocolBytes := [4]byte{
 		byte(protocol >> 24), byte(protocol >> 16),
@@ -63,7 +62,7 @@ func hashStrings(h hash.Hash64, strs ...string) {
 // binaryKeyHash produces a binary hash that uniquely identifies a given ContainerEndpoint indicator.
 // This is a memory-optimized implementation using direct hash generation without string conversion.
 func (i *ContainerEndpoint) binaryKeyHash() BinaryHash {
-	h := fnv.New64a()
+	h := xxhash.New()
 	hashStrings(h, i.Entity.ID)
 	hashPortAndProtocol(h, i.Port, i.Protocol)
 	return BinaryHash(h.Sum64())
@@ -74,7 +73,7 @@ func (i *ContainerEndpoint) binaryKeyHash() BinaryHash {
 // binaryKeyHash produces a binary hash that uniquely identifies a given ProcessListening indicator.
 // This is a memory-optimized implementation using direct hash generation without string conversion.
 func (i *ProcessListening) binaryKeyHash() BinaryHash {
-	h := fnv.New64a()
+	h := xxhash.New()
 	// From `ProcessIndicatorUniqueKey` - identifies the process and the container
 	hashStrings(h, i.PodID, i.ContainerName, i.Process.ProcessName, i.Process.ProcessExec, i.Process.ProcessArgs)
 	// From: containerEndpoint - identifies the endpoint
