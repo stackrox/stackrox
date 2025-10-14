@@ -124,7 +124,7 @@ func (s *serviceAccountSACSuite) TestGetServiceAccount() {
 }
 
 func (s *serviceAccountSACSuite) TestRemoveServiceAccount() {
-	cases := testutils.GenericNamespaceSACErrorLessDeleteTestCases(s.T())
+	cases := testutils.GenericNamespaceSACDeleteTestCases(s.T())
 
 	for name, c := range cases {
 		s.Run(name, func() {
