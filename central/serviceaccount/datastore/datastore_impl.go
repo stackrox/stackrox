@@ -6,17 +6,11 @@ import (
 	"github.com/stackrox/rox/central/serviceaccount/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sac/resources"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 )
 
 const whenUnlimited = 100
-
-var (
-	serviceAccountsSAC = sac.ForResource(resources.ServiceAccount)
-)
 
 type datastoreImpl struct {
 	storage store.Store
