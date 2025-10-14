@@ -1,0 +1,28 @@
+# Images used by Go e2e tests (nongroovy-e2e-tests) that will be prefetched
+#
+# This is a minimal subset of qa-tests-backend/scripts/images-to-prefetch.txt,
+# containing only images that are:
+# 1. Actually used by the Go e2e test suite
+# 2. Available in the main prefetch list (verified to exist)
+#
+# If renaming/moving this file, update the reference in scripts/ci/lib.sh
+
+# Used by tests/yamls/multi-container-pod.yaml (TestPod, TestContainerInstances, roxctl verification)
+quay.io/rhacs-eng/qa-multi-arch-nginx:latest
+quay.io/rhacs-eng/qa-multi-arch-busybox:latest
+
+# Used by tests/backup_test.go and tests/excluded_scopes_test.go via setupDeployment
+# (already covered above: quay.io/rhacs-eng/qa-multi-arch-nginx:latest)
+
+# Used by tests/tls_challenge_test.go
+quay.io/rhacs-eng/qa-multi-arch:nginx-1-17-1
+
+# NOTE: The following images are used by other e2e tests but are NOT in the main
+# prefetch list and may require special credentials or will be pulled on-demand:
+#
+# - quay.io/rhacs-eng/qa:nginx-1-14-alpine (resourcecollection_test.go)
+# - registry.access.redhat.com/ubi9/ubi-minimal:* (delegated_scanning_test.go, requires QUAY_RHACS_ENG_RO_* credentials)
+# - quay.io/rhacs-eng/qa:dele-scan-* (delegated_scanning_test.go, requires QUAY_RHACS_ENG_RO_* credentials)
+#
+# These tests may fail in CI environments without proper credentials configured.
+
