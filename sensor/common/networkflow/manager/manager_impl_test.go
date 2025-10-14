@@ -1,24 +1,17 @@
 package manager
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/net"
-	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
-	"github.com/stackrox/rox/sensor/common"
-	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"go.uber.org/mock/gomock"
 )
 
 var (
@@ -194,220 +187,6 @@ func (s *NetworkFlowManagerTestSuite) TestAddNoOriginator() {
 	s.NoError(err)
 
 	s.Len(h.endpoints, 1)
-}
-
-func (s *NetworkFlowManagerTestSuite) TestManagerOfflineMode() {
-	// This test verifies offline mode behavior without event buffering
-	s.T().Skip("Test skipped: feature is now always enabled with event buffering")
-	s.T().Setenv(env.ProcessesListeningOnPort.EnvVar(), "false")
-	const (
-		srcID       = "src-id"
-		dstID       = "dst-id"
-		hostname    = "hostname"
-		containerID = "container-id"
-	)
-	mockCtrl := gomock.NewController(s.T())
-	enrichTickerC := make(chan time.Time)
-	defer close(enrichTickerC)
-	defer mockCtrl.Finish()
-	m, mockEntity, _, mockDetector := createManager(mockCtrl, enrichTickerC)
-	states := []struct {
-		testName                    string
-		notify                      common.SensorComponentEvent
-		connections                 []*HostnameAndConnections
-		expectEntityLookupContainer expectFn
-		expectEntityLookupEndpoint  expectFn
-		expectDetector              expectFn
-		expectedSensorMessage       *central.MsgFromSensor
-	}{
-		// The test cases are supposed to be run in order!
-		{
-			testName:    "In offline mode we should not send any messages upon receiving a connection",
-			notify:      common.SensorComponentEventOfflineMode,
-			connections: []*HostnameAndConnections{createHostnameConnections(hostname).withConnectionPair(createConnectionPair())},
-		},
-		{
-			testName: "In online mode we should enrich and send the previously received connection",
-			notify:   common.SensorComponentEventResourceSyncFinished,
-			expectEntityLookupContainer: expectEntityLookupContainerHelper(mockEntity, 1, clusterentities.ContainerMetadata{
-				DeploymentID: srcID,
-			}, true, false),
-			expectEntityLookupEndpoint: expectEntityLookupEndpointHelper(mockEntity, 1, []clusterentities.LookupResult{
-				{
-					Entity:         networkgraph.Entity{ID: dstID},
-					ContainerPorts: []uint16{80},
-				},
-			}),
-			expectDetector:        expectDetectorHelper(mockDetector, 1),
-			expectedSensorMessage: createExpectedSensorMessageWithConnections(&expectedEntitiesPair{srcID: srcID, dstID: dstID}),
-		},
-		{
-			testName: "In offline mode we should not send any messages upon receiving multiple connections",
-			notify:   common.SensorComponentEventOfflineMode,
-			connections: []*HostnameAndConnections{
-				createHostnameConnections(hostname).withConnectionPair(createConnectionPair().containerID(fmt.Sprintf("%s-1", containerID))),
-				createHostnameConnections(hostname).withConnectionPair(createConnectionPair().containerID(fmt.Sprintf("%s-2", containerID))),
-			},
-		},
-		{
-			testName: "In online mode we should enrich and send the previously received connections",
-			notify:   common.SensorComponentEventResourceSyncFinished,
-			expectEntityLookupContainer: func() {
-				gomock.InOrder(
-					mockEntity.EXPECT().LookupByContainerID(gomock.Any()).Times(1).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool, bool) {
-						return clusterentities.ContainerMetadata{DeploymentID: fmt.Sprintf("%s-1", srcID)}, true, false
-					}),
-					mockEntity.EXPECT().LookupByContainerID(gomock.Any()).Times(1).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool, bool) {
-						return clusterentities.ContainerMetadata{DeploymentID: fmt.Sprintf("%s-2", srcID)}, true, false
-
-					}),
-				)
-			},
-			expectEntityLookupEndpoint: func() {
-				gomock.InOrder(
-					mockEntity.EXPECT().LookupByEndpoint(gomock.Any()).Times(1).DoAndReturn(func(_ any) []clusterentities.LookupResult {
-						return []clusterentities.LookupResult{
-							{
-								Entity:         networkgraph.Entity{ID: fmt.Sprintf("%s-1", dstID)},
-								ContainerPorts: []uint16{80},
-							},
-						}
-					}),
-					mockEntity.EXPECT().LookupByEndpoint(gomock.Any()).Times(1).DoAndReturn(func(_ any) []clusterentities.LookupResult {
-						return []clusterentities.LookupResult{
-							{
-								Entity:         networkgraph.Entity{ID: fmt.Sprintf("%s-2", dstID)},
-								ContainerPorts: []uint16{80},
-							},
-						}
-					}),
-				)
-			},
-			expectDetector: expectDetectorHelper(mockDetector, 2),
-			expectedSensorMessage: createExpectedSensorMessageWithConnections(
-				&expectedEntitiesPair{srcID: fmt.Sprintf("%s-1", srcID), dstID: fmt.Sprintf("%s-1", dstID)},
-				&expectedEntitiesPair{srcID: fmt.Sprintf("%s-2", srcID), dstID: fmt.Sprintf("%s-2", dstID)},
-			),
-		},
-		{
-			testName: "In offline mode we should not send any messages upon receiving multiple endpoints",
-			notify:   common.SensorComponentEventOfflineMode,
-			connections: []*HostnameAndConnections{
-				createHostnameConnections(hostname).withEndpointPair(createEndpointPair(timestamp.Now(), timestamp.Now()).containerID(fmt.Sprintf("%s-1", containerID))),
-				createHostnameConnections(hostname).withEndpointPair(createEndpointPair(timestamp.Now(), timestamp.Now()).containerID(fmt.Sprintf("%s-2", containerID))),
-			},
-		},
-		{
-			testName: "In online mode we should enrich and send the previously received endpoints",
-			notify:   common.SensorComponentEventResourceSyncFinished,
-			expectEntityLookupContainer: func() {
-				gomock.InOrder(
-					mockEntity.EXPECT().LookupByContainerID(gomock.Any()).Times(1).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool, bool) {
-						return clusterentities.ContainerMetadata{DeploymentID: fmt.Sprintf("%s-1", srcID)}, true, false
-					}),
-					mockEntity.EXPECT().LookupByContainerID(gomock.Any()).Times(1).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool, bool) {
-						return clusterentities.ContainerMetadata{DeploymentID: fmt.Sprintf("%s-2", srcID)}, true, false
-					}),
-				)
-			},
-			expectedSensorMessage: createExpectedSensorMessageWithEndpoints(
-				fmt.Sprintf("%s-1", srcID),
-				fmt.Sprintf("%s-2", srcID),
-			),
-		},
-	}
-	fakeTicker := make(chan time.Time)
-	defer close(fakeTicker)
-	go m.enrichConnections(fakeTicker)
-	// The test cases are supposed to be run in order!
-	for _, state := range states {
-		s.Run(state.testName, func() {
-			for _, cnn := range state.connections {
-				addHostConnection(m, cnn)
-			}
-			state.expectEntityLookupContainer.runIfSet()
-			state.expectEntityLookupEndpoint.runIfSet()
-			state.expectDetector.runIfSet()
-			// We do not test ticking here, but without this line, the test would deadlock.
-			mockEntity.EXPECT().RecordTick().AnyTimes()
-			m.Notify(state.notify)
-			fakeTicker <- time.Now()
-			if state.expectedSensorMessage != nil {
-				select {
-				case <-time.After(10 * time.Second):
-					s.Fail("timeout waiting for sensor message")
-				case msg, ok := <-m.sensorUpdates:
-					s.Require().True(ok, "the sensorUpdates channel should not be closed")
-					s.Assert().NotNil(msg)
-					msgFromSensor, ok := msg.Msg.(*central.MsgFromSensor_NetworkFlowUpdate)
-					s.Require().True(ok, "the message received is not a NetworkFlowUpdate message")
-					expectedMsg, ok := state.expectedSensorMessage.GetMsg().(*central.MsgFromSensor_NetworkFlowUpdate)
-					s.Require().True(ok, "the message expected is not a NetworkFlowUpdate message")
-					s.Assert().Len(msgFromSensor.NetworkFlowUpdate.GetUpdated(), len(expectedMsg.NetworkFlowUpdate.GetUpdated()))
-					s.assertSensorMessageConnectionIDs(expectedMsg.NetworkFlowUpdate.GetUpdated(), msgFromSensor.NetworkFlowUpdate.GetUpdated())
-					s.Assert().Len(msgFromSensor.NetworkFlowUpdate.GetUpdatedEndpoints(), len(expectedMsg.NetworkFlowUpdate.GetUpdatedEndpoints()))
-					s.assertSensorMessageEndpointIDs(expectedMsg.NetworkFlowUpdate.GetUpdatedEndpoints(), msgFromSensor.NetworkFlowUpdate.GetUpdatedEndpoints())
-				}
-			} else {
-				select {
-				case _, ok := <-m.sensorUpdates:
-					s.Require().True(ok, "the sensorUpdates channel should not be closed")
-					s.Fail("should not received message in sensorUpdates channel")
-				case <-time.After(time.Second):
-					break
-				}
-			}
-		})
-	}
-	m.Stop()
-}
-
-func (s *NetworkFlowManagerTestSuite) TestExpireMessage() {
-	// This test verifies message expiration behavior without event buffering
-	s.T().Skip("Test skipped: feature is now always enabled with event buffering")
-	s.T().Setenv(env.ProcessesListeningOnPort.EnvVar(), "false")
-	hostname := "hostname"
-	containerID := "container-id"
-
-	mockCtrl := gomock.NewController(s.T())
-	enrichTickerC := make(chan time.Time)
-	defer close(enrichTickerC)
-	defer mockCtrl.Finish()
-	m, mockEntity, _, mockDetector := createManager(mockCtrl, enrichTickerC)
-	go m.enrichConnections(enrichTickerC)
-	mockEntity.EXPECT().LookupByContainerID(gomock.Any()).Times(1).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool, bool) {
-		return clusterentities.ContainerMetadata{
-			DeploymentID: containerID,
-		}, true, false
-	})
-	mockEntity.EXPECT().LookupByEndpoint(gomock.Any()).Times(1).DoAndReturn(func(_ any) []clusterentities.LookupResult {
-		return []clusterentities.LookupResult{
-			{
-				Entity:         networkgraph.Entity{ID: containerID},
-				ContainerPorts: []uint16{80},
-			},
-		}
-	})
-	mockDetector.EXPECT().ProcessNetworkFlow(gomock.Any(), gomock.Any()).Times(1)
-	mockEntity.EXPECT().RecordTick().AnyTimes()
-	addHostConnection(m, createHostnameConnections(hostname).withConnectionPair(createConnectionPair()))
-	m.Notify(common.SensorComponentEventResourceSyncFinished)
-
-	select {
-	case <-time.After(10 * time.Second):
-		s.Fail("enrichTickerC blocks!")
-	case enrichTickerC <- time.Now():
-	}
-	select {
-	case <-time.After(10 * time.Second):
-		s.Fail("timeout waiting for sensor message")
-	case msg, ok := <-m.sensorUpdates:
-		s.Require().True(ok, "the sensorUpdates channel should not be closed")
-		m.Notify(common.SensorComponentEventOfflineMode)
-		m.Notify(common.SensorComponentEventResourceSyncFinished)
-		s.Assert().True(msg.IsExpired(), "the message should be expired")
-	}
-	m.Stop()
 }
 
 // endregion
