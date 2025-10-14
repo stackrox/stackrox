@@ -4,7 +4,7 @@
 
 **Start Date:** 2025-10-14
 
-**Status:** Not Started
+**Status:** In Progress (Phase 0 Complete)
 
 ---
 
@@ -12,7 +12,14 @@
 
 This tracker organizes the UI prototype work into phases with detailed task checklists.
 
-**Completion Status:** 0 / 57 tasks (0%)
+**Completion Status:** 12 / 57 tasks (21%)
+
+**⚠️ IMPORTANT: After completing a phase or section, update the checklists below:**
+1. Mark tasks as complete with `[x]`
+2. Update phase status emoji (⬜ → 🔄 → ✅)
+3. Update overall completion status at the top
+4. Add notes to the "Notes & Decisions" section with date
+5. Update "Completion Checklist" at the bottom
 
 ---
 
@@ -20,31 +27,35 @@ This tracker organizes the UI prototype work into phases with detailed task chec
 
 **Goal:** Prepare project structure and mock data foundation
 
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete (Commit: 9d2900c86e)
 
 ### Tasks
 
-- [ ] Create directory structure:
-  - [ ] `ui/apps/platform/src/Containers/Vulnerabilities/BaseImages/`
-  - [ ] `ui/apps/platform/src/Containers/Vulnerabilities/BaseImages/mockData/`
-  - [ ] `ui/apps/platform/src/Containers/Vulnerabilities/BaseImages/components/`
-  - [ ] `ui/apps/platform/src/Containers/Vulnerabilities/BaseImages/tabs/`
+- [x] Create directory structure:
+  - [x] `ui/apps/platform/src/Containers/Vulnerabilities/BaseImages/`
+  - [x] `ui/apps/platform/src/Containers/Vulnerabilities/BaseImages/mockData/`
+  - [x] `ui/apps/platform/src/Containers/Vulnerabilities/BaseImages/components/`
+  - [x] `ui/apps/platform/src/Containers/Vulnerabilities/BaseImages/tabs/`
 
-- [ ] Create mock data files:
-  - [ ] `mockData/baseImages.ts` - Base image list data
-  - [ ] `mockData/baseImageCVEs.ts` - CVE data for each base
-  - [ ] `mockData/baseImageImages.ts` - Application images using bases
-  - [ ] `mockData/baseImageDeployments.ts` - Deployments using bases
-  - [ ] `mockData/index.ts` - Export all mock data
+- [x] Create mock data files:
+  - [x] `mockData/baseImages.ts` - Base image list data (4 samples: ubuntu, alpine, node, nginx)
+  - [x] `mockData/baseImageCVEs.ts` - CVE data for each base (7 CVEs for ubuntu, 4 for alpine, etc.)
+  - [x] `mockData/baseImageImages.ts` - Application images using bases (3 for ubuntu, 2 for alpine)
+  - [x] `mockData/baseImageDeployments.ts` - Deployments using bases (5 for ubuntu, 3 for alpine, etc.)
+  - [x] `mockData/index.ts` - Export all mock data
 
-- [ ] Create TypeScript types:
-  - [ ] `types.ts` - BaseImage, BaseImageDetails, BaseImageCVE, etc.
+- [x] Create TypeScript types:
+  - [x] `types.ts` - BaseImage, ScanningStatus, CVESeverity, CVECount, BaseImageCVE, BaseImageApplicationImage, BaseImageDeployment, ImageBaseInfo, BaseImageDetailTab, BaseImageMockData
 
-- [ ] Set up routing:
-  - [ ] Add route for `/vulnerabilities/base-images` in router config
-  - [ ] Add route for `/vulnerabilities/base-images/:id` in router config
+- [x] Set up routing:
+  - [x] Add route for `/vulnerabilities/base-images` in router config (with RBAC: Deployment + Image)
+  - [x] Add route for `/vulnerabilities/base-images/:id` in router config
+  - [x] Create placeholder pages: BaseImagesPage, BaseImagesListPage, BaseImageDetailPage
+  - [x] Add to Body.tsx route component map
+  - [x] Add label "Base Images" to path label map
 
 **Estimated Time:** 2-3 hours
+**Actual Time:** ~2 hours
 
 ---
 
@@ -422,7 +433,16 @@ This tracker organizes the UI prototype work into phases with detailed task chec
 
 ## Notes & Decisions
 
-### 2025-10-14
+### 2025-10-14 - Phase 0 Complete
+- ✅ Phase 0 scaffolding completed in ~2 hours
+- Created comprehensive TypeScript types covering all entities
+- Implemented mock data with realistic CVE counts and relationships
+- Set up routing with proper RBAC requirements (Deployment + Image access)
+- All code passes ESLint checks
+- Committed as: `feat(ui): add base images feature scaffolding and routing` (9d2900c86e)
+- Ready to proceed to Phase 1 (Base Images List View)
+
+### 2025-10-14 - Project Start
 - Initial progress tracker created
 - Phases defined based on requirements doc
 - Estimated time added for each phase
@@ -431,11 +451,11 @@ This tracker organizes the UI prototype work into phases with detailed task chec
 
 ## Completion Checklist
 
-### Phase 0: Setup ✅ / ⬜
-- [ ] All directories created
-- [ ] All mock data files created
-- [ ] TypeScript types defined
-- [ ] Routes configured
+### Phase 0: Setup ✅
+- [x] All directories created
+- [x] All mock data files created
+- [x] TypeScript types defined
+- [x] Routes configured
 
 ### Phase 1: List View ✅ / ⬜
 - [ ] Empty state working
@@ -476,5 +496,5 @@ This tracker organizes the UI prototype work into phases with detailed task chec
 
 ---
 
-*Last Updated: 2025-10-14*
+*Last Updated: 2025-10-14 (Phase 0 Complete)*
 *Next Review: After Phase 1 completion*
