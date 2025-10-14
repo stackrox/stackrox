@@ -666,14 +666,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("FileActivity", []string{
 		"file: FileActivity_File",
 		"moved: FileActivity_File",
-		"moved: FileActivity_File",
 		"operation: FileActivity_Operation!",
 		"process: ProcessIndicator",
 		"timestamp: Time",
-		"xMoved: FileActivityXMoved",
-	}))
-	utils.Must(builder.AddUnionType("FileActivityXMoved", []string{
-		"FileActivity_File",
 	}))
 	utils.Must(builder.AddType("FileActivity_File", []string{
 		"hostPath: String!",
@@ -8052,11 +8047,6 @@ func (resolver *fileActivityResolver) Moved(ctx context.Context) (*fileActivity_
 	return resolver.root.wrapFileActivity_File(value, true, nil)
 }
 
-func (resolver *fileActivityResolver) Moved(ctx context.Context) (*fileActivity_FileResolver, error) {
-	value := resolver.data.GetMoved()
-	return resolver.root.wrapFileActivity_File(value, true, nil)
-}
-
 func (resolver *fileActivityResolver) Operation(ctx context.Context) string {
 	value := resolver.data.GetOperation()
 	return value.String()
@@ -8070,24 +8060,6 @@ func (resolver *fileActivityResolver) Process(ctx context.Context) (*processIndi
 func (resolver *fileActivityResolver) Timestamp(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetTimestamp()
 	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
-}
-
-type fileActivityXMovedResolver struct {
-	resolver interface{}
-}
-
-func (resolver *fileActivityResolver) XMoved() *fileActivityXMovedResolver {
-	if val := resolver.data.GetMoved(); val != nil {
-		return &fileActivityXMovedResolver{
-			resolver: &fileActivity_FileResolver{root: resolver.root, data: val},
-		}
-	}
-	return nil
-}
-
-func (resolver *fileActivityXMovedResolver) ToFileActivity_File() (*fileActivity_FileResolver, bool) {
-	res, ok := resolver.resolver.(*fileActivity_FileResolver)
-	return res, ok
 }
 
 type fileActivity_FileResolver struct {
