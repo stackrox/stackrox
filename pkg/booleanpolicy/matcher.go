@@ -15,6 +15,7 @@ var (
 	imageEvalFactory      = evaluator.MustCreateNewFactory(augmentedobjs.ImageMeta)
 	kubeEventFactory      = evaluator.MustCreateNewFactory(augmentedobjs.KubeEventMeta)
 	networkFlowFactory    = evaluator.MustCreateNewFactory(augmentedobjs.NetworkFlowMeta)
+	nodeEvalFactory       = evaluator.MustCreateNewFactory(augmentedobjs.NodeMeta)
 )
 
 // A CacheReceptacle is an optional argument that can be passed to the Match* functions of the Matchers below, that
@@ -45,8 +46,9 @@ type EnhancedDeployment struct {
 
 // Violations represents a list of violation sub-objects.
 type Violations struct {
-	ProcessViolation *storage.Alert_ProcessViolation
-	AlertViolations  []*storage.Alert_Violation
+	ProcessViolation    *storage.Alert_ProcessViolation
+	FileAccessViolation *storage.Alert_FileAccessViolation
+	AlertViolations     []*storage.Alert_Violation
 }
 
 // An ImageMatcher matches images against a policy.
@@ -77,6 +79,11 @@ type AuditLogEventMatcher interface {
 // A DeploymentWithNetworkFlowMatcher matches deployments, and a network flow against a policy.
 type DeploymentWithNetworkFlowMatcher interface {
 	MatchDeploymentWithNetworkFlowInfo(cache *CacheReceptacle, enhancedDeployment EnhancedDeployment, flow *augmentedobjs.NetworkFlowDetails) (Violations, error)
+}
+
+// A NodeEventMatcher matches file events from a node against a policy.
+type NodeEventMatcher interface {
+	MatchNodeWithFileAccess(cache *CacheReceptacle, access *storage.FileAccess) (Violations, error)
 }
 
 type sectionAndEvaluator struct {
@@ -249,6 +256,18 @@ func BuildImageMatcher(p *storage.Policy, options ...ValidateOption) (ImageMatch
 	}
 	return &matcherImpl{
 		evaluators: sectionsAndEvals,
+	}, nil
+}
+
+func BuildNodeEventMatcher(p *storage.Policy, options ...ValidateOption) (NodeEventMatcher, error) {
+	sectionsAndEvals, err := getSectionsAndEvals(&nodeEvalFactory, p, storage.LifecycleStage_RUNTIME, options...)
+	if err != nil {
+		return nil, err
+	}
+	return &nodeEventMatcher{
+		matcherImpl: matcherImpl{
+			evaluators: sectionsAndEvals,
+		},
 	}, nil
 }
 
