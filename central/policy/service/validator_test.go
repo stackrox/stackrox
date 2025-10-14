@@ -362,6 +362,37 @@ func (s *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 					fieldnames.ProcessName: "PROCESS",
 				}),
 		},
+		{
+			description: "Node file system policy with no fields",
+			p:           booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT, nil),
+			errExpected: true,
+		},
+		{
+			description: "Node file system policy with deploy-time fields only",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.ImageTag:   "latest",
+					fieldnames.VolumeName: "BLAH",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Node file system policy with process field (should be valid)",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.ProcessName: "malicious-process",
+				}),
+		},
+		{
+			description: "Node file system policy with wrong lifecycle stage (build)",
+			p:           booleanPolicyWithFields(storage.LifecycleStage_BUILD, storage.EventSource_NODE_EVENT, nil),
+			errExpected: true,
+		},
+		{
+			description: "Node file system policy with wrong lifecycle stage (deploy)",
+			p:           booleanPolicyWithFields(storage.LifecycleStage_DEPLOY, storage.EventSource_NODE_EVENT, nil),
+			errExpected: true,
+		},
 	}
 
 	for _, c := range testCases {
