@@ -27,6 +27,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/deployment"
 	"github.com/stackrox/rox/sensor/common/deploymentenhancer"
 	"github.com/stackrox/rox/sensor/common/detector"
+	filesystemService "github.com/stackrox/rox/sensor/common/detector/filesystem/service"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
 	"github.com/stackrox/rox/sensor/common/heritage"
 	"github.com/stackrox/rox/sensor/common/image"
@@ -137,6 +138,8 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		processSignals = signalService.New(processPipeline, indicators, signalService.WithTraceWriter(cfg.processIndicatorWriter))
 	}
 
+	fileSystemService := filesystemService.NewService()
+
 	networkFlowManager :=
 		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub, updatecomputer.New(), manager.WithEnrichTicker(cfg.networkFlowTicker))
 	enhancer := deploymentenhancer.CreateEnhancer(storeProvider)
@@ -227,6 +230,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		complianceService,
 		imageService,
 		deployment.NewService(storeProvider.Deployments(), storeProvider.Pods()),
+		fileSystemService,
 	}
 
 	if features.VirtualMachines.Enabled() {
