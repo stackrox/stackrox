@@ -218,9 +218,6 @@ type networkFlowManager struct {
 	sensorUpdates chan *message.ExpiringMessage
 	centralReady  concurrency.Signal
 
-	ctxMutex    sync.Mutex
-	cancelCtx   context.CancelFunc
-	pipelineCtx context.Context
 	initialSync *atomic.Bool
 
 	enricherTicker  *time.Ticker
@@ -315,12 +312,6 @@ func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
 			m.clusterEntities.RecordTick()
 		}
 	}
-}
-
-func (m *networkFlowManager) getCurrentContext() context.Context {
-	m.ctxMutex.Lock()
-	defer m.ctxMutex.Unlock()
-	return m.pipelineCtx
 }
 
 func (m *networkFlowManager) updateEnrichmentCollectionsSize() {

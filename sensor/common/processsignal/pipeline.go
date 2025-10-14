@@ -21,8 +21,7 @@ import (
 )
 
 var (
-	log              = logging.LoggerForModule()
-	errSensorOffline = errors.New("sensor is offline")
+	log = logging.LoggerForModule()
 )
 
 // Pipeline is the struct that handles a process signal
