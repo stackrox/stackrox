@@ -236,7 +236,7 @@ func (s *relayTestSuite) TestSendReportToSensor_RetriesOnRetryableErrors() {
 	}
 }
 
-func (s *relayTestSuite) TestAcquireSemaphore() {
+func (s *relayTestSuite) TestSemaphore() {
 	vsockServer := &VsockServer{
 		semaphore:            semaphore.NewWeighted(1),
 		maxSemaphoreWaitTime: 5 * time.Millisecond,
@@ -251,6 +251,10 @@ func (s *relayTestSuite) TestAcquireSemaphore() {
 	s.Require().Error(err)
 	s.Require().Contains(err.Error(), "failed to acquire semaphore")
 
+	// After releasing once, a new acquire should succeed
+	vsockServer.releaseSemaphore()
+	err = vsockServer.acquireSemaphore(s.ctx)
+	s.Require().NoError(err)
 }
 
 func (s *relayTestSuite) defaultRelay(ctx context.Context, sensorClient sensor.VirtualMachineIndexReportServiceClient) *Relay {
