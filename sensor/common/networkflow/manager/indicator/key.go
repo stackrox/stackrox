@@ -21,6 +21,15 @@ func (i *NetworkConn) keyHash(h hash.Hash64) string {
 	return hashToHexString(h.Sum64())
 }
 
+// binaryKeyHash produces a binary hash that uniquely identifies a given NetworkConn indicator.
+// This is a memory-optimized implementation using direct hash generation without string conversion.
+func (i *NetworkConn) binaryKeyHash() BinaryHash {
+	h := xxhash.New()
+	hashStrings(h, i.SrcEntity.ID, i.DstEntity.ID)
+	hashPortAndProtocol(h, i.DstPort, i.Protocol)
+	return BinaryHash(h.Sum64())
+}
+
 // Common hash computation utilities
 func hashPortAndProtocol(h hash.Hash64, port uint16, protocol storage.L4Protocol) {
 	buf := [6]byte{
