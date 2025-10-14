@@ -356,6 +356,8 @@ func (s *policyValidator) compilesForRunTime(policy *storage.Policy, options ...
 	var err error
 	if s.isAuditEventPolicy(policy) {
 		_, err = booleanpolicy.BuildAuditLogEventMatcher(policy, booleanpolicy.ValidateSourceIsAuditLogEvents())
+	} else if s.isNodeEventPolicy(policy) {
+		_, err = booleanpolicy.BuildNodeEventMatcher(policy, options...)
 	} else {
 		// build a deployment matcher to check for all runtime fields that are evaluated against a deployment
 		_, err = booleanpolicy.BuildDeploymentMatcher(policy, options...)
@@ -401,6 +403,10 @@ func removeEnforcementForLifecycle(policy *storage.Policy, stage storage.Lifecyc
 
 func (s *policyValidator) isAuditEventPolicy(policy *storage.Policy) bool {
 	return policy.GetEventSource() == storage.EventSource_AUDIT_LOG_EVENT
+}
+
+func (s *policyValidator) isNodeEventPolicy(policy *storage.Policy) bool {
+	return policy.GetEventSource() == storage.EventSource_NODE_EVENT
 }
 
 func (s *policyValidator) validateEnforcement(policy *storage.Policy) error {
