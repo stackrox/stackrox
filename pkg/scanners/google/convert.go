@@ -101,7 +101,7 @@ func (c *googleScanner) convertVulnsFromOccurrence(occurrence *grafeas.Occurrenc
 
 	vuln.CvssV2 = &storage.CVSSV2{}
 
-	vectorString := strings.TrimPrefix(vulnerability.LongDescription, "NIST vectors: ")
+	vectorString := strings.TrimPrefix(vulnerability.GetLongDescription(), "NIST vectors: ")
 	cvssV2Wrapper := &storagewrappers.CVSSV2Wrapper{
 		CVSSV2: &storage.CVSSV2{},
 	}

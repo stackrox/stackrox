@@ -105,4 +105,3 @@ func (w *CVSSV3Wrapper) SetSeverity(severity storage.CVSSV3_Severity) {
 	}
 	w.Severity = severity
 }
-

@@ -195,7 +195,7 @@ func convertVulnerability(v *v1.Vulnerability, vulnType storage.EmbeddedVulnerab
 
 		vuln.PublishedOn = protoconv.ConvertTimeString(m.GetPublishedDateTime())
 		vuln.LastModified = protoconv.ConvertTimeString(m.GetLastModifiedDateTime())
-		if m.GetCvssV2() != nil && m.GetCvssV2().Vector != "" {
+		if m.GetCvssV2() != nil && m.GetCvssV2().GetVector() != "" {
 			cvssV2Wrapper := &storagewrappers.CVSSV2Wrapper{
 				CVSSV2: &storage.CVSSV2{},
 			}
@@ -215,7 +215,7 @@ func convertVulnerability(v *v1.Vulnerability, vulnType storage.EmbeddedVulnerab
 			}
 		}
 
-		if m.GetCvssV3() != nil && m.GetCvssV3().Vector != "" {
+		if m.GetCvssV3() != nil && m.GetCvssV3().GetVector() != "" {
 			cvssV3Wrapper := &storagewrappers.CVSSV3Wrapper{
 				CVSSV3: &storage.CVSSV3{},
 			}
