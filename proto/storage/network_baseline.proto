@@ -36,8 +36,8 @@ message NetworkBaseline {
   // This is the ID of the baseline.
   string deployment_id = 1; // @gotags: sql:"pk,type(uuid)"
 
-  string cluster_id = 2; // @gotags: search:"Cluster ID,hidden,store" sql:"type(uuid)"
-  string namespace = 3; // @gotags: search:"Namespace,hidden,store"
+  string cluster_id = 2; // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
+  string namespace = 3; // @gotags: search:"Namespace,hidden"
 
   repeated NetworkBaselinePeer peers = 4; // @gotags: search:"-"
 

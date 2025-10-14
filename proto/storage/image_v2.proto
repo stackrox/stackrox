@@ -72,7 +72,7 @@ message ImageV2 {
   float risk_score = 13; // @gotags: search:"Image Risk Score,hidden"
 
   // Caching top cvss to avoid re-calculating it by joining on the cve table.
-  float top_cvss = 14; // @gotags: search:"Image Top CVSS,store"
+  float top_cvss = 14; // @gotags: search:"Image Top CVSS"
 
   enum Note {
     MISSING_METADATA = 0;

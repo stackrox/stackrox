@@ -26,12 +26,12 @@ const (
 // Deprecated: Marked as deprecated in storage/image_component.proto.
 type ImageComponent struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
-	Id        string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Component ID,store,hidden" sql:"pk,id"`           // This field is composite id over name, version, and operating system. // @gotags: search:"Component ID,store,hidden" sql:"pk,id"
-	Name      string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Component,store"`       // @gotags: search:"Component,store"
-	Version   string                 `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty" search:"Component Version,store"` // @gotags: search:"Component Version,store"
+	Id        string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Component ID,hidden" sql:"pk,id"`           // This field is composite id over name, version, and operating system. // @gotags: search:"Component ID,hidden" sql:"pk,id"
+	Name      string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Component"`       // @gotags: search:"Component"
+	Version   string                 `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty" search:"Component Version"` // @gotags: search:"Component Version"
 	License   *License               `protobuf:"bytes,4,opt,name=license,proto3" json:"license,omitempty"`
 	Priority  int64                  `protobuf:"varint,5,opt,name=priority,proto3" json:"priority,omitempty" search:"Component Risk Priority,hidden"`                     // @gotags: search:"Component Risk Priority,hidden"
-	Source    SourceType             `protobuf:"varint,6,opt,name=source,proto3,enum=storage.SourceType" json:"source,omitempty" search:"Component Source,store"` // @gotags: search:"Component Source,store"
+	Source    SourceType             `protobuf:"varint,6,opt,name=source,proto3,enum=storage.SourceType" json:"source,omitempty" search:"Component Source"` // @gotags: search:"Component Source"
 	RiskScore float32                `protobuf:"fixed32,7,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Component Risk Score,hidden"` // @gotags: search:"Component Risk Score,hidden"
 	// Types that are valid to be assigned to SetTopCvss:
 	//
@@ -158,7 +158,7 @@ type isImageComponent_SetTopCvss interface {
 }
 
 type ImageComponent_TopCvss struct {
-	TopCvss float32 `protobuf:"fixed32,8,opt,name=top_cvss,json=topCvss,proto3,oneof" search:"Component Top CVSS,store"` // @gotags: search:"Component Top CVSS,store"
+	TopCvss float32 `protobuf:"fixed32,8,opt,name=top_cvss,json=topCvss,proto3,oneof" search:"Component Top CVSS"` // @gotags: search:"Component Top CVSS"
 }
 
 func (*ImageComponent_TopCvss) isImageComponent_SetTopCvss() {}
@@ -166,11 +166,11 @@ func (*ImageComponent_TopCvss) isImageComponent_SetTopCvss() {}
 type ImageComponentV2 struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// ID will be form of Name+version+arch+imageID
-	Id        string     `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Component ID,store,hidden" sql:"pk,id"`                                  // @gotags: search:"Component ID,store,hidden" sql:"pk,id"
-	Name      string     `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Component,store"`                              // @gotags: search:"Component,store"
-	Version   string     `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty" search:"Component Version,store"`                        // @gotags: search:"Component Version,store"
+	Id        string     `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Component ID,hidden" sql:"pk,id"`                                  // @gotags: search:"Component ID,hidden" sql:"pk,id"
+	Name      string     `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Component"`                              // @gotags: search:"Component"
+	Version   string     `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty" search:"Component Version"`                        // @gotags: search:"Component Version"
 	Priority  int64      `protobuf:"varint,4,opt,name=priority,proto3" json:"priority,omitempty" search:"Component Risk Priority,hidden"`                     // @gotags: search:"Component Risk Priority,hidden"
-	Source    SourceType `protobuf:"varint,5,opt,name=source,proto3,enum=storage.SourceType" json:"source,omitempty" search:"Component Source,store"` // @gotags: search:"Component Source,store"
+	Source    SourceType `protobuf:"varint,5,opt,name=source,proto3,enum=storage.SourceType" json:"source,omitempty" search:"Component Source"` // @gotags: search:"Component Source"
 	RiskScore float32    `protobuf:"fixed32,6,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Component Risk Score,hidden"` // @gotags: search:"Component Risk Score,hidden"
 	// Types that are valid to be assigned to SetTopCvss:
 	//
@@ -189,7 +189,7 @@ type ImageComponentV2 struct {
 	//
 	//	*ImageComponentV2_LayerIndex
 	HasLayerIndex isImageComponentV2_HasLayerIndex `protobuf_oneof:"has_layer_index"`
-	Location      string                           `protobuf:"bytes,12,opt,name=location,proto3" json:"location,omitempty" search:"Component Location,store,hidden"` // @gotags: search:"Component Location,store,hidden"
+	Location      string                           `protobuf:"bytes,12,opt,name=location,proto3" json:"location,omitempty" search:"Component Location,hidden"` // @gotags: search:"Component Location,hidden"
 	Architecture  string                           `protobuf:"bytes,13,opt,name=architecture,proto3" json:"architecture,omitempty"`
 	ImageIdV2     string                           `protobuf:"bytes,14,opt,name=image_id_v2,json=imageIdV2,proto3" json:"image_id_v2,omitempty" sql:"fk(ImageV2:id),index=btree,allow-null"` // @gotags: sql:"fk(ImageV2:id),index=btree,allow-null"
 	unknownFields protoimpl.UnknownFields
@@ -348,7 +348,7 @@ type isImageComponentV2_SetTopCvss interface {
 }
 
 type ImageComponentV2_TopCvss struct {
-	TopCvss float32 `protobuf:"fixed32,7,opt,name=top_cvss,json=topCvss,proto3,oneof" search:"Component Top CVSS,store"` // @gotags: search:"Component Top CVSS,store"
+	TopCvss float32 `protobuf:"fixed32,7,opt,name=top_cvss,json=topCvss,proto3,oneof" search:"Component Top CVSS"` // @gotags: search:"Component Top CVSS"
 }
 
 func (*ImageComponentV2_TopCvss) isImageComponentV2_SetTopCvss() {}
