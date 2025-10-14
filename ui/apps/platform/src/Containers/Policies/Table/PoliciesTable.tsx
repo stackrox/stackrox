@@ -398,7 +398,7 @@ function PoliciesTable({
                     </Thead>
                     <TbodyUnified
                         tableState={tableState}
-                        colSpan={8}
+                        colSpan={9}
                         emptyProps={{
                             title: 'No policies found',
                             message: '',
@@ -541,7 +541,7 @@ function PoliciesTable({
                                         <Tr isExpanded={isExpanded}>
                                             <Td />
                                             <Td />
-                                            <Td colSpan={6}>
+                                            <Td colSpan={7}>
                                                 <ExpandableRowContent>
                                                     {description}
                                                 </ExpandableRowContent>
