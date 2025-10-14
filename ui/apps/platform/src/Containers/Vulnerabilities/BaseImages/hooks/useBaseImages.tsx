@@ -16,6 +16,76 @@ export function BaseImagesProvider({ children }: { children: ReactNode }) {
     const [baseImages, setBaseImages] = useState<BaseImage[]>(MOCK_BASE_IMAGES);
 
     const addBaseImage = useCallback((name: string) => {
+        // Generate realistic counts based on base image name
+        const generateCounts = (baseName: string) => {
+            const lowerName = baseName.toLowerCase();
+
+            // Different base images have different typical CVE profiles
+            if (lowerName.includes('ubuntu')) {
+                return {
+                    cveCount: {
+                        critical: Math.floor(Math.random() * 5) + 3,
+                        high: Math.floor(Math.random() * 15) + 8,
+                        medium: Math.floor(Math.random() * 20) + 15,
+                        low: Math.floor(Math.random() * 10) + 5,
+                        total: 0, // Will be calculated
+                    },
+                    imageCount: Math.floor(Math.random() * 10) + 5,
+                    deploymentCount: Math.floor(Math.random() * 15) + 8,
+                    lastBaseLayerIndex: 4,
+                };
+            }
+            if (lowerName.includes('alpine')) {
+                return {
+                    cveCount: {
+                        critical: Math.floor(Math.random() * 2) + 1,
+                        high: Math.floor(Math.random() * 5) + 2,
+                        medium: Math.floor(Math.random() * 8) + 3,
+                        low: Math.floor(Math.random() * 5) + 2,
+                        total: 0,
+                    },
+                    imageCount: Math.floor(Math.random() * 8) + 3,
+                    deploymentCount: Math.floor(Math.random() * 12) + 5,
+                    lastBaseLayerIndex: 2,
+                };
+            }
+            if (lowerName.includes('node')) {
+                return {
+                    cveCount: {
+                        critical: Math.floor(Math.random() * 4) + 2,
+                        high: Math.floor(Math.random() * 12) + 6,
+                        medium: Math.floor(Math.random() * 18) + 10,
+                        low: Math.floor(Math.random() * 8) + 4,
+                        total: 0,
+                    },
+                    imageCount: Math.floor(Math.random() * 12) + 6,
+                    deploymentCount: Math.floor(Math.random() * 18) + 10,
+                    lastBaseLayerIndex: 5,
+                };
+            }
+
+            // Default for other base images
+            return {
+                cveCount: {
+                    critical: Math.floor(Math.random() * 3) + 1,
+                    high: Math.floor(Math.random() * 10) + 5,
+                    medium: Math.floor(Math.random() * 15) + 8,
+                    low: Math.floor(Math.random() * 8) + 3,
+                    total: 0,
+                },
+                imageCount: Math.floor(Math.random() * 8) + 4,
+                deploymentCount: Math.floor(Math.random() * 12) + 6,
+                lastBaseLayerIndex: 3,
+            };
+        };
+
+        const counts = generateCounts(name);
+        const totalCves =
+            counts.cveCount.critical +
+            counts.cveCount.high +
+            counts.cveCount.medium +
+            counts.cveCount.low;
+
         const newBaseImage: BaseImage = {
             id: `base-image-${Date.now()}`,
             name,
@@ -32,12 +102,12 @@ export function BaseImagesProvider({ children }: { children: ReactNode }) {
             },
             imageCount: 0,
             deploymentCount: 0,
-            lastBaseLayerIndex: 0,
+            lastBaseLayerIndex: counts.lastBaseLayerIndex,
         };
 
         setBaseImages((prev) => [newBaseImage, ...prev]);
 
-        // Simulate scan completion after 2 seconds
+        // Simulate scan completion after 5 seconds with realistic counts
         setTimeout(() => {
             setBaseImages((prev) =>
                 prev.map((img) =>
@@ -46,11 +116,17 @@ export function BaseImagesProvider({ children }: { children: ReactNode }) {
                               ...img,
                               scanningStatus: 'COMPLETED',
                               lastScanned: new Date().toISOString(),
+                              cveCount: {
+                                  ...counts.cveCount,
+                                  total: totalCves,
+                              },
+                              imageCount: counts.imageCount,
+                              deploymentCount: counts.deploymentCount,
                           }
                         : img
                 )
             );
-        }, 2000);
+        }, 5000);
     }, []);
 
     const removeBaseImage = useCallback((id: string) => {
