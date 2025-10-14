@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
     Alert,
     AlertActionCloseButton,
@@ -10,10 +10,6 @@ import {
     FlexItem,
     Card,
     CardBody,
-    SearchInput,
-    Toolbar,
-    ToolbarContent,
-    ToolbarItem,
 } from '@patternfly/react-core';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 
@@ -30,7 +26,6 @@ import { useBaseImages } from './hooks/useBaseImages';
  */
 function BaseImagesListPage() {
     const { baseImages, addBaseImage, removeBaseImage } = useBaseImages();
-    const [searchValue, setSearchValue] = useState('');
     const addModalToggle = useSelectToggle();
     const { toasts, addToast, removeToast } = useToasts();
 
@@ -46,10 +41,6 @@ function BaseImagesListPage() {
             addToast(`Base image ${removedImage.name} removed`, 'success');
         }
     };
-
-    const filteredBaseImages = baseImages.filter((baseImage) =>
-        baseImage.name.toLowerCase().includes(searchValue.toLowerCase())
-    );
 
     const showEmptyState = baseImages.length === 0;
 
@@ -83,26 +74,9 @@ function BaseImagesListPage() {
                         </CardBody>
                     </Card>
                 ) : (
-                    <>
-                        <Toolbar>
-                            <ToolbarContent>
-                                <ToolbarItem variant="search-filter">
-                                    <SearchInput
-                                        placeholder="Search by base image name"
-                                        value={searchValue}
-                                        onChange={(_event, value) => setSearchValue(value)}
-                                        onClear={() => setSearchValue('')}
-                                    />
-                                </ToolbarItem>
-                            </ToolbarContent>
-                        </Toolbar>
-                        <Card>
-                            <BaseImageTable
-                                baseImages={filteredBaseImages}
-                                onRemove={handleRemoveBaseImage}
-                            />
-                        </Card>
-                    </>
+                    <Card>
+                        <BaseImageTable baseImages={baseImages} onRemove={handleRemoveBaseImage} />
+                    </Card>
                 )}
             </PageSection>
 

@@ -15,7 +15,7 @@ import PageTitle from 'Components/PageTitle';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import { vulnerabilitiesBasePath } from 'routePaths';
 import BaseImageHeader from './components/BaseImageHeader';
-import BaseImageCVEsTab from './tabs/BaseImageCVEsTab';
+import BaseImageDetailTabs from './components/BaseImageDetailTabs';
 import { useBaseImages } from './hooks/useBaseImages';
 
 /**
@@ -86,11 +86,8 @@ function BaseImageDetailPage() {
 
             <BaseImageHeader baseImage={baseImage} />
 
-            <PageSection
-                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
-                padding={{ default: 'noPadding' }}
-            >
-                <BaseImageCVEsTab baseImageId={id} />
+            <PageSection isCenterAligned>
+                <BaseImageDetailTabs baseImageId={id} />
             </PageSection>
         </>
     );

@@ -1,13 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import {
-    Card,
-    CardBody,
-    PageSection,
-    SearchInput,
-    Toolbar,
-    ToolbarContent,
-    ToolbarGroup,
-    ToolbarItem,
     Text,
     EmptyState,
     EmptyStateHeader,
@@ -60,7 +52,6 @@ function getSeverityLabel(severity: CVESeverity) {
  * CVEs tab for base image detail page
  */
 function BaseImageCVEsTab({ baseImageId }: BaseImageCVEsTabProps) {
-    const [searchValue, setSearchValue] = useState('');
     const [expandedCveIds, setExpandedCveIds] = useState<Set<string>>(new Set());
 
     // Reset states when baseImageId changes
@@ -69,21 +60,6 @@ function BaseImageCVEsTab({ baseImageId }: BaseImageCVEsTabProps) {
     }, [baseImageId]);
 
     const cves = useMemo(() => MOCK_BASE_IMAGE_CVES[baseImageId] || [], [baseImageId]);
-
-    const filteredCves = useMemo(() => {
-        return cves.filter((cve) => {
-            // Search filter
-            const matchesSearch =
-                !searchValue ||
-                cve.cveId.toLowerCase().includes(searchValue.toLowerCase()) ||
-                cve.summary.toLowerCase().includes(searchValue.toLowerCase()) ||
-                cve.components.some((comp) =>
-                    comp.name.toLowerCase().includes(searchValue.toLowerCase())
-                );
-
-            return matchesSearch;
-        });
-    }, [cves, searchValue]);
 
     const toggleRowExpanded = (cveId: string) => {
         setExpandedCveIds((prev) => {
@@ -99,153 +75,126 @@ function BaseImageCVEsTab({ baseImageId }: BaseImageCVEsTabProps) {
 
     if (cves.length === 0) {
         return (
-            <PageSection isFilled>
-                <Bullseye>
-                    <EmptyState>
-                        <EmptyStateHeader
-                            titleText="No CVEs found"
-                            icon={<EmptyStateIcon icon={SearchIcon} />}
-                            headingLevel="h2"
-                        />
-                    </EmptyState>
-                </Bullseye>
-            </PageSection>
+            <Bullseye>
+                <EmptyState>
+                    <EmptyStateHeader
+                        titleText="No CVEs found"
+                        icon={<EmptyStateIcon icon={SearchIcon} />}
+                        headingLevel="h2"
+                    />
+                </EmptyState>
+            </Bullseye>
         );
     }
 
     return (
-        <PageSection isFilled>
-            <Toolbar>
-                <ToolbarContent>
-                    <ToolbarGroup variant="filter-group">
-                        <ToolbarItem variant="search-filter">
-                            <SearchInput
-                                placeholder="Search by CVE ID, summary, or component"
-                                value={searchValue}
-                                onChange={(_event, value) => setSearchValue(value)}
-                                onClear={() => setSearchValue('')}
-                            />
-                        </ToolbarItem>
-                    </ToolbarGroup>
-                </ToolbarContent>
-            </Toolbar>
+        <>
+            {cves.length === 0 ? (
+                <Bullseye>
+                    <EmptyState>
+                        <EmptyStateHeader
+                            titleText="No CVEs match the current filters"
+                            icon={<EmptyStateIcon icon={SearchIcon} />}
+                            headingLevel="h3"
+                        />
+                    </EmptyState>
+                </Bullseye>
+            ) : (
+                <Table variant="compact" borders>
+                    <Thead noWrap>
+                        <Tr>
+                            <Th />
+                            <Th>CVE ID</Th>
+                            <Th>Severity</Th>
+                            <Th>CVSS Score</Th>
+                            <Th>Summary</Th>
+                            <Th>Fixed By</Th>
+                        </Tr>
+                    </Thead>
+                    {cves.map((cve, rowIndex) => {
+                        const isExpanded = expandedCveIds.has(cve.cveId);
+                        const SeverityIcon = getSeverityIcon(cve.severity);
 
-            <Card>
-                <CardBody>
-                    {filteredCves.length === 0 ? (
-                        <Bullseye>
-                            <EmptyState>
-                                <EmptyStateHeader
-                                    titleText="No CVEs match the current filters"
-                                    icon={<EmptyStateIcon icon={SearchIcon} />}
-                                    headingLevel="h3"
-                                />
-                            </EmptyState>
-                        </Bullseye>
-                    ) : (
-                        <Table variant="compact" borders>
-                            <Thead noWrap>
+                        return (
+                            <Tbody key={cve.cveId} isExpanded={isExpanded}>
                                 <Tr>
-                                    <Th expand={{ isExpanded: false }} />
-                                    <Th>CVE ID</Th>
-                                    <Th>Severity</Th>
-                                    <Th>CVSS Score</Th>
-                                    <Th>Summary</Th>
-                                    <Th>Fixed By</Th>
+                                    <Td
+                                        expand={{
+                                            rowIndex,
+                                            isExpanded,
+                                            onToggle: () => toggleRowExpanded(cve.cveId),
+                                        }}
+                                    />
+                                    <Td dataLabel="CVE ID">{cve.cveId}</Td>
+                                    <Td dataLabel="Severity">
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '8px',
+                                            }}
+                                        >
+                                            <SeverityIcon title={getSeverityLabel(cve.severity)} />
+                                            <span>{getSeverityLabel(cve.severity)}</span>
+                                        </div>
+                                    </Td>
+                                    <Td dataLabel="CVSS Score">{cve.cvssScore.toFixed(1)}</Td>
+                                    <Td dataLabel="Summary">
+                                        <div
+                                            style={{
+                                                maxWidth: '400px',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap',
+                                            }}
+                                            title={cve.summary}
+                                        >
+                                            {cve.summary}
+                                        </div>
+                                    </Td>
+                                    <Td dataLabel="Fixed By">
+                                        {cve.fixedBy || (
+                                            <Text component="small">No fix available</Text>
+                                        )}
+                                    </Td>
                                 </Tr>
-                            </Thead>
-                            {filteredCves.map((cve, rowIndex) => {
-                                const isExpanded = expandedCveIds.has(cve.cveId);
-                                const SeverityIcon = getSeverityIcon(cve.severity);
-
-                                return (
-                                    <Tbody key={cve.cveId} isExpanded={isExpanded}>
-                                        <Tr>
-                                            <Td
-                                                expand={{
-                                                    rowIndex,
-                                                    isExpanded,
-                                                    onToggle: () => toggleRowExpanded(cve.cveId),
-                                                }}
-                                            />
-                                            <Td dataLabel="CVE ID">{cve.cveId}</Td>
-                                            <Td dataLabel="Severity">
-                                                <div
-                                                    style={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '8px',
-                                                    }}
-                                                >
-                                                    <SeverityIcon
-                                                        title={getSeverityLabel(cve.severity)}
-                                                    />
-                                                    <span>{getSeverityLabel(cve.severity)}</span>
-                                                </div>
-                                            </Td>
-                                            <Td dataLabel="CVSS Score">
-                                                {cve.cvssScore.toFixed(1)}
-                                            </Td>
-                                            <Td dataLabel="Summary">
-                                                <div
-                                                    style={{
-                                                        maxWidth: '400px',
-                                                        overflow: 'hidden',
-                                                        textOverflow: 'ellipsis',
-                                                        whiteSpace: 'nowrap',
-                                                    }}
-                                                    title={cve.summary}
-                                                >
-                                                    {cve.summary}
-                                                </div>
-                                            </Td>
-                                            <Td dataLabel="Fixed By">
-                                                {cve.fixedBy || (
-                                                    <Text component="small">No fix available</Text>
-                                                )}
-                                            </Td>
-                                        </Tr>
-                                        <Tr isExpanded={isExpanded}>
-                                            <Td colSpan={6}>
-                                                <ExpandableRowContent>
-                                                    <div style={{ padding: '16px' }}>
-                                                        <Text className="pf-v5-u-font-weight-bold pf-v5-u-mb-sm">
-                                                            Affected Components:
-                                                        </Text>
-                                                        <Table variant="compact" borders={false}>
-                                                            <Thead>
-                                                                <Tr>
-                                                                    <Th>Component Name</Th>
-                                                                    <Th>Version</Th>
-                                                                    <Th>Layer Index</Th>
-                                                                </Tr>
-                                                            </Thead>
-                                                            <Tbody>
-                                                                {cve.components.map((component) => (
-                                                                    <Tr
-                                                                        key={`${component.name}-${component.version}`}
-                                                                    >
-                                                                        <Td>{component.name}</Td>
-                                                                        <Td>{component.version}</Td>
-                                                                        <Td>
-                                                                            {component.layerIndex}
-                                                                        </Td>
-                                                                    </Tr>
-                                                                ))}
-                                                            </Tbody>
-                                                        </Table>
-                                                    </div>
-                                                </ExpandableRowContent>
-                                            </Td>
-                                        </Tr>
-                                    </Tbody>
-                                );
-                            })}
-                        </Table>
-                    )}
-                </CardBody>
-            </Card>
-        </PageSection>
+                                <Tr isExpanded={isExpanded}>
+                                    <Td colSpan={6}>
+                                        <ExpandableRowContent>
+                                            <div style={{ padding: '16px' }}>
+                                                <Text className="pf-v5-u-font-weight-bold pf-v5-u-mb-sm">
+                                                    Affected Components:
+                                                </Text>
+                                                <Table variant="compact" borders={false}>
+                                                    <Thead>
+                                                        <Tr>
+                                                            <Th>Component Name</Th>
+                                                            <Th>Version</Th>
+                                                            <Th>Layer Index</Th>
+                                                        </Tr>
+                                                    </Thead>
+                                                    <Tbody>
+                                                        {cve.components.map((component) => (
+                                                            <Tr
+                                                                key={`${component.name}-${component.version}`}
+                                                            >
+                                                                <Td>{component.name}</Td>
+                                                                <Td>{component.version}</Td>
+                                                                <Td>{component.layerIndex}</Td>
+                                                            </Tr>
+                                                        ))}
+                                                    </Tbody>
+                                                </Table>
+                                            </div>
+                                        </ExpandableRowContent>
+                                    </Td>
+                                </Tr>
+                            </Tbody>
+                        );
+                    })}
+                </Table>
+            )}
+        </>
     );
 }
 
