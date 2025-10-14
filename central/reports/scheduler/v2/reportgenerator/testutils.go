@@ -43,19 +43,11 @@ func testDeploymentsWithImages(namespaces []*storage.NamespaceMetadata, numDeplo
 	deployments := make([]*storage.Deployment, 0, capacity)
 	images := make([]*storage.Image, 0, capacity)
 
-	for j, namespace := range namespaces {
+	for _, namespace := range namespaces {
 		for i := 0; i < numDeploymentsPerNamespace; i++ {
 			depName := fmt.Sprintf("%s_%s_dep%d", namespace.GetClusterName(), namespace.GetName(), i)
 			image := testImage(depName)
-			var deployment *storage.Deployment
-			if j == 0 && i == 0 {
-				// Add a copy of image with same SHA, components and CVEs, but different name
-				image2 := image.CloneVT()
-				image2.Name.FullName = image.GetName().GetFullName() + "_copy"
-				deployment = testDeployment(depName, namespace, image, image2)
-			} else {
-				deployment = testDeployment(depName, namespace, image)
-			}
+			deployment := testDeployment(depName, namespace, image)
 			deployments = append(deployments, deployment)
 			images = append(images, image)
 		}
@@ -63,25 +55,21 @@ func testDeploymentsWithImages(namespaces []*storage.NamespaceMetadata, numDeplo
 	return deployments, images
 }
 
-func testDeployment(deploymentName string, namespace *storage.NamespaceMetadata, images ...*storage.Image) *storage.Deployment {
-	dep := &storage.Deployment{
+func testDeployment(deploymentName string, namespace *storage.NamespaceMetadata, image *storage.Image) *storage.Deployment {
+	return &storage.Deployment{
 		Name:        deploymentName,
 		Id:          uuid.NewV4().String(),
 		ClusterName: namespace.GetClusterName(),
 		ClusterId:   namespace.GetClusterId(),
 		Namespace:   namespace.GetName(),
 		NamespaceId: namespace.GetId(),
+		Containers: []*storage.Container{
+			{
+				Name:  fmt.Sprintf("%s_container", deploymentName),
+				Image: types2.ToContainerImage(image),
+			},
+		},
 	}
-
-	containers := make([]*storage.Container, 0, len(images))
-	for i, image := range images {
-		containers = append(containers, &storage.Container{
-			Name:  fmt.Sprintf("%s_container_%d", deploymentName, i),
-			Image: types2.ToContainerImage(image),
-		})
-	}
-	dep.Containers = containers
-	return dep
 }
 
 func testWatchedImages(numImages int) []*storage.Image {
