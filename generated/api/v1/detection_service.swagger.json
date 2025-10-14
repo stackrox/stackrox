@@ -145,9 +145,36 @@
         "UNSET",
         "DEPLOYMENT",
         "CONTAINER_IMAGE",
-        "RESOURCE"
+        "RESOURCE",
+        "HOST"
       ],
       "default": "UNSET"
+    },
+    "AlertFileActivityViolation": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "activity": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageFileActivity"
+          }
+        }
+      }
+    },
+    "AlertHost": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
     },
     "AlertProcessViolation": {
       "type": "object",
@@ -256,6 +283,42 @@
       ],
       "default": "UNSET",
       "title": "For any update to EnvVarSource, please also update 'ui/src/messages/common.js'"
+    },
+    "FileActivityFileMetadata": {
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "gid": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "mode": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "username": {
+          "type": "string"
+        },
+        "group": {
+          "type": "string"
+        }
+      }
+    },
+    "FileActivityOperation": {
+      "type": "string",
+      "enum": [
+        "CREATE",
+        "UNLINK",
+        "RENAME",
+        "PERMISSION_CHANGE",
+        "OWNERSHIP_CHANGE",
+        "WRITE",
+        "OPEN"
+      ],
+      "default": "CREATE"
     },
     "KeyValueAttrsKeyValueAttr": {
       "type": "object",
@@ -506,6 +569,10 @@
           "$ref": "#/definitions/storageAlertResource",
           "title": "Represents an alert on a kubernetes resource (configmaps, secrets, etc.)\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
         },
+        "host": {
+          "$ref": "#/definitions/AlertHost",
+          "title": "Represents an alert on a host/node.\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
+        },
         "violations": {
           "type": "array",
           "items": {
@@ -516,6 +583,9 @@
         },
         "processViolation": {
           "$ref": "#/definitions/AlertProcessViolation"
+        },
+        "fileActivityViolation": {
+          "$ref": "#/definitions/AlertFileActivityViolation"
         },
         "enforcement": {
           "$ref": "#/definitions/AlertEnforcement"
@@ -543,7 +613,7 @@
           "$ref": "#/definitions/AlertEntityType"
         }
       },
-      "title": "Next available tag: 24"
+      "title": "Next available tag: 25"
     },
     "storageAlertDeployment": {
       "type": "object",
@@ -903,7 +973,8 @@
       "enum": [
         "NOT_APPLICABLE",
         "DEPLOYMENT_EVENT",
-        "AUDIT_LOG_EVENT"
+        "AUDIT_LOG_EVENT",
+        "HOST_EVENT"
       ],
       "default": "NOT_APPLICABLE"
     },
@@ -941,6 +1012,45 @@
       "properties": {
         "name": {
           "type": "string"
+        }
+      }
+    },
+    "storageFileActivity": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "$ref": "#/definitions/storageFileActivityFile"
+        },
+        "operation": {
+          "$ref": "#/definitions/FileActivityOperation"
+        },
+        "moved": {
+          "$ref": "#/definitions/storageFileActivityFile",
+          "description": "specific to `RENAME` activity, the new location / metadata of the file."
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "title": "When the file activity happened"
+        },
+        "process": {
+          "$ref": "#/definitions/storageProcessIndicator",
+          "description": "The process that performed the action. May contain deployment/namespace\ninformation."
+        }
+      },
+      "description": "FileActivity contains fields related to arbitrary file activity\nperformed by a given process. This activity can come from k8s, or\ndirectly on a node.\n\nIt is currently intended to be used in Sensor and for detection,\nbut will only be stored embedded in an Alert. As a result, it\ndoes not currently define a primary key."
+    },
+    "storageFileActivityFile": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "hostPath": {
+          "type": "string"
+        },
+        "meta": {
+          "$ref": "#/definitions/FileActivityFileMetadata"
         }
       }
     },

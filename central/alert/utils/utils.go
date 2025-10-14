@@ -14,6 +14,8 @@ func GetEntityType(alert *storage.Alert) storage.Alert_EntityType {
 		return storage.Alert_CONTAINER_IMAGE
 	case *storage.Alert_Resource_:
 		return storage.Alert_RESOURCE
+	case *storage.Alert_Host_:
+		return storage.Alert_HOST
 	}
 	return storage.Alert_UNSET
 }
