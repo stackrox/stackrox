@@ -23,7 +23,7 @@ metadata:
     # added to the PR. See the Slack tread linked from ROX-30580.
     pipelinesascode.tekton.dev/on-label: "[]"
   labels:
-    appstudio.openshift.io/application: acs
+    appstudio.openshift.io/application: acs-4-9
   name: retag-scanner-db
   namespace: rh-acs-tenant
 
@@ -45,7 +45,7 @@ spec:
     name: retag-pipeline
 
   taskRunTemplate:
-    serviceAccountName: build-pipeline-scanner-db
+    serviceAccountName: build-pipeline-scanner-db-4-9
 
   timeouts:
     tasks: 30m

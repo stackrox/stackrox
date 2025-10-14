@@ -23,8 +23,8 @@ metadata:
     # added to the PR. See the Slack tread linked from ROX-30580.
     pipelinesascode.tekton.dev/on-label: "[]"
   labels:
-    appstudio.openshift.io/application: acs
-    appstudio.openshift.io/component: main
+    appstudio.openshift.io/application: acs-4-9
+    appstudio.openshift.io/component: main-4-9
     pipelines.appstudio.openshift.io/type: build
   name: main-on-push
   namespace: rh-acs-tenant
