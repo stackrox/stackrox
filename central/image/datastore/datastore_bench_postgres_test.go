@@ -4,6 +4,8 @@ package datastore
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/sha256"
 	"fmt"
 	"testing"
 
@@ -85,8 +87,12 @@ func BenchmarkImageUpsert(b *testing.B) {
 	images := make([]*storage.Image, 0, 100)
 	for i := 0; i < 100; i++ {
 		img := fixtures.GetImageWithUniqueComponents(50)
-		id := fmt.Sprintf("%d", i)
-		img.Id = id
+		data := make([]byte, 10)
+		if _, err := rand.Read(data); err == nil {
+			id := fmt.Sprintf("%x", sha256.Sum256(data))
+			require.NoError(b, err)
+			img.Id = id
+		}
 		images = append(images, img)
 	}
 

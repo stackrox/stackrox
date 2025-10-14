@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
@@ -78,8 +79,7 @@ func BenchmarkImageUpsert(b *testing.B) {
 	images := make([]*storage.ImageV2, 0, 100)
 	for i := 0; i < 100; i++ {
 		img := fixtures.GetImageV2WithUniqueComponents(5)
-		id := fmt.Sprintf("%d", i)
-		img.Id = id
+		img.Id = uuid.NewV4().String()
 		images = append(images, img)
 	}
 
