@@ -11,7 +11,7 @@ function BaseImagesPage() {
     return (
         <BaseImagesProvider>
             <Routes>
-                <Route path="/" element={<BaseImagesListPage />} />
+                <Route index element={<BaseImagesListPage />} />
                 <Route path=":id" element={<BaseImageDetailPage />} />
             </Routes>
         </BaseImagesProvider>

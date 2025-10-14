@@ -1,19 +1,142 @@
 import React from 'react';
+import {
+    Breadcrumb,
+    BreadcrumbItem,
+    Bullseye,
+    Divider,
+    PageSection,
+    Skeleton,
+    Tab,
+    Tabs,
+    TabTitleText,
+} from '@patternfly/react-core';
+import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { useParams } from 'react-router-dom-v5-compat';
-import { PageSection, Title } from '@patternfly/react-core';
+
+import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+import PageTitle from 'Components/PageTitle';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate';
+import useURLStringUnion from 'hooks/useURLStringUnion';
+
+import { vulnerabilitiesBasePath } from 'routePaths';
+import BaseImageHeader from './components/BaseImageHeader';
+import BaseImageCVEsTab from './tabs/BaseImageCVEsTab';
+import BaseImageImagesTab from './tabs/BaseImageImagesTab';
+import BaseImageDeploymentsTab from './tabs/BaseImageDeploymentsTab';
+import { useBaseImages } from './hooks/useBaseImages';
+import type { BaseImageDetailTab } from './types';
+
+const baseImageTabValues = ['cves', 'images', 'deployments'] as const;
 
 /**
- * Base Image detail page - placeholder for Phase 2
+ * Base Image detail page - shows comprehensive information about a tracked base image
  */
 function BaseImageDetailPage() {
     const { id } = useParams<{ id: string }>();
+    const { getBaseImageById } = useBaseImages();
+    const [activeTabKey, setActiveTabKey] = useURLStringUnion<BaseImageDetailTab>(
+        'tab',
+        baseImageTabValues
+    );
+
+    const baseImage = getBaseImageById(id || '');
+    const baseImagesListPath = `${vulnerabilitiesBasePath}/base-images`;
+
+    if (!id) {
+        return (
+            <>
+                <PageTitle title="Base Image Details" />
+                <PageSection variant="light">
+                    <Bullseye>
+                        <EmptyStateTemplate
+                            title="No base image ID provided"
+                            headingLevel="h2"
+                            icon={ExclamationCircleIcon}
+                            iconClassName="pf-v5-u-danger-color-100"
+                        />
+                    </Bullseye>
+                </PageSection>
+            </>
+        );
+    }
+
+    if (!baseImage) {
+        return (
+            <>
+                <PageTitle title="Base Image Details" />
+                <PageSection variant="light">
+                    <Bullseye>
+                        <EmptyStateTemplate
+                            title="Base image not found"
+                            headingLevel="h2"
+                            icon={ExclamationCircleIcon}
+                            iconClassName="pf-v5-u-danger-color-100"
+                        >
+                            The base image with ID &quot;{id}&quot; could not be found. It may have
+                            been removed or the ID is invalid.
+                        </EmptyStateTemplate>
+                    </Bullseye>
+                </PageSection>
+            </>
+        );
+    }
 
     return (
-        <PageSection variant="light">
-            <Title headingLevel="h1">Base Image Details</Title>
-            <p>Base Image detail page for ID: {id}</p>
-            <p>To be implemented in Phase 2</p>
-        </PageSection>
+        <>
+            <PageTitle title={`Base Images - ${baseImage.name}`} />
+            <PageSection variant="light" className="pf-v5-u-py-md">
+                <Breadcrumb>
+                    <BreadcrumbItemLink to={baseImagesListPath}>Base Images</BreadcrumbItemLink>
+                    <BreadcrumbItem isActive>
+                        {baseImage ? (
+                            baseImage.name
+                        ) : (
+                            <Skeleton screenreaderText="Loading base image name" width="200px" />
+                        )}
+                    </BreadcrumbItem>
+                </Breadcrumb>
+            </PageSection>
+            <Divider component="div" />
+
+            <BaseImageHeader baseImage={baseImage} />
+
+            <PageSection
+                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
+                padding={{ default: 'noPadding' }}
+            >
+                <Tabs
+                    activeKey={activeTabKey}
+                    onSelect={(_e, key) => {
+                        setActiveTabKey(key as BaseImageDetailTab);
+                    }}
+                    className="pf-v5-u-pl-md pf-v5-u-background-color-100"
+                    mountOnEnter
+                    unmountOnExit
+                >
+                    <Tab
+                        className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
+                        eventKey="cves"
+                        title={<TabTitleText>CVEs</TabTitleText>}
+                    >
+                        <BaseImageCVEsTab baseImageId={id} />
+                    </Tab>
+                    <Tab
+                        className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
+                        eventKey="images"
+                        title={<TabTitleText>Images</TabTitleText>}
+                    >
+                        <BaseImageImagesTab baseImageId={id} />
+                    </Tab>
+                    <Tab
+                        className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
+                        eventKey="deployments"
+                        title={<TabTitleText>Deployments</TabTitleText>}
+                    >
+                        <BaseImageDeploymentsTab baseImageId={id} />
+                    </Tab>
+                </Tabs>
+            </PageSection>
+        </>
     );
 }
 

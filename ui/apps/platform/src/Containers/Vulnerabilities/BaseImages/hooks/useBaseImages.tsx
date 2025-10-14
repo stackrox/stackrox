@@ -7,6 +7,7 @@ type BaseImagesContextType = {
     addBaseImage: (name: string) => void;
     removeBaseImage: (id: string) => void;
     updateBaseImageStatus: (id: string, status: ScanningStatus) => void;
+    getBaseImageById: (id: string) => BaseImage | undefined;
 };
 
 const BaseImagesContext = createContext<BaseImagesContextType | undefined>(undefined);
@@ -62,9 +63,22 @@ export function BaseImagesProvider({ children }: { children: ReactNode }) {
         );
     }, []);
 
+    const getBaseImageById = useCallback(
+        (id: string) => {
+            return baseImages.find((img) => img.id === id);
+        },
+        [baseImages]
+    );
+
     return (
         <BaseImagesContext.Provider
-            value={{ baseImages, addBaseImage, removeBaseImage, updateBaseImageStatus }}
+            value={{
+                baseImages,
+                addBaseImage,
+                removeBaseImage,
+                updateBaseImageStatus,
+                getBaseImageById,
+            }}
         >
             {children}
         </BaseImagesContext.Provider>
