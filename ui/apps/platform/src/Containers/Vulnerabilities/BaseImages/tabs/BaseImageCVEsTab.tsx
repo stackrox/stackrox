@@ -4,8 +4,6 @@ import {
     CardBody,
     PageSection,
     SearchInput,
-    Select,
-    SelectOption,
     Toolbar,
     ToolbarContent,
     ToolbarGroup,
@@ -63,11 +61,14 @@ function getSeverityLabel(severity: CVESeverity) {
  */
 function BaseImageCVEsTab({ baseImageId }: BaseImageCVEsTabProps) {
     const [searchValue, setSearchValue] = useState('');
-    const [severityFilter, setSeverityFilter] = useState<CVESeverity[]>([]);
-    const [isSeveritySelectOpen, setIsSeveritySelectOpen] = useState(false);
     const [expandedCveIds, setExpandedCveIds] = useState<Set<string>>(new Set());
 
-    const cves = MOCK_BASE_IMAGE_CVES[baseImageId] || [];
+    // Reset states when baseImageId changes
+    React.useEffect(() => {
+        setExpandedCveIds(new Set());
+    }, [baseImageId]);
+
+    const cves = useMemo(() => MOCK_BASE_IMAGE_CVES[baseImageId] || [], [baseImageId]);
 
     const filteredCves = useMemo(() => {
         return cves.filter((cve) => {
@@ -80,27 +81,9 @@ function BaseImageCVEsTab({ baseImageId }: BaseImageCVEsTabProps) {
                     comp.name.toLowerCase().includes(searchValue.toLowerCase())
                 );
 
-            // Severity filter
-            const matchesSeverity =
-                severityFilter.length === 0 || severityFilter.includes(cve.severity);
-
-            return matchesSearch && matchesSeverity;
+            return matchesSearch;
         });
-    }, [cves, searchValue, severityFilter]);
-
-    const handleSeverityToggle = () => {
-        setIsSeveritySelectOpen(!isSeveritySelectOpen);
-    };
-
-    const handleSeveritySelect = (
-        _event: React.MouseEvent | React.ChangeEvent,
-        selection: string | number
-    ) => {
-        const severity = selection as CVESeverity;
-        setSeverityFilter((prev) =>
-            prev.includes(severity) ? prev.filter((s) => s !== severity) : [...prev, severity]
-        );
-    };
+    }, [cves, searchValue]);
 
     const toggleRowExpanded = (cveId: string) => {
         setExpandedCveIds((prev) => {
@@ -143,22 +126,6 @@ function BaseImageCVEsTab({ baseImageId }: BaseImageCVEsTabProps) {
                                 onClear={() => setSearchValue('')}
                             />
                         </ToolbarItem>
-                        <ToolbarItem>
-                            <Select
-                                variant="checkbox"
-                                aria-label="Select severities"
-                                onToggle={handleSeverityToggle}
-                                onSelect={handleSeveritySelect}
-                                selections={severityFilter}
-                                isOpen={isSeveritySelectOpen}
-                                placeholderText="Filter by severity"
-                            >
-                                <SelectOption value="CRITICAL">Critical</SelectOption>
-                                <SelectOption value="HIGH">High</SelectOption>
-                                <SelectOption value="MEDIUM">Medium</SelectOption>
-                                <SelectOption value="LOW">Low</SelectOption>
-                            </Select>
-                        </ToolbarItem>
                     </ToolbarGroup>
                 </ToolbarContent>
             </Toolbar>
@@ -179,7 +146,7 @@ function BaseImageCVEsTab({ baseImageId }: BaseImageCVEsTabProps) {
                         <Table variant="compact" borders>
                             <Thead noWrap>
                                 <Tr>
-                                    <Th screenReaderText="Row expansion" />
+                                    <Th expand={{ isExpanded: false }} />
                                     <Th>CVE ID</Th>
                                     <Th>Severity</Th>
                                     <Th>CVSS Score</Th>

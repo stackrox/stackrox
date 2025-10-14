@@ -74,14 +74,12 @@ function BaseImageTable({ baseImages, onRemove }: BaseImageTableProps) {
     };
 
     const getSortParams = (column: SortColumn) => ({
-        sort: {
-            sortBy: {
-                index: 0,
-                direction: sortDirection,
-            },
-            onSort: () => handleSort(column),
-            columnIndex: 0,
+        sortBy: {
+            index: 0,
+            direction: sortDirection,
         },
+        onSort: () => handleSort(column),
+        columnIndex: 0,
     });
 
     const sortedImages = [...baseImages].sort((a, b) => {
@@ -183,6 +181,7 @@ function BaseImageTable({ baseImages, onRemove }: BaseImageTableProps) {
                                         importantCount={baseImage.cveCount.high}
                                         moderateCount={baseImage.cveCount.medium}
                                         lowCount={baseImage.cveCount.low}
+                                        unknownCount={0}
                                         entity="image"
                                         filteredSeverities={filteredSeverities}
                                     />

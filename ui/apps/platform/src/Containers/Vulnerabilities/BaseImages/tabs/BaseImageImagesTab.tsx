@@ -90,14 +90,12 @@ function BaseImageImagesTab({ baseImageId }: BaseImageImagesTabProps) {
     };
 
     const getSortParams = (column: SortColumn) => ({
-        sort: {
-            sortBy: {
-                index: 0,
-                direction: sortDirection,
-            },
-            onSort: () => handleSort(column),
-            columnIndex: 0,
+        sortBy: {
+            index: 0,
+            direction: sortDirection,
         },
+        onSort: () => handleSort(column),
+        columnIndex: 0,
     });
 
     const filteredSeverities: VulnerabilitySeverityLabel[] = [
@@ -193,6 +191,7 @@ function BaseImageImagesTab({ baseImageId }: BaseImageImagesTabProps) {
                                                     importantCount={image.cveCount.high}
                                                     moderateCount={image.cveCount.medium}
                                                     lowCount={image.cveCount.low}
+                                                    unknownCount={0}
                                                     entity="image"
                                                     filteredSeverities={filteredSeverities}
                                                 />

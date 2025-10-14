@@ -41,14 +41,28 @@ function BaseImageDeploymentsTab({ baseImageId }: BaseImageDeploymentsTabProps) 
     const [isClusterSelectOpen, setIsClusterSelectOpen] = useState(false);
     const [isNamespaceSelectOpen, setIsNamespaceSelectOpen] = useState(false);
 
+    // Reset select states when baseImageId changes
+    React.useEffect(() => {
+        setIsClusterSelectOpen(false);
+        setIsNamespaceSelectOpen(false);
+        setClusterFilter([]);
+        setNamespaceFilter([]);
+    }, [baseImageId]);
+
     const deployments = MOCK_BASE_IMAGE_DEPLOYMENTS[baseImageId] || [];
 
     // Extract unique clusters and namespaces for filters
     const uniqueClusters = useMemo(() => {
+        if (!deployments || deployments.length === 0) {
+            return [];
+        }
         return Array.from(new Set(deployments.map((d) => d.cluster))).sort();
     }, [deployments]);
 
     const uniqueNamespaces = useMemo(() => {
+        if (!deployments || deployments.length === 0) {
+            return [];
+        }
         return Array.from(new Set(deployments.map((d) => d.namespace))).sort();
     }, [deployments]);
 
@@ -115,34 +129,38 @@ function BaseImageDeploymentsTab({ baseImageId }: BaseImageDeploymentsTabProps) 
     };
 
     const getSortParams = (column: SortColumn) => ({
-        sort: {
-            sortBy: {
-                index: 0,
-                direction: sortDirection,
-            },
-            onSort: () => handleSort(column),
-            columnIndex: 0,
+        sortBy: {
+            index: 0,
+            direction: sortDirection,
         },
+        onSort: () => handleSort(column),
+        columnIndex: 0,
     });
 
     const handleClusterSelect = (
-        _event: React.MouseEvent | React.ChangeEvent,
-        selection: string | number
+        _event?: React.MouseEvent<Element, MouseEvent>,
+        selection?: string | number
     ) => {
-        const cluster = selection as string;
-        setClusterFilter((prev) =>
-            prev.includes(cluster) ? prev.filter((c) => c !== cluster) : [...prev, cluster]
-        );
+        if (selection) {
+            const cluster = selection as string;
+            setClusterFilter((prev) =>
+                prev.includes(cluster) ? prev.filter((c) => c !== cluster) : [...prev, cluster]
+            );
+        }
     };
 
     const handleNamespaceSelect = (
-        _event: React.MouseEvent | React.ChangeEvent,
-        selection: string | number
+        _event?: React.MouseEvent<Element, MouseEvent>,
+        selection?: string | number
     ) => {
-        const namespace = selection as string;
-        setNamespaceFilter((prev) =>
-            prev.includes(namespace) ? prev.filter((n) => n !== namespace) : [...prev, namespace]
-        );
+        if (selection) {
+            const namespace = selection as string;
+            setNamespaceFilter((prev) =>
+                prev.includes(namespace)
+                    ? prev.filter((n) => n !== namespace)
+                    : [...prev, namespace]
+            );
+        }
     };
 
     const filteredSeverities: VulnerabilitySeverityLabel[] = [
@@ -181,46 +199,46 @@ function BaseImageDeploymentsTab({ baseImageId }: BaseImageDeploymentsTabProps) 
                                 onClear={() => setSearchValue('')}
                             />
                         </ToolbarItem>
-                        {uniqueClusters.length > 1 && (
-                            <ToolbarItem>
-                                <Select
-                                    variant="checkbox"
-                                    aria-label="Select clusters"
-                                    onToggle={() => setIsClusterSelectOpen(!isClusterSelectOpen)}
-                                    onSelect={handleClusterSelect}
-                                    selections={clusterFilter}
-                                    isOpen={isClusterSelectOpen}
-                                    placeholderText="Filter by cluster"
-                                >
-                                    {uniqueClusters.map((cluster) => (
-                                        <SelectOption key={cluster} value={cluster}>
-                                            {cluster}
-                                        </SelectOption>
-                                    ))}
-                                </Select>
-                            </ToolbarItem>
-                        )}
-                        {uniqueNamespaces.length > 1 && (
-                            <ToolbarItem>
-                                <Select
-                                    variant="checkbox"
-                                    aria-label="Select namespaces"
-                                    onToggle={() =>
-                                        setIsNamespaceSelectOpen(!isNamespaceSelectOpen)
-                                    }
-                                    onSelect={handleNamespaceSelect}
-                                    selections={namespaceFilter}
-                                    isOpen={isNamespaceSelectOpen}
-                                    placeholderText="Filter by namespace"
-                                >
-                                    {uniqueNamespaces.map((namespace) => (
-                                        <SelectOption key={namespace} value={namespace}>
-                                            {namespace}
-                                        </SelectOption>
-                                    ))}
-                                </Select>
-                            </ToolbarItem>
-                        )}
+                        <ToolbarItem>
+                            <Select
+                                key="cluster-select"
+                                aria-label="Select clusters"
+                                onToggle={(_event: React.MouseEvent | undefined, isOpen: boolean) =>
+                                    setIsClusterSelectOpen(isOpen)
+                                }
+                                onSelect={handleClusterSelect}
+                                selections={clusterFilter}
+                                isOpen={isClusterSelectOpen}
+                                placeholderText="Filter by cluster"
+                                isDisabled={uniqueClusters.length <= 1}
+                            >
+                                {uniqueClusters.map((cluster) => (
+                                    <SelectOption key={cluster} value={cluster}>
+                                        {cluster}
+                                    </SelectOption>
+                                ))}
+                            </Select>
+                        </ToolbarItem>
+                        <ToolbarItem>
+                            <Select
+                                key="namespace-select"
+                                aria-label="Select namespaces"
+                                onToggle={(_event: React.MouseEvent | undefined, isOpen: boolean) =>
+                                    setIsNamespaceSelectOpen(isOpen)
+                                }
+                                onSelect={handleNamespaceSelect}
+                                selections={namespaceFilter}
+                                isOpen={isNamespaceSelectOpen}
+                                placeholderText="Filter by namespace"
+                                isDisabled={uniqueNamespaces.length <= 1}
+                            >
+                                {uniqueNamespaces.map((namespace) => (
+                                    <SelectOption key={namespace} value={namespace}>
+                                        {namespace}
+                                    </SelectOption>
+                                ))}
+                            </Select>
+                        </ToolbarItem>
                     </ToolbarGroup>
                 </ToolbarContent>
             </Toolbar>
@@ -263,6 +281,7 @@ function BaseImageDeploymentsTab({ baseImageId }: BaseImageDeploymentsTabProps) 
                                                     importantCount={deployment.cveCount.high}
                                                     moderateCount={deployment.cveCount.medium}
                                                     lowCount={deployment.cveCount.low}
+                                                    unknownCount={0}
                                                     entity="deployment"
                                                     filteredSeverities={filteredSeverities}
                                                 />

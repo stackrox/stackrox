@@ -1,0 +1,303 @@
+# Cursor Rules for StackRox UI
+
+This file provides guidance to Cursor AI when working with the StackRox UI codebase.
+
+## Essential Commands
+
+### Development Commands
+
+-   `npm run start` - Start development server (from apps/platform directory)
+-   `npm run build` - Build UI for production
+-   `npm run clean` - Clean build artifacts and test results
+-   `npm run start:ocp-plugin` - Start OpenShift Console plugin development server
+-   `npm run build:ocp-plugin` - Build OpenShift Console plugin
+
+### Testing Commands
+
+-   `npm run test` - Run unit tests with Vitest
+-   `npm run test-coverage` - Run unit tests with coverage report
+-   `npm run test-e2e` - Run end-to-end tests with Cypress
+-   `npm run test-e2e:ocp` - Run OpenShift-specific E2E tests
+-   `npm run test-component` - Run component tests with Cypress
+-   `npm run cypress-open` - Open Cypress interactive test runner
+-   `npm run cypress-component` - Open Cypress component test runner
+
+### Code Quality Commands
+
+-   `npm run lint` - Run ESLint
+-   `npm run lint:fast-dev` - Run ESLint with faster rules for development
+-   `npm run lint:fix` - Run ESLint and auto-fix issues
+-   `npm run tsc` - Run TypeScript compiler check
+
+### Single Test Execution
+
+-   Unit tests: `npm test -- --testNamePattern="ComponentName"` or `npm test -- src/path/to/test.test.ts`
+-   E2E tests: `npm run cypress-spec -- "cypress/integration/test-name.test.js"`
+-   Component tests: Use Cypress component test runner
+
+## UI Architecture Overview
+
+### Directory Structure
+
+-   `apps/platform/` - Main React application
+-   `apps/platform/src/` - Application source code
+-   `apps/platform/cypress/` - E2E and component tests
+-   `apps/platform/scripts/` - Build and development scripts
+
+### Key Source Directories
+
+-   `src/components/` - Reusable React components
+-   `src/Containers/` - Page-level container components
+-   `src/services/` - API service calls and business logic
+-   `src/types/` - TypeScript type definitions
+-   `src/utils/` - Utility functions and helpers
+-   `src/hooks/` - Custom React hooks
+-   `src/reducers/` - Redux state management
+-   `src/sagas/` - Redux-Saga side effects
+
+### Technology Stack
+
+-   **Framework**: React 18 with TypeScript
+-   **UI Library**: PatternFly React components
+-   **State Management**: React state and context (migrating away from Redux/Redux-Saga)
+-   **Routing**: React Router v5 with connected-react-router
+-   **Testing**: Vitest (unit), Cypress (E2E/component)
+-   **Build Tool**: Vite
+-   **Styling**: PatternFly CSS variables and utility classes
+-   **Data Fetching**: Apollo Client (GraphQL), Axios (REST)
+
+### Development Patterns
+
+-   Component-first architecture with PatternFly design system
+-   Container/Presenter pattern for separating concerns
+-   React Context and useState/useReducer for state (migrating away from Redux)
+-   GraphQL for complex queries, REST for simple operations
+-   Custom hooks for reusable logic
+-   Type-safe API clients generated from protobuf definitions
+
+## Local Development Setup
+
+### Prerequisites
+
+-   Node.js >=20.0.0
+-   npm v9.x
+-   Docker (for backend services)
+
+### Development Workflow
+
+1. **Backend Setup**: Deploy StackRox backend using `../deploy/k8s/deploy-local.sh`
+2. **Install Dependencies**: `npm ci` (from apps/platform directory)
+3. **Start Development**: `npm run start`
+4. **Access UI**: https://localhost:3000 (proxies to backend at localhost:8000)
+
+### Environment Configuration
+
+-   `CI=true` - Treat warnings as errors in CI mode
+-   `TEST_RESULTS_OUTPUT_DIR` - Directory for test output files
+-   `CYPRESS_COMPONENT_TEST=true` - Enable component testing mode
+-   `ROX_AUTH_TOKEN` - Authentication token for GraphQL introspection
+
+### IDE Recommendations
+
+-   **ESLint Extension**: For real-time linting feedback
+-   **Prettier Extension**: For code formatting
+-   **TypeScript Extension**: For type checking and IntelliSense
+-   **React Developer Tools**: Browser extension for React debugging
+-   **Redux DevTools**: Browser extension for Redux state inspection
+
+## Testing Guidelines
+
+### Unit Testing
+
+-   Use Vitest with React Testing Library
+-   Test components in isolation with mocked dependencies
+-   Focus on user interactions and accessibility
+-   Maintain test coverage for critical business logic
+
+### E2E Testing
+
+-   Use Cypress for full application flows
+-   Test critical user journeys end-to-end
+-   Include accessibility testing with cypress-axe
+-   Test both standard and OpenShift Console plugin modes
+
+### Component Testing
+
+-   Use Cypress component testing for complex interactions
+-   Test components with real DOM rendering
+-   Useful for testing PatternFly component integrations
+
+## Data Fetching Patterns
+
+-   **Prefer useRestQuery**: Use `useRestQuery(fetchFunction)` for API calls instead of creating custom wrapper hooks
+-   **Check existing patterns**: Always grep for similar functionality before implementing new data fetching hooks
+-   **Avoid unnecessary abstractions**: Don't create custom hooks that are just wrappers around existing patterns
+-   **Use established services**: Leverage existing service functions in `src/services/` directory
+
+## State Management Guidelines
+
+-   **Use React built-in state**: Prefer `useState`, `useReducer`, and React Context for new code
+-   **Avoid Redux/Redux-Saga**: Do not use Redux or Redux-Saga for new features - only modify existing Redux code when migrating away from it
+-   **Component-level state**: Use local state (`useState`) for component-specific data
+-   **Shared state**: Use React Context for state that needs to be shared across components
+-   **Complex state logic**: Use `useReducer` for complex state transitions
+
+## Styling Guidelines
+
+-   **Prefer PatternFly components**: Use PatternFly React components whenever possible for consistent design and accessibility
+-   **Use PatternFly CSS variables**: For custom styling, leverage PatternFly's CSS custom properties and utility classes
+-   **Avoid CSS-in-JS**: Do not use styled-components or other CSS-in-JS solutions for new code
+-   **Avoid Tailwind CSS**: Do not use Tailwind utility classes for new code - use PatternFly utilities instead
+-   **Custom CSS**: When PatternFly doesn't provide what you need, write standard CSS modules or plain CSS
+
+## Code Quality and Readability
+
+-   Always prefer clarity over cleverness. Code should be self-explanatory to the next engineer who reads it.
+-   Use consistent naming conventions that match the project style (e.g., `camelCase` for JavaScript/TypeScript).
+-   Break down large functions into smaller, single-purpose ones.
+
+### Conditional Rendering with Data Processing
+
+-   **Process data before JSX**: When rendering lists or arrays conditionally, perform normalization, filtering, and validation above the JSX return statement
+-   **Use processed data for conditionals**: Instead of checking raw data existence, check the length or validity of the processed result
+-   **Avoid empty state rendering**: Ensure conditionals prevent rendering empty containers (like `<Stack>` with no children)
+
+Example:
+
+```tsx
+// ❌ Avoid - processing in JSX, potential for empty renders
+{rawData ? (
+  <Stack>
+    {normalizeArray(rawData)
+      .filter(isValid)
+      .map(item => <Component key={item} />)}
+  </Stack>
+) : 'Fallback'}
+
+// ✅ Prefer - process first, then conditionally render
+const validItems = rawData
+  ? normalizeArray(rawData).filter(isValid)
+  : [];
+
+return (
+  {validItems.length > 0 ? (
+    <Stack>
+      {validItems.map(item => <Component key={item} />)}
+    </Stack>
+  ) : 'Fallback'}
+);
+```
+
+This pattern ensures the UI accurately reflects the actual data state and prevents confusing empty renders when filters remove all items.
+
+## Refactoring and Pattern Changes
+
+When fixing bugs, optimizing code, or applying patterns across the codebase:
+
+### Search for All Instances First
+
+-   **Before fixing**: Use codebase search and grep tools to find all occurrences of the pattern you're about to change
+-   **Assess scope**: Determine how many files are affected before starting the work
+-   **Offer batch fixes**: When multiple files have the same issue, fix them all at once rather than one at a time
+-   **Example**: If optimizing how a modal is rendered in one component, search for all usages of that modal component
+
+### Respect Project Configuration
+
+-   **Don't modify imports blindly**: Check project configuration before removing/changing imports (especially React, which may be required for JSX in classic transform projects)
+-   **Test before committing**: Verify that linting/type-checking passes after import changes
+-   **Common gotcha**: This project requires `React` import for JSX even though modern React doesn't need it
+
+### Batch Related Changes
+
+-   **Group similar fixes**: When the same change applies to multiple files, make all edits in one session
+-   **Maintain consistency**: Ensure all instances of a pattern are updated to match
+-   **Reduce context switching**: Complete all related changes before moving to a different task
+
+## Documentation and Comments
+
+-   Add JSDoc comments to public functions, classes, and components.
+-   Write comments only where context is not obvious from the code itself.
+
+## Testing and Verification
+
+-   Write unit tests for new features and bug fixes.
+-   Ensure that tests cover both the "happy path" and edge cases.
+-   Run relevant tests locally.
+
+## Error Handling
+
+-   Handle errors gracefully, with clear error messages that provide actionable detail.
+-   Avoid silent failures unless explicitly required.
+-   Validate inputs early to prevent cascading issues.
+
+## Performance and Efficiency
+
+-   Avoid unnecessary complexity. Always start with a straightforward solution before optimizing.
+-   Use built-in language features and standard libraries before reaching for third-party dependencies.
+-   Consider memory and time complexity for large inputs.
+
+## Security and Safety
+
+-   Never hardcode secrets or credentials.
+-   Sanitize and validate all external inputs.
+-   Keep dependencies up to date and avoid unmaintained libraries.
+
+## RBAC (Role-Based Access Control) Guidelines
+
+**Always check RBAC permissions when:**
+
+-   Adding UI components that trigger actions (buttons, modals, forms)
+-   Creating links or navigation between different areas of the application
+-   Implementing data fetching or mutation operations
+-   Rendering conditional UI based on user capabilities
+
+**Cross-link RBAC validation:**
+
+-   When Component A links to Page B, ensure users have access to BOTH resources
+-   Check `routePaths.ts` for `resourceAccessRequirements` of destination pages
+-   Example: Report generation requires `Image` access, but viewing reports requires `WorkflowAdministration`
+
+**Common RBAC patterns:**
+
+```typescript
+// Always extract permissions at component top level
+const { hasReadAccess, hasReadWriteAccess } = usePermissions();
+const hasResourceAccess = hasReadAccess('ResourceName');
+const hasWriteAccess = hasReadWriteAccess('ResourceName');
+
+// Use permissions in conditional rendering
+const shouldShowFeature = isFeatureEnabled && hasResourceAccess;
+
+// Check cross-resource requirements for navigation
+const canAccessDestination = hasReadAccess('DestinationResource');
+```
+
+**RBAC checklist for new features:**
+
+1. What resource permissions does this feature require?
+2. Does this feature link to other pages? What permissions do those require?
+3. Are there conditional actions that need different permission levels?
+4. Could a user with partial permissions get into an unusable state?
+
+## Code Review Mindset
+
+-   Assume another engineer will review the code. Strive for code that passes on the first review.
+-   Write commit messages that explain _why_ a change was made, not just _what_.
+-   Respect project coding standards and linting rules.
+
+## Git Workflow
+
+-   Sign commits with `-s` flag
+-   Don't mention AI assistants in commits
+-   Run `npm run lint` before committing
+-   Run relevant tests for your changes
+-   Use conventional commit messages focusing on "why" rather than "what"
+
+## Cursor-Specific Guidelines
+
+-   **Use codebase search**: Always search the codebase to understand existing patterns before implementing new features
+-   **Read related files**: When making changes, read related files to understand the full context
+-   **Check for existing implementations**: Before creating new components or utilities, search for similar existing code
+-   **Batch similar changes**: When fixing patterns across multiple files, make all changes in one session
+-   **Respect project structure**: Follow the established directory structure and naming conventions
+-   **Validate changes**: Always run linting and type checking after making changes
