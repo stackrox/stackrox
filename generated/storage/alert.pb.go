@@ -311,7 +311,7 @@ func (ListAlert_ResourceType) EnumDescriptor() ([]byte, []int) {
 	return file_storage_alert_proto_rawDescGZIP(), []int{1, 0}
 }
 
-// Next available tag: 25
+// Next available tag: 26
 type Alert struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Alert ID" sensorhash:"ignore" sql:"pk,type(uuid)"`                                                                            // @gotags: search:"Alert ID" sensorhash:"ignore" sql:"pk,type(uuid)"
@@ -1967,7 +1967,7 @@ var File_storage_alert_proto protoreflect.FileDescriptor
 
 const file_storage_alert_proto_rawDesc = "" +
 	"\n" +
-	"\x13storage/alert.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x18storage/deployment.proto\x1a\x1astorage/network_flow.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\x1a\x1bstorage/file_activity.proto\"\xa2\x1c\n" +
+	"\x13storage/alert.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x18storage/deployment.proto\x1a\x1bstorage/file_activity.proto\x1a\x1astorage/network_flow.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\"\xa2\x1c\n" +
 	"\x05Alert\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x06policy\x18\x02 \x01(\v2\x0f.storage.PolicyR\x06policy\x12@\n" +
@@ -2271,10 +2271,10 @@ func file_storage_alert_proto_init() {
 		return
 	}
 	file_storage_deployment_proto_init()
+	file_storage_file_activity_proto_init()
 	file_storage_network_flow_proto_init()
 	file_storage_policy_proto_init()
 	file_storage_process_indicator_proto_init()
-	file_storage_file_activity_proto_init()
 	file_storage_alert_proto_msgTypes[0].OneofWrappers = []any{
 		(*Alert_Deployment_)(nil),
 		(*Alert_Image)(nil),
