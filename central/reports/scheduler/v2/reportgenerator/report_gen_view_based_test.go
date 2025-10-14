@@ -123,10 +123,9 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBased() {
 			query: "SEVERITY:CRITICAL_VULNERABILITY_SEVERITY",
 			expected: &viewBasedReportData{
 				deploymentNames: []string{"c1_ns1_dep0", "c1_ns2_dep0", "c2_ns1_dep0", "c2_ns2_dep0"},
-				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns1_dep0_img_copy", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
 				componentNames:  []string{"c1_ns1_dep0_img_comp", "c1_ns2_dep0_img_comp", "c2_ns1_dep0_img_comp", "c2_ns2_dep0_img_comp", "w0_img_comp", "w1_img_comp"},
 				cveNames: []string{
-					"CVE-fixable_critical-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns2_dep0_img_comp",
 					"CVE-fixable_critical-c2_ns1_dep0_img_comp",
@@ -141,11 +140,10 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBased() {
 			query: "SEVERITY:CRITICAL_VULNERABILITY_SEVERITY,IMPORTANT_VULNERABILITY_SEVERITY",
 			expected: &viewBasedReportData{
 				deploymentNames: []string{"c1_ns1_dep0", "c1_ns2_dep0", "c2_ns1_dep0", "c2_ns2_dep0"},
-				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns1_dep0_img_copy", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
 				componentNames: []string{"c1_ns1_dep0_img_comp", "c1_ns2_dep0_img_comp", "c2_ns1_dep0_img_comp", "c2_ns2_dep0_img_comp",
 					"w0_img_comp", "w1_img_comp"},
 				cveNames: []string{
-					"CVE-fixable_critical-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns2_dep0_img_comp",
 					"CVE-fixable_critical-c2_ns1_dep0_img_comp",
@@ -160,10 +158,9 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBased() {
 			query: "CVE Severity:CRITICAL_VULNERABILITY_SEVERITY+Fixable:true",
 			expected: &viewBasedReportData{
 				deploymentNames: []string{"c1_ns1_dep0", "c1_ns2_dep0", "c2_ns1_dep0", "c2_ns2_dep0"},
-				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns1_dep0_img_copy", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
 				componentNames:  []string{"c1_ns1_dep0_img_comp", "c1_ns2_dep0_img_comp", "c2_ns1_dep0_img_comp", "c2_ns2_dep0_img_comp", "w0_img_comp", "w1_img_comp"},
 				cveNames: []string{
-					"CVE-fixable_critical-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns2_dep0_img_comp",
 					"CVE-fixable_critical-c2_ns1_dep0_img_comp",
@@ -178,10 +175,9 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBased() {
 			query: "",
 			expected: &viewBasedReportData{
 				deploymentNames: []string{"c1_ns1_dep0", "c1_ns2_dep0", "c2_ns1_dep0", "c2_ns2_dep0"},
-				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns1_dep0_img_copy", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
 				componentNames:  []string{"c1_ns1_dep0_img_comp", "c1_ns2_dep0_img_comp", "c2_ns1_dep0_img_comp", "c2_ns2_dep0_img_comp", "w0_img_comp", "w1_img_comp"},
 				cveNames: []string{
-					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns2_dep0_img_comp", "CVE-nonFixable_low-c1_ns2_dep0_img_comp",
 					"CVE-fixable_critical-c2_ns1_dep0_img_comp", "CVE-nonFixable_low-c2_ns1_dep0_img_comp",
@@ -199,9 +195,9 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBased() {
 			query: "CVE:CVE-fixable_critical-c1_ns1_dep0_img_comp",
 			expected: &viewBasedReportData{
 				deploymentNames: []string{"c1_ns1_dep0"},
-				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns1_dep0_img_copy"},
+				imageNames:      []string{"c1_ns1_dep0_img"},
 				componentNames:  []string{"c1_ns1_dep0_img_comp"},
-				cveNames:        []string{"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-fixable_critical-c1_ns1_dep0_img_comp"},
+				cveNames:        []string{"CVE-fixable_critical-c1_ns1_dep0_img_comp"},
 			},
 		},
 		{
@@ -209,10 +205,9 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBased() {
 			query: "CVSS:>=7.0",
 			expected: &viewBasedReportData{
 				deploymentNames: []string{"c1_ns1_dep0", "c1_ns2_dep0", "c2_ns1_dep0", "c2_ns2_dep0"},
-				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns1_dep0_img_copy", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
 				componentNames:  []string{"c1_ns1_dep0_img_comp", "c1_ns2_dep0_img_comp", "c2_ns1_dep0_img_comp", "c2_ns2_dep0_img_comp", "w0_img_comp", "w1_img_comp"},
 				cveNames: []string{
-					"CVE-fixable_critical-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns2_dep0_img_comp",
 					"CVE-fixable_critical-c2_ns1_dep0_img_comp",
@@ -227,10 +222,9 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBased() {
 			query: "NVD CVSS:>=8",
 			expected: &viewBasedReportData{
 				deploymentNames: []string{"c1_ns1_dep0", "c1_ns2_dep0", "c2_ns1_dep0", "c2_ns2_dep0"},
-				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns1_dep0_img_copy", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
 				componentNames:  []string{"c1_ns1_dep0_img_comp", "c1_ns2_dep0_img_comp", "c2_ns1_dep0_img_comp", "c2_ns2_dep0_img_comp", "w0_img_comp", "w1_img_comp"},
 				cveNames: []string{
-					"CVE-fixable_critical-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns2_dep0_img_comp",
 					"CVE-fixable_critical-c2_ns1_dep0_img_comp",
@@ -245,10 +239,9 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBased() {
 			query: "Vulnerability State:OBSERVED",
 			expected: &viewBasedReportData{
 				deploymentNames: []string{"c1_ns1_dep0", "c1_ns2_dep0", "c2_ns1_dep0", "c2_ns2_dep0"},
-				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns1_dep0_img_copy", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
 				componentNames:  []string{"c1_ns1_dep0_img_comp", "c1_ns2_dep0_img_comp", "c2_ns1_dep0_img_comp", "c2_ns2_dep0_img_comp", "w0_img_comp", "w1_img_comp"},
 				cveNames: []string{
-					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns2_dep0_img_comp", "CVE-nonFixable_low-c1_ns2_dep0_img_comp",
 					"CVE-fixable_critical-c2_ns1_dep0_img_comp", "CVE-nonFixable_low-c2_ns1_dep0_img_comp",
@@ -264,12 +257,9 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBased() {
 			query: "Component:c1_ns1_dep0_img_comp",
 			expected: &viewBasedReportData{
 				deploymentNames: []string{"c1_ns1_dep0"},
-				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns1_dep0_img_copy"},
+				imageNames:      []string{"c1_ns1_dep0_img"},
 				componentNames:  []string{"c1_ns1_dep0_img_comp"},
-				cveNames: []string{
-					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
-					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
-				},
+				cveNames:        []string{"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp"},
 			},
 		},
 		// Test cases for image-related search fields
@@ -278,12 +268,9 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBased() {
 			query: "Image:c1_ns1_dep0_img",
 			expected: &viewBasedReportData{
 				deploymentNames: []string{"c1_ns1_dep0"},
-				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns1_dep0_img_copy"},
+				imageNames:      []string{"c1_ns1_dep0_img"},
 				componentNames:  []string{"c1_ns1_dep0_img_comp"},
-				cveNames: []string{
-					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
-					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
-				},
+				cveNames:        []string{"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp"},
 			},
 		},
 		{
@@ -291,10 +278,9 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBased() {
 			query: "Image Registry:docker.io",
 			expected: &viewBasedReportData{
 				deploymentNames: []string{"c1_ns1_dep0", "c1_ns2_dep0", "c2_ns1_dep0", "c2_ns2_dep0"},
-				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns1_dep0_img_copy", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
 				componentNames:  []string{"c1_ns1_dep0_img_comp", "c1_ns2_dep0_img_comp", "c2_ns1_dep0_img_comp", "c2_ns2_dep0_img_comp", "w0_img_comp", "w1_img_comp"},
 				cveNames: []string{
-					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns2_dep0_img_comp", "CVE-nonFixable_low-c1_ns2_dep0_img_comp",
 					"CVE-fixable_critical-c2_ns1_dep0_img_comp", "CVE-nonFixable_low-c2_ns1_dep0_img_comp",
@@ -309,10 +295,9 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBased() {
 			query: "Image Tag:latest",
 			expected: &viewBasedReportData{
 				deploymentNames: []string{"c1_ns1_dep0", "c1_ns2_dep0", "c2_ns1_dep0", "c2_ns2_dep0"},
-				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns1_dep0_img_copy", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
 				componentNames:  []string{"c1_ns1_dep0_img_comp", "c1_ns2_dep0_img_comp", "c2_ns1_dep0_img_comp", "c2_ns2_dep0_img_comp", "w0_img_comp", "w1_img_comp"},
 				cveNames: []string{
-					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns2_dep0_img_comp", "CVE-nonFixable_low-c1_ns2_dep0_img_comp",
 					"CVE-fixable_critical-c2_ns1_dep0_img_comp", "CVE-nonFixable_low-c2_ns1_dep0_img_comp",
@@ -328,10 +313,9 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBased() {
 			query: "Cluster:r/c1",
 			expected: &viewBasedReportData{
 				deploymentNames: []string{"c1_ns1_dep0", "c1_ns2_dep0"},
-				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns1_dep0_img_copy", "c1_ns2_dep0_img"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns2_dep0_img"},
 				componentNames:  []string{"c1_ns1_dep0_img_comp", "c1_ns2_dep0_img_comp"},
 				cveNames: []string{
-					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns2_dep0_img_comp", "CVE-nonFixable_low-c1_ns2_dep0_img_comp",
 				},
@@ -342,13 +326,9 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBased() {
 			query: "Namespace:r/ns1",
 			expected: &viewBasedReportData{
 				deploymentNames: []string{"c1_ns1_dep0", "c2_ns1_dep0"},
-				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns1_dep0_img_copy", "c2_ns1_dep0_img"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c2_ns1_dep0_img"},
 				componentNames:  []string{"c1_ns1_dep0_img_comp", "c2_ns1_dep0_img_comp"},
-				cveNames: []string{
-					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
-					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
-					"CVE-fixable_critical-c2_ns1_dep0_img_comp", "CVE-nonFixable_low-c2_ns1_dep0_img_comp",
-				},
+				cveNames:        []string{"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp", "CVE-fixable_critical-c2_ns1_dep0_img_comp", "CVE-nonFixable_low-c2_ns1_dep0_img_comp"},
 			},
 		},
 		{
@@ -356,12 +336,9 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBased() {
 			query: "Deployment:r/c1_ns1_dep0",
 			expected: &viewBasedReportData{
 				deploymentNames: []string{"c1_ns1_dep0"},
-				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns1_dep0_img_copy"},
+				imageNames:      []string{"c1_ns1_dep0_img"},
 				componentNames:  []string{"c1_ns1_dep0_img_comp"},
-				cveNames: []string{
-					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
-					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
-				},
+				cveNames:        []string{"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp"},
 			},
 		},
 		// Test cases for fixability-related search fields
@@ -370,10 +347,9 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBased() {
 			query: "Fixable:false",
 			expected: &viewBasedReportData{
 				deploymentNames: []string{"c1_ns1_dep0", "c1_ns2_dep0", "c2_ns1_dep0", "c2_ns2_dep0"},
-				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns1_dep0_img_copy", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
 				componentNames:  []string{"c1_ns1_dep0_img_comp", "c1_ns2_dep0_img_comp", "c2_ns1_dep0_img_comp", "c2_ns2_dep0_img_comp", "w0_img_comp", "w1_img_comp"},
 				cveNames: []string{
-					"CVE-nonFixable_low-c1_ns1_dep0_img_comp",
 					"CVE-nonFixable_low-c1_ns1_dep0_img_comp",
 					"CVE-nonFixable_low-c1_ns2_dep0_img_comp",
 					"CVE-nonFixable_low-c2_ns1_dep0_img_comp",
@@ -389,10 +365,9 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBased() {
 			query: "Cluster:c1+Severity:CRITICAL_VULNERABILITY_SEVERITY+Fixable:true",
 			expected: &viewBasedReportData{
 				deploymentNames: []string{"c1_ns1_dep0", "c1_ns2_dep0"},
-				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns1_dep0_img_copy", "c1_ns2_dep0_img"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns2_dep0_img"},
 				componentNames:  []string{"c1_ns1_dep0_img_comp", "c1_ns2_dep0_img_comp"},
 				cveNames: []string{
-					"CVE-fixable_critical-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns2_dep0_img_comp",
 				},
@@ -404,10 +379,9 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBased() {
 			query: "EPSS Probability:>=0.0",
 			expected: &viewBasedReportData{
 				deploymentNames: []string{"c1_ns1_dep0", "c1_ns2_dep0", "c2_ns1_dep0", "c2_ns2_dep0"},
-				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns1_dep0_img_copy", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
 				componentNames:  []string{"c1_ns1_dep0_img_comp", "c1_ns2_dep0_img_comp", "c2_ns1_dep0_img_comp", "c2_ns2_dep0_img_comp", "w0_img_comp", "w1_img_comp"},
 				cveNames: []string{
-					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns2_dep0_img_comp", "CVE-nonFixable_low-c1_ns2_dep0_img_comp",
 					"CVE-fixable_critical-c2_ns1_dep0_img_comp", "CVE-nonFixable_low-c2_ns1_dep0_img_comp",
@@ -422,10 +396,9 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBased() {
 			query: "Fixed By:1.1",
 			expected: &viewBasedReportData{
 				deploymentNames: []string{"c1_ns1_dep0", "c1_ns2_dep0", "c2_ns1_dep0", "c2_ns2_dep0"},
-				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns1_dep0_img_copy", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
 				componentNames:  []string{"c1_ns1_dep0_img_comp", "c1_ns2_dep0_img_comp", "c2_ns1_dep0_img_comp", "c2_ns2_dep0_img_comp", "w0_img_comp", "w1_img_comp"},
 				cveNames: []string{
-					"CVE-fixable_critical-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns2_dep0_img_comp",
 					"CVE-fixable_critical-c2_ns1_dep0_img_comp",
@@ -441,10 +414,9 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBased() {
 			query: "Component Version:1.0",
 			expected: &viewBasedReportData{
 				deploymentNames: []string{"c1_ns1_dep0", "c1_ns2_dep0", "c2_ns1_dep0", "c2_ns2_dep0"},
-				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns1_dep0_img_copy", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
 				componentNames:  []string{"c1_ns1_dep0_img_comp", "c1_ns2_dep0_img_comp", "c2_ns1_dep0_img_comp", "c2_ns2_dep0_img_comp", "w0_img_comp", "w1_img_comp"},
 				cveNames: []string{
-					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns2_dep0_img_comp", "CVE-nonFixable_low-c1_ns2_dep0_img_comp",
 					"CVE-fixable_critical-c2_ns1_dep0_img_comp", "CVE-nonFixable_low-c2_ns1_dep0_img_comp",
@@ -460,10 +432,9 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBased() {
 			query: "First Image Occurrence Timestamp:<01/01/2020",
 			expected: &viewBasedReportData{
 				deploymentNames: []string{"c1_ns1_dep0", "c1_ns2_dep0", "c2_ns1_dep0", "c2_ns2_dep0"},
-				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns1_dep0_img_copy", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
 				componentNames:  []string{"c1_ns1_dep0_img_comp", "c1_ns2_dep0_img_comp", "c2_ns1_dep0_img_comp", "c2_ns2_dep0_img_comp", "w0_img_comp", "w1_img_comp"},
 				cveNames: []string{
-					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns2_dep0_img_comp", "CVE-nonFixable_low-c1_ns2_dep0_img_comp",
 					"CVE-fixable_critical-c2_ns1_dep0_img_comp", "CVE-nonFixable_low-c2_ns1_dep0_img_comp",
@@ -582,10 +553,9 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBasedAccessScope() {
 			},
 			expected: &viewBasedReportData{
 				deploymentNames: []string{"c1_ns1_dep0", "c1_ns2_dep0", "c2_ns1_dep0"},
-				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns1_dep0_img_copy", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "w0_img", "w1_img"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "w0_img", "w1_img"},
 				componentNames:  []string{"c1_ns1_dep0_img_comp", "c1_ns2_dep0_img_comp", "c2_ns1_dep0_img_comp", "w0_img_comp", "w1_img_comp"},
 				cveNames: []string{
-					"CVE-fixable_critical-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns1_dep0_img_comp",
 					"CVE-fixable_critical-c1_ns2_dep0_img_comp",
 					"CVE-fixable_critical-c2_ns1_dep0_img_comp",
