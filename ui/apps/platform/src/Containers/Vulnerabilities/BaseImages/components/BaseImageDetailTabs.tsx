@@ -5,8 +5,9 @@ import useURLStringUnion from 'hooks/useURLStringUnion';
 import BaseImageTabToggleGroup from './BaseImageTabToggleGroup';
 import BaseImageCVEsTab from '../tabs/BaseImageCVEsTab';
 import BaseImageImagesTab from '../tabs/BaseImageImagesTab';
+import BaseImageDeploymentsTab from '../tabs/BaseImageDeploymentsTab';
 
-const baseImageTabValues = ['cves', 'images'] as const;
+const baseImageTabValues = ['cves', 'images', 'deployments'] as const;
 
 type BaseImageDetailTabsProps = {
     baseImageId: string;
@@ -23,6 +24,9 @@ function BaseImageDetailTabs({ baseImageId }: BaseImageDetailTabsProps) {
                 </div>
                 {activeTabKey === 'cves' && <BaseImageCVEsTab baseImageId={baseImageId} />}
                 {activeTabKey === 'images' && <BaseImageImagesTab baseImageId={baseImageId} />}
+                {activeTabKey === 'deployments' && (
+                    <BaseImageDeploymentsTab baseImageId={baseImageId} />
+                )}
             </CardBody>
         </Card>
     );

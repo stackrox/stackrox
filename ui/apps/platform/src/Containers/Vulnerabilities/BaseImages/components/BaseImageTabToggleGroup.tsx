@@ -4,7 +4,7 @@ import { ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import type { BaseImageDetailTab } from '../types';
 
-const baseImageTabValues = ['cves', 'images'] as const;
+const baseImageTabValues = ['cves', 'images', 'deployments'] as const;
 
 export type BaseImageTabToggleGroupProps = {
     onChange?: (tab: BaseImageDetailTab) => void;
@@ -31,6 +31,12 @@ function BaseImageTabToggleGroup({ onChange }: BaseImageTabToggleGroupProps) {
                 buttonId="images"
                 isSelected={activeTabKey === 'images'}
                 onChange={() => handleTabChange('images')}
+            />
+            <ToggleGroupItem
+                text="Deployments"
+                buttonId="deployments"
+                isSelected={activeTabKey === 'deployments'}
+                onChange={() => handleTabChange('deployments')}
             />
         </ToggleGroup>
     );

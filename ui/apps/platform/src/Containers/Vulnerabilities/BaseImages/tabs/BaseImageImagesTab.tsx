@@ -114,7 +114,6 @@ function BaseImageImagesTab({ baseImageId }: BaseImageImagesTabProps) {
                     <Thead noWrap>
                         <Tr>
                             <Th sort={getSortParams('name')}>Image Name</Th>
-                            <Th>SHA</Th>
                             <Th sort={getSortParams('totalCves')}>Total CVEs</Th>
                             <Th sort={getSortParams('baseCves')}>Base CVEs</Th>
                             <Th sort={getSortParams('appCves')}>App CVEs</Th>
@@ -132,19 +131,6 @@ function BaseImageImagesTab({ baseImageId }: BaseImageImagesTabProps) {
                                         >
                                             {image.name}
                                         </Link>
-                                    </Td>
-                                    <Td dataLabel="SHA">
-                                        <div
-                                            style={{
-                                                maxWidth: '200px',
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap',
-                                            }}
-                                            title={image.sha}
-                                        >
-                                            {image.sha}
-                                        </div>
                                     </Td>
                                     <Td dataLabel="Total CVEs">
                                         <SeverityCountLabels
