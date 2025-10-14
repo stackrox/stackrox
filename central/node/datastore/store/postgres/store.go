@@ -672,9 +672,8 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Node,
 }
 
 func (s *storeImpl) populateNode(ctx context.Context, tx *postgres.Tx, node *storage.Node) error {
-	q := search.NewQueryBuilder().AddExactMatches(search.NodeID, node.GetId()).ProtoQuery()
 	componentEdgeMap := map[string]*storage.NodeComponentEdge{}
-	err := s.nodeComponentEdgeStore.GetByQueryFn(ctx, q, func(obj *storage.NodeComponentEdge) error {
+	err := s.nodeComponentEdgeStore.GetByQueryFn(ctx, search.NewQueryBuilder().AddExactMatches(search.NodeID, node.GetId()).ProtoQuery(), func(obj *storage.NodeComponentEdge) error {
 		componentEdgeMap[obj.GetNodeComponentId()] = obj
 		return nil
 	})
@@ -692,16 +691,18 @@ func (s *storeImpl) populateNode(ctx context.Context, tx *postgres.Tx, node *sto
 		log.Errorf("Number of node component from edges (%d) is unexpected (%d) for node %s (id=%s)",
 			len(componentEdgeMap), len(components), node.GetName(), node.GetId())
 	}
-	componentCVEEdgeMap, err := getComponentCVEEdges(ctx, tx, componentIDs)
-	if err != nil {
-		return err
-	}
-
+	componentCVEEdgeMap := map[string][]*storage.NodeComponentCVEEdge{}
 	cveIDs := set.NewStringSet()
-	for _, edges := range componentCVEEdgeMap {
-		for _, edge := range edges {
-			cveIDs.Add(edge.GetNodeCveId())
-		}
+	err = s.nodeComponentCVEEdgeDataStore.GetByQueryFn(ctx,
+		search.NewQueryBuilder().AddExactMatches(search.ComponentID, componentIDs...).ProtoQuery(),
+		func(e *storage.NodeComponentCVEEdge) error {
+			componentCVEEdgeMap[e.GetNodeComponentId()] = append(componentCVEEdgeMap[e.GetNodeComponentId()], e)
+			cveIDs.Add(e.GetNodeCveId())
+			return nil
+		},
+	)
+	if err != nil {
+		return errors.Wrap(err, "fetching node component CVE edge data")
 	}
 
 	cveMap, err := getCVEs(ctx, tx, cveIDs.AsSlice())
@@ -749,75 +750,6 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx *postgres.Tx, nodeID str
 		return nil, false, err
 	}
 	return &node, true, nil
-}
-
-func getNodeComponentEdges(ctx context.Context, tx *postgres.Tx, nodeID string) (map[string]*storage.NodeComponentEdge, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeComponentEdge")
-
-	rows, err := tx.Query(ctx, "SELECT serialized FROM "+nodeComponentEdgesTable+" WHERE nodeid = $1", pgutils.NilOrUUID(nodeID))
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	componentIDToEdgeMap := make(map[string]*storage.NodeComponentEdge)
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return nil, err
-		}
-		msg := &storage.NodeComponentEdge{}
-		if err := msg.UnmarshalVTUnsafe(data); err != nil {
-			return nil, err
-		}
-		componentIDToEdgeMap[msg.GetNodeComponentId()] = msg
-	}
-	return componentIDToEdgeMap, rows.Err()
-}
-
-func getNodeComponents(ctx context.Context, tx *postgres.Tx, componentIDs []string) (map[string]*storage.NodeComponent, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeComponent")
-
-	rows, err := tx.Query(ctx, "SELECT serialized FROM "+nodeComponentsTable+" WHERE id = ANY($1::text[])", componentIDs)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	idToComponentMap := make(map[string]*storage.NodeComponent)
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return nil, err
-		}
-		msg := &storage.NodeComponent{}
-		if err := msg.UnmarshalVTUnsafe(data); err != nil {
-			return nil, err
-		}
-		idToComponentMap[msg.GetId()] = msg
-	}
-	return idToComponentMap, rows.Err()
-}
-
-func getComponentCVEEdges(ctx context.Context, tx *postgres.Tx, componentIDs []string) (map[string][]*storage.NodeComponentCVEEdge, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeComponentCVERelations")
-
-	rows, err := tx.Query(ctx, "SELECT serialized FROM "+componentCVEEdgesTable+" WHERE nodecomponentid = ANY($1::text[])", componentIDs)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	componentIDToEdgesMap := make(map[string][]*storage.NodeComponentCVEEdge)
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return nil, err
-		}
-		msg := &storage.NodeComponentCVEEdge{}
-		if err := msg.UnmarshalVTUnsafe(data); err != nil {
-			return nil, err
-		}
-		componentIDToEdgesMap[msg.GetNodeComponentId()] = append(componentIDToEdgesMap[msg.GetNodeComponentId()], msg)
-	}
-	return componentIDToEdgesMap, rows.Err()
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
