@@ -50,6 +50,7 @@ import {
     vulnerabilitiesInactiveImagesPath,
     vulnerabilitiesImagesWithoutCvesPath,
     vulnerabilitiesVirtualMachineCvesPath,
+    vulnerabilitiesBaseImagesPath,
 } from 'routePaths';
 
 import PageNotFound from 'Components/PageNotFound';
@@ -232,21 +233,51 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         component: asyncComponent(() => import('Containers/Violations/ViolationsPage')),
         path: violationsBasePath,
     },
+    'vulnerabilities/all-images': {
+        component: makeVulnMgmtUserWorkloadView('all-images'),
+        path: vulnerabilitiesAllImagesPath,
+    },
+    'vulnerabilities/base-images': {
+        component: asyncComponent(
+            () => import('Containers/Vulnerabilities/BaseImages/BaseImagesPage')
+        ),
+        path: vulnerabilitiesBaseImagesPath,
+    },
     'vulnerabilities/exception-management': {
         component: asyncComponent(
             () => import('Containers/Vulnerabilities/ExceptionManagement/ExceptionManagementPage')
         ),
         path: exceptionManagementPath,
     },
+    'vulnerabilities/images-without-cves': {
+        component: makeVulnMgmtUserWorkloadView('images-without-cves'),
+        path: vulnerabilitiesImagesWithoutCvesPath,
+    },
+    'vulnerabilities/inactive-images': {
+        component: makeVulnMgmtUserWorkloadView('inactive-images'),
+        path: vulnerabilitiesInactiveImagesPath,
+    },
     'vulnerabilities/node-cves': {
         component: asyncComponent(() => import('Containers/Vulnerabilities/NodeCves/NodeCvesPage')),
         path: vulnerabilitiesNodeCvesPath,
+    },
+    // Note: currently 'platform' is an implementation of the user-workloads view and
+    // it is expected that this will change in the future as these views diverge
+    'vulnerabilities/platform': {
+        component: makeVulnMgmtUserWorkloadView('platform'),
+        path: vulnerabilitiesPlatformPath,
     },
     'vulnerabilities/platform-cves': {
         component: asyncComponent(
             () => import('Containers/Vulnerabilities/PlatformCves/PlatformCvesPage')
         ),
         path: vulnerabilitiesPlatformCvesPath,
+    },
+    'vulnerabilities/reports': {
+        component: asyncComponent(
+            () => import('Containers/Vulnerabilities/VulnerablityReporting/VulnReportingPage')
+        ),
+        path: vulnerabilityReportsPath,
     },
     'vulnerabilities/user-workloads': {
         component: makeVulnMgmtUserWorkloadView('user-workloads'),
@@ -257,30 +288,6 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
             () => import('Containers/Vulnerabilities/VirtualMachineCves/VirtualMachineCvesPage')
         ),
         path: vulnerabilitiesVirtualMachineCvesPath,
-    },
-    // Note: currently 'platform' is an implementation of the user-workloads view and
-    // it is expected that this will change in the future as these views diverge
-    'vulnerabilities/platform': {
-        component: makeVulnMgmtUserWorkloadView('platform'),
-        path: vulnerabilitiesPlatformPath,
-    },
-    'vulnerabilities/all-images': {
-        component: makeVulnMgmtUserWorkloadView('all-images'),
-        path: vulnerabilitiesAllImagesPath,
-    },
-    'vulnerabilities/inactive-images': {
-        component: makeVulnMgmtUserWorkloadView('inactive-images'),
-        path: vulnerabilitiesInactiveImagesPath,
-    },
-    'vulnerabilities/images-without-cves': {
-        component: makeVulnMgmtUserWorkloadView('images-without-cves'),
-        path: vulnerabilitiesImagesWithoutCvesPath,
-    },
-    'vulnerabilities/reports': {
-        component: asyncComponent(
-            () => import('Containers/Vulnerabilities/VulnerablityReporting/VulnReportingPage')
-        ),
-        path: vulnerabilityReportsPath,
     },
     'vulnerability-management': {
         component: asyncComponent(() => import('Containers/VulnMgmt/WorkflowLayout')),

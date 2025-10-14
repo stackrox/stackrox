@@ -82,6 +82,8 @@ export const vulnerabilitiesUserWorkloadsPath = `${vulnerabilitiesBasePath}/user
 export const vulnerabilitiesPlatformPath = `${vulnerabilitiesBasePath}/platform`;
 export const vulnerabilitiesNodeCvesPath = `${vulnerabilitiesBasePath}/node-cves`;
 export const vulnerabilitiesVirtualMachineCvesPath = `${vulnerabilitiesBasePath}/virtual-machine-cves`;
+export const vulnerabilitiesBaseImagesPath = `${vulnerabilitiesBasePath}/base-images`;
+export const vulnerabilitiesBaseImageDetailsPath = `${vulnerabilitiesBaseImagesPath}/:id`;
 // System defined "views"
 export const vulnerabilitiesAllImagesPath = `${vulnerabilitiesBasePath}/all-images`;
 export const vulnerabilitiesInactiveImagesPath = `${vulnerabilitiesBasePath}/inactive-images`;
@@ -178,15 +180,16 @@ export type RouteKey =
     | 'systemconfig'
     | 'user'
     | 'violations'
+    | 'vulnerabilities/all-images'
+    | 'vulnerabilities/base-images'
     | 'vulnerabilities/exception-management'
+    | 'vulnerabilities/images-without-cves'
+    | 'vulnerabilities/inactive-images'
     | 'vulnerabilities/node-cves'
+    | 'vulnerabilities/platform'
+    | 'vulnerabilities/platform-cves'
     | 'vulnerabilities/reports'
     | 'vulnerabilities/user-workloads'
-    | 'vulnerabilities/platform'
-    | 'vulnerabilities/all-images'
-    | 'vulnerabilities/inactive-images'
-    | 'vulnerabilities/images-without-cves'
-    | 'vulnerabilities/platform-cves'
     | 'vulnerabilities/virtual-machine-cves'
     | 'vulnerability-management'
     ;
@@ -333,14 +336,29 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     violations: {
         resourceAccessRequirements: everyResource(['Alert']),
     },
+    'vulnerabilities/all-images': {
+        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
+    },
+    'vulnerabilities/base-images': {
+        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
+    },
     'vulnerabilities/exception-management': {
         resourceAccessRequirements: someResource([
             'VulnerabilityManagementRequests',
             'VulnerabilityManagementApprovals',
         ]),
     },
+    'vulnerabilities/images-without-cves': {
+        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
+    },
+    'vulnerabilities/inactive-images': {
+        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
+    },
     'vulnerabilities/node-cves': {
         resourceAccessRequirements: everyResource(['Cluster', 'Node']),
+    },
+    'vulnerabilities/platform': {
+        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
     'vulnerabilities/platform-cves': {
         resourceAccessRequirements: everyResource(['Cluster']),
@@ -349,18 +367,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['WorkflowAdministration']),
     },
     'vulnerabilities/user-workloads': {
-        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
-    },
-    'vulnerabilities/platform': {
-        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
-    },
-    'vulnerabilities/all-images': {
-        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
-    },
-    'vulnerabilities/inactive-images': {
-        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
-    },
-    'vulnerabilities/images-without-cves': {
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
     'vulnerabilities/virtual-machine-cves': {
@@ -453,6 +459,7 @@ const vulnManagementPathToLabelMap: Record<string, string> = {
 
 const vulnerabilitiesPathToLabelMap: Record<string, string> = {
     [vulnerabilitiesBasePath]: 'Vulnerabilities',
+    [vulnerabilitiesBaseImagesPath]: 'Base Images',
     [vulnerabilitiesPlatformCvesPath]: 'Platform CVEs',
     [vulnerabilitiesNodeCvesPath]: 'Node CVEs',
     [vulnerabilityReportsPath]: 'Vulnerability Reporting',
