@@ -67,6 +67,6 @@ func (s *serviceImpl) receiveMessages(stream sensor.FileActivityService_Communic
 			return errors.Wrap(err, "receiving file system activity message")
 		}
 
-		log.Info("Got activity: ", msg)
+		log.Info("Got file activity: ", msg)
 	}
 }
