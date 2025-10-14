@@ -265,8 +265,7 @@ class TestClusterTestSetsRunner(unittest.TestCase):
             ClusterTestSetsRunner(
                 sets=[
                     TestSet(None, test=test1),
-                    TestSet(None, test=skipped_test, post=post_skipped_test,
-                        always_run=False),
+                    TestSet(None, test=skipped_test, post=post_skipped_test, always_run=False),
                     TestSet(None, test=test3, post=post_test3),
                 ]
             ).run()

@@ -86,7 +86,7 @@ class ClusterTestSetsRunner:
         exception = self.run_initial_pre_test(exception)
 
         if exception is None:
-            for idx, test_set in enumerate(self.sets):
+            for test_set in self.sets:
                 if exception is None or test_set.always_run:
                     try:
                         log_event("About to run", test_set)
