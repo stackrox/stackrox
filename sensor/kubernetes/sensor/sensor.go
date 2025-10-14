@@ -138,8 +138,6 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		processSignals = signalService.New(processPipeline, indicators, signalService.WithTraceWriter(cfg.processIndicatorWriter))
 	}
 
-	fileSystemService := filesystemService.NewService()
-
 	networkFlowManager :=
 		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub, updatecomputer.New(), manager.WithEnrichTicker(cfg.networkFlowTicker))
 	enhancer := deploymentenhancer.CreateEnhancer(storeProvider)
@@ -230,7 +228,11 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		complianceService,
 		imageService,
 		deployment.NewService(storeProvider.Deployments(), storeProvider.Pods()),
-		fileSystemService,
+	}
+
+	if features.SensitiveFileActivity.Enabled() {
+		fileSystemService := filesystemService.NewService()
+		apiServices = append(apiServices, fileSystemService)
 	}
 
 	if features.VirtualMachines.Enabled() {
