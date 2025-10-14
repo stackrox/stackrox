@@ -63,10 +63,9 @@ func (s *serviceImpl) receiveMessages(stream sensor.FileActivityService_Communic
 	for {
 		msg, err := stream.Recv()
 		if err != nil {
-			log.Error("error dequeing file system activity event: ", err)
 			return errors.Wrap(err, "receiving file system activity message")
 		}
 
-		log.Info("Got file activity: ", msg)
+		log.Debug("Got file activity: ", msg)
 	}
 }
