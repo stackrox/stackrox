@@ -238,9 +238,4 @@ tasks.register<Test>("testDeploymentCheck") {
 allprojects {
     apply(plugin = "java")
     group = "io.stackrox"
-    java {
-        toolchain {
-            languageVersion.set(JavaLanguageVersion.of(11))
-        }
-    }
 }
