@@ -9,6 +9,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/node/datastore/store/common/v2"
+	componentstore "github.com/stackrox/rox/central/nodecomponent/datastore/store/postgres"
+	cveedgestore "github.com/stackrox/rox/central/nodecomponentcveedge/datastore/store/postgres"
+	edgestore "github.com/stackrox/rox/central/nodecomponentedge/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -77,17 +80,23 @@ type Store interface {
 }
 
 type storeImpl struct {
-	db                 postgres.DB
-	noUpdateTimestamps bool
-	keyFence           concurrency.KeyFence
+	db                            postgres.DB
+	noUpdateTimestamps            bool
+	keyFence                      concurrency.KeyFence
+	nodeComponentStore            componentstore.Store
+	nodeComponentEdgeStore        edgestore.Store
+	nodeComponentCVEEdgeDataStore cveedgestore.Store
 }
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB, noUpdateTimestamps bool, keyFence concurrency.KeyFence) Store {
 	return &storeImpl{
-		db:                 db,
-		noUpdateTimestamps: noUpdateTimestamps,
-		keyFence:           keyFence,
+		db:                            db,
+		noUpdateTimestamps:            noUpdateTimestamps,
+		keyFence:                      keyFence,
+		nodeComponentCVEEdgeDataStore: cveedgestore.New(db),
+		nodeComponentStore:            componentstore.New(db),
+		nodeComponentEdgeStore:        edgestore.New(db),
 	}
 }
 
@@ -661,9 +670,14 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Node,
 }
 
 func (s *storeImpl) populateNode(ctx context.Context, tx *postgres.Tx, node *storage.Node) error {
-	componentEdgeMap, err := getNodeComponentEdges(ctx, tx, node.GetId())
+	q := search.NewQueryBuilder().AddExactMatches(search.NodeID, node.GetId()).ProtoQuery()
+	componentEdgeMap := map[string]*storage.NodeComponentEdge{}
+	err := s.nodeComponentEdgeStore.GetByQueryFn(ctx, q, func(obj *storage.NodeComponentEdge) error {
+		componentEdgeMap[obj.GetNodeComponentId()] = obj
+		return nil
+	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "fetching node component edges")
 	}
 	componentIDs := make([]string, 0, len(componentEdgeMap))
 	for _, val := range componentEdgeMap {
