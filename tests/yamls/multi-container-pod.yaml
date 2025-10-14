@@ -14,11 +14,13 @@ spec:
   containers:
     - name: 1st
       image: quay.io/rhacs-eng/qa-multi-arch-nginx:latest
+      imagePullPolicy: IfNotPresent
       volumeMounts:
         - name: html
           mountPath: /usr/share/nginx/html
     - name: 2nd
       image: quay.io/rhacs-eng/qa-multi-arch-busybox:latest
+      imagePullPolicy: IfNotPresent
       volumeMounts:
         - name: html
           mountPath: /html
