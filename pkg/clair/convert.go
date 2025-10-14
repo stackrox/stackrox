@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scancomponent"
+	"github.com/stackrox/rox/pkg/scanners/storagewrappers"
 	"github.com/stackrox/rox/pkg/scans"
 	clairV1 "github.com/stackrox/scanner/api/v1"
 	clairConvert "github.com/stackrox/scanner/api/v1/convert"
@@ -101,31 +102,39 @@ func ConvertVulnerability(v clairV1.Vulnerability) *storage.EmbeddedVulnerabilit
 	vul.LastModified = protoconv.ConvertTimeString(m.LastModified)
 
 	if m.CvssV2 != nil && m.CvssV2.Vectors != "" {
-		if cvssV2, err := cvssv2.ParseCVSSV2(m.CvssV2.Vectors); err == nil {
-			cvssV2.ExploitabilityScore = m.CvssV2.ExploitabilityScore
-			cvssV2.ImpactScore = m.CvssV2.ImpactScore
-			cvssV2.Score = m.CvssV2.Score
+		cvssV2Wrapper := &storagewrappers.CVSSV2Wrapper{
+			CVSSV2: &storage.CVSSV2{},
+		}
+		if err := cvssv2.ParseCVSSV2(cvssV2Wrapper, m.CvssV2.Vectors); err == nil {
+			cvssV2Wrapper.SetExploitabilityScore(m.CvssV2.ExploitabilityScore)
+			cvssV2Wrapper.SetImpactScore(m.CvssV2.ImpactScore)
+			cvssV2Wrapper.SetScore(m.CvssV2.Score)
 
-			vul.CvssV2 = cvssV2
+			cvssV2Wrapper.SetSeverity(cvssv2.Severity(m.CvssV2.Score))
+
+			vul.CvssV2 = cvssV2Wrapper.AsCVSSV2()
 			// This sets the top level score for use in policies. It will be overwritten if v3 exists
 			vul.Cvss = m.CvssV2.Score
 			vul.ScoreVersion = storage.EmbeddedVulnerability_V2
-			vul.GetCvssV2().Severity = cvssv2.Severity(vul.GetCvss())
 		} else {
 			log.Error(err)
 		}
 	}
 
 	if m.CvssV3 != nil && m.CvssV3.Vectors != "" {
-		if cvssV3, err := cvssv3.ParseCVSSV3(m.CvssV3.Vectors); err == nil {
-			cvssV3.ExploitabilityScore = m.CvssV3.ExploitabilityScore
-			cvssV3.ImpactScore = m.CvssV3.ImpactScore
-			cvssV3.Score = m.CvssV3.Score
+		cvssV3Wrapper := &storagewrappers.CVSSV3Wrapper{
+			CVSSV3: &storage.CVSSV3{},
+		}
+		if err := cvssv3.ParseCVSSV3(cvssV3Wrapper, m.CvssV3.Vectors); err == nil {
+			cvssV3Wrapper.SetExploitabilityScore(m.CvssV3.ExploitabilityScore)
+			cvssV3Wrapper.SetImpactScore(m.CvssV3.ImpactScore)
+			cvssV3Wrapper.SetScore(m.CvssV3.Score)
 
-			vul.CvssV3 = cvssV3
+			cvssV3Wrapper.SetSeverity(cvssv3.Severity(m.CvssV3.Score))
+
+			vul.CvssV3 = cvssV3Wrapper.AsCVSSV3()
 			vul.Cvss = m.CvssV3.Score
 			vul.ScoreVersion = storage.EmbeddedVulnerability_V3
-			vul.GetCvssV3().Severity = cvssv3.Severity(vul.GetCvss())
 		} else {
 			log.Error(err)
 		}

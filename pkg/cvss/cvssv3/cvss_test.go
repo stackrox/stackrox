@@ -63,9 +63,10 @@ func TestParseCVSSV3(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
-			cvss, err := ParseCVSSV3(c.input)
+			wrapper := NewTestCVSSV3Wrapper()
+			err := ParseCVSSV3(wrapper, c.input)
 			assert.NoError(t, err)
-			protoassert.Equal(t, c.cvssV3, cvss)
+			protoassert.Equal(t, c.cvssV3, wrapper.GetCVSSV3())
 		})
 	}
 
@@ -140,7 +141,8 @@ func TestParseCVSSV3(t *testing.T) {
 
 	for _, c := range validCases {
 		t.Run(c, func(t *testing.T) {
-			_, err := ParseCVSSV3(c)
+			wrapper := NewTestCVSSV3Wrapper()
+			err := ParseCVSSV3(wrapper, c)
 			assert.NoError(t, err)
 		})
 	}
@@ -154,7 +156,8 @@ func TestParseCVSSV3(t *testing.T) {
 	}
 	for _, c := range errorCases {
 		t.Run(c, func(t *testing.T) {
-			_, err := ParseCVSSV3(c)
+			wrapper := NewTestCVSSV3Wrapper()
+			err := ParseCVSSV3(wrapper, c)
 			assert.Error(t, err)
 		})
 	}
@@ -174,14 +177,135 @@ func Test_CalculateScores(t *testing.T) {
 		_, err = fmt.Sscanf(l, "%f %f %f %s\n", &bS, &eS, &iS, &vec)
 		require.NoError(t, err)
 		t.Run(fmt.Sprintf("#%d/%s", n, l), func(t *testing.T) {
-			cvssV3, err := ParseCVSSV3(vec)
+			wrapper := NewTestCVSSV3Wrapper()
+			err := ParseCVSSV3(wrapper, vec)
 			assert.NoError(t, err)
-			err = CalculateScores(cvssV3)
+			err = CalculateScores(wrapper)
 			assert.NoError(t, err)
-			assert.InEpsilon(t, bS, cvssV3.GetScore(), 0.09)
-			assert.InEpsilon(t, eS, cvssV3.GetExploitabilityScore(), 0.09)
-			assert.InEpsilon(t, iS, cvssV3.GetImpactScore(), 0.09)
+			assert.InEpsilon(t, bS, wrapper.GetCVSSV3().GetScore(), 0.09)
+			assert.InEpsilon(t, eS, wrapper.GetCVSSV3().GetExploitabilityScore(), 0.09)
+			assert.InEpsilon(t, iS, wrapper.GetCVSSV3().GetImpactScore(), 0.09)
 		})
 	}
 	require.NoError(t, s.Err())
 }
+
+// region helpers
+
+// TestCVSSV3Wrapper is a test implementation of the Writer interface
+type TestCVSSV3Wrapper struct {
+	*storage.CVSSV3
+}
+
+func NewTestCVSSV3Wrapper() *TestCVSSV3Wrapper {
+	return &TestCVSSV3Wrapper{
+		CVSSV3: &storage.CVSSV3{},
+	}
+}
+
+func (w *TestCVSSV3Wrapper) GetCVSSV3() *storage.CVSSV3 {
+	if w == nil {
+		return nil
+	}
+	return w.CVSSV3
+}
+
+func (w *TestCVSSV3Wrapper) GetVector() string {
+	if w == nil || w.CVSSV3 == nil {
+		return ""
+	}
+	return w.CVSSV3.GetVector()
+}
+
+func (w *TestCVSSV3Wrapper) SetVector(vector string) {
+	if w == nil || w.CVSSV3 == nil {
+		return
+	}
+	w.CVSSV3.Vector = vector
+}
+
+func (w *TestCVSSV3Wrapper) SetExploitabilityScore(score float32) {
+	if w == nil || w.CVSSV3 == nil {
+		return
+	}
+	w.CVSSV3.ExploitabilityScore = score
+}
+
+func (w *TestCVSSV3Wrapper) SetImpactScore(score float32) {
+	if w == nil || w.CVSSV3 == nil {
+		return
+	}
+	w.CVSSV3.ImpactScore = score
+}
+
+func (w *TestCVSSV3Wrapper) SetAttackVector(attackVector storage.CVSSV3_AttackVector) {
+	if w == nil || w.CVSSV3 == nil {
+		return
+	}
+	w.CVSSV3.AttackVector = attackVector
+}
+
+func (w *TestCVSSV3Wrapper) SetAttackComplexity(attackComplexity storage.CVSSV3_Complexity) {
+	if w == nil || w.CVSSV3 == nil {
+		return
+	}
+	w.CVSSV3.AttackComplexity = attackComplexity
+}
+
+func (w *TestCVSSV3Wrapper) SetPrivilegesRequired(privilegesRequired storage.CVSSV3_Privileges) {
+	if w == nil || w.CVSSV3 == nil {
+		return
+	}
+	w.CVSSV3.PrivilegesRequired = privilegesRequired
+}
+
+func (w *TestCVSSV3Wrapper) SetUserInteraction(userInteraction storage.CVSSV3_UserInteraction) {
+	if w == nil || w.CVSSV3 == nil {
+		return
+	}
+	w.CVSSV3.UserInteraction = userInteraction
+}
+
+func (w *TestCVSSV3Wrapper) SetScope(scope storage.CVSSV3_Scope) {
+	if w == nil || w.CVSSV3 == nil {
+		return
+	}
+	w.CVSSV3.Scope = scope
+}
+
+func (w *TestCVSSV3Wrapper) SetConfidentiality(impact storage.CVSSV3_Impact) {
+	if w == nil || w.CVSSV3 == nil {
+		return
+	}
+	w.CVSSV3.Confidentiality = impact
+}
+
+func (w *TestCVSSV3Wrapper) SetIntegrity(impact storage.CVSSV3_Impact) {
+	if w == nil || w.CVSSV3 == nil {
+		return
+	}
+	w.CVSSV3.Integrity = impact
+}
+
+func (w *TestCVSSV3Wrapper) SetAvailability(impact storage.CVSSV3_Impact) {
+	if w == nil || w.CVSSV3 == nil {
+		return
+	}
+	w.CVSSV3.Availability = impact
+}
+
+func (w *TestCVSSV3Wrapper) SetScore(score float32) {
+	if w == nil || w.CVSSV3 == nil {
+		return
+	}
+	w.CVSSV3.Score = score
+}
+
+func (w *TestCVSSV3Wrapper) SetSeverity(severity storage.CVSSV3_Severity) {
+	if w == nil || w.CVSSV3 == nil {
+		return
+	}
+	w.CVSSV3.Severity = severity
+}
+
+// endregion helpers

@@ -48,28 +48,44 @@ func GetSeverityMapProtoVal(s string) (storage.CVSSV2_Severity, error) {
 	return v, nil
 }
 
+type Writer interface {
+	GetVector() string
+
+	SetVector(vector string)
+	SetAttackVector(attackVector storage.CVSSV2_AttackVector)
+	SetAccessComplexity(accessComplexity storage.CVSSV2_AccessComplexity)
+	SetAuthentication(authentication storage.CVSSV2_Authentication)
+	SetConfidentiality(impact storage.CVSSV2_Impact)
+	SetIntegrity(impact storage.CVSSV2_Impact)
+	SetAvailability(impact storage.CVSSV2_Impact)
+	SetExploitabilityScore(score float32)
+	SetImpactScore(score float32)
+	SetScore(score float32)
+	SetSeverity(severity storage.CVSSV2_Severity)
+}
+
 // ParseCVSSV2 parses the vector string and returns an internal representation of CVSS V2
-func ParseCVSSV2(vectorStr string) (*storage.CVSSV2, error) {
-	vec, err := cvss2.VectorFromString(vectorStr)
+func ParseCVSSV2(out Writer, vectorStr string) error {
+	return ParseWCVSSV2(out, vectorStr)
+}
+
+func ParseWCVSSV2(out Writer, vector string) error {
+	vec, err := getValidatedVectorFromString(vector)
 	if err != nil {
-		return nil, fmt.Errorf("invalid CVSSv2 vector %q: %w", vectorStr, err)
-	}
-	if err := vec.Validate(); err != nil {
-		return nil, fmt.Errorf("invalid CVSSv2 vector %q: %w", vectorStr, err)
+		return err
 	}
 
-	// We only care about base metrics at this time.
 	metrics := vec.BaseMetrics
 
-	return &storage.CVSSV2{
-		Vector:           vectorStr,
-		AttackVector:     attackVectorMap[metrics.AccessVector.String()],
-		AccessComplexity: accessComplexityMap[metrics.AccessComplexity.String()],
-		Authentication:   authenticationMap[metrics.Authentication.String()],
-		Confidentiality:  impactMap[metrics.ConfidentialityImpact.String()],
-		Integrity:        impactMap[metrics.IntegrityImpact.String()],
-		Availability:     impactMap[metrics.AvailabilityImpact.String()],
-	}, nil
+	out.SetVector(vector)
+	out.SetAttackVector(attackVectorMap[metrics.AccessVector.String()])
+	out.SetAccessComplexity(accessComplexityMap[metrics.AccessComplexity.String()])
+	out.SetAuthentication(authenticationMap[metrics.Authentication.String()])
+	out.SetConfidentiality(impactMap[metrics.ConfidentialityImpact.String()])
+	out.SetIntegrity(impactMap[metrics.IntegrityImpact.String()])
+	out.SetAvailability(impactMap[metrics.AvailabilityImpact.String()])
+
+	return nil
 }
 
 // Severity returns the severity for the cvss v2 score
@@ -86,16 +102,25 @@ func Severity(score float32) storage.CVSSV2_Severity {
 }
 
 // CalculateScores calculates and sets CVSS scores based on the current vector string.
-func CalculateScores(cvssV2 *storage.CVSSV2) error {
-	vec, err := cvss2.VectorFromString(cvssV2.GetVector())
+func CalculateScores(io Writer) error {
+	vec, err := getValidatedVectorFromString(io.GetVector())
 	if err != nil {
-		return fmt.Errorf("parsing: %w", err)
+		return err
+	}
+	io.SetScore(float32(vec.BaseScore()))
+	io.SetExploitabilityScore(float32(mathutil.RoundToDecimal(vec.ExploitabilityScore(), 1)))
+	io.SetImpactScore(float32(mathutil.RoundToDecimal(vec.ImpactScore(false), 1)))
+	return nil
+}
+
+func getValidatedVectorFromString(vector string) (cvss2.Vector, error) {
+	vec, err := cvss2.VectorFromString(vector)
+	if err != nil {
+		return cvss2.Vector{}, fmt.Errorf("invalid CVSSv2 vector %q: %w", vector, err)
 	}
 	if err := vec.Validate(); err != nil {
-		return fmt.Errorf("validating: %w", err)
+		return cvss2.Vector{}, fmt.Errorf("invalid CVSSv2 vector %q: %w", vector, err)
 	}
-	cvssV2.Score = float32(vec.BaseScore())
-	cvssV2.ExploitabilityScore = float32(mathutil.RoundToDecimal(vec.ExploitabilityScore(), 1))
-	cvssV2.ImpactScore = float32(mathutil.RoundToDecimal(vec.ImpactScore(false), 1))
-	return nil
+
+	return vec, nil
 }

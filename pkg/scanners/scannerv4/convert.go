@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/cvss/cvssv3"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/scanners/storagewrappers"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -295,39 +296,49 @@ func CVSSSource(source v4.VulnerabilityReport_Vulnerability_CVSS_Source) storage
 
 func toCVSSV2Scores(vulnCVSS *v4.VulnerabilityReport_Vulnerability_CVSS, cve string) (float32, *storage.CVSSV2, error) {
 	v2 := vulnCVSS.GetV2()
-	c, err := cvssv2.ParseCVSSV2(v2.GetVector())
-	if err == nil {
-		err = cvssv2.CalculateScores(c)
-		if err != nil {
-			return 0, nil, fmt.Errorf("calculating CVSS v2 scores: %w", err)
-		}
-		// Use the report's score if it exists.
-		if baseScore := v2.GetBaseScore(); baseScore != 0.0 && baseScore != c.GetScore() {
-			log.Debugf("Calculated CVSSv2 score does not match given base score (%f != %f) for %s. Using given score...", c.GetScore(), baseScore, cve)
-			c.Score = baseScore
-		}
-		c.Severity = cvssv2.Severity(c.GetScore())
-		return c.GetScore(), c, nil
+	cvssV2Wrapper := &storagewrappers.CVSSV2Wrapper{
+		CVSSV2: &storage.CVSSV2{},
 	}
-	return 0, nil, fmt.Errorf("parsing CVSS v2 vector: %w", err)
+	err := cvssv2.ParseCVSSV2(cvssV2Wrapper, v2.GetVector())
+	if err != nil {
+		return 0, nil, fmt.Errorf("parsing CVSS v2 vector: %w", err)
+	}
+	err = cvssv2.CalculateScores(cvssV2Wrapper)
+	if err != nil {
+		return 0, nil, fmt.Errorf("calculating CVSS v2 scores: %w", err)
+	}
+	// Use the report's score if it exists.
+	calculatedScore := cvssV2Wrapper.AsCVSSV2().GetScore()
+	if baseScore := v2.GetBaseScore(); baseScore != 0.0 && baseScore != calculatedScore {
+		log.Debugf("Calculated CVSSv2 score does not match given base score (%f != %f) for %s. Using given score...", calculatedScore, baseScore, cve)
+		cvssV2Wrapper.SetScore(baseScore)
+	}
+	resultScore := cvssV2Wrapper.AsCVSSV2().GetScore()
+	cvssV2Wrapper.SetSeverity(cvssv2.Severity(resultScore))
+	return resultScore, cvssV2Wrapper.AsCVSSV2(), nil
 }
 
 func toCVSSV3Scores(vulnCVSS *v4.VulnerabilityReport_Vulnerability_CVSS, cve string) (float32, *storage.CVSSV3, error) {
 	v3 := vulnCVSS.GetV3()
-	c, err := cvssv3.ParseCVSSV3(v3.GetVector())
-	if err == nil {
-		if err := cvssv3.CalculateScores(c); err != nil {
-			return 0, nil, fmt.Errorf("calculating CVSS v3 scores: %w", err)
-		}
-		// Use the report's score if it exists and differs from the calculated score
-		if baseScore := v3.GetBaseScore(); baseScore != 0.0 && baseScore != c.GetScore() {
-			log.Debugf("Calculated CVSSv3 score does not match given base score (calculated: %f, given: %f) for %s. Using given score...", c.GetScore(), baseScore, cve)
-			c.Score = baseScore
-		}
-		c.Severity = cvssv3.Severity(c.GetScore())
-		return c.GetScore(), c, nil
+	cvssV3Wrapper := &storagewrappers.CVSSV3Wrapper{
+		CVSSV3: &storage.CVSSV3{},
 	}
-	return 0, nil, fmt.Errorf("parsing CVSS v3 vector: %w", err)
+	err := cvssv3.ParseCVSSV3(cvssV3Wrapper, v3.GetVector())
+	if err != nil {
+		return 0, nil, fmt.Errorf("parsing CVSS v3 vector: %w", err)
+	}
+	err = cvssv3.CalculateScores(cvssV3Wrapper)
+	if err != nil {
+		return 0, nil, fmt.Errorf("calculating CVSS v3 scores: %w", err)
+	}
+	// Use the report's score if it exists and differs from the calculated score
+	calculatedScore := cvssV3Wrapper.AsCVSSV3().GetScore()
+	if baseScore := v3.GetBaseScore(); baseScore != 0.0 && baseScore != calculatedScore {
+		log.Debugf("Calculated CVSSv3 score does not match given base score (calculated: %f, given: %f) for %s. Using given score...", calculatedScore, baseScore, cve)
+		cvssV3Wrapper.SetScore(baseScore)
+	}
+	resultScore := cvssV3Wrapper.AsCVSSV3().GetScore()
+	return resultScore, cvssV3Wrapper.AsCVSSV3(), nil
 }
 
 // link returns the first link from space separated list of links (which is how ClairCore provides links).
