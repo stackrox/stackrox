@@ -2,7 +2,6 @@ package eventual
 
 import (
 	"context"
-
 	"sync/atomic"
 )
 
