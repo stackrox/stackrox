@@ -45,7 +45,7 @@ var (
 	reportGenCtx = resolvers.SetAuthorizerOverride(loaders.WithLoaderContext(sac.WithAllAccess(context.Background())), allow.Anonymous())
 
 	deployedImagesQueryParts = &ReportQueryParts{
-		Schema:  selectDeployedImagesSchema(),
+		Schema:  selectSchema(),
 		Selects: getSelectsDeployedImages(),
 		Pagination: search.NewPagination().
 			AddSortOption(search.NewSortOption(search.Cluster)).
@@ -512,14 +512,6 @@ func filterOnImageType(imageTypes []storage.VulnerabilityReportFilters_ImageType
 		}
 	}
 	return false
-}
-
-func selectDeployedImagesSchema() *walker.Schema {
-	// When usinng deployments schema, the greedy approach of query builder will select image name from deployments_containers table.
-	// This will avoid the discrepancy caused by multiple images with same SHA but different names in reports.
-	// This is just a temporary woraround until image data model is denormalized.
-	// TODO(ROX-30117): Revert to using image CVE schema once imageV2 model is rolled out.
-	return pkgSchema.DeploymentsSchema
 }
 
 func selectSchema() *walker.Schema {
