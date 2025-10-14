@@ -67,7 +67,7 @@ func (ts *TLSChallengeSuite) SetupSuite() {
 func (ts *TLSChallengeSuite) TearDownSuite() {
 	ts.cleanupProxy(ts.cleanupCtx, proxyNs)
 	if ts.originalCentralEndpoint != "" {
-		ts.mustSetDeploymentEnvVal(ts.cleanupCtx, s, sensorDeployment, sensorContainer, centralEndpointVar, ts.originalCentralEndpoint)
+		_ = ts.mustSetDeploymentEnvVal(ts.cleanupCtx, s, sensorDeployment, sensorContainer, centralEndpointVar, ts.originalCentralEndpoint)
 	}
 	// Check sanity after test.
 	waitUntilCentralSensorConnectionIs(ts.T(), ts.cleanupCtx, storage.ClusterHealthStatus_HEALTHY)
@@ -92,15 +92,10 @@ func (ts *TLSChallengeSuite) TestTLSChallenge() {
 		proxyEndpoint    = proxyServiceName + "." + proxyNs + ":443"
 	)
 
-	deploy, err := ts.k8s.AppsV1().Deployments(s).Get(ts.ctx, sensorDeployment, metaV1.GetOptions{})
-	ts.Require().NoError(err, "getting sensor deployment before patching")
-	oldGeneration := deploy.GetGeneration()
-	ts.logf("Current sensor deployment generation: %d", oldGeneration)
-
 	ts.logf("Pointing sensor at the proxy...")
-	ts.mustSetDeploymentEnvVal(ts.ctx, s, sensorDeployment, sensorContainer, centralEndpointVar, proxyEndpoint)
-	ts.logf("Waiting for sensor deployment to rollout new generation and become ready...")
-	ts.waitUntilK8sDeploymentNewGenerationReady(ts.ctx, s, sensorDeployment, oldGeneration)
+	patchedDeploy := ts.mustSetDeploymentEnvVal(ts.ctx, s, sensorDeployment, sensorContainer, centralEndpointVar, proxyEndpoint)
+	ts.logf("Waiting for sensor deployment generation %d to be ready...", patchedDeploy.GetGeneration())
+	ts.waitUntilK8sDeploymentGenerationReady(ts.ctx, s, sensorDeployment, patchedDeploy.GetGeneration())
 	ts.logf("Sensor will now attempt connecting via the nginx proxy.")
 
 	ts.waitUntilLog(ts.ctx, s, map[string]string{"app": "sensor"}, sensorContainer, "contain info about successful connection",
