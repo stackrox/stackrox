@@ -4,15 +4,15 @@ package storage;
 
 import "google/protobuf/timestamp.proto";
 import "storage/deployment.proto";
+import "storage/file_activity.proto";
 import "storage/network_flow.proto";
 import "storage/policy.proto";
 import "storage/process_indicator.proto";
-import "storage/file_activity.proto";
 
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
-// Next available tag: 25
+// Next available tag: 26
 message Alert {
   message Deployment {
     string id = 1; // @gotags: search:"Deployment ID,hidden" sql:"index=hash,type(uuid)"

@@ -613,7 +613,7 @@
           "$ref": "#/definitions/AlertEntityType"
         }
       },
-      "title": "Next available tag: 25"
+      "title": "Next available tag: 26"
     },
     "storageAlertDeployment": {
       "type": "object",
