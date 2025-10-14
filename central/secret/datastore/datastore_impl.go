@@ -15,10 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/secret/convert"
 )
 
-var (
-	secretSAC = sac.ForResource(resources.Secret)
-)
-
 type datastoreImpl struct {
 	storage store.Store
 }
