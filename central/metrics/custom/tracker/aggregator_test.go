@@ -8,12 +8,12 @@ import (
 )
 
 func Test_aggregator(t *testing.T) {
-	getters := map[Label]func(testFinding) string{
+	getters := LazyLabelGetters[testFinding]{
 		"Severity":  func(tf testFinding) string { return testData[tf]["Severity"] },
 		"Cluster":   func(tf testFinding) string { return testData[tf]["Cluster"] },
 		"Namespace": func(tf testFinding) string { return testData[tf]["Namespace"] },
 	}
-	a := makeAggregator(makeTestMetricDescriptors(t), testLabelOrder, getters)
+	a := makeAggregator(makeTestMetricDescriptors(t), getters)
 	assert.NotNil(t, a)
 	assert.Equal(t, map[MetricName]map[aggregationKey]*aggregatedRecord{
 		"test_Test_aggregator_metric1": {},
@@ -152,12 +152,12 @@ func TestFinding_GetIncrement(t *testing.T) {
 	var f withIncrement
 	f.n = 5
 
-	getters := map[Label]func(*withIncrement) string{
+	getters := LazyLabelGetters[*withIncrement]{
 		"l1": func(tf *withIncrement) string { return "v1" },
 	}
 	a := makeAggregator(
 		MetricDescriptors{"m1": []Label{"l1"}},
-		map[Label]int{"l1": 0}, getters)
+		getters)
 	a.count(&f)
 	f.n = 7
 	a.count(&f)

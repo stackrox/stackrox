@@ -23,13 +23,13 @@ import (
 
 func TestMakeLabelOrderMap(t *testing.T) {
 	assert.Equal(t, map[Label]int{
-		"test":      1,
-		"Cluster":   2,
-		"Namespace": 3,
-		"CVE":       4,
-		"Severity":  5,
-		"CVSS":      6,
-		"IsFixable": 7,
+		"CVE":       1,
+		"CVSS":      2,
+		"Cluster":   3,
+		"IsFixable": 4,
+		"Namespace": 5,
+		"Severity":  6,
+		"test":      7,
 	}, testLabelOrder)
 }
 

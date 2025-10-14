@@ -40,15 +40,15 @@ type aggregator[F Finding] struct {
 	result     map[MetricName]map[aggregationKey]*aggregatedRecord
 	md         MetricDescriptors
 	labelOrder map[Label]int
-	getters    map[Label]func(F) string
+	getters    LazyLabelGetters[F]
 }
 
-func makeAggregator[F Finding](md MetricDescriptors, labelOrder map[Label]int, getters map[Label]func(F) string) *aggregator[F] {
+func makeAggregator[F Finding](md MetricDescriptors, getters LazyLabelGetters[F]) *aggregator[F] {
 	aggregated := make(map[MetricName]map[aggregationKey]*aggregatedRecord)
 	for metric := range md {
 		aggregated[metric] = make(map[aggregationKey]*aggregatedRecord)
 	}
-	return &aggregator[F]{aggregated, md, labelOrder, getters}
+	return &aggregator[F]{aggregated, md, getters.MakeLabelOrderMap(), getters}
 }
 
 // count the finding in the aggregation result.

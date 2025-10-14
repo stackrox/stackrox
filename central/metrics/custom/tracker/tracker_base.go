@@ -27,32 +27,33 @@ var (
 	log = logging.CreateLogger(logging.ModuleForName("central_metrics"), 1)
 )
 
-// LazyLabel enables deferred evaluation of a label's value.
+// Getter is a function, normally bound to a label, that extracts the label
+// value from a finding.
+type Getter[F Finding] func(F) string
+
+// LazyLabelGetters enables deferred evaluation of a label's value.
 // Computing and storing values for all labels for every finding would be
 // inefficient. Instead, the Getter function computes the value for this
 // specific label only when provided with a finding.
-type LazyLabel[F Finding] struct {
-	Label
-	Getter func(F) string
-}
+type LazyLabelGetters[F Finding] map[Label]Getter[F]
 
 // MakeLabelOrderMap maps labels to their order according to the order of
 // the labels in the list of getters.
 // Respecting the order is important for computing the aggregation key, which is
 // a concatenation of label values.
-func MakeLabelOrderMap[F Finding](getters []LazyLabel[F]) map[Label]int {
-	result := make(map[Label]int, len(getters))
-	for i, getter := range getters {
-		result[getter.Label] = i + 1
+func (ll LazyLabelGetters[F]) MakeLabelOrderMap() map[Label]int {
+	result := make(map[Label]int, len(ll))
+	for i, label := range slices.Sorted(maps.Keys(ll)) {
+		result[label] = i + 1
 	}
 	return result
 }
 
 // GetLabels returns a slice of labels from the list of lazy getters.
-func GetLabels[F Finding](getters []LazyLabel[F]) []string {
-	result := make([]string, 0, len(getters))
-	for _, l := range getters {
-		result = append(result, string(l.Label))
+func (ll LazyLabelGetters[F]) GetLabels() []string {
+	result := make([]string, 0, len(ll))
+	for _, label := range slices.Sorted(maps.Keys(ll)) {
+		result = append(result, string(label))
 	}
 	return result
 }
@@ -87,7 +88,7 @@ type TrackerBase[F Finding] struct {
 	metricPrefix string
 	description  string
 	labelOrder   map[Label]int
-	getters      map[Label]func(F) string
+	getters      LazyLabelGetters[F]
 	generator    FindingGenerator[F]
 
 	// metricsConfig can be changed with an API call.
@@ -100,38 +101,29 @@ type TrackerBase[F Finding] struct {
 	registryFactory func(userID string) (metrics.CustomRegistry, error) // for mocking in tests.
 }
 
-// makeGettersMap transforms a list of label names with their getters to a map.
-func makeGettersMap[F Finding](getters []LazyLabel[F]) map[Label]func(F) string {
-	result := make(map[Label]func(F) string, len(getters))
-	for _, getter := range getters {
-		result[getter.Label] = getter.Getter
-	}
-	return result
-}
-
 // MakeTrackerBase initializes a tracker without any period or metrics
 // configuration. Call Reconfigure to configure the period and the metrics.
 func MakeTrackerBase[F Finding](metricPrefix, description string,
-	getters []LazyLabel[F], generator FindingGenerator[F],
+	getters LazyLabelGetters[F], generator FindingGenerator[F],
 ) *TrackerBase[F] {
 	return &TrackerBase[F]{
 		metricPrefix:    metricPrefix,
 		description:     description,
-		labelOrder:      MakeLabelOrderMap(getters),
-		getters:         makeGettersMap(getters),
+		labelOrder:      getters.MakeLabelOrderMap(),
+		getters:         getters,
 		generator:       generator,
 		registryFactory: metrics.GetCustomRegistry,
 	}
 }
 
 // NewConfiguration does not apply the configuration.
-func (tracker *TrackerBase[Finding]) NewConfiguration(cfg *storage.PrometheusMetrics_Group) (*Configuration, error) {
+func (tracker *TrackerBase[F]) NewConfiguration(cfg *storage.PrometheusMetrics_Group) (*Configuration, error) {
 	current := tracker.getConfiguration()
 	if current == nil {
 		current = &Configuration{}
 	}
 
-	md, err := translateStorageConfiguration(cfg.GetDescriptors(), tracker.metricPrefix, tracker.labelOrder)
+	md, err := tracker.translateStorageConfiguration(cfg.GetDescriptors())
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +142,7 @@ func (tracker *TrackerBase[Finding]) NewConfiguration(cfg *storage.PrometheusMet
 
 // Reconfigure assumes the configuration has been validated, so doesn't return
 // an error.
-func (tracker *TrackerBase[Finding]) Reconfigure(cfg *Configuration) {
+func (tracker *TrackerBase[F]) Reconfigure(cfg *Configuration) {
 	if cfg == nil {
 		cfg = &Configuration{}
 	}
@@ -224,7 +216,7 @@ func (tracker *TrackerBase[Finding]) track(ctx context.Context, registry metrics
 	if len(metrics) == 0 {
 		return nil
 	}
-	aggregator := makeAggregator(metrics, tracker.labelOrder, tracker.getters)
+	aggregator := makeAggregator(metrics, tracker.getters)
 	for finding, err := range tracker.generator(ctx, metrics) {
 		if err != nil {
 			return err

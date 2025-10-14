@@ -11,23 +11,17 @@ import (
 // The test tracker finds some integers to track.
 type testFinding int
 
-var testLabelGetters = []LazyLabel[testFinding]{
-	testLabel("test"),
-	testLabel("Cluster"),
-	testLabel("Namespace"),
-	testLabel("CVE"),
-	testLabel("Severity"),
-	testLabel("CVSS"),
-	testLabel("IsFixable"),
+var testLabelGetters = LazyLabelGetters[testFinding]{
+	"test":      func(f testFinding) string { return testData[f]["test"] },
+	"Cluster":   func(f testFinding) string { return testData[f]["Cluster"] },
+	"Namespace": func(f testFinding) string { return testData[f]["Namespace"] },
+	"CVE":       func(f testFinding) string { return testData[f]["CVE"] },
+	"Severity":  func(f testFinding) string { return testData[f]["Severity"] },
+	"CVSS":      func(f testFinding) string { return testData[f]["CVSS"] },
+	"IsFixable": func(f testFinding) string { return testData[f]["IsFixable"] },
 }
 
-var testLabelOrder = MakeLabelOrderMap(testLabelGetters)
-
-func testLabel(label Label) LazyLabel[testFinding] {
-	return LazyLabel[testFinding]{
-		label,
-		func(i testFinding) string { return testData[i][label] }}
-}
+var testLabelOrder = testLabelGetters.MakeLabelOrderMap()
 
 var testData = []map[Label]string{
 	{
