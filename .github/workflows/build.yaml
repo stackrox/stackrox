@@ -639,6 +639,10 @@ jobs:
         run: |
           scripts/lib.sh retry 2 true make -C operator/ test
 
+      - name: Free disk space before building Operator image
+        run: |
+          docker system prune --all --force
+
       - name: Build Operator image
         run: |
           CGO_ENABLED=0 GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ build docker-build
