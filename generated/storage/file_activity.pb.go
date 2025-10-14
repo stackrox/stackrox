@@ -95,7 +95,7 @@ type FileActivity struct {
 	File      *FileActivity_File     `protobuf:"bytes,1,opt,name=file,proto3" json:"file,omitempty"`
 	Operation FileActivity_Operation `protobuf:"varint,2,opt,name=operation,proto3,enum=storage.FileActivity_Operation" json:"operation,omitempty" search:"File Operation"` // @gotags: search:"File Operation"
 	// specific to `RENAME` activity, the new location / metadata of the file.
-	Moved *FileActivity_File `protobuf:"bytes,3,opt,name=moved,proto3,oneof" json:"moved,omitempty" search:"-"` // @gotags: search:"-"
+	Moved *FileActivity_File `protobuf:"bytes,3,opt,name=moved,proto3" json:"moved,omitempty" search:"-"` // @gotags: search:"-"
 	// When the file activity happened
 	Timestamp *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// The process that performed the action. May contain deployment/namespace
@@ -310,11 +310,11 @@ var File_storage_file_activity_proto protoreflect.FileDescriptor
 
 const file_storage_file_activity_proto_rawDesc = "" +
 	"\n" +
-	"\x1bstorage/file_activity.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/process_indicator.proto\"\x8b\x05\n" +
+	"\x1bstorage/file_activity.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/process_indicator.proto\"\xfc\x04\n" +
 	"\fFileActivity\x12.\n" +
 	"\x04file\x18\x01 \x01(\v2\x1a.storage.FileActivity.FileR\x04file\x12=\n" +
-	"\toperation\x18\x02 \x01(\x0e2\x1f.storage.FileActivity.OperationR\toperation\x125\n" +
-	"\x05moved\x18\x03 \x01(\v2\x1a.storage.FileActivity.FileH\x00R\x05moved\x88\x01\x01\x128\n" +
+	"\toperation\x18\x02 \x01(\x0e2\x1f.storage.FileActivity.OperationR\toperation\x120\n" +
+	"\x05moved\x18\x03 \x01(\v2\x1a.storage.FileActivity.FileR\x05moved\x128\n" +
 	"\ttimestamp\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x123\n" +
 	"\aprocess\x18\x05 \x01(\v2\x19.storage.ProcessIndicatorR\aprocess\x1ax\n" +
 	"\fFileMetadata\x12\x10\n" +
@@ -337,8 +337,7 @@ const file_storage_file_activity_proto_rawDesc = "" +
 	"\x11PERMISSION_CHANGE\x10\x03\x12\x14\n" +
 	"\x10OWNERSHIP_CHANGE\x10\x04\x12\t\n" +
 	"\x05WRITE\x10\x05\x12\b\n" +
-	"\x04OPEN\x10\x06B\b\n" +
-	"\x06_movedB.\n" +
+	"\x04OPEN\x10\x06B.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (
@@ -383,7 +382,6 @@ func file_storage_file_activity_proto_init() {
 		return
 	}
 	file_storage_process_indicator_proto_init()
-	file_storage_file_activity_proto_msgTypes[0].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
