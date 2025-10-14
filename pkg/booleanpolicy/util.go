@@ -17,7 +17,8 @@ func ContainsOneOf(policy *storage.Policy, fieldType RuntimeFieldType) bool {
 // ContainsRuntimeFields returns whether the policy contains runtime specific fields.
 func ContainsRuntimeFields(policy *storage.Policy) bool {
 	return ContainsOneOf(policy, AuditLogEvent) || ContainsOneOf(policy, Process) ||
-		ContainsOneOf(policy, KubeEvent) || ContainsOneOf(policy, NetworkFlow)
+		ContainsOneOf(policy, KubeEvent) || ContainsOneOf(policy, NetworkFlow) ||
+		ContainsOneOf(policy, FileAccess)
 }
 
 // ContainsDeployTimeFields returns whether the policy contains deploy-time specific fields.
@@ -86,6 +87,9 @@ func ContainsDiscreteRuntimeFieldCategorySections(policy *storage.Policy) bool {
 			numRuntimeCategories++
 		}
 		if SectionContainsFieldOfType(section, NetworkFlow) {
+			numRuntimeCategories++
+		}
+		if SectionContainsFieldOfType(section, FileAccess) {
 			numRuntimeCategories++
 		}
 		if numRuntimeCategories > 1 {
