@@ -35,6 +35,7 @@ import {
     violationsBasePath,
     vulnManagementPath,
     vulnerabilitiesAllImagesPath,
+    vulnerabilitiesBaseImagesPath,
     vulnerabilitiesImagesWithoutCvesPath,
     vulnerabilitiesInactiveImagesPath,
     vulnerabilitiesNodeCvesPath,
@@ -85,6 +86,12 @@ function getNavDescriptions(
                     matchPath({ path: `${path}/*` }, location.pathname)
                 );
             },
+        },
+        {
+            type: 'link',
+            content: 'Base Images',
+            path: vulnerabilitiesBaseImagesPath,
+            routeKey: 'vulnerabilities/base-images',
         },
         {
             type: 'link',
