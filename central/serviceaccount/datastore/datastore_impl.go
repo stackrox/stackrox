@@ -28,10 +28,6 @@ func (d *datastoreImpl) GetServiceAccount(ctx context.Context, id string) (*stor
 		return nil, false, err
 	}
 
-	if !serviceAccountsSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(acc).IsAllowed() {
-		return nil, false, nil
-	}
-
 	return acc, true, nil
 }
 
@@ -58,22 +54,10 @@ func (d *datastoreImpl) SearchServiceAccounts(ctx context.Context, q *v1.Query) 
 }
 
 func (d *datastoreImpl) UpsertServiceAccount(ctx context.Context, request *storage.ServiceAccount) error {
-	if ok, err := serviceAccountsSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
 	return d.storage.Upsert(ctx, request)
 }
 
 func (d *datastoreImpl) RemoveServiceAccount(ctx context.Context, id string) error {
-	if ok, err := serviceAccountsSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
 	return d.storage.Delete(ctx, id)
 }
 

@@ -202,6 +202,61 @@ func GenericNamespaceSACDeleteTestCases(_ *testing.T) map[string]SACCrudTestCase
 	}
 }
 
+// GenericNamespaceSACErrorLessDeleteTestCases returns a generic set of SACCrudTestCase.
+// It is appropriate for use in the context of testing Delete or Remove function on resources when the scope checks
+// are expected to assess whether the retrieved object belongs to a namespace
+// in scope. These cases cover the removal flows which do not raise errors when the target object
+// is not in scope, but only remove the object if it was in requester scope.
+// These test cases assume the removed test object belongs to Cluster2 and NamespaceB.
+func GenericNamespaceSACErrorLessDeleteTestCases(_ *testing.T) map[string]SACCrudTestCase {
+	// The "Not able to delete" cases are materialized by "expected found" after the removal call.
+	// "Able to delete" cases are materialized by "expected NOT found" after removal.
+	// The test case structure that uses these template cases is `Upsert`, `Delete`, `VerifyRemoved` where
+	// `VerifyRemoved` performs a Get call which should then result in the expected found state.
+	return map[string]SACCrudTestCase{
+		"global read-only should not be able to delete": {
+			ScopeKey:      UnrestrictedReadCtx,
+			ExpectedFound: true,
+		},
+		"global read-write should be able to delete": {
+			ScopeKey:      UnrestrictedReadWriteCtx,
+			ExpectedFound: false,
+		},
+		"read-write on wrong cluster should not be able to delete": {
+			ScopeKey:      Cluster1ReadWriteCtx,
+			ExpectedFound: true,
+		},
+		"read-write on wrong cluster and namespace should not be able to delete": {
+			ScopeKey:      Cluster1NamespaceAReadWriteCtx,
+			ExpectedFound: true,
+		},
+		"read-write on wrong cluster and matching namespace should not be able to delete": {
+			ScopeKey:      Cluster1NamespaceBReadWriteCtx,
+			ExpectedFound: true,
+		},
+		"read-write on matching cluster should be able to delete": {
+			ScopeKey:      Cluster2ReadWriteCtx,
+			ExpectedFound: false,
+		},
+		"read-write on matching cluster and wrong namespace should not be able to delete": {
+			ScopeKey:      Cluster2NamespaceAReadWriteCtx,
+			ExpectedFound: true,
+		},
+		"read-write on matching cluster and wrong namespaces should not be able to delete": {
+			ScopeKey:      Cluster2NamespacesACReadWriteCtx,
+			ExpectedFound: true,
+		},
+		"read-write on matching cluster and matching namespace should be able to delete": {
+			ScopeKey:      Cluster2NamespaceBReadWriteCtx,
+			ExpectedFound: false,
+		},
+		"read-write on matching cluster and at least one matching namespace should be able to delete": {
+			ScopeKey:      Cluster2NamespacesABReadWriteCtx,
+			ExpectedFound: false,
+		},
+	}
+}
+
 // GenericClusterSACGetTestCases returns a generic set of ClusterSACCrudTestCase.
 // It is appropriate for use in the context of testing Get function on cluster scoped resources
 // when the scope checks are expected to assess whether the retrieved object belongs to a cluster
