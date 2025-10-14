@@ -8,8 +8,8 @@
 # If renaming/moving this file, update the reference in scripts/ci/lib.sh
 
 # Used by tests/yamls/multi-container-pod.yaml (TestPod, TestContainerInstances, roxctl verification)
-quay.io/rhacs-eng/qa-multi-arch-nginx:latest
-quay.io/rhacs-eng/qa-multi-arch-busybox:latest
+quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1
+quay.io/rhacs-eng/qa-multi-arch:busybox-1-33-1
 
 # Used by tests/backup_test.go and tests/excluded_scopes_test.go via setupDeployment
 # (already covered above: quay.io/rhacs-eng/qa-multi-arch-nginx:latest)

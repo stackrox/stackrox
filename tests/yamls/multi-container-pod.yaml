@@ -13,13 +13,13 @@ spec:
       emptyDir: {}
   containers:
     - name: 1st
-      image: quay.io/rhacs-eng/qa-multi-arch-nginx:latest
+      image: quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1
       imagePullPolicy: IfNotPresent
       volumeMounts:
         - name: html
           mountPath: /usr/share/nginx/html
     - name: 2nd
-      image: quay.io/rhacs-eng/qa-multi-arch-busybox:latest
+      image: quay.io/rhacs-eng/qa-multi-arch:busybox-1-33-1
       imagePullPolicy: IfNotPresent
       volumeMounts:
         - name: html
