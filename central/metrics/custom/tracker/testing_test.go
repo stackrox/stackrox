@@ -21,8 +21,6 @@ var testLabelGetters = LazyLabelGetters[testFinding]{
 	"IsFixable": func(f testFinding) string { return testData[f]["IsFixable"] },
 }
 
-var testLabelOrder = testLabelGetters.MakeLabelOrderMap()
-
 var testData = []map[Label]string{
 	{
 		"Severity":  "CRITICAL",

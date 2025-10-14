@@ -21,18 +21,6 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func TestMakeLabelOrderMap(t *testing.T) {
-	assert.Equal(t, map[Label]int{
-		"CVE":       1,
-		"CVSS":      2,
-		"Cluster":   3,
-		"IsFixable": 4,
-		"Namespace": 5,
-		"Severity":  6,
-		"test":      7,
-	}, testLabelOrder)
-}
-
 func nilGatherFunc(context.Context, MetricDescriptors) FindingErrorSequence[testFinding] {
 	return func(yield func(testFinding, error) bool) {}
 }

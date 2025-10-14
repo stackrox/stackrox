@@ -37,18 +37,6 @@ type Getter[F Finding] func(F) string
 // specific label only when provided with a finding.
 type LazyLabelGetters[F Finding] map[Label]Getter[F]
 
-// MakeLabelOrderMap maps labels to their order according to the order of
-// the labels in the list of getters.
-// Respecting the order is important for computing the aggregation key, which is
-// a concatenation of label values.
-func (ll LazyLabelGetters[F]) MakeLabelOrderMap() map[Label]int {
-	result := make(map[Label]int, len(ll))
-	for i, label := range slices.Sorted(maps.Keys(ll)) {
-		result[label] = i + 1
-	}
-	return result
-}
-
 // GetLabels returns a slice of labels from the list of lazy getters.
 func (ll LazyLabelGetters[F]) GetLabels() []string {
 	result := make([]string, 0, len(ll))
@@ -87,7 +75,6 @@ type gatherer struct {
 type TrackerBase[F Finding] struct {
 	metricPrefix string
 	description  string
-	labelOrder   map[Label]int
 	getters      LazyLabelGetters[F]
 	generator    FindingGenerator[F]
 
@@ -109,7 +96,6 @@ func MakeTrackerBase[F Finding](metricPrefix, description string,
 	return &TrackerBase[F]{
 		metricPrefix:    metricPrefix,
 		description:     description,
-		labelOrder:      getters.MakeLabelOrderMap(),
 		getters:         getters,
 		generator:       generator,
 		registryFactory: metrics.GetCustomRegistry,

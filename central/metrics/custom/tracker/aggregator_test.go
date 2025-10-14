@@ -108,36 +108,42 @@ func Test_aggregator(t *testing.T) {
 }
 
 func Test_makeAggregationKey(t *testing.T) {
-	testMetric := map[Label]string{
-		"Cluster":   "value",
-		"IsFixable": "false",
-	}
-	getter := func(label Label) string {
-		return testMetric[label]
-	}
-	key, labels := makeAggregationKey(
-		[]Label{"Cluster", "IsFixable"},
-		getter,
-		testLabelOrder)
+	md := makeTestMetricDescriptors(t)
+	a := makeAggregator(md, testLabelGetters)
 
-	assert.Equal(t, aggregationKey("value|false"), key)
+	var metric = MetricName("test_" + t.Name() + "_metric1")
+	key, labels := a.makeAggregationKey(
+		md[metric],
+		testFinding(0),
+	)
+
+	assert.Equal(t, aggregationKey("cluster 1|CRITICAL"), key)
 	assert.Equal(t, prometheus.Labels{
-		"Cluster":   "value",
-		"IsFixable": "false",
+		"Cluster":  "cluster 1",
+		"Severity": "CRITICAL",
 	}, labels)
 
-}
+	metric = MetricName("test_" + t.Name() + "_metric2")
+	key, labels = a.makeAggregationKey(
+		md[metric],
+		testFinding(0),
+	)
 
-func Test_collectMatchingLabels(t *testing.T) {
-	i := 0
-	for range collectMatchingLabels([]Label{"label1", "label2", "label3"},
-		func(l Label) string {
-			i++
-			return "value"
-		}) {
-		break
-	}
-	assert.Equal(t, 1, i)
+	assert.Equal(t, aggregationKey("ns 1"), key)
+	assert.Equal(t, prometheus.Labels{
+		"Namespace": "ns 1",
+	}, labels)
+
+	metric = MetricName("test_" + t.Name() + "_metric2")
+	key, labels = a.makeAggregationKey(
+		md[metric],
+		testFinding(1),
+	)
+
+	assert.Equal(t, aggregationKey("ns 2"), key)
+	assert.Equal(t, prometheus.Labels{
+		"Namespace": "ns 2",
+	}, labels)
 }
 
 type withIncrement struct {
