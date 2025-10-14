@@ -143,13 +143,13 @@ func ConvertPeersToProto(peerSet map[Peer]struct{}) ([]*storage.NetworkBaselineP
 	for entity, properties := range propertiesByEntity {
 		connectionProperties := properties.ConnectionProperties
 		sort.Slice(connectionProperties, func(i, j int) bool {
-			if connectionProperties[i].Ingress != connectionProperties[j].Ingress {
-				return connectionProperties[i].Ingress
+			if connectionProperties[i].GetIngress() != connectionProperties[j].GetIngress() {
+				return connectionProperties[i].GetIngress()
 			}
-			if connectionProperties[i].Protocol != connectionProperties[j].Protocol {
-				return connectionProperties[i].Protocol < connectionProperties[j].Protocol
+			if connectionProperties[i].GetProtocol() != connectionProperties[j].GetProtocol() {
+				return connectionProperties[i].GetProtocol() < connectionProperties[j].GetProtocol()
 			}
-			return connectionProperties[i].Port < connectionProperties[j].Port
+			return connectionProperties[i].GetPort() < connectionProperties[j].GetPort()
 		})
 		properties.ConnectionProperties = connectionProperties
 		propertiesByEntity[entity] = properties

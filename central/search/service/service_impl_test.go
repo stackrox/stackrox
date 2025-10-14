@@ -178,7 +178,7 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 		ignoreOrder     bool
 	}{
 		{
-			query:           search.NewQueryBuilder().AddStrings(search.DeploymentName, deploymentNameOneOff.Name).Query(),
+			query:           search.NewQueryBuilder().AddStrings(search.DeploymentName, deploymentNameOneOff.GetName()).Query(),
 			expectedResults: []string{deploymentNameOneOff.GetName()},
 		},
 		{
@@ -205,7 +205,7 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 			ignoreOrder:     true,
 		},
 		{
-			query:           fmt.Sprintf("%s:%s+%s:", search.DeploymentName, deploymentName2.Name, search.DeploymentLabel),
+			query:           fmt.Sprintf("%s:%s+%s:", search.DeploymentName, deploymentName2.GetName(), search.DeploymentLabel),
 			expectedResults: []string{"hello=hi", "hey=ho"},
 			ignoreOrder:     true,
 		},
@@ -326,7 +326,7 @@ func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
 	builder = builder.WithPolicyCategoryDataStore(categoryDataStoreMocks.NewMockDataStore(s.mockCtrl))
 	service := builder.Build().(*serviceImpl)
 
-	deploymentQuery := search.NewQueryBuilder().AddStrings(search.DeploymentName, deployment.Name).Query()
+	deploymentQuery := search.NewQueryBuilder().AddStrings(search.DeploymentName, deployment.GetName()).Query()
 	alertQuery := search.NewQueryBuilder().AddStrings(search.DeploymentName, alert.GetDeployment().GetName()).Query()
 
 	// If caller has "Deployment" permission, return results in "Deployment" category
@@ -398,7 +398,7 @@ func (s *SearchOperationsTestSuite) TestSearchAuthz() {
 
 	service := builder.Build().(*serviceImpl)
 
-	deploymentQuery := search.NewQueryBuilder().AddStrings(search.DeploymentName, deployment.Name).Query()
+	deploymentQuery := search.NewQueryBuilder().AddStrings(search.DeploymentName, deployment.GetName()).Query()
 	alertQuery := search.NewQueryBuilder().AddStrings(search.DeploymentName, alert.GetDeployment().GetName()).Query()
 
 	// If caller has "Deployment" permission, return results in "Deployment" category

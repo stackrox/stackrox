@@ -76,7 +76,7 @@ func BenchmarkFlatDataModelReportGenerator(b *testing.B) {
 		storage.VulnerabilityReportFilters_WATCHED,
 	}
 
-	expectedRowCount := 5002
+	expectedRowCount := 5000
 
 	reportSnap := testReportSnapshot(collection.GetId(), fixability, severities, imageTypes, nil)
 
@@ -127,7 +127,7 @@ func (bts *FlatDataModelReportGeneratorBenchmarkTestSuite) upsertManyImages(imag
 
 func (bts *FlatDataModelReportGeneratorBenchmarkTestSuite) upsertManyWatchedImages(images []*storage.Image) {
 	for _, img := range images {
-		err := bts.watchedImageDatastore.UpsertWatchedImage(bts.ctx, img.Name.FullName)
+		err := bts.watchedImageDatastore.UpsertWatchedImage(bts.ctx, img.GetName().GetFullName())
 		require.NoError(bts.b, err)
 	}
 }

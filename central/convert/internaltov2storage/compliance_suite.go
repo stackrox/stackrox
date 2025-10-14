@@ -7,7 +7,7 @@ import (
 
 // ComplianceOperatorSuite converts message from sensor to storage message
 func ComplianceOperatorSuite(sensorData *central.ComplianceOperatorSuiteV2, clusterID string) *storage.ComplianceOperatorSuiteV2 {
-	sensorStatus := sensorData.Status
+	sensorStatus := sensorData.GetStatus()
 	status := &storage.ComplianceOperatorStatus{
 		Phase:        sensorStatus.GetPhase(),
 		Result:       sensorStatus.GetResult(),

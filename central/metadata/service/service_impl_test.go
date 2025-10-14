@@ -110,7 +110,7 @@ func (s *serviceImplTestSuite) TestTLSChallenge_VerifySignatureWithCACert_Should
 	s.Require().NoError(err)
 
 	// Read root CA from response
-	caCert := trustInfo.CertChain[len(trustInfo.CertChain)-1]
+	caCert := trustInfo.GetCertChain()[len(trustInfo.GetCertChain())-1]
 	cert, err := x509.ParseCertificate(caCert)
 	s.Require().NoError(err)
 	s.Equal(cert.Subject.CommonName, "StackRox Certificate Authority", "Not a root CA?")
@@ -163,22 +163,22 @@ func (s *serviceImplTestSuite) TestDatabaseStatus() {
 
 	dbStatus, err := service.GetDatabaseStatus(ctx, nil)
 	s.NoError(err)
-	s.True(dbStatus.DatabaseAvailable)
-	s.Equal(v1.DatabaseStatus_PostgresDB, dbStatus.DatabaseType)
-	s.NotEqual("", dbStatus.DatabaseVersion)
+	s.True(dbStatus.GetDatabaseAvailable())
+	s.Equal(v1.DatabaseStatus_PostgresDB, dbStatus.GetDatabaseType())
+	s.NotEqual("", dbStatus.GetDatabaseVersion())
 
 	dbStatus, err = service.GetDatabaseStatus(context.Background(), nil)
 	s.NoError(err)
-	s.True(dbStatus.DatabaseAvailable)
-	s.Equal(v1.DatabaseStatus_Hidden, dbStatus.DatabaseType)
-	s.Equal("", dbStatus.DatabaseVersion)
+	s.True(dbStatus.GetDatabaseAvailable())
+	s.Equal(v1.DatabaseStatus_Hidden, dbStatus.GetDatabaseType())
+	s.Equal("", dbStatus.GetDatabaseVersion())
 
 	tp.Close()
 	dbStatus, err = service.GetDatabaseStatus(context.Background(), nil)
 	s.NoError(err)
-	s.False(dbStatus.DatabaseAvailable)
-	s.Equal(v1.DatabaseStatus_Hidden, dbStatus.DatabaseType)
-	s.Equal("", dbStatus.DatabaseVersion)
+	s.False(dbStatus.GetDatabaseAvailable())
+	s.Equal(v1.DatabaseStatus_Hidden, dbStatus.GetDatabaseType())
+	s.Equal("", dbStatus.GetDatabaseVersion())
 }
 
 func (s *serviceImplTestSuite) TestDatabaseBackupStatus() {
@@ -199,7 +199,7 @@ func (s *serviceImplTestSuite) TestDatabaseBackupStatus() {
 	s.NoError(err)
 	actual, err := srv.GetDatabaseBackupStatus(ctx, &v1.Empty{})
 	s.NoError(err)
-	protoassert.Equal(s.T(), expected.BackupInfo, actual.BackupInfo)
+	protoassert.Equal(s.T(), expected.GetBackupInfo(), actual.GetBackupInfo())
 }
 
 func (s *serviceImplTestSuite) TestGetCentralCapabilities() {
@@ -227,10 +227,10 @@ func (s *serviceImplTestSuite) TestGetCentralCapabilities() {
 			caps, err := New().GetCentralCapabilities(ctx, nil)
 
 			s.NoError(err)
-			s.Equal(v1.CentralServicesCapabilities_CapabilityAvailable, caps.CentralScanningCanUseContainerIamRoleForEcr)
-			s.Equal(v1.CentralServicesCapabilities_CapabilityAvailable, caps.CentralCanUseCloudBackupIntegrations)
-			s.Equal(v1.CentralServicesCapabilities_CapabilityAvailable, caps.CentralCanDisplayDeclarativeConfigHealth)
-			s.Equal(v1.CentralServicesCapabilities_CapabilityAvailable, caps.CentralCanUpdateCert)
+			s.Equal(v1.CentralServicesCapabilities_CapabilityAvailable, caps.GetCentralScanningCanUseContainerIamRoleForEcr())
+			s.Equal(v1.CentralServicesCapabilities_CapabilityAvailable, caps.GetCentralCanUseCloudBackupIntegrations())
+			s.Equal(v1.CentralServicesCapabilities_CapabilityAvailable, caps.GetCentralCanDisplayDeclarativeConfigHealth())
+			s.Equal(v1.CentralServicesCapabilities_CapabilityAvailable, caps.GetCentralCanUpdateCert())
 		})
 	}
 }

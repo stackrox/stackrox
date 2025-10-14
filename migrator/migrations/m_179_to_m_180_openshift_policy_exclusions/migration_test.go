@@ -107,7 +107,7 @@ func (s *categoriesMigrationTestSuite) TestMigration() {
 	q := search.NewQueryBuilder().AddExactMatches(search.PolicyID, testPolicy.GetId()).ProtoQuery()
 	policyPremigration, err := s.policyStore.GetByQuery(ctx, q)
 	s.NoError(err)
-	s.Empty(policyPremigration[0].Exclusions)
+	s.Empty(policyPremigration[0].GetExclusions())
 	s.NoError(migration.Run(dbs))
 	expectedExclusions := []string{"Don't alert on ovnkube-node deployment in openshift-ovn-kubernetes Namespace",
 		"Don't alert on haproxy-* deployment in openshift-vsphere-infra namespace",
@@ -117,8 +117,8 @@ func (s *categoriesMigrationTestSuite) TestMigration() {
 	policy, err := s.policyStore.GetByQuery(ctx, query)
 	s.NoError(err)
 	var actualExclusions []string
-	for _, excl := range policy[0].Exclusions {
-		actualExclusions = append(actualExclusions, excl.Name)
+	for _, excl := range policy[0].GetExclusions() {
+		actualExclusions = append(actualExclusions, excl.GetName())
 	}
 	s.ElementsMatch(actualExclusions, expectedExclusions, "exclusion do not match after migration")
 

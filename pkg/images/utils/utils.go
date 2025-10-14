@@ -64,7 +64,7 @@ func GenerateImageFromStringWithDefaultTag(imageStr, defaultTag string) (*storag
 
 	// Default the image to latest if and only if there was no tag specific and also no SHA specified
 	if image.GetId() == "" && image.GetName().GetTag() == "" && defaultTag != "" {
-		SetImageTagNoSha(image.Name, defaultTag)
+		SetImageTagNoSha(image.GetName(), defaultTag)
 	}
 
 	return image, nil

@@ -41,5 +41,5 @@ func TestGoogle(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
-	assert.Len(t, metadata.LayerShas, 10)
+	assert.Len(t, metadata.GetLayerShas(), 10)
 }

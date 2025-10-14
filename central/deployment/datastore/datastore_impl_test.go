@@ -148,14 +148,14 @@ func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
 
 	// Different numbers of containers for the CronJob so early exit with no changes
 	returnedDep := dep.CloneVT()
-	returnedDep.Containers = returnedDep.Containers[:1]
+	returnedDep.Containers = returnedDep.GetContainers()[:1]
 
 	suite.storage.EXPECT().Get(ctx, "id").Return(returnedDep, true, nil)
 	suite.NoError(ds.mergeCronJobs(ctx, dep))
 	protoassert.Equal(suite.T(), expectedDep, dep)
 
 	// Filled in for missing last container, but names do not match
-	returnedDep.Containers = append(returnedDep.Containers, dep.Containers[1].CloneVT())
+	returnedDep.Containers = append(returnedDep.Containers, dep.GetContainers()[1].CloneVT())
 	returnedDep.Containers[1].Image.Id = "xyz"
 	returnedDep.Containers[1].Image.Name = &storage.ImageName{
 		FullName: "fullname",
@@ -165,8 +165,8 @@ func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
 	protoassert.Equal(suite.T(), expectedDep, dep)
 
 	// Fill in missing last container value since names match
-	dep.Containers[1].Image.Name = returnedDep.Containers[1].Image.Name
-	expectedDep.Containers[1].Image.Name = returnedDep.Containers[1].Image.Name
+	dep.Containers[1].Image.Name = returnedDep.GetContainers()[1].GetImage().GetName()
+	expectedDep.Containers[1].Image.Name = returnedDep.GetContainers()[1].GetImage().GetName()
 	expectedDep.Containers[1].Image.Id = "xyz"
 	suite.storage.EXPECT().Get(ctx, "id").Return(returnedDep, true, nil)
 	suite.NoError(ds.mergeCronJobs(ctx, dep))

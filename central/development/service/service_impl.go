@@ -123,7 +123,7 @@ func (s *serviceImpl) URLHasValidCert(_ context.Context, req *central.URLHasVali
 	// Consequently, they will be located in `/etc/ssl/certs/ca-certificates.crt`,
 	// which is the default CA path for Go, as specified in:
 	// https://github.com/golang/go/blob/ad77cefeb2f5b3f1cef4383e974195ffc8610236/src/crypto/x509/root_linux.go#L11
-	if req.CertPEM == "" {
+	if req.GetCertPEM() == "" {
 		_, err = s.client.Head(req.GetUrl())
 	} else {
 		err = verifyProvidedCert(req, u)
@@ -188,7 +188,7 @@ func (s *serviceImpl) RandomData(_ context.Context, req *central.RandomDataReque
 		Data: make([]byte, req.GetSize()),
 	}
 
-	_, _ = rand.Read(resp.Data)
+	_, _ = rand.Read(resp.GetData())
 	return resp, nil
 }
 

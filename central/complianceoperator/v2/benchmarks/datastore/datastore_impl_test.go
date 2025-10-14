@@ -172,7 +172,7 @@ func (s *complianceBenchmarkDataStoreSuite) TestGetBenchmarksByProfileName() {
 	benchmarks, err := s.datastore.GetBenchmarksByProfileName(s.hasReadCtx, benchmark.GetProfiles()[0].GetProfileName())
 	s.Require().NoError(err)
 	s.Require().Len(benchmarks, 1)
-	s.Assert().Equal("OpenShift CIS", benchmarks[0].Name)
+	s.Assert().Equal("OpenShift CIS", benchmarks[0].GetName())
 }
 
 func getTestBenchmark(id string, name string, version string, profileCount int) *storage.ComplianceOperatorBenchmarkV2 {
