@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"context"
+	"maps"
+	"slices"
 	"testing"
 	"time"
 
@@ -679,19 +681,16 @@ func (s *storeImpl) populateNode(ctx context.Context, tx *postgres.Tx, node *sto
 	if err != nil {
 		return errors.Wrap(err, "fetching node component edges")
 	}
-	componentIDs := make([]string, 0, len(componentEdgeMap))
-	for _, val := range componentEdgeMap {
-		componentIDs = append(componentIDs, val.GetNodeComponentId())
-	}
+	componentIDs := slices.Collect(maps.Keys(componentEdgeMap))
 
-	componentMap, err := getNodeComponents(ctx, tx, componentIDs)
+	components, _, err := s.nodeComponentStore.GetMany(ctx, componentIDs)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "fetching node components")
 	}
 
-	if len(componentEdgeMap) != len(componentMap) {
+	if len(componentEdgeMap) != len(components) {
 		log.Errorf("Number of node component from edges (%d) is unexpected (%d) for node %s (id=%s)",
-			len(componentEdgeMap), len(componentMap), node.GetName(), node.GetId())
+			len(componentEdgeMap), len(components), node.GetName(), node.GetId())
 	}
 	componentCVEEdgeMap, err := getComponentCVEEdges(ctx, tx, componentIDs)
 	if err != nil {
@@ -714,7 +713,9 @@ func (s *storeImpl) populateNode(ctx context.Context, tx *postgres.Tx, node *sto
 		Node:     node,
 		Children: []*common.ComponentParts{},
 	}
-	for componentID, component := range componentMap {
+
+	for _, component := range components {
+		componentID := component.GetId()
 		child := &common.ComponentParts{
 			Edge:      componentEdgeMap[componentID],
 			Component: component,
