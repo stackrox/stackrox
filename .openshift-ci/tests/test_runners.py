@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import Mock
-from runners import ClusterTestRunner, ClusterTestSetsRunner
+from runners import ClusterTestRunner, ClusterTestSetsRunner, TestSet
 
 
 class TestClusterTestRunner(unittest.TestCase):
@@ -177,42 +177,42 @@ class TestClusterTestSetsRunner(unittest.TestCase):
     def test_runs_initial_pre_test(self):
         initial_pre_test = Mock()
         ClusterTestSetsRunner(initial_pre_test=initial_pre_test,
-                              sets=[{}]).run()
+                              sets=[TestSet(None)]).run()
         initial_pre_test.run.assert_called_once()
 
     def test_runs_pre_test(self):
         pre_test = Mock()
-        ClusterTestSetsRunner(sets=[{"pre_test": pre_test}]).run()
+        ClusterTestSetsRunner(sets=[TestSet(None, pre=pre_test)]).run()
         pre_test.run.assert_called_once()
 
     def test_runs_test(self):
         test = Mock()
-        ClusterTestSetsRunner(sets=[{"test": test}]).run()
+        ClusterTestSetsRunner(sets=[TestSet(None, test=test)]).run()
         test.run.assert_called_once()
 
     def test_runs_post_test(self):
         post_test = Mock()
-        ClusterTestSetsRunner(sets=[{"post_test": post_test}]).run()
+        ClusterTestSetsRunner(sets=[TestSet(None, post=post_test)]).run()
         post_test.run.assert_called_once()
 
     def test_runs_nth_pre_test(self):
         pre_test = Mock()
-        ClusterTestSetsRunner(sets=[{}, {"pre_test": pre_test}]).run()
+        ClusterTestSetsRunner(sets=[TestSet(None), TestSet(None, pre=pre_test)]).run()
         pre_test.run.assert_called_once()
 
     def test_runs_nth_test(self):
         test = Mock()
-        ClusterTestSetsRunner(sets=[{"test": test}, {}]).run()
+        ClusterTestSetsRunner(sets=[TestSet(None, test=test), TestSet(None)]).run()
         test.run.assert_called_once()
 
     def test_runs_nth_post_test(self):
         post_test = Mock()
-        ClusterTestSetsRunner(sets=[{}, {"post_test": post_test}, {}]).run()
+        ClusterTestSetsRunner(sets=[TestSet(None), TestSet(None, post=post_test), TestSet(None)]).run()
         post_test.run.assert_called_once()
 
     def test_runs_final_post(self):
         final_post = Mock()
-        ClusterTestSetsRunner(sets=[{}, {}],
+        ClusterTestSetsRunner(sets=[TestSet(None), TestSet(None)],
                               final_post=final_post).run()
         final_post.run.assert_called_once()
 
@@ -224,7 +224,7 @@ class TestClusterTestSetsRunner(unittest.TestCase):
         test2 = Mock()
         with self.assertRaisesRegex(Exception, "test1 oops"):
             ClusterTestSetsRunner(
-                sets=[{"test": test1}, {"test": test2}]).run()
+                sets=[TestSet(None, test=test1), TestSet(None, test=test2)]).run()
         test2.run.assert_called_once()
 
     def test_first_failure_is_reported(self):
@@ -234,7 +234,7 @@ class TestClusterTestSetsRunner(unittest.TestCase):
         test2.run.side_effect = Exception("test2 oops")
         with self.assertRaisesRegex(Exception, "test1 oops"):
             ClusterTestSetsRunner(
-                sets=[{"test": test1}, {"test": test2}]).run()
+                sets=[TestSet(None, test=test1), TestSet(None, test=test2)]).run()
 
     def test_test_failure_is_reported_over_post_failure(self):
         test1 = Mock()
@@ -243,7 +243,7 @@ class TestClusterTestSetsRunner(unittest.TestCase):
         final_post.run.side_effect = Exception("final post oops")
         with self.assertRaisesRegex(Exception, "test1 oops"):
             ClusterTestSetsRunner(
-                sets=[{"test": test1},], final_post=final_post).run()
+                sets=[TestSet(None, test=test1)], final_post=final_post).run()
 
     def test_test_failure_is_reported_over_teardown_failure(self):
         test1 = Mock()
@@ -252,7 +252,7 @@ class TestClusterTestSetsRunner(unittest.TestCase):
         cluster.teardown.side_effect = Exception("teardown oops")
         with self.assertRaisesRegex(Exception, "test1 oops"):
             ClusterTestSetsRunner(
-                sets=[{"test": test1},], cluster=cluster).run()
+                sets=[TestSet(None, test=test1)], cluster=cluster).run()
 
     def test_can_skip(self):
         test1 = Mock()
@@ -264,10 +264,10 @@ class TestClusterTestSetsRunner(unittest.TestCase):
         with self.assertRaisesRegex(Exception, "test1 oops"):
             ClusterTestSetsRunner(
                 sets=[
-                    {"test": test1},
-                    {"test": skipped_test, "post_test": post_skipped_test,
-                        "always_run": False},
-                    {"test": test3, "post_test": post_test3},
+                    TestSet(None, test=test1),
+                    TestSet(None, test=skipped_test, post=post_skipped_test,
+                        always_run=False),
+                    TestSet(None, test=test3, post=post_test3),
                 ]
             ).run()
         skipped_test.run.assert_not_called()
@@ -282,7 +282,7 @@ class TestClusterTestSetsRunner(unittest.TestCase):
         final_post.run.side_effect = Exception("final post oops")
         with self.assertRaisesRegex(Exception, "final post oops"):
             ClusterTestSetsRunner(
-                sets=[{"test": test1}, {"test": test2}],
+                sets=[TestSet(None, test=test1), TestSet(None, test=test2)],
                 final_post=final_post).run()
 
     def test_initial_pre_test_failure_skips_the_set(self):
@@ -295,7 +295,7 @@ class TestClusterTestSetsRunner(unittest.TestCase):
             ClusterTestSetsRunner(
                 initial_pre_test=initial_pre_test,
                 cluster=cluster,
-                sets=[{"test": test1}],
+                sets=[TestSet(None, test=test1)],
                 final_post=final_post).run()
         test1.run.assert_not_called()
         # and keeps the cluster teardown and final post
