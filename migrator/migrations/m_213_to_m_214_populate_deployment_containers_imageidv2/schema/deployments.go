@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -53,11 +52,7 @@ var (
 
 	// DeploymentsSchema is the go schema for table `deployments`.
 	DeploymentsSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("deployments")
-		if schema != nil {
-			return schema
-		}
-		schema = walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments")
+		schema := walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments")
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Image":             ImagesSchema,
 			"storage.NamespaceMetadata": NamespacesSchema,
@@ -85,8 +80,6 @@ var (
 			v1.SearchCategory_PODS,
 		}...)
 		schema.ScopingResource = resources.Deployment
-		RegisterTable(schema, CreateTableDeploymentsStmt)
-		mapping.RegisterCategoryToTable(v1.SearchCategory_DEPLOYMENTS, schema)
 		return schema
 	}()
 )
@@ -148,8 +141,8 @@ type DeploymentsContainers struct {
 	ResourcesCPUCoresRequest              float32         `gorm:"column:resources_cpucoresrequest;type:numeric"`
 	ResourcesCPUCoresLimit                float32         `gorm:"column:resources_cpucoreslimit;type:numeric"`
 	ResourcesMemoryMbRequest              float32         `gorm:"column:resources_memorymbrequest;type:numeric"`
-	ResourcesMemoryMbLimit                float32         `gorm:"column:resources_memorymblimit;type:numeric"`
-	DeploymentsRef                        Deployments     `gorm:"foreignKey:deployments_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+	ResourcesMemoryMbLimit float32     `gorm:"column:resources_memorymblimit;type:numeric"`
+	DeploymentsRef         Deployments `gorm:"foreignKey:deployments_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
 
 // DeploymentsContainersEnvs holds the Gorm model for Postgres table `deployments_containers_envs`.
@@ -206,6 +199,6 @@ type DeploymentsPortsExposureInfos struct {
 	ServicePort         int32                            `gorm:"column:serviceport;type:integer"`
 	NodePort            int32                            `gorm:"column:nodeport;type:integer"`
 	ExternalIps         *pq.StringArray                  `gorm:"column:externalips;type:text[]"`
-	ExternalHostnames   *pq.StringArray                  `gorm:"column:externalhostnames;type:text[]"`
-	DeploymentsPortsRef DeploymentsPorts                 `gorm:"foreignKey:deployments_id,deployments_ports_idx;references:deployments_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
+	ExternalHostnames   *pq.StringArray  `gorm:"column:externalhostnames;type:text[]"`
+	DeploymentsPortsRef DeploymentsPorts `gorm:"foreignKey:deployments_id,deployments_ports_idx;references:deployments_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
 }
