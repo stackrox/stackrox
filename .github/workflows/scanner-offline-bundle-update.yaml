@@ -13,6 +13,7 @@ jobs:
   offline-bundle-matrix:
     runs-on: ubuntu-latest
     if: >
+      github.repository_owner == 'stackrox' &&
       github.event_name == 'schedule' ||
       (github.event_name == 'pull_request' &&
        contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns'))

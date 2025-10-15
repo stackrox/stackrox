@@ -14,6 +14,7 @@ jobs:
   fetch-nvd-feeds:
     runs-on: ubuntu-latest
     if: >
+      github.repository_owner == 'stackrox' &&
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'pull_request' &&
