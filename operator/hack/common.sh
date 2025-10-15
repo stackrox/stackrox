@@ -99,7 +99,7 @@ function approve_install_plan() {
   # `local` ignores `errexit` so we assign value separately: http://mywiki.wooledge.org/BashFAQ/105
   current_csv=$("${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get -n "${operator_ns}" subscription.operators.coreos.com stackrox-operator-test-subscription -o jsonpath="{.status.currentCSV}")
   readonly current_csv
-  local -r expected_csv="rhacs-operator.${csv_version}"
+  local -r expected_csv="rhacs-operator.${csv_version}x"
   if [[ $current_csv != "$expected_csv" ]]; then
     log "Subscription is progressing to unexpected CSV '${current_csv}', expected '${expected_csv}'"
     gather_olm_resources "${operator_ns}"
