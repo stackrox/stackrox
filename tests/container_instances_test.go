@@ -67,17 +67,36 @@ func TestContainerInstances(testT *testing.T) {
 		// Verify default sort is by name.
 		names := sliceutils.Map(groupedContainers, func(g ContainerNameGroup) string { return g.Name })
 		require.Equal(retryEventsT, names, []string{"1st", "2nd"})
-		// Verify the events.
-		// Expecting 1 process: nginx
-		require.Len(retryEventsT, groupedContainers[0].Events, 1)
+
+		// Use "at least" semantics: verify required processes exist, but allow extras.
+		// Rationale: Modern container images (especially nginx) run extensive initialization:
+		// - docker-entrypoint.sh and scripts in /docker-entrypoint.d/ (10-listen-on-ipv6, 20-envsubst, 30-tune-workers)
+		// - Short-lived utilities: /usr/bin/find, /bin/grep, /usr/bin/cut, /bin/sed, /usr/bin/basename, etc.
+		// - nginx worker processes (duplicate /usr/sbin/nginx)
+		// A typical nginx container may capture 20+ processes during startup. This approach focuses on
+		// verifying the main application processes exist without being brittle to image implementation details.
+
 		firstContainerEvents :=
 			sliceutils.Map(groupedContainers[0].Events, func(event Event) string { return event.Name })
-		require.ElementsMatch(retryEventsT, firstContainerEvents, []string{"/usr/sbin/nginx"})
-		// Expecting 3 processes: sh, date, sleep
-		require.Len(retryEventsT, groupedContainers[1].Events, 3)
+		retryEventsT.Logf("First container (%s) events: %+v", groupedContainers[0].Name, firstContainerEvents)
+
+		// First container: nginx (may see workers and ~20 docker-entrypoint processes)
+		requiredFirstContainer := []string{"/usr/sbin/nginx"}
+		for _, required := range requiredFirstContainer {
+			require.Contains(retryEventsT, firstContainerEvents, required,
+				"first container missing required process %q", required)
+		}
+
 		secondContainerEvents :=
 			sliceutils.Map(groupedContainers[1].Events, func(event Event) string { return event.Name })
-		require.ElementsMatch(retryEventsT, secondContainerEvents, []string{"/bin/sh", "/bin/date", "/bin/sleep"})
+		retryEventsT.Logf("Second container (%s) events: %+v", groupedContainers[1].Name, secondContainerEvents)
+
+		// Second container: busybox running a simple loop (may see extra date/sleep invocations)
+		requiredSecondContainer := []string{"/bin/sh", "/bin/date", "/bin/sleep"}
+		for _, required := range requiredSecondContainer {
+			require.Contains(retryEventsT, secondContainerEvents, required,
+				"second container missing required process %q", required)
+		}
 
 		// Verify the container group's timestamp is no later than the timestamp of the earliest event
 		// Find the actual earliest event for each container (GraphQL doesn't guarantee ordering)

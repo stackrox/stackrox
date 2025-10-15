@@ -10,7 +10,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
-	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/require"
 	coreV1 "k8s.io/api/core/v1"
@@ -94,18 +93,34 @@ func TestPod(testT *testing.T) {
 	}
 	testutils.Retry(testT, 30, 5*time.Second, func(retryEventsT testutils.T) {
 		events := getEvents(retryEventsT, pod)
-		retryEventsT.Logf("Found %d events (expected 4): %+v", len(events), events)
+		retryEventsT.Logf("Found %d events: %+v", len(events), events)
 
-		// Verify we have all 4 expected events
-		require.Len(retryEventsT, events, 4, "expected 4 process events")
+		// Use "at least" semantics: verify required processes exist, but allow extras.
+		// Rationale: nginx spawns worker processes (creating duplicate /usr/sbin/nginx events),
+		// and docker-entrypoint scripts may create short-lived utility processes
+		// (/docker-entrypoint.sh, /usr/bin/find, /bin/grep, etc.) that get captured.
+		// This approach makes the test robust against image changes and process lifecycle variations.
+		requiredProcesses := []string{"/bin/date", "/bin/sh", "/bin/sleep", "/usr/sbin/nginx"}
 
-		// Expecting processes: nginx, sh, date, sleep
-		eventNames := sliceutils.Map(events, func(event Event) string { return event.Name })
-		expected := []string{"/bin/date", "/bin/sh", "/bin/sleep", "/usr/sbin/nginx"}
+		eventNames := make([]string, 0, len(events))
+		for _, event := range events {
+			eventNames = append(eventNames, event.Name)
+		}
 
 		retryEventsT.Logf("Event names: %+v", eventNames)
-		retryEventsT.Logf("Expected names: %+v", expected)
-		require.ElementsMatch(retryEventsT, eventNames, expected)
+		retryEventsT.Logf("Required processes (at least): %+v", requiredProcesses)
+
+		// Verify all required processes are present
+		for _, required := range requiredProcesses {
+			found := false
+			for _, eventName := range eventNames {
+				if eventName == required {
+					found = true
+					break
+				}
+			}
+			require.True(retryEventsT, found, "required process %q not found in events", required)
+		}
 
 		// Verify the pod's timestamp is no later than the timestamp of the earliest event.
 		// Find the actual earliest event (GraphQL doesn't guarantee ordering)
