@@ -18,7 +18,7 @@ import (
 // NodeCVEStore provides functionality for node CVE operations
 type NodeCVEStore interface {
 	GetCVEs(ctx context.Context, tx *postgres.Tx, cveIDs []string) (map[string]*storage.NodeCVE, error)
-	CopyFromNodeCves(ctx context.Context, tx *postgres.Tx, objs ...*storage.NodeCVE) error
+	CopyFromNodeCves(ctx context.Context, tx *postgres.Tx, nodeCVEs ...*storage.NodeCVE) error
 	RemoveOrphanedNodeCVEs(ctx context.Context, tx *postgres.Tx) error
 	MarkOrphanedNodeCVEs(ctx context.Context, tx *postgres.Tx) error
 }
@@ -39,16 +39,10 @@ func (s *nodeCVEStoreImpl) GetCVEs(ctx context.Context, tx *postgres.Tx, cveIDs 
 
 	// Check cache first
 	cachedCVEs, missingIDs := s.cache.GetMany(cveIDs)
-	idToCVEMap := make(map[string]*storage.NodeCVE, len(cveIDs))
-
-	// Add cached CVEs to result
-	for id, cve := range cachedCVEs {
-		idToCVEMap[id] = cve
-	}
 
 	// If all CVEs were found in cache, return early
 	if len(missingIDs) == 0 {
-		return idToCVEMap, nil
+		return cachedCVEs, nil
 	}
 
 	// Fetch missing CVEs from database
@@ -69,7 +63,7 @@ func (s *nodeCVEStoreImpl) GetCVEs(ctx context.Context, tx *postgres.Tx, cveIDs 
 			return nil, errors.Wrap(err, "unmarshaling CVE data")
 		}
 		dbCVEs[msg.GetId()] = msg
-		idToCVEMap[msg.GetId()] = msg
+		cachedCVEs[msg.GetId()] = msg
 	}
 
 	// Cache the newly fetched CVEs
@@ -81,10 +75,10 @@ func (s *nodeCVEStoreImpl) GetCVEs(ctx context.Context, tx *postgres.Tx, cveIDs 
 		return nil, errors.Wrap(err, "iterating over CVE rows")
 	}
 
-	return idToCVEMap, nil
+	return cachedCVEs, nil
 }
 
-func (s *nodeCVEStoreImpl) CopyFromNodeCves(ctx context.Context, tx *postgres.Tx, objs ...*storage.NodeCVE) error {
+func (s *nodeCVEStoreImpl) CopyFromNodeCves(ctx context.Context, tx *postgres.Tx, nodeCVEs ...*storage.NodeCVE) error {
 	copyCols := []string{
 		"id",
 		"cvebaseinfo_cve",
@@ -102,34 +96,19 @@ func (s *nodeCVEStoreImpl) CopyFromNodeCves(ctx context.Context, tx *postgres.Tx
 	}
 
 	// Process CVEs in batches using slices.Chunk
-	for batch := range slices.Chunk(objs, batchSize) {
+	for batch := range slices.Chunk(nodeCVEs, batchSize) {
 		// Prepare data for this batch
 		inputRows := make([][]interface{}, 0, len(batch))
 		deletes := make([]string, 0, len(batch))
 
-		for _, obj := range batch {
-			serialized, marshalErr := obj.MarshalVT()
-			if marshalErr != nil {
-				return errors.Wrapf(marshalErr, "marshaling CVE %s", obj.GetId())
+		for _, nodeCVE := range batch {
+			inputRow, err := prepareCVEInputRow(nodeCVE)
+			if err != nil {
+				return err
 			}
 
-			inputRows = append(inputRows, []interface{}{
-				obj.GetId(),
-				obj.GetCveBaseInfo().GetCve(),
-				protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
-				protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
-				obj.GetOperatingSystem(),
-				obj.GetCvss(),
-				obj.GetSeverity(),
-				obj.GetImpactScore(),
-				obj.GetSnoozed(),
-				protocompat.NilOrTime(obj.GetSnoozeExpiry()),
-				obj.GetOrphaned(),
-				protocompat.NilOrTime(obj.GetOrphanedTime()),
-				serialized,
-			})
-
-			deletes = append(deletes, obj.GetId())
+			inputRows = append(inputRows, inputRow)
+			deletes = append(deletes, nodeCVE.GetId())
 		}
 
 		// Copy does not upsert so have to delete first.
@@ -152,12 +131,37 @@ func (s *nodeCVEStoreImpl) CopyFromNodeCves(ctx context.Context, tx *postgres.Tx
 
 	// Update cache with all successfully inserted/updated CVEs
 	cveMap := make(map[string]*storage.NodeCVE)
-	for _, obj := range objs {
-		cveMap[obj.GetId()] = obj
+	for _, nodeCVE := range nodeCVEs {
+		cveMap[nodeCVE.GetId()] = nodeCVE
 	}
 	s.cache.SetMany(cveMap)
 
 	return nil
+}
+
+// prepareCVEInputRow converts a NodeCVE object into a database input row
+// IMPORTANT: The order of values must exactly match the order of copyCols
+func prepareCVEInputRow(nodeCVE *storage.NodeCVE) ([]interface{}, error) {
+	serialized, err := nodeCVE.MarshalVT()
+	if err != nil {
+		return nil, errors.Wrapf(err, "marshaling CVE %s", nodeCVE.GetId())
+	}
+
+	return []interface{}{
+		nodeCVE.GetId(),
+		nodeCVE.GetCveBaseInfo().GetCve(),
+		protocompat.NilOrTime(nodeCVE.GetCveBaseInfo().GetPublishedOn()),
+		protocompat.NilOrTime(nodeCVE.GetCveBaseInfo().GetCreatedAt()),
+		nodeCVE.GetOperatingSystem(),
+		nodeCVE.GetCvss(),
+		nodeCVE.GetSeverity(),
+		nodeCVE.GetImpactScore(),
+		nodeCVE.GetSnoozed(),
+		protocompat.NilOrTime(nodeCVE.GetSnoozeExpiry()),
+		nodeCVE.GetOrphaned(),
+		protocompat.NilOrTime(nodeCVE.GetOrphanedTime()),
+		serialized,
+	}, nil
 }
 
 func (s *nodeCVEStoreImpl) RemoveOrphanedNodeCVEs(ctx context.Context, tx *postgres.Tx) error {

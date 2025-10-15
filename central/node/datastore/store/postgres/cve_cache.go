@@ -47,6 +47,10 @@ func (c *nodeCVECache) SetMany(cves map[string]*storage.NodeCVE) {
 }
 
 func (c *nodeCVECache) DeleteMany(ids []string) {
+	if len(ids) == 0 {
+		return
+	}
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
