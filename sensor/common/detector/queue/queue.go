@@ -47,6 +47,7 @@ func NewQueue[T comparable](stopper concurrency.Stopper, name string, size int, 
 
 // Start the queue.
 func (q *Queue[T]) Start() {
+	q.isRunning.Signal() // Start in running state
 	go q.run()
 }
 
