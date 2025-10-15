@@ -115,6 +115,9 @@ spec:
     description: This sets the expiration time for intermediate OCI artifacts produced and used during builds after which they can be garbage collected.
     name: oci-artifact-expires-after
     type: string
+  - name: extra-labels
+    type: array
+    description: Additional labels to put on the built containers.
 
   - name: operator-image-build-repo
     description: Repository where the (unreleased) operator image is pushed by its build pipeline.
@@ -478,6 +481,8 @@ spec:
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+    - name: LABELS
+      value: ["$(params.extra-labels[*])"]
     taskRef:
       params:
       - name: name
