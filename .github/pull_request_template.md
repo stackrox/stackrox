@@ -32,6 +32,19 @@ e.g., the PR is a one-line comment change.
 - [ ] added compatibility tests
 - [ ] modified existing tests
 
+### AI assistance
+
+<!--
+If AI tools were used to generate or assist with code in this PR, please
+document which parts and confirm you have reviewed the AI-generated code.
+This helps reviewers understand the context and ensures quality standards.
+-->
+
+- [ ] No AI assistance was used in this PR
+- [ ] AI assistance was used for the following parts (please specify):
+  - <!-- e.g., "initial implementation of X function", "test case generation for Y", "refactoring Z module" -->
+- [ ] I have critically reviewed all AI-generated code for correctness, security, and maintainability
+
 ### How I validated my change
 
 <!--
