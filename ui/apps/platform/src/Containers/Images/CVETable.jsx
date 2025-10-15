@@ -99,7 +99,8 @@ const CVETable = (props) => {
     if (!scan) {
         return <div className="p-3">No scanner setup for this registry</div>;
     }
-    const { components } = scan;
+    // Support both imageComponents (new) and components (legacy) for backward compatibility
+    const components = scan.imageComponents || [];
     if (components.length === 0) {
         return <NoComponentVulnMessage />;
     }
@@ -127,7 +128,8 @@ const CVETable = (props) => {
 
 CVETable.propTypes = {
     scan: PropTypes.shape({
-        components: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+        // Support both new and legacy field names
+        imageComponents: PropTypes.arrayOf(PropTypes.shape({})),
     }).isRequired,
     containsFixableCVEs: PropTypes.bool,
 };
