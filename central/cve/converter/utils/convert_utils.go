@@ -53,6 +53,39 @@ func (c CVEType) ToStorageCVEType() storage.CVE_CVEType {
 	return storage.CVE_UNKNOWN_CVE
 }
 
+// Deprecated: replaced with equivalent functions using storage.ImageCVEV2
+// ImageCVEToEmbeddedVulnerability coverts a Proto CVEs to Embedded Vuln
+// It converts all the fields except Fixed By which gets set depending on the CVE
+// TODO(ROX-28123): Remove
+func ImageCVEToEmbeddedVulnerability(vuln *storage.ImageCVE) *storage.EmbeddedVulnerability {
+	embeddedCVE := &storage.EmbeddedVulnerability{
+		Cve:                   vuln.GetCveBaseInfo().GetCve(),
+		Cvss:                  vuln.GetCvss(),
+		Summary:               vuln.GetCveBaseInfo().GetSummary(),
+		Link:                  vuln.GetCveBaseInfo().GetLink(),
+		CvssV2:                vuln.GetCveBaseInfo().GetCvssV2(),
+		CvssV3:                vuln.GetCveBaseInfo().GetCvssV3(),
+		PublishedOn:           vuln.GetCveBaseInfo().GetPublishedOn(),
+		LastModified:          vuln.GetCveBaseInfo().GetLastModified(),
+		FirstSystemOccurrence: vuln.GetCveBaseInfo().GetCreatedAt(),
+		Suppressed:            vuln.GetSnoozed(),
+		SuppressActivation:    vuln.GetSnoozeStart(),
+		SuppressExpiry:        vuln.GetSnoozeExpiry(),
+		Severity:              vuln.GetSeverity(),
+		CvssMetrics:           vuln.GetCvssMetrics(),
+		NvdCvss:               vuln.GetNvdcvss(),
+		Epss:                  vuln.GetCveBaseInfo().GetEpss(),
+	}
+	if vuln.GetCveBaseInfo().GetCvssV3() != nil {
+		embeddedCVE.ScoreVersion = storage.EmbeddedVulnerability_V3
+	} else {
+		embeddedCVE.ScoreVersion = storage.EmbeddedVulnerability_V2
+	}
+	embeddedCVE.VulnerabilityType = storage.EmbeddedVulnerability_IMAGE_VULNERABILITY
+	embeddedCVE.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY}
+	return embeddedCVE
+}
+
 // NVDCVEToEmbeddedCVE converts a *schema.NVDCVEFeedJSON10DefCVEItem to *storage.EmbeddedVulnerability.
 func NVDCVEToEmbeddedCVE(nvdCVE *schema.NVDCVEFeedJSON10DefCVEItem, ct CVEType) (*storage.EmbeddedVulnerability, error) {
 	if nvdCVE == nil || nvdCVE.CVE == nil || nvdCVE.CVE.CVEDataMeta == nil {
@@ -189,39 +222,6 @@ func NVDCVEsToEmbeddedCVEs(cves []*schema.NVDCVEFeedJSON10DefCVEItem, ct CVEType
 		ret = append(ret, ev)
 	}
 	return ret, nil
-}
-
-// Deprecated: replaced with equivalent functions using storage.ImageCVEV2
-// ImageCVEToEmbeddedVulnerability coverts a Proto CVEs to Embedded Vuln
-// It converts all the fields except Fixed By which gets set depending on the CVE
-// TODO(ROX-28123): Remove
-func ImageCVEToEmbeddedVulnerability(vuln *storage.ImageCVE) *storage.EmbeddedVulnerability {
-	embeddedCVE := &storage.EmbeddedVulnerability{
-		Cve:                   vuln.GetCveBaseInfo().GetCve(),
-		Cvss:                  vuln.GetCvss(),
-		Summary:               vuln.GetCveBaseInfo().GetSummary(),
-		Link:                  vuln.GetCveBaseInfo().GetLink(),
-		CvssV2:                vuln.GetCveBaseInfo().GetCvssV2(),
-		CvssV3:                vuln.GetCveBaseInfo().GetCvssV3(),
-		PublishedOn:           vuln.GetCveBaseInfo().GetPublishedOn(),
-		LastModified:          vuln.GetCveBaseInfo().GetLastModified(),
-		FirstSystemOccurrence: vuln.GetCveBaseInfo().GetCreatedAt(),
-		Suppressed:            vuln.GetSnoozed(),
-		SuppressActivation:    vuln.GetSnoozeStart(),
-		SuppressExpiry:        vuln.GetSnoozeExpiry(),
-		Severity:              vuln.GetSeverity(),
-		CvssMetrics:           vuln.GetCvssMetrics(),
-		NvdCvss:               vuln.GetNvdcvss(),
-		Epss:                  vuln.GetCveBaseInfo().GetEpss(),
-	}
-	if vuln.GetCveBaseInfo().GetCvssV3() != nil {
-		embeddedCVE.ScoreVersion = storage.EmbeddedVulnerability_V3
-	} else {
-		embeddedCVE.ScoreVersion = storage.EmbeddedVulnerability_V2
-	}
-	embeddedCVE.VulnerabilityType = storage.EmbeddedVulnerability_IMAGE_VULNERABILITY
-	embeddedCVE.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY}
-	return embeddedCVE
 }
 
 // NodeCVEToNodeVulnerability coverts a Proto CVEs to Embedded node vulnerability.

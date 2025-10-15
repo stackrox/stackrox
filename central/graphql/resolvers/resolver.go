@@ -20,10 +20,8 @@ import (
 	complianceService "github.com/stackrox/rox/central/compliance/service"
 	complianceStandards "github.com/stackrox/rox/central/compliance/standards"
 	complianceOperatorManager "github.com/stackrox/rox/central/complianceoperator/manager"
-	componentCVEEdgeDataStore "github.com/stackrox/rox/central/componentcveedge/datastore"
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
 	"github.com/stackrox/rox/central/cve/fetcher"
-	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
 	imageCVEV2DataStore "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
 	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
@@ -32,8 +30,6 @@ import (
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageComponentDataStore "github.com/stackrox/rox/central/imagecomponent/datastore"
 	imageComponentV2DataStore "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
-	imageComponentEdgeDataStore "github.com/stackrox/rox/central/imagecomponentedge/datastore"
-	imageCVEEdgeDataStore "github.com/stackrox/rox/central/imagecveedge/datastore"
 	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
 	imageMapperDatastore "github.com/stackrox/rox/central/imagev2/datastore/mapper/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
@@ -88,8 +84,6 @@ type Resolver struct {
 	ComplianceManagementService   v1.ComplianceManagementServiceServer
 	ComplianceManager             complianceManager.ComplianceManager
 	ClusterCVEEdgeDataStore       clusterCVEEdgeDataStore.DataStore
-	ComponentCVEEdgeDataStore     componentCVEEdgeDataStore.DataStore
-	ImageCVEDataStore             imageCVEDataStore.DataStore
 	NodeCVEDataStore              nodeCVEDataStore.DataStore
 	DeploymentDataStore           deploymentDatastore.DataStore
 	PodDataStore                  podDatastore.DataStore
@@ -98,8 +92,6 @@ type Resolver struct {
 	ImageComponentDataStore       imageComponentDataStore.DataStore
 	NodeComponentDataStore        nodeComponentDataStore.DataStore
 	NodeComponentCVEEdgeDataStore nodeComponentCVEEdgeDataStore.DataStore
-	ImageComponentEdgeDataStore   imageComponentEdgeDataStore.DataStore
-	ImageCVEEdgeDataStore         imageCVEEdgeDataStore.DataStore
 	GroupDataStore                groupDataStore.DataStore
 	NamespaceDataStore            namespaceDataStore.DataStore
 	NetworkFlowDataStore          nfDS.ClusterDataStore
@@ -150,7 +142,6 @@ func New() *Resolver {
 		ComplianceService:             complianceService.Singleton(),
 		ClusterDataStore:              clusterDatastore.Singleton(),
 		ClusterCVEEdgeDataStore:       clusterCVEEdgeDataStore.Singleton(),
-		ComponentCVEEdgeDataStore:     componentCVEEdgeDataStore.Singleton(),
 		DeploymentDataStore:           deploymentDatastore.Singleton(),
 		PodDataStore:                  podDatastore.Singleton(),
 		GroupDataStore:                groupDataStore.Singleton(),
@@ -195,22 +186,15 @@ func New() *Resolver {
 			return platformcve.Singleton()
 		}(),
 	}
-	if features.FlattenCVEData.Enabled() {
-		resolver.ImageCVEFlatView = func() imagecveflat.CveFlatView {
-			return imagecveflat.Singleton()
-		}()
-		resolver.ImageComponentFlatView = func() imagecomponentflat.ComponentFlatView {
-			return imagecomponentflat.Singleton()
-		}()
+	resolver.ImageCVEFlatView = func() imagecveflat.CveFlatView {
+		return imagecveflat.Singleton()
+	}()
+	resolver.ImageComponentFlatView = func() imagecomponentflat.ComponentFlatView {
+		return imagecomponentflat.Singleton()
+	}()
 
-		resolver.ImageComponentV2DataStore = imageComponentV2DataStore.Singleton()
-		resolver.ImageCVEV2DataStore = imageCVEV2DataStore.Singleton()
-	} else {
-		resolver.ImageComponentDataStore = imageComponentDataStore.Singleton()
-		resolver.ImageComponentEdgeDataStore = imageComponentEdgeDataStore.Singleton()
-		resolver.ImageCVEEdgeDataStore = imageCVEEdgeDataStore.Singleton()
-		resolver.ImageCVEDataStore = imageCVEDataStore.Singleton()
-	}
+	resolver.ImageComponentV2DataStore = imageComponentV2DataStore.Singleton()
+	resolver.ImageCVEV2DataStore = imageCVEV2DataStore.Singleton()
 	if features.FlattenImageData.Enabled() {
 		// Only initialize the ImageV2DataStore if we have the new image data model enabled, otherwise this makes no sense
 		resolver.ImageV2DataStore = imageV2Datastore.Singleton()

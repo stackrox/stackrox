@@ -20,7 +20,6 @@ import (
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
-	SearchImageCVEs(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 	SearchRawImageCVEs(ctx context.Context, q *v1.Query) ([]*storage.ImageCVE, error)
 
 	Exists(ctx context.Context, id string) (bool, error)
