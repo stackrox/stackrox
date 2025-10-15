@@ -24,7 +24,7 @@ type NodeCVEStoreSuite struct {
 	ctx    context.Context
 	pool   postgres.DB
 	gormDB *gorm.DB
-	store  nodeCVEStore
+	store  *nodeCVEStore
 }
 
 func TestNodeCVEStore(t *testing.T) {
@@ -303,7 +303,7 @@ func (s *NodeCVEStoreSuite) TestCacheMissingIDs() {
 	s.NotContains(cves, nonExistentID)
 
 	// Test cache directly to verify missing IDs are returned
-	cache := s.store.(*nodeCVEStoreImpl).cache
+	cache := s.store.cache
 	cachedCVEs, missingIDs := cache.GetMany([]string{cve1.GetId(), nonExistentID})
 
 	// Should return cached CVE and missing ID
@@ -355,7 +355,7 @@ func (s *NodeCVEStoreSuite) TestGetCVEsNothingFoundInDB() {
 	s.Empty(cves)
 
 	// Verify the cache path was also taken for missing IDs
-	cache := s.store.(*nodeCVEStoreImpl).cache
+	cache := s.store.cache
 	cachedCVEs, missingIDs := cache.GetMany(nonExistentIDs)
 	s.Empty(cachedCVEs)
 	s.Len(missingIDs, 2)
@@ -543,7 +543,7 @@ func (s *NodeCVEStoreSuite) TestGetCVEsFromDatabaseWithCacheMiss() {
 	s.Require().NoError(err)
 
 	// Verify cache is empty for this CVE (since we bypassed it)
-	cache := s.store.(*nodeCVEStoreImpl).cache
+	cache := s.store.cache
 	cachedCVEs, missingIDs := cache.GetMany([]string{cve.GetId()})
 	s.Empty(cachedCVEs)
 	s.Len(missingIDs, 1)
