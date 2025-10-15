@@ -417,7 +417,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 							},
 						},
 						AdmissionControl: &platform.AdmissionControlComponentSpec{
-							Enforce:       ptr.To(true),
+							Enforcement:   ptr.To(platform.PolicyEnforcementEnabled),
 							Bypass:        platform.BypassBreakGlassAnnotation.Pointer(),
 							FailurePolicy: ptr.To(platform.FailurePolicyFail),
 							DeploymentSpec: platform.DeploymentSpec{
