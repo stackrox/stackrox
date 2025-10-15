@@ -157,11 +157,11 @@ type AdmissionControlComponentSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	ListenOnEvents *bool `json:"listenOnEvents,omitempty"`
 
-	// Set to false to disable policy enforcement for the admission controller. This is not recommended.
-	// On new deployments starting with version 4.9, defaults to true.
-	// On old deployments, defaults to true if at least one of listenOnCreates or listenOnUpdates is true.
+	// Set to Disabled to disable policy enforcement for the admission controller. This is not recommended.
+	// On new deployments starting with version 4.9, defaults to Enabled.
+	// On old deployments, defaults to Enabled if at least one of listenOnCreates or listenOnUpdates is true.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
-	Enforce *bool `json:"enforce,omitempty"`
+	Enforcement *PolicyEnforcement `json:"enforcement,omitempty"`
 
 	// Deprecated field. This field will be removed in a future release.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
@@ -192,6 +192,17 @@ type AdmissionControlComponentSpec struct {
 	// The default is: 3.
 	Replicas *int32 `json:"replicas,omitempty"`
 }
+
+// PolicyEnforcement defines whether policy enforcement is enabled or disabled.
+// +kubebuilder:validation:Enum=Enabled;Disabled
+type PolicyEnforcement string
+
+const (
+	// PolicyEnforcementEnabled means: policy enforcement is enabled.
+	PolicyEnforcementEnabled PolicyEnforcement = "Enabled"
+	// PolicyEnforcementDisabled means: polict enforcement is disabled.
+	PolicyEnforcementDisabled PolicyEnforcement = "Disabled"
+)
 
 // ImageScanPolicy defines whether images should be scanned at admission control time.
 // +kubebuilder:validation:Enum=ScanIfMissing;DoNotScanInline

@@ -54,16 +54,16 @@ func TestReconcileAdmissionControllerDefaulting(t *testing.T) {
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
-				Enforce:       ptr.To(true),
+				Enforcement:   ptr.To(platform.PolicyEnforcementEnabled),
 			},
 			ExpectedAnnotations: map[string]string{
-				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "true",
+				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Enabled",
 			},
 		},
-		"install: explicit enforce false": {
+		"install: explicit enforcement disabled": {
 			Spec: platform.SecuredClusterSpec{
 				AdmissionControl: &platform.AdmissionControlComponentSpec{
-					Enforce: ptr.To(false),
+					Enforcement: ptr.To(platform.PolicyEnforcementDisabled),
 				},
 			},
 			Status: platform.SecuredClusterStatus{},
@@ -71,16 +71,16 @@ func TestReconcileAdmissionControllerDefaulting(t *testing.T) {
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
-				Enforce:       nil,
+				Enforcement:   nil,
 			},
 			ExpectedAnnotations: map[string]string{
-				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "",
+				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "",
 			},
 		},
-		"install: explicit enforce true": {
+		"install: explicit enforcement enabled": {
 			Spec: platform.SecuredClusterSpec{
 				AdmissionControl: &platform.AdmissionControlComponentSpec{
-					Enforce: ptr.To(true),
+					Enforcement: ptr.To(platform.PolicyEnforcementEnabled),
 				},
 			},
 			Status: platform.SecuredClusterStatus{},
@@ -88,45 +88,45 @@ func TestReconcileAdmissionControllerDefaulting(t *testing.T) {
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
-				Enforce:       nil,
+				Enforcement:   nil,
 			},
 			ExpectedAnnotations: map[string]string{
-				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "",
+				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "",
 			},
 		},
 		"upgrade: annotation true is picked up": {
 			Spec:   platform.SecuredClusterSpec{},
 			Status: nonEmptyStatus,
 			Annotations: map[string]string{
-				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "true",
+				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Enabled",
 			},
 			ExpectedDefaults: &platform.AdmissionControlComponentSpec{
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
-				Enforce:       ptr.To(true),
+				Enforcement:   ptr.To(platform.PolicyEnforcementEnabled),
 			},
 			ExpectedAnnotations: map[string]string{
-				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "true",
+				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Enabled",
 			},
 		},
 		"upgrade: annotation false is picked up": {
 			Spec:   platform.SecuredClusterSpec{},
 			Status: nonEmptyStatus,
 			Annotations: map[string]string{
-				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "false",
+				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Disabled",
 			},
 			ExpectedDefaults: &platform.AdmissionControlComponentSpec{
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
-				Enforce:       ptr.To(false),
+				Enforcement:   ptr.To(platform.PolicyEnforcementDisabled),
 			},
 			ExpectedAnnotations: map[string]string{
-				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "false",
+				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Disabled",
 			},
 		},
-		"upgrade: enforce disabled if listenOnCreates & listenOnUpdates disabled": {
+		"upgrade: enforcement disabled if listenOnCreates & listenOnUpdates disabled": {
 			Spec: platform.SecuredClusterSpec{
 				AdmissionControl: &platform.AdmissionControlComponentSpec{
 					ListenOnCreates: ptr.To(false),
@@ -138,13 +138,13 @@ func TestReconcileAdmissionControllerDefaulting(t *testing.T) {
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
-				Enforce:       ptr.To(false),
+				Enforcement:   ptr.To(platform.PolicyEnforcementDisabled),
 			},
 			ExpectedAnnotations: map[string]string{
-				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "false",
+				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Disabled",
 			},
 		},
-		"upgrade: enforce enabled if listenOnCreates enabled": {
+		"upgrade: enforcement enabled if listenOnCreates enabled": {
 			Spec: platform.SecuredClusterSpec{
 				AdmissionControl: &platform.AdmissionControlComponentSpec{
 					ListenOnCreates: ptr.To(true),
@@ -156,13 +156,13 @@ func TestReconcileAdmissionControllerDefaulting(t *testing.T) {
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
-				Enforce:       ptr.To(true),
+				Enforcement:   ptr.To(platform.PolicyEnforcementEnabled),
 			},
 			ExpectedAnnotations: map[string]string{
-				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "true",
+				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Enabled",
 			},
 		},
-		"upgrade: enforce enabled if listenOnUpdates enabled": {
+		"upgrade: enforcement enabled if listenOnUpdates enabled": {
 			Spec: platform.SecuredClusterSpec{
 				AdmissionControl: &platform.AdmissionControlComponentSpec{
 					ListenOnCreates: ptr.To(false),
@@ -174,10 +174,10 @@ func TestReconcileAdmissionControllerDefaulting(t *testing.T) {
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
-				Enforce:       ptr.To(true),
+				Enforcement:   ptr.To(platform.PolicyEnforcementEnabled),
 			},
 			ExpectedAnnotations: map[string]string{
-				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "true",
+				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Enabled",
 			},
 		},
 	}
