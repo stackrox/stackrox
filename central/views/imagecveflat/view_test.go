@@ -535,7 +535,7 @@ func (s *ImageCVEFlatViewTestSuite) testCases() []testCase {
 							Location:     "",
 							Architecture: "",
 						}, "sha256:05dd8ed5c76ad3c9f06481770828cf17b8c89f1e406c91d548426dd70fe94560", 0), 0)},
-					Level: v1.SearchCategory_IMAGE_VULNERABILITIES,
+					Level: v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 				},
 			}),
 			q: search.NewQueryBuilder().

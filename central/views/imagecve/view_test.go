@@ -619,7 +619,7 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 				Level: v1.SearchCategory_IMAGES,
 				Parent: &scoped.Scope{
 					IDs:   []string{cve.ID("CVE-2022-1552", "debian:8")},
-					Level: v1.SearchCategory_IMAGE_VULNERABILITIES,
+					Level: v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 				},
 			}),
 			q: search.NewQueryBuilder().
