@@ -53,6 +53,10 @@ spec:
     value: '0'
   - name: clone-fetch-tags
     value: 'true'
+  - name: extra-labels
+    value:
+    # X.Y in the cpe label must be adjusted for every version stream.
+    - "cpe=cpe:/a:redhat:advanced_cluster_security:X.Y::el8"
 
   pipelineRef:
     name: basic-component-pipeline
