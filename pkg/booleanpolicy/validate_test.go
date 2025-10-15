@@ -105,6 +105,23 @@ func (s *PolicyValueValidator) TestRegex() {
 			invalid: []string{"", " "},
 			r:       portExposureValueRegex,
 		},
+		{
+			name: "absolute path",
+			valid: []string{
+				"/",
+				"/foo",
+				"/foo/bar",
+				"/foo/bar/",
+				"//foo/",
+			},
+			invalid: []string{
+				"",
+				" ",
+				"foo",
+				"/some\x00/thing/",
+			},
+			r: absolutePathRegex,
+		},
 	}
 
 	for _, c := range cases {
