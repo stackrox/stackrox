@@ -483,6 +483,8 @@ spec:
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
     - name: LABELS
       value: ["$(params.extra-labels[*])"]
+    - name: BUILD_TIMESTAMP
+      value: "$(tasks.clone-repository.results.commit-timestamp)"
     taskRef:
       params:
       - name: name
