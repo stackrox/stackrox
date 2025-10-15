@@ -61,7 +61,7 @@ spec:
   - name: extra-labels
     value:
     # X.Y in the cpe label must be adjusted for every version stream.
-    - "cpe=cpe:/a:redhat:advanced_cluster_security:X.Y::el8"
+    - "cpe=cpe:/a:redhat:advanced_cluster_security:4.7::el8"
 
   pipelineRef:
     name: main-pipeline
