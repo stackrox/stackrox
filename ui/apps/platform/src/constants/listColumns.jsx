@@ -39,9 +39,7 @@ const imageColumns = [
         headerClassName: `w-1/8 ${defaultHeaderClassName} pointer-events-none`,
         className: 'w-1/8 pointer-events-none flex items-center justify-end',
         Expander: ({ isExpanded, ...rest }) => {
-            // Support both imageComponents (new) and components (legacy) for layer data
-            const components = rest.original.imageComponents || rest.original.components || [];
-            if (components.length === 0) {
+            if (!rest.original.components || rest.original.components.length === 0) {
                 return '';
             }
             const className = 'rt-expander w-1 pt-2 pointer-events-auto';
@@ -69,7 +67,7 @@ const imageColumns = [
         Cell: ({ original }) => getDateTime(original.created),
     },
     {
-        accessor: (row) => (row.imageComponents || row.components || []).length,
+        accessor: 'components.length',
         Header: 'Components',
         headerClassName: `text-left ${wrapClassName} ${defaultHeaderClassName}`,
         className: `text-left pl-3 word-break-all ${wrapClassName} ${defaultColumnClassName}`,
