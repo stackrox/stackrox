@@ -158,11 +158,11 @@ func (s *storeImpl) insertIntoNodes(
 	if err := copyFromNodeComponentEdges(ctx, tx, cloned.GetId(), parts.nodeComponentEdges...); err != nil {
 		return err
 	}
-	if err := copyFromNodeComponents(ctx, tx, parts.components...); err != nil {
+	if err := s.copyFromNodeComponents(ctx, tx, parts.components...); err != nil {
 		return err
 	}
 
-	if err := copyFromNodeComponentCVEEdges(ctx, tx, parts.componentCVEEdges...); err != nil {
+	if err := s.copyFromNodeComponentCVEEdges(ctx, tx, parts.componentCVEEdges...); err != nil {
 		return err
 	}
 	return s.insertIntoNodeCves(ctx, tx, iTime, parts.vulns...)
@@ -214,7 +214,7 @@ func insertIntoNodesTaints(ctx context.Context, tx *postgres.Tx, obj *storage.Ta
 	return nil
 }
 
-func copyFromNodeComponents(ctx context.Context, tx *postgres.Tx, objs ...*storage.NodeComponent) error {
+func (s *storeImpl) copyFromNodeComponents(ctx context.Context, tx *postgres.Tx, objs ...*storage.NodeComponent) error {
 	inputRows := [][]interface{}{}
 	var err error
 	var deletes []string
@@ -256,6 +256,7 @@ func copyFromNodeComponents(ctx context.Context, tx *postgres.Tx, objs ...*stora
 			if err != nil {
 				return err
 			}
+
 
 			// clear the inserts for the next batch
 			deletes = nil
@@ -350,10 +351,11 @@ func (s *storeImpl) insertIntoNodeCves(ctx context.Context, tx *postgres.Tx, iTi
 	return s.cveStore.MarkOrphanedNodeCVEs(ctx, tx)
 }
 
-func copyFromNodeComponentCVEEdges(ctx context.Context, tx *postgres.Tx, objs ...*storage.NodeComponentCVEEdge) error {
+func (s *storeImpl) copyFromNodeComponentCVEEdges(ctx context.Context, tx *postgres.Tx, objs ...*storage.NodeComponentCVEEdge) error {
 	inputRows := [][]interface{}{}
 	var err error
 	deletes := set.NewStringSet()
+	affectedComponentIDs := set.NewStringSet()
 	copyCols := []string{
 		"id",
 		"isfixable",
@@ -378,8 +380,9 @@ func copyFromNodeComponentCVEEdges(ctx context.Context, tx *postgres.Tx, objs ..
 			serialized,
 		})
 
-		// Add the id to be deleted.
+		// Add the id to be deleted and track affected component IDs
 		deletes.Add(obj.GetId())
+		affectedComponentIDs.Add(obj.GetNodeComponentId())
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
@@ -401,6 +404,8 @@ func copyFromNodeComponentCVEEdges(ctx context.Context, tx *postgres.Tx, objs ..
 			inputRows = inputRows[:0]
 		}
 	}
+
+
 	// Due to referential constraint orphaned component-cve edges are removed when orphaned image components are removed.
 	return nil
 }
@@ -545,7 +550,8 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Node,
 	if err != nil {
 		return nil, false, err
 	}
-	node, found, getErr := s.getFullNode(ctx, tx, id)
+	txNoCache := newTransactionNoCache(tx)
+	node, found, getErr := s.getFullNode(ctx, tx, id, txNoCache)
 	// No changes are made to the database, so COMMIT or ROLLBACK have same effect.
 	if err := tx.Commit(ctx); err != nil {
 		return nil, false, err
@@ -553,7 +559,7 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Node,
 	return node, found, getErr
 }
 
-func (s *storeImpl) populateNode(ctx context.Context, tx *postgres.Tx, node *storage.Node) error {
+func (s *storeImpl) populateNode(ctx context.Context, tx *postgres.Tx, node *storage.Node, txCache txWithCache) error {
 	componentEdgeMap, err := getNodeComponentEdges(ctx, tx, node.GetId())
 	if err != nil {
 		return err
@@ -563,7 +569,7 @@ func (s *storeImpl) populateNode(ctx context.Context, tx *postgres.Tx, node *sto
 		componentIDs = append(componentIDs, val.GetNodeComponentId())
 	}
 
-	componentMap, err := getNodeComponents(ctx, tx, componentIDs)
+	componentMap, err := txCache.GetNodeComponents(ctx, componentIDs)
 	if err != nil {
 		return err
 	}
@@ -572,7 +578,8 @@ func (s *storeImpl) populateNode(ctx context.Context, tx *postgres.Tx, node *sto
 		log.Errorf("Number of node component from edges (%d) is unexpected (%d) for node %s (id=%s)",
 			len(componentEdgeMap), len(componentMap), node.GetName(), node.GetId())
 	}
-	componentCVEEdgeMap, err := getComponentCVEEdges(ctx, tx, componentIDs)
+
+	componentCVEEdgeMap, err := txCache.GetComponentCVEEdges(ctx, componentIDs)
 	if err != nil {
 		return err
 	}
@@ -612,7 +619,8 @@ func (s *storeImpl) populateNode(ctx context.Context, tx *postgres.Tx, node *sto
 	return nil
 }
 
-func (s *storeImpl) getFullNode(ctx context.Context, tx *postgres.Tx, nodeID string) (*storage.Node, bool, error) {
+
+func (s *storeImpl) getFullNode(ctx context.Context, tx *postgres.Tx, nodeID string, txCache txWithCache) (*storage.Node, bool, error) {
 	row := tx.QueryRow(ctx, getNodeMetaStmt, pgutils.NilOrUUID(nodeID))
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -623,11 +631,12 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx *postgres.Tx, nodeID str
 	if err := node.UnmarshalVTUnsafe(data); err != nil {
 		return nil, false, err
 	}
-	if err := s.populateNode(ctx, tx, &node); err != nil {
+	if err := s.populateNode(ctx, tx, &node, txCache); err != nil {
 		return nil, false, err
 	}
 	return &node, true, nil
 }
+
 
 func getNodeComponentEdges(ctx context.Context, tx *postgres.Tx, nodeID string) (map[string]*storage.NodeComponentEdge, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeComponentEdge")
@@ -660,7 +669,7 @@ func getNodeComponents(ctx context.Context, tx *postgres.Tx, componentIDs []stri
 		return nil, err
 	}
 	defer rows.Close()
-	idToComponentMap := make(map[string]*storage.NodeComponent)
+	componentIDToComponentMap := make(map[string]*storage.NodeComponent)
 	for rows.Next() {
 		var data []byte
 		if err := rows.Scan(&data); err != nil {
@@ -670,9 +679,9 @@ func getNodeComponents(ctx context.Context, tx *postgres.Tx, componentIDs []stri
 		if err := msg.UnmarshalVTUnsafe(data); err != nil {
 			return nil, err
 		}
-		idToComponentMap[msg.GetId()] = msg
+		componentIDToComponentMap[msg.GetId()] = msg
 	}
-	return idToComponentMap, rows.Err()
+	return componentIDToComponentMap, rows.Err()
 }
 
 func getComponentCVEEdges(ctx context.Context, tx *postgres.Tx, componentIDs []string) (map[string][]*storage.NodeComponentCVEEdge, error) {
@@ -683,7 +692,7 @@ func getComponentCVEEdges(ctx context.Context, tx *postgres.Tx, componentIDs []s
 		return nil, err
 	}
 	defer rows.Close()
-	componentIDToEdgesMap := make(map[string][]*storage.NodeComponentCVEEdge)
+	componentIDToEdgeMap := make(map[string][]*storage.NodeComponentCVEEdge)
 	for rows.Next() {
 		var data []byte
 		if err := rows.Scan(&data); err != nil {
@@ -693,9 +702,10 @@ func getComponentCVEEdges(ctx context.Context, tx *postgres.Tx, componentIDs []s
 		if err := msg.UnmarshalVTUnsafe(data); err != nil {
 			return nil, err
 		}
-		componentIDToEdgesMap[msg.GetNodeComponentId()] = append(componentIDToEdgesMap[msg.GetNodeComponentId()], msg)
+		componentID := msg.GetNodeComponentId()
+		componentIDToEdgeMap[componentID] = append(componentIDToEdgeMap[componentID], msg)
 	}
-	return componentIDToEdgesMap, rows.Err()
+	return componentIDToEdgeMap, rows.Err()
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
@@ -776,9 +786,12 @@ func (s *storeImpl) retryableGetMany(ctx context.Context, ids []string) ([]*stor
 		return nil, nil, err
 	}
 
+	// Create transaction-scoped cache to reduce database queries for GetMany
+	txCache := newTransactionCache(tx)
+
 	resultsByID := make(map[string]*storage.Node)
 	for _, id := range ids {
-		msg, found, err := s.getFullNode(ctx, tx, id)
+		msg, found, err := s.getFullNode(ctx, tx, id, txCache)
 		if err != nil {
 			// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
 			if err := tx.Commit(ctx); err != nil {
@@ -832,8 +845,11 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(node *
 		}
 	}()
 
+	// Create transaction-scoped cache to reduce database queries
+	txCache := newTransactionCache(tx)
+
 	callback := func(node *storage.Node) error {
-		err := s.populateNode(ctx, tx, node)
+		err := s.populateNode(ctx, tx, node, txCache)
 		if err != nil {
 			return errors.Wrap(err, "populate node")
 		}
