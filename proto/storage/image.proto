@@ -12,7 +12,7 @@ option java_package = "io.stackrox.proto.storage";
 // Next Tag: 19
 message Image {
   option deprecated = true;
-  string id = 4; // @gotags: search:"Image Sha,store,hidden" sql:"pk"
+  string id = 4; // @gotags: search:"Image Sha,hidden" sql:"pk"
   ImageName name = 1;
   // This should deprecate the ImageName field long-term, allowing images with the same digest to be associated with
   // different locations.
@@ -27,13 +27,13 @@ message Image {
   ImageSignature signature = 16;
 
   oneof set_components {
-    int32 components = 7; // @gotags: search:"Component Count,store,hidden"
+    int32 components = 7; // @gotags: search:"Component Count,hidden"
   }
   oneof set_cves {
-    int32 cves = 8; // @gotags: search:"Image CVE Count,store"
+    int32 cves = 8; // @gotags: search:"Image CVE Count"
   }
   oneof set_fixable {
-    int32 fixable_cves = 9; // @gotags: search:"Fixable CVE Count,store,hidden"
+    int32 fixable_cves = 9; // @gotags: search:"Fixable CVE Count,hidden"
   }
 
   google.protobuf.Timestamp last_updated = 5; // @gotags: search:"Last Updated,hidden"
@@ -45,7 +45,7 @@ message Image {
   int64 priority = 11; // @gotags: search:"Image Risk Priority,hidden"
   float risk_score = 12; // @gotags: search:"Image Risk Score,hidden"
   oneof set_top_cvss {
-    float top_cvss = 13; // @gotags: search:"Image Top CVSS,store"
+    float top_cvss = 13; // @gotags: search:"Image Top CVSS"
   }
 
   enum Note {
@@ -66,9 +66,9 @@ message DataSource {
 // Next tag: 8
 message ImageScan {
   string scanner_version = 6;
-  google.protobuf.Timestamp scan_time = 1; // @gotags: search:"Image Scan Time,store"
+  google.protobuf.Timestamp scan_time = 1; // @gotags: search:"Image Scan Time"
   repeated EmbeddedImageScanComponent components = 2; // @gotags: sql:"-"
-  string operating_system = 4; // @gotags: search:"Image OS,store"
+  string operating_system = 4; // @gotags: search:"Image OS"
   // DataSource contains information about which integration was used to scan the image
   DataSource data_source = 3;
   enum Note {
@@ -119,8 +119,8 @@ message ImageSignatureVerificationResult {
 
 // Next Tag: 14
 message EmbeddedImageScanComponent {
-  string name = 1; // @gotags: search:"Component,store"
-  string version = 2; // @gotags: search:"Component Version,store"
+  string name = 1; // @gotags: search:"Component"
+  string version = 2; // @gotags: search:"Component Version"
   License license = 3;
   repeated EmbeddedVulnerability vulns = 4; // @gotags: hash:"set"
   oneof has_layer_index {
@@ -205,19 +205,19 @@ message V2Metadata {
 
 message V1Metadata {
   string digest = 1;
-  google.protobuf.Timestamp created = 2; // @gotags: search:"Image Created Time,store"
+  google.protobuf.Timestamp created = 2; // @gotags: search:"Image Created Time"
   string author = 3;
   repeated ImageLayer layers = 4;
   string user = 5; // @gotags: search:"Image User"
   repeated string command = 6; // @gotags: search:"Image Command"
   repeated string entrypoint = 7; // @gotags: search:"Image Entrypoint"
   repeated string volumes = 8; // @gotags: search:"Image Volumes"
-  map<string, string> labels = 9; // @gotags: search:"Image Label,store"
+  map<string, string> labels = 9; // @gotags: search:"Image Label"
 }
 
 message ImageLayer {
-  string instruction = 1; // @gotags: search:"Dockerfile Instruction Keyword,store"
-  string value = 2; // @gotags: search:"Dockerfile Instruction Value,store"
+  string instruction = 1; // @gotags: search:"Dockerfile Instruction Keyword"
+  string value = 2; // @gotags: search:"Dockerfile Instruction Value"
   google.protobuf.Timestamp created = 3;
   string author = 4;
   reserved 5; // formerly embedded components
@@ -225,10 +225,10 @@ message ImageLayer {
 }
 
 message ImageName {
-  string registry = 1; // @gotags: search:"Image Registry,store"
-  string remote = 2; // @gotags: search:"Image Remote,store"
-  string tag = 3; // @gotags: search:"Image Tag,store"
-  string full_name = 4; // @gotags: search:"Image,store,analyzer=standard"
+  string registry = 1; // @gotags: search:"Image Registry"
+  string remote = 2; // @gotags: search:"Image Remote"
+  string tag = 3; // @gotags: search:"Image Tag"
+  string full_name = 4; // @gotags: search:"Image,analyzer=standard"
 }
 
 message ListImage {
