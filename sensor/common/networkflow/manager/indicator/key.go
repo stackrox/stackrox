@@ -21,14 +21,12 @@ func (i *NetworkConn) keyHash() string {
 
 // Common hash computation utilities
 func hashPortAndProtocol(h hash.Hash64, port uint16, protocol storage.L4Protocol) {
-	portBytes := [2]byte{byte(port >> 8), byte(port)}
-	_, _ = h.Write(portBytes[:]) // xxhash never returns errors, but being explicit
-
-	protocolBytes := [4]byte{
+	buf := [6]byte{
+		byte(port >> 8), byte(port),
 		byte(protocol >> 24), byte(protocol >> 16),
 		byte(protocol >> 8), byte(protocol),
 	}
-	_, _ = h.Write(protocolBytes[:])
+	_, _ = h.Write(buf[:]) // xxhash never returns errors, but being explicit
 }
 
 // hashToHexString is performance-optimized implementation of fmt.Sprintf("%016x", hash).
