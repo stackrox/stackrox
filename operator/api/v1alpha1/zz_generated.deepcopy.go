@@ -78,9 +78,9 @@ func (in *AdmissionControlComponentSpec) DeepCopyInto(out *AdmissionControlCompo
 		*out = new(bool)
 		**out = **in
 	}
-	if in.Enforce != nil {
-		in, out := &in.Enforce, &out.Enforce
-		*out = new(bool)
+	if in.Enforcement != nil {
+		in, out := &in.Enforcement, &out.Enforcement
+		*out = new(PolicyEnforcement)
 		**out = **in
 	}
 	if in.ContactImageScanners != nil {

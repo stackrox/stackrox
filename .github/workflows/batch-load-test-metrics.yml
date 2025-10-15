@@ -9,6 +9,7 @@ concurrency: Batch load test metrics
 
 jobs:
   batch-load-test-metrics:
+    if:  ${{ github.repository_owner == 'stackrox' }}
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9

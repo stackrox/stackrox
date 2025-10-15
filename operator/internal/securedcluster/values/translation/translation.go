@@ -324,7 +324,16 @@ func (t Translator) getAdmissionControlValues(admissionControl *platform.Admissi
 	// the CR fields directly below spec.admissionControl. This is because
 	// redeployment is natively part of the CR lifecycle when we have an operator, so
 	// no need to distinguish between the static and dynamic part.
-	acv.SetBool("enforce", admissionControl.Enforce)
+	if admissionControl.Enforcement != nil {
+		switch *admissionControl.Enforcement {
+		case platform.PolicyEnforcementEnabled:
+			acv.SetBoolValue("enforce", true)
+		case platform.PolicyEnforcementDisabled:
+			acv.SetBoolValue("enforce", false)
+		default:
+			return dynamic.SetError(errors.Errorf("invalid spec.admissionControl.enforcement setting %q", *admissionControl.Enforcement))
+		}
+	}
 	if admissionControl.Bypass != nil {
 		switch *admissionControl.Bypass {
 		case platform.BypassBreakGlassAnnotation:

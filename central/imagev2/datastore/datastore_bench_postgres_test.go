@@ -4,14 +4,11 @@ package datastore
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/sha256"
 	"fmt"
 	"testing"
 
 	"github.com/stackrox/rox/central/image/datastore/keyfence"
-	pgStore "github.com/stackrox/rox/central/image/datastore/store/postgres"
-	pgStoreV2 "github.com/stackrox/rox/central/image/datastore/store/v2/postgres"
+	pgStore "github.com/stackrox/rox/central/imagev2/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
@@ -19,30 +16,28 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
 
 func BenchmarkImageGetMany(b *testing.B) {
+	if !features.FlattenImageData.Enabled() {
+		b.Skip("Image flattened data model is not enabled")
+	}
 	ctx := sac.WithAllAccess(context.Background())
 
 	testDB := pgtest.ForT(b)
 
-	gormDB := testDB.GetGormDB(b)
 	db := testDB.DB
 
 	mockRisk := mockRisks.NewMockDataStore(gomock.NewController(b))
-	var datastore DataStore
-	if features.FlattenCVEData.Enabled() {
-		datastore = NewWithPostgres(pgStoreV2.New(db, false, keyfence.ImageKeyFenceSingleton()), mockRisk, ranking.NewRanker(), ranking.NewRanker())
-	} else {
-		datastore = NewWithPostgres(pgStore.CreateTableAndNewStore(ctx, db, gormDB, false), mockRisk, ranking.NewRanker(), ranking.NewRanker())
-	}
+	datastore := NewWithPostgres(pgStore.New(db, false, keyfence.ImageKeyFenceSingleton()), mockRisk, ranking.NewRanker(), ranking.NewRanker())
 
 	ids := make([]string, 0, 100)
-	images := make([]*storage.Image, 0, 100)
+	images := make([]*storage.ImageV2, 0, 100)
 	for i := 0; i < 100; i++ {
-		img := fixtures.GetImageWithUniqueComponents(5)
+		img := fixtures.GetImageV2WithUniqueComponents(5)
 		id := fmt.Sprintf("%d", i)
 		ids = append(ids, id)
 		img.Id = id
@@ -69,30 +64,22 @@ func BenchmarkImageGetMany(b *testing.B) {
 }
 
 func BenchmarkImageUpsert(b *testing.B) {
+	if !features.FlattenImageData.Enabled() {
+		b.Skip("Image flattened data model is not enabled")
+	}
 	ctx := sac.WithAllAccess(context.Background())
 
 	testDB := pgtest.ForT(b)
 
-	gormDB := testDB.GetGormDB(b)
 	db := testDB.DB
 
 	mockRisk := mockRisks.NewMockDataStore(gomock.NewController(b))
-	var datastore DataStore
-	if features.FlattenCVEData.Enabled() {
-		datastore = NewWithPostgres(pgStoreV2.New(db, false, keyfence.ImageKeyFenceSingleton()), mockRisk, ranking.NewRanker(), ranking.NewRanker())
-	} else {
-		datastore = NewWithPostgres(pgStore.CreateTableAndNewStore(ctx, db, gormDB, false), mockRisk, ranking.NewRanker(), ranking.NewRanker())
-	}
+	datastore := NewWithPostgres(pgStore.New(db, false, keyfence.ImageKeyFenceSingleton()), mockRisk, ranking.NewRanker(), ranking.NewRanker())
 
-	images := make([]*storage.Image, 0, 100)
+	images := make([]*storage.ImageV2, 0, 100)
 	for i := 0; i < 100; i++ {
-		img := fixtures.GetImageWithUniqueComponents(50)
-		data := make([]byte, 10)
-		if _, err := rand.Read(data); err == nil {
-			id := fmt.Sprintf("%x", sha256.Sum256(data))
-			require.NoError(b, err)
-			img.Id = id
-		}
+		img := fixtures.GetImageV2WithUniqueComponents(5)
+		img.Id = uuid.NewV4().String()
 		images = append(images, img)
 	}
 
