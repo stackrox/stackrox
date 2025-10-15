@@ -162,7 +162,7 @@ func (s *nodeCVEStoreImpl) CopyFromNodeCves(ctx context.Context, tx *postgres.Tx
 
 func (s *nodeCVEStoreImpl) RemoveOrphanedNodeCVEs(ctx context.Context, tx *postgres.Tx) error {
 	// Delete orphaned CVEs and return their IDs for cache invalidation
-	rows, err := tx.Query(ctx, "DELETE FROM "+nodeCVEsTable+" WHERE not exists (select "+componentCVEEdgesTable+".nodecveid from "+componentCVEEdgesTable+" where "+nodeCVEsTable+".id = "+componentCVEEdgesTable+".nodecveid) RETURNING id")
+	rows, err := tx.Query(ctx, "DELETE FROM "+nodeCVEsTable+" WHERE NOT EXISTS (SELECT "+componentCVEEdgesTable+".nodecveid FROM "+componentCVEEdgesTable+" WHERE "+nodeCVEsTable+".id = "+componentCVEEdgesTable+".nodecveid) RETURNING id")
 	if err != nil {
 		return errors.Wrap(err, "deleting orphaned CVEs")
 	}
