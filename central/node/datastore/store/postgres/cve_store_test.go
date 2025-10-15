@@ -500,6 +500,69 @@ func (s *NodeCVEStoreSuite) TestCacheEmptyOperations() {
 	s.Equal("test", missing[0])
 }
 
+func (s *NodeCVEStoreSuite) TestGetCVEsFromDatabaseWithCacheMiss() {
+	conn, err := s.pool.Acquire(s.ctx)
+	s.Require().NoError(err)
+	defer conn.Release()
+
+	tx, err := conn.Begin(s.ctx)
+	s.Require().NoError(err)
+	defer func() {
+		s.NoError(tx.Commit(s.ctx))
+	}()
+
+	// Create test CVE
+	cve := &storage.NodeCVE{}
+	s.NoError(testutils.FullInit(cve, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	cve.CveBaseInfo.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&time.Time{})
+
+	// Insert CVE directly into database (bypassing cache) to simulate cache miss
+	serialized, err := cve.MarshalVT()
+	s.Require().NoError(err)
+
+	_, err = tx.Exec(s.ctx, `
+		INSERT INTO `+nodeCVEsTable+` (
+			id, cvebaseinfo_cve, cvebaseinfo_publishedon, cvebaseinfo_createdat,
+			operatingsystem, cvss, severity, impactscore, snoozed, snoozeexpiry,
+			orphaned, orphanedtime, serialized
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+		cve.GetId(),
+		cve.GetCveBaseInfo().GetCve(),
+		protocompat.NilOrTime(cve.GetCveBaseInfo().GetPublishedOn()),
+		protocompat.NilOrTime(cve.GetCveBaseInfo().GetCreatedAt()),
+		cve.GetOperatingSystem(),
+		cve.GetCvss(),
+		cve.GetSeverity(),
+		cve.GetImpactScore(),
+		cve.GetSnoozed(),
+		protocompat.NilOrTime(cve.GetSnoozeExpiry()),
+		cve.GetOrphaned(),
+		protocompat.NilOrTime(cve.GetOrphanedTime()),
+		serialized,
+	)
+	s.Require().NoError(err)
+
+	// Verify cache is empty for this CVE (since we bypassed it)
+	cache := s.store.(*nodeCVEStoreImpl).cache
+	cachedCVEs, missingIDs := cache.GetMany([]string{cve.GetId()})
+	s.Empty(cachedCVEs)
+	s.Len(missingIDs, 1)
+	s.Equal(cve.GetId(), missingIDs[0])
+
+	// Query through store - should fetch from database and populate cache
+	cves, err := s.store.GetCVEs(s.ctx, tx, []string{cve.GetId()})
+	s.NoError(err)
+	s.Len(cves, 1)
+	s.Contains(cves, cve.GetId())
+	s.Equal(cve.GetId(), cves[cve.GetId()].GetId())
+
+	// Verify cache now contains the CVE
+	cachedCVEs, missingIDs = cache.GetMany([]string{cve.GetId()})
+	s.Len(cachedCVEs, 1)
+	s.Contains(cachedCVEs, cve.GetId())
+	s.Empty(missingIDs)
+}
+
 func (s *NodeCVEStoreSuite) TestBatchingBehavior() {
 	conn, err := s.pool.Acquire(s.ctx)
 	s.Require().NoError(err)
