@@ -53,15 +53,7 @@ var (
 	// DeploymentsSchema is the go schema for table `deployments`.
 	DeploymentsSchema = func() *walker.Schema {
 		schema := walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments")
-		referencedSchemas := map[string]*walker.Schema{
-			"storage.Image":             ImagesSchema,
-			"storage.NamespaceMetadata": NamespacesSchema,
-			"storage.ImageV2":           ImagesV2Schema,
-		}
 
-		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
-			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
-		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_DEPLOYMENTS, "deployment", (*storage.Deployment)(nil)))
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
