@@ -2,10 +2,13 @@ package indicator
 
 import (
 	"hash"
+	"unsafe"
 
 	"github.com/cespare/xxhash"
 	"github.com/stackrox/rox/generated/storage"
 )
+
+var hashDelimiter = []byte{0}
 
 // keyHash produces a string that uniquely identifies a given NetworConn indicator.
 // Assumption: Two NetworkConn's are identical (for the network-graph purposes) when their keys are identical.
@@ -49,9 +52,17 @@ func hashToHexString(hash uint64) string {
 func hashStrings(h hash.Hash64, strs ...string) {
 	for i, s := range strs {
 		if i > 0 {
-			_, _ = h.Write([]byte{0}) // Use null byte as delimiter to avoid hash collisions
+			_, _ = h.Write(hashDelimiter) // Use null byte as delimiter to avoid hash collisions
 		}
-		_, _ = h.Write([]byte(s))
+		// Use zero-copy conversion from string to []byte using unsafe to avoid allocation.
+		// This is safe because:
+		// 1. h.Write() doesn't modify data (io.Writer contract)
+		// 2. xxhash doesn't retain references
+		// 3. string s remains alive during the call
+		if len(s) > 0 {
+			b := unsafe.Slice(unsafe.StringData(s), len(s))
+			_, _ = h.Write(b)
+		}
 	}
 }
 
