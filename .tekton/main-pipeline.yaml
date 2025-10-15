@@ -115,6 +115,10 @@ spec:
     description: This sets the expiration time for intermediate OCI artifacts produced and used during builds after which they can be garbage collected.
     name: oci-artifact-expires-after
     type: string
+  - name: buildah-format
+    default: docker
+    type: string
+    description: The format for the resulting image's mediaType. Valid values are oci or docker.
   - name: extra-labels
     type: array
     description: Additional labels to put on the built containers.
@@ -296,6 +300,8 @@ spec:
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+    - name: BUILDAH_FORMAT
+      value: $(params.buildah-format)
     - name: LABELS
       value: ["$(params.extra-labels[*])"]
     - name: BUILD_TIMESTAMP
@@ -339,6 +345,8 @@ spec:
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+    - name: BUILDAH_FORMAT
+      value: $(params.buildah-format)
     - name: LABELS
       value: ["$(params.extra-labels[*])"]
     - name: BUILD_TIMESTAMP
@@ -383,6 +391,8 @@ spec:
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+    - name: BUILDAH_FORMAT
+      value: $(params.buildah-format)
     - name: LABELS
       value: ["$(params.extra-labels[*])"]
     - name: BUILD_TIMESTAMP
@@ -427,6 +437,8 @@ spec:
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+    - name: BUILDAH_FORMAT
+      value: $(params.buildah-format)
     - name: LABELS
       value: ["$(params.extra-labels[*])"]
     - name: BUILD_TIMESTAMP
@@ -460,6 +472,8 @@ spec:
       - $(tasks.build-container-arm64.results.IMAGE_REF)
     - name: IMAGE_EXPIRES_AFTER
       value: $(tasks.determine-image-expiration.results.IMAGE_EXPIRES_AFTER)
+    - name: BUILDAH_FORMAT
+      value: $(params.buildah-format)
     taskRef:
       params:
       - name: name
