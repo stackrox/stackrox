@@ -1,9 +1,8 @@
 package postgres
 
 import (
-	"sync"
-
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 // nodeCVECache is a thread-safe in-memory cache for NodeCVE objects
