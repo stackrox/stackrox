@@ -73,7 +73,7 @@ spec:
           memory: 3Gi
 
   taskRunTemplate:
-    serviceAccountName: build-pipeline-central-db
+    serviceAccountName: build-pipeline-central-db-4-9
 
   # IMPORTANT: when changing timeouts here, read and follow timeout instructions in operator-bundle-build.yaml.
   timeouts:
