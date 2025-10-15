@@ -3,7 +3,7 @@ package cve
 import (
 	"strconv"
 
-	"github.com/mitchellh/hashstructure/v2"
+	"github.com/stackrox/hashstructure"
 	"github.com/stackrox/rox/generated/storage"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
@@ -26,7 +26,7 @@ func ID(cve, os string) string {
 
 // IDV2 creates a CVE ID from the given cve name, component id and index of CVE within the component.
 func IDV2(cve *storage.EmbeddedVulnerability, componentID string) (string, error) {
-	hash, err := hashstructure.Hash(cve, hashstructure.FormatV2, &hashstructure.HashOptions{ZeroNil: true})
+	hash, err := hashstructure.Hash(cve, &hashstructure.HashOptions{ZeroNil: true})
 	if err != nil {
 		return "", err
 	}

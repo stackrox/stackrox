@@ -91,7 +91,7 @@ type ImageV2 struct {
 	Priority                  int64                           `protobuf:"varint,12,opt,name=priority,proto3" json:"priority,omitempty" search:"Image Risk Priority,hidden"`                     // @gotags: search:"Image Risk Priority,hidden"
 	RiskScore                 float32                         `protobuf:"fixed32,13,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Image Risk Score,hidden"` // @gotags: search:"Image Risk Score,hidden"
 	// Caching top cvss to avoid re-calculating it by joining on the cve table.
-	TopCvss       float32        `protobuf:"fixed32,14,opt,name=top_cvss,json=topCvss,proto3" json:"top_cvss,omitempty" search:"Image Top CVSS,store"` // @gotags: search:"Image Top CVSS,store"
+	TopCvss       float32        `protobuf:"fixed32,14,opt,name=top_cvss,json=topCvss,proto3" json:"top_cvss,omitempty" search:"Image Top CVSS"` // @gotags: search:"Image Top CVSS"
 	Notes         []ImageV2_Note `protobuf:"varint,15,rep,packed,name=notes,proto3,enum=storage.ImageV2_Note" json:"notes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

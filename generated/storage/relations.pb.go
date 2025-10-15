@@ -35,7 +35,7 @@ type ImageComponentEdge struct {
 	//
 	//	*ImageComponentEdge_LayerIndex
 	HasLayerIndex    isImageComponentEdge_HasLayerIndex `protobuf_oneof:"has_layer_index"`
-	Location         string                             `protobuf:"bytes,3,opt,name=location,proto3" json:"location,omitempty" search:"Component Location,store,hidden"`                                           // @gotags: search:"Component Location,store,hidden"
+	Location         string                             `protobuf:"bytes,3,opt,name=location,proto3" json:"location,omitempty" search:"Component Location,hidden"`                                           // @gotags: search:"Component Location,hidden"
 	ImageId          string                             `protobuf:"bytes,4,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" sql:"fk(Image:id),index=hash"`                              // @gotags: sql:"fk(Image:id),index=hash"
 	ImageComponentId string                             `protobuf:"bytes,5,opt,name=image_component_id,json=imageComponentId,proto3" json:"image_component_id,omitempty" sql:"fk(ImageComponent:id),no-fk-constraint,index=hash"` // @gotags: sql:"fk(ImageComponent:id),no-fk-constraint,index=hash"
 	unknownFields    protoimpl.UnknownFields
@@ -133,7 +133,7 @@ type ComponentCVEEdge struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// base 64 encoded Component:CVE ids.
 	Id        string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                 // @gotags: sql:"pk,id"
-	IsFixable bool   `protobuf:"varint,2,opt,name=is_fixable,json=isFixable,proto3" json:"is_fixable,omitempty" search:"Fixable,store"` // @gotags: search:"Fixable,store"
+	IsFixable bool   `protobuf:"varint,2,opt,name=is_fixable,json=isFixable,proto3" json:"is_fixable,omitempty" search:"Fixable"` // @gotags: search:"Fixable"
 	// Whether there is a version the CVE is fixed in the component.
 	//
 	// Types that are valid to be assigned to HasFixedBy:
@@ -225,7 +225,7 @@ type isComponentCVEEdge_HasFixedBy interface {
 }
 
 type ComponentCVEEdge_FixedBy struct {
-	FixedBy string `protobuf:"bytes,3,opt,name=fixed_by,json=fixedBy,proto3,oneof" search:"Fixed By,store,hidden"` // @gotags: search:"Fixed By,store,hidden"
+	FixedBy string `protobuf:"bytes,3,opt,name=fixed_by,json=fixedBy,proto3,oneof" search:"Fixed By,hidden"` // @gotags: search:"Fixed By,hidden"
 }
 
 func (*ComponentCVEEdge_FixedBy) isComponentCVEEdge_HasFixedBy() {}
@@ -374,7 +374,7 @@ func (x *NodeComponentEdge) GetNodeComponentId() string {
 type NodeComponentCVEEdge struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
 	Id        string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                 // @gotags: sql:"pk,id"
-	IsFixable bool                   `protobuf:"varint,2,opt,name=is_fixable,json=isFixable,proto3" json:"is_fixable,omitempty" search:"Fixable,store"` // @gotags: search:"Fixable,store"
+	IsFixable bool                   `protobuf:"varint,2,opt,name=is_fixable,json=isFixable,proto3" json:"is_fixable,omitempty" search:"Fixable"` // @gotags: search:"Fixable"
 	// Whether there is a version the CVE is fixed in the component.
 	//
 	// Types that are valid to be assigned to HasFixedBy:
@@ -466,7 +466,7 @@ type isNodeComponentCVEEdge_HasFixedBy interface {
 }
 
 type NodeComponentCVEEdge_FixedBy struct {
-	FixedBy string `protobuf:"bytes,3,opt,name=fixed_by,json=fixedBy,proto3,oneof" search:"Fixed By,store,hidden"` // @gotags: search:"Fixed By,store,hidden"
+	FixedBy string `protobuf:"bytes,3,opt,name=fixed_by,json=fixedBy,proto3,oneof" search:"Fixed By,hidden"` // @gotags: search:"Fixed By,hidden"
 }
 
 func (*NodeComponentCVEEdge_FixedBy) isNodeComponentCVEEdge_HasFixedBy() {}
@@ -475,7 +475,7 @@ type ClusterCVEEdge struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// base 64 encoded Cluster:CVE ids.
 	Id        string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                 // @gotags: sql:"pk,id"
-	IsFixable bool   `protobuf:"varint,2,opt,name=is_fixable,json=isFixable,proto3" json:"is_fixable,omitempty" search:"Cluster CVE Fixable,store,hidden"` // @gotags: search:"Cluster CVE Fixable,store,hidden"
+	IsFixable bool   `protobuf:"varint,2,opt,name=is_fixable,json=isFixable,proto3" json:"is_fixable,omitempty" search:"Cluster CVE Fixable,hidden"` // @gotags: search:"Cluster CVE Fixable,hidden"
 	// Whether there is a version the CVE is fixed in the Cluster.
 	//
 	// Types that are valid to be assigned to HasFixedBy:
@@ -567,7 +567,7 @@ type isClusterCVEEdge_HasFixedBy interface {
 }
 
 type ClusterCVEEdge_FixedBy struct {
-	FixedBy string `protobuf:"bytes,3,opt,name=fixed_by,json=fixedBy,proto3,oneof" search:"Cluster CVE Fixed By,store,hidden"` // @gotags: search:"Cluster CVE Fixed By,store,hidden"
+	FixedBy string `protobuf:"bytes,3,opt,name=fixed_by,json=fixedBy,proto3,oneof" search:"Cluster CVE Fixed By,hidden"` // @gotags: search:"Cluster CVE Fixed By,hidden"
 }
 
 func (*ClusterCVEEdge_FixedBy) isClusterCVEEdge_HasFixedBy() {}
@@ -575,7 +575,7 @@ func (*ClusterCVEEdge_FixedBy) isClusterCVEEdge_HasFixedBy() {}
 type PolicyCategoryEdge struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                   // @gotags: sql:"pk,id"
-	PolicyId      string                 `protobuf:"bytes,2,opt,name=policy_id,json=policyId,proto3" json:"policy_id,omitempty" sql:"fk(Policy:id)" search:"Policy ID,store,hidden"`       // @gotags: sql:"fk(Policy:id)" search:"Policy ID,store,hidden"
+	PolicyId      string                 `protobuf:"bytes,2,opt,name=policy_id,json=policyId,proto3" json:"policy_id,omitempty" sql:"fk(Policy:id)" search:"Policy ID,hidden"`       // @gotags: sql:"fk(Policy:id)" search:"Policy ID,hidden"
 	CategoryId    string                 `protobuf:"bytes,3,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty" sql:"fk(PolicyCategory:id)"` // @gotags: sql:"fk(PolicyCategory:id)"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

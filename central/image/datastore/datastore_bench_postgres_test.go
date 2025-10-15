@@ -4,6 +4,8 @@ package datastore
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/sha256"
 	"fmt"
 	"testing"
 
@@ -62,6 +64,43 @@ func BenchmarkImageGetMany(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			_, err := datastore.GetManyImageMetadata(ctx, ids)
 			require.NoError(b, err)
+		}
+	})
+}
+
+func BenchmarkImageUpsert(b *testing.B) {
+	ctx := sac.WithAllAccess(context.Background())
+
+	testDB := pgtest.ForT(b)
+
+	gormDB := testDB.GetGormDB(b)
+	db := testDB.DB
+
+	mockRisk := mockRisks.NewMockDataStore(gomock.NewController(b))
+	var datastore DataStore
+	if features.FlattenCVEData.Enabled() {
+		datastore = NewWithPostgres(pgStoreV2.New(db, false, keyfence.ImageKeyFenceSingleton()), mockRisk, ranking.NewRanker(), ranking.NewRanker())
+	} else {
+		datastore = NewWithPostgres(pgStore.CreateTableAndNewStore(ctx, db, gormDB, false), mockRisk, ranking.NewRanker(), ranking.NewRanker())
+	}
+
+	images := make([]*storage.Image, 0, 100)
+	for i := 0; i < 100; i++ {
+		img := fixtures.GetImageWithUniqueComponents(50)
+		data := make([]byte, 10)
+		if _, err := rand.Read(data); err == nil {
+			id := fmt.Sprintf("%x", sha256.Sum256(data))
+			require.NoError(b, err)
+			img.Id = id
+		}
+		images = append(images, img)
+	}
+
+	b.Run("UpsertImage", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			for _, img := range images {
+				require.NoError(b, datastore.UpsertImage(ctx, img))
+			}
 		}
 	})
 }
