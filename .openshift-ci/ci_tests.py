@@ -4,6 +4,7 @@
 Available tests
 """
 
+import os
 import subprocess
 
 from common import popen_graceful_kill
@@ -13,10 +14,14 @@ class BaseTest:
     def __init__(self):
         self.test_outputs = []
 
-    def run_with_graceful_kill(self, args, timeout, post_start_hook=None):
-        with subprocess.Popen(args) as cmd:
-            if post_start_hook is not None:
-                post_start_hook()
+    def run_with_graceful_kill(self, args, timeout, output_dir=None):
+        output_dir_env = {}
+        if output_dir:
+            if output_dir not in self.test_outputs:
+                self.test_outputs.append(output_dir)
+            output_dir_env = {"ROX_CI_OUTPUT_DIR": output_dir}
+
+        with subprocess.Popen(args, env=dict(os.environ, **output_dir_env)) as cmd:
             try:
                 exitstatus = cmd.wait(timeout)
                 if exitstatus != 0:
@@ -46,33 +51,25 @@ class UpgradeTest(BaseTest):
     def run(self):
         print("Executing the Upgrade Test")
 
-        def set_dirs_after_start():
-            # let post test know where logs are
-            self.test_outputs = [
-                self.TEST_SENSOR_OUTPUT_DIR,
-                self.TEST_OUTPUT_DIR,
-                self.TEST_PG_UPGRADE_OUTPUT_DIR,
-            ]
-
         self.run_with_graceful_kill(
             [
                 "tests/upgrade/postgres_sensor_run.sh",
                 self.TEST_SENSOR_OUTPUT_DIR,
             ],
             self.TEST_TIMEOUT,
-            post_start_hook=set_dirs_after_start,
+            output_dir=self.TEST_SENSOR_OUTPUT_DIR,
         )
 
         self.run_with_graceful_kill(
             ["tests/upgrade/postgres_run.sh", self.TEST_OUTPUT_DIR],
             self.TEST_TIMEOUT,
-            post_start_hook=set_dirs_after_start,
+            output_dir=self.TEST_OUTPUT_DIR,
         )
 
         self.run_with_graceful_kill(
-            ["tests/upgrade/postgres_upgrade_run.sh", self.TEST_OUTPUT_DIR],
+            ["tests/upgrade/postgres_upgrade_run.sh", self.TEST_PG_UPGRADE_OUTPUT_DIR],
             self.TEST_TIMEOUT,
-            post_start_hook=set_dirs_after_start,
+            output_dir=self.TEST_PG_UPGRADE_OUTPUT_DIR,
         )
 
 
@@ -177,15 +174,11 @@ class QaE2eGoCompatibilityTest(BaseTest):
     def run(self):
         print("Executing non-groovy compatibility tests")
 
-        def set_dirs_after_start():
-            # let post test know where logs are
-            self.test_outputs = [self.TEST_OUTPUT_DIR]
-
         self.run_with_graceful_kill(
             ["tests/e2e/run-compatibility.sh",
              self._central_version, self._sensor_version],
             self.TEST_TIMEOUT,
-            post_start_hook=set_dirs_after_start,
+            output_dir=self.TEST_OUTPUT_DIR,
         )
 
 
@@ -196,10 +189,6 @@ class QaE2eDBBackupRestoreTest(BaseTest):
     def run(self):
         print("Executing DB backup and restore test")
 
-        def set_dirs_after_start():
-            # let post test know where logs are
-            self.test_outputs = [self.TEST_OUTPUT_DIR]
-
         self.run_with_graceful_kill(
             [
                 "tests/e2e/lib.sh",
@@ -207,7 +196,7 @@ class QaE2eDBBackupRestoreTest(BaseTest):
                 self.TEST_OUTPUT_DIR,
             ],
             self.TEST_TIMEOUT,
-            post_start_hook=set_dirs_after_start,
+            output_dir=self.TEST_OUTPUT_DIR,
         )
 
 
@@ -246,14 +235,10 @@ class NonGroovyE2e(BaseTest):
     def run(self):
         print("Executing the E2e Test")
 
-        def set_dirs_after_start():
-            # let post test know where logs are
-            self.test_outputs = [self.TEST_OUTPUT_DIR]
-
         self.run_with_graceful_kill(
             ["tests/e2e/run.sh", self.TEST_OUTPUT_DIR],
             self.TEST_TIMEOUT,
-            post_start_hook=set_dirs_after_start,
+            output_dir=self.TEST_OUTPUT_DIR,
         )
 
 
@@ -264,14 +249,10 @@ class SensorIntegration(BaseTest):
     def run(self):
         print("Executing the Sensor Integration Tests")
 
-        def set_dirs_after_start():
-            # let post test know where logs are
-            self.test_outputs = [self.TEST_OUTPUT_DIR]
-
         self.run_with_graceful_kill(
             ["tests/e2e/sensor.sh", self.TEST_OUTPUT_DIR],
             self.TEST_TIMEOUT,
-            post_start_hook=set_dirs_after_start,
+            output_dir=self.TEST_OUTPUT_DIR,
         )
 
 
@@ -288,14 +269,10 @@ class ScaleTest(BaseTest):
     def run(self):
         print("Executing the Scale Test")
 
-        def set_dirs_after_start():
-            # let post test know where results are
-            self.test_outputs = [self.PPROF_ZIP_OUTPUT]
-
         self.run_with_graceful_kill(
             ["tests/e2e/run-scale.sh", self.PPROF_ZIP_OUTPUT],
             self.TEST_TIMEOUT,
-            post_start_hook=set_dirs_after_start,
+            output_dir=self.PPROF_ZIP_OUTPUT,
         )
 
 
@@ -306,14 +283,10 @@ class ScannerV4InstallTest(BaseTest):
     def run(self):
         print("Executing the Scanner V4 Test")
 
-        def set_dirs_after_start():
-            # let post test know where results are
-            self.test_outputs = [self.TEST_OUTPUT_DIR]
-
         self.run_with_graceful_kill(
             ["tests/e2e/run-scanner-v4-install.sh", self.TEST_OUTPUT_DIR],
             self.TEST_TIMEOUT,
-            post_start_hook=set_dirs_after_start,
+            output_dir=self.TEST_OUTPUT_DIR,
         )
 
 
@@ -335,14 +308,8 @@ class BYODBTest(BaseTest):
     def run(self):
         print("Executing the BYODB Test")
 
-        def set_dirs_after_start():
-            # let post test know where logs are
-            self.test_outputs = [
-                self.TEST_OUTPUT_DIR,
-            ]
-
         self.run_with_graceful_kill(
             ["tests/byodb/run.sh", self.TEST_OUTPUT_DIR],
             self.TEST_TIMEOUT,
-            post_start_hook=set_dirs_after_start,
+            output_dir=self.TEST_OUTPUT_DIR,
         )
