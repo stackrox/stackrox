@@ -9,7 +9,6 @@ import (
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
-	componentMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
 	componentV2Mocks "github.com/stackrox/rox/central/imagecomponent/v2/datastore/mocks"
 	nsMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	nodeMocks "github.com/stackrox/rox/central/node/datastore/mocks"
@@ -37,7 +36,6 @@ type CVEScopingTestSuite struct {
 	deploymentDataStore  *deploymentMocks.MockDataStore
 	imageDataStore       *imageMocks.MockDataStore
 	nodeDataStore        *nodeMocks.MockDataStore
-	componentDataStore   *componentMocks.MockDataStore
 	componentV2DataStore *componentV2Mocks.MockDataStore
 	resolver             *resolvers.Resolver
 	handler              *HandlerImpl
@@ -50,32 +48,19 @@ func (suite *CVEScopingTestSuite) SetupTest() {
 	suite.deploymentDataStore = deploymentMocks.NewMockDataStore(suite.mockCtrl)
 	suite.imageDataStore = imageMocks.NewMockDataStore(suite.mockCtrl)
 	suite.nodeDataStore = nodeMocks.NewMockDataStore(suite.mockCtrl)
-	suite.componentDataStore = componentMocks.NewMockDataStore(suite.mockCtrl)
 	suite.componentV2DataStore = componentV2Mocks.NewMockDataStore(suite.mockCtrl)
 	notifierMock := notifierMocks.NewMockProcessor(suite.mockCtrl)
 
 	notifierMock.EXPECT().HasEnabledAuditNotifiers().Return(false).AnyTimes()
 
-	if features.FlattenCVEData.Enabled() {
-		suite.resolver = &resolvers.Resolver{
-			ClusterDataStore:          suite.clusterDataStore,
-			NamespaceDataStore:        suite.nsDataStore,
-			DeploymentDataStore:       suite.deploymentDataStore,
-			ImageDataStore:            suite.imageDataStore,
-			NodeDataStore:             suite.nodeDataStore,
-			ImageComponentV2DataStore: suite.componentV2DataStore,
-			AuditLogger:               audit.New(notifierMock),
-		}
-	} else {
-		suite.resolver = &resolvers.Resolver{
-			ClusterDataStore:        suite.clusterDataStore,
-			NamespaceDataStore:      suite.nsDataStore,
-			DeploymentDataStore:     suite.deploymentDataStore,
-			ImageDataStore:          suite.imageDataStore,
-			NodeDataStore:           suite.nodeDataStore,
-			ImageComponentDataStore: suite.componentDataStore,
-			AuditLogger:             audit.New(notifierMock),
-		}
+	suite.resolver = &resolvers.Resolver{
+		ClusterDataStore:          suite.clusterDataStore,
+		NamespaceDataStore:        suite.nsDataStore,
+		DeploymentDataStore:       suite.deploymentDataStore,
+		ImageDataStore:            suite.imageDataStore,
+		NodeDataStore:             suite.nodeDataStore,
+		ImageComponentV2DataStore: suite.componentV2DataStore,
+		AuditLogger:               audit.New(notifierMock),
 	}
 
 	suite.handler = newTestHandler(suite.resolver)
