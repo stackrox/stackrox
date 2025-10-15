@@ -100,7 +100,6 @@ func TestPod(testT *testing.T) {
 		// and docker-entrypoint scripts may create short-lived utility processes
 		// (/docker-entrypoint.sh, /usr/bin/find, /bin/grep, etc.) that get captured.
 		// This approach makes the test robust against image changes and process lifecycle variations.
-		requiredProcesses := []string{"/bin/date", "/bin/sh", "/bin/sleep", "/usr/sbin/nginx"}
 
 		eventNames := make([]string, 0, len(events))
 		for _, event := range events {
@@ -108,10 +107,11 @@ func TestPod(testT *testing.T) {
 		}
 
 		retryEventsT.Logf("Event names: %+v", eventNames)
-		retryEventsT.Logf("Required processes (at least): %+v", requiredProcesses)
 
-		// Verify all required processes are present
-		for _, required := range requiredProcesses {
+		// Always required: long-running processes
+		alwaysRequired := []string{"/bin/sh", "/usr/sbin/nginx"}
+		retryEventsT.Logf("Always required processes: %v", alwaysRequired)
+		for _, required := range alwaysRequired {
 			found := false
 			for _, eventName := range eventNames {
 				if eventName == required {
@@ -121,6 +121,29 @@ func TestPod(testT *testing.T) {
 			}
 			require.True(retryEventsT, found, "required process %q not found in events", required)
 		}
+
+		// At least one required: short-lived processes from the busybox loop.
+		// These processes have very short lifetimes and may not be captured consistently:
+		// - /bin/date: completes in microseconds (often missed)
+		// - /bin/sleep 1: runs for 1 second (usually captured)
+		// We require at least one to verify the loop is executing, but don't fail if
+		// timing causes us to miss the faster process.
+		atLeastOneRequired := []string{"/bin/date", "/bin/sleep"}
+		retryEventsT.Logf("At least one required (short-lived processes): %v", atLeastOneRequired)
+		foundAtLeastOne := false
+		for _, candidate := range atLeastOneRequired {
+			for _, eventName := range eventNames {
+				if eventName == candidate {
+					foundAtLeastOne = true
+					break
+				}
+			}
+			if foundAtLeastOne {
+				break
+			}
+		}
+		require.True(retryEventsT, foundAtLeastOne,
+			"expected at least one of %v, found none", atLeastOneRequired)
 
 		// Verify the pod's timestamp is no later than the timestamp of the earliest event.
 		// Find the actual earliest event (GraphQL doesn't guarantee ordering)

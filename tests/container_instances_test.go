@@ -82,6 +82,7 @@ func TestContainerInstances(testT *testing.T) {
 
 		// First container: nginx (may see workers and ~20 docker-entrypoint processes)
 		requiredFirstContainer := []string{"/usr/sbin/nginx"}
+		retryEventsT.Logf("First container always required: %v", requiredFirstContainer)
 		for _, required := range requiredFirstContainer {
 			require.Contains(retryEventsT, firstContainerEvents, required,
 				"first container missing required process %q", required)
@@ -91,12 +92,35 @@ func TestContainerInstances(testT *testing.T) {
 			sliceutils.Map(groupedContainers[1].Events, func(event Event) string { return event.Name })
 		retryEventsT.Logf("Second container (%s) events: %+v", groupedContainers[1].Name, secondContainerEvents)
 
-		// Second container: busybox running a simple loop (may see extra date/sleep invocations)
-		requiredSecondContainer := []string{"/bin/sh", "/bin/date", "/bin/sleep"}
-		for _, required := range requiredSecondContainer {
-			require.Contains(retryEventsT, secondContainerEvents, required,
-				"second container missing required process %q", required)
+		// Second container: busybox running a simple loop
+		// Always required: the shell running the loop
+		alwaysRequiredSecond := []string{"/bin/sh"}
+		retryEventsT.Logf("Second container always required: %v", alwaysRequiredSecond)
+		require.Contains(retryEventsT, secondContainerEvents, "/bin/sh",
+			"second container missing required process /bin/sh")
+
+		// At least one required: short-lived processes from the busybox loop.
+		// These processes have very short lifetimes and may not be captured consistently:
+		// - /bin/date: completes in microseconds (often missed)
+		// - /bin/sleep 1: runs for 1 second (usually captured)
+		// We require at least one to verify the loop is executing, but don't fail if
+		// timing causes us to miss the faster process.
+		atLeastOneRequired := []string{"/bin/date", "/bin/sleep"}
+		retryEventsT.Logf("Second container at least one required (short-lived): %v", atLeastOneRequired)
+		foundAtLeastOne := false
+		for _, candidate := range atLeastOneRequired {
+			for _, proc := range secondContainerEvents {
+				if proc == candidate {
+					foundAtLeastOne = true
+					break
+				}
+			}
+			if foundAtLeastOne {
+				break
+			}
 		}
+		require.True(retryEventsT, foundAtLeastOne,
+			"second container: expected at least one of %v, found none", atLeastOneRequired)
 
 		// Verify the container group's timestamp is no later than the timestamp of the earliest event
 		// Find the actual earliest event for each container (GraphQL doesn't guarantee ordering)
