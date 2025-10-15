@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
-	imageCVEDS "github.com/stackrox/rox/central/cve/image/datastore"
 	imageCVE2DS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/graphql/resolvers"
@@ -69,7 +68,6 @@ type reportGeneratorImpl struct {
 	blobStore               blobDS.Datastore
 	clusterDatastore        clusterDS.DataStore
 	namespaceDatastore      namespaceDS.DataStore
-	imageCVEDatastore       imageCVEDS.DataStore
 	imageCVE2Datastore      imageCVE2DS.DataStore
 	db                      postgres.DB
 
@@ -449,23 +447,12 @@ func (rg *reportGeneratorImpl) withCVEReferenceLinks(imageCVEResponses []*ImageC
 	}
 
 	var cves []ImageCVEInterface
-	if features.FlattenCVEData.Enabled() {
-		imageCVEV2, err := rg.imageCVE2Datastore.GetBatch(reportGenCtx, cveIDs.AsSlice())
-		if err != nil {
-			return nil, err
-		}
-		for _, v2 := range imageCVEV2 {
-			cves = append(cves, v2)
-		}
-	} else {
-		imageCVE, err := rg.imageCVEDatastore.GetBatch(reportGenCtx, cveIDs.AsSlice())
-		if err != nil {
-			return nil, err
-		}
-		for _, v2 := range imageCVE {
-			cves = append(cves, v2)
-		}
-
+	imageCVEV2, err := rg.imageCVE2Datastore.GetBatch(reportGenCtx, cveIDs.AsSlice())
+	if err != nil {
+		return nil, err
+	}
+	for _, v2 := range imageCVEV2 {
+		cves = append(cves, v2)
 	}
 
 	cveRefLinks := make(map[string]string)

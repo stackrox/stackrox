@@ -9,8 +9,6 @@ import (
 	"time"
 
 	cveStore "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
-	v1Store "github.com/stackrox/rox/central/image/datastore/store"
-	v1StorePostgres "github.com/stackrox/rox/central/image/datastore/store/postgres"
 	"github.com/stackrox/rox/central/imagev2/datastore/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -36,11 +34,10 @@ var (
 type ImagesV2StoreSuite struct {
 	suite.Suite
 
-	ctx         context.Context
-	testDB      *pgtest.TestPostgres
-	store       store.Store
-	legacyStore v1Store.Store
-	cvePgStore  cveStore.Store
+	ctx        context.Context
+	testDB     *pgtest.TestPostgres
+	store      store.Store
+	cvePgStore cveStore.Store
 }
 
 func TestImagesV2Store(t *testing.T) {
@@ -56,7 +53,6 @@ func (s *ImagesV2StoreSuite) SetupSuite() {
 	s.testDB = pgtest.ForT(s.T())
 
 	s.store = New(s.testDB.DB, false, concurrency.NewKeyFence())
-	s.legacyStore = v1StorePostgres.NewForTest(s.T(), s.testDB.DB, false, concurrency.NewKeyFence())
 	s.cvePgStore = cveStore.New(s.testDB.DB)
 }
 
@@ -174,60 +170,6 @@ func (s *ImagesV2StoreSuite) TestNVDCVSS() {
 	s.Equal(float32(10), imageCve.GetNvdcvss())
 	s.Require().NotEmpty(imageCve.GetCveBaseInfo().GetCvssMetrics())
 	protoassert.Equal(s.T(), nvdCvss, imageCve.GetCveBaseInfo().GetCvssMetrics()[0])
-}
-
-func (s *ImagesV2StoreSuite) TestUpsertLegacyToNew() {
-	imageV2 := getTestImageV2("image1", "sha256:SHA1")
-	imageV1 := convertToImageV1(imageV2)
-
-	// Upsert image using legacy store. This will insert CVEs and components into the old tables and set created at and
-	// first image occurrence timestamps to current time
-	s.NoError(s.legacyStore.Upsert(s.ctx, imageV1))
-	foundImageV1, exists, err := s.legacyStore.Get(s.ctx, imageV1.GetId())
-	s.NoError(err)
-	s.True(exists)
-
-	// Set the created and first image occurrence timestamps in the test image to a future value
-	for _, comp := range imageV2.GetScan().GetComponents() {
-		for _, vuln := range comp.GetVulns() {
-			vuln.FirstSystemOccurrence = protocompat.ConvertTimeToTimestampOrNil(&nextWeek)
-			vuln.FirstImageOccurrence = protocompat.ConvertTimeToTimestampOrNil(&nextWeek)
-		}
-	}
-	// Re-upsert the image into v2 data model store
-	s.NoError(s.store.Upsert(s.ctx, imageV2))
-	foundImageV2, exists, err := s.store.Get(s.ctx, imageV2.GetId())
-	s.NoError(err)
-	s.True(exists)
-
-	// Note that we will just compare time fields because the old model can mess up other things like
-	// severity, published time, CVSS, etc. because of over normalization.
-	expectedTimestamps := make(map[string]*timeFields)
-	for _, comp := range foundImageV1.GetScan().GetComponents() {
-		for _, vuln := range comp.GetVulns() {
-			if _, ok := expectedTimestamps[vuln.GetCve()]; !ok {
-				expectedTimestamps[vuln.GetCve()] = &timeFields{
-					createdAt:            vuln.GetFirstSystemOccurrence().AsTime(),
-					firstImageOccurrence: vuln.GetFirstImageOccurrence().AsTime(),
-				}
-			}
-		}
-	}
-
-	actualTimestamps := make(map[string]*timeFields)
-	for _, comp := range foundImageV2.GetScan().GetComponents() {
-		for _, vuln := range comp.GetVulns() {
-			if _, ok := actualTimestamps[vuln.GetCve()]; !ok {
-				actualTimestamps[vuln.GetCve()] = &timeFields{
-					createdAt:            vuln.GetFirstSystemOccurrence().AsTime(),
-					firstImageOccurrence: vuln.GetFirstImageOccurrence().AsTime(),
-				}
-			}
-		}
-	}
-
-	// Created at and first image occurrence timestamps should not have changed to the future ones.
-	s.Assert().Equal(expectedTimestamps, actualTimestamps)
 }
 
 func (s *ImagesV2StoreSuite) TestUpsert() {

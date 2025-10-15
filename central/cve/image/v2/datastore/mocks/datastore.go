@@ -12,6 +12,7 @@ package mocks
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
@@ -43,6 +44,25 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
+// ApplyException mocks base method.
+func (m *MockDataStore) ApplyException(arg0 context.Context, arg1, arg2 *time.Time, _ ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []any{arg0, arg1, arg2}
+	for _, a := range _ {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ApplyException", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ApplyException indicates an expected call of ApplyException.
+func (mr *MockDataStoreMockRecorder) ApplyException(arg0, arg1, arg2 any, _ ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{arg0, arg1, arg2}, _...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyException", reflect.TypeOf((*MockDataStore)(nil).ApplyException), varargs...)
+}
+
 // Count mocks base method.
 func (m *MockDataStore) Count(ctx context.Context, q *v1.Query) (int, error) {
 	m.ctrl.T.Helper()
@@ -56,6 +76,18 @@ func (m *MockDataStore) Count(ctx context.Context, q *v1.Query) (int, error) {
 func (mr *MockDataStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockDataStore)(nil).Count), ctx, q)
+}
+
+// EnrichImageV2WithSuppressedCVEs mocks base method.
+func (m *MockDataStore) EnrichImageV2WithSuppressedCVEs(image *storage.ImageV2) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "EnrichImageV2WithSuppressedCVEs", image)
+}
+
+// EnrichImageV2WithSuppressedCVEs indicates an expected call of EnrichImageV2WithSuppressedCVEs.
+func (mr *MockDataStoreMockRecorder) EnrichImageV2WithSuppressedCVEs(image any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichImageV2WithSuppressedCVEs", reflect.TypeOf((*MockDataStore)(nil).EnrichImageV2WithSuppressedCVEs), image)
 }
 
 // EnrichImageWithSuppressedCVEs mocks base method.
@@ -114,6 +146,25 @@ func (m *MockDataStore) GetBatch(ctx context.Context, id []string) ([]*storage.I
 func (mr *MockDataStoreMockRecorder) GetBatch(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBatch", reflect.TypeOf((*MockDataStore)(nil).GetBatch), ctx, id)
+}
+
+// RevertException mocks base method.
+func (m *MockDataStore) RevertException(arg0 context.Context, _ ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []any{arg0}
+	for _, a := range _ {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "RevertException", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RevertException indicates an expected call of RevertException.
+func (mr *MockDataStoreMockRecorder) RevertException(arg0 any, _ ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{arg0}, _...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RevertException", reflect.TypeOf((*MockDataStore)(nil).RevertException), varargs...)
 }
 
 // Search mocks base method.

@@ -484,8 +484,6 @@ func (resolver *imageComponentV2Resolver) LayerIndex() (*int32, error) {
 }
 
 // Location returns the location of the component.
-//
-//	TODO(ROX-28123): Once the old code is removed, the parameters can be removed.
 func (resolver *imageComponentV2Resolver) Location(_ context.Context, _ RawQuery) (string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "Location")
 
