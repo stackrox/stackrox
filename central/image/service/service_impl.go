@@ -232,9 +232,8 @@ func (s *serviceImpl) saveImage(img *storage.Image) error {
 
 // ScanImageInternal handles an image request from Sensor and Admission Controller.
 func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
-	err := s.acquireScanSemaphore(ctx)
-	if err != nil {
-		log.Errorw("Failed to acquire scan semaphore",
+	if err := s.acquireScanSemaphore(ctx); err != nil {
+		log.Debugw("Failed to acquire scan semaphore",
 			logging.FromContext(ctx),
 			logging.ImageName(request.GetImage().GetName().GetFullName()),
 			logging.ImageID(request.GetImage().GetId()),
@@ -446,9 +445,8 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 // specified by the given components and scan notes.
 // This is meant to be called by Sensor.
 func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, request *v1.GetImageVulnerabilitiesInternalRequest) (*v1.ScanImageInternalResponse, error) {
-	err := s.acquireScanSemaphore(ctx)
-	if err != nil {
-		log.Errorw("Failed to acquire scan semaphore",
+	if err := s.acquireScanSemaphore(ctx); err != nil {
+		log.Debugw("Failed to acquire scan semaphore",
 			logging.FromContext(ctx),
 			logging.ImageName(request.GetImageName().GetFullName()),
 			logging.ImageID(request.GetImageId()),
@@ -482,7 +480,7 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 	}
 
 	comps := scannerTypes.NewScanComponents("", request.GetComponents(), nil)
-	_, err = s.enricher.EnrichWithVulnerabilities(img, comps, request.GetNotes())
+	_, err := s.enricher.EnrichWithVulnerabilities(img, comps, request.GetNotes())
 	if err != nil {
 		return nil, err
 	}
@@ -524,9 +522,8 @@ func (s *serviceImpl) acquireScanSemaphore(ctx context.Context) error {
 }
 
 func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.EnrichLocalImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
-	err := s.acquireScanSemaphore(ctx)
-	if err != nil {
-		log.Errorw("Failed to acquire scan semaphore",
+	if err := s.acquireScanSemaphore(ctx); err != nil {
+		log.Debugw("Failed to acquire scan semaphore",
 			logging.FromContext(ctx),
 			logging.ImageName(request.GetImageName().GetFullName()),
 			logging.ImageID(request.GetImageId()),
@@ -560,6 +557,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 	forceScanUpdate := true
 	// Always pull the image from the store if the ID != "" and rescan is not forced. Central will manage the reprocessing over the images.
 	if imgID != "" && !request.GetForce() {
+		var err error
 		existingImg, imgExists, err = s.datastore.GetImage(ctx, imgID)
 		if err != nil {
 			s.informScanWaiter(request.GetRequestId(), nil, err)
@@ -656,6 +654,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		_ = s.saveImage(img)
 	}
 
+	var err error
 	if hasErrors && request.GetRequestId() != "" {
 		// Send an actual error to the waiter so that error handling can be done (ie: retry)
 		// Without this a bare image is returned that will have notes such as MISSING_METADATA
