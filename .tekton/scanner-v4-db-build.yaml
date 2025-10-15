@@ -23,8 +23,8 @@ metadata:
     # added to the PR. See the Slack tread linked from ROX-30580.
     pipelinesascode.tekton.dev/on-label: "[]"
   labels:
-    appstudio.openshift.io/application: acs
-    appstudio.openshift.io/component: scanner-v4-db
+    appstudio.openshift.io/application: acs-4-9
+    appstudio.openshift.io/component: scanner-v4-db-4-9
     pipelines.appstudio.openshift.io/type: build
   name: scanner-v4-db-on-push
   namespace: rh-acs-tenant
@@ -73,7 +73,7 @@ spec:
           memory: 3Gi
 
   taskRunTemplate:
-    serviceAccountName: build-pipeline-scanner-v4-db
+    serviceAccountName: build-pipeline-scanner-v4-db-4-9
 
   # IMPORTANT: when changing timeouts here, read and follow timeout instructions in operator-bundle-build.yaml.
   timeouts:
