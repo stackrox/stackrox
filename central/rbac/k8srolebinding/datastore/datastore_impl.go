@@ -28,10 +28,6 @@ func (d *datastoreImpl) GetRoleBinding(ctx context.Context, id string) (*storage
 		return nil, false, err
 	}
 
-	if !k8sRoleBindingsSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(binding).IsAllowed() {
-		return nil, false, nil
-	}
-
 	return binding, true, nil
 }
 
@@ -58,22 +54,10 @@ func (d *datastoreImpl) SearchRawRoleBindings(ctx context.Context, request *v1.Q
 }
 
 func (d *datastoreImpl) UpsertRoleBinding(ctx context.Context, request *storage.K8SRoleBinding) error {
-	if ok, err := k8sRoleBindingsSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
 	return d.storage.Upsert(ctx, request)
 }
 
 func (d *datastoreImpl) RemoveRoleBinding(ctx context.Context, id string) error {
-	if ok, err := k8sRoleBindingsSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
 	return d.storage.Delete(ctx, id)
 }
 
