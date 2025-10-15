@@ -8,4 +8,10 @@ const (
 		"Please review the vulnerable software packages/components from the impacted images and update them to a version containing the fix, if one is available.\n"
 
 	defaultNoVulnsEmailBodyTemplate = "{{.BrandedPrefix}} for Kubernetes has found no workload CVEs in the images matched by the following report configuration parameters.\n"
+
+	// Maximum number of CVE results to fetch per page
+	DefaultCVEPageSize = 1000
+
+	// Maximum number of pages to process before switching to streaming
+	MaxPagesBeforeStream = 100
 )
