@@ -80,6 +80,7 @@ type storeImpl struct {
 	db                 postgres.DB
 	noUpdateTimestamps bool
 	keyFence           concurrency.KeyFence
+	cveStore           *nodeCVEStore
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -88,6 +89,7 @@ func New(db postgres.DB, noUpdateTimestamps bool, keyFence concurrency.KeyFence)
 		db:                 db,
 		noUpdateTimestamps: noUpdateTimestamps,
 		keyFence:           keyFence,
+		cveStore:           newNodeCVEStore(),
 	}
 }
 
@@ -163,7 +165,7 @@ func (s *storeImpl) insertIntoNodes(
 	if err := copyFromNodeComponentCVEEdges(ctx, tx, parts.componentCVEEdges...); err != nil {
 		return err
 	}
-	return insertIntoNodeCves(ctx, tx, iTime, parts.vulns...)
+	return s.insertIntoNodeCves(ctx, tx, iTime, parts.vulns...)
 }
 
 func getPartsAsSlice(parts *common.NodeParts) *nodePartsAsSlice {
@@ -313,12 +315,12 @@ func copyFromNodeComponentEdges(ctx context.Context, tx *postgres.Tx, nodeID str
 	return nil
 }
 
-func insertIntoNodeCves(ctx context.Context, tx *postgres.Tx, iTime time.Time, objs ...*storage.NodeCVE) error {
+func (s *storeImpl) insertIntoNodeCves(ctx context.Context, tx *postgres.Tx, iTime time.Time, objs ...*storage.NodeCVE) error {
 	ids := set.NewStringSet()
 	for _, obj := range objs {
 		ids.Add(obj.GetId())
 	}
-	existingCVEs, err := getCVEs(ctx, tx, ids.AsSlice())
+	existingCVEs, err := s.cveStore.GetCVEs(ctx, tx, ids.AsSlice())
 	if err != nil {
 		return err
 	}
@@ -336,87 +338,16 @@ func insertIntoNodeCves(ctx context.Context, tx *postgres.Tx, iTime time.Time, o
 		}
 	}
 
-	err = copyFromNodeCves(ctx, tx, objs...)
+	err = s.cveStore.CopyFromNodeCves(ctx, tx, objs...)
 	if err != nil {
 		return err
 	}
 
 	if !env.OrphanedCVEsKeepAlive.BooleanSetting() {
-		return removeOrphanedNodeCVEs(ctx, tx)
+		return s.cveStore.RemoveOrphanedNodeCVEs(ctx, tx)
 	}
 
-	return markOrphanedNodeCVEs(ctx, tx)
-}
-
-func copyFromNodeCves(ctx context.Context, tx *postgres.Tx, objs ...*storage.NodeCVE) error {
-	inputRows := [][]interface{}{}
-
-	var err error
-
-	// This is a copy so first we must delete the rows and re-add them
-	var deletes []string
-
-	copyCols := []string{
-		"id",
-		"cvebaseinfo_cve",
-		"cvebaseinfo_publishedon",
-		"cvebaseinfo_createdat",
-		"operatingsystem",
-		"cvss",
-		"severity",
-		"impactscore",
-		"snoozed",
-		"snoozeexpiry",
-		"orphaned",
-		"orphanedtime",
-		"serialized",
-	}
-
-	for idx, obj := range objs {
-		serialized, marshalErr := obj.MarshalVT()
-		if marshalErr != nil {
-			return marshalErr
-		}
-
-		inputRows = append(inputRows, []interface{}{
-			obj.GetId(),
-			obj.GetCveBaseInfo().GetCve(),
-			protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
-			protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
-			obj.GetOperatingSystem(),
-			obj.GetCvss(),
-			obj.GetSeverity(),
-			obj.GetImpactScore(),
-			obj.GetSnoozed(),
-			protocompat.NilOrTime(obj.GetSnoozeExpiry()),
-			obj.GetOrphaned(),
-			protocompat.NilOrTime(obj.GetOrphanedTime()),
-			serialized,
-		})
-
-		// Add the id to be deleted.
-		deletes = append(deletes, obj.GetId())
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// Copy does not upsert so have to delete first.
-			_, err = tx.Exec(ctx, "DELETE FROM "+nodeCVEsTable+" WHERE id = ANY($1::text[])", deletes)
-			if err != nil {
-				return err
-			}
-			// Clear the inserts for the next batch.
-			deletes = nil
-
-			_, err = tx.CopyFrom(ctx, pgx.Identifier{nodeCVEsTable}, copyCols, pgx.CopyFromRows(inputRows))
-			if err != nil {
-				return err
-			}
-
-			// Clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-	return nil
+	return s.cveStore.MarkOrphanedNodeCVEs(ctx, tx)
 }
 
 func copyFromNodeComponentCVEEdges(ctx context.Context, tx *postgres.Tx, objs ...*storage.NodeComponentCVEEdge) error {
@@ -480,44 +411,6 @@ func removeOrphanedNodeComponent(ctx context.Context, tx *postgres.Tx) error {
 		return err
 	}
 	return nil
-}
-
-func removeOrphanedNodeCVEs(ctx context.Context, tx *postgres.Tx) error {
-	_, err := tx.Exec(ctx, "DELETE FROM "+nodeCVEsTable+" WHERE not exists (select "+componentCVEEdgesTable+".nodecveid from "+componentCVEEdgesTable+" where "+nodeCVEsTable+".id = "+componentCVEEdgesTable+".nodecveid)")
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func markOrphanedNodeCVEs(ctx context.Context, tx *postgres.Tx) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeCVEs")
-
-	iTime := time.Now()
-	rows, err := tx.Query(ctx, "SELECT serialized FROM "+nodeCVEsTable+" WHERE orphaned = 'false' AND not exists (select "+componentCVEEdgesTable+".nodecveid from "+componentCVEEdgesTable+" where "+nodeCVEsTable+".id = "+componentCVEEdgesTable+".nodecveid)")
-	if err != nil {
-		return err
-	}
-	defer rows.Close()
-	orphanedNodeCVEs := make([]*storage.NodeCVE, 0)
-	ids := set.NewStringSet()
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return err
-		}
-		msg := &storage.NodeCVE{}
-		if err := msg.UnmarshalVTUnsafe(data); err != nil {
-			return err
-		}
-		if ids.Add(msg.GetId()) {
-			msg.Orphaned = true
-			msg.OrphanedTime = protocompat.ConvertTimeToTimestampOrNil(&iTime)
-			orphanedNodeCVEs = append(orphanedNodeCVEs, msg)
-		}
-	}
-
-	return copyFromNodeCves(ctx, tx, orphanedNodeCVEs...)
 }
 
 func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, error) {
@@ -691,7 +584,7 @@ func (s *storeImpl) populateNode(ctx context.Context, tx *postgres.Tx, node *sto
 		}
 	}
 
-	cveMap, err := getCVEs(ctx, tx, cveIDs.AsSlice())
+	cveMap, err := s.cveStore.GetCVEs(ctx, tx, cveIDs.AsSlice())
 	if err != nil {
 		return err
 	}
@@ -856,7 +749,7 @@ func (s *storeImpl) deleteNodeTree(ctx context.Context, tx *postgres.Tx, nodeID 
 	}
 
 	// Delete orphaned cves.
-	if _, err := tx.Exec(ctx, "delete from "+nodeCVEsTable+" where not exists (select "+componentCVEEdgesTable+".nodecveid FROM "+componentCVEEdgesTable+" where "+componentCVEEdgesTable+".nodecveid = "+nodeCVEsTable+".id)"); err != nil {
+	if err := s.cveStore.RemoveOrphanedNodeCVEs(ctx, tx); err != nil {
 		return err
 	}
 	return nil
@@ -1091,29 +984,6 @@ func dropTableNodeComponentEdges(ctx context.Context, db postgres.DB) {
 // Destroy drops all node tree tables.
 func Destroy(ctx context.Context, db postgres.DB) {
 	dropTableNodes(ctx, db)
-}
-
-func getCVEs(ctx context.Context, tx *postgres.Tx, cveIDs []string) (map[string]*storage.NodeCVE, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeCVEs")
-
-	rows, err := tx.Query(ctx, "SELECT serialized FROM "+nodeCVEsTable+" WHERE id = ANY($1::text[])", cveIDs)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	idToCVEMap := make(map[string]*storage.NodeCVE)
-	for rows.Next() {
-		var data []byte
-		if err := rows.Scan(&data); err != nil {
-			return nil, err
-		}
-		msg := &storage.NodeCVE{}
-		if err := msg.UnmarshalVTUnsafe(data); err != nil {
-			return nil, err
-		}
-		idToCVEMap[msg.GetId()] = msg
-	}
-	return idToCVEMap, rows.Err()
 }
 
 func gatherKeys(parts *nodePartsAsSlice) [][]byte {

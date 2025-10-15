@@ -24,7 +24,7 @@ type NodeCVEStoreSuite struct {
 	ctx    context.Context
 	pool   postgres.DB
 	gormDB *gorm.DB
-	store  NodeCVEStore
+	store  nodeCVEStore
 }
 
 func TestNodeCVEStore(t *testing.T) {
@@ -51,7 +51,7 @@ func (s *NodeCVEStoreSuite) SetupTest() {
 	pgutils.CreateTableFromModel(s.ctx, s.gormDB, pkgSchema.CreateTableNodeComponentEdgesStmt)
 	pgutils.CreateTableFromModel(s.ctx, s.gormDB, pkgSchema.CreateTableNodeComponentsCvesEdgesStmt)
 
-	s.store = NewNodeCVEStore()
+	s.store = newNodeCVEStore()
 }
 
 func (s *NodeCVEStoreSuite) TearDownTest() {

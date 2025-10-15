@@ -15,26 +15,19 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
-// NodeCVEStore provides functionality for node CVE operations
-type NodeCVEStore interface {
-	GetCVEs(ctx context.Context, tx *postgres.Tx, cveIDs []string) (map[string]*storage.NodeCVE, error)
-	CopyFromNodeCves(ctx context.Context, tx *postgres.Tx, nodeCVEs ...*storage.NodeCVE) error
-	RemoveOrphanedNodeCVEs(ctx context.Context, tx *postgres.Tx) error
-	MarkOrphanedNodeCVEs(ctx context.Context, tx *postgres.Tx) error
-}
-
-type nodeCVEStoreImpl struct {
+// nodeCVEStore provides functionality for node CVE operations
+type nodeCVEStore struct {
 	cache *nodeCVECache
 }
 
-// NewNodeCVEStore creates a new NodeCVEStore instance
-func NewNodeCVEStore() NodeCVEStore {
-	return &nodeCVEStoreImpl{
+// newNodeCVEStore creates a new nodeCVEStore instance
+func newNodeCVEStore() *nodeCVEStore {
+	return &nodeCVEStore{
 		cache: newNodeCVECache(),
 	}
 }
 
-func (s *nodeCVEStoreImpl) GetCVEs(ctx context.Context, tx *postgres.Tx, cveIDs []string) (map[string]*storage.NodeCVE, error) {
+func (s *nodeCVEStore) GetCVEs(ctx context.Context, tx *postgres.Tx, cveIDs []string) (map[string]*storage.NodeCVE, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeCVEs")
 
 	// Check cache first
@@ -78,23 +71,7 @@ func (s *nodeCVEStoreImpl) GetCVEs(ctx context.Context, tx *postgres.Tx, cveIDs 
 	return cachedCVEs, nil
 }
 
-func (s *nodeCVEStoreImpl) CopyFromNodeCves(ctx context.Context, tx *postgres.Tx, nodeCVEs ...*storage.NodeCVE) error {
-	copyCols := []string{
-		"id",
-		"cvebaseinfo_cve",
-		"cvebaseinfo_publishedon",
-		"cvebaseinfo_createdat",
-		"operatingsystem",
-		"cvss",
-		"severity",
-		"impactscore",
-		"snoozed",
-		"snoozeexpiry",
-		"orphaned",
-		"orphanedtime",
-		"serialized",
-	}
-
+func (s *nodeCVEStore) CopyFromNodeCves(ctx context.Context, tx *postgres.Tx, nodeCVEs ...*storage.NodeCVE) error {
 	// Process CVEs in batches using slices.Chunk
 	for batch := range slices.Chunk(nodeCVEs, batchSize) {
 		// Prepare data for this batch
@@ -139,6 +116,22 @@ func (s *nodeCVEStoreImpl) CopyFromNodeCves(ctx context.Context, tx *postgres.Tx
 	return nil
 }
 
+var copyCols = []string{
+	"id",
+	"cvebaseinfo_cve",
+	"cvebaseinfo_publishedon",
+	"cvebaseinfo_createdat",
+	"operatingsystem",
+	"cvss",
+	"severity",
+	"impactscore",
+	"snoozed",
+	"snoozeexpiry",
+	"orphaned",
+	"orphanedtime",
+	"serialized",
+}
+
 // prepareCVEInputRow converts a NodeCVE object into a database input row
 // IMPORTANT: The order of values must exactly match the order of copyCols
 func prepareCVEInputRow(nodeCVE *storage.NodeCVE) ([]interface{}, error) {
@@ -164,7 +157,7 @@ func prepareCVEInputRow(nodeCVE *storage.NodeCVE) ([]interface{}, error) {
 	}, nil
 }
 
-func (s *nodeCVEStoreImpl) RemoveOrphanedNodeCVEs(ctx context.Context, tx *postgres.Tx) error {
+func (s *nodeCVEStore) RemoveOrphanedNodeCVEs(ctx context.Context, tx *postgres.Tx) error {
 	// Delete orphaned CVEs and return their IDs for cache invalidation
 	rows, err := tx.Query(ctx, "DELETE FROM "+nodeCVEsTable+" WHERE NOT EXISTS (SELECT "+componentCVEEdgesTable+".nodecveid FROM "+componentCVEEdgesTable+" WHERE "+nodeCVEsTable+".id = "+componentCVEEdgesTable+".nodecveid) RETURNING id")
 	if err != nil {
@@ -193,7 +186,7 @@ func (s *nodeCVEStoreImpl) RemoveOrphanedNodeCVEs(ctx context.Context, tx *postg
 	return nil
 }
 
-func (s *nodeCVEStoreImpl) MarkOrphanedNodeCVEs(ctx context.Context, tx *postgres.Tx) error {
+func (s *nodeCVEStore) MarkOrphanedNodeCVEs(ctx context.Context, tx *postgres.Tx) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "NodeCVEs")
 
 	iTime := time.Now()
