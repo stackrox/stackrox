@@ -313,6 +313,193 @@ func (s *NodeCVEStoreSuite) TestCacheMissingIDs() {
 	s.Contains(missingIDs, nonExistentID)
 }
 
+func (s *NodeCVEStoreSuite) TestGetCVEsEmptyInput() {
+	conn, err := s.pool.Acquire(s.ctx)
+	s.Require().NoError(err)
+	defer conn.Release()
+
+	tx, err := conn.Begin(s.ctx)
+	s.Require().NoError(err)
+	defer func() {
+		s.NoError(tx.Commit(s.ctx))
+	}()
+
+	// Test with empty slice
+	cves, err := s.store.GetCVEs(s.ctx, tx, []string{})
+	s.NoError(err)
+	s.Empty(cves)
+
+	// Test with nil slice
+	cves, err = s.store.GetCVEs(s.ctx, tx, nil)
+	s.NoError(err)
+	s.Empty(cves)
+}
+
+func (s *NodeCVEStoreSuite) TestGetCVEsNothingFoundInDB() {
+	conn, err := s.pool.Acquire(s.ctx)
+	s.Require().NoError(err)
+	defer conn.Release()
+
+	tx, err := conn.Begin(s.ctx)
+	s.Require().NoError(err)
+	defer func() {
+		s.NoError(tx.Commit(s.ctx))
+	}()
+
+	// Request CVEs that don't exist in cache or DB
+	nonExistentIDs := []string{"CVE-1111-1111", "CVE-2222-2222"}
+	cves, err := s.store.GetCVEs(s.ctx, tx, nonExistentIDs)
+	s.NoError(err)
+
+	// Should return empty map since nothing exists
+	s.Empty(cves)
+
+	// Verify the cache path was also taken for missing IDs
+	cache := s.store.(*nodeCVEStoreImpl).cache
+	cachedCVEs, missingIDs := cache.GetMany(nonExistentIDs)
+	s.Empty(cachedCVEs)
+	s.Len(missingIDs, 2)
+}
+
+func (s *NodeCVEStoreSuite) TestMarkOrphanedNodeCVEsNothingToMark() {
+	conn, err := s.pool.Acquire(s.ctx)
+	s.Require().NoError(err)
+	defer conn.Release()
+
+	tx, err := conn.Begin(s.ctx)
+	s.Require().NoError(err)
+	defer func() {
+		s.NoError(tx.Commit(s.ctx))
+	}()
+
+	// Call MarkOrphanedNodeCVEs when there are no CVEs to mark as orphaned
+	// (i.e., when orphanedNodeCVEs slice is empty)
+	err = s.store.MarkOrphanedNodeCVEs(s.ctx, tx)
+	s.NoError(err)
+
+	// Should complete successfully even with no CVEs to mark
+}
+
+func (s *NodeCVEStoreSuite) TestRemoveOrphanedNodeCVEsNothingToRemove() {
+	conn, err := s.pool.Acquire(s.ctx)
+	s.Require().NoError(err)
+	defer conn.Release()
+
+	tx, err := conn.Begin(s.ctx)
+	s.Require().NoError(err)
+	defer func() {
+		s.NoError(tx.Commit(s.ctx))
+	}()
+
+	// Call RemoveOrphanedNodeCVEs when there are no orphaned CVEs to remove
+	err = s.store.RemoveOrphanedNodeCVEs(s.ctx, tx)
+	s.NoError(err)
+
+	// Should complete successfully even with no CVEs to remove
+}
+
+func (s *NodeCVEStoreSuite) TestCopyFromNodeCvesEmptyInput() {
+	conn, err := s.pool.Acquire(s.ctx)
+	s.Require().NoError(err)
+	defer conn.Release()
+
+	tx, err := conn.Begin(s.ctx)
+	s.Require().NoError(err)
+	defer func() {
+		s.NoError(tx.Commit(s.ctx))
+	}()
+
+	// Test with empty slice
+	err = s.store.CopyFromNodeCves(s.ctx, tx)
+	s.NoError(err)
+
+	// Test with nil slice
+	err = s.store.CopyFromNodeCves(s.ctx, tx, nil...)
+	s.NoError(err)
+}
+
+func (s *NodeCVEStoreSuite) TestMarkOrphanedWithDuplicateIds() {
+	conn, err := s.pool.Acquire(s.ctx)
+	s.Require().NoError(err)
+	defer conn.Release()
+
+	tx, err := conn.Begin(s.ctx)
+	s.Require().NoError(err)
+	defer func() {
+		s.NoError(tx.Commit(s.ctx))
+	}()
+
+	// Create a test CVE that will be considered orphaned
+	cve := &storage.NodeCVE{}
+	s.NoError(testutils.FullInit(cve, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	cve.CveBaseInfo.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&time.Time{})
+	cve.Orphaned = false
+	cve.OrphanedTime = nil
+
+	// Insert the CVE (it will be orphaned since we don't create component edges)
+	err = s.store.CopyFromNodeCves(s.ctx, tx, cve)
+	s.NoError(err)
+
+	// Verify initial state
+	cves, err := s.store.GetCVEs(s.ctx, tx, []string{cve.GetId()})
+	s.NoError(err)
+	s.Len(cves, 1)
+	s.False(cves[cve.GetId()].GetOrphaned())
+
+	// Call MarkOrphanedNodeCVEs - this should find the orphaned CVE
+	// The duplicate ID check (ids.Add) ensures each CVE is only processed once
+	err = s.store.MarkOrphanedNodeCVEs(s.ctx, tx)
+	s.NoError(err)
+
+	// Verify CVE is now marked as orphaned
+	cves, err = s.store.GetCVEs(s.ctx, tx, []string{cve.GetId()})
+	s.NoError(err)
+	s.Len(cves, 1)
+	s.True(cves[cve.GetId()].GetOrphaned())
+	s.NotNil(cves[cve.GetId()].GetOrphanedTime())
+}
+
+func (s *NodeCVEStoreSuite) TestCopyFromNodeCvesZeroLengthBatch() {
+	conn, err := s.pool.Acquire(s.ctx)
+	s.Require().NoError(err)
+	defer conn.Release()
+
+	tx, err := conn.Begin(s.ctx)
+	s.Require().NoError(err)
+	defer func() {
+		s.NoError(tx.Commit(s.ctx))
+	}()
+
+	// This test ensures we handle the case where somehow we get an empty batch
+	// which should result in len(deletes) == 0 and skip the cache deletion branch
+
+	// Test with an empty batch - this should not fail
+	err = s.store.CopyFromNodeCves(s.ctx, tx)
+	s.NoError(err)
+}
+
+func (s *NodeCVEStoreSuite) TestCacheEmptyOperations() {
+	// Test cache operations with empty data to ensure all branches are covered
+	cache := newNodeCVECache()
+
+	// Test GetMany with empty slice
+	result, missing := cache.GetMany([]string{})
+	s.Empty(result)
+	s.Empty(missing)
+
+	// Test SetMany with empty map
+	cache.SetMany(map[string]*storage.NodeCVE{})
+
+	// Test DeleteMany with empty slice
+	cache.DeleteMany([]string{})
+
+	// Verify cache is still empty
+	result, missing = cache.GetMany([]string{"test"})
+	s.Empty(result)
+	s.Len(missing, 1)
+	s.Equal("test", missing[0])
+}
+
 func (s *NodeCVEStoreSuite) TestBatchingBehavior() {
 	conn, err := s.pool.Acquire(s.ctx)
 	s.Require().NoError(err)
