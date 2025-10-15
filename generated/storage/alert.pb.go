@@ -243,7 +243,7 @@ func (Alert_Violation_Type) EnumDescriptor() ([]byte, []int) {
 }
 
 // A special ListAlert-only enumeration of all resource types. Unlike Alert.Resource.ResourceType this also includes deployment as a type
-// This must be kept in sync with Alert.Resource.ResourceType (excluding the deployment value)
+// This must be kept in sync with Alert.Resource.ResourceType (excluding the deployment and host values)
 type ListAlert_ResourceType int32
 
 const (
