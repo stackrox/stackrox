@@ -122,12 +122,13 @@ func TestPod(testT *testing.T) {
 			require.True(retryEventsT, found, "required process %q not found in events", required)
 		}
 
-		// At least one required: short-lived processes from the busybox loop.
-		// These processes have very short lifetimes and may not be captured consistently:
-		// - /bin/date: completes in microseconds (often missed)
-		// - /bin/sleep 1: runs for 1 second (usually captured)
-		// We require at least one to verify the loop is executing, but don't fail if
-		// timing causes us to miss the faster process.
+		// At least one required: processes from the busybox loop.
+		// MYSTERY/BREADCRUMB: /bin/date is consistently NOT captured in some CI runs, while /bin/sleep IS captured.
+		// This is puzzling because:
+		// 1. The loop runs for 60+ seconds (plenty of time for events to be ingested)
+		// 2. The collector CAN capture microsecond-duration processes (we've seen /bin/grep, /usr/bin/find, etc.)
+		// 3. /bin/sleep is captured reliably, proving the loop is running
+		// 4. If sleep is captured, date must have executed 60+ times just before each sleep
 		atLeastOneRequired := []string{"/bin/date", "/bin/sleep"}
 		retryEventsT.Logf("At least one required (short-lived processes): %v", atLeastOneRequired)
 		foundAtLeastOne := false
