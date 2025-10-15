@@ -795,7 +795,7 @@ module.exports = [
         },
     },
     {
-        files: ['**/*.{jsx,tsx}'],
+        files: ['**/*.{js,jsx,ts,tsx}'],
         ignores: [
             'src/Components/**',
             'src/ConsolePlugin/**',
@@ -828,18 +828,18 @@ module.exports = [
             'src/Containers/VulnMgmt/**', // deprecated
             'src/Containers/Vulnerabilities/**',
             'src/Containers/Workflow/**', // deprecated
-            'src/Containers/*.{jsx,tsx}',
+            'src/Containers/*.{js,jsx,ts,tsx}',
             'src/constants/**',
             'src/hooks/**',
             'src/providers/**',
             'src/test-utils/**',
             'src/utils/**',
-            'src/*.{jsx,tsx}',
+            'src/*.{js,jsx,ts,tsx}',
         ],
 
         // After deprecated folders have been deleted:
         // Move jsxPragma property to languageOptions at module scope.
-        // Move react rules into appropriate configuration object.
+        // Move react rules into appropriate configuration objects.
 
         // Set parserOptions and turn off rules explicitly,
         // instead of implicitlu via jsx-runtime configuration of eslint-plugin-react package.
