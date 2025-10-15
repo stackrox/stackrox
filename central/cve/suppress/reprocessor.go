@@ -6,7 +6,6 @@ import (
 	"time"
 
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
-	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
 	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -17,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
+// TODO(ROX-28123): Verify with Charmik this stuff is obsolete.
 var (
 	log = logging.LoggerForModule()
 
@@ -41,7 +41,7 @@ type vulnsStore interface {
 // Singleton returns the singleton reprocessor loop
 func Singleton() CVEUnsuppressLoop {
 	once.Do(func() {
-		loop = NewLoop(imageCVEDataStore.Singleton(), nodeCVEDataStore.Singleton(), clusterCVEDataStore.Singleton())
+		loop = NewLoop(nodeCVEDataStore.Singleton(), clusterCVEDataStore.Singleton())
 	})
 	return loop
 }

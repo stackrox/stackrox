@@ -13,7 +13,6 @@ import (
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globaldb"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
-	imageComponentDatastore "github.com/stackrox/rox/central/imagecomponent/datastore"
 	imageComponentV2Datastore "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
 	logimbueDataStore "github.com/stackrox/rox/central/logimbue/store"
 	"github.com/stackrox/rox/central/metrics"
@@ -36,7 +35,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/maputil"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
@@ -96,7 +94,6 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	processbaseline processBaselineDatastore.DataStore,
 	networkflows networkFlowDatastore.ClusterDataStore,
 	config configDatastore.DataStore,
-	imageComponents imageComponentDatastore.DataStore,
 	imageComponentsV2 imageComponentV2Datastore.DataStore,
 	risks riskDataStore.DataStore,
 	vulnReqs vulnReqDataStore.DataStore,
@@ -114,7 +111,6 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 		clusters:          clusters,
 		nodes:             nodes,
 		images:            images,
-		imageComponents:   imageComponents,
 		imageComponentsV2: imageComponentsV2,
 		deployments:       deployments,
 		pods:              pods,
@@ -144,7 +140,6 @@ type garbageCollectorImpl struct {
 	clusters          clusterDatastore.DataStore
 	nodes             nodeDatastore.DataStore
 	images            imageDatastore.DataStore
-	imageComponents   imageComponentDatastore.DataStore
 	imageComponentsV2 imageComponentV2Datastore.DataStore
 	deployments       deploymentDatastore.DataStore
 	pods              podDatastore.DataStore
@@ -1007,18 +1002,10 @@ func (g *garbageCollectorImpl) removeOrphanedImageComponentRisks() {
 	var err error
 	componentsWithRisk := g.getRisks(storage.RiskSubjectType_IMAGE_COMPONENT)
 
-	if features.FlattenCVEData.Enabled() {
-		results, err = g.imageComponentsV2.Search(pruningCtx, search.EmptyQuery())
-		if err != nil {
-			log.Errorf("[Risk pruning] Searching image components: %v", err)
-			return
-		}
-	} else {
-		results, err = g.imageComponents.Search(pruningCtx, search.EmptyQuery())
-		if err != nil {
-			log.Errorf("[Risk pruning] Searching image components: %v", err)
-			return
-		}
+	results, err = g.imageComponentsV2.Search(pruningCtx, search.EmptyQuery())
+	if err != nil {
+		log.Errorf("[Risk pruning] Searching image components: %v", err)
+		return
 	}
 
 	prunable = componentsWithRisk.Difference(search.ResultsToIDSet(results)).AsSlice()

@@ -27,7 +27,6 @@ import (
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
-	imageComponentDataStore "github.com/stackrox/rox/central/imagecomponent/datastore"
 	imageComponentV2DataStore "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
 	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
 	imageMapperDatastore "github.com/stackrox/rox/central/imagev2/datastore/mapper/datastore"
@@ -87,7 +86,6 @@ type Resolver struct {
 	PodDataStore                  podDatastore.DataStore
 	ImageDataStore                imageDatastore.DataStore
 	ImageV2DataStore              imageV2Datastore.DataStore
-	ImageComponentDataStore       imageComponentDataStore.DataStore
 	NodeComponentDataStore        nodeComponentDataStore.DataStore
 	NodeComponentCVEEdgeDataStore nodeComponentCVEEdgeDataStore.DataStore
 	GroupDataStore                groupDataStore.DataStore

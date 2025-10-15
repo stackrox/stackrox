@@ -6,7 +6,7 @@ import (
 
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/cve/fetcher"
-	imageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
+	imageCVEV2DataStore "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
 	delegatedRegistryConfigDS "github.com/stackrox/rox/central/delegatedregistryconfig/datastore"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/delegator"
@@ -35,6 +35,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
+// TODO(ROX-28123) -- See if this thing is alive.
 var (
 	once sync.Once
 
@@ -56,7 +57,7 @@ func initialize() {
 		sachelper.NewClusterNamespaceSacHelper(clusterDataStore.Singleton(), namespaceDataStore.Singleton()),
 	)
 
-	ie = imageEnricher.New(imageCVEDataStore.Singleton(), suppressor.Singleton(), imageintegration.Set(),
+	ie = imageEnricher.New(imageCVEV2DataStore.Singleton(), suppressor.Singleton(), imageintegration.Set(),
 		metrics.CentralSubsystem, cache.ImageMetadataCacheSingleton(), datastore.Singleton().GetImage, reporter.Singleton(),
 		signatureIntegrationDataStore.Singleton().GetAllSignatureIntegrations, scanDelegator)
 	ne = nodeEnricher.New(nodeCVEDataStore.Singleton(), metrics.CentralSubsystem)

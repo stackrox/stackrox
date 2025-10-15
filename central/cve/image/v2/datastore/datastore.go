@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/central/cve/common"
 	"github.com/stackrox/rox/central/cve/image/v2/datastore/store"
@@ -26,7 +27,11 @@ type DataStore interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	GetBatch(ctx context.Context, id []string) ([]*storage.ImageCVEV2, error)
 
+	// TODO(ROX-28123): figure out if we need to add these functions or not.
 	EnrichImageWithSuppressedCVEs(image *storage.Image)
+	EnrichImageV2WithSuppressedCVEs(image *storage.ImageV2)
+	ApplyException(_ context.Context, _, _ *time.Time, _ ...string) error
+	RevertException(_ context.Context, _ ...string) error
 }
 
 // New returns a new instance of a DataStore.
