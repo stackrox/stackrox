@@ -134,7 +134,7 @@ func (c *ClusterGatherer) fetchClusterFromSensor(ctx context.Context, sensorConn
 	cluster *storage.Cluster) (*data.ClusterInfo, error) {
 	var clusterBytes []byte
 	callback := func(ctx concurrency.ErrorWaitable, sensorInfo *central.TelemetryResponsePayload_ClusterInfo) error {
-		clusterBytes = append(clusterBytes, sensorInfo.Chunk...)
+		clusterBytes = append(clusterBytes, sensorInfo.GetChunk()...)
 		return nil
 	}
 

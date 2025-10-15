@@ -257,7 +257,7 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalBatch() {
 		if i == 0 {
 			continue
 		}
-		ids = append(ids, indicator.Id)
+		ids = append(ids, indicator.GetId())
 	}
 
 	for i := len(ids); i < numIndicators; i++ {

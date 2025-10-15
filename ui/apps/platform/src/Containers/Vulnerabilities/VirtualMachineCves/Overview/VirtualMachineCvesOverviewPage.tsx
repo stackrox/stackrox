@@ -4,6 +4,7 @@ import { Card, CardBody, Flex, PageSection, Text, Title } from '@patternfly/reac
 import PageTitle from 'Components/PageTitle';
 import DeveloperPreviewLabel from 'Components/PatternFly/DeveloperPreviewLabel';
 
+import VirtualMachineScanScopeAlert from '../components/VirtualMachineScanScopeAlert';
 import VirtualMachinesCvesTable from './VirtualMachinesCvesTable';
 
 function VirtualMachineCvesOverviewPage() {
@@ -23,6 +24,7 @@ function VirtualMachineCvesOverviewPage() {
                 <PageSection isCenterAligned>
                     <Card>
                         <CardBody>
+                            <VirtualMachineScanScopeAlert />
                             <VirtualMachinesCvesTable />
                         </CardBody>
                     </Card>

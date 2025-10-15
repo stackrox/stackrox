@@ -44,12 +44,6 @@ type resourceDef struct {
 }
 
 func Test_SensorReconcilesKubernetesEvents(t *testing.T) {
-	t.Setenv(features.PreventSensorRestartOnDisconnect.EnvVar(), "true")
-	if !features.PreventSensorRestartOnDisconnect.Enabled() {
-		t.Skip("Skip tests when ROX_PREVENT_SENSOR_RESTART_ON_DISCONNECT is disabled")
-		t.SkipNow()
-	}
-
 	t.Setenv(features.SensorReconciliationOnReconnect.EnvVar(), "true")
 
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_INITIAL_INTERVAL", "1s")
@@ -153,8 +147,8 @@ func Test_SensorReconcilesKubernetesEvents(t *testing.T) {
 		synced := testContext.WaitForSyncEvent(t, 2*time.Minute)
 
 		// Synced message should have stub for unchanged NginxUnchanged and NetpolBlockEgress
-		assert.Contains(t, synced.UnchangedIds, fmt.Sprintf("Deployment:%s", resourceMap[NginxUnchanged.YamlFile].uid))
-		assert.Contains(t, synced.UnchangedIds, fmt.Sprintf("NetworkPolicy:%s", resourceMap[NetpolBlockEgress.YamlFile].uid))
+		assert.Contains(t, synced.GetUnchangedIds(), fmt.Sprintf("Deployment:%s", resourceMap[NginxUnchanged.YamlFile].uid))
+		assert.Contains(t, synced.GetUnchangedIds(), fmt.Sprintf("NetworkPolicy:%s", resourceMap[NetpolBlockEgress.YamlFile].uid))
 
 		// Expect the following state to be communicated:
 		testContext.FirstDeploymentReceivedWithAction(t, NginxUpdatedWhenOffline.Name, central.ResourceAction_SYNC_RESOURCE)

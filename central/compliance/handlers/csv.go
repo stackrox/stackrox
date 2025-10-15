@@ -107,7 +107,7 @@ func (c *csvResults) addRow(row complianceRow) {
 		row.objectName,
 		row.controlName,
 		row.controlDescription,
-		stateToString(row.result.OverallState),
+		stateToString(row.result.GetOverallState()),
 	}
 
 	lines := make([]string, 0, len(row.result.GetEvidence()))

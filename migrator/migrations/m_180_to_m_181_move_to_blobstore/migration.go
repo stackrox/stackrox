@@ -137,7 +137,7 @@ func moveFileToBlob(tx *gorm.DB, blobName string, file string, crc32Data []byte)
 		if err != nil {
 			return errors.Wrapf(err, "existing blob is not valid %+v", targets[0])
 		}
-		blob.Oid = existingBlob.Oid
+		blob.Oid = existingBlob.GetOid()
 	}
 	blobModel, err := schema.ConvertBlobFromProto(blob)
 	if err != nil {
@@ -147,7 +147,7 @@ func moveFileToBlob(tx *gorm.DB, blobName string, file string, crc32Data []byte)
 	if tx.Error != nil {
 		return errors.Wrap(tx.Error, "failed to create blob metadata")
 	}
-	return los.Upsert(blob.Oid, dataReader)
+	return los.Upsert(blob.GetOid(), dataReader)
 }
 
 func moveProbesToBlob(db *gorm.DB) {

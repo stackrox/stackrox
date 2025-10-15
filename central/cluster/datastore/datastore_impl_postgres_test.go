@@ -132,7 +132,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestRemoveCluster() {
 	s.NotEmpty(clusterId)
 	s.NoError(clusterAddErr)
 
-	testDeployment := &storage.Deployment{Id: fixtureconsts.Deployment1, ClusterId: clusterId, ClusterName: testCluster.Name}
+	testDeployment := &storage.Deployment{Id: fixtureconsts.Deployment1, ClusterId: clusterId, ClusterName: testCluster.GetName()}
 	deploymentUpsertErr := s.deploymentDatastore.UpsertDeployment(ctx, testDeployment)
 	s.NoError(deploymentUpsertErr)
 
@@ -140,23 +140,23 @@ func (s *ClusterPostgresDataStoreTestSuite) TestRemoveCluster() {
 	podUpsertErr := s.podDatastore.UpsertPod(ctx, testPod)
 	s.NoError(podUpsertErr)
 
-	testAlert := &storage.Alert{Id: fixtureconsts.Alert1, ClusterId: clusterId, ClusterName: testCluster.Name, Entity: convert.ToAlertDeployment(testDeployment)}
+	testAlert := &storage.Alert{Id: fixtureconsts.Alert1, ClusterId: clusterId, ClusterName: testCluster.GetName(), Entity: convert.ToAlertDeployment(testDeployment)}
 	alertUpsertErr := s.alertDatastore.UpsertAlert(ctx, testAlert)
 	s.NoError(alertUpsertErr)
 
-	testSecret := &storage.Secret{Id: fixtureconsts.AlertFake, ClusterId: clusterId, ClusterName: testCluster.Name}
+	testSecret := &storage.Secret{Id: fixtureconsts.AlertFake, ClusterId: clusterId, ClusterName: testCluster.GetName()}
 	secretUpsertErr := s.secretDatastore.UpsertSecret(ctx, testSecret)
 	s.NoError(secretUpsertErr)
 
-	testServiceAccount := &storage.ServiceAccount{Id: fixtureconsts.ServiceAccount1, ClusterId: clusterId, ClusterName: testCluster.Name}
+	testServiceAccount := &storage.ServiceAccount{Id: fixtureconsts.ServiceAccount1, ClusterId: clusterId, ClusterName: testCluster.GetName()}
 	serviceAccountUpsertErr := s.serviceAccountDatastore.UpsertServiceAccount(ctx, testServiceAccount)
 	s.NoError(serviceAccountUpsertErr)
 
-	testRole := &storage.K8SRole{Id: fixtureconsts.Role1, ClusterId: clusterId, ClusterName: testCluster.Name}
+	testRole := &storage.K8SRole{Id: fixtureconsts.Role1, ClusterId: clusterId, ClusterName: testCluster.GetName()}
 	roleUpsertErr := s.roleDatastore.UpsertRole(ctx, testRole)
 	s.NoError(roleUpsertErr)
 
-	testRoleBinding := &storage.K8SRoleBinding{Id: fixtureconsts.RoleBinding1, ClusterId: clusterId, ClusterName: testCluster.Name}
+	testRoleBinding := &storage.K8SRoleBinding{Id: fixtureconsts.RoleBinding1, ClusterId: clusterId, ClusterName: testCluster.GetName()}
 	roleBindingUpsertErr := s.roleBindingDatastore.UpsertRoleBinding(ctx, testRoleBinding)
 	s.NoError(roleBindingUpsertErr)
 
@@ -234,7 +234,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestPopulateClusterHealthInfo() {
 	results, err := s.clusterDatastore.SearchRawClusters(ctx, pkgSearch.EmptyQuery())
 	s.NoError(err)
 	for _, result := range results {
-		protoassert.Equal(s.T(), expectedHealths[result.Name], result.HealthStatus)
+		protoassert.Equal(s.T(), expectedHealths[result.GetName()], result.GetHealthStatus())
 	}
 }
 
@@ -452,7 +452,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestLookupOrCreateClusterFromConfig(
 			if c.cluster != nil {
 				c.cluster.Name = clusterName
 			}
-			if helmCfg := c.sensorHello.GetHelmManagedConfigInit(); helmCfg != nil && helmCfg.ClusterName == "" {
+			if helmCfg := c.sensorHello.GetHelmManagedConfigInit(); helmCfg != nil && helmCfg.GetClusterName() == "" {
 				helmCfg.ClusterName = clusterName
 			}
 
@@ -474,13 +474,13 @@ func (s *ClusterPostgresDataStoreTestSuite) TestLookupOrCreateClusterFromConfig(
 				s.NoError(lookupErr)
 			}
 			if c.expectedManagerType != 0 {
-				s.Equal(c.expectedManagerType, cluster.ManagedBy)
+				s.Equal(c.expectedManagerType, cluster.GetManagedBy())
 			}
 			if c.expectedHelmConfig != nil {
 				protoassert.Equal(s.T(), c.expectedHelmConfig, cluster.GetHelmConfig())
 			}
 			if c.expectedSensorCapabilities != nil {
-				s.Equal(c.expectedSensorCapabilities, cluster.SensorCapabilities)
+				s.Equal(c.expectedSensorCapabilities, cluster.GetSensorCapabilities())
 			}
 		})
 	}
@@ -552,7 +552,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestUpdateAuditLogFileStatesLeaveUnm
 	s.NoError(err)
 	s.True(exists)
 
-	protoassert.MapEqual(s.T(), expectedStates, realCluster.AuditLogState)
+	protoassert.MapEqual(s.T(), expectedStates, realCluster.GetAuditLogState())
 }
 
 func (s *ClusterPostgresDataStoreTestSuite) TestUpdateAuditLogFileStatesErrorConditions() {
@@ -954,7 +954,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestAddDefaults() {
 		s.Require().NotNil(tc)
 		s.True(tc.GetDisabled())
 		s.Equal(int64(10), cluster.GetPriority())
-		s.True(cluster.SlimCollector)
+		s.True(cluster.GetSlimCollector())
 		s.NotNil(cluster.GetHelmConfig())
 		s.Equal("someId", cluster.GetInitBundleId())
 		s.Equal(storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR, cluster.GetManagedBy())
@@ -1184,21 +1184,21 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 		},
 		{
 			desc:  "Search clusters with namespace scope",
-			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.Id}, Level: v1.SearchCategory_NAMESPACES}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.GetId()}, Level: v1.SearchCategory_NAMESPACES}),
 			query: pkgSearch.EmptyQuery(),
 
 			expectedIDs: []string{c1ID},
 		},
 		{
 			desc:  "Search clusters with namespace scope and in-scope cluster query",
-			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.Id}, Level: v1.SearchCategory_NAMESPACES}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.GetId()}, Level: v1.SearchCategory_NAMESPACES}),
 			query: pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "prod").ProtoQuery(),
 
 			expectedIDs: []string{c1ID},
 		},
 		{
 			desc:  "Search clusters with namespace scope and out-of-scope cluster query",
-			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.Id}, Level: v1.SearchCategory_NAMESPACES}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.GetId()}, Level: v1.SearchCategory_NAMESPACES}),
 			query: pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "test").ProtoQuery(),
 
 			expectedIDs: []string{},
@@ -1209,14 +1209,14 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 			ctx:   ctx,
 			query: pkgSearch.EmptyQuery(),
 
-			expectedIDs: []string{ns1C1.Id, ns2C1.Id, ns1C2.Id},
+			expectedIDs: []string{ns1C1.GetId(), ns2C1.GetId(), ns1C2.GetId()},
 			queryNs:     true,
 		},
 		{
 			desc:        "Search namespaces with cluster query",
 			ctx:         ctx,
 			query:       pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "test").ProtoQuery(),
-			expectedIDs: []string{ns1C2.Id},
+			expectedIDs: []string{ns1C2.GetId()},
 			queryNs:     true,
 		},
 		{
@@ -1224,7 +1224,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 			ctx:   ctx,
 			query: pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, "n1").AddMapQuery(pkgSearch.ClusterLabel, "team", "team").ProtoQuery(),
 
-			expectedIDs: []string{ns1C1.Id, ns1C2.Id},
+			expectedIDs: []string{ns1C1.GetId(), ns1C2.GetId()},
 			queryNs:     true,
 		},
 		{
@@ -1237,23 +1237,23 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 		},
 		{
 			desc:  "Search namespace with namespace scope",
-			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.Id}, Level: v1.SearchCategory_NAMESPACES}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.GetId()}, Level: v1.SearchCategory_NAMESPACES}),
 			query: pkgSearch.EmptyQuery(),
 
-			expectedIDs: []string{ns1C1.Id},
+			expectedIDs: []string{ns1C1.GetId()},
 			queryNs:     true,
 		},
 		{
 			desc:  "Search namespace with namespace scope and in-scope cluster query",
-			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.Id}, Level: v1.SearchCategory_NAMESPACES}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.GetId()}, Level: v1.SearchCategory_NAMESPACES}),
 			query: pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "prod").ProtoQuery(),
 
-			expectedIDs: []string{ns1C1.Id},
+			expectedIDs: []string{ns1C1.GetId()},
 			queryNs:     true,
 		},
 		{
 			desc:  "Search namespace with namespace scope and out-of-scope cluster query",
-			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.Id}, Level: v1.SearchCategory_NAMESPACES}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.GetId()}, Level: v1.SearchCategory_NAMESPACES}),
 			query: pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "test").ProtoQuery(),
 
 			expectedIDs: []string{},
@@ -1261,15 +1261,15 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 		},
 		{
 			desc:  "Search namespace with namespace scope and in-scope namespace query",
-			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.Id}, Level: v1.SearchCategory_NAMESPACES}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.GetId()}, Level: v1.SearchCategory_NAMESPACES}),
 			query: pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, "n1").ProtoQuery(),
 
-			expectedIDs: []string{ns1C1.Id},
+			expectedIDs: []string{ns1C1.GetId()},
 			queryNs:     true,
 		},
 		{
 			desc:  "Search namespace with namespace scope and out-of-scope namespace query",
-			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.Id}, Level: v1.SearchCategory_NAMESPACES}),
+			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{ns1C1.GetId()}, Level: v1.SearchCategory_NAMESPACES}),
 			query: pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, "n2").ProtoQuery(),
 
 			expectedIDs: []string{},
@@ -1280,7 +1280,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{c1ID}, Level: v1.SearchCategory_CLUSTERS}),
 			query: pkgSearch.EmptyQuery(),
 
-			expectedIDs: []string{ns1C1.Id, ns2C1.Id},
+			expectedIDs: []string{ns1C1.GetId(), ns2C1.GetId()},
 			queryNs:     true,
 		},
 		{
@@ -1288,7 +1288,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 			ctx:   scoped.Context(ctx, scoped.Scope{IDs: []string{c1ID}, Level: v1.SearchCategory_CLUSTERS}),
 			query: pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "prod").ProtoQuery(),
 
-			expectedIDs: []string{ns1C1.Id, ns2C1.Id},
+			expectedIDs: []string{ns1C1.GetId(), ns2C1.GetId()},
 			queryNs:     true,
 		},
 		{
@@ -1303,7 +1303,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 			desc: "Search namespaces with cluster+namespace scope",
 			ctx: scoped.Context(ctx,
 				scoped.Scope{
-					IDs:   []string{ns1C1.Id},
+					IDs:   []string{ns1C1.GetId()},
 					Level: v1.SearchCategory_NAMESPACES,
 					Parent: &scoped.Scope{
 						IDs:   []string{c1ID},
@@ -1313,14 +1313,14 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 			),
 			query: pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "env", "prod").ProtoQuery(),
 
-			expectedIDs: []string{ns1C1.Id},
+			expectedIDs: []string{ns1C1.GetId()},
 			queryNs:     true,
 		},
 		{
 			desc: "Search namespaces with cluster+namespace scope and out-of-scope cluster query",
 			ctx: scoped.Context(ctx,
 				scoped.Scope{
-					IDs:   []string{ns1C1.Id},
+					IDs:   []string{ns1C1.GetId()},
 					Level: v1.SearchCategory_NAMESPACES,
 					Parent: &scoped.Scope{
 						IDs:   []string{c1ID},

@@ -130,12 +130,12 @@ func (evr *EmbeddedVulnerabilityResolver) CreatedAt(_ context.Context) (*graphql
 
 // DiscoveredAtImage is the first time the vulnerability was discovered in the parent image.
 func (evr *EmbeddedVulnerabilityResolver) DiscoveredAtImage(_ context.Context, _ RawQuery) (*graphql.Time, error) {
-	return protocompat.ConvertTimestampToGraphqlTimeOrError(evr.data.FirstImageOccurrence)
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(evr.data.GetFirstImageOccurrence())
 }
 
 // VulnerabilityType returns the type of vulnerability
 func (evr *EmbeddedVulnerabilityResolver) VulnerabilityType() string {
-	return evr.data.VulnerabilityType.String()
+	return evr.data.GetVulnerabilityType().String()
 }
 
 // VulnerabilityTypes returns the types of the vulnerability
@@ -314,7 +314,7 @@ func (evr *EmbeddedVulnerabilityResolver) getEnvImpactComponentsForPerClusterVul
 	if err != nil {
 		return 0, 0, err
 	}
-	affectedClusters, err := evr.root.orchestratorIstioCVEManager.GetAffectedClusters(ctx, evr.data.Cve, ct, evr.root.cveMatcher)
+	affectedClusters, err := evr.root.orchestratorIstioCVEManager.GetAffectedClusters(ctx, evr.data.GetCve(), ct, evr.root.cveMatcher)
 	if err != nil {
 		return 0, 0, err
 	}

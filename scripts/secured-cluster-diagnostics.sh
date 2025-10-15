@@ -227,16 +227,18 @@ save_collector_diagnostics() {
 }
 
 main() {
-    if [ $# -gt 0 ]; then
-        namespace="$1"
+    if [ $# -eq 0 ]; then
+        usage
+        die "Please specify the namespace argument."
     else
-        namespace="stackrox"
+        namespace="$1"
     fi
 
-    if [ $# -gt 1 ]; then
-        output_dir="$2"
+    if [ $# -lt 2 ]; then
+        usage
+        die "Please specify the output dir argument."
     else
-        output_dir="/tmp/k8s-service-logs/$namespace/metrics"
+        output_dir="$2"
     fi
     mkdir -p "${output_dir}"
 

@@ -96,11 +96,11 @@ message ComplianceDomain {
 // Next available tag: 5
 message ComplianceRunMetadata {
   string run_id = 1; // @gotags: sql:"pk" search:"Compliance Run ID,hidden"
-  string standard_id = 2; // @gotags: search:"Standard ID,hidden,store"
-  string cluster_id = 3; // @gotags: search:"Cluster ID,hidden,store" sql:"type(uuid)"
+  string standard_id = 2; // @gotags: search:"Standard ID,hidden"
+  string cluster_id = 3; // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
 
   google.protobuf.Timestamp start_timestamp = 4;
-  google.protobuf.Timestamp finish_timestamp = 5; // @gotags: search:"Compliance Run Finished Timestamp,hidden,store"
+  google.protobuf.Timestamp finish_timestamp = 5; // @gotags: search:"Compliance Run Finished Timestamp,hidden"
 
   bool success = 6;
   string error_message = 7;

@@ -267,7 +267,7 @@ func (s *serviceImpl) UpdatePlatformComponentConfig(ctx context.Context, req *v1
 		}
 		regexes = append(regexes, regex)
 	}
-	config, err := s.datastore.UpsertPlatformComponentConfigRules(ctx, req.Rules)
+	config, err := s.datastore.UpsertPlatformComponentConfigRules(ctx, req.GetRules())
 	if err != nil {
 		return nil, err
 	}

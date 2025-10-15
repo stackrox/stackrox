@@ -216,7 +216,7 @@ func (ds *datastoreImpl) updateProcessBaselineElements(ctx context.Context, base
 			continue
 		}
 		existing, ok := baselineMap[element.GetProcessName()]
-		if !ok || existing.Auto {
+		if !ok || existing.GetAuto() {
 			delete(graveyardMap, element.GetProcessName())
 			baselineMap[element.GetProcessName()] = &storage.BaselineElement{
 				Element: element,
@@ -228,7 +228,7 @@ func (ds *datastoreImpl) updateProcessBaselineElements(ctx context.Context, base
 	for _, removeElement := range removeElements {
 		delete(baselineMap, removeElement.GetProcessName())
 		existing, ok := graveyardMap[removeElement.GetProcessName()]
-		if !ok || existing.Auto {
+		if !ok || existing.GetAuto() {
 			graveyardMap[removeElement.GetProcessName()] = &storage.BaselineElement{
 				Element: removeElement,
 				Auto:    auto,
@@ -451,7 +451,7 @@ func (ds *datastoreImpl) ClearProcessBaselines(ctx context.Context, ids []string
 
 	// Go through the baselines and clear them out
 	for _, baseline := range baselines {
-		if !deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(baseline.Key).IsAllowed() {
+		if !deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(baseline.GetKey()).IsAllowed() {
 			return sac.ErrResourceAccessDenied
 		}
 

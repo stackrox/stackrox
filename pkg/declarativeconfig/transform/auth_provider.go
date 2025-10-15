@@ -66,7 +66,7 @@ func (a *authProviderTransform) Transform(configuration declarativeconfig.Config
 	}
 	return map[reflect.Type][]protocompat.Message{
 		authProviderType: {authProviderProto},
-		groupType:        getGroups(authProviderProto.Id, authProviderConfig),
+		groupType:        getGroups(authProviderProto.GetId(), authProviderConfig),
 	}, nil
 }
 

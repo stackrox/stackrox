@@ -80,7 +80,7 @@ func BenchmarkReportGenerator(b *testing.B) {
 		storage.VulnerabilityReportFilters_WATCHED,
 	}
 
-	expectedRowCount := 5002
+	expectedRowCount := 5000
 
 	reportSnap := testReportSnapshot(collection.GetId(), fixability, severities, imageTypes, nil)
 
@@ -137,7 +137,7 @@ func (bts *ReportGeneratorBenchmarkTestSuite) upsertManyImages(images []*storage
 
 func (bts *ReportGeneratorBenchmarkTestSuite) upsertManyWatchedImages(images []*storage.Image) {
 	for _, img := range images {
-		err := bts.watchedImageDatastore.UpsertWatchedImage(bts.ctx, img.Name.FullName)
+		err := bts.watchedImageDatastore.UpsertWatchedImage(bts.ctx, img.GetName().GetFullName())
 		require.NoError(bts.b, err)
 	}
 }

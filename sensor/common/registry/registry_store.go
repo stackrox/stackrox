@@ -323,16 +323,16 @@ func (rs *Store) IsLocal(image *storage.ImageName) bool {
 	defer rs.delegatedRegistryConfigMutex.RUnlock()
 
 	config := rs.delegatedRegistryConfig
-	if config == nil || config.EnabledFor == central.DelegatedRegistryConfig_NONE {
+	if config == nil || config.GetEnabledFor() == central.DelegatedRegistryConfig_NONE {
 		return false
 	}
 
-	if config.EnabledFor == central.DelegatedRegistryConfig_ALL {
+	if config.GetEnabledFor() == central.DelegatedRegistryConfig_ALL {
 		return true
 	}
 
 	// if image matches a delegated registry prefix, it is local
-	for _, r := range config.Registries {
+	for _, r := range config.GetRegistries() {
 		regPath := urlfmt.TrimHTTPPrefixes(r.GetPath())
 		if strings.HasPrefix(imageFullName, regPath) {
 			return true

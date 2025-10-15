@@ -34,7 +34,7 @@ func ImageCVEV2ToEmbeddedVulnerability(vuln *storage.ImageCVEV2) *storage.Embedd
 		State:                 vuln.GetState(),
 	}
 
-	if vuln.IsFixable {
+	if vuln.GetIsFixable() {
 		ret.SetFixedBy = &storage.EmbeddedVulnerability_FixedBy{
 			FixedBy: vuln.GetFixedBy(),
 		}

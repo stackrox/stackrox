@@ -8,11 +8,11 @@ import "storage/image.proto";
 
 // TODO (ROX-30352): Review this whole proto for GA readiness.  Lots of copypasta.
 message VirtualMachine {
-  string id = 1; // @gotags: sql:"pk,type(uuid)" search:"Virtual Machine ID,store"
-  string namespace = 2; // @gotags: search:"Namespace,store"
-  string name = 3; // @gotags: search:"Virtual Machine Name,store"
-  string cluster_id = 4; // @gotags: search:"Cluster ID,hidden,store"  sql:"type(uuid)"
-  string cluster_name = 5; // @gotags: search:"Cluster,store"
+  string id = 1; // @gotags: sql:"pk,type(uuid)" search:"Virtual Machine ID"
+  string namespace = 2; // @gotags: search:"Namespace"
+  string name = 3; // @gotags: search:"Virtual Machine Name"
+  string cluster_id = 4; // @gotags: search:"Cluster ID,hidden"  sql:"type(uuid)"
+  string cluster_name = 5; // @gotags: search:"Cluster"
   map<string, string> facts = 6;
 
   google.protobuf.Timestamp last_updated = 7;

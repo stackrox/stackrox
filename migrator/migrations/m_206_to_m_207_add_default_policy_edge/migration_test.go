@@ -85,7 +85,7 @@ func (s *migrationTestSuite) TestMigration() {
 			for _, edge := range foundEdge {
 				migratedEdge, err := schema.ConvertPolicyCategoryEdgeToProto(edge)
 				s.Require().NoError(err)
-				actualCategories = append(actualCategories, migratedEdge.CategoryId)
+				actualCategories = append(actualCategories, migratedEdge.GetCategoryId())
 			}
 			s.Require().ElementsMatch(actualCategories, policy_category_map[policyID])
 		})

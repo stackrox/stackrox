@@ -369,7 +369,7 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 		}
 
 		// Apply the predicate function.  Will phase out as we move away form Rocks to where clause
-		if pred == nil || pred(flow.Props) {
+		if pred == nil || pred(flow.GetProps()) {
 			flows = append(flows, flow)
 		}
 	}

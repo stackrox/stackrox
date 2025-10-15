@@ -27,8 +27,8 @@ func (i *imageMultiplier) Score(_ context.Context, _ *storage.Deployment, imageR
 	var maxScore float32
 	var factors []*storage.Risk_Result_Factor
 	for _, r := range riskResults {
-		factors = append(factors, r.Factors...)
-		maxScore = max(maxScore, r.Score)
+		factors = append(factors, r.GetFactors()...)
+		maxScore = max(maxScore, r.GetScore())
 	}
 
 	return &storage.Risk_Result{

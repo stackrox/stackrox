@@ -9,9 +9,10 @@ import { searchValueAsArray } from 'utils/searchUtils';
 import { severityToQuerySeverityKeys } from '../components/BySeveritySummaryCard';
 import type { ResourceCountByCveSeverityAndStatus } from '../components/CvesByStatusSummaryCard';
 import { isVulnerabilitySeverityLabel } from '../types';
-import type { FixableStatus } from '../types';
+import type { FixableStatus, ScannableStatus } from '../types';
 import { severityLabelToSeverity } from '../utils/searchUtils';
 import {
+    COMPONENT_SORT_FIELD,
     CVE_EPSS_PROBABILITY_SORT_FIELD,
     CVE_SEVERITY_SORT_FIELD,
     CVE_SORT_FIELD,
@@ -56,6 +57,20 @@ export type CveTableRow = {
     epssProbability: number; // should be the same across all components
     affectedComponents: CveComponentRow[];
 };
+
+export function getVirtualMachineScannedPackagesCount(virtualMachine: VirtualMachine): string {
+    const components = virtualMachine.scan?.components;
+    if (!Array.isArray(components)) {
+        return 'Not available';
+    }
+
+    const totalComponents = components.length;
+    const scannedComponents = components.filter(
+        (component) => !component.notes?.includes('UNSCANNED')
+    ).length;
+
+    return `${scannedComponents}/${totalComponents} scanned packages`;
+}
 
 export function getVirtualMachineCveSeverityStatusCounts(
     cveTableData: CveTableRow[]
@@ -234,6 +249,109 @@ export function applyVirtualMachineCveTableSort(
         // doesn't appear to be a consistent behavior in the backend between vulnerability pages
         // however secondary sort of cve name (ignoring direction) seems to mimic node cve page behavior
         return a.cve.localeCompare(b.cve);
+    };
+
+    return [...rows].sort(comparator);
+}
+
+export type PackageTableRow = {
+    name: ScanComponent['name'];
+    version: string;
+    isScannable: boolean;
+};
+
+export function getVirtualMachinePackagesTableData(
+    virtualMachine?: VirtualMachine
+): PackageTableRow[] {
+    if (!virtualMachine) {
+        return [];
+    }
+
+    const packagesTableData: PackageTableRow[] = [];
+
+    virtualMachine.scan?.components?.forEach((component) => {
+        packagesTableData.push({
+            name: component.name,
+            version: component.version,
+            isScannable: !component.notes.includes('UNSCANNED'),
+        });
+    });
+
+    return packagesTableData;
+}
+
+export function applyVirtualMachinePackagesTableFilters(
+    packagesTableData: PackageTableRow[],
+    searchFilter: SearchFilter
+): PackageTableRow[] {
+    if (!searchFilter || Object.keys(searchFilter).length === 0) {
+        return packagesTableData;
+    }
+
+    const componentFilters = searchValueAsArray(searchFilter.Component).map((component) =>
+        component.toLowerCase()
+    );
+    const componentVersionFilters = searchValueAsArray(searchFilter['Component Version']).map(
+        (version) => version.toLowerCase()
+    );
+
+    const scannableFilters = searchValueAsArray(searchFilter.SCANNABLE);
+
+    return packagesTableData.filter((packageTableRow) => {
+        // "Component" filter, case insensitive and substring
+        if (componentFilters.length > 0) {
+            const componentNameLowerCase = packageTableRow.name.toLowerCase();
+            if (!componentFilters.some((filter) => componentNameLowerCase.includes(filter))) {
+                return false;
+            }
+        }
+
+        // "Component Version" filter, case insensitive and substring
+        if (componentVersionFilters.length > 0) {
+            const componentVersionLowerCase = packageTableRow.version.toLowerCase();
+            if (
+                !componentVersionFilters.some((filter) =>
+                    componentVersionLowerCase.includes(filter)
+                )
+            ) {
+                return false;
+            }
+        }
+
+        // "SCANNABLE" filter, exact
+        if (scannableFilters.length > 0) {
+            const rowScannable: ScannableStatus = packageTableRow.isScannable
+                ? 'Scanned'
+                : 'Not scanned';
+            if (!scannableFilters.includes(rowScannable)) {
+                return false;
+            }
+        }
+
+        return true; // passed all filter conditions
+    });
+}
+
+export function applyVirtualMachinePackagesTableSort(
+    rows: PackageTableRow[],
+    sortKey: string,
+    reversed: boolean
+): PackageTableRow[] {
+    const comparator = (a: PackageTableRow, b: PackageTableRow) => {
+        let compareResult = 0;
+
+        switch (sortKey) {
+            case COMPONENT_SORT_FIELD:
+                compareResult = a.name.localeCompare(b.name);
+                break;
+            default:
+                break;
+        }
+        if (compareResult !== 0) {
+            return reversed ? compareResult * -1 : compareResult;
+        }
+
+        return 0;
     };
 
     return [...rows].sort(comparator);

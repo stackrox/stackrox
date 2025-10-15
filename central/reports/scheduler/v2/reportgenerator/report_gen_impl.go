@@ -45,7 +45,7 @@ var (
 	reportGenCtx = resolvers.SetAuthorizerOverride(loaders.WithLoaderContext(sac.WithAllAccess(context.Background())), allow.Anonymous())
 
 	deployedImagesQueryParts = &ReportQueryParts{
-		Schema:  selectDeployedImagesSchema(),
+		Schema:  selectSchema(),
 		Selects: getSelectsDeployedImages(),
 		Pagination: search.NewPagination().
 			AddSortOption(search.NewSortOption(search.Cluster)).
@@ -143,7 +143,7 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 	}
 
 	// Format results into CSV
-	zippedCSVData, err := GenerateCSV(reportData.CVEResponses, req.ReportSnapshot.Name, req.ReportSnapshot)
+	zippedCSVData, err := GenerateCSV(reportData.CVEResponses, req.ReportSnapshot.GetName(), req.ReportSnapshot)
 	if err != nil {
 		return err
 	}
@@ -153,7 +153,7 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 	if err != nil {
 		return errors.Wrap(err, "Error changing report status to GENERATED")
 	}
-	switch req.ReportSnapshot.ReportStatus.ReportNotificationMethod {
+	switch req.ReportSnapshot.GetReportStatus().GetReportNotificationMethod() {
 	case storage.ReportStatus_DOWNLOAD:
 		parentDir := req.ReportSnapshot.GetReportConfigurationId()
 		if req.ReportSnapshot.GetVulnReportFilters() == nil {
@@ -208,7 +208,7 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 				emailSubject = customSubject
 			}
 			emailBodyWithConfigDetails := addReportConfigDetails(emailBody, configDetailsHTML)
-			reportName := req.ReportSnapshot.Name
+			reportName := req.ReportSnapshot.GetName()
 			err := rg.retryableSendReportResults(reportNotifier, notifierSnap.GetEmailConfig().GetMailingLists(),
 				zippedCSVData, emailSubject, emailBodyWithConfigDetails, reportName)
 			if err != nil {
@@ -487,7 +487,7 @@ func (rg *reportGeneratorImpl) updateReportStatus(snapshot *storage.ReportSnapsh
 }
 
 func (rg *reportGeneratorImpl) logAndUpsertError(reportErr error, req *ReportRequest) {
-	if req.ReportSnapshot == nil || req.ReportSnapshot.ReportStatus == nil {
+	if req.ReportSnapshot == nil || req.ReportSnapshot.GetReportStatus() == nil {
 		utils.Should(errors.New("Request does not have non-nil report snapshot with a non-nil report status"))
 		return
 	}
@@ -512,14 +512,6 @@ func filterOnImageType(imageTypes []storage.VulnerabilityReportFilters_ImageType
 		}
 	}
 	return false
-}
-
-func selectDeployedImagesSchema() *walker.Schema {
-	// When usinng deployments schema, the greedy approach of query builder will select image name from deployments_containers table.
-	// This will avoid the discrepancy caused by multiple images with same SHA but different names in reports.
-	// This is just a temporary woraround until image data model is denormalized.
-	// TODO(ROX-30117): Revert to using image CVE schema once imageV2 model is rolled out.
-	return pkgSchema.DeploymentsSchema
 }
 
 func selectSchema() *walker.Schema {

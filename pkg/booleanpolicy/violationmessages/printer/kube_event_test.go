@@ -39,7 +39,7 @@ func TestViolationMessageForAuditLogEvents(t *testing.T) {
 		t.Run(c.testName, func(t *testing.T) {
 			kubeEvent := getKubeEvent(c.res, c.verb, "cluster-id", "ns", c.name)
 			violation := GenerateKubeEventViolationMsg(kubeEvent)
-			assert.Equal(t, c.expectedMsg, violation.Message)
+			assert.Equal(t, c.expectedMsg, violation.GetMessage())
 		})
 	}
 }
