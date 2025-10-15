@@ -9,6 +9,13 @@ Put an entry in this file if your change is user-visible and you consider it _pa
 
 Changes should still be described appropriately in JIRA/doc input pages, for inclusion in downstream release notes.
 
+## [4.8.5]
+
+### Technical Changes
+
+- ROX-30462: Reduced log level for semaphore acquisition failures from ERROR to DEBUG. This eliminates log spam during Central shutdown when multiple scans are queued in parallel, making it easier to identify actual shutdown issues.
+- ROX-30867: Prevents mutex timeouts and reduces strain on Central and Central-DB during high-volume indicator processing, reducing lock contention and transaction duration when writing large batches of process indicators. Previously, batches of 10K indicators were processed in a single transaction with a held lock, causing timeouts with datasets over 500K indicators.
+
 ## [4.8.4]
 
 ### Technical Changes
