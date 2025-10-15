@@ -4,9 +4,29 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
+type CVSSV2Writer interface {
+	AsCVSSV2() *storage.CVSSV2
+	GetVector() string
+	GetScore() float32
+
+	SetVector(vector string)
+	SetAttackVector(attackVector storage.CVSSV2_AttackVector)
+	SetAccessComplexity(accessComplexity storage.CVSSV2_AccessComplexity)
+	SetAuthentication(authentication storage.CVSSV2_Authentication)
+	SetConfidentiality(impact storage.CVSSV2_Impact)
+	SetIntegrity(impact storage.CVSSV2_Impact)
+	SetAvailability(impact storage.CVSSV2_Impact)
+	SetExploitabilityScore(score float32)
+	SetImpactScore(score float32)
+	SetScore(score float32)
+	SetSeverity(severity storage.CVSSV2_Severity)
+}
+
 type CVSSV2Wrapper struct {
 	*storage.CVSSV2
 }
+
+var _ CVSSV2Writer = (*CVSSV2Wrapper)(nil)
 
 func (w *CVSSV2Wrapper) AsCVSSV2() *storage.CVSSV2 {
 	if w == nil {

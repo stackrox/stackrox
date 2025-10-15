@@ -214,7 +214,7 @@ func (w *TestCVSSV3Wrapper) GetVector() string {
 	if w == nil || w.CVSSV3 == nil {
 		return ""
 	}
-	return w.CVSSV3.GetVector()
+	return w.GetCVSSV3().GetVector()
 }
 
 func (w *TestCVSSV3Wrapper) SetVector(vector string) {

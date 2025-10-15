@@ -71,7 +71,7 @@ func Test_CalculateScores(t *testing.T) {
 		require.NoError(t, err)
 		t.Run(fmt.Sprintf("#%d/%s", n, l), func(t *testing.T) {
 			wrapper := NewTestCVSSV2Wrapper()
-			err := ParseWCVSSV2(wrapper, vec)
+			err := ParseCVSSV2(wrapper, vec)
 			assert.NoError(t, err)
 			err = CalculateScores(wrapper)
 			assert.NoError(t, err)
@@ -185,7 +185,7 @@ func TestTestCVSSV2Wrapper(t *testing.T) {
 	assert.Equal(t, storage.CVSSV2_MEDIUM, cvss.GetSeverity())
 
 	// Test that the wrapper can be used with functions expecting a Writer interface
-	err := ParseWCVSSV2(wrapper, "AV:N/AC:L/Au:N/C:P/I:P/A:P")
+	err := ParseCVSSV2(wrapper, "AV:N/AC:L/Au:N/C:P/I:P/A:P")
 	assert.NoError(t, err)
 
 	// Verify the values were set correctly by the ParseWCVSSV2 function

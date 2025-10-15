@@ -65,11 +65,7 @@ type Writer interface {
 }
 
 // ParseCVSSV2 parses the vector string and returns an internal representation of CVSS V2
-func ParseCVSSV2(out Writer, vectorStr string) error {
-	return ParseWCVSSV2(out, vectorStr)
-}
-
-func ParseWCVSSV2(out Writer, vector string) error {
+func ParseCVSSV2(out Writer, vector string) error {
 	vec, err := getValidatedVectorFromString(vector)
 	if err != nil {
 		return err
