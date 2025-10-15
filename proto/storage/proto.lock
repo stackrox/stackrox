@@ -344,6 +344,10 @@
               {
                 "name": "RESOURCE",
                 "integer": 3
+              },
+              {
+                "name": "HOST",
+                "integer": 4
               }
             ]
           },
@@ -380,6 +384,10 @@
               {
                 "name": "EGRESS_FIREWALLS",
                 "integer": 7
+              },
+              {
+                "name": "HOST",
+                "integer": 8
               }
             ]
           },
@@ -464,6 +472,12 @@
                 "oneof_parent": "Entity"
               },
               {
+                "id": 24,
+                "name": "host",
+                "type": "Host",
+                "oneof_parent": "Entity"
+              },
+              {
                 "id": 5,
                 "name": "violations",
                 "type": "Violation",
@@ -473,6 +487,11 @@
                 "id": 13,
                 "name": "process_violation",
                 "type": "ProcessViolation"
+              },
+              {
+                "id": 25,
+                "name": "file_activity_violation",
+                "type": "FileActivityViolation"
               },
               {
                 "id": 6,
@@ -640,6 +659,21 @@
                 ]
               },
               {
+                "name": "Host",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "id",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "name",
+                    "type": "string"
+                  }
+                ]
+              },
+              {
                 "name": "Violation",
                 "fields": [
                   {
@@ -774,6 +808,22 @@
                 ]
               },
               {
+                "name": "FileActivityViolation",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "message",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "activity",
+                    "type": "FileActivity",
+                    "is_repeated": true
+                  }
+                ]
+              },
+              {
                 "name": "Enforcement",
                 "fields": [
                   {
@@ -844,6 +894,12 @@
                 "name": "resource",
                 "type": "ResourceEntity",
                 "oneof_parent": "Entity"
+              },
+              {
+                "id": 16,
+                "name": "host",
+                "type": "HostEntity",
+                "oneof_parent": "Entity"
               }
             ],
             "reserved_ids": [
@@ -882,6 +938,16 @@
               },
               {
                 "name": "ResourceEntity",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "name",
+                    "type": "string"
+                  }
+                ]
+              },
+              {
+                "name": "HostEntity",
                 "fields": [
                   {
                     "id": 1,
@@ -1019,6 +1085,9 @@
           },
           {
             "path": "storage/deployment.proto"
+          },
+          {
+            "path": "storage/file_activity.proto"
           },
           {
             "path": "storage/network_flow.proto"
@@ -8154,8 +8223,7 @@
               {
                 "id": 3,
                 "name": "moved",
-                "type": "File",
-                "optional": true
+                "type": "File"
               },
               {
                 "id": 4,
@@ -13104,6 +13172,10 @@
               {
                 "name": "AUDIT_LOG_EVENT",
                 "integer": 2
+              },
+              {
+                "name": "HOST_EVENT",
+                "integer": 3
               }
             ]
           },
