@@ -1191,7 +1191,6 @@ func (ts *DelegatedScanningSuite) waitForHealthyCentralSensorConn() {
 	ctx := ts.ctx
 
 	// Wait for critical components to be healthy.
-	logf(t, "Waiting for Sensor to be ready")
 	ts.waitUntilK8sDeploymentReady(ctx, ts.namespace, sensorDeployment)
 
 	logf(t, "Waiting for Central/Sensor connection to be ready")

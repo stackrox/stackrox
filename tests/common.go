@@ -494,6 +494,7 @@ func (ks *KubernetesSuite) waitUntilK8sDeploymentReady(ctx context.Context, name
 
 	timer := time.NewTimer(waitTimeout)
 
+	ks.logf("Waiting for deployment %q in namespace %q to be ready", deploymentName, namespace)
 	for {
 		select {
 		case <-ctx.Done():

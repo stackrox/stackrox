@@ -94,7 +94,6 @@ func (ts *TLSChallengeSuite) TestTLSChallenge() {
 
 	ts.logf("Pointing sensor at the proxy...")
 	patchedDeploy := ts.mustSetDeploymentEnvVal(ts.ctx, s, sensorDeployment, sensorContainer, centralEndpointVar, proxyEndpoint)
-	ts.logf("Waiting for sensor deployment generation %d to be ready...", patchedDeploy.GetGeneration())
 	ts.waitUntilK8sDeploymentGenerationReady(ts.ctx, s, sensorDeployment, patchedDeploy.GetGeneration())
 	ts.logf("Sensor will now attempt connecting via the nginx proxy.")
 
@@ -119,7 +118,6 @@ func (ts *TLSChallengeSuite) setupProxy(centralEndpoint string) {
 	ts.createProxyConfigMap(centralEndpoint, nginxConfigName)
 	ts.createService(ts.ctx, proxyNs, name, nginxLabels, map[int32]int32{443: 8443})
 	ts.createProxyDeployment(name, nginxLabels, nginxConfigName, nginxTLSSecretName)
-	ts.logf("Waiting for nginx proxy deployment to become ready...")
 	ts.waitUntilK8sDeploymentReady(ts.ctx, proxyNs, name)
 	ts.logf("Nginx proxy is now set up in namespace %q.", proxyNs)
 }
