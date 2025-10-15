@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -122,10 +123,10 @@ func TestCredentialManager(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			k8sClient := fake.NewSimpleClientset()
-			syncChanges := make(chan struct{})
-			defer close(syncChanges)
+			var wg sync.WaitGroup
+			wg.Add(c.changes)
 			manager := newCredentialsManagerImpl(k8sClient, namespace, secretName, func() {
-				syncChanges <- struct{}{}
+				wg.Done()
 			})
 			manager.Start()
 			defer manager.Stop()
@@ -134,9 +135,7 @@ func TestCredentialManager(t *testing.T) {
 			err := c.setupFn(k8sClient)
 			require.NoError(t, err)
 
-			for range c.changes {
-				<-syncChanges
-			}
+			wg.Wait()
 
 			manager.mutex.RLock()
 			defer manager.mutex.RUnlock()
