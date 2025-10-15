@@ -60,6 +60,7 @@ func hashStrings(h hash.Hash64, strs ...string) {
 		// 2. xxhash doesn't retain references
 		// 3. string s remains alive during the call
 		if len(s) > 0 {
+			//#nosec G103 -- Audited: zero-copy string-to-bytes conversion for performance
 			b := unsafe.Slice(unsafe.StringData(s), len(s))
 			_, _ = h.Write(b)
 		}
