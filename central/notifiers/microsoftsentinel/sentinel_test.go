@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -55,7 +54,6 @@ func (suite *SentinelTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.mockAzureClient = mocks.NewMockazureLogsClient(suite.mockCtrl)
 
-	suite.T().Setenv(features.MicrosoftSentinelNotifier.EnvVar(), "true")
 }
 
 func (suite *SentinelTestSuite) TestAlertNotify() {
