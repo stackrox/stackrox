@@ -9,13 +9,7 @@ import (
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sac/resources"
 	searchPkg "github.com/stackrox/rox/pkg/search"
-)
-
-var (
-	k8sRoleBindingsSAC = sac.ForResource(resources.K8sRoleBinding)
 )
 
 type datastoreImpl struct {
