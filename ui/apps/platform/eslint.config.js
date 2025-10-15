@@ -795,7 +795,7 @@ module.exports = [
         },
     },
     {
-        files: ['**/*.{js,jsx,ts,tsx}'],
+        files: ['**/*.{jsx,tsx}'],
         ignores: [
             'src/Components/**',
             'src/ConsolePlugin/**',
@@ -828,20 +828,38 @@ module.exports = [
             'src/Containers/VulnMgmt/**', // deprecated
             'src/Containers/Vulnerabilities/**',
             'src/Containers/Workflow/**', // deprecated
-            'src/Containers/*.{js,jsx,tsx}',
+            'src/Containers/*.{jsx,tsx}',
             'src/constants/**',
             'src/hooks/**',
             'src/providers/**',
             'src/test-utils/**',
             'src/utils/**',
-            'src/*.{js,jsx,tsx}',
+            'src/*.{jsx,tsx}',
         ],
+
+        // After deprecated folders have been deleted:
+        // Move jsxPragma property to languageOptions at module scope.
+        // Move react rules into appropriate configuration object.
+
+        // Set parserOptions and turn off rules explicitly,
+        // instead of implicitlu via jsx-runtime configuration of eslint-plugin-react package.
+
+        languageOptions: {
+            parserOptions: {
+                // https://typescript-eslint.io/packages/parser/#jsxpragma
+                // If you are using the new JSX transform you can set this to null.
+                jsxPragma: null,
+            },
+        },
+
         plugins: {
             limited: pluginLimited,
             react: pluginReact,
         },
         rules: {
+            // After ignores array consists only of deprecated folders, delete limited rule (which has autofix).
             'limited/no-default-import-react': 'error',
+            'react/jsx-uses-react': 'off',
             'react/react-in-jsx-scope': 'off',
         },
     },
