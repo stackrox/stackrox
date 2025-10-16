@@ -77,7 +77,7 @@ func (s *processIndicatorDatastoreSACSuite) deleteProcessIndicator(id string) {
 }
 
 func (s *processIndicatorDatastoreSACSuite) TestAddProcessIndicators() {
-	cases := sacTestUtils.GenericGlobalSACUpsertTestCases(s.T(), sacTestUtils.VerbAdd)
+	cases := sacTestUtils.GenericNamespaceSACUpsertTestCases(s.T(), sacTestUtils.VerbAdd)
 
 	for name, c := range cases {
 		s.Run(name, func() {
@@ -149,7 +149,7 @@ func (s *processIndicatorDatastoreSACSuite) TestGetProcessIndicators() {
 }
 
 func (s *processIndicatorDatastoreSACSuite) TestRemoveProcessIndicators() {
-	cases := sacTestUtils.GenericGlobalSACDeleteTestCases(s.T())
+	cases := sacTestUtils.GenericNamespaceSACDeleteTestCases(s.T())
 
 	for name, c := range cases {
 		s.Run(name, func() {
@@ -163,18 +163,26 @@ func (s *processIndicatorDatastoreSACSuite) TestRemoveProcessIndicators() {
 			defer s.deleteProcessIndicator(processIndicator.GetId())
 
 			err = s.datastore.RemoveProcessIndicators(ctx, []string{processIndicator.GetId()})
-			if c.ExpectError {
-				s.Require().Error(err)
-				s.ErrorIs(err, c.ExpectedError)
+			s.NoError(err)
+
+			fetchedProcess, found, err := s.datastore.GetProcessIndicator(
+				s.testContexts[sacTestUtils.UnrestrictedReadWriteCtx],
+				processIndicator.GetId(),
+			)
+			s.NoError(err)
+			if c.ExpectedFound {
+				s.True(found)
+				protoassert.Equal(s.T(), processIndicator, fetchedProcess)
 			} else {
-				s.NoError(err)
+				s.False(found)
+				s.Nil(fetchedProcess)
 			}
 		})
 	}
 }
 
 func (s *processIndicatorDatastoreSACSuite) TestPruneProcessIndicators() {
-	cases := sacTestUtils.GenericGlobalSACDeleteTestCases(s.T())
+	cases := sacTestUtils.GenericNamespaceSACDeleteTestCases(s.T())
 
 	for name, c := range cases {
 		s.Run(name, func() {
@@ -188,12 +196,23 @@ func (s *processIndicatorDatastoreSACSuite) TestPruneProcessIndicators() {
 			defer s.deleteProcessIndicator(processIndicator.GetId())
 
 			prunedCount, err := s.datastore.PruneProcessIndicators(ctx, []string{processIndicator.GetId()})
-			if c.ExpectError {
-				s.Require().Error(err)
-				s.ErrorIs(err, c.ExpectedError)
-				s.Zero(prunedCount)
+			s.NoError(err)
+
+			fetchedProcess, found, err := s.datastore.GetProcessIndicator(
+				s.testContexts[sacTestUtils.UnrestrictedReadWriteCtx],
+				processIndicator.GetId(),
+			)
+			s.NoError(err)
+			if c.ExpectedFound {
+				s.True(found)
+				protoassert.Equal(s.T(), processIndicator, fetchedProcess)
+				// TODO: Make the pruning process return fine-grain information on removed items
+				// Note: delete does not return the ID of the removed processes,
+				// and counts items in successful batch as removed, even if they were not.
+				s.Equal(1, prunedCount)
 			} else {
-				s.NoError(err)
+				s.False(found)
+				s.Nil(fetchedProcess)
 				s.Equal(1, prunedCount)
 			}
 		})
@@ -201,14 +220,14 @@ func (s *processIndicatorDatastoreSACSuite) TestPruneProcessIndicators() {
 }
 
 func (s *processIndicatorDatastoreSACSuite) TestRemoveProcessIndicatorsByPod() {
-	cases := sacTestUtils.GenericGlobalSACDeleteTestCases(s.T())
+	cases := sacTestUtils.GenericNamespaceSACDeleteTestCases(s.T())
 
 	for name, c := range cases {
 		s.Run(name, func() {
 			processIndicator := fixtures.GetScopedProcessIndicator(uuid.NewV4().String(), testconsts.Cluster2,
 				testconsts.NamespaceB)
 			podID := uuid.NewV4().String()
-			processIndicator.PodId = podID
+			processIndicator.PodUid = podID
 			s.testProcessIndicatorIDs = append(s.testProcessIndicatorIDs, processIndicator.GetId())
 
 			ctx := s.testContexts[c.ScopeKey]
@@ -217,25 +236,33 @@ func (s *processIndicatorDatastoreSACSuite) TestRemoveProcessIndicatorsByPod() {
 			defer s.deleteProcessIndicator(processIndicator.GetId())
 
 			err = s.datastore.RemoveProcessIndicatorsByPod(ctx, podID)
-			if c.ExpectError {
-				s.Require().Error(err)
-				s.ErrorIs(err, c.ExpectedError)
+			s.NoError(err)
+
+			fetchedProcess, found, err := s.datastore.GetProcessIndicator(
+				s.testContexts[sacTestUtils.UnrestrictedReadWriteCtx],
+				processIndicator.GetId(),
+			)
+			s.NoError(err)
+			if c.ExpectedFound {
+				s.True(found)
+				protoassert.Equal(s.T(), processIndicator, fetchedProcess)
 			} else {
-				s.NoError(err)
+				s.False(found)
+				s.Nil(fetchedProcess)
 			}
 		})
 	}
 }
 
 func (s *processIndicatorDatastoreSACSuite) TestRemoveProcessIndicatorsByPodOtherPod() {
-	cases := sacTestUtils.GenericGlobalSACDeleteTestCases(s.T())
+	cases := sacTestUtils.GenericNamespaceSACDeleteTestCases(s.T())
 
 	for name, c := range cases {
 		s.Run(name, func() {
 			processIndicator := fixtures.GetScopedProcessIndicator(uuid.NewV4().String(), testconsts.Cluster2,
 				testconsts.NamespaceB)
 			podID := uuid.NewV4().String()
-			processIndicator.PodId = podID
+			processIndicator.PodUid = podID
 			otherPodID := uuid.NewV4().String()
 			s.Require().NotEqual(podID, otherPodID)
 			s.testProcessIndicatorIDs = append(s.testProcessIndicatorIDs, processIndicator.GetId())
@@ -246,12 +273,7 @@ func (s *processIndicatorDatastoreSACSuite) TestRemoveProcessIndicatorsByPodOthe
 			defer s.deleteProcessIndicator(processIndicator.GetId())
 
 			err = s.datastore.RemoveProcessIndicatorsByPod(ctx, otherPodID)
-			if c.ExpectError {
-				s.Require().Error(err)
-				s.ErrorIs(err, c.ExpectedError)
-			} else {
-				s.NoError(err)
-			}
+			s.NoError(err)
 
 			fetchedProcess, found, err := s.datastore.GetProcessIndicator(
 				s.testContexts[sacTestUtils.UnrestrictedReadWriteCtx],
