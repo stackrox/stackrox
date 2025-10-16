@@ -119,6 +119,7 @@ class OperatorE2eTest(BaseTest):
         self.run_with_graceful_kill(
             ["operator/tests/run.sh"],
             self.TEST_TIMEOUT_SEC,
+            output_dir="/tmp/operator-e2e-misc-logs",
         )
 
 
@@ -129,7 +130,8 @@ class QaE2eTestPart1(BaseTest):
         print("Executing qa-tests-backend tests (part I)")
 
         self.run_with_graceful_kill(
-            ["qa-tests-backend/scripts/run-part-1.sh"], self.TEST_TIMEOUT
+            ["qa-tests-backend/scripts/run-part-1.sh"], self.TEST_TIMEOUT,
+            output_dir="/tmp/qa-part1-misc-logs",
         )
 
 
@@ -140,7 +142,8 @@ class QaE2eTestPart2(BaseTest):
         print("Executing qa-tests-backend tests (part II)")
 
         self.run_with_graceful_kill(
-            ["qa-tests-backend/scripts/run-part-2.sh"], self.TEST_TIMEOUT
+            ["qa-tests-backend/scripts/run-part-2.sh"], self.TEST_TIMEOUT,
+            output_dir="/tmp/qa-part2-misc-logs",
         )
 
 
@@ -159,6 +162,7 @@ class QaE2eTestCompatibility(BaseTest):
             ["qa-tests-backend/scripts/run-compatibility.sh",
              self._central_version, self._sensor_version],
             self.TEST_TIMEOUT,
+            output_dir="/tmp/qa-compat-misc-logs",
         )
 
 
@@ -211,6 +215,7 @@ class UIE2eTest(BaseTest):
                 "tests/e2e/run-ui-e2e.sh",
             ],
             self.TEST_TIMEOUT,
+            output_dir="/tmp/ui-e2e-misc-logs",
         )
 
 
@@ -225,6 +230,7 @@ class ComplianceE2eTest(BaseTest):
                 "tests/e2e/run-compliance-e2e.sh",
             ],
             self.TEST_TIMEOUT,
+            output_dir="/tmp/compliance-e2e-misc-logs",
         )
 
 
@@ -297,7 +303,8 @@ class CustomSetTest(BaseTest):
         print("Executing a sub set of qa-tests-backend tests for ppc64le and s390x")
 
         self.run_with_graceful_kill(
-            ["qa-tests-backend/scripts/run-custom-pz.sh"], self.TEST_TIMEOUT
+            ["qa-tests-backend/scripts/run-custom-pz.sh"], self.TEST_TIMEOUT,
+            output_dir="/tmp/custom-pz-misc-logs",
         )
 
 
