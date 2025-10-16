@@ -15,6 +15,7 @@ var (
 	imageEvalFactory      = evaluator.MustCreateNewFactory(augmentedobjs.ImageMeta)
 	kubeEventFactory      = evaluator.MustCreateNewFactory(augmentedobjs.KubeEventMeta)
 	networkFlowFactory    = evaluator.MustCreateNewFactory(augmentedobjs.NetworkFlowMeta)
+	hostFileEventFactory  = evaluator.MustCreateNewFactory(augmentedobjs.FileActivityMeta)
 )
 
 // A CacheReceptacle is an optional argument that can be passed to the Match* functions of the Matchers below, that
@@ -34,6 +35,9 @@ type CacheReceptacle struct {
 
 	// Used only by MatchDeploymentWithNetworkFlow
 	augmentedNetworkFlow *pathutil.AugmentedObj
+
+	// Used ony by MatchHostFileActivity
+	augmentedFile *pathutil.AugmentedObj
 }
 
 // EnhancedDeployment holds the deployment object plus the additional resources used for the matching.
@@ -45,8 +49,9 @@ type EnhancedDeployment struct {
 
 // Violations represents a list of violation sub-objects.
 type Violations struct {
-	ProcessViolation *storage.Alert_ProcessViolation
-	AlertViolations  []*storage.Alert_Violation
+	ProcessViolation      *storage.Alert_ProcessViolation
+	FileActivityViolation *storage.Alert_FileActivityViolation
+	AlertViolations       []*storage.Alert_Violation
 }
 
 // An ImageMatcher matches images against a policy.
@@ -77,6 +82,11 @@ type AuditLogEventMatcher interface {
 // A DeploymentWithNetworkFlowMatcher matches deployments, and a network flow against a policy.
 type DeploymentWithNetworkFlowMatcher interface {
 	MatchDeploymentWithNetworkFlowInfo(cache *CacheReceptacle, enhancedDeployment EnhancedDeployment, flow *augmentedobjs.NetworkFlowDetails) (Violations, error)
+}
+
+// A HostFileEventMatcher matches file events from a host against a policy.
+type HostFileEventMatcher interface {
+	MatchHostFileActivity(cache *CacheReceptacle, activity *storage.FileActivity) (Violations, error)
 }
 
 type sectionAndEvaluator struct {
@@ -249,6 +259,43 @@ func BuildImageMatcher(p *storage.Policy, options ...ValidateOption) (ImageMatch
 	}
 	return &matcherImpl{
 		evaluators: sectionsAndEvals,
+	}, nil
+}
+
+func BuildHostFileEventMatcher(p *storage.Policy, options ...ValidateOption) (HostFileEventMatcher, error) {
+	sectionsAndEvals, err := getSectionsAndEvals(&hostFileEventFactory, p, storage.LifecycleStage_RUNTIME, options...)
+	if err != nil {
+		return nil, err
+	}
+
+	fileEventMatchers := make([]evaluator.Evaluator, 0, len(p.GetPolicySections()))
+	for _, section := range p.GetPolicySections() {
+		if len(section.GetPolicyGroups()) == 0 {
+			return nil, errors.Errorf("no groups in section %q", section.GetSectionName())
+		}
+
+		// Conjunction of process fields and events fields is not supported.
+		if !ContainsDiscreteRuntimeFieldCategorySections(p) {
+			return nil, errors.New("a run time policy section must not contain both and kubernetes event constraints")
+		}
+
+		fieldQueries, err := sectionTypeToFieldQueries(section, FileActivity)
+		if err != nil {
+			return nil, errors.Wrapf(err, "converting to field queries for section %q", section.GetSectionName())
+		}
+
+		eval, err := hostFileEventFactory.GenerateEvaluator(&query.Query{FieldQueries: fieldQueries})
+		if err != nil {
+			return nil, errors.Wrapf(err, "generating network flow evaluator for section %q", section.GetSectionName())
+		}
+		fileEventMatchers = append(fileEventMatchers, eval)
+	}
+
+	return &hostFileEventMatcher{
+		matcherImpl: matcherImpl{
+			evaluators: sectionsAndEvals,
+		},
+		fileEventOnlyMatchers: fileEventMatchers,
 	}, nil
 }
 

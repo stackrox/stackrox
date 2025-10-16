@@ -53,6 +53,8 @@ const (
 	NetworkFlow = "networkFlow"
 	// KubeEvent for an admission controller based runtime event
 	KubeEvent = "kubeEvent"
+	// FileActivity for a file-based runtime event
+	FileActivity = "fileActivity"
 )
 
 type metadataAndQB struct {
