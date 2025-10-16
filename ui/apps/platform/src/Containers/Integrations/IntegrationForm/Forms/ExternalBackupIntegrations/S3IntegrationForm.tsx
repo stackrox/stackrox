@@ -1,5 +1,5 @@
 /* eslint-disable no-void */
-import React from 'react';
+
 import type { ReactElement } from 'react';
 import { Checkbox, Form, FormSelect, PageSection, Text, TextInput } from '@patternfly/react-core';
 import * as yup from 'yup';

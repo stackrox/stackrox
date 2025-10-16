@@ -1,4 +1,3 @@
-import React from 'react';
 import { gql, useQuery } from '@apollo/client';
 import { Button, Divider, Flex, FlexItem, Stack, StackItem, Title } from '@patternfly/react-core';
 
