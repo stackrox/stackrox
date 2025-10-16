@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import type { ReactNode } from 'react';
+import type { FormEvent, ReactNode } from 'react';
 import {
     Button,
     Divider,
@@ -10,14 +10,14 @@ import {
     Flex,
     FlexItem,
     SearchInput,
+    SelectOption,
     Skeleton,
     Text,
     Title,
 } from '@patternfly/react-core';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 import { ExclamationCircleIcon, ListIcon, SyncAltIcon } from '@patternfly/react-icons';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import ResourceIcon from 'Components/PatternFly/ResourceIcon';
+import SelectSingle from 'Components/SelectSingle/SelectSingle';
 
 import { dryRunCollection } from 'services/CollectionsService';
 import type { CollectionRequest } from 'services/CollectionsService';
@@ -91,7 +91,6 @@ function CollectionResults({
     configError,
     setConfigError,
 }: CollectionResultsProps) {
-    const { isOpen, onToggle, closeSelect } = useSelectToggle();
     const [selected, setSelected] = useState<SelectorEntityType>('Deployment');
     // This state controls the value of the text in the SearchInput component separately from the value sent via query
     const [filterInput, setFilterInput] = useState('');
@@ -122,14 +121,13 @@ function CollectionResults({
         dryRunConfig.resourceSelectors?.[0]?.rules?.length > 0 ||
         dryRunConfig.embeddedCollectionIds.length > 0;
 
-    function onRuleOptionSelect(_, value): void {
-        setSelected(value);
+    function onRuleOptionSelect(_id: string, value: string): void {
+        setSelected(value as SelectorEntityType);
         setFilterInput('');
         setFilterValue('');
-        closeSelect();
     }
 
-    function onSearchInputChange(_event, value) {
+    function onSearchInputChange(_event: FormEvent<HTMLInputElement>, value: string) {
         setFilterInput(value);
     }
 
@@ -254,18 +252,18 @@ function CollectionResults({
                 >
                     <Flex spaceItems={{ default: 'spaceItemsNone' }}>
                         <FlexItem>
-                            <Select
+                            <SelectSingle
+                                id="entity-type-select"
                                 toggleAriaLabel="Select an entity type to filter the results by"
-                                isOpen={isOpen}
-                                onToggle={(_e, v) => onToggle(v)}
-                                selections={selected}
-                                onSelect={onRuleOptionSelect}
+                                value={selected}
+                                handleSelect={onRuleOptionSelect}
                                 isDisabled={false}
+                                isFullWidth={false}
                             >
                                 <SelectOption value="Deployment">Deployment</SelectOption>
                                 <SelectOption value="Namespace">Namespace</SelectOption>
                                 <SelectOption value="Cluster">Cluster</SelectOption>
-                            </Select>
+                            </SelectSingle>
                         </FlexItem>
                         <div className="pf-v5-u-flex-grow-1 pf-v5-u-flex-basis-0">
                             <SearchInput
