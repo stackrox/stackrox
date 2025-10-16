@@ -1,5 +1,4 @@
 /* eslint-disable no-void */
-
 import type { ReactElement } from 'react';
 import {
     Checkbox,
