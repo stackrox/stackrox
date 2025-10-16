@@ -1,5 +1,5 @@
 /* eslint-disable react/no-array-index-key */
-import React from 'react';
+
 import type { ReactElement } from 'react';
 import {
     Checkbox,

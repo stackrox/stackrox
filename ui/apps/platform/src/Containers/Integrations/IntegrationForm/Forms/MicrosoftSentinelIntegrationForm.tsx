@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { ChangeEvent, FormEvent, ReactElement } from 'react';
 import {
     Card,
