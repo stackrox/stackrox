@@ -17,10 +17,10 @@ func migrate(database *types.Databases) error {
 
 	getStmt := `SELECT image_name_fullname, image_id FROM deployments_containers WHERE image_id is not null AND image_id != '' AND image_name_fullname is not null AND image_name_fullname != ''`
 	rows, err := db.Query(database.DBCtx, getStmt)
-	defer rows.Close()
 	if err != nil {
 		return err
 	}
+	defer rows.Close()
 
 	containers, err := readRows(rows)
 	if err != nil {
