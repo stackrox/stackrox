@@ -30,8 +30,8 @@ type DataStore interface {
 	// TODO(ROX-28123): figure out if we need to add these functions or not.
 	EnrichImageWithSuppressedCVEs(image *storage.Image)
 	EnrichImageV2WithSuppressedCVEs(image *storage.ImageV2)
-	ApplyException(_ context.Context, _, _ *time.Time, _ ...string) error
-	RevertException(_ context.Context, _ ...string) error
+	ApplyException(ctx context.Context, snoozed, expiry *time.Time, cves ...string) error
+	RevertException(ctx context.Context, cves ...string) error
 }
 
 // New returns a new instance of a DataStore.
