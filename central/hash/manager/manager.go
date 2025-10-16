@@ -62,10 +62,9 @@ func (m *managerImpl) flushHashes(ctx context.Context) {
 		if !ok {
 			continue
 		}
-		hash := &storage.Hash{
-			ClusterId: cluster,
-			Hashes:    deduper.GetSuccessfulHashes(),
-		}
+		hash := &storage.Hash{}
+		hash.SetClusterId(cluster)
+		hash.SetHashes(deduper.GetSuccessfulHashes())
 		if err := m.datastore.UpsertHash(ctx, hash); err != nil {
 			log.Errorf("flushing hashes: %v", err)
 		}

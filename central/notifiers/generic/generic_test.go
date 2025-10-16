@@ -19,11 +19,9 @@ var (
 
 func makeBaseGeneric() *generic {
 	return &generic{
-		Notifier: &storage.Notifier{
-			Config: &storage.Notifier_Generic{
-				Generic: &storage.Generic{},
-			},
-		},
+		Notifier: storage.Notifier_builder{
+			Generic: &storage.Generic{},
+		}.Build(),
 	}
 }
 
@@ -35,14 +33,14 @@ func TestConstructJSON(t *testing.T) {
 		"Base, no extra field": {},
 		"Base, with extra field": {
 			fields: []*storage.KeyValuePair{
-				{
+				storage.KeyValuePair_builder{
 					Key:   "key1",
 					Value: "value1",
-				},
-				{
+				}.Build(),
+				storage.KeyValuePair_builder{
 					Key:   "key2",
 					Value: "value2",
-				},
+				}.Build(),
 			},
 		},
 	}
@@ -51,7 +49,7 @@ func TestConstructJSON(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			notifier := makeBaseGeneric()
 			var err error
-			notifier.Notifier.GetGeneric().ExtraFields = c.fields
+			notifier.Notifier.GetGeneric().SetExtraFields(c.fields)
 			notifier.extraFieldsJSONPrefix, err = getExtraFieldJSON(c.fields)
 			require.NoError(t, err)
 
@@ -72,14 +70,14 @@ func TestConstructJSON(t *testing.T) {
 		},
 		"fake alert, extra fields": {
 			fields: []*storage.KeyValuePair{
-				{
+				storage.KeyValuePair_builder{
 					Key:   "key1",
 					Value: "value1",
-				},
-				{
+				}.Build(),
+				storage.KeyValuePair_builder{
 					Key:   "key2",
 					Value: "value2",
-				},
+				}.Build(),
 			},
 			expectedPayload: `{
   "key1":"value1",
@@ -93,7 +91,7 @@ func TestConstructJSON(t *testing.T) {
 			notifier := makeBaseGeneric()
 
 			var err error
-			notifier.Notifier.GetGeneric().ExtraFields = c.fields
+			notifier.Notifier.GetGeneric().SetExtraFields(c.fields)
 			notifier.extraFieldsJSONPrefix, err = getExtraFieldJSON(c.fields)
 			require.NoError(t, err)
 
@@ -115,14 +113,14 @@ func TestJSONDoesNotContainNewlines(t *testing.T) {
 		"Base, no extra field": {},
 		"Base, with extra field": {
 			fields: []*storage.KeyValuePair{
-				{
+				storage.KeyValuePair_builder{
 					Key:   "key1",
 					Value: "value1",
-				},
-				{
+				}.Build(),
+				storage.KeyValuePair_builder{
 					Key:   "key2",
 					Value: "value2",
-				},
+				}.Build(),
 			},
 		},
 	}
@@ -131,7 +129,7 @@ func TestJSONDoesNotContainNewlines(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			notifier := makeBaseGeneric()
 			var err error
-			notifier.Notifier.GetGeneric().ExtraFields = c.fields
+			notifier.Notifier.GetGeneric().SetExtraFields(c.fields)
 			notifier.extraFieldsJSONPrefix, err = getExtraFieldJSON(c.fields)
 			require.NoError(t, err)
 

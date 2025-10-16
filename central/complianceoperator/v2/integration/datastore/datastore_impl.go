@@ -52,7 +52,7 @@ func (ds *datastoreImpl) GetComplianceIntegrationsView(ctx context.Context, quer
 	}
 
 	cloned := query.CloneVT()
-	cloned.Selects = []*v1.QuerySelect{
+	cloned.SetSelects([]*v1.QuerySelect{
 		search.NewQuerySelect(search.Cluster).Proto(),
 		search.NewQuerySelect(search.ClusterID).Proto(),
 		search.NewQuerySelect(search.ClusterType).Proto(),
@@ -61,7 +61,7 @@ func (ds *datastoreImpl) GetComplianceIntegrationsView(ctx context.Context, quer
 		search.NewQuerySelect(search.ComplianceOperatorVersion).Proto(),
 		search.NewQuerySelect(search.ComplianceOperatorStatus).Proto(),
 		search.NewQuerySelect(search.ComplianceOperatorIntegrationID).Proto(),
-	}
+	})
 
 	results, err := pgSearch.RunSelectRequestForSchema[IntegrationDetails](ctx, ds.db, schema.ComplianceIntegrationsSchema, cloned)
 	if err != nil {
@@ -82,7 +82,7 @@ func (ds *datastoreImpl) AddComplianceIntegration(ctx context.Context, integrati
 	if integration.GetId() != "" {
 		return "", errox.InvalidArgs.Newf("id should be empty but %q provided", integration.GetId())
 	}
-	integration.Id = uuid.NewV4().String()
+	integration.SetId(uuid.NewV4().String())
 
 	err := ds.storage.Upsert(ctx, integration)
 	if err != nil {

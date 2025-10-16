@@ -127,7 +127,9 @@ func (suite *ServiceAccountServiceTestSuite) TestGetServiceAccount() {
 
 	suite.mockServiceAccountStore.EXPECT().GetServiceAccount(gomock.Any(), saID).Return(expectedSA, true, nil)
 
-	sa, err := suite.service.GetServiceAccount(suite.ctx, &v1.ResourceByID{Id: saID})
+	rbid := &v1.ResourceByID{}
+	rbid.SetId(saID)
+	sa, err := suite.service.GetServiceAccount(suite.ctx, rbid)
 	suite.NoError(err)
 	protoassert.Equal(suite.T(), expectedSA, sa.GetSaAndRole().GetServiceAccount())
 	suite.Equal(1, len(sa.GetSaAndRole().GetDeploymentRelationships()))
@@ -143,7 +145,9 @@ func (suite *ServiceAccountServiceTestSuite) TestGetSAWithStoreSANotExists() {
 
 	suite.mockServiceAccountStore.EXPECT().GetServiceAccount(gomock.Any(), saID).Return((*storage.ServiceAccount)(nil), false, nil)
 
-	_, err := suite.service.GetServiceAccount(suite.ctx, &v1.ResourceByID{Id: saID})
+	rbid := &v1.ResourceByID{}
+	rbid.SetId(saID)
+	_, err := suite.service.GetServiceAccount(suite.ctx, rbid)
 	suite.Error(err)
 }
 
@@ -154,7 +158,9 @@ func (suite *ServiceAccountServiceTestSuite) TestGetSAWithStoreSAFailure() {
 	expectedErr := errors.New("failure")
 	suite.mockServiceAccountStore.EXPECT().GetServiceAccount(gomock.Any(), saID).Return((*storage.ServiceAccount)(nil), true, expectedErr)
 
-	_, actualErr := suite.service.GetServiceAccount(suite.ctx, &v1.ResourceByID{Id: saID})
+	rbid := &v1.ResourceByID{}
+	rbid.SetId(saID)
+	_, actualErr := suite.service.GetServiceAccount(suite.ctx, rbid)
 	suite.Error(actualErr)
 }
 

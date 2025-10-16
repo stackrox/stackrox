@@ -201,12 +201,12 @@ func (s *syslog) alertToCEF(ctx context.Context, alert *storage.Alert) string {
 }
 
 func getNamespaceFromAlert(alert *storage.Alert) string {
-	switch entity := alert.GetEntity().(type) {
-	case *storage.Alert_Deployment_:
-		return entity.Deployment.GetNamespace()
-	case *storage.Alert_Resource_:
-		return entity.Resource.GetNamespace()
-	case *storage.Alert_Image:
+	switch alert.WhichEntity() {
+	case storage.Alert_Deployment_case:
+		return alert.GetDeployment().GetNamespace()
+	case storage.Alert_Resource_case:
+		return alert.GetResource().GetNamespace()
+	case storage.Alert_Image_case:
 		// An image doesn't have a namespace, but it's not an error so just return
 		return ""
 	default:

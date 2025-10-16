@@ -40,7 +40,9 @@ func (d *dataStore) UpsertWatchedImage(ctx context.Context, name string) error {
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-	return d.storage.Upsert(ctx, &storage.WatchedImage{Name: name})
+	wi := &storage.WatchedImage{}
+	wi.SetName(name)
+	return d.storage.Upsert(ctx, wi)
 }
 
 func (d *dataStore) GetAllWatchedImages(ctx context.Context) ([]*storage.WatchedImage, error) {

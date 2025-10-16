@@ -233,15 +233,15 @@ func TestTransformAuthProvider(t *testing.T) {
 		authProvider.ClaimMappings[0].Path: authProvider.ClaimMappings[0].Name,
 		authProvider.ClaimMappings[1].Path: authProvider.ClaimMappings[1].Name,
 	}
+	ar := &storage.AuthProvider_RequiredAttribute{}
+	ar.SetAttributeKey(authProvider.RequiredAttributes[0].AttributeKey)
+	ar.SetAttributeValue(authProvider.RequiredAttributes[0].AttributeValue)
+	ar2 := &storage.AuthProvider_RequiredAttribute{}
+	ar2.SetAttributeKey(authProvider.RequiredAttributes[1].AttributeKey)
+	ar2.SetAttributeValue(authProvider.RequiredAttributes[1].AttributeValue)
 	expectedRequiredAttributes := []*storage.AuthProvider_RequiredAttribute{
-		{
-			AttributeKey:   authProvider.RequiredAttributes[0].AttributeKey,
-			AttributeValue: authProvider.RequiredAttributes[0].AttributeValue,
-		},
-		{
-			AttributeKey:   authProvider.RequiredAttributes[1].AttributeKey,
-			AttributeValue: authProvider.RequiredAttributes[1].AttributeValue,
-		},
+		ar,
+		ar2,
 	}
 
 	transformer := newAuthProviderTransformer()
@@ -370,15 +370,15 @@ func TestUniversalTransformAuthProvider(t *testing.T) {
 		authProvider.ClaimMappings[0].Path: authProvider.ClaimMappings[0].Name,
 		authProvider.ClaimMappings[1].Path: authProvider.ClaimMappings[1].Name,
 	}
+	ar := &storage.AuthProvider_RequiredAttribute{}
+	ar.SetAttributeKey(authProvider.RequiredAttributes[0].AttributeKey)
+	ar.SetAttributeValue(authProvider.RequiredAttributes[0].AttributeValue)
+	ar2 := &storage.AuthProvider_RequiredAttribute{}
+	ar2.SetAttributeKey(authProvider.RequiredAttributes[1].AttributeKey)
+	ar2.SetAttributeValue(authProvider.RequiredAttributes[1].AttributeValue)
 	expectedRequiredAttributes := []*storage.AuthProvider_RequiredAttribute{
-		{
-			AttributeKey:   authProvider.RequiredAttributes[0].AttributeKey,
-			AttributeValue: authProvider.RequiredAttributes[0].AttributeValue,
-		},
-		{
-			AttributeKey:   authProvider.RequiredAttributes[1].AttributeKey,
-			AttributeValue: authProvider.RequiredAttributes[1].AttributeValue,
-		},
+		ar,
+		ar2,
 	}
 
 	transformer := New()

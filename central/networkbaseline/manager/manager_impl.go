@@ -37,6 +37,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/utils"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -159,16 +160,16 @@ func (m *manager) persistNetworkBaselines(deploymentIDs set.StringSet, baselines
 		if err != nil {
 			return err
 		}
-		baselines = append(baselines, &storage.NetworkBaseline{
-			DeploymentId:         deploymentID,
-			ClusterId:            baselineInfo.ClusterID,
-			Namespace:            baselineInfo.Namespace,
-			Peers:                peers,
-			ForbiddenPeers:       forbiddenPeers,
-			ObservationPeriodEnd: protoconv.ConvertMicroTSToProtobufTS(baselineInfo.ObservationPeriodEnd),
-			Locked:               baselineInfo.UserLocked,
-			DeploymentName:       baselineInfo.DeploymentName,
-		})
+		nb := &storage.NetworkBaseline{}
+		nb.SetDeploymentId(deploymentID)
+		nb.SetClusterId(baselineInfo.ClusterID)
+		nb.SetNamespace(baselineInfo.Namespace)
+		nb.SetPeers(peers)
+		nb.SetForbiddenPeers(forbiddenPeers)
+		nb.SetObservationPeriodEnd(protoconv.ConvertMicroTSToProtobufTS(baselineInfo.ObservationPeriodEnd))
+		nb.SetLocked(baselineInfo.UserLocked)
+		nb.SetDeploymentName(baselineInfo.DeploymentName)
+		baselines = append(baselines, nb)
 	}
 	err := m.ds.UpsertNetworkBaselines(managerCtx, baselines)
 	if err != nil {
@@ -188,13 +189,11 @@ func (m *manager) sendNetworkBaselinesToSensor(baselines []*storage.NetworkBasel
 		}
 	}
 	for clusterID, clusterBaselines := range clusterIDToBaselines {
-		err := m.connectionManager.SendMessage(clusterID, &central.MsgToSensor{
-			Msg: &central.MsgToSensor_NetworkBaselineSync{
-				NetworkBaselineSync: &central.NetworkBaselineSync{
-					NetworkBaselines: clusterBaselines,
-				},
-			},
-		})
+		nbs := &central.NetworkBaselineSync{}
+		nbs.SetNetworkBaselines(clusterBaselines)
+		mts := &central.MsgToSensor{}
+		mts.SetNetworkBaselineSync(proto.ValueOrDefault(nbs))
+		err := m.connectionManager.SendMessage(clusterID, mts)
 		if err != nil {
 			log.Errorf("error sending network baselines to cluster %q: %v", clusterID, err)
 		}
@@ -854,12 +853,11 @@ func (m *manager) addBaseline(deploymentID, deploymentName, clusterID, namespace
 		return err
 	}
 
-	listDeployment := &storage.ListDeployment{
-		Name:      deploymentName,
-		Id:        deploymentID,
-		ClusterId: clusterID,
-		Namespace: namespace,
-	}
+	listDeployment := &storage.ListDeployment{}
+	listDeployment.SetName(deploymentName)
+	listDeployment.SetId(deploymentID)
+	listDeployment.SetClusterId(clusterID)
+	listDeployment.SetNamespace(namespace)
 
 	flows = m.enrichFlows(listDeployment, flows)
 
@@ -981,12 +979,11 @@ func (m *manager) GetExternalNetworkPeers(ctx context.Context, deploymentID stri
 		m.treeManager.GetDefaultNetworkTree(managerCtx),
 	)
 
-	listDeployment := &storage.ListDeployment{
-		Name:      deployment.GetName(),
-		Id:        deploymentID,
-		ClusterId: deployment.GetClusterId(),
-		Namespace: deployment.GetNamespace(),
-	}
+	listDeployment := &storage.ListDeployment{}
+	listDeployment.SetName(deployment.GetName())
+	listDeployment.SetId(deploymentID)
+	listDeployment.SetClusterId(deployment.GetClusterId())
+	listDeployment.SetNamespace(deployment.GetNamespace())
 
 	flows = m.enrichFlows(listDeployment, flows)
 
@@ -1014,28 +1011,26 @@ func (m *manager) mapFlowToPeer(flow *storage.NetworkFlow) *v1.NetworkBaselineSt
 	src, dst := props.GetSrcEntity(), props.GetDstEntity()
 
 	if src.GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
-		entity = &v1.NetworkBaselinePeerEntity{
-			Id:         dst.GetId(),
-			Type:       dst.GetType(),
-			Name:       dst.GetExternalSource().GetName(),
-			Discovered: dst.GetExternalSource().GetDiscovered(),
-		}
+		entity = &v1.NetworkBaselinePeerEntity{}
+		entity.SetId(dst.GetId())
+		entity.SetType(dst.GetType())
+		entity.SetName(dst.GetExternalSource().GetName())
+		entity.SetDiscovered(dst.GetExternalSource().GetDiscovered())
 	} else {
-		entity = &v1.NetworkBaselinePeerEntity{
-			Id:         src.GetId(),
-			Type:       src.GetType(),
-			Name:       src.GetExternalSource().GetName(),
-			Discovered: src.GetExternalSource().GetDiscovered(),
-		}
+		entity = &v1.NetworkBaselinePeerEntity{}
+		entity.SetId(src.GetId())
+		entity.SetType(src.GetType())
+		entity.SetName(src.GetExternalSource().GetName())
+		entity.SetDiscovered(src.GetExternalSource().GetDiscovered())
 		ingress = true
 	}
 
-	return &v1.NetworkBaselineStatusPeer{
-		Entity:   entity,
-		Port:     props.GetDstPort(),
-		Protocol: props.GetL4Protocol(),
-		Ingress:  ingress,
-	}
+	nbsp := &v1.NetworkBaselineStatusPeer{}
+	nbsp.SetEntity(entity)
+	nbsp.SetPort(props.GetDstPort())
+	nbsp.SetProtocol(props.GetL4Protocol())
+	nbsp.SetIngress(ingress)
+	return nbsp
 }
 
 func (m *manager) getEntitiesByQuery(ctx context.Context, clusterId, query string) ([]*storage.NetworkEntity, error) {

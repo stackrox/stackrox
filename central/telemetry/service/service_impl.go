@@ -53,15 +53,17 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // (previous implementation) was enabled. Returns false unconditionally.
 // Deprecated: the previous implementation is not used for periodic collection.
 func (s *serviceImpl) GetTelemetryConfiguration(_ context.Context, _ *v1.Empty) (*storage.TelemetryConfiguration, error) {
-	return &storage.TelemetryConfiguration{
-		Enabled: false,
-	}, nil
+	tc := &storage.TelemetryConfiguration{}
+	tc.SetEnabled(false)
+	return tc, nil
 }
 
 // ConfigureTelemetry used to enable or disable periodic telemetry collection.
 // Deprecated: the previous implementation is not used for periodic collection.
 func (s *serviceImpl) ConfigureTelemetry(_ context.Context, _ *v1.ConfigureTelemetryRequest) (*storage.TelemetryConfiguration, error) {
-	return &storage.TelemetryConfiguration{Enabled: false}, nil
+	tc := &storage.TelemetryConfiguration{}
+	tc.SetEnabled(false)
+	return tc, nil
 }
 
 func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*central.TelemetryConfig, error) {
@@ -71,17 +73,17 @@ func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*central.Tele
 		return nil, err
 	}
 	if c.Client.IsEnabled() {
-		return &central.TelemetryConfig{
-			UserId:       c.HashUserAuthID(id),
-			Endpoint:     c.GetEndpoint(),
-			StorageKeyV1: c.GetStorageKey(),
-		}, nil
+		tc := &central.TelemetryConfig{}
+		tc.SetUserId(c.HashUserAuthID(id))
+		tc.SetEndpoint(c.GetEndpoint())
+		tc.SetStorageKeyV1(c.GetStorageKey())
+		return tc, nil
 	}
-	return &central.TelemetryConfig{
-		UserId:       c.HashUserAuthID(id),
-		Endpoint:     c.GetEndpoint(),
-		StorageKeyV1: "",
-	}, nil
+	tc := &central.TelemetryConfig{}
+	tc.SetUserId(c.HashUserAuthID(id))
+	tc.SetEndpoint(c.GetEndpoint())
+	tc.SetStorageKeyV1("")
+	return tc, nil
 }
 
 func (s *serviceImpl) PostConfigReload(_ context.Context, _ *v1.Empty) (*v1.Empty, error) {

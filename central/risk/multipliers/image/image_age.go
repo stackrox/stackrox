@@ -49,13 +49,15 @@ func (c *imageAgeMultiplier) Score(_ context.Context, image *storage.Image) *sto
 	}
 	message := GetImageAgeRiskFactorMessage(image.GetName().GetFullName(), daysSinceCreated)
 
-	return &storage.Risk_Result{
-		Name: ImageAgeHeading,
-		Factors: []*storage.Risk_Result_Factor{
-			{Message: message},
-		},
-		Score: score,
-	}
+	rrf := &storage.Risk_Result_Factor{}
+	rrf.SetMessage(message)
+	rr := &storage.Risk_Result{}
+	rr.SetName(ImageAgeHeading)
+	rr.SetFactors([]*storage.Risk_Result_Factor{
+		rrf,
+	})
+	rr.SetScore(score)
+	return rr
 }
 
 // ScoreV2 takes an image and evaluates its risk based on age (days since creation)
@@ -75,13 +77,15 @@ func (c *imageAgeMultiplier) ScoreV2(_ context.Context, image *storage.ImageV2) 
 	}
 	message := GetImageAgeRiskFactorMessage(image.GetName().GetFullName(), daysSinceCreated)
 
-	return &storage.Risk_Result{
-		Name: ImageAgeHeading,
-		Factors: []*storage.Risk_Result_Factor{
-			{Message: message},
-		},
-		Score: score,
-	}
+	rrf := &storage.Risk_Result_Factor{}
+	rrf.SetMessage(message)
+	rr := &storage.Risk_Result{}
+	rr.SetName(ImageAgeHeading)
+	rr.SetFactors([]*storage.Risk_Result_Factor{
+		rrf,
+	})
+	rr.SetScore(score)
+	return rr
 }
 
 // GetImageAgeRiskScore returns a risk score for given image age.

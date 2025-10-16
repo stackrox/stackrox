@@ -59,7 +59,12 @@ func (f *fakeClusterStorage) GetCluster(_ context.Context, id string) (*storage.
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	if value, ok := f.values[id]; ok {
-		return &storage.Cluster{MainImage: "stackrox.io/main", Status: &storage.ClusterStatus{UpgradeStatus: value}}, true, nil
+		cs := &storage.ClusterStatus{}
+		cs.SetUpgradeStatus(value)
+		cluster := &storage.Cluster{}
+		cluster.SetMainImage("stackrox.io/main")
+		cluster.SetStatus(cs)
+		return cluster, true, nil
 	}
 	return nil, false, nil
 }
@@ -206,29 +211,27 @@ func (suite *UpgradeCtrlTestSuite) upgraderCheckInAndRespMustBe(processID string
 }
 
 func (suite *UpgradeCtrlTestSuite) upgraderCheckInWithErrAndRespMustBe(processID string, workflow string, stage sensorupgrader.Stage, upgraderErr string, expectedWorkflowResp string) {
-	resp, err := suite.upgradeCtrl.ProcessCheckInFromUpgrader(&central.UpgradeCheckInFromUpgraderRequest{
-		UpgradeProcessId:       processID,
-		ClusterId:              fakeClusterID,
-		CurrentWorkflow:        workflow,
-		LastExecutedStage:      stage.String(),
-		LastExecutedStageError: upgraderErr,
-	})
+	ucifur := &central.UpgradeCheckInFromUpgraderRequest{}
+	ucifur.SetUpgradeProcessId(processID)
+	ucifur.SetClusterId(fakeClusterID)
+	ucifur.SetCurrentWorkflow(workflow)
+	ucifur.SetLastExecutedStage(stage.String())
+	ucifur.SetLastExecutedStageError(upgraderErr)
+	resp, err := suite.upgradeCtrl.ProcessCheckInFromUpgrader(ucifur)
 	suite.NoError(err)
 	suite.Equal(expectedWorkflowResp, resp.GetWorkflowToExecute())
 }
 
 func (suite *UpgradeCtrlTestSuite) sensorSaysUpgraderIsUp(processID string) {
-	suite.NoError(suite.upgradeCtrl.ProcessCheckInFromSensor(&central.UpgradeCheckInFromSensorRequest{
+	suite.NoError(suite.upgradeCtrl.ProcessCheckInFromSensor(central.UpgradeCheckInFromSensorRequest_builder{
 		ClusterId:        fakeClusterID,
 		UpgradeProcessId: processID,
-		State: &central.UpgradeCheckInFromSensorRequest_PodStates{
-			PodStates: &central.UpgradeCheckInFromSensorRequest_UpgraderPodStates{
-				States: []*central.UpgradeCheckInFromSensorRequest_UpgraderPodState{
-					{PodName: "upgrader", Started: true},
-				},
+		PodStates: central.UpgradeCheckInFromSensorRequest_UpgraderPodStates_builder{
+			States: []*central.UpgradeCheckInFromSensorRequest_UpgraderPodState{
+				central.UpgradeCheckInFromSensorRequest_UpgraderPodState_builder{PodName: "upgrader", Started: true}.Build(),
 			},
-		},
-	}))
+		}.Build(),
+	}.Build()))
 }
 
 func (suite *UpgradeCtrlTestSuite) SetupTest() {

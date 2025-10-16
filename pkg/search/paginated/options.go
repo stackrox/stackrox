@@ -7,8 +7,8 @@ import (
 
 // GetViolationTimeSortOption returns the commonly used violation time sort option
 func GetViolationTimeSortOption() *v1.QuerySortOption {
-	return &v1.QuerySortOption{
-		Field:    search.ViolationTime.String(),
-		Reversed: true,
-	}
+	qso := &v1.QuerySortOption{}
+	qso.SetField(search.ViolationTime.String())
+	qso.SetReversed(true)
+	return qso
 }

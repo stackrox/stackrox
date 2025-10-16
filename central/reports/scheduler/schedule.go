@@ -244,18 +244,18 @@ func (s *scheduler) updateLastRunStatus(req *ReportRequest, err error) error {
 	}
 	if err != nil {
 		// TODO: @khushboo for more accuracy, save timestamp when the vuln data is pulled aka the query is run
-		req.ReportConfig.LastRunStatus = &storage.ReportLastRunStatus{
-			ReportStatus: storage.ReportLastRunStatus_FAILURE,
-			LastRunTime:  protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
-			ErrorMsg:     err.Error(),
-		}
+		rlrs := &storage.ReportLastRunStatus{}
+		rlrs.SetReportStatus(storage.ReportLastRunStatus_FAILURE)
+		rlrs.SetLastRunTime(protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()))
+		rlrs.SetErrorMsg(err.Error())
+		req.ReportConfig.SetLastRunStatus(rlrs)
 	} else {
-		req.ReportConfig.LastRunStatus = &storage.ReportLastRunStatus{
-			ReportStatus: storage.ReportLastRunStatus_SUCCESS,
-			LastRunTime:  protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
-			ErrorMsg:     "",
-		}
-		req.ReportConfig.LastSuccessfulRunTime = protocompat.TimestampNow()
+		rlrs := &storage.ReportLastRunStatus{}
+		rlrs.SetReportStatus(storage.ReportLastRunStatus_SUCCESS)
+		rlrs.SetLastRunTime(protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()))
+		rlrs.SetErrorMsg("")
+		req.ReportConfig.SetLastRunStatus(rlrs)
+		req.ReportConfig.SetLastSuccessfulRunTime(protocompat.TimestampNow())
 	}
 	if err = s.UpsertReportSchedule(req.ReportConfig); err != nil {
 		return err

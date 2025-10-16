@@ -108,15 +108,17 @@ func bulkUpdate(keys []*storage.ProcessBaselineKey, parallelFunc func(*storage.P
 	for _, key := range keys {
 		baseline, err := parallelFunc(key)
 		if err != nil {
-			errorList = append(errorList, &v1.ProcessBaselineUpdateError{Error: err.Error(), Key: key})
+			pbue := &v1.ProcessBaselineUpdateError{}
+			pbue.SetError(err.Error())
+			pbue.SetKey(key)
+			errorList = append(errorList, pbue)
 		} else {
 			baselines = append(baselines, baseline)
 		}
 	}
-	response := &v1.UpdateProcessBaselinesResponse{
-		Baselines: baselines,
-		Errors:    errorList,
-	}
+	response := &v1.UpdateProcessBaselinesResponse{}
+	response.SetBaselines(baselines)
+	response.SetErrors(errorList)
 	return response
 }
 
@@ -216,9 +218,8 @@ func (s *serviceImpl) bulkLockOrUnlockProcessBaselines(ctx context.Context, requ
 		}
 	}
 
-	success := &v1.BulkUpdateProcessBaselinesResponse{
-		Success: true,
-	}
+	success := &v1.BulkUpdateProcessBaselinesResponse{}
+	success.SetSuccess(true)
 
 	return success, nil
 }
@@ -246,10 +247,9 @@ func (s *serviceImpl) DeleteProcessBaselines(ctx context.Context, request *v1.De
 		return nil, err
 	}
 
-	response := &v1.DeleteProcessBaselinesResponse{
-		DryRun:     !request.GetConfirm(),
-		NumDeleted: int32(len(results)),
-	}
+	response := &v1.DeleteProcessBaselinesResponse{}
+	response.SetDryRun(!request.GetConfirm())
+	response.SetNumDeleted(int32(len(results)))
 
 	if !request.GetConfirm() {
 		return response, nil

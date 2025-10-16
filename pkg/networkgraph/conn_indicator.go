@@ -31,11 +31,11 @@ func (i NetworkConnIndicator) String() string {
 
 // ToNetworkFlowPropertiesProto converts the proto to a network flow properties.
 func (i *NetworkConnIndicator) ToNetworkFlowPropertiesProto() *storage.NetworkFlowProperties {
-	return &storage.NetworkFlowProperties{
-		SrcEntity:  i.SrcEntity.ToProto(),
-		DstEntity:  i.DstEntity.ToProto(),
-		DstPort:    i.DstPort,
-		L4Protocol: i.Protocol,
-	}
+	nfp := &storage.NetworkFlowProperties{}
+	nfp.SetSrcEntity(i.SrcEntity.ToProto())
+	nfp.SetDstEntity(i.DstEntity.ToProto())
+	nfp.SetDstPort(i.DstPort)
+	nfp.SetL4Protocol(i.Protocol)
+	return nfp
 
 }

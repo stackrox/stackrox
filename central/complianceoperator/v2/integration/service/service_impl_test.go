@@ -77,7 +77,7 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 	}{
 		{
 			desc:           "Empty query",
-			query:          &apiV2.RawQuery{Query: ""},
+			query:          apiV2.RawQuery_builder{Query: ""}.Build(),
 			expectedQ:      search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
 			expectedCountQ: search.EmptyQuery(),
 			sensorHealthState: sensorHealthStateReturn{
@@ -88,7 +88,7 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 		},
 		{
 			desc:  "Query with search field",
-			query: &apiV2.RawQuery{Query: "Cluster ID:id"},
+			query: apiV2.RawQuery_builder{Query: "Cluster ID:id"}.Build(),
 			expectedQ: search.NewQueryBuilder().AddStrings(search.ClusterID, "id").
 				WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
 			expectedCountQ: search.NewQueryBuilder().AddStrings(search.ClusterID, "id").ProtoQuery(),
@@ -100,10 +100,10 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 		},
 		{
 			desc: "Query with custom pagination",
-			query: &apiV2.RawQuery{
+			query: apiV2.RawQuery_builder{
 				Query:      "",
-				Pagination: &apiV2.Pagination{Limit: 1},
-			},
+				Pagination: apiV2.Pagination_builder{Limit: 1}.Build(),
+			}.Build(),
 			expectedQ:      search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(1)).ProtoQuery(),
 			expectedCountQ: search.EmptyQuery(),
 			sensorHealthState: sensorHealthStateReturn{
@@ -114,7 +114,7 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 		},
 		{
 			desc:           "Fetch cluster failed",
-			query:          &apiV2.RawQuery{Query: ""},
+			query:          apiV2.RawQuery_builder{Query: ""}.Build(),
 			expectedQ:      search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
 			expectedCountQ: search.EmptyQuery(),
 			sensorHealthState: sensorHealthStateReturn{
@@ -123,7 +123,7 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 		},
 		{
 			desc:           "Cluster not found",
-			query:          &apiV2.RawQuery{Query: ""},
+			query:          apiV2.RawQuery_builder{Query: ""}.Build(),
 			expectedQ:      search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
 			expectedCountQ: search.EmptyQuery(),
 			sensorHealthState: sensorHealthStateReturn{
@@ -133,7 +133,7 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 		},
 		{
 			desc:           "Sensor connection is not established",
-			query:          &apiV2.RawQuery{Query: ""},
+			query:          apiV2.RawQuery_builder{Query: ""}.Build(),
 			expectedQ:      search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
 			expectedCountQ: search.EmptyQuery(),
 			sensorHealthState: sensorHealthStateReturn{
@@ -146,9 +146,9 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 
 	for _, tc := range testCases {
 		s.T().Run(tc.desc, func(t *testing.T) {
-			expectedResp := &apiV2.ListComplianceIntegrationsResponse{
+			expectedResp := apiV2.ListComplianceIntegrationsResponse_builder{
 				Integrations: []*apiV2.ComplianceIntegration{
-					{
+					apiV2.ComplianceIntegration_builder{
 						Id:                  uuid.NewDummy().String(),
 						Version:             "22",
 						ClusterId:           fixtureconsts.Cluster1,
@@ -159,27 +159,27 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 						Status:              apiV2.COStatus_HEALTHY,
 						ClusterPlatformType: apiV2.ClusterPlatformType_OPENSHIFT_CLUSTER,
 						ClusterProviderType: apiV2.ClusterProviderType_OCP,
-					},
+					}.Build(),
 				},
 				TotalCount: 6,
-			}
+			}.Build()
 
 			// Adjust expected response for sensor connection status
 			if tc.sensorHealthState.err != nil {
-				expectedResp.Integrations[0].StatusErrors = append(expectedResp.Integrations[0].StatusErrors, fmt.Sprintf(fmtGetClusterErr, mockClusterName))
+				expectedResp.GetIntegrations()[0].SetStatusErrors(append(expectedResp.GetIntegrations()[0].GetStatusErrors(), fmt.Sprintf(fmtGetClusterErr, mockClusterName)))
 			} else if !tc.sensorHealthState.found {
-				expectedResp.Integrations[0].StatusErrors = append(expectedResp.Integrations[0].StatusErrors, fmt.Sprintf(fmtGetClusterNotFound, mockClusterName))
+				expectedResp.GetIntegrations()[0].SetStatusErrors(append(expectedResp.GetIntegrations()[0].GetStatusErrors(), fmt.Sprintf(fmtGetClusterNotFound, mockClusterName)))
 			} else if tc.sensorHealthState.healthStatus != storage.ClusterHealthStatus_HEALTHY {
-				expectedResp.Integrations[0].StatusErrors = append(expectedResp.Integrations[0].StatusErrors, fmt.Sprintf(fmtGetClusterUnhealthy, mockClusterName))
+				expectedResp.GetIntegrations()[0].SetStatusErrors(append(expectedResp.GetIntegrations()[0].GetStatusErrors(), fmt.Sprintf(fmtGetClusterUnhealthy, mockClusterName)))
 			}
 
-			s.complianceIntegrationDataStore.EXPECT().GetComplianceIntegration(gomock.Any(), gomock.Any()).Return(&storage.ComplianceIntegration{
-				Id:                  uuid.NewDummy().String(),
-				Version:             "22",
-				ClusterId:           fixtureconsts.Cluster1,
-				ComplianceNamespace: fixtureconsts.Namespace1,
-				StatusErrors:        []string{"Error 1", "Error 2", "Error 3"},
-			}, true, nil).Times(1)
+			ci := &storage.ComplianceIntegration{}
+			ci.SetId(uuid.NewDummy().String())
+			ci.SetVersion("22")
+			ci.SetClusterId(fixtureconsts.Cluster1)
+			ci.SetComplianceNamespace(fixtureconsts.Namespace1)
+			ci.SetStatusErrors([]string{"Error 1", "Error 2", "Error 3"})
+			s.complianceIntegrationDataStore.EXPECT().GetComplianceIntegration(gomock.Any(), gomock.Any()).Return(ci, true, nil).Times(1)
 
 			s.clusterDatastore.EXPECT().WalkClusters(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, fn func(c *storage.Cluster) error) error {
 				// Getting clusters from DB failed.
@@ -188,11 +188,16 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 				}
 
 				storedClusters := []*storage.Cluster{
-					{Id: fixtureconsts.Cluster2, HealthStatus: &storage.ClusterHealthStatus{SensorHealthStatus: storage.ClusterHealthStatus_UNINITIALIZED}},
-					{Id: fixtureconsts.Cluster3, HealthStatus: &storage.ClusterHealthStatus{SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY}},
+					storage.Cluster_builder{Id: fixtureconsts.Cluster2, HealthStatus: storage.ClusterHealthStatus_builder{SensorHealthStatus: storage.ClusterHealthStatus_UNINITIALIZED}.Build()}.Build(),
+					storage.Cluster_builder{Id: fixtureconsts.Cluster3, HealthStatus: storage.ClusterHealthStatus_builder{SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY}.Build()}.Build(),
 				}
 				if tc.sensorHealthState.found {
-					storedClusters = append(storedClusters, &storage.Cluster{Id: fixtureconsts.Cluster1, HealthStatus: &storage.ClusterHealthStatus{SensorHealthStatus: tc.sensorHealthState.healthStatus}})
+					chs := &storage.ClusterHealthStatus{}
+					chs.SetSensorHealthStatus(tc.sensorHealthState.healthStatus)
+					cluster := &storage.Cluster{}
+					cluster.SetId(fixtureconsts.Cluster1)
+					cluster.SetHealthStatus(chs)
+					storedClusters = append(storedClusters, cluster)
 				}
 
 				for _, cluster := range storedClusters {

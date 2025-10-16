@@ -155,7 +155,11 @@ func TestCosignSignatureFetcher_FetchSignature_Success(t *testing.T) {
 	cimg, err := imgUtils.GenerateImageFromString(imgRef)
 	require.NoError(t, err, "creating test image")
 	img := types.ToImage(cimg)
-	img.Metadata = &storage.ImageMetadata{V2: &storage.V2Metadata{Digest: "something"}}
+	v2m := &storage.V2Metadata{}
+	v2m.SetDigest("something")
+	im := &storage.ImageMetadata{}
+	im.SetV2(v2m)
+	img.SetMetadata(im)
 
 	rawSig1, err := base64.StdEncoding.DecodeString(sig1)
 	require.NoError(t, err, "decoding signature")
@@ -197,43 +201,35 @@ func TestCosignSignatureFetcher_FetchSignature_Success(t *testing.T) {
 		"uploading signature")
 
 	expectedSignatures := []*storage.Signature{
-		{
-			Signature: &storage.Signature_Cosign{
-				Cosign: &storage.CosignSignature{
-					RawSignature:     rawSig1,
-					SignaturePayload: sigPayload1,
-				},
-			},
-		},
-		{
-			Signature: &storage.Signature_Cosign{
-				Cosign: &storage.CosignSignature{
-					RawSignature:     rawSig2,
-					SignaturePayload: sigPayload2,
-				},
-			},
-		},
-		{
-			Signature: &storage.Signature_Cosign{
-				Cosign: &storage.CosignSignature{
-					RawSignature:     rawSig3,
-					SignaturePayload: sigPayload3,
-					CertPem:          certPEM,
-					CertChainPem:     chainPEM,
-				},
-			},
-		},
-		{
-			Signature: &storage.Signature_Cosign{
-				Cosign: &storage.CosignSignature{
-					RawSignature:     rawSig4,
-					SignaturePayload: sigPayload4,
-					CertPem:          certPEMWithTlog,
-					CertChainPem:     chainPEMWithTlog,
-					RekorBundle:      bundle,
-				},
-			},
-		},
+		storage.Signature_builder{
+			Cosign: storage.CosignSignature_builder{
+				RawSignature:     rawSig1,
+				SignaturePayload: sigPayload1,
+			}.Build(),
+		}.Build(),
+		storage.Signature_builder{
+			Cosign: storage.CosignSignature_builder{
+				RawSignature:     rawSig2,
+				SignaturePayload: sigPayload2,
+			}.Build(),
+		}.Build(),
+		storage.Signature_builder{
+			Cosign: storage.CosignSignature_builder{
+				RawSignature:     rawSig3,
+				SignaturePayload: sigPayload3,
+				CertPem:          certPEM,
+				CertChainPem:     chainPEM,
+			}.Build(),
+		}.Build(),
+		storage.Signature_builder{
+			Cosign: storage.CosignSignature_builder{
+				RawSignature:     rawSig4,
+				SignaturePayload: sigPayload4,
+				CertPem:          certPEMWithTlog,
+				CertChainPem:     chainPEMWithTlog,
+				RekorBundle:      bundle,
+			}.Build(),
+		}.Build(),
 	}
 
 	f := newCosignSignatureFetcher()
@@ -260,9 +256,13 @@ func TestCosignSignatureFetcher_FetchSignature_Failure(t *testing.T) {
 	require.NoError(t, err, "creating test image")
 
 	// Fail with a non-retryable error when an image is given with a wrong reference.
-	cimg.Name.FullName = "fa@wrongreference"
+	cimg.GetName().SetFullName("fa@wrongreference")
 	img := types.ToImage(cimg)
-	img.Metadata = &storage.ImageMetadata{V2: &storage.V2Metadata{Digest: "something"}}
+	v2m := &storage.V2Metadata{}
+	v2m.SetDigest("something")
+	im := &storage.ImageMetadata{}
+	im.SetV2(v2m)
+	img.SetMetadata(im)
 	res, err := f.FetchSignatures(context.Background(), img, img.GetName().GetFullName(), nil)
 	assert.Nil(t, res)
 	require.Error(t, err)

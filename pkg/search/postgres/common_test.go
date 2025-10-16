@@ -698,7 +698,7 @@ func TestSelectQueries(t *testing.T) {
 					search.NewQueryBuilder().
 						AddExactMatches(search.Namespace, "ns").ProtoQuery(),
 				)
-				q.Selects = []*v1.QuerySelect{search.NewQuerySelect(search.DeploymentName).Proto()}
+				q.SetSelects([]*v1.QuerySelect{search.NewQuerySelect(search.DeploymentName).Proto()})
 				return q
 			}(),
 			schema:        deploymentBaseSchema,
@@ -922,7 +922,7 @@ func TestDeleteQueries(t *testing.T) {
 					search.NewQueryBuilder().
 						AddExactMatches(search.Namespace, "ns").ProtoQuery(),
 				)
-				q.Selects = []*v1.QuerySelect{search.NewQuerySelect(search.DeploymentName).Proto()}
+				q.SetSelects([]*v1.QuerySelect{search.NewQuerySelect(search.DeploymentName).Proto()})
 				return q
 			}(),
 			expectedQuery: "delete from deployments where (deployments.Name = $1 and deployments.Namespace = $2)",
@@ -1087,7 +1087,7 @@ func TestDeleteReturningIDsQueries(t *testing.T) {
 					search.NewQueryBuilder().
 						AddExactMatches(search.Namespace, "ns").ProtoQuery(),
 				)
-				q.Selects = []*v1.QuerySelect{search.NewQuerySelect(search.DeploymentName).Proto()}
+				q.SetSelects([]*v1.QuerySelect{search.NewQuerySelect(search.DeploymentName).Proto()})
 				return q
 			}(),
 			expectedQuery: normalizeStatement(`delete from deployments where (deployments.Name = $1 and deployments.Namespace = $2)
@@ -1310,15 +1310,15 @@ func TestGetQueries(t *testing.T) {
 			q: func() *v1.Query {
 				// Create a query with joined table ordering to trigger subquery logic
 				query := search.NewQueryBuilder().AddExactMatches(search.ImageName, "test").ProtoQuery()
-				query.Pagination = &v1.QueryPagination{
+				query.SetPagination(v1.QueryPagination_builder{
 					SortOptions: []*v1.QuerySortOption{
-						{
+						v1.QuerySortOption_builder{
 							Field:    search.ImageName.String(),
 							Reversed: false,
-						},
+						}.Build(),
 					},
 					Limit: 10,
-				}
+				}.Build())
 				return query
 			}(),
 			schema: deploymentBaseSchema,
@@ -1336,15 +1336,15 @@ func TestGetQueries(t *testing.T) {
 				// Create a query for images ordered by CVE severity (CVSS score)
 				// This searches for images that have CVEs and orders them by severity
 				query := search.NewQueryBuilder().AddStrings(search.CVE, "*").ProtoQuery()
-				query.Pagination = &v1.QueryPagination{
+				query.SetPagination(v1.QueryPagination_builder{
 					SortOptions: []*v1.QuerySortOption{
-						{
+						v1.QuerySortOption_builder{
 							Field:    search.CVSS.String(),
 							Reversed: true, // Highest severity first
-						},
+						}.Build(),
 					},
 					Limit: 20,
-				}
+				}.Build())
 				return query
 			}(),
 			schema: imagesSchema,

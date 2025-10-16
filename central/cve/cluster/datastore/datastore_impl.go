@@ -166,9 +166,9 @@ func (ds *datastoreImpl) Suppress(ctx context.Context, start *time.Time, duratio
 	}
 
 	for _, vuln := range vulns {
-		vuln.Snoozed = true
-		vuln.SnoozeStart = protocompat.ConvertTimeToTimestampOrNil(start)
-		vuln.SnoozeExpiry = protocompat.ConvertTimeToTimestampOrNil(expiry)
+		vuln.SetSnoozed(true)
+		vuln.SetSnoozeStart(protocompat.ConvertTimeToTimestampOrNil(start))
+		vuln.SetSnoozeExpiry(protocompat.ConvertTimeToTimestampOrNil(expiry))
 	}
 	if err := ds.storage.UpsertMany(ctx, vulns); err != nil {
 		return err
@@ -191,9 +191,9 @@ func (ds *datastoreImpl) Unsuppress(ctx context.Context, cves ...string) error {
 	}
 
 	for _, vuln := range vulns {
-		vuln.Snoozed = false
-		vuln.SnoozeStart = nil
-		vuln.SnoozeExpiry = nil
+		vuln.SetSnoozed(false)
+		vuln.ClearSnoozeStart()
+		vuln.ClearSnoozeExpiry()
 	}
 	if err := ds.storage.UpsertMany(ctx, vulns); err != nil {
 		return err
@@ -246,11 +246,11 @@ func convertMany(cves []*storage.ClusterCVE, results []pkgSearch.Result) ([]*v1.
 }
 
 func convertOne(cve *storage.ClusterCVE, result *pkgSearch.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_CLUSTER_VULNERABILITIES,
-		Id:             cve.GetId(),
-		Name:           cve.GetCveBaseInfo().GetCve(),
-		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+	sr := &v1.SearchResult{}
+	sr.SetCategory(v1.SearchCategory_CLUSTER_VULNERABILITIES)
+	sr.SetId(cve.GetId())
+	sr.SetName(cve.GetCveBaseInfo().GetCve())
+	sr.SetFieldToMatches(pkgSearch.GetProtoMatchesMap(result.Matches))
+	sr.SetScore(result.Score)
+	return sr
 }

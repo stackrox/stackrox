@@ -15,24 +15,24 @@ func VulnerabilityExceptionConfig(config *storage.VulnerabilityExceptionConfig) 
 	if expiryOptions == nil {
 		return nil
 	}
-	return &v1.VulnerabilityExceptionConfig{
-		ExpiryOptions: &v1.VulnerabilityExceptionConfig_ExpiryOptions{
-			DayOptions: func() []*v1.DayOption {
-				dayOptions := make([]*v1.DayOption, 0, len(expiryOptions.GetDayOptions()))
-				for _, op := range expiryOptions.GetDayOptions() {
-					dayOptions = append(dayOptions, &v1.DayOption{
-						NumDays: op.GetNumDays(),
-						Enabled: op.GetEnabled(),
-					})
-				}
-				return dayOptions
-			}(),
-			Indefinite: expiryOptions.GetIndefinite(),
-			FixableCveOptions: &v1.VulnerabilityExceptionConfig_FixableCVEOptions{
-				AllFixable: expiryOptions.GetFixableCveOptions().GetAllFixable(),
-				AnyFixable: expiryOptions.GetFixableCveOptions().GetAnyFixable(),
-			},
-			CustomDate: expiryOptions.GetCustomDate(),
-		},
-	}
+	vf := &v1.VulnerabilityExceptionConfig_FixableCVEOptions{}
+	vf.SetAllFixable(expiryOptions.GetFixableCveOptions().GetAllFixable())
+	vf.SetAnyFixable(expiryOptions.GetFixableCveOptions().GetAnyFixable())
+	ve := &v1.VulnerabilityExceptionConfig_ExpiryOptions{}
+	ve.SetDayOptions(func() []*v1.DayOption {
+		dayOptions := make([]*v1.DayOption, 0, len(expiryOptions.GetDayOptions()))
+		for _, op := range expiryOptions.GetDayOptions() {
+			dayOption := &v1.DayOption{}
+			dayOption.SetNumDays(op.GetNumDays())
+			dayOption.SetEnabled(op.GetEnabled())
+			dayOptions = append(dayOptions, dayOption)
+		}
+		return dayOptions
+	}())
+	ve.SetIndefinite(expiryOptions.GetIndefinite())
+	ve.SetFixableCveOptions(vf)
+	ve.SetCustomDate(expiryOptions.GetCustomDate())
+	vec := &v1.VulnerabilityExceptionConfig{}
+	vec.SetExpiryOptions(ve)
+	return vec
 }

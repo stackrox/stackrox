@@ -35,7 +35,7 @@ func TestVirtualMachine(t *testing.T) {
 		},
 		{
 			name: "complete virtual machine",
-			input: &storage.VirtualMachine{
+			input: storage.VirtualMachine_builder{
 				Id:          "vm-123",
 				Namespace:   "default",
 				Name:        "test-vm",
@@ -45,8 +45,8 @@ func TestVirtualMachine(t *testing.T) {
 				State:       storage.VirtualMachine_RUNNING,
 				LastUpdated: timestamp,
 				Scan:        &storage.VirtualMachineScan{},
-			},
-			expected: &v2.VirtualMachine{
+			}.Build(),
+			expected: v2.VirtualMachine_builder{
 				Id:          "vm-123",
 				Namespace:   "default",
 				Name:        "test-vm",
@@ -56,35 +56,35 @@ func TestVirtualMachine(t *testing.T) {
 				State:       v2.VirtualMachine_RUNNING,
 				LastUpdated: timestamp,
 				Scan:        &v2.VirtualMachineScan{},
-			},
+			}.Build(),
 		},
 		{
 			name: "stopped virtual machine",
-			input: &storage.VirtualMachine{
+			input: storage.VirtualMachine_builder{
 				Id:        "vm-stopped",
 				Namespace: "test",
 				Name:      "stopped-vm",
 				State:     storage.VirtualMachine_STOPPED,
-			},
-			expected: &v2.VirtualMachine{
+			}.Build(),
+			expected: v2.VirtualMachine_builder{
 				Id:        "vm-stopped",
 				Namespace: "test",
 				Name:      "stopped-vm",
 				State:     v2.VirtualMachine_STOPPED,
-			},
+			}.Build(),
 		},
 		{
 			name: "minimal virtual machine",
-			input: &storage.VirtualMachine{
+			input: storage.VirtualMachine_builder{
 				Id:        "vm-minimal",
 				Namespace: "test",
 				Name:      "minimal-vm",
-			},
-			expected: &v2.VirtualMachine{
+			}.Build(),
+			expected: v2.VirtualMachine_builder{
 				Id:        "vm-minimal",
 				Namespace: "test",
 				Name:      "minimal-vm",
-			},
+			}.Build(),
 		},
 	}
 
@@ -145,40 +145,40 @@ func TestVirtualMachineScan(t *testing.T) {
 		},
 		{
 			name: "scan without component",
-			input: &storage.VirtualMachineScan{
+			input: storage.VirtualMachineScan_builder{
 				ScanTime:        protocompat.ConvertTimeToTimestampOrNil(&testScanTime),
 				OperatingSystem: testScanOS,
 				Notes: []storage.VirtualMachineScan_Note{
 					storage.VirtualMachineScan_UNSET,
 				},
 				Components: []*storage.EmbeddedVirtualMachineScanComponent{
-					{
+					storage.EmbeddedVirtualMachineScanComponent_builder{
 						Name:      testComponentName,
 						Version:   testComponentVersion,
 						RiskScore: testComponentRiskScore,
 						Vulnerabilities: []*storage.VirtualMachineVulnerability{
 							storageVirtualMachineTestVuln,
 						},
-					},
+					}.Build(),
 				},
-			},
-			expected: &v2.VirtualMachineScan{
+			}.Build(),
+			expected: v2.VirtualMachineScan_builder{
 				ScanTime:        protocompat.ConvertTimeToTimestampOrNil(&testScanTime),
 				OperatingSystem: testScanOS,
 				Notes: []v2.VirtualMachineScan_Note{
 					v2.VirtualMachineScan_UNSET,
 				},
 				Components: []*v2.ScanComponent{
-					{
+					v2.ScanComponent_builder{
 						Name:      testComponentName,
 						Version:   testComponentVersion,
 						RiskScore: testComponentRiskScore,
 						Vulns: []*v2.EmbeddedVulnerability{
 							v2VirtualMachineTestVuln,
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 	}
 

@@ -50,7 +50,7 @@ func DefaultAddToStore(ctx context.Context, store Store) ProviderOption {
 			return nil
 		}
 		if pr.storedInfo.GetLastUpdated() == nil {
-			pr.storedInfo.LastUpdated = protocompat.TimestampNow()
+			pr.storedInfo.SetLastUpdated(protocompat.TimestampNow())
 		}
 		return store.AddAuthProvider(ctx, pr.storedInfo)
 	}
@@ -62,7 +62,7 @@ func UpdateStore(ctx context.Context, store Store) ProviderOption {
 		if pr.doNotStore {
 			return nil
 		}
-		pr.storedInfo.LastUpdated = protocompat.TimestampNow()
+		pr.storedInfo.SetLastUpdated(protocompat.TimestampNow())
 		return store.UpdateAuthProvider(ctx, pr.storedInfo)
 	}
 }
@@ -81,10 +81,10 @@ func DeleteFromStore(ctx context.Context, store Store, providerID string, force 
 		}
 		// a deleted provider should no longer be accessible, but it's still cached as a token source so mark it as
 		// no longer valid
-		pr.storedInfo = &storage.AuthProvider{
-			Id:      pr.storedInfo.GetId(),
-			Enabled: false,
-		}
+		ap := &storage.AuthProvider{}
+		ap.SetId(pr.storedInfo.GetId())
+		ap.SetEnabled(false)
+		pr.storedInfo = ap
 		return nil
 	}
 }

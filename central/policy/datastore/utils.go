@@ -6,8 +6,8 @@ import (
 
 func markPoliciesAsCustom(policies ...*storage.Policy) {
 	for _, policy := range policies {
-		policy.IsDefault = false
-		policy.MitreVectorsLocked = false
-		policy.CriteriaLocked = false
+		policy.SetIsDefault(false)
+		policy.SetMitreVectorsLocked(false)
+		policy.SetCriteriaLocked(false)
 	}
 }

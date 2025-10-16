@@ -14,93 +14,93 @@ var (
 	allDeployments = []string{"dep_0", "dep_1", "dep_2", "dep_3"}
 	allImages      = []string{"image_0", "image_1", "image_2"}
 	indicators1    = []*storage.ProcessIndicator{
-		{
+		storage.ProcessIndicator_builder{
 			Id:            uuid.NewV4().String(),
 			DeploymentId:  allDeployments[0],
 			ContainerName: "container_a",
 			ImageId:       allImages[0],
-			Signal: &storage.ProcessSignal{
+			Signal: storage.ProcessSignal_builder{
 				ContainerId:  "13ea7ce738f4",
 				Pid:          15,
 				Name:         "ssh",
 				ExecFilePath: "/usr/bin/ssh",
-			},
-		},
-		{
+			}.Build(),
+		}.Build(),
+		storage.ProcessIndicator_builder{
 			Id:            uuid.NewV4().String(),
 			DeploymentId:  allDeployments[1],
 			ContainerName: "container_b",
 			ImageId:       allImages[0],
-			Signal: &storage.ProcessSignal{
+			Signal: storage.ProcessSignal_builder{
 				ContainerId:  "860a6347711e",
 				Pid:          32,
 				Name:         "sshd",
 				ExecFilePath: "/bin/sshd",
-			},
-		},
-		{
+			}.Build(),
+		}.Build(),
+		storage.ProcessIndicator_builder{
 			Id:            uuid.NewV4().String(),
 			DeploymentId:  allDeployments[2],
 			ContainerName: "container_c",
 			ImageId:       allImages[1],
-			Signal: &storage.ProcessSignal{
+			Signal: storage.ProcessSignal_builder{
 				ContainerId:  "828b7beae96b",
 				Pid:          16,
 				Name:         "ssh",
 				ExecFilePath: "/bin/bash",
-			},
-		},
-		{
+			}.Build(),
+		}.Build(),
+		storage.ProcessIndicator_builder{
 			Id:            uuid.NewV4().String(),
 			DeploymentId:  allDeployments[3],
 			ContainerName: "container_d",
 			ImageId:       allImages[1],
-			Signal: &storage.ProcessSignal{
+			Signal: storage.ProcessSignal_builder{
 				ContainerId:  "17e5fdec203e",
 				Pid:          33,
 				Name:         "sshd",
 				ExecFilePath: "/bin/zsh",
-			},
-		},
+			}.Build(),
+		}.Build(),
 	}
 
 	indicators2 = []*storage.ProcessIndicator{
-		{
+		storage.ProcessIndicator_builder{
 			Id:            uuid.NewV4().String(),
 			DeploymentId:  allDeployments[2],
 			ContainerName: "container_single",
 			ImageId:       allImages[1],
-			Signal: &storage.ProcessSignal{
+			Signal: storage.ProcessSignal_builder{
 				ContainerId:  "828b7beae69b",
 				Pid:          17,
 				Name:         "sh",
 				ExecFilePath: "/bin/sh",
-			},
-		},
-		{
+			}.Build(),
+		}.Build(),
+		storage.ProcessIndicator_builder{
 			Id:            uuid.NewV4().String(),
 			DeploymentId:  allDeployments[2],
 			ContainerName: "container_c",
 			ImageId:       allImages[1],
-			Signal: &storage.ProcessSignal{
+			Signal: storage.ProcessSignal_builder{
 				ContainerId:  "828b7beae96b",
 				Pid:          16,
 				Name:         "ssh",
 				ExecFilePath: "/bin/bash",
-			},
-		},
-		{
+			}.Build(),
+		}.Build(),
+		storage.ProcessIndicator_builder{
 			Id:            uuid.NewV4().String(),
 			DeploymentId:  allDeployments[2],
 			ContainerName: "container_c",
 			ImageId:       allImages[1],
-			Signal: &storage.ProcessSignal{
+			Signal: storage.ProcessSignal_builder{
 				ContainerId:  "828b7beae96b",
 				Pid:          33,
 				Name:         "zsh",
 				ExecFilePath: "/bin/zsh",
-			},
-		},
+			}.Build(),
+		}.Build(),
 	}
 )
 
@@ -196,15 +196,15 @@ func TestAggregator(t *testing.T) {
 	}
 
 	// Test case 7: Container removed from deployment, generate delete update.
-	newDeployment := &storage.Deployment{
+	newDeployment := storage.Deployment_builder{
 		Id: allDeployments[2],
 		Containers: []*storage.Container{
-			{
+			storage.Container_builder{
 				Name:  "container_c",
-				Image: &storage.ContainerImage{Id: allImages[1]},
-			},
+				Image: storage.ContainerImage_builder{Id: allImages[1]}.Build(),
+			}.Build(),
 		},
-	}
+	}.Build()
 	containerToRemove := "container_single"
 	aggregator.RefreshDeployment(newDeployment)
 
@@ -218,21 +218,21 @@ func TestAggregator(t *testing.T) {
 
 	// Test case 8: Indicators coming in with wrong image, no update
 	indicatorNewImage := indicators2[2].CloneVT()
-	indicatorNewImage.ImageId = allImages[0]
+	indicatorNewImage.SetImageId(allImages[0])
 	aggregator.Add([]*storage.ProcessIndicator{indicatorNewImage})
 	deployToupdates = aggregator.GetAndPrune(scannedImageFunc, existingDeployments)
 	assert.Len(t, deployToupdates, 0)
 
 	// Test case 9: Container image changed, generate update from database
-	newDeployment = &storage.Deployment{
+	newDeployment = storage.Deployment_builder{
 		Id: allDeployments[2],
 		Containers: []*storage.Container{
-			{
+			storage.Container_builder{
 				Name:  "container_c",
-				Image: &storage.ContainerImage{Id: allImages[0]},
-			},
+				Image: storage.ContainerImage_builder{Id: allImages[0]}.Build(),
+			}.Build(),
 		},
-	}
+	}.Build()
 	aggregator.RefreshDeployment(newDeployment)
 	deployToupdates = aggregator.GetAndPrune(scannedImageFunc, existingDeployments)
 	updates = deployToupdates[indicators2[0].GetDeploymentId()]

@@ -244,150 +244,143 @@ func getClusterID(name string, caches map[CacheType]map[string]string) (string, 
 
 // ToProtobuf converts the SecurityPolicy spec into policy proto
 func (p SecurityPolicySpec) ToProtobuf(caches map[CacheType]map[string]string) (*storage.Policy, error) {
-	proto := storage.Policy{
-		Name:          p.PolicyName,
-		Description:   p.Description,
-		Rationale:     p.Rationale,
-		Remediation:   p.Remediation,
-		Disabled:      p.Disabled,
-		Categories:    p.Categories,
-		PolicyVersion: policyversion.CurrentVersion().String(),
-		Source:        storage.PolicySource_DECLARATIVE,
-	}
+	proto := &storage.Policy{}
+	proto.SetName(p.PolicyName)
+	proto.SetDescription(p.Description)
+	proto.SetRationale(p.Rationale)
+	proto.SetRemediation(p.Remediation)
+	proto.SetDisabled(p.Disabled)
+	proto.SetCategories(p.Categories)
+	proto.SetPolicyVersion(policyversion.CurrentVersion().String())
+	proto.SetSource(storage.PolicySource_DECLARATIVE)
 
-	proto.Notifiers = make([]string, 0, len(p.Notifiers))
+	proto.SetNotifiers(make([]string, 0, len(p.Notifiers)))
 	for _, notifier := range p.Notifiers {
 		id, err := getNotifierID(notifier, caches)
 		if err != nil {
 			return nil, errors.New(fmt.Sprintf("Notifier '%s' does not exist", notifier))
 		}
-		proto.Notifiers = append(proto.Notifiers, id)
+		proto.SetNotifiers(append(proto.GetNotifiers(), id))
 	}
 
 	for _, ls := range p.LifecycleStages {
 		val, found := storage.LifecycleStage_value[string(ls)]
 		if found {
-			proto.LifecycleStages = append(proto.LifecycleStages, storage.LifecycleStage(val))
+			proto.SetLifecycleStages(append(proto.GetLifecycleStages(), storage.LifecycleStage(val)))
 		}
 	}
 
 	for _, exclusion := range p.Exclusions {
-		protoExclusion := storage.Exclusion{
-			Name: exclusion.Name,
-		}
+		protoExclusion := &storage.Exclusion{}
+		protoExclusion.SetName(exclusion.Name)
 
 		if exclusion.Expiration != "" {
 			protoTS, err := protocompat.ParseRFC3339NanoTimestamp(exclusion.Expiration)
 			if err != nil {
 				return nil, errors.Wrapf(err, "Error parsing timestamp '%s'", exclusion.Expiration)
 			}
-			protoExclusion.Expiration = protoTS
+			protoExclusion.SetExpiration(protoTS)
 		}
 
 		if exclusion.Deployment != (Deployment{}) {
-			protoExclusion.Deployment = &storage.Exclusion_Deployment{
-				Name: exclusion.Deployment.Name,
-			}
+			ed := &storage.Exclusion_Deployment{}
+			ed.SetName(exclusion.Deployment.Name)
+			protoExclusion.SetDeployment(ed)
 
 			scope := exclusion.Deployment.Scope
 			if scope != (Scope{}) {
-				protoExclusion.Deployment.Scope = &storage.Scope{
-					Namespace: scope.Namespace,
-				}
+				scope2 := &storage.Scope{}
+				scope2.SetNamespace(scope.Namespace)
+				protoExclusion.GetDeployment().SetScope(scope2)
 				if scope.Cluster != "" {
 					clusterID, err := getClusterID(scope.Cluster, caches)
 					if err != nil {
 						return nil, errors.New(fmt.Sprintf("Cluster '%s' does not exist", scope.Cluster))
 					}
-					protoExclusion.Deployment.Scope.Cluster = clusterID
+					protoExclusion.GetDeployment().GetScope().SetCluster(clusterID)
 				}
 			}
 
 			if scope.Label != (Label{}) {
-				protoExclusion.Deployment.Scope.Label = &storage.Scope_Label{
-					Key:   scope.Label.Key,
-					Value: scope.Label.Value,
-				}
+				sl := &storage.Scope_Label{}
+				sl.SetKey(scope.Label.Key)
+				sl.SetValue(scope.Label.Value)
+				protoExclusion.GetDeployment().GetScope().SetLabel(sl)
 			}
 
 		}
 
-		proto.Exclusions = append(proto.Exclusions, &protoExclusion)
+		proto.SetExclusions(append(proto.GetExclusions(), &protoExclusion))
 	}
 
 	for _, scope := range p.Scope {
-		protoScope := &storage.Scope{
-			Namespace: scope.Namespace,
-		}
+		protoScope := &storage.Scope{}
+		protoScope.SetNamespace(scope.Namespace)
 		if scope.Cluster != "" {
 			clusterID, err := getClusterID(scope.Cluster, caches)
 			if err != nil {
 				return nil, errors.New(fmt.Sprintf("Cluster '%s' does not exist", scope.Cluster))
 			}
-			protoScope.Cluster = clusterID
+			protoScope.SetCluster(clusterID)
 		}
 
 		if scope.Label != (Label{}) {
-			protoScope.Label = &storage.Scope_Label{
-				Key:   scope.Label.Key,
-				Value: scope.Label.Value,
-			}
+			sl := &storage.Scope_Label{}
+			sl.SetKey(scope.Label.Key)
+			sl.SetValue(scope.Label.Value)
+			protoScope.SetLabel(sl)
 		}
 
-		proto.Scope = append(proto.Scope, protoScope)
+		proto.SetScope(append(proto.GetScope(), protoScope))
 	}
 
 	val, found := storage.Severity_value[p.Severity]
 	if found {
-		proto.Severity = storage.Severity(val)
+		proto.SetSeverity(storage.Severity(val))
 	}
 
 	val, found = storage.EventSource_value[string(p.EventSource)]
 	if found {
-		proto.EventSource = storage.EventSource(val)
+		proto.SetEventSource(storage.EventSource(val))
 	}
 
 	for _, ea := range p.EnforcementActions {
 		val, found := storage.EnforcementAction_value[string(ea)]
 		if found {
-			proto.EnforcementActions = append(proto.EnforcementActions, storage.EnforcementAction(val))
+			proto.SetEnforcementActions(append(proto.GetEnforcementActions(), storage.EnforcementAction(val)))
 		}
 	}
 
 	for _, section := range p.PolicySections {
-		protoSection := &storage.PolicySection{
-			SectionName: section.SectionName,
-		}
+		protoSection := &storage.PolicySection{}
+		protoSection.SetSectionName(section.SectionName)
 
 		for _, group := range section.PolicyGroups {
-			protoGroup := &storage.PolicyGroup{
-				FieldName: group.FieldName,
-				Negate:    group.Negate,
-			}
+			protoGroup := &storage.PolicyGroup{}
+			protoGroup.SetFieldName(group.FieldName)
+			protoGroup.SetNegate(group.Negate)
 
 			val, found = storage.BooleanOperator_value[group.BooleanOperator]
 			if found {
-				protoGroup.BooleanOperator = storage.BooleanOperator(val)
+				protoGroup.SetBooleanOperator(storage.BooleanOperator(val))
 			}
 
 			for _, value := range group.Values {
-				protoValue := &storage.PolicyValue{
-					Value: value.Value,
-				}
-				protoGroup.Values = append(protoGroup.Values, protoValue)
+				protoValue := &storage.PolicyValue{}
+				protoValue.SetValue(value.Value)
+				protoGroup.SetValues(append(protoGroup.GetValues(), protoValue))
 			}
-			protoSection.PolicyGroups = append(protoSection.PolicyGroups, protoGroup)
+			protoSection.SetPolicyGroups(append(protoSection.GetPolicyGroups(), protoGroup))
 		}
-		proto.PolicySections = append(proto.PolicySections, protoSection)
+		proto.SetPolicySections(append(proto.GetPolicySections(), protoSection))
 	}
 
 	for _, mitreAttackVectors := range p.MitreAttackVectors {
-		protoMitreAttackVetor := &storage.Policy_MitreAttackVectors{
-			Tactic:     mitreAttackVectors.Tactic,
-			Techniques: mitreAttackVectors.Techniques,
-		}
+		protoMitreAttackVetor := &storage.Policy_MitreAttackVectors{}
+		protoMitreAttackVetor.SetTactic(mitreAttackVectors.Tactic)
+		protoMitreAttackVetor.SetTechniques(mitreAttackVectors.Techniques)
 
-		proto.MitreAttackVectors = append(proto.MitreAttackVectors, protoMitreAttackVetor)
+		proto.SetMitreAttackVectors(append(proto.GetMitreAttackVectors(), protoMitreAttackVetor))
 	}
 
 	return &proto, nil

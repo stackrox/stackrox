@@ -8,21 +8,21 @@ import (
 )
 
 func getProcessIndicator(name string, path string, args string, uid uint32) *storage.ProcessIndicator {
-	return &storage.ProcessIndicator{
-		Signal: &storage.ProcessSignal{
-			Name:         name,
-			ExecFilePath: path,
-			Args:         args,
-			Uid:          uid,
-		},
-	}
+	ps := &storage.ProcessSignal{}
+	ps.SetName(name)
+	ps.SetExecFilePath(path)
+	ps.SetArgs(args)
+	ps.SetUid(uid)
+	pi := &storage.ProcessIndicator{}
+	pi.SetSignal(ps)
+	return pi
 }
 
 func getAlertProcessViolation(message string, processes ...*storage.ProcessIndicator) *storage.Alert_ProcessViolation {
-	return &storage.Alert_ProcessViolation{
-		Message:   message,
-		Processes: processes,
-	}
+	ap := &storage.Alert_ProcessViolation{}
+	ap.SetMessage(message)
+	ap.SetProcesses(processes)
+	return ap
 }
 
 func TestUpdateRuntimeAlertViolationMessage(t *testing.T) {

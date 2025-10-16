@@ -72,19 +72,17 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Running:   false,
 					})
 			},
-			expectedMsg: component.NewEvent(&central.SensorEvent{
+			expectedMsg: component.NewEvent(central.SensorEvent_builder{
 				Id:     vmUID,
 				Action: central.ResourceAction_SYNC_RESOURCE,
-				Resource: &central.SensorEvent_VirtualMachine{
-					VirtualMachine: &virtualMachineV1.VirtualMachine{
-						Id:        vmUID,
-						Name:      vmName,
-						Namespace: vmNamespace,
-						ClusterId: clusterID,
-						State:     virtualMachineV1.VirtualMachine_STOPPED,
-					},
-				},
-			}),
+				VirtualMachine: virtualMachineV1.VirtualMachine_builder{
+					Id:        vmUID,
+					Name:      vmName,
+					Namespace: vmNamespace,
+					ClusterId: clusterID,
+					State:     virtualMachineV1.VirtualMachine_STOPPED,
+				}.Build(),
+			}.Build()),
 		},
 		"create event": {
 			action: central.ResourceAction_CREATE_RESOURCE,
@@ -104,19 +102,17 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Running:   false,
 					})
 			},
-			expectedMsg: component.NewEvent(&central.SensorEvent{
+			expectedMsg: component.NewEvent(central.SensorEvent_builder{
 				Id:     vmUID,
 				Action: central.ResourceAction_CREATE_RESOURCE,
-				Resource: &central.SensorEvent_VirtualMachine{
-					VirtualMachine: &virtualMachineV1.VirtualMachine{
-						Id:        vmUID,
-						Name:      vmName,
-						Namespace: vmNamespace,
-						ClusterId: clusterID,
-						State:     virtualMachineV1.VirtualMachine_STOPPED,
-					},
-				},
-			}),
+				VirtualMachine: virtualMachineV1.VirtualMachine_builder{
+					Id:        vmUID,
+					Name:      vmName,
+					Namespace: vmNamespace,
+					ClusterId: clusterID,
+					State:     virtualMachineV1.VirtualMachine_STOPPED,
+				}.Build(),
+			}.Build()),
 		},
 		"update event": {
 			action: central.ResourceAction_UPDATE_RESOURCE,
@@ -136,19 +132,17 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Running:   false,
 					})
 			},
-			expectedMsg: component.NewEvent(&central.SensorEvent{
+			expectedMsg: component.NewEvent(central.SensorEvent_builder{
 				Id:     vmUID,
 				Action: central.ResourceAction_UPDATE_RESOURCE,
-				Resource: &central.SensorEvent_VirtualMachine{
-					VirtualMachine: &virtualMachineV1.VirtualMachine{
-						Id:        vmUID,
-						Name:      vmName,
-						Namespace: vmNamespace,
-						ClusterId: clusterID,
-						State:     virtualMachineV1.VirtualMachine_STOPPED,
-					},
-				},
-			}),
+				VirtualMachine: virtualMachineV1.VirtualMachine_builder{
+					Id:        vmUID,
+					Name:      vmName,
+					Namespace: vmNamespace,
+					ClusterId: clusterID,
+					State:     virtualMachineV1.VirtualMachine_STOPPED,
+				}.Build(),
+			}.Build()),
 		},
 		"remove event": {
 			action: central.ResourceAction_REMOVE_RESOURCE,
@@ -156,19 +150,17 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 			expectFn: func() {
 				s.store.EXPECT().Remove(gomock.Eq(virtualmachine.VMID(vmUID))).Times(1)
 			},
-			expectedMsg: component.NewEvent(&central.SensorEvent{
+			expectedMsg: component.NewEvent(central.SensorEvent_builder{
 				Id:     vmUID,
 				Action: central.ResourceAction_REMOVE_RESOURCE,
-				Resource: &central.SensorEvent_VirtualMachine{
-					VirtualMachine: &virtualMachineV1.VirtualMachine{
-						Id:        vmUID,
-						Name:      vmName,
-						Namespace: vmNamespace,
-						ClusterId: clusterID,
-						State:     virtualMachineV1.VirtualMachine_STOPPED,
-					},
-				},
-			}),
+				VirtualMachine: virtualMachineV1.VirtualMachine_builder{
+					Id:        vmUID,
+					Name:      vmName,
+					Namespace: vmNamespace,
+					ClusterId: clusterID,
+					State:     virtualMachineV1.VirtualMachine_STOPPED,
+				}.Build(),
+			}.Build()),
 		},
 		"no unstructured object": {
 			action:      central.ResourceAction_REMOVE_RESOURCE,
@@ -201,21 +193,19 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						VSOCKCID:  &runningVSockCID,
 					})
 			},
-			expectedMsg: component.NewEvent(&central.SensorEvent{
+			expectedMsg: component.NewEvent(central.SensorEvent_builder{
 				Id:     vmUID,
 				Action: central.ResourceAction_CREATE_RESOURCE,
-				Resource: &central.SensorEvent_VirtualMachine{
-					VirtualMachine: &virtualMachineV1.VirtualMachine{
-						Id:          vmUID,
-						Name:        vmName,
-						Namespace:   vmNamespace,
-						ClusterId:   clusterID,
-						State:       virtualMachineV1.VirtualMachine_RUNNING,
-						VsockCid:    int32(runningVSockCID),
-						VsockCidSet: true,
-					},
-				},
-			}),
+				VirtualMachine: virtualMachineV1.VirtualMachine_builder{
+					Id:          vmUID,
+					Name:        vmName,
+					Namespace:   vmNamespace,
+					ClusterId:   clusterID,
+					State:       virtualMachineV1.VirtualMachine_RUNNING,
+					VsockCid:    int32(runningVSockCID),
+					VsockCidSet: true,
+				}.Build(),
+			}.Build()),
 		},
 		"update already running event": {
 			action: central.ResourceAction_UPDATE_RESOURCE,
@@ -236,21 +226,19 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						VSOCKCID:  &runningVSockCID,
 					})
 			},
-			expectedMsg: component.NewEvent(&central.SensorEvent{
+			expectedMsg: component.NewEvent(central.SensorEvent_builder{
 				Id:     vmUID,
 				Action: central.ResourceAction_UPDATE_RESOURCE,
-				Resource: &central.SensorEvent_VirtualMachine{
-					VirtualMachine: &virtualMachineV1.VirtualMachine{
-						Id:          vmUID,
-						Name:        vmName,
-						Namespace:   vmNamespace,
-						ClusterId:   clusterID,
-						State:       virtualMachineV1.VirtualMachine_RUNNING,
-						VsockCid:    int32(runningVSockCID),
-						VsockCidSet: true,
-					},
-				},
-			}),
+				VirtualMachine: virtualMachineV1.VirtualMachine_builder{
+					Id:          vmUID,
+					Name:        vmName,
+					Namespace:   vmNamespace,
+					ClusterId:   clusterID,
+					State:       virtualMachineV1.VirtualMachine_RUNNING,
+					VsockCid:    int32(runningVSockCID),
+					VsockCidSet: true,
+				}.Build(),
+			}.Build()),
 		},
 	}
 	for tName, tCase := range cases {

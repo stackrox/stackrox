@@ -65,11 +65,10 @@ func TestSecuredUnitsConverter(t *testing.T) {
 	assert.Equal(t, csv.Row{"", "0", "0"}, first)
 
 	now := time.Now()
-	su := &storage.SecuredUnits{
-		Timestamp:   protoconv.ConvertTimeToTimestamp(now),
-		NumNodes:    10,
-		NumCpuUnits: 20,
-	}
+	su := &storage.SecuredUnits{}
+	su.SetTimestamp(protoconv.ConvertTimeToTimestamp(now))
+	su.SetNumNodes(10)
+	su.SetNumCpuUnits(20)
 	second := converter(su)
 	assert.Equal(t, csv.Row{now.UTC().Format(time.RFC3339), "10", "20"}, second)
 	assert.Equal(t, 3, cap(second))

@@ -92,13 +92,13 @@ func (s *complianceDataStoreTestSuite) TestGetLatestRunResultsBatch() {
 	}
 	expectedReturn := map[compliance.ClusterStandardPair]types.ResultsWithStatus{
 		csPair: {
-			LastSuccessfulResults: &storage.ComplianceRunResults{
+			LastSuccessfulResults: storage.ComplianceRunResults_builder{
 				DeploymentResults: map[string]*storage.ComplianceRunResults_EntityResults{
 					"dep1": {},
 					"dep2": {},
 					"dep3": {},
 				},
-			},
+			}.Build(),
 		},
 	}
 

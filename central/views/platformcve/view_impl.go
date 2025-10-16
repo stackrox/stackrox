@@ -79,9 +79,9 @@ func (v *platformCVECoreViewImpl) GetClusterIDs(ctx context.Context, q *v1.Query
 		return nil, err
 	}
 
-	q.Selects = []*v1.QuerySelect{
+	q.SetSelects([]*v1.QuerySelect{
 		search.NewQuerySelect(search.ClusterID).Distinct().Proto(),
-	}
+	})
 
 	var results []*clusterResponse
 	results, err = pgSearch.RunSelectRequestForSchema[clusterResponse](ctx, v.db, v.schema, q)
@@ -154,7 +154,7 @@ func (v *platformCVECoreViewImpl) CVECountByFixability(ctx context.Context, q *v
 
 func withSelectQuery(q *v1.Query) *v1.Query {
 	cloned := q.CloneVT()
-	cloned.Selects = []*v1.QuerySelect{
+	cloned.SetSelects([]*v1.QuerySelect{
 		search.NewQuerySelect(search.CVE).Proto(),
 		search.NewQuerySelect(search.CVEID).Proto(),
 		search.NewQuerySelect(search.CVEType).Proto(),
@@ -167,17 +167,17 @@ func withSelectQuery(q *v1.Query) *v1.Query {
 			Filter("fixable_cluster_count",
 				search.NewQueryBuilder().AddBools(search.ClusterCVEFixable, true).ProtoQuery(),
 			).Proto(),
-	}
-	cloned.Selects = append(cloned.Selects, withCountByPlatformTypeSelectQuery(q).GetSelects()...)
-	cloned.GroupBy = &v1.QueryGroupBy{
-		Fields: []string{search.CVEID.String()},
-	}
+	})
+	cloned.SetSelects(append(cloned.GetSelects(), withCountByPlatformTypeSelectQuery(q).GetSelects()...))
+	qgb := &v1.QueryGroupBy{}
+	qgb.SetFields([]string{search.CVEID.String()})
+	cloned.SetGroupBy(qgb)
 	return cloned
 }
 
 func withCountByPlatformTypeSelectQuery(q *v1.Query) *v1.Query {
 	cloned := q.CloneVT()
-	cloned.Selects = append(cloned.Selects,
+	cloned.SetSelects(append(cloned.GetSelects(),
 		search.NewQuerySelect(search.ClusterID).
 			Distinct().
 			AggrFunc(aggregatefunc.Count).
@@ -218,13 +218,13 @@ func withCountByPlatformTypeSelectQuery(q *v1.Query) *v1.Query {
 						storage.ClusterType_OPENSHIFT4_CLUSTER.String(),
 					).ProtoQuery(),
 			).Proto(),
-	)
+	))
 	return cloned
 }
 
 func withCVECountByTypeQuery(q *v1.Query) *v1.Query {
 	cloned := q.CloneVT()
-	cloned.Selects = append(cloned.Selects,
+	cloned.SetSelects(append(cloned.GetSelects(),
 		search.NewQuerySelect(search.CVEID).
 			Distinct().
 			AggrFunc(aggregatefunc.Count).
@@ -255,13 +255,13 @@ func withCVECountByTypeQuery(q *v1.Query) *v1.Query {
 						storage.CVE_ISTIO_CVE.String(),
 					).ProtoQuery(),
 			).Proto(),
-	)
+	))
 	return cloned
 }
 
 func withCVECountByFixabilityQuery(q *v1.Query) *v1.Query {
 	cloned := q.CloneVT()
-	cloned.Selects = append(cloned.Selects,
+	cloned.SetSelects(append(cloned.GetSelects(),
 		search.NewQuerySelect(search.CVEID).
 			Distinct().
 			AggrFunc(aggregatefunc.Count).
@@ -272,6 +272,6 @@ func withCVECountByFixabilityQuery(q *v1.Query) *v1.Query {
 			Filter("fixable_cve_id_count",
 				search.NewQueryBuilder().AddBools(search.ClusterCVEFixable, true).ProtoQuery(),
 			).Proto(),
-	)
+	))
 	return cloned
 }

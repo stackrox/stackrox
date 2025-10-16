@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -139,71 +140,51 @@ var (
 
 func TestParseNetworkData(t *testing.T) {
 	expected := []*storage.NetworkEntity{
-		{
-			Info: &storage.NetworkEntityInfo{
-				Desc: &storage.NetworkEntityInfo_ExternalSource_{
-					ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-						Name: "Oracle/us-phoenix-1",
-						Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-							Cidr: "129.146.0.0/21",
-						},
-						Default: true,
-					},
-				},
-			},
-		},
-		{
-			Info: &storage.NetworkEntityInfo{
-				Desc: &storage.NetworkEntityInfo_ExternalSource_{
-					ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-						Name: "Oracle/us-phoenix-1",
-						Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-							Cidr: "129.146.8.0/22",
-						},
-						Default: true,
-					},
-				},
-			},
-		},
-		{
-			Info: &storage.NetworkEntityInfo{
-				Desc: &storage.NetworkEntityInfo_ExternalSource_{
-					ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-						Name: "Oracle/us-phoenix-1",
-						Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-							Cidr: "129.146.12.128/25",
-						},
-						Default: true,
-					},
-				},
-			},
-		},
-		{
-			Info: &storage.NetworkEntityInfo{
-				Desc: &storage.NetworkEntityInfo_ExternalSource_{
-					ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-						Name: "Oracle/sa-saopaulo-1",
-						Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-							Cidr: "129.151.32.0/21",
-						},
-						Default: true,
-					},
-				},
-			},
-		},
-		{
-			Info: &storage.NetworkEntityInfo{
-				Desc: &storage.NetworkEntityInfo_ExternalSource_{
-					ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-						Name: "Google/multi-region",
-						Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-							Cidr: "35.0.0.0/8",
-						},
-						Default: true,
-					},
-				},
-			},
-		},
+		storage.NetworkEntity_builder{
+			Info: storage.NetworkEntityInfo_builder{
+				ExternalSource: storage.NetworkEntityInfo_ExternalSource_builder{
+					Name:    "Oracle/us-phoenix-1",
+					Cidr:    proto.String("129.146.0.0/21"),
+					Default: true,
+				}.Build(),
+			}.Build(),
+		}.Build(),
+		storage.NetworkEntity_builder{
+			Info: storage.NetworkEntityInfo_builder{
+				ExternalSource: storage.NetworkEntityInfo_ExternalSource_builder{
+					Name:    "Oracle/us-phoenix-1",
+					Cidr:    proto.String("129.146.8.0/22"),
+					Default: true,
+				}.Build(),
+			}.Build(),
+		}.Build(),
+		storage.NetworkEntity_builder{
+			Info: storage.NetworkEntityInfo_builder{
+				ExternalSource: storage.NetworkEntityInfo_ExternalSource_builder{
+					Name:    "Oracle/us-phoenix-1",
+					Cidr:    proto.String("129.146.12.128/25"),
+					Default: true,
+				}.Build(),
+			}.Build(),
+		}.Build(),
+		storage.NetworkEntity_builder{
+			Info: storage.NetworkEntityInfo_builder{
+				ExternalSource: storage.NetworkEntityInfo_ExternalSource_builder{
+					Name:    "Oracle/sa-saopaulo-1",
+					Cidr:    proto.String("129.151.32.0/21"),
+					Default: true,
+				}.Build(),
+			}.Build(),
+		}.Build(),
+		storage.NetworkEntity_builder{
+			Info: storage.NetworkEntityInfo_builder{
+				ExternalSource: storage.NetworkEntityInfo_ExternalSource_builder{
+					Name:    "Google/multi-region",
+					Cidr:    proto.String("35.0.0.0/8"),
+					Default: true,
+				}.Build(),
+			}.Build(),
+		}.Build(),
 	}
 	actual, err := ParseProviderNetworkData([]byte(validData))
 	assert.NoError(t, err)
@@ -222,19 +203,15 @@ func TestParseNetworkData(t *testing.T) {
 
 func TestParseNetworkDataWithMissingFields(t *testing.T) {
 	expected := []*storage.NetworkEntity{
-		{
-			Info: &storage.NetworkEntityInfo{
-				Desc: &storage.NetworkEntityInfo_ExternalSource_{
-					ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-						Name: "Google/us-east-1",
-						Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-							Cidr: "35.0.0.0/8",
-						},
-						Default: true,
-					},
-				},
-			},
-		},
+		storage.NetworkEntity_builder{
+			Info: storage.NetworkEntityInfo_builder{
+				ExternalSource: storage.NetworkEntityInfo_ExternalSource_builder{
+					Name:    "Google/us-east-1",
+					Cidr:    proto.String("35.0.0.0/8"),
+					Default: true,
+				}.Build(),
+			}.Build(),
+		}.Build(),
 	}
 	actual, err := ParseProviderNetworkData([]byte(missingData))
 	assert.NoError(t, err)

@@ -41,7 +41,7 @@ func (p *setImpl) RemoveNotifier(notifierID string) error {
 		if outIdx >= len(notifiers) { // no change
 			continue
 		}
-		policy.Notifiers = notifiers[:outIdx]
+		policy.SetNotifiers(notifiers[:outIdx])
 
 		err := p.policyStore.UpdatePolicy(policyCtx, policy)
 		if err != nil {

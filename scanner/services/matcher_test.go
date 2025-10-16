@@ -60,10 +60,10 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 		EXPECT().
 		Initialized(gomock.Any()).
 		Return(nil)
-	res, err := srv.GetVulnerabilities(s.ctx, &v4.GetVulnerabilitiesRequest{
-		HashId:   "/v4/containerimage/sample-hash-id",
-		Contents: nil,
-	})
+	gvr := &v4.GetVulnerabilitiesRequest{}
+	gvr.SetHashId("/v4/containerimage/sample-hash-id")
+	gvr.ClearContents()
+	res, err := srv.GetVulnerabilities(s.ctx, gvr)
 	s.ErrorContains(err, "empty contents is disabled")
 	s.Nil(res)
 }
@@ -75,20 +75,19 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_not_ini
 		EXPECT().
 		Initialized(gomock.Any()).
 		Return(errors.New("not initialized"))
-	res, err := srv.GetVulnerabilities(s.ctx, &v4.GetVulnerabilitiesRequest{
-		HashId:   "/v4/containerimage/sample-hash-id",
-		Contents: nil,
-	})
+	gvr := &v4.GetVulnerabilitiesRequest{}
+	gvr.SetHashId("/v4/containerimage/sample-hash-id")
+	gvr.ClearContents()
+	res, err := srv.GetVulnerabilities(s.ctx, gvr)
 	s.ErrorContains(err, "not initialized")
 	s.Nil(res)
 }
 
 func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_contents_enabled() {
 	emptyCPE := "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"
-	emptyNormalizedVersion := v4.NormalizedVersion{
-		Kind: "",
-		V:    []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-	}
+	emptyNormalizedVersion := &v4.NormalizedVersion{}
+	emptyNormalizedVersion.SetKind("")
+	emptyNormalizedVersion.SetV([]int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
 
 	s.Run("when empty content is enable and empty contents then retrieve index report", func() {
 		ir := &claircore.IndexReport{Success: true}
@@ -109,23 +108,23 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 			Initialized(gomock.Any()).
 			Return(nil)
 		srv := NewMatcherService(s.matcherMock, s.indexerMock)
-		res, err := srv.GetVulnerabilities(s.ctx, &v4.GetVulnerabilitiesRequest{
-			HashId:   hashID,
-			Contents: nil,
-		})
+		gvr := &v4.GetVulnerabilitiesRequest{}
+		gvr.SetHashId(hashID)
+		gvr.ClearContents()
+		res, err := srv.GetVulnerabilities(s.ctx, gvr)
 		s.NoError(err)
-		protoassert.Equal(s.T(), &v4.VulnerabilityReport{
+		protoassert.Equal(s.T(), v4.VulnerabilityReport_builder{
 			HashId: hashID,
-			Contents: &v4.Contents{
+			Contents: v4.Contents_builder{
 				Packages: map[string]*v4.Package{
-					"1": {Id: "1", Name: "Foobar", Cpe: emptyCPE, NormalizedVersion: &emptyNormalizedVersion},
+					"1": v4.Package_builder{Id: "1", Name: "Foobar", Cpe: emptyCPE, NormalizedVersion: &emptyNormalizedVersion}.Build(),
 				},
 				PackagesDEPRECATED: []*v4.Package{
-					{Id: "1", Name: "Foobar", Cpe: emptyCPE, NormalizedVersion: &emptyNormalizedVersion},
+					v4.Package_builder{Id: "1", Name: "Foobar", Cpe: emptyCPE, NormalizedVersion: &emptyNormalizedVersion}.Build(),
 				},
-			},
+			}.Build(),
 			Notes: []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNKNOWN},
-		}, res)
+		}.Build(), res)
 
 	})
 
@@ -147,27 +146,27 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 			Initialized(gomock.Any()).
 			Return(nil)
 		srv := NewMatcherService(s.matcherMock, nil)
-		res, err := srv.GetVulnerabilities(s.ctx, &v4.GetVulnerabilitiesRequest{
+		res, err := srv.GetVulnerabilities(s.ctx, v4.GetVulnerabilitiesRequest_builder{
 			HashId: hashID,
-			Contents: &v4.Contents{
+			Contents: v4.Contents_builder{
 				Packages: map[string]*v4.Package{
-					"1": {Id: "1", Name: "Foobar", Cpe: emptyCPE},
+					"1": v4.Package_builder{Id: "1", Name: "Foobar", Cpe: emptyCPE}.Build(),
 				},
-			},
-		})
+			}.Build(),
+		}.Build())
 		s.NoError(err)
-		protoassert.Equal(s.T(), &v4.VulnerabilityReport{
+		protoassert.Equal(s.T(), v4.VulnerabilityReport_builder{
 			HashId: hashID,
-			Contents: &v4.Contents{
+			Contents: v4.Contents_builder{
 				Packages: map[string]*v4.Package{
-					"1": {Id: "1", Name: "Foobar", Cpe: emptyCPE, NormalizedVersion: &emptyNormalizedVersion},
+					"1": v4.Package_builder{Id: "1", Name: "Foobar", Cpe: emptyCPE, NormalizedVersion: &emptyNormalizedVersion}.Build(),
 				},
 				PackagesDEPRECATED: []*v4.Package{
-					{Id: "1", Name: "Foobar", Cpe: emptyCPE, NormalizedVersion: &emptyNormalizedVersion},
+					v4.Package_builder{Id: "1", Name: "Foobar", Cpe: emptyCPE, NormalizedVersion: &emptyNormalizedVersion}.Build(),
 				},
-			},
+			}.Build(),
 			Notes: []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNKNOWN},
-		}, res)
+		}.Build(), res)
 
 	})
 }
@@ -185,9 +184,9 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetMetadata() {
 	srv := NewMatcherService(s.matcherMock, nil)
 	res, err := srv.GetMetadata(s.ctx, protocompat.ProtoEmpty())
 	s.NoError(err)
-	protoassert.Equal(s.T(), &v4.Metadata{
-		LastVulnerabilityUpdate: protoNow,
-	}, res)
+	metadata := &v4.Metadata{}
+	metadata.SetLastVulnerabilityUpdate(protoNow)
+	protoassert.Equal(s.T(), metadata, res)
 
 }
 
@@ -249,16 +248,16 @@ func (s *matcherServiceTestSuite) Test_matcherService_notes() {
 		EXPECT().
 		GetKnownDistributions(gomock.Any()).
 		Return(dists)
-	notes := srv.notes(s.ctx, &v4.VulnerabilityReport{
-		Contents: &v4.Contents{
+	notes := srv.notes(s.ctx, v4.VulnerabilityReport_builder{
+		Contents: v4.Contents_builder{
 			Distributions: map[string]*v4.Distribution{
-				"0": {
+				"0": v4.Distribution_builder{
 					Did:       "alpine",
 					VersionId: "3.18",
-				},
+				}.Build(),
 			},
-		},
-	})
+		}.Build(),
+	}.Build())
 	s.Empty(notes)
 
 	// Unsupported OS.
@@ -266,16 +265,16 @@ func (s *matcherServiceTestSuite) Test_matcherService_notes() {
 		EXPECT().
 		GetKnownDistributions(gomock.Any()).
 		Return(dists)
-	notes = srv.notes(s.ctx, &v4.VulnerabilityReport{
-		Contents: &v4.Contents{
+	notes = srv.notes(s.ctx, v4.VulnerabilityReport_builder{
+		Contents: v4.Contents_builder{
 			Distributions: map[string]*v4.Distribution{
-				"1": {
+				"1": v4.Distribution_builder{
 					Did:       "debian",
 					VersionId: "8",
-				},
+				}.Build(),
 			},
-		},
-	})
+		}.Build(),
+	}.Build())
 	s.ElementsMatch([]v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNSUPPORTED}, notes)
 
 	// No known OSes is the same as unsupported.
@@ -283,33 +282,33 @@ func (s *matcherServiceTestSuite) Test_matcherService_notes() {
 		EXPECT().
 		GetKnownDistributions(gomock.Any()).
 		Return([]claircore.Distribution{})
-	notes = srv.notes(s.ctx, &v4.VulnerabilityReport{
-		Contents: &v4.Contents{
+	notes = srv.notes(s.ctx, v4.VulnerabilityReport_builder{
+		Contents: v4.Contents_builder{
 			Distributions: map[string]*v4.Distribution{
-				"2": {
+				"2": v4.Distribution_builder{
 					Did:       "alpine",
 					VersionId: "3.18",
-				},
+				}.Build(),
 			},
-		},
-	})
+		}.Build(),
+	}.Build())
 	s.ElementsMatch([]v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNSUPPORTED}, notes)
 
 	// Unknown OS.
-	notes = srv.notes(s.ctx, &v4.VulnerabilityReport{
-		Contents: &v4.Contents{
+	notes = srv.notes(s.ctx, v4.VulnerabilityReport_builder{
+		Contents: v4.Contents_builder{
 			Distributions: map[string]*v4.Distribution{
-				"2": {
+				"2": v4.Distribution_builder{
 					Did:       "alpine",
 					VersionId: "3.18",
-				},
-				"3": {
+				}.Build(),
+				"3": v4.Distribution_builder{
 					Did:       "alpine",
 					VersionId: "3.19",
-				},
+				}.Build(),
 			},
-		},
-	})
+		}.Build(),
+	}.Build())
 	s.ElementsMatch([]v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNKNOWN}, notes)
 }
 
@@ -328,28 +327,28 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetSBOM() {
 
 	s.Run("error on no name", func() {
 		srv := NewMatcherService(nil, nil)
-		_, err := srv.GetSBOM(s.ctx, &v4.GetSBOMRequest{
-			Id: "id",
-		})
+		gsbomr := &v4.GetSBOMRequest{}
+		gsbomr.SetId("id")
+		_, err := srv.GetSBOM(s.ctx, gsbomr)
 		s.ErrorContains(err, "name is required")
 	})
 
 	s.Run("error on no uri", func() {
 		srv := NewMatcherService(nil, nil)
-		_, err := srv.GetSBOM(s.ctx, &v4.GetSBOMRequest{
-			Id:   "id",
-			Name: "name",
-		})
+		gsbomr := &v4.GetSBOMRequest{}
+		gsbomr.SetId("id")
+		gsbomr.SetName("name")
+		_, err := srv.GetSBOM(s.ctx, gsbomr)
 		s.ErrorContains(err, "uri is required")
 	})
 
 	s.Run("error on empty contents", func() {
 		srv := NewMatcherService(nil, nil)
-		_, err := srv.GetSBOM(s.ctx, &v4.GetSBOMRequest{
-			Id:   "id",
-			Name: "name",
-			Uri:  "uri",
-		})
+		gsbomr := &v4.GetSBOMRequest{}
+		gsbomr.SetId("id")
+		gsbomr.SetName("name")
+		gsbomr.SetUri("uri")
+		_, err := srv.GetSBOM(s.ctx, gsbomr)
 		s.ErrorContains(err, "contents are required")
 
 	})
@@ -357,12 +356,12 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetSBOM() {
 	s.Run("error when sbom generation fails", func() {
 		s.matcherMock.EXPECT().GetSBOM(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("broken"))
 		srv := NewMatcherService(s.matcherMock, nil)
-		_, err := srv.GetSBOM(s.ctx, &v4.GetSBOMRequest{
-			Id:       "id",
-			Name:     "name",
-			Uri:      "uri",
-			Contents: &v4.Contents{},
-		})
+		gsbomr := &v4.GetSBOMRequest{}
+		gsbomr.SetId("id")
+		gsbomr.SetName("name")
+		gsbomr.SetUri("uri")
+		gsbomr.SetContents(&v4.Contents{})
+		_, err := srv.GetSBOM(s.ctx, gsbomr)
 		s.ErrorContains(err, "broken")
 	})
 
@@ -370,12 +369,12 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetSBOM() {
 		fakeSbomB := []byte("fake sbom")
 		s.matcherMock.EXPECT().GetSBOM(gomock.Any(), gomock.Any(), gomock.Any()).Return(fakeSbomB, nil)
 		srv := NewMatcherService(s.matcherMock, nil)
-		res, err := srv.GetSBOM(s.ctx, &v4.GetSBOMRequest{
-			Id:       "id",
-			Name:     "name",
-			Uri:      "uri",
-			Contents: &v4.Contents{},
-		})
+		gsbomr := &v4.GetSBOMRequest{}
+		gsbomr.SetId("id")
+		gsbomr.SetName("name")
+		gsbomr.SetUri("uri")
+		gsbomr.SetContents(&v4.Contents{})
+		res, err := srv.GetSBOM(s.ctx, gsbomr)
 		s.Require().NoError(err)
 		s.Equal(res.GetSbom(), fakeSbomB)
 	})

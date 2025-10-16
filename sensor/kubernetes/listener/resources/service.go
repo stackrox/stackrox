@@ -44,8 +44,8 @@ func getPortMatchFunc(port intstr.IntOrString) func(servicePort *v1.ServicePort)
 
 func exposureInfoFromPort(template *storage.PortConfig_ExposureInfo, port v1.ServicePort) *storage.PortConfig_ExposureInfo {
 	out := template.CloneVT()
-	out.ServicePort = port.Port
-	out.NodePort = port.NodePort
+	out.SetServicePort(port.Port)
+	out.SetNodePort(port.NodePort)
 	return out
 }
 
@@ -54,23 +54,22 @@ func (s *serviceWithRoutes) exposure() map[service.PortRef][]*storage.PortConfig
 		return nil
 	}
 
-	exposureTemplate := &storage.PortConfig_ExposureInfo{
-		Level:            storage.PortConfig_INTERNAL,
-		ServiceId:        string(s.UID),
-		ServiceName:      s.Name,
-		ServiceClusterIp: s.Spec.ClusterIP,
-	}
+	exposureTemplate := &storage.PortConfig_ExposureInfo{}
+	exposureTemplate.SetLevel(storage.PortConfig_INTERNAL)
+	exposureTemplate.SetServiceId(string(s.UID))
+	exposureTemplate.SetServiceName(s.Name)
+	exposureTemplate.SetServiceClusterIp(s.Spec.ClusterIP)
 
 	if s.Spec.Type == v1.ServiceTypeNodePort {
-		exposureTemplate.Level = storage.PortConfig_NODE
+		exposureTemplate.SetLevel(storage.PortConfig_NODE)
 	} else if s.Spec.Type == v1.ServiceTypeLoadBalancer {
-		exposureTemplate.Level = storage.PortConfig_EXTERNAL
+		exposureTemplate.SetLevel(storage.PortConfig_EXTERNAL)
 		for _, lbIngress := range s.Status.LoadBalancer.Ingress {
 			if lbIngress.IP != "" {
-				exposureTemplate.ExternalIps = append(exposureTemplate.ExternalIps, lbIngress.IP)
+				exposureTemplate.SetExternalIps(append(exposureTemplate.GetExternalIps(), lbIngress.IP))
 			}
 			if lbIngress.Hostname != "" {
-				exposureTemplate.ExternalHostnames = append(exposureTemplate.ExternalHostnames, lbIngress.Hostname)
+				exposureTemplate.SetExternalHostnames(append(exposureTemplate.GetExternalHostnames(), lbIngress.Hostname))
 			}
 		}
 	}
@@ -83,15 +82,14 @@ func (s *serviceWithRoutes) exposure() map[service.PortRef][]*storage.PortConfig
 	}
 
 	for _, route := range s.routes {
-		routeExposureTemplate := &storage.PortConfig_ExposureInfo{
-			Level:            storage.PortConfig_ROUTE,
-			ServiceId:        string(s.UID),
-			ServiceName:      s.Name,
-			ServiceClusterIp: s.Spec.ClusterIP,
-		}
+		routeExposureTemplate := &storage.PortConfig_ExposureInfo{}
+		routeExposureTemplate.SetLevel(storage.PortConfig_ROUTE)
+		routeExposureTemplate.SetServiceId(string(s.UID))
+		routeExposureTemplate.SetServiceName(s.Name)
+		routeExposureTemplate.SetServiceClusterIp(s.Spec.ClusterIP)
 		for _, ingress := range route.Status.Ingress {
 			if ingress.Host != "" {
-				routeExposureTemplate.ExternalHostnames = append(routeExposureTemplate.ExternalHostnames, ingress.Host)
+				routeExposureTemplate.SetExternalHostnames(append(routeExposureTemplate.GetExternalHostnames(), ingress.Host))
 			}
 		}
 		// if route.Spec.Port is specified, then the route targets one specific port on the service.

@@ -213,9 +213,8 @@ func readFromConn(conn net.Conn, maxSize int, timeout time.Duration) ([]byte, er
 func sendReportToSensor(ctx context.Context, report *v1.IndexReport, sensorClient sensor.VirtualMachineIndexReportServiceClient) error {
 	log.Infof("Sending index report to sensor (vsockCID: %s)", report.GetVsockCid())
 
-	req := &sensor.UpsertVirtualMachineIndexReportRequest{
-		IndexReport: report,
-	}
+	req := &sensor.UpsertVirtualMachineIndexReportRequest{}
+	req.SetIndexReport(report)
 
 	// Considering a timeout of 5 seconds and 10 tries with exponential backoff, the maximum time spent in this function
 	// is around 1 min 40 s. Given that each virtual machine sends an index report every 4 hours, these retries seem

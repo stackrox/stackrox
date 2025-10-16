@@ -104,12 +104,12 @@ func UpdateSecuredClusterIdentity(ctx context.Context, clusterID string, metrics
 	props["Compliance Operator Version"] = metrics.GetComplianceOperatorVersion()
 
 	if pmd := cluster.GetStatus().GetProviderMetadata(); pmd.GetProvider() != nil {
-		switch pmd.GetProvider().(type) {
-		case *storage.ProviderMetadata_Aws:
+		switch pmd.WhichProvider() {
+		case storage.ProviderMetadata_Aws_case:
 			props["Provider"] = "AWS"
-		case *storage.ProviderMetadata_Azure:
+		case storage.ProviderMetadata_Azure_case:
 			props["Provider"] = "Azure"
-		case *storage.ProviderMetadata_Google:
+		case storage.ProviderMetadata_Google_case:
 			props["Provider"] = "Google"
 		default:
 			props["Provider"] = "Unknown"

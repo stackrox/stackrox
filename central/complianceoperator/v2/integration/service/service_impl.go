@@ -99,16 +99,16 @@ func (s *serviceImpl) ListComplianceIntegrations(ctx context.Context, req *v2.Ra
 	// Enrich cluster status with sensor connection status.
 	for _, apiIntegration := range apiIntegrations {
 		if errFetchStatus != nil {
-			apiIntegration.StatusErrors = append(apiIntegration.StatusErrors, fmt.Sprintf(fmtGetClusterErr, apiIntegration.GetClusterName()))
+			apiIntegration.SetStatusErrors(append(apiIntegration.GetStatusErrors(), fmt.Sprintf(fmtGetClusterErr, apiIntegration.GetClusterName())))
 			continue
 		}
 		clusterSensorStatus, found := clusterSensorStatuses[apiIntegration.GetClusterId()]
 		if !found {
-			apiIntegration.StatusErrors = append(apiIntegration.StatusErrors, fmt.Sprintf(fmtGetClusterNotFound, apiIntegration.GetClusterName()))
+			apiIntegration.SetStatusErrors(append(apiIntegration.GetStatusErrors(), fmt.Sprintf(fmtGetClusterNotFound, apiIntegration.GetClusterName())))
 			continue
 		}
 		if clusterSensorStatus != storage.ClusterHealthStatus_HEALTHY {
-			apiIntegration.StatusErrors = append(apiIntegration.StatusErrors, fmt.Sprintf(fmtGetClusterUnhealthy, apiIntegration.GetClusterName()))
+			apiIntegration.SetStatusErrors(append(apiIntegration.GetStatusErrors(), fmt.Sprintf(fmtGetClusterUnhealthy, apiIntegration.GetClusterName())))
 		}
 	}
 
@@ -117,5 +117,8 @@ func (s *serviceImpl) ListComplianceIntegrations(ctx context.Context, req *v2.Ra
 		return nil, errors.Wrap(err, "unable to determine number of compliance operator integrations")
 	}
 
-	return &v2.ListComplianceIntegrationsResponse{Integrations: apiIntegrations, TotalCount: int32(integrationCount)}, nil
+	lcir := &v2.ListComplianceIntegrationsResponse{}
+	lcir.SetIntegrations(apiIntegrations)
+	lcir.SetTotalCount(int32(integrationCount))
+	return lcir, nil
 }

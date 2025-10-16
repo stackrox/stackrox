@@ -133,11 +133,11 @@ func (s *ServiceAccountResolverTestSuite) TestGetSaNamespace() {
 	s.secretsDataStore.EXPECT().Count(gomock.Any(), gomock.Any()).Return(0, nil).AnyTimes()
 	// saNamesapce -> namespace resolver -> CountMatchingNetworkPolicies. Yikes
 	s.netPolDataStore.EXPECT().CountMatchingNetworkPolicies(gomock.Any(), gomock.Any(), gomock.Any()).Return(0, nil).AnyTimes()
-	s.namespaceDataStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).AnyTimes().Return([]*storage.NamespaceMetadata{{
-		Id:        "namespace-id",
-		Name:      "Fake NS",
-		ClusterId: sa.GetClusterId(),
-	}}, nil)
+	nm := &storage.NamespaceMetadata{}
+	nm.SetId("namespace-id")
+	nm.SetName("Fake NS")
+	nm.SetClusterId(sa.GetClusterId())
+	s.namespaceDataStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).AnyTimes().Return([]*storage.NamespaceMetadata{nm}, nil)
 
 	query := `
 		query serviceAccounts($query: String, $pagination: Pagination) {
@@ -198,11 +198,11 @@ func (s *ServiceAccountResolverTestSuite) getMockContext(extraPerms ...permissio
 }
 
 func getServiceAcct(name, clusterName, namespace string) *storage.ServiceAccount {
-	return &storage.ServiceAccount{
-		Id:          uuid.NewV4().String(),
-		Name:        name,
-		Namespace:   namespace,
-		ClusterName: clusterName,
-		ClusterId:   uuid.NewV4().String(),
-	}
+	sa := &storage.ServiceAccount{}
+	sa.SetId(uuid.NewV4().String())
+	sa.SetName(name)
+	sa.SetNamespace(namespace)
+	sa.SetClusterName(clusterName)
+	sa.SetClusterId(uuid.NewV4().String())
+	return sa
 }

@@ -108,7 +108,8 @@ func TestNoErrorOnUnknownAttribute(t *testing.T) {
 }
 
 func TestProtoToJSONOptCompact(t *testing.T) {
-	testResource := &v1.ResourceByID{Id: "test"}
+	testResource := &v1.ResourceByID{}
+	testResource.SetId("test")
 
 	strRes, err := ProtoToJSON(testResource)
 	assert.NoError(t, err)

@@ -62,7 +62,9 @@ func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap
 	}
 	store := storeMap.Get((*central.SensorEvent_Namespace)(nil))
 	return reconciliation.Perform(store, search.ResultsToIDSet(results), "namespaces", func(id string) error {
-		return s.runRemovePipeline(ctx, central.ResourceAction_REMOVE_RESOURCE, &storage.NamespaceMetadata{Id: id})
+		nm := &storage.NamespaceMetadata{}
+		nm.SetId(id)
+		return s.runRemovePipeline(ctx, central.ResourceAction_REMOVE_RESOURCE, nm)
 	})
 }
 
@@ -76,7 +78,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	event := msg.GetEvent()
 	namespace := event.GetNamespace()
-	namespace.ClusterId = clusterID
+	namespace.SetClusterId(clusterID)
 
 	// ROX-22002: Remove invalid null characters in annotations
 	stringutils.SanitizeMapValues(namespace.GetAnnotations())
@@ -132,7 +134,7 @@ func (s *pipelineImpl) validateInput(np *storage.NamespaceMetadata) error {
 }
 
 func (s *pipelineImpl) enrichCluster(ctx context.Context, ns *storage.NamespaceMetadata) error {
-	ns.ClusterName = ""
+	ns.SetClusterName("")
 
 	clusterName, clusterExists, err := s.clusters.GetClusterName(ctx, ns.GetClusterId())
 	switch {
@@ -141,7 +143,7 @@ func (s *pipelineImpl) enrichCluster(ctx context.Context, ns *storage.NamespaceM
 	case !clusterExists:
 		log.Warnf("Couldn't find cluster '%s'", ns.GetClusterId())
 	default:
-		ns.ClusterName = clusterName
+		ns.SetClusterName(clusterName)
 	}
 	return nil
 }

@@ -66,11 +66,10 @@ func upsertPolicyCategoryEdge(db *gorm.DB, ctx context.Context, edge *storage.Po
 func add_policy_category_edge(db *gorm.DB, policyID string, categories []string) error {
 	ctx := sac.WithAllAccess(context.Background())
 	for _, categoryID := range categories {
-		edge := &storage.PolicyCategoryEdge{
-			Id:         uuid.NewV4().String(),
-			PolicyId:   policyID,
-			CategoryId: categoryID,
-		}
+		edge := &storage.PolicyCategoryEdge{}
+		edge.SetId(uuid.NewV4().String())
+		edge.SetPolicyId(policyID)
+		edge.SetCategoryId(categoryID)
 		err := upsertPolicyCategoryEdge(db, ctx, edge)
 		if err != nil {
 			return err

@@ -145,10 +145,11 @@ func (c *certIssuerImpl) issueCertificates(namespace string, clusterID string) (
 		return nil, certIssueError
 	}
 
-	certsSet := storage.TypedServiceCertificateSet{
-		CaPem:        caPem,
-		ServiceCerts: serviceCerts,
+	certsSet := &storage.TypedServiceCertificateSet{}
+	if caPem != nil {
+		certsSet.SetCaPem(caPem)
 	}
+	certsSet.SetServiceCerts(serviceCerts)
 
 	// Populate CA bundle for rotation-capable Sensors
 	if c.sensorSupportsCARotation {
@@ -156,7 +157,11 @@ func (c *certIssuerImpl) issueCertificates(namespace string, clusterID string) (
 		if err != nil {
 			log.Warnf("Failed to build CA bundle for rotation-capable Sensor (certificates will still be issued): %v", err)
 		} else {
-			certsSet.CaBundlePem = caBundlePem
+			if caBundlePem != nil {
+				certsSet.SetCaBundlePem(caBundlePem)
+			} else {
+				certsSet.ClearCaBundlePem()
+			}
 			log.Debug("Populated CA bundle for rotation-capable Sensor")
 		}
 	}
@@ -170,13 +175,16 @@ func (c *certIssuerImpl) certificateFor(serviceType storage.ServiceType, namespa
 		return nil, nil, errors.Wrapf(err, "generating certificate for service %s", serviceType)
 	}
 	caPem = certificates[mtls.CACertFileName]
-	cert = &storage.TypedServiceCertificate{
-		ServiceType: serviceType,
-		Cert: &storage.ServiceCertificate{
-			CertPem: certificates[mtls.ServiceCertFileName],
-			KeyPem:  certificates[mtls.ServiceKeyFileName],
-		},
+	sc := &storage.ServiceCertificate{}
+	if x := certificates[mtls.ServiceCertFileName]; x != nil {
+		sc.SetCertPem(x)
 	}
+	if x := certificates[mtls.ServiceKeyFileName]; x != nil {
+		sc.SetKeyPem(x)
+	}
+	cert = &storage.TypedServiceCertificate{}
+	cert.SetServiceType(serviceType)
+	cert.SetCert(sc)
 	return caPem, cert, err
 }
 

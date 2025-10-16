@@ -84,11 +84,10 @@ func getACRConfig(integration *storage.ImageIntegration) (*storage.AzureConfig, 
 		if dockerCfg == nil {
 			return nil, errors.New("azure container registry or docker configuration required")
 		}
-		acrCfg = &storage.AzureConfig{
-			Endpoint: dockerCfg.GetEndpoint(),
-			Username: dockerCfg.GetUsername(),
-			Password: dockerCfg.GetPassword(),
-		}
+		acrCfg = &storage.AzureConfig{}
+		acrCfg.SetEndpoint(dockerCfg.GetEndpoint())
+		acrCfg.SetUsername(dockerCfg.GetUsername())
+		acrCfg.SetPassword(dockerCfg.GetPassword())
 	}
 	if err := validate(acrCfg); err != nil {
 		return nil, err

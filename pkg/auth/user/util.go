@@ -20,10 +20,9 @@ func ConvertAttributes(attrMap map[string][]string) []*v1.UserAttribute {
 
 	result := make([]*v1.UserAttribute, 0, len(attrMap))
 	for k, vs := range attrMap {
-		attr := &v1.UserAttribute{
-			Key:    k,
-			Values: vs,
-		}
+		attr := &v1.UserAttribute{}
+		attr.SetKey(k)
+		attr.SetValues(vs)
 		result = append(result, attr)
 	}
 	sort.Slice(result, func(i, j int) bool {

@@ -49,7 +49,8 @@ func (s *notifierSetTestSuite) TestHasFunctions() {
 	s.False(s.ns.HasEnabledAuditNotifiers())
 
 	// Only an alert notifier.
-	notifier1 := &storage.Notifier{Id: "n1"}
+	notifier1 := &storage.Notifier{}
+	notifier1.SetId("n1")
 	s.mockAlertN.EXPECT().ProtoNotifier().Return(notifier1)
 
 	s.ns.UpsertNotifier(context.Background(), s.mockAlertN)
@@ -58,7 +59,8 @@ func (s *notifierSetTestSuite) TestHasFunctions() {
 	s.False(s.ns.HasEnabledAuditNotifiers())
 
 	// An alet and an enabled audit notifier.
-	notifier2 := &storage.Notifier{Id: "n2"}
+	notifier2 := &storage.Notifier{}
+	notifier2.SetId("n2")
 	s.mockAuditN.EXPECT().ProtoNotifier().Return(notifier2)
 	s.mockAuditN.EXPECT().AuditLoggingEnabled().Return(true)
 
@@ -72,11 +74,14 @@ func (s *notifierSetTestSuite) TestCoorelatedPoliciesAndNotifiers() {
 	ctx := context.Background()
 
 	// Add all of our notifiers.
-	notifier1 := &storage.Notifier{Id: "n1"}
+	notifier1 := &storage.Notifier{}
+	notifier1.SetId("n1")
 	s.mockAlertN.EXPECT().ProtoNotifier().Return(notifier1)
-	notifier2 := &storage.Notifier{Id: "n2"}
+	notifier2 := &storage.Notifier{}
+	notifier2.SetId("n2")
 	s.mockResolvableAlertN.EXPECT().ProtoNotifier().Return(notifier2)
-	notifier3 := &storage.Notifier{Id: "n3"}
+	notifier3 := &storage.Notifier{}
+	notifier3.SetId("n3")
 	s.mockAuditN.EXPECT().ProtoNotifier().Return(notifier3)
 
 	s.ns.UpsertNotifier(ctx, s.mockAlertN)

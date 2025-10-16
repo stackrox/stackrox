@@ -32,6 +32,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -88,19 +89,18 @@ func (s *ReportServiceTestSuite) TestCreateReportConfiguration() {
 	allAccessContext := sac.WithAllAccess(context.Background())
 	s.scheduler.EXPECT().UpsertReportSchedule(gomock.Any()).Return(nil).AnyTimes()
 
-	creator := &storage.SlimUser{
-		Id:   "uid",
-		Name: "name",
-	}
+	creator := &storage.SlimUser{}
+	creator.SetId("uid")
+	creator.SetName("name")
 
-	accessScope := &storage.SimpleAccessScope{
-		Rules: &storage.SimpleAccessScope_Rules{
+	accessScope := storage.SimpleAccessScope_builder{
+		Rules: storage.SimpleAccessScope_Rules_builder{
 			IncludedClusters: []string{"cluster-1"},
 			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
-				{ClusterName: "cluster-2", NamespaceName: "namespace-2"},
+				storage.SimpleAccessScope_Rules_Namespace_builder{ClusterName: "cluster-2", NamespaceName: "namespace-2"}.Build(),
 			},
-		},
-	}
+		}.Build(),
+	}.Build()
 	for _, tc := range s.upsertReportConfigTestCases(false) {
 		s.T().Run(tc.desc, func(t *testing.T) {
 			requestConfig := tc.setMocksAndGenReportConfig()
@@ -117,8 +117,8 @@ func (s *ReportServiceTestSuite) TestCreateReportConfiguration() {
 				mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).Times(1)
 
 				protoReportConfig := tc.reportConfigGen()
-				protoReportConfig.Creator = creator
-				protoReportConfig.GetVulnReportFilters().AccessScopeRules = []*storage.SimpleAccessScope_Rules{accessScope.GetRules()}
+				protoReportConfig.SetCreator(creator)
+				protoReportConfig.GetVulnReportFilters().SetAccessScopeRules([]*storage.SimpleAccessScope_Rules{accessScope.GetRules()})
 				s.reportConfigDataStore.EXPECT().AddReportConfiguration(ctx, protoReportConfig).Return(protoReportConfig.GetId(), nil).Times(1)
 				s.reportConfigDataStore.EXPECT().GetReportConfiguration(ctx, protoReportConfig.GetId()).Return(protoReportConfig, true, nil).Times(1)
 			}
@@ -140,22 +140,19 @@ func (s *ReportServiceTestSuite) TestCreateReportConfiguration() {
 
 func (s *ReportServiceTestSuite) TestUpdateReportConfigurationError() {
 
-	requester := &storage.SlimUser{
-		Id:   "uid",
-		Name: "name",
-	}
+	requester := &storage.SlimUser{}
+	requester.SetId("uid")
+	requester.SetName("name")
 
-	status := &storage.ReportStatus{
-		RunState: storage.ReportStatus_WAITING,
-	}
+	status := &storage.ReportStatus{}
+	status.SetRunState(storage.ReportStatus_WAITING)
 
-	reportSnapshots := []*storage.ReportSnapshot{{
-		ReportId:     "test_report",
-		Name:         "test_report",
-		ReportStatus: status,
-		Requester:    requester,
-	},
-	}
+	rs := &storage.ReportSnapshot{}
+	rs.SetReportId("test_report")
+	rs.SetName("test_report")
+	rs.SetReportStatus(status)
+	rs.SetRequester(requester)
+	reportSnapshots := []*storage.ReportSnapshot{rs}
 	user := reportSnapshots[0].GetRequester()
 	userContext := s.getContextForUser(user)
 
@@ -164,29 +161,25 @@ func (s *ReportServiceTestSuite) TestUpdateReportConfigurationError() {
 		Return(protoReportConfig, true, nil).Times(1)
 	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).Return(reportSnapshots, nil).Times(1)
 	s.collectionDataStore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
-	requestConfig := &apiV2.ReportConfiguration{
+	requestConfig := apiV2.ReportConfiguration_builder{
 		Id:   "test_rep",
 		Name: "test_rep",
-		ResourceScope: &apiV2.ResourceScope{
-			ScopeReference: &apiV2.ResourceScope_CollectionScope{
-				CollectionScope: &apiV2.CollectionReference{
-					CollectionId:   "collection-test",
-					CollectionName: "collection-test",
-				},
+		ResourceScope: apiV2.ResourceScope_builder{
+			CollectionScope: apiV2.CollectionReference_builder{
+				CollectionId:   "collection-test",
+				CollectionName: "collection-test",
+			}.Build(),
+		}.Build(),
+		VulnReportFilters: apiV2.VulnerabilityReportFilters_builder{
+			Fixability: apiV2.VulnerabilityReportFilters_FIXABLE,
+			Severities: []apiV2.VulnerabilityReportFilters_VulnerabilitySeverity{apiV2.VulnerabilityReportFilters_CRITICAL_VULNERABILITY_SEVERITY},
+			ImageTypes: []apiV2.VulnerabilityReportFilters_ImageType{
+				apiV2.VulnerabilityReportFilters_DEPLOYED,
+				apiV2.VulnerabilityReportFilters_WATCHED,
 			},
-		},
-		Filter: &apiV2.ReportConfiguration_VulnReportFilters{
-			VulnReportFilters: &apiV2.VulnerabilityReportFilters{
-				Fixability: apiV2.VulnerabilityReportFilters_FIXABLE,
-				Severities: []apiV2.VulnerabilityReportFilters_VulnerabilitySeverity{apiV2.VulnerabilityReportFilters_CRITICAL_VULNERABILITY_SEVERITY},
-				ImageTypes: []apiV2.VulnerabilityReportFilters_ImageType{
-					apiV2.VulnerabilityReportFilters_DEPLOYED,
-					apiV2.VulnerabilityReportFilters_WATCHED,
-				},
-				CvesSince: &apiV2.VulnerabilityReportFilters_SinceLastSentScheduledReport{SinceLastSentScheduledReport: true},
-			},
-		},
-	}
+			SinceLastSentScheduledReport: proto.Bool(true),
+		}.Build(),
+	}.Build()
 	_, err := s.service.UpdateReportConfiguration(userContext, requestConfig)
 	s.Error(err)
 
@@ -195,27 +188,26 @@ func (s *ReportServiceTestSuite) TestUpdateReportConfigurationError() {
 func (s *ReportServiceTestSuite) TestUpdateReportConfiguration() {
 	s.scheduler.EXPECT().UpsertReportSchedule(gomock.Any()).Return(nil).AnyTimes()
 
-	creator := &storage.SlimUser{
-		Id:   "uid",
-		Name: "name",
-	}
+	creator := &storage.SlimUser{}
+	creator.SetId("uid")
+	creator.SetName("name")
 	userContext := s.getContextForUser(creator)
 
 	accessScopeRules := []*storage.SimpleAccessScope_Rules{
-		{
+		storage.SimpleAccessScope_Rules_builder{
 			IncludedClusters: []string{"cluster-1"},
 			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
-				{ClusterName: "cluster-2", NamespaceName: "namespace-2"},
+				storage.SimpleAccessScope_Rules_Namespace_builder{ClusterName: "cluster-2", NamespaceName: "namespace-2"}.Build(),
 			},
-		},
+		}.Build(),
 	}
 	for _, tc := range s.upsertReportConfigTestCases(true) {
 		s.T().Run(tc.desc, func(t *testing.T) {
 			requestConfig := tc.setMocksAndGenReportConfig()
 			if !tc.isValidationError {
 				protoReportConfig := tc.reportConfigGen()
-				protoReportConfig.Creator = creator
-				protoReportConfig.GetVulnReportFilters().AccessScopeRules = accessScopeRules
+				protoReportConfig.SetCreator(creator)
+				protoReportConfig.GetVulnReportFilters().SetAccessScopeRules(accessScopeRules)
 				s.reportConfigDataStore.EXPECT().GetReportConfiguration(userContext, protoReportConfig.GetId()).
 					Return(protoReportConfig, true, nil).Times(1)
 				s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(userContext, gomock.Any()).Return([]*storage.ReportSnapshot{}, nil).Times(1)
@@ -241,37 +233,37 @@ func (s *ReportServiceTestSuite) TestListReportConfigurations() {
 	}{
 		{
 			desc:  "Empty query",
-			query: &apiV2.RawQuery{Query: ""},
+			query: apiV2.RawQuery_builder{Query: ""}.Build(),
 			expectedQ: func() *v1.Query {
 				query := search.ConjunctionQuery(
 					search.EmptyQuery(),
 					withoutV1ConfigsQuery)
-				query.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
+				query.SetPagination(v1.QueryPagination_builder{Limit: maxPaginationLimit}.Build())
 				return query
 			}(),
 		},
 		{
 			desc:  "Query with search field",
-			query: &apiV2.RawQuery{Query: "Report Name:name"},
+			query: apiV2.RawQuery_builder{Query: "Report Name:name"}.Build(),
 			expectedQ: func() *v1.Query {
 				query := search.ConjunctionQuery(
 					search.NewQueryBuilder().AddStrings(search.ReportName, "name").ProtoQuery(),
 					withoutV1ConfigsQuery)
-				query.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
+				query.SetPagination(v1.QueryPagination_builder{Limit: maxPaginationLimit}.Build())
 				return query
 			}(),
 		},
 		{
 			desc: "Query with custom pagination",
-			query: &apiV2.RawQuery{
+			query: apiV2.RawQuery_builder{
 				Query:      "",
-				Pagination: &apiV2.Pagination{Limit: 25},
-			},
+				Pagination: apiV2.Pagination_builder{Limit: 25}.Build(),
+			}.Build(),
 			expectedQ: func() *v1.Query {
 				query := search.ConjunctionQuery(
 					search.EmptyQuery(),
 					withoutV1ConfigsQuery)
-				query.Pagination = &v1.QueryPagination{Limit: 25}
+				query.SetPagination(v1.QueryPagination_builder{Limit: 25}.Build())
 				return query
 			}(),
 		},
@@ -279,9 +271,8 @@ func (s *ReportServiceTestSuite) TestListReportConfigurations() {
 
 	for _, tc := range testCases {
 		s.T().Run(tc.desc, func(t *testing.T) {
-			expectedResp := &apiV2.ListReportConfigurationsResponse{
-				ReportConfigs: []*apiV2.ReportConfiguration{fixtures.GetValidV2ReportConfigWithMultipleNotifiers()},
-			}
+			expectedResp := &apiV2.ListReportConfigurationsResponse{}
+			expectedResp.SetReportConfigs([]*apiV2.ReportConfiguration{fixtures.GetValidV2ReportConfigWithMultipleNotifiers()})
 
 			s.reportConfigDataStore.EXPECT().GetReportConfigurations(allAccessContext, tc.expectedQ).
 				Return([]*storage.ReportConfiguration{fixtures.GetValidReportConfigWithMultipleNotifiersV2()}, nil).Times(1)
@@ -343,7 +334,9 @@ func (s *ReportServiceTestSuite) TestGetReportConfigurationByID() {
 				}
 			}
 
-			config, err := s.service.GetReportConfiguration(allAccessContext, &apiV2.ResourceByID{Id: tc.id})
+			rbid := &apiV2.ResourceByID{}
+			rbid.SetId(tc.id)
+			config, err := s.service.GetReportConfiguration(allAccessContext, rbid)
 			if tc.isValidationError || tc.isDataNotFoundError {
 				s.Error(err)
 			} else {
@@ -356,6 +349,10 @@ func (s *ReportServiceTestSuite) TestGetReportConfigurationByID() {
 
 func (s *ReportServiceTestSuite) TestCountReportConfigurations() {
 	allAccessContext := sac.WithAllAccess(context.Background())
+	rawQuery := &apiV2.RawQuery{}
+	rawQuery.SetQuery("")
+	rawQuery2 := &apiV2.RawQuery{}
+	rawQuery2.SetQuery("Report Name:name")
 	testCases := []struct {
 		desc      string
 		query     *apiV2.RawQuery
@@ -363,14 +360,14 @@ func (s *ReportServiceTestSuite) TestCountReportConfigurations() {
 	}{
 		{
 			desc:  "Empty query",
-			query: &apiV2.RawQuery{Query: ""},
+			query: rawQuery,
 			expectedQ: search.ConjunctionQuery(
 				search.NewQueryBuilder().ProtoQuery(),
 				withoutV1ConfigsQuery),
 		},
 		{
 			desc:  "Query with search field",
-			query: &apiV2.RawQuery{Query: "Report Name:name"},
+			query: rawQuery2,
 			expectedQ: search.ConjunctionQuery(
 				search.NewQueryBuilder().AddStrings(search.ReportName, "name").ProtoQuery(),
 				withoutV1ConfigsQuery),
@@ -413,7 +410,9 @@ func (s *ReportServiceTestSuite) TestDeleteReportConfiguration() {
 			s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).Return([]*storage.ReportSnapshot{}, nil).Times(1)
 			s.reportConfigDataStore.EXPECT().RemoveReportConfiguration(allAccessContext, tc.id).Return(nil).Times(1)
 		}
-		_, err := s.service.DeleteReportConfiguration(allAccessContext, &apiV2.ResourceByID{Id: tc.id})
+		rbid := &apiV2.ResourceByID{}
+		rbid.SetId(tc.id)
+		_, err := s.service.DeleteReportConfiguration(allAccessContext, rbid)
 		if tc.isError {
 			s.Error(err)
 		} else {
@@ -445,16 +444,16 @@ func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []up
 			desc: "Valid report config without notifiers",
 			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.Notifiers = nil
-				ret.Schedule = nil
+				ret.SetNotifiers(nil)
+				ret.ClearSchedule()
 
 				s.mockCollectionStoreCalls(ret, true, false, isUpdate)
 				return ret
 			},
 			reportConfigGen: func() *storage.ReportConfiguration {
 				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
-				ret.Notifiers = nil
-				ret.Schedule = nil
+				ret.SetNotifiers(nil)
+				ret.ClearSchedule()
 				return ret
 			},
 			isValidationError: false,
@@ -463,14 +462,12 @@ func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []up
 			desc: "Report config with invalid schedule : invalid day of week",
 			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.Schedule = &apiV2.ReportSchedule{
+				ret.SetSchedule(apiV2.ReportSchedule_builder{
 					IntervalType: apiV2.ReportSchedule_WEEKLY,
-					Interval: &apiV2.ReportSchedule_DaysOfWeek_{
-						DaysOfWeek: &apiV2.ReportSchedule_DaysOfWeek{
-							Days: []int32{8},
-						},
-					},
-				}
+					DaysOfWeek: apiV2.ReportSchedule_DaysOfWeek_builder{
+						Days: []int32{8},
+					}.Build(),
+				}.Build())
 				return ret
 			},
 			isValidationError: true,
@@ -479,14 +476,12 @@ func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []up
 			desc: "Report config with invalid schedule : missing days of week",
 			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.Schedule = &apiV2.ReportSchedule{
+				ret.SetSchedule(apiV2.ReportSchedule_builder{
 					IntervalType: apiV2.ReportSchedule_WEEKLY,
-					Interval: &apiV2.ReportSchedule_DaysOfWeek_{
-						DaysOfWeek: &apiV2.ReportSchedule_DaysOfWeek{
-							Days: []int32{},
-						},
-					},
-				}
+					DaysOfWeek: apiV2.ReportSchedule_DaysOfWeek_builder{
+						Days: []int32{},
+					}.Build(),
+				}.Build())
 				return ret
 			},
 			isValidationError: true,
@@ -495,14 +490,12 @@ func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []up
 			desc: "Report config with invalid schedule : invalid day of month",
 			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.Schedule = &apiV2.ReportSchedule{
+				ret.SetSchedule(apiV2.ReportSchedule_builder{
 					IntervalType: apiV2.ReportSchedule_MONTHLY,
-					Interval: &apiV2.ReportSchedule_DaysOfMonth_{
-						DaysOfMonth: &apiV2.ReportSchedule_DaysOfMonth{
-							Days: []int32{30},
-						},
-					},
-				}
+					DaysOfMonth: apiV2.ReportSchedule_DaysOfMonth_builder{
+						Days: []int32{30},
+					}.Build(),
+				}.Build())
 				return ret
 			},
 			isValidationError: true,
@@ -511,14 +504,12 @@ func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []up
 			desc: "Report config with invalid schedule : missing days of month",
 			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.Schedule = &apiV2.ReportSchedule{
+				ret.SetSchedule(apiV2.ReportSchedule_builder{
 					IntervalType: apiV2.ReportSchedule_MONTHLY,
-					Interval: &apiV2.ReportSchedule_DaysOfMonth_{
-						DaysOfMonth: &apiV2.ReportSchedule_DaysOfMonth{
-							Days: nil,
-						},
-					},
-				}
+					DaysOfMonth: apiV2.ReportSchedule_DaysOfMonth_builder{
+						Days: nil,
+					}.Build(),
+				}.Build())
 				return ret
 			},
 			isValidationError: true,
@@ -527,7 +518,7 @@ func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []up
 			desc: "Report config with invalid notifier : missing email config",
 			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.Notifiers[1].NotifierConfig.(*apiV2.NotifierConfiguration_EmailConfig).EmailConfig = nil
+				ret.GetNotifiers()[1].NotifierConfig.(*apiV2.NotifierConfiguration_EmailConfig).EmailConfig = nil
 				s.mockNotifierStoreCalls(ret.GetNotifiers()[0], true, true, isUpdate)
 				return ret
 			},
@@ -537,7 +528,7 @@ func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []up
 			desc: "Report config with invalid notifier : empty notifierID in email config",
 			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.Notifiers[1].NotifierConfig.(*apiV2.NotifierConfiguration_EmailConfig).EmailConfig.NotifierId = ""
+				ret.GetNotifiers()[1].NotifierConfig.(*apiV2.NotifierConfiguration_EmailConfig).EmailConfig.SetNotifierId("")
 				s.mockNotifierStoreCalls(ret.GetNotifiers()[0], true, true, isUpdate)
 				return ret
 			},
@@ -547,7 +538,7 @@ func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []up
 			desc: "Report config with invalid notifier : empty mailing list in email config",
 			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.Notifiers[1].NotifierConfig.(*apiV2.NotifierConfiguration_EmailConfig).EmailConfig.MailingLists = nil
+				ret.GetNotifiers()[1].NotifierConfig.(*apiV2.NotifierConfiguration_EmailConfig).EmailConfig.SetMailingLists(nil)
 				s.mockNotifierStoreCalls(ret.GetNotifiers()[0], true, true, isUpdate)
 				return ret
 			},
@@ -557,7 +548,7 @@ func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []up
 			desc: "Report config with invalid notifier: Custom email subject too long",
 			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.Notifiers[0].GetEmailConfig().CustomSubject = strings.Repeat("a", env.ReportCustomEmailSubjectMaxLen.IntegerSetting()+1)
+				ret.GetNotifiers()[0].GetEmailConfig().SetCustomSubject(strings.Repeat("a", env.ReportCustomEmailSubjectMaxLen.IntegerSetting()+1))
 				return ret
 			},
 			isValidationError: true,
@@ -566,7 +557,7 @@ func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []up
 			desc: "Report config with invalid notifier: Custom email body too long",
 			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.Notifiers[0].GetEmailConfig().CustomBody = strings.Repeat("a", env.ReportCustomEmailBodyMaxLen.IntegerSetting()+1)
+				ret.GetNotifiers()[0].GetEmailConfig().SetCustomBody(strings.Repeat("a", env.ReportCustomEmailBodyMaxLen.IntegerSetting()+1))
 				return ret
 			},
 			isValidationError: true,
@@ -575,7 +566,7 @@ func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []up
 			desc: "Report config with invalid notifier : invalid email in email config",
 			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.Notifiers[1].NotifierConfig.(*apiV2.NotifierConfiguration_EmailConfig).EmailConfig.MailingLists = []string{"sdfdksfjk"}
+				ret.GetNotifiers()[1].NotifierConfig.(*apiV2.NotifierConfiguration_EmailConfig).EmailConfig.SetMailingLists([]string{"sdfdksfjk"})
 				s.mockNotifierStoreCalls(ret.GetNotifiers()[0], true, true, isUpdate)
 				return ret
 			},
@@ -595,7 +586,7 @@ func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []up
 			desc: "Report config with missing resource scope",
 			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.ResourceScope = nil
+				ret.ClearResourceScope()
 				s.mockNotifierStoreCalls(ret.GetNotifiers()[0], true, true, isUpdate)
 				s.mockNotifierStoreCalls(ret.GetNotifiers()[1], true, true, isUpdate)
 				return ret
@@ -606,7 +597,7 @@ func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []up
 			desc: "Report config with invalid resource scope : empty collectionID",
 			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.ResourceScope.ScopeReference.(*apiV2.ResourceScope_CollectionScope).CollectionScope.CollectionId = ""
+				ret.GetResourceScope().ScopeReference.(*apiV2.ResourceScope_CollectionScope).CollectionScope.SetCollectionId("")
 				s.mockNotifierStoreCalls(ret.GetNotifiers()[0], true, true, isUpdate)
 				s.mockNotifierStoreCalls(ret.GetNotifiers()[1], true, true, isUpdate)
 				return ret
@@ -642,7 +633,7 @@ func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []up
 			desc: "Report config with invalid vuln report filters : cvesSince unset",
 			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.Filter.(*apiV2.ReportConfiguration_VulnReportFilters).VulnReportFilters.CvesSince = nil
+				ret.Filter.(*apiV2.ReportConfiguration_VulnReportFilters).VulnReportFilters.ClearCvesSince()
 				s.mockNotifierStoreCalls(ret.GetNotifiers()[0], true, true, isUpdate)
 				s.mockNotifierStoreCalls(ret.GetNotifiers()[1], true, true, isUpdate)
 
@@ -655,7 +646,7 @@ func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []up
 			desc: "Report config with invalid vuln report filters : image types not set",
 			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.Filter.(*apiV2.ReportConfiguration_VulnReportFilters).VulnReportFilters.ImageTypes = nil
+				ret.Filter.(*apiV2.ReportConfiguration_VulnReportFilters).VulnReportFilters.SetImageTypes(nil)
 				s.mockNotifierStoreCalls(ret.GetNotifiers()[0], true, true, isUpdate)
 				s.mockNotifierStoreCalls(ret.GetNotifiers()[1], true, true, isUpdate)
 
@@ -671,7 +662,7 @@ func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []up
 			desc: "Report config with empty id",
 			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.Id = ""
+				ret.SetId("")
 				return ret
 			},
 			isValidationError: true,
@@ -697,11 +688,11 @@ func (s *ReportServiceTestSuite) mockNotifierStoreCalls(reqNotifier *apiV2.Notif
 }
 
 func (s *ReportServiceTestSuite) mockGetNotifierCall(reqNotifier *apiV2.NotifierConfiguration) {
+	notifier := &storage.Notifier{}
+	notifier.SetId(reqNotifier.GetEmailConfig().GetNotifierId())
+	notifier.SetName(reqNotifier.GetNotifierName())
 	s.notifierDataStore.EXPECT().GetNotifier(gomock.Any(), reqNotifier.GetEmailConfig().GetNotifierId()).
-		Return(&storage.Notifier{
-			Id:   reqNotifier.GetEmailConfig().GetNotifierId(),
-			Name: reqNotifier.GetNotifierName(),
-		}, true, nil).Times(1)
+		Return(notifier, true, nil).Times(1)
 }
 
 func (s *ReportServiceTestSuite) mockCollectionStoreCalls(reqConfig *apiV2.ReportConfiguration,
@@ -720,69 +711,64 @@ func (s *ReportServiceTestSuite) mockCollectionStoreCalls(reqConfig *apiV2.Repor
 }
 
 func (s *ReportServiceTestSuite) mockGetCollectionCall(reqConfig *apiV2.ReportConfiguration) {
+	rc := &storage.ResourceCollection{}
+	rc.SetId(reqConfig.GetResourceScope().GetCollectionScope().GetCollectionId())
+	rc.SetName(reqConfig.GetResourceScope().GetCollectionScope().GetCollectionName())
 	s.collectionDataStore.EXPECT().Get(gomock.Any(), reqConfig.GetResourceScope().GetCollectionScope().GetCollectionId()).
-		Return(&storage.ResourceCollection{
-			Id:   reqConfig.GetResourceScope().GetCollectionScope().GetCollectionId(),
-			Name: reqConfig.GetResourceScope().GetCollectionScope().GetCollectionName(),
-		}, true, nil).Times(1)
+		Return(rc, true, nil).Times(1)
 }
 
 func (s *ReportServiceTestSuite) TestGetReportStatus() {
-	status := &storage.ReportStatus{
-		ErrorMsg: "Error msg",
-	}
+	status := &storage.ReportStatus{}
+	status.SetErrorMsg("Error msg")
 
-	snapshot := &storage.ReportSnapshot{
-		ReportId:     "test_report",
-		ReportStatus: status,
-	}
+	snapshot := &storage.ReportSnapshot{}
+	snapshot.SetReportId("test_report")
+	snapshot.SetReportStatus(status)
 
 	s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), gomock.Any()).Return(snapshot, true, nil)
-	id := apiV2.ResourceByID{
-		Id: "test_report",
-	}
+	id := &apiV2.ResourceByID{}
+	id.SetId("test_report")
 	repStatusResponse, err := s.service.GetReportStatus(s.ctx, &id)
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), repStatusResponse.GetStatus().GetErrorMsg(), status.GetErrorMsg())
 }
 
 func (s *ReportServiceTestSuite) TestGetReportHistory() {
-	reportSnapshot := &storage.ReportSnapshot{
-		ReportId:              "test_report",
-		ReportConfigurationId: "test_report_config",
-		Name:                  "Report",
-		ReportStatus: &storage.ReportStatus{
-			ErrorMsg:                 "Error msg",
-			ReportNotificationMethod: 1,
-		},
-	}
+	rs := &storage.ReportStatus{}
+	rs.SetErrorMsg("Error msg")
+	rs.SetReportNotificationMethod(1)
+	reportSnapshot := &storage.ReportSnapshot{}
+	reportSnapshot.SetReportId("test_report")
+	reportSnapshot.SetReportConfigurationId("test_report_config")
+	reportSnapshot.SetName("Report")
+	reportSnapshot.SetReportStatus(rs)
 
 	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).Return([]*storage.ReportSnapshot{reportSnapshot}, nil).AnyTimes()
 	s.blobStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{}, nil).AnyTimes()
-	emptyQuery := &apiV2.RawQuery{Query: ""}
-	req := &apiV2.GetReportHistoryRequest{
-		Id:               "test_report_config",
-		ReportParamQuery: emptyQuery,
-	}
+	emptyQuery := &apiV2.RawQuery{}
+	emptyQuery.SetQuery("")
+	req := &apiV2.GetReportHistoryRequest{}
+	req.SetId("test_report_config")
+	req.SetReportParamQuery(emptyQuery)
 
 	res, err := s.service.GetReportHistory(s.ctx, req)
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), res.GetReportSnapshots()[0].GetReportJobId(), "test_report")
 	assert.Equal(s.T(), res.GetReportSnapshots()[0].GetReportStatus().GetErrorMsg(), "Error msg")
 
-	req = &apiV2.GetReportHistoryRequest{
-		Id:               "",
-		ReportParamQuery: emptyQuery,
-	}
+	req = &apiV2.GetReportHistoryRequest{}
+	req.SetId("")
+	req.SetReportParamQuery(emptyQuery)
 
 	_, err = s.service.GetReportHistory(s.ctx, req)
 	assert.Error(s.T(), err)
 
-	query := &apiV2.RawQuery{Query: "Report Name:test_report"}
-	req = &apiV2.GetReportHistoryRequest{
-		Id:               "test_report_config",
-		ReportParamQuery: query,
-	}
+	query := &apiV2.RawQuery{}
+	query.SetQuery("Report Name:test_report")
+	req = &apiV2.GetReportHistoryRequest{}
+	req.SetId("test_report_config")
+	req.SetReportParamQuery(query)
 
 	res, err = s.service.GetReportHistory(s.ctx, req)
 	assert.NoError(s.T(), err)
@@ -791,66 +777,61 @@ func (s *ReportServiceTestSuite) TestGetReportHistory() {
 }
 
 func (s *ReportServiceTestSuite) TestGetMyReportHistory() {
-	userA := &storage.SlimUser{
-		Id:   "user-a",
-		Name: "user-a",
-	}
+	userA := &storage.SlimUser{}
+	userA.SetId("user-a")
+	userA.SetName("user-a")
 
-	reportSnapshot := &storage.ReportSnapshot{
-		ReportId:              "test_report",
-		ReportConfigurationId: "test_report_config",
-		Name:                  "Report",
-		ReportStatus: &storage.ReportStatus{
-			ErrorMsg:                 "Error msg",
-			ReportNotificationMethod: 1,
-		},
-		Requester: &storage.SlimUser{
-			Id: "user-a",
-		},
-	}
+	rs := &storage.ReportStatus{}
+	rs.SetErrorMsg("Error msg")
+	rs.SetReportNotificationMethod(1)
+	slimUser := &storage.SlimUser{}
+	slimUser.SetId("user-a")
+	reportSnapshot := &storage.ReportSnapshot{}
+	reportSnapshot.SetReportId("test_report")
+	reportSnapshot.SetReportConfigurationId("test_report_config")
+	reportSnapshot.SetName("Report")
+	reportSnapshot.SetReportStatus(rs)
+	reportSnapshot.SetRequester(slimUser)
 
 	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
 		Return([]*storage.ReportSnapshot{reportSnapshot}, nil).AnyTimes()
 	s.blobStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{}, nil).AnyTimes()
-	emptyQuery := &apiV2.RawQuery{Query: ""}
-	req := &apiV2.GetReportHistoryRequest{
-		Id:               "test_report_config",
-		ReportParamQuery: emptyQuery,
-	}
+	emptyQuery := &apiV2.RawQuery{}
+	emptyQuery.SetQuery("")
+	req := &apiV2.GetReportHistoryRequest{}
+	req.SetId("test_report_config")
+	req.SetReportParamQuery(emptyQuery)
 
 	res, err := s.service.GetMyReportHistory(s.getContextForUser(userA), req)
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), res.GetReportSnapshots()[0].GetReportJobId(), "test_report")
 	assert.Equal(s.T(), res.GetReportSnapshots()[0].GetReportStatus().GetErrorMsg(), "Error msg")
 
-	req = &apiV2.GetReportHistoryRequest{
-		Id:               "",
-		ReportParamQuery: emptyQuery,
-	}
+	req = &apiV2.GetReportHistoryRequest{}
+	req.SetId("")
+	req.SetReportParamQuery(emptyQuery)
 	_, err = s.service.GetMyReportHistory(s.getContextForUser(userA), req)
 	assert.Error(s.T(), err)
 
 	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
 		Return(nil, nil).AnyTimes()
-	emptyQuery = &apiV2.RawQuery{Query: ""}
-	req = &apiV2.GetReportHistoryRequest{
-		Id:               "test_report_config",
-		ReportParamQuery: emptyQuery,
-	}
+	emptyQuery = &apiV2.RawQuery{}
+	emptyQuery.SetQuery("")
+	req = &apiV2.GetReportHistoryRequest{}
+	req.SetId("test_report_config")
+	req.SetReportParamQuery(emptyQuery)
 
 	_, err = s.service.GetMyReportHistory(s.ctx, req)
 	assert.Error(s.T(), err)
 }
 
 func (s *ReportServiceTestSuite) TestAuthz() {
-	status := &storage.ReportStatus{
-		ErrorMsg: "Error msg",
-	}
+	status := &storage.ReportStatus{}
+	status.SetErrorMsg("Error msg")
 
-	snapshot := &storage.ReportSnapshot{
-		ReportId:     "test_report",
-		ReportStatus: status,
-	}
+	snapshot := &storage.ReportSnapshot{}
+	snapshot.SetReportId("test_report")
+	snapshot.SetReportStatus(status)
 	snapshotDS := reportSnapshotDSMocks.NewMockDataStore(s.mockCtrl)
 	snapshotDS.EXPECT().Get(gomock.Any(), gomock.Any()).Return(snapshot, true, nil).AnyTimes()
 	metadataSlice := []*storage.ReportSnapshot{snapshot}
@@ -865,27 +846,25 @@ func (s *ReportServiceTestSuite) TestRunReport() {
 	notifiers := make([]*storage.Notifier, 0, len(reportConfig.GetNotifiers()))
 	for _, nc := range reportConfig.GetNotifiers() {
 		notifierIDs = append(notifierIDs, nc.GetId())
-		notifiers = append(notifiers, &storage.Notifier{
-			Id:   nc.GetEmailConfig().GetNotifierId(),
-			Name: nc.GetEmailConfig().GetNotifierId(),
-		})
+		notifier := &storage.Notifier{}
+		notifier.SetId(nc.GetEmailConfig().GetNotifierId())
+		notifier.SetName(nc.GetEmailConfig().GetNotifierId())
+		notifiers = append(notifiers, notifier)
 	}
-	collection := &storage.ResourceCollection{
-		Id: reportConfig.GetResourceScope().GetCollectionId(),
-	}
+	collection := &storage.ResourceCollection{}
+	collection.SetId(reportConfig.GetResourceScope().GetCollectionId())
 
-	user := &storage.SlimUser{
-		Id:   "uid",
-		Name: "name",
-	}
-	accessScope := &storage.SimpleAccessScope{
-		Rules: &storage.SimpleAccessScope_Rules{
+	user := &storage.SlimUser{}
+	user.SetId("uid")
+	user.SetName("name")
+	accessScope := storage.SimpleAccessScope_builder{
+		Rules: storage.SimpleAccessScope_Rules_builder{
 			IncludedClusters: []string{"cluster-1"},
 			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
-				{ClusterName: "cluster-2", NamespaceName: "namespace-2"},
+				storage.SimpleAccessScope_Rules_Namespace_builder{ClusterName: "cluster-2", NamespaceName: "namespace-2"}.Build(),
 			},
-		},
-	}
+		}.Build(),
+	}.Build()
 
 	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
 	mockID.EXPECT().UID().Return(user.GetId()).AnyTimes()
@@ -907,30 +886,30 @@ func (s *ReportServiceTestSuite) TestRunReport() {
 	}{
 		{
 			desc: "Report config ID empty",
-			req: &apiV2.RunReportRequest{
+			req: apiV2.RunReportRequest_builder{
 				ReportConfigId:           "",
 				ReportNotificationMethod: apiV2.NotificationMethod_EMAIL,
-			},
+			}.Build(),
 			ctx:     userContext,
 			mockGen: func() {},
 			isError: true,
 		},
 		{
 			desc: "User info not present in context",
-			req: &apiV2.RunReportRequest{
+			req: apiV2.RunReportRequest_builder{
 				ReportConfigId:           reportConfig.GetId(),
 				ReportNotificationMethod: apiV2.NotificationMethod_EMAIL,
-			},
+			}.Build(),
 			ctx:     s.ctx,
 			mockGen: func() {},
 			isError: true,
 		},
 		{
 			desc: "Report config not found",
-			req: &apiV2.RunReportRequest{
+			req: apiV2.RunReportRequest_builder{
 				ReportConfigId:           reportConfig.GetId(),
 				ReportNotificationMethod: apiV2.NotificationMethod_EMAIL,
-			},
+			}.Build(),
 			ctx: userContext,
 			mockGen: func() {
 				s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), reportConfig.GetId()).
@@ -940,10 +919,10 @@ func (s *ReportServiceTestSuite) TestRunReport() {
 		},
 		{
 			desc: "Collection not found",
-			req: &apiV2.RunReportRequest{
+			req: apiV2.RunReportRequest_builder{
 				ReportConfigId:           reportConfig.GetId(),
 				ReportNotificationMethod: apiV2.NotificationMethod_EMAIL,
-			},
+			}.Build(),
 			ctx: userContext,
 			mockGen: func() {
 				s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), reportConfig.GetId()).
@@ -955,10 +934,10 @@ func (s *ReportServiceTestSuite) TestRunReport() {
 		},
 		{
 			desc: "One of the notifiers not found",
-			req: &apiV2.RunReportRequest{
+			req: apiV2.RunReportRequest_builder{
 				ReportConfigId:           reportConfig.GetId(),
 				ReportNotificationMethod: apiV2.NotificationMethod_EMAIL,
-			},
+			}.Build(),
 			ctx: userContext,
 			mockGen: func() {
 				s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), reportConfig.GetId()).
@@ -972,10 +951,10 @@ func (s *ReportServiceTestSuite) TestRunReport() {
 		},
 		{
 			desc: "Successful submission; Notification method email",
-			req: &apiV2.RunReportRequest{
+			req: apiV2.RunReportRequest_builder{
 				ReportConfigId:           reportConfig.GetId(),
 				ReportNotificationMethod: apiV2.NotificationMethod_EMAIL,
-			},
+			}.Build(),
 			ctx: userContext,
 			mockGen: func() {
 				s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), reportConfig.GetId()).
@@ -988,17 +967,17 @@ func (s *ReportServiceTestSuite) TestRunReport() {
 					Return("reportID", nil).Times(1)
 			},
 			isError: false,
-			resp: &apiV2.RunReportResponse{
+			resp: apiV2.RunReportResponse_builder{
 				ReportConfigId: reportConfig.GetId(),
 				ReportId:       "reportID",
-			},
+			}.Build(),
 		},
 		{
 			desc: "Successful submission; Notification method download",
-			req: &apiV2.RunReportRequest{
+			req: apiV2.RunReportRequest_builder{
 				ReportConfigId:           reportConfig.GetId(),
 				ReportNotificationMethod: apiV2.NotificationMethod_DOWNLOAD,
-			},
+			}.Build(),
 			ctx: userContext,
 			mockGen: func() {
 				s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), reportConfig.GetId()).
@@ -1011,10 +990,10 @@ func (s *ReportServiceTestSuite) TestRunReport() {
 					Return("reportID", nil).Times(1)
 			},
 			isError: false,
-			resp: &apiV2.RunReportResponse{
+			resp: apiV2.RunReportResponse_builder{
 				ReportConfigId: reportConfig.GetId(),
 				ReportId:       "reportID",
-			},
+			}.Build(),
 		},
 	}
 
@@ -1034,8 +1013,8 @@ func (s *ReportServiceTestSuite) TestRunReport() {
 
 func (s *ReportServiceTestSuite) TestCancelReport() {
 	reportSnapshot := fixtures.GetReportSnapshot()
-	reportSnapshot.ReportId = uuid.NewV4().String()
-	reportSnapshot.ReportStatus.RunState = storage.ReportStatus_WAITING
+	reportSnapshot.SetReportId(uuid.NewV4().String())
+	reportSnapshot.GetReportStatus().SetRunState(storage.ReportStatus_WAITING)
 	user := reportSnapshot.GetRequester()
 	userContext := s.getContextForUser(user)
 
@@ -1048,27 +1027,27 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 	}{
 		{
 			desc: "Empty Report ID",
-			req: &apiV2.ResourceByID{
+			req: apiV2.ResourceByID_builder{
 				Id: "",
-			},
+			}.Build(),
 			ctx:     userContext,
 			mockGen: func() {},
 			isError: true,
 		},
 		{
 			desc: "User info not present in context",
-			req: &apiV2.ResourceByID{
+			req: apiV2.ResourceByID_builder{
 				Id: reportSnapshot.GetReportId(),
-			},
+			}.Build(),
 			ctx:     s.ctx,
 			mockGen: func() {},
 			isError: true,
 		},
 		{
 			desc: "Report ID not found",
-			req: &apiV2.ResourceByID{
+			req: apiV2.ResourceByID_builder{
 				Id: reportSnapshot.GetReportId(),
-			},
+			}.Build(),
 			ctx: userContext,
 			mockGen: func() {
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
@@ -1078,16 +1057,16 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 		},
 		{
 			desc: "Report requester id and cancelling user id mismatch",
-			req: &apiV2.ResourceByID{
+			req: apiV2.ResourceByID_builder{
 				Id: reportSnapshot.GetReportId(),
-			},
+			}.Build(),
 			ctx: userContext,
 			mockGen: func() {
 				snap := reportSnapshot.CloneVT()
-				snap.Requester = &storage.SlimUser{
+				snap.SetRequester(storage.SlimUser_builder{
 					Id:   reportSnapshot.GetRequester().GetId() + "-1",
 					Name: reportSnapshot.GetRequester().GetName() + "-1",
-				}
+				}.Build())
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(snap, true, nil).Times(1)
 			},
@@ -1095,13 +1074,13 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 		},
 		{
 			desc: "Report is already delivered",
-			req: &apiV2.ResourceByID{
+			req: apiV2.ResourceByID_builder{
 				Id: reportSnapshot.GetReportId(),
-			},
+			}.Build(),
 			ctx: userContext,
 			mockGen: func() {
 				snap := reportSnapshot.CloneVT()
-				snap.ReportStatus.RunState = storage.ReportStatus_DELIVERED
+				snap.GetReportStatus().SetRunState(storage.ReportStatus_DELIVERED)
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(snap, true, nil).Times(1)
 			},
@@ -1109,13 +1088,13 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 		},
 		{
 			desc: "Report is already generated",
-			req: &apiV2.ResourceByID{
+			req: apiV2.ResourceByID_builder{
 				Id: reportSnapshot.GetReportId(),
-			},
+			}.Build(),
 			ctx: userContext,
 			mockGen: func() {
 				snap := reportSnapshot.CloneVT()
-				snap.ReportStatus.RunState = storage.ReportStatus_GENERATED
+				snap.GetReportStatus().SetRunState(storage.ReportStatus_GENERATED)
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(snap, true, nil).Times(1)
 			},
@@ -1123,13 +1102,13 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 		},
 		{
 			desc: "Report already in PREPARING state",
-			req: &apiV2.ResourceByID{
+			req: apiV2.ResourceByID_builder{
 				Id: reportSnapshot.GetReportId(),
-			},
+			}.Build(),
 			ctx: userContext,
 			mockGen: func() {
 				snap := reportSnapshot.CloneVT()
-				snap.ReportStatus.RunState = storage.ReportStatus_PREPARING
+				snap.GetReportStatus().SetRunState(storage.ReportStatus_PREPARING)
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(snap, true, nil).Times(1)
 			},
@@ -1137,9 +1116,9 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 		},
 		{
 			desc: "Scheduler error while cancelling request",
-			req: &apiV2.ResourceByID{
+			req: apiV2.ResourceByID_builder{
 				Id: reportSnapshot.GetReportId(),
-			},
+			}.Build(),
 			ctx: userContext,
 			mockGen: func() {
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
@@ -1151,9 +1130,9 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 		},
 		{
 			desc: "Scheduler couldn't find report ID in queue",
-			req: &apiV2.ResourceByID{
+			req: apiV2.ResourceByID_builder{
 				Id: reportSnapshot.GetReportId(),
-			},
+			}.Build(),
 			ctx: userContext,
 			mockGen: func() {
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
@@ -1165,9 +1144,9 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 		},
 		{
 			desc: "Request cancelled",
-			req: &apiV2.ResourceByID{
+			req: apiV2.ResourceByID_builder{
 				Id: reportSnapshot.GetReportId(),
-			},
+			}.Build(),
 			ctx: userContext,
 			mockGen: func() {
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
@@ -1195,10 +1174,10 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 
 func (s *ReportServiceTestSuite) TestDeleteReport() {
 	reportSnapshot := fixtures.GetReportSnapshot()
-	reportSnapshot.ReportId = uuid.NewV4().String()
-	reportSnapshot.ReportConfigurationId = uuid.NewV4().String()
-	reportSnapshot.ReportStatus.RunState = storage.ReportStatus_DELIVERED
-	reportSnapshot.ReportStatus.ReportNotificationMethod = storage.ReportStatus_DOWNLOAD
+	reportSnapshot.SetReportId(uuid.NewV4().String())
+	reportSnapshot.SetReportConfigurationId(uuid.NewV4().String())
+	reportSnapshot.GetReportStatus().SetRunState(storage.ReportStatus_DELIVERED)
+	reportSnapshot.GetReportStatus().SetReportNotificationMethod(storage.ReportStatus_DOWNLOAD)
 	user := reportSnapshot.GetRequester()
 	userContext := s.getContextForUser(user)
 	blobName := common.GetReportBlobPath(reportSnapshot.GetReportConfigurationId(), reportSnapshot.GetReportId())
@@ -1212,26 +1191,26 @@ func (s *ReportServiceTestSuite) TestDeleteReport() {
 	}{
 		{
 			desc: "Empty Report ID",
-			req: &apiV2.DeleteReportRequest{
+			req: apiV2.DeleteReportRequest_builder{
 				Id: "",
-			},
+			}.Build(),
 			ctx:     userContext,
 			isError: true,
 		},
 		{
 			desc: "User info not present in context",
-			req: &apiV2.DeleteReportRequest{
+			req: apiV2.DeleteReportRequest_builder{
 				Id: reportSnapshot.GetReportId(),
-			},
+			}.Build(),
 			ctx:     s.ctx,
 			mockGen: func() {},
 			isError: true,
 		},
 		{
 			desc: "Report ID not found",
-			req: &apiV2.DeleteReportRequest{
+			req: apiV2.DeleteReportRequest_builder{
 				Id: reportSnapshot.GetReportId(),
-			},
+			}.Build(),
 			ctx: userContext,
 			mockGen: func() {
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
@@ -1241,16 +1220,16 @@ func (s *ReportServiceTestSuite) TestDeleteReport() {
 		},
 		{
 			desc: "Delete requester user id and report requester user id mismatch",
-			req: &apiV2.DeleteReportRequest{
+			req: apiV2.DeleteReportRequest_builder{
 				Id: reportSnapshot.GetReportId(),
-			},
+			}.Build(),
 			ctx: userContext,
 			mockGen: func() {
 				snap := reportSnapshot.CloneVT()
-				snap.Requester = &storage.SlimUser{
+				snap.SetRequester(storage.SlimUser_builder{
 					Id:   reportSnapshot.GetRequester().GetId() + "-1",
 					Name: reportSnapshot.GetRequester().GetName() + "-1",
-				}
+				}.Build())
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(snap, true, nil).Times(1)
 			},
@@ -1258,13 +1237,13 @@ func (s *ReportServiceTestSuite) TestDeleteReport() {
 		},
 		{
 			desc: "Report was not generated",
-			req: &apiV2.DeleteReportRequest{
+			req: apiV2.DeleteReportRequest_builder{
 				Id: reportSnapshot.GetReportId(),
-			},
+			}.Build(),
 			ctx: userContext,
 			mockGen: func() {
 				snap := reportSnapshot.CloneVT()
-				snap.ReportStatus.ReportNotificationMethod = storage.ReportStatus_EMAIL
+				snap.GetReportStatus().SetReportNotificationMethod(storage.ReportStatus_EMAIL)
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(snap, true, nil).Times(1)
 			},
@@ -1272,13 +1251,13 @@ func (s *ReportServiceTestSuite) TestDeleteReport() {
 		},
 		{
 			desc: "Report job has not completed",
-			req: &apiV2.DeleteReportRequest{
+			req: apiV2.DeleteReportRequest_builder{
 				Id: reportSnapshot.GetReportId(),
-			},
+			}.Build(),
 			ctx: userContext,
 			mockGen: func() {
 				snap := reportSnapshot.CloneVT()
-				snap.ReportStatus.RunState = storage.ReportStatus_PREPARING
+				snap.GetReportStatus().SetRunState(storage.ReportStatus_PREPARING)
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(snap, true, nil).Times(1)
 			},
@@ -1286,9 +1265,9 @@ func (s *ReportServiceTestSuite) TestDeleteReport() {
 		},
 		{
 			desc: "Delete blob failed",
-			req: &apiV2.DeleteReportRequest{
+			req: apiV2.DeleteReportRequest_builder{
 				Id: reportSnapshot.GetReportId(),
-			},
+			}.Build(),
 			ctx: userContext,
 			mockGen: func() {
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
@@ -1299,9 +1278,9 @@ func (s *ReportServiceTestSuite) TestDeleteReport() {
 		},
 		{
 			desc: "Report deleted",
-			req: &apiV2.DeleteReportRequest{
+			req: apiV2.DeleteReportRequest_builder{
 				Id: reportSnapshot.GetReportId(),
-			},
+			}.Build(),
 			ctx: userContext,
 			mockGen: func() {
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
@@ -1312,13 +1291,13 @@ func (s *ReportServiceTestSuite) TestDeleteReport() {
 		},
 		{
 			desc: "Generated but not downloaded report deleted",
-			req: &apiV2.DeleteReportRequest{
+			req: apiV2.DeleteReportRequest_builder{
 				Id: reportSnapshot.GetReportId(),
-			},
+			}.Build(),
 			ctx: userContext,
 			mockGen: func() {
 				snap := reportSnapshot.CloneVT()
-				snap.ReportStatus.RunState = storage.ReportStatus_GENERATED
+				snap.GetReportStatus().SetRunState(storage.ReportStatus_GENERATED)
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), snap.GetReportId()).
 					Return(snap, true, nil).Times(1)
 				s.blobStore.EXPECT().Delete(gomock.Any(), blobName).Times(1).Return(nil)
@@ -1346,21 +1325,17 @@ func (s *ReportServiceTestSuite) TestPostViewBasedReport() {
 	// Enable the view-based reports feature flag for this test
 	s.T().Setenv(features.VulnerabilityViewBasedReports.EnvVar(), "true")
 
-	user := &storage.SlimUser{
-		Id:   "test-user-id",
-		Name: "test-user-name",
-	}
+	user := &storage.SlimUser{}
+	user.SetId("test-user-id")
+	user.SetName("test-user-name")
 	userContext := s.getContextForUser(user)
 
-	validRequest := &apiV2.ReportRequestViewBased{
-		Type: apiV2.ReportRequestViewBased_VULNERABILITY,
-		Filter: &apiV2.ReportRequestViewBased_ViewBasedVulnReportFilters{
-			ViewBasedVulnReportFilters: &apiV2.ViewBasedVulnerabilityReportFilters{
-				Query: "CVE Severity:CRITICAL",
-			},
-		},
-		AreaOfConcern: "User Workloads",
-	}
+	vbvrf := &apiV2.ViewBasedVulnerabilityReportFilters{}
+	vbvrf.SetQuery("CVE Severity:CRITICAL")
+	validRequest := &apiV2.ReportRequestViewBased{}
+	validRequest.SetType(apiV2.ReportRequestViewBased_VULNERABILITY)
+	validRequest.SetViewBasedVulnReportFilters(proto.ValueOrDefault(vbvrf))
+	validRequest.SetAreaOfConcern("User Workloads")
 
 	testCases := []struct {
 		desc    string
@@ -1386,24 +1361,22 @@ func (s *ReportServiceTestSuite) TestPostViewBasedReport() {
 		},
 		{
 			desc: "Unsupported report type",
-			req: &apiV2.ReportRequestViewBased{
+			req: apiV2.ReportRequestViewBased_builder{
 				Type: 1,
-				Filter: &apiV2.ReportRequestViewBased_ViewBasedVulnReportFilters{
-					ViewBasedVulnReportFilters: &apiV2.ViewBasedVulnerabilityReportFilters{
-						Query: "",
-					},
-				},
-			},
+				ViewBasedVulnReportFilters: apiV2.ViewBasedVulnerabilityReportFilters_builder{
+					Query: "",
+				}.Build(),
+			}.Build(),
 			ctx:     userContext,
 			mockGen: func() {},
 			isError: true,
 		},
 		{
 			desc: "Missing view-based vulnerability report filters",
-			req: &apiV2.ReportRequestViewBased{
+			req: apiV2.ReportRequestViewBased_builder{
 				Type:   apiV2.ReportRequestViewBased_VULNERABILITY,
 				Filter: nil,
-			},
+			}.Build(),
 			ctx:     userContext,
 			mockGen: func() {},
 			isError: true,
@@ -1427,30 +1400,28 @@ func (s *ReportServiceTestSuite) TestPostViewBasedReport() {
 					Return("reportID123", nil).Times(1)
 			},
 			isError: false,
-			resp: &apiV2.RunReportResponseViewBased{
+			resp: apiV2.RunReportResponseViewBased_builder{
 				ReportID: "reportID123",
-			},
+			}.Build(),
 		},
 		{
 			desc: "Successful submission with only deployed images",
-			req: &apiV2.ReportRequestViewBased{
+			req: apiV2.ReportRequestViewBased_builder{
 				Type: apiV2.ReportRequestViewBased_VULNERABILITY,
-				Filter: &apiV2.ReportRequestViewBased_ViewBasedVulnReportFilters{
-					ViewBasedVulnReportFilters: &apiV2.ViewBasedVulnerabilityReportFilters{
-						Query: "CVE Severity:CRITICAL,IMPORTANT",
-					},
-				},
+				ViewBasedVulnReportFilters: apiV2.ViewBasedVulnerabilityReportFilters_builder{
+					Query: "CVE Severity:CRITICAL,IMPORTANT",
+				}.Build(),
 				AreaOfConcern: "High severity vulnerabilities",
-			},
+			}.Build(),
 			ctx: userContext,
 			mockGen: func() {
 				s.scheduler.EXPECT().SubmitReportRequest(gomock.Any(), gomock.Any(), false).
 					Return("reportID789", nil).Times(1)
 			},
 			isError: false,
-			resp: &apiV2.RunReportResponseViewBased{
+			resp: apiV2.RunReportResponseViewBased_builder{
 				ReportID: "reportID789",
-			},
+			}.Build(),
 		},
 	}
 
@@ -1480,9 +1451,9 @@ func (s *ReportServiceTestSuite) TestGetViewBasedReportHistory() {
 	}{
 		{
 			desc: "Datastore error",
-			req: &apiV2.GetViewBasedReportHistoryRequest{
-				ReportParamQuery: &apiV2.RawQuery{Query: ""},
-			},
+			req: apiV2.GetViewBasedReportHistoryRequest_builder{
+				ReportParamQuery: apiV2.RawQuery_builder{Query: ""}.Build(),
+			}.Build(),
 			mockGen: func() {
 				s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
 					Return(nil, errors.New("datastore error")).Times(1)
@@ -1491,21 +1462,21 @@ func (s *ReportServiceTestSuite) TestGetViewBasedReportHistory() {
 		},
 		{
 			desc: "Successful request with empty query",
-			req: &apiV2.GetViewBasedReportHistoryRequest{
-				ReportParamQuery: &apiV2.RawQuery{Query: ""},
-			},
+			req: apiV2.GetViewBasedReportHistoryRequest_builder{
+				ReportParamQuery: apiV2.RawQuery_builder{Query: ""}.Build(),
+			}.Build(),
 			mockGen: func() {
-				reportSnapshot := &storage.ReportSnapshot{
+				reportSnapshot := storage.ReportSnapshot_builder{
 					ReportId:              "test-report-id",
 					ReportConfigurationId: "test-config-id",
 					Name:                  "View Based Report",
-					ReportStatus: &storage.ReportStatus{
+					ReportStatus: storage.ReportStatus_builder{
 						ErrorMsg:                 "",
 						ReportNotificationMethod: storage.ReportStatus_DOWNLOAD,
 						RunState:                 storage.ReportStatus_GENERATED,
 						ReportRequestType:        storage.ReportStatus_VIEW_BASED,
-					},
-				}
+					}.Build(),
+				}.Build()
 				s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
 					Return([]*storage.ReportSnapshot{reportSnapshot}, nil).Times(1)
 				s.blobStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{}, nil).AnyTimes()
@@ -1514,21 +1485,21 @@ func (s *ReportServiceTestSuite) TestGetViewBasedReportHistory() {
 		},
 		{
 			desc: "Successful request with custom query",
-			req: &apiV2.GetViewBasedReportHistoryRequest{
-				ReportParamQuery: &apiV2.RawQuery{Query: "Report Name:test"},
-			},
+			req: apiV2.GetViewBasedReportHistoryRequest_builder{
+				ReportParamQuery: apiV2.RawQuery_builder{Query: "Report Name:test"}.Build(),
+			}.Build(),
 			mockGen: func() {
-				reportSnapshot := &storage.ReportSnapshot{
+				reportSnapshot := storage.ReportSnapshot_builder{
 					ReportId:              "test-report-id",
 					ReportConfigurationId: "test-config-id",
 					Name:                  "View Based Test Report",
-					ReportStatus: &storage.ReportStatus{
+					ReportStatus: storage.ReportStatus_builder{
 						ErrorMsg:                 "",
 						ReportNotificationMethod: storage.ReportStatus_DOWNLOAD,
 						RunState:                 storage.ReportStatus_GENERATED,
 						ReportRequestType:        storage.ReportStatus_VIEW_BASED,
-					},
-				}
+					}.Build(),
+				}.Build()
 				s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
 					Return([]*storage.ReportSnapshot{reportSnapshot}, nil).Times(1)
 				s.blobStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{}, nil).AnyTimes()
@@ -1537,15 +1508,15 @@ func (s *ReportServiceTestSuite) TestGetViewBasedReportHistory() {
 		},
 		{
 			desc: "Successful request with pagination",
-			req: &apiV2.GetViewBasedReportHistoryRequest{
-				ReportParamQuery: &apiV2.RawQuery{
+			req: apiV2.GetViewBasedReportHistoryRequest_builder{
+				ReportParamQuery: apiV2.RawQuery_builder{
 					Query: "",
-					Pagination: &apiV2.Pagination{
+					Pagination: apiV2.Pagination_builder{
 						Limit:  10,
 						Offset: 0,
-					},
-				},
-			},
+					}.Build(),
+				}.Build(),
+			}.Build(),
 			mockGen: func() {
 				s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
 					Return([]*storage.ReportSnapshot{}, nil).Times(1)
@@ -1577,10 +1548,9 @@ func (s *ReportServiceTestSuite) TestGetViewBasedMyReportHistory() {
 	// Enable the view-based reports feature flag for this test
 	s.T().Setenv(features.VulnerabilityViewBasedReports.EnvVar(), "true")
 
-	userA := &storage.SlimUser{
-		Id:   "user-a",
-		Name: "user-a",
-	}
+	userA := &storage.SlimUser{}
+	userA.SetId("user-a")
+	userA.SetName("user-a")
 	userContext := s.getContextForUser(userA)
 
 	testCases := []struct {
@@ -1592,17 +1562,17 @@ func (s *ReportServiceTestSuite) TestGetViewBasedMyReportHistory() {
 	}{
 		{
 			desc: "User info not present in context",
-			req: &apiV2.GetViewBasedReportHistoryRequest{
-				ReportParamQuery: &apiV2.RawQuery{Query: ""},
-			},
+			req: apiV2.GetViewBasedReportHistoryRequest_builder{
+				ReportParamQuery: apiV2.RawQuery_builder{Query: ""}.Build(),
+			}.Build(),
 			ctx:     s.ctx,
 			isError: true,
 		},
 		{
 			desc: "Datastore error",
-			req: &apiV2.GetViewBasedReportHistoryRequest{
-				ReportParamQuery: &apiV2.RawQuery{Query: ""},
-			},
+			req: apiV2.GetViewBasedReportHistoryRequest_builder{
+				ReportParamQuery: apiV2.RawQuery_builder{Query: ""}.Build(),
+			}.Build(),
 			ctx: userContext,
 			mockGen: func() {
 				s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
@@ -1612,23 +1582,23 @@ func (s *ReportServiceTestSuite) TestGetViewBasedMyReportHistory() {
 		},
 		{
 			desc: "Successful request with empty query",
-			req: &apiV2.GetViewBasedReportHistoryRequest{
-				ReportParamQuery: &apiV2.RawQuery{Query: ""},
-			},
+			req: apiV2.GetViewBasedReportHistoryRequest_builder{
+				ReportParamQuery: apiV2.RawQuery_builder{Query: ""}.Build(),
+			}.Build(),
 			ctx: userContext,
 			mockGen: func() {
-				reportSnapshot := &storage.ReportSnapshot{
+				reportSnapshot := storage.ReportSnapshot_builder{
 					ReportId:              "test-report-id",
 					ReportConfigurationId: "test-config-id",
 					Name:                  "My View Based Report",
-					ReportStatus: &storage.ReportStatus{
+					ReportStatus: storage.ReportStatus_builder{
 						ErrorMsg:                 "",
 						ReportNotificationMethod: storage.ReportStatus_DOWNLOAD,
 						RunState:                 storage.ReportStatus_GENERATED,
 						ReportRequestType:        storage.ReportStatus_VIEW_BASED,
-					},
+					}.Build(),
 					Requester: userA,
-				}
+				}.Build()
 				s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
 					Return([]*storage.ReportSnapshot{reportSnapshot}, nil).Times(1)
 				s.blobStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{}, nil).AnyTimes()
@@ -1637,15 +1607,15 @@ func (s *ReportServiceTestSuite) TestGetViewBasedMyReportHistory() {
 		},
 		{
 			desc: "Successful request with pagination",
-			req: &apiV2.GetViewBasedReportHistoryRequest{
-				ReportParamQuery: &apiV2.RawQuery{
+			req: apiV2.GetViewBasedReportHistoryRequest_builder{
+				ReportParamQuery: apiV2.RawQuery_builder{
 					Query: "",
-					Pagination: &apiV2.Pagination{
+					Pagination: apiV2.Pagination_builder{
 						Limit:  5,
 						Offset: 10,
-					},
-				},
-			},
+					}.Build(),
+				}.Build(),
+			}.Build(),
 			ctx: userContext,
 			mockGen: func() {
 				s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
@@ -1681,14 +1651,14 @@ func (s *ReportServiceTestSuite) getContextForUser(user *storage.SlimUser) conte
 	mockID.EXPECT().FriendlyName().Return(user.GetName()).AnyTimes()
 
 	// Create a mock role with a default access scope for testing
-	accessScope := &storage.SimpleAccessScope{
-		Rules: &storage.SimpleAccessScope_Rules{
+	accessScope := storage.SimpleAccessScope_builder{
+		Rules: storage.SimpleAccessScope_Rules_builder{
 			IncludedClusters: []string{"cluster-1"},
 			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
-				{ClusterName: "cluster-2", NamespaceName: "namespace-2"},
+				storage.SimpleAccessScope_Rules_Namespace_builder{ClusterName: "cluster-2", NamespaceName: "namespace-2"}.Build(),
 			},
-		},
-	}
+		}.Build(),
+	}.Build()
 	mockRole := permissionsMocks.NewMockResolvedRole(s.mockCtrl)
 	mockRole.EXPECT().GetAccessScope().Return(accessScope).AnyTimes()
 	mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).AnyTimes()

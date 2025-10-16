@@ -14,18 +14,15 @@ func EmbeddedVirtualMachineScanComponent(cmp *storage.EmbeddedVirtualMachineScan
 	if cmp == nil {
 		return nil
 	}
-	result := &v2.ScanComponent{
-		Name:      cmp.GetName(),
-		Version:   cmp.GetVersion(),
-		RiskScore: cmp.GetRiskScore(),
-		Vulns:     VirtualMachineVulnerabilities(cmp.GetVulnerabilities()),
-		Source:    convertSourceType(cmp.GetSource()),
-		Notes:     scanComponentNotes(cmp.GetNotes()),
-	}
+	result := &v2.ScanComponent{}
+	result.SetName(cmp.GetName())
+	result.SetVersion(cmp.GetVersion())
+	result.SetRiskScore(cmp.GetRiskScore())
+	result.SetVulns(VirtualMachineVulnerabilities(cmp.GetVulnerabilities()))
+	result.SetSource(convertSourceType(cmp.GetSource()))
+	result.SetNotes(scanComponentNotes(cmp.GetNotes()))
 	if cmp.GetSetTopCvss() != nil {
-		result.SetTopCvss = &v2.ScanComponent_TopCvss{
-			TopCvss: cmp.GetTopCvss(),
-		}
+		result.Set_TopCvss(cmp.GetTopCvss())
 	}
 	return result
 }

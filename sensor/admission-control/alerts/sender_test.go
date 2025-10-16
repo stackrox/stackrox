@@ -86,21 +86,21 @@ func (s *alertSenderSuite) TestSendAlertsToSensor() {
 }
 
 func createAlertsRequest(alerts []*storage.Alert) *sensor.AdmissionControlAlerts {
-	return &sensor.AdmissionControlAlerts{
-		AlertResults: []*central.AlertResults{
-			{
-				Alerts: alerts,
-			},
-		},
-	}
+	ar := &central.AlertResults{}
+	ar.SetAlerts(alerts)
+	aca := &sensor.AdmissionControlAlerts{}
+	aca.SetAlertResults([]*central.AlertResults{
+		ar,
+	})
+	return aca
 }
 
 func createAlertsMessage(numAlerts int) []*storage.Alert {
 	ret := make([]*storage.Alert, numAlerts)
 	for i := 0; i < numAlerts; i++ {
-		ret[i] = &storage.Alert{
-			Id: fmt.Sprintf("alert-%d", i),
-		}
+		alert := &storage.Alert{}
+		alert.SetId(fmt.Sprintf("alert-%d", i))
+		ret[i] = alert
 	}
 	return ret
 }

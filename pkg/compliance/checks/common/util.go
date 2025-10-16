@@ -72,8 +72,8 @@ func SkipList(msg string) []*storage.ComplianceResultValue_Evidence {
 }
 
 func result(status storage.ComplianceState, msg string) *storage.ComplianceResultValue_Evidence {
-	return &storage.ComplianceResultValue_Evidence{
-		State:   status,
-		Message: msg,
-	}
+	ce := &storage.ComplianceResultValue_Evidence{}
+	ce.SetState(status)
+	ce.SetMessage(msg)
+	return ce
 }

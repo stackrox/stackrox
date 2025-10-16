@@ -46,7 +46,8 @@ func TestWriteBlob(t *testing.T) {
 	t.Run("file created and modified time updated on success", func(t *testing.T) {
 		oneHourAgo := time.Now().Add(-1 * time.Hour)
 		dir := t.TempDir()
-		blob := &storage.Blob{ModifiedTime: protocompat.ConvertTimeToTimestampOrNil(&oneHourAgo)}
+		blob := &storage.Blob{}
+		blob.SetModifiedTime(protocompat.ConvertTimeToTimestampOrNil(&oneHourAgo))
 
 		ctrl := gomock.NewController(t)
 		blobStore := blobDatastoreMocks.NewMockDatastore(ctrl)

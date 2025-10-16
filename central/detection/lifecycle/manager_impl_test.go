@@ -26,27 +26,27 @@ import (
 )
 
 var (
-	clusterAutolockEnabled = &storage.Cluster{
+	clusterAutolockEnabled = storage.Cluster_builder{
 		ManagedBy: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
-		HelmConfig: &storage.CompleteClusterConfig{
-			DynamicConfig: &storage.DynamicClusterConfig{
-				AutoLockProcessBaselinesConfig: &storage.AutoLockProcessBaselinesConfig{
+		HelmConfig: storage.CompleteClusterConfig_builder{
+			DynamicConfig: storage.DynamicClusterConfig_builder{
+				AutoLockProcessBaselinesConfig: storage.AutoLockProcessBaselinesConfig_builder{
 					Enabled: true,
-				},
-			},
-		},
-	}
+				}.Build(),
+			}.Build(),
+		}.Build(),
+	}.Build()
 
-	clusterAutolockDisabled = &storage.Cluster{
+	clusterAutolockDisabled = storage.Cluster_builder{
 		ManagedBy: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
-		HelmConfig: &storage.CompleteClusterConfig{
-			DynamicConfig: &storage.DynamicClusterConfig{
-				AutoLockProcessBaselinesConfig: &storage.AutoLockProcessBaselinesConfig{
+		HelmConfig: storage.CompleteClusterConfig_builder{
+			DynamicConfig: storage.DynamicClusterConfig_builder{
+				AutoLockProcessBaselinesConfig: storage.AutoLockProcessBaselinesConfig_builder{
 					Enabled: false,
-				},
-			},
-		},
-	}
+				}.Build(),
+			}.Build(),
+		}.Build(),
+	}.Build()
 
 	clusterAutolockManualEnabled = &storage.Cluster{
 		ManagedBy: storage.ManagerType_MANAGER_TYPE_MANUAL,
@@ -109,36 +109,33 @@ func (suite *ManagerTestSuite) TearDownTest() {
 }
 
 func makeIndicator() (*storage.ProcessBaselineKey, *storage.ProcessIndicator) {
-	signal := &storage.ProcessSignal{
-		Id:           uuid.NewV4().String(),
-		ContainerId:  uuid.NewV4().String(),
-		Time:         protocompat.TimestampNow(),
-		Name:         uuid.NewV4().String(),
-		Args:         uuid.NewV4().String(),
-		ExecFilePath: uuid.NewV4().String(),
-		Pid:          rand.Uint32(),
-		Uid:          rand.Uint32(),
-		Gid:          rand.Uint32(),
-		LineageInfo: []*storage.ProcessSignal_LineageInfo{
-			{
-				ParentExecFilePath: uuid.NewV4().String(),
-			},
-		},
-	}
+	pl := &storage.ProcessSignal_LineageInfo{}
+	pl.SetParentExecFilePath(uuid.NewV4().String())
+	signal := &storage.ProcessSignal{}
+	signal.SetId(uuid.NewV4().String())
+	signal.SetContainerId(uuid.NewV4().String())
+	signal.SetTime(protocompat.TimestampNow())
+	signal.SetName(uuid.NewV4().String())
+	signal.SetArgs(uuid.NewV4().String())
+	signal.SetExecFilePath(uuid.NewV4().String())
+	signal.SetPid(rand.Uint32())
+	signal.SetUid(rand.Uint32())
+	signal.SetGid(rand.Uint32())
+	signal.SetLineageInfo([]*storage.ProcessSignal_LineageInfo{
+		pl,
+	})
 
-	indicator := &storage.ProcessIndicator{
-		Id:            uuid.NewV4().String(),
-		DeploymentId:  uuid.NewV4().String(),
-		ContainerName: uuid.NewV4().String(),
-		PodId:         uuid.NewV4().String(),
-		Signal:        signal,
-	}
-	key := &storage.ProcessBaselineKey{
-		DeploymentId:  indicator.GetDeploymentId(),
-		ContainerName: indicator.GetContainerName(),
-		ClusterId:     indicator.GetClusterId(),
-		Namespace:     indicator.GetNamespace(),
-	}
+	indicator := &storage.ProcessIndicator{}
+	indicator.SetId(uuid.NewV4().String())
+	indicator.SetDeploymentId(uuid.NewV4().String())
+	indicator.SetContainerName(uuid.NewV4().String())
+	indicator.SetPodId(uuid.NewV4().String())
+	indicator.SetSignal(signal)
+	key := &storage.ProcessBaselineKey{}
+	key.SetDeploymentId(indicator.GetDeploymentId())
+	key.SetContainerName(indicator.GetContainerName())
+	key.SetClusterId(indicator.GetClusterId())
+	key.SetNamespace(indicator.GetNamespace())
 	return key, indicator
 }
 
@@ -181,7 +178,8 @@ func (suite *ManagerTestSuite) TestBaselineNotFoundInObservation() {
 
 func (suite *ManagerTestSuite) TestBaselineShouldPass() {
 	key, indicator := makeIndicator()
-	baseline := &storage.ProcessBaseline{Elements: fixtures.MakeBaselineElements(indicator.GetSignal().GetExecFilePath())}
+	baseline := &storage.ProcessBaseline{}
+	baseline.SetElements(fixtures.MakeBaselineElements(indicator.GetSignal().GetExecFilePath()))
 	suite.deploymentObservationQueue.EXPECT().InObservation(key.GetDeploymentId()).Return(false).AnyTimes()
 	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(baseline, true, nil)
 	_, _, err := suite.manager.checkAndUpdateBaseline(indicatorToBaselineKey(indicator), []*storage.ProcessIndicator{indicator})
@@ -219,9 +217,9 @@ func (suite *ManagerTestSuite) TestHandleResourceAlerts() {
 
 func TestFilterOutDisabledPolicies(t *testing.T) {
 	alert1 := fixtures.GetAlertWithID("1")
-	alert1.Policy.Id = "1"
+	alert1.GetPolicy().SetId("1")
 	alert2 := fixtures.GetAlertWithID("2")
-	alert2.Policy.Id = "2"
+	alert2.GetPolicy().SetId("2")
 	cases := []struct {
 		name            string
 		initialAlerts   []*storage.Alert

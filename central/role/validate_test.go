@@ -11,14 +11,14 @@ import (
 )
 
 func TestValidateRole(t *testing.T) {
+	role := &storage.Role{}
+	role.SetName("name")
+	role.SetResourceToAccess(map[string]storage.Access{
+		"Policy": storage.Access_READ_ACCESS,
+	})
 	testCasesBad := map[string]*storage.Role{
-		"name field must be set": {},
-		"role must not have resourceToAccess field set": {
-			Name: "name",
-			ResourceToAccess: map[string]storage.Access{
-				"Policy": storage.Access_READ_ACCESS,
-			},
-		},
+		"name field must be set":                         {},
+		"role must not have resourceToAccess field set":  role,
 		"role must reference an existing permission set": constructRole("role with no permission set", "", GenerateAccessScopeID()),
 		"empty access scope reference is not allowed":    constructRole("role with no access scope", GeneratePermissionSetID(), ""),
 	}
@@ -43,11 +43,11 @@ func TestValidateRole(t *testing.T) {
 }
 
 func constructRole(name, permissionSetID, accessScopeID string) *storage.Role {
-	return &storage.Role{
-		Name:            name,
-		PermissionSetId: permissionSetID,
-		AccessScopeId:   accessScopeID,
-	}
+	role := &storage.Role{}
+	role.SetName(name)
+	role.SetPermissionSetId(permissionSetID)
+	role.SetAccessScopeId(accessScopeID)
+	return role
 }
 
 func TestValidatePermissionSet(t *testing.T) {
@@ -57,39 +57,39 @@ func TestValidatePermissionSet(t *testing.T) {
 	mockGoodResource := "K8sRoleBinding"
 	mockBadResource := "K8sWitchcraftAndWizardry"
 
+	ps := &storage.PermissionSet{}
+	ps.SetId(mockGoodID)
+	ps.SetName(mockName)
+	ps2 := &storage.PermissionSet{}
+	ps2.SetId(mockGoodID)
+	ps2.SetName(mockName)
+	ps2.SetResourceToAccess(map[string]storage.Access{
+		mockGoodResource: storage.Access_READ_ACCESS,
+	})
 	testCasesGood := map[string]*storage.PermissionSet{
-		"id and name are set": {
-			Id:   mockGoodID,
-			Name: mockName,
-		},
-		"id, name, and a resource are set": {
-			Id:   mockGoodID,
-			Name: mockName,
-			ResourceToAccess: map[string]storage.Access{
-				mockGoodResource: storage.Access_READ_ACCESS,
-			},
-		},
+		"id and name are set":              ps,
+		"id, name, and a resource are set": ps2,
 	}
 
 	testCasesBad := map[string]*storage.PermissionSet{
 		"empty permissionSet": {},
-		"id is missing": {
+		"id is missing": storage.PermissionSet_builder{
 			Name: mockName,
-		},
-		"name is missing": {
+		}.Build(),
+		"name is missing": storage.PermissionSet_builder{
 			Id: mockGoodID,
-		},
-		"bad id": {
+		}.Build(),
+		"bad id": storage.PermissionSet_builder{
 			Id:   mockBadID,
 			Name: mockName,
-		},
-		"bad resource": {
+		}.Build(),
+		"bad resource": storage.PermissionSet_builder{
 			Id:   mockGoodID,
 			Name: mockName,
 			ResourceToAccess: map[string]storage.Access{
 				mockBadResource: storage.Access_NO_ACCESS,
 			},
-		},
+		}.Build(),
 	}
 
 	for desc, permissionSet := range testCasesGood {
@@ -132,43 +132,43 @@ func TestValidateSimpleAccessScope(t *testing.T) {
 	emptyID := ""
 	mockName := "Heart of Gold"
 	mockDescription := "HHGTTG"
-	mockGoodRules := &storage.SimpleAccessScope_Rules{
-		IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
-			{
-				ClusterName:   "Atomic Vector Plotter",
-				NamespaceName: "Advanced Tea Substitute",
-			},
-		},
-	}
-	mockBadRules := &storage.SimpleAccessScope_Rules{
-		IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
-			{NamespaceName: "Advanced Tea Substitute"}},
-	}
+	srn := &storage.SimpleAccessScope_Rules_Namespace{}
+	srn.SetClusterName("Atomic Vector Plotter")
+	srn.SetNamespaceName("Advanced Tea Substitute")
+	mockGoodRules := &storage.SimpleAccessScope_Rules{}
+	mockGoodRules.SetIncludedNamespaces([]*storage.SimpleAccessScope_Rules_Namespace{
+		srn,
+	})
+	srn2 := &storage.SimpleAccessScope_Rules_Namespace{}
+	srn2.SetNamespaceName("Advanced Tea Substitute")
+	mockBadRules := &storage.SimpleAccessScope_Rules{}
+	mockBadRules.SetIncludedNamespaces([]*storage.SimpleAccessScope_Rules_Namespace{
+		srn2})
 
 	testCasesGood := map[string]*storage.SimpleAccessScope{
-		"id, name, and namespace label selector are set": {
+		"id, name, and namespace label selector are set": storage.SimpleAccessScope_builder{
 			Id:    mockGoodID,
 			Name:  mockName,
 			Rules: mockGoodRules,
-		},
-		"all possible fields are set": {
+		}.Build(),
+		"all possible fields are set": storage.SimpleAccessScope_builder{
 			Id:          mockGoodID,
 			Name:        mockName,
 			Description: mockDescription,
 			Rules:       mockGoodRules,
-		},
-		"label selector with empty rules": {
+		}.Build(),
+		"label selector with empty rules": storage.SimpleAccessScope_builder{
 			Id:    mockGoodID,
 			Name:  mockName,
 			Rules: &storage.SimpleAccessScope_Rules{},
-		},
-		"label selector with empty requirements": {
+		}.Build(),
+		"label selector with empty requirements": storage.SimpleAccessScope_builder{
 			Id:   mockGoodID,
 			Name: mockName,
-			Rules: &storage.SimpleAccessScope_Rules{
+			Rules: storage.SimpleAccessScope_Rules_builder{
 				ClusterLabelSelectors: []*storage.SetBasedLabelSelector{
-					{Requirements: nil}}},
-		},
+					storage.SetBasedLabelSelector_builder{Requirements: nil}.Build()}}.Build(),
+		}.Build(),
 	}
 
 	testCasesBad := []struct {
@@ -183,83 +183,83 @@ func TestValidateSimpleAccessScope(t *testing.T) {
 		},
 		{
 			name:                   "id is missing",
-			scope:                  &storage.SimpleAccessScope{Name: mockName, Rules: &storage.SimpleAccessScope_Rules{}},
+			scope:                  storage.SimpleAccessScope_builder{Name: mockName, Rules: &storage.SimpleAccessScope_Rules{}}.Build(),
 			expectedNumberOfErrors: 1,
 		},
 		{
 			name:                   "empty id",
-			scope:                  &storage.SimpleAccessScope{Id: emptyID, Name: mockName, Rules: &storage.SimpleAccessScope_Rules{}},
+			scope:                  storage.SimpleAccessScope_builder{Id: emptyID, Name: mockName, Rules: &storage.SimpleAccessScope_Rules{}}.Build(),
 			expectedNumberOfErrors: 1,
 		}, {
 			name:                   "name is missing",
-			scope:                  &storage.SimpleAccessScope{Id: mockGoodID, Rules: &storage.SimpleAccessScope_Rules{}},
+			scope:                  storage.SimpleAccessScope_builder{Id: mockGoodID, Rules: &storage.SimpleAccessScope_Rules{}}.Build(),
 			expectedNumberOfErrors: 1,
 		}, {
 			name: "bad id",
-			scope: &storage.SimpleAccessScope{
+			scope: storage.SimpleAccessScope_builder{
 				Id:    mockBadID,
 				Name:  mockName,
 				Rules: &storage.SimpleAccessScope_Rules{},
-			},
+			}.Build(),
 			expectedNumberOfErrors: 1,
 		},
 		{
 			name: "bad rules",
-			scope: &storage.SimpleAccessScope{
+			scope: storage.SimpleAccessScope_builder{
 				Id:    mockGoodID,
 				Name:  mockName,
 				Rules: mockBadRules,
-			},
+			}.Build(),
 			expectedNumberOfErrors: 1,
 		}, {
 
 			name: "missing cluster name in namespace rule",
-			scope: &storage.SimpleAccessScope{
+			scope: storage.SimpleAccessScope_builder{
 				Id:   mockGoodID,
 				Name: mockName,
-				Rules: &storage.SimpleAccessScope_Rules{
+				Rules: storage.SimpleAccessScope_Rules_builder{
 					IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
-						{ClusterName: "Atomic Vector Plotter"}}}},
+						storage.SimpleAccessScope_Rules_Namespace_builder{ClusterName: "Atomic Vector Plotter"}.Build()}}.Build()}.Build(),
 			expectedNumberOfErrors: 1,
 		}, {
 			name: "missing namespace name name in namespace rule",
-			scope: &storage.SimpleAccessScope{
+			scope: storage.SimpleAccessScope_builder{
 				Id:   mockGoodID,
 				Name: mockName,
-				Rules: &storage.SimpleAccessScope_Rules{
+				Rules: storage.SimpleAccessScope_Rules_builder{
 					IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
-						{NamespaceName: "Advanced Tea Substitute"}}}},
+						storage.SimpleAccessScope_Rules_Namespace_builder{NamespaceName: "Advanced Tea Substitute"}.Build()}}.Build()}.Build(),
 			expectedNumberOfErrors: 1,
 		}, {
 			name: "multiple errors",
-			scope: &storage.SimpleAccessScope{
+			scope: storage.SimpleAccessScope_builder{
 				Id:   mockBadID,
 				Name: mockName,
-				Rules: &storage.SimpleAccessScope_Rules{
+				Rules: storage.SimpleAccessScope_Rules_builder{
 					IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
-						{NamespaceName: "Advanced Tea Substitute"}},
+						storage.SimpleAccessScope_Rules_Namespace_builder{NamespaceName: "Advanced Tea Substitute"}.Build()},
 					ClusterLabelSelectors: []*storage.SetBasedLabelSelector{
-						{Requirements: []*storage.SetBasedLabelSelector_Requirement{
-							{Key: "valid", Op: 42, Values: []string{"value"}},
-						}}}}},
+						storage.SetBasedLabelSelector_builder{Requirements: []*storage.SetBasedLabelSelector_Requirement{
+							storage.SetBasedLabelSelector_Requirement_builder{Key: "valid", Op: 42, Values: []string{"value"}}.Build(),
+						}}.Build()}}.Build()}.Build(),
 			expectedNumberOfErrors: 3,
 		}, {
 			name: "invalid selectors",
-			scope: &storage.SimpleAccessScope{
+			scope: storage.SimpleAccessScope_builder{
 				Id:   mockGoodID,
 				Name: mockName,
-				Rules: &storage.SimpleAccessScope_Rules{
+				Rules: storage.SimpleAccessScope_Rules_builder{
 					NamespaceLabelSelectors: []*storage.SetBasedLabelSelector{
-						{Requirements: []*storage.SetBasedLabelSelector_Requirement{
-							{Key: "valid", Op: storage.SetBasedLabelSelector_UNKNOWN, Values: []string{"values"}},
-							{Key: "valid", Op: storage.SetBasedLabelSelector_NOT_EXISTS},
-						}}},
+						storage.SetBasedLabelSelector_builder{Requirements: []*storage.SetBasedLabelSelector_Requirement{
+							storage.SetBasedLabelSelector_Requirement_builder{Key: "valid", Op: storage.SetBasedLabelSelector_UNKNOWN, Values: []string{"values"}}.Build(),
+							storage.SetBasedLabelSelector_Requirement_builder{Key: "valid", Op: storage.SetBasedLabelSelector_NOT_EXISTS}.Build(),
+						}}.Build()},
 					ClusterLabelSelectors: []*storage.SetBasedLabelSelector{
-						{Requirements: []*storage.SetBasedLabelSelector_Requirement{
-							{Key: "", Op: storage.SetBasedLabelSelector_EXISTS, Values: nil},
-							{Key: "valid", Op: storage.SetBasedLabelSelector_IN, Values: []string{"good"}},
-							{Key: "valid", Op: storage.SetBasedLabelSelector_NOT_IN, Values: nil},
-						}}}}},
+						storage.SetBasedLabelSelector_builder{Requirements: []*storage.SetBasedLabelSelector_Requirement{
+							storage.SetBasedLabelSelector_Requirement_builder{Key: "", Op: storage.SetBasedLabelSelector_EXISTS, Values: nil}.Build(),
+							storage.SetBasedLabelSelector_Requirement_builder{Key: "valid", Op: storage.SetBasedLabelSelector_IN, Values: []string{"good"}}.Build(),
+							storage.SetBasedLabelSelector_Requirement_builder{Key: "valid", Op: storage.SetBasedLabelSelector_NOT_IN, Values: nil}.Build(),
+						}}.Build()}}.Build()}.Build(),
 			expectedNumberOfErrors: 3,
 		},
 	}

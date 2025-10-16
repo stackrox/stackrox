@@ -9,20 +9,18 @@ func getSanitizedPagination(requested *v1.Pagination, allowedSortFields set.Stri
 	if requested == nil {
 		return nil
 	}
-	sanitized := &v1.QueryPagination{
-		Limit:       requested.GetLimit(),
-		Offset:      requested.GetOffset(),
-		SortOptions: nil,
-	}
+	sanitized := &v1.QueryPagination{}
+	sanitized.SetLimit(requested.GetLimit())
+	sanitized.SetOffset(requested.GetOffset())
+	sanitized.SetSortOptions(nil)
 	if requested.GetSortOption() != nil {
 		sortField := requested.GetSortOption().GetField()
 		if allowedSortFields.Contains(sortField) {
-			sanitizedSortOption := &v1.QuerySortOption{
-				Field:          sortField,
-				Reversed:       requested.GetSortOption().GetReversed(),
-				SearchAfterOpt: nil,
-			}
-			sanitized.SortOptions = append(sanitized.SortOptions, sanitizedSortOption)
+			sanitizedSortOption := &v1.QuerySortOption{}
+			sanitizedSortOption.SetField(sortField)
+			sanitizedSortOption.SetReversed(requested.GetSortOption().GetReversed())
+			sanitizedSortOption.ClearSearchAfterOpt()
+			sanitized.SetSortOptions(append(sanitized.GetSortOptions(), sanitizedSortOption))
 		}
 	}
 	return sanitized

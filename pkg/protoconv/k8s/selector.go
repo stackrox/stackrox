@@ -82,10 +82,10 @@ func ToRoxLabelSelector(sel *v1.LabelSelector) (*storage.LabelSelector, error) {
 			roxReqs[i] = roxReq
 		}
 	}
-	return &storage.LabelSelector{
-		MatchLabels:  sel.MatchLabels,
-		Requirements: roxReqs,
-	}, nil
+	ls := &storage.LabelSelector{}
+	ls.SetMatchLabels(sel.MatchLabels)
+	ls.SetRequirements(roxReqs)
+	return ls, nil
 }
 
 // ToRoxLabelSelectorRequirement converts a Kubernetes LabelSelectorRequirement into the corresponding StackRox
@@ -96,9 +96,9 @@ func ToRoxLabelSelectorRequirement(req *v1.LabelSelectorRequirement) (*storage.L
 		return nil, fmt.Errorf("label selector operator %v not supported by StackRox", req.Operator)
 	}
 
-	return &storage.LabelSelector_Requirement{
-		Key:    req.Key,
-		Op:     op,
-		Values: req.Values,
-	}, nil
+	lr := &storage.LabelSelector_Requirement{}
+	lr.SetKey(req.Key)
+	lr.SetOp(op)
+	lr.SetValues(req.Values)
+	return lr, nil
 }

@@ -67,12 +67,12 @@ func (s *service) AuthFuncOverride(ctx context.Context, fullMethodName string) (
 }
 
 func (s *service) wrapToggleResponse(config *storage.SensorUpgradeConfig) *v1.GetSensorUpgradeConfigResponse {
-	return &v1.GetSensorUpgradeConfigResponse{
-		Config: &v1.GetSensorUpgradeConfigResponse_UpgradeConfig{
-			EnableAutoUpgrade:  config.GetEnableAutoUpgrade(),
-			AutoUpgradeFeature: getAutoUpgradeFeatureStatus(),
-		},
-	}
+	gu := &v1.GetSensorUpgradeConfigResponse_UpgradeConfig{}
+	gu.SetEnableAutoUpgrade(config.GetEnableAutoUpgrade())
+	gu.SetAutoUpgradeFeature(getAutoUpgradeFeatureStatus())
+	gsucr := &v1.GetSensorUpgradeConfigResponse{}
+	gsucr.SetConfig(gu)
+	return gsucr
 }
 
 // getOrCreateSensorUpgradeConfig returns the upgrade config stored in the DB. If there's no entry
@@ -86,9 +86,11 @@ func (s *service) getOrCreateSensorUpgradeConfig(ctx context.Context) (*storage.
 		// If there's no config in the DB, return default config according to managed central flag
 		// and insert the value
 		if getAutoUpgradeFeatureStatus() == v1.GetSensorUpgradeConfigResponse_SUPPORTED {
-			config = &storage.SensorUpgradeConfig{EnableAutoUpgrade: true}
+			config = &storage.SensorUpgradeConfig{}
+			config.SetEnableAutoUpgrade(true)
 		} else {
-			config = &storage.SensorUpgradeConfig{EnableAutoUpgrade: false}
+			config = &storage.SensorUpgradeConfig{}
+			config.SetEnableAutoUpgrade(false)
 		}
 		if err := s.configDataStore.UpsertSensorUpgradeConfig(ctx, config); err != nil {
 			return nil, err

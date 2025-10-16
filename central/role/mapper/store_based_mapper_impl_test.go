@@ -62,16 +62,15 @@ func (s *MapperTestSuite) TearDownTest() {
 
 func (s *MapperTestSuite) TestMapperSuccessForRoleAbsence() {
 	// The user information.
-	expectedUser := &storage.User{
-		Id:             "testuserid",
-		AuthProviderId: fakeAuthProvider,
-		Attributes: []*storage.UserAttribute{
-			{
-				Key:   "email",
-				Value: "testuser@domain.tld",
-			},
-		},
-	}
+	ua := &storage.UserAttribute{}
+	ua.SetKey("email")
+	ua.SetValue("testuser@domain.tld")
+	expectedUser := &storage.User{}
+	expectedUser.SetId("testuserid")
+	expectedUser.SetAuthProviderId(fakeAuthProvider)
+	expectedUser.SetAttributes([]*storage.UserAttribute{
+		ua,
+	})
 	s.mockUsers.EXPECT().GetUser(s.requestContext, expectedUser.GetId()).Times(1).Return(nil, nil)
 	s.mockUsers.EXPECT().Upsert(s.requestContext, expectedUser).Times(1).Return(nil)
 
@@ -97,28 +96,26 @@ func (s *MapperTestSuite) TestMapperSuccessForRoleAbsence() {
 
 func (s *MapperTestSuite) TestMapperSuccessForSingleRole() {
 	// The user information we expect to be upserted.
-	expectedUser := &storage.User{
-		Id:             "coolguysid",
-		AuthProviderId: fakeAuthProvider,
-		Attributes: []*storage.UserAttribute{
-			{
-				Key:   "email",
-				Value: "coolguy@yahoo",
-			},
-		},
-	}
+	ua := &storage.UserAttribute{}
+	ua.SetKey("email")
+	ua.SetValue("coolguy@yahoo")
+	expectedUser := &storage.User{}
+	expectedUser.SetId("coolguysid")
+	expectedUser.SetAuthProviderId(fakeAuthProvider)
+	expectedUser.SetAttributes([]*storage.UserAttribute{
+		ua,
+	})
 	s.mockUsers.EXPECT().GetUser(s.requestContext, expectedUser.GetId()).Times(1).Return(nil, nil)
 	s.mockUsers.EXPECT().Upsert(s.requestContext, expectedUser).Times(1).Return(nil)
 
 	// Expect the user to have a group mapping for a role.
-	expectedGroup := &storage.Group{
-		Props: &storage.GroupProperties{
-			AuthProviderId: fakeAuthProvider,
-			Key:            "email",
-			Value:          "coolguy@yahoo",
-		},
-		RoleName: "TeamAwesome",
-	}
+	gp := &storage.GroupProperties{}
+	gp.SetAuthProviderId(fakeAuthProvider)
+	gp.SetKey("email")
+	gp.SetValue("coolguy@yahoo")
+	expectedGroup := &storage.Group{}
+	expectedGroup.SetProps(gp)
+	expectedGroup.SetRoleName("TeamAwesome")
 	expectedAttributes := map[string][]string{
 		"email": {"coolguy@yahoo"},
 	}
@@ -151,28 +148,26 @@ func (s *MapperTestSuite) TestMapperSuccessForSingleRole() {
 
 func (s *MapperTestSuite) TestMapperSuccessForOnlyNoneRole() {
 	// The user information we expect to be upserted.
-	expectedUser := &storage.User{
-		Id:             "testuserid",
-		AuthProviderId: fakeAuthProvider,
-		Attributes: []*storage.UserAttribute{
-			{
-				Key:   "email",
-				Value: "testuser@domain.tld",
-			},
-		},
-	}
+	ua := &storage.UserAttribute{}
+	ua.SetKey("email")
+	ua.SetValue("testuser@domain.tld")
+	expectedUser := &storage.User{}
+	expectedUser.SetId("testuserid")
+	expectedUser.SetAuthProviderId(fakeAuthProvider)
+	expectedUser.SetAttributes([]*storage.UserAttribute{
+		ua,
+	})
 	s.mockUsers.EXPECT().GetUser(s.requestContext, expectedUser.GetId()).Times(1).Return(nil, nil)
 	s.mockUsers.EXPECT().Upsert(s.requestContext, expectedUser).Times(1).Return(nil)
 
 	// Expect the user to have a group mapping to the None role.
-	expectedGroup := &storage.Group{
-		Props: &storage.GroupProperties{
-			AuthProviderId: fakeAuthProvider,
-			Key:            "email",
-			Value:          "testuser@domain.tld",
-		},
-		RoleName: "None",
-	}
+	gp := &storage.GroupProperties{}
+	gp.SetAuthProviderId(fakeAuthProvider)
+	gp.SetKey("email")
+	gp.SetValue("testuser@domain.tld")
+	expectedGroup := &storage.Group{}
+	expectedGroup.SetProps(gp)
+	expectedGroup.SetRoleName("None")
 	expectedAttributes := map[string][]string{
 		"email": {"testuser@domain.tld"},
 	}
@@ -205,36 +200,33 @@ func (s *MapperTestSuite) TestMapperSuccessForOnlyNoneRole() {
 
 func (s *MapperTestSuite) TestMapperSuccessForMultiRole() {
 	// The user information we expect to be upserted.
-	expectedUser := &storage.User{
-		Id:             "coolguysid",
-		AuthProviderId: fakeAuthProvider,
-		Attributes: []*storage.UserAttribute{
-			{
-				Key:   "email",
-				Value: "coolguy@yahoo",
-			},
-		},
-	}
+	ua := &storage.UserAttribute{}
+	ua.SetKey("email")
+	ua.SetValue("coolguy@yahoo")
+	expectedUser := &storage.User{}
+	expectedUser.SetId("coolguysid")
+	expectedUser.SetAuthProviderId(fakeAuthProvider)
+	expectedUser.SetAttributes([]*storage.UserAttribute{
+		ua,
+	})
 	s.mockUsers.EXPECT().GetUser(s.requestContext, expectedUser.GetId()).Times(1).Return(nil, nil)
 	s.mockUsers.EXPECT().Upsert(s.requestContext, expectedUser).Times(1).Return(nil)
 
 	// Expect the user to have a two group mappings for two roles.
-	expectedGroup1 := &storage.Group{
-		Props: &storage.GroupProperties{
-			AuthProviderId: fakeAuthProvider,
-			Key:            "email",
-			Value:          "coolguy@yahoo",
-		},
-		RoleName: "TeamAwesome",
-	}
-	expectedGroup2 := &storage.Group{
-		Props: &storage.GroupProperties{
-			AuthProviderId: fakeAuthProvider,
-			Key:            "email",
-			Value:          "coolguy@yahoo",
-		},
-		RoleName: "TeamEvenAwesomer",
-	}
+	gp := &storage.GroupProperties{}
+	gp.SetAuthProviderId(fakeAuthProvider)
+	gp.SetKey("email")
+	gp.SetValue("coolguy@yahoo")
+	expectedGroup1 := &storage.Group{}
+	expectedGroup1.SetProps(gp)
+	expectedGroup1.SetRoleName("TeamAwesome")
+	gp2 := &storage.GroupProperties{}
+	gp2.SetAuthProviderId(fakeAuthProvider)
+	gp2.SetKey("email")
+	gp2.SetValue("coolguy@yahoo")
+	expectedGroup2 := &storage.Group{}
+	expectedGroup2.SetProps(gp2)
+	expectedGroup2.SetRoleName("TeamEvenAwesomer")
 	expectedAttributes := map[string][]string{
 		"email": {"coolguy@yahoo"},
 	}
@@ -277,36 +269,33 @@ func (s *MapperTestSuite) TestMapperSuccessForMultiRole() {
 
 func (s *MapperTestSuite) TestMapperSuccessForMultipleRolesIncludingNone() {
 	// The user information we expect to be upserted.
-	expectedUser := &storage.User{
-		Id:             "coolguysid",
-		AuthProviderId: fakeAuthProvider,
-		Attributes: []*storage.UserAttribute{
-			{
-				Key:   "email",
-				Value: "coolguy@yahoo",
-			},
-		},
-	}
+	ua := &storage.UserAttribute{}
+	ua.SetKey("email")
+	ua.SetValue("coolguy@yahoo")
+	expectedUser := &storage.User{}
+	expectedUser.SetId("coolguysid")
+	expectedUser.SetAuthProviderId(fakeAuthProvider)
+	expectedUser.SetAttributes([]*storage.UserAttribute{
+		ua,
+	})
 	s.mockUsers.EXPECT().GetUser(s.requestContext, expectedUser.GetId()).Times(1).Return(nil, nil)
 	s.mockUsers.EXPECT().Upsert(s.requestContext, expectedUser).Times(1).Return(nil)
 
 	// Expect the user to have multiple group mappings for roles including None.
-	expectedGroup := &storage.Group{
-		Props: &storage.GroupProperties{
-			AuthProviderId: fakeAuthProvider,
-			Key:            "email",
-			Value:          "coolguy@yahoo",
-		},
-		RoleName: "TeamAwesome",
-	}
-	expectedGroupNone := &storage.Group{
-		Props: &storage.GroupProperties{
-			AuthProviderId: fakeAuthProvider,
-			Key:            "email",
-			Value:          "coolguy@yahoo",
-		},
-		RoleName: "None",
-	}
+	gp := &storage.GroupProperties{}
+	gp.SetAuthProviderId(fakeAuthProvider)
+	gp.SetKey("email")
+	gp.SetValue("coolguy@yahoo")
+	expectedGroup := &storage.Group{}
+	expectedGroup.SetProps(gp)
+	expectedGroup.SetRoleName("TeamAwesome")
+	gp2 := &storage.GroupProperties{}
+	gp2.SetAuthProviderId(fakeAuthProvider)
+	gp2.SetKey("email")
+	gp2.SetValue("coolguy@yahoo")
+	expectedGroupNone := &storage.Group{}
+	expectedGroupNone.SetProps(gp2)
+	expectedGroupNone.SetRoleName("None")
 	expectedAttributes := map[string][]string{
 		"email": {"coolguy@yahoo"},
 	}
@@ -347,28 +336,26 @@ func (s *MapperTestSuite) TestMapperSuccessForMultipleRolesIncludingNone() {
 
 func (s *MapperTestSuite) TestUserUpsertFailureDoesntMatter() {
 	// The user information we expect to be upserted.
-	expectedUser := &storage.User{
-		Id:             "coolguysid",
-		AuthProviderId: fakeAuthProvider,
-		Attributes: []*storage.UserAttribute{
-			{
-				Key:   "email",
-				Value: "coolguy@yahoo",
-			},
-		},
-	}
+	ua := &storage.UserAttribute{}
+	ua.SetKey("email")
+	ua.SetValue("coolguy@yahoo")
+	expectedUser := &storage.User{}
+	expectedUser.SetId("coolguysid")
+	expectedUser.SetAuthProviderId(fakeAuthProvider)
+	expectedUser.SetAttributes([]*storage.UserAttribute{
+		ua,
+	})
 	s.mockUsers.EXPECT().GetUser(s.requestContext, expectedUser.GetId()).Times(1).Return(nil, nil)
 	s.mockUsers.EXPECT().Upsert(s.requestContext, expectedUser).Times(1).Return(errors.New("error that shouldnt matter"))
 
 	// Expect the user to have a group mapping for a role.
-	expectedGroup := &storage.Group{
-		Props: &storage.GroupProperties{
-			AuthProviderId: fakeAuthProvider,
-			Key:            "email",
-			Value:          "coolguy@yahoo",
-		},
-		RoleName: "TeamAwesome",
-	}
+	gp := &storage.GroupProperties{}
+	gp.SetAuthProviderId(fakeAuthProvider)
+	gp.SetKey("email")
+	gp.SetValue("coolguy@yahoo")
+	expectedGroup := &storage.Group{}
+	expectedGroup.SetProps(gp)
+	expectedGroup.SetRoleName("TeamAwesome")
 	expectedAttributes := map[string][]string{
 		"email": {"coolguy@yahoo"},
 	}
@@ -402,16 +389,15 @@ func (s *MapperTestSuite) TestUserUpsertFailureDoesntMatter() {
 
 func (s *MapperTestSuite) TestGroupWalkFailureCausesError() {
 	// The user information we expect to be upserted.
-	expectedUser := &storage.User{
-		Id:             "coolguysid",
-		AuthProviderId: fakeAuthProvider,
-		Attributes: []*storage.UserAttribute{
-			{
-				Key:   "email",
-				Value: "coolguy@yahoo",
-			},
-		},
-	}
+	ua := &storage.UserAttribute{}
+	ua.SetKey("email")
+	ua.SetValue("coolguy@yahoo")
+	expectedUser := &storage.User{}
+	expectedUser.SetId("coolguysid")
+	expectedUser.SetAuthProviderId(fakeAuthProvider)
+	expectedUser.SetAttributes([]*storage.UserAttribute{
+		ua,
+	})
 	s.mockUsers.EXPECT().GetUser(s.requestContext, expectedUser.GetId()).Times(1).Return(nil, nil)
 	s.mockUsers.EXPECT().Upsert(s.requestContext, expectedUser).Times(1).Return(nil)
 
@@ -438,28 +424,26 @@ func (s *MapperTestSuite) TestGroupWalkFailureCausesError() {
 
 func (s *MapperTestSuite) TestRoleFetchFailureCausesError() {
 	// The user information we expect to be upserted.
-	expectedUser := &storage.User{
-		Id:             "coolguysid",
-		AuthProviderId: fakeAuthProvider,
-		Attributes: []*storage.UserAttribute{
-			{
-				Key:   "email",
-				Value: "coolguy@yahoo",
-			},
-		},
-	}
+	ua := &storage.UserAttribute{}
+	ua.SetKey("email")
+	ua.SetValue("coolguy@yahoo")
+	expectedUser := &storage.User{}
+	expectedUser.SetId("coolguysid")
+	expectedUser.SetAuthProviderId(fakeAuthProvider)
+	expectedUser.SetAttributes([]*storage.UserAttribute{
+		ua,
+	})
 	s.mockUsers.EXPECT().GetUser(s.requestContext, expectedUser.GetId()).Times(1).Return(nil, nil)
 	s.mockUsers.EXPECT().Upsert(s.requestContext, expectedUser).Times(1).Return(nil)
 
 	// Expect the user to have a group mapping for a role.
-	expectedGroup := &storage.Group{
-		Props: &storage.GroupProperties{
-			AuthProviderId: fakeAuthProvider,
-			Key:            "email",
-			Value:          "coolguy@yahoo",
-		},
-		RoleName: "TeamAwesome",
-	}
+	gp := &storage.GroupProperties{}
+	gp.SetAuthProviderId(fakeAuthProvider)
+	gp.SetKey("email")
+	gp.SetValue("coolguy@yahoo")
+	expectedGroup := &storage.Group{}
+	expectedGroup.SetProps(gp)
+	expectedGroup.SetRoleName("TeamAwesome")
 	expectedAttributes := map[string][]string{
 		"email": {"coolguy@yahoo"},
 	}

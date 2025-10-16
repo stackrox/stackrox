@@ -14,19 +14,19 @@ func GetSecret() *storage.Secret {
 
 // GetScopedSecret returns a mock Secret belonging to the input scope
 func GetScopedSecret(ID string, clusterID string, namespace string) *storage.Secret {
-	return &storage.Secret{
-		Id:          ID,
-		Name:        "secretName",
-		ClusterId:   clusterID,
-		ClusterName: "clustername",
-		Namespace:   namespace,
-		Files: []*storage.SecretDataFile{
-			{
-				Name: "foo",
-				Type: storage.SecretType_IMAGE_PULL_SECRET,
-			},
-		},
-	}
+	sdf := &storage.SecretDataFile{}
+	sdf.SetName("foo")
+	sdf.SetType(storage.SecretType_IMAGE_PULL_SECRET)
+	secret := &storage.Secret{}
+	secret.SetId(ID)
+	secret.SetName("secretName")
+	secret.SetClusterId(clusterID)
+	secret.SetClusterName("clustername")
+	secret.SetNamespace(namespace)
+	secret.SetFiles([]*storage.SecretDataFile{
+		sdf,
+	})
+	return secret
 }
 
 // GetSACTestSecretSet returns a set of mock secrets that can be used for scoped access control tests

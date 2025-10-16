@@ -45,8 +45,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // Ping implements v1.PingServiceServer, and it always returns a v1.PongMessage object.
 func (s *serviceImpl) Ping(context.Context, *v1.Empty) (*v1.PongMessage, error) {
-	result := &v1.PongMessage{
-		Status: "ok",
-	}
+	result := &v1.PongMessage{}
+	result.SetStatus("ok")
 	return result, nil
 }

@@ -34,13 +34,13 @@ func (s *suiteImpl) TestFail() {
 	check := s.verifyCheckRegistered()
 
 	testCluster := s.cluster()
+	ii := &storage.ImageIntegration{}
+	ii.SetId("ii1")
+	ii.SetCategories([]storage.ImageIntegrationCategory{
+		storage.ImageIntegrationCategory_REGISTRY,
+	})
 	imageIntegrations := []*storage.ImageIntegration{
-		{
-			Id: "ii1",
-			Categories: []storage.ImageIntegrationCategory{
-				storage.ImageIntegrationCategory_REGISTRY,
-			},
-		},
+		ii,
 	}
 
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
@@ -66,19 +66,19 @@ func (s *suiteImpl) TestPass() {
 	check := s.verifyCheckRegistered()
 
 	testCluster := s.cluster()
+	ii := &storage.ImageIntegration{}
+	ii.SetId("ii1")
+	ii.SetCategories([]storage.ImageIntegrationCategory{
+		storage.ImageIntegrationCategory_REGISTRY,
+	})
+	ii2 := &storage.ImageIntegration{}
+	ii2.SetId("ii2")
+	ii2.SetCategories([]storage.ImageIntegrationCategory{
+		storage.ImageIntegrationCategory_SCANNER,
+	})
 	imageIntegrations := []*storage.ImageIntegration{
-		{
-			Id: "ii1",
-			Categories: []storage.ImageIntegrationCategory{
-				storage.ImageIntegrationCategory_REGISTRY,
-			},
-		},
-		{
-			Id: "ii2",
-			Categories: []storage.ImageIntegrationCategory{
-				storage.ImageIntegrationCategory_SCANNER,
-			},
-		},
+		ii,
+		ii2,
 	}
 
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
@@ -111,7 +111,7 @@ func (s *suiteImpl) verifyCheckRegistered() framework.Check {
 }
 
 func (s *suiteImpl) cluster() *storage.Cluster {
-	return &storage.Cluster{
-		Id: uuid.NewV4().String(),
-	}
+	cluster := &storage.Cluster{}
+	cluster.SetId(uuid.NewV4().String())
+	return cluster
 }

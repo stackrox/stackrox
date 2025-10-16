@@ -65,15 +65,15 @@ func (u *upgradeController) setUpgradeProgress(expectedProcessID string, state s
 	if detail == "" && prevState == state {
 		detail = u.active.status.GetProgress().GetUpgradeStatusDetail()
 	}
-	u.upgradeStatus.MostRecentProcess.Progress = &storage.UpgradeProgress{
-		UpgradeState:        state,
-		UpgradeStatusDetail: detail,
-		Since:               since,
-	}
+	up := &storage.UpgradeProgress{}
+	up.SetUpgradeState(state)
+	up.SetUpgradeStatusDetail(detail)
+	up.SetSince(since)
+	u.upgradeStatus.GetMostRecentProcess().SetProgress(up)
 	adjustTrigger(u.active.trigger, state)
 
 	if stateutils.TerminalStates.Contains(state) {
-		u.upgradeStatus.MostRecentProcess.Active = false
+		u.upgradeStatus.GetMostRecentProcess().SetActive(false)
 		u.active = nil
 	}
 

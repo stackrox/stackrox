@@ -93,29 +93,29 @@ func (s *suiteImpl) verifyCheckRegistered() framework.Check {
 }
 
 func (s *suiteImpl) cluster() *storage.Cluster {
-	return &storage.Cluster{
-		Id: uuid.NewV4().String(),
-	}
+	cluster := &storage.Cluster{}
+	cluster.SetId(uuid.NewV4().String())
+	return cluster
 }
 
 // First deployment will pass, second deployment will fail.
 func (s *suiteImpl) deployments() []*storage.Deployment {
 	return []*storage.Deployment{
-		{
+		storage.Deployment_builder{
 			Id: uuid.NewV4().String(),
 			Ports: []*storage.PortConfig{
-				{
+				storage.PortConfig_builder{
 					Protocol: "TCP",
-				},
+				}.Build(),
 			},
-		},
-		{
+		}.Build(),
+		storage.Deployment_builder{
 			Id: uuid.NewV4().String(),
 			Ports: []*storage.PortConfig{
-				{
+				storage.PortConfig_builder{
 					Protocol: "UDP",
-				},
+				}.Build(),
 			},
-		},
+		}.Build(),
 	}
 }

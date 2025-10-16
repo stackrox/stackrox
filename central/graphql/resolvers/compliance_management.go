@@ -26,12 +26,12 @@ func (resolver *Resolver) ComplianceTriggerRuns(ctx context.Context, args struct
 	}
 
 	resp, err := resolver.processWithAuditLog(ctx, args, "ComplianceTriggerRuns", func() (interface{}, error) {
-		resp, err := resolver.ComplianceManagementService.TriggerRuns(ctx, &v1.TriggerComplianceRunsRequest{
-			Selection: &v1.ComplianceRunSelection{
-				ClusterId:  string(args.ClusterID),
-				StandardId: string(args.StandardID),
-			},
-		})
+		crs := &v1.ComplianceRunSelection{}
+		crs.SetClusterId(string(args.ClusterID))
+		crs.SetStandardId(string(args.StandardID))
+		tcrr := &v1.TriggerComplianceRunsRequest{}
+		tcrr.SetSelection(crs)
+		resp, err := resolver.ComplianceManagementService.TriggerRuns(ctx, tcrr)
 
 		return resolver.wrapComplianceRuns(resp.GetStartedRuns(), err)
 	})
@@ -58,10 +58,10 @@ func (resolver *Resolver) ComplianceRunStatuses(ctx context.Context, args struct
 		for i, id := range ids {
 			idStrings[i] = string(id)
 		}
-		request.RunIds = idStrings
+		request.SetRunIds(idStrings)
 	}
 	if args.Latest != nil {
-		request.Latest = *args.Latest
+		request.SetLatest(*args.Latest)
 	}
 	resp, err := resolver.ComplianceManagementService.GetRunStatuses(ctx, &request)
 	return resolver.wrapGetComplianceRunStatusesResponse(resp, resp != nil, err)
@@ -79,17 +79,17 @@ func (resolver *Resolver) ComplianceRecentRuns(
 	}
 	req := &v1.GetRecentComplianceRunsRequest{}
 	if args.ClusterID != nil {
-		req.ClusterIdOpt = &v1.GetRecentComplianceRunsRequest_ClusterId{ClusterId: string(*args.ClusterID)}
+		req.SetClusterId(string(*args.ClusterID))
 	}
 	if args.StandardID != nil {
-		req.StandardIdOpt = &v1.GetRecentComplianceRunsRequest_StandardId{StandardId: string(*args.StandardID)}
+		req.SetStandardId(string(*args.StandardID))
 	}
 	if args.Since != nil {
 		t, err := protocompat.ConvertTimeToTimestampOrError(args.Since.Time)
 		if err != nil {
 			return nil, err
 		}
-		req.Since = t
+		req.SetSince(t)
 	}
 	runs, err := resolver.ComplianceManager.GetRecentRuns(ctx, req)
 	if err != nil {

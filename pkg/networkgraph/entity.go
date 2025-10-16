@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/utils"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -42,25 +43,21 @@ type Entity struct {
 // ToProto converts the Entity struct to a storage.NetworkEntityInfo proto.
 func (e Entity) ToProto() *storage.NetworkEntityInfo {
 	if e.Discovered && e.Type == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
-		return &storage.NetworkEntityInfo{
-			Type: e.Type,
-			Id:   e.ID,
-			Desc: &storage.NetworkEntityInfo_ExternalSource_{
-				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-					Name:       e.ExternalEntityAddress.IP().String(),
-					Default:    false,
-					Discovered: true,
-					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-						Cidr: e.ExternalEntityAddress.String(),
-					},
-				},
-			},
-		}
+		nei2 := &storage.NetworkEntityInfo{}
+		nei2.SetType(e.Type)
+		nei2.SetId(e.ID)
+		nei2.SetExternalSource(storage.NetworkEntityInfo_ExternalSource_builder{
+			Name:       e.ExternalEntityAddress.IP().String(),
+			Default:    false,
+			Discovered: true,
+			Cidr:       proto.String(e.ExternalEntityAddress.String()),
+		}.Build())
+		return nei2
 	}
-	return &storage.NetworkEntityInfo{
-		Type: e.Type,
-		Id:   e.ID,
-	}
+	nei := &storage.NetworkEntityInfo{}
+	nei.SetType(e.Type)
+	nei.SetId(e.ID)
+	return nei
 }
 
 // EntityFromProto converts a storage.NetworkEntityInfo proto to an Entity struct.
@@ -143,16 +140,12 @@ func InternetProtoWithDesc(family net.Family) *storage.NetworkEntityInfo {
 		return nil
 	}
 
-	return &storage.NetworkEntityInfo{
-		Id:   InternetExternalSourceID,
-		Type: storage.NetworkEntityInfo_INTERNET,
-		Desc: &storage.NetworkEntityInfo_ExternalSource_{
-			ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-				Name: "External Entities",
-				Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-					Cidr: cidr,
-				},
-			},
-		},
-	}
+	nei := &storage.NetworkEntityInfo{}
+	nei.SetId(InternetExternalSourceID)
+	nei.SetType(storage.NetworkEntityInfo_INTERNET)
+	nei.SetExternalSource(storage.NetworkEntityInfo_ExternalSource_builder{
+		Name: "External Entities",
+		Cidr: proto.String(cidr),
+	}.Build())
+	return nei
 }

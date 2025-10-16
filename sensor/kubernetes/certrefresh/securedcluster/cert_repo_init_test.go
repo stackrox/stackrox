@@ -78,11 +78,15 @@ func sensorOwnerReference(sensorDeployment *appsApiv1.Deployment) metav1.OwnerRe
 }
 
 func createServiceCertificate(serviceType storage.ServiceType) *storage.TypedServiceCertificate {
-	return &storage.TypedServiceCertificate{
-		ServiceType: serviceType,
-		Cert: &storage.ServiceCertificate{
-			CertPem: make([]byte, 0),
-			KeyPem:  make([]byte, 1),
-		},
+	sc := &storage.ServiceCertificate{}
+	if x := make([]byte, 0); x != nil {
+		sc.SetCertPem(x)
 	}
+	if x := make([]byte, 1); x != nil {
+		sc.SetKeyPem(x)
+	}
+	tsc := &storage.TypedServiceCertificate{}
+	tsc.SetServiceType(serviceType)
+	tsc.SetCert(sc)
+	return tsc
 }

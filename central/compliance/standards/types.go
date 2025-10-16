@@ -79,14 +79,14 @@ func (s *Standard) protoScopes() []v1.ComplianceStandardMetadata_Scope {
 
 // MetadataProto returns the proto representation of the standard's metadata.
 func (s *Standard) MetadataProto() *v1.ComplianceStandardMetadata {
-	return &v1.ComplianceStandardMetadata{
-		Id:                   s.ID,
-		Name:                 s.Name,
-		Description:          s.Description,
-		NumImplementedChecks: int32(len(s.allChecks)),
-		Scopes:               s.protoScopes(),
-		Dynamic:              s.Dynamic,
-	}
+	csm := &v1.ComplianceStandardMetadata{}
+	csm.SetId(s.ID)
+	csm.SetName(s.Name)
+	csm.SetDescription(s.Description)
+	csm.SetNumImplementedChecks(int32(len(s.allChecks)))
+	csm.SetScopes(s.protoScopes())
+	csm.SetDynamic(s.Dynamic)
+	return csm
 }
 
 // ToProto returns the proto definition of the entire compliance standard.
@@ -101,11 +101,11 @@ func (s *Standard) ToProto() *v1.ComplianceStandard {
 		}
 	}
 
-	return &v1.ComplianceStandard{
-		Metadata: s.MetadataProto(),
-		Groups:   groups,
-		Controls: controls,
-	}
+	cs := &v1.ComplianceStandard{}
+	cs.SetMetadata(s.MetadataProto())
+	cs.SetGroups(groups)
+	cs.SetControls(controls)
+	return cs
 }
 
 // HasAnyDataDependency checks if the given standard requires at least one of the given data dependencies.
@@ -163,13 +163,13 @@ func (c *Category) ToProto() *v1.ComplianceControlGroup {
 	if c == nil {
 		return nil
 	}
-	return &v1.ComplianceControlGroup{
-		Id:                   c.QualifiedID(),
-		StandardId:           c.Standard.ID,
-		Name:                 c.Name,
-		Description:          c.Description,
-		NumImplementedChecks: int32(len(c.allChecks)),
-	}
+	ccg := &v1.ComplianceControlGroup{}
+	ccg.SetId(c.QualifiedID())
+	ccg.SetStandardId(c.Standard.ID)
+	ccg.SetName(c.Name)
+	ccg.SetDescription(c.Description)
+	ccg.SetNumImplementedChecks(int32(len(c.allChecks)))
+	return ccg
 }
 
 // Control contains information about a compliance control.
@@ -201,15 +201,15 @@ func (c *Control) ToProto() *v1.ComplianceControl {
 	if c.Check != nil {
 		interpretationText = c.Check.InterpretationText()
 	}
-	return &v1.ComplianceControl{
-		Id:                 c.QualifiedID(),
-		StandardId:         c.Standard.ID,
-		GroupId:            c.Category.QualifiedID(),
-		Name:               c.Name,
-		Description:        c.Description,
-		Implemented:        c.Check != nil,
-		InterpretationText: interpretationText,
-	}
+	cc := &v1.ComplianceControl{}
+	cc.SetId(c.QualifiedID())
+	cc.SetStandardId(c.Standard.ID)
+	cc.SetGroupId(c.Category.QualifiedID())
+	cc.SetName(c.Name)
+	cc.SetDescription(c.Description)
+	cc.SetImplemented(c.Check != nil)
+	cc.SetInterpretationText(interpretationText)
+	return cc
 }
 
 func newStandard(standardMD metadata.Standard, checkRegistry framework.CheckRegistry) *Standard {

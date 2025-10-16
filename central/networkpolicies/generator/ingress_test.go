@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -30,21 +31,21 @@ func makeNumPort(numPort int32) *storage.NetworkPolicyPort_Port {
 }
 
 func createDeploymentNode(id, name, namespace string, selectorLabels map[string]string) *node {
+	ls := &storage.LabelSelector{}
+	ls.SetMatchLabels(selectorLabels)
+	deployment := &storage.Deployment{}
+	deployment.SetId(id)
+	deployment.SetName(name)
+	deployment.SetNamespace(namespace)
+	deployment.SetLabelSelector(ls)
 	return &node{
 		entity: networkgraph.Entity{
 			Type: storage.NetworkEntityInfo_DEPLOYMENT,
 			ID:   id,
 		},
-		deployment: &storage.Deployment{
-			Id:        id,
-			Name:      name,
-			Namespace: namespace,
-			LabelSelector: &storage.LabelSelector{
-				MatchLabels: selectorLabels,
-			},
-		},
-		incoming: make(map[portDesc]*ingressInfo),
-		outgoing: make(map[portDesc]peers),
+		deployment: deployment,
+		incoming:   make(map[portDesc]*ingressInfo),
+		outgoing:   make(map[portDesc]peers),
 	}
 }
 
@@ -56,14 +57,14 @@ func TestGenerateIngressRule_WithInternetIngress(t *testing.T) {
 		},
 	}
 
+	nm := &storage.NamespaceMetadata{}
+	nm.SetId("ns")
+	nm.SetName("ns")
+	nm.SetLabels(map[string]string{
+		namespaces.NamespaceNameLabel: "ns",
+	})
 	nss := map[string]*storage.NamespaceMetadata{
-		"ns": {
-			Id:   "ns",
-			Name: "ns",
-			Labels: map[string]string{
-				namespaces.NamespaceNameLabel: "ns",
-			},
-		},
+		"ns": nm,
 	}
 
 	deployment0 := createDeploymentNode("deployment0", "deployment0", "ns", map[string]string{"app": "foo"})
@@ -87,14 +88,14 @@ func TestGenerateIngressRule_WithInternetIngress_WithPorts(t *testing.T) {
 		},
 	}
 
+	nm := &storage.NamespaceMetadata{}
+	nm.SetId("ns")
+	nm.SetName("ns")
+	nm.SetLabels(map[string]string{
+		namespaces.NamespaceNameLabel: "ns",
+	})
 	nss := map[string]*storage.NamespaceMetadata{
-		"ns": {
-			Id:   "ns",
-			Name: "ns",
-			Labels: map[string]string{
-				namespaces.NamespaceNameLabel: "ns",
-			},
-		},
+		"ns": nm,
 	}
 
 	deployment0 := createDeploymentNode("deployment0", "deployment0", "ns", map[string]string{"app": "foo"})
@@ -112,32 +113,32 @@ func TestGenerateIngressRule_WithInternetIngress_WithPorts(t *testing.T) {
 	}
 
 	expectedRules := []*storage.NetworkPolicyIngressRule{
-		{
+		storage.NetworkPolicyIngressRule_builder{
 			Ports: []*storage.NetworkPolicyPort{
-				{
+				storage.NetworkPolicyPort_builder{
 					Protocol: storage.Protocol_TCP_PROTOCOL,
-					PortRef:  makeNumPort(443),
-				},
+					Port:     proto.Int32(makeNumPort(443).Port),
+				}.Build(),
 			},
 			From: allowAllIngress.GetFrom(),
-		},
-		{
+		}.Build(),
+		storage.NetworkPolicyIngressRule_builder{
 			Ports: []*storage.NetworkPolicyPort{
-				{
+				storage.NetworkPolicyPort_builder{
 					Protocol: storage.Protocol_UDP_PROTOCOL,
-					PortRef:  makeNumPort(53),
-				},
+					Port:     proto.Int32(makeNumPort(53).Port),
+				}.Build(),
 			},
 			From: []*storage.NetworkPolicyPeer{
-				{
-					PodSelector: &storage.LabelSelector{
+				storage.NetworkPolicyPeer_builder{
+					PodSelector: storage.LabelSelector_builder{
 						MatchLabels: map[string]string{
 							"app": "foo",
 						},
-					},
-				},
+					}.Build(),
+				}.Build(),
 			},
-		},
+		}.Build(),
 	}
 
 	rules := generateIngressRules(deployment1, nss)
@@ -149,12 +150,12 @@ func TestGenerateIngressRule_WithInternetExposure(t *testing.T) {
 	deployment0 := createDeploymentNode("deployment0", "deployment0", "ns", map[string]string{"app": "foo"})
 	deployment1 := createDeploymentNode("deployment1", "deployment1", "ns", nil)
 
-	deployment1.deployment.Ports = []*storage.PortConfig{
-		{
-			ContainerPort: 443,
-			Exposure:      storage.PortConfig_EXTERNAL,
-		},
-	}
+	pc := &storage.PortConfig{}
+	pc.SetContainerPort(443)
+	pc.SetExposure(storage.PortConfig_EXTERNAL)
+	deployment1.deployment.SetPorts([]*storage.PortConfig{
+		pc,
+	})
 	deployment1.incoming[portDesc{}] = &ingressInfo{
 		peers: peers{
 			deployment0: struct{}{},
@@ -162,14 +163,14 @@ func TestGenerateIngressRule_WithInternetExposure(t *testing.T) {
 	}
 	deployment1.populateExposureInfo(false)
 
+	nm := &storage.NamespaceMetadata{}
+	nm.SetId("ns")
+	nm.SetName("ns")
+	nm.SetLabels(map[string]string{
+		namespaces.NamespaceNameLabel: "ns",
+	})
 	nss := map[string]*storage.NamespaceMetadata{
-		"ns": {
-			Id:   "ns",
-			Name: "ns",
-			Labels: map[string]string{
-				namespaces.NamespaceNameLabel: "ns",
-			},
-		},
+		"ns": nm,
 	}
 
 	rule := generateIngressRule(deployment1, portDesc{}, nss)
@@ -181,18 +182,18 @@ func TestGenerateIngressRule_WithInternetExposure_WithPorts(t *testing.T) {
 	deployment0 := createDeploymentNode("deployment0", "deployment0", "ns", map[string]string{"app": "foo"})
 	deployment1 := createDeploymentNode("deployment1", "deployment1", "ns", nil)
 
-	deployment1.deployment.Ports = []*storage.PortConfig{
-		{
-			ContainerPort: 443,
-			Protocol:      "TCP",
-			Exposure:      storage.PortConfig_EXTERNAL,
-		},
-		{
-			ContainerPort: 80,
-			Protocol:      "TCP",
-			Exposure:      storage.PortConfig_NODE,
-		},
-	}
+	pc := &storage.PortConfig{}
+	pc.SetContainerPort(443)
+	pc.SetProtocol("TCP")
+	pc.SetExposure(storage.PortConfig_EXTERNAL)
+	pc2 := &storage.PortConfig{}
+	pc2.SetContainerPort(80)
+	pc2.SetProtocol("TCP")
+	pc2.SetExposure(storage.PortConfig_NODE)
+	deployment1.deployment.SetPorts([]*storage.PortConfig{
+		pc,
+		pc2,
+	})
 	deployment1.incoming[httpsPort] = &ingressInfo{
 		peers: peers{
 			deployment0: struct{}{},
@@ -205,52 +206,52 @@ func TestGenerateIngressRule_WithInternetExposure_WithPorts(t *testing.T) {
 	}
 	deployment1.populateExposureInfo(true)
 
+	nm := &storage.NamespaceMetadata{}
+	nm.SetId("ns")
+	nm.SetName("ns")
+	nm.SetLabels(map[string]string{
+		namespaces.NamespaceNameLabel: "ns",
+	})
 	nss := map[string]*storage.NamespaceMetadata{
-		"ns": {
-			Id:   "ns",
-			Name: "ns",
-			Labels: map[string]string{
-				namespaces.NamespaceNameLabel: "ns",
-			},
-		},
+		"ns": nm,
 	}
 
 	expectedRules := []*storage.NetworkPolicyIngressRule{
-		{
+		storage.NetworkPolicyIngressRule_builder{
 			Ports: []*storage.NetworkPolicyPort{
-				{
+				storage.NetworkPolicyPort_builder{
 					Protocol: storage.Protocol_TCP_PROTOCOL,
-					PortRef:  makeNumPort(443),
-				},
+					Port:     proto.Int32(makeNumPort(443).Port),
+				}.Build(),
 			},
 			From: allowAllIngress.GetFrom(),
-		},
-		{
+		}.Build(),
+		storage.NetworkPolicyIngressRule_builder{
 			Ports: []*storage.NetworkPolicyPort{
-				{
+				storage.NetworkPolicyPort_builder{
 					Protocol: storage.Protocol_TCP_PROTOCOL,
-					PortRef:  makeNumPort(80),
-				},
+					Port:     proto.Int32(makeNumPort(80).Port),
+				}.Build(),
 			},
 			From: allowAllIngress.GetFrom(),
-		},
-		{
+		}.Build(),
+		storage.NetworkPolicyIngressRule_builder{
 			Ports: []*storage.NetworkPolicyPort{
-				{
+				storage.NetworkPolicyPort_builder{
 					Protocol: storage.Protocol_UDP_PROTOCOL,
-					PortRef:  makeNumPort(53),
-				},
+					Port:     proto.Int32(makeNumPort(53).Port),
+				}.Build(),
 			},
 			From: []*storage.NetworkPolicyPeer{
-				{
-					PodSelector: &storage.LabelSelector{
+				storage.NetworkPolicyPeer_builder{
+					PodSelector: storage.LabelSelector_builder{
 						MatchLabels: map[string]string{
 							"app": "foo",
 						},
-					},
-				},
+					}.Build(),
+				}.Build(),
 			},
-		},
+		}.Build(),
 	}
 
 	rules := generateIngressRules(deployment1, nss)
@@ -270,37 +271,37 @@ func TestGenerateIngressRule_WithoutInternet(t *testing.T) {
 		},
 	}
 
+	nm := &storage.NamespaceMetadata{}
+	nm.SetId("ns1")
+	nm.SetName("ns1")
+	nm.SetLabels(map[string]string{
+		namespaces.NamespaceNameLabel: "ns1",
+	})
+	nm2 := &storage.NamespaceMetadata{}
+	nm2.SetId("ns2")
+	nm2.SetName("ns2")
+	nm2.SetLabels(map[string]string{
+		namespaces.NamespaceNameLabel: "ns2",
+	})
 	nss := map[string]*storage.NamespaceMetadata{
-		"ns1": {
-			Id:   "ns1",
-			Name: "ns1",
-			Labels: map[string]string{
-				namespaces.NamespaceNameLabel: "ns1",
-			},
-		},
-		"ns2": {
-			Id:   "ns2",
-			Name: "ns2",
-			Labels: map[string]string{
-				namespaces.NamespaceNameLabel: "ns2",
-			},
-		},
+		"ns1": nm,
+		"ns2": nm2,
 	}
 
 	expectedPeers := []*storage.NetworkPolicyPeer{
-		{
-			PodSelector: &storage.LabelSelector{
+		storage.NetworkPolicyPeer_builder{
+			PodSelector: storage.LabelSelector_builder{
 				MatchLabels: map[string]string{"app": "foo"},
-			},
-		},
-		{
-			NamespaceSelector: &storage.LabelSelector{
+			}.Build(),
+		}.Build(),
+		storage.NetworkPolicyPeer_builder{
+			NamespaceSelector: storage.LabelSelector_builder{
 				MatchLabels: map[string]string{namespaces.NamespaceNameLabel: "ns2"},
-			},
-			PodSelector: &storage.LabelSelector{
+			}.Build(),
+			PodSelector: storage.LabelSelector_builder{
 				MatchLabels: map[string]string{"app": "bar"},
-			},
-		},
+			}.Build(),
+		}.Build(),
 	}
 
 	rule := generateIngressRule(tgtDeployment, portDesc{}, nss)
@@ -325,62 +326,62 @@ func TestGenerateIngressRule_WithoutInternet_WithPorts(t *testing.T) {
 		},
 	}
 
+	nm := &storage.NamespaceMetadata{}
+	nm.SetId("ns1")
+	nm.SetName("ns1")
+	nm.SetLabels(map[string]string{
+		namespaces.NamespaceNameLabel: "ns1",
+	})
+	nm2 := &storage.NamespaceMetadata{}
+	nm2.SetId("ns2")
+	nm2.SetName("ns2")
+	nm2.SetLabels(map[string]string{
+		namespaces.NamespaceNameLabel: "ns2",
+	})
 	nss := map[string]*storage.NamespaceMetadata{
-		"ns1": {
-			Id:   "ns1",
-			Name: "ns1",
-			Labels: map[string]string{
-				namespaces.NamespaceNameLabel: "ns1",
-			},
-		},
-		"ns2": {
-			Id:   "ns2",
-			Name: "ns2",
-			Labels: map[string]string{
-				namespaces.NamespaceNameLabel: "ns2",
-			},
-		},
+		"ns1": nm,
+		"ns2": nm2,
 	}
 
 	expectedRules := []*storage.NetworkPolicyIngressRule{
-		{
+		storage.NetworkPolicyIngressRule_builder{
 			Ports: []*storage.NetworkPolicyPort{
-				{
+				storage.NetworkPolicyPort_builder{
 					Protocol: storage.Protocol_TCP_PROTOCOL,
-					PortRef:  makeNumPort(443),
-				},
+					Port:     proto.Int32(makeNumPort(443).Port),
+				}.Build(),
 			},
 			From: []*storage.NetworkPolicyPeer{
-				{
-					PodSelector: &storage.LabelSelector{
+				storage.NetworkPolicyPeer_builder{
+					PodSelector: storage.LabelSelector_builder{
 						MatchLabels: map[string]string{"app": "foo"},
-					},
-				},
-				{
-					NamespaceSelector: &storage.LabelSelector{
+					}.Build(),
+				}.Build(),
+				storage.NetworkPolicyPeer_builder{
+					NamespaceSelector: storage.LabelSelector_builder{
 						MatchLabels: map[string]string{namespaces.NamespaceNameLabel: "ns2"},
-					},
-					PodSelector: &storage.LabelSelector{
+					}.Build(),
+					PodSelector: storage.LabelSelector_builder{
 						MatchLabels: map[string]string{"app": "bar"},
-					},
-				},
+					}.Build(),
+				}.Build(),
 			},
-		},
-		{
+		}.Build(),
+		storage.NetworkPolicyIngressRule_builder{
 			Ports: []*storage.NetworkPolicyPort{
-				{
+				storage.NetworkPolicyPort_builder{
 					Protocol: storage.Protocol_UDP_PROTOCOL,
-					PortRef:  makeNumPort(53),
-				},
+					Port:     proto.Int32(makeNumPort(53).Port),
+				}.Build(),
 			},
 			From: []*storage.NetworkPolicyPeer{
-				{
-					PodSelector: &storage.LabelSelector{
+				storage.NetworkPolicyPeer_builder{
+					PodSelector: storage.LabelSelector_builder{
 						MatchLabels: map[string]string{"app": "foo"},
-					},
-				},
+					}.Build(),
+				}.Build(),
 			},
-		},
+		}.Build(),
 	}
 
 	rules := generateIngressRules(tgtDeployment, nss)
@@ -407,21 +408,21 @@ func TestGenerateIngressRule_ScopeAlienDeployment(t *testing.T) {
 		},
 	}
 
+	nm := &storage.NamespaceMetadata{}
+	nm.SetId("ns1")
+	nm.SetName("ns1")
+	nm.SetLabels(map[string]string{
+		namespaces.NamespaceNameLabel: "ns1",
+	})
 	nss := map[string]*storage.NamespaceMetadata{
-		"ns": {
-			Id:   "ns1",
-			Name: "ns1",
-			Labels: map[string]string{
-				namespaces.NamespaceNameLabel: "ns1",
-			},
-		},
+		"ns": nm,
 	}
 
+	npp := &storage.NetworkPolicyPeer{}
+	npp.SetNamespaceSelector(&storage.LabelSelector{})
+	npp.SetPodSelector(&storage.LabelSelector{})
 	expectedPeers := []*storage.NetworkPolicyPeer{
-		{
-			NamespaceSelector: &storage.LabelSelector{},
-			PodSelector:       &storage.LabelSelector{},
-		},
+		npp,
 	}
 	rule := generateIngressRule(tgtDeployment, portDesc{}, nss)
 	protoassert.SlicesEqual(t, expectedPeers, rule.GetFrom())
@@ -439,28 +440,28 @@ func TestGenerateIngressRule_ScopeAlienNSOnly(t *testing.T) {
 		},
 	}
 
+	nm := &storage.NamespaceMetadata{}
+	nm.SetId("ns1")
+	nm.SetName("ns1")
+	nm.SetLabels(map[string]string{
+		namespaces.NamespaceNameLabel: "ns1",
+	})
 	nss := map[string]*storage.NamespaceMetadata{
-		"ns": {
-			Id:   "ns1",
-			Name: "ns1",
-			Labels: map[string]string{
-				namespaces.NamespaceNameLabel: "ns1",
-			},
-		},
+		"ns": nm,
 	}
 
 	expectedPeers := []*storage.NetworkPolicyPeer{
-		{
-			PodSelector: &storage.LabelSelector{
+		storage.NetworkPolicyPeer_builder{
+			PodSelector: storage.LabelSelector_builder{
 				MatchLabels: map[string]string{"app": "foo"},
-			},
-		},
-		{
+			}.Build(),
+		}.Build(),
+		storage.NetworkPolicyPeer_builder{
 			NamespaceSelector: &storage.LabelSelector{},
-			PodSelector: &storage.LabelSelector{
+			PodSelector: storage.LabelSelector_builder{
 				MatchLabels: map[string]string{"app": "bar"},
-			},
-		},
+			}.Build(),
+		}.Build(),
 	}
 	rule := generateIngressRule(tgtDeployment, portDesc{}, nss)
 	protoassert.ElementsMatch(t, expectedPeers, rule.GetFrom())
@@ -480,51 +481,51 @@ func TestGenerateIngressRule_FromProtectedNS(t *testing.T) {
 		},
 	}
 
+	nm := &storage.NamespaceMetadata{}
+	nm.SetId("ns1")
+	nm.SetName("ns1")
+	nm.SetLabels(map[string]string{
+		namespaces.NamespaceNameLabel: "ns1",
+	})
+	nm2 := &storage.NamespaceMetadata{}
+	nm2.SetId("ns2")
+	nm2.SetName("ns2")
+	nm2.SetLabels(map[string]string{
+		namespaces.NamespaceNameLabel: "ns2",
+	})
+	nm3 := &storage.NamespaceMetadata{}
+	nm3.SetId("kube-system")
+	nm3.SetName("kube-system")
+	nm3.SetLabels(map[string]string{
+		namespaces.NamespaceNameLabel: "kube-system",
+	})
 	nss := map[string]*storage.NamespaceMetadata{
-		"ns1": {
-			Id:   "ns1",
-			Name: "ns1",
-			Labels: map[string]string{
-				namespaces.NamespaceNameLabel: "ns1",
-			},
-		},
-		"ns2": {
-			Id:   "ns2",
-			Name: "ns2",
-			Labels: map[string]string{
-				namespaces.NamespaceNameLabel: "ns2",
-			},
-		},
-		"kube-system": {
-			Id:   "kube-system",
-			Name: "kube-system",
-			Labels: map[string]string{
-				namespaces.NamespaceNameLabel: "kube-system",
-			},
-		},
+		"ns1":         nm,
+		"ns2":         nm2,
+		"kube-system": nm3,
 	}
 
 	expectedPeers := []*storage.NetworkPolicyPeer{
-		{
-			NamespaceSelector: &storage.LabelSelector{
+		storage.NetworkPolicyPeer_builder{
+			NamespaceSelector: storage.LabelSelector_builder{
 				MatchLabels: map[string]string{
 					namespaces.NamespaceNameLabel: "kube-system",
 				},
-			},
-			PodSelector: &storage.LabelSelector{
+			}.Build(),
+			PodSelector: storage.LabelSelector_builder{
 				MatchLabels: map[string]string{"app": "foo"},
-			},
-		},
-		{
-			NamespaceSelector: &storage.LabelSelector{
+			}.Build(),
+		}.Build(),
+		storage.NetworkPolicyPeer_builder{
+			NamespaceSelector: storage.LabelSelector_builder{
 				MatchLabels: map[string]string{
 					namespaces.NamespaceNameLabel: "ns2",
 				},
-			},
-			PodSelector: &storage.LabelSelector{
+			}.Build(),
+			PodSelector: storage.LabelSelector_builder{
 				MatchLabels: map[string]string{"app": "bar"},
-			},
-		},
+			}.Build(),
+		}.Build(),
 	}
 
 	rules := generateIngressRules(tgtDeployment, nss)

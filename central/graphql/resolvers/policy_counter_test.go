@@ -9,41 +9,41 @@ import (
 
 func TestMapListAlertsToPolicyCounterResolver(t *testing.T) {
 	alerts := []*storage.ListAlert{
-		{
+		storage.ListAlert_builder{
 			State: storage.ViolationState_ACTIVE,
-			Policy: &storage.ListAlertPolicy{
+			Policy: storage.ListAlertPolicy_builder{
 				Id:       "id1",
 				Severity: storage.Severity_LOW_SEVERITY,
-			},
-		},
-		{
+			}.Build(),
+		}.Build(),
+		storage.ListAlert_builder{
 			State: storage.ViolationState_ACTIVE,
-			Policy: &storage.ListAlertPolicy{
+			Policy: storage.ListAlertPolicy_builder{
 				Id:       "id2",
 				Severity: storage.Severity_HIGH_SEVERITY,
-			},
-		},
-		{
+			}.Build(),
+		}.Build(),
+		storage.ListAlert_builder{
 			State: storage.ViolationState_RESOLVED,
-			Policy: &storage.ListAlertPolicy{
+			Policy: storage.ListAlertPolicy_builder{
 				Id:       "id3",
 				Severity: storage.Severity_CRITICAL_SEVERITY,
-			},
-		},
-		{
+			}.Build(),
+		}.Build(),
+		storage.ListAlert_builder{
 			State: storage.ViolationState_ACTIVE,
-			Policy: &storage.ListAlertPolicy{
+			Policy: storage.ListAlertPolicy_builder{
 				Id:       "id1",
 				Severity: storage.Severity_LOW_SEVERITY,
-			},
-		},
-		{
+			}.Build(),
+		}.Build(),
+		storage.ListAlert_builder{
 			State: storage.ViolationState_ACTIVE,
-			Policy: &storage.ListAlertPolicy{
+			Policy: storage.ListAlertPolicy_builder{
 				Id:       "id3",
 				Severity: storage.Severity_LOW_SEVERITY,
-			},
-		},
+			}.Build(),
+		}.Build(),
 	}
 
 	counterResolver := mapListAlertsToPolicySeverityCount(alerts)

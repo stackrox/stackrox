@@ -39,14 +39,14 @@ func (c *vulnerabilitiesMultiplier) Score(_ context.Context, node *storage.Node)
 	}
 
 	score := multipliers.NormalizeScore(sum, vulnSaturation, vulnMaxScore)
-	return &storage.Risk_Result{
-		Name: VulnerabilitiesHeading,
-		Factors: []*storage.Risk_Result_Factor{
-			{
-				Message: fmt.Sprintf("Node %q contains %d CVEs with severities ranging between %s and %s",
-					node.GetName(), num, min.Severity, max.Severity),
-			},
-		},
-		Score: score,
-	}
+	rrf := &storage.Risk_Result_Factor{}
+	rrf.SetMessage(fmt.Sprintf("Node %q contains %d CVEs with severities ranging between %s and %s",
+		node.GetName(), num, min.Severity, max.Severity))
+	rr := &storage.Risk_Result{}
+	rr.SetName(VulnerabilitiesHeading)
+	rr.SetFactors([]*storage.Risk_Result_Factor{
+		rrf,
+	})
+	rr.SetScore(score)
+	return rr
 }

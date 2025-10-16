@@ -13,62 +13,62 @@ var (
 	SortFieldsMap = map[search.FieldLabel]SortFieldMapper{
 		search.ImageName: func(option *v1.QuerySortOption) []*v1.QuerySortOption {
 			return []*v1.QuerySortOption{
-				{
+				v1.QuerySortOption_builder{
 					Field:    search.ImageRegistry.String(),
 					Reversed: option.GetReversed(),
-				},
-				{
+				}.Build(),
+				v1.QuerySortOption_builder{
 					Field:    search.ImageRemote.String(),
 					Reversed: option.GetReversed(),
-				},
-				{
+				}.Build(),
+				v1.QuerySortOption_builder{
 					Field:    search.ImageTag.String(),
 					Reversed: option.GetReversed(),
-				},
+				}.Build(),
 			}
 		},
 		search.Component: func(option *v1.QuerySortOption) []*v1.QuerySortOption {
 			return []*v1.QuerySortOption{
-				{
+				v1.QuerySortOption_builder{
 					Field:    search.Component.String(),
 					Reversed: option.GetReversed(),
-				},
-				{
+				}.Build(),
+				v1.QuerySortOption_builder{
 					Field:    search.ComponentVersion.String(),
 					Reversed: option.GetReversed(),
-				},
+				}.Build(),
 			}
 		},
 		search.NodePriority: func(option *v1.QuerySortOption) []*v1.QuerySortOption {
 			return []*v1.QuerySortOption{
-				{
+				v1.QuerySortOption_builder{
 					Field:    search.NodeRiskScore.String(),
 					Reversed: !option.GetReversed(),
-				},
+				}.Build(),
 			}
 		},
 		search.DeploymentPriority: func(option *v1.QuerySortOption) []*v1.QuerySortOption {
 			return []*v1.QuerySortOption{
-				{
+				v1.QuerySortOption_builder{
 					Field:    search.DeploymentRiskScore.String(),
 					Reversed: !option.GetReversed(),
-				},
+				}.Build(),
 			}
 		},
 		search.ImagePriority: func(option *v1.QuerySortOption) []*v1.QuerySortOption {
 			return []*v1.QuerySortOption{
-				{
+				v1.QuerySortOption_builder{
 					Field:    search.ImageRiskScore.String(),
 					Reversed: !option.GetReversed(),
-				},
+				}.Build(),
 			}
 		},
 		search.ComponentPriority: func(option *v1.QuerySortOption) []*v1.QuerySortOption {
 			return []*v1.QuerySortOption{
-				{
+				v1.QuerySortOption_builder{
 					Field:    search.ComponentRiskScore.String(),
 					Reversed: !option.GetReversed(),
-				},
+				}.Build(),
 			}
 		},
 	}

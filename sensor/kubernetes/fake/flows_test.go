@@ -65,11 +65,10 @@ func (s *flowsSuite) TestOriginatorCache_BasicCaching() {
 	cache := NewOriginatorCache()
 
 	// Manually seed the cache with a known originator
-	seedOriginator := &storage.NetworkProcessUniqueKey{
-		ProcessName:         "cached-process",
-		ProcessExecFilePath: "/usr/bin/cached-process",
-		ProcessArgs:         "cached args",
-	}
+	seedOriginator := &storage.NetworkProcessUniqueKey{}
+	seedOriginator.SetProcessName("cached-process")
+	seedOriginator.SetProcessExecFilePath("/usr/bin/cached-process")
+	seedOriginator.SetProcessArgs("cached args")
 	cache.cache[s.endpointKey] = seedOriginator
 
 	// With 0.0 probability, it should return the cached originator
@@ -85,11 +84,10 @@ func (s *flowsSuite) TestOriginatorCache_BasicCaching() {
 func (s *flowsSuite) TestOriginatorCache_ProbabilityCaching() {
 	cache := NewOriginatorCache()
 
-	seedOriginator := &storage.NetworkProcessUniqueKey{
-		ProcessName:         "cached-process",
-		ProcessExecFilePath: "/usr/bin/cached-process",
-		ProcessArgs:         "cached args",
-	}
+	seedOriginator := &storage.NetworkProcessUniqueKey{}
+	seedOriginator.SetProcessName("cached-process")
+	seedOriginator.SetProcessExecFilePath("/usr/bin/cached-process")
+	seedOriginator.SetProcessArgs("cached args")
 	cache.cache[s.endpointKey] = seedOriginator
 	numCacheMisses := 0
 

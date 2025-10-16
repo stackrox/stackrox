@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
+	"google.golang.org/protobuf/proto"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -95,48 +96,44 @@ func (c *ResultDispatcher) ProcessEvent(obj, _ interface{}, action central.Resou
 
 	id := string(complianceCheckResult.UID)
 	events := []*central.SensorEvent{
-		{
+		central.SensorEvent_builder{
 			Id:     id,
 			Action: action,
-			Resource: &central.SensorEvent_ComplianceOperatorResult{
-				ComplianceOperatorResult: &storage.ComplianceOperatorCheckResult{
-					Id:           id,
-					CheckId:      complianceCheckResult.ID,
-					CheckName:    complianceCheckResult.Name,
-					Status:       statusToProtoStatus(complianceCheckResult.Status),
-					Description:  complianceCheckResult.Description,
-					Instructions: complianceCheckResult.Instructions,
-					Labels:       complianceCheckResult.Labels,
-					Annotations:  complianceCheckResult.Annotations,
-				},
-			},
-		},
+			ComplianceOperatorResult: storage.ComplianceOperatorCheckResult_builder{
+				Id:           id,
+				CheckId:      complianceCheckResult.ID,
+				CheckName:    complianceCheckResult.Name,
+				Status:       statusToProtoStatus(complianceCheckResult.Status),
+				Description:  complianceCheckResult.Description,
+				Instructions: complianceCheckResult.Instructions,
+				Labels:       complianceCheckResult.Labels,
+				Annotations:  complianceCheckResult.Annotations,
+			}.Build(),
+		}.Build(),
 	}
 
 	if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
-		events = append(events, &central.SensorEvent{
-			Id:     id,
-			Action: action,
-			Resource: &central.SensorEvent_ComplianceOperatorResultV2{
-				ComplianceOperatorResultV2: &central.ComplianceOperatorCheckResultV2{
-					Id:           id,
-					CheckId:      complianceCheckResult.ID,
-					CheckName:    complianceCheckResult.GetName(),
-					Status:       statusToV2Status(complianceCheckResult.Status),
-					Severity:     severityToV2Severity(complianceCheckResult.Severity),
-					Description:  complianceCheckResult.Description,
-					Instructions: complianceCheckResult.Instructions,
-					Labels:       complianceCheckResult.GetLabels(),
-					Annotations:  complianceCheckResult.GetAnnotations(),
-					CreatedTime:  protoconv.ConvertTimeToTimestamp(complianceCheckResult.GetCreationTimestamp().Time),
-					ScanName:     getScanName(complianceCheckResult.GetLabels()),
-					SuiteName:    getSuiteName(complianceCheckResult.GetLabels()),
-					Rationale:    complianceCheckResult.Rationale,
-					ValuesUsed:   complianceCheckResult.ValuesUsed,
-					Warnings:     complianceCheckResult.Warnings,
-				},
-			},
-		})
+		cocrv2 := &central.ComplianceOperatorCheckResultV2{}
+		cocrv2.SetId(id)
+		cocrv2.SetCheckId(complianceCheckResult.ID)
+		cocrv2.SetCheckName(complianceCheckResult.GetName())
+		cocrv2.SetStatus(statusToV2Status(complianceCheckResult.Status))
+		cocrv2.SetSeverity(severityToV2Severity(complianceCheckResult.Severity))
+		cocrv2.SetDescription(complianceCheckResult.Description)
+		cocrv2.SetInstructions(complianceCheckResult.Instructions)
+		cocrv2.SetLabels(complianceCheckResult.GetLabels())
+		cocrv2.SetAnnotations(complianceCheckResult.GetAnnotations())
+		cocrv2.SetCreatedTime(protoconv.ConvertTimeToTimestamp(complianceCheckResult.GetCreationTimestamp().Time))
+		cocrv2.SetScanName(getScanName(complianceCheckResult.GetLabels()))
+		cocrv2.SetSuiteName(getSuiteName(complianceCheckResult.GetLabels()))
+		cocrv2.SetRationale(complianceCheckResult.Rationale)
+		cocrv2.SetValuesUsed(complianceCheckResult.ValuesUsed)
+		cocrv2.SetWarnings(complianceCheckResult.Warnings)
+		se := &central.SensorEvent{}
+		se.SetId(id)
+		se.SetAction(action)
+		se.SetComplianceOperatorResultV2(proto.ValueOrDefault(cocrv2))
+		events = append(events, se)
 	}
 
 	return component.NewEvent(events...)

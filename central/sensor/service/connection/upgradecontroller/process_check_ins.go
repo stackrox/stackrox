@@ -41,13 +41,17 @@ func (u *upgradeController) ProcessCheckInFromUpgrader(req *central.UpgradeCheck
 func (u *upgradeController) doProcessCheckInFromUpgrader(req *central.UpgradeCheckInFromUpgraderRequest) (*central.UpgradeCheckInFromUpgraderResponse, error) {
 	if u.active == nil {
 		// No upgrade is currently in progress. Tell the upgrader to clean up.
-		return &central.UpgradeCheckInFromUpgraderResponse{WorkflowToExecute: sensorupgrader.CleanupWorkflow}, nil
+		ucifur := &central.UpgradeCheckInFromUpgraderResponse{}
+		ucifur.SetWorkflowToExecute(sensorupgrader.CleanupWorkflow)
+		return ucifur, nil
 	}
 
 	processStatus := u.active.status
 	if processStatus.GetId() != req.GetUpgradeProcessId() {
 		// Current upgrade process id is different. Tell the upgrader to clean up.
-		return &central.UpgradeCheckInFromUpgraderResponse{WorkflowToExecute: sensorupgrader.CleanupWorkflow}, nil
+		ucifur := &central.UpgradeCheckInFromUpgraderResponse{}
+		ucifur.SetWorkflowToExecute(sensorupgrader.CleanupWorkflow)
+		return ucifur, nil
 	}
 
 	stage := sensorupgrader.GetStage(req.GetLastExecutedStage())
@@ -67,7 +71,9 @@ func (u *upgradeController) doProcessCheckInFromUpgrader(req *central.UpgradeChe
 		return nil, err
 	}
 
-	return &central.UpgradeCheckInFromUpgraderResponse{WorkflowToExecute: workflowToExecute}, nil
+	ucifur := &central.UpgradeCheckInFromUpgraderResponse{}
+	ucifur.SetWorkflowToExecute(workflowToExecute)
+	return ucifur, nil
 }
 
 func (u *upgradeController) ProcessCheckInFromSensor(req *central.UpgradeCheckInFromSensorRequest) error {
@@ -120,19 +126,19 @@ func (u *upgradeController) doProcessCheckInFromSensor(req *central.UpgradeCheck
 	var nextState storage.UpgradeProgress_UpgradeState
 	var detail string
 
-	switch s := req.GetState().(type) {
-	case *central.UpgradeCheckInFromSensorRequest_LaunchError:
+	switch req.WhichState() {
+	case central.UpgradeCheckInFromSensorRequest_LaunchError_case:
 		if currState >= storage.UpgradeProgress_UPGRADER_LAUNCHED {
 			return nil // not interesting if upgrader has already launched
 		}
 
-		if s.LaunchError != "" {
+		if req.GetLaunchError() != "" {
 			nextState = storage.UpgradeProgress_UPGRADE_INITIALIZATION_ERROR
-			detail = fmt.Sprintf("Sensor failed to launch upgrader deployment: %s", s.LaunchError)
+			detail = fmt.Sprintf("Sensor failed to launch upgrader deployment: %s", req.GetLaunchError())
 		} else {
 			nextState = storage.UpgradeProgress_UPGRADER_LAUNCHING
 		}
-	case *central.UpgradeCheckInFromSensorRequest_DeploymentGone:
+	case central.UpgradeCheckInFromSensorRequest_DeploymentGone_case:
 		if currState == storage.UpgradeProgress_UPGRADE_ERROR_ROLLING_BACK {
 			return nil
 		}
@@ -141,7 +147,7 @@ func (u *upgradeController) doProcessCheckInFromSensor(req *central.UpgradeCheck
 		// case we would have exited this function right at the top.
 		nextState = storage.UpgradeProgress_UPGRADE_ERROR_UNKNOWN
 		detail = "Sensor reported the upgrader deployment no longer exists."
-	case *central.UpgradeCheckInFromSensorRequest_PodStates:
+	case central.UpgradeCheckInFromSensorRequest_PodStates_case:
 		if currState >= storage.UpgradeProgress_UPGRADER_LAUNCHED && time.Since(inStateSince) < u.timeouts.StuckInSameStateTimeout() {
 			// Generally, not interesting if the upgrader has already launched, unless it's been stuck in the same
 			// state for a really long time.
@@ -149,7 +155,7 @@ func (u *upgradeController) doProcessCheckInFromSensor(req *central.UpgradeCheck
 		}
 
 		var ok bool
-		detail, ok = analyzeUpgraderPodStates(s.PodStates.GetStates())
+		detail, ok = analyzeUpgraderPodStates(req.GetPodStates().GetStates())
 		if ok {
 			nextState = storage.UpgradeProgress_UPGRADER_LAUNCHING
 			break

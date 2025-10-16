@@ -43,15 +43,14 @@ func TestCategoryRemove(t *testing.T) {
 		reporter:       reporter,
 	}
 
-	integration := &storage.ImageIntegration{
-		Id:   "fake-id",
-		Name: "fake-name",
-		Type: "fake-type",
-		Categories: []storage.ImageIntegrationCategory{
-			storage.ImageIntegrationCategory_SCANNER,
-			storage.ImageIntegrationCategory_REGISTRY,
-		},
-	}
+	integration := &storage.ImageIntegration{}
+	integration.SetId("fake-id")
+	integration.SetName("fake-name")
+	integration.SetType("fake-type")
+	integration.SetCategories([]storage.ImageIntegrationCategory{
+		storage.ImageIntegrationCategory_SCANNER,
+		storage.ImageIntegrationCategory_REGISTRY,
+	})
 
 	err := s.UpdateImageIntegration(integration)
 	require.NoError(t, err)
@@ -59,14 +58,14 @@ func TestCategoryRemove(t *testing.T) {
 	assert.False(t, registrySet.IsEmpty())
 
 	// Remove the Scanner category
-	integration.Categories = []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY}
+	integration.SetCategories([]storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY})
 	err = s.UpdateImageIntegration(integration)
 	require.NoError(t, err)
 	assert.True(t, scannerSet.IsEmpty())
 	assert.False(t, registrySet.IsEmpty())
 
 	// Remove the Registry category
-	integration.Categories = []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_SCANNER}
+	integration.SetCategories([]storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_SCANNER})
 	err = s.UpdateImageIntegration(integration)
 	require.NoError(t, err)
 	assert.False(t, scannerSet.IsEmpty())

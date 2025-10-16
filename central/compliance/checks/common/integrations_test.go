@@ -29,12 +29,18 @@ func constructDeployments(lightDeps []deployment) map[string]*storage.Deployment
 	for _, lightDep := range lightDeps {
 		containers := make([]*storage.Container, 0, len(lightDep.images))
 		for _, img := range lightDep.images {
-			containers = append(containers, &storage.Container{Image: &storage.ContainerImage{Name: &storage.ImageName{FullName: img}}})
+			imageName := &storage.ImageName{}
+			imageName.SetFullName(img)
+			ci := &storage.ContainerImage{}
+			ci.SetName(imageName)
+			container := &storage.Container{}
+			container.SetImage(ci)
+			containers = append(containers, container)
 		}
-		outputDeps[lightDep.name] = &storage.Deployment{
-			Name:       lightDep.name,
-			Containers: containers,
-		}
+		deployment2 := &storage.Deployment{}
+		deployment2.SetName(lightDep.name)
+		deployment2.SetContainers(containers)
+		outputDeps[lightDep.name] = deployment2
 	}
 	return outputDeps
 }

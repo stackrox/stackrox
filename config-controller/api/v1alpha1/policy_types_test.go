@@ -68,7 +68,7 @@ func TestToProtobuf(t *testing.T) {
 		},
 	}
 
-	expectedProto := &storage.Policy{
+	expectedProto := storage.Policy_builder{
 		Name:            "This is a test policy",
 		Description:     "This is a test description",
 		Rationale:       "This is a test rationale",
@@ -80,42 +80,42 @@ func TestToProtobuf(t *testing.T) {
 			emailNotifierID,
 		},
 		Exclusions: []*storage.Exclusion{
-			{
+			storage.Exclusion_builder{
 				Name: "Don't alert on deployment collector in namespace stackrox",
-				Deployment: &storage.Exclusion_Deployment{
+				Deployment: storage.Exclusion_Deployment_builder{
 					Name: "collector",
-					Scope: &storage.Scope{
+					Scope: storage.Scope_builder{
 						Namespace: "stackrox",
 						Cluster:   clusterID,
-					},
-				},
+					}.Build(),
+				}.Build(),
 				Expiration: protoconv.ConvertTimeString(expirationTS),
-			},
+			}.Build(),
 		},
 		Severity:           storage.Severity_LOW_SEVERITY,
 		EventSource:        storage.EventSource_DEPLOYMENT_EVENT,
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
 		PolicySections: []*storage.PolicySection{
-			{
+			storage.PolicySection_builder{
 				SectionName: "Section name",
 				PolicyGroups: []*storage.PolicyGroup{
-					{
+					storage.PolicyGroup_builder{
 						FieldName: "Image Component",
 						Values: []*storage.PolicyValue{
-							{
+							storage.PolicyValue_builder{
 								Value: "rpm|microdnf|dnf|yum=",
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 		Scope: []*storage.Scope{
-			{
+			storage.Scope_builder{
 				Cluster: clusterID,
-			},
+			}.Build(),
 		},
-	}
+	}.Build()
 
 	notifiers := map[string]string{
 		"email-notifier": emailNotifierID,
@@ -130,7 +130,7 @@ func TestToProtobuf(t *testing.T) {
 	})
 	assert.NoError(t, err, "unexpected error in converting to policy proto")
 	// Hack: Reset the source field for us to be able to compare
-	protoPolicy.Source = storage.PolicySource_IMPERATIVE
+	protoPolicy.SetSource(storage.PolicySource_IMPERATIVE)
 	protoassert.Equal(t, expectedProto, protoPolicy, "proto message derived from custom resource not as expected")
 }
 

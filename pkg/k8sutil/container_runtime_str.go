@@ -38,8 +38,8 @@ func ParseContainerRuntimeVersion(versionString string) *storage.ContainerRuntim
 	if rt == storage.ContainerRuntime_UNKNOWN_CONTAINER_RUNTIME {
 		version = versionString // use the full string, e.g., `somert://1.2.3`
 	}
-	return &storage.ContainerRuntimeInfo{
-		Type:    rt,
-		Version: version,
-	}
+	cri := &storage.ContainerRuntimeInfo{}
+	cri.SetType(rt)
+	cri.SetVersion(version)
+	return cri
 }

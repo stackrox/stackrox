@@ -301,7 +301,7 @@ func (ds *datastoreImpl) mergeCronJobs(ctx context.Context, deployment *storage.
 		if container.GetImage().GetName().GetFullName() != oldContainer.GetImage().GetName().GetFullName() {
 			continue
 		}
-		container.Image.Id = oldContainer.GetImage().GetId()
+		container.GetImage().SetId(oldContainer.GetImage().GetId())
 	}
 	return nil
 }
@@ -315,7 +315,7 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 	}
 
 	// Update deployment with latest risk score
-	deployment.RiskScore = ds.deploymentRanker.GetScoreForID(deployment.GetId())
+	deployment.SetRiskScore(ds.deploymentRanker.GetScoreForID(deployment.GetId()))
 
 	// Deployments that run intermittently and do not have images that are referenced by digest
 	// should maintain the digest of the last used image
@@ -328,7 +328,7 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 		if err != nil {
 			return err
 		}
-		deployment.PlatformComponent = match
+		deployment.SetPlatformComponent(match)
 	}
 
 	if err := ds.deploymentStore.Upsert(ctx, deployment); err != nil {
@@ -427,13 +427,13 @@ func (ds *datastoreImpl) GetImagesForDeployment(ctx context.Context, deployment 
 
 func (ds *datastoreImpl) updateListDeploymentPriority(deployments ...*storage.ListDeployment) {
 	for _, deployment := range deployments {
-		deployment.Priority = ds.deploymentRanker.GetRankForID(deployment.GetId())
+		deployment.SetPriority(ds.deploymentRanker.GetRankForID(deployment.GetId()))
 	}
 }
 
 func (ds *datastoreImpl) updateDeploymentPriority(deployments ...*storage.Deployment) {
 	for _, deployment := range deployments {
-		deployment.Priority = ds.deploymentRanker.GetRankForID(deployment.GetId())
+		deployment.SetPriority(ds.deploymentRanker.GetRankForID(deployment.GetId()))
 	}
 }
 
@@ -443,12 +443,12 @@ func (ds *datastoreImpl) GetDeploymentIDs(ctx context.Context) ([]string, error)
 
 // convertDeployment returns proto search result from a deployment object and the internal search result
 func convertDeployment(deployment *storage.Deployment, result pkgSearch.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_DEPLOYMENTS,
-		Id:             deployment.GetId(),
-		Name:           deployment.GetName(),
-		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-		Location:       fmt.Sprintf("/%s/%s", deployment.GetClusterName(), deployment.GetNamespace()),
-	}
+	sr := &v1.SearchResult{}
+	sr.SetCategory(v1.SearchCategory_DEPLOYMENTS)
+	sr.SetId(deployment.GetId())
+	sr.SetName(deployment.GetName())
+	sr.SetFieldToMatches(pkgSearch.GetProtoMatchesMap(result.Matches))
+	sr.SetScore(result.Score)
+	sr.SetLocation(fmt.Sprintf("/%s/%s", deployment.GetClusterName(), deployment.GetNamespace()))
+	return sr
 }

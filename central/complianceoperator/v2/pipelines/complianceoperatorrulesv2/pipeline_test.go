@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestPipeline(t *testing.T) {
@@ -50,17 +51,13 @@ func (s *PipelineTestSuite) TestRunCreate() {
 
 	s.v2DS.EXPECT().UpsertRule(ctx, testutils.GetRuleV2Storage(s.T())).Return(nil).Times(1)
 
-	msg := &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id:     testutils.RuleUID,
-				Action: central.ResourceAction_CREATE_RESOURCE,
-				Resource: &central.SensorEvent_ComplianceOperatorRuleV2{
-					ComplianceOperatorRuleV2: testutils.GetRuleV2SensorMsg(s.T()),
-				},
-			},
-		},
-	}
+	se := &central.SensorEvent{}
+	se.SetId(testutils.RuleUID)
+	se.SetAction(central.ResourceAction_CREATE_RESOURCE)
+	se.SetComplianceOperatorRuleV2(proto.ValueOrDefault(testutils.GetRuleV2SensorMsg(s.T())))
+	msg := central.MsgFromSensor_builder{
+		Event: se,
+	}.Build()
 
 	err := s.pipeline.Run(ctx, fixtureconsts.Cluster1, msg, nil)
 	s.NoError(err)
@@ -71,17 +68,13 @@ func (s *PipelineTestSuite) TestRunDelete() {
 
 	s.v2DS.EXPECT().DeleteRule(ctx, testutils.RuleUID).Return(nil).Times(1)
 
-	msg := &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id:     testutils.RuleUID,
-				Action: central.ResourceAction_REMOVE_RESOURCE,
-				Resource: &central.SensorEvent_ComplianceOperatorRuleV2{
-					ComplianceOperatorRuleV2: testutils.GetRuleV2SensorMsg(s.T()),
-				},
-			},
-		},
-	}
+	se := &central.SensorEvent{}
+	se.SetId(testutils.RuleUID)
+	se.SetAction(central.ResourceAction_REMOVE_RESOURCE)
+	se.SetComplianceOperatorRuleV2(proto.ValueOrDefault(testutils.GetRuleV2SensorMsg(s.T())))
+	msg := central.MsgFromSensor_builder{
+		Event: se,
+	}.Build()
 
 	err := s.pipeline.Run(ctx, fixtureconsts.Cluster1, msg, nil)
 	s.NoError(err)
@@ -111,41 +104,29 @@ func (s *PipelineTestSuite) TestCapabilities() {
 }
 
 func (s *PipelineTestSuite) TestMatch() {
-	v1Msg := &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id:     testutils.RuleUID,
-				Action: central.ResourceAction_REMOVE_RESOURCE,
-				Resource: &central.SensorEvent_ComplianceOperatorRule{
-					ComplianceOperatorRule: testutils.GetRuleV1Storage(s.T()),
-				},
-			},
-		},
-	}
+	se := &central.SensorEvent{}
+	se.SetId(testutils.RuleUID)
+	se.SetAction(central.ResourceAction_REMOVE_RESOURCE)
+	se.SetComplianceOperatorRule(proto.ValueOrDefault(testutils.GetRuleV1Storage(s.T())))
+	v1Msg := central.MsgFromSensor_builder{
+		Event: se,
+	}.Build()
 
-	v2Msg := &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id:     testutils.RuleUID,
-				Action: central.ResourceAction_REMOVE_RESOURCE,
-				Resource: &central.SensorEvent_ComplianceOperatorRuleV2{
-					ComplianceOperatorRuleV2: testutils.GetRuleV2SensorMsg(s.T()),
-				},
-			},
-		},
-	}
+	se2 := &central.SensorEvent{}
+	se2.SetId(testutils.RuleUID)
+	se2.SetAction(central.ResourceAction_REMOVE_RESOURCE)
+	se2.SetComplianceOperatorRuleV2(proto.ValueOrDefault(testutils.GetRuleV2SensorMsg(s.T())))
+	v2Msg := central.MsgFromSensor_builder{
+		Event: se2,
+	}.Build()
 
-	otherMsg := &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id:     testutils.ProfileUID,
-				Action: central.ResourceAction_REMOVE_RESOURCE,
-				Resource: &central.SensorEvent_ComplianceOperatorProfileV2{
-					ComplianceOperatorProfileV2: testutils.GetProfileV2SensorMsg(s.T()),
-				},
-			},
-		},
-	}
+	se3 := &central.SensorEvent{}
+	se3.SetId(testutils.ProfileUID)
+	se3.SetAction(central.ResourceAction_REMOVE_RESOURCE)
+	se3.SetComplianceOperatorProfileV2(proto.ValueOrDefault(testutils.GetProfileV2SensorMsg(s.T())))
+	otherMsg := central.MsgFromSensor_builder{
+		Event: se3,
+	}.Build()
 
 	s.Require().False(s.pipeline.Match(v1Msg))
 	s.Require().True(s.pipeline.Match(v2Msg))

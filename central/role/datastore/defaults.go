@@ -156,15 +156,14 @@ func getDefaultRoles() []*storage.Role {
 			continue
 		}
 
-		role := &storage.Role{
-			Name:          roleName,
-			Description:   attributes.description,
-			AccessScopeId: rolePkg.AccessScopeIncludeAll.GetId(),
-			Traits: &storage.Traits{
-				Origin: storage.Traits_DEFAULT,
-			},
-			PermissionSetId: permissionSet.GetId(),
-		}
+		traits := &storage.Traits{}
+		traits.SetOrigin(storage.Traits_DEFAULT)
+		role := &storage.Role{}
+		role.SetName(roleName)
+		role.SetDescription(attributes.description)
+		role.SetAccessScopeId(rolePkg.AccessScopeIncludeAll.GetId())
+		role.SetTraits(traits)
+		role.SetPermissionSetId(permissionSet.GetId())
 		roles = append(roles, role)
 	}
 	return roles
@@ -176,15 +175,14 @@ func getDefaultPermissionSets() []*storage.PermissionSet {
 	for name, attributes := range defaultPermissionSets {
 		resourceToAccess := permissionsUtils.FromResourcesWithAccess(attributes.resourceWithAccess...)
 
-		permissionSet := &storage.PermissionSet{
-			Id:               attributes.getID(),
-			Name:             name,
-			Description:      attributes.description,
-			ResourceToAccess: resourceToAccess,
-			Traits: &storage.Traits{
-				Origin: storage.Traits_DEFAULT,
-			},
-		}
+		traits := &storage.Traits{}
+		traits.SetOrigin(storage.Traits_DEFAULT)
+		permissionSet := &storage.PermissionSet{}
+		permissionSet.SetId(attributes.getID())
+		permissionSet.SetName(name)
+		permissionSet.SetDescription(attributes.description)
+		permissionSet.SetResourceToAccess(resourceToAccess)
+		permissionSet.SetTraits(traits)
 		permissionSets = append(permissionSets, permissionSet)
 	}
 
@@ -202,15 +200,15 @@ func getDefaultPermissionSet(name string) *storage.PermissionSet {
 		return nil
 	}
 
-	return &storage.PermissionSet{
-		Id:               attributes.getID(),
-		Name:             name,
-		Description:      attributes.description,
-		ResourceToAccess: permissionsUtils.FromResourcesWithAccess(attributes.resourceWithAccess...),
-		Traits: &storage.Traits{
-			Origin: storage.Traits_DEFAULT,
-		},
-	}
+	traits := &storage.Traits{}
+	traits.SetOrigin(storage.Traits_DEFAULT)
+	ps := &storage.PermissionSet{}
+	ps.SetId(attributes.getID())
+	ps.SetName(name)
+	ps.SetDescription(attributes.description)
+	ps.SetResourceToAccess(permissionsUtils.FromResourcesWithAccess(attributes.resourceWithAccess...))
+	ps.SetTraits(traits)
+	return ps
 }
 
 func getDefaultAccessScopes() []*storage.SimpleAccessScope {

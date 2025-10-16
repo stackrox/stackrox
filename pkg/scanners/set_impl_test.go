@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"golang.org/x/sync/semaphore"
+	"google.golang.org/protobuf/proto"
 )
 
 var _ types.Scanner = (*fakeScanner)(nil)
@@ -90,43 +91,34 @@ func TestSetOrdering(t *testing.T) {
 		return integration.GetType() == types.Clairify
 	})).Return(newFakeImageScanner(&fakeScanner{typ: types.Clairify}), nil)
 
-	clairifyIntegration := &storage.ImageIntegration{
-		Id:   "clairify",
-		Type: types.Clairify,
-		IntegrationConfig: &storage.ImageIntegration_Clairify{
-			Clairify: &storage.ClairifyConfig{
-				Endpoint: server.URL,
-			},
-		},
-	}
+	cc := &storage.ClairifyConfig{}
+	cc.SetEndpoint(server.URL)
+	clairifyIntegration := &storage.ImageIntegration{}
+	clairifyIntegration.SetId("clairify")
+	clairifyIntegration.SetType(types.Clairify)
+	clairifyIntegration.SetClairify(proto.ValueOrDefault(cc))
 
 	scannerFactory.EXPECT().CreateScanner(testutils.PredMatcher("ecr", func(integration *storage.ImageIntegration) bool {
 		return integration.GetType() == "ecr"
 	})).Return(newFakeImageScanner(&fakeScanner{typ: "ecr"}), nil)
 
-	ecrIntegration := &storage.ImageIntegration{
-		Id:   "ecr",
-		Type: "ecr",
-		IntegrationConfig: &storage.ImageIntegration_Ecr{
-			Ecr: &storage.ECRConfig{
-				AccessKeyId:     "user",
-				SecretAccessKey: "password",
-				Endpoint:        server.URL,
-			},
-		},
-	}
+	eCRConfig := &storage.ECRConfig{}
+	eCRConfig.SetAccessKeyId("user")
+	eCRConfig.SetSecretAccessKey("password")
+	eCRConfig.SetEndpoint(server.URL)
+	ecrIntegration := &storage.ImageIntegration{}
+	ecrIntegration.SetId("ecr")
+	ecrIntegration.SetType("ecr")
+	ecrIntegration.SetEcr(proto.ValueOrDefault(eCRConfig))
 
 	scannerFactory.EXPECT().CreateScanner(testutils.PredMatcher("scannerv4", func(integration *storage.ImageIntegration) bool {
 		return integration.GetType() == types.ScannerV4
 	})).Return(newFakeImageScanner(&fakeScanner{typ: types.ScannerV4}), nil)
 
-	scannerV4Integration := &storage.ImageIntegration{
-		Id:   "scannerv4",
-		Type: types.ScannerV4,
-		IntegrationConfig: &storage.ImageIntegration_ScannerV4{
-			ScannerV4: &storage.ScannerV4Config{},
-		},
-	}
+	scannerV4Integration := &storage.ImageIntegration{}
+	scannerV4Integration.SetId("scannerv4")
+	scannerV4Integration.SetType(types.ScannerV4)
+	scannerV4Integration.SetScannerV4(&storage.ScannerV4Config{})
 
 	require.NoError(t, scannerSet.UpdateImageIntegration(clairifyIntegration))
 	require.NoError(t, scannerSet.UpdateImageIntegration(ecrIntegration))
@@ -149,10 +141,12 @@ func TestSet(t *testing.T) {
 
 	assert.True(t, s.IsEmpty())
 
-	goodIntegration := &storage.ImageIntegration{Id: "GOOD"}
+	goodIntegration := &storage.ImageIntegration{}
+	goodIntegration.SetId("GOOD")
 	mockFactory.EXPECT().CreateScanner(goodIntegration).Return(newFakeImageScanner(&fakeScanner{typ: "FAKE"}), nil).Times(2)
 
-	badIntegration := &storage.ImageIntegration{Id: "BAD"}
+	badIntegration := &storage.ImageIntegration{}
+	badIntegration.SetId("BAD")
 	var nilFIS *fakeImageScanner
 	mockFactory.EXPECT().CreateScanner(badIntegration).Return(nilFIS, errors.New(errText))
 

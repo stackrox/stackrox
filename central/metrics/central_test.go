@@ -19,9 +19,9 @@ func TestIncrementMsgToSensorNotSentCounter(t *testing.T) {
 
 	t.Run("no panic on nil inner msg", func(t *testing.T) {
 		assert.NotPanics(t, func() {
-			IncrementMsgToSensorNotSentCounter("", &central.MsgToSensor{
-				Msg: nil,
-			}, "")
+			mts := &central.MsgToSensor{}
+			mts.ClearMsg()
+			IncrementMsgToSensorNotSentCounter("", mts, "")
 		})
 	})
 
@@ -50,23 +50,23 @@ func TestIncrementMsgToSensorNotSentCounter(t *testing.T) {
 		assert.Equal(t, 0.0, testutil.ToFloat64(reprocessDeploySignalCounter))
 
 		// Verify the count is incremented, type extracted, and reason recorded.
-		IncrementMsgToSensorNotSentCounter("a", &central.MsgToSensor{
-			Msg: &central.MsgToSensor_UpdatedImage{},
-		}, NotSentError)
+		mts := &central.MsgToSensor{}
+		mts.Msg = &central.MsgToSensor_UpdatedImage{}
+		IncrementMsgToSensorNotSentCounter("a", mts, NotSentError)
 		assert.Equal(t, 1.0, testutil.ToFloat64(updImgErrCounter))
 		assert.Equal(t, 0.0, testutil.ToFloat64(updImgSkipCounter))
 		assert.Equal(t, 0.0, testutil.ToFloat64(reprocessDeploySignalCounter))
 
-		IncrementMsgToSensorNotSentCounter("a", &central.MsgToSensor{
-			Msg: &central.MsgToSensor_UpdatedImage{},
-		}, NotSentSkip)
+		mts2 := &central.MsgToSensor{}
+		mts2.Msg = &central.MsgToSensor_UpdatedImage{}
+		IncrementMsgToSensorNotSentCounter("a", mts2, NotSentSkip)
 		assert.Equal(t, 1.0, testutil.ToFloat64(updImgErrCounter))
 		assert.Equal(t, 1.0, testutil.ToFloat64(updImgSkipCounter))
 		assert.Equal(t, 0.0, testutil.ToFloat64(reprocessDeploySignalCounter))
 
-		IncrementMsgToSensorNotSentCounter("b", &central.MsgToSensor{
-			Msg: &central.MsgToSensor_ReprocessDeployments{},
-		}, NotSentSignal)
+		mts3 := &central.MsgToSensor{}
+		mts3.Msg = &central.MsgToSensor_ReprocessDeployments{}
+		IncrementMsgToSensorNotSentCounter("b", mts3, NotSentSignal)
 		assert.Equal(t, 1.0, testutil.ToFloat64(updImgErrCounter))
 		assert.Equal(t, 1.0, testutil.ToFloat64(updImgSkipCounter))
 		assert.Equal(t, 1.0, testutil.ToFloat64(reprocessDeploySignalCounter))

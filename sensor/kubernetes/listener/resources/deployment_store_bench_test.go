@@ -129,15 +129,15 @@ func createDeploymentWrap() *deploymentWrap {
 		selector:  selector.CreateSelector(labels, selector.EmptyMatchesNothing()),
 	}
 	namespaceSelectorPoll = append(namespaceSelectorPoll, nsAndSel)
+	deployment := &storage.Deployment{}
+	deployment.SetLabels(labels)
+	deployment.SetPodLabels(labels)
+	deployment.SetNamespace(nsAndSel.namespace)
+	deployment.SetId(randStringWithLength(16))
+	deployment.SetName(randStringWithLength(16))
 	return &deploymentWrap{
 		portConfigs: map[service.PortRef]*storage.PortConfig{},
-		Deployment: &storage.Deployment{
-			Labels:    labels,
-			PodLabels: labels,
-			Namespace: nsAndSel.namespace,
-			Id:        randStringWithLength(16),
-			Name:      randStringWithLength(16),
-		},
+		Deployment:  deployment,
 	}
 }
 
@@ -157,36 +157,36 @@ func generateExposureInfos(numMaps, numExposureInfos int) []map[service.PortRef]
 }
 
 func generateFakeExposureInfo() []*storage.PortConfig_ExposureInfo {
+	pe := &storage.PortConfig_ExposureInfo{}
+	pe.SetLevel(storage.PortConfig_EXTERNAL)
+	pe.SetServiceName("abc")
+	pe.SetServiceId("")
+	pe.SetServiceClusterIp("")
+	pe.SetServicePort(8080)
+	pe.SetNodePort(0)
+	pe.SetExternalIps([]string{"A", "B", "C"})
+	pe.SetExternalHostnames([]string{"a.com", "b.com", "c.com"})
+	pe2 := &storage.PortConfig_ExposureInfo{}
+	pe2.SetLevel(storage.PortConfig_HOST)
+	pe2.SetServiceName("host")
+	pe2.SetServiceId("")
+	pe2.SetServiceClusterIp("")
+	pe2.SetServicePort(8081)
+	pe2.SetNodePort(0)
+	pe2.SetExternalIps([]string{"A", "B", "C"})
+	pe2.SetExternalHostnames([]string{"a.com", "b.com", "c.com"})
+	pe3 := &storage.PortConfig_ExposureInfo{}
+	pe3.SetLevel(storage.PortConfig_NODE)
+	pe3.SetServiceName("node")
+	pe3.SetServiceId("")
+	pe3.SetServiceClusterIp("")
+	pe3.SetServicePort(8082)
+	pe3.SetNodePort(0)
+	pe3.SetExternalIps([]string{"A", "B", "C"})
+	pe3.SetExternalHostnames([]string{"a.com", "b.com", "c.com"})
 	return []*storage.PortConfig_ExposureInfo{
-		{
-			Level:             storage.PortConfig_EXTERNAL,
-			ServiceName:       "abc",
-			ServiceId:         "",
-			ServiceClusterIp:  "",
-			ServicePort:       8080,
-			NodePort:          0,
-			ExternalIps:       []string{"A", "B", "C"},
-			ExternalHostnames: []string{"a.com", "b.com", "c.com"},
-		},
-		{
-			Level:             storage.PortConfig_HOST,
-			ServiceName:       "host",
-			ServiceId:         "",
-			ServiceClusterIp:  "",
-			ServicePort:       8081,
-			NodePort:          0,
-			ExternalIps:       []string{"A", "B", "C"},
-			ExternalHostnames: []string{"a.com", "b.com", "c.com"},
-		},
-		{
-			Level:             storage.PortConfig_NODE,
-			ServiceName:       "node",
-			ServiceId:         "",
-			ServiceClusterIp:  "",
-			ServicePort:       8082,
-			NodePort:          0,
-			ExternalIps:       []string{"A", "B", "C"},
-			ExternalHostnames: []string{"a.com", "b.com", "c.com"},
-		},
+		pe,
+		pe2,
+		pe3,
 	}
 }

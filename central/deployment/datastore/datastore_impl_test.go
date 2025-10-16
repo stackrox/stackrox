@@ -59,29 +59,29 @@ func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 	ds := newDatastoreImpl(suite.storage, nil, nil, nil, suite.riskStore, nil, suite.filter, clusterRanker, nsRanker, deploymentRanker, suite.matcher)
 
 	deployments := []*storage.Deployment{
-		{
+		storage.Deployment_builder{
 			Id:          "1",
 			RiskScore:   float32(1.0),
 			NamespaceId: "ns1",
 			ClusterId:   "c1",
-		},
-		{
+		}.Build(),
+		storage.Deployment_builder{
 			Id:          "2",
 			RiskScore:   float32(2.0),
 			NamespaceId: "ns1",
 			ClusterId:   "c1",
-		},
-		{
+		}.Build(),
+		storage.Deployment_builder{
 			Id:          "3",
 			NamespaceId: "ns2",
 			ClusterId:   "c2",
-		},
-		{
+		}.Build(),
+		storage.Deployment_builder{
 			Id: "4",
-		},
-		{
+		}.Build(),
+		storage.Deployment_builder{
 			Id: "5",
-		},
+		}.Build(),
 	}
 	suite.storage.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc(deployments))
 	ds.initializeRanker()
@@ -113,34 +113,33 @@ func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	// Not a cronjob so no merging
-	dep := &storage.Deployment{
-		Id:   "id",
-		Type: kubernetes.Deployment,
-	}
+	dep := &storage.Deployment{}
+	dep.SetId("id")
+	dep.SetType(kubernetes.Deployment)
 	expectedDep := dep.CloneVT()
 	suite.NoError(ds.mergeCronJobs(ctx, dep))
 	protoassert.Equal(suite.T(), expectedDep, dep)
 
-	dep.Containers = []*storage.Container{
-		{
-			Image: &storage.ContainerImage{
+	dep.SetContainers([]*storage.Container{
+		storage.Container_builder{
+			Image: storage.ContainerImage_builder{
 				Id: "abc",
-			},
-		},
-		{
-			Image: &storage.ContainerImage{
+			}.Build(),
+		}.Build(),
+		storage.Container_builder{
+			Image: storage.ContainerImage_builder{
 				Id: "def",
-			},
-		},
-	}
-	dep.Type = kubernetes.CronJob
+			}.Build(),
+		}.Build(),
+	})
+	dep.SetType(kubernetes.CronJob)
 	expectedDep = dep.CloneVT()
 	// All container have images with digests
 	suite.NoError(ds.mergeCronJobs(ctx, dep))
 	protoassert.Equal(suite.T(), expectedDep, dep)
 
 	// All containers don't have images with digests, but old deployment does not exist
-	dep.Containers[1].Image.Id = ""
+	dep.GetContainers()[1].GetImage().SetId("")
 	expectedDep = dep.CloneVT()
 	suite.storage.EXPECT().Get(ctx, "id").Return(nil, false, nil)
 	suite.NoError(ds.mergeCronJobs(ctx, dep))
@@ -148,26 +147,26 @@ func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
 
 	// Different numbers of containers for the CronJob so early exit with no changes
 	returnedDep := dep.CloneVT()
-	returnedDep.Containers = returnedDep.GetContainers()[:1]
+	returnedDep.SetContainers(returnedDep.GetContainers()[:1])
 
 	suite.storage.EXPECT().Get(ctx, "id").Return(returnedDep, true, nil)
 	suite.NoError(ds.mergeCronJobs(ctx, dep))
 	protoassert.Equal(suite.T(), expectedDep, dep)
 
 	// Filled in for missing last container, but names do not match
-	returnedDep.Containers = append(returnedDep.Containers, dep.GetContainers()[1].CloneVT())
-	returnedDep.Containers[1].Image.Id = "xyz"
-	returnedDep.Containers[1].Image.Name = &storage.ImageName{
-		FullName: "fullname",
-	}
+	returnedDep.SetContainers(append(returnedDep.GetContainers(), dep.GetContainers()[1].CloneVT()))
+	returnedDep.GetContainers()[1].GetImage().SetId("xyz")
+	imageName := &storage.ImageName{}
+	imageName.SetFullName("fullname")
+	returnedDep.GetContainers()[1].GetImage().SetName(imageName)
 	suite.storage.EXPECT().Get(ctx, "id").Return(returnedDep, true, nil)
 	suite.NoError(ds.mergeCronJobs(ctx, dep))
 	protoassert.Equal(suite.T(), expectedDep, dep)
 
 	// Fill in missing last container value since names match
-	dep.Containers[1].Image.Name = returnedDep.GetContainers()[1].GetImage().GetName()
-	expectedDep.Containers[1].Image.Name = returnedDep.GetContainers()[1].GetImage().GetName()
-	expectedDep.Containers[1].Image.Id = "xyz"
+	dep.GetContainers()[1].GetImage().SetName(returnedDep.GetContainers()[1].GetImage().GetName())
+	expectedDep.GetContainers()[1].GetImage().SetName(returnedDep.GetContainers()[1].GetImage().GetName())
+	expectedDep.GetContainers()[1].GetImage().SetId("xyz")
 	suite.storage.EXPECT().Get(ctx, "id").Return(returnedDep, true, nil)
 	suite.NoError(ds.mergeCronJobs(ctx, dep))
 	protoassert.Equal(suite.T(), expectedDep, dep)
@@ -184,15 +183,13 @@ func (suite *DeploymentDataStoreTestSuite) TestUpsert_PlatformComponentAssignmen
 	suite.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).AnyTimes()
 
 	// Case: Deployment not matching platform rules
-	deployment := &storage.Deployment{
-		Id:        "id",
-		Namespace: "my-namespace",
-	}
-	expectedDeployment := &storage.Deployment{
-		Id:                "id",
-		Namespace:         "my-namespace",
-		PlatformComponent: false,
-	}
+	deployment := &storage.Deployment{}
+	deployment.SetId("id")
+	deployment.SetNamespace("my-namespace")
+	expectedDeployment := &storage.Deployment{}
+	expectedDeployment.SetId("id")
+	expectedDeployment.SetNamespace("my-namespace")
+	expectedDeployment.SetPlatformComponent(false)
 
 	suite.storage.EXPECT().Upsert(gomock.Any(), expectedDeployment).Return(nil).Times(1)
 	suite.matcher.EXPECT().MatchDeployment(deployment).Return(false, nil).Times(1)
@@ -200,15 +197,13 @@ func (suite *DeploymentDataStoreTestSuite) TestUpsert_PlatformComponentAssignmen
 	suite.Require().NoError(err)
 
 	// Case: Deployment matching platform rules
-	deployment = &storage.Deployment{
-		Id:        "id",
-		Namespace: "kube-123",
-	}
-	expectedDeployment = &storage.Deployment{
-		Id:                "id",
-		Namespace:         "kube-123",
-		PlatformComponent: true,
-	}
+	deployment = &storage.Deployment{}
+	deployment.SetId("id")
+	deployment.SetNamespace("kube-123")
+	expectedDeployment = &storage.Deployment{}
+	expectedDeployment.SetId("id")
+	expectedDeployment.SetNamespace("kube-123")
+	expectedDeployment.SetPlatformComponent(true)
 
 	suite.storage.EXPECT().Upsert(gomock.Any(), expectedDeployment).Return(nil).Times(1)
 	suite.matcher.EXPECT().MatchDeployment(deployment).Return(true, nil).Times(1)

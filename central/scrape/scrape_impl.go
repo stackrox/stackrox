@@ -68,12 +68,12 @@ func (s *scrapeImpl) AcceptUpdate(update *central.ScrapeUpdate) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	switch update.GetUpdate().(type) {
-	case *central.ScrapeUpdate_ScrapeStarted:
+	switch update.WhichUpdate() {
+	case central.ScrapeUpdate_ScrapeStarted_case:
 		s.acceptStart(update.GetScrapeStarted())
-	case *central.ScrapeUpdate_ComplianceReturn:
+	case central.ScrapeUpdate_ComplianceReturn_case:
 		s.acceptComplianceReturn(update.GetComplianceReturn())
-	case *central.ScrapeUpdate_ScrapeKilled:
+	case central.ScrapeUpdate_ScrapeKilled_case:
 		s.acceptKill(update.GetScrapeKilled())
 	default:
 		log.Errorf("unrecognized scrape update: %s", protocompat.MarshalTextString(update))

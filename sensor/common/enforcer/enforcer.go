@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -56,14 +57,14 @@ func (e *enforcer) ResponsesC() <-chan *message.ExpiringMessage {
 }
 
 func generateDeploymentEnforcement(a *storage.Alert) *central.DeploymentEnforcement {
-	return &central.DeploymentEnforcement{
-		DeploymentId:   a.GetDeployment().GetId(),
-		DeploymentName: a.GetDeployment().GetName(),
-		DeploymentType: a.GetDeployment().GetType(),
-		Namespace:      a.GetDeployment().GetNamespace(),
-		AlertId:        a.GetId(),
-		PolicyName:     a.GetPolicy().GetName(),
-	}
+	de := &central.DeploymentEnforcement{}
+	de.SetDeploymentId(a.GetDeployment().GetId())
+	de.SetDeploymentName(a.GetDeployment().GetName())
+	de.SetDeploymentType(a.GetDeployment().GetType())
+	de.SetNamespace(a.GetDeployment().GetNamespace())
+	de.SetAlertId(a.GetId())
+	de.SetPolicyName(a.GetPolicy().GetName())
+	return de
 }
 
 func (e *enforcer) ProcessAlertResults(action central.ResourceAction, stage storage.LifecycleStage, alertResults *central.AlertResults) {
@@ -80,26 +81,22 @@ func (e *enforcer) ProcessAlertResults(action central.ResourceAction, stage stor
 		}
 		switch stage {
 		case storage.LifecycleStage_DEPLOY:
-			e.actionsC <- &central.SensorEnforcement{
-				Enforcement: a.GetEnforcement().GetAction(),
-				Resource: &central.SensorEnforcement_Deployment{
-					Deployment: generateDeploymentEnforcement(a),
-				},
-			}
+			se := &central.SensorEnforcement{}
+			se.SetEnforcement(a.GetEnforcement().GetAction())
+			se.SetDeployment(proto.ValueOrDefault(generateDeploymentEnforcement(a)))
+			e.actionsC <- se
 		case storage.LifecycleStage_RUNTIME:
 			if numProcesses := len(a.GetProcessViolation().GetProcesses()); numProcesses != 1 {
 				log.Errorf("Runtime alert on policy %q and deployment %q has %d process violations. Expected only 1", a.GetPolicy().GetName(), a.GetDeployment().GetName(), numProcesses)
 				continue
 			}
-			e.actionsC <- &central.SensorEnforcement{
-				Enforcement: a.GetEnforcement().GetAction(),
-				Resource: &central.SensorEnforcement_ContainerInstance{
-					ContainerInstance: &central.ContainerInstanceEnforcement{
-						PodId:                 a.GetProcessViolation().GetProcesses()[0].GetPodId(),
-						DeploymentEnforcement: generateDeploymentEnforcement(a),
-					},
-				},
-			}
+			cie := &central.ContainerInstanceEnforcement{}
+			cie.SetPodId(a.GetProcessViolation().GetProcesses()[0].GetPodId())
+			cie.SetDeploymentEnforcement(generateDeploymentEnforcement(a))
+			se := &central.SensorEnforcement{}
+			se.SetEnforcement(a.GetEnforcement().GetAction())
+			se.SetContainerInstance(proto.ValueOrDefault(cie))
+			e.actionsC <- se
 		}
 	}
 }

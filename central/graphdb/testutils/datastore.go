@@ -64,30 +64,29 @@ type testGraphDataStoreImpl struct {
 }
 
 func embeddedVulnerabilityToClusterCVE(from *storage.EmbeddedVulnerability) *storage.ClusterCVE {
-	ret := &storage.ClusterCVE{
-		Id: from.GetCve(),
-		CveBaseInfo: &storage.CVEInfo{
-			Cve:          from.GetCve(),
-			Summary:      from.GetSummary(),
-			Link:         from.GetLink(),
-			PublishedOn:  from.GetPublishedOn(),
-			CreatedAt:    from.GetFirstSystemOccurrence(),
-			LastModified: from.GetLastModified(),
-			CvssV2:       from.GetCvssV2(),
-			CvssV3:       from.GetCvssV3(),
-		},
-		Cvss:         from.GetCvss(),
-		Severity:     from.GetSeverity(),
-		Snoozed:      from.GetSuppressed(),
-		SnoozeStart:  from.GetSuppressActivation(),
-		SnoozeExpiry: from.GetSuppressExpiry(),
-	}
+	cVEInfo := &storage.CVEInfo{}
+	cVEInfo.SetCve(from.GetCve())
+	cVEInfo.SetSummary(from.GetSummary())
+	cVEInfo.SetLink(from.GetLink())
+	cVEInfo.SetPublishedOn(from.GetPublishedOn())
+	cVEInfo.SetCreatedAt(from.GetFirstSystemOccurrence())
+	cVEInfo.SetLastModified(from.GetLastModified())
+	cVEInfo.SetCvssV2(from.GetCvssV2())
+	cVEInfo.SetCvssV3(from.GetCvssV3())
+	ret := &storage.ClusterCVE{}
+	ret.SetId(from.GetCve())
+	ret.SetCveBaseInfo(cVEInfo)
+	ret.SetCvss(from.GetCvss())
+	ret.SetSeverity(from.GetSeverity())
+	ret.SetSnoozed(from.GetSuppressed())
+	ret.SetSnoozeStart(from.GetSuppressActivation())
+	ret.SetSnoozeExpiry(from.GetSuppressExpiry())
 	if ret.GetCveBaseInfo().GetCvssV3() != nil {
-		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V3
-		ret.ImpactScore = from.GetCvssV3().GetImpactScore()
+		ret.GetCveBaseInfo().SetScoreVersion(storage.CVEInfo_V3)
+		ret.SetImpactScore(from.GetCvssV3().GetImpactScore())
 	} else if ret.GetCveBaseInfo().GetCvssV2() != nil {
-		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V2
-		ret.ImpactScore = from.GetCvssV2().GetImpactScore()
+		ret.GetCveBaseInfo().SetScoreVersion(storage.CVEInfo_V2)
+		ret.SetImpactScore(from.GetCvssV2().GetImpactScore())
 	}
 	return ret
 }
@@ -116,13 +115,13 @@ func (s *testGraphDataStoreImpl) PushClusterToVulnerabilitiesGraph() (err error)
 		return err
 	}
 	s.storedClusters = append(s.storedClusters, cluster1ID)
-	cluster1.Id = cluster1ID
+	cluster1.SetId(cluster1ID)
 	cluster2ID, err := s.clusterStore.AddCluster(ctx, cluster2)
 	if err != nil {
 		return err
 	}
 	s.storedClusters = append(s.storedClusters, cluster2ID)
-	cluster2.Id = cluster2ID
+	cluster2.SetId(cluster2ID)
 	clusters1Only := []*storage.Cluster{cluster1}
 	clusters2Only := []*storage.Cluster{cluster2}
 	embeddedClusterCVE1 := fixtures.GetEmbeddedClusterCVE1234x0001()

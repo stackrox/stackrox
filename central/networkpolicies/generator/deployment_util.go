@@ -18,7 +18,7 @@ func labelSelectorForDeployment(deployment *storage.Deployment) *storage.LabelSe
 	if ls := deployment.GetLabelSelector(); ls != nil {
 		return ls
 	}
-	return &storage.LabelSelector{
-		MatchLabels: deployment.GetPodLabels(),
-	}
+	ls := &storage.LabelSelector{}
+	ls.SetMatchLabels(deployment.GetPodLabels())
+	return ls
 }

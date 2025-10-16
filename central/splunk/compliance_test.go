@@ -29,82 +29,82 @@ var (
 	}
 	latestRunResultBatch = map[compliance.ClusterStandardPair]types.ResultsWithStatus{
 		csPair: {
-			LastSuccessfulResults: &storage.ComplianceRunResults{
-				RunMetadata: &storage.ComplianceRunMetadata{
+			LastSuccessfulResults: storage.ComplianceRunResults_builder{
+				RunMetadata: storage.ComplianceRunMetadata_builder{
 					RunId:      "compliance-run-metadata-id",
 					StandardId: "CIS_Kubernetes_v1_5",
 					ClusterId:  clusterID,
-				},
-				Domain: &storage.ComplianceDomain{
+				}.Build(),
+				Domain: storage.ComplianceDomain_builder{
 					Id: "compliance-test-id",
-					Cluster: &storage.ComplianceDomain_Cluster{
+					Cluster: storage.ComplianceDomain_Cluster_builder{
 						Name: clusterID,
-					},
+					}.Build(),
 					Deployments: map[string]*storage.ComplianceDomain_Deployment{
-						"deployment1": {
+						"deployment1": storage.ComplianceDomain_Deployment_builder{
 							Id:        "deployment1",
 							Name:      "deployment1",
 							Namespace: "dep-ns1",
-						},
+						}.Build(),
 					},
 					Nodes: map[string]*storage.ComplianceDomain_Node{
-						"node1": {
+						"node1": storage.ComplianceDomain_Node_builder{
 							Id:   "node1",
 							Name: "node1",
-						},
+						}.Build(),
 					},
-				},
-				ClusterResults: &storage.ComplianceRunResults_EntityResults{
+				}.Build(),
+				ClusterResults: storage.ComplianceRunResults_EntityResults_builder{
 					ControlResults: map[string]*storage.ComplianceResultValue{
-						"HIPAA_164:310_a_1": {
-							Evidence: []*storage.ComplianceResultValue_Evidence{{
+						"HIPAA_164:310_a_1": storage.ComplianceResultValue_builder{
+							Evidence: []*storage.ComplianceResultValue_Evidence{storage.ComplianceResultValue_Evidence_builder{
 								State:   storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 								Message: "Cluster has an image scanner in use",
-							}},
+							}.Build()},
 							OverallState: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 				DeploymentResults: map[string]*storage.ComplianceRunResults_EntityResults{
-					"deployment1": {
+					"deployment1": storage.ComplianceRunResults_EntityResults_builder{
 						ControlResults: map[string]*storage.ComplianceResultValue{
-							"CIS_Kubernetes_v1_5:5_6": {
-								Evidence: []*storage.ComplianceResultValue_Evidence{{
+							"CIS_Kubernetes_v1_5:5_6": storage.ComplianceResultValue_builder{
+								Evidence: []*storage.ComplianceResultValue_Evidence{storage.ComplianceResultValue_Evidence_builder{
 									State:   storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 									Message: "Container has no ssh process running",
-								}},
+								}.Build()},
 								OverallState: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
 				NodeResults: map[string]*storage.ComplianceRunResults_EntityResults{
-					"node1": {
+					"node1": storage.ComplianceRunResults_EntityResults_builder{
 						ControlResults: map[string]*storage.ComplianceResultValue{
-							"CIS_Kubernetes_v1_5:1_1_2": {
-								Evidence: []*storage.ComplianceResultValue_Evidence{{
+							"CIS_Kubernetes_v1_5:1_1_2": storage.ComplianceResultValue_builder{
+								Evidence: []*storage.ComplianceResultValue_Evidence{storage.ComplianceResultValue_Evidence_builder{
 									State:   storage.ComplianceState_COMPLIANCE_STATE_SKIP,
 									Message: "Node does not use Docker container runtime",
-								}},
+								}.Build()},
 								OverallState: storage.ComplianceState_COMPLIANCE_STATE_SKIP,
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
 				MachineConfigResults: map[string]*storage.ComplianceRunResults_EntityResults{
-					"ocp4-cis-node-master": {
+					"ocp4-cis-node-master": storage.ComplianceRunResults_EntityResults_builder{
 						ControlResults: map[string]*storage.ComplianceResultValue{
-							"ocp4-cis-node:file-owner-worker-kubeconfig": {
-								Evidence: []*storage.ComplianceResultValue_Evidence{{
+							"ocp4-cis-node:file-owner-worker-kubeconfig": storage.ComplianceResultValue_builder{
+								Evidence: []*storage.ComplianceResultValue_Evidence{storage.ComplianceResultValue_Evidence_builder{
 									State:   storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 									Message: "Pass for ocp4-cis-node-master-file-owner-worker-kubeconfig.",
-								}},
+								}.Build()},
 								OverallState: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 	}
 )

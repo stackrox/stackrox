@@ -53,20 +53,21 @@ func TestTransformAuthMachineToMachineConfig(t *testing.T) {
 	assert.Contains(t, output, authM2MConfigType)
 	m2mMessages := output[authM2MConfigType]
 
-	expectedOutputMsg := &storage.AuthMachineToMachineConfig{
-		Id:                      declarativeconfig.NewDeclarativeM2MAuthConfigUUID(testIssuer).String(),
-		Type:                    storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
-		TokenExpirationDuration: testTokenExpirationDuration,
-		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{
-			{
-				Key:             testMappingKey,
-				ValueExpression: testMappingValue,
-				Role:            testRoleName,
-			},
-		},
-		Issuer: testIssuer,
-		Traits: &storage.Traits{Origin: storage.Traits_DECLARATIVE},
-	}
+	am := &storage.AuthMachineToMachineConfig_Mapping{}
+	am.SetKey(testMappingKey)
+	am.SetValueExpression(testMappingValue)
+	am.SetRole(testRoleName)
+	traits := &storage.Traits{}
+	traits.SetOrigin(storage.Traits_DECLARATIVE)
+	expectedOutputMsg := &storage.AuthMachineToMachineConfig{}
+	expectedOutputMsg.SetId(declarativeconfig.NewDeclarativeM2MAuthConfigUUID(testIssuer).String())
+	expectedOutputMsg.SetType(storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT)
+	expectedOutputMsg.SetTokenExpirationDuration(testTokenExpirationDuration)
+	expectedOutputMsg.SetMappings([]*storage.AuthMachineToMachineConfig_Mapping{
+		am,
+	})
+	expectedOutputMsg.SetIssuer(testIssuer)
+	expectedOutputMsg.SetTraits(traits)
 
 	castedTransformOutput := make([]*storage.AuthMachineToMachineConfig, 0, len(m2mMessages))
 	for _, m := range m2mMessages {
@@ -112,20 +113,21 @@ func TestUniversalTransformAuthMachineToMachineConfig(t *testing.T) {
 	assert.Contains(t, output, authM2MConfigType)
 	m2mMessages := output[authM2MConfigType]
 
-	expectedOutputMsg := &storage.AuthMachineToMachineConfig{
-		Id:                      declarativeconfig.NewDeclarativeM2MAuthConfigUUID(testIssuer).String(),
-		Type:                    storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
-		TokenExpirationDuration: testTokenExpirationDuration,
-		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{
-			{
-				Key:             testMappingKey,
-				ValueExpression: testMappingValue,
-				Role:            testRoleName,
-			},
-		},
-		Issuer: testIssuer,
-		Traits: &storage.Traits{Origin: storage.Traits_DECLARATIVE},
-	}
+	am := &storage.AuthMachineToMachineConfig_Mapping{}
+	am.SetKey(testMappingKey)
+	am.SetValueExpression(testMappingValue)
+	am.SetRole(testRoleName)
+	traits := &storage.Traits{}
+	traits.SetOrigin(storage.Traits_DECLARATIVE)
+	expectedOutputMsg := &storage.AuthMachineToMachineConfig{}
+	expectedOutputMsg.SetId(declarativeconfig.NewDeclarativeM2MAuthConfigUUID(testIssuer).String())
+	expectedOutputMsg.SetType(storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT)
+	expectedOutputMsg.SetTokenExpirationDuration(testTokenExpirationDuration)
+	expectedOutputMsg.SetMappings([]*storage.AuthMachineToMachineConfig_Mapping{
+		am,
+	})
+	expectedOutputMsg.SetIssuer(testIssuer)
+	expectedOutputMsg.SetTraits(traits)
 
 	castedTransformOutput := make([]*storage.AuthMachineToMachineConfig, 0, len(m2mMessages))
 	for _, m := range m2mMessages {

@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -96,12 +97,12 @@ func (s *serviceImpl) GetLoginAuthProviders(_ context.Context, _ *v1.Empty) (*v1
 	for _, provider := range authProviders {
 		if isLoginAuthProvider(provider) {
 			view := provider.StorageView()
-			result = append(result, &v1.GetLoginAuthProvidersResponse_LoginAuthProvider{
-				Id:       view.GetId(),
-				Name:     view.GetName(),
-				Type:     view.GetType(),
-				LoginUrl: view.GetLoginUrl(),
-			})
+			gl := &v1.GetLoginAuthProvidersResponse_LoginAuthProvider{}
+			gl.SetId(view.GetId())
+			gl.SetName(view.GetName())
+			gl.SetType(view.GetType())
+			gl.SetLoginUrl(view.GetLoginUrl())
+			result = append(result, gl)
 		}
 	}
 	sort.Slice(result, func(i, j int) bool {
@@ -113,7 +114,9 @@ func (s *serviceImpl) GetLoginAuthProviders(_ context.Context, _ *v1.Empty) (*v1
 		}
 		return result[i].GetName() < result[j].GetName()
 	})
-	return &v1.GetLoginAuthProvidersResponse{AuthProviders: result}, nil
+	glapr := &v1.GetLoginAuthProvidersResponse{}
+	glapr.SetAuthProviders(result)
+	return glapr, nil
 }
 
 // isLoginAuthProvider is a helper that determines whether an authproviders.Provider can be used for
@@ -146,10 +149,10 @@ func (s *serviceImpl) ListAvailableProviderTypes(_ context.Context, _ *v1.Empty)
 
 		attributes := factory.GetSuggestedAttributes()
 		slices.Sort(attributes)
-		supportedTypes = append(supportedTypes, &v1.AvailableProviderTypesResponse_AuthProviderType{
-			Type:                typ,
-			SuggestedAttributes: attributes,
-		})
+		aa := &v1.AvailableProviderTypesResponse_AuthProviderType{}
+		aa.SetType(typ)
+		aa.SetSuggestedAttributes(attributes)
+		supportedTypes = append(supportedTypes, aa)
 	}
 
 	// List auth providers in the same order for consistency across requests.
@@ -157,19 +160,19 @@ func (s *serviceImpl) ListAvailableProviderTypes(_ context.Context, _ *v1.Empty)
 		return supportedTypes[i].GetType() < supportedTypes[j].GetType()
 	})
 
-	return &v1.AvailableProviderTypesResponse{
-		AuthProviderTypes: supportedTypes,
-	}, nil
+	aptr := &v1.AvailableProviderTypesResponse{}
+	aptr.SetAuthProviderTypes(supportedTypes)
+	return aptr, nil
 }
 
 // GetAuthProviders retrieves all authProviders that matches the request filters.
 func (s *serviceImpl) GetAuthProviders(_ context.Context, request *v1.GetAuthProvidersRequest) (*v1.GetAuthProvidersResponse, error) {
 	var name, typ *string
 	if request.GetName() != "" {
-		name = &request.Name
+		name = proto.String(request.GetName())
 	}
 	if request.GetType() != "" {
-		typ = &request.Type
+		typ = proto.String(request.GetType())
 	}
 
 	authProviders := s.registry.GetProviders(name, typ)
@@ -186,7 +189,9 @@ func (s *serviceImpl) GetAuthProviders(_ context.Context, request *v1.GetAuthPro
 		}
 		return result[i].GetName() < result[j].GetName()
 	})
-	return &v1.GetAuthProvidersResponse{AuthProviders: result}, nil
+	gapr := &v1.GetAuthProvidersResponse{}
+	gapr.SetAuthProviders(result)
+	return gapr, nil
 }
 
 // PostAuthProvider inserts a new auth provider into the system.
@@ -230,7 +235,7 @@ func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.Auth
 	}
 
 	// Attempt to merge configs.
-	request.Config = provider.MergeConfigInto(request.GetConfig())
+	request.SetConfig(provider.MergeConfigInto(request.GetConfig()))
 
 	if err := s.registry.ValidateProvider(ctx, authproviders.WithStorageView(request)); err != nil {
 		return nil, errox.InvalidArgs.New("auth provider validation check failed").CausedBy(err)
@@ -324,10 +329,9 @@ func (s *serviceImpl) ExchangeToken(ctx context.Context, request *v1.ExchangeTok
 
 	clientState, mode := idputil.ParseClientState(clientState)
 	testMode := mode == idputil.TestAuthMode
-	response := &v1.ExchangeTokenResponse{
-		ClientState: clientState,
-		Test:        testMode,
-	}
+	response := &v1.ExchangeTokenResponse{}
+	response.SetClientState(clientState)
+	response.SetTest(testMode)
 
 	userMetadata, err := authproviders.CreateRoleBasedIdentity(sac.WithAllAccess(ctx), provider, authResponse)
 	if err != nil {
@@ -339,7 +343,7 @@ func (s *serviceImpl) ExchangeToken(ctx context.Context, request *v1.ExchangeTok
 	userPkg.LogSuccessfulUserLogin(log, userMetadata)
 
 	if testMode {
-		response.User = userMetadata
+		response.SetUser(userMetadata)
 		return response, nil
 	}
 
@@ -347,7 +351,7 @@ func (s *serviceImpl) ExchangeToken(ctx context.Context, request *v1.ExchangeTok
 	if err != nil {
 		return nil, err
 	}
-	response.Token = token
+	response.SetToken(token)
 	if refreshCookie != nil {
 		if err := grpc.SetHeader(ctx, metadata.Pairs("Set-Cookie", refreshCookie.String())); err != nil {
 			log.Errorf("Failed to set cookie in gRPC response: %v", err)

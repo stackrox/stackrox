@@ -29,6 +29,7 @@ import (
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -37,29 +38,29 @@ func TestGetCertExpiryStatus(t *testing.T) {
 		notBefore, notAfter time.Time
 		expectedStatus      *storage.ClusterCertExpiryStatus
 	}
+	cces := &storage.ClusterCertExpiryStatus{}
+	cces.SetSensorCertNotBefore(protocompat.GetProtoTimestampFromSeconds(1646870400))
+	cces2 := &storage.ClusterCertExpiryStatus{}
+	cces2.SetSensorCertExpiry(protocompat.GetProtoTimestampFromSeconds(1646956799))
+	cces3 := &storage.ClusterCertExpiryStatus{}
+	cces3.SetSensorCertNotBefore(protocompat.GetProtoTimestampFromSeconds(1646870400))
+	cces3.SetSensorCertExpiry(protocompat.GetProtoTimestampFromSeconds(1646956799))
 	testCases := map[string]testCase{
 		"should return nil when no dates": {
 			expectedStatus: nil,
 		},
 		"should fill not before only if expiry is not set": {
-			notBefore: time.Unix(1646870400, 0), // Thu Mar 10 2022 00:00:00 GMT+0000
-			expectedStatus: &storage.ClusterCertExpiryStatus{
-				SensorCertNotBefore: protocompat.GetProtoTimestampFromSeconds(1646870400),
-			},
+			notBefore:      time.Unix(1646870400, 0), // Thu Mar 10 2022 00:00:00 GMT+0000
+			expectedStatus: cces,
 		},
 		"should fill expiry only if notbefore is not set": {
-			notAfter: time.Unix(1646956799, 0), // Thu Mar 10 2022 23:59:59 GMT+0000
-			expectedStatus: &storage.ClusterCertExpiryStatus{
-				SensorCertExpiry: protocompat.GetProtoTimestampFromSeconds(1646956799),
-			},
+			notAfter:       time.Unix(1646956799, 0), // Thu Mar 10 2022 23:59:59 GMT+0000
+			expectedStatus: cces2,
 		},
 		"should fill status if both bounds are set": {
-			notBefore: time.Unix(1646870400, 0), // Thu Mar 10 2022 00:00:00 GMT+0000
-			notAfter:  time.Unix(1646956799, 0), // Thu Mar 10 2022 23:59:59 GMT+0000
-			expectedStatus: &storage.ClusterCertExpiryStatus{
-				SensorCertNotBefore: protocompat.GetProtoTimestampFromSeconds(1646870400),
-				SensorCertExpiry:    protocompat.GetProtoTimestampFromSeconds(1646956799),
-			},
+			notBefore:      time.Unix(1646870400, 0), // Thu Mar 10 2022 00:00:00 GMT+0000
+			notAfter:       time.Unix(1646956799, 0), // Thu Mar 10 2022 23:59:59 GMT+0000
+			expectedStatus: cces3,
 		},
 	}
 
@@ -108,9 +109,8 @@ func TestIsCARotationSupported(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			sensorHello := &central.SensorHello{
-				Capabilities: tc.capabilities,
-			}
+			sensorHello := &central.SensorHello{}
+			sensorHello.SetCapabilities(tc.capabilities)
 
 			result := isCARotationSupported(sensorHello)
 			assert.Equal(t, tc.expected, result)
@@ -181,9 +181,9 @@ func (s *crsTestSuite) TestCrsFlowFailsAfterLastContact() {
 
 	// Simulate a connection with service certificates has occurred by updating
 	// the LastContact field of a cluster.
-	mockServer.clustersRegistered[0].HealthStatus = &storage.ClusterHealthStatus{
-		LastContact: timestamppb.Now(),
-	}
+	chs := &storage.ClusterHealthStatus{}
+	chs.SetLastContact(timestamppb.Now())
+	mockServer.clustersRegistered[0].SetHealthStatus(chs)
 
 	// Initiating the CRS should fail now.
 	mockServer.prepareNewHandshake(sensorHello)
@@ -213,10 +213,10 @@ func newMockServer(ctx context.Context, ctrl *gomock.Controller) *mockServer {
 }
 
 func (s *mockServer) prepareNewHandshake(hello *central.SensorHello) {
+	mfs := &central.MsgFromSensor{}
+	mfs.SetHello(proto.ValueOrDefault(hello))
 	s.msgsFromSensor = []*central.MsgFromSensor{
-		{
-			Msg: &central.MsgFromSensor_Hello{Hello: hello},
-		},
+		mfs,
 	}
 	s.msgsToSensor = nil
 }
@@ -260,12 +260,12 @@ func (s *mockServer) LookupOrCreateClusterFromConfig(clusterId string, hello *ce
 }
 
 func newCluster(clusterName string, hello *central.SensorHello) *storage.Cluster {
-	return &storage.Cluster{
-		Id:                 uuid.NewV4().String(),
-		Name:               clusterName,
-		HealthStatus:       &storage.ClusterHealthStatus{},
-		MostRecentSensorId: hello.GetDeploymentIdentification(),
-	}
+	cluster := &storage.Cluster{}
+	cluster.SetId(uuid.NewV4().String())
+	cluster.SetName(clusterName)
+	cluster.SetHealthStatus(&storage.ClusterHealthStatus{})
+	cluster.SetMostRecentSensorId(hello.GetDeploymentIdentification())
+	return cluster
 }
 
 func retrieveCentralHello(s *crsTestSuite, server *mockServer) *central.CentralHello {
@@ -276,7 +276,8 @@ func retrieveCentralHello(s *crsTestSuite, server *mockServer) *central.CentralH
 	return centralHello
 }
 
-var registrantIdentity = storage.ServiceIdentity{
+// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+var registrantIdentity = &storage.ServiceIdentity{
 	Type: storage.ServiceType_REGISTRANT_SERVICE,
 }
 

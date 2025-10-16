@@ -169,10 +169,9 @@ func (d *delegatedRegistryImpl) sendScanStatusUpdate(scanReq *central.ScanImage,
 	ctx, cancel := context.WithTimeout(trace.Background(d.clusterID), statusUpdateTimeout)
 	defer cancel()
 
-	req := &v1.UpdateLocalScanStatusInternalRequest{
-		RequestId: scanReq.GetRequestId(),
-		Error:     enrichErr.Error(),
-	}
+	req := &v1.UpdateLocalScanStatusInternalRequest{}
+	req.SetRequestId(scanReq.GetRequestId())
+	req.SetError(enrichErr.Error())
 
 	_, err := d.imageSvc.UpdateLocalScanStatusInternal(ctx, req)
 	if err != nil {

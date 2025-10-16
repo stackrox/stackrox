@@ -143,9 +143,9 @@ func (ds *datastoreImpl) Suppress(ctx context.Context, start *time.Time, duratio
 
 	err = ds.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(gatherKeys(vulns)...), func() error {
 		for _, vuln := range vulns {
-			vuln.Snoozed = true
-			vuln.SnoozeStart = protocompat.ConvertTimeToTimestampOrNil(start)
-			vuln.SnoozeExpiry = protocompat.ConvertTimeToTimestampOrNil(expiry)
+			vuln.SetSnoozed(true)
+			vuln.SetSnoozeStart(protocompat.ConvertTimeToTimestampOrNil(start))
+			vuln.SetSnoozeExpiry(protocompat.ConvertTimeToTimestampOrNil(expiry))
 		}
 		return ds.storage.UpsertMany(ctx, vulns)
 	})
@@ -171,9 +171,9 @@ func (ds *datastoreImpl) Unsuppress(ctx context.Context, cves ...string) error {
 
 	err = ds.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(gatherKeys(vulns)...), func() error {
 		for _, vuln := range vulns {
-			vuln.Snoozed = false
-			vuln.SnoozeStart = nil
-			vuln.SnoozeExpiry = nil
+			vuln.SetSnoozed(false)
+			vuln.ClearSnoozeStart()
+			vuln.ClearSnoozeExpiry()
 		}
 		return ds.storage.UpsertMany(ctx, vulns)
 	})
@@ -200,9 +200,9 @@ func (ds *datastoreImpl) ApplyException(ctx context.Context, start, expiry *time
 
 	return ds.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(gatherKeys(vulns)...), func() error {
 		for _, vuln := range vulns {
-			vuln.Snoozed = true
-			vuln.SnoozeStart = protocompat.ConvertTimeToTimestampOrNil(start)
-			vuln.SnoozeExpiry = protocompat.ConvertTimeToTimestampOrNil(expiry)
+			vuln.SetSnoozed(true)
+			vuln.SetSnoozeStart(protocompat.ConvertTimeToTimestampOrNil(start))
+			vuln.SetSnoozeExpiry(protocompat.ConvertTimeToTimestampOrNil(expiry))
 		}
 		return ds.storage.UpsertMany(ctx, vulns)
 	})
@@ -223,9 +223,9 @@ func (ds *datastoreImpl) RevertException(ctx context.Context, cves ...string) er
 
 	return ds.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(gatherKeys(vulns)...), func() error {
 		for _, vuln := range vulns {
-			vuln.Snoozed = false
-			vuln.SnoozeStart = nil
-			vuln.SnoozeExpiry = nil
+			vuln.SetSnoozed(false)
+			vuln.ClearSnoozeStart()
+			vuln.ClearSnoozeExpiry()
 		}
 		return ds.storage.UpsertMany(ctx, vulns)
 	})
@@ -238,10 +238,10 @@ func (ds *datastoreImpl) EnrichImageWithSuppressedCVEs(image *storage.Image) {
 	for _, component := range image.GetScan().GetComponents() {
 		for _, vuln := range component.GetVulns() {
 			if entry, ok := ds.cveSuppressionCache[vuln.GetCve()]; ok {
-				vuln.Suppressed = true
-				vuln.SuppressActivation = protocompat.ConvertTimeToTimestampOrNil(entry.SuppressActivation)
-				vuln.SuppressExpiry = protocompat.ConvertTimeToTimestampOrNil(entry.SuppressExpiry)
-				vuln.State = storage.VulnerabilityState_DEFERRED
+				vuln.SetSuppressed(true)
+				vuln.SetSuppressActivation(protocompat.ConvertTimeToTimestampOrNil(entry.SuppressActivation))
+				vuln.SetSuppressExpiry(protocompat.ConvertTimeToTimestampOrNil(entry.SuppressExpiry))
+				vuln.SetState(storage.VulnerabilityState_DEFERRED)
 			}
 		}
 	}
@@ -303,11 +303,11 @@ func convertMany(cves []*storage.ImageCVE, results []pkgSearch.Result) ([]*v1.Se
 }
 
 func convertOne(cve *storage.ImageCVE, result *pkgSearch.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_IMAGE_VULNERABILITIES,
-		Id:             cve.GetId(),
-		Name:           cve.GetCveBaseInfo().GetCve(),
-		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+	sr := &v1.SearchResult{}
+	sr.SetCategory(v1.SearchCategory_IMAGE_VULNERABILITIES)
+	sr.SetId(cve.GetId())
+	sr.SetName(cve.GetCveBaseInfo().GetCve())
+	sr.SetFieldToMatches(pkgSearch.GetProtoMatchesMap(result.Matches))
+	sr.SetScore(result.Score)
+	return sr
 }

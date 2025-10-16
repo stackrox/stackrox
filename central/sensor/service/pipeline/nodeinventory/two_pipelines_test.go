@@ -32,6 +32,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"golang.org/x/sync/semaphore"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -42,43 +43,40 @@ const (
 )
 
 func Test_TwoPipelines_Run(t *testing.T) {
-	nodeWithScore := &storage.Node{
-		Id:            nodeID,
-		Name:          nodeName,
-		ClusterId:     clusterID,
-		ClusterName:   clusterID,
-		KernelVersion: "v1",
-		Notes:         []storage.Node_Note{storage.Node_MISSING_SCAN_DATA},
-		RiskScore:     1,
-	}
+	nodeWithScore := &storage.Node{}
+	nodeWithScore.SetId(nodeID)
+	nodeWithScore.SetName(nodeName)
+	nodeWithScore.SetClusterId(clusterID)
+	nodeWithScore.SetClusterName(clusterID)
+	nodeWithScore.SetKernelVersion("v1")
+	nodeWithScore.SetNotes([]storage.Node_Note{storage.Node_MISSING_SCAN_DATA})
+	nodeWithScore.SetRiskScore(1)
 
-	nodeWithScanWithKernelV1 := &storage.Node{
-		Id:            nodeID,
-		Name:          nodeName,
-		ClusterId:     clusterID,
-		ClusterName:   clusterID,
-		KernelVersion: "v1",
-		Notes:         []storage.Node_Note{},
-		RiskScore:     1,
-		Scan:          nodeScanFixtureWithKernel("v1"),
-		SetComponents: &storage.Node_Components{Components: 1},
-		SetCves:       &storage.Node_Cves{Cves: 1},
-		SetTopCvss:    &storage.Node_TopCvss{TopCvss: 1},
-	}
+	nodeWithScanWithKernelV1 := &storage.Node{}
+	nodeWithScanWithKernelV1.SetId(nodeID)
+	nodeWithScanWithKernelV1.SetName(nodeName)
+	nodeWithScanWithKernelV1.SetClusterId(clusterID)
+	nodeWithScanWithKernelV1.SetClusterName(clusterID)
+	nodeWithScanWithKernelV1.SetKernelVersion("v1")
+	nodeWithScanWithKernelV1.SetNotes([]storage.Node_Note{})
+	nodeWithScanWithKernelV1.SetRiskScore(1)
+	nodeWithScanWithKernelV1.SetScan(nodeScanFixtureWithKernel("v1"))
+	nodeWithScanWithKernelV1.Set_Components(1)
+	nodeWithScanWithKernelV1.Set_Cves(1)
+	nodeWithScanWithKernelV1.Set_TopCvss(1)
 
-	nodeWithScanWithKernelV2 := &storage.Node{
-		Id:            nodeID,
-		Name:          nodeName,
-		ClusterId:     clusterID,
-		ClusterName:   clusterID,
-		KernelVersion: "v1",
-		Notes:         []storage.Node_Note{},
-		RiskScore:     1,
-		Scan:          nodeScanFixtureWithKernel("v2"),
-		SetComponents: &storage.Node_Components{Components: 1},
-		SetCves:       &storage.Node_Cves{Cves: 1},
-		SetTopCvss:    &storage.Node_TopCvss{TopCvss: 1},
-	}
+	nodeWithScanWithKernelV2 := &storage.Node{}
+	nodeWithScanWithKernelV2.SetId(nodeID)
+	nodeWithScanWithKernelV2.SetName(nodeName)
+	nodeWithScanWithKernelV2.SetClusterId(clusterID)
+	nodeWithScanWithKernelV2.SetClusterName(clusterID)
+	nodeWithScanWithKernelV2.SetKernelVersion("v1")
+	nodeWithScanWithKernelV2.SetNotes([]storage.Node_Note{})
+	nodeWithScanWithKernelV2.SetRiskScore(1)
+	nodeWithScanWithKernelV2.SetScan(nodeScanFixtureWithKernel("v2"))
+	nodeWithScanWithKernelV2.Set_Components(1)
+	nodeWithScanWithKernelV2.Set_Cves(1)
+	nodeWithScanWithKernelV2.Set_TopCvss(1)
 
 	type usedMocks struct {
 		clusterStore      *clusterDatastoreMocks.MockDataStore
@@ -216,16 +214,16 @@ func Test_TwoPipelines_Run(t *testing.T) {
 				}
 			}
 			tt.enricher = nodeEnricher.NewWithCreator(tt.mocks.cveDatastore, metrics.CentralSubsystem, creator, creator)
-			err := tt.enricher.UpsertNodeIntegration(&storage.NodeIntegration{
-				Id:   "1",
-				Name: "dummy-scanner",
-				Type: "fake",
-				IntegrationConfig: &storage.NodeIntegration_Clairify{Clairify: &storage.ClairifyConfig{
-					Endpoint:           "abc",
-					GrpcEndpoint:       "",
-					NumConcurrentScans: 0,
-				}},
-			})
+			cc := &storage.ClairifyConfig{}
+			cc.SetEndpoint("abc")
+			cc.SetGrpcEndpoint("")
+			cc.SetNumConcurrentScans(0)
+			ni := &storage.NodeIntegration{}
+			ni.SetId("1")
+			ni.SetName("dummy-scanner")
+			ni.SetType("fake")
+			ni.SetClairify(proto.ValueOrDefault(cc))
+			err := tt.enricher.UpsertNodeIntegration(ni)
 			require.NoError(t, err)
 
 			if tt.setUpMocks != nil {
@@ -258,13 +256,13 @@ func Test_TwoPipelines_Run(t *testing.T) {
 }
 
 func createNodeInventory(id, kernelV string) *storage.NodeInventory {
-	return &storage.NodeInventory{
+	return storage.NodeInventory_builder{
 		NodeId:   id,
 		NodeName: nodeName,
-		Components: &storage.NodeInventory_Components{
+		Components: storage.NodeInventory_Components_builder{
 			Namespace: "",
 			RhelComponents: []*storage.NodeInventory_Components_RHELComponent{
-				{
+				storage.NodeInventory_Components_RHELComponent_builder{
 					Id:          1,
 					Name:        kernelComponentName,
 					Namespace:   "",
@@ -273,67 +271,59 @@ func createNodeInventory(id, kernelV string) *storage.NodeInventory {
 					Module:      "",
 					AddedBy:     "",
 					Executables: nil,
-				},
+				}.Build(),
 			},
 			RhelContentSets: nil,
-		},
-	}
+		}.Build(),
+	}.Build()
 }
 
 func createNodeInventoryMsg(id, kernel string) *central.MsgFromSensor {
-	return &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Resource: &central.SensorEvent_NodeInventory{
-					NodeInventory: createNodeInventory(id, kernel),
-				},
-			},
-		},
-	}
+	se := &central.SensorEvent{}
+	se.SetNodeInventory(proto.ValueOrDefault(createNodeInventory(id, kernel)))
+	return central.MsgFromSensor_builder{
+		Event: se,
+	}.Build()
 }
 
 func createNodeMsg(id, kernel string) *central.MsgFromSensor {
-	return &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Resource: &central.SensorEvent_Node{
-					Node: &storage.Node{
-						Id:            id,
-						KernelVersion: kernel,
-						Name:          nodeName,
-					},
-				},
-			},
-		},
-	}
+	return central.MsgFromSensor_builder{
+		Event: central.SensorEvent_builder{
+			Node: storage.Node_builder{
+				Id:            id,
+				KernelVersion: kernel,
+				Name:          nodeName,
+			}.Build(),
+		}.Build(),
+	}.Build()
 }
 
 func nodeScanFixtureWithKernel(kernelVersion string) *storage.NodeScan {
-	return &storage.NodeScan{
+	return storage.NodeScan_builder{
 		Components: []*storage.EmbeddedNodeScanComponent{
-			{
+			storage.EmbeddedNodeScanComponent_builder{
 				Name:    kernelComponentName,
 				Version: kernelVersion,
 				Vulns:   nil,
 				Vulnerabilities: []*storage.NodeVulnerability{
-					{
-						CveBaseInfo: &storage.CVEInfo{
+					storage.NodeVulnerability_builder{
+						CveBaseInfo: storage.CVEInfo_builder{
 							Cve: "CVE-2020-1234",
-						},
+						}.Build(),
 						Cvss:         1,
 						Severity:     0,
 						SetFixedBy:   nil,
 						Snoozed:      false,
 						SnoozeStart:  nil,
 						SnoozeExpiry: nil,
-					},
+					}.Build(),
 				},
-				Priority:   0,
-				SetTopCvss: &storage.EmbeddedNodeScanComponent_TopCvss{TopCvss: 1.0},
-				RiskScore:  1,
-			},
+				Priority:  0,
+				TopCvss:   proto.Float32(1.0),
+				RiskScore: 1,
+			}.Build(),
 		},
-	}
+	}.Build()
 }
 
 var _ types.NodeScanner = (*fakeNodeScanner)(nil)
@@ -369,11 +359,11 @@ func (*fakeNodeScanner) Name() string {
 }
 
 func getDummyRisk() *storage.Risk {
-	return &storage.Risk{
-		Score:   1.0,
-		Results: make([]*storage.Risk_Result, 0),
-		Subject: &storage.RiskSubject{},
-	}
+	risk := &storage.Risk{}
+	risk.SetScore(1.0)
+	risk.SetResults(make([]*storage.Risk_Result, 0))
+	risk.SetSubject(&storage.RiskSubject{})
+	return risk
 }
 
 type mockNodeScorer struct{}

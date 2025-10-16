@@ -173,11 +173,11 @@ func MigratePoliciesWithStoreV2(policiesToMigrate map[string]PolicyChanges,
 			if !ok {
 				return errors.New(fmt.Sprintf("policy category %q not found", category))
 			}
-			err = upsertPolicyCategoryEdge(ctx, &storage.PolicyCategoryEdge{
-				Id:         uuid.NewV4().String(),
-				PolicyId:   policyID,
-				CategoryId: cId,
-			})
+			pce := &storage.PolicyCategoryEdge{}
+			pce.SetId(uuid.NewV4().String())
+			pce.SetPolicyId(policyID)
+			pce.SetCategoryId(cId)
+			err = upsertPolicyCategoryEdge(ctx, pce)
 			if err != nil {
 				return err
 			}
@@ -188,14 +188,17 @@ func MigratePoliciesWithStoreV2(policiesToMigrate map[string]PolicyChanges,
 			if !ok {
 				continue
 			}
-			err = removePolicyCategoryEdge(ctx, &storage.PolicyCategoryEdge{CategoryId: cId, PolicyId: policyID})
+			pce := &storage.PolicyCategoryEdge{}
+			pce.SetCategoryId(cId)
+			pce.SetPolicyId(policyID)
+			err = removePolicyCategoryEdge(ctx, pce)
 			if err != nil {
 				return err
 			}
 		}
 		// Update policy as needed
 		updateDetails.ToChange.applyToPolicy(policy)
-		policy.Categories = []string{}
+		policy.SetCategories([]string{})
 		err = upsertPolicy(ctx, policy)
 		if err != nil {
 			return err

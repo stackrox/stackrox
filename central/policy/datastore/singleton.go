@@ -76,7 +76,7 @@ func addDefaults(s policyStore.Store, categoriesDS categoriesDS.DataStore) {
 		policyutils.FillSortHelperFields(p)
 
 		policyCategories := p.GetCategories()
-		p.Categories = []string{}
+		p.SetCategories([]string{})
 		if err := s.Upsert(workflowAdministrationCtx, p); err != nil {
 			utils.Must(err)
 		}

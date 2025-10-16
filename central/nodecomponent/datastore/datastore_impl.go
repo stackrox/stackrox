@@ -111,7 +111,7 @@ func (ds *datastoreImpl) initializeRankers() {
 
 func (ds *datastoreImpl) updateNodeComponentPriority(ics ...*storage.NodeComponent) {
 	for _, ic := range ics {
-		ic.Priority = ds.nodeComponentRanker.GetRankForID(ic.GetId())
+		ic.SetPriority(ds.nodeComponentRanker.GetRankForID(ic.GetId()))
 	}
 }
 
@@ -128,11 +128,11 @@ func convertMany(components []*storage.NodeComponent, results []pkgSearch.Result
 }
 
 func convertOne(component *storage.NodeComponent, result *pkgSearch.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_NODE_COMPONENTS,
-		Id:             component.GetId(),
-		Name:           component.GetName(),
-		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+	sr := &v1.SearchResult{}
+	sr.SetCategory(v1.SearchCategory_NODE_COMPONENTS)
+	sr.SetId(component.GetId())
+	sr.SetName(component.GetName())
+	sr.SetFieldToMatches(pkgSearch.GetProtoMatchesMap(result.Matches))
+	sr.SetScore(result.Score)
+	return sr
 }

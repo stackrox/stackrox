@@ -24,10 +24,9 @@ func TestRunner_makeRunner(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	t.Run("nil configuration", func(t *testing.T) {
 		cds := configDS.NewMockDataStore(ctrl)
-		cds.EXPECT().GetPrivateConfig(gomock.Any()).Times(1).Return(
-			&storage.PrivateConfig{
-				Metrics: nil,
-			},
+		pc := &storage.PrivateConfig{}
+		pc.ClearMetrics()
+		cds.EXPECT().GetPrivateConfig(gomock.Any()).Times(1).Return(pc,
 			nil)
 		runner := makeRunner(&runnerDatastores{})
 		runner.initialize(cds)
@@ -79,22 +78,22 @@ func TestRunner_ServeHTTP(t *testing.T) {
 	cds := configDS.NewMockDataStore(ctrl)
 
 	cds.EXPECT().GetPrivateConfig(gomock.Any()).Times(1).Return(
-		&storage.PrivateConfig{
-			Metrics: &storage.PrometheusMetrics{
-				ImageVulnerabilities: &storage.PrometheusMetrics_Group{
+		storage.PrivateConfig_builder{
+			Metrics: storage.PrometheusMetrics_builder{
+				ImageVulnerabilities: storage.PrometheusMetrics_Group_builder{
 					GatheringPeriodMinutes: 10,
 					Descriptors: map[string]*storage.PrometheusMetrics_Group_Labels{
-						"metric1": {
+						"metric1": storage.PrometheusMetrics_Group_Labels_builder{
 							Labels: []string{"Cluster", "Severity"},
-						},
-					}},
-				PolicyViolations: &storage.PrometheusMetrics_Group{
+						}.Build(),
+					}}.Build(),
+				PolicyViolations: storage.PrometheusMetrics_Group_builder{
 					GatheringPeriodMinutes: 10,
 					Descriptors: map[string]*storage.PrometheusMetrics_Group_Labels{
-						"metric2": {
+						"metric2": storage.PrometheusMetrics_Group_Labels_builder{
 							Labels: []string{"Cluster", "Policy", "Categories"},
-						},
-					}}}},
+						}.Build(),
+					}}.Build()}.Build()}.Build(),
 		nil)
 
 	dds := deploymentDS.NewMockDataStore(ctrl)
@@ -102,23 +101,23 @@ func TestRunner_ServeHTTP(t *testing.T) {
 	dds.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
 		Do(func(_ context.Context, _ *v1.Query, f func(*storage.Deployment) error) {
-			_ = f(&storage.Deployment{
-				Name:        "deployment1",
-				ClusterName: "cluster1",
-			})
+			deployment := &storage.Deployment{}
+			deployment.SetName("deployment1")
+			deployment.SetClusterName("cluster1")
+			_ = f(deployment)
 		}).
 		Return(nil)
 
 	dds.EXPECT().GetImagesForDeployment(gomock.Any(), gomock.Any()).
-		Times(1).Return([]*storage.Image{{
-		Names: []*storage.ImageName{{FullName: "fullname1"}},
-		Scan: &storage.ImageScan{
-			Components: []*storage.EmbeddedImageScanComponent{{
-				Vulns: []*storage.EmbeddedVulnerability{{
+		Times(1).Return([]*storage.Image{storage.Image_builder{
+		Names: []*storage.ImageName{storage.ImageName_builder{FullName: "fullname1"}.Build()},
+		Scan: storage.ImageScan_builder{
+			Components: []*storage.EmbeddedImageScanComponent{storage.EmbeddedImageScanComponent_builder{
+				Vulns: []*storage.EmbeddedVulnerability{storage.EmbeddedVulnerability_builder{
 					Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
-				}},
-			}},
-		}},
+				}.Build()},
+			}.Build()},
+		}.Build()}.Build(),
 	}, nil)
 
 	ads := alertDS.NewMockDataStore(ctrl)
@@ -126,18 +125,18 @@ func TestRunner_ServeHTTP(t *testing.T) {
 	ads.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
 		Do(func(_ context.Context, _ *v1.Query, f func(*storage.Alert) error) {
-			_ = f(&storage.Alert{
-				ClusterName: "cluster1",
-				Violations: []*storage.Alert_Violation{
-					{
-						Message: "violation",
-					},
-				},
-				Policy: &storage.Policy{
-					Name:       "Test Policy",
-					Categories: []string{"catB", "catA"},
-				},
+			av := &storage.Alert_Violation{}
+			av.SetMessage("violation")
+			policy := &storage.Policy{}
+			policy.SetName("Test Policy")
+			policy.SetCategories([]string{"catB", "catA"})
+			alert := &storage.Alert{}
+			alert.SetClusterName("cluster1")
+			alert.SetViolations([]*storage.Alert_Violation{
+				av,
 			})
+			alert.SetPolicy(policy)
+			_ = f(alert)
 		}).
 		Return(nil)
 

@@ -143,7 +143,7 @@ func (ds *datastoreImpl) addCollectionToGraphNoLock(obj *storage.ResourceCollect
 	}
 
 	// set id for the object and return the new graph
-	obj.Id = id
+	obj.SetId(id)
 	return graph, nil
 }
 
@@ -323,7 +323,7 @@ func (ds *datastoreImpl) addCollectionWorkflow(ctx context.Context, collection *
 
 	// if this is a dryrun, we don't want to add to storage or make changes to objects
 	if dryrun {
-		collection.Id = ""
+		collection.SetId("")
 		return "", nil
 	}
 
@@ -389,8 +389,8 @@ func (ds *datastoreImpl) updateCollectionWorkflow(ctx context.Context, collectio
 		return err
 	}
 
-	collection.CreatedBy = storedCollection.GetCreatedBy()
-	collection.CreatedAt = storedCollection.GetCreatedAt()
+	collection.SetCreatedBy(storedCollection.GetCreatedBy())
+	collection.SetCreatedAt(storedCollection.GetCreatedAt())
 
 	// if this is a dryrun we don't want to make changes to the datastore or tracking objects
 	if dryrun {
@@ -647,11 +647,11 @@ func verifyCollectionConstraints(collection *storage.ResourceCollection) error {
 }
 
 func convertOne(collection *storage.ResourceCollection, result pkgSearch.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_COLLECTIONS,
-		Id:             collection.GetId(),
-		Name:           collection.GetName(),
-		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+	sr := &v1.SearchResult{}
+	sr.SetCategory(v1.SearchCategory_COLLECTIONS)
+	sr.SetId(collection.GetId())
+	sr.SetName(collection.GetName())
+	sr.SetFieldToMatches(pkgSearch.GetProtoMatchesMap(result.Matches))
+	sr.SetScore(result.Score)
+	return sr
 }

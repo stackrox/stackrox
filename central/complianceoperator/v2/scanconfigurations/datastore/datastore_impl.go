@@ -148,7 +148,7 @@ func (ds *datastoreImpl) UpsertScanConfiguration(ctx context.Context, scanConfig
 
 // upsertNoLockScanConfiguration upserts scan config like UpsertScanConfiguration but does not create a lock
 func (ds *datastoreImpl) upsertNoLockScanConfiguration(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2) error {
-	scanConfig.LastUpdatedTime = protocompat.TimestampNow()
+	scanConfig.SetLastUpdatedTime(protocompat.TimestampNow())
 	return ds.storage.Upsert(ctx, scanConfig)
 }
 
@@ -214,13 +214,12 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, scanConfigID s
 	}
 	statusKey := uuid.NewV5(clusterUUID, scanConfigID).String()
 
-	clusterScanStatus := &storage.ComplianceOperatorClusterScanConfigStatus{
-		Id:           statusKey,
-		ClusterId:    clusterID,
-		ClusterName:  clusterName,
-		ScanConfigId: scanConfigID,
-		Errors:       []string{clusterStatus},
-	}
+	clusterScanStatus := &storage.ComplianceOperatorClusterScanConfigStatus{}
+	clusterScanStatus.SetId(statusKey)
+	clusterScanStatus.SetClusterId(clusterID)
+	clusterScanStatus.SetClusterName(clusterName)
+	clusterScanStatus.SetScanConfigId(scanConfigID)
+	clusterScanStatus.SetErrors([]string{clusterStatus})
 
 	return ds.statusStorage.Upsert(ctx, clusterScanStatus)
 }
@@ -263,7 +262,7 @@ func (ds *datastoreImpl) deleteClusterFromScanConfigWithLock(ctx context.Context
 		return cluster.GetClusterId() != clusterID
 	}
 	newClusters := sliceutils.Filter(clusters, filterFunction)
-	scanConfig.Clusters = newClusters
+	scanConfig.SetClusters(newClusters)
 
 	err := ds.upsertNoLockScanConfiguration(ctx, scanConfig)
 	if err != nil {
@@ -306,16 +305,16 @@ func (ds *datastoreImpl) GetProfilesNames(ctx context.Context, q *v1.Query) ([]s
 	clonedQuery := q.CloneVT()
 
 	// Build the select and group by on distinct profile name
-	clonedQuery.Selects = []*v1.QuerySelect{
+	clonedQuery.SetSelects([]*v1.QuerySelect{
 		search.NewQuerySelect(search.ComplianceOperatorConfigProfileName).Distinct().Proto(),
-	}
-	clonedQuery.GroupBy = &v1.QueryGroupBy{
-		Fields: []string{
-			search.ComplianceOperatorConfigProfileName.String(),
-		},
-	}
+	})
+	qgb := &v1.QueryGroupBy{}
+	qgb.SetFields([]string{
+		search.ComplianceOperatorConfigProfileName.String(),
+	})
+	clonedQuery.SetGroupBy(qgb)
 
-	clonedQuery.Pagination = q.GetPagination()
+	clonedQuery.SetPagination(q.GetPagination())
 
 	var results []*distinctProfileName
 	results, err = pgSearch.RunSelectRequestForSchema[distinctProfileName](ctx, ds.db, schema.ComplianceOperatorScanConfigurationV2Schema, clonedQuery)
@@ -348,11 +347,11 @@ func (ds *datastoreImpl) DistinctProfiles(ctx context.Context, q *v1.Query) (map
 
 	query := q.CloneVT()
 
-	query.GroupBy = &v1.QueryGroupBy{
-		Fields: []string{
-			search.ComplianceOperatorConfigProfileName.String(),
-		},
-	}
+	qgb := &v1.QueryGroupBy{}
+	qgb.SetFields([]string{
+		search.ComplianceOperatorConfigProfileName.String(),
+	})
+	query.SetGroupBy(qgb)
 
 	result, err := pgSearch.RunSelectRequestForSchema[distinctProfileCount](ctx, ds.db, schema.ComplianceOperatorScanConfigurationV2Schema, withCountQuery(query, search.ComplianceOperatorConfigProfileName))
 	if err != nil {
@@ -367,9 +366,9 @@ func (ds *datastoreImpl) DistinctProfiles(ctx context.Context, q *v1.Query) (map
 
 func withCountQuery(query *v1.Query, field search.FieldLabel) *v1.Query {
 	cloned := query.CloneVT()
-	cloned.Selects = []*v1.QuerySelect{
+	cloned.SetSelects([]*v1.QuerySelect{
 		search.NewQuerySelect(field).AggrFunc(aggregatefunc.Count).Proto(),
-	}
+	})
 	return cloned
 }
 

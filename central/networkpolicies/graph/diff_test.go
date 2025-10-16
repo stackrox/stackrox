@@ -27,23 +27,20 @@ func sortedIDs(ids []string) []string {
 }
 
 func (m nodeSpecMap) toGraph() *v1.NetworkGraph {
-	result := &v1.NetworkGraph{
-		Nodes: make([]*v1.NetworkNode, 0, len(m)),
-	}
+	result := &v1.NetworkGraph{}
+	result.SetNodes(make([]*v1.NetworkNode, 0, len(m)))
 	for node, spec := range m {
-		result.Nodes = append(result.Nodes, &v1.NetworkNode{
-			Entity: &storage.NetworkEntityInfo{
-				Type: storage.NetworkEntityInfo_DEPLOYMENT,
-				Id:   node,
-				Desc: &storage.NetworkEntityInfo_Deployment_{
-					Deployment: &storage.NetworkEntityInfo_Deployment{
-						Name: node,
-					},
-				},
-			},
-			OutEdges:  make(map[int32]*v1.NetworkEdgePropertiesBundle, len(spec.adjacencies)),
-			PolicyIds: sortedIDs(spec.policies),
-		})
+		nn := &v1.NetworkNode{}
+		nn.SetEntity(storage.NetworkEntityInfo_builder{
+			Type: storage.NetworkEntityInfo_DEPLOYMENT,
+			Id:   node,
+			Deployment: storage.NetworkEntityInfo_Deployment_builder{
+				Name: node,
+			}.Build(),
+		}.Build())
+		nn.SetOutEdges(make(map[int32]*v1.NetworkEdgePropertiesBundle, len(spec.adjacencies)))
+		nn.SetPolicyIds(sortedIDs(spec.policies))
+		result.SetNodes(append(result.GetNodes(), nn))
 	}
 	sort.Slice(result.GetNodes(), func(i, j int) bool {
 		return result.GetNodes()[i].GetEntity().GetId() < result.GetNodes()[j].GetEntity().GetId()
@@ -55,29 +52,27 @@ func (m nodeSpecMap) toGraph() *v1.NetworkGraph {
 	for node, spec := range m {
 		node := result.GetNodes()[nodeIDs[node]]
 		for _, succ := range spec.adjacencies {
-			node.OutEdges[int32(nodeIDs[succ])] = &v1.NetworkEdgePropertiesBundle{}
+			node.GetOutEdges()[int32(nodeIDs[succ])] = &v1.NetworkEdgePropertiesBundle{}
 		}
 	}
 	return result
 }
 
 func (m nodeSpecMap) toDiff(g *v1.NetworkGraph) *v1.NetworkGraphDiff {
-	result := &v1.NetworkGraphDiff{
-		NodeDiffs: make(map[string]*v1.NetworkNodeDiff, len(m)),
-	}
+	result := &v1.NetworkGraphDiff{}
+	result.SetNodeDiffs(make(map[string]*v1.NetworkNodeDiff, len(m)))
 	nodeIDs := make(map[string]int, len(g.GetNodes()))
 	for idx, node := range g.GetNodes() {
 		nodeIDs[node.GetEntity().GetId()] = idx
 	}
 	for nodeID, spec := range m {
-		diff := &v1.NetworkNodeDiff{
-			PolicyIds: sortedIDs(spec.policies),
-			OutEdges:  make(map[string]*v1.NetworkEdgePropertiesBundle),
-		}
+		diff := &v1.NetworkNodeDiff{}
+		diff.SetPolicyIds(sortedIDs(spec.policies))
+		diff.SetOutEdges(make(map[string]*v1.NetworkEdgePropertiesBundle))
 		for _, succID := range spec.adjacencies {
-			diff.OutEdges[succID] = &v1.NetworkEdgePropertiesBundle{}
+			diff.GetOutEdges()[succID] = &v1.NetworkEdgePropertiesBundle{}
 		}
-		result.NodeDiffs[nodeID] = diff
+		result.GetNodeDiffs()[nodeID] = diff
 	}
 	return result
 }

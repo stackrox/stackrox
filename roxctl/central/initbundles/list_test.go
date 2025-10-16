@@ -28,12 +28,12 @@ func Test_outputBundles(t *testing.T) {
 		},
 		"time format is good": {
 			bundles: []*v1.InitBundleMeta{
-				{
+				v1.InitBundleMeta_builder{
 					Id:        "9887ccc2-20ce-44f9-b316-57f9f79f5e05",
 					Name:      "test",
 					CreatedAt: protocompat.GetProtoTimestampFromSecondsAndNanos(secondsCreatedAt, nanos),
 					ExpiresAt: protocompat.GetProtoTimestampFromSecondsAndNanos(secondsExpiresAt, nanos),
-				},
+				}.Build(),
 			},
 			output: `Name	Created at			Expires at			Created By	ID
 ====	==========			==========			==========	==
@@ -42,12 +42,12 @@ test	2040-06-02T03:57:02.123456789Z	2044-05-01T01:28:21.123456789Z	(unknown)	988
 		},
 		"time format is good without nanos": {
 			bundles: []*v1.InitBundleMeta{
-				{
+				v1.InitBundleMeta_builder{
 					Id:        "9887ccc2-20ce-44f9-b316-57f9f79f5e05",
 					Name:      "test",
 					CreatedAt: protocompat.GetProtoTimestampFromSecondsAndNanos(secondsCreatedAt, 0),
 					ExpiresAt: protocompat.GetProtoTimestampFromSecondsAndNanos(secondsExpiresAt, 0),
-				},
+				}.Build(),
 			},
 			output: `Name	Created at		Expires at		Created By	ID
 ====	==========		==========		==========	==
@@ -56,11 +56,11 @@ test	2040-06-02T03:57:02Z	2044-05-01T01:28:21Z	(unknown)	9887ccc2-20ce-44f9-b316
 		},
 		"nil Expires at": {
 			bundles: []*v1.InitBundleMeta{
-				{
+				v1.InitBundleMeta_builder{
 					Id:        "9887ccc2-20ce-44f9-b316-57f9f79f5e05",
 					Name:      "test",
 					CreatedAt: protocompat.GetProtoTimestampFromSecondsAndNanos(secondsCreatedAt, nanos),
-				},
+				}.Build(),
 			},
 			output: `Name	Created at			Expires at	Created By	ID
 ====	==========			==========	==========	==
@@ -69,11 +69,11 @@ test	2040-06-02T03:57:02.123456789Z	N/A		(unknown)	9887ccc2-20ce-44f9-b316-57f9f
 		},
 		"nil Created at": {
 			bundles: []*v1.InitBundleMeta{
-				{
+				v1.InitBundleMeta_builder{
 					Id:        "9887ccc2-20ce-44f9-b316-57f9f79f5e05",
 					Name:      "test",
 					ExpiresAt: protocompat.GetProtoTimestampFromSecondsAndNanos(secondsExpiresAt, nanos),
-				},
+				}.Build(),
 			},
 			output: `Name	Created at	Expires at			Created By	ID
 ====	==========	==========			==========	==
@@ -82,15 +82,15 @@ test	N/A		2044-05-01T01:28:21.123456789Z	(unknown)	9887ccc2-20ce-44f9-b316-57f9f
 		},
 		"full row": {
 			bundles: []*v1.InitBundleMeta{
-				{
+				v1.InitBundleMeta_builder{
 					Id:        "9887ccc2-20ce-44f9-b316-57f9f79f5e05",
 					Name:      "test",
 					CreatedAt: protocompat.GetProtoTimestampFromSecondsAndNanos(secondsCreatedAt, nanos),
-					CreatedBy: &storage.User{
+					CreatedBy: storage.User_builder{
 						Id: "test-user",
-					},
+					}.Build(),
 					ExpiresAt: protocompat.GetProtoTimestampFromSecondsAndNanos(secondsExpiresAt, 0),
-				},
+				}.Build(),
 			},
 			output: `Name	Created at			Expires at		Created By	ID
 ====	==========			==========		==========	==

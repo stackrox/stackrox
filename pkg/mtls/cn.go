@@ -32,12 +32,12 @@ func IdentityFromCert(cert CertInfo) Identity {
 
 // V1 returns the identity represented as a v1 API ServiceIdentity.
 func (id Identity) V1() *storage.ServiceIdentity {
-	return &storage.ServiceIdentity{
-		SerialStr:    id.Serial.String(),
-		Type:         id.Subject.ServiceType,
-		Id:           id.Subject.Identifier,
-		InitBundleId: id.Subject.InitBundleID,
-	}
+	si := &storage.ServiceIdentity{}
+	si.SetSerialStr(id.Serial.String())
+	si.SetType(id.Subject.ServiceType)
+	si.SetId(id.Subject.Identifier)
+	si.SetInitBundleId(id.Subject.InitBundleID)
+	return si
 }
 
 // Subject encodes the parts of a certificate's identity.

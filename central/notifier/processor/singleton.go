@@ -72,7 +72,8 @@ func initialize() {
 		}
 		if encConfig == nil {
 			// This will be true when secured notifiers feature is enabled for the first time as the config will not exist yet in the db
-			encConfig = &storage.NotifierEncConfig{ActiveKeyIndex: 0}
+			encConfig = &storage.NotifierEncConfig{}
+			encConfig.SetActiveKeyIndex(0)
 			err = encConfigDataStore.UpsertConfig(encConfig)
 			if err != nil {
 				utils.Should(errors.Wrap(err, "Error inserting notifier encryption config %d"))
@@ -127,7 +128,8 @@ func initialize() {
 		}
 		if needsRekey {
 			// If we did a rekey, then update the stored key index
-			encConfig = &storage.NotifierEncConfig{ActiveKeyIndex: int32(activeIndex)}
+			encConfig = &storage.NotifierEncConfig{}
+			encConfig.SetActiveKeyIndex(int32(activeIndex))
 			err = encConfigDataStore.UpsertConfig(encConfig)
 			if err != nil {
 				utils.Should(errors.Wrapf(err, "Error updating notifier encryption config's stored key index to %d", activeIndex))

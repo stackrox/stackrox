@@ -31,17 +31,13 @@ func TestDocIDs(t *testing.T) {
 	}
 	for _, c := range cases {
 		q := NewQueryBuilder().AddDocIDs(c.docIDs...).ProtoQuery()
-		expected := &v1.Query{
-			Query: &v1.Query_BaseQuery{
-				BaseQuery: &v1.BaseQuery{
-					Query: &v1.BaseQuery_DocIdQuery{
-						DocIdQuery: &v1.DocIDQuery{
-							Ids: c.docIDs,
-						},
-					},
-				},
-			},
-		}
+		expected := v1.Query_builder{
+			BaseQuery: v1.BaseQuery_builder{
+				DocIdQuery: v1.DocIDQuery_builder{
+					Ids: c.docIDs,
+				}.Build(),
+			}.Build(),
+		}.Build()
 		protoassert.Equal(t, expected, q)
 	}
 }

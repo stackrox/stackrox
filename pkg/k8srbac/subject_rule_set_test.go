@@ -17,104 +17,104 @@ func TestDeduplicatesSubjectsCorrectly(t *testing.T) {
 		{
 			name: "Same subject twice",
 			input: []*storage.Subject{
-				{
+				storage.Subject_builder{
 					Name:      "rob",
 					Namespace: "stackrox",
 					Kind:      storage.SubjectKind_USER,
-				},
-				{
+				}.Build(),
+				storage.Subject_builder{
 					Name:      "rob",
 					Namespace: "stackrox",
 					Kind:      storage.SubjectKind_USER,
-				},
+				}.Build(),
 			},
 			expected: []*storage.Subject{
-				{
+				storage.Subject_builder{
 					Name:      "rob",
 					Namespace: "stackrox",
 					Kind:      storage.SubjectKind_USER,
-				},
+				}.Build(),
 			},
 		},
 		{
 			name: "Different names",
 			input: []*storage.Subject{
-				{
+				storage.Subject_builder{
 					Name:      "rob",
 					Namespace: "stackrox",
 					Kind:      storage.SubjectKind_USER,
-				},
-				{
+				}.Build(),
+				storage.Subject_builder{
 					Name:      "tim",
 					Namespace: "stackrox",
 					Kind:      storage.SubjectKind_USER,
-				},
+				}.Build(),
 			},
 			expected: []*storage.Subject{
-				{
+				storage.Subject_builder{
 					Name:      "rob",
 					Namespace: "stackrox",
 					Kind:      storage.SubjectKind_USER,
-				},
-				{
+				}.Build(),
+				storage.Subject_builder{
 					Name:      "tim",
 					Namespace: "stackrox",
 					Kind:      storage.SubjectKind_USER,
-				},
+				}.Build(),
 			},
 		},
 		{
 			name: "Difference namespaces",
 			input: []*storage.Subject{
-				{
+				storage.Subject_builder{
 					Name:      "rob",
 					Namespace: "default",
 					Kind:      storage.SubjectKind_USER,
-				},
-				{
+				}.Build(),
+				storage.Subject_builder{
 					Name:      "rob",
 					Namespace: "stackrox",
 					Kind:      storage.SubjectKind_USER,
-				},
+				}.Build(),
 			},
 			expected: []*storage.Subject{
-				{
+				storage.Subject_builder{
 					Name:      "rob",
 					Namespace: "default",
 					Kind:      storage.SubjectKind_USER,
-				},
-				{
+				}.Build(),
+				storage.Subject_builder{
 					Name:      "rob",
 					Namespace: "stackrox",
 					Kind:      storage.SubjectKind_USER,
-				},
+				}.Build(),
 			},
 		},
 		{
 			name: "Different kinds",
 			input: []*storage.Subject{
-				{
+				storage.Subject_builder{
 					Name:      "rob",
 					Namespace: "stackrox",
 					Kind:      storage.SubjectKind_GROUP,
-				},
-				{
+				}.Build(),
+				storage.Subject_builder{
 					Name:      "rob",
 					Namespace: "stackrox",
 					Kind:      storage.SubjectKind_USER,
-				},
+				}.Build(),
 			},
 			expected: []*storage.Subject{
-				{
+				storage.Subject_builder{
 					Name:      "rob",
 					Namespace: "stackrox",
 					Kind:      storage.SubjectKind_USER,
-				},
-				{
+				}.Build(),
+				storage.Subject_builder{
 					Name:      "rob",
 					Namespace: "stackrox",
 					Kind:      storage.SubjectKind_GROUP,
-				},
+				}.Build(),
 			},
 		},
 	}
@@ -138,85 +138,85 @@ func TestMatchesSubjectContentsCorrectly(t *testing.T) {
 		{
 			name: "Same subject twice",
 			initial: []*storage.Subject{
-				{
+				storage.Subject_builder{
 					Name:      "rob",
 					Namespace: "stackrox",
 					Kind:      storage.SubjectKind_USER,
-				},
-				{
+				}.Build(),
+				storage.Subject_builder{
 					Name:      "rob",
 					Namespace: "stackrox",
 					Kind:      storage.SubjectKind_USER,
-				},
+				}.Build(),
 			},
-			contains: &storage.Subject{
+			contains: storage.Subject_builder{
 				Name:      "rob",
 				Namespace: "stackrox",
 				Kind:      storage.SubjectKind_USER,
-			},
+			}.Build(),
 			expected: true,
 		},
 		{
 			name: "Different name",
 			initial: []*storage.Subject{
-				{
+				storage.Subject_builder{
 					Name:      "rob",
 					Namespace: "stackrox",
 					Kind:      storage.SubjectKind_USER,
-				},
-				{
+				}.Build(),
+				storage.Subject_builder{
 					Name:      "tim",
 					Namespace: "stackrox",
 					Kind:      storage.SubjectKind_USER,
-				},
+				}.Build(),
 			},
-			contains: &storage.Subject{
+			contains: storage.Subject_builder{
 				Name:      "joe",
 				Namespace: "stackrox",
 				Kind:      storage.SubjectKind_USER,
-			},
+			}.Build(),
 			expected: false,
 		},
 		{
 			name: "Different namespace",
 			initial: []*storage.Subject{
-				{
+				storage.Subject_builder{
 					Name:      "rob",
 					Namespace: "stackrox",
 					Kind:      storage.SubjectKind_USER,
-				},
-				{
+				}.Build(),
+				storage.Subject_builder{
 					Name:      "tim",
 					Namespace: "default",
 					Kind:      storage.SubjectKind_USER,
-				},
+				}.Build(),
 			},
-			contains: &storage.Subject{
+			contains: storage.Subject_builder{
 				Name:      "tim",
 				Namespace: "stackrox",
 				Kind:      storage.SubjectKind_USER,
-			},
+			}.Build(),
 			expected: false,
 		},
 		{
 			name: "Different kind",
 			initial: []*storage.Subject{
-				{
+				storage.Subject_builder{
 					Name:      "rob",
 					Namespace: "stackrox",
 					Kind:      storage.SubjectKind_USER,
-				},
-				{
+				}.Build(),
+				storage.Subject_builder{
 					Name:      "tim",
 					Namespace: "stackrox",
 					Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
-				},
+				}.Build(),
 			},
-			contains: &storage.Subject{
+			contains: storage.Subject_builder{
 				Name:      "tim",
 				Namespace: "stackrox",
 				Kind:      storage.SubjectKind_USER,
-			},
+			}.Build(),
 			expected: false,
 		},
 	}

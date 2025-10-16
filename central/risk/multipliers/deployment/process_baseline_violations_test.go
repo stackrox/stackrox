@@ -43,13 +43,13 @@ func TestProcessBaselines(t *testing.T) {
 					ContainerName: deployment.GetContainers()[0].GetName(),
 				},
 			},
-			expected: &storage.Risk_Result{
+			expected: storage.Risk_Result_builder{
 				Name:  processBaselineHeading,
 				Score: 1.6,
 				Factors: []*storage.Risk_Result_Factor{
-					{Message: "Detected execution of suspicious process \"apt-get\" with args \"install nmap\" in container containerName"},
+					storage.Risk_Result_Factor_builder{Message: "Detected execution of suspicious process \"apt-get\" with args \"install nmap\" in container containerName"}.Build(),
 				},
-			},
+			}.Build(),
 		},
 		{
 			name: "Two violating processes",
@@ -65,14 +65,14 @@ func TestProcessBaselines(t *testing.T) {
 					ContainerName: deployment.GetContainers()[0].GetName(),
 				},
 			},
-			expected: &storage.Risk_Result{
+			expected: storage.Risk_Result_builder{
 				Name:  processBaselineHeading,
 				Score: 2.14,
 				Factors: []*storage.Risk_Result_Factor{
-					{Message: "Detected execution of suspicious process \"apt-get\" with args \"install nmap\" in container containerName"},
-					{Message: "Detected execution of suspicious process \"curl\" with args \"badssl.com\" in container containerName"},
+					storage.Risk_Result_Factor_builder{Message: "Detected execution of suspicious process \"apt-get\" with args \"install nmap\" in container containerName"}.Build(),
+					storage.Risk_Result_Factor_builder{Message: "Detected execution of suspicious process \"curl\" with args \"badssl.com\" in container containerName"}.Build(),
 				},
-			},
+			}.Build(),
 		},
 	}
 

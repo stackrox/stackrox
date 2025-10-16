@@ -56,21 +56,20 @@ func (s *componentImageScorerImpl) Score(ctx context.Context, scanComponent scan
 		componentID = scancomponent.ComponentID(scanComponent.GetName(), scanComponent.GetVersion(), os)
 	}
 
-	risk := &storage.Risk{
-		Score:   overallScore,
-		Results: riskResults,
-		Subject: &storage.RiskSubject{
-			Id:   componentID,
-			Type: s.riskSubjectType,
-		},
-	}
+	rs := &storage.RiskSubject{}
+	rs.SetId(componentID)
+	rs.SetType(s.riskSubjectType)
+	risk := &storage.Risk{}
+	risk.SetScore(overallScore)
+	risk.SetResults(riskResults)
+	risk.SetSubject(rs)
 
 	riskID, err := datastore.GetID(risk.GetSubject().GetId(), risk.GetSubject().GetType())
 	if err != nil {
 		log.Errorf("Scoring %s: %v", scanComponent.GetName(), err)
 		return nil
 	}
-	risk.Id = riskID
+	risk.SetId(riskID)
 
 	return risk
 }

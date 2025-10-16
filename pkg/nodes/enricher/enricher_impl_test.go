@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"golang.org/x/sync/semaphore"
+	"google.golang.org/protobuf/proto"
 )
 
 var _ types.NodeScannerWithDataSource = (*fakeNodeScannerWithDataSource)(nil)
@@ -52,44 +53,44 @@ func (*fakeNodeScanner) MaxConcurrentNodeScanSemaphore() *semaphore.Weighted {
 
 func (f *fakeNodeScanner) GetNodeScan(*storage.Node) (*storage.NodeScan, error) {
 	f.requestedScan = true
-	return &storage.NodeScan{
+	return storage.NodeScan_builder{
 		Components: []*storage.EmbeddedNodeScanComponent{
-			{
+			storage.EmbeddedNodeScanComponent_builder{
 				Vulns: []*storage.EmbeddedVulnerability{
-					{
+					storage.EmbeddedVulnerability_builder{
 						Cve: "CVE-2020-1234",
-					},
-					{
+					}.Build(),
+					storage.EmbeddedVulnerability_builder{
 						Cve: "CVE-2021-1234",
-					},
-					{
+					}.Build(),
+					storage.EmbeddedVulnerability_builder{
 						Cve: "CVE-2022-1234",
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
-	}, nil
+	}.Build(), nil
 }
 
 func (f *fakeNodeScanner) GetNodeInventoryScan(*storage.Node, *storage.NodeInventory, *v4.IndexReport) (*storage.NodeScan, error) {
 	f.requestedScan = true
-	return &storage.NodeScan{
+	return storage.NodeScan_builder{
 		Components: []*storage.EmbeddedNodeScanComponent{
-			{
+			storage.EmbeddedNodeScanComponent_builder{
 				Vulns: []*storage.EmbeddedVulnerability{
-					{
+					storage.EmbeddedVulnerability_builder{
 						Cve: "CVE-2020-1234",
-					},
-					{
+					}.Build(),
+					storage.EmbeddedVulnerability_builder{
 						Cve: "CVE-2021-1234",
-					},
-					{
+					}.Build(),
+					storage.EmbeddedVulnerability_builder{
 						Cve: "CVE-2022-1234",
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
-	}, nil
+	}.Build(), nil
 }
 
 func (*fakeNodeScanner) TestNodeScanner() error {
@@ -110,14 +111,14 @@ func (*fakeCVESuppressor) EnrichNodeWithSuppressedCVEs(node *storage.Node) {
 	for _, c := range node.GetScan().GetComponents() {
 		for _, v := range c.GetVulns() {
 			if v.GetCve() == "CVE-2020-1234" {
-				v.Suppressed = true
+				v.SetSuppressed(true)
 			}
 		}
 
 		// Data moved from Vulns to Vulnerabilities in Postgres.  So simply add the data here.
 		for _, v := range c.GetVulnerabilities() {
 			if v.GetCveBaseInfo().GetCve() == "CVE-2020-1234" {
-				v.Snoozed = true
+				v.SetSnoozed(true)
 			}
 		}
 	}
@@ -132,19 +133,19 @@ func TestEnricherFlow(t *testing.T) {
 	}{
 		{
 			name: "node already has scan",
-			node: &storage.Node{
+			node: storage.Node_builder{
 				Id:   fixtureconsts.Node1,
 				Scan: &storage.NodeScan{},
-			},
+			}.Build(),
 			fns: newFakeNodeScannerWithDataSource(opts{
 				requestedScan: true,
 			}),
 		},
 		{
 			name: "node does not have scan",
-			node: &storage.Node{
+			node: storage.Node_builder{
 				Id: fixtureconsts.Node1,
-			},
+			}.Build(),
 			fns: newFakeNodeScannerWithDataSource(opts{
 				requestedScan: true,
 			}),
@@ -184,10 +185,10 @@ func TestEnricherFlowWithPostgres(t *testing.T) {
 	}{
 		{
 			name: "node already has scan",
-			node: &storage.Node{
+			node: storage.Node_builder{
 				Id:   fixtureconsts.Node1,
 				Scan: &storage.NodeScan{},
-			},
+			}.Build(),
 			fns: newFakeNodeScannerWithDataSource(opts{
 				requestedScan: true,
 			}),
@@ -234,7 +235,8 @@ func TestCVESuppression(t *testing.T) {
 		metrics: newMetrics(pkgMetrics.CentralSubsystem),
 	}
 
-	node := &storage.Node{Id: fixtureconsts.Node1}
+	node := &storage.Node{}
+	node.SetId(fixtureconsts.Node1)
 	err := enricherImpl.EnrichNode(node)
 	require.NoError(t, err)
 
@@ -254,7 +256,10 @@ func TestZeroIntegrations(t *testing.T) {
 		metrics:  newMetrics(pkgMetrics.CentralSubsystem),
 	}
 
-	node := &storage.Node{Id: fixtureconsts.Node1, ClusterName: "cluster", Name: "node"}
+	node := &storage.Node{}
+	node.SetId(fixtureconsts.Node1)
+	node.SetClusterName("cluster")
+	node.SetName("node")
 	err := enricherImpl.EnrichNode(node)
 	assert.Error(t, err)
 	expectedErrMsg := "error scanning node cluster:node error: no node scanners are integrated"
@@ -268,98 +273,92 @@ func TestFillScanStatsWithPostgres(t *testing.T) {
 		expectedFixableVulns int32
 	}{
 		{
-			node: &storage.Node{
+			node: storage.Node_builder{
 				Id: fixtureconsts.Node1,
-				Scan: &storage.NodeScan{
+				Scan: storage.NodeScan_builder{
 					Components: []*storage.EmbeddedNodeScanComponent{
-						{
+						storage.EmbeddedNodeScanComponent_builder{
 							Vulnerabilities: []*storage.NodeVulnerability{
-								{
-									CveBaseInfo: &storage.CVEInfo{
+								storage.NodeVulnerability_builder{
+									CveBaseInfo: storage.CVEInfo_builder{
 										Cve: "cve-1",
-									},
-									SetFixedBy: &storage.NodeVulnerability_FixedBy{
-										FixedBy: "blah",
-									},
-								},
+									}.Build(),
+									FixedBy: proto.String("blah"),
+								}.Build(),
 							},
-						},
+						}.Build(),
 					},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			expectedVulns:        1,
 			expectedFixableVulns: 1,
 		},
 		{
-			node: &storage.Node{
+			node: storage.Node_builder{
 				Id: fixtureconsts.Node1,
-				Scan: &storage.NodeScan{
+				Scan: storage.NodeScan_builder{
 					Components: []*storage.EmbeddedNodeScanComponent{
-						{
+						storage.EmbeddedNodeScanComponent_builder{
 							Vulnerabilities: []*storage.NodeVulnerability{
-								{
-									CveBaseInfo: &storage.CVEInfo{
+								storage.NodeVulnerability_builder{
+									CveBaseInfo: storage.CVEInfo_builder{
 										Cve: "cve-1",
-									},
-									SetFixedBy: &storage.NodeVulnerability_FixedBy{
-										FixedBy: "blah",
-									},
-								},
+									}.Build(),
+									FixedBy: proto.String("blah"),
+								}.Build(),
 							},
-						},
-						{
+						}.Build(),
+						storage.EmbeddedNodeScanComponent_builder{
 							Vulnerabilities: []*storage.NodeVulnerability{
-								{
-									CveBaseInfo: &storage.CVEInfo{
+								storage.NodeVulnerability_builder{
+									CveBaseInfo: storage.CVEInfo_builder{
 										Cve: "cve-2",
-									},
-									SetFixedBy: &storage.NodeVulnerability_FixedBy{
-										FixedBy: "blah",
-									},
-								},
+									}.Build(),
+									FixedBy: proto.String("blah"),
+								}.Build(),
 							},
-						},
+						}.Build(),
 					},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			expectedVulns:        2,
 			expectedFixableVulns: 2,
 		},
 		{
-			node: &storage.Node{
+			node: storage.Node_builder{
 				Id: fixtureconsts.Node1,
-				Scan: &storage.NodeScan{
+				Scan: storage.NodeScan_builder{
 					Components: []*storage.EmbeddedNodeScanComponent{
-						{
+						storage.EmbeddedNodeScanComponent_builder{
 							Vulnerabilities: []*storage.NodeVulnerability{
-								{
-									CveBaseInfo: &storage.CVEInfo{
+								storage.NodeVulnerability_builder{
+									CveBaseInfo: storage.CVEInfo_builder{
 										Cve: "cve-1",
-									},
-								},
+									}.Build(),
+								}.Build(),
 							},
-						},
-						{
+						}.Build(),
+						storage.EmbeddedNodeScanComponent_builder{
 							Vulnerabilities: []*storage.NodeVulnerability{
-								{
-									CveBaseInfo: &storage.CVEInfo{
+								storage.NodeVulnerability_builder{
+									CveBaseInfo: storage.CVEInfo_builder{
 										Cve: "cve-2",
-									},
-								},
+									}.Build(),
+								}.Build(),
 							},
-						},
-						{
+						}.Build(),
+						storage.EmbeddedNodeScanComponent_builder{
 							Vulnerabilities: []*storage.NodeVulnerability{
-								{
-									CveBaseInfo: &storage.CVEInfo{
+								storage.NodeVulnerability_builder{
+									CveBaseInfo: storage.CVEInfo_builder{
 										Cve: "cve-3",
-									},
-								},
+									}.Build(),
+								}.Build(),
 							},
-						},
+						}.Build(),
 					},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			expectedVulns:        3,
 			expectedFixableVulns: 0,
 		},

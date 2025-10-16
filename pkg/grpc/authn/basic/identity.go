@@ -52,11 +52,13 @@ func (i identity) Service() *storage.ServiceIdentity {
 }
 
 func (i identity) User() *storage.UserInfo {
-	return &storage.UserInfo{
-		Username:    i.username,
-		Permissions: &storage.UserInfo_ResourceToAccess{ResourceToAccess: i.Permissions()},
-		Roles:       utils.ExtractRolesForUserInfo(i.resolvedRoles),
-	}
+	ur := &storage.UserInfo_ResourceToAccess{}
+	ur.SetResourceToAccess(i.Permissions())
+	userInfo := &storage.UserInfo{}
+	userInfo.SetUsername(i.username)
+	userInfo.SetPermissions(ur)
+	userInfo.SetRoles(utils.ExtractRolesForUserInfo(i.resolvedRoles))
+	return userInfo
 }
 
 func (i identity) ValidityPeriod() (time.Time, time.Time) {

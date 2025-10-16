@@ -119,10 +119,10 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 func populateYAML(np *storage.NetworkPolicy) {
 	yaml, err := networkPolicyConversion.RoxNetworkPolicyWrap{NetworkPolicy: np}.ToYaml()
 	if err != nil {
-		np.Yaml = fmt.Sprintf("Could not render Network Policy YAML: %s", err)
+		np.SetYaml(fmt.Sprintf("Could not render Network Policy YAML: %s", err))
 		return
 	}
-	np.Yaml = yaml
+	np.SetYaml(yaml)
 }
 
 func (s *serviceImpl) GetNetworkPolicy(ctx context.Context, request *v1.ResourceByID) (*storage.NetworkPolicy, error) {
@@ -173,9 +173,9 @@ func (s *serviceImpl) GetNetworkPolicies(ctx context.Context, request *v1.GetNet
 	}
 
 	// Get the policies that apply to the fetched deployments.
-	return &v1.NetworkPoliciesResponse{
-		NetworkPolicies: networkPolicies,
-	}, nil
+	npr := &v1.NetworkPoliciesResponse{}
+	npr.SetNetworkPolicies(networkPolicies)
+	return npr, nil
 }
 
 func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.GetNetworkGraphRequest) (*v1.NetworkGraph, error) {
@@ -205,9 +205,9 @@ func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.GetNetwor
 }
 
 func (s *serviceImpl) GetNetworkGraphEpoch(_ context.Context, req *v1.GetNetworkGraphEpochRequest) (*v1.NetworkGraphEpoch, error) {
-	return &v1.NetworkGraphEpoch{
-		Epoch: s.graphEvaluator.Epoch(req.GetClusterId()),
-	}, nil
+	nge := &v1.NetworkGraphEpoch{}
+	nge.SetEpoch(s.graphEvaluator.Epoch(req.GetClusterId()))
+	return nge, nil
 }
 
 func (s *serviceImpl) ApplyNetworkPolicy(ctx context.Context, request *v1.ApplyNetworkPolicyYamlRequest) (*v1.Empty, error) {
@@ -215,7 +215,7 @@ func (s *serviceImpl) ApplyNetworkPolicy(ctx context.Context, request *v1.ApplyN
 	if err != nil {
 		return nil, err
 	}
-	undoRecord.ClusterId = request.GetClusterId()
+	undoRecord.SetClusterId(request.GetClusterId())
 
 	err = s.networkPolicies.UpsertUndoRecord(ctx, undoRecord)
 	if err != nil {
@@ -278,10 +278,9 @@ func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.Simu
 	}
 
 	newGraph := s.graphEvaluator.GetGraph(request.GetClusterId(), queryDeploymentIDs, clusterDeployments, networkTree, newPolicies, request.GetIncludePorts())
-	result := &v1.SimulateNetworkGraphResponse{
-		SimulatedGraph: newGraph,
-		Policies:       networkPoliciesInSimulation,
-	}
+	result := &v1.SimulateNetworkGraphResponse{}
+	result.SetSimulatedGraph(newGraph)
+	result.SetPolicies(networkPoliciesInSimulation)
 	if !hasChanges {
 		// no need to compute diff - no new policies
 		return result, nil
@@ -297,7 +296,8 @@ func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.Simu
 		return nil, errors.Wrap(err, "could not compute a network graph diff")
 	}
 
-	result.Removed, result.Added = removedEdges, addedEdges
+	result.SetRemoved(removedEdges)
+	result.SetAdded(addedEdges)
 	return result, nil
 }
 
@@ -359,7 +359,7 @@ func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.Sen
 func (s *serviceImpl) GenerateNetworkPolicies(ctx context.Context, req *v1.GenerateNetworkPoliciesRequest) (*v1.GenerateNetworkPoliciesResponse, error) {
 	// Default to `none` delete existing mode.
 	if req.GetDeleteExisting() == v1.GenerateNetworkPoliciesRequest_UNKNOWN {
-		req.DeleteExisting = v1.GenerateNetworkPoliciesRequest_NONE
+		req.SetDeleteExisting(v1.GenerateNetworkPoliciesRequest_NONE)
 	}
 
 	if req.GetClusterId() == "" {
@@ -376,14 +376,13 @@ func (s *serviceImpl) GenerateNetworkPolicies(ctx context.Context, req *v1.Gener
 		return nil, err
 	}
 
-	mod := &storage.NetworkPolicyModification{
-		ApplyYaml: applyYAML,
-		ToDelete:  toDelete,
-	}
+	mod := &storage.NetworkPolicyModification{}
+	mod.SetApplyYaml(applyYAML)
+	mod.SetToDelete(toDelete)
 
-	return &v1.GenerateNetworkPoliciesResponse{
-		Modification: mod,
-	}, nil
+	gnpr := &v1.GenerateNetworkPoliciesResponse{}
+	gnpr.SetModification(mod)
+	return gnpr, nil
 }
 
 func (s *serviceImpl) GetUndoModification(ctx context.Context, req *v1.GetUndoModificationRequest) (*v1.GetUndoModificationResponse, error) {
@@ -394,9 +393,9 @@ func (s *serviceImpl) GetUndoModification(ctx context.Context, req *v1.GetUndoMo
 	if !exists {
 		return nil, errors.Wrapf(errox.NotFound, "no undo record stored for cluster %q", req.GetClusterId())
 	}
-	return &v1.GetUndoModificationResponse{
-		UndoRecord: undoRecord,
-	}, nil
+	gumr := &v1.GetUndoModificationResponse{}
+	gumr.SetUndoRecord(undoRecord)
+	return gumr, nil
 }
 
 func (s *serviceImpl) generateApplyYamlFromGeneratedPolicies(generatedPolicies []*storage.NetworkPolicy) (string, error) {
@@ -431,12 +430,12 @@ func (s *serviceImpl) GetBaselineGeneratedNetworkPolicyForDeployment(ctx context
 		return nil, err
 	}
 
-	return &v1.GetBaselineGeneratedPolicyForDeploymentResponse{
-		Modification: &storage.NetworkPolicyModification{
-			ApplyYaml: applyYAML,
-			ToDelete:  toDelete,
-		},
-	}, nil
+	npm := &storage.NetworkPolicyModification{}
+	npm.SetApplyYaml(applyYAML)
+	npm.SetToDelete(toDelete)
+	gbgpfdr := &v1.GetBaselineGeneratedPolicyForDeploymentResponse{}
+	gbgpfdr.SetModification(npm)
+	return gbgpfdr, nil
 }
 
 func (s *serviceImpl) GetAllowedPeersFromCurrentPolicyForDeployment(ctx context.Context, request *v1.ResourceByID) (*v1.GetAllowedPeersFromCurrentPolicyForDeploymentResponse, error) {
@@ -452,15 +451,15 @@ func (s *serviceImpl) GetAllowedPeersFromCurrentPolicyForDeployment(ctx context.
 	for _, p := range allowedPeers {
 		entity := p.entity
 		for _, prop := range p.properties {
-			resp.AllowedPeers = append(resp.AllowedPeers, &v1.NetworkBaselineStatusPeer{
-				Entity: &v1.NetworkBaselinePeerEntity{
-					Id:   entity.GetId(),
-					Type: entity.GetType(),
-				},
-				Port:     prop.GetPort(),
-				Protocol: prop.GetProtocol(),
-				Ingress:  prop.GetIngress(),
-			})
+			nbpe := &v1.NetworkBaselinePeerEntity{}
+			nbpe.SetId(entity.GetId())
+			nbpe.SetType(entity.GetType())
+			nbsp := &v1.NetworkBaselineStatusPeer{}
+			nbsp.SetEntity(nbpe)
+			nbsp.SetPort(prop.GetPort())
+			nbsp.SetProtocol(prop.GetProtocol())
+			nbsp.SetIngress(prop.GetIngress())
+			resp.SetAllowedPeers(append(resp.GetAllowedPeers(), nbsp))
 		}
 	}
 	return resp, nil
@@ -551,11 +550,11 @@ func (s *serviceImpl) getPeersOfDeploymentFromGraph(deployment *storage.Deployme
 		for egressPeerIdx := range node.GetOutEdges() {
 			egressPeer := graph.GetNodes()[egressPeerIdx]
 			for _, prop := range node.GetOutEdges()[egressPeerIdx].GetProperties() {
-				allowedPeers.addProperty(egressPeer.GetEntity(), &storage.NetworkBaselineConnectionProperties{
-					Ingress:  false,
-					Port:     prop.GetPort(),
-					Protocol: prop.GetProtocol(),
-				})
+				nbcp := &storage.NetworkBaselineConnectionProperties{}
+				nbcp.SetIngress(false)
+				nbcp.SetPort(prop.GetPort())
+				nbcp.SetProtocol(prop.GetProtocol())
+				allowedPeers.addProperty(egressPeer.GetEntity(), nbcp)
 			}
 		}
 		// Record the idx
@@ -579,18 +578,18 @@ func (s *serviceImpl) getPeersOfDeploymentFromGraph(deployment *storage.Deployme
 				entry = &entityWithProperties{entity: node.GetEntity()}
 				allowedPeers[node.GetEntity().GetId()] = entry
 			}
-			allowedPeers.addProperty(node.GetEntity(), &storage.NetworkBaselineConnectionProperties{
-				Ingress:  true,
-				Port:     0,
-				Protocol: storage.L4Protocol_L4_PROTOCOL_ANY,
-			})
+			nbcp := &storage.NetworkBaselineConnectionProperties{}
+			nbcp.SetIngress(true)
+			nbcp.SetPort(0)
+			nbcp.SetProtocol(storage.L4Protocol_L4_PROTOCOL_ANY)
+			allowedPeers.addProperty(node.GetEntity(), nbcp)
 		}
 		if deploymentEgressNonIsolated && node.GetNonIsolatedIngress() {
-			allowedPeers.addProperty(node.GetEntity(), &storage.NetworkBaselineConnectionProperties{
-				Ingress:  false,
-				Port:     0,
-				Protocol: storage.L4Protocol_L4_PROTOCOL_ANY,
-			})
+			nbcp := &storage.NetworkBaselineConnectionProperties{}
+			nbcp.SetIngress(false)
+			nbcp.SetPort(0)
+			nbcp.SetProtocol(storage.L4Protocol_L4_PROTOCOL_ANY)
+			allowedPeers.addProperty(node.GetEntity(), nbcp)
 		}
 
 		// We should try to fill in ingress info for the deployment from this node.
@@ -599,11 +598,11 @@ func (s *serviceImpl) getPeersOfDeploymentFromGraph(deployment *storage.Deployme
 			continue
 		}
 		for _, prop := range props.GetProperties() {
-			allowedPeers.addProperty(node.GetEntity(), &storage.NetworkBaselineConnectionProperties{
-				Ingress:  true,
-				Port:     prop.GetPort(),
-				Protocol: prop.GetProtocol(),
-			})
+			nbcp := &storage.NetworkBaselineConnectionProperties{}
+			nbcp.SetIngress(true)
+			nbcp.SetPort(prop.GetPort())
+			nbcp.SetProtocol(prop.GetProtocol())
+			allowedPeers.addProperty(node.GetEntity(), nbcp)
 		}
 	}
 	return allowedPeers, nil
@@ -648,12 +647,11 @@ func (s *serviceImpl) applyModificationAndGetUndoRecord(
 			user += fmt.Sprintf(" [%s]", ap.Name())
 		}
 	}
-	undoRecord := &storage.NetworkPolicyApplicationUndoRecord{
-		User:                 user,
-		ApplyTimestamp:       protocompat.TimestampNow(),
-		OriginalModification: modification,
-		UndoModification:     undoMod,
-	}
+	undoRecord := &storage.NetworkPolicyApplicationUndoRecord{}
+	undoRecord.SetUser(user)
+	undoRecord.SetApplyTimestamp(protocompat.TimestampNow())
+	undoRecord.SetOriginalModification(modification)
+	undoRecord.SetUndoModification(undoMod)
 	return undoRecord, nil
 }
 
@@ -671,12 +669,11 @@ func (s *serviceImpl) ApplyNetworkPolicyYamlForDeployment(ctx context.Context, r
 		return nil, err
 	}
 
+	npaudr := &storage.NetworkPolicyApplicationUndoDeploymentRecord{}
+	npaudr.SetDeploymentId(request.GetDeploymentId())
+	npaudr.SetUndoRecord(undoRecord)
 	err = s.networkPolicies.UpsertUndoDeploymentRecord(
-		ctx,
-		&storage.NetworkPolicyApplicationUndoDeploymentRecord{
-			DeploymentId: request.GetDeploymentId(),
-			UndoRecord:   undoRecord,
-		})
+		ctx, npaudr)
 	if err != nil {
 		return nil, errors.Errorf("network policy was applied, but undo deployment record could not be stored: %v", err)
 	}
@@ -698,9 +695,9 @@ func (s *serviceImpl) GetUndoModificationForDeployment(ctx context.Context, requ
 	} else if !found {
 		return nil, errors.Wrapf(errox.NotFound, "no undo record stored for deployment %q", request.GetId())
 	}
-	return &v1.GetUndoModificationForDeploymentResponse{
-		UndoRecord: undoRecord.GetUndoRecord(),
-	}, nil
+	gumfdr := &v1.GetUndoModificationForDeploymentResponse{}
+	gumfdr.SetUndoRecord(undoRecord.GetUndoRecord())
+	return gumfdr, nil
 }
 
 type nameNSPair struct {
@@ -771,8 +768,10 @@ func (s *serviceImpl) GetDiffFlowsBetweenPolicyAndBaselineForDeployment(ctx cont
 		return nil, err
 	}
 
-	generated, toDelete, err := s.policyGenerator.GenerateFromBaselineForDeployment(ctx,
-		&v1.GetBaselineGeneratedPolicyForDeploymentRequest{DeploymentId: request.GetId(), IncludePorts: true})
+	gbgpfdr := &v1.GetBaselineGeneratedPolicyForDeploymentRequest{}
+	gbgpfdr.SetDeploymentId(request.GetId())
+	gbgpfdr.SetIncludePorts(true)
+	generated, toDelete, err := s.policyGenerator.GenerateFromBaselineForDeployment(ctx, gbgpfdr)
 	if err != nil {
 		return nil, errors.Errorf("error generating network policies: %v", err)
 	}
@@ -813,13 +812,13 @@ func (s *serviceImpl) computeDiffBetweenPeerGroups(
 		entity := currentPeer.entity
 		if previousPeer, ok := previousPeers[entity.GetId()]; !ok {
 			// Previous peer not found in the list of current peers. This is a newly added peer
-			rsp.Added = append(rsp.Added, &v1.GetDiffFlowsGroupedFlow{
-				Entity:     currentPeer.entity,
-				Properties: currentPeer.properties,
-			})
+			gdfgf := &v1.GetDiffFlowsGroupedFlow{}
+			gdfgf.SetEntity(currentPeer.entity)
+			gdfgf.SetProperties(currentPeer.properties)
+			rsp.SetAdded(append(rsp.GetAdded(), gdfgf))
 		} else {
 			// A new set of flows might be configured for this entity. Reconcile the difference if there is any
-			rsp.Reconciled = append(rsp.Reconciled, s.reconcileFlowDifferences(entity, previousPeer.properties, currentPeer.properties))
+			rsp.SetReconciled(append(rsp.GetReconciled(), s.reconcileFlowDifferences(entity, previousPeer.properties, currentPeer.properties)))
 			delete(previousPeers, entity.GetId())
 		}
 	}
@@ -827,7 +826,10 @@ func (s *serviceImpl) computeDiffBetweenPeerGroups(
 	// Since we have deleted matched peers from the previous peers map, the peers left
 	// are removed in the diff.
 	for _, previousPeer := range previousPeers {
-		rsp.Removed = append(rsp.Removed, &v1.GetDiffFlowsGroupedFlow{Entity: previousPeer.entity, Properties: previousPeer.properties})
+		gdfgf := &v1.GetDiffFlowsGroupedFlow{}
+		gdfgf.SetEntity(previousPeer.entity)
+		gdfgf.SetProperties(previousPeer.properties)
+		rsp.SetRemoved(append(rsp.GetRemoved(), gdfgf))
 	}
 
 	return rsp
@@ -849,9 +851,8 @@ func (s *serviceImpl) toConnectionPropertiesStruct(properties *storage.NetworkBa
 
 func (s *serviceImpl) reconcileFlowDifferences(entity *storage.NetworkEntityInfo, allowedProperties,
 	baselineProperties []*storage.NetworkBaselineConnectionProperties) *v1.GetDiffFlowsReconciledFlow {
-	result := &v1.GetDiffFlowsReconciledFlow{
-		Entity: entity,
-	}
+	result := &v1.GetDiffFlowsReconciledFlow{}
+	result.SetEntity(entity)
 	// Convert allowedProperties to set for easy lookup
 	allowedPropertiesSet := make(map[connectionProperties]struct{})
 	for _, properties := range allowedProperties {
@@ -863,21 +864,21 @@ func (s *serviceImpl) reconcileFlowDifferences(entity *storage.NetworkEntityInfo
 		converted := s.toConnectionPropertiesStruct(properties)
 		if _, ok := allowedPropertiesSet[converted]; !ok {
 			// This set of baseline connection properties if not currently allowed
-			result.Added = append(result.Added, properties)
+			result.SetAdded(append(result.GetAdded(), properties))
 		} else {
 			// This set of properties currently exists.
-			result.Unchanged = append(result.Unchanged, properties)
+			result.SetUnchanged(append(result.GetUnchanged(), properties))
 			delete(allowedPropertiesSet, converted)
 		}
 	}
 	// Since we have deleted matched properties from the currently allowed properties set. The properties left
 	// are the ones that will be removed.
 	for properties := range allowedPropertiesSet {
-		result.Removed = append(result.Removed, &storage.NetworkBaselineConnectionProperties{
-			Ingress:  properties.ingress,
-			Port:     properties.port,
-			Protocol: properties.protocol,
-		})
+		nbcp := &storage.NetworkBaselineConnectionProperties{}
+		nbcp.SetIngress(properties.ingress)
+		nbcp.SetPort(properties.port)
+		nbcp.SetProtocol(properties.protocol)
+		result.SetRemoved(append(result.GetRemoved(), nbcp))
 	}
 
 	return result
@@ -982,10 +983,9 @@ func applyPolicyModification(policies policyModification) (outputPolicies []*v1.
 	outputPolicies = make([]*v1.NetworkPolicyInSimulation, 0, len(policies.NewPolicies)+len(policies.ExistingPolicies))
 	policiesByRef := make(map[k8sutil.NSObjRef]*v1.NetworkPolicyInSimulation, len(policies.ExistingPolicies))
 	for _, oldPolicy := range policies.ExistingPolicies {
-		simPolicy := &v1.NetworkPolicyInSimulation{
-			Policy: oldPolicy,
-			Status: v1.NetworkPolicyInSimulation_UNCHANGED,
-		}
+		simPolicy := &v1.NetworkPolicyInSimulation{}
+		simPolicy.SetPolicy(oldPolicy)
+		simPolicy.SetStatus(v1.NetworkPolicyInSimulation_UNCHANGED)
 		outputPolicies = append(outputPolicies, simPolicy)
 		policiesByRef[k8sutil.RefOf(oldPolicy)] = simPolicy
 	}
@@ -999,27 +999,26 @@ func applyPolicyModification(policies policyModification) (outputPolicies []*v1.
 		}
 
 		if simPolicy.GetOldPolicy() == nil {
-			simPolicy.OldPolicy = simPolicy.GetPolicy()
+			simPolicy.SetOldPolicy(simPolicy.GetPolicy())
 		}
-		simPolicy.Policy = nil
-		simPolicy.Status = v1.NetworkPolicyInSimulation_DELETED
+		simPolicy.ClearPolicy()
+		simPolicy.SetStatus(v1.NetworkPolicyInSimulation_DELETED)
 	}
 
 	// Add new policies that have no matching old policies.
 	for _, newPolicy := range policies.NewPolicies {
 		oldPolicySim := policiesByRef[k8sutil.RefOf(newPolicy)]
 		if oldPolicySim != nil {
-			oldPolicySim.Status = v1.NetworkPolicyInSimulation_MODIFIED
+			oldPolicySim.SetStatus(v1.NetworkPolicyInSimulation_MODIFIED)
 			if oldPolicySim.GetOldPolicy() == nil {
-				oldPolicySim.OldPolicy = oldPolicySim.GetPolicy()
+				oldPolicySim.SetOldPolicy(oldPolicySim.GetPolicy())
 			}
-			oldPolicySim.Policy = newPolicy
+			oldPolicySim.SetPolicy(newPolicy)
 			continue
 		}
-		newPolicySim := &v1.NetworkPolicyInSimulation{
-			Status: v1.NetworkPolicyInSimulation_ADDED,
-			Policy: newPolicy,
-		}
+		newPolicySim := &v1.NetworkPolicyInSimulation{}
+		newPolicySim.SetStatus(v1.NetworkPolicyInSimulation_ADDED)
+		newPolicySim.SetPolicy(newPolicy)
 		outputPolicies = append(outputPolicies, newPolicySim)
 	}
 
@@ -1030,9 +1029,9 @@ func applyPolicyModification(policies policyModification) (outputPolicies []*v1.
 	// anyway.
 	for _, policy := range outputPolicies {
 		if policy.GetStatus() == v1.NetworkPolicyInSimulation_MODIFIED {
-			policy.Policy.Id = policy.GetOldPolicy().GetId()
+			policy.GetPolicy().SetId(policy.GetOldPolicy().GetId())
 		} else if policy.GetStatus() == v1.NetworkPolicyInSimulation_ADDED {
-			policy.Policy.Id = uuid.NewV4().String()
+			policy.GetPolicy().SetId(uuid.NewV4().String())
 		}
 	}
 	return

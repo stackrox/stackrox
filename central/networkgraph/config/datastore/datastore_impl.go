@@ -58,10 +58,9 @@ func (d *datastoreImpl) initDefaultConfig(ctx context.Context) error {
 	}
 
 	if !found {
-		defaultConfig := &storage.NetworkGraphConfig{
-			Id:                      networkGraphConfigKey,
-			HideDefaultExternalSrcs: false,
-		}
+		defaultConfig := &storage.NetworkGraphConfig{}
+		defaultConfig.SetId(networkGraphConfigKey)
+		defaultConfig.SetHideDefaultExternalSrcs(false)
 		if err := d.store.Upsert(ctx, defaultConfig); err != nil {
 			return err
 		}
@@ -92,6 +91,6 @@ func (d *datastoreImpl) UpdateNetworkGraphConfig(ctx context.Context, config *st
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-	config.Id = networkGraphConfigKey
+	config.SetId(networkGraphConfigKey)
 	return d.store.Upsert(ctx, config)
 }

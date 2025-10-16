@@ -45,7 +45,9 @@ func TestGetConfigSuccess(t *testing.T) {
 	})
 
 	t.Run("specific and default cluster", func(t *testing.T) {
-		retVal := &storage.DelegatedRegistryConfig{EnabledFor: storage.DelegatedRegistryConfig_SPECIFIC, DefaultClusterId: "id1"}
+		retVal := &storage.DelegatedRegistryConfig{}
+		retVal.SetEnabledFor(storage.DelegatedRegistryConfig_SPECIFIC)
+		retVal.SetDefaultClusterId("id1")
 		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(retVal, true, nil)
 		cfg, err = s.GetConfig(context.Background(), empty)
 		assert.NoError(t, err)
@@ -83,7 +85,10 @@ func TestGetClustersSuccess(t *testing.T) {
 
 	s := New(deleClusterDS, clustersDS, connMgr)
 
-	clusters := []*storage.Cluster{{Id: "id", Name: "fake"}}
+	cluster := &storage.Cluster{}
+	cluster.SetId("id")
+	cluster.SetName("fake")
+	clusters := []*storage.Cluster{cluster}
 
 	tt := map[string]struct {
 		conn  *connMocks.MockSensorConnection
@@ -107,8 +112,10 @@ func TestGetClustersSuccess(t *testing.T) {
 	}
 
 	t.Run("multi cluster", func(t *testing.T) {
-		cluster1 := &storage.Cluster{Id: "id1"}
-		cluster2 := &storage.Cluster{Id: "id2"}
+		cluster1 := &storage.Cluster{}
+		cluster1.SetId("id1")
+		cluster2 := &storage.Cluster{}
+		cluster2.SetId("id2")
 		clustersDS.EXPECT().GetClusters(gomock.Any()).Return([]*storage.Cluster{cluster1, cluster2}, nil)
 		connMgr.EXPECT().GetConnection("id1").Return(fakeConnWithCap)
 		connMgr.EXPECT().GetConnection("id2").Return(fakeConnWithoutCap)
@@ -160,19 +167,25 @@ func TestPutConfigError(t *testing.T) {
 	genCfg := func(ef v1.DelegatedRegistryConfig_EnabledFor, defId string, regIds []string) *v1.DelegatedRegistryConfig {
 		regs := make([]*v1.DelegatedRegistryConfig_DelegatedRegistry, len(regIds))
 		for i, id := range regIds {
-			regs[i] = &v1.DelegatedRegistryConfig_DelegatedRegistry{ClusterId: id}
+			dd := &v1.DelegatedRegistryConfig_DelegatedRegistry{}
+			dd.SetClusterId(id)
+			regs[i] = dd
 		}
 
-		return &v1.DelegatedRegistryConfig{
-			EnabledFor:       ef,
-			DefaultClusterId: defId,
-			Registries:       regs,
-		}
+		drc := &v1.DelegatedRegistryConfig{}
+		drc.SetEnabledFor(ef)
+		drc.SetDefaultClusterId(defId)
+		drc.SetRegistries(regs)
+		return drc
 	}
 
+	cluster := &storage.Cluster{}
+	cluster.SetId("id1")
+	cluster2 := &storage.Cluster{}
+	cluster2.SetId("id2")
 	multiClusters := []*storage.Cluster{
-		{Id: "id1"},
-		{Id: "id2"},
+		cluster,
+		cluster2,
 	}
 
 	tt := map[string]struct {
@@ -235,12 +248,18 @@ func TestUpdateConfigSuccess(t *testing.T) {
 	connMgr.EXPECT().GetConnection("id2").Return(fakeConnWithoutCap).AnyTimes()
 
 	s := New(deleClusterDS, clustersDS, connMgr)
-	clustersDS.EXPECT().GetClusters(gomock.Any()).Return([]*storage.Cluster{{Id: "id1"}, {Id: "id2"}}, nil).AnyTimes()
+	cluster := &storage.Cluster{}
+	cluster.SetId("id1")
+	cluster2 := &storage.Cluster{}
+	cluster2.SetId("id2")
+	clustersDS.EXPECT().GetClusters(gomock.Any()).Return([]*storage.Cluster{cluster, cluster2}, nil).AnyTimes()
 
 	t.Run("default cluster id", func(t *testing.T) {
 		deleClusterDS.EXPECT().UpsertConfig(gomock.Any(), gomock.Any())
 		connMgr.EXPECT().SendMessage(gomock.Any(), gomock.Any())
-		cfg = &v1.DelegatedRegistryConfig{EnabledFor: specific, DefaultClusterId: "id1"}
+		cfg = &v1.DelegatedRegistryConfig{}
+		cfg.SetEnabledFor(specific)
+		cfg.SetDefaultClusterId("id1")
 		_, err = s.UpdateConfig(context.Background(), cfg)
 		assert.NoError(t, err)
 	})
@@ -248,7 +267,10 @@ func TestUpdateConfigSuccess(t *testing.T) {
 	t.Run("registries", func(t *testing.T) {
 		deleClusterDS.EXPECT().UpsertConfig(gomock.Any(), gomock.Any())
 		connMgr.EXPECT().SendMessage(gomock.Any(), gomock.Any())
-		cfg.Registries = []*v1.DelegatedRegistryConfig_DelegatedRegistry{{ClusterId: "id1", Path: "something"}}
+		dd := &v1.DelegatedRegistryConfig_DelegatedRegistry{}
+		dd.SetClusterId("id1")
+		dd.SetPath("something")
+		cfg.SetRegistries([]*v1.DelegatedRegistryConfig_DelegatedRegistry{dd})
 		_, err = s.UpdateConfig(context.Background(), cfg)
 		assert.NoError(t, err)
 	})

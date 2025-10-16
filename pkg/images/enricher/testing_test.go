@@ -15,6 +15,7 @@ import (
 	scannertypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/signatures"
 	"golang.org/x/sync/semaphore"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -34,15 +35,15 @@ func defaultRedHatSignatureIntegrationGetter(_ context.Context) ([]*storage.Sign
 }
 
 func twoSignaturesIntegrationGetter(_ context.Context) ([]*storage.SignatureIntegration, error) {
+	si := &storage.SignatureIntegration{}
+	si.SetId("id-1")
+	si.SetName("name-1")
+	si2 := &storage.SignatureIntegration{}
+	si2.SetId("id-2")
+	si2.SetName("name-2")
 	return []*storage.SignatureIntegration{
-		{
-			Id:   "id-1",
-			Name: "name-1",
-		},
-		{
-			Id:   "id-2",
-			Name: "name-2",
-		},
+		si,
+		si2,
 	}, nil
 }
 
@@ -75,17 +76,17 @@ func (*fakeScanner) MaxConcurrentScanSemaphore() *semaphore.Weighted {
 
 func (f *fakeScanner) GetScan(_ *storage.Image) (*storage.ImageScan, error) {
 	f.requestedScan = true
-	return &storage.ImageScan{
+	return storage.ImageScan_builder{
 		Components: []*storage.EmbeddedImageScanComponent{
-			{
+			storage.EmbeddedImageScanComponent_builder{
 				Vulns: []*storage.EmbeddedVulnerability{
-					{
+					storage.EmbeddedVulnerability_builder{
 						Cve: "CVE-2020-1234",
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
-	}, nil
+	}.Build(), nil
 }
 
 func (f *fakeScanner) Match(*storage.ImageName) bool {
@@ -165,17 +166,17 @@ func (f *fakeRegistryScanner) GetScanner() scannertypes.Scanner {
 }
 
 func (f *fakeRegistryScanner) DataSource() *storage.DataSource {
-	return &storage.DataSource{
-		Id:   "id",
-		Name: f.Name(),
-	}
+	ds := &storage.DataSource{}
+	ds.SetId("id")
+	ds.SetName(f.Name())
+	return ds
 }
 
 func (f *fakeRegistryScanner) Source() *storage.ImageIntegration {
-	return &storage.ImageIntegration{
-		Id:   "id",
-		Name: f.Name(),
-	}
+	ii := &storage.ImageIntegration{}
+	ii.SetId("id")
+	ii.SetName(f.Name())
+	return ii
 }
 
 type fakeCVESuppressor struct{}
@@ -184,7 +185,7 @@ func (f *fakeCVESuppressor) EnrichImageWithSuppressedCVEs(image *storage.Image) 
 	for _, c := range image.GetScan().GetComponents() {
 		for _, v := range c.GetVulns() {
 			if v.GetCve() == "CVE-2020-1234" {
-				v.Suppressed = true
+				v.SetSuppressed(true)
 			}
 		}
 	}
@@ -194,7 +195,7 @@ func (f *fakeCVESuppressor) EnrichImageV2WithSuppressedCVEs(image *storage.Image
 	for _, c := range image.GetScan().GetComponents() {
 		for _, v := range c.GetVulns() {
 			if v.GetCve() == "CVE-2020-1234" {
-				v.Suppressed = true
+				v.SetSuppressed(true)
 			}
 		}
 	}
@@ -206,7 +207,7 @@ func (f *fakeCVESuppressorV2) EnrichImageWithSuppressedCVEs(image *storage.Image
 	for _, c := range image.GetScan().GetComponents() {
 		for _, v := range c.GetVulns() {
 			if v.GetCve() == "CVE-2020-1234" {
-				v.State = storage.VulnerabilityState_DEFERRED
+				v.SetState(storage.VulnerabilityState_DEFERRED)
 			}
 		}
 	}
@@ -216,7 +217,7 @@ func (f *fakeCVESuppressorV2) EnrichImageV2WithSuppressedCVEs(image *storage.Ima
 	for _, c := range image.GetScan().GetComponents() {
 		for _, v := range c.GetVulns() {
 			if v.GetCve() == "CVE-2020-1234" {
-				v.State = storage.VulnerabilityState_DEFERRED
+				v.SetState(storage.VulnerabilityState_DEFERRED)
 			}
 		}
 	}
@@ -227,21 +228,21 @@ func newCache() cache.ImageMetadata {
 }
 
 func createSignature(sig, payload string) *storage.Signature {
-	return &storage.Signature{Signature: &storage.Signature_Cosign{
-		Cosign: &storage.CosignSignature{
-			RawSignature:     []byte(sig),
-			SignaturePayload: []byte(payload),
-		},
-	}}
+	cs := &storage.CosignSignature{}
+	cs.SetRawSignature([]byte(sig))
+	cs.SetSignaturePayload([]byte(payload))
+	signature := &storage.Signature{}
+	signature.SetCosign(proto.ValueOrDefault(cs))
+	return signature
 }
 
 func createSignatureVerificationResult(verifier string, status storage.ImageSignatureVerificationResult_Status,
 	verifiedImageNames ...string) *storage.ImageSignatureVerificationResult {
-	return &storage.ImageSignatureVerificationResult{
-		VerifierId:              verifier,
-		Status:                  status,
-		VerifiedImageReferences: verifiedImageNames,
-	}
+	isvr := &storage.ImageSignatureVerificationResult{}
+	isvr.SetVerifierId(verifier)
+	isvr.SetStatus(status)
+	isvr.SetVerifiedImageReferences(verifiedImageNames)
+	return isvr
 }
 
 func fakeSignatureIntegrationGetter(id string, fail bool) SignatureIntegrationGetter {
@@ -249,11 +250,11 @@ func fakeSignatureIntegrationGetter(id string, fail bool) SignatureIntegrationGe
 		if fail {
 			return nil, errors.New("fake error")
 		}
+		si := &storage.SignatureIntegration{}
+		si.SetId(id)
+		si.SetName(id)
 		return []*storage.SignatureIntegration{
-			{
-				Id:   id,
-				Name: id,
-			},
+			si,
 		}, nil
 	}
 }

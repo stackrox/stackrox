@@ -58,7 +58,7 @@ func PopulateCollectorStatus(collectorInfo *storage.CollectorHealthInfo) storage
 		return storage.ClusterHealthStatus_UNINITIALIZED
 	}
 
-	if collectorInfo.TotalDesiredPodsOpt == nil || collectorInfo.TotalReadyPodsOpt == nil {
+	if !collectorInfo.HasTotalDesiredPodsOpt() || !collectorInfo.HasTotalReadyPodsOpt() {
 		// Fields will be nil if there was an error when trying to determine counts of desired/ready pods.
 		// In this case we don't have enough information and can't report status as HEALTHY or even DEGRADED.
 		// Reporting status as UNHEALTHY will attract user's attention to the problem and push them to resolve it.
@@ -89,7 +89,7 @@ func PopulateAdmissionControlStatus(admissionControlHealthInfo *storage.Admissio
 		return storage.ClusterHealthStatus_UNINITIALIZED
 	}
 
-	if admissionControlHealthInfo.TotalDesiredPodsOpt == nil || admissionControlHealthInfo.TotalReadyPodsOpt == nil {
+	if !admissionControlHealthInfo.HasTotalDesiredPodsOpt() || !admissionControlHealthInfo.HasTotalReadyPodsOpt() {
 		// Fields will be nil if there was an error when trying to determine counts of desired/ready pods.
 		// In this case we don't have enough information and can't report status as HEALTHY or even DEGRADED.
 		// Reporting status as UNHEALTHY will attract user's attention to the problem and push them to resolve it.

@@ -11,17 +11,17 @@ func VirtualMachine(vm *storage.VirtualMachine) *v2.VirtualMachine {
 		return nil
 	}
 
-	return &v2.VirtualMachine{
-		Id:          vm.GetId(),
-		Namespace:   vm.GetNamespace(),
-		Name:        vm.GetName(),
-		ClusterId:   vm.GetClusterId(),
-		ClusterName: vm.GetClusterName(),
-		VsockCid:    vm.GetVsockCid(),
-		State:       convertVirtualMachineState(vm.GetState()),
-		LastUpdated: vm.GetLastUpdated(),
-		Scan:        VirtualMachineScan(vm.GetScan()),
-	}
+	vm2 := &v2.VirtualMachine{}
+	vm2.SetId(vm.GetId())
+	vm2.SetNamespace(vm.GetNamespace())
+	vm2.SetName(vm.GetName())
+	vm2.SetClusterId(vm.GetClusterId())
+	vm2.SetClusterName(vm.GetClusterName())
+	vm2.SetVsockCid(vm.GetVsockCid())
+	vm2.SetState(convertVirtualMachineState(vm.GetState()))
+	vm2.SetLastUpdated(vm.GetLastUpdated())
+	vm2.SetScan(VirtualMachineScan(vm.GetScan()))
+	return vm2
 }
 
 func convertVirtualMachineState(state storage.VirtualMachine_State) v2.VirtualMachine_State {
@@ -41,12 +41,12 @@ func VirtualMachineScan(scan *storage.VirtualMachineScan) *v2.VirtualMachineScan
 	if scan == nil {
 		return nil
 	}
-	return &v2.VirtualMachineScan{
-		ScanTime:        scan.GetScanTime(),
-		OperatingSystem: scan.GetOperatingSystem(),
-		Notes:           VirtualMachineScanNotes(scan.GetNotes()),
-		Components:      EmbeddedVirtualMachineScanComponents(scan.GetComponents()),
-	}
+	vms := &v2.VirtualMachineScan{}
+	vms.SetScanTime(scan.GetScanTime())
+	vms.SetOperatingSystem(scan.GetOperatingSystem())
+	vms.SetNotes(VirtualMachineScanNotes(scan.GetNotes()))
+	vms.SetComponents(EmbeddedVirtualMachineScanComponents(scan.GetComponents()))
+	return vms
 }
 
 func VirtualMachineScanNotes(notes []storage.VirtualMachineScan_Note) []v2.VirtualMachineScan_Note {

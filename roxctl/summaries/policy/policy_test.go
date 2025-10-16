@@ -26,23 +26,23 @@ func TestNewPolicySummaryForPrinting(t *testing.T) {
 		},
 		"Policy violations but no failed policies - unknown entity": {
 			alerts: []*storage.Alert{
-				{
-					Policy: &storage.Policy{
+				storage.Alert_builder{
+					Policy: storage.Policy_builder{
 						Id:          "policy1",
 						Name:        "test Policy 1",
 						Description: "test description 1",
 						Remediation: "test remediation 1",
 						Severity:    storage.Severity_HIGH_SEVERITY,
-					},
+					}.Build(),
 					Violations: []*storage.Alert_Violation{
-						{
+						storage.Alert_Violation_builder{
 							Message: "test violation 1",
-						},
-						{
+						}.Build(),
+						storage.Alert_Violation_builder{
 							Message: "test violation 2",
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			expectedOutput: &Result{
 				Results: []EntityResult{
@@ -77,41 +77,41 @@ func TestNewPolicySummaryForPrinting(t *testing.T) {
 		},
 		"Policy violations with failed policies - unknown entity": {
 			alerts: []*storage.Alert{
-				{
-					Policy: &storage.Policy{
+				storage.Alert_builder{
+					Policy: storage.Policy_builder{
 						Id:          "policy1",
 						Name:        "test Policy 1",
 						Description: "test description 1",
 						Remediation: "test remediation 1",
 						Severity:    storage.Severity_HIGH_SEVERITY,
-					},
+					}.Build(),
 					Violations: []*storage.Alert_Violation{
-						{
+						storage.Alert_Violation_builder{
 							Message: "test violation 1",
-						},
-						{
+						}.Build(),
+						storage.Alert_Violation_builder{
 							Message: "test violation 2",
-						},
+						}.Build(),
 					},
-				},
-				{
-					Policy: &storage.Policy{
+				}.Build(),
+				storage.Alert_builder{
+					Policy: storage.Policy_builder{
 						Id:                 "policy2",
 						Name:               "test Policy 2",
 						Description:        "test description 2",
 						Remediation:        "test remediation 2",
 						Severity:           storage.Severity_LOW_SEVERITY,
 						EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT},
-					},
+					}.Build(),
 					Violations: []*storage.Alert_Violation{
-						{
+						storage.Alert_Violation_builder{
 							Message: "test violation 1",
-						},
-						{
+						}.Build(),
+						storage.Alert_Violation_builder{
 							Message: "test violation 2",
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			expectedOutput: &Result{
 				Results: []EntityResult{
@@ -154,104 +154,96 @@ func TestNewPolicySummaryForPrinting(t *testing.T) {
 		},
 		"multiple entities within alerts": {
 			alerts: []*storage.Alert{
-				{
-					Entity: &storage.Alert_Image{
-						Image: &storage.ContainerImage{
-							Id:   "nginx",
-							Name: &storage.ImageName{FullName: "nginx"},
-						},
-					},
-					Policy: &storage.Policy{
+				storage.Alert_builder{
+					Image: storage.ContainerImage_builder{
+						Id:   "nginx",
+						Name: storage.ImageName_builder{FullName: "nginx"}.Build(),
+					}.Build(),
+					Policy: storage.Policy_builder{
 						Id:          "policy1",
 						Name:        "test Policy 1",
 						Description: "test description 1",
 						Remediation: "test remediation 1",
 						Severity:    storage.Severity_HIGH_SEVERITY,
-					},
+					}.Build(),
 					Violations: []*storage.Alert_Violation{
-						{
+						storage.Alert_Violation_builder{
 							Message: "test violation 1",
-						},
-						{
+						}.Build(),
+						storage.Alert_Violation_builder{
 							Message: "test violation 2",
-						},
+						}.Build(),
 					},
-				},
-				{
-					Entity: &storage.Alert_Deployment_{
-						Deployment: &storage.Alert_Deployment{
-							Id:        "deployment",
-							Name:      "test-deployment",
-							Type:      "deployment",
-							Namespace: "default",
-						},
-					},
-					Policy: &storage.Policy{
+				}.Build(),
+				storage.Alert_builder{
+					Deployment: storage.Alert_Deployment_builder{
+						Id:        "deployment",
+						Name:      "test-deployment",
+						Type:      "deployment",
+						Namespace: "default",
+					}.Build(),
+					Policy: storage.Policy_builder{
 						Id:          "policy1",
 						Name:        "test Policy 1",
 						Description: "test description 1",
 						Remediation: "test remediation 1",
 						Severity:    storage.Severity_HIGH_SEVERITY,
-					},
+					}.Build(),
 					Violations: []*storage.Alert_Violation{
-						{
+						storage.Alert_Violation_builder{
 							Message: "test violation 1",
-						},
-						{
+						}.Build(),
+						storage.Alert_Violation_builder{
 							Message: "test violation 2",
-						},
+						}.Build(),
 					},
-				},
-				{
-					Entity: &storage.Alert_Image{
-						Image: &storage.ContainerImage{
-							Id:   "nginx",
-							Name: &storage.ImageName{FullName: "nginx"},
-						},
-					},
-					Policy: &storage.Policy{
+				}.Build(),
+				storage.Alert_builder{
+					Image: storage.ContainerImage_builder{
+						Id:   "nginx",
+						Name: storage.ImageName_builder{FullName: "nginx"}.Build(),
+					}.Build(),
+					Policy: storage.Policy_builder{
 						Id:                 "policy2",
 						Name:               "test Policy 2",
 						Description:        "test description 2",
 						Remediation:        "test remediation 2",
 						Severity:           storage.Severity_LOW_SEVERITY,
 						EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT},
-					},
+					}.Build(),
 					Violations: []*storage.Alert_Violation{
-						{
+						storage.Alert_Violation_builder{
 							Message: "test violation 1",
-						},
-						{
+						}.Build(),
+						storage.Alert_Violation_builder{
 							Message: "test violation 2",
-						},
+						}.Build(),
 					},
-				},
-				{
-					Entity: &storage.Alert_Deployment_{
-						Deployment: &storage.Alert_Deployment{
-							Id:        "deployment",
-							Name:      "test-deployment",
-							Type:      "deployment",
-							Namespace: "default",
-						},
-					},
-					Policy: &storage.Policy{
+				}.Build(),
+				storage.Alert_builder{
+					Deployment: storage.Alert_Deployment_builder{
+						Id:        "deployment",
+						Name:      "test-deployment",
+						Type:      "deployment",
+						Namespace: "default",
+					}.Build(),
+					Policy: storage.Policy_builder{
 						Id:                 "policy2",
 						Name:               "test Policy 2",
 						Description:        "test description 2",
 						Remediation:        "test remediation 2",
 						Severity:           storage.Severity_LOW_SEVERITY,
 						EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT},
-					},
+					}.Build(),
 					Violations: []*storage.Alert_Violation{
-						{
+						storage.Alert_Violation_builder{
 							Message: "test violation 1",
-						},
-						{
+						}.Build(),
+						storage.Alert_Violation_builder{
 							Message: "test violation 2",
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			expectedOutput: &Result{
 				Results: []EntityResult{
@@ -334,16 +326,16 @@ func TestNewPolicySummaryForPrinting(t *testing.T) {
 		},
 		"policy violations with optional fields being empty": {
 			alerts: []*storage.Alert{
-				{
-					Policy: &storage.Policy{
+				storage.Alert_builder{
+					Policy: storage.Policy_builder{
 						Id:          "policy1",
 						Name:        "test Policy 1",
 						Description: "",
 						Remediation: "",
 						Severity:    storage.Severity_HIGH_SEVERITY,
-					},
+					}.Build(),
 					Violations: nil,
-				},
+				}.Build(),
 			},
 			expectedOutput: &Result{
 				Results: []EntityResult{

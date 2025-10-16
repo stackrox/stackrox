@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestSendProtoPayload(t *testing.T) {
@@ -21,14 +22,11 @@ func TestSendProtoPayload(t *testing.T) {
 	server := httptest.NewServer(fakeSumoLogicSvc)
 	defer server.Close()
 
-	notifierConfig := &storage.Notifier{
-		Config: &storage.Notifier_Sumologic{
-			Sumologic: &storage.SumoLogic{
-				HttpSourceAddress: server.URL,
-				SkipTLSVerify:     true,
-			},
-		},
-	}
+	sumoLogic := &storage.SumoLogic{}
+	sumoLogic.SetHttpSourceAddress(server.URL)
+	sumoLogic.SetSkipTLSVerify(true)
+	notifierConfig := &storage.Notifier{}
+	notifierConfig.SetSumologic(proto.ValueOrDefault(sumoLogic))
 	sumoLogicNotifier, err := newSumoLogic(notifierConfig)
 	require.NoError(t, err)
 

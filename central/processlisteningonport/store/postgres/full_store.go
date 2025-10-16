@@ -258,34 +258,33 @@ func (s *fullStoreImpl) readRows(
 			continue
 		}
 
-		plop := &storage.ProcessListeningOnPort{
-			Endpoint: &storage.ProcessListeningOnPort_Endpoint{
-				Port:     msg.GetPort(),
-				Protocol: msg.GetProtocol(),
-			},
-			DeploymentId:  msg.GetDeploymentId(),
-			PodId:         podID,
-			PodUid:        podUID,
-			ContainerName: containerName,
-			Signal: &storage.ProcessSignal{
-				Id:           procMsg.GetSignal().GetId(),
-				ContainerId:  procMsg.GetSignal().GetContainerId(),
-				Time:         procMsg.GetSignal().GetTime(),
-				Name:         name,
-				Args:         args,
-				ExecFilePath: execFilePath,
-				Pid:          procMsg.GetSignal().GetPid(),
-				Uid:          procMsg.GetSignal().GetUid(),
-				Gid:          procMsg.GetSignal().GetGid(),
-				Lineage:      procMsg.GetSignal().GetLineage(),
-				Scraped:      procMsg.GetSignal().GetScraped(),
-				LineageInfo:  procMsg.GetSignal().GetLineageInfo(),
-			},
-			ClusterId:          clusterID,
-			Namespace:          namespace,
-			ContainerStartTime: procMsg.GetContainerStartTime(),
-			ImageId:            procMsg.GetImageId(),
-		}
+		pe := &storage.ProcessListeningOnPort_Endpoint{}
+		pe.SetPort(msg.GetPort())
+		pe.SetProtocol(msg.GetProtocol())
+		ps := &storage.ProcessSignal{}
+		ps.SetId(procMsg.GetSignal().GetId())
+		ps.SetContainerId(procMsg.GetSignal().GetContainerId())
+		ps.SetTime(procMsg.GetSignal().GetTime())
+		ps.SetName(name)
+		ps.SetArgs(args)
+		ps.SetExecFilePath(execFilePath)
+		ps.SetPid(procMsg.GetSignal().GetPid())
+		ps.SetUid(procMsg.GetSignal().GetUid())
+		ps.SetGid(procMsg.GetSignal().GetGid())
+		ps.SetLineage(procMsg.GetSignal().GetLineage())
+		ps.SetScraped(procMsg.GetSignal().GetScraped())
+		ps.SetLineageInfo(procMsg.GetSignal().GetLineageInfo())
+		plop := &storage.ProcessListeningOnPort{}
+		plop.SetEndpoint(pe)
+		plop.SetDeploymentId(msg.GetDeploymentId())
+		plop.SetPodId(podID)
+		plop.SetPodUid(podUID)
+		plop.SetContainerName(containerName)
+		plop.SetSignal(ps)
+		plop.SetClusterId(clusterID)
+		plop.SetNamespace(namespace)
+		plop.SetContainerStartTime(procMsg.GetContainerStartTime())
+		plop.SetImageId(procMsg.GetImageId())
 
 		if ok, err := plopSAC.ReadAllowed(ctx, sac.ClusterScopeKey(plop.GetClusterId()), sac.NamespaceScopeKey(plop.GetNamespace())); err == nil && ok {
 			plops = append(plops, plop)

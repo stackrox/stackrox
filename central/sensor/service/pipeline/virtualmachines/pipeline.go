@@ -99,7 +99,7 @@ func (p *pipelineImpl) runUpsertPipeline(
 
 	clusterName, ok, err := p.clusterStore.GetClusterName(ctx, clusterID)
 	if err == nil && ok {
-		virtualMachineToStore.ClusterName = clusterName
+		virtualMachineToStore.SetClusterName(clusterName)
 	}
 
 	return p.virtualMachineStore.UpsertVirtualMachine(ctx, virtualMachineToStore)

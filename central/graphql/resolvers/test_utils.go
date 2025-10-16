@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -42,7 +43,7 @@ const (
 
 func testDeployments() []*storage.Deployment {
 	return []*storage.Deployment{
-		{
+		storage.Deployment_builder{
 			Id:          fixtureconsts.Deployment1,
 			Name:        dep1name,
 			Namespace:   namespace1name,
@@ -50,17 +51,17 @@ func testDeployments() []*storage.Deployment {
 			ClusterId:   fixtureconsts.Cluster1,
 			ClusterName: cluster1name,
 			Containers: []*storage.Container{
-				{
+				storage.Container_builder{
 					Name:  container1name,
 					Image: imageTypes.ToContainerImage(testImages()[0]),
-				},
-				{
+				}.Build(),
+				storage.Container_builder{
 					Name:  container2name,
 					Image: imageTypes.ToContainerImage(testImages()[1]),
-				},
+				}.Build(),
 			},
-		},
-		{
+		}.Build(),
+		storage.Deployment_builder{
 			Id:          fixtureconsts.Deployment2,
 			Name:        dep2name,
 			Namespace:   namespace1name,
@@ -68,13 +69,13 @@ func testDeployments() []*storage.Deployment {
 			ClusterId:   fixtureconsts.Cluster1,
 			ClusterName: cluster1name,
 			Containers: []*storage.Container{
-				{
+				storage.Container_builder{
 					Name:  container1name,
 					Image: imageTypes.ToContainerImage(testImages()[0]),
-				},
+				}.Build(),
 			},
-		},
-		{
+		}.Build(),
+		storage.Deployment_builder{
 			Id:          fixtureconsts.Deployment3,
 			Name:        dep3name,
 			Namespace:   namespace2name,
@@ -82,12 +83,12 @@ func testDeployments() []*storage.Deployment {
 			ClusterId:   fixtureconsts.Cluster2,
 			ClusterName: cluster2name,
 			Containers: []*storage.Container{
-				{
+				storage.Container_builder{
 					Name:  container1name,
 					Image: imageTypes.ToContainerImage(testImages()[1]),
-				},
+				}.Build(),
 			},
-		},
+		}.Build(),
 	}
 }
 
@@ -97,140 +98,124 @@ func testImages() []*storage.Image {
 	t2, err := protocompat.ConvertTimeToTimestampOrError(time.Unix(0, 2000))
 	utils.CrashOnError(err)
 	return []*storage.Image{
-		{
+		storage.Image_builder{
 			Id: "sha1",
-			Name: &storage.ImageName{
+			Name: storage.ImageName_builder{
 				Registry: "reg1",
 				Remote:   "img1",
 				Tag:      "tag1",
 				FullName: "reg1/img1:tag1",
-			},
-			SetCves: &storage.Image_Cves{
-				Cves: 3,
-			},
-			Scan: &storage.ImageScan{
+			}.Build(),
+			Cves: proto.Int32(3),
+			Scan: storage.ImageScan_builder{
 				Components: []*storage.EmbeddedImageScanComponent{
-					{
+					storage.EmbeddedImageScanComponent_builder{
 						Name:    "comp1",
 						Version: "0.9",
 						Vulns: []*storage.EmbeddedVulnerability{
-							{
-								Cve: "cve-2018-1",
-								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-									FixedBy: "1.1",
-								},
+							storage.EmbeddedVulnerability_builder{
+								Cve:      "cve-2018-1",
+								FixedBy:  proto.String("1.1"),
 								Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-							},
+							}.Build(),
 						},
-					},
-					{
+					}.Build(),
+					storage.EmbeddedImageScanComponent_builder{
 						Name:    "comp2",
 						Version: "1.1",
 						Vulns: []*storage.EmbeddedVulnerability{
-							{
-								Cve: "cve-2018-1",
-								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-									FixedBy: "1.5",
-								},
+							storage.EmbeddedVulnerability_builder{
+								Cve:      "cve-2018-1",
+								FixedBy:  proto.String("1.5"),
 								Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-							},
+							}.Build(),
 						},
-					},
-					{
-						Name:     "comp3",
-						Version:  "1.0",
-						Source:   storage.SourceType_JAVA,
-						Location: "p/q/r",
-						HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
-							LayerIndex: 10,
-						},
+					}.Build(),
+					storage.EmbeddedImageScanComponent_builder{
+						Name:       "comp3",
+						Version:    "1.0",
+						Source:     storage.SourceType_JAVA,
+						Location:   "p/q/r",
+						LayerIndex: proto.Int32(10),
 						Vulns: []*storage.EmbeddedVulnerability{
-							{
+							storage.EmbeddedVulnerability_builder{
 								Cve:      "cve-2019-1",
 								Cvss:     4,
 								Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
-							},
-							{
+							}.Build(),
+							storage.EmbeddedVulnerability_builder{
 								Cve:      "cve-2019-2",
 								Cvss:     3,
 								Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
 				ScanTime: t1,
-			},
-		},
-		{
+			}.Build(),
+		}.Build(),
+		storage.Image_builder{
 			Id: "sha2",
-			Name: &storage.ImageName{
+			Name: storage.ImageName_builder{
 				Registry: "reg2",
 				Remote:   "img2",
 				Tag:      "tag2",
 				FullName: "reg2/img2:tag2",
-			},
-			SetCves: &storage.Image_Cves{
-				Cves: 5,
-			},
-			Scan: &storage.ImageScan{
+			}.Build(),
+			Cves: proto.Int32(5),
+			Scan: storage.ImageScan_builder{
 				Components: []*storage.EmbeddedImageScanComponent{
-					{
+					storage.EmbeddedImageScanComponent_builder{
 						Name:    "comp1",
 						Version: "0.9",
 						Vulns: []*storage.EmbeddedVulnerability{
-							{
-								Cve: "cve-2018-1",
-								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-									FixedBy: "1.1",
-								},
+							storage.EmbeddedVulnerability_builder{
+								Cve:      "cve-2018-1",
+								FixedBy:  proto.String("1.1"),
 								Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-							},
+							}.Build(),
 						},
-					},
-					{
-						Name:     "comp3",
-						Version:  "1.0",
-						Source:   storage.SourceType_JAVA,
-						Location: "p/q/r",
-						HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
-							LayerIndex: 10,
-						},
+					}.Build(),
+					storage.EmbeddedImageScanComponent_builder{
+						Name:       "comp3",
+						Version:    "1.0",
+						Source:     storage.SourceType_JAVA,
+						Location:   "p/q/r",
+						LayerIndex: proto.Int32(10),
 						Vulns: []*storage.EmbeddedVulnerability{
-							{
+							storage.EmbeddedVulnerability_builder{
 								Cve:      "cve-2019-1",
 								Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
 								Cvss:     4,
-							},
-							{
+							}.Build(),
+							storage.EmbeddedVulnerability_builder{
 								Cve:      "cve-2019-2",
 								Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
 								Cvss:     3,
-							},
+							}.Build(),
 						},
-					},
-					{
-						Name:     "comp4",
-						Version:  "1.0",
-						Source:   storage.SourceType_PYTHON,
-						Location: "a/b/c",
-						HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
-							LayerIndex: 10,
-						},
+					}.Build(),
+					storage.EmbeddedImageScanComponent_builder{
+						Name:       "comp4",
+						Version:    "1.0",
+						Source:     storage.SourceType_PYTHON,
+						Location:   "a/b/c",
+						LayerIndex: proto.Int32(10),
 						Vulns: []*storage.EmbeddedVulnerability{
-							{
+							storage.EmbeddedVulnerability_builder{
 								Cve:      "cve-2017-1",
 								Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
-							},
-							{
+							}.Build(),
+							storage.EmbeddedVulnerability_builder{
 								Cve:      "cve-2017-2",
 								Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
 				ScanTime: t2,
-			},
-		},
+			}.Build(),
+		}.Build(),
 	}
 }
 
@@ -238,54 +223,54 @@ func testCluster() []*storage.Cluster {
 	mainImage := "docker.io/stackrox/rox:latest"
 	centralEndpoint := "central.stackrox:443"
 	return []*storage.Cluster{
-		{
+		storage.Cluster_builder{
 			Name:               "k8s_cluster1",
 			Type:               storage.ClusterType_KUBERNETES_CLUSTER,
 			MainImage:          mainImage,
 			CentralApiEndpoint: centralEndpoint,
-		},
-		{
+		}.Build(),
+		storage.Cluster_builder{
 			Name:               "k8s_cluster2",
 			Type:               storage.ClusterType_KUBERNETES_CLUSTER,
 			MainImage:          mainImage,
 			CentralApiEndpoint: centralEndpoint,
-		},
-		{
+		}.Build(),
+		storage.Cluster_builder{
 			Name:               "os_cluster1",
 			Type:               storage.ClusterType_OPENSHIFT_CLUSTER,
 			MainImage:          mainImage,
 			CentralApiEndpoint: centralEndpoint,
-		},
-		{
+		}.Build(),
+		storage.Cluster_builder{
 			Name:               "os_cluster2",
 			Type:               storage.ClusterType_OPENSHIFT_CLUSTER,
 			MainImage:          mainImage,
 			CentralApiEndpoint: centralEndpoint,
-		},
-		{
+		}.Build(),
+		storage.Cluster_builder{
 			Name:               "os4_cluster1",
 			Type:               storage.ClusterType_OPENSHIFT4_CLUSTER,
 			MainImage:          mainImage,
 			CentralApiEndpoint: centralEndpoint,
-		},
-		{
+		}.Build(),
+		storage.Cluster_builder{
 			Name:               "os4_cluster2",
 			Type:               storage.ClusterType_OPENSHIFT4_CLUSTER,
 			MainImage:          mainImage,
 			CentralApiEndpoint: centralEndpoint,
-		},
-		{
+		}.Build(),
+		storage.Cluster_builder{
 			Name:               "gen_cluster1",
 			Type:               storage.ClusterType_GENERIC_CLUSTER,
 			MainImage:          mainImage,
 			CentralApiEndpoint: centralEndpoint,
-		},
-		{
+		}.Build(),
+		storage.Cluster_builder{
 			Name:               "gen_cluster2",
 			Type:               storage.ClusterType_GENERIC_CLUSTER,
 			MainImage:          mainImage,
 			CentralApiEndpoint: centralEndpoint,
-		},
+		}.Build(),
 	}
 }
 
@@ -297,136 +282,136 @@ func testClusterCVEParts(clusterIDs []string) []converter.ClusterCVEParts {
 	utils.CrashOnError(err)
 	return []converter.ClusterCVEParts{
 		{
-			CVE: &storage.ClusterCVE{
+			CVE: storage.ClusterCVE_builder{
 				Id:       cveIds[0],
 				Cvss:     4,
 				Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
 				Type:     storage.CVE_K8S_CVE,
-				CveBaseInfo: &storage.CVEInfo{
+				CveBaseInfo: storage.CVEInfo_builder{
 					CreatedAt: t1,
 					CvssV2:    &storage.CVSSV2{},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			Children: []converter.EdgeParts{
 				{
-					Edge: &storage.ClusterCVEEdge{
-						Id:         pgSearch.IDFromPks([]string{clusterIDs[0], cveIds[0]}),
-						IsFixable:  true,
-						HasFixedBy: &storage.ClusterCVEEdge_FixedBy{FixedBy: "1.1"},
-						ClusterId:  clusterIDs[0],
-						CveId:      cveIds[0],
-					},
+					Edge: storage.ClusterCVEEdge_builder{
+						Id:        pgSearch.IDFromPks([]string{clusterIDs[0], cveIds[0]}),
+						IsFixable: true,
+						FixedBy:   proto.String("1.1"),
+						ClusterId: clusterIDs[0],
+						CveId:     cveIds[0],
+					}.Build(),
 					ClusterID: clusterIDs[0],
 				},
 			},
 		},
 		{
-			CVE: &storage.ClusterCVE{
+			CVE: storage.ClusterCVE_builder{
 				Id:       cveIds[1],
 				Cvss:     5,
 				Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
 				Type:     storage.CVE_K8S_CVE,
-				CveBaseInfo: &storage.CVEInfo{
+				CveBaseInfo: storage.CVEInfo_builder{
 					CreatedAt: t1,
 					CvssV3:    &storage.CVSSV3{},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			Children: []converter.EdgeParts{
 				{
-					Edge: &storage.ClusterCVEEdge{
+					Edge: storage.ClusterCVEEdge_builder{
 						Id:         pgSearch.IDFromPks([]string{clusterIDs[0], cveIds[1]}),
 						IsFixable:  false,
 						HasFixedBy: nil,
 						ClusterId:  clusterIDs[0],
 						CveId:      cveIds[1],
-					},
+					}.Build(),
 					ClusterID: clusterIDs[0],
 				},
 				{
-					Edge: &storage.ClusterCVEEdge{
+					Edge: storage.ClusterCVEEdge_builder{
 						Id:         pgSearch.IDFromPks([]string{clusterIDs[1], cveIds[1]}),
 						IsFixable:  false,
 						HasFixedBy: nil,
 						ClusterId:  clusterIDs[1],
 						CveId:      cveIds[1],
-					},
+					}.Build(),
 					ClusterID: clusterIDs[1],
 				},
 			},
 		},
 		{
-			CVE: &storage.ClusterCVE{
+			CVE: storage.ClusterCVE_builder{
 				Id:       cveIds[2],
 				Cvss:     7,
 				Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
 				Type:     storage.CVE_K8S_CVE,
-				CveBaseInfo: &storage.CVEInfo{
+				CveBaseInfo: storage.CVEInfo_builder{
 					CreatedAt: t2,
 					CvssV2:    &storage.CVSSV2{},
 					CvssV3:    &storage.CVSSV3{},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			Children: []converter.EdgeParts{
 				{
-					Edge: &storage.ClusterCVEEdge{
-						Id:         pgSearch.IDFromPks([]string{clusterIDs[1], cveIds[2]}),
-						IsFixable:  true,
-						HasFixedBy: &storage.ClusterCVEEdge_FixedBy{FixedBy: "1.2"},
-						ClusterId:  clusterIDs[1],
-						CveId:      cveIds[2],
-					},
+					Edge: storage.ClusterCVEEdge_builder{
+						Id:        pgSearch.IDFromPks([]string{clusterIDs[1], cveIds[2]}),
+						IsFixable: true,
+						FixedBy:   proto.String("1.2"),
+						ClusterId: clusterIDs[1],
+						CveId:     cveIds[2],
+					}.Build(),
 					ClusterID: clusterIDs[1],
 				},
 			},
 		},
 		{
-			CVE: &storage.ClusterCVE{
+			CVE: storage.ClusterCVE_builder{
 				Id:          cveIds[3],
 				Cvss:        2,
 				Severity:    storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
 				Type:        storage.CVE_K8S_CVE,
-				CveBaseInfo: &storage.CVEInfo{CreatedAt: t2},
-			},
+				CveBaseInfo: storage.CVEInfo_builder{CreatedAt: t2}.Build(),
+			}.Build(),
 			Children: []converter.EdgeParts{
 				{
-					Edge: &storage.ClusterCVEEdge{
+					Edge: storage.ClusterCVEEdge_builder{
 						Id:         pgSearch.IDFromPks([]string{clusterIDs[0], cveIds[3]}),
 						IsFixable:  false,
 						HasFixedBy: nil,
 						ClusterId:  clusterIDs[0],
 						CveId:      cveIds[3],
-					},
+					}.Build(),
 					ClusterID: clusterIDs[0],
 				},
 				{
-					Edge: &storage.ClusterCVEEdge{
-						Id:         pgSearch.IDFromPks([]string{clusterIDs[1], cveIds[3]}),
-						IsFixable:  true,
-						HasFixedBy: &storage.ClusterCVEEdge_FixedBy{FixedBy: "1.4"},
-						ClusterId:  clusterIDs[1],
-						CveId:      cveIds[3],
-					},
+					Edge: storage.ClusterCVEEdge_builder{
+						Id:        pgSearch.IDFromPks([]string{clusterIDs[1], cveIds[3]}),
+						IsFixable: true,
+						FixedBy:   proto.String("1.4"),
+						ClusterId: clusterIDs[1],
+						CveId:     cveIds[3],
+					}.Build(),
 					ClusterID: clusterIDs[1],
 				},
 			},
 		},
 		{
-			CVE: &storage.ClusterCVE{
+			CVE: storage.ClusterCVE_builder{
 				Id:          cveIds[4],
 				Cvss:        2,
 				Severity:    storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
 				Type:        storage.CVE_K8S_CVE,
-				CveBaseInfo: &storage.CVEInfo{CreatedAt: t1},
-			},
+				CveBaseInfo: storage.CVEInfo_builder{CreatedAt: t1}.Build(),
+			}.Build(),
 			Children: []converter.EdgeParts{
 				{
-					Edge: &storage.ClusterCVEEdge{
+					Edge: storage.ClusterCVEEdge_builder{
 						Id:         pgSearch.IDFromPks([]string{clusterIDs[0], cveIds[4]}),
 						IsFixable:  false,
 						HasFixedBy: nil,
 						ClusterId:  clusterIDs[0],
 						CveId:      cveIds[4],
-					},
+					}.Build(),
 					ClusterID: clusterIDs[0],
 				},
 			},
@@ -436,8 +421,8 @@ func testClusterCVEParts(clusterIDs []string) []converter.ClusterCVEParts {
 
 func testImagesWithOperatingSystems() []*storage.Image {
 	ret := testImages()
-	ret[0].Scan.OperatingSystem = "os1"
-	ret[1].Scan.OperatingSystem = "os2"
+	ret[0].GetScan().SetOperatingSystem("os1")
+	ret[1].GetScan().SetOperatingSystem("os2")
 	return ret
 }
 
@@ -447,145 +432,135 @@ func testNodes(includeCVEsToOrphan bool) []*storage.Node {
 	t2, err := protocompat.ConvertTimeToTimestampOrError(time.Unix(0, 2000))
 	utils.CrashOnError(err)
 	nodes := []*storage.Node{
-		{
+		storage.Node_builder{
 			Id:   fixtureconsts.Node1,
 			Name: "node1",
-			SetCves: &storage.Node_Cves{
-				Cves: 3,
-			},
-			Scan: &storage.NodeScan{
+			Cves: proto.Int32(3),
+			Scan: storage.NodeScan_builder{
 				ScanTime: t1,
 				Components: []*storage.EmbeddedNodeScanComponent{
-					{
+					storage.EmbeddedNodeScanComponent_builder{
 						Name:    "comp1",
 						Version: "0.9",
 						Vulnerabilities: []*storage.NodeVulnerability{
-							{
-								CveBaseInfo: &storage.CVEInfo{
+							storage.NodeVulnerability_builder{
+								CveBaseInfo: storage.CVEInfo_builder{
 									Cve: "cve-2018-1",
-								},
-								SetFixedBy: &storage.NodeVulnerability_FixedBy{
-									FixedBy: "1.1",
-								},
-							},
+								}.Build(),
+								FixedBy: proto.String("1.1"),
+							}.Build(),
 						},
-					},
-					{
+					}.Build(),
+					storage.EmbeddedNodeScanComponent_builder{
 						Name:    "comp2",
 						Version: "1.1",
 						Vulnerabilities: []*storage.NodeVulnerability{
-							{
-								CveBaseInfo: &storage.CVEInfo{
+							storage.NodeVulnerability_builder{
+								CveBaseInfo: storage.CVEInfo_builder{
 									Cve: "cve-2018-1",
-								},
-								SetFixedBy: &storage.NodeVulnerability_FixedBy{
-									FixedBy: "1.5",
-								},
-							},
+								}.Build(),
+								FixedBy: proto.String("1.5"),
+							}.Build(),
 						},
-					},
-					{
+					}.Build(),
+					storage.EmbeddedNodeScanComponent_builder{
 						Name:    "comp3",
 						Version: "1.0",
 						Vulnerabilities: []*storage.NodeVulnerability{
-							{
-								CveBaseInfo: &storage.CVEInfo{
+							storage.NodeVulnerability_builder{
+								CveBaseInfo: storage.CVEInfo_builder{
 									Cve: "cve-2019-1",
-								},
+								}.Build(),
 								Cvss: 4,
-							},
-							{
-								CveBaseInfo: &storage.CVEInfo{
+							}.Build(),
+							storage.NodeVulnerability_builder{
+								CveBaseInfo: storage.CVEInfo_builder{
 									Cve: "cve-2019-2",
-								},
+								}.Build(),
 								Cvss: 3,
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
-		},
-		{
+			}.Build(),
+		}.Build(),
+		storage.Node_builder{
 			Id:   fixtureconsts.Node2,
 			Name: "node2",
-			SetCves: &storage.Node_Cves{
-				Cves: 5,
-			},
-			Scan: &storage.NodeScan{
+			Cves: proto.Int32(5),
+			Scan: storage.NodeScan_builder{
 				ScanTime: t2,
 				Components: []*storage.EmbeddedNodeScanComponent{
-					{
+					storage.EmbeddedNodeScanComponent_builder{
 						Name:    "comp1",
 						Version: "0.9",
 						Vulnerabilities: []*storage.NodeVulnerability{
-							{
-								CveBaseInfo: &storage.CVEInfo{
+							storage.NodeVulnerability_builder{
+								CveBaseInfo: storage.CVEInfo_builder{
 									Cve: "cve-2018-1",
-								},
-								SetFixedBy: &storage.NodeVulnerability_FixedBy{
-									FixedBy: "1.1",
-								},
+								}.Build(),
+								FixedBy:  proto.String("1.1"),
 								Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-							},
+							}.Build(),
 						},
-					},
-					{
+					}.Build(),
+					storage.EmbeddedNodeScanComponent_builder{
 						Name:    "comp3",
 						Version: "1.0",
 						Vulnerabilities: []*storage.NodeVulnerability{
-							{
-								CveBaseInfo: &storage.CVEInfo{
+							storage.NodeVulnerability_builder{
+								CveBaseInfo: storage.CVEInfo_builder{
 									Cve: "cve-2019-1",
-								},
+								}.Build(),
 								Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
 								Cvss:     4,
-							},
-							{
-								CveBaseInfo: &storage.CVEInfo{
+							}.Build(),
+							storage.NodeVulnerability_builder{
+								CveBaseInfo: storage.CVEInfo_builder{
 									Cve: "cve-2019-2",
-								},
+								}.Build(),
 								Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
 								Cvss:     3,
-							},
+							}.Build(),
 						},
-					},
-					{
+					}.Build(),
+					storage.EmbeddedNodeScanComponent_builder{
 						Name:    "comp4",
 						Version: "1.0",
 						Vulnerabilities: []*storage.NodeVulnerability{
-							{
-								CveBaseInfo: &storage.CVEInfo{
+							storage.NodeVulnerability_builder{
+								CveBaseInfo: storage.CVEInfo_builder{
 									Cve: "cve-2017-1",
-								},
+								}.Build(),
 								Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
-							},
-							{
-								CveBaseInfo: &storage.CVEInfo{
+							}.Build(),
+							storage.NodeVulnerability_builder{
+								CveBaseInfo: storage.CVEInfo_builder{
 									Cve: "cve-2017-2",
-								},
+								}.Build(),
 								Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
-		},
+			}.Build(),
+		}.Build(),
 	}
 
 	if includeCVEsToOrphan {
 		for _, node := range nodes {
 			if len(node.GetScan().GetComponents()) > 0 {
-				node.Scan.Components = append(node.Scan.Components, &storage.EmbeddedNodeScanComponent{
+				node.GetScan().SetComponents(append(node.GetScan().GetComponents(), storage.EmbeddedNodeScanComponent_builder{
 					Name:    "comp5",
 					Version: "1.0",
 					Vulnerabilities: []*storage.NodeVulnerability{
-						{
-							CveBaseInfo: &storage.CVEInfo{
+						storage.NodeVulnerability_builder{
+							CveBaseInfo: storage.CVEInfo_builder{
 								Cve: "cve-to-be-orphaned",
-							},
-						},
+							}.Build(),
+						}.Build(),
 					},
-				})
+				}.Build()))
 			}
 		}
 	}
@@ -595,25 +570,25 @@ func testNodes(includeCVEsToOrphan bool) []*storage.Node {
 
 // returns clusters and associated nodes for testing
 func testClustersWithNodes(includeCVEsToOrphan bool) ([]*storage.Cluster, []*storage.Node) {
+	cluster := &storage.Cluster{}
+	cluster.SetId(fixtureconsts.Cluster1)
+	cluster.SetName("cluster1")
+	cluster.SetMainImage("quay.io/stackrox-io/main")
+	cluster2 := &storage.Cluster{}
+	cluster2.SetId(fixtureconsts.Cluster2)
+	cluster2.SetName("cluster2")
+	cluster2.SetMainImage("quay.io/stackrox-io/main")
 	clusters := []*storage.Cluster{
-		{
-			Id:        fixtureconsts.Cluster1,
-			Name:      "cluster1",
-			MainImage: "quay.io/stackrox-io/main",
-		},
-		{
-			Id:        fixtureconsts.Cluster2,
-			Name:      "cluster2",
-			MainImage: "quay.io/stackrox-io/main",
-		},
+		cluster,
+		cluster2,
 	}
 
 	nodes := testNodes(includeCVEsToOrphan)
-	nodes[0].ClusterId = clusters[0].GetId()
-	nodes[0].ClusterName = clusters[0].GetName()
+	nodes[0].SetClusterId(clusters[0].GetId())
+	nodes[0].SetClusterName(clusters[0].GetName())
 
-	nodes[1].ClusterId = clusters[1].GetId()
-	nodes[1].ClusterName = clusters[1].GetName()
+	nodes[1].SetClusterId(clusters[1].GetId())
+	nodes[1].SetClusterName(clusters[1].GetName())
 
 	return clusters, nodes
 }
@@ -717,7 +692,7 @@ func getTestImages(imageCount int) []*storage.Image {
 	for i := 0; i < imageCount; i++ {
 		img := fixtures.GetImageWithUniqueComponents(100)
 		id := fmt.Sprintf("%d", i)
-		img.Id = id
+		img.SetId(id)
 		images = append(images, img)
 	}
 	return images
@@ -735,7 +710,7 @@ func getTestNodes(nodeCount int) []*storage.Node {
 		node := fixtures.GetNodeWithUniqueComponents(100, 5)
 		nodeConverter.MoveNodeVulnsToNewField(node)
 		id := uuid.NewV4().String()
-		node.Id = id
+		node.SetId(id)
 		nodes = append(nodes, node)
 	}
 	return nodes

@@ -27,9 +27,9 @@ func getSubjectFromStores(ctx context.Context, subjectName string, roleDS k8sRol
 			[]search.FieldLabel{search.SubjectName, search.SubjectKind},
 			[]string{search.ExactMatchString(subjectName), search.ExactMatchString(storage.SubjectKind_GROUP.String())}).ProtoQuery(),
 	)
-	bindingsQuery.Pagination = &v1.QueryPagination{
-		Limit: math.MaxInt32,
-	}
+	qp := &v1.QueryPagination{}
+	qp.SetLimit(math.MaxInt32)
+	bindingsQuery.SetPagination(qp)
 	relevantBindings, err := bindingDS.SearchRawRoleBindings(ctx, bindingsQuery)
 	if err != nil || len(relevantBindings) == 0 {
 		return nil, err
@@ -64,9 +64,9 @@ func getSubjectFromStores(ctx context.Context, subjectName string, roleDS k8sRol
 	}
 
 	rolesQuery := search.NewQueryBuilder().AddExactMatches(search.RoleID, roleIDs.AsSlice()...).ProtoQuery()
-	rolesQuery.Pagination = &v1.QueryPagination{
-		Limit: math.MaxInt32,
-	}
+	qp2 := &v1.QueryPagination{}
+	qp2.SetLimit(math.MaxInt32)
+	rolesQuery.SetPagination(qp2)
 	relevantRoles, err := roleDS.SearchRawRoles(ctx, rolesQuery)
 	if err != nil {
 		return nil, err
@@ -76,16 +76,16 @@ func getSubjectFromStores(ctx context.Context, subjectName string, roleDS k8sRol
 	clusterRoles := k8srbac.NewEvaluator(relevantRoles, clusterBindings).RolesForSubject(subject)
 	namespacedRoles := make([]*v1.ScopedRoles, 0)
 	for namespace, bindings := range namespacedBindings {
-		namespacedRoles = append(namespacedRoles, &v1.ScopedRoles{
-			Namespace: namespace,
-			Roles:     k8srbac.NewEvaluator(relevantRoles, bindings).RolesForSubject(subject),
-		})
+		sr := &v1.ScopedRoles{}
+		sr.SetNamespace(namespace)
+		sr.SetRoles(k8srbac.NewEvaluator(relevantRoles, bindings).RolesForSubject(subject))
+		namespacedRoles = append(namespacedRoles, sr)
 	}
 
 	// Build response.
-	return &v1.GetSubjectResponse{
-		Subject:      subject,
-		ClusterRoles: clusterRoles,
-		ScopedRoles:  namespacedRoles,
-	}, nil
+	gsr := &v1.GetSubjectResponse{}
+	gsr.SetSubject(subject)
+	gsr.SetClusterRoles(clusterRoles)
+	gsr.SetScopedRoles(namespacedRoles)
+	return gsr, nil
 }

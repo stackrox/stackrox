@@ -180,20 +180,20 @@ func (resolver *Resolver) TopNodeVulnerability(ctx context.Context, args RawQuer
 	if err != nil {
 		return nil, err
 	}
-	query.Pagination = &v1.QueryPagination{
-		SortOptions: []*v1.QuerySortOption{
-			{
-				Field:    search.CVSS.String(),
-				Reversed: true,
-			},
-			{
-				Field:    search.CVE.String(),
-				Reversed: true,
-			},
-		},
-		Limit:  1,
-		Offset: 0,
-	}
+	qso := &v1.QuerySortOption{}
+	qso.SetField(search.CVSS.String())
+	qso.SetReversed(true)
+	qso2 := &v1.QuerySortOption{}
+	qso2.SetField(search.CVE.String())
+	qso2.SetReversed(true)
+	qp := &v1.QueryPagination{}
+	qp.SetSortOptions([]*v1.QuerySortOption{
+		qso,
+		qso2,
+	})
+	qp.SetLimit(1)
+	qp.SetOffset(0)
+	query.SetPagination(qp)
 
 	vulnLoader, err := loaders.GetNodeCVELoader(ctx)
 	if err != nil {
@@ -351,16 +351,16 @@ func (resolver *nodeCVEResolver) LastScanned(ctx context.Context) (*graphql.Time
 	}
 
 	q := resolver.getNodeCVEQuery()
-	q.Pagination = &v1.QueryPagination{
-		Limit:  1,
-		Offset: 0,
-		SortOptions: []*v1.QuerySortOption{
-			{
-				Field:    search.NodeScanTime.String(),
-				Reversed: true,
-			},
-		},
-	}
+	qso := &v1.QuerySortOption{}
+	qso.SetField(search.NodeScanTime.String())
+	qso.SetReversed(true)
+	qp := &v1.QueryPagination{}
+	qp.SetLimit(1)
+	qp.SetOffset(0)
+	qp.SetSortOptions([]*v1.QuerySortOption{
+		qso,
+	})
+	q.SetPagination(qp)
 
 	nodes, err := nodeLoader.FromQuery(resolver.ctx, q)
 	if err != nil || len(nodes) == 0 {

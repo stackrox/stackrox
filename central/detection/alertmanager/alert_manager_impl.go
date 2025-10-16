@@ -218,7 +218,7 @@ func mergeProcessesFromOldIntoNew(old, newAlert *storage.Alert) (newAlertHasNewP
 	if len(newProcessesSlice) > maxRunTimeViolationsPerAlert {
 		newProcessesSlice = newProcessesSlice[:maxRunTimeViolationsPerAlert]
 	}
-	newAlert.ProcessViolation.Processes = newProcessesSlice
+	newAlert.GetProcessViolation().SetProcesses(newProcessesSlice)
 	printer.UpdateProcessAlertViolationMessage(newAlert.GetProcessViolation())
 	return
 }
@@ -276,7 +276,7 @@ func mergeAlertsByLatestFirst(old, new *storage.Alert, alertType storage.Alert_V
 	if len(newViolations) > maxRunTimeViolationsPerAlert {
 		newViolations = newViolations[:maxRunTimeViolationsPerAlert]
 	}
-	new.Violations = newViolations
+	new.SetViolations(newViolations)
 	// Since violations are not aggregated under one drop-down, no other message changes required.
 
 	return true
@@ -291,17 +291,17 @@ func mergeAlerts(old, newAlert *storage.Alert) *storage.Alert {
 		}
 	}
 
-	newAlert.Id = old.GetId()
+	newAlert.SetId(old.GetId())
 	// Updated deploy-time alerts continue to have the same enforcement action.
 	if newAlert.GetLifecycleStage() == storage.LifecycleStage_DEPLOY && old.GetLifecycleStage() == storage.LifecycleStage_DEPLOY {
-		newAlert.Enforcement = old.GetEnforcement()
+		newAlert.SetEnforcement(old.GetEnforcement())
 		// Don't keep updating the timestamp of the violation _unless_ the violations are actually different.
 		if protoutils.SlicesEqual(newAlert.GetViolations(), old.GetViolations()) {
-			newAlert.Time = old.GetTime()
+			newAlert.SetTime(old.GetTime())
 		}
 	}
 
-	newAlert.FirstOccurred = old.GetFirstOccurred()
+	newAlert.SetFirstOccurred(old.GetFirstOccurred())
 	return newAlert
 }
 
@@ -328,7 +328,7 @@ func (d *alertManagerImpl) mergeManyAlerts(
 	for _, alert := range incomingAlerts {
 		if pkgAlert.IsDeployTimeAttemptedAlert(alert) {
 			// `alert.time` is the latest violation time.
-			alert.FirstOccurred = alert.GetTime()
+			alert.SetFirstOccurred(alert.GetTime())
 			newAlerts = append(newAlerts, alert)
 			continue
 		}
@@ -342,7 +342,7 @@ func (d *alertManagerImpl) mergeManyAlerts(
 		}
 
 		// `alert.time` is the latest violation time.
-		alert.FirstOccurred = alert.GetTime()
+		alert.SetFirstOccurred(alert.GetTime())
 		newAlerts = append(newAlerts, alert)
 	}
 
@@ -372,7 +372,7 @@ func (d *alertManagerImpl) mergeManyAlerts(
 				depID := deployment.GetId()
 				if deploymentsBeingRemoved.Contains(depID) || d.runtimeDetector.DeploymentInactive(depID) {
 					if deployment := previousAlert.GetDeployment(); deployment != nil && !deployment.GetInactive() {
-						deployment.Inactive = true
+						deployment.SetInactive(true)
 						updatedAlerts = append(updatedAlerts, previousAlert)
 					}
 				}

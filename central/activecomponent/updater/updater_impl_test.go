@@ -38,87 +38,87 @@ type indicatorModel struct {
 
 var (
 	mockDeployments = []*storage.Deployment{
-		{
+		storage.Deployment_builder{
 			Id: "depA",
 			Containers: []*storage.Container{
-				{
+				storage.Container_builder{
 					Name:  "depA-C1-image1",
-					Image: &storage.ContainerImage{Id: "image1"},
-				},
-				{
+					Image: storage.ContainerImage_builder{Id: "image1"}.Build(),
+				}.Build(),
+				storage.Container_builder{
 					Name:  "depA-C2-image1",
-					Image: &storage.ContainerImage{Id: "image1"},
-				},
+					Image: storage.ContainerImage_builder{Id: "image1"}.Build(),
+				}.Build(),
 			},
-		},
-		{
+		}.Build(),
+		storage.Deployment_builder{
 			Id: "depB",
 			Containers: []*storage.Container{
-				{
+				storage.Container_builder{
 					Name:  "depB-C1-image2",
-					Image: &storage.ContainerImage{Id: "image2"},
-				},
-				{
+					Image: storage.ContainerImage_builder{Id: "image2"}.Build(),
+				}.Build(),
+				storage.Container_builder{
 					Name:  "depB-C2-image1",
-					Image: &storage.ContainerImage{Id: "image1"},
-				},
+					Image: storage.ContainerImage_builder{Id: "image1"}.Build(),
+				}.Build(),
 			},
-		},
-		{
+		}.Build(),
+		storage.Deployment_builder{
 			Id: "depC",
 			Containers: []*storage.Container{
-				{
+				storage.Container_builder{
 					Name:  "depC-C1-image2",
-					Image: &storage.ContainerImage{Id: "image2"},
-				},
+					Image: storage.ContainerImage_builder{Id: "image2"}.Build(),
+				}.Build(),
 			},
-		},
+		}.Build(),
 	}
-	mockImage = &storage.Image{
+	mockImage = storage.Image_builder{
 		Id: "image1",
-		Scan: &storage.ImageScan{
+		Scan: storage.ImageScan_builder{
 			ScanTime: protoconv.ConvertTimeToTimestamp(time.Now()),
 			// leaving empty initially so the test will cover backwards compatibility for scans with no version
 			ScannerVersion: "",
 			Components: []*storage.EmbeddedImageScanComponent{
-				{
+				storage.EmbeddedImageScanComponent_builder{
 					Name:    "image1_component1",
 					Version: "1",
 					Source:  storage.SourceType_OS,
 					Executables: []*storage.EmbeddedImageScanComponent_Executable{
-						{Path: "/root/bin/image1_component1_match_file1", Dependencies: []string{scancomponent.ComponentID("image1_component1", "1", "")}},
-						{Path: "/root/bin/image1_component1_nonmatch_file2", Dependencies: []string{scancomponent.ComponentID("image1_component1", "1", "")}},
-						{Path: "/root/bin/image1_component1_nonmatch_file3", Dependencies: []string{scancomponent.ComponentID("image1_component1", "1", "")}},
+						storage.EmbeddedImageScanComponent_Executable_builder{Path: "/root/bin/image1_component1_match_file1", Dependencies: []string{scancomponent.ComponentID("image1_component1", "1", "")}}.Build(),
+						storage.EmbeddedImageScanComponent_Executable_builder{Path: "/root/bin/image1_component1_nonmatch_file2", Dependencies: []string{scancomponent.ComponentID("image1_component1", "1", "")}}.Build(),
+						storage.EmbeddedImageScanComponent_Executable_builder{Path: "/root/bin/image1_component1_nonmatch_file3", Dependencies: []string{scancomponent.ComponentID("image1_component1", "1", "")}}.Build(),
 					},
-				},
-				{
+				}.Build(),
+				storage.EmbeddedImageScanComponent_builder{
 					Name:    "image1_component2",
 					Version: "2",
 					Source:  storage.SourceType_OS,
 					Executables: []*storage.EmbeddedImageScanComponent_Executable{
-						{Path: "/root/bin/image1_component2_nonmatch_file1", Dependencies: []string{scancomponent.ComponentID("image1_component2", "2", "")}},
-						{Path: "/root/bin/image1_component2_nonmatch_file2", Dependencies: []string{scancomponent.ComponentID("image1_component2", "2", "")}},
-						{Path: "/root/bin/image1_component2_match_file3", Dependencies: []string{scancomponent.ComponentID("image1_component2", "2", "")}},
+						storage.EmbeddedImageScanComponent_Executable_builder{Path: "/root/bin/image1_component2_nonmatch_file1", Dependencies: []string{scancomponent.ComponentID("image1_component2", "2", "")}}.Build(),
+						storage.EmbeddedImageScanComponent_Executable_builder{Path: "/root/bin/image1_component2_nonmatch_file2", Dependencies: []string{scancomponent.ComponentID("image1_component2", "2", "")}}.Build(),
+						storage.EmbeddedImageScanComponent_Executable_builder{Path: "/root/bin/image1_component2_match_file3", Dependencies: []string{scancomponent.ComponentID("image1_component2", "2", "")}}.Build(),
 					},
-				},
-				{
+				}.Build(),
+				storage.EmbeddedImageScanComponent_builder{
 					Name:    "image1_component3",
 					Version: "2",
 					Source:  storage.SourceType_JAVA,
-				},
-				{
+				}.Build(),
+				storage.EmbeddedImageScanComponent_builder{
 					Name:    "image1_component4",
 					Version: "2",
 					Source:  storage.SourceType_OS,
 					Executables: []*storage.EmbeddedImageScanComponent_Executable{
-						{Path: "/root/bin/image1_component4_nonmatch_file1", Dependencies: []string{scancomponent.ComponentID("image1_component4", "2", "")}},
-						{Path: "/root/bin/image1_component4_nonmatch_file2", Dependencies: []string{scancomponent.ComponentID("image1_component4", "2", "")}},
-						{Path: "/root/bin/image1_component4_match_file3", Dependencies: []string{scancomponent.ComponentID("image1_component4", "2", "")}},
+						storage.EmbeddedImageScanComponent_Executable_builder{Path: "/root/bin/image1_component4_nonmatch_file1", Dependencies: []string{scancomponent.ComponentID("image1_component4", "2", "")}}.Build(),
+						storage.EmbeddedImageScanComponent_Executable_builder{Path: "/root/bin/image1_component4_nonmatch_file2", Dependencies: []string{scancomponent.ComponentID("image1_component4", "2", "")}}.Build(),
+						storage.EmbeddedImageScanComponent_Executable_builder{Path: "/root/bin/image1_component4_match_file3", Dependencies: []string{scancomponent.ComponentID("image1_component4", "2", "")}}.Build(),
 					},
-				},
+				}.Build(),
 			},
-		},
-	}
+		}.Build(),
+	}.Build()
 
 	mockIndicators = []indicatorModel{
 		{
@@ -228,11 +228,13 @@ func (s *acUpdaterTestSuite) TestUpdater() {
 				if pi.ContainerName == containerName && deploymentID == pi.DeploymentID {
 					var ret []*storage.ProcessIndicator
 					for _, exec := range pi.ExePaths {
-						ret = append(ret, &storage.ProcessIndicator{
-							Id:      uuid.NewV4().String(),
-							ImageId: pi.ImageID,
-							Signal:  &storage.ProcessSignal{ExecFilePath: exec}},
-						)
+						ps := &storage.ProcessSignal{}
+						ps.SetExecFilePath(exec)
+						pi2 := &storage.ProcessIndicator{}
+						pi2.SetId(uuid.NewV4().String())
+						pi2.SetImageId(pi.ImageID)
+						pi2.SetSignal(ps)
+						ret = append(ret, pi2)
 					}
 					return ret, nil
 				}
@@ -315,8 +317,8 @@ func (s *acUpdaterTestSuite) TestUpdater_PopulateExecutableCache() {
 	// New update without the first component
 	image = mockImage.CloneVT()
 	// update the scanner version to make sure cache gets re-populated
-	image.GetScan().ScannerVersion = "2.22.0"
-	image.GetScan().Components = image.GetScan().GetComponents()[1:]
+	image.GetScan().SetScannerVersion("2.22.0")
+	image.GetScan().SetComponents(image.GetScan().GetComponents()[1:])
 	imageForVerify := image.CloneVT()
 	s.Assert().NoError(updater.PopulateExecutableCache(updaterCtx, image))
 	s.verifyExecutableCache(updater, imageForVerify)
@@ -355,39 +357,39 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 		aggregator:      s.mockAggregator,
 		executableCache: simplecache.New(),
 	}
-	image := &storage.Image{
+	image := storage.Image_builder{
 		Id: "image1",
-		Scan: &storage.ImageScan{
+		Scan: storage.ImageScan_builder{
 			ScanTime:       protoconv.ConvertTimeToTimestamp(time.Now()),
 			ScannerVersion: "2.22.0",
 			Components: []*storage.EmbeddedImageScanComponent{
-				{
+				storage.EmbeddedImageScanComponent_builder{
 					Name:    "component1",
 					Version: "1",
 					Source:  storage.SourceType_OS,
 					Executables: []*storage.EmbeddedImageScanComponent_Executable{
-						{Path: "/usr/bin/component1_file1", Dependencies: []string{scancomponent.ComponentID("component1", "1", "")}},
-						{Path: "/usr/bin/component1_file2", Dependencies: []string{scancomponent.ComponentID("component1", "1", "")}},
-						{Path: "/usr/bin/component1and2_file3", Dependencies: []string{scancomponent.ComponentID("component1", "1", "")}},
-						{Path: "/usr/bin/component1_file4", Dependencies: []string{
+						storage.EmbeddedImageScanComponent_Executable_builder{Path: "/usr/bin/component1_file1", Dependencies: []string{scancomponent.ComponentID("component1", "1", "")}}.Build(),
+						storage.EmbeddedImageScanComponent_Executable_builder{Path: "/usr/bin/component1_file2", Dependencies: []string{scancomponent.ComponentID("component1", "1", "")}}.Build(),
+						storage.EmbeddedImageScanComponent_Executable_builder{Path: "/usr/bin/component1and2_file3", Dependencies: []string{scancomponent.ComponentID("component1", "1", "")}}.Build(),
+						storage.EmbeddedImageScanComponent_Executable_builder{Path: "/usr/bin/component1_file4", Dependencies: []string{
 							scancomponent.ComponentID("component1", "1", ""),
 							scancomponent.ComponentID("component2", "1", ""),
-						}},
+						}}.Build(),
 					},
-				},
-				{
+				}.Build(),
+				storage.EmbeddedImageScanComponent_builder{
 					Name:    "component2",
 					Version: "1",
 					Source:  storage.SourceType_OS,
 					Executables: []*storage.EmbeddedImageScanComponent_Executable{
-						{Path: "/usr/bin/component2_file1", Dependencies: []string{scancomponent.ComponentID("component2", "1", "")}},
-						{Path: "/usr/bin/component2_file2", Dependencies: []string{scancomponent.ComponentID("component2", "1", "")}},
-						{Path: "/usr/bin/component1and2_file3", Dependencies: []string{scancomponent.ComponentID("component2", "1", "")}},
+						storage.EmbeddedImageScanComponent_Executable_builder{Path: "/usr/bin/component2_file1", Dependencies: []string{scancomponent.ComponentID("component2", "1", "")}}.Build(),
+						storage.EmbeddedImageScanComponent_Executable_builder{Path: "/usr/bin/component2_file2", Dependencies: []string{scancomponent.ComponentID("component2", "1", "")}}.Build(),
+						storage.EmbeddedImageScanComponent_Executable_builder{Path: "/usr/bin/component1and2_file3", Dependencies: []string{scancomponent.ComponentID("component2", "1", "")}}.Build(),
 					},
-				},
+				}.Build(),
 			},
-		},
-	}
+		}.Build(),
+	}.Build()
 	imageScan := image.GetScan()
 	components := imageScan.GetComponents()
 	deployment := mockDeployments[0]
@@ -902,13 +904,15 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					var ret []*storage.ProcessIndicator
 
 					for _, exec := range testCase.indicators[containerName].ExePaths {
-						ret = append(ret, &storage.ProcessIndicator{
-							Id:            uuid.NewV4().String(),
-							ImageId:       testCase.indicators[containerName].ImageID,
-							DeploymentId:  deployment.GetId(),
-							ContainerName: containerName,
-							Signal:        &storage.ProcessSignal{ExecFilePath: exec}},
-						)
+						ps := &storage.ProcessSignal{}
+						ps.SetExecFilePath(exec)
+						pi := &storage.ProcessIndicator{}
+						pi.SetId(uuid.NewV4().String())
+						pi.SetImageId(testCase.indicators[containerName].ImageID)
+						pi.SetDeploymentId(deployment.GetId())
+						pi.SetContainerName(containerName)
+						pi.SetSignal(ps)
+						ret = append(ret, pi)
 					}
 					return ret, nil
 				})
@@ -925,13 +929,15 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					var ret []*storage.ActiveComponent
 					for componentID, containerNames := range testCase.existingAcs {
 						acID := acConverter.ComposeID(deployment.GetId(), componentID)
-						ac := &storage.ActiveComponent{
-							Id:           acID,
-							ComponentId:  componentID,
-							DeploymentId: deployment.GetId(),
-						}
+						ac := &storage.ActiveComponent{}
+						ac.SetId(acID)
+						ac.SetComponentId(componentID)
+						ac.SetDeploymentId(deployment.GetId())
 						for containerName := range containerNames {
-							ac.ActiveContextsSlice = append(ac.ActiveContextsSlice, &storage.ActiveComponent_ActiveContext{ContainerName: containerName, ImageId: existingImageID})
+							aa := &storage.ActiveComponent_ActiveContext{}
+							aa.SetContainerName(containerName)
+							aa.SetImageId(existingImageID)
+							ac.SetActiveContextsSlice(append(ac.GetActiveContextsSlice(), aa))
 						}
 						ret = append(ret, ac)
 					}
@@ -950,16 +956,15 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 						if !requestedIds.Contains(acID) {
 							continue
 						}
-						ac := &storage.ActiveComponent{
-							Id:           acID,
-							ComponentId:  componentID,
-							DeploymentId: deployment.GetId(),
-						}
+						ac := &storage.ActiveComponent{}
+						ac.SetId(acID)
+						ac.SetComponentId(componentID)
+						ac.SetDeploymentId(deployment.GetId())
 						for containerName := range containerNames {
-							ac.ActiveContextsSlice = append(ac.ActiveContextsSlice, &storage.ActiveComponent_ActiveContext{
-								ContainerName: containerName,
-								ImageId:       existingImageID,
-							})
+							aa := &storage.ActiveComponent_ActiveContext{}
+							aa.SetContainerName(containerName)
+							aa.SetImageId(existingImageID)
+							ac.SetActiveContextsSlice(append(ac.GetActiveContextsSlice(), aa))
 						}
 						ret = append(ret, ac)
 					}

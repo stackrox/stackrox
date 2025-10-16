@@ -25,20 +25,20 @@ func TestScore(t *testing.T) {
 	// Without user defined function
 	expectedRiskScore := 1.9418751
 	expectedRiskResults := []*storage.Risk_Result{
-		{
+		storage.Risk_Result_builder{
 			Name: imageMultiplier.VulnerabilitiesHeading,
 			Factors: []*storage.Risk_Result_Factor{
-				{Message: "Image \"docker.io/library/nginx:1.10\" contains 3 CVEs with severities ranging between Moderate and Critical"},
+				storage.Risk_Result_Factor_builder{Message: "Image \"docker.io/library/nginx:1.10\" contains 3 CVEs with severities ranging between Moderate and Critical"}.Build(),
 			},
 			Score: 1.5535,
-		},
-		{
+		}.Build(),
+		storage.Risk_Result_builder{
 			Name: imageMultiplier.ImageAgeHeading,
 			Factors: []*storage.Risk_Result_Factor{
-				{Message: "Image \"docker.io/library/nginx:1.10\" is 180 days old"},
+				storage.Risk_Result_Factor_builder{Message: "Image \"docker.io/library/nginx:1.10\" is 180 days old"}.Build(),
 			},
 			Score: 1.25,
-		},
+		}.Build(),
 	}
 
 	actualRisk := scorer.Score(ctx, image)
@@ -64,20 +64,20 @@ func TestScoreV2(t *testing.T) {
 	// Without user defined function
 	expectedRiskScore := 1.9418751
 	expectedRiskResults := []*storage.Risk_Result{
-		{
+		storage.Risk_Result_builder{
 			Name: imageMultiplier.VulnerabilitiesHeading,
 			Factors: []*storage.Risk_Result_Factor{
-				{Message: "Image \"docker.io/library/nginx:1.10\" contains 3 CVEs with severities ranging between Moderate and Critical"},
+				storage.Risk_Result_Factor_builder{Message: "Image \"docker.io/library/nginx:1.10\" contains 3 CVEs with severities ranging between Moderate and Critical"}.Build(),
 			},
 			Score: 1.5535,
-		},
-		{
+		}.Build(),
+		storage.Risk_Result_builder{
 			Name: imageMultiplier.ImageAgeHeading,
 			Factors: []*storage.Risk_Result_Factor{
-				{Message: "Image \"docker.io/library/nginx:1.10\" is 180 days old"},
+				storage.Risk_Result_Factor_builder{Message: "Image \"docker.io/library/nginx:1.10\" is 180 days old"}.Build(),
 			},
 			Score: 1.25,
-		},
+		}.Build(),
 	}
 
 	actualRisk := scorer.ScoreV2(ctx, image)

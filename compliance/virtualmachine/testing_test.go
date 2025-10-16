@@ -89,8 +89,10 @@ type mockSensorClient struct {
 }
 
 func newMockSensorClient() *mockSensorClient {
+	uvmirr := &sensor.UpsertVirtualMachineIndexReportResponse{}
+	uvmirr.SetSuccess(true)
 	return &mockSensorClient{
-		response: &sensor.UpsertVirtualMachineIndexReportResponse{Success: true},
+		response: uvmirr,
 	}
 }
 
@@ -115,6 +117,8 @@ func (c *mockSensorClient) withError(err error) *mockSensorClient {
 }
 
 func (c *mockSensorClient) withUnsuccessfulResponse() *mockSensorClient {
-	c.response = &sensor.UpsertVirtualMachineIndexReportResponse{Success: false}
+	uvmirr := &sensor.UpsertVirtualMachineIndexReportResponse{}
+	uvmirr.SetSuccess(false)
+	c.response = uvmirr
 	return c
 }

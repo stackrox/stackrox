@@ -38,10 +38,10 @@ func (s *PolicyCategoryServiceTestSuite) TearDownTest() {
 
 func (s *PolicyCategoryServiceTestSuite) TestRenameInvalidNameFails() {
 	ctx := context.Background()
-	resp, err := s.tested.RenamePolicyCategory(ctx, &v1.RenamePolicyCategoryRequest{
-		Id:              "id",
-		NewCategoryName: "foo",
-	})
+	rpcr := &v1.RenamePolicyCategoryRequest{}
+	rpcr.SetId("id")
+	rpcr.SetNewCategoryName("foo")
+	resp, err := s.tested.RenamePolicyCategory(ctx, rpcr)
 	s.Nil(resp)
 	s.Error(err)
 	s.Equal(fmt.Sprintf("%s: %s", invalidNameErrString, errox.InvalidArgs.Error()), err.Error())
@@ -50,13 +50,13 @@ func (s *PolicyCategoryServiceTestSuite) TestRenameInvalidNameFails() {
 
 func (s *PolicyCategoryServiceTestSuite) TesPostInvalidNameFails() {
 	ctx := context.Background()
-	resp, err := s.tested.PostPolicyCategory(ctx, &v1.PostPolicyCategoryRequest{
-		PolicyCategory: &v1.PolicyCategory{
-			Id:        "id",
-			Name:      " ",
-			IsDefault: false,
-		},
-	})
+	pc := &v1.PolicyCategory{}
+	pc.SetId("id")
+	pc.SetName(" ")
+	pc.SetIsDefault(false)
+	ppcr := &v1.PostPolicyCategoryRequest{}
+	ppcr.SetPolicyCategory(pc)
+	resp, err := s.tested.PostPolicyCategory(ctx, ppcr)
 	s.Nil(resp)
 	s.Error(err)
 	s.Equal(fmt.Sprintf("%s: %s", invalidNameErrString, errox.InvalidArgs.Error()), err.Error())

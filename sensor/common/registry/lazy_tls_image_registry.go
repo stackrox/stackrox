@@ -168,7 +168,7 @@ func (l *lazyTLSCheckRegistry) lazyInit() {
 		l.initError = errors.New("docker config is nil")
 		return
 	}
-	dockerCfg.Insecure = !secure
+	dockerCfg.SetInsecure(!secure)
 	l.source = newSrc
 
 	// Create the registry.

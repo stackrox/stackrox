@@ -19,6 +19,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 // fakeJira is a fake JIRA backend that implements exactly the APIs that the JIRA notifier needs (and only to the extent
@@ -224,39 +225,36 @@ func testWithFakeJira(t *testing.T, cloud bool) {
 	testSrv := httptest.NewServer(fj.Handler())
 	defer testSrv.Close()
 
-	fakeJiraStorageConfig := storage.Jira{
+	fakeJiraStorageConfig := storage.Jira_builder{
 		Url:       testSrv.URL,
 		Username:  "fakejirauser",
 		Password:  "badpassword",
 		IssueType: "IssueWithPrio",
 		PriorityMappings: []*storage.Jira_PriorityMapping{
-			{
+			storage.Jira_PriorityMapping_builder{
 				Severity:     storage.Severity_CRITICAL_SEVERITY,
 				PriorityName: "P0",
-			},
-			{
+			}.Build(),
+			storage.Jira_PriorityMapping_builder{
 				Severity:     storage.Severity_HIGH_SEVERITY,
 				PriorityName: "P1",
-			},
-			{
+			}.Build(),
+			storage.Jira_PriorityMapping_builder{
 				Severity:     storage.Severity_MEDIUM_SEVERITY,
 				PriorityName: "P2",
-			},
-			{
+			}.Build(),
+			storage.Jira_PriorityMapping_builder{
 				Severity:     storage.Severity_LOW_SEVERITY,
 				PriorityName: "P3",
-			},
+			}.Build(),
 		},
-	}
-	fakeJiraConfig := &storage.Notifier{
-		Name:         "FakeJIRA",
-		UiEndpoint:   "https://central.stackrox",
-		Type:         "jira",
-		LabelDefault: projectKey,
-		Config: &storage.Notifier_Jira{
-			Jira: &fakeJiraStorageConfig,
-		},
-	}
+	}.Build()
+	fakeJiraConfig := &storage.Notifier{}
+	fakeJiraConfig.SetName("FakeJIRA")
+	fakeJiraConfig.SetUiEndpoint("https://central.stackrox")
+	fakeJiraConfig.SetType("jira")
+	fakeJiraConfig.SetLabelDefault(projectKey)
+	fakeJiraConfig.SetJira(fakeJiraStorageConfig)
 
 	mockCtrl := gomock.NewController(t)
 	mitreStore := mitreMocks.NewMockAttackReadOnlyDataStore(mockCtrl)
@@ -270,12 +268,12 @@ func testWithFakeJira(t *testing.T, cloud bool) {
 	assert.Contains(t, err.Error(), "Status code: 401")
 
 	// Test with valid username/password combo
-	fakeJiraStorageConfig.Password = password
+	fakeJiraStorageConfig.SetPassword(password)
 	_, err = newJira(fakeJiraConfig, metadataGetter, mitreStore, cryptocodec.Singleton(), "stackrox")
 	require.NoError(t, err)
 
 	// Test with valid bearer token
-	fakeJiraStorageConfig.Password = token
+	fakeJiraStorageConfig.SetPassword(token)
 	j, err := newJira(fakeJiraConfig, metadataGetter, mitreStore, cryptocodec.Singleton(), "stackrox")
 	require.NoError(t, err)
 
@@ -287,21 +285,20 @@ func testWithFakeJira(t *testing.T, cloud bool) {
 	assert.Equal(t, "IssueWithPrio", issue.Fields.Type.Name)
 	assert.Equal(t, "P3", issue.Fields.Priority.Name)
 
-	testAlert := &storage.Alert{
-		Id: "myAlertID",
-		Policy: &storage.Policy{
-			Id:             "myPolicyID",
-			Name:           "myPolicy",
-			Description:    "Fake policy",
-			PolicySections: []*storage.PolicySection{},
-			Severity:       storage.Severity_HIGH_SEVERITY,
-		},
-		Entity: &storage.Alert_Deployment_{Deployment: &storage.Alert_Deployment{
-			Name: "myDeployment",
-			Id:   "myDeploymentID",
-		}},
-		Time: protocompat.TimestampNow(),
-	}
+	policy := &storage.Policy{}
+	policy.SetId("myPolicyID")
+	policy.SetName("myPolicy")
+	policy.SetDescription("Fake policy")
+	policy.SetPolicySections([]*storage.PolicySection{})
+	policy.SetSeverity(storage.Severity_HIGH_SEVERITY)
+	ad := &storage.Alert_Deployment{}
+	ad.SetName("myDeployment")
+	ad.SetId("myDeploymentID")
+	testAlert := &storage.Alert{}
+	testAlert.SetId("myAlertID")
+	testAlert.SetPolicy(policy)
+	testAlert.SetDeployment(proto.ValueOrDefault(ad))
+	testAlert.SetTime(protocompat.TimestampNow())
 	assert.NoError(t, j.AlertNotify(context.Background(), testAlert))
 	require.Len(t, fj.createdIssues, 2)
 

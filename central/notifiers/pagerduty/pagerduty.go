@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -100,24 +101,26 @@ func (p *pagerDuty) ProtoNotifier() *storage.Notifier {
 }
 
 func (p *pagerDuty) Test(_ context.Context) *notifiers.NotifierError {
-	err := p.postAlert(&storage.Alert{
-		Id: uuid.NewDummy().String(),
-		Policy: &storage.Policy{
-			Name:        "Test PagerDuty Policy",
-			Description: "Sample policy used to test PagerDuty integration",
-			Severity:    storage.Severity_HIGH_SEVERITY,
-			Categories:  []string{"Privileges"},
-		},
-		Entity: &storage.Alert_Deployment_{Deployment: &storage.Alert_Deployment{
-			Id:          uuid.NewDummy().String(),
-			Name:        "Test Deployment",
-			ClusterName: "Test Cluster",
-		}},
-		Violations: []*storage.Alert_Violation{
-			{Message: "This is a sample pagerduty alert message created to test integration with StackRox."},
-		},
-		Time: protocompat.TimestampNow(),
-	}, newAlert)
+	policy := &storage.Policy{}
+	policy.SetName("Test PagerDuty Policy")
+	policy.SetDescription("Sample policy used to test PagerDuty integration")
+	policy.SetSeverity(storage.Severity_HIGH_SEVERITY)
+	policy.SetCategories([]string{"Privileges"})
+	ad := &storage.Alert_Deployment{}
+	ad.SetId(uuid.NewDummy().String())
+	ad.SetName("Test Deployment")
+	ad.SetClusterName("Test Cluster")
+	av := &storage.Alert_Violation{}
+	av.SetMessage("This is a sample pagerduty alert message created to test integration with StackRox.")
+	alert := &storage.Alert{}
+	alert.SetId(uuid.NewDummy().String())
+	alert.SetPolicy(policy)
+	alert.SetDeployment(proto.ValueOrDefault(ad))
+	alert.SetViolations([]*storage.Alert_Violation{
+		av,
+	})
+	alert.SetTime(protocompat.TimestampNow())
+	err := p.postAlert(alert, newAlert)
 
 	if err != nil {
 		return notifiers.NewNotifierError("send PagerDuty alert failed", err)
@@ -175,20 +178,20 @@ func (p *pagerDuty) createPagerDutyEvent(alert *storage.Alert, eventType string)
 		Details:   (*marshalableAlert)(alert),
 	}
 
-	switch entity := alert.GetEntity().(type) {
-	case *storage.Alert_Deployment_:
-		payload.Source = fmt.Sprintf("%s/%s", entity.Deployment.GetClusterName(), entity.Deployment.GetNamespace())
-		payload.Component = fmt.Sprintf("Deployment %s", entity.Deployment.GetName())
-	case *storage.Alert_Image:
-		payload.Source = fmt.Sprintf("Image from %s/%s", entity.Image.GetName().GetRemote(), entity.Image.GetName().GetRegistry())
-		payload.Component = fmt.Sprintf("Image %s", imagesTypes.Wrapper{GenericImage: entity.Image}.FullName())
-	case *storage.Alert_Resource_:
-		if entity.Resource.GetNamespace() != "" {
-			payload.Source = fmt.Sprintf("%s/%s", entity.Resource.GetClusterName(), entity.Resource.GetNamespace())
+	switch alert.WhichEntity() {
+	case storage.Alert_Deployment_case:
+		payload.Source = fmt.Sprintf("%s/%s", alert.GetDeployment().GetClusterName(), alert.GetDeployment().GetNamespace())
+		payload.Component = fmt.Sprintf("Deployment %s", alert.GetDeployment().GetName())
+	case storage.Alert_Image_case:
+		payload.Source = fmt.Sprintf("Image from %s/%s", alert.GetImage().GetName().GetRemote(), alert.GetImage().GetName().GetRegistry())
+		payload.Component = fmt.Sprintf("Image %s", imagesTypes.Wrapper{GenericImage: alert.GetImage()}.FullName())
+	case storage.Alert_Resource_case:
+		if alert.GetResource().GetNamespace() != "" {
+			payload.Source = fmt.Sprintf("%s/%s", alert.GetResource().GetClusterName(), alert.GetResource().GetNamespace())
 		} else {
-			payload.Source = entity.Resource.GetClusterName()
+			payload.Source = alert.GetResource().GetClusterName()
 		}
-		payload.Component = fmt.Sprintf("%s %s", entity.Resource.GetResourceType(), entity.Resource.GetName())
+		payload.Component = fmt.Sprintf("%s %s", alert.GetResource().GetResourceType(), alert.GetResource().GetName())
 	}
 	return pd.V2Event{
 		Action:     eventType,

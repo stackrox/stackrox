@@ -33,13 +33,13 @@ func newFlowGraphMasker() *flowGraphMasker {
 }
 
 func (m *flowGraphMasker) RegisterDeploymentForMasking(deployment *storage.ListDeployment) {
-	m.deploymentsToMask[deployment.GetId()] = &storage.ListDeployment{
-		Id:        deployment.GetId(),
-		Name:      deployment.GetName(),
-		Cluster:   deployment.GetCluster(),
-		ClusterId: deployment.GetClusterId(),
-		Namespace: deployment.GetNamespace(),
-	}
+	ld := &storage.ListDeployment{}
+	ld.SetId(deployment.GetId())
+	ld.SetName(deployment.GetName())
+	ld.SetCluster(deployment.GetCluster())
+	ld.SetClusterId(deployment.GetClusterId())
+	ld.SetNamespace(deployment.GetNamespace())
+	m.deploymentsToMask[deployment.GetId()] = ld
 	m.namespaceNamesToMask.Add(deployment.GetNamespace())
 }
 
@@ -59,13 +59,12 @@ func (m *flowGraphMasker) MaskDeploymentsAndNamespaces() {
 	for ix, deploymentID := range orderedDeploymentIDsToMask {
 		origDeployment := m.deploymentsToMask[deploymentID]
 		maskedDeploymentName := fmt.Sprintf("%s #%d", MaskedDeploymentName, ix+1)
-		maskedDeployment := &storage.ListDeployment{
-			Id:        deploymentUtils.GetMaskedDeploymentID(origDeployment.GetId(), origDeployment.GetName()),
-			Name:      maskedDeploymentName,
-			Cluster:   origDeployment.GetCluster(),
-			ClusterId: origDeployment.GetClusterId(),
-			Namespace: m.realToMaskedNamespace[origDeployment.GetNamespace()],
-		}
+		maskedDeployment := &storage.ListDeployment{}
+		maskedDeployment.SetId(deploymentUtils.GetMaskedDeploymentID(origDeployment.GetId(), origDeployment.GetName()))
+		maskedDeployment.SetName(maskedDeploymentName)
+		maskedDeployment.SetCluster(origDeployment.GetCluster())
+		maskedDeployment.SetClusterId(origDeployment.GetClusterId())
+		maskedDeployment.SetNamespace(m.realToMaskedNamespace[origDeployment.GetNamespace()])
 		m.realToMaskedDeployment[deploymentID] = maskedDeployment
 		m.maskedDeployments = append(m.maskedDeployments, maskedDeployment)
 		delete(m.deploymentsToMask, deploymentID)

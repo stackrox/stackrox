@@ -19,26 +19,26 @@ import (
 
 func getSubjects() []*storage.Subject {
 	return []*storage.Subject{
-		{
+		storage.Subject_builder{
 			Name: "def",
 			Kind: storage.SubjectKind_GROUP,
-		},
-		{
+		}.Build(),
+		storage.Subject_builder{
 			Name: "def",
 			Kind: storage.SubjectKind_USER,
-		},
-		{
+		}.Build(),
+		storage.Subject_builder{
 			Name: "hij",
 			Kind: storage.SubjectKind_SERVICE_ACCOUNT,
-		},
-		{
+		}.Build(),
+		storage.Subject_builder{
 			Name: "abc",
 			Kind: storage.SubjectKind_USER,
-		},
-		{
+		}.Build(),
+		storage.Subject_builder{
 			Name: "abc",
 			Kind: storage.SubjectKind_GROUP,
-		},
+		}.Build(),
 	}
 }
 
@@ -52,141 +52,140 @@ func TestSortSubjects(t *testing.T) {
 		{
 			name: "subject sort",
 			sortOptions: []*v1.QuerySortOption{
-				{
+				v1.QuerySortOption_builder{
 					Field:    search.SubjectName.String(),
 					Reversed: false,
-				},
+				}.Build(),
 			},
 			expected: []*storage.Subject{
-				{
+				storage.Subject_builder{
 					Name: "abc",
 					Kind: storage.SubjectKind_USER,
-				},
-				{
+				}.Build(),
+				storage.Subject_builder{
 					Name: "abc",
 					Kind: storage.SubjectKind_GROUP,
-				},
-				{
+				}.Build(),
+				storage.Subject_builder{
 					Name: "def",
 					Kind: storage.SubjectKind_GROUP,
-				},
-				{
+				}.Build(),
+				storage.Subject_builder{
 					Name: "def",
 					Kind: storage.SubjectKind_USER,
-				},
-				{
+				}.Build(),
+				storage.Subject_builder{
 					Name: "hij",
 					Kind: storage.SubjectKind_SERVICE_ACCOUNT,
-				},
+				}.Build(),
 			},
 		},
 		{
 			name: "subject sort - reversed",
 			sortOptions: []*v1.QuerySortOption{
-				{
+				v1.QuerySortOption_builder{
 					Field:    search.SubjectName.String(),
 					Reversed: true,
-				},
+				}.Build(),
 			},
 			expected: []*storage.Subject{
-				{
+				storage.Subject_builder{
 					Name: "hij",
 					Kind: storage.SubjectKind_SERVICE_ACCOUNT,
-				},
-				{
+				}.Build(),
+				storage.Subject_builder{
 					Name: "def",
 					Kind: storage.SubjectKind_GROUP,
-				},
-				{
+				}.Build(),
+				storage.Subject_builder{
 					Name: "def",
 					Kind: storage.SubjectKind_USER,
-				},
-				{
+				}.Build(),
+				storage.Subject_builder{
 					Name: "abc",
 					Kind: storage.SubjectKind_USER,
-				},
-				{
+				}.Build(),
+				storage.Subject_builder{
 					Name: "abc",
 					Kind: storage.SubjectKind_GROUP,
-				},
+				}.Build(),
 			},
 		},
 		{
 			name: "subject sort - kind sort",
 			sortOptions: []*v1.QuerySortOption{
-				{
+				v1.QuerySortOption_builder{
 					Field: search.SubjectName.String(),
-				},
-				{
+				}.Build(),
+				v1.QuerySortOption_builder{
 					Field: search.SubjectKind.String(),
-				},
+				}.Build(),
 			},
 			expected: []*storage.Subject{
-				{
+				storage.Subject_builder{
 					Name: "abc",
 					Kind: storage.SubjectKind_GROUP,
-				},
-				{
+				}.Build(),
+				storage.Subject_builder{
 					Name: "abc",
 					Kind: storage.SubjectKind_USER,
-				},
-				{
+				}.Build(),
+				storage.Subject_builder{
 					Name: "def",
 					Kind: storage.SubjectKind_GROUP,
-				},
-				{
+				}.Build(),
+				storage.Subject_builder{
 					Name: "def",
 					Kind: storage.SubjectKind_USER,
-				},
-				{
+				}.Build(),
+				storage.Subject_builder{
 					Name: "hij",
 					Kind: storage.SubjectKind_SERVICE_ACCOUNT,
-				},
+				}.Build(),
 			},
 		},
 		{
 			name: "subject sort - kind sort",
 			sortOptions: []*v1.QuerySortOption{
-				{
+				v1.QuerySortOption_builder{
 					Field: search.SubjectName.String(),
-				},
-				{
+				}.Build(),
+				v1.QuerySortOption_builder{
 					Field:    search.SubjectKind.String(),
 					Reversed: true,
-				},
+				}.Build(),
 			},
 			expected: []*storage.Subject{
-				{
+				storage.Subject_builder{
 					Name: "abc",
 					Kind: storage.SubjectKind_USER,
-				},
-				{
+				}.Build(),
+				storage.Subject_builder{
 					Name: "abc",
 					Kind: storage.SubjectKind_GROUP,
-				},
-				{
+				}.Build(),
+				storage.Subject_builder{
 					Name: "def",
 					Kind: storage.SubjectKind_USER,
-				},
-				{
+				}.Build(),
+				storage.Subject_builder{
 					Name: "def",
 					Kind: storage.SubjectKind_GROUP,
-				},
-				{
+				}.Build(),
+				storage.Subject_builder{
 					Name: "hij",
 					Kind: storage.SubjectKind_SERVICE_ACCOUNT,
-				},
+				}.Build(),
 			},
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			q := &v1.Query{
-				Pagination: &v1.QueryPagination{
-					SortOptions: c.sortOptions,
-				},
-			}
+			qp := &v1.QueryPagination{}
+			qp.SetSortOptions(c.sortOptions)
+			q := &v1.Query{}
+			q.SetPagination(qp)
 
 			testSubjects := getSubjects()
 			err := sortSubjects(q, testSubjects)
@@ -210,41 +209,41 @@ func TestGetFiltered(t *testing.T) {
 		{
 			name: "name search",
 			subjects: []*storage.Subject{
-				{
+				storage.Subject_builder{
 					Name: "sub1",
 					Kind: storage.SubjectKind_GROUP,
-				},
-				{
+				}.Build(),
+				storage.Subject_builder{
 					Name: "sub2",
 					Kind: storage.SubjectKind_USER,
-				},
+				}.Build(),
 			},
 			query: search.NewQueryBuilder().AddStrings(search.SubjectName, "sub1").ProtoQuery(),
 			expectedSubjects: []*storage.Subject{
-				{
+				storage.Subject_builder{
 					Name: "sub1",
 					Kind: storage.SubjectKind_GROUP,
-				},
+				}.Build(),
 			},
 		},
 		{
 			name: "kind search",
 			subjects: []*storage.Subject{
-				{
+				storage.Subject_builder{
 					Name: "sub1",
 					Kind: storage.SubjectKind_GROUP,
-				},
-				{
+				}.Build(),
+				storage.Subject_builder{
 					Name: "sub2",
 					Kind: storage.SubjectKind_USER,
-				},
+				}.Build(),
 			},
 			query: search.NewQueryBuilder().AddStrings(search.SubjectKind, storage.SubjectKind_USER.String()).ProtoQuery(),
 			expectedSubjects: []*storage.Subject{
-				{
+				storage.Subject_builder{
 					Name: "sub2",
 					Kind: storage.SubjectKind_USER,
-				},
+				}.Build(),
 			},
 		},
 	}
@@ -287,7 +286,7 @@ func (s *SubjectSearcherTestSuite) SetupTest() {
 	s.subjectSearcher = NewSubjectSearcher(s.mockBindingsStore)
 	s.testBindings = fixtures.GetMultipleK8sRoleBindings(3, 3)
 	// For one binding, keep only the SERVICE_ACCOUNT kind subject
-	s.testBindings[2].Subjects = s.testBindings[2].GetSubjects()[:1]
+	s.testBindings[2].SetSubjects(s.testBindings[2].GetSubjects()[:1])
 }
 
 func (s *SubjectSearcherTestSuite) TearDownTest() {
@@ -409,11 +408,11 @@ func (s *SubjectSearcherTestSuite) testCases() []testCase {
 func (s *SubjectSearcherTestSuite) resultsToV1SearchResults(results []search.Result) []*v1.SearchResult {
 	v1SearchResults := make([]*v1.SearchResult, 0, len(results))
 	for _, r := range results {
-		v1SearchResults = append(v1SearchResults, &v1.SearchResult{
-			Id:       r.ID,
-			Name:     r.ID,
-			Category: v1.SearchCategory_SUBJECTS,
-		})
+		sr := &v1.SearchResult{}
+		sr.SetId(r.ID)
+		sr.SetName(r.ID)
+		sr.SetCategory(v1.SearchCategory_SUBJECTS)
+		v1SearchResults = append(v1SearchResults, sr)
 	}
 	return v1SearchResults
 }

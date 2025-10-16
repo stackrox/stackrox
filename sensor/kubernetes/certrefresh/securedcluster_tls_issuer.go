@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/securedcluster"
+	"google.golang.org/protobuf/proto"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -75,14 +76,12 @@ func NewSecuredClusterTLSIssuer(
 }
 
 func newSecuredClusterMsgFromSensor(requestID string) *central.MsgFromSensor {
-	return &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_IssueSecuredClusterCertsRequest{
-			IssueSecuredClusterCertsRequest: &central.IssueSecuredClusterCertsRequest{
-				RequestId:     requestID,
-				CaFingerprint: currentSensorCAFingerprint(),
-			},
-		},
-	}
+	isccr := &central.IssueSecuredClusterCertsRequest{}
+	isccr.SetRequestId(requestID)
+	isccr.SetCaFingerprint(currentSensorCAFingerprint())
+	mfs := &central.MsgFromSensor{}
+	mfs.SetIssueSecuredClusterCertsRequest(proto.ValueOrDefault(isccr))
+	return mfs
 }
 
 // currentSensorCAFingerprint returns the hex-encoded fingerprint of the Sensor's currently trusted CA.

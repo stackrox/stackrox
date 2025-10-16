@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -69,10 +70,9 @@ func (n *NodeInventoryComponentScanner) ScanNode(ctx context.Context) (*sensor.M
 	}
 	cmetrics.ObserveNodeInventoryCallDuration(time.Since(startCall), result.GetNodeName(), err)
 	inv := ToNodeInventory(result)
-	msg := &sensor.MsgFromCompliance{
-		Node: result.GetNodeName(),
-		Msg:  &sensor.MsgFromCompliance_NodeInventory{NodeInventory: inv},
-	}
+	msg := &sensor.MsgFromCompliance{}
+	msg.SetNode(result.GetNodeName())
+	msg.SetNodeInventory(proto.ValueOrDefault(inv))
 	cmetrics.ObserveReportProtobufMessage(msg, cmetrics.ScannerVersionV2)
 	return msg, nil
 }

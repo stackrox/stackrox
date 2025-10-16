@@ -38,13 +38,13 @@ func cloneAndCombine(q *v1.Query, scopeQ *v1.Query) *v1.Query {
 
 	// Removing this from to-be nested query is optional because selects, group by and pagination from
 	// the nested query is ignored anyway. However, this make it safer.
-	cloned.Selects = nil
-	cloned.GroupBy = nil
-	cloned.Pagination = nil
+	cloned.SetSelects(nil)
+	cloned.ClearGroupBy()
+	cloned.ClearPagination()
 
 	cloned = searchPkg.ConjunctionQuery(cloned, scopeQ)
-	cloned.Selects = selects
-	cloned.GroupBy = groupBy
-	cloned.Pagination = pagination
+	cloned.SetSelects(selects)
+	cloned.SetGroupBy(groupBy)
+	cloned.SetPagination(pagination)
 	return cloned
 }

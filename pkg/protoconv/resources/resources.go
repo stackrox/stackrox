@@ -104,19 +104,19 @@ func newWrap(meta metav1.Object, kind, clusterID, registryOverride string) *Depl
 	if err != nil {
 		log.Error(err)
 	}
+	deployment := &storage.Deployment{}
+	deployment.SetId(string(meta.GetUID()))
+	deployment.SetClusterId(clusterID)
+	deployment.SetName(meta.GetName())
+	deployment.SetType(kind)
+	deployment.SetNamespace(stringutils.OrDefault(meta.GetNamespace(), "default"))
+	deployment.SetLabels(meta.GetLabels())
+	deployment.SetAnnotations(meta.GetAnnotations())
+	deployment.SetCreated(createdTime)
+	deployment.SetStateTimestamp(int64(timestamp.Now()))
 	return &DeploymentWrap{
 		registryOverride: registryOverride,
-		Deployment: &storage.Deployment{
-			Id:             string(meta.GetUID()),
-			ClusterId:      clusterID,
-			Name:           meta.GetName(),
-			Type:           kind,
-			Namespace:      stringutils.OrDefault(meta.GetNamespace(), "default"),
-			Labels:         meta.GetLabels(),
-			Annotations:    meta.GetAnnotations(),
-			Created:        createdTime,
-			StateTimestamp: int64(timestamp.Now()),
-		},
+		Deployment:       deployment,
 	}
 }
 
@@ -180,11 +180,10 @@ func convertSeccompProfile(sp *v1.SeccompProfile) *storage.SecurityContext_Secco
 	if sp == nil {
 		return nil
 	}
-	seccompProfile := &storage.SecurityContext_SeccompProfile{
-		Type: getSeccompProfileType(sp.Type),
-	}
+	seccompProfile := &storage.SecurityContext_SeccompProfile{}
+	seccompProfile.SetType(getSeccompProfileType(sp.Type))
 	if sp.LocalhostProfile != nil {
-		seccompProfile.LocalhostProfile = *sp.LocalhostProfile
+		seccompProfile.SetLocalhostProfile(*sp.LocalhostProfile)
 	}
 	return seccompProfile
 }
@@ -208,12 +207,12 @@ func convertSELinux(SELinux *v1.SELinuxOptions) *storage.SecurityContext_SELinux
 		return nil
 	}
 
-	return &storage.SecurityContext_SELinux{
-		User:  SELinux.User,
-		Role:  SELinux.Role,
-		Type:  SELinux.Type,
-		Level: SELinux.Level,
-	}
+	ss := &storage.SecurityContext_SELinux{}
+	ss.SetUser(SELinux.User)
+	ss.SetRole(SELinux.Role)
+	ss.SetType(SELinux.Type)
+	ss.SetLevel(SELinux.Level)
+	return ss
 }
 
 func (w *DeploymentWrap) populateFields(obj interface{}) {
@@ -283,22 +282,22 @@ func (w *DeploymentWrap) PopulateDeploymentFromPodMeta(podMeta metav1.ObjectMeta
 func (w *DeploymentWrap) populateTolerations(podSpec v1.PodSpec) {
 	w.Tolerations = make([]*storage.Toleration, 0, len(podSpec.Tolerations))
 	for _, toleration := range podSpec.Tolerations {
-		w.Tolerations = append(w.Tolerations, &storage.Toleration{
-			Key:         toleration.Key,
-			Value:       toleration.Value,
-			Operator:    k8s.ToRoxTolerationOperator(toleration.Operator),
-			TaintEffect: k8s.ToRoxTaintEffect(toleration.Effect),
-		})
+		toleration2 := &storage.Toleration{}
+		toleration2.SetKey(toleration.Key)
+		toleration2.SetValue(toleration.Value)
+		toleration2.SetOperator(k8s.ToRoxTolerationOperator(toleration.Operator))
+		toleration2.SetTaintEffect(k8s.ToRoxTaintEffect(toleration.Effect))
+		w.Tolerations = append(w.Tolerations, toleration2)
 	}
 }
 
 func (w *DeploymentWrap) populateContainers(podSpec v1.PodSpec) {
-	w.Deployment.Containers = make([]*storage.Container, 0, len(podSpec.Containers))
+	w.Deployment.SetContainers(make([]*storage.Container, 0, len(podSpec.Containers)))
 	for _, c := range podSpec.Containers {
-		w.Deployment.Containers = append(w.Deployment.Containers, &storage.Container{
-			Id:   fmt.Sprintf("%s:%s", w.Deployment.GetId(), c.Name),
-			Name: c.Name,
-		})
+		container := &storage.Container{}
+		container.SetId(fmt.Sprintf("%s:%s", w.Deployment.GetId(), c.Name))
+		container.SetName(c.Name)
+		w.Deployment.SetContainers(append(w.Deployment.GetContainers(), container))
 	}
 
 	w.populateContainerConfigs(podSpec)
@@ -359,31 +358,30 @@ func (w *DeploymentWrap) populateReplicas(spec reflect.Value, obj interface{}) {
 
 	replicasPointer, ok := replicaField.Interface().(*int32)
 	if ok && replicasPointer != nil {
-		w.Deployment.Replicas = int64(*replicasPointer)
+		w.Deployment.SetReplicas(int64(*replicasPointer))
 	}
 
 	replicas, ok := replicaField.Interface().(int32)
 	if ok {
-		w.Deployment.Replicas = int64(replicas)
+		w.Deployment.SetReplicas(int64(replicas))
 	}
 }
 
 func (w *DeploymentWrap) populateContainerConfigs(podSpec v1.PodSpec) {
 	for i, c := range podSpec.Containers {
-		config := &storage.ContainerConfig{
-			Command:   c.Command,
-			Args:      c.Args,
-			Directory: c.WorkingDir,
-		}
+		config := &storage.ContainerConfig{}
+		config.SetCommand(c.Command)
+		config.SetArgs(c.Args)
+		config.SetDirectory(c.WorkingDir)
 
 		envSlice := make([]*storage.ContainerConfig_EnvironmentConfig, len(c.Env))
 		for i, env := range c.Env {
 			if env.ValueFrom == nil {
-				envSlice[i] = &storage.ContainerConfig_EnvironmentConfig{
-					Key:          env.Name,
-					Value:        env.Value,
-					EnvVarSource: storage.ContainerConfig_EnvironmentConfig_RAW,
-				}
+				ce := &storage.ContainerConfig_EnvironmentConfig{}
+				ce.SetKey(env.Name)
+				ce.SetValue(env.Value)
+				ce.SetEnvVarSource(storage.ContainerConfig_EnvironmentConfig_RAW)
+				envSlice[i] = ce
 			} else {
 				var value string
 				var envVarSrc storage.ContainerConfig_EnvironmentConfig_EnvVarSource
@@ -408,27 +406,27 @@ func (w *DeploymentWrap) populateContainerConfigs(podSpec v1.PodSpec) {
 					envVarSrc = storage.ContainerConfig_EnvironmentConfig_UNKNOWN
 					value = "Unknown environment value reference"
 				}
-				envSlice[i] = &storage.ContainerConfig_EnvironmentConfig{
-					Key:          env.Name,
-					Value:        value,
-					EnvVarSource: envVarSrc,
-				}
+				ce := &storage.ContainerConfig_EnvironmentConfig{}
+				ce.SetKey(env.Name)
+				ce.SetValue(value)
+				ce.SetEnvVarSource(envVarSrc)
+				envSlice[i] = ce
 			}
 		}
 
-		config.Env = envSlice
+		config.SetEnv(envSlice)
 
 		if s := c.SecurityContext; s != nil {
 			if uid := s.RunAsUser; uid != nil {
-				config.Uid = *uid
+				config.SetUid(*uid)
 			}
 		}
 
 		appArmorAnnotation := fmt.Sprintf(appArmorAnnotationTemplate, c.Name)
 		appArmorProfile := w.Annotations[appArmorAnnotation]
-		config.AppArmorProfile = appArmorProfile
+		config.SetAppArmorProfile(appArmorProfile)
 
-		w.Deployment.Containers[i].Config = config
+		w.Deployment.GetContainers()[i].SetConfig(config)
 	}
 }
 
@@ -438,17 +436,16 @@ func (w *DeploymentWrap) populateImages(podSpec v1.PodSpec) {
 
 		if err != nil {
 			log.Error(err)
-			parsedImage = &storage.ContainerImage{
-				Name: &storage.ImageName{
-					FullName: fmt.Sprintf("%q is an invalid image", c.Image),
-				},
-				// This Container image (with invalid name) will be sent to Scanner (possibly via Central)
-				// and a scan will be attempted. By setting NonPullable=true, we can avoid the unnecessary API calls,
-				// because we know already here that the FullName is invalid and cannot be pulled
-				NotPullable: true,
-			}
+			imageName := &storage.ImageName{}
+			imageName.SetFullName(fmt.Sprintf("%q is an invalid image", c.Image))
+			parsedImage = &storage.ContainerImage{}
+			parsedImage.SetName(imageName)
+			// This Container image (with invalid name) will be sent to Scanner (possibly via Central)
+			// and a scan will be attempted. By setting NonPullable=true, we can avoid the unnecessary API calls,
+			// because we know already here that the FullName is invalid and cannot be pulled
+			parsedImage.SetNotPullable(true)
 		}
-		w.Deployment.Containers[i].Image = parsedImage
+		w.Deployment.GetContainers()[i].SetImage(parsedImage)
 	}
 }
 
@@ -458,34 +455,34 @@ func (w *DeploymentWrap) populateSecurityContext(podSpec v1.PodSpec) {
 		s := c.SecurityContext
 		if s != nil {
 			if p := s.Privileged; p != nil {
-				sc.Privileged = *p
+				sc.SetPrivileged(*p)
 			}
 
 			if p := s.ReadOnlyRootFilesystem; p != nil {
-				sc.ReadOnlyRootFilesystem = *p
+				sc.SetReadOnlyRootFilesystem(*p)
 			}
 
 			if capabilities := s.Capabilities; capabilities != nil {
 				for _, add := range capabilities.Add {
-					sc.AddCapabilities = append(sc.AddCapabilities, string(add))
+					sc.SetAddCapabilities(append(sc.GetAddCapabilities(), string(add)))
 				}
 
 				for _, drop := range capabilities.Drop {
-					sc.DropCapabilities = append(sc.DropCapabilities, string(drop))
+					sc.SetDropCapabilities(append(sc.GetDropCapabilities(), string(drop)))
 				}
 			}
 			// If allowPrivilegeEscalation is not defined explicitly in the container's security context
 			// its default value is true
 			if ape := s.AllowPrivilegeEscalation; ape != nil {
-				sc.AllowPrivilegeEscalation = *ape
+				sc.SetAllowPrivilegeEscalation(*ape)
 			} else {
-				sc.AllowPrivilegeEscalation = true
+				sc.SetAllowPrivilegeEscalation(true)
 			}
 		}
-		sc.Selinux = makeSELinuxWithDefaults(s, podSpec.SecurityContext)
-		sc.SeccompProfile = makeSeccompProfileWithDefaults(s, podSpec.SecurityContext)
+		sc.SetSelinux(makeSELinuxWithDefaults(s, podSpec.SecurityContext))
+		sc.SetSeccompProfile(makeSeccompProfileWithDefaults(s, podSpec.SecurityContext))
 
-		w.Deployment.Containers[i].SecurityContext = sc
+		w.Deployment.GetContainers()[i].SetSecurityContext(sc)
 	}
 }
 
@@ -510,12 +507,12 @@ func (w *DeploymentWrap) getVolumeSourceMap(podSpec v1.PodSpec) map[string]volum
 
 func (w *DeploymentWrap) populateResources(podSpec v1.PodSpec) {
 	for i, c := range podSpec.Containers {
-		w.Deployment.Containers[i].Resources = &storage.Resources{
-			CpuCoresRequest: k8s.ConvertQuantityToCores(c.Resources.Requests.Cpu()),
-			CpuCoresLimit:   k8s.ConvertQuantityToCores(c.Resources.Limits.Cpu()),
-			MemoryMbRequest: k8s.ConvertQuantityToMB(c.Resources.Requests.Memory()),
-			MemoryMbLimit:   k8s.ConvertQuantityToMB(c.Resources.Limits.Memory()),
-		}
+		resources := &storage.Resources{}
+		resources.SetCpuCoresRequest(k8s.ConvertQuantityToCores(c.Resources.Requests.Cpu()))
+		resources.SetCpuCoresLimit(k8s.ConvertQuantityToCores(c.Resources.Limits.Cpu()))
+		resources.SetMemoryMbRequest(k8s.ConvertQuantityToMB(c.Resources.Requests.Memory()))
+		resources.SetMemoryMbLimit(k8s.ConvertQuantityToMB(c.Resources.Limits.Memory()))
+		w.Deployment.GetContainers()[i].SetResources(resources)
 	}
 }
 
@@ -529,42 +526,42 @@ func (w *DeploymentWrap) populateVolumesAndSecrets(podSpec v1.PodSpec) {
 				sourceVolume = &volumes.Unimplemented{}
 			}
 			if sourceVolume.Type() == "Secret" {
-				w.Deployment.Containers[i].Secrets = append(w.Deployment.Containers[i].Secrets, &storage.EmbeddedSecret{
-					Name: sourceVolume.Source(),
-					Path: v.MountPath,
-				})
+				es := &storage.EmbeddedSecret{}
+				es.SetName(sourceVolume.Source())
+				es.SetPath(v.MountPath)
+				w.Deployment.GetContainers()[i].SetSecrets(append(w.Deployment.GetContainers()[i].GetSecrets(), es))
 				continue
 			}
 
-			w.Deployment.Containers[i].Volumes = append(w.Deployment.Containers[i].Volumes, &storage.Volume{
-				Name:             v.Name,
-				Source:           sourceVolume.Source(),
-				Destination:      v.MountPath,
-				ReadOnly:         v.ReadOnly,
-				Type:             sourceVolume.Type(),
-				MountPropagation: getMountPropagation(v.MountPropagation),
-			})
+			volume := &storage.Volume{}
+			volume.SetName(v.Name)
+			volume.SetSource(sourceVolume.Source())
+			volume.SetDestination(v.MountPath)
+			volume.SetReadOnly(v.ReadOnly)
+			volume.SetType(sourceVolume.Type())
+			volume.SetMountPropagation(getMountPropagation(v.MountPropagation))
+			w.Deployment.GetContainers()[i].SetVolumes(append(w.Deployment.GetContainers()[i].GetVolumes(), volume))
 		}
 
 		for _, s := range podSpec.ImagePullSecrets {
-			w.Deployment.Containers[i].Secrets = append(w.Deployment.Containers[i].Secrets, &storage.EmbeddedSecret{
-				Name: s.Name,
-			})
+			es := &storage.EmbeddedSecret{}
+			es.SetName(s.Name)
+			w.Deployment.GetContainers()[i].SetSecrets(append(w.Deployment.GetContainers()[i].GetSecrets(), es))
 		}
 
 		for _, e := range c.EnvFrom {
 			if e.SecretRef != nil {
-				w.Deployment.Containers[i].Secrets = append(w.Deployment.Containers[i].Secrets, &storage.EmbeddedSecret{
-					Name: e.SecretRef.Name,
-				})
+				es := &storage.EmbeddedSecret{}
+				es.SetName(e.SecretRef.Name)
+				w.Deployment.GetContainers()[i].SetSecrets(append(w.Deployment.GetContainers()[i].GetSecrets(), es))
 			}
 		}
 
 		for _, e := range c.Env {
 			if e.ValueFrom != nil && e.ValueFrom.SecretKeyRef != nil {
-				w.Deployment.Containers[i].Secrets = append(w.Deployment.Containers[i].Secrets, &storage.EmbeddedSecret{
-					Name: e.ValueFrom.SecretKeyRef.Name,
-				})
+				es := &storage.EmbeddedSecret{}
+				es.SetName(e.ValueFrom.SecretKeyRef.Name)
+				w.Deployment.GetContainers()[i].SetSecrets(append(w.Deployment.GetContainers()[i].GetSecrets(), es))
 			}
 		}
 	}
@@ -577,10 +574,9 @@ func (w *DeploymentWrap) populatePorts(podSpec v1.PodSpec) {
 			var exposures []*storage.PortConfig_ExposureInfo
 			exposureLevel := storage.PortConfig_UNSET
 			if p.HostPort != 0 {
-				hostPortExposure := &storage.PortConfig_ExposureInfo{
-					Level:    storage.PortConfig_HOST,
-					NodePort: p.HostPort,
-				}
+				hostPortExposure := &storage.PortConfig_ExposureInfo{}
+				hostPortExposure.SetLevel(storage.PortConfig_HOST)
+				hostPortExposure.SetNodePort(p.HostPort)
 				exposures = []*storage.PortConfig_ExposureInfo{hostPortExposure}
 				exposureLevel = storage.PortConfig_HOST
 			}
@@ -590,14 +586,13 @@ func (w *DeploymentWrap) populatePorts(podSpec v1.PodSpec) {
 				protocolStr = string(v1.ProtocolTCP)
 			}
 
-			portConfig := &storage.PortConfig{
-				Name:          p.Name,
-				ContainerPort: p.ContainerPort,
-				Protocol:      protocolStr,
-				Exposure:      exposureLevel,
-				ExposureInfos: exposures,
-			}
-			w.Deployment.Containers[i].Ports = append(w.Deployment.Containers[i].Ports, portConfig)
+			portConfig := &storage.PortConfig{}
+			portConfig.SetName(p.Name)
+			portConfig.SetContainerPort(p.ContainerPort)
+			portConfig.SetProtocol(protocolStr)
+			portConfig.SetExposure(exposureLevel)
+			portConfig.SetExposureInfos(exposures)
+			w.Deployment.GetContainers()[i].SetPorts(append(w.Deployment.GetContainers()[i].GetPorts(), portConfig))
 			w.Ports = append(w.Ports, portConfig)
 		}
 	}
@@ -606,15 +601,23 @@ func (w *DeploymentWrap) populatePorts(podSpec v1.PodSpec) {
 func (w *DeploymentWrap) populateProbes(podSpec v1.PodSpec) {
 	for i, c := range podSpec.Containers {
 		if c.LivenessProbe == nil || *c.LivenessProbe == (v1.Probe{}) {
-			w.Deployment.Containers[i].LivenessProbe = &storage.LivenessProbe{Defined: false}
+			lp := &storage.LivenessProbe{}
+			lp.SetDefined(false)
+			w.Deployment.GetContainers()[i].SetLivenessProbe(lp)
 		} else {
-			w.Deployment.Containers[i].LivenessProbe = &storage.LivenessProbe{Defined: true}
+			lp := &storage.LivenessProbe{}
+			lp.SetDefined(true)
+			w.Deployment.GetContainers()[i].SetLivenessProbe(lp)
 		}
 
 		if c.ReadinessProbe == nil || *c.ReadinessProbe == (v1.Probe{}) {
-			w.Deployment.Containers[i].ReadinessProbe = &storage.ReadinessProbe{Defined: false}
+			rp := &storage.ReadinessProbe{}
+			rp.SetDefined(false)
+			w.Deployment.GetContainers()[i].SetReadinessProbe(rp)
 		} else {
-			w.Deployment.Containers[i].ReadinessProbe = &storage.ReadinessProbe{Defined: true}
+			rp := &storage.ReadinessProbe{}
+			rp.SetDefined(true)
+			w.Deployment.GetContainers()[i].SetReadinessProbe(rp)
 		}
 	}
 }

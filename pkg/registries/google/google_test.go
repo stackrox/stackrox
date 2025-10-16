@@ -18,42 +18,42 @@ func TestGoogleMatch(t *testing.T) {
 		registryMatch bool
 	}{
 		{
-			name: &storage.ImageName{
+			name: storage.ImageName_builder{
 				Registry: "",
 				Remote:   "",
-			},
+			}.Build(),
 			projectMatch:  false,
 			registryMatch: false,
 		},
 		{
-			name: &storage.ImageName{
+			name: storage.ImageName_builder{
 				Registry: "gcr.io",
 				Remote:   "acs-san-stackroxci/nginx",
-			},
+			}.Build(),
 			projectMatch:  false, // does not match gcr.io, matches us.gcr.io
 			registryMatch: false, // does not match gcr.io, matches us.gcr.io
 		},
 		{
-			name: &storage.ImageName{
+			name: storage.ImageName_builder{
 				Registry: "us.gcr.io",
 				Remote:   "acs-san-stackroxci/nginx",
-			},
+			}.Build(),
 			projectMatch:  true, // matches both us.gcr.io and acs-san-stackroxci
 			registryMatch: true, // matches us.gcr.io
 		},
 		{
-			name: &storage.ImageName{
+			name: storage.ImageName_builder{
 				Registry: "us.gcr.io",
 				Remote:   "acs-san-stackroxci/nginx/another",
-			},
+			}.Build(),
 			projectMatch:  true, // matches both us.gcr.io and acs-san-stackroxci
 			registryMatch: true, // matches us.gcr.io
 		},
 		{
-			name: &storage.ImageName{
+			name: storage.ImageName_builder{
 				Registry: "us.gcr.io",
 				Remote:   "stackrox-ci/nginx/another",
-			},
+			}.Build(),
 			projectMatch:  false, // matches us.gcr.io, but not stackrox-ci
 			registryMatch: true,  // matches us.gcr.io
 		},
@@ -94,27 +94,27 @@ func TestGoogleValidate(t *testing.T) {
 	}{
 		{
 			name:    "static credentials - success",
-			config:  &storage.GoogleConfig{Endpoint: "eu.gcr.io", ServiceAccount: `{"type": "service_account"}`},
+			config:  storage.GoogleConfig_builder{Endpoint: "eu.gcr.io", ServiceAccount: `{"type": "service_account"}`}.Build(),
 			isValid: true,
 		},
 		{
 			name:    "static credentials - no endpoint",
-			config:  &storage.GoogleConfig{Endpoint: "", ServiceAccount: `{"type": "service_account"}`},
+			config:  storage.GoogleConfig_builder{Endpoint: "", ServiceAccount: `{"type": "service_account"}`}.Build(),
 			isValid: false,
 		},
 		{
 			name:    "static credentials - no service account",
-			config:  &storage.GoogleConfig{Endpoint: "eu.gcr.io", ServiceAccount: ""},
+			config:  storage.GoogleConfig_builder{Endpoint: "eu.gcr.io", ServiceAccount: ""}.Build(),
 			isValid: false,
 		},
 		{
 			name:    "workload identity - success",
-			config:  &storage.GoogleConfig{Endpoint: "eu.gcr.io", ServiceAccount: "", WifEnabled: true},
+			config:  storage.GoogleConfig_builder{Endpoint: "eu.gcr.io", ServiceAccount: "", WifEnabled: true}.Build(),
 			isValid: true,
 		},
 		{
 			name:    "workload identity - no endpoint",
-			config:  &storage.GoogleConfig{Endpoint: "", ServiceAccount: "", WifEnabled: true},
+			config:  storage.GoogleConfig_builder{Endpoint: "", ServiceAccount: "", WifEnabled: true}.Build(),
 			isValid: false,
 		},
 	}

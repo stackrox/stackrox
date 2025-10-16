@@ -197,9 +197,9 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 		// Get the CVEs themselves.  This will be denormalized.  So use the IDs to get them, but use
 		// the data returned from CVE Flat View to keep order and set just 1 instance of a CVE
 		vulnQuery := search.NewQueryBuilder().AddExactMatches(search.CVEID, cveIDs...).ProtoQuery()
-		vulnQuery.Pagination = &v1.QueryPagination{
-			SortOptions: query.GetPagination().GetSortOptions(),
-		}
+		qp := &v1.QueryPagination{}
+		qp.SetSortOptions(query.GetPagination().GetSortOptions())
+		vulnQuery.SetPagination(qp)
 		vulns, err := loader.FromQuery(ctx, vulnQuery)
 
 		// Stash a single instance of a CVE to aid in normalizing
@@ -367,20 +367,20 @@ func (resolver *Resolver) TopImageVulnerability(ctx context.Context, args RawQue
 	if err != nil {
 		return nil, err
 	}
-	query.Pagination = &v1.QueryPagination{
-		SortOptions: []*v1.QuerySortOption{
-			{
-				Field:    search.CVSS.String(),
-				Reversed: true,
-			},
-			{
-				Field:    search.CVE.String(),
-				Reversed: true,
-			},
-		},
-		Limit:  1,
-		Offset: 0,
-	}
+	qso := &v1.QuerySortOption{}
+	qso.SetField(search.CVSS.String())
+	qso.SetReversed(true)
+	qso2 := &v1.QuerySortOption{}
+	qso2.SetField(search.CVE.String())
+	qso2.SetReversed(true)
+	qp := &v1.QueryPagination{}
+	qp.SetSortOptions([]*v1.QuerySortOption{
+		qso,
+		qso2,
+	})
+	qp.SetLimit(1)
+	qp.SetOffset(0)
+	query.SetPagination(qp)
 
 	if features.FlattenCVEData.Enabled() {
 		loader, err := loaders.GetImageCVEV2Loader(ctx)
@@ -574,16 +574,16 @@ func (resolver *imageCVEResolver) LastScanned(ctx context.Context) (*graphql.Tim
 		}
 
 		q := search.EmptyQuery()
-		q.Pagination = &v1.QueryPagination{
-			Limit:  1,
-			Offset: 0,
-			SortOptions: []*v1.QuerySortOption{
-				{
-					Field:    search.ImageScanTime.String(),
-					Reversed: true,
-				},
-			},
-		}
+		qso := &v1.QuerySortOption{}
+		qso.SetField(search.ImageScanTime.String())
+		qso.SetReversed(true)
+		qp := &v1.QueryPagination{}
+		qp.SetLimit(1)
+		qp.SetOffset(0)
+		qp.SetSortOptions([]*v1.QuerySortOption{
+			qso,
+		})
+		q.SetPagination(qp)
 
 		images, err := imageLoader.FromQuery(resolver.imageVulnerabilityScopeContext(ctx), q)
 		if err != nil || len(images) == 0 {
@@ -600,16 +600,16 @@ func (resolver *imageCVEResolver) LastScanned(ctx context.Context) (*graphql.Tim
 	}
 
 	q := search.EmptyQuery()
-	q.Pagination = &v1.QueryPagination{
-		Limit:  1,
-		Offset: 0,
-		SortOptions: []*v1.QuerySortOption{
-			{
-				Field:    search.ImageScanTime.String(),
-				Reversed: true,
-			},
-		},
-	}
+	qso := &v1.QuerySortOption{}
+	qso.SetField(search.ImageScanTime.String())
+	qso.SetReversed(true)
+	qp := &v1.QueryPagination{}
+	qp.SetLimit(1)
+	qp.SetOffset(0)
+	qp.SetSortOptions([]*v1.QuerySortOption{
+		qso,
+	})
+	q.SetPagination(qp)
 
 	images, err := imageLoader.FromQuery(resolver.imageVulnerabilityScopeContext(ctx), q)
 	if err != nil || len(images) == 0 {

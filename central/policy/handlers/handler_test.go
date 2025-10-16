@@ -77,12 +77,12 @@ func (s *PolicyHandlerTestSuite) performRequest(body interface{}) *httptest.Resp
 // Test when an invalid policy ID is provided
 func (s *PolicyHandlerTestSuite) TestSaveAsInvalidIDFails() {
 	mockRequest := &apiparams.SaveAsCustomResourcesRequest{IDs: []string{"invalid-id"}}
+	pe := &v1.PolicyError{}
+	pe.SetError("not found")
 	mockErrors := []*policyOperationError{
 		{
 			PolicyId: "invalid-id",
-			Error: &v1.PolicyError{
-				Error: "not found",
-			},
+			Error:    pe,
 		},
 	}
 
@@ -96,26 +96,26 @@ func (s *PolicyHandlerTestSuite) TestSaveAsInvalidIDFails() {
 // Test when a valid policy ID is provided
 func (s *PolicyHandlerTestSuite) TestSaveAsValidIDSucceeds() {
 	ctx := context.Background()
+	policy := &storage.Policy{}
+	policy.SetId("valid-id")
+	policy.SetName("A name")
 	expectedNameToPolicies := map[string]*storage.Policy{
-		"a-name": {
-			Id:   "valid-id",
-			Name: "A name",
-		},
+		"a-name": policy,
 	}
 	mockRequest := &apiparams.SaveAsCustomResourcesRequest{IDs: []string{"valid-id"}}
 
 	s.policyStore.EXPECT().GetPolicies(ctx, mockRequest.IDs).Return(slices.Collect(maps.Values(expectedNameToPolicies)), nil, nil)
 	s.notifierStore.EXPECT().ForEachNotifier(s.ctx, gomock.Any()).DoAndReturn(
 		func(_ context.Context, fn func(obj *storage.Notifier) error) error {
+			notifier := &storage.Notifier{}
+			notifier.SetId(emailNotifierUuid)
+			notifier.SetName("email-notifier")
+			notifier2 := &storage.Notifier{}
+			notifier2.SetId(jiraNotifierUuid)
+			notifier2.SetName("jira-notifier")
 			for _, n := range []*storage.Notifier{
-				{
-					Id:   emailNotifierUuid,
-					Name: "email-notifier",
-				},
-				{
-					Id:   jiraNotifierUuid,
-					Name: "jira-notifier",
-				},
+				notifier,
+				notifier2,
 			} {
 				if err := fn(n); err != nil {
 					return err
@@ -143,10 +143,19 @@ func (s *PolicyHandlerTestSuite) TestSaveAsValidIDSucceeds() {
 // Test when multiple valid policy IDs are provided
 func (s *PolicyHandlerTestSuite) TestSaveAsMultipleValidIDSucceeds() {
 	ctx := context.Background()
+	policy := &storage.Policy{}
+	policy.SetId("id1")
+	policy.SetName("Policy 1")
+	policy2 := &storage.Policy{}
+	policy2.SetId("id2")
+	policy2.SetName("Policy 2")
+	policy3 := &storage.Policy{}
+	policy3.SetId("id3")
+	policy3.SetName("policy 2-")
 	expectedNameToPolicies := map[string]*storage.Policy{
-		"policy-1":     {Id: "id1", Name: "Policy 1"},
-		"policy-2":     {Id: "id2", Name: "Policy 2"},
-		"policy-2-id3": {Id: "id3", Name: "policy 2-"}, // Name conflict
+		"policy-1":     policy,
+		"policy-2":     policy2,
+		"policy-2-id3": policy3, // Name conflict
 	}
 	mockRequest := &apiparams.SaveAsCustomResourcesRequest{IDs: []string{"id1", "id2"}}
 
@@ -154,15 +163,15 @@ func (s *PolicyHandlerTestSuite) TestSaveAsMultipleValidIDSucceeds() {
 	s.policyStore.EXPECT().GetPolicies(ctx, mockRequest.IDs).Return(policies, nil, nil)
 	s.notifierStore.EXPECT().ForEachNotifier(s.ctx, gomock.Any()).DoAndReturn(
 		func(_ context.Context, fn func(obj *storage.Notifier) error) error {
+			notifier := &storage.Notifier{}
+			notifier.SetId(emailNotifierUuid)
+			notifier.SetName("email-notifier")
+			notifier2 := &storage.Notifier{}
+			notifier2.SetId(jiraNotifierUuid)
+			notifier2.SetName("jira-notifier")
 			for _, n := range []*storage.Notifier{
-				{
-					Id:   emailNotifierUuid,
-					Name: "email-notifier",
-				},
-				{
-					Id:   jiraNotifierUuid,
-					Name: "jira-notifier",
-				},
+				notifier,
+				notifier2,
 			} {
 				if err := fn(n); err != nil {
 					return err
@@ -190,16 +199,19 @@ func (s *PolicyHandlerTestSuite) TestSaveAsMultipleValidIDSucceeds() {
 // Test mixed scenario where some policies are found and some are missing
 func (s *PolicyHandlerTestSuite) TestSaveAsMixedSuccessAndMissing() {
 	ctx := context.Background()
+	policy := &storage.Policy{}
+	policy.SetId("id1")
+	policy.SetName("Policy 1")
 	policies := []*storage.Policy{
-		{Id: "id1", Name: "Policy 1"},
+		policy,
 	}
 	mockRequest := &apiparams.SaveAsCustomResourcesRequest{IDs: []string{"id1", "id2"}}
+	pe := &v1.PolicyError{}
+	pe.SetError("not found")
 	mockErrors := []*policyOperationError{
 		{
 			PolicyId: "id2",
-			Error: &v1.PolicyError{
-				Error: "not found",
-			},
+			Error:    pe,
 		},
 	}
 
@@ -213,18 +225,18 @@ func (s *PolicyHandlerTestSuite) TestSaveAsMixedSuccessAndMissing() {
 func (s *PolicyHandlerTestSuite) TestSaveAsMultipleFailures() {
 	ctx := context.Background()
 	mockRequest := &apiparams.SaveAsCustomResourcesRequest{IDs: []string{"id1", "id2"}}
+	pe := &v1.PolicyError{}
+	pe.SetError("not found")
+	pe2 := &v1.PolicyError{}
+	pe2.SetError("not found")
 	mockErrors := []*policyOperationError{
 		{
 			PolicyId: "id1",
-			Error: &v1.PolicyError{
-				Error: "not found",
-			},
+			Error:    pe,
 		},
 		{
 			PolicyId: "id2",
-			Error: &v1.PolicyError{
-				Error: "not found",
-			},
+			Error:    pe2,
 		},
 	}
 

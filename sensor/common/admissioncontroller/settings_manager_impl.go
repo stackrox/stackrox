@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/store"
+	"google.golang.org/protobuf/proto"
 )
 
 type settingsManager struct {
@@ -52,9 +53,9 @@ func (p *settingsManager) newSettingsNoLock() *sensor.AdmissionControlSettings {
 	if p.currSettings != nil {
 		settings = p.currSettings.CloneVT()
 	}
-	settings.ClusterId = p.clusterID.Get()
-	settings.CentralEndpoint = p.centralEndpoint
-	settings.Timestamp = protocompat.TimestampNow()
+	settings.SetClusterId(p.clusterID.Get())
+	settings.SetCentralEndpoint(p.centralEndpoint)
+	settings.SetTimestamp(protocompat.TimestampNow())
 	return settings
 }
 
@@ -76,8 +77,12 @@ func (p *settingsManager) UpdatePolicies(policies []*storage.Policy) {
 	p.hasPolicies = true
 
 	newSettings := p.newSettingsNoLock()
-	newSettings.EnforcedDeployTimePolicies = &storage.PolicyList{Policies: deploytimePolicies}
-	newSettings.RuntimePolicies = &storage.PolicyList{Policies: runtimePolicies}
+	pl := &storage.PolicyList{}
+	pl.SetPolicies(deploytimePolicies)
+	newSettings.SetEnforcedDeployTimePolicies(pl)
+	pl2 := &storage.PolicyList{}
+	pl2.SetPolicies(runtimePolicies)
+	newSettings.SetRuntimePolicies(pl2)
 
 	if p.hasClusterConfig && p.hasPolicies {
 		p.settingsStream.Push(newSettings)
@@ -95,7 +100,7 @@ func (p *settingsManager) UpdateConfig(config *storage.DynamicClusterConfig) {
 	p.hasClusterConfig = true
 
 	newSettings := p.newSettingsNoLock()
-	newSettings.ClusterConfig = clonedConfig
+	newSettings.SetClusterConfig(clonedConfig)
 
 	if p.hasClusterConfig && p.hasPolicies {
 		p.settingsStream.Push(newSettings)
@@ -108,7 +113,7 @@ func (p *settingsManager) FlushCache() {
 	defer p.mutex.Unlock()
 
 	newSettings := p.newSettingsNoLock()
-	newSettings.CacheVersion = uuid.NewV4().String()
+	newSettings.SetCacheVersion(uuid.NewV4().String())
 
 	if p.hasClusterConfig && p.hasPolicies {
 		p.settingsStream.Push(newSettings)
@@ -127,31 +132,27 @@ func (p *settingsManager) SensorEventsStream() concurrency.ReadOnlyValueStream[*
 func (p *settingsManager) GetResourcesForSync() []*sensor.AdmCtrlUpdateResourceRequest {
 	var ret []*sensor.AdmCtrlUpdateResourceRequest
 	for _, d := range p.deployments.GetAll() {
-		ret = append(ret, &sensor.AdmCtrlUpdateResourceRequest{
-			Action: central.ResourceAction_CREATE_RESOURCE,
-			Resource: &sensor.AdmCtrlUpdateResourceRequest_Deployment{
-				Deployment: d,
-			},
-		})
+		acurr := &sensor.AdmCtrlUpdateResourceRequest{}
+		acurr.SetAction(central.ResourceAction_CREATE_RESOURCE)
+		acurr.SetDeployment(proto.ValueOrDefault(d))
+		ret = append(ret, acurr)
 	}
 
 	for _, pod := range p.pods.GetAll() {
-		ret = append(ret, &sensor.AdmCtrlUpdateResourceRequest{
-			Action: central.ResourceAction_CREATE_RESOURCE,
-			Resource: &sensor.AdmCtrlUpdateResourceRequest_Pod{
-				Pod: pod,
-			},
-		})
+		acurr := &sensor.AdmCtrlUpdateResourceRequest{}
+		acurr.SetAction(central.ResourceAction_CREATE_RESOURCE)
+		acurr.SetPod(proto.ValueOrDefault(pod))
+		ret = append(ret, acurr)
 	}
 	return ret
 }
 
 func (p *settingsManager) UpdateResources(events ...*central.SensorEvent) {
 	for _, event := range events {
-		switch event.GetResource().(type) {
-		case *central.SensorEvent_Synced, *central.SensorEvent_Deployment, *central.SensorEvent_Pod:
+		switch event.WhichResource() {
+		case central.SensorEvent_Synced_case, central.SensorEvent_Deployment_case, central.SensorEvent_Pod_case:
 			p.convertAndPush(event)
-		case *central.SensorEvent_Namespace:
+		case central.SensorEvent_Namespace_case:
 			// Track namespace deletion to removal sub-resources from admission control.
 			if event.GetAction() == central.ResourceAction_REMOVE_RESOURCE {
 				p.convertAndPush(event)

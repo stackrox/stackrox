@@ -45,14 +45,14 @@ func (resolver *Resolver) PlottedImageVulnerabilities(ctx context.Context, args 
 	}
 	logErrorOnQueryContainingField(query, search.Fixable, "PlottedImageVulnerabilities")
 
-	query.Pagination = &v1.QueryPagination{
-		SortOptions: []*v1.QuerySortOption{
-			{
-				Field:    search.CVSS.String(),
-				Reversed: true,
-			},
-		},
-	}
+	qso := &v1.QuerySortOption{}
+	qso.SetField(search.CVSS.String())
+	qso.SetReversed(true)
+	qp := &v1.QueryPagination{}
+	qp.SetSortOptions([]*v1.QuerySortOption{
+		qso,
+	})
+	query.SetPagination(qp)
 
 	if features.FlattenCVEData.Enabled() {
 		// get loader

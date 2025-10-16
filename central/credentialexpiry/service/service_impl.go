@@ -82,7 +82,9 @@ func (s *serviceImpl) getCentralCertExpiry() (*v1.GetCertExpiry_Response, error)
 	if err != nil {
 		return nil, errors.Errorf("failed to convert timestamp: %v", err)
 	}
-	return &v1.GetCertExpiry_Response{Expiry: expiry}, nil
+	gr := &v1.GetCertExpiry_Response{}
+	gr.SetExpiry(expiry)
+	return gr, nil
 }
 
 func (s *serviceImpl) getCentralDBCertExpiry() (*v1.GetCertExpiry_Response, error) {
@@ -142,7 +144,9 @@ func (s *serviceImpl) getCentralDBCertExpiry() (*v1.GetCertExpiry_Response, erro
 	if err != nil {
 		return nil, err
 	}
-	return &v1.GetCertExpiry_Response{Expiry: certExpiry}, nil
+	gr := &v1.GetCertExpiry_Response{}
+	gr.SetExpiry(certExpiry)
+	return gr, nil
 }
 
 // tlsConnectToCentralDB implements the protocol to establish a TLS connection to a postgres database server
@@ -252,13 +256,17 @@ func (s *serviceImpl) getScannerCertExpiry(ctx context.Context) (*v1.GetCertExpi
 			}
 		case expiry := <-expiryC:
 			if expiry == nil {
-				return &v1.GetCertExpiry_Response{Expiry: nil}, nil
+				gr := &v1.GetCertExpiry_Response{}
+				gr.ClearExpiry()
+				return gr, nil
 			}
 			certExpiry, err := protocompat.ConvertTimeToTimestampOrError(*expiry)
 			if err != nil {
 				return nil, err
 			}
-			return &v1.GetCertExpiry_Response{Expiry: certExpiry}, nil
+			gr := &v1.GetCertExpiry_Response{}
+			gr.SetExpiry(certExpiry)
+			return gr, nil
 		}
 	}
 }
@@ -335,14 +343,18 @@ func (s *serviceImpl) getScannerV4CertExpiry(ctx context.Context) (*v1.GetCertEx
 	})
 
 	if expiries[0] == nil {
-		return &v1.GetCertExpiry_Response{Expiry: nil}, nil
+		gr := &v1.GetCertExpiry_Response{}
+		gr.ClearExpiry()
+		return gr, nil
 	}
 	certExpiry, err := protocompat.ConvertTimeToTimestampOrError(*expiries[0])
 	if err != nil {
 		return nil, err
 	}
 
-	return &v1.GetCertExpiry_Response{Expiry: certExpiry}, nil
+	gr := &v1.GetCertExpiry_Response{}
+	gr.SetExpiry(certExpiry)
+	return gr, nil
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

@@ -49,21 +49,20 @@ func (a *authProviderTransform) Transform(configuration declarativeconfig.Config
 
 	// The assumption is that, when the auth provider will be stored later on, the DefaultLoginURL option is used,
 	// thus we do not set the login URL explicitly, even though we could.
-	authProviderProto := &storage.AuthProvider{
-		Id:                 declarativeconfig.NewDeclarativeAuthProviderUUID(authProviderConfig.Name).String(),
-		Name:               authProviderConfig.Name,
-		Type:               providerType,
-		UiEndpoint:         authProviderConfig.UIEndpoint,
-		ExtraUiEndpoints:   authProviderConfig.ExtraUIEndpoints,
-		Enabled:            true, // Enabled is required to be set to ensure the auth provider listed as ready for login.
-		Active:             true, // Active signals at least one user has logged in with the auth provider and disables modification in the UI.
-		Config:             providerConfig,
-		RequiredAttributes: getRequiredAttributes(authProviderConfig.RequiredAttributes),
-		Traits: &storage.Traits{
-			Origin: storage.Traits_DECLARATIVE,
-		},
-		ClaimMappings: getClaimMappings(authProviderConfig.ClaimMappings),
-	}
+	traits := &storage.Traits{}
+	traits.SetOrigin(storage.Traits_DECLARATIVE)
+	authProviderProto := &storage.AuthProvider{}
+	authProviderProto.SetId(declarativeconfig.NewDeclarativeAuthProviderUUID(authProviderConfig.Name).String())
+	authProviderProto.SetName(authProviderConfig.Name)
+	authProviderProto.SetType(providerType)
+	authProviderProto.SetUiEndpoint(authProviderConfig.UIEndpoint)
+	authProviderProto.SetExtraUiEndpoints(authProviderConfig.ExtraUIEndpoints)
+	authProviderProto.SetEnabled(true) // Enabled is required to be set to ensure the auth provider listed as ready for login.
+	authProviderProto.SetActive(true)  // Active signals at least one user has logged in with the auth provider and disables modification in the UI.
+	authProviderProto.SetConfig(providerConfig)
+	authProviderProto.SetRequiredAttributes(getRequiredAttributes(authProviderConfig.RequiredAttributes))
+	authProviderProto.SetTraits(traits)
+	authProviderProto.SetClaimMappings(getClaimMappings(authProviderConfig.ClaimMappings))
 	return map[reflect.Type][]protocompat.Message{
 		authProviderType: {authProviderProto},
 		groupType:        getGroups(authProviderProto.GetId(), authProviderConfig),
@@ -128,10 +127,10 @@ func getConfig(authProviderConfig *declarativeconfig.AuthProvider) (map[string]s
 func getRequiredAttributes(requiredAttributesConfig []declarativeconfig.RequiredAttribute) []*storage.AuthProvider_RequiredAttribute {
 	requiredAttributes := make([]*storage.AuthProvider_RequiredAttribute, 0, len(requiredAttributesConfig))
 	for _, req := range requiredAttributesConfig {
-		requiredAttributes = append(requiredAttributes, &storage.AuthProvider_RequiredAttribute{
-			AttributeKey:   req.AttributeKey,
-			AttributeValue: req.AttributeValue,
-		})
+		ar := &storage.AuthProvider_RequiredAttribute{}
+		ar.SetAttributeKey(req.AttributeKey)
+		ar.SetAttributeValue(req.AttributeValue)
+		requiredAttributes = append(requiredAttributes, ar)
 	}
 	return requiredAttributes
 }
@@ -149,29 +148,33 @@ func getGroups(authProviderID string, authProviderConfig *declarativeconfig.Auth
 	groups := make([]protocompat.Message, 0, len(authProviderConfig.Groups)+utils.IfThenElse(hasMinimumRoleName, 1, 0))
 
 	if hasMinimumRoleName {
-		groups = append(groups, &storage.Group{
-			Props: &storage.GroupProperties{
-				Id:             declarativeconfig.NewDeclarativeGroupUUID(authProviderConfig.Name + "-default").String(),
-				Traits:         &storage.Traits{Origin: storage.Traits_DECLARATIVE},
-				AuthProviderId: authProviderID,
-				Key:            "",
-				Value:          "",
-			},
-			RoleName: authProviderConfig.MinimumRoleName,
-		})
+		traits := &storage.Traits{}
+		traits.SetOrigin(storage.Traits_DECLARATIVE)
+		gp := &storage.GroupProperties{}
+		gp.SetId(declarativeconfig.NewDeclarativeGroupUUID(authProviderConfig.Name + "-default").String())
+		gp.SetTraits(traits)
+		gp.SetAuthProviderId(authProviderID)
+		gp.SetKey("")
+		gp.SetValue("")
+		group := &storage.Group{}
+		group.SetProps(gp)
+		group.SetRoleName(authProviderConfig.MinimumRoleName)
+		groups = append(groups, group)
 	}
 
 	for idx, group := range authProviderConfig.Groups {
-		groups = append(groups, &storage.Group{
-			Props: &storage.GroupProperties{
-				Id:             declarativeconfig.NewDeclarativeGroupUUID(fmt.Sprintf("%s-%d", authProviderConfig.Name, idx)).String(),
-				Traits:         &storage.Traits{Origin: storage.Traits_DECLARATIVE},
-				AuthProviderId: authProviderID,
-				Key:            group.AttributeKey,
-				Value:          group.AttributeValue,
-			},
-			RoleName: group.RoleName,
-		})
+		traits := &storage.Traits{}
+		traits.SetOrigin(storage.Traits_DECLARATIVE)
+		gp := &storage.GroupProperties{}
+		gp.SetId(declarativeconfig.NewDeclarativeGroupUUID(fmt.Sprintf("%s-%d", authProviderConfig.Name, idx)).String())
+		gp.SetTraits(traits)
+		gp.SetAuthProviderId(authProviderID)
+		gp.SetKey(group.AttributeKey)
+		gp.SetValue(group.AttributeValue)
+		group2 := &storage.Group{}
+		group2.SetProps(gp)
+		group2.SetRoleName(group.RoleName)
+		groups = append(groups, group2)
 	}
 
 	return groups

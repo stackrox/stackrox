@@ -58,7 +58,10 @@ func applyRevokeInitBundles(ctx context.Context, cliEnvironment environment.Envi
 		}
 	}
 
-	revokeResp, err := svc.RevokeInitBundle(ctx, &v1.InitBundleRevokeRequest{Ids: revokeInitBundleIds, ConfirmImpactedClustersIds: impactedClusterIds})
+	ibrr := &v1.InitBundleRevokeRequest{}
+	ibrr.SetIds(revokeInitBundleIds)
+	ibrr.SetConfirmImpactedClustersIds(impactedClusterIds)
+	revokeResp, err := svc.RevokeInitBundle(ctx, ibrr)
 	if err != nil {
 		return errors.Wrap(err, "revoking init bundles")
 	}

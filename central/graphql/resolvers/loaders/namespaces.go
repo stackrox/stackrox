@@ -13,10 +13,12 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var namespaceLoaderType = reflect.TypeOf(storage.NamespaceMetadata{})
+// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+var namespaceLoaderType = reflect.TypeOf(&storage.NamespaceMetadata{})
 
 func init() {
-	RegisterTypeFactory(reflect.TypeOf(storage.NamespaceMetadata{}), func() interface{} {
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	RegisterTypeFactory(reflect.TypeOf(&storage.NamespaceMetadata{}), func() interface{} {
 		return NewNamespaceLoader(datastore.Singleton())
 	})
 }

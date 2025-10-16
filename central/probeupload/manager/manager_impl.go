@@ -121,11 +121,11 @@ func (m *manager) getFileInfo(ctx context.Context, file string) (*v1.ProbeUpload
 
 	crc32 := binary.BigEndian.Uint32(crc32Data)
 
-	return &v1.ProbeUploadManifest_File{
-		Name:  file,
-		Size:  blob.GetLength(),
-		Crc32: crc32,
-	}, nil
+	pf := &v1.ProbeUploadManifest_File{}
+	pf.SetName(file)
+	pf.SetSize(blob.GetLength())
+	pf.SetCrc32(crc32)
+	return pf, nil
 }
 
 func (m *manager) GetExistingProbeFiles(ctx context.Context, files []string) ([]*v1.ProbeUploadManifest_File, error) {
@@ -167,13 +167,12 @@ func (m *manager) StoreFile(ctx context.Context, file string, data io.Reader, si
 
 	verifyingReader := ioutils.NewCRC32ChecksumReader(io.LimitReader(data, size), crc32.IEEETable, crc32Sum)
 	checksumBytes := binenc.BigEndian.EncodeUint32(crc32Sum)
-	b := &storage.Blob{
-		Name:         path.Join(rootBlobPathPrefix, file),
-		Checksum:     string(checksumBytes),
-		Length:       size,
-		LastUpdated:  protocompat.TimestampNow(),
-		ModifiedTime: protocompat.TimestampNow(),
-	}
+	b := &storage.Blob{}
+	b.SetName(path.Join(rootBlobPathPrefix, file))
+	b.SetChecksum(string(checksumBytes))
+	b.SetLength(size)
+	b.SetLastUpdated(protocompat.TimestampNow())
+	b.SetModifiedTime(protocompat.TimestampNow())
 
 	if err := m.blobStore.Upsert(ctx, b, verifyingReader); err != nil {
 		return errors.Wrapf(err, "writing probe data blob %s", file)

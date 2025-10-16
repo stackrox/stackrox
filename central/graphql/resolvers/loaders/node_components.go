@@ -13,10 +13,12 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var nodeComponentLoaderType = reflect.TypeOf(storage.NodeComponent{})
+// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+var nodeComponentLoaderType = reflect.TypeOf(&storage.NodeComponent{})
 
 func init() {
-	RegisterTypeFactory(reflect.TypeOf(storage.NodeComponent{}), func() interface{} {
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	RegisterTypeFactory(reflect.TypeOf(&storage.NodeComponent{}), func() interface{} {
 		return NewNodeComponentLoader(datastore.Singleton())
 	})
 }

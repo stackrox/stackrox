@@ -22,9 +22,9 @@ func TestWorkerNodeConfigChecks(t *testing.T) {
 		{
 			name: "CIS_Kubernetes_v1_5:4_1_1",
 			files: map[string]*compliance.File{
-				"/etc/systemd/system/kubelet.service.d/10-kubeadm.conf": {
+				"/etc/systemd/system/kubelet.service.d/10-kubeadm.conf": compliance.File_builder{
 					Permissions: 0644,
-				},
+				}.Build(),
 			},
 			status:     storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 			numResults: 1,
@@ -33,10 +33,10 @@ func TestWorkerNodeConfigChecks(t *testing.T) {
 		{
 			name: "CIS_Kubernetes_v1_5:4_1_2",
 			files: map[string]*compliance.File{
-				"/etc/systemd/system/kubelet.service.d/10-kubeadm.conf": {
+				"/etc/systemd/system/kubelet.service.d/10-kubeadm.conf": compliance.File_builder{
 					UserName:  "root",
 					GroupName: "root",
-				},
+				}.Build(),
 			},
 			status:     storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 			numResults: 1,
@@ -45,17 +45,17 @@ func TestWorkerNodeConfigChecks(t *testing.T) {
 		{
 			name: "CIS_Kubernetes_v1_5:4_1_3",
 			commandLines: map[string]*compliance.CommandLine{
-				"test": {
+				"test": compliance.CommandLine_builder{
 					Process: "kubelet",
 					Args: []*compliance.CommandLine_Args{
-						{
+						compliance.CommandLine_Args_builder{
 							Key: "kubeconfig",
-							File: &compliance.File{
+							File: compliance.File_builder{
 								Permissions: 0644,
-							},
-						},
+							}.Build(),
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			status:     storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 			numResults: 1,
@@ -64,18 +64,18 @@ func TestWorkerNodeConfigChecks(t *testing.T) {
 		{
 			name: "CIS_Kubernetes_v1_5:4_1_4",
 			commandLines: map[string]*compliance.CommandLine{
-				"test": {
+				"test": compliance.CommandLine_builder{
 					Process: "kubelet",
 					Args: []*compliance.CommandLine_Args{
-						{
+						compliance.CommandLine_Args_builder{
 							Key: "kubeconfig",
-							File: &compliance.File{
+							File: compliance.File_builder{
 								UserName:  "root",
 								GroupName: "root",
-							},
-						},
+							}.Build(),
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			status:     storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 			numResults: 1,

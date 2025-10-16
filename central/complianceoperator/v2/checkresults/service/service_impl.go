@@ -237,11 +237,11 @@ func (s *serviceImpl) GetComplianceProfileResults(ctx context.Context, request *
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for compliance scan results %v", request)
 	}
 
-	return &v2.ListComplianceProfileResults{
-		ProfileResults: storagetov2.ComplianceV2ProfileResults(scanResults, controls),
-		ProfileName:    request.GetProfileName(),
-		TotalCount:     int32(count),
-	}, nil
+	lcpr := &v2.ListComplianceProfileResults{}
+	lcpr.SetProfileResults(storagetov2.ComplianceV2ProfileResults(scanResults, controls))
+	lcpr.SetProfileName(request.GetProfileName())
+	lcpr.SetTotalCount(int32(count))
+	return lcpr, nil
 }
 
 // GetComplianceProfileCheckResult retrieves cluster status for a specific check result
@@ -318,13 +318,13 @@ func (s *serviceImpl) GetComplianceProfileCheckResult(ctx context.Context, reque
 		convertedControls = storagetov2.GetControls(ruleNames[0], controls)
 	}
 
-	return &v2.ListComplianceCheckClusterResponse{
-		CheckResults: storagetov2.ComplianceV2CheckClusterResults(scanResults, clusterLastScan),
-		ProfileName:  request.GetProfileName(),
-		CheckName:    request.GetCheckName(),
-		TotalCount:   int32(resultCount),
-		Controls:     convertedControls,
-	}, nil
+	lcccr := &v2.ListComplianceCheckClusterResponse{}
+	lcccr.SetCheckResults(storagetov2.ComplianceV2CheckClusterResults(scanResults, clusterLastScan))
+	lcccr.SetProfileName(request.GetProfileName())
+	lcccr.SetCheckName(request.GetCheckName())
+	lcccr.SetTotalCount(int32(resultCount))
+	lcccr.SetControls(convertedControls)
+	return lcccr, nil
 }
 
 // GetComplianceProfileClusterResults retrieves check results for a specific profile on a specific cluster
@@ -391,13 +391,13 @@ func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, re
 		return nil, err
 	}
 
-	return &v2.ListComplianceCheckResultResponse{
-		CheckResults: storagetov2.ComplianceV2CheckResults(scanResults, checkToRule, controls),
-		ProfileName:  request.GetProfileName(),
-		ClusterId:    request.GetClusterId(),
-		TotalCount:   int32(resultCount),
-		LastScanTime: lastExecutedTime,
-	}, nil
+	lccrr := &v2.ListComplianceCheckResultResponse{}
+	lccrr.SetCheckResults(storagetov2.ComplianceV2CheckResults(scanResults, checkToRule, controls))
+	lccrr.SetProfileName(request.GetProfileName())
+	lccrr.SetClusterId(request.GetClusterId())
+	lccrr.SetTotalCount(int32(resultCount))
+	lccrr.SetLastScanTime(lastExecutedTime)
+	return lccrr, nil
 }
 
 func (s *serviceImpl) GetComplianceProfileCheckDetails(ctx context.Context, request *v2.ComplianceCheckDetailRequest) (*v2.ComplianceClusterCheckStatus, error) {
@@ -523,8 +523,8 @@ func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQu
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve count of compliance scan results for query %v", parsedQuery)
 	}
 
-	return &v2.ListComplianceResultsResponse{
-		ScanResults: storagetov2.ComplianceV2CheckData(scanResults, checkToRule, checkToControls),
-		TotalCount:  int32(count),
-	}, nil
+	lcrr := &v2.ListComplianceResultsResponse{}
+	lcrr.SetScanResults(storagetov2.ComplianceV2CheckData(scanResults, checkToRule, checkToControls))
+	lcrr.SetTotalCount(int32(count))
+	return lcrr, nil
 }

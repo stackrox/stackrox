@@ -96,10 +96,10 @@ func (s *storeImpl) insertIntoImages(
 			}
 		} else {
 			if cve.GetFirstImageOccurrence() == nil {
-				cve.FirstImageOccurrence = timestamppb.New(iTime)
+				cve.SetFirstImageOccurrence(timestamppb.New(iTime))
 			}
 			if cve.GetCveBaseInfo().GetCreatedAt() == nil {
-				cve.GetCveBaseInfo().CreatedAt = timestamppb.New(iTime)
+				cve.GetCveBaseInfo().SetCreatedAt(timestamppb.New(iTime))
 			}
 			cveTimeMap[cve.GetCveBaseInfo().GetCve()] = &timeFields{
 				createdAt:            cve.GetCveBaseInfo().GetCreatedAt().AsTime(),
@@ -141,7 +141,7 @@ func (s *storeImpl) insertIntoImages(
 	// need to clear that data out so that it is not stored with Image thus greatly duplicating data.
 	if cloned.GetScan().GetComponents() != nil {
 		cloned = parts.image.CloneVT()
-		cloned.Scan.Components = nil
+		cloned.GetScan().SetComponents(nil)
 	}
 	serialized, marshalErr := cloned.MarshalVT()
 	if marshalErr != nil {
@@ -333,14 +333,14 @@ func copyFromImageComponentV2Cves(ctx context.Context, tx *postgres.Tx, iTime ti
 	for idx, obj := range objs {
 		// If we have seen this CVE in the image already, set the times consistently.
 		if cveTimes := cveTimeMap[obj.GetCveBaseInfo().GetCve()]; cveTimes != nil {
-			obj.CveBaseInfo.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&cveTimes.createdAt)
-			obj.FirstImageOccurrence = protocompat.ConvertTimeToTimestampOrNil(&cveTimes.firstImageOccurrence)
+			obj.GetCveBaseInfo().SetCreatedAt(protocompat.ConvertTimeToTimestampOrNil(&cveTimes.createdAt))
+			obj.SetFirstImageOccurrence(protocompat.ConvertTimeToTimestampOrNil(&cveTimes.firstImageOccurrence))
 		} else {
 			if obj.GetCveBaseInfo().GetCreatedAt() == nil {
-				obj.CveBaseInfo.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&iTime)
+				obj.GetCveBaseInfo().SetCreatedAt(protocompat.ConvertTimeToTimestampOrNil(&iTime))
 			}
 			if obj.GetFirstImageOccurrence() == nil {
-				obj.FirstImageOccurrence = protocompat.ConvertTimeToTimestampOrNil(&iTime)
+				obj.SetFirstImageOccurrence(protocompat.ConvertTimeToTimestampOrNil(&iTime))
 			}
 		}
 
@@ -393,24 +393,28 @@ func (s *storeImpl) isUpdated(oldImage, image *storage.Image) (bool, bool, error
 	scanUpdated := false
 
 	if protocompat.CompareTimestamps(oldImage.GetMetadata().GetV1().GetCreated(), image.GetMetadata().GetV1().GetCreated()) > 0 {
-		image.Metadata = oldImage.GetMetadata()
+		image.SetMetadata(oldImage.GetMetadata())
 	} else {
 		metadataUpdated = true
 	}
 
 	// We skip rewriting components and cves if scan is not newer, hence we do not need to merge.
 	if protocompat.CompareTimestamps(oldImage.GetScan().GetScanTime(), image.GetScan().GetScanTime()) > 0 {
-		image.Scan = oldImage.GetScan()
+		image.SetScan(oldImage.GetScan())
 	} else {
 		scanUpdated = true
 	}
 
 	// If the image in the DB is latest, then use its risk score and scan stats
 	if !scanUpdated {
-		image.RiskScore = oldImage.GetRiskScore()
+		image.SetRiskScore(oldImage.GetRiskScore())
+		// DO NOT SUBMIT: Migrate the direct oneof field access (go/go-opaque-special-cases/oneof.md).
 		image.SetComponents = oldImage.GetSetComponents()
+		// DO NOT SUBMIT: Migrate the direct oneof field access (go/go-opaque-special-cases/oneof.md).
 		image.SetCves = oldImage.GetSetCves()
+		// DO NOT SUBMIT: Migrate the direct oneof field access (go/go-opaque-special-cases/oneof.md).
 		image.SetFixable = oldImage.GetSetFixable()
+		// DO NOT SUBMIT: Migrate the direct oneof field access (go/go-opaque-special-cases/oneof.md).
 		image.SetTopCvss = oldImage.GetSetTopCvss()
 	}
 	return metadataUpdated, scanUpdated, nil
@@ -425,9 +429,7 @@ func populateImageScanHash(scan *storage.ImageScan) error {
 	if err != nil {
 		return errors.Wrap(err, "calculating hash for image scan")
 	}
-	scan.Hashoneof = &storage.ImageScan_Hash{
-		Hash: hash,
-	}
+	scan.SetHash(hash)
 	return nil
 }
 
@@ -435,7 +437,7 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 	iTime := time.Now()
 
 	if !s.noUpdateTimestamps {
-		obj.LastUpdated = protocompat.ConvertTimeToTimestampOrNil(&iTime)
+		obj.SetLastUpdated(protocompat.ConvertTimeToTimestampOrNil(&iTime))
 	}
 
 	oldImage, _, err := s.GetImageMetadata(ctx, obj.GetId())
@@ -731,7 +733,7 @@ func getLegacyImageCVEs(ctx context.Context, tx *postgres.Tx, imageID string) ([
 			continue
 		}
 		vuln := convertutils.ImageCVEToEmbeddedVulnerability(cve)
-		vuln.FirstImageOccurrence = edge.GetFirstImageOccurrence()
+		vuln.SetFirstImageOccurrence(edge.GetFirstImageOccurrence())
 		vulns = append(vulns, vuln)
 	}
 
@@ -967,7 +969,7 @@ func (s *storeImpl) retryableUpdateVulnState(ctx context.Context, cve string, im
 	// Update state.
 	cveIDs := make([]string, 0, len(imageCVEs))
 	for _, compCVE := range imageCVEs {
-		compCVE.State = state
+		compCVE.SetState(state)
 		cveIDs = append(cveIDs, compCVE.GetId())
 	}
 
@@ -1061,9 +1063,8 @@ func (s *storeImpl) isComponentsTableEmpty(ctx context.Context, imageID string) 
 func applyDefaultSort(q *v1.Query) *v1.Query {
 	q = sortfields.TransformSortOptions(q, pkgSchema.ImagesSchema.OptionsMap)
 
-	defaultSortOption := &v1.QuerySortOption{
-		Field: search.LastUpdatedTime.String(),
-	}
+	defaultSortOption := &v1.QuerySortOption{}
+	defaultSortOption.SetField(search.LastUpdatedTime.String())
 	// Add pagination sort order if needed.
 	return paginated.FillDefaultSortOption(q, defaultSortOption.CloneVT())
 }

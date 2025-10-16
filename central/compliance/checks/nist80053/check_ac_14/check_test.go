@@ -21,28 +21,26 @@ func setupMockCtx(ctrl *gomock.Controller, k8sRoles []*storage.K8SRole, roleBind
 
 func createRoleAndBindToSubject(clusterRole bool, ns string, subjectName string, subjectKind storage.SubjectKind, rules []*storage.PolicyRule) (*storage.K8SRole, *storage.K8SRoleBinding) {
 	roleID := uuid.NewV4().String()
-	role := &storage.K8SRole{
-		Id:          roleID,
-		Name:        roleID,
-		Namespace:   ns,
-		ClusterRole: clusterRole,
-		Rules:       rules,
-	}
+	role := &storage.K8SRole{}
+	role.SetId(roleID)
+	role.SetName(roleID)
+	role.SetNamespace(ns)
+	role.SetClusterRole(clusterRole)
+	role.SetRules(rules)
 	bindingID := uuid.NewV4().String()
-	roleBinding := &storage.K8SRoleBinding{
-		Id:          bindingID,
-		Name:        bindingID,
-		Namespace:   ns,
-		ClusterRole: clusterRole,
-		Subjects: []*storage.Subject{
-			{
-				Name:      subjectName,
-				Namespace: ns,
-				Kind:      subjectKind,
-			},
-		},
-		RoleId: roleID,
-	}
+	subject := &storage.Subject{}
+	subject.SetName(subjectName)
+	subject.SetNamespace(ns)
+	subject.SetKind(subjectKind)
+	roleBinding := &storage.K8SRoleBinding{}
+	roleBinding.SetId(bindingID)
+	roleBinding.SetName(bindingID)
+	roleBinding.SetNamespace(ns)
+	roleBinding.SetClusterRole(clusterRole)
+	roleBinding.SetSubjects([]*storage.Subject{
+		subject,
+	})
+	roleBinding.SetRoleId(roleID)
 
 	return role, roleBinding
 }
@@ -56,35 +54,35 @@ type testCase struct {
 
 func TestCheckAC14(t *testing.T) {
 
+	pr := &storage.PolicyRule{}
+	pr.SetVerbs([]string{"get"})
+	pr.SetNonResourceUrls([]string{"/healthz"})
 	acceptableRole, acceptableBinding := createRoleAndBindToSubject(true, "", systemUnauthenticatedSubject, storage.SubjectKind_GROUP, []*storage.PolicyRule{
-		{
-			Verbs:           []string{"get"},
-			NonResourceUrls: []string{"/healthz"},
-		},
+		pr,
 	})
 
+	pr2 := &storage.PolicyRule{}
+	pr2.SetVerbs([]string{"*"})
+	pr2.SetResources([]string{"*"})
+	pr2.SetApiGroups([]string{"*"})
 	unrelatedRole, unrelatedBinding := createRoleAndBindToSubject(true, "", "unrelated", storage.SubjectKind_GROUP, []*storage.PolicyRule{
-		{
-			Verbs:     []string{"*"},
-			Resources: []string{"*"},
-			ApiGroups: []string{"*"},
-		},
+		pr2,
 	})
 
+	pr3 := &storage.PolicyRule{}
+	pr3.SetVerbs([]string{"get"})
+	pr3.SetApiGroups([]string{"extensions/v1beta1"})
+	pr3.SetResources([]string{"networkpolicies"})
 	netpolRole, netpolBinding := createRoleAndBindToSubject(true, "", systemUnauthenticatedSubject, storage.SubjectKind_GROUP, []*storage.PolicyRule{
-		{
-			Verbs:     []string{"get"},
-			ApiGroups: []string{"extensions/v1beta1"},
-			Resources: []string{"networkpolicies"},
-		},
+		pr3,
 	})
 
+	pr4 := &storage.PolicyRule{}
+	pr4.SetVerbs([]string{"get"})
+	pr4.SetApiGroups([]string{"extensions/v1beta1"})
+	pr4.SetResources([]string{"networkpolicies"})
 	namespacedRole, namespacedBinding := createRoleAndBindToSubject(false, "fake-ns", systemUnauthenticatedSubject, storage.SubjectKind_GROUP, []*storage.PolicyRule{
-		{
-			Verbs:     []string{"get"},
-			ApiGroups: []string{"extensions/v1beta1"},
-			Resources: []string{"networkpolicies"},
-		},
+		pr4,
 	})
 
 	for _, tc := range []testCase{

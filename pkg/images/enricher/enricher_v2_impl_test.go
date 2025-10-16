@@ -72,11 +72,11 @@ func TestEnricherV2Flow(t *testing.T) {
 				FetchOpt: UseCachesIfPossible,
 			},
 			inMetadataCache: false,
-			image: &storage.ImageV2{
-				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+			image: storage.ImageV2_builder{
+				Id:     utils.NewImageV2ID(storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(), "sha"),
 				Digest: "sha",
-				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
-			},
+				Name:   storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(),
+			}.Build(),
 
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: true,
@@ -95,16 +95,16 @@ func TestEnricherV2Flow(t *testing.T) {
 			inMetadataCache:      true,
 			shortCircuitRegistry: false,
 			shortCircuitScanner:  true,
-			image: &storage.ImageV2{
-				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+			image: storage.ImageV2_builder{
+				Id:     utils.NewImageV2ID(storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(), "sha"),
 				Digest: "sha",
-				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
-			},
-			imageGetter: imageGetterV2FromImage(&storage.ImageV2{
-				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+				Name:   storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(),
+			}.Build(),
+			imageGetter: imageGetterV2FromImage(storage.ImageV2_builder{
+				Id:     utils.NewImageV2ID(storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(), "sha"),
 				Digest: "sha",
-				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
-				Scan:   &storage.ImageScan{}}),
+				Name:   storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(),
+				Scan:   &storage.ImageScan{}}.Build()),
 
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: false,
@@ -121,11 +121,11 @@ func TestEnricherV2Flow(t *testing.T) {
 				FetchOpt: ForceRefetch,
 			},
 			inMetadataCache: true,
-			image: &storage.ImageV2{
-				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+			image: storage.ImageV2_builder{
+				Id:     utils.NewImageV2ID(storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(), "sha"),
 				Digest: "sha",
-				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
-			},
+				Name:   storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(),
+			}.Build(),
 
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: true,
@@ -142,11 +142,11 @@ func TestEnricherV2Flow(t *testing.T) {
 				FetchOpt: UseImageNamesRefetchCachedValues,
 			},
 			inMetadataCache: true,
-			image: &storage.ImageV2{
-				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+			image: storage.ImageV2_builder{
+				Id:     utils.NewImageV2ID(storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(), "sha"),
 				Digest: "sha",
-				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
-			},
+				Name:   storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(),
+			}.Build(),
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: true,
 				requestedScan:     true,
@@ -162,11 +162,11 @@ func TestEnricherV2Flow(t *testing.T) {
 				FetchOpt: ForceRefetchScansOnly,
 			},
 			inMetadataCache: true,
-			image: &storage.ImageV2{
-				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+			image: storage.ImageV2_builder{
+				Id:     utils.NewImageV2ID(storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(), "sha"),
 				Digest: "sha",
-				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
-			},
+				Name:   storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(),
+			}.Build(),
 
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: false,
@@ -185,11 +185,11 @@ func TestEnricherV2Flow(t *testing.T) {
 				ScannerTypeHint: "type-test",
 			},
 			inMetadataCache: true,
-			image: &storage.ImageV2{
-				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+			image: storage.ImageV2_builder{
+				Id:     utils.NewImageV2ID(storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(), "sha"),
 				Digest: "sha",
-				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
-			},
+				Name:   storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(),
+			}.Build(),
 
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: false,
@@ -207,11 +207,11 @@ func TestEnricherV2Flow(t *testing.T) {
 				ScannerTypeHint: "type",
 			},
 			inMetadataCache: true,
-			image: &storage.ImageV2{
-				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+			image: storage.ImageV2_builder{
+				Id:     utils.NewImageV2ID(storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(), "sha"),
 				Digest: "sha",
-				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
-			},
+				Name:   storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(),
+			}.Build(),
 
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: false,
@@ -230,11 +230,11 @@ func TestEnricherV2Flow(t *testing.T) {
 			inMetadataCache:      false,
 			shortCircuitRegistry: true,
 			shortCircuitScanner:  true,
-			image: &storage.ImageV2{
-				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+			image: storage.ImageV2_builder{
+				Id:     utils.NewImageV2ID(storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(), "sha"),
 				Digest: "sha",
-				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
-			},
+				Name:   storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(),
+			}.Build(),
 
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: false,
@@ -253,13 +253,13 @@ func TestEnricherV2Flow(t *testing.T) {
 			inMetadataCache:      false,
 			shortCircuitRegistry: false,
 			shortCircuitScanner:  true,
-			image: &storage.ImageV2{
-				Id:       utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+			image: storage.ImageV2_builder{
+				Id:       utils.NewImageV2ID(storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(), "sha"),
 				Digest:   "sha",
 				Metadata: &storage.ImageMetadata{},
 				Scan:     &storage.ImageScan{},
-				Name:     &storage.ImageName{Registry: "reg", FullName: "reg"},
-			},
+				Name:     storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(),
+			}.Build(),
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: false,
 				requestedScan:     false,
@@ -275,12 +275,12 @@ func TestEnricherV2Flow(t *testing.T) {
 				FetchOpt: IgnoreExistingImages,
 			},
 			inMetadataCache: false,
-			image: &storage.ImageV2{
-				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+			image: storage.ImageV2_builder{
+				Id:     utils.NewImageV2ID(storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(), "sha"),
 				Digest: "sha",
-				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
+				Name:   storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(),
 				Scan:   &storage.ImageScan{},
-			},
+			}.Build(),
 			imageGetter: imageGetterV2PanicOnCall,
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: true,
@@ -299,13 +299,13 @@ func TestEnricherV2Flow(t *testing.T) {
 			inMetadataCache:      true,
 			shortCircuitRegistry: false,
 			shortCircuitScanner:  false,
-			image: &storage.ImageV2{
-				Id:       utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+			image: storage.ImageV2_builder{
+				Id:       utils.NewImageV2ID(storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(), "sha"),
 				Digest:   "sha",
 				Metadata: &storage.ImageMetadata{},
 				Scan:     &storage.ImageScan{},
-				Name:     &storage.ImageName{Registry: "reg", FullName: "reg"},
-			},
+				Name:     storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(),
+			}.Build(),
 			imageGetter: imageGetterV2PanicOnCall,
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: false,
@@ -411,11 +411,16 @@ func TestCVESuppressionV2(t *testing.T) {
 		signatureFetcher:           &fakeSigFetcher{},
 	}
 
-	img := &storage.ImageV2{
-		Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
-		Digest: "sha",
-		Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
-	}
+	imageName := &storage.ImageName{}
+	imageName.SetRegistry("reg")
+	imageName.SetFullName("reg")
+	imageName2 := &storage.ImageName{}
+	imageName2.SetRegistry("reg")
+	imageName2.SetFullName("reg")
+	img := &storage.ImageV2{}
+	img.SetId(utils.NewImageV2ID(imageName, "sha"))
+	img.SetDigest("sha")
+	img.SetName(imageName2)
 	results, err := enricherImpl.EnrichImage(emptyCtx, EnrichmentContext{}, img)
 	require.NoError(t, err)
 	assert.True(t, results.ImageUpdated)
@@ -441,11 +446,16 @@ func TestZeroIntegrationsV2(t *testing.T) {
 
 	enricherImpl := newEnricherV2(set, mockReporter)
 
-	img := &storage.ImageV2{
-		Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
-		Digest: "sha",
-		Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
-	}
+	imageName := &storage.ImageName{}
+	imageName.SetRegistry("reg")
+	imageName.SetFullName("reg")
+	imageName2 := &storage.ImageName{}
+	imageName2.SetRegistry("reg")
+	imageName2.SetFullName("reg")
+	img := &storage.ImageV2{}
+	img.SetId(utils.NewImageV2ID(imageName, "sha"))
+	img.SetDigest("sha")
+	img.SetName(imageName2)
 	results, err := enricherImpl.EnrichImage(emptyCtx, EnrichmentContext{}, img)
 	assert.Error(t, err)
 	expectedErrMsg := "image enrichment error: error getting metadata for image: reg error: not found: " +
@@ -473,11 +483,16 @@ func TestZeroIntegrationsInternalV2(t *testing.T) {
 
 	enricherImpl := newEnricherV2(set, mockReporter)
 
-	img := &storage.ImageV2{
-		Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
-		Digest: "sha",
-		Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
-	}
+	imageName := &storage.ImageName{}
+	imageName.SetRegistry("reg")
+	imageName.SetFullName("reg")
+	imageName2 := &storage.ImageName{}
+	imageName2.SetRegistry("reg")
+	imageName2.SetFullName("reg")
+	img := &storage.ImageV2{}
+	img.SetId(utils.NewImageV2ID(imageName, "sha"))
+	img.SetDigest("sha")
+	img.SetName(imageName2)
 	results, err := enricherImpl.EnrichImage(emptyCtx, EnrichmentContext{Internal: true}, img)
 	assert.NoError(t, err)
 	assert.False(t, results.ImageUpdated)
@@ -504,11 +519,14 @@ func TestRegistryMissingFromImageV2(t *testing.T) {
 
 	enricherImpl := newEnricherV2(set, mockReporter)
 
-	img := &storage.ImageV2{
-		Id:     utils.NewImageV2ID(&storage.ImageName{FullName: "testimage"}, "sha"),
-		Digest: "sha",
-		Name:   &storage.ImageName{FullName: "testimage"},
-	}
+	imageName := &storage.ImageName{}
+	imageName.SetFullName("testimage")
+	imageName2 := &storage.ImageName{}
+	imageName2.SetFullName("testimage")
+	img := &storage.ImageV2{}
+	img.SetId(utils.NewImageV2ID(imageName, "sha"))
+	img.SetDigest("sha")
+	img.SetName(imageName2)
 	results, err := enricherImpl.EnrichImage(emptyCtx, EnrichmentContext{}, img)
 	assert.Error(t, err)
 	expectedErrMsg := fmt.Sprintf("image enrichment error: error getting metadata for image: %s "+
@@ -540,11 +558,16 @@ func TestZeroRegistryIntegrationsV2(t *testing.T) {
 
 	enricherImpl := newEnricherV2(set, mockReporter)
 
-	img := &storage.ImageV2{
-		Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
-		Digest: "sha",
-		Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
-	}
+	imageName := &storage.ImageName{}
+	imageName.SetRegistry("reg")
+	imageName.SetFullName("reg")
+	imageName2 := &storage.ImageName{}
+	imageName2.SetRegistry("reg")
+	imageName2.SetFullName("reg")
+	img := &storage.ImageV2{}
+	img.SetId(utils.NewImageV2ID(imageName, "sha"))
+	img.SetDigest("sha")
+	img.SetName(imageName2)
 	results, err := enricherImpl.EnrichImage(emptyCtx, EnrichmentContext{}, img)
 	assert.Error(t, err)
 	expectedErrMsg := "image enrichment error: error getting metadata for image: reg error: not found: " +
@@ -576,11 +599,16 @@ func TestNoMatchingRegistryIntegrationV2(t *testing.T) {
 	mockReporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).AnyTimes()
 	enricherImpl := newEnricherV2(set, mockReporter)
 
-	img := &storage.ImageV2{
-		Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
-		Digest: "sha",
-		Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
-	}
+	imageName := &storage.ImageName{}
+	imageName.SetRegistry("reg")
+	imageName.SetFullName("reg")
+	imageName2 := &storage.ImageName{}
+	imageName2.SetRegistry("reg")
+	imageName2.SetFullName("reg")
+	img := &storage.ImageV2{}
+	img.SetId(utils.NewImageV2ID(imageName, "sha"))
+	img.SetDigest("sha")
+	img.SetName(imageName2)
 	results, err := enricherImpl.EnrichImage(emptyCtx, EnrichmentContext{}, img)
 	assert.Error(t, err)
 	expectedErrMsg := "image enrichment error: error getting metadata for image: reg error: no matching image " +
@@ -611,11 +639,16 @@ func TestZeroScannerIntegrationsV2(t *testing.T) {
 	mockReporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).AnyTimes()
 	enricherImpl := newEnricherV2(set, mockReporter)
 
-	img := &storage.ImageV2{
-		Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
-		Digest: "sha",
-		Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
-	}
+	imageName := &storage.ImageName{}
+	imageName.SetRegistry("reg")
+	imageName.SetFullName("reg")
+	imageName2 := &storage.ImageName{}
+	imageName2.SetRegistry("reg")
+	imageName2.SetFullName("reg")
+	img := &storage.ImageV2{}
+	img.SetId(utils.NewImageV2ID(imageName, "sha"))
+	img.SetDigest("sha")
+	img.SetName(imageName2)
 	results, err := enricherImpl.EnrichImage(emptyCtx, EnrichmentContext{}, img)
 	assert.Error(t, err)
 	expectedErrMsg := "image enrichment error: error scanning image: reg error: no image scanners are integrated"
@@ -635,11 +668,11 @@ func TestEnrichWithSignatureV2_Success(t *testing.T) {
 		sigIntegrationGetter SignatureIntegrationGetter
 	}{
 		"signatures found without pre-existing signatures": {
-			img: &storage.ImageV2{
-				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+			img: storage.ImageV2_builder{
+				Id:     utils.NewImageV2ID(storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(), "sha"),
 				Digest: "sha",
-				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
-			},
+				Name:   storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(),
+			}.Build(),
 			ctx: EnrichmentContext{FetchOpt: ForceRefetchSignaturesOnly},
 			sigFetcher: &fakeSigFetcher{sigs: []*storage.Signature{
 				createSignature("rawsignature", "rawpayload")}},
@@ -652,18 +685,18 @@ func TestEnrichWithSignatureV2_Success(t *testing.T) {
 		},
 		"cached values should be respected": {
 			ctx: EnrichmentContext{FetchOpt: UseCachesIfPossible},
-			img: &storage.ImageV2{Id: "id", Digest: "sha", Name: &storage.ImageName{Registry: "reg"}, Signature: &storage.ImageSignature{
-				Signatures: []*storage.Signature{createSignature("rawsignature", "rawpayload")}},
-			},
+			img: storage.ImageV2_builder{Id: "id", Digest: "sha", Name: storage.ImageName_builder{Registry: "reg"}.Build(), Signature: storage.ImageSignature_builder{
+				Signatures: []*storage.Signature{createSignature("rawsignature", "rawpayload")}}.Build(),
+			}.Build(),
 			expectedSigs:         []*storage.Signature{createSignature("rawsignature", "rawpayload")},
 			sigIntegrationGetter: fakeSignatureIntegrationGetter("test", false),
 		},
 		"fetched signatures contains duplicate": {
-			img: &storage.ImageV2{
-				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+			img: storage.ImageV2_builder{
+				Id:     utils.NewImageV2ID(storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(), "sha"),
 				Digest: "sha",
-				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
-			},
+				Name:   storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(),
+			}.Build(),
 			ctx: EnrichmentContext{FetchOpt: ForceRefetchSignaturesOnly},
 			sigFetcher: &fakeSigFetcher{sigs: []*storage.Signature{
 				createSignature("rawsignature", "rawpayload"),
@@ -677,20 +710,20 @@ func TestEnrichWithSignatureV2_Success(t *testing.T) {
 			sigIntegrationGetter: emptySignatureIntegrationGetter,
 		},
 		"enrichment should be skipped if only default Red Hat integration available and not Red Hat image": {
-			img: &storage.ImageV2{
-				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "not-redhat.io", FullName: "not-redhat.io"}, "sha"),
+			img: storage.ImageV2_builder{
+				Id:     utils.NewImageV2ID(storage.ImageName_builder{Registry: "not-redhat.io", FullName: "not-redhat.io"}.Build(), "sha"),
 				Digest: "sha",
-				Name:   &storage.ImageName{Registry: "not-redhat.io", FullName: "not-redhat.io"},
-			},
+				Name:   storage.ImageName_builder{Registry: "not-redhat.io", FullName: "not-redhat.io"}.Build(),
+			}.Build(),
 			ctx:                  EnrichmentContext{FetchOpt: NoExternalMetadata},
 			sigIntegrationGetter: defaultRedHatSignatureIntegrationGetter,
 		},
 		"enrichment should be performed if only default Red Hat integration available and Red Hat image": {
-			img: &storage.ImageV2{
-				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "registry.redhat.io", FullName: "registry.redhat.io"}, "sha"),
+			img: storage.ImageV2_builder{
+				Id:     utils.NewImageV2ID(storage.ImageName_builder{Registry: "registry.redhat.io", FullName: "registry.redhat.io"}.Build(), "sha"),
 				Digest: "sha",
-				Name:   &storage.ImageName{Registry: "registry.redhat.io", FullName: "registry.redhat.io"},
-			},
+				Name:   storage.ImageName_builder{Registry: "registry.redhat.io", FullName: "registry.redhat.io"}.Build(),
+			}.Build(),
 			ctx: EnrichmentContext{FetchOpt: ForceRefetchSignaturesOnly},
 			sigFetcher: &fakeSigFetcher{sigs: []*storage.Signature{
 				createSignature("rawsignature", "rawpayload")}},
@@ -699,11 +732,11 @@ func TestEnrichWithSignatureV2_Success(t *testing.T) {
 			sigIntegrationGetter: defaultRedHatSignatureIntegrationGetter,
 		},
 		"enrichment should be performed for any image if several integrations available": {
-			img: &storage.ImageV2{
-				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "not-redhat.io", FullName: "not-redhat.io"}, "sha"),
+			img: storage.ImageV2_builder{
+				Id:     utils.NewImageV2ID(storage.ImageName_builder{Registry: "not-redhat.io", FullName: "not-redhat.io"}.Build(), "sha"),
 				Digest: "sha",
-				Name:   &storage.ImageName{Registry: "not-redhat.io", FullName: "not-redhat.io"},
-			},
+				Name:   storage.ImageName_builder{Registry: "not-redhat.io", FullName: "not-redhat.io"}.Build(),
+			}.Build(),
 			ctx: EnrichmentContext{FetchOpt: ForceRefetchSignaturesOnly},
 			sigFetcher: &fakeSigFetcher{sigs: []*storage.Signature{
 				createSignature("rawsignature", "rawpayload")}},
@@ -763,28 +796,28 @@ func TestEnrichWithSignatureV2_Failures(t *testing.T) {
 		err            error
 	}{
 		"no registry set for the image": {
-			img: &storage.ImageV2{
-				Id:     utils.NewImageV2ID(&storage.ImageName{FullName: "fullname"}, "sha"),
+			img: storage.ImageV2_builder{
+				Id:     utils.NewImageV2ID(storage.ImageName_builder{FullName: "fullname"}.Build(), "sha"),
 				Digest: "sha",
-				Name:   &storage.ImageName{FullName: "fullname"},
-			},
+				Name:   storage.ImageName_builder{FullName: "fullname"}.Build(),
+			}.Build(),
 			err: errox.InvalidArgs,
 		},
 		"no registry available": {
-			img: &storage.ImageV2{
-				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+			img: storage.ImageV2_builder{
+				Id:     utils.NewImageV2ID(storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(), "sha"),
 				Digest: "sha",
-				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
-			},
+				Name:   storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(),
+			}.Build(),
 			integrationSet: emptyIntegrationSetMock,
 			err:            errox.NotFound,
 		},
 		"no matching registry found": {
-			img: &storage.ImageV2{
-				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+			img: storage.ImageV2_builder{
+				Id:     utils.NewImageV2ID(storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(), "sha"),
 				Digest: "sha",
-				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
-			},
+				Name:   storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(),
+			}.Build(),
 			integrationSet: nonMatchingIntegrationSetMock,
 			err:            errox.NotFound,
 		},
@@ -816,11 +849,11 @@ func TestEnrichWithSignatureVerificationDataV2_Success(t *testing.T) {
 		ctx                         EnrichmentContext
 	}{
 		"verification result found without pre-existing verification results": {
-			img: &storage.ImageV2{
-				Id:        utils.NewImageV2ID(&storage.ImageName{FullName: "test:1.0"}, "sha"),
+			img: storage.ImageV2_builder{
+				Id:        utils.NewImageV2ID(storage.ImageName_builder{FullName: "test:1.0"}.Build(), "sha"),
 				Digest:    "sha",
-				Name:      &storage.ImageName{FullName: "test:1.0"},
-				Signature: &storage.ImageSignature{Signatures: []*storage.Signature{createSignature("sig1", "payload1")}}},
+				Name:      storage.ImageName_builder{FullName: "test:1.0"}.Build(),
+				Signature: storage.ImageSignature_builder{Signatures: []*storage.Signature{createSignature("sig1", "payload1")}}.Build()}.Build(),
 			sigVerifier: func(ctx context.Context, integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult {
 				return []*storage.ImageSignatureVerificationResult{
 					createSignatureVerificationResult("verifier1", storage.ImageSignatureVerificationResult_VERIFIED, "test:1.0"),
@@ -835,40 +868,40 @@ func TestEnrichWithSignatureVerificationDataV2_Success(t *testing.T) {
 			ctx:     EnrichmentContext{FetchOpt: ForceRefetch},
 		},
 		"empty signature integrations without pre-existing verification results": {
-			img: &storage.ImageV2{
-				Id:        utils.NewImageV2ID(&storage.ImageName{FullName: "test:1.0"}, "sha"),
+			img: storage.ImageV2_builder{
+				Id:        utils.NewImageV2ID(storage.ImageName_builder{FullName: "test:1.0"}.Build(), "sha"),
 				Digest:    "sha",
-				Name:      &storage.ImageName{FullName: "test:1.0"},
-				Signature: &storage.ImageSignature{Signatures: []*storage.Signature{createSignature("sig1", "payload1")}}},
+				Name:      storage.ImageName_builder{FullName: "test:1.0"}.Build(),
+				Signature: storage.ImageSignature_builder{Signatures: []*storage.Signature{createSignature("sig1", "payload1")}}.Build()}.Build(),
 			sigIntegrationGetter: emptySignatureIntegrationGetter,
 			ctx:                  EnrichmentContext{FetchOpt: ForceRefetch},
 		},
 		"empty signature integration with pre-existing verification results": {
-			img: &storage.ImageV2{
-				Id:        utils.NewImageV2ID(&storage.ImageName{FullName: "test:1.0"}, "sha"),
+			img: storage.ImageV2_builder{
+				Id:        utils.NewImageV2ID(storage.ImageName_builder{FullName: "test:1.0"}.Build(), "sha"),
 				Digest:    "sha",
-				Name:      &storage.ImageName{FullName: "test:1.0"},
-				Signature: &storage.ImageSignature{Signatures: []*storage.Signature{createSignature("sig1", "payload1")}},
-				SignatureVerificationData: &storage.ImageSignatureVerificationData{
+				Name:      storage.ImageName_builder{FullName: "test:1.0"}.Build(),
+				Signature: storage.ImageSignature_builder{Signatures: []*storage.Signature{createSignature("sig1", "payload1")}}.Build(),
+				SignatureVerificationData: storage.ImageSignatureVerificationData_builder{
 					Results: []*storage.ImageSignatureVerificationResult{
 						createSignatureVerificationResult("verifier1",
 							storage.ImageSignatureVerificationResult_VERIFIED, "test:1.0"),
-					}}},
+					}}.Build()}.Build(),
 			sigIntegrationGetter: emptySignatureIntegrationGetter,
 			ctx:                  EnrichmentContext{FetchOpt: UseCachesIfPossible},
 			updated:              true,
 		},
 		"cached values should be respected": {
-			img: &storage.ImageV2{
-				Id:        utils.NewImageV2ID(&storage.ImageName{FullName: "test:1.0"}, "sha"),
+			img: storage.ImageV2_builder{
+				Id:        utils.NewImageV2ID(storage.ImageName_builder{FullName: "test:1.0"}.Build(), "sha"),
 				Digest:    "sha",
-				Name:      &storage.ImageName{FullName: "test:1.0"},
-				Signature: &storage.ImageSignature{Signatures: []*storage.Signature{createSignature("sig1", "payload1")}},
-				SignatureVerificationData: &storage.ImageSignatureVerificationData{
+				Name:      storage.ImageName_builder{FullName: "test:1.0"}.Build(),
+				Signature: storage.ImageSignature_builder{Signatures: []*storage.Signature{createSignature("sig1", "payload1")}}.Build(),
+				SignatureVerificationData: storage.ImageSignatureVerificationData_builder{
 					Results: []*storage.ImageSignatureVerificationResult{
 						createSignatureVerificationResult("verifier1",
 							storage.ImageSignatureVerificationResult_VERIFIED, "test:1.0"),
-					}}},
+					}}.Build()}.Build(),
 			sigIntegrationGetter: fakeSignatureIntegrationGetter("verifier1", false),
 			ctx:                  EnrichmentContext{FetchOpt: UseCachesIfPossible},
 			expectedVerificationResults: []*storage.ImageSignatureVerificationResult{
@@ -877,30 +910,30 @@ func TestEnrichWithSignatureVerificationDataV2_Success(t *testing.T) {
 			},
 		},
 		"no external metadata should be respected": {
-			img: &storage.ImageV2{
-				Id:     utils.NewImageV2ID(&storage.ImageName{FullName: "test:1.0"}, "sha"),
+			img: storage.ImageV2_builder{
+				Id:     utils.NewImageV2ID(storage.ImageName_builder{FullName: "test:1.0"}.Build(), "sha"),
 				Digest: "sha",
-				Name:   &storage.ImageName{FullName: "test:1.0"},
-			},
+				Name:   storage.ImageName_builder{FullName: "test:1.0"}.Build(),
+			}.Build(),
 			ctx: EnrichmentContext{FetchOpt: NoExternalMetadata},
 		},
 		"empty signature without pre-existing verification results": {
-			img: &storage.ImageV2{
-				Id:     utils.NewImageV2ID(&storage.ImageName{FullName: "test:1.0"}, "sha"),
+			img: storage.ImageV2_builder{
+				Id:     utils.NewImageV2ID(storage.ImageName_builder{FullName: "test:1.0"}.Build(), "sha"),
 				Digest: "sha",
-				Name:   &storage.ImageName{FullName: "test:1.0"},
-			},
+				Name:   storage.ImageName_builder{FullName: "test:1.0"}.Build(),
+			}.Build(),
 		},
 		"empty signature with pre-existing verification results": {
-			img: &storage.ImageV2{
-				Id:     utils.NewImageV2ID(&storage.ImageName{FullName: "test:1.0"}, "sha"),
+			img: storage.ImageV2_builder{
+				Id:     utils.NewImageV2ID(storage.ImageName_builder{FullName: "test:1.0"}.Build(), "sha"),
 				Digest: "sha",
-				Name:   &storage.ImageName{FullName: "test:1.0"},
-				SignatureVerificationData: &storage.ImageSignatureVerificationData{
+				Name:   storage.ImageName_builder{FullName: "test:1.0"}.Build(),
+				SignatureVerificationData: storage.ImageSignatureVerificationData_builder{
 					Results: []*storage.ImageSignatureVerificationResult{
 						createSignatureVerificationResult("verifier1",
 							storage.ImageSignatureVerificationResult_VERIFIED, "test:1.0"),
-					}}},
+					}}.Build()}.Build(),
 			ctx:     EnrichmentContext{FetchOpt: UseCachesIfPossible},
 			updated: true,
 		},
@@ -926,13 +959,17 @@ func TestEnrichWithSignatureVerificationDataV2_Failure(t *testing.T) {
 	e := enricherV2Impl{
 		signatureIntegrationGetter: fakeSignatureIntegrationGetter("", true),
 	}
-	img := &storage.ImageV2{
-		Id:     utils.NewImageV2ID(&storage.ImageName{FullName: "test:1.0"}, "sha"),
-		Digest: "sha",
-		Name:   &storage.ImageName{FullName: "test:1.0"},
-		Signature: &storage.ImageSignature{
-			Signatures: []*storage.Signature{createSignature("sig", "pay")},
-		}}
+	imageName := &storage.ImageName{}
+	imageName.SetFullName("test:1.0")
+	imageName2 := &storage.ImageName{}
+	imageName2.SetFullName("test:1.0")
+	is := &storage.ImageSignature{}
+	is.SetSignatures([]*storage.Signature{createSignature("sig", "pay")})
+	img := &storage.ImageV2{}
+	img.SetId(utils.NewImageV2ID(imageName, "sha"))
+	img.SetDigest("sha")
+	img.SetName(imageName2)
+	img.SetSignature(is)
 
 	updated, err := e.enrichWithSignatureVerificationData(emptyCtx,
 		EnrichmentContext{FetchOpt: ForceRefetch}, img)
@@ -1015,13 +1052,13 @@ func TestDelegateEnrichImageV2(t *testing.T) {
 	t.Run("delegate enrich cached image", func(t *testing.T) {
 		setup(t)
 		dele.EXPECT().GetDelegateClusterID(emptyCtx, gomock.Any()).Return("cluster-id", true, nil)
-		img := &storage.ImageV2{
-			Id:       utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+		img := storage.ImageV2_builder{
+			Id:       utils.NewImageV2ID(storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(), "sha"),
 			Digest:   "sha",
-			Name:     &storage.ImageName{Registry: "reg", FullName: "reg"},
+			Name:     storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(),
 			Metadata: &storage.ImageMetadata{},
 			Scan:     &storage.ImageScan{},
-		}
+		}.Build()
 		e.imageGetter = imageGetterV2FromImage(img)
 
 		should, err := e.delegateEnrichImage(emptyCtx, deleEnrichCtx, img)
@@ -1097,15 +1134,25 @@ func TestFetchFromDatabaseV2_ForceFetch(t *testing.T) {
 	cimg, err := utils.GenerateImageFromString("docker.io/test")
 	require.NoError(t, err)
 	img := imgTypes.ToImageV2(cimg)
-	img.Digest = "sha"
-	img.Name = &storage.ImageName{Registry: "reg", FullName: "reg"}
-	img.Id = utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha")
+	img.SetDigest("sha")
+	imageName := &storage.ImageName{}
+	imageName.SetRegistry("reg")
+	imageName.SetFullName("reg")
+	img.SetName(imageName)
+	imageName2 := &storage.ImageName{}
+	imageName2.SetRegistry("reg")
+	imageName2.SetFullName("reg")
+	img.SetId(utils.NewImageV2ID(imageName2, "sha"))
 
 	e := &enricherV2Impl{
 		imageGetter: func(ctx context.Context, id string) (*storage.ImageV2, bool, error) {
-			img.Signature = &storage.ImageSignature{Signatures: []*storage.Signature{createSignature("test", "test")}}
-			img.SignatureVerificationData = &storage.ImageSignatureVerificationData{Results: []*storage.ImageSignatureVerificationResult{
-				createSignatureVerificationResult("test", storage.ImageSignatureVerificationResult_VERIFIED)}}
+			is := &storage.ImageSignature{}
+			is.SetSignatures([]*storage.Signature{createSignature("test", "test")})
+			img.SetSignature(is)
+			isvd := &storage.ImageSignatureVerificationData{}
+			isvd.SetResults([]*storage.ImageSignatureVerificationResult{
+				createSignatureVerificationResult("test", storage.ImageSignatureVerificationResult_VERIFIED)})
+			img.SetSignatureVerificationData(isvd)
 			return img, true, nil
 		},
 	}
@@ -1122,20 +1169,19 @@ func TestUpdateImageFromDatabaseV2_Metadata(t *testing.T) {
 	cimg, err := utils.GenerateImageFromString("docker.io/test")
 	require.NoError(t, err)
 	img := imgTypes.ToImageV2(cimg)
-	img.Digest = imageSHA
-	img.Id = utils.NewImageV2ID(cimg.GetName(), imageSHA)
-	metadata := &storage.ImageMetadata{
-		V1: nil,
-		V2: &storage.V2Metadata{
-			Digest: imageSHA,
-		},
-		Version: 2,
-	}
-	img.Metadata = metadata
+	img.SetDigest(imageSHA)
+	img.SetId(utils.NewImageV2ID(cimg.GetName(), imageSHA))
+	v2m := &storage.V2Metadata{}
+	v2m.SetDigest(imageSHA)
+	metadata := &storage.ImageMetadata{}
+	metadata.ClearV1()
+	metadata.SetV2(v2m)
+	metadata.SetVersion(2)
+	img.SetMetadata(metadata)
 
 	existingImg := imgTypes.ToImageV2(cimg)
-	existingImg.Digest = imageSHA
-	existingImg.Id = utils.NewImageV2ID(cimg.GetName(), imageSHA)
+	existingImg.SetDigest(imageSHA)
+	existingImg.SetId(utils.NewImageV2ID(cimg.GetName(), imageSHA))
 
 	e := &enricherV2Impl{
 		imageGetter: func(_ context.Context, id string) (*storage.ImageV2, bool, error) {
@@ -1169,13 +1215,12 @@ func TestMetadataUpToDateV2(t *testing.T) {
 		e := &enricherV2Impl{
 			integrations: iiSet,
 		}
-		img := &storage.ImageV2{
-			Metadata: &storage.ImageMetadata{
-				DataSource: &storage.DataSource{
-					Id: "does-not-exist",
-				},
-			},
-		}
+		ds := &storage.DataSource{}
+		ds.SetId("does-not-exist")
+		im := &storage.ImageMetadata{}
+		im.SetDataSource(ds)
+		img := &storage.ImageV2{}
+		img.SetMetadata(im)
 		assert.False(t, e.metadataIsValid(img))
 	})
 
@@ -1191,13 +1236,12 @@ func TestMetadataUpToDateV2(t *testing.T) {
 		e := &enricherV2Impl{
 			integrations: iiSet,
 		}
-		img := &storage.ImageV2{
-			Metadata: &storage.ImageMetadata{
-				DataSource: &storage.DataSource{
-					Mirror: "some fake mirror",
-				},
-			},
-		}
+		ds := &storage.DataSource{}
+		ds.SetMirror("some fake mirror")
+		im := &storage.ImageMetadata{}
+		im.SetDataSource(ds)
+		img := &storage.ImageV2{}
+		img.SetMetadata(im)
 		assert.False(t, e.metadataIsValid(img))
 	})
 
@@ -1213,13 +1257,12 @@ func TestMetadataUpToDateV2(t *testing.T) {
 		e := &enricherV2Impl{
 			integrations: iiSet,
 		}
-		img := &storage.ImageV2{
-			Metadata: &storage.ImageMetadata{
-				DataSource: &storage.DataSource{
-					Id: "exists",
-				},
-			},
-		}
+		ds := &storage.DataSource{}
+		ds.SetId("exists")
+		im := &storage.ImageMetadata{}
+		im.SetDataSource(ds)
+		img := &storage.ImageV2{}
+		img.SetMetadata(im)
 		assert.True(t, e.metadataIsValid(img))
 	})
 }

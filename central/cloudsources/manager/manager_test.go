@@ -54,24 +54,24 @@ func TestMatchDiscoveredClusters(t *testing.T) {
 		createCluster("arn:aws:eks:us-east-1:test-account:cluster/test-cluster-3",
 			"test-cluster-3", storage.ClusterMetadata_EKS),
 		nil,
-		{
-			HealthStatus: &storage.ClusterHealthStatus{OverallHealthStatus: storage.ClusterHealthStatus_HEALTHY},
-			Status: &storage.ClusterStatus{
-				ProviderMetadata: &storage.ProviderMetadata{
-					Provider: &storage.ProviderMetadata_Aws{Aws: &storage.AWSProviderMetadata{
+		storage.Cluster_builder{
+			HealthStatus: storage.ClusterHealthStatus_builder{OverallHealthStatus: storage.ClusterHealthStatus_HEALTHY}.Build(),
+			Status: storage.ClusterStatus_builder{
+				ProviderMetadata: storage.ProviderMetadata_builder{
+					Aws: storage.AWSProviderMetadata_builder{
 						AccountId: "666666666666",
-					}},
-				},
-			},
-		},
-		{
-			HealthStatus: &storage.ClusterHealthStatus{OverallHealthStatus: storage.ClusterHealthStatus_UNHEALTHY},
-			Status: &storage.ClusterStatus{
-				ProviderMetadata: &storage.ProviderMetadata{
-					Cluster: &storage.ClusterMetadata{Id: "5553424234234_MC_testing_unsecured_eastus"},
-				},
-			},
-		},
+					}.Build(),
+				}.Build(),
+			}.Build(),
+		}.Build(),
+		storage.Cluster_builder{
+			HealthStatus: storage.ClusterHealthStatus_builder{OverallHealthStatus: storage.ClusterHealthStatus_UNHEALTHY}.Build(),
+			Status: storage.ClusterStatus_builder{
+				ProviderMetadata: storage.ProviderMetadata_builder{
+					Cluster: storage.ClusterMetadata_builder{Id: "5553424234234_MC_testing_unsecured_eastus"}.Build(),
+				}.Build(),
+			}.Build(),
+		}.Build(),
 	}}
 
 	discoveredClusters := []*discoveredclusters.DiscoveredCluster{
@@ -132,17 +132,17 @@ func TestMatchDiscoveredClusters(t *testing.T) {
 }
 
 func createCluster(id, name string, clusterType storage.ClusterMetadata_Type) *storage.Cluster {
-	return &storage.Cluster{
+	return storage.Cluster_builder{
 		Id:           id,
-		HealthStatus: &storage.ClusterHealthStatus{OverallHealthStatus: storage.ClusterHealthStatus_HEALTHY},
-		Status: &storage.ClusterStatus{
-			ProviderMetadata: &storage.ProviderMetadata{
-				Cluster: &storage.ClusterMetadata{
+		HealthStatus: storage.ClusterHealthStatus_builder{OverallHealthStatus: storage.ClusterHealthStatus_HEALTHY}.Build(),
+		Status: storage.ClusterStatus_builder{
+			ProviderMetadata: storage.ProviderMetadata_builder{
+				Cluster: storage.ClusterMetadata_builder{
 					Type: clusterType,
 					Name: name,
 					Id:   id,
-				},
-			},
-		},
-	}
+				}.Build(),
+			}.Build(),
+		}.Build(),
+	}.Build()
 }

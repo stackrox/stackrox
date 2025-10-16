@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/compliance/index"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/message"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -218,7 +219,7 @@ func (c *nodeInventoryHandlerImpl) handleNodeInventory(
 			metrics.AckReasonNodeUnknown)
 
 	} else {
-		inventory.NodeId = nodeID
+		inventory.SetNodeId(nodeID)
 		log.Debugf("Mapping NodeInventory name '%s' to Node ID '%s'", inventory.GetNodeName(), nodeID)
 		c.sendNodeInventory(toCentral, inventory)
 	}
@@ -265,14 +266,12 @@ func (c *nodeInventoryHandlerImpl) sendAckToCompliance(
 	select {
 	case <-c.stopper.Flow().StopRequested():
 	case c.toCompliance <- common.MessageToComplianceWithAddress{
-		Msg: &sensor.MsgToCompliance{
-			Msg: &sensor.MsgToCompliance_Ack{
-				Ack: &sensor.MsgToCompliance_NodeInventoryACK{
-					Action:      action,
-					MessageType: messageType,
-				},
-			},
-		},
+		Msg: sensor.MsgToCompliance_builder{
+			Ack: sensor.MsgToCompliance_NodeInventoryACK_builder{
+				Action:      action,
+				MessageType: messageType,
+			}.Build(),
+		}.Build(),
 		Hostname:  nodeName,
 		Broadcast: nodeName == "",
 	}:
@@ -290,19 +289,15 @@ func (c *nodeInventoryHandlerImpl) sendNodeInventory(toC chan<- *message.Expirin
 	}
 	select {
 	case <-c.stopper.Flow().StopRequested():
-	case toC <- message.New(&central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id: inventory.GetNodeId(),
-				// ResourceAction_UNSET_ACTION_RESOURCE is the only one supported by Central 4.6 and older.
-				// This can be changed to CREATE or UPDATE for Sensor 4.8 or when Central 4.6 is out of support.
-				Action: central.ResourceAction_UNSET_ACTION_RESOURCE,
-				Resource: &central.SensorEvent_NodeInventory{
-					NodeInventory: inventory,
-				},
-			},
-		},
-	}):
+		se := &central.SensorEvent{}
+		se.SetId(inventory.GetNodeId())
+		// ResourceAction_UNSET_ACTION_RESOURCE is the only one supported by Central 4.6 and older.
+		// This can be changed to CREATE or UPDATE for Sensor 4.8 or when Central 4.6 is out of support.
+		se.SetAction(central.ResourceAction_UNSET_ACTION_RESOURCE)
+		se.SetNodeInventory(proto.ValueOrDefault(inventory))
+	case toC <- message.New(central.MsgFromSensor_builder{
+		Event: se,
+	}.Build()):
 		metrics.ObserveReceivedNodeInventory(inventory) // keeping for compatibility with 4.6. Remove in 4.8
 		metrics.ObserveNodeScan(inventory.GetNodeName(), metrics.NodeScanTypeNodeInventory, metrics.NodeScanOperationSendToCentral)
 	}
@@ -339,19 +334,15 @@ func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMes
 			log.Debugf("Attaching OCI entry for 'rhcos' to index-report for node %s: version=%s, arch=%s", indexWrap.NodeName, version, arch)
 			irWrapperFunc = attachRPMtoRHCOS
 		}
-		toC <- message.New(&central.MsgFromSensor{
-			Msg: &central.MsgFromSensor_Event{
-				Event: &central.SensorEvent{
-					Id: indexWrap.NodeID,
-					// ResourceAction_UNSET_ACTION_RESOURCE is the only one supported by Central 4.6 and older.
-					// This can be changed to CREATE or UPDATE for Sensor 4.8 or when Central 4.6 is out of support.
-					Action: central.ResourceAction_UNSET_ACTION_RESOURCE,
-					Resource: &central.SensorEvent_IndexReport{
-						IndexReport: irWrapperFunc(version, arch, indexWrap.IndexReport),
-					},
-				},
-			},
-		})
+		se := &central.SensorEvent{}
+		se.SetId(indexWrap.NodeID)
+		// ResourceAction_UNSET_ACTION_RESOURCE is the only one supported by Central 4.6 and older.
+		// This can be changed to CREATE or UPDATE for Sensor 4.8 or when Central 4.6 is out of support.
+		se.SetAction(central.ResourceAction_UNSET_ACTION_RESOURCE)
+		se.SetIndexReport(proto.ValueOrDefault(irWrapperFunc(version, arch, indexWrap.IndexReport)))
+		toC <- message.New(central.MsgFromSensor_builder{
+			Event: se,
+		}.Build())
 	}
 }
 
@@ -413,117 +404,117 @@ func attachRPMtoRHCOS(version, arch string, rpm *v4.IndexReport) *v4.IndexReport
 	strID := strconv.Itoa(idCandidate)
 	oci := buildRHCOSIndexReport(strID, version, arch)
 	for pkgID, pkg := range rpm.GetContents().GetPackages() {
-		oci.Contents.Packages[pkgID] = pkg
+		oci.GetContents().GetPackages()[pkgID] = pkg
 	}
-	oci.Contents.PackagesDEPRECATED = append(oci.Contents.PackagesDEPRECATED, rpm.GetContents().GetPackagesDEPRECATED()...)
+	oci.GetContents().SetPackagesDEPRECATED(append(oci.GetContents().GetPackagesDEPRECATED(), rpm.GetContents().GetPackagesDEPRECATED()...))
 	for repoID, repo := range rpm.GetContents().GetRepositories() {
-		oci.Contents.Repositories[repoID] = repo
+		oci.GetContents().GetRepositories()[repoID] = repo
 	}
-	oci.Contents.RepositoriesDEPRECATED = append(oci.Contents.RepositoriesDEPRECATED, rpm.GetContents().GetRepositoriesDEPRECATED()...)
+	oci.GetContents().SetRepositoriesDEPRECATED(append(oci.GetContents().GetRepositoriesDEPRECATED(), rpm.GetContents().GetRepositoriesDEPRECATED()...))
 	for envId, list := range rpm.GetContents().GetEnvironments() {
-		oci.Contents.Environments[envId] = list
+		oci.GetContents().GetEnvironments()[envId] = list
 	}
 	for envId, list := range rpm.GetContents().GetEnvironmentsDEPRECATED() {
-		oci.Contents.EnvironmentsDEPRECATED[envId] = list
+		oci.GetContents().GetEnvironmentsDEPRECATED()[envId] = list
 	}
-	oci.Contents.Distributions = rpm.GetContents().GetDistributions()
-	oci.Contents.DistributionsDEPRECATED = rpm.GetContents().GetDistributionsDEPRECATED()
+	oci.GetContents().SetDistributions(rpm.GetContents().GetDistributions())
+	oci.GetContents().SetDistributionsDEPRECATED(rpm.GetContents().GetDistributionsDEPRECATED())
 	return oci
 }
 
 func buildRHCOSIndexReport(Id, version, arch string) *v4.IndexReport {
-	return &v4.IndexReport{
+	return v4.IndexReport_builder{
 		// This hashId is arbitrary. The value doesn't play a role for matcher, but must be valid sha256.
 		HashId:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		State:   controller.IndexFinished.String(),
 		Success: true,
 		Err:     "",
-		Contents: &v4.Contents{
+		Contents: v4.Contents_builder{
 			Packages: map[string]*v4.Package{
-				Id: {
+				Id: v4.Package_builder{
 					Id:      Id,
 					Name:    "rhcos",
 					Version: version,
-					NormalizedVersion: &v4.NormalizedVersion{
+					NormalizedVersion: v4.NormalizedVersion_builder{
 						Kind: "rhctag",
 						V:    normalizeVersion(version), // Only two first fields matter for the db-query.
-					},
+					}.Build(),
 					Kind: "binary",
-					Source: &v4.Package{
+					Source: v4.Package_builder{
 						Id:      Id,
 						Name:    "rhcos",
 						Kind:    "source",
 						Version: version,
 						Cpe:     "cpe:2.3:*", // required to pass validation of scanner V4 API
-					},
+					}.Build(),
 					Arch: arch,
 					Cpe:  "cpe:2.3:*", // required to pass validation of scanner V4 API
-				},
+				}.Build(),
 			},
 			PackagesDEPRECATED: []*v4.Package{
-				{
+				v4.Package_builder{
 					Id:      Id,
 					Name:    "rhcos",
 					Version: version,
-					NormalizedVersion: &v4.NormalizedVersion{
+					NormalizedVersion: v4.NormalizedVersion_builder{
 						Kind: "rhctag",
 						V:    normalizeVersion(version), // Only two first fields matter for the db-query.
-					},
+					}.Build(),
 					Kind: "binary",
-					Source: &v4.Package{
+					Source: v4.Package_builder{
 						Id:      Id,
 						Name:    "rhcos",
 						Kind:    "source",
 						Version: version,
 						Cpe:     "cpe:2.3:*", // required to pass validation of scanner V4 API
-					},
+					}.Build(),
 					Arch: arch,
 					Cpe:  "cpe:2.3:*", // required to pass validation of scanner V4 API
-				},
+				}.Build(),
 			},
 			Repositories: map[string]*v4.Repository{
-				Id: {
+				Id: v4.Repository_builder{
 					Id:   Id,
 					Name: goldenName,
 					Key:  goldenKey,
 					Uri:  goldenURI,
 					Cpe:  "cpe:2.3:*", // required to pass validation of scanner V4 API
-				},
+				}.Build(),
 			},
 			RepositoriesDEPRECATED: []*v4.Repository{
-				{
+				v4.Repository_builder{
 					Id:   Id,
 					Name: goldenName,
 					Key:  goldenKey,
 					Uri:  goldenURI,
 					Cpe:  "cpe:2.3:*", // required to pass validation of scanner V4 API
-				},
+				}.Build(),
 			},
 			// Environments must be present for the matcher to discover records
 			Environments: map[string]*v4.Environment_List{
-				Id: {
+				Id: v4.Environment_List_builder{
 					Environments: []*v4.Environment{
-						{
+						v4.Environment_builder{
 							PackageDb: "",
 							// IntroducedIn must be a valid sha256, but the value is not important.
 							IntroducedIn:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 							RepositoryIds: []string{Id},
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			EnvironmentsDEPRECATED: map[string]*v4.Environment_List{
-				Id: {
+				Id: v4.Environment_List_builder{
 					Environments: []*v4.Environment{
-						{
+						v4.Environment_builder{
 							PackageDb: "",
 							// IntroducedIn must be a valid sha256, but the value is not important.
 							IntroducedIn:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 							RepositoryIds: []string{Id},
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
-		},
-	}
+		}.Build(),
+	}.Build()
 }

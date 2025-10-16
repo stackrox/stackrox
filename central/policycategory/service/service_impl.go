@@ -58,7 +58,7 @@ func (s *serviceImpl) GetPolicyCategories(ctx context.Context, query *v1.RawQuer
 	if err != nil {
 		return nil, err
 	}
-	resp.Categories = s.convertCategoriesToV1Categories(categories)
+	resp.SetCategories(s.convertCategoriesToV1Categories(categories))
 
 	return resp, nil
 }

@@ -66,9 +66,9 @@ func (s *serviceImpl) ListSignatureIntegrations(ctx context.Context, _ *v1.Empty
 	sort.Slice(integrations, func(i, j int) bool {
 		return integrations[i].GetName() < integrations[j].GetName()
 	})
-	return &v1.ListSignatureIntegrationsResponse{
-		Integrations: integrations,
-	}, nil
+	lsir := &v1.ListSignatureIntegrationsResponse{}
+	lsir.SetIntegrations(integrations)
+	return lsir, nil
 }
 
 func (s *serviceImpl) GetSignatureIntegration(ctx context.Context, id *v1.ResourceByID) (*storage.SignatureIntegration, error) {

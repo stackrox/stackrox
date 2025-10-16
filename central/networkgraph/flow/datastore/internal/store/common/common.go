@@ -59,17 +59,16 @@ func ParseID(id []byte) (*storage.NetworkFlowProperties, error) {
 		return nil, errors.Wrap(err, "parsing l4 proto of network flow ID")
 	}
 
-	result := &storage.NetworkFlowProperties{
-		SrcEntity: &storage.NetworkEntityInfo{
-			Type: storage.NetworkEntityInfo_Type(srcType),
-			Id:   parts[1],
-		},
-		DstEntity: &storage.NetworkEntityInfo{
-			Type: storage.NetworkEntityInfo_Type(dstType),
-			Id:   parts[3],
-		},
-		DstPort:    uint32(dstPort),
-		L4Protocol: storage.L4Protocol(l4proto),
-	}
+	nei := &storage.NetworkEntityInfo{}
+	nei.SetType(storage.NetworkEntityInfo_Type(srcType))
+	nei.SetId(parts[1])
+	nei2 := &storage.NetworkEntityInfo{}
+	nei2.SetType(storage.NetworkEntityInfo_Type(dstType))
+	nei2.SetId(parts[3])
+	result := &storage.NetworkFlowProperties{}
+	result.SetSrcEntity(nei)
+	result.SetDstEntity(nei2)
+	result.SetDstPort(uint32(dstPort))
+	result.SetL4Protocol(storage.L4Protocol(l4proto))
 	return result, nil
 }

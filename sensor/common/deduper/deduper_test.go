@@ -35,25 +35,21 @@ func Test_DeduperParseKeyFromEvent(t *testing.T) {
 		k1: 0,
 	}, true)
 
-	msg := &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id:       "1234",
-				Action:   central.ResourceAction_SYNC_RESOURCE,
-				Resource: &central.SensorEvent_Deployment{Deployment: nil},
-			},
-		},
-	}
+	se := &central.SensorEvent{}
+	se.SetId("1234")
+	se.SetAction(central.ResourceAction_SYNC_RESOURCE)
+	se.Resource = &central.SensorEvent_Deployment{Deployment: nil}
+	msg := central.MsgFromSensor_builder{
+		Event: se,
+	}.Build()
 
-	msg2 := &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id:       "4321",
-				Action:   central.ResourceAction_SYNC_RESOURCE,
-				Resource: &central.SensorEvent_Deployment{Deployment: nil},
-			},
-		},
-	}
+	se2 := &central.SensorEvent{}
+	se2.SetId("4321")
+	se2.SetAction(central.ResourceAction_SYNC_RESOURCE)
+	se2.Resource = &central.SensorEvent_Deployment{Deployment: nil}
+	msg2 := central.MsgFromSensor_builder{
+		Event: se2,
+	}.Build()
 
 	// Send event twice so it's hashed and added to the dedupermap
 	require.NoError(t, deduperStream.Send(msg))
@@ -64,15 +60,11 @@ func Test_DeduperParseKeyFromEvent(t *testing.T) {
 	require.NoError(t, deduperStream.Send(msg2))
 
 	// observedIDs := observationSet.Close()
-	err = deduperStream.Send(&central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Resource: &central.SensorEvent_Synced{
-					Synced: &central.SensorEvent_ResourcesSynced{},
-				},
-			},
-		},
-	})
+	err = deduperStream.Send(central.MsgFromSensor_builder{
+		Event: central.SensorEvent_builder{
+			Synced: &central.SensorEvent_ResourcesSynced{},
+		}.Build(),
+	}.Build())
 	require.NoError(t, err)
 
 	lastEventSent := fake.orderedMessages[len(fake.orderedMessages)-1]
@@ -91,147 +83,127 @@ func Test_DeduperShallNotDedupeSomeMessages(t *testing.T) {
 		wantDedupe bool
 	}{
 		"Identical IndexReports shall not be deduped": {
-			msg: &central.MsgFromSensor{
-				Msg: &central.MsgFromSensor_Event{
-					Event: &central.SensorEvent{
-						Id: "1",
-						Resource: &central.SensorEvent_IndexReport{
-							IndexReport: &v4.IndexReport{
-								HashId:   "nodeID",
-								State:    "7", // IndexFinished
-								Success:  true,
-								Err:      "",
-								Contents: &v4.Contents{},
-							},
-						},
-					},
-				},
-			},
+			msg: central.MsgFromSensor_builder{
+				Event: central.SensorEvent_builder{
+					Id: "1",
+					IndexReport: v4.IndexReport_builder{
+						HashId:   "nodeID",
+						State:    "7", // IndexFinished
+						Success:  true,
+						Err:      "",
+						Contents: &v4.Contents{},
+					}.Build(),
+				}.Build(),
+			}.Build(),
 			key:        "IndexReport:1",
 			wantDedupe: false,
 		},
 		"Identical ProcessIndicators shall not be deduped": {
-			msg: &central.MsgFromSensor{
-				Msg: &central.MsgFromSensor_Event{
-					Event: &central.SensorEvent{
-						Id: "1",
-						Resource: &central.SensorEvent_ProcessIndicator{
-							ProcessIndicator: &storage.ProcessIndicator{
-								Id:                 "1",
-								DeploymentId:       "rrr",
-								ContainerName:      "rrr",
-								PodId:              "aaa",
-								PodUid:             "aaa",
-								Signal:             nil,
-								ClusterId:          "abc",
-								Namespace:          "ns",
-								ContainerStartTime: nil,
-								ImageId:            "bbb",
-							},
-						},
-					},
-				},
-			},
+			msg: central.MsgFromSensor_builder{
+				Event: central.SensorEvent_builder{
+					Id: "1",
+					ProcessIndicator: storage.ProcessIndicator_builder{
+						Id:                 "1",
+						DeploymentId:       "rrr",
+						ContainerName:      "rrr",
+						PodId:              "aaa",
+						PodUid:             "aaa",
+						Signal:             nil,
+						ClusterId:          "abc",
+						Namespace:          "ns",
+						ContainerStartTime: nil,
+						ImageId:            "bbb",
+					}.Build(),
+				}.Build(),
+			}.Build(),
 			key:        "ProcessIndicator:1",
 			wantDedupe: false,
 		},
 		"Identical Runtime AlertResults shall not be deduped": {
-			msg: &central.MsgFromSensor{
-				Msg: &central.MsgFromSensor_Event{
-					Event: &central.SensorEvent{
-						Id: "1",
-						Resource: &central.SensorEvent_AlertResults{
-							AlertResults: &central.AlertResults{
-								DeploymentId: "aaa",
-								Alerts: []*storage.Alert{{
-									Id:                "1",
-									Policy:            nil,
-									LifecycleStage:    0,
-									ClusterId:         "aaa",
-									ClusterName:       "aaa",
-									Namespace:         "ns",
-									NamespaceId:       "aaa",
-									Entity:            nil,
-									Violations:        nil,
-									ProcessViolation:  nil,
-									Enforcement:       nil,
-									Time:              nil,
-									FirstOccurred:     nil,
-									ResolvedAt:        nil,
-									State:             0,
-									PlatformComponent: false,
-									EntityType:        0,
-								}},
-								Stage:  storage.LifecycleStage_RUNTIME,
-								Source: 0,
-							},
-						},
-					},
-				},
-			},
+			msg: central.MsgFromSensor_builder{
+				Event: central.SensorEvent_builder{
+					Id: "1",
+					AlertResults: central.AlertResults_builder{
+						DeploymentId: "aaa",
+						Alerts: []*storage.Alert{storage.Alert_builder{
+							Id:                "1",
+							Policy:            nil,
+							LifecycleStage:    0,
+							ClusterId:         "aaa",
+							ClusterName:       "aaa",
+							Namespace:         "ns",
+							NamespaceId:       "aaa",
+							Entity:            nil,
+							Violations:        nil,
+							ProcessViolation:  nil,
+							Enforcement:       nil,
+							Time:              nil,
+							FirstOccurred:     nil,
+							ResolvedAt:        nil,
+							State:             0,
+							PlatformComponent: false,
+							EntityType:        0,
+						}.Build()},
+						Stage:  storage.LifecycleStage_RUNTIME,
+						Source: 0,
+					}.Build(),
+				}.Build(),
+			}.Build(),
 			key:        "AlertResults:1",
 			wantDedupe: false,
 		},
 		"Identical Deploy AlertResults shall be deduped": {
-			msg: &central.MsgFromSensor{
-				Msg: &central.MsgFromSensor_Event{
-					Event: &central.SensorEvent{
-						Id: "1",
-						Resource: &central.SensorEvent_AlertResults{
-							AlertResults: &central.AlertResults{
-								DeploymentId: "aaa",
-								Alerts: []*storage.Alert{{
-									Id:                "1",
-									Policy:            nil,
-									LifecycleStage:    0,
-									ClusterId:         "aaa",
-									ClusterName:       "aaa",
-									Namespace:         "ns",
-									NamespaceId:       "aaa",
-									Entity:            nil,
-									Violations:        nil,
-									ProcessViolation:  nil,
-									Enforcement:       nil,
-									Time:              nil,
-									FirstOccurred:     nil,
-									ResolvedAt:        nil,
-									State:             0,
-									PlatformComponent: false,
-									EntityType:        0,
-								}},
-								Stage:  storage.LifecycleStage_DEPLOY,
-								Source: 0,
-							},
-						},
-					},
-				},
-			},
+			msg: central.MsgFromSensor_builder{
+				Event: central.SensorEvent_builder{
+					Id: "1",
+					AlertResults: central.AlertResults_builder{
+						DeploymentId: "aaa",
+						Alerts: []*storage.Alert{storage.Alert_builder{
+							Id:                "1",
+							Policy:            nil,
+							LifecycleStage:    0,
+							ClusterId:         "aaa",
+							ClusterName:       "aaa",
+							Namespace:         "ns",
+							NamespaceId:       "aaa",
+							Entity:            nil,
+							Violations:        nil,
+							ProcessViolation:  nil,
+							Enforcement:       nil,
+							Time:              nil,
+							FirstOccurred:     nil,
+							ResolvedAt:        nil,
+							State:             0,
+							PlatformComponent: false,
+							EntityType:        0,
+						}.Build()},
+						Stage:  storage.LifecycleStage_DEPLOY,
+						Source: 0,
+					}.Build(),
+				}.Build(),
+			}.Build(),
 			key:        "AlertResults:1",
 			wantDedupe: true,
 		},
 		"Identical ServiceAccounts shall be deduped": { // as an example of something that should be deduped
-			msg: &central.MsgFromSensor{
-				Msg: &central.MsgFromSensor_Event{
-					Event: &central.SensorEvent{
-						Id: "1",
-						Resource: &central.SensorEvent_ServiceAccount{
-							ServiceAccount: &storage.ServiceAccount{
-								Id:               "1",
-								Name:             "abc",
-								Namespace:        "ns",
-								ClusterName:      "cluster1",
-								ClusterId:        "0abcdef",
-								Labels:           nil,
-								Annotations:      nil,
-								CreatedAt:        nil,
-								AutomountToken:   false,
-								Secrets:          nil,
-								ImagePullSecrets: nil,
-							},
-						},
-					},
-				},
-			},
+			msg: central.MsgFromSensor_builder{
+				Event: central.SensorEvent_builder{
+					Id: "1",
+					ServiceAccount: storage.ServiceAccount_builder{
+						Id:               "1",
+						Name:             "abc",
+						Namespace:        "ns",
+						ClusterName:      "cluster1",
+						ClusterId:        "0abcdef",
+						Labels:           nil,
+						Annotations:      nil,
+						CreatedAt:        nil,
+						AutomountToken:   false,
+						Secrets:          nil,
+						ImagePullSecrets: nil,
+					}.Build(),
+				}.Build(),
+			}.Build(),
 			key:        "ServiceAccount:1",
 			wantDedupe: true,
 		},

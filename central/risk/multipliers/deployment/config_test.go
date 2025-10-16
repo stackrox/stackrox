@@ -17,7 +17,7 @@ func TestScoreVolumesAndSecrets(t *testing.T) {
 	assert.Contains(t, volumeFactor, "rw volume")
 
 	for _, container := range deployment.GetContainers() {
-		container.Volumes = nil
+		container.SetVolumes(nil)
 	}
 	volumeFactor = mult.scoreVolumes(deployment)
 	assert.Empty(t, volumeFactor)
@@ -32,7 +32,7 @@ func TestScoreSecrets(t *testing.T) {
 	assert.Contains(t, secretFactor, "secret")
 
 	for _, container := range deployment.GetContainers() {
-		container.Secrets = nil
+		container.SetSecrets(nil)
 	}
 	secretFactor = mult.scoreSecrets(deployment)
 	assert.Empty(t, secretFactor)
@@ -49,8 +49,8 @@ func TestScoreCapabilities(t *testing.T) {
 	assert.Contains(t, dropFactor, "No capabilities")
 
 	for _, container := range deployment.GetContainers() {
-		container.GetSecurityContext().AddCapabilities = nil
-		container.SecurityContext.DropCapabilities = []string{"SYS_MODULE"}
+		container.GetSecurityContext().SetAddCapabilities(nil)
+		container.GetSecurityContext().SetDropCapabilities([]string{"SYS_MODULE"})
 	}
 	addFactor, dropFactor = mult.scoreCapabilities(deployment)
 	assert.Empty(t, addFactor)
@@ -63,7 +63,7 @@ func TestScorePrivileged(t *testing.T) {
 	factor := mult.scorePrivilege(deployment)
 	assert.NotEmpty(t, factor)
 
-	deployment.Containers[0].SecurityContext.Privileged = false
+	deployment.GetContainers()[0].GetSecurityContext().SetPrivileged(false)
 	factor = mult.scorePrivilege(deployment)
 	assert.Empty(t, factor)
 }

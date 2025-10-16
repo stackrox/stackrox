@@ -33,8 +33,14 @@ const (
 var (
 	mockNamespaceStore = func() *namespaceStore {
 		s := newNamespaceStore()
-		s.addNamespace(&storage.NamespaceMetadata{Id: "FAKENSID", Name: "namespace"})
-		s.addNamespace(&storage.NamespaceMetadata{Id: "KUBESYSID", Name: "kube-system"})
+		nm := &storage.NamespaceMetadata{}
+		nm.SetId("FAKENSID")
+		nm.SetName("namespace")
+		s.addNamespace(nm)
+		nm2 := &storage.NamespaceMetadata{}
+		nm2.SetId("KUBESYSID")
+		nm2.SetName("kube-system")
+		s.addNamespace(nm2)
 		return s
 	}()
 )
@@ -392,9 +398,9 @@ func TestPopulateImageMetadata(t *testing.T) {
 			for _, container := range c.wrap {
 				img, err := imageUtils.GenerateImageFromString(container.image)
 				require.NoError(t, err)
-				wrap.Containers = append(wrap.Containers, &storage.Container{
-					Image: img,
-				})
+				container2 := &storage.Container{}
+				container2.SetImage(img)
+				wrap.Containers = append(wrap.Containers, container2)
 
 			}
 
@@ -458,12 +464,12 @@ func TestPopulateImageMetadataWithUnqualified(t *testing.T) {
 			expectedMetadata: []metadata{
 				{
 					expectedID: "sha256:66233eebd72bb5baa25190d4f55e1dc3fff3a9b77186c1f91a0abdb274452072",
-					expectedImageName: &storage.ImageName{
+					expectedImageName: storage.ImageName_builder{
 						Registry: "registry.access.redhat.com",
 						Remote:   "ubi9",
 						Tag:      "9.3-1610",
 						FullName: "registry.access.redhat.com/ubi9:9.3-1610",
-					},
+					}.Build(),
 				},
 			},
 		},
@@ -481,12 +487,12 @@ func TestPopulateImageMetadataWithUnqualified(t *testing.T) {
 			expectedMetadata: []metadata{
 				{
 					expectedID: "sha256:66233eebd72bb5baa25190d4f55e1dc3fff3a9b77186c1f91a0abdb274452072",
-					expectedImageName: &storage.ImageName{
+					expectedImageName: storage.ImageName_builder{
 						Registry: "registry.access.redhat.com",
 						Remote:   "ubi9",
 						Tag:      "latest",
 						FullName: "registry.access.redhat.com/ubi9:latest",
-					},
+					}.Build(),
 				},
 			},
 		},
@@ -504,12 +510,12 @@ func TestPopulateImageMetadataWithUnqualified(t *testing.T) {
 			expectedMetadata: []metadata{
 				{
 					expectedID: "sha256:66233eebd72bb5baa25190d4f55e1dc3fff3a9b77186c1f91a0abdb274452072",
-					expectedImageName: &storage.ImageName{
+					expectedImageName: storage.ImageName_builder{
 						Registry: "registry.access.redhat.com",
 						Remote:   "ubi9",
 						Tag:      "",
 						FullName: "registry.access.redhat.com/ubi9@sha256:66233eebd72bb5baa25190d4f55e1dc3fff3a9b77186c1f91a0abdb274452072",
-					},
+					}.Build(),
 				},
 			},
 		},
@@ -527,12 +533,12 @@ func TestPopulateImageMetadataWithUnqualified(t *testing.T) {
 			expectedMetadata: []metadata{
 				{
 					expectedID: "sha256:66233eebd72bb5baa25190d4f55e1dc3fff3a9b77186c1f91a0abdb274452072",
-					expectedImageName: &storage.ImageName{
+					expectedImageName: storage.ImageName_builder{
 						Registry: "registry.access.redhat.com",
 						Remote:   "ubi9",
 						Tag:      "v1.2.3",
 						FullName: "registry.access.redhat.com/ubi9:v1.2.3@sha256:66233eebd72bb5baa25190d4f55e1dc3fff3a9b77186c1f91a0abdb274452072",
-					},
+					}.Build(),
 				},
 			},
 		},
@@ -547,9 +553,9 @@ func TestPopulateImageMetadataWithUnqualified(t *testing.T) {
 			for _, container := range c.wrap {
 				img, err := imageUtils.GenerateImageFromString(container.image)
 				require.NoError(t, err)
-				wrap.Containers = append(wrap.Containers, &storage.Container{
-					Image: img,
-				})
+				container2 := &storage.Container{}
+				container2.SetImage(img)
+				wrap.Containers = append(wrap.Containers, container2)
 
 			}
 
@@ -804,7 +810,7 @@ func TestConvert(t *testing.T) {
 					},
 				},
 			},
-			expectedDeployment: &storage.Deployment{
+			expectedDeployment: storage.Deployment_builder{
 				Id:                           "FooID",
 				ClusterId:                    testClusterID,
 				Name:                         "deployment",
@@ -819,9 +825,9 @@ func TestConvert(t *testing.T) {
 					"key":      "value",
 					"question": "answer",
 				},
-				LabelSelector: &storage.LabelSelector{
+				LabelSelector: storage.LabelSelector_builder{
 					MatchLabels: map[string]string{},
-				},
+				}.Build(),
 				Annotations: map[string]string{
 					"annotationkey1": "annotationvalue1",
 					"annotationkey2": "annotationvalue2",
@@ -829,143 +835,143 @@ func TestConvert(t *testing.T) {
 				Created:     protocompat.GetProtoTimestampFromSeconds(1000),
 				Tolerations: []*storage.Toleration{},
 				Ports: []*storage.PortConfig{
-					{
+					storage.PortConfig_builder{
 						Name:          "api",
 						ContainerPort: 9092,
 						Protocol:      "TCP",
-					},
-					{
+					}.Build(),
+					storage.PortConfig_builder{
 						Name:          "status",
 						ContainerPort: 443,
 						Protocol:      "UCP",
-					},
+					}.Build(),
 				},
 				Containers: []*storage.Container{
-					{
+					storage.Container_builder{
 						Id:   "FooID:container1",
 						Name: "container1",
-						Config: &storage.ContainerConfig{
+						Config: storage.ContainerConfig_builder{
 							Command: []string{"hello", "world"},
 							Args:    []string{"lorem", "ipsum"},
 							Env: []*storage.ContainerConfig_EnvironmentConfig{
-								{
+								storage.ContainerConfig_EnvironmentConfig_builder{
 									Key:          "envName",
 									Value:        "envValue",
 									EnvVarSource: storage.ContainerConfig_EnvironmentConfig_RAW,
-								},
+								}.Build(),
 							},
-						},
-						Image: &storage.ContainerImage{
+						}.Build(),
+						Image: storage.ContainerImage_builder{
 							Id: "sha256:aa561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
-							Name: &storage.ImageName{
+							Name: storage.ImageName_builder{
 								Registry: "docker.io",
 								Remote:   "stackrox/kafka",
 								Tag:      "latest",
 								FullName: "docker.io/stackrox/kafka:latest",
-							},
+							}.Build(),
 							NotPullable: true,
-						},
+						}.Build(),
 						Secrets: []*storage.EmbeddedSecret{
-							{
+							storage.EmbeddedSecret_builder{
 								Name: "private_key",
 								Path: "/var/secrets",
-							},
-							{
+							}.Build(),
+							storage.EmbeddedSecret_builder{
 								Name: "pull-secret1",
-							},
-							{
+							}.Build(),
+							storage.EmbeddedSecret_builder{
 								Name: "pull-secret2",
-							},
+							}.Build(),
 						},
-						SecurityContext: &storage.SecurityContext{
+						SecurityContext: storage.SecurityContext_builder{
 							AllowPrivilegeEscalation: true,
-							Selinux: &storage.SecurityContext_SELinux{
+							Selinux: storage.SecurityContext_SELinux_builder{
 								User:  "user",
 								Role:  "role",
 								Type:  "type",
 								Level: "level",
-							},
+							}.Build(),
 							ReadOnlyRootFilesystem: true,
-						},
-						Resources: &storage.Resources{
+						}.Build(),
+						Resources: storage.Resources_builder{
 							CpuCoresRequest: 0.1,
 							CpuCoresLimit:   0.2,
 							MemoryMbRequest: 1024.00,
 							MemoryMbLimit:   2048.00,
-						},
+						}.Build(),
 						Ports: []*storage.PortConfig{
-							{
+							storage.PortConfig_builder{
 								Name:          "api",
 								ContainerPort: 9092,
 								Protocol:      "TCP",
-							},
-							{
+							}.Build(),
+							storage.PortConfig_builder{
 								Name:          "status",
 								ContainerPort: 443,
 								Protocol:      "UCP",
-							},
+							}.Build(),
 						},
-						LivenessProbe:  &storage.LivenessProbe{Defined: true},
-						ReadinessProbe: &storage.ReadinessProbe{Defined: true},
-					},
-					{
+						LivenessProbe:  storage.LivenessProbe_builder{Defined: true}.Build(),
+						ReadinessProbe: storage.ReadinessProbe_builder{Defined: true}.Build(),
+					}.Build(),
+					storage.Container_builder{
 						Id:   "FooID:container2",
 						Name: "container2",
-						Config: &storage.ContainerConfig{
+						Config: storage.ContainerConfig_builder{
 							Args: []string{"--flag"},
 							Env: []*storage.ContainerConfig_EnvironmentConfig{
-								{
+								storage.ContainerConfig_EnvironmentConfig_builder{
 									Key:          "ROX_ENV_VAR",
 									Value:        "rox",
 									EnvVarSource: storage.ContainerConfig_EnvironmentConfig_RAW,
-								},
-								{
+								}.Build(),
+								storage.ContainerConfig_EnvironmentConfig_builder{
 									Key:          "ROX_VERSION",
 									Value:        "1.0",
 									EnvVarSource: storage.ContainerConfig_EnvironmentConfig_RAW,
-								},
+								}.Build(),
 							},
 							Uid: 0,
-						},
-						Image: &storage.ContainerImage{
+						}.Build(),
+						Image: storage.ContainerImage_builder{
 							Id: "sha256:6b561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
-							Name: &storage.ImageName{
+							Name: storage.ImageName_builder{
 								Registry: "docker.io",
 								Remote:   "stackrox/policy-engine",
 								Tag:      "1.3",
 								FullName: "docker.io/stackrox/policy-engine:1.3",
-							},
+							}.Build(),
 							NotPullable: false,
-						},
+						}.Build(),
 						Secrets: []*storage.EmbeddedSecret{
-							{
+							storage.EmbeddedSecret_builder{
 								Name: "pull-secret1",
-							},
-							{
+							}.Build(),
+							storage.EmbeddedSecret_builder{
 								Name: "pull-secret2",
-							},
+							}.Build(),
 						},
-						SecurityContext: &storage.SecurityContext{
+						SecurityContext: storage.SecurityContext_builder{
 							Privileged:               true,
 							AddCapabilities:          []string{"IPC_LOCK", "SYS_RESOURCE"},
 							ReadOnlyRootFilesystem:   true,
 							AllowPrivilegeEscalation: true,
-						},
+						}.Build(),
 						Volumes: []*storage.Volume{
 
-							{
+							storage.Volume_builder{
 								Name:        "hostMountVol1",
 								Source:      "/var/run/docker.sock",
 								Destination: "/var/run/docker.sock",
 								Type:        "HostPath",
-							},
+							}.Build(),
 						},
 						Resources:      &storage.Resources{},
-						LivenessProbe:  &storage.LivenessProbe{Defined: false},
-						ReadinessProbe: &storage.ReadinessProbe{Defined: false},
-					},
+						LivenessProbe:  storage.LivenessProbe_builder{Defined: false}.Build(),
+						ReadinessProbe: storage.ReadinessProbe_builder{Defined: false}.Build(),
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 		{
 			name: "CronJob",
@@ -1168,7 +1174,7 @@ func TestConvert(t *testing.T) {
 					},
 				},
 			},
-			expectedDeployment: &storage.Deployment{
+			expectedDeployment: storage.Deployment_builder{
 				Id:                           "FooID",
 				ClusterId:                    testClusterID,
 				Name:                         "cronjob",
@@ -1183,9 +1189,9 @@ func TestConvert(t *testing.T) {
 					"key":      "value",
 					"question": "answer",
 				},
-				LabelSelector: &storage.LabelSelector{
+				LabelSelector: storage.LabelSelector_builder{
 					MatchLabels: map[string]string{},
-				},
+				}.Build(),
 				Annotations: map[string]string{
 					"annotationkey1": "annotationvalue1",
 					"annotationkey2": "annotationvalue2",
@@ -1193,143 +1199,143 @@ func TestConvert(t *testing.T) {
 				Created:     protocompat.GetProtoTimestampFromSeconds(1000),
 				Tolerations: []*storage.Toleration{},
 				Ports: []*storage.PortConfig{
-					{
+					storage.PortConfig_builder{
 						Name:          "api",
 						ContainerPort: 9092,
 						Protocol:      "TCP",
-					},
-					{
+					}.Build(),
+					storage.PortConfig_builder{
 						Name:          "status",
 						ContainerPort: 443,
 						Protocol:      "UCP",
-					},
+					}.Build(),
 				},
 				Containers: []*storage.Container{
-					{
+					storage.Container_builder{
 						Id:   "FooID:container1",
 						Name: "container1",
-						Config: &storage.ContainerConfig{
+						Config: storage.ContainerConfig_builder{
 							Command: []string{"hello", "world"},
 							Args:    []string{"lorem", "ipsum"},
 							Env: []*storage.ContainerConfig_EnvironmentConfig{
-								{
+								storage.ContainerConfig_EnvironmentConfig_builder{
 									Key:          "envName",
 									Value:        "envValue",
 									EnvVarSource: storage.ContainerConfig_EnvironmentConfig_RAW,
-								},
+								}.Build(),
 							},
-						},
-						Image: &storage.ContainerImage{
+						}.Build(),
+						Image: storage.ContainerImage_builder{
 							Id: "sha256:aa561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
-							Name: &storage.ImageName{
+							Name: storage.ImageName_builder{
 								Registry: "docker.io",
 								Remote:   "stackrox/kafka",
 								Tag:      "latest",
 								FullName: "docker.io/stackrox/kafka:latest",
-							},
+							}.Build(),
 							NotPullable: true,
-						},
+						}.Build(),
 						Secrets: []*storage.EmbeddedSecret{
-							{
+							storage.EmbeddedSecret_builder{
 								Name: "private_key",
 								Path: "/var/secrets",
-							},
-							{
+							}.Build(),
+							storage.EmbeddedSecret_builder{
 								Name: "pull-secret1",
-							},
-							{
+							}.Build(),
+							storage.EmbeddedSecret_builder{
 								Name: "pull-secret2",
-							},
+							}.Build(),
 						},
-						SecurityContext: &storage.SecurityContext{
+						SecurityContext: storage.SecurityContext_builder{
 							AllowPrivilegeEscalation: true,
-							Selinux: &storage.SecurityContext_SELinux{
+							Selinux: storage.SecurityContext_SELinux_builder{
 								User:  "user",
 								Role:  "role",
 								Type:  "type",
 								Level: "level",
-							},
+							}.Build(),
 							ReadOnlyRootFilesystem: true,
-						},
-						Resources: &storage.Resources{
+						}.Build(),
+						Resources: storage.Resources_builder{
 							CpuCoresRequest: 0.1,
 							CpuCoresLimit:   0.2,
 							MemoryMbRequest: 1024.00,
 							MemoryMbLimit:   2048.00,
-						},
+						}.Build(),
 						Ports: []*storage.PortConfig{
-							{
+							storage.PortConfig_builder{
 								Name:          "api",
 								ContainerPort: 9092,
 								Protocol:      "TCP",
-							},
-							{
+							}.Build(),
+							storage.PortConfig_builder{
 								Name:          "status",
 								ContainerPort: 443,
 								Protocol:      "UCP",
-							},
+							}.Build(),
 						},
-						LivenessProbe:  &storage.LivenessProbe{Defined: true},
-						ReadinessProbe: &storage.ReadinessProbe{Defined: true},
-					},
-					{
+						LivenessProbe:  storage.LivenessProbe_builder{Defined: true}.Build(),
+						ReadinessProbe: storage.ReadinessProbe_builder{Defined: true}.Build(),
+					}.Build(),
+					storage.Container_builder{
 						Id:   "FooID:container2",
 						Name: "container2",
-						Config: &storage.ContainerConfig{
+						Config: storage.ContainerConfig_builder{
 							Args: []string{"--flag"},
 							Env: []*storage.ContainerConfig_EnvironmentConfig{
-								{
+								storage.ContainerConfig_EnvironmentConfig_builder{
 									Key:          "ROX_ENV_VAR",
 									Value:        "rox",
 									EnvVarSource: storage.ContainerConfig_EnvironmentConfig_RAW,
-								},
-								{
+								}.Build(),
+								storage.ContainerConfig_EnvironmentConfig_builder{
 									Key:          "ROX_VERSION",
 									Value:        "1.0",
 									EnvVarSource: storage.ContainerConfig_EnvironmentConfig_RAW,
-								},
+								}.Build(),
 							},
 							Uid: 0,
-						},
-						Image: &storage.ContainerImage{
+						}.Build(),
+						Image: storage.ContainerImage_builder{
 							Id: "sha256:6b561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
-							Name: &storage.ImageName{
+							Name: storage.ImageName_builder{
 								Registry: "docker.io",
 								Remote:   "stackrox/policy-engine",
 								Tag:      "1.3",
 								FullName: "docker.io/stackrox/policy-engine:1.3",
-							},
+							}.Build(),
 							NotPullable: false,
-						},
+						}.Build(),
 						Secrets: []*storage.EmbeddedSecret{
-							{
+							storage.EmbeddedSecret_builder{
 								Name: "pull-secret1",
-							},
-							{
+							}.Build(),
+							storage.EmbeddedSecret_builder{
 								Name: "pull-secret2",
-							},
+							}.Build(),
 						},
-						SecurityContext: &storage.SecurityContext{
+						SecurityContext: storage.SecurityContext_builder{
 							Privileged:               true,
 							AddCapabilities:          []string{"IPC_LOCK", "SYS_RESOURCE"},
 							ReadOnlyRootFilesystem:   true,
 							AllowPrivilegeEscalation: true,
-						},
+						}.Build(),
 						Volumes: []*storage.Volume{
 
-							{
+							storage.Volume_builder{
 								Name:        "hostMountVol1",
 								Source:      "/var/run/docker.sock",
 								Destination: "/var/run/docker.sock",
 								Type:        "HostPath",
-							},
+							}.Build(),
 						},
 						Resources:      &storage.Resources{},
-						LivenessProbe:  &storage.LivenessProbe{Defined: false},
-						ReadinessProbe: &storage.ReadinessProbe{Defined: false},
-					},
+						LivenessProbe:  storage.LivenessProbe_builder{Defined: false}.Build(),
+						ReadinessProbe: storage.ReadinessProbe_builder{Defined: false}.Build(),
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 	}
 
@@ -1340,7 +1346,7 @@ func TestConvert(t *testing.T) {
 				c.podLister, mockNamespaceStore, hierarchyFromPodLister(c.podLister), "",
 				storeProvider.orchestratorNamespaces).GetDeployment()
 			if actual != nil {
-				actual.StateTimestamp = 0
+				actual.SetStateTimestamp(0)
 			}
 			protoassert.Equal(t, c.expectedDeployment, actual)
 		})

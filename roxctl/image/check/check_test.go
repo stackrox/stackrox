@@ -108,73 +108,73 @@ var (
 
 	// Alerts for testing
 	testAlertsWithoutFailure = []*storage.Alert{
-		{
+		storage.Alert_builder{
 			Policy:     lowSevPolicy,
 			Violations: singleViolationMessage,
-		},
-		{
+		}.Build(),
+		storage.Alert_builder{
 			Policy:     mediumSevPolicy,
 			Violations: multipleViolationMessages,
-		},
+		}.Build(),
 		// Alerts with the same policy should result in single policy and merged violation messages
-		{
+		storage.Alert_builder{
 			Policy:     mediumSevPolicy2,
 			Violations: multipleViolationMessages,
-		},
-		{
+		}.Build(),
+		storage.Alert_builder{
 			Policy:     mediumSevPolicy2,
 			Violations: singleViolationMessage,
-		},
-		{
+		}.Build(),
+		storage.Alert_builder{
 			Policy:     mediumSevPolicy3,
 			Violations: singleViolationMessage,
-		},
+		}.Build(),
 		// Policy with non build fail Enforcement Action should not result in an error
-		{
+		storage.Alert_builder{
 			Policy:     highSevPolicyWithDeployCreateFail,
 			Violations: singleViolationMessage,
-		},
-		{
+		}.Build(),
+		storage.Alert_builder{
 			Policy:     highSevPolicyWithNoDescription,
 			Violations: multipleViolationMessages,
-		},
+		}.Build(),
 	}
 	testAlertsWithFailure = []*storage.Alert{
-		{
+		storage.Alert_builder{
 			Policy:     lowSevPolicy,
 			Violations: singleViolationMessage,
-		},
-		{
+		}.Build(),
+		storage.Alert_builder{
 			Policy:     mediumSevPolicy,
 			Violations: singleViolationMessage,
-		},
+		}.Build(),
 		// Alerts with the same policy should result in single policy and merged violation messages
-		{
+		storage.Alert_builder{
 			Policy:     mediumSevPolicy2,
 			Violations: multipleViolationMessages,
-		},
-		{
+		}.Build(),
+		storage.Alert_builder{
 			Policy:     mediumSevPolicy2,
 			Violations: singleViolationMessage,
-		},
-		{
+		}.Build(),
+		storage.Alert_builder{
 			Policy:     mediumSevPolicy3,
 			Violations: multipleViolationMessages,
-		},
+		}.Build(),
 		// Policy with non build fail Enforcement Action should not result in an error
-		{
+		storage.Alert_builder{
 			Policy:     highSevPolicyWithDeployCreateFail,
 			Violations: singleViolationMessage,
-		},
+		}.Build(),
 		// Policy with build fail Enforcement Action should result in an error
-		{
+		storage.Alert_builder{
 			Policy:     criticalSevPolicyWithBuildFail,
 			Violations: multipleViolationMessages,
-		},
-		{
+		}.Build(),
+		storage.Alert_builder{
 			Policy:     highSevPolicyWithNoDescription,
 			Violations: multipleViolationMessages,
-		},
+		}.Build(),
 	}
 )
 
@@ -186,9 +186,9 @@ type mockDetectionServiceServer struct {
 }
 
 func (m *mockDetectionServiceServer) DetectBuildTime(context.Context, *v1.BuildDetectionRequest) (*v1.BuildDetectionResponse, error) {
-	return &v1.BuildDetectionResponse{
-		Alerts: m.alerts,
-	}, nil
+	bdr := &v1.BuildDetectionResponse{}
+	bdr.SetAlerts(m.alerts)
+	return bdr, nil
 }
 
 func TestImageCheckCommand(t *testing.T) {

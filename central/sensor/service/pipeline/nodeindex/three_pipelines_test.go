@@ -34,6 +34,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"golang.org/x/sync/semaphore"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -44,54 +45,52 @@ const (
 )
 
 func Test_ThreePipelines_Run(t *testing.T) {
-	nodeWithScore := &storage.Node{
-		Id:            nodeID,
-		Name:          nodeName,
-		ClusterId:     clusterID,
-		ClusterName:   clusterID,
-		KernelVersion: "v1",
-		Notes:         []storage.Node_Note{storage.Node_MISSING_SCAN_DATA},
-		RiskScore:     1,
-	}
+	nodeWithScore := &storage.Node{}
+	nodeWithScore.SetId(nodeID)
+	nodeWithScore.SetName(nodeName)
+	nodeWithScore.SetClusterId(clusterID)
+	nodeWithScore.SetClusterName(clusterID)
+	nodeWithScore.SetKernelVersion("v1")
+	nodeWithScore.SetNotes([]storage.Node_Note{storage.Node_MISSING_SCAN_DATA})
+	nodeWithScore.SetRiskScore(1)
 
-	nodeWithV4Scan := &storage.Node{
-		Id:            nodeID,
-		Name:          nodeName,
-		ClusterId:     clusterID,
-		ClusterName:   clusterID,
-		KernelVersion: "v1",
-		Notes:         []storage.Node_Note{storage.Node_MISSING_SCAN_DATA},
-		RiskScore:     1,
-		Scan:          &storage.NodeScan{ScannerVersion: storage.NodeScan_SCANNER_V4},
-	}
+	nodeScan := &storage.NodeScan{}
+	nodeScan.SetScannerVersion(storage.NodeScan_SCANNER_V4)
+	nodeWithV4Scan := &storage.Node{}
+	nodeWithV4Scan.SetId(nodeID)
+	nodeWithV4Scan.SetName(nodeName)
+	nodeWithV4Scan.SetClusterId(clusterID)
+	nodeWithV4Scan.SetClusterName(clusterID)
+	nodeWithV4Scan.SetKernelVersion("v1")
+	nodeWithV4Scan.SetNotes([]storage.Node_Note{storage.Node_MISSING_SCAN_DATA})
+	nodeWithV4Scan.SetRiskScore(1)
+	nodeWithV4Scan.SetScan(nodeScan)
 
-	nodeWithScanWithKernelV2 := &storage.Node{
-		Id:            nodeID,
-		Name:          nodeName,
-		ClusterId:     clusterID,
-		ClusterName:   clusterID,
-		KernelVersion: "v1",
-		Notes:         []storage.Node_Note{},
-		RiskScore:     1,
-		Scan:          nodeScanFixtureWithKernel("v2"),
-		SetComponents: &storage.Node_Components{Components: 1},
-		SetCves:       &storage.Node_Cves{Cves: 1},
-		SetTopCvss:    &storage.Node_TopCvss{TopCvss: 1},
-	}
+	nodeWithScanWithKernelV2 := &storage.Node{}
+	nodeWithScanWithKernelV2.SetId(nodeID)
+	nodeWithScanWithKernelV2.SetName(nodeName)
+	nodeWithScanWithKernelV2.SetClusterId(clusterID)
+	nodeWithScanWithKernelV2.SetClusterName(clusterID)
+	nodeWithScanWithKernelV2.SetKernelVersion("v1")
+	nodeWithScanWithKernelV2.SetNotes([]storage.Node_Note{})
+	nodeWithScanWithKernelV2.SetRiskScore(1)
+	nodeWithScanWithKernelV2.SetScan(nodeScanFixtureWithKernel("v2"))
+	nodeWithScanWithKernelV2.Set_Components(1)
+	nodeWithScanWithKernelV2.Set_Cves(1)
+	nodeWithScanWithKernelV2.Set_TopCvss(1)
 
-	nodeWithScanWithKernelV4 := &storage.Node{
-		Id:            nodeID,
-		Name:          nodeName,
-		ClusterId:     clusterID,
-		ClusterName:   clusterID,
-		KernelVersion: "v1",
-		Notes:         []storage.Node_Note{},
-		RiskScore:     1,
-		Scan:          nodeScanFixtureWithKernel("v4"),
-		SetComponents: &storage.Node_Components{Components: 1},
-		SetCves:       &storage.Node_Cves{Cves: 1},
-		SetTopCvss:    &storage.Node_TopCvss{TopCvss: 1},
-	}
+	nodeWithScanWithKernelV4 := &storage.Node{}
+	nodeWithScanWithKernelV4.SetId(nodeID)
+	nodeWithScanWithKernelV4.SetName(nodeName)
+	nodeWithScanWithKernelV4.SetClusterId(clusterID)
+	nodeWithScanWithKernelV4.SetClusterName(clusterID)
+	nodeWithScanWithKernelV4.SetKernelVersion("v1")
+	nodeWithScanWithKernelV4.SetNotes([]storage.Node_Note{})
+	nodeWithScanWithKernelV4.SetRiskScore(1)
+	nodeWithScanWithKernelV4.SetScan(nodeScanFixtureWithKernel("v4"))
+	nodeWithScanWithKernelV4.Set_Components(1)
+	nodeWithScanWithKernelV4.Set_Cves(1)
+	nodeWithScanWithKernelV4.Set_TopCvss(1)
 
 	type usedMocks struct {
 		clusterStore      *clusterDatastoreMocks.MockDataStore
@@ -336,27 +335,27 @@ func Test_ThreePipelines_Run(t *testing.T) {
 				}
 			}
 			tt.enricher = nodeEnricher.NewWithCreator(tt.mocks.cveDatastore, metrics.CentralSubsystem, creator, creatorV4)
-			err := tt.enricher.UpsertNodeIntegration(&storage.NodeIntegration{
-				Id:   "1",
-				Name: "dummy-scanner",
-				Type: types.Clairify,
-				IntegrationConfig: &storage.NodeIntegration_Clairify{Clairify: &storage.ClairifyConfig{
-					Endpoint:           "abc",
-					GrpcEndpoint:       "",
-					NumConcurrentScans: 0,
-				}},
-			})
+			cc := &storage.ClairifyConfig{}
+			cc.SetEndpoint("abc")
+			cc.SetGrpcEndpoint("")
+			cc.SetNumConcurrentScans(0)
+			ni := &storage.NodeIntegration{}
+			ni.SetId("1")
+			ni.SetName("dummy-scanner")
+			ni.SetType(types.Clairify)
+			ni.SetClairify(proto.ValueOrDefault(cc))
+			err := tt.enricher.UpsertNodeIntegration(ni)
 			require.NoError(t, err)
-			err = tt.enricher.UpsertNodeIntegration(&storage.NodeIntegration{
-				Id:   "2",
-				Name: "dummy-scanner-v4",
-				Type: types.ScannerV4,
-				IntegrationConfig: &storage.NodeIntegration_Scannerv4{Scannerv4: &storage.ScannerV4Config{
-					NumConcurrentScans: 0,
-					IndexerEndpoint:    "",
-					MatcherEndpoint:    "",
-				}},
-			})
+			sv4c := &storage.ScannerV4Config{}
+			sv4c.SetNumConcurrentScans(0)
+			sv4c.SetIndexerEndpoint("")
+			sv4c.SetMatcherEndpoint("")
+			ni2 := &storage.NodeIntegration{}
+			ni2.SetId("2")
+			ni2.SetName("dummy-scanner-v4")
+			ni2.SetType(types.ScannerV4)
+			ni2.SetScannerv4(proto.ValueOrDefault(sv4c))
+			err = tt.enricher.UpsertNodeIntegration(ni2)
 			require.NoError(t, err)
 
 			if tt.setUpMocksAndEnv != nil {
@@ -390,70 +389,66 @@ func Test_ThreePipelines_Run(t *testing.T) {
 }
 
 func createIndexReportWithKernel(kernelV string) *v4.IndexReport {
-	return &v4.IndexReport{
+	return v4.IndexReport_builder{
 		State:   "7", // IndexFinished
 		Success: true,
-		Contents: &v4.Contents{
+		Contents: v4.Contents_builder{
 			Packages: map[string]*v4.Package{
-				"1": {
+				"1": v4.Package_builder{
 					Id:      "1",
 					Name:    kernelComponentName,
 					Version: kernelV,
 					Kind:    "binary",
-					Source: &v4.Package{
+					Source: v4.Package_builder{
 						Name:    kernelComponentName,
 						Version: kernelV,
 						Kind:    "source",
 						Source:  nil,
 						Cpe:     "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
-					},
+					}.Build(),
 					PackageDb:      "sqlite:usr/share/rpm",
 					RepositoryHint: "hash:sha256:f52ca767328e6919ec11a1da654e92743587bd3c008f0731f8c4de3af19c1830|key:199e2f91fd431d51",
 					Arch:           "x86_64",
 					Cpe:            "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
-				},
+				}.Build(),
 			},
 			Repositories: map[string]*v4.Repository{
-				"cpe:/o:redhat:enterprise_linux:9::fastdatapath": {
+				"cpe:/o:redhat:enterprise_linux:9::fastdatapath": v4.Repository_builder{
 					Id:   "1",
 					Name: "cpe:/o:redhat:enterprise_linux:9::fastdatapath",
 					Key:  "rhel-cpe-repository",
 					Cpe:  "cpe:2.3:o:redhat:enterprise_linux:9:*:fastdatapath:*:*:*:*:*",
-				},
+				}.Build(),
 			},
-			Environments: map[string]*v4.Environment_List{"1": {Environments: []*v4.Environment{
-				{
+			Environments: map[string]*v4.Environment_List{"1": v4.Environment_List_builder{Environments: []*v4.Environment{
+				v4.Environment_builder{
 					PackageDb:     "sqlite:usr/share/rpm",
 					IntroducedIn:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 					RepositoryIds: []string{"1"},
-				},
+				}.Build(),
 			},
-			}},
-		},
-	}
+			}.Build()},
+		}.Build(),
+	}.Build()
 }
 
 func createNodeIndexMsg(id, kernel string) *central.MsgFromSensor {
-	return &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id: id,
-				Resource: &central.SensorEvent_IndexReport{
-					IndexReport: createIndexReportWithKernel(kernel),
-				},
-			},
-		},
-	}
+	se := &central.SensorEvent{}
+	se.SetId(id)
+	se.SetIndexReport(proto.ValueOrDefault(createIndexReportWithKernel(kernel)))
+	return central.MsgFromSensor_builder{
+		Event: se,
+	}.Build()
 }
 
 func createNodeInventory(id, kernelV string) *storage.NodeInventory {
-	return &storage.NodeInventory{
+	return storage.NodeInventory_builder{
 		NodeId:   id,
 		NodeName: nodeName,
-		Components: &storage.NodeInventory_Components{
+		Components: storage.NodeInventory_Components_builder{
 			Namespace: "",
 			RhelComponents: []*storage.NodeInventory_Components_RHELComponent{
-				{
+				storage.NodeInventory_Components_RHELComponent_builder{
 					Id:          1,
 					Name:        kernelComponentName,
 					Namespace:   "",
@@ -462,67 +457,59 @@ func createNodeInventory(id, kernelV string) *storage.NodeInventory {
 					Module:      "",
 					AddedBy:     "",
 					Executables: nil,
-				},
+				}.Build(),
 			},
 			RhelContentSets: nil,
-		},
-	}
+		}.Build(),
+	}.Build()
 }
 
 func createNodeInventoryMsg(id, kernel string) *central.MsgFromSensor {
-	return &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Resource: &central.SensorEvent_NodeInventory{
-					NodeInventory: createNodeInventory(id, kernel),
-				},
-			},
-		},
-	}
+	se := &central.SensorEvent{}
+	se.SetNodeInventory(proto.ValueOrDefault(createNodeInventory(id, kernel)))
+	return central.MsgFromSensor_builder{
+		Event: se,
+	}.Build()
 }
 
 func createNodeMsg(id, kernel string) *central.MsgFromSensor {
-	return &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Resource: &central.SensorEvent_Node{
-					Node: &storage.Node{
-						Id:            id,
-						KernelVersion: kernel,
-						Name:          nodeName,
-					},
-				},
-			},
-		},
-	}
+	return central.MsgFromSensor_builder{
+		Event: central.SensorEvent_builder{
+			Node: storage.Node_builder{
+				Id:            id,
+				KernelVersion: kernel,
+				Name:          nodeName,
+			}.Build(),
+		}.Build(),
+	}.Build()
 }
 
 func nodeScanFixtureWithKernel(kernelVersion string) *storage.NodeScan {
-	return &storage.NodeScan{
+	return storage.NodeScan_builder{
 		Components: []*storage.EmbeddedNodeScanComponent{
-			{
+			storage.EmbeddedNodeScanComponent_builder{
 				Name:    kernelComponentName,
 				Version: kernelVersion,
 				Vulns:   nil,
 				Vulnerabilities: []*storage.NodeVulnerability{
-					{
-						CveBaseInfo: &storage.CVEInfo{
+					storage.NodeVulnerability_builder{
+						CveBaseInfo: storage.CVEInfo_builder{
 							Cve: "CVE-2020-1234",
-						},
+						}.Build(),
 						Cvss:         1,
 						Severity:     0,
 						SetFixedBy:   nil,
 						Snoozed:      false,
 						SnoozeStart:  nil,
 						SnoozeExpiry: nil,
-					},
+					}.Build(),
 				},
-				Priority:   0,
-				SetTopCvss: &storage.EmbeddedNodeScanComponent_TopCvss{TopCvss: 1.0},
-				RiskScore:  1,
-			},
+				Priority:  0,
+				TopCvss:   proto.Float32(1.0),
+				RiskScore: 1,
+			}.Build(),
 		},
-	}
+	}.Build()
 }
 
 var _ types.NodeScanner = (*fakeNodeScanner)(nil)
@@ -587,11 +574,11 @@ func (f fakeNodeScannerv4) Type() string {
 }
 
 func getDummyRisk() *storage.Risk {
-	return &storage.Risk{
-		Score:   1.0,
-		Results: make([]*storage.Risk_Result, 0),
-		Subject: &storage.RiskSubject{},
-	}
+	risk := &storage.Risk{}
+	risk.SetScore(1.0)
+	risk.SetResults(make([]*storage.Risk_Result, 0))
+	risk.SetSubject(&storage.RiskSubject{})
+	return risk
 }
 
 type mockNodeScorer struct{}

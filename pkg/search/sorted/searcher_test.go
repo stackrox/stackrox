@@ -46,40 +46,40 @@ func TestIsValidPriorityQuery(t *testing.T) {
 	}{
 		{
 			name: "valid single priority sort",
-			query: &v1.Query{
-				Pagination: &v1.QueryPagination{
+			query: v1.Query_builder{
+				Pagination: v1.QueryPagination_builder{
 					SortOptions: []*v1.QuerySortOption{
-						{Field: search.Priority.String()},
+						v1.QuerySortOption_builder{Field: search.Priority.String()}.Build(),
 					},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			field:         search.Priority,
 			expectedValid: true,
 			expectedError: false,
 		},
 		{
 			name: "valid single cluster priority sort",
-			query: &v1.Query{
-				Pagination: &v1.QueryPagination{
+			query: v1.Query_builder{
+				Pagination: v1.QueryPagination_builder{
 					SortOptions: []*v1.QuerySortOption{
-						{Field: search.ClusterPriority.String()},
+						v1.QuerySortOption_builder{Field: search.ClusterPriority.String()}.Build(),
 					},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			field:         search.ClusterPriority,
 			expectedValid: true,
 			expectedError: false,
 		},
 		{
 			name: "invalid - priority with other sort options",
-			query: &v1.Query{
-				Pagination: &v1.QueryPagination{
+			query: v1.Query_builder{
+				Pagination: v1.QueryPagination_builder{
 					SortOptions: []*v1.QuerySortOption{
-						{Field: search.Priority.String()},
-						{Field: search.CVE.String()},
+						v1.QuerySortOption_builder{Field: search.Priority.String()}.Build(),
+						v1.QuerySortOption_builder{Field: search.CVE.String()}.Build(),
 					},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			field:         search.Priority,
 			expectedValid: false,
 			expectedError: true,
@@ -94,38 +94,38 @@ func TestIsValidPriorityQuery(t *testing.T) {
 		},
 		{
 			name: "empty sort options",
-			query: &v1.Query{
-				Pagination: &v1.QueryPagination{
+			query: v1.Query_builder{
+				Pagination: v1.QueryPagination_builder{
 					SortOptions: []*v1.QuerySortOption{},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			field:         search.Priority,
 			expectedValid: false,
 			expectedError: false,
 		},
 		{
 			name: "different field",
-			query: &v1.Query{
-				Pagination: &v1.QueryPagination{
+			query: v1.Query_builder{
+				Pagination: v1.QueryPagination_builder{
 					SortOptions: []*v1.QuerySortOption{
-						{Field: search.CVE.String()},
+						v1.QuerySortOption_builder{Field: search.CVE.String()}.Build(),
 					},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			field:         search.Priority,
 			expectedValid: false,
 			expectedError: false,
 		},
 		{
 			name: "multiple sort options without priority",
-			query: &v1.Query{
-				Pagination: &v1.QueryPagination{
+			query: v1.Query_builder{
+				Pagination: v1.QueryPagination_builder{
 					SortOptions: []*v1.QuerySortOption{
-						{Field: search.CVE.String()},
-						{Field: search.Cluster.String()},
+						v1.QuerySortOption_builder{Field: search.CVE.String()}.Build(),
+						v1.QuerySortOption_builder{Field: search.Cluster.String()}.Build(),
 					},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			field:         search.Priority,
 			expectedValid: false,
 			expectedError: false,
@@ -160,73 +160,65 @@ func TestBuildPriorityQuery(t *testing.T) {
 	}{
 		{
 			name: "valid priority query - not reversed",
-			query: &v1.Query{
-				Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{
-								Field: "Cluster",
-								Value: "test",
-							},
-						},
-					},
-				},
-				Pagination: &v1.QueryPagination{
+			query: v1.Query_builder{
+				BaseQuery: v1.BaseQuery_builder{
+					MatchFieldQuery: v1.MatchFieldQuery_builder{
+						Field: "Cluster",
+						Value: "test",
+					}.Build(),
+				}.Build(),
+				Pagination: v1.QueryPagination_builder{
 					SortOptions: []*v1.QuerySortOption{
-						{Field: search.Priority.String(), Reversed: false},
+						v1.QuerySortOption_builder{Field: search.Priority.String(), Reversed: false}.Build(),
 					},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			field:            search.Priority,
 			expectedReversed: false,
 			expectedError:    false,
 		},
 		{
 			name: "valid priority query - reversed",
-			query: &v1.Query{
-				Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{
-								Field: "Cluster",
-								Value: "test",
-							},
-						},
-					},
-				},
-				Pagination: &v1.QueryPagination{
+			query: v1.Query_builder{
+				BaseQuery: v1.BaseQuery_builder{
+					MatchFieldQuery: v1.MatchFieldQuery_builder{
+						Field: "Cluster",
+						Value: "test",
+					}.Build(),
+				}.Build(),
+				Pagination: v1.QueryPagination_builder{
 					SortOptions: []*v1.QuerySortOption{
-						{Field: search.Priority.String(), Reversed: true},
+						v1.QuerySortOption_builder{Field: search.Priority.String(), Reversed: true}.Build(),
 					},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			field:            search.Priority,
 			expectedReversed: true,
 			expectedError:    false,
 		},
 		{
 			name: "invalid - not a priority query",
-			query: &v1.Query{
-				Pagination: &v1.QueryPagination{
+			query: v1.Query_builder{
+				Pagination: v1.QueryPagination_builder{
 					SortOptions: []*v1.QuerySortOption{
-						{Field: search.CVE.String()},
+						v1.QuerySortOption_builder{Field: search.CVE.String()}.Build(),
 					},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			field:         search.Priority,
 			expectedError: true,
 			errorMsg:      "does not sort by",
 		},
 		{
 			name: "invalid - priority with other sort options",
-			query: &v1.Query{
-				Pagination: &v1.QueryPagination{
+			query: v1.Query_builder{
+				Pagination: v1.QueryPagination_builder{
 					SortOptions: []*v1.QuerySortOption{
-						{Field: search.Priority.String()},
-						{Field: search.CVE.String()},
+						v1.QuerySortOption_builder{Field: search.Priority.String()}.Build(),
+						v1.QuerySortOption_builder{Field: search.CVE.String()}.Build(),
 					},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			field:         search.Priority,
 			expectedError: true,
 			errorMsg:      "not supported with other sort options",

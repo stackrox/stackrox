@@ -50,6 +50,7 @@ import (
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -109,10 +110,10 @@ func (ds *datastoreImpl) UpdateClusterUpgradeStatus(ctx context.Context, id stri
 	}
 
 	if cluster.GetStatus() == nil {
-		cluster.Status = &storage.ClusterStatus{}
+		cluster.SetStatus(&storage.ClusterStatus{})
 	}
 
-	cluster.Status.UpgradeStatus = upgradeStatus
+	cluster.GetStatus().SetUpgradeStatus(upgradeStatus)
 	return ds.clusterStorage.Upsert(ctx, cluster)
 }
 
@@ -130,10 +131,10 @@ func (ds *datastoreImpl) UpdateClusterCertExpiryStatus(ctx context.Context, id s
 	}
 
 	if cluster.GetStatus() == nil {
-		cluster.Status = &storage.ClusterStatus{}
+		cluster.SetStatus(&storage.ClusterStatus{})
 	}
 
-	cluster.Status.CertExpiryStatus = clusterCertExpiryStatus
+	cluster.GetStatus().SetCertExpiryStatus(clusterCertExpiryStatus)
 	return ds.clusterStorage.Upsert(ctx, cluster)
 }
 
@@ -147,9 +148,9 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, sta
 		return err
 	}
 
-	status.UpgradeStatus = cluster.GetStatus().GetUpgradeStatus()
-	status.CertExpiryStatus = cluster.GetStatus().GetCertExpiryStatus()
-	cluster.Status = status
+	status.SetUpgradeStatus(cluster.GetStatus().GetUpgradeStatus())
+	status.SetCertExpiryStatus(cluster.GetStatus().GetCertExpiryStatus())
+	cluster.SetStatus(status)
 
 	return ds.clusterStorage.Upsert(ctx, cluster)
 }
@@ -175,7 +176,7 @@ func (ds *datastoreImpl) buildCache(ctx context.Context) error {
 	for _, c := range clusters {
 		ds.idToNameCache.Add(c.GetId(), c.GetName())
 		ds.nameToIDCache.Add(c.GetName(), c.GetId())
-		c.HealthStatus = clusterHealthStatuses[c.GetId()]
+		c.SetHealthStatus(clusterHealthStatuses[c.GetId()])
 	}
 	return nil
 }
@@ -411,7 +412,7 @@ func (ds *datastoreImpl) addClusterNoLock(ctx context.Context, cluster *storage.
 		return "", errors.New("cannot add a cluster without name")
 	}
 
-	cluster.Id = uuid.NewV4().String()
+	cluster.SetId(uuid.NewV4().String())
 	if err := ds.updateClusterNoLock(ctx, cluster); err != nil {
 		return "", err
 	}
@@ -449,7 +450,7 @@ func (ds *datastoreImpl) UpdateCluster(ctx context.Context, cluster *storage.Clu
 		if cluster.GetManagedBy() != existingCluster.GetManagedBy() {
 			return errors.Errorf("Cannot update cluster. Cluster manager type change from %s not permitted.", existingCluster.GetManagedBy())
 		}
-		cluster.Status = existingCluster.GetStatus()
+		cluster.SetStatus(existingCluster.GetStatus())
 	}
 
 	if err := ds.updateClusterNoLock(ctx, cluster); err != nil {
@@ -460,13 +461,11 @@ func (ds *datastoreImpl) UpdateCluster(ctx context.Context, cluster *storage.Clu
 	if conn == nil {
 		return nil
 	}
-	err = conn.InjectMessage(concurrency.Never(), &central.MsgToSensor{
-		Msg: &central.MsgToSensor_ClusterConfig{
-			ClusterConfig: &central.ClusterConfig{
-				Config: cluster.GetDynamicConfig(),
-			},
-		},
-	})
+	cc := &central.ClusterConfig{}
+	cc.SetConfig(cluster.GetDynamicConfig())
+	mts := &central.MsgToSensor{}
+	mts.SetClusterConfig(proto.ValueOrDefault(cc))
+	err = conn.InjectMessage(concurrency.Never(), mts)
 	if err != nil {
 		// This is just logged because the connection could have been broken during the config send and we should handle it gracefully
 		log.Error(err)
@@ -495,7 +494,7 @@ func (ds *datastoreImpl) UpdateClusterHealth(ctx context.Context, id string, clu
 		return err
 	}
 
-	clusterHealthStatus.Id = id
+	clusterHealthStatus.SetId(id)
 	if err := ds.clusterHealthStorage.Upsert(ctx, clusterHealthStatus); err != nil {
 		return err
 	}
@@ -513,7 +512,7 @@ func (ds *datastoreImpl) UpdateClusterHealth(ctx context.Context, id string, clu
 	if !exists {
 		return nil
 	}
-	cluster.HealthStatus = clusterHealthStatus
+	cluster.SetHealthStatus(clusterHealthStatus)
 
 	if oldHealth.GetSensorHealthStatus() == storage.ClusterHealthStatus_UNINITIALIZED &&
 		clusterHealthStatus.GetSensorHealthStatus() != storage.ClusterHealthStatus_UNINITIALIZED {
@@ -535,7 +534,7 @@ func (ds *datastoreImpl) UpdateSensorDeploymentIdentification(ctx context.Contex
 		return err
 	}
 
-	cluster.MostRecentSensorId = identification
+	cluster.SetMostRecentSensorId(identification)
 	return ds.clusterStorage.Upsert(ctx, cluster)
 }
 
@@ -562,10 +561,10 @@ func (ds *datastoreImpl) UpdateAuditLogFileStates(ctx context.Context, id string
 	// If a state is missing in the new update, keep it in the saved state.
 	// It could be that compliance is down temporarily and we don't want to lose the data
 	if cluster.GetAuditLogState() == nil {
-		cluster.AuditLogState = make(map[string]*storage.AuditLogFileState)
+		cluster.SetAuditLogState(make(map[string]*storage.AuditLogFileState))
 	}
 	for node, state := range states {
-		cluster.AuditLogState[node] = state
+		cluster.GetAuditLogState()[node] = state
 	}
 
 	return ds.clusterStorage.Upsert(ctx, cluster)
@@ -841,7 +840,7 @@ func (ds *datastoreImpl) markAlertsStale(ctx context.Context, alerts []*storage.
 
 func (ds *datastoreImpl) updateClusterPriority(clusters ...*storage.Cluster) {
 	for _, cluster := range clusters {
-		cluster.Priority = ds.clusterRanker.GetRankForID(cluster.GetId())
+		cluster.SetPriority(ds.clusterRanker.GetRankForID(cluster.GetId()))
 	}
 }
 
@@ -878,7 +877,7 @@ func (ds *datastoreImpl) populateHealthInfos(ctx context.Context, clusters ...*s
 			missCount++
 			continue
 		}
-		cluster.HealthStatus = infos[healthIdx]
+		cluster.SetHealthStatus(infos[healthIdx])
 		healthIdx++
 	}
 }
@@ -940,17 +939,16 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 
 	} else if clusterName != "" {
 		// At this point, we can be sure that the cluster does not exist.
-		cluster = &storage.Cluster{
-			Name:               clusterName,
-			InitBundleId:       registrantID,
-			MostRecentSensorId: hello.GetDeploymentIdentification().CloneVT(),
-			SensorCapabilities: sliceutils.CopySliceSorted(hello.GetCapabilities()),
-		}
+		cluster = &storage.Cluster{}
+		cluster.SetName(clusterName)
+		cluster.SetInitBundleId(registrantID)
+		cluster.SetMostRecentSensorId(hello.GetDeploymentIdentification().CloneVT())
+		cluster.SetSensorCapabilities(sliceutils.CopySliceSorted(hello.GetCapabilities()))
 		clusterConfig := helmConfig.GetClusterConfig()
 		configureFromHelmConfig(cluster, clusterConfig)
 
 		if centralsensor.SecuredClusterIsNotManagedManually(helmConfig) {
-			cluster.HelmConfig = clusterConfig.CloneVT()
+			cluster.SetHelmConfig(clusterConfig.CloneVT())
 		}
 
 		if _, err := ds.addClusterNoLock(ctx, cluster); err != nil {
@@ -1002,14 +1000,14 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	currentCluster := cluster
 
 	cluster = cluster.CloneVT()
-	cluster.ManagedBy = manager
-	cluster.InitBundleId = registrantID
-	cluster.SensorCapabilities = sliceutils.CopySliceSorted(hello.GetCapabilities())
+	cluster.SetManagedBy(manager)
+	cluster.SetInitBundleId(registrantID)
+	cluster.SetSensorCapabilities(sliceutils.CopySliceSorted(hello.GetCapabilities()))
 	if centralsensor.SecuredClusterIsNotManagedManually(helmConfig) {
 		configureFromHelmConfig(cluster, clusterConfig)
-		cluster.HelmConfig = clusterConfig.CloneVT()
+		cluster.SetHelmConfig(clusterConfig.CloneVT())
 	} else {
-		cluster.HelmConfig = nil
+		cluster.ClearHelmConfig()
 	}
 
 	if !currentCluster.EqualVT(cluster) {
@@ -1031,8 +1029,8 @@ func normalizeCluster(cluster *storage.Cluster) error {
 		return errox.InvariantViolation.CausedBy("cannot normalize nil cluster object")
 	}
 
-	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "https://")
-	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "http://")
+	cluster.SetCentralApiEndpoint(strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "https://"))
+	cluster.SetCentralApiEndpoint(strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "http://"))
 
 	return addDefaults(cluster)
 }
@@ -1054,66 +1052,65 @@ func addDefaults(cluster *storage.Cluster) error {
 	// For backwards compatibility reasons, if Collection Method is not set, or set
 	// to KERNEL_MODULE (which is unsupported) then honor defaults for runtime support
 	if collectionMethod == storage.CollectionMethod_UNSET_COLLECTION || collectionMethod == storage.CollectionMethod_KERNEL_MODULE {
-		cluster.CollectionMethod = storage.CollectionMethod_CORE_BPF
+		cluster.SetCollectionMethod(storage.CollectionMethod_CORE_BPF)
 	}
-	cluster.RuntimeSupport = cluster.GetCollectionMethod() != storage.CollectionMethod_NO_COLLECTION
+	cluster.SetRuntimeSupport(cluster.GetCollectionMethod() != storage.CollectionMethod_NO_COLLECTION)
 
 	if cluster.GetTolerationsConfig() == nil {
-		cluster.TolerationsConfig = &storage.TolerationsConfig{
-			Disabled: false,
-		}
+		tc := &storage.TolerationsConfig{}
+		tc.SetDisabled(false)
+		cluster.SetTolerationsConfig(tc)
 	}
 
 	if cluster.GetDynamicConfig() == nil {
-		cluster.DynamicConfig = &storage.DynamicClusterConfig{}
+		cluster.SetDynamicConfig(&storage.DynamicClusterConfig{})
 	}
 	if cluster.GetType() != storage.ClusterType_OPENSHIFT4_CLUSTER {
-		cluster.DynamicConfig.DisableAuditLogs = true
+		cluster.GetDynamicConfig().SetDisableAuditLogs(true)
 	}
 
 	acConfig := cluster.GetDynamicConfig().GetAdmissionControllerConfig()
 	if acConfig == nil {
-		acConfig = &storage.AdmissionControllerConfig{
-			Enabled: false,
-		}
-		cluster.DynamicConfig.AdmissionControllerConfig = acConfig
+		acConfig = &storage.AdmissionControllerConfig{}
+		acConfig.SetEnabled(false)
+		cluster.GetDynamicConfig().SetAdmissionControllerConfig(acConfig)
 	}
 	if acConfig.GetTimeoutSeconds() < 0 {
 		return fmt.Errorf("timeout of %d is invalid", acConfig.GetTimeoutSeconds())
 	}
 	if acConfig.GetTimeoutSeconds() == 0 {
-		acConfig.TimeoutSeconds = defaultAdmissionControllerTimeout
+		acConfig.SetTimeoutSeconds(defaultAdmissionControllerTimeout)
 	}
 	if cluster.GetMainImage() == "" {
 		flavor := defaults.GetImageFlavorFromEnv()
-		cluster.MainImage = flavor.MainImageNoTag()
+		cluster.SetMainImage(flavor.MainImageNoTag())
 		// cluster.CollectorImage should be kept empty here on the save path
 		// because it is computed using complex rules from the MainImage on the load path.
 	}
 	if cluster.GetCentralApiEndpoint() == "" {
-		cluster.CentralApiEndpoint = "central.stackrox:443"
+		cluster.SetCentralApiEndpoint("central.stackrox:443")
 	}
 	return nil
 }
 
 func configureFromHelmConfig(cluster *storage.Cluster, helmConfig *storage.CompleteClusterConfig) {
-	cluster.DynamicConfig = helmConfig.GetDynamicConfig().CloneVT()
+	cluster.SetDynamicConfig(helmConfig.GetDynamicConfig().CloneVT())
 
 	staticConfig := helmConfig.GetStaticConfig()
-	cluster.Labels = helmConfig.GetClusterLabels()
-	cluster.Type = staticConfig.GetType()
-	cluster.MainImage = staticConfig.GetMainImage()
-	cluster.CentralApiEndpoint = staticConfig.GetCentralApiEndpoint()
-	cluster.CollectionMethod = staticConfig.GetCollectionMethod()
-	cluster.CollectorImage = staticConfig.GetCollectorImage()
-	cluster.AdmissionController = staticConfig.GetAdmissionController()
-	cluster.AdmissionControllerUpdates = staticConfig.GetAdmissionControllerUpdates()
-	cluster.AdmissionControllerEvents = staticConfig.GetAdmissionControllerEvents()
-	cluster.TolerationsConfig = staticConfig.GetTolerationsConfig().CloneVT()
-	cluster.SlimCollector = staticConfig.GetSlimCollector()
-	cluster.AdmissionControllerFailOnError = false
+	cluster.SetLabels(helmConfig.GetClusterLabels())
+	cluster.SetType(staticConfig.GetType())
+	cluster.SetMainImage(staticConfig.GetMainImage())
+	cluster.SetCentralApiEndpoint(staticConfig.GetCentralApiEndpoint())
+	cluster.SetCollectionMethod(staticConfig.GetCollectionMethod())
+	cluster.SetCollectorImage(staticConfig.GetCollectorImage())
+	cluster.SetAdmissionController(staticConfig.GetAdmissionController())
+	cluster.SetAdmissionControllerUpdates(staticConfig.GetAdmissionControllerUpdates())
+	cluster.SetAdmissionControllerEvents(staticConfig.GetAdmissionControllerEvents())
+	cluster.SetTolerationsConfig(staticConfig.GetTolerationsConfig().CloneVT())
+	cluster.SetSlimCollector(staticConfig.GetSlimCollector())
+	cluster.SetAdmissionControllerFailOnError(false)
 	if features.AdmissionControllerConfig.Enabled() {
-		cluster.AdmissionControllerFailOnError = staticConfig.GetAdmissionControllerFailOnError()
+		cluster.SetAdmissionControllerFailOnError(staticConfig.GetAdmissionControllerFailOnError())
 	}
 }
 
@@ -1133,12 +1130,12 @@ func (ds *datastoreImpl) collectClusters(ctx context.Context) ([]*storage.Cluste
 }
 
 func convertCluster(cluster *storage.Cluster, result pkgSearch.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_CLUSTERS,
-		Id:             cluster.GetId(),
-		Name:           cluster.GetName(),
-		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-		Location:       fmt.Sprintf("/%s", cluster.GetName()),
-	}
+	sr := &v1.SearchResult{}
+	sr.SetCategory(v1.SearchCategory_CLUSTERS)
+	sr.SetId(cluster.GetId())
+	sr.SetName(cluster.GetName())
+	sr.SetFieldToMatches(pkgSearch.GetProtoMatchesMap(result.Matches))
+	sr.SetScore(result.Score)
+	sr.SetLocation(fmt.Sprintf("/%s", cluster.GetName()))
+	return sr
 }

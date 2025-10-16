@@ -64,9 +64,9 @@ func (s *service) GetRecentRuns(ctx context.Context, req *v1.GetRecentCompliance
 		return protocompat.CompareTimestamps(runs[i].GetStartTime(), runs[j].GetStartTime()) < 0
 	})
 
-	return &v1.GetRecentComplianceRunsResponse{
-		ComplianceRuns: runs,
-	}, nil
+	grcrr := &v1.GetRecentComplianceRunsResponse{}
+	grcrr.SetComplianceRuns(runs)
+	return grcrr, nil
 }
 
 func (s *service) TriggerRuns(ctx context.Context, req *v1.TriggerComplianceRunsRequest) (*v1.TriggerComplianceRunsResponse, error) {
@@ -79,9 +79,9 @@ func (s *service) TriggerRuns(ctx context.Context, req *v1.TriggerComplianceRuns
 	if err != nil {
 		return nil, err
 	}
-	return &v1.TriggerComplianceRunsResponse{
-		StartedRuns: runs,
-	}, nil
+	tcrr := &v1.TriggerComplianceRunsResponse{}
+	tcrr.SetStartedRuns(runs)
+	return tcrr, nil
 }
 
 func (s *service) GetRunStatuses(ctx context.Context, req *v1.GetComplianceRunStatusesRequest) (*v1.GetComplianceRunStatusesResponse, error) {
@@ -94,9 +94,9 @@ func (s *service) GetRunStatuses(ctx context.Context, req *v1.GetComplianceRunSt
 		if err != nil {
 			return nil, err
 		}
-		return &v1.GetComplianceRunStatusesResponse{
-			Runs: runs,
-		}, nil
+		gcrsr := &v1.GetComplianceRunStatusesResponse{}
+		gcrsr.SetRuns(runs)
+		return gcrsr, nil
 	}
 
 	runs, err := s.manager.GetRunStatuses(ctx, req.GetRunIds()...)
@@ -108,8 +108,8 @@ func (s *service) GetRunStatuses(ctx context.Context, req *v1.GetComplianceRunSt
 	for _, run := range runs {
 		allRunIds.Remove(run.GetId())
 	}
-	return &v1.GetComplianceRunStatusesResponse{
-		InvalidRunIds: allRunIds.AsSlice(),
-		Runs:          runs,
-	}, nil
+	gcrsr := &v1.GetComplianceRunStatusesResponse{}
+	gcrsr.SetInvalidRunIds(allRunIds.AsSlice())
+	gcrsr.SetRuns(runs)
+	return gcrsr, nil
 }

@@ -67,7 +67,7 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 	if d.appendUnchangedIDs && resourcesSynced != nil {
 		d.synced = true
 		log.Infof("Adding %d events as unchanged to sync event", len(d.unchangedIDs))
-		resourcesSynced.UnchangedIds = d.unchangedIDs.AsSlice()
+		resourcesSynced.SetUnchangedIds(d.unchangedIDs.AsSlice())
 		metrics.IncrementTotalResourcesSyncSent(len(d.unchangedIDs))
 		metrics.SetResourcesSyncedSize(msg.SizeVT())
 	}
@@ -105,9 +105,7 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 			}
 			return nil
 		}
-		event.SensorHashOneof = &central.SensorEvent_SensorHash{
-			SensorHash: hashValue,
-		}
+		event.SetSensorHash(hashValue)
 		d.lastSent[key] = hashValue
 	}
 

@@ -68,9 +68,9 @@ func ResolveMetadataOnlyByID(ctx context.Context, id string, dataStore datastore
 		return nil, false, nil
 	}
 
-	return &v1.Namespace{
-		Metadata: ns,
-	}, true, nil
+	namespace := &v1.Namespace{}
+	namespace.SetMetadata(ns)
+	return namespace, true, nil
 }
 
 // ResolveByID resolves a namespace by id given all the stores.
@@ -113,10 +113,10 @@ func populate(ctx context.Context, storageNamespace *storage.NamespaceMetadata, 
 		return nil, errors.Wrap(err, "counting network policies")
 	}
 
-	return &v1.Namespace{
-		Metadata:           storageNamespace,
-		NumDeployments:     int32(deploymentCount),
-		NumSecrets:         int32(secretCount),
-		NumNetworkPolicies: int32(networkPolicyCount),
-	}, nil
+	namespace := &v1.Namespace{}
+	namespace.SetMetadata(storageNamespace)
+	namespace.SetNumDeployments(int32(deploymentCount))
+	namespace.SetNumSecrets(int32(secretCount))
+	namespace.SetNumNetworkPolicies(int32(networkPolicyCount))
+	return namespace, nil
 }

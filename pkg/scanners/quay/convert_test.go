@@ -12,13 +12,12 @@ import (
 )
 
 func getTestScan() (*scanResult, *storage.ImageScan, *storage.Image) {
-	image := &storage.Image{
-		Name: &storage.ImageName{
-			Registry: "quay.io",
-			Remote:   "integration/nginx",
-			Tag:      "1.10",
-		},
-	}
+	imageName := &storage.ImageName{}
+	imageName.SetRegistry("quay.io")
+	imageName.SetRemote("integration/nginx")
+	imageName.SetTag("1.10")
+	image := &storage.Image{}
+	image.SetName(imageName)
 	quayFeatures, protoComponents := mock.GetTestFeatures()
 
 	quayScan := &scanResult{
@@ -30,9 +29,8 @@ func getTestScan() (*scanResult, *storage.ImageScan, *storage.Image) {
 		},
 	}
 	// Leaving OperatingSystem blank, so we can make sure it says 'unknown'
-	protoScan := &storage.ImageScan{
-		Components: protoComponents,
-	}
+	protoScan := &storage.ImageScan{}
+	protoScan.SetComponents(protoComponents)
 	return quayScan, protoScan, image
 }
 

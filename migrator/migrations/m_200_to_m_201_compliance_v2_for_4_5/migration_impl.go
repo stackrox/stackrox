@@ -73,7 +73,7 @@ func migrateProfiles(database *types.Databases) error {
 		}
 
 		// Add the profile ref id
-		profileProto.ProfileRefId = createProfileRefID(profileProto.GetClusterId(), profileProto.GetProfileId(), profileProto.GetProductType())
+		profileProto.SetProfileRefId(createProfileRefID(profileProto.GetClusterId(), profileProto.GetProfileId(), profileProto.GetProductType()))
 
 		converted, err := newSchema.ConvertComplianceOperatorProfileV2FromProto(profileProto)
 		if err != nil {
@@ -117,8 +117,8 @@ func migrateRules(database *types.Databases) error {
 	ruleCount := 0
 	rules := make([]*storage.ComplianceOperatorRuleV2, 0)
 	err := ruleStore.Walk(database.DBCtx, func(obj *storage.ComplianceOperatorRuleV2) error {
-		obj.ParentRule = obj.GetAnnotations()[v1alpha1.RuleIDAnnotationKey]
-		obj.RuleRefId = buildDeterministicID(obj.GetClusterId(), obj.GetParentRule())
+		obj.SetParentRule(obj.GetAnnotations()[v1alpha1.RuleIDAnnotationKey])
+		obj.SetRuleRefId(buildDeterministicID(obj.GetClusterId(), obj.GetParentRule()))
 
 		var newControls []*storage.RuleControls
 		for _, control := range obj.GetControls() {
@@ -126,13 +126,13 @@ func migrateRules(database *types.Databases) error {
 
 			// Add a control entry for each Control + Standard. This data is intentionally denormalized for easier querying.
 			for _, controlValue := range controlAnnotationValues {
-				newControls = append(newControls, &storage.RuleControls{
-					Standard: control.GetStandard(),
-					Control:  controlValue,
-				})
+				rc := &storage.RuleControls{}
+				rc.SetStandard(control.GetStandard())
+				rc.SetControl(controlValue)
+				newControls = append(newControls, rc)
 			}
 		}
-		obj.Controls = newControls
+		obj.SetControls(newControls)
 
 		rules = append(rules, obj)
 		if len(rules) >= batchSize {
@@ -189,12 +189,12 @@ func migrateScans(database *types.Databases) error {
 		}
 
 		// Add the profile ref id and scan ref id
-		scanProto.ProductType = scanTypeToString[scanProto.GetScanType()]
-		scanProto.ScanRefId = buildDeterministicID(scanProto.GetClusterId(), scanProto.GetScanName())
+		scanProto.SetProductType(scanTypeToString[scanProto.GetScanType()])
+		scanProto.SetScanRefId(buildDeterministicID(scanProto.GetClusterId(), scanProto.GetScanName()))
 		if scanProto.GetProfile() == nil {
 			return errors.Wrapf(err, "failed to set profile %+v to proto", scan)
 		}
-		scanProto.Profile.ProfileRefId = createProfileRefID(scanProto.GetClusterId(), scanProto.GetProfile().GetProfileId(), scanProto.GetProductType())
+		scanProto.GetProfile().SetProfileRefId(createProfileRefID(scanProto.GetClusterId(), scanProto.GetProfile().GetProfileId(), scanProto.GetProductType()))
 
 		converted, err := newSchema.ConvertComplianceOperatorScanV2FromProto(scanProto)
 		if err != nil {
@@ -254,8 +254,8 @@ func migrateResults(database *types.Databases) error {
 		}
 
 		// Add the scan_ref_id and rule_ref_id
-		resultProto.ScanRefId = buildDeterministicID(resultProto.GetClusterId(), resultProto.GetScanName())
-		resultProto.RuleRefId = buildDeterministicID(resultProto.GetClusterId(), resultProto.GetAnnotations()[v1alpha1.RuleIDAnnotationKey])
+		resultProto.SetScanRefId(buildDeterministicID(resultProto.GetClusterId(), resultProto.GetScanName()))
+		resultProto.SetRuleRefId(buildDeterministicID(resultProto.GetClusterId(), resultProto.GetAnnotations()[v1alpha1.RuleIDAnnotationKey]))
 
 		converted, err := newSchema.ConvertComplianceOperatorCheckResultV2FromProto(resultProto)
 		if err != nil {

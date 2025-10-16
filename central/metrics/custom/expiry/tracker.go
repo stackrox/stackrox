@@ -31,9 +31,9 @@ func track(ctx context.Context, s service.Service) iter.Seq[*finding] {
 			if v1.GetCertExpiry_Component(i) == v1.GetCertExpiry_UNKNOWN {
 				continue
 			}
-			result, err := s.GetCertExpiry(ctx, &v1.GetCertExpiry_Request{
-				Component: v1.GetCertExpiry_Component(i),
-			})
+			gr := &v1.GetCertExpiry_Request{}
+			gr.SetComponent(v1.GetCertExpiry_Component(i))
+			result, err := s.GetCertExpiry(ctx, gr)
 			f.component = component
 			f.err = err
 			if result != nil {

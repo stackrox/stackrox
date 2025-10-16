@@ -120,11 +120,11 @@ func (suite *complianceManagerTestSuite) TestProcessComplianceOperatorInfo() {
 				suite.integrationDS.EXPECT().GetComplianceIntegrations(gomock.Any(), query).Return(nil, errors.New("Unable to retrieve data")).Times(1)
 			},
 			complianceInfoGen: func() *storage.ComplianceIntegration {
-				return &storage.ComplianceIntegration{
+				return storage.ComplianceIntegration_builder{
 					Version:             "22",
 					ClusterId:           fixtureconsts.Cluster1,
 					ComplianceNamespace: fixtureconsts.Namespace1,
-				}
+				}.Build()
 			},
 			isErrorTest: true,
 		},
@@ -136,19 +136,19 @@ func (suite *complianceManagerTestSuite) TestProcessComplianceOperatorInfo() {
 
 				suite.integrationDS.EXPECT().GetComplianceIntegrations(gomock.Any(), query).Return(nil, nil).Times(1)
 
-				expectedInfo := &storage.ComplianceIntegration{
+				expectedInfo := storage.ComplianceIntegration_builder{
 					Version:             "22",
 					ClusterId:           fixtureconsts.Cluster1,
 					ComplianceNamespace: fixtureconsts.Namespace1,
-				}
+				}.Build()
 				suite.integrationDS.EXPECT().AddComplianceIntegration(gomock.Any(), expectedInfo).Return(uuid.NewV4().String(), nil).Times(1)
 			},
 			complianceInfoGen: func() *storage.ComplianceIntegration {
-				return &storage.ComplianceIntegration{
+				return storage.ComplianceIntegration_builder{
 					Version:             "22",
 					ClusterId:           fixtureconsts.Cluster1,
 					ComplianceNamespace: fixtureconsts.Namespace1,
-				}
+				}.Build()
 			},
 			isErrorTest: false,
 		},
@@ -158,23 +158,23 @@ func (suite *complianceManagerTestSuite) TestProcessComplianceOperatorInfo() {
 				query := search.NewQueryBuilder().
 					AddExactMatches(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery()
 
-				expectedInfo := &storage.ComplianceIntegration{
+				expectedInfo := storage.ComplianceIntegration_builder{
 					Id:                  uuid.NewV4().String(),
 					Version:             "22",
 					ClusterId:           fixtureconsts.Cluster1,
 					ComplianceNamespace: fixtureconsts.Namespace1,
-				}
+				}.Build()
 
 				suite.integrationDS.EXPECT().GetComplianceIntegrations(gomock.Any(), query).Return([]*storage.ComplianceIntegration{expectedInfo}, nil).Times(1)
 
 				suite.integrationDS.EXPECT().UpdateComplianceIntegration(gomock.Any(), expectedInfo).Return(nil).Times(1)
 			},
 			complianceInfoGen: func() *storage.ComplianceIntegration {
-				return &storage.ComplianceIntegration{
+				return storage.ComplianceIntegration_builder{
 					Version:             "22",
 					ClusterId:           fixtureconsts.Cluster1,
 					ComplianceNamespace: fixtureconsts.Namespace1,
-				}
+				}.Build()
 			},
 			isErrorTest: false,
 		},
@@ -558,27 +558,27 @@ func getTestProfile(profileName string, version string, platform string, product
 	if ruleCount > 0 {
 		rules = make([]*storage.ComplianceOperatorProfileV2_Rule, 0, ruleCount)
 		for i := 0; i < ruleCount; i++ {
-			rules = append(rules, &storage.ComplianceOperatorProfileV2_Rule{
-				RuleName: fmt.Sprintf("name-%d", i),
-			})
+			cr := &storage.ComplianceOperatorProfileV2_Rule{}
+			cr.SetRuleName(fmt.Sprintf("name-%d", i))
+			rules = append(rules, cr)
 		}
 	}
 
-	return &storage.ComplianceOperatorProfileV2{
-		Id:             uuid.NewV4().String(),
-		ProfileId:      uuid.NewV4().String(),
-		Name:           profileName,
-		ProfileVersion: version,
-		ProductType:    platform,
-		Standard:       profileName,
-		Description:    "this is a test",
-		Labels:         nil,
-		Annotations:    nil,
-		Product:        product,
-		ClusterId:      clusterID,
-		Title:          "A Title",
-		Rules:          rules,
-	}
+	copv2 := &storage.ComplianceOperatorProfileV2{}
+	copv2.SetId(uuid.NewV4().String())
+	copv2.SetProfileId(uuid.NewV4().String())
+	copv2.SetName(profileName)
+	copv2.SetProfileVersion(version)
+	copv2.SetProductType(platform)
+	copv2.SetStandard(profileName)
+	copv2.SetDescription("this is a test")
+	copv2.SetLabels(nil)
+	copv2.SetAnnotations(nil)
+	copv2.SetProduct(product)
+	copv2.SetClusterId(clusterID)
+	copv2.SetTitle("A Title")
+	copv2.SetRules(rules)
+	return copv2
 }
 
 func getTestScans(scanConfigName string, clusterID string, profileID string, count int) []*storage.ComplianceOperatorScanV2 {
@@ -586,15 +586,15 @@ func getTestScans(scanConfigName string, clusterID string, profileID string, cou
 	for i := 0; i < count; i++ {
 		scanName := fmt.Sprintf("scan-%s-%s-%s-%d", scanConfigName, clusterID, profileID, i)
 
-		scans = append(scans, &storage.ComplianceOperatorScanV2{
-			Id:             uuid.NewV4().String(),
-			ScanName:       scanName,
-			ScanConfigName: scanConfigName,
-			ClusterId:      clusterID,
-			Profile: &storage.ProfileShim{
-				ProfileId: profileID,
-			},
-		})
+		ps := &storage.ProfileShim{}
+		ps.SetProfileId(profileID)
+		cosv2 := &storage.ComplianceOperatorScanV2{}
+		cosv2.SetId(uuid.NewV4().String())
+		cosv2.SetScanName(scanName)
+		cosv2.SetScanConfigName(scanConfigName)
+		cosv2.SetClusterId(clusterID)
+		cosv2.SetProfile(ps)
+		scans = append(scans, cosv2)
 	}
 
 	return scans
@@ -610,7 +610,9 @@ func getTestRecMultiCluster() *storage.ComplianceOperatorScanConfigurationV2 {
 
 func (suite *complianceManagerTestSuite) TestProcessRescanRequest() {
 	multiCluster := getTestRec()
-	multiCluster.Clusters = append(multiCluster.Clusters, &storage.ComplianceOperatorScanConfigurationV2_Cluster{ClusterId: testconsts.Cluster3})
+	cc := &storage.ComplianceOperatorScanConfigurationV2_Cluster{}
+	cc.SetClusterId(testconsts.Cluster3)
+	multiCluster.SetClusters(append(multiCluster.GetClusters(), cc))
 	cases := []processScanConfigTestCase{
 		{
 			desc: "Rerun existing scan config succeeds",
@@ -673,28 +675,28 @@ func getTestRecNoIDValidProfile() *storage.ComplianceOperatorScanConfigurationV2
 func getTestRecWithClustersAndProfiles(scanID string, clusterIDs []string, profileNames []string) *storage.ComplianceOperatorScanConfigurationV2 {
 	clusters := make([]*storage.ComplianceOperatorScanConfigurationV2_Cluster, 0, len(clusterIDs))
 	for _, clusterID := range clusterIDs {
-		clusters = append(clusters, &storage.ComplianceOperatorScanConfigurationV2_Cluster{
-			ClusterId: clusterID,
-		})
+		cc := &storage.ComplianceOperatorScanConfigurationV2_Cluster{}
+		cc.SetClusterId(clusterID)
+		clusters = append(clusters, cc)
 	}
 
 	profiles := make([]*storage.ComplianceOperatorScanConfigurationV2_ProfileName, 0, len(profileNames))
 	for _, profileName := range profileNames {
-		profiles = append(profiles, &storage.ComplianceOperatorScanConfigurationV2_ProfileName{
-			ProfileName: profileName,
-		})
+		cp := &storage.ComplianceOperatorScanConfigurationV2_ProfileName{}
+		cp.SetProfileName(profileName)
+		profiles = append(profiles, cp)
 	}
 
-	return &storage.ComplianceOperatorScanConfigurationV2{
-		Id:                     scanID,
-		ScanConfigName:         mockScanName,
-		AutoApplyRemediations:  false,
-		AutoUpdateRemediations: false,
-		OneTimeScan:            false,
-		Profiles:               profiles,
-		Clusters:               clusters,
-		StrictNodeScan:         false,
-	}
+	coscv2 := &storage.ComplianceOperatorScanConfigurationV2{}
+	coscv2.SetId(scanID)
+	coscv2.SetScanConfigName(mockScanName)
+	coscv2.SetAutoApplyRemediations(false)
+	coscv2.SetAutoUpdateRemediations(false)
+	coscv2.SetOneTimeScan(false)
+	coscv2.SetProfiles(profiles)
+	coscv2.SetClusters(clusters)
+	coscv2.SetStrictNodeScan(false)
+	return coscv2
 }
 
 func (suite *complianceManagerTestSuite) TestRemoveObsoleteResultsByClusters() {

@@ -32,6 +32,7 @@ import (
 	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
 	"github.com/stackrox/rox/sensor/common/networkflow/updatecomputer"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
+	"google.golang.org/protobuf/proto"
 )
 
 const connectionDeletionGracePeriod = 5 * time.Minute
@@ -440,11 +441,10 @@ func (m *networkFlowManager) enrichAndSend() {
 }
 
 func (m *networkFlowManager) sendConnsEps(conns []*storage.NetworkFlow, eps []*storage.NetworkEndpoint) bool {
-	protoToSend := &central.NetworkFlowUpdate{
-		Updated:          conns,
-		UpdatedEndpoints: eps,
-		Time:             protocompat.TimestampNow(),
-	}
+	protoToSend := &central.NetworkFlowUpdate{}
+	protoToSend.SetUpdated(conns)
+	protoToSend.SetUpdatedEndpoints(eps)
+	protoToSend.SetTime(protocompat.TimestampNow())
 
 	var detectionContext context.Context
 	if features.SensorCapturesIntermediateEvents.Enabled() {
@@ -458,23 +458,18 @@ func (m *networkFlowManager) sendConnsEps(conns []*storage.NetworkFlow, eps []*s
 	}
 
 	log.Debugf("Flow update : %v", protoToSend)
-	return m.sendToCentral(&central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_NetworkFlowUpdate{
-			NetworkFlowUpdate: protoToSend,
-		},
-	})
+	mfs := &central.MsgFromSensor{}
+	mfs.SetNetworkFlowUpdate(proto.ValueOrDefault(protoToSend))
+	return m.sendToCentral(mfs)
 }
 
 func (m *networkFlowManager) sendProcesses(processes []*storage.ProcessListeningOnPortFromSensor) bool {
-	processesToSend := &central.ProcessListeningOnPortsUpdate{
-		ProcessesListeningOnPorts: processes,
-		Time:                      protocompat.TimestampNow(),
-	}
-	return m.sendToCentral(&central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_ProcessListeningOnPortUpdate{
-			ProcessListeningOnPortUpdate: processesToSend,
-		},
-	})
+	processesToSend := &central.ProcessListeningOnPortsUpdate{}
+	processesToSend.SetProcessesListeningOnPorts(processes)
+	processesToSend.SetTime(protocompat.TimestampNow())
+	mfs := &central.MsgFromSensor{}
+	mfs.SetProcessListeningOnPortUpdate(proto.ValueOrDefault(processesToSend))
+	return m.sendToCentral(mfs)
 }
 
 func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (

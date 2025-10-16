@@ -61,12 +61,11 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	}
 
 	var operatorErrors []string
-	operatorInfo := &storage.ComplianceIntegration{
-		Version:             msg.GetComplianceOperatorInfo().GetVersion(),
-		ClusterId:           clusterID,
-		ComplianceNamespace: msg.GetComplianceOperatorInfo().GetNamespace(),
-		OperatorInstalled:   msg.GetComplianceOperatorInfo().GetIsInstalled(),
-	}
+	operatorInfo := &storage.ComplianceIntegration{}
+	operatorInfo.SetVersion(msg.GetComplianceOperatorInfo().GetVersion())
+	operatorInfo.SetClusterId(clusterID)
+	operatorInfo.SetComplianceNamespace(msg.GetComplianceOperatorInfo().GetNamespace())
+	operatorInfo.SetOperatorInstalled(msg.GetComplianceOperatorInfo().GetIsInstalled())
 
 	if msg.GetComplianceOperatorInfo().GetStatusError() != "" {
 		operatorErrors = append(operatorErrors, msg.GetComplianceOperatorInfo().GetStatusError())
@@ -91,10 +90,10 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		}
 	}
 
-	operatorInfo.StatusErrors = operatorErrors
-	operatorInfo.OperatorStatus = storage.COStatus_UNHEALTHY
+	operatorInfo.SetStatusErrors(operatorErrors)
+	operatorInfo.SetOperatorStatus(storage.COStatus_UNHEALTHY)
 	if len(operatorInfo.GetStatusErrors()) == 0 {
-		operatorInfo.OperatorStatus = storage.COStatus_HEALTHY
+		operatorInfo.SetOperatorStatus(storage.COStatus_HEALTHY)
 	}
 	return s.manager.ProcessComplianceOperatorInfo(ctx, operatorInfo)
 }

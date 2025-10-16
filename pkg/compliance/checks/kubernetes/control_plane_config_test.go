@@ -20,14 +20,14 @@ func TestControlPlaneConfigChecks(t *testing.T) {
 		{
 			name: "CIS_Kubernetes_v1_5:3_2_1",
 			commandLines: map[string]*compliance.CommandLine{
-				"test": {
+				"test": compliance.CommandLine_builder{
 					Process: "kube-apiserver",
 					Args: []*compliance.CommandLine_Args{
-						{
+						compliance.CommandLine_Args_builder{
 							Key: "--audit-policy-file",
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			status: storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
 		},

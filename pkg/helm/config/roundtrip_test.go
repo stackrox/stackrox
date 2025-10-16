@@ -145,7 +145,7 @@ func (h *helmConfigSuite) DoTestHelmConfigRoundTrip(helmValuesFile string) {
 
 	// Create a `Cluster` proto from  the `CompleteClusterConfig`.
 	cluster := initClusterFromCompleteClusterConfig(clusterCfg)
-	cluster.Name = clusterName
+	cluster.SetName(clusterName)
 
 	// Derive a new Helm config from the `Cluster` proto.
 	derivedHelmCfg, err := FromCluster(cluster, flavorUtils.MakeImageFlavorForTest(h.T()))
@@ -165,20 +165,19 @@ func (h *helmConfigSuite) DoTestHelmConfigRoundTrip(helmValuesFile string) {
 // This should probably be moved to a better place since this could be useful for Central when a new Cluster needs
 // to be created, given a `CompleteClusterConfig`.
 func initClusterFromCompleteClusterConfig(cfg *storage.CompleteClusterConfig) *storage.Cluster {
-	cluster := storage.Cluster{
-		Type:                       cfg.GetStaticConfig().GetType(),
-		MainImage:                  cfg.GetStaticConfig().GetMainImage(),
-		CollectorImage:             cfg.GetStaticConfig().GetCollectorImage(),
-		CentralApiEndpoint:         cfg.GetStaticConfig().GetCentralApiEndpoint(),
-		CollectionMethod:           cfg.GetStaticConfig().GetCollectionMethod(),
-		AdmissionController:        cfg.GetStaticConfig().GetAdmissionController(),
-		AdmissionControllerUpdates: cfg.GetStaticConfig().GetAdmissionControllerUpdates(),
-		AdmissionControllerEvents:  cfg.GetStaticConfig().GetAdmissionControllerEvents(),
-		DynamicConfig:              cfg.GetDynamicConfig(),
-		TolerationsConfig:          cfg.GetStaticConfig().GetTolerationsConfig(),
-		SlimCollector:              cfg.GetStaticConfig().GetSlimCollector(),
-		HelmConfig:                 cfg,
-		ManagedBy:                  storage.ManagerType_MANAGER_TYPE_HELM_CHART,
-	}
+	cluster := &storage.Cluster{}
+	cluster.SetType(cfg.GetStaticConfig().GetType())
+	cluster.SetMainImage(cfg.GetStaticConfig().GetMainImage())
+	cluster.SetCollectorImage(cfg.GetStaticConfig().GetCollectorImage())
+	cluster.SetCentralApiEndpoint(cfg.GetStaticConfig().GetCentralApiEndpoint())
+	cluster.SetCollectionMethod(cfg.GetStaticConfig().GetCollectionMethod())
+	cluster.SetAdmissionController(cfg.GetStaticConfig().GetAdmissionController())
+	cluster.SetAdmissionControllerUpdates(cfg.GetStaticConfig().GetAdmissionControllerUpdates())
+	cluster.SetAdmissionControllerEvents(cfg.GetStaticConfig().GetAdmissionControllerEvents())
+	cluster.SetDynamicConfig(cfg.GetDynamicConfig())
+	cluster.SetTolerationsConfig(cfg.GetStaticConfig().GetTolerationsConfig())
+	cluster.SetSlimCollector(cfg.GetStaticConfig().GetSlimCollector())
+	cluster.SetHelmConfig(cfg)
+	cluster.SetManagedBy(storage.ManagerType_MANAGER_TYPE_HELM_CHART)
 	return &cluster
 }

@@ -17,20 +17,16 @@ func (r *tstResourceWithTraits) GetTraits() *storage.Traits {
 }
 
 func TestVerifyReferencedResourceOrigin(t *testing.T) {
-	declarativeTraits := &storage.Traits{
-		Origin: storage.Traits_DECLARATIVE,
-	}
-	imperativeTraits := &storage.Traits{
-		Origin: storage.Traits_IMPERATIVE,
-	}
-	orphanedTraits := &storage.Traits{
-		Origin: storage.Traits_DECLARATIVE_ORPHANED,
-	}
+	declarativeTraits := &storage.Traits{}
+	declarativeTraits.SetOrigin(storage.Traits_DECLARATIVE)
+	imperativeTraits := &storage.Traits{}
+	imperativeTraits.SetOrigin(storage.Traits_IMPERATIVE)
+	orphanedTraits := &storage.Traits{}
+	orphanedTraits.SetOrigin(storage.Traits_DECLARATIVE_ORPHANED)
 	// Let's not enforce rules for when default resource is referencing another resource.
 	// There's no need for that since default resources are immutable and created on a system startup.
-	defaultTraits := &storage.Traits{
-		Origin: storage.Traits_DEFAULT,
-	}
+	defaultTraits := &storage.Traits{}
+	defaultTraits.SetOrigin(storage.Traits_DEFAULT)
 	testNoError(t, declarativeTraits, declarativeTraits)
 	testNoError(t, declarativeTraits, orphanedTraits)
 	testNoError(t, declarativeTraits, defaultTraits)

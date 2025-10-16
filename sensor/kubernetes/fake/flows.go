@@ -113,21 +113,25 @@ func makeNetworkConnection(src string, dst string, containerID string, closeTime
 		log.Errorf("Unable to set closeTS %+v", err)
 	}
 
-	return &sensor.NetworkConnection{
-		SocketFamily: sensor.SocketFamily_SOCKET_FAMILY_IPV4,
-		LocalAddress: &sensor.NetworkAddress{
-			AddressData: net.ParseIP(src).AsNetIP(),
-			Port:        rand.Uint32() % 63556,
-		},
-		RemoteAddress: &sensor.NetworkAddress{
-			AddressData: net.ParseIP(dst).AsNetIP(),
-			Port:        rand.Uint32() % 63556,
-		},
-		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
-		Role:           sensor.ClientServerRole_ROLE_CLIENT,
-		ContainerId:    containerID,
-		CloseTimestamp: closeTS,
+	na := &sensor.NetworkAddress{}
+	if x := net.ParseIP(src).AsNetIP(); x != nil {
+		na.SetAddressData(x)
 	}
+	na.SetPort(rand.Uint32() % 63556)
+	na2 := &sensor.NetworkAddress{}
+	if x := net.ParseIP(dst).AsNetIP(); x != nil {
+		na2.SetAddressData(x)
+	}
+	na2.SetPort(rand.Uint32() % 63556)
+	nc := &sensor.NetworkConnection{}
+	nc.SetSocketFamily(sensor.SocketFamily_SOCKET_FAMILY_IPV4)
+	nc.SetLocalAddress(na)
+	nc.SetRemoteAddress(na2)
+	nc.SetProtocol(storage.L4Protocol_L4_PROTOCOL_TCP)
+	nc.SetRole(sensor.ClientServerRole_ROLE_CLIENT)
+	nc.SetContainerId(containerID)
+	nc.SetCloseTimestamp(closeTS)
+	return nc
 }
 
 // Randomly decide to get an interal or external IP, with an 80% chance of the IP
@@ -196,17 +200,18 @@ func (w *WorkloadManager) getRandomNetworkEndpoint(containerID string) (*sensor.
 	// Get or set originator for this endpoint with configurable reuse probability
 	originator := w.originatorCache.GetOrSetOriginator(endpointKey, containerID, w.workload.NetworkWorkload.OpenPortReuseProbability, w.processPool)
 
-	networkEndpoint := &sensor.NetworkEndpoint{
-		SocketFamily: sensor.SocketFamily_SOCKET_FAMILY_IPV4,
-		Protocol:     storage.L4Protocol_L4_PROTOCOL_TCP,
-		ListenAddress: &sensor.NetworkAddress{
-			AddressData: net.ParseIP(ip).AsNetIP(),
-			Port:        port,
-		},
-		ContainerId:    containerID,
-		CloseTimestamp: nil,
-		Originator:     originator,
+	na := &sensor.NetworkAddress{}
+	if x := net.ParseIP(ip).AsNetIP(); x != nil {
+		na.SetAddressData(x)
 	}
+	na.SetPort(port)
+	networkEndpoint := &sensor.NetworkEndpoint{}
+	networkEndpoint.SetSocketFamily(sensor.SocketFamily_SOCKET_FAMILY_IPV4)
+	networkEndpoint.SetProtocol(storage.L4Protocol_L4_PROTOCOL_TCP)
+	networkEndpoint.SetListenAddress(na)
+	networkEndpoint.SetContainerId(containerID)
+	networkEndpoint.ClearCloseTimestamp()
+	networkEndpoint.SetOriginator(originator)
 
 	return networkEndpoint, ok
 }
@@ -249,18 +254,18 @@ func (w *WorkloadManager) getFakeNetworkConnectionInfo() *sensor.NetworkConnecti
 		if err != nil {
 			log.Errorf("Unable to set CloseTimestamp for endpoint %+v", err)
 		} else {
-			networkEndpoint.CloseTimestamp = closeTS
+			networkEndpoint.SetCloseTimestamp(closeTS)
 			networkEndpoints = append(networkEndpoints, networkEndpoint)
 		}
 	}
 
 	w.endpointPool.clearEndpointsToBeClosed()
 
-	return &sensor.NetworkConnectionInfo{
-		UpdatedConnections: conns,
-		UpdatedEndpoints:   networkEndpoints,
-		Time:               protocompat.TimestampNow(),
-	}
+	nci := &sensor.NetworkConnectionInfo{}
+	nci.SetUpdatedConnections(conns)
+	nci.SetUpdatedEndpoints(networkEndpoints)
+	nci.SetTime(protocompat.TimestampNow())
+	return nci
 }
 
 // manageFlows should be called via `go manageFlows` as it will run forever

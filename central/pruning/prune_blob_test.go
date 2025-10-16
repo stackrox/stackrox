@@ -16,12 +16,11 @@ import (
 )
 
 func TestDownloadableReportPruning(t *testing.T) {
-	config := &storage.PrivateConfig{
-		ReportRetentionConfig: &storage.ReportRetentionConfig{
-			DownloadableReportRetentionDays:        7,
-			DownloadableReportGlobalRetentionBytes: 500,
-		},
-	}
+	rrc := &storage.ReportRetentionConfig{}
+	rrc.SetDownloadableReportRetentionDays(7)
+	rrc.SetDownloadableReportGlobalRetentionBytes(500)
+	config := &storage.PrivateConfig{}
+	config.SetReportRetentionConfig(rrc)
 	ctrl := gomock.NewController(t)
 	mockBlobStore := blobDSMocks.NewMockDatastore(ctrl)
 	gci := &garbageCollectorImpl{
@@ -127,17 +126,17 @@ func TestDownloadableReportPruning(t *testing.T) {
 		t.Run(c.description, func(t *testing.T) {
 			currConfig := config.CloneVT()
 			if c.retentionBytes != 0 {
-				currConfig.ReportRetentionConfig.DownloadableReportGlobalRetentionBytes = c.retentionBytes
+				currConfig.GetReportRetentionConfig().SetDownloadableReportGlobalRetentionBytes(c.retentionBytes)
 			}
 			var existingBlobs []*storage.Blob
 			for _, bt := range c.existing {
 				modTime, err := protocompat.ConvertTimeToTimestampOrError(now.Add(-time.Duration(bt.modTimeMinusDays) * 24 * time.Hour))
 				require.NoError(t, err)
-				existingBlobs = append(existingBlobs, &storage.Blob{
-					Name:         bt.name,
-					Length:       bt.length,
-					ModifiedTime: modTime,
-				})
+				blob := &storage.Blob{}
+				blob.SetName(bt.name)
+				blob.SetLength(bt.length)
+				blob.SetModifiedTime(modTime)
+				existingBlobs = append(existingBlobs, blob)
 			}
 			sort.Slice(existingBlobs, func(i, j int) bool {
 				return protocompat.CompareTimestamps(existingBlobs[i].GetModifiedTime(), existingBlobs[j].GetModifiedTime()) > 0

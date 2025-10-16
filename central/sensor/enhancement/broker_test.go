@@ -27,12 +27,11 @@ func (s *BrokerTestSuite) TestNotifyDeploymentReceivedDoubleMessage() {
 		activeRequests: map[string]*enhancementSignal{"1": {msgArrived: concurrency.NewSignal()}},
 		lock:           sync.Mutex{},
 	}
-	msg := &central.DeploymentEnhancementResponse{
-		Msg: &central.DeploymentEnhancementMessage{
-			Id:          "1",
-			Deployments: nil,
-		},
-	}
+	dem := &central.DeploymentEnhancementMessage{}
+	dem.SetId("1")
+	dem.SetDeployments(nil)
+	msg := &central.DeploymentEnhancementResponse{}
+	msg.SetMsg(dem)
 
 	// Simulate a duplicate message. Broker mustn't crash or deadlock
 	b.NotifyDeploymentReceived(msg)
@@ -47,12 +46,12 @@ func (s *BrokerTestSuite) TestDeploymentReceivedWritesMessage() {
 		activeRequests: map[string]*enhancementSignal{"1": es},
 		lock:           sync.Mutex{},
 	}
-	msg := &central.DeploymentEnhancementResponse{
-		Msg: &central.DeploymentEnhancementMessage{
+	msg := central.DeploymentEnhancementResponse_builder{
+		Msg: central.DeploymentEnhancementMessage_builder{
 			Id:          "1",
 			Deployments: []*storage.Deployment{{}, {}},
-		},
-	}
+		}.Build(),
+	}.Build()
 
 	b.NotifyDeploymentReceived(msg)
 	s.Len(es.msg.GetMsg().GetDeployments(), 2)

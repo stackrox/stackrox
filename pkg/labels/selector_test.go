@@ -29,12 +29,11 @@ func TestCompileSelector_EmptyMatchesEverything(t *testing.T) {
 }
 
 func TestCompileSelector_Simple(t *testing.T) {
-	sel := &storage.LabelSelector{
-		MatchLabels: map[string]string{
-			"foo": "bar",
-			"baz": "qux",
-		},
-	}
+	sel := &storage.LabelSelector{}
+	sel.SetMatchLabels(map[string]string{
+		"foo": "bar",
+		"baz": "qux",
+	})
 
 	csel, err := CompileSelector(sel)
 	require.NoError(t, err)
@@ -56,45 +55,45 @@ func TestCompileSelector_Simple(t *testing.T) {
 }
 
 func TestCompileSelector_WithRequirements(t *testing.T) {
-	sel := &storage.LabelSelector{
+	sel := storage.LabelSelector_builder{
 		MatchLabels: map[string]string{
 			"foo": "bar",
 		},
 		Requirements: []*storage.LabelSelector_Requirement{
-			{
+			storage.LabelSelector_Requirement_builder{
 				Key:    "baz",
 				Op:     storage.LabelSelector_IN,
 				Values: []string{"a", "b", "c", "d"},
-			},
-			{
+			}.Build(),
+			storage.LabelSelector_Requirement_builder{
 				Key:    "qux",
 				Op:     storage.LabelSelector_NOT_IN,
 				Values: []string{"a", "b", "c"},
-			},
-			{
+			}.Build(),
+			storage.LabelSelector_Requirement_builder{
 				Key:    "baz",
 				Op:     storage.LabelSelector_NOT_IN,
 				Values: []string{"c", "d", "e"},
-			},
-			{
+			}.Build(),
+			storage.LabelSelector_Requirement_builder{
 				Key: "quux",
 				Op:  storage.LabelSelector_EXISTS,
-			},
-			{
+			}.Build(),
+			storage.LabelSelector_Requirement_builder{
 				Key: "quuz",
 				Op:  storage.LabelSelector_NOT_EXISTS,
-			},
-			{
+			}.Build(),
+			storage.LabelSelector_Requirement_builder{
 				Key:    "corge",
 				Op:     storage.LabelSelector_NOT_IN,
 				Values: []string{"a", "b", "c"},
-			},
-			{
+			}.Build(),
+			storage.LabelSelector_Requirement_builder{
 				Key: "corge",
 				Op:  storage.LabelSelector_EXISTS,
-			},
+			}.Build(),
 		},
-	}
+	}.Build()
 
 	csel, err := CompileSelector(sel)
 	require.NoError(t, err)

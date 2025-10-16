@@ -24,155 +24,155 @@ func TestViolationsScore(t *testing.T) {
 		{
 			name: "One critical",
 			alerts: []*storage.ListAlert{
-				{
-					Policy: &storage.ListAlertPolicy{
+				storage.ListAlert_builder{
+					Policy: storage.ListAlertPolicy_builder{
 						Severity: storage.Severity_CRITICAL_SEVERITY,
 						Name:     "Policy 1",
-					},
-				},
+					}.Build(),
+				}.Build(),
 			},
-			expected: &storage.Risk_Result{
+			expected: storage.Risk_Result_builder{
 				Name: PolicyViolationsHeading,
 				Factors: []*storage.Risk_Result_Factor{
-					{Message: "Policy 1 (severity: Critical)"},
+					storage.Risk_Result_Factor_builder{Message: "Policy 1 (severity: Critical)"}.Build(),
 				},
 				Score: 1.96,
-			},
+			}.Build(),
 		},
 		{
 			name: "Two critical",
 			alerts: []*storage.ListAlert{
-				{
-					Policy: &storage.ListAlertPolicy{
+				storage.ListAlert_builder{
+					Policy: storage.ListAlertPolicy_builder{
 						Severity: storage.Severity_CRITICAL_SEVERITY,
 						Name:     "Policy 1",
-					},
-				},
+					}.Build(),
+				}.Build(),
 			},
-			expected: &storage.Risk_Result{
+			expected: storage.Risk_Result_builder{
 				Name: PolicyViolationsHeading,
 				Factors: []*storage.Risk_Result_Factor{
-					{Message: "Policy 1 (severity: Critical)"},
+					storage.Risk_Result_Factor_builder{Message: "Policy 1 (severity: Critical)"}.Build(),
 				},
 				Score: 1.96,
-			},
+			}.Build(),
 		},
 		{
 			name: "Mix of severities (1)",
 			alerts: []*storage.ListAlert{
-				{
-					Policy: &storage.ListAlertPolicy{
+				storage.ListAlert_builder{
+					Policy: storage.ListAlertPolicy_builder{
 						Severity: storage.Severity_HIGH_SEVERITY,
 						Name:     "Policy 1",
-					},
-				},
-				{
-					Policy: &storage.ListAlertPolicy{
+					}.Build(),
+				}.Build(),
+				storage.ListAlert_builder{
+					Policy: storage.ListAlertPolicy_builder{
 						Severity: storage.Severity_MEDIUM_SEVERITY,
 						Name:     "Policy 2",
-					},
-				},
-				{
-					Policy: &storage.ListAlertPolicy{
+					}.Build(),
+				}.Build(),
+				storage.ListAlert_builder{
+					Policy: storage.ListAlertPolicy_builder{
 						Severity: storage.Severity_LOW_SEVERITY,
 						Name:     "Policy 3",
-					},
-				},
+					}.Build(),
+				}.Build(),
 			},
-			expected: &storage.Risk_Result{
+			expected: storage.Risk_Result_builder{
 				Name: PolicyViolationsHeading,
 				Factors: []*storage.Risk_Result_Factor{
-					{Message: "Policy 1 (severity: High)"},
-					{Message: "Policy 2 (severity: Medium)"},
-					{Message: "Policy 3 (severity: Low)"},
+					storage.Risk_Result_Factor_builder{Message: "Policy 1 (severity: High)"}.Build(),
+					storage.Risk_Result_Factor_builder{Message: "Policy 2 (severity: Medium)"}.Build(),
+					storage.Risk_Result_Factor_builder{Message: "Policy 3 (severity: Low)"}.Build(),
 				},
 				Score: 1.84,
-			},
+			}.Build(),
 		},
 		{
 			name: "Mix of severities (2)",
 			alerts: []*storage.ListAlert{
-				{
-					Policy: &storage.ListAlertPolicy{
+				storage.ListAlert_builder{
+					Policy: storage.ListAlertPolicy_builder{
 						Severity: storage.Severity_CRITICAL_SEVERITY,
 						Name:     "Policy 1",
-					},
-				},
-				{
-					Policy: &storage.ListAlertPolicy{
+					}.Build(),
+				}.Build(),
+				storage.ListAlert_builder{
+					Policy: storage.ListAlertPolicy_builder{
 						Severity: storage.Severity_HIGH_SEVERITY,
 						Name:     "Policy 2",
-					},
-				},
-				{
-					Policy: &storage.ListAlertPolicy{
+					}.Build(),
+				}.Build(),
+				storage.ListAlert_builder{
+					Policy: storage.ListAlertPolicy_builder{
 						Severity: storage.Severity_LOW_SEVERITY,
 						Name:     "Policy 3",
-					},
-				},
+					}.Build(),
+				}.Build(),
 			},
-			expected: &storage.Risk_Result{
+			expected: storage.Risk_Result_builder{
 				Name: PolicyViolationsHeading,
 				Factors: []*storage.Risk_Result_Factor{
-					{Message: "Policy 1 (severity: Critical)"},
-					{Message: "Policy 2 (severity: High)"},
-					{Message: "Policy 3 (severity: Low)"},
+					storage.Risk_Result_Factor_builder{Message: "Policy 1 (severity: Critical)"}.Build(),
+					storage.Risk_Result_Factor_builder{Message: "Policy 2 (severity: High)"}.Build(),
+					storage.Risk_Result_Factor_builder{Message: "Policy 3 (severity: Low)"}.Build(),
 				},
 				Score: 2.56,
-			},
+			}.Build(),
 		},
 		{
 			name: "Don't include stale alerts",
 			alerts: []*storage.ListAlert{
-				{
-					Policy: &storage.ListAlertPolicy{
+				storage.ListAlert_builder{
+					Policy: storage.ListAlertPolicy_builder{
 						Severity: storage.Severity_CRITICAL_SEVERITY,
 						Name:     "Policy 3",
-					},
-				},
-				{
-					Policy: &storage.ListAlertPolicy{
+					}.Build(),
+				}.Build(),
+				storage.ListAlert_builder{
+					Policy: storage.ListAlertPolicy_builder{
 						Severity: storage.Severity_HIGH_SEVERITY,
 						Name:     "Policy 2",
-					},
-				},
-				{
-					Policy: &storage.ListAlertPolicy{
+					}.Build(),
+				}.Build(),
+				storage.ListAlert_builder{
+					Policy: storage.ListAlertPolicy_builder{
 						Severity: storage.Severity_LOW_SEVERITY,
 						Name:     "Policy 1",
-					},
-				},
-				{
-					Policy: &storage.ListAlertPolicy{
+					}.Build(),
+				}.Build(),
+				storage.ListAlert_builder{
+					Policy: storage.ListAlertPolicy_builder{
 						Severity: storage.Severity_CRITICAL_SEVERITY,
 						Name:     "Policy Don't Show Me!",
-					},
+					}.Build(),
 					State: storage.ViolationState_RESOLVED,
-				},
-				{
-					Policy: &storage.ListAlertPolicy{
+				}.Build(),
+				storage.ListAlert_builder{
+					Policy: storage.ListAlertPolicy_builder{
 						Severity: storage.Severity_HIGH_SEVERITY,
 						Name:     "Policy Don't Show Me!",
-					},
+					}.Build(),
 					State: storage.ViolationState_RESOLVED,
-				},
-				{
-					Policy: &storage.ListAlertPolicy{
+				}.Build(),
+				storage.ListAlert_builder{
+					Policy: storage.ListAlertPolicy_builder{
 						Severity: storage.Severity_LOW_SEVERITY,
 						Name:     "Policy Don't Show Me!",
-					},
+					}.Build(),
 					State: storage.ViolationState_RESOLVED,
-				},
+				}.Build(),
 			},
-			expected: &storage.Risk_Result{
+			expected: storage.Risk_Result_builder{
 				Name: PolicyViolationsHeading,
 				Factors: []*storage.Risk_Result_Factor{
-					{Message: "Policy 3 (severity: Critical)"},
-					{Message: "Policy 2 (severity: High)"},
-					{Message: "Policy 1 (severity: Low)"},
+					storage.Risk_Result_Factor_builder{Message: "Policy 3 (severity: Critical)"}.Build(),
+					storage.Risk_Result_Factor_builder{Message: "Policy 2 (severity: High)"}.Build(),
+					storage.Risk_Result_Factor_builder{Message: "Policy 1 (severity: Low)"}.Build(),
 				},
 				Score: 2.56,
-			},
+			}.Build(),
 		},
 	}
 

@@ -36,7 +36,9 @@ type mockClustersServiceServer struct {
 }
 
 func (m *mockClustersServiceServer) GetClusters(_ context.Context, _ *v1.GetClustersRequest) (*v1.ClustersList, error) {
-	return &v1.ClustersList{Clusters: m.clusters}, nil
+	cl := &v1.ClustersList{}
+	cl.SetClusters(m.clusters)
+	return cl, nil
 }
 
 func (m *mockClustersServiceServer) DeleteCluster(_ context.Context, _ *v1.ResourceByID) (*v1.Empty, error) {
@@ -87,7 +89,9 @@ func (c *clusterDeleteTestSuite) setupCommand(clusters []*storage.Cluster) (*cob
 }
 
 func (c *clusterDeleteTestSuite) TestCommandHappyPath() {
-	clusters := []*storage.Cluster{{Name: "dummy"}}
+	cluster := &storage.Cluster{}
+	cluster.SetName("dummy")
+	clusters := []*storage.Cluster{cluster}
 	cbr, closeFunction, stdout, _ := c.setupCommand(clusters)
 	defer closeFunction()
 
@@ -99,7 +103,9 @@ func (c *clusterDeleteTestSuite) TestCommandHappyPath() {
 }
 
 func (c *clusterDeleteTestSuite) TestCommandRequiresName() {
-	clusters := []*storage.Cluster{{Name: "dummy"}}
+	cluster := &storage.Cluster{}
+	cluster.SetName("dummy")
+	clusters := []*storage.Cluster{cluster}
 	cbr, closeFunction, _, _ := c.setupCommand(clusters)
 	defer closeFunction()
 

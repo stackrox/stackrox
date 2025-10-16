@@ -150,15 +150,15 @@ func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignals
 		}
 		signal := signalStreamMsg.GetSignal()
 
-		switch signal.GetSignal().(type) {
-		case *v1.Signal_ProcessSignal:
+		switch signal.WhichSignal() {
+		case v1.Signal_ProcessSignal_case:
 			processSignal := signal.GetProcessSignal()
 			if processSignal == nil {
 				log.Error("Empty process signal")
 				continue
 			}
 
-			processSignal.ExecFilePath = stringutils.OrDefault(processSignal.GetExecFilePath(), processSignal.GetName())
+			processSignal.SetExecFilePath(stringutils.OrDefault(processSignal.GetExecFilePath(), processSignal.GetName()))
 			if !isProcessSignalValid(processSignal) {
 				log.Debugf("Invalid process signal: %+v", processSignal)
 				continue

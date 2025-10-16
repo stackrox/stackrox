@@ -226,8 +226,12 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 
 		// enrichImageFunc will fake enrich an image by Scanner V4.
 		enrichImageFunc := func(ctx context.Context, enrichCtx enricher.EnrichmentContext, img *storage.Image) (enricher.EnrichmentResult, error) {
-			img.Id = "fake-id"
-			img.Scan = &storage.ImageScan{DataSource: &storage.DataSource{Id: iiStore.DefaultScannerV4Integration.GetId()}}
+			img.SetId("fake-id")
+			ds := &storage.DataSource{}
+			ds.SetId(iiStore.DefaultScannerV4Integration.GetId())
+			imageScan := &storage.ImageScan{}
+			imageScan.SetDataSource(ds)
+			img.SetScan(imageScan)
 			return enricher.EnrichmentResult{ImageUpdated: true, ScanResult: enricher.ScanSucceeded}, nil
 		}
 

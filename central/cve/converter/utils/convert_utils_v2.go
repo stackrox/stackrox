@@ -13,38 +13,35 @@ func ImageCVEV2ToEmbeddedVulnerability(vuln *storage.ImageCVEV2) *storage.Embedd
 		scoreVersion = storage.EmbeddedVulnerability_V3
 	}
 
-	ret := &storage.EmbeddedVulnerability{
-		Cve:                   vuln.GetCveBaseInfo().GetCve(),
-		Cvss:                  vuln.GetCvss(),
-		Summary:               vuln.GetCveBaseInfo().GetSummary(),
-		Link:                  vuln.GetCveBaseInfo().GetLink(),
-		ScoreVersion:          scoreVersion,
-		CvssV2:                vuln.GetCveBaseInfo().GetCvssV2(),
-		CvssV3:                vuln.GetCveBaseInfo().GetCvssV3(),
-		PublishedOn:           vuln.GetCveBaseInfo().GetPublishedOn(),
-		LastModified:          vuln.GetCveBaseInfo().GetLastModified(),
-		FirstSystemOccurrence: vuln.GetCveBaseInfo().GetCreatedAt(),
-		Severity:              vuln.GetSeverity(),
-		CvssMetrics:           vuln.GetCveBaseInfo().GetCvssMetrics(),
-		NvdCvss:               vuln.GetNvdcvss(),
-		Epss:                  vuln.GetCveBaseInfo().GetEpss(),
-		FirstImageOccurrence:  vuln.GetFirstImageOccurrence(),
-		VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-		VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
-		State:                 vuln.GetState(),
-	}
+	ret := &storage.EmbeddedVulnerability{}
+	ret.SetCve(vuln.GetCveBaseInfo().GetCve())
+	ret.SetCvss(vuln.GetCvss())
+	ret.SetSummary(vuln.GetCveBaseInfo().GetSummary())
+	ret.SetLink(vuln.GetCveBaseInfo().GetLink())
+	ret.SetScoreVersion(scoreVersion)
+	ret.SetCvssV2(vuln.GetCveBaseInfo().GetCvssV2())
+	ret.SetCvssV3(vuln.GetCveBaseInfo().GetCvssV3())
+	ret.SetPublishedOn(vuln.GetCveBaseInfo().GetPublishedOn())
+	ret.SetLastModified(vuln.GetCveBaseInfo().GetLastModified())
+	ret.SetFirstSystemOccurrence(vuln.GetCveBaseInfo().GetCreatedAt())
+	ret.SetSeverity(vuln.GetSeverity())
+	ret.SetCvssMetrics(vuln.GetCveBaseInfo().GetCvssMetrics())
+	ret.SetNvdCvss(vuln.GetNvdcvss())
+	ret.SetEpss(vuln.GetCveBaseInfo().GetEpss())
+	ret.SetFirstImageOccurrence(vuln.GetFirstImageOccurrence())
+	ret.SetVulnerabilityType(storage.EmbeddedVulnerability_IMAGE_VULNERABILITY)
+	ret.SetVulnerabilityTypes([]storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY})
+	ret.SetState(vuln.GetState())
 
 	if vuln.GetIsFixable() {
-		ret.SetFixedBy = &storage.EmbeddedVulnerability_FixedBy{
-			FixedBy: vuln.GetFixedBy(),
-		}
+		ret.Set_FixedBy(vuln.GetFixedBy())
 	}
 
 	if vuln.GetAdvisory() != nil {
-		ret.Advisory = &storage.Advisory{
-			Name: vuln.GetAdvisory().GetName(),
-			Link: vuln.GetAdvisory().GetLink(),
-		}
+		advisory := &storage.Advisory{}
+		advisory.SetName(vuln.GetAdvisory().GetName())
+		advisory.SetLink(vuln.GetAdvisory().GetLink())
+		ret.SetAdvisory(advisory)
 	}
 
 	return ret
@@ -81,42 +78,39 @@ func EmbeddedVulnerabilityToImageCVEV2(imageID string, componentID string, from 
 		return nil, err
 	}
 
-	ret := &storage.ImageCVEV2{
-		Id:          cveID,
-		ComponentId: componentID,
-		CveBaseInfo: &storage.CVEInfo{
-			Cve:          from.GetCve(),
-			Summary:      from.GetSummary(),
-			Link:         from.GetLink(),
-			PublishedOn:  from.GetPublishedOn(),
-			CreatedAt:    from.GetFirstSystemOccurrence(),
-			LastModified: from.GetLastModified(),
-			CvssV2:       from.GetCvssV2(),
-			CvssV3:       from.GetCvssV3(),
-			CvssMetrics:  from.GetCvssMetrics(),
-			Epss:         from.GetEpss(),
-			ScoreVersion: scoreVersion,
-		},
-		Cvss:                 from.GetCvss(),
-		Nvdcvss:              nvdCvss,
-		NvdScoreVersion:      nvdVersion,
-		Severity:             from.GetSeverity(),
-		FirstImageOccurrence: from.GetFirstImageOccurrence(),
-		State:                from.GetState(),
-		IsFixable:            from.GetFixedBy() != "",
-		ImpactScore:          impactScore,
-		Advisory:             from.GetAdvisory(),
-	}
+	cVEInfo := &storage.CVEInfo{}
+	cVEInfo.SetCve(from.GetCve())
+	cVEInfo.SetSummary(from.GetSummary())
+	cVEInfo.SetLink(from.GetLink())
+	cVEInfo.SetPublishedOn(from.GetPublishedOn())
+	cVEInfo.SetCreatedAt(from.GetFirstSystemOccurrence())
+	cVEInfo.SetLastModified(from.GetLastModified())
+	cVEInfo.SetCvssV2(from.GetCvssV2())
+	cVEInfo.SetCvssV3(from.GetCvssV3())
+	cVEInfo.SetCvssMetrics(from.GetCvssMetrics())
+	cVEInfo.SetEpss(from.GetEpss())
+	cVEInfo.SetScoreVersion(scoreVersion)
+	ret := &storage.ImageCVEV2{}
+	ret.SetId(cveID)
+	ret.SetComponentId(componentID)
+	ret.SetCveBaseInfo(cVEInfo)
+	ret.SetCvss(from.GetCvss())
+	ret.SetNvdcvss(nvdCvss)
+	ret.SetNvdScoreVersion(nvdVersion)
+	ret.SetSeverity(from.GetSeverity())
+	ret.SetFirstImageOccurrence(from.GetFirstImageOccurrence())
+	ret.SetState(from.GetState())
+	ret.SetIsFixable(from.GetFixedBy() != "")
+	ret.SetImpactScore(impactScore)
+	ret.SetAdvisory(from.GetAdvisory())
 	if !features.FlattenImageData.Enabled() {
-		ret.ImageId = imageID
+		ret.SetImageId(imageID)
 	} else {
-		ret.ImageIdV2 = imageID
+		ret.SetImageIdV2(imageID)
 	}
 
 	if from.GetFixedBy() != "" {
-		ret.HasFixedBy = &storage.ImageCVEV2_FixedBy{
-			FixedBy: from.GetFixedBy(),
-		}
+		ret.SetFixedBy(from.GetFixedBy())
 	}
 
 	return ret, nil

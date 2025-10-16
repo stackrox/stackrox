@@ -108,11 +108,11 @@ func (m *publicIPsManager) regenerateAndPushPublicIPsProto() {
 		netIP := publicIP.AsNetIP()
 
 		if ipV4 := netIP.To4(); ipV4 != nil {
-			publicIPsList.Ipv4Addresses = append(publicIPsList.Ipv4Addresses, binary.BigEndian.Uint32(ipV4))
+			publicIPsList.SetIpv4Addresses(append(publicIPsList.GetIpv4Addresses(), binary.BigEndian.Uint32(ipV4)))
 		} else if len(netIP) == 16 { // Genuine IPv6 address
 			high := binary.BigEndian.Uint64(netIP[:8])
 			low := binary.BigEndian.Uint64(netIP[8:])
-			publicIPsList.Ipv6Addresses = append(publicIPsList.Ipv6Addresses, high, low)
+			publicIPsList.SetIpv6Addresses(append(publicIPsList.GetIpv6Addresses(), high, low))
 		}
 	}
 

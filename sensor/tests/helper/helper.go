@@ -188,17 +188,17 @@ func NewContextWithConfig(t *testing.T, config Config) (*TestContext, error) {
 		return nil, err
 	}
 
+	ds := &central.DeduperState{}
+	ds.SetResourceHashes(nil)
+	ds.SetCurrent(1)
+	ds.SetTotal(1)
 	tc := TestContext{
 		r:                r,
 		env:              envConfig,
 		centralStopped:   atomic.Bool{},
 		config:           config,
 		archivedMessages: [][]*central.MsgFromSensor{},
-		deduperState: &central.DeduperState{
-			ResourceHashes: nil,
-			Current:        1,
-			Total:          1,
-		},
+		deduperState:     ds,
 	}
 
 	tc.StartFakeGRPC(config.CentralCaps...)

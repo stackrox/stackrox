@@ -27,6 +27,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 	"golang.org/x/sync/semaphore"
+	"google.golang.org/protobuf/proto"
 )
 
 var _ types.Scanner = (*fakeScanner)(nil)
@@ -134,87 +135,92 @@ func TestValidateIntegration(t *testing.T) {
 	// Test name and categories validation
 	assert.Error(t, s.validateIntegration(testCtx, &storage.ImageIntegration{}))
 
-	assert.Error(t, s.validateIntegration(testCtx, &storage.ImageIntegration{
-		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
-	}))
+	ii := &storage.ImageIntegration{}
+	ii.SetCategories([]storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY})
+	assert.Error(t, s.validateIntegration(testCtx, ii))
 
 	// Test should be successful
-	integrationDatastore.EXPECT().GetImageIntegrations(gomock.Any(), &v1.GetImageIntegrationsRequest{Name: "name"}).Return([]*storage.ImageIntegration{}, nil)
-	assert.NoError(t, s.validateIntegration(testCtx, &storage.ImageIntegration{
-		Name:       "name",
-		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
-	}))
+	giir := &v1.GetImageIntegrationsRequest{}
+	giir.SetName("name")
+	integrationDatastore.EXPECT().GetImageIntegrations(gomock.Any(), giir).Return([]*storage.ImageIntegration{}, nil)
+	ii2 := &storage.ImageIntegration{}
+	ii2.SetName("name")
+	ii2.SetCategories([]storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY})
+	assert.NoError(t, s.validateIntegration(testCtx, ii2))
 
 	// Test name scenarios
 
-	integrationDatastore.EXPECT().GetImageIntegrations(gomock.Any(), &v1.GetImageIntegrationsRequest{Name: "name"}).Return([]*storage.ImageIntegration{{Id: "id", Name: "name"}}, nil).AnyTimes()
+	giir2 := &v1.GetImageIntegrationsRequest{}
+	giir2.SetName("name")
+	ii3 := &storage.ImageIntegration{}
+	ii3.SetId("id")
+	ii3.SetName("name")
+	integrationDatastore.EXPECT().GetImageIntegrations(gomock.Any(), giir2).Return([]*storage.ImageIntegration{ii3}, nil).AnyTimes()
 	// Duplicate name with different ID should fail
-	assert.Error(t, s.validateIntegration(testCtx, &storage.ImageIntegration{
-		Id:         "diff",
-		Name:       "name",
-		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
-	}))
+	ii4 := &storage.ImageIntegration{}
+	ii4.SetId("diff")
+	ii4.SetName("name")
+	ii4.SetCategories([]storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY})
+	assert.Error(t, s.validateIntegration(testCtx, ii4))
 
 	// Duplicate name with same ID should succeed
-	assert.NoError(t, s.validateIntegration(testCtx, &storage.ImageIntegration{
-		Id:         "id",
-		Name:       "name",
-		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
-	}))
+	ii5 := &storage.ImageIntegration{}
+	ii5.SetId("id")
+	ii5.SetName("name")
+	ii5.SetCategories([]storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY})
+	assert.NoError(t, s.validateIntegration(testCtx, ii5))
 
-	request := &v1.UpdateImageIntegrationRequest{
-		Config: &storage.ImageIntegration{
-			Id:                  "id",
-			Name:                "name",
-			Categories:          []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
-			IntegrationConfig:   nil,
-			SkipTestIntegration: true,
-		},
-		UpdatePassword: false,
-	}
+	ii6 := &storage.ImageIntegration{}
+	ii6.SetId("id")
+	ii6.SetName("name")
+	ii6.SetCategories([]storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY})
+	ii6.ClearIntegrationConfig()
+	ii6.SetSkipTestIntegration(true)
+	request := &v1.UpdateImageIntegrationRequest{}
+	request.SetConfig(ii6)
+	request.SetUpdatePassword(false)
 
-	integrationDatastore.EXPECT().GetImageIntegrations(gomock.Any(), &v1.GetImageIntegrationsRequest{Name: "name"}).Return([]*storage.ImageIntegration{
-		{
-			Id:         "id",
-			Name:       "name",
-			Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
-		}}, nil).AnyTimes()
-	integrationDatastore.EXPECT().GetImageIntegration(gomock.Any(), "id").Return(&storage.ImageIntegration{
-		Id:         "id",
-		Name:       "name",
-		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
-	}, true, nil).AnyTimes()
+	giir3 := &v1.GetImageIntegrationsRequest{}
+	giir3.SetName("name")
+	ii7 := &storage.ImageIntegration{}
+	ii7.SetId("id")
+	ii7.SetName("name")
+	ii7.SetCategories([]storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY})
+	integrationDatastore.EXPECT().GetImageIntegrations(gomock.Any(), giir3).Return([]*storage.ImageIntegration{
+		ii7}, nil).AnyTimes()
+	ii8 := &storage.ImageIntegration{}
+	ii8.SetId("id")
+	ii8.SetName("name")
+	ii8.SetCategories([]storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY})
+	integrationDatastore.EXPECT().GetImageIntegration(gomock.Any(), "id").Return(ii8, true, nil).AnyTimes()
 
 	_, err := s.TestUpdatedImageIntegration(testCtx, request)
 	assert.Error(t, err)
 	assert.EqualError(t, err, errors.Wrap(errox.InvalidArgs, "the request doesn't have a valid integration config type").Error())
 
-	dockerConfig := &storage.DockerConfig{
-		Endpoint: "endpoint",
-		Username: "username",
-		Password: "password",
-	}
+	dockerConfig := &storage.DockerConfig{}
+	dockerConfig.SetEndpoint("endpoint")
+	dockerConfig.SetUsername("username")
+	dockerConfig.SetPassword("password")
 	dockerConfigScrubbed := dockerConfig.CloneVT()
 	secrets.ScrubSecretsFromStructWithReplacement(dockerConfigScrubbed, secrets.ScrubReplacementStr)
-	dockerImageIntegrationConfig := &storage.ImageIntegration{
-		Id:                  "id2",
-		Name:                "name2",
-		Categories:          []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
-		SkipTestIntegration: true,
-	}
+	dockerImageIntegrationConfig := &storage.ImageIntegration{}
+	dockerImageIntegrationConfig.SetId("id2")
+	dockerImageIntegrationConfig.SetName("name2")
+	dockerImageIntegrationConfig.SetCategories([]storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY})
+	dockerImageIntegrationConfig.SetSkipTestIntegration(true)
 
 	dockerImageIntegrationConfigStored := dockerImageIntegrationConfig.CloneVT()
-	dockerImageIntegrationConfigStored.IntegrationConfig = &storage.ImageIntegration_Docker{Docker: dockerConfig.CloneVT()}
+	dockerImageIntegrationConfigStored.SetDocker(proto.ValueOrDefault(dockerConfig.CloneVT()))
 
 	integrationDatastore.EXPECT().GetImageIntegration(gomock.Any(),
 		dockerImageIntegrationConfig.GetId()).Return(dockerImageIntegrationConfigStored, true, nil).AnyTimes()
 
 	dockerImageIntegrationConfigScrubbed := dockerImageIntegrationConfig.CloneVT()
-	dockerImageIntegrationConfigScrubbed.IntegrationConfig = &storage.ImageIntegration_Docker{Docker: dockerConfigScrubbed}
-	requestWithADockerConfig := &v1.UpdateImageIntegrationRequest{
-		Config:         dockerImageIntegrationConfigScrubbed,
-		UpdatePassword: false,
-	}
+	dockerImageIntegrationConfigScrubbed.SetDocker(proto.ValueOrDefault(dockerConfigScrubbed))
+	requestWithADockerConfig := &v1.UpdateImageIntegrationRequest{}
+	requestWithADockerConfig.SetConfig(dockerImageIntegrationConfigScrubbed)
+	requestWithADockerConfig.SetUpdatePassword(false)
 
 	storedConfig, exists, err := s.datastore.GetImageIntegration(testCtx,
 		requestWithADockerConfig.GetConfig().GetId())
@@ -229,14 +235,13 @@ func TestValidateIntegration(t *testing.T) {
 
 	// Test case: config request with a different endpoint
 	dockerConfigDiffEndpoint := dockerConfig.CloneVT()
-	dockerConfigDiffEndpoint.Endpoint = "endpointDiff"
+	dockerConfigDiffEndpoint.SetEndpoint("endpointDiff")
 	secrets.ScrubSecretsFromStructWithReplacement(dockerConfigDiffEndpoint, secrets.ScrubReplacementStr)
 	dockerImageIntegrationConfigDiffEndpoint := dockerImageIntegrationConfig.CloneVT()
-	dockerImageIntegrationConfigDiffEndpoint.IntegrationConfig = &storage.ImageIntegration_Docker{Docker: dockerConfigDiffEndpoint}
-	requestWithDifferentEndpoint := &v1.UpdateImageIntegrationRequest{
-		Config:         dockerImageIntegrationConfigDiffEndpoint,
-		UpdatePassword: false,
-	}
+	dockerImageIntegrationConfigDiffEndpoint.SetDocker(proto.ValueOrDefault(dockerConfigDiffEndpoint))
+	requestWithDifferentEndpoint := &v1.UpdateImageIntegrationRequest{}
+	requestWithDifferentEndpoint.SetConfig(dockerImageIntegrationConfigDiffEndpoint)
+	requestWithDifferentEndpoint.SetUpdatePassword(false)
 
 	storedConfig, exists, err = s.datastore.GetImageIntegration(testCtx, requestWithDifferentEndpoint.GetConfig().GetId())
 	assert.NoError(t, err)
@@ -247,14 +252,13 @@ func TestValidateIntegration(t *testing.T) {
 
 	// Test case: config request with a different username
 	dockerConfigDiffUsername := dockerConfig.CloneVT()
-	dockerConfigDiffUsername.Username = "usernameDiff"
+	dockerConfigDiffUsername.SetUsername("usernameDiff")
 	secrets.ScrubSecretsFromStructWithReplacement(dockerConfigDiffUsername, secrets.ScrubReplacementStr)
 	dockerImageIntegrationConfigDiffUsername := dockerImageIntegrationConfig.CloneVT()
-	dockerImageIntegrationConfigDiffUsername.IntegrationConfig = &storage.ImageIntegration_Docker{Docker: dockerConfigDiffUsername}
-	requestWithDifferentUsername := &v1.UpdateImageIntegrationRequest{
-		Config:         dockerImageIntegrationConfigDiffUsername,
-		UpdatePassword: false,
-	}
+	dockerImageIntegrationConfigDiffUsername.SetDocker(proto.ValueOrDefault(dockerConfigDiffUsername))
+	requestWithDifferentUsername := &v1.UpdateImageIntegrationRequest{}
+	requestWithDifferentUsername.SetConfig(dockerImageIntegrationConfigDiffUsername)
+	requestWithDifferentUsername.SetUpdatePassword(false)
 	storedConfig, exists, err = s.datastore.GetImageIntegration(testCtx, requestWithDifferentEndpoint.GetConfig().GetId())
 	assert.NoError(t, err)
 	assert.True(t, exists)
@@ -289,39 +293,38 @@ func TestValidateNodeIntegration(t *testing.T) {
 	}
 
 	// Test should be successful
-	integrationDatastore.EXPECT().GetImageIntegrations(gomock.Any(), &v1.GetImageIntegrationsRequest{Name: "name"}).Return([]*storage.ImageIntegration{}, nil)
-	assert.NoError(t, s.validateIntegration(testCtx, &storage.ImageIntegration{
-		Name:       "name",
-		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_NODE_SCANNER},
-	}))
+	giir := &v1.GetImageIntegrationsRequest{}
+	giir.SetName("name")
+	integrationDatastore.EXPECT().GetImageIntegrations(gomock.Any(), giir).Return([]*storage.ImageIntegration{}, nil)
+	ii := &storage.ImageIntegration{}
+	ii.SetName("name")
+	ii.SetCategories([]storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_NODE_SCANNER})
+	assert.NoError(t, s.validateIntegration(testCtx, ii))
 
-	clairifyConfig := &storage.ClairifyConfig{
-		Endpoint:           "https://scanner.stackrox:8080",
-		NumConcurrentScans: 30,
-	}
-	clairifyIntegrationConfig := &storage.ImageIntegration{
-		Id:                  "id",
-		Name:                "name",
-		Type:                scannerTypes.Clairify,
-		IntegrationConfig:   &storage.ImageIntegration_Clairify{Clairify: clairifyConfig},
-		Categories:          []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_SCANNER, storage.ImageIntegrationCategory_NODE_SCANNER},
-		SkipTestIntegration: true,
-	}
-	clairifyNodeIntegrationConfig := &storage.NodeIntegration{
-		Id:                "id",
-		Name:              "name",
-		Type:              scannerTypes.Clairify,
-		IntegrationConfig: &storage.NodeIntegration_Clairify{Clairify: clairifyConfig},
-	}
+	clairifyConfig := &storage.ClairifyConfig{}
+	clairifyConfig.SetEndpoint("https://scanner.stackrox:8080")
+	clairifyConfig.SetNumConcurrentScans(30)
+	clairifyIntegrationConfig := &storage.ImageIntegration{}
+	clairifyIntegrationConfig.SetId("id")
+	clairifyIntegrationConfig.SetName("name")
+	clairifyIntegrationConfig.SetType(scannerTypes.Clairify)
+	clairifyIntegrationConfig.SetClairify(proto.ValueOrDefault(clairifyConfig))
+	clairifyIntegrationConfig.SetCategories([]storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_SCANNER, storage.ImageIntegrationCategory_NODE_SCANNER})
+	clairifyIntegrationConfig.SetSkipTestIntegration(true)
+	clairifyNodeIntegrationConfig := &storage.NodeIntegration{}
+	clairifyNodeIntegrationConfig.SetId("id")
+	clairifyNodeIntegrationConfig.SetName("name")
+	clairifyNodeIntegrationConfig.SetType(scannerTypes.Clairify)
+	clairifyNodeIntegrationConfig.SetClairify(proto.ValueOrDefault(clairifyConfig))
 
 	clairifyIntegrationConfigStored := clairifyIntegrationConfig.CloneVT()
-	clairifyIntegrationConfigStored.IntegrationConfig = &storage.ImageIntegration_Clairify{Clairify: clairifyConfig.CloneVT()}
+	clairifyIntegrationConfigStored.SetClairify(proto.ValueOrDefault(clairifyConfig.CloneVT()))
 
 	// Test integration.
+	giir2 := &v1.GetImageIntegrationsRequest{}
+	giir2.SetName("name")
 	integrationDatastore.EXPECT().GetImageIntegrations(
-		gomock.Any(),
-		&v1.GetImageIntegrationsRequest{Name: "name"},
-	).Return([]*storage.ImageIntegration{clairifyIntegrationConfigStored}, nil).AnyTimes()
+		gomock.Any(), giir2).Return([]*storage.ImageIntegration{clairifyIntegrationConfigStored}, nil).AnyTimes()
 	integrationDatastore.EXPECT().GetImageIntegration(gomock.Any(), clairifyIntegrationConfig.GetId()).Return(clairifyIntegrationConfigStored, true, nil).Times(1)
 	scannerFactory.EXPECT().CreateScanner(clairifyIntegrationConfig).Return(newFakeImageAndNodeScanner(), nil).Times(1)
 	nodeEnricher.EXPECT().CreateNodeScanner(clairifyNodeIntegrationConfig).Return(newFakeImageAndNodeScanner(), nil).Times(1)
@@ -329,10 +332,10 @@ func TestValidateNodeIntegration(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Put.
+	giir3 := &v1.GetImageIntegrationsRequest{}
+	giir3.SetName("name")
 	integrationDatastore.EXPECT().GetImageIntegrations(
-		gomock.Any(),
-		&v1.GetImageIntegrationsRequest{Name: "name"},
-	).Return([]*storage.ImageIntegration{clairifyIntegrationConfigStored}, nil).AnyTimes()
+		gomock.Any(), giir3).Return([]*storage.ImageIntegration{clairifyIntegrationConfigStored}, nil).AnyTimes()
 	integrationDatastore.EXPECT().UpdateImageIntegration(gomock.Any(), clairifyIntegrationConfig).Return(nil).Times(1)
 	integrationDatastore.EXPECT().GetImageIntegration(gomock.Any(), clairifyIntegrationConfig.GetId()).Return(clairifyIntegrationConfigStored, true, nil).Times(1)
 	integrationManager.EXPECT().Upsert(clairifyIntegrationConfig).Return(nil)
@@ -400,7 +403,9 @@ func TestBroadcastOnDelete(t *testing.T) {
 	var connMgr *connMocks.MockManager
 	var conn *connMocks.MockSensorConnection
 
-	ii := &storage.ImageIntegration{Id: "id", Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY}}
+	ii := &storage.ImageIntegration{}
+	ii.SetId("id")
+	ii.SetCategories([]storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY})
 
 	setup := func(t *testing.T) {
 		ctrl := gomock.NewController(t)
@@ -424,7 +429,9 @@ func TestBroadcastOnDelete(t *testing.T) {
 		iiDS.EXPECT().GetImageIntegration(gomock.Any(), gomock.Any()).Return(ii, true, nil)
 		iiDS.EXPECT().RemoveImageIntegration(gomock.Any(), gomock.Any()).Return(nil)
 
-		_, err := s.DeleteImageIntegration(context.Background(), &v1.ResourceByID{Id: "id"})
+		rbid := &v1.ResourceByID{}
+		rbid.SetId("id")
+		_, err := s.DeleteImageIntegration(context.Background(), rbid)
 		assert.NoError(t, err)
 	})
 
@@ -436,7 +443,9 @@ func TestBroadcastOnDelete(t *testing.T) {
 		iiDS.EXPECT().GetImageIntegration(gomock.Any(), gomock.Any()).Return(nil, false, nil)
 		iiDS.EXPECT().RemoveImageIntegration(gomock.Any(), gomock.Any()).Return(nil)
 
-		_, err := s.DeleteImageIntegration(context.Background(), &v1.ResourceByID{Id: "id"})
+		rbid := &v1.ResourceByID{}
+		rbid.SetId("id")
+		_, err := s.DeleteImageIntegration(context.Background(), rbid)
 		assert.NoError(t, err)
 	})
 
@@ -445,27 +454,28 @@ func TestBroadcastOnDelete(t *testing.T) {
 
 		iiDS.EXPECT().GetImageIntegration(gomock.Any(), gomock.Any()).Return(nil, false, errors.New("broken"))
 
-		_, err := s.DeleteImageIntegration(context.Background(), &v1.ResourceByID{Id: "id"})
+		rbid := &v1.ResourceByID{}
+		rbid.SetId("id")
+		_, err := s.DeleteImageIntegration(context.Background(), rbid)
 		assert.Error(t, err)
 	})
 }
 
 func TestScannerV4Restrictions(t *testing.T) {
-	ii := &storage.ImageIntegration{
-		Name: "fake",
-		Id:   "fake",
-		Type: types.ScannerV4,
-		Categories: []storage.ImageIntegrationCategory{
-			storage.ImageIntegrationCategory_SCANNER,
-		},
-		IntegrationConfig: &storage.ImageIntegration_ScannerV4{},
-	}
+	ii := &storage.ImageIntegration{}
+	ii.SetName("fake")
+	ii.SetId("fake")
+	ii.SetType(types.ScannerV4)
+	ii.SetCategories([]storage.ImageIntegrationCategory{
+		storage.ImageIntegrationCategory_SCANNER,
+	})
+	ii.IntegrationConfig = &storage.ImageIntegration_ScannerV4{}
 
 	t.Run("prevent scannerv4 create", func(t *testing.T) {
 		s := &serviceImpl{}
 
 		iiNew := ii.CloneVT()
-		iiNew.Id = ""
+		iiNew.SetId("")
 
 		_, err := s.PostImageIntegration(context.Background(), iiNew)
 		assert.ErrorContains(t, err, "scanner V4")
@@ -478,7 +488,9 @@ func TestScannerV4Restrictions(t *testing.T) {
 
 		iiDS.EXPECT().GetImageIntegration(gomock.Any(), gomock.Any()).Return(ii, true, nil)
 
-		_, err := s.DeleteImageIntegration(context.Background(), &v1.ResourceByID{Id: "fake"})
+		rbid := &v1.ResourceByID{}
+		rbid.SetId("fake")
+		_, err := s.DeleteImageIntegration(context.Background(), rbid)
 		assert.ErrorContains(t, err, "scanner V4")
 	})
 
@@ -488,12 +500,14 @@ func TestScannerV4Restrictions(t *testing.T) {
 		s := &serviceImpl{datastore: iiDS}
 
 		iiOld := ii.CloneVT()
-		iiOld.Type = types.Clairify
+		iiOld.SetType(types.Clairify)
 
 		iiDS.EXPECT().GetImageIntegrations(gomock.Any(), gomock.Any()).Return([]*storage.ImageIntegration{iiOld}, nil)
 		iiDS.EXPECT().GetImageIntegration(gomock.Any(), gomock.Any()).Return(iiOld, true, nil)
 
-		_, err := s.UpdateImageIntegration(context.Background(), &v1.UpdateImageIntegrationRequest{Config: ii})
+		uiir := &v1.UpdateImageIntegrationRequest{}
+		uiir.SetConfig(ii)
+		_, err := s.UpdateImageIntegration(context.Background(), uiir)
 		assert.ErrorContains(t, err, "scanner V4")
 	})
 
@@ -503,13 +517,15 @@ func TestScannerV4Restrictions(t *testing.T) {
 		s := &serviceImpl{datastore: iiDS}
 
 		iiNew := ii.CloneVT()
-		iiNew.Type = types.Clairify
+		iiNew.SetType(types.Clairify)
 		iiNew.IntegrationConfig = &storage.ImageIntegration_Clairify{}
 
 		iiDS.EXPECT().GetImageIntegrations(gomock.Any(), gomock.Any()).Return([]*storage.ImageIntegration{ii}, nil)
 		iiDS.EXPECT().GetImageIntegration(gomock.Any(), gomock.Any()).Return(ii, true, nil)
 
-		_, err := s.UpdateImageIntegration(context.Background(), &v1.UpdateImageIntegrationRequest{Config: iiNew})
+		uiir := &v1.UpdateImageIntegrationRequest{}
+		uiir.SetConfig(iiNew)
+		_, err := s.UpdateImageIntegration(context.Background(), uiir)
 		assert.ErrorContains(t, err, "scanner V4")
 	})
 }

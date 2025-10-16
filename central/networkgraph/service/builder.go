@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"google.golang.org/protobuf/proto"
 )
 
 type flowGraphBuilder struct {
@@ -40,10 +41,9 @@ func (b *flowGraphBuilder) getNode(entity networkgraph.Entity, addIfMissing bool
 	if !addIfMissing {
 		return -1, nil, false
 	}
-	node = &v1.NetworkNode{
-		Entity:   entity.ToProto(),
-		OutEdges: make(map[int32]*v1.NetworkEdgePropertiesBundle),
-	}
+	node = &v1.NetworkNode{}
+	node.SetEntity(entity.ToProto())
+	node.SetOutEdges(make(map[int32]*v1.NetworkEdgePropertiesBundle))
 	idx = len(b.nodes)
 	b.nodes = append(b.nodes, node)
 	b.nodeIndices[entity] = idx
@@ -60,13 +60,11 @@ func (b *flowGraphBuilder) AddDeployments(deployments []*storage.ListDeployment)
 		if !added {
 			continue
 		}
-		node.Entity.Desc = &storage.NetworkEntityInfo_Deployment_{
-			Deployment: &storage.NetworkEntityInfo_Deployment{
-				Name:      deployment.GetName(),
-				Namespace: deployment.GetNamespace(),
-				Cluster:   deployment.GetCluster(),
-			},
-		}
+		nd := &storage.NetworkEntityInfo_Deployment{}
+		nd.SetName(deployment.GetName())
+		nd.SetNamespace(deployment.GetNamespace())
+		nd.SetCluster(deployment.GetCluster())
+		node.GetEntity().SetDeployment(proto.ValueOrDefault(nd))
 	}
 }
 
@@ -81,15 +79,16 @@ func (b *flowGraphBuilder) AddFlows(flows []*storage.NetworkFlow) {
 		}
 
 		if networkgraph.IsExternal(props.GetSrcEntity()) {
-			srcNode.Entity.Desc = props.GetSrcEntity().GetDesc()
+			// DO NOT SUBMIT: Migrate the direct oneof field access (go/go-opaque-special-cases/oneof.md).
+			srcNode.GetEntity().Desc = props.GetSrcEntity().GetDesc()
 		}
 
 		if props.GetDstEntity().GetType() == storage.NetworkEntityInfo_LISTEN_ENDPOINT {
 			if deployment := srcNode.GetEntity().GetDeployment(); deployment != nil {
-				deployment.ListenPorts = append(deployment.ListenPorts, &storage.NetworkEntityInfo_Deployment_ListenPort{
-					Port:       props.GetDstPort(),
-					L4Protocol: props.GetL4Protocol(),
-				})
+				ndl := &storage.NetworkEntityInfo_Deployment_ListenPort{}
+				ndl.SetPort(props.GetDstPort())
+				ndl.SetL4Protocol(props.GetL4Protocol())
+				deployment.SetListenPorts(append(deployment.GetListenPorts(), ndl))
 			} else if added {
 				log.Errorf("UNEXPECTED: Listen endpoint for non-deployment source entity %v", srcEnt)
 				b.removeLastNode()
@@ -108,7 +107,8 @@ func (b *flowGraphBuilder) AddFlows(flows []*storage.NetworkFlow) {
 		}
 
 		if networkgraph.IsExternal(props.GetDstEntity()) {
-			dstNode.Entity.Desc = props.GetDstEntity().GetDesc()
+			// DO NOT SUBMIT: Migrate the direct oneof field access (go/go-opaque-special-cases/oneof.md).
+			dstNode.GetEntity().Desc = props.GetDstEntity().GetDesc()
 		}
 
 		tgtIdx := int32(dstIdx)
@@ -116,25 +116,24 @@ func (b *flowGraphBuilder) AddFlows(flows []*storage.NetworkFlow) {
 		tgtEdgeBundle := srcNode.GetOutEdges()[tgtIdx]
 		if tgtEdgeBundle == nil {
 			tgtEdgeBundle = &v1.NetworkEdgePropertiesBundle{}
-			srcNode.OutEdges[tgtIdx] = tgtEdgeBundle
+			srcNode.GetOutEdges()[tgtIdx] = tgtEdgeBundle
 		}
 
-		edgeProps := &v1.NetworkEdgeProperties{
-			Port:     props.GetDstPort(),
-			Protocol: props.GetL4Protocol(),
-		}
+		edgeProps := &v1.NetworkEdgeProperties{}
+		edgeProps.SetPort(props.GetDstPort())
+		edgeProps.SetProtocol(props.GetL4Protocol())
 
-		edgeProps.LastActiveTimestamp = flow.GetLastSeenTimestamp()
+		edgeProps.SetLastActiveTimestamp(flow.GetLastSeenTimestamp())
 		if edgeProps.GetLastActiveTimestamp() == nil {
-			edgeProps.LastActiveTimestamp = protocompat.TimestampNow()
+			edgeProps.SetLastActiveTimestamp(protocompat.TimestampNow())
 		}
 
-		tgtEdgeBundle.Properties = append(tgtEdgeBundle.Properties, edgeProps)
+		tgtEdgeBundle.SetProperties(append(tgtEdgeBundle.GetProperties(), edgeProps))
 	}
 }
 
 func (b *flowGraphBuilder) Build() *v1.NetworkGraph {
-	return &v1.NetworkGraph{
-		Nodes: b.nodes,
-	}
+	ng := &v1.NetworkGraph{}
+	ng.SetNodes(b.nodes)
+	return ng
 }

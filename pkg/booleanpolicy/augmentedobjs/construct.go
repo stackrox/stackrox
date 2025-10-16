@@ -204,9 +204,9 @@ func ConstructImage(image *storage.Image, imageFullName string) (*pathutil.Augme
 	// making it possible to also match for nil objects.
 	// We have to do this at the beginning, so the augmented object contains the field steps.
 	if img.GetSignatureVerificationData().GetResults() == nil {
-		img.SignatureVerificationData = &storage.ImageSignatureVerificationData{
-			Results: []*storage.ImageSignatureVerificationResult{{}},
-		}
+		isvd := &storage.ImageSignatureVerificationData{}
+		isvd.SetResults([]*storage.ImageSignatureVerificationResult{{}})
+		img.SetSignatureVerificationData(isvd)
 	}
 
 	obj := pathutil.NewAugmentedObj(img)

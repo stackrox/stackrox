@@ -68,7 +68,8 @@ func Run(databases *types.Databases) error {
 
 	// Make sure version is up to date after migrations to ensure latest version schema is used in the event
 	// there are no migrations executed.
-	currentVersion := &versionStorage.Version{SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNum())}
+	currentVersion := &versionStorage.Version{}
+	currentVersion.SetSeqNum(int32(pkgMigrations.CurrentDBVersionSeqNum()))
 	ctx := sac.WithAllAccess(context.Background())
 	err = updateVersion(ctx, databases, currentVersion)
 	if err != nil {

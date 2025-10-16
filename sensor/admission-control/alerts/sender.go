@@ -93,13 +93,12 @@ func (s *alertSenderImpl) stageAlerts(alerts ...*storage.Alert) {
 
 		val := s.stagedAlerts[id]
 		if val == nil {
-			val = &central.AlertResults{
-				DeploymentId: alert.GetDeployment().GetId(),
-				Stage:        alert.GetLifecycleStage(),
-			}
+			val = &central.AlertResults{}
+			val.SetDeploymentId(alert.GetDeployment().GetId())
+			val.SetStage(alert.GetLifecycleStage())
 			s.stagedAlerts[id] = val
 		}
-		val.Alerts = append(val.Alerts, alert)
+		val.SetAlerts(append(val.GetAlerts(), alert))
 	}
 }
 
@@ -130,7 +129,9 @@ func (s *alertSenderImpl) sensorMsg() (*sensor.AdmissionControlAlerts, []alertRe
 		keys = append(keys, key)
 		results = append(results, val)
 	}
-	return &sensor.AdmissionControlAlerts{AlertResults: results}, keys
+	aca := &sensor.AdmissionControlAlerts{}
+	aca.SetAlertResults(results)
+	return aca, keys
 }
 
 func (s *alertSenderImpl) pruneStagedAlerts(keys ...alertResultsIndicator) {

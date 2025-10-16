@@ -38,7 +38,9 @@ func applyRevokeCRSs(ctx context.Context, cliEnvironment environment.Environment
 		return errox.NotFound.Newf("could not find CRS(s) %s", strings.Join(idsOrNames.AsSlice(), ", "))
 	}
 
-	revokeResp, err := svc.RevokeCRS(ctx, &v1.CRSRevokeRequest{Ids: revokeIds})
+	crsrr := &v1.CRSRevokeRequest{}
+	crsrr.SetIds(revokeIds)
+	revokeResp, err := svc.RevokeCRS(ctx, crsrr)
 	if err != nil {
 		return errors.Wrap(err, "revoking CRSs")
 	}

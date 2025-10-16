@@ -16,13 +16,14 @@ func TestImageAgeScore(t *testing.T) {
 	imageAgeMultiplier := NewImageAge()
 
 	image := multipliers.GetMockImages()[0]
-	expectedScore := &storage.Risk_Result{
-		Name: ImageAgeHeading,
-		Factors: []*storage.Risk_Result_Factor{
-			{Message: fmt.Sprintf("Image %q is 180 days old", image.GetName().GetFullName())},
-		},
-		Score: 1.25,
-	}
+	rrf := &storage.Risk_Result_Factor{}
+	rrf.SetMessage(fmt.Sprintf("Image %q is 180 days old", image.GetName().GetFullName()))
+	expectedScore := &storage.Risk_Result{}
+	expectedScore.SetName(ImageAgeHeading)
+	expectedScore.SetFactors([]*storage.Risk_Result_Factor{
+		rrf,
+	})
+	expectedScore.SetScore(1.25)
 
 	score := imageAgeMultiplier.Score(context.Background(), image)
 	protoassert.Equal(t, expectedScore, score)
@@ -33,13 +34,14 @@ func TestImageAgeScoreV2(t *testing.T) {
 	imageAgeMultiplier := NewImageAge()
 
 	image := multipliers.GetMockImagesV2()[0]
-	expectedScore := &storage.Risk_Result{
-		Name: ImageAgeHeading,
-		Factors: []*storage.Risk_Result_Factor{
-			{Message: fmt.Sprintf("Image %q is 180 days old", image.GetName().GetFullName())},
-		},
-		Score: 1.25,
-	}
+	rrf := &storage.Risk_Result_Factor{}
+	rrf.SetMessage(fmt.Sprintf("Image %q is 180 days old", image.GetName().GetFullName()))
+	expectedScore := &storage.Risk_Result{}
+	expectedScore.SetName(ImageAgeHeading)
+	expectedScore.SetFactors([]*storage.Risk_Result_Factor{
+		rrf,
+	})
+	expectedScore.SetScore(1.25)
 
 	score := imageAgeMultiplier.ScoreV2(context.Background(), image)
 	protoassert.Equal(t, expectedScore, score)

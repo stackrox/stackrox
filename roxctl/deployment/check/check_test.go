@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -121,85 +122,85 @@ var (
 	}
 
 	testDeploymentAlertsWithFailure = []*storage.Alert{
-		{
-			Entity:     testDeploymentEntity,
+		storage.Alert_builder{
+			Deployment: proto.ValueOrDefault(testDeploymentEntity.Deployment),
 			Policy:     lowSevPolicy,
 			Violations: singleViolationMessage,
-		},
-		{
+		}.Build(),
+		storage.Alert_builder{
 			Policy:     mediumSevPolicy,
-			Entity:     testDeploymentEntity,
+			Deployment: proto.ValueOrDefault(testDeploymentEntity.Deployment),
 			Violations: multipleViolationMessages,
-		},
+		}.Build(),
 		// multiple alerts with same policies should result in single policy violation
 		// and their violation messages should be merged
-		{
+		storage.Alert_builder{
 			Policy:     mediumSevPolicy2,
-			Entity:     testDeploymentEntity,
+			Deployment: proto.ValueOrDefault(testDeploymentEntity.Deployment),
 			Violations: singleViolationMessage,
-		},
-		{
+		}.Build(),
+		storage.Alert_builder{
 			Policy:     mediumSevPolicy2,
-			Entity:     testDeploymentEntity,
+			Deployment: proto.ValueOrDefault(testDeploymentEntity.Deployment),
 			Violations: multipleViolationMessages,
-		},
-		{
+		}.Build(),
+		storage.Alert_builder{
 			Policy:     mediumSevPolicy3,
-			Entity:     testDeploymentEntity,
+			Deployment: proto.ValueOrDefault(testDeploymentEntity.Deployment),
 			Violations: singleViolationMessage,
-		},
-		{
+		}.Build(),
+		storage.Alert_builder{
 			Policy:     highSevPolicyWithDeployScaleZero,
-			Entity:     testDeploymentEntity,
+			Deployment: proto.ValueOrDefault(testDeploymentEntity.Deployment),
 			Violations: multipleViolationMessages,
-		},
-		{
+		}.Build(),
+		storage.Alert_builder{
 			Policy:     highSevPolicyWithNoDescription,
-			Entity:     testDeploymentEntity,
+			Deployment: proto.ValueOrDefault(testDeploymentEntity.Deployment),
 			Violations: multipleViolationMessages,
-		},
+		}.Build(),
 	}
 
 	testDeploymentAlertsWithoutFailure = []*storage.Alert{
-		{
-			Entity:     testDeploymentEntity,
+		storage.Alert_builder{
+			Deployment: proto.ValueOrDefault(testDeploymentEntity.Deployment),
 			Policy:     lowSevPolicy,
 			Violations: singleViolationMessage,
-		},
-		{
+		}.Build(),
+		storage.Alert_builder{
 			Policy:     mediumSevPolicy,
-			Entity:     testDeploymentEntity,
+			Deployment: proto.ValueOrDefault(testDeploymentEntity.Deployment),
 			Violations: multipleViolationMessages,
-		},
+		}.Build(),
 		// multiple alerts with same policies should result in single policy violation
 		// and their violation messages should be merged
-		{
+		storage.Alert_builder{
 			Policy:     mediumSevPolicy2,
-			Entity:     testDeploymentEntity,
+			Deployment: proto.ValueOrDefault(testDeploymentEntity.Deployment),
 			Violations: singleViolationMessage,
-		},
-		{
+		}.Build(),
+		storage.Alert_builder{
 			Policy:     mediumSevPolicy2,
-			Entity:     testDeploymentEntity,
+			Deployment: proto.ValueOrDefault(testDeploymentEntity.Deployment),
 			Violations: multipleViolationMessages,
-		},
-		{
+		}.Build(),
+		storage.Alert_builder{
 			Policy:     mediumSevPolicy3,
-			Entity:     testDeploymentEntity,
+			Deployment: proto.ValueOrDefault(testDeploymentEntity.Deployment),
 			Violations: singleViolationMessage,
-		},
+		}.Build(),
 		// alert with policy which is NOT storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT should not result in a
 		// failure
-		{
+		storage.Alert_builder{
 			Policy:     criticalSevPolicyWithBuildFail,
-			Entity:     testDeploymentEntity,
+			Deployment: proto.ValueOrDefault(testDeploymentEntity.Deployment),
 			Violations: multipleViolationMessages,
-		},
-		{
+		}.Build(),
+		storage.Alert_builder{
 			Policy:     highSevPolicyWithNoDescription,
-			Entity:     testDeploymentEntity,
+			Deployment: proto.ValueOrDefault(testDeploymentEntity.Deployment),
 			Violations: multipleViolationMessages,
-		},
+		}.Build(),
 	}
 
 	testIgnoredObjRefs = []string{
@@ -219,14 +220,14 @@ type mockDetectionServiceServer struct {
 
 func (m *mockDetectionServiceServer) DetectDeployTimeFromYAML(_ context.Context, request *v1.DeployYAMLDetectionRequest) (*v1.DeployDetectionResponse, error) {
 	m.request = request
-	return &v1.DeployDetectionResponse{
-		Runs: []*v1.DeployDetectionResponse_Run{
-			{
-				Alerts: m.alerts,
-			},
-		},
-		IgnoredObjectRefs: m.ignoredObjRefs,
-	}, nil
+	dr := &v1.DeployDetectionResponse_Run{}
+	dr.SetAlerts(m.alerts)
+	ddr := &v1.DeployDetectionResponse{}
+	ddr.SetRuns([]*v1.DeployDetectionResponse_Run{
+		dr,
+	})
+	ddr.SetIgnoredObjectRefs(m.ignoredObjRefs)
+	return ddr, nil
 }
 
 func TestDeploymentCheckCommand(t *testing.T) {

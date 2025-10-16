@@ -76,13 +76,12 @@ func TestReportNotify(t *testing.T) {
 }
 
 func TestAlertNotify(t *testing.T) {
-	inputAlert := storage.Alert{
-		Id: "test-id",
-		Policy: &storage.Policy{
-			Name: "test-policy",
-		},
-		Time: protocompat.TimestampNow(),
-	}
+	policy := &storage.Policy{}
+	policy.SetName("test-policy")
+	inputAlert := &storage.Alert{}
+	inputAlert.SetId("test-id")
+	inputAlert.SetPolicy(policy)
+	inputAlert.SetTime(protocompat.TimestampNow())
 	expectedTo := "default@test.acscs-email-test.com"
 	expectedSubject := "Policy 'test-policy' violated"
 
@@ -101,12 +100,12 @@ func TestAlertNotify(t *testing.T) {
 	mitreStore := mitreMocks.NewMockAttackReadOnlyDataStore(mockController)
 	mitreStore.EXPECT().Get(gomock.Any()).Return(&storage.MitreAttackVector{}, nil).AnyTimes()
 
+	notifier := &storage.Notifier{}
+	notifier.SetLabelDefault("default@test.acscs-email-test.com")
 	acscsEmail := &acscsEmail{
 		client:         mockClient,
 		metadataGetter: metadataGetter,
-		notifier: &storage.Notifier{
-			LabelDefault: "default@test.acscs-email-test.com",
-		},
+		notifier:       notifier,
 	}
 
 	err := acscsEmail.AlertNotify(context.Background(), &inputAlert)
@@ -138,11 +137,11 @@ func TestNetworkPolicyYAMLNotify(t *testing.T) {
 	expectedClusterName := "test-cluster"
 	expectedSubject := fmt.Sprintf("New network policy YAML for cluster '%s' needs to be applied", expectedClusterName)
 
+	notifier := &storage.Notifier{}
+	notifier.SetLabelDefault(expectedTo)
 	acscsEmail := &acscsEmail{
-		client: mockClient,
-		notifier: &storage.Notifier{
-			LabelDefault: expectedTo,
-		},
+		client:   mockClient,
+		notifier: notifier,
 	}
 
 	exampleYamlObject := struct {
@@ -183,11 +182,11 @@ func TestACSCSEmailTest(t *testing.T) {
 
 	expectedTo := "default@test.acscs-email-test.com"
 
+	notifier := &storage.Notifier{}
+	notifier.SetLabelDefault(expectedTo)
 	acscsEmail := &acscsEmail{
-		client: mockClient,
-		notifier: &storage.Notifier{
-			LabelDefault: expectedTo,
-		},
+		client:   mockClient,
+		notifier: notifier,
 	}
 
 	err := acscsEmail.Test(context.Background())

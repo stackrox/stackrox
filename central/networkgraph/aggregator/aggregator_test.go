@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestSubnetToSupernetAggregator(t *testing.T) {
@@ -292,18 +293,13 @@ func TestAggregateExtConnsByName(t *testing.T) {
 
 	flows := []*storage.NetworkFlow{f1, f2, f3, f4, f5, f6, f7, f8, f9, f10}
 
-	e2x := &storage.NetworkEntityInfo{
-		Id:   "cluster1__google",
-		Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-		Desc: &storage.NetworkEntityInfo_ExternalSource_{
-			ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-				Name: "google",
-				Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-					Cidr: canonicalMultiNetworkCIDR,
-				},
-			},
-		},
-	}
+	e2x := &storage.NetworkEntityInfo{}
+	e2x.SetId("cluster1__google")
+	e2x.SetType(storage.NetworkEntityInfo_EXTERNAL_SOURCE)
+	e2x.SetExternalSource(storage.NetworkEntityInfo_ExternalSource_builder{
+		Name: "google",
+		Cidr: proto.String(canonicalMultiNetworkCIDR),
+	}.Build())
 	e5x := testutils.GetExtSrcNetworkEntityInfo("cluster1__nameless", "unnamed external source #1", "", false, false)
 
 	/*

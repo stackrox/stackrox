@@ -127,10 +127,10 @@ func (p portDescs) ToProto() []*v1.NetworkEdgeProperties {
 
 	props := make([]*v1.NetworkEdgeProperties, 0, len(p))
 	for _, port := range p {
-		props = append(props, &v1.NetworkEdgeProperties{
-			Protocol: protoToL4Proto[port.l4proto],
-			Port:     uint32(port.port),
-		})
+		nep := &v1.NetworkEdgeProperties{}
+		nep.SetProtocol(protoToL4Proto[port.l4proto])
+		nep.SetPort(uint32(port.port))
+		props = append(props, nep)
 	}
 
 	return props

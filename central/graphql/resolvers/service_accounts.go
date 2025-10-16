@@ -115,7 +115,7 @@ func (resolver *serviceAccountResolver) K8sRoles(ctx context.Context, args Pagin
 		return nil, err
 	}
 	pagination := q.GetPagination()
-	q.Pagination = nil
+	q.ClearPagination()
 
 	bindings, roles, err := resolver.getRolesAndBindings(ctx, q)
 	if err != nil {

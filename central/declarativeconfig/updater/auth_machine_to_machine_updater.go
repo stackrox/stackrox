@@ -74,7 +74,7 @@ func (u *authMachineToMachineConfigUpdater) DeleteResources(
 				log.Errorf("Failed to update the declarative config health status %q: %v", m2mConfig.GetId(), err)
 			}
 			if errors.Is(err, errox.ReferencedByAnotherObject) {
-				m2mConfig.Traits.Origin = storage.Traits_DECLARATIVE_ORPHANED
+				m2mConfig.GetTraits().SetOrigin(storage.Traits_DECLARATIVE_ORPHANED)
 				if _, err := u.configDataStore.UpsertAuthM2MConfig(ctx, m2mConfig); err != nil {
 					deletionErr = multierror.Append(
 						deletionErr,

@@ -63,7 +63,7 @@ func (a *aggregateToSupernetImpl) Aggregate(conns []*storage.NetworkFlow) []*sto
 		connID := networkgraph.GetNetworkConnIndicator(conn)
 		if storedFlow := normalizedConns[connID]; storedFlow != nil {
 			if protocompat.CompareTimestamps(storedFlow.GetLastSeenTimestamp(), conn.GetLastSeenTimestamp()) < 0 {
-				storedFlow.LastSeenTimestamp = conn.GetLastSeenTimestamp()
+				storedFlow.SetLastSeenTimestamp(conn.GetLastSeenTimestamp())
 			}
 		} else {
 			normalizedConns[connID] = conn
@@ -134,7 +134,7 @@ func (a *aggregateDefaultToCustomExtSrcsImpl) Aggregate(conns []*storage.Network
 		connID := networkgraph.GetNetworkConnIndicator(conn)
 		if storedFlow := normalizedConns[connID]; storedFlow != nil {
 			if protocompat.CompareTimestamps(storedFlow.GetLastSeenTimestamp(), conn.GetLastSeenTimestamp()) < 0 {
-				storedFlow.LastSeenTimestamp = conn.GetLastSeenTimestamp()
+				storedFlow.SetLastSeenTimestamp(conn.GetLastSeenTimestamp())
 			}
 		} else {
 			normalizedConns[connID] = conn
@@ -190,7 +190,7 @@ func (a *aggregateExternalConnByNameImpl) Aggregate(flows []*storage.NetworkFlow
 		// liveliness of the connection.
 		if storedFlow := conns[connIndicator]; storedFlow != nil {
 			if protocompat.CompareTimestamps(storedFlow.GetLastSeenTimestamp(), flow.GetLastSeenTimestamp()) < 0 {
-				storedFlow.LastSeenTimestamp = flow.GetLastSeenTimestamp()
+				storedFlow.SetLastSeenTimestamp(flow.GetLastSeenTimestamp())
 			}
 		} else {
 			conns[connIndicator] = flow
@@ -236,7 +236,7 @@ func (a *aggregateLatestTimestampImpl) Aggregate(flows []*storage.NetworkFlow) [
 		connID := networkgraph.GetNetworkConnIndicator(flow)
 		if storedFlow := normalizedConns[connID]; storedFlow != nil {
 			if protocompat.CompareTimestamps(storedFlow.GetLastSeenTimestamp(), flow.GetLastSeenTimestamp()) < 0 {
-				storedFlow.LastSeenTimestamp = flow.GetLastSeenTimestamp()
+				storedFlow.SetLastSeenTimestamp(flow.GetLastSeenTimestamp())
 			}
 		} else {
 			normalizedConns[connID] = flow
@@ -296,9 +296,7 @@ func normalizeUnnamedExternalEntities(entity *storage.NetworkEntityInfo, unnamed
 	}
 
 	if entity.GetExternalSource() == nil {
-		entity.Desc = &storage.NetworkEntityInfo_ExternalSource_{
-			ExternalSource: &storage.NetworkEntityInfo_ExternalSource{},
-		}
+		entity.SetExternalSource(&storage.NetworkEntityInfo_ExternalSource{})
 	}
 
 	if entity.GetExternalSource().GetName() != "" {
@@ -309,7 +307,7 @@ func normalizeUnnamedExternalEntities(entity *storage.NetworkEntityInfo, unnamed
 		unnamedExtSrcCounter[entity.GetId()] = len(unnamedExtSrcCounter) + 1
 	}
 
-	entity.GetExternalSource().Name = fmt.Sprintf("%s #%d", unnamedExtSrcPrefix, unnamedExtSrcCounter[entity.GetId()])
+	entity.GetExternalSource().SetName(fmt.Sprintf("%s #%d", unnamedExtSrcPrefix, unnamedExtSrcCounter[entity.GetId()]))
 	return true
 }
 
@@ -339,18 +337,14 @@ func normalizeDupNameExtSrcs(entity *storage.NetworkEntityInfo) {
 	}
 
 	proto.Reset(entity)
-	proto.Merge(entity, &storage.NetworkEntityInfo{
-		Id:   id.String(),
-		Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-		Desc: &storage.NetworkEntityInfo_ExternalSource_{
-			ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-				Name:    entity.GetExternalSource().GetName(),
-				Default: entity.GetExternalSource().GetDefault(),
-				// Since many CIDRs are mapped to one endpoint, we use a canonical CIDR string.
-				Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-					Cidr: canonicalMultiNetworkCIDR,
-				},
-			},
-		},
-	})
+	nei := &storage.NetworkEntityInfo{}
+	nei.SetId(id.String())
+	nei.SetType(storage.NetworkEntityInfo_EXTERNAL_SOURCE)
+	nei.SetExternalSource(storage.NetworkEntityInfo_ExternalSource_builder{
+		Name:    entity.GetExternalSource().GetName(),
+		Default: entity.GetExternalSource().GetDefault(),
+		// Since many CIDRs are mapped to one endpoint, we use a canonical CIDR string.
+		Cidr: proto.String(canonicalMultiNetworkCIDR),
+	}.Build())
+	proto.Merge(entity, nei)
 }

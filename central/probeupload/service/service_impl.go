@@ -70,9 +70,9 @@ func (s *service) GetExistingProbes(ctx context.Context, req *v1.GetExistingProb
 	if err != nil {
 		return nil, err
 	}
-	return &v1.GetExistingProbesResponse{
-		ExistingFiles: fileInfos,
-	}, nil
+	gepr := &v1.GetExistingProbesResponse{}
+	gepr.SetExistingFiles(fileInfos)
+	return gepr, nil
 }
 
 func (s *service) CustomRoutes() []routes.CustomRoute {

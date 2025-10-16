@@ -29,12 +29,11 @@ func GetFullMitreAttackVectors(mitreStore mitreDS.AttackReadOnlyDataStore, polic
 			return nil, err
 		}
 
-		vector := &storage.MitreAttackVector{
-			Tactic: fullVector.GetTactic(),
-		}
+		vector := &storage.MitreAttackVector{}
+		vector.SetTactic(fullVector.GetTactic())
 		for _, technique := range fullVector.GetTechniques() {
 			if _, ok := techniqueIDs[technique.GetId()]; ok {
-				vector.Techniques = append(vector.Techniques, technique)
+				vector.SetTechniques(append(vector.GetTechniques(), technique))
 			}
 		}
 		sort.SliceStable(vector.GetTechniques(), func(i, j int) bool {

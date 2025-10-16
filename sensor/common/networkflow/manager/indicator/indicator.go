@@ -38,17 +38,16 @@ type NetworkConn struct {
 }
 
 func (i *NetworkConn) ToProto(ts timestamp.MicroTS) *storage.NetworkFlow {
-	proto := &storage.NetworkFlow{
-		Props: &storage.NetworkFlowProperties{
-			SrcEntity:  i.SrcEntity.ToProto(),
-			DstEntity:  i.DstEntity.ToProto(),
-			DstPort:    uint32(i.DstPort),
-			L4Protocol: i.Protocol,
-		},
-	}
+	nfp := &storage.NetworkFlowProperties{}
+	nfp.SetSrcEntity(i.SrcEntity.ToProto())
+	nfp.SetDstEntity(i.DstEntity.ToProto())
+	nfp.SetDstPort(uint32(i.DstPort))
+	nfp.SetL4Protocol(i.Protocol)
+	proto := &storage.NetworkFlow{}
+	proto.SetProps(nfp)
 
 	if ts != timestamp.InfiniteFuture {
-		proto.LastSeenTimestamp = protoconv.ConvertMicroTSToProtobufTS(ts)
+		proto.SetLastSeenTimestamp(protoconv.ConvertMicroTSToProtobufTS(ts))
 	}
 	return proto
 }
@@ -71,16 +70,15 @@ type ContainerEndpoint struct {
 }
 
 func (i *ContainerEndpoint) ToProto(ts timestamp.MicroTS) *storage.NetworkEndpoint {
-	proto := &storage.NetworkEndpoint{
-		Props: &storage.NetworkEndpointProperties{
-			Entity:     i.Entity.ToProto(),
-			Port:       uint32(i.Port),
-			L4Protocol: i.Protocol,
-		},
-	}
+	nep := &storage.NetworkEndpointProperties{}
+	nep.SetEntity(i.Entity.ToProto())
+	nep.SetPort(uint32(i.Port))
+	nep.SetL4Protocol(i.Protocol)
+	proto := &storage.NetworkEndpoint{}
+	proto.SetProps(nep)
 
 	if ts != timestamp.InfiniteFuture {
-		proto.LastActiveTimestamp = protoconv.ConvertMicroTSToProtobufTS(ts)
+		proto.SetLastActiveTimestamp(protoconv.ConvertMicroTSToProtobufTS(ts))
 	}
 	return proto
 }
@@ -116,23 +114,22 @@ type ProcessListeningWithTimestamp struct {
 }
 
 func (i *ProcessListening) ToProto(ts timestamp.MicroTS) *storage.ProcessListeningOnPortFromSensor {
-	proto := &storage.ProcessListeningOnPortFromSensor{
-		Port:     uint32(i.Port),
-		Protocol: i.Protocol,
-		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               i.PodID,
-			ContainerName:       i.ContainerName,
-			ProcessName:         i.Process.ProcessName,
-			ProcessExecFilePath: i.Process.ProcessExec,
-			ProcessArgs:         i.Process.ProcessArgs,
-		},
-		DeploymentId: i.DeploymentID,
-		PodUid:       i.PodUID,
-		Namespace:    i.Namespace,
-	}
+	piuk := &storage.ProcessIndicatorUniqueKey{}
+	piuk.SetPodId(i.PodID)
+	piuk.SetContainerName(i.ContainerName)
+	piuk.SetProcessName(i.Process.ProcessName)
+	piuk.SetProcessExecFilePath(i.Process.ProcessExec)
+	piuk.SetProcessArgs(i.Process.ProcessArgs)
+	proto := &storage.ProcessListeningOnPortFromSensor{}
+	proto.SetPort(uint32(i.Port))
+	proto.SetProtocol(i.Protocol)
+	proto.SetProcess(piuk)
+	proto.SetDeploymentId(i.DeploymentID)
+	proto.SetPodUid(i.PodUID)
+	proto.SetNamespace(i.Namespace)
 
 	if ts != timestamp.InfiniteFuture {
-		proto.CloseTimestamp = protoconv.ConvertMicroTSToProtobufTS(ts)
+		proto.SetCloseTimestamp(protoconv.ConvertMicroTSToProtobufTS(ts))
 	}
 
 	return proto

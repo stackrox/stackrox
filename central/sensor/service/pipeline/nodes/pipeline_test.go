@@ -18,15 +18,13 @@ import (
 
 func Test_pipelineImpl_Run(t *testing.T) {
 	createMsg := func(osImage string) *central.MsgFromSensor {
-		return &central.MsgFromSensor{
-			Msg: &central.MsgFromSensor_Event{
-				Event: &central.SensorEvent{
-					Resource: &central.SensorEvent_Node{Node: &storage.Node{
-						OsImage: osImage,
-						// Set timestamp to assert it was nilled later on.
-						LastUpdated: protocompat.TimestampNow(),
-					}}},
-			}}
+		return central.MsgFromSensor_builder{
+			Event: central.SensorEvent_builder{
+				Node: storage.Node_builder{
+					OsImage: osImage,
+					// Set timestamp to assert it was nilled later on.
+					LastUpdated: protocompat.TimestampNow(),
+				}.Build()}.Build()}.Build()
 	}
 	type mocks struct {
 		clusterStore  *clusterDatastoreMocks.MockDataStore

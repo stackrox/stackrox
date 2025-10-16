@@ -71,9 +71,9 @@ func (s *serviceImpl) GetPods(ctx context.Context, request *v1.RawQuery) (*v1.Po
 		return nil, err
 	}
 
-	return &v1.PodsResponse{
-		Pods: pods,
-	}, nil
+	pr := &v1.PodsResponse{}
+	pr.SetPods(pods)
+	return pr, nil
 }
 
 func (s *serviceImpl) ExportPods(req *v1.ExportPodRequest, srv v1.PodService_ExportPodsServer) error {
@@ -89,7 +89,9 @@ func (s *serviceImpl) ExportPods(req *v1.ExportPodRequest, srv v1.PodService_Exp
 	}
 
 	return s.datastore.WalkByQuery(ctx, parsedQuery, func(p *storage.Pod) error {
-		if err := srv.Send(&v1.ExportPodResponse{Pod: p}); err != nil {
+		epr := &v1.ExportPodResponse{}
+		epr.SetPod(p)
+		if err := srv.Send(epr); err != nil {
 			return err
 		}
 		return nil

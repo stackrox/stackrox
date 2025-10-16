@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/store/mocks"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestComponent(t *testing.T) {
@@ -80,7 +81,7 @@ func (s *ComponentTestSuite) TestEnhanceDeploymentsEmptyMessages() {
 			msg: &central.DeploymentEnhancementRequest{},
 		},
 		"No Deployments": {
-			msg: &central.DeploymentEnhancementRequest{Msg: &central.DeploymentEnhancementMessage{Id: uuid.NewV4().String()}},
+			msg: central.DeploymentEnhancementRequest_builder{Msg: central.DeploymentEnhancementMessage_builder{Id: uuid.NewV4().String()}.Build()}.Build(),
 		},
 	}
 
@@ -110,24 +111,24 @@ func (s *ComponentTestSuite) TestMsgQueueOverfill() {
 }
 
 func generateMsgToSensor() *central.MsgToSensor {
-	return &central.MsgToSensor{
-		Msg: &central.MsgToSensor_DeploymentEnhancementRequest{
-			DeploymentEnhancementRequest: generateDeploymentMsg(uuid.NewV4().String(), 1),
-		},
-	}
+	mts := &central.MsgToSensor{}
+	mts.SetDeploymentEnhancementRequest(proto.ValueOrDefault(generateDeploymentMsg(uuid.NewV4().String(), 1)))
+	return mts
 }
 
 func generateDeploymentMsg(id string, noOfDeployments int) *central.DeploymentEnhancementRequest {
 	d := make([]*storage.Deployment, noOfDeployments)
 	for i := 0; i < noOfDeployments; i++ {
-		d[i] = &storage.Deployment{Id: uuid.NewV4().String()}
+		deployment := &storage.Deployment{}
+		deployment.SetId(uuid.NewV4().String())
+		d[i] = deployment
 	}
-	return &central.DeploymentEnhancementRequest{
-		Msg: &central.DeploymentEnhancementMessage{
-			Id:          id,
-			Deployments: d,
-		},
-	}
+	dem := &central.DeploymentEnhancementMessage{}
+	dem.SetId(id)
+	dem.SetDeployments(d)
+	der := &central.DeploymentEnhancementRequest{}
+	der.SetMsg(dem)
+	return der
 }
 
 type mockStoreProvider struct {

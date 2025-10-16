@@ -126,9 +126,9 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	// If the policy in CR is being renamed or does not exist on central, exists will be false, and we will update the policy ID
 	// to the one in CR status. The policy ID in the CR status is expected to be blank if this is the first time policy is being reconciled.
 	if exists {
-		desiredState.Id = existingPolicy.GetId()
+		desiredState.SetId(existingPolicy.GetId())
 	} else {
-		desiredState.Id = policyCR.Status.PolicyId
+		desiredState.SetId(policyCR.Status.PolicyId)
 	}
 
 	// Ensure a finalizer is added to each policy custom resource if it is not being deleted

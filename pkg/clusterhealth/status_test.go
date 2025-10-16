@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestPopulateInactiveSensorStatus(t *testing.T) {
@@ -76,82 +77,82 @@ func TestCollectorStatus(t *testing.T) {
 		},
 		{
 			name: "collector: uninitialized - 5/0",
-			collectorHealthInfo: &storage.CollectorHealthInfo{
-				TotalDesiredPodsOpt: podsDesired(0),
-				TotalReadyPodsOpt:   podsReady(5),
-			},
+			collectorHealthInfo: storage.CollectorHealthInfo_builder{
+				TotalDesiredPods: proto.Int32(podsDesired(0).TotalDesiredPods),
+				TotalReadyPods:   proto.Int32(podsReady(5).TotalReadyPods),
+			}.Build(),
 			expectedStatus: storage.ClusterHealthStatus_UNINITIALIZED,
 		},
 		{
 			name: "collector: uninitialized - 0/0",
-			collectorHealthInfo: &storage.CollectorHealthInfo{
-				TotalDesiredPodsOpt: podsDesired(0),
-				TotalReadyPodsOpt:   podsReady(0),
-			},
+			collectorHealthInfo: storage.CollectorHealthInfo_builder{
+				TotalDesiredPods: proto.Int32(podsDesired(0).TotalDesiredPods),
+				TotalReadyPods:   proto.Int32(podsReady(0).TotalReadyPods),
+			}.Build(),
 			expectedStatus: storage.ClusterHealthStatus_UNINITIALIZED,
 		},
 		{
 			name: "collector: healthy - 10/10",
-			collectorHealthInfo: &storage.CollectorHealthInfo{
-				TotalDesiredPodsOpt: podsDesired(10),
-				TotalReadyPodsOpt:   podsReady(10),
-			},
+			collectorHealthInfo: storage.CollectorHealthInfo_builder{
+				TotalDesiredPods: proto.Int32(podsDesired(10).TotalDesiredPods),
+				TotalReadyPods:   proto.Int32(podsReady(10).TotalReadyPods),
+			}.Build(),
 			expectedStatus: storage.ClusterHealthStatus_HEALTHY,
 		},
 		{
 			name: "collector: healthy - 12/10 (anomaly)",
-			collectorHealthInfo: &storage.CollectorHealthInfo{
-				TotalDesiredPodsOpt: podsDesired(10),
-				TotalReadyPodsOpt:   podsReady(12),
-			},
+			collectorHealthInfo: storage.CollectorHealthInfo_builder{
+				TotalDesiredPods: proto.Int32(podsDesired(10).TotalDesiredPods),
+				TotalReadyPods:   proto.Int32(podsReady(12).TotalReadyPods),
+			}.Build(),
 			expectedStatus: storage.ClusterHealthStatus_HEALTHY,
 		},
 		{
 			name: "collector: degraded - 9/10",
-			collectorHealthInfo: &storage.CollectorHealthInfo{
-				TotalDesiredPodsOpt: podsDesired(10),
-				TotalReadyPodsOpt:   podsReady(9),
-			},
+			collectorHealthInfo: storage.CollectorHealthInfo_builder{
+				TotalDesiredPods: proto.Int32(podsDesired(10).TotalDesiredPods),
+				TotalReadyPods:   proto.Int32(podsReady(9).TotalReadyPods),
+			}.Build(),
 			expectedStatus: storage.ClusterHealthStatus_DEGRADED,
 		},
 		{
 			name: "collector: unhealthy - 5/10",
-			collectorHealthInfo: &storage.CollectorHealthInfo{
-				TotalDesiredPodsOpt: podsDesired(10),
-				TotalReadyPodsOpt:   podsReady(5),
-			},
+			collectorHealthInfo: storage.CollectorHealthInfo_builder{
+				TotalDesiredPods: proto.Int32(podsDesired(10).TotalDesiredPods),
+				TotalReadyPods:   proto.Int32(podsReady(5).TotalReadyPods),
+			}.Build(),
 			expectedStatus: storage.ClusterHealthStatus_UNHEALTHY,
 		},
 		{
 			name: "collector: unhealthy - 10/n.a. can't get count of desired pods",
-			collectorHealthInfo: &storage.CollectorHealthInfo{
+			collectorHealthInfo: storage.CollectorHealthInfo_builder{
 				TotalDesiredPodsOpt: nil,
 				TotalReadyPodsOpt:   podsReady(10),
-			},
+			}.Build(),
 			expectedStatus: storage.ClusterHealthStatus_UNHEALTHY,
 		},
 		{
 			name: "collector: unhealthy - n.a./10 can't get count of ready pods",
-			collectorHealthInfo: &storage.CollectorHealthInfo{
+			collectorHealthInfo: storage.CollectorHealthInfo_builder{
 				TotalDesiredPodsOpt: podsDesired(10),
 				TotalReadyPodsOpt:   nil,
-			},
+			}.Build(),
 			expectedStatus: storage.ClusterHealthStatus_UNHEALTHY,
 		},
 		{
 			name: "collector: unhealthy - n.a./0 can't get count of ready pods",
-			collectorHealthInfo: &storage.CollectorHealthInfo{
+			collectorHealthInfo: storage.CollectorHealthInfo_builder{
 				TotalDesiredPodsOpt: podsDesired(0),
 				TotalReadyPodsOpt:   nil,
-			},
+			}.Build(),
 			expectedStatus: storage.ClusterHealthStatus_UNHEALTHY,
 		},
 		{
 			name: "collector: unhealthy - n.a./n.a. can't get both counts",
-			collectorHealthInfo: &storage.CollectorHealthInfo{
+			collectorHealthInfo: storage.CollectorHealthInfo_builder{
 				TotalDesiredPodsOpt: nil,
 				TotalReadyPodsOpt:   nil,
-			},
+			}.Build(),
 			expectedStatus: storage.ClusterHealthStatus_UNHEALTHY,
 		},
 	}
@@ -177,58 +178,58 @@ func TestOverallHealth(t *testing.T) {
 	}{
 		{
 			name: "sensor degraded, collector unhealthy",
-			health: &storage.ClusterHealthStatus{
+			health: storage.ClusterHealthStatus_builder{
 				SensorHealthStatus:    storage.ClusterHealthStatus_DEGRADED,
 				CollectorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
-			},
+			}.Build(),
 			expected: storage.ClusterHealthStatus_UNHEALTHY,
 		},
 		{
 			name: "sensor unhealthy, collector degraded",
-			health: &storage.ClusterHealthStatus{
+			health: storage.ClusterHealthStatus_builder{
 				SensorHealthStatus:    storage.ClusterHealthStatus_UNHEALTHY,
 				CollectorHealthStatus: storage.ClusterHealthStatus_DEGRADED,
-			},
+			}.Build(),
 			expected: storage.ClusterHealthStatus_UNHEALTHY,
 		},
 		{
 			name: "sensor degraded, collector healthy",
-			health: &storage.ClusterHealthStatus{
+			health: storage.ClusterHealthStatus_builder{
 				SensorHealthStatus:    storage.ClusterHealthStatus_DEGRADED,
 				CollectorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
-			},
+			}.Build(),
 			expected: storage.ClusterHealthStatus_DEGRADED,
 		},
 		{
 			name: "sensor healthy, collector degraded",
-			health: &storage.ClusterHealthStatus{
+			health: storage.ClusterHealthStatus_builder{
 				SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
 				CollectorHealthStatus: storage.ClusterHealthStatus_DEGRADED,
-			},
+			}.Build(),
 			expected: storage.ClusterHealthStatus_DEGRADED,
 		},
 		{
 			name: "sensor healthy, collector unavailable",
-			health: &storage.ClusterHealthStatus{
+			health: storage.ClusterHealthStatus_builder{
 				SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
 				CollectorHealthStatus: storage.ClusterHealthStatus_UNAVAILABLE,
-			},
+			}.Build(),
 			expected: storage.ClusterHealthStatus_HEALTHY,
 		},
 		{
 			name: "sensor healthy, collector healthy",
-			health: &storage.ClusterHealthStatus{
+			health: storage.ClusterHealthStatus_builder{
 				SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
 				CollectorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
-			},
+			}.Build(),
 			expected: storage.ClusterHealthStatus_HEALTHY,
 		},
 		{
 			name: "sensor unintialized, collector unhealthy: unexpected states",
-			health: &storage.ClusterHealthStatus{
+			health: storage.ClusterHealthStatus_builder{
 				SensorHealthStatus:    storage.ClusterHealthStatus_UNINITIALIZED,
 				CollectorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
-			},
+			}.Build(),
 			expected: storage.ClusterHealthStatus_UNINITIALIZED,
 		},
 	}

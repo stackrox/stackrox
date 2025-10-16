@@ -8,6 +8,7 @@ import (
 	configVersioned "github.com/openshift/client-go/config/clientset/versioned"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"google.golang.org/protobuf/proto"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -44,48 +45,48 @@ func openShiftCRsToProviderMetadata(infra *configv1.Infrastructure,
 
 	switch infra.Status.PlatformStatus.Type {
 	case configv1.AWSPlatformType:
-		return &storage.ProviderMetadata{
-			Region:   infra.Status.PlatformStatus.AWS.Region,
-			Provider: &storage.ProviderMetadata_Aws{Aws: &storage.AWSProviderMetadata{}},
-			Verified: true,
-			Cluster: &storage.ClusterMetadata{
-				Type: clusterTypeFromAWSResourceTags(infra.Status.PlatformStatus.AWS.ResourceTags),
-				Name: infra.Status.InfrastructureName,
-				Id:   string(clusterVersion.Spec.ClusterID),
-			},
-		}
+		cm := &storage.ClusterMetadata{}
+		cm.SetType(clusterTypeFromAWSResourceTags(infra.Status.PlatformStatus.AWS.ResourceTags))
+		cm.SetName(infra.Status.InfrastructureName)
+		cm.SetId(string(clusterVersion.Spec.ClusterID))
+		pm := &storage.ProviderMetadata{}
+		pm.SetRegion(infra.Status.PlatformStatus.AWS.Region)
+		pm.SetAws(&storage.AWSProviderMetadata{})
+		pm.SetVerified(true)
+		pm.SetCluster(cm)
+		return pm
 	case configv1.GCPPlatformType:
-		return &storage.ProviderMetadata{
-			Region: infra.Status.PlatformStatus.GCP.Region,
-			Provider: &storage.ProviderMetadata_Google{Google: &storage.GoogleProviderMetadata{
-				Project: infra.Status.PlatformStatus.GCP.ProjectID,
-			}},
-			Verified: true,
-			Cluster: &storage.ClusterMetadata{
-				Type: clusterTypeFromGCPResourceTags(infra.Status.PlatformStatus.GCP.ResourceTags),
-				Name: infra.Status.InfrastructureName,
-				Id:   string(clusterVersion.Spec.ClusterID),
-			},
-		}
+		gpm := &storage.GoogleProviderMetadata{}
+		gpm.SetProject(infra.Status.PlatformStatus.GCP.ProjectID)
+		cm := &storage.ClusterMetadata{}
+		cm.SetType(clusterTypeFromGCPResourceTags(infra.Status.PlatformStatus.GCP.ResourceTags))
+		cm.SetName(infra.Status.InfrastructureName)
+		cm.SetId(string(clusterVersion.Spec.ClusterID))
+		pm := &storage.ProviderMetadata{}
+		pm.SetRegion(infra.Status.PlatformStatus.GCP.Region)
+		pm.SetGoogle(proto.ValueOrDefault(gpm))
+		pm.SetVerified(true)
+		pm.SetCluster(cm)
+		return pm
 	case configv1.AzurePlatformType:
-		return &storage.ProviderMetadata{
-			Region:   "",
-			Provider: &storage.ProviderMetadata_Azure{Azure: &storage.AzureProviderMetadata{}},
-			Verified: true,
-			Cluster: &storage.ClusterMetadata{
-				Type: clusterTypeFromAzureResourceTags(infra.Status.PlatformStatus.Azure.ResourceTags),
-				Name: infra.Status.InfrastructureName,
-				Id:   string(clusterVersion.Spec.ClusterID),
-			},
-		}
+		cm := &storage.ClusterMetadata{}
+		cm.SetType(clusterTypeFromAzureResourceTags(infra.Status.PlatformStatus.Azure.ResourceTags))
+		cm.SetName(infra.Status.InfrastructureName)
+		cm.SetId(string(clusterVersion.Spec.ClusterID))
+		pm := &storage.ProviderMetadata{}
+		pm.SetRegion("")
+		pm.SetAzure(&storage.AzureProviderMetadata{})
+		pm.SetVerified(true)
+		pm.SetCluster(cm)
+		return pm
 	default:
-		return &storage.ProviderMetadata{
-			Cluster: &storage.ClusterMetadata{
-				Type: storage.ClusterMetadata_OCP,
-				Name: infra.Status.InfrastructureName,
-				Id:   string(clusterVersion.Spec.ClusterID),
-			},
-		}
+		cm := &storage.ClusterMetadata{}
+		cm.SetType(storage.ClusterMetadata_OCP)
+		cm.SetName(infra.Status.InfrastructureName)
+		cm.SetId(string(clusterVersion.Spec.ClusterID))
+		pm := &storage.ProviderMetadata{}
+		pm.SetCluster(cm)
+		return pm
 	}
 }
 

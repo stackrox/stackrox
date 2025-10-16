@@ -147,18 +147,18 @@ func (s *DeploymentExposureSuite) Test_ClusterIpPermutation() {
 		// Test context already takes care of creating and destroying resources
 		testC.LastDeploymentState(t, nginxDeploymentName,
 			assertLastDeploymentHasPortExposure([]*storage.PortConfig{
-				{
+				storage.PortConfig_builder{
 					Protocol:      "TCP",
 					ContainerPort: 9376,
 					Exposure:      storage.PortConfig_INTERNAL,
 					ExposureInfos: []*storage.PortConfig_ExposureInfo{
-						{
+						storage.PortConfig_ExposureInfo_builder{
 							ServiceName: "nginx-svc-cluster-ip",
 							ServicePort: 80,
 							Level:       storage.PortConfig_INTERNAL,
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			),
 			"'PortConfig' for Cluster IP service test not found",
@@ -211,15 +211,13 @@ func (s *DeploymentExposureSuite) Test_NodePortPermutation() {
 			// Test context already takes care of creating and destroying resources
 			testC.LastDeploymentState(t, nginxDeploymentName,
 				assertLastDeploymentHasPortExposure(c.portConfig), "'PortConfig' for Node Port service test not found")
+			policy := &storage.Policy{}
+			policy.SetName(servicePolicyName)
+			alert := &storage.Alert{}
+			alert.SetPolicy(policy)
+			alert.SetState(storage.ViolationState_ACTIVE)
 			testC.LastViolationState(t, nginxDeploymentName,
-				assertAlertTriggered(
-					&storage.Alert{
-						Policy: &storage.Policy{
-							Name: servicePolicyName,
-						},
-						State: storage.ViolationState_ACTIVE,
-					},
-				),
+				assertAlertTriggered(alert),
 				fmt.Sprintf("Alert '%s' should be triggered", servicePolicyName))
 			testC.GetFakeCentral().ClearReceivedBuffer()
 		}), helper.WithRetryCallback(func(err error, obj k8s.Object) error {
@@ -296,15 +294,13 @@ func (s *DeploymentExposureSuite) Test_LoadBalancerPermutation() {
 				30*time.Second) // Increased from default 3s to 30s
 
 			// Use increased timeout for violation state checks
+			policy := &storage.Policy{}
+			policy.SetName(servicePolicyName)
+			alert := &storage.Alert{}
+			alert.SetPolicy(policy)
+			alert.SetState(storage.ViolationState_ACTIVE)
 			testC.LastViolationStateWithTimeout(t, nginxDeploymentName,
-				assertAlertTriggered(
-					&storage.Alert{
-						Policy: &storage.Policy{
-							Name: servicePolicyName,
-						},
-						State: storage.ViolationState_ACTIVE,
-					},
-				),
+				assertAlertTriggered(alert),
 				fmt.Sprintf("Alert '%s' should be triggered", servicePolicyName),
 				30*time.Second) // Increased from default 3s to 30s
 			testC.GetFakeCentral().ClearReceivedBuffer()
@@ -330,13 +326,13 @@ func (s *DeploymentExposureSuite) Test_NoExposure() {
 		}),
 		helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
 			// Test context already takes care of creating and destroying resources
+			pc := &storage.PortConfig{}
+			pc.SetProtocol("TCP")
+			pc.SetContainerPort(80)
+			pc.SetExposure(0)
 			testC.LastDeploymentState(t, nginxDeploymentName,
 				assertLastDeploymentHasPortExposure([]*storage.PortConfig{
-					{
-						Protocol:      "TCP",
-						ContainerPort: 80,
-						Exposure:      0,
-					},
+					pc,
 				},
 				),
 				"PortConfig",
@@ -385,51 +381,49 @@ func (s *DeploymentExposureSuite) Test_MultipleDeploymentUpdates() {
 
 		testC.LastDeploymentState(t, nginxDeploymentName,
 			assertLastDeploymentHasPortExposure([]*storage.PortConfig{
-				{
+				storage.PortConfig_builder{
 					Protocol:      "TCP",
 					ContainerPort: 80,
 					Exposure:      storage.PortConfig_NODE,
 					ExposureInfos: []*storage.PortConfig_ExposureInfo{
-						{
+						storage.PortConfig_ExposureInfo_builder{
 							ServiceName: fmt.Sprintf(serviceNodePortFmt, port),
 							ServicePort: 80,
 							NodePort:    port,
 							Level:       storage.PortConfig_NODE,
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			),
 			"'PortConfig' for Multiple Deployment Updates test not found",
 		)
+		policy := &storage.Policy{}
+		policy.SetName(servicePolicyName)
+		alert := &storage.Alert{}
+		alert.SetPolicy(policy)
+		alert.SetState(storage.ViolationState_ACTIVE)
 		testC.LastViolationState(t, nginxDeploymentName,
-			assertAlertTriggered(
-				&storage.Alert{
-					Policy: &storage.Policy{
-						Name: servicePolicyName,
-					},
-					State: storage.ViolationState_ACTIVE,
-				},
-			),
+			assertAlertTriggered(alert),
 			fmt.Sprintf("Alert '%s' should be triggered", servicePolicyName))
 
 		require.NoError(t, deleteService())
 
 		testC.LastDeploymentState(t, nginxDeploymentName,
 			assertLastDeploymentMissingPortExposure([]*storage.PortConfig{
-				{
+				storage.PortConfig_builder{
 					Protocol:      "TCP",
 					ContainerPort: 80,
 					Exposure:      storage.PortConfig_NODE,
 					ExposureInfos: []*storage.PortConfig_ExposureInfo{
-						{
+						storage.PortConfig_ExposureInfo_builder{
 							ServiceName: fmt.Sprintf(serviceNodePortFmt, port),
 							ServicePort: 80,
 							NodePort:    port,
 							Level:       storage.PortConfig_NODE,
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			),
 			"'PortConfig' for Multiple Deployment Updates test found",
@@ -482,15 +476,13 @@ func (s *DeploymentExposureSuite) Test_NodePortPermutationWithPod() {
 			// Test context already takes care of creating and destroying resources
 			testC.LastDeploymentState(t, nginxPodName,
 				assertLastDeploymentHasPortExposure(c.portConfig), "'PortConfig' for Node Port service test not found")
+			policy := &storage.Policy{}
+			policy.SetName(servicePolicyName)
+			alert := &storage.Alert{}
+			alert.SetPolicy(policy)
+			alert.SetState(storage.ViolationState_ACTIVE)
 			testC.LastViolationState(t, nginxPodName,
-				assertAlertTriggered(
-					&storage.Alert{
-						Policy: &storage.Policy{
-							Name: servicePolicyName,
-						},
-						State: storage.ViolationState_ACTIVE,
-					},
-				),
+				assertAlertTriggered(alert),
 				fmt.Sprintf("Alert '%s' should be triggered", servicePolicyName))
 			testC.GetFakeCentral().ClearReceivedBuffer()
 		}), helper.WithRetryCallback(func(err error, obj k8s.Object) error {
@@ -614,38 +606,38 @@ func setPortConfigExternal(portConfig []*storage.PortConfig, name string, port i
 	if len(portConfig) != 1 {
 		return
 	}
-	portConfig[0] = &storage.PortConfig{
-		Protocol:      "TCP",
-		ContainerPort: 80,
-		Exposure:      storage.PortConfig_EXTERNAL,
-		ExposureInfos: []*storage.PortConfig_ExposureInfo{
-			{
-				ServiceName: fmt.Sprintf(name, port),
-				ServicePort: 80,
-				NodePort:    port,
-				Level:       storage.PortConfig_EXTERNAL,
-			},
-		},
-	}
+	pe := &storage.PortConfig_ExposureInfo{}
+	pe.SetServiceName(fmt.Sprintf(name, port))
+	pe.SetServicePort(80)
+	pe.SetNodePort(port)
+	pe.SetLevel(storage.PortConfig_EXTERNAL)
+	pc := &storage.PortConfig{}
+	pc.SetProtocol("TCP")
+	pc.SetContainerPort(80)
+	pc.SetExposure(storage.PortConfig_EXTERNAL)
+	pc.SetExposureInfos([]*storage.PortConfig_ExposureInfo{
+		pe,
+	})
+	portConfig[0] = pc
 }
 
 func setPortConfigNode(portConfig []*storage.PortConfig, name string, port int32) {
 	if len(portConfig) != 1 {
 		return
 	}
-	portConfig[0] = &storage.PortConfig{
-		Protocol:      "TCP",
-		ContainerPort: 80,
-		Exposure:      storage.PortConfig_NODE,
-		ExposureInfos: []*storage.PortConfig_ExposureInfo{
-			{
-				ServiceName: fmt.Sprintf(name, port),
-				ServicePort: 80,
-				NodePort:    port,
-				Level:       storage.PortConfig_NODE,
-			},
-		},
-	}
+	pe := &storage.PortConfig_ExposureInfo{}
+	pe.SetServiceName(fmt.Sprintf(name, port))
+	pe.SetServicePort(80)
+	pe.SetNodePort(port)
+	pe.SetLevel(storage.PortConfig_NODE)
+	pc := &storage.PortConfig{}
+	pc.SetProtocol("TCP")
+	pc.SetContainerPort(80)
+	pc.SetExposure(storage.PortConfig_NODE)
+	pc.SetExposureInfos([]*storage.PortConfig_ExposureInfo{
+		pe,
+	})
+	portConfig[0] = pc
 }
 
 func setDynamicFields(svc *v1.Service, name string, port int32, sel map[string]string, serviceFn func(*v1.Service, string, int32, map[string]string)) {

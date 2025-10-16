@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
 	"github.com/stackrox/rox/sensor/kubernetes/telemetry"
+	"google.golang.org/protobuf/proto"
 	v1 "k8s.io/api/authorization/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -172,11 +173,8 @@ func (u *updaterImpl) collectInfoAndSendResponse() bool {
 		u.registerDiagnosticComplianceOperatorObjects(info)
 	}
 
-	msg := &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_ComplianceOperatorInfo{
-			ComplianceOperatorInfo: info,
-		},
-	}
+	msg := &central.MsgFromSensor{}
+	msg.SetComplianceOperatorInfo(proto.ValueOrDefault(info))
 
 	log.Debugf("Compliance Operator Info: %v", protoutils.NewWrapper(msg.GetComplianceOperatorInfo()))
 
@@ -191,39 +189,34 @@ func (u *updaterImpl) collectInfoAndSendResponse() bool {
 func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInfo {
 	complianceOperatorDeployment, err := searchForDeployment(u.ctx(), u.complianceOperatorNS, u.client)
 	if err != nil {
-		return &central.ComplianceOperatorInfo{
-			StatusError: err.Error(),
-			IsInstalled: false,
-		}
+		coi := &central.ComplianceOperatorInfo{}
+		coi.SetStatusError(err.Error())
+		coi.SetIsInstalled(false)
+		return coi
 	}
 
 	version := extractVersionFromLabels(complianceOperatorDeployment.Labels)
-	info := &central.ComplianceOperatorInfo{
-		Namespace: complianceOperatorDeployment.GetNamespace(),
-		TotalDesiredPodsOpt: &central.ComplianceOperatorInfo_TotalDesiredPods{
-			TotalDesiredPods: complianceOperatorDeployment.Status.Replicas,
-		},
-		TotalReadyPodsOpt: &central.ComplianceOperatorInfo_TotalReadyPods{
-			TotalReadyPods: complianceOperatorDeployment.Status.ReadyReplicas,
-		},
-		Version:     version,
-		IsInstalled: true,
-	}
+	info := &central.ComplianceOperatorInfo{}
+	info.SetNamespace(complianceOperatorDeployment.GetNamespace())
+	info.SetTotalDesiredPods(complianceOperatorDeployment.Status.Replicas)
+	info.SetTotalReadyPods(complianceOperatorDeployment.Status.ReadyReplicas)
+	info.SetVersion(version)
+	info.SetIsInstalled(true)
 
 	// Check Sensor access to compliance.openshift.io resources
 	if err := checkWriteAccess(u.client); err != nil {
-		info.StatusError = err.Error()
+		info.SetStatusError(err.Error())
 		return info
 	}
 
 	resourceList, err := getResourceListForComplianceGroupVersion(u.client)
 	if err != nil {
-		info.StatusError = err.Error()
+		info.SetStatusError(err.Error())
 		return info
 	}
 
 	if err := checkRequiredComplianceCRDsExist(resourceList); err != nil {
-		info.StatusError = err.Error()
+		info.SetStatusError(err.Error())
 	}
 
 	return info

@@ -9,14 +9,14 @@ import (
 )
 
 func inject(c Cache) {
-	c.UpdateUsage("test1", &storage.SecuredUnits{
-		NumNodes:    1,
-		NumCpuUnits: 10,
-	})
-	c.UpdateUsage("test2", &storage.SecuredUnits{
-		NumNodes:    2,
-		NumCpuUnits: 20,
-	})
+	su := &storage.SecuredUnits{}
+	su.SetNumNodes(1)
+	su.SetNumCpuUnits(10)
+	c.UpdateUsage("test1", su)
+	su2 := &storage.SecuredUnits{}
+	su2.SetNumNodes(2)
+	su2.SetNumCpuUnits(20)
+	c.UpdateUsage("test2", su2)
 }
 
 func TestCleanupCurrent(t *testing.T) {

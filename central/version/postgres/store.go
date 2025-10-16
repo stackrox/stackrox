@@ -125,14 +125,13 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*storage.Version, bool, e
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
-	msg := storage.Version{
-		SeqNum:    int32(sequenceNum),
-		Version:   version,
-		MinSeqNum: int32(minSequenceNum),
-	}
+	msg := &storage.Version{}
+	msg.SetSeqNum(int32(sequenceNum))
+	msg.SetVersion(version)
+	msg.SetMinSeqNum(int32(minSequenceNum))
 
 	if lastPersistedTime != nil {
-		msg.LastPersisted = protoconv.MustConvertTimeToTimestamp(*lastPersistedTime)
+		msg.SetLastPersisted(protoconv.MustConvertTimeToTimestamp(*lastPersistedTime))
 	}
 	return &msg, true, nil
 }

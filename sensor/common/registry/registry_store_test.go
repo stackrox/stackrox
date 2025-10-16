@@ -451,14 +451,12 @@ func TestRegistryStore_CentralIntegrations(t *testing.T) {
 	regStore := NewRegistryStore(alwaysFailCheckTLS)
 
 	iis := []*storage.ImageIntegration{
-		{Id: "bad", Name: "bad", Type: "bad"},
-		{Id: "a", Name: "a", Type: types.DockerType, IntegrationConfig: &storage.ImageIntegration_Docker{}},
-		{Id: "b", Name: "b", Type: types.DockerType, IntegrationConfig: &storage.ImageIntegration_Docker{}},
-		{
-			Id: "c", Name: "c", Type: types.DockerType, IntegrationConfig: &storage.ImageIntegration_Docker{
-				Docker: &storage.DockerConfig{Endpoint: "example.com"},
-			},
-		},
+		storage.ImageIntegration_builder{Id: "bad", Name: "bad", Type: "bad"}.Build(),
+		storage.ImageIntegration_builder{Id: "a", Name: "a", Type: types.DockerType, Docker: &storage.DockerConfig{}}.Build(),
+		storage.ImageIntegration_builder{Id: "b", Name: "b", Type: types.DockerType, Docker: &storage.DockerConfig{}}.Build(),
+		storage.ImageIntegration_builder{
+			Id: "c", Name: "c", Type: types.DockerType, Docker: storage.DockerConfig_builder{Endpoint: "example.com"}.Build(),
+		}.Build(),
 	}
 
 	imgName, _, err := utils.GenerateImageNameFromString("example.com/repo/path:tag")
@@ -476,7 +474,11 @@ func TestRegistryStore_CentralIntegrations(t *testing.T) {
 	regs = regStore.GetCentralRegistries(imgName)
 	assert.Len(t, regs, 1) // c
 
-	zII := &storage.ImageIntegration{Id: "z", Name: "z", Type: types.DockerType, IntegrationConfig: &storage.ImageIntegration_Docker{}}
+	zII := &storage.ImageIntegration{}
+	zII.SetId("z")
+	zII.SetName("z")
+	zII.SetType(types.DockerType)
+	zII.IntegrationConfig = &storage.ImageIntegration_Docker{}
 	// When false existing integrations should remain, in this case the 'c' integration.
 	regStore.UpsertCentralRegistryIntegrations([]*storage.ImageIntegration{zII}, false)
 	assert.Len(t, regStore.centralRegistryIntegrations.GetAll(), 2) // c, z
@@ -502,9 +504,13 @@ func TestRegistryStore_IsLocal(t *testing.T) {
 	regStore := NewRegistryStore(alwaysInsecureCheckTLS)
 	regStore.addClusterLocalRegistryHost("image-registry.openshift-image-registry.svc:5000")
 
+	dd := &central.DelegatedRegistryConfig_DelegatedRegistry{}
+	dd.SetPath("isfound.svc/repo/path")
+	dd2 := &central.DelegatedRegistryConfig_DelegatedRegistry{}
+	dd2.SetPath("otherfound.svc")
 	specificRegs := []*central.DelegatedRegistryConfig_DelegatedRegistry{
-		{Path: "isfound.svc/repo/path"},
-		{Path: "otherfound.svc"},
+		dd,
+		dd2,
 	}
 
 	tt := map[string]struct {
@@ -518,79 +524,79 @@ func TestRegistryStore_IsLocal(t *testing.T) {
 			expected: false,
 		},
 		"cluster local": {
-			image: &storage.ImageName{
+			image: storage.ImageName_builder{
 				Registry: "image-registry.openshift-image-registry.svc:5000",
-			},
+			}.Build(),
 			config:   nil,
 			expected: true,
 		},
 		"nil config": {
-			image: &storage.ImageName{
+			image: storage.ImageName_builder{
 				Registry: "noexist.svc",
-			},
+			}.Build(),
 			config:   nil,
 			expected: false,
 		},
 		"enabled for none": {
-			image: &storage.ImageName{
+			image: storage.ImageName_builder{
 				Registry: "noexist.svc",
-			},
-			config: &central.DelegatedRegistryConfig{
+			}.Build(),
+			config: central.DelegatedRegistryConfig_builder{
 				EnabledFor: central.DelegatedRegistryConfig_NONE,
-			},
+			}.Build(),
 			expected: false,
 		},
 		"enabled for all": {
-			image: &storage.ImageName{
+			image: storage.ImageName_builder{
 				Registry: "noexist.svc",
-			},
-			config: &central.DelegatedRegistryConfig{
+			}.Build(),
+			config: central.DelegatedRegistryConfig_builder{
 				EnabledFor: central.DelegatedRegistryConfig_ALL,
-			},
+			}.Build(),
 			expected: true,
 		},
 		"specific not found": {
-			image: &storage.ImageName{
+			image: storage.ImageName_builder{
 				Registry: "isnotfound.svc",
 				FullName: "isnotfound.svc/repo/path",
-			},
-			config: &central.DelegatedRegistryConfig{
+			}.Build(),
+			config: central.DelegatedRegistryConfig_builder{
 				EnabledFor: central.DelegatedRegistryConfig_SPECIFIC,
 				Registries: specificRegs,
-			},
+			}.Build(),
 			expected: false,
 		},
 		"specific found by host": {
-			image: &storage.ImageName{
+			image: storage.ImageName_builder{
 				Registry: "otherfound.svc",
 				FullName: "otherfound.svc/random/path",
-			},
-			config: &central.DelegatedRegistryConfig{
+			}.Build(),
+			config: central.DelegatedRegistryConfig_builder{
 				EnabledFor: central.DelegatedRegistryConfig_SPECIFIC,
 				Registries: specificRegs,
-			},
+			}.Build(),
 			expected: true,
 		},
 		"specific found by path": {
-			image: &storage.ImageName{
+			image: storage.ImageName_builder{
 				Registry: "isfound.svc",
 				FullName: "isfound.svc/repo/path",
-			},
-			config: &central.DelegatedRegistryConfig{
+			}.Build(),
+			config: central.DelegatedRegistryConfig_builder{
 				EnabledFor: central.DelegatedRegistryConfig_SPECIFIC,
 				Registries: specificRegs,
-			},
+			}.Build(),
 			expected: true,
 		},
 		"specific not found by path": {
-			image: &storage.ImageName{
+			image: storage.ImageName_builder{
 				Registry: "isfound.svc",
 				FullName: "isfound.svc/notfound/repo/path",
-			},
-			config: &central.DelegatedRegistryConfig{
+			}.Build(),
+			config: central.DelegatedRegistryConfig_builder{
 				EnabledFor: central.DelegatedRegistryConfig_SPECIFIC,
 				Registries: specificRegs,
-			},
+			}.Build(),
 			expected: false,
 		},
 	}
@@ -1070,7 +1076,7 @@ func TestRegistyStore_Metrics(t *testing.T) {
 		require.Len(t, regs, 1)
 
 		ii := regs[0].Source()
-		ii.Name = ii.GetName() + "1234567890" // Add 10 'bytes' to the integration name
+		ii.SetName(ii.GetName() + "1234567890") // Add 10 'bytes' to the integration name
 
 		regStore.DeleteSecret(fakeNamespace, fakeSecretName)
 		assert.Equal(t, -10.0, testutil.ToFloat64(c))

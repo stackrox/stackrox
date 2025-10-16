@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv/k8s"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
+	"google.golang.org/protobuf/proto"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -27,11 +28,11 @@ func newNodeDispatcher(deploymentStore *DeploymentStore, nodeStore nodeStore, en
 func convertTaints(taints []v1.Taint) []*storage.Taint {
 	roxTaints := make([]*storage.Taint, 0, len(taints))
 	for _, t := range taints {
-		roxTaints = append(roxTaints, &storage.Taint{
-			Key:         t.Key,
-			Value:       t.Value,
-			TaintEffect: k8s.ToRoxTaintEffect(t.Effect),
-		})
+		taint := &storage.Taint{}
+		taint.SetKey(t.Key)
+		taint.SetValue(t.Value)
+		taint.SetTaintEffect(k8s.ToRoxTaintEffect(t.Effect))
+		roxTaints = append(roxTaints, taint)
 	}
 	return roxTaints
 }
@@ -55,13 +56,11 @@ func (h *nodeDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 		}
 	}
 
-	return component.NewEvent(&central.SensorEvent{
-		Id:     protoNode.GetId(),
-		Action: action,
-		Resource: &central.SensorEvent_Node{
-			Node: protoNode,
-		},
-	})
+	se := &central.SensorEvent{}
+	se.SetId(protoNode.GetId())
+	se.SetAction(action)
+	se.SetNode(proto.ValueOrDefault(protoNode))
+	return component.NewEvent(se)
 }
 
 func buildNode(node *v1.Node) *storage.Node {
@@ -77,22 +76,22 @@ func buildNode(node *v1.Node) *storage.Node {
 	}
 
 	creation := node.CreationTimestamp.ProtoTime()
-	return &storage.Node{
-		Id:                      string(node.UID),
-		Name:                    node.Name,
-		Taints:                  convertTaints(node.Spec.Taints),
-		Labels:                  node.GetLabels(),
-		Annotations:             node.GetAnnotations(),
-		JoinedAt:                protocompat.GetProtoTimestampFromSecondsAndNanos(creation.Seconds, creation.Nanos),
-		InternalIpAddresses:     internal,
-		ExternalIpAddresses:     external,
-		ContainerRuntime:        k8sutil.ParseContainerRuntimeVersion(node.Status.NodeInfo.ContainerRuntimeVersion),
-		ContainerRuntimeVersion: node.Status.NodeInfo.ContainerRuntimeVersion,
-		KernelVersion:           node.Status.NodeInfo.KernelVersion,
-		OperatingSystem:         node.Status.NodeInfo.OperatingSystem,
-		OsImage:                 node.Status.NodeInfo.OSImage,
-		KubeletVersion:          node.Status.NodeInfo.KubeletVersion,
-		KubeProxyVersion:        node.Status.NodeInfo.KubeProxyVersion,
-		K8SUpdated:              protocompat.TimestampNow(),
-	}
+	node2 := &storage.Node{}
+	node2.SetId(string(node.UID))
+	node2.SetName(node.Name)
+	node2.SetTaints(convertTaints(node.Spec.Taints))
+	node2.SetLabels(node.GetLabels())
+	node2.SetAnnotations(node.GetAnnotations())
+	node2.SetJoinedAt(protocompat.GetProtoTimestampFromSecondsAndNanos(creation.Seconds, creation.Nanos))
+	node2.SetInternalIpAddresses(internal)
+	node2.SetExternalIpAddresses(external)
+	node2.SetContainerRuntime(k8sutil.ParseContainerRuntimeVersion(node.Status.NodeInfo.ContainerRuntimeVersion))
+	node2.SetContainerRuntimeVersion(node.Status.NodeInfo.ContainerRuntimeVersion)
+	node2.SetKernelVersion(node.Status.NodeInfo.KernelVersion)
+	node2.SetOperatingSystem(node.Status.NodeInfo.OperatingSystem)
+	node2.SetOsImage(node.Status.NodeInfo.OSImage)
+	node2.SetKubeletVersion(node.Status.NodeInfo.KubeletVersion)
+	node2.SetKubeProxyVersion(node.Status.NodeInfo.KubeProxyVersion)
+	node2.SetK8SUpdated(protocompat.TimestampNow())
+	return node2
 }

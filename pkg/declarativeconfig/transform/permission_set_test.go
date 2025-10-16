@@ -79,14 +79,16 @@ func TestUniversalTransformPermissionSet(t *testing.T) {
 
 	require.Len(t, protos, 1)
 	require.Contains(t, protos, permissionSetType)
+	traits := &storage.Traits{}
+	traits.SetOrigin(storage.Traits_DECLARATIVE)
+	ps := &storage.PermissionSet{}
+	ps.SetId(expectedPermissionSetID)
+	ps.SetName(permissionSet.Name)
+	ps.SetDescription(permissionSet.Description)
+	ps.SetResourceToAccess(expectedResourceToAccess)
+	ps.SetTraits(traits)
 	expectedMessages := []*storage.PermissionSet{
-		{
-			Id:               expectedPermissionSetID,
-			Name:             permissionSet.Name,
-			Description:      permissionSet.Description,
-			ResourceToAccess: expectedResourceToAccess,
-			Traits:           &storage.Traits{Origin: storage.Traits_DECLARATIVE},
-		},
+		ps,
 	}
 
 	obtainedMessages := make([]*storage.PermissionSet, 0, len(protos[permissionSetType]))

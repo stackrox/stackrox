@@ -32,16 +32,13 @@ func TestVersionFormatCompleteness(t *testing.T) {
 }
 
 func componentWithLayerIndex(name string, idx int32) *storage.EmbeddedImageScanComponent {
-	c := &storage.EmbeddedImageScanComponent{
-		Name: name,
+	c := &storage.EmbeddedImageScanComponent{}
+	c.SetName(name)
 
-		Vulns:       []*storage.EmbeddedVulnerability{},
-		Executables: []*storage.EmbeddedImageScanComponent_Executable{},
-	}
+	c.SetVulns([]*storage.EmbeddedVulnerability{})
+	c.SetExecutables([]*storage.EmbeddedImageScanComponent_Executable{})
 	if idx != -1 {
-		c.HasLayerIndex = &storage.EmbeddedImageScanComponent_LayerIndex{
-			LayerIndex: idx,
-		}
+		c.SetLayerIndex(idx)
 	}
 	return c
 }
@@ -64,12 +61,12 @@ func TestConvertFeaturesWithLayerIndexes(t *testing.T) {
 		},
 		{
 			name: "v1 metadata with equal vulns and layers - no empty",
-			metadata: &storage.ImageMetadata{
-				V1: &storage.V1Metadata{
+			metadata: storage.ImageMetadata_builder{
+				V1: storage.V1Metadata_builder{
 					Layers: []*storage.ImageLayer{{}, {}},
-				},
+				}.Build(),
 				LayerShas: []string{"A", "B"},
-			},
+			}.Build(),
 			features: []clairV1.Feature{
 				{
 					Name:    "a-name",
@@ -87,12 +84,12 @@ func TestConvertFeaturesWithLayerIndexes(t *testing.T) {
 		},
 		{
 			name: "v1 metadata with fewer vulns than layers - no empty",
-			metadata: &storage.ImageMetadata{
-				V1: &storage.V1Metadata{
+			metadata: storage.ImageMetadata_builder{
+				V1: storage.V1Metadata_builder{
 					Layers: []*storage.ImageLayer{{}, {}},
-				},
+				}.Build(),
 				LayerShas: []string{"A", "B"},
-			},
+			}.Build(),
 			features: []clairV1.Feature{
 				{
 					Name:    "b-name",
@@ -105,13 +102,13 @@ func TestConvertFeaturesWithLayerIndexes(t *testing.T) {
 		},
 		{
 			name: "v2 metadata with fewer vulns than layers - no empty",
-			metadata: &storage.ImageMetadata{
-				V1: &storage.V1Metadata{
+			metadata: storage.ImageMetadata_builder{
+				V1: storage.V1Metadata_builder{
 					Layers: []*storage.ImageLayer{{}, {}},
-				},
+				}.Build(),
 				V2:        &storage.V2Metadata{},
 				LayerShas: []string{"A", "B"},
-			},
+			}.Build(),
 			features: []clairV1.Feature{
 				{
 					Name:    "b-name",
@@ -124,13 +121,13 @@ func TestConvertFeaturesWithLayerIndexes(t *testing.T) {
 		},
 		{
 			name: "v2 metadata with empty layers",
-			metadata: &storage.ImageMetadata{
-				V1: &storage.V1Metadata{
-					Layers: []*storage.ImageLayer{{Empty: true}, {}, {}},
-				},
+			metadata: storage.ImageMetadata_builder{
+				V1: storage.V1Metadata_builder{
+					Layers: []*storage.ImageLayer{storage.ImageLayer_builder{Empty: true}.Build(), {}, {}},
+				}.Build(),
 				V2:        &storage.V2Metadata{},
 				LayerShas: []string{"A", "B"},
-			},
+			}.Build(),
 			features: []clairV1.Feature{
 				{
 					Name:    "b-name",
@@ -145,9 +142,8 @@ func TestConvertFeaturesWithLayerIndexes(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			img := &storage.Image{
-				Metadata: c.metadata,
-			}
+			img := &storage.Image{}
+			img.SetMetadata(c.metadata)
 			convertedComponents := ConvertFeatures(img, c.features, "")
 			require.Equal(t, len(c.expectedComponents), len(convertedComponents))
 			for i := range convertedComponents {

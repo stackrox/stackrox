@@ -109,7 +109,7 @@ func (h *clusterSACHelperImpl) GetClustersForPermissions(
 		ProtoQuery()
 
 	allowedSortFields := set.NewStringSet(search.ClusterID.String(), search.Cluster.String())
-	query.Pagination = getSanitizedPagination(pagination, allowedSortFields)
+	query.SetPagination(getSanitizedPagination(pagination, allowedSortFields))
 	results, err := h.clusterDataStore.Search(clusterLookupCtx, query)
 	if err != nil {
 		return nil, err

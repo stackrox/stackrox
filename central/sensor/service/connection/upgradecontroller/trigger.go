@@ -8,34 +8,34 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sensorupgrader"
+	"google.golang.org/protobuf/proto"
 )
 
 func constructTriggerUpgradeRequest(cluster *storage.Cluster, process *storage.ClusterUpgradeStatus_UpgradeProcessStatus) *central.SensorUpgradeTrigger {
-	t := &central.SensorUpgradeTrigger{
-		UpgradeProcessId: process.GetId(),
-		Image:            process.GetUpgraderImage(),
-		Command:          []string{"sensor-upgrader"},
-		EnvVars: []*central.SensorUpgradeTrigger_EnvVarDef{
-			{
-				Name:         env.CentralEndpoint.EnvVar(),
-				SourceEnvVar: env.CentralEndpoint.EnvVar(),
-				DefaultValue: cluster.GetCentralApiEndpoint(),
-			},
-			{
-				Name:         "ROX_UPGRADE_PROCESS_ID",
-				DefaultValue: process.GetId(),
-			},
-			{
-				Name:         sensorupgrader.ClusterIDEnvVarName,
-				DefaultValue: cluster.GetId(),
-			},
-		},
-	}
+	se := &central.SensorUpgradeTrigger_EnvVarDef{}
+	se.SetName(env.CentralEndpoint.EnvVar())
+	se.SetSourceEnvVar(env.CentralEndpoint.EnvVar())
+	se.SetDefaultValue(cluster.GetCentralApiEndpoint())
+	se2 := &central.SensorUpgradeTrigger_EnvVarDef{}
+	se2.SetName("ROX_UPGRADE_PROCESS_ID")
+	se2.SetDefaultValue(process.GetId())
+	se3 := &central.SensorUpgradeTrigger_EnvVarDef{}
+	se3.SetName(sensorupgrader.ClusterIDEnvVarName)
+	se3.SetDefaultValue(cluster.GetId())
+	t := &central.SensorUpgradeTrigger{}
+	t.SetUpgradeProcessId(process.GetId())
+	t.SetImage(process.GetUpgraderImage())
+	t.SetCommand([]string{"sensor-upgrader"})
+	t.SetEnvVars([]*central.SensorUpgradeTrigger_EnvVarDef{
+		se,
+		se2,
+		se3,
+	})
 	if process.GetType() == storage.ClusterUpgradeStatus_UpgradeProcessStatus_CERT_ROTATION {
-		t.EnvVars = append(t.EnvVars, &central.SensorUpgradeTrigger_EnvVarDef{
-			Name:         env.UpgraderCertsOnly.EnvVar(),
-			DefaultValue: "true",
-		})
+		se4 := &central.SensorUpgradeTrigger_EnvVarDef{}
+		se4.SetName(env.UpgraderCertsOnly.EnvVar())
+		se4.SetDefaultValue("true")
+		t.SetEnvVars(append(t.GetEnvVars(), se4))
 	}
 	adjustTrigger(t, process.GetProgress().GetUpgradeState())
 	return t
@@ -43,7 +43,7 @@ func constructTriggerUpgradeRequest(cluster *storage.Cluster, process *storage.C
 
 func adjustTrigger(trigger *central.SensorUpgradeTrigger, state storage.UpgradeProgress_UpgradeState) {
 	if state >= storage.UpgradeProgress_UPGRADER_LAUNCHED {
-		trigger.Image = "" // indicate to sensor that it should not launch another upgrader
+		trigger.SetImage("") // indicate to sensor that it should not launch another upgrader
 	}
 }
 
@@ -56,11 +56,9 @@ func sendTrigger(ctx concurrency.Waitable, injector common.MessageInjector, trig
 		return nil
 	}
 
-	return injector.InjectMessage(ctx, &central.MsgToSensor{
-		Msg: &central.MsgToSensor_SensorUpgradeTrigger{
-			SensorUpgradeTrigger: trigger,
-		},
-	})
+	mts := &central.MsgToSensor{}
+	mts.SetSensorUpgradeTrigger(proto.ValueOrDefault(trigger))
+	return injector.InjectMessage(ctx, mts)
 }
 
 func (u *upgradeController) Trigger(ctx concurrency.Waitable) error {

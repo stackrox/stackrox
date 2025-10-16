@@ -65,7 +65,7 @@ func AugmentInsecureRegistriesConfig(info *compliance.InsecureRegistriesConfig) 
 		}
 
 		if registriesSet.Add(location) {
-			info.InsecureRegistries = append(info.InsecureRegistries, location)
+			info.SetInsecureRegistries(append(info.GetInsecureRegistries(), location))
 		}
 	}
 }

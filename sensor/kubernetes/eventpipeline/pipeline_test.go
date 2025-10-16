@@ -162,11 +162,8 @@ func (s *eventPipelineSuite) Test_ReprocessDeployments() {
 	messageReceived := sync.WaitGroup{}
 	messageReceived.Add(2)
 
-	msgFromCentral := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_ReprocessDeployments{
-			ReprocessDeployments: &central.ReprocessDeployments{},
-		},
-	}
+	msgFromCentral := &central.MsgToSensor{}
+	msgFromCentral.SetReprocessDeployments(&central.ReprocessDeployments{})
 	s.detector.EXPECT().ProcessReprocessDeployments().Times(1).Do(func() {
 		defer messageReceived.Done()
 	})
@@ -193,13 +190,11 @@ func (s *eventPipelineSuite) Test_PolicySync() {
 	messageReceived := sync.WaitGroup{}
 	messageReceived.Add(1)
 
-	msgFromCentral := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_PolicySync{
-			PolicySync: &central.PolicySync{
-				Policies: []*storage.Policy{},
-			},
-		},
-	}
+	msgFromCentral := central.MsgToSensor_builder{
+		PolicySync: central.PolicySync_builder{
+			Policies: []*storage.Policy{},
+		}.Build(),
+	}.Build()
 	s.detector.EXPECT().ProcessPolicySync(gomock.Any(), gomock.Any()).Times(1).Do(func(_, _ interface{}) {
 		defer messageReceived.Done()
 	})
@@ -214,11 +209,8 @@ func (s *eventPipelineSuite) Test_UpdatedImage() {
 	messageReceived := sync.WaitGroup{}
 	messageReceived.Add(2)
 
-	msgFromCentral := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_UpdatedImage{
-			UpdatedImage: &storage.Image{},
-		},
-	}
+	msgFromCentral := &central.MsgToSensor{}
+	msgFromCentral.SetUpdatedImage(&storage.Image{})
 	s.detector.EXPECT().ProcessUpdatedImage(gomock.Any()).Times(1).Do(func(msg interface{}) {
 		defer messageReceived.Done()
 		image, ok := msg.(*storage.Image)
@@ -243,11 +235,8 @@ func (s *eventPipelineSuite) Test_ReprocessDeployment() {
 	messageReceived := sync.WaitGroup{}
 	messageReceived.Add(2)
 
-	msgFromCentral := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_ReprocessDeployment{
-			ReprocessDeployment: &central.ReprocessDeployment{},
-		},
-	}
+	msgFromCentral := &central.MsgToSensor{}
+	msgFromCentral.SetReprocessDeployment(&central.ReprocessDeployment{})
 	s.reprocessor.EXPECT().ProcessReprocessDeployments(gomock.Any()).Times(1).Do(func(msg interface{}) {
 		defer messageReceived.Done()
 		reprocessDeployment, ok := msg.(*central.ReprocessDeployment)
@@ -272,11 +261,8 @@ func (s *eventPipelineSuite) Test_InvalidateImageCache() {
 	messageReceived := sync.WaitGroup{}
 	messageReceived.Add(2)
 
-	msgFromCentral := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_InvalidateImageCache{
-			InvalidateImageCache: &central.InvalidateImageCache{},
-		},
-	}
+	msgFromCentral := &central.MsgToSensor{}
+	msgFromCentral.SetInvalidateImageCache(&central.InvalidateImageCache{})
 	s.reprocessor.EXPECT().ProcessInvalidateImageCache(gomock.Any()).Times(1).Do(func(msg interface{}) {
 		defer messageReceived.Done()
 		invalidateCache, ok := msg.(*central.InvalidateImageCache)

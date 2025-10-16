@@ -114,15 +114,15 @@ func (m *mountSettingsWatch) OnChange(dir string) (interface{}, error) {
 		clusterID = string(clusterIDBytes)
 	}
 
-	return &sensor.AdmissionControlSettings{
-		ClusterConfig:              &clusterConfig,
-		EnforcedDeployTimePolicies: deployTimePolicies,
-		RuntimePolicies:            runTimePolicies,
-		Timestamp:                  tsProto,
-		CacheVersion:               cacheVersion,
-		CentralEndpoint:            centralEndpoint,
-		ClusterId:                  clusterID,
-	}, nil
+	acs := &sensor.AdmissionControlSettings{}
+	acs.SetClusterConfig(&clusterConfig)
+	acs.SetEnforcedDeployTimePolicies(deployTimePolicies)
+	acs.SetRuntimePolicies(runTimePolicies)
+	acs.SetTimestamp(tsProto)
+	acs.SetCacheVersion(cacheVersion)
+	acs.SetCentralEndpoint(centralEndpoint)
+	acs.SetClusterId(clusterID)
+	return acs, nil
 }
 
 func (m *mountSettingsWatch) OnStableUpdate(val interface{}, err error) {

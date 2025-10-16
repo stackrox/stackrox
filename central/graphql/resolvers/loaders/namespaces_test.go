@@ -44,10 +44,14 @@ func (suite *NamespaceLoaderTestSuite) TearDownTest() {
 }
 
 func (suite *NamespaceLoaderTestSuite) TestFromID() {
+	nm := &storage.NamespaceMetadata{}
+	nm.SetId(namespace1)
+	nm2 := &storage.NamespaceMetadata{}
+	nm2.SetId(namespace2)
 	loader := namespaceLoaderImpl{
 		loaded: map[string]*storage.NamespaceMetadata{
-			"namespace1": {Id: namespace1},
-			"namespace2": {Id: namespace2},
+			"namespace1": nm,
+			"namespace2": nm2,
 		},
 		ds: suite.mockDataStore,
 	}
@@ -58,7 +62,8 @@ func (suite *NamespaceLoaderTestSuite) TestFromID() {
 	protoassert.Equal(suite.T(), loader.loaded[namespace1], namespace)
 
 	// Get a non-preloaded namespace from id.
-	thirdNamespace := &storage.NamespaceMetadata{Id: namespace3}
+	thirdNamespace := &storage.NamespaceMetadata{}
+	thirdNamespace.SetId(namespace3)
 	suite.mockDataStore.EXPECT().GetManyNamespaces(suite.ctx, []string{namespace3}).
 		Return([]*storage.NamespaceMetadata{thirdNamespace}, nil)
 
@@ -73,10 +78,14 @@ func (suite *NamespaceLoaderTestSuite) TestFromID() {
 }
 
 func (suite *NamespaceLoaderTestSuite) TestFromIDs() {
+	nm := &storage.NamespaceMetadata{}
+	nm.SetId(namespace1)
+	nm2 := &storage.NamespaceMetadata{}
+	nm2.SetId(namespace2)
 	loader := namespaceLoaderImpl{
 		loaded: map[string]*storage.NamespaceMetadata{
-			"namespace1": {Id: namespace1},
-			"namespace2": {Id: namespace2},
+			"namespace1": nm,
+			"namespace2": nm2,
 		},
 		ds: suite.mockDataStore,
 	}
@@ -90,7 +99,8 @@ func (suite *NamespaceLoaderTestSuite) TestFromIDs() {
 	}, namespaces)
 
 	// Get a non-preloaded namespace from id.
-	thirdNamespace := &storage.NamespaceMetadata{Id: namespace3}
+	thirdNamespace := &storage.NamespaceMetadata{}
+	thirdNamespace.SetId(namespace3)
 	suite.mockDataStore.EXPECT().GetManyNamespaces(suite.ctx, []string{namespace3}).
 		Return([]*storage.NamespaceMetadata{thirdNamespace}, nil)
 
@@ -113,10 +123,14 @@ func (suite *NamespaceLoaderTestSuite) TestFromIDs() {
 }
 
 func (suite *NamespaceLoaderTestSuite) TestFromQuery() {
+	nm := &storage.NamespaceMetadata{}
+	nm.SetId(namespace1)
+	nm2 := &storage.NamespaceMetadata{}
+	nm2.SetId(namespace2)
 	loader := namespaceLoaderImpl{
 		loaded: map[string]*storage.NamespaceMetadata{
-			"namespace1": {Id: namespace1},
-			"namespace2": {Id: namespace2},
+			"namespace1": nm,
+			"namespace2": nm2,
 		},
 		ds: suite.mockDataStore,
 	}
@@ -153,7 +167,8 @@ func (suite *NamespaceLoaderTestSuite) TestFromQuery() {
 	}
 	suite.mockDataStore.EXPECT().Search(suite.ctx, query).Return(results, nil)
 
-	thirdNamespace := &storage.NamespaceMetadata{Id: namespace3}
+	thirdNamespace := &storage.NamespaceMetadata{}
+	thirdNamespace.SetId(namespace3)
 	suite.mockDataStore.EXPECT().GetManyNamespaces(suite.ctx, []string{namespace3}).
 		Return([]*storage.NamespaceMetadata{thirdNamespace}, nil)
 

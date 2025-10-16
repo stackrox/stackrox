@@ -81,7 +81,7 @@ func (ds *datastoreImpl) AddImageIntegration(ctx context.Context, integration *s
 	// Use the provided ID for sourced integrations, trust that the ID is
 	// predictable for reconciliation, deletes, etc. to work.
 	if !sourcedIntegration || integration.GetId() == "" {
-		integration.Id = uuid.NewV4().String()
+		integration.SetId(uuid.NewV4().String())
 	}
 	err := ds.storage.Upsert(ctx, integration)
 	if err != nil {
@@ -143,11 +143,11 @@ func (ds *datastoreImpl) SearchImageIntegrations(ctx context.Context, q *v1.Quer
 
 // convertImageIntegration returns proto search result from a image integration object and the internal search result
 func convertImageIntegration(imageIntegration *storage.ImageIntegration, result searchPkg.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_IMAGE_INTEGRATIONS,
-		Id:             imageIntegration.GetId(),
-		Name:           imageIntegration.GetName(),
-		FieldToMatches: searchPkg.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+	sr := &v1.SearchResult{}
+	sr.SetCategory(v1.SearchCategory_IMAGE_INTEGRATIONS)
+	sr.SetId(imageIntegration.GetId())
+	sr.SetName(imageIntegration.GetName())
+	sr.SetFieldToMatches(searchPkg.GetProtoMatchesMap(result.Matches))
+	sr.SetScore(result.Score)
+	return sr
 }

@@ -24,21 +24,21 @@ func StorageToPublicAPI(from *storage.DelegatedRegistryConfig) *v1.DelegatedRegi
 		regs = make([]*v1.DelegatedRegistryConfig_DelegatedRegistry, len(from.GetRegistries()))
 
 		for i, reg := range from.GetRegistries() {
-			regs[i] = &v1.DelegatedRegistryConfig_DelegatedRegistry{
-				ClusterId: reg.GetClusterId(),
-				Path:      reg.GetPath(),
-			}
+			dd := &v1.DelegatedRegistryConfig_DelegatedRegistry{}
+			dd.SetClusterId(reg.GetClusterId())
+			dd.SetPath(reg.GetPath())
+			regs[i] = dd
 		}
 	}
 
 	// defaults to 0 (NONE) if not found in map
 	enabledFor := v1.DelegatedRegistryConfig_EnabledFor_value[from.GetEnabledFor().String()]
 
-	return &v1.DelegatedRegistryConfig{
-		EnabledFor:       v1.DelegatedRegistryConfig_EnabledFor(enabledFor),
-		DefaultClusterId: from.GetDefaultClusterId(),
-		Registries:       regs,
-	}
+	drc := &v1.DelegatedRegistryConfig{}
+	drc.SetEnabledFor(v1.DelegatedRegistryConfig_EnabledFor(enabledFor))
+	drc.SetDefaultClusterId(from.GetDefaultClusterId())
+	drc.SetRegistries(regs)
+	return drc
 }
 
 // PublicAPIToStorage converts a delegated registry config from the type used by the gRPC/REST API
@@ -54,21 +54,21 @@ func PublicAPIToStorage(from *v1.DelegatedRegistryConfig) *storage.DelegatedRegi
 		regs = make([]*storage.DelegatedRegistryConfig_DelegatedRegistry, len(from.GetRegistries()))
 
 		for i, reg := range from.GetRegistries() {
-			regs[i] = &storage.DelegatedRegistryConfig_DelegatedRegistry{
-				ClusterId: reg.GetClusterId(),
-				Path:      reg.GetPath(),
-			}
+			dd := &storage.DelegatedRegistryConfig_DelegatedRegistry{}
+			dd.SetClusterId(reg.GetClusterId())
+			dd.SetPath(reg.GetPath())
+			regs[i] = dd
 		}
 	}
 
 	// defaults to 0 (NONE) if not found in map
 	enabledFor := storage.DelegatedRegistryConfig_EnabledFor_value[from.GetEnabledFor().String()]
 
-	return &storage.DelegatedRegistryConfig{
-		EnabledFor:       storage.DelegatedRegistryConfig_EnabledFor(enabledFor),
-		DefaultClusterId: from.GetDefaultClusterId(),
-		Registries:       regs,
-	}
+	drc := &storage.DelegatedRegistryConfig{}
+	drc.SetEnabledFor(storage.DelegatedRegistryConfig_EnabledFor(enabledFor))
+	drc.SetDefaultClusterId(from.GetDefaultClusterId())
+	drc.SetRegistries(regs)
+	return drc
 }
 
 // PublicAPIToInternalAPI converts a delegated registry config from the type used by the gRPC/REST API
@@ -84,19 +84,19 @@ func PublicAPIToInternalAPI(from *v1.DelegatedRegistryConfig) *central.Delegated
 		regs = make([]*central.DelegatedRegistryConfig_DelegatedRegistry, len(from.GetRegistries()))
 
 		for i, reg := range from.GetRegistries() {
-			regs[i] = &central.DelegatedRegistryConfig_DelegatedRegistry{
-				Path: reg.GetPath(),
-			}
+			dd := &central.DelegatedRegistryConfig_DelegatedRegistry{}
+			dd.SetPath(reg.GetPath())
+			regs[i] = dd
 		}
 	}
 
 	// defaults to 0 (NONE) if not found in map
 	enabledFor := storage.DelegatedRegistryConfig_EnabledFor_value[from.GetEnabledFor().String()]
 
-	return &central.DelegatedRegistryConfig{
-		EnabledFor: central.DelegatedRegistryConfig_EnabledFor(enabledFor),
-		Registries: regs,
-	}
+	drc := &central.DelegatedRegistryConfig{}
+	drc.SetEnabledFor(central.DelegatedRegistryConfig_EnabledFor(enabledFor))
+	drc.SetRegistries(regs)
+	return drc
 }
 
 // StorageToInternalAPI converts a delegated registry config from the type used by the storage (db) to
@@ -112,17 +112,17 @@ func StorageToInternalAPI(from *storage.DelegatedRegistryConfig) *central.Delega
 		regs = make([]*central.DelegatedRegistryConfig_DelegatedRegistry, len(from.GetRegistries()))
 
 		for i, reg := range from.GetRegistries() {
-			regs[i] = &central.DelegatedRegistryConfig_DelegatedRegistry{
-				Path: reg.GetPath(),
-			}
+			dd := &central.DelegatedRegistryConfig_DelegatedRegistry{}
+			dd.SetPath(reg.GetPath())
+			regs[i] = dd
 		}
 	}
 
 	// defaults to 0 (NONE) if not found in map
 	enabledFor := v1.DelegatedRegistryConfig_EnabledFor_value[from.GetEnabledFor().String()]
 
-	return &central.DelegatedRegistryConfig{
-		EnabledFor: central.DelegatedRegistryConfig_EnabledFor(enabledFor),
-		Registries: regs,
-	}
+	drc := &central.DelegatedRegistryConfig{}
+	drc.SetEnabledFor(central.DelegatedRegistryConfig_EnabledFor(enabledFor))
+	drc.SetRegistries(regs)
+	return drc
 }

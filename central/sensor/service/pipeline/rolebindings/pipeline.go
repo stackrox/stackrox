@@ -60,7 +60,9 @@ func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap
 
 	store := storeMap.Get((*central.SensorEvent_Binding)(nil))
 	err = reconciliation.Perform(store, search.ResultsToIDSet(results), "k8srolebindings", func(id string) error {
-		return s.runRemovePipeline(ctx, central.ResourceAction_REMOVE_RESOURCE, &storage.K8SRoleBinding{Id: id})
+		k8srb := &storage.K8SRoleBinding{}
+		k8srb.SetId(id)
+		return s.runRemovePipeline(ctx, central.ResourceAction_REMOVE_RESOURCE, k8srb)
 	})
 
 	if err != nil {
@@ -80,7 +82,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	event := msg.GetEvent()
 	binding := event.GetBinding()
-	binding.ClusterId = clusterID
+	binding.SetClusterId(clusterID)
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
@@ -109,9 +111,9 @@ func (s *pipelineImpl) runRemovePipeline(ctx context.Context, _ central.Resource
 
 func enrichSubjects(binding *storage.K8SRoleBinding) {
 	for _, subject := range binding.GetSubjects() {
-		subject.ClusterId = binding.GetClusterId()
-		subject.ClusterName = binding.GetClusterName()
-		subject.Id = k8srbac.CreateSubjectID(subject.GetClusterId(), subject.GetName())
+		subject.SetClusterId(binding.GetClusterId())
+		subject.SetClusterName(binding.GetClusterName())
+		subject.SetId(k8srbac.CreateSubjectID(subject.GetClusterId(), subject.GetName()))
 	}
 }
 
@@ -143,7 +145,7 @@ func (s *pipelineImpl) validateInput(binding *storage.K8SRoleBinding) error {
 }
 
 func (s *pipelineImpl) enrichCluster(ctx context.Context, binding *storage.K8SRoleBinding) error {
-	binding.ClusterName = ""
+	binding.SetClusterName("")
 
 	clusterName, clusterExists, err := s.clusters.GetClusterName(ctx, binding.GetClusterId())
 	switch {
@@ -154,7 +156,7 @@ func (s *pipelineImpl) enrichCluster(ctx context.Context, binding *storage.K8SRo
 		log.Errorf("Couldn't find cluster '%q'", binding.GetClusterId())
 		return err
 	default:
-		binding.ClusterName = clusterName
+		binding.SetClusterName(clusterName)
 	}
 	return nil
 }

@@ -109,15 +109,15 @@ func (d *datastoreImpl) GetProfilesNames(ctx context.Context, q *v1.Query, clust
 	)
 
 	// Build the select and group by on distinct profile name
-	parsedQuery.Selects = []*v1.QuerySelect{
+	parsedQuery.SetSelects([]*v1.QuerySelect{
 		search.NewQuerySelect(search.ComplianceOperatorProfileName).Distinct().Proto(),
-	}
-	parsedQuery.GroupBy = &v1.QueryGroupBy{
-		Fields: []string{
-			search.ComplianceOperatorProfileName.String(),
-		},
-	}
-	parsedQuery.Pagination = q.GetPagination()
+	})
+	qgb := &v1.QueryGroupBy{}
+	qgb.SetFields([]string{
+		search.ComplianceOperatorProfileName.String(),
+	})
+	parsedQuery.SetGroupBy(qgb)
+	parsedQuery.SetPagination(q.GetPagination())
 
 	var results []*distinctProfileName
 	results, err = pgSearch.RunSelectRequestForSchema[distinctProfileName](ctx, d.db, schema.ComplianceOperatorProfileV2Schema, parsedQuery)
@@ -152,11 +152,11 @@ func (d *datastoreImpl) CountDistinctProfiles(ctx context.Context, q *v1.Query, 
 		q,
 	)
 
-	query.GroupBy = &v1.QueryGroupBy{
-		Fields: []string{
-			search.ComplianceOperatorProfileName.String(),
-		},
-	}
+	qgb := &v1.QueryGroupBy{}
+	qgb.SetFields([]string{
+		search.ComplianceOperatorProfileName.String(),
+	})
+	query.SetGroupBy(qgb)
 
 	var results []*distinctProfileCount
 	results, err := pgSearch.RunSelectRequestForSchema[distinctProfileCount](ctx, d.db, schema.ComplianceOperatorProfileV2Schema, withCountQuery(query, search.ComplianceOperatorProfileName))
@@ -168,9 +168,9 @@ func (d *datastoreImpl) CountDistinctProfiles(ctx context.Context, q *v1.Query, 
 
 func withCountQuery(query *v1.Query, field search.FieldLabel) *v1.Query {
 	cloned := query.CloneVT()
-	cloned.Selects = []*v1.QuerySelect{
+	cloned.SetSelects([]*v1.QuerySelect{
 		search.NewQuerySelect(field).AggrFunc(aggregatefunc.Count).Proto(),
-	}
+	})
 	return cloned
 }
 

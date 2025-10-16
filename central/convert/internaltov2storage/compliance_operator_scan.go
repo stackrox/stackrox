@@ -15,28 +15,28 @@ var (
 
 // ComplianceOperatorScanObject converts internal api V2 compliance scan object to a V2 storage compliance scan object
 func ComplianceOperatorScanObject(sensorData *central.ComplianceOperatorScanV2, clusterID string) *storage.ComplianceOperatorScanV2 {
-	return &storage.ComplianceOperatorScanV2{
-		Id:             sensorData.GetId(),
-		ScanConfigName: sensorData.GetLabels()[v1alpha1.SuiteLabel],
-		ScanName:       sensorData.GetName(),
-		ClusterId:      clusterID,
-		Errors:         sensorData.GetStatus().GetErrorMessage(),
-		Profile: &storage.ProfileShim{
-			ProfileId:    sensorData.GetProfileId(),
-			ProfileRefId: BuildProfileRefID(clusterID, sensorData.GetProfileId(), sensorData.GetScanType()),
-		},
-		Labels:      sensorData.GetLabels(),
-		Annotations: sensorData.GetAnnotations(),
-		ScanType:    scanTypeToV2[sensorData.GetScanType()],
-		Status: &storage.ScanStatus{
-			Phase:    sensorData.GetStatus().GetPhase(),
-			Result:   sensorData.GetStatus().GetResult(),
-			Warnings: sensorData.GetStatus().GetWarnings(),
-		},
-		CreatedTime:      sensorData.GetStatus().GetStartTime(),
-		LastStartedTime:  sensorData.GetStatus().GetLastStartTime(),
-		LastExecutedTime: sensorData.GetStatus().GetEndTime(),
-		ProductType:      sensorData.GetScanType(),
-		ScanRefId:        BuildNameRefID(clusterID, sensorData.GetName()),
-	}
+	ps := &storage.ProfileShim{}
+	ps.SetProfileId(sensorData.GetProfileId())
+	ps.SetProfileRefId(BuildProfileRefID(clusterID, sensorData.GetProfileId(), sensorData.GetScanType()))
+	ss := &storage.ScanStatus{}
+	ss.SetPhase(sensorData.GetStatus().GetPhase())
+	ss.SetResult(sensorData.GetStatus().GetResult())
+	ss.SetWarnings(sensorData.GetStatus().GetWarnings())
+	cosv2 := &storage.ComplianceOperatorScanV2{}
+	cosv2.SetId(sensorData.GetId())
+	cosv2.SetScanConfigName(sensorData.GetLabels()[v1alpha1.SuiteLabel])
+	cosv2.SetScanName(sensorData.GetName())
+	cosv2.SetClusterId(clusterID)
+	cosv2.SetErrors(sensorData.GetStatus().GetErrorMessage())
+	cosv2.SetProfile(ps)
+	cosv2.SetLabels(sensorData.GetLabels())
+	cosv2.SetAnnotations(sensorData.GetAnnotations())
+	cosv2.SetScanType(scanTypeToV2[sensorData.GetScanType()])
+	cosv2.SetStatus(ss)
+	cosv2.SetCreatedTime(sensorData.GetStatus().GetStartTime())
+	cosv2.SetLastStartedTime(sensorData.GetStatus().GetLastStartTime())
+	cosv2.SetLastExecutedTime(sensorData.GetStatus().GetEndTime())
+	cosv2.SetProductType(sensorData.GetScanType())
+	cosv2.SetScanRefId(BuildNameRefID(clusterID, sensorData.GetName()))
+	return cosv2
 }

@@ -98,7 +98,7 @@ func (s *ImageScanResolverTestSuite) TestGetImagesWithScan() {
 	s.imageView.EXPECT().Get(gomock.Any(), gomock.Any()).
 		Return([]imagesView.ImageCore{imageCore}, nil)
 	cloned := img.CloneVT()
-	cloned.Scan.Components = nil
+	cloned.GetScan().SetComponents(nil)
 	s.imageDataStore.EXPECT().GetManyImageMetadata(gomock.Any(), gomock.Any()).
 		Return([]*storage.Image{cloned}, nil)
 	s.imageDataStore.EXPECT().GetImagesBatch(gomock.Any(), gomock.Any()).
@@ -116,7 +116,7 @@ func (s *ImageScanResolverTestSuite) TestGetImagesWithoutScan() {
 		Return([]imagesView.ImageCore{imageCore}, nil)
 
 	cloned := img.CloneVT()
-	cloned.Scan.Components = nil
+	cloned.GetScan().SetComponents(nil)
 	s.imageDataStore.EXPECT().GetManyImageMetadata(gomock.Any(), gomock.Any()).
 		Return([]*storage.Image{cloned}, nil)
 	if features.FlattenCVEData.Enabled() {

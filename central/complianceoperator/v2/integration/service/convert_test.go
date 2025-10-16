@@ -33,14 +33,14 @@ func TestConvertStorageIntegrationToV2(t *testing.T) {
 	}{
 		{
 			testname: "Integration conversion",
-			integration: &storage.ComplianceIntegration{
+			integration: storage.ComplianceIntegration_builder{
 				Id:                  testID,
 				Version:             "22",
 				ClusterId:           fixtureconsts.Cluster1,
 				ComplianceNamespace: fixtureconsts.Namespace1,
 				StatusErrors:        []string{"Error 1", "Error 2", "Error 3"},
 				OperatorInstalled:   true,
-			},
+			}.Build(),
 			view: &datastore.IntegrationDetails{
 				ID:                                testID,
 				Version:                           "22",
@@ -51,7 +51,7 @@ func TestConvertStorageIntegrationToV2(t *testing.T) {
 				Type:                              pointers.Pointer(storage.ClusterType_OPENSHIFT_CLUSTER),
 				StatusProviderMetadataClusterType: pointers.Pointer(storage.ClusterMetadata_OCP),
 			},
-			expected: &apiV2.ComplianceIntegration{
+			expected: apiV2.ComplianceIntegration_builder{
 				Id:                  testID,
 				Version:             "22",
 				ClusterId:           fixtureconsts.Cluster1,
@@ -62,18 +62,18 @@ func TestConvertStorageIntegrationToV2(t *testing.T) {
 				Status:              apiV2.COStatus_HEALTHY,
 				ClusterPlatformType: apiV2.ClusterPlatformType_OPENSHIFT_CLUSTER,
 				ClusterProviderType: apiV2.ClusterProviderType_OCP,
-			},
+			}.Build(),
 			clusterError: false,
 		},
 		{
 			testname: "Integration conversion with cluster error",
-			integration: &storage.ComplianceIntegration{
+			integration: storage.ComplianceIntegration_builder{
 				Id:                  testID,
 				Version:             "22",
 				ClusterId:           fixtureconsts.Cluster1,
 				ComplianceNamespace: fixtureconsts.Namespace1,
 				StatusErrors:        []string{"Error 1", "Error 2", "Error 3"},
-			},
+			}.Build(),
 			view: &datastore.IntegrationDetails{
 				ID:                                testID,
 				Version:                           "22",
@@ -89,14 +89,14 @@ func TestConvertStorageIntegrationToV2(t *testing.T) {
 		},
 		{
 			testname: "Integration conversion with nil pointers",
-			integration: &storage.ComplianceIntegration{
+			integration: storage.ComplianceIntegration_builder{
 				Id:                  testID,
 				Version:             "22",
 				ClusterId:           fixtureconsts.Cluster1,
 				ComplianceNamespace: fixtureconsts.Namespace1,
 				StatusErrors:        []string{"Error 1", "Error 2", "Error 3"},
 				OperatorInstalled:   true,
-			},
+			}.Build(),
 			view: &datastore.IntegrationDetails{
 				ID:                                testID,
 				Version:                           "22",
@@ -107,7 +107,7 @@ func TestConvertStorageIntegrationToV2(t *testing.T) {
 				Type:                              nil,
 				StatusProviderMetadataClusterType: nil,
 			},
-			expected: &apiV2.ComplianceIntegration{
+			expected: apiV2.ComplianceIntegration_builder{
 				Id:                  testID,
 				Version:             "22",
 				ClusterId:           fixtureconsts.Cluster1,
@@ -118,7 +118,7 @@ func TestConvertStorageIntegrationToV2(t *testing.T) {
 				Status:              apiV2.COStatus_UNHEALTHY,
 				ClusterPlatformType: apiV2.ClusterPlatformType_GENERIC_CLUSTER,
 				ClusterProviderType: apiV2.ClusterProviderType_UNSPECIFIED,
-			},
+			}.Build(),
 			clusterError: false,
 		},
 	}

@@ -27,6 +27,7 @@ import (
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -194,20 +195,22 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 
 	// Send local enriched data to central to receive a fully enrich image. This includes image vulnerabilities and
 	// signature verification results.
-	centralResp, err := centralClient.EnrichLocalImageInternal(ctx, &v1.EnrichLocalImageInternalRequest{
-		ImageId:        srcImage.GetId(),
-		ImageName:      srcImage.GetName(),
-		Metadata:       pullSourceImage.GetMetadata(),
-		Components:     scannerResp.GetComponents(),
-		V4Contents:     scannerResp.GetContents(),
-		Notes:          scannerResp.GetNotes(),
-		IndexerVersion: scannerResp.GetIndexerVersion(),
-		ImageSignature: &storage.ImageSignature{Signatures: sigs},
-		ImageNotes:     pullSourceImage.GetNotes(),
-		Error:          errorList.String(),
-		RequestId:      req.ID,
-		Force:          req.Force,
-	})
+	is := &storage.ImageSignature{}
+	is.SetSignatures(sigs)
+	eliir := &v1.EnrichLocalImageInternalRequest{}
+	eliir.SetImageId(srcImage.GetId())
+	eliir.SetImageName(srcImage.GetName())
+	eliir.SetMetadata(pullSourceImage.GetMetadata())
+	eliir.SetComponents(scannerResp.GetComponents())
+	eliir.SetV4Contents(scannerResp.GetContents())
+	eliir.SetNotes(scannerResp.GetNotes())
+	eliir.SetIndexerVersion(scannerResp.GetIndexerVersion())
+	eliir.SetImageSignature(is)
+	eliir.SetImageNotes(pullSourceImage.GetNotes())
+	eliir.SetError(errorList.String())
+	eliir.SetRequestId(req.ID)
+	eliir.SetForce(req.Force)
+	centralResp, err := centralClient.EnrichLocalImageInternal(ctx, eliir)
 	if err != nil {
 		log.Debugf("Unable to enrich image %q: %v", srcImage.GetName().GetFullName(), err)
 		return nil, pkgErrors.Wrapf(err, "enriching image %q via central", srcImage.GetName())
@@ -279,7 +282,7 @@ func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhe
 	errorList.AddErrors(allErrs.Errors()...)
 
 	image := types.ToImage(req.Image)
-	image.Notes = append(image.Notes, storage.Image_MISSING_METADATA)
+	image.SetNotes(append(image.GetNotes(), storage.Image_MISSING_METADATA))
 	return nil, image
 }
 
@@ -288,10 +291,10 @@ func enrichImageDataSource(sourceImage *storage.ContainerImage, reg registryType
 
 	// If target is a mirror, then add mirror details to the data source.
 	if sourceImage.GetName().GetFullName() != targetImg.GetName().GetFullName() {
-		ds.Mirror = targetImg.GetName().GetFullName()
+		ds.SetMirror(targetImg.GetName().GetFullName())
 	}
 
-	targetImg.GetMetadata().DataSource = ds
+	targetImg.GetMetadata().SetDataSource(ds)
 }
 
 // getRegistries will return registries that match the provided image, starting with image integrations sync'd from Central,
@@ -366,7 +369,7 @@ func (s *LocalScan) getPullSources(srcImage *storage.ContainerImage) []*storage.
 		// would be populated and this condition never true.
 		if img.GetId() == "" && srcImage.GetId() != "" {
 			log.Debugf("Adding id from source image %q (id: %q) to pull source %q", srcImage.GetName().GetFullName(), srcImage.GetId(), img.GetName().GetFullName())
-			img.Id = srcImage.GetId()
+			img.SetId(srcImage.GetId())
 		}
 
 		cImages = append(cImages, img)
@@ -393,7 +396,7 @@ func (s *LocalScan) enrichImageWithMetadata(ctx context.Context, errorList *erro
 		// Ensure the metadata is set on the image we pass to i.e. fetching signatures. If no V2 digest is available for the
 		// image, the signature will not be attempted to be fetched.
 		// We don't need to do anything on central side, as there the image will correctly have the metadata assigned.
-		image.Metadata = metadata
+		image.SetMetadata(metadata)
 		return reg
 	}
 
@@ -412,7 +415,7 @@ func (s *LocalScan) fetchImageAnalysis(ctx context.Context, errorList *errorhelp
 	scannerResp, err := s.scanImg(ctx, image, registry, s.scannerClientSingleton())
 	if err != nil {
 		log.Debugf("Scan for image %q with id %v failed: %v", image.GetName().GetFullName(), image.GetId(), err)
-		image.Notes = append(image.Notes, storage.Image_MISSING_SCAN_DATA)
+		image.SetNotes(append(image.GetNotes(), storage.Image_MISSING_SCAN_DATA))
 		errorList.AddError(pkgErrors.Wrapf(err, "scanning image %q locally", image.GetName()))
 		return nil
 	}
@@ -440,7 +443,7 @@ func (s *LocalScan) fetchSignatures(ctx context.Context, errorList *errorhelpers
 	}
 
 	if len(sigs) == 0 {
-		image.Notes = append(image.Notes, storage.Image_MISSING_SIGNATURE)
+		image.SetNotes(append(image.GetNotes(), storage.Image_MISSING_SIGNATURE))
 	}
 
 	return sigs
@@ -476,18 +479,15 @@ func createNoAuthImageRegistry(ctx context.Context, imgName *storage.ImageName, 
 	}
 
 	name := fmt.Sprintf("%s/reg:%v", registryTypes.NoAuthNamePrefix, reg)
-	ii := &storage.ImageIntegration{
-		Id:         name,
-		Name:       name,
-		Type:       registryTypes.DockerType,
-		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
-		IntegrationConfig: &storage.ImageIntegration_Docker{
-			Docker: &storage.DockerConfig{
-				Endpoint: reg,
-				Insecure: !secure,
-			},
-		},
-	}
+	dc := &storage.DockerConfig{}
+	dc.SetEndpoint(reg)
+	dc.SetInsecure(!secure)
+	ii := &storage.ImageIntegration{}
+	ii.SetId(name)
+	ii.SetName(name)
+	ii.SetType(registryTypes.DockerType)
+	ii.SetCategories([]storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY})
+	ii.SetDocker(proto.ValueOrDefault(dc))
 
 	registry, err := regFactory.CreateRegistry(ii)
 	if err != nil {

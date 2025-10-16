@@ -66,8 +66,8 @@ func diffPolicies(beforePolicy, afterPolicy *storage.Policy) (PolicyUpdates, err
 
 	// Diff exclusions and clear out if they are similar
 	getExclusionsUpdates(beforePolicy, afterPolicy, &updates)
-	beforePolicy.Exclusions = nil
-	afterPolicy.Exclusions = nil
+	beforePolicy.SetExclusions(nil)
+	afterPolicy.SetExclusions(nil)
 
 	if !beforePolicy.EqualVT(afterPolicy) {
 		return PolicyUpdates{}, errors.New("policies have diff after nil-ing out fields we checked, please update this function " +
@@ -105,7 +105,7 @@ func (u *PolicyUpdates) applyToPolicy(policy *storage.Policy) {
 	}
 	// Add new exclusions as needed
 	if u.ExclusionsToAdd != nil {
-		policy.Exclusions = append(policy.Exclusions, u.ExclusionsToAdd...)
+		policy.SetExclusions(append(policy.GetExclusions(), u.ExclusionsToAdd...))
 	}
 }
 

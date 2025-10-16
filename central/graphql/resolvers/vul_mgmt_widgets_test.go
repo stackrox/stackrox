@@ -9,11 +9,15 @@ import (
 )
 
 func TestSortBySeverity(t *testing.T) {
+	lad := &storage.ListAlertDeployment{}
+	lad.SetId("1")
+	lad2 := &storage.ListAlertDeployment{}
+	lad2.SetId("2")
+	lad3 := &storage.ListAlertDeployment{}
+	lad3.SetId("3")
 	deployments := []*DeploymentsWithMostSevereViolationsResolver{
 		{
-			deployment: &storage.ListAlertDeployment{
-				Id: "1",
-			},
+			deployment: lad,
 			policySeverityCounts: &PolicyCounterResolver{
 				critical: 1,
 				high:     2,
@@ -22,9 +26,7 @@ func TestSortBySeverity(t *testing.T) {
 			},
 		},
 		{
-			deployment: &storage.ListAlertDeployment{
-				Id: "2",
-			},
+			deployment: lad2,
 			policySeverityCounts: &PolicyCounterResolver{
 				critical: 1,
 				high:     2,
@@ -33,9 +35,7 @@ func TestSortBySeverity(t *testing.T) {
 			},
 		},
 		{
-			deployment: &storage.ListAlertDeployment{
-				Id: "3",
-			},
+			deployment: lad3,
 			policySeverityCounts: &PolicyCounterResolver{
 				critical: 2,
 				high:     2,
@@ -45,11 +45,15 @@ func TestSortBySeverity(t *testing.T) {
 		},
 	}
 
+	lad4 := &storage.ListAlertDeployment{}
+	lad4.SetId("3")
+	lad5 := &storage.ListAlertDeployment{}
+	lad5.SetId("1")
+	lad6 := &storage.ListAlertDeployment{}
+	lad6.SetId("2")
 	expected := []*DeploymentsWithMostSevereViolationsResolver{
 		{
-			deployment: &storage.ListAlertDeployment{
-				Id: "3",
-			},
+			deployment: lad4,
 			policySeverityCounts: &PolicyCounterResolver{
 				critical: 2,
 				high:     2,
@@ -58,9 +62,7 @@ func TestSortBySeverity(t *testing.T) {
 			},
 		},
 		{
-			deployment: &storage.ListAlertDeployment{
-				Id: "1",
-			},
+			deployment: lad5,
 			policySeverityCounts: &PolicyCounterResolver{
 				critical: 1,
 				high:     2,
@@ -69,9 +71,7 @@ func TestSortBySeverity(t *testing.T) {
 			},
 		},
 		{
-			deployment: &storage.ListAlertDeployment{
-				Id: "2",
-			},
+			deployment: lad6,
 			policySeverityCounts: &PolicyCounterResolver{
 				critical: 1,
 				high:     2,

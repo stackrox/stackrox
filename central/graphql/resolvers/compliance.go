@@ -276,14 +276,14 @@ func (resolver *Resolver) AggregatedResults(ctx context.Context, args aggregated
 
 	validResults, domainMap, errMsg := truncateResults(validResults, domainMap, collapseBy)
 
+	cr := &storage.ComplianceAggregation_Response{}
+	cr.SetResults(validResults)
+	cr.SetSources(sources)
+	cr.SetErrorMessage(errMsg)
 	return &complianceAggregationResponseWithDomainResolver{
 		complianceAggregation_ResponseResolver: complianceAggregation_ResponseResolver{
 			root: resolver,
-			data: &storage.ComplianceAggregation_Response{
-				Results:      validResults,
-				Sources:      sources,
-				ErrorMessage: errMsg,
-			},
+			data: cr,
 		},
 		domainMap: domainMap,
 	}, nil

@@ -50,16 +50,16 @@ func TestVulnerabilityRequest(t *testing.T) {
 		t,
 		func() *storage.VulnerabilityRequest {
 			req := testutils.GetTestVulnRequestWithUpdate(t)
-			req.GetDeferralReq().Expiry = &storage.RequestExpiry{
-				ExpiryType: storage.RequestExpiry_ALL_CVE_FIXABLE,
-			}
+			re := &storage.RequestExpiry{}
+			re.SetExpiryType(storage.RequestExpiry_ALL_CVE_FIXABLE)
+			req.GetDeferralReq().SetExpiry(re)
 			return req
 		}(),
 		func() *storage.VulnerabilityRequest {
 			req := testutils.GetTestVulnExceptionWithUpdate(t)
-			req.GetDeferralRequest().Expiry = &v2.ExceptionExpiry{
-				ExpiryType: v2.ExceptionExpiry_ALL_CVE_FIXABLE,
-			}
+			ee := &v2.ExceptionExpiry{}
+			ee.SetExpiryType(v2.ExceptionExpiry_ALL_CVE_FIXABLE)
+			req.GetDeferralRequest().SetExpiry(ee)
 			return VulnerabilityRequest(req)
 		}(),
 	)
@@ -68,19 +68,17 @@ func TestVulnerabilityRequest(t *testing.T) {
 		t,
 		func() *storage.VulnerabilityRequest {
 			req := testutils.GetTestVulnRequestWithUpdate(t)
-			req.GetDeferralReq().Expiry = &storage.RequestExpiry{
-				ExpiryType: storage.RequestExpiry_ANY_CVE_FIXABLE,
-				Expiry: &storage.RequestExpiry_ExpiresWhenFixed{
-					ExpiresWhenFixed: true,
-				},
-			}
+			re := &storage.RequestExpiry{}
+			re.SetExpiryType(storage.RequestExpiry_ANY_CVE_FIXABLE)
+			re.SetExpiresWhenFixed(true)
+			req.GetDeferralReq().SetExpiry(re)
 			return req
 		}(),
 		func() *storage.VulnerabilityRequest {
 			req := testutils.GetTestVulnExceptionWithUpdate(t)
-			req.GetDeferralRequest().Expiry = &v2.ExceptionExpiry{
-				ExpiryType: v2.ExceptionExpiry_ANY_CVE_FIXABLE,
-			}
+			ee := &v2.ExceptionExpiry{}
+			ee.SetExpiryType(v2.ExceptionExpiry_ANY_CVE_FIXABLE)
+			req.GetDeferralRequest().SetExpiry(ee)
 			return VulnerabilityRequest(req)
 		}(),
 	)
@@ -89,18 +87,18 @@ func TestVulnerabilityRequest(t *testing.T) {
 		t,
 		func() *storage.VulnerabilityRequest {
 			req := testutils.GetTestVulnRequestWithUpdate(t)
-			req.GetDeferralReq().Expiry = &storage.RequestExpiry{
-				ExpiryType: storage.RequestExpiry_TIME,
-				Expiry:     nil,
-			}
+			re := &storage.RequestExpiry{}
+			re.SetExpiryType(storage.RequestExpiry_TIME)
+			re.ClearExpiry()
+			req.GetDeferralReq().SetExpiry(re)
 			return req
 		}(),
 		func() *storage.VulnerabilityRequest {
 			req := testutils.GetTestVulnExceptionWithUpdate(t)
-			req.GetDeferralRequest().Expiry = &v2.ExceptionExpiry{
-				ExpiryType: v2.ExceptionExpiry_TIME,
-				ExpiresOn:  nil,
-			}
+			ee := &v2.ExceptionExpiry{}
+			ee.SetExpiryType(v2.ExceptionExpiry_TIME)
+			ee.ClearExpiresOn()
+			req.GetDeferralRequest().SetExpiry(ee)
 			return VulnerabilityRequest(req)
 		}(),
 	)
@@ -116,12 +114,12 @@ func TestVulnerabilityRequest(t *testing.T) {
 		func() *storage.VulnerabilityRequest {
 			req := testutils.GetTestVulnDeferralRequestFull(t)
 			// Reset the fields that are nondeterministic.
-			req.Id = ""
-			req.Name = ""
-			req.Approvers = nil
-			req.ApproversV2 = nil
-			req.Comments[0].Id = ""
-			req.Comments[0].CreatedAt = nil
+			req.SetId("")
+			req.SetName("")
+			req.SetApprovers(nil)
+			req.SetApproversV2(nil)
+			req.GetComments()[0].SetId("")
+			req.GetComments()[0].ClearCreatedAt()
 			return req
 		}(),
 		func() *storage.VulnerabilityRequest {
@@ -130,10 +128,10 @@ func TestVulnerabilityRequest(t *testing.T) {
 			assert.NotNil(t, converted.GetCreatedAt())
 			assert.NotNil(t, converted.GetLastUpdated())
 			// Reset the fields that are nondeterministic.
-			converted.CreatedAt = nil
-			converted.LastUpdated = nil
-			converted.Comments[0].Id = ""
-			converted.Comments[0].CreatedAt = nil
+			converted.ClearCreatedAt()
+			converted.ClearLastUpdated()
+			converted.GetComments()[0].SetId("")
+			converted.GetComments()[0].ClearCreatedAt()
 			return converted
 		}(),
 	)
@@ -143,12 +141,12 @@ func TestVulnerabilityRequest(t *testing.T) {
 		func() *storage.VulnerabilityRequest {
 			req := testutils.GetTestVulnFPRequestFull(t)
 			// Reset the fields that are nondeterministic.
-			req.Id = ""
-			req.Name = ""
-			req.Approvers = nil
-			req.ApproversV2 = nil
-			req.Comments[0].Id = ""
-			req.Comments[0].CreatedAt = nil
+			req.SetId("")
+			req.SetName("")
+			req.SetApprovers(nil)
+			req.SetApproversV2(nil)
+			req.GetComments()[0].SetId("")
+			req.GetComments()[0].ClearCreatedAt()
 			return req
 		}(),
 		func() *storage.VulnerabilityRequest {
@@ -157,10 +155,10 @@ func TestVulnerabilityRequest(t *testing.T) {
 			assert.NotNil(t, converted.GetCreatedAt())
 			assert.NotNil(t, converted.GetLastUpdated())
 			// Reset the fields that are nondeterministic.
-			converted.CreatedAt = nil
-			converted.LastUpdated = nil
-			converted.Comments[0].Id = ""
-			converted.Comments[0].CreatedAt = nil
+			converted.ClearCreatedAt()
+			converted.ClearLastUpdated()
+			converted.GetComments()[0].SetId("")
+			converted.GetComments()[0].ClearCreatedAt()
 			return converted
 		}(),
 	)

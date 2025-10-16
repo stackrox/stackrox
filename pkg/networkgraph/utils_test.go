@@ -15,6 +15,10 @@ func TestGetQueries(t *testing.T) {
 	depNameQ := search.NewQueryBuilder().AddStrings(search.DeploymentName, "dep").ProtoQuery()
 	baseScopeQ := search.NewQueryBuilder().AddStrings(search.OrchestratorComponent, "false").ProtoQuery()
 
+	ngs := &v1.NetworkGraphScope{}
+	ngs.SetQuery("Orchestrator Component:false")
+	ngs2 := &v1.NetworkGraphScope{}
+	ngs2.SetQuery("Orchestrator Component:false")
 	for _, tc := range []struct {
 		desc   string
 		rawQ   string
@@ -29,19 +33,15 @@ func TestGetQueries(t *testing.T) {
 			scopeQ: clusterQ,
 		},
 		{
-			desc: "query; non-orchestrator component scope",
-			rawQ: "Deployment:dep",
-			scope: &v1.NetworkGraphScope{
-				Query: "Orchestrator Component:false",
-			},
+			desc:   "query; non-orchestrator component scope",
+			rawQ:   "Deployment:dep",
+			scope:  ngs,
 			depQ:   search.ConjunctionQuery(search.ConjunctionQuery(clusterQ, baseScopeQ), depNameQ),
 			scopeQ: search.ConjunctionQuery(clusterQ, baseScopeQ),
 		},
 		{
-			desc: "no query; non-orchestrator component scope",
-			scope: &v1.NetworkGraphScope{
-				Query: "Orchestrator Component:false",
-			},
+			desc:   "no query; non-orchestrator component scope",
+			scope:  ngs2,
 			depQ:   search.ConjunctionQuery(clusterQ, baseScopeQ),
 			scopeQ: search.ConjunctionQuery(clusterQ, baseScopeQ),
 		},
@@ -62,36 +62,32 @@ func TestIsExternalDiscovered(t *testing.T) {
 	}{
 		// is external and discovered
 		{
-			info: &storage.NetworkEntityInfo{
+			info: storage.NetworkEntityInfo_builder{
 				Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-				Desc: &storage.NetworkEntityInfo_ExternalSource_{
-					ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-						Discovered: true,
-					},
-				},
-			},
+				ExternalSource: storage.NetworkEntityInfo_ExternalSource_builder{
+					Discovered: true,
+				}.Build(),
+			}.Build(),
 			expected: true,
 		},
 
 		// is external but not discovered
 		{
-			info: &storage.NetworkEntityInfo{
+			info: storage.NetworkEntityInfo_builder{
 				Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-				Desc: &storage.NetworkEntityInfo_ExternalSource_{
-					ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-						Discovered: false,
-					},
-				},
-			},
+				ExternalSource: storage.NetworkEntityInfo_ExternalSource_builder{
+					Discovered: false,
+				}.Build(),
+			}.Build(),
 			expected: false,
 		},
 
 		// neither external or discovered
 		{
-			info: &storage.NetworkEntityInfo{
-				Type: storage.NetworkEntityInfo_DEPLOYMENT,
-				Desc: &storage.NetworkEntityInfo_Deployment_{},
-			},
+			info: storage.NetworkEntityInfo_builder{
+				Type:       storage.NetworkEntityInfo_DEPLOYMENT,
+				Deployment: &storage.NetworkEntityInfo_Deployment{},
+			}.Build(),
 			expected: false,
 		},
 	} {

@@ -202,9 +202,9 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 		// Get the Components themselves.  This will be denormalized.  So use the IDs to get them, but use
 		// the data returned from Component Flat View to keep order and set just 1 instance of a Component
 		componentQuery := search.NewQueryBuilder().AddExactMatches(search.ComponentID, componentIDs...).ProtoQuery()
-		componentQuery.Pagination = &v1.QueryPagination{
-			SortOptions: query.GetPagination().GetSortOptions(),
-		}
+		qp := &v1.QueryPagination{}
+		qp.SetSortOptions(query.GetPagination().GetSortOptions())
+		componentQuery.SetPagination(qp)
 		comps, err := loader.FromQuery(ctx, componentQuery)
 
 		// Stash a single instance of a Component to aid in normalizing
@@ -576,16 +576,16 @@ func (resolver *imageComponentResolver) LastScanned(ctx context.Context) (*graph
 		}
 
 		q := resolver.componentQuery()
-		q.Pagination = &v1.QueryPagination{
-			Limit:  1,
-			Offset: 0,
-			SortOptions: []*v1.QuerySortOption{
-				{
-					Field:    search.ImageScanTime.String(),
-					Reversed: true,
-				},
-			},
-		}
+		qso := &v1.QuerySortOption{}
+		qso.SetField(search.ImageScanTime.String())
+		qso.SetReversed(true)
+		qp := &v1.QueryPagination{}
+		qp.SetLimit(1)
+		qp.SetOffset(0)
+		qp.SetSortOptions([]*v1.QuerySortOption{
+			qso,
+		})
+		q.SetPagination(qp)
 
 		images, err := imageLoader.FromQuery(resolver.ctx, q)
 		if err != nil || len(images) == 0 {
@@ -602,16 +602,16 @@ func (resolver *imageComponentResolver) LastScanned(ctx context.Context) (*graph
 	}
 
 	q := resolver.componentQuery()
-	q.Pagination = &v1.QueryPagination{
-		Limit:  1,
-		Offset: 0,
-		SortOptions: []*v1.QuerySortOption{
-			{
-				Field:    search.ImageScanTime.String(),
-				Reversed: true,
-			},
-		},
-	}
+	qso := &v1.QuerySortOption{}
+	qso.SetField(search.ImageScanTime.String())
+	qso.SetReversed(true)
+	qp := &v1.QueryPagination{}
+	qp.SetLimit(1)
+	qp.SetOffset(0)
+	qp.SetSortOptions([]*v1.QuerySortOption{
+		qso,
+	})
+	q.SetPagination(qp)
 
 	images, err := imageLoader.FromQuery(resolver.ctx, q)
 	if err != nil || len(images) == 0 {

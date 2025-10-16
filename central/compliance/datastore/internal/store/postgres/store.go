@@ -177,8 +177,8 @@ func (s *storeImpl) getResultsFromMetadataFromStore(
 		return nil, errox.NotFound.Newf("run results with id %q was not found", metadata.GetRunId())
 	}
 
-	results.RunMetadata = metadata
-	results.Domain = domain
+	results.SetRunMetadata(metadata)
+	results.SetDomain(domain)
 
 	if flags&(dsTypes.WithMessageStrings|dsTypes.RequireMessageStrings) != 0 {
 		externalizedStrings, exists, err := s.strings.Get(ctx, metadata.GetRunId())
@@ -297,7 +297,7 @@ func (s *storeImpl) GetLatestRunMetadataBatch(ctx context.Context, clusterID str
 
 func (s *storeImpl) StoreRunResults(ctx context.Context, results *storage.ComplianceRunResults) error {
 	// Domain is stored separately
-	results.Domain = nil
+	results.ClearDomain()
 	if err := s.metadata.Upsert(ctx, results.GetRunMetadata()); err != nil {
 		return err
 	}

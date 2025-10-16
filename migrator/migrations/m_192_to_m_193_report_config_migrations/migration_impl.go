@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/uuid"
+	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -24,43 +25,33 @@ func createV2reportConfig(reportConfigProto *storage.ReportConfiguration) *stora
 	newConfig := reportConfigProto.CloneVT()
 	// populate id
 	id := getDeterministicID(reportConfigProto.GetId())
-	newConfig.Id = id
+	newConfig.SetId(id)
 	// assign collection id in resource scope
-	newConfig.ResourceScope = &storage.ResourceScope{
-		ScopeReference: &storage.ResourceScope_CollectionId{CollectionId: reportConfigProto.GetScopeId()},
-	}
+	rs := &storage.ResourceScope{}
+	rs.SetCollectionId(reportConfigProto.GetScopeId())
+	newConfig.SetResourceScope(rs)
 	// set scope id to empty string so that v2 api does filter out v2 configs
-	newConfig.ScopeId = ""
+	newConfig.SetScopeId("")
 	// add vuln report filter to v2 copy of report config
-	vulnFilter := &storage.VulnerabilityReportFilters{
-		Severities: reportConfigProto.GetVulnReportFilters().GetSeverities(),
-		Fixability: reportConfigProto.GetVulnReportFilters().GetFixability(),
-		ImageTypes: []storage.VulnerabilityReportFilters_ImageType{storage.VulnerabilityReportFilters_DEPLOYED},
-	}
+	vulnFilter := &storage.VulnerabilityReportFilters{}
+	vulnFilter.SetSeverities(reportConfigProto.GetVulnReportFilters().GetSeverities())
+	vulnFilter.SetFixability(reportConfigProto.GetVulnReportFilters().GetFixability())
+	vulnFilter.SetImageTypes([]storage.VulnerabilityReportFilters_ImageType{storage.VulnerabilityReportFilters_DEPLOYED})
 	if reportConfigProto.GetVulnReportFilters().GetSinceLastReport() {
-		vulnFilter.CvesSince = &storage.VulnerabilityReportFilters_SinceLastSentScheduledReport{
-			SinceLastSentScheduledReport: true,
-		}
+		vulnFilter.SetSinceLastSentScheduledReport(true)
 	} else {
-		vulnFilter.CvesSince = &storage.VulnerabilityReportFilters_AllVuln{
-			AllVuln: true,
-		}
+		vulnFilter.SetAllVuln(true)
 	}
-	newConfig.Filter = &storage.ReportConfiguration_VulnReportFilters{
-		VulnReportFilters: vulnFilter,
-	}
+	newConfig.SetVulnReportFilters(proto.ValueOrDefault(vulnFilter))
 	return newConfig
 }
 
 func createNotifier(reportConfigProto *storage.ReportConfiguration) *storage.NotifierConfiguration {
-	notifierConfig := &storage.NotifierConfiguration{
-		Ref: &storage.NotifierConfiguration_Id{
-			Id: reportConfigProto.GetEmailConfig().GetNotifierId()},
-		NotifierConfig: &storage.NotifierConfiguration_EmailConfig{
-			EmailConfig: &storage.EmailNotifierConfiguration{
-				MailingLists: reportConfigProto.GetEmailConfig().GetMailingLists(),
-			},
-		}}
+	enc := &storage.EmailNotifierConfiguration{}
+	enc.SetMailingLists(reportConfigProto.GetEmailConfig().GetMailingLists())
+	notifierConfig := &storage.NotifierConfiguration{}
+	notifierConfig.SetId(reportConfigProto.GetEmailConfig().GetNotifierId())
+	notifierConfig.SetEmailConfig(proto.ValueOrDefault(enc))
 	return notifierConfig
 }
 
@@ -71,25 +62,23 @@ func createReportSnapshot(v1Config *storage.ReportConfiguration, v2Config *stora
 		return nil
 	}
 	if v1Config.GetLastRunStatus() != nil {
-		return &storage.ReportSnapshot{
-			ReportConfigurationId: v2Config.GetId(),
-			Name:                  v2Config.GetName(),
-			Description:           v2Config.GetDescription(),
-			Type:                  storage.ReportSnapshot_VULNERABILITY,
-			ReportId:              uuid.NewV4().String(),
-			Collection: &storage.CollectionSnapshot{
-				Id: v2Config.GetResourceScope().GetCollectionId(),
-			},
-			Schedule: v2Config.GetSchedule(),
-			ReportStatus: &storage.ReportStatus{
-				RunState:          storage.ReportStatus_DELIVERED,
-				ReportRequestType: storage.ReportStatus_SCHEDULED,
-				CompletedAt:       v1Config.GetLastSuccessfulRunTime(),
-			},
-			Filter: &storage.ReportSnapshot_VulnReportFilters{
-				VulnReportFilters: v2Config.GetVulnReportFilters().CloneVT(),
-			},
-		}
+		cs := &storage.CollectionSnapshot{}
+		cs.SetId(v2Config.GetResourceScope().GetCollectionId())
+		rs := &storage.ReportStatus{}
+		rs.SetRunState(storage.ReportStatus_DELIVERED)
+		rs.SetReportRequestType(storage.ReportStatus_SCHEDULED)
+		rs.SetCompletedAt(v1Config.GetLastSuccessfulRunTime())
+		rs2 := &storage.ReportSnapshot{}
+		rs2.SetReportConfigurationId(v2Config.GetId())
+		rs2.SetName(v2Config.GetName())
+		rs2.SetDescription(v2Config.GetDescription())
+		rs2.SetType(storage.ReportSnapshot_VULNERABILITY)
+		rs2.SetReportId(uuid.NewV4().String())
+		rs2.SetCollection(cs)
+		rs2.SetSchedule(v2Config.GetSchedule())
+		rs2.SetReportStatus(rs)
+		rs2.SetVulnReportFilters(proto.ValueOrDefault(v2Config.GetVulnReportFilters().CloneVT()))
+		return rs2
 	}
 	return nil
 }
@@ -151,7 +140,7 @@ func migrate(database *types.Databases) error {
 			}
 			// if version=0 and scope id is not nil it is v2 config created in tech preview. just set version = 2
 			if reportConfigProto.GetVersion() == 0 && reportConfigProto.GetResourceScope() != nil {
-				reportConfigProto.Version = 2
+				reportConfigProto.SetVersion(2)
 				// convert report config proto back to gorm model
 				convertedGormConfig, err := updatedSchema.ConvertReportConfigurationFromProto(reportConfigProto)
 				if err == nil {
@@ -181,10 +170,10 @@ func migrate(database *types.Databases) error {
 
 			// create notifier config for report_configuration_notifier table
 			notifierConfig := createNotifier(reportConfigProto)
-			newConfig.Notifiers = append(newConfig.Notifiers, notifierConfig)
+			newConfig.SetNotifiers(append(newConfig.GetNotifiers(), notifierConfig))
 			// assign version to 2 to new copy and version to 1 in original so that they are not re-created during migration
-			newConfig.Version = 2
-			reportConfigProto.Version = 1
+			newConfig.SetVersion(2)
+			reportConfigProto.SetVersion(1)
 
 			// if deterministic id exists no need to copy the config
 			// since getMigratedReportConfigIfExsists only reads data from older migration, no need to write a new tx

@@ -17,7 +17,7 @@ func Test_ImageIntegrationToNodeIntegration(t *testing.T) {
 		expectedErrorMsg string
 	}{
 		"Valid v2": {
-			in: &storage.ImageIntegration{
+			in: storage.ImageIntegration_builder{
 				Id:   "169b0d3f-8277-4900-bbce-1127077defae",
 				Name: "Stackrox Scanner",
 				Type: scannerTypes.Clairify,
@@ -25,26 +25,22 @@ func Test_ImageIntegrationToNodeIntegration(t *testing.T) {
 					storage.ImageIntegrationCategory_SCANNER,
 					storage.ImageIntegrationCategory_NODE_SCANNER,
 				},
-				IntegrationConfig: &storage.ImageIntegration_Clairify{
-					Clairify: &storage.ClairifyConfig{
-						Endpoint: "https://localhost:8080",
-					},
-				},
-			},
-			expected: &storage.NodeIntegration{
+				Clairify: storage.ClairifyConfig_builder{
+					Endpoint: "https://localhost:8080",
+				}.Build(),
+			}.Build(),
+			expected: storage.NodeIntegration_builder{
 				Id:   "169b0d3f-8277-4900-bbce-1127077defae",
 				Name: "Stackrox Scanner",
 				Type: scannerTypes.Clairify,
-				IntegrationConfig: &storage.NodeIntegration_Clairify{
-					Clairify: &storage.ClairifyConfig{
-						Endpoint: "https://localhost:8080",
-					},
-				},
-			},
+				Clairify: storage.ClairifyConfig_builder{
+					Endpoint: "https://localhost:8080",
+				}.Build(),
+			}.Build(),
 			expectedErrorMsg: "",
 		},
 		"Valid v4": {
-			in: &storage.ImageIntegration{
+			in: storage.ImageIntegration_builder{
 				Id:   "a87471e6-9678-4e66-8348-91e302b6de07",
 				Name: "Scanner V4",
 				Type: scannerTypes.ScannerV4,
@@ -52,32 +48,28 @@ func Test_ImageIntegrationToNodeIntegration(t *testing.T) {
 					storage.ImageIntegrationCategory_SCANNER,
 					storage.ImageIntegrationCategory_NODE_SCANNER,
 				},
-				IntegrationConfig: &storage.ImageIntegration_ScannerV4{
-					ScannerV4: &storage.ScannerV4Config{
-						IndexerEndpoint: "https://localhost:8443",
-						MatcherEndpoint: "https://localhost:9443",
-					},
-				},
-			},
-			expected: &storage.NodeIntegration{
+				ScannerV4: storage.ScannerV4Config_builder{
+					IndexerEndpoint: "https://localhost:8443",
+					MatcherEndpoint: "https://localhost:9443",
+				}.Build(),
+			}.Build(),
+			expected: storage.NodeIntegration_builder{
 				Id:   "a87471e6-9678-4e66-8348-91e302b6de07",
 				Name: "Scanner V4",
 				Type: scannerTypes.ScannerV4,
-				IntegrationConfig: &storage.NodeIntegration_Scannerv4{
-					Scannerv4: &storage.ScannerV4Config{
-						IndexerEndpoint: "https://localhost:8443",
-						MatcherEndpoint: "https://localhost:9443",
-					},
-				},
-			},
+				Scannerv4: storage.ScannerV4Config_builder{
+					IndexerEndpoint: "https://localhost:8443",
+					MatcherEndpoint: "https://localhost:9443",
+				}.Build(),
+			}.Build(),
 			expectedErrorMsg: "",
 		},
 		"Invalid Scanner Type": {
-			in: &storage.ImageIntegration{
+			in: storage.ImageIntegration_builder{
 				Id:   "a87471e6-0000-0000-0000-91e302b6de07",
 				Name: "Quay",
 				Type: scannerTypes.Quay,
-			},
+			}.Build(),
 			expectedErrorMsg: fmt.Sprintf("unsupported integration type: %q.", scannerTypes.Quay),
 		},
 	}

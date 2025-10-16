@@ -125,43 +125,43 @@ func (s *PolicyValueValidator) TestEnvKeyValuePolicyValidation() {
 		storage.ContainerConfig_EnvironmentConfig_UNKNOWN,
 		storage.ContainerConfig_EnvironmentConfig_RAW,
 	} {
-		assert.NoError(s.T(), Validate(&storage.Policy{
+		assert.NoError(s.T(), Validate(storage.Policy_builder{
 			Name:          "some-policy",
 			PolicyVersion: policyversion.CurrentVersion().String(),
 			PolicySections: []*storage.PolicySection{
-				{
+				storage.PolicySection_builder{
 					PolicyGroups: []*storage.PolicyGroup{
-						{
+						storage.PolicyGroup_builder{
 							FieldName: fieldnames.EnvironmentVariable,
 							Values: []*storage.PolicyValue{
-								{
+								storage.PolicyValue_builder{
 									Value: fmt.Sprintf("%s=key=value", p),
-								},
+								}.Build(),
 							},
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
-		}, ValidateEnvVarSourceRestrictions()))
+		}.Build(), ValidateEnvVarSourceRestrictions()))
 
-		assert.NoError(s.T(), Validate(&storage.Policy{
+		assert.NoError(s.T(), Validate(storage.Policy_builder{
 			Name:          "some-policy",
 			PolicyVersion: policyversion.CurrentVersion().String(),
 			PolicySections: []*storage.PolicySection{
-				{
+				storage.PolicySection_builder{
 					PolicyGroups: []*storage.PolicyGroup{
-						{
+						storage.PolicyGroup_builder{
 							FieldName: fieldnames.EnvironmentVariable,
 							Values: []*storage.PolicyValue{
-								{
+								storage.PolicyValue_builder{
 									Value: fmt.Sprintf("%s=key=", p),
-								},
+								}.Build(),
 							},
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
-		}, ValidateEnvVarSourceRestrictions()))
+		}.Build(), ValidateEnvVarSourceRestrictions()))
 	}
 
 	for _, p := range []storage.ContainerConfig_EnvironmentConfig_EnvVarSource{
@@ -170,218 +170,222 @@ func (s *PolicyValueValidator) TestEnvKeyValuePolicyValidation() {
 		storage.ContainerConfig_EnvironmentConfig_FIELD,
 		storage.ContainerConfig_EnvironmentConfig_RESOURCE_FIELD,
 	} {
-		assert.Error(s.T(), Validate(&storage.Policy{
+		assert.Error(s.T(), Validate(storage.Policy_builder{
 			Name:          "some-policy",
 			PolicyVersion: policyversion.CurrentVersion().String(),
 			PolicySections: []*storage.PolicySection{
-				{
+				storage.PolicySection_builder{
 					PolicyGroups: []*storage.PolicyGroup{
-						{
+						storage.PolicyGroup_builder{
 							FieldName: fieldnames.EnvironmentVariable,
 							Values: []*storage.PolicyValue{
-								{
+								storage.PolicyValue_builder{
 									Value: fmt.Sprintf("%s=key=value", p),
-								},
+								}.Build(),
 							},
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
-		}, ValidateEnvVarSourceRestrictions()))
+		}.Build(), ValidateEnvVarSourceRestrictions()))
 
-		assert.NoError(s.T(), Validate(&storage.Policy{
+		assert.NoError(s.T(), Validate(storage.Policy_builder{
 			Name:          "some-policy",
 			PolicyVersion: policyversion.CurrentVersion().String(),
 			PolicySections: []*storage.PolicySection{
-				{
+				storage.PolicySection_builder{
 					PolicyGroups: []*storage.PolicyGroup{
-						{
+						storage.PolicyGroup_builder{
 							FieldName: fieldnames.EnvironmentVariable,
 							Values: []*storage.PolicyValue{
-								{
+								storage.PolicyValue_builder{
 									Value: fmt.Sprintf("%s=key=", p),
-								},
+								}.Build(),
 							},
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
-		}, ValidateEnvVarSourceRestrictions()))
+		}.Build(), ValidateEnvVarSourceRestrictions()))
 	}
 }
 
 func (s *PolicyValueValidator) TestValidateMultipleSections() {
-	group := &storage.PolicyGroup{FieldName: fieldnames.CVE, Values: []*storage.PolicyValue{{Value: "CVE-2017-1234"}}}
-	assert.NoError(s.T(), Validate(&storage.Policy{Name: "name", PolicyVersion: policyversion.CurrentVersion().String(), PolicySections: []*storage.PolicySection{
-		{SectionName: "good", PolicyGroups: []*storage.PolicyGroup{group}},
-	}}))
-	assert.Error(s.T(), Validate(&storage.Policy{Name: "name", PolicyVersion: policyversion.CurrentVersion().String(), PolicySections: []*storage.PolicySection{
-		{SectionName: "bad", PolicyGroups: []*storage.PolicyGroup{group, group}},
-	}}))
+	pv := &storage.PolicyValue{}
+	pv.SetValue("CVE-2017-1234")
+	group := &storage.PolicyGroup{}
+	group.SetFieldName(fieldnames.CVE)
+	group.SetValues([]*storage.PolicyValue{pv})
+	assert.NoError(s.T(), Validate(storage.Policy_builder{Name: "name", PolicyVersion: policyversion.CurrentVersion().String(), PolicySections: []*storage.PolicySection{
+		storage.PolicySection_builder{SectionName: "good", PolicyGroups: []*storage.PolicyGroup{group}}.Build(),
+	}}.Build()))
+	assert.Error(s.T(), Validate(storage.Policy_builder{Name: "name", PolicyVersion: policyversion.CurrentVersion().String(), PolicySections: []*storage.PolicySection{
+		storage.PolicySection_builder{SectionName: "bad", PolicyGroups: []*storage.PolicyGroup{group, group}}.Build(),
+	}}.Build()))
 }
 
 func (s *PolicyValueValidator) TestValidateKubeResourceSpecifiedForAuditEventSource() {
-	assert.NoError(s.T(), Validate(&storage.Policy{
+	assert.NoError(s.T(), Validate(storage.Policy_builder{
 		Name:            "runtime-policy-valid",
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
 		EventSource:     storage.EventSource_AUDIT_LOG_EVENT,
 		PolicyVersion:   policyversion.CurrentVersion().String(),
 		PolicySections: []*storage.PolicySection{
-			{
+			storage.PolicySection_builder{
 				PolicyGroups: []*storage.PolicyGroup{
-					{
+					storage.PolicyGroup_builder{
 						FieldName: fieldnames.KubeResource,
 						Values: []*storage.PolicyValue{
-							{
+							storage.PolicyValue_builder{
 								Value: "SECRETS",
-							},
+							}.Build(),
 						},
-					},
-					{
+					}.Build(),
+					storage.PolicyGroup_builder{
 						FieldName: fieldnames.KubeAPIVerb,
 						Values: []*storage.PolicyValue{
-							{
+							storage.PolicyValue_builder{
 								Value: "GET",
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
-	}, ValidateSourceIsAuditLogEvents()))
+	}.Build(), ValidateSourceIsAuditLogEvents()))
 
-	assert.Error(s.T(), Validate(&storage.Policy{
+	assert.Error(s.T(), Validate(storage.Policy_builder{
 		Name:            "runtime-policy-no-resource",
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
 		EventSource:     storage.EventSource_AUDIT_LOG_EVENT,
 		PolicyVersion:   policyversion.CurrentVersion().String(),
 		PolicySections: []*storage.PolicySection{
-			{
+			storage.PolicySection_builder{
 				PolicyGroups: []*storage.PolicyGroup{
-					{
+					storage.PolicyGroup_builder{
 						FieldName: fieldnames.KubeAPIVerb,
 						Values: []*storage.PolicyValue{
-							{
+							storage.PolicyValue_builder{
 								Value: "GET",
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
-	}, ValidateSourceIsAuditLogEvents()))
+	}.Build(), ValidateSourceIsAuditLogEvents()))
 }
 
 func (s *PolicyValueValidator) TestValidateKubeAPIVerbSpecifiedForAuditEventSource() {
-	assert.NoError(s.T(), Validate(&storage.Policy{
+	assert.NoError(s.T(), Validate(storage.Policy_builder{
 		Name:            "runtime-policy-valid",
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
 		EventSource:     storage.EventSource_AUDIT_LOG_EVENT,
 		PolicyVersion:   policyversion.CurrentVersion().String(),
 		PolicySections: []*storage.PolicySection{
-			{
+			storage.PolicySection_builder{
 				PolicyGroups: []*storage.PolicyGroup{
-					{
+					storage.PolicyGroup_builder{
 						FieldName: fieldnames.KubeResource,
 						Values: []*storage.PolicyValue{
-							{
+							storage.PolicyValue_builder{
 								Value: "SECRETS",
-							},
+							}.Build(),
 						},
-					},
-					{
+					}.Build(),
+					storage.PolicyGroup_builder{
 						FieldName: fieldnames.KubeAPIVerb,
 						Values: []*storage.PolicyValue{
-							{
+							storage.PolicyValue_builder{
 								Value: "GET",
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
-	}, ValidateSourceIsAuditLogEvents()))
+	}.Build(), ValidateSourceIsAuditLogEvents()))
 
-	assert.Error(s.T(), Validate(&storage.Policy{
+	assert.Error(s.T(), Validate(storage.Policy_builder{
 		Name:            "runtime-policy-no-resource",
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
 		EventSource:     storage.EventSource_AUDIT_LOG_EVENT,
 		PolicyVersion:   policyversion.CurrentVersion().String(),
 		PolicySections: []*storage.PolicySection{
-			{
+			storage.PolicySection_builder{
 				PolicyGroups: []*storage.PolicyGroup{
-					{
+					storage.PolicyGroup_builder{
 						FieldName: fieldnames.KubeResource,
 						Values: []*storage.PolicyValue{
-							{
+							storage.PolicyValue_builder{
 								Value: "SECRETS",
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
-	}, ValidateSourceIsAuditLogEvents()))
+	}.Build(), ValidateSourceIsAuditLogEvents()))
 }
 
 func (s *PolicyValueValidator) TestValidatePolicyCriteriaForAuditEventSource() {
-	assert.NoError(s.T(), Validate(&storage.Policy{
+	assert.NoError(s.T(), Validate(storage.Policy_builder{
 		Name:            "runtime-policy-valid-criteria",
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
 		EventSource:     storage.EventSource_AUDIT_LOG_EVENT,
 		PolicyVersion:   policyversion.CurrentVersion().String(),
 		PolicySections: []*storage.PolicySection{
-			{
+			storage.PolicySection_builder{
 				PolicyGroups: []*storage.PolicyGroup{
-					{
+					storage.PolicyGroup_builder{
 						FieldName: fieldnames.KubeResource,
 						Values: []*storage.PolicyValue{
-							{
+							storage.PolicyValue_builder{
 								Value: "SECRETS",
-							},
+							}.Build(),
 						},
-					},
-					{
+					}.Build(),
+					storage.PolicyGroup_builder{
 						FieldName: fieldnames.KubeAPIVerb,
 						Values: []*storage.PolicyValue{
-							{
+							storage.PolicyValue_builder{
 								Value: "GET",
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
-	}, ValidateSourceIsAuditLogEvents()))
+	}.Build(), ValidateSourceIsAuditLogEvents()))
 
-	assert.Error(s.T(), Validate(&storage.Policy{
+	assert.Error(s.T(), Validate(storage.Policy_builder{
 		Name:            "runtime-policy-incorrect-criteria",
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
 		EventSource:     storage.EventSource_AUDIT_LOG_EVENT,
 		PolicyVersion:   policyversion.CurrentVersion().String(),
 		PolicySections: []*storage.PolicySection{
-			{
+			storage.PolicySection_builder{
 				PolicyGroups: []*storage.PolicyGroup{
-					{
+					storage.PolicyGroup_builder{
 						FieldName: fieldnames.KubeResource,
 						Values: []*storage.PolicyValue{
-							{
+							storage.PolicyValue_builder{
 								Value: "CONFIGMAPS",
-							},
+							}.Build(),
 						},
-					},
-					{
+					}.Build(),
+					storage.PolicyGroup_builder{
 						FieldName: fieldnames.ProcessName,
 						Values: []*storage.PolicyValue{
-							{
+							storage.PolicyValue_builder{
 								Value: "ps",
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
-	}, ValidateSourceIsAuditLogEvents()))
+	}.Build(), ValidateSourceIsAuditLogEvents()))
 }
 
 func (s *PolicyValueValidator) TestValidatePolicyValueRegexForAuditEventSource() {
@@ -541,33 +545,34 @@ func (s *PolicyValueValidator) TestValidatePolicyValueRegexForAuditEventSource()
 
 	for _, c := range cases {
 		s.T().Run(c.name, func(t *testing.T) {
-			policy := &storage.Policy{
+			policy := storage.Policy_builder{
 				Name:            "audit-policy-should-pass-regex-checks",
 				LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
 				EventSource:     storage.EventSource_AUDIT_LOG_EVENT,
 				PolicyVersion:   policyversion.CurrentVersion().String(),
 				PolicySections: []*storage.PolicySection{
-					{
+					storage.PolicySection_builder{
 						PolicyGroups: []*storage.PolicyGroup{
-							{
+							storage.PolicyGroup_builder{
 								FieldName: fieldnames.KubeResource,
-								Values:    []*storage.PolicyValue{{Value: c.resourceType}},
-							},
-							{
+								Values:    []*storage.PolicyValue{storage.PolicyValue_builder{Value: c.resourceType}.Build()},
+							}.Build(),
+							storage.PolicyGroup_builder{
 								FieldName: fieldnames.KubeAPIVerb,
-								Values:    []*storage.PolicyValue{{Value: c.verb}},
-							},
+								Values:    []*storage.PolicyValue{storage.PolicyValue_builder{Value: c.verb}.Build()},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			}
+			}.Build()
 
 			if c.fieldName != "" {
-				group := &storage.PolicyGroup{
-					FieldName: c.fieldName,
-					Values:    []*storage.PolicyValue{{Value: c.fieldValue}},
-				}
-				policy.PolicySections[0].PolicyGroups = append(policy.PolicySections[0].PolicyGroups, group)
+				pv := &storage.PolicyValue{}
+				pv.SetValue(c.fieldValue)
+				group := &storage.PolicyGroup{}
+				group.SetFieldName(c.fieldName)
+				group.SetValues([]*storage.PolicyValue{pv})
+				policy.GetPolicySections()[0].SetPolicyGroups(append(policy.GetPolicySections()[0].GetPolicyGroups(), group))
 			}
 
 			if c.errExpected {
@@ -580,20 +585,24 @@ func (s *PolicyValueValidator) TestValidatePolicyValueRegexForAuditEventSource()
 }
 
 func (s *PolicyValueValidator) TestValidatePolicyHasCorrectVersion() {
-	group := &storage.PolicyGroup{FieldName: fieldnames.CVE, Values: []*storage.PolicyValue{{Value: "CVE-2017-1234"}}}
-	s.NoError(Validate(&storage.Policy{Name: "name", PolicyVersion: policyversion.CurrentVersion().String(), PolicySections: []*storage.PolicySection{
-		{SectionName: "good", PolicyGroups: []*storage.PolicyGroup{group}},
-	}}))
+	pv := &storage.PolicyValue{}
+	pv.SetValue("CVE-2017-1234")
+	group := &storage.PolicyGroup{}
+	group.SetFieldName(fieldnames.CVE)
+	group.SetValues([]*storage.PolicyValue{pv})
+	s.NoError(Validate(storage.Policy_builder{Name: "name", PolicyVersion: policyversion.CurrentVersion().String(), PolicySections: []*storage.PolicySection{
+		storage.PolicySection_builder{SectionName: "good", PolicyGroups: []*storage.PolicyGroup{group}}.Build(),
+	}}.Build()))
 
-	s.Error(Validate(&storage.Policy{Name: "name", PolicyVersion: "", PolicySections: []*storage.PolicySection{
-		{SectionName: "good", PolicyGroups: []*storage.PolicyGroup{group}},
-	}}))
+	s.Error(Validate(storage.Policy_builder{Name: "name", PolicyVersion: "", PolicySections: []*storage.PolicySection{
+		storage.PolicySection_builder{SectionName: "good", PolicyGroups: []*storage.PolicyGroup{group}}.Build(),
+	}}.Build()))
 
-	s.Error(Validate(&storage.Policy{Name: "name", PolicyVersion: "1", PolicySections: []*storage.PolicySection{
-		{SectionName: "good", PolicyGroups: []*storage.PolicyGroup{group}},
-	}}))
+	s.Error(Validate(storage.Policy_builder{Name: "name", PolicyVersion: "1", PolicySections: []*storage.PolicySection{
+		storage.PolicySection_builder{SectionName: "good", PolicyGroups: []*storage.PolicyGroup{group}}.Build(),
+	}}.Build()))
 
-	s.Error(Validate(&storage.Policy{Name: "name", PolicyVersion: "x.y.z", PolicySections: []*storage.PolicySection{
-		{SectionName: "good", PolicyGroups: []*storage.PolicyGroup{group}},
-	}}))
+	s.Error(Validate(storage.Policy_builder{Name: "name", PolicyVersion: "x.y.z", PolicySections: []*storage.PolicySection{
+		storage.PolicySection_builder{SectionName: "good", PolicyGroups: []*storage.PolicyGroup{group}}.Build(),
+	}}.Build()))
 }

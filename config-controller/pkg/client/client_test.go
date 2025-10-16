@@ -50,31 +50,32 @@ func createListPolicies(policies []*storage.Policy) []*storage.ListPolicy {
 	ret := make([]*storage.ListPolicy, len(policies))
 
 	for i, policy := range policies {
-		lp := storage.ListPolicy{Id: policy.GetId()}
+		lp := &storage.ListPolicy{}
+		lp.SetId(policy.GetId())
 		ret[i] = &lp
 	}
 	return ret
 }
 
 func listNotifiers() []*storage.Notifier {
+	notifier := &storage.Notifier{}
+	notifier.SetId("notifier-1")
+	notifier.SetName("email-notifier")
+	notifier2 := &storage.Notifier{}
+	notifier2.SetId("notifier-2")
+	notifier2.SetName("jira-notifier")
 	return []*storage.Notifier{
-		{
-			Id:   "notifier-1",
-			Name: "email-notifier",
-		},
-		{
-			Id:   "notifier-2",
-			Name: "jira-notifier",
-		},
+		notifier,
+		notifier2,
 	}
 }
 
 func listClusters() []*storage.Cluster {
+	cluster := &storage.Cluster{}
+	cluster.SetId("cluster-1")
+	cluster.SetName("Cluster1")
 	return []*storage.Cluster{
-		{
-			Id:   "cluster-1",
-			Name: "Cluster1",
-		},
+		cluster,
 	}
 }
 
@@ -156,51 +157,51 @@ func TestCachedClientGet(t *testing.T) {
 
 // TestCachedClientDelete validates that the cached client deletes policies as expected
 func TestCachedClientDelete(t *testing.T) {
-	newPolicyDeclarative := storage.Policy{
+	newPolicyDeclarative := storage.Policy_builder{
 		Name:            "This is a new declarative policy",
 		Description:     "A really good description",
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD},
 		Severity:        storage.Severity_CRITICAL_SEVERITY,
-		PolicySections: []*storage.PolicySection{{
+		PolicySections: []*storage.PolicySection{storage.PolicySection_builder{
 			SectionName: "Section A",
-			PolicyGroups: []*storage.PolicyGroup{{
+			PolicyGroups: []*storage.PolicyGroup{storage.PolicyGroup_builder{
 				FieldName: "Image",
-				Values: []*storage.PolicyValue{{
+				Values: []*storage.PolicyValue{storage.PolicyValue_builder{
 					Value: "hello",
-				}},
-			}},
-		}},
-	}
+				}.Build()},
+			}.Build()},
+		}.Build()},
+	}.Build()
 
 	mockDecPolicyToReturn := newPolicyDeclarative.CloneVT()
-	mockDecPolicyToReturn.Id = "dec123"
-	mockDecPolicyToReturn.Source = storage.PolicySource_DECLARATIVE
+	mockDecPolicyToReturn.SetId("dec123")
+	mockDecPolicyToReturn.SetSource(storage.PolicySource_DECLARATIVE)
 
-	newPolicyImperative := storage.Policy{
+	newPolicyImperative := storage.Policy_builder{
 		Name:            "This is a new imperative policy",
 		Description:     "A really good description",
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD},
 		Severity:        storage.Severity_CRITICAL_SEVERITY,
-		PolicySections: []*storage.PolicySection{{
+		PolicySections: []*storage.PolicySection{storage.PolicySection_builder{
 			SectionName: "Section A",
-			PolicyGroups: []*storage.PolicyGroup{{
+			PolicyGroups: []*storage.PolicyGroup{storage.PolicyGroup_builder{
 				FieldName: "Image",
-				Values: []*storage.PolicyValue{{
+				Values: []*storage.PolicyValue{storage.PolicyValue_builder{
 					Value: "hello",
-				}},
-			}},
-		}},
-	}
+				}.Build()},
+			}.Build()},
+		}.Build()},
+	}.Build()
 
 	mockImpPolicyToReturn := newPolicyImperative.CloneVT()
-	mockImpPolicyToReturn.Id = "imp123"
+	mockImpPolicyToReturn.SetId("imp123")
 
 	clientTest := setUp(t, func(mockClient *mocks.MockCentralClient, policies []*storage.Policy) {
 		mockClient.EXPECT().ListPolicies(gomock.Any()).Return(createListPolicies(policies), nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].GetId()).Return(policies[0], nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].GetId()).Return(policies[1], nil).Times(1)
-		mockClient.EXPECT().PostPolicy(gomock.Any(), &newPolicyDeclarative).Return(mockDecPolicyToReturn, nil).Times(1)
-		mockClient.EXPECT().PostPolicy(gomock.Any(), &newPolicyImperative).Return(mockImpPolicyToReturn, nil).Times(1)
+		mockClient.EXPECT().PostPolicy(gomock.Any(), newPolicyDeclarative).Return(mockDecPolicyToReturn, nil).Times(1)
+		mockClient.EXPECT().PostPolicy(gomock.Any(), newPolicyImperative).Return(mockImpPolicyToReturn, nil).Times(1)
 		mockClient.EXPECT().DeletePolicy(gomock.Any(), mockDecPolicyToReturn.GetId()).Return(nil).Times(1)
 		mockClient.EXPECT().ListNotifiers(gomock.Any()).Return(listNotifiers(), nil).Times(1)
 		mockClient.EXPECT().ListClusters(gomock.Any()).Return(listClusters(), nil).Times(1)
@@ -208,7 +209,7 @@ func TestCachedClientDelete(t *testing.T) {
 	})
 	defer clientTest.controller.Finish()
 
-	createdDecPolicy, err := clientTest.client.CreatePolicy(clientTest.ctx, &newPolicyDeclarative)
+	createdDecPolicy, err := clientTest.client.CreatePolicy(clientTest.ctx, newPolicyDeclarative)
 
 	assert.NoError(t, err, "Unexpected error creating a policy")
 	assert.Equal(t, "dec123", createdDecPolicy.GetId())
@@ -216,7 +217,7 @@ func TestCachedClientDelete(t *testing.T) {
 	err = clientTest.client.DeletePolicy(clientTest.ctx, createdDecPolicy.GetId())
 	assert.NoError(t, err, "Unexpected error deleting the policy")
 
-	createdImpPolicy, err := clientTest.client.CreatePolicy(clientTest.ctx, &newPolicyImperative)
+	createdImpPolicy, err := clientTest.client.CreatePolicy(clientTest.ctx, newPolicyImperative)
 
 	assert.NoError(t, err, "Unexpected error creating a policy")
 	assert.Equal(t, "imp123", createdImpPolicy.GetId())
@@ -227,37 +228,37 @@ func TestCachedClientDelete(t *testing.T) {
 
 // TestCachedClientCreate validates that the cached client creates policies as expected
 func TestCachedClientCreate(t *testing.T) {
-	newPolicy := storage.Policy{
+	newPolicy := storage.Policy_builder{
 		Name:            "This is a new policy",
 		Description:     "A really good description",
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD},
 		Severity:        storage.Severity_CRITICAL_SEVERITY,
-		PolicySections: []*storage.PolicySection{{
+		PolicySections: []*storage.PolicySection{storage.PolicySection_builder{
 			SectionName: "Section A",
-			PolicyGroups: []*storage.PolicyGroup{{
+			PolicyGroups: []*storage.PolicyGroup{storage.PolicyGroup_builder{
 				FieldName: "Image",
-				Values: []*storage.PolicyValue{{
+				Values: []*storage.PolicyValue{storage.PolicyValue_builder{
 					Value: "hello",
-				}},
-			}},
-		}},
-	}
+				}.Build()},
+			}.Build()},
+		}.Build()},
+	}.Build()
 
 	mockPolicyToReturn := newPolicy.CloneVT()
-	mockPolicyToReturn.Id = "abc123"
+	mockPolicyToReturn.SetId("abc123")
 
 	clientTest := setUp(t, func(mockClient *mocks.MockCentralClient, policies []*storage.Policy) {
 		mockClient.EXPECT().ListPolicies(gomock.Any()).Return(createListPolicies(policies), nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].GetId()).Return(policies[0], nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].GetId()).Return(policies[1], nil).Times(1)
-		mockClient.EXPECT().PostPolicy(gomock.Any(), &newPolicy).Return(mockPolicyToReturn, nil).Times(1)
+		mockClient.EXPECT().PostPolicy(gomock.Any(), newPolicy).Return(mockPolicyToReturn, nil).Times(1)
 		mockClient.EXPECT().ListNotifiers(gomock.Any()).Return(listNotifiers(), nil).Times(1)
 		mockClient.EXPECT().ListClusters(gomock.Any()).Return(listClusters(), nil).Times(1)
 		mockClient.EXPECT().TokenExchange(gomock.Any()).Return(nil).Times(1)
 	})
 	defer clientTest.controller.Finish()
 
-	createdPolicy, err := clientTest.client.CreatePolicy(clientTest.ctx, &newPolicy)
+	createdPolicy, err := clientTest.client.CreatePolicy(clientTest.ctx, newPolicy)
 
 	assert.NoError(t, err, "Unexpected error creating a policy")
 	assert.Equal(t, "abc123", createdPolicy.GetId())
@@ -276,8 +277,8 @@ func TestCachedClientUpdate(t *testing.T) {
 	defer clientTest.controller.Finish()
 
 	policyToUpdate := clientTest.policies[0]
-	policyToUpdate.Description = "Update this description"
-	policyToUpdate.Source = storage.PolicySource_DECLARATIVE
+	policyToUpdate.SetDescription("Update this description")
+	policyToUpdate.SetSource(storage.PolicySource_DECLARATIVE)
 	clientTest.mockClient.EXPECT().PutPolicy(gomock.Any(), policyToUpdate).Return(nil).Times(1)
 
 	err := clientTest.client.UpdatePolicy(clientTest.ctx, policyToUpdate)

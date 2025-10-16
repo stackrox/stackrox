@@ -78,7 +78,7 @@ func (d *datastoreImpl) AddSignatureIntegration(ctx context.Context, integration
 	if integration.GetId() != "" {
 		return nil, errox.InvalidArgs.Newf("id should be empty but %q provided", integration.GetId())
 	}
-	integration.Id = GenerateSignatureIntegrationID()
+	integration.SetId(GenerateSignatureIntegrationID())
 	applyDefaultValues(integration)
 	if err := ValidateSignatureIntegration(integration); err != nil {
 		return nil, errox.InvalidArgs.CausedBy(err)

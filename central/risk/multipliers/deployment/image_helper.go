@@ -31,9 +31,9 @@ func (i *imageMultiplier) Score(_ context.Context, _ *storage.Deployment, imageR
 		maxScore = max(maxScore, r.GetScore())
 	}
 
-	return &storage.Risk_Result{
-		Name:    i.heading,
-		Factors: factors,
-		Score:   maxScore,
-	}
+	rr := &storage.Risk_Result{}
+	rr.SetName(i.heading)
+	rr.SetFactors(factors)
+	rr.SetScore(maxScore)
+	return rr
 }

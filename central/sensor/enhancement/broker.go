@@ -104,14 +104,12 @@ func (b *Broker) waitAndProcessResponse(s *enhancementSignal, timeout time.Durat
 }
 
 func sendDeployments(ctx context.Context, conn connection.SensorConnection, deployments []*storage.Deployment, id string) error {
-	return conn.InjectMessage(ctx, &central.MsgToSensor{
-		Msg: &central.MsgToSensor_DeploymentEnhancementRequest{
-			DeploymentEnhancementRequest: &central.DeploymentEnhancementRequest{
-				Msg: &central.DeploymentEnhancementMessage{
-					Id:          id,
-					Deployments: deployments,
-				},
-			},
-		},
-	})
+	return conn.InjectMessage(ctx, central.MsgToSensor_builder{
+		DeploymentEnhancementRequest: central.DeploymentEnhancementRequest_builder{
+			Msg: central.DeploymentEnhancementMessage_builder{
+				Id:          id,
+				Deployments: deployments,
+			}.Build(),
+		}.Build(),
+	}.Build())
 }

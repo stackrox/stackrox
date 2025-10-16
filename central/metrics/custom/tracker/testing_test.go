@@ -71,9 +71,13 @@ var testData = []map[Label]string{
 
 func makeTestMetricLabels(t *testing.T) map[string]*storage.PrometheusMetrics_Group_Labels {
 	pfx := strings.ReplaceAll(t.Name(), "/", "_")
+	pgl := &storage.PrometheusMetrics_Group_Labels{}
+	pgl.SetLabels([]string{"Cluster", "Severity"})
+	pgl2 := &storage.PrometheusMetrics_Group_Labels{}
+	pgl2.SetLabels([]string{"Namespace"})
 	return map[string]*storage.PrometheusMetrics_Group_Labels{
-		pfx + "_metric1": {Labels: []string{"Cluster", "Severity"}},
-		pfx + "_metric2": {Labels: []string{"Namespace"}},
+		pfx + "_metric1": pgl,
+		pfx + "_metric2": pgl2,
 	}
 }
 

@@ -57,21 +57,20 @@ func (s *imageScorerImpl) Score(ctx context.Context, image *storage.Image) *stor
 		return nil
 	}
 
-	risk := &storage.Risk{
-		Score:   overallScore,
-		Results: riskResults,
-		Subject: &storage.RiskSubject{
-			Id:   image.GetId(),
-			Type: storage.RiskSubjectType_IMAGE,
-		},
-	}
+	rs := &storage.RiskSubject{}
+	rs.SetId(image.GetId())
+	rs.SetType(storage.RiskSubjectType_IMAGE)
+	risk := &storage.Risk{}
+	risk.SetScore(overallScore)
+	risk.SetResults(riskResults)
+	risk.SetSubject(rs)
 
 	riskID, err := datastore.GetID(risk.GetSubject().GetId(), risk.GetSubject().GetType())
 	if err != nil {
 		log.Error(err)
 		return nil
 	}
-	risk.Id = riskID
+	risk.SetId(riskID)
 
 	return risk
 }
@@ -94,21 +93,20 @@ func (s *imageScorerImpl) ScoreV2(ctx context.Context, image *storage.ImageV2) *
 		return nil
 	}
 
-	risk := &storage.Risk{
-		Score:   overallScore,
-		Results: riskResults,
-		Subject: &storage.RiskSubject{
-			Id:   image.GetId(),
-			Type: storage.RiskSubjectType_IMAGE,
-		},
-	}
+	rs := &storage.RiskSubject{}
+	rs.SetId(image.GetId())
+	rs.SetType(storage.RiskSubjectType_IMAGE)
+	risk := &storage.Risk{}
+	risk.SetScore(overallScore)
+	risk.SetResults(riskResults)
+	risk.SetSubject(rs)
 
 	riskID, err := datastore.GetID(risk.GetSubject().GetId(), risk.GetSubject().GetType())
 	if err != nil {
 		log.Error(err)
 		return nil
 	}
-	risk.Id = riskID
+	risk.SetId(riskID)
 
 	return risk
 }

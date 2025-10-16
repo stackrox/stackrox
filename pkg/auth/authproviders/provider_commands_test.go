@@ -18,10 +18,10 @@ func TestValidateName(t *testing.T) {
 		assert.ErrorIs(it, err, errNoProviderName)
 	})
 	t.Run("provider with valid name, store error", func(it *testing.T) {
+		ap := &storage.AuthProvider{}
+		ap.SetName("Test AuthProvider")
 		provider := &providerImpl{
-			storedInfo: &storage.AuthProvider{
-				Name: "Test AuthProvider",
-			},
+			storedInfo: ap,
 		}
 		store := &mockStore{
 			expectedFound: false,
@@ -31,10 +31,10 @@ func TestValidateName(t *testing.T) {
 		assert.ErrorIs(it, err, errox.NotAuthorized)
 	})
 	t.Run("provider with name already in use", func(it *testing.T) {
+		ap := &storage.AuthProvider{}
+		ap.SetName("Test AuthProvider")
 		provider := &providerImpl{
-			storedInfo: &storage.AuthProvider{
-				Name: "Test AuthProvider",
-			},
+			storedInfo: ap,
 		}
 		store := &mockStore{
 			expectedFound: true,
@@ -44,10 +44,10 @@ func TestValidateName(t *testing.T) {
 		assert.ErrorIs(it, err, errDuplicateProviderName)
 	})
 	t.Run("provider with name not in use", func(it *testing.T) {
+		ap := &storage.AuthProvider{}
+		ap.SetName("Test AuthProvider")
 		provider := &providerImpl{
-			storedInfo: &storage.AuthProvider{
-				Name: "Test AuthProvider",
-			},
+			storedInfo: ap,
 		}
 		store := &mockStore{
 			expectedFound: false,

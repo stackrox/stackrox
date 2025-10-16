@@ -43,7 +43,9 @@ func (i *fakeImageServiceClient) EnrichLocalImageInternal(_ context.Context,
 	if i.fail {
 		return nil, errors.New("failed enrichment")
 	}
-	return &v1.ScanImageInternalResponse{Image: i.img}, nil
+	siir := &v1.ScanImageInternalResponse{}
+	siir.SetImage(i.img)
+	return siir, nil
 }
 
 type echoImageServiceClient struct {
@@ -51,14 +53,15 @@ type echoImageServiceClient struct {
 
 // EnrichLocalImageInternal returns an image with values taken from the request (echoes them back).
 func (i *echoImageServiceClient) EnrichLocalImageInternal(_ context.Context, req *v1.EnrichLocalImageInternalRequest, _ ...grpc.CallOption) (*v1.ScanImageInternalResponse, error) {
-	img := &storage.Image{
-		Id:        req.GetImageId(),
-		Name:      req.GetImageName(),
-		Metadata:  req.GetMetadata(),
-		Notes:     req.GetImageNotes(),
-		Signature: req.GetImageSignature(),
-	}
-	return &v1.ScanImageInternalResponse{Image: img}, nil
+	img := &storage.Image{}
+	img.SetId(req.GetImageId())
+	img.SetName(req.GetImageName())
+	img.SetMetadata(req.GetMetadata())
+	img.SetNotes(req.GetImageNotes())
+	img.SetSignature(req.GetImageSignature())
+	siir := &v1.ScanImageInternalResponse{}
+	siir.SetImage(img)
+	return siir, nil
 }
 
 type scanTestSuite struct {
@@ -282,7 +285,10 @@ func (suite *scanTestSuite) TestEnrichErrorNoScanner() {
 		scannerClientSingleton: func() scannerclient.ScannerClient { return nil },
 	}
 
-	img := &storage.ContainerImage{Name: &storage.ImageName{Registry: "fake"}}
+	imageName := &storage.ImageName{}
+	imageName.SetRegistry("fake")
+	img := &storage.ContainerImage{}
+	img.SetName(imageName)
 	_, err := scan.EnrichLocalImageInNamespace(context.Background(), nil, genScanReq(img, "", "", false))
 	suite.Require().ErrorIs(err, ErrNoLocalScanner)
 	suite.Require().ErrorIs(err, ErrEnrichNotStarted)
@@ -326,9 +332,8 @@ func (suite *scanTestSuite) TestEnrichErrorBadImage() {
 	})
 
 	suite.Run("enrich error missing image registry", func() {
-		containerImg := &storage.ContainerImage{
-			Name: &storage.ImageName{},
-		}
+		containerImg := &storage.ContainerImage{}
+		containerImg.SetName(&storage.ImageName{})
 		resultImg, err := scan.EnrichLocalImageInNamespace(context.Background(), imageServiceClient, genScanReq(containerImg, "", "", false))
 		suite.Require().ErrorContains(err, "missing image registry")
 		suite.Require().ErrorIs(err, ErrEnrichNotStarted)
@@ -337,12 +342,11 @@ func (suite *scanTestSuite) TestEnrichErrorBadImage() {
 	})
 
 	suite.Run("enrich error on bad full image name", func() {
-		containerImg := &storage.ContainerImage{
-			Name: &storage.ImageName{
-				Registry: "fake",
-				FullName: imgNameStr,
-			},
-		}
+		imageName := &storage.ImageName{}
+		imageName.SetRegistry("fake")
+		imageName.SetFullName(imgNameStr)
+		containerImg := &storage.ContainerImage{}
+		containerImg.SetName(imageName)
 		mirrorStore.EXPECT().PullSources(gomock.Any()).Return([]string{imgNameStr}, nil)
 		resultImg, err := scan.EnrichLocalImageInNamespace(context.Background(), imageServiceClient, genScanReq(containerImg, "", "", false))
 		suite.Require().ErrorContains(err, "zero valid pull sources")
@@ -358,7 +362,10 @@ func (suite *scanTestSuite) TestEnrichThrottle() {
 		maxSemaphoreWaitTime:   1 * time.Millisecond,
 	}
 
-	img := &storage.ContainerImage{Name: &storage.ImageName{Registry: "fake"}}
+	imageName := &storage.ImageName{}
+	imageName.SetRegistry("fake")
+	img := &storage.ContainerImage{}
+	img.SetName(imageName)
 	_, err := scan.EnrichLocalImageInNamespace(context.Background(), nil, genScanReq(img, "", "", false))
 	suite.Require().ErrorIs(err, ErrTooManyParallelScans)
 	suite.Require().ErrorIs(err, ErrEnrichNotStarted)
@@ -372,7 +379,10 @@ func (suite *scanTestSuite) TestAdHocScanThrottle() {
 		maxSemaphoreWaitTime:   1 * time.Millisecond,
 	}
 
-	img := &storage.ContainerImage{Name: &storage.ImageName{Registry: "fake"}}
+	imageName := &storage.ImageName{}
+	imageName.SetRegistry("fake")
+	img := &storage.ContainerImage{}
+	img.SetName(imageName)
 	req := genScanReq(img, "", "some-id", false) // "setting up request ID to make it an ad-hoc delegated request
 
 	_, err := ls.EnrichLocalImageInNamespace(context.Background(), nil, req)
@@ -572,7 +582,7 @@ func (suite *scanTestSuite) TestGetPullSourceIDKeep() {
 
 	srcImg, err := utils.GenerateImageFromString(imgStr)
 	suite.Require().NoError(err)
-	srcImg.Id = imgID // Simulate an image ID being set on an image after it has been observed running.
+	srcImg.SetId(imgID) // Simulate an image ID being set on an image after it has been observed running.
 
 	suite.Run("Ensure image ID is not lost when pull sources not found", func() {
 		mirrorStore := mirrorStoreMocks.NewMockStore(gomock.NewController(suite.T()))
@@ -591,7 +601,7 @@ func (suite *scanTestSuite) TestGetPullSourceIDKeep() {
 
 		srcImg, err := utils.GenerateImageFromString(imgStr)
 		suite.Require().NoError(err)
-		srcImg.Id = imgID
+		srcImg.SetId(imgID)
 
 		fakeDigest := "sha256:0000000000000000000000000000000000000000000000000000000000000000"
 		mirrorStore.EXPECT().PullSources(gomock.Any()).Return([]string{
@@ -690,12 +700,12 @@ func successfulScan(_ context.Context, _ *storage.Image,
 
 func successfulFetchSignatures(_ context.Context, _ signatures.SignatureFetcher, _ *storage.Image, _ string,
 	_ registryTypes.Registry) ([]*storage.Signature, error) {
-	return []*storage.Signature{{
-		Signature: &storage.Signature_Cosign{Cosign: &storage.CosignSignature{
+	return []*storage.Signature{storage.Signature_builder{
+		Cosign: storage.CosignSignature_builder{
 			RawSignature:     []byte("some-signature"),
 			SignaturePayload: []byte("some-payload"),
-		}},
-	}}, nil
+		}.Build(),
+	}.Build()}, nil
 }
 
 func failingScan(_ context.Context, _ *storage.Image,
@@ -756,7 +766,11 @@ func (f *fakeRegistry) Metadata(_ *storage.Image) (*storage.ImageMetadata, error
 	if f.fail {
 		return nil, errors.New("failed fetching metadata")
 	}
-	return &storage.ImageMetadata{V2: &storage.V2Metadata{Digest: "sha256:XYZ"}}, nil
+	v2m := &storage.V2Metadata{}
+	v2m.SetDigest("sha256:XYZ")
+	im := &storage.ImageMetadata{}
+	im.SetV2(v2m)
+	return im, nil
 }
 
 func (f *fakeRegistry) Config(_ context.Context) *registryTypes.Config {

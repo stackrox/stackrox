@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
+	"google.golang.org/protobuf/proto"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -31,13 +32,12 @@ func newNamespaceDispatcher(nsStore *namespaceStore, deletionListeners ...Namesp
 func (h *namespaceDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
 	ns := obj.(*v1.Namespace)
 
-	roxNamespace := &storage.NamespaceMetadata{
-		Id:           string(ns.GetUID()),
-		Name:         ns.GetName(),
-		Labels:       ns.GetLabels(),
-		Annotations:  ns.GetAnnotations(),
-		CreationTime: protoconv.ConvertTimeToTimestamp(ns.GetCreationTimestamp().Time),
-	}
+	roxNamespace := &storage.NamespaceMetadata{}
+	roxNamespace.SetId(string(ns.GetUID()))
+	roxNamespace.SetName(ns.GetName())
+	roxNamespace.SetLabels(ns.GetLabels())
+	roxNamespace.SetAnnotations(ns.GetAnnotations())
+	roxNamespace.SetCreationTime(protoconv.ConvertTimeToTimestamp(ns.GetCreationTimestamp().Time))
 
 	if action == central.ResourceAction_REMOVE_RESOURCE {
 		for _, listener := range h.deletionListeners {
@@ -48,11 +48,9 @@ func (h *namespaceDispatcher) ProcessEvent(obj, _ interface{}, action central.Re
 		h.nsStore.addNamespace(roxNamespace)
 	}
 
-	return component.NewEvent(&central.SensorEvent{
-		Id:     string(ns.GetUID()),
-		Action: action,
-		Resource: &central.SensorEvent_Namespace{
-			Namespace: roxNamespace,
-		},
-	})
+	se := &central.SensorEvent{}
+	se.SetId(string(ns.GetUID()))
+	se.SetAction(action)
+	se.SetNamespace(proto.ValueOrDefault(roxNamespace))
+	return component.NewEvent(se)
 }

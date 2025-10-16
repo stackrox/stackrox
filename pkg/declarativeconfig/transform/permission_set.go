@@ -27,13 +27,14 @@ func (p *permissionSetTransform) Transform(configuration declarativeconfig.Confi
 		return nil, errox.InvalidArgs.Newf("invalid configuration type received for permission set: %T", configuration)
 	}
 
-	permissionSetProto := &storage.PermissionSet{
-		Id:               declarativeconfig.NewDeclarativePermissionSetUUID(permissionSetConfig.Name).String(),
-		Name:             permissionSetConfig.Name,
-		Description:      permissionSetConfig.Description,
-		ResourceToAccess: getResources(permissionSetConfig),
-		Traits:           &storage.Traits{Origin: storage.Traits_DECLARATIVE},
-	}
+	traits := &storage.Traits{}
+	traits.SetOrigin(storage.Traits_DECLARATIVE)
+	permissionSetProto := &storage.PermissionSet{}
+	permissionSetProto.SetId(declarativeconfig.NewDeclarativePermissionSetUUID(permissionSetConfig.Name).String())
+	permissionSetProto.SetName(permissionSetConfig.Name)
+	permissionSetProto.SetDescription(permissionSetConfig.Description)
+	permissionSetProto.SetResourceToAccess(getResources(permissionSetConfig))
+	permissionSetProto.SetTraits(traits)
 
 	return map[reflect.Type][]protocompat.Message{
 		permissionSetType: {permissionSetProto},

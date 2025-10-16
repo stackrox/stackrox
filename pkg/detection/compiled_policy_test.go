@@ -13,34 +13,40 @@ import (
 )
 
 func constructPolicy(scopes []*storage.Scope, exclusions []*storage.Exclusion) *storage.Policy {
-	return &storage.Policy{
+	return storage.Policy_builder{
 		PolicyVersion:   policyversion.CurrentVersion().String(),
 		Name:            "testname",
 		Scope:           scopes,
 		Exclusions:      exclusions,
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
-		PolicySections:  []*storage.PolicySection{{PolicyGroups: []*storage.PolicyGroup{{FieldName: fieldnames.VolumeName, Values: []*storage.PolicyValue{{Value: "something"}}}}}},
-	}
+		PolicySections:  []*storage.PolicySection{storage.PolicySection_builder{PolicyGroups: []*storage.PolicyGroup{storage.PolicyGroup_builder{FieldName: fieldnames.VolumeName, Values: []*storage.PolicyValue{storage.PolicyValue_builder{Value: "something"}.Build()}}.Build()}}.Build()},
+	}.Build()
 }
 
 func newDeployment(id string) *storage.Deployment {
 	dep := fixtures.GetDeployment()
-	dep.Id = id
+	dep.SetId(id)
 	return dep
 }
 
 func TestCompiledPolicyScopesAndExclusions(t *testing.T) {
-	stackRoxNSScope := &storage.Scope{Namespace: "stackr.*"}
-	defaultNSScope := &storage.Scope{Namespace: "default"}
-	appStackRoxScope := &storage.Scope{Label: &storage.Scope_Label{Key: "app", Value: "stackrox"}}
+	stackRoxNSScope := &storage.Scope{}
+	stackRoxNSScope.SetNamespace("stackr.*")
+	defaultNSScope := &storage.Scope{}
+	defaultNSScope.SetNamespace("default")
+	sl := &storage.Scope_Label{}
+	sl.SetKey("app")
+	sl.SetValue("stackrox")
+	appStackRoxScope := &storage.Scope{}
+	appStackRoxScope.SetLabel(sl)
 
 	stackRoxNSDep := newDeployment("STACKROXDEP")
 
 	defaultNSDep := newDeployment("DEFAULTDEP")
-	defaultNSDep.Namespace = "default"
+	defaultNSDep.SetNamespace("default")
 
 	appStackRoxDep := newDeployment("APPSTACKROXDEP")
-	appStackRoxDep.Labels["app"] = "stackrox"
+	appStackRoxDep.GetLabels()["app"] = "stackrox"
 
 	allDeps := []*storage.Deployment{appStackRoxDep, defaultNSDep, stackRoxNSDep}
 
@@ -62,7 +68,7 @@ func TestCompiledPolicyScopesAndExclusions(t *testing.T) {
 		{
 			desc:          "only stackrox ns, but app=stackrox excluded",
 			scopes:        []*storage.Scope{stackRoxNSScope},
-			exclusions:    []*storage.Exclusion{{Deployment: &storage.Exclusion_Deployment{Scope: appStackRoxScope}}},
+			exclusions:    []*storage.Exclusion{storage.Exclusion_builder{Deployment: storage.Exclusion_Deployment_builder{Scope: appStackRoxScope}.Build()}.Build()},
 			shouldApplyTo: []*storage.Deployment{stackRoxNSDep},
 		},
 		{

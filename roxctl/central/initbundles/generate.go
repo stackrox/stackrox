@@ -58,7 +58,8 @@ func generateInitBundle(cliEnvironment environment.Environment, name string,
 		files = append(files, outFile)
 	}
 
-	req := v1.InitBundleGenRequest{Name: name}
+	req := &v1.InitBundleGenRequest{}
+	req.SetName(name)
 	resp, err := svc.GenerateInitBundle(ctx, &req)
 	if err != nil {
 		return errors.Wrap(err, "generating new init bundle")

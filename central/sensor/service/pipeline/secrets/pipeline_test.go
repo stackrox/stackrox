@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestPipeline(t *testing.T) {
@@ -42,17 +43,13 @@ func (suite *PipelineTestSuite) TestRun() {
 	suite.secrets.EXPECT().UpsertSecret(ctx, secret).Return(nil)
 
 	pipeline := NewPipeline(suite.clusters, suite.secrets)
-	msg := &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id:     "secretid",
-				Action: central.ResourceAction_CREATE_RESOURCE,
-				Resource: &central.SensorEvent_Secret{
-					Secret: secret,
-				},
-			},
-		},
-	}
+	se := &central.SensorEvent{}
+	se.SetId("secretid")
+	se.SetAction(central.ResourceAction_CREATE_RESOURCE)
+	se.SetSecret(proto.ValueOrDefault(secret))
+	msg := central.MsgFromSensor_builder{
+		Event: se,
+	}.Build()
 	err := pipeline.Run(ctx, "clusterid", msg, nil)
 	suite.NoError(err)
 }

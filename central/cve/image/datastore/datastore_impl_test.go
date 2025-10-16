@@ -55,19 +55,19 @@ func (suite *ImageCVEDataStoreSuite) TearDownSuite() {
 func getImageWithCVEs(cves ...string) *storage.Image {
 	vulns := make([]*storage.EmbeddedVulnerability, 0, len(cves))
 	for _, cve := range cves {
-		vulns = append(vulns, &storage.EmbeddedVulnerability{
-			Cve: cve,
-		})
+		ev := &storage.EmbeddedVulnerability{}
+		ev.SetCve(cve)
+		vulns = append(vulns, ev)
 	}
-	return &storage.Image{
-		Scan: &storage.ImageScan{
+	return storage.Image_builder{
+		Scan: storage.ImageScan_builder{
 			Components: []*storage.EmbeddedImageScanComponent{
-				{
+				storage.EmbeddedImageScanComponent_builder{
 					Vulns: vulns,
-				},
+				}.Build(),
 			},
-		},
-	}
+		}.Build(),
+	}.Build()
 }
 
 func (suite *ImageCVEDataStoreSuite) verifySuppressionStateImage(image *storage.Image, suppressedCVEs, unsuppressedCVEs []string) {
@@ -113,14 +113,13 @@ func (suite *ImageCVEDataStoreSuite) TestSuppressionCacheImages() {
 	expiry, err := getSuppressExpiry(&start, &duration)
 	suite.NoError(err)
 
-	storedCVE := &storage.ImageCVE{
-		CveBaseInfo: &storage.CVEInfo{
-			Cve: "CVE-GHI",
-		},
-		Snoozed:      true,
-		SnoozeStart:  protocompat.ConvertTimeToTimestampOrNil(&start),
-		SnoozeExpiry: protocompat.ConvertTimeToTimestampOrNil(expiry),
-	}
+	cVEInfo := &storage.CVEInfo{}
+	cVEInfo.SetCve("CVE-GHI")
+	storedCVE := &storage.ImageCVE{}
+	storedCVE.SetCveBaseInfo(cVEInfo)
+	storedCVE.SetSnoozed(true)
+	storedCVE.SetSnoozeStart(protocompat.ConvertTimeToTimestampOrNil(&start))
+	storedCVE.SetSnoozeExpiry(protocompat.ConvertTimeToTimestampOrNil(expiry))
 	suite.storage.EXPECT().UpsertMany(testAllAccessContext, []*storage.ImageCVE{storedCVE}).Return(nil)
 
 	// Clear image before suppressing
@@ -132,7 +131,11 @@ func (suite *ImageCVEDataStoreSuite) TestSuppressionCacheImages() {
 
 	// Clear image before unsupressing
 	img = getImageWithCVEs("CVE-ABC", "CVE-DEF", "CVE-GHI")
-	suite.storage.EXPECT().UpsertMany(testAllAccessContext, []*storage.ImageCVE{{CveBaseInfo: &storage.CVEInfo{Cve: "CVE-GHI"}}}).Return(nil)
+	cVEInfo2 := &storage.CVEInfo{}
+	cVEInfo2.SetCve("CVE-GHI")
+	imageCVE := &storage.ImageCVE{}
+	imageCVE.SetCveBaseInfo(cVEInfo2)
+	suite.storage.EXPECT().UpsertMany(testAllAccessContext, []*storage.ImageCVE{imageCVE}).Return(nil)
 	err = suite.datastore.Unsuppress(testAllAccessContext, "CVE-GHI")
 	suite.NoError(err)
 	suite.datastore.EnrichImageWithSuppressedCVEs(img)
@@ -179,28 +182,25 @@ func TestGetSuppressionCacheEntry(t *testing.T) {
 	entry1 := getSuppressionCacheEntry(cve1)
 	assert.Equal(t, expectedEntry1, entry1)
 
-	cve2 := &storage.ImageCVE{
-		SnoozeStart: protoStart,
-	}
+	cve2 := &storage.ImageCVE{}
+	cve2.SetSnoozeStart(protoStart)
 	expectedEntry2 := common.SuppressionCacheEntry{
 		SuppressActivation: &activation,
 	}
 	entry2 := getSuppressionCacheEntry(cve2)
 	assert.Equal(t, expectedEntry2, entry2)
 
-	cve3 := &storage.ImageCVE{
-		SnoozeExpiry: protoExpiration,
-	}
+	cve3 := &storage.ImageCVE{}
+	cve3.SetSnoozeExpiry(protoExpiration)
 	expectedEntry3 := common.SuppressionCacheEntry{
 		SuppressExpiry: &expiration,
 	}
 	entry3 := getSuppressionCacheEntry(cve3)
 	assert.Equal(t, expectedEntry3, entry3)
 
-	cve4 := &storage.ImageCVE{
-		SnoozeStart:  protoStart,
-		SnoozeExpiry: protoExpiration,
-	}
+	cve4 := &storage.ImageCVE{}
+	cve4.SetSnoozeStart(protoStart)
+	cve4.SetSnoozeExpiry(protoExpiration)
 	expectedEntry4 := common.SuppressionCacheEntry{
 		SuppressActivation: &activation,
 		SuppressExpiry:     &expiration,

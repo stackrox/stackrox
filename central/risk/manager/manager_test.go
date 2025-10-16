@@ -30,7 +30,9 @@ func TestSkipImageUpsert(t *testing.T) {
 
 		imageScannerWithDatasource := scannerTypesMocks.NewMockImageScannerWithDataSource(ctrl)
 		imageScannerWithDatasource.EXPECT().GetScanner().Return(scanner).AnyTimes()
-		imageScannerWithDatasource.EXPECT().DataSource().Return(&storage.DataSource{Id: id}).AnyTimes()
+		ds := &storage.DataSource{}
+		ds.SetId(id)
+		imageScannerWithDatasource.EXPECT().DataSource().Return(ds).AnyTimes()
 		return imageScannerWithDatasource
 	}
 
@@ -49,11 +51,17 @@ func TestSkipImageUpsert(t *testing.T) {
 	}
 
 	createImage := func(imgId, dsId string) *storage.Image {
-		return &storage.Image{
-			Id:   imgId,
-			Name: &storage.ImageName{FullName: fmt.Sprintf("FullName-%v", imgId)},
-			Scan: &storage.ImageScan{DataSource: &storage.DataSource{Id: dsId}},
-		}
+		imageName := &storage.ImageName{}
+		imageName.SetFullName(fmt.Sprintf("FullName-%v", imgId))
+		ds := &storage.DataSource{}
+		ds.SetId(dsId)
+		imageScan := &storage.ImageScan{}
+		imageScan.SetDataSource(ds)
+		image := &storage.Image{}
+		image.SetId(imgId)
+		image.SetName(imageName)
+		image.SetScan(imageScan)
+		return image
 	}
 
 	noDataSourceImage := &storage.Image{}
@@ -164,7 +172,9 @@ func TestSkipImageV2Upsert(t *testing.T) {
 
 		imageScannerWithDatasource := scannerTypesMocks.NewMockImageScannerWithDataSource(ctrl)
 		imageScannerWithDatasource.EXPECT().GetScanner().Return(scanner).AnyTimes()
-		imageScannerWithDatasource.EXPECT().DataSource().Return(&storage.DataSource{Id: id}).AnyTimes()
+		ds := &storage.DataSource{}
+		ds.SetId(id)
+		imageScannerWithDatasource.EXPECT().DataSource().Return(ds).AnyTimes()
 		return imageScannerWithDatasource
 	}
 
@@ -183,11 +193,17 @@ func TestSkipImageV2Upsert(t *testing.T) {
 	}
 
 	createImage := func(imgId, dsId string) *storage.ImageV2 {
-		return &storage.ImageV2{
-			Id:   imgId,
-			Name: &storage.ImageName{FullName: fmt.Sprintf("FullName-%v", imgId)},
-			Scan: &storage.ImageScan{DataSource: &storage.DataSource{Id: dsId}},
-		}
+		imageName := &storage.ImageName{}
+		imageName.SetFullName(fmt.Sprintf("FullName-%v", imgId))
+		ds := &storage.DataSource{}
+		ds.SetId(dsId)
+		imageScan := &storage.ImageScan{}
+		imageScan.SetDataSource(ds)
+		imageV2 := &storage.ImageV2{}
+		imageV2.SetId(imgId)
+		imageV2.SetName(imageName)
+		imageV2.SetScan(imageScan)
+		return imageV2
 	}
 
 	noDataSourceImage := &storage.ImageV2{}

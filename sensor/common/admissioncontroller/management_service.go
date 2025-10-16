@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -84,12 +85,10 @@ func (s *managementService) sendCurrentSettings(stream sensor.AdmissionControlMa
 	if settings == nil {
 		return nil
 	}
+	mtac := &sensor.MsgToAdmissionControl{}
+	mtac.SetSettingsPush(proto.ValueOrDefault(settings))
 	return errors.Wrap(
-		stream.Send(&sensor.MsgToAdmissionControl{
-			Msg: &sensor.MsgToAdmissionControl_SettingsPush{
-				SettingsPush: settings,
-			},
-		}),
+		stream.Send(mtac),
 		"sending settings",
 	)
 }
@@ -157,38 +156,30 @@ func (s *managementService) sendSensorEvent(stream sensor.AdmissionControlManage
 	}
 
 	// Wrap errors when sending update resource request
+	mtac := &sensor.MsgToAdmissionControl{}
+	mtac.SetUpdateResourceRequest(proto.ValueOrDefault(obj))
 	return errors.Wrap(
-		stream.Send(&sensor.MsgToAdmissionControl{
-			Msg: &sensor.MsgToAdmissionControl_UpdateResourceRequest{
-				UpdateResourceRequest: obj,
-			},
-		}),
+		stream.Send(mtac),
 		"sending update resource request",
 	)
 }
 
 func (s *managementService) sync(stream sensor.AdmissionControlManagementService_CommunicateServer) error {
 	for _, msg := range s.admCtrlMgr.GetResourcesForSync() {
-		err := stream.Send(&sensor.MsgToAdmissionControl{
-			Msg: &sensor.MsgToAdmissionControl_UpdateResourceRequest{
-				UpdateResourceRequest: msg,
-			},
-		})
+		mtac := &sensor.MsgToAdmissionControl{}
+		mtac.SetUpdateResourceRequest(proto.ValueOrDefault(msg))
+		err := stream.Send(mtac)
 		if err != nil {
 			return errors.Wrapf(err, "sending admission control resource %v in sync", msg)
 		}
 	}
 
 	return errors.Wrap(
-		stream.Send(&sensor.MsgToAdmissionControl{
-			Msg: &sensor.MsgToAdmissionControl_UpdateResourceRequest{
-				UpdateResourceRequest: &sensor.AdmCtrlUpdateResourceRequest{
-					Resource: &sensor.AdmCtrlUpdateResourceRequest_Synced{
-						Synced: &sensor.AdmCtrlUpdateResourceRequest_ResourcesSynced{},
-					},
-				},
-			},
-		}),
+		stream.Send(sensor.MsgToAdmissionControl_builder{
+			UpdateResourceRequest: sensor.AdmCtrlUpdateResourceRequest_builder{
+				Synced: &sensor.AdmCtrlUpdateResourceRequest_ResourcesSynced{},
+			}.Build(),
+		}.Build()),
 		"sending resources synced signal",
 	)
 }

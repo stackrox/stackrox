@@ -37,34 +37,34 @@ func (s *suiteImpl) TestPass() {
 
 	testNodes := s.nodes()
 
+	policy := &storage.Policy{}
+	policy.SetId(uuid.NewV4().String())
+	policy.SetLifecycleStages([]storage.LifecycleStage{
+		storage.LifecycleStage_RUNTIME,
+	})
+	policy2 := &storage.Policy{}
+	policy2.SetId(uuid.NewV4().String())
+	policy2.SetLifecycleStages([]storage.LifecycleStage{
+		storage.LifecycleStage_DEPLOY,
+	})
 	testPolicies := []*storage.Policy{
-		{
-			Id: uuid.NewV4().String(),
-			LifecycleStages: []storage.LifecycleStage{
-				storage.LifecycleStage_RUNTIME,
-			},
-		},
-		{
-			Id: uuid.NewV4().String(),
-			LifecycleStages: []storage.LifecycleStage{
-				storage.LifecycleStage_DEPLOY,
-			},
-		},
+		policy,
+		policy2,
 	}
 
 	testDeployments := []*storage.Deployment{
-		{
+		storage.Deployment_builder{
 			Id:   uuid.NewV4().String(),
 			Name: "Foo",
 			Containers: []*storage.Container{
-				{
+				storage.Container_builder{
 					Name: "container-foo",
-					SecurityContext: &storage.SecurityContext{
+					SecurityContext: storage.SecurityContext_builder{
 						ReadOnlyRootFilesystem: true,
-					},
-				},
+					}.Build(),
+				}.Build(),
 			},
-		},
+		}.Build(),
 	}
 
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
@@ -100,34 +100,34 @@ func (s *suiteImpl) TestFail() {
 
 	testNodes := s.nodes()
 
+	policy := &storage.Policy{}
+	policy.SetId(uuid.NewV4().String())
+	policy.SetLifecycleStages([]storage.LifecycleStage{
+		storage.LifecycleStage_DEPLOY,
+	})
+	policy2 := &storage.Policy{}
+	policy2.SetId(uuid.NewV4().String())
+	policy2.SetLifecycleStages([]storage.LifecycleStage{
+		storage.LifecycleStage_DEPLOY,
+	})
 	testPolicies := []*storage.Policy{
-		{
-			Id: uuid.NewV4().String(),
-			LifecycleStages: []storage.LifecycleStage{
-				storage.LifecycleStage_DEPLOY,
-			},
-		},
-		{
-			Id: uuid.NewV4().String(),
-			LifecycleStages: []storage.LifecycleStage{
-				storage.LifecycleStage_DEPLOY,
-			},
-		},
+		policy,
+		policy2,
 	}
 
 	testDeployments := []*storage.Deployment{
-		{
+		storage.Deployment_builder{
 			Id:   uuid.NewV4().String(),
 			Name: "Foo",
 			Containers: []*storage.Container{
-				{
+				storage.Container_builder{
 					Name: "container-foo",
-					SecurityContext: &storage.SecurityContext{
+					SecurityContext: storage.SecurityContext_builder{
 						ReadOnlyRootFilesystem: false,
-					},
-				},
+					}.Build(),
+				}.Build(),
 			},
-		},
+		}.Build(),
 	}
 
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
@@ -167,19 +167,19 @@ func (s *suiteImpl) verifyCheckRegistered() framework.Check {
 }
 
 func (s *suiteImpl) cluster() *storage.Cluster {
-	return &storage.Cluster{
-		Id: uuid.NewV4().String(),
-	}
+	cluster := &storage.Cluster{}
+	cluster.SetId(uuid.NewV4().String())
+	return cluster
 }
 
 func (s *suiteImpl) nodes() []*storage.Node {
+	node := &storage.Node{}
+	node.SetId(uuid.NewV4().String())
+	node2 := &storage.Node{}
+	node2.SetId(uuid.NewV4().String())
 	return []*storage.Node{
-		{
-			Id: uuid.NewV4().String(),
-		},
-		{
-			Id: uuid.NewV4().String(),
-		},
+		node,
+		node2,
 	}
 }
 

@@ -167,14 +167,13 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetMetadata returns the metadata for Rox.
 func (s *serviceImpl) GetMetadata(ctx context.Context, _ *v1.Empty) (*v1.Metadata, error) {
-	metadata := &v1.Metadata{
-		BuildFlavor:   buildinfo.BuildFlavor,
-		ReleaseBuild:  buildinfo.ReleaseBuild,
-		LicenseStatus: v1.Metadata_VALID,
-	}
+	metadata := &v1.Metadata{}
+	metadata.SetBuildFlavor(buildinfo.BuildFlavor)
+	metadata.SetReleaseBuild(buildinfo.ReleaseBuild)
+	metadata.SetLicenseStatus(v1.Metadata_VALID)
 	// Only return the version to logged in users, not anonymous users.
 	if authn.IdentityFromContextOrNil(ctx) != nil {
-		metadata.Version = version.GetMainVersion()
+		metadata.SetVersion(version.GetMainVersion())
 	}
 	return metadata, nil
 }
@@ -230,15 +229,14 @@ func (s *serviceImpl) TLSChallenge(_ context.Context, req *v1.TLSChallengeReques
 	}
 
 	// Write trust info to proto struct
-	trustInfo := &v1.TrustInfo{
-		CentralChallenge: centralChallenge,
-		SensorChallenge:  sensorChallenge,
-		CertChain: [][]byte{
-			leafCert.Certificate[0],
-			caCertDERBytes,
-		},
-		AdditionalCas: additionalCAs,
-	}
+	trustInfo := &v1.TrustInfo{}
+	trustInfo.SetCentralChallenge(centralChallenge)
+	trustInfo.SetSensorChallenge(sensorChallenge)
+	trustInfo.SetCertChain([][]byte{
+		leafCert.Certificate[0],
+		caCertDERBytes,
+	})
+	trustInfo.SetAdditionalCas(additionalCAs)
 
 	// if a secondary CA exists, add its chain to TrustInfo
 	secondaryLeafCert, secondaryLeafCertErr := s.certProvider.GetSecondaryLeafCert()
@@ -246,10 +244,10 @@ func (s *serviceImpl) TLSChallenge(_ context.Context, req *v1.TLSChallengeReques
 		_, secondaryCACertDERBytes, secondaryCACertErr := s.certProvider.GetSecondaryCACert()
 
 		if secondaryCACertErr == nil {
-			trustInfo.SecondaryCertChain = [][]byte{
+			trustInfo.SetSecondaryCertChain([][]byte{
 				secondaryLeafCert.Certificate[0],
 				secondaryCACertDERBytes,
-			}
+			})
 		}
 	}
 
@@ -264,9 +262,12 @@ func (s *serviceImpl) TLSChallenge(_ context.Context, req *v1.TLSChallengeReques
 		return nil, errors.Errorf("Could not sign trust info: %s", err)
 	}
 
-	resp := &v1.TLSChallengeResponse{
-		Signature:           sign.Signature,
-		TrustInfoSerialized: trustInfoBytes,
+	resp := &v1.TLSChallengeResponse{}
+	if sign.Signature != nil {
+		resp.SetSignature(sign.Signature)
+	}
+	if trustInfoBytes != nil {
+		resp.SetTrustInfoSerialized(trustInfoBytes)
 	}
 
 	// Optionally also sign with the secondary CA
@@ -275,7 +276,11 @@ func (s *serviceImpl) TLSChallenge(_ context.Context, req *v1.TLSChallengeReques
 		if err != nil {
 			log.Warnf("Failed to create secondary signature (primary signature will still be used): %v", err)
 		} else {
-			resp.SignatureSecondaryCa = secondarySign.Signature
+			if secondarySign.Signature != nil {
+				resp.SetSignatureSecondaryCa(secondarySign.Signature)
+			} else {
+				resp.ClearSignatureSecondaryCa()
+			}
 		}
 	}
 
@@ -284,13 +289,12 @@ func (s *serviceImpl) TLSChallenge(_ context.Context, req *v1.TLSChallengeReques
 
 // GetDatabaseStatus returns the database status for Rox.
 func (s *serviceImpl) GetDatabaseStatus(ctx context.Context, _ *v1.Empty) (*v1.DatabaseStatus, error) {
-	dbStatus := &v1.DatabaseStatus{
-		DatabaseAvailable: true,
-	}
+	dbStatus := &v1.DatabaseStatus{}
+	dbStatus.SetDatabaseAvailable(true)
 
 	dbType := v1.DatabaseStatus_PostgresDB
 	if err := s.db.Ping(ctx); err != nil {
-		dbStatus.DatabaseAvailable = false
+		dbStatus.SetDatabaseAvailable(false)
 		log.Warn("central is unable to communicate with the database.")
 		return dbStatus, nil
 	}
@@ -299,9 +303,9 @@ func (s *serviceImpl) GetDatabaseStatus(ctx context.Context, _ *v1.Empty) (*v1.D
 
 	// Only return the database type and version to logged in users, not anonymous users.
 	if authn.IdentityFromContextOrNil(ctx) != nil {
-		dbStatus.DatabaseVersion = dbVersion
-		dbStatus.DatabaseType = dbType
-		dbStatus.DatabaseIsExternal = pgconfig.IsExternalDatabase()
+		dbStatus.SetDatabaseVersion(dbVersion)
+		dbStatus.SetDatabaseType(dbType)
+		dbStatus.SetDatabaseIsExternal(pgconfig.IsExternalDatabase())
 	}
 
 	return dbStatus, nil
@@ -316,9 +320,9 @@ func (s *serviceImpl) GetDatabaseBackupStatus(ctx context.Context, _ *v1.Empty) 
 	if !found {
 		return nil, errox.NotFound
 	}
-	return &v1.DatabaseBackupStatus{
-		BackupInfo: sysInfo.GetBackupInfo(),
-	}, nil
+	dbs := &v1.DatabaseBackupStatus{}
+	dbs.SetBackupInfo(sysInfo.GetBackupInfo())
+	return dbs, nil
 }
 
 // GetCentralCapabilities returns central services capabilities.

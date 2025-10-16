@@ -31,6 +31,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 const fakeClusterID = "FAKECLUSTERID"
@@ -174,10 +175,9 @@ func (suite *ServiceTestSuite) TestFailsIfClusterDoesNotExist() {
 		Return(false, nil)
 
 	// Make the request to the service and check that it did not err.
-	request := &v1.SimulateNetworkGraphRequest{
-		ClusterId:       fakeClusterID,
-		IncludeNodeDiff: true,
-	}
+	request := &v1.SimulateNetworkGraphRequest{}
+	request.SetClusterId(fakeClusterID)
+	request.SetIncludeNodeDiff(true)
 	_, err := suite.tested.SimulateNetworkGraph(testCtx, request)
 	suite.Error(err, "expected graph generation to fail since cluster does not exist")
 }
@@ -188,13 +188,12 @@ func (suite *ServiceTestSuite) TestRejectsYamlWithoutNamespace() {
 		Return(true, nil)
 
 	// Make the request to the service and check that it did not err.
-	request := &v1.SimulateNetworkGraphRequest{
-		ClusterId: fakeClusterID,
-		Modification: &storage.NetworkPolicyModification{
-			ApplyYaml: badYAML,
-		},
-		IncludeNodeDiff: true,
-	}
+	npm := &storage.NetworkPolicyModification{}
+	npm.SetApplyYaml(badYAML)
+	request := &v1.SimulateNetworkGraphRequest{}
+	request.SetClusterId(fakeClusterID)
+	request.SetModification(npm)
+	request.SetIncludeNodeDiff(true)
 	_, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.Error(err, "expected graph generation to fail since input yaml has no namespace")
 }
@@ -214,23 +213,23 @@ func (suite *ServiceTestSuite) TestGetNetworkGraph() {
 	pols := make([]*storage.NetworkPolicy, 0)
 	suite.networkPolicies.EXPECT().GetNetworkPolicies(suite.requestContext, networkPolicyGetIsForCluster(fakeClusterID), "").
 		Return(pols, nil)
-	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil)
+	ngc := &storage.NetworkGraphConfig{}
+	ngc.SetHideDefaultExternalSrcs(true)
+	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(ngc, nil)
 	suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), fakeClusterID).Return(nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedGraph := &v1.NetworkGraph{}
 	suite.evaluator.EXPECT().GetGraph(fakeClusterID, set.NewStringSet(), deps, networkTree, pols, false).
 		Return(expectedGraph)
-	expectedResp := &v1.SimulateNetworkGraphResponse{
-		SimulatedGraph: expectedGraph,
-		Policies:       []*v1.NetworkPolicyInSimulation{},
-	}
+	expectedResp := &v1.SimulateNetworkGraphResponse{}
+	expectedResp.SetSimulatedGraph(expectedGraph)
+	expectedResp.SetPolicies([]*v1.NetworkPolicyInSimulation{})
 
 	// Make the request to the service and check that it did not err.
-	request := &v1.SimulateNetworkGraphRequest{
-		ClusterId:       fakeClusterID,
-		IncludeNodeDiff: true,
-	}
+	request := &v1.SimulateNetworkGraphRequest{}
+	request.SetClusterId(fakeClusterID)
+	request.SetIncludeNodeDiff(true)
 	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
 	protoassert.Equal(suite.T(), expectedResp, actualResp, "response should be output from graph generation")
@@ -254,7 +253,9 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
 	}
 	suite.networkPolicies.EXPECT().GetNetworkPolicies(suite.requestContext, networkPolicyGetIsForCluster(fakeClusterID), "").
 		Return(pols, nil)
-	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil)
+	ngc := &storage.NetworkGraphConfig{}
+	ngc.SetHideDefaultExternalSrcs(true)
+	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(ngc, nil)
 	suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), fakeClusterID).Return(nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -265,13 +266,12 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
 		Return(expectedGraph)
 
 	// Make the request to the service and check that it did not err.
-	request := &v1.SimulateNetworkGraphRequest{
-		ClusterId: fakeClusterID,
-		Modification: &storage.NetworkPolicyModification{
-			ApplyYaml: fakeYAML1,
-		},
-		IncludeNodeDiff: true,
-	}
+	npm := &storage.NetworkPolicyModification{}
+	npm.SetApplyYaml(fakeYAML1)
+	request := &v1.SimulateNetworkGraphRequest{}
+	request.SetClusterId(fakeClusterID)
+	request.SetModification(npm)
+	request.SetIncludeNodeDiff(true)
 	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
 	protoassert.Equal(suite.T(), expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
@@ -295,7 +295,9 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithAddition() {
 	compiledPolicies, _ := networkpolicy.YamlWrap{Yaml: fakeYAML2}.ToRoxNetworkPolicies()
 	suite.networkPolicies.EXPECT().GetNetworkPolicies(suite.requestContext, networkPolicyGetIsForCluster(fakeClusterID), "").
 		Return(compiledPolicies, nil)
-	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil)
+	ngc := &storage.NetworkGraphConfig{}
+	ngc.SetHideDefaultExternalSrcs(true)
+	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(ngc, nil)
 	suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), fakeClusterID).Return(nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -305,13 +307,12 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithAddition() {
 	suite.evaluator.EXPECT().GetGraph(fakeClusterID, set.NewStringSet(), deps, networkTree, checkHasPolicies("second-policy"), false).
 		Return(expectedGraph)
 
-	request := &v1.SimulateNetworkGraphRequest{
-		ClusterId: fakeClusterID,
-		Modification: &storage.NetworkPolicyModification{
-			ApplyYaml: fakeYAML1,
-		},
-		IncludeNodeDiff: true,
-	}
+	npm := &storage.NetworkPolicyModification{}
+	npm.SetApplyYaml(fakeYAML1)
+	request := &v1.SimulateNetworkGraphRequest{}
+	request.SetClusterId(fakeClusterID)
+	request.SetModification(npm)
+	request.SetIncludeNodeDiff(true)
 	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
 	protoassert.Equal(suite.T(), expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
@@ -337,7 +338,9 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacementAndAddition() {
 	compiledPolicies, _ := networkpolicy.YamlWrap{Yaml: fakeYAML1}.ToRoxNetworkPolicies()
 	suite.networkPolicies.EXPECT().GetNetworkPolicies(suite.requestContext, networkPolicyGetIsForCluster(fakeClusterID), "").
 		Return(compiledPolicies, nil)
-	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil)
+	ngc := &storage.NetworkGraphConfig{}
+	ngc.SetHideDefaultExternalSrcs(true)
+	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(ngc, nil)
 	suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), fakeClusterID).Return(nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -348,13 +351,12 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacementAndAddition() {
 		Return(expectedGraph)
 
 	// Make the request to the service and check that it did not err.
-	request := &v1.SimulateNetworkGraphRequest{
-		ClusterId: fakeClusterID,
-		Modification: &storage.NetworkPolicyModification{
-			ApplyYaml: combinedYAMLs,
-		},
-		IncludeNodeDiff: true,
-	}
+	npm := &storage.NetworkPolicyModification{}
+	npm.SetApplyYaml(combinedYAMLs)
+	request := &v1.SimulateNetworkGraphRequest{}
+	request.SetClusterId(fakeClusterID)
+	request.SetModification(npm)
+	request.SetIncludeNodeDiff(true)
 	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
 
@@ -381,7 +383,9 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletion() {
 	compiledPolicies, _ := networkpolicy.YamlWrap{Yaml: fakeYAML1}.ToRoxNetworkPolicies()
 	suite.networkPolicies.EXPECT().GetNetworkPolicies(suite.requestContext, networkPolicyGetIsForCluster(fakeClusterID), "").
 		Return(compiledPolicies, nil)
-	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil)
+	ngc := &storage.NetworkGraphConfig{}
+	ngc.SetHideDefaultExternalSrcs(true)
+	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(ngc, nil)
 	suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), fakeClusterID).Return(nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -392,18 +396,18 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletion() {
 		Return(expectedGraph)
 
 	// Make the request to the service and check that it did not err.
-	request := &v1.SimulateNetworkGraphRequest{
+	request := v1.SimulateNetworkGraphRequest_builder{
 		ClusterId: fakeClusterID,
-		Modification: &storage.NetworkPolicyModification{
+		Modification: storage.NetworkPolicyModification_builder{
 			ToDelete: []*storage.NetworkPolicyReference{
-				{
+				storage.NetworkPolicyReference_builder{
 					Namespace: "default",
 					Name:      "first-policy",
-				},
+				}.Build(),
 			},
-		},
+		}.Build(),
 		IncludeNodeDiff: true,
-	}
+	}.Build()
 	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
 
@@ -428,7 +432,9 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletionAndAdditionOfSame(
 	compiledPolicies, _ := networkpolicy.YamlWrap{Yaml: fakeYAML2}.ToRoxNetworkPolicies()
 	suite.networkPolicies.EXPECT().GetNetworkPolicies(suite.requestContext, networkPolicyGetIsForCluster(fakeClusterID), "").
 		Return(compiledPolicies, nil)
-	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil)
+	ngc := &storage.NetworkGraphConfig{}
+	ngc.SetHideDefaultExternalSrcs(true)
+	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(ngc, nil)
 	suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), fakeClusterID).Return(nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -438,19 +444,19 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletionAndAdditionOfSame(
 	suite.evaluator.EXPECT().GetGraph(fakeClusterID, set.NewStringSet(), deps, networkTree, checkHasPolicies("second-policy"), false).
 		Return(expectedGraph)
 
-	request := &v1.SimulateNetworkGraphRequest{
+	request := v1.SimulateNetworkGraphRequest_builder{
 		ClusterId: fakeClusterID,
-		Modification: &storage.NetworkPolicyModification{
+		Modification: storage.NetworkPolicyModification_builder{
 			ToDelete: []*storage.NetworkPolicyReference{
-				{
+				storage.NetworkPolicyReference_builder{
 					Namespace: "default",
 					Name:      "second-policy",
-				},
+				}.Build(),
 			},
 			ApplyYaml: combinedYAMLs,
-		},
+		}.Build(),
 		IncludeNodeDiff: true,
-	}
+	}.Build()
 	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
 	protoassert.Equal(suite.T(), expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
@@ -475,7 +481,9 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithOnlyAdditions() {
 	// Mock that we have network policies in effect for the cluster.
 	suite.networkPolicies.EXPECT().GetNetworkPolicies(suite.requestContext, networkPolicyGetIsForCluster(fakeClusterID), "").
 		Return(nil, nil)
-	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil)
+	ngc := &storage.NetworkGraphConfig{}
+	ngc.SetHideDefaultExternalSrcs(true)
+	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(ngc, nil)
 	suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), fakeClusterID).Return(nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -486,13 +494,12 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithOnlyAdditions() {
 		Return(expectedGraph)
 
 	// Make the request to the service and check that it did not err.
-	request := &v1.SimulateNetworkGraphRequest{
-		ClusterId: fakeClusterID,
-		Modification: &storage.NetworkPolicyModification{
-			ApplyYaml: combinedYAMLs,
-		},
-		IncludeNodeDiff: true,
-	}
+	npm := &storage.NetworkPolicyModification{}
+	npm.SetApplyYaml(combinedYAMLs)
+	request := &v1.SimulateNetworkGraphRequest{}
+	request.SetClusterId(fakeClusterID)
+	request.SetModification(npm)
+	request.SetIncludeNodeDiff(true)
 	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
 	protoassert.Equal(suite.T(), expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
@@ -514,9 +521,8 @@ func (suite *ServiceTestSuite) TestGetNetworkPoliciesWithoutDeploymentQuery() {
 		Return(neps, nil)
 
 	// Make the request to the service and check that it did not err.
-	request := &v1.GetNetworkPoliciesRequest{
-		ClusterId: fakeClusterID,
-	}
+	request := &v1.GetNetworkPoliciesRequest{}
+	request.SetClusterId(fakeClusterID)
 	actualResp, err := suite.tested.GetNetworkPolicies(suite.requestContext, request)
 
 	suite.NoError(err, "expected graph generation to succeed")
@@ -551,7 +557,9 @@ func (suite *ServiceTestSuite) TestGetNetworkPoliciesWitDeploymentQuery() {
 		return matchCount == 2
 	})).Return(deps, nil)
 
-	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil)
+	ngc := &storage.NetworkGraphConfig{}
+	ngc.SetHideDefaultExternalSrcs(true)
+	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(ngc, nil)
 	suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), fakeClusterID).Return(nil)
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedPolicies := make([]*storage.NetworkPolicy, 0)
@@ -559,10 +567,9 @@ func (suite *ServiceTestSuite) TestGetNetworkPoliciesWitDeploymentQuery() {
 		Return(expectedPolicies)
 
 	// Make the request to the service and check that it did not err.
-	request := &v1.GetNetworkPoliciesRequest{
-		ClusterId:       fakeClusterID,
-		DeploymentQuery: fmt.Sprintf("%s:\"%s\"", search.DeploymentID, fakeDeploymentID),
-	}
+	request := &v1.GetNetworkPoliciesRequest{}
+	request.SetClusterId(fakeClusterID)
+	request.SetDeploymentQuery(fmt.Sprintf("%s:\"%s\"", search.DeploymentID, fakeDeploymentID))
 	actualResp, err := suite.tested.GetNetworkPolicies(suite.requestContext, request)
 
 	suite.NoError(err, "expected graph generation to succeed")
@@ -583,10 +590,9 @@ func (suite *ServiceTestSuite) TestGetAllNetworkPoliciesForNamespace() {
 		Times(0)
 
 	// Make the request to the service and check that it did not err.
-	request := &v1.GetNetworkPoliciesRequest{
-		ClusterId: fakeClusterID,
-		Namespace: "my-namespace",
-	}
+	request := &v1.GetNetworkPoliciesRequest{}
+	request.SetClusterId(fakeClusterID)
+	request.SetNamespace("my-namespace")
 	actualResp, err := suite.tested.GetNetworkPolicies(suite.requestContext, request)
 
 	suite.NoError(err, "expected graph generation to succeed")
@@ -602,13 +608,13 @@ func (suite *ServiceTestSuite) TestGetAllowedPeersFromCurrentPolicyForDeployment
 	numDeployments := 4
 	deps := make([]*storage.Deployment, 0, numDeployments)
 	for i := 0; i < numDeployments; i++ {
-		deps = append(deps, &storage.Deployment{
-			Id:        fmt.Sprintf("deployment%03d", i),
-			Name:      fmt.Sprintf("deployment%03d", i),
-			Namespace: "namespace",
-			ClusterId: fakeClusterID,
-			PodLabels: map[string]string{"app": fmt.Sprintf("deployment%03d", i)},
-		})
+		deployment := &storage.Deployment{}
+		deployment.SetId(fmt.Sprintf("deployment%03d", i))
+		deployment.SetName(fmt.Sprintf("deployment%03d", i))
+		deployment.SetNamespace("namespace")
+		deployment.SetClusterId(fakeClusterID)
+		deployment.SetPodLabels(map[string]string{"app": fmt.Sprintf("deployment%03d", i)})
+		deps = append(deps, deployment)
 	}
 	suite.deployments.EXPECT().SearchRawDeployments(
 		gomock.Any(), deploymentSearchIsForCluster(fakeClusterID)).MinTimes(numDeployments).Return(deps, nil)
@@ -616,7 +622,9 @@ func (suite *ServiceTestSuite) TestGetAllowedPeersFromCurrentPolicyForDeployment
 	var pols []*storage.NetworkPolicy
 	suite.evaluator.EXPECT().GetAppliedPolicies(gomock.Any(), gomock.Any(), pols).MinTimes(numDeployments).Return(pols)
 	suite.networkPolicies.EXPECT().GetNetworkPolicies(suite.requestContext, networkPolicyGetIsForCluster(fakeClusterID), "").MinTimes(numDeployments).Return(pols, nil)
-	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil).MinTimes(numDeployments)
+	ngc := &storage.NetworkGraphConfig{}
+	ngc.SetHideDefaultExternalSrcs(true)
+	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(ngc, nil).MinTimes(numDeployments)
 	suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), fakeClusterID).MinTimes(numDeployments).Return(nil)
 
 	// Validate GetAllowedPeers
@@ -626,88 +634,88 @@ func (suite *ServiceTestSuite) TestGetAllowedPeersFromCurrentPolicyForDeployment
 		{
 			// deployment000
 			expectedAllowedPeers: []*v1.NetworkBaselineStatusPeer{
-				{
-					Entity: &v1.NetworkBaselinePeerEntity{
+				v1.NetworkBaselineStatusPeer_builder{
+					Entity: v1.NetworkBaselinePeerEntity_builder{
 						Id:   deps[1].GetId(),
 						Type: storage.NetworkEntityInfo_DEPLOYMENT,
-					},
+					}.Build(),
 					Port:     80,
 					Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 					Ingress:  true,
-				},
-				{
-					Entity: &v1.NetworkBaselinePeerEntity{
+				}.Build(),
+				v1.NetworkBaselineStatusPeer_builder{
+					Entity: v1.NetworkBaselinePeerEntity_builder{
 						Id:   deps[2].GetId(),
 						Type: storage.NetworkEntityInfo_DEPLOYMENT,
-					},
+					}.Build(),
 					Port:     443,
 					Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 					Ingress:  false,
-				},
-				{
-					Entity: &v1.NetworkBaselinePeerEntity{
+				}.Build(),
+				v1.NetworkBaselineStatusPeer_builder{
+					Entity: v1.NetworkBaselinePeerEntity_builder{
 						Id:   deps[2].GetId(),
 						Type: storage.NetworkEntityInfo_DEPLOYMENT,
-					},
+					}.Build(),
 					Port:     80,
 					Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 					Ingress:  false,
-				},
+				}.Build(),
 			},
 		},
 		{
 			// deployment001
 			expectedAllowedPeers: []*v1.NetworkBaselineStatusPeer{
-				{
-					Entity: &v1.NetworkBaselinePeerEntity{
+				v1.NetworkBaselineStatusPeer_builder{
+					Entity: v1.NetworkBaselinePeerEntity_builder{
 						Id:   deps[0].GetId(),
 						Type: storage.NetworkEntityInfo_DEPLOYMENT,
-					},
+					}.Build(),
 					Port:     80,
 					Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 					Ingress:  false,
-				},
-				{
-					Entity: &v1.NetworkBaselinePeerEntity{
+				}.Build(),
+				v1.NetworkBaselineStatusPeer_builder{
+					Entity: v1.NetworkBaselinePeerEntity_builder{
 						Id:   deps[2].GetId(),
 						Type: storage.NetworkEntityInfo_DEPLOYMENT,
-					},
+					}.Build(),
 					Port:     0,
 					Protocol: storage.L4Protocol_L4_PROTOCOL_ANY,
 					Ingress:  true,
-				},
+				}.Build(),
 			},
 		},
 		{
 			// deployment002
 			expectedAllowedPeers: []*v1.NetworkBaselineStatusPeer{
-				{
-					Entity: &v1.NetworkBaselinePeerEntity{
+				v1.NetworkBaselineStatusPeer_builder{
+					Entity: v1.NetworkBaselinePeerEntity_builder{
 						Id:   deps[0].GetId(),
 						Type: storage.NetworkEntityInfo_DEPLOYMENT,
-					},
+					}.Build(),
 					Port:     443,
 					Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 					Ingress:  true,
-				},
-				{
-					Entity: &v1.NetworkBaselinePeerEntity{
+				}.Build(),
+				v1.NetworkBaselineStatusPeer_builder{
+					Entity: v1.NetworkBaselinePeerEntity_builder{
 						Id:   deps[0].GetId(),
 						Type: storage.NetworkEntityInfo_DEPLOYMENT,
-					},
+					}.Build(),
 					Port:     80,
 					Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 					Ingress:  true,
-				},
-				{
-					Entity: &v1.NetworkBaselinePeerEntity{
+				}.Build(),
+				v1.NetworkBaselineStatusPeer_builder{
+					Entity: v1.NetworkBaselinePeerEntity_builder{
 						Id:   deps[1].GetId(),
 						Type: storage.NetworkEntityInfo_DEPLOYMENT,
-					},
+					}.Build(),
 					Port:     0,
 					Protocol: storage.L4Protocol_L4_PROTOCOL_ANY,
 					Ingress:  false,
-				},
+				}.Build(),
 			},
 		},
 		{
@@ -718,13 +726,14 @@ func (suite *ServiceTestSuite) TestGetAllowedPeersFromCurrentPolicyForDeployment
 		suite.Run(fmt.Sprintf("testing deployment%03d", i), func() {
 			// Mark testing deployment node's query match to be true
 			graph := suite.getSampleNetworkGraph(deps...)
-			graph.Nodes[i].QueryMatch = true
+			graph.GetNodes()[i].SetQueryMatch(true)
 
 			suite.evaluator.EXPECT().GetGraph(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(graph)
 			suite.deployments.EXPECT().GetDeployment(gomock.Any(), gomock.Any()).Return(deps[i], true, nil)
+			rbid := &v1.ResourceByID{}
+			rbid.SetId(deps[0].GetId())
 			resp, err := suite.tested.GetAllowedPeersFromCurrentPolicyForDeployment(
-				suite.requestContext,
-				&v1.ResourceByID{Id: deps[0].GetId()})
+				suite.requestContext, rbid)
 			suite.NoError(err, "expected GetAllowedPeersFromCurrentPolicyForDeployment to succeed")
 
 			protoassert.ElementsMatch(suite.T(), resp.GetAllowedPeers(), testCase.expectedAllowedPeers)
@@ -733,42 +742,46 @@ func (suite *ServiceTestSuite) TestGetAllowedPeersFromCurrentPolicyForDeployment
 }
 
 func (suite *ServiceTestSuite) TestGetUndoDeploymentRecord() {
+	deployment := &storage.Deployment{}
+	deployment.SetId("some-deployment")
+	deployment.SetNamespace("some-namespace")
 	suite.deployments.EXPECT().GetDeployment(gomock.Any(), "some-deployment").Return(
-		&storage.Deployment{
-			Id:        "some-deployment",
-			Namespace: "some-namespace",
-		},
+		deployment,
 		true,
 		nil)
+	npaudr := &storage.NetworkPolicyApplicationUndoDeploymentRecord{}
+	npaudr.SetDeploymentId("some-deployment")
+	npaudr.SetUndoRecord(&storage.NetworkPolicyApplicationUndoRecord{})
 	suite.
 		networkPolicies.
 		EXPECT().
 		GetUndoDeploymentRecord(gomock.Any(), "some-deployment").
 		Return(
-			&storage.NetworkPolicyApplicationUndoDeploymentRecord{
-				DeploymentId: "some-deployment",
-				UndoRecord:   &storage.NetworkPolicyApplicationUndoRecord{},
-			},
+			npaudr,
 			true,
 			nil)
+	rbid := &v1.ResourceByID{}
+	rbid.SetId("some-deployment")
 	resp, err :=
-		suite.tested.GetUndoModificationForDeployment(suite.requestContext, &v1.ResourceByID{Id: "some-deployment"})
+		suite.tested.GetUndoModificationForDeployment(suite.requestContext, rbid)
 	suite.NoError(err)
+	gumfdr := &v1.GetUndoModificationForDeploymentResponse{}
+	gumfdr.SetUndoRecord(&storage.NetworkPolicyApplicationUndoRecord{})
 	protoassert.Equal(suite.T(),
-		&v1.GetUndoModificationForDeploymentResponse{UndoRecord: &storage.NetworkPolicyApplicationUndoRecord{}},
+		gumfdr,
 		resp)
 
 }
 
 func depToInfo(dep *storage.Deployment) *storage.NetworkEntityInfo {
-	return &storage.NetworkEntityInfo{
-		Type: storage.NetworkEntityInfo_DEPLOYMENT,
-		Id:   dep.GetId(),
-		Desc: &storage.NetworkEntityInfo_Deployment_{Deployment: &storage.NetworkEntityInfo_Deployment{
-			Name:      dep.GetName(),
-			Namespace: dep.GetNamespace(),
-		}},
-	}
+	nd := &storage.NetworkEntityInfo_Deployment{}
+	nd.SetName(dep.GetName())
+	nd.SetNamespace(dep.GetNamespace())
+	nei := &storage.NetworkEntityInfo{}
+	nei.SetType(storage.NetworkEntityInfo_DEPLOYMENT)
+	nei.SetId(dep.GetId())
+	nei.SetDeployment(proto.ValueOrDefault(nd))
+	return nei
 }
 
 // getSampleNetworkGraph requires at least 4 deployments
@@ -780,49 +793,49 @@ func depToInfo(dep *storage.Deployment) *storage.NetworkEntityInfo {
 // there should be an implicit edge from deployment002 -> deployment001
 func (suite *ServiceTestSuite) getSampleNetworkGraph(deps ...*storage.Deployment) *v1.NetworkGraph {
 	suite.GreaterOrEqual(len(deps), 4)
-	return &v1.NetworkGraph{
+	return v1.NetworkGraph_builder{
 		Epoch: 0,
 		Nodes: []*v1.NetworkNode{
-			{
+			v1.NetworkNode_builder{
 				Entity: depToInfo(deps[0]),
 				OutEdges: map[int32]*v1.NetworkEdgePropertiesBundle{
-					2: {
+					2: v1.NetworkEdgePropertiesBundle_builder{
 						Properties: []*v1.NetworkEdgeProperties{
-							{
+							v1.NetworkEdgeProperties_builder{
 								Port:     443,
 								Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-							},
-							{
+							}.Build(),
+							v1.NetworkEdgeProperties_builder{
 								Port:     80,
 								Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
-			{
+			}.Build(),
+			v1.NetworkNode_builder{
 				Entity: depToInfo(deps[1]),
 				OutEdges: map[int32]*v1.NetworkEdgePropertiesBundle{
-					0: {
+					0: v1.NetworkEdgePropertiesBundle_builder{
 						Properties: []*v1.NetworkEdgeProperties{
-							{
+							v1.NetworkEdgeProperties_builder{
 								Port:     80,
 								Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
 				NonIsolatedIngress: true,
-			},
-			{
+			}.Build(),
+			v1.NetworkNode_builder{
 				Entity:            depToInfo(deps[2]),
 				NonIsolatedEgress: true,
-			},
-			{
+			}.Build(),
+			v1.NetworkNode_builder{
 				Entity: depToInfo(deps[3]),
-			},
+			}.Build(),
 		},
-	}
+	}.Build()
 }
 
 // deploymentSearchIsForCluster returns a function that returns true if the in input ParsedSearchRequest has the
@@ -970,20 +983,20 @@ func TestGetNamespacesFromModification(t *testing.T) {
 		},
 		"single deletion in test ns": {
 			toDelete: []*storage.NetworkPolicyReference{
-				{
+				storage.NetworkPolicyReference_builder{
 					Name:      "foo",
 					Namespace: "testns",
-				},
+				}.Build(),
 			},
 			expectedNamespaces: []string{"testns"},
 		},
 		"multi-document YAML and deletion": {
 			applyYAML: combinedYAMLs,
 			toDelete: []*storage.NetworkPolicyReference{
-				{
+				storage.NetworkPolicyReference_builder{
 					Name:      "foo",
 					Namespace: "testns",
-				},
+				}.Build(),
 			},
 			expectedNamespaces: []string{"default", "testns"},
 		},
@@ -996,10 +1009,9 @@ func TestGetNamespacesFromModification(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 
-			mod := &storage.NetworkPolicyModification{
-				ApplyYaml: c.applyYAML,
-				ToDelete:  c.toDelete,
-			}
+			mod := &storage.NetworkPolicyModification{}
+			mod.SetApplyYaml(c.applyYAML)
+			mod.SetToDelete(c.toDelete)
 
 			nsSet, err := getNamespacesFromModification(mod)
 			require.NoError(t, err)

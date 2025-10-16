@@ -12,10 +12,10 @@ type stringCollector struct {
 }
 
 func newStringCollector(runID string) *stringCollector {
+	cs := &storage.ComplianceStrings{}
+	cs.SetId(runID)
 	return &stringCollector{
-		stringsProto: &storage.ComplianceStrings{
-			Id: runID,
-		},
+		stringsProto:  cs,
 		stringIndices: make(map[string]int),
 	}
 }
@@ -24,7 +24,7 @@ func (c *stringCollector) Collect(s string) int {
 	idx, ok := c.stringIndices[s]
 	if !ok {
 		idx = len(c.stringsProto.GetStrings())
-		c.stringsProto.Strings = append(c.stringsProto.Strings, s)
+		c.stringsProto.SetStrings(append(c.stringsProto.GetStrings(), s))
 		c.stringIndices[s] = idx
 	}
 	return idx
@@ -51,8 +51,8 @@ func externalizeStringsForEntity(entityResults *storage.ComplianceRunResults_Ent
 			if e.GetMessage() == "" {
 				continue
 			}
-			e.MessageId = int32(strings.Collect(e.GetMessage())) + 1
-			e.Message = ""
+			e.SetMessageId(int32(strings.Collect(e.GetMessage())) + 1)
+			e.SetMessage("")
 		}
 	}
 }
@@ -85,8 +85,8 @@ func reconstituteStringsForEntity(entityResults *storage.ComplianceRunResults_En
 			} else {
 				msg = stringsProto.GetStrings()[idx]
 			}
-			e.Message = msg
-			e.MessageId = 0
+			e.SetMessage(msg)
+			e.SetMessageId(0)
 		}
 	}
 	return allFound

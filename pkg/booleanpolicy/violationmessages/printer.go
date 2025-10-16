@@ -205,10 +205,10 @@ func Render(
 	for _, message := range messages.AsSortedSlice(func(i, j string) bool {
 		return i < j
 	}) {
-		alertViolations = append(alertViolations, &storage.Alert_Violation{
-			Message: message,
-			Type:    alertType,
-		})
+		av := &storage.Alert_Violation{}
+		av.SetMessage(message)
+		av.SetType(alertType)
+		alertViolations = append(alertViolations, av)
 	}
 	return alertViolations, isProcessViolation, isKubeOrAuditEventViolation, isNetworkFlowViolation, isNetworkPolicyViolation, errorList.ToError()
 }

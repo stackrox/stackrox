@@ -10,35 +10,34 @@ func GetMockResult() (*storage.ComplianceRunResults, *storage.ComplianceDomain) 
 	clusterID := "Test cluster ID"
 	domainID := "a very good domain ID"
 
-	domain := &storage.ComplianceDomain{
-		Id: domainID,
-		Cluster: &storage.ComplianceDomain_Cluster{
-			Id: clusterID,
-		},
-	}
+	cc := &storage.ComplianceDomain_Cluster{}
+	cc.SetId(clusterID)
+	domain := &storage.ComplianceDomain{}
+	domain.SetId(domainID)
+	domain.SetCluster(cc)
 
-	result := &storage.ComplianceRunResults{
-		RunMetadata: &storage.ComplianceRunMetadata{
+	result := storage.ComplianceRunResults_builder{
+		RunMetadata: storage.ComplianceRunMetadata_builder{
 			StandardId:      "yeet",
 			Success:         true,
 			RunId:           "Test run ID",
 			ClusterId:       clusterID,
 			FinishTimestamp: protocompat.TimestampNow(),
 			DomainId:        domainID,
-		},
-		ClusterResults: &storage.ComplianceRunResults_EntityResults{
+		}.Build(),
+		ClusterResults: storage.ComplianceRunResults_EntityResults_builder{
 			ControlResults: map[string]*storage.ComplianceResultValue{
-				"test": {
+				"test": storage.ComplianceResultValue_builder{
 					Evidence: []*storage.ComplianceResultValue_Evidence{
-						{
+						storage.ComplianceResultValue_Evidence_builder{
 							Message: "test",
-						},
+						}.Build(),
 					},
 					OverallState: 0,
-				},
+				}.Build(),
 			},
-		},
+		}.Build(),
 		Domain: domain,
-	}
+	}.Build()
 	return result, domain
 }

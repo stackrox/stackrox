@@ -121,7 +121,7 @@ func (h *downloadHandler) handle(w http.ResponseWriter, r *http.Request) {
 			sac.ResourceScopeKeys(resources.Compliance)),
 	)
 	if status.GetRunState() == storage.ComplianceOperatorReportStatus_GENERATED {
-		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_DELIVERED
+		snapshot.GetReportStatus().SetRunState(storage.ComplianceOperatorReportStatus_DELIVERED)
 		err = h.snapshotDataStore.UpsertSnapshot(writeSnapshotCtx, snapshot)
 		if err != nil {
 			log.Error("Error setting report state to DELIVERED")

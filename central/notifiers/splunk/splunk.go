@@ -27,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -79,13 +80,18 @@ func (s *splunk) Test(ctx context.Context) *notifiers.NotifierError {
 		}
 		return nil
 	}
-	alert := &storage.Alert{
-		Policy: &storage.Policy{Name: "Test Policy"},
-		Entity: &storage.Alert_Deployment_{Deployment: &storage.Alert_Deployment{Name: "Test Deployment"}},
-		Violations: []*storage.Alert_Violation{
-			{Message: "This is a sample Splunk alert message created to test integration with StackRox."},
-		},
-	}
+	policy := &storage.Policy{}
+	policy.SetName("Test Policy")
+	ad := &storage.Alert_Deployment{}
+	ad.SetName("Test Deployment")
+	av := &storage.Alert_Violation{}
+	av.SetMessage("This is a sample Splunk alert message created to test integration with StackRox.")
+	alert := &storage.Alert{}
+	alert.SetPolicy(policy)
+	alert.SetDeployment(proto.ValueOrDefault(ad))
+	alert.SetViolations([]*storage.Alert_Violation{
+		av,
+	})
 
 	if err := s.postAlert(ctx, alert); err != nil {
 		return notifiers.NewNotifierError("send test alert failed", err)
@@ -100,10 +106,10 @@ func (s *splunk) postAlert(ctx context.Context, alert *storage.Alert) error {
 	// Removing some of the fields here to make it smaller
 	// More details on HEC limitation: https://developers.perfectomobile.com/display/TT/Splunk+-+Configure+HTTP+Event+Collector
 	// Check section on "Increasing the Event Data Truncate Limit"
-	clonedAlert.Policy.Description = ""
-	clonedAlert.Policy.Rationale = ""
-	clonedAlert.Policy.Remediation = ""
-	clonedAlert.Policy.Exclusions = nil
+	clonedAlert.GetPolicy().SetDescription("")
+	clonedAlert.GetPolicy().SetRationale("")
+	clonedAlert.GetPolicy().SetRemediation("")
+	clonedAlert.GetPolicy().SetExclusions(nil)
 	notifiers.PruneAlert(clonedAlert, int(s.conf.GetTruncate()))
 
 	return retry.WithRetry(
@@ -125,11 +131,11 @@ func (s *splunk) getSplunkEvent(msg protocompat.Message, sourceTypeKey string) (
 		return nil, err
 	}
 
-	return &wrapper.SplunkEvent{
-		Event:      e,
-		Source:     source,
-		Sourcetype: s.conf.GetSourceTypes()[sourceTypeKey],
-	}, nil
+	se := &wrapper.SplunkEvent{}
+	se.SetEvent(e)
+	se.SetSource(source)
+	se.SetSourcetype(s.conf.GetSourceTypes()[sourceTypeKey])
+	return se, nil
 }
 
 func (*splunk) Close(_ context.Context) error {
@@ -276,7 +282,7 @@ func Validate(conf *storage.Splunk, validateSecret bool) error {
 		errorList.AddString("Splunk HTTP endpoint must be specified")
 	}
 	if conf.GetTruncate() == 0 {
-		conf.Truncate = splunkHECDefaultDataLimit
+		conf.SetTruncate(splunkHECDefaultDataLimit)
 	}
 	for sourceTypeKey := range defaultSourceTypeMap {
 		if _, ok := conf.GetSourceTypes()[sourceTypeKey]; !ok {
@@ -293,14 +299,14 @@ func UpgradeNotifierConfig(notifier *storage.Notifier) {
 			splunk := notifier.GetSplunk()
 			// Handle backwards compatibility for derived source type field
 			if splunk.GetDerivedSourceType() {
-				splunk.SourceTypes = defaultSourceTypeMap
+				splunk.SetSourceTypes(defaultSourceTypeMap)
 			} else {
-				splunk.SourceTypes = make(map[string]string)
+				splunk.SetSourceTypes(make(map[string]string))
 				for k := range defaultSourceTypeMap {
-					splunk.SourceTypes[k] = jsonSourceType
+					splunk.GetSourceTypes()[k] = jsonSourceType
 				}
 			}
-			splunk.DerivedSourceTypeDeprecated = nil
+			splunk.ClearDerivedSourceTypeDeprecated()
 		}
 	}
 }

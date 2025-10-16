@@ -53,9 +53,11 @@ func TestCheckNoUnresolvedAlertsForPolicies(t *testing.T) {
 
 			convertedAlerts := make([]*storage.ListAlert, 0, len(c.alerts))
 			for _, alert := range c.alerts {
-				convertedAlerts = append(convertedAlerts, &storage.ListAlert{
-					Policy: &storage.ListAlertPolicy{Id: alert.policyID},
-				})
+				lap := &storage.ListAlertPolicy{}
+				lap.SetId(alert.policyID)
+				listAlert := &storage.ListAlert{}
+				listAlert.SetPolicy(lap)
+				convertedAlerts = append(convertedAlerts, listAlert)
 			}
 
 			mockData.EXPECT().UnresolvedAlerts().Return(convertedAlerts)

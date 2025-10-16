@@ -26,12 +26,11 @@ func IDToKey(id string) (*storage.ProcessBaselineKey, error) {
 	if strings.HasPrefix(id, string(deploymentContainerKeyPrefix)) {
 		keys := strings.Split(id, ":")
 		if len(keys) == 5 {
-			resKey := &storage.ProcessBaselineKey{
-				ClusterId:     keys[1],
-				Namespace:     keys[2],
-				DeploymentId:  keys[3],
-				ContainerName: keys[4],
-			}
+			resKey := &storage.ProcessBaselineKey{}
+			resKey.SetClusterId(keys[1])
+			resKey.SetNamespace(keys[2])
+			resKey.SetDeploymentId(keys[3])
+			resKey.SetContainerName(keys[4])
 
 			return resKey, nil
 		}

@@ -24,9 +24,9 @@ func submitDryRunJob(service v1.PolicyServiceClient, policy *storage.Policy, job
 func queryJobTillCompletion(service v1.PolicyServiceClient, jobID string) func() error {
 	return func() (err error) {
 		for {
-			res, err := service.QueryDryRunJobStatus(common.Context(), &v1.JobId{
-				JobId: jobID,
-			})
+			jobId := &v1.JobId{}
+			jobId.SetJobId(jobID)
+			res, err := service.QueryDryRunJobStatus(common.Context(), jobId)
 
 			if err != nil {
 				return err

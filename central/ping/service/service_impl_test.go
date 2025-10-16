@@ -19,5 +19,7 @@ func TestPing(t *testing.T) {
 	service := &serviceImpl{}
 	response, err := service.Ping(sac.WithNoAccess(context.Background()), &v1.Empty{})
 	assert.NoError(t, err)
-	protoassert.Equal(t, &v1.PongMessage{Status: "ok"}, response)
+	pm := &v1.PongMessage{}
+	pm.SetStatus("ok")
+	protoassert.Equal(t, pm, response)
 }

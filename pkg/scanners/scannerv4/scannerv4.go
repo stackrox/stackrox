@@ -201,9 +201,9 @@ func (s *scannerv4) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
 		return nil, errors.New("no timestamp available")
 	}
 
-	return &v1.VulnDefinitionsInfo{
-		LastUpdatedTimestamp: lastTms,
-	}, nil
+	vdi := &v1.VulnDefinitionsInfo{}
+	vdi.SetLastUpdatedTimestamp(lastTms)
+	return vdi, nil
 }
 
 func (s *scannerv4) Match(image *storage.ImageName) bool {

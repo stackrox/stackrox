@@ -9,19 +9,18 @@ import (
 // DiscoveredCluster converts the given discoveredclusters.DiscoveredCluster
 // to storage.DiscoveredCluster.
 func DiscoveredCluster(cluster *discoveredclusters.DiscoveredCluster) *storage.DiscoveredCluster {
-	storageConfig := &storage.DiscoveredCluster{
-		Id: discoveredclusters.GenerateDiscoveredClusterID(cluster),
-		Metadata: &storage.DiscoveredCluster_Metadata{
-			Id:                cluster.GetID(),
-			Name:              cluster.GetName(),
-			Type:              cluster.GetType(),
-			ProviderType:      cluster.GetProviderType(),
-			Region:            cluster.GetRegion(),
-			FirstDiscoveredAt: protocompat.ConvertTimeToTimestampOrNil(cluster.GetFirstDiscoveredAt()),
-		},
-		Status:        cluster.GetStatus(),
-		SourceId:      cluster.GetCloudSourceID(),
-		LastUpdatedAt: protocompat.TimestampNow(),
-	}
+	dm := &storage.DiscoveredCluster_Metadata{}
+	dm.SetId(cluster.GetID())
+	dm.SetName(cluster.GetName())
+	dm.SetType(cluster.GetType())
+	dm.SetProviderType(cluster.GetProviderType())
+	dm.SetRegion(cluster.GetRegion())
+	dm.SetFirstDiscoveredAt(protocompat.ConvertTimeToTimestampOrNil(cluster.GetFirstDiscoveredAt()))
+	storageConfig := &storage.DiscoveredCluster{}
+	storageConfig.SetId(discoveredclusters.GenerateDiscoveredClusterID(cluster))
+	storageConfig.SetMetadata(dm)
+	storageConfig.SetStatus(cluster.GetStatus())
+	storageConfig.SetSourceId(cluster.GetCloudSourceID())
+	storageConfig.SetLastUpdatedAt(protocompat.TimestampNow())
 	return storageConfig
 }

@@ -410,10 +410,10 @@ func (s *UpdaterTestSuite) assertVersion(health *storage.CollectorHealthInfo, ex
 
 func (s *UpdaterTestSuite) assertTotalDesiredPods(health *storage.CollectorHealthInfo, expected int32) {
 	var actual int32
-	switch v := health.GetTotalDesiredPodsOpt().(type) {
-	case *storage.CollectorHealthInfo_TotalDesiredPods:
-		actual = v.TotalDesiredPods
-	case nil:
+	switch health.WhichTotalDesiredPodsOpt() {
+	case storage.CollectorHealthInfo_TotalDesiredPods_case:
+		actual = health.GetTotalDesiredPods()
+	case 0:
 		actual = -1
 	default:
 		s.FailNowf("Unexpected total desired pods value type", "actual value: %#v", health.GetTotalDesiredPodsOpt())
@@ -423,10 +423,10 @@ func (s *UpdaterTestSuite) assertTotalDesiredPods(health *storage.CollectorHealt
 
 func (s *UpdaterTestSuite) assertTotalReadyPods(health *storage.CollectorHealthInfo, expected int32) {
 	var actual int32
-	switch v := health.GetTotalReadyPodsOpt().(type) {
-	case *storage.CollectorHealthInfo_TotalReadyPods:
-		actual = v.TotalReadyPods
-	case nil:
+	switch health.WhichTotalReadyPodsOpt() {
+	case storage.CollectorHealthInfo_TotalReadyPods_case:
+		actual = health.GetTotalReadyPods()
+	case 0:
 		actual = -1
 	default:
 		s.FailNowf("Unexpected total ready pods value type", "actual value: %#v", health.GetTotalReadyPodsOpt())
@@ -436,10 +436,10 @@ func (s *UpdaterTestSuite) assertTotalReadyPods(health *storage.CollectorHealthI
 
 func (s *UpdaterTestSuite) assertTotalRegisteredNodes(health *storage.CollectorHealthInfo, expected int32) {
 	var actual int32
-	switch v := health.GetTotalRegisteredNodesOpt().(type) {
-	case *storage.CollectorHealthInfo_TotalRegisteredNodes:
-		actual = v.TotalRegisteredNodes
-	case nil:
+	switch health.WhichTotalRegisteredNodesOpt() {
+	case storage.CollectorHealthInfo_TotalRegisteredNodes_case:
+		actual = health.GetTotalRegisteredNodes()
+	case 0:
 		actual = -1
 	default:
 		s.FailNowf("Unexpected total registered nodes value type", "actual value: %#v", health.GetTotalRegisteredNodesOpt())

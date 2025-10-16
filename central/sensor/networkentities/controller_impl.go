@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
+	"google.golang.org/protobuf/proto"
 )
 
 type controller struct {
@@ -75,12 +76,10 @@ func (c *controller) getPushNetworkEntitiesRequestMsg(ctx context.Context) (*cen
 		srcs = append(srcs, entity.GetInfo())
 	}
 
-	return &central.MsgToSensor{
-		Msg: &central.MsgToSensor_PushNetworkEntitiesRequest{
-			PushNetworkEntitiesRequest: &central.PushNetworkEntitiesRequest{
-				Entities: srcs,
-				SeqID:    requestSeqID,
-			},
-		},
-	}, nil
+	pner := &central.PushNetworkEntitiesRequest{}
+	pner.SetEntities(srcs)
+	pner.SetSeqID(requestSeqID)
+	mts := &central.MsgToSensor{}
+	mts.SetPushNetworkEntitiesRequest(proto.ValueOrDefault(pner))
+	return mts, nil
 }

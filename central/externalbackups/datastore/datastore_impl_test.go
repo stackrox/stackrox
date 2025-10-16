@@ -25,11 +25,11 @@ const (
 
 // NewFakeExtBkps constructs and returns a new External Backup object suitable for unit-testing.
 func NewFakeExtBkp() *storage.ExternalBackup {
-	return &storage.ExternalBackup{
-		Id:   FakeID,
-		Name: FakeName,
-		Type: FakeType,
-	}
+	eb := &storage.ExternalBackup{}
+	eb.SetId(FakeID)
+	eb.SetName(FakeName)
+	eb.SetType(FakeType)
+	return eb
 }
 
 // NewFakeListExtBkps constructs and returns a new slice of storage.ExternalBackup objects suitable for unit-testing.

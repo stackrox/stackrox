@@ -104,7 +104,9 @@ func (s *serviceImpl) GetNotifiers(ctx context.Context, _ *v1.GetNotifiersReques
 		return nil, err
 	}
 
-	return &v1.GetNotifiersResponse{Notifiers: scrubbedNotifiers}, nil
+	gnr := &v1.GetNotifiersResponse{}
+	gnr.SetNotifiers(scrubbedNotifiers)
+	return gnr, nil
 }
 
 func validateNotifier(notifier *storage.Notifier) error {
@@ -129,7 +131,10 @@ func validateNotifier(notifier *storage.Notifier) error {
 
 // PutNotifier updates a notifier configuration, without stored credential reconciliation
 func (s *serviceImpl) PutNotifier(ctx context.Context, notifier *storage.Notifier) (*v1.Empty, error) {
-	return s.UpdateNotifier(ctx, &v1.UpdateNotifierRequest{Notifier: notifier, UpdatePassword: true})
+	unr := &v1.UpdateNotifierRequest{}
+	unr.SetNotifier(notifier)
+	unr.SetUpdatePassword(true)
+	return s.UpdateNotifier(ctx, unr)
 }
 
 // UpdateNotifier updates a notifier configuration
@@ -193,7 +198,7 @@ func (s *serviceImpl) PostNotifier(ctx context.Context, request *storage.Notifie
 	if err != nil {
 		return nil, err
 	}
-	request.Id = id
+	request.SetId(id)
 	s.processor.UpdateNotifier(ctx, notifier)
 
 	if err = s.reporter.Register(request.GetId(), request.GetName(), storage.IntegrationHealth_NOTIFIER); err != nil {
@@ -204,7 +209,10 @@ func (s *serviceImpl) PostNotifier(ctx context.Context, request *storage.Notifie
 
 // TestNotifier tests to see if the config is setup properly, without stored credential reconciliation
 func (s *serviceImpl) TestNotifier(ctx context.Context, notifier *storage.Notifier) (*v1.Empty, error) {
-	return s.TestUpdatedNotifier(ctx, &v1.UpdateNotifierRequest{Notifier: notifier, UpdatePassword: true})
+	unr := &v1.UpdateNotifierRequest{}
+	unr.SetNotifier(notifier)
+	unr.SetUpdatePassword(true)
+	return s.TestUpdatedNotifier(ctx, unr)
 }
 
 // TestUpdatedNotifier tests to see if the config is setup properly
@@ -250,7 +258,9 @@ func (s *serviceImpl) DeleteNotifier(ctx context.Context, request *v1.DeleteNoti
 		return nil, errors.Wrap(errox.InvalidArgs, "notifier id must be provided")
 	}
 
-	n, err := s.GetNotifier(ctx, &v1.ResourceByID{Id: request.GetId()})
+	rbid := &v1.ResourceByID{}
+	rbid.SetId(request.GetId())
+	n, err := s.GetNotifier(ctx, rbid)
 	if err != nil {
 		return nil, err
 	}

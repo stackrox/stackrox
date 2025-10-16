@@ -73,8 +73,8 @@ func migrateAuthProviderClaims(ctx context.Context, groupStore groups.Store, pro
 		for _, requiredAttribute := range provider.GetRequiredAttributes() {
 			if requiredAttribute.GetAttributeKey() == groupsKey && requiredAttribute.GetAttributeValue() == orgAdminGroupsValue {
 				setClaimMapping(provider, isOrgAdminKey, orgAdminGroupsValue)
-				requiredAttribute.AttributeKey = orgAdminGroupsValue
-				requiredAttribute.AttributeValue = "true"
+				requiredAttribute.SetAttributeKey(orgAdminGroupsValue)
+				requiredAttribute.SetAttributeValue("true")
 				fixIsOrgAdmin = true
 			}
 		}
@@ -82,8 +82,8 @@ func migrateAuthProviderClaims(ctx context.Context, groupStore groups.Store, pro
 			if group.GetProps().GetKey() == groupsKey && group.GetProps().GetValue() == orgAdminGroupsValue {
 				setClaimMapping(provider, isOrgAdminKey, orgAdminGroupsValue)
 				groupToMigrate = group
-				groupToMigrate.Props.Key = orgAdminGroupsValue
-				groupToMigrate.Props.Value = "true"
+				groupToMigrate.GetProps().SetKey(orgAdminGroupsValue)
+				groupToMigrate.GetProps().SetValue("true")
 				fixIsOrgAdmin = true
 				break
 			}
@@ -111,9 +111,9 @@ func migrateAuthProviderClaims(ctx context.Context, groupStore groups.Store, pro
 
 func setClaimMapping(provider *storage.AuthProvider, claim string, key string) {
 	if provider.GetClaimMappings() == nil {
-		provider.ClaimMappings = map[string]string{}
+		provider.SetClaimMappings(map[string]string{})
 	}
-	provider.ClaimMappings[claim] = key
+	provider.GetClaimMappings()[claim] = key
 }
 
 func hasClaimMapping(expectedPath, expectedMapping string, mappings map[string]string) bool {

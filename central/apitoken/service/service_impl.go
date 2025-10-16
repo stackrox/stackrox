@@ -70,9 +70,9 @@ func (s *serviceImpl) GetAPITokens(ctx context.Context, req *v1.GetAPITokensRequ
 	if err != nil {
 		return nil, errors.Errorf("retrieval of tokens failed: %s", err)
 	}
-	return &v1.GetAPITokensResponse{
-		Tokens: tokens,
-	}, nil
+	gapitr := &v1.GetAPITokensResponse{}
+	gapitr.SetTokens(tokens)
+	return gapitr, nil
 }
 
 func (s *serviceImpl) RevokeToken(ctx context.Context, req *v1.ResourceByID) (*v1.Empty, error) {
@@ -95,8 +95,8 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 		if len(req.GetRoles()) > 0 {
 			return nil, errors.Wrap(errox.InvalidArgs, "must use either role or roles, but not both")
 		}
-		req.Roles = []string{req.GetRole()}
-		req.Role = ""
+		req.SetRoles([]string{req.GetRole()})
+		req.SetRole("")
 	}
 
 	roles, missingIndices, err := permissions.GetResolvedRolesFromStore(ctx, s.roles, req.GetRoles())
@@ -124,10 +124,10 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 
 	creation.LogTokenCreation(id, metadata)
 
-	return &v1.GenerateTokenResponse{
-		Token:    token,
-		Metadata: metadata,
-	}, nil
+	gtr := &v1.GenerateTokenResponse{}
+	gtr.SetToken(token)
+	gtr.SetMetadata(metadata)
+	return gtr, nil
 }
 
 func (s *serviceImpl) ListAllowedTokenRoles(ctx context.Context, _ *v1.Empty) (*v1.ListAllowedTokenRolesResponse, error) {
@@ -151,9 +151,9 @@ func (s *serviceImpl) ListAllowedTokenRoles(ctx context.Context, _ *v1.Empty) (*
 		}
 	}
 	slices.Sort(result)
-	return &v1.ListAllowedTokenRolesResponse{
-		RoleNames: result,
-	}, nil
+	latrr := &v1.ListAllowedTokenRolesResponse{}
+	latrr.SetRoleNames(result)
+	return latrr, nil
 }
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {

@@ -41,61 +41,61 @@ func (s *suiteImpl) TestPass() {
 	testNodes := s.nodes()
 
 	testDeployments := []*storage.Deployment{
-		{
+		storage.Deployment_builder{
 			Id: uuid.NewV4().String(),
 			Containers: []*storage.Container{
-				{
+				storage.Container_builder{
 					Volumes: []*storage.Volume{
-						{
+						storage.Volume_builder{
 							Source: "/tmp/blah",
 							Type:   "EmptyDir",
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
-		},
-		{
+		}.Build(),
+		storage.Deployment_builder{
 			Id: uuid.NewV4().String(),
 			Containers: []*storage.Container{
-				{
+				storage.Container_builder{
 					Volumes: []*storage.Volume{
-						{
+						storage.Volume_builder{
 							Source: "/tmp/blah",
 							Type:   "EmptyDir",
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
-		},
+		}.Build(),
 	}
 
 	policies := []*storage.Policy{
-		{
+		storage.Policy_builder{
 			PolicySections: []*storage.PolicySection{
-				{
+				storage.PolicySection_builder{
 					SectionName: "section-1",
 					PolicyGroups: []*storage.PolicyGroup{
-						{
+						storage.PolicyGroup_builder{
 							FieldName: fieldnames.VolumeSource,
 							Values: []*storage.PolicyValue{
-								{
+								storage.PolicyValue_builder{
 									Value: "/etc/passwd",
-								},
+								}.Build(),
 							},
-						},
-						{
+						}.Build(),
+						storage.PolicyGroup_builder{
 							FieldName: fieldnames.VolumeType,
 							Values: []*storage.PolicyValue{
-								{
+								storage.PolicyValue_builder{
 									Value: "EmptyDir",
-								},
+								}.Build(),
 							},
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			PolicyVersion: "1.1",
-		},
+		}.Build(),
 	}
 
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
@@ -131,71 +131,69 @@ func (s *suiteImpl) TestFail() {
 	testNodes := s.nodes()
 
 	testDeployments := []*storage.Deployment{
-		{
+		storage.Deployment_builder{
 			Id:   uuid.NewV4().String(),
 			Name: "foo",
 			Containers: []*storage.Container{
-				{
+				storage.Container_builder{
 					Volumes: []*storage.Volume{
-						{
+						storage.Volume_builder{
 							Source: "/etc/passwd",
 							Type:   "HostPath (bare host directory volume)",
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
-		},
+		}.Build(),
 	}
 
 	policies := []*storage.Policy{
-		{
+		storage.Policy_builder{
 			Id:   "policy1",
 			Name: "policy-1",
 			PolicySections: []*storage.PolicySection{
-				{
+				storage.PolicySection_builder{
 					SectionName: "section-1",
 					PolicyGroups: []*storage.PolicyGroup{
-						{
+						storage.PolicyGroup_builder{
 							FieldName: fieldnames.VolumeSource,
 							Values: []*storage.PolicyValue{
-								{
+								storage.PolicyValue_builder{
 									Value: "/etc/passwd",
-								},
+								}.Build(),
 							},
-						},
-						{
+						}.Build(),
+						storage.PolicyGroup_builder{
 							FieldName: fieldnames.VolumeType,
 							Values: []*storage.PolicyValue{
-								{
+								storage.PolicyValue_builder{
 									Value: "HostPath (bare host directory volume)",
-								},
+								}.Build(),
 							},
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			PolicyVersion: "1.1",
-		},
+		}.Build(),
 	}
 
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
 	data.EXPECT().Deployments().AnyTimes().Return(toMap(testDeployments))
 	data.EXPECT().Policies().AnyTimes().Return(policiesToMap(s.T(), policies))
 	data.EXPECT().UnresolvedAlerts().AnyTimes().Return([]*storage.ListAlert{
-		{
+		storage.ListAlert_builder{
 			Id:    "alert1",
 			State: storage.ViolationState_ACTIVE,
-			Policy: &storage.ListAlertPolicy{
+			Policy: storage.ListAlertPolicy_builder{
 				Id:   "policy1",
 				Name: "policy-1",
-			},
-			Entity: &storage.ListAlert_Deployment{
-				Deployment: &storage.ListAlertDeployment{
-					Id:   testDeployments[0].GetId(),
-					Name: testDeployments[0].GetName(),
-				},
-			},
-		},
+			}.Build(),
+			Deployment: storage.ListAlertDeployment_builder{
+				Id:   testDeployments[0].GetId(),
+				Name: testDeployments[0].GetName(),
+			}.Build(),
+		}.Build(),
 	})
 
 	run, err := framework.NewComplianceRun(check)
@@ -229,19 +227,19 @@ func (s *suiteImpl) verifyCheckRegistered() framework.Check {
 }
 
 func (s *suiteImpl) cluster() *storage.Cluster {
-	return &storage.Cluster{
-		Id: uuid.NewV4().String(),
-	}
+	cluster := &storage.Cluster{}
+	cluster.SetId(uuid.NewV4().String())
+	return cluster
 }
 
 func (s *suiteImpl) nodes() []*storage.Node {
+	node := &storage.Node{}
+	node.SetId(uuid.NewV4().String())
+	node2 := &storage.Node{}
+	node2.SetId(uuid.NewV4().String())
 	return []*storage.Node{
-		{
-			Id: uuid.NewV4().String(),
-		},
-		{
-			Id: uuid.NewV4().String(),
-		},
+		node,
+		node2,
 	}
 }
 

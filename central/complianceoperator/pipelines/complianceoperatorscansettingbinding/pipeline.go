@@ -70,7 +70,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	event := msg.GetEvent()
 	scanSetting := event.GetComplianceOperatorScanSettingBinding()
-	scanSetting.ClusterId = clusterID
+	scanSetting.SetClusterId(clusterID)
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:

@@ -15,6 +15,7 @@ import (
 	metricsPkg "github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
 	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator"
+	"google.golang.org/protobuf/proto"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -133,11 +134,9 @@ func (cm *clusterMetricsImpl) Poll(tickerC <-chan time.Time) {
 
 func (cm *clusterMetricsImpl) runPipeline() {
 	if metrics, err := cm.collectMetrics(); err == nil {
-		cm.output <- message.New(&central.MsgFromSensor{
-			Msg: &central.MsgFromSensor_ClusterMetrics{
-				ClusterMetrics: metrics,
-			},
-		})
+		mfs := &central.MsgFromSensor{}
+		mfs.SetClusterMetrics(proto.ValueOrDefault(metrics))
+		cm.output <- message.New(mfs)
 		metricsPkg.SetTelemetryMetrics(cm.clusterID.GetNoWait, metrics)
 	} else {
 		log.Errorf("Collection of cluster metrics failed: %v", err.Error())
@@ -174,5 +173,9 @@ func (cm *clusterMetricsImpl) collectMetrics() (*central.ClusterMetrics, error) 
 			coVersion = complianceOperUnavailable
 		}
 	}
-	return &central.ClusterMetrics{NodeCount: nodeCount, CpuCapacity: capacity, ComplianceOperatorVersion: coVersion}, nil
+	cm2 := &central.ClusterMetrics{}
+	cm2.SetNodeCount(nodeCount)
+	cm2.SetCpuCapacity(capacity)
+	cm2.SetComplianceOperatorVersion(coVersion)
+	return cm2, nil
 }

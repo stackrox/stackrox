@@ -95,9 +95,9 @@ func (s *serviceImpl) ListCollectionSelectors(_ context.Context, _ *v1.Empty) (*
 	for _, selector := range selectors {
 		selectorStrings = append(selectorStrings, selector.String())
 	}
-	return &v1.ListCollectionSelectorsResponse{
-		Selectors: selectorStrings,
-	}, nil
+	lcsr := &v1.ListCollectionSelectorsResponse{}
+	lcsr.SetSelectors(selectorStrings)
+	return lcsr, nil
 }
 
 // GetCollection returns a collection for the given request
@@ -119,10 +119,10 @@ func (s *serviceImpl) GetCollection(ctx context.Context, request *v1.GetCollecti
 		return nil, errors.Wrap(err, "failed resolving deployments")
 	}
 
-	return &v1.GetCollectionResponse{
-		Collection:  collection,
-		Deployments: deployments,
-	}, nil
+	gcr := &v1.GetCollectionResponse{}
+	gcr.SetCollection(collection)
+	gcr.SetDeployments(deployments)
+	return gcr, nil
 }
 
 // GetCollectionCount returns count of collections matching the query in the request
@@ -136,7 +136,9 @@ func (s *serviceImpl) GetCollectionCount(ctx context.Context, request *v1.GetCol
 	if err != nil {
 		return nil, err
 	}
-	return &v1.GetCollectionCountResponse{Count: int32(count)}, nil
+	gccr := &v1.GetCollectionCountResponse{}
+	gccr.SetCount(int32(count))
+	return gccr, nil
 }
 
 // DeleteCollection deletes the collection with the given ID
@@ -207,7 +209,9 @@ func (s *serviceImpl) CreateCollection(ctx context.Context, request *v1.CreateCo
 		return nil, err
 	}
 
-	return &v1.CreateCollectionResponse{Collection: collection}, nil
+	ccr := &v1.CreateCollectionResponse{}
+	ccr.SetCollection(collection)
+	return ccr, nil
 }
 
 func (s *serviceImpl) UpdateCollection(ctx context.Context, request *v1.UpdateCollectionRequest) (*v1.UpdateCollectionResponse, error) {
@@ -225,7 +229,9 @@ func (s *serviceImpl) UpdateCollection(ctx context.Context, request *v1.UpdateCo
 		return nil, err
 	}
 
-	return &v1.UpdateCollectionResponse{Collection: collection}, nil
+	ucr := &v1.UpdateCollectionResponse{}
+	ucr.SetCollection(collection)
+	return ucr, nil
 }
 
 func collectionRequestToCollection(ctx context.Context, request collectionRequest, id string) (*storage.ResourceCollection, error) {
@@ -245,27 +251,28 @@ func collectionRequestToCollection(ctx context.Context, request collectionReques
 
 	timeNow := protoconv.ConvertTimeToTimestamp(time.Now())
 
-	collection := &storage.ResourceCollection{
-		Id:                id,
-		Name:              collectionName,
-		Description:       request.GetDescription(),
-		LastUpdated:       timeNow,
-		UpdatedBy:         slimUser,
-		ResourceSelectors: request.GetResourceSelectors(),
-	}
+	collection := &storage.ResourceCollection{}
+	collection.SetId(id)
+	collection.SetName(collectionName)
+	collection.SetDescription(request.GetDescription())
+	collection.SetLastUpdated(timeNow)
+	collection.SetUpdatedBy(slimUser)
+	collection.SetResourceSelectors(request.GetResourceSelectors())
 
 	if id == "" {
 		// new  collection
-		collection.CreatedBy = slimUser
-		collection.CreatedAt = timeNow
+		collection.SetCreatedBy(slimUser)
+		collection.SetCreatedAt(timeNow)
 	}
 
 	if len(request.GetEmbeddedCollectionIds()) > 0 {
 		embeddedCollections := make([]*storage.ResourceCollection_EmbeddedResourceCollection, 0, len(request.GetEmbeddedCollectionIds()))
 		for _, id := range request.GetEmbeddedCollectionIds() {
-			embeddedCollections = append(embeddedCollections, &storage.ResourceCollection_EmbeddedResourceCollection{Id: id})
+			re := &storage.ResourceCollection_EmbeddedResourceCollection{}
+			re.SetId(id)
+			embeddedCollections = append(embeddedCollections, re)
 		}
-		collection.EmbeddedCollections = embeddedCollections
+		collection.SetEmbeddedCollections(embeddedCollections)
 	}
 
 	return collection, nil
@@ -294,9 +301,9 @@ func (s *serviceImpl) ListCollections(ctx context.Context, request *v1.ListColle
 		return nil, err
 	}
 
-	return &v1.ListCollectionsResponse{
-		Collections: collections,
-	}, nil
+	lcr := &v1.ListCollectionsResponse{}
+	lcr.SetCollections(collections)
+	return lcr, nil
 }
 
 func (s *serviceImpl) DryRunCollection(ctx context.Context, request *v1.DryRunCollectionRequest) (*v1.DryRunCollectionResponse, error) {
@@ -319,9 +326,9 @@ func (s *serviceImpl) DryRunCollection(ctx context.Context, request *v1.DryRunCo
 		return nil, errors.Wrap(err, "failed resolving deployments")
 	}
 
-	return &v1.DryRunCollectionResponse{
-		Deployments: deployments,
-	}, nil
+	drcr := &v1.DryRunCollectionResponse{}
+	drcr.SetDeployments(deployments)
+	return drcr, nil
 }
 
 func (s *serviceImpl) tryDeploymentMatching(ctx context.Context, collection *storage.ResourceCollection, matchOptions *v1.CollectionDeploymentMatchOptions) ([]*storage.ListDeployment, error) {

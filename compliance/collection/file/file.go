@@ -129,8 +129,8 @@ func collectAuditLog() *compliance.File {
 	for scanner.Scan() {
 		if bytes.Contains(scanner.Bytes(), dockerByteSlice) && bytes.Contains(scanner.Bytes(), execByteSlice) {
 			if bytes.Contains(scanner.Bytes(), privilegedByteSlice) || bytes.Contains(scanner.Bytes(), userByte) {
-				complianceFile.Content = append(complianceFile.Content, scanner.Bytes()...)
-				complianceFile.Content = append(complianceFile.Content, byte('\n'))
+				complianceFile.SetContent(append(complianceFile.GetContent(), scanner.Bytes()...))
+				complianceFile.SetContent(append(complianceFile.GetContent(), byte('\n')))
 			}
 		}
 	}
@@ -184,7 +184,7 @@ func EvaluatePath(path string, withContents, recurse bool) (*compliance.File, bo
 			if !exists {
 				continue
 			}
-			file.Children = append(file.Children, child)
+			file.SetChildren(append(file.GetChildren(), child))
 		}
 	} else if withContents {
 		if fi.Size() == 0 || fi.Size() > maxFileSize || !fileExtensions.Contains(filepath.Ext(pathInContainer)) {
@@ -202,13 +202,13 @@ func EvaluatePath(path string, withContents, recurse bool) (*compliance.File, bo
 func getFile(path string, fi os.FileInfo) *compliance.File {
 	gid := fi.Sys().(*syscall.Stat_t).Gid
 	uid := fi.Sys().(*syscall.Stat_t).Uid
-	return &compliance.File{
-		Path:        path,
-		User:        uid,
-		UserName:    userMap[uid],
-		Group:       gid,
-		GroupName:   groupMap[gid],
-		Permissions: uint32(fi.Mode().Perm()),
-		IsDir:       fi.IsDir(),
-	}
+	file := &compliance.File{}
+	file.SetPath(path)
+	file.SetUser(uid)
+	file.SetUserName(userMap[uid])
+	file.SetGroup(gid)
+	file.SetGroupName(groupMap[gid])
+	file.SetPermissions(uint32(fi.Mode().Perm()))
+	file.SetIsDir(fi.IsDir())
+	return file
 }

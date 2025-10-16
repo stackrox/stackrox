@@ -10,8 +10,8 @@ func convertUser(user *storage.SlimUser) *v2.SlimUser {
 		return nil
 	}
 
-	return &v2.SlimUser{
-		Id:   user.GetId(),
-		Name: user.GetName(),
-	}
+	slimUser := &v2.SlimUser{}
+	slimUser.SetId(user.GetId())
+	slimUser.SetName(user.GetName())
+	return slimUser
 }

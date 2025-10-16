@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
+	"google.golang.org/protobuf/proto"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
@@ -354,10 +355,10 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 				// otherwise assume the image is pullable. An Image ID may be empty when a
 				// container is not ready yet per the container runtime.
 				if c.ImageID != "" {
-					image.NotPullable = !imageUtils.IsPullable(c.ImageID)
+					image.SetNotPullable(!imageUtils.IsPullable(c.ImageID))
 				}
 
-				image.IsClusterLocal = localImages.Contains(image.GetName().GetFullName())
+				image.SetIsClusterLocal(localImages.Contains(image.GetName().GetFullName()))
 				updateImageWithNewerImageName(image, runtimeImageName, true)
 				continue
 			}
@@ -375,9 +376,9 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 			}
 
 			if digest := imageUtils.ExtractImageDigest(c.ImageID); digest != "" {
-				image.Id = digest
-				image.NotPullable = !imageUtils.IsPullable(c.ImageID)
-				image.IsClusterLocal = localImages.Contains(image.GetName().GetFullName())
+				image.SetId(digest)
+				image.SetNotPullable(!imageUtils.IsPullable(c.ImageID))
+				image.SetIsClusterLocal(localImages.Contains(image.GetName().GetFullName()))
 				updateImageWithNewerImageName(image, runtimeImageName, false)
 			}
 		}
@@ -405,8 +406,8 @@ func updateImageWithNewerImageName(image *storage.ContainerImage, newerImageName
 	imageName := image.GetName()
 	origFullName := imageName.GetFullName()
 	if imageName.GetRegistry() != newerImageName.GetRegistry() || imageName.GetRemote() != newerImageName.GetRemote() {
-		imageName.Registry = newerImageName.GetRegistry()
-		imageName.Remote = newerImageName.GetRemote()
+		imageName.SetRegistry(newerImageName.GetRegistry())
+		imageName.SetRemote(newerImageName.GetRemote())
 
 		if updateDigest {
 			imageUtils.NormalizeImageFullName(imageName, image.GetId())
@@ -467,13 +468,11 @@ func (w *deploymentWrap) toEvent(action central.ResourceAction) *central.SensorE
 	w.mutex.RLock()
 	defer w.mutex.RUnlock()
 
-	return &central.SensorEvent{
-		Id:     w.GetId(),
-		Action: action,
-		Resource: &central.SensorEvent_Deployment{
-			Deployment: w.GetDeployment().CloneVT(),
-		},
-	}
+	se := &central.SensorEvent{}
+	se.SetId(w.GetId())
+	se.SetAction(action)
+	se.SetDeployment(proto.ValueOrDefault(w.GetDeployment().CloneVT()))
+	return se
 }
 
 // anyNonHostPort is derived from `filterHostExposure(...)`. Therefore, if `filterHostExposure(...)` is updated,
@@ -542,19 +541,18 @@ func (w *deploymentWrap) updatePortExposureUncheckedNoLock(portExposure map[serv
 				// named ports MUST be defined in the pod spec
 				continue
 			}
-			portCfg = &storage.PortConfig{
-				ContainerPort: ref.Port.IntVal,
-				Protocol:      string(ref.Protocol),
-			}
+			portCfg = &storage.PortConfig{}
+			portCfg.SetContainerPort(ref.Port.IntVal)
+			portCfg.SetProtocol(string(ref.Protocol))
 			w.Ports = append(w.Ports, portCfg)
 			w.portConfigs[ref] = portCfg
 		}
 
-		portCfg.ExposureInfos = append(portCfg.ExposureInfos, exposureInfos...)
+		portCfg.SetExposureInfos(append(portCfg.GetExposureInfos(), exposureInfos...))
 
 		for _, exposureInfo := range exposureInfos {
 			if containers.CompareExposureLevel(portCfg.GetExposure(), exposureInfo.GetLevel()) < 0 {
-				portCfg.Exposure = exposureInfo.GetLevel()
+				portCfg.SetExposure(exposureInfo.GetLevel())
 			}
 		}
 	}

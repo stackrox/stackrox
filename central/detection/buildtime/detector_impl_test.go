@@ -34,7 +34,7 @@ func TestDetector(t *testing.T) {
 	// Load the latest tag policy since that has image fields, and add the BUILD lifecycle so it gets compiled for the
 	// buildtime policy set.
 	policyToTest := getPolicy(defaultPolicies, "Latest tag", t).CloneVT()
-	policyToTest.LifecycleStages = append(policyToTest.LifecycleStages, storage.LifecycleStage_BUILD)
+	policyToTest.SetLifecycleStages(append(policyToTest.GetLifecycleStages(), storage.LifecycleStage_BUILD))
 
 	require.NoError(t, policySet.UpsertPolicy(policyToTest))
 
@@ -45,25 +45,25 @@ func TestDetector(t *testing.T) {
 		expectedUnusedCategories []string
 	}{
 		{
-			image:          &storage.Image{Name: &storage.ImageName{Tag: "latest"}},
+			image:          storage.Image_builder{Name: storage.ImageName_builder{Tag: "latest"}.Build()}.Build(),
 			expectedAlerts: 1,
 		},
 		{
-			image:          &storage.Image{Id: "AAA", Name: &storage.ImageName{Tag: "latest"}},
+			image:          storage.Image_builder{Id: "AAA", Name: storage.ImageName_builder{Tag: "latest"}.Build()}.Build(),
 			expectedAlerts: 1,
 		},
 		{
-			image:          &storage.Image{Id: "AAA", Name: &storage.ImageName{Tag: "OLDEST"}},
+			image:          storage.Image_builder{Id: "AAA", Name: storage.ImageName_builder{Tag: "OLDEST"}.Build()}.Build(),
 			expectedAlerts: 0,
 		},
 		{
-			image:                    &storage.Image{Name: &storage.ImageName{Tag: "latest"}},
+			image:                    storage.Image_builder{Name: storage.ImageName_builder{Tag: "latest"}.Build()}.Build(),
 			allowedCategories:        []string{"Not a category"},
 			expectedAlerts:           0,
 			expectedUnusedCategories: []string{"Not a category"},
 		},
 		{
-			image:             &storage.Image{Name: &storage.ImageName{Tag: "latest"}},
+			image:             storage.Image_builder{Name: storage.ImageName_builder{Tag: "latest"}.Build()}.Build(),
 			allowedCategories: []string{"DevOps Best Practices"},
 			expectedAlerts:    1,
 		},

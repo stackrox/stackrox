@@ -49,21 +49,20 @@ func VerifyAgainstSignatureIntegration(ctx context.Context, integration *storage
 	image *storage.Image) *storage.ImageSignatureVerificationResult {
 	verifier, err := createVerifierFromSignatureIntegration(integration)
 	if err != nil {
-		return &storage.ImageSignatureVerificationResult{
-			VerificationTime: protoconv.ConvertTimeToTimestamp(time.Now()),
-			VerifierId:       integration.GetId(),
-			Status:           storage.ImageSignatureVerificationResult_GENERIC_ERROR,
-			Description:      err.Error(),
-		}
+		isvr := &storage.ImageSignatureVerificationResult{}
+		isvr.SetVerificationTime(protoconv.ConvertTimeToTimestamp(time.Now()))
+		isvr.SetVerifierId(integration.GetId())
+		isvr.SetStatus(storage.ImageSignatureVerificationResult_GENERIC_ERROR)
+		isvr.SetDescription(err.Error())
+		return isvr
 	}
 	res, verifiedImageReferences, err := verifier.VerifySignature(ctx, image)
 
-	verificationResult := &storage.ImageSignatureVerificationResult{
-		VerificationTime:        protoconv.ConvertTimeToTimestamp(time.Now()),
-		VerifierId:              integration.GetId(),
-		Status:                  res,
-		VerifiedImageReferences: verifiedImageReferences,
-	}
+	verificationResult := &storage.ImageSignatureVerificationResult{}
+	verificationResult.SetVerificationTime(protoconv.ConvertTimeToTimestamp(time.Now()))
+	verificationResult.SetVerifierId(integration.GetId())
+	verificationResult.SetStatus(res)
+	verificationResult.SetVerifiedImageReferences(verifiedImageReferences)
 	// We do not currently support specifying which specific method within an image signature integration should
 	// be successful. Hence, short-circuit on the first successfully verified signature within an image signature
 	// integration.
@@ -74,7 +73,7 @@ func VerifyAgainstSignatureIntegration(ctx context.Context, integration *storage
 	// signature, ensuring all errors are properly returned to the caller.
 	// The result description is rendered in the signature verification tab of the image UI page.
 	if err != nil {
-		verificationResult.Description = err.Error()
+		verificationResult.SetDescription(err.Error())
 	}
 	return verificationResult
 }

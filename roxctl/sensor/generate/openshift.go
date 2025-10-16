@@ -25,17 +25,17 @@ type sensorGenerateOpenShiftCommand struct {
 }
 
 func (s *sensorGenerateOpenShiftCommand) ConstructOpenShift() error {
-	s.cluster.Type = storage.ClusterType_OPENSHIFT4_CLUSTER
+	s.cluster.SetType(storage.ClusterType_OPENSHIFT4_CLUSTER)
 	switch s.openshiftVersion {
 	case 0:
 	case 3:
-		s.cluster.Type = storage.ClusterType_OPENSHIFT_CLUSTER
+		s.cluster.SetType(storage.ClusterType_OPENSHIFT_CLUSTER)
 	case 4:
 	default:
 		return errox.InvalidArgs.Newf("invalid OpenShift version %d, supported values are '3' and '4'", s.openshiftVersion)
 	}
 
-	s.cluster.AdmissionControllerEvents = s.cluster.GetType() == storage.ClusterType_OPENSHIFT4_CLUSTER
+	s.cluster.SetAdmissionControllerEvents(s.cluster.GetType() == storage.ClusterType_OPENSHIFT4_CLUSTER)
 
 	// This is intentionally NOT feature-flagged, because we always want to set the correct (auto) value,
 	// even if we turn off the flag before shipping.
@@ -45,7 +45,7 @@ func (s *sensorGenerateOpenShiftCommand) ConstructOpenShift() error {
 		return errox.InvalidArgs.New(errorAuditLogsNotSupportedOnOpenShift3x)
 	}
 
-	s.cluster.DynamicConfig.DisableAuditLogs = *s.disableAuditLogCollection
+	s.cluster.GetDynamicConfig().SetDisableAuditLogs(*s.disableAuditLogCollection)
 
 	return nil
 }

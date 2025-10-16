@@ -27,13 +27,13 @@ var (
 )
 
 func init() {
-	metadata := &storage.ImageMetadata{
-		V1: &storage.V1Metadata{
+	metadata := storage.ImageMetadata_builder{
+		V1: storage.V1Metadata_builder{
 			Layers: []*storage.ImageLayer{
 				{}, // This is necessary for hashstructure to consider changes to ImageLayer
 			},
-		},
-	}
+		}.Build(),
+	}.Build()
 	var err error
 	metadataHash, err = hashstructure.Hash(metadata, hashstructure.FormatV2, &hashstructure.HashOptions{ZeroNil: true})
 	utils.Must(err)

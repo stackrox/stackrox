@@ -112,7 +112,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	event := msg.GetEvent()
 	deployment := event.GetDeployment()
-	deployment.ClusterId = clusterID
+	deployment.SetClusterId(clusterID)
 
 	// ROX-22002: Remove invalid null characters in annotations
 	stringutils.SanitizeMapValues(deployment.GetAnnotations())

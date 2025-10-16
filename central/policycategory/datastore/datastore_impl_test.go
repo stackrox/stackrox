@@ -69,7 +69,7 @@ func (s *PolicyCategoryDatastoreTestSuite) TestDeletePolicyCategory() {
 
 func (s *PolicyCategoryDatastoreTestSuite) TestDeleteDefaultPolicyCategory() {
 	c := fixtures.GetPolicyCategory()
-	c.IsDefault = true
+	c.SetIsDefault(true)
 
 	s.store.EXPECT().Get(s.hasReadWriteWorkflowAdministrationCtx, "category-id").Return(c, true, nil)
 
@@ -97,7 +97,7 @@ func (s *PolicyCategoryDatastoreTestSuite) TestRenamePolicyCategoryDuplicateName
 
 func (s *PolicyCategoryDatastoreTestSuite) TestRenameDefaultPolicyCategory() {
 	c := fixtures.GetPolicyCategory()
-	c.IsDefault = true
+	c.SetIsDefault(true)
 
 	s.store.EXPECT().Get(s.hasReadWriteWorkflowAdministrationCtx, "category-id").Return(c, true, nil)
 

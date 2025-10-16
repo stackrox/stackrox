@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 type componentPieces struct {
@@ -30,7 +31,7 @@ var (
 	}
 
 	testVulns = []*storage.EmbeddedVulnerability{
-		{
+		storage.EmbeddedVulnerability_builder{
 			Cve:          "cve1",
 			Cvss:         0,
 			Summary:      "",
@@ -38,7 +39,7 @@ var (
 			SetFixedBy:   nil,
 			ScoreVersion: 1,
 			CvssV2:       nil,
-			CvssV3: &storage.CVSSV3{
+			CvssV3: storage.CVSSV3_builder{
 				Vector:              "testVector",
 				ExploitabilityScore: 1.0,
 				ImpactScore:         2.0,
@@ -52,7 +53,7 @@ var (
 				Availability:        storage.CVSSV3_IMPACT_HIGH,
 				Score:               11.0,
 				Severity:            storage.CVSSV3_CRITICAL,
-			},
+			}.Build(),
 			PublishedOn:           ts,
 			LastModified:          ts,
 			VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
@@ -65,44 +66,40 @@ var (
 			Severity:              0,
 			State:                 0,
 			CvssMetrics: []*storage.CVSSScore{
-				{
+				storage.CVSSScore_builder{
 					Source: storage.Source_SOURCE_NVD,
 					Url:    "blah.com",
-					CvssScore: &storage.CVSSScore_Cvssv3{
-						Cvssv3: &storage.CVSSV3{
-							Vector:              "testVector",
-							ExploitabilityScore: 1.0,
-							ImpactScore:         2.0,
-							AttackVector:        storage.CVSSV3_ATTACK_NETWORK,
-							AttackComplexity:    storage.CVSSV3_COMPLEXITY_HIGH,
-							PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_HIGH,
-							UserInteraction:     storage.CVSSV3_UI_REQUIRED,
-							Scope:               storage.CVSSV3_CHANGED,
-							Confidentiality:     storage.CVSSV3_IMPACT_HIGH,
-							Integrity:           storage.CVSSV3_IMPACT_HIGH,
-							Availability:        storage.CVSSV3_IMPACT_HIGH,
-							Score:               11.0,
-							Severity:            storage.CVSSV3_CRITICAL,
-						},
-					},
-				},
+					Cvssv3: storage.CVSSV3_builder{
+						Vector:              "testVector",
+						ExploitabilityScore: 1.0,
+						ImpactScore:         2.0,
+						AttackVector:        storage.CVSSV3_ATTACK_NETWORK,
+						AttackComplexity:    storage.CVSSV3_COMPLEXITY_HIGH,
+						PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_HIGH,
+						UserInteraction:     storage.CVSSV3_UI_REQUIRED,
+						Scope:               storage.CVSSV3_CHANGED,
+						Confidentiality:     storage.CVSSV3_IMPACT_HIGH,
+						Integrity:           storage.CVSSV3_IMPACT_HIGH,
+						Availability:        storage.CVSSV3_IMPACT_HIGH,
+						Score:               11.0,
+						Severity:            storage.CVSSV3_CRITICAL,
+					}.Build(),
+				}.Build(),
 			},
 			NvdCvss: 11,
-			Epss: &storage.EPSS{
+			Epss: storage.EPSS_builder{
 				EpssProbability: 22,
 				EpssPercentile:  98,
-			},
-		},
-		{
-			Cve:     "cve2",
-			Cvss:    0,
-			Summary: "",
-			Link:    "",
-			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-				FixedBy: "ver3",
-			},
+			}.Build(),
+		}.Build(),
+		storage.EmbeddedVulnerability_builder{
+			Cve:          "cve2",
+			Cvss:         0,
+			Summary:      "",
+			Link:         "",
+			FixedBy:      proto.String("ver3"),
 			ScoreVersion: 0,
-			CvssV2: &storage.CVSSV2{
+			CvssV2: storage.CVSSV2_builder{
 				Vector:              "testVector2",
 				AttackVector:        storage.CVSSV2_ATTACK_ADJACENT,
 				AccessComplexity:    storage.CVSSV2_ACCESS_LOW,
@@ -114,7 +111,7 @@ var (
 				ImpactScore:         32,
 				Score:               43,
 				Severity:            storage.CVSSV2_HIGH,
-			},
+			}.Build(),
 			CvssV3:                nil,
 			PublishedOn:           ts,
 			LastModified:          ts,
@@ -130,7 +127,7 @@ var (
 			CvssMetrics:           nil,
 			NvdCvss:               0,
 			Epss:                  nil,
-		},
+		}.Build(),
 	}
 )
 
@@ -164,10 +161,10 @@ func getTestCVEID(t *testing.T, testCVE *storage.EmbeddedVulnerability, componen
 
 func getTestCVEs(t *testing.T) []*storage.ImageCVEV2 {
 	return []*storage.ImageCVEV2{
-		{
+		storage.ImageCVEV2_builder{
 			Id:      getTestCVEID(t, testVulns[0], getTestComponentID(t)),
 			ImageId: "sha",
-			CveBaseInfo: &storage.CVEInfo{
+			CveBaseInfo: storage.CVEInfo_builder{
 				Cve:          "cve1",
 				Summary:      "",
 				Link:         "",
@@ -176,7 +173,7 @@ func getTestCVEs(t *testing.T) []*storage.ImageCVEV2 {
 				LastModified: ts,
 				ScoreVersion: 1,
 				CvssV2:       nil,
-				CvssV3: &storage.CVSSV3{
+				CvssV3: storage.CVSSV3_builder{
 					Vector:              "testVector",
 					ExploitabilityScore: 1.0,
 					ImpactScore:         2.0,
@@ -190,36 +187,34 @@ func getTestCVEs(t *testing.T) []*storage.ImageCVEV2 {
 					Availability:        storage.CVSSV3_IMPACT_HIGH,
 					Score:               11.0,
 					Severity:            storage.CVSSV3_CRITICAL,
-				},
+				}.Build(),
 				References: nil,
 				CvssMetrics: []*storage.CVSSScore{
-					{
+					storage.CVSSScore_builder{
 						Source: storage.Source_SOURCE_NVD,
 						Url:    "blah.com",
-						CvssScore: &storage.CVSSScore_Cvssv3{
-							Cvssv3: &storage.CVSSV3{
-								Vector:              "testVector",
-								ExploitabilityScore: 1.0,
-								ImpactScore:         2.0,
-								AttackVector:        storage.CVSSV3_ATTACK_NETWORK,
-								AttackComplexity:    storage.CVSSV3_COMPLEXITY_HIGH,
-								PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_HIGH,
-								UserInteraction:     storage.CVSSV3_UI_REQUIRED,
-								Scope:               storage.CVSSV3_CHANGED,
-								Confidentiality:     storage.CVSSV3_IMPACT_HIGH,
-								Integrity:           storage.CVSSV3_IMPACT_HIGH,
-								Availability:        storage.CVSSV3_IMPACT_HIGH,
-								Score:               11.0,
-								Severity:            storage.CVSSV3_CRITICAL,
-							},
-						},
-					},
+						Cvssv3: storage.CVSSV3_builder{
+							Vector:              "testVector",
+							ExploitabilityScore: 1.0,
+							ImpactScore:         2.0,
+							AttackVector:        storage.CVSSV3_ATTACK_NETWORK,
+							AttackComplexity:    storage.CVSSV3_COMPLEXITY_HIGH,
+							PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_HIGH,
+							UserInteraction:     storage.CVSSV3_UI_REQUIRED,
+							Scope:               storage.CVSSV3_CHANGED,
+							Confidentiality:     storage.CVSSV3_IMPACT_HIGH,
+							Integrity:           storage.CVSSV3_IMPACT_HIGH,
+							Availability:        storage.CVSSV3_IMPACT_HIGH,
+							Score:               11.0,
+							Severity:            storage.CVSSV3_CRITICAL,
+						}.Build(),
+					}.Build(),
 				},
-				Epss: &storage.EPSS{
+				Epss: storage.EPSS_builder{
 					EpssProbability: 22,
 					EpssPercentile:  98,
-				},
-			},
+				}.Build(),
+			}.Build(),
 			Cvss:                 0,
 			Severity:             0,
 			ImpactScore:          2.0,
@@ -230,11 +225,11 @@ func getTestCVEs(t *testing.T) []*storage.ImageCVEV2 {
 			IsFixable:            false,
 			HasFixedBy:           nil,
 			ComponentId:          getTestComponentID(t),
-		},
-		{
+		}.Build(),
+		storage.ImageCVEV2_builder{
 			Id:      getTestCVEID(t, testVulns[1], getTestComponentID(t)),
 			ImageId: "sha",
-			CveBaseInfo: &storage.CVEInfo{
+			CveBaseInfo: storage.CVEInfo_builder{
 				Cve:          "cve2",
 				Summary:      "",
 				Link:         "",
@@ -242,7 +237,7 @@ func getTestCVEs(t *testing.T) []*storage.ImageCVEV2 {
 				CreatedAt:    ts,
 				LastModified: ts,
 				ScoreVersion: 0,
-				CvssV2: &storage.CVSSV2{
+				CvssV2: storage.CVSSV2_builder{
 					Vector:              "testVector2",
 					AttackVector:        storage.CVSSV2_ATTACK_ADJACENT,
 					AccessComplexity:    storage.CVSSV2_ACCESS_LOW,
@@ -254,12 +249,12 @@ func getTestCVEs(t *testing.T) []*storage.ImageCVEV2 {
 					ImpactScore:         32,
 					Score:               43,
 					Severity:            storage.CVSSV2_HIGH,
-				},
+				}.Build(),
 				CvssV3:      nil,
 				References:  nil,
 				CvssMetrics: nil,
 				Epss:        nil,
-			},
+			}.Build(),
 			Cvss:                 0,
 			Severity:             0,
 			ImpactScore:          32,
@@ -268,11 +263,9 @@ func getTestCVEs(t *testing.T) []*storage.ImageCVEV2 {
 			FirstImageOccurrence: ts,
 			State:                0,
 			IsFixable:            true,
-			HasFixedBy: &storage.ImageCVEV2_FixedBy{
-				FixedBy: "ver3",
-			},
-			ComponentId: getTestComponentID(t),
-		},
+			FixedBy:              proto.String("ver3"),
+			ComponentId:          getTestComponentID(t),
+		}.Build(),
 	}
 }
 

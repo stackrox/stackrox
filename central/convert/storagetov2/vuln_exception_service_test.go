@@ -44,18 +44,18 @@ func TestVulnerabilityException(t *testing.T) {
 		t,
 		func() *v2.VulnerabilityException {
 			req := testutils.GetTestVulnExceptionWithUpdate(t)
-			req.GetDeferralRequest().Expiry = &v2.ExceptionExpiry{
-				ExpiryType: v2.ExceptionExpiry_TIME,
-				ExpiresOn:  nil,
-			}
+			ee := &v2.ExceptionExpiry{}
+			ee.SetExpiryType(v2.ExceptionExpiry_TIME)
+			ee.ClearExpiresOn()
+			req.GetDeferralRequest().SetExpiry(ee)
 			return req
 		}(),
 		func() *v2.VulnerabilityException {
 			req := testutils.GetTestVulnRequestWithUpdate(t)
-			req.GetDeferralReq().Expiry = &storage.RequestExpiry{
-				ExpiryType: storage.RequestExpiry_TIME,
-				Expiry:     nil,
-			}
+			re := &storage.RequestExpiry{}
+			re.SetExpiryType(storage.RequestExpiry_TIME)
+			re.ClearExpiry()
+			req.GetDeferralReq().SetExpiry(re)
 			return VulnerabilityException(req)
 		}(),
 	)

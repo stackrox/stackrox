@@ -32,33 +32,33 @@ type testEvent func(*testing.T, ScanWatcher)
 
 func handleScan(id string, startTime *protocompat.Timestamp) func(*testing.T, ScanWatcher) {
 	return func(t *testing.T, scanWatcher ScanWatcher) {
-		err := scanWatcher.PushScan(&storage.ComplianceOperatorScanV2{
-			Id:              id,
-			LastStartedTime: startTime,
-		})
+		cosv2 := &storage.ComplianceOperatorScanV2{}
+		cosv2.SetId(id)
+		cosv2.SetLastStartedTime(startTime)
+		err := scanWatcher.PushScan(cosv2)
 		require.NoError(t, err)
 	}
 }
 
 func handleScanWithAnnotation(id, checkCount string, startTime *protocompat.Timestamp) func(*testing.T, ScanWatcher) {
 	return func(t *testing.T, scanWatcher ScanWatcher) {
-		err := scanWatcher.PushScan(&storage.ComplianceOperatorScanV2{
-			Id:              id,
-			Annotations:     map[string]string{CheckCountAnnotationKey: checkCount},
-			LastStartedTime: startTime,
-		})
+		cosv2 := &storage.ComplianceOperatorScanV2{}
+		cosv2.SetId(id)
+		cosv2.SetAnnotations(map[string]string{CheckCountAnnotationKey: checkCount})
+		cosv2.SetLastStartedTime(startTime)
+		err := scanWatcher.PushScan(cosv2)
 		require.NoError(t, err)
 	}
 }
 
 func handleResult(id string, startTime *protocompat.Timestamp) func(*testing.T, ScanWatcher) {
 	return func(t *testing.T, scanWatcher ScanWatcher) {
-		err := scanWatcher.PushCheckResult(&storage.ComplianceOperatorCheckResultV2{
-			CheckId: id,
-			Annotations: map[string]string{
-				LastScannedAnnotationKey: startTime.AsTime().Format(time.RFC3339Nano),
-			},
+		cocrv2 := &storage.ComplianceOperatorCheckResultV2{}
+		cocrv2.SetCheckId(id)
+		cocrv2.SetAnnotations(map[string]string{
+			LastScannedAnnotationKey: startTime.AsTime().Format(time.RFC3339Nano),
 		})
+		err := scanWatcher.PushCheckResult(cocrv2)
 		require.NoError(t, err)
 	}
 }
@@ -276,15 +276,15 @@ func TestGetIDFromScan(t *testing.T) {
 	scan := &storage.ComplianceOperatorScanV2{}
 	_, err = GetWatcherIDFromScan(testDBAccess, scan, snapshotDS, scanConfigDS, nil)
 	assert.Error(t, err)
-	scan.ClusterId = "cluster-1"
+	scan.SetClusterId("cluster-1")
 	_, err = GetWatcherIDFromScan(testDBAccess, scan, snapshotDS, scanConfigDS, nil)
 	assert.Error(t, err)
-	scan.Id = "scan-1"
+	scan.SetId("scan-1")
 	_, err = GetWatcherIDFromScan(testDBAccess, scan, snapshotDS, scanConfigDS, nil)
 	assert.Error(t, err)
 	assert.Equal(t, ErrComplianceOperatorScanMissingLastStartedFiled, err)
 	timeNow := protocompat.TimestampNow()
-	scan.LastStartedTime = timeNow
+	scan.SetLastStartedTime(timeNow)
 	scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).Times(1).
 		Return(nil, errors.New("some error"))
 	_, err = GetWatcherIDFromScan(testDBAccess, scan, snapshotDS, scanConfigDS, nil)
@@ -295,12 +295,12 @@ func TestGetIDFromScan(t *testing.T) {
 	_, err = GetWatcherIDFromScan(testDBAccess, scan, snapshotDS, scanConfigDS, nil)
 	assert.Error(t, err)
 
+	coscv2 := &storage.ComplianceOperatorScanConfigurationV2{}
+	coscv2.SetId("scan-config-id")
 	scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).AnyTimes().
 		Return(
 			[]*storage.ComplianceOperatorScanConfigurationV2{
-				{
-					Id: "scan-config-id",
-				},
+				coscv2,
 			}, nil,
 		)
 	snapshotDS.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).Times(1).
@@ -311,10 +311,10 @@ func TestGetIDFromScan(t *testing.T) {
 	assert.Error(t, err)
 	snapshotDS.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(_, _ any) ([]*storage.ComplianceOperatorReportSnapshotV2, error) {
+			corsv2 := &storage.ComplianceOperatorReportSnapshotV2{}
+			corsv2.SetReportId("report-1")
 			return []*storage.ComplianceOperatorReportSnapshotV2{
-				{
-					ReportId: "report-1",
-				},
+				corsv2,
 			}, nil
 		})
 	_, err = GetWatcherIDFromScan(testDBAccess, scan, snapshotDS, scanConfigDS, nil)
@@ -344,12 +344,12 @@ func TestGetIDFromResult(t *testing.T) {
 		DoAndReturn(func(_, _ any) ([]*storage.ComplianceOperatorReportSnapshotV2, error) {
 			return []*storage.ComplianceOperatorReportSnapshotV2{}, nil
 		})
+	coscv2 := &storage.ComplianceOperatorScanConfigurationV2{}
+	coscv2.SetId("scan-config-id")
 	scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).AnyTimes().
 		Return(
 			[]*storage.ComplianceOperatorScanConfigurationV2{
-				{
-					Id: "scan-config-id",
-				},
+				coscv2,
 			}, nil,
 		)
 
@@ -376,12 +376,12 @@ func TestGetIDFromResult(t *testing.T) {
 	// Scan retrieved successfully
 	scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Times(5).
 		DoAndReturn(func(_, _ any) ([]*storage.ComplianceOperatorScanV2, error) {
+			cosv2 := &storage.ComplianceOperatorScanV2{}
+			cosv2.SetClusterId("cluster-1")
+			cosv2.SetId("scan-1")
+			cosv2.SetLastStartedTime(timeNow)
 			return []*storage.ComplianceOperatorScanV2{
-				{
-					ClusterId:       "cluster-1",
-					Id:              "scan-1",
-					LastStartedTime: timeNow,
-				},
+				cosv2,
 			}, nil
 		})
 	// Empty annotation
@@ -389,33 +389,33 @@ func TestGetIDFromResult(t *testing.T) {
 	assert.Error(t, err)
 
 	// Invalid format in the annotation
-	result.Annotations = map[string]string{
+	result.SetAnnotations(map[string]string{
 		LastScannedAnnotationKey: protocompat.TimestampNow().String(),
-	}
+	})
 	_, err = GetWatcherIDFromCheckResult(testDBAccess, result, scanDS, snapshotDS, scanConfigDS)
 	assert.Error(t, err)
 
 	// The timestamp is in the past
-	result.Annotations = map[string]string{
+	result.SetAnnotations(map[string]string{
 		LastScannedAnnotationKey: timeNow.AsTime().Add(-10 * time.Second).Format(time.RFC3339Nano),
-	}
+	})
 	_, err = GetWatcherIDFromCheckResult(testDBAccess, result, scanDS, snapshotDS, scanConfigDS)
 	assert.Error(t, err)
 	assert.Error(t, ErrComplianceOperatorReceivedOldCheckResult)
 
 	// The timestamp is in the future
 	futureTime := timeNow.AsTime().Add(10 * time.Second)
-	result.Annotations = map[string]string{
+	result.SetAnnotations(map[string]string{
 		LastScannedAnnotationKey: futureTime.Format(time.RFC3339Nano),
-	}
+	})
 	id, err := GetWatcherIDFromCheckResult(testDBAccess, result, scanDS, snapshotDS, scanConfigDS)
 	assert.NoError(t, err)
 	assert.Equal(t, "cluster-1:scan-1", id)
 
 	// The timestamp is the same
-	result.Annotations = map[string]string{
+	result.SetAnnotations(map[string]string{
 		LastScannedAnnotationKey: timeNow.AsTime().Format(time.RFC3339Nano),
-	}
+	})
 	id, err = GetWatcherIDFromCheckResult(testDBAccess, result, scanDS, snapshotDS, scanConfigDS)
 	assert.NoError(t, err)
 	assert.Equal(t, "cluster-1:scan-1", id)
@@ -446,10 +446,10 @@ func TestIsComplianceOperatorHealthy(t *testing.T) {
 	// Compliance Operator not installed
 	ds.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(_, _ any) ([]*storage.ComplianceIntegration, error) {
+			ci := &storage.ComplianceIntegration{}
+			ci.SetOperatorInstalled(false)
 			return []*storage.ComplianceIntegration{
-				{
-					OperatorInstalled: false,
-				},
+				ci,
 			}, nil
 		})
 	_, err = IsComplianceOperatorHealthy(testDBAccess, clusterID, ds)
@@ -459,11 +459,11 @@ func TestIsComplianceOperatorHealthy(t *testing.T) {
 	// Minimum version error
 	ds.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(_, _ any) ([]*storage.ComplianceIntegration, error) {
+			ci := &storage.ComplianceIntegration{}
+			ci.SetOperatorInstalled(true)
+			ci.SetVersion("v1.5.0")
 			return []*storage.ComplianceIntegration{
-				{
-					OperatorInstalled: true,
-					Version:           "v1.5.0",
-				},
+				ci,
 			}, nil
 		})
 	_, err = IsComplianceOperatorHealthy(testDBAccess, clusterID, ds)
@@ -473,11 +473,11 @@ func TestIsComplianceOperatorHealthy(t *testing.T) {
 	// Compliance Operator is healthy
 	ds.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(_, _ any) ([]*storage.ComplianceIntegration, error) {
+			ci := &storage.ComplianceIntegration{}
+			ci.SetOperatorInstalled(true)
+			ci.SetVersion("v1.6.0")
 			return []*storage.ComplianceIntegration{
-				{
-					OperatorInstalled: true,
-					Version:           "v1.6.0",
-				},
+				ci,
 			}, nil
 		})
 	_, err = IsComplianceOperatorHealthy(testDBAccess, clusterID, ds)
@@ -492,11 +492,11 @@ func TestDeleteOldResults(t *testing.T) {
 		assert.Error(tt, DeleteOldResults(context.Background(), nil, ds))
 	})
 	t.Run("results with error should also delete current CheckResults", func(tt *testing.T) {
+		cosv2 := &storage.ComplianceOperatorScanV2{}
+		cosv2.SetScanRefId("ref-id")
+		cosv2.SetLastStartedTime(timeNow)
 		results := &ScanWatcherResults{
-			Scan: &storage.ComplianceOperatorScanV2{
-				ScanRefId:       "ref-id",
-				LastStartedTime: timeNow,
-			},
+			Scan:  cosv2,
 			Error: errors.New("some error"),
 		}
 		ds.EXPECT().DeleteOldResults(gomock.Any(),
@@ -506,11 +506,11 @@ func TestDeleteOldResults(t *testing.T) {
 		assert.NoError(tt, DeleteOldResults(context.Background(), results, ds))
 	})
 	t.Run("results with no error should not delete current CheckResults", func(tt *testing.T) {
+		cosv2 := &storage.ComplianceOperatorScanV2{}
+		cosv2.SetScanRefId("ref-id")
+		cosv2.SetLastStartedTime(timeNow)
 		results := &ScanWatcherResults{
-			Scan: &storage.ComplianceOperatorScanV2{
-				ScanRefId:       "ref-id",
-				LastStartedTime: timeNow,
-			},
+			Scan: cosv2,
 		}
 		ds.EXPECT().DeleteOldResults(gomock.Any(),
 			gomock.Eq(results.Scan.GetLastStartedTime()),
@@ -519,11 +519,11 @@ func TestDeleteOldResults(t *testing.T) {
 		assert.NoError(tt, DeleteOldResults(context.Background(), results, ds))
 	})
 	t.Run("DataStore error should return an error", func(tt *testing.T) {
+		cosv2 := &storage.ComplianceOperatorScanV2{}
+		cosv2.SetScanRefId("ref-id")
+		cosv2.SetLastStartedTime(timeNow)
 		results := &ScanWatcherResults{
-			Scan: &storage.ComplianceOperatorScanV2{
-				ScanRefId:       "ref-id",
-				LastStartedTime: timeNow,
-			},
+			Scan: cosv2,
 		}
 		ds.EXPECT().DeleteOldResults(gomock.Any(),
 			gomock.Eq(results.Scan.GetLastStartedTime()),
@@ -532,11 +532,11 @@ func TestDeleteOldResults(t *testing.T) {
 		assert.Error(tt, DeleteOldResults(context.Background(), results, ds))
 	})
 	t.Run("DataStore success should not return error", func(tt *testing.T) {
+		cosv2 := &storage.ComplianceOperatorScanV2{}
+		cosv2.SetScanRefId("ref-id")
+		cosv2.SetLastStartedTime(timeNow)
 		results := &ScanWatcherResults{
-			Scan: &storage.ComplianceOperatorScanV2{
-				ScanRefId:       "ref-id",
-				LastStartedTime: timeNow,
-			},
+			Scan: cosv2,
 		}
 		ds.EXPECT().DeleteOldResults(gomock.Any(),
 			gomock.Eq(results.Scan.GetLastStartedTime()),

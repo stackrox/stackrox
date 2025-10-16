@@ -50,7 +50,9 @@ func TestStreamAuthzTraces(t *testing.T) {
 type fakeService struct{}
 
 func (s *fakeService) GetLogLevel(_ context.Context, _ *v1.GetLogLevelRequest) (*v1.LogLevelResponse, error) {
-	return &v1.LogLevelResponse{Level: "Invalid"}, nil
+	llr := &v1.LogLevelResponse{}
+	llr.SetLevel("Invalid")
+	return llr, nil
 }
 
 func (s *fakeService) SetLogLevel(_ context.Context, _ *v1.LogLevelRequest) (*protocompat.Empty, error) {
@@ -86,45 +88,43 @@ var (
 		"WatchedImages":                    storage.Access_READ_WRITE_ACCESS,
 		"WorkflowAdministration":           storage.Access_READ_WRITE_ACCESS,
 	}
-	trace = &v1.AuthorizationTraceResponse{
+	trace = v1.AuthorizationTraceResponse_builder{
 		ArrivedAt:   protocompat.ConvertTimeToTimestampOrNil(&arrivedAtTime),
 		ProcessedAt: protocompat.ConvertTimeToTimestampOrNil(&processedAtTime),
-		Request: &v1.AuthorizationTraceResponse_Request{
+		Request: v1.AuthorizationTraceResponse_Request_builder{
 			Endpoint: "/api/graphql",
 			Method:   http.MethodPost,
-		},
-		Response: &v1.AuthorizationTraceResponse_Response{
+		}.Build(),
+		Response: v1.AuthorizationTraceResponse_Response_builder{
 			Status: http.StatusOK,
 			Error:  "",
-		},
-		User: &v1.AuthorizationTraceResponse_User{
+		}.Build(),
+		User: v1.AuthorizationTraceResponse_User_builder{
 			Username:              "admin",
 			FriendlyName:          "admin",
 			AggregatedPermissions: adminPermissions,
 			Roles: []*v1.AuthorizationTraceResponse_User_Role{
-				{
+				v1.AuthorizationTraceResponse_User_Role_builder{
 					Name:            "admin",
 					Permissions:     adminPermissions,
 					AccessScopeName: "admin",
-					AccessScope: &storage.SimpleAccessScope_Rules{
+					AccessScope: storage.SimpleAccessScope_Rules_builder{
 						IncludedClusters: []string{"*"},
-					},
-				},
+					}.Build(),
+				}.Build(),
 			},
-		},
-		Trace: &v1.AuthorizationTraceResponse_Trace{
+		}.Build(),
+		Trace: v1.AuthorizationTraceResponse_Trace_builder{
 			ScopeCheckerType: "built-in",
-			Authorizer: &v1.AuthorizationTraceResponse_Trace_BuiltIn{
-				BuiltIn: &v1.AuthorizationTraceResponse_Trace_BuiltInAuthorizer{
-					ClustersTotalNum:      0,
-					NamespacesTotalNum:    0,
-					DeniedAuthzDecisions:  nil,
-					AllowedAuthzDecisions: nil,
-					EffectiveAccessScopes: map[string]string{"*": "*"},
-				},
-			},
-		},
-	}
+			BuiltIn: v1.AuthorizationTraceResponse_Trace_BuiltInAuthorizer_builder{
+				ClustersTotalNum:      0,
+				NamespacesTotalNum:    0,
+				DeniedAuthzDecisions:  nil,
+				AllowedAuthzDecisions: nil,
+				EffectiveAccessScopes: map[string]string{"*": "*"},
+			}.Build(),
+		}.Build(),
+	}.Build()
 
 	serializedPermissions = `{
 	"Access": "READ_WRITE_ACCESS",

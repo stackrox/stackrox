@@ -21,17 +21,13 @@ import (
 
 func Test_pipelineImpl_Run(t *testing.T) {
 	createMsg := func(id string) *central.MsgFromSensor {
-		return &central.MsgFromSensor{
-			Msg: &central.MsgFromSensor_Event{
-				Event: &central.SensorEvent{
-					Resource: &central.SensorEvent_NodeInventory{
-						NodeInventory: &storage.NodeInventory{
-							NodeId: id,
-						},
-					},
-				},
-			},
-		}
+		return central.MsgFromSensor_builder{
+			Event: central.SensorEvent_builder{
+				NodeInventory: storage.NodeInventory_builder{
+					NodeId: id,
+				}.Build(),
+			}.Build(),
+		}.Build()
 	}
 	type mocks struct {
 		clusterStore  *clusterDatastoreMocks.MockDataStore
@@ -62,7 +58,7 @@ func Test_pipelineImpl_Run(t *testing.T) {
 			name: "when event action is REMOVE_RESOURCE then ignore event",
 			setUp: func(t *testing.T, a *args, m *mocks) {
 				a.msg = createMsg("foobar")
-				a.msg.GetEvent().Action = central.ResourceAction_REMOVE_RESOURCE
+				a.msg.GetEvent().SetAction(central.ResourceAction_REMOVE_RESOURCE)
 				a.injector = &recordingInjector{}
 			},
 			wantInjectorContain: []*central.NodeInventoryACK{},
@@ -70,33 +66,33 @@ func Test_pipelineImpl_Run(t *testing.T) {
 		{
 			name: "when event action is CREATE_RESOURCE then do not ignore event",
 			setUp: func(t *testing.T, a *args, m *mocks) {
-				node := storage.Node{
+				node := storage.Node_builder{
 					Id: "test node id",
-				}
+				}.Build()
 				a.msg = createMsg(node.GetId())
-				a.msg.GetEvent().Action = central.ResourceAction_CREATE_RESOURCE
+				a.msg.GetEvent().SetAction(central.ResourceAction_CREATE_RESOURCE)
 				a.injector = &recordingInjector{}
 				gomock.InOrder(
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(node.GetId())).Times(1).Return(&node, true, nil),
+					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(node.GetId())).Times(1).Return(node, true, nil),
 					m.enricher.EXPECT().EnrichNodeWithVulnerabilities(gomock.Any(), gomock.Any(), nil).Times(1).Return(nil),
 					m.riskManager.EXPECT().CalculateRiskAndUpsertNode(gomock.Any()).Times(1).Return(nil),
 				)
 			},
-			wantInjectorContain: []*central.NodeInventoryACK{{Action: central.NodeInventoryACK_ACK}},
+			wantInjectorContain: []*central.NodeInventoryACK{central.NodeInventoryACK_builder{Action: central.NodeInventoryACK_ACK}.Build()},
 		},
 		{
 			name: "when event has inventory then enrich and upsert with risk",
 			wantInjectorContain: []*central.NodeInventoryACK{
-				{Action: central.NodeInventoryACK_ACK},
+				central.NodeInventoryACK_builder{Action: central.NodeInventoryACK_ACK}.Build(),
 			},
 			setUp: func(t *testing.T, a *args, m *mocks) {
-				node := storage.Node{
+				node := storage.Node_builder{
 					Id: "test node id",
-				}
+				}.Build()
 				a.msg = createMsg(node.GetId())
 				a.injector = &recordingInjector{}
 				gomock.InOrder(
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(node.GetId())).Times(1).Return(&node, true, nil),
+					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(node.GetId())).Times(1).Return(node, true, nil),
 					m.enricher.EXPECT().EnrichNodeWithVulnerabilities(gomock.Any(), gomock.Any(), nil).Times(1).Return(nil),
 					m.riskManager.EXPECT().CalculateRiskAndUpsertNode(gomock.Any()).Times(1).Return(nil),
 				)
@@ -105,13 +101,13 @@ func Test_pipelineImpl_Run(t *testing.T) {
 		{
 			name: "when injector is nil then handle normally and don't panic",
 			setUp: func(t *testing.T, a *args, m *mocks) {
-				node := storage.Node{
+				node := storage.Node_builder{
 					Id: "test node id",
-				}
+				}.Build()
 				a.msg = createMsg(node.GetId())
 				a.injector = nil
 				gomock.InOrder(
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(node.GetId())).Times(1).Return(&node, true, nil),
+					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(node.GetId())).Times(1).Return(node, true, nil),
 					m.enricher.EXPECT().EnrichNodeWithVulnerabilities(gomock.Any(), gomock.Any(), nil).Times(1).Return(nil),
 					m.riskManager.EXPECT().CalculateRiskAndUpsertNode(gomock.Any()).Times(1).Return(nil),
 				)

@@ -33,6 +33,7 @@ import (
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -123,7 +124,7 @@ func (suite *ManagerTestSuite) TearDownTest() {
 func (suite *ManagerTestSuite) mustInitManager(initialBaselines ...*storage.NetworkBaseline) {
 	suite.ds = &fakeDS{baselines: make(map[string]*storage.NetworkBaseline)}
 	for _, baseline := range initialBaselines {
-		baseline.ObservationPeriodEnd = protoconv.ConvertMicroTSToProtobufTS(getNewObservationPeriodEnd())
+		baseline.SetObservationPeriodEnd(protoconv.ConvertMicroTSToProtobufTS(getNewObservationPeriodEnd()))
 		suite.ds.baselines[baseline.GetDeploymentId()] = baseline
 	}
 
@@ -174,13 +175,13 @@ func (suite *ManagerTestSuite) mustGetObserationPeriod(baselineID int) timestamp
 
 func (suite *ManagerTestSuite) initBaselinesForDeployments(ids ...int) {
 	for _, id := range ids {
+		deployment := &storage.Deployment{}
+		deployment.SetId(depID(id))
+		deployment.SetName(depName(id))
+		deployment.SetClusterId(clusterID(id))
+		deployment.SetNamespace(ns(id))
 		suite.deploymentDS.EXPECT().GetDeployment(gomock.Any(), depID(id)).Return(
-			&storage.Deployment{
-				Id:        depID(id),
-				Name:      depName(id),
-				ClusterId: clusterID(id),
-				Namespace: ns(id),
-			}, true, nil,
+			deployment, true, nil,
 		).AnyTimes()
 		suite.clusterFlows.EXPECT().GetFlowStore(gomock.Any(), clusterID(id)).Return(suite.flowStore, nil).AnyTimes()
 		suite.flowStore.EXPECT().GetFlowsForDeployment(gomock.Any(), depID(id), false).Return(nil, nil).AnyTimes()
@@ -220,7 +221,7 @@ func (suite *ManagerTestSuite) assertBaselinesAre(baselines ...*storage.NetworkB
 		actualObsEnd := timestamp.FromProtobuf(cloned.GetObservationPeriodEnd())
 		suite.True(actualObsEnd.After(obsPeriodStart), "Actual obs end: %v, expected obs window: %v-%v", actualObsEnd.GoTime(), obsPeriodStart.GoTime(), obsPeriodEnd.GoTime())
 		suite.True(obsPeriodEnd.After(actualObsEnd), "Actual obs end: %v, expected obs window: %v-%v", actualObsEnd.GoTime(), obsPeriodStart.GoTime(), obsPeriodEnd.GoTime())
-		cloned.ObservationPeriodEnd = nil
+		cloned.ClearObservationPeriodEnd()
 		baselinesWithoutObsPeriod = append(baselinesWithoutObsPeriod, cloned)
 	}
 
@@ -237,19 +238,17 @@ func (suite *ManagerTestSuite) TestFlowsUpdateForOtherEntityTypes() {
 		baselineWithPeers(2, depPeer(1, properties(true, 52))),
 		emptyBaseline(3),
 	)
+	ne4 := &storage.NetworkEntity{}
+	ne4.SetInfo(storage.NetworkEntityInfo_builder{
+		Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+		Id:   extSrcID(10),
+		ExternalSource: storage.NetworkEntityInfo_ExternalSource_builder{
+			Name: extSrcName(10),
+			Cidr: proto.String("11.0.0.0/32"),
+		}.Build(),
+	}.Build())
 	suite.networkEntities.EXPECT().GetEntity(gomock.Any(), extSrcID(10)).Return(
-		&storage.NetworkEntity{
-			Info: &storage.NetworkEntityInfo{
-				Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-				Id:   extSrcID(10),
-				Desc: &storage.NetworkEntityInfo_ExternalSource_{
-					ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-						Name:   extSrcName(10),
-						Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{Cidr: "11.0.0.0/32"},
-					},
-				},
-			},
-		}, true, nil)
+		ne4, true, nil)
 
 	suite.processFlowUpdate([]networkgraph.NetworkConnIndicator{
 		// This conn is valid and should get incorporated into the baseline.
@@ -333,42 +332,46 @@ func (suite *ManagerTestSuite) TestFlowsUpdateForOtherEntityTypes() {
 			DstPort:  1,
 		},
 	}, nil)
+	nei := &storage.NetworkEntityInfo{}
+	nei.SetType(storage.NetworkEntityInfo_INTERNAL_ENTITIES)
+	nei.SetId("INTERNALZZ")
+	ne := &storage.NetworkEntity{}
+	ne.SetInfo(nei)
+	nbp := &storage.NetworkBaselinePeer{}
+	nbp.SetEntity(ne)
+	nbp.SetProperties([]*storage.NetworkBaselineConnectionProperties{properties(false, 13)})
+	nei2 := &storage.NetworkEntityInfo{}
+	nei2.SetType(storage.NetworkEntityInfo_INTERNET)
+	nei2.SetId("INTERNETTZZ")
+	ne2 := &storage.NetworkEntity{}
+	ne2.SetInfo(nei2)
+	nbp2 := &storage.NetworkBaselinePeer{}
+	nbp2.SetEntity(ne2)
+	nbp2.SetProperties([]*storage.NetworkBaselineConnectionProperties{properties(false, 13)})
+	nei3 := &storage.NetworkEntityInfo{}
+	nei3.SetType(storage.NetworkEntityInfo_INTERNET)
+	nei3.SetId(networkgraph.InternetEntity().ID)
+	ne3 := &storage.NetworkEntity{}
+	ne3.SetInfo(nei3)
+	nbp3 := &storage.NetworkBaselinePeer{}
+	nbp3.SetEntity(ne3)
+	nbp3.SetProperties([]*storage.NetworkBaselineConnectionProperties{properties(false, 12)})
 	suite.assertBaselinesAre(
 		baselineWithPeers(1, depPeer(2, properties(false, 52)),
-			&storage.NetworkBaselinePeer{
-				Entity: &storage.NetworkEntity{Info: &storage.NetworkEntityInfo{
+			storage.NetworkBaselinePeer_builder{
+				Entity: storage.NetworkEntity_builder{Info: storage.NetworkEntityInfo_builder{
 					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 					Id:   extSrcID(10),
-					Desc: &storage.NetworkEntityInfo_ExternalSource_{
-						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-							Name:   extSrcName(10),
-							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{Cidr: "11.0.0.0/32"},
-						},
-					},
-				}},
+					ExternalSource: storage.NetworkEntityInfo_ExternalSource_builder{
+						Name: extSrcName(10),
+						Cidr: proto.String("11.0.0.0/32"),
+					}.Build(),
+				}.Build()}.Build(),
 				Properties: []*storage.NetworkBaselineConnectionProperties{properties(false, 1)},
-			},
-			&storage.NetworkBaselinePeer{
-				Entity: &storage.NetworkEntity{Info: &storage.NetworkEntityInfo{
-					Type: storage.NetworkEntityInfo_INTERNAL_ENTITIES,
-					Id:   "INTERNALZZ",
-				}},
-				Properties: []*storage.NetworkBaselineConnectionProperties{properties(false, 13)},
-			},
-			&storage.NetworkBaselinePeer{
-				Entity: &storage.NetworkEntity{Info: &storage.NetworkEntityInfo{
-					Type: storage.NetworkEntityInfo_INTERNET,
-					Id:   "INTERNETTZZ",
-				}},
-				Properties: []*storage.NetworkBaselineConnectionProperties{properties(false, 13)},
-			},
-			&storage.NetworkBaselinePeer{
-				Entity: &storage.NetworkEntity{Info: &storage.NetworkEntityInfo{
-					Type: storage.NetworkEntityInfo_INTERNET,
-					Id:   networkgraph.InternetEntity().ID,
-				}},
-				Properties: []*storage.NetworkBaselineConnectionProperties{properties(false, 12)},
-			},
+			}.Build(),
+			nbp,
+			nbp2,
+			nbp3,
 		),
 		baselineWithPeers(2, depPeer(1, properties(true, 52))),
 		emptyBaseline(3),
@@ -479,9 +482,9 @@ func (suite *ManagerTestSuite) TestUpdateBaselineStatus() {
 	)
 
 	// No deployment ID -- should fail.
-	suite.Error(suite.m.ProcessBaselineStatusUpdate(allAllowedCtx, &v1.ModifyBaselineStatusForPeersRequest{
-		Peers: []*v1.NetworkBaselinePeerStatus{protoPeerStatus(v1.NetworkBaselinePeerStatus_BASELINE, 2, 52, true)},
-	}))
+	mbsfpr := &v1.ModifyBaselineStatusForPeersRequest{}
+	mbsfpr.SetPeers([]*v1.NetworkBaselinePeerStatus{protoPeerStatus(v1.NetworkBaselinePeerStatus_BASELINE, 2, 52, true)})
+	suite.Error(suite.m.ProcessBaselineStatusUpdate(allAllowedCtx, mbsfpr))
 
 	// Non existent deployment ID -- should fail.
 	suite.Error(suite.m.ProcessBaselineStatusUpdate(allAllowedCtx,
@@ -494,20 +497,19 @@ func (suite *ManagerTestSuite) TestUpdateBaselineStatus() {
 	))
 
 	// Trying to add a listen endpoint as a peer -- should fail.
+	nbpe := &v1.NetworkBaselinePeerEntity{}
+	nbpe.SetId("")
+	nbpe.SetType(storage.NetworkEntityInfo_DEPLOYMENT)
+	nbsp := &v1.NetworkBaselineStatusPeer{}
+	nbsp.SetEntity(nbpe)
+	nbsp.SetPort(52)
+	nbsp.SetProtocol(storage.L4Protocol_L4_PROTOCOL_TCP)
+	nbsp.SetIngress(true)
+	nbps := &v1.NetworkBaselinePeerStatus{}
+	nbps.SetPeer(nbsp)
+	nbps.SetStatus(v1.NetworkBaselinePeerStatus_ANOMALOUS)
 	suite.Error(suite.m.ProcessBaselineStatusUpdate(allAllowedCtx,
-		modifyPeersReq(1, &v1.NetworkBaselinePeerStatus{
-			Peer: &v1.NetworkBaselineStatusPeer{
-				Entity: &v1.NetworkBaselinePeerEntity{
-					Id:   "",
-					Type: storage.NetworkEntityInfo_DEPLOYMENT,
-				},
-				Port:     52,
-				Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-				Ingress:  true,
-			},
-			Status: v1.NetworkBaselinePeerStatus_ANOMALOUS,
-		},
-		)))
+		modifyPeersReq(1, nbps)))
 
 	// SAC enforcement: should not be able to modify other deployment.
 	suite.Error(suite.m.ProcessBaselineStatusUpdate(ctxWithAccessToWrite(2),
@@ -740,14 +742,14 @@ func (suite *ManagerTestSuite) TestProcessNetworkPolicyUpdate() {
 			AddExactMatches(search.ClusterID, networkPolicy.GetClusterId()).
 			AddExactMatches(search.Namespace, networkPolicy.GetNamespace()).
 			ProtoQuery()
+	deployment := &storage.Deployment{}
+	deployment.SetId(depID(1))
+	deployment.SetClusterId(networkPolicy.GetClusterId())
+	deployment.SetNamespace(networkPolicy.GetNamespace())
+	deployment.SetPodLabels(matchLabels)
 	suite.deploymentDS.EXPECT().SearchRawDeployments(gomock.Any(), deploymentSearchQuery).Return(
 		[]*storage.Deployment{
-			{
-				Id:        depID(1),
-				ClusterId: networkPolicy.GetClusterId(),
-				Namespace: networkPolicy.GetNamespace(),
-				PodLabels: matchLabels,
-			},
+			deployment,
 		}, nil).AnyTimes()
 
 	suite.Nil(suite.m.ProcessNetworkPolicyUpdate(managerCtx, central.ResourceAction_CREATE_RESOURCE, networkPolicy))
@@ -772,19 +774,19 @@ func (suite *ManagerTestSuite) TestProcessNetworkPolicyUpdate() {
 
 	// Or changing the policy content should update the observation period as well
 	rule := networkPolicy.GetSpec().GetIngress()[0]
-	rule.Ports =
+	npp := &storage.NetworkPolicyPort{}
+	npp.SetProtocol(storage.Protocol_TCP_PROTOCOL)
+	npp.SetPort(1234)
+	rule.SetPorts(
 		append(
-			rule.Ports,
-			&storage.NetworkPolicyPort{
-				Protocol: storage.Protocol_TCP_PROTOCOL,
-				PortRef:  &storage.NetworkPolicyPort_Port{Port: 1234}})
-	networkPolicy.Spec.Ingress = []*storage.NetworkPolicyIngressRule{rule}
+			rule.GetPorts(), npp))
+	networkPolicy.GetSpec().SetIngress([]*storage.NetworkPolicyIngressRule{rule})
 	suite.Nil(suite.m.ProcessNetworkPolicyUpdate(managerCtx, central.ResourceAction_CREATE_RESOURCE, networkPolicy))
 	afterPolicyRuleUpdateObservationPeriod := suite.mustGetObserationPeriod(1)
 	suite.True(afterPolicyRuleUpdateObservationPeriod.After(afterActionChangeObservationPeriod))
 
 	// Or changing the pod selector of the policy
-	networkPolicy.Spec.PodSelector.MatchLabels["another_tag"] = "another_value"
+	networkPolicy.GetSpec().GetPodSelector().GetMatchLabels()["another_tag"] = "another_value"
 	suite.Nil(suite.m.ProcessNetworkPolicyUpdate(managerCtx, central.ResourceAction_CREATE_RESOURCE, networkPolicy))
 	afterPodSelectorUpdateObservationPeriod := suite.mustGetObserationPeriod(1)
 	suite.True(afterPodSelectorUpdateObservationPeriod.After(afterPolicyRuleUpdateObservationPeriod))
@@ -803,7 +805,7 @@ func (suite *ManagerTestSuite) TestLockBaseline() {
 	baseline1 := suite.mustGetBaseline(1)
 	beforeLockUpdateState := baseline1.GetLocked()
 	baseline1Copy := baseline1.CloneVT()
-	baseline1Copy.Locked = !beforeLockUpdateState
+	baseline1Copy.SetLocked(!beforeLockUpdateState)
 	expectOneTimeCallToConnectionManagerWithBaseline(suite, baseline1Copy)
 
 	suite.Nil(suite.m.ProcessBaselineLockUpdate(managerCtx, depID(1), !beforeLockUpdateState))
@@ -880,7 +882,7 @@ func (suite *ManagerTestSuite) TestBaselineSyncMsg() {
 
 	baseline1 := suite.mustGetBaseline(1)
 	baseline1Copy := baseline1.CloneVT()
-	baseline1Copy.Locked = true
+	baseline1Copy.SetLocked(true)
 	// Lock state changed from unlocked to locked, we should sync this baseline to sensor now
 	expectOneTimeCallToConnectionManagerWithBaseline(suite, baseline1Copy)
 	suite.Nil(suite.m.ProcessBaselineLockUpdate(managerCtx, depID(1), true))
@@ -889,13 +891,13 @@ func (suite *ManagerTestSuite) TestBaselineSyncMsg() {
 
 	// If it stays as locked, and some updates are made to the baseline, then we should also sync to sensor
 	modifiedBaseline := baselineWithPeers(1)
-	modifiedBaseline.Locked = baseline1Copy.GetLocked()
-	modifiedBaseline.ObservationPeriodEnd = baseline1.GetObservationPeriodEnd()
+	modifiedBaseline.SetLocked(baseline1Copy.GetLocked())
+	modifiedBaseline.SetObservationPeriodEnd(baseline1.GetObservationPeriodEnd())
 	expectOneTimeCallToConnectionManagerWithBaseline(suite, modifiedBaseline)
 	suite.Nil(suite.m.ProcessDeploymentDelete(depID(2)))
 
 	// If baseline changed from locked to unlocked, we should also sync to sensor
-	modifiedBaseline.Locked = false
+	modifiedBaseline.SetLocked(false)
 	expectOneTimeCallToConnectionManagerWithBaseline(suite, modifiedBaseline)
 	suite.Nil(suite.m.ProcessBaselineLockUpdate(managerCtx, depID(1), false))
 	// And locked state should be updated
@@ -905,11 +907,11 @@ func (suite *ManagerTestSuite) TestBaselineSyncMsg() {
 
 func (suite *ManagerTestSuite) TestGetExternalNetworkPeers() {
 	suite.mustInitManager()
+	deployment := &storage.Deployment{}
+	deployment.SetId(fixtureconsts.Deployment1)
+	deployment.SetClusterId(fixtureconsts.Cluster1)
 	suite.deploymentDS.EXPECT().GetDeployment(gomock.Any(), gomock.Any()).Return(
-		&storage.Deployment{
-			Id:        fixtureconsts.Deployment1,
-			ClusterId: fixtureconsts.Cluster1,
-		}, true, nil,
+		deployment, true, nil,
 	)
 
 	entities := []*storage.NetworkEntity{
@@ -939,32 +941,32 @@ func (suite *ManagerTestSuite) TestGetExternalNetworkPeers() {
 	suite.flowStore.EXPECT().GetMatchingFlows(gomock.Any(), gomock.Any(), gomock.Any()).Return(flows, nil, nil).AnyTimes()
 
 	expectedPeers := []*v1.NetworkBaselineStatusPeer{
-		{
-			Entity: &v1.NetworkBaselinePeerEntity{
+		v1.NetworkBaselineStatusPeer_builder{
+			Entity: v1.NetworkBaselinePeerEntity_builder{
 				Id:         "entity1",
 				Type:       storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 				Name:       "1.2.3.4",
 				Discovered: true,
-			},
-		},
+			}.Build(),
+		}.Build(),
 
-		{
-			Entity: &v1.NetworkBaselinePeerEntity{
+		v1.NetworkBaselineStatusPeer_builder{
+			Entity: v1.NetworkBaselinePeerEntity_builder{
 				Id:         "entity2",
 				Type:       storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 				Name:       "1.2.3.5",
 				Discovered: true,
-			},
-		},
+			}.Build(),
+		}.Build(),
 
-		{
-			Entity: &v1.NetworkBaselinePeerEntity{
+		v1.NetworkBaselineStatusPeer_builder{
+			Entity: v1.NetworkBaselinePeerEntity_builder{
 				Id:         "entity3",
 				Type:       storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 				Name:       "1.2.3.6",
 				Discovered: false,
-			},
-		},
+			}.Build(),
+		}.Build(),
 	}
 
 	result, err := suite.m.GetExternalNetworkPeers(allAllowedCtx, fixtureconsts.Deployment1, "", nil)
@@ -976,32 +978,31 @@ func (suite *ManagerTestSuite) TestGetExternalNetworkPeers() {
 func (suite *ManagerTestSuite) TestAddBaselineAnonymizeDiscoveredExternalSource() {
 	discoveredExtSourceID := "discovered-external-src-1"
 
-	mockDeployment := &storage.Deployment{
-		Id:        fixtureconsts.Deployment1,
-		Name:      "deployment1",
-		ClusterId: fixtureconsts.Cluster1,
-		Namespace: fixtureconsts.Namespace1,
-		PodLabels: map[string]string{"app": "anonymize-test"},
-	}
+	mockDeployment := &storage.Deployment{}
+	mockDeployment.SetId(fixtureconsts.Deployment1)
+	mockDeployment.SetName("deployment1")
+	mockDeployment.SetClusterId(fixtureconsts.Cluster1)
+	mockDeployment.SetNamespace(fixtureconsts.Namespace1)
+	mockDeployment.SetPodLabels(map[string]string{"app": "anonymize-test"})
 
 	suite.deploymentDS.EXPECT().GetDeployment(gomock.Any(), fixtureconsts.Deployment1).Return(mockDeployment, true, nil).Times(1)
 
 	mockFlows := []*storage.NetworkFlow{
-		{
-			Props: &storage.NetworkFlowProperties{
-				SrcEntity: &storage.NetworkEntityInfo{
+		storage.NetworkFlow_builder{
+			Props: storage.NetworkFlowProperties_builder{
+				SrcEntity: storage.NetworkEntityInfo_builder{
 					Type: storage.NetworkEntityInfo_DEPLOYMENT,
 					Id:   fixtureconsts.Deployment1,
-				},
-				DstEntity: &storage.NetworkEntityInfo{
+				}.Build(),
+				DstEntity: storage.NetworkEntityInfo_builder{
 					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 					Id:   discoveredExtSourceID,
-				},
+				}.Build(),
 				DstPort:    443,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-			},
+			}.Build(),
 			LastSeenTimestamp: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
-		},
+		}.Build(),
 	}
 
 	suite.clusterFlows.EXPECT().GetFlowStore(gomock.Any(), fixtureconsts.Cluster1).Return(suite.flowStore, nil).Times(1)
@@ -1009,19 +1010,14 @@ func (suite *ManagerTestSuite) TestAddBaselineAnonymizeDiscoveredExternalSource(
 
 	// Note: The 'Discovered' flag on the flow's DstEntity is what triggers anonymization.
 	// The tree provides the descriptive info for the original (pre-anonymization) entity.
-	discoveredEntityInfoFromTree := &storage.NetworkEntityInfo{
-		Id:   discoveredExtSourceID,
-		Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-		Desc: &storage.NetworkEntityInfo_ExternalSource_{
-			ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-				Name: "8.8.8.8/32",
-				Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-					Cidr: "8.8.8.8/32", // Example CIDR
-				},
-				Discovered: true,
-			},
-		},
-	}
+	discoveredEntityInfoFromTree := &storage.NetworkEntityInfo{}
+	discoveredEntityInfoFromTree.SetId(discoveredExtSourceID)
+	discoveredEntityInfoFromTree.SetType(storage.NetworkEntityInfo_EXTERNAL_SOURCE)
+	discoveredEntityInfoFromTree.SetExternalSource(storage.NetworkEntityInfo_ExternalSource_builder{
+		Name:       "8.8.8.8/32",
+		Cidr:       proto.String("8.8.8.8/32"), // Example CIDR
+		Discovered: true,
+	}.Build())
 
 	defaultTree := tree.NewDefaultNetworkTreeWrapper()
 	readOnlyTree, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{discoveredEntityInfoFromTree})
@@ -1075,13 +1071,11 @@ func expectOneTimeCallToConnectionManagerWithBaseline(suite *ManagerTestSuite, b
 		EXPECT().
 		SendMessage(
 			baseline.GetClusterId(),
-			&central.MsgToSensor{
-				Msg: &central.MsgToSensor_NetworkBaselineSync{
-					NetworkBaselineSync: &central.NetworkBaselineSync{
-						NetworkBaselines: []*storage.NetworkBaseline{baseline},
-					},
-				},
-			}).
+			central.MsgToSensor_builder{
+				NetworkBaselineSync: central.NetworkBaselineSync_builder{
+					NetworkBaselines: []*storage.NetworkBaseline{baseline},
+				}.Build(),
+			}.Build()).
 		Return(nil)
 }
 
@@ -1095,42 +1089,42 @@ func ctxWithAccessToWrite(id int) context.Context {
 }
 
 func modifyPeersReq(id int, peers ...*v1.NetworkBaselinePeerStatus) *v1.ModifyBaselineStatusForPeersRequest {
-	return &v1.ModifyBaselineStatusForPeersRequest{
-		DeploymentId: depID(id),
-		Peers:        peers,
-	}
+	mbsfpr := &v1.ModifyBaselineStatusForPeersRequest{}
+	mbsfpr.SetDeploymentId(depID(id))
+	mbsfpr.SetPeers(peers)
+	return mbsfpr
 }
 
 func protoPeerStatus(status v1.NetworkBaselinePeerStatus_Status, peerID int, port uint32, ingress bool) *v1.NetworkBaselinePeerStatus {
-	return &v1.NetworkBaselinePeerStatus{
-		Peer: &v1.NetworkBaselineStatusPeer{
-			Entity: &v1.NetworkBaselinePeerEntity{
-				Id:   depID(peerID),
-				Type: storage.NetworkEntityInfo_DEPLOYMENT,
-			},
-			Port:     port,
-			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-			Ingress:  ingress,
-		},
-		Status: status,
-	}
+	nbpe := &v1.NetworkBaselinePeerEntity{}
+	nbpe.SetId(depID(peerID))
+	nbpe.SetType(storage.NetworkEntityInfo_DEPLOYMENT)
+	nbsp := &v1.NetworkBaselineStatusPeer{}
+	nbsp.SetEntity(nbpe)
+	nbsp.SetPort(port)
+	nbsp.SetProtocol(storage.L4Protocol_L4_PROTOCOL_TCP)
+	nbsp.SetIngress(ingress)
+	nbps := &v1.NetworkBaselinePeerStatus{}
+	nbps.SetPeer(nbsp)
+	nbps.SetStatus(status)
+	return nbps
 }
 
 func protoExternalPeerStatus(status v1.NetworkBaselinePeerStatus_Status, peerID int, port uint32, ingress, discovered bool) *v1.NetworkBaselinePeerStatus {
-	return &v1.NetworkBaselinePeerStatus{
-		Peer: &v1.NetworkBaselineStatusPeer{
-			Entity: &v1.NetworkBaselinePeerEntity{
-				Id:         extSrcID(peerID),
-				Name:       extSrcName(peerID),
-				Type:       storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-				Discovered: discovered,
-			},
-			Port:     port,
-			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-			Ingress:  ingress,
-		},
-		Status: status,
-	}
+	nbpe := &v1.NetworkBaselinePeerEntity{}
+	nbpe.SetId(extSrcID(peerID))
+	nbpe.SetName(extSrcName(peerID))
+	nbpe.SetType(storage.NetworkEntityInfo_EXTERNAL_SOURCE)
+	nbpe.SetDiscovered(discovered)
+	nbsp := &v1.NetworkBaselineStatusPeer{}
+	nbsp.SetEntity(nbpe)
+	nbsp.SetPort(port)
+	nbsp.SetProtocol(storage.L4Protocol_L4_PROTOCOL_TCP)
+	nbsp.SetIngress(ingress)
+	nbps := &v1.NetworkBaselinePeerStatus{}
+	nbps.SetPeer(nbsp)
+	nbps.SetStatus(status)
+	return nbps
 }
 
 func conns(indicators ...networkgraph.NetworkConnIndicator) []networkgraph.NetworkConnIndicator {
@@ -1138,81 +1132,77 @@ func conns(indicators ...networkgraph.NetworkConnIndicator) []networkgraph.Netwo
 }
 
 func emptyBaseline(id int) *storage.NetworkBaseline {
-	return &storage.NetworkBaseline{
-		DeploymentId:   depID(id),
-		ClusterId:      clusterID(id),
-		Namespace:      ns(id),
-		DeploymentName: depName(id),
-	}
+	nb := &storage.NetworkBaseline{}
+	nb.SetDeploymentId(depID(id))
+	nb.SetClusterId(clusterID(id))
+	nb.SetNamespace(ns(id))
+	nb.SetDeploymentName(depName(id))
+	return nb
 }
 
 func baselineWithPeers(id int, peers ...*storage.NetworkBaselinePeer) *storage.NetworkBaseline {
 	baseline := emptyBaseline(id)
-	baseline.Peers = peers
+	baseline.SetPeers(peers)
 	return baseline
 }
 
 func baselineWithClusterAndPeers(id, _clusterID int, peers ...*storage.NetworkBaselinePeer) *storage.NetworkBaseline {
 	baseline := baselineWithPeers(id, peers...)
-	baseline.ClusterId = clusterID(_clusterID)
+	baseline.SetClusterId(clusterID(_clusterID))
 	return baseline
 }
 
 func wrapWithForbidden(baseline *storage.NetworkBaseline, peers ...*storage.NetworkBaselinePeer) *storage.NetworkBaseline {
-	baseline.ForbiddenPeers = peers
+	baseline.SetForbiddenPeers(peers)
 	return baseline
 }
 
 func depPeer(id int, properties ...*storage.NetworkBaselineConnectionProperties) *storage.NetworkBaselinePeer {
-	return &storage.NetworkBaselinePeer{
-		Entity: &storage.NetworkEntity{Info: &storage.NetworkEntityInfo{
+	return storage.NetworkBaselinePeer_builder{
+		Entity: storage.NetworkEntity_builder{Info: storage.NetworkEntityInfo_builder{
 			Type: storage.NetworkEntityInfo_DEPLOYMENT,
 			Id:   depID(id),
-			Desc: &storage.NetworkEntityInfo_Deployment_{
-				Deployment: &storage.NetworkEntityInfo_Deployment{
-					Name: depName(id),
-				},
-			},
-		}},
+			Deployment: storage.NetworkEntityInfo_Deployment_builder{
+				Name: depName(id),
+			}.Build(),
+		}.Build()}.Build(),
 		Properties: properties,
-	}
+	}.Build()
 }
 
 func extSrcPeer(id int, cidr string, properties ...*storage.NetworkBaselineConnectionProperties) *storage.NetworkBaselinePeer {
-	return &storage.NetworkBaselinePeer{
-		Entity: &storage.NetworkEntity{
-			Info: &storage.NetworkEntityInfo{
+	return storage.NetworkBaselinePeer_builder{
+		Entity: storage.NetworkEntity_builder{
+			Info: storage.NetworkEntityInfo_builder{
 				Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 				Id:   extSrcID(id),
-				Desc: &storage.NetworkEntityInfo_ExternalSource_{
-					ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-						Name:   extSrcName(id),
-						Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{Cidr: cidr},
-					},
-				},
-			}},
+				ExternalSource: storage.NetworkEntityInfo_ExternalSource_builder{
+					Name: extSrcName(id),
+					Cidr: proto.String(cidr),
+				}.Build(),
+			}.Build()}.Build(),
 		Properties: properties,
-	}
+	}.Build()
 }
 
 func internetPeer(properties ...*storage.NetworkBaselineConnectionProperties) *storage.NetworkBaselinePeer {
-	return &storage.NetworkBaselinePeer{
-		Entity: &storage.NetworkEntity{
-			Info: &storage.NetworkEntityInfo{
-				Id:   networkgraph.InternetExternalSourceID,
-				Type: storage.NetworkEntityInfo_INTERNET,
-			},
-		},
-		Properties: properties,
-	}
+	nei := &storage.NetworkEntityInfo{}
+	nei.SetId(networkgraph.InternetExternalSourceID)
+	nei.SetType(storage.NetworkEntityInfo_INTERNET)
+	ne := &storage.NetworkEntity{}
+	ne.SetInfo(nei)
+	nbp := &storage.NetworkBaselinePeer{}
+	nbp.SetEntity(ne)
+	nbp.SetProperties(properties)
+	return nbp
 }
 
 func properties(ingress bool, port uint32) *storage.NetworkBaselineConnectionProperties {
-	return &storage.NetworkBaselineConnectionProperties{
-		Ingress:  ingress,
-		Port:     port,
-		Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-	}
+	nbcp := &storage.NetworkBaselineConnectionProperties{}
+	nbcp.SetIngress(ingress)
+	nbcp.SetPort(port)
+	nbcp.SetProtocol(storage.L4Protocol_L4_PROTOCOL_TCP)
+	return nbcp
 }
 
 func depToDepConn(srcID, dstID int, port uint32) networkgraph.NetworkConnIndicator {
@@ -1232,33 +1222,35 @@ func depToDepConn(srcID, dstID int, port uint32) networkgraph.NetworkConnIndicat
 
 func getNetworkPolicy(matchLabels map[string]string) *storage.NetworkPolicy {
 	networkPolicy := fixtures.GetNetworkPolicy()
-	networkPolicy.Spec.PodSelector = &storage.LabelSelector{MatchLabels: matchLabels}
+	ls := &storage.LabelSelector{}
+	ls.SetMatchLabels(matchLabels)
+	networkPolicy.GetSpec().SetPodSelector(ls)
 	// Add some ingress egress rule
-	networkPolicy.Spec.Ingress = append(networkPolicy.Spec.Ingress, &storage.NetworkPolicyIngressRule{
+	networkPolicy.GetSpec().SetIngress(append(networkPolicy.GetSpec().GetIngress(), storage.NetworkPolicyIngressRule_builder{
 		Ports: []*storage.NetworkPolicyPort{
-			{
+			storage.NetworkPolicyPort_builder{
 				Protocol: storage.Protocol_TCP_PROTOCOL,
-				PortRef:  &storage.NetworkPolicyPort_Port{Port: 80},
-			},
+				Port:     proto.Int32(80),
+			}.Build(),
 		},
 		From: []*storage.NetworkPolicyPeer{
-			{
-				PodSelector: &storage.LabelSelector{MatchLabels: map[string]string{"foo": "bar"}},
-			},
+			storage.NetworkPolicyPeer_builder{
+				PodSelector: storage.LabelSelector_builder{MatchLabels: map[string]string{"foo": "bar"}}.Build(),
+			}.Build(),
 		},
-	})
-	networkPolicy.Spec.Egress = append(networkPolicy.Spec.Egress, &storage.NetworkPolicyEgressRule{
+	}.Build()))
+	networkPolicy.GetSpec().SetEgress(append(networkPolicy.GetSpec().GetEgress(), storage.NetworkPolicyEgressRule_builder{
 		Ports: []*storage.NetworkPolicyPort{
-			{
+			storage.NetworkPolicyPort_builder{
 				Protocol: storage.Protocol_TCP_PROTOCOL,
-				PortRef:  &storage.NetworkPolicyPort_Port{Port: 443},
-			},
+				Port:     proto.Int32(443),
+			}.Build(),
 		},
 		To: []*storage.NetworkPolicyPeer{
-			{
-				PodSelector: &storage.LabelSelector{MatchLabels: map[string]string{"foo": "bar"}},
-			},
+			storage.NetworkPolicyPeer_builder{
+				PodSelector: storage.LabelSelector_builder{MatchLabels: map[string]string{"foo": "bar"}}.Build(),
+			}.Build(),
 		},
-	})
+	}.Build()))
 	return networkPolicy
 }

@@ -166,7 +166,7 @@ func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 	e.updateNamespaceRisk(deployment.GetNamespaceId(), oldScore, risk.GetScore())
 	e.updateClusterRisk(deployment.GetClusterId(), oldScore, risk.GetScore())
 
-	deployment.RiskScore = risk.GetScore()
+	deployment.SetRiskScore(risk.GetScore())
 	if err := e.deploymentStorage.UpsertDeployment(riskReprocessorCtx, deployment); err != nil {
 		log.Errorf("error upserting deployment: %v", err)
 	}
@@ -187,7 +187,7 @@ func (e *managerImpl) calculateAndUpsertNodeRisk(node *storage.Node) error {
 		e.reprocessNodeComponentRisk(c, node.GetScan().GetOperatingSystem())
 	}
 
-	node.RiskScore = risk.GetScore()
+	node.SetRiskScore(risk.GetScore())
 	return nil
 }
 
@@ -221,7 +221,7 @@ func (e *managerImpl) calculateAndUpsertImageRisk(image *storage.Image) error {
 		e.reprocessImageComponentRisk(component, image.GetScan().GetOperatingSystem(), image.GetId())
 	}
 
-	image.RiskScore = risk.GetScore()
+	image.SetRiskScore(risk.GetScore())
 	return nil
 }
 
@@ -303,7 +303,7 @@ func (e *managerImpl) calculateAndUpsertImageV2Risk(image *storage.ImageV2) erro
 		e.reprocessImageComponentRisk(component, image.GetScan().GetOperatingSystem(), image.GetId())
 	}
 
-	image.RiskScore = risk.GetScore()
+	image.SetRiskScore(risk.GetScore())
 	return nil
 }
 
@@ -369,7 +369,7 @@ func (e *managerImpl) reprocessImageComponentRisk(imageComponent *storage.Embedd
 		log.Errorf("Error reprocessing risk for image component %s %s: %v", imageComponent.GetName(), imageComponent.GetVersion(), err)
 	}
 
-	imageComponent.RiskScore = risk.GetScore()
+	imageComponent.SetRiskScore(risk.GetScore())
 	// skip direct upsert here since it is handled during image upsert
 }
 
@@ -395,7 +395,7 @@ func (e *managerImpl) reprocessNodeComponentRisk(nodeComponent *storage.Embedded
 		log.Errorf("Error reprocessing risk for node component %s %s: %v", nodeComponent.GetName(), nodeComponent.GetVersion(), err)
 	}
 
-	nodeComponent.RiskScore = risk.GetScore()
+	nodeComponent.SetRiskScore(risk.GetScore())
 	// skip direct upsert here since it is handled during node upsert
 }
 

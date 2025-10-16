@@ -76,12 +76,12 @@ func metadataFromTokenInfo(name string, info *tokens.TokenInfo) *storage.TokenMe
 	if len(info.RoleNames) == 1 {
 		singleRole = info.RoleNames[0]
 	}
-	return &storage.TokenMetadata{
-		Id:         info.ID,
-		Name:       name,
-		Role:       singleRole,
-		Roles:      info.RoleNames,
-		IssuedAt:   protoconv.ConvertTimeToTimestamp(info.IssuedAt()),
-		Expiration: protoconv.ConvertTimeToTimestamp(info.Expiry()),
-	}
+	tm := &storage.TokenMetadata{}
+	tm.SetId(info.ID)
+	tm.SetName(name)
+	tm.SetRole(singleRole)
+	tm.SetRoles(info.RoleNames)
+	tm.SetIssuedAt(protoconv.ConvertTimeToTimestamp(info.IssuedAt()))
+	tm.SetExpiration(protoconv.ConvertTimeToTimestamp(info.Expiry()))
+	return tm
 }

@@ -207,13 +207,10 @@ func (h *commandHandler) ctx() context.Context {
 }
 
 func (h *commandHandler) rejectUpgradeRequest(trigger *central.SensorUpgradeTrigger, errReason error) {
-	checkInReq := &central.UpgradeCheckInFromSensorRequest{
-		UpgradeProcessId: trigger.GetUpgradeProcessId(),
-		ClusterId:        h.clusterID.Get(), // will definitely be available at this point
-		State: &central.UpgradeCheckInFromSensorRequest_LaunchError{
-			LaunchError: errReason.Error(),
-		},
-	}
+	checkInReq := &central.UpgradeCheckInFromSensorRequest{}
+	checkInReq.SetUpgradeProcessId(trigger.GetUpgradeProcessId())
+	checkInReq.SetClusterId(h.clusterID.Get()) // will definitely be available at this point
+	checkInReq.SetLaunchError(errReason.Error())
 	// We don't care about the error, if any.
 	_, _ = h.checkInClient.UpgradeCheckInFromSensor(h.ctx(), checkInReq)
 }

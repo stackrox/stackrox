@@ -67,7 +67,9 @@ func (cmd *centralUserPkiListCommand) listProviders() error {
 
 	authClient := v1.NewAuthProviderServiceClient(conn)
 	groupClient := v1.NewGroupServiceClient(conn)
-	providers, err := authClient.GetAuthProviders(ctx, &v1.GetAuthProvidersRequest{Type: userpki.TypeName})
+	gapr := &v1.GetAuthProvidersRequest{}
+	gapr.SetType(userpki.TypeName)
+	providers, err := authClient.GetAuthProviders(ctx, gapr)
 	if err != nil {
 		return errors.Wrap(err, "getting auth providers")
 	}

@@ -22,7 +22,7 @@ func DefaultNewID() ProviderOption {
 		if pr.storedInfo == nil {
 			return errors.New("no storage information for auth provider")
 		}
-		pr.storedInfo.Id = uuid.NewV4().String()
+		pr.storedInfo.SetId(uuid.NewV4().String())
 		return nil
 	}
 }
@@ -36,7 +36,7 @@ func DefaultLoginURL(fn func(authProviderID string) string) ProviderOption {
 		if pr.storedInfo == nil {
 			return errors.New("no storage information for auth provider")
 		}
-		pr.storedInfo.LoginUrl = fn(pr.storedInfo.GetId())
+		pr.storedInfo.SetLoginUrl(fn(pr.storedInfo.GetId()))
 		return nil
 	}
 }
@@ -94,7 +94,7 @@ func DefaultBackend(ctx context.Context, backendFactoryPool map[string]BackendFa
 		}
 		pr.backend = backend
 		// We can assume that pr.storedInfo is non-nil here because pr.storedInfo.GetType() referenced a valid auth provider type.
-		pr.storedInfo.Config = backend.Config()
+		pr.storedInfo.SetConfig(backend.Config())
 		return nil
 	}
 }

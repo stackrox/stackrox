@@ -37,9 +37,10 @@ func (c *Client) SendIndexReport(report *v4.IndexReport) error {
 	if err != nil {
 		return fmt.Errorf("getting vsock context id: %w", err)
 	}
-	return c.writeIndexReport(conn,
-		&v1.IndexReport{VsockCid: strconv.Itoa(int(vsockCid)), IndexV4: report},
-	)
+	ir := &v1.IndexReport{}
+	ir.SetVsockCid(strconv.Itoa(int(vsockCid)))
+	ir.SetIndexV4(report)
+	return c.writeIndexReport(conn, ir)
 }
 
 func (c *Client) writeIndexReport(conn net.Conn, report *v1.IndexReport) error {

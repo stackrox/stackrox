@@ -36,14 +36,13 @@ func (s *SearchMapperTestSuite) testMapSearchString(fieldLabel search.FieldLabel
 
 func (s *SearchMapperTestSuite) testDirectMapSearchString(fieldLabel search.FieldLabel, expectedPolicyField string) {
 	searchTerms := []string{"abc"}
-	expectedGroup := &storage.PolicyGroup{
-		FieldName: expectedPolicyField,
-		Values: []*storage.PolicyValue{
-			{
-				Value: "abc",
-			},
-		},
-	}
+	pv := &storage.PolicyValue{}
+	pv.SetValue("abc")
+	expectedGroup := &storage.PolicyGroup{}
+	expectedGroup.SetFieldName(expectedPolicyField)
+	expectedGroup.SetValues([]*storage.PolicyValue{
+		pv,
+	})
 	s.testMapSearchString(fieldLabel, searchTerms, expectedGroup, false, true)
 }
 
@@ -53,132 +52,122 @@ func (s *SearchMapperTestSuite) TestNoMapper() {
 
 func (s *SearchMapperTestSuite) TestConvertInstructionKeyword() {
 	searchTerms := []string{"abc"}
-	expectedGroup := &storage.PolicyGroup{
-		FieldName: fieldnames.DockerfileLine,
-		Values: []*storage.PolicyValue{
-			{
-				Value: "abc=",
-			},
-		},
-	}
+	pv := &storage.PolicyValue{}
+	pv.SetValue("abc=")
+	expectedGroup := &storage.PolicyGroup{}
+	expectedGroup.SetFieldName(fieldnames.DockerfileLine)
+	expectedGroup.SetValues([]*storage.PolicyValue{
+		pv,
+	})
 	s.testMapSearchString(search.DockerfileInstructionKeyword, searchTerms, expectedGroup, false, true)
 }
 
 func (s *SearchMapperTestSuite) TestConvertInstructionValue() {
 	searchTerms := []string{"abc"}
-	expectedGroup := &storage.PolicyGroup{
-		FieldName: fieldnames.DockerfileLine,
-		Values: []*storage.PolicyValue{
-			{
-				Value: "=abc",
-			},
-		},
-	}
+	pv := &storage.PolicyValue{}
+	pv.SetValue("=abc")
+	expectedGroup := &storage.PolicyGroup{}
+	expectedGroup.SetFieldName(fieldnames.DockerfileLine)
+	expectedGroup.SetValues([]*storage.PolicyValue{
+		pv,
+	})
 	s.testMapSearchString(search.DockerfileInstructionValue, searchTerms, expectedGroup, false, true)
 }
 
 func (s *SearchMapperTestSuite) TestConvertEnvironmentKey() {
 	searchTerms := []string{"abc"}
-	expectedGroup := &storage.PolicyGroup{
-		FieldName: fieldnames.EnvironmentVariable,
-		Values: []*storage.PolicyValue{
-			{
-				Value: "=abc=",
-			},
-		},
-	}
+	pv := &storage.PolicyValue{}
+	pv.SetValue("=abc=")
+	expectedGroup := &storage.PolicyGroup{}
+	expectedGroup.SetFieldName(fieldnames.EnvironmentVariable)
+	expectedGroup.SetValues([]*storage.PolicyValue{
+		pv,
+	})
 	s.testMapSearchString(search.EnvironmentKey, searchTerms, expectedGroup, false, true)
 }
 
 func (s *SearchMapperTestSuite) TestConvertEnvironmentValue() {
 	searchTerms := []string{"abc"}
-	expectedGroup := &storage.PolicyGroup{
-		FieldName: fieldnames.EnvironmentVariable,
-		Values: []*storage.PolicyValue{
-			{
-				Value: "==abc",
-			},
-		},
-	}
+	pv := &storage.PolicyValue{}
+	pv.SetValue("==abc")
+	expectedGroup := &storage.PolicyGroup{}
+	expectedGroup.SetFieldName(fieldnames.EnvironmentVariable)
+	expectedGroup.SetValues([]*storage.PolicyValue{
+		pv,
+	})
 	s.testMapSearchString(search.EnvironmentValue, searchTerms, expectedGroup, false, true)
 }
 
 func (s *SearchMapperTestSuite) TestConvertEnvironmentVarSrc() {
 	searchTerms := []string{"abc"}
-	expectedGroup := &storage.PolicyGroup{
-		FieldName: fieldnames.EnvironmentVariable,
-		Values: []*storage.PolicyValue{
-			{
-				Value: "abc==",
-			},
-		},
-	}
+	pv := &storage.PolicyValue{}
+	pv.SetValue("abc==")
+	expectedGroup := &storage.PolicyGroup{}
+	expectedGroup.SetFieldName(fieldnames.EnvironmentVariable)
+	expectedGroup.SetValues([]*storage.PolicyValue{
+		pv,
+	})
 	s.testMapSearchString(search.EnvironmentVarSrc, searchTerms, expectedGroup, false, true)
 }
 
 func (s *SearchMapperTestSuite) TestConvertAnnotation() {
 	searchTerms := []string{"abc"}
-	expectedGroup := &storage.PolicyGroup{
-		FieldName: fieldnames.DisallowedAnnotation,
-		Values: []*storage.PolicyValue{
-			{
-				Value: "abc=",
-			},
-		},
-	}
+	pv := &storage.PolicyValue{}
+	pv.SetValue("abc=")
+	expectedGroup := &storage.PolicyGroup{}
+	expectedGroup.SetFieldName(fieldnames.DisallowedAnnotation)
+	expectedGroup.SetValues([]*storage.PolicyValue{
+		pv,
+	})
 	s.testMapSearchString(search.DeploymentAnnotation, searchTerms, expectedGroup, false, true)
 }
 
 func (s *SearchMapperTestSuite) TestConvertImageLabel() {
 	searchTerms := []string{"abc"}
-	expectedGroup := &storage.PolicyGroup{
-		FieldName: fieldnames.DisallowedImageLabel,
-		Values: []*storage.PolicyValue{
-			{
-				Value: "abc=",
-			},
-		},
-	}
+	pv := &storage.PolicyValue{}
+	pv.SetValue("abc=")
+	expectedGroup := &storage.PolicyGroup{}
+	expectedGroup.SetFieldName(fieldnames.DisallowedImageLabel)
+	expectedGroup.SetValues([]*storage.PolicyValue{
+		pv,
+	})
 	s.testMapSearchString(search.ImageLabel, searchTerms, expectedGroup, false, true)
 }
 
 func (s *SearchMapperTestSuite) TestConvertVolumeReadonly() {
 	searchTerms := []string{"abc", "true"}
-	expectedGroup := &storage.PolicyGroup{
-		FieldName: fieldnames.WritableMountedVolume,
-		Values: []*storage.PolicyValue{
-			{
-				Value: "false",
-			},
-		},
-	}
+	pv := &storage.PolicyValue{}
+	pv.SetValue("false")
+	expectedGroup := &storage.PolicyGroup{}
+	expectedGroup.SetFieldName(fieldnames.WritableMountedVolume)
+	expectedGroup.SetValues([]*storage.PolicyValue{
+		pv,
+	})
 	s.testMapSearchString(search.VolumeReadonly, searchTerms, expectedGroup, true, true)
 }
 
 func (s *SearchMapperTestSuite) TestConvertImageCreatedTime() {
 	// We only convert searches of the form >Nd.  Other searches have no equivalent policy fields.
 	searchTerms := []string{"abc", ">30d", "<50d"}
-	expectedGroup := &storage.PolicyGroup{
-		FieldName: fieldnames.ImageAge,
-		Values: []*storage.PolicyValue{
-			{
-				Value: "30",
-			},
-		},
-	}
+	pv := &storage.PolicyValue{}
+	pv.SetValue("30")
+	expectedGroup := &storage.PolicyGroup{}
+	expectedGroup.SetFieldName(fieldnames.ImageAge)
+	expectedGroup.SetValues([]*storage.PolicyValue{
+		pv,
+	})
 	s.testMapSearchString(search.ImageCreatedTime, searchTerms, expectedGroup, true, true)
 }
 
 func (s *SearchMapperTestSuite) TestConvertImageScanTime() {
 	searchTerms := []string{"abc", ">1337D"}
-	expectedGroup := &storage.PolicyGroup{
-		FieldName: fieldnames.ImageScanAge,
-		Values: []*storage.PolicyValue{
-			{
-				Value: "1337",
-			},
-		},
-	}
+	pv := &storage.PolicyValue{}
+	pv.SetValue("1337")
+	expectedGroup := &storage.PolicyGroup{}
+	expectedGroup.SetFieldName(fieldnames.ImageScanAge)
+	expectedGroup.SetValues([]*storage.PolicyValue{
+		pv,
+	})
 	s.testMapSearchString(search.ImageScanTime, searchTerms, expectedGroup, true, true)
 }
 
@@ -186,14 +175,13 @@ func (s *SearchMapperTestSuite) TestConvertServiceAccountPermissionLevel() {
 	searchTerms := []string{"abc"}
 	s.testMapSearchString(search.ServiceAccountPermissionLevel, searchTerms, nil, false, true)
 	searchTermsWithResults := []string{"ELEVATED_IN_NAMESPACE", "CLUSTER_ADMIN"}
-	expectedGroup := &storage.PolicyGroup{
-		FieldName: fieldnames.MinimumRBACPermissions,
-		Values: []*storage.PolicyValue{
-			{
-				Value: "ELEVATED_IN_NAMESPACE",
-			},
-		},
-	}
+	pv := &storage.PolicyValue{}
+	pv.SetValue("ELEVATED_IN_NAMESPACE")
+	expectedGroup := &storage.PolicyGroup{}
+	expectedGroup.SetFieldName(fieldnames.MinimumRBACPermissions)
+	expectedGroup.SetValues([]*storage.PolicyValue{
+		pv,
+	})
 	s.testMapSearchString(search.ServiceAccountPermissionLevel, searchTermsWithResults, expectedGroup, true, true)
 }
 
@@ -211,109 +199,103 @@ func (s *SearchMapperTestSuite) TestConvertCVE() {
 
 func (s *SearchMapperTestSuite) TestConvertCVSS() {
 	searchTerms := []string{">88", "7644"}
-	expectedGroup := &storage.PolicyGroup{
-		FieldName: fieldnames.CVSS,
-		Values: []*storage.PolicyValue{
-			{
-				Value: "> 88",
-			},
-			{
-				Value: "7644",
-			},
-		},
-	}
+	pv := &storage.PolicyValue{}
+	pv.SetValue("> 88")
+	pv2 := &storage.PolicyValue{}
+	pv2.SetValue("7644")
+	expectedGroup := &storage.PolicyGroup{}
+	expectedGroup.SetFieldName(fieldnames.CVSS)
+	expectedGroup.SetValues([]*storage.PolicyValue{
+		pv,
+		pv2,
+	})
 	s.testMapSearchString(search.CVSS, searchTerms, expectedGroup, false, true)
 }
 
 func (s *SearchMapperTestSuite) TestConvertNVDCVSS() {
 	searchTerms := []string{">88", "7644"}
-	expectedGroup := &storage.PolicyGroup{
-		FieldName: fieldnames.NvdCvss,
-		Values: []*storage.PolicyValue{
-			{
-				Value: "> 88",
-			},
-			{
-				Value: "7644",
-			},
-		},
-	}
+	pv := &storage.PolicyValue{}
+	pv.SetValue("> 88")
+	pv2 := &storage.PolicyValue{}
+	pv2.SetValue("7644")
+	expectedGroup := &storage.PolicyGroup{}
+	expectedGroup.SetFieldName(fieldnames.NvdCvss)
+	expectedGroup.SetValues([]*storage.PolicyValue{
+		pv,
+		pv2,
+	})
 	s.testMapSearchString(search.NVDCVSS, searchTerms, expectedGroup, false, true)
 }
 
 func (s *SearchMapperTestSuite) TestConvertCPUCoresLimit() {
 	searchTerms := []string{"5", "<7", ">=98"}
-	expectedGroup := &storage.PolicyGroup{
-		FieldName: fieldnames.ContainerCPULimit,
-		Values: []*storage.PolicyValue{
-			{
-				Value: "5",
-			},
-			{
-				Value: "< 7",
-			},
-			{
-				Value: ">= 98",
-			},
-		},
-	}
+	pv := &storage.PolicyValue{}
+	pv.SetValue("5")
+	pv2 := &storage.PolicyValue{}
+	pv2.SetValue("< 7")
+	pv3 := &storage.PolicyValue{}
+	pv3.SetValue(">= 98")
+	expectedGroup := &storage.PolicyGroup{}
+	expectedGroup.SetFieldName(fieldnames.ContainerCPULimit)
+	expectedGroup.SetValues([]*storage.PolicyValue{
+		pv,
+		pv2,
+		pv3,
+	})
 	s.testMapSearchString(search.CPUCoresLimit, searchTerms, expectedGroup, false, true)
 }
 
 func (s *SearchMapperTestSuite) TestConvertCPUCoresRequest() {
 	searchTerms := []string{"5", "<7", ">=98"}
-	expectedGroup := &storage.PolicyGroup{
-		FieldName: fieldnames.ContainerCPURequest,
-		Values: []*storage.PolicyValue{
-			{
-				Value: "5",
-			},
-			{
-				Value: "< 7",
-			},
-			{
-				Value: ">= 98",
-			},
-		},
-	}
+	pv := &storage.PolicyValue{}
+	pv.SetValue("5")
+	pv2 := &storage.PolicyValue{}
+	pv2.SetValue("< 7")
+	pv3 := &storage.PolicyValue{}
+	pv3.SetValue(">= 98")
+	expectedGroup := &storage.PolicyGroup{}
+	expectedGroup.SetFieldName(fieldnames.ContainerCPURequest)
+	expectedGroup.SetValues([]*storage.PolicyValue{
+		pv,
+		pv2,
+		pv3,
+	})
 	s.testMapSearchString(search.CPUCoresRequest, searchTerms, expectedGroup, false, true)
 }
 
 func (s *SearchMapperTestSuite) TestConvertMemoryLimit() {
 	searchTerms := []string{"5", "<7", ">=98"}
-	expectedGroup := &storage.PolicyGroup{
-		FieldName: fieldnames.ContainerMemLimit,
-		Values: []*storage.PolicyValue{
-			{
-				Value: "5",
-			},
-			{
-				Value: "< 7",
-			},
-			{
-				Value: ">= 98",
-			},
-		},
-	}
+	pv := &storage.PolicyValue{}
+	pv.SetValue("5")
+	pv2 := &storage.PolicyValue{}
+	pv2.SetValue("< 7")
+	pv3 := &storage.PolicyValue{}
+	pv3.SetValue(">= 98")
+	expectedGroup := &storage.PolicyGroup{}
+	expectedGroup.SetFieldName(fieldnames.ContainerMemLimit)
+	expectedGroup.SetValues([]*storage.PolicyValue{
+		pv,
+		pv2,
+		pv3,
+	})
 	s.testMapSearchString(search.MemoryLimit, searchTerms, expectedGroup, false, true)
 }
 
 func (s *SearchMapperTestSuite) TestConvertMemoryRequest() {
 	searchTerms := []string{"5", "<7", ">=98"}
-	expectedGroup := &storage.PolicyGroup{
-		FieldName: fieldnames.ContainerMemRequest,
-		Values: []*storage.PolicyValue{
-			{
-				Value: "5",
-			},
-			{
-				Value: "< 7",
-			},
-			{
-				Value: ">= 98",
-			},
-		},
-	}
+	pv := &storage.PolicyValue{}
+	pv.SetValue("5")
+	pv2 := &storage.PolicyValue{}
+	pv2.SetValue("< 7")
+	pv3 := &storage.PolicyValue{}
+	pv3.SetValue(">= 98")
+	expectedGroup := &storage.PolicyGroup{}
+	expectedGroup.SetFieldName(fieldnames.ContainerMemRequest)
+	expectedGroup.SetValues([]*storage.PolicyValue{
+		pv,
+		pv2,
+		pv3,
+	})
 	s.testMapSearchString(search.MemoryRequest, searchTerms, expectedGroup, false, true)
 }
 
@@ -323,27 +305,25 @@ func (s *SearchMapperTestSuite) TestConvertFixedBy() {
 
 func (s *SearchMapperTestSuite) TestConvertComponent() {
 	searchTerms := []string{"abc"}
-	expectedGroup := &storage.PolicyGroup{
-		FieldName: fieldnames.ImageComponent,
-		Values: []*storage.PolicyValue{
-			{
-				Value: "abc=",
-			},
-		},
-	}
+	pv := &storage.PolicyValue{}
+	pv.SetValue("abc=")
+	expectedGroup := &storage.PolicyGroup{}
+	expectedGroup.SetFieldName(fieldnames.ImageComponent)
+	expectedGroup.SetValues([]*storage.PolicyValue{
+		pv,
+	})
 	s.testMapSearchString(search.Component, searchTerms, expectedGroup, false, true)
 }
 
 func (s *SearchMapperTestSuite) TestConvertComponentVersion() {
 	searchTerms := []string{"abc"}
-	expectedGroup := &storage.PolicyGroup{
-		FieldName: fieldnames.ImageComponent,
-		Values: []*storage.PolicyValue{
-			{
-				Value: "=abc",
-			},
-		},
-	}
+	pv := &storage.PolicyValue{}
+	pv.SetValue("=abc")
+	expectedGroup := &storage.PolicyGroup{}
+	expectedGroup.SetFieldName(fieldnames.ImageComponent)
+	expectedGroup.SetValues([]*storage.PolicyValue{
+		pv,
+	})
 	s.testMapSearchString(search.ComponentVersion, searchTerms, expectedGroup, false, true)
 }
 

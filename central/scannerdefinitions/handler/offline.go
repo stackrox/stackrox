@@ -104,12 +104,11 @@ func (o *offlineFileManager) upsertBlob(ctx context.Context, blobName string, mo
 
 	protoModTime := protocompat.ConvertTimeToTimestampOrNil(&modTime)
 
-	b := &storage.Blob{
-		Name:         blobName,
-		LastUpdated:  protoModTime,
-		ModifiedTime: protoModTime,
-		Length:       size,
-	}
+	b := &storage.Blob{}
+	b.SetName(blobName)
+	b.SetLastUpdated(protoModTime)
+	b.SetModifiedTime(protoModTime)
+	b.SetLength(size)
 
 	if err := o.blobStore.Upsert(sac.WithAllAccess(ctx), b, r); err != nil {
 		return fmt.Errorf("writing scanner definitions: %w", err)

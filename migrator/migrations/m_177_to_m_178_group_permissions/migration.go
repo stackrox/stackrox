@@ -86,13 +86,13 @@ func migrateReplacedResourcesInPermissionSets(db postgres.DB) error {
 		// lowest access level between that of deprecated resource and their replacement
 		// for the replacement resource.
 		newPermissionSet := obj.CloneVT()
-		newPermissionSet.ResourceToAccess = make(map[string]storage.Access, len(obj.GetResourceToAccess()))
+		newPermissionSet.SetResourceToAccess(make(map[string]storage.Access, len(obj.GetResourceToAccess())))
 		for resource, accessLevel := range obj.GetResourceToAccess() {
 			if replacement, found := replacements[resource]; found {
 				changed = true
 				resource = replacement
 			}
-			newPermissionSet.ResourceToAccess[resource] =
+			newPermissionSet.GetResourceToAccess()[resource] =
 				propagateAccessForPermission(resource, accessLevel, newPermissionSet.GetResourceToAccess())
 		}
 		if !changed {

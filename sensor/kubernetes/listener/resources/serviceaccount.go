@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/sensor/common/store/resolver"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
+	"google.golang.org/protobuf/proto"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -36,22 +37,22 @@ func (s *serviceAccountDispatcher) ProcessEvent(obj, _ interface{}, action centr
 		serviceAccountImagePullSecrets = append(serviceAccountImagePullSecrets, ipSecret.Name)
 	}
 
+	sa2 := &storage.ServiceAccount{}
+	sa2.SetId(string(serviceAccount.GetUID()))
+	sa2.SetName(serviceAccount.GetName())
+	sa2.SetNamespace(serviceAccount.GetNamespace())
+	sa2.SetCreatedAt(protoconv.ConvertTimeToTimestamp(serviceAccount.GetCreationTimestamp().Time))
+	sa2.SetAutomountToken(true)
+	sa2.SetLabels(serviceAccount.GetLabels())
+	sa2.SetAnnotations(serviceAccount.GetAnnotations())
+	sa2.SetSecrets(serviceAccountSecrets)
+	sa2.SetImagePullSecrets(serviceAccountImagePullSecrets)
 	sa := &central.SensorEvent_ServiceAccount{
-		ServiceAccount: &storage.ServiceAccount{
-			Id:               string(serviceAccount.GetUID()),
-			Name:             serviceAccount.GetName(),
-			Namespace:        serviceAccount.GetNamespace(),
-			CreatedAt:        protoconv.ConvertTimeToTimestamp(serviceAccount.GetCreationTimestamp().Time),
-			AutomountToken:   true,
-			Labels:           serviceAccount.GetLabels(),
-			Annotations:      serviceAccount.GetAnnotations(),
-			Secrets:          serviceAccountSecrets,
-			ImagePullSecrets: serviceAccountImagePullSecrets,
-		},
+		ServiceAccount: sa2,
 	}
 
 	if serviceAccount.AutomountServiceAccountToken != nil {
-		sa.ServiceAccount.AutomountToken = *serviceAccount.AutomountServiceAccountToken
+		sa.ServiceAccount.SetAutomountToken(*serviceAccount.AutomountServiceAccountToken)
 	}
 
 	var deploymentReference resolver.DeploymentResolution
@@ -73,12 +74,12 @@ func (s *serviceAccountDispatcher) ProcessEvent(obj, _ interface{}, action centr
 		})
 	}
 
+	se := &central.SensorEvent{}
+	se.SetId(string(serviceAccount.UID))
+	se.SetAction(action)
+	se.SetServiceAccount(proto.ValueOrDefault(sa.ServiceAccount))
 	events := []*central.SensorEvent{
-		{
-			Id:       string(serviceAccount.UID),
-			Action:   action,
-			Resource: sa,
-		},
+		se,
 	}
 	componentMessage := component.NewEvent(events...)
 	if deploymentReference != nil {

@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -37,17 +38,18 @@ func (r *notifierTransform) Transform(configuration declarativeconfig.Configurat
 		return nil, errors.Wrap(err, "invalid notifier type")
 	}
 
-	notifierProto := &storage.Notifier{
-		Id:     declarativeconfig.NewDeclarativeNotifierUUID(notifierConfig.Name).String(),
-		Name:   notifierConfig.Name,
-		Type:   notifierTypeStr,
-		Traits: &storage.Traits{Origin: storage.Traits_DECLARATIVE},
-	}
+	traits := &storage.Traits{}
+	traits.SetOrigin(storage.Traits_DECLARATIVE)
+	notifierProto := &storage.Notifier{}
+	notifierProto.SetId(declarativeconfig.NewDeclarativeNotifierUUID(notifierConfig.Name).String())
+	notifierProto.SetName(notifierConfig.Name)
+	notifierProto.SetType(notifierTypeStr)
+	notifierProto.SetTraits(traits)
 
 	if notifierConfig.GenericConfig != nil {
-		notifierProto.Config = getGenericConfig(notifierConfig.GenericConfig)
+		notifierProto.SetGeneric(proto.ValueOrDefault(getGenericConfig(notifierConfig.GenericConfig).Generic))
 	} else if notifierConfig.SplunkConfig != nil {
-		notifierProto.Config = getSplunkConfig(notifierConfig.SplunkConfig)
+		notifierProto.SetSplunk(proto.ValueOrDefault(getSplunkConfig(notifierConfig.SplunkConfig).Splunk))
 	} else {
 		return nil, errox.InvalidArgs.Newf("unsupported notifier type %s", notifierTypeStr)
 	}
@@ -58,15 +60,15 @@ func (r *notifierTransform) Transform(configuration declarativeconfig.Configurat
 }
 
 func getSplunkConfig(config *declarativeconfig.SplunkConfig) *storage.Notifier_Splunk {
+	splunk := &storage.Splunk{}
+	splunk.SetHttpToken(config.HTTPToken)
+	splunk.SetHttpEndpoint(config.HTTPEndpoint)
+	splunk.SetInsecure(config.Insecure)
+	splunk.SetTruncate(config.Truncate)
+	splunk.SetAuditLoggingEnabled(config.AuditLoggingEnabled)
+	splunk.SetSourceTypes(getSourceTypes(config.SourceTypes))
 	return &storage.Notifier_Splunk{
-		Splunk: &storage.Splunk{
-			HttpToken:           config.HTTPToken,
-			HttpEndpoint:        config.HTTPEndpoint,
-			Insecure:            config.Insecure,
-			Truncate:            config.Truncate,
-			AuditLoggingEnabled: config.AuditLoggingEnabled,
-			SourceTypes:         getSourceTypes(config.SourceTypes),
-		},
+		Splunk: splunk,
 	}
 }
 
@@ -79,27 +81,27 @@ func getSourceTypes(types []declarativeconfig.SourceTypePair) map[string]string 
 }
 
 func getGenericConfig(config *declarativeconfig.GenericConfig) *storage.Notifier_Generic {
+	generic := &storage.Generic{}
+	generic.SetEndpoint(config.Endpoint)
+	generic.SetUsername(config.Username)
+	generic.SetPassword(config.Password)
+	generic.SetSkipTLSVerify(config.SkipTLSVerify)
+	generic.SetCaCert(config.CACertPEM)
+	generic.SetAuditLoggingEnabled(config.AuditLoggingEnabled)
+	generic.SetHeaders(getKeyValues(config.Headers))
+	generic.SetExtraFields(getKeyValues(config.ExtraFields))
 	return &storage.Notifier_Generic{
-		Generic: &storage.Generic{
-			Endpoint:            config.Endpoint,
-			Username:            config.Username,
-			Password:            config.Password,
-			SkipTLSVerify:       config.SkipTLSVerify,
-			CaCert:              config.CACertPEM,
-			AuditLoggingEnabled: config.AuditLoggingEnabled,
-			Headers:             getKeyValues(config.Headers),
-			ExtraFields:         getKeyValues(config.ExtraFields),
-		},
+		Generic: generic,
 	}
 }
 
 func getKeyValues(headers []declarativeconfig.KeyValuePair) []*storage.KeyValuePair {
 	res := make([]*storage.KeyValuePair, 0, len(headers))
 	for _, h := range headers {
-		res = append(res, &storage.KeyValuePair{
-			Key:   h.Key,
-			Value: h.Value,
-		})
+		kvp := &storage.KeyValuePair{}
+		kvp.SetKey(h.Key)
+		kvp.SetValue(h.Value)
+		res = append(res, kvp)
 	}
 	return res
 }

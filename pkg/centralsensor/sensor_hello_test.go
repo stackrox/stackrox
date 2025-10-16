@@ -39,7 +39,7 @@ func TestSecuredClusterIsNotManagedManually(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			config := &central.HelmManagedConfigInit{}
-			config.ManagedBy = tt.managedBy
+			config.SetManagedBy(tt.managedBy)
 
 			result := SecuredClusterIsNotManagedManually(config)
 			assert.Equal(t, tt.expectedOutcome, result)

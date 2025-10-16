@@ -34,10 +34,10 @@ func DeriveSensorHelloFromIncomingMetadata(md metautils.MD) (*central.SensorHell
 
 	versionInfo, versionErr := deriveSensorVersionInfo(md)
 	if versionInfo != nil {
-		sensorHello.SensorVersion = versionInfo.MainVersion
+		sensorHello.SetSensorVersion(versionInfo.MainVersion)
 	}
 
-	sensorHello.Capabilities = sliceutils.StringSlice(extractCapsFromMD(md).AsSlice()...)
+	sensorHello.SetCapabilities(sliceutils.StringSlice(extractCapsFromMD(md).AsSlice()...))
 	return sensorHello, versionErr
 }
 

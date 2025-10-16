@@ -55,17 +55,17 @@ func (v *deploymentViewImpl) Get(ctx context.Context, query *v1.Query) ([]Deploy
 
 func withSelectQuery(query *v1.Query) *v1.Query {
 	cloned := query.CloneVT()
-	cloned.Selects = []*v1.QuerySelect{
+	cloned.SetSelects([]*v1.QuerySelect{
 		search.NewQuerySelect(search.DeploymentID).Distinct().Proto(),
-	}
+	})
 
 	if common.IsSortBySeverityCounts(cloned) {
-		cloned.GroupBy = &v1.QueryGroupBy{
-			Fields: []string{search.DeploymentID.String()},
-		}
-		cloned.Selects = append(cloned.Selects,
+		qgb := &v1.QueryGroupBy{}
+		qgb.SetFields([]string{search.DeploymentID.String()})
+		cloned.SetGroupBy(qgb)
+		cloned.SetSelects(append(cloned.GetSelects(),
 			common.WithCountBySeverityAndFixabilityQuery(query, search.CVE).GetSelects()...,
-		)
+		))
 	}
 
 	return cloned

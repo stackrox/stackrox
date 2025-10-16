@@ -84,20 +84,20 @@ func expectProcessAlerts(mockAlertHandler *alertHandlerMocks.MockAlertHandler, t
 }
 
 func createAlertRequest(deploymentID, policyID string, stage storage.LifecycleStage, source central.AlertResults_Source) *sensor.AdmissionControlAlerts {
-	return &sensor.AdmissionControlAlerts{
+	return sensor.AdmissionControlAlerts_builder{
 		AlertResults: []*central.AlertResults{
-			{
+			central.AlertResults_builder{
 				DeploymentId: deploymentID,
 				Alerts: []*storage.Alert{
-					{
-						Policy: &storage.Policy{
+					storage.Alert_builder{
+						Policy: storage.Policy_builder{
 							Id: policyID,
-						},
-					},
+						}.Build(),
+					}.Build(),
 				},
 				Stage:  stage,
 				Source: source,
-			},
+			}.Build(),
 		},
-	}
+	}.Build()
 }

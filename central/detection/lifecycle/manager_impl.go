@@ -198,7 +198,7 @@ func (m *managerImpl) autoLockProcessBaselines(baselines []*storage.ProcessBasel
 			continue
 		}
 
-		baseline.UserLockedTimestamp = protocompat.TimestampNow()
+		baseline.SetUserLockedTimestamp(protocompat.TimestampNow())
 		_, err := m.baselines.UserLockProcessBaseline(lifecycleMgrCtx, baseline.GetKey(), true)
 		if err != nil {
 			log.Errorf("Error setting user lock for %+v: %v", baseline.GetKey(), err)
@@ -323,12 +323,11 @@ func (m *managerImpl) buildMapAndCheckBaseline(indicatorSlice []*storage.Process
 
 func (m *managerImpl) SendBaselineToSensor(baseline *storage.ProcessBaseline) error {
 	clusterId := baseline.GetKey().GetClusterId()
-	err := m.connectionManager.SendMessage(clusterId, &central.MsgToSensor{
-		Msg: &central.MsgToSensor_BaselineSync{
-			BaselineSync: &central.BaselineSync{
-				Baselines: []*storage.ProcessBaseline{baseline},
-			}},
-	})
+	err := m.connectionManager.SendMessage(clusterId, central.MsgToSensor_builder{
+		BaselineSync: central.BaselineSync_builder{
+			Baselines: []*storage.ProcessBaseline{baseline},
+		}.Build(),
+	}.Build())
 	if err != nil {
 		log.Errorf("Error sending process baseline to cluster %q: %v", clusterId, err)
 		return err
@@ -339,12 +338,11 @@ func (m *managerImpl) SendBaselineToSensor(baseline *storage.ProcessBaseline) er
 }
 
 func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, indicators []*storage.ProcessIndicator) (*storage.ProcessBaseline, bool, error) {
-	key := &storage.ProcessBaselineKey{
-		DeploymentId:  baselineKey.deploymentID,
-		ContainerName: baselineKey.containerName,
-		ClusterId:     baselineKey.clusterID,
-		Namespace:     baselineKey.namespace,
-	}
+	key := &storage.ProcessBaselineKey{}
+	key.SetDeploymentId(baselineKey.deploymentID)
+	key.SetContainerName(baselineKey.containerName)
+	key.SetClusterId(baselineKey.clusterID)
+	key.SetNamespace(baselineKey.namespace)
 
 	// TODO joseph what to do if exclusions ("baseline" in the old non-inclusive language) doesn't exist?  Always create for now?
 	baseline, exists, err := m.baselines.GetProcessBaseline(lifecycleMgrCtx, key)
@@ -374,7 +372,8 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 		if !existingProcess.Add(baselineItem) {
 			continue
 		}
-		insertableElement := &storage.BaselineItem{Item: &storage.BaselineItem_ProcessName{ProcessName: baselineItem}}
+		insertableElement := &storage.BaselineItem{}
+		insertableElement.SetProcessName(baselineItem)
 		elements = append(elements, insertableElement)
 	}
 	if len(elements) == 0 {

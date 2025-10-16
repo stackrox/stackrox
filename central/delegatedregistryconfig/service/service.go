@@ -25,6 +25,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -109,9 +110,9 @@ func (s *serviceImpl) GetClusters(ctx context.Context, _ *v1.Empty) (*v1.Delegat
 		return nil, status.Error(codes.NotFound, "no clusters found")
 	}
 
-	return &v1.DelegatedRegistryClustersResponse{
-		Clusters: clusters,
-	}, nil
+	drcr := &v1.DelegatedRegistryClustersResponse{}
+	drcr.SetClusters(clusters)
+	return drcr, nil
 }
 
 // UpdateConfig updates Central's delegated registry config.
@@ -137,11 +138,8 @@ func (s *serviceImpl) UpdateConfig(ctx context.Context, config *v1.DelegatedRegi
 	}
 
 	// broadcast the config
-	msg := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_DelegatedRegistryConfig{
-			DelegatedRegistryConfig: convert.PublicAPIToInternalAPI(config),
-		},
-	}
+	msg := &central.MsgToSensor{}
+	msg.SetDelegatedRegistryConfig(proto.ValueOrDefault(convert.PublicAPIToInternalAPI(config)))
 
 	log.Infof("Delegated registry config updated: %q", config)
 	for clusterID := range clusterIDs {
@@ -199,11 +197,11 @@ func (s *serviceImpl) getClusters(ctx context.Context) ([]*v1.DelegatedRegistryC
 	for i, c := range clusters {
 		conn := s.connManager.GetConnection(c.GetId())
 
-		res[i] = &v1.DelegatedRegistryCluster{
-			Id:      c.GetId(),
-			Name:    c.GetName(),
-			IsValid: deleConnection.ValidForDelegation(conn),
-		}
+		drc := &v1.DelegatedRegistryCluster{}
+		drc.SetId(c.GetId())
+		drc.SetName(c.GetName())
+		drc.SetIsValid(deleConnection.ValidForDelegation(conn))
+		res[i] = drc
 	}
 
 	return res, nil

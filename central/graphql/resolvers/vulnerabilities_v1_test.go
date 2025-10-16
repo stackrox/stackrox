@@ -20,51 +20,51 @@ func TestK8sCVEEnvImpact(t *testing.T) {
 	expected := []float64{0.6, 0.4, 0.4}
 
 	clusters := []*storage.Cluster{
-		{
+		storage.Cluster_builder{
 			Id:   "test_cluster_id1",
 			Name: "cluster1",
-			Status: &storage.ClusterStatus{
-				OrchestratorMetadata: &storage.OrchestratorMetadata{
+			Status: storage.ClusterStatus_builder{
+				OrchestratorMetadata: storage.OrchestratorMetadata_builder{
 					Version: "v1.14.2",
-				},
-			},
-		},
-		{
+				}.Build(),
+			}.Build(),
+		}.Build(),
+		storage.Cluster_builder{
 			Id:   "test_cluster_id2",
 			Name: "cluster2",
-			Status: &storage.ClusterStatus{
-				OrchestratorMetadata: &storage.OrchestratorMetadata{
+			Status: storage.ClusterStatus_builder{
+				OrchestratorMetadata: storage.OrchestratorMetadata_builder{
 					Version: "v1.14.5+build1",
-				},
-			},
-		},
-		{
+				}.Build(),
+			}.Build(),
+		}.Build(),
+		storage.Cluster_builder{
 			Id:   "test_cluster_id3",
 			Name: "cluster3",
-			Status: &storage.ClusterStatus{
-				OrchestratorMetadata: &storage.OrchestratorMetadata{
+			Status: storage.ClusterStatus_builder{
+				OrchestratorMetadata: storage.OrchestratorMetadata_builder{
 					Version: "v1.15.4-beta1",
-				},
-			},
-		},
-		{
+				}.Build(),
+			}.Build(),
+		}.Build(),
+		storage.Cluster_builder{
 			Id:   "test_cluster_id4",
 			Name: "cluster4",
-			Status: &storage.ClusterStatus{
-				OrchestratorMetadata: &storage.OrchestratorMetadata{
+			Status: storage.ClusterStatus_builder{
+				OrchestratorMetadata: storage.OrchestratorMetadata_builder{
 					Version: "v1.16.3-alpha1+build2",
-				},
-			},
-		},
-		{
+				}.Build(),
+			}.Build(),
+		}.Build(),
+		storage.Cluster_builder{
 			Id:   "test_cluster_id5",
 			Name: "cluster4",
-			Status: &storage.ClusterStatus{
-				OrchestratorMetadata: &storage.OrchestratorMetadata{
+			Status: storage.ClusterStatus_builder{
+				OrchestratorMetadata: storage.OrchestratorMetadata_builder{
 					Version: "v1.17.5",
-				},
-			},
-		},
+				}.Build(),
+			}.Build(),
+		}.Build(),
 	}
 
 	ctrl := gomock.NewController(t)

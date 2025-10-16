@@ -79,11 +79,11 @@ func convertMany(edges []*storage.NodeComponentCVEEdge, results []searchPkg.Resu
 }
 
 func convertOne(obj *storage.NodeComponentCVEEdge, result *searchPkg.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_NODE_COMPONENT_CVE_EDGE,
-		Id:             obj.GetId(),
-		Name:           obj.GetId(),
-		FieldToMatches: searchPkg.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+	sr := &v1.SearchResult{}
+	sr.SetCategory(v1.SearchCategory_NODE_COMPONENT_CVE_EDGE)
+	sr.SetId(obj.GetId())
+	sr.SetName(obj.GetId())
+	sr.SetFieldToMatches(searchPkg.GetProtoMatchesMap(result.Matches))
+	sr.SetScore(result.Score)
+	return sr
 }

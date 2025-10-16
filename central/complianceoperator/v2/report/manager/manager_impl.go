@@ -290,26 +290,25 @@ func (m *managerImpl) handleReportRequest(request *reportRequest) (bool, error) 
 	concurrency.WithLock(&m.watchingScanConfigsLock, func() {
 		w = m.watchingScanConfigs[request.scanConfig.GetId()]
 	})
-	snapshot := &storage.ComplianceOperatorReportSnapshotV2{
-		ReportId:            uuid.NewV4().String(),
-		ScanConfigurationId: request.scanConfig.GetId(),
-		Name:                request.scanConfig.GetScanConfigName(),
-		Description:         request.scanConfig.GetDescription(),
-		ReportStatus: &storage.ComplianceOperatorReportStatus{
-			RunState:                 storage.ComplianceOperatorReportStatus_WAITING,
-			StartedAt:                protocompat.TimestampNow(),
-			ReportRequestType:        storage.ComplianceOperatorReportStatus_ON_DEMAND,
-			ReportNotificationMethod: request.notificationMethod,
-		},
-		ReportData: m.getReportData(request.scanConfig),
-		User: &storage.SlimUser{
-			Id:   requesterID.UID(),
-			Name: stringutils.FirstNonEmpty(requesterID.FullName(), requesterID.FriendlyName()),
-		},
-	}
+	cors := &storage.ComplianceOperatorReportStatus{}
+	cors.SetRunState(storage.ComplianceOperatorReportStatus_WAITING)
+	cors.SetStartedAt(protocompat.TimestampNow())
+	cors.SetReportRequestType(storage.ComplianceOperatorReportStatus_ON_DEMAND)
+	cors.SetReportNotificationMethod(request.notificationMethod)
+	slimUser := &storage.SlimUser{}
+	slimUser.SetId(requesterID.UID())
+	slimUser.SetName(stringutils.FirstNonEmpty(requesterID.FullName(), requesterID.FriendlyName()))
+	snapshot := &storage.ComplianceOperatorReportSnapshotV2{}
+	snapshot.SetReportId(uuid.NewV4().String())
+	snapshot.SetScanConfigurationId(request.scanConfig.GetId())
+	snapshot.SetName(request.scanConfig.GetScanConfigName())
+	snapshot.SetDescription(request.scanConfig.GetDescription())
+	snapshot.SetReportStatus(cors)
+	snapshot.SetReportData(m.getReportData(request.scanConfig))
+	snapshot.SetUser(slimUser)
 	if w == nil {
 		// The report is going to be generated now
-		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_PREPARING
+		snapshot.GetReportStatus().SetRunState(storage.ComplianceOperatorReportStatus_PREPARING)
 		if err := m.snapshotDataStore.UpsertSnapshot(request.ctx, snapshot); err != nil {
 			return false, errors.Wrap(err, "unable to upsert snapshot on report preparation")
 		}
@@ -345,7 +344,7 @@ func (m *managerImpl) handleReportRequest(request *reportRequest) (bool, error) 
 		return false, errors.New("unable to subscribe to the scan configuration watcher")
 	}
 	if scans := w.GetScans(); len(scans) > 0 {
-		snapshot.Scans = scans
+		snapshot.SetScans(scans)
 	}
 	if err := m.snapshotDataStore.UpsertSnapshot(request.ctx, snapshot); err != nil {
 		return false, errors.Wrap(err, "unable to upsert snapshot on report waiting")
@@ -563,20 +562,19 @@ func (m *managerImpl) createAutomaticSnapshotAndSubscribe(ctx context.Context, s
 		return report.ErrNoNotifiersConfigured
 	}
 	// If the watcher is not running we need to create a new snapshot
-	snapshot := &storage.ComplianceOperatorReportSnapshotV2{
-		ReportId:            uuid.NewV4().String(),
-		ScanConfigurationId: sc.GetId(),
-		Name:                sc.GetScanConfigName(),
-		Description:         sc.GetDescription(),
-		ReportStatus: &storage.ComplianceOperatorReportStatus{
-			RunState:                 storage.ComplianceOperatorReportStatus_WAITING,
-			StartedAt:                protocompat.TimestampNow(),
-			ReportRequestType:        storage.ComplianceOperatorReportStatus_SCHEDULED,
-			ReportNotificationMethod: storage.ComplianceOperatorReportStatus_EMAIL,
-		},
-		ReportData: m.getReportData(sc),
-		User:       sc.GetModifiedBy(),
-	}
+	cors := &storage.ComplianceOperatorReportStatus{}
+	cors.SetRunState(storage.ComplianceOperatorReportStatus_WAITING)
+	cors.SetStartedAt(protocompat.TimestampNow())
+	cors.SetReportRequestType(storage.ComplianceOperatorReportStatus_SCHEDULED)
+	cors.SetReportNotificationMethod(storage.ComplianceOperatorReportStatus_EMAIL)
+	snapshot := &storage.ComplianceOperatorReportSnapshotV2{}
+	snapshot.SetReportId(uuid.NewV4().String())
+	snapshot.SetScanConfigurationId(sc.GetId())
+	snapshot.SetName(sc.GetScanConfigName())
+	snapshot.SetDescription(sc.GetDescription())
+	snapshot.SetReportStatus(cors)
+	snapshot.SetReportData(m.getReportData(sc))
+	snapshot.SetUser(sc.GetModifiedBy())
 	if err := w.Subscribe(snapshot); err != nil {
 		log.Errorf("Unable to subscribe to the scan configuration watcher")
 		if dbErr := helpers.UpdateSnapshotOnError(ctx, snapshot, report.ErrUnableToSubscribeToWatcher, m.snapshotDataStore); dbErr != nil {
@@ -585,7 +583,7 @@ func (m *managerImpl) createAutomaticSnapshotAndSubscribe(ctx context.Context, s
 		return errors.Wrap(err, report.ErrUnableToSubscribeToWatcher.Error())
 	}
 	if scans := w.GetScans(); len(scans) > 0 {
-		snapshot.Scans = scans
+		snapshot.SetScans(scans)
 	}
 	if err := m.snapshotDataStore.UpsertSnapshot(ctx, snapshot); err != nil {
 		return errors.Wrap(err, "unable to upsert the snapshot")
@@ -627,13 +625,13 @@ func (m *managerImpl) generateReportsFromWatcherResults(result *watcher.ScanConf
 
 func (m *managerImpl) generateSingleReportFromWatcherResults(result *watcher.ScanConfigWatcherResults, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
 	failedClusters, err := watcher.ValidateScanConfigResults(m.automaticReportingCtx, result, m.integrationDataStore)
-	snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_PREPARING
+	snapshot.GetReportStatus().SetRunState(storage.ComplianceOperatorReportStatus_PREPARING)
 	if err != nil {
-		snapshot.GetReportStatus().ErrorMsg = err.Error()
+		snapshot.GetReportStatus().SetErrorMsg(err.Error())
 	}
 	log.Infof("Snapshot for ScanConfig %s: %+v -- %+v", result.ScanConfig.GetScanConfigName(), snapshot.GetReportStatus(), snapshot.GetFailedClusters())
 	// Update ReportData
-	snapshot.ReportData = m.getReportData(result.ScanConfig)
+	snapshot.SetReportData(m.getReportData(result.ScanConfig))
 	// Populate ClusterData
 	clusterData, err := helpers.GetClusterData(m.automaticReportingCtx, snapshot.GetReportData(), failedClusters, m.scanDataStore)
 	if err != nil {
@@ -673,15 +671,15 @@ func (m *managerImpl) addFailedClustersToTheSnapshot(failedClusters map[string]*
 		for _, scan := range failedCluster.FailedScans {
 			scans = append(scans, scan.GetScanName())
 		}
-		failedClustersSlice = append(failedClustersSlice, &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
-			ClusterId:       failedCluster.ClusterId,
-			ClusterName:     failedCluster.ClusterName,
-			OperatorVersion: failedCluster.OperatorVersion,
-			Reasons:         failedCluster.Reasons,
-			ScanNames:       scans,
-		})
+		cf := &storage.ComplianceOperatorReportSnapshotV2_FailedCluster{}
+		cf.SetClusterId(failedCluster.ClusterId)
+		cf.SetClusterName(failedCluster.ClusterName)
+		cf.SetOperatorVersion(failedCluster.OperatorVersion)
+		cf.SetReasons(failedCluster.Reasons)
+		cf.SetScanNames(scans)
+		failedClustersSlice = append(failedClustersSlice, cf)
 	}
-	snapshot.FailedClusters = failedClustersSlice
+	snapshot.SetFailedClusters(failedClustersSlice)
 	if err := m.snapshotDataStore.UpsertSnapshot(m.automaticReportingCtx, snapshot); err != nil {
 		return snapshot, errors.Wrapf(err, "unable to upsert the snapshot %s", snapshot.GetReportId())
 	}

@@ -127,9 +127,8 @@ func (s *developmentServiceAccessControlTestSuite) TestDevelopmentServiceAuthori
 
 func (s *developmentServiceAccessControlTestSuite) TestDevelopmentServiceRandomBytes() {
 	const dataSize = 16
-	request := &central.RandomDataRequest{
-		Size: dataSize,
-	}
+	request := &central.RandomDataRequest{}
+	request.SetSize(dataSize)
 	for _, c := range s.getTestCases() {
 		s.Run(c.name, func() {
 			rsp, err := s.svc.RandomData(c.ctx, request)
@@ -209,10 +208,10 @@ RwxPuzZEaFZcVlmtqoq8
 
 	for _, c := range cases {
 		s.Run(c.url, func() {
-			resp, err := s.svc.URLHasValidCert(ctx, &central.URLHasValidCertRequest{
-				Url:     c.url,
-				CertPEM: c.certPEM,
-			})
+			urlhvcr := &central.URLHasValidCertRequest{}
+			urlhvcr.SetUrl(c.url)
+			urlhvcr.SetCertPEM(c.certPEM)
+			resp, err := s.svc.URLHasValidCert(ctx, urlhvcr)
 			s.NoError(err)
 			s.Equal(c.expectedResp.String(), resp.GetResult().String())
 		})

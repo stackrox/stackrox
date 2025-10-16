@@ -138,7 +138,7 @@ func (h *downloadHandler) handle(w http.ResponseWriter, r *http.Request) {
 			sac.ResourceScopeKeys(resources.WorkflowAdministration)),
 	)
 	if err == nil && status.GetRunState() == storage.ReportStatus_GENERATED {
-		rep.ReportStatus.RunState = storage.ReportStatus_DELIVERED
+		rep.GetReportStatus().SetRunState(storage.ReportStatus_DELIVERED)
 		err = h.snapshotStore.UpdateReportSnapshot(writeSnapshotCtx, rep)
 		if err != nil {
 			log.Error("Error setting report state to DELIVERED")

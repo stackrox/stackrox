@@ -18,26 +18,24 @@ import (
 
 var (
 	mockClusters = []*storage.Cluster{
-		{
+		storage.Cluster_builder{
 			Id:             "abc",
 			Name:           "123",
 			MainImage:      "Joseph Rules",
 			CollectorImage: "098",
-			Status: &storage.ClusterStatus{
+			Status: storage.ClusterStatus_builder{
 				SensorVersion: "555",
-				ProviderMetadata: &storage.ProviderMetadata{
-					Provider: &storage.ProviderMetadata_Google{
-						Google: &storage.GoogleProviderMetadata{},
-					},
-				},
-				OrchestratorMetadata: &storage.OrchestratorMetadata{
+				ProviderMetadata: storage.ProviderMetadata_builder{
+					Google: &storage.GoogleProviderMetadata{},
+				}.Build(),
+				OrchestratorMetadata: storage.OrchestratorMetadata_builder{
 					Version: "333",
-				},
-			},
-			HealthStatus: &storage.ClusterHealthStatus{
+				}.Build(),
+			}.Build(),
+			HealthStatus: storage.ClusterHealthStatus_builder{
 				LastContact: protocompat.GetProtoTimestampFromSeconds(300),
-			},
-		},
+			}.Build(),
+		}.Build(),
 	}
 )
 

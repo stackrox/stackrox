@@ -34,77 +34,77 @@ func (suite *UserServiceTestSuite) SetupSuite() {
 func (suite *UserServiceTestSuite) TestGetUsersAttributes() {
 	expectedContext := context.Background()
 	users := []*storage.User{
-		{
+		storage.User_builder{
 			Id:             "user1",
 			AuthProviderId: "ap1",
 			Attributes: []*storage.UserAttribute{
-				{
+				storage.UserAttribute_builder{
 					Key:   "name",
 					Value: "user1",
-				},
-				{
+				}.Build(),
+				storage.UserAttribute_builder{
 					Key:   "email",
 					Value: "user@derp.com",
-				},
+				}.Build(),
 			},
-		},
-		{
+		}.Build(),
+		storage.User_builder{
 			Id:             "user2",
 			AuthProviderId: "ap1",
 			Attributes: []*storage.UserAttribute{
-				{
+				storage.UserAttribute_builder{
 					Key:   "name",
 					Value: "user2",
-				},
+				}.Build(),
 			},
-		},
-		{
+		}.Build(),
+		storage.User_builder{
 			Id:             "user3",
 			AuthProviderId: "ap2",
 			Attributes: []*storage.UserAttribute{
-				{
+				storage.UserAttribute_builder{
 					Key:   "name",
 					Value: "user1",
-				},
+				}.Build(),
 			},
-		},
-		{
+		}.Build(),
+		storage.User_builder{
 			Id:             "user4",
 			AuthProviderId: "ap1",
 			Attributes: []*storage.UserAttribute{
-				{
+				storage.UserAttribute_builder{
 					Key:   "name",
 					Value: "user1",
-				},
-				{
+				}.Build(),
+				storage.UserAttribute_builder{
 					Key:   "email",
 					Value: "user@derp.com",
-				},
+				}.Build(),
 			},
-		},
+		}.Build(),
 	}
 
 	expectedAttributes := []*v1.UserAttributeTuple{
-		{
+		v1.UserAttributeTuple_builder{
 			AuthProviderId: "ap1",
 			Key:            "name",
 			Value:          "user1",
-		},
-		{
+		}.Build(),
+		v1.UserAttributeTuple_builder{
 			AuthProviderId: "ap1",
 			Key:            "email",
 			Value:          "user@derp.com",
-		},
-		{
+		}.Build(),
+		v1.UserAttributeTuple_builder{
 			AuthProviderId: "ap1",
 			Key:            "name",
 			Value:          "user2",
-		},
-		{
+		}.Build(),
+		v1.UserAttributeTuple_builder{
 			AuthProviderId: "ap2",
 			Key:            "name",
 			Value:          "user1",
-		},
+		}.Build(),
 	}
 
 	suite.usersMock.EXPECT().GetAllUsers(expectedContext).Return(users, nil)

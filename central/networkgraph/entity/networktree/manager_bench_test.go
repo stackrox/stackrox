@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 func BenchmarkCreateNetworkTree(b *testing.B) {
@@ -17,18 +18,13 @@ func BenchmarkCreateNetworkTree(b *testing.B) {
 	for i := range entities {
 		cidr := ip.String() + "/32"
 		id, _ := externalsrcs.NewClusterScopedID(c1, cidr)
-		e := &storage.NetworkEntityInfo{
-			Id:   id.String(),
-			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-			Desc: &storage.NetworkEntityInfo_ExternalSource_{
-				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-					Name: cidr,
-					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-						Cidr: cidr,
-					},
-				},
-			},
-		}
+		e := &storage.NetworkEntityInfo{}
+		e.SetId(id.String())
+		e.SetType(storage.NetworkEntityInfo_EXTERNAL_SOURCE)
+		e.SetExternalSource(storage.NetworkEntityInfo_ExternalSource_builder{
+			Name: cidr,
+			Cidr: proto.String(cidr),
+		}.Build())
 		entities[i] = e
 		ip = nextIP(ip)
 	}

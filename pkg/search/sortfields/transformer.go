@@ -42,7 +42,7 @@ func TransformSortOptions(q *v1.Query, optionsMap search.OptionsMap) *v1.Query {
 	}
 
 	// update query pagination
-	local.Pagination.SortOptions = sortOptions
+	local.GetPagination().SetSortOptions(sortOptions)
 
 	return local
 }

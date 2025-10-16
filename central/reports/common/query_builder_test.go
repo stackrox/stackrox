@@ -48,15 +48,11 @@ var securedNS = &storage.NamespaceMetadata{
 }
 
 func getMatchNoneQuery() *v1.Query {
-	return &v1.Query{
-		Query: &v1.Query_BaseQuery{
-			BaseQuery: &v1.BaseQuery{
-				Query: &v1.BaseQuery_MatchNoneQuery{
-					MatchNoneQuery: &v1.MatchNoneQuery{},
-				},
-			},
-		},
-	}
+	return v1.Query_builder{
+		BaseQuery: v1.BaseQuery_builder{
+			MatchNoneQuery: &v1.MatchNoneQuery{},
+		}.Build(),
+	}.Build()
 }
 
 func TestBuildAccessScopeQuery(t *testing.T) {
@@ -113,11 +109,11 @@ func TestBuildAccessScopeQuery(t *testing.T) {
 		{
 			name: "Identity has include all access scope among multiple access scopes",
 			identityGen: func() authn.Identity {
-				accessScope := &storage.SimpleAccessScope{
-					Rules: &storage.SimpleAccessScope_Rules{
+				accessScope := storage.SimpleAccessScope_builder{
+					Rules: storage.SimpleAccessScope_Rules_builder{
 						IncludedClusters: []string{clusters[0].GetName()},
-					},
-				}
+					}.Build(),
+				}.Build()
 				mockRole1 := permissionsMocks.NewMockResolvedRole(mockCtrl)
 				mockRole1.EXPECT().GetAccessScope().Return(accessScope).Times(1)
 				mockRole2 := permissionsMocks.NewMockResolvedRole(mockCtrl)
@@ -143,14 +139,14 @@ func TestBuildAccessScopeQuery(t *testing.T) {
 		{
 			name: "Identity has access scope with rules",
 			identityGen: func() authn.Identity {
-				accessScope := &storage.SimpleAccessScope{
-					Rules: &storage.SimpleAccessScope_Rules{
+				accessScope := storage.SimpleAccessScope_builder{
+					Rules: storage.SimpleAccessScope_Rules_builder{
 						IncludedClusters: []string{clusters[0].GetName()},
 						IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
-							{ClusterName: clusters[1].GetName(), NamespaceName: securedNS.GetName()},
+							storage.SimpleAccessScope_Rules_Namespace_builder{ClusterName: clusters[1].GetName(), NamespaceName: securedNS.GetName()}.Build(),
 						},
-					},
-				}
+					}.Build(),
+				}.Build()
 				mockRole := permissionsMocks.NewMockResolvedRole(mockCtrl)
 				mockRole.EXPECT().GetAccessScope().Return(accessScope).Times(1)
 				mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).Times(1)
@@ -164,11 +160,11 @@ func TestBuildAccessScopeQuery(t *testing.T) {
 				),
 			),
 			assertQueries: func(t testing.TB, expected *v1.Query, actual *v1.Query) {
-				switch typedQ := actual.GetQuery().(type) {
-				case *v1.Query_Disjunction:
+				switch actual.WhichQuery() {
+				case v1.Query_Disjunction_case:
 					protoassert.ElementsMatch(t,
 						expected.GetQuery().(*v1.Query_Disjunction).Disjunction.GetQueries(),
-						typedQ.Disjunction.GetQueries())
+						actual.GetDisjunction().GetQueries())
 				default:
 					assert.Fail(t, "queries mismatch")
 				}
@@ -180,9 +176,8 @@ func TestBuildAccessScopeQuery(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			identity := tc.identityGen()
 			scopeRules := ExtractAccessScopeRules(identity)
-			vulnReportFilters := &storage.VulnerabilityReportFilters{
-				AccessScopeRules: scopeRules,
-			}
+			vulnReportFilters := &storage.VulnerabilityReportFilters{}
+			vulnReportFilters.SetAccessScopeRules(scopeRules)
 			qBuilder := queryBuilder{vulnFilters: vulnReportFilters}
 			scopeQuery, err := qBuilder.buildAccessScopeQuery(clusters, namespaces)
 			assert.NoError(t, err)

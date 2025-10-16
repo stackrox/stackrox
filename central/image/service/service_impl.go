@@ -47,6 +47,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -173,7 +174,9 @@ func (s *serviceImpl) CountImages(ctx context.Context, request *v1.RawQuery) (*v
 	if err != nil {
 		return nil, err
 	}
-	return &v1.CountImagesResponse{Count: int32(numImages)}, nil
+	cir := &v1.CountImagesResponse{}
+	cir.SetCount(int32(numImages))
+	return cir, nil
 }
 
 // ListImages retrieves all images in minimal form.
@@ -192,9 +195,9 @@ func (s *serviceImpl) ListImages(ctx context.Context, request *v1.RawQuery) (*v1
 		return nil, err
 	}
 
-	return &v1.ListImagesResponse{
-		Images: images,
-	}, nil
+	lir := &v1.ListImagesResponse{}
+	lir.SetImages(images)
+	return lir, nil
 }
 
 func (s *serviceImpl) ExportImages(req *v1.ExportImageRequest, srv v1.ImageService_ExportImagesServer) error {
@@ -209,7 +212,9 @@ func (s *serviceImpl) ExportImages(req *v1.ExportImageRequest, srv v1.ImageServi
 		defer cancel()
 	}
 	return s.mappingDatastore.WalkByQuery(ctx, parsedQuery, func(image *storage.Image) error {
-		if err := srv.Send(&v1.ExportImageResponse{Image: image}); err != nil {
+		eir := &v1.ExportImageResponse{}
+		eir.SetImage(image)
+		if err := srv.Send(eir); err != nil {
 			return err
 		}
 		return nil
@@ -225,9 +230,9 @@ func (s *serviceImpl) InvalidateScanAndRegistryCaches(context.Context, *v1.Empty
 func internalScanRespFromImage(img *storage.Image) *v1.ScanImageInternalResponse {
 	utils.FilterSuppressedCVEsNoClone(img)
 	utils.StripCVEDescriptionsNoClone(img)
-	return &v1.ScanImageInternalResponse{
-		Image: img,
-	}
+	siir := &v1.ScanImageInternalResponse{}
+	siir.SetImage(img)
+	return siir
 }
 
 func (s *serviceImpl) saveImage(img *storage.Image) error {
@@ -274,7 +279,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 			var clusterLocalScanExpired bool
 			if existingImg.GetIsClusterLocal() && scanExpired(existingImg) {
 				clusterLocalScanExpired = true
-				existingImg.IsClusterLocal = false
+				existingImg.SetIsClusterLocal(false)
 			}
 
 			// If the image exists and the image name from the request matches at least one stored image name(/reference),
@@ -295,7 +300,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 			)
 
 			if !nameFound {
-				existingImg.Names = append(existingImg.Names, request.GetImage().GetName())
+				existingImg.SetNames(append(existingImg.GetNames(), request.GetImage().GetName()))
 				// We only want to force re-fetching of signatures and verification data, the additional image name has no
 				// impact on image scan data.
 				fetchOpt = enricher.ForceRefetchSignaturesOnly
@@ -371,7 +376,7 @@ func updateImageFromRequest(existingImg *storage.Image, reqImgName *storage.Imag
 
 	// Replace the image name with the one from the request since it is more likely to be 'correct'.
 	log.Debugf("Updated existing image name from %q to %q", existingImgName.GetFullName(), reqImgName.GetFullName())
-	existingImg.Name = reqImgName
+	existingImg.SetName(reqImgName)
 
 	return true
 }
@@ -439,7 +444,7 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 	}
 
 	// Save the image
-	img.Id = utils.GetSHA(img)
+	img.SetId(utils.GetSHA(img))
 	if img.GetId() != "" {
 		if err := s.saveImage(img); err != nil {
 			return nil, err
@@ -486,12 +491,11 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 		}
 	}
 
-	img := &storage.Image{
-		Id:             imgID,
-		Name:           request.GetImageName(),
-		Metadata:       request.GetMetadata(),
-		IsClusterLocal: request.GetIsClusterLocal(),
-	}
+	img := &storage.Image{}
+	img.SetId(imgID)
+	img.SetName(request.GetImageName())
+	img.SetMetadata(request.GetMetadata())
+	img.SetIsClusterLocal(request.GetIsClusterLocal())
 
 	comps := scannerTypes.NewScanComponents("", request.GetComponents(), nil)
 	_, err := s.enricher.EnrichWithVulnerabilities(img, comps, request.GetNotes())
@@ -616,17 +620,16 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		}
 	}
 
-	img := &storage.Image{
-		Id:   imgID,
-		Name: request.GetImageName(),
-		// 'Names' must be populated to enable cache hits in central AND sensor.
-		Names:          buildNames(request.GetImageName(), existingImg.GetNames(), request.GetMetadata()),
-		Signature:      request.GetImageSignature(),
-		Metadata:       request.GetMetadata(),
-		Notes:          request.GetImageNotes(),
-		Scan:           existingImg.GetScan(),
-		IsClusterLocal: true,
-	}
+	img := &storage.Image{}
+	img.SetId(imgID)
+	img.SetName(request.GetImageName())
+	// 'Names' must be populated to enable cache hits in central AND sensor.
+	img.SetNames(buildNames(request.GetImageName(), existingImg.GetNames(), request.GetMetadata()))
+	img.SetSignature(request.GetImageSignature())
+	img.SetMetadata(request.GetMetadata())
+	img.SetNotes(request.GetImageNotes())
+	img.SetScan(existingImg.GetScan())
+	img.SetIsClusterLocal(true)
 
 	if !hasErrors {
 		if forceScanUpdate {
@@ -776,10 +779,9 @@ func (s *serviceImpl) DeleteImages(ctx context.Context, request *v1.DeleteImages
 		return nil, err
 	}
 
-	response := &v1.DeleteImagesResponse{
-		NumDeleted: uint32(len(results)),
-		DryRun:     !request.GetConfirm(),
-	}
+	response := &v1.DeleteImagesResponse{}
+	response.SetNumDeleted(uint32(len(results)))
+	response.SetDryRun(!request.GetConfirm())
 
 	if !request.GetConfirm() {
 		return response, nil
@@ -792,41 +794,39 @@ func (s *serviceImpl) DeleteImages(ctx context.Context, request *v1.DeleteImages
 
 	keys := make([]*central.InvalidateImageCache_ImageKey, 0, len(idSlice))
 	for _, id := range idSlice {
-		keys = append(keys, &central.InvalidateImageCache_ImageKey{
-			ImageId: id,
-		})
+		ii := &central.InvalidateImageCache_ImageKey{}
+		ii.SetImageId(id)
+		keys = append(keys, ii)
 	}
 
-	s.connManager.BroadcastMessage(&central.MsgToSensor{
-		Msg: &central.MsgToSensor_InvalidateImageCache{
-			InvalidateImageCache: &central.InvalidateImageCache{
-				ImageKeys: keys,
-			},
-		},
-	})
+	iic := &central.InvalidateImageCache{}
+	iic.SetImageKeys(keys)
+	mts := &central.MsgToSensor{}
+	mts.SetInvalidateImageCache(proto.ValueOrDefault(iic))
+	s.connManager.BroadcastMessage(mts)
 
 	return response, nil
 }
 
 func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequest) (*v1.WatchImageResponse, error) {
 	if request.GetName() == "" {
-		return &v1.WatchImageResponse{
-			ErrorMessage: "no image name specified",
-			ErrorType:    v1.WatchImageResponse_INVALID_IMAGE_NAME,
-		}, nil
+		wir := &v1.WatchImageResponse{}
+		wir.SetErrorMessage("no image name specified")
+		wir.SetErrorType(v1.WatchImageResponse_INVALID_IMAGE_NAME)
+		return wir, nil
 	}
 	containerImage, err := utils.GenerateImageFromString(request.GetName())
 	if err != nil {
-		return &v1.WatchImageResponse{
-			ErrorMessage: fmt.Sprintf("failed to parse name: %v", err),
-			ErrorType:    v1.WatchImageResponse_INVALID_IMAGE_NAME,
-		}, nil
+		wir := &v1.WatchImageResponse{}
+		wir.SetErrorMessage(fmt.Sprintf("failed to parse name: %v", err))
+		wir.SetErrorType(v1.WatchImageResponse_INVALID_IMAGE_NAME)
+		return wir, nil
 	}
 	if containerImage.GetId() != "" {
-		return &v1.WatchImageResponse{
-			ErrorMessage: fmt.Sprintf("name %s contains a digest, but watch does not handle images with digests", request.GetName()),
-			ErrorType:    v1.WatchImageResponse_INVALID_IMAGE_NAME,
-		}, nil
+		wir := &v1.WatchImageResponse{}
+		wir.SetErrorMessage(fmt.Sprintf("name %s contains a digest, but watch does not handle images with digests", request.GetName()))
+		wir.SetErrorType(v1.WatchImageResponse_INVALID_IMAGE_NAME)
+		return wir, nil
 	}
 
 	img := types.ToImage(containerImage)
@@ -837,26 +837,26 @@ func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequ
 	}
 	enrichmentResult, err := s.enricher.EnrichImage(ctx, enrichCtx, img)
 	if err != nil {
-		return &v1.WatchImageResponse{
-			ErrorMessage: fmt.Sprintf("failed to scan image: %v", err),
-			ErrorType:    v1.WatchImageResponse_SCAN_FAILED,
-		}, nil
+		wir := &v1.WatchImageResponse{}
+		wir.SetErrorMessage(fmt.Sprintf("failed to scan image: %v", err))
+		wir.SetErrorType(v1.WatchImageResponse_SCAN_FAILED)
+		return wir, nil
 	}
 
 	if !enrichmentResult.ImageUpdated || (enrichmentResult.ScanResult != enricher.ScanSucceeded) {
-		return &v1.WatchImageResponse{
-			ErrorMessage: "scan could not be completed, due to no applicable registry/scanner integration",
-			ErrorType:    v1.WatchImageResponse_NO_VALID_INTEGRATION,
-		}, nil
+		wir := &v1.WatchImageResponse{}
+		wir.SetErrorMessage("scan could not be completed, due to no applicable registry/scanner integration")
+		wir.SetErrorType(v1.WatchImageResponse_NO_VALID_INTEGRATION)
+		return wir, nil
 	}
 
 	// Save the image
-	img.Id = utils.GetSHA(img)
+	img.SetId(utils.GetSHA(img))
 	if img.GetId() == "" {
-		return &v1.WatchImageResponse{
-			ErrorType:    v1.WatchImageResponse_SCAN_FAILED,
-			ErrorMessage: "could not get SHA after scanning image",
-		}, nil
+		wir := &v1.WatchImageResponse{}
+		wir.SetErrorType(v1.WatchImageResponse_SCAN_FAILED)
+		wir.SetErrorMessage("could not get SHA after scanning image")
+		return wir, nil
 	}
 
 	if err := s.saveImage(img); err != nil {
@@ -867,7 +867,9 @@ func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequ
 	if err := s.watchedImages.UpsertWatchedImage(ctx, normalizedName); err != nil {
 		return nil, errors.Errorf("failed to upsert watched image: %v", err)
 	}
-	return &v1.WatchImageResponse{NormalizedName: normalizedName}, nil
+	wir := &v1.WatchImageResponse{}
+	wir.SetNormalizedName(normalizedName)
+	return wir, nil
 }
 
 func (s *serviceImpl) UnwatchImage(ctx context.Context, request *v1.UnwatchImageRequest) (*v1.Empty, error) {
@@ -882,5 +884,7 @@ func (s *serviceImpl) GetWatchedImages(ctx context.Context, _ *v1.Empty) (*v1.Ge
 	if err != nil {
 		return nil, err
 	}
-	return &v1.GetWatchedImagesResponse{WatchedImages: watchedImgs}, nil
+	gwir := &v1.GetWatchedImagesResponse{}
+	gwir.SetWatchedImages(watchedImgs)
+	return gwir, nil
 }

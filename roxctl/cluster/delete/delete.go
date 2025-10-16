@@ -89,7 +89,9 @@ func (cmd *clusterDeleteCommand) Delete() error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), cmd.timeout)
 	defer cancel()
-	_, err = service.DeleteCluster(ctx, &v1.ResourceByID{Id: cluster.GetId()})
+	rbid := &v1.ResourceByID{}
+	rbid.SetId(cluster.GetId())
+	_, err = service.DeleteCluster(ctx, rbid)
 	if err != nil {
 		return errors.Wrapf(err, "could not delete cluster: %q", cluster.GetId())
 	}

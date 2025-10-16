@@ -31,6 +31,7 @@ import (
 	"google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 // sensor implements the Sensor interface by sending inputs to central,
@@ -140,20 +141,19 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	// While the message is only sent after the stream is established, it is also used to populate the legacy,
 	// header metadata-based self-identification protocol, which needs to happen prior to making the streaming RPC
 	// call. That's why we create it here and not in the `initialSync` method below.
-	sensorHello := &central.SensorHello{
-		SensorVersion:            version.GetMainVersion(),
-		PolicyVersion:            policyversion.CurrentVersion().String(),
-		DeploymentIdentification: configHandler.GetDeploymentIdentification(),
-		SensorState:              s.getSensorState(),
-		RequestDeduperState:      s.clientReconcile,
-	}
+	sensorHello := &central.SensorHello{}
+	sensorHello.SetSensorVersion(version.GetMainVersion())
+	sensorHello.SetPolicyVersion(policyversion.CurrentVersion().String())
+	sensorHello.SetDeploymentIdentification(configHandler.GetDeploymentIdentification())
+	sensorHello.SetSensorState(s.getSensorState())
+	sensorHello.SetRequestDeduperState(s.clientReconcile)
 
 	capsSet := set.NewSet[centralsensor.SensorCapability]()
 	for _, component := range s.components {
 		capsSet.AddAll(component.Capabilities()...)
 	}
 	capsSet.Add(centralsensor.SendDeduperStateOnReconnect)
-	sensorHello.Capabilities = sliceutils.StringSlice(capsSet.AsSlice()...)
+	sensorHello.SetCapabilities(sliceutils.StringSlice(capsSet.AsSlice()...))
 
 	// Inject desired Helm configuration, if any.
 	if helmManagedCfg := configHandler.GetHelmManagedConfig(); helmManagedCfg != nil && helmManagedCfg.GetClusterId() == "" {
@@ -162,11 +162,11 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 			log.Warnf("Failed to load cached cluster ID: %s", err)
 		} else if cachedClusterID != "" {
 			helmManagedCfg = helmManagedCfg.CloneVT()
-			helmManagedCfg.ClusterId = cachedClusterID
+			helmManagedCfg.SetClusterId(cachedClusterID)
 			log.Infof("Re-using cluster ID %s of previous run. If you see the connection to central failing, re-apply a new Helm configuration via 'helm upgrade', or delete the sensor pod.", cachedClusterID)
 		}
 
-		sensorHello.HelmManagedConfigInit = helmManagedCfg
+		sensorHello.SetHelmManagedConfigInit(helmManagedCfg)
 	}
 
 	// Prepare outgoing context
@@ -220,7 +220,9 @@ func (s *centralCommunicationImpl) initialSync(ctx context.Context, stream centr
 	hdr := metautils.MD(rawHdr)
 	if hdr.Get(centralsensor.SensorHelloMetadataKey) == "true" {
 		// Yay, central supports the "sensor hello" protocol!
-		err := stream.Send(&central.MsgFromSensor{Msg: &central.MsgFromSensor_Hello{Hello: hello}})
+		mfs := &central.MsgFromSensor{}
+		mfs.SetHello(proto.ValueOrDefault(hello))
+		err := stream.Send(mfs)
 		if err != nil {
 			return errors.Wrap(err, "sending SensorHello message to central")
 		}

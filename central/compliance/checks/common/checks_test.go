@@ -63,14 +63,14 @@ func TestCheckSecretsInEnv(t *testing.T) {
 }
 
 func TestCheckNotifierInUseByCluster(t *testing.T) {
+	notifier := &storage.Notifier{}
+	notifier.SetId("Some Notifier")
+	notifier2 := &storage.Notifier{}
+	notifier2.SetId("Some Other Notifier")
 	var (
-		someNotifier = storage.Notifier{
-			Id: "Some Notifier",
-		}
-		someOtherNotifier = storage.Notifier{
-			Id: "Some Other Notifier",
-		}
-		notifiers = []*storage.Notifier{&someNotifier, &someOtherNotifier}
+		someNotifier      = notifier
+		someOtherNotifier = notifier2
+		notifiers         = []*storage.Notifier{&someNotifier, &someOtherNotifier}
 	)
 
 	for desc, testCase := range map[string]struct {

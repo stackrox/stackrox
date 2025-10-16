@@ -208,18 +208,18 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGetSecretDataMissingKeysSu
 		"missing CA": {
 			missingSecretDataKey: mtls.CACertFileName,
 			setExpectedCertsFunc: func(certificates *storage.TypedServiceCertificateSet) {
-				certificates.CaPem = nil
+				certificates.ClearCaPem()
 			}},
 		"missing Cert": {
 			missingSecretDataKey: mtls.ServiceCertFileName,
 			setExpectedCertsFunc: func(certificates *storage.TypedServiceCertificateSet) {
-				s.getFirstServiceCertificate(certificates).Cert.CertPem = nil
+				s.getFirstServiceCertificate(certificates).GetCert().ClearCertPem()
 			},
 		},
 		"missing Key": {
 			missingSecretDataKey: mtls.ServiceKeyFileName,
 			setExpectedCertsFunc: func(certificates *storage.TypedServiceCertificateSet) {
-				s.getFirstServiceCertificate(certificates).Cert.KeyPem = nil
+				s.getFirstServiceCertificate(certificates).GetCert().ClearKeyPem()
 			},
 		},
 	}
@@ -238,7 +238,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGetSecretDataMissingKeysSu
 
 func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureCertsUnknownServiceTypeIgnores() {
 	fixture := s.newFixture(certSecretsRepoFixtureConfig{})
-	s.getFirstServiceCertificate(fixture.certificates).ServiceType = unknownServiceType
+	s.getFirstServiceCertificate(fixture.certificates).SetServiceType(unknownServiceType)
 	ctx := context.Background()
 
 	persistedCertificates, err := fixture.repo.EnsureServiceCertificates(ctx, fixture.certificates)
@@ -252,7 +252,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureCertsUnknownServiceT
 
 func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureCertsMissingServiceTypeSuccess() {
 	fixture := s.newFixture(certSecretsRepoFixtureConfig{})
-	fixture.certificates.ServiceCerts = make([]*storage.TypedServiceCertificate, 0)
+	fixture.certificates.SetServiceCerts(make([]*storage.TypedServiceCertificate, 0))
 
 	persistedCertificates, err := fixture.repo.EnsureServiceCertificates(context.Background(), fixture.certificates)
 
@@ -268,13 +268,17 @@ func (s *serviceCertificatesRepoSecretsImplSuite) getFirstServiceCertificate(
 }
 
 func createServiceCertificate(serviceType storage.ServiceType) *storage.TypedServiceCertificate {
-	return &storage.TypedServiceCertificate{
-		ServiceType: serviceType,
-		Cert: &storage.ServiceCertificate{
-			CertPem: make([]byte, 0),
-			KeyPem:  make([]byte, 1),
-		},
+	sc := &storage.ServiceCertificate{}
+	if x := make([]byte, 0); x != nil {
+		sc.SetCertPem(x)
 	}
+	if x := make([]byte, 1); x != nil {
+		sc.SetKeyPem(x)
+	}
+	tsc := &storage.TypedServiceCertificate{}
+	tsc.SetServiceType(serviceType)
+	tsc.SetCert(sc)
+	return tsc
 }
 
 type certSecretsRepoFixture struct {

@@ -46,9 +46,9 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 func (s *serviceImpl) UpsertVirtualMachineIndexReport(ctx context.Context, req *sensor.UpsertVirtualMachineIndexReportRequest) (*sensor.UpsertVirtualMachineIndexReportResponse, error) {
 	if req.GetIndexReport() == nil {
-		return &sensor.UpsertVirtualMachineIndexReportResponse{
-			Success: false,
-		}, errox.InvalidArgs.CausedBy("index report in request cannot be nil")
+		uvmirr := &sensor.UpsertVirtualMachineIndexReportResponse{}
+		uvmirr.SetSuccess(false)
+		return uvmirr, errox.InvalidArgs.CausedBy("index report in request cannot be nil")
 	}
 
 	log.Debugf("Upserting virtual machine index report with vsock_cid=%q", req.GetIndexReport().GetVsockCid())
@@ -56,11 +56,11 @@ func (s *serviceImpl) UpsertVirtualMachineIndexReport(ctx context.Context, req *
 	timeoutCtx, cancel := context.WithTimeout(ctx, indexReportSendTimeout)
 	defer cancel()
 	if err := s.handler.Send(timeoutCtx, req.GetIndexReport()); err != nil {
-		return &sensor.UpsertVirtualMachineIndexReportResponse{
-			Success: false,
-		}, errors.Wrapf(err, "sending virtual machine index report with vsock_cid=%q to Central", req.GetIndexReport().GetVsockCid())
+		uvmirr := &sensor.UpsertVirtualMachineIndexReportResponse{}
+		uvmirr.SetSuccess(false)
+		return uvmirr, errors.Wrapf(err, "sending virtual machine index report with vsock_cid=%q to Central", req.GetIndexReport().GetVsockCid())
 	}
-	return &sensor.UpsertVirtualMachineIndexReportResponse{
-		Success: true,
-	}, nil
+	uvmirr := &sensor.UpsertVirtualMachineIndexReportResponse{}
+	uvmirr.SetSuccess(true)
+	return uvmirr, nil
 }

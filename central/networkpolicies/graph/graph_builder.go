@@ -54,10 +54,9 @@ func (b *graphBuilder) init(queryDeploymentIDs set.StringSet, deployments []*sto
 		if ns == nil {
 			ns = namespacesByID[deployment.GetNamespaceId()]
 			if ns == nil {
-				ns = &storage.NamespaceMetadata{
-					Name: deployment.GetNamespace(),
-					Id:   deployment.GetNamespaceId(),
-				}
+				ns = &storage.NamespaceMetadata{}
+				ns.SetName(deployment.GetNamespace())
+				ns.SetId(deployment.GetNamespaceId())
 			}
 			b.namespacesByName[ns.GetName()] = ns
 		}
@@ -387,7 +386,7 @@ func (b *graphBuilder) PostProcess() {
 func bundleForPorts(ports portDescs, includePorts bool) *v1.NetworkEdgePropertiesBundle {
 	bundle := &v1.NetworkEdgePropertiesBundle{}
 	if includePorts {
-		bundle.Properties = ports.ToProto()
+		bundle.SetProperties(ports.ToProto())
 	}
 
 	return bundle
@@ -427,8 +426,8 @@ func (b *graphBuilder) ToProto(includePorts bool) []*v1.NetworkNode {
 			}
 
 			srcNode := allNodes[srcIdx]
-			if srcNode.OutEdges == nil {
-				srcNode.OutEdges = make(map[int32]*v1.NetworkEdgePropertiesBundle)
+			if srcNode.GetOutEdges() == nil {
+				srcNode.SetOutEdges(make(map[int32]*v1.NetworkEdgePropertiesBundle))
 			}
 
 			tgtIdx, ok := nodeMap[tgt]
@@ -441,7 +440,7 @@ func (b *graphBuilder) ToProto(includePorts bool) []*v1.NetworkNode {
 				continue
 			}
 
-			srcNode.OutEdges[int32(tgtIdx)] = bundleForPorts(portsForEdge, includePorts)
+			srcNode.GetOutEdges()[int32(tgtIdx)] = bundleForPorts(portsForEdge, includePorts)
 		}
 	}
 	return allNodes
@@ -466,15 +465,15 @@ func (b *graphBuilder) getRelevantNodes() (map[*node]int, []*v1.NetworkNode) {
 		}
 
 		nodeMap[node] = len(allNodes)
-		allNodes = append(allNodes, &v1.NetworkNode{
-			Entity:             node.toEntityProto(),
-			InternetAccess:     node.internetAccess || !node.isEgressIsolated,
-			NonIsolatedEgress:  !node.isEgressIsolated,
-			NonIsolatedIngress: !node.isIngressIsolated,
-			OutEdges:           make(map[int32]*v1.NetworkEdgePropertiesBundle),
-			PolicyIds:          node.applyingPoliciesIDs,
-			QueryMatch:         b.deploymentPredicate(node.deployment.GetId()),
-		})
+		nn := &v1.NetworkNode{}
+		nn.SetEntity(node.toEntityProto())
+		nn.SetInternetAccess(node.internetAccess || !node.isEgressIsolated)
+		nn.SetNonIsolatedEgress(!node.isEgressIsolated)
+		nn.SetNonIsolatedIngress(!node.isIngressIsolated)
+		nn.SetOutEdges(make(map[int32]*v1.NetworkEdgePropertiesBundle))
+		nn.SetPolicyIds(node.applyingPoliciesIDs)
+		nn.SetQueryMatch(b.deploymentPredicate(node.deployment.GetId()))
+		allNodes = append(allNodes, nn)
 	}
 
 	for _, node := range b.extSrcs {
@@ -483,13 +482,13 @@ func (b *graphBuilder) getRelevantNodes() (map[*node]int, []*v1.NetworkNode) {
 		}
 
 		nodeMap[node] = len(allNodes)
-		allNodes = append(allNodes, &v1.NetworkNode{
-			Entity:             node.extSrc,
-			InternetAccess:     true,
-			NonIsolatedEgress:  true,
-			NonIsolatedIngress: true,
-			OutEdges:           make(map[int32]*v1.NetworkEdgePropertiesBundle),
-		})
+		nn := &v1.NetworkNode{}
+		nn.SetEntity(node.extSrc)
+		nn.SetInternetAccess(true)
+		nn.SetNonIsolatedEgress(true)
+		nn.SetNonIsolatedIngress(true)
+		nn.SetOutEdges(make(map[int32]*v1.NetworkEdgePropertiesBundle))
+		allNodes = append(allNodes, nn)
 	}
 	return nodeMap, allNodes
 }

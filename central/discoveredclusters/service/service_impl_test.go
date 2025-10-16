@@ -14,14 +14,13 @@ func TestAuthz(t *testing.T) {
 }
 
 func TestDiscoveredClustersQueryBuilder(t *testing.T) {
-	filter := &v1.DiscoveredClustersFilter{
-		Names: []string{"my-cluster"},
-		Types: []v1.DiscoveredCluster_Metadata_Type{
-			v1.DiscoveredCluster_Metadata_EKS,
-			v1.DiscoveredCluster_Metadata_GKE,
-		},
-		Statuses: []v1.DiscoveredCluster_Status{v1.DiscoveredCluster_STATUS_UNSECURED},
-	}
+	filter := &v1.DiscoveredClustersFilter{}
+	filter.SetNames([]string{"my-cluster"})
+	filter.SetTypes([]v1.DiscoveredCluster_Metadata_Type{
+		v1.DiscoveredCluster_Metadata_EKS,
+		v1.DiscoveredCluster_Metadata_GKE,
+	})
+	filter.SetStatuses([]v1.DiscoveredCluster_Status{v1.DiscoveredCluster_STATUS_UNSECURED})
 	queryBuilder := getQueryBuilderFromFilter(filter)
 
 	rawQuery, err := queryBuilder.RawQuery()

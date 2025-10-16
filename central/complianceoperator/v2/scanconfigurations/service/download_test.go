@@ -25,10 +25,9 @@ func TestDownloadReport(t *testing.T) {
 	snapshotDS := snapshotMocks.NewMockDataStore(ctrl)
 	blobDS := blobMocks.NewMockDatastore(ctrl)
 
-	user := &storage.SlimUser{
-		Id:   "user-1",
-		Name: "user-1",
-	}
+	user := &storage.SlimUser{}
+	user.SetId("user-1")
+	user.SetName("user-1")
 
 	handler := &downloadHandler{
 		snapshotDataStore: snapshotDS,
@@ -100,10 +99,9 @@ func TestDownloadReport(t *testing.T) {
 	t.Run("Snapshot User differs from the User in the Context", func(t *testing.T) {
 		snapshotID := "snapshot-1"
 		snapshot := getSnapshot(snapshotID, user)
-		ctxUser := &storage.SlimUser{
-			Id:   "user-2",
-			Name: "user-2",
-		}
+		ctxUser := &storage.SlimUser{}
+		ctxUser.SetId("user-2")
+		ctxUser.SetName("user-2")
 
 		snapshotDS.EXPECT().GetSnapshot(gomock.Any(), snapshotID).Return(snapshot, true, nil)
 
@@ -119,7 +117,7 @@ func TestDownloadReport(t *testing.T) {
 	t.Run("Snapshot is not a download", func(t *testing.T) {
 		snapshotID := "snapshot-1"
 		snapshot := getSnapshot(snapshotID, user)
-		snapshot.GetReportStatus().ReportNotificationMethod = storage.ComplianceOperatorReportStatus_EMAIL
+		snapshot.GetReportStatus().SetReportNotificationMethod(storage.ComplianceOperatorReportStatus_EMAIL)
 
 		snapshotDS.EXPECT().GetSnapshot(gomock.Any(), snapshotID).Return(snapshot, true, nil)
 
@@ -135,7 +133,7 @@ func TestDownloadReport(t *testing.T) {
 	t.Run("Snapshot is waiting", func(t *testing.T) {
 		snapshotID := "snapshot-1"
 		snapshot := getSnapshot(snapshotID, user)
-		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_WAITING
+		snapshot.GetReportStatus().SetRunState(storage.ComplianceOperatorReportStatus_WAITING)
 
 		snapshotDS.EXPECT().GetSnapshot(gomock.Any(), snapshotID).Return(snapshot, true, nil)
 
@@ -151,7 +149,7 @@ func TestDownloadReport(t *testing.T) {
 	t.Run("Snapshot is preparing", func(t *testing.T) {
 		snapshotID := "snapshot-1"
 		snapshot := getSnapshot(snapshotID, user)
-		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_PREPARING
+		snapshot.GetReportStatus().SetRunState(storage.ComplianceOperatorReportStatus_PREPARING)
 
 		snapshotDS.EXPECT().GetSnapshot(gomock.Any(), snapshotID).Return(snapshot, true, nil)
 
@@ -167,7 +165,7 @@ func TestDownloadReport(t *testing.T) {
 	t.Run("Snapshot failed", func(t *testing.T) {
 		snapshotID := "snapshot-1"
 		snapshot := getSnapshot(snapshotID, user)
-		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_FAILURE
+		snapshot.GetReportStatus().SetRunState(storage.ComplianceOperatorReportStatus_FAILURE)
 
 		snapshotDS.EXPECT().GetSnapshot(gomock.Any(), snapshotID).Return(snapshot, true, nil)
 
@@ -220,7 +218,7 @@ func TestDownloadReport(t *testing.T) {
 		blobDS.EXPECT().Get(gomock.Any(), common.GetComplianceReportBlobPath(snapshot.GetScanConfigurationId(), snapshotID), gomock.Any()).Return(nil, true, nil)
 
 		clone := snapshot.CloneVT()
-		clone.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_DELIVERED
+		clone.GetReportStatus().SetRunState(storage.ComplianceOperatorReportStatus_DELIVERED)
 		snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), snapshot).DoAndReturn(func(_ any, s *storage.ComplianceOperatorReportSnapshotV2) error {
 			require.Equal(t, clone.GetReportStatus().GetRunState(), s.GetReportStatus().GetRunState())
 			return errors.New("some error")
@@ -242,7 +240,7 @@ func TestDownloadReport(t *testing.T) {
 		snapshotDS.EXPECT().GetSnapshot(gomock.Any(), snapshotID).Return(snapshot, true, nil)
 		blobDS.EXPECT().Get(gomock.Any(), common.GetComplianceReportBlobPath(snapshot.GetScanConfigurationId(), snapshotID), gomock.Any()).Return(nil, true, nil)
 		clone := snapshot.CloneVT()
-		clone.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_DELIVERED
+		clone.GetReportStatus().SetRunState(storage.ComplianceOperatorReportStatus_DELIVERED)
 		snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), snapshot).DoAndReturn(func(_ any, s *storage.ComplianceOperatorReportSnapshotV2) error {
 			require.Equal(t, clone.GetReportStatus().GetRunState(), s.GetReportStatus().GetRunState())
 			return nil
@@ -259,14 +257,14 @@ func TestDownloadReport(t *testing.T) {
 }
 
 func getSnapshot(id string, user *storage.SlimUser) *storage.ComplianceOperatorReportSnapshotV2 {
-	return &storage.ComplianceOperatorReportSnapshotV2{
-		ReportId:            id,
-		Name:                id,
-		ScanConfigurationId: fmt.Sprintf("scan-config-%s", id),
-		User:                user,
-		ReportStatus: &storage.ComplianceOperatorReportStatus{
-			ReportNotificationMethod: storage.ComplianceOperatorReportStatus_DOWNLOAD,
-			RunState:                 storage.ComplianceOperatorReportStatus_GENERATED,
-		},
-	}
+	cors := &storage.ComplianceOperatorReportStatus{}
+	cors.SetReportNotificationMethod(storage.ComplianceOperatorReportStatus_DOWNLOAD)
+	cors.SetRunState(storage.ComplianceOperatorReportStatus_GENERATED)
+	corsv2 := &storage.ComplianceOperatorReportSnapshotV2{}
+	corsv2.SetReportId(id)
+	corsv2.SetName(id)
+	corsv2.SetScanConfigurationId(fmt.Sprintf("scan-config-%s", id))
+	corsv2.SetUser(user)
+	corsv2.SetReportStatus(cors)
+	return corsv2
 }

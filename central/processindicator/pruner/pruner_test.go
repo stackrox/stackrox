@@ -44,16 +44,16 @@ var (
 )
 
 func rabbitMQBeamSMPProcess() *storage.ProcessIndicator {
-	return &storage.ProcessIndicator{
-		Id:    uuid.NewV4().String(),
-		PodId: rabbitMQPodID,
-		Signal: &storage.ProcessSignal{
-			ContainerId:  rabbitMQContainerID,
-			Name:         "beam.smp",
-			Args:         fmt.Sprintf("-- -root /usr/lib/erlang -progname erl -- -home /var/lib/rabbitmq -- -sname epmd-starter-%d -noshell -eval halt()", rand.Intn(int(math.Pow10(9)))),
-			ExecFilePath: "/usr/lib/erlang/erts-9.3.3.3/bin/beam.smp",
-		},
-	}
+	ps := &storage.ProcessSignal{}
+	ps.SetContainerId(rabbitMQContainerID)
+	ps.SetName("beam.smp")
+	ps.SetArgs(fmt.Sprintf("-- -root /usr/lib/erlang -progname erl -- -home /var/lib/rabbitmq -- -sname epmd-starter-%d -noshell -eval halt()", rand.Intn(int(math.Pow10(9)))))
+	ps.SetExecFilePath("/usr/lib/erlang/erts-9.3.3.3/bin/beam.smp")
+	pi := &storage.ProcessIndicator{}
+	pi.SetId(uuid.NewV4().String())
+	pi.SetPodId(rabbitMQPodID)
+	pi.SetSignal(ps)
+	return pi
 }
 
 func processToIDAndArgs(process *storage.ProcessIndicator) processindicator.IDAndArgs {

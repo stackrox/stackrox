@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
+	"google.golang.org/protobuf/proto"
 )
 
 // constructProcessAlert constructs an alert.
@@ -15,12 +16,12 @@ func constructProcessAlert(policy *storage.Policy, deployment *storage.Deploymen
 		return nil
 	}
 	alert := constructGenericRuntimeAlert(policy, deployment, violations.AlertViolations)
-	alert.ProcessViolation = violations.ProcessViolation
+	alert.SetProcessViolation(violations.ProcessViolation)
 	if action, msg := buildEnforcement(policy); action != storage.EnforcementAction_UNSET_ENFORCEMENT {
-		alert.Enforcement = &storage.Alert_Enforcement{
-			Action:  action,
-			Message: msg,
-		}
+		ae := &storage.Alert_Enforcement{}
+		ae.SetAction(action)
+		ae.SetMessage(msg)
+		alert.SetEnforcement(ae)
 	}
 	return alert
 }
@@ -45,10 +46,10 @@ func constructKubeEventAlert(
 
 	alert := constructGenericRuntimeAlert(policy, kubeResource.(*storage.Deployment), violations.AlertViolations)
 	if action, msg := buildKubeEventEnforcement(policy); action != storage.EnforcementAction_UNSET_ENFORCEMENT {
-		alert.Enforcement = &storage.Alert_Enforcement{
-			Action:  action,
-			Message: msg,
-		}
+		ae := &storage.Alert_Enforcement{}
+		ae.SetAction(action)
+		ae.SetMessage(msg)
+		alert.SetEnforcement(ae)
 	}
 	return alert
 }
@@ -72,14 +73,14 @@ func constructGenericRuntimeAlert(
 	deployment *storage.Deployment,
 	violations []*storage.Alert_Violation,
 ) *storage.Alert {
-	return &storage.Alert{
-		Id:             uuid.NewV4().String(),
-		Policy:         policy.CloneVT(),
-		LifecycleStage: storage.LifecycleStage_RUNTIME,
-		Entity:         convert.ToAlertDeployment(deployment),
-		Violations:     violations,
-		Time:           protocompat.TimestampNow(),
-	}
+	alert := &storage.Alert{}
+	alert.SetId(uuid.NewV4().String())
+	alert.SetPolicy(policy.CloneVT())
+	alert.SetLifecycleStage(storage.LifecycleStage_RUNTIME)
+	alert.SetDeployment(proto.ValueOrDefault(convert.ToAlertDeployment(deployment).Deployment))
+	alert.SetViolations(violations)
+	alert.SetTime(protocompat.TimestampNow())
+	return alert
 }
 
 func constructResourceRuntimeAlert(
@@ -87,14 +88,14 @@ func constructResourceRuntimeAlert(
 	kubeEvent *storage.KubernetesEvent,
 	violations []*storage.Alert_Violation,
 ) *storage.Alert {
-	return &storage.Alert{
-		Id:             uuid.NewV4().String(),
-		Policy:         policy.CloneVT(),
-		LifecycleStage: storage.LifecycleStage_RUNTIME,
-		Entity:         convert.ToAlertResource(kubeEvent),
-		Violations:     violations,
-		Time:           protocompat.TimestampNow(),
-	}
+	alert := &storage.Alert{}
+	alert.SetId(uuid.NewV4().String())
+	alert.SetPolicy(policy.CloneVT())
+	alert.SetLifecycleStage(storage.LifecycleStage_RUNTIME)
+	alert.SetResource(proto.ValueOrDefault(convert.ToAlertResource(kubeEvent).Resource))
+	alert.SetViolations(violations)
+	alert.SetTime(protocompat.TimestampNow())
+	return alert
 }
 
 func buildEnforcement(policy *storage.Policy) (enforcement storage.EnforcementAction, message string) {

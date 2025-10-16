@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestConfigDataStore(t *testing.T) {
@@ -217,17 +218,17 @@ func (s *configDataStoreTestSuite) TestAllowsUpdate() {
 }
 
 func (s *configDataStoreTestSuite) TestGetPlatformComponentConfig() {
-	s.storage.EXPECT().Get(gomock.Any()).Return(&storage.Config{
-		PublicConfig:  sampleConfig.GetPublicConfig(),
-		PrivateConfig: sampleConfig.GetPrivateConfig(),
-		PlatformComponentConfig: &storage.PlatformComponentConfig{
-			NeedsReevaluation: true,
-			Rules: []*storage.PlatformComponentConfig_Rule{
-				defaultPlatformConfigSystemRule,
-				defaultPlatformConfigLayeredProductsRule,
-			},
-		},
-	}, true, nil).Times(1)
+	pcc := &storage.PlatformComponentConfig{}
+	pcc.SetNeedsReevaluation(true)
+	pcc.SetRules([]*storage.PlatformComponentConfig_Rule{
+		defaultPlatformConfigSystemRule,
+		defaultPlatformConfigLayeredProductsRule,
+	})
+	config := &storage.Config{}
+	config.SetPublicConfig(sampleConfig.GetPublicConfig())
+	config.SetPrivateConfig(sampleConfig.GetPrivateConfig())
+	config.SetPlatformComponentConfig(pcc)
+	s.storage.EXPECT().Get(gomock.Any()).Return(config, true, nil).Times(1)
 
 	platformConfig, _, err := s.dataStore.GetPlatformComponentConfig(s.hasReadCtx)
 	s.NoError(err, "expected no error trying to read with permissions")
@@ -238,17 +239,17 @@ func (s *configDataStoreTestSuite) TestGetPlatformComponentConfig() {
 
 func (s *configDataStoreTestSuite) TestUpsertPlatformComponentConfig() {
 	// Test when no update is required
-	s.storage.EXPECT().Get(gomock.Any()).Return(&storage.Config{
-		PublicConfig:  sampleConfig.GetPublicConfig(),
-		PrivateConfig: sampleConfig.GetPrivateConfig(),
-		PlatformComponentConfig: &storage.PlatformComponentConfig{
-			NeedsReevaluation: false,
-			Rules: []*storage.PlatformComponentConfig_Rule{
-				defaultPlatformConfigSystemRule,
-				defaultPlatformConfigLayeredProductsRule,
-			},
-		},
-	}, true, nil).Times(1)
+	pcc := &storage.PlatformComponentConfig{}
+	pcc.SetNeedsReevaluation(false)
+	pcc.SetRules([]*storage.PlatformComponentConfig_Rule{
+		defaultPlatformConfigSystemRule,
+		defaultPlatformConfigLayeredProductsRule,
+	})
+	config2 := &storage.Config{}
+	config2.SetPublicConfig(sampleConfig.GetPublicConfig())
+	config2.SetPrivateConfig(sampleConfig.GetPrivateConfig())
+	config2.SetPlatformComponentConfig(pcc)
+	s.storage.EXPECT().Get(gomock.Any()).Return(config2, true, nil).Times(1)
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 	config, err := s.dataStore.UpsertPlatformComponentConfigRules(s.hasWriteCtx, []*storage.PlatformComponentConfig_Rule{
@@ -261,27 +262,27 @@ func (s *configDataStoreTestSuite) TestUpsertPlatformComponentConfig() {
 	s.Equal(2, len(config.GetRules()))
 
 	// Test when a re-evaluation should be triggered
-	s.storage.EXPECT().Get(gomock.Any()).Return(&storage.Config{
-		PublicConfig:  sampleConfig.GetPublicConfig(),
-		PrivateConfig: sampleConfig.GetPrivateConfig(),
-		PlatformComponentConfig: &storage.PlatformComponentConfig{
-			NeedsReevaluation: false,
-			Rules: []*storage.PlatformComponentConfig_Rule{
-				defaultPlatformConfigSystemRule,
-				defaultPlatformConfigLayeredProductsRule,
-			},
-		},
-	}, true, nil).Times(1)
+	pcc2 := &storage.PlatformComponentConfig{}
+	pcc2.SetNeedsReevaluation(false)
+	pcc2.SetRules([]*storage.PlatformComponentConfig_Rule{
+		defaultPlatformConfigSystemRule,
+		defaultPlatformConfigLayeredProductsRule,
+	})
+	config3 := &storage.Config{}
+	config3.SetPublicConfig(sampleConfig.GetPublicConfig())
+	config3.SetPrivateConfig(sampleConfig.GetPrivateConfig())
+	config3.SetPlatformComponentConfig(pcc2)
+	s.storage.EXPECT().Get(gomock.Any()).Return(config3, true, nil).Times(1)
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	prn := &storage.PlatformComponentConfig_Rule_NamespaceRule{}
+	prn.SetRegex(".*")
+	pr := &storage.PlatformComponentConfig_Rule{}
+	pr.SetName("new rule")
+	pr.SetNamespaceRule(prn)
 	config, err = s.dataStore.UpsertPlatformComponentConfigRules(s.hasWriteCtx, []*storage.PlatformComponentConfig_Rule{
 		defaultPlatformConfigSystemRule,
 		defaultPlatformConfigLayeredProductsRule,
-		{
-			Name: "new rule",
-			NamespaceRule: &storage.PlatformComponentConfig_Rule_NamespaceRule{
-				Regex: ".*",
-			},
-		},
+		pr,
 	})
 	s.NoError(err, "expected no error when upserting new rule")
 	s.NotNil(config)
@@ -289,41 +290,41 @@ func (s *configDataStoreTestSuite) TestUpsertPlatformComponentConfig() {
 	s.Equal(3, len(config.GetRules()))
 
 	// Test updating a system rule a couple ways
-	s.storage.EXPECT().Get(gomock.Any()).Return(&storage.Config{
-		PublicConfig:  sampleConfig.GetPublicConfig(),
-		PrivateConfig: sampleConfig.GetPrivateConfig(),
-		PlatformComponentConfig: &storage.PlatformComponentConfig{
-			NeedsReevaluation: false,
-			Rules: []*storage.PlatformComponentConfig_Rule{
-				defaultPlatformConfigSystemRule,
-				defaultPlatformConfigLayeredProductsRule,
-			},
-		},
-	}, true, nil).Times(1)
+	pcc3 := &storage.PlatformComponentConfig{}
+	pcc3.SetNeedsReevaluation(false)
+	pcc3.SetRules([]*storage.PlatformComponentConfig_Rule{
+		defaultPlatformConfigSystemRule,
+		defaultPlatformConfigLayeredProductsRule,
+	})
+	config4 := &storage.Config{}
+	config4.SetPublicConfig(sampleConfig.GetPublicConfig())
+	config4.SetPrivateConfig(sampleConfig.GetPrivateConfig())
+	config4.SetPlatformComponentConfig(pcc3)
+	s.storage.EXPECT().Get(gomock.Any()).Return(config4, true, nil).Times(1)
+	prn2 := &storage.PlatformComponentConfig_Rule_NamespaceRule{}
+	prn2.SetRegex("not the system regex")
+	pr2 := &storage.PlatformComponentConfig_Rule{}
+	pr2.SetName("system rule")
+	pr2.SetNamespaceRule(prn2)
 	config, err = s.dataStore.UpsertPlatformComponentConfigRules(s.hasWriteCtx, []*storage.PlatformComponentConfig_Rule{
 		defaultPlatformConfigSystemRule,
 		defaultPlatformConfigLayeredProductsRule,
-		{
-			Name: "system rule",
-			NamespaceRule: &storage.PlatformComponentConfig_Rule_NamespaceRule{
-				Regex: "not the system regex",
-			},
-		},
+		pr2,
 	})
 	s.Error(err, "expected an error when trying to override the system regex")
 	s.Nil(config)
 
-	s.storage.EXPECT().Get(gomock.Any()).Return(&storage.Config{
-		PublicConfig:  sampleConfig.GetPublicConfig(),
-		PrivateConfig: sampleConfig.GetPrivateConfig(),
-		PlatformComponentConfig: &storage.PlatformComponentConfig{
-			NeedsReevaluation: false,
-			Rules: []*storage.PlatformComponentConfig_Rule{
-				defaultPlatformConfigSystemRule,
-				defaultPlatformConfigLayeredProductsRule,
-			},
-		},
-	}, true, nil).Times(1)
+	pcc4 := &storage.PlatformComponentConfig{}
+	pcc4.SetNeedsReevaluation(false)
+	pcc4.SetRules([]*storage.PlatformComponentConfig_Rule{
+		defaultPlatformConfigSystemRule,
+		defaultPlatformConfigLayeredProductsRule,
+	})
+	config5 := &storage.Config{}
+	config5.SetPublicConfig(sampleConfig.GetPublicConfig())
+	config5.SetPrivateConfig(sampleConfig.GetPrivateConfig())
+	config5.SetPlatformComponentConfig(pcc4)
+	s.storage.EXPECT().Get(gomock.Any()).Return(config5, true, nil).Times(1)
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	config, err = s.dataStore.UpsertPlatformComponentConfigRules(s.hasWriteCtx, []*storage.PlatformComponentConfig_Rule{
 		defaultPlatformConfigSystemRule,
@@ -336,27 +337,27 @@ func (s *configDataStoreTestSuite) TestUpsertPlatformComponentConfig() {
 	s.Equal(2, len(config.GetRules()))
 
 	// Test duplicating the layered products rule
-	s.storage.EXPECT().Get(gomock.Any()).Return(&storage.Config{
-		PublicConfig:  sampleConfig.GetPublicConfig(),
-		PrivateConfig: sampleConfig.GetPrivateConfig(),
-		PlatformComponentConfig: &storage.PlatformComponentConfig{
-			NeedsReevaluation: false,
-			Rules: []*storage.PlatformComponentConfig_Rule{
-				defaultPlatformConfigSystemRule,
-				defaultPlatformConfigLayeredProductsRule,
-			},
-		},
-	}, true, nil).Times(1)
+	pcc5 := &storage.PlatformComponentConfig{}
+	pcc5.SetNeedsReevaluation(false)
+	pcc5.SetRules([]*storage.PlatformComponentConfig_Rule{
+		defaultPlatformConfigSystemRule,
+		defaultPlatformConfigLayeredProductsRule,
+	})
+	config6 := &storage.Config{}
+	config6.SetPublicConfig(sampleConfig.GetPublicConfig())
+	config6.SetPrivateConfig(sampleConfig.GetPrivateConfig())
+	config6.SetPlatformComponentConfig(pcc5)
+	s.storage.EXPECT().Get(gomock.Any()).Return(config6, true, nil).Times(1)
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	prn3 := &storage.PlatformComponentConfig_Rule_NamespaceRule{}
+	prn3.SetRegex(".*")
+	pr3 := &storage.PlatformComponentConfig_Rule{}
+	pr3.SetName(defaultPlatformConfigLayeredProductsRule.GetName())
+	pr3.SetNamespaceRule(prn3)
 	config, err = s.dataStore.UpsertPlatformComponentConfigRules(s.hasWriteCtx, []*storage.PlatformComponentConfig_Rule{
 		defaultPlatformConfigSystemRule,
 		defaultPlatformConfigLayeredProductsRule,
-		{
-			Name: defaultPlatformConfigLayeredProductsRule.GetName(),
-			NamespaceRule: &storage.PlatformComponentConfig_Rule_NamespaceRule{
-				Regex: ".*",
-			},
-		},
+		pr3,
 	})
 	s.NoError(err, "expected no error trying to add duplicate system rule")
 	s.NotNil(config)
@@ -384,34 +385,34 @@ var (
 		AdministrationEventsConfig:          customAdministrationEventsConfig,
 	}
 
-	customVulnerabilityDeferralConfig = &storage.VulnerabilityExceptionConfig{
-		ExpiryOptions: &storage.VulnerabilityExceptionConfig_ExpiryOptions{
+	customVulnerabilityDeferralConfig = storage.VulnerabilityExceptionConfig_builder{
+		ExpiryOptions: storage.VulnerabilityExceptionConfig_ExpiryOptions_builder{
 			DayOptions: []*storage.DayOption{
-				{
+				storage.DayOption_builder{
 					NumDays: 15,
 					Enabled: true,
-				},
-				{
+				}.Build(),
+				storage.DayOption_builder{
 					NumDays: 31,
 					Enabled: true,
-				},
-				{
+				}.Build(),
+				storage.DayOption_builder{
 					NumDays: 61,
 					Enabled: true,
-				},
-				{
+				}.Build(),
+				storage.DayOption_builder{
 					NumDays: 91,
 					Enabled: true,
-				},
+				}.Build(),
 			},
-			FixableCveOptions: &storage.VulnerabilityExceptionConfig_FixableCVEOptions{
+			FixableCveOptions: storage.VulnerabilityExceptionConfig_FixableCVEOptions_builder{
 				AllFixable: true,
 				AnyFixable: false,
-			},
+			}.Build(),
 			CustomDate: false,
 			Indefinite: false,
-		},
-	}
+		}.Build(),
+	}.Build()
 
 	customDecommissionedClusterRetention = &storage.DecommissionedClusterRetentionConfig{
 		RetentionDurationDays: DefaultDecommissionedClusterRetentionDays + 1,
@@ -436,179 +437,179 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 		upsertedConfig *storage.Config
 	}{
 		"No Update for fully set config": {
-			initialConfig: &storage.Config{
+			initialConfig: storage.Config_builder{
 				PublicConfig:            samplePublicConfig,
 				PrivateConfig:           customPrivateConfig,
 				PlatformComponentConfig: samplePlatformConfig,
-			},
+			}.Build(),
 			upsertedConfig: nil,
 		},
 		"Missing private config gets fully configured when Features activated": {
 			enabledFlags: []string{features.UnifiedCVEDeferral.EnvVar()},
-			initialConfig: &storage.Config{
+			initialConfig: storage.Config_builder{
 				PublicConfig:  samplePublicConfig,
 				PrivateConfig: nil,
-			},
-			upsertedConfig: &storage.Config{
+			}.Build(),
+			upsertedConfig: storage.Config_builder{
 				PublicConfig: samplePublicConfig,
-				PrivateConfig: &storage.PrivateConfig{
-					AlertRetention:                      defaultAlertRetention,
+				PrivateConfig: storage.PrivateConfig_builder{
+					AlertConfig:                         proto.ValueOrDefault(defaultAlertRetention.AlertConfig),
 					ImageRetentionDurationDays:          DefaultImageRetention,
 					ExpiredVulnReqRetentionDurationDays: DefaultExpiredVulnReqRetention,
 					DecommissionedClusterRetention:      defaultDecommissionedClusterRetention,
 					ReportRetentionConfig:               defaultReportRetentionConfig,
 					VulnerabilityExceptionConfig:        defaultVulnerabilityDeferralConfig,
 					AdministrationEventsConfig:          defaultAdministrationEventsConfig,
-				},
+				}.Build(),
 				PlatformComponentConfig: samplePlatformConfig,
-			},
+			}.Build(),
 		},
 		"Missing private config gets partially configured when Features deactivated": {
 			disabledFlags: []string{features.UnifiedCVEDeferral.EnvVar()},
-			initialConfig: &storage.Config{
+			initialConfig: storage.Config_builder{
 				PublicConfig:  samplePublicConfig,
 				PrivateConfig: nil,
-			},
-			upsertedConfig: &storage.Config{
+			}.Build(),
+			upsertedConfig: storage.Config_builder{
 				PublicConfig: samplePublicConfig,
-				PrivateConfig: &storage.PrivateConfig{
-					AlertRetention:                      defaultAlertRetention,
+				PrivateConfig: storage.PrivateConfig_builder{
+					AlertConfig:                         proto.ValueOrDefault(defaultAlertRetention.AlertConfig),
 					ImageRetentionDurationDays:          DefaultImageRetention,
 					ExpiredVulnReqRetentionDurationDays: DefaultExpiredVulnReqRetention,
 					DecommissionedClusterRetention:      defaultDecommissionedClusterRetention,
 					ReportRetentionConfig:               defaultReportRetentionConfig,
 					VulnerabilityExceptionConfig:        nil,
 					AdministrationEventsConfig:          defaultAdministrationEventsConfig,
-				},
+				}.Build(),
 				PlatformComponentConfig: samplePlatformConfig,
-			},
+			}.Build(),
 		},
 		"Configure decommissioned cluster retention when missing": {
-			initialConfig: &storage.Config{
+			initialConfig: storage.Config_builder{
 				PublicConfig: samplePublicConfig,
-				PrivateConfig: &storage.PrivateConfig{
-					AlertRetention:                      customAlertRetention,
+				PrivateConfig: storage.PrivateConfig_builder{
+					AlertConfig:                         proto.ValueOrDefault(customAlertRetention.AlertConfig),
 					ImageRetentionDurationDays:          DefaultImageRetention + 1,
 					ExpiredVulnReqRetentionDurationDays: DefaultExpiredVulnReqRetention + 1,
 					DecommissionedClusterRetention:      nil,
 					ReportRetentionConfig:               customReportRetentionConfig,
 					VulnerabilityExceptionConfig:        customVulnerabilityDeferralConfig,
 					AdministrationEventsConfig:          customAdministrationEventsConfig,
-				},
-			},
-			upsertedConfig: &storage.Config{
+				}.Build(),
+			}.Build(),
+			upsertedConfig: storage.Config_builder{
 				PublicConfig: samplePublicConfig,
-				PrivateConfig: &storage.PrivateConfig{
-					AlertRetention:                      customAlertRetention,
+				PrivateConfig: storage.PrivateConfig_builder{
+					AlertConfig:                         proto.ValueOrDefault(customAlertRetention.AlertConfig),
 					ImageRetentionDurationDays:          DefaultImageRetention + 1,
 					ExpiredVulnReqRetentionDurationDays: DefaultExpiredVulnReqRetention + 1,
 					DecommissionedClusterRetention:      defaultDecommissionedClusterRetention,
 					ReportRetentionConfig:               customReportRetentionConfig,
 					VulnerabilityExceptionConfig:        customVulnerabilityDeferralConfig,
 					AdministrationEventsConfig:          customAdministrationEventsConfig,
-				},
+				}.Build(),
 				PlatformComponentConfig: samplePlatformConfig,
-			},
+			}.Build(),
 		},
 		"Configure report retention when missing": {
-			initialConfig: &storage.Config{
+			initialConfig: storage.Config_builder{
 				PublicConfig: samplePublicConfig,
-				PrivateConfig: &storage.PrivateConfig{
-					AlertRetention:                      customAlertRetention,
+				PrivateConfig: storage.PrivateConfig_builder{
+					AlertConfig:                         proto.ValueOrDefault(customAlertRetention.AlertConfig),
 					ImageRetentionDurationDays:          DefaultImageRetention + 1,
 					ExpiredVulnReqRetentionDurationDays: DefaultExpiredVulnReqRetention + 1,
 					DecommissionedClusterRetention:      customDecommissionedClusterRetention,
 					ReportRetentionConfig:               nil,
 					VulnerabilityExceptionConfig:        customVulnerabilityDeferralConfig,
 					AdministrationEventsConfig:          customAdministrationEventsConfig,
-				},
-			},
-			upsertedConfig: &storage.Config{
+				}.Build(),
+			}.Build(),
+			upsertedConfig: storage.Config_builder{
 				PublicConfig: samplePublicConfig,
-				PrivateConfig: &storage.PrivateConfig{
-					AlertRetention:                      customAlertRetention,
+				PrivateConfig: storage.PrivateConfig_builder{
+					AlertConfig:                         proto.ValueOrDefault(customAlertRetention.AlertConfig),
 					ImageRetentionDurationDays:          DefaultImageRetention + 1,
 					ExpiredVulnReqRetentionDurationDays: DefaultExpiredVulnReqRetention + 1,
 					DecommissionedClusterRetention:      customDecommissionedClusterRetention,
 					ReportRetentionConfig:               defaultReportRetentionConfig,
 					VulnerabilityExceptionConfig:        customVulnerabilityDeferralConfig,
 					AdministrationEventsConfig:          customAdministrationEventsConfig,
-				},
+				}.Build(),
 				PlatformComponentConfig: samplePlatformConfig,
-			},
+			}.Build(),
 		},
 		"Configure vulnerability exception management when missing and Feature activated": {
 			enabledFlags: []string{features.UnifiedCVEDeferral.EnvVar()},
-			initialConfig: &storage.Config{
+			initialConfig: storage.Config_builder{
 				PublicConfig: samplePublicConfig,
-				PrivateConfig: &storage.PrivateConfig{
-					AlertRetention:                      customAlertRetention,
+				PrivateConfig: storage.PrivateConfig_builder{
+					AlertConfig:                         proto.ValueOrDefault(customAlertRetention.AlertConfig),
 					ImageRetentionDurationDays:          DefaultImageRetention + 1,
 					ExpiredVulnReqRetentionDurationDays: DefaultExpiredVulnReqRetention + 1,
 					DecommissionedClusterRetention:      customDecommissionedClusterRetention,
 					ReportRetentionConfig:               customReportRetentionConfig,
 					VulnerabilityExceptionConfig:        nil,
 					AdministrationEventsConfig:          customAdministrationEventsConfig,
-				},
-			},
-			upsertedConfig: &storage.Config{
+				}.Build(),
+			}.Build(),
+			upsertedConfig: storage.Config_builder{
 				PublicConfig: samplePublicConfig,
-				PrivateConfig: &storage.PrivateConfig{
-					AlertRetention:                      customAlertRetention,
+				PrivateConfig: storage.PrivateConfig_builder{
+					AlertConfig:                         proto.ValueOrDefault(customAlertRetention.AlertConfig),
 					ImageRetentionDurationDays:          DefaultImageRetention + 1,
 					ExpiredVulnReqRetentionDurationDays: DefaultExpiredVulnReqRetention + 1,
 					DecommissionedClusterRetention:      customDecommissionedClusterRetention,
 					ReportRetentionConfig:               customReportRetentionConfig,
 					VulnerabilityExceptionConfig:        defaultVulnerabilityDeferralConfig,
 					AdministrationEventsConfig:          customAdministrationEventsConfig,
-				},
+				}.Build(),
 				PlatformComponentConfig: samplePlatformConfig,
-			},
+			}.Build(),
 		},
 		"No update when vulnerability exception management is missing and Feature deactivated": {
 			disabledFlags: []string{features.UnifiedCVEDeferral.EnvVar()},
-			initialConfig: &storage.Config{
+			initialConfig: storage.Config_builder{
 				PublicConfig: samplePublicConfig,
-				PrivateConfig: &storage.PrivateConfig{
-					AlertRetention:                      customAlertRetention,
+				PrivateConfig: storage.PrivateConfig_builder{
+					AlertConfig:                         proto.ValueOrDefault(customAlertRetention.AlertConfig),
 					ImageRetentionDurationDays:          DefaultImageRetention + 1,
 					ExpiredVulnReqRetentionDurationDays: DefaultExpiredVulnReqRetention + 1,
 					DecommissionedClusterRetention:      customDecommissionedClusterRetention,
 					ReportRetentionConfig:               customReportRetentionConfig,
 					VulnerabilityExceptionConfig:        nil,
 					AdministrationEventsConfig:          customAdministrationEventsConfig,
-				},
+				}.Build(),
 				PlatformComponentConfig: samplePlatformConfig,
-			},
+			}.Build(),
 			upsertedConfig: nil,
 		},
 		"Configure administration event management when missing": {
 			enabledFlags: []string{features.UnifiedCVEDeferral.EnvVar()},
-			initialConfig: &storage.Config{
+			initialConfig: storage.Config_builder{
 				PublicConfig: samplePublicConfig,
-				PrivateConfig: &storage.PrivateConfig{
-					AlertRetention:                      customAlertRetention,
+				PrivateConfig: storage.PrivateConfig_builder{
+					AlertConfig:                         proto.ValueOrDefault(customAlertRetention.AlertConfig),
 					ImageRetentionDurationDays:          DefaultImageRetention + 1,
 					ExpiredVulnReqRetentionDurationDays: DefaultExpiredVulnReqRetention + 1,
 					DecommissionedClusterRetention:      customDecommissionedClusterRetention,
 					ReportRetentionConfig:               customReportRetentionConfig,
 					VulnerabilityExceptionConfig:        customVulnerabilityDeferralConfig,
 					AdministrationEventsConfig:          nil,
-				},
-			},
-			upsertedConfig: &storage.Config{
+				}.Build(),
+			}.Build(),
+			upsertedConfig: storage.Config_builder{
 				PublicConfig: samplePublicConfig,
-				PrivateConfig: &storage.PrivateConfig{
-					AlertRetention:                      customAlertRetention,
+				PrivateConfig: storage.PrivateConfig_builder{
+					AlertConfig:                         proto.ValueOrDefault(customAlertRetention.AlertConfig),
 					ImageRetentionDurationDays:          DefaultImageRetention + 1,
 					ExpiredVulnReqRetentionDurationDays: DefaultExpiredVulnReqRetention + 1,
 					DecommissionedClusterRetention:      customDecommissionedClusterRetention,
 					ReportRetentionConfig:               customReportRetentionConfig,
 					VulnerabilityExceptionConfig:        customVulnerabilityDeferralConfig,
 					AdministrationEventsConfig:          defaultAdministrationEventsConfig,
-				},
+				}.Build(),
 				PlatformComponentConfig: samplePlatformConfig,
-			},
+			}.Build(),
 		},
 	}
 

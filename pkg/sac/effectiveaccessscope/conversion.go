@@ -16,32 +16,30 @@ import (
 func ToEffectiveAccessScope(tree *ScopeTree) (*storage.EffectiveAccessScope, error) {
 	response := &storage.EffectiveAccessScope{}
 	if len(tree.Clusters) != 0 {
-		response.Clusters = make([]*storage.EffectiveAccessScope_Cluster, 0, len(tree.Clusters))
+		response.SetClusters(make([]*storage.EffectiveAccessScope_Cluster, 0, len(tree.Clusters)))
 	}
 
 	for _, clusterSubTree := range tree.Clusters {
-		cluster := &storage.EffectiveAccessScope_Cluster{
-			Id:     clusterSubTree.Attributes.ID,
-			Name:   clusterSubTree.Attributes.Name,
-			State:  convertScopeStateToEffectiveAccessScopeState(clusterSubTree.State),
-			Labels: clusterSubTree.Attributes.Labels,
-		}
+		cluster := &storage.EffectiveAccessScope_Cluster{}
+		cluster.SetId(clusterSubTree.Attributes.ID)
+		cluster.SetName(clusterSubTree.Attributes.Name)
+		cluster.SetState(convertScopeStateToEffectiveAccessScopeState(clusterSubTree.State))
+		cluster.SetLabels(clusterSubTree.Attributes.Labels)
 		if len(clusterSubTree.Namespaces) != 0 {
-			cluster.Namespaces = make([]*storage.EffectiveAccessScope_Namespace, 0, len(clusterSubTree.Namespaces))
+			cluster.SetNamespaces(make([]*storage.EffectiveAccessScope_Namespace, 0, len(clusterSubTree.Namespaces)))
 		}
 
 		for _, namespaceSubTree := range clusterSubTree.Namespaces {
-			namespace := &storage.EffectiveAccessScope_Namespace{
-				Id:     namespaceSubTree.Attributes.ID,
-				Name:   namespaceSubTree.Attributes.Name,
-				State:  convertScopeStateToEffectiveAccessScopeState(namespaceSubTree.State),
-				Labels: namespaceSubTree.Attributes.Labels,
-			}
+			namespace := &storage.EffectiveAccessScope_Namespace{}
+			namespace.SetId(namespaceSubTree.Attributes.ID)
+			namespace.SetName(namespaceSubTree.Attributes.Name)
+			namespace.SetState(convertScopeStateToEffectiveAccessScopeState(namespaceSubTree.State))
+			namespace.SetLabels(namespaceSubTree.Attributes.Labels)
 
-			cluster.Namespaces = append(cluster.Namespaces, namespace)
+			cluster.SetNamespaces(append(cluster.GetNamespaces(), namespace))
 		}
 
-		response.Clusters = append(response.Clusters, cluster)
+		response.SetClusters(append(response.GetClusters(), cluster))
 	}
 
 	// Ensure order consistency across invocations.

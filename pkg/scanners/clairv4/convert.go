@@ -86,14 +86,13 @@ func fetchLayerURIAndHeader(client *http.Client, url, repository, digest string)
 
 // imageScan converts the given report to an image scan.
 func imageScan(report *claircore.VulnerabilityReport) *storage.ImageScan {
-	scan := &storage.ImageScan{
-		ScanTime:        protocompat.TimestampNow(),
-		Components:      components(report),
-		OperatingSystem: os(report),
-	}
+	scan := &storage.ImageScan{}
+	scan.SetScanTime(protocompat.TimestampNow())
+	scan.SetComponents(components(report))
+	scan.SetOperatingSystem(os(report))
 
 	if scan.GetOperatingSystem() == "unknown" {
-		scan.Notes = append(scan.Notes, storage.ImageScan_OS_UNAVAILABLE)
+		scan.SetNotes(append(scan.GetNotes(), storage.ImageScan_OS_UNAVAILABLE))
 	}
 
 	return scan
@@ -103,12 +102,11 @@ func components(report *claircore.VulnerabilityReport) []*storage.EmbeddedImageS
 	components := make([]*storage.EmbeddedImageScanComponent, 0, len(report.PackageVulnerabilities))
 	for id, pkg := range report.Packages {
 		vulnIDs := report.PackageVulnerabilities[id]
-		component := &storage.EmbeddedImageScanComponent{
-			Name:         pkg.Name,
-			Version:      pkg.Version,
-			Architecture: pkg.Arch,
-			Vulns:        vulnerabilities(report.Vulnerabilities, vulnIDs),
-		}
+		component := &storage.EmbeddedImageScanComponent{}
+		component.SetName(pkg.Name)
+		component.SetVersion(pkg.Version)
+		component.SetArchitecture(pkg.Arch)
+		component.SetVulns(vulnerabilities(report.Vulnerabilities, vulnIDs))
 
 		components = append(components, component)
 	}
@@ -128,22 +126,19 @@ func vulnerabilities(vulnerabilities map[string]*claircore.Vulnerability, ids []
 			continue
 		}
 
-		vuln := &storage.EmbeddedVulnerability{
-			Cve:               vulnName(ccVuln.Name),
-			Summary:           ccVuln.Description,
-			Link:              link(ccVuln.Links),
-			VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-			Severity:          normalizedSeverity(ccVuln.NormalizedSeverity),
-		}
+		vuln := &storage.EmbeddedVulnerability{}
+		vuln.SetCve(vulnName(ccVuln.Name))
+		vuln.SetSummary(ccVuln.Description)
+		vuln.SetLink(link(ccVuln.Links))
+		vuln.SetVulnerabilityType(storage.EmbeddedVulnerability_IMAGE_VULNERABILITY)
+		vuln.SetSeverity(normalizedSeverity(ccVuln.NormalizedSeverity))
 		if !ccVuln.Issued.IsZero() {
 			// Ignore the error, as publishedTime will just be `nil` if the given time is invalid.
 			vuln.PublishedOn, _ = protocompat.ConvertTimeToTimestampOrError(ccVuln.Issued)
 		}
 
 		if ccVuln.FixedInVersion != "" {
-			vuln.SetFixedBy = &storage.EmbeddedVulnerability_FixedBy{
-				FixedBy: ccVuln.FixedInVersion,
-			}
+			vuln.Set_FixedBy(ccVuln.FixedInVersion)
 		}
 
 		vulns = append(vulns, vuln)

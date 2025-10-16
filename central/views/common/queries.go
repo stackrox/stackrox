@@ -12,15 +12,15 @@ import (
 // WithCountQuery returns a query to count the number of distinct values of the given field
 func WithCountQuery(q *v1.Query, field search.FieldLabel) *v1.Query {
 	cloned := q.CloneVT()
-	cloned.Selects = []*v1.QuerySelect{
+	cloned.SetSelects([]*v1.QuerySelect{
 		search.NewQuerySelect(field).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
-	}
+	})
 	return cloned
 }
 
 func WithCountBySeverityAndFixabilityQuery(q *v1.Query, countOn search.FieldLabel) *v1.Query {
 	cloned := q.CloneVT()
-	cloned.Selects = append(cloned.Selects,
+	cloned.SetSelects(append(cloned.GetSelects(),
 		search.NewQuerySelect(countOn).
 			Distinct().
 			AggrFunc(aggregatefunc.Count).
@@ -126,7 +126,7 @@ func WithCountBySeverityAndFixabilityQuery(q *v1.Query, countOn search.FieldLabe
 					).
 					AddBools(search.Fixable, true).ProtoQuery(),
 			).Proto(),
-	)
+	))
 	return cloned
 }
 
@@ -167,29 +167,29 @@ func UpdateSortAggs(q *v1.Query) *v1.Query {
 
 		switch upperOptions {
 		case search.Severity.ToUpper():
-			sortOption.Field = search.SeverityMax.String()
+			sortOption.SetField(search.SeverityMax.String())
 		case search.CVSS.ToUpper():
-			sortOption.Field = search.CVSSMax.String()
+			sortOption.SetField(search.CVSSMax.String())
 		case search.CVECreatedTime.ToUpper():
-			sortOption.Field = search.CVECreatedTimeMin.String()
+			sortOption.SetField(search.CVECreatedTimeMin.String())
 		case search.EPSSProbablity.ToUpper():
-			sortOption.Field = search.EPSSProbablityMax.String()
+			sortOption.SetField(search.EPSSProbablityMax.String())
 		case search.ImpactScore.ToUpper():
-			sortOption.Field = search.ImpactScoreMax.String()
+			sortOption.SetField(search.ImpactScoreMax.String())
 		case search.FirstImageOccurrenceTimestamp.ToUpper():
-			sortOption.Field = search.FirstImageOccurrenceTimestampMin.String()
+			sortOption.SetField(search.FirstImageOccurrenceTimestampMin.String())
 		case search.CVEPublishedOn.ToUpper():
-			sortOption.Field = search.CVEPublishedOnMin.String()
+			sortOption.SetField(search.CVEPublishedOnMin.String())
 		case search.VulnerabilityState.ToUpper():
-			sortOption.Field = search.VulnerabilityStateMax.String()
+			sortOption.SetField(search.VulnerabilityStateMax.String())
 		case search.NVDCVSS.ToUpper():
-			sortOption.Field = search.NVDCVSSMax.String()
+			sortOption.SetField(search.NVDCVSSMax.String())
 		case search.ComponentTopCVSS.ToUpper():
-			sortOption.Field = search.ComponentTopCVSSMax.String()
+			sortOption.SetField(search.ComponentTopCVSSMax.String())
 		case search.ComponentPriority.ToUpper():
-			sortOption.Field = search.ComponentPriorityMax.String()
+			sortOption.SetField(search.ComponentPriorityMax.String())
 		case search.OperatingSystem.ToUpper():
-			sortOption.Field = search.ImageOS.String()
+			sortOption.SetField(search.ImageOS.String())
 		}
 	}
 

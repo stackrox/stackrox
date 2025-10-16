@@ -7,18 +7,18 @@ import (
 
 // ToStorageProto converts the v1 representation to its corresponding storage representation
 func ToStorageProto(category *v1.PolicyCategory) *storage.PolicyCategory {
-	return &storage.PolicyCategory{
-		Id:        category.GetId(),
-		Name:      category.GetName(),
-		IsDefault: category.GetIsDefault(),
-	}
+	pc := &storage.PolicyCategory{}
+	pc.SetId(category.GetId())
+	pc.SetName(category.GetName())
+	pc.SetIsDefault(category.GetIsDefault())
+	return pc
 }
 
 // ToV1Proto converts the storage representation to its corresponding v1 representation
 func ToV1Proto(category *storage.PolicyCategory) *v1.PolicyCategory {
-	return &v1.PolicyCategory{
-		Id:        category.GetId(),
-		Name:      category.GetName(),
-		IsDefault: category.GetIsDefault(),
-	}
+	pc := &v1.PolicyCategory{}
+	pc.SetId(category.GetId())
+	pc.SetName(category.GetName())
+	pc.SetIsDefault(category.GetIsDefault())
+	return pc
 }

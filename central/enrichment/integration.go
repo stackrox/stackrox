@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
+	"google.golang.org/protobuf/proto"
 )
 
 // Manager implements a bit of multiplexing logic between ImageIntegrations and NodeIntegrations
@@ -46,21 +47,16 @@ func isNodeIntegration(integration *storage.ImageIntegration) bool {
 // Currently, only StackRox Scanner and Scanner v4 are supported node integrations.
 // Assumes integration.GetCategories() includes storage.ImageIntegrationCategory_NODE_SCANNER.
 func ImageIntegrationToNodeIntegration(integration *storage.ImageIntegration) (*storage.NodeIntegration, error) {
-	i := &storage.NodeIntegration{
-		Id:   integration.GetId(),
-		Name: integration.GetName(),
-		Type: integration.GetType(),
-	}
+	i := &storage.NodeIntegration{}
+	i.SetId(integration.GetId())
+	i.SetName(integration.GetName())
+	i.SetType(integration.GetType())
 
 	switch integration.GetType() {
 	case scannerTypes.ScannerV4:
-		i.IntegrationConfig = &storage.NodeIntegration_Scannerv4{
-			Scannerv4: integration.GetScannerV4(),
-		}
+		i.SetScannerv4(proto.ValueOrDefault(integration.GetScannerV4()))
 	case scannerTypes.Clairify:
-		i.IntegrationConfig = &storage.NodeIntegration_Clairify{
-			Clairify: integration.GetClairify(),
-		}
+		i.SetClairify(proto.ValueOrDefault(integration.GetClairify()))
 	default:
 		return nil, errors.Errorf("unsupported integration type: %q.", integration.GetType())
 	}
@@ -73,14 +69,12 @@ func imageIntegrationToOrchestratorIntegration(integration *storage.ImageIntegra
 	if integration.GetClairify() == nil {
 		return nil, errors.Errorf("unsupported orchestrator scanner: %q", integration.GetName())
 	}
-	return &storage.OrchestratorIntegration{
-		Id:   integration.GetId(),
-		Name: integration.GetName(),
-		Type: integration.GetType(),
-		IntegrationConfig: &storage.OrchestratorIntegration_Clairify{
-			Clairify: integration.GetClairify(),
-		},
-	}, nil
+	oi := &storage.OrchestratorIntegration{}
+	oi.SetId(integration.GetId())
+	oi.SetName(integration.GetName())
+	oi.SetType(integration.GetType())
+	oi.SetClairify(proto.ValueOrDefault(integration.GetClairify()))
+	return oi, nil
 }
 
 func (m *managerImpl) Upsert(integration *storage.ImageIntegration) error {

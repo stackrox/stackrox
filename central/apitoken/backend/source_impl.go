@@ -27,11 +27,8 @@ type sourceImpl struct {
 }
 
 func (s *sourceImpl) initFromStore(ctx context.Context, apiTokens datastore.DataStore) error {
-	revokedTokenReq := &v1.GetAPITokensRequest{
-		RevokedOneof: &v1.GetAPITokensRequest_Revoked{
-			Revoked: true,
-		},
-	}
+	revokedTokenReq := &v1.GetAPITokensRequest{}
+	revokedTokenReq.SetRevoked(true)
 	existingTokens, err := apiTokens.GetTokens(ctx, revokedTokenReq)
 	if err != nil {
 		return err

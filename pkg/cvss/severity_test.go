@@ -28,84 +28,84 @@ func TestVulnToSeverity(t *testing.T) {
 		"unknown severity is returned if no source has known severity": {
 			input: &vulnScoreInfo{
 				severity: storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY,
-				cvssV3: &storage.CVSSV3{
+				cvssV3: storage.CVSSV3_builder{
 					Severity: storage.CVSSV3_UNKNOWN,
-				},
-				cvssv2: &storage.CVSSV2{
+				}.Build(),
+				cvssv2: storage.CVSSV2_builder{
 					Severity: storage.CVSSV2_UNKNOWN,
-				},
+				}.Build(),
 			},
 			want: storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY,
 		},
 		"CVSS V2 severity is used if the base severity is unknown and V3 is not available": {
 			input: &vulnScoreInfo{
 				severity: storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY,
-				cvssv2: &storage.CVSSV2{
+				cvssv2: storage.CVSSV2_builder{
 					Severity: storage.CVSSV2_LOW,
-				},
+				}.Build(),
 			},
 			want: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
 		},
 		"unknown CVSS V3 takes precedence over CVSS V2 severity if the base severity is unknown": {
 			input: &vulnScoreInfo{
 				severity: storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY,
-				cvssV3: &storage.CVSSV3{
+				cvssV3: storage.CVSSV3_builder{
 					Severity: storage.CVSSV3_UNKNOWN,
-				},
-				cvssv2: &storage.CVSSV2{
+				}.Build(),
+				cvssv2: storage.CVSSV2_builder{
 					Severity: storage.CVSSV2_LOW,
-				},
+				}.Build(),
 			},
 			want: storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY,
 		},
 		"known CVSS V3 severity is used if the base severity is unknown": {
 			input: &vulnScoreInfo{
 				severity: storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY,
-				cvssV3: &storage.CVSSV3{
+				cvssV3: storage.CVSSV3_builder{
 					Severity: storage.CVSSV3_MEDIUM,
-				},
+				}.Build(),
 			},
 			want: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
 		},
 		"known CVSS V3 takes precedence over CVSS V2 severity if the base severity is unknown": {
 			input: &vulnScoreInfo{
 				severity: storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY,
-				cvssv2: &storage.CVSSV2{
+				cvssv2: storage.CVSSV2_builder{
 					Severity: storage.CVSSV2_HIGH,
-				},
-				cvssV3: &storage.CVSSV3{
+				}.Build(),
+				cvssV3: storage.CVSSV3_builder{
 					Severity: storage.CVSSV3_LOW,
-				},
+				}.Build(),
 			},
 			want: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
 		},
 		"known base severity takes precedence over provided CVSSV3 one": {
 			input: &vulnScoreInfo{
 				severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
-				cvssV3: &storage.CVSSV3{
+				cvssV3: storage.CVSSV3_builder{
 					Severity: storage.CVSSV3_MEDIUM,
-				},
+				}.Build(),
 			},
 			want: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
 		},
 		"known base severity takes precedence over provided CVSSV2 one": {
 			input: &vulnScoreInfo{
 				severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
-				cvssv2: &storage.CVSSV2{
+				cvssv2: storage.CVSSV2_builder{
 					Severity: storage.CVSSV2_MEDIUM,
-				},
+				}.Build(),
 			},
 			want: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
 		},
 		"known base severity takes precedence over provided CVSSV2 and CVSSV3 ones": {
 			input: &vulnScoreInfo{
 				severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
-				cvssV3: &storage.CVSSV3{
+				cvssV3: storage.CVSSV3_builder{
 					Severity: storage.CVSSV3_MEDIUM,
-				},
-				cvssv2: &storage.CVSSV2{
+				}.Build(),
+				cvssv2: storage.CVSSV2_builder{
 					Severity: storage.CVSSV2_HIGH,
-				},
+				}.Build(),
 			},
 			want: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
 		},

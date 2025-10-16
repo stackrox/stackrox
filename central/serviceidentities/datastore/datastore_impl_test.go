@@ -49,9 +49,8 @@ func (s *serviceIdentityDataStoreTestSuite) TearDownTest() {
 }
 
 func (s *serviceIdentityDataStoreTestSuite) TestAddSrvId() {
-	srvID := &storage.ServiceIdentity{
-		Id: "FAKEID",
-	}
+	srvID := &storage.ServiceIdentity{}
+	srvID.SetId("FAKEID")
 
 	s.storage.EXPECT().Upsert(gomock.Any(), srvID).Return(nil).Times(1)
 

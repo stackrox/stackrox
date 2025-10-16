@@ -13,20 +13,17 @@ import (
 )
 
 func getDeploymentEvent(action central.ResourceAction, id, name string, processingAttempt int32) *central.MsgFromSensor {
-	return &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id: id,
-				Resource: &central.SensorEvent_Deployment{
-					Deployment: &storage.Deployment{
-						Id:   id,
-						Name: name,
-					},
-				},
-				Action: action,
-			}},
+	return central.MsgFromSensor_builder{
+		Event: central.SensorEvent_builder{
+			Id: id,
+			Deployment: storage.Deployment_builder{
+				Id:   id,
+				Name: name,
+			}.Build(),
+			Action: action,
+		}.Build(),
 		ProcessingAttempt: processingAttempt,
-	}
+	}.Build()
 }
 
 func TestDeduper(t *testing.T) {
@@ -51,11 +48,9 @@ func TestDeduper(t *testing.T) {
 			testName: "network flow",
 			testEvents: []testEvents{
 				{
-					event: &central.MsgFromSensor{
-						Msg: &central.MsgFromSensor_NetworkFlowUpdate{
-							NetworkFlowUpdate: &central.NetworkFlowUpdate{},
-						},
-					},
+					event: central.MsgFromSensor_builder{
+						NetworkFlowUpdate: &central.NetworkFlowUpdate{},
+					}.Build(),
 					result: true,
 				},
 			},
@@ -64,33 +59,25 @@ func TestDeduper(t *testing.T) {
 			testName: "duplicate runtime alerts",
 			testEvents: []testEvents{
 				{
-					event: &central.MsgFromSensor{
-						Msg: &central.MsgFromSensor_Event{
-							Event: &central.SensorEvent{
-								Id: "abc",
-								Resource: &central.SensorEvent_AlertResults{
-									AlertResults: &central.AlertResults{
-										Stage: storage.LifecycleStage_RUNTIME,
-									},
-								},
-							},
-						},
-					},
+					event: central.MsgFromSensor_builder{
+						Event: central.SensorEvent_builder{
+							Id: "abc",
+							AlertResults: central.AlertResults_builder{
+								Stage: storage.LifecycleStage_RUNTIME,
+							}.Build(),
+						}.Build(),
+					}.Build(),
 					result: true,
 				},
 				{
-					event: &central.MsgFromSensor{
-						Msg: &central.MsgFromSensor_Event{
-							Event: &central.SensorEvent{
-								Id: "abc",
-								Resource: &central.SensorEvent_AlertResults{
-									AlertResults: &central.AlertResults{
-										Stage: storage.LifecycleStage_RUNTIME,
-									},
-								},
-							},
-						},
-					},
+					event: central.MsgFromSensor_builder{
+						Event: central.SensorEvent_builder{
+							Id: "abc",
+							AlertResults: central.AlertResults_builder{
+								Stage: storage.LifecycleStage_RUNTIME,
+							}.Build(),
+						}.Build(),
+					}.Build(),
 					result: true,
 				},
 			},
@@ -99,41 +86,33 @@ func TestDeduper(t *testing.T) {
 			testName: "duplicate node indexes should not be deduped",
 			testEvents: []testEvents{
 				{
-					event: &central.MsgFromSensor{
-						Msg: &central.MsgFromSensor_Event{
-							Event: &central.SensorEvent{
-								Id: "1",
-								Resource: &central.SensorEvent_IndexReport{
-									IndexReport: &v4.IndexReport{
-										HashId:   "a",
-										State:    "7",
-										Success:  true,
-										Err:      "",
-										Contents: nil,
-									},
-								},
-							},
-						},
-					},
+					event: central.MsgFromSensor_builder{
+						Event: central.SensorEvent_builder{
+							Id: "1",
+							IndexReport: v4.IndexReport_builder{
+								HashId:   "a",
+								State:    "7",
+								Success:  true,
+								Err:      "",
+								Contents: nil,
+							}.Build(),
+						}.Build(),
+					}.Build(),
 					result: true,
 				},
 				{
-					event: &central.MsgFromSensor{
-						Msg: &central.MsgFromSensor_Event{
-							Event: &central.SensorEvent{
-								Id: "1",
-								Resource: &central.SensorEvent_IndexReport{
-									IndexReport: &v4.IndexReport{
-										HashId:   "a",
-										State:    "7",
-										Success:  true,
-										Err:      "",
-										Contents: nil,
-									},
-								},
-							},
-						},
-					},
+					event: central.MsgFromSensor_builder{
+						Event: central.SensorEvent_builder{
+							Id: "1",
+							IndexReport: v4.IndexReport_builder{
+								HashId:   "a",
+								State:    "7",
+								Success:  true,
+								Err:      "",
+								Contents: nil,
+							}.Build(),
+						}.Build(),
+					}.Build(),
 					result: true,
 				},
 			},
@@ -142,23 +121,19 @@ func TestDeduper(t *testing.T) {
 			testName: "attempted alert",
 			testEvents: []testEvents{
 				{
-					event: &central.MsgFromSensor{
-						Msg: &central.MsgFromSensor_Event{
-							Event: &central.SensorEvent{
-								Id: "abc",
-								Resource: &central.SensorEvent_AlertResults{
-									AlertResults: &central.AlertResults{
-										Stage: storage.LifecycleStage_DEPLOY,
-										Alerts: []*storage.Alert{
-											{
-												State: storage.ViolationState_ATTEMPTED,
-											},
-										},
-									},
+					event: central.MsgFromSensor_builder{
+						Event: central.SensorEvent_builder{
+							Id: "abc",
+							AlertResults: central.AlertResults_builder{
+								Stage: storage.LifecycleStage_DEPLOY,
+								Alerts: []*storage.Alert{
+									storage.Alert_builder{
+										State: storage.ViolationState_ATTEMPTED,
+									}.Build(),
 								},
-							},
-						},
-					},
+							}.Build(),
+						}.Build(),
+					}.Build(),
 					result: true,
 				},
 			},
@@ -167,14 +142,11 @@ func TestDeduper(t *testing.T) {
 			testName: "process indicator",
 			testEvents: []testEvents{
 				{
-					event: &central.MsgFromSensor{
-						Msg: &central.MsgFromSensor_Event{
-							Event: &central.SensorEvent{
-								Resource: &central.SensorEvent_ProcessIndicator{
-									ProcessIndicator: &storage.ProcessIndicator{},
-								},
-							}},
-					},
+					event: central.MsgFromSensor_builder{
+						Event: central.SensorEvent_builder{
+							ProcessIndicator: &storage.ProcessIndicator{},
+						}.Build(),
+					}.Build(),
 					result: true,
 				},
 			},
@@ -295,20 +267,16 @@ func TestReconciliation(t *testing.T) {
 	d4 := getDeploymentEvent(central.ResourceAction_SYNC_RESOURCE, "4", "4", 0)
 	d5 := getDeploymentEvent(central.ResourceAction_SYNC_RESOURCE, "5", "5", 0)
 
-	d1Alert := &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id: d1.GetEvent().GetId(),
-				Resource: &central.SensorEvent_AlertResults{
-					AlertResults: &central.AlertResults{
-						DeploymentId: d1.GetEvent().GetId(),
-						Stage:        storage.LifecycleStage_DEPLOY,
-					},
-				},
-				Action: central.ResourceAction_SYNC_RESOURCE,
-			},
-		},
-	}
+	d1Alert := central.MsgFromSensor_builder{
+		Event: central.SensorEvent_builder{
+			Id: d1.GetEvent().GetId(),
+			AlertResults: central.AlertResults_builder{
+				DeploymentId: d1.GetEvent().GetId(),
+				Stage:        storage.LifecycleStage_DEPLOY,
+			}.Build(),
+			Action: central.ResourceAction_SYNC_RESOURCE,
+		}.Build(),
+	}.Build()
 
 	// Basic case
 	deduper.StartSync()

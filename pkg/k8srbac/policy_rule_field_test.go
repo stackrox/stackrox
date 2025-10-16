@@ -18,7 +18,7 @@ func TestFieldMerge(t *testing.T) {
 	}{
 		{
 			name: "Same Value",
-			to: &storage.PolicyRule{
+			to: storage.PolicyRule_builder{
 				Verbs: []string{
 					"Get",
 				},
@@ -28,8 +28,8 @@ func TestFieldMerge(t *testing.T) {
 				Resources: []string{
 					"pods",
 				},
-			},
-			from: &storage.PolicyRule{
+			}.Build(),
+			from: storage.PolicyRule_builder{
 				Verbs: []string{
 					"Get",
 				},
@@ -39,8 +39,8 @@ func TestFieldMerge(t *testing.T) {
 				Resources: []string{
 					"pods",
 				},
-			},
-			expected: &storage.PolicyRule{
+			}.Build(),
+			expected: storage.PolicyRule_builder{
 				Verbs: []string{
 					"Get",
 				},
@@ -50,11 +50,11 @@ func TestFieldMerge(t *testing.T) {
 				Resources: []string{
 					"pods",
 				},
-			},
+			}.Build(),
 		},
 		{
 			name: "different Values",
-			to: &storage.PolicyRule{
+			to: storage.PolicyRule_builder{
 				Verbs: []string{
 					"Get",
 				},
@@ -64,8 +64,8 @@ func TestFieldMerge(t *testing.T) {
 				Resources: []string{
 					"pods",
 				},
-			},
-			from: &storage.PolicyRule{
+			}.Build(),
+			from: storage.PolicyRule_builder{
 				Verbs: []string{
 					"Get",
 				},
@@ -75,8 +75,8 @@ func TestFieldMerge(t *testing.T) {
 				Resources: []string{
 					"deployments",
 				},
-			},
-			expected: &storage.PolicyRule{
+			}.Build(),
+			expected: storage.PolicyRule_builder{
 				Verbs: []string{
 					"Get",
 				},
@@ -87,7 +87,7 @@ func TestFieldMerge(t *testing.T) {
 					"deployments",
 					"pods",
 				},
-			},
+			}.Build(),
 		},
 	}
 
@@ -109,7 +109,7 @@ func TestFieldEquals(t *testing.T) {
 	}{
 		{
 			name: "Equal",
-			first: &storage.PolicyRule{
+			first: storage.PolicyRule_builder{
 				Verbs: []string{
 					"Get",
 				},
@@ -120,8 +120,8 @@ func TestFieldEquals(t *testing.T) {
 					"deployments",
 					"pods",
 				},
-			},
-			second: &storage.PolicyRule{
+			}.Build(),
+			second: storage.PolicyRule_builder{
 				Verbs: []string{
 					"Get",
 				},
@@ -132,12 +132,12 @@ func TestFieldEquals(t *testing.T) {
 					"deployments",
 					"pods",
 				},
-			},
+			}.Build(),
 			expected: true,
 		},
 		{
 			name: "Not equal",
-			first: &storage.PolicyRule{
+			first: storage.PolicyRule_builder{
 				Verbs: []string{
 					"Get",
 				},
@@ -148,8 +148,8 @@ func TestFieldEquals(t *testing.T) {
 					"deployments",
 					"pods",
 				},
-			},
-			second: &storage.PolicyRule{
+			}.Build(),
+			second: storage.PolicyRule_builder{
 				Verbs: []string{
 					"Get",
 				},
@@ -159,7 +159,7 @@ func TestFieldEquals(t *testing.T) {
 				Resources: []string{
 					"deployments",
 				},
-			},
+			}.Build(),
 			expected: false,
 		},
 	}
@@ -181,7 +181,7 @@ func TestFieldGrants(t *testing.T) {
 	}{
 		{
 			name: "Same permissions",
-			first: &storage.PolicyRule{
+			first: storage.PolicyRule_builder{
 				Verbs: []string{
 					"Get",
 				},
@@ -192,8 +192,8 @@ func TestFieldGrants(t *testing.T) {
 					"deployments",
 					"pods",
 				},
-			},
-			second: &storage.PolicyRule{
+			}.Build(),
+			second: storage.PolicyRule_builder{
 				Verbs: []string{
 					"Get",
 				},
@@ -204,12 +204,12 @@ func TestFieldGrants(t *testing.T) {
 					"deployments",
 					"pods",
 				},
-			},
+			}.Build(),
 			expected: true,
 		},
 		{
 			name: "More permissions",
-			first: &storage.PolicyRule{
+			first: storage.PolicyRule_builder{
 				Verbs: []string{
 					"Get",
 				},
@@ -220,8 +220,8 @@ func TestFieldGrants(t *testing.T) {
 					"deployments",
 					"pods",
 				},
-			},
-			second: &storage.PolicyRule{
+			}.Build(),
+			second: storage.PolicyRule_builder{
 				Verbs: []string{
 					"Get",
 				},
@@ -231,12 +231,12 @@ func TestFieldGrants(t *testing.T) {
 				Resources: []string{
 					"deployments",
 				},
-			},
+			}.Build(),
 			expected: true,
 		},
 		{
 			name: "Less permissions",
-			first: &storage.PolicyRule{
+			first: storage.PolicyRule_builder{
 				Verbs: []string{
 					"Get",
 				},
@@ -246,8 +246,8 @@ func TestFieldGrants(t *testing.T) {
 				Resources: []string{
 					"pods",
 				},
-			},
-			second: &storage.PolicyRule{
+			}.Build(),
+			second: storage.PolicyRule_builder{
 				Verbs: []string{
 					"Get",
 				},
@@ -258,7 +258,7 @@ func TestFieldGrants(t *testing.T) {
 					"deployments",
 					"pods",
 				},
-			},
+			}.Build(),
 			expected: false,
 		},
 	}

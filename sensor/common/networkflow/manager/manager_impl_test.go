@@ -99,9 +99,8 @@ func (s *NetworkFlowManagerTestSuite) TestAddOpen() {
 	h := hostConnections{}
 	h.endpoints = make(map[containerEndpoint]*connStatus)
 
-	networkInfo := &sensor.NetworkConnectionInfo{
-		UpdatedEndpoints: []*sensor.NetworkEndpoint{openNetworkEndpoint},
-	}
+	networkInfo := &sensor.NetworkConnectionInfo{}
+	networkInfo.SetUpdatedEndpoints([]*sensor.NetworkEndpoint{openNetworkEndpoint})
 
 	nowTimestamp := timestamp.Now()
 	var sequenceID int64
@@ -115,13 +114,11 @@ func (s *NetworkFlowManagerTestSuite) TestAddOpenAndClosed() {
 	h := hostConnections{}
 	h.endpoints = make(map[containerEndpoint]*connStatus)
 
-	networkInfoOpen := &sensor.NetworkConnectionInfo{
-		UpdatedEndpoints: []*sensor.NetworkEndpoint{openNetworkEndpoint},
-	}
+	networkInfoOpen := &sensor.NetworkConnectionInfo{}
+	networkInfoOpen.SetUpdatedEndpoints([]*sensor.NetworkEndpoint{openNetworkEndpoint})
 
-	networkInfoClosed := &sensor.NetworkConnectionInfo{
-		UpdatedEndpoints: []*sensor.NetworkEndpoint{closedNetworkEndpoint},
-	}
+	networkInfoClosed := &sensor.NetworkConnectionInfo{}
+	networkInfoClosed.SetUpdatedEndpoints([]*sensor.NetworkEndpoint{closedNetworkEndpoint})
 
 	nowTimestamp := timestamp.Now()
 	var sequenceID int64
@@ -140,13 +137,11 @@ func (s *NetworkFlowManagerTestSuite) TestAddTwoDifferent() {
 	h := hostConnections{}
 	h.endpoints = make(map[containerEndpoint]*connStatus)
 
-	networkInfoOpen := &sensor.NetworkConnectionInfo{
-		UpdatedEndpoints: []*sensor.NetworkEndpoint{openNetworkEndpoint},
-	}
+	networkInfoOpen := &sensor.NetworkConnectionInfo{}
+	networkInfoOpen.SetUpdatedEndpoints([]*sensor.NetworkEndpoint{openNetworkEndpoint})
 
-	networkInfoOpen81 := &sensor.NetworkConnectionInfo{
-		UpdatedEndpoints: []*sensor.NetworkEndpoint{openNetworkEndpoint81},
-	}
+	networkInfoOpen81 := &sensor.NetworkConnectionInfo{}
+	networkInfoOpen81.SetUpdatedEndpoints([]*sensor.NetworkEndpoint{openNetworkEndpoint81})
 
 	nowTimestamp := timestamp.Now()
 	var sequenceID int64
@@ -165,9 +160,8 @@ func (s *NetworkFlowManagerTestSuite) TestAddTwoDifferentSameBatch() {
 	h := hostConnections{}
 	h.endpoints = make(map[containerEndpoint]*connStatus)
 
-	networkInfoOpen := &sensor.NetworkConnectionInfo{
-		UpdatedEndpoints: []*sensor.NetworkEndpoint{openNetworkEndpoint, openNetworkEndpoint81},
-	}
+	networkInfoOpen := &sensor.NetworkConnectionInfo{}
+	networkInfoOpen.SetUpdatedEndpoints([]*sensor.NetworkEndpoint{openNetworkEndpoint, openNetworkEndpoint81})
 
 	nowTimestamp := timestamp.Now()
 	var sequenceID int64
@@ -183,9 +177,8 @@ func (s *NetworkFlowManagerTestSuite) TestAddNoOriginator() {
 	h := hostConnections{}
 	h.endpoints = make(map[containerEndpoint]*connStatus)
 
-	networkInfoOpen := &sensor.NetworkConnectionInfo{
-		UpdatedEndpoints: []*sensor.NetworkEndpoint{openNetworkEndpointNoOriginator},
-	}
+	networkInfoOpen := &sensor.NetworkConnectionInfo{}
+	networkInfoOpen.SetUpdatedEndpoints([]*sensor.NetworkEndpoint{openNetworkEndpointNoOriginator})
 
 	nowTimestamp := timestamp.Now()
 	var sequenceID int64
@@ -664,17 +657,16 @@ func Test_getConnection_direction(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		networkConn := sensor.NetworkConnection{
-			SocketFamily: sensor.SocketFamily_SOCKET_FAMILY_IPV4,
-			LocalAddress: &sensor.NetworkAddress{
-				Port: tt.localPort,
-			},
-			RemoteAddress: &sensor.NetworkAddress{
-				Port: tt.remotePort,
-			},
-			Protocol: tt.protocol,
-			Role:     tt.role,
-		}
+		na := &sensor.NetworkAddress{}
+		na.SetPort(tt.localPort)
+		na2 := &sensor.NetworkAddress{}
+		na2.SetPort(tt.remotePort)
+		networkConn := &sensor.NetworkConnection{}
+		networkConn.SetSocketFamily(sensor.SocketFamily_SOCKET_FAMILY_IPV4)
+		networkConn.SetLocalAddress(na)
+		networkConn.SetRemoteAddress(na2)
+		networkConn.SetProtocol(tt.protocol)
+		networkConn.SetRole(tt.role)
 		conn, err := processConnection(&networkConn)
 		assert.NoError(t, err)
 		assert.NotNil(t, conn)

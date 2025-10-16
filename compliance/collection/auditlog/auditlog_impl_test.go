@@ -334,10 +334,10 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderStartsSendingEventsAfterSt
 	s.NoError(f.Sync())
 
 	collectSinceTs, _ := protocompat.ConvertTimeToTimestampOrError(eventTime)
-	sender, reader := s.getMocksWithStartState(logPath, &storage.AuditLogFileState{
-		CollectLogsSince: collectSinceTs,
-		LastAuditId:      latestEvent.AuditID,
-	})
+	alfs := &storage.AuditLogFileState{}
+	alfs.SetCollectLogsSince(collectSinceTs)
+	alfs.SetLastAuditId(latestEvent.AuditID)
+	sender, reader := s.getMocksWithStartState(logPath, alfs)
 
 	started, err := reader.StartReader(context.Background())
 	s.True(started)
@@ -376,10 +376,10 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderStartsSendingEventsAtStart
 
 	// Set CollectLogSince to be same exact time as the last two logs, but the ID should be the first of the two
 	collectSinceTs, _ := protocompat.ConvertTimeToTimestampOrError(eventTime)
-	sender, reader := s.getMocksWithStartState(logPath, &storage.AuditLogFileState{
-		CollectLogsSince: collectSinceTs,
-		LastAuditId:      latestEvent.AuditID,
-	})
+	alfs := &storage.AuditLogFileState{}
+	alfs.SetCollectLogsSince(collectSinceTs)
+	alfs.SetLastAuditId(latestEvent.AuditID)
+	sender, reader := s.getMocksWithStartState(logPath, alfs)
 
 	started, err := reader.StartReader(context.Background())
 	s.True(started)

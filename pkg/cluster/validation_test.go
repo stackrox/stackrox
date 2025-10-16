@@ -24,79 +24,83 @@ func TestPartialValidation(t *testing.T) {
 		},
 		"Cluster with invalid main image should fail": {
 			configureClusterFn: func(cluster *storage.Cluster) {
-				cluster.MainImage = "invalid image"
+				cluster.SetMainImage("invalid image")
 			},
 			expectedErrors: []string{"invalid main image 'invalid image': invalid reference format"},
 		},
 		"Cluster with empty main image should not fail": {
 			configureClusterFn: func(cluster *storage.Cluster) {
-				cluster.MainImage = ""
+				cluster.SetMainImage("")
 			},
 		},
 		"Cluster with configured collector image tag should fail": {
 			configureClusterFn: func(cluster *storage.Cluster) {
-				cluster.CollectorImage = "docker.io/stackrox/collector:3.2.0-slim"
+				cluster.SetCollectorImage("docker.io/stackrox/collector:3.2.0-slim")
 			},
 			expectedErrors: []string{"collector image may not specify a tag.  Please remove tag '3.2.0-slim' to continue"},
 		},
 		"Cluster with configured collector image without tag is valid": {
 			configureClusterFn: func(cluster *storage.Cluster) {
-				cluster.CollectorImage = "docker.io/stackrox/collector"
+				cluster.SetCollectorImage("docker.io/stackrox/collector")
 			},
 		},
 		"Cluster with invalid collector image should fail": {
 			configureClusterFn: func(cluster *storage.Cluster) {
-				cluster.CollectorImage = "invalid image"
+				cluster.SetCollectorImage("invalid image")
 			},
 			expectedErrors: []string{"invalid collector image 'invalid image': invalid reference format"},
 		},
 		"Cluster with empty collector image should not fail": {
 			configureClusterFn: func(cluster *storage.Cluster) {
-				cluster.CollectorImage = ""
+				cluster.SetCollectorImage("")
 			},
 		},
 		"Helm Managed cluster with configured collector image tag is allowed": {
 			configureClusterFn: func(cluster *storage.Cluster) {
-				cluster.HelmConfig = &storage.CompleteClusterConfig{}
-				cluster.CollectorImage = "docker.io/stackrox/collector:3.2.0-slim"
+				cluster.SetHelmConfig(&storage.CompleteClusterConfig{})
+				cluster.SetCollectorImage("docker.io/stackrox/collector:3.2.0-slim")
 			},
 		},
 		"Cluster without central endpoint should fail": {
 			configureClusterFn: func(cluster *storage.Cluster) {
-				cluster.CentralApiEndpoint = ""
+				cluster.SetCentralApiEndpoint("")
 			},
 			expectedErrors: []string{"Central API Endpoint is required", "Central API Endpoint must be a valid endpoint. Error: empty endpoint specified"},
 		},
 		"Cluster without central endpoint port fails": {
 			configureClusterFn: func(cluster *storage.Cluster) {
-				cluster.CentralApiEndpoint = "central.stackrox"
+				cluster.SetCentralApiEndpoint("central.stackrox")
 			},
 			expectedErrors: []string{"Central API Endpoint must have port specified"},
 		},
 		"Cluster with central endpoint and whitespace should fail": {
 			configureClusterFn: func(cluster *storage.Cluster) {
-				cluster.CentralApiEndpoint = "central. stackrox:443"
+				cluster.SetCentralApiEndpoint("central. stackrox:443")
 			},
 			expectedErrors: []string{"Central API endpoint cannot contain whitespace"},
 		},
 		"OpenShift3 cluster and enabled admission controller webhooks should fail": {
 			configureClusterFn: func(cluster *storage.Cluster) {
-				cluster.AdmissionControllerEvents = true
-				cluster.Type = storage.ClusterType_OPENSHIFT_CLUSTER
+				cluster.SetAdmissionControllerEvents(true)
+				cluster.SetType(storage.ClusterType_OPENSHIFT_CLUSTER)
 			},
 			expectedErrors: []string{"OpenShift 3.x compatibility mode does not support"},
 		},
 		"Non OpenShift4 cluster with enabled audit log collection should fail": {
 			configureClusterFn: func(cluster *storage.Cluster) {
-				cluster.DynamicConfig = &storage.DynamicClusterConfig{DisableAuditLogs: false}
-				cluster.Type = storage.ClusterType_KUBERNETES_CLUSTER
+				dcc := &storage.DynamicClusterConfig{}
+				dcc.SetDisableAuditLogs(false)
+				cluster.SetDynamicConfig(dcc)
+				cluster.SetType(storage.ClusterType_KUBERNETES_CLUSTER)
 			},
 			expectedErrors: []string{"Audit log collection is only supported on OpenShift 4.x clusters"},
 		},
 		"OpenShift4 cluster with enabled audit log should be valid": {
 			configureClusterFn: func(cluster *storage.Cluster) {
-				cluster.DynamicConfig = &storage.DynamicClusterConfig{DisableAuditLogs: false}
-				cluster.Type = storage.ClusterType_OPENSHIFT4_CLUSTER
+				dcc := &storage.DynamicClusterConfig{}
+				dcc.SetDisableAuditLogs(false)
+				cluster.SetDynamicConfig(dcc)
+				cluster.SetType(storage.ClusterType_OPENSHIFT4_CLUSTER)
 			},
 		},
 	}
@@ -126,7 +130,7 @@ func TestFullValidation(t *testing.T) {
 	}{
 		"Cluster with empty main image should fail": {
 			configureClusterFn: func(cluster *storage.Cluster) {
-				cluster.MainImage = ""
+				cluster.SetMainImage("")
 			},
 			expectedErrors: []string{"invalid main image '': invalid reference format"},
 		},

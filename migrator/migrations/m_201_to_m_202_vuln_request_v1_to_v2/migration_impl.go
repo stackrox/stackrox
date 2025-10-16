@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -36,47 +37,43 @@ func updateVulnerabilityRequests(ctx context.Context, database *types.Databases)
 
 		// Migrate requester and approvers to new RequesterV2 and ApproversV2 fields
 		if requester := obj.GetRequestor(); requester != nil {
-			updated.RequesterV2 = convertSlimUserToRequester(obj.GetRequestor())
+			updated.SetRequesterV2(convertSlimUserToRequester(obj.GetRequestor()))
 		}
 		if approvers := obj.GetApprovers(); len(approvers) > 0 {
-			updated.ApproversV2 = convertSlimUserToApprovers(obj.GetApprovers())
+			updated.SetApproversV2(convertSlimUserToApprovers(obj.GetApprovers()))
 		}
 
 		// Update new expiry type field
 		if obj.GetDeferralReq() != nil && obj.GetDeferralReq().GetExpiry() != nil {
 			if obj.GetDeferralReq().GetExpiry().GetExpiresWhenFixed() {
-				updated.GetDeferralReq().Expiry.ExpiryType = storage.RequestExpiry_ANY_CVE_FIXABLE
+				updated.GetDeferralReq().GetExpiry().SetExpiryType(storage.RequestExpiry_ANY_CVE_FIXABLE)
 			} else {
-				updated.GetDeferralReq().Expiry.ExpiryType = storage.RequestExpiry_TIME
+				updated.GetDeferralReq().GetExpiry().SetExpiryType(storage.RequestExpiry_TIME)
 			}
 		}
 
 		// Migrate UpdateDeferralReq (if any) to new DeferralUpdate field
 		if obj.GetUpdatedDeferralReq().GetExpiry() != nil {
-			updated.UpdatedReq = &storage.VulnerabilityRequest_DeferralUpdate{
-				DeferralUpdate: &storage.DeferralUpdate{
-					CVEs:   obj.GetCves().GetCves(),
-					Expiry: obj.GetUpdatedDeferralReq().GetExpiry(),
-				},
-			}
+			du := &storage.DeferralUpdate{}
+			du.SetCVEs(obj.GetCves().GetCves())
+			du.SetExpiry(obj.GetUpdatedDeferralReq().GetExpiry())
+			updated.SetDeferralUpdate(proto.ValueOrDefault(du))
 			if obj.GetUpdatedDeferralReq().GetExpiry().GetExpiresWhenFixed() {
-				updated.GetDeferralUpdate().Expiry.ExpiryType = storage.RequestExpiry_ANY_CVE_FIXABLE
+				updated.GetDeferralUpdate().GetExpiry().SetExpiryType(storage.RequestExpiry_ANY_CVE_FIXABLE)
 			} else {
-				updated.GetDeferralUpdate().Expiry.ExpiryType = storage.RequestExpiry_TIME
+				updated.GetDeferralUpdate().GetExpiry().SetExpiryType(storage.RequestExpiry_TIME)
 			}
 		}
 
 		// Migrate global scope to new representation for global scope
 		if obj.GetScope().GetGlobalScope() != nil {
-			updated.Scope = &storage.VulnerabilityRequest_Scope{
-				Info: &storage.VulnerabilityRequest_Scope_ImageScope{
-					ImageScope: &storage.VulnerabilityRequest_Scope_Image{
-						Registry: ".*",
-						Remote:   ".*",
-						Tag:      ".*",
-					},
-				},
-			}
+			vsi := &storage.VulnerabilityRequest_Scope_Image{}
+			vsi.SetRegistry(".*")
+			vsi.SetRemote(".*")
+			vsi.SetTag(".*")
+			vs := &storage.VulnerabilityRequest_Scope{}
+			vs.SetImageScope(proto.ValueOrDefault(vsi))
+			updated.SetScope(vs)
 		}
 
 		updatedObjs = append(updatedObjs, updated)
@@ -110,10 +107,10 @@ func convertSlimUserToRequester(user *storage.SlimUser) *storage.Requester {
 	if user == nil {
 		return nil
 	}
-	return &storage.Requester{
-		Id:   user.GetId(),
-		Name: user.GetName(),
-	}
+	requester := &storage.Requester{}
+	requester.SetId(user.GetId())
+	requester.SetName(user.GetName())
+	return requester
 }
 
 func convertSlimUserToApprovers(users []*storage.SlimUser) []*storage.Approver {
@@ -122,10 +119,10 @@ func convertSlimUserToApprovers(users []*storage.SlimUser) []*storage.Approver {
 		if user == nil {
 			continue
 		}
-		approvers = append(approvers, &storage.Approver{
-			Id:   user.GetId(),
-			Name: user.GetName(),
-		})
+		approver := &storage.Approver{}
+		approver.SetId(user.GetId())
+		approver.SetName(user.GetName())
+		approvers = append(approvers, approver)
 	}
 	if len(approvers) == 0 {
 		return nil

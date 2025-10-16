@@ -12,60 +12,38 @@ import (
 )
 
 func TestGetCVEEdgeQuery(t *testing.T) {
-	query := &v1.Query{
-		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
+	query := v1.Query_builder{
+		Conjunction: v1.ConjunctionQuery_builder{
 			Queries: []*v1.Query{
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: search.Fixable.String(), Value: "true"},
-						},
-					},
-				}},
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: search.ClusterID.String(), Value: "cluster1"},
-						},
-					},
-				}},
+				v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+					MatchFieldQuery: v1.MatchFieldQuery_builder{Field: search.Fixable.String(), Value: "true"}.Build(),
+				}.Build()}.Build(),
+				v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+					MatchFieldQuery: v1.MatchFieldQuery_builder{Field: search.ClusterID.String(), Value: "cluster1"}.Build(),
+				}.Build()}.Build(),
 			},
-		}},
-	}
+		}.Build(),
+	}.Build()
 
-	expectedQuery := &v1.Query{
-		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
+	expectedQuery := v1.Query_builder{
+		Conjunction: v1.ConjunctionQuery_builder{
 			Queries: []*v1.Query{
-				{Query: &v1.Query_Disjunction{
-					Disjunction: &v1.DisjunctionQuery{
-						Queries: []*v1.Query{
-							{Query: &v1.Query_BaseQuery{
-								BaseQuery: &v1.BaseQuery{
-									Query: &v1.BaseQuery_MatchFieldQuery{
-										MatchFieldQuery: &v1.MatchFieldQuery{Field: search.Fixable.String(), Value: "true"},
-									},
-								},
-							}},
-							{Query: &v1.Query_BaseQuery{
-								BaseQuery: &v1.BaseQuery{
-									Query: &v1.BaseQuery_MatchFieldQuery{
-										MatchFieldQuery: &v1.MatchFieldQuery{Field: search.ClusterCVEFixable.String(), Value: "true"},
-									},
-								},
-							}},
-						},
+				v1.Query_builder{Disjunction: v1.DisjunctionQuery_builder{
+					Queries: []*v1.Query{
+						v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+							MatchFieldQuery: v1.MatchFieldQuery_builder{Field: search.Fixable.String(), Value: "true"}.Build(),
+						}.Build()}.Build(),
+						v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+							MatchFieldQuery: v1.MatchFieldQuery_builder{Field: search.ClusterCVEFixable.String(), Value: "true"}.Build(),
+						}.Build()}.Build(),
 					},
-				}},
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: search.ClusterID.String(), Value: "cluster1"},
-						},
-					},
-				}},
+				}.Build()}.Build(),
+				v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+					MatchFieldQuery: v1.MatchFieldQuery_builder{Field: search.ClusterID.String(), Value: "cluster1"}.Build(),
+				}.Build()}.Build(),
 			},
-		}},
-	}
+		}.Build(),
+	}.Build()
 
 	getCVEEdgeQuery(query)
 	protoassert.Equal(t, expectedQuery, query)

@@ -16,21 +16,22 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/utils"
+	"google.golang.org/protobuf/proto"
 )
 
 func AnyFlow(toID string, toType storage.NetworkEntityInfo_Type, fromID string, fromType storage.NetworkEntityInfo_Type) *storage.NetworkFlow {
-	return &storage.NetworkFlow{
-		Props: &storage.NetworkFlowProperties{
-			SrcEntity: &storage.NetworkEntityInfo{
-				Type: fromType,
-				Id:   fromID,
-			},
-			DstEntity: &storage.NetworkEntityInfo{
-				Type: toType,
-				Id:   toID,
-			},
-		},
-	}
+	nei := &storage.NetworkEntityInfo{}
+	nei.SetType(fromType)
+	nei.SetId(fromID)
+	nei2 := &storage.NetworkEntityInfo{}
+	nei2.SetType(toType)
+	nei2.SetId(toID)
+	nfp := &storage.NetworkFlowProperties{}
+	nfp.SetSrcEntity(nei)
+	nfp.SetDstEntity(nei2)
+	nf := &storage.NetworkFlow{}
+	nf.SetProps(nfp)
+	return nf
 }
 
 func ExtFlow(toID, fromID string) *storage.NetworkFlow {
@@ -42,19 +43,19 @@ func DepFlow(toID, fromID string) *storage.NetworkFlow {
 }
 
 func ListenFlow(depID string, port uint32) *storage.NetworkFlow {
-	return &storage.NetworkFlow{
-		Props: &storage.NetworkFlowProperties{
-			SrcEntity: &storage.NetworkEntityInfo{
-				Type: storage.NetworkEntityInfo_DEPLOYMENT,
-				Id:   depID,
-			},
-			DstEntity: &storage.NetworkEntityInfo{
-				Type: storage.NetworkEntityInfo_LISTEN_ENDPOINT,
-			},
-			DstPort:    port,
-			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-		},
-	}
+	nei := &storage.NetworkEntityInfo{}
+	nei.SetType(storage.NetworkEntityInfo_DEPLOYMENT)
+	nei.SetId(depID)
+	nei2 := &storage.NetworkEntityInfo{}
+	nei2.SetType(storage.NetworkEntityInfo_LISTEN_ENDPOINT)
+	nfp := &storage.NetworkFlowProperties{}
+	nfp.SetSrcEntity(nei)
+	nfp.SetDstEntity(nei2)
+	nfp.SetDstPort(port)
+	nfp.SetL4Protocol(storage.L4Protocol_L4_PROTOCOL_TCP)
+	nf := &storage.NetworkFlow{}
+	nf.SetProps(nfp)
+	return nf
 }
 
 func ExtIdFromIPv4(clusterId string, packedIp uint32) (sac.ResourceID, error) {
@@ -66,56 +67,50 @@ func ExtIdFromIPv4(clusterId string, packedIp uint32) (sac.ResourceID, error) {
 
 // GetDeploymentNetworkEntity returns a deployment type network entity.
 func GetDeploymentNetworkEntity(id, name string) *storage.NetworkEntityInfo {
-	return &storage.NetworkEntityInfo{
-		Id:   id,
-		Type: storage.NetworkEntityInfo_DEPLOYMENT,
-		Desc: &storage.NetworkEntityInfo_Deployment_{
-			Deployment: &storage.NetworkEntityInfo_Deployment{
-				Name: name,
-			},
-		},
-	}
+	nd := &storage.NetworkEntityInfo_Deployment{}
+	nd.SetName(name)
+	nei := &storage.NetworkEntityInfo{}
+	nei.SetId(id)
+	nei.SetType(storage.NetworkEntityInfo_DEPLOYMENT)
+	nei.SetDeployment(proto.ValueOrDefault(nd))
+	return nei
 }
 
 // GetExtSrcNetworkEntity returns a external source typed *storage.NetworkEntity object.
 func GetExtSrcNetworkEntity(id, name, cidr string, isDefault bool, clusterID string, isDiscovered bool) *storage.NetworkEntity {
-	return &storage.NetworkEntity{
-		Info: GetExtSrcNetworkEntityInfo(id, name, cidr, isDefault, isDiscovered),
-		Scope: &storage.NetworkEntity_Scope{
-			ClusterId: clusterID,
-		},
-	}
+	ns := &storage.NetworkEntity_Scope{}
+	ns.SetClusterId(clusterID)
+	ne := &storage.NetworkEntity{}
+	ne.SetInfo(GetExtSrcNetworkEntityInfo(id, name, cidr, isDefault, isDiscovered))
+	ne.SetScope(ns)
+	return ne
 }
 
 // GetExtSrcNetworkEntityInfo returns a external source typed *storage.NetworkEntityInfo object.
 func GetExtSrcNetworkEntityInfo(id, name, cidr string, isDefault bool, isDiscovered bool) *storage.NetworkEntityInfo {
-	return &storage.NetworkEntityInfo{
-		Id:   id,
-		Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-		Desc: &storage.NetworkEntityInfo_ExternalSource_{
-			ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-				Name: name,
-				Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-					Cidr: cidr,
-				},
-				Default:    isDefault,
-				Discovered: isDiscovered,
-			},
-		},
-	}
+	nei := &storage.NetworkEntityInfo{}
+	nei.SetId(id)
+	nei.SetType(storage.NetworkEntityInfo_EXTERNAL_SOURCE)
+	nei.SetExternalSource(storage.NetworkEntityInfo_ExternalSource_builder{
+		Name:       name,
+		Cidr:       proto.String(cidr),
+		Default:    isDefault,
+		Discovered: isDiscovered,
+	}.Build())
+	return nei
 }
 
 // GetNetworkFlow returns a network flow constructed from supplied data.
 func GetNetworkFlow(src, dst *storage.NetworkEntityInfo, port int, protocol storage.L4Protocol, ts *time.Time) *storage.NetworkFlow {
-	return &storage.NetworkFlow{
-		Props: &storage.NetworkFlowProperties{
-			SrcEntity:  src,
-			DstEntity:  dst,
-			DstPort:    uint32(port),
-			L4Protocol: protocol,
-		},
-		LastSeenTimestamp: protocompat.ConvertTimeToTimestampOrNil(ts),
-	}
+	nfp := &storage.NetworkFlowProperties{}
+	nfp.SetSrcEntity(src)
+	nfp.SetDstEntity(dst)
+	nfp.SetDstPort(uint32(port))
+	nfp.SetL4Protocol(protocol)
+	nf := &storage.NetworkFlow{}
+	nf.SetProps(nfp)
+	nf.SetLastSeenTimestamp(protocompat.ConvertTimeToTimestampOrNil(ts))
+	return nf
 }
 
 // GenRandomExtSrcNetworkEntityInfo generates numNetworks number of storage.NetworkEntityInfo objects with random CIDRs.

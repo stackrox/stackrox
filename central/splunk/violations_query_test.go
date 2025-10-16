@@ -66,9 +66,9 @@ func (s *violationsTestSuite) withAlerts(alerts []*storage.Alert, action func(al
 
 func (s *violationsTestSuite) TestQueryReturnsAlertsWithAllStates() {
 	a2 := s.k8sAlert.CloneVT()
-	a2.State = storage.ViolationState_RESOLVED
+	a2.SetState(storage.ViolationState_RESOLVED)
 	a3 := s.deployAlert.CloneVT()
-	a3.State = storage.ViolationState_ATTEMPTED
+	a3.SetState(storage.ViolationState_ATTEMPTED)
 
 	var alertIDs []string
 
@@ -134,7 +134,7 @@ func (s *violationsTestSuite) TestQueryAlertsAreSortedByAlertID() {
 	// decreasing timestamp does not match ordering by ID. Therefore we'll be able to validate that our requested
 	// sorting by ID really works.
 	for _, a := range alerts {
-		a.Id = uuid.NewV4().String()
+		a.SetId(uuid.NewV4().String())
 		sortedIDs = append(sortedIDs, a.GetId())
 	}
 	sort.Slice(sortedIDs, func(i, j int) bool {

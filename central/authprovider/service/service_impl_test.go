@@ -81,21 +81,20 @@ func (s *mockedAuthProviderServiceTestSuite) TearDownTest() {
 }
 
 func (s *mockedAuthProviderServiceTestSuite) TestPostDuplicateAuthProvider() {
-	postRequest := &v1.PostAuthProviderRequest{
-		Provider: &storage.AuthProvider{
-			Name:       "Test Provider",
-			Type:       testProviderType,
-			Config:     map[string]string{},
-			UiEndpoint: "central.svc",
-			Enabled:    true,
-			Traits: &storage.Traits{
-				MutabilityMode: storage.Traits_ALLOW_MUTATE,
-			},
-		},
-	}
+	traits := &storage.Traits{}
+	traits.SetMutabilityMode(storage.Traits_ALLOW_MUTATE)
+	ap := &storage.AuthProvider{}
+	ap.SetName("Test Provider")
+	ap.SetType(testProviderType)
+	ap.SetConfig(map[string]string{})
+	ap.SetUiEndpoint("central.svc")
+	ap.SetEnabled(true)
+	ap.SetTraits(traits)
+	postRequest := &v1.PostAuthProviderRequest{}
+	postRequest.SetProvider(ap)
 
 	otherPostRequest := postRequest.CloneVT()
-	otherPostRequest.Provider.Name = "Test Provider 2"
+	otherPostRequest.GetProvider().SetName("Test Provider 2")
 
 	ctx := context.Background()
 

@@ -18,7 +18,7 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 		{
 			name: "Same policy rule twice",
 			input: []*storage.PolicyRule{
-				{
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"Get",
 					},
@@ -28,8 +28,8 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 					Resources: []string{
 						"pods",
 					},
-				},
-				{
+				}.Build(),
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"Get",
 					},
@@ -39,10 +39,10 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 					Resources: []string{
 						"pods",
 					},
-				},
+				}.Build(),
 			},
 			expected: []*storage.PolicyRule{
-				{
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"Get",
 					},
@@ -52,13 +52,13 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 					Resources: []string{
 						"pods",
 					},
-				},
+				}.Build(),
 			},
 		},
 		{
 			name: "Different API groups",
 			input: []*storage.PolicyRule{
-				{
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"Get",
 					},
@@ -68,8 +68,8 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 					Resources: []string{
 						"pods",
 					},
-				},
-				{
+				}.Build(),
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"Get",
 					},
@@ -79,10 +79,10 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 					Resources: []string{
 						"pods",
 					},
-				},
+				}.Build(),
 			},
 			expected: []*storage.PolicyRule{
-				{
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"Get",
 					},
@@ -93,13 +93,13 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 					Resources: []string{
 						"pods",
 					},
-				},
+				}.Build(),
 			},
 		},
 		{
 			name: "Different resources",
 			input: []*storage.PolicyRule{
-				{
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"Get",
 					},
@@ -109,8 +109,8 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 					Resources: []string{
 						"pods",
 					},
-				},
-				{
+				}.Build(),
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"Get",
 					},
@@ -120,10 +120,10 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 					Resources: []string{
 						"deployments",
 					},
-				},
+				}.Build(),
 			},
 			expected: []*storage.PolicyRule{
-				{
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"Get",
 					},
@@ -134,13 +134,13 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 						"deployments",
 						"pods",
 					},
-				},
+				}.Build(),
 			},
 		},
 		{
 			name: "Different verbs",
 			input: []*storage.PolicyRule{
-				{
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"Get",
 					},
@@ -150,8 +150,8 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 					Resources: []string{
 						"pods",
 					},
-				},
-				{
+				}.Build(),
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"Put",
 					},
@@ -161,10 +161,10 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 					Resources: []string{
 						"pods",
 					},
-				},
+				}.Build(),
 			},
 			expected: []*storage.PolicyRule{
-				{
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"Get",
 						"Put",
@@ -175,13 +175,13 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 					Resources: []string{
 						"pods",
 					},
-				},
+				}.Build(),
 			},
 		},
 		{
 			name: "Multiple mixed",
 			input: []*storage.PolicyRule{
-				{
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"*",
 					},
@@ -191,8 +191,8 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 					Resources: []string{
 						"*",
 					},
-				},
-				{
+				}.Build(),
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"*",
 					},
@@ -202,8 +202,8 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 					Resources: []string{
 						"pods",
 					},
-				},
-				{
+				}.Build(),
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"Put",
 					},
@@ -213,8 +213,8 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 					Resources: []string{
 						"pods",
 					},
-				},
-				{
+				}.Build(),
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"*",
 					},
@@ -224,8 +224,8 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 					Resources: []string{
 						"deployments",
 					},
-				},
-				{
+				}.Build(),
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"Get",
 						"Put",
@@ -236,10 +236,10 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 					Resources: []string{
 						"deployments",
 					},
-				},
+				}.Build(),
 			},
 			expected: []*storage.PolicyRule{
-				{
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"*",
 					},
@@ -249,8 +249,8 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 					Resources: []string{
 						"*",
 					},
-				},
-				{
+				}.Build(),
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"*",
 					},
@@ -260,14 +260,14 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 					Resources: []string{
 						"deployments",
 					},
-				},
+				}.Build(),
 			},
 		},
 
 		{
 			name: "boo",
 			input: []*storage.PolicyRule{
-				{
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"get",
 					},
@@ -277,8 +277,8 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 					Resources: []string{
 						"*",
 					},
-				},
-				{
+				}.Build(),
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"create",
 					},
@@ -288,10 +288,10 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 					Resources: []string{
 						"deployments",
 					},
-				},
+				}.Build(),
 			},
 			expected: []*storage.PolicyRule{
-				{
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"get",
 					},
@@ -301,8 +301,8 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 					Resources: []string{
 						"*",
 					},
-				},
-				{
+				}.Build(),
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"create",
 					},
@@ -312,7 +312,7 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 					Resources: []string{
 						"deployments",
 					},
-				},
+				}.Build(),
 			},
 		},
 	}
@@ -336,7 +336,7 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 		{
 			name: "Two different api groups and one matches",
 			initial: []*storage.PolicyRule{
-				{
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"Get",
 					},
@@ -346,8 +346,8 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 					Resources: []string{
 						"pods",
 					},
-				},
-				{
+				}.Build(),
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"Get",
 					},
@@ -357,9 +357,9 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 					Resources: []string{
 						"pods",
 					},
-				},
+				}.Build(),
 			},
-			grants: &storage.PolicyRule{
+			grants: storage.PolicyRule_builder{
 				Verbs: []string{
 					"Get",
 				},
@@ -369,13 +369,13 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 				Resources: []string{
 					"pods",
 				},
-			},
+			}.Build(),
 			expected: true,
 		},
 		{
 			name: "Different api groups and different resources",
 			initial: []*storage.PolicyRule{
-				{
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"Get",
 					},
@@ -385,8 +385,8 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 					Resources: []string{
 						"deployments",
 					},
-				},
-				{
+				}.Build(),
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"Get",
 					},
@@ -396,9 +396,9 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 					Resources: []string{
 						"pods",
 					},
-				},
+				}.Build(),
 			},
-			grants: &storage.PolicyRule{
+			grants: storage.PolicyRule_builder{
 				Verbs: []string{
 					"Get",
 				},
@@ -408,13 +408,13 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 				Resources: []string{
 					"pods",
 				},
-			},
+			}.Build(),
 			expected: false,
 		},
 		{
 			name: "Matches one verb in a rule",
 			initial: []*storage.PolicyRule{
-				{
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"Get",
 						"Put",
@@ -425,8 +425,8 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 					Resources: []string{
 						"deployments",
 					},
-				},
-				{
+				}.Build(),
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"Get",
 					},
@@ -436,9 +436,9 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 					Resources: []string{
 						"pods",
 					},
-				},
+				}.Build(),
 			},
-			grants: &storage.PolicyRule{
+			grants: storage.PolicyRule_builder{
 				Verbs: []string{
 					"Get",
 				},
@@ -448,13 +448,13 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 				Resources: []string{
 					"deployments",
 				},
-			},
+			}.Build(),
 			expected: true,
 		},
 		{
 			name: "Different api group with multiple verbs",
 			initial: []*storage.PolicyRule{
-				{
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"Get",
 						"Put",
@@ -465,8 +465,8 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 					Resources: []string{
 						"deployments",
 					},
-				},
-				{
+				}.Build(),
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"Get",
 						"Put",
@@ -477,9 +477,9 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 					Resources: []string{
 						"pods",
 					},
-				},
+				}.Build(),
 			},
-			grants: &storage.PolicyRule{
+			grants: storage.PolicyRule_builder{
 				Verbs: []string{
 					"Get",
 				},
@@ -489,13 +489,13 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 				Resources: []string{
 					"pods",
 				},
-			},
+			}.Build(),
 			expected: false,
 		},
 		{
 			name: "Different multiple resources multiple verbs",
 			initial: []*storage.PolicyRule{
-				{
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"Get",
 						"Put",
@@ -506,8 +506,8 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 					Resources: []string{
 						"deployments",
 					},
-				},
-				{
+				}.Build(),
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"Get",
 						"Put",
@@ -518,9 +518,9 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 					Resources: []string{
 						"pods",
 					},
-				},
+				}.Build(),
 			},
-			grants: &storage.PolicyRule{
+			grants: storage.PolicyRule_builder{
 				Verbs: []string{
 					"Get",
 					"Put",
@@ -532,13 +532,13 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 					"deployments",
 					"pods",
 				},
-			},
+			}.Build(),
 			expected: true,
 		},
 		{
 			name: "Handles verb wildcard",
 			initial: []*storage.PolicyRule{
-				{
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"*",
 					},
@@ -548,8 +548,8 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 					Resources: []string{
 						"deployments",
 					},
-				},
-				{
+				}.Build(),
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"Get",
 						"Put",
@@ -560,9 +560,9 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 					Resources: []string{
 						"pods",
 					},
-				},
+				}.Build(),
 			},
-			grants: &storage.PolicyRule{
+			grants: storage.PolicyRule_builder{
 				Verbs: []string{
 					"Get",
 					"Put",
@@ -573,13 +573,13 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 				Resources: []string{
 					"deployments",
 				},
-			},
+			}.Build(),
 			expected: true,
 		},
 		{
 			name: "Handles api group wildcard",
 			initial: []*storage.PolicyRule{
-				{
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"*",
 					},
@@ -589,8 +589,8 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 					Resources: []string{
 						"deployments",
 					},
-				},
-				{
+				}.Build(),
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"Get",
 						"Put",
@@ -601,9 +601,9 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 					Resources: []string{
 						"pods",
 					},
-				},
+				}.Build(),
 			},
-			grants: &storage.PolicyRule{
+			grants: storage.PolicyRule_builder{
 				Verbs: []string{
 					"Get",
 					"Put",
@@ -614,13 +614,13 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 				Resources: []string{
 					"deployments",
 				},
-			},
+			}.Build(),
 			expected: true,
 		},
 		{
 			name: "Handles resource wildcard",
 			initial: []*storage.PolicyRule{
-				{
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"Get",
 					},
@@ -630,8 +630,8 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 					Resources: []string{
 						"*",
 					},
-				},
-				{
+				}.Build(),
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"Get",
 						"Put",
@@ -642,9 +642,9 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 					Resources: []string{
 						"pods",
 					},
-				},
+				}.Build(),
 			},
-			grants: &storage.PolicyRule{
+			grants: storage.PolicyRule_builder{
 				Verbs: []string{
 					"Get",
 				},
@@ -654,13 +654,13 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 				Resources: []string{
 					"deployments",
 				},
-			},
+			}.Build(),
 			expected: true,
 		},
 		{
 			name: "Handles multiple wildcards",
 			initial: []*storage.PolicyRule{
-				{
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"*",
 					},
@@ -670,8 +670,8 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 					Resources: []string{
 						"deployments",
 					},
-				},
-				{
+				}.Build(),
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"*",
 					},
@@ -681,9 +681,9 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 					Resources: []string{
 						"*",
 					},
-				},
+				}.Build(),
 			},
-			grants: &storage.PolicyRule{
+			grants: storage.PolicyRule_builder{
 				Verbs: []string{
 					"Get",
 					"Put",
@@ -694,13 +694,13 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 				Resources: []string{
 					"pods",
 				},
-			},
+			}.Build(),
 			expected: true,
 		},
 		{
 			name: "Doesn't match multiple wildcards",
 			initial: []*storage.PolicyRule{
-				{
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"*",
 					},
@@ -710,8 +710,8 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 					Resources: []string{
 						"deployments",
 					},
-				},
-				{
+				}.Build(),
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"*",
 					},
@@ -721,9 +721,9 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 					Resources: []string{
 						"pods",
 					},
-				},
+				}.Build(),
 			},
-			grants: &storage.PolicyRule{
+			grants: storage.PolicyRule_builder{
 				Verbs: []string{
 					"Get",
 					"Put",
@@ -734,14 +734,14 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 				Resources: []string{
 					"deployments",
 				},
-			},
+			}.Build(),
 			expected: false,
 		},
 
 		{
 			name: "Doesn't match multiple wildcards",
 			initial: []*storage.PolicyRule{
-				{
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"*",
 					},
@@ -751,8 +751,8 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 					Resources: []string{
 						"deployments",
 					},
-				},
-				{
+				}.Build(),
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"*",
 					},
@@ -762,9 +762,9 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 					Resources: []string{
 						"pods",
 					},
-				},
+				}.Build(),
 			},
-			grants: &storage.PolicyRule{
+			grants: storage.PolicyRule_builder{
 				Verbs: []string{
 					"Get",
 					"Put",
@@ -775,13 +775,13 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 				Resources: []string{
 					"deployments",
 				},
-			},
+			}.Build(),
 			expected: false,
 		},
 		{
 			name: "rules verbs and resources are not merged",
 			initial: []*storage.PolicyRule{
-				{
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"*",
 					},
@@ -791,8 +791,8 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 					Resources: []string{
 						"",
 					},
-				},
-				{
+				}.Build(),
+				storage.PolicyRule_builder{
 					Verbs: []string{
 						"get",
 					},
@@ -802,7 +802,7 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 					Resources: []string{
 						"*",
 					},
-				},
+				}.Build(),
 			},
 			grants:   EffectiveAdmin,
 			expected: false,
@@ -820,22 +820,22 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 
 func TestGetPermissionMap(t *testing.T) {
 	rules := []*storage.PolicyRule{
-		{
+		storage.PolicyRule_builder{
 			Resources: []string{"foo"},
 			Verbs:     []string{"view", "edit"},
-		},
-		{
+		}.Build(),
+		storage.PolicyRule_builder{
 			Resources: []string{"*"},
 			Verbs:     []string{"edit", "delete"},
-		},
-		{
+		}.Build(),
+		storage.PolicyRule_builder{
 			Resources: []string{"bar"},
 			Verbs:     []string{"delete", "patch"},
-		},
-		{
+		}.Build(),
+		storage.PolicyRule_builder{
 			Resources: []string{"foo"},
 			Verbs:     []string{"patch"},
-		},
+		}.Build(),
 	}
 	expected := map[string]set.StringSet{
 		"view":   set.NewStringSet("foo"),

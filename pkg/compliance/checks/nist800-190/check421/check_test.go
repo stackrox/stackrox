@@ -28,11 +28,11 @@ func TestDockerInfoBasedChecks(t *testing.T) {
 		},
 		{
 			name: standards.NIST800190CheckName("4_2_1"),
-			cri: &compliance.ContainerRuntimeInfo{
-				InsecureRegistries: &compliance.InsecureRegistriesConfig{
+			cri: compliance.ContainerRuntimeInfo_builder{
+				InsecureRegistries: compliance.InsecureRegistriesConfig_builder{
 					InsecureCidrs: []string{localIPNet},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			status: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 		},
 		{

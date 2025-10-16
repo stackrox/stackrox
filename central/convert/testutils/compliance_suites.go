@@ -23,61 +23,59 @@ var (
 
 // GetSuiteStorage -- returns suite storage
 func GetSuiteStorage(_ *testing.T) *storage.ComplianceOperatorSuiteV2 {
-	status := &storage.ComplianceOperatorStatus{
-		Phase:        "DONE",
-		Result:       "NON-COMPLIANT",
-		ErrorMessage: "some error",
-		Conditions: []*storage.ComplianceOperatorCondition{
-			{
-				Type:               "Processing",
-				Status:             "False",
-				Reason:             "NotRunning",
-				Message:            "This is message 1",
-				LastTransitionTime: TransitionTimeForCondition1,
-			},
-			{
-				Type:               "Ready",
-				Status:             "True",
-				Reason:             "Done",
-				LastTransitionTime: TransitionTimeForCondition2,
-			},
-		},
-	}
+	coc := &storage.ComplianceOperatorCondition{}
+	coc.SetType("Processing")
+	coc.SetStatus("False")
+	coc.SetReason("NotRunning")
+	coc.SetMessage("This is message 1")
+	coc.SetLastTransitionTime(TransitionTimeForCondition1)
+	coc2 := &storage.ComplianceOperatorCondition{}
+	coc2.SetType("Ready")
+	coc2.SetStatus("True")
+	coc2.SetReason("Done")
+	coc2.SetLastTransitionTime(TransitionTimeForCondition2)
+	status := &storage.ComplianceOperatorStatus{}
+	status.SetPhase("DONE")
+	status.SetResult("NON-COMPLIANT")
+	status.SetErrorMessage("some error")
+	status.SetConditions([]*storage.ComplianceOperatorCondition{
+		coc,
+		coc2,
+	})
 
-	return &storage.ComplianceOperatorSuiteV2{
-		Id:        SuiteUID,
-		Name:      "compliancesuitename",
-		Status:    status,
-		ClusterId: fixtureconsts.Cluster1,
-	}
+	cosv2 := &storage.ComplianceOperatorSuiteV2{}
+	cosv2.SetId(SuiteUID)
+	cosv2.SetName("compliancesuitename")
+	cosv2.SetStatus(status)
+	cosv2.SetClusterId(fixtureconsts.Cluster1)
+	return cosv2
 }
 
 // GetSuiteSensorMsg -- returns a suite message from sensor
 func GetSuiteSensorMsg(_ *testing.T) *central.ComplianceOperatorSuiteV2 {
-	status := &central.ComplianceOperatorStatus{
-		Phase:        "DONE",
-		Result:       "NON-COMPLIANT",
-		ErrorMessage: "some error",
-		Conditions: []*central.ComplianceOperatorCondition{
-			{
-				Type:               "Processing",
-				Status:             "False",
-				Reason:             "NotRunning",
-				Message:            "This is message 1",
-				LastTransitionTime: TransitionTimeForCondition1,
-			},
-			{
-				Type:               "Ready",
-				Status:             "True",
-				Reason:             "Done",
-				LastTransitionTime: TransitionTimeForCondition2,
-			},
-		},
-	}
+	coc := &central.ComplianceOperatorCondition{}
+	coc.SetType("Processing")
+	coc.SetStatus("False")
+	coc.SetReason("NotRunning")
+	coc.SetMessage("This is message 1")
+	coc.SetLastTransitionTime(TransitionTimeForCondition1)
+	coc2 := &central.ComplianceOperatorCondition{}
+	coc2.SetType("Ready")
+	coc2.SetStatus("True")
+	coc2.SetReason("Done")
+	coc2.SetLastTransitionTime(TransitionTimeForCondition2)
+	status := &central.ComplianceOperatorStatus{}
+	status.SetPhase("DONE")
+	status.SetResult("NON-COMPLIANT")
+	status.SetErrorMessage("some error")
+	status.SetConditions([]*central.ComplianceOperatorCondition{
+		coc,
+		coc2,
+	})
 
-	return &central.ComplianceOperatorSuiteV2{
-		Id:     SuiteUID,
-		Name:   "compliancesuitename",
-		Status: status,
-	}
+	cosv2 := &central.ComplianceOperatorSuiteV2{}
+	cosv2.SetId(SuiteUID)
+	cosv2.SetName("compliancesuitename")
+	cosv2.SetStatus(status)
+	return cosv2
 }

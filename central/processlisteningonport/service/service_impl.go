@@ -61,8 +61,8 @@ func (s *serviceImpl) GetListeningEndpoints(
 		processesListeningOnPorts = paginated.PaginateSlice(int(page.GetOffset()), int(page.GetLimit()), processesListeningOnPorts)
 	}
 
-	return &v1.GetProcessesListeningOnPortsResponse{
-		ListeningEndpoints:      processesListeningOnPorts,
-		TotalListeningEndpoints: int32(totalListeningEndpoints),
-	}, nil
+	gplopr := &v1.GetProcessesListeningOnPortsResponse{}
+	gplopr.SetListeningEndpoints(processesListeningOnPorts)
+	gplopr.SetTotalListeningEndpoints(int32(totalListeningEndpoints))
+	return gplopr, nil
 }

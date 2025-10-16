@@ -38,48 +38,48 @@ type testCase struct {
 func getTestCases() map[string]testCase {
 	return map[string]testCase{
 		"AccessScope": {
-			m: &storage.SimpleAccessScope{
+			m: storage.SimpleAccessScope_builder{
 				Id:   testAccessScopeID,
 				Name: testAccessScopeName,
-			},
+			}.Build(),
 			expectedID:   testAccessScopeID,
 			expectedName: testAccessScopeName,
 		},
 		"AuthProvider": {
-			m: &storage.AuthProvider{
+			m: storage.AuthProvider_builder{
 				Id:   testAuthProviderID,
 				Name: testAuthProviderName,
-			},
+			}.Build(),
 			expectedID:   testAuthProviderID,
 			expectedName: testAuthProviderName,
 		},
 		"AuthMachineToMachineConfig": {
-			m: &storage.AuthMachineToMachineConfig{
+			m: storage.AuthMachineToMachineConfig_builder{
 				Id:     testAuthM2MConfigID,
 				Issuer: testAuthM2MConfigIssuer,
-			},
+			}.Build(),
 			expectedID:   testAuthM2MConfigID,
 			expectedName: testAuthM2MConfigIssuer,
 		},
 		"Deployment": {
-			m: &storage.Deployment{
+			m: storage.Deployment_builder{
 				Id:   testDeploymentID,
 				Name: testDeploymentName,
-			},
+			}.Build(),
 			expectedID:   testDeploymentID,
 			expectedName: testDeploymentName,
 		},
 		"Group": {
-			m: &storage.Group{
-				Props: &storage.GroupProperties{
+			m: storage.Group_builder{
+				Props: storage.GroupProperties_builder{
 					Id:             testGroupID,
 					Traits:         nil,
 					AuthProviderId: testAuthProviderID,
 					Key:            "key",
 					Value:          "value",
-				},
+				}.Build(),
 				RoleName: testRoleName,
-			},
+			}.Build(),
 			expectedID: testGroupID,
 			expectedName: fmt.Sprintf(
 				"group %s:%s:%s for auth provider ID %s",
@@ -90,25 +90,25 @@ func getTestCases() map[string]testCase {
 			),
 		},
 		"Notifier": {
-			m: &storage.Notifier{
+			m: storage.Notifier_builder{
 				Id:   testNotifierID,
 				Name: testNotifierName,
-			},
+			}.Build(),
 			expectedID:   testNotifierID,
 			expectedName: testNotifierName,
 		},
 		"PermissionSet": {
-			m: &storage.PermissionSet{
+			m: storage.PermissionSet_builder{
 				Id:   testPermissionSetID,
 				Name: testPermissionSetName,
-			},
+			}.Build(),
 			expectedID:   testPermissionSetID,
 			expectedName: testPermissionSetName,
 		},
 		"Role": {
-			m: &storage.Role{
+			m: storage.Role_builder{
 				Name: testRoleName,
-			},
+			}.Build(),
 			expectedID:   testRoleName,
 			expectedName: testRoleName,
 		},

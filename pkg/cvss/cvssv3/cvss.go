@@ -73,17 +73,17 @@ func ParseCVSSV3(vectorStr string) (*storage.CVSSV3, error) {
 	// We only care about base metrics at this time.
 	metrics := vec.BaseMetrics
 
-	return &storage.CVSSV3{
-		Vector:             vectorStr,
-		AttackVector:       attackVectorMap[metrics.AttackVector.String()],
-		AttackComplexity:   complexityMap[metrics.AttackComplexity.String()],
-		PrivilegesRequired: privilegesMap[metrics.PrivilegesRequired.String()],
-		UserInteraction:    userInteractionMap[metrics.UserInteraction.String()],
-		Scope:              scopeMap[metrics.Scope.String()],
-		Confidentiality:    impactMap[metrics.Confidentiality.String()],
-		Integrity:          impactMap[metrics.Integrity.String()],
-		Availability:       impactMap[metrics.Availability.String()],
-	}, nil
+	cVSSV3 := &storage.CVSSV3{}
+	cVSSV3.SetVector(vectorStr)
+	cVSSV3.SetAttackVector(attackVectorMap[metrics.AttackVector.String()])
+	cVSSV3.SetAttackComplexity(complexityMap[metrics.AttackComplexity.String()])
+	cVSSV3.SetPrivilegesRequired(privilegesMap[metrics.PrivilegesRequired.String()])
+	cVSSV3.SetUserInteraction(userInteractionMap[metrics.UserInteraction.String()])
+	cVSSV3.SetScope(scopeMap[metrics.Scope.String()])
+	cVSSV3.SetConfidentiality(impactMap[metrics.Confidentiality.String()])
+	cVSSV3.SetIntegrity(impactMap[metrics.Integrity.String()])
+	cVSSV3.SetAvailability(impactMap[metrics.Availability.String()])
+	return cVSSV3, nil
 }
 
 // Severity returns the severity for the cvss v3 score
@@ -112,8 +112,8 @@ func CalculateScores(cvssV3 *storage.CVSSV3) error {
 	if err := vec.Validate(); err != nil {
 		return fmt.Errorf("validating: %w", err)
 	}
-	cvssV3.Score = float32(vec.BaseScore())
-	cvssV3.ExploitabilityScore = float32(mathutil.RoundToDecimal(vec.ExploitabilityScore(), 1))
-	cvssV3.ImpactScore = float32(mathutil.RoundToDecimal(vec.ImpactScore(), 1))
+	cvssV3.SetScore(float32(vec.BaseScore()))
+	cvssV3.SetExploitabilityScore(float32(mathutil.RoundToDecimal(vec.ExploitabilityScore(), 1)))
+	cvssV3.SetImpactScore(float32(mathutil.RoundToDecimal(vec.ImpactScore(), 1)))
 	return nil
 }

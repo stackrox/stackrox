@@ -30,30 +30,28 @@ func makeRandomPlops(nport int, nprocess int, npod int) []*storage.ProcessListen
 			execFilePath := makeRandomString(10)
 			for port := 0; port < nport; port++ {
 
-				plopTCP := &storage.ProcessListeningOnPort{
-					Endpoint: &storage.ProcessListeningOnPort_Endpoint{
-						Port:     uint32(port),
-						Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-					},
-					DeploymentId: deploymentID,
-					PodId:        podID,
-					PodUid:       podUID,
-					Signal: &storage.ProcessSignal{
-						ExecFilePath: execFilePath,
-					},
-				}
-				plopUDP := &storage.ProcessListeningOnPort{
-					Endpoint: &storage.ProcessListeningOnPort_Endpoint{
-						Port:     uint32(port),
-						Protocol: storage.L4Protocol_L4_PROTOCOL_UDP,
-					},
-					DeploymentId: deploymentID,
-					PodId:        podID,
-					PodUid:       podUID,
-					Signal: &storage.ProcessSignal{
-						ExecFilePath: execFilePath,
-					},
-				}
+				pe := &storage.ProcessListeningOnPort_Endpoint{}
+				pe.SetPort(uint32(port))
+				pe.SetProtocol(storage.L4Protocol_L4_PROTOCOL_TCP)
+				ps := &storage.ProcessSignal{}
+				ps.SetExecFilePath(execFilePath)
+				plopTCP := &storage.ProcessListeningOnPort{}
+				plopTCP.SetEndpoint(pe)
+				plopTCP.SetDeploymentId(deploymentID)
+				plopTCP.SetPodId(podID)
+				plopTCP.SetPodUid(podUID)
+				plopTCP.SetSignal(ps)
+				pe2 := &storage.ProcessListeningOnPort_Endpoint{}
+				pe2.SetPort(uint32(port))
+				pe2.SetProtocol(storage.L4Protocol_L4_PROTOCOL_UDP)
+				ps2 := &storage.ProcessSignal{}
+				ps2.SetExecFilePath(execFilePath)
+				plopUDP := &storage.ProcessListeningOnPort{}
+				plopUDP.SetEndpoint(pe2)
+				plopUDP.SetDeploymentId(deploymentID)
+				plopUDP.SetPodId(podID)
+				plopUDP.SetPodUid(podUID)
+				plopUDP.SetSignal(ps2)
 				plops[count] = plopTCP
 				count++
 				plops[count] = plopUDP

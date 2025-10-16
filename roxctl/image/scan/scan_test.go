@@ -25,6 +25,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -107,37 +108,37 @@ var (
 		},
 	}
 	criticalSeverityCVEs = [3]*storage.EmbeddedVulnerability{
-		{
-			Cve:        "CVE-123-CRIT",
-			Cvss:       8.5,
-			Summary:    "This is a crit CVE 1",
-			Link:       "<some-link-to-nvd>",
-			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "1.1"},
-			Severity:   storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-		},
-		{
-			Cve:        "CVE-456-CRIT",
-			Cvss:       9.0,
-			Summary:    "This is a crit CVE 2",
-			Link:       "<some-link-to-nvd>",
-			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "1.2"},
-			Severity:   storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-		},
-		{
-			Cve:        "CVE-789-CRIT",
-			Cvss:       9.5,
-			Summary:    "This is a crit CVE 3",
-			Link:       "<some-link-to-nvd>",
-			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "1.3"},
-			Severity:   storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-			Advisory: &storage.Advisory{
+		storage.EmbeddedVulnerability_builder{
+			Cve:      "CVE-123-CRIT",
+			Cvss:     8.5,
+			Summary:  "This is a crit CVE 1",
+			Link:     "<some-link-to-nvd>",
+			FixedBy:  proto.String("1.1"),
+			Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+		}.Build(),
+		storage.EmbeddedVulnerability_builder{
+			Cve:      "CVE-456-CRIT",
+			Cvss:     9.0,
+			Summary:  "This is a crit CVE 2",
+			Link:     "<some-link-to-nvd>",
+			FixedBy:  proto.String("1.2"),
+			Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+		}.Build(),
+		storage.EmbeddedVulnerability_builder{
+			Cve:      "CVE-789-CRIT",
+			Cvss:     9.5,
+			Summary:  "This is a crit CVE 3",
+			Link:     "<some-link-to-nvd>",
+			FixedBy:  proto.String("1.3"),
+			Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+			Advisory: storage.Advisory_builder{
 				Name: "ADVISORY-789-CRIT",
 				Link: "<some-link-to-somewhere>",
-			},
-		},
+			}.Build(),
+		}.Build(),
 	}
 	testComponents = []*storage.EmbeddedImageScanComponent{
-		{
+		storage.EmbeddedImageScanComponent_builder{
 			Name:    "apt",
 			Version: "1.0",
 			FixedBy: "1.4",
@@ -146,30 +147,30 @@ var (
 				lowSeverityCVEs[2],
 				criticalSeverityCVEs[2],
 			},
-			HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 0},
-		},
-		{
-			Name:          "systemd",
-			Version:       "1.3-debu49",
-			FixedBy:       "1.3-debu102",
-			Vulns:         moderateSeverityCVEs[:],
-			HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 1},
-		},
-		{
-			Name:          "curl",
-			Version:       "7.0-rc1",
-			FixedBy:       "7.1-rc2",
-			Vulns:         importantSeverityCVEs[:],
-			HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 1},
-		},
-		{
-			Name:          "bash",
-			Version:       "4.2",
-			FixedBy:       "4.3",
-			Vulns:         criticalSeverityCVEs[:],
-			HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 2},
-		},
-		{
+			LayerIndex: proto.Int32(0),
+		}.Build(),
+		storage.EmbeddedImageScanComponent_builder{
+			Name:       "systemd",
+			Version:    "1.3-debu49",
+			FixedBy:    "1.3-debu102",
+			Vulns:      moderateSeverityCVEs[:],
+			LayerIndex: proto.Int32(1),
+		}.Build(),
+		storage.EmbeddedImageScanComponent_builder{
+			Name:       "curl",
+			Version:    "7.0-rc1",
+			FixedBy:    "7.1-rc2",
+			Vulns:      importantSeverityCVEs[:],
+			LayerIndex: proto.Int32(1),
+		}.Build(),
+		storage.EmbeddedImageScanComponent_builder{
+			Name:       "bash",
+			Version:    "4.2",
+			FixedBy:    "4.3",
+			Vulns:      criticalSeverityCVEs[:],
+			LayerIndex: proto.Int32(2),
+		}.Build(),
+		storage.EmbeddedImageScanComponent_builder{
 			Name:    "openssl",
 			Version: "1.1.1k",
 			Vulns: []*storage.EmbeddedVulnerability{
@@ -179,8 +180,8 @@ var (
 				importantSeverityCVEs[0],
 				criticalSeverityCVEs[2],
 			},
-			HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 2},
-		},
+			LayerIndex: proto.Int32(2),
+		}.Build(),
 	}
 )
 
@@ -192,27 +193,27 @@ type mockImageServiceServer struct {
 }
 
 func (m *mockImageServiceServer) ScanImage(_ context.Context, _ *v1.ScanImageRequest) (*storage.Image, error) {
-	img := &storage.Image{
-		Scan: &storage.ImageScan{
+	img := storage.Image_builder{
+		Scan: storage.ImageScan_builder{
 			Components: m.components,
-		},
-		Metadata: &storage.ImageMetadata{V1: &storage.V1Metadata{
+		}.Build(),
+		Metadata: storage.ImageMetadata_builder{V1: storage.V1Metadata_builder{
 			Layers: []*storage.ImageLayer{
-				{
+				storage.ImageLayer_builder{
 					Instruction: "layer1",
 					Value:       "1",
-				},
-				{
+				}.Build(),
+				storage.ImageLayer_builder{
 					Instruction: "layer2",
 					Value:       "2",
-				},
-				{
+				}.Build(),
+				storage.ImageLayer_builder{
 					Instruction: "layer3",
 					Value:       "3",
-				},
+				}.Build(),
 			},
-		}},
-	}
+		}.Build()}.Build(),
+	}.Build()
 	return img, nil
 }
 

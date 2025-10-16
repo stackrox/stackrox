@@ -8,33 +8,33 @@ import (
 
 // GetProcessIndicator returns a mock ProcessIndicator.
 func GetProcessIndicator() *storage.ProcessIndicator {
-	return &storage.ProcessIndicator{
+	return storage.ProcessIndicator_builder{
 		Id:           "b3523d84-ac1a-4daa-a908-62d196c5a741",
 		DeploymentId: GetDeployment().GetId(),
 		Namespace:    fixtureconsts.Namespace1,
 		ClusterId:    fixtureconsts.Cluster1,
-		Signal: &storage.ProcessSignal{
+		Signal: storage.ProcessSignal_builder{
 			ContainerId:  "containerid",
 			Name:         "apt-get",
 			Args:         "install nmap",
 			ExecFilePath: "bin",
 			LineageInfo: []*storage.ProcessSignal_LineageInfo{
-				{
+				storage.ProcessSignal_LineageInfo_builder{
 					ParentUid:          22,
 					ParentExecFilePath: "/bin/bash",
-				},
-				{
+				}.Build(),
+				storage.ProcessSignal_LineageInfo_builder{
 					ParentUid:          28,
 					ParentExecFilePath: "/bin/curl",
-				},
+				}.Build(),
 			},
-		},
-	}
+		}.Build(),
+	}.Build()
 }
 
 // GetProcessIndicator1 returns a mock ProcessIndicator.
 func GetProcessIndicator1() *storage.ProcessIndicator {
-	pi := &storage.ProcessIndicator{
+	pi := storage.ProcessIndicator_builder{
 		Id:            "b3523d84-ac1a-4daa-a908-62d196c5a741",
 		DeploymentId:  fixtureconsts.Deployment1,
 		ContainerName: "containername",
@@ -42,23 +42,23 @@ func GetProcessIndicator1() *storage.ProcessIndicator {
 		ClusterId:     fixtureconsts.Cluster1,
 		PodId:         fixtureconsts.PodName1,
 		PodUid:        fixtureconsts.PodUID1,
-		Signal: &storage.ProcessSignal{
+		Signal: storage.ProcessSignal_builder{
 			ContainerId:  "containerid",
 			Name:         "apt-get",
 			Args:         "install nmap",
 			ExecFilePath: "bin",
 			LineageInfo: []*storage.ProcessSignal_LineageInfo{
-				{
+				storage.ProcessSignal_LineageInfo_builder{
 					ParentUid:          22,
 					ParentExecFilePath: "/bin/bash",
-				},
-				{
+				}.Build(),
+				storage.ProcessSignal_LineageInfo_builder{
 					ParentUid:          28,
 					ParentExecFilePath: "/bin/curl",
-				},
+				}.Build(),
 			},
-		},
-	}
+		}.Build(),
+	}.Build()
 	id.SetIndicatorID(pi)
 
 	return pi
@@ -66,7 +66,7 @@ func GetProcessIndicator1() *storage.ProcessIndicator {
 
 // GetProcessIndicator2 returns a mock ProcessIndicator.
 func GetProcessIndicator2() *storage.ProcessIndicator {
-	pi := &storage.ProcessIndicator{
+	pi := storage.ProcessIndicator_builder{
 		Id:            "b3523d84-ac1a-4daa-a908-62d196c5a741",
 		DeploymentId:  fixtureconsts.Deployment1,
 		ContainerName: "containername",
@@ -74,23 +74,23 @@ func GetProcessIndicator2() *storage.ProcessIndicator {
 		ClusterId:     fixtureconsts.Cluster1,
 		PodId:         fixtureconsts.PodName1,
 		PodUid:        fixtureconsts.PodUID1,
-		Signal: &storage.ProcessSignal{
+		Signal: storage.ProcessSignal_builder{
 			ContainerId:  "containerid",
 			Name:         "dnf",
 			Args:         "install nmap",
 			ExecFilePath: "bin",
 			LineageInfo: []*storage.ProcessSignal_LineageInfo{
-				{
+				storage.ProcessSignal_LineageInfo_builder{
 					ParentUid:          22,
 					ParentExecFilePath: "/bin/bash",
-				},
-				{
+				}.Build(),
+				storage.ProcessSignal_LineageInfo_builder{
 					ParentUid:          28,
 					ParentExecFilePath: "/bin/curl",
-				},
+				}.Build(),
 			},
-		},
-	}
+		}.Build(),
+	}.Build()
 	id.SetIndicatorID(pi)
 
 	return pi
@@ -98,7 +98,7 @@ func GetProcessIndicator2() *storage.ProcessIndicator {
 
 // GetProcessIndicator3 returns a mock ProcessIndicator.
 func GetProcessIndicator3() *storage.ProcessIndicator {
-	pi := &storage.ProcessIndicator{
+	pi := storage.ProcessIndicator_builder{
 		Id:            "b3523d84-ac1a-4daa-a908-62d196c5a741",
 		DeploymentId:  fixtureconsts.Deployment1,
 		ContainerName: "containername",
@@ -106,23 +106,23 @@ func GetProcessIndicator3() *storage.ProcessIndicator {
 		ClusterId:     fixtureconsts.Cluster1,
 		PodId:         fixtureconsts.PodName2,
 		PodUid:        fixtureconsts.PodUID2,
-		Signal: &storage.ProcessSignal{
+		Signal: storage.ProcessSignal_builder{
 			ContainerId:  "containerid",
 			Name:         "apt-get",
 			Args:         "install nmap",
 			ExecFilePath: "bin",
 			LineageInfo: []*storage.ProcessSignal_LineageInfo{
-				{
+				storage.ProcessSignal_LineageInfo_builder{
 					ParentUid:          22,
 					ParentExecFilePath: "/bin/bash",
-				},
-				{
+				}.Build(),
+				storage.ProcessSignal_LineageInfo_builder{
 					ParentUid:          28,
 					ParentExecFilePath: "/bin/curl",
-				},
+				}.Build(),
 			},
-		},
-	}
+		}.Build(),
+	}.Build()
 	id.SetIndicatorID(pi)
 
 	return pi
@@ -130,9 +130,9 @@ func GetProcessIndicator3() *storage.ProcessIndicator {
 
 // GetScopedProcessIndicator returns a mock ProcessIndicator belonging to the input scope.
 func GetScopedProcessIndicator(ID string, clusterID string, namespace string) *storage.ProcessIndicator {
-	return &storage.ProcessIndicator{
-		Id:        ID,
-		ClusterId: clusterID,
-		Namespace: namespace,
-	}
+	pi := &storage.ProcessIndicator{}
+	pi.SetId(ID)
+	pi.SetClusterId(clusterID)
+	pi.SetNamespace(namespace)
+	return pi
 }

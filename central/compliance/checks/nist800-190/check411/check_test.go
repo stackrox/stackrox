@@ -15,6 +15,7 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
 var (
 	testCluster = &storage.Cluster{
 		Id: uuid.NewV4().String(),
@@ -40,103 +41,103 @@ var (
 
 	domain = framework.NewComplianceDomain(testCluster, testNodes, testDeployments, nil)
 
-	cvssPolicyEnabledAndEnforced = &storage.Policy{
+	cvssPolicyEnabledAndEnforced = storage.Policy_builder{
 		Id:              uuid.NewV4().String(),
 		Name:            "Foo",
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
 		PolicySections: []*storage.PolicySection{
-			{
+			storage.PolicySection_builder{
 				SectionName: "section-1",
 				PolicyGroups: []*storage.PolicyGroup{
-					{
+					storage.PolicyGroup_builder{
 						FieldName: fieldnames.CVSS,
 						Values: []*storage.PolicyValue{
-							{
+							storage.PolicyValue_builder{
 								Value: "7",
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 		Disabled:           false,
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
 		PolicyVersion:      "1.1",
-	}
+	}.Build()
 
-	buildPolicyEnforced = &storage.Policy{
+	buildPolicyEnforced = storage.Policy_builder{
 		Id:              uuid.NewV4().String(),
 		Name:            "Sample Build time",
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD},
 		PolicySections: []*storage.PolicySection{
-			{
+			storage.PolicySection_builder{
 				SectionName: "section-1",
 				PolicyGroups: []*storage.PolicyGroup{
-					{
+					storage.PolicyGroup_builder{
 						FieldName: fieldnames.CVSS,
 						Values: []*storage.PolicyValue{
-							{
+							storage.PolicyValue_builder{
 								Value: "7",
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 		Disabled:           false,
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT},
 		PolicyVersion:      "1.1",
-	}
+	}.Build()
 
-	cvssPolicyDisabled = &storage.Policy{
+	cvssPolicyDisabled = storage.Policy_builder{
 		Id:              uuid.NewV4().String(),
 		Name:            "Foo",
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
 		Disabled:        true,
 		PolicySections: []*storage.PolicySection{
-			{
+			storage.PolicySection_builder{
 				SectionName: "section-1",
 				PolicyGroups: []*storage.PolicyGroup{
-					{
+					storage.PolicyGroup_builder{
 						FieldName: fieldnames.CVSS,
 						Values: []*storage.PolicyValue{
-							{
+							storage.PolicyValue_builder{
 								Value: "7",
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
 		PolicyVersion:      "1.1",
-	}
+	}.Build()
 
-	buildPolicyDisabled = &storage.Policy{
+	buildPolicyDisabled = storage.Policy_builder{
 		Id:              uuid.NewV4().String(),
 		Name:            "Sample Build time",
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD},
 		PolicySections: []*storage.PolicySection{
-			{
+			storage.PolicySection_builder{
 				SectionName: "section-1",
 				PolicyGroups: []*storage.PolicyGroup{
-					{
+					storage.PolicyGroup_builder{
 						FieldName: fieldnames.CVSS,
 						Values: []*storage.PolicyValue{
-							{
+							storage.PolicyValue_builder{
 								Value: "7",
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 		Disabled:           true,
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT},
 		PolicyVersion:      "1.1",
-	}
+	}.Build()
 
-	imageIntegration = storage.ImageIntegration{
+	imageIntegration = &storage.ImageIntegration{
 		Name:       "Clairify",
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_SCANNER},
 	}

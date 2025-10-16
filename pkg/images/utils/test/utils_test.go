@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestNewImage(t *testing.T) {
@@ -20,41 +21,41 @@ func TestNewImage(t *testing.T) {
 	}{
 		{
 			ImageString: "nginx:latest@sha256:adea4f68096fded167603ba6663ed615a80e090da68eb3c9e2508c15c8368401",
-			ExpectedImage: &storage.ContainerImage{
+			ExpectedImage: storage.ContainerImage_builder{
 				Id: "sha256:adea4f68096fded167603ba6663ed615a80e090da68eb3c9e2508c15c8368401",
-				Name: &storage.ImageName{
+				Name: storage.ImageName_builder{
 					Registry: "docker.io",
 					Remote:   "library/nginx",
 					Tag:      "latest",
 					FullName: "docker.io/library/nginx:latest@sha256:adea4f68096fded167603ba6663ed615a80e090da68eb3c9e2508c15c8368401",
-				},
+				}.Build(),
 				NotPullable: false,
-			},
+			}.Build(),
 		},
 		{
 			ImageString: "stackrox.io/main:1.0@sha256:adea4f68096fded167603ba6663ed615a80e090da68eb3c9e2508c15c8368401",
-			ExpectedImage: &storage.ContainerImage{
+			ExpectedImage: storage.ContainerImage_builder{
 				Id: "sha256:adea4f68096fded167603ba6663ed615a80e090da68eb3c9e2508c15c8368401",
-				Name: &storage.ImageName{
+				Name: storage.ImageName_builder{
 					Registry: "stackrox.io",
 					Remote:   "main",
 					Tag:      "1.0",
 					FullName: "stackrox.io/main:1.0@sha256:adea4f68096fded167603ba6663ed615a80e090da68eb3c9e2508c15c8368401",
-				},
+				}.Build(),
 				NotPullable: false,
-			},
+			}.Build(),
 		},
 		{
 			ImageString: "nginx",
-			ExpectedImage: &storage.ContainerImage{
-				Name: &storage.ImageName{
+			ExpectedImage: storage.ContainerImage_builder{
+				Name: storage.ImageName_builder{
 					Registry: "docker.io",
 					Remote:   "library/nginx",
 					Tag:      "latest",
 					FullName: "docker.io/library/nginx:latest",
-				},
+				}.Build(),
 				NotPullable: false,
-			},
+			}.Build(),
 		},
 	}
 
@@ -107,76 +108,76 @@ func TestGenerateImageFromStringWithOverride(t *testing.T) {
 		{
 			name:  "no remote - no override",
 			image: "nginx:latest",
-			expectedName: &storage.ImageName{
+			expectedName: storage.ImageName_builder{
 				Registry: "docker.io",
 				Remote:   "library/nginx",
 				Tag:      "latest",
 				FullName: "docker.io/library/nginx:latest",
-			},
+			}.Build(),
 		},
 		{
 			name:  "no registry - no override",
 			image: "library/nginx:latest",
-			expectedName: &storage.ImageName{
+			expectedName: storage.ImageName_builder{
 				Registry: "docker.io",
 				Remote:   "library/nginx",
 				Tag:      "latest",
 				FullName: "docker.io/library/nginx:latest",
-			},
+			}.Build(),
 		},
 		{
 			name:  "full registry - no override",
 			image: "docker.io/library/nginx:latest",
-			expectedName: &storage.ImageName{
+			expectedName: storage.ImageName_builder{
 				Registry: "docker.io",
 				Remote:   "library/nginx",
 				Tag:      "latest",
 				FullName: "docker.io/library/nginx:latest",
-			},
+			}.Build(),
 		},
 		{
 			name:     "full registry - not docker - override",
 			image:    "quay.io/library/nginx:latest",
 			override: "override.io",
-			expectedName: &storage.ImageName{
+			expectedName: storage.ImageName_builder{
 				Registry: "quay.io",
 				Remote:   "library/nginx",
 				Tag:      "latest",
 				FullName: "quay.io/library/nginx:latest",
-			},
+			}.Build(),
 		},
 		{
 			name:     "no remote - override",
 			image:    "nginx:latest",
 			override: "override.io",
-			expectedName: &storage.ImageName{
+			expectedName: storage.ImageName_builder{
 				Registry: "override.io",
 				Remote:   "library/nginx",
 				Tag:      "latest",
 				FullName: "override.io/library/nginx:latest",
-			},
+			}.Build(),
 		},
 		{
 			name:     "no registry - override",
 			image:    "library/nginx:latest",
 			override: "override.io",
-			expectedName: &storage.ImageName{
+			expectedName: storage.ImageName_builder{
 				Registry: "override.io",
 				Remote:   "library/nginx",
 				Tag:      "latest",
 				FullName: "override.io/library/nginx:latest",
-			},
+			}.Build(),
 		},
 		{
 			name:     "full registry - override",
 			image:    "docker.io/library/nginx:latest",
 			override: "override.io",
-			expectedName: &storage.ImageName{
+			expectedName: storage.ImageName_builder{
 				Registry: "override.io",
 				Remote:   "library/nginx",
 				Tag:      "latest",
 				FullName: "override.io/library/nginx:latest",
-			},
+			}.Build(),
 		},
 	}
 
@@ -203,19 +204,17 @@ func TestStripCVEDescriptions(t *testing.T) {
 }
 
 func TestExtractOpenShiftProject_fullName(t *testing.T) {
-	imgName := &storage.ImageName{
-		Registry: "image-registry.openshift-image-registry.svc:5000",
-		Remote:   "qa/nginx",
-		Tag:      "1.18.0",
-		FullName: "image-registry.openshift-image-registry.svc:5000/qa/nginx:1.18.0",
-	}
+	imgName := &storage.ImageName{}
+	imgName.SetRegistry("image-registry.openshift-image-registry.svc:5000")
+	imgName.SetRemote("qa/nginx")
+	imgName.SetTag("1.18.0")
+	imgName.SetFullName("image-registry.openshift-image-registry.svc:5000/qa/nginx:1.18.0")
 	assert.Equal(t, "qa", utils.ExtractOpenShiftProject(imgName))
 }
 
 func TestExtractOpenShiftProject_solelyRemote(t *testing.T) {
-	imgName := &storage.ImageName{
-		Remote: "stackrox/nginx",
-	}
+	imgName := &storage.ImageName{}
+	imgName.SetRemote("stackrox/nginx")
 	assert.Equal(t, "stackrox", utils.ExtractOpenShiftProject(imgName))
 }
 
@@ -250,31 +249,31 @@ func TestNormalizeImageFullName(t *testing.T) {
 	}{
 		{
 			"only tag",
-			&storage.ImageName{Registry: "docker.io", Remote: "library/nginx", Tag: "latest"},
+			storage.ImageName_builder{Registry: "docker.io", Remote: "library/nginx", Tag: "latest"}.Build(),
 			"",
 			"docker.io/library/nginx:latest",
 		},
 		{
 			"only digest",
-			&storage.ImageName{Registry: "docker.io", Remote: "library/nginx", Tag: ""},
+			storage.ImageName_builder{Registry: "docker.io", Remote: "library/nginx", Tag: ""}.Build(),
 			"sha256:0000000000000000000000000000000000000000000000000000000000000000",
 			"docker.io/library/nginx@sha256:0000000000000000000000000000000000000000000000000000000000000000",
 		},
 		{
 			"tag and digest (latest tag)",
-			&storage.ImageName{Registry: "docker.io", Remote: "library/nginx", Tag: "latest"},
+			storage.ImageName_builder{Registry: "docker.io", Remote: "library/nginx", Tag: "latest"}.Build(),
 			"sha256:0000000000000000000000000000000000000000000000000000000000000000",
 			"docker.io/library/nginx:latest@sha256:0000000000000000000000000000000000000000000000000000000000000000",
 		},
 		{
 			"tag and digest (specific tag)",
-			&storage.ImageName{Registry: "docker.io", Remote: "library/nginx", Tag: "v1.2.3"},
+			storage.ImageName_builder{Registry: "docker.io", Remote: "library/nginx", Tag: "v1.2.3"}.Build(),
 			"sha256:0000000000000000000000000000000000000000000000000000000000000000",
 			"docker.io/library/nginx:v1.2.3@sha256:0000000000000000000000000000000000000000000000000000000000000000",
 		},
 		{
 			"no tag or digest (malformed) do not modify fullname",
-			&storage.ImageName{Registry: "docker.io", Remote: "library/nginx", Tag: "", FullName: "helloworld"},
+			storage.ImageName_builder{Registry: "docker.io", Remote: "library/nginx", Tag: "", FullName: "helloworld"}.Build(),
 			"",
 			"helloworld",
 		},
@@ -407,7 +406,8 @@ func TestIsRedHatImage(t *testing.T) {
 				names = append(names, name)
 			}
 
-			img := &storage.Image{Names: names}
+			img := &storage.Image{}
+			img.SetNames(names)
 			got := utils.IsRedHatImage(img)
 			assert.Equal(t, tc.want, got)
 		})
@@ -432,34 +432,32 @@ func TestFillScanStatsV2(t *testing.T) {
 		expectedFixableCveCount          int32
 	}{
 		{
-			image: &storage.ImageV2{
-				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+			image: storage.ImageV2_builder{
+				Id:     utils.NewImageV2ID(storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(), "sha"),
 				Digest: "sha",
-				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
-				Scan: &storage.ImageScan{
+				Name:   storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(),
+				Scan: storage.ImageScan_builder{
 					Components: []*storage.EmbeddedImageScanComponent{
-						{
+						storage.EmbeddedImageScanComponent_builder{
 							Vulns: []*storage.EmbeddedVulnerability{
-								{
-									Cve: "cve-1",
-									SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-										FixedBy: "blah",
-									},
+								storage.EmbeddedVulnerability_builder{
+									Cve:      "cve-1",
+									FixedBy:  proto.String("blah"),
 									Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-								},
+								}.Build(),
 							},
-						},
-						{
+						}.Build(),
+						storage.EmbeddedImageScanComponent_builder{
 							Vulns: []*storage.EmbeddedVulnerability{
-								{
+								storage.EmbeddedVulnerability_builder{
 									Cve:      "cve-1",
 									Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-								},
+								}.Build(),
 							},
-						},
+						}.Build(),
 					},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			expectedCveCount:                 1,
 			expectedUnknownCveCount:          0,
 			expectedFixableUnknownCveCount:   0,
@@ -474,37 +472,33 @@ func TestFillScanStatsV2(t *testing.T) {
 			expectedFixableCveCount:          1,
 		},
 		{
-			image: &storage.ImageV2{
-				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+			image: storage.ImageV2_builder{
+				Id:     utils.NewImageV2ID(storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(), "sha"),
 				Digest: "sha",
-				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
-				Scan: &storage.ImageScan{
+				Name:   storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(),
+				Scan: storage.ImageScan_builder{
 					Components: []*storage.EmbeddedImageScanComponent{
-						{
+						storage.EmbeddedImageScanComponent_builder{
 							Vulns: []*storage.EmbeddedVulnerability{
-								{
-									Cve: "cve-1",
-									SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-										FixedBy: "blah",
-									},
+								storage.EmbeddedVulnerability_builder{
+									Cve:      "cve-1",
+									FixedBy:  proto.String("blah"),
 									Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-								},
+								}.Build(),
 							},
-						},
-						{
+						}.Build(),
+						storage.EmbeddedImageScanComponent_builder{
 							Vulns: []*storage.EmbeddedVulnerability{
-								{
-									Cve: "cve-2",
-									SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-										FixedBy: "blah",
-									},
+								storage.EmbeddedVulnerability_builder{
+									Cve:      "cve-2",
+									FixedBy:  proto.String("blah"),
 									Severity: storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY,
-								},
+								}.Build(),
 							},
-						},
+						}.Build(),
 					},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			expectedCveCount:                 2,
 			expectedUnknownCveCount:          1,
 			expectedFixableUnknownCveCount:   1,
@@ -519,55 +513,55 @@ func TestFillScanStatsV2(t *testing.T) {
 			expectedFixableCveCount:          2,
 		},
 		{
-			image: &storage.ImageV2{
-				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+			image: storage.ImageV2_builder{
+				Id:     utils.NewImageV2ID(storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(), "sha"),
 				Digest: "sha",
-				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
-				Scan: &storage.ImageScan{
+				Name:   storage.ImageName_builder{Registry: "reg", FullName: "reg"}.Build(),
+				Scan: storage.ImageScan_builder{
 					Components: []*storage.EmbeddedImageScanComponent{
-						{
+						storage.EmbeddedImageScanComponent_builder{
 							Vulns: []*storage.EmbeddedVulnerability{
-								{
+								storage.EmbeddedVulnerability_builder{
 									Cve:      "cve-1",
 									Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-								},
+								}.Build(),
 							},
-						},
-						{
+						}.Build(),
+						storage.EmbeddedImageScanComponent_builder{
 							Vulns: []*storage.EmbeddedVulnerability{
-								{
+								storage.EmbeddedVulnerability_builder{
 									Cve:      "cve-2",
 									Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
-								},
+								}.Build(),
 							},
-						},
-						{
+						}.Build(),
+						storage.EmbeddedImageScanComponent_builder{
 							Vulns: []*storage.EmbeddedVulnerability{
-								{
+								storage.EmbeddedVulnerability_builder{
 									Cve:      "cve-3",
 									Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
-								},
+								}.Build(),
 							},
-						},
-						{
+						}.Build(),
+						storage.EmbeddedImageScanComponent_builder{
 							Vulns: []*storage.EmbeddedVulnerability{
-								{
+								storage.EmbeddedVulnerability_builder{
 									Cve:      "cve-4",
 									Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
-								},
+								}.Build(),
 							},
-						},
-						{
+						}.Build(),
+						storage.EmbeddedImageScanComponent_builder{
 							Vulns: []*storage.EmbeddedVulnerability{
-								{
+								storage.EmbeddedVulnerability_builder{
 									Cve:      "cve-5",
 									Severity: storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY,
-								},
+								}.Build(),
 							},
-						},
+						}.Build(),
 					},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			expectedCveCount:                 5,
 			expectedUnknownCveCount:          1,
 			expectedFixableUnknownCveCount:   0,

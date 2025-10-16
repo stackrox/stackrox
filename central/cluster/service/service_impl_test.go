@@ -85,58 +85,58 @@ func (suite *ClusterServiceTestSuite) TestGetClusterWithRetentionInfo() {
 		expected string
 	}{
 		"HEALTHY cluster": {
-			cluster: &storage.Cluster{
+			cluster: storage.Cluster_builder{
 				Id: "HEALTHY cluster",
-				HealthStatus: &storage.ClusterHealthStatus{
+				HealthStatus: storage.ClusterHealthStatus_builder{
 					SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
-				},
-			},
+				}.Build(),
+			}.Build(),
 			config:   suite.getTestSystemConfig(60, 30, 7),
 			expected: "<nil>",
 		},
 		"UNHEALTHY cluster with label matching ignored labels": {
-			cluster: &storage.Cluster{
+			cluster: storage.Cluster_builder{
 				Id:     "UNHEALTHY cluster matching a label to ignore the cluster",
 				Labels: map[string]string{"k2": "v2"},
-				HealthStatus: &storage.ClusterHealthStatus{
+				HealthStatus: storage.ClusterHealthStatus_builder{
 					SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
-				},
-			},
+				}.Build(),
+			}.Build(),
 			config:   suite.getTestSystemConfig(60, 30, 7),
 			expected: "is_excluded:true",
 		},
 		"UNHEALTHY cluster with last contact time after config creation time": {
-			cluster: &storage.Cluster{
+			cluster: storage.Cluster_builder{
 				Id:     "UNHEALTHY cluster with last contact time after config creation time",
 				Labels: map[string]string{"k1": "v2"},
-				HealthStatus: &storage.ClusterHealthStatus{
+				HealthStatus: storage.ClusterHealthStatus_builder{
 					SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
 					LastContact:        tenDaysAgo,
-				},
-			},
+				}.Build(),
+			}.Build(),
 			config:   suite.getTestSystemConfig(60, 30, 7),
 			expected: "days_until_deletion:50",
 		},
 		"UNHEALTHY cluster with last contact time before config creation time": {
-			cluster: &storage.Cluster{
+			cluster: storage.Cluster_builder{
 				Id:     "UNHEALTHY cluster with last contact time before config creation time",
 				Labels: map[string]string{"k1": "v2"},
-				HealthStatus: &storage.ClusterHealthStatus{
+				HealthStatus: storage.ClusterHealthStatus_builder{
 					SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
 					LastContact:        eightyDaysAgo,
-				},
-			},
+				}.Build(),
+			}.Build(),
 			config:   suite.getTestSystemConfig(60, 30, 7),
 			expected: "days_until_deletion:30",
 		},
 		"UNHEALTHY cluster, cluster removal disabled": {
-			cluster: &storage.Cluster{
+			cluster: storage.Cluster_builder{
 				Id: "UNHEALTHY CLUSTER",
-				HealthStatus: &storage.ClusterHealthStatus{
+				HealthStatus: storage.ClusterHealthStatus_builder{
 					SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
 					LastContact:        tenDaysAgo,
-				},
-			},
+				}.Build(),
+			}.Build(),
 			config:   suite.getTestSystemConfig(0, 30, 7),
 			expected: "<nil>",
 		},
@@ -151,9 +151,8 @@ func (suite *ClusterServiceTestSuite) TestGetClusterWithRetentionInfo() {
 			}
 			clusterService := New(suite.dataStore, nil, ps, suite.sysConfigDatastore)
 
-			clusterID := &v1.ResourceByID{
-				Id: testCase.cluster.GetId(),
-			}
+			clusterID := &v1.ResourceByID{}
+			clusterID.SetId(testCase.cluster.GetId())
 			result, err := clusterService.GetCluster(context.Background(), clusterID)
 			suite.NoError(err)
 			suite.Equal(testCase.expected, strings.TrimSpace(result.GetClusterRetentionInfo().String()))
@@ -169,35 +168,35 @@ func (suite *ClusterServiceTestSuite) TestGetClustersWithRetentionInfoMap() {
 	eightyDaysAgo, err := protocompat.ConvertTimeToTimestampOrError(daysAgo(80))
 	suite.NoError(err)
 	clusters := []*storage.Cluster{
-		{
+		storage.Cluster_builder{
 			Id: "HEALTHY cluster",
-			HealthStatus: &storage.ClusterHealthStatus{
+			HealthStatus: storage.ClusterHealthStatus_builder{
 				SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
-			},
-		},
-		{
+			}.Build(),
+		}.Build(),
+		storage.Cluster_builder{
 			Id:     "UNHEALTHY cluster matching a label to ignore the cluster",
 			Labels: map[string]string{"k2": "v2"},
-			HealthStatus: &storage.ClusterHealthStatus{
+			HealthStatus: storage.ClusterHealthStatus_builder{
 				SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
-			},
-		},
-		{
+			}.Build(),
+		}.Build(),
+		storage.Cluster_builder{
 			Id:     "UNHEALTHY cluster with last contact time after config creation time",
 			Labels: map[string]string{"k1": "v2"},
-			HealthStatus: &storage.ClusterHealthStatus{
+			HealthStatus: storage.ClusterHealthStatus_builder{
 				SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
 				LastContact:        tenDaysAgo,
-			},
-		},
-		{
+			}.Build(),
+		}.Build(),
+		storage.Cluster_builder{
 			Id:     "UNHEALTHY cluster with last contact time before config creation time",
 			Labels: map[string]string{"k1": "v2"},
-			HealthStatus: &storage.ClusterHealthStatus{
+			HealthStatus: storage.ClusterHealthStatus_builder{
 				SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
 				LastContact:        eightyDaysAgo,
-			},
-		},
+			}.Build(),
+		}.Build(),
 	}
 
 	expectedIds := []string{
@@ -211,7 +210,9 @@ func (suite *ClusterServiceTestSuite) TestGetClustersWithRetentionInfoMap() {
 	suite.sysConfigDatastore.EXPECT().GetPrivateConfig(gomock.Any()).Times(3).Return(config.GetPrivateConfig(), nil)
 
 	clusterService := New(suite.dataStore, nil, ps, suite.sysConfigDatastore)
-	results, err := clusterService.GetClusters(context.Background(), &v1.GetClustersRequest{Query: search.EmptyQuery().String()})
+	gcr := &v1.GetClustersRequest{}
+	gcr.SetQuery(search.EmptyQuery().String())
+	results, err := clusterService.GetClusters(context.Background(), gcr)
 	suite.NoError(err)
 
 	idToRetentionInfoMap := results.GetClusterIdToRetentionInfo()
@@ -232,9 +233,9 @@ func (suite *ClusterServiceTestSuite) getTestSystemConfig(retentionDays, created
 	suite.NoError(err)
 	createdAt, err := protocompat.ConvertTimeToTimestampOrError(daysAgo(createdBeforeDays))
 	suite.NoError(err)
-	return &storage.Config{
-		PrivateConfig: &storage.PrivateConfig{
-			DecommissionedClusterRetention: &storage.DecommissionedClusterRetentionConfig{
+	return storage.Config_builder{
+		PrivateConfig: storage.PrivateConfig_builder{
+			DecommissionedClusterRetention: storage.DecommissionedClusterRetentionConfig_builder{
 				RetentionDurationDays: int32(retentionDays),
 				IgnoreClusterLabels: map[string]string{
 					"k1": "v1",
@@ -243,7 +244,7 @@ func (suite *ClusterServiceTestSuite) getTestSystemConfig(retentionDays, created
 				},
 				LastUpdated: lastUpdated,
 				CreatedAt:   createdAt,
-			},
-		},
-	}
+			}.Build(),
+		}.Build(),
+	}.Build()
 }

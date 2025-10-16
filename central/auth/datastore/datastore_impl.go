@@ -260,13 +260,12 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 // If a customer breaks config-controller auth, they can simply restart Central to get it back to a working state.
 func (d *datastoreImpl) configureConfigControllerAccess(kubeSAIssuer string, kubeSAConfig *storage.AuthMachineToMachineConfig) error {
 	if kubeSAConfig == nil {
-		kubeSAConfig = &storage.AuthMachineToMachineConfig{
-			Id:                      uuid.NewV4().String(),
-			Type:                    storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
-			TokenExpirationDuration: "1h",
-			Mappings:                []*storage.AuthMachineToMachineConfig_Mapping{},
-			Issuer:                  kubeSAIssuer,
-		}
+		kubeSAConfig = &storage.AuthMachineToMachineConfig{}
+		kubeSAConfig.SetId(uuid.NewV4().String())
+		kubeSAConfig.SetType(storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT)
+		kubeSAConfig.SetTokenExpirationDuration("1h")
+		kubeSAConfig.SetMappings([]*storage.AuthMachineToMachineConfig_Mapping{})
+		kubeSAConfig.SetIssuer(kubeSAIssuer)
 	}
 
 	var mappingFound bool
@@ -278,11 +277,11 @@ func (d *datastoreImpl) configureConfigControllerAccess(kubeSAIssuer string, kub
 	}
 
 	if !mappingFound {
-		kubeSAConfig.Mappings = append(kubeSAConfig.Mappings, &storage.AuthMachineToMachineConfig_Mapping{
-			Key:             "sub",
-			ValueExpression: configControllerServiceAccountName,
-			Role:            "Configuration Controller",
-		})
+		am := &storage.AuthMachineToMachineConfig_Mapping{}
+		am.SetKey("sub")
+		am.SetValueExpression(configControllerServiceAccountName)
+		am.SetRole("Configuration Controller")
+		kubeSAConfig.SetMappings(append(kubeSAConfig.GetMappings(), am))
 	}
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(

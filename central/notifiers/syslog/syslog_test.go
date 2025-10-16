@@ -53,40 +53,32 @@ func (s *SyslogNotifierTestSuite) makeSyslog(notifier *storage.Notifier) *syslog
 }
 
 func makeNotifier() *storage.Notifier {
-	return &storage.Notifier{
+	return storage.Notifier_builder{
 		Id:   "testID",
 		Name: "testName",
 		Type: "syslog",
-		Config: &storage.Notifier_Syslog{
-			Syslog: &storage.Syslog{
-				Endpoint: &storage.Syslog_TcpConfig{
-					TcpConfig: &storage.Syslog_TCPConfig{
-						Hostname: "hostname",
-					},
-				},
-				MessageFormat: storage.Syslog_CEF,
-			},
-		},
-	}
+		Syslog: storage.Syslog_builder{
+			TcpConfig: storage.Syslog_TCPConfig_builder{
+				Hostname: "hostname",
+			}.Build(),
+			MessageFormat: storage.Syslog_CEF,
+		}.Build(),
+	}.Build()
 }
 
 func makeNotifierExtrafields(keyVals []*storage.KeyValuePair) *storage.Notifier {
-	return &storage.Notifier{
+	return storage.Notifier_builder{
 		Id:   "testID",
 		Name: "testName",
 		Type: "syslog",
-		Config: &storage.Notifier_Syslog{
-			Syslog: &storage.Syslog{
-				Endpoint: &storage.Syslog_TcpConfig{
-					TcpConfig: &storage.Syslog_TCPConfig{
-						Hostname: "hostname",
-					},
-				},
-				MessageFormat: storage.Syslog_CEF,
-				ExtraFields:   keyVals,
-			},
-		},
-	}
+		Syslog: storage.Syslog_builder{
+			TcpConfig: storage.Syslog_TCPConfig_builder{
+				Hostname: "hostname",
+			}.Build(),
+			MessageFormat: storage.Syslog_CEF,
+			ExtraFields:   keyVals,
+		}.Build(),
+	}.Build()
 }
 
 func (s *SyslogNotifierTestSuite) setupMockMetadataGetterForAlert(alert *storage.Alert) {
@@ -139,7 +131,10 @@ func (s *SyslogNotifierTestSuite) TestCEFExtensionFromPairs() {
 }
 
 func (s *SyslogNotifierTestSuite) TestValidateSyslogEmptyExtrafields() {
-	keyVals := []*storage.KeyValuePair{{Key: "", Value: ""}}
+	kvp := &storage.KeyValuePair{}
+	kvp.SetKey("")
+	kvp.SetValue("")
+	keyVals := []*storage.KeyValuePair{kvp}
 
 	notifier := makeNotifierExtrafields(keyVals)
 	sys := notifier.GetSyslog()
@@ -162,7 +157,10 @@ func (s *SyslogNotifierTestSuite) TestValidateSyslogExtraFieldsEmptyList() {
 }
 
 func (s *SyslogNotifierTestSuite) TestValidateSyslogExtraFields() {
-	keyVals := []*storage.KeyValuePair{{Key: "foo", Value: "bar"}}
+	kvp := &storage.KeyValuePair{}
+	kvp.SetKey("foo")
+	kvp.SetValue("bar")
+	keyVals := []*storage.KeyValuePair{kvp}
 	notifier := makeNotifierExtrafields(keyVals)
 	sys := notifier.GetSyslog()
 	e := validateSyslog(sys)
@@ -170,7 +168,10 @@ func (s *SyslogNotifierTestSuite) TestValidateSyslogExtraFields() {
 }
 
 func (s *SyslogNotifierTestSuite) TestValidateAlertToCEFWithExtraFields() {
-	keyVals := []*storage.KeyValuePair{{Key: "foo", Value: "bar"}}
+	kvp := &storage.KeyValuePair{}
+	kvp.SetKey("foo")
+	kvp.SetValue("bar")
+	keyVals := []*storage.KeyValuePair{kvp}
 	notifier := makeNotifierExtrafields(keyVals)
 	testAlert := fixtures.GetAlert()
 	s.setupMockMetadataGetterForAlert(testAlert)
@@ -227,22 +228,24 @@ func (s *SyslogNotifierTestSuite) TestValidateAlertToCEFWithNamespaceLabels() {
 }
 
 func (s *SyslogNotifierTestSuite) TestValidateExtraFieldsAuditLog() {
-	keyVals := []*storage.KeyValuePair{{Key: "foo", Value: "bar"}}
+	kvp := &storage.KeyValuePair{}
+	kvp.SetKey("foo")
+	kvp.SetValue("bar")
+	keyVals := []*storage.KeyValuePair{kvp}
 	notifier := makeNotifierExtrafields(keyVals)
-	testAuditMessage := &v1.Audit_Message{
-		Time: protocompat.TimestampNow(),
-		User: &storage.UserInfo{
-			Username:     "Joseph",
-			FriendlyName: "Rules",
-			Permissions:  nil,
-			Roles:        nil,
-		},
-		Request: &v1.Audit_Message_Request{
-			Endpoint: "asg",
-			Method:   "jtyr",
-			Payload:  nil,
-		},
-	}
+	userInfo := &storage.UserInfo{}
+	userInfo.SetUsername("Joseph")
+	userInfo.SetFriendlyName("Rules")
+	userInfo.ClearPermissions()
+	userInfo.SetRoles(nil)
+	amr := &v1.Audit_Message_Request{}
+	amr.SetEndpoint("asg")
+	amr.SetMethod("jtyr")
+	amr.ClearPayload()
+	testAuditMessage := &v1.Audit_Message{}
+	testAuditMessage.SetTime(protocompat.TimestampNow())
+	testAuditMessage.SetUser(userInfo)
+	testAuditMessage.SetRequest(amr)
 	syslog := s.makeSyslog(notifier)
 
 	m := syslog.auditLogToCEF(testAuditMessage, notifier)
@@ -252,20 +255,19 @@ func (s *SyslogNotifierTestSuite) TestValidateExtraFieldsAuditLog() {
 func (s *SyslogNotifierTestSuite) TestSendAuditLog() {
 	notifier := makeNotifier()
 	syslog := s.makeSyslog(notifier)
-	testAuditMessage := &v1.Audit_Message{
-		Time: protocompat.TimestampNow(),
-		User: &storage.UserInfo{
-			Username:     "Joseph",
-			FriendlyName: "Rules",
-			Permissions:  nil,
-			Roles:        nil,
-		},
-		Request: &v1.Audit_Message_Request{
-			Endpoint: "asg",
-			Method:   "jtyr",
-			Payload:  nil,
-		},
-	}
+	userInfo := &storage.UserInfo{}
+	userInfo.SetUsername("Joseph")
+	userInfo.SetFriendlyName("Rules")
+	userInfo.ClearPermissions()
+	userInfo.SetRoles(nil)
+	amr := &v1.Audit_Message_Request{}
+	amr.SetEndpoint("asg")
+	amr.SetMethod("jtyr")
+	amr.ClearPayload()
+	testAuditMessage := &v1.Audit_Message{}
+	testAuditMessage.SetTime(protocompat.TimestampNow())
+	testAuditMessage.SetUser(userInfo)
+	testAuditMessage.SetRequest(amr)
 
 	s.mockSender.EXPECT().SendSyslog(gomock.Any()).Return(nil)
 	err := syslog.SendAuditMessage(context.Background(), testAuditMessage)
@@ -280,36 +282,33 @@ func (s *SyslogNotifierTestSuite) TestAlerts() {
 	s.Require().NoError(syslog.AlertNotify(context.Background(), testAlert))
 
 	// Ensure it doesn't panic with nil timestamps
-	testAlert.FirstOccurred = nil
+	testAlert.ClearFirstOccurred()
 	s.setupMockMetadataGetterForAlert(testAlert)
 	s.Require().NoError(syslog.AlertNotify(context.Background(), testAlert))
 }
 
 func (s *SyslogNotifierTestSuite) TestValidateRemoteConfig() {
-	tcpConfig := &storage.Syslog_TCPConfig{
-		Hostname:      "google.com",
-		Port:          66666666,
-		SkipTlsVerify: true,
-		UseTls:        true,
-	}
+	tcpConfig := &storage.Syslog_TCPConfig{}
+	tcpConfig.SetHostname("google.com")
+	tcpConfig.SetPort(66666666)
+	tcpConfig.SetSkipTlsVerify(true)
+	tcpConfig.SetUseTls(true)
 	_, errPort := validateRemoteConfig(tcpConfig)
 	s.Error(errPort)
 
-	tcpConfigExtraSpace := &storage.Syslog_TCPConfig{
-		Hostname:      "10.46.152.34 ",
-		Port:          514,
-		SkipTlsVerify: true,
-		UseTls:        true,
-	}
+	tcpConfigExtraSpace := &storage.Syslog_TCPConfig{}
+	tcpConfigExtraSpace.SetHostname("10.46.152.34 ")
+	tcpConfigExtraSpace.SetPort(514)
+	tcpConfigExtraSpace.SetSkipTlsVerify(true)
+	tcpConfigExtraSpace.SetUseTls(true)
 	_, errURL := validateRemoteConfig(tcpConfigExtraSpace)
 	s.Error(errURL)
 
-	tcpConfigValidIP := &storage.Syslog_TCPConfig{
-		Hostname:      "10.46.152.34",
-		Port:          514,
-		SkipTlsVerify: true,
-		UseTls:        true,
-	}
+	tcpConfigValidIP := &storage.Syslog_TCPConfig{}
+	tcpConfigValidIP.SetHostname("10.46.152.34")
+	tcpConfigValidIP.SetPort(514)
+	tcpConfigValidIP.SetSkipTlsVerify(true)
+	tcpConfigValidIP.SetUseTls(true)
 	_, errURLValidIP := validateRemoteConfig(tcpConfigValidIP)
 	s.NoError(errURLValidIP)
 }
@@ -321,7 +320,7 @@ func (s *SyslogNotifierTestSuite) TestHeaderFormat() {
 	s.Regexp(`^CEF:0\|StackRox\|Kubernetes Security Platform\|.*\|deviceEventClassID\|alertnameunique\|999\|extension$`, header)
 
 	// Legacy format
-	syslog.Notifier.GetSyslog().MessageFormat = storage.Syslog_LEGACY
+	syslog.Notifier.GetSyslog().SetMessageFormat(storage.Syslog_LEGACY)
 	header = syslog.getCEFHeaderWithExtension("deviceEventClassID", "alertnameunique", 999, "extension")
 	s.Regexp(`^CEF:0\|StackRox\|Kubernetes Security Platform\|.*\|deviceEventClassID\|999\|alertnameunique\|extension$`, header)
 }

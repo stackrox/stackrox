@@ -60,7 +60,7 @@ func populateFromServiceAccountNamespaceFile(out *storage.SensorDeploymentIdenti
 	if err != nil {
 		return errors.Wrapf(err, "reading application namespace from file %s", namespaceFile)
 	}
-	out.AppNamespace = string(bytes.TrimSpace(appNamespaceBytes))
+	out.SetAppNamespace(string(bytes.TrimSpace(appNamespaceBytes)))
 	return nil
 }
 
@@ -69,21 +69,21 @@ func populateFromServiceAccountNamespaceFile(out *storage.SensorDeploymentIdenti
 func populateFromKubernetes(ctx context.Context, k8sClient kubernetes.Interface, out *storage.SensorDeploymentIdentification) error {
 	nsClient := k8sClient.CoreV1().Namespaces()
 
-	out.K8SNodeName = k8sNodeName.Setting()
+	out.SetK8SNodeName(k8sNodeName.Setting())
 
 	var errResult error
 	systemNS, err := k8sClient.CoreV1().Namespaces().Get(ctx, namespaces.KubeSystem, metav1.GetOptions{})
 	if err != nil {
 		errResult = multierror.Append(errResult, errors.Wrapf(err, "failed to look up system namespace %q", namespaces.KubeSystem))
 	} else {
-		out.SystemNamespaceId = string(systemNS.GetUID())
+		out.SetSystemNamespaceId(string(systemNS.GetUID()))
 	}
 
 	defaultNS, err := k8sClient.CoreV1().Namespaces().Get(ctx, namespaces.Default, metav1.GetOptions{})
 	if err != nil {
 		errResult = multierror.Append(errResult, errors.Wrap(err, "failed to look up default namespace"))
 	} else {
-		out.DefaultNamespaceId = string(defaultNS.GetUID())
+		out.SetDefaultNamespaceId(string(defaultNS.GetUID()))
 	}
 
 	appNS := out.GetAppNamespace()
@@ -98,7 +98,7 @@ func populateFromKubernetes(ctx context.Context, k8sClient kubernetes.Interface,
 	if err != nil {
 		errResult = multierror.Append(errResult, errors.Wrapf(err, "failed to look up application namespace %q", appNS))
 	} else {
-		out.AppNamespaceId = string(appNSObj.GetUID())
+		out.SetAppNamespaceId(string(appNSObj.GetUID()))
 	}
 
 	if errResult != nil {

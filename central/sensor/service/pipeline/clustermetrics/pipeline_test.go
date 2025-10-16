@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestPipeline(t *testing.T) {
@@ -43,20 +44,20 @@ func (suite *PipelineTestSuite) TearDownTest() {
 func (suite *PipelineTestSuite) TestClusterMetricsMessageFromSensor() {
 	deployment := fixtures.GetDeployment()
 	clusterID := deployment.GetClusterId()
-	expectedMetrics := &central.ClusterMetrics{NodeCount: 1, CpuCapacity: 10}
+	expectedMetrics := &central.ClusterMetrics{}
+	expectedMetrics.SetNodeCount(1)
+	expectedMetrics.SetCpuCapacity(10)
 
 	suite.metricsStore.EXPECT().Set(clusterID, expectedMetrics)
 	suite.telemetryMetrics.EXPECT().SetClusterMetrics(clusterID, expectedMetrics)
-	suite.usageStore.EXPECT().UpdateUsage(gomock.Any(), clusterID, &storage.SecuredUnits{
-		NumNodes:    expectedMetrics.GetNodeCount(),
-		NumCpuUnits: expectedMetrics.GetCpuCapacity(),
-	}).Return(nil)
+	su := &storage.SecuredUnits{}
+	su.SetNumNodes(expectedMetrics.GetNodeCount())
+	su.SetNumCpuUnits(expectedMetrics.GetCpuCapacity())
+	suite.usageStore.EXPECT().UpdateUsage(gomock.Any(), clusterID, su).Return(nil)
 
-	err := suite.pipeline.Run(context.Background(), clusterID, &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_ClusterMetrics{
-			ClusterMetrics: expectedMetrics,
-		},
-	}, nil)
+	mfs := &central.MsgFromSensor{}
+	mfs.SetClusterMetrics(proto.ValueOrDefault(expectedMetrics))
+	err := suite.pipeline.Run(context.Background(), clusterID, mfs, nil)
 	suite.NoError(err)
 }
 

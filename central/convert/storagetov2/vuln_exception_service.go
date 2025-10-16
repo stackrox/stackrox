@@ -5,6 +5,7 @@ import (
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
+	"google.golang.org/protobuf/proto"
 )
 
 // VulnerabilityExceptions converts a slice of *storage.VulnerabilityRequest to a slice of *v2.VulnerabilityException.
@@ -25,39 +26,30 @@ func VulnerabilityException(vulnRequest *storage.VulnerabilityRequest) *v2.Vulne
 		return nil
 	}
 
-	out := &v2.VulnerabilityException{
-		Id:          vulnRequest.GetId(),
-		Name:        vulnRequest.GetName(),
-		TargetState: convertVulnerabilityState(vulnRequest.GetTargetState()),
-		Status:      exceptionStatus(vulnRequest.GetStatus()),
-		Expired:     vulnRequest.GetExpired(),
-		Requester:   requester(vulnRequest.GetRequesterV2()),
-		Approvers:   approvers(vulnRequest.GetApproversV2()),
-		CreatedAt:   vulnRequest.GetCreatedAt(),
-		LastUpdated: vulnRequest.GetLastUpdated(),
-		Comments:    comments(vulnRequest.GetComments()),
-		Scope:       exceptionScope(vulnRequest.GetScope()),
-		Cves:        vulnRequest.GetCves().GetCves(),
-	}
+	out := &v2.VulnerabilityException{}
+	out.SetId(vulnRequest.GetId())
+	out.SetName(vulnRequest.GetName())
+	out.SetTargetState(convertVulnerabilityState(vulnRequest.GetTargetState()))
+	out.SetStatus(exceptionStatus(vulnRequest.GetStatus()))
+	out.SetExpired(vulnRequest.GetExpired())
+	out.SetRequester(requester(vulnRequest.GetRequesterV2()))
+	out.SetApprovers(approvers(vulnRequest.GetApproversV2()))
+	out.SetCreatedAt(vulnRequest.GetCreatedAt())
+	out.SetLastUpdated(vulnRequest.GetLastUpdated())
+	out.SetComments(comments(vulnRequest.GetComments()))
+	out.SetScope(exceptionScope(vulnRequest.GetScope()))
+	out.SetCves(vulnRequest.GetCves().GetCves())
 
 	if vulnRequest.GetDeferralReq() != nil {
-		out.Req = &v2.VulnerabilityException_DeferralRequest{
-			DeferralRequest: deferralRequest(vulnRequest.GetDeferralReq()),
-		}
+		out.SetDeferralRequest(proto.ValueOrDefault(deferralRequest(vulnRequest.GetDeferralReq())))
 	} else if vulnRequest.GetFpRequest() != nil {
-		out.Req = &v2.VulnerabilityException_FalsePositiveRequest{
-			FalsePositiveRequest: &v2.FalsePositiveRequest{},
-		}
+		out.SetFalsePositiveRequest(&v2.FalsePositiveRequest{})
 	}
 
 	if vulnRequest.GetDeferralUpdate() != nil {
-		out.UpdatedReq = &v2.VulnerabilityException_DeferralUpdate{
-			DeferralUpdate: deferralUpdate(vulnRequest.GetDeferralUpdate()),
-		}
+		out.SetDeferralUpdate(proto.ValueOrDefault(deferralUpdate(vulnRequest.GetDeferralUpdate())))
 	} else if vulnRequest.GetFalsePositiveUpdate() != nil {
-		out.UpdatedReq = &v2.VulnerabilityException_FalsePositiveUpdate{
-			FalsePositiveUpdate: falsePositiveUpdate(vulnRequest.GetFalsePositiveUpdate()),
-		}
+		out.SetFalsePositiveUpdate(proto.ValueOrDefault(falsePositiveUpdate(vulnRequest.GetFalsePositiveUpdate())))
 	}
 
 	return out
@@ -89,12 +81,12 @@ func comments(comments []*storage.RequestComment) []*v2.Comment {
 		if comment == nil {
 			continue
 		}
-		ret = append(ret, &v2.Comment{
-			Id:        comment.GetId(),
-			Message:   comment.GetMessage(),
-			User:      convertUser(comment.GetUser()),
-			CreatedAt: comment.GetCreatedAt(),
-		})
+		comment2 := &v2.Comment{}
+		comment2.SetId(comment.GetId())
+		comment2.SetMessage(comment.GetMessage())
+		comment2.SetUser(convertUser(comment.GetUser()))
+		comment2.SetCreatedAt(comment.GetCreatedAt())
+		ret = append(ret, comment2)
 	}
 	return ret
 }
@@ -104,29 +96,29 @@ func exceptionScope(scope *storage.VulnerabilityRequest_Scope) *v2.Vulnerability
 		return nil
 	}
 
-	return &v2.VulnerabilityException_Scope{
-		ImageScope: &v2.VulnerabilityException_Scope_Image{
-			Registry: scope.GetImageScope().GetRegistry(),
-			Remote:   scope.GetImageScope().GetRemote(),
-			Tag:      scope.GetImageScope().GetTag(),
-		},
-	}
+	vsi := &v2.VulnerabilityException_Scope_Image{}
+	vsi.SetRegistry(scope.GetImageScope().GetRegistry())
+	vsi.SetRemote(scope.GetImageScope().GetRemote())
+	vsi.SetTag(scope.GetImageScope().GetTag())
+	vs := &v2.VulnerabilityException_Scope{}
+	vs.SetImageScope(vsi)
+	return vs
 }
 
 func deferralRequest(r *storage.DeferralRequest) *v2.DeferralRequest {
 	if r == nil {
 		return nil
 	}
-	return &v2.DeferralRequest{
-		Expiry: exceptionExpiry(r.GetExpiry()),
-	}
+	dr := &v2.DeferralRequest{}
+	dr.SetExpiry(exceptionExpiry(r.GetExpiry()))
+	return dr
 }
 
 func exceptionExpiry(expiry *storage.RequestExpiry) *v2.ExceptionExpiry {
-	return &v2.ExceptionExpiry{
-		ExpiryType: exceptionExpiryType(expiry.GetExpiryType()),
-		ExpiresOn:  expiry.GetExpiresOn(),
-	}
+	ee := &v2.ExceptionExpiry{}
+	ee.SetExpiryType(exceptionExpiryType(expiry.GetExpiryType()))
+	ee.SetExpiresOn(expiry.GetExpiresOn())
+	return ee
 }
 
 func exceptionExpiryType(t storage.RequestExpiry_ExpiryType) v2.ExceptionExpiry_ExpiryType {
@@ -144,26 +136,26 @@ func exceptionExpiryType(t storage.RequestExpiry_ExpiryType) v2.ExceptionExpiry_
 }
 
 func deferralUpdate(update *storage.DeferralUpdate) *v2.DeferralUpdate {
-	return &v2.DeferralUpdate{
-		Cves:   update.GetCVEs(),
-		Expiry: exceptionExpiry(update.GetExpiry()),
-	}
+	du := &v2.DeferralUpdate{}
+	du.SetCves(update.GetCVEs())
+	du.SetExpiry(exceptionExpiry(update.GetExpiry()))
+	return du
 }
 
 func falsePositiveUpdate(update *storage.FalsePositiveUpdate) *v2.FalsePositiveUpdate {
-	return &v2.FalsePositiveUpdate{
-		Cves: update.GetCVEs(),
-	}
+	fpu := &v2.FalsePositiveUpdate{}
+	fpu.SetCves(update.GetCVEs())
+	return fpu
 }
 
 func requester(user *storage.Requester) *v2.SlimUser {
 	if user == nil {
 		return nil
 	}
-	return &v2.SlimUser{
-		Id:   user.GetId(),
-		Name: user.GetName(),
-	}
+	slimUser := &v2.SlimUser{}
+	slimUser.SetId(user.GetId())
+	slimUser.SetName(user.GetName())
+	return slimUser
 }
 
 func approvers(users []*storage.Approver) []*v2.SlimUser {
@@ -172,10 +164,10 @@ func approvers(users []*storage.Approver) []*v2.SlimUser {
 		if user == nil {
 			continue
 		}
-		ret = append(ret, &v2.SlimUser{
-			Id:   user.GetId(),
-			Name: user.GetName(),
-		})
+		slimUser := &v2.SlimUser{}
+		slimUser.SetId(user.GetId())
+		slimUser.SetName(user.GetName())
+		ret = append(ret, slimUser)
 	}
 	if len(ret) == 0 {
 		return nil

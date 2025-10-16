@@ -71,15 +71,18 @@ func extractUserIdentity(ctx context.Context) *storage.User {
 
 	for k, vs := range ctxIdentity.Attributes() {
 		for _, v := range vs {
-			attributes = append(attributes, &storage.UserAttribute{Key: k, Value: v})
+			ua := &storage.UserAttribute{}
+			ua.SetKey(k)
+			ua.SetValue(v)
+			attributes = append(attributes, ua)
 		}
 	}
 
-	return &storage.User{
-		Id:             ctxIdentity.UID(),
-		AuthProviderId: providerID,
-		Attributes:     attributes,
-	}
+	user := &storage.User{}
+	user.SetId(ctxIdentity.UID())
+	user.SetAuthProviderId(providerID)
+	user.SetAttributes(attributes)
+	return user
 }
 
 func extractCertExpiryDate(cert *mtls.IssuedCert) (time.Time, error) {
@@ -135,13 +138,12 @@ func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMe
 		return nil, errors.Wrap(err, "converting expiry date to timestamp")
 	}
 
-	meta := &storage.InitBundleMeta{
-		Id:        id.String(),
-		Name:      name,
-		CreatedAt: protocompat.TimestampNow(),
-		CreatedBy: user,
-		ExpiresAt: expiryTimestamp,
-	}
+	meta := &storage.InitBundleMeta{}
+	meta.SetId(id.String())
+	meta.SetName(name)
+	meta.SetCreatedAt(protocompat.TimestampNow())
+	meta.SetCreatedBy(user)
+	meta.SetExpiresAt(expiryTimestamp)
 
 	if err := b.store.Add(storeCtx, meta); err != nil {
 		return nil, errors.Wrap(err, "adding new init bundle to data store")
@@ -188,14 +190,13 @@ func (b *backendImpl) IssueCRS(ctx context.Context, name string, validUntil time
 	}
 
 	// On the storage side we are reusing the InitBundleMeta.
-	meta := &storage.InitBundleMeta{
-		Id:        id.String(),
-		Name:      name,
-		CreatedAt: protocompat.TimestampNow(),
-		CreatedBy: user,
-		ExpiresAt: expiryTimestamp,
-		Version:   storage.InitBundleMeta_CRS,
-	}
+	meta := &storage.InitBundleMeta{}
+	meta.SetId(id.String())
+	meta.SetName(name)
+	meta.SetCreatedAt(protocompat.TimestampNow())
+	meta.SetCreatedBy(user)
+	meta.SetExpiresAt(expiryTimestamp)
+	meta.SetVersion(storage.InitBundleMeta_CRS)
 
 	if err := b.store.Add(storeCtx, meta); err != nil {
 		return nil, errors.Wrap(err, "adding new CRS metadata to data store")

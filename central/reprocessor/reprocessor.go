@@ -36,6 +36,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"go.uber.org/atomic"
 	"golang.org/x/sync/semaphore"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -266,19 +267,15 @@ func (l *loopImpl) sendDeployments(deploymentIDs []string) {
 
 		dedupeKey := uuid.NewV5(riskDedupeNamespace, r.GetId()).String()
 
-		msg := &central.MsgFromSensor{
+		msg := central.MsgFromSensor_builder{
 			HashKey:   r.GetId(),
 			DedupeKey: dedupeKey,
-			Msg: &central.MsgFromSensor_Event{
-				Event: &central.SensorEvent{
-					Resource: &central.SensorEvent_ReprocessDeployment{
-						ReprocessDeployment: &central.ReprocessDeploymentRisk{
-							DeploymentId: r.GetId(),
-						},
-					},
-				},
-			},
-		}
+			Event: central.SensorEvent_builder{
+				ReprocessDeployment: central.ReprocessDeploymentRisk_builder{
+					DeploymentId: r.GetId(),
+				}.Build(),
+			}.Build(),
+		}.Build()
 
 		conn.InjectMessageIntoQueue(msg)
 	}
@@ -413,11 +410,8 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 					continue
 				}
 
-				msg := &central.MsgToSensor{
-					Msg: &central.MsgToSensor_UpdatedImage{
-						UpdatedImage: image,
-					},
-				}
+				msg := &central.MsgToSensor{}
+				msg.SetUpdatedImage(proto.ValueOrDefault(image))
 
 				// If were prior errors, do not attempt to send a message to this cluster.
 				if skipClusterIDs.Contains(clusterID) {
@@ -454,11 +448,8 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 	// Once the images have been rescanned, then reprocess the deployments.
 	// This should not take a particularly long period of time.
 	if !l.stopSig.IsDone() {
-		msg := &central.MsgToSensor{
-			Msg: &central.MsgToSensor_ReprocessDeployments{
-				ReprocessDeployments: &central.ReprocessDeployments{},
-			},
-		}
+		msg := &central.MsgToSensor{}
+		msg.SetReprocessDeployments(&central.ReprocessDeployments{})
 		ctx := concurrency.AsContext(&l.stopSig)
 		for _, conn := range l.connManager.GetActiveConnections() {
 			clusterID := conn.ClusterID()
@@ -555,7 +546,7 @@ func (l *loopImpl) reprocessWatchedImage(name string) bool {
 		return false
 	}
 	// Save the image
-	img.Id = utils.GetSHA(img)
+	img.SetId(utils.GetSHA(img))
 	if img.GetId() == "" {
 		return false
 	}

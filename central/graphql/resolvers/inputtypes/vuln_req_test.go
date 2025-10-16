@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stretchr/testify/suite"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestVulnReqInputResolvers(t *testing.T) {
@@ -31,20 +32,16 @@ func (s *VulnReqInputResolversTestSuite) TestAsRequestExpiry() {
 				ExpiresWhenFixed: boolPtr(false),
 				ExpiresOn:        &graphql.Time{Time: now},
 			},
-			expectedExpiry: &storage.RequestExpiry{
-				Expiry: &storage.RequestExpiry_ExpiresOn{
-					ExpiresOn: protoconv.ConvertTimeToTimestamp(now),
-				},
-			},
+			expectedExpiry: storage.RequestExpiry_builder{
+				ExpiresOn: proto.ValueOrDefault(protoconv.ConvertTimeToTimestamp(now)),
+			}.Build(),
 		},
 		{
 			name:  "Expiring at time with nil ExpiresWhenFixed",
 			input: &VulnReqExpiry{ExpiresOn: &graphql.Time{Time: now}},
-			expectedExpiry: &storage.RequestExpiry{
-				Expiry: &storage.RequestExpiry_ExpiresOn{
-					ExpiresOn: protoconv.ConvertTimeToTimestamp(now),
-				},
-			},
+			expectedExpiry: storage.RequestExpiry_builder{
+				ExpiresOn: proto.ValueOrDefault(protoconv.ConvertTimeToTimestamp(now)),
+			}.Build(),
 		},
 		{
 			name: "Expiring when fixed with some value in ExpiresOn",
@@ -52,20 +49,16 @@ func (s *VulnReqInputResolversTestSuite) TestAsRequestExpiry() {
 				ExpiresWhenFixed: boolPtr(true),
 				ExpiresOn:        &graphql.Time{Time: now},
 			},
-			expectedExpiry: &storage.RequestExpiry{
-				Expiry: &storage.RequestExpiry_ExpiresWhenFixed{
-					ExpiresWhenFixed: true,
-				},
-			},
+			expectedExpiry: storage.RequestExpiry_builder{
+				ExpiresWhenFixed: proto.Bool(true),
+			}.Build(),
 		},
 		{
 			name:  "Expiring when fixed with nil ExpiresOn",
 			input: &VulnReqExpiry{ExpiresWhenFixed: boolPtr(true)},
-			expectedExpiry: &storage.RequestExpiry{
-				Expiry: &storage.RequestExpiry_ExpiresWhenFixed{
-					ExpiresWhenFixed: true,
-				},
-			},
+			expectedExpiry: storage.RequestExpiry_builder{
+				ExpiresWhenFixed: proto.Bool(true),
+			}.Build(),
 		},
 		{
 			name: "Never expiring with nil ExpiresOn",
@@ -91,11 +84,9 @@ func (s *VulnReqInputResolversTestSuite) TestAsRequestExpiry() {
 				ExpiresWhenFixed: boolPtr(false),
 				ExpiresOn:        &graphql.Time{Time: time.Time{}},
 			},
-			expectedExpiry: &storage.RequestExpiry{
-				Expiry: &storage.RequestExpiry_ExpiresOn{
-					ExpiresOn: protoconv.ConvertTimeToTimestamp(time.Time{}),
-				},
-			},
+			expectedExpiry: storage.RequestExpiry_builder{
+				ExpiresOn: proto.ValueOrDefault(protoconv.ConvertTimeToTimestamp(time.Time{})),
+			}.Build(),
 		},
 	}
 

@@ -26,7 +26,7 @@ func SetIndicatorID(indicator *storage.ProcessIndicator) {
 	id := GetIndicatorIDFromParts(indicator.GetPodId(), indicator.GetContainerName(),
 		indicator.GetSignal().GetExecFilePath(), indicator.GetSignal().GetName(), indicator.GetSignal().GetArgs())
 
-	indicator.Id = id
+	indicator.SetId(id)
 }
 
 // GetIndicatorIDFromProcessIndicatorUniqueKey gets the indicator ID from information in the ProcessIndicatorUniqueKey

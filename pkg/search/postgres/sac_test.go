@@ -13,28 +13,20 @@ import (
 )
 
 var (
-	expectedMatchFieldQuery = &v1.Query{
-		Query: &v1.Query_BaseQuery{
-			BaseQuery: &v1.BaseQuery{
-				Query: &v1.BaseQuery_MatchFieldQuery{
-					MatchFieldQuery: &v1.MatchFieldQuery{
-						Field: "Cluster ID",
-						Value: "\"clusterID\"",
-					},
-				},
-			},
-		},
-	}
+	expectedMatchFieldQuery = v1.Query_builder{
+		BaseQuery: v1.BaseQuery_builder{
+			MatchFieldQuery: v1.MatchFieldQuery_builder{
+				Field: "Cluster ID",
+				Value: "\"clusterID\"",
+			}.Build(),
+		}.Build(),
+	}.Build()
 
-	expectedMatchNoneQuery = &v1.Query{
-		Query: &v1.Query_BaseQuery{
-			BaseQuery: &v1.BaseQuery{
-				Query: &v1.BaseQuery_MatchNoneQuery{
-					MatchNoneQuery: &v1.MatchNoneQuery{},
-				},
-			},
-		},
-	}
+	expectedMatchNoneQuery = v1.Query_builder{
+		BaseQuery: v1.BaseQuery_builder{
+			MatchNoneQuery: &v1.MatchNoneQuery{},
+		}.Build(),
+	}.Build()
 )
 
 func TestGetReadWriteSACQuery(t *testing.T) {

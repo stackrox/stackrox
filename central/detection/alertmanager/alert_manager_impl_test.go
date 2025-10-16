@@ -27,6 +27,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -46,66 +47,63 @@ var (
 )
 
 func getKubeEventViolation(msg string, violationTime time.Time) *storage.Alert_Violation {
-	return &storage.Alert_Violation{
-		Message: msg,
-		Type:    storage.Alert_Violation_K8S_EVENT,
-		Time:    protocompat.ConvertTimeToTimestampOrNil(&violationTime),
-	}
+	av := &storage.Alert_Violation{}
+	av.SetMessage(msg)
+	av.SetType(storage.Alert_Violation_K8S_EVENT)
+	av.SetTime(protocompat.ConvertTimeToTimestampOrNil(&violationTime))
+	return av
 }
 
 func getNetworkFlowViolation(msg string, networkFlowTimestamp time.Time) *storage.Alert_Violation {
-	return &storage.Alert_Violation{
+	return storage.Alert_Violation_builder{
 		Message: msg,
-		MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
-			KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
-				Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
-					{
-						Key:   "NetworkFlowTimestamp",
-						Value: networkFlowTimestamp.Format("2006-01-02 15:04:05 UTC"),
-					},
-				},
+		KeyValueAttrs: storage.Alert_Violation_KeyValueAttrs_builder{
+			Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
+				storage.Alert_Violation_KeyValueAttrs_KeyValueAttr_builder{
+					Key:   "NetworkFlowTimestamp",
+					Value: networkFlowTimestamp.Format("2006-01-02 15:04:05 UTC"),
+				}.Build(),
 			},
-		},
+		}.Build(),
 		Type: storage.Alert_Violation_NETWORK_FLOW,
-	}
+	}.Build()
 }
 
 func getProcessIndicator(processTime time.Time) *storage.ProcessIndicator {
-	return &storage.ProcessIndicator{
-		Signal: &storage.ProcessSignal{
-			Name: "apt-get",
-			Time: protocompat.ConvertTimeToTimestampOrNil(&processTime),
-		},
-	}
+	ps := &storage.ProcessSignal{}
+	ps.SetName("apt-get")
+	ps.SetTime(protocompat.ConvertTimeToTimestampOrNil(&processTime))
+	pi := &storage.ProcessIndicator{}
+	pi.SetSignal(ps)
+	return pi
 }
 
 func getFakeRuntimeAlert(indicators ...*storage.ProcessIndicator) *storage.Alert {
-	v := &storage.Alert_ProcessViolation{Processes: indicators}
+	v := &storage.Alert_ProcessViolation{}
+	v.SetProcesses(indicators)
 	printer.UpdateProcessAlertViolationMessage(v)
-	return &storage.Alert{
-		LifecycleStage:   storage.LifecycleStage_RUNTIME,
-		ProcessViolation: v,
-	}
+	alert := &storage.Alert{}
+	alert.SetLifecycleStage(storage.LifecycleStage_RUNTIME)
+	alert.SetProcessViolation(v)
+	return alert
 }
 
 func getFakeResourceRuntimeAlert(resourceType storage.Alert_Resource_ResourceType, resourceName, clusterID, namespaceID, namespace string) *storage.Alert {
-	return &storage.Alert{
-		LifecycleStage: storage.LifecycleStage_RUNTIME,
-		Entity: &storage.Alert_Resource_{
-			Resource: &storage.Alert_Resource{
-				ResourceType: resourceType,
-				Name:         resourceName,
-				ClusterId:    clusterID,
-				ClusterName:  "prod cluster",
-				Namespace:    namespace,
-				NamespaceId:  namespaceID,
-			},
-		},
-	}
+	ar := &storage.Alert_Resource{}
+	ar.SetResourceType(resourceType)
+	ar.SetName(resourceName)
+	ar.SetClusterId(clusterID)
+	ar.SetClusterName("prod cluster")
+	ar.SetNamespace(namespace)
+	ar.SetNamespaceId(namespaceID)
+	alert := &storage.Alert{}
+	alert.SetLifecycleStage(storage.LifecycleStage_RUNTIME)
+	alert.SetResource(proto.ValueOrDefault(ar))
+	return alert
 }
 
 func appendViolations(alert *storage.Alert, violations ...*storage.Alert_Violation) *storage.Alert {
-	alert.Violations = append(alert.Violations, violations...)
+	alert.SetViolations(append(alert.GetViolations(), violations...))
 	return alert
 }
 
@@ -172,16 +170,16 @@ func queryHasFields(fields ...search.FieldLabel) func(interface{}) bool {
 
 func (suite *AlertManagerTestSuite) TestNotifyAndUpdateBatch() {
 	alerts := []*storage.Alert{fixtures.GetAlert(), fixtures.GetAlert()}
-	alerts[0].GetPolicy().Id = "Pol1"
-	alerts[0].GetDeployment().Id = "Dep1"
-	alerts[1].GetPolicy().Id = "Pol2"
-	alerts[1].GetDeployment().Id = "Dep2"
+	alerts[0].GetPolicy().SetId("Pol1")
+	alerts[0].GetDeployment().SetId("Dep1")
+	alerts[1].GetPolicy().SetId("Pol2")
+	alerts[1].GetDeployment().SetId("Dep2")
 
 	suite.T().Setenv(env.AlertRenotifDebounceDuration.EnvVar(), "5m")
 
 	resolvedAlerts := []*storage.Alert{alerts[0].CloneVT(), alerts[1].CloneVT()}
-	resolvedAlerts[0].ResolvedAt = protoconv.MustConvertTimeToTimestamp(time.Now().Add(-10 * time.Minute))
-	resolvedAlerts[1].ResolvedAt = protoconv.MustConvertTimeToTimestamp(time.Now().Add(-2 * time.Minute))
+	resolvedAlerts[0].SetResolvedAt(protoconv.MustConvertTimeToTimestamp(time.Now().Add(-10 * time.Minute)))
+	resolvedAlerts[1].SetResolvedAt(protoconv.MustConvertTimeToTimestamp(time.Now().Add(-2 * time.Minute)))
 
 	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx,
 		testutils.PredMatcher("query for dep 1", func(q *v1.Query) bool {
@@ -298,10 +296,10 @@ func (suite *AlertManagerTestSuite) TestNewResourceAlertIsAdded() {
 func (suite *AlertManagerTestSuite) TestMergeResourceAlerts() {
 	alerts := getResourceAlerts()
 	newAlert := alerts[0].CloneVT()
-	newAlert.Violations[0].Message = "new-violation"
+	newAlert.GetViolations()[0].SetMessage("new-violation")
 
 	expectedMergedAlert := newAlert.CloneVT()
-	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].GetViolations()...)
+	expectedMergedAlert.SetViolations(append(expectedMergedAlert.GetViolations(), alerts[0].GetViolations()...))
 
 	// Only the merged alert will be updated.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, protomock.GoMockMatcherEqualMessage(expectedMergedAlert)).Return(nil)
@@ -326,10 +324,10 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsNoNotify() {
 	suite.T().Setenv("NOTIFY_EVERY_RUNTIME_EVENT", "false")
 	alerts := getResourceAlerts()
 	newAlert := alerts[0].CloneVT()
-	newAlert.Violations[0].Message = "new-violation"
+	newAlert.GetViolations()[0].SetMessage("new-violation")
 
 	expectedMergedAlert := newAlert.CloneVT()
-	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].GetViolations()...)
+	expectedMergedAlert.SetViolations(append(expectedMergedAlert.GetViolations(), alerts[0].GetViolations()...))
 
 	// Only the merged alert will be updated.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, protomock.GoMockMatcherEqualMessage(expectedMergedAlert)).Return(nil)
@@ -352,9 +350,9 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsNoNotify() {
 func (suite *AlertManagerTestSuite) TestMergeMultipleResourceAlerts() {
 	alerts := getResourceAlerts()
 	newAlert := alerts[0].CloneVT()
-	newAlert.Violations[0].Message = "new-violation"
+	newAlert.GetViolations()[0].SetMessage("new-violation")
 	newAlert2 := alerts[0].CloneVT()
-	newAlert2.Violations[0].Message = "new-violation-2"
+	newAlert2.GetViolations()[0].SetMessage("new-violation-2")
 
 	// There will be two calls to Upsert
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, gomock.Any()).Return(nil)
@@ -380,14 +378,17 @@ func (suite *AlertManagerTestSuite) TestMergeMultipleResourceAlerts() {
 func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfMoreThanMax() {
 	alerts := getResourceAlerts()
 	newAlert := alerts[0].CloneVT()
-	newAlert.Violations = make([]*storage.Alert_Violation, maxRunTimeViolationsPerAlert)
+	newAlert.SetViolations(make([]*storage.Alert_Violation, maxRunTimeViolationsPerAlert))
 	for i := 0; i < maxRunTimeViolationsPerAlert; i++ {
-		newAlert.Violations[i] = &storage.Alert_Violation{Message: fmt.Sprintf("new-violation-%d", i), Type: storage.Alert_Violation_K8S_EVENT}
+		av := &storage.Alert_Violation{}
+		av.SetMessage(fmt.Sprintf("new-violation-%d", i))
+		av.SetType(storage.Alert_Violation_K8S_EVENT)
+		newAlert.GetViolations()[i] = av
 	}
 
 	expectedMergedAlert := newAlert.CloneVT()
-	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].GetViolations()...)
-	expectedMergedAlert.Violations = expectedMergedAlert.GetViolations()[:maxRunTimeViolationsPerAlert]
+	expectedMergedAlert.SetViolations(append(expectedMergedAlert.GetViolations(), alerts[0].GetViolations()...))
+	expectedMergedAlert.SetViolations(expectedMergedAlert.GetViolations()[:maxRunTimeViolationsPerAlert])
 
 	// Only the merged alert will be updated.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, protomock.GoMockMatcherEqualMessage(expectedMergedAlert)).Return(nil)
@@ -414,14 +415,17 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfM
 	suite.T().Setenv("NOTIFY_EVERY_RUNTIME_EVENT", "false")
 	alerts := getResourceAlerts()
 	newAlert := alerts[0].CloneVT()
-	newAlert.Violations = make([]*storage.Alert_Violation, maxRunTimeViolationsPerAlert)
+	newAlert.SetViolations(make([]*storage.Alert_Violation, maxRunTimeViolationsPerAlert))
 	for i := 0; i < maxRunTimeViolationsPerAlert; i++ {
-		newAlert.Violations[i] = &storage.Alert_Violation{Message: fmt.Sprintf("new-violation-%d", i), Type: storage.Alert_Violation_K8S_EVENT}
+		av := &storage.Alert_Violation{}
+		av.SetMessage(fmt.Sprintf("new-violation-%d", i))
+		av.SetType(storage.Alert_Violation_K8S_EVENT)
+		newAlert.GetViolations()[i] = av
 	}
 
 	expectedMergedAlert := newAlert.CloneVT()
-	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].GetViolations()...)
-	expectedMergedAlert.Violations = expectedMergedAlert.GetViolations()[:maxRunTimeViolationsPerAlert]
+	expectedMergedAlert.SetViolations(append(expectedMergedAlert.GetViolations(), alerts[0].GetViolations()...))
+	expectedMergedAlert.SetViolations(expectedMergedAlert.GetViolations()[:maxRunTimeViolationsPerAlert])
 
 	// Only the merged alert will be updated.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, protomock.GoMockMatcherEqualMessage(expectedMergedAlert)).Return(nil)
@@ -443,12 +447,15 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfM
 
 func (suite *AlertManagerTestSuite) TestMergeResourceAlertsOnlyKeepsMaxViolations() {
 	alerts := getResourceAlerts()
-	alerts[0].Violations = make([]*storage.Alert_Violation, maxRunTimeViolationsPerAlert)
+	alerts[0].SetViolations(make([]*storage.Alert_Violation, maxRunTimeViolationsPerAlert))
 	for i := 0; i < maxRunTimeViolationsPerAlert; i++ {
-		alerts[0].Violations[i] = &storage.Alert_Violation{Message: fmt.Sprintf("old-violation-%d", i), Type: storage.Alert_Violation_K8S_EVENT}
+		av := &storage.Alert_Violation{}
+		av.SetMessage(fmt.Sprintf("old-violation-%d", i))
+		av.SetType(storage.Alert_Violation_K8S_EVENT)
+		alerts[0].GetViolations()[i] = av
 	}
 	newAlert := alerts[0].CloneVT()
-	newAlert.Violations[0].Message = "new-violation"
+	newAlert.GetViolations()[0].SetMessage("new-violation")
 
 	expectedMergedAlert := newAlert.CloneVT()
 
@@ -474,12 +481,15 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsOnlyKeepsMaxViolation
 func (suite *AlertManagerTestSuite) TestMergeResourceAlertsOnlyKeepsMaxViolationsNoNotify() {
 	suite.T().Setenv("NOTIFY_EVERY_RUNTIME_EVENT", "false")
 	alerts := getResourceAlerts()
-	alerts[0].Violations = make([]*storage.Alert_Violation, maxRunTimeViolationsPerAlert)
+	alerts[0].SetViolations(make([]*storage.Alert_Violation, maxRunTimeViolationsPerAlert))
 	for i := 0; i < maxRunTimeViolationsPerAlert; i++ {
-		alerts[0].Violations[i] = &storage.Alert_Violation{Message: fmt.Sprintf("old-violation-%d", i), Type: storage.Alert_Violation_K8S_EVENT}
+		av := &storage.Alert_Violation{}
+		av.SetMessage(fmt.Sprintf("old-violation-%d", i))
+		av.SetType(storage.Alert_Violation_K8S_EVENT)
+		alerts[0].GetViolations()[i] = av
 	}
 	newAlert := alerts[0].CloneVT()
-	newAlert.Violations[0].Message = "new-violation"
+	newAlert.GetViolations()[0].SetMessage("new-violation")
 
 	expectedMergedAlert := newAlert.CloneVT()
 
@@ -713,10 +723,10 @@ func TestFindAlert(t *testing.T) {
 	resourceAlerts := []*storage.Alert{getResourceAlerts()[0], fixtures.GetResourceAlert()}
 
 	resourceAlertWithAltPolicy := getResourceAlerts()[0].CloneVT()
-	resourceAlertWithAltPolicy.Policy = getPolicies()[0].CloneVT()
+	resourceAlertWithAltPolicy.SetPolicy(getPolicies()[0].CloneVT())
 
 	resourceAlertWithAltPolicyAndResource := getResourceAlerts()[1].CloneVT()
-	resourceAlertWithAltPolicyAndResource.Policy = getPolicies()[0].CloneVT()
+	resourceAlertWithAltPolicyAndResource.SetPolicy(getPolicies()[0].CloneVT())
 
 	for _, c := range []struct {
 		desc     string
@@ -825,141 +835,141 @@ func TestFindAlert(t *testing.T) {
 
 // Policies are set up so that policy one is violated by deployment 1, 2 is violated by 2, etc.
 func getAlerts() []*storage.Alert {
+	alert := &storage.Alert{}
+	alert.SetId("alert1")
+	alert.SetPolicy(getPolicies()[0])
+	alert.SetDeployment(proto.ValueOrDefault(getDeployments()[0]))
+	alert.SetTime(protocompat.GetProtoTimestampFromSeconds(100))
+	alert2 := &storage.Alert{}
+	alert2.SetId("alert2")
+	alert2.SetPolicy(getPolicies()[1])
+	alert2.SetDeployment(proto.ValueOrDefault(getDeployments()[1]))
+	alert2.SetTime(protocompat.GetProtoTimestampFromSeconds(200))
+	alert3 := &storage.Alert{}
+	alert3.SetId("alert3")
+	alert3.SetPolicy(getPolicies()[2])
+	alert3.SetDeployment(proto.ValueOrDefault(getDeployments()[2]))
+	alert3.SetTime(protocompat.GetProtoTimestampFromSeconds(300))
 	return []*storage.Alert{
-		{
-			Id:     "alert1",
-			Policy: getPolicies()[0],
-			Entity: &storage.Alert_Deployment_{Deployment: getDeployments()[0]},
-			Time:   protocompat.GetProtoTimestampFromSeconds(100),
-		},
-		{
-			Id:     "alert2",
-			Policy: getPolicies()[1],
-			Entity: &storage.Alert_Deployment_{Deployment: getDeployments()[1]},
-			Time:   protocompat.GetProtoTimestampFromSeconds(200),
-		},
-		{
-			Id:     "alert3",
-			Policy: getPolicies()[2],
-			Entity: &storage.Alert_Deployment_{Deployment: getDeployments()[2]},
-			Time:   protocompat.GetProtoTimestampFromSeconds(300),
-		},
+		alert,
+		alert2,
+		alert3,
 	}
 }
 
 // Policies are set up so that policy one is violated by deployment 1, 2 is violated by 2, etc.
 func getDeployments() []*storage.Alert_Deployment {
 	return []*storage.Alert_Deployment{
-		{
+		storage.Alert_Deployment_builder{
 			Name: "deployment1",
 			Containers: []*storage.Alert_Deployment_Container{
-				{
-					Image: &storage.ContainerImage{
-						Name: &storage.ImageName{
+				storage.Alert_Deployment_Container_builder{
+					Image: storage.ContainerImage_builder{
+						Name: storage.ImageName_builder{
 							Tag:    "latest1",
 							Remote: "stackrox/health",
-						},
-					},
-				},
+						}.Build(),
+					}.Build(),
+				}.Build(),
 			},
-		},
-		{
+		}.Build(),
+		storage.Alert_Deployment_builder{
 			Name: "deployment2",
 			Containers: []*storage.Alert_Deployment_Container{
-				{
-					Image: &storage.ContainerImage{
-						Name: &storage.ImageName{
+				storage.Alert_Deployment_Container_builder{
+					Image: storage.ContainerImage_builder{
+						Name: storage.ImageName_builder{
 							Tag:    "latest2",
 							Remote: "stackrox/health",
-						},
-					},
-				},
+						}.Build(),
+					}.Build(),
+				}.Build(),
 			},
-		},
-		{
+		}.Build(),
+		storage.Alert_Deployment_builder{
 			Name: "deployment3",
 			Containers: []*storage.Alert_Deployment_Container{
-				{
-					Image: &storage.ContainerImage{
-						Name: &storage.ImageName{
+				storage.Alert_Deployment_Container_builder{
+					Image: storage.ContainerImage_builder{
+						Name: storage.ImageName_builder{
 							Tag:    "latest3",
 							Remote: "stackrox/health",
-						},
-					},
-				},
+						}.Build(),
+					}.Build(),
+				}.Build(),
 			},
-		},
+		}.Build(),
 	}
 }
 
 // Policies are set up so that policy one is violated by deployment 1, 2 is violated by 2, etc.
 func getPolicies() []*storage.Policy {
 	return []*storage.Policy{
-		{
+		storage.Policy_builder{
 			Id:         "policy1",
 			Name:       "latest1",
 			Severity:   storage.Severity_LOW_SEVERITY,
 			Categories: []string{"Image Assurance", "Privileges Capabilities"},
 			PolicySections: []*storage.PolicySection{
-				{
+				storage.PolicySection_builder{
 					SectionName: "section-1",
 					PolicyGroups: []*storage.PolicyGroup{
-						{
+						storage.PolicyGroup_builder{
 							FieldName: fieldnames.ImageTag,
 							Values: []*storage.PolicyValue{
-								{
+								storage.PolicyValue_builder{
 									Value: "latest1",
-								},
+								}.Build(),
 							},
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			PolicyVersion: "1.1",
-		},
-		{
+		}.Build(),
+		storage.Policy_builder{
 			Id:         "policy2",
 			Name:       "latest2",
 			Severity:   storage.Severity_LOW_SEVERITY,
 			Categories: []string{"Image Assurance", "Privileges Capabilities"},
 			PolicySections: []*storage.PolicySection{
-				{
+				storage.PolicySection_builder{
 					SectionName: "section-1",
 					PolicyGroups: []*storage.PolicyGroup{
-						{
+						storage.PolicyGroup_builder{
 							FieldName: fieldnames.ImageTag,
 							Values: []*storage.PolicyValue{
-								{
+								storage.PolicyValue_builder{
 									Value: "latest2",
-								},
+								}.Build(),
 							},
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
-		},
-		{
+		}.Build(),
+		storage.Policy_builder{
 			Id:         "policy3",
 			Name:       "latest3",
 			Severity:   storage.Severity_LOW_SEVERITY,
 			Categories: []string{"Image Assurance", "Privileges Capabilities"},
 			PolicySections: []*storage.PolicySection{
-				{
+				storage.PolicySection_builder{
 					SectionName: "section-1",
 					PolicyGroups: []*storage.PolicyGroup{
-						{
+						storage.PolicyGroup_builder{
 							FieldName: fieldnames.ImageTag,
 							Values: []*storage.PolicyValue{
-								{
+								storage.PolicyValue_builder{
 									Value: "latest3",
-								},
+								}.Build(),
 							},
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			PolicyVersion: "1.1",
-		},
+		}.Build(),
 	}
 }
 
@@ -967,91 +977,91 @@ func getPolicies() []*storage.Policy {
 // type, name, cluster & namespace in that order. Everything else is the same
 func getResourceAlerts() []*storage.Alert {
 	return []*storage.Alert{
-		{
+		storage.Alert_builder{
 			Id:             "alert1",
 			Policy:         fixtures.GetAuditLogEventSourcePolicy(),
-			Entity:         &storage.Alert_Resource_{Resource: getResources()[0]},
+			Resource:       proto.ValueOrDefault(getResources()[0]),
 			LifecycleStage: storage.LifecycleStage_RUNTIME,
 			Time:           protocompat.GetProtoTimestampFromSeconds(100),
-			Violations:     []*storage.Alert_Violation{{Message: "violation-alert-1", Type: storage.Alert_Violation_K8S_EVENT}},
-		},
-		{
+			Violations:     []*storage.Alert_Violation{storage.Alert_Violation_builder{Message: "violation-alert-1", Type: storage.Alert_Violation_K8S_EVENT}.Build()},
+		}.Build(),
+		storage.Alert_builder{
 			Id:             "alert2",
 			Policy:         fixtures.GetAuditLogEventSourcePolicy(),
-			Entity:         &storage.Alert_Resource_{Resource: getResources()[1]},
+			Resource:       proto.ValueOrDefault(getResources()[1]),
 			LifecycleStage: storage.LifecycleStage_RUNTIME,
 			Time:           protocompat.GetProtoTimestampFromSeconds(200),
-			Violations:     []*storage.Alert_Violation{{Message: "violation-alert-2", Type: storage.Alert_Violation_K8S_EVENT}},
-		},
-		{
+			Violations:     []*storage.Alert_Violation{storage.Alert_Violation_builder{Message: "violation-alert-2", Type: storage.Alert_Violation_K8S_EVENT}.Build()},
+		}.Build(),
+		storage.Alert_builder{
 			Id:             "alert3",
 			Policy:         fixtures.GetAuditLogEventSourcePolicy(),
-			Entity:         &storage.Alert_Resource_{Resource: getResources()[2]},
+			Resource:       proto.ValueOrDefault(getResources()[2]),
 			LifecycleStage: storage.LifecycleStage_RUNTIME,
 			Time:           protocompat.GetProtoTimestampFromSeconds(300),
-			Violations:     []*storage.Alert_Violation{{Message: "violation-alert-3", Type: storage.Alert_Violation_K8S_EVENT}},
-		},
-		{
+			Violations:     []*storage.Alert_Violation{storage.Alert_Violation_builder{Message: "violation-alert-3", Type: storage.Alert_Violation_K8S_EVENT}.Build()},
+		}.Build(),
+		storage.Alert_builder{
 			Id:             "alert4",
 			Policy:         fixtures.GetAuditLogEventSourcePolicy(),
-			Entity:         &storage.Alert_Resource_{Resource: getResources()[3]},
+			Resource:       proto.ValueOrDefault(getResources()[3]),
 			LifecycleStage: storage.LifecycleStage_RUNTIME,
 			Time:           protocompat.GetProtoTimestampFromSeconds(400),
-			Violations:     []*storage.Alert_Violation{{Message: "violation-alert-4", Type: storage.Alert_Violation_K8S_EVENT}},
-		},
-		{
+			Violations:     []*storage.Alert_Violation{storage.Alert_Violation_builder{Message: "violation-alert-4", Type: storage.Alert_Violation_K8S_EVENT}.Build()},
+		}.Build(),
+		storage.Alert_builder{
 			Id:             "alert5",
 			Policy:         fixtures.GetAuditLogEventSourcePolicy(),
-			Entity:         &storage.Alert_Resource_{Resource: getResources()[4]},
+			Resource:       proto.ValueOrDefault(getResources()[4]),
 			LifecycleStage: storage.LifecycleStage_RUNTIME,
 			Time:           protocompat.GetProtoTimestampFromSeconds(500),
-			Violations:     []*storage.Alert_Violation{{Message: "violation-alert-5", Type: storage.Alert_Violation_K8S_EVENT}},
-		},
+			Violations:     []*storage.Alert_Violation{storage.Alert_Violation_builder{Message: "violation-alert-5", Type: storage.Alert_Violation_K8S_EVENT}.Build()},
+		}.Build(),
 	}
 }
 
 // Each resource after the 0th one is different in one property: type, name, cluster & namespace in that order
 func getResources() []*storage.Alert_Resource {
 	return []*storage.Alert_Resource{
-		{
+		storage.Alert_Resource_builder{
 			ResourceType: storage.Alert_Resource_SECRETS,
 			Name:         "rez-name",
 			ClusterId:    "cluster-id",
 			ClusterName:  "prod cluster",
 			Namespace:    "stackrox",
 			NamespaceId:  "namespace-id",
-		},
-		{
+		}.Build(),
+		storage.Alert_Resource_builder{
 			ResourceType: storage.Alert_Resource_CONFIGMAPS,
 			Name:         "rez-name",
 			ClusterId:    "cluster-id",
 			ClusterName:  "prod cluster",
 			Namespace:    "stackrox",
 			NamespaceId:  "namespace-id",
-		},
-		{
+		}.Build(),
+		storage.Alert_Resource_builder{
 			ResourceType: storage.Alert_Resource_SECRETS,
 			Name:         "rez-name-alt",
 			ClusterId:    "cluster-id",
 			ClusterName:  "prod cluster",
 			Namespace:    "stackrox",
 			NamespaceId:  "namespace-id",
-		},
-		{
+		}.Build(),
+		storage.Alert_Resource_builder{
 			ResourceType: storage.Alert_Resource_SECRETS,
 			Name:         "rez-name",
 			ClusterId:    "cluster-id-alt",
 			ClusterName:  "prod cluster-alt",
 			Namespace:    "stackrox",
 			NamespaceId:  "namespace-id",
-		},
-		{
+		}.Build(),
+		storage.Alert_Resource_builder{
 			ResourceType: storage.Alert_Resource_SECRETS,
 			Name:         "rez-name",
 			ClusterId:    "cluster-id",
 			ClusterName:  "prod cluster",
 			Namespace:    "stackrox-alt",
 			NamespaceId:  "namespace-id-alt",
-		},
+		}.Build(),
 	}
 }

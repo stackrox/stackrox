@@ -48,7 +48,8 @@ type Field struct {
 var customResourceTemplate = newTemplate(templateFile)
 
 func main() {
-	typ := reflect.TypeOf(storage.Policy{})
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	typ := reflect.TypeOf(&storage.Policy{})
 	renderData := RenderRequestData{
 		TypeName:       "Policy",
 		TypesToConvert: generateTemplateData(typ, set.NewStringSet()),

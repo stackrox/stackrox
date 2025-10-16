@@ -8,13 +8,13 @@ import (
 
 // GetCentralCapabilities informs what Central Services cannot do in the current configuration.
 func GetCentralCapabilities() *v1.CentralServicesCapabilities {
-	return &v1.CentralServicesCapabilities{
-		CentralScanningCanUseContainerIamRoleForEcr: disabledIfManagedCentral(),
-		CentralCanUseCloudBackupIntegrations:        disabledIfExternalDatabase(),
-		CentralCanDisplayDeclarativeConfigHealth:    disabledIfManagedCentral(),
-		CentralCanUpdateCert:                        disabledIfManagedCentral(),
-		CentralCanUseAcscsEmailIntegration:          enabledIfManagedCentral(),
-	}
+	csc := &v1.CentralServicesCapabilities{}
+	csc.SetCentralScanningCanUseContainerIamRoleForEcr(disabledIfManagedCentral())
+	csc.SetCentralCanUseCloudBackupIntegrations(disabledIfExternalDatabase())
+	csc.SetCentralCanDisplayDeclarativeConfigHealth(disabledIfManagedCentral())
+	csc.SetCentralCanUpdateCert(disabledIfManagedCentral())
+	csc.SetCentralCanUseAcscsEmailIntegration(enabledIfManagedCentral())
+	return csc
 }
 
 func enabledIfManagedCentral() v1.CentralServicesCapabilities_CapabilityStatus {

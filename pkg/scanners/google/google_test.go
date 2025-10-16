@@ -15,48 +15,48 @@ func TestGoogleValidate(t *testing.T) {
 	}{
 		{
 			name: "static credentials - success",
-			config: &storage.GoogleConfig{
+			config: storage.GoogleConfig_builder{
 				Endpoint:       "eu.gcr.io",
 				Project:        "test-project",
 				ServiceAccount: `{"type": "service_account"}`,
-			},
+			}.Build(),
 			isValid: true,
 		},
 		{
 			name: "static credentials - no endpoint",
-			config: &storage.GoogleConfig{
+			config: storage.GoogleConfig_builder{
 				Endpoint:       "",
 				Project:        "test-project",
 				ServiceAccount: `{"type": "service_account"}`,
-			},
+			}.Build(),
 			isValid: false,
 		},
 		{
 			name: "static credentials - no project",
-			config: &storage.GoogleConfig{
+			config: storage.GoogleConfig_builder{
 				Endpoint:       "eu.gcr.io",
 				Project:        "",
 				ServiceAccount: `{"type": "service_account"}`,
-			},
+			}.Build(),
 			isValid: false,
 		},
 		{
 			name: "static credentials - no service account",
-			config: &storage.GoogleConfig{
+			config: storage.GoogleConfig_builder{
 				Endpoint:       "eu.gcr.io",
 				Project:        "test-project",
 				ServiceAccount: "",
-			},
+			}.Build(),
 			isValid: false,
 		},
 		{
 			name: "workload identity - rejected",
-			config: &storage.GoogleConfig{
+			config: storage.GoogleConfig_builder{
 				Endpoint:       "eu.gcr.io",
 				Project:        "test-project",
 				ServiceAccount: `{"type": "service_account"}`,
 				WifEnabled:     true,
-			},
+			}.Build(),
 			isValid: false,
 		},
 	}

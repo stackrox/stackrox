@@ -21,59 +21,59 @@ func TestMasterAPIServerChecks(t *testing.T) {
 		{
 			name: "CIS_Kubernetes_v1_5:1_2_13",
 			commandLines: map[string]*compliance.CommandLine{
-				"test": {
+				"test": compliance.CommandLine_builder{
 					Process: common.KubeAPIProcessName,
 					Args: []*compliance.CommandLine_Args{
-						{
+						compliance.CommandLine_Args_builder{
 							Key:    "enable-admission-plugins",
 							Values: []string{"PodSecurityPolicy"},
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			status: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 		},
 		{
 			name: "CIS_Kubernetes_v1_5:1_2_13",
 			commandLines: map[string]*compliance.CommandLine{
-				"test": {
+				"test": compliance.CommandLine_builder{
 					Process: common.KubeAPIProcessName,
 					Args: []*compliance.CommandLine_Args{
-						{
+						compliance.CommandLine_Args_builder{
 							Key:    "enable-admission-plugins",
 							Values: []string{"SecurityContextDeny"},
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			status: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 		},
 		{
 			name: "CIS_Kubernetes_v1_5:1_2_13",
 			commandLines: map[string]*compliance.CommandLine{
-				"test": {
+				"test": compliance.CommandLine_builder{
 					Process: common.KubeAPIProcessName,
 					Args: []*compliance.CommandLine_Args{
-						{
+						compliance.CommandLine_Args_builder{
 							Key:    "enable-admission-plugins",
 							Values: []string{"Some other value"},
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			status: storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
 		},
 		{
 			name: "CIS_Kubernetes_v1_5:1_2_13",
 			commandLines: map[string]*compliance.CommandLine{
-				"test": {
+				"test": compliance.CommandLine_builder{
 					Process: common.KubeAPIProcessName,
 					Args: []*compliance.CommandLine_Args{
-						{
+						compliance.CommandLine_Args_builder{
 							Key: "enable-admission-plugins",
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			status: storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
 		},

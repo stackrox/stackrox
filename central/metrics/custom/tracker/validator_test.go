@@ -34,7 +34,9 @@ func Test_validateMetricName(t *testing.T) {
 }
 
 func Test_noLabels(t *testing.T) {
-	for _, labels := range []*storage.PrometheusMetrics_Group_Labels{{Labels: []string{}}, {}, nil} {
+	pgl := &storage.PrometheusMetrics_Group_Labels{}
+	pgl.SetLabels([]string{})
+	for _, labels := range []*storage.PrometheusMetrics_Group_Labels{pgl, {}, nil} {
 		config := map[string]*storage.PrometheusMetrics_Group_Labels{
 			"metric": labels,
 		}
@@ -49,10 +51,10 @@ func Test_noLabels(t *testing.T) {
 }
 
 func Test_parseErrors(t *testing.T) {
+	pgl := &storage.PrometheusMetrics_Group_Labels{}
+	pgl.SetLabels([]string{"unknown"})
 	config := map[string]*storage.PrometheusMetrics_Group_Labels{
-		"metric1": {
-			Labels: []string{"unknown"},
-		},
+		"metric1": pgl,
 	}
 	md, err := translateStorageConfiguration(config, "test", testLabelOrder)
 	assert.Equal(t, `invalid configuration: label "unknown" for metric "test_metric1" is not in the list of known labels [CVE CVSS Cluster IsFixable Namespace Severity test]`, err.Error())

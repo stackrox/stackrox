@@ -5,6 +5,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"google.golang.org/protobuf/proto"
 )
 
 // VulnReqExpiry represents when a vulnerability request can expire.
@@ -21,17 +22,13 @@ func (re *VulnReqExpiry) AsRequestExpiry() *storage.RequestExpiry {
 
 	ret := &storage.RequestExpiry{}
 	if re.ExpiresWhenFixed != nil && *re.ExpiresWhenFixed {
-		ret.Expiry = &storage.RequestExpiry_ExpiresWhenFixed{
-			ExpiresWhenFixed: true,
-		}
+		ret.SetExpiresWhenFixed(true)
 	} else if re.ExpiresOn != nil {
 		ts := protoconv.ConvertTimeToTimestampOrNil(re.ExpiresOn.Time)
 		if ts == nil {
 			return &storage.RequestExpiry{}
 		}
-		ret.Expiry = &storage.RequestExpiry_ExpiresOn{
-			ExpiresOn: ts,
-		}
+		ret.SetExpiresOn(proto.ValueOrDefault(ts))
 	}
 	return ret
 }
@@ -51,39 +48,34 @@ func (dr *DeferVulnRequest) AsV1DeferralRequest() *v1.DeferVulnRequest {
 		return nil
 	}
 
-	ret := &v1.DeferVulnRequest{
-		Cve: func() string {
-			if dr.Cve == nil {
-				return ""
-			}
-			return *dr.Cve
-		}(),
-		Comment: func() string {
-			if dr.Comment == nil {
-				return ""
-			}
-			return *dr.Comment
-		}(),
-		Scope: dr.Scope.AsV1VulnerabilityRequestScope(),
-	}
+	ret := &v1.DeferVulnRequest{}
+	ret.SetCve(func() string {
+		if dr.Cve == nil {
+			return ""
+		}
+		return *dr.Cve
+	}())
+	ret.SetComment(func() string {
+		if dr.Comment == nil {
+			return ""
+		}
+		return *dr.Comment
+	}())
+	ret.SetScope(dr.Scope.AsV1VulnerabilityRequestScope())
 
 	if dr.ExpiresWhenFixed == nil && dr.ExpiresOn == nil {
 		return ret
 	}
 	if dr.ExpiresWhenFixed != nil {
 		if *dr.ExpiresWhenFixed {
-			ret.Expiry = &v1.DeferVulnRequest_ExpiresWhenFixed{
-				ExpiresWhenFixed: true,
-			}
+			ret.SetExpiresWhenFixed(true)
 		}
 	} else {
 		ts := protoconv.ConvertTimeToTimestampOrNil(dr.ExpiresOn.Time)
 		if ts == nil {
 			return nil
 		}
-		ret.Expiry = &v1.DeferVulnRequest_ExpiresOn{
-			ExpiresOn: ts,
-		}
+		ret.SetExpiresOn(proto.ValueOrDefault(ts))
 	}
 	return ret
 }
@@ -100,21 +92,21 @@ func (fpr *FalsePositiveVulnRequest) AsV1FalsePositiveRequest() *v1.FalsePositiv
 	if fpr == nil {
 		return nil
 	}
-	return &v1.FalsePositiveVulnRequest{
-		Cve: func() string {
-			if fpr.Cve == nil {
-				return ""
-			}
-			return *fpr.Cve
-		}(),
-		Comment: func() string {
-			if fpr.Comment == nil {
-				return ""
-			}
-			return *fpr.Comment
-		}(),
-		Scope: fpr.Scope.AsV1VulnerabilityRequestScope(),
-	}
+	fpvr := &v1.FalsePositiveVulnRequest{}
+	fpvr.SetCve(func() string {
+		if fpr.Cve == nil {
+			return ""
+		}
+		return *fpr.Cve
+	}())
+	fpvr.SetComment(func() string {
+		if fpr.Comment == nil {
+			return ""
+		}
+		return *fpr.Comment
+	}())
+	fpvr.SetScope(fpr.Scope.AsV1VulnerabilityRequestScope())
+	return fpvr
 }
 
 // VulnReqScope represents the scope of vulnerability request.
@@ -129,18 +121,14 @@ func (rs *VulnReqScope) AsV1VulnerabilityRequestScope() *storage.VulnerabilityRe
 		return nil
 	}
 	if rs.ImageScope != nil {
-		return &storage.VulnerabilityRequest_Scope{
-			Info: &storage.VulnerabilityRequest_Scope_ImageScope{
-				ImageScope: rs.ImageScope.AsV1VulnerabilityRequestImageScope(),
-			},
-		}
+		vs := &storage.VulnerabilityRequest_Scope{}
+		vs.SetImageScope(proto.ValueOrDefault(rs.ImageScope.AsV1VulnerabilityRequestImageScope()))
+		return vs
 	}
 	if rs.GlobalScope != nil {
-		return &storage.VulnerabilityRequest_Scope{
-			Info: &storage.VulnerabilityRequest_Scope_GlobalScope{
-				GlobalScope: rs.GlobalScope.AsV1VulnerabilityRequestGlobalScope(),
-			},
-		}
+		vs := &storage.VulnerabilityRequest_Scope{}
+		vs.SetGlobalScope(proto.ValueOrDefault(rs.GlobalScope.AsV1VulnerabilityRequestGlobalScope()))
+		return vs
 	}
 	return nil
 }
@@ -157,26 +145,26 @@ func (rs *VulnReqImageScope) AsV1VulnerabilityRequestImageScope() *storage.Vulne
 	if rs == nil {
 		return nil
 	}
-	return &storage.VulnerabilityRequest_Scope_Image{
-		Registry: func() string {
-			if rs.Registry == nil {
-				return ""
-			}
-			return *rs.Registry
-		}(),
-		Remote: func() string {
-			if rs.Remote == nil {
-				return ""
-			}
-			return *rs.Remote
-		}(),
-		Tag: func() string {
-			if rs.Tag == nil {
-				return ""
-			}
-			return *rs.Tag
-		}(),
-	}
+	vsi := &storage.VulnerabilityRequest_Scope_Image{}
+	vsi.SetRegistry(func() string {
+		if rs.Registry == nil {
+			return ""
+		}
+		return *rs.Registry
+	}())
+	vsi.SetRemote(func() string {
+		if rs.Remote == nil {
+			return ""
+		}
+		return *rs.Remote
+	}())
+	vsi.SetTag(func() string {
+		if rs.Tag == nil {
+			return ""
+		}
+		return *rs.Tag
+	}())
+	return vsi
 }
 
 // VulnReqGlobalScope represents the global scope of a vulnerability request.

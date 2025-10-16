@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"google.golang.org/protobuf/proto"
 )
 
 /*
@@ -86,17 +87,17 @@ func convertStorageScanConfigToV2(ctx context.Context, scanConfig *storage.Compl
 		profiles = append(profiles, profile.GetProfileName())
 	}
 
-	return &v2.ComplianceScanConfiguration{
-		Id:       scanConfig.GetId(),
-		ScanName: scanConfig.GetScanConfigName(),
-		Clusters: clusters,
-		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
-			OneTimeScan:  scanConfig.GetOneTimeScan(),
-			ScanSchedule: convertProtoScheduleToV2(scanConfig.GetSchedule()),
-			Profiles:     profiles,
-			Description:  scanConfig.GetDescription(),
-		},
-	}, nil
+	bcscs := &v2.BaseComplianceScanConfigurationSettings{}
+	bcscs.SetOneTimeScan(scanConfig.GetOneTimeScan())
+	bcscs.SetScanSchedule(convertProtoScheduleToV2(scanConfig.GetSchedule()))
+	bcscs.SetProfiles(profiles)
+	bcscs.SetDescription(scanConfig.GetDescription())
+	csc := &v2.ComplianceScanConfiguration{}
+	csc.SetId(scanConfig.GetId())
+	csc.SetScanName(scanConfig.GetScanConfigName())
+	csc.SetClusters(clusters)
+	csc.SetScanConfig(bcscs)
+	return csc, nil
 }
 
 func convertV2NotifierConfigToProto(notifier *v2.NotifierConfiguration) *storage.NotifierConfiguration {
@@ -104,20 +105,15 @@ func convertV2NotifierConfigToProto(notifier *v2.NotifierConfiguration) *storage
 		return nil
 	}
 
-	ret := &storage.NotifierConfiguration{
-		Ref: &storage.NotifierConfiguration_Id{
-			Id: notifier.GetEmailConfig().GetNotifierId(),
-		},
-	}
+	ret := &storage.NotifierConfiguration{}
+	ret.SetId(notifier.GetEmailConfig().GetNotifierId())
 
 	if emailConfig := notifier.GetEmailConfig(); emailConfig != nil {
-		ret.NotifierConfig = &storage.NotifierConfiguration_EmailConfig{
-			EmailConfig: &storage.EmailNotifierConfiguration{
-				MailingLists:  emailConfig.GetMailingLists(),
-				CustomSubject: emailConfig.GetCustomSubject(),
-				CustomBody:    emailConfig.GetCustomBody(),
-			},
-		}
+		enc := &storage.EmailNotifierConfiguration{}
+		enc.SetMailingLists(emailConfig.GetMailingLists())
+		enc.SetCustomSubject(emailConfig.GetCustomSubject())
+		enc.SetCustomBody(emailConfig.GetCustomBody())
+		ret.SetEmailConfig(proto.ValueOrDefault(enc))
 	}
 	return ret
 }
@@ -132,17 +128,15 @@ func convertProtoNotifierConfigToV2(notifierConfig *storage.NotifierConfiguratio
 		return nil, errors.New("Email notifier is not configured")
 	}
 
-	return &v2.NotifierConfiguration{
-		NotifierName: notifierName,
-		NotifierConfig: &v2.NotifierConfiguration_EmailConfig{
-			EmailConfig: &v2.EmailNotifierConfiguration{
-				NotifierId:    notifierConfig.GetId(),
-				MailingLists:  notifierConfig.GetEmailConfig().GetMailingLists(),
-				CustomSubject: notifierConfig.GetEmailConfig().GetCustomSubject(),
-				CustomBody:    notifierConfig.GetEmailConfig().GetCustomBody(),
-			},
-		},
-	}, nil
+	enc := &v2.EmailNotifierConfiguration{}
+	enc.SetNotifierId(notifierConfig.GetId())
+	enc.SetMailingLists(notifierConfig.GetEmailConfig().GetMailingLists())
+	enc.SetCustomSubject(notifierConfig.GetEmailConfig().GetCustomSubject())
+	enc.SetCustomBody(notifierConfig.GetEmailConfig().GetCustomBody())
+	nc := &v2.NotifierConfiguration{}
+	nc.SetNotifierName(notifierName)
+	nc.SetEmailConfig(proto.ValueOrDefault(enc))
+	return nc, nil
 }
 
 func convertV2ScanConfigToStorage(ctx context.Context, scanConfig *v2.ComplianceScanConfiguration) *storage.ComplianceOperatorScanConfigurationV2 {
@@ -152,16 +146,16 @@ func convertV2ScanConfigToStorage(ctx context.Context, scanConfig *v2.Compliance
 
 	profiles := make([]*storage.ComplianceOperatorScanConfigurationV2_ProfileName, 0, len(scanConfig.GetScanConfig().GetProfiles()))
 	for _, profile := range scanConfig.GetScanConfig().GetProfiles() {
-		profiles = append(profiles, &storage.ComplianceOperatorScanConfigurationV2_ProfileName{
-			ProfileName: profile,
-		})
+		cp := &storage.ComplianceOperatorScanConfigurationV2_ProfileName{}
+		cp.SetProfileName(profile)
+		profiles = append(profiles, cp)
 	}
 
 	clusters := make([]*storage.ComplianceOperatorScanConfigurationV2_Cluster, 0, len(scanConfig.GetClusters()))
 	for _, cluster := range scanConfig.GetClusters() {
-		clusters = append(clusters, &storage.ComplianceOperatorScanConfigurationV2_Cluster{
-			ClusterId: cluster,
-		})
+		cc := &storage.ComplianceOperatorScanConfigurationV2_Cluster{}
+		cc.SetClusterId(cluster)
+		clusters = append(clusters, cc)
 	}
 
 	notifiers := []*storage.NotifierConfiguration{}
@@ -173,20 +167,20 @@ func convertV2ScanConfigToStorage(ctx context.Context, scanConfig *v2.Compliance
 
 	}
 
-	return &storage.ComplianceOperatorScanConfigurationV2{
-		Id:                     scanConfig.GetId(),
-		ScanConfigName:         scanConfig.GetScanName(),
-		AutoApplyRemediations:  false,
-		AutoUpdateRemediations: false,
-		OneTimeScan:            false,
-		StrictNodeScan:         false,
-		Schedule:               ConvertV2ScheduleToProto(scanConfig.GetScanConfig().GetScanSchedule()),
-		Profiles:               profiles,
-		ModifiedBy:             authn.UserFromContext(ctx),
-		Description:            scanConfig.GetScanConfig().GetDescription(),
-		Clusters:               clusters,
-		Notifiers:              notifiers,
-	}
+	coscv2 := &storage.ComplianceOperatorScanConfigurationV2{}
+	coscv2.SetId(scanConfig.GetId())
+	coscv2.SetScanConfigName(scanConfig.GetScanName())
+	coscv2.SetAutoApplyRemediations(false)
+	coscv2.SetAutoUpdateRemediations(false)
+	coscv2.SetOneTimeScan(false)
+	coscv2.SetStrictNodeScan(false)
+	coscv2.SetSchedule(ConvertV2ScheduleToProto(scanConfig.GetScanConfig().GetScanSchedule()))
+	coscv2.SetProfiles(profiles)
+	coscv2.SetModifiedBy(authn.UserFromContext(ctx))
+	coscv2.SetDescription(scanConfig.GetScanConfig().GetDescription())
+	coscv2.SetClusters(clusters)
+	coscv2.SetNotifiers(notifiers)
+	return coscv2
 }
 
 // ConvertV2ScheduleToProto converts v2.Schedule to storage.Schedule. Does not validate v2.Schedule
@@ -195,20 +189,19 @@ func ConvertV2ScheduleToProto(schedule *v2.Schedule) *storage.Schedule {
 		return nil
 	}
 
-	ret := &storage.Schedule{
-		IntervalType: v2IntervalTypeToStorage[schedule.GetIntervalType()],
-		Hour:         schedule.GetHour(),
-		Minute:       schedule.GetMinute(),
-	}
-	switch schedule.GetInterval().(type) {
-	case *v2.Schedule_DaysOfWeek_:
-		ret.Interval = &storage.Schedule_DaysOfWeek_{
-			DaysOfWeek: &storage.Schedule_DaysOfWeek{Days: schedule.GetDaysOfWeek().GetDays()},
-		}
-	case *v2.Schedule_DaysOfMonth_:
-		ret.Interval = &storage.Schedule_DaysOfMonth_{
-			DaysOfMonth: &storage.Schedule_DaysOfMonth{Days: schedule.GetDaysOfMonth().GetDays()},
-		}
+	ret := &storage.Schedule{}
+	ret.SetIntervalType(v2IntervalTypeToStorage[schedule.GetIntervalType()])
+	ret.SetHour(schedule.GetHour())
+	ret.SetMinute(schedule.GetMinute())
+	switch schedule.WhichInterval() {
+	case v2.Schedule_DaysOfWeek_case:
+		sd := &storage.Schedule_DaysOfWeek{}
+		sd.SetDays(schedule.GetDaysOfWeek().GetDays())
+		ret.SetDaysOfWeek(proto.ValueOrDefault(sd))
+	case v2.Schedule_DaysOfMonth_case:
+		sd := &storage.Schedule_DaysOfMonth{}
+		sd.SetDays(schedule.GetDaysOfMonth().GetDays())
+		ret.SetDaysOfMonth(proto.ValueOrDefault(sd))
 	}
 
 	return ret
@@ -219,25 +212,24 @@ func convertProtoScheduleToV2(schedule *storage.Schedule) *v2.Schedule {
 	if schedule == nil {
 		return nil
 	}
-	ret := &v2.Schedule{
-		IntervalType: storageIntervalTypeToV2[schedule.GetIntervalType()],
-		Hour:         schedule.GetHour(),
-		Minute:       schedule.GetMinute(),
-	}
+	ret := &v2.Schedule{}
+	ret.SetIntervalType(storageIntervalTypeToV2[schedule.GetIntervalType()])
+	ret.SetHour(schedule.GetHour())
+	ret.SetMinute(schedule.GetMinute())
 
-	switch schedule.GetInterval().(type) {
-	case *storage.Schedule_DaysOfWeek_:
-		ret.Interval = &v2.Schedule_DaysOfWeek_{
-			DaysOfWeek: &v2.Schedule_DaysOfWeek{Days: schedule.GetDaysOfWeek().GetDays()},
-		}
-	case *storage.Schedule_Weekly:
-		ret.Interval = &v2.Schedule_DaysOfWeek_{
-			DaysOfWeek: &v2.Schedule_DaysOfWeek{Days: schedule.GetDaysOfWeek().GetDays()},
-		}
-	case *storage.Schedule_DaysOfMonth_:
-		ret.Interval = &v2.Schedule_DaysOfMonth_{
-			DaysOfMonth: &v2.Schedule_DaysOfMonth{Days: schedule.GetDaysOfMonth().GetDays()},
-		}
+	switch schedule.WhichInterval() {
+	case storage.Schedule_DaysOfWeek_case:
+		sd := &v2.Schedule_DaysOfWeek{}
+		sd.SetDays(schedule.GetDaysOfWeek().GetDays())
+		ret.SetDaysOfWeek(proto.ValueOrDefault(sd))
+	case storage.Schedule_Weekly_case:
+		sd := &v2.Schedule_DaysOfWeek{}
+		sd.SetDays(schedule.GetDaysOfWeek().GetDays())
+		ret.SetDaysOfWeek(proto.ValueOrDefault(sd))
+	case storage.Schedule_DaysOfMonth_case:
+		sd := &v2.Schedule_DaysOfMonth{}
+		sd.SetDays(schedule.GetDaysOfMonth().GetDays())
+		ret.SetDaysOfMonth(proto.ValueOrDefault(sd))
 	}
 
 	return ret
@@ -279,10 +271,10 @@ func convertStorageReportDataToV2ScanStatus(ctx context.Context, reportData *sto
 		notifiers = append(notifiers, notifierV2)
 	}
 
-	return &v2.ComplianceScanConfigurationStatus{
+	return v2.ComplianceScanConfigurationStatus_builder{
 		Id:       reportData.GetScanConfiguration().GetId(),
 		ScanName: reportData.GetScanConfiguration().GetScanConfigName(),
-		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
+		ScanConfig: v2.BaseComplianceScanConfigurationSettings_builder{
 			OneTimeScan: reportData.GetScanConfiguration().GetOneTimeScan(),
 			Profiles: func() []string {
 
@@ -295,33 +287,33 @@ func convertStorageReportDataToV2ScanStatus(ctx context.Context, reportData *sto
 			ScanSchedule: convertProtoScheduleToV2(reportData.GetScanConfiguration().GetSchedule()),
 			Description:  reportData.GetScanConfiguration().GetDescription(),
 			Notifiers:    notifiers,
-		},
+		}.Build(),
 		ClusterStatus: func() []*v2.ClusterScanStatus {
 
 			ret := make([]*v2.ClusterScanStatus, 0, len(reportData.GetClusterStatus()))
 			for _, cluster := range reportData.GetClusterStatus() {
-				ret = append(ret, &v2.ClusterScanStatus{
+				ret = append(ret, v2.ClusterScanStatus_builder{
 					ClusterId:   cluster.GetClusterId(),
 					ClusterName: cluster.GetClusterName(),
 					Errors:      cluster.GetErrors(),
-					SuiteStatus: &v2.ClusterScanStatus_SuiteStatus{
+					SuiteStatus: v2.ClusterScanStatus_SuiteStatus_builder{
 						Phase:              cluster.GetSuiteStatus().GetPhase(),
 						Result:             cluster.GetSuiteStatus().GetResult(),
 						ErrorMessage:       cluster.GetSuiteStatus().GetErrorMessage(),
 						LastTransitionTime: cluster.GetSuiteStatus().GetLastTransitionTime(),
-					},
-				})
+					}.Build(),
+				}.Build())
 			}
 			return ret
 		}(),
 		CreatedTime:     reportData.GetScanConfiguration().GetCreatedTime(),
 		LastUpdatedTime: reportData.GetScanConfiguration().GetLastUpdatedTime(),
-		ModifiedBy: &v2.SlimUser{
+		ModifiedBy: v2.SlimUser_builder{
 			Id:   reportData.GetScanConfiguration().GetModifiedBy().GetId(),
 			Name: reportData.GetScanConfiguration().GetModifiedBy().GetName(),
-		},
+		}.Build(),
 		LastExecutedTime: reportData.GetLastExecutedTime(),
-	}, nil
+	}.Build(), nil
 }
 
 func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
@@ -366,15 +358,14 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 	}
 	clusterToSuiteMap := make(map[string]*v2.ClusterScanStatus_SuiteStatus, len(suiteClusters))
 	for _, suite := range suiteClusters {
-		suiteStatus := &v2.ClusterScanStatus_SuiteStatus{
-			Phase:        suite.GetStatus().GetPhase(),
-			Result:       suite.GetStatus().GetResult(),
-			ErrorMessage: suite.GetStatus().GetErrorMessage(),
-		}
+		suiteStatus := &v2.ClusterScanStatus_SuiteStatus{}
+		suiteStatus.SetPhase(suite.GetStatus().GetPhase())
+		suiteStatus.SetResult(suite.GetStatus().GetResult())
+		suiteStatus.SetErrorMessage(suite.GetStatus().GetErrorMessage())
 		conditions := suite.GetStatus().GetConditions()
 		for _, c := range conditions {
 			if suiteStatus.GetLastTransitionTime() == nil || protoutils.After(c.GetLastTransitionTime(), suiteStatus.GetLastTransitionTime()) {
-				suiteStatus.LastTransitionTime = c.GetLastTransitionTime()
+				suiteStatus.SetLastTransitionTime(c.GetLastTransitionTime())
 			}
 		}
 
@@ -386,53 +377,53 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 		clusterToSuiteMap[suite.GetClusterId()] = suiteStatus
 	}
 
-	return &v2.ComplianceScanConfigurationStatus{
-		Id:       scanConfig.GetId(),
-		ScanName: scanConfig.GetScanConfigName(),
-		ClusterStatus: func() []*v2.ClusterScanStatus {
-			clusterStatuses := make([]*v2.ClusterScanStatus, 0, len(scanClusters))
-			for _, cluster := range scanClusters {
-				var errors []string
-				bindings, err := bindingsDS.GetScanSettingBindings(ctx, search.NewQueryBuilder().
-					AddExactMatches(search.ComplianceOperatorScanConfigName, scanConfig.GetScanConfigName()).
-					AddExactMatches(search.ClusterID, cluster.GetClusterId()).ProtoQuery())
-				if err != nil {
-					continue
-				}
-
-				// We may not have received any bindings from sensor
-				if len(bindings) != 0 {
-					bindingError := getLatestBindingError(bindings[0].GetStatus())
-					if bindingError != "" {
-						errors = append(errors, bindingError)
-					}
-				}
-
-				errors = append(errors, cluster.GetErrors()...)
-				clusterStatuses = append(clusterStatuses, &v2.ClusterScanStatus{
-					ClusterId:   cluster.GetClusterId(),
-					ClusterName: cluster.GetClusterName(),
-					Errors:      errors,
-					SuiteStatus: clusterToSuiteMap[cluster.GetClusterId()],
-				})
+	bcscs := &v2.BaseComplianceScanConfigurationSettings{}
+	bcscs.SetOneTimeScan(scanConfig.GetOneTimeScan())
+	bcscs.SetScanSchedule(convertProtoScheduleToV2(scanConfig.GetSchedule()))
+	bcscs.SetProfiles(profiles)
+	bcscs.SetDescription(scanConfig.GetDescription())
+	bcscs.SetNotifiers(notifiers)
+	slimUser := &v2.SlimUser{}
+	slimUser.SetId(scanConfig.GetModifiedBy().GetId())
+	slimUser.SetName(scanConfig.GetModifiedBy().GetName())
+	cscs := &v2.ComplianceScanConfigurationStatus{}
+	cscs.SetId(scanConfig.GetId())
+	cscs.SetScanName(scanConfig.GetScanConfigName())
+	cscs.SetClusterStatus(func() []*v2.ClusterScanStatus {
+		clusterStatuses := make([]*v2.ClusterScanStatus, 0, len(scanClusters))
+		for _, cluster := range scanClusters {
+			var errors []string
+			bindings, err := bindingsDS.GetScanSettingBindings(ctx, search.NewQueryBuilder().
+				AddExactMatches(search.ComplianceOperatorScanConfigName, scanConfig.GetScanConfigName()).
+				AddExactMatches(search.ClusterID, cluster.GetClusterId()).ProtoQuery())
+			if err != nil {
+				continue
 			}
-			return clusterStatuses
-		}(),
-		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
-			OneTimeScan:  scanConfig.GetOneTimeScan(),
-			ScanSchedule: convertProtoScheduleToV2(scanConfig.GetSchedule()),
-			Profiles:     profiles,
-			Description:  scanConfig.GetDescription(),
-			Notifiers:    notifiers,
-		},
-		ModifiedBy: &v2.SlimUser{
-			Id:   scanConfig.GetModifiedBy().GetId(),
-			Name: scanConfig.GetModifiedBy().GetName(),
-		},
-		CreatedTime:      scanConfig.GetCreatedTime(),
-		LastUpdatedTime:  scanConfig.GetLastUpdatedTime(),
-		LastExecutedTime: lastScanTime,
-	}, nil
+
+			// We may not have received any bindings from sensor
+			if len(bindings) != 0 {
+				bindingError := getLatestBindingError(bindings[0].GetStatus())
+				if bindingError != "" {
+					errors = append(errors, bindingError)
+				}
+			}
+
+			errors = append(errors, cluster.GetErrors()...)
+			css := &v2.ClusterScanStatus{}
+			css.SetClusterId(cluster.GetClusterId())
+			css.SetClusterName(cluster.GetClusterName())
+			css.SetErrors(errors)
+			css.SetSuiteStatus(clusterToSuiteMap[cluster.GetClusterId()])
+			clusterStatuses = append(clusterStatuses, css)
+		}
+		return clusterStatuses
+	}())
+	cscs.SetScanConfig(bcscs)
+	cscs.SetModifiedBy(slimUser)
+	cscs.SetCreatedTime(scanConfig.GetCreatedTime())
+	cscs.SetLastUpdatedTime(scanConfig.GetLastUpdatedTime())
+	cscs.SetLastExecutedTime(lastScanTime)
+	return cscs, nil
 }
 
 func convertStorageScanConfigToV2ScanStatuses(ctx context.Context,
@@ -490,12 +481,12 @@ func failedClusterReasonsJoinFunc(reasons []string) string {
 func convertStorageFailedClustersToV2FailedClusters(failedClusters []*storage.ComplianceOperatorReportSnapshotV2_FailedCluster) []*v2.FailedCluster {
 	ret := make([]*v2.FailedCluster, 0, len(failedClusters))
 	for _, cluster := range failedClusters {
-		ret = append(ret, &v2.FailedCluster{
-			ClusterId:       cluster.GetClusterId(),
-			ClusterName:     cluster.GetClusterName(),
-			OperatorVersion: cluster.GetOperatorVersion(),
-			Reason:          failedClusterReasonsJoinFunc(cluster.GetReasons()),
-		})
+		fc := &v2.FailedCluster{}
+		fc.SetClusterId(cluster.GetClusterId())
+		fc.SetClusterName(cluster.GetClusterName())
+		fc.SetOperatorVersion(cluster.GetOperatorVersion())
+		fc.SetReason(failedClusterReasonsJoinFunc(cluster.GetReasons()))
+		ret = append(ret, fc)
 	}
 	return ret
 }
@@ -540,27 +531,26 @@ func convertStorageSnapshotToV2Snapshot(ctx context.Context, snapshot *storage.C
 		blobs := search.ResultsToIDSet(blobResults)
 		isDownloadReady = blobs.Contains(blobName)
 	}
-	retSnapshot := &v2.ComplianceReportSnapshot{
-		ReportJobId:  snapshot.GetReportId(),
-		ScanConfigId: snapshot.GetScanConfigurationId(),
-		Name:         snapshot.GetName(),
-		Description:  snapshot.GetDescription(),
-		ReportStatus: &v2.ComplianceReportStatus{
-			RunState:                 storageReportRunStateToV2[snapshot.GetReportStatus().GetRunState()],
-			StartedAt:                snapshot.GetReportStatus().GetStartedAt(),
-			CompletedAt:              snapshot.GetReportStatus().GetCompletedAt(),
-			ErrorMsg:                 snapshot.GetReportStatus().GetErrorMsg(),
-			ReportRequestType:        storageReportRequestTypeToV2[snapshot.GetReportStatus().GetReportRequestType()],
-			ReportNotificationMethod: storageReportNotificationMethodToV2[snapshot.GetReportStatus().GetReportNotificationMethod()],
-			FailedClusters:           convertStorageFailedClustersToV2FailedClusters(snapshot.GetFailedClusters()),
-		},
-		ReportData: configStatus,
-		User: &v2.SlimUser{
-			Id:   snapshot.GetUser().GetId(),
-			Name: snapshot.GetUser().GetName(),
-		},
-		IsDownloadAvailable: isDownloadReady,
-	}
+	crs := &v2.ComplianceReportStatus{}
+	crs.SetRunState(storageReportRunStateToV2[snapshot.GetReportStatus().GetRunState()])
+	crs.SetStartedAt(snapshot.GetReportStatus().GetStartedAt())
+	crs.SetCompletedAt(snapshot.GetReportStatus().GetCompletedAt())
+	crs.SetErrorMsg(snapshot.GetReportStatus().GetErrorMsg())
+	crs.SetReportRequestType(storageReportRequestTypeToV2[snapshot.GetReportStatus().GetReportRequestType()])
+	crs.SetReportNotificationMethod(storageReportNotificationMethodToV2[snapshot.GetReportStatus().GetReportNotificationMethod()])
+	crs.SetFailedClusters(convertStorageFailedClustersToV2FailedClusters(snapshot.GetFailedClusters()))
+	slimUser := &v2.SlimUser{}
+	slimUser.SetId(snapshot.GetUser().GetId())
+	slimUser.SetName(snapshot.GetUser().GetName())
+	retSnapshot := &v2.ComplianceReportSnapshot{}
+	retSnapshot.SetReportJobId(snapshot.GetReportId())
+	retSnapshot.SetScanConfigId(snapshot.GetScanConfigurationId())
+	retSnapshot.SetName(snapshot.GetName())
+	retSnapshot.SetDescription(snapshot.GetDescription())
+	retSnapshot.SetReportStatus(crs)
+	retSnapshot.SetReportData(configStatus)
+	retSnapshot.SetUser(slimUser)
+	retSnapshot.SetIsDownloadAvailable(isDownloadReady)
 	return retSnapshot, nil
 }
 

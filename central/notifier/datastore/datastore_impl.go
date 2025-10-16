@@ -168,7 +168,7 @@ func (b *datastoreImpl) AddNotifier(ctx context.Context, notifier *storage.Notif
 	} else if !ok {
 		return "", sac.ErrResourceAccessDenied
 	}
-	notifier.Id = uuid.NewV4().String()
+	notifier.SetId(uuid.NewV4().String())
 
 	if err := verifyNotifierOrigin(ctx, notifier); err != nil {
 		return "", errors.Wrap(err, "origin didn't match for new notifier")

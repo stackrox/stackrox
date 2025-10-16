@@ -52,11 +52,11 @@ func ExtractMitreAttackBundle(domain Domain, platforms []Platform, objs []mitreO
 			continue
 		}
 
-		tactics[id] = &storage.MitreTactic{
-			Id:          id,
-			Name:        obj.Name,
-			Description: obj.Description,
-		}
+		mt := &storage.MitreTactic{}
+		mt.SetId(id)
+		mt.SetName(obj.Name)
+		mt.SetDescription(obj.Description)
+		tactics[id] = mt
 		tacticShortNameMap[obj.XMitreShortname] = id
 	}
 
@@ -86,11 +86,11 @@ func ExtractMitreAttackBundle(domain Domain, platforms []Platform, objs []mitreO
 			continue
 		}
 
-		techniques[techniqueID] = &storage.MitreTechnique{
-			Id:          techniqueID,
-			Name:        obj.Name,
-			Description: obj.Description,
-		}
+		mt := &storage.MitreTechnique{}
+		mt.SetId(techniqueID)
+		mt.SetName(obj.Name)
+		mt.SetDescription(obj.Description)
+		techniques[techniqueID] = mt
 
 		if obj.XMitreIsSubtechnique {
 			subTechiquesMap[techniqueID] = struct{}{}
@@ -134,7 +134,7 @@ func ExtractMitreAttackBundle(domain Domain, platforms []Platform, objs []mitreO
 		if pTechnique == nil {
 			return nil, errors.Errorf("MITRE ATT&CK technique %s not found", pID)
 		}
-		technique.Name = fmt.Sprintf("%s: %s", pTechnique.GetName(), technique.GetName())
+		technique.SetName(fmt.Sprintf("%s: %s", pTechnique.GetName(), technique.GetName()))
 	}
 
 	var version string
@@ -159,12 +159,11 @@ func buildVectors(
 ) []*storage.MitreAttackVector {
 	var vectors []*storage.MitreAttackVector
 	for tacticID, techniquesMap := range tacticTechniquesMap {
-		vector := &storage.MitreAttackVector{
-			Tactic: tactics[tacticID],
-		}
+		vector := &storage.MitreAttackVector{}
+		vector.SetTactic(tactics[tacticID])
 
 		for techniqueID := range techniquesMap {
-			vector.Techniques = append(vector.Techniques, techniques[techniqueID])
+			vector.SetTechniques(append(vector.GetTechniques(), techniques[techniqueID]))
 		}
 		vectors = append(vectors, vector)
 
@@ -186,9 +185,8 @@ func generateBundle(
 	techniqueMatrix map[Platform]map[string]struct{},
 	vectors ...*storage.MitreAttackVector,
 ) *storage.MitreAttackBundle {
-	bundle := &storage.MitreAttackBundle{
-		Version: version,
-	}
+	bundle := &storage.MitreAttackBundle{}
+	bundle.SetVersion(version)
 	for platform, techniqueIDs := range techniqueMatrix {
 		var filteredVectors []*storage.MitreAttackVector
 		for _, vector := range vectors {
@@ -203,23 +201,23 @@ func generateBundle(
 				continue
 			}
 
-			filteredVectors = append(filteredVectors, &storage.MitreAttackVector{
-				Tactic:     vector.GetTactic(),
-				Techniques: filteredTechniques,
-			})
+			mav := &storage.MitreAttackVector{}
+			mav.SetTactic(vector.GetTactic())
+			mav.SetTechniques(filteredTechniques)
+			filteredVectors = append(filteredVectors, mav)
 		}
 
 		if len(filteredVectors) == 0 {
 			continue
 		}
 
-		bundle.Matrices = append(bundle.Matrices, &storage.MitreAttackMatrix{
-			MatrixInfo: &storage.MitreAttackMatrix_MatrixInfo{
-				Domain:   domain.String(),
-				Platform: platform.String(),
-			},
-			Vectors: filteredVectors,
-		})
+		mm := &storage.MitreAttackMatrix_MatrixInfo{}
+		mm.SetDomain(domain.String())
+		mm.SetPlatform(platform.String())
+		mam := &storage.MitreAttackMatrix{}
+		mam.SetMatrixInfo(mm)
+		mam.SetVectors(filteredVectors)
+		bundle.SetMatrices(append(bundle.GetMatrices(), mam))
 	}
 
 	sort.SliceStable(bundle.GetMatrices(), func(i, j int) bool {

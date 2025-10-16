@@ -108,11 +108,11 @@ func convertMany(serviceAccounts []*storage.ServiceAccount, results []searchPkg.
 }
 
 func convertServiceAccount(sa *storage.ServiceAccount, result *searchPkg.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_SERVICE_ACCOUNTS,
-		Id:             sa.GetId(),
-		Name:           sa.GetName(),
-		FieldToMatches: searchPkg.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+	sr := &v1.SearchResult{}
+	sr.SetCategory(v1.SearchCategory_SERVICE_ACCOUNTS)
+	sr.SetId(sa.GetId())
+	sr.SetName(sa.GetName())
+	sr.SetFieldToMatches(searchPkg.GetProtoMatchesMap(result.Matches))
+	sr.SetScore(result.Score)
+	return sr
 }

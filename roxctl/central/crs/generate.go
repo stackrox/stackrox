@@ -65,7 +65,9 @@ func generateCRS(cliEnvironment environment.Environment, name string,
 			return errors.Wrap(err, "generating new CRS with extended settings")
 		}
 	} else {
-		resp, err = svc.GenerateCRS(ctx, &v1.CRSGenRequest{Name: name})
+		crsgr := &v1.CRSGenRequest{}
+		crsgr.SetName(name)
+		resp, err = svc.GenerateCRS(ctx, crsgr)
 		if err != nil {
 			if errStatus, ok := status.FromError(err); ok && errStatus.Code() == codes.Unimplemented {
 				return errors.Wrap(err, "missing CRS support in Central")
@@ -108,12 +110,13 @@ func generateCrsExtended(
 	validFor time.Duration,
 	validUntil time.Time,
 ) (*v1.CRSGenResponse, error) {
-	req := v1.CRSGenRequestExtended{Name: name}
+	req := &v1.CRSGenRequestExtended{}
+	req.SetName(name)
 	if validFor != 0 {
-		req.ValidFor = durationpb.New(validFor)
+		req.SetValidFor(durationpb.New(validFor))
 	}
 	if !validUntil.IsZero() {
-		req.ValidUntil = timestamppb.New(validUntil)
+		req.SetValidUntil(timestamppb.New(validUntil))
 	}
 
 	crs, err := svc.GenerateCRSExtended(ctx, &req)

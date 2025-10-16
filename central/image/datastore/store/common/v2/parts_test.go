@@ -11,503 +11,436 @@ import (
 	"github.com/stackrox/rox/pkg/scancomponent"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
 	ts = protocompat.TimestampNow()
 
 	testComponents = []*storage.EmbeddedImageScanComponent{
-		{
-			Name:    "comp1",
-			Version: "ver1",
-			HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
-				LayerIndex: 1,
-			},
-		},
-		{
-			Name:    "comp1",
-			Version: "ver2",
-			HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
-				LayerIndex: 3,
-			},
+		storage.EmbeddedImageScanComponent_builder{
+			Name:       "comp1",
+			Version:    "ver1",
+			LayerIndex: proto.Int32(1),
+		}.Build(),
+		storage.EmbeddedImageScanComponent_builder{
+			Name:       "comp1",
+			Version:    "ver2",
+			LayerIndex: proto.Int32(3),
 			Vulns: []*storage.EmbeddedVulnerability{
-				{
+				storage.EmbeddedVulnerability_builder{
 					Cve:                   "cve1",
 					VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 					VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
 					FirstImageOccurrence:  ts,
 					FirstSystemOccurrence: ts,
-				},
-				{
-					Cve:                "cve2",
-					VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-					VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
-					SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-						FixedBy: "ver3",
-					},
+				}.Build(),
+				storage.EmbeddedVulnerability_builder{
+					Cve:                   "cve2",
+					VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+					VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+					FixedBy:               proto.String("ver3"),
 					FirstImageOccurrence:  ts,
 					FirstSystemOccurrence: ts,
-				},
+				}.Build(),
 				// Exact duplicate to make sure we filter that out
-				{
-					Cve:                "cve2",
-					VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-					VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
-					SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-						FixedBy: "ver3",
-					},
+				storage.EmbeddedVulnerability_builder{
+					Cve:                   "cve2",
+					VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+					VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+					FixedBy:               proto.String("ver3"),
 					FirstImageOccurrence:  ts,
 					FirstSystemOccurrence: ts,
-				},
+				}.Build(),
 			},
-		},
-		{
-			Name:    "comp2",
-			Version: "ver1",
-			HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
-				LayerIndex: 2,
-			},
+		}.Build(),
+		storage.EmbeddedImageScanComponent_builder{
+			Name:       "comp2",
+			Version:    "ver1",
+			LayerIndex: proto.Int32(2),
 			Vulns: []*storage.EmbeddedVulnerability{
-				{
-					Cve:                "cve1",
-					VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-					VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
-					SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-						FixedBy: "ver2",
-					},
+				storage.EmbeddedVulnerability_builder{
+					Cve:                   "cve1",
+					VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+					VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+					FixedBy:               proto.String("ver2"),
 					FirstImageOccurrence:  ts,
 					FirstSystemOccurrence: ts,
-				},
-				{
+				}.Build(),
+				storage.EmbeddedVulnerability_builder{
 					Cve:                   "cve2",
 					VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 					VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
 					FirstImageOccurrence:  ts,
 					FirstSystemOccurrence: ts,
-				},
+				}.Build(),
 			},
-		},
+		}.Build(),
 		// Exact duplicate to ensure it is filtered out
-		{
-			Name:    "comp2",
-			Version: "ver1",
-			HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
-				LayerIndex: 2,
-			},
+		storage.EmbeddedImageScanComponent_builder{
+			Name:       "comp2",
+			Version:    "ver1",
+			LayerIndex: proto.Int32(2),
 			Vulns: []*storage.EmbeddedVulnerability{
-				{
-					Cve:                "cve1",
-					VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-					VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
-					SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-						FixedBy: "ver2",
-					},
+				storage.EmbeddedVulnerability_builder{
+					Cve:                   "cve1",
+					VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+					VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+					FixedBy:               proto.String("ver2"),
 					FirstImageOccurrence:  ts,
 					FirstSystemOccurrence: ts,
-				},
-				{
+				}.Build(),
+				storage.EmbeddedVulnerability_builder{
 					Cve:                   "cve2",
 					VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 					VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
 					FirstImageOccurrence:  ts,
 					FirstSystemOccurrence: ts,
-				},
+				}.Build(),
 			},
-		},
+		}.Build(),
 	}
 
 	testCVEs = map[string]*storage.EmbeddedVulnerability{
-		"cve1comp1": {
+		"cve1comp1": storage.EmbeddedVulnerability_builder{
 			Cve:                   "cve1",
 			VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 			VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
 			FirstImageOccurrence:  ts,
 			FirstSystemOccurrence: ts,
-		},
-		"cve2comp1": {
-			Cve:                "cve2",
-			VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-			VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
-			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-				FixedBy: "ver3",
-			},
+		}.Build(),
+		"cve2comp1": storage.EmbeddedVulnerability_builder{
+			Cve:                   "cve2",
+			VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+			VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+			FixedBy:               proto.String("ver3"),
 			FirstImageOccurrence:  ts,
 			FirstSystemOccurrence: ts,
-		},
-		"cve1comp2": {
-			Cve:                "cve1",
-			VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-			VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
-			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-				FixedBy: "ver2",
-			},
+		}.Build(),
+		"cve1comp2": storage.EmbeddedVulnerability_builder{
+			Cve:                   "cve1",
+			VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+			VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+			FixedBy:               proto.String("ver2"),
 			FirstImageOccurrence:  ts,
 			FirstSystemOccurrence: ts,
-		},
-		"cve2comp2": {
+		}.Build(),
+		"cve2comp2": storage.EmbeddedVulnerability_builder{
 			Cve:                   "cve2",
 			VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 			VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
 			FirstImageOccurrence:  ts,
 			FirstSystemOccurrence: ts,
-		},
+		}.Build(),
 	}
 )
 
 func TestSplitAndMergeImage(t *testing.T) {
-	image := &storage.Image{
+	image := storage.Image_builder{
 		Id: "sha",
-		Name: &storage.ImageName{
+		Name: storage.ImageName_builder{
 			FullName: "name",
-		},
-		Metadata: &storage.ImageMetadata{
-			V1: &storage.V1Metadata{
+		}.Build(),
+		Metadata: storage.ImageMetadata_builder{
+			V1: storage.V1Metadata_builder{
 				Created: ts,
-			},
-		},
-		SetComponents: &storage.Image_Components{
-			Components: 3,
-		},
-		SetCves: &storage.Image_Cves{
-			Cves: 4,
-		},
-		SetFixable: &storage.Image_FixableCves{
-			FixableCves: 2,
-		},
-		Scan: &storage.ImageScan{
+			}.Build(),
+		}.Build(),
+		Components:  proto.Int32(3),
+		Cves:        proto.Int32(4),
+		FixableCves: proto.Int32(2),
+		Scan: storage.ImageScan_builder{
 			ScanTime: ts,
 			Components: []*storage.EmbeddedImageScanComponent{
-				{
-					Name:    "comp1",
-					Version: "ver1",
-					HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
-						LayerIndex: 1,
-					},
-					Vulns: []*storage.EmbeddedVulnerability{},
-				},
-				{
-					Name:    "comp1",
-					Version: "ver2",
-					HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
-						LayerIndex: 3,
-					},
+				storage.EmbeddedImageScanComponent_builder{
+					Name:       "comp1",
+					Version:    "ver1",
+					LayerIndex: proto.Int32(1),
+					Vulns:      []*storage.EmbeddedVulnerability{},
+				}.Build(),
+				storage.EmbeddedImageScanComponent_builder{
+					Name:       "comp1",
+					Version:    "ver2",
+					LayerIndex: proto.Int32(3),
 					Vulns: []*storage.EmbeddedVulnerability{
-						{
+						storage.EmbeddedVulnerability_builder{
 							Cve:                   "cve1",
 							VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 							VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
 							FirstImageOccurrence:  ts,
 							FirstSystemOccurrence: ts,
-						},
-						{
-							Cve:                "cve2",
-							VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-							VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
-							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-								FixedBy: "ver3",
-							},
+						}.Build(),
+						storage.EmbeddedVulnerability_builder{
+							Cve:                   "cve2",
+							VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+							FixedBy:               proto.String("ver3"),
 							FirstImageOccurrence:  ts,
 							FirstSystemOccurrence: ts,
-						},
-						{
-							Cve:                "cve2",
-							VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-							VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
-							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-								FixedBy: "ver3",
-							},
+						}.Build(),
+						storage.EmbeddedVulnerability_builder{
+							Cve:                   "cve2",
+							VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+							FixedBy:               proto.String("ver3"),
 							FirstImageOccurrence:  ts,
 							FirstSystemOccurrence: ts,
-						},
+						}.Build(),
 					},
-				},
-				{
-					Name:    "comp2",
-					Version: "ver1",
-					HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
-						LayerIndex: 2,
-					},
+				}.Build(),
+				storage.EmbeddedImageScanComponent_builder{
+					Name:       "comp2",
+					Version:    "ver1",
+					LayerIndex: proto.Int32(2),
 					Vulns: []*storage.EmbeddedVulnerability{
-						{
-							Cve:                "cve1",
-							VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-							VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
-							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-								FixedBy: "ver2",
-							},
+						storage.EmbeddedVulnerability_builder{
+							Cve:                   "cve1",
+							VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+							FixedBy:               proto.String("ver2"),
 							FirstImageOccurrence:  ts,
 							FirstSystemOccurrence: ts,
-						},
-						{
+						}.Build(),
+						storage.EmbeddedVulnerability_builder{
 							Cve:                   "cve2",
 							VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 							VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
 							FirstImageOccurrence:  ts,
 							FirstSystemOccurrence: ts,
-						},
+						}.Build(),
 					},
-				},
-				{
-					Name:    "comp2",
-					Version: "ver1",
-					HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
-						LayerIndex: 2,
-					},
+				}.Build(),
+				storage.EmbeddedImageScanComponent_builder{
+					Name:       "comp2",
+					Version:    "ver1",
+					LayerIndex: proto.Int32(2),
 					Vulns: []*storage.EmbeddedVulnerability{
-						{
-							Cve:                "cve1",
-							VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-							VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
-							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-								FixedBy: "ver2",
-							},
+						storage.EmbeddedVulnerability_builder{
+							Cve:                   "cve1",
+							VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+							FixedBy:               proto.String("ver2"),
 							FirstImageOccurrence:  ts,
 							FirstSystemOccurrence: ts,
-						},
-						{
+						}.Build(),
+						storage.EmbeddedVulnerability_builder{
 							Cve:                   "cve2",
 							VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 							VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
 							FirstImageOccurrence:  ts,
 							FirstSystemOccurrence: ts,
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
-		},
-	}
+		}.Build(),
+	}.Build()
 
 	splitExpected := ImageParts{
-		Image: &storage.Image{
+		Image: storage.Image_builder{
 			Id: "sha",
-			Name: &storage.ImageName{
+			Name: storage.ImageName_builder{
 				FullName: "name",
-			},
-			Metadata: &storage.ImageMetadata{
-				V1: &storage.V1Metadata{
+			}.Build(),
+			Metadata: storage.ImageMetadata_builder{
+				V1: storage.V1Metadata_builder{
 					Created: ts,
-				},
-			},
-			Scan: &storage.ImageScan{
+				}.Build(),
+			}.Build(),
+			Scan: storage.ImageScan_builder{
 				ScanTime: ts,
-			},
-			SetComponents: &storage.Image_Components{
-				Components: 3,
-			},
-			SetCves: &storage.Image_Cves{
-				Cves: 4,
-			},
-			SetFixable: &storage.Image_FixableCves{
-				FixableCves: 2,
-			},
-		},
+			}.Build(),
+			Components:  proto.Int32(3),
+			Cves:        proto.Int32(4),
+			FixableCves: proto.Int32(2),
+		}.Build(),
 		ImageCVEEdges: map[string]*storage.ImageCVEEdge{
-			cve.ID("cve1", ""): {
+			cve.ID("cve1", ""): storage.ImageCVEEdge_builder{
 				Id:         pgSearch.IDFromPks([]string{"sha", cve.ID("cve1", "")}),
 				ImageId:    "sha",
 				ImageCveId: cve.ID("cve1", ""),
-			},
-			cve.ID("cve2", ""): {
+			}.Build(),
+			cve.ID("cve2", ""): storage.ImageCVEEdge_builder{
 				Id:         pgSearch.IDFromPks([]string{"sha", cve.ID("cve2", "")}),
 				ImageId:    "sha",
 				ImageCveId: cve.ID("cve2", ""),
-			},
+			}.Build(),
 		},
 		Children: []ComponentParts{
 			{
-				Component: &storage.ImageComponent{
+				Component: storage.ImageComponent_builder{
 					Id:      scancomponent.ComponentID("comp1", "ver1", ""),
 					Name:    "comp1",
 					Version: "ver1",
-				},
-				ComponentV2: &storage.ImageComponentV2{
-					Id:      getTestComponentID(testComponents[0], "sha"),
-					Name:    "comp1",
-					Version: "ver1",
-					ImageId: "sha",
-					HasLayerIndex: &storage.ImageComponentV2_LayerIndex{
-						LayerIndex: 1,
-					},
-				},
-				Edge: &storage.ImageComponentEdge{
+				}.Build(),
+				ComponentV2: storage.ImageComponentV2_builder{
+					Id:         getTestComponentID(testComponents[0], "sha"),
+					Name:       "comp1",
+					Version:    "ver1",
+					ImageId:    "sha",
+					LayerIndex: proto.Int32(1),
+				}.Build(),
+				Edge: storage.ImageComponentEdge_builder{
 					Id:               pgSearch.IDFromPks([]string{"sha", scancomponent.ComponentID("comp1", "ver1", "")}),
 					ImageId:          "sha",
 					ImageComponentId: scancomponent.ComponentID("comp1", "ver1", ""),
-					HasLayerIndex: &storage.ImageComponentEdge_LayerIndex{
-						LayerIndex: 1,
-					},
-				},
+					LayerIndex:       proto.Int32(1),
+				}.Build(),
 				Children: []CVEParts{},
 			},
 			{
-				Component: &storage.ImageComponent{
+				Component: storage.ImageComponent_builder{
 					Id:      scancomponent.ComponentID("comp1", "ver2", ""),
 					Name:    "comp1",
 					Version: "ver2",
-				},
-				ComponentV2: &storage.ImageComponentV2{
-					Id:      getTestComponentID(testComponents[1], "sha"),
-					Name:    "comp1",
-					Version: "ver2",
-					ImageId: "sha",
-					HasLayerIndex: &storage.ImageComponentV2_LayerIndex{
-						LayerIndex: 3,
-					},
-				},
-				Edge: &storage.ImageComponentEdge{
+				}.Build(),
+				ComponentV2: storage.ImageComponentV2_builder{
+					Id:         getTestComponentID(testComponents[1], "sha"),
+					Name:       "comp1",
+					Version:    "ver2",
+					ImageId:    "sha",
+					LayerIndex: proto.Int32(3),
+				}.Build(),
+				Edge: storage.ImageComponentEdge_builder{
 					Id:               pgSearch.IDFromPks([]string{"sha", scancomponent.ComponentID("comp1", "ver2", "")}),
 					ImageId:          "sha",
 					ImageComponentId: scancomponent.ComponentID("comp1", "ver2", ""),
-					HasLayerIndex: &storage.ImageComponentEdge_LayerIndex{
-						LayerIndex: 3,
-					},
-				},
+					LayerIndex:       proto.Int32(3),
+				}.Build(),
 				Children: []CVEParts{
 					{
-						CVE: &storage.ImageCVE{
+						CVE: storage.ImageCVE_builder{
 							Id: cve.ID("cve1", ""),
-							CveBaseInfo: &storage.CVEInfo{
+							CveBaseInfo: storage.CVEInfo_builder{
 								Cve:       "cve1",
 								CreatedAt: ts,
-							},
+							}.Build(),
 							NvdScoreVersion: storage.CvssScoreVersion_UNKNOWN_VERSION,
-						},
-						Edge: &storage.ComponentCVEEdge{
+						}.Build(),
+						Edge: storage.ComponentCVEEdge_builder{
 							Id:               pgSearch.IDFromPks([]string{scancomponent.ComponentID("comp1", "ver2", ""), cve.ID("cve1", "")}),
 							ImageComponentId: scancomponent.ComponentID("comp1", "ver2", ""),
 							ImageCveId:       cve.ID("cve1", ""),
-						},
-						CVEV2: &storage.ImageCVEV2{
+						}.Build(),
+						CVEV2: storage.ImageCVEV2_builder{
 							Id:      getTestCVEID(testCVEs["cve1comp1"], getTestComponentID(testComponents[1], "sha")),
 							ImageId: "sha",
-							CveBaseInfo: &storage.CVEInfo{
+							CveBaseInfo: storage.CVEInfo_builder{
 								Cve:       "cve1",
 								CreatedAt: ts,
-							},
+							}.Build(),
 							NvdScoreVersion:      storage.CvssScoreVersion_UNKNOWN_VERSION,
 							FirstImageOccurrence: ts,
 							ComponentId:          getTestComponentID(testComponents[1], "sha"),
-						},
+						}.Build(),
 					},
 					{
-						CVE: &storage.ImageCVE{
+						CVE: storage.ImageCVE_builder{
 							Id: cve.ID("cve2", ""),
-							CveBaseInfo: &storage.CVEInfo{
+							CveBaseInfo: storage.CVEInfo_builder{
 								Cve:       "cve2",
 								CreatedAt: ts,
-							},
+							}.Build(),
 							NvdScoreVersion: storage.CvssScoreVersion_UNKNOWN_VERSION,
-						},
-						Edge: &storage.ComponentCVEEdge{
+						}.Build(),
+						Edge: storage.ComponentCVEEdge_builder{
 							Id:               pgSearch.IDFromPks([]string{scancomponent.ComponentID("comp1", "ver2", ""), cve.ID("cve2", "")}),
 							ImageComponentId: scancomponent.ComponentID("comp1", "ver2", ""),
 							ImageCveId:       cve.ID("cve2", ""),
-							HasFixedBy: &storage.ComponentCVEEdge_FixedBy{
-								FixedBy: "ver3",
-							},
-							IsFixable: true,
-						},
-						CVEV2: &storage.ImageCVEV2{
+							FixedBy:          proto.String("ver3"),
+							IsFixable:        true,
+						}.Build(),
+						CVEV2: storage.ImageCVEV2_builder{
 							Id:      getTestCVEID(testCVEs["cve2comp1"], getTestComponentID(testComponents[1], "sha")),
 							ImageId: "sha",
-							CveBaseInfo: &storage.CVEInfo{
+							CveBaseInfo: storage.CVEInfo_builder{
 								Cve:       "cve2",
 								CreatedAt: ts,
-							},
-							NvdScoreVersion: storage.CvssScoreVersion_UNKNOWN_VERSION,
-							HasFixedBy: &storage.ImageCVEV2_FixedBy{
-								FixedBy: "ver3",
-							},
+							}.Build(),
+							NvdScoreVersion:      storage.CvssScoreVersion_UNKNOWN_VERSION,
+							FixedBy:              proto.String("ver3"),
 							IsFixable:            true,
 							FirstImageOccurrence: ts,
 							ComponentId:          getTestComponentID(testComponents[1], "sha"),
-						},
+						}.Build(),
 					},
 				},
 			},
 			{
-				Component: &storage.ImageComponent{
+				Component: storage.ImageComponent_builder{
 					Id:      scancomponent.ComponentID("comp2", "ver1", ""),
 					Name:    "comp2",
 					Version: "ver1",
-				},
-				ComponentV2: &storage.ImageComponentV2{
-					Id:      getTestComponentID(testComponents[2], "sha"),
-					Name:    "comp2",
-					Version: "ver1",
-					ImageId: "sha",
-					HasLayerIndex: &storage.ImageComponentV2_LayerIndex{
-						LayerIndex: 2,
-					},
-				},
-				Edge: &storage.ImageComponentEdge{
+				}.Build(),
+				ComponentV2: storage.ImageComponentV2_builder{
+					Id:         getTestComponentID(testComponents[2], "sha"),
+					Name:       "comp2",
+					Version:    "ver1",
+					ImageId:    "sha",
+					LayerIndex: proto.Int32(2),
+				}.Build(),
+				Edge: storage.ImageComponentEdge_builder{
 					Id:               pgSearch.IDFromPks([]string{"sha", scancomponent.ComponentID("comp2", "ver1", "")}),
 					ImageId:          "sha",
 					ImageComponentId: scancomponent.ComponentID("comp2", "ver1", ""),
-					HasLayerIndex: &storage.ImageComponentEdge_LayerIndex{
-						LayerIndex: 2,
-					},
-				},
+					LayerIndex:       proto.Int32(2),
+				}.Build(),
 				Children: []CVEParts{
 					{
-						CVE: &storage.ImageCVE{
+						CVE: storage.ImageCVE_builder{
 							Id: cve.ID("cve1", ""),
-							CveBaseInfo: &storage.CVEInfo{
+							CveBaseInfo: storage.CVEInfo_builder{
 								Cve:       "cve1",
 								CreatedAt: ts,
-							},
+							}.Build(),
 							NvdScoreVersion: storage.CvssScoreVersion_UNKNOWN_VERSION,
-						},
-						Edge: &storage.ComponentCVEEdge{
+						}.Build(),
+						Edge: storage.ComponentCVEEdge_builder{
 							Id:               pgSearch.IDFromPks([]string{scancomponent.ComponentID("comp2", "ver1", ""), cve.ID("cve1", "")}),
 							ImageComponentId: scancomponent.ComponentID("comp2", "ver1", ""),
 							ImageCveId:       cve.ID("cve1", ""),
-							HasFixedBy: &storage.ComponentCVEEdge_FixedBy{
-								FixedBy: "ver2",
-							},
-							IsFixable: true,
-						},
-						CVEV2: &storage.ImageCVEV2{
+							FixedBy:          proto.String("ver2"),
+							IsFixable:        true,
+						}.Build(),
+						CVEV2: storage.ImageCVEV2_builder{
 							Id:      getTestCVEID(testCVEs["cve1comp2"], getTestComponentID(testComponents[2], "sha")),
 							ImageId: "sha",
-							CveBaseInfo: &storage.CVEInfo{
+							CveBaseInfo: storage.CVEInfo_builder{
 								Cve:       "cve1",
 								CreatedAt: ts,
-							},
-							NvdScoreVersion: storage.CvssScoreVersion_UNKNOWN_VERSION,
-							HasFixedBy: &storage.ImageCVEV2_FixedBy{
-								FixedBy: "ver2",
-							},
+							}.Build(),
+							NvdScoreVersion:      storage.CvssScoreVersion_UNKNOWN_VERSION,
+							FixedBy:              proto.String("ver2"),
 							IsFixable:            true,
 							FirstImageOccurrence: ts,
 							ComponentId:          getTestComponentID(testComponents[2], "sha"),
-						},
+						}.Build(),
 					},
 					{
-						CVE: &storage.ImageCVE{
+						CVE: storage.ImageCVE_builder{
 							Id: cve.ID("cve2", ""),
-							CveBaseInfo: &storage.CVEInfo{
+							CveBaseInfo: storage.CVEInfo_builder{
 								Cve:       "cve2",
 								CreatedAt: ts,
-							},
+							}.Build(),
 							NvdScoreVersion: storage.CvssScoreVersion_UNKNOWN_VERSION,
-						},
-						Edge: &storage.ComponentCVEEdge{
+						}.Build(),
+						Edge: storage.ComponentCVEEdge_builder{
 							Id:               pgSearch.IDFromPks([]string{scancomponent.ComponentID("comp2", "ver1", ""), cve.ID("cve2", "")}),
 							ImageComponentId: scancomponent.ComponentID("comp2", "ver1", ""),
 							ImageCveId:       cve.ID("cve2", ""),
-						},
-						CVEV2: &storage.ImageCVEV2{
+						}.Build(),
+						CVEV2: storage.ImageCVEV2_builder{
 							Id:      getTestCVEID(testCVEs["cve2comp2"], getTestComponentID(testComponents[2], "sha")),
 							ImageId: "sha",
-							CveBaseInfo: &storage.CVEInfo{
+							CveBaseInfo: storage.CVEInfo_builder{
 								Cve:       "cve2",
 								CreatedAt: ts,
-							},
+							}.Build(),
 							NvdScoreVersion:      storage.CvssScoreVersion_UNKNOWN_VERSION,
 							FirstImageOccurrence: ts,
 							ComponentId:          getTestComponentID(testComponents[2], "sha"),
-						},
+						}.Build(),
 					},
 				},
 			},
@@ -546,7 +479,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 	// Need to add first occurrence edges as otherwise they will be filtered out
 	// These values are added on insertion for the DB which is why we will populate them artificially here
 	for _, v := range splitActual.ImageCVEEdges {
-		v.FirstImageOccurrence = ts
+		v.SetFirstImageOccurrence(ts)
 	}
 
 	var imageActual *storage.Image
@@ -571,89 +504,73 @@ func getTestCVEID(testCVE *storage.EmbeddedVulnerability, componentID string) st
 }
 
 func dedupedImage() *storage.Image {
-	return &storage.Image{
+	return storage.Image_builder{
 		Id: "sha",
-		Name: &storage.ImageName{
+		Name: storage.ImageName_builder{
 			FullName: "name",
-		},
-		Metadata: &storage.ImageMetadata{
-			V1: &storage.V1Metadata{
+		}.Build(),
+		Metadata: storage.ImageMetadata_builder{
+			V1: storage.V1Metadata_builder{
 				Created: ts,
-			},
-		},
-		SetComponents: &storage.Image_Components{
-			Components: 3,
-		},
-		SetCves: &storage.Image_Cves{
-			Cves: 4,
-		},
-		SetFixable: &storage.Image_FixableCves{
-			FixableCves: 2,
-		},
-		Scan: &storage.ImageScan{
+			}.Build(),
+		}.Build(),
+		Components:  proto.Int32(3),
+		Cves:        proto.Int32(4),
+		FixableCves: proto.Int32(2),
+		Scan: storage.ImageScan_builder{
 			ScanTime: ts,
 			Components: []*storage.EmbeddedImageScanComponent{
-				{
-					Name:    "comp1",
-					Version: "ver1",
-					HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
-						LayerIndex: 1,
-					},
-					Vulns: []*storage.EmbeddedVulnerability{},
-				},
-				{
-					Name:    "comp1",
-					Version: "ver2",
-					HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
-						LayerIndex: 3,
-					},
+				storage.EmbeddedImageScanComponent_builder{
+					Name:       "comp1",
+					Version:    "ver1",
+					LayerIndex: proto.Int32(1),
+					Vulns:      []*storage.EmbeddedVulnerability{},
+				}.Build(),
+				storage.EmbeddedImageScanComponent_builder{
+					Name:       "comp1",
+					Version:    "ver2",
+					LayerIndex: proto.Int32(3),
 					Vulns: []*storage.EmbeddedVulnerability{
-						{
+						storage.EmbeddedVulnerability_builder{
 							Cve:                   "cve1",
 							VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 							VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
 							FirstImageOccurrence:  ts,
 							FirstSystemOccurrence: ts,
-						},
-						{
-							Cve:                "cve2",
-							VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-							VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
-							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-								FixedBy: "ver3",
-							},
+						}.Build(),
+						storage.EmbeddedVulnerability_builder{
+							Cve:                   "cve2",
+							VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+							FixedBy:               proto.String("ver3"),
 							FirstImageOccurrence:  ts,
 							FirstSystemOccurrence: ts,
-						},
+						}.Build(),
 					},
-				},
-				{
-					Name:    "comp2",
-					Version: "ver1",
-					HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
-						LayerIndex: 2,
-					},
+				}.Build(),
+				storage.EmbeddedImageScanComponent_builder{
+					Name:       "comp2",
+					Version:    "ver1",
+					LayerIndex: proto.Int32(2),
 					Vulns: []*storage.EmbeddedVulnerability{
-						{
-							Cve:                "cve1",
-							VulnerabilityType:  storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-							VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
-							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-								FixedBy: "ver2",
-							},
+						storage.EmbeddedVulnerability_builder{
+							Cve:                   "cve1",
+							VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+							FixedBy:               proto.String("ver2"),
 							FirstImageOccurrence:  ts,
 							FirstSystemOccurrence: ts,
-						},
-						{
+						}.Build(),
+						storage.EmbeddedVulnerability_builder{
 							Cve:                   "cve2",
 							VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 							VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
 							FirstImageOccurrence:  ts,
 							FirstSystemOccurrence: ts,
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
-		},
-	}
+		}.Build(),
+	}.Build()
 }

@@ -18,12 +18,11 @@ func getAlertsSummaryByCategory(service v1.AlertServiceClient) func() error {
 
 func getAlertsSummary(service v1.AlertServiceClient, groupBy v1.GetAlertsCountsRequest_RequestGroup) func() error {
 	return func() error {
-		alertCountsRequest := &v1.GetAlertsCountsRequest{
-			Request: &v1.ListAlertsRequest{
-				Query: "",
-			},
-			GroupBy: groupBy,
-		}
+		lar := &v1.ListAlertsRequest{}
+		lar.SetQuery("")
+		alertCountsRequest := &v1.GetAlertsCountsRequest{}
+		alertCountsRequest.SetRequest(lar)
+		alertCountsRequest.SetGroupBy(groupBy)
 		_, err := service.GetAlertsCounts(common.Context(), alertCountsRequest)
 		return err
 	}
@@ -31,9 +30,8 @@ func getAlertsSummary(service v1.AlertServiceClient, groupBy v1.GetAlertsCountsR
 
 func getAlertsSummaryTimeseries(service v1.AlertServiceClient) func() error {
 	return func() error {
-		request := &v1.ListAlertsRequest{
-			Query: "",
-		}
+		request := &v1.ListAlertsRequest{}
+		request.SetQuery("")
 		_, err := service.GetAlertTimeseries(common.Context(), request)
 		return err
 	}
@@ -41,9 +39,8 @@ func getAlertsSummaryTimeseries(service v1.AlertServiceClient) func() error {
 
 func getDeploymentsWithProcessInfo(service v1.DeploymentServiceClient) func() error {
 	return func() error {
-		query := &v1.RawQuery{
-			Query: "",
-		}
+		query := &v1.RawQuery{}
+		query.SetQuery("")
 		_, err := service.ListDeploymentsWithProcessInfo(common.Context(), query)
 		return err
 	}

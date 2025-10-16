@@ -30,13 +30,12 @@ func setupLocalTCPListener(t *testing.T) (net.Listener, uint64) {
 func TestClient_writeIndexReport_LocalSocket(t *testing.T) {
 	listener, port := setupLocalTCPListener(t)
 	client := &Client{Port: uint32(port)}
-	testReport := &v1.IndexReport{
-		IndexV4: &v4.IndexReport{
-			HashId:  "test-hash-local",
-			State:   "completed",
-			Success: true,
-		},
-	}
+	ir := &v4.IndexReport{}
+	ir.SetHashId("test-hash-local")
+	ir.SetState("completed")
+	ir.SetSuccess(true)
+	testReport := &v1.IndexReport{}
+	testReport.SetIndexV4(ir)
 
 	receivedData := make(chan []byte, 1)
 	listenerErr := make(chan error, 1)

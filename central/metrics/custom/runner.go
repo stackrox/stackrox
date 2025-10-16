@@ -51,15 +51,14 @@ type runnerDatastores struct {
 }
 
 func withHardcodedConfiguration(period uint32, descriptors map[string][]string) func(*storage.PrometheusMetrics) *storage.PrometheusMetrics_Group {
-	group := &storage.PrometheusMetrics_Group{
-		GatheringPeriodMinutes: period,
-		Descriptors:            map[string]*storage.PrometheusMetrics_Group_Labels{},
-	}
+	group := &storage.PrometheusMetrics_Group{}
+	group.SetGatheringPeriodMinutes(period)
+	group.SetDescriptors(map[string]*storage.PrometheusMetrics_Group_Labels{})
 
 	for metric, labels := range descriptors {
-		group.Descriptors[metric] = &storage.PrometheusMetrics_Group_Labels{
-			Labels: labels,
-		}
+		pgl := &storage.PrometheusMetrics_Group_Labels{}
+		pgl.SetLabels(labels)
+		group.GetDescriptors()[metric] = pgl
 	}
 
 	return func(*storage.PrometheusMetrics) *storage.PrometheusMetrics_Group {

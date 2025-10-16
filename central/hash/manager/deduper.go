@@ -271,9 +271,7 @@ func (d *deduperImpl) ShouldProcess(msg *central.MsgFromSensor) bool {
 		if !ok {
 			return true
 		}
-		event.SensorHashOneof = &central.SensorEvent_SensorHash{
-			SensorHash: hashValue,
-		}
+		event.SetSensorHash(hashValue)
 	}
 	// In the reprocessing case, the above will never evaluate to not nil, but it makes testing easier
 	if msg.GetProcessingAttempt() > 0 {

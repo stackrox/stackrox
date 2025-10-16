@@ -95,15 +95,14 @@ func (s *cveMatcherTestSuite) TestMatchVersions() {
 }
 
 func (s *cveMatcherTestSuite) TestIfSpecificVersionCVEAffectsCluster() {
-	cluster := &storage.Cluster{
-		Id:   "test_cluster_id1",
-		Name: "cluster1",
-		Status: &storage.ClusterStatus{
-			OrchestratorMetadata: &storage.OrchestratorMetadata{
-				Version: "v1.15.3",
-			},
-		},
-	}
+	om := &storage.OrchestratorMetadata{}
+	om.SetVersion("v1.15.3")
+	cs := &storage.ClusterStatus{}
+	cs.SetOrchestratorMetadata(om)
+	cluster := &storage.Cluster{}
+	cluster.SetId("test_cluster_id1")
+	cluster.SetName("cluster1")
+	cluster.SetStatus(cs)
 
 	cve1 := &schema.NVDCVEFeedJSON10DefCVEItem{
 		CVE: &schema.CVEJSON40{
@@ -175,7 +174,7 @@ func (s *cveMatcherTestSuite) TestIfSpecificVersionCVEAffectsCluster() {
 	ret, _ = s.cveMatcher.IsClusterAffectedByK8sCVE(s.hasReadCtx, cluster, cve3)
 	s.Equal(false, ret)
 
-	cluster.Status.OrchestratorMetadata.Version = "v1.15.3+build1"
+	cluster.GetStatus().GetOrchestratorMetadata().SetVersion("v1.15.3+build1")
 	ret, _ = s.cveMatcher.IsClusterAffectedByK8sCVE(s.hasReadCtx, cluster, cve1)
 	s.Equal(true, ret)
 	ret, _ = s.cveMatcher.IsClusterAffectedByK8sCVE(s.hasReadCtx, cluster, cve2)
@@ -183,7 +182,7 @@ func (s *cveMatcherTestSuite) TestIfSpecificVersionCVEAffectsCluster() {
 	ret, _ = s.cveMatcher.IsClusterAffectedByK8sCVE(s.hasReadCtx, cluster, cve3)
 	s.Equal(false, ret)
 
-	cluster.Status.OrchestratorMetadata.Version = "v1.15.3-alpha1"
+	cluster.GetStatus().GetOrchestratorMetadata().SetVersion("v1.15.3-alpha1")
 	ret, _ = s.cveMatcher.IsClusterAffectedByK8sCVE(s.hasReadCtx, cluster, cve1)
 	s.Equal(true, ret)
 	ret, _ = s.cveMatcher.IsClusterAffectedByK8sCVE(s.hasReadCtx, cluster, cve2)
@@ -191,7 +190,7 @@ func (s *cveMatcherTestSuite) TestIfSpecificVersionCVEAffectsCluster() {
 	ret, _ = s.cveMatcher.IsClusterAffectedByK8sCVE(s.hasReadCtx, cluster, cve3)
 	s.Equal(true, ret)
 
-	cluster.Status.OrchestratorMetadata.Version = "v1.15.3-alpha1+build1"
+	cluster.GetStatus().GetOrchestratorMetadata().SetVersion("v1.15.3-alpha1+build1")
 	ret, _ = s.cveMatcher.IsClusterAffectedByK8sCVE(s.hasReadCtx, cluster, cve1)
 	s.Equal(true, ret)
 	ret, _ = s.cveMatcher.IsClusterAffectedByK8sCVE(s.hasReadCtx, cluster, cve2)
@@ -201,15 +200,14 @@ func (s *cveMatcherTestSuite) TestIfSpecificVersionCVEAffectsCluster() {
 }
 
 func (s *cveMatcherTestSuite) TestMultipleVersionCVEAffectsCluster() {
-	cluster := &storage.Cluster{
-		Id:   "test_cluster_id1",
-		Name: "cluster1",
-		Status: &storage.ClusterStatus{
-			OrchestratorMetadata: &storage.OrchestratorMetadata{
-				Version: "v1.15.3",
-			},
-		},
-	}
+	om := &storage.OrchestratorMetadata{}
+	om.SetVersion("v1.15.3")
+	cs := &storage.ClusterStatus{}
+	cs.SetOrchestratorMetadata(om)
+	cluster := &storage.Cluster{}
+	cluster.SetId("test_cluster_id1")
+	cluster.SetName("cluster1")
+	cluster.SetStatus(cs)
 
 	cve1 := &schema.NVDCVEFeedJSON10DefCVEItem{
 		CVE: &schema.CVEJSON40{
@@ -304,46 +302,45 @@ func (s *cveMatcherTestSuite) TestMultipleVersionCVEAffectsCluster() {
 	ret, _ = s.cveMatcher.IsClusterAffectedByK8sCVE(s.hasReadCtx, cluster, cve2)
 	s.Equal(true, ret)
 
-	cluster.Status.OrchestratorMetadata.Version = "v1.15.1-beta1"
+	cluster.GetStatus().GetOrchestratorMetadata().SetVersion("v1.15.1-beta1")
 	ret, _ = s.cveMatcher.IsClusterAffectedByK8sCVE(s.hasReadCtx, cluster, cve1)
 	s.Equal(false, ret)
 
 	ret, _ = s.cveMatcher.IsClusterAffectedByK8sCVE(s.hasReadCtx, cluster, cve2)
 	s.Equal(true, ret)
 
-	cluster.Status.OrchestratorMetadata.Version = "v1.15.9"
+	cluster.GetStatus().GetOrchestratorMetadata().SetVersion("v1.15.9")
 	ret, _ = s.cveMatcher.IsClusterAffectedByK8sCVE(s.hasReadCtx, cluster, cve1)
 	s.Equal(false, ret)
 
 	ret, _ = s.cveMatcher.IsClusterAffectedByK8sCVE(s.hasReadCtx, cluster, cve2)
 	s.Equal(false, ret)
 
-	cluster.Status.OrchestratorMetadata.Version = "v1.15.1"
+	cluster.GetStatus().GetOrchestratorMetadata().SetVersion("v1.15.1")
 	ret, _ = s.cveMatcher.IsClusterAffectedByK8sCVE(s.hasReadCtx, cluster, cve1)
 	s.Equal(false, ret)
 
 	ret, _ = s.cveMatcher.IsClusterAffectedByK8sCVE(s.hasReadCtx, cluster, cve2)
 	s.Equal(true, ret)
 
-	cluster.Status.OrchestratorMetadata.Version = "v1.16.4"
+	cluster.GetStatus().GetOrchestratorMetadata().SetVersion("v1.16.4")
 	ret, _ = s.cveMatcher.IsClusterAffectedByK8sCVE(s.hasReadCtx, cluster, cve3)
 	s.Equal(false, ret)
 
-	cluster.Status.OrchestratorMetadata.Version = "v1.17.4"
+	cluster.GetStatus().GetOrchestratorMetadata().SetVersion("v1.17.4")
 	ret, _ = s.cveMatcher.IsClusterAffectedByK8sCVE(s.hasReadCtx, cluster, cve3)
 	s.Equal(true, ret)
 }
 
 func (s *cveMatcherTestSuite) TestSingleAndMultipleVersionCVEAffectsCluster() {
-	cluster := &storage.Cluster{
-		Id:   "test_cluster_id1",
-		Name: "cluster1",
-		Status: &storage.ClusterStatus{
-			OrchestratorMetadata: &storage.OrchestratorMetadata{
-				Version: "v1.10.6",
-			},
-		},
-	}
+	om := &storage.OrchestratorMetadata{}
+	om.SetVersion("v1.10.6")
+	cs := &storage.ClusterStatus{}
+	cs.SetOrchestratorMetadata(om)
+	cluster := &storage.Cluster{}
+	cluster.SetId("test_cluster_id1")
+	cluster.SetName("cluster1")
+	cluster.SetStatus(cs)
 	cve := &schema.NVDCVEFeedJSON10DefCVEItem{
 		CVE: &schema.CVEJSON40{
 			CVEDataMeta: &schema.CVEJSON40CVEDataMeta{
@@ -384,29 +381,28 @@ func (s *cveMatcherTestSuite) TestSingleAndMultipleVersionCVEAffectsCluster() {
 	ret, _ := s.cveMatcher.IsClusterAffectedByK8sCVE(s.hasReadCtx, cluster, cve)
 	s.Equal(true, ret)
 
-	cluster.Status.OrchestratorMetadata.Version = "v1.10.3-alpha1"
+	cluster.GetStatus().GetOrchestratorMetadata().SetVersion("v1.10.3-alpha1")
 	ret, _ = s.cveMatcher.IsClusterAffectedByK8sCVE(s.hasReadCtx, cluster, cve)
 	s.Equal(true, ret)
 
-	cluster.Status.OrchestratorMetadata.Version = "v1.10.3-beta1"
+	cluster.GetStatus().GetOrchestratorMetadata().SetVersion("v1.10.3-beta1")
 	ret, _ = s.cveMatcher.IsClusterAffectedByK8sCVE(s.hasReadCtx, cluster, cve)
 	s.Equal(true, ret)
 
-	cluster.Status.OrchestratorMetadata.Version = "v1.10.3-rc1"
+	cluster.GetStatus().GetOrchestratorMetadata().SetVersion("v1.10.3-rc1")
 	ret, _ = s.cveMatcher.IsClusterAffectedByK8sCVE(s.hasReadCtx, cluster, cve)
 	s.Equal(true, ret)
 }
 
 func (s *cveMatcherTestSuite) TestCountCVEsAffectsCluster() {
-	cluster := &storage.Cluster{
-		Id:   "test_cluster_id1",
-		Name: "cluster1",
-		Status: &storage.ClusterStatus{
-			OrchestratorMetadata: &storage.OrchestratorMetadata{
-				Version: "v1.10.6",
-			},
-		},
-	}
+	om := &storage.OrchestratorMetadata{}
+	om.SetVersion("v1.10.6")
+	cs := &storage.ClusterStatus{}
+	cs.SetOrchestratorMetadata(om)
+	cluster := &storage.Cluster{}
+	cluster.SetId("test_cluster_id1")
+	cluster.SetName("cluster1")
+	cluster.SetStatus(cs)
 	cves := []*schema.NVDCVEFeedJSON10DefCVEItem{
 		{
 			CVE: &schema.CVEJSON40{
@@ -511,15 +507,14 @@ func (s *cveMatcherTestSuite) TestCountCVEsAffectsCluster() {
 }
 
 func (s *cveMatcherTestSuite) TestNonK8sCPEMatch() {
-	cluster := &storage.Cluster{
-		Id:   "test_cluster_id1",
-		Name: "cluster1",
-		Status: &storage.ClusterStatus{
-			OrchestratorMetadata: &storage.OrchestratorMetadata{
-				Version: "v1.10.6",
-			},
-		},
-	}
+	om := &storage.OrchestratorMetadata{}
+	om.SetVersion("v1.10.6")
+	cs := &storage.ClusterStatus{}
+	cs.SetOrchestratorMetadata(om)
+	cluster := &storage.Cluster{}
+	cluster.SetId("test_cluster_id1")
+	cluster.SetName("cluster1")
+	cluster.SetStatus(cs)
 
 	cves := []*schema.NVDCVEFeedJSON10DefCVEItem{
 		{
@@ -688,15 +683,15 @@ func (s *cveMatcherTestSuite) TestIstioCVEImpactsCluster() {
 	expected := []bool{true, true, true, false}
 
 	clusters := []*storage.Cluster{
-		{
+		storage.Cluster_builder{
 			Id:   "test_cluster_id1",
 			Name: "cluster1",
-			Status: &storage.ClusterStatus{
-				OrchestratorMetadata: &storage.OrchestratorMetadata{
+			Status: storage.ClusterStatus_builder{
+				OrchestratorMetadata: storage.OrchestratorMetadata_builder{
 					Version: "v1.14.2",
-				},
-			},
-		},
+				}.Build(),
+			}.Build(),
+		}.Build(),
 	}
 
 	namespaces := []search.Result{
@@ -706,42 +701,42 @@ func (s *cveMatcherTestSuite) TestIstioCVEImpactsCluster() {
 	}
 
 	images := []*storage.Image{
-		{
+		storage.Image_builder{
 			Id: "test_image_id1",
-			Name: &storage.ImageName{
+			Name: storage.ImageName_builder{
 				Tag:      "1.2.6",
 				Remote:   "istio/proxyv2",
 				Registry: "docker.io",
 				FullName: "docker.io/istio/proxyv2:1.2.6",
-			},
-		},
-		{
+			}.Build(),
+		}.Build(),
+		storage.Image_builder{
 			Id: "test_image_id2",
-			Name: &storage.ImageName{
+			Name: storage.ImageName_builder{
 				Tag:      "1.4.4",
 				Remote:   "istio/node-agent-k8s",
 				Registry: "docker.io",
 				FullName: "docker.io/istio/node-agent-k8s:1.4.4",
-			},
-		},
-		{
+			}.Build(),
+		}.Build(),
+		storage.Image_builder{
 			Id: "test_image_id3",
-			Name: &storage.ImageName{
+			Name: storage.ImageName_builder{
 				Tag:      "v1.13.11-gke.14",
 				Remote:   "kube-proxy",
 				Registry: "gke.gcr.io",
 				FullName: "gke.gcr.io/kube-proxy:v1.13.11-gke.14",
-			},
-		},
-		{
+			}.Build(),
+		}.Build(),
+		storage.Image_builder{
 			Id: "test_image_id4",
-			Name: &storage.ImageName{
+			Name: storage.ImageName_builder{
 				Tag:      "v0.11.0",
 				Remote:   "jetstack/cert-manager-controller",
 				Registry: "quay.io",
 				FullName: "quay.io/jetstack/cert-manager-controller:v0.11.0",
-			},
-		},
+			}.Build(),
+		}.Build(),
 	}
 
 	s.clusters.EXPECT().GetClusters(gomock.Any()).Return(clusters, nil).AnyTimes()

@@ -80,8 +80,8 @@ func (u *cacheImpl) GetCurrent() *storage.SecuredUnits {
 	var result storage.SecuredUnits
 	u.lastKnown.RAccess(func(m map[string]*storage.SecuredUnits) {
 		for _, v := range m {
-			result.NumNodes += v.GetNumNodes()
-			result.NumCpuUnits += v.GetNumCpuUnits()
+			result.SetNumNodes(result.GetNumNodes() + v.GetNumNodes())
+			result.SetNumCpuUnits(result.GetNumCpuUnits() + v.GetNumCpuUnits())
 		}
 	})
 	return &result
@@ -94,22 +94,21 @@ func (u *cacheImpl) GetCurrent() *storage.SecuredUnits {
 // usage counting when customers remove and add clusters within one collection
 // period.
 func (u *cacheImpl) AggregateAndReset() *storage.SecuredUnits {
-	result := storage.SecuredUnits{
-		Timestamp: protocompat.TimestampNow(),
-	}
+	result := &storage.SecuredUnits{}
+	result.SetTimestamp(protocompat.TimestampNow())
 
 	u.mux.Lock()
 	defer u.mux.Unlock()
 
 	u.nodesMap.Access(func(m *map[string]int64) {
 		for _, v := range *m {
-			result.NumNodes += v
+			result.SetNumNodes(result.GetNumNodes() + v)
 		}
 		*m = make(map[string]int64)
 	})
 	u.cpuUnitsMap.Access(func(m *map[string]int64) {
 		for _, v := range *m {
-			result.NumCpuUnits += v
+			result.SetNumCpuUnits(result.GetNumCpuUnits() + v)
 		}
 		*m = make(map[string]int64)
 	})

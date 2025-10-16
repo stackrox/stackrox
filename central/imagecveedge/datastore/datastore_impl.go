@@ -67,11 +67,11 @@ func convertMany(cves []*storage.ImageCVEEdge, results []pkgSearch.Result) ([]*v
 }
 
 func convertOne(obj *storage.ImageCVEEdge, result *pkgSearch.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_IMAGE_VULN_EDGE,
-		Id:             obj.GetId(),
-		Name:           obj.GetId(),
-		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+	sr := &v1.SearchResult{}
+	sr.SetCategory(v1.SearchCategory_IMAGE_VULN_EDGE)
+	sr.SetId(obj.GetId())
+	sr.SetName(obj.GetId())
+	sr.SetFieldToMatches(pkgSearch.GetProtoMatchesMap(result.Matches))
+	sr.SetScore(result.Score)
+	return sr
 }

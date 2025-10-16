@@ -159,11 +159,11 @@ func getRandomOriginator(containerID string, pool *ProcessPool) *storage.Network
 
 func getNetworkProcessUniqueKeyFromProcess(process *storage.ProcessSignal) *storage.NetworkProcessUniqueKey {
 	if process != nil {
-		return &storage.NetworkProcessUniqueKey{
-			ProcessName:         process.GetName(),
-			ProcessExecFilePath: process.GetExecFilePath(),
-			ProcessArgs:         process.GetArgs(),
-		}
+		npuk := &storage.NetworkProcessUniqueKey{}
+		npuk.SetProcessName(process.GetName())
+		npuk.SetProcessExecFilePath(process.GetExecFilePath())
+		npuk.SetProcessArgs(process.GetArgs())
+		return npuk
 	}
 
 	return nil

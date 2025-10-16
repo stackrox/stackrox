@@ -36,66 +36,66 @@ var (
 	}
 
 	defaultCategories = []*storage.PolicyCategory{
-		{
+		storage.PolicyCategory_builder{
 			Name:      "Anomalous Activity",
 			Id:        "1cf56ef4-2669-4bcd-928c-cae178e5873f",
 			IsDefault: true,
-		},
-		{
+		}.Build(),
+		storage.PolicyCategory_builder{
 			Name:      "Cryptocurrency Mining",
 			Id:        "a1245e73-00b8-422c-a2c5-cac95d87cc4e",
 			IsDefault: true,
-		},
-		{
+		}.Build(),
+		storage.PolicyCategory_builder{
 			Name:      "DevOps Best Practices",
 			Id:        "3274122b-a016-441c-9efb-a50fc98b2280",
 			IsDefault: true,
-		},
-		{
+		}.Build(),
+		storage.PolicyCategory_builder{
 			Name:      "Docker CIS",
 			Id:        "d2bbe19e-3009-4a0e-a701-a0b621b319a0",
 			IsDefault: true,
-		},
-		{
+		}.Build(),
+		storage.PolicyCategory_builder{
 			Name:      "Kubernetes",
 			Id:        "c57c15d2-8c8f-449d-9904-92a4aa325d66",
 			IsDefault: true,
-		},
-		{
+		}.Build(),
+		storage.PolicyCategory_builder{
 			Name:      "Kubernetes Events",
 			Id:        "19e04fdf-d7ed-465a-9d37-fa5320aa0c64",
 			IsDefault: true,
-		},
-		{
+		}.Build(),
+		storage.PolicyCategory_builder{
 			Name:      "Network Tools",
 			Id:        "9d924f5d-6679-4449-8154-795449c8e754",
 			IsDefault: true,
-		},
-		{
+		}.Build(),
+		storage.PolicyCategory_builder{
 			Name:      "Package Management",
 			Id:        "c489b821-27c4-47cb-a461-69796f1aa24e",
 			IsDefault: true,
-		},
-		{
+		}.Build(),
+		storage.PolicyCategory_builder{
 			Name:      "Privileges",
 			Id:        "f732f1a5-1515-4e9e-9179-3ab2aefe9ad9",
 			IsDefault: true,
-		},
-		{
+		}.Build(),
+		storage.PolicyCategory_builder{
 			Name:      "Security Best Practices",
 			Id:        "99cfb323-c9d3-4e0c-af64-4d0101659866",
 			IsDefault: true,
-		},
-		{
+		}.Build(),
+		storage.PolicyCategory_builder{
 			Name:      "System Modification",
 			Id:        "12a75c7e-7651-4e38-ad1d-baed20539aa2",
 			IsDefault: true,
-		},
-		{
+		}.Build(),
+		storage.PolicyCategory_builder{
 			Name:      "Vulnerability Management",
 			Id:        "88979ffe-f1b6-48f9-8ef0-e18751196ba6",
 			IsDefault: true,
-		},
+		}.Build(),
 	}
 )
 
@@ -154,11 +154,11 @@ func CreatePolicyCategoryEdges(gormDB *gorm.DB, db postgres.DB) error {
 			} else {
 				// category does not exist, has to be a non default category
 				id := uuid.NewV4().String()
-				if err := categoriesStore.Upsert(ctx, &storage.PolicyCategory{
-					Id:        id,
-					Name:      categoryName,
-					IsDefault: false,
-				}); err != nil {
+				pc := &storage.PolicyCategory{}
+				pc.SetId(id)
+				pc.SetName(categoryName)
+				pc.SetIsDefault(false)
+				if err := categoriesStore.Upsert(ctx, pc); err != nil {
 					return err
 				}
 				policyToCategoryIDsMap[p.GetId()] = append(policyToCategoryIDsMap[p.GetId()], id)
@@ -166,7 +166,7 @@ func CreatePolicyCategoryEdges(gormDB *gorm.DB, db postgres.DB) error {
 			}
 		}
 		// policies will be upserted without category info
-		p.Categories = []string{}
+		p.SetCategories([]string{})
 		policiesToUpdate = append(policiesToUpdate, p)
 
 		return nil
@@ -180,11 +180,11 @@ func CreatePolicyCategoryEdges(gormDB *gorm.DB, db postgres.DB) error {
 	for policyID, categoryIDs := range policyToCategoryIDsMap {
 		edges := make([]*storage.PolicyCategoryEdge, 0, len(policyToCategoryIDsMap[policyID]))
 		for _, categoryID := range categoryIDs {
-			edges = append(edges, &storage.PolicyCategoryEdge{
-				Id:         uuid.NewV4().String(),
-				PolicyId:   policyID,
-				CategoryId: categoryID,
-			})
+			pce := &storage.PolicyCategoryEdge{}
+			pce.SetId(uuid.NewV4().String())
+			pce.SetPolicyId(policyID)
+			pce.SetCategoryId(categoryID)
+			edges = append(edges, pce)
 		}
 		if err := edgeStore.UpsertMany(ctx, edges); err != nil {
 			return err

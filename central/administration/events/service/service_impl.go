@@ -64,7 +64,9 @@ func (s *serviceImpl) CountAdministrationEvents(ctx context.Context, request *v1
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to count administration events")
 	}
-	return &v1.CountAdministrationEventsResponse{Count: int32(count)}, nil
+	caer := &v1.CountAdministrationEventsResponse{}
+	caer.SetCount(int32(count))
+	return caer, nil
 }
 
 // GetAdministrationEvent returns a specific administration event based on its ID.
@@ -74,20 +76,20 @@ func (s *serviceImpl) GetAdministrationEvent(ctx context.Context, resource *v1.R
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get administration event %q", resourceID)
 	}
-	return &v1.GetAdministrationEventResponse{Event: toV1Proto(event)}, err
+	gaer := &v1.GetAdministrationEventResponse{}
+	gaer.SetEvent(toV1Proto(event))
+	return gaer, err
 }
 
 // ListAdministrationEvents returns all administration events matching the request query.
 func (s *serviceImpl) ListAdministrationEvents(ctx context.Context, request *v1.ListAdministrationEventsRequest) (*v1.ListAdministrationEventsResponse, error) {
 	query := getQueryBuilderFromFilter(request.GetFilter()).ProtoQuery()
 	paginated.FillPagination(query, request.GetPagination(), maxPaginationLimit)
+	qso := &v1.QuerySortOption{}
+	qso.SetField(search.LastUpdatedTime.String())
+	qso.SetReversed(true)
 	query = paginated.FillDefaultSortOption(
-		query,
-		&v1.QuerySortOption{
-			Field:    search.LastUpdatedTime.String(),
-			Reversed: true,
-		},
-	)
+		query, qso)
 
 	events, err := s.ds.ListEvents(ctx, query)
 	if err != nil {
@@ -97,7 +99,9 @@ func (s *serviceImpl) ListAdministrationEvents(ctx context.Context, request *v1.
 	for _, n := range events {
 		respEvents = append(respEvents, toV1Proto(n))
 	}
-	return &v1.ListAdministrationEventsResponse{Events: respEvents}, nil
+	laer := &v1.ListAdministrationEventsResponse{}
+	laer.SetEvents(respEvents)
+	return laer, nil
 }
 
 func getQueryBuilderFromFilter(filter *v1.AdministrationEventsFilter) *search.QueryBuilder {

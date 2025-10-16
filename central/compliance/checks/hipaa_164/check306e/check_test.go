@@ -34,21 +34,19 @@ func (s *suiteImpl) TestFail() {
 	check := s.verifyCheckRegistered()
 
 	testCluster := s.cluster()
+	ii := &storage.ImageIntegration{}
+	ii.SetId("ii1")
+	ii.SetCategories([]storage.ImageIntegrationCategory{
+		storage.ImageIntegrationCategory_REGISTRY,
+	})
 	imageIntegrations := []*storage.ImageIntegration{
-		{
-			Id: "ii1",
-			Categories: []storage.ImageIntegrationCategory{
-				storage.ImageIntegrationCategory_REGISTRY,
-			},
-		},
+		ii,
 	}
+	listImage := &storage.ListImage{}
+	listImage.SetName("nginx")
+	listImage.SetFixableCves(1)
 	images := []*storage.ListImage{
-		{
-			Name: "nginx",
-			SetFixable: &storage.ListImage_FixableCves{
-				FixableCves: 1,
-			},
-		},
+		listImage,
 	}
 
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
@@ -76,30 +74,26 @@ func (s *suiteImpl) TestPass() {
 	check := s.verifyCheckRegistered()
 
 	testCluster := s.cluster()
+	ii := &storage.ImageIntegration{}
+	ii.SetId("ii1")
+	ii.SetCategories([]storage.ImageIntegrationCategory{
+		storage.ImageIntegrationCategory_REGISTRY,
+	})
+	ii2 := &storage.ImageIntegration{}
+	ii2.SetId("ii2")
+	ii2.SetCategories([]storage.ImageIntegrationCategory{
+		storage.ImageIntegrationCategory_SCANNER,
+	})
 	imageIntegrations := []*storage.ImageIntegration{
-		{
-			Id: "ii1",
-			Categories: []storage.ImageIntegrationCategory{
-				storage.ImageIntegrationCategory_REGISTRY,
-			},
-		},
-		{
-			Id: "ii2",
-			Categories: []storage.ImageIntegrationCategory{
-				storage.ImageIntegrationCategory_SCANNER,
-			},
-		},
+		ii,
+		ii2,
 	}
+	listImage := &storage.ListImage{}
+	listImage.SetName("nginx")
+	listImage.Set_Cves(0)
+	listImage.SetFixableCves(0)
 	images := []*storage.ListImage{
-		{
-			Name: "nginx",
-			SetCves: &storage.ListImage_Cves{
-				Cves: 0,
-			},
-			SetFixable: &storage.ListImage_FixableCves{
-				FixableCves: 0,
-			},
-		},
+		listImage,
 	}
 
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
@@ -134,7 +128,7 @@ func (s *suiteImpl) verifyCheckRegistered() framework.Check {
 }
 
 func (s *suiteImpl) cluster() *storage.Cluster {
-	return &storage.Cluster{
-		Id: uuid.NewV4().String(),
-	}
+	cluster := &storage.Cluster{}
+	cluster.SetId(uuid.NewV4().String())
+	return cluster
 }

@@ -77,7 +77,7 @@ func (s *serviceImpl) PostCluster(ctx context.Context, request *storage.Cluster)
 	if err != nil {
 		return nil, err
 	}
-	request.Id = id
+	request.SetId(id)
 	return s.getCluster(ctx, request.GetId())
 }
 
@@ -115,10 +115,10 @@ func (s *serviceImpl) getCluster(ctx context.Context, id string) (*v1.ClusterRes
 		return nil, err
 	}
 
-	return &v1.ClusterResponse{
-		Cluster:              cluster,
-		ClusterRetentionInfo: clusterRetentionInfo,
-	}, nil
+	cr := &v1.ClusterResponse{}
+	cr.SetCluster(cluster)
+	cr.SetClusterRetentionInfo(clusterRetentionInfo)
+	return cr, nil
 }
 
 func (s *serviceImpl) getClusterRetentionInfo(ctx context.Context, cluster *storage.Cluster) (*v1.DecommissionedClusterRetentionInfo, error) {
@@ -138,11 +138,9 @@ func (s *serviceImpl) getClusterRetentionInfo(ctx context.Context, cluster *stor
 	}
 
 	if maputil.MapsIntersect(clusterRetentionConfig.GetIgnoreClusterLabels(), cluster.GetLabels()) {
-		return &v1.DecommissionedClusterRetentionInfo{
-			RetentionInfo: &v1.DecommissionedClusterRetentionInfo_IsExcluded{
-				IsExcluded: true,
-			},
-		}, nil
+		dcri := &v1.DecommissionedClusterRetentionInfo{}
+		dcri.SetIsExcluded(true)
+		return dcri, nil
 	}
 
 	timeNow := time.Now()
@@ -165,11 +163,9 @@ func (s *serviceImpl) getClusterRetentionInfo(ctx context.Context, cluster *stor
 		daysRemaining = retentionDays - int32(timeutil.TimeDiffDays(timeNow, lastContactTime))
 	}
 
-	return &v1.DecommissionedClusterRetentionInfo{
-		RetentionInfo: &v1.DecommissionedClusterRetentionInfo_DaysUntilDeletion{
-			DaysUntilDeletion: daysRemaining,
-		},
-	}, nil
+	dcri := &v1.DecommissionedClusterRetentionInfo{}
+	dcri.SetDaysUntilDeletion(daysRemaining)
+	return dcri, nil
 }
 
 // GetClusters returns the currently defined clusters.
@@ -189,10 +185,10 @@ func (s *serviceImpl) GetClusters(ctx context.Context, req *v1.GetClustersReques
 		return nil, err
 	}
 
-	return &v1.ClustersList{
-		Clusters:                 clusters,
-		ClusterIdToRetentionInfo: clusterIDToRetentionInfoMap,
-	}, nil
+	cl := &v1.ClustersList{}
+	cl.SetClusters(clusters)
+	cl.SetClusterIdToRetentionInfo(clusterIDToRetentionInfoMap)
+	return cl, nil
 }
 
 func (s *serviceImpl) getClusterIDToRetentionInfoMap(
@@ -231,9 +227,8 @@ func (s *serviceImpl) GetKernelSupportAvailable(ctx context.Context, _ *v1.Empty
 	if err != nil {
 		return nil, err
 	}
-	result := &v1.KernelSupportAvailableResponse{
-		KernelSupportAvailable: anyAvailable,
-	}
+	result := &v1.KernelSupportAvailableResponse{}
+	result.SetKernelSupportAvailable(anyAvailable)
 	return result, nil
 }
 
@@ -243,10 +238,9 @@ func (s *serviceImpl) GetClusterDefaultValues(ctx context.Context, _ *v1.Empty) 
 		return nil, err
 	}
 	flavor := defaults.GetImageFlavorFromEnv()
-	defaults := &v1.ClusterDefaultsResponse{
-		MainImageRepository:      flavor.MainImageNoTag(),
-		CollectorImageRepository: flavor.CollectorImageNoTag(),
-		KernelSupportAvailable:   kernelSupport,
-	}
+	defaults := &v1.ClusterDefaultsResponse{}
+	defaults.SetMainImageRepository(flavor.MainImageNoTag())
+	defaults.SetCollectorImageRepository(flavor.CollectorImageNoTag())
+	defaults.SetKernelSupportAvailable(kernelSupport)
 	return defaults, nil
 }

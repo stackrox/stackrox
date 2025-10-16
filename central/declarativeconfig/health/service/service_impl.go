@@ -51,5 +51,7 @@ func (s *serviceImpl) GetDeclarativeConfigHealths(ctx context.Context, _ *v1.Emp
 	if err != nil {
 		return nil, err
 	}
-	return &v1.GetDeclarativeConfigHealthsResponse{Healths: healths}, nil
+	gdchr := &v1.GetDeclarativeConfigHealthsResponse{}
+	gdchr.SetHealths(healths)
+	return gdchr, nil
 }

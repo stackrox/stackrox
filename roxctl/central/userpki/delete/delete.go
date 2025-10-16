@@ -72,12 +72,17 @@ func makeCentralUserPkiDeleteCommand(cliEnvironment environment.Environment, cmd
 }
 
 func getAuthProviderByID(ctx context.Context, svc v1.AuthProviderServiceClient, id string) (*storage.AuthProvider, error) {
-	prov, err := svc.GetAuthProvider(ctx, &v1.GetAuthProviderRequest{Id: id})
+	gapr := &v1.GetAuthProviderRequest{}
+	gapr.SetId(id)
+	prov, err := svc.GetAuthProvider(ctx, gapr)
 	return prov, errors.Wrap(err, "getting auth provider by ID")
 }
 
 func getAuthProviderByName(ctx context.Context, svc v1.AuthProviderServiceClient, name string) (*storage.AuthProvider, error) {
-	provs, err := svc.GetAuthProviders(ctx, &v1.GetAuthProvidersRequest{Name: name, Type: userpki.TypeName})
+	gapr := &v1.GetAuthProvidersRequest{}
+	gapr.SetName(name)
+	gapr.SetType(userpki.TypeName)
+	provs, err := svc.GetAuthProviders(ctx, gapr)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting auth providers by name")
 	}
@@ -114,7 +119,9 @@ func (cmd *centralUserPkiDeleteCommand) prepareDeleteProvider() (func() error, e
 	if err != nil {
 		return nil, errors.Wrap(err, "getting auth provider to delete")
 	}
-	group, err := groupService.GetGroup(ctx, &storage.GroupProperties{AuthProviderId: prov.GetId()})
+	gp := &storage.GroupProperties{}
+	gp.SetAuthProviderId(prov.GetId())
+	group, err := groupService.GetGroup(ctx, gp)
 
 	defaultRoles := make(map[string]string)
 	if err == nil && group != nil {
@@ -125,9 +132,9 @@ func (cmd *centralUserPkiDeleteCommand) prepareDeleteProvider() (func() error, e
 	return func() error {
 		cmd.env.Logger().PrintfLn("Deleting provider and rolemappings.")
 
-		_, err := authService.DeleteAuthProvider(ctx, &v1.DeleteByIDWithForce{
-			Id: prov.GetId(),
-		})
+		dbidwf := &v1.DeleteByIDWithForce{}
+		dbidwf.SetId(prov.GetId())
+		_, err := authService.DeleteAuthProvider(ctx, dbidwf)
 		if err != nil {
 			return errors.Wrap(err, "deleting auth provider")
 		}
@@ -143,10 +150,10 @@ func (cmd *centralUserPkiDeleteCommand) prepareDeleteProvider() (func() error, e
 			}
 		}
 		if len(relevantGroups) != 0 {
-			_, err := groupService.BatchUpdate(ctx, &v1.GroupBatchUpdateRequest{
-				PreviousGroups: relevantGroups,
-				RequiredGroups: nil,
-			})
+			gbur := &v1.GroupBatchUpdateRequest{}
+			gbur.SetPreviousGroups(relevantGroups)
+			gbur.SetRequiredGroups(nil)
+			_, err := groupService.BatchUpdate(ctx, gbur)
 			if err != nil {
 				return errors.Wrap(err, "updating groups")
 			}

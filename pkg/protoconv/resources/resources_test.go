@@ -67,10 +67,10 @@ func TestGetVolumeSourceMap(t *testing.T) {
 }
 
 func TestDaemonSetReplicas(t *testing.T) {
+	deployment := &storage.Deployment{}
+	deployment.SetType(kubernetes.DaemonSet)
 	deploymentWrap := &DeploymentWrap{
-		Deployment: &storage.Deployment{
-			Type: kubernetes.DaemonSet,
-		},
+		Deployment: deployment,
 	}
 
 	daemonSet1 := &extV1beta1.DaemonSet{
@@ -105,10 +105,10 @@ func TestDaemonSetReplicas(t *testing.T) {
 }
 
 func TestCronJobPopulateSpec(t *testing.T) {
+	deployment := &storage.Deployment{}
+	deployment.SetType(kubernetes.CronJob)
 	deploymentWrap := &DeploymentWrap{
-		Deployment: &storage.Deployment{
-			Type: kubernetes.CronJob,
-		},
+		Deployment: deployment,
 	}
 
 	cronJob1 := &batchV1.CronJob{
@@ -229,7 +229,9 @@ func TestContainerLivenessProbePopulation(t *testing.T) {
 		t.Run(testCase.caseName, func(t *testing.T) {
 			emptyContainer := &storage.Container{}
 			containers := []*storage.Container{emptyContainer}
-			deploymentWrap := &DeploymentWrap{Deployment: &storage.Deployment{Containers: containers}}
+			deployment := &storage.Deployment{}
+			deployment.SetContainers(containers)
+			deploymentWrap := &DeploymentWrap{Deployment: deployment}
 			spec := v1.PodSpec{Containers: []v1.Container{{LivenessProbe: testCase.probe}}}
 
 			deploymentWrap.populateProbes(spec)
@@ -260,7 +262,9 @@ func TestContainerLivenessProbeFromJSON(t *testing.T) {
 		t.Run(testCase.caseName, func(t *testing.T) {
 			emptyContainer := &storage.Container{}
 			containers := []*storage.Container{emptyContainer}
-			deploymentWrap := &DeploymentWrap{Deployment: &storage.Deployment{Containers: containers}}
+			deployment := &storage.Deployment{}
+			deployment.SetContainers(containers)
+			deploymentWrap := &DeploymentWrap{Deployment: deployment}
 
 			var probe v1.Probe
 			err := json.Unmarshal([]byte(testCase.probeJSON), &probe)
@@ -299,7 +303,9 @@ func TestContainerReadinessProbePopulation(t *testing.T) {
 		t.Run(testCase.caseName, func(t *testing.T) {
 			emptyContainer := &storage.Container{}
 			containers := []*storage.Container{emptyContainer}
-			deploymentWrap := &DeploymentWrap{Deployment: &storage.Deployment{Containers: containers}}
+			deployment := &storage.Deployment{}
+			deployment.SetContainers(containers)
+			deploymentWrap := &DeploymentWrap{Deployment: deployment}
 			spec := v1.PodSpec{Containers: []v1.Container{{ReadinessProbe: testCase.probe}}}
 
 			deploymentWrap.populateProbes(spec)
@@ -330,7 +336,9 @@ func TestContainerReadinessProbeFromJSON(t *testing.T) {
 		t.Run(testCase.caseName, func(t *testing.T) {
 			emptyContainer := &storage.Container{}
 			containers := []*storage.Container{emptyContainer}
-			deploymentWrap := &DeploymentWrap{Deployment: &storage.Deployment{Containers: containers}}
+			deployment := &storage.Deployment{}
+			deployment.SetContainers(containers)
+			deploymentWrap := &DeploymentWrap{Deployment: deployment}
 
 			var probe v1.Probe
 			err := json.Unmarshal([]byte(testCase.probeJSON), &probe)
@@ -374,7 +382,9 @@ func TestSecurityContext(t *testing.T) {
 
 			emptyContainer := &storage.Container{}
 			containers := []*storage.Container{emptyContainer}
-			deploymentWrap := &DeploymentWrap{Deployment: &storage.Deployment{Containers: containers}}
+			deployment := &storage.Deployment{}
+			deployment.SetContainers(containers)
+			deploymentWrap := &DeploymentWrap{Deployment: deployment}
 			spec := v1.PodSpec{Containers: []v1.Container{{SecurityContext: &v1.SecurityContext{}}}}
 			if testCase.allowPrivilegeEscalationInSpec != nil {
 				spec.Containers[0].SecurityContext.AllowPrivilegeEscalation = testCase.allowPrivilegeEscalationInSpec

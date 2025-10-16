@@ -150,23 +150,22 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 			return nil, pgutils.ErrNilIfNoRows(err)
 		}
 
-		flow := &storage.NetworkFlow{
-			Props: &storage.NetworkFlowProperties{
-				SrcEntity: &storage.NetworkEntityInfo{
-					Type: srcType,
-					Id:   srcID,
-				},
-				DstEntity: &storage.NetworkEntityInfo{
-					Type: destType,
-					Id:   destID,
-				},
-				DstPort:    port,
-				L4Protocol: protocol,
-			},
-			ClusterId: clusterID,
-		}
+		nei := &storage.NetworkEntityInfo{}
+		nei.SetType(srcType)
+		nei.SetId(srcID)
+		nei2 := &storage.NetworkEntityInfo{}
+		nei2.SetType(destType)
+		nei2.SetId(destID)
+		nfp := &storage.NetworkFlowProperties{}
+		nfp.SetSrcEntity(nei)
+		nfp.SetDstEntity(nei2)
+		nfp.SetDstPort(port)
+		nfp.SetL4Protocol(protocol)
+		flow := &storage.NetworkFlow{}
+		flow.SetProps(nfp)
+		flow.SetClusterId(clusterID)
 		if lastTime != nil {
-			flow.LastSeenTimestamp = protoconv.MustConvertTimeToTimestamp(*lastTime)
+			flow.SetLastSeenTimestamp(protoconv.MustConvertTimeToTimestamp(*lastTime))
 		}
 
 		// Apply the predicate function.  Will phase out as we move away form Rocks to where clause

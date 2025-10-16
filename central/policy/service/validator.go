@@ -116,7 +116,7 @@ func (s *policyValidator) validateVersion(policy *storage.Policy) error {
 }
 
 func (s *policyValidator) validateName(policy *storage.Policy) error {
-	policy.Name = strings.TrimSpace(policy.GetName())
+	policy.SetName(strings.TrimSpace(policy.GetName()))
 	return nameValidator.Validate(policy.GetName())
 }
 
@@ -396,7 +396,7 @@ func removeEnforcementForLifecycle(policy *storage.Policy, stage storage.Lifecyc
 			newActions = append(newActions, ea)
 		}
 	}
-	policy.EnforcementActions = newActions
+	policy.SetEnforcementActions(newActions)
 }
 
 func (s *policyValidator) isAuditEventPolicy(policy *storage.Policy) bool {

@@ -219,9 +219,8 @@ func (s *serviceImpl) sendPublicIPList(stream sensor.NetworkConnectionInfoServic
 		return nil
 	}
 
-	controlMsg := &sensor.NetworkFlowsControlMessage{
-		PublicIpAddresses: listProto,
-	}
+	controlMsg := &sensor.NetworkFlowsControlMessage{}
+	controlMsg.SetPublicIpAddresses(listProto)
 
 	if err := stream.Send(controlMsg); err != nil {
 		return errors.Wrap(err, "sending public IPs list")
@@ -235,9 +234,8 @@ func (s *serviceImpl) sendExternalSrcsList(stream sensor.NetworkConnectionInfoSe
 		return nil
 	}
 
-	controlMsg := &sensor.NetworkFlowsControlMessage{
-		IpNetworks: listProto,
-	}
+	controlMsg := &sensor.NetworkFlowsControlMessage{}
+	controlMsg.SetIpNetworks(listProto)
 
 	if err := stream.Send(controlMsg); err != nil {
 		return errors.Wrap(err, "sending external sources (IP Network) list")

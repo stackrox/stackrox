@@ -12,63 +12,43 @@ import (
 func TestFilterQuery(t *testing.T) {
 	optionsMap := Walk(v1.SearchCategory_IMAGES, "derp", &storage.Image{})
 
-	query := &v1.Query{
-		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
+	query := v1.Query_builder{
+		Conjunction: v1.ConjunctionQuery_builder{
 			Queries: []*v1.Query{
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: CVE.String(), Value: "cveId"},
-						},
-					},
-				}},
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "depname"},
-						},
-					},
-				}},
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "depname"},
-						},
-					},
-				}},
+				v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+					MatchFieldQuery: v1.MatchFieldQuery_builder{Field: CVE.String(), Value: "cveId"}.Build(),
+				}.Build()}.Build(),
+				v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+					MatchFieldQuery: v1.MatchFieldQuery_builder{Field: DeploymentName.String(), Value: "depname"}.Build(),
+				}.Build()}.Build(),
+				v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+					MatchFieldQuery: v1.MatchFieldQuery_builder{Field: DeploymentName.String(), Value: "depname"}.Build(),
+				}.Build()}.Build(),
 			},
-		}},
-	}
+		}.Build(),
+	}.Build()
 
 	newQuery, filtered := FilterQueryWithMap(query, optionsMap)
 	assert.True(t, filtered)
-	protoassert.Equal(t, &v1.Query{
-		Query: &v1.Query_BaseQuery{
-			BaseQuery: &v1.BaseQuery{
-				Query: &v1.BaseQuery_MatchFieldQuery{
-					MatchFieldQuery: &v1.MatchFieldQuery{Field: CVE.String(), Value: "cveId"},
-				},
-			},
-		},
-	}, newQuery)
+	protoassert.Equal(t, v1.Query_builder{
+		BaseQuery: v1.BaseQuery_builder{
+			MatchFieldQuery: v1.MatchFieldQuery_builder{Field: CVE.String(), Value: "cveId"}.Build(),
+		}.Build(),
+	}.Build(), newQuery)
 
 	var expected *v1.Query
 	newQuery, filtered = FilterQueryWithMap(EmptyQuery(), optionsMap)
 	assert.False(t, filtered)
 	protoassert.Equal(t, expected, newQuery)
 
-	q := &v1.Query{
-		Query: &v1.Query_BaseQuery{
-			BaseQuery: &v1.BaseQuery{
-				Query: &v1.BaseQuery_MatchFieldQuery{
-					MatchFieldQuery: &v1.MatchFieldQuery{
-						Field: ImageSHA.String(),
-						Value: "blah",
-					},
-				},
-			},
-		},
-	}
+	q := v1.Query_builder{
+		BaseQuery: v1.BaseQuery_builder{
+			MatchFieldQuery: v1.MatchFieldQuery_builder{
+				Field: ImageSHA.String(),
+				Value: "blah",
+			}.Build(),
+		}.Build(),
+	}.Build()
 	newQuery, filtered = FilterQueryWithMap(q, optionsMap)
 	assert.False(t, filtered)
 	protoassert.Equal(t, q, newQuery)
@@ -77,198 +57,130 @@ func TestFilterQuery(t *testing.T) {
 func TestInverseFilterQuery(t *testing.T) {
 	optionsMap := Walk(v1.SearchCategory_IMAGES, "derp", &storage.Image{})
 
-	query := &v1.Query{
-		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
+	query := v1.Query_builder{
+		Conjunction: v1.ConjunctionQuery_builder{
 			Queries: []*v1.Query{
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: CVE.String(), Value: "cveId"},
-						},
-					},
-				}},
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "depname"},
-						},
-					},
-				}},
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "depname"},
-						},
-					},
-				}},
+				v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+					MatchFieldQuery: v1.MatchFieldQuery_builder{Field: CVE.String(), Value: "cveId"}.Build(),
+				}.Build()}.Build(),
+				v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+					MatchFieldQuery: v1.MatchFieldQuery_builder{Field: DeploymentName.String(), Value: "depname"}.Build(),
+				}.Build()}.Build(),
+				v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+					MatchFieldQuery: v1.MatchFieldQuery_builder{Field: DeploymentName.String(), Value: "depname"}.Build(),
+				}.Build()}.Build(),
 			},
-		}},
-	}
+		}.Build(),
+	}.Build()
 
 	newQuery, filtered := InverseFilterQueryWithMap(query, optionsMap)
 	assert.True(t, filtered)
-	protoassert.Equal(t, &v1.Query{
-		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
+	protoassert.Equal(t, v1.Query_builder{
+		Conjunction: v1.ConjunctionQuery_builder{
 			Queries: []*v1.Query{
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "depname"},
-						},
-					},
-				}},
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "depname"},
-						},
-					},
-				}},
+				v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+					MatchFieldQuery: v1.MatchFieldQuery_builder{Field: DeploymentName.String(), Value: "depname"}.Build(),
+				}.Build()}.Build(),
+				v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+					MatchFieldQuery: v1.MatchFieldQuery_builder{Field: DeploymentName.String(), Value: "depname"}.Build(),
+				}.Build()}.Build(),
 			},
-		}},
-	}, newQuery)
+		}.Build(),
+	}.Build(), newQuery)
 
 	var expected *v1.Query
 	newQuery, filtered = InverseFilterQueryWithMap(EmptyQuery(), optionsMap)
 	assert.False(t, filtered)
 	protoassert.Equal(t, expected, newQuery)
 
-	q := &v1.Query{
-		Query: &v1.Query_BaseQuery{
-			BaseQuery: &v1.BaseQuery{
-				Query: &v1.BaseQuery_MatchFieldQuery{
-					MatchFieldQuery: &v1.MatchFieldQuery{
-						Field: ImageSHA.String(),
-						Value: "blah",
-					},
-				},
-			},
-		},
-	}
+	q := v1.Query_builder{
+		BaseQuery: v1.BaseQuery_builder{
+			MatchFieldQuery: v1.MatchFieldQuery_builder{
+				Field: ImageSHA.String(),
+				Value: "blah",
+			}.Build(),
+		}.Build(),
+	}.Build()
 	newQuery, filtered = InverseFilterQueryWithMap(q, optionsMap)
 	assert.False(t, filtered)
 	protoassert.Equal(t, expected, newQuery)
 }
 
 func TestAddAsConjunction(t *testing.T) {
-	toAdd := &v1.Query{
-		Query: &v1.Query_BaseQuery{
-			BaseQuery: &v1.BaseQuery{
-				Query: &v1.BaseQuery_MatchFieldQuery{
-					MatchFieldQuery: &v1.MatchFieldQuery{Field: CVE.String(), Value: "cveId"},
-				},
-			},
-		},
-	}
+	toAdd := v1.Query_builder{
+		BaseQuery: v1.BaseQuery_builder{
+			MatchFieldQuery: v1.MatchFieldQuery_builder{Field: CVE.String(), Value: "cveId"}.Build(),
+		}.Build(),
+	}.Build()
 
-	addTo := &v1.Query{
-		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
+	addTo := v1.Query_builder{
+		Conjunction: v1.ConjunctionQuery_builder{
 			Queries: []*v1.Query{
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "depname"},
-						},
-					},
-				}},
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "depname"},
-						},
-					},
-				}},
+				v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+					MatchFieldQuery: v1.MatchFieldQuery_builder{Field: DeploymentName.String(), Value: "depname"}.Build(),
+				}.Build()}.Build(),
+				v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+					MatchFieldQuery: v1.MatchFieldQuery_builder{Field: DeploymentName.String(), Value: "depname"}.Build(),
+				}.Build()}.Build(),
 			},
-		}},
-	}
+		}.Build(),
+	}.Build()
 
-	expected := &v1.Query{
-		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
+	expected := v1.Query_builder{
+		Conjunction: v1.ConjunctionQuery_builder{
 			Queries: []*v1.Query{
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "depname"},
-						},
-					},
-				}},
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "depname"},
-						},
-					},
-				}},
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: CVE.String(), Value: "cveId"},
-						},
-					},
-				}},
+				v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+					MatchFieldQuery: v1.MatchFieldQuery_builder{Field: DeploymentName.String(), Value: "depname"}.Build(),
+				}.Build()}.Build(),
+				v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+					MatchFieldQuery: v1.MatchFieldQuery_builder{Field: DeploymentName.String(), Value: "depname"}.Build(),
+				}.Build()}.Build(),
+				v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+					MatchFieldQuery: v1.MatchFieldQuery_builder{Field: CVE.String(), Value: "cveId"}.Build(),
+				}.Build()}.Build(),
 			},
-		}},
-	}
+		}.Build(),
+	}.Build()
 
 	added, err := AddAsConjunction(toAdd, addTo)
 	assert.NoError(t, err)
 	protoassert.Equal(t, expected, added)
 
-	addTo = &v1.Query{
-		Query: &v1.Query_BaseQuery{
-			BaseQuery: &v1.BaseQuery{
-				Query: &v1.BaseQuery_MatchFieldQuery{
-					MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "depname"},
-				},
-			},
-		},
-	}
+	addTo = v1.Query_builder{
+		BaseQuery: v1.BaseQuery_builder{
+			MatchFieldQuery: v1.MatchFieldQuery_builder{Field: DeploymentName.String(), Value: "depname"}.Build(),
+		}.Build(),
+	}.Build()
 
-	expected = &v1.Query{
-		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
+	expected = v1.Query_builder{
+		Conjunction: v1.ConjunctionQuery_builder{
 			Queries: []*v1.Query{
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: CVE.String(), Value: "cveId"},
-						},
-					},
-				}},
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "depname"},
-						},
-					},
-				}},
+				v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+					MatchFieldQuery: v1.MatchFieldQuery_builder{Field: CVE.String(), Value: "cveId"}.Build(),
+				}.Build()}.Build(),
+				v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+					MatchFieldQuery: v1.MatchFieldQuery_builder{Field: DeploymentName.String(), Value: "depname"}.Build(),
+				}.Build()}.Build(),
 			},
-		}},
-	}
+		}.Build(),
+	}.Build()
 
 	added, err = AddAsConjunction(toAdd, addTo)
 	assert.NoError(t, err)
 	protoassert.Equal(t, expected, added)
 
-	addTo = &v1.Query{
-		Query: &v1.Query_Disjunction{Disjunction: &v1.DisjunctionQuery{
+	addTo = v1.Query_builder{
+		Disjunction: v1.DisjunctionQuery_builder{
 			Queries: []*v1.Query{
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: CVE.String(), Value: "cveId"},
-						},
-					},
-				}},
-				{Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "depname"},
-						},
-					},
-				}},
+				v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+					MatchFieldQuery: v1.MatchFieldQuery_builder{Field: CVE.String(), Value: "cveId"}.Build(),
+				}.Build()}.Build(),
+				v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+					MatchFieldQuery: v1.MatchFieldQuery_builder{Field: DeploymentName.String(), Value: "depname"}.Build(),
+				}.Build()}.Build(),
 			},
-		}},
-	}
+		}.Build(),
+	}.Build()
 
 	_, err = AddAsConjunction(toAdd, addTo)
 	assert.NoError(t, err)

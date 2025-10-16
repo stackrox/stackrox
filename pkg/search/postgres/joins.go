@@ -120,18 +120,18 @@ func collectFields(q *v1.Query) (set.StringSet, set.StringSet) {
 	var queries []*v1.Query
 	collectedFields := set.NewStringSet()
 	nullableFields := set.NewStringSet()
-	switch sub := q.GetQuery().(type) {
-	case *v1.Query_BaseQuery:
-		switch subBQ := q.GetBaseQuery().GetQuery().(type) {
-		case *v1.BaseQuery_DocIdQuery, *v1.BaseQuery_MatchNoneQuery:
+	switch q.WhichQuery() {
+	case v1.Query_BaseQuery_case:
+		switch q.GetBaseQuery().WhichQuery() {
+		case v1.BaseQuery_DocIdQuery_case, v1.BaseQuery_MatchNoneQuery_case:
 			// nothing to do
-		case *v1.BaseQuery_MatchFieldQuery:
-			collectedFields.Add(subBQ.MatchFieldQuery.GetField())
-			if subBQ.MatchFieldQuery.GetValue() == search.NullString {
-				nullableFields.Add(subBQ.MatchFieldQuery.GetField())
+		case v1.BaseQuery_MatchFieldQuery_case:
+			collectedFields.Add(q.GetBaseQuery().GetMatchFieldQuery().GetField())
+			if q.GetBaseQuery().GetMatchFieldQuery().GetValue() == search.NullString {
+				nullableFields.Add(q.GetBaseQuery().GetMatchFieldQuery().GetField())
 			}
-		case *v1.BaseQuery_MatchLinkedFieldsQuery:
-			for _, q := range subBQ.MatchLinkedFieldsQuery.GetQuery() {
+		case v1.BaseQuery_MatchLinkedFieldsQuery_case:
+			for _, q := range q.GetBaseQuery().GetMatchLinkedFieldsQuery().GetQuery() {
 				collectedFields.Add(q.GetField())
 				if q.GetValue() == search.NullString {
 					nullableFields.Add(q.GetField())
@@ -140,13 +140,13 @@ func collectFields(q *v1.Query) (set.StringSet, set.StringSet) {
 		default:
 			panic("unsupported")
 		}
-	case *v1.Query_Conjunction:
-		queries = append(queries, sub.Conjunction.GetQueries()...)
-	case *v1.Query_Disjunction:
-		queries = append(queries, sub.Disjunction.GetQueries()...)
-	case *v1.Query_BooleanQuery:
-		queries = append(queries, sub.BooleanQuery.GetMust().GetQueries()...)
-		queries = append(queries, sub.BooleanQuery.GetMustNot().GetQueries()...)
+	case v1.Query_Conjunction_case:
+		queries = append(queries, q.GetConjunction().GetQueries()...)
+	case v1.Query_Disjunction_case:
+		queries = append(queries, q.GetDisjunction().GetQueries()...)
+	case v1.Query_BooleanQuery_case:
+		queries = append(queries, q.GetBooleanQuery().GetMust().GetQueries()...)
+		queries = append(queries, q.GetBooleanQuery().GetMustNot().GetQueries()...)
 	}
 
 	for _, query := range queries {

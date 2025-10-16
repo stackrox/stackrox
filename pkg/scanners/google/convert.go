@@ -14,10 +14,9 @@ const (
 )
 
 func (c *googleScanner) convertComponentFromPackageAndVersion(pv packageAndVersion) *storage.EmbeddedImageScanComponent {
-	component := &storage.EmbeddedImageScanComponent{
-		Name:    pv.name,
-		Version: pv.version,
-	}
+	component := &storage.EmbeddedImageScanComponent{}
+	component.SetName(pv.name)
+	component.SetVersion(pv.version)
 	return component
 }
 
@@ -84,27 +83,24 @@ func (c *googleScanner) convertVulnsFromOccurrence(occurrence *grafeas.Occurrenc
 		link = fmt.Sprintf("https://nvd.nist.gov/vuln/detail/%s", cveName)
 	}
 
-	vuln := &storage.EmbeddedVulnerability{
-		Cve:     cveName,
-		Link:    link,
-		Cvss:    vulnerability.GetCvssScore(),
-		Summary: c.getSummary(occurrence),
-		SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-			FixedBy: pkgIssue.GetFixedLocation().GetVersion().GetRevision(),
-		},
-		VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-		// On looking up cvss for a cve (CVE-2015-5186 in image gcr.io/ultra-current-825/srox/jump-host:latest) on nvd,
-		// it is concluded that score version is v2.
-		ScoreVersion: storage.EmbeddedVulnerability_V2,
-	}
+	vuln := &storage.EmbeddedVulnerability{}
+	vuln.SetCve(cveName)
+	vuln.SetLink(link)
+	vuln.SetCvss(vulnerability.GetCvssScore())
+	vuln.SetSummary(c.getSummary(occurrence))
+	vuln.Set_FixedBy(pkgIssue.GetFixedLocation().GetVersion().GetRevision())
+	vuln.SetVulnerabilityType(storage.EmbeddedVulnerability_IMAGE_VULNERABILITY)
+	// On looking up cvss for a cve (CVE-2015-5186 in image gcr.io/ultra-current-825/srox/jump-host:latest) on nvd,
+	// it is concluded that score version is v2.
+	vuln.SetScoreVersion(storage.EmbeddedVulnerability_V2)
 
-	vuln.CvssV2 = &storage.CVSSV2{}
+	vuln.SetCvssV2(&storage.CVSSV2{})
 
 	if cvssVector, err := v2.ParseCVSSV2(strings.TrimPrefix(vulnerability.GetLongDescription(), "NIST vectors: ")); err == nil {
-		vuln.CvssV2 = cvssVector
+		vuln.SetCvssV2(cvssVector)
 	}
 
-	vuln.CvssV2.Severity = v2.Severity(vulnerability.GetCvssScore())
+	vuln.GetCvssV2().SetSeverity(v2.Severity(vulnerability.GetCvssScore()))
 
 	return vuln
 }

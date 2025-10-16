@@ -26,6 +26,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"google.golang.org/protobuf/proto"
 	appsApiv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -142,7 +143,8 @@ func (f *securedClusterTLSIssuerFixture) respondRequest(
 		if responseOverwrite != nil {
 			response = responseOverwrite
 		} else {
-			response = &central.IssueSecuredClusterCertsResponse{RequestId: interceptedRequestID}
+			response = &central.IssueSecuredClusterCertsResponse{}
+			response.SetRequestId(interceptedRequestID)
 		}
 		f.interceptedRequestID.Store(response.GetRequestId())
 		f.tlsIssuer.responseQueue.Push(NewResponseFromSecuredClusterCerts(response))
@@ -269,14 +271,10 @@ func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerFetchSensorDep
 
 func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerProcessMessageKnownMessage() {
 	fixture := newSecuredClusterTLSIssuerFixture(fakeK8sClientConfig{})
-	expectedResponse := &central.IssueSecuredClusterCertsResponse{
-		RequestId: uuid.NewDummy().String(),
-	}
-	msg := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_IssueSecuredClusterCertsResponse{
-			IssueSecuredClusterCertsResponse: expectedResponse,
-		},
-	}
+	expectedResponse := &central.IssueSecuredClusterCertsResponse{}
+	expectedResponse.SetRequestId(uuid.NewDummy().String())
+	msg := &central.MsgToSensor{}
+	msg.SetIssueSecuredClusterCertsResponse(proto.ValueOrDefault(expectedResponse))
 
 	fixture.mockForStart(mockForStartConfig{})
 	fixture.tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
@@ -291,9 +289,8 @@ func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerProcessMessage
 
 func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerProcessMessageUnknownMessage() {
 	fixture := newSecuredClusterTLSIssuerFixture(fakeK8sClientConfig{})
-	msg := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_ReprocessDeployments{},
-	}
+	msg := &central.MsgToSensor{}
+	msg.Msg = &central.MsgToSensor_ReprocessDeployments{}
 
 	fixture.mockForStart(mockForStartConfig{})
 	fixture.tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
@@ -347,7 +344,8 @@ func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerResponsesWithU
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 
-	response := &central.IssueSecuredClusterCertsResponse{RequestId: "UNKNOWN"}
+	response := &central.IssueSecuredClusterCertsResponse{}
+	response.SetRequestId("UNKNOWN")
 	// Request with different request ID should be ignored.
 	go f.respondRequest(ctx, s.T(), response)
 
@@ -841,28 +839,28 @@ func getSecuredClusterIssueCertsSuccessResponse(
 		if !exists {
 			continue
 		}
-		serviceCerts = append(serviceCerts, &storage.TypedServiceCertificate{
-			ServiceType: serviceType,
-			Cert: &storage.ServiceCertificate{
-				KeyPem:  cert.KeyPEM,
-				CertPem: cert.CertPEM,
-			},
-		})
+		sc := &storage.ServiceCertificate{}
+		if cert.KeyPEM != nil {
+			sc.SetKeyPem(cert.KeyPEM)
+		}
+		if cert.CertPEM != nil {
+			sc.SetCertPem(cert.CertPEM)
+		}
+		tsc := &storage.TypedServiceCertificate{}
+		tsc.SetServiceType(serviceType)
+		tsc.SetCert(sc)
+		serviceCerts = append(serviceCerts, tsc)
 	}
 
-	return &central.MsgToSensor{
-		Msg: &central.MsgToSensor_IssueSecuredClusterCertsResponse{
-			IssueSecuredClusterCertsResponse: &central.IssueSecuredClusterCertsResponse{
-				RequestId: requestID,
-				Response: &central.IssueSecuredClusterCertsResponse_Certificates{
-					Certificates: &storage.TypedServiceCertificateSet{
-						CaPem:        caPem,
-						ServiceCerts: serviceCerts,
-					},
-				},
-			},
-		},
-	}
+	return central.MsgToSensor_builder{
+		IssueSecuredClusterCertsResponse: central.IssueSecuredClusterCertsResponse_builder{
+			RequestId: requestID,
+			Certificates: storage.TypedServiceCertificateSet_builder{
+				CaPem:        caPem,
+				ServiceCerts: serviceCerts,
+			}.Build(),
+		}.Build(),
+	}.Build()
 }
 
 func getSecuredClusterIssueCertsSuccessResponseWithCABundle(
@@ -872,23 +870,23 @@ func getSecuredClusterIssueCertsSuccessResponseWithCABundle(
 	secretsCerts map[string]*mtls.IssuedCert,
 ) *central.MsgToSensor {
 	msg := getSecuredClusterIssueCertsSuccessResponse(requestID, caPem, secretsCerts)
-	msg.GetIssueSecuredClusterCertsResponse().GetCertificates().CaBundlePem = caBundlePem
+	if caBundlePem != nil {
+		msg.GetIssueSecuredClusterCertsResponse().GetCertificates().SetCaBundlePem(caBundlePem)
+	} else {
+		msg.GetIssueSecuredClusterCertsResponse().GetCertificates().ClearCaBundlePem()
+	}
 	return msg
 }
 
 func getSecuredClusterIssueCertsFailureResponse(requestID string) *central.MsgToSensor {
-	return &central.MsgToSensor{
-		Msg: &central.MsgToSensor_IssueSecuredClusterCertsResponse{
-			IssueSecuredClusterCertsResponse: &central.IssueSecuredClusterCertsResponse{
-				RequestId: requestID,
-				Response: &central.IssueSecuredClusterCertsResponse_Error{
-					Error: &central.SecuredClusterCertsIssueError{
-						Message: "forced error",
-					},
-				},
-			},
-		},
-	}
+	return central.MsgToSensor_builder{
+		IssueSecuredClusterCertsResponse: central.IssueSecuredClusterCertsResponse_builder{
+			RequestId: requestID,
+			Error: central.SecuredClusterCertsIssueError_builder{
+				Message: "forced error",
+			}.Build(),
+		}.Build(),
+	}.Build()
 }
 
 func newSecuredClusterTLSIssuer(

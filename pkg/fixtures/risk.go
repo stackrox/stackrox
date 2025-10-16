@@ -7,28 +7,28 @@ import (
 
 // GetRisk returns a mock Risk.
 func GetRisk() *storage.Risk {
-	return &storage.Risk{
-		Id:    fixtureconsts.Deployment1,
-		Score: 10,
-		Subject: &storage.RiskSubject{
-			Id:        fixtureconsts.Deployment1,
-			Namespace: fixtureconsts.Namespace1,
-			ClusterId: fixtureconsts.Cluster1,
-			Type:      storage.RiskSubjectType_DEPLOYMENT,
-		},
-		Results: []*storage.Risk_Result{},
-	}
+	rs := &storage.RiskSubject{}
+	rs.SetId(fixtureconsts.Deployment1)
+	rs.SetNamespace(fixtureconsts.Namespace1)
+	rs.SetClusterId(fixtureconsts.Cluster1)
+	rs.SetType(storage.RiskSubjectType_DEPLOYMENT)
+	risk := &storage.Risk{}
+	risk.SetId(fixtureconsts.Deployment1)
+	risk.SetScore(10)
+	risk.SetSubject(rs)
+	risk.SetResults([]*storage.Risk_Result{})
+	return risk
 }
 
 // GetScopedRisk returns a mock Risk belonging to the input scope.
 func GetScopedRisk(id string, clusterID string, namespace string) *storage.Risk {
-	return &storage.Risk{
-		Id: id,
-		Subject: &storage.RiskSubject{
-			Id:        id,
-			Namespace: namespace,
-			ClusterId: clusterID,
-			Type:      storage.RiskSubjectType_DEPLOYMENT,
-		},
-	}
+	rs := &storage.RiskSubject{}
+	rs.SetId(id)
+	rs.SetNamespace(namespace)
+	rs.SetClusterId(clusterID)
+	rs.SetType(storage.RiskSubjectType_DEPLOYMENT)
+	risk := &storage.Risk{}
+	risk.SetId(id)
+	risk.SetSubject(rs)
+	return risk
 }

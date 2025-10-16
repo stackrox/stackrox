@@ -374,10 +374,10 @@ func getAggregationKeys(groupByKey groupByKey) []*storage.ComplianceAggregation_
 		if val == "" {
 			continue
 		}
-		aggregationKeys = append(aggregationKeys, &storage.ComplianceAggregation_AggregationKey{
-			Scope: storage.ComplianceAggregation_Scope(i + int(minScope)),
-			Id:    val,
-		})
+		ca := &storage.ComplianceAggregation_AggregationKey{}
+		ca.SetScope(storage.ComplianceAggregation_Scope(i + int(minScope)))
+		ca.SetId(val)
+		aggregationKeys = append(aggregationKeys, ca)
 	}
 	return aggregationKeys
 }
@@ -560,13 +560,12 @@ func (a *aggregatorImpl) getAggregatedResults(groupBy []storage.ComplianceAggreg
 			counts = *groupByValue.unitMap[checkName]
 		}
 
-		result := &storage.ComplianceAggregation_Result{
-			AggregationKeys: getAggregationKeys(key),
-			Unit:            unit,
-			NumPassing:      int32(counts.pass),
-			NumFailing:      int32(counts.fail),
-			NumSkipped:      int32(counts.skipped),
-		}
+		result := &storage.ComplianceAggregation_Result{}
+		result.SetAggregationKeys(getAggregationKeys(key))
+		result.SetUnit(unit)
+		result.SetNumPassing(int32(counts.pass))
+		result.SetNumFailing(int32(counts.fail))
+		result.SetNumSkipped(int32(counts.skipped))
 		results = append(results, result)
 		domainMap[result] = groupByValue.domain
 	}

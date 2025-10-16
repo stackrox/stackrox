@@ -13,46 +13,46 @@ func ComplianceV2ClusterStats(resultCounts []*datastore.ResourceResultCountByClu
 	var convertedResults []*v2.ComplianceClusterScanStats
 
 	for _, resultCount := range resultCounts {
-		convertedResults = append(convertedResults, &v2.ComplianceClusterScanStats{
-			Cluster: &v2.ComplianceScanCluster{
+		convertedResults = append(convertedResults, v2.ComplianceClusterScanStats_builder{
+			Cluster: v2.ComplianceScanCluster_builder{
 				ClusterId:   resultCount.ClusterID,
 				ClusterName: resultCount.ClusterName,
-			},
-			ScanStats: &v2.ComplianceScanStatsShim{
+			}.Build(),
+			ScanStats: v2.ComplianceScanStatsShim_builder{
 				ScanName:     resultCount.ScanConfigName,
 				ScanConfigId: scanToScanID[resultCount.ScanConfigName],
 				CheckStats: []*v2.ComplianceCheckStatusCount{
-					{
+					v2.ComplianceCheckStatusCount_builder{
 						Count:  int32(resultCount.FailCount),
 						Status: v2.ComplianceCheckStatus_FAIL,
-					},
-					{
+					}.Build(),
+					v2.ComplianceCheckStatusCount_builder{
 						Count:  int32(resultCount.InfoCount),
 						Status: v2.ComplianceCheckStatus_INFO,
-					},
-					{
+					}.Build(),
+					v2.ComplianceCheckStatusCount_builder{
 						Count:  int32(resultCount.PassCount),
 						Status: v2.ComplianceCheckStatus_PASS,
-					},
-					{
+					}.Build(),
+					v2.ComplianceCheckStatusCount_builder{
 						Count:  int32(resultCount.ErrorCount),
 						Status: v2.ComplianceCheckStatus_ERROR,
-					},
-					{
+					}.Build(),
+					v2.ComplianceCheckStatusCount_builder{
 						Count:  int32(resultCount.ManualCount),
 						Status: v2.ComplianceCheckStatus_MANUAL,
-					},
-					{
+					}.Build(),
+					v2.ComplianceCheckStatusCount_builder{
 						Count:  int32(resultCount.InconsistentCount),
 						Status: v2.ComplianceCheckStatus_INCONSISTENT,
-					},
-					{
+					}.Build(),
+					v2.ComplianceCheckStatusCount_builder{
 						Count:  int32(resultCount.NotApplicableCount),
 						Status: v2.ComplianceCheckStatus_NOT_APPLICABLE,
-					},
+					}.Build(),
 				},
-			},
-		})
+			}.Build(),
+		}.Build())
 	}
 	return convertedResults
 }
@@ -66,44 +66,44 @@ func ComplianceV2ClusterOverallStats(resultCounts []*datastore.ResultStatusCount
 		if resultCount.LastScanTime != nil {
 			lastScanTime = protoconv.ConvertTimeToTimestampOrNil(*resultCount.LastScanTime)
 		}
-		convertedResults = append(convertedResults, &v2.ComplianceClusterOverallStats{
-			Cluster: &v2.ComplianceScanCluster{
+		convertedResults = append(convertedResults, v2.ComplianceClusterOverallStats_builder{
+			Cluster: v2.ComplianceScanCluster_builder{
 				ClusterId:   resultCount.ClusterID,
 				ClusterName: resultCount.ClusterName,
-			},
+			}.Build(),
 			ClusterErrors: clusterErrors[resultCount.ClusterID],
 			CheckStats: []*v2.ComplianceCheckStatusCount{
-				{
+				v2.ComplianceCheckStatusCount_builder{
 					Count:  int32(resultCount.FailCount),
 					Status: v2.ComplianceCheckStatus_FAIL,
-				},
-				{
+				}.Build(),
+				v2.ComplianceCheckStatusCount_builder{
 					Count:  int32(resultCount.InfoCount),
 					Status: v2.ComplianceCheckStatus_INFO,
-				},
-				{
+				}.Build(),
+				v2.ComplianceCheckStatusCount_builder{
 					Count:  int32(resultCount.PassCount),
 					Status: v2.ComplianceCheckStatus_PASS,
-				},
-				{
+				}.Build(),
+				v2.ComplianceCheckStatusCount_builder{
 					Count:  int32(resultCount.ErrorCount),
 					Status: v2.ComplianceCheckStatus_ERROR,
-				},
-				{
+				}.Build(),
+				v2.ComplianceCheckStatusCount_builder{
 					Count:  int32(resultCount.ManualCount),
 					Status: v2.ComplianceCheckStatus_MANUAL,
-				},
-				{
+				}.Build(),
+				v2.ComplianceCheckStatusCount_builder{
 					Count:  int32(resultCount.InconsistentCount),
 					Status: v2.ComplianceCheckStatus_INCONSISTENT,
-				},
-				{
+				}.Build(),
+				v2.ComplianceCheckStatusCount_builder{
 					Count:  int32(resultCount.NotApplicableCount),
 					Status: v2.ComplianceCheckStatus_NOT_APPLICABLE,
-				},
+				}.Build(),
 			},
 			LastScanTime: lastScanTime,
-		})
+		}.Build())
 	}
 	return convertedResults
 }
@@ -113,42 +113,42 @@ func ComplianceV2ProfileStats(resultCounts []*datastore.ResourceResultCountByPro
 	var convertedResults []*v2.ComplianceProfileScanStats
 
 	for _, resultCount := range resultCounts {
-		convertedResults = append(convertedResults, &v2.ComplianceProfileScanStats{
+		convertedResults = append(convertedResults, v2.ComplianceProfileScanStats_builder{
 			ProfileName: resultCount.ProfileName,
 			Title:       profileMap[resultCount.ProfileName].GetTitle(),
 			Version:     profileMap[resultCount.ProfileName].GetProfileVersion(),
 			Benchmarks:  convertBenchmarks(profileBenchmarkMap[resultCount.ProfileName]),
 			CheckStats: []*v2.ComplianceCheckStatusCount{
-				{
+				v2.ComplianceCheckStatusCount_builder{
 					Count:  int32(resultCount.FailCount),
 					Status: v2.ComplianceCheckStatus_FAIL,
-				},
-				{
+				}.Build(),
+				v2.ComplianceCheckStatusCount_builder{
 					Count:  int32(resultCount.InfoCount),
 					Status: v2.ComplianceCheckStatus_INFO,
-				},
-				{
+				}.Build(),
+				v2.ComplianceCheckStatusCount_builder{
 					Count:  int32(resultCount.PassCount),
 					Status: v2.ComplianceCheckStatus_PASS,
-				},
-				{
+				}.Build(),
+				v2.ComplianceCheckStatusCount_builder{
 					Count:  int32(resultCount.ErrorCount),
 					Status: v2.ComplianceCheckStatus_ERROR,
-				},
-				{
+				}.Build(),
+				v2.ComplianceCheckStatusCount_builder{
 					Count:  int32(resultCount.ManualCount),
 					Status: v2.ComplianceCheckStatus_MANUAL,
-				},
-				{
+				}.Build(),
+				v2.ComplianceCheckStatusCount_builder{
 					Count:  int32(resultCount.InconsistentCount),
 					Status: v2.ComplianceCheckStatus_INCONSISTENT,
-				},
-				{
+				}.Build(),
+				v2.ComplianceCheckStatusCount_builder{
 					Count:  int32(resultCount.NotApplicableCount),
 					Status: v2.ComplianceCheckStatus_NOT_APPLICABLE,
-				},
+				}.Build(),
 			},
-		})
+		}.Build())
 	}
 	return convertedResults
 }
@@ -156,13 +156,13 @@ func ComplianceV2ProfileStats(resultCounts []*datastore.ResourceResultCountByPro
 func convertBenchmarks(incoming []*storage.ComplianceOperatorBenchmarkV2) []*v2.ComplianceBenchmark {
 	var convertedBenchmarks []*v2.ComplianceBenchmark
 	for _, benchmark := range incoming {
-		convertedBenchmarks = append(convertedBenchmarks, &v2.ComplianceBenchmark{
-			Name:        benchmark.GetName(),
-			Version:     benchmark.GetVersion(),
-			Description: benchmark.GetDescription(),
-			Provider:    benchmark.GetProvider(),
-			ShortName:   benchmark.GetShortName(),
-		})
+		cb := &v2.ComplianceBenchmark{}
+		cb.SetName(benchmark.GetName())
+		cb.SetVersion(benchmark.GetVersion())
+		cb.SetDescription(benchmark.GetDescription())
+		cb.SetProvider(benchmark.GetProvider())
+		cb.SetShortName(benchmark.GetShortName())
+		convertedBenchmarks = append(convertedBenchmarks, cb)
 	}
 
 	return convertedBenchmarks

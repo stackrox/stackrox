@@ -229,12 +229,11 @@ func (resolver *Resolver) getProcessActivityEvents(ctx context.Context, query *v
 	for _, indicator := range indicators {
 		var keyStr, procName string
 		if canReadBaseline {
-			key := &storage.ProcessBaselineKey{
-				ClusterId:     indicator.GetClusterId(),
-				Namespace:     indicator.GetNamespace(),
-				DeploymentId:  indicator.GetDeploymentId(),
-				ContainerName: indicator.GetContainerName(),
-			}
+			key := &storage.ProcessBaselineKey{}
+			key.SetClusterId(indicator.GetClusterId())
+			key.SetNamespace(indicator.GetNamespace())
+			key.SetDeploymentId(indicator.GetDeploymentId())
+			key.SetContainerName(indicator.GetContainerName())
 			keyStr = key.String()
 			procName = processBaselinePkg.BaselineItemFromProcess(indicator)
 			if procName != "" {

@@ -3,6 +3,7 @@ package mock
 import (
 	"github.com/stackrox/rox/generated/storage"
 	clairV1 "github.com/stackrox/scanner/api/v1"
+	"google.golang.org/protobuf/proto"
 )
 
 // GetTestVulns returns test clair vulns and also the expected converted proto vulns
@@ -50,15 +51,13 @@ func GetTestVulns() ([]clairV1.Vulnerability, []*storage.EmbeddedVulnerability) 
 	}
 	protoVulns := []*storage.EmbeddedVulnerability{
 		nil,
-		{
+		storage.EmbeddedVulnerability_builder{
 			Cve:     "CVE-2017-7246",
 			Link:    "https://security-tracker.debian.org/tracker/CVE-2017-7246",
 			Summary: "Stack-based buffer overflow in the pcre32_copy_substring function in pcre_get.c in libpcre1 in PCRE 8.40 allows remote attackers to cause a denial of service (WRITE of size 268) or possibly have unspecified other impact via a crafted file.",
 			Cvss:    6.8,
-			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-				FixedBy: "",
-			},
-			CvssV2: &storage.CVSSV2{
+			FixedBy: proto.String(""),
+			CvssV2: storage.CVSSV2_builder{
 				Vector:           "AV:N/AC:M/Au:N/C:P/I:P/A:P",
 				Score:            6.8,
 				AttackVector:     storage.CVSSV2_ATTACK_NETWORK,
@@ -68,19 +67,17 @@ func GetTestVulns() ([]clairV1.Vulnerability, []*storage.EmbeddedVulnerability) 
 				Integrity:        storage.CVSSV2_IMPACT_PARTIAL,
 				Availability:     storage.CVSSV2_IMPACT_PARTIAL,
 				Severity:         storage.CVSSV2_MEDIUM,
-			},
+			}.Build(),
 			VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-		},
-		{
-			Cve:     "CVE-2017-7247",
-			Link:    "https://security-tracker.debian.org/tracker/CVE-2017-7247",
-			Summary: "Stack-based buffer overflow in the pcre32_copy_substring function in pcre_get.c in libpcre1 in PCRE 8.40 allows remote attackers to cause a denial of service (WRITE of size 268) or possibly have unspecified other impact via a crafted file.",
-			Cvss:    7.5,
-			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-				FixedBy: "",
-			},
+		}.Build(),
+		storage.EmbeddedVulnerability_builder{
+			Cve:          "CVE-2017-7247",
+			Link:         "https://security-tracker.debian.org/tracker/CVE-2017-7247",
+			Summary:      "Stack-based buffer overflow in the pcre32_copy_substring function in pcre_get.c in libpcre1 in PCRE 8.40 allows remote attackers to cause a denial of service (WRITE of size 268) or possibly have unspecified other impact via a crafted file.",
+			Cvss:         7.5,
+			FixedBy:      proto.String(""),
 			ScoreVersion: storage.EmbeddedVulnerability_V3,
-			CvssV2: &storage.CVSSV2{
+			CvssV2: storage.CVSSV2_builder{
 				Vector:              "AV:N/AC:L/Au:S/C:N/I:N/A:C",
 				ExploitabilityScore: 8.0,
 				ImpactScore:         6.9,
@@ -92,8 +89,8 @@ func GetTestVulns() ([]clairV1.Vulnerability, []*storage.EmbeddedVulnerability) 
 				Integrity:           storage.CVSSV2_IMPACT_NONE,
 				Availability:        storage.CVSSV2_IMPACT_COMPLETE,
 				Severity:            storage.CVSSV2_MEDIUM,
-			},
-			CvssV3: &storage.CVSSV3{
+			}.Build(),
+			CvssV3: storage.CVSSV3_builder{
 				Vector:              "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
 				Score:               7.5,
 				ExploitabilityScore: 3.9,
@@ -107,9 +104,9 @@ func GetTestVulns() ([]clairV1.Vulnerability, []*storage.EmbeddedVulnerability) 
 				Integrity:           storage.CVSSV3_IMPACT_NONE,
 				Availability:        storage.CVSSV3_IMPACT_NONE,
 				Severity:            storage.CVSSV3_HIGH,
-			},
+			}.Build(),
 			VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-		},
+		}.Build(),
 	}
 	return quayVulns, protoVulns
 }
@@ -128,19 +125,19 @@ func GetTestFeatures() ([]clairV1.Feature, []*storage.EmbeddedImageScanComponent
 			Vulnerabilities: quayVulns,
 		},
 	}
+	eisc := &storage.EmbeddedImageScanComponent{}
+	eisc.SetName("nginx-module-geoip")
+	eisc.SetVersion("1.10.3-1~jessie")
+	eisc.SetVulns([]*storage.EmbeddedVulnerability{})
+	eisc.SetExecutables([]*storage.EmbeddedImageScanComponent_Executable{})
+	eisc2 := &storage.EmbeddedImageScanComponent{}
+	eisc2.SetName("pcre3")
+	eisc2.SetVersion("2:8.35-3.3+deb8u4")
+	eisc2.SetVulns(protoVulns[1:]) // cut out the nil value
+	eisc2.SetExecutables([]*storage.EmbeddedImageScanComponent_Executable{})
 	protoComponents := []*storage.EmbeddedImageScanComponent{
-		{
-			Name:        "nginx-module-geoip",
-			Version:     "1.10.3-1~jessie",
-			Vulns:       []*storage.EmbeddedVulnerability{},
-			Executables: []*storage.EmbeddedImageScanComponent_Executable{},
-		},
-		{
-			Name:        "pcre3",
-			Version:     "2:8.35-3.3+deb8u4",
-			Vulns:       protoVulns[1:], // cut out the nil value
-			Executables: []*storage.EmbeddedImageScanComponent_Executable{},
-		},
+		eisc,
+		eisc2,
 	}
 	return quayFeatures, protoComponents
 }

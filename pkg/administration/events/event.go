@@ -106,22 +106,22 @@ func (m *AdministrationEvent) GetType() storage.AdministrationEventType {
 // ToStorageEvent converts the event to its storage representation.
 func (m *AdministrationEvent) ToStorageEvent() *storage.AdministrationEvent {
 	tsNow := protocompat.TimestampNow()
-	return &storage.AdministrationEvent{
-		Id:      GenerateEventID(m),
-		Type:    m.GetType(),
-		Level:   m.GetLevel(),
-		Message: m.GetMessage(),
-		Hint:    m.GetHint(),
-		Domain:  m.GetDomain(),
-		Resource: &storage.AdministrationEvent_Resource{
-			Type: m.GetResourceType(),
-			Id:   m.GetResourceID(),
-			Name: m.GetResourceName(),
-		},
-		NumOccurrences: 1,
-		CreatedAt:      tsNow,
-		LastOccurredAt: tsNow,
-	}
+	ar := &storage.AdministrationEvent_Resource{}
+	ar.SetType(m.GetResourceType())
+	ar.SetId(m.GetResourceID())
+	ar.SetName(m.GetResourceName())
+	ae := &storage.AdministrationEvent{}
+	ae.SetId(GenerateEventID(m))
+	ae.SetType(m.GetType())
+	ae.SetLevel(m.GetLevel())
+	ae.SetMessage(m.GetMessage())
+	ae.SetHint(m.GetHint())
+	ae.SetDomain(m.GetDomain())
+	ae.SetResource(ar)
+	ae.SetNumOccurrences(1)
+	ae.SetCreatedAt(tsNow)
+	ae.SetLastOccurredAt(tsNow)
+	return ae
 }
 
 // Validate will validate the administration event.

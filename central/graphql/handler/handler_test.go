@@ -81,7 +81,8 @@ func mockResolver(t *testing.T) mocks {
 		SecretsDataStore:      secret,
 		NetworkPoliciesStore:  nps,
 	}
-	loaders.RegisterTypeFactory(reflect.TypeOf(storage.Deployment{}), func() interface{} {
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	loaders.RegisterTypeFactory(reflect.TypeOf(&storage.Deployment{}), func() interface{} {
 		return loaders.NewDeploymentLoader(deployment, deploymentView)
 	})
 

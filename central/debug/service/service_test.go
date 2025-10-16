@@ -81,15 +81,15 @@ func (s *debugServiceTestSuite) TestGetGroups() {
 	_, err := s.service.getGroups(s.noneCtx)
 	s.Error(err, "expected error propagation")
 
+	gp := &storage.GroupProperties{}
+	gp.SetAuthProviderId("1")
+	gp.SetKey("test")
+	gp.SetValue("1")
+	group := &storage.Group{}
+	group.SetRoleName("test")
+	group.SetProps(gp)
 	expectedGroups := []*storage.Group{
-		{
-			RoleName: "test",
-			Props: &storage.GroupProperties{
-				AuthProviderId: "1",
-				Key:            "test",
-				Value:          "1",
-			},
-		},
+		group,
 	}
 	s.groupsMock.EXPECT().ForEach(gomock.Any(), gomock.Any()).Do(
 		func(ctx context.Context, fn func(group *storage.Group) error) error {
@@ -107,10 +107,10 @@ func (s *debugServiceTestSuite) TestGetRoles() {
 	_, err := s.service.getRoles(s.noneCtx)
 	s.Error(err, "expected error propagation")
 
+	role := &storage.Role{}
+	role.SetName("Test")
 	allRoles := []*storage.Role{
-		{
-			Name: "Test",
-		},
+		role,
 	}
 	s.rolesMock.EXPECT().GetAllRoles(gomock.Any()).Return(allRoles, nil)
 
@@ -121,9 +121,8 @@ func (s *debugServiceTestSuite) TestGetRoles() {
 		"TestRead":      1,
 		"TestReadWrite": 2,
 	})
-	expectedAccessScope := storage.SimpleAccessScope{
-		Name: "TestScope",
-	}
+	expectedAccessScope := &storage.SimpleAccessScope{}
+	expectedAccessScope.SetName("TestScope")
 	resolvedRole.EXPECT().GetAccessScope().Return(&expectedAccessScope)
 	actualRoles, err := s.service.getRoles(s.noneCtx)
 
@@ -155,14 +154,12 @@ func (s *debugServiceTestSuite) TestGetNotifiers() {
 	s.Error(err, "expected error propagation")
 
 	expectedNotifiers := []*storage.Notifier{
-		{
+		storage.Notifier_builder{
 			Name: "test",
-			Config: &storage.Notifier_Pagerduty{
-				Pagerduty: &storage.PagerDuty{
-					ApiKey: "******",
-				},
-			},
-		},
+			Pagerduty: storage.PagerDuty_builder{
+				ApiKey: "******",
+			}.Build(),
+		}.Build(),
 	}
 	s.notifiersMock.EXPECT().ForEachScrubbedNotifier(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(_ context.Context, fn func(obj *storage.Notifier) error) error {
@@ -180,16 +177,15 @@ func (s *debugServiceTestSuite) TestGetConfig() {
 	_, err := s.service.getConfig(s.noneCtx)
 	s.Error(err, "expected error propagation")
 
-	expectedConfig := &storage.Config{
-		PublicConfig: &storage.PublicConfig{
-			LoginNotice: &storage.LoginNotice{
-				Text: "test",
-			},
-		},
-		PrivateConfig: &storage.PrivateConfig{
-			ImageRetentionDurationDays: 1,
-		},
-	}
+	ln := &storage.LoginNotice{}
+	ln.SetText("test")
+	pc := &storage.PublicConfig{}
+	pc.SetLoginNotice(ln)
+	pc2 := &storage.PrivateConfig{}
+	pc2.SetImageRetentionDurationDays(1)
+	expectedConfig := &storage.Config{}
+	expectedConfig.SetPublicConfig(pc)
+	expectedConfig.SetPrivateConfig(pc2)
 	s.configMock.EXPECT().GetConfig(gomock.Any()).Return(expectedConfig, nil)
 	actualConfig, err := s.service.getConfig(s.noneCtx)
 	ac, ok := actualConfig.(*storage.Config)
@@ -241,18 +237,18 @@ func (s *debugServiceTestSuite) TestGetBundle() {
 
 func (s *debugServiceTestSuite) TestGetLogs() {
 	logs := []*storage.LogImbue{
-		{
+		storage.LogImbue_builder{
 			Log: []byte("not a json"),
-		},
-		{
+		}.Build(),
+		storage.LogImbue_builder{
 			Log: []byte(`{"json": "object"}`),
-		},
-		{
+		}.Build(),
+		storage.LogImbue_builder{
 			Log: []byte(`{"weirdstring" : "**&&^^%%$$"}`),
-		},
-		{
+		}.Build(),
+		storage.LogImbue_builder{
 			Log: []byte(`[{},{"hey": "hehehehey"}]`),
-		},
+		}.Build(),
 	}
 
 	logStore := logMocks.NewMockStore(s.mockCtrl)

@@ -62,9 +62,9 @@ func (s *nodeServiceImpl) ListNodes(ctx context.Context, req *v1.ListNodesReques
 	if err != nil {
 		return nil, errors.Errorf("could not list notes in cluster %s: %v", req.GetClusterId(), err)
 	}
-	return &v1.ListNodesResponse{
-		Nodes: nodes,
-	}, nil
+	lnr := &v1.ListNodesResponse{}
+	lnr.SetNodes(nodes)
+	return lnr, nil
 }
 
 func (s *nodeServiceImpl) GetNode(ctx context.Context, req *v1.GetNodeRequest) (*storage.Node, error) {
@@ -95,7 +95,9 @@ func (s *nodeServiceImpl) ExportNodes(req *v1.ExportNodeRequest, srv v1.NodeServ
 		defer cancel()
 	}
 	return s.nodeDatastore.WalkByQuery(ctx, parsedQuery, func(node *storage.Node) error {
-		if err := srv.Send(&v1.ExportNodeResponse{Node: node}); err != nil {
+		enr := &v1.ExportNodeResponse{}
+		enr.SetNode(node)
+		if err := srv.Send(enr); err != nil {
 			return err
 		}
 		return nil

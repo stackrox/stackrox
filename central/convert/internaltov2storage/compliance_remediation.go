@@ -7,14 +7,14 @@ import (
 
 // ComplianceOperatorRemediation converts internal api V2 remediation to a storage V2 remediation
 func ComplianceOperatorRemediation(sensorData *central.ComplianceOperatorRemediationV2, clusterID string) *storage.ComplianceOperatorRemediationV2 {
-	return &storage.ComplianceOperatorRemediationV2{
-		Id:                        sensorData.GetId(),
-		Name:                      sensorData.GetName(),
-		ComplianceCheckResultName: sensorData.GetComplianceCheckResultName(),
-		EnforcementType:           sensorData.GetEnforcementType(),
-		OutdatedObject:            sensorData.GetOutdatedObject(),
-		CurrentObject:             sensorData.GetCurrentObject(),
-		ClusterId:                 clusterID,
-		Apply:                     sensorData.GetApply(),
-	}
+	corv2 := &storage.ComplianceOperatorRemediationV2{}
+	corv2.SetId(sensorData.GetId())
+	corv2.SetName(sensorData.GetName())
+	corv2.SetComplianceCheckResultName(sensorData.GetComplianceCheckResultName())
+	corv2.SetEnforcementType(sensorData.GetEnforcementType())
+	corv2.SetOutdatedObject(sensorData.GetOutdatedObject())
+	corv2.SetCurrentObject(sensorData.GetCurrentObject())
+	corv2.SetClusterId(clusterID)
+	corv2.SetApply(sensorData.GetApply())
+	return corv2
 }

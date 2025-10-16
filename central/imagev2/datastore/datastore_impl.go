@@ -290,7 +290,7 @@ func (ds *datastoreImpl) initializeRankers() {
 		pkgSearch.NewQuerySelect(pkgSearch.ImageRiskScore).Proto(),
 	}
 	query := pkgSearch.EmptyQuery()
-	query.Selects = selects
+	query.SetSelects(selects)
 
 	// The entire image is not needed to initialize the ranker.  We only need the image id and risk score.
 	var results []*views.ImageV2RiskView
@@ -309,14 +309,14 @@ func (ds *datastoreImpl) initializeRankers() {
 
 func (ds *datastoreImpl) updateImagePriority(images ...*storage.ImageV2) {
 	for _, image := range images {
-		image.Priority = ds.imageRanker.GetRankForID(image.GetId())
+		image.SetPriority(ds.imageRanker.GetRankForID(image.GetId()))
 		for _, component := range image.GetScan().GetComponents() {
 			componentID, err := scancomponent.ComponentIDV2(component, image.GetId())
 			if err != nil {
 				log.Error(err)
 				continue
 			}
-			component.Priority = ds.imageComponentRanker.GetRankForID(componentID)
+			component.SetPriority(ds.imageComponentRanker.GetRankForID(componentID))
 		}
 	}
 }
@@ -328,7 +328,7 @@ func (ds *datastoreImpl) updateComponentRisk(image *storage.ImageV2) {
 			log.Error(err)
 			continue
 		}
-		component.RiskScore = ds.imageComponentRanker.GetScoreForID(componentID)
+		component.SetRiskScore(ds.imageComponentRanker.GetScoreForID(componentID))
 	}
 }
 
@@ -345,11 +345,11 @@ func convertMany(images []*storage.ImageV2, results []search.Result) ([]*v1.Sear
 }
 
 func convertOne(image *storage.ImageV2, result *search.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_IMAGES,
-		Id:             image.GetId(),
-		Name:           image.GetName().GetFullName(),
-		FieldToMatches: search.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+	sr := &v1.SearchResult{}
+	sr.SetCategory(v1.SearchCategory_IMAGES)
+	sr.SetId(image.GetId())
+	sr.SetName(image.GetName().GetFullName())
+	sr.SetFieldToMatches(search.GetProtoMatchesMap(result.Matches))
+	sr.SetScore(result.Score)
+	return sr
 }

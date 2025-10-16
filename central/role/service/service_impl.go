@@ -91,7 +91,9 @@ func (s *serviceImpl) GetRoles(ctx context.Context, _ *v1.Empty) (*v1.GetRolesRe
 		return roles[i].GetName() < roles[j].GetName()
 	})
 
-	return &v1.GetRolesResponse{Roles: roles}, nil
+	grr := &v1.GetRolesResponse{}
+	grr.SetRoles(roles)
+	return grr, nil
 }
 
 func (s *serviceImpl) GetRole(ctx context.Context, id *v1.ResourceByID) (*storage.Role, error) {
@@ -116,7 +118,7 @@ func (s *serviceImpl) CreateRole(ctx context.Context, roleRequest *v1.CreateRole
 	if role.GetName() != "" && role.GetName() != roleRequest.GetName() {
 		return nil, errox.InvalidArgs.CausedBy("different role names in path and body")
 	}
-	role.Name = roleRequest.GetName()
+	role.SetName(roleRequest.GetName())
 
 	err := s.roleDataStore.AddRole(ctx, role)
 	if err != nil {
@@ -148,9 +150,9 @@ func (s *serviceImpl) GetResources(context.Context, *v1.Empty) (*v1.GetResources
 	for _, r := range resourceList {
 		resources = append(resources, string(r))
 	}
-	return &v1.GetResourcesResponse{
-		Resources: resources,
-	}, nil
+	grr := &v1.GetResourcesResponse{}
+	grr.SetResources(resources)
+	return grr, nil
 }
 
 // GetMyPermissions returns the permissions for a user based on the context.
@@ -160,9 +162,9 @@ func GetMyPermissions(ctx context.Context) (*v1.GetPermissionsResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &v1.GetPermissionsResponse{
-		ResourceToAccess: id.Permissions(),
-	}, nil
+	gpr := &v1.GetPermissionsResponse{}
+	gpr.SetResourceToAccess(id.Permissions())
+	return gpr, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -192,14 +194,16 @@ func (s *serviceImpl) ListPermissionSets(ctx context.Context, _ *v1.Empty) (*v1.
 		return permissionSets[i].GetName() < permissionSets[j].GetName()
 	})
 
-	return &v1.ListPermissionSetsResponse{PermissionSets: permissionSets}, nil
+	lpsr := &v1.ListPermissionSetsResponse{}
+	lpsr.SetPermissionSets(permissionSets)
+	return lpsr, nil
 }
 
 func (s *serviceImpl) PostPermissionSet(ctx context.Context, permissionSet *storage.PermissionSet) (*storage.PermissionSet, error) {
 	if permissionSet.GetId() != "" {
 		return nil, errox.InvalidArgs.CausedBy("setting id field is not allowed")
 	}
-	permissionSet.Id = rolePkg.GeneratePermissionSetID()
+	permissionSet.SetId(rolePkg.GeneratePermissionSetID())
 
 	// Store the augmented permission set; report back on error. Note the
 	// permission set is referenced by its name because that's what the caller
@@ -258,14 +262,16 @@ func (s *serviceImpl) ListSimpleAccessScopes(ctx context.Context, _ *v1.Empty) (
 		return scopes[i].GetName() < scopes[j].GetName()
 	})
 
-	return &v1.ListSimpleAccessScopesResponse{AccessScopes: scopes}, nil
+	lsasr := &v1.ListSimpleAccessScopesResponse{}
+	lsasr.SetAccessScopes(scopes)
+	return lsasr, nil
 }
 
 func (s *serviceImpl) PostSimpleAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) (*storage.SimpleAccessScope, error) {
 	if scope.GetId() != "" {
 		return nil, errox.InvalidArgs.CausedBy("setting id field is not allowed")
 	}
-	scope.Id = rolePkg.GenerateAccessScopeID()
+	scope.SetId(rolePkg.GenerateAccessScopeID())
 
 	// Store the augmented access scope; report back on error. Note the access
 	// scope is referenced by its name because that's what the caller knows.
@@ -338,9 +344,8 @@ func (s *serviceImpl) GetClustersForPermissions(ctx context.Context, req *v1.Get
 		return nil, err
 	}
 
-	response := &v1.GetClustersForPermissionsResponse{
-		Clusters: clusters,
-	}
+	response := &v1.GetClustersForPermissionsResponse{}
+	response.SetClusters(clusters)
 	return response, nil
 }
 
@@ -353,9 +358,8 @@ func (s *serviceImpl) GetNamespacesForClusterAndPermissions(ctx context.Context,
 		return nil, err
 	}
 
-	response := &v1.GetNamespacesForClusterAndPermissionsResponse{
-		Namespaces: namespaces,
-	}
+	response := &v1.GetNamespacesForClusterAndPermissionsResponse{}
+	response.SetNamespaces(namespaces)
 	return response, nil
 }
 

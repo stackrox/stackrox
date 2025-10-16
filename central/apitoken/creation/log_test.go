@@ -38,11 +38,10 @@ func Test_loggingMessage(t *testing.T) {
 		}),
 			zapcore.AddSync(w), zapcore.InfoLevel)).Sugar()
 
-	md := &storage.TokenMetadata{
-		Id:    "token-id",
-		Name:  "test",
-		Roles: []string{"Admin", "Test"},
-	}
+	md := &storage.TokenMetadata{}
+	md.SetId("token-id")
+	md.SetName("test")
+	md.SetRoles([]string{"Admin", "Test"})
 
 	LogTokenCreation(mockIdentity, md)
 	assert.Equal(t, `An API token has been created	`+

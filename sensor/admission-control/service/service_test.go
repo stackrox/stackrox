@@ -40,18 +40,18 @@ func TestExecIntoPodNameEventPolicy(t *testing.T) {
 	defer mgr.Stop()
 
 	const deploymentID = "f3237faf-8350-4c39-b045-ff4c493ddb71"
-	managerTesting.ProcessDeploymentEvent(t, mgr, &storage.Deployment{
-		Id:        deploymentID,
-		Name:      "sensor",
-		Type:      "Deployment",
-		Namespace: "stackrox",
-	})
-	managerTesting.ProcessPodEvent(t, mgr, &storage.Pod{
-		Id:           "64a1d6ee-2425-5f19-990e-a2d8b18c1e4c",
-		Name:         "sensor-74f6965874-qckz6",
-		DeploymentId: deploymentID,
-		Namespace:    "stackrox",
-	})
+	deployment := &storage.Deployment{}
+	deployment.SetId(deploymentID)
+	deployment.SetName("sensor")
+	deployment.SetType("Deployment")
+	deployment.SetNamespace("stackrox")
+	managerTesting.ProcessDeploymentEvent(t, mgr, deployment)
+	pod := &storage.Pod{}
+	pod.SetId("64a1d6ee-2425-5f19-990e-a2d8b18c1e4c")
+	pod.SetName("sensor-74f6965874-qckz6")
+	pod.SetDeploymentId(deploymentID)
+	pod.SetNamespace("stackrox")
+	managerTesting.ProcessPodEvent(t, mgr, pod)
 
 	r := serviceTestRun{
 		mgr:               mgr,
@@ -79,32 +79,32 @@ func TestLatestTagPolicyAdmissionReview(t *testing.T) {
 	policy, err := policiesTesting.GetDefaultPolicy(t, LatestTagPolicyName)
 	require.NoError(t, err)
 
-	policy.EnforcementActions = []storage.EnforcementAction{
+	policy.SetEnforcementActions([]storage.EnforcementAction{
 		storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT,
-	}
+	})
 
 	mgr := managerTesting.NewTestManager(t, managerTesting.TestManagerOptions{
-		AdmissionControllerSettings: &sensor.AdmissionControlSettings{
+		AdmissionControllerSettings: sensor.AdmissionControlSettings_builder{
 			ClusterId: uuid.NewDummy().String(),
-			ClusterConfig: &storage.DynamicClusterConfig{
-				AdmissionControllerConfig: &storage.AdmissionControllerConfig{
+			ClusterConfig: storage.DynamicClusterConfig_builder{
+				AdmissionControllerConfig: storage.AdmissionControllerConfig_builder{
 					EnforceOnUpdates: true,
 					Enabled:          true,
-				},
-			},
-		},
+				}.Build(),
+			}.Build(),
+		}.Build(),
 		Policy: policy,
-		ImageServiceResponse: &sensor.GetImageResponse{
-			Image: &storage.Image{
+		ImageServiceResponse: sensor.GetImageResponse_builder{
+			Image: storage.Image_builder{
 				Id: "sha256:e66b2e83961df8f87a4a20c0365b1404d60cdd58798f4db5763332fe0ac235ea",
-				Name: &storage.ImageName{
+				Name: storage.ImageName_builder{
 					Registry: "docker.io",
 					Remote:   "library/nginx",
 					Tag:      "latest",
 					FullName: "docker.io/library/nginx:latest",
-				},
-			},
-		},
+				}.Build(),
+			}.Build(),
+		}.Build(),
 	})
 
 	mgr.Start()

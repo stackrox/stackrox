@@ -69,10 +69,9 @@ func (g *generic) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 
 // NetworkPolicyYAMLNotify takes in a yaml file and generates the Slack message.
 func (g *generic) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, clusterName string) error {
-	msg := &v1.NetworkPolicyNotification{
-		Cluster: clusterName,
-		Yaml:    yaml,
-	}
+	msg := &v1.NetworkPolicyNotification{}
+	msg.SetCluster(clusterName)
+	msg.SetYaml(yaml)
 	return g.postMessageWithRetry(ctx, msg, networkPolicyMessageKey)
 }
 
@@ -164,12 +163,11 @@ func (g *generic) ProtoNotifier() *storage.Notifier {
 }
 
 func (g *generic) Test(ctx context.Context) *notifiers.NotifierError {
-	alert := &storage.Alert{
-		Id: "testalert",
-		Policy: &storage.Policy{
-			Name: "This is a test message created to test integration with StackRox.",
-		},
-	}
+	policy := &storage.Policy{}
+	policy.SetName("This is a test message created to test integration with StackRox.")
+	alert := &storage.Alert{}
+	alert.SetId("testalert")
+	alert.SetPolicy(policy)
 
 	if err := g.AlertNotify(ctx, alert); err != nil {
 		return notifiers.NewNotifierError("send test message failed", err)

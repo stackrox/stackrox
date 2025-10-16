@@ -28,36 +28,45 @@ func NewServiceConfig() Multiplier {
 
 // Score takes a deployment and evaluates its risk based on the service configuration
 func (s *serviceConfigMultiplier) Score(_ context.Context, deployment *storage.Deployment, _ map[string][]*storage.Risk_Result) *storage.Risk_Result {
-	riskResult := &storage.Risk_Result{
-		Name: ServiceConfigHeading,
-	}
+	riskResult := &storage.Risk_Result{}
+	riskResult.SetName(ServiceConfigHeading)
 	var overallScore float32
 	if volumeFactor := s.scoreVolumes(deployment); volumeFactor != "" {
 		overallScore++
-		riskResult.Factors = append(riskResult.Factors, &storage.Risk_Result_Factor{Message: volumeFactor})
+		rrf := &storage.Risk_Result_Factor{}
+		rrf.SetMessage(volumeFactor)
+		riskResult.SetFactors(append(riskResult.GetFactors(), rrf))
 	}
 	if secretFactor := s.scoreSecrets(deployment); secretFactor != "" {
 		overallScore++
-		riskResult.Factors = append(riskResult.Factors, &storage.Risk_Result_Factor{Message: secretFactor})
+		rrf := &storage.Risk_Result_Factor{}
+		rrf.SetMessage(secretFactor)
+		riskResult.SetFactors(append(riskResult.GetFactors(), rrf))
 	}
 	capAddFactor, capDropFactor := s.scoreCapabilities(deployment)
 	if capAddFactor != "" {
 		overallScore++
-		riskResult.Factors = append(riskResult.Factors, &storage.Risk_Result_Factor{Message: capAddFactor})
+		rrf := &storage.Risk_Result_Factor{}
+		rrf.SetMessage(capAddFactor)
+		riskResult.SetFactors(append(riskResult.GetFactors(), rrf))
 	}
 	if capDropFactor != "" {
 		overallScore++
-		riskResult.Factors = append(riskResult.Factors, &storage.Risk_Result_Factor{Message: capDropFactor})
+		rrf := &storage.Risk_Result_Factor{}
+		rrf.SetMessage(capDropFactor)
+		riskResult.SetFactors(append(riskResult.GetFactors(), rrf))
 	}
 	if factor := s.scorePrivilege(deployment); factor != "" {
 		overallScore *= 2
-		riskResult.Factors = append(riskResult.Factors, &storage.Risk_Result_Factor{Message: factor})
+		rrf := &storage.Risk_Result_Factor{}
+		rrf.SetMessage(factor)
+		riskResult.SetFactors(append(riskResult.GetFactors(), rrf))
 	}
 	if len(riskResult.GetFactors()) == 0 {
 		return nil
 	}
 	// riskResult.Score is the normalized [1.0,2.0] score
-	riskResult.Score = multipliers.NormalizeScore(overallScore, configSaturation, configMaxScore)
+	riskResult.SetScore(multipliers.NormalizeScore(overallScore, configSaturation, configMaxScore))
 	return riskResult
 }
 

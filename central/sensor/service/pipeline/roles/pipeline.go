@@ -59,7 +59,9 @@ func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap
 
 	store := storeMap.Get((*central.SensorEvent_Role)(nil))
 	err = reconciliation.Perform(store, search.ResultsToIDSet(results), "k8sroles", func(id string) error {
-		return s.runRemovePipeline(ctx, central.ResourceAction_REMOVE_RESOURCE, &storage.K8SRole{Id: id})
+		k8SRole := &storage.K8SRole{}
+		k8SRole.SetId(id)
+		return s.runRemovePipeline(ctx, central.ResourceAction_REMOVE_RESOURCE, k8SRole)
 	})
 
 	if err != nil {
@@ -78,7 +80,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	event := msg.GetEvent()
 	role := event.GetRole()
-	role.ClusterId = clusterID
+	role.SetClusterId(clusterID)
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
@@ -131,7 +133,7 @@ func (s *pipelineImpl) validateInput(role *storage.K8SRole) error {
 }
 
 func (s *pipelineImpl) enrichCluster(ctx context.Context, role *storage.K8SRole) error {
-	role.ClusterName = ""
+	role.SetClusterName("")
 
 	clusterName, clusterExists, err := s.clusters.GetClusterName(ctx, role.GetClusterId())
 	switch {
@@ -142,7 +144,7 @@ func (s *pipelineImpl) enrichCluster(ctx context.Context, role *storage.K8SRole)
 		log.Errorf("Couldn't find cluster '%q'", role.GetClusterId())
 		return err
 	default:
-		role.ClusterName = clusterName
+		role.SetClusterName(clusterName)
 	}
 	return nil
 }

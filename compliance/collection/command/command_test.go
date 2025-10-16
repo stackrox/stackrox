@@ -31,57 +31,57 @@ func TestParseArgs(t *testing.T) {
 	_, args := getCommandLineArgs(nullSeparatedCmdLine)
 
 	expectedArgs := []*compliance.CommandLine_Args{
-		{
+		compliance.CommandLine_Args_builder{
 			Key:    "kubeconfig",
 			Values: sliceFromString("/etc/kubernetes/kubelet.conf"),
-		},
-		{
+		}.Build(),
+		compliance.CommandLine_Args_builder{
 			Key:    "logtostderr",
 			Values: sliceFromString("true"),
-		},
-		{
+		}.Build(),
+		compliance.CommandLine_Args_builder{
 			Key:    "v",
 			Values: sliceFromString("0"),
-		},
-		{
+		}.Build(),
+		compliance.CommandLine_Args_builder{
 			Key:    "container-runtime",
 			Values: sliceFromString("docker"),
-		},
-		{
+		}.Build(),
+		compliance.CommandLine_Args_builder{
 			Key:    "pod-manifest-path",
 			Values: sliceFromString("/etc/kubernetes/manifests"),
-		},
-		{
+		}.Build(),
+		compliance.CommandLine_Args_builder{
 			Key:    "hostname-override",
 			Values: sliceFromString("hostname"),
-		},
-		{
+		}.Build(),
+		compliance.CommandLine_Args_builder{
 			Key:    "tls-cert-file",
 			Values: sliceFromString("/etc/kubernetes/pki/kubelet-crt.crt"),
-		},
-		{
+		}.Build(),
+		compliance.CommandLine_Args_builder{
 			Key:    "tls-private-key-file",
 			Values: sliceFromString("/etc/kubernetes/pki/kubelet-key.key"),
-		},
-		{
+		}.Build(),
+		compliance.CommandLine_Args_builder{
 			Key:    "anonymous-auth",
 			Values: sliceFromString("false"),
-		},
-		{
+		}.Build(),
+		compliance.CommandLine_Args_builder{
 			Key:    "client-ca-file",
 			Values: sliceFromString("/etc/kubernetes/pki/k8s-ca.crt"),
-		},
-		{
+		}.Build(),
+		compliance.CommandLine_Args_builder{
 			Key:    "fail-swap-on",
 			Values: sliceFromString("false"),
-		},
-		{
+		}.Build(),
+		compliance.CommandLine_Args_builder{
 			Key: "enable-test1",
-		},
-		{
+		}.Build(),
+		compliance.CommandLine_Args_builder{
 			Key:    "feature-gates",
 			Values: []string{"A", "B", "C"},
-		},
+		}.Build(),
 	}
 	parsedArgs := parseArgs(args)
 	protoassert.SlicesEqual(t, expectedArgs, parsedArgs)

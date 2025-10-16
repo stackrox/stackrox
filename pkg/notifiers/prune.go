@@ -12,12 +12,12 @@ const (
 )
 
 func cleanProcessIndicator(process *storage.ProcessIndicator) *storage.ProcessIndicator {
-	return &storage.ProcessIndicator{
-		Id:            process.GetId(),
-		ContainerName: process.GetContainerName(),
-		PodId:         process.GetPodId(),
-		Signal:        process.GetSignal(),
-	}
+	pi := &storage.ProcessIndicator{}
+	pi.SetId(process.GetId())
+	pi.SetContainerName(process.GetContainerName())
+	pi.SetPodId(process.GetPodId())
+	pi.SetSignal(process.GetSignal())
+	return pi
 }
 
 type mapPair struct {
@@ -105,7 +105,7 @@ func PruneAlert(alert *storage.Alert, maxSize int) {
 	filterDeploymentMaps(alert.GetDeployment(), maxSize, &currSize)
 
 	if alert.GetProcessViolation() != nil {
-		alert.ProcessViolation.Processes = filterProcesses(alert.GetProcessViolation().GetProcesses(), maxSize, &currSize)
+		alert.GetProcessViolation().SetProcesses(filterProcesses(alert.GetProcessViolation().GetProcesses(), maxSize, &currSize))
 	}
-	alert.Violations = filterViolations(alert.GetViolations(), maxSize, &currSize)
+	alert.SetViolations(filterViolations(alert.GetViolations(), maxSize, &currSize))
 }

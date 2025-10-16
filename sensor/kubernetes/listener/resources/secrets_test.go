@@ -90,23 +90,21 @@ func TestOpenShiftRegistrySecret_311(t *testing.T) {
 
 	_ = d.ProcessEvent(openshift311DockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
 
-	imgName := &storage.ImageName{
-		Registry: "docker-registry.default.svc.cluster.local:5000",
-		Remote:   "dummy/nginx",
-		Tag:      "1.18.0",
-		FullName: "docker-registry.default.svc.cluster.local:5000/stackrox/nginx:1.18.0",
-	}
+	imgName := &storage.ImageName{}
+	imgName.SetRegistry("docker-registry.default.svc.cluster.local:5000")
+	imgName.SetRemote("dummy/nginx")
+	imgName.SetTag("1.18.0")
+	imgName.SetFullName("docker-registry.default.svc.cluster.local:5000/stackrox/nginx:1.18.0")
 
 	regs, err := regStore.GetPullSecretRegistries(imgName, "dummy", nil)
 	assert.Nil(t, regs)
 	assert.Error(t, err)
 
-	imgName = &storage.ImageName{
-		Registry: "docker-registry.default.svc.cluster.local:5000",
-		Remote:   "test-ns/nginx",
-		Tag:      "1.18.0",
-		FullName: "docker-registry.default.svc.cluster.local:5000/stackrox/nginx:1.18.0",
-	}
+	imgName = &storage.ImageName{}
+	imgName.SetRegistry("docker-registry.default.svc.cluster.local:5000")
+	imgName.SetRemote("test-ns/nginx")
+	imgName.SetTag("1.18.0")
+	imgName.SetFullName("docker-registry.default.svc.cluster.local:5000/stackrox/nginx:1.18.0")
 
 	regs, err = regStore.GetPullSecretRegistries(imgName, "test-ns", nil)
 	assert.NotNil(t, regs)
@@ -135,23 +133,21 @@ func TestOpenShiftRegistrySecret_4x(t *testing.T) {
 
 	_ = d.ProcessEvent(openshift4xDockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
 
-	imgName := &storage.ImageName{
-		Registry: "image-registry.openshift-image-registry.svc:5000",
-		Remote:   "dummy/nginx",
-		Tag:      "1.18.0",
-		FullName: "image-registry.openshift-image-registry.svc:5000/stackrox/nginx:1.18.0",
-	}
+	imgName := &storage.ImageName{}
+	imgName.SetRegistry("image-registry.openshift-image-registry.svc:5000")
+	imgName.SetRemote("dummy/nginx")
+	imgName.SetTag("1.18.0")
+	imgName.SetFullName("image-registry.openshift-image-registry.svc:5000/stackrox/nginx:1.18.0")
 
 	regs, err := regStore.GetPullSecretRegistries(imgName, "dummy", nil)
 	assert.Nil(t, regs)
 	assert.Error(t, err)
 
-	imgName = &storage.ImageName{
-		Registry: "image-registry.openshift-image-registry.svc:5000",
-		Remote:   "test-ns/nginx",
-		Tag:      "1.18.0",
-		FullName: "image-registry.openshift-image-registry.svc:5000/stackrox/nginx:1.18.0",
-	}
+	imgName = &storage.ImageName{}
+	imgName.SetRegistry("image-registry.openshift-image-registry.svc:5000")
+	imgName.SetRemote("test-ns/nginx")
+	imgName.SetTag("1.18.0")
+	imgName.SetFullName("image-registry.openshift-image-registry.svc:5000/stackrox/nginx:1.18.0")
 
 	regs, err = regStore.GetPullSecretRegistries(imgName, "test-ns", nil)
 	assert.NotNil(t, regs)
@@ -191,12 +187,11 @@ func TestForceLocalScanning(t *testing.T) {
 			}
 		`)},
 	}
-	fakeImage := &storage.ImageName{
-		Registry: "fake.reg.local",
-		Remote:   "fake/repo",
-		Tag:      "latest",
-		FullName: "fake.reg.local/fake/repo:latest",
-	}
+	fakeImage := &storage.ImageName{}
+	fakeImage.SetRegistry("fake.reg.local")
+	fakeImage.SetRemote("fake/repo")
+	fakeImage.SetTag("latest")
+	fakeImage.SetFullName("fake.reg.local/fake/repo:latest")
 
 	t.Setenv(env.LocalImageScanningEnabled.EnvVar(), "false")
 	t.Setenv(env.DelegatedScanningDisabled.EnvVar(), "false")
@@ -293,12 +288,11 @@ func TestLocalScanningSecretDelete(t *testing.T) {
 			}
 		`)},
 	}
-	fakeImage := &storage.ImageName{
-		Registry: "fake.reg.local",
-		Remote:   "fake/repo",
-		Tag:      "latest",
-		FullName: "fake.reg.local/fake/repo:latest",
-	}
+	fakeImage := &storage.ImageName{}
+	fakeImage.SetRegistry("fake.reg.local")
+	fakeImage.SetRemote("fake/repo")
+	fakeImage.SetTag("latest")
+	fakeImage.SetFullName("fake.reg.local/fake/repo:latest")
 
 	regStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
 	d := newSecretDispatcher(clusterID, regStore)

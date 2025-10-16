@@ -19,9 +19,9 @@ func UpdateSnapshotOnError(ctx context.Context, snapshot *storage.ComplianceOper
 	if snapshot == nil {
 		return nil
 	}
-	snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_FAILURE
-	snapshot.GetReportStatus().ErrorMsg = err.Error()
-	snapshot.GetReportStatus().CompletedAt = protocompat.TimestampNow()
+	snapshot.GetReportStatus().SetRunState(storage.ComplianceOperatorReportStatus_FAILURE)
+	snapshot.GetReportStatus().SetErrorMsg(err.Error())
+	snapshot.GetReportStatus().SetCompletedAt(protocompat.TimestampNow())
 	if dbErr := store.UpsertSnapshot(ctx, snapshot); dbErr != nil {
 		return dbErr
 	}
@@ -55,16 +55,15 @@ func ConvertScanConfigurationToReportData(ctx context.Context, scanConfig *stora
 	var lastExecutedTime *timestamppb.Timestamp
 	clusterToSuiteMap := make(map[string]*storage.ComplianceOperatorReportData_SuiteStatus, len(suiteClusters))
 	for _, suite := range suiteClusters {
-		status := &storage.ComplianceOperatorReportData_SuiteStatus{
-			Phase:        suite.GetStatus().GetPhase(),
-			Result:       suite.GetStatus().GetResult(),
-			ErrorMessage: suite.GetStatus().GetErrorMessage(),
-		}
+		status := &storage.ComplianceOperatorReportData_SuiteStatus{}
+		status.SetPhase(suite.GetStatus().GetPhase())
+		status.SetResult(suite.GetStatus().GetResult())
+		status.SetErrorMessage(suite.GetStatus().GetErrorMessage())
 
 		conditions := suite.GetStatus().GetConditions()
 		for _, c := range conditions {
 			if status.GetLastTransitionTime() == nil || protoutils.After(c.GetLastTransitionTime(), status.GetLastTransitionTime()) {
-				status.LastTransitionTime = c.GetLastTransitionTime()
+				status.SetLastTransitionTime(c.GetLastTransitionTime())
 			}
 		}
 
@@ -75,35 +74,35 @@ func ConvertScanConfigurationToReportData(ctx context.Context, scanConfig *stora
 		clusterToSuiteMap[suite.GetClusterId()] = status
 	}
 
-	return &storage.ComplianceOperatorReportData{
-		ScanConfiguration: scanConfig,
-		ClusterStatus: func() []*storage.ComplianceOperatorReportData_ClusterStatus {
-			clusterStatutes := make([]*storage.ComplianceOperatorReportData_ClusterStatus, 0, len(clusters))
-			var clusterErrors []string
-			for _, cluster := range clusters {
-				bindings, err := bindingsDS.GetScanSettingBindings(ctx, search.NewQueryBuilder().
-					AddExactMatches(search.ComplianceOperatorScanConfigName, scanConfig.GetScanConfigName()).
-					AddExactMatches(search.ClusterID, cluster.GetClusterId()).ProtoQuery())
-				if err != nil {
-					continue
-				}
-
-				if len(bindings) != 0 {
-					bindingError := getLatestBindingError(bindings[0].GetStatus())
-					if bindingError != "" {
-						clusterErrors = append(clusterErrors, bindingError)
-					}
-				}
-
-				clusterStatutes = append(clusterStatutes, &storage.ComplianceOperatorReportData_ClusterStatus{
-					ClusterId:   cluster.GetClusterId(),
-					ClusterName: cluster.GetClusterName(),
-					Errors:      append(clusterErrors, cluster.GetErrors()...),
-					SuiteStatus: clusterToSuiteMap[cluster.GetClusterId()],
-				})
+	cord := &storage.ComplianceOperatorReportData{}
+	cord.SetScanConfiguration(scanConfig)
+	cord.SetClusterStatus(func() []*storage.ComplianceOperatorReportData_ClusterStatus {
+		clusterStatutes := make([]*storage.ComplianceOperatorReportData_ClusterStatus, 0, len(clusters))
+		var clusterErrors []string
+		for _, cluster := range clusters {
+			bindings, err := bindingsDS.GetScanSettingBindings(ctx, search.NewQueryBuilder().
+				AddExactMatches(search.ComplianceOperatorScanConfigName, scanConfig.GetScanConfigName()).
+				AddExactMatches(search.ClusterID, cluster.GetClusterId()).ProtoQuery())
+			if err != nil {
+				continue
 			}
-			return clusterStatutes
-		}(),
-		LastExecutedTime: lastExecutedTime,
-	}, nil
+
+			if len(bindings) != 0 {
+				bindingError := getLatestBindingError(bindings[0].GetStatus())
+				if bindingError != "" {
+					clusterErrors = append(clusterErrors, bindingError)
+				}
+			}
+
+			cc := &storage.ComplianceOperatorReportData_ClusterStatus{}
+			cc.SetClusterId(cluster.GetClusterId())
+			cc.SetClusterName(cluster.GetClusterName())
+			cc.SetErrors(append(clusterErrors, cluster.GetErrors()...))
+			cc.SetSuiteStatus(clusterToSuiteMap[cluster.GetClusterId()])
+			clusterStatutes = append(clusterStatutes, cc)
+		}
+		return clusterStatutes
+	}())
+	cord.SetLastExecutedTime(lastExecutedTime)
+	return cord, nil
 }

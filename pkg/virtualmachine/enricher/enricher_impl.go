@@ -32,21 +32,21 @@ func New(scannerClient client.Scanner) VirtualMachineEnricher {
 
 func (e *enricherImpl) EnrichVirtualMachineWithVulnerabilities(vm *storage.VirtualMachine, indexReport *v4.IndexReport) error {
 	// Clear any pre-existing notes
-	vm.Notes = vm.GetNotes()[:0]
+	vm.SetNotes(vm.GetNotes()[:0])
 
 	if e.scannerClient == nil {
-		vm.Notes = append(vm.Notes, storage.VirtualMachine_MISSING_SCAN_DATA)
+		vm.SetNotes(append(vm.GetNotes(), storage.VirtualMachine_MISSING_SCAN_DATA))
 		return errors.New("Scanner V4 client not available for VM enrichment")
 	}
 
 	if indexReport == nil {
-		vm.Notes = append(vm.Notes, storage.VirtualMachine_MISSING_SCAN_DATA)
+		vm.SetNotes(append(vm.GetNotes(), storage.VirtualMachine_MISSING_SCAN_DATA))
 		return errors.New("index report is required for VM scanning")
 	}
 
 	vmDigest, err := name.NewDigest(vmMockDigest)
 	if err != nil {
-		vm.Notes = append(vm.Notes, storage.VirtualMachine_MISSING_SCAN_DATA)
+		vm.SetNotes(append(vm.GetNotes(), storage.VirtualMachine_MISSING_SCAN_DATA))
 		return errors.Wrapf(err, "failed to parse digest for VM %q", vm.GetName())
 	}
 
@@ -55,11 +55,11 @@ func (e *enricherImpl) EnrichVirtualMachineWithVulnerabilities(vm *storage.Virtu
 
 	vr, err := e.scannerClient.GetVulnerabilities(ctx, vmDigest, indexReport.GetContents())
 	if err != nil {
-		vm.Notes = append(vm.Notes, storage.VirtualMachine_MISSING_SCAN_DATA)
+		vm.SetNotes(append(vm.GetNotes(), storage.VirtualMachine_MISSING_SCAN_DATA))
 		return errors.Wrap(err, "failed to get vulnerability report for VM")
 	}
 
-	vm.Scan = scannerv4.ToVirtualMachineScan(vr)
+	vm.SetScan(scannerv4.ToVirtualMachineScan(vr))
 	log.Debugf("Enriched VM %s with %d components", vm.GetName(), len(vm.GetScan().GetComponents()))
 	return nil
 }

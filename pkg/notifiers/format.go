@@ -142,10 +142,10 @@ func FormatAlert(alert *storage.Alert, alertLink string, funcMap template.FuncMa
 		Severity:               SeverityString(alert.GetPolicy().GetSeverity()),
 		Time:                   protoconv.ReadableTime(alert.GetTime()),
 	}
-	switch alert.GetEntity().(type) {
-	case *storage.Alert_Deployment_:
+	switch alert.WhichEntity() {
+	case storage.Alert_Deployment_case:
 		data.DeploymentCommaSeparatedImages = types.FromContainers(alert.GetDeployment().GetContainers()).String()
-	case *storage.Alert_Image:
+	case storage.Alert_Image_case:
 		data.Image = types.Wrapper{GenericImage: alert.GetImage()}.FullName()
 	}
 
@@ -169,12 +169,12 @@ func FormatAlert(alert *storage.Alert, alertLink string, funcMap template.FuncMa
 // SummaryForAlert returns a summary for an alert.
 // This can be used for notifiers that need a summary/title for the notification.
 func SummaryForAlert(alert *storage.Alert) string {
-	switch entity := alert.GetEntity().(type) {
-	case *storage.Alert_Deployment_:
-		return fmt.Sprintf("Deployment %s (in cluster %s) violates '%s' Policy", entity.Deployment.GetName(), entity.Deployment.GetClusterName(), alert.GetPolicy().GetName())
-	case *storage.Alert_Image:
-		return fmt.Sprintf("Image %s violates '%s' Policy", types.Wrapper{GenericImage: entity.Image}.FullName(), alert.GetPolicy().GetName())
-	case *storage.Alert_Resource_:
+	switch alert.WhichEntity() {
+	case storage.Alert_Deployment_case:
+		return fmt.Sprintf("Deployment %s (in cluster %s) violates '%s' Policy", alert.GetDeployment().GetName(), alert.GetDeployment().GetClusterName(), alert.GetPolicy().GetName())
+	case storage.Alert_Image_case:
+		return fmt.Sprintf("Image %s violates '%s' Policy", types.Wrapper{GenericImage: alert.GetImage()}.FullName(), alert.GetPolicy().GetName())
+	case storage.Alert_Resource_case:
 		return fmt.Sprintf("Policy '%s' violated in cluster %s", alert.GetPolicy().GetName(), alert.GetResource().GetClusterName())
 	}
 	return fmt.Sprintf("Policy '%s' violated", alert.GetPolicy().GetName())

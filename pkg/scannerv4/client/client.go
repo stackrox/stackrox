@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -236,12 +237,12 @@ func (c *gRPCScanner) GetSBOM(ctx context.Context, imageFullName string, ref nam
 		return nil, false, nil
 	}
 
-	resp, err := c.matcher.GetSBOM(ctx, &v4.GetSBOMRequest{
-		Id:       ref.DigestStr(),
-		Name:     imageFullName,
-		Uri:      uri,
-		Contents: ir.GetContents(),
-	})
+	gsbomr := &v4.GetSBOMRequest{}
+	gsbomr.SetId(ref.DigestStr())
+	gsbomr.SetName(imageFullName)
+	gsbomr.SetUri(uri)
+	gsbomr.SetContents(ir.GetContents())
+	resp, err := c.matcher.GetSBOM(ctx, gsbomr)
 	return resp.GetSbom(), true, err
 }
 
@@ -306,7 +307,9 @@ func (c *gRPCScanner) IndexAndScanImage(ctx context.Context, ref name.Digest, au
 }
 
 func (c *gRPCScanner) getImageIndex(ctx context.Context, hashID string, options callOptions) (*v4.IndexReport, bool, error) {
-	req := &v4.GetIndexReportRequest{HashId: hashID, IncludeExternal: options.includeExternalIndexReports}
+	req := &v4.GetIndexReportRequest{}
+	req.SetHashId(hashID)
+	req.SetIncludeExternal(options.includeExternalIndexReports)
 	var ir *v4.IndexReport
 	var responseMetadata metadata.MD
 	// Get the IndexReport, if it exists.
@@ -341,17 +344,14 @@ func (c *gRPCScanner) getOrCreateImageIndex(ctx context.Context, ref name.Digest
 	if err != nil {
 		return nil, fmt.Errorf("get auth: %w", err)
 	}
-	req := v4.GetOrCreateIndexReportRequest{
-		HashId: id,
-		ResourceLocator: &v4.GetOrCreateIndexReportRequest_ContainerImage{
-			ContainerImage: &v4.ContainerImageLocator{
-				Url:                   imgURL.String(),
-				Username:              authCfg.Username,
-				Password:              authCfg.Password,
-				InsecureSkipTlsVerify: opt.InsecureSkipTLSVerify,
-			},
-		},
-	}
+	cil := &v4.ContainerImageLocator{}
+	cil.SetUrl(imgURL.String())
+	cil.SetUsername(authCfg.Username)
+	cil.SetPassword(authCfg.Password)
+	cil.SetInsecureSkipTlsVerify(opt.InsecureSkipTLSVerify)
+	req := &v4.GetOrCreateIndexReportRequest{}
+	req.SetHashId(id)
+	req.SetContainerImage(proto.ValueOrDefault(cil))
 	var ir *v4.IndexReport
 	var responseMetadata metadata.MD
 	err = retryWithBackoff(ctx, defaultBackoff(), "indexer.GetOrCreateIndexReport", func() (err error) {
@@ -384,7 +384,9 @@ func (c *gRPCScanner) GetVulnerabilities(ctx context.Context, ref name.Digest, c
 }
 
 func (c *gRPCScanner) getVulnerabilities(ctx context.Context, hashID string, contents *v4.Contents, options callOptions) (*v4.VulnerabilityReport, error) {
-	req := &v4.GetVulnerabilitiesRequest{HashId: hashID, Contents: contents}
+	req := &v4.GetVulnerabilitiesRequest{}
+	req.SetHashId(hashID)
+	req.SetContents(contents)
 	var vr *v4.VulnerabilityReport
 	var responseMetadata metadata.MD
 	err := retryWithBackoff(ctx, defaultBackoff(), "matcher.GetVulnerabilities", func() (err error) {
@@ -434,11 +436,10 @@ func (c *gRPCScanner) StoreImageIndex(ctx context.Context, ref name.Digest, inde
 
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "StoreImageIndex")
 
-	req := &v4.StoreIndexReportRequest{
-		HashId:         getImageManifestID(ref),
-		IndexerVersion: indexerVersion,
-		Contents:       contents,
-	}
+	req := &v4.StoreIndexReportRequest{}
+	req.SetHashId(getImageManifestID(ref))
+	req.SetIndexerVersion(indexerVersion)
+	req.SetContents(contents)
 	var r *v4.StoreIndexReportResponse
 	err := retryWithBackoff(ctx, defaultBackoff(), "indexer.StoreImageIndex", func() error {
 		var err error

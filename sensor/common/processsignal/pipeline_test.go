@@ -43,12 +43,12 @@ func TestProcessPipelineOfflineV3(t *testing.T) {
 			},
 			events: []func(*testing.T, *Pipeline){
 				online,
-				signal(&storage.ProcessSignal{ContainerId: containerID1}, false),
+				signal(storage.ProcessSignal_builder{ContainerId: containerID1}.Build(), false),
 				assertSize(1),
 				read(containerID1, deploymentID1),
 				assertSize(0),
 				offline,
-				signal(&storage.ProcessSignal{ContainerId: containerID2}, false),
+				signal(storage.ProcessSignal_builder{ContainerId: containerID2}.Build(), false),
 				assertSize(1),
 				online,
 				read(containerID2, deploymentID2),
@@ -62,8 +62,8 @@ func TestProcessPipelineOfflineV3(t *testing.T) {
 			},
 			events: []func(*testing.T, *Pipeline){
 				offline,
-				signal(&storage.ProcessSignal{ContainerId: containerID1}, false),
-				signal(&storage.ProcessSignal{ContainerId: containerID2}, false),
+				signal(storage.ProcessSignal_builder{ContainerId: containerID1}.Build(), false),
+				signal(storage.ProcessSignal_builder{ContainerId: containerID2}.Build(), false),
 				assertSize(2),
 				online,
 				read(containerID1, deploymentID1),
@@ -79,9 +79,9 @@ func TestProcessPipelineOfflineV3(t *testing.T) {
 			},
 			events: []func(*testing.T, *Pipeline){
 				offline,
-				signal(&storage.ProcessSignal{ContainerId: containerID1}, false),
-				signal(&storage.ProcessSignal{ContainerId: containerID2}, false),
-				signal(&storage.ProcessSignal{ContainerId: containerID3}, true),
+				signal(storage.ProcessSignal_builder{ContainerId: containerID1}.Build(), false),
+				signal(storage.ProcessSignal_builder{ContainerId: containerID2}.Build(), false),
+				signal(storage.ProcessSignal_builder{ContainerId: containerID3}.Build(), true),
 				assertSize(2), // The third signal should be dropped
 				online,
 				read(containerID1, deploymentID1),
@@ -205,13 +205,13 @@ func TestProcessPipelineOfflineV1(t *testing.T) {
 			initialState: common.SensorComponentEventCentralReachable,
 			laterState:   common.SensorComponentEventCentralReachable,
 			initialSignal: &processIndicatorMessageT{
-				signal:                  &storage.ProcessSignal{ContainerId: containerMetadata1.ContainerID},
+				signal:                  storage.ProcessSignal_builder{ContainerId: containerMetadata1.ContainerID}.Build(),
 				expectDeploymentID:      containerMetadata1.DeploymentID,
 				expectContextCancel:     assert.NoError,
 				signalProcessingRoutine: processSignal,
 			},
 			laterSignal: &processIndicatorMessageT{
-				signal:                  &storage.ProcessSignal{ContainerId: containerMetadata2.ContainerID},
+				signal:                  storage.ProcessSignal_builder{ContainerId: containerMetadata2.ContainerID}.Build(),
 				expectDeploymentID:      containerMetadata2.DeploymentID,
 				expectContextCancel:     assert.NoError,
 				signalProcessingRoutine: processSignal,
@@ -222,13 +222,13 @@ func TestProcessPipelineOfflineV1(t *testing.T) {
 			initialState: common.SensorComponentEventCentralReachable,
 			laterState:   common.SensorComponentEventOfflineMode,
 			initialSignal: &processIndicatorMessageT{
-				signal:                  &storage.ProcessSignal{ContainerId: containerMetadata1.ContainerID},
+				signal:                  storage.ProcessSignal_builder{ContainerId: containerMetadata1.ContainerID}.Build(),
 				expectDeploymentID:      containerMetadata1.DeploymentID,
 				expectContextCancel:     assert.NoError,
 				signalProcessingRoutine: processSignal,
 			},
 			laterSignal: &processIndicatorMessageT{
-				signal:                  &storage.ProcessSignal{ContainerId: containerMetadata2.ContainerID},
+				signal:                  storage.ProcessSignal_builder{ContainerId: containerMetadata2.ContainerID}.Build(),
 				expectDeploymentID:      containerMetadata2.DeploymentID,
 				expectContextCancel:     assert.Error,
 				signalProcessingRoutine: processSignal,
@@ -239,13 +239,13 @@ func TestProcessPipelineOfflineV1(t *testing.T) {
 			initialState: common.SensorComponentEventOfflineMode,
 			laterState:   common.SensorComponentEventOfflineMode,
 			initialSignal: &processIndicatorMessageT{
-				signal:                  &storage.ProcessSignal{ContainerId: containerMetadata1.ContainerID},
+				signal:                  storage.ProcessSignal_builder{ContainerId: containerMetadata1.ContainerID}.Build(),
 				expectDeploymentID:      containerMetadata1.DeploymentID,
 				expectContextCancel:     assert.Error,
 				signalProcessingRoutine: processSignal,
 			},
 			laterSignal: &processIndicatorMessageT{
-				signal:                  &storage.ProcessSignal{ContainerId: containerMetadata2.ContainerID},
+				signal:                  storage.ProcessSignal_builder{ContainerId: containerMetadata2.ContainerID}.Build(),
 				expectDeploymentID:      containerMetadata2.DeploymentID,
 				expectContextCancel:     assert.Error,
 				signalProcessingRoutine: processSignal,
@@ -256,13 +256,13 @@ func TestProcessPipelineOfflineV1(t *testing.T) {
 			initialState: common.SensorComponentEventOfflineMode,
 			laterState:   common.SensorComponentEventCentralReachable,
 			initialSignal: &processIndicatorMessageT{
-				signal:                  &storage.ProcessSignal{ContainerId: containerMetadata1.ContainerID},
+				signal:                  storage.ProcessSignal_builder{ContainerId: containerMetadata1.ContainerID}.Build(),
 				expectDeploymentID:      containerMetadata1.DeploymentID,
 				expectContextCancel:     assert.Error,
 				signalProcessingRoutine: processSignal,
 			},
 			laterSignal: &processIndicatorMessageT{
-				signal:                  &storage.ProcessSignal{ContainerId: containerMetadata2.ContainerID},
+				signal:                  storage.ProcessSignal_builder{ContainerId: containerMetadata2.ContainerID}.Build(),
 				expectDeploymentID:      containerMetadata2.DeploymentID,
 				expectContextCancel:     assert.NoError,
 				signalProcessingRoutine: processSignal,
@@ -274,7 +274,7 @@ func TestProcessPipelineOfflineV1(t *testing.T) {
 			laterState:   common.SensorComponentEventCentralReachable,
 			// initial signal is processed in offline mode without the enricher (processSignal) as metadata is known
 			initialSignal: &processIndicatorMessageT{
-				signal:                  &storage.ProcessSignal{ContainerId: containerMetadata1.ContainerID},
+				signal:                  storage.ProcessSignal_builder{ContainerId: containerMetadata1.ContainerID}.Build(),
 				expectDeploymentID:      containerMetadata1.DeploymentID,
 				expectContextCancel:     assert.Error,
 				signalProcessingRoutine: processSignal,
@@ -282,7 +282,7 @@ func TestProcessPipelineOfflineV1(t *testing.T) {
 			// initial signal is processed in online using the enricher (processSignalAsync) as metadata will be
 			// updated through ticker asynchronously
 			laterSignal: &processIndicatorMessageT{
-				signal:                  &storage.ProcessSignal{ContainerId: containerMetadata2.ContainerID},
+				signal:                  storage.ProcessSignal_builder{ContainerId: containerMetadata2.ContainerID}.Build(),
 				expectDeploymentID:      containerMetadata2.DeploymentID,
 				expectContextCancel:     assert.NoError,
 				signalProcessingRoutine: processSignalAsync,
@@ -436,9 +436,8 @@ func TestProcessPipelineOnline(t *testing.T) {
 
 	// 1. Signal which has metadata present in store
 	updateStore(containerID, deploymentID, containerMetadata, mockStore)
-	signal := storage.ProcessSignal{
-		ContainerId: containerID,
-	}
+	signal := &storage.ProcessSignal{}
+	signal.SetContainerId(containerID)
 	mockDetector.EXPECT().ProcessIndicator(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, ind *storage.ProcessIndicator) {
 		assert.Equal(t, deploymentID, ind.GetDeploymentId())
 	})
@@ -450,9 +449,8 @@ func TestProcessPipelineOnline(t *testing.T) {
 	deleteStore(deploymentID, mockStore)
 
 	// 2. Signal which does not have metadata.
-	signal = storage.ProcessSignal{
-		ContainerId: containerID,
-	}
+	signal = &storage.ProcessSignal{}
+	signal.SetContainerId(containerID)
 	mockDetector.EXPECT().ProcessIndicator(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, ind *storage.ProcessIndicator) {
 		assert.Equal(t, deploymentID, ind.GetDeploymentId())
 	})
@@ -464,9 +462,8 @@ func TestProcessPipelineOnline(t *testing.T) {
 	deleteStore(deploymentID, mockStore)
 
 	// 3. back to back signals
-	signal = storage.ProcessSignal{
-		ContainerId: containerID,
-	}
+	signal = &storage.ProcessSignal{}
+	signal.SetContainerId(containerID)
 	mockDetector.EXPECT().ProcessIndicator(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, ind *storage.ProcessIndicator) {
 		assert.Equal(t, deploymentID, ind.GetDeploymentId())
 	})

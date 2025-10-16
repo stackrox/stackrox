@@ -34,15 +34,14 @@ func ConvertVersionToProto(m *schema.Versions) (*storage.Version, error) {
 		return &msg, nil
 	}
 
-	msg = storage.Version{
-		Version:   m.Version,
-		SeqNum:    m.SeqNum,
-		MinSeqNum: m.MinSeqNum,
-	}
+	msg = &storage.Version{}
+	msg.SetVersion(m.Version)
+	msg.SetSeqNum(m.SeqNum)
+	msg.SetMinSeqNum(m.MinSeqNum)
 
 	if m.LastPersisted != nil {
 		ts := protoconv.MustConvertTimeToTimestamp(*m.LastPersisted)
-		msg.LastPersisted = protoutils.RoundTimestamp(ts, time.Microsecond)
+		msg.SetLastPersisted(protoutils.RoundTimestamp(ts, time.Microsecond))
 	}
 
 	return &msg, nil

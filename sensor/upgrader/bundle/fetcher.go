@@ -24,9 +24,8 @@ func (f *fetcher) FetchBundle() (Contents, error) {
 		log.Panic("Cluster id is empty, unable to fetch bundle for upgrade.")
 	}
 
-	resByID := &v1.ResourceByID{
-		Id: f.ctx.ClusterID(),
-	}
+	resByID := &v1.ResourceByID{}
+	resByID.SetId(f.ctx.ClusterID())
 	var buf bytes.Buffer
 	if err := jsonutil.Marshal(&buf, resByID); err != nil {
 		return nil, utils.ShouldErr(err)

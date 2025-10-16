@@ -20,13 +20,13 @@ func TestScore(t *testing.T) {
 
 	expectedRiskScore := 1.1027501
 	expectedRiskResults := []*storage.Risk_Result{
-		{
+		storage.Risk_Result_builder{
 			Name: nodeMultiplier.VulnerabilitiesHeading,
 			Factors: []*storage.Risk_Result_Factor{
-				{Message: "Node \"node1\" contains 2 CVEs with severities ranging between Low and Moderate"},
+				storage.Risk_Result_Factor_builder{Message: "Node \"node1\" contains 2 CVEs with severities ranging between Low and Moderate"}.Build(),
 			},
 			Score: 1.1027501,
-		},
+		}.Build(),
 	}
 
 	scorer := NewNodeScorer()

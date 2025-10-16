@@ -472,12 +472,12 @@ func getActiveProcesses(containerID string) []*storage.ProcessSignal {
 }
 
 func getProcess(path, name, containerID string) *storage.ProcessSignal {
-	return &storage.ProcessSignal{
-		ContainerId:  containerID[:12],
-		Time:         protocompat.TimestampNow(),
-		Name:         name,
-		Args:         "abc def ghi jkl lmn op qrs tuv",
-		ExecFilePath: filepath.Clean(path + "/" + name),
-		LineageInfo:  processAncestors,
-	}
+	ps := &storage.ProcessSignal{}
+	ps.SetContainerId(containerID[:12])
+	ps.SetTime(protocompat.TimestampNow())
+	ps.SetName(name)
+	ps.SetArgs("abc def ghi jkl lmn op qrs tuv")
+	ps.SetExecFilePath(filepath.Clean(path + "/" + name))
+	ps.SetLineageInfo(processAncestors)
+	return ps
 }

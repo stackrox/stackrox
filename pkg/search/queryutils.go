@@ -15,24 +15,24 @@ func ApplyFnToAllBaseQueries(q *v1.Query, fn func(*v1.BaseQuery)) {
 		return
 	}
 
-	switch typedQ := q.GetQuery().(type) {
-	case *v1.Query_Disjunction:
-		for _, subQ := range typedQ.Disjunction.GetQueries() {
+	switch q.WhichQuery() {
+	case v1.Query_Disjunction_case:
+		for _, subQ := range q.GetDisjunction().GetQueries() {
 			ApplyFnToAllBaseQueries(subQ, fn)
 		}
-	case *v1.Query_Conjunction:
-		for _, subQ := range typedQ.Conjunction.GetQueries() {
+	case v1.Query_Conjunction_case:
+		for _, subQ := range q.GetConjunction().GetQueries() {
 			ApplyFnToAllBaseQueries(subQ, fn)
 		}
-	case *v1.Query_BooleanQuery:
-		for _, subQ := range typedQ.BooleanQuery.GetMust().GetQueries() {
+	case v1.Query_BooleanQuery_case:
+		for _, subQ := range q.GetBooleanQuery().GetMust().GetQueries() {
 			ApplyFnToAllBaseQueries(subQ, fn)
 		}
-		for _, subQ := range typedQ.BooleanQuery.GetMustNot().GetQueries() {
+		for _, subQ := range q.GetBooleanQuery().GetMustNot().GetQueries() {
 			ApplyFnToAllBaseQueries(subQ, fn)
 		}
-	case *v1.Query_BaseQuery:
-		fn(typedQ.BaseQuery)
+	case v1.Query_BaseQuery_case:
+		fn(q.GetBaseQuery())
 	default:
 		utils.Should(fmt.Errorf("unhandled query type: %T; query was %s", q, protocompat.MarshalTextString(q)))
 	}
@@ -74,14 +74,14 @@ func InverseFilterQueryWithMap(q *v1.Query, optionsMap OptionsMap) (*v1.Query, b
 // conjunction list, or, if it is a base query, by making it a conjunction. Explicity disallows nested queries, as the
 // resulting query is expected to be either a base query, or a flat query.
 func AddAsConjunction(toAdd *v1.Query, addTo *v1.Query) (*v1.Query, error) {
-	if addTo.Query == nil {
+	if !addTo.HasQuery() {
 		return toAdd, nil
 	}
-	switch typedQ := addTo.GetQuery().(type) {
-	case *v1.Query_Conjunction:
-		typedQ.Conjunction.Queries = append(typedQ.Conjunction.Queries, toAdd)
+	switch addTo.WhichQuery() {
+	case v1.Query_Conjunction_case:
+		addTo.GetConjunction().SetQueries(append(addTo.GetConjunction().GetQueries(), toAdd))
 		return addTo, nil
-	case *v1.Query_BaseQuery, *v1.Query_Disjunction:
+	case v1.Query_BaseQuery_case, v1.Query_Disjunction_case:
 		return ConjunctionQuery(toAdd, addTo), nil
 	default:
 		return nil, errors.New("cannot add to a non-nil, non-conjunction/disjunction, non-base query")
@@ -95,21 +95,21 @@ func FilterQuery(q *v1.Query, fn func(*v1.BaseQuery) bool) (*v1.Query, bool) {
 	if q.GetQuery() == nil {
 		return nil, false
 	}
-	switch typedQ := q.GetQuery().(type) {
-	case *v1.Query_Disjunction:
-		filteredQueries := filterQueriesByFunction(typedQ.Disjunction.GetQueries(), fn)
+	switch q.WhichQuery() {
+	case v1.Query_Disjunction_case:
+		filteredQueries := filterQueriesByFunction(q.GetDisjunction().GetQueries(), fn)
 		if len(filteredQueries) == 0 {
 			return nil, false
 		}
 		return DisjunctionQuery(filteredQueries...), true
-	case *v1.Query_Conjunction:
-		filteredQueries := filterQueriesByFunction(typedQ.Conjunction.GetQueries(), fn)
+	case v1.Query_Conjunction_case:
+		filteredQueries := filterQueriesByFunction(q.GetConjunction().GetQueries(), fn)
 		if len(filteredQueries) == 0 {
 			return nil, false
 		}
 		return ConjunctionQuery(filteredQueries...), true
-	case *v1.Query_BaseQuery:
-		if fn(typedQ.BaseQuery) {
+	case v1.Query_BaseQuery_case:
+		if fn(q.GetBaseQuery()) {
 			return q, true
 		}
 		return nil, false

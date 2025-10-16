@@ -69,7 +69,9 @@ func (s *serviceImpl) GetInitBundles(ctx context.Context, _ *v1.Empty) (*v1.Init
 			initBundleMetaStorageToV1WithImpactedClusters(initBundle, impactedClustersForBundles[initBundle.GetId()]))
 	}
 
-	return &v1.InitBundleMetasResponse{Items: v1InitBundleMetas}, nil
+	ibmr := &v1.InitBundleMetasResponse{}
+	ibmr.SetItems(v1InitBundleMetas)
+	return ibmr, nil
 }
 
 func (s *serviceImpl) GetCRSs(ctx context.Context, _ *v1.Empty) (*v1.CRSMetasResponse, error) {
@@ -87,7 +89,9 @@ func (s *serviceImpl) GetCRSs(ctx context.Context, _ *v1.Empty) (*v1.CRSMetasRes
 		v1CRSMetas = append(v1CRSMetas, crsMetaStorageToV1(crsMeta))
 	}
 
-	return &v1.CRSMetasResponse{Items: v1CRSMetas}, nil
+	crsmr := &v1.CRSMetasResponse{}
+	crsmr.SetItems(v1CRSMetas)
+	return crsmr, nil
 }
 
 func (s *serviceImpl) GetCAConfig(ctx context.Context, _ *v1.Empty) (*v1.GetCAConfigResponse, error) {
@@ -101,9 +105,11 @@ func (s *serviceImpl) GetCAConfig(ctx context.Context, _ *v1.Empty) (*v1.GetCACo
 		return nil, errors.Errorf("failed to render CA config to YAML: %v", err)
 	}
 
-	return &v1.GetCAConfigResponse{
-		HelmValuesBundle: caConfigYAML,
-	}, nil
+	gcacr := &v1.GetCAConfigResponse{}
+	if caConfigYAML != nil {
+		gcacr.SetHelmValuesBundle(caConfigYAML)
+	}
+	return gcacr, nil
 }
 
 func (s *serviceImpl) GenerateInitBundle(ctx context.Context, request *v1.InitBundleGenRequest) (*v1.InitBundleGenResponse, error) {
@@ -125,11 +131,15 @@ func (s *serviceImpl) GenerateInitBundle(ctx context.Context, request *v1.InitBu
 		return nil, errors.Errorf("rendering init bundle as Kubernetes secrets: %s", err)
 	}
 
-	return &v1.InitBundleGenResponse{
-		HelmValuesBundle: bundleYaml,
-		KubectlBundle:    bundleK8sManifest,
-		Meta:             meta,
-	}, nil
+	ibgr := &v1.InitBundleGenResponse{}
+	if bundleYaml != nil {
+		ibgr.SetHelmValuesBundle(bundleYaml)
+	}
+	if bundleK8sManifest != nil {
+		ibgr.SetKubectlBundle(bundleK8sManifest)
+	}
+	ibgr.SetMeta(meta)
+	return ibgr, nil
 }
 
 func (s *serviceImpl) GenerateCRS(ctx context.Context, request *v1.CRSGenRequest) (*v1.CRSGenResponse, error) {
@@ -151,10 +161,12 @@ func (s *serviceImpl) GenerateCRS(ctx context.Context, request *v1.CRSGenRequest
 		return nil, errors.Errorf("rendering as Kubernetes secrets: %s", err)
 	}
 
-	return &v1.CRSGenResponse{
-		Crs:  bundleK8sManifest,
-		Meta: meta,
-	}, nil
+	crsgr := &v1.CRSGenResponse{}
+	if bundleK8sManifest != nil {
+		crsgr.SetCrs(bundleK8sManifest)
+	}
+	crsgr.SetMeta(meta)
+	return crsgr, nil
 }
 
 func (s *serviceImpl) GenerateCRSExtended(ctx context.Context, request *v1.CRSGenRequestExtended) (*v1.CRSGenResponse, error) {
@@ -191,10 +203,12 @@ func (s *serviceImpl) GenerateCRSExtended(ctx context.Context, request *v1.CRSGe
 		return nil, errors.Errorf("rendering as Kubernetes secrets: %s", err)
 	}
 
-	return &v1.CRSGenResponse{
-		Crs:  bundleK8sManifest,
-		Meta: meta,
-	}, nil
+	crsgr := &v1.CRSGenResponse{}
+	if bundleK8sManifest != nil {
+		crsgr.SetCrs(bundleK8sManifest)
+	}
+	crsgr.SetMeta(meta)
+	return crsgr, nil
 }
 
 func (s *serviceImpl) RevokeInitBundle(ctx context.Context, request *v1.InitBundleRevokeRequest) (*v1.InitBundleRevokeResponse, error) {
@@ -210,19 +224,25 @@ func (s *serviceImpl) RevokeInitBundle(ctx context.Context, request *v1.InitBund
 	for _, id := range request.GetIds() {
 		impactedClusters := impactedClustersForBundles[id]
 		if !containsAll(userConfirmedImpactedClusters, impactedClusters) {
-			failed = append(failed, &v1.InitBundleRevokeResponse_InitBundleRevocationError{
-				Id:               id,
-				Error:            "not all clusters were confirmed",
-				ImpactedClusters: impactedClusters,
-			})
+			ii := &v1.InitBundleRevokeResponse_InitBundleRevocationError{}
+			ii.SetId(id)
+			ii.SetError("not all clusters were confirmed")
+			ii.SetImpactedClusters(impactedClusters)
+			failed = append(failed, ii)
 		} else if err := s.backend.Revoke(ctx, id); err != nil {
-			failed = append(failed, &v1.InitBundleRevokeResponse_InitBundleRevocationError{Id: id, Error: err.Error()})
+			ii := &v1.InitBundleRevokeResponse_InitBundleRevocationError{}
+			ii.SetId(id)
+			ii.SetError(err.Error())
+			failed = append(failed, ii)
 		} else {
 			revoked = append(revoked, id)
 		}
 	}
 
-	return &v1.InitBundleRevokeResponse{InitBundleRevokedIds: revoked, InitBundleRevocationErrors: failed}, nil
+	ibrr := &v1.InitBundleRevokeResponse{}
+	ibrr.SetInitBundleRevokedIds(revoked)
+	ibrr.SetInitBundleRevocationErrors(failed)
+	return ibrr, nil
 }
 
 func (s *serviceImpl) RevokeCRS(ctx context.Context, request *v1.CRSRevokeRequest) (*v1.CRSRevokeResponse, error) {
@@ -231,13 +251,19 @@ func (s *serviceImpl) RevokeCRS(ctx context.Context, request *v1.CRSRevokeReques
 
 	for _, id := range request.GetIds() {
 		if err := s.backend.Revoke(ctx, id); err != nil {
-			failed = append(failed, &v1.CRSRevokeResponse_CRSRevocationError{Id: id, Error: err.Error()})
+			cc := &v1.CRSRevokeResponse_CRSRevocationError{}
+			cc.SetId(id)
+			cc.SetError(err.Error())
+			failed = append(failed, cc)
 		} else {
 			revoked = append(revoked, id)
 		}
 	}
 
-	return &v1.CRSRevokeResponse{RevokedIds: revoked, CrsRevocationErrors: failed}, nil
+	crsrr := &v1.CRSRevokeResponse{}
+	crsrr.SetRevokedIds(revoked)
+	crsrr.SetCrsRevocationErrors(failed)
+	return crsrr, nil
 }
 
 func (s *serviceImpl) getImpactedClustersForBundles(ctx context.Context, bundleIDs set.StringSet) (map[string][]*v1.InitBundleMeta_ImpactedCluster, error) {
@@ -249,10 +275,10 @@ func (s *serviceImpl) getImpactedClustersForBundles(ctx context.Context, bundleI
 	for _, cluster := range clusters {
 		bundleID := cluster.GetInitBundleId()
 		if bundleIDs.Contains(bundleID) {
-			clustersByBundleID[bundleID] = append(clustersByBundleID[bundleID], &v1.InitBundleMeta_ImpactedCluster{
-				Name: cluster.GetName(),
-				Id:   cluster.GetId(),
-			})
+			ii := &v1.InitBundleMeta_ImpactedCluster{}
+			ii.SetName(cluster.GetName())
+			ii.SetId(cluster.GetId())
+			clustersByBundleID[bundleID] = append(clustersByBundleID[bundleID], ii)
 		}
 	}
 	return clustersByBundleID, nil

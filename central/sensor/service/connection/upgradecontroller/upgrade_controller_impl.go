@@ -61,8 +61,8 @@ func (u *upgradeController) initialize() error {
 	}
 
 	// Reset the upgradability status - we always need an active sensor connection to assess this.
-	upgradeStatus.Upgradability = storage.ClusterUpgradeStatus_UNSET
-	upgradeStatus.UpgradabilityStatusReason = ""
+	upgradeStatus.SetUpgradability(storage.ClusterUpgradeStatus_UNSET)
+	upgradeStatus.SetUpgradabilityStatusReason("")
 
 	u.upgradeStatus = upgradeStatus
 	process := upgradeStatus.GetMostRecentProcess()

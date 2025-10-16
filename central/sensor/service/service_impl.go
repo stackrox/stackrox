@@ -32,6 +32,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -144,13 +145,12 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		preferences := s.manager.GetConnectionPreference(clusterID)
 
 		// Let's be polite and respond with a greeting from our side.
-		centralHello := &central.CentralHello{
-			ClusterId:        clusterID,
-			ManagedCentral:   env.ManagedCentral.BooleanSetting(),
-			CentralId:        installInfo.GetId(),
-			Capabilities:     capabilities,
-			SendDeduperState: preferences.SendDeduperState,
-		}
+		centralHello := &central.CentralHello{}
+		centralHello.SetClusterId(clusterID)
+		centralHello.SetManagedCentral(env.ManagedCentral.BooleanSetting())
+		centralHello.SetCentralId(installInfo.GetId())
+		centralHello.SetCapabilities(capabilities)
+		centralHello.SetSendDeduperState(preferences.SendDeduperState)
 
 		if err := safe.RunE(func() error {
 			sensorNamespace := sensorHello.GetDeploymentIdentification().GetAppNamespace()
@@ -168,7 +168,9 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 			log.Errorf("Could not include certificate bundle in sensor hello message: %s", err)
 		}
 
-		if err := server.Send(&central.MsgToSensor{Msg: &central.MsgToSensor_Hello{Hello: centralHello}}); err != nil {
+		mts := &central.MsgToSensor{}
+		mts.SetHello(proto.ValueOrDefault(centralHello))
+		if err := server.Send(mts); err != nil {
 			return errors.Wrap(err, "sending CentralHello message to sensor")
 		}
 	}
@@ -215,7 +217,7 @@ func getCertExpiryStatus(identity authn.Identity) (*storage.ClusterCertExpirySta
 		if err != nil {
 			multiErr = multierror.Append(multiErr, err)
 		} else {
-			expiryStatus.SensorCertExpiry = expiryTimestamp
+			expiryStatus.SetSensorCertExpiry(expiryTimestamp)
 		}
 	}
 	if !notBefore.IsZero() {
@@ -223,7 +225,7 @@ func getCertExpiryStatus(identity authn.Identity) (*storage.ClusterCertExpirySta
 		if err != nil {
 			multiErr = multierror.Append(multiErr, err)
 		} else {
-			expiryStatus.SensorCertNotBefore = notBeforeTimestamp
+			expiryStatus.SetSensorCertNotBefore(notBeforeTimestamp)
 		}
 	}
 	return expiryStatus, multiErr

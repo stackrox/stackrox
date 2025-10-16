@@ -63,11 +63,10 @@ func findContainer(containers []coreV1.Container, name string) (cont coreV1.Cont
 }
 
 func doTestRenderOpenshif(t *testing.T, clusterType storage.ClusterType) {
-	cluster := &storage.Cluster{
-		Name:      "cluster",
-		MainImage: "stackrox/main:abc",
-		Type:      clusterType,
-	}
+	cluster := &storage.Cluster{}
+	cluster.SetName("cluster")
+	cluster.SetMainImage("stackrox/main:abc")
+	cluster.SetType(clusterType)
 
 	baseFiles, err := renderBaseFiles(cluster, clusters.RenderOptions{}, dummyCerts)
 	require.NoError(t, err)
@@ -132,12 +131,11 @@ func doTestRenderOpenshif(t *testing.T, clusterType storage.ClusterType) {
 
 func TestRenderWithNoCollection(t *testing.T) {
 	t.Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameDevelopmentBuild)
-	cluster := &storage.Cluster{
-		Name:             "cluster",
-		MainImage:        "stackrox/main:abc",
-		Type:             storage.ClusterType_OPENSHIFT_CLUSTER,
-		CollectionMethod: storage.CollectionMethod_NO_COLLECTION,
-	}
+	cluster := &storage.Cluster{}
+	cluster.SetName("cluster")
+	cluster.SetMainImage("stackrox/main:abc")
+	cluster.SetType(storage.ClusterType_OPENSHIFT_CLUSTER)
+	cluster.SetCollectionMethod(storage.CollectionMethod_NO_COLLECTION)
 
 	baseFiles, err := renderBaseFiles(cluster, clusters.RenderOptions{}, dummyCerts)
 	require.NoError(t, err)

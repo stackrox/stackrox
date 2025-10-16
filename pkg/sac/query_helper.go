@@ -96,15 +96,11 @@ func BuildClusterNamespaceLevelSACQueryFilter(root *effectiveaccessscope.ScopeTr
 }
 
 func getMatchNoneQuery() *v1.Query {
-	return &v1.Query{
-		Query: &v1.Query_BaseQuery{
-			BaseQuery: &v1.BaseQuery{
-				Query: &v1.BaseQuery_MatchNoneQuery{
-					MatchNoneQuery: &v1.MatchNoneQuery{},
-				},
-			},
-		},
-	}
+	return v1.Query_builder{
+		BaseQuery: v1.BaseQuery_builder{
+			MatchNoneQuery: &v1.MatchNoneQuery{},
+		}.Build(),
+	}.Build()
 }
 
 func getClusterMatchQuery(clusterID ...string) *v1.Query {

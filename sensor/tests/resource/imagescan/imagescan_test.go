@@ -18,7 +18,7 @@ var (
 	Pod = helper.K8sResourceInfo{Kind: "Pod", YamlFile: "pod.yaml"}
 
 	Policies = []*storage.Policy{
-		{
+		storage.Policy_builder{
 			Id:         uuid.NewV4().String(),
 			Name:       "Red Hat Package Manager in Image",
 			Disabled:   false,
@@ -29,26 +29,26 @@ var (
 			EventSource:   0,
 			PolicyVersion: "1.1",
 			PolicySections: []*storage.PolicySection{
-				{
+				storage.PolicySection_builder{
 					SectionName: "",
 					PolicyGroups: []*storage.PolicyGroup{
-						{
+						storage.PolicyGroup_builder{
 							FieldName:       "Image Component",
 							BooleanOperator: storage.BooleanOperator_OR,
 							Negate:          false,
 							Values: []*storage.PolicyValue{
-								{
+								storage.PolicyValue_builder{
 									Value: "rpm|microdnf|dnf|yum=",
-								},
+								}.Build(),
 							},
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			CriteriaLocked:     true,
 			MitreVectorsLocked: true,
 			IsDefault:          true,
-		},
+		}.Build(),
 	}
 )
 
@@ -95,30 +95,26 @@ func (s *ImageScanSuite) Test_AlertsUpdatedOnImageUpdate() {
 
 			// There should be no violation yet, because there are no components provided for this image
 			tc.NoViolations(t, "myapp", "violation found for deployment")
-			tc.GetFakeCentral().StubMessage(&central.MsgToSensor{
-				Msg: &central.MsgToSensor_UpdatedImage{
-					UpdatedImage: &storage.Image{
-						Id:    image.GetId(),
-						Name:  image.GetName(),
-						Names: []*storage.ImageName{image.GetName()},
-						Scan: &storage.ImageScan{
-							ScannerVersion: "2.0",
-							Components: []*storage.EmbeddedImageScanComponent{
-								{
-									Name:    "rpm",
-									Version: "3.2.1",
-								},
-							},
+			tc.GetFakeCentral().StubMessage(central.MsgToSensor_builder{
+				UpdatedImage: storage.Image_builder{
+					Id:    image.GetId(),
+					Name:  image.GetName(),
+					Names: []*storage.ImageName{image.GetName()},
+					Scan: storage.ImageScan_builder{
+						ScannerVersion: "2.0",
+						Components: []*storage.EmbeddedImageScanComponent{
+							storage.EmbeddedImageScanComponent_builder{
+								Name:    "rpm",
+								Version: "3.2.1",
+							}.Build(),
 						},
-					},
-				},
-			})
+					}.Build(),
+				}.Build(),
+			}.Build())
 
-			tc.GetFakeCentral().StubMessage(&central.MsgToSensor{
-				Msg: &central.MsgToSensor_ReprocessDeployments{
-					ReprocessDeployments: &central.ReprocessDeployments{},
-				},
-			})
+			mts := &central.MsgToSensor{}
+			mts.SetReprocessDeployments(&central.ReprocessDeployments{})
+			tc.GetFakeCentral().StubMessage(mts)
 
 			// Violation should eventually happen for myapp, since the image scanned has rpm installed
 			tc.LastViolationStateWithTimeout(t, "myapp", func(result *central.AlertResults) error {

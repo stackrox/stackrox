@@ -227,24 +227,30 @@ func testIssueCertsResponse(seed uint, serviceTypes ...storage.ServiceType) *Res
 	for i, serviceType := range serviceTypes {
 		serviceCerts[i] = testServiceCertificate(seed, serviceType)
 	}
+	tscs := &storage.TypedServiceCertificateSet{}
+	if x := make([]byte, 1*seed); x != nil {
+		tscs.SetCaPem(x)
+	}
+	tscs.SetServiceCerts(serviceCerts)
 	return &Response{
-		Certificates: &storage.TypedServiceCertificateSet{
-			CaPem:        make([]byte, 1*seed),
-			ServiceCerts: serviceCerts,
-		},
+		Certificates: tscs,
 	}
 }
 
 // testServiceCertificate return a test certificate for the specified serviceType. Different values of seed
 // produce different certificates.
 func testServiceCertificate(seed uint, serviceType storage.ServiceType) *storage.TypedServiceCertificate {
-	return &storage.TypedServiceCertificate{
-		ServiceType: serviceType,
-		Cert: &storage.ServiceCertificate{
-			CertPem: make([]byte, 2*seed),
-			KeyPem:  make([]byte, 3*seed),
-		},
+	sc := &storage.ServiceCertificate{}
+	if x := make([]byte, 2*seed); x != nil {
+		sc.SetCertPem(x)
 	}
+	if x := make([]byte, 3*seed); x != nil {
+		sc.SetKeyPem(x)
+	}
+	tsc := &storage.TypedServiceCertificate{}
+	tsc.SetServiceType(serviceType)
+	tsc.SetCert(sc)
+	return tsc
 }
 
 type dependenciesMock struct {

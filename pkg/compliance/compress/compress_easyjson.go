@@ -4,6 +4,7 @@ package compress
 
 import (
 	json "encoding/json"
+
 	easyjson "github.com/mailru/easyjson"
 	jlexer "github.com/mailru/easyjson/jlexer"
 	jwriter "github.com/mailru/easyjson/jwriter"
@@ -142,9 +143,9 @@ func easyjson24245084DecodeGithubComStackroxRoxGeneratedInternalapiCompliance(in
 			} else {
 				in.Delim('{')
 				if !in.IsDelim('}') {
-					out.NodeCheckResults = make(map[string]*storage.ComplianceResultValue)
+					out.SetNodeCheckResults(make(map[string]*storage.ComplianceResultValue))
 				} else {
-					out.NodeCheckResults = nil
+					out.SetNodeCheckResults(nil)
 				}
 				for !in.IsDelim('}') {
 					key := string(in.String())
@@ -159,7 +160,7 @@ func easyjson24245084DecodeGithubComStackroxRoxGeneratedInternalapiCompliance(in
 						}
 						easyjson24245084DecodeGithubComStackroxRoxGeneratedStorage(in, v3)
 					}
-					(out.NodeCheckResults)[key] = v3
+					(out.GetNodeCheckResults())[key] = v3
 					in.WantComma()
 				}
 				in.Delim('}')
@@ -170,9 +171,9 @@ func easyjson24245084DecodeGithubComStackroxRoxGeneratedInternalapiCompliance(in
 			} else {
 				in.Delim('{')
 				if !in.IsDelim('}') {
-					out.ClusterCheckResults = make(map[string]*storage.ComplianceResultValue)
+					out.SetClusterCheckResults(make(map[string]*storage.ComplianceResultValue))
 				} else {
-					out.ClusterCheckResults = nil
+					out.SetClusterCheckResults(nil)
 				}
 				for !in.IsDelim('}') {
 					key := string(in.String())
@@ -187,7 +188,7 @@ func easyjson24245084DecodeGithubComStackroxRoxGeneratedInternalapiCompliance(in
 						}
 						easyjson24245084DecodeGithubComStackroxRoxGeneratedStorage(in, v4)
 					}
-					(out.ClusterCheckResults)[key] = v4
+					(out.GetClusterCheckResults())[key] = v4
 					in.WantComma()
 				}
 				in.Delim('}')
@@ -202,18 +203,18 @@ func easyjson24245084DecodeGithubComStackroxRoxGeneratedInternalapiCompliance(in
 		in.Consumed()
 	}
 }
-func easyjson24245084EncodeGithubComStackroxRoxGeneratedInternalapiCompliance(out *jwriter.Writer, in compliance.ComplianceStandardResult) {
+func easyjson24245084EncodeGithubComStackroxRoxGeneratedInternalapiCompliance(out *jwriter.Writer, in *compliance.ComplianceStandardResult) {
 	out.RawByte('{')
 	first := true
 	_ = first
-	if len(in.NodeCheckResults) != 0 {
+	if len(in.GetNodeCheckResults()) != 0 {
 		const prefix string = ",\"node_check_results\":"
 		first = false
 		out.RawString(prefix[1:])
 		{
 			out.RawByte('{')
 			v5First := true
-			for v5Name, v5Value := range in.NodeCheckResults {
+			for v5Name, v5Value := range in.GetNodeCheckResults() {
 				if v5First {
 					v5First = false
 				} else {
@@ -230,7 +231,7 @@ func easyjson24245084EncodeGithubComStackroxRoxGeneratedInternalapiCompliance(ou
 			out.RawByte('}')
 		}
 	}
-	if len(in.ClusterCheckResults) != 0 {
+	if len(in.GetClusterCheckResults()) != 0 {
 		const prefix string = ",\"cluster_check_results\":"
 		if first {
 			first = false
@@ -241,7 +242,7 @@ func easyjson24245084EncodeGithubComStackroxRoxGeneratedInternalapiCompliance(ou
 		{
 			out.RawByte('{')
 			v6First := true
-			for v6Name, v6Value := range in.ClusterCheckResults {
+			for v6Name, v6Value := range in.GetClusterCheckResults() {
 				if v6First {
 					v6First = false
 				} else {
@@ -277,17 +278,17 @@ func easyjson24245084DecodeGithubComStackroxRoxGeneratedStorage(in *jlexer.Lexer
 		case "evidence":
 			if in.IsNull() {
 				in.Skip()
-				out.Evidence = nil
+				out.SetEvidence(nil)
 			} else {
 				in.Delim('[')
-				if out.Evidence == nil {
+				if out.GetEvidence() == nil {
 					if !in.IsDelim(']') {
-						out.Evidence = make([]*storage.ComplianceResultValue_Evidence, 0, 8)
+						out.SetEvidence(make([]*storage.ComplianceResultValue_Evidence, 0, 8))
 					} else {
-						out.Evidence = []*storage.ComplianceResultValue_Evidence{}
+						out.SetEvidence([]*storage.ComplianceResultValue_Evidence{})
 					}
 				} else {
-					out.Evidence = (out.Evidence)[:0]
+					out.SetEvidence((out.GetEvidence())[:0])
 				}
 				for !in.IsDelim(']') {
 					var v7 *storage.ComplianceResultValue_Evidence
@@ -300,7 +301,7 @@ func easyjson24245084DecodeGithubComStackroxRoxGeneratedStorage(in *jlexer.Lexer
 						}
 						easyjson24245084DecodeGithubComStackroxRoxGeneratedStorageComplianceResultValue(in, v7)
 					}
-					out.Evidence = append(out.Evidence, v7)
+					out.SetEvidence(append(out.GetEvidence(), v7))
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -309,7 +310,7 @@ func easyjson24245084DecodeGithubComStackroxRoxGeneratedStorage(in *jlexer.Lexer
 			if in.IsNull() {
 				in.Skip()
 			} else {
-				out.OverallState = storage.ComplianceState(in.Int32())
+				out.SetOverallState(storage.ComplianceState(in.Int32()))
 			}
 		default:
 			in.SkipRecursive()
@@ -321,17 +322,17 @@ func easyjson24245084DecodeGithubComStackroxRoxGeneratedStorage(in *jlexer.Lexer
 		in.Consumed()
 	}
 }
-func easyjson24245084EncodeGithubComStackroxRoxGeneratedStorage(out *jwriter.Writer, in storage.ComplianceResultValue) {
+func easyjson24245084EncodeGithubComStackroxRoxGeneratedStorage(out *jwriter.Writer, in *storage.ComplianceResultValue) {
 	out.RawByte('{')
 	first := true
 	_ = first
-	if len(in.Evidence) != 0 {
+	if len(in.GetEvidence()) != 0 {
 		const prefix string = ",\"evidence\":"
 		first = false
 		out.RawString(prefix[1:])
 		{
 			out.RawByte('[')
-			for v8, v9 := range in.Evidence {
+			for v8, v9 := range in.GetEvidence() {
 				if v8 > 0 {
 					out.RawByte(',')
 				}
@@ -344,7 +345,7 @@ func easyjson24245084EncodeGithubComStackroxRoxGeneratedStorage(out *jwriter.Wri
 			out.RawByte(']')
 		}
 	}
-	if in.OverallState != 0 {
+	if in.GetOverallState() != 0 {
 		const prefix string = ",\"overall_state\":"
 		if first {
 			first = false
@@ -352,7 +353,7 @@ func easyjson24245084EncodeGithubComStackroxRoxGeneratedStorage(out *jwriter.Wri
 		} else {
 			out.RawString(prefix)
 		}
-		out.Int32(int32(in.OverallState))
+		out.Int32(int32(in.GetOverallState()))
 	}
 	out.RawByte('}')
 }
@@ -374,19 +375,19 @@ func easyjson24245084DecodeGithubComStackroxRoxGeneratedStorageComplianceResultV
 			if in.IsNull() {
 				in.Skip()
 			} else {
-				out.State = storage.ComplianceState(in.Int32())
+				out.SetState(storage.ComplianceState(in.Int32()))
 			}
 		case "message":
 			if in.IsNull() {
 				in.Skip()
 			} else {
-				out.Message = string(in.String())
+				out.SetMessage(string(in.String()))
 			}
 		case "message_id":
 			if in.IsNull() {
 				in.Skip()
 			} else {
-				out.MessageId = int32(in.Int32())
+				out.SetMessageId(int32(in.Int32()))
 			}
 		default:
 			in.SkipRecursive()
@@ -398,17 +399,17 @@ func easyjson24245084DecodeGithubComStackroxRoxGeneratedStorageComplianceResultV
 		in.Consumed()
 	}
 }
-func easyjson24245084EncodeGithubComStackroxRoxGeneratedStorageComplianceResultValue(out *jwriter.Writer, in storage.ComplianceResultValue_Evidence) {
+func easyjson24245084EncodeGithubComStackroxRoxGeneratedStorageComplianceResultValue(out *jwriter.Writer, in *storage.ComplianceResultValue_Evidence) {
 	out.RawByte('{')
 	first := true
 	_ = first
-	if in.State != 0 {
+	if in.GetState() != 0 {
 		const prefix string = ",\"state\":"
 		first = false
 		out.RawString(prefix[1:])
-		out.Int32(int32(in.State))
+		out.Int32(int32(in.GetState()))
 	}
-	if in.Message != "" {
+	if in.GetMessage() != "" {
 		const prefix string = ",\"message\":"
 		if first {
 			first = false
@@ -416,9 +417,9 @@ func easyjson24245084EncodeGithubComStackroxRoxGeneratedStorageComplianceResultV
 		} else {
 			out.RawString(prefix)
 		}
-		out.String(string(in.Message))
+		out.String(string(in.GetMessage()))
 	}
-	if in.MessageId != 0 {
+	if in.GetMessageId() != 0 {
 		const prefix string = ",\"message_id\":"
 		if first {
 			first = false
@@ -426,7 +427,7 @@ func easyjson24245084EncodeGithubComStackroxRoxGeneratedStorageComplianceResultV
 		} else {
 			out.RawString(prefix)
 		}
-		out.Int32(int32(in.MessageId))
+		out.Int32(int32(in.GetMessageId()))
 	}
 	out.RawByte('}')
 }

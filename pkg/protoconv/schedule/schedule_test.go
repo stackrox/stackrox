@@ -6,38 +6,33 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 func newSchedule(minute int32, hour int32, weekdays []int32, daysOfMonth []int32) *storage.Schedule {
 	var sched storage.Schedule
 
-	sched.Hour = hour
-	sched.Minute = minute
+	sched.SetHour(hour)
+	sched.SetMinute(minute)
 	if len(daysOfMonth) != 0 {
-		sched.IntervalType = storage.Schedule_MONTHLY
-		sched.Interval = &storage.Schedule_DaysOfMonth_{
-			DaysOfMonth: &storage.Schedule_DaysOfMonth{
-				Days: daysOfMonth,
-			},
-		}
+		sched.SetIntervalType(storage.Schedule_MONTHLY)
+		sd := &storage.Schedule_DaysOfMonth{}
+		sd.SetDays(daysOfMonth)
+		sched.SetDaysOfMonth(proto.ValueOrDefault(sd))
 	} else {
 		if len(weekdays) == 0 {
-			sched.IntervalType = storage.Schedule_DAILY
+			sched.SetIntervalType(storage.Schedule_DAILY)
 		} else {
 			if len(weekdays) == 1 {
-				sched.IntervalType = storage.Schedule_WEEKLY
-				sched.Interval = &storage.Schedule_Weekly{
-					Weekly: &storage.Schedule_WeeklyInterval{
-						Day: weekdays[0],
-					},
-				}
+				sched.SetIntervalType(storage.Schedule_WEEKLY)
+				sw := &storage.Schedule_WeeklyInterval{}
+				sw.SetDay(weekdays[0])
+				sched.SetWeekly(proto.ValueOrDefault(sw))
 			} else {
-				sched.IntervalType = storage.Schedule_WEEKLY
-				sched.Interval = &storage.Schedule_DaysOfWeek_{
-					DaysOfWeek: &storage.Schedule_DaysOfWeek{
-						Days: weekdays,
-					},
-				}
+				sched.SetIntervalType(storage.Schedule_WEEKLY)
+				sd := &storage.Schedule_DaysOfWeek{}
+				sd.SetDays(weekdays)
+				sched.SetDaysOfWeek(proto.ValueOrDefault(sd))
 			}
 		}
 	}

@@ -116,22 +116,22 @@ func fakeWalkByResponse(
 			}
 		}
 		for i := 0; i < numPassedChecksPerCluster; i++ {
-			_ = fn(&storage.ComplianceOperatorCheckResultV2{
-				CheckName: fmt.Sprintf("pass-check-%d", i),
-				Status:    storage.ComplianceOperatorCheckResultV2_PASS,
-			})
+			cocrv2 := &storage.ComplianceOperatorCheckResultV2{}
+			cocrv2.SetCheckName(fmt.Sprintf("pass-check-%d", i))
+			cocrv2.SetStatus(storage.ComplianceOperatorCheckResultV2_PASS)
+			_ = fn(cocrv2)
 		}
 		for i := 0; i < numFailedChecksPerCluster; i++ {
-			_ = fn(&storage.ComplianceOperatorCheckResultV2{
-				CheckName: fmt.Sprintf("fail-check-%d", i),
-				Status:    storage.ComplianceOperatorCheckResultV2_FAIL,
-			})
+			cocrv2 := &storage.ComplianceOperatorCheckResultV2{}
+			cocrv2.SetCheckName(fmt.Sprintf("fail-check-%d", i))
+			cocrv2.SetStatus(storage.ComplianceOperatorCheckResultV2_FAIL)
+			_ = fn(cocrv2)
 		}
 		for i := 0; i < numMixedChecksPerCluster; i++ {
-			_ = fn(&storage.ComplianceOperatorCheckResultV2{
-				CheckName: fmt.Sprintf("mixed-check-%d", i),
-				Status:    storage.ComplianceOperatorCheckResultV2_INCONSISTENT,
-			})
+			cocrv2 := &storage.ComplianceOperatorCheckResultV2{}
+			cocrv2.SetCheckName(fmt.Sprintf("mixed-check-%d", i))
+			cocrv2.SetStatus(storage.ComplianceOperatorCheckResultV2_INCONSISTENT)
+			_ = fn(cocrv2)
 		}
 		return expectedErr
 	}
@@ -457,9 +457,9 @@ func getRequest(ctx context.Context, numClusters, numProfiles, numFailedClusters
 				FailedScans: func() []*storage.ComplianceOperatorScanV2 {
 					var scans []*storage.ComplianceOperatorScanV2
 					for _, scanName := range clusterData[id].ScanNames {
-						scans = append(scans, &storage.ComplianceOperatorScanV2{
-							ScanName: scanName,
-						})
+						cosv2 := &storage.ComplianceOperatorScanV2{}
+						cosv2.SetScanName(scanName)
+						scans = append(scans, cosv2)
 					}
 					return scans
 				}(),
@@ -535,14 +535,14 @@ func assertResults(t *testing.T, tcase getReportDataTestCase, res *report.Result
 }
 
 func getCheckResult(status storage.ComplianceOperatorCheckResultV2_CheckStatus) *storage.ComplianceOperatorCheckResultV2 {
-	return &storage.ComplianceOperatorCheckResultV2{
-		ClusterName:  "cluster-1",
-		CheckName:    "check",
-		Description:  "description",
-		Status:       status,
-		Rationale:    "rationale",
-		Instructions: "instructions",
-	}
+	cocrv2 := &storage.ComplianceOperatorCheckResultV2{}
+	cocrv2.SetClusterName("cluster-1")
+	cocrv2.SetCheckName("check")
+	cocrv2.SetDescription("description")
+	cocrv2.SetStatus(status)
+	cocrv2.SetRationale("rationale")
+	cocrv2.SetInstructions("instructions")
+	return cocrv2
 }
 
 func assertStatus(t *testing.T, expected storage.ComplianceOperatorCheckResultV2_CheckStatus, actual *checkStatus) {

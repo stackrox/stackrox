@@ -90,12 +90,12 @@ func (d *datastoreImpl) GetRiskByIndicators(ctx context.Context, subjectID strin
 		riskResults = append(riskResults, result)
 	}
 
-	return &storage.Risk{
-		Id:      risk.GetId(),
-		Subject: risk.GetSubject(),
-		Results: riskResults,
-		Score:   overallScore,
-	}, nil
+	risk2 := &storage.Risk{}
+	risk2.SetId(risk.GetId())
+	risk2.SetSubject(risk.GetSubject())
+	risk2.SetResults(riskResults)
+	risk2.SetScore(overallScore)
+	return risk2, nil
 }
 
 func (d *datastoreImpl) UpsertRisk(ctx context.Context, risk *storage.Risk) error {
@@ -110,7 +110,7 @@ func (d *datastoreImpl) UpsertRisk(ctx context.Context, risk *storage.Risk) erro
 		return err
 	}
 
-	risk.Id = id
+	risk.SetId(id)
 	if err := d.storage.Upsert(ctx, risk); err != nil {
 		return err
 	}

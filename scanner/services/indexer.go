@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/scanner/indexer"
 	"github.com/stackrox/rox/scanner/services/validators"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
 )
 
 var indexerAuth = perrpc.FromMap(map[authz.Authorizer][]string{
@@ -106,7 +107,7 @@ func (s *indexerService) createIndexReport(ctx context.Context, req *v4.CreateIn
 		zlog.Error(ctx).Err(err).Msg("internal error: converting to v4.IndexReport")
 		return nil, err
 	}
-	indexReport.HashId = req.GetHashId()
+	indexReport.SetHashId(req.GetHashId())
 	return indexReport, nil
 }
 
@@ -139,7 +140,7 @@ func (s *indexerService) getIndexReport(ctx context.Context, hashID string, incl
 	if err != nil {
 		return nil, err
 	}
-	v4IR.HashId = hashID
+	v4IR.SetHashId(hashID)
 	return v4IR, nil
 }
 
@@ -165,12 +166,10 @@ func (s *indexerService) GetOrCreateIndexReport(ctx context.Context, req *v4.Get
 	// TODO We currently only support container images, hence we assume the resource
 	//      is of that type. When introducing nodes and other resources, this should
 	//      evolve.
-	return s.createIndexReport(ctx, &v4.CreateIndexReportRequest{
-		HashId: req.GetHashId(),
-		ResourceLocator: &v4.CreateIndexReportRequest_ContainerImage{
-			ContainerImage: req.GetContainerImage(),
-		},
-	})
+	cirr := &v4.CreateIndexReportRequest{}
+	cirr.SetHashId(req.GetHashId())
+	cirr.SetContainerImage(proto.ValueOrDefault(req.GetContainerImage()))
+	return s.createIndexReport(ctx, cirr)
 }
 
 func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexReportRequest) (*v4.HasIndexReportResponse, error) {
@@ -189,7 +188,9 @@ func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexRep
 		zlog.Error(ctx).Err(err).Msg("failed retrieve index report")
 		return nil, err
 	}
-	return &v4.HasIndexReportResponse{Exists: exists}, nil
+	hirr := &v4.HasIndexReportResponse{}
+	hirr.SetExists(exists)
+	return hirr, nil
 }
 
 func (s *indexerService) StoreIndexReport(ctx context.Context, req *v4.StoreIndexReportRequest) (*v4.StoreIndexReportResponse, error) {
@@ -198,7 +199,8 @@ func (s *indexerService) StoreIndexReport(ctx context.Context, req *v4.StoreInde
 		"hash_id", req.GetHashId(),
 	)
 
-	resp := &v4.StoreIndexReportResponse{Status: "ERROR"}
+	resp := &v4.StoreIndexReportResponse{}
+	resp.SetStatus("ERROR")
 	if req.GetContents() == nil {
 		zlog.Debug(ctx).Msg("no contents, rejecting")
 		return resp, errox.InvalidArgs.New("empty contents")

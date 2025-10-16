@@ -23,10 +23,9 @@ func TestGCMEncryptionDecryption(t *testing.T) {
 	assert.Equal(t, originalText, decryptedText)
 
 	// Test struct encryption/decryption
-	originalCreds := &storage.AWSSecurityHub_Credentials{
-		AccessKeyId:     "key-id",
-		SecretAccessKey: "lorem ipsum dolor sit amet",
-	}
+	originalCreds := &storage.AWSSecurityHub_Credentials{}
+	originalCreds.SetAccessKeyId("key-id")
+	originalCreds.SetSecretAccessKey("lorem ipsum dolor sit amet")
 	marshalled, err := originalCreds.MarshalVT()
 	assert.NoError(t, err)
 	marshalledString := string(marshalled)

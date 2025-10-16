@@ -192,42 +192,40 @@ func TestUniversalTransformGenericNotifier(t *testing.T) {
 	require.Contains(t, protos, notifierType)
 	require.Len(t, protos[notifierType], 1)
 	expectedMessages := []*storage.Notifier{
-		{
-			Traits: &storage.Traits{Origin: storage.Traits_DECLARATIVE},
+		storage.Notifier_builder{
+			Traits: storage.Traits_builder{Origin: storage.Traits_DECLARATIVE}.Build(),
 			Id:     expectedNotifierID,
 			Name:   notifier.Name,
 			Type:   "generic",
-			Config: &storage.Notifier_Generic{
-				Generic: &storage.Generic{
-					Endpoint:            notifier.GenericConfig.Endpoint,
-					Password:            notifier.GenericConfig.Password,
-					Username:            notifier.GenericConfig.Username,
-					CaCert:              notifier.GenericConfig.CACertPEM,
-					SkipTLSVerify:       notifier.GenericConfig.SkipTLSVerify,
-					AuditLoggingEnabled: notifier.GenericConfig.AuditLoggingEnabled,
-					Headers: []*storage.KeyValuePair{
-						{
-							Key:   notifier.GenericConfig.Headers[0].Key,
-							Value: notifier.GenericConfig.Headers[0].Value,
-						},
-						{
-							Key:   notifier.GenericConfig.Headers[1].Key,
-							Value: notifier.GenericConfig.Headers[1].Value,
-						},
-					},
-					ExtraFields: []*storage.KeyValuePair{
-						{
-							Key:   notifier.GenericConfig.ExtraFields[0].Key,
-							Value: notifier.GenericConfig.ExtraFields[0].Value,
-						},
-						{
-							Key:   notifier.GenericConfig.ExtraFields[1].Key,
-							Value: notifier.GenericConfig.ExtraFields[1].Value,
-						},
-					},
+			Generic: storage.Generic_builder{
+				Endpoint:            notifier.GenericConfig.Endpoint,
+				Password:            notifier.GenericConfig.Password,
+				Username:            notifier.GenericConfig.Username,
+				CaCert:              notifier.GenericConfig.CACertPEM,
+				SkipTLSVerify:       notifier.GenericConfig.SkipTLSVerify,
+				AuditLoggingEnabled: notifier.GenericConfig.AuditLoggingEnabled,
+				Headers: []*storage.KeyValuePair{
+					storage.KeyValuePair_builder{
+						Key:   notifier.GenericConfig.Headers[0].Key,
+						Value: notifier.GenericConfig.Headers[0].Value,
+					}.Build(),
+					storage.KeyValuePair_builder{
+						Key:   notifier.GenericConfig.Headers[1].Key,
+						Value: notifier.GenericConfig.Headers[1].Value,
+					}.Build(),
 				},
-			},
-		},
+				ExtraFields: []*storage.KeyValuePair{
+					storage.KeyValuePair_builder{
+						Key:   notifier.GenericConfig.ExtraFields[0].Key,
+						Value: notifier.GenericConfig.ExtraFields[0].Value,
+					}.Build(),
+					storage.KeyValuePair_builder{
+						Key:   notifier.GenericConfig.ExtraFields[1].Key,
+						Value: notifier.GenericConfig.ExtraFields[1].Value,
+					}.Build(),
+				},
+			}.Build(),
+		}.Build(),
 	}
 
 	obtainedMessages := make([]*storage.Notifier, 0, len(protos[notifierType]))

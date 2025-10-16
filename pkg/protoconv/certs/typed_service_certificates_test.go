@@ -39,13 +39,13 @@ var (
 )
 
 func makeTypedServiceCert(serviceType storage.ServiceType, certPem string, keyPem string) *storage.TypedServiceCertificate {
-	return &storage.TypedServiceCertificate{
-		ServiceType: serviceType,
-		Cert: &storage.ServiceCertificate{
-			CertPem: []byte(certPem),
-			KeyPem:  []byte(keyPem),
-		},
-	}
+	sc := &storage.ServiceCertificate{}
+	sc.SetCertPem([]byte(certPem))
+	sc.SetKeyPem([]byte(keyPem))
+	tsc := &storage.TypedServiceCertificate{}
+	tsc.SetServiceType(serviceType)
+	tsc.SetCert(sc)
+	return tsc
 }
 
 func TestConvertTypedServiceCertificateSetToFileMap(t *testing.T) {
@@ -62,30 +62,30 @@ func TestConvertTypedServiceCertificateSetToFileMap(t *testing.T) {
 		},
 		{
 			description: "no CA",
-			input: &storage.TypedServiceCertificateSet{
+			input: storage.TypedServiceCertificateSet_builder{
 				ServiceCerts: []*storage.TypedServiceCertificate{
 					makeTypedServiceCert(storage.ServiceType_SENSOR_SERVICE, sensorCert, sensorKey),
 					makeTypedServiceCert(storage.ServiceType_COLLECTOR_SERVICE, collectorCert, collectorKey),
 				},
-			},
+			}.Build(),
 			expectedErr: true,
 		},
 		{
 			description: "no service certificates",
-			input: &storage.TypedServiceCertificateSet{
+			input: storage.TypedServiceCertificateSet_builder{
 				CaPem: []byte(caCert),
-			},
+			}.Build(),
 			expectedErr: true,
 		},
 		{
 			description: "two certs",
-			input: &storage.TypedServiceCertificateSet{
+			input: storage.TypedServiceCertificateSet_builder{
 				CaPem: []byte(caCert),
 				ServiceCerts: []*storage.TypedServiceCertificate{
 					makeTypedServiceCert(storage.ServiceType_SENSOR_SERVICE, sensorCert, sensorKey),
 					makeTypedServiceCert(storage.ServiceType_COLLECTOR_SERVICE, collectorCert, collectorKey),
 				},
-			},
+			}.Build(),
 			expectedFileMap: map[string]string{
 				"ca-cert.pem":        caCert,
 				"collector-cert.pem": collectorCert,
@@ -166,18 +166,18 @@ func TestConvertFileMapToTypedServiceCertificateSet(t *testing.T) {
 			},
 			expectedErr:             false,
 			expectedUnknownServices: nil,
-			expectedTypedServiceCertificateSet: &storage.TypedServiceCertificateSet{
+			expectedTypedServiceCertificateSet: storage.TypedServiceCertificateSet_builder{
 				CaPem: []byte(caCert),
 				ServiceCerts: []*storage.TypedServiceCertificate{
-					{
+					storage.TypedServiceCertificate_builder{
 						ServiceType: storage.ServiceType_COLLECTOR_SERVICE,
-						Cert: &storage.ServiceCertificate{
+						Cert: storage.ServiceCertificate_builder{
 							CertPem: []byte(collectorCert),
 							KeyPem:  []byte(collectorKey),
-						},
-					},
+						}.Build(),
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 		{
 			description: "invalid key",
@@ -210,18 +210,18 @@ func TestConvertFileMapToTypedServiceCertificateSet(t *testing.T) {
 			},
 			expectedErr:             false,
 			expectedUnknownServices: []string{"foo", "bar"},
-			expectedTypedServiceCertificateSet: &storage.TypedServiceCertificateSet{
+			expectedTypedServiceCertificateSet: storage.TypedServiceCertificateSet_builder{
 				CaPem: []byte(caCert),
 				ServiceCerts: []*storage.TypedServiceCertificate{
-					{
+					storage.TypedServiceCertificate_builder{
 						ServiceType: storage.ServiceType_COLLECTOR_SERVICE,
-						Cert: &storage.ServiceCertificate{
+						Cert: storage.ServiceCertificate_builder{
 							CertPem: []byte(collectorCert),
 							KeyPem:  []byte(collectorKey),
-						},
-					},
+						}.Build(),
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 		{
 			description: "invalid file names",

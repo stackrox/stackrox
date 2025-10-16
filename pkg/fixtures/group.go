@@ -11,22 +11,24 @@ var idCounter int
 // GetGroup return a mock storage.Group with all possible properties filled out.
 func GetGroup() *storage.Group {
 	idCounter++
-	return &storage.Group{
-		Props: &storage.GroupProperties{
-			Id:             fmt.Sprintf("abcdef-%d", idCounter),
-			AuthProviderId: "authProviderA",
-			Key:            "AttributeA",
-			Value:          "ValueUno",
-		},
-		RoleName: "test-role",
-	}
+	gp := &storage.GroupProperties{}
+	gp.SetId(fmt.Sprintf("abcdef-%d", idCounter))
+	gp.SetAuthProviderId("authProviderA")
+	gp.SetKey("AttributeA")
+	gp.SetValue("ValueUno")
+	group := &storage.Group{}
+	group.SetProps(gp)
+	group.SetRoleName("test-role")
+	return group
 }
 
 // GetGroupWithMutability returns a mock storage.Group with all possible properties filled out.
 func GetGroupWithMutability(mode storage.Traits_MutabilityMode) *storage.Group {
 	group := GetGroup()
 
-	group.Props.Traits = &storage.Traits{MutabilityMode: mode}
+	traits := &storage.Traits{}
+	traits.SetMutabilityMode(mode)
+	group.GetProps().SetTraits(traits)
 
 	return group
 }
@@ -35,7 +37,9 @@ func GetGroupWithMutability(mode storage.Traits_MutabilityMode) *storage.Group {
 func GetGroupWithOrigin(origin storage.Traits_Origin) *storage.Group {
 	group := GetGroup()
 
-	group.Props.Traits = &storage.Traits{Origin: origin}
+	traits := &storage.Traits{}
+	traits.SetOrigin(origin)
+	group.GetProps().SetTraits(traits)
 
 	return group
 }
@@ -44,62 +48,62 @@ func GetGroupWithOrigin(origin storage.Traits_Origin) *storage.Group {
 // properties and roles.
 func GetGroups() []*storage.Group {
 	return []*storage.Group{
-		{
-			Props: &storage.GroupProperties{
+		storage.Group_builder{
+			Props: storage.GroupProperties_builder{
 				Id: "0",
-			},
+			}.Build(),
 			RoleName: "role1",
-		},
-		{
-			Props: &storage.GroupProperties{
+		}.Build(),
+		storage.Group_builder{
+			Props: storage.GroupProperties_builder{
 				AuthProviderId: "authProvider1",
 				Id:             "1",
-			},
+			}.Build(),
 			RoleName: "role2",
-		},
-		{
-			Props: &storage.GroupProperties{
+		}.Build(),
+		storage.Group_builder{
+			Props: storage.GroupProperties_builder{
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute1",
 				Id:             "2",
-			},
+			}.Build(),
 			RoleName: "role3",
-		},
-		{
-			Props: &storage.GroupProperties{
+		}.Build(),
+		storage.Group_builder{
+			Props: storage.GroupProperties_builder{
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute1",
 				Value:          "Value1",
 				Id:             "3",
-			},
+			}.Build(),
 			RoleName: "role4",
-		},
-		{
-			Props: &storage.GroupProperties{
+		}.Build(),
+		storage.Group_builder{
+			Props: storage.GroupProperties_builder{
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute2",
 				Value:          "Value1",
 				Id:             "4",
-			},
+			}.Build(),
 			RoleName: "role5",
-		},
-		{
-			Props: &storage.GroupProperties{
+		}.Build(),
+		storage.Group_builder{
+			Props: storage.GroupProperties_builder{
 				AuthProviderId: "authProvide2",
 				Key:            "Attribute1",
 				Value:          "Value1",
 				Id:             "5",
-			},
+			}.Build(),
 			RoleName: "role6",
-		},
-		{
-			Props: &storage.GroupProperties{
+		}.Build(),
+		storage.Group_builder{
+			Props: storage.GroupProperties_builder{
 				AuthProviderId: "authProvide2",
 				Key:            "Attribute2",
 				Value:          "Value1",
 				Id:             "6",
-			},
+			}.Build(),
 			RoleName: "role7",
-		},
+		}.Build(),
 	}
 }

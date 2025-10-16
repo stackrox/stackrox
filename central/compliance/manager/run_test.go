@@ -59,11 +59,11 @@ func (s *RunTestSuite) TestFoldNodeResults() {
 	testStandardName := "TestStandardName"
 	testNodeCheckID := "TestCheckID"
 	testClusterCheckID := "TestClusterCheckID"
+	node := &storage.Node{}
+	node.SetId(testNodeID)
+	node.SetName(testNodeName)
 	testNodes := []*storage.Node{
-		{
-			Id:   testNodeID,
-			Name: testNodeName,
-		},
+		node,
 	}
 
 	testRun := makeTestRun("testRun", testStandardID, testStandardName, testNodes)
@@ -80,24 +80,22 @@ func (s *RunTestSuite) TestFoldNodeResults() {
 	)
 	s.Require().NoError(err)
 
-	expectedNodeResults := &storage.ComplianceResultValue{
-		Evidence: []*storage.ComplianceResultValue_Evidence{
-			{
-				State:   1,
-				Message: "Joseph Rules",
-			},
-		},
-		OverallState: 1,
-	}
-	expectedClusterResults := &storage.ComplianceResultValue{
-		Evidence: []*storage.ComplianceResultValue_Evidence{
-			{
-				State:   1,
-				Message: "Joseph is the best",
-			},
-		},
-		OverallState: 1,
-	}
+	ce := &storage.ComplianceResultValue_Evidence{}
+	ce.SetState(1)
+	ce.SetMessage("Joseph Rules")
+	expectedNodeResults := &storage.ComplianceResultValue{}
+	expectedNodeResults.SetEvidence([]*storage.ComplianceResultValue_Evidence{
+		ce,
+	})
+	expectedNodeResults.SetOverallState(1)
+	ce2 := &storage.ComplianceResultValue_Evidence{}
+	ce2.SetState(1)
+	ce2.SetMessage("Joseph is the best")
+	expectedClusterResults := &storage.ComplianceResultValue{}
+	expectedClusterResults.SetEvidence([]*storage.ComplianceResultValue_Evidence{
+		ce2,
+	})
+	expectedClusterResults.SetOverallState(1)
 	testNodeResults := map[string]map[string]*compliance.ComplianceStandardResult{
 		testNodeName: {
 			testStandardID: {
@@ -110,16 +108,14 @@ func (s *RunTestSuite) TestFoldNodeResults() {
 			},
 		},
 	}
-	expectedNodeRunResults := &storage.ComplianceRunResults_EntityResults{
-		ControlResults: map[string]*storage.ComplianceResultValue{
-			testNodeCheckID: expectedNodeResults,
-		},
-	}
-	expectedClusterRunResults := &storage.ComplianceRunResults_EntityResults{
-		ControlResults: map[string]*storage.ComplianceResultValue{
-			testClusterCheckID: expectedClusterResults,
-		},
-	}
+	expectedNodeRunResults := &storage.ComplianceRunResults_EntityResults{}
+	expectedNodeRunResults.SetControlResults(map[string]*storage.ComplianceResultValue{
+		testNodeCheckID: expectedNodeResults,
+	})
+	expectedClusterRunResults := &storage.ComplianceRunResults_EntityResults{}
+	expectedClusterRunResults.SetControlResults(map[string]*storage.ComplianceResultValue{
+		testClusterCheckID: expectedClusterResults,
+	})
 
 	complianceRunResults := testRun.collectResults(testRunData, testNodeResults)
 	s.Require().Contains(complianceRunResults.GetNodeResults(), testNodeID)
@@ -152,15 +148,14 @@ func (s *RunTestSuite) TestNoteMissing() {
 
 func (s *RunTestSuite) TestNoteDoesNotReplace() {
 	existingResultName := pkgStandards.CISKubernetes + ":1_2_32"
-	existingResult := &storage.ComplianceResultValue{
-		Evidence: []*storage.ComplianceResultValue_Evidence{
-			{
-				State:   storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
-				Message: "Some successful test",
-			},
-		},
-		OverallState: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
-	}
+	ce := &storage.ComplianceResultValue_Evidence{}
+	ce.SetState(storage.ComplianceState_COMPLIANCE_STATE_SUCCESS)
+	ce.SetMessage("Some successful test")
+	existingResult := &storage.ComplianceResultValue{}
+	existingResult.SetEvidence([]*storage.ComplianceResultValue_Evidence{
+		ce,
+	})
+	existingResult.SetOverallState(storage.ComplianceState_COMPLIANCE_STATE_SUCCESS)
 	clusterResults := map[string]*storage.ComplianceResultValue{
 		existingResultName: existingResult,
 	}
@@ -177,49 +172,47 @@ func (s *RunTestSuite) TestNoteDoesNotReplace() {
 func (s *RunTestSuite) TestMergesMultipleClusterResults() {
 	testNodeOne := "TestNodeOne"
 	testNodeTwo := "TestNodeTwo"
+	node := &storage.Node{}
+	node.SetId(testNodeOne)
+	node.SetName(testNodeOne)
+	node2 := &storage.Node{}
+	node2.SetId(testNodeTwo)
+	node2.SetName(testNodeTwo)
 	testNodes := []*storage.Node{
-		{
-			Id:   testNodeOne,
-			Name: testNodeOne,
-		},
-		{
-			Id:   testNodeTwo,
-			Name: testNodeTwo,
-		},
+		node,
+		node2,
 	}
-	evidenceOne := &storage.ComplianceResultValue_Evidence{
-		State:   storage.ComplianceState_COMPLIANCE_STATE_NOTE,
-		Message: "Test One",
-	}
-	evidenceTwo := &storage.ComplianceResultValue_Evidence{
-		State:   storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
-		Message: "Test Two",
-	}
+	evidenceOne := &storage.ComplianceResultValue_Evidence{}
+	evidenceOne.SetState(storage.ComplianceState_COMPLIANCE_STATE_NOTE)
+	evidenceOne.SetMessage("Test One")
+	evidenceTwo := &storage.ComplianceResultValue_Evidence{}
+	evidenceTwo.SetState(storage.ComplianceState_COMPLIANCE_STATE_SUCCESS)
+	evidenceTwo.SetMessage("Test Two")
 	testName := "test"
 	testNodeResults := map[string]map[string]*compliance.ComplianceStandardResult{
 		testNodeOne: {
-			pkgStandards.CISKubernetes: &compliance.ComplianceStandardResult{
+			pkgStandards.CISKubernetes: compliance.ComplianceStandardResult_builder{
 				ClusterCheckResults: map[string]*storage.ComplianceResultValue{
-					testName: {
+					testName: storage.ComplianceResultValue_builder{
 						Evidence: []*storage.ComplianceResultValue_Evidence{
 							evidenceOne,
 						},
 						OverallState: evidenceOne.GetState(),
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 		testNodeTwo: {
-			pkgStandards.CISKubernetes: &compliance.ComplianceStandardResult{
+			pkgStandards.CISKubernetes: compliance.ComplianceStandardResult_builder{
 				ClusterCheckResults: map[string]*storage.ComplianceResultValue{
-					testName: {
+					testName: storage.ComplianceResultValue_builder{
 						Evidence: []*storage.ComplianceResultValue_Evidence{
 							evidenceTwo,
 						},
 						OverallState: evidenceTwo.GetState(),
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 	}
 	testRunData, err := framework.NewComplianceRun(

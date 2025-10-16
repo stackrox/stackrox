@@ -58,10 +58,9 @@ func applyFetchedCertSettings(fetchResult *sensor.FetchCertificateResponse) erro
 }
 
 func fetchCertificateFromSensor(ctx context.Context, token string) (*sensor.FetchCertificateResponse, error) {
-	req := &sensor.FetchCertificateRequest{
-		ServiceType:         storage.ServiceType_ADMISSION_CONTROL_SERVICE,
-		ServiceAccountToken: token,
-	}
+	req := &sensor.FetchCertificateRequest{}
+	req.SetServiceType(storage.ServiceType_ADMISSION_CONTROL_SERVICE)
+	req.SetServiceAccountToken(token)
 
 	caPool, err := verifier.TrustedCertPool()
 	if err != nil {

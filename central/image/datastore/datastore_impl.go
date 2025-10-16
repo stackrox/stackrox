@@ -356,13 +356,13 @@ func (ds *datastoreImpl) initializeRankers() {
 
 func (ds *datastoreImpl) updateListImagePriority(images ...*storage.ListImage) {
 	for _, image := range images {
-		image.Priority = ds.imageRanker.GetRankForID(image.GetId())
+		image.SetPriority(ds.imageRanker.GetRankForID(image.GetId()))
 	}
 }
 
 func (ds *datastoreImpl) updateImagePriority(images ...*storage.Image) {
 	for _, image := range images {
-		image.Priority = ds.imageRanker.GetRankForID(image.GetId())
+		image.SetPriority(ds.imageRanker.GetRankForID(image.GetId()))
 		for _, component := range image.GetScan().GetComponents() {
 			if features.FlattenCVEData.Enabled() {
 				componentID, err := scancomponent.ComponentIDV2(component, image.GetId())
@@ -370,9 +370,9 @@ func (ds *datastoreImpl) updateImagePriority(images ...*storage.Image) {
 					log.Error(err)
 					continue
 				}
-				component.Priority = ds.imageComponentRanker.GetRankForID(componentID)
+				component.SetPriority(ds.imageComponentRanker.GetRankForID(componentID))
 			} else {
-				component.Priority = ds.imageComponentRanker.GetRankForID(scancomponent.ComponentID(component.GetName(), component.GetVersion(), image.GetScan().GetOperatingSystem()))
+				component.SetPriority(ds.imageComponentRanker.GetRankForID(scancomponent.ComponentID(component.GetName(), component.GetVersion(), image.GetScan().GetOperatingSystem())))
 			}
 		}
 	}
@@ -386,20 +386,20 @@ func (ds *datastoreImpl) updateComponentRisk(image *storage.Image) {
 				log.Error(err)
 				continue
 			}
-			component.RiskScore = ds.imageComponentRanker.GetScoreForID(componentID)
+			component.SetRiskScore(ds.imageComponentRanker.GetScoreForID(componentID))
 		} else {
-			component.RiskScore = ds.imageComponentRanker.GetScoreForID(scancomponent.ComponentID(component.GetName(), component.GetVersion(), image.GetScan().GetOperatingSystem()))
+			component.SetRiskScore(ds.imageComponentRanker.GetScoreForID(scancomponent.ComponentID(component.GetName(), component.GetVersion(), image.GetScan().GetOperatingSystem())))
 		}
 	}
 }
 
 // convertImage returns proto search result from an image object and the internal search result
 func convertImage(image *storage.Image, result pkgSearch.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_IMAGES,
-		Id:             imageTypes.NewDigest(image.GetId()).Digest(),
-		Name:           image.GetName().GetFullName(),
-		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+	sr := &v1.SearchResult{}
+	sr.SetCategory(v1.SearchCategory_IMAGES)
+	sr.SetId(imageTypes.NewDigest(image.GetId()).Digest())
+	sr.SetName(image.GetName().GetFullName())
+	sr.SetFieldToMatches(pkgSearch.GetProtoMatchesMap(result.Matches))
+	sr.SetScore(result.Score)
+	return sr
 }

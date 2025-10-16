@@ -115,7 +115,7 @@ func updatePolicies(db *gorm.DB) error {
 				if err != nil {
 					return nil, err
 				}
-				categories[c.Name] = c.Id
+				categories[c.GetName()] = c.GetId()
 			}
 			return categories, nil
 		},

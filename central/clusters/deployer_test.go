@@ -93,19 +93,19 @@ func (s *deployerTestSuite) Test_deriveImageWithNewName() {
 
 // Create a cluster object for test purposes.
 func makeTestCluster(mainImage, collectorImage string) *storage.Cluster {
-	return &storage.Cluster{
-		Id:                  "testID",
-		Name:                "Test Cluster",
-		Type:                storage.ClusterType_KUBERNETES_CLUSTER,
-		MainImage:           mainImage,
-		CollectorImage:      collectorImage,
-		CentralApiEndpoint:  "central.stackrox:443",
-		CollectionMethod:    storage.CollectionMethod_CORE_BPF,
-		AdmissionController: false,
-		TolerationsConfig: &storage.TolerationsConfig{
-			Disabled: false,
-		},
-	}
+	tc := &storage.TolerationsConfig{}
+	tc.SetDisabled(false)
+	cluster := &storage.Cluster{}
+	cluster.SetId("testID")
+	cluster.SetName("Test Cluster")
+	cluster.SetType(storage.ClusterType_KUBERNETES_CLUSTER)
+	cluster.SetMainImage(mainImage)
+	cluster.SetCollectorImage(collectorImage)
+	cluster.SetCentralApiEndpoint("central.stackrox:443")
+	cluster.SetCollectionMethod(storage.CollectionMethod_CORE_BPF)
+	cluster.SetAdmissionController(false)
+	cluster.SetTolerationsConfig(tc)
+	return cluster
 }
 
 func testMetaValueGenerationWithImageFlavor(s *deployerTestSuite, flavor defaults.ImageFlavor) {

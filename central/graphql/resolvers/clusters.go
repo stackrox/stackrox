@@ -112,14 +112,14 @@ func (resolver *clusterResolver) getClusterQuery() *v1.Query {
 
 func (resolver *clusterResolver) getClusterConjunctionQuery(q *v1.Query) (*v1.Query, error) {
 	pagination := q.GetPagination()
-	q.Pagination = nil
+	q.ClearPagination()
 
 	q, err := search.AddAsConjunction(resolver.getClusterQuery(), q)
 	if err != nil {
 		return nil, err
 	}
 
-	q.Pagination = pagination
+	q.SetPagination(pagination)
 	return q, nil
 }
 
@@ -185,10 +185,9 @@ func (resolver *Resolver) clustersForReadPermission(ctx context.Context, args Pa
 	}
 	scopeObjects := make([]*v1.ScopeObject, 0, len(clusters))
 	for _, cluster := range clusters {
-		scopeObject := &v1.ScopeObject{
-			Id:   cluster.GetId(),
-			Name: cluster.GetName(),
-		}
+		scopeObject := &v1.ScopeObject{}
+		scopeObject.SetId(cluster.GetId())
+		scopeObject.SetName(cluster.GetName())
 		scopeObjects = append(scopeObjects, scopeObject)
 	}
 	return resolver.wrapScopeObjectsWithContext(ctx, scopeObjects, err)
@@ -462,7 +461,7 @@ func (resolver *clusterResolver) Subjects(ctx context.Context, args PaginatedQue
 	}
 
 	pagination := q.GetPagination()
-	q.Pagination = nil
+	q.ClearPagination()
 
 	subjectResolvers, err := resolver.root.wrapSubjects(resolver.getSubjects(ctx, q))
 	if err != nil {
@@ -662,9 +661,9 @@ func (resolver *clusterResolver) Policies(ctx context.Context, args PaginatedQue
 
 	// remove pagination from query since we want to paginate the final result
 	pagination := q.GetPagination()
-	q.Pagination = &v1.QueryPagination{
-		SortOptions: pagination.GetSortOptions(),
-	}
+	qp := &v1.QueryPagination{}
+	qp.SetSortOptions(pagination.GetSortOptions())
+	q.SetPagination(qp)
 
 	policyResolvers, err := resolver.root.wrapPolicies(resolver.getApplicablePolicies(ctx, q))
 	if err != nil {
@@ -928,19 +927,18 @@ func (resolver *clusterResolver) getClusterRisk(ctx context.Context) (*storage.R
 		return nil, false, nil
 	}
 
-	risk := &storage.Risk{
-		Score: aggregateRiskScore,
-		Subject: &storage.RiskSubject{
-			Id:   cluster.GetId(),
-			Type: storage.RiskSubjectType_CLUSTER,
-		},
-	}
+	rs := &storage.RiskSubject{}
+	rs.SetId(cluster.GetId())
+	rs.SetType(storage.RiskSubjectType_CLUSTER)
+	risk := &storage.Risk{}
+	risk.SetScore(aggregateRiskScore)
+	risk.SetSubject(rs)
 
 	id, err := riskDS.GetID(risk.GetSubject().GetId(), risk.GetSubject().GetType())
 	if err != nil {
 		return nil, false, err
 	}
-	risk.Id = id
+	risk.SetId(id)
 
 	return risk, true, nil
 }

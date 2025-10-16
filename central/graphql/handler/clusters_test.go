@@ -22,12 +22,12 @@ func emptyPaginatedQuery() *v1.Query {
 
 func TestGetClusters(t *testing.T) {
 	mocks := mockResolver(t)
+	cluster := &storage.Cluster{}
+	cluster.SetId(fakeClusterID)
+	cluster.SetName("fake cluster")
+	cluster.SetType(storage.ClusterType_KUBERNETES_CLUSTER)
 	mocks.cluster.EXPECT().SearchRawClusters(gomock.Any(), emptyPaginatedQuery()).Return([]*storage.Cluster{
-		{
-			Id:   fakeClusterID,
-			Name: "fake cluster",
-			Type: storage.ClusterType_KUBERNETES_CLUSTER,
-		},
+		cluster,
 	}, nil)
 	response := executeTestQuery(t, mocks, "{clusters {id name type}}")
 	assertJSONMatches(t, response.Body, ".data.clusters[0].id", fakeClusterID)
@@ -36,11 +36,11 @@ func TestGetClusters(t *testing.T) {
 
 func TestGetCluster(t *testing.T) {
 	mocks := mockResolver(t)
-	mocks.cluster.EXPECT().GetCluster(gomock.Any(), fakeClusterID).Return(&storage.Cluster{
-		Id:   fakeClusterID,
-		Name: "fake cluster",
-		Type: storage.ClusterType_KUBERNETES_CLUSTER,
-	}, true, nil)
+	cluster := &storage.Cluster{}
+	cluster.SetId(fakeClusterID)
+	cluster.SetName("fake cluster")
+	cluster.SetType(storage.ClusterType_KUBERNETES_CLUSTER)
+	mocks.cluster.EXPECT().GetCluster(gomock.Any(), fakeClusterID).Return(cluster, true, nil)
 	response := executeTestQuery(t, mocks, fmt.Sprintf(`{cluster(id: "%s") { id name type}}`, fakeClusterID))
 	assert.Equal(t, 200, response.Code)
 	assertJSONMatches(t, response.Body, ".data.cluster.id", fakeClusterID)

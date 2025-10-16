@@ -39,10 +39,10 @@ func getSlackWithMock(t *testing.T, notifier *storage.Notifier) (*slack, *gomock
 
 func TestSlackAlertNotify(t *testing.T) {
 	webhook := skip(t)
-	s, mockCtrl := getSlackWithMock(t, &storage.Notifier{
-		UiEndpoint:   "http://google.com",
-		LabelDefault: webhook,
-	})
+	notifier := &storage.Notifier{}
+	notifier.SetUiEndpoint("http://google.com")
+	notifier.SetLabelDefault(webhook)
+	s, mockCtrl := getSlackWithMock(t, notifier)
 	defer mockCtrl.Finish()
 
 	assert.NoError(t, s.AlertNotify(context.Background(), fixtures.GetAlert()))
@@ -50,10 +50,10 @@ func TestSlackAlertNotify(t *testing.T) {
 
 func TestSlackNetworkPolicyYAMLNotify(t *testing.T) {
 	webhook := skip(t)
-	s, mockCtrl := getSlackWithMock(t, &storage.Notifier{
-		UiEndpoint:   "http://google.com",
-		LabelDefault: webhook,
-	})
+	notifier := &storage.Notifier{}
+	notifier.SetUiEndpoint("http://google.com")
+	notifier.SetLabelDefault(webhook)
+	s, mockCtrl := getSlackWithMock(t, notifier)
 	defer mockCtrl.Finish()
 
 	assert.NoError(t, s.NetworkPolicyYAMLNotify(context.Background(), fixtures.GetYAML(), "test-cluster"))
@@ -61,10 +61,10 @@ func TestSlackNetworkPolicyYAMLNotify(t *testing.T) {
 
 func TestSlackTest(t *testing.T) {
 	webhook := skip(t)
-	s, mockCtrl := getSlackWithMock(t, &storage.Notifier{
-		UiEndpoint:   "http://google.com",
-		LabelDefault: webhook,
-	})
+	notifier := &storage.Notifier{}
+	notifier.SetUiEndpoint("http://google.com")
+	notifier.SetLabelDefault(webhook)
+	s, mockCtrl := getSlackWithMock(t, notifier)
 	defer mockCtrl.Finish()
 
 	assert.NoError(t, s.Test(context.Background()))

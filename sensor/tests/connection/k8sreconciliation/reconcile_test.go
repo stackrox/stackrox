@@ -129,11 +129,11 @@ func Test_SensorReconcilesKubernetesEvents(t *testing.T) {
 		}
 
 		resourceHashes := makeResourceHashes(resourceMap)
-		c.SetCentralDeduperState(&central.DeduperState{
-			ResourceHashes: resourceHashes,
-			Current:        1,
-			Total:          1,
-		})
+		ds := &central.DeduperState{}
+		ds.SetResourceHashes(resourceHashes)
+		ds.SetCurrent(1)
+		ds.SetTotal(1)
+		c.SetCentralDeduperState(ds)
 
 		obj := &appsV1.Deployment{}
 		_, err = c.ApplyResource(ctx, t, helper.DefaultNamespace, &NginxCreatedWhenOffline, obj, nil)

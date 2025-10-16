@@ -48,12 +48,14 @@ func (i *roleBasedIdentity) Service() *storage.ServiceIdentity {
 }
 
 func (i *roleBasedIdentity) User() *storage.UserInfo {
-	return &storage.UserInfo{
-		Username:     i.username,
-		FriendlyName: i.friendlyName,
-		Permissions:  &storage.UserInfo_ResourceToAccess{ResourceToAccess: i.Permissions()},
-		Roles:        utils.ExtractRolesForUserInfo(i.resolvedRoles),
-	}
+	ur := &storage.UserInfo_ResourceToAccess{}
+	ur.SetResourceToAccess(i.Permissions())
+	userInfo := &storage.UserInfo{}
+	userInfo.SetUsername(i.username)
+	userInfo.SetFriendlyName(i.friendlyName)
+	userInfo.SetPermissions(ur)
+	userInfo.SetRoles(utils.ExtractRolesForUserInfo(i.resolvedRoles))
+	return userInfo
 }
 
 func (i *roleBasedIdentity) ValidityPeriod() (time.Time, time.Time) {

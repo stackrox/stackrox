@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/generic"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/set"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -92,33 +93,33 @@ type Select struct {
 
 // NewQuerySelect creates a new query select.
 func NewQuerySelect(field FieldLabel) *Select {
+	qf := &v1.QueryField{}
+	qf.SetName(field.String())
+	qs := &v1.QuerySelect{}
+	qs.SetField(qf)
 	return &Select{
-		qs: &v1.QuerySelect{
-			Field: &v1.QueryField{
-				Name: field.String(),
-			},
-		},
+		qs: qs,
 	}
 }
 
 // AggrFunc sets aggregate function to be applied on the select field.
 func (s *Select) AggrFunc(aggr aggregatefunc.AggrFunc) *Select {
-	s.qs.Field.AggregateFunc = aggr.Name()
+	s.qs.GetField().SetAggregateFunc(aggr.Name())
 	return s
 }
 
 // Distinct sets query select to distinct.
 func (s *Select) Distinct() *Select {
-	s.qs.Field.Distinct = true
+	s.qs.GetField().SetDistinct(true)
 	return s
 }
 
 // Filter sets filter on the select field.
 func (s *Select) Filter(name string, q *v1.Query) *Select {
-	s.qs.Filter = &v1.QuerySelectFilter{
-		Name:  name,
-		Query: q,
-	}
+	qsf := &v1.QuerySelectFilter{}
+	qsf.SetName(name)
+	qsf.SetQuery(q)
+	s.qs.SetFilter(qsf)
 	return s
 }
 
@@ -153,31 +154,28 @@ type Pagination struct {
 
 // Limit sets the limit
 func (p *Pagination) Limit(limit int32) *Pagination {
-	p.qp.Limit = limit
+	p.qp.SetLimit(limit)
 	return p
 }
 
 // Offset sets the offset
 func (p *Pagination) Offset(offset int32) *Pagination {
-	p.qp.Offset = offset
+	p.qp.SetOffset(offset)
 	return p
 }
 
 // AddSortOption adds the sort option to the pagination object
 func (p *Pagination) AddSortOption(so *SortOption) *Pagination {
-	opt := &v1.QuerySortOption{
-		Field:    string(so.field),
-		Reversed: so.reversed,
-	}
+	opt := &v1.QuerySortOption{}
+	opt.SetField(string(so.field))
+	opt.SetReversed(so.reversed)
 	if so.aggregateBy.aggrFunc != aggregatefunc.Unset {
-		opt.AggregateBy = so.aggregateBy.Proto()
+		opt.SetAggregateBy(so.aggregateBy.Proto())
 	}
 	if so.searchAfter != "" {
-		opt.SearchAfterOpt = &v1.QuerySortOption_SearchAfter{
-			SearchAfter: so.searchAfter,
-		}
+		opt.SetSearchAfter(so.searchAfter)
 	}
-	p.qp.SortOptions = append(p.qp.SortOptions, opt)
+	p.qp.SetSortOptions(append(p.qp.GetSortOptions(), opt))
 	return p
 }
 
@@ -229,10 +227,10 @@ type aggregateBy struct {
 }
 
 func (a *aggregateBy) Proto() *v1.AggregateBy {
-	return &v1.AggregateBy{
-		AggrFunc: a.aggrFunc.Proto(),
-		Distinct: a.distinct,
-	}
+	ab := &v1.AggregateBy{}
+	ab.SetAggrFunc(a.aggrFunc.Proto())
+	ab.SetDistinct(a.distinct)
+	return ab
 }
 
 // QueryBuilder builds a search query
@@ -279,7 +277,7 @@ func (qb *QueryBuilder) WithGroupBy(grpBy *GroupBy) *QueryBuilder {
 func (qb *QueryBuilder) AddGroupBy(fields ...FieldLabel) *QueryBuilder {
 	gb := NewGroupBy()
 	for _, field := range fields {
-		gb.grpBy.Fields = append(gb.grpBy.Fields, field.String())
+		gb.grpBy.SetFields(append(gb.grpBy.GetFields(), field.String()))
 	}
 	qb.groupBy = gb
 	return qb
@@ -495,14 +493,14 @@ func (qb *QueryBuilder) ProtoQuery() *v1.Query {
 
 	cq := ConjunctionQuery(queries...)
 	if qSelects != nil {
-		cq.Selects = qSelects
+		cq.SetSelects(qSelects)
 	}
 
 	if qb.groupBy != nil {
-		cq.GroupBy = qb.groupBy.grpBy
+		cq.SetGroupBy(qb.groupBy.grpBy)
 	}
 	if qb.pagination != nil {
-		cq.Pagination = qb.pagination.qp
+		cq.SetPagination(qb.pagination.qp)
 	}
 	return cq
 }
@@ -535,23 +533,19 @@ func EmptyQuery() *v1.Query {
 
 // MatchNoneQuery returns a v1.Query that maps to a bleve query that does not match any results
 func MatchNoneQuery() *v1.Query {
-	return &v1.Query{
-		Query: &v1.Query_BaseQuery{
-			BaseQuery: &v1.BaseQuery{
-				Query: &v1.BaseQuery_MatchNoneQuery{},
-			},
-		},
-	}
+	baseQuery := &v1.BaseQuery{}
+	baseQuery.Query = &v1.BaseQuery_MatchNoneQuery{}
+	return v1.Query_builder{
+		BaseQuery: baseQuery,
+	}.Build()
 }
 
 // NewBooleanQuery takes in a must conjunction query and a must not disjunction query
 func NewBooleanQuery(must *v1.ConjunctionQuery, mustNot *v1.DisjunctionQuery) *v1.Query {
-	return &v1.Query{
-		Query: &v1.Query_BooleanQuery{
-			BooleanQuery: &v1.BooleanQuery{
-				Must:    must,
-				MustNot: mustNot,
-			},
-		},
-	}
+	bq := &v1.BooleanQuery{}
+	bq.SetMust(must)
+	bq.SetMustNot(mustNot)
+	query := &v1.Query{}
+	query.SetBooleanQuery(proto.ValueOrDefault(bq))
+	return query
 }

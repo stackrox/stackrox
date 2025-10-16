@@ -123,13 +123,13 @@ func (t *teams) getPolicySection(alert *storage.Alert) (section, error) {
 }
 
 func (t *teams) getEntitySection(alert *storage.Alert) section {
-	switch entity := alert.GetEntity().(type) {
-	case *storage.Alert_Deployment_:
-		return t.getDeploymentSection(entity.Deployment)
-	case *storage.Alert_Image:
-		return t.getImageSection(entity.Image)
-	case *storage.Alert_Resource_:
-		return t.getResourceSection(entity.Resource)
+	switch alert.WhichEntity() {
+	case storage.Alert_Deployment_case:
+		return t.getDeploymentSection(alert.GetDeployment())
+	case storage.Alert_Image_case:
+		return t.getImageSection(alert.GetImage())
+	case storage.Alert_Resource_case:
+		return t.getResourceSection(alert.GetResource())
 	}
 	return section{}
 }

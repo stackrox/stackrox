@@ -44,11 +44,11 @@ func (s *flowPersisterImpl) update(ctx context.Context, newFlows []*storage.Netw
 		internetEntity := networkgraph.InternetEntity().ToProto()
 		for _, newFlow := range newFlows {
 			if newFlow.GetProps().GetSrcEntity().GetExternalSource().GetDiscovered() {
-				newFlow.GetProps().SrcEntity = internetEntity
+				newFlow.GetProps().SetSrcEntity(internetEntity)
 			}
 
 			if newFlow.GetProps().GetDstEntity().GetExternalSource().GetDiscovered() {
-				newFlow.GetProps().DstEntity = internetEntity
+				newFlow.GetProps().SetDstEntity(internetEntity)
 			}
 		}
 	}
@@ -139,11 +139,10 @@ func getFlowsByIndicator(newFlows []*storage.NetworkFlow, updateTS, now timestam
 func convertToFlows(updatedFlows map[networkgraph.NetworkConnIndicator]timestamp.MicroTS) []*storage.NetworkFlow {
 	flowsToBeUpserted := make([]*storage.NetworkFlow, 0, len(updatedFlows))
 	for indicator, ts := range updatedFlows {
-		toBeUpserted := &storage.NetworkFlow{
-			Props: indicator.ToNetworkFlowPropertiesProto(),
-		}
+		toBeUpserted := &storage.NetworkFlow{}
+		toBeUpserted.SetProps(indicator.ToNetworkFlowPropertiesProto())
 		if ts != 0 {
-			toBeUpserted.LastSeenTimestamp = protoconv.ConvertMicroTSToProtobufTS(ts)
+			toBeUpserted.SetLastSeenTimestamp(protoconv.ConvertMicroTSToProtobufTS(ts))
 		}
 		flowsToBeUpserted = append(flowsToBeUpserted, toBeUpserted)
 	}
@@ -156,12 +155,11 @@ func (s *flowPersisterImpl) updateExternalNetworkEntityIfDiscovered(ctx context.
 	}
 
 	// Discovered entities are stored
-	entity := &storage.NetworkEntity{
-		Info: entityInfo,
-		Scope: &storage.NetworkEntity_Scope{
-			ClusterId: s.clusterID,
-		},
-	}
+	ns := &storage.NetworkEntity_Scope{}
+	ns.SetClusterId(s.clusterID)
+	entity := &storage.NetworkEntity{}
+	entity.SetInfo(entityInfo)
+	entity.SetScope(ns)
 
 	return s.entityStore.UpdateExternalNetworkEntity(ctx, entity, true)
 }
@@ -177,7 +175,7 @@ func (s *flowPersisterImpl) fixupExternalNetworkEntityIdIfDiscovered(ctx context
 	id, err := externalsrcs.NewClusterScopedID(s.clusterID, entityInfo.GetExternalSource().GetCidr())
 
 	if err == nil {
-		entityInfo.Id = id.String()
+		entityInfo.SetId(id.String())
 	}
 
 	return err

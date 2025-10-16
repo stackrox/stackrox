@@ -29,13 +29,13 @@ func toNodeScan(r *v4.VulnerabilityReport, osImageRef string) *storage.NodeScan 
 		log.Warnf("Could not determine operating system from OSimage ref %s", osImageRef)
 	}
 
-	return &storage.NodeScan{
-		ScanTime:        protocompat.TimestampNow(),
-		Components:      toStorageComponents(r),
-		Notes:           fixedNotes,
-		ScannerVersion:  storage.NodeScan_SCANNER_V4,
-		OperatingSystem: convertedOS,
-	}
+	nodeScan := &storage.NodeScan{}
+	nodeScan.SetScanTime(protocompat.TimestampNow())
+	nodeScan.SetComponents(toStorageComponents(r))
+	nodeScan.SetNotes(fixedNotes)
+	nodeScan.SetScannerVersion(storage.NodeScan_SCANNER_V4)
+	nodeScan.SetOperatingSystem(convertedOS)
+	return nodeScan
 }
 
 func toOperatingSystem(ref string) string {
@@ -88,34 +88,31 @@ func getPackageVulns(packageID string, r *v4.VulnerabilityReport) []*storage.Emb
 }
 
 func convertVulnerability(v *v4.VulnerabilityReport_Vulnerability) *storage.EmbeddedVulnerability {
-	converted := &storage.EmbeddedVulnerability{
-		Cve:               v.GetName(),
-		Summary:           v.GetDescription(),
-		VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
-		Severity:          normalizedSeverity(v.GetNormalizedSeverity()),
-		Link:              link(v.GetLink()),
-		PublishedOn:       v.GetIssued(),
-	}
+	converted := &storage.EmbeddedVulnerability{}
+	converted.SetCve(v.GetName())
+	converted.SetSummary(v.GetDescription())
+	converted.SetVulnerabilityType(storage.EmbeddedVulnerability_NODE_VULNERABILITY)
+	converted.SetSeverity(normalizedSeverity(v.GetNormalizedSeverity()))
+	converted.SetLink(link(v.GetLink()))
+	converted.SetPublishedOn(v.GetIssued())
 
 	if err := setScoresAndScoreVersions(converted, v.GetCvssMetrics()); err != nil {
 		utils.Should(err)
 	}
 	maybeOverwriteSeverity(converted)
 	if v.GetFixedInVersion() != "" {
-		converted.SetFixedBy = &storage.EmbeddedVulnerability_FixedBy{
-			FixedBy: v.GetFixedInVersion(),
-		}
+		converted.Set_FixedBy(v.GetFixedInVersion())
 	}
 
 	return converted
 }
 
 func createEmbeddedComponent(pkg *v4.Package, vulns []*storage.EmbeddedVulnerability) *storage.EmbeddedNodeScanComponent {
-	return &storage.EmbeddedNodeScanComponent{
-		Name:    pkg.GetName(),
-		Version: pkg.GetVersion(),
-		Vulns:   vulns,
-	}
+	ensc := &storage.EmbeddedNodeScanComponent{}
+	ensc.SetName(pkg.GetName())
+	ensc.SetVersion(pkg.GetVersion())
+	ensc.SetVulns(vulns)
+	return ensc
 }
 
 func toStorageNotes(notes []v4.VulnerabilityReport_Note) []storage.NodeScan_Note {

@@ -24,15 +24,14 @@ func TestEndpointValidation(t *testing.T) {
 	}
 
 	for _, c := range testCases {
-		s3Config := storage.S3Config{
-			Endpoint:        c.endpoint,
-			Bucket:          "buck",
-			UseIam:          false,
-			AccessKeyId:     "foo",
-			SecretAccessKey: "bar",
-			Region:          "us-west-2",
-			ObjectPrefix:    "",
-		}
+		s3Config := &storage.S3Config{}
+		s3Config.SetEndpoint(c.endpoint)
+		s3Config.SetBucket("buck")
+		s3Config.SetUseIam(false)
+		s3Config.SetAccessKeyId("foo")
+		s3Config.SetSecretAccessKey("bar")
+		s3Config.SetRegion("us-west-2")
+		s3Config.SetObjectPrefix("")
 		err := ValidateEndpoints(&s3Config)
 		assert.Equalf(t, c.errExpected, err != nil, "Testcase with endpoint: %s failed", c.endpoint)
 	}

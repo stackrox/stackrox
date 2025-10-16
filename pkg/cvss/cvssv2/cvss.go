@@ -61,15 +61,15 @@ func ParseCVSSV2(vectorStr string) (*storage.CVSSV2, error) {
 	// We only care about base metrics at this time.
 	metrics := vec.BaseMetrics
 
-	return &storage.CVSSV2{
-		Vector:           vectorStr,
-		AttackVector:     attackVectorMap[metrics.AccessVector.String()],
-		AccessComplexity: accessComplexityMap[metrics.AccessComplexity.String()],
-		Authentication:   authenticationMap[metrics.Authentication.String()],
-		Confidentiality:  impactMap[metrics.ConfidentialityImpact.String()],
-		Integrity:        impactMap[metrics.IntegrityImpact.String()],
-		Availability:     impactMap[metrics.AvailabilityImpact.String()],
-	}, nil
+	cVSSV2 := &storage.CVSSV2{}
+	cVSSV2.SetVector(vectorStr)
+	cVSSV2.SetAttackVector(attackVectorMap[metrics.AccessVector.String()])
+	cVSSV2.SetAccessComplexity(accessComplexityMap[metrics.AccessComplexity.String()])
+	cVSSV2.SetAuthentication(authenticationMap[metrics.Authentication.String()])
+	cVSSV2.SetConfidentiality(impactMap[metrics.ConfidentialityImpact.String()])
+	cVSSV2.SetIntegrity(impactMap[metrics.IntegrityImpact.String()])
+	cVSSV2.SetAvailability(impactMap[metrics.AvailabilityImpact.String()])
+	return cVSSV2, nil
 }
 
 // Severity returns the severity for the cvss v2 score
@@ -94,8 +94,8 @@ func CalculateScores(cvssV2 *storage.CVSSV2) error {
 	if err := vec.Validate(); err != nil {
 		return fmt.Errorf("validating: %w", err)
 	}
-	cvssV2.Score = float32(vec.BaseScore())
-	cvssV2.ExploitabilityScore = float32(mathutil.RoundToDecimal(vec.ExploitabilityScore(), 1))
-	cvssV2.ImpactScore = float32(mathutil.RoundToDecimal(vec.ImpactScore(false), 1))
+	cvssV2.SetScore(float32(vec.BaseScore()))
+	cvssV2.SetExploitabilityScore(float32(mathutil.RoundToDecimal(vec.ExploitabilityScore(), 1)))
+	cvssV2.SetImpactScore(float32(mathutil.RoundToDecimal(vec.ImpactScore(false), 1)))
 	return nil
 }

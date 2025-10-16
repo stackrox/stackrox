@@ -59,10 +59,10 @@ func (s *serviceImpl) GetCurrentSecuredUnitsUsage(ctx context.Context, _ *v1.Emp
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot get current administration usage")
 	}
-	return &v1.SecuredUnitsUsageResponse{
-		NumNodes:    m.GetNumNodes(),
-		NumCpuUnits: m.GetNumCpuUnits(),
-	}, nil
+	suur := &v1.SecuredUnitsUsageResponse{}
+	suur.SetNumNodes(m.GetNumNodes())
+	suur.SetNumCpuUnits(m.GetNumCpuUnits())
+	return suur, nil
 }
 
 func (s *serviceImpl) GetMaxSecuredUnitsUsage(ctx context.Context, req *v1.TimeRange) (*v1.MaxSecuredUnitsUsageResponse, error) {
@@ -88,15 +88,15 @@ func (s *serviceImpl) GetMaxSecuredUnitsUsage(ctx context.Context, req *v1.TimeR
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot get maximum nodes usage")
 	}
-	max.MaxNodes = maxNumNodes.GetNumNodes()
-	max.MaxNodesAt = maxNumNodes.GetTimestamp()
+	max.SetMaxNodes(maxNumNodes.GetNumNodes())
+	max.SetMaxNodesAt(maxNumNodes.GetTimestamp())
 
 	maxNumCPUUnits, err := s.datastore.GetMaxNumCPUUnits(ctx, from, to)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot get maximum CPU usage")
 	}
-	max.MaxCpuUnits = maxNumCPUUnits.GetNumCpuUnits()
-	max.MaxCpuUnitsAt = maxNumCPUUnits.GetTimestamp()
+	max.SetMaxCpuUnits(maxNumCPUUnits.GetNumCpuUnits())
+	max.SetMaxCpuUnitsAt(maxNumCPUUnits.GetTimestamp())
 
 	return max, nil
 }

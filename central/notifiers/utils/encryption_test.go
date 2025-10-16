@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stretchr/testify/suite"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestNotifierSecurity(t *testing.T) {
@@ -126,14 +127,11 @@ func (s *NotifierSecurityTestSuite) TestSecureCleanupDisabled() {
 	}
 
 	// Case: secure jira notifier
-	jira := &storage.Notifier{
-		Type: pkgNotifiers.JiraType,
-		Config: &storage.Notifier_Jira{
-			Jira: &storage.Jira{
-				Password: "fakePassword",
-			},
-		},
-	}
+	jira2 := &storage.Jira{}
+	jira2.SetPassword("fakePassword")
+	jira := &storage.Notifier{}
+	jira.SetType(pkgNotifiers.JiraType)
+	jira.SetJira(proto.ValueOrDefault(jira2))
 	s.checkUnsecured(jira)
 	err := SecureNotifier(jira, s.key)
 	s.Require().NoError(err)
@@ -142,14 +140,11 @@ func (s *NotifierSecurityTestSuite) TestSecureCleanupDisabled() {
 	s.checkSecured(jira)
 
 	// Case: secure email notifier
-	email := &storage.Notifier{
-		Type: pkgNotifiers.EmailType,
-		Config: &storage.Notifier_Email{
-			Email: &storage.Email{
-				Password: "fakePassword",
-			},
-		},
-	}
+	email2 := &storage.Email{}
+	email2.SetPassword("fakePassword")
+	email := &storage.Notifier{}
+	email.SetType(pkgNotifiers.EmailType)
+	email.SetEmail(proto.ValueOrDefault(email2))
 	s.checkUnsecured(email)
 	err = SecureNotifier(email, s.key)
 	s.Require().NoError(err)
@@ -158,15 +153,12 @@ func (s *NotifierSecurityTestSuite) TestSecureCleanupDisabled() {
 	s.checkSecured(email)
 
 	// Case: secure unauthenticated email notifier
-	emailUnauth := &storage.Notifier{
-		Type: pkgNotifiers.EmailType,
-		Config: &storage.Notifier_Email{
-			Email: &storage.Email{
-				AllowUnauthenticatedSmtp: true,
-				Password:                 "",
-			},
-		},
-	}
+	email3 := &storage.Email{}
+	email3.SetAllowUnauthenticatedSmtp(true)
+	email3.SetPassword("")
+	emailUnauth := &storage.Notifier{}
+	emailUnauth.SetType(pkgNotifiers.EmailType)
+	emailUnauth.SetEmail(proto.ValueOrDefault(email3))
 	s.checkUnsecured(emailUnauth)
 	err = SecureNotifier(emailUnauth, s.key)
 	s.Require().NoError(err)
@@ -175,14 +167,11 @@ func (s *NotifierSecurityTestSuite) TestSecureCleanupDisabled() {
 	s.checkSecured(emailUnauth)
 
 	// Case: secure CSCC notifier
-	cscc := &storage.Notifier{
-		Type: pkgNotifiers.CSCCType,
-		Config: &storage.Notifier_Cscc{
-			Cscc: &storage.CSCC{
-				ServiceAccount: "fakeServiceAccount",
-			},
-		},
-	}
+	cSCC := &storage.CSCC{}
+	cSCC.SetServiceAccount("fakeServiceAccount")
+	cscc := &storage.Notifier{}
+	cscc.SetType(pkgNotifiers.CSCCType)
+	cscc.SetCscc(proto.ValueOrDefault(cSCC))
 	s.checkUnsecured(cscc)
 	err = SecureNotifier(cscc, s.key)
 	s.Require().NoError(err)
@@ -191,14 +180,11 @@ func (s *NotifierSecurityTestSuite) TestSecureCleanupDisabled() {
 	s.checkSecured(cscc)
 
 	// Case: secure splunk notifier
-	splunk := &storage.Notifier{
-		Type: pkgNotifiers.SplunkType,
-		Config: &storage.Notifier_Splunk{
-			Splunk: &storage.Splunk{
-				HttpToken: "fakeHttpToken",
-			},
-		},
-	}
+	splunk2 := &storage.Splunk{}
+	splunk2.SetHttpToken("fakeHttpToken")
+	splunk := &storage.Notifier{}
+	splunk.SetType(pkgNotifiers.SplunkType)
+	splunk.SetSplunk(proto.ValueOrDefault(splunk2))
 	s.checkUnsecured(splunk)
 	err = SecureNotifier(splunk, s.key)
 	s.Require().NoError(err)
@@ -207,14 +193,11 @@ func (s *NotifierSecurityTestSuite) TestSecureCleanupDisabled() {
 	s.checkSecured(splunk)
 
 	// Case: secure pagerduty notifier
-	pagerduty := &storage.Notifier{
-		Type: pkgNotifiers.PagerDutyType,
-		Config: &storage.Notifier_Pagerduty{
-			Pagerduty: &storage.PagerDuty{
-				ApiKey: "fakeApiKey",
-			},
-		},
-	}
+	pagerDuty := &storage.PagerDuty{}
+	pagerDuty.SetApiKey("fakeApiKey")
+	pagerduty := &storage.Notifier{}
+	pagerduty.SetType(pkgNotifiers.PagerDutyType)
+	pagerduty.SetPagerduty(proto.ValueOrDefault(pagerDuty))
 	s.checkUnsecured(pagerduty)
 	err = SecureNotifier(pagerduty, s.key)
 	s.Require().NoError(err)
@@ -223,15 +206,12 @@ func (s *NotifierSecurityTestSuite) TestSecureCleanupDisabled() {
 	s.checkSecured(pagerduty)
 
 	// Case: secure generic notifier
-	generic := &storage.Notifier{
-		Type: pkgNotifiers.GenericType,
-		Config: &storage.Notifier_Generic{
-			Generic: &storage.Generic{
-				Username: "fakeUsername",
-				Password: "fakePassword",
-			},
-		},
-	}
+	generic2 := &storage.Generic{}
+	generic2.SetUsername("fakeUsername")
+	generic2.SetPassword("fakePassword")
+	generic := &storage.Notifier{}
+	generic.SetType(pkgNotifiers.GenericType)
+	generic.SetGeneric(proto.ValueOrDefault(generic2))
 	s.checkUnsecured(generic)
 	err = SecureNotifier(generic, s.key)
 	s.Require().NoError(err)
@@ -240,15 +220,12 @@ func (s *NotifierSecurityTestSuite) TestSecureCleanupDisabled() {
 	s.checkSecured(generic)
 
 	// Case: secure unauthenticated generic notifier
-	genericUnauth := &storage.Notifier{
-		Type: pkgNotifiers.GenericType,
-		Config: &storage.Notifier_Generic{
-			Generic: &storage.Generic{
-				Username: "",
-				Password: "",
-			},
-		},
-	}
+	generic3 := &storage.Generic{}
+	generic3.SetUsername("")
+	generic3.SetPassword("")
+	genericUnauth := &storage.Notifier{}
+	genericUnauth.SetType(pkgNotifiers.GenericType)
+	genericUnauth.SetGeneric(proto.ValueOrDefault(generic3))
 	s.checkUnsecured(genericUnauth)
 	err = SecureNotifier(genericUnauth, s.key)
 	s.Require().NoError(err)
@@ -257,17 +234,15 @@ func (s *NotifierSecurityTestSuite) TestSecureCleanupDisabled() {
 	s.checkSecured(genericUnauth)
 
 	// Case: secure awsSecurityHub notifier
-	awsSecurityHub := &storage.Notifier{
+	awsSecurityHub := storage.Notifier_builder{
 		Type: pkgNotifiers.AWSSecurityHubType,
-		Config: &storage.Notifier_AwsSecurityHub{
-			AwsSecurityHub: &storage.AWSSecurityHub{
-				Credentials: &storage.AWSSecurityHub_Credentials{
-					AccessKeyId:     "fakeAccessKeyId",
-					SecretAccessKey: "fakeSecretAccessKey",
-				},
-			},
-		},
-	}
+		AwsSecurityHub: storage.AWSSecurityHub_builder{
+			Credentials: storage.AWSSecurityHub_Credentials_builder{
+				AccessKeyId:     "fakeAccessKeyId",
+				SecretAccessKey: "fakeSecretAccessKey",
+			}.Build(),
+		}.Build(),
+	}.Build()
 	s.checkUnsecured(awsSecurityHub)
 	err = SecureNotifier(awsSecurityHub, s.key)
 	s.Require().NoError(err)
@@ -277,14 +252,11 @@ func (s *NotifierSecurityTestSuite) TestSecureCleanupDisabled() {
 	s.checkSecured(awsSecurityHub)
 
 	// Case: secure microsoft sentinel notifier
-	microsoftSentinel := &storage.Notifier{
-		Type: pkgNotifiers.MicrosoftSentinelType,
-		Config: &storage.Notifier_MicrosoftSentinel{
-			MicrosoftSentinel: &storage.MicrosoftSentinel{
-				Secret: "secret value",
-			},
-		},
-	}
+	ms := &storage.MicrosoftSentinel{}
+	ms.SetSecret("secret value")
+	microsoftSentinel := &storage.Notifier{}
+	microsoftSentinel.SetType(pkgNotifiers.MicrosoftSentinelType)
+	microsoftSentinel.SetMicrosoftSentinel(proto.ValueOrDefault(ms))
 	s.checkUnsecured(microsoftSentinel)
 	err = SecureNotifier(microsoftSentinel, s.key)
 	s.Require().NoError(err)
@@ -292,17 +264,15 @@ func (s *NotifierSecurityTestSuite) TestSecureCleanupDisabled() {
 	s.Require().NotEmpty(microsoftSentinel.GetMicrosoftSentinel().GetSecret())
 	s.checkSecured(microsoftSentinel)
 
-	microsoftSentinel = &storage.Notifier{
+	microsoftSentinel = storage.Notifier_builder{
 		Type: pkgNotifiers.MicrosoftSentinelType,
-		Config: &storage.Notifier_MicrosoftSentinel{
-			MicrosoftSentinel: &storage.MicrosoftSentinel{
-				ClientCertAuthConfig: &storage.MicrosoftSentinel_ClientCertAuthConfig{
-					PrivateKey: "private key",
-					ClientCert: "client cert",
-				},
-			},
-		},
-	}
+		MicrosoftSentinel: storage.MicrosoftSentinel_builder{
+			ClientCertAuthConfig: storage.MicrosoftSentinel_ClientCertAuthConfig_builder{
+				PrivateKey: "private key",
+				ClientCert: "client cert",
+			}.Build(),
+		}.Build(),
+	}.Build()
 	s.checkUnsecured(microsoftSentinel)
 	err = SecureNotifier(microsoftSentinel, s.key)
 	s.Require().NoError(err)
@@ -319,14 +289,11 @@ func (s *NotifierSecurityTestSuite) TestSecureCleanupEnabled() {
 		s.T().SkipNow()
 	}
 	// Case: secure jira notifier
-	jira := &storage.Notifier{
-		Type: pkgNotifiers.JiraType,
-		Config: &storage.Notifier_Jira{
-			Jira: &storage.Jira{
-				Password: "fakePassword",
-			},
-		},
-	}
+	jira2 := &storage.Jira{}
+	jira2.SetPassword("fakePassword")
+	jira := &storage.Notifier{}
+	jira.SetType(pkgNotifiers.JiraType)
+	jira.SetJira(proto.ValueOrDefault(jira2))
 	s.checkUnsecured(jira)
 	err := SecureNotifier(jira, s.key)
 	s.Require().NoError(err)
@@ -335,14 +302,11 @@ func (s *NotifierSecurityTestSuite) TestSecureCleanupEnabled() {
 	s.checkSecured(jira)
 
 	// Case: secure email notifier
-	email := &storage.Notifier{
-		Type: pkgNotifiers.EmailType,
-		Config: &storage.Notifier_Email{
-			Email: &storage.Email{
-				Password: "fakePassword",
-			},
-		},
-	}
+	email2 := &storage.Email{}
+	email2.SetPassword("fakePassword")
+	email := &storage.Notifier{}
+	email.SetType(pkgNotifiers.EmailType)
+	email.SetEmail(proto.ValueOrDefault(email2))
 	s.checkUnsecured(email)
 	err = SecureNotifier(email, s.key)
 	s.Require().NoError(err)
@@ -351,15 +315,12 @@ func (s *NotifierSecurityTestSuite) TestSecureCleanupEnabled() {
 	s.checkSecured(email)
 
 	// Case: secure unauthenticated email notifier
-	emailUnauth := &storage.Notifier{
-		Type: pkgNotifiers.EmailType,
-		Config: &storage.Notifier_Email{
-			Email: &storage.Email{
-				AllowUnauthenticatedSmtp: true,
-				Password:                 "",
-			},
-		},
-	}
+	email3 := &storage.Email{}
+	email3.SetAllowUnauthenticatedSmtp(true)
+	email3.SetPassword("")
+	emailUnauth := &storage.Notifier{}
+	emailUnauth.SetType(pkgNotifiers.EmailType)
+	emailUnauth.SetEmail(proto.ValueOrDefault(email3))
 	s.checkUnsecured(emailUnauth)
 	err = SecureNotifier(emailUnauth, s.key)
 	s.Require().NoError(err)
@@ -368,14 +329,11 @@ func (s *NotifierSecurityTestSuite) TestSecureCleanupEnabled() {
 	s.checkSecured(emailUnauth)
 
 	// Case: secure CSCC notifier
-	cscc := &storage.Notifier{
-		Type: pkgNotifiers.CSCCType,
-		Config: &storage.Notifier_Cscc{
-			Cscc: &storage.CSCC{
-				ServiceAccount: "fakeServiceAccount",
-			},
-		},
-	}
+	cSCC := &storage.CSCC{}
+	cSCC.SetServiceAccount("fakeServiceAccount")
+	cscc := &storage.Notifier{}
+	cscc.SetType(pkgNotifiers.CSCCType)
+	cscc.SetCscc(proto.ValueOrDefault(cSCC))
 	s.checkUnsecured(cscc)
 	err = SecureNotifier(cscc, s.key)
 	s.Require().NoError(err)
@@ -384,14 +342,11 @@ func (s *NotifierSecurityTestSuite) TestSecureCleanupEnabled() {
 	s.checkSecured(cscc)
 
 	// Case: secure splunk notifier
-	splunk := &storage.Notifier{
-		Type: pkgNotifiers.SplunkType,
-		Config: &storage.Notifier_Splunk{
-			Splunk: &storage.Splunk{
-				HttpToken: "fakeHttpToken",
-			},
-		},
-	}
+	splunk2 := &storage.Splunk{}
+	splunk2.SetHttpToken("fakeHttpToken")
+	splunk := &storage.Notifier{}
+	splunk.SetType(pkgNotifiers.SplunkType)
+	splunk.SetSplunk(proto.ValueOrDefault(splunk2))
 	s.checkUnsecured(splunk)
 	err = SecureNotifier(splunk, s.key)
 	s.Require().NoError(err)
@@ -400,14 +355,11 @@ func (s *NotifierSecurityTestSuite) TestSecureCleanupEnabled() {
 	s.checkSecured(splunk)
 
 	// Case: secure pagerduty notifier
-	pagerduty := &storage.Notifier{
-		Type: pkgNotifiers.PagerDutyType,
-		Config: &storage.Notifier_Pagerduty{
-			Pagerduty: &storage.PagerDuty{
-				ApiKey: "fakeApiKey",
-			},
-		},
-	}
+	pagerDuty := &storage.PagerDuty{}
+	pagerDuty.SetApiKey("fakeApiKey")
+	pagerduty := &storage.Notifier{}
+	pagerduty.SetType(pkgNotifiers.PagerDutyType)
+	pagerduty.SetPagerduty(proto.ValueOrDefault(pagerDuty))
 	s.checkUnsecured(pagerduty)
 	err = SecureNotifier(pagerduty, s.key)
 	s.Require().NoError(err)
@@ -416,15 +368,12 @@ func (s *NotifierSecurityTestSuite) TestSecureCleanupEnabled() {
 	s.checkSecured(pagerduty)
 
 	// Case: secure generic notifier
-	generic := &storage.Notifier{
-		Type: pkgNotifiers.GenericType,
-		Config: &storage.Notifier_Generic{
-			Generic: &storage.Generic{
-				Username: "fakeUsername",
-				Password: "fakePassword",
-			},
-		},
-	}
+	generic2 := &storage.Generic{}
+	generic2.SetUsername("fakeUsername")
+	generic2.SetPassword("fakePassword")
+	generic := &storage.Notifier{}
+	generic.SetType(pkgNotifiers.GenericType)
+	generic.SetGeneric(proto.ValueOrDefault(generic2))
 	s.checkUnsecured(generic)
 	err = SecureNotifier(generic, s.key)
 	s.Require().NoError(err)
@@ -433,15 +382,12 @@ func (s *NotifierSecurityTestSuite) TestSecureCleanupEnabled() {
 	s.checkSecured(generic)
 
 	// Case: secure unauthenticated generic notifier
-	genericUnauth := &storage.Notifier{
-		Type: pkgNotifiers.GenericType,
-		Config: &storage.Notifier_Generic{
-			Generic: &storage.Generic{
-				Username: "",
-				Password: "",
-			},
-		},
-	}
+	generic3 := &storage.Generic{}
+	generic3.SetUsername("")
+	generic3.SetPassword("")
+	genericUnauth := &storage.Notifier{}
+	genericUnauth.SetType(pkgNotifiers.GenericType)
+	genericUnauth.SetGeneric(proto.ValueOrDefault(generic3))
 	s.checkUnsecured(genericUnauth)
 	err = SecureNotifier(genericUnauth, s.key)
 	s.Require().NoError(err)
@@ -450,17 +396,15 @@ func (s *NotifierSecurityTestSuite) TestSecureCleanupEnabled() {
 	s.checkSecured(genericUnauth)
 
 	// Case: secure awsSecurityHub notifier
-	awsSecurityHub := &storage.Notifier{
+	awsSecurityHub := storage.Notifier_builder{
 		Type: pkgNotifiers.AWSSecurityHubType,
-		Config: &storage.Notifier_AwsSecurityHub{
-			AwsSecurityHub: &storage.AWSSecurityHub{
-				Credentials: &storage.AWSSecurityHub_Credentials{
-					AccessKeyId:     "fakeAccessKeyId",
-					SecretAccessKey: "fakeSecretAccessKey",
-				},
-			},
-		},
-	}
+		AwsSecurityHub: storage.AWSSecurityHub_builder{
+			Credentials: storage.AWSSecurityHub_Credentials_builder{
+				AccessKeyId:     "fakeAccessKeyId",
+				SecretAccessKey: "fakeSecretAccessKey",
+			}.Build(),
+		}.Build(),
+	}.Build()
 	s.checkUnsecured(awsSecurityHub)
 	err = SecureNotifier(awsSecurityHub, s.key)
 	s.Require().NoError(err)
@@ -470,14 +414,11 @@ func (s *NotifierSecurityTestSuite) TestSecureCleanupEnabled() {
 	s.checkSecured(awsSecurityHub)
 
 	// Case: secure microsoft sentinel notifier
-	microsoftSentinel := &storage.Notifier{
-		Type: pkgNotifiers.MicrosoftSentinelType,
-		Config: &storage.Notifier_MicrosoftSentinel{
-			MicrosoftSentinel: &storage.MicrosoftSentinel{
-				Secret: "secret value",
-			},
-		},
-	}
+	ms := &storage.MicrosoftSentinel{}
+	ms.SetSecret("secret value")
+	microsoftSentinel := &storage.Notifier{}
+	microsoftSentinel.SetType(pkgNotifiers.MicrosoftSentinelType)
+	microsoftSentinel.SetMicrosoftSentinel(proto.ValueOrDefault(ms))
 	s.checkUnsecured(microsoftSentinel)
 	err = SecureNotifier(microsoftSentinel, s.key)
 	s.Require().NoError(err)
@@ -486,10 +427,10 @@ func (s *NotifierSecurityTestSuite) TestSecureCleanupEnabled() {
 	s.Require().Empty(microsoftSentinel.GetMicrosoftSentinel().GetClientCertAuthConfig().GetPrivateKey())
 	s.checkSecured(microsoftSentinel)
 
-	microsoftSentinel.GetMicrosoftSentinel().ClientCertAuthConfig = &storage.MicrosoftSentinel_ClientCertAuthConfig{
-		PrivateKey: "private key",
-		ClientCert: "client cert",
-	}
+	mc := &storage.MicrosoftSentinel_ClientCertAuthConfig{}
+	mc.SetPrivateKey("private key")
+	mc.SetClientCert("client cert")
+	microsoftSentinel.GetMicrosoftSentinel().SetClientCertAuthConfig(mc)
 	s.checkUnsecured(microsoftSentinel)
 	err = SecureNotifier(microsoftSentinel, s.key)
 	s.Require().NoError(err)
@@ -513,14 +454,11 @@ func (s *NotifierSecurityTestSuite) checkUnsecured(notifier *storage.Notifier) {
 }
 
 func (s *NotifierSecurityTestSuite) TestRekeyNotifier() {
-	notifier := &storage.Notifier{
-		Type: pkgNotifiers.EmailType,
-		Config: &storage.Notifier_Email{
-			Email: &storage.Email{
-				Password: "fakePassword",
-			},
-		},
-	}
+	email := &storage.Email{}
+	email.SetPassword("fakePassword")
+	notifier := &storage.Notifier{}
+	notifier.SetType(pkgNotifiers.EmailType)
+	notifier.SetEmail(proto.ValueOrDefault(email))
 	err := SecureNotifier(notifier, s.key)
 	s.Require().NoError(err)
 	s.Require().NotEmpty(notifier.GetNotifierSecret())

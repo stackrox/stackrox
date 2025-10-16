@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -49,25 +50,22 @@ func (s *serviceImpl) convertV2ReportConfigurationToProto(config *apiV2.ReportCo
 		return nil
 	}
 
-	ret := &storage.ReportConfiguration{
-		Id:            config.GetId(),
-		Name:          config.GetName(),
-		Description:   config.GetDescription(),
-		Type:          storage.ReportConfiguration_ReportType(config.GetType()),
-		Schedule:      s.convertV2ScheduleToProto(config.GetSchedule()),
-		ResourceScope: s.convertV2ResourceScopeToProto(config.GetResourceScope()),
-		Creator:       creator,
-		Version:       2,
-	}
+	ret := &storage.ReportConfiguration{}
+	ret.SetId(config.GetId())
+	ret.SetName(config.GetName())
+	ret.SetDescription(config.GetDescription())
+	ret.SetType(storage.ReportConfiguration_ReportType(config.GetType()))
+	ret.SetSchedule(s.convertV2ScheduleToProto(config.GetSchedule()))
+	ret.SetResourceScope(s.convertV2ResourceScopeToProto(config.GetResourceScope()))
+	ret.SetCreator(creator)
+	ret.SetVersion(2)
 
 	if config.GetVulnReportFilters() != nil {
-		ret.Filter = &storage.ReportConfiguration_VulnReportFilters{
-			VulnReportFilters: s.convertV2VulnReportFiltersToProto(config.GetVulnReportFilters(), accessScopeRules),
-		}
+		ret.SetVulnReportFilters(proto.ValueOrDefault(s.convertV2VulnReportFiltersToProto(config.GetVulnReportFilters(), accessScopeRules)))
 	}
 
 	for _, notifier := range config.GetNotifiers() {
-		ret.Notifiers = append(ret.Notifiers, s.convertV2NotifierConfigToProto(notifier))
+		ret.SetNotifiers(append(ret.GetNotifiers(), s.convertV2NotifierConfigToProto(notifier)))
 	}
 
 	return ret
@@ -79,37 +77,30 @@ func (s *serviceImpl) convertV2VulnReportFiltersToProto(filters *apiV2.Vulnerabi
 		return nil
 	}
 
-	ret := &storage.VulnerabilityReportFilters{
-		Fixability:             storage.VulnerabilityReportFilters_Fixability(filters.GetFixability()),
-		AccessScopeRules:       accessScopeRules,
-		IncludeNvdCvss:         filters.GetIncludeNvdCvss(),
-		IncludeEpssProbability: filters.GetIncludeEpssProbability(),
-		IncludeAdvisory:        filters.GetIncludeAdvisory(),
-	}
+	ret := &storage.VulnerabilityReportFilters{}
+	ret.SetFixability(storage.VulnerabilityReportFilters_Fixability(filters.GetFixability()))
+	ret.SetAccessScopeRules(accessScopeRules)
+	ret.SetIncludeNvdCvss(filters.GetIncludeNvdCvss())
+	ret.SetIncludeEpssProbability(filters.GetIncludeEpssProbability())
+	ret.SetIncludeAdvisory(filters.GetIncludeAdvisory())
 
 	for _, severity := range filters.GetSeverities() {
-		ret.Severities = append(ret.Severities, storage.VulnerabilitySeverity(severity))
+		ret.SetSeverities(append(ret.GetSeverities(), storage.VulnerabilitySeverity(severity)))
 	}
 
 	for _, imageType := range filters.GetImageTypes() {
-		ret.ImageTypes = append(ret.ImageTypes, storage.VulnerabilityReportFilters_ImageType(imageType))
+		ret.SetImageTypes(append(ret.GetImageTypes(), storage.VulnerabilityReportFilters_ImageType(imageType)))
 	}
 
-	switch filters.GetCvesSince().(type) {
-	case *apiV2.VulnerabilityReportFilters_AllVuln:
-		ret.CvesSince = &storage.VulnerabilityReportFilters_AllVuln{
-			AllVuln: filters.GetAllVuln(),
-		}
+	switch filters.WhichCvesSince() {
+	case apiV2.VulnerabilityReportFilters_AllVuln_case:
+		ret.SetAllVuln(filters.GetAllVuln())
 
-	case *apiV2.VulnerabilityReportFilters_SinceLastSentScheduledReport:
-		ret.CvesSince = &storage.VulnerabilityReportFilters_SinceLastSentScheduledReport{
-			SinceLastSentScheduledReport: filters.GetSinceLastSentScheduledReport(),
-		}
+	case apiV2.VulnerabilityReportFilters_SinceLastSentScheduledReport_case:
+		ret.SetSinceLastSentScheduledReport(filters.GetSinceLastSentScheduledReport())
 
-	case *apiV2.VulnerabilityReportFilters_SinceStartDate:
-		ret.CvesSince = &storage.VulnerabilityReportFilters_SinceStartDate{
-			SinceStartDate: filters.GetSinceStartDate(),
-		}
+	case apiV2.VulnerabilityReportFilters_SinceStartDate_case:
+		ret.SetSinceStartDate(proto.ValueOrDefault(filters.GetSinceStartDate()))
 	}
 
 	return ret
@@ -122,7 +113,7 @@ func (s *serviceImpl) convertV2ResourceScopeToProto(scope *apiV2.ResourceScope) 
 
 	ret := &storage.ResourceScope{}
 	if scope.GetCollectionScope() != nil {
-		ret.ScopeReference = &storage.ResourceScope_CollectionId{CollectionId: scope.GetCollectionScope().GetCollectionId()}
+		ret.SetCollectionId(scope.GetCollectionScope().GetCollectionId())
 	}
 	return ret
 }
@@ -132,20 +123,15 @@ func (s *serviceImpl) convertV2NotifierConfigToProto(notifier *apiV2.NotifierCon
 		return nil
 	}
 
-	ret := &storage.NotifierConfiguration{
-		Ref: &storage.NotifierConfiguration_Id{
-			Id: notifier.GetEmailConfig().GetNotifierId(),
-		},
-	}
+	ret := &storage.NotifierConfiguration{}
+	ret.SetId(notifier.GetEmailConfig().GetNotifierId())
 
 	if emailConfig := notifier.GetEmailConfig(); emailConfig != nil {
-		ret.NotifierConfig = &storage.NotifierConfiguration_EmailConfig{
-			EmailConfig: &storage.EmailNotifierConfiguration{
-				MailingLists:  emailConfig.GetMailingLists(),
-				CustomSubject: emailConfig.GetCustomSubject(),
-				CustomBody:    emailConfig.GetCustomBody(),
-			},
-		}
+		enc := &storage.EmailNotifierConfiguration{}
+		enc.SetMailingLists(emailConfig.GetMailingLists())
+		enc.SetCustomSubject(emailConfig.GetCustomSubject())
+		enc.SetCustomBody(emailConfig.GetCustomBody())
+		ret.SetEmailConfig(proto.ValueOrDefault(enc))
 	}
 	return ret
 }
@@ -155,20 +141,19 @@ func (s *serviceImpl) convertV2ScheduleToProto(schedule *apiV2.ReportSchedule) *
 	if schedule == nil {
 		return nil
 	}
-	ret := &storage.Schedule{
-		IntervalType: v2IntervalTypeToStorage[schedule.GetIntervalType()],
-		Hour:         schedule.GetHour(),
-		Minute:       schedule.GetMinute(),
-	}
-	switch schedule.GetInterval().(type) {
-	case *apiV2.ReportSchedule_DaysOfWeek_:
-		ret.Interval = &storage.Schedule_DaysOfWeek_{
-			DaysOfWeek: &storage.Schedule_DaysOfWeek{Days: schedule.GetDaysOfWeek().GetDays()},
-		}
-	case *apiV2.ReportSchedule_DaysOfMonth_:
-		ret.Interval = &storage.Schedule_DaysOfMonth_{
-			DaysOfMonth: &storage.Schedule_DaysOfMonth{Days: schedule.GetDaysOfMonth().GetDays()},
-		}
+	ret := &storage.Schedule{}
+	ret.SetIntervalType(v2IntervalTypeToStorage[schedule.GetIntervalType()])
+	ret.SetHour(schedule.GetHour())
+	ret.SetMinute(schedule.GetMinute())
+	switch schedule.WhichInterval() {
+	case apiV2.ReportSchedule_DaysOfWeek_case:
+		sd := &storage.Schedule_DaysOfWeek{}
+		sd.SetDays(schedule.GetDaysOfWeek().GetDays())
+		ret.SetDaysOfWeek(proto.ValueOrDefault(sd))
+	case apiV2.ReportSchedule_DaysOfMonth_case:
+		sd := &storage.Schedule_DaysOfMonth{}
+		sd.SetDays(schedule.GetDaysOfMonth().GetDays())
+		ret.SetDaysOfMonth(proto.ValueOrDefault(sd))
 	}
 
 	return ret
@@ -189,19 +174,16 @@ func (s *serviceImpl) convertProtoReportConfigurationToV2(config *storage.Report
 		return nil, err
 	}
 
-	ret := &apiV2.ReportConfiguration{
-		Id:            config.GetId(),
-		Name:          config.GetName(),
-		Description:   config.GetDescription(),
-		Type:          apiV2.ReportConfiguration_ReportType(config.GetType()),
-		Schedule:      s.convertProtoScheduleToV2(config.GetSchedule()),
-		ResourceScope: resourceScope,
-	}
+	ret := &apiV2.ReportConfiguration{}
+	ret.SetId(config.GetId())
+	ret.SetName(config.GetName())
+	ret.SetDescription(config.GetDescription())
+	ret.SetType(apiV2.ReportConfiguration_ReportType(config.GetType()))
+	ret.SetSchedule(s.convertProtoScheduleToV2(config.GetSchedule()))
+	ret.SetResourceScope(resourceScope)
 
 	if config.GetVulnReportFilters() != nil {
-		ret.Filter = &apiV2.ReportConfiguration_VulnReportFilters{
-			VulnReportFilters: s.convertProtoVulnReportFiltersToV2(config.GetVulnReportFilters()),
-		}
+		ret.SetVulnReportFilters(proto.ValueOrDefault(s.convertProtoVulnReportFiltersToV2(config.GetVulnReportFilters())))
 	}
 
 	for _, notifier := range config.GetNotifiers() {
@@ -209,7 +191,7 @@ func (s *serviceImpl) convertProtoReportConfigurationToV2(config *storage.Report
 		if err != nil {
 			return nil, err
 		}
-		ret.Notifiers = append(ret.Notifiers, converted)
+		ret.SetNotifiers(append(ret.GetNotifiers(), converted))
 	}
 
 	return ret, nil
@@ -221,36 +203,29 @@ func (s *serviceImpl) convertProtoVulnReportFiltersToV2(filters *storage.Vulnera
 		return nil
 	}
 
-	ret := &apiV2.VulnerabilityReportFilters{
-		Fixability:             apiV2.VulnerabilityReportFilters_Fixability(filters.GetFixability()),
-		IncludeNvdCvss:         filters.GetIncludeNvdCvss(),
-		IncludeEpssProbability: filters.GetIncludeEpssProbability(),
-		IncludeAdvisory:        filters.GetIncludeAdvisory(),
-	}
+	ret := &apiV2.VulnerabilityReportFilters{}
+	ret.SetFixability(apiV2.VulnerabilityReportFilters_Fixability(filters.GetFixability()))
+	ret.SetIncludeNvdCvss(filters.GetIncludeNvdCvss())
+	ret.SetIncludeEpssProbability(filters.GetIncludeEpssProbability())
+	ret.SetIncludeAdvisory(filters.GetIncludeAdvisory())
 
 	for _, severity := range filters.GetSeverities() {
-		ret.Severities = append(ret.Severities, apiV2.VulnerabilityReportFilters_VulnerabilitySeverity(severity))
+		ret.SetSeverities(append(ret.GetSeverities(), apiV2.VulnerabilityReportFilters_VulnerabilitySeverity(severity)))
 	}
 
 	for _, imageType := range filters.GetImageTypes() {
-		ret.ImageTypes = append(ret.ImageTypes, apiV2.VulnerabilityReportFilters_ImageType(imageType))
+		ret.SetImageTypes(append(ret.GetImageTypes(), apiV2.VulnerabilityReportFilters_ImageType(imageType)))
 	}
 
-	switch filters.GetCvesSince().(type) {
-	case *storage.VulnerabilityReportFilters_AllVuln:
-		ret.CvesSince = &apiV2.VulnerabilityReportFilters_AllVuln{
-			AllVuln: filters.GetAllVuln(),
-		}
+	switch filters.WhichCvesSince() {
+	case storage.VulnerabilityReportFilters_AllVuln_case:
+		ret.SetAllVuln(filters.GetAllVuln())
 
-	case *storage.VulnerabilityReportFilters_SinceLastSentScheduledReport:
-		ret.CvesSince = &apiV2.VulnerabilityReportFilters_SinceLastSentScheduledReport{
-			SinceLastSentScheduledReport: filters.GetSinceLastSentScheduledReport(),
-		}
+	case storage.VulnerabilityReportFilters_SinceLastSentScheduledReport_case:
+		ret.SetSinceLastSentScheduledReport(filters.GetSinceLastSentScheduledReport())
 
-	case *storage.VulnerabilityReportFilters_SinceStartDate:
-		ret.CvesSince = &apiV2.VulnerabilityReportFilters_SinceStartDate{
-			SinceStartDate: filters.GetSinceStartDate(),
-		}
+	case storage.VulnerabilityReportFilters_SinceStartDate_case:
+		ret.SetSinceStartDate(proto.ValueOrDefault(filters.GetSinceStartDate()))
 	}
 
 	return ret
@@ -273,12 +248,10 @@ func (s *serviceImpl) convertProtoResourceScopeToV2(scope *storage.ResourceScope
 		}
 		collectionName = collection.GetName()
 
-		ret.ScopeReference = &apiV2.ResourceScope_CollectionScope{
-			CollectionScope: &apiV2.CollectionReference{
-				CollectionId:   scope.GetCollectionId(),
-				CollectionName: collectionName,
-			},
-		}
+		cr := &apiV2.CollectionReference{}
+		cr.SetCollectionId(scope.GetCollectionId())
+		cr.SetCollectionName(collectionName)
+		ret.SetCollectionScope(proto.ValueOrDefault(cr))
 	}
 	return ret, nil
 }
@@ -301,17 +274,15 @@ func (s *serviceImpl) convertProtoNotifierConfigToV2(notifierConfig *storage.Not
 		return nil, errors.Errorf("Notifier with ID %s no longer exists", notifierConfig.GetId())
 	}
 
-	return &apiV2.NotifierConfiguration{
-		NotifierName: notifier.GetName(),
-		NotifierConfig: &apiV2.NotifierConfiguration_EmailConfig{
-			EmailConfig: &apiV2.EmailNotifierConfiguration{
-				NotifierId:    notifierConfig.GetId(),
-				MailingLists:  notifierConfig.GetEmailConfig().GetMailingLists(),
-				CustomSubject: notifierConfig.GetEmailConfig().GetCustomSubject(),
-				CustomBody:    notifierConfig.GetEmailConfig().GetCustomBody(),
-			},
-		},
-	}, nil
+	enc := &apiV2.EmailNotifierConfiguration{}
+	enc.SetNotifierId(notifierConfig.GetId())
+	enc.SetMailingLists(notifierConfig.GetEmailConfig().GetMailingLists())
+	enc.SetCustomSubject(notifierConfig.GetEmailConfig().GetCustomSubject())
+	enc.SetCustomBody(notifierConfig.GetEmailConfig().GetCustomBody())
+	nc := &apiV2.NotifierConfiguration{}
+	nc.SetNotifierName(notifier.GetName())
+	nc.SetEmailConfig(proto.ValueOrDefault(enc))
+	return nc, nil
 }
 
 // convertProtoScheduleToV2 converts storage.Schedule to v2.ReportSchedule. Does not validate storage.Schedule
@@ -319,21 +290,20 @@ func (s *serviceImpl) convertProtoScheduleToV2(schedule *storage.Schedule) *apiV
 	if schedule == nil {
 		return nil
 	}
-	ret := &apiV2.ReportSchedule{
-		IntervalType: storageIntervalTypeToV2[schedule.GetIntervalType()],
-		Hour:         schedule.GetHour(),
-		Minute:       schedule.GetMinute(),
-	}
+	ret := &apiV2.ReportSchedule{}
+	ret.SetIntervalType(storageIntervalTypeToV2[schedule.GetIntervalType()])
+	ret.SetHour(schedule.GetHour())
+	ret.SetMinute(schedule.GetMinute())
 
-	switch schedule.GetInterval().(type) {
-	case *storage.Schedule_DaysOfWeek_:
-		ret.Interval = &apiV2.ReportSchedule_DaysOfWeek_{
-			DaysOfWeek: &apiV2.ReportSchedule_DaysOfWeek{Days: schedule.GetDaysOfWeek().GetDays()},
-		}
-	case *storage.Schedule_DaysOfMonth_:
-		ret.Interval = &apiV2.ReportSchedule_DaysOfMonth_{
-			DaysOfMonth: &apiV2.ReportSchedule_DaysOfMonth{Days: schedule.GetDaysOfMonth().GetDays()},
-		}
+	switch schedule.WhichInterval() {
+	case storage.Schedule_DaysOfWeek_case:
+		rd := &apiV2.ReportSchedule_DaysOfWeek{}
+		rd.SetDays(schedule.GetDaysOfWeek().GetDays())
+		ret.SetDaysOfWeek(proto.ValueOrDefault(rd))
+	case storage.Schedule_DaysOfMonth_case:
+		rd := &apiV2.ReportSchedule_DaysOfMonth{}
+		rd.SetDays(schedule.GetDaysOfMonth().GetDays())
+		ret.SetDaysOfMonth(proto.ValueOrDefault(rd))
 	}
 
 	return ret
@@ -343,13 +313,13 @@ func (s *serviceImpl) convertPrototoV2Reportstatus(status *storage.ReportStatus)
 	if status == nil {
 		return nil
 	}
-	return &apiV2.ReportStatus{
-		ReportRequestType:        apiV2.ReportStatus_ReportMethod(status.GetReportRequestType()),
-		CompletedAt:              status.GetCompletedAt(),
-		RunState:                 storageRunStateToV2[status.GetRunState()],
-		ReportNotificationMethod: apiV2.NotificationMethod(status.GetReportNotificationMethod()),
-		ErrorMsg:                 status.GetErrorMsg(),
-	}
+	rs := &apiV2.ReportStatus{}
+	rs.SetReportRequestType(apiV2.ReportStatus_ReportMethod(status.GetReportRequestType()))
+	rs.SetCompletedAt(status.GetCompletedAt())
+	rs.SetRunState(storageRunStateToV2[status.GetRunState()])
+	rs.SetReportNotificationMethod(apiV2.NotificationMethod(status.GetReportNotificationMethod()))
+	rs.SetErrorMsg(status.GetErrorMsg())
+	return rs
 }
 
 func (s *serviceImpl) convertProtoReportCollectiontoV2(collection *storage.CollectionSnapshot) *apiV2.CollectionSnapshot {
@@ -357,10 +327,10 @@ func (s *serviceImpl) convertProtoReportCollectiontoV2(collection *storage.Colle
 		return nil
 	}
 
-	return &apiV2.CollectionSnapshot{
-		Id:   collection.GetId(),
-		Name: collection.GetName(),
-	}
+	cs := &apiV2.CollectionSnapshot{}
+	cs.SetId(collection.GetId())
+	cs.SetName(collection.GetName())
+	return cs
 }
 
 // convertProtoNotifierSnapshotToV2 converts notifiersnapshot proto to v2
@@ -372,17 +342,15 @@ func (s *serviceImpl) convertProtoNotifierSnapshotToV2(notifierSnapshot *storage
 		return &apiV2.NotifierConfiguration{}
 	}
 
-	return &apiV2.NotifierConfiguration{
-		NotifierName: notifierSnapshot.GetNotifierName(),
-		NotifierConfig: &apiV2.NotifierConfiguration_EmailConfig{
-			EmailConfig: &apiV2.EmailNotifierConfiguration{
-				NotifierId:    notifierSnapshot.GetEmailConfig().GetNotifierId(),
-				MailingLists:  notifierSnapshot.GetEmailConfig().GetMailingLists(),
-				CustomSubject: notifierSnapshot.GetEmailConfig().GetCustomSubject(),
-				CustomBody:    notifierSnapshot.GetEmailConfig().GetCustomBody(),
-			},
-		},
-	}
+	enc := &apiV2.EmailNotifierConfiguration{}
+	enc.SetNotifierId(notifierSnapshot.GetEmailConfig().GetNotifierId())
+	enc.SetMailingLists(notifierSnapshot.GetEmailConfig().GetMailingLists())
+	enc.SetCustomSubject(notifierSnapshot.GetEmailConfig().GetCustomSubject())
+	enc.SetCustomBody(notifierSnapshot.GetEmailConfig().GetCustomBody())
+	nc := &apiV2.NotifierConfiguration{}
+	nc.SetNotifierName(notifierSnapshot.GetNotifierName())
+	nc.SetEmailConfig(proto.ValueOrDefault(enc))
+	return nc
 }
 
 // convertViewBasedPrototoV2ReportSnapshot converts storage.ReportSnapshot to apiV2.ReportSnapshot for view based reports
@@ -396,25 +364,21 @@ func (s *serviceImpl) convertViewBasedProtoReportSnapshotstoV2(snapshots []*stor
 	}
 	v2snaps := make([]*apiV2.ReportSnapshot, 0, len(snapshots))
 	for _, snapshot := range snapshots {
-		viewBasedFilters := &apiV2.ViewBasedVulnerabilityReportFilters{
-			Query: snapshot.GetViewBasedVulnReportFilters().GetQuery(),
-		}
-		snapshotv2 := &apiV2.ReportSnapshot{
-			ReportStatus:   s.convertPrototoV2Reportstatus(snapshot.GetReportStatus()),
-			ReportConfigId: snapshot.GetReportConfigurationId(),
-			ReportJobId:    snapshot.GetReportId(),
-			Name:           snapshot.GetName(),
-			Description:    snapshot.GetDescription(),
-			AreaOfConcern:  snapshot.GetAreaOfConcern(),
-			User: &apiV2.SlimUser{
-				Id:   snapshot.GetRequester().GetId(),
-				Name: snapshot.GetRequester().GetName(),
-			},
-			Filter: &apiV2.ReportSnapshot_ViewBasedVulnReportFilters{
-				ViewBasedVulnReportFilters: viewBasedFilters,
-			},
-			IsDownloadAvailable: blobNames.Contains(common.GetReportBlobPath("view-based-report", snapshot.GetReportId())),
-		}
+		viewBasedFilters := &apiV2.ViewBasedVulnerabilityReportFilters{}
+		viewBasedFilters.SetQuery(snapshot.GetViewBasedVulnReportFilters().GetQuery())
+		slimUser := &apiV2.SlimUser{}
+		slimUser.SetId(snapshot.GetRequester().GetId())
+		slimUser.SetName(snapshot.GetRequester().GetName())
+		snapshotv2 := &apiV2.ReportSnapshot{}
+		snapshotv2.SetReportStatus(s.convertPrototoV2Reportstatus(snapshot.GetReportStatus()))
+		snapshotv2.SetReportConfigId(snapshot.GetReportConfigurationId())
+		snapshotv2.SetReportJobId(snapshot.GetReportId())
+		snapshotv2.SetName(snapshot.GetName())
+		snapshotv2.SetDescription(snapshot.GetDescription())
+		snapshotv2.SetAreaOfConcern(snapshot.GetAreaOfConcern())
+		snapshotv2.SetUser(slimUser)
+		snapshotv2.SetViewBasedVulnReportFilters(proto.ValueOrDefault(viewBasedFilters))
+		snapshotv2.SetIsDownloadAvailable(blobNames.Contains(common.GetReportBlobPath("view-based-report", snapshot.GetReportId())))
 		v2snaps = append(v2snaps, snapshotv2)
 	}
 
@@ -432,27 +396,24 @@ func (s *serviceImpl) convertProtoReportSnapshotstoV2(snapshots []*storage.Repor
 	}
 	v2snaps := make([]*apiV2.ReportSnapshot, 0, len(snapshots))
 	for _, snapshot := range snapshots {
-		snapshotv2 := &apiV2.ReportSnapshot{
-			ReportStatus:       s.convertPrototoV2Reportstatus(snapshot.GetReportStatus()),
-			ReportConfigId:     snapshot.GetReportConfigurationId(),
-			ReportJobId:        snapshot.GetReportId(),
-			Name:               snapshot.GetName(),
-			Description:        snapshot.GetDescription(),
-			CollectionSnapshot: s.convertProtoReportCollectiontoV2(snapshot.GetCollection()),
-			User: &apiV2.SlimUser{
-				Id:   snapshot.GetRequester().GetId(),
-				Name: snapshot.GetRequester().GetName(),
-			},
-			Schedule: s.convertProtoScheduleToV2(snapshot.GetSchedule()),
-			Filter: &apiV2.ReportSnapshot_VulnReportFilters{
-				VulnReportFilters: s.convertProtoVulnReportFiltersToV2(snapshot.GetVulnReportFilters()),
-			},
-			IsDownloadAvailable: blobNames.Contains(common.GetReportBlobPath(snapshot.GetReportConfigurationId(), snapshot.GetReportId())),
-		}
+		slimUser := &apiV2.SlimUser{}
+		slimUser.SetId(snapshot.GetRequester().GetId())
+		slimUser.SetName(snapshot.GetRequester().GetName())
+		snapshotv2 := &apiV2.ReportSnapshot{}
+		snapshotv2.SetReportStatus(s.convertPrototoV2Reportstatus(snapshot.GetReportStatus()))
+		snapshotv2.SetReportConfigId(snapshot.GetReportConfigurationId())
+		snapshotv2.SetReportJobId(snapshot.GetReportId())
+		snapshotv2.SetName(snapshot.GetName())
+		snapshotv2.SetDescription(snapshot.GetDescription())
+		snapshotv2.SetCollectionSnapshot(s.convertProtoReportCollectiontoV2(snapshot.GetCollection()))
+		snapshotv2.SetUser(slimUser)
+		snapshotv2.SetSchedule(s.convertProtoScheduleToV2(snapshot.GetSchedule()))
+		snapshotv2.SetVulnReportFilters(proto.ValueOrDefault(s.convertProtoVulnReportFiltersToV2(snapshot.GetVulnReportFilters())))
+		snapshotv2.SetIsDownloadAvailable(blobNames.Contains(common.GetReportBlobPath(snapshot.GetReportConfigurationId(), snapshot.GetReportId())))
 		for _, notifier := range snapshot.GetNotifiers() {
 			converted := s.convertProtoNotifierSnapshotToV2(notifier)
 			if converted != nil {
-				snapshotv2.Notifiers = append(snapshotv2.Notifiers, converted)
+				snapshotv2.SetNotifiers(append(snapshotv2.GetNotifiers(), converted))
 			}
 		}
 		v2snaps = append(v2snaps, snapshotv2)

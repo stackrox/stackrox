@@ -132,7 +132,7 @@ func (resolver *policyResolver) Deployments(ctx context.Context, args PaginatedQ
 	}
 
 	pagination := deploymentFilterQuery.GetPagination()
-	deploymentFilterQuery.Pagination = nil
+	deploymentFilterQuery.ClearPagination()
 
 	deploymentIDs, err := resolver.getDeploymentsForPolicy(ctx)
 	if err != nil {
@@ -141,7 +141,7 @@ func (resolver *policyResolver) Deployments(ctx context.Context, args PaginatedQ
 
 	deploymentQuery := search.ConjunctionQuery(deploymentFilterQuery,
 		search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deploymentIDs...).ProtoQuery())
-	deploymentQuery.Pagination = pagination
+	deploymentQuery.SetPagination(pagination)
 
 	deploymentLoader, err := loaders.GetDeploymentLoader(ctx)
 	if err != nil {
@@ -196,7 +196,7 @@ func (resolver *policyResolver) failingDeployments(ctx context.Context, q *v1.Qu
 	}
 
 	deploymentQuery := search.ConjunctionQuery(q, search.NewQueryBuilder().AddDocIDs(deploymentIDs...).ProtoQuery())
-	deploymentQuery.Pagination = q.GetPagination()
+	deploymentQuery.SetPagination(q.GetPagination())
 
 	deploymentLoader, err := loaders.GetDeploymentLoader(ctx)
 	if err != nil {
@@ -360,7 +360,7 @@ func inverseFilterFailingDeploymentsQuery(q *v1.Query) (*v1.Query, bool) {
 		return true
 	})
 	if filtered != nil {
-		filtered.Pagination = q.GetPagination()
+		filtered.SetPagination(q.GetPagination())
 	}
 	return filtered, isFailingDeploymentsQuery
 }

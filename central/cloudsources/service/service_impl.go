@@ -80,7 +80,9 @@ func (s *serviceImpl) CountCloudSources(ctx context.Context, request *v1.CountCl
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to count cloud sources")
 	}
-	return &v1.CountCloudSourcesResponse{Count: int32(count)}, nil
+	ccsr := &v1.CountCloudSourcesResponse{}
+	ccsr.SetCount(int32(count))
+	return ccsr, nil
 }
 
 // GetCloudSource returns a specific cloud source based on its ID.
@@ -94,7 +96,9 @@ func (s *serviceImpl) GetCloudSource(ctx context.Context, request *v1.GetCloudSo
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get cloud source %q", resourceID)
 	}
-	return &v1.GetCloudSourceResponse{CloudSource: storagetov1.CloudSource(cloudSource)}, nil
+	gcsr := &v1.GetCloudSourceResponse{}
+	gcsr.SetCloudSource(storagetov1.CloudSource(cloudSource))
+	return gcsr, nil
 }
 
 // ListCloudSources returns all cloud sources matching the request query.
@@ -102,12 +106,10 @@ func (s *serviceImpl) ListCloudSources(ctx context.Context, request *v1.ListClou
 ) (*v1.ListCloudSourcesResponse, error) {
 	query := getQueryBuilderFromFilter(request.GetFilter()).ProtoQuery()
 	paginated.FillPagination(query, request.GetPagination(), maxPaginationLimit)
+	qso := &v1.QuerySortOption{}
+	qso.SetField(search.IntegrationName.String())
 	query = paginated.FillDefaultSortOption(
-		query,
-		&v1.QuerySortOption{
-			Field: search.IntegrationName.String(),
-		},
-	)
+		query, qso)
 
 	cloudSources, err := s.ds.ListCloudSources(ctx, query)
 	if err != nil {
@@ -117,7 +119,9 @@ func (s *serviceImpl) ListCloudSources(ctx context.Context, request *v1.ListClou
 	for _, cs := range cloudSources {
 		v1CloudSources = append(v1CloudSources, storagetov1.CloudSource(cs))
 	}
-	return &v1.ListCloudSourcesResponse{CloudSources: v1CloudSources}, nil
+	lcsr := &v1.ListCloudSourcesResponse{}
+	lcsr.SetCloudSources(v1CloudSources)
+	return lcsr, nil
 }
 
 // CreateCloudSource creates a new cloud source.
@@ -130,7 +134,7 @@ func (s *serviceImpl) CreateCloudSource(ctx context.Context, request *v1.CreateC
 	if v1CloudSource.GetId() != "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "id field must be empty when creating a new cloud source")
 	}
-	v1CloudSource.Id = uuid.NewV4().String()
+	v1CloudSource.SetId(uuid.NewV4().String())
 	storageCloudSource := v1tostorage.CloudSource(v1CloudSource)
 
 	if !v1CloudSource.GetSkipTestIntegration() {
@@ -145,7 +149,9 @@ func (s *serviceImpl) CreateCloudSource(ctx context.Context, request *v1.CreateC
 	}
 	// Short-circuit the cloud sources manager to ensure the latest changes are propagated.
 	s.mgr.ShortCircuit()
-	return &v1.CreateCloudSourceResponse{CloudSource: storagetov1.CloudSource(storageCloudSource)}, nil
+	ccsr := &v1.CreateCloudSourceResponse{}
+	ccsr.SetCloudSource(storagetov1.CloudSource(storageCloudSource))
+	return ccsr, nil
 }
 
 // UpdateCloudSource creates or updates a cloud source.

@@ -438,37 +438,37 @@ func (n *notifier) Test(ctx context.Context) *notifiers.NotifierError {
 		return notifiers.NewNotifierError("get findings from AWS Security Hub failed", createError("error testing AWS Security Hub integration", err, n.descriptor.GetName()))
 	}
 
-	testAlert := &storage.Alert{
+	testAlert := storage.Alert_builder{
 		Id: uuid.NewV4().String(),
-		Policy: &storage.Policy{
+		Policy: storage.Policy_builder{
 			Id:          uuid.NewV4().String(),
 			Name:        "example policy",
 			Severity:    storage.Severity_HIGH_SEVERITY,
 			Description: "This finding tests the SecurityHub integration",
-		},
-		Entity: &storage.Alert_Deployment_{Deployment: &storage.Alert_Deployment{
+		}.Build(),
+		Deployment: storage.Alert_Deployment_builder{
 			Id:          uuid.NewV4().String(),
 			Name:        "example deployment",
 			Namespace:   "example namespace",
 			ClusterId:   uuid.NewV4().String(),
 			ClusterName: "example cluster",
 			Containers: []*storage.Alert_Deployment_Container{
-				{
+				storage.Alert_Deployment_Container_builder{
 					Name: "example container",
-					Image: &storage.ContainerImage{
+					Image: storage.ContainerImage_builder{
 						Id: uuid.NewV4().String(),
-						Name: &storage.ImageName{
+						Name: storage.ImageName_builder{
 							FullName: "registry/path/to/image:tag",
-						},
-					},
-				},
+						}.Build(),
+					}.Build(),
+				}.Build(),
 			},
-		}},
+		}.Build(),
 		FirstOccurred: protocompat.TimestampNow(),
 		Time:          protocompat.TimestampNow(),
 		// Mark the state as resolved, thus indicating to security hub that all is good and avoiding raising a false alert.
 		State: storage.ViolationState_RESOLVED,
-	}
+	}.Build()
 	_, err = n.securityHub.BatchImportFindings(ctx, &securityhub.BatchImportFindingsInput{
 		Findings: []securityhubTypes.AwsSecurityFinding{
 			mapAlertToFinding(n.account, n.arn, notifiers.AlertLink(n.ProtoNotifier().GetUiEndpoint(), testAlert), testAlert),

@@ -69,11 +69,11 @@ func (v *ViolationsMultiplier) Score(ctx context.Context, deployment *storage.De
 		return nil
 	}
 	score := multipliers.NormalizeScore(severitySum, policySaturation, policyMaxValue)
-	return &storage.Risk_Result{
-		Name:    PolicyViolationsHeading,
-		Factors: policyFactors(factors),
-		Score:   score,
-	}
+	rr := &storage.Risk_Result{}
+	rr.SetName(PolicyViolationsHeading)
+	rr.SetFactors(policyFactors(factors))
+	rr.SetScore(score)
+	return rr
 }
 
 func severityImpact(severity storage.Severity) float32 {
@@ -97,8 +97,9 @@ func policyFactors(pfs []policyFactor) (factors []*storage.Risk_Result_Factor) {
 
 	factors = make([]*storage.Risk_Result_Factor, 0, len(pfs))
 	for _, pf := range pfs {
-		factors = append(factors,
-			&storage.Risk_Result_Factor{Message: fmt.Sprintf("%s (severity: %s)", pf.name, severityString(pf.severity))})
+		rrf := &storage.Risk_Result_Factor{}
+		rrf.SetMessage(fmt.Sprintf("%s (severity: %s)", pf.name, severityString(pf.severity)))
+		factors = append(factors, rrf)
 	}
 	return
 }

@@ -115,7 +115,7 @@ func (b *datastoreImpl) RevokeToken(ctx context.Context, id string) (bool, error
 	if !exists {
 		return false, nil
 	}
-	token.Revoked = true
+	token.SetRevoked(true)
 
 	if err := b.storage.Upsert(ctx, token); err != nil {
 		return false, err

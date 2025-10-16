@@ -65,7 +65,9 @@ func (s *serviceImpl) GetReportConfigurations(ctx context.Context, query *v1.Raw
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve report configurations")
 	}
-	return &v1.GetReportConfigurationsResponse{ReportConfigs: reportConfigs}, nil
+	grcr := &v1.GetReportConfigurationsResponse{}
+	grcr.SetReportConfigs(reportConfigs)
+	return grcr, nil
 }
 
 func (s *serviceImpl) GetReportConfiguration(ctx context.Context, id *v1.ResourceByID) (*v1.GetReportConfigurationResponse, error) {
@@ -79,9 +81,9 @@ func (s *serviceImpl) GetReportConfiguration(ctx context.Context, id *v1.Resourc
 	if !common.IsV1ReportConfig(reportConfig) {
 		return nil, errors.Wrap(errox.InvalidArgs, "report configuration does not belong to reporting version 1.0")
 	}
-	return &v1.GetReportConfigurationResponse{
-		ReportConfig: reportConfig,
-	}, nil
+	grcr := &v1.GetReportConfigurationResponse{}
+	grcr.SetReportConfig(reportConfig)
+	return grcr, nil
 }
 
 func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *v1.PostReportConfigurationRequest) (*v1.PostReportConfigurationResponse, error) {
@@ -98,9 +100,9 @@ func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *v1.P
 		return nil, err
 	}
 
-	return &v1.PostReportConfigurationResponse{
-		ReportConfig: createdReportConfig,
-	}, err
+	prcr := &v1.PostReportConfigurationResponse{}
+	prcr.SetReportConfig(createdReportConfig)
+	return prcr, err
 }
 
 func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *v1.UpdateReportConfigurationRequest) (*v1.Empty, error) {
@@ -151,7 +153,9 @@ func (s *serviceImpl) CountReportConfigurations(ctx context.Context, request *v1
 	if err != nil {
 		return nil, err
 	}
-	return &v1.CountReportConfigurationsResponse{Count: int32(numReportConfigs)}, nil
+	crcr := &v1.CountReportConfigurationsResponse{}
+	crcr.SetCount(int32(numReportConfigs))
+	return crcr, nil
 }
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {

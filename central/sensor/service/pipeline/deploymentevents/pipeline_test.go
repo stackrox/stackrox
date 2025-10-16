@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestPipeline(t *testing.T) {
@@ -69,17 +70,13 @@ func (suite *PipelineTestSuite) TestDeploymentRemovePipeline() {
 	suite.graphEvaluator.EXPECT().IncrementEpoch(deployment.GetClusterId())
 	suite.networkBaselines.EXPECT().ProcessDeploymentDelete(gomock.Any()).Return(nil)
 
-	err := suite.pipeline.Run(context.Background(), deployment.GetClusterId(), &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id:     deployment.GetId(),
-				Action: central.ResourceAction_REMOVE_RESOURCE,
-				Resource: &central.SensorEvent_Deployment{
-					Deployment: deployment,
-				},
-			},
-		},
-	}, nil)
+	se := &central.SensorEvent{}
+	se.SetId(deployment.GetId())
+	se.SetAction(central.ResourceAction_REMOVE_RESOURCE)
+	se.SetDeployment(proto.ValueOrDefault(deployment))
+	err := suite.pipeline.Run(context.Background(), deployment.GetClusterId(), central.MsgFromSensor_builder{
+		Event: se,
+	}.Build(), nil)
 	suite.NoError(err)
 }
 
@@ -90,17 +87,13 @@ func (suite *PipelineTestSuite) TestSensorReconcileDeploymentRemove() {
 	suite.graphEvaluator.EXPECT().IncrementEpoch(deployment.GetClusterId())
 	suite.networkBaselines.EXPECT().ProcessDeploymentDelete(gomock.Any()).Return(nil)
 
-	err := suite.pipeline.Run(context.Background(), deployment.GetClusterId(), &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id:     deployment.GetId(),
-				Action: central.ResourceAction_REMOVE_RESOURCE,
-				Resource: &central.SensorEvent_Deployment{
-					Deployment: &storage.Deployment{Id: deployment.GetId()},
-				},
-			},
-		},
-	}, nil)
+	err := suite.pipeline.Run(context.Background(), deployment.GetClusterId(), central.MsgFromSensor_builder{
+		Event: central.SensorEvent_builder{
+			Id:         deployment.GetId(),
+			Action:     central.ResourceAction_REMOVE_RESOURCE,
+			Deployment: storage.Deployment_builder{Id: deployment.GetId()}.Build(),
+		}.Build(),
+	}.Build(), nil)
 	suite.NoError(err)
 }
 
@@ -114,20 +107,16 @@ func (suite *PipelineTestSuite) TestCreateNetworkBaseline() {
 	suite.graphEvaluator.EXPECT().IncrementEpoch(gomock.Any()).Return()
 	suite.processAggregator.EXPECT().RefreshDeployment(gomock.Any()).AnyTimes()
 
+	se := &central.SensorEvent{}
+	se.SetId(deployment.GetId())
+	se.SetAction(central.ResourceAction_CREATE_RESOURCE)
+	se.SetDeployment(proto.ValueOrDefault(deployment))
 	err := suite.pipeline.Run(
 		context.Background(),
 		deployment.GetClusterId(),
-		&central.MsgFromSensor{
-			Msg: &central.MsgFromSensor_Event{
-				Event: &central.SensorEvent{
-					Id:     deployment.GetId(),
-					Action: central.ResourceAction_CREATE_RESOURCE,
-					Resource: &central.SensorEvent_Deployment{
-						Deployment: deployment,
-					},
-				},
-			},
-		},
+		central.MsgFromSensor_builder{
+			Event: se,
+		}.Build(),
 		nil)
 	suite.Nil(err)
 }
@@ -163,70 +152,62 @@ func (suite *PipelineTestSuite) TestValidateImages() {
 // Create a set of fake deployments for testing.
 func fakeDeploymentEvents() []*central.SensorEvent {
 	return []*central.SensorEvent{
-		{
-			Resource: &central.SensorEvent_Deployment{
-				Deployment: &storage.Deployment{
-					Id: "id1",
-					Containers: []*storage.Container{
-						{
-							Image: &storage.ContainerImage{
-								Id: "sha1",
-							},
-						},
-					},
+		central.SensorEvent_builder{
+			Deployment: storage.Deployment_builder{
+				Id: "id1",
+				Containers: []*storage.Container{
+					storage.Container_builder{
+						Image: storage.ContainerImage_builder{
+							Id: "sha1",
+						}.Build(),
+					}.Build(),
 				},
-			},
+			}.Build(),
 			Action: central.ResourceAction_CREATE_RESOURCE,
-		},
-		{
-			Resource: &central.SensorEvent_Deployment{
-				Deployment: &storage.Deployment{
-					Id: "id2",
-					Containers: []*storage.Container{
-						{
-							Image: &storage.ContainerImage{
-								Id: "sha1",
-							},
-						},
-					},
+		}.Build(),
+		central.SensorEvent_builder{
+			Deployment: storage.Deployment_builder{
+				Id: "id2",
+				Containers: []*storage.Container{
+					storage.Container_builder{
+						Image: storage.ContainerImage_builder{
+							Id: "sha1",
+						}.Build(),
+					}.Build(),
 				},
-			},
+			}.Build(),
 			Action: central.ResourceAction_CREATE_RESOURCE,
-		},
-		{
-			Resource: &central.SensorEvent_Deployment{
-				Deployment: &storage.Deployment{
-					Id: "id3",
-					Containers: []*storage.Container{
-						{
-							Image: &storage.ContainerImage{
-								Id: "sha2",
-							},
-						},
-					},
+		}.Build(),
+		central.SensorEvent_builder{
+			Deployment: storage.Deployment_builder{
+				Id: "id3",
+				Containers: []*storage.Container{
+					storage.Container_builder{
+						Image: storage.ContainerImage_builder{
+							Id: "sha2",
+						}.Build(),
+					}.Build(),
 				},
-			},
+			}.Build(),
 			Action: central.ResourceAction_CREATE_RESOURCE,
-		},
-		{
-			Resource: &central.SensorEvent_Deployment{
-				Deployment: &storage.Deployment{
-					Id: "id4",
-					Containers: []*storage.Container{
-						{
-							Image: &storage.ContainerImage{
-								Id: "sha2",
-							},
-						},
-						{
-							Image: &storage.ContainerImage{
-								Id: "sha2",
-							},
-						},
-					},
+		}.Build(),
+		central.SensorEvent_builder{
+			Deployment: storage.Deployment_builder{
+				Id: "id4",
+				Containers: []*storage.Container{
+					storage.Container_builder{
+						Image: storage.ContainerImage_builder{
+							Id: "sha2",
+						}.Build(),
+					}.Build(),
+					storage.Container_builder{
+						Image: storage.ContainerImage_builder{
+							Id: "sha2",
+						}.Build(),
+					}.Build(),
 				},
-			},
+			}.Build(),
 			Action: central.ResourceAction_CREATE_RESOURCE,
-		},
+		}.Build(),
 	}
 }

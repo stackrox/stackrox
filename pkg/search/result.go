@@ -23,7 +23,9 @@ func NewResult() *Result {
 func GetProtoMatchesMap(m map[string][]string) map[string]*v1.SearchResult_Matches {
 	matches := make(map[string]*v1.SearchResult_Matches)
 	for k, v := range m {
-		matches[k] = &v1.SearchResult_Matches{Values: v}
+		sm := &v1.SearchResult_Matches{}
+		sm.SetValues(v)
+		matches[k] = sm
 	}
 	return matches
 }

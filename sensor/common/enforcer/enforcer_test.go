@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"google.golang.org/protobuf/proto"
 )
 
 type alertEnforcementPair struct {
@@ -16,18 +17,18 @@ type alertEnforcementPair struct {
 
 func TestProcessAlertResults(t *testing.T) {
 	alert1 := fixtures.GetAlert()
-	alert1.GetDeployment().Id = "dep1"
-	alert1.ProcessViolation = &storage.Alert_ProcessViolation{
-		Processes: []*storage.ProcessIndicator{
-			{
-				Id:    "pid",
-				PodId: "pod1",
-			},
-		},
-	}
+	alert1.GetDeployment().SetId("dep1")
+	pi := &storage.ProcessIndicator{}
+	pi.SetId("pid")
+	pi.SetPodId("pod1")
+	ap := &storage.Alert_ProcessViolation{}
+	ap.SetProcesses([]*storage.ProcessIndicator{
+		pi,
+	})
+	alert1.SetProcessViolation(ap)
 
 	alert2 := fixtures.GetAlert()
-	alert2.GetDeployment().Id = "dep2"
+	alert2.GetDeployment().SetId("dep2")
 
 	cases := []struct {
 		name                 string
@@ -81,18 +82,14 @@ func TestProcessAlertResults(t *testing.T) {
 				},
 			},
 			expectedEnforcements: []*central.SensorEnforcement{
-				{
+				central.SensorEnforcement_builder{
 					Enforcement: storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT,
-					Resource: &central.SensorEnforcement_Deployment{
-						Deployment: generateDeploymentEnforcement(alert1),
-					},
-				},
-				{
+					Deployment:  proto.ValueOrDefault(generateDeploymentEnforcement(alert1)),
+				}.Build(),
+				central.SensorEnforcement_builder{
 					Enforcement: storage.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT,
-					Resource: &central.SensorEnforcement_Deployment{
-						Deployment: generateDeploymentEnforcement(alert2),
-					},
-				},
+					Deployment:  proto.ValueOrDefault(generateDeploymentEnforcement(alert2)),
+				}.Build(),
 			},
 		},
 		{
@@ -117,15 +114,13 @@ func TestProcessAlertResults(t *testing.T) {
 				},
 			},
 			expectedEnforcements: []*central.SensorEnforcement{
-				{
+				central.SensorEnforcement_builder{
 					Enforcement: storage.EnforcementAction_KILL_POD_ENFORCEMENT,
-					Resource: &central.SensorEnforcement_ContainerInstance{
-						ContainerInstance: &central.ContainerInstanceEnforcement{
-							PodId:                 alert1.GetProcessViolation().GetProcesses()[0].GetPodId(),
-							DeploymentEnforcement: generateDeploymentEnforcement(alert1),
-						},
-					},
-				},
+					ContainerInstance: central.ContainerInstanceEnforcement_builder{
+						PodId:                 alert1.GetProcessViolation().GetProcesses()[0].GetPodId(),
+						DeploymentEnforcement: generateDeploymentEnforcement(alert1),
+					}.Build(),
+				}.Build(),
 			},
 		},
 	}
@@ -136,10 +131,10 @@ func TestProcessAlertResults(t *testing.T) {
 
 			results := &central.AlertResults{}
 			for _, pair := range c.alerts {
-				pair.alert.Enforcement = &storage.Alert_Enforcement{
-					Action: pair.enforcement,
-				}
-				results.Alerts = append(results.Alerts, pair.alert)
+				ae := &storage.Alert_Enforcement{}
+				ae.SetAction(pair.enforcement)
+				pair.alert.SetEnforcement(ae)
+				results.SetAlerts(append(results.GetAlerts(), pair.alert))
 			}
 
 			enforcer.ProcessAlertResults(c.action, c.stage, results)

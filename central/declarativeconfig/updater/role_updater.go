@@ -64,7 +64,7 @@ func (u *roleUpdater) DeleteResources(ctx context.Context, resourceIDsToSkip ...
 				log.Errorf("Failed to update the declarative config health status %q: %v", role.GetName(), err)
 			}
 			if errors.Is(err, errox.ReferencedByAnotherObject) {
-				role.Traits.Origin = storage.Traits_DECLARATIVE_ORPHANED
+				role.GetTraits().SetOrigin(storage.Traits_DECLARATIVE_ORPHANED)
 				if err = u.roleDS.UpdateRole(ctx, role); err != nil {
 					roleDeletionErr = multierror.Append(roleDeletionErr, errors.Wrap(err, "setting origin to orphaned"))
 				}

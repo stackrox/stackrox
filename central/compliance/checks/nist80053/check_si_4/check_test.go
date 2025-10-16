@@ -12,17 +12,17 @@ import (
 
 func getClusterWithLastContactTime(timestamp *time.Time) *storage.Cluster {
 	if timestamp == nil {
-		return &storage.Cluster{
-			HealthStatus: &storage.ClusterHealthStatus{
-				LastContact: nil,
-			},
-		}
+		chs := &storage.ClusterHealthStatus{}
+		chs.ClearLastContact()
+		cluster := &storage.Cluster{}
+		cluster.SetHealthStatus(chs)
+		return cluster
 	}
-	return &storage.Cluster{
-		HealthStatus: &storage.ClusterHealthStatus{
-			LastContact: protoconv.ConvertTimeToTimestamp(*timestamp),
-		},
-	}
+	chs := &storage.ClusterHealthStatus{}
+	chs.SetLastContact(protoconv.ConvertTimeToTimestamp(*timestamp))
+	cluster := &storage.Cluster{}
+	cluster.SetHealthStatus(chs)
+	return cluster
 }
 
 func TestCheckClusterCheckedInInThePastHour(t *testing.T) {

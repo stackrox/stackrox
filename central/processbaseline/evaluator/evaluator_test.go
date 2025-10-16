@@ -62,10 +62,10 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 		},
 		{
 			name: "Locked process baseline, but all processes in baseline",
-			baseline: &storage.ProcessBaseline{
+			baseline: storage.ProcessBaseline_builder{
 				StackRoxLockedTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
 				Elements:                fixtures.MakeBaselineElements("/bin/apt-get", "/unrelated"),
-			},
+			}.Build(),
 			indicators: []*views.ProcessIndicatorRiskView{
 				{
 					ExecFilePath:  "/bin/apt-get",
@@ -80,9 +80,9 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 		},
 		{
 			name: "Locked process baseline, one not-in-baseline process",
-			baseline: &storage.ProcessBaseline{
+			baseline: storage.ProcessBaseline_builder{
 				StackRoxLockedTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
-			},
+			}.Build(),
 			indicators: []*views.ProcessIndicatorRiskView{
 				{
 					ExecFilePath:  "apt-get",
@@ -98,9 +98,9 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 		},
 		{
 			name: "Locked process baseline, two not-in-baseline processes",
-			baseline: &storage.ProcessBaseline{
+			baseline: storage.ProcessBaseline_builder{
 				StackRoxLockedTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
-			},
+			}.Build(),
 			indicators: []*views.ProcessIndicatorRiskView{
 				{
 					ExecFilePath:  "apt-get",
@@ -121,10 +121,10 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 		},
 		{
 			name: "Locked process baseline, two not-in-baseline processes from different containers",
-			baseline: &storage.ProcessBaseline{
+			baseline: storage.ProcessBaseline_builder{
 				StackRoxLockedTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
 				Elements:                fixtures.MakeBaselineElements("/bin/apt-get"),
-			},
+			}.Build(),
 			indicators: []*views.ProcessIndicatorRiskView{
 				{
 					ExecFilePath:  "/bin/not-apt-get",
@@ -150,10 +150,10 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 		},
 		{
 			name: "Locked process baseline, two not-in-baseline processes from different containers. result already exists",
-			baseline: &storage.ProcessBaseline{
+			baseline: storage.ProcessBaseline_builder{
 				StackRoxLockedTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
 				Elements:                fixtures.MakeBaselineElements("/bin/apt-get"),
-			},
+			}.Build(),
 			indicators: []*views.ProcessIndicatorRiskView{
 				{
 					ExecFilePath:  "/bin/not-apt-get",
@@ -174,28 +174,28 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 			expectedIndicatorIndices:   []int{0, 2},
 			baselineStatuses:           makeBaselineStatuses(t, "LOCKED", "LOCKED"),
 			anomalousProcessesExecuted: []bool{true, true},
-			currentBaselineResults: &storage.ProcessBaselineResults{
+			currentBaselineResults: storage.ProcessBaselineResults_builder{
 				BaselineStatuses: []*storage.ContainerNameAndBaselineStatus{
-					{
+					storage.ContainerNameAndBaselineStatus_builder{
 						ContainerName:              deployment.GetContainers()[1].GetName(),
 						BaselineStatus:             storage.ContainerNameAndBaselineStatus_LOCKED,
 						AnomalousProcessesExecuted: true,
-					},
-					{
+					}.Build(),
+					storage.ContainerNameAndBaselineStatus_builder{
 						ContainerName:              deployment.GetContainers()[0].GetName(),
 						BaselineStatus:             storage.ContainerNameAndBaselineStatus_LOCKED,
 						AnomalousProcessesExecuted: true,
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 			shouldBePersisted: false,
 		},
 		{
 			name: "Locked process baseline, two not-in-baseline processes from different containers. result already exists, but needs an update",
-			baseline: &storage.ProcessBaseline{
+			baseline: storage.ProcessBaseline_builder{
 				StackRoxLockedTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
 				Elements:                fixtures.MakeBaselineElements("/bin/apt-get"),
-			},
+			}.Build(),
 			indicators: []*views.ProcessIndicatorRiskView{
 				{
 					ExecFilePath:  "/bin/not-apt-get",
@@ -216,20 +216,20 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 			expectedIndicatorIndices:   []int{0, 2},
 			baselineStatuses:           makeBaselineStatuses(t, "LOCKED", "LOCKED"),
 			anomalousProcessesExecuted: []bool{true, true},
-			currentBaselineResults: &storage.ProcessBaselineResults{
+			currentBaselineResults: storage.ProcessBaselineResults_builder{
 				BaselineStatuses: []*storage.ContainerNameAndBaselineStatus{
-					{
+					storage.ContainerNameAndBaselineStatus_builder{
 						ContainerName:              deployment.GetContainers()[1].GetName(),
 						BaselineStatus:             storage.ContainerNameAndBaselineStatus_UNLOCKED,
 						AnomalousProcessesExecuted: true,
-					},
-					{
+					}.Build(),
+					storage.ContainerNameAndBaselineStatus_builder{
 						ContainerName:              deployment.GetContainers()[0].GetName(),
 						BaselineStatus:             storage.ContainerNameAndBaselineStatus_LOCKED,
 						AnomalousProcessesExecuted: true,
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 			shouldBePersisted: true,
 		},
 	}
@@ -254,17 +254,16 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 					}).Return(c.indicatorErr)
 			}
 
-			expectedBaselineResult := &storage.ProcessBaselineResults{
-				DeploymentId: deployment.GetId(),
-				ClusterId:    deployment.GetClusterId(),
-				Namespace:    deployment.GetNamespace(),
-			}
+			expectedBaselineResult := &storage.ProcessBaselineResults{}
+			expectedBaselineResult.SetDeploymentId(deployment.GetId())
+			expectedBaselineResult.SetClusterId(deployment.GetClusterId())
+			expectedBaselineResult.SetNamespace(deployment.GetNamespace())
 			for i, container := range deployment.GetContainers() {
-				expectedBaselineResult.BaselineStatuses = append(expectedBaselineResult.BaselineStatuses, &storage.ContainerNameAndBaselineStatus{
-					ContainerName:              container.GetName(),
-					BaselineStatus:             c.baselineStatuses[i],
-					AnomalousProcessesExecuted: c.anomalousProcessesExecuted[i],
-				})
+				cnabs := &storage.ContainerNameAndBaselineStatus{}
+				cnabs.SetContainerName(container.GetName())
+				cnabs.SetBaselineStatus(c.baselineStatuses[i])
+				cnabs.SetAnomalousProcessesExecuted(c.anomalousProcessesExecuted[i])
+				expectedBaselineResult.SetBaselineStatuses(append(expectedBaselineResult.GetBaselineStatuses(), cnabs))
 			}
 			mockResults.EXPECT().GetBaselineResults(gomock.Any(), deployment.GetId()).Return(c.currentBaselineResults, nil)
 

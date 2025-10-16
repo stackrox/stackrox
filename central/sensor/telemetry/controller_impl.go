@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -65,17 +66,14 @@ func (c *controller) streamingRequest(ctx context.Context, dataType central.Pull
 	if err != nil {
 		return errors.Wrap(err, "could not convert Since timestamp")
 	}
-	msg := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_TelemetryDataRequest{
-			TelemetryDataRequest: &central.PullTelemetryDataRequest{
-				RequestId:              requestID,
-				DataType:               dataType,
-				TimeoutMs:              timeoutMs,
-				Since:                  sinceTs,
-				WithComplianceOperator: opts.WithComplianceOperator,
-			},
-		},
-	}
+	ptdr := &central.PullTelemetryDataRequest{}
+	ptdr.SetRequestId(requestID)
+	ptdr.SetDataType(dataType)
+	ptdr.SetTimeoutMs(timeoutMs)
+	ptdr.SetSince(sinceTs)
+	ptdr.SetWithComplianceOperator(opts.WithComplianceOperator)
+	msg := &central.MsgToSensor{}
+	msg.SetTelemetryDataRequest(proto.ValueOrDefault(ptdr))
 
 	retC := make(chan *central.TelemetryResponsePayload, 1)
 	concurrency.WithLock(&c.returnChansMutex, func() {
@@ -136,13 +134,10 @@ func (c *controller) sendCancellation(requestID string) {
 		return
 	}
 
-	cancelMsg := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_CancelPullTelemetryDataRequest{
-			CancelPullTelemetryDataRequest: &central.CancelPullTelemetryDataRequest{
-				RequestId: requestID,
-			},
-		},
-	}
+	cptdr := &central.CancelPullTelemetryDataRequest{}
+	cptdr.SetRequestId(requestID)
+	cancelMsg := &central.MsgToSensor{}
+	cancelMsg.SetCancelPullTelemetryDataRequest(proto.ValueOrDefault(cptdr))
 
 	// We don't care about any error - it can only be a context or stop error; the first is impossible because we're
 	// using the background context, and in the second we're fine not sending a cancellation as the connection is going

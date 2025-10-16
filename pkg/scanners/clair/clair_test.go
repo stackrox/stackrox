@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	clairV1 "github.com/stackrox/scanner/api/v1"
 	"github.com/stretchr/testify/suite"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestClairSuite(t *testing.T) {
@@ -45,13 +46,10 @@ func (suite *ClairSuite) SetupSuite() {
 	// Set the global variable of the Clair endpoint
 	suite.server = masterServer
 
-	protoScanner := &storage.ImageIntegration{
-		IntegrationConfig: &storage.ImageIntegration_Clair{
-			Clair: &storage.ClairConfig{
-				Endpoint: "http://" + masterServer.Listener.Addr().String(),
-			},
-		},
-	}
+	cc := &storage.ClairConfig{}
+	cc.SetEndpoint("http://" + masterServer.Listener.Addr().String())
+	protoScanner := &storage.ImageIntegration{}
+	protoScanner.SetClair(proto.ValueOrDefault(cc))
 
 	var err error
 	// newScanner is tested within setup
@@ -71,19 +69,18 @@ func (suite *ClairSuite) TestScanTest() {
 }
 
 func (suite *ClairSuite) TestGetScan() {
-	image := &storage.Image{
-		Name: &storage.ImageName{
-			Registry: "quay.io",
-			Remote:   "integration/nginx",
-			Tag:      "1.10",
-		},
-		Metadata: &storage.ImageMetadata{
-			LayerShas: []string{
-				"sha256:randomhashthatshouldnotbeused",
-				"sha256:0346349a1a640da9535acfc0f68be9d9b81e85957725ecb76f3b522f4e2f0455",
-			},
-		},
-	}
+	imageName := &storage.ImageName{}
+	imageName.SetRegistry("quay.io")
+	imageName.SetRemote("integration/nginx")
+	imageName.SetTag("1.10")
+	im := &storage.ImageMetadata{}
+	im.SetLayerShas([]string{
+		"sha256:randomhashthatshouldnotbeused",
+		"sha256:0346349a1a640da9535acfc0f68be9d9b81e85957725ecb76f3b522f4e2f0455",
+	})
+	image := &storage.Image{}
+	image.SetName(imageName)
+	image.SetMetadata(im)
 	scan, err := suite.scanner.GetScan(image)
 	suite.NoError(err)
 

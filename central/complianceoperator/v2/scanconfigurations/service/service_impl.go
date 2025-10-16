@@ -248,10 +248,10 @@ func (s *serviceImpl) ListComplianceScanConfigurations(ctx context.Context, quer
 		return nil, errors.Wrap(errox.NotFound, err.Error())
 	}
 
-	return &v2.ListComplianceScanConfigurationsResponse{
-		Configurations: scanStatuses,
-		TotalCount:     int32(scanConfigCount),
-	}, nil
+	lcscr := &v2.ListComplianceScanConfigurationsResponse{}
+	lcscr.SetConfigurations(scanStatuses)
+	lcscr.SetTotalCount(int32(scanConfigCount))
+	return lcscr, nil
 }
 
 func (s *serviceImpl) GetComplianceScanConfiguration(ctx context.Context, req *v2.ResourceByID) (*v2.ComplianceScanConfigurationStatus, error) {
@@ -306,18 +306,18 @@ func (s *serviceImpl) RunReport(ctx context.Context, request *v2.ComplianceRunRe
 
 	err = s.reportManager.SubmitReportRequest(ctx, scanConfig, notificationMethod)
 	if err != nil {
-		return &v2.ComplianceRunReportResponse{
-			RunState:    v2.ComplianceRunReportResponse_ERROR,
-			SubmittedAt: types.TimestampNow(),
-			ErrorMsg:    err.Error(),
-		}, errors.Wrapf(err, "failed to submit compliance on demand report request for scan config %q", scanConfig.GetScanConfigName())
+		crrr := &v2.ComplianceRunReportResponse{}
+		crrr.SetRunState(v2.ComplianceRunReportResponse_ERROR)
+		crrr.SetSubmittedAt(types.TimestampNow())
+		crrr.SetErrorMsg(err.Error())
+		return crrr, errors.Wrapf(err, "failed to submit compliance on demand report request for scan config %q", scanConfig.GetScanConfigName())
 	}
 
-	return &v2.ComplianceRunReportResponse{
-		RunState:    v2.ComplianceRunReportResponse_SUBMITTED,
-		SubmittedAt: types.TimestampNow(),
-		ErrorMsg:    "",
-	}, nil
+	crrr := &v2.ComplianceRunReportResponse{}
+	crrr.SetRunState(v2.ComplianceRunReportResponse_SUBMITTED)
+	crrr.SetSubmittedAt(types.TimestampNow())
+	crrr.SetErrorMsg("")
+	return crrr, nil
 }
 
 func (s *serviceImpl) GetReportHistory(ctx context.Context, request *v2.ComplianceReportHistoryRequest) (*v2.ComplianceReportHistoryResponse, error) {
@@ -347,9 +347,8 @@ func (s *serviceImpl) GetReportHistory(ctx context.Context, request *v2.Complian
 	if err != nil {
 		return nil, errors.Wrap(err, "Unable to convert storage report snapshots to response")
 	}
-	res := &v2.ComplianceReportHistoryResponse{
-		ComplianceReportSnapshots: snapshots,
-	}
+	res := &v2.ComplianceReportHistoryResponse{}
+	res.SetComplianceReportSnapshots(snapshots)
 	return res, nil
 }
 
@@ -390,9 +389,8 @@ func (s *serviceImpl) GetMyReportHistory(ctx context.Context, request *v2.Compli
 		return nil, errors.Wrap(err, "Unable to convert storage report snapshots to response")
 	}
 
-	res := &v2.ComplianceReportHistoryResponse{
-		ComplianceReportSnapshots: snapshots,
-	}
+	res := &v2.ComplianceReportHistoryResponse{}
+	res.SetComplianceReportSnapshots(snapshots)
 	return res, nil
 }
 
@@ -466,10 +464,10 @@ func (s *serviceImpl) ListComplianceScanConfigProfiles(ctx context.Context, quer
 		return nil, err
 	}
 
-	return &v2.ListComplianceScanConfigsProfileResponse{
-		Profiles:   profiles,
-		TotalCount: int32(profileCount),
-	}, nil
+	lcscpr := &v2.ListComplianceScanConfigsProfileResponse{}
+	lcscpr.SetProfiles(profiles)
+	lcscpr.SetTotalCount(int32(profileCount))
+	return lcscpr, nil
 }
 
 func (s *serviceImpl) ListComplianceScanConfigClusterProfiles(ctx context.Context, request *v2.ComplianceConfigClusterProfileRequest) (*v2.ListComplianceScanConfigsClusterProfileResponse, error) {
@@ -508,12 +506,12 @@ func (s *serviceImpl) ListComplianceScanConfigClusterProfiles(ctx context.Contex
 		return nil, err
 	}
 
-	return &v2.ListComplianceScanConfigsClusterProfileResponse{
-		ClusterId:   request.GetClusterId(),
-		ClusterName: clusterName,
-		Profiles:    profiles,
-		TotalCount:  int32(profileCount),
-	}, nil
+	lcsccpr := &v2.ListComplianceScanConfigsClusterProfileResponse{}
+	lcsccpr.SetClusterId(request.GetClusterId())
+	lcsccpr.SetClusterName(clusterName)
+	lcsccpr.SetProfiles(profiles)
+	lcsccpr.SetTotalCount(int32(profileCount))
+	return lcsccpr, nil
 }
 
 func validateScanConfiguration(req *v2.ComplianceScanConfiguration) error {

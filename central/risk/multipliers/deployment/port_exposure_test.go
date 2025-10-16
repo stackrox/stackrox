@@ -13,15 +13,20 @@ func TestPortExposureScore(t *testing.T) {
 	portMultiplier := NewReachability()
 
 	deployment := multipliers.GetMockDeployment()
-	expectedScore := &storage.Risk_Result{
-		Name: ReachabilityHeading,
-		Factors: []*storage.Risk_Result_Factor{
-			{Message: "Port 22 is exposed to external clients"},
-			{Message: "Port 23 is exposed in the cluster"},
-			{Message: "Port 24 is exposed on node interfaces"},
-		},
-		Score: 1.6,
-	}
+	rrf := &storage.Risk_Result_Factor{}
+	rrf.SetMessage("Port 22 is exposed to external clients")
+	rrf2 := &storage.Risk_Result_Factor{}
+	rrf2.SetMessage("Port 23 is exposed in the cluster")
+	rrf3 := &storage.Risk_Result_Factor{}
+	rrf3.SetMessage("Port 24 is exposed on node interfaces")
+	expectedScore := &storage.Risk_Result{}
+	expectedScore.SetName(ReachabilityHeading)
+	expectedScore.SetFactors([]*storage.Risk_Result_Factor{
+		rrf,
+		rrf2,
+		rrf3,
+	})
+	expectedScore.SetScore(1.6)
 	score := portMultiplier.Score(context.Background(), deployment, nil)
 	protoassert.Equal(t, expectedScore, score)
 }

@@ -35,37 +35,37 @@ func (s *sacFilterTestSuite) TestRunNotFiltered() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Cluster, resources.Deployment, resources.Node)))
 
-	resultToFilter := &storage.ComplianceRunResults{
-		Domain: &storage.ComplianceDomain{
-			Cluster: &storage.ComplianceDomain_Cluster{
+	resultToFilter := storage.ComplianceRunResults_builder{
+		Domain: storage.ComplianceDomain_builder{
+			Cluster: storage.ComplianceDomain_Cluster_builder{
 				Id: clusterID,
-			},
+			}.Build(),
 			Deployments: map[string]*storage.ComplianceDomain_Deployment{
-				"dep1": {
+				"dep1": storage.ComplianceDomain_Deployment_builder{
 					Id: "dep1",
-				},
-				"dep2": {
+				}.Build(),
+				"dep2": storage.ComplianceDomain_Deployment_builder{
 					Id: "dep2",
-				},
-				"dep3": {
+				}.Build(),
+				"dep3": storage.ComplianceDomain_Deployment_builder{
 					Id: "dep3",
-				},
+				}.Build(),
 			},
 			Nodes: map[string]*storage.ComplianceDomain_Node{
-				"node1": {
+				"node1": storage.ComplianceDomain_Node_builder{
 					Id: "node1",
-				},
-				"node2": {
+				}.Build(),
+				"node2": storage.ComplianceDomain_Node_builder{
 					Id: "node2",
-				},
-				"node3": {
+				}.Build(),
+				"node3": storage.ComplianceDomain_Node_builder{
 					Id: "node3",
-				},
+				}.Build(),
 			},
-		},
-		ClusterResults: &storage.ComplianceRunResults_EntityResults{
+		}.Build(),
+		ClusterResults: storage.ComplianceRunResults_EntityResults_builder{
 			ControlResults: make(map[string]*storage.ComplianceResultValue),
-		},
+		}.Build(),
 		DeploymentResults: map[string]*storage.ComplianceRunResults_EntityResults{
 			"dep1": {},
 			"dep2": {},
@@ -76,7 +76,7 @@ func (s *sacFilterTestSuite) TestRunNotFiltered() {
 			"node2": {},
 			"node3": {},
 		},
-	}
+	}.Build()
 	filtered, err := s.filter.FilterRunResults(ctx, resultToFilter)
 
 	s.NoError(err)
@@ -90,37 +90,37 @@ func (s *sacFilterTestSuite) TestFilterCluster() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Deployment, resources.Node)))
 
-	resultToFilter := &storage.ComplianceRunResults{
-		Domain: &storage.ComplianceDomain{
-			Cluster: &storage.ComplianceDomain_Cluster{
+	resultToFilter := storage.ComplianceRunResults_builder{
+		Domain: storage.ComplianceDomain_builder{
+			Cluster: storage.ComplianceDomain_Cluster_builder{
 				Id: clusterID,
-			},
+			}.Build(),
 			Deployments: map[string]*storage.ComplianceDomain_Deployment{
-				"dep1": {
+				"dep1": storage.ComplianceDomain_Deployment_builder{
 					Id: "dep1",
-				},
-				"dep2": {
+				}.Build(),
+				"dep2": storage.ComplianceDomain_Deployment_builder{
 					Id: "dep2",
-				},
-				"dep3": {
+				}.Build(),
+				"dep3": storage.ComplianceDomain_Deployment_builder{
 					Id: "dep3",
-				},
+				}.Build(),
 			},
 			Nodes: map[string]*storage.ComplianceDomain_Node{
-				"node1": {
+				"node1": storage.ComplianceDomain_Node_builder{
 					Id: "node1",
-				},
-				"node2": {
+				}.Build(),
+				"node2": storage.ComplianceDomain_Node_builder{
 					Id: "node2",
-				},
-				"node3": {
+				}.Build(),
+				"node3": storage.ComplianceDomain_Node_builder{
 					Id: "node3",
-				},
+				}.Build(),
 			},
-		},
-		ClusterResults: &storage.ComplianceRunResults_EntityResults{
+		}.Build(),
+		ClusterResults: storage.ComplianceRunResults_EntityResults_builder{
 			ControlResults: make(map[string]*storage.ComplianceResultValue),
-		},
+		}.Build(),
 		DeploymentResults: map[string]*storage.ComplianceRunResults_EntityResults{
 			"dep1": {},
 			"dep2": {},
@@ -131,34 +131,34 @@ func (s *sacFilterTestSuite) TestFilterCluster() {
 			"node2": {},
 			"node3": {},
 		},
-	}
+	}.Build()
 	filtered, err := s.filter.FilterRunResults(ctx, resultToFilter)
 
-	expectedResults := &storage.ComplianceRunResults{
-		Domain: &storage.ComplianceDomain{
+	expectedResults := storage.ComplianceRunResults_builder{
+		Domain: storage.ComplianceDomain_builder{
 			Deployments: map[string]*storage.ComplianceDomain_Deployment{
-				"dep1": {
+				"dep1": storage.ComplianceDomain_Deployment_builder{
 					Id: "dep1",
-				},
-				"dep2": {
+				}.Build(),
+				"dep2": storage.ComplianceDomain_Deployment_builder{
 					Id: "dep2",
-				},
-				"dep3": {
+				}.Build(),
+				"dep3": storage.ComplianceDomain_Deployment_builder{
 					Id: "dep3",
-				},
+				}.Build(),
 			},
 			Nodes: map[string]*storage.ComplianceDomain_Node{
-				"node1": {
+				"node1": storage.ComplianceDomain_Node_builder{
 					Id: "node1",
-				},
-				"node2": {
+				}.Build(),
+				"node2": storage.ComplianceDomain_Node_builder{
 					Id: "node2",
-				},
-				"node3": {
+				}.Build(),
+				"node3": storage.ComplianceDomain_Node_builder{
 					Id: "node3",
-				},
+				}.Build(),
 			},
-		},
+		}.Build(),
 		DeploymentResults: map[string]*storage.ComplianceRunResults_EntityResults{
 			"dep1": {},
 			"dep2": {},
@@ -169,7 +169,7 @@ func (s *sacFilterTestSuite) TestFilterCluster() {
 			"node2": {},
 			"node3": {},
 		},
-	}
+	}.Build()
 	s.NoError(err)
 	protoassert.Equal(s.T(), expectedResults, filtered)
 }
@@ -181,37 +181,37 @@ func (s *sacFilterTestSuite) TestFiltersAllDeployments() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Cluster, resources.Node)))
 
-	resultToFilter := &storage.ComplianceRunResults{
-		Domain: &storage.ComplianceDomain{
-			Cluster: &storage.ComplianceDomain_Cluster{
+	resultToFilter := storage.ComplianceRunResults_builder{
+		Domain: storage.ComplianceDomain_builder{
+			Cluster: storage.ComplianceDomain_Cluster_builder{
 				Id: clusterID,
-			},
+			}.Build(),
 			Deployments: map[string]*storage.ComplianceDomain_Deployment{
-				"dep1": {
+				"dep1": storage.ComplianceDomain_Deployment_builder{
 					Id: "dep1",
-				},
-				"dep2": {
+				}.Build(),
+				"dep2": storage.ComplianceDomain_Deployment_builder{
 					Id: "dep2",
-				},
-				"dep3": {
+				}.Build(),
+				"dep3": storage.ComplianceDomain_Deployment_builder{
 					Id: "dep3",
-				},
+				}.Build(),
 			},
 			Nodes: map[string]*storage.ComplianceDomain_Node{
-				"node1": {
+				"node1": storage.ComplianceDomain_Node_builder{
 					Id: "node1",
-				},
-				"node2": {
+				}.Build(),
+				"node2": storage.ComplianceDomain_Node_builder{
 					Id: "node2",
-				},
-				"node3": {
+				}.Build(),
+				"node3": storage.ComplianceDomain_Node_builder{
 					Id: "node3",
-				},
+				}.Build(),
 			},
-		},
-		ClusterResults: &storage.ComplianceRunResults_EntityResults{
+		}.Build(),
+		ClusterResults: storage.ComplianceRunResults_EntityResults_builder{
 			ControlResults: make(map[string]*storage.ComplianceResultValue),
-		},
+		}.Build(),
 		DeploymentResults: map[string]*storage.ComplianceRunResults_EntityResults{
 			"dep1": {},
 			"dep2": {},
@@ -222,36 +222,36 @@ func (s *sacFilterTestSuite) TestFiltersAllDeployments() {
 			"node2": {},
 			"node3": {},
 		},
-	}
+	}.Build()
 	filtered, err := s.filter.FilterRunResults(ctx, resultToFilter)
 
-	expectedResults := &storage.ComplianceRunResults{
-		Domain: &storage.ComplianceDomain{
-			Cluster: &storage.ComplianceDomain_Cluster{
+	expectedResults := storage.ComplianceRunResults_builder{
+		Domain: storage.ComplianceDomain_builder{
+			Cluster: storage.ComplianceDomain_Cluster_builder{
 				Id: clusterID,
-			},
+			}.Build(),
 			Nodes: map[string]*storage.ComplianceDomain_Node{
-				"node1": {
+				"node1": storage.ComplianceDomain_Node_builder{
 					Id: "node1",
-				},
-				"node2": {
+				}.Build(),
+				"node2": storage.ComplianceDomain_Node_builder{
 					Id: "node2",
-				},
-				"node3": {
+				}.Build(),
+				"node3": storage.ComplianceDomain_Node_builder{
 					Id: "node3",
-				},
+				}.Build(),
 			},
 			Deployments: map[string]*storage.ComplianceDomain_Deployment{},
-		},
-		ClusterResults: &storage.ComplianceRunResults_EntityResults{
+		}.Build(),
+		ClusterResults: storage.ComplianceRunResults_EntityResults_builder{
 			ControlResults: make(map[string]*storage.ComplianceResultValue),
-		},
+		}.Build(),
 		NodeResults: map[string]*storage.ComplianceRunResults_EntityResults{
 			"node1": {},
 			"node2": {},
 			"node3": {},
 		},
-	}
+	}.Build()
 	s.NoError(err)
 	protoassert.Equal(s.T(), expectedResults, filtered)
 }
@@ -276,43 +276,43 @@ func (s *sacFilterTestSuite) TestFiltersSomeDeployments() {
 			},
 		))
 
-	resultToFilter := &storage.ComplianceRunResults{
-		Domain: &storage.ComplianceDomain{
-			Cluster: &storage.ComplianceDomain_Cluster{
+	resultToFilter := storage.ComplianceRunResults_builder{
+		Domain: storage.ComplianceDomain_builder{
+			Cluster: storage.ComplianceDomain_Cluster_builder{
 				Id: clusterID,
-			},
+			}.Build(),
 			Deployments: map[string]*storage.ComplianceDomain_Deployment{
-				"dep1": {
+				"dep1": storage.ComplianceDomain_Deployment_builder{
 					Id:        "dep1",
 					ClusterId: clusterID,
 					Namespace: namespace2,
-				},
-				"dep2": {
+				}.Build(),
+				"dep2": storage.ComplianceDomain_Deployment_builder{
 					Id:        "dep2",
 					ClusterId: clusterID,
 					Namespace: namespace1,
-				},
-				"dep3": {
+				}.Build(),
+				"dep3": storage.ComplianceDomain_Deployment_builder{
 					Id:        "dep3",
 					ClusterId: clusterID,
 					Namespace: namespace2,
-				},
+				}.Build(),
 			},
 			Nodes: map[string]*storage.ComplianceDomain_Node{
-				"node1": {
+				"node1": storage.ComplianceDomain_Node_builder{
 					Id: "node1",
-				},
-				"node2": {
+				}.Build(),
+				"node2": storage.ComplianceDomain_Node_builder{
 					Id: "node2",
-				},
-				"node3": {
+				}.Build(),
+				"node3": storage.ComplianceDomain_Node_builder{
 					Id: "node3",
-				},
+				}.Build(),
 			},
-		},
-		ClusterResults: &storage.ComplianceRunResults_EntityResults{
+		}.Build(),
+		ClusterResults: storage.ComplianceRunResults_EntityResults_builder{
 			ControlResults: make(map[string]*storage.ComplianceResultValue),
-		},
+		}.Build(),
 		DeploymentResults: map[string]*storage.ComplianceRunResults_EntityResults{
 			"dep1": {},
 			"dep2": {},
@@ -323,41 +323,41 @@ func (s *sacFilterTestSuite) TestFiltersSomeDeployments() {
 			"node2": {},
 			"node3": {},
 		},
-	}
+	}.Build()
 	filtered, err := s.filter.FilterRunResults(ctx, resultToFilter)
 
-	expectedResults := &storage.ComplianceRunResults{
-		Domain: &storage.ComplianceDomain{
-			Cluster: &storage.ComplianceDomain_Cluster{
+	expectedResults := storage.ComplianceRunResults_builder{
+		Domain: storage.ComplianceDomain_builder{
+			Cluster: storage.ComplianceDomain_Cluster_builder{
 				Id: clusterID,
-			},
+			}.Build(),
 			Deployments: map[string]*storage.ComplianceDomain_Deployment{
-				"dep1": {
+				"dep1": storage.ComplianceDomain_Deployment_builder{
 					Id:        "dep1",
 					ClusterId: clusterID,
 					Namespace: namespace2,
-				},
-				"dep3": {
+				}.Build(),
+				"dep3": storage.ComplianceDomain_Deployment_builder{
 					Id:        "dep3",
 					ClusterId: clusterID,
 					Namespace: namespace2,
-				},
+				}.Build(),
 			},
 			Nodes: map[string]*storage.ComplianceDomain_Node{
-				"node1": {
+				"node1": storage.ComplianceDomain_Node_builder{
 					Id: "node1",
-				},
-				"node2": {
+				}.Build(),
+				"node2": storage.ComplianceDomain_Node_builder{
 					Id: "node2",
-				},
-				"node3": {
+				}.Build(),
+				"node3": storage.ComplianceDomain_Node_builder{
 					Id: "node3",
-				},
+				}.Build(),
 			},
-		},
-		ClusterResults: &storage.ComplianceRunResults_EntityResults{
+		}.Build(),
+		ClusterResults: storage.ComplianceRunResults_EntityResults_builder{
 			ControlResults: make(map[string]*storage.ComplianceResultValue),
-		},
+		}.Build(),
 		DeploymentResults: map[string]*storage.ComplianceRunResults_EntityResults{
 			"dep1": {},
 			"dep3": {},
@@ -367,7 +367,7 @@ func (s *sacFilterTestSuite) TestFiltersSomeDeployments() {
 			"node2": {},
 			"node3": {},
 		},
-	}
+	}.Build()
 	s.NoError(err)
 	protoassert.Equal(s.T(), expectedResults, filtered)
 }
@@ -379,37 +379,37 @@ func (s *sacFilterTestSuite) TestFilterNodes() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Cluster, resources.Deployment)))
 
-	resultToFilter := &storage.ComplianceRunResults{
-		Domain: &storage.ComplianceDomain{
-			Cluster: &storage.ComplianceDomain_Cluster{
+	resultToFilter := storage.ComplianceRunResults_builder{
+		Domain: storage.ComplianceDomain_builder{
+			Cluster: storage.ComplianceDomain_Cluster_builder{
 				Id: clusterID,
-			},
+			}.Build(),
 			Deployments: map[string]*storage.ComplianceDomain_Deployment{
-				"dep1": {
+				"dep1": storage.ComplianceDomain_Deployment_builder{
 					Id: "dep1",
-				},
-				"dep2": {
+				}.Build(),
+				"dep2": storage.ComplianceDomain_Deployment_builder{
 					Id: "dep2",
-				},
-				"dep3": {
+				}.Build(),
+				"dep3": storage.ComplianceDomain_Deployment_builder{
 					Id: "dep3",
-				},
+				}.Build(),
 			},
 			Nodes: map[string]*storage.ComplianceDomain_Node{
-				"node1": {
+				"node1": storage.ComplianceDomain_Node_builder{
 					Id: "node1",
-				},
-				"node2": {
+				}.Build(),
+				"node2": storage.ComplianceDomain_Node_builder{
 					Id: "node2",
-				},
-				"node3": {
+				}.Build(),
+				"node3": storage.ComplianceDomain_Node_builder{
 					Id: "node3",
-				},
+				}.Build(),
 			},
-		},
-		ClusterResults: &storage.ComplianceRunResults_EntityResults{
+		}.Build(),
+		ClusterResults: storage.ComplianceRunResults_EntityResults_builder{
 			ControlResults: make(map[string]*storage.ComplianceResultValue),
-		},
+		}.Build(),
 		DeploymentResults: map[string]*storage.ComplianceRunResults_EntityResults{
 			"dep1": {},
 			"dep2": {},
@@ -420,35 +420,35 @@ func (s *sacFilterTestSuite) TestFilterNodes() {
 			"node2": {},
 			"node3": {},
 		},
-	}
+	}.Build()
 	filtered, err := s.filter.FilterRunResults(ctx, resultToFilter)
 
-	expectedResults := &storage.ComplianceRunResults{
-		Domain: &storage.ComplianceDomain{
-			Cluster: &storage.ComplianceDomain_Cluster{
+	expectedResults := storage.ComplianceRunResults_builder{
+		Domain: storage.ComplianceDomain_builder{
+			Cluster: storage.ComplianceDomain_Cluster_builder{
 				Id: clusterID,
-			},
+			}.Build(),
 			Deployments: map[string]*storage.ComplianceDomain_Deployment{
-				"dep1": {
+				"dep1": storage.ComplianceDomain_Deployment_builder{
 					Id: "dep1",
-				},
-				"dep2": {
+				}.Build(),
+				"dep2": storage.ComplianceDomain_Deployment_builder{
 					Id: "dep2",
-				},
-				"dep3": {
+				}.Build(),
+				"dep3": storage.ComplianceDomain_Deployment_builder{
 					Id: "dep3",
-				},
+				}.Build(),
 			},
-		},
-		ClusterResults: &storage.ComplianceRunResults_EntityResults{
+		}.Build(),
+		ClusterResults: storage.ComplianceRunResults_EntityResults_builder{
 			ControlResults: make(map[string]*storage.ComplianceResultValue),
-		},
+		}.Build(),
 		DeploymentResults: map[string]*storage.ComplianceRunResults_EntityResults{
 			"dep1": {},
 			"dep2": {},
 			"dep3": {},
 		},
-	}
+	}.Build()
 	s.NoError(err)
 	protoassert.Equal(s.T(), expectedResults, filtered)
 }
@@ -472,22 +472,22 @@ func (s *sacFilterTestSuite) TestFiltersClustersBatch() {
 	}
 	resultToFilter := map[compliance.ClusterStandardPair]types.ResultsWithStatus{
 		csPair1: {
-			LastSuccessfulResults: &storage.ComplianceRunResults{
-				Domain: &storage.ComplianceDomain{
-					Cluster: &storage.ComplianceDomain_Cluster{
+			LastSuccessfulResults: storage.ComplianceRunResults_builder{
+				Domain: storage.ComplianceDomain_builder{
+					Cluster: storage.ComplianceDomain_Cluster_builder{
 						Id: cluster1,
-					},
-				},
-			},
+					}.Build(),
+				}.Build(),
+			}.Build(),
 		},
 		csPair2: {
-			LastSuccessfulResults: &storage.ComplianceRunResults{
-				Domain: &storage.ComplianceDomain{
-					Cluster: &storage.ComplianceDomain_Cluster{
+			LastSuccessfulResults: storage.ComplianceRunResults_builder{
+				Domain: storage.ComplianceDomain_builder{
+					Cluster: storage.ComplianceDomain_Cluster_builder{
 						Id: cluster2,
-					},
-				},
-			},
+					}.Build(),
+				}.Build(),
+			}.Build(),
 		},
 	}
 
@@ -496,13 +496,13 @@ func (s *sacFilterTestSuite) TestFiltersClustersBatch() {
 
 	expectedResults := map[compliance.ClusterStandardPair]types.ResultsWithStatus{
 		csPair2: {
-			LastSuccessfulResults: &storage.ComplianceRunResults{
-				Domain: &storage.ComplianceDomain{
-					Cluster: &storage.ComplianceDomain_Cluster{
+			LastSuccessfulResults: storage.ComplianceRunResults_builder{
+				Domain: storage.ComplianceDomain_builder{
+					Cluster: storage.ComplianceDomain_Cluster_builder{
 						Id: cluster2,
-					},
-				},
-			},
+					}.Build(),
+				}.Build(),
+			}.Build(),
 		},
 	}
 	s.Equal(expectedResults, results)

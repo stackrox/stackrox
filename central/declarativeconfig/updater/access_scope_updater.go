@@ -63,7 +63,7 @@ func (u *accessScopeUpdater) DeleteResources(ctx context.Context, resourceIDsToS
 			}
 
 			if errors.Is(err, errox.ReferencedByAnotherObject) {
-				scope.Traits.Origin = storage.Traits_DECLARATIVE_ORPHANED
+				scope.GetTraits().SetOrigin(storage.Traits_DECLARATIVE_ORPHANED)
 				if err = u.roleDS.UpsertAccessScope(ctx, scope); err != nil {
 					scopeDeletionErr = multierror.Append(scopeDeletionErr, errors.Wrap(err, "setting origin to orphaned"))
 				}

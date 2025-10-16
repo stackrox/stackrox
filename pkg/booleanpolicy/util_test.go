@@ -16,90 +16,90 @@ func TestDiscreteRuntimeSections(t *testing.T) {
 	}{
 		{
 			name: "process fields only",
-			policy: &storage.Policy{
+			policy: storage.Policy_builder{
 				PolicySections: []*storage.PolicySection{
-					{
+					storage.PolicySection_builder{
 						PolicyGroups: []*storage.PolicyGroup{
-							{
+							storage.PolicyGroup_builder{
 								FieldName: fieldnames.ProcessName,
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 			pass: true,
 		},
 		{
 			name: "kubernetes events fields only",
-			policy: &storage.Policy{
+			policy: storage.Policy_builder{
 				PolicySections: []*storage.PolicySection{
-					{
+					storage.PolicySection_builder{
 						PolicyGroups: []*storage.PolicyGroup{
-							{
+							storage.PolicyGroup_builder{
 								FieldName: fieldnames.KubeResource,
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 			pass: true,
 		},
 		{
 			name: "kubernetes events and process fields in separate sections",
-			policy: &storage.Policy{
+			policy: storage.Policy_builder{
 				PolicySections: []*storage.PolicySection{
-					{
+					storage.PolicySection_builder{
 						PolicyGroups: []*storage.PolicyGroup{
-							{
+							storage.PolicyGroup_builder{
 								FieldName: fieldnames.ProcessName,
-							},
+							}.Build(),
 						},
-					},
-					{
+					}.Build(),
+					storage.PolicySection_builder{
 						PolicyGroups: []*storage.PolicyGroup{
-							{
+							storage.PolicyGroup_builder{
 								FieldName: fieldnames.KubeResource,
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 			pass: true,
 		},
 		{
 			name: "kubernetes events and process fields in same section",
-			policy: &storage.Policy{
+			policy: storage.Policy_builder{
 				PolicySections: []*storage.PolicySection{
-					{
+					storage.PolicySection_builder{
 						PolicyGroups: []*storage.PolicyGroup{
-							{
+							storage.PolicyGroup_builder{
 								FieldName: fieldnames.ProcessName,
-							},
-							{
+							}.Build(),
+							storage.PolicyGroup_builder{
 								FieldName: fieldnames.KubeResource,
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 			pass: false,
 		},
 		{
 			name: "deploy time and runtime fields",
-			policy: &storage.Policy{
+			policy: storage.Policy_builder{
 				PolicySections: []*storage.PolicySection{
-					{
+					storage.PolicySection_builder{
 						PolicyGroups: []*storage.PolicyGroup{
-							{
+							storage.PolicyGroup_builder{
 								FieldName: fieldnames.ImageTag,
-							},
-							{
+							}.Build(),
+							storage.PolicyGroup_builder{
 								FieldName: fieldnames.KubeResource,
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 			pass: true,
 		},
 	} {

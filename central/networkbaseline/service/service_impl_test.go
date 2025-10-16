@@ -63,23 +63,23 @@ func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaselineStatusForFlows()
 	peer := baseline.GetPeers()[0]
 	port, isIngress := peer.GetProperties()[0].GetPort(), peer.GetProperties()[0].GetIngress()
 	entityID := peer.GetEntity().GetInfo().GetId()
-	request := &v1.NetworkBaselineStatusRequest{
+	request := v1.NetworkBaselineStatusRequest_builder{
 		DeploymentId: baseline.GetDeploymentId(),
 		Peers: []*v1.NetworkBaselineStatusPeer{
-			{
-				Entity: &v1.NetworkBaselinePeerEntity{
+			v1.NetworkBaselineStatusPeer_builder{
+				Entity: v1.NetworkBaselinePeerEntity_builder{
 					Id:   entityID,
 					Type: storage.NetworkEntityInfo_DEPLOYMENT,
-				},
+				}.Build(),
 				Port:     port,
 				Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 				Ingress:  isIngress,
-			},
+			}.Build(),
 		},
-	}
+	}.Build()
 	otherRequest := request.CloneVT()
 	s.Require().NotEmpty(otherRequest.GetPeers())
-	otherRequest.Peers[0].Entity.Id = deploymentUtils.GetMaskedDeploymentID(entityID, testPeerDeploymentName)
+	otherRequest.GetPeers()[0].GetEntity().SetId(deploymentUtils.GetMaskedDeploymentID(entityID, testPeerDeploymentName))
 
 	// If we don't have any baseline, then it is in observation and not created yet, so we will create
 	// one
@@ -128,12 +128,16 @@ func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaseline() {
 	s.baselines.EXPECT().GetNetworkBaseline(gomock.Any(), gomock.Any()).Return(nil, false, nil)
 	s.baselines.EXPECT().GetNetworkBaseline(gomock.Any(), gomock.Any()).Return(baseline, true, nil)
 	s.manager.EXPECT().CreateNetworkBaseline(gomock.Any())
-	newBase, err := s.service.GetNetworkBaseline(allAllowedCtx, &v1.ResourceByID{Id: baseline.GetDeploymentId()})
+	rbid := &v1.ResourceByID{}
+	rbid.SetId(baseline.GetDeploymentId())
+	newBase, err := s.service.GetNetworkBaseline(allAllowedCtx, rbid)
 	s.NotNil(newBase)
 	s.Nil(err)
 
 	s.baselines.EXPECT().GetNetworkBaseline(gomock.Any(), gomock.Any()).Return(baseline, true, nil)
-	rsp, err := s.service.GetNetworkBaseline(allAllowedCtx, &v1.ResourceByID{Id: baseline.GetDeploymentId()})
+	rbid2 := &v1.ResourceByID{}
+	rbid2.SetId(baseline.GetDeploymentId())
+	rsp, err := s.service.GetNetworkBaseline(allAllowedCtx, rbid2)
 	s.Nil(err)
 	protoassert.Equal(s.T(), rsp, baseline, "network baselines do not match")
 }
@@ -142,11 +146,15 @@ func (s *NetworkBaselineServiceTestSuite) TestLockBaseline() {
 	sampleID := "sample-ID"
 	// Make sure when we call lock we are indeed locking in the manager
 	s.manager.EXPECT().ProcessBaselineLockUpdate(gomock.Any(), sampleID, true).Return(nil)
-	_, err := s.service.LockNetworkBaseline(allAllowedCtx, &v1.ResourceByID{Id: sampleID})
+	rbid := &v1.ResourceByID{}
+	rbid.SetId(sampleID)
+	_, err := s.service.LockNetworkBaseline(allAllowedCtx, rbid)
 	s.Nil(err)
 	// and when we call unlock we are indeed unlocking in the manager
 	s.manager.EXPECT().ProcessBaselineLockUpdate(gomock.Any(), sampleID, false).Return(nil)
-	_, err = s.service.UnlockNetworkBaseline(allAllowedCtx, &v1.ResourceByID{Id: sampleID})
+	rbid2 := &v1.ResourceByID{}
+	rbid2.SetId(sampleID)
+	_, err = s.service.UnlockNetworkBaseline(allAllowedCtx, rbid2)
 	s.Nil(err)
 }
 
@@ -155,74 +163,74 @@ func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaselineStatusForExterna
 
 	externalPeers := []*v1.NetworkBaselineStatusPeer{
 		// In the baseline
-		{
-			Entity: &v1.NetworkBaselinePeerEntity{
+		v1.NetworkBaselineStatusPeer_builder{
+			Entity: v1.NetworkBaselinePeerEntity_builder{
 				Id:         "external1",
 				Type:       storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 				Name:       "123.0.0.4",
 				Discovered: true,
-			},
+			}.Build(),
 			Port:     1234,
 			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			Ingress:  true,
-		},
-		{
-			Entity: &v1.NetworkBaselinePeerEntity{
+		}.Build(),
+		v1.NetworkBaselineStatusPeer_builder{
+			Entity: v1.NetworkBaselinePeerEntity_builder{
 				Id:         "external2",
 				Type:       storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 				Name:       "123.0.0.5",
 				Discovered: true,
-			},
+			}.Build(),
 			Port:     1234,
 			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			Ingress:  true,
-		},
-		{
-			Entity: &v1.NetworkBaselinePeerEntity{
+		}.Build(),
+		v1.NetworkBaselineStatusPeer_builder{
+			Entity: v1.NetworkBaselinePeerEntity_builder{
 				Id:         "external3",
 				Type:       storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 				Name:       "123.0.0.6",
 				Discovered: true,
-			},
+			}.Build(),
 			Port:     1234,
 			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			Ingress:  true,
-		},
+		}.Build(),
 
 		// not in the baseline
-		{
-			Entity: &v1.NetworkBaselinePeerEntity{
+		v1.NetworkBaselineStatusPeer_builder{
+			Entity: v1.NetworkBaselinePeerEntity_builder{
 				Id:         "external4",
 				Type:       storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 				Name:       "1.2.3.4",
 				Discovered: true,
-			},
+			}.Build(),
 			Port:     4567, // different port
 			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			Ingress:  true,
-		},
-		{
-			Entity: &v1.NetworkBaselinePeerEntity{
+		}.Build(),
+		v1.NetworkBaselineStatusPeer_builder{
+			Entity: v1.NetworkBaselinePeerEntity_builder{
 				Id:         "external5",
 				Type:       storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 				Name:       "1.2.3.5",
 				Discovered: true,
-			},
+			}.Build(),
 			Port:     9012, // different port
 			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			Ingress:  true,
-		},
-		{
-			Entity: &v1.NetworkBaselinePeerEntity{
+		}.Build(),
+		v1.NetworkBaselineStatusPeer_builder{
+			Entity: v1.NetworkBaselinePeerEntity_builder{
 				Id:         "external6",
 				Type:       storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 				Name:       "1.2.3.6",
 				Discovered: true,
-			},
+			}.Build(),
 			Port:     3456, // different port
 			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			Ingress:  true,
-		},
+		}.Build(),
 	}
 
 	s.baselines.EXPECT().GetNetworkBaseline(gomock.Any(), gomock.Any()).AnyTimes().Return(baseline, true, nil)
@@ -234,86 +242,86 @@ func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaselineStatusForExterna
 		expectedAnomalous []*v1.NetworkBaselinePeerStatus
 	}{
 		{
-			request: &v1.NetworkBaselineExternalStatusRequest{
+			request: v1.NetworkBaselineExternalStatusRequest_builder{
 				DeploymentId: "deployment",
-				Pagination: &v1.Pagination{
+				Pagination: v1.Pagination_builder{
 					Limit:  1,
 					Offset: 0,
-				},
-			},
+				}.Build(),
+			}.Build(),
 
 			expectedBaseline: []*v1.NetworkBaselinePeerStatus{
-				{
+				v1.NetworkBaselinePeerStatus_builder{
 					Peer:   externalPeers[0],
 					Status: v1.NetworkBaselinePeerStatus_BASELINE,
-				},
+				}.Build(),
 			},
 
 			expectedAnomalous: []*v1.NetworkBaselinePeerStatus{
-				{
+				v1.NetworkBaselinePeerStatus_builder{
 					Peer:   externalPeers[3],
 					Status: v1.NetworkBaselinePeerStatus_ANOMALOUS,
-				},
+				}.Build(),
 			},
 		},
 
 		{
-			request: &v1.NetworkBaselineExternalStatusRequest{
+			request: v1.NetworkBaselineExternalStatusRequest_builder{
 				DeploymentId: "deployment",
-				Pagination: &v1.Pagination{
+				Pagination: v1.Pagination_builder{
 					Limit:  1,
 					Offset: 2,
-				},
-			},
+				}.Build(),
+			}.Build(),
 
 			expectedBaseline: []*v1.NetworkBaselinePeerStatus{
-				{
+				v1.NetworkBaselinePeerStatus_builder{
 					Peer:   externalPeers[2],
 					Status: v1.NetworkBaselinePeerStatus_BASELINE,
-				},
+				}.Build(),
 			},
 
 			expectedAnomalous: []*v1.NetworkBaselinePeerStatus{
-				{
+				v1.NetworkBaselinePeerStatus_builder{
 					Peer:   externalPeers[5],
 					Status: v1.NetworkBaselinePeerStatus_ANOMALOUS,
-				},
+				}.Build(),
 			},
 		},
 
 		{
-			request: &v1.NetworkBaselineExternalStatusRequest{
+			request: v1.NetworkBaselineExternalStatusRequest_builder{
 				DeploymentId: "deployment",
-			},
+			}.Build(),
 
 			expectedBaseline: []*v1.NetworkBaselinePeerStatus{
-				{
+				v1.NetworkBaselinePeerStatus_builder{
 					Peer:   externalPeers[0],
 					Status: v1.NetworkBaselinePeerStatus_BASELINE,
-				},
-				{
+				}.Build(),
+				v1.NetworkBaselinePeerStatus_builder{
 					Peer:   externalPeers[1],
 					Status: v1.NetworkBaselinePeerStatus_BASELINE,
-				},
-				{
+				}.Build(),
+				v1.NetworkBaselinePeerStatus_builder{
 					Peer:   externalPeers[2],
 					Status: v1.NetworkBaselinePeerStatus_BASELINE,
-				},
+				}.Build(),
 			},
 
 			expectedAnomalous: []*v1.NetworkBaselinePeerStatus{
-				{
+				v1.NetworkBaselinePeerStatus_builder{
 					Peer:   externalPeers[3],
 					Status: v1.NetworkBaselinePeerStatus_ANOMALOUS,
-				},
-				{
+				}.Build(),
+				v1.NetworkBaselinePeerStatus_builder{
 					Peer:   externalPeers[4],
 					Status: v1.NetworkBaselinePeerStatus_ANOMALOUS,
-				},
-				{
+				}.Build(),
+				v1.NetworkBaselinePeerStatus_builder{
 					Peer:   externalPeers[5],
 					Status: v1.NetworkBaselinePeerStatus_ANOMALOUS,
-				},
+				}.Build(),
 			},
 		},
 	}

@@ -152,12 +152,12 @@ func copyFromCVEs(ctx context.Context, tx *postgres.Tx, iTime time.Time, objs ..
 	for objBatch := range slices.Chunk(objs, batchSize) {
 		for _, obj := range objBatch {
 			if storedCVE := existingCVEs[obj.GetId()]; storedCVE != nil {
-				obj.Snoozed = storedCVE.GetSnoozed()
-				obj.CveBaseInfo.CreatedAt = storedCVE.GetCveBaseInfo().GetCreatedAt()
-				obj.SnoozeStart = storedCVE.GetSnoozeStart()
-				obj.SnoozeExpiry = storedCVE.GetSnoozeExpiry()
+				obj.SetSnoozed(storedCVE.GetSnoozed())
+				obj.GetCveBaseInfo().SetCreatedAt(storedCVE.GetCveBaseInfo().GetCreatedAt())
+				obj.SetSnoozeStart(storedCVE.GetSnoozeStart())
+				obj.SetSnoozeExpiry(storedCVE.GetSnoozeExpiry())
 			} else {
-				obj.CveBaseInfo.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&iTime)
+				obj.GetCveBaseInfo().SetCreatedAt(protocompat.ConvertTimeToTimestampOrNil(&iTime))
 			}
 
 			serialized, marshalErr := obj.MarshalVT()

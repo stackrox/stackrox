@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/metrics"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -76,13 +77,13 @@ func NewProcessPipeline(indicators chan *message.ExpiringMessage, clusterEntitie
 }
 
 func populateIndicatorFromCachedContainer(indicator *storage.ProcessIndicator, cachedContainer clusterentities.ContainerMetadata) {
-	indicator.DeploymentId = cachedContainer.DeploymentID
-	indicator.ContainerName = cachedContainer.ContainerName
-	indicator.PodId = cachedContainer.PodID
-	indicator.PodUid = cachedContainer.PodUID
-	indicator.Namespace = cachedContainer.Namespace
-	indicator.ContainerStartTime = protocompat.ConvertTimeToTimestampOrNil(cachedContainer.StartTime)
-	indicator.ImageId = cachedContainer.ImageID
+	indicator.SetDeploymentId(cachedContainer.DeploymentID)
+	indicator.SetContainerName(cachedContainer.ContainerName)
+	indicator.SetPodId(cachedContainer.PodID)
+	indicator.SetPodUid(cachedContainer.PodUID)
+	indicator.SetNamespace(cachedContainer.Namespace)
+	indicator.SetContainerStartTime(protocompat.ConvertTimeToTimestampOrNil(cachedContainer.StartTime))
+	indicator.SetImageId(cachedContainer.ImageID)
 }
 
 // Shutdown closes all communication channels and shutdowns the enricher
@@ -137,10 +138,9 @@ func (p *Pipeline) cancelCurrentContext() {
 
 // Process defines processes to process a ProcessIndicator
 func (p *Pipeline) Process(signal *storage.ProcessSignal) {
-	indicator := &storage.ProcessIndicator{
-		Id:     uuid.NewV4().String(),
-		Signal: signal,
-	}
+	indicator := &storage.ProcessIndicator{}
+	indicator.SetId(uuid.NewV4().String())
+	indicator.SetSignal(signal)
 
 	// indicator.GetSignal() is never nil at this point
 	metadata, ok, _ := p.clusterEntities.LookupByContainerID(indicator.GetSignal().GetContainerId())
@@ -161,18 +161,14 @@ func (p *Pipeline) sendIndicatorEvent() {
 			continue
 		}
 		p.detector.ProcessIndicator(p.getCurrentContext(), indicator)
+		se := &central.SensorEvent{}
+		se.SetId(indicator.GetId())
+		se.SetAction(central.ResourceAction_CREATE_RESOURCE)
+		se.SetProcessIndicator(proto.ValueOrDefault(indicator))
 		p.sendToCentral(
-			message.NewExpiring(p.getCurrentContext(), &central.MsgFromSensor{
-				Msg: &central.MsgFromSensor_Event{
-					Event: &central.SensorEvent{
-						Id:     indicator.GetId(),
-						Action: central.ResourceAction_CREATE_RESOURCE,
-						Resource: &central.SensorEvent_ProcessIndicator{
-							ProcessIndicator: indicator,
-						},
-					},
-				},
-			}),
+			message.NewExpiring(p.getCurrentContext(), central.MsgFromSensor_builder{
+				Event: se,
+			}.Build()),
 		)
 		metrics.SetProcessSignalBufferSizeGauge(len(p.indicators))
 	}

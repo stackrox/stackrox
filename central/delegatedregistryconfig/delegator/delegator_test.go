@@ -83,7 +83,8 @@ func TestGetDelegateClusterID(t *testing.T) {
 
 	t.Run("none", func(t *testing.T) {
 		setup(t)
-		config := &storage.DelegatedRegistryConfig{EnabledFor: storage.DelegatedRegistryConfig_NONE}
+		config := &storage.DelegatedRegistryConfig{}
+		config.SetEnabledFor(storage.DelegatedRegistryConfig_NONE)
 		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, true, nil)
 		clusterID, shouldDelegate, err := d.GetDelegateClusterID(ctxBG, nil)
 		assert.Empty(t, clusterID)
@@ -93,7 +94,8 @@ func TestGetDelegateClusterID(t *testing.T) {
 
 	t.Run("all no default cluster id", func(t *testing.T) {
 		setup(t)
-		config := &storage.DelegatedRegistryConfig{EnabledFor: storage.DelegatedRegistryConfig_ALL}
+		config := &storage.DelegatedRegistryConfig{}
+		config.SetEnabledFor(storage.DelegatedRegistryConfig_ALL)
 		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, true, nil)
 		clusterID, shouldDelegate, err := d.GetDelegateClusterID(ctxBG, nil)
 		assert.Empty(t, clusterID)
@@ -103,10 +105,9 @@ func TestGetDelegateClusterID(t *testing.T) {
 
 	t.Run("all def cluster id nil conn", func(t *testing.T) {
 		setup(t)
-		config := &storage.DelegatedRegistryConfig{
-			EnabledFor:       storage.DelegatedRegistryConfig_ALL,
-			DefaultClusterId: fakeClusterID,
-		}
+		config := &storage.DelegatedRegistryConfig{}
+		config.SetEnabledFor(storage.DelegatedRegistryConfig_ALL)
+		config.SetDefaultClusterId(fakeClusterID)
 		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, true, nil)
 		connMgr.EXPECT().GetConnection(gomock.Any()).Return(nil)
 		_, shouldDelegate, err := d.GetDelegateClusterID(ctxBG, nil)
@@ -116,10 +117,9 @@ func TestGetDelegateClusterID(t *testing.T) {
 
 	t.Run("all def cluster id conn no cap", func(t *testing.T) {
 		setup(t)
-		config := &storage.DelegatedRegistryConfig{
-			EnabledFor:       storage.DelegatedRegistryConfig_ALL,
-			DefaultClusterId: fakeClusterID,
-		}
+		config := &storage.DelegatedRegistryConfig{}
+		config.SetEnabledFor(storage.DelegatedRegistryConfig_ALL)
+		config.SetDefaultClusterId(fakeClusterID)
 		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, true, nil)
 		connMgr.EXPECT().GetConnection(gomock.Any()).Return(fakeConnWithoutCap)
 		_, shouldDelegate, err := d.GetDelegateClusterID(ctxBG, nil)
@@ -129,10 +129,9 @@ func TestGetDelegateClusterID(t *testing.T) {
 
 	t.Run("all def cluster id conn with cap", func(t *testing.T) {
 		setup(t)
-		config := &storage.DelegatedRegistryConfig{
-			EnabledFor:       storage.DelegatedRegistryConfig_ALL,
-			DefaultClusterId: fakeClusterID,
-		}
+		config := &storage.DelegatedRegistryConfig{}
+		config.SetEnabledFor(storage.DelegatedRegistryConfig_ALL)
+		config.SetDefaultClusterId(fakeClusterID)
 		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, true, nil)
 		connMgr.EXPECT().GetConnection(gomock.Any()).Return(fakeConnWithCap)
 		clusterID, shouldDelegate, err := d.GetDelegateClusterID(ctxBG, nil)
@@ -143,12 +142,14 @@ func TestGetDelegateClusterID(t *testing.T) {
 
 	t.Run("all reg cluster id conn no cap", func(t *testing.T) {
 		setup(t)
-		config := &storage.DelegatedRegistryConfig{
-			EnabledFor: storage.DelegatedRegistryConfig_ALL,
-			Registries: []*storage.DelegatedRegistryConfig_DelegatedRegistry{
-				{Path: "", ClusterId: fakeClusterID},
-			},
-		}
+		dd := &storage.DelegatedRegistryConfig_DelegatedRegistry{}
+		dd.SetPath("")
+		dd.SetClusterId(fakeClusterID)
+		config := &storage.DelegatedRegistryConfig{}
+		config.SetEnabledFor(storage.DelegatedRegistryConfig_ALL)
+		config.SetRegistries([]*storage.DelegatedRegistryConfig_DelegatedRegistry{
+			dd,
+		})
 		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, true, nil)
 		connMgr.EXPECT().GetConnection(gomock.Any()).Return(fakeConnWithoutCap)
 		_, shouldDelegate, err := d.GetDelegateClusterID(ctxBG, nil)
@@ -158,12 +159,14 @@ func TestGetDelegateClusterID(t *testing.T) {
 
 	t.Run("all reg cluster id conn with cap", func(t *testing.T) {
 		setup(t)
-		config := &storage.DelegatedRegistryConfig{
-			EnabledFor: storage.DelegatedRegistryConfig_ALL,
-			Registries: []*storage.DelegatedRegistryConfig_DelegatedRegistry{
-				{Path: "", ClusterId: fakeClusterID},
-			},
-		}
+		dd := &storage.DelegatedRegistryConfig_DelegatedRegistry{}
+		dd.SetPath("")
+		dd.SetClusterId(fakeClusterID)
+		config := &storage.DelegatedRegistryConfig{}
+		config.SetEnabledFor(storage.DelegatedRegistryConfig_ALL)
+		config.SetRegistries([]*storage.DelegatedRegistryConfig_DelegatedRegistry{
+			dd,
+		})
 		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, true, nil)
 		connMgr.EXPECT().GetConnection(gomock.Any()).Return(fakeConnWithCap)
 		clusterID, shouldDelegate, err := d.GetDelegateClusterID(ctxBG, nil)
@@ -174,12 +177,14 @@ func TestGetDelegateClusterID(t *testing.T) {
 
 	t.Run("specific reg no match", func(t *testing.T) {
 		setup(t)
-		config := &storage.DelegatedRegistryConfig{
-			EnabledFor: storage.DelegatedRegistryConfig_SPECIFIC,
-			Registries: []*storage.DelegatedRegistryConfig_DelegatedRegistry{
-				{Path: "fake-path", ClusterId: fakeClusterID},
-			},
-		}
+		dd := &storage.DelegatedRegistryConfig_DelegatedRegistry{}
+		dd.SetPath("fake-path")
+		dd.SetClusterId(fakeClusterID)
+		config := &storage.DelegatedRegistryConfig{}
+		config.SetEnabledFor(storage.DelegatedRegistryConfig_SPECIFIC)
+		config.SetRegistries([]*storage.DelegatedRegistryConfig_DelegatedRegistry{
+			dd,
+		})
 		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, true, nil)
 		clusterID, shouldDelegate, err := d.GetDelegateClusterID(ctxBG, nil)
 		assert.Empty(t, clusterID)
@@ -189,12 +194,14 @@ func TestGetDelegateClusterID(t *testing.T) {
 
 	t.Run("specific reg match", func(t *testing.T) {
 		setup(t)
-		config := &storage.DelegatedRegistryConfig{
-			EnabledFor: storage.DelegatedRegistryConfig_SPECIFIC,
-			Registries: []*storage.DelegatedRegistryConfig_DelegatedRegistry{
-				{Path: fakeRegistry, ClusterId: fakeClusterID},
-			},
-		}
+		dd := &storage.DelegatedRegistryConfig_DelegatedRegistry{}
+		dd.SetPath(fakeRegistry)
+		dd.SetClusterId(fakeClusterID)
+		config := &storage.DelegatedRegistryConfig{}
+		config.SetEnabledFor(storage.DelegatedRegistryConfig_SPECIFIC)
+		config.SetRegistries([]*storage.DelegatedRegistryConfig_DelegatedRegistry{
+			dd,
+		})
 
 		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, true, nil)
 		connMgr.EXPECT().GetConnection(gomock.Any()).Return(fakeConnWithCap)
@@ -206,13 +213,14 @@ func TestGetDelegateClusterID(t *testing.T) {
 
 	t.Run("specific reg match no reg cluster id", func(t *testing.T) {
 		setup(t)
-		config := &storage.DelegatedRegistryConfig{
-			EnabledFor:       storage.DelegatedRegistryConfig_SPECIFIC,
-			DefaultClusterId: fakeClusterID,
-			Registries: []*storage.DelegatedRegistryConfig_DelegatedRegistry{
-				{Path: fakeRegistry},
-			},
-		}
+		dd := &storage.DelegatedRegistryConfig_DelegatedRegistry{}
+		dd.SetPath(fakeRegistry)
+		config := &storage.DelegatedRegistryConfig{}
+		config.SetEnabledFor(storage.DelegatedRegistryConfig_SPECIFIC)
+		config.SetDefaultClusterId(fakeClusterID)
+		config.SetRegistries([]*storage.DelegatedRegistryConfig_DelegatedRegistry{
+			dd,
+		})
 
 		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, true, nil)
 		connMgr.EXPECT().GetConnection(gomock.Any()).Return(fakeConnWithCap)
@@ -224,15 +232,21 @@ func TestGetDelegateClusterID(t *testing.T) {
 
 	t.Run("specific multiple regs first match", func(t *testing.T) {
 		setup(t)
-		tImgName := &storage.ImageName{FullName: "reg/specific"}
+		tImgName := &storage.ImageName{}
+		tImgName.SetFullName("reg/specific")
 
-		config := &storage.DelegatedRegistryConfig{
-			EnabledFor: storage.DelegatedRegistryConfig_SPECIFIC,
-			Registries: []*storage.DelegatedRegistryConfig_DelegatedRegistry{
-				{Path: "reg/specific", ClusterId: "id1"},
-				{Path: "reg", ClusterId: "id2"},
-			},
-		}
+		dd := &storage.DelegatedRegistryConfig_DelegatedRegistry{}
+		dd.SetPath("reg/specific")
+		dd.SetClusterId("id1")
+		dd2 := &storage.DelegatedRegistryConfig_DelegatedRegistry{}
+		dd2.SetPath("reg")
+		dd2.SetClusterId("id2")
+		config := &storage.DelegatedRegistryConfig{}
+		config.SetEnabledFor(storage.DelegatedRegistryConfig_SPECIFIC)
+		config.SetRegistries([]*storage.DelegatedRegistryConfig_DelegatedRegistry{
+			dd,
+			dd2,
+		})
 
 		deleClusterDS.EXPECT().GetConfig(gomock.Any()).Return(config, true, nil)
 		connMgr.EXPECT().GetConnection(gomock.Any()).Return(fakeConnWithCap)
@@ -318,13 +332,14 @@ func TestDelegateEnrichImage(t *testing.T) {
 
 	t.Run("success round trip", func(t *testing.T) {
 		setup(t)
+		so := &v1.ScopeObject{}
+		so.SetName("repo")
 		namespaceSACHelper.EXPECT().GetNamespacesForClusterAndPermissions(ctxBG, fakeClusterID,
-			inferNamespacePermissions).Return([]*v1.ScopeObject{{Name: "repo"}}, nil)
-		fakeImage := &storage.Image{
-			Name: &storage.ImageName{
-				FullName: fakeImageFullName,
-			},
-		}
+			inferNamespacePermissions).Return([]*v1.ScopeObject{so}, nil)
+		imageName := &storage.ImageName{}
+		imageName.SetFullName(fakeImageFullName)
+		fakeImage := &storage.Image{}
+		fakeImage.SetName(imageName)
 
 		waiterMgr.EXPECT().NewWaiter().Return(waiter, nil)
 		waiter.EXPECT().Wait(gomock.Any()).Return(fakeImage, nil)
@@ -412,13 +427,14 @@ func TestDelegateScanImageV2(t *testing.T) {
 
 	t.Run("success round trip", func(t *testing.T) {
 		setup(t)
+		so := &v1.ScopeObject{}
+		so.SetName("repo")
 		namespaceSACHelper.EXPECT().GetNamespacesForClusterAndPermissions(ctxBG, fakeClusterID,
-			inferNamespacePermissions).Return([]*v1.ScopeObject{{Name: "repo"}}, nil)
-		fakeImage := &storage.ImageV2{
-			Name: &storage.ImageName{
-				FullName: fakeImageFullName,
-			},
-		}
+			inferNamespacePermissions).Return([]*v1.ScopeObject{so}, nil)
+		imageName := &storage.ImageName{}
+		imageName.SetFullName(fakeImageFullName)
+		fakeImage := &storage.ImageV2{}
+		fakeImage.SetName(imageName)
 
 		waiterMgr.EXPECT().NewWaiter().Return(waiter, nil)
 		waiter.EXPECT().Wait(gomock.Any()).Return(fakeImage, nil)
@@ -461,7 +477,9 @@ func TestInferNamespace(t *testing.T) {
 
 	t.Run("namespace found", func(t *testing.T) {
 		setup(t)
-		namespaces := []*v1.ScopeObject{{Name: "repo"}}
+		so := &v1.ScopeObject{}
+		so.SetName("repo")
+		namespaces := []*v1.ScopeObject{so}
 		namespaceSACHelper.EXPECT().GetNamespacesForClusterAndPermissions(ctxBG, fakeClusterID, inferNamespacePermissions).Return(namespaces, nil)
 
 		result := d.inferNamespace(ctxBG, fakeImgName, fakeClusterID)

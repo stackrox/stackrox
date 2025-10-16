@@ -13,10 +13,12 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var clusterCveLoaderType = reflect.TypeOf(storage.ClusterCVE{})
+// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+var clusterCveLoaderType = reflect.TypeOf(&storage.ClusterCVE{})
 
 func init() {
-	RegisterTypeFactory(reflect.TypeOf(storage.ClusterCVE{}), func() interface{} {
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	RegisterTypeFactory(reflect.TypeOf(&storage.ClusterCVE{}), func() interface{} {
 		return NewClusterCVELoader(clusterCVEDataStore.Singleton())
 	})
 }

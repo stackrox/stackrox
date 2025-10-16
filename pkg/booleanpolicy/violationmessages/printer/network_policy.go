@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -57,20 +58,24 @@ func hasEgressNetworkPolicyPrinter(fieldMap map[string][]string) ([]string, erro
 func EnhanceNetworkPolicyViolations(violations []*storage.Alert_Violation, np *augmentedobjs.NetworkPoliciesApplied) []*storage.Alert_Violation {
 	kvAttrs := make([]*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr, 0, len(np.Policies))
 	for id, p := range np.Policies {
+		avkk := &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{}
+		avkk.SetKey(PolicyID)
+		avkk.SetValue(id)
+		avkk2 := &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{}
+		avkk2.SetKey(PolicyName)
+		avkk2.SetValue(p.GetName())
 		attrs := []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
-			{Key: PolicyID, Value: id},
-			{Key: PolicyName, Value: p.GetName()},
+			avkk,
+			avkk2,
 		}
 		kvAttrs = append(kvAttrs, attrs...)
 	}
 	for _, violation := range violations {
-		violation.Time = protocompat.TimestampNow()
+		violation.SetTime(protocompat.TimestampNow())
 		if len(kvAttrs) > 0 {
-			violation.MessageAttributes = &storage.Alert_Violation_KeyValueAttrs_{
-				KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
-					Attrs: kvAttrs,
-				},
-			}
+			avk := &storage.Alert_Violation_KeyValueAttrs{}
+			avk.SetAttrs(kvAttrs)
+			violation.SetKeyValueAttrs(proto.ValueOrDefault(avk))
 		}
 	}
 	return violations

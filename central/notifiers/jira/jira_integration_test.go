@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 const testJiraPassword = "JIRA_PASSWORD"
@@ -40,18 +41,15 @@ func getJira(t *testing.T) (*jira, *gomock.Controller) {
 	mitreStore.EXPECT().Get(gomock.Any()).Return(&storage.MitreAttackVector{}, nil).AnyTimes()
 
 	user, password := skip(t)
-	notifier := &storage.Notifier{
-		UiEndpoint: "http://google.com",
-		Config: &storage.Notifier_Jira{
-			Jira: &storage.Jira{
-				Username:  user,
-				Password:  password,
-				IssueType: "Bug",
-				Url:       "https://stack-rox.atlassian.net/",
-			},
-		},
-		LabelDefault: "AJIT",
-	}
+	jira2 := &storage.Jira{}
+	jira2.SetUsername(user)
+	jira2.SetPassword(password)
+	jira2.SetIssueType("Bug")
+	jira2.SetUrl("https://stack-rox.atlassian.net/")
+	notifier := &storage.Notifier{}
+	notifier.SetUiEndpoint("http://google.com")
+	notifier.SetJira(proto.ValueOrDefault(jira2))
+	notifier.SetLabelDefault("AJIT")
 
 	j, err := newJira(notifier, metadataGetter, mitreStore, cryptocodec.Singleton(), "stackrox")
 	require.NoError(t, err)

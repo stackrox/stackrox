@@ -18,7 +18,7 @@ type clusterEnrichmentImpl struct {
 }
 
 func (s *clusterEnrichmentImpl) do(ctx context.Context, d *storage.Deployment) error {
-	d.ClusterName = ""
+	d.SetClusterName("")
 
 	clusterName, clusterExists, err := s.clusters.GetClusterName(ctx, d.GetClusterId())
 	switch {
@@ -27,7 +27,7 @@ func (s *clusterEnrichmentImpl) do(ctx context.Context, d *storage.Deployment) e
 	case !clusterExists:
 		log.Warnf("Couldn't find cluster '%s'", d.GetClusterId())
 	default:
-		d.ClusterName = clusterName
+		d.SetClusterName(clusterName)
 	}
 	return nil
 }

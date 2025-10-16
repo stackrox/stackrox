@@ -50,21 +50,21 @@ func Test_OutputQueue_ExpiringMessages(t *testing.T) {
 	}{
 		"Empty context are treated as Background": {
 			message: &component.ResourceEvent{
-				ForwardMessages: []*central.SensorEvent{{Id: "a"}},
+				ForwardMessages: []*central.SensorEvent{central.SensorEvent_builder{Id: "a"}.Build()},
 				Context:         nil,
 			},
 			assertion: shouldForwardMessage,
 		},
 		"Not expired message is sent": {
 			message: &component.ResourceEvent{
-				ForwardMessages: []*central.SensorEvent{{Id: "a"}},
+				ForwardMessages: []*central.SensorEvent{central.SensorEvent_builder{Id: "a"}.Build()},
 				Context:         context.Background(),
 			},
 			assertion: shouldForwardMessage,
 		},
 		"Expired message is not sent": {
 			message: &component.ResourceEvent{
-				ForwardMessages: []*central.SensorEvent{{Id: "a"}},
+				ForwardMessages: []*central.SensorEvent{central.SensorEvent_builder{Id: "a"}.Build()},
 				Context:         expiredContext,
 			},
 			assertion: shouldNotForwardMessage,

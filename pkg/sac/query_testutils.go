@@ -32,40 +32,40 @@ func isSameQuery(expected, actual *v1.Query) bool {
 	if !isSameQueryPagination(expected.GetPagination(), actual.GetPagination()) {
 		return false
 	}
-	if expected.Query == nil && actual.Query == nil {
+	if !expected.HasQuery() && !actual.HasQuery() {
 		return true
 	}
-	if expected.Query != nil && actual.Query == nil {
+	if expected.HasQuery() && !actual.HasQuery() {
 		return false
 	}
-	if expected.Query == nil && actual.Query != nil {
+	if !expected.HasQuery() && actual.HasQuery() {
 		return false
 	}
-	switch expected.GetQuery().(type) {
-	case *v1.Query_BaseQuery:
-		switch actual.GetQuery().(type) {
-		case *v1.Query_BaseQuery:
+	switch expected.WhichQuery() {
+	case v1.Query_BaseQuery_case:
+		switch actual.WhichQuery() {
+		case v1.Query_BaseQuery_case:
 			return isSameBaseQuery(expected.GetBaseQuery(), actual.GetBaseQuery())
 		default:
 			return false
 		}
-	case *v1.Query_BooleanQuery:
-		switch actual.GetQuery().(type) {
-		case *v1.Query_BooleanQuery:
+	case v1.Query_BooleanQuery_case:
+		switch actual.WhichQuery() {
+		case v1.Query_BooleanQuery_case:
 			return isSameBooleanQuery(expected.GetBooleanQuery(), actual.GetBooleanQuery())
 		default:
 			return false
 		}
-	case *v1.Query_Conjunction:
-		switch actual.GetQuery().(type) {
-		case *v1.Query_Conjunction:
+	case v1.Query_Conjunction_case:
+		switch actual.WhichQuery() {
+		case v1.Query_Conjunction_case:
 			return isSameConjunctionQuery(expected.GetConjunction(), actual.GetConjunction())
 		default:
 			return false
 		}
-	case *v1.Query_Disjunction:
-		switch actual.GetQuery().(type) {
-		case *v1.Query_Disjunction:
+	case v1.Query_Disjunction_case:
+		switch actual.WhichQuery() {
+		case v1.Query_Disjunction_case:
 			return isSameDisjunctionQuery(expected.GetDisjunction(), actual.GetDisjunction())
 		default:
 			return false
@@ -86,37 +86,37 @@ func isSameBaseQuery(expected, actual *v1.BaseQuery) bool {
 	if expected == nil && actual != nil {
 		return false
 	}
-	switch expected.GetQuery().(type) {
-	case *v1.BaseQuery_DocIdQuery:
-		switch actual.GetQuery().(type) {
-		case *v1.BaseQuery_DocIdQuery:
+	switch expected.WhichQuery() {
+	case v1.BaseQuery_DocIdQuery_case:
+		switch actual.WhichQuery() {
+		case v1.BaseQuery_DocIdQuery_case:
 			return isSameDocIDQuery(expected.GetDocIdQuery(), actual.GetDocIdQuery())
 		default:
 			return false
 		}
-	case *v1.BaseQuery_MatchFieldQuery:
-		switch actual.GetQuery().(type) {
-		case *v1.BaseQuery_MatchFieldQuery:
+	case v1.BaseQuery_MatchFieldQuery_case:
+		switch actual.WhichQuery() {
+		case v1.BaseQuery_MatchFieldQuery_case:
 			return isSameMatchFieldQuery(expected.GetMatchFieldQuery(), actual.GetMatchFieldQuery())
 		default:
 			return false
 		}
-	case *v1.BaseQuery_MatchLinkedFieldsQuery:
-		switch actual.GetQuery().(type) {
-		case *v1.BaseQuery_MatchLinkedFieldsQuery:
+	case v1.BaseQuery_MatchLinkedFieldsQuery_case:
+		switch actual.WhichQuery() {
+		case v1.BaseQuery_MatchLinkedFieldsQuery_case:
 			return isSameMatchLinkedFieldsQuery(
 				expected.GetMatchLinkedFieldsQuery(),
 				actual.GetMatchLinkedFieldsQuery())
 		default:
 			return false
 		}
-	case *v1.BaseQuery_MatchNoneQuery:
-		switch actual.GetQuery().(type) {
-		case *v1.BaseQuery_MatchNoneQuery:
-			if expected.Query == nil && actual.Query == nil {
+	case v1.BaseQuery_MatchNoneQuery_case:
+		switch actual.WhichQuery() {
+		case v1.BaseQuery_MatchNoneQuery_case:
+			if !expected.HasQuery() && !actual.HasQuery() {
 				return true
 			}
-			if expected.Query != nil && actual.Query != nil {
+			if expected.HasQuery() && actual.HasQuery() {
 				return true
 			}
 			return false

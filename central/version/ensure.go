@@ -31,14 +31,12 @@ func Ensure(versionStore vStore.Store) error {
 	// No version in the DB. This means that we're starting from scratch, with a blank DB, so we can just
 	// write the current version in and move on.
 	if version == nil {
-		err = versionStore.UpdateVersion(
-			&storage.Version{
-				SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
-				Version:       versionUtil.GetMainVersion(),
-				MinSeqNum:     int32(migrations.MinimumSupportedDBVersionSeqNum()),
-				LastPersisted: protocompat.TimestampNow(),
-			},
-		)
+		version2 := &storage.Version{}
+		version2.SetSeqNum(int32(migrations.CurrentDBVersionSeqNum()))
+		version2.SetVersion(versionUtil.GetMainVersion())
+		version2.SetMinSeqNum(int32(migrations.MinimumSupportedDBVersionSeqNum()))
+		version2.SetLastPersisted(protocompat.TimestampNow())
+		err = versionStore.UpdateVersion(version2)
 		if err != nil {
 			return errors.Wrap(err, "failed to write version to the DB")
 		}

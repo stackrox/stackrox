@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
+	"google.golang.org/protobuf/proto"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -66,24 +67,21 @@ func (c *RemediationDispatcher) ProcessEvent(obj, _ interface{}, action central.
 		}
 	}
 
-	remediationCentral := &central.ComplianceOperatorRemediationV2{
-		Id:                        uid,
-		Name:                      remediation.Name,
-		Apply:                     remediation.IsApplied(),
-		ComplianceCheckResultName: checkResultName,
-		CurrentObject:             string(currentObjJSON),
-		OutdatedObject:            string(outdatedObjJSON),
-		EnforcementType:           remediation.GetEnforcementType(),
-	}
+	remediationCentral := &central.ComplianceOperatorRemediationV2{}
+	remediationCentral.SetId(uid)
+	remediationCentral.SetName(remediation.Name)
+	remediationCentral.SetApply(remediation.IsApplied())
+	remediationCentral.SetComplianceCheckResultName(checkResultName)
+	remediationCentral.SetCurrentObject(string(currentObjJSON))
+	remediationCentral.SetOutdatedObject(string(outdatedObjJSON))
+	remediationCentral.SetEnforcementType(remediation.GetEnforcementType())
 
+	se := &central.SensorEvent{}
+	se.SetId(uid)
+	se.SetAction(action)
+	se.SetComplianceOperatorRemediationV2(proto.ValueOrDefault(remediationCentral))
 	events := []*central.SensorEvent{
-		{
-			Id:     uid,
-			Action: action,
-			Resource: &central.SensorEvent_ComplianceOperatorRemediationV2{
-				ComplianceOperatorRemediationV2: remediationCentral,
-			},
-		},
+		se,
 	}
 
 	return component.NewEvent(events...)

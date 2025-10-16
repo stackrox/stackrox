@@ -11,7 +11,7 @@ import (
 
 func scopeQuery(q *v1.Query, scopes []scoped.Scope) (*v1.Query, error) {
 	pagination := q.GetPagination()
-	q.Pagination = nil
+	q.ClearPagination()
 	conjuncts := []*v1.Query{q}
 	for _, scope := range scopes {
 		schema := mapping.GetTableFromCategory(scope.Level)
@@ -26,6 +26,6 @@ func scopeQuery(q *v1.Query, scopes []scoped.Scope) (*v1.Query, error) {
 		}
 	}
 	ret := search.ConjunctionQuery(conjuncts...)
-	ret.Pagination = pagination
+	ret.SetPagination(pagination)
 	return ret, nil
 }

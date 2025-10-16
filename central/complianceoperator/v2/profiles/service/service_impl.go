@@ -129,10 +129,10 @@ func (s *serviceImpl) ListComplianceProfiles(ctx context.Context, request *v2.Pr
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance profiles counts for %v", request)
 	}
 
-	return &v2.ListComplianceProfilesResponse{
-		Profiles:   storagetov2.ComplianceV2Profiles(profiles, benchmarkMap),
-		TotalCount: int32(totalCount),
-	}, nil
+	lcpr := &v2.ListComplianceProfilesResponse{}
+	lcpr.SetProfiles(storagetov2.ComplianceV2Profiles(profiles, benchmarkMap))
+	lcpr.SetTotalCount(int32(totalCount))
+	return lcpr, nil
 }
 
 // ListProfileSummaries returns profile summaries matching incoming clusters
@@ -154,11 +154,11 @@ func (s *serviceImpl) ListProfileSummaries(ctx context.Context, request *v2.Clus
 	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
 	// make sure we sort by profile name at a minimum
 	if parsedQuery.GetPagination().GetSortOptions() == nil {
-		parsedQuery.Pagination.SortOptions = []*v1.QuerySortOption{
-			{
-				Field: search.ComplianceOperatorProfileName.String(),
-			},
-		}
+		qso := &v1.QuerySortOption{}
+		qso.SetField(search.ComplianceOperatorProfileName.String())
+		parsedQuery.GetPagination().SetSortOptions([]*v1.QuerySortOption{
+			qso,
+		})
 	}
 
 	profileNames, err := s.complianceProfilesDS.GetProfilesNames(ctx, parsedQuery, request.GetClusterIds())
@@ -169,8 +169,8 @@ func (s *serviceImpl) ListProfileSummaries(ctx context.Context, request *v2.Clus
 	// Build query to get the filtered list by profile names
 	profileQuery := search.NewQueryBuilder().AddSelectFields().AddExactMatches(search.ComplianceOperatorProfileName, profileNames...).ProtoQuery()
 	// Bring the sort options only, paging is handled in step one when we get the distinct profiles.
-	profileQuery.Pagination = &v1.QueryPagination{}
-	profileQuery.Pagination.SortOptions = parsedQuery.GetPagination().GetSortOptions()
+	profileQuery.SetPagination(&v1.QueryPagination{})
+	profileQuery.GetPagination().SetSortOptions(parsedQuery.GetPagination().GetSortOptions())
 
 	profiles, err := s.complianceProfilesDS.SearchProfiles(ctx, profileQuery)
 	if err != nil {
@@ -188,10 +188,10 @@ func (s *serviceImpl) ListProfileSummaries(ctx context.Context, request *v2.Clus
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance profiles counts for %v", request)
 	}
 
-	return &v2.ListComplianceProfileSummaryResponse{
-		Profiles:   storagetov2.ComplianceProfileSummary(profiles, benchmarkMap),
-		TotalCount: int32(totalCount),
-	}, nil
+	lcpsr := &v2.ListComplianceProfileSummaryResponse{}
+	lcpsr.SetProfiles(storagetov2.ComplianceProfileSummary(profiles, benchmarkMap))
+	lcpsr.SetTotalCount(int32(totalCount))
+	return lcpsr, nil
 }
 
 func (s *serviceImpl) getBenchmarks(ctx context.Context, profiles []*storage.ComplianceOperatorProfileV2) (map[string][]*storage.ComplianceOperatorBenchmarkV2, error) {

@@ -29,7 +29,7 @@ func enrichQueryWithSACFilter(ctx context.Context, q *v1.Query, schema *walker.S
 		}
 		pagination := q.GetPagination()
 		query := searchPkg.ConjunctionQuery(sacFilter, q)
-		query.Pagination = pagination
+		query.SetPagination(pagination)
 		return query, nil
 	default:
 		sacFilter, err := GetReadSACQuery(ctx, schema.ScopingResource)
@@ -41,7 +41,7 @@ func enrichQueryWithSACFilter(ctx context.Context, q *v1.Query, schema *walker.S
 		}
 		pagination := q.GetPagination()
 		query := searchPkg.ConjunctionQuery(sacFilter, q)
-		query.Pagination = pagination
+		query.SetPagination(pagination)
 		return query, nil
 	}
 }
@@ -49,14 +49,14 @@ func enrichQueryWithSACFilter(ctx context.Context, q *v1.Query, schema *walker.S
 func isEmptySACFilter(sacFilter *v1.Query) bool {
 	// Hack to avoid having non-nil query but nil queryEntry in standardizeQueryAndPopulatePath
 	// which then results in Walk with unrestricted scope failing
-	switch sacFilter.GetQuery().(type) {
-	case *v1.Query_BaseQuery:
+	switch sacFilter.WhichQuery() {
+	case v1.Query_BaseQuery_case:
 		return false
-	case *v1.Query_Conjunction:
+	case v1.Query_Conjunction_case:
 		return false
-	case *v1.Query_Disjunction:
+	case v1.Query_Disjunction_case:
 		return false
-	case *v1.Query_BooleanQuery:
+	case v1.Query_BooleanQuery_case:
 		return false
 	}
 	return true
@@ -105,13 +105,9 @@ func getSACQuery(ctx context.Context, targetResource permissions.ResourceMetadat
 }
 
 func getMatchNoneQuery() *v1.Query {
-	return &v1.Query{
-		Query: &v1.Query_BaseQuery{
-			BaseQuery: &v1.BaseQuery{
-				Query: &v1.BaseQuery_MatchNoneQuery{
-					MatchNoneQuery: &v1.MatchNoneQuery{},
-				},
-			},
-		},
-	}
+	return v1.Query_builder{
+		BaseQuery: v1.BaseQuery_builder{
+			MatchNoneQuery: &v1.MatchNoneQuery{},
+		}.Build(),
+	}.Build()
 }

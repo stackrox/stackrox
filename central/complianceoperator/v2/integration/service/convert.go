@@ -37,18 +37,18 @@ func convertStorageIntegrationToV2(ctx context.Context, integration *complianceD
 		opInstalled = true
 	}
 
-	return &v2.ComplianceIntegration{
-		Id:                  integration.ID,
-		Version:             integration.Version,
-		ClusterId:           integration.ClusterID,
-		ClusterName:         integration.ClusterName,
-		Namespace:           integrationDetail.GetComplianceNamespace(),
-		StatusErrors:        integrationDetail.GetStatusErrors(),
-		OperatorInstalled:   opInstalled,
-		Status:              opStatus,
-		ClusterPlatformType: convertPlatformType(integration.GetType()),
-		ClusterProviderType: convertProviderType(integration.GetStatusProviderMetadataClusterType()),
-	}, true, nil
+	ci := &v2.ComplianceIntegration{}
+	ci.SetId(integration.ID)
+	ci.SetVersion(integration.Version)
+	ci.SetClusterId(integration.ClusterID)
+	ci.SetClusterName(integration.ClusterName)
+	ci.SetNamespace(integrationDetail.GetComplianceNamespace())
+	ci.SetStatusErrors(integrationDetail.GetStatusErrors())
+	ci.SetOperatorInstalled(opInstalled)
+	ci.SetStatus(opStatus)
+	ci.SetClusterPlatformType(convertPlatformType(integration.GetType()))
+	ci.SetClusterProviderType(convertProviderType(integration.GetStatusProviderMetadataClusterType()))
+	return ci, true, nil
 }
 
 func convertStorageProtos(ctx context.Context, integrations []*complianceDS.IntegrationDetails, complianceStore complianceDS.DataStore) ([]*v2.ComplianceIntegration, error) {

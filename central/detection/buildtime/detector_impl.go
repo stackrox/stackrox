@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
+	"google.golang.org/protobuf/proto"
 )
 
 type detectorImpl struct {
@@ -60,13 +61,12 @@ func policyViolationsAndImageToAlert(policy *storage.Policy, violations []*stora
 	if len(violations) == 0 {
 		return nil
 	}
-	alert := &storage.Alert{
-		Id:             uuid.NewV4().String(),
-		LifecycleStage: storage.LifecycleStage_BUILD,
-		Policy:         policy.CloneVT(),
-		Entity:         &storage.Alert_Image{Image: types.ToContainerImage(image)},
-		Violations:     violations,
-		Time:           protocompat.TimestampNow(),
-	}
+	alert := &storage.Alert{}
+	alert.SetId(uuid.NewV4().String())
+	alert.SetLifecycleStage(storage.LifecycleStage_BUILD)
+	alert.SetPolicy(policy.CloneVT())
+	alert.SetImage(proto.ValueOrDefault(types.ToContainerImage(image)))
+	alert.SetViolations(violations)
+	alert.SetTime(protocompat.TimestampNow())
 	return alert
 }

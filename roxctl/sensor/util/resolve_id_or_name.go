@@ -32,9 +32,9 @@ func ResolveClusterID(idOrName string, timeout time.Duration, retryTimeout time.
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), timeout)
 	defer cancel()
 
-	clusters, err := service.GetClusters(ctx, &v1.GetClustersRequest{
-		Query: fmt.Sprintf("%s:%s", search.Cluster, idOrName),
-	})
+	gcr := &v1.GetClustersRequest{}
+	gcr.SetQuery(fmt.Sprintf("%s:%s", search.Cluster, idOrName))
+	clusters, err := service.GetClusters(ctx, gcr)
 	if err != nil {
 		return "", errors.Wrapf(err, "could not get cluster: %q", idOrName)
 	}

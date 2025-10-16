@@ -28,8 +28,8 @@ func (c *metricsCache) Set(clusterID string, clusterMetrics *central.ClusterMetr
 	defer c.mutex.Unlock()
 	oldValue := c.cache[clusterID]
 	c.cache[clusterID] = clusterMetrics
-	c.sum.CpuCapacity += clusterMetrics.GetCpuCapacity() - oldValue.GetCpuCapacity()
-	c.sum.NodeCount += clusterMetrics.GetNodeCount() - oldValue.GetNodeCount()
+	c.sum.SetCpuCapacity(c.sum.GetCpuCapacity() + (clusterMetrics.GetCpuCapacity() - oldValue.GetCpuCapacity()))
+	c.sum.SetNodeCount(c.sum.GetNodeCount() + (clusterMetrics.GetNodeCount() - oldValue.GetNodeCount()))
 }
 
 func (c *metricsCache) Delete(clusterID string) {
@@ -39,8 +39,8 @@ func (c *metricsCache) Delete(clusterID string) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	if clusterMetric, ok := c.cache[clusterID]; ok {
-		c.sum.CpuCapacity -= clusterMetric.GetCpuCapacity()
-		c.sum.NodeCount -= clusterMetric.GetNodeCount()
+		c.sum.SetCpuCapacity(c.sum.GetCpuCapacity() - clusterMetric.GetCpuCapacity())
+		c.sum.SetNodeCount(c.sum.GetNodeCount() - clusterMetric.GetNodeCount())
 		delete(c.cache, clusterID)
 	}
 }
@@ -51,10 +51,10 @@ func (c *metricsCache) Sum() *central.ClusterMetrics {
 	}
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
-	return &central.ClusterMetrics{
-		CpuCapacity: c.sum.GetCpuCapacity(),
-		NodeCount:   c.sum.GetNodeCount(),
-	}
+	cm := &central.ClusterMetrics{}
+	cm.SetCpuCapacity(c.sum.GetCpuCapacity())
+	cm.SetNodeCount(c.sum.GetNodeCount())
+	return cm
 }
 
 func (c *metricsCache) Len() int {

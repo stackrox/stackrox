@@ -33,23 +33,23 @@ func (s *getSecretRenewalTimeSuite) TestGetSecretsCertRenewalTime() {
 	s.Require().NoError(err)
 	certPEMDays, err := issueCertificatePEM(mtls.WithValidityExpiringInDays())
 	s.Require().NoError(err)
-	certificates := &storage.TypedServiceCertificateSet{
+	certificates := storage.TypedServiceCertificateSet_builder{
 		CaPem: make([]byte, 0),
 		ServiceCerts: []*storage.TypedServiceCertificate{
-			{
+			storage.TypedServiceCertificate_builder{
 				ServiceType: storage.ServiceType_SCANNER_SERVICE,
-				Cert: &storage.ServiceCertificate{
+				Cert: storage.ServiceCertificate_builder{
 					CertPem: certPEMHours,
-				},
-			},
-			{
+				}.Build(),
+			}.Build(),
+			storage.TypedServiceCertificate_builder{
 				ServiceType: storage.ServiceType_SCANNER_DB_SERVICE,
-				Cert: &storage.ServiceCertificate{
+				Cert: storage.ServiceCertificate_builder{
 					CertPem: certPEMDays,
-				},
-			},
+				}.Build(),
+			}.Build(),
 		},
-	}
+	}.Build()
 
 	certRenewalTime, err := GetCertsRenewalTime(certificates)
 

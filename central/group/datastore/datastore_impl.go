@@ -428,10 +428,12 @@ func setGroupIDIfEmpty(group *storage.Group) error {
 		return errox.InvalidArgs.Newf("id should be empty but %q was provided", group.GetProps().GetId())
 	}
 	if group.GetProps() != nil {
-		group.GetProps().Id = GenerateGroupID()
+		group.GetProps().SetId(GenerateGroupID())
 	} else {
 		// Theoretically should never happen, as the auth provider ID is required to be set.
-		group.Props = &storage.GroupProperties{Id: GenerateGroupID()}
+		gp := &storage.GroupProperties{}
+		gp.SetId(GenerateGroupID())
+		group.SetProps(gp)
 	}
 	return nil
 }
@@ -446,13 +448,22 @@ func propertiesMatch(props *storage.GroupProperties, expected *storage.GroupProp
 // key/value pairs that exist in the datastore for the given auth provider.
 func getPossibleGroupProperties(authProviderID string, attributes map[string][]string) (props []*storage.GroupProperties) {
 	// Need to consider no key.
-	props = append(props, &storage.GroupProperties{AuthProviderId: authProviderID})
+	gp := &storage.GroupProperties{}
+	gp.SetAuthProviderId(authProviderID)
+	props = append(props, gp)
 	for key, values := range attributes {
 		// Need to consider key with no value
-		props = append(props, &storage.GroupProperties{AuthProviderId: authProviderID, Key: key})
+		gp2 := &storage.GroupProperties{}
+		gp2.SetAuthProviderId(authProviderID)
+		gp2.SetKey(key)
+		props = append(props, gp2)
 		// Consider all Key/Value pairs present.
 		for _, value := range values {
-			props = append(props, &storage.GroupProperties{AuthProviderId: authProviderID, Key: key, Value: value})
+			gp3 := &storage.GroupProperties{}
+			gp3.SetAuthProviderId(authProviderID)
+			gp3.SetKey(key)
+			gp3.SetValue(value)
+			props = append(props, gp3)
 		}
 	}
 	return
@@ -499,7 +510,9 @@ func (ds *dataStoreImpl) getDefaultGroupForProps(ctx context.Context, props *sto
 	}
 
 	// 2. Filter for the default group.
-	return ds.getByProps(ctx, &storage.GroupProperties{AuthProviderId: props.GetAuthProviderId()})
+	gp := &storage.GroupProperties{}
+	gp.SetAuthProviderId(props.GetAuthProviderId())
+	return ds.getByProps(ctx, gp)
 }
 
 // validateMutableGroupIDNoLock validates whether a group allows changes or not based on the mutability mode set.

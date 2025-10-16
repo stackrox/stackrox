@@ -107,9 +107,9 @@ func (t *ClientTestSuite) TestGetPingOK() {
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t.Equal(pingRoute, r.URL.Path)
 
-		_ = json.NewEncoder(w).Encode(
-			v1.PongMessage{Status: "ok"},
-		)
+		pm := &v1.PongMessage{}
+		pm.SetStatus("ok")
+		_ = json.NewEncoder(w).Encode(pm)
 	}))
 	defer ts.Close()
 
@@ -384,15 +384,14 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_SecondaryCA() {
 	for _, tc := range testCases {
 		t.Run(tc.name, func() {
 			// Build TrustInfo with failing primary chain and scenario-specific secondary chain
-			trustInfo := &v1.TrustInfo{
-				SensorChallenge:  exampleChallengeToken,
-				CentralChallenge: "central-challenge",
-				CertChain: [][]byte{
-					primaryLeaf.Certificate[0],
-					primaryCA.Certificate[0],
-				},
-				SecondaryCertChain: tc.secondaryChain,
-			}
+			trustInfo := &v1.TrustInfo{}
+			trustInfo.SetSensorChallenge(exampleChallengeToken)
+			trustInfo.SetCentralChallenge("central-challenge")
+			trustInfo.SetCertChain([][]byte{
+				primaryLeaf.Certificate[0],
+				primaryCA.Certificate[0],
+			})
+			trustInfo.SetSecondaryCertChain(tc.secondaryChain)
 
 			trustInfoBytes, err := trustInfo.MarshalVT()
 			t.Require().NoError(err)
@@ -459,7 +458,7 @@ func (t *ClientTestSuite) TestExtractCentralCAsFromTrustInfo() {
 	}{
 		{
 			name: "with both chains",
-			trustInfo: &v1.TrustInfo{
+			trustInfo: v1.TrustInfo_builder{
 				CertChain: [][]byte{
 					[]byte("leaf-cert-der"),
 					primaryCert.Certificate[0],
@@ -468,38 +467,38 @@ func (t *ClientTestSuite) TestExtractCentralCAsFromTrustInfo() {
 					[]byte("secondary-leaf-cert-der"),
 					secondaryCert.Certificate[0],
 				},
-			},
+			}.Build(),
 			expectedCACount:         2,
 			expectedPrimaryCAName:   "Primary CA",
 			expectedSecondaryCAName: "Secondary CA",
 		},
 		{
 			name: "only primary chain",
-			trustInfo: &v1.TrustInfo{
+			trustInfo: v1.TrustInfo_builder{
 				CertChain: [][]byte{
 					[]byte("leaf-cert-der"),
 					primaryCert.Certificate[0],
 				},
 				SecondaryCertChain: [][]byte{},
-			},
+			}.Build(),
 			expectedCACount:       1,
 			expectedPrimaryCAName: "Primary CA",
 		},
 		{
 			name: "short chains",
-			trustInfo: &v1.TrustInfo{
+			trustInfo: v1.TrustInfo_builder{
 				CertChain: [][]byte{
 					[]byte("only-leaf-cert-der"),
 				},
 				SecondaryCertChain: [][]byte{
 					[]byte("only-secondary-leaf-cert-der"),
 				},
-			},
+			}.Build(),
 			expectedCACount: 0,
 		},
 		{
 			name: "empty CA fields",
-			trustInfo: &v1.TrustInfo{
+			trustInfo: v1.TrustInfo_builder{
 				CertChain: [][]byte{
 					[]byte("leaf-cert-der"),
 					{},
@@ -508,18 +507,18 @@ func (t *ClientTestSuite) TestExtractCentralCAsFromTrustInfo() {
 					[]byte("secondary-leaf-cert-der"),
 					{},
 				},
-			},
+			}.Build(),
 			expectedCACount: 0,
 		},
 		{
 			name: "invalid CA cert",
-			trustInfo: &v1.TrustInfo{
+			trustInfo: v1.TrustInfo_builder{
 				CertChain: [][]byte{
 					[]byte("leaf-cert-der"),
 					[]byte("invalid-ca-cert-data"),
 				},
 				SecondaryCertChain: [][]byte{},
-			},
+			}.Build(),
 			expectedCACount: 0,
 		},
 	}

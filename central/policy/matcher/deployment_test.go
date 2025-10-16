@@ -14,57 +14,57 @@ func TestDeploymentMatcher(t *testing.T) {
 		matches    bool
 	}{
 		{
-			deployment: &storage.Deployment{
+			deployment: storage.Deployment_builder{
 				Name:      "deployment1",
 				ClusterId: "cluster1",
 				Namespace: "ns1",
-			},
-			policy: &storage.Policy{
+			}.Build(),
+			policy: storage.Policy_builder{
 				Scope: []*storage.Scope{
-					{
+					storage.Scope_builder{
 						Cluster: "cluster1",
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 			matches: true,
 		},
 		{
-			deployment: &storage.Deployment{
+			deployment: storage.Deployment_builder{
 				Name:      "deployment1",
 				ClusterId: "cluster1",
 				Namespace: "ns1",
-			},
-			policy: &storage.Policy{
+			}.Build(),
+			policy: storage.Policy_builder{
 				Scope: []*storage.Scope{
-					{
+					storage.Scope_builder{
 						Cluster:   "cluster2",
 						Namespace: "ns1",
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 			matches: false,
 		},
 		{
-			deployment: &storage.Deployment{
+			deployment: storage.Deployment_builder{
 				Name:      "deployment1",
 				ClusterId: "cluster1",
 				Namespace: "ns1",
-			},
-			policy: &storage.Policy{
+			}.Build(),
+			policy: storage.Policy_builder{
 				Scope: []*storage.Scope{
-					{
+					storage.Scope_builder{
 						Namespace: "ns1",
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 			matches: true,
 		},
 		{
-			deployment: &storage.Deployment{
+			deployment: storage.Deployment_builder{
 				Name:      "deployment1",
 				ClusterId: "cluster1",
 				Namespace: "ns1",
-			},
+			}.Build(),
 			policy:  &storage.Policy{},
 			matches: true,
 		},
@@ -83,123 +83,123 @@ func TestDeploymentWithExclusion(t *testing.T) {
 		matches    bool
 	}{
 		{
-			deployment: &storage.Deployment{
+			deployment: storage.Deployment_builder{
 				Name:      "deployment1",
 				ClusterId: "cluster1",
 				Namespace: "ns1",
-			},
-			policy: &storage.Policy{
+			}.Build(),
+			policy: storage.Policy_builder{
 				Scope: []*storage.Scope{
-					{
+					storage.Scope_builder{
 						Cluster: "cluster1",
-					},
+					}.Build(),
 				},
 				Exclusions: []*storage.Exclusion{
-					{
-						Deployment: &storage.Exclusion_Deployment{
-							Scope: &storage.Scope{
+					storage.Exclusion_builder{
+						Deployment: storage.Exclusion_Deployment_builder{
+							Scope: storage.Scope_builder{
 								Namespace: "ns.*",
-							},
-						},
-					},
+							}.Build(),
+						}.Build(),
+					}.Build(),
 				},
-			},
+			}.Build(),
 			matches: false,
 		},
 		{
-			deployment: &storage.Deployment{
+			deployment: storage.Deployment_builder{
 				Name:      "deployment1",
 				ClusterId: "cluster1",
 				Namespace: "ns1",
-			},
-			policy: &storage.Policy{
+			}.Build(),
+			policy: storage.Policy_builder{
 				Scope: []*storage.Scope{
-					{
+					storage.Scope_builder{
 						Cluster:   "cluster1",
 						Namespace: "ns1",
-					},
+					}.Build(),
 				},
 				Exclusions: []*storage.Exclusion{
-					{
-						Deployment: &storage.Exclusion_Deployment{
+					storage.Exclusion_builder{
+						Deployment: storage.Exclusion_Deployment_builder{
 							Name: "deployment2",
-							Scope: &storage.Scope{
+							Scope: storage.Scope_builder{
 								Namespace: "ns.*",
-							},
-						},
-					},
+							}.Build(),
+						}.Build(),
+					}.Build(),
 				},
-			},
+			}.Build(),
 			matches: true,
 		},
 		{
-			deployment: &storage.Deployment{
+			deployment: storage.Deployment_builder{
 				Name:      "deployment1",
 				ClusterId: "cluster1",
 				Namespace: "ns1",
-			},
-			policy: &storage.Policy{
+			}.Build(),
+			policy: storage.Policy_builder{
 				Scope: []*storage.Scope{
-					{
+					storage.Scope_builder{
 						Namespace: "ns1",
-					},
+					}.Build(),
 				},
 				Exclusions: []*storage.Exclusion{
-					{
-						Deployment: &storage.Exclusion_Deployment{
+					storage.Exclusion_builder{
+						Deployment: storage.Exclusion_Deployment_builder{
 							Name: "deployment2",
-							Scope: &storage.Scope{
+							Scope: storage.Scope_builder{
 								Namespace: "ns1",
-							},
-						},
-					},
-					{
-						Deployment: &storage.Exclusion_Deployment{
+							}.Build(),
+						}.Build(),
+					}.Build(),
+					storage.Exclusion_builder{
+						Deployment: storage.Exclusion_Deployment_builder{
 							Name: "deployment1",
-						},
-					},
+						}.Build(),
+					}.Build(),
 				},
-			},
+			}.Build(),
 			matches: false,
 		},
 		{
-			deployment: &storage.Deployment{
+			deployment: storage.Deployment_builder{
 				Name:      "deployment1",
 				ClusterId: "cluster1",
 				Namespace: "ns1",
-			},
-			policy: &storage.Policy{
+			}.Build(),
+			policy: storage.Policy_builder{
 				Scope: []*storage.Scope{
-					{
+					storage.Scope_builder{
 						Namespace: "ns1",
-					},
+					}.Build(),
 				},
 				Exclusions: []*storage.Exclusion{
-					{
-						Deployment: &storage.Exclusion_Deployment{
+					storage.Exclusion_builder{
+						Deployment: storage.Exclusion_Deployment_builder{
 							Name: "deployment2",
-							Scope: &storage.Scope{
+							Scope: storage.Scope_builder{
 								Namespace: "ns1",
-							},
-						},
-					},
-					{
-						Deployment: &storage.Exclusion_Deployment{
-							Scope: &storage.Scope{
+							}.Build(),
+						}.Build(),
+					}.Build(),
+					storage.Exclusion_builder{
+						Deployment: storage.Exclusion_Deployment_builder{
+							Scope: storage.Scope_builder{
 								Namespace: "ns1",
-							},
-						},
-					},
+							}.Build(),
+						}.Build(),
+					}.Build(),
 				},
-			},
+			}.Build(),
 			matches: false,
 		},
 		{
-			deployment: &storage.Deployment{
+			deployment: storage.Deployment_builder{
 				Name:      "deployment1",
 				ClusterId: "cluster1",
 				Namespace: "ns1",
-			},
+			}.Build(),
 			policy:  &storage.Policy{},
 			matches: true,
 		},

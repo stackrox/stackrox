@@ -27,22 +27,22 @@ func (resolver *imageScanResolver) Components(_ context.Context, args PaginatedQ
 	}
 
 	pagination := query.GetPagination()
-	query.Pagination = nil
+	query.ClearPagination()
 
 	// This purely exists to make it easier when we do a second pass to remove the storage.Image proto later on, technically this code would work without this.
 	if features.FlattenImageData.Enabled() {
+		imageV2 := &storage.ImageV2{}
+		imageV2.SetScan(resolver.data)
 		vulns, err := mapImageV2sToComponentResolvers(resolver.root, []*storage.ImageV2{
-			{
-				Scan: resolver.data,
-			},
+			imageV2,
 		}, query)
 
 		return paginate(pagination, vulns, err)
 	}
+	image := &storage.Image{}
+	image.SetScan(resolver.data)
 	vulns, err := mapImagesToComponentResolvers(resolver.root, []*storage.Image{
-		{
-			Scan: resolver.data,
-		},
+		image,
 	}, query)
 
 	return paginate(pagination, vulns, err)
@@ -301,14 +301,14 @@ func (eicr *EmbeddedImageScanComponentResolver) Nodes(ctx context.Context, args 
 	}
 
 	pagination := query.GetPagination()
-	query.Pagination = nil
+	query.ClearPagination()
 
 	query, err = search.AddAsConjunction(eicr.componentQuery(), query)
 	if err != nil {
 		return nil, err
 	}
 
-	query.Pagination = pagination
+	query.SetPagination(pagination)
 
 	return eicr.root.wrapNodes(nodeLoader.FromQuery(ctx, query))
 }
@@ -336,14 +336,14 @@ func (eicr *EmbeddedImageScanComponentResolver) NodeCount(ctx context.Context, a
 func (eicr *EmbeddedImageScanComponentResolver) loadImages(ctx context.Context, query *v1.Query) ([]ImageResolver, error) {
 
 	pagination := query.GetPagination()
-	query.Pagination = nil
+	query.ClearPagination()
 
 	query, err := search.AddAsConjunction(eicr.componentQuery(), query)
 	if err != nil {
 		return nil, err
 	}
 
-	query.Pagination = pagination
+	query.SetPagination(pagination)
 
 	if features.FlattenImageData.Enabled() {
 		imageV2Loader, err := loaders.GetImageV2Loader(ctx)
@@ -381,14 +381,14 @@ func (eicr *EmbeddedImageScanComponentResolver) loadDeployments(ctx context.Cont
 	}
 
 	pagination := query.GetPagination()
-	query.Pagination = nil
+	query.ClearPagination()
 
 	query, err = search.AddAsConjunction(deploymentBaseQuery, query)
 	if err != nil {
 		return nil, err
 	}
 
-	query.Pagination = pagination
+	query.SetPagination(pagination)
 
 	return eicr.root.wrapListDeployments(ListDeploymentLoader.FromQuery(ctx, query))
 }

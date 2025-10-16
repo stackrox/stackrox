@@ -24,41 +24,41 @@ func (s *UserStoreTestSuite) SetupSuite() {
 
 func (s *UserStoreTestSuite) TestUserStore() {
 	users := []*storage.User{
-		{
+		storage.User_builder{
 			Id: "user1",
 			Attributes: []*storage.UserAttribute{
-				{
+				storage.UserAttribute_builder{
 					Key:   "name",
 					Value: "user1",
-				},
-				{
+				}.Build(),
+				storage.UserAttribute_builder{
 					Key:   "email",
 					Value: "user@derp.com",
-				},
+				}.Build(),
 			},
-		},
-		{
+		}.Build(),
+		storage.User_builder{
 			Id: "user2",
 			Attributes: []*storage.UserAttribute{
-				{
+				storage.UserAttribute_builder{
 					Key:   "name",
 					Value: "user2",
-				},
+				}.Build(),
 			},
-		},
-		{
+		}.Build(),
+		storage.User_builder{
 			Id: "user3",
 			Attributes: []*storage.UserAttribute{
-				{
+				storage.UserAttribute_builder{
 					Key:   "groups",
 					Value: "squad",
-				},
-				{
+				}.Build(),
+				storage.UserAttribute_builder{
 					Key:   "name",
 					Value: "user3",
-				},
+				}.Build(),
 			},
-		},
+		}.Build(),
 	}
 
 	for _, a := range users {

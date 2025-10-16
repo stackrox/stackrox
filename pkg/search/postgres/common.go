@@ -750,36 +750,36 @@ func compileQueryToPostgres(schema *walker.Schema, q *v1.Query, queryFields map[
 		return nil, err
 	}
 
-	switch sub := q.GetQuery().(type) {
-	case *v1.Query_BaseQuery:
-		switch subBQ := q.GetBaseQuery().GetQuery().(type) {
-		case *v1.BaseQuery_DocIdQuery:
+	switch q.WhichQuery() {
+	case v1.Query_BaseQuery_case:
+		switch q.GetBaseQuery().WhichQuery() {
+		case v1.BaseQuery_DocIdQuery_case:
 			cast := "::text[]"
 			if schema.ID().SQLType == "uuid" {
 				cast = "::uuid[]"
 			}
 			return &pgsearch.QueryEntry{Where: pgsearch.WhereClause{
 				Query:  fmt.Sprintf("%s.%s = ANY($$%s)", schema.Table, schema.ID().ColumnName, cast),
-				Values: []interface{}{subBQ.DocIdQuery.GetIds()},
+				Values: []interface{}{q.GetBaseQuery().GetDocIdQuery().GetIds()},
 			}}, nil
-		case *v1.BaseQuery_MatchFieldQuery:
-			queryFieldMetadata := queryFields[subBQ.MatchFieldQuery.GetField()]
+		case v1.BaseQuery_MatchFieldQuery_case:
+			queryFieldMetadata := queryFields[q.GetBaseQuery().GetMatchFieldQuery().GetField()]
 			qe, err := pgsearch.MatchFieldQuery(
 				queryFieldMetadata.baseField,
 				queryFieldMetadata.derivedMetadata,
-				subBQ.MatchFieldQuery.GetValue(),
-				subBQ.MatchFieldQuery.GetHighlight(),
+				q.GetBaseQuery().GetMatchFieldQuery().GetValue(),
+				q.GetBaseQuery().GetMatchFieldQuery().GetHighlight(),
 				nowForQuery,
 			)
 			if err != nil {
 				return nil, err
 			}
 			return qe, nil
-		case *v1.BaseQuery_MatchNoneQuery:
+		case v1.BaseQuery_MatchNoneQuery_case:
 			return pgsearch.NewFalseQuery(), nil
-		case *v1.BaseQuery_MatchLinkedFieldsQuery:
+		case v1.BaseQuery_MatchLinkedFieldsQuery_case:
 			var entries []*pgsearch.QueryEntry
-			for _, q := range subBQ.MatchLinkedFieldsQuery.GetQuery() {
+			for _, q := range q.GetBaseQuery().GetMatchLinkedFieldsQuery().GetQuery() {
 				queryFieldMetadata := queryFields[q.GetField()]
 				qe, err := pgsearch.MatchFieldQuery(queryFieldMetadata.baseField, queryFieldMetadata.derivedMetadata, q.GetValue(), q.GetHighlight(), nowForQuery)
 				if err != nil {
@@ -793,20 +793,20 @@ func compileQueryToPostgres(schema *walker.Schema, q *v1.Query, queryFields map[
 		default:
 			panic("unsupported")
 		}
-	case *v1.Query_Conjunction:
-		entries, err := entriesFromQueries(schema, sub.Conjunction.GetQueries(), queryFields, nowForQuery)
+	case v1.Query_Conjunction_case:
+		entries, err := entriesFromQueries(schema, q.GetConjunction().GetQueries(), queryFields, nowForQuery)
 		if err != nil {
 			return nil, err
 		}
 		return combineQueryEntries(entries, " and "), nil
-	case *v1.Query_Disjunction:
-		entries, err := entriesFromQueries(schema, sub.Disjunction.GetQueries(), queryFields, nowForQuery)
+	case v1.Query_Disjunction_case:
+		entries, err := entriesFromQueries(schema, q.GetDisjunction().GetQueries(), queryFields, nowForQuery)
 		if err != nil {
 			return nil, err
 		}
 		return combineDisjunction(entries), nil
-	case *v1.Query_BooleanQuery:
-		entries, err := entriesFromQueries(schema, sub.BooleanQuery.GetMust().GetQueries(), queryFields, nowForQuery)
+	case v1.Query_BooleanQuery_case:
+		entries, err := entriesFromQueries(schema, q.GetBooleanQuery().GetMust().GetQueries(), queryFields, nowForQuery)
 		if err != nil {
 			return nil, err
 		}
@@ -815,7 +815,7 @@ func compileQueryToPostgres(schema *walker.Schema, q *v1.Query, queryFields map[
 			cqe = pgsearch.NewTrueQuery()
 		}
 
-		entries, err = entriesFromQueries(schema, sub.BooleanQuery.GetMustNot().GetQueries(), queryFields, nowForQuery)
+		entries, err = entriesFromQueries(schema, q.GetBooleanQuery().GetMustNot().GetQueries(), queryFields, nowForQuery)
 		if err != nil {
 			return nil, err
 		}
@@ -839,7 +839,7 @@ func valueFromStringPtrInterface(value interface{}) string {
 
 func standardizeFieldNamesInQuery(q *v1.Query) {
 	for idx, s := range q.GetSelects() {
-		q.Selects[idx].Field.Name = strings.ToLower(s.GetField().GetName())
+		q.GetSelects()[idx].GetField().SetName(strings.ToLower(s.GetField().GetName()))
 		standardizeFieldNamesInQuery(s.GetFilter().GetQuery())
 	}
 
@@ -848,22 +848,22 @@ func standardizeFieldNamesInQuery(q *v1.Query) {
 	// without access to the options map.
 	// TODO: this could be made cleaner by refactoring the v1.Query object to directly have FieldLabels.
 	searchPkg.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
-		switch bq := bq.GetQuery().(type) {
-		case *v1.BaseQuery_MatchFieldQuery:
-			bq.MatchFieldQuery.Field = strings.ToLower(bq.MatchFieldQuery.GetField())
-		case *v1.BaseQuery_MatchLinkedFieldsQuery:
-			for _, q := range bq.MatchLinkedFieldsQuery.GetQuery() {
-				q.Field = strings.ToLower(q.GetField())
+		switch bq.WhichQuery() {
+		case v1.BaseQuery_MatchFieldQuery_case:
+			bq.GetMatchFieldQuery().SetField(strings.ToLower(bq.GetMatchFieldQuery().GetField()))
+		case v1.BaseQuery_MatchLinkedFieldsQuery_case:
+			for _, q := range bq.GetMatchLinkedFieldsQuery().GetQuery() {
+				q.SetField(strings.ToLower(q.GetField()))
 			}
 		}
 	})
 
 	for idx, field := range q.GetGroupBy().GetFields() {
-		q.GroupBy.Fields[idx] = strings.ToLower(field)
+		q.GetGroupBy().GetFields()[idx] = strings.ToLower(field)
 	}
 
 	for _, sortOption := range q.GetPagination().GetSortOptions() {
-		sortOption.Field = strings.ToLower(sortOption.GetField())
+		sortOption.SetField(strings.ToLower(sortOption.GetField()))
 	}
 }
 

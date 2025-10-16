@@ -293,16 +293,16 @@ func (ds *datastoreImpl) initializeRankers() {
 
 func (ds *datastoreImpl) updateNodePriority(nodes ...*storage.Node) {
 	for _, node := range nodes {
-		node.Priority = ds.nodeRanker.GetRankForID(node.GetId())
+		node.SetPriority(ds.nodeRanker.GetRankForID(node.GetId()))
 		for _, component := range node.GetScan().GetComponents() {
-			component.Priority = ds.nodeComponentRanker.GetRankForID(scancomponent.ComponentID(component.GetName(), component.GetVersion(), node.GetScan().GetOperatingSystem()))
+			component.SetPriority(ds.nodeComponentRanker.GetRankForID(scancomponent.ComponentID(component.GetName(), component.GetVersion(), node.GetScan().GetOperatingSystem())))
 		}
 	}
 }
 
 func (ds *datastoreImpl) updateComponentRisk(node *storage.Node) {
 	for _, component := range node.GetScan().GetComponents() {
-		component.RiskScore = ds.nodeComponentRanker.GetScoreForID(scancomponent.ComponentID(component.GetName(), component.GetVersion(), node.GetScan().GetOperatingSystem()))
+		component.SetRiskScore(ds.nodeComponentRanker.GetScoreForID(scancomponent.ComponentID(component.GetName(), component.GetVersion(), node.GetScan().GetOperatingSystem())))
 	}
 }
 
@@ -319,11 +319,11 @@ func convertMany(nodes []*storage.Node, results []pkgSearch.Result) ([]*v1.Searc
 }
 
 func convertOne(node *storage.Node, result *pkgSearch.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_NODES,
-		Id:             node.GetId(),
-		Name:           node.GetName(),
-		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+	sr := &v1.SearchResult{}
+	sr.SetCategory(v1.SearchCategory_NODES)
+	sr.SetId(node.GetId())
+	sr.SetName(node.GetName())
+	sr.SetFieldToMatches(pkgSearch.GetProtoMatchesMap(result.Matches))
+	sr.SetScore(result.Score)
+	return sr
 }

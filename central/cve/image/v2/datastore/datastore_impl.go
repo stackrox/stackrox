@@ -86,10 +86,10 @@ func (ds *datastoreImpl) EnrichImageWithSuppressedCVEs(image *storage.Image) {
 	for _, component := range image.GetScan().GetComponents() {
 		for _, vuln := range component.GetVulns() {
 			if entry, ok := ds.cveSuppressionCache[vuln.GetCve()]; ok {
-				vuln.Suppressed = true
-				vuln.SuppressActivation = protocompat.ConvertTimeToTimestampOrNil(entry.SuppressActivation)
-				vuln.SuppressExpiry = protocompat.ConvertTimeToTimestampOrNil(entry.SuppressExpiry)
-				vuln.State = storage.VulnerabilityState_DEFERRED
+				vuln.SetSuppressed(true)
+				vuln.SetSuppressActivation(protocompat.ConvertTimeToTimestampOrNil(entry.SuppressActivation))
+				vuln.SetSuppressExpiry(protocompat.ConvertTimeToTimestampOrNil(entry.SuppressExpiry))
+				vuln.SetState(storage.VulnerabilityState_DEFERRED)
 			}
 		}
 	}
@@ -108,11 +108,11 @@ func convertMany(cves []*storage.ImageCVEV2, results []pkgSearch.Result) ([]*v1.
 }
 
 func convertOne(cve *storage.ImageCVEV2, result *pkgSearch.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
-		Id:             cve.GetId(),
-		Name:           cve.GetCveBaseInfo().GetCve(),
-		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+	sr := &v1.SearchResult{}
+	sr.SetCategory(v1.SearchCategory_IMAGE_VULNERABILITIES_V2)
+	sr.SetId(cve.GetId())
+	sr.SetName(cve.GetCveBaseInfo().GetCve())
+	sr.SetFieldToMatches(pkgSearch.GetProtoMatchesMap(result.Matches))
+	sr.SetScore(result.Score)
+	return sr
 }

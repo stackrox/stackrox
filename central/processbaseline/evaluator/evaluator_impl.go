@@ -39,15 +39,14 @@ func getBaselineStatus(baseline *storage.ProcessBaseline) storage.ContainerNameA
 }
 
 func (e *evaluator) persistResults(ctx context.Context, deployment *storage.Deployment, containerNameToBaselineResults map[string]*storage.ContainerNameAndBaselineStatus) error {
-	results := &storage.ProcessBaselineResults{
-		DeploymentId: deployment.GetId(),
-		ClusterId:    deployment.GetClusterId(),
-		Namespace:    deployment.GetNamespace(),
-	}
+	results := &storage.ProcessBaselineResults{}
+	results.SetDeploymentId(deployment.GetId())
+	results.SetClusterId(deployment.GetClusterId())
+	results.SetNamespace(deployment.GetNamespace())
 
 	for _, container := range deployment.GetContainers() {
 		if baselineStatus, ok := containerNameToBaselineResults[container.GetName()]; ok {
-			results.BaselineStatuses = append(results.BaselineStatuses, baselineStatus)
+			results.SetBaselineStatuses(append(results.GetBaselineStatuses(), baselineStatus))
 		}
 	}
 
@@ -60,12 +59,12 @@ func (e *evaluator) EvaluateBaselinesAndPersistResult(deployment *storage.Deploy
 
 	var hasAtLeastOneLockedBaseline bool
 	for _, container := range deployment.GetContainers() {
-		baseline, exists, err := e.baselines.GetProcessBaseline(evaluatorCtx, &storage.ProcessBaselineKey{
-			DeploymentId:  deployment.GetId(),
-			ContainerName: container.GetName(),
-			ClusterId:     deployment.GetClusterId(),
-			Namespace:     deployment.GetNamespace(),
-		})
+		pbk := &storage.ProcessBaselineKey{}
+		pbk.SetDeploymentId(deployment.GetId())
+		pbk.SetContainerName(container.GetName())
+		pbk.SetClusterId(deployment.GetClusterId())
+		pbk.SetNamespace(deployment.GetNamespace())
+		baseline, exists, err := e.baselines.GetProcessBaseline(evaluatorCtx, pbk)
 		if err != nil {
 			return nil, errors.Wrapf(err, "fetching process baseline for deployment %s/%s/%s", deployment.GetClusterName(), deployment.GetNamespace(), deployment.GetName())
 		}
@@ -73,10 +72,10 @@ func (e *evaluator) EvaluateBaselinesAndPersistResult(deployment *storage.Deploy
 		if baselineStatus == storage.ContainerNameAndBaselineStatus_LOCKED {
 			hasAtLeastOneLockedBaseline = true
 		}
-		containerNameToBaselineResults[container.GetName()] = &storage.ContainerNameAndBaselineStatus{
-			ContainerName:  container.GetName(),
-			BaselineStatus: getBaselineStatus(baseline),
-		}
+		cnabs := &storage.ContainerNameAndBaselineStatus{}
+		cnabs.SetContainerName(container.GetName())
+		cnabs.SetBaselineStatus(getBaselineStatus(baseline))
+		containerNameToBaselineResults[container.GetName()] = cnabs
 		if !exists {
 			continue
 		}
@@ -102,7 +101,7 @@ func (e *evaluator) EvaluateBaselinesAndPersistResult(deployment *storage.Deploy
 			}
 			if !processSet.Contains(processbaseline.BaselineItemFromProcessView(process)) {
 				violatingProcesses = append(violatingProcesses, process)
-				containerNameToBaselineResults[process.ContainerName].AnomalousProcessesExecuted = true
+				containerNameToBaselineResults[process.ContainerName].SetAnomalousProcessesExecuted(true)
 			}
 			return nil
 		})

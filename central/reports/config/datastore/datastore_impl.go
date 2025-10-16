@@ -59,7 +59,7 @@ func (d *dataStoreImpl) AddReportConfiguration(ctx context.Context, reportConfig
 		return "", err
 	}
 	if reportConfig.GetId() == "" {
-		reportConfig.Id = uuid.NewV4().String()
+		reportConfig.SetId(uuid.NewV4().String())
 	}
 	if err := d.reportConfigStore.Upsert(ctx, reportConfig); err != nil {
 		return "", err

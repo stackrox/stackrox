@@ -39,15 +39,16 @@ func (r *roleTransform) Transform(configuration declarativeconfig.Configuration)
 		return nil, errox.InvalidArgs.CausedBy("permission set must be non-empty")
 	}
 
-	roleProto := &storage.Role{
-		Name:        roleConfig.Name,
-		Description: roleConfig.Description,
-		PermissionSetId: stringutils.FirstNonEmpty(accesscontrol.DefaultPermissionSetIDs[roleConfig.PermissionSet],
-			declarativeconfig.NewDeclarativePermissionSetUUID(roleConfig.PermissionSet).String()),
-		AccessScopeId: stringutils.FirstNonEmpty(accesscontrol.DefaultAccessScopeIDs[roleConfig.AccessScope],
-			declarativeconfig.NewDeclarativeAccessScopeUUID(roleConfig.AccessScope).String()),
-		Traits: &storage.Traits{Origin: storage.Traits_DECLARATIVE},
-	}
+	traits := &storage.Traits{}
+	traits.SetOrigin(storage.Traits_DECLARATIVE)
+	roleProto := &storage.Role{}
+	roleProto.SetName(roleConfig.Name)
+	roleProto.SetDescription(roleConfig.Description)
+	roleProto.SetPermissionSetId(stringutils.FirstNonEmpty(accesscontrol.DefaultPermissionSetIDs[roleConfig.PermissionSet],
+		declarativeconfig.NewDeclarativePermissionSetUUID(roleConfig.PermissionSet).String()))
+	roleProto.SetAccessScopeId(stringutils.FirstNonEmpty(accesscontrol.DefaultAccessScopeIDs[roleConfig.AccessScope],
+		declarativeconfig.NewDeclarativeAccessScopeUUID(roleConfig.AccessScope).String()))
+	roleProto.SetTraits(traits)
 	return map[reflect.Type][]protocompat.Message{
 		roleType: {roleProto},
 	}, nil

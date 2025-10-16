@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 )
 
+// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
 var (
 	walkParameters = generator.TypeWalkParameters{
 		IncludedTypes: []reflect.Type{
@@ -70,11 +71,11 @@ var (
 			reflect.TypeOf((*v1.SearchResult)(nil)),
 		},
 		SkipResolvers: []reflect.Type{
-			reflect.TypeOf(storage.EmbeddedVulnerability{}),
-			reflect.TypeOf(storage.EmbeddedImageScanComponent{}),
-			reflect.TypeOf(storage.EmbeddedNodeScanComponent{}),
+			reflect.TypeOf(&storage.EmbeddedVulnerability{}),
+			reflect.TypeOf(&storage.EmbeddedImageScanComponent{}),
+			reflect.TypeOf(&storage.EmbeddedNodeScanComponent{}),
 			protocompat.TimestampType,
-			reflect.TypeOf(storage.NodeVulnerability{}),
+			reflect.TypeOf(&storage.NodeVulnerability{}),
 			reflect.TypeOf((*storage.ImageCVE)(nil)),
 			reflect.TypeOf((*storage.ImageCVEV2)(nil)),
 			reflect.TypeOf((*storage.ImageComponent)(nil)),
@@ -82,46 +83,46 @@ var (
 		},
 		SkipFields: []generator.TypeAndField{
 			{
-				ParentType: reflect.TypeOf(storage.Image{}),
+				ParentType: reflect.TypeOf(&storage.Image{}),
 				FieldName:  "Scan",
 			},
 			{
-				ParentType: reflect.TypeOf(storage.ImageV2{}),
+				ParentType: reflect.TypeOf(&storage.ImageV2{}),
 				FieldName:  "Scan",
 			},
 			{
-				ParentType: reflect.TypeOf(storage.ImageV2{}),
+				ParentType: reflect.TypeOf(&storage.ImageV2{}),
 				FieldName:  "ScanStats",
 			},
 			{
-				ParentType: reflect.TypeOf(storage.ImageScan{}),
+				ParentType: reflect.TypeOf(&storage.ImageScan{}),
 				FieldName:  "Components",
 			},
 			{
-				ParentType: reflect.TypeOf(storage.NodeScan{}),
+				ParentType: reflect.TypeOf(&storage.NodeScan{}),
 				FieldName:  "Components",
 			},
 			{
-				ParentType: reflect.TypeOf(storage.Node{}),
+				ParentType: reflect.TypeOf(&storage.Node{}),
 				FieldName:  "Scan",
 			},
 			{
-				ParentType: reflect.TypeOf(storage.CVE{}),
+				ParentType: reflect.TypeOf(&storage.CVE{}),
 				FieldName:  "Cvss",
 			},
 			{
-				ParentType: reflect.TypeOf(storage.CVE{}),
+				ParentType: reflect.TypeOf(&storage.CVE{}),
 				FieldName:  "CvssV2",
 			},
 			{
-				ParentType: reflect.TypeOf(storage.CVE{}),
+				ParentType: reflect.TypeOf(&storage.CVE{}),
 				FieldName:  "CvssV3",
 			},
 			// TODO(ROX-28123): Need to skip these to keep the interfaces the same
 			// during the transition.  Once that is complete, these can become
 			// generated.
 			{
-				ParentType: reflect.TypeOf(storage.ImageComponentV2{}),
+				ParentType: reflect.TypeOf(&storage.ImageComponentV2{}),
 				FieldName:  "Location",
 			},
 		},

@@ -298,10 +298,10 @@ func (r *v2Restorer) initResume(ctx context.Context, file *os.File, activeStatus
 			subCtx, cancel := context.WithTimeout(ctx, grpcRequestTimeout)
 			defer cancel()
 
-			interruptResp, err := r.dbClient.InterruptRestoreProcess(subCtx, &v1.InterruptDBRestoreProcessRequest{
-				ProcessId: r.processID,
-				AttemptId: activeStatus.GetAttemptId(),
-			})
+			idbrpr := &v1.InterruptDBRestoreProcessRequest{}
+			idbrpr.SetProcessId(r.processID)
+			idbrpr.SetAttemptId(activeStatus.GetAttemptId())
+			interruptResp, err := r.dbClient.InterruptRestoreProcess(subCtx, idbrpr)
 			if err != nil {
 				return nil, errors.Wrap(err, "could not interrupt ongoing restore process")
 			}
@@ -343,14 +343,13 @@ func (r *v2Restorer) initNewProcess(ctx context.Context, file *os.File) (*http.R
 		return nil, errors.Wrap(err, "could not stat input file")
 	}
 
-	header := &v1.DBRestoreRequestHeader{
-		FormatName: format.GetFormatName(),
-		Manifest:   manifest,
-		LocalFile: &v1.DBRestoreRequestHeader_LocalFileInfo{
-			Path:      file.Name(),
-			BytesSize: st.Size(),
-		},
-	}
+	dl := &v1.DBRestoreRequestHeader_LocalFileInfo{}
+	dl.SetPath(file.Name())
+	dl.SetBytesSize(st.Size())
+	header := &v1.DBRestoreRequestHeader{}
+	header.SetFormatName(format.GetFormatName())
+	header.SetManifest(manifest)
+	header.SetLocalFile(dl)
 
 	headerBytes, err := header.MarshalVT()
 	if err != nil {
@@ -463,10 +462,10 @@ func (r *v2Restorer) resumeAfterError(ctx context.Context) (*http.Request, error
 		subCtx, cancel = context.WithTimeout(ctx, grpcRequestTimeout)
 		defer cancel()
 
-		interruptResp, err := r.dbClient.InterruptRestoreProcess(subCtx, &v1.InterruptDBRestoreProcessRequest{
-			ProcessId: r.processID,
-			AttemptId: r.lastAttemptID,
-		})
+		idbrpr := &v1.InterruptDBRestoreProcessRequest{}
+		idbrpr.SetProcessId(r.processID)
+		idbrpr.SetAttemptId(r.lastAttemptID)
+		interruptResp, err := r.dbClient.InterruptRestoreProcess(subCtx, idbrpr)
 		if err != nil {
 			return nil, errors.Wrap(err, "interrupting restore process")
 		}

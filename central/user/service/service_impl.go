@@ -51,9 +51,8 @@ func (s *serviceImpl) GetUsers(ctx context.Context, _ *v1.Empty) (*v1.GetUsersRe
 	if err != nil {
 		return nil, err
 	}
-	resp := &v1.GetUsersResponse{
-		Users: users,
-	}
+	resp := &v1.GetUsersResponse{}
+	resp.SetUsers(users)
 	return resp, nil
 }
 
@@ -75,9 +74,8 @@ func (s *serviceImpl) GetUsersAttributes(ctx context.Context, _ *v1.Empty) (*v1.
 	}
 
 	attrs := aggregateUserAttributes(users)
-	resp := &v1.GetUsersAttributesResponse{
-		UsersAttributes: attrs,
-	}
+	resp := &v1.GetUsersAttributesResponse{}
+	resp.SetUsersAttributes(attrs)
 	return resp, nil
 }
 
@@ -88,11 +86,11 @@ func aggregateUserAttributes(users []*storage.User) (attrs []*v1.UserAttributeTu
 		for _, attr := range user.GetAttributes() {
 			key := serialize.StringKey(user.GetAuthProviderId(), attr.GetKey(), attr.GetValue())
 			if _, exists := tups[key]; !exists {
-				tups[key] = &v1.UserAttributeTuple{
-					AuthProviderId: user.GetAuthProviderId(),
-					Key:            attr.GetKey(),
-					Value:          attr.GetValue(),
-				}
+				uat := &v1.UserAttributeTuple{}
+				uat.SetAuthProviderId(user.GetAuthProviderId())
+				uat.SetKey(attr.GetKey())
+				uat.SetValue(attr.GetValue())
+				tups[key] = uat
 			}
 		}
 	}

@@ -71,11 +71,10 @@ func (s *virtualMachineServiceSuite) TestAuthFuncOverride() {
 
 func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_NilConnection() {
 	ctx := context.Background()
-	req := &sensor.UpsertVirtualMachineIndexReportRequest{
-		IndexReport: &v1.IndexReport{
-			VsockCid: "test-vm-id",
-		},
-	}
+	ir := &v1.IndexReport{}
+	ir.SetVsockCid("test-vm-id")
+	req := &sensor.UpsertVirtualMachineIndexReportRequest{}
+	req.SetIndexReport(ir)
 
 	resp, err := s.service.UpsertVirtualMachineIndexReport(ctx, req)
 	s.Assert().NotNil(resp)
@@ -93,11 +92,10 @@ func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_WithConnection() {
 	defer s.service.handler.Stop()
 	s.service.handler.Notify(common.SensorComponentEventCentralReachable)
 
-	req := &sensor.UpsertVirtualMachineIndexReportRequest{
-		IndexReport: &v1.IndexReport{
-			VsockCid: "test-vm-id",
-		},
-	}
+	ir := &v1.IndexReport{}
+	ir.SetVsockCid("test-vm-id")
+	req := &sensor.UpsertVirtualMachineIndexReportRequest{}
+	req.SetIndexReport(ir)
 
 	resp, err := s.service.UpsertVirtualMachineIndexReport(ctx, req)
 	s.Require().NotNil(resp)

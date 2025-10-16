@@ -34,11 +34,10 @@ func (rs *storeImpl) Cleanup() {
 }
 
 func (rs *storeImpl) GetPermissionLevelForDeployment(d rbac.NamespacedServiceAccount) storage.PermissionLevel {
-	subject := &storage.Subject{
-		Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
-		Name:      d.GetServiceAccount(),
-		Namespace: d.GetNamespace(),
-	}
+	subject := &storage.Subject{}
+	subject.SetKind(storage.SubjectKind_SERVICE_ACCOUNT)
+	subject.SetName(d.GetServiceAccount())
+	subject.SetNamespace(d.GetNamespace())
 
 	rs.lock.Lock()
 	defer rs.lock.Unlock()

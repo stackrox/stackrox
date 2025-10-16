@@ -23,10 +23,10 @@ func init() {
 
 func clusterIsCompliant(ctx framework.ComplianceContext) {
 	common.CheckDeploymentsDoNotHaveClusterAccess(ctx, common.EffectiveAdmin)
-	common.CheckDeploymentsDoNotHaveClusterAccess(ctx, &storage.PolicyRule{
-		Verbs:     []string{"*"},
-		ApiGroups: []string{""},
-		Resources: []string{"secrets"},
-	})
+	pr := &storage.PolicyRule{}
+	pr.SetVerbs([]string{"*"})
+	pr.SetApiGroups([]string{""})
+	pr.SetResources([]string{"secrets"})
+	common.CheckDeploymentsDoNotHaveClusterAccess(ctx, pr)
 	common.CheckSecretsInEnv(ctx)
 }

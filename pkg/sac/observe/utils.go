@@ -6,6 +6,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"google.golang.org/protobuf/proto"
 )
 
 // CountAllowedTraces exists solely for testing purposes.
@@ -27,23 +28,21 @@ func calculateRequest(ctx context.Context, rpcMethod string) *v1.AuthorizationTr
 		endpoint = rpcMethod
 	}
 
-	request := &v1.AuthorizationTraceResponse_Request{
-		Endpoint: endpoint,
-		Method:   method,
-	}
+	request := &v1.AuthorizationTraceResponse_Request{}
+	request.SetEndpoint(endpoint)
+	request.SetMethod(method)
 
 	return request
 }
 
 func calculateResponse(requestError error) *v1.AuthorizationTraceResponse_Response {
-	response := &v1.AuthorizationTraceResponse_Response{
-		Status: v1.AuthorizationTraceResponse_Response_SUCCESS,
-	}
+	response := &v1.AuthorizationTraceResponse_Response{}
+	response.SetStatus(v1.AuthorizationTraceResponse_Response_SUCCESS)
 
 	// requestError also includes AuthStatus.Error.
 	if requestError != nil {
-		response.Status = v1.AuthorizationTraceResponse_Response_FAILURE
-		response.Error = requestError.Error()
+		response.SetStatus(v1.AuthorizationTraceResponse_Response_FAILURE)
+		response.SetError(requestError.Error())
 	}
 
 	return response
@@ -57,21 +56,19 @@ func calculateUser(ctx context.Context) *v1.AuthorizationTraceResponse_User {
 
 	roles := make([]*v1.AuthorizationTraceResponse_User_Role, 0, len(id.Roles()))
 	for _, rr := range id.Roles() {
-		r := &v1.AuthorizationTraceResponse_User_Role{
-			Name:            rr.GetRoleName(),
-			Permissions:     rr.GetPermissions(),
-			AccessScopeName: rr.GetAccessScope().GetName(),
-			AccessScope:     rr.GetAccessScope().GetRules(),
-		}
+		r := &v1.AuthorizationTraceResponse_User_Role{}
+		r.SetName(rr.GetRoleName())
+		r.SetPermissions(rr.GetPermissions())
+		r.SetAccessScopeName(rr.GetAccessScope().GetName())
+		r.SetAccessScope(rr.GetAccessScope().GetRules())
 		roles = append(roles, r)
 	}
 
-	user := &v1.AuthorizationTraceResponse_User{
-		Username:              id.User().GetUsername(),
-		FriendlyName:          id.User().GetFriendlyName(),
-		AggregatedPermissions: id.Permissions(),
-		Roles:                 roles,
-	}
+	user := &v1.AuthorizationTraceResponse_User{}
+	user.SetUsername(id.User().GetUsername())
+	user.SetFriendlyName(id.User().GetFriendlyName())
+	user.SetAggregatedPermissions(id.Permissions())
+	user.SetRoles(roles)
 	return user
 }
 
@@ -83,19 +80,16 @@ func calculateTrace(authzTrace *AuthzTrace) *v1.AuthorizationTraceResponse_Trace
 	authzTrace.mutex.Lock()
 	defer authzTrace.mutex.Unlock()
 
-	trace := &v1.AuthorizationTraceResponse_Trace{
-		ScopeCheckerType: string(authzTrace.sccType),
-	}
+	trace := &v1.AuthorizationTraceResponse_Trace{}
+	trace.SetScopeCheckerType(string(authzTrace.sccType))
 	if authzTrace.sccType == ScopeCheckerBuiltIn {
-		trace.Authorizer = &v1.AuthorizationTraceResponse_Trace_BuiltIn{
-			BuiltIn: &v1.AuthorizationTraceResponse_Trace_BuiltInAuthorizer{
-				ClustersTotalNum:      authzTrace.numClusters,
-				NamespacesTotalNum:    authzTrace.numNamespaces,
-				DeniedAuthzDecisions:  authzTrace.denied,
-				AllowedAuthzDecisions: authzTrace.allowed,
-				EffectiveAccessScopes: authzTrace.effectiveAccessScopes,
-			},
-		}
+		atb := &v1.AuthorizationTraceResponse_Trace_BuiltInAuthorizer{}
+		atb.SetClustersTotalNum(authzTrace.numClusters)
+		atb.SetNamespacesTotalNum(authzTrace.numNamespaces)
+		atb.SetDeniedAuthzDecisions(authzTrace.denied)
+		atb.SetAllowedAuthzDecisions(authzTrace.allowed)
+		atb.SetEffectiveAccessScopes(authzTrace.effectiveAccessScopes)
+		trace.SetBuiltIn(proto.ValueOrDefault(atb))
 	}
 
 	return trace

@@ -17,16 +17,14 @@ import (
 
 func BenchmarkRunChecks(b *testing.B) {
 	data := readDataForBenchmark()
-	run := &sensor.MsgToCompliance_TriggerRun{
-		ScrapeId: "test",
-		StandardIds: []string{
-			standards.CISKubernetes,
-			standards.NIST800190,
-		},
-	}
-	conf := &sensor.MsgToCompliance_ScrapeConfig{
-		ContainerRuntime: storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
-	}
+	run := &sensor.MsgToCompliance_TriggerRun{}
+	run.SetScrapeId("test")
+	run.SetStandardIds([]string{
+		standards.CISKubernetes,
+		standards.NIST800190,
+	})
+	conf := &sensor.MsgToCompliance_ScrapeConfig{}
+	conf.SetContainerRuntime(storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		getCheckResults(run, conf, data)
@@ -35,16 +33,14 @@ func BenchmarkRunChecks(b *testing.B) {
 
 func BenchmarkCompressResults(b *testing.B) {
 	data := readDataForBenchmark()
-	run := &sensor.MsgToCompliance_TriggerRun{
-		ScrapeId: "test",
-		StandardIds: []string{
-			standards.CISKubernetes,
-			standards.NIST800190,
-		},
-	}
-	conf := &sensor.MsgToCompliance_ScrapeConfig{
-		ContainerRuntime: storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
-	}
+	run := &sensor.MsgToCompliance_TriggerRun{}
+	run.SetScrapeId("test")
+	run.SetStandardIds([]string{
+		standards.CISKubernetes,
+		standards.NIST800190,
+	})
+	conf := &sensor.MsgToCompliance_ScrapeConfig{}
+	conf.SetContainerRuntime(storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME)
 	results := getCheckResults(run, conf, data)
 
 	b.ResetTimer()
@@ -58,16 +54,14 @@ func BenchmarkCompressResults(b *testing.B) {
 
 func BenchmarkChecksAndCompression(b *testing.B) {
 	data := readDataForBenchmark()
-	run := &sensor.MsgToCompliance_TriggerRun{
-		ScrapeId: "test",
-		StandardIds: []string{
-			standards.CISKubernetes,
-			standards.NIST800190,
-		},
-	}
-	conf := &sensor.MsgToCompliance_ScrapeConfig{
-		ContainerRuntime: storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
-	}
+	run := &sensor.MsgToCompliance_TriggerRun{}
+	run.SetScrapeId("test")
+	run.SetStandardIds([]string{
+		standards.CISKubernetes,
+		standards.NIST800190,
+	})
+	conf := &sensor.MsgToCompliance_ScrapeConfig{}
+	conf.SetContainerRuntime(storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		results := getCheckResults(run, conf, data)

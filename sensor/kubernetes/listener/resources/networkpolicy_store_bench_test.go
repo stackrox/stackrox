@@ -55,15 +55,15 @@ func populateStore(s store.NetworkPolicyStore, num, numLabels int64, allLabels, 
 }
 
 func newNPDummy(id, ns string, sel map[string]string) *storage.NetworkPolicy {
-	return &storage.NetworkPolicy{
-		Namespace: ns,
-		Id:        id,
-		Spec: &storage.NetworkPolicySpec{
-			PodSelector: &storage.LabelSelector{
-				MatchLabels: sel,
-			},
-		},
-	}
+	ls := &storage.LabelSelector{}
+	ls.SetMatchLabels(sel)
+	nps := &storage.NetworkPolicySpec{}
+	nps.SetPodSelector(ls)
+	np := &storage.NetworkPolicy{}
+	np.SetNamespace(ns)
+	np.SetId(id)
+	np.SetSpec(nps)
+	return np
 }
 
 var allLabels16 = generateSetOfAllLabels(16)

@@ -13,10 +13,12 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var policyLoaderType = reflect.TypeOf(storage.Policy{})
+// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+var policyLoaderType = reflect.TypeOf(&storage.Policy{})
 
 func init() {
-	RegisterTypeFactory(reflect.TypeOf(storage.Policy{}), func() interface{} {
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	RegisterTypeFactory(reflect.TypeOf(&storage.Policy{}), func() interface{} {
 		return NewPolicyLoader(policyDataStore.Singleton())
 	})
 }

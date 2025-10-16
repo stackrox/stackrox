@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -30,14 +31,11 @@ func skip(t *testing.T) (apiKey string) {
 func getPagerDuty(t *testing.T) *pagerDuty {
 	apiKey := skip(t)
 
-	notifier := &storage.Notifier{
-		UiEndpoint: "https://www.stackrox.com",
-		Config: &storage.Notifier_Pagerduty{
-			Pagerduty: &storage.PagerDuty{
-				ApiKey: apiKey,
-			},
-		},
-	}
+	pagerDuty2 := &storage.PagerDuty{}
+	pagerDuty2.SetApiKey(apiKey)
+	notifier := &storage.Notifier{}
+	notifier.SetUiEndpoint("https://www.stackrox.com")
+	notifier.SetPagerduty(proto.ValueOrDefault(pagerDuty2))
 
 	s, err := newPagerDuty(notifier, cryptocodec.Singleton(), "stackrox")
 	require.NoError(t, err)
@@ -57,14 +55,14 @@ func TestPagerDutyTest(t *testing.T) {
 func TestPagerDutyAckAlert(t *testing.T) {
 	p := getPagerDuty(t)
 	alert := fixtures.GetAlert()
-	alert.State = storage.ViolationState_ACTIVE
+	alert.SetState(storage.ViolationState_ACTIVE)
 	assert.NoError(t, p.AckAlert(context.Background(), alert))
 }
 
 func TestPagerDutyResolveAlert(t *testing.T) {
 	p := getPagerDuty(t)
 	alert := fixtures.GetAlert()
-	alert.State = storage.ViolationState_RESOLVED
+	alert.SetState(storage.ViolationState_RESOLVED)
 	assert.NoError(t, p.ResolveAlert(context.Background(), alert))
 }
 

@@ -38,21 +38,17 @@ func (c *controller) ApplyNetworkPolicies(ctx context.Context, mod *storage.Netw
 
 	applyID := uuid.NewV4().String()
 
-	msg := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_NetworkPoliciesCommand{
-			NetworkPoliciesCommand: &central.NetworkPoliciesCommand{
-				SeqId: seqID,
-				Payload: &central.NetworkPoliciesCommand_Payload{
-					Cmd: &central.NetworkPoliciesCommand_Payload_Apply{
-						Apply: &central.NetworkPoliciesCommand_Apply{
-							ApplyId:      applyID,
-							Modification: mod,
-						},
-					},
-				},
-			},
-		},
-	}
+	msg := central.MsgToSensor_builder{
+		NetworkPoliciesCommand: central.NetworkPoliciesCommand_builder{
+			SeqId: seqID,
+			Payload: central.NetworkPoliciesCommand_Payload_builder{
+				Apply: central.NetworkPoliciesCommand_Apply_builder{
+					ApplyId:      applyID,
+					Modification: mod,
+				}.Build(),
+			}.Build(),
+		}.Build(),
+	}.Build()
 
 	retC := make(chan *central.NetworkPoliciesResponse_Payload, 1)
 	concurrency.WithLock(&c.returnChansMutex, func() {

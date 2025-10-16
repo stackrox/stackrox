@@ -96,19 +96,17 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 					).Times(1),
 				)
 			},
-			expectedMsg: component.NewEvent(&central.SensorEvent{
+			expectedMsg: component.NewEvent(central.SensorEvent_builder{
 				Id:     ownerUID,
 				Action: central.ResourceAction_UPDATE_RESOURCE,
-				Resource: &central.SensorEvent_VirtualMachine{
-					VirtualMachine: &virtualMachineV1.VirtualMachine{
-						Id:        ownerUID,
-						Name:      vmiName,
-						Namespace: vmiNamespace,
-						ClusterId: clusterID,
-						State:     virtualMachineV1.VirtualMachine_STOPPED,
-					},
-				},
-			}),
+				VirtualMachine: virtualMachineV1.VirtualMachine_builder{
+					Id:        ownerUID,
+					Name:      vmiName,
+					Namespace: vmiNamespace,
+					ClusterId: clusterID,
+					State:     virtualMachineV1.VirtualMachine_STOPPED,
+				}.Build(),
+			}.Build()),
 		},
 		"update event": {
 			action: central.ResourceAction_UPDATE_RESOURCE,
@@ -127,19 +125,17 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 					).Times(1),
 				)
 			},
-			expectedMsg: component.NewEvent(&central.SensorEvent{
+			expectedMsg: component.NewEvent(central.SensorEvent_builder{
 				Id:     ownerUID,
 				Action: central.ResourceAction_UPDATE_RESOURCE,
-				Resource: &central.SensorEvent_VirtualMachine{
-					VirtualMachine: &virtualMachineV1.VirtualMachine{
-						Id:        ownerUID,
-						Name:      vmiName,
-						Namespace: vmiNamespace,
-						ClusterId: clusterID,
-						State:     virtualMachineV1.VirtualMachine_STOPPED,
-					},
-				},
-			}),
+				VirtualMachine: virtualMachineV1.VirtualMachine_builder{
+					Id:        ownerUID,
+					Name:      vmiName,
+					Namespace: vmiNamespace,
+					ClusterId: clusterID,
+					State:     virtualMachineV1.VirtualMachine_STOPPED,
+				}.Build(),
+			}.Build()),
 		},
 		"remove event": {
 			action: central.ResourceAction_REMOVE_RESOURCE,
@@ -150,19 +146,17 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 					s.store.EXPECT().ClearState(gomock.Eq(vmInfo.VMID(ownerUID))).Times(1),
 				)
 			},
-			expectedMsg: component.NewEvent(&central.SensorEvent{
+			expectedMsg: component.NewEvent(central.SensorEvent_builder{
 				Id:     ownerUID,
 				Action: central.ResourceAction_UPDATE_RESOURCE,
-				Resource: &central.SensorEvent_VirtualMachine{
-					VirtualMachine: &virtualMachineV1.VirtualMachine{
-						Id:        ownerUID,
-						Name:      vmiName,
-						Namespace: vmiNamespace,
-						ClusterId: clusterID,
-						State:     virtualMachineV1.VirtualMachine_STOPPED,
-					},
-				},
-			}),
+				VirtualMachine: virtualMachineV1.VirtualMachine_builder{
+					Id:        ownerUID,
+					Name:      vmiName,
+					Namespace: vmiNamespace,
+					ClusterId: clusterID,
+					State:     virtualMachineV1.VirtualMachine_STOPPED,
+				}.Build(),
+			}.Build()),
 		},
 		"no unstructured object": {
 			action:      central.ResourceAction_REMOVE_RESOURCE,
@@ -197,19 +191,17 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Running:   false,
 					})
 			},
-			expectedMsg: component.NewEvent(&central.SensorEvent{
+			expectedMsg: component.NewEvent(central.SensorEvent_builder{
 				Id:     vmiUID,
 				Action: central.ResourceAction_CREATE_RESOURCE,
-				Resource: &central.SensorEvent_VirtualMachine{
-					VirtualMachine: &virtualMachineV1.VirtualMachine{
-						Id:        vmiUID,
-						Name:      vmiName,
-						Namespace: vmiNamespace,
-						ClusterId: clusterID,
-						State:     virtualMachineV1.VirtualMachine_STOPPED,
-					},
-				},
-			}),
+				VirtualMachine: virtualMachineV1.VirtualMachine_builder{
+					Id:        vmiUID,
+					Name:      vmiName,
+					Namespace: vmiNamespace,
+					ClusterId: clusterID,
+					State:     virtualMachineV1.VirtualMachine_STOPPED,
+				}.Build(),
+			}.Build()),
 		},
 		"no VirtualMachine owner reference update resource": {
 			action: central.ResourceAction_UPDATE_RESOURCE,
@@ -232,19 +224,17 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Running:   false,
 					})
 			},
-			expectedMsg: component.NewEvent(&central.SensorEvent{
+			expectedMsg: component.NewEvent(central.SensorEvent_builder{
 				Id:     vmiUID,
 				Action: central.ResourceAction_UPDATE_RESOURCE,
-				Resource: &central.SensorEvent_VirtualMachine{
-					VirtualMachine: &virtualMachineV1.VirtualMachine{
-						Id:        vmiUID,
-						Name:      vmiName,
-						Namespace: vmiNamespace,
-						ClusterId: clusterID,
-						State:     virtualMachineV1.VirtualMachine_STOPPED,
-					},
-				},
-			}),
+				VirtualMachine: virtualMachineV1.VirtualMachine_builder{
+					Id:        vmiUID,
+					Name:      vmiName,
+					Namespace: vmiNamespace,
+					ClusterId: clusterID,
+					State:     virtualMachineV1.VirtualMachine_STOPPED,
+				}.Build(),
+			}.Build()),
 		},
 		"no VirtualMachine owner reference remove resource": {
 			action: central.ResourceAction_REMOVE_RESOURCE,
@@ -252,19 +242,17 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 			expectFn: func() {
 				s.store.EXPECT().Remove(gomock.Eq(vmInfo.VMID(vmiUID))).Times(1)
 			},
-			expectedMsg: component.NewEvent(&central.SensorEvent{
+			expectedMsg: component.NewEvent(central.SensorEvent_builder{
 				Id:     vmiUID,
 				Action: central.ResourceAction_REMOVE_RESOURCE,
-				Resource: &central.SensorEvent_VirtualMachine{
-					VirtualMachine: &virtualMachineV1.VirtualMachine{
-						Id:        vmiUID,
-						Name:      vmiName,
-						Namespace: vmiNamespace,
-						ClusterId: clusterID,
-						State:     virtualMachineV1.VirtualMachine_STOPPED,
-					},
-				},
-			}),
+				VirtualMachine: virtualMachineV1.VirtualMachine_builder{
+					Id:        vmiUID,
+					Name:      vmiName,
+					Namespace: vmiNamespace,
+					ClusterId: clusterID,
+					State:     virtualMachineV1.VirtualMachine_STOPPED,
+				}.Build(),
+			}.Build()),
 		},
 		"no VirtualMachine owner reference sync resource": {
 			action: central.ResourceAction_SYNC_RESOURCE,
@@ -287,19 +275,17 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Running:   false,
 					})
 			},
-			expectedMsg: component.NewEvent(&central.SensorEvent{
+			expectedMsg: component.NewEvent(central.SensorEvent_builder{
 				Id:     vmiUID,
 				Action: central.ResourceAction_SYNC_RESOURCE,
-				Resource: &central.SensorEvent_VirtualMachine{
-					VirtualMachine: &virtualMachineV1.VirtualMachine{
-						Id:        vmiUID,
-						Name:      vmiName,
-						Namespace: vmiNamespace,
-						ClusterId: clusterID,
-						State:     virtualMachineV1.VirtualMachine_STOPPED,
-					},
-				},
-			}),
+				VirtualMachine: virtualMachineV1.VirtualMachine_builder{
+					Id:        vmiUID,
+					Name:      vmiName,
+					Namespace: vmiNamespace,
+					ClusterId: clusterID,
+					State:     virtualMachineV1.VirtualMachine_STOPPED,
+				}.Build(),
+			}.Build()),
 		},
 		"call to store Has returns false": {
 			action: central.ResourceAction_UPDATE_RESOURCE,
@@ -337,21 +323,19 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 					).Times(1),
 				)
 			},
-			expectedMsg: component.NewEvent(&central.SensorEvent{
+			expectedMsg: component.NewEvent(central.SensorEvent_builder{
 				Id:     ownerUID,
 				Action: central.ResourceAction_UPDATE_RESOURCE,
-				Resource: &central.SensorEvent_VirtualMachine{
-					VirtualMachine: &virtualMachineV1.VirtualMachine{
-						Id:          ownerUID,
-						Name:        vmiName,
-						Namespace:   vmiNamespace,
-						ClusterId:   clusterID,
-						VsockCid:    int32(vsockVal),
-						VsockCidSet: true,
-						State:       virtualMachineV1.VirtualMachine_RUNNING,
-					},
-				},
-			}),
+				VirtualMachine: virtualMachineV1.VirtualMachine_builder{
+					Id:          ownerUID,
+					Name:        vmiName,
+					Namespace:   vmiNamespace,
+					ClusterId:   clusterID,
+					VsockCid:    int32(vsockVal),
+					VsockCidSet: true,
+					State:       virtualMachineV1.VirtualMachine_RUNNING,
+				}.Build(),
+			}.Build()),
 		},
 	}
 	for tName, tCase := range cases {

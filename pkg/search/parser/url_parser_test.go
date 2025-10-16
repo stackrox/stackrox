@@ -19,25 +19,21 @@ func TestParseURLQuery(t *testing.T) {
 		"pagination.sortOption.reversed": []string{"true"},
 	}
 
-	expectedQuery := &v1.Query{
-		Query: &v1.Query_BaseQuery{
-			BaseQuery: &v1.BaseQuery{
-				Query: &v1.BaseQuery_MatchFieldQuery{
-					MatchFieldQuery: &v1.MatchFieldQuery{Field: search.Namespace.String(), Value: "ABC"},
-				},
-			},
-		},
-		Pagination: &v1.QueryPagination{
+	expectedQuery := v1.Query_builder{
+		BaseQuery: v1.BaseQuery_builder{
+			MatchFieldQuery: v1.MatchFieldQuery_builder{Field: search.Namespace.String(), Value: "ABC"}.Build(),
+		}.Build(),
+		Pagination: v1.QueryPagination_builder{
 			Offset: 5,
 			Limit:  50,
 			SortOptions: []*v1.QuerySortOption{
-				{
+				v1.QuerySortOption_builder{
 					Field:    search.DeploymentName.String(),
 					Reversed: true,
-				},
+				}.Build(),
 			},
-		},
-	}
+		}.Build(),
+	}.Build()
 
 	actual, _, err := ParseURLQuery(vals)
 	assert.NoError(t, err)
@@ -54,25 +50,21 @@ func TestParseURLQueryWithExtraValues(t *testing.T) {
 		"blah":                           []string{"blah"},
 	}
 
-	expectedQuery := &v1.Query{
-		Query: &v1.Query_BaseQuery{
-			BaseQuery: &v1.BaseQuery{
-				Query: &v1.BaseQuery_MatchFieldQuery{
-					MatchFieldQuery: &v1.MatchFieldQuery{Field: search.Namespace.String(), Value: "ABC"},
-				},
-			},
-		},
-		Pagination: &v1.QueryPagination{
+	expectedQuery := v1.Query_builder{
+		BaseQuery: v1.BaseQuery_builder{
+			MatchFieldQuery: v1.MatchFieldQuery_builder{Field: search.Namespace.String(), Value: "ABC"}.Build(),
+		}.Build(),
+		Pagination: v1.QueryPagination_builder{
 			Offset: 5,
 			Limit:  50,
 			SortOptions: []*v1.QuerySortOption{
-				{
+				v1.QuerySortOption_builder{
 					Field:    search.DeploymentName.String(),
 					Reversed: true,
-				},
+				}.Build(),
 			},
-		},
-	}
+		}.Build(),
+	}.Build()
 
 	actual, _, err := ParseURLQuery(vals)
 	assert.NoError(t, err)
@@ -88,40 +80,32 @@ func TestParseURLQueryConjunctionQuery(t *testing.T) {
 		"pagination.sortOption.reversed": []string{"true"},
 	}
 
-	expectedQuery := &v1.Query{
-		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
+	expectedQuery := v1.Query_builder{
+		Conjunction: v1.ConjunctionQuery_builder{
 			Queries: []*v1.Query{
-				{
-					Query: &v1.Query_BaseQuery{
-						BaseQuery: &v1.BaseQuery{
-							Query: &v1.BaseQuery_MatchFieldQuery{
-								MatchFieldQuery: &v1.MatchFieldQuery{Field: search.Cluster.String(), Value: "ABC"},
-							},
-						},
-					},
-				},
-				{
-					Query: &v1.Query_BaseQuery{
-						BaseQuery: &v1.BaseQuery{
-							Query: &v1.BaseQuery_MatchFieldQuery{
-								MatchFieldQuery: &v1.MatchFieldQuery{Field: search.Namespace.String(), Value: "ABC"},
-							},
-						},
-					},
-				},
+				v1.Query_builder{
+					BaseQuery: v1.BaseQuery_builder{
+						MatchFieldQuery: v1.MatchFieldQuery_builder{Field: search.Cluster.String(), Value: "ABC"}.Build(),
+					}.Build(),
+				}.Build(),
+				v1.Query_builder{
+					BaseQuery: v1.BaseQuery_builder{
+						MatchFieldQuery: v1.MatchFieldQuery_builder{Field: search.Namespace.String(), Value: "ABC"}.Build(),
+					}.Build(),
+				}.Build(),
 			},
-		}},
-		Pagination: &v1.QueryPagination{
+		}.Build(),
+		Pagination: v1.QueryPagination_builder{
 			Offset: 5,
 			Limit:  50,
 			SortOptions: []*v1.QuerySortOption{
-				{
+				v1.QuerySortOption_builder{
 					Field:    search.DeploymentName.String(),
 					Reversed: true,
-				},
+				}.Build(),
 			},
-		},
-	}
+		}.Build(),
+	}.Build()
 
 	actual, _, err := ParseURLQuery(vals)
 	assert.NoError(t, err)

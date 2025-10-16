@@ -23,65 +23,65 @@ var (
 
 // GetScanV2SensorMsg -- returns a V2 message from sensor
 func GetScanV2SensorMsg(_ *testing.T) *central.ComplianceOperatorScanV2 {
-	return &central.ComplianceOperatorScanV2{
-		Id:          ScanUID,
-		Name:        "ocp-cis",
-		ProfileId:   profileID,
-		Labels:      map[string]string{v1alpha1.SuiteLabel: "ocp-cis"},
-		Annotations: nil,
-		ScanType:    "",
-		Status: &central.ComplianceOperatorScanStatusV2{
-			Phase:            "",
-			Result:           "FAIL",
-			ErrorMessage:     "",
-			CurrentIndex:     0,
-			Warnings:         "",
-			RemainingRetries: 0,
-			LastStartTime:    startTime,
-			StartTime:        createTime,
-			EndTime:          endTime,
-		},
-	}
+	cossv2 := &central.ComplianceOperatorScanStatusV2{}
+	cossv2.SetPhase("")
+	cossv2.SetResult("FAIL")
+	cossv2.SetErrorMessage("")
+	cossv2.SetCurrentIndex(0)
+	cossv2.SetWarnings("")
+	cossv2.SetRemainingRetries(0)
+	cossv2.SetLastStartTime(startTime)
+	cossv2.SetStartTime(createTime)
+	cossv2.SetEndTime(endTime)
+	cosv2 := &central.ComplianceOperatorScanV2{}
+	cosv2.SetId(ScanUID)
+	cosv2.SetName("ocp-cis")
+	cosv2.SetProfileId(profileID)
+	cosv2.SetLabels(map[string]string{v1alpha1.SuiteLabel: "ocp-cis"})
+	cosv2.SetAnnotations(nil)
+	cosv2.SetScanType("")
+	cosv2.SetStatus(cossv2)
+	return cosv2
 }
 
 // GetScanV1Storage -- returns V1 storage scan object
 func GetScanV1Storage(_ *testing.T) *storage.ComplianceOperatorScan {
-	return &storage.ComplianceOperatorScan{
-		Id:          ScanUID,
-		Name:        "ocp-cis",
-		ClusterId:   fixtureconsts.Cluster1,
-		ProfileId:   profileID,
-		Labels:      map[string]string{v1alpha1.SuiteLabel: "ocp-cis"},
-		Annotations: nil,
-	}
+	cos := &storage.ComplianceOperatorScan{}
+	cos.SetId(ScanUID)
+	cos.SetName("ocp-cis")
+	cos.SetClusterId(fixtureconsts.Cluster1)
+	cos.SetProfileId(profileID)
+	cos.SetLabels(map[string]string{v1alpha1.SuiteLabel: "ocp-cis"})
+	cos.SetAnnotations(nil)
+	return cos
 }
 
 // GetScanV2Storage -- returns V2 storage scan object
 func GetScanV2Storage(_ *testing.T) *storage.ComplianceOperatorScanV2 {
-	return &storage.ComplianceOperatorScanV2{
-		Id:             ScanUID,
-		ScanConfigName: "ocp-cis",
-		ScanName:       "ocp-cis",
-		ClusterId:      fixtureconsts.Cluster1,
-		Errors:         "",
-		Warnings:       "",
-		Profile: &storage.ProfileShim{
-			ProfileId:    profileID,
-			ProfileRefId: internaltov2storage.BuildProfileRefID(fixtureconsts.Cluster1, profileID, ""),
-		},
-		Labels:       map[string]string{v1alpha1.SuiteLabel: "ocp-cis"},
-		Annotations:  nil,
-		ScanType:     0,
-		NodeSelector: 0,
-		Status: &storage.ScanStatus{
-			Phase:    "",
-			Result:   "FAIL",
-			Warnings: "",
-		},
-		CreatedTime:      createTime,
-		LastStartedTime:  startTime,
-		LastExecutedTime: endTime,
-		ProductType:      "",
-		ScanRefId:        internaltov2storage.BuildNameRefID(fixtureconsts.Cluster1, "ocp-cis"),
-	}
+	ps := &storage.ProfileShim{}
+	ps.SetProfileId(profileID)
+	ps.SetProfileRefId(internaltov2storage.BuildProfileRefID(fixtureconsts.Cluster1, profileID, ""))
+	ss := &storage.ScanStatus{}
+	ss.SetPhase("")
+	ss.SetResult("FAIL")
+	ss.SetWarnings("")
+	cosv2 := &storage.ComplianceOperatorScanV2{}
+	cosv2.SetId(ScanUID)
+	cosv2.SetScanConfigName("ocp-cis")
+	cosv2.SetScanName("ocp-cis")
+	cosv2.SetClusterId(fixtureconsts.Cluster1)
+	cosv2.SetErrors("")
+	cosv2.SetWarnings("")
+	cosv2.SetProfile(ps)
+	cosv2.SetLabels(map[string]string{v1alpha1.SuiteLabel: "ocp-cis"})
+	cosv2.SetAnnotations(nil)
+	cosv2.SetScanType(0)
+	cosv2.SetNodeSelector(0)
+	cosv2.SetStatus(ss)
+	cosv2.SetCreatedTime(createTime)
+	cosv2.SetLastStartedTime(startTime)
+	cosv2.SetLastExecutedTime(endTime)
+	cosv2.SetProductType("")
+	cosv2.SetScanRefId(internaltov2storage.BuildNameRefID(fixtureconsts.Cluster1, "ocp-cis"))
+	return cosv2
 }

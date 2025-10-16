@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/cloudsources/discoveredclusters"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestClient_GetAssets(t *testing.T) {
@@ -75,13 +76,15 @@ func TestClient_GetAssets(t *testing.T) {
 		},
 	}
 
-	client := NewClient(&storage.CloudSource{
-		Id:          "id",
-		Credentials: &storage.CloudSource_Credentials{Secret: "testing"},
-		Config: &storage.CloudSource_PaladinCloud{PaladinCloud: &storage.PaladinCloudConfig{
-			Endpoint: server.URL,
-		}},
-	})
+	cc := &storage.CloudSource_Credentials{}
+	cc.SetSecret("testing")
+	pcc := &storage.PaladinCloudConfig{}
+	pcc.SetEndpoint(server.URL)
+	cs := &storage.CloudSource{}
+	cs.SetId("id")
+	cs.SetCredentials(cc)
+	cs.SetPaladinCloud(proto.ValueOrDefault(pcc))
+	client := NewClient(cs)
 
 	resp, err := client.GetDiscoveredClusters(context.Background())
 	require.NoError(t, err)

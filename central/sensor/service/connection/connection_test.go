@@ -29,6 +29,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestHandler(t *testing.T) {
@@ -44,23 +45,21 @@ type testSuite struct {
 
 var (
 	scanConfigs = []*storage.ComplianceOperatorScanConfigurationV2{
-		{
+		storage.ComplianceOperatorScanConfigurationV2_builder{
 			ScanConfigName: "TestConfigName",
 			Profiles: []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
-				{
+				storage.ComplianceOperatorScanConfigurationV2_ProfileName_builder{
 					ProfileName: "TestProfileName",
-				},
+				}.Build(),
 			},
-			Schedule: &storage.Schedule{
+			Schedule: storage.Schedule_builder{
 				IntervalType: storage.Schedule_DAILY,
 				Hour:         1,
-				Minute:       2, Interval: &storage.Schedule_DaysOfWeek_{
-					DaysOfWeek: &storage.Schedule_DaysOfWeek{
-						Days: []int32{1},
-					},
-				},
-			},
-		},
+				Minute:       2, DaysOfWeek: storage.Schedule_DaysOfWeek_builder{
+					Days: []int32{1},
+				}.Build(),
+			}.Build(),
+		}.Build(),
 	}
 )
 
@@ -103,9 +102,8 @@ func (s *testSuite) TestSendsScanConfigurationMsgOnRun() {
 	deduper := mocks.NewMockDeduper(ctrl)
 	stopSig := concurrency.NewErrorSignal()
 
-	hello := &central.SensorHello{
-		SensorVersion: "1.0",
-	}
+	hello := &central.SensorHello{}
+	hello.SetSensorVersion("1.0")
 
 	eventHandler := newSensorEventHandler(&storage.Cluster{}, "", pipeline, nil, &stopSig, deduper, nil)
 
@@ -153,13 +151,15 @@ func (s *testSuite) TestSendsScanConfigurationMsgOnRun() {
 }
 
 func (s *testSuite) TestGetPolicySyncMsgFromPoliciesDoesntDowngradeBelowMinimumVersion() {
+	sh := &central.SensorHello{}
+	sh.SetPolicyVersion("1")
 	sensorMockConn := &sensorConnection{
-		sensorHello: &central.SensorHello{
-			PolicyVersion: "1",
-		},
+		sensorHello: sh,
 	}
 
-	msg, err := sensorMockConn.getPolicySyncMsgFromPolicies([]*storage.Policy{{PolicyVersion: policyversion.CurrentVersion().String()}})
+	policy := &storage.Policy{}
+	policy.SetPolicyVersion(policyversion.CurrentVersion().String())
+	msg, err := sensorMockConn.getPolicySyncMsgFromPolicies([]*storage.Policy{policy})
 	s.NoError(err)
 
 	policySync := msg.GetPolicySync()
@@ -253,10 +253,9 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 			deduper := mocks.NewMockDeduper(ctrl)
 			stopSig := concurrency.NewErrorSignal()
 
-			hello := &central.SensorHello{
-				SensorVersion: "1.0",
-				SensorState:   tc.givenSensorState,
-			}
+			hello := &central.SensorHello{}
+			hello.SetSensorVersion("1.0")
+			hello.SetSensorState(tc.givenSensorState)
 
 			eventHandler := newSensorEventHandler(&storage.Cluster{}, "", pipeline, nil, &stopSig, deduper, nil)
 
@@ -326,13 +325,15 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 }
 
 func (s *testSuite) TestGetPolicySyncMsgFromPoliciesDoesntDowngradeInvalidVersions() {
+	sh := &central.SensorHello{}
+	sh.SetPolicyVersion("this ain't a version")
 	sensorMockConn := &sensorConnection{
-		sensorHello: &central.SensorHello{
-			PolicyVersion: "this ain't a version",
-		},
+		sensorHello: sh,
 	}
 
-	msg, err := sensorMockConn.getPolicySyncMsgFromPolicies([]*storage.Policy{{PolicyVersion: policyversion.CurrentVersion().String()}})
+	policy := &storage.Policy{}
+	policy.SetPolicyVersion(policyversion.CurrentVersion().String())
+	msg, err := sensorMockConn.getPolicySyncMsgFromPolicies([]*storage.Policy{policy})
 	s.NoError(err)
 
 	policySync := msg.GetPolicySync()
@@ -344,17 +345,16 @@ func (s *testSuite) TestGetPolicySyncMsgFromPoliciesDoesntDowngradeInvalidVersio
 func (s *testSuite) TestSendsAuditLogSyncMessageIfEnabledOnRun() {
 	ctx := context.Background()
 	clusterID := "this-cluster"
+	alfs := &storage.AuditLogFileState{}
+	alfs.SetCollectLogsSince(protocompat.TimestampNow())
+	alfs.SetLastAuditId("abcd")
 	auditLogState := map[string]*storage.AuditLogFileState{
-		"node-a": {
-			CollectLogsSince: protocompat.TimestampNow(),
-			LastAuditId:      "abcd",
-		},
+		"node-a": alfs,
 	}
-	cluster := &storage.Cluster{
-		Id:            clusterID,
-		DynamicConfig: &storage.DynamicClusterConfig{},
-		AuditLogState: auditLogState,
-	}
+	cluster := &storage.Cluster{}
+	cluster.SetId(clusterID)
+	cluster.SetDynamicConfig(&storage.DynamicClusterConfig{})
+	cluster.SetAuditLogState(auditLogState)
 
 	ctrl := gomock.NewController(s.T())
 	mgrMock := clusterMgrMock.NewMockClusterManager(ctrl)
@@ -398,26 +398,23 @@ func (s *testSuite) TestIssueLocalScannerCerts() {
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
 			sendC := make(chan *central.MsgToSensor)
+			sdi := &storage.SensorDeploymentIdentification{}
+			sdi.SetAppNamespace(tc.namespace)
+			sh := &central.SensorHello{}
+			sh.SetDeploymentIdentification(sdi)
 			sensorMockConn := &sensorConnection{
-				clusterID: tc.clusterID,
-				sendC:     sendC,
-				stopSig:   concurrency.NewErrorSignal(),
-				sensorHello: &central.SensorHello{
-					DeploymentIdentification: &storage.SensorDeploymentIdentification{
-						AppNamespace: tc.namespace,
-					},
-				},
+				clusterID:   tc.clusterID,
+				sendC:       sendC,
+				stopSig:     concurrency.NewErrorSignal(),
+				sensorHello: sh,
 			}
 			ctx := context.Background()
 			ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 			defer cancel()
-			request := &central.MsgFromSensor{
-				Msg: &central.MsgFromSensor_IssueLocalScannerCertsRequest{
-					IssueLocalScannerCertsRequest: &central.IssueLocalScannerCertsRequest{
-						RequestId: tc.requestID,
-					},
-				},
-			}
+			ilscr := &central.IssueLocalScannerCertsRequest{}
+			ilscr.SetRequestId(tc.requestID)
+			request := &central.MsgFromSensor{}
+			request.SetIssueLocalScannerCertsRequest(proto.ValueOrDefault(ilscr))
 
 			handleDoneErrSig := concurrency.NewErrorSignal()
 			go func() {
@@ -460,26 +457,23 @@ func (s *testSuite) TestIssueSecuredClusterCerts() {
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
 			sendC := make(chan *central.MsgToSensor)
+			sdi := &storage.SensorDeploymentIdentification{}
+			sdi.SetAppNamespace(tc.namespace)
+			sh := &central.SensorHello{}
+			sh.SetDeploymentIdentification(sdi)
 			sensorMockConn := &sensorConnection{
-				clusterID: tc.clusterID,
-				sendC:     sendC,
-				stopSig:   concurrency.NewErrorSignal(),
-				sensorHello: &central.SensorHello{
-					DeploymentIdentification: &storage.SensorDeploymentIdentification{
-						AppNamespace: tc.namespace,
-					},
-				},
+				clusterID:   tc.clusterID,
+				sendC:       sendC,
+				stopSig:     concurrency.NewErrorSignal(),
+				sensorHello: sh,
 			}
 			ctx := context.Background()
 			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 			defer cancel()
-			request := &central.MsgFromSensor{
-				Msg: &central.MsgFromSensor_IssueSecuredClusterCertsRequest{
-					IssueSecuredClusterCertsRequest: &central.IssueSecuredClusterCertsRequest{
-						RequestId: tc.requestID,
-					},
-				},
-			}
+			isccr := &central.IssueSecuredClusterCertsRequest{}
+			isccr.SetRequestId(tc.requestID)
+			request := &central.MsgFromSensor{}
+			request.SetIssueSecuredClusterCertsRequest(proto.ValueOrDefault(isccr))
 
 			handleDoneErrSig := concurrency.NewErrorSignal()
 			go func() {
@@ -544,9 +538,8 @@ func (s *testSuite) TestIssueSecuredClusterCerts() {
 func (s *testSuite) TestDelegatedRegistryConfigOnRun() {
 	ctx := context.Background()
 	clusterID := "this-cluster"
-	cluster := &storage.Cluster{
-		Id: clusterID,
-	}
+	cluster := &storage.Cluster{}
+	cluster.SetId(clusterID)
 
 	ctrl := gomock.NewController(s.T())
 	mgrMock := clusterMgrMock.NewMockClusterManager(ctrl)
@@ -565,7 +558,8 @@ func (s *testSuite) TestDelegatedRegistryConfigOnRun() {
 	s.Run("send", func() {
 		caps := set.NewSet(centralsensor.DelegatedRegistryCap)
 
-		config := &storage.DelegatedRegistryConfig{EnabledFor: storage.DelegatedRegistryConfig_ALL}
+		config := &storage.DelegatedRegistryConfig{}
+		config.SetEnabledFor(storage.DelegatedRegistryConfig_ALL)
 		deleRegMgr.EXPECT().GetConfig(ctx).Return(config, true, nil)
 
 		server := &mockServer{sentList: make([]*central.MsgToSensor, 0)}
@@ -625,9 +619,8 @@ func (s *testSuite) TestDelegatedRegistryConfigOnRun() {
 func (s *testSuite) TestImageIntegrationsOnRun() {
 	ctx := context.Background()
 	clusterID := "this-cluster"
-	cluster := &storage.Cluster{
-		Id: clusterID,
-	}
+	cluster := &storage.Cluster{}
+	cluster.SetId(clusterID)
 
 	withCap := set.NewSet(centralsensor.DelegatedRegistryCap)
 	withoutCap := set.NewSet[centralsensor.SensorCapability]()
@@ -652,16 +645,16 @@ func (s *testSuite) TestImageIntegrationsOnRun() {
 	mgrMock.EXPECT().GetCluster(ctx, clusterID).Return(cluster, true, nil).AnyTimes()
 	deleRegMgr.EXPECT().GetConfig(ctx).AnyTimes()
 
+	ii := &storage.ImageIntegration{}
+	ii.SetName("valid")
+	ii.SetId("id1")
 	iis := []*storage.ImageIntegration{
-		{
-			Name: "valid",
-			Id:   "id1",
-		},
+		ii,
 	}
 
 	s.Run("send", func() {
-		iis[0].Autogenerated = false
-		iis[0].Categories = withRegCategory
+		iis[0].SetAutogenerated(false)
+		iis[0].SetCategories(withRegCategory)
 		iiMgr.EXPECT().GetImageIntegrations(gomock.Any(), gomock.Any()).Return(iis, nil)
 
 		server := genServer()
@@ -681,8 +674,8 @@ func (s *testSuite) TestImageIntegrationsOnRun() {
 	})
 
 	s.Run("no send on autogenerated", func() {
-		iis[0].Autogenerated = true
-		iis[0].Categories = withRegCategory
+		iis[0].SetAutogenerated(true)
+		iis[0].SetCategories(withRegCategory)
 		iiMgr.EXPECT().GetImageIntegrations(gomock.Any(), gomock.Any()).Return(iis, nil)
 
 		server := genServer()
@@ -696,8 +689,8 @@ func (s *testSuite) TestImageIntegrationsOnRun() {
 	})
 
 	s.Run("no send on no category", func() {
-		iis[0].Autogenerated = false
-		iis[0].Categories = withoutRegCategory
+		iis[0].SetAutogenerated(false)
+		iis[0].SetCategories(withoutRegCategory)
 
 		iiMgr.EXPECT().GetImageIntegrations(gomock.Any(), gomock.Any()).Return(iis, nil)
 
@@ -712,8 +705,8 @@ func (s *testSuite) TestImageIntegrationsOnRun() {
 	})
 
 	s.Run("no send on no cap", func() {
-		iis[0].Autogenerated = false
-		iis[0].Categories = withRegCategory
+		iis[0].SetAutogenerated(false)
+		iis[0].SetCategories(withRegCategory)
 
 		server := genServer()
 		s.NoError(sensorMockConn.Run(ctx, server, withoutCap))

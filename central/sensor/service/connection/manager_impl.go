@@ -162,14 +162,13 @@ func (m *manager) updateInactiveClusterHealth(cluster *storage.Cluster) {
 	oldHealth := cluster.GetHealthStatus()
 	lastContact := protoconv.ConvertTimestampToTimeOrDefault(oldHealth.GetLastContact(), time.Time{})
 	newSensorStatus := clusterhealth.PopulateInactiveSensorStatus(lastContact)
-	clusterHealthStatus := &storage.ClusterHealthStatus{
-		SensorHealthStatus:    newSensorStatus,
-		CollectorHealthStatus: oldHealth.GetCollectorHealthStatus(),
-		LastContact:           oldHealth.GetLastContact(),
-		CollectorHealthInfo:   oldHealth.GetCollectorHealthInfo(),
-		HealthInfoComplete:    oldHealth.GetHealthInfoComplete(),
-	}
-	clusterHealthStatus.OverallHealthStatus = clusterhealth.PopulateOverallClusterStatus(clusterHealthStatus)
+	clusterHealthStatus := &storage.ClusterHealthStatus{}
+	clusterHealthStatus.SetSensorHealthStatus(newSensorStatus)
+	clusterHealthStatus.SetCollectorHealthStatus(oldHealth.GetCollectorHealthStatus())
+	clusterHealthStatus.SetLastContact(oldHealth.GetLastContact())
+	clusterHealthStatus.SetCollectorHealthInfo(oldHealth.GetCollectorHealthInfo())
+	clusterHealthStatus.SetHealthInfoComplete(oldHealth.GetHealthInfoComplete())
+	clusterHealthStatus.SetOverallHealthStatus(clusterhealth.PopulateOverallClusterStatus(clusterHealthStatus))
 
 	if err := m.clusters.UpdateClusterHealth(managerCtx, cluster.GetId(), clusterHealthStatus); err != nil {
 		log.Errorf("error updating health for cluster %s (id: %s): %v", cluster.GetName(), cluster.GetId(), err)
@@ -177,12 +176,11 @@ func (m *manager) updateInactiveClusterHealth(cluster *storage.Cluster) {
 }
 
 func (m *manager) updateActiveClusterHealth(cluster *storage.Cluster) {
-	clusterHealthStatus := &storage.ClusterHealthStatus{
-		SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
-		CollectorHealthStatus: storage.ClusterHealthStatus_UNAVAILABLE,
-		LastContact:           protocompat.TimestampNow(),
-	}
-	clusterHealthStatus.OverallHealthStatus = clusterhealth.PopulateOverallClusterStatus(clusterHealthStatus)
+	clusterHealthStatus := &storage.ClusterHealthStatus{}
+	clusterHealthStatus.SetSensorHealthStatus(storage.ClusterHealthStatus_HEALTHY)
+	clusterHealthStatus.SetCollectorHealthStatus(storage.ClusterHealthStatus_UNAVAILABLE)
+	clusterHealthStatus.SetLastContact(protocompat.TimestampNow())
+	clusterHealthStatus.SetOverallHealthStatus(clusterhealth.PopulateOverallClusterStatus(clusterHealthStatus))
 
 	if err := m.clusters.UpdateClusterHealth(managerCtx, cluster.GetId(), clusterHealthStatus); err != nil {
 		log.Errorf("error updating health for cluster %s (id: %s): %v", cluster.GetName(), cluster.GetId(), err)

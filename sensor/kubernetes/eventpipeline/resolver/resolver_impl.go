@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -213,14 +214,12 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 }
 
 func toEvent(action central.ResourceAction, deployment *storage.Deployment, timing *central.Timing) *central.SensorEvent {
-	return &central.SensorEvent{
-		Id:     deployment.GetId(),
-		Action: action,
-		Timing: timing,
-		Resource: &central.SensorEvent_Deployment{
-			Deployment: deployment.CloneVT(),
-		},
-	}
+	se := &central.SensorEvent{}
+	se.SetId(deployment.GetId())
+	se.SetAction(action)
+	se.SetTiming(timing)
+	se.SetDeployment(proto.ValueOrDefault(deployment.CloneVT()))
+	return se
 }
 
 var _ component.Resolver = (*resolverImpl)(nil)

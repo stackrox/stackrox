@@ -170,14 +170,14 @@ func (resolver *deploymentResolver) DeployAlerts(ctx context.Context, args Pagin
 	}
 
 	pagination := q.GetPagination()
-	q.Pagination = nil
+	q.ClearPagination()
 
 	nested, err := search.AddAsConjunction(q, resolver.getDeploymentQuery())
 	if err != nil {
 		return nil, err
 	}
 
-	nested.Pagination = pagination
+	nested.SetPagination(pagination)
 
 	nested = paginated.FillDefaultSortOption(nested, paginated.GetViolationTimeSortOption())
 	return resolver.root.wrapAlerts(
@@ -222,9 +222,9 @@ func (resolver *deploymentResolver) Policies(ctx context.Context, args Paginated
 
 	// remove pagination from query since we want to paginate the final result
 	pagination := q.GetPagination()
-	q.Pagination = &v1.QueryPagination{
-		SortOptions: pagination.GetSortOptions(),
-	}
+	qp := &v1.QueryPagination{}
+	qp.SetSortOptions(pagination.GetSortOptions())
+	q.SetPagination(qp)
 
 	policyResolvers, err := resolver.root.wrapPolicies(resolver.getApplicablePolicies(ctx, q))
 	if err != nil {
@@ -290,7 +290,9 @@ func (resolver *deploymentResolver) FailingPolicies(ctx context.Context, args Pa
 
 	// remove pagination from query since we want to paginate the final result
 	pagination := q.GetPagination()
-	q.Pagination = &v1.QueryPagination{SortOptions: pagination.GetSortOptions()}
+	qp := &v1.QueryPagination{}
+	qp.SetSortOptions(pagination.GetSortOptions())
+	q.SetPagination(qp)
 
 	q = paginated.FillDefaultSortOption(q, paginated.GetViolationTimeSortOption())
 	alerts, err := resolver.root.ViolationsDataStore.SearchRawAlerts(ctx, q, true)
@@ -398,7 +400,7 @@ func (resolver *deploymentResolver) Secrets(ctx context.Context, args PaginatedQ
 	}
 
 	pagination := q.GetPagination()
-	q.Pagination = nil
+	q.ClearPagination()
 
 	secrets, err := resolver.getDeploymentSecrets(ctx, q)
 	if err != nil {
@@ -685,7 +687,9 @@ func (resolver *deploymentResolver) unresolvedAlertsExists(ctx context.Context, 
 	if err != nil {
 		return false, err
 	}
-	q.Pagination = &v1.QueryPagination{Limit: 1}
+	qp := &v1.QueryPagination{}
+	qp.SetLimit(1)
+	q.SetPagination(qp)
 	results, err := resolver.root.ViolationsDataStore.Search(ctx, q, true)
 	if err != nil {
 		return false, err

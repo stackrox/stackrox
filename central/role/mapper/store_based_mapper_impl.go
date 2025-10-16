@@ -96,11 +96,10 @@ func (rm *storeBasedMapperImpl) rolesForGroups(ctx context.Context, groups []*st
 
 func (rm *storeBasedMapperImpl) createUser(descriptor *permissions.UserDescriptor) *storage.User {
 	// Create a user.
-	user := &storage.User{
-		Id:             descriptor.UserID,
-		AuthProviderId: rm.authProviderID,
-		IdpToken:       descriptor.IdpToken,
-	}
+	user := &storage.User{}
+	user.SetId(descriptor.UserID)
+	user.SetAuthProviderId(rm.authProviderID)
+	user.SetIdpToken(descriptor.IdpToken)
 	addAttributesToUser(user, descriptor.Attributes)
 	return user
 }
@@ -111,7 +110,10 @@ func addAttributesToUser(user *storage.User, attributes map[string][]string) {
 	}
 	for k, vs := range attributes {
 		for _, v := range vs {
-			user.Attributes = append(user.Attributes, &storage.UserAttribute{Key: k, Value: v})
+			ua := &storage.UserAttribute{}
+			ua.SetKey(k)
+			ua.SetValue(v)
+			user.SetAttributes(append(user.GetAttributes(), ua))
 		}
 	}
 }

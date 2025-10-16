@@ -12,13 +12,12 @@ import (
 )
 
 func TestVerifyNoPrivilegeEscalation(t *testing.T) {
-	devScope := &storage.SimpleAccessScope{
-		Id:   "devScopeId",
-		Name: "Dev",
-		Rules: &storage.SimpleAccessScope_Rules{
-			IncludedClusters: []string{"Dev"},
-		},
-	}
+	sr := &storage.SimpleAccessScope_Rules{}
+	sr.SetIncludedClusters([]string{"Dev"})
+	devScope := &storage.SimpleAccessScope{}
+	devScope.SetId("devScopeId")
+	devScope.SetName("Dev")
+	devScope.SetRules(sr)
 
 	writeRole := roletest.NewResolvedRole(
 		"Admin",

@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/secrets"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestNotifierService(t *testing.T) {
@@ -52,25 +53,25 @@ func (s *notifierServiceTestSuite) getSvc() Service {
 }
 
 func createNotifier(notifierType string) *storage.Notifier {
-	return &storage.Notifier{
-		Id:         "id",
-		Name:       "name",
-		UiEndpoint: "endpoint",
-		Type:       notifierType,
-		Config: &storage.Notifier_Generic{Generic: &storage.Generic{
-			Endpoint:            "server:25",
-			SkipTLSVerify:       true,
-			Username:            "username",
-			Password:            "password",
-			AuditLoggingEnabled: false,
-		}},
-	}
+	generic := &storage.Generic{}
+	generic.SetEndpoint("server:25")
+	generic.SetSkipTLSVerify(true)
+	generic.SetUsername("username")
+	generic.SetPassword("password")
+	generic.SetAuditLoggingEnabled(false)
+	notifier := &storage.Notifier{}
+	notifier.SetId("id")
+	notifier.SetName("name")
+	notifier.SetUiEndpoint("endpoint")
+	notifier.SetType(notifierType)
+	notifier.SetGeneric(proto.ValueOrDefault(generic))
+	return notifier
 }
 
 func createUpdateNotifierRequest(notifierType string) *v1.UpdateNotifierRequest {
-	return &v1.UpdateNotifierRequest{
-		Notifier: createNotifier(notifierType),
-	}
+	unr := &v1.UpdateNotifierRequest{}
+	unr.SetNotifier(createNotifier(notifierType))
+	return unr
 }
 
 func (s *notifierServiceTestSuite) TestPutNotifier() {
@@ -95,27 +96,27 @@ func (s *notifierServiceTestSuite) TestUpdateNotifier() {
 	_, err := s.getSvc().UpdateNotifier(s.ctx, &v1.UpdateNotifierRequest{})
 	s.Error(err)
 	updateReq := createUpdateNotifierRequest("generic")
-	updateReq.GetNotifier().GetGeneric().Password = "updatePassword"
+	updateReq.GetNotifier().GetGeneric().SetPassword("updatePassword")
 	_, err = s.getSvc().UpdateNotifier(s.ctx, updateReq)
 	s.EqualError(err, errors.Wrap(errox.InvalidArgs, "non-zero or unmasked credential field 'Notifier.Notifier_Generic.Generic.Password'").Error())
 
-	updateReq.UpdatePassword = true
+	updateReq.SetUpdatePassword(true)
 	_, err = s.getSvc().UpdateNotifier(s.ctx, updateReq)
 	s.NoError(err)
 
 	updateDependentReq := createUpdateNotifierRequest("generic")
-	updateDependentReq.GetNotifier().GetGeneric().Endpoint = "updated-server:25"
-	updateDependentReq.UpdatePassword = true
+	updateDependentReq.GetNotifier().GetGeneric().SetEndpoint("updated-server:25")
+	updateDependentReq.SetUpdatePassword(true)
 	_, err = s.getSvc().UpdateNotifier(s.ctx, updateDependentReq)
 	s.NoError(err)
 
 	secrets.ScrubSecretsFromStructWithReplacement(updateDependentReq, secrets.ScrubReplacementStr)
-	updateDependentReq.UpdatePassword = false
+	updateDependentReq.SetUpdatePassword(false)
 	_, err = s.getSvc().UpdateNotifier(s.ctx, updateDependentReq)
 	s.EqualError(err, errors.Wrap(errox.InvalidArgs, "credentials required to update field 'Notifier.Notifier_Generic.Generic.Endpoint'").Error())
 
 	updateBasic := createUpdateNotifierRequest("generic")
-	updateBasic.GetNotifier().GetGeneric().AuditLoggingEnabled = true
+	updateBasic.GetNotifier().GetGeneric().SetAuditLoggingEnabled(true)
 	secrets.ScrubSecretsFromStructWithReplacement(updateBasic, secrets.ScrubReplacementStr)
 	_, err = s.getSvc().UpdateNotifier(s.ctx, updateBasic)
 	s.NoError(err)
@@ -157,7 +158,7 @@ func (s *notifierServiceTestSuite) TestNotifierTestDoesNotExposeInternalErrors()
 
 func (s *notifierServiceTestSuite) TestNotifierTestUpdatedNoError() {
 	reqUpdateNotifier := createUpdateNotifierRequest("TestNotifierTestUpdatedNoError")
-	reqUpdateNotifier.UpdatePassword = true
+	reqUpdateNotifier.SetUpdatePassword(true)
 
 	s.datastore.EXPECT().GetNotifier(gomock.Any(), reqUpdateNotifier.GetNotifier().GetId()).
 		Return(reqUpdateNotifier.GetNotifier(), true, nil).AnyTimes()
@@ -179,7 +180,7 @@ func (s *notifierServiceTestSuite) TestNotifierTestUpdatedDoesNotExposeInternalE
 	baseErrMsg := "127.0.0.1"
 
 	reqUpdateNotifier := createUpdateNotifierRequest("TestNotifierTestUpdatedDoesNotExposeInternalErrors")
-	reqUpdateNotifier.UpdatePassword = true
+	reqUpdateNotifier.SetUpdatePassword(true)
 
 	s.datastore.EXPECT().GetNotifier(gomock.Any(), reqUpdateNotifier.GetNotifier().GetId()).
 		Return(reqUpdateNotifier.GetNotifier(), true, nil).AnyTimes()

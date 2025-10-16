@@ -16,92 +16,80 @@ func TestConfigConversion(t *testing.T) {
 		shouldErr   bool
 	}{
 		"azure config with workload identity": {
-			input: &storage.ImageIntegration{
+			input: storage.ImageIntegration_builder{
 				Type: "azure",
-				IntegrationConfig: &storage.ImageIntegration_Azure{
-					Azure: &storage.AzureConfig{
-						Endpoint:   "endpoint",
-						WifEnabled: true,
-					},
-				},
-			},
-			expectedCfg: &storage.AzureConfig{
+				Azure: storage.AzureConfig_builder{
+					Endpoint:   "endpoint",
+					WifEnabled: true,
+				}.Build(),
+			}.Build(),
+			expectedCfg: storage.AzureConfig_builder{
 				Endpoint:   "endpoint",
 				WifEnabled: true,
-			},
+			}.Build(),
 			shouldErr: false,
 		},
 		"azure config with credentials": {
-			input: &storage.ImageIntegration{
+			input: storage.ImageIntegration_builder{
 				Type: "azure",
-				IntegrationConfig: &storage.ImageIntegration_Azure{
-					Azure: &storage.AzureConfig{
-						Endpoint: "endpoint",
-						Username: "username",
-						Password: "password",
-					},
-				},
-			},
-			expectedCfg: &storage.AzureConfig{
+				Azure: storage.AzureConfig_builder{
+					Endpoint: "endpoint",
+					Username: "username",
+					Password: "password",
+				}.Build(),
+			}.Build(),
+			expectedCfg: storage.AzureConfig_builder{
 				Endpoint: "endpoint",
 				Username: "username",
 				Password: "password",
-			},
+			}.Build(),
 			shouldErr: false,
 		},
 		"docker config": {
-			input: &storage.ImageIntegration{
+			input: storage.ImageIntegration_builder{
 				Type: "azure",
-				IntegrationConfig: &storage.ImageIntegration_Docker{
-					Docker: &storage.DockerConfig{
-						Endpoint: "endpoint",
-						Username: "username",
-						Password: "password",
-					},
-				},
-			},
-			expectedCfg: &storage.AzureConfig{
+				Docker: storage.DockerConfig_builder{
+					Endpoint: "endpoint",
+					Username: "username",
+					Password: "password",
+				}.Build(),
+			}.Build(),
+			expectedCfg: storage.AzureConfig_builder{
 				Endpoint:   "endpoint",
 				Username:   "username",
 				Password:   "password",
 				WifEnabled: false,
-			},
+			}.Build(),
 			shouldErr: false,
 		},
 		"no valid type": {
-			input: &storage.ImageIntegration{
+			input: storage.ImageIntegration_builder{
 				Type: "ecr",
-				IntegrationConfig: &storage.ImageIntegration_Ecr{
-					Ecr: &storage.ECRConfig{
-						Endpoint: "endpoint",
-					},
-				},
-			},
+				Ecr: storage.ECRConfig_builder{
+					Endpoint: "endpoint",
+				}.Build(),
+			}.Build(),
 			expectedCfg: nil,
 			shouldErr:   true,
 		},
 		"invalid - no endpoint": {
-			input: &storage.ImageIntegration{
+			input: storage.ImageIntegration_builder{
 				Type: "azure",
-				IntegrationConfig: &storage.ImageIntegration_Azure{
-					Azure: &storage.AzureConfig{
-						Username: "username",
-						Password: "password",
-					},
-				},
-			},
+				Azure: storage.AzureConfig_builder{
+					Username: "username",
+					Password: "password",
+				}.Build(),
+			}.Build(),
 			expectedCfg: nil,
 			shouldErr:   true,
 		},
 		"invalid - no password": {
-			input: &storage.ImageIntegration{
+			input: storage.ImageIntegration_builder{
 				Type: "azure",
-				IntegrationConfig: &storage.ImageIntegration_Azure{
-					Azure: &storage.AzureConfig{
-						Username: "username",
-					},
-				},
-			},
+				Azure: storage.AzureConfig_builder{
+					Username: "username",
+				}.Build(),
+			}.Build(),
 			expectedCfg: nil,
 			shouldErr:   true,
 		},

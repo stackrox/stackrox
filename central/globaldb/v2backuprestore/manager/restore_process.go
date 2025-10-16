@@ -93,14 +93,13 @@ func newRestoreProcess(ctx context.Context, id string, header *v1.DBRestoreReque
 		})
 	}
 
-	metadata := &v1.DBRestoreProcessMetadata{
-		Id:        id,
-		Header:    header,
-		StartTime: protocompat.TimestampNow(),
-	}
+	metadata := &v1.DBRestoreProcessMetadata{}
+	metadata.SetId(id)
+	metadata.SetHeader(header)
+	metadata.SetStartTime(protocompat.TimestampNow())
 
 	if identity := authn.IdentityFromContextOrNil(ctx); identity != nil {
-		metadata.InitiatingUserName = identity.User().GetUsername()
+		metadata.SetInitiatingUserName(identity.User().GetUsername())
 	}
 
 	resumableDataReader, initAttach, detachEvents := ioutils.NewResumableReader(crc32.NewIEEE())
@@ -177,9 +176,9 @@ func (p *restoreProcess) Interrupt(ctx context.Context, attemptID string) (*v1.D
 	reattachCond, resumeInfo, err := concurrency.WithLock3(&p.mutex, func() (concurrency.Waitable, *v1.DBRestoreProcessStatus_ResumeInfo, error) {
 		if p.reattachC != nil {
 			// Process is already interrupted
-			return nil, &v1.DBRestoreProcessStatus_ResumeInfo{
-				Pos: p.reattachPos,
-			}, nil
+			dr := &v1.DBRestoreProcessStatus_ResumeInfo{}
+			dr.SetPos(p.reattachPos)
+			return nil, dr, nil
 		}
 
 		if p.attemptID != attemptID {
@@ -207,9 +206,9 @@ func (p *restoreProcess) Interrupt(ctx context.Context, attemptID string) (*v1.D
 	if reattachC == nil {
 		return nil, errors.New("process was interrupted, but has already been resumed")
 	}
-	return &v1.DBRestoreProcessStatus_ResumeInfo{
-		Pos: pos,
-	}, nil
+	dr := &v1.DBRestoreProcessStatus_ResumeInfo{}
+	dr.SetPos(pos)
+	return dr, nil
 }
 
 func (p *restoreProcess) getReattachC() (int64, chan<- reattachRequest) {
@@ -397,30 +396,29 @@ func (p *restoreProcess) processSingleFile(ctx *restoreProcessContext, file *res
 }
 
 func (p *restoreProcess) ProtoStatus() *v1.DBRestoreProcessStatus {
-	status := &v1.DBRestoreProcessStatus{
-		Metadata:       p.Metadata(),
-		BytesRead:      atomic.LoadInt64(&p.bytesRead),
-		FilesProcessed: atomic.LoadInt64(&p.filesProcessed),
-	}
+	status := &v1.DBRestoreProcessStatus{}
+	status.SetMetadata(p.Metadata())
+	status.SetBytesRead(atomic.LoadInt64(&p.bytesRead))
+	status.SetFilesProcessed(atomic.LoadInt64(&p.filesProcessed))
 
 	if !p.started.Get() {
-		status.State = v1.DBRestoreProcessStatus_NOT_STARTED
+		status.SetState(v1.DBRestoreProcessStatus_NOT_STARTED)
 	} else if err, done := p.completionSig.Error(); !done {
 		concurrency.WithLock(&p.mutex, func() {
 			if p.reattachC != nil {
-				status.State = v1.DBRestoreProcessStatus_PAUSED
-				status.ResumeInfo = &v1.DBRestoreProcessStatus_ResumeInfo{
-					Pos: p.reattachPos,
-				}
+				status.SetState(v1.DBRestoreProcessStatus_PAUSED)
+				dr := &v1.DBRestoreProcessStatus_ResumeInfo{}
+				dr.SetPos(p.reattachPos)
+				status.SetResumeInfo(dr)
 			} else {
-				status.State = v1.DBRestoreProcessStatus_IN_PROGRESS
-				status.AttemptId = p.attemptID
+				status.SetState(v1.DBRestoreProcessStatus_IN_PROGRESS)
+				status.SetAttemptId(p.attemptID)
 			}
 		})
 	} else {
-		status.State = v1.DBRestoreProcessStatus_COMPLETED
+		status.SetState(v1.DBRestoreProcessStatus_COMPLETED)
 		if err != nil {
-			status.Error = err.Error()
+			status.SetError(err.Error())
 		}
 	}
 

@@ -453,9 +453,9 @@ func RandomSerial() (*big.Int, error) {
 }
 
 func generateIdentity(subj Subject, serial *big.Int) *storage.ServiceIdentity {
-	return &storage.ServiceIdentity{
-		Id:        subj.Identifier,
-		Type:      subj.ServiceType,
-		SerialStr: serial.String(),
-	}
+	si := &storage.ServiceIdentity{}
+	si.SetId(subj.Identifier)
+	si.SetType(subj.ServiceType)
+	si.SetSerialStr(serial.String())
+	return si
 }

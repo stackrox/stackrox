@@ -116,56 +116,56 @@ const (
 )
 
 func (s *fakeAccessService) GetAuthProviders(_ context.Context, _ *v1.GetAuthProvidersRequest) (*v1.GetAuthProvidersResponse, error) {
-	return &v1.GetAuthProvidersResponse{
-		AuthProviders: []*storage.AuthProvider{
-			{
-				Id:   authProviderId1,
-				Name: "UserPKI provider 1",
-				Type: userpki.TypeName,
-			},
-			{
-				Id:   authProviderId2,
-				Name: "UserPKI provider 2",
-				Type: userpki.TypeName,
-			},
-		},
-	}, nil
+	ap := &storage.AuthProvider{}
+	ap.SetId(authProviderId1)
+	ap.SetName("UserPKI provider 1")
+	ap.SetType(userpki.TypeName)
+	ap2 := &storage.AuthProvider{}
+	ap2.SetId(authProviderId2)
+	ap2.SetName("UserPKI provider 2")
+	ap2.SetType(userpki.TypeName)
+	gapr := &v1.GetAuthProvidersResponse{}
+	gapr.SetAuthProviders([]*storage.AuthProvider{
+		ap,
+		ap2,
+	})
+	return gapr, nil
 }
 
 func (s *fakeAccessService) GetGroups(_ context.Context, _ *v1.GetGroupsRequest) (*v1.GetGroupsResponse, error) {
-	return &v1.GetGroupsResponse{
+	return v1.GetGroupsResponse_builder{
 		Groups: []*storage.Group{
-			{
-				Props: &storage.GroupProperties{
+			storage.Group_builder{
+				Props: storage.GroupProperties_builder{
 					AuthProviderId: authProviderId1,
 					Key:            "",
-				},
+				}.Build(),
 				RoleName: "Continuous Integration",
-			},
-			{
-				Props: &storage.GroupProperties{
+			}.Build(),
+			storage.Group_builder{
+				Props: storage.GroupProperties_builder{
 					AuthProviderId: authProviderId1,
 					Key:            "email",
 					Value:          "no-reply@stackrox.io",
-				},
+				}.Build(),
 				RoleName: "Admin",
-			},
-			{
-				Props: &storage.GroupProperties{
+			}.Build(),
+			storage.Group_builder{
+				Props: storage.GroupProperties_builder{
 					AuthProviderId: authProviderId2,
 					Key:            "",
-				},
+				}.Build(),
 				RoleName: "Analyst",
-			},
-			{
-				Props: &storage.GroupProperties{
+			}.Build(),
+			storage.Group_builder{
+				Props: storage.GroupProperties_builder{
 					AuthProviderId: "authProviderId3",
 					Key:            "",
-				},
+				}.Build(),
 				RoleName: "Admin",
-			},
+			}.Build(),
 		},
-	}, nil
+	}.Build(), nil
 }
 
 func (s *fakeAccessService) GetAuthProvider(_ context.Context, _ *v1.GetAuthProviderRequest) (*storage.AuthProvider, error) {

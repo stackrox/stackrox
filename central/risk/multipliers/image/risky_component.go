@@ -68,13 +68,15 @@ func (c *riskyComponentCountMultiplier) Score(_ context.Context, image *storage.
 		score = maxRiskyScore
 	}
 
-	return &storage.Risk_Result{
-		Name: RiskyComponentCountHeading,
-		Factors: []*storage.Risk_Result_Factor{
-			{Message: generateMessage(image.GetName().GetFullName(), riskySet.AsSlice())},
-		},
-		Score: score,
-	}
+	rrf := &storage.Risk_Result_Factor{}
+	rrf.SetMessage(generateMessage(image.GetName().GetFullName(), riskySet.AsSlice()))
+	rr := &storage.Risk_Result{}
+	rr.SetName(RiskyComponentCountHeading)
+	rr.SetFactors([]*storage.Risk_Result_Factor{
+		rrf,
+	})
+	rr.SetScore(score)
+	return rr
 }
 
 // ScoreV2 takes an image and evaluates its risk based on risky components
@@ -100,13 +102,15 @@ func (c *riskyComponentCountMultiplier) ScoreV2(_ context.Context, image *storag
 		score = maxRiskyScore
 	}
 
-	return &storage.Risk_Result{
-		Name: RiskyComponentCountHeading,
-		Factors: []*storage.Risk_Result_Factor{
-			{Message: generateMessage(image.GetName().GetFullName(), riskySet.AsSlice())},
-		},
-		Score: score,
-	}
+	rrf := &storage.Risk_Result_Factor{}
+	rrf.SetMessage(generateMessage(image.GetName().GetFullName(), riskySet.AsSlice()))
+	rr := &storage.Risk_Result{}
+	rr.SetName(RiskyComponentCountHeading)
+	rr.SetFactors([]*storage.Risk_Result_Factor{
+		rrf,
+	})
+	rr.SetScore(score)
+	return rr
 }
 
 func generateMessage(imageName string, largestRiskySet []string) string {

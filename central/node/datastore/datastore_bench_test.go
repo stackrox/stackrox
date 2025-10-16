@@ -28,24 +28,24 @@ func BenchmarkNodes(b *testing.B) {
 	fakeNode := fixtures.GetNodeWithUniqueComponents(100, 100)
 	nodes := make([]*storage.Node, 100)
 	for i := 0; i < 100; i++ {
-		fakeNode.Id = uuid.NewV4().String()
-		fakeNode.ClusterId = fakeNode.GetId()
-		fakeNode.ClusterName = fmt.Sprintf("c-%d", i)
-		fakeNode.Name = fmt.Sprintf("node-%d", i)
+		fakeNode.SetId(uuid.NewV4().String())
+		fakeNode.SetClusterId(fakeNode.GetId())
+		fakeNode.SetClusterName(fmt.Sprintf("c-%d", i))
+		fakeNode.SetName(fmt.Sprintf("node-%d", i))
 		nodes[i] = fakeNode
 		require.NoError(b, nodeDS.UpsertNode(ctx, fakeNode))
 	}
 
 	// Stored node is read because it contains new scan.
 	b.Run("upsertNodeWithOldScan", func(b *testing.B) {
-		fakeNode.Scan.ScanTime.Seconds = fakeNode.GetScan().GetScanTime().GetSeconds() - 500
+		fakeNode.GetScan().GetScanTime().Seconds = fakeNode.GetScan().GetScanTime().GetSeconds() - 500
 		for i := 0; i < b.N; i++ {
 			require.NoError(b, nodeDS.UpsertNode(ctx, fakeNode))
 		}
 	})
 
 	b.Run("upsertNodeWithNewScan", func(b *testing.B) {
-		fakeNode.Scan.ScanTime.Seconds = fakeNode.GetScan().GetScanTime().GetSeconds() + 500
+		fakeNode.GetScan().GetScanTime().Seconds = fakeNode.GetScan().GetScanTime().GetSeconds() + 500
 		for i := 0; i < b.N; i++ {
 			require.NoError(b, nodeDS.UpsertNode(ctx, fakeNode))
 		}

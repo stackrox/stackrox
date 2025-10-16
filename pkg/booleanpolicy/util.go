@@ -110,10 +110,10 @@ func SectionContainsFieldOfType(section *storage.PolicySection, fieldType Runtim
 func FilterPolicySections(policy *storage.Policy, pred func(section *storage.PolicySection) bool) *storage.Policy {
 	cloned := policy.CloneVT()
 	sections := policy.GetPolicySections()
-	cloned.PolicySections = nil
+	cloned.SetPolicySections(nil)
 	for _, section := range sections {
 		if pred(section) {
-			cloned.PolicySections = append(cloned.PolicySections, section)
+			cloned.SetPolicySections(append(cloned.GetPolicySections(), section))
 		}
 	}
 	return cloned

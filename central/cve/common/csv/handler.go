@@ -135,7 +135,7 @@ func (h *HandlerImpl) GetScopeContext(ctx context.Context, query *v1.Query) (con
 
 	cloned := query.CloneVT()
 	// Remove pagination since we are only determining the resource category which should scope the query.
-	cloned.Pagination = nil
+	cloned.ClearPagination()
 	for _, searchWrapper := range h.searchWrappers {
 		// Filter the query by resource categories to determine the category that should scope the query.
 		// Note that the resource categories are ordered from COMPONENTS to CLUSTERS.

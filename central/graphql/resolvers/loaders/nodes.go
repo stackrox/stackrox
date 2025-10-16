@@ -14,7 +14,8 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var nodeLoaderType = reflect.TypeOf(storage.Node{})
+// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+var nodeLoaderType = reflect.TypeOf(&storage.Node{})
 
 func init() {
 	RegisterTypeFactory(nodeLoaderType, func() interface{} {

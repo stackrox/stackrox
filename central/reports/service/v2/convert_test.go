@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestTypeConversions(t *testing.T) {
@@ -42,17 +43,16 @@ func (s *typeConversionTestSuite) TearDownSuite() {
 }
 
 func (s *typeConversionTestSuite) TestConvertV2ReportConfigurationToProto() {
-	creator := &storage.SlimUser{
-		Id:   "uid",
-		Name: "name",
-	}
+	creator := &storage.SlimUser{}
+	creator.SetId("uid")
+	creator.SetName("name")
 	accessScopeRules := []*storage.SimpleAccessScope_Rules{
-		{
+		storage.SimpleAccessScope_Rules_builder{
 			IncludedClusters: []string{"cluster-1"},
 			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
-				{ClusterName: "cluster-2", NamespaceName: "namespace-2"},
+				storage.SimpleAccessScope_Rules_Namespace_builder{ClusterName: "cluster-2", NamespaceName: "namespace-2"}.Build(),
 			},
-		},
+		}.Build(),
 	}
 
 	var cases = []struct {
@@ -67,8 +67,8 @@ func (s *typeConversionTestSuite) TestConvertV2ReportConfigurationToProto() {
 			},
 			resultGen: func() *storage.ReportConfiguration {
 				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
-				ret.Creator = creator
-				ret.GetVulnReportFilters().AccessScopeRules = accessScopeRules
+				ret.SetCreator(creator)
+				ret.GetVulnReportFilters().SetAccessScopeRules(accessScopeRules)
 				return ret
 			},
 		},
@@ -76,14 +76,14 @@ func (s *typeConversionTestSuite) TestConvertV2ReportConfigurationToProto() {
 			testname: "Report config without notifiers",
 			reportConfigGen: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.Notifiers = nil
+				ret.SetNotifiers(nil)
 				return ret
 			},
 			resultGen: func() *storage.ReportConfiguration {
 				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
-				ret.Notifiers = nil
-				ret.Creator = creator
-				ret.GetVulnReportFilters().AccessScopeRules = accessScopeRules
+				ret.SetNotifiers(nil)
+				ret.SetCreator(creator)
+				ret.GetVulnReportFilters().SetAccessScopeRules(accessScopeRules)
 				return ret
 			},
 		},
@@ -91,16 +91,16 @@ func (s *typeConversionTestSuite) TestConvertV2ReportConfigurationToProto() {
 			testname: "Report config with custom email subject and body",
 			reportConfigGen: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.Notifiers[0].GetEmailConfig().CustomSubject = "custom subject"
-				ret.Notifiers[0].GetEmailConfig().CustomBody = "custom body"
+				ret.GetNotifiers()[0].GetEmailConfig().SetCustomSubject("custom subject")
+				ret.GetNotifiers()[0].GetEmailConfig().SetCustomBody("custom body")
 				return ret
 			},
 			resultGen: func() *storage.ReportConfiguration {
 				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
-				ret.Notifiers[0].GetEmailConfig().CustomSubject = "custom subject"
-				ret.Notifiers[0].GetEmailConfig().CustomBody = "custom body"
-				ret.Creator = creator
-				ret.GetVulnReportFilters().AccessScopeRules = accessScopeRules
+				ret.GetNotifiers()[0].GetEmailConfig().SetCustomSubject("custom subject")
+				ret.GetNotifiers()[0].GetEmailConfig().SetCustomBody("custom body")
+				ret.SetCreator(creator)
+				ret.GetVulnReportFilters().SetAccessScopeRules(accessScopeRules)
 				return ret
 			},
 		},
@@ -108,14 +108,14 @@ func (s *typeConversionTestSuite) TestConvertV2ReportConfigurationToProto() {
 			testname: "Report config without schedule",
 			reportConfigGen: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.Schedule = nil
+				ret.ClearSchedule()
 				return ret
 			},
 			resultGen: func() *storage.ReportConfiguration {
 				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
-				ret.Schedule = nil
-				ret.Creator = creator
-				ret.GetVulnReportFilters().AccessScopeRules = accessScopeRules
+				ret.ClearSchedule()
+				ret.SetCreator(creator)
+				ret.GetVulnReportFilters().SetAccessScopeRules(accessScopeRules)
 				return ret
 			},
 		},
@@ -123,13 +123,13 @@ func (s *typeConversionTestSuite) TestConvertV2ReportConfigurationToProto() {
 			testname: "Report config without filter",
 			reportConfigGen: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.Filter = nil
+				ret.ClearFilter()
 				return ret
 			},
 			resultGen: func() *storage.ReportConfiguration {
 				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
-				ret.Filter = nil
-				ret.Creator = creator
+				ret.ClearFilter()
+				ret.SetCreator(creator)
 				return ret
 			},
 		},
@@ -137,14 +137,14 @@ func (s *typeConversionTestSuite) TestConvertV2ReportConfigurationToProto() {
 			testname: "Report config without resource scope",
 			reportConfigGen: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.ResourceScope = nil
+				ret.ClearResourceScope()
 				return ret
 			},
 			resultGen: func() *storage.ReportConfiguration {
 				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
-				ret.ResourceScope = nil
-				ret.Creator = creator
-				ret.GetVulnReportFilters().AccessScopeRules = accessScopeRules
+				ret.ClearResourceScope()
+				ret.SetCreator(creator)
+				ret.GetVulnReportFilters().SetAccessScopeRules(accessScopeRules)
 				return ret
 			},
 		},
@@ -152,14 +152,14 @@ func (s *typeConversionTestSuite) TestConvertV2ReportConfigurationToProto() {
 			testname: "Report config without CvesSince in filter",
 			reportConfigGen: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.GetVulnReportFilters().CvesSince = nil
+				ret.GetVulnReportFilters().ClearCvesSince()
 				return ret
 			},
 			resultGen: func() *storage.ReportConfiguration {
 				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
-				ret.GetVulnReportFilters().CvesSince = nil
-				ret.Creator = creator
-				ret.GetVulnReportFilters().AccessScopeRules = accessScopeRules
+				ret.GetVulnReportFilters().ClearCvesSince()
+				ret.SetCreator(creator)
+				ret.GetVulnReportFilters().SetAccessScopeRules(accessScopeRules)
 				return ret
 			},
 		},
@@ -167,14 +167,14 @@ func (s *typeConversionTestSuite) TestConvertV2ReportConfigurationToProto() {
 			testname: "Report config without scope reference in ResourceScope",
 			reportConfigGen: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.ResourceScope.ScopeReference = nil
+				ret.GetResourceScope().ClearScopeReference()
 				return ret
 			},
 			resultGen: func() *storage.ReportConfiguration {
 				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
-				ret.ResourceScope.ScopeReference = nil
-				ret.Creator = creator
-				ret.GetVulnReportFilters().AccessScopeRules = accessScopeRules
+				ret.GetResourceScope().ClearScopeReference()
+				ret.SetCreator(creator)
+				ret.GetVulnReportFilters().SetAccessScopeRules(accessScopeRules)
 				return ret
 			},
 		},
@@ -192,13 +192,13 @@ func (s *typeConversionTestSuite) TestConvertV2ReportConfigurationToProto() {
 
 func setAllNotifierNamesToFixedValue(reportConfig *apiV2.ReportConfiguration, name string) {
 	for _, notifierConfig := range reportConfig.GetNotifiers() {
-		notifierConfig.NotifierName = name
+		notifierConfig.SetNotifierName(name)
 	}
 }
 
 func setCollectionName(reportConfig *apiV2.ReportConfiguration, name string) {
 	if reportConfig.GetResourceScope() != nil && reportConfig.GetResourceScope().GetCollectionScope() != nil {
-		reportConfig.ResourceScope.GetCollectionScope().CollectionName = name
+		reportConfig.GetResourceScope().GetCollectionScope().SetCollectionName(name)
 	}
 }
 
@@ -227,12 +227,12 @@ func (s *typeConversionTestSuite) TestConvertProtoReportConfigurationToV2() {
 			testname: "Report config without notifiers",
 			reportConfigGen: func() *storage.ReportConfiguration {
 				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
-				ret.Notifiers = nil
+				ret.SetNotifiers(nil)
 				return ret
 			},
 			resultGen: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.Notifiers = nil
+				ret.SetNotifiers(nil)
 				setCollectionName(ret, mockCollectionName)
 				return ret
 			},
@@ -241,14 +241,14 @@ func (s *typeConversionTestSuite) TestConvertProtoReportConfigurationToV2() {
 			testname: "Report config with custom email subject and body",
 			reportConfigGen: func() *storage.ReportConfiguration {
 				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
-				ret.Notifiers[0].GetEmailConfig().CustomSubject = "custom subject"
-				ret.Notifiers[0].GetEmailConfig().CustomBody = "custom body"
+				ret.GetNotifiers()[0].GetEmailConfig().SetCustomSubject("custom subject")
+				ret.GetNotifiers()[0].GetEmailConfig().SetCustomBody("custom body")
 				return ret
 			},
 			resultGen: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.Notifiers[0].GetEmailConfig().CustomSubject = "custom subject"
-				ret.Notifiers[0].GetEmailConfig().CustomBody = "custom body"
+				ret.GetNotifiers()[0].GetEmailConfig().SetCustomSubject("custom subject")
+				ret.GetNotifiers()[0].GetEmailConfig().SetCustomBody("custom body")
 				setAllNotifierNamesToFixedValue(ret, mockNotifierName)
 				setCollectionName(ret, mockCollectionName)
 				return ret
@@ -258,12 +258,12 @@ func (s *typeConversionTestSuite) TestConvertProtoReportConfigurationToV2() {
 			testname: "Report config without schedule",
 			reportConfigGen: func() *storage.ReportConfiguration {
 				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
-				ret.Schedule = nil
+				ret.ClearSchedule()
 				return ret
 			},
 			resultGen: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.Schedule = nil
+				ret.ClearSchedule()
 				setAllNotifierNamesToFixedValue(ret, mockNotifierName)
 				setCollectionName(ret, mockCollectionName)
 				return ret
@@ -273,12 +273,12 @@ func (s *typeConversionTestSuite) TestConvertProtoReportConfigurationToV2() {
 			testname: "Report config without filter",
 			reportConfigGen: func() *storage.ReportConfiguration {
 				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
-				ret.Filter = nil
+				ret.ClearFilter()
 				return ret
 			},
 			resultGen: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.Filter = nil
+				ret.ClearFilter()
 				setAllNotifierNamesToFixedValue(ret, mockNotifierName)
 				setCollectionName(ret, mockCollectionName)
 				return ret
@@ -288,12 +288,12 @@ func (s *typeConversionTestSuite) TestConvertProtoReportConfigurationToV2() {
 			testname: "Report config without resource scope",
 			reportConfigGen: func() *storage.ReportConfiguration {
 				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
-				ret.ResourceScope = nil
+				ret.ClearResourceScope()
 				return ret
 			},
 			resultGen: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.ResourceScope = nil
+				ret.ClearResourceScope()
 				setAllNotifierNamesToFixedValue(ret, mockNotifierName)
 				return ret
 			},
@@ -302,12 +302,12 @@ func (s *typeConversionTestSuite) TestConvertProtoReportConfigurationToV2() {
 			testname: "Report config without CvesSince in filter",
 			reportConfigGen: func() *storage.ReportConfiguration {
 				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
-				ret.GetVulnReportFilters().CvesSince = nil
+				ret.GetVulnReportFilters().ClearCvesSince()
 				return ret
 			},
 			resultGen: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.GetVulnReportFilters().CvesSince = nil
+				ret.GetVulnReportFilters().ClearCvesSince()
 				setAllNotifierNamesToFixedValue(ret, mockNotifierName)
 				setCollectionName(ret, mockCollectionName)
 				return ret
@@ -317,12 +317,12 @@ func (s *typeConversionTestSuite) TestConvertProtoReportConfigurationToV2() {
 			testname: "Report config without scope reference in ResourceScope",
 			reportConfigGen: func() *storage.ReportConfiguration {
 				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
-				ret.ResourceScope.ScopeReference = nil
+				ret.GetResourceScope().ClearScopeReference()
 				return ret
 			},
 			resultGen: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.ResourceScope.ScopeReference = nil
+				ret.GetResourceScope().ClearScopeReference()
 				setAllNotifierNamesToFixedValue(ret, mockNotifierName)
 				return ret
 			},
@@ -334,18 +334,18 @@ func (s *typeConversionTestSuite) TestConvertProtoReportConfigurationToV2() {
 			reportConfig := c.reportConfigGen()
 
 			for _, notifierConfig := range reportConfig.GetNotifiers() {
+				notifier := &storage.Notifier{}
+				notifier.SetId(notifierConfig.GetId())
+				notifier.SetName(mockNotifierName)
 				s.notifierDatastore.EXPECT().GetNotifier(gomock.Any(), notifierConfig.GetId()).
-					Return(&storage.Notifier{
-						Id:   notifierConfig.GetId(),
-						Name: mockNotifierName,
-					}, true, nil).Times(1)
+					Return(notifier, true, nil).Times(1)
 			}
 			if reportConfig.GetResourceScope() != nil && reportConfig.GetResourceScope().GetScopeReference() != nil {
+				rc := &storage.ResourceCollection{}
+				rc.SetId(reportConfig.GetResourceScope().GetCollectionId())
+				rc.SetName(mockCollectionName)
 				s.collectionDatastore.EXPECT().Get(gomock.Any(), reportConfig.GetResourceScope().GetCollectionId()).
-					Return(&storage.ResourceCollection{
-						Id:   reportConfig.GetResourceScope().GetCollectionId(),
-						Name: mockCollectionName,
-					}, true, nil).Times(1)
+					Return(rc, true, nil).Times(1)
 			}
 
 			expected := c.resultGen()
@@ -377,7 +377,7 @@ func (s *typeConversionTestSuite) TestConvertProtoScheduleToV2() {
 			schedule: newSchedule(34, 12, []int32{2}, true, []int32{}),
 			result: func() *apiV2.ReportSchedule {
 				sched := newScheduleV2(34, 12, []int32{}, []int32{})
-				sched.IntervalType = apiV2.ReportSchedule_WEEKLY
+				sched.SetIntervalType(apiV2.ReportSchedule_WEEKLY)
 				return sched
 			}(),
 		},
@@ -435,33 +435,27 @@ func (s *typeConversionTestSuite) TestConvertV2ScheduleToProto() {
 func newSchedule(minute int32, hour int32, weekdays []int32, isWeeklyIntervalType bool, daysOfMonth []int32) *storage.Schedule {
 	var sched storage.Schedule
 
-	sched.Hour = hour
-	sched.Minute = minute
+	sched.SetHour(hour)
+	sched.SetMinute(minute)
 	if len(daysOfMonth) != 0 {
-		sched.IntervalType = storage.Schedule_MONTHLY
-		sched.Interval = &storage.Schedule_DaysOfMonth_{
-			DaysOfMonth: &storage.Schedule_DaysOfMonth{
-				Days: daysOfMonth,
-			},
-		}
+		sched.SetIntervalType(storage.Schedule_MONTHLY)
+		sd := &storage.Schedule_DaysOfMonth{}
+		sd.SetDays(daysOfMonth)
+		sched.SetDaysOfMonth(proto.ValueOrDefault(sd))
 		return &sched
 	}
 	if len(weekdays) == 0 {
-		sched.IntervalType = storage.Schedule_DAILY
+		sched.SetIntervalType(storage.Schedule_DAILY)
 	} else {
-		sched.IntervalType = storage.Schedule_WEEKLY
+		sched.SetIntervalType(storage.Schedule_WEEKLY)
 		if isWeeklyIntervalType {
-			sched.Interval = &storage.Schedule_Weekly{
-				Weekly: &storage.Schedule_WeeklyInterval{
-					Day: weekdays[0],
-				},
-			}
+			sw := &storage.Schedule_WeeklyInterval{}
+			sw.SetDay(weekdays[0])
+			sched.SetWeekly(proto.ValueOrDefault(sw))
 		} else {
-			sched.Interval = &storage.Schedule_DaysOfWeek_{
-				DaysOfWeek: &storage.Schedule_DaysOfWeek{
-					Days: weekdays,
-				},
-			}
+			sd := &storage.Schedule_DaysOfWeek{}
+			sd.SetDays(weekdays)
+			sched.SetDaysOfWeek(proto.ValueOrDefault(sd))
 		}
 	}
 	return &sched
@@ -470,26 +464,22 @@ func newSchedule(minute int32, hour int32, weekdays []int32, isWeeklyIntervalTyp
 func newScheduleV2(minute int32, hour int32, weekdays []int32, daysOfMonth []int32) *apiV2.ReportSchedule {
 	var sched apiV2.ReportSchedule
 
-	sched.Hour = hour
-	sched.Minute = minute
+	sched.SetHour(hour)
+	sched.SetMinute(minute)
 	if len(daysOfMonth) != 0 {
-		sched.IntervalType = apiV2.ReportSchedule_MONTHLY
-		sched.Interval = &apiV2.ReportSchedule_DaysOfMonth_{
-			DaysOfMonth: &apiV2.ReportSchedule_DaysOfMonth{
-				Days: daysOfMonth,
-			},
-		}
+		sched.SetIntervalType(apiV2.ReportSchedule_MONTHLY)
+		rd := &apiV2.ReportSchedule_DaysOfMonth{}
+		rd.SetDays(daysOfMonth)
+		sched.SetDaysOfMonth(proto.ValueOrDefault(rd))
 		return &sched
 	}
 	if len(weekdays) == 0 {
-		sched.IntervalType = apiV2.ReportSchedule_UNSET
+		sched.SetIntervalType(apiV2.ReportSchedule_UNSET)
 	} else {
-		sched.IntervalType = apiV2.ReportSchedule_WEEKLY
-		sched.Interval = &apiV2.ReportSchedule_DaysOfWeek_{
-			DaysOfWeek: &apiV2.ReportSchedule_DaysOfWeek{
-				Days: weekdays,
-			},
-		}
+		sched.SetIntervalType(apiV2.ReportSchedule_WEEKLY)
+		rd := &apiV2.ReportSchedule_DaysOfWeek{}
+		rd.SetDays(weekdays)
+		sched.SetDaysOfWeek(proto.ValueOrDefault(rd))
 	}
 	return &sched
 }

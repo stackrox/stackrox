@@ -68,14 +68,14 @@ func (d *DatastoreBasedIntegrationHealthReporter) Register(id, name string, typ 
 
 	now := protocompat.TimestampNow()
 	// Integration health does not exist yet, initialize it.
-	d.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
-		Id:            id,
-		Name:          name,
-		Type:          typ,
-		Status:        storage.IntegrationHealth_UNINITIALIZED,
-		LastTimestamp: now,
-		ErrorMessage:  "",
-	})
+	ih := &storage.IntegrationHealth{}
+	ih.SetId(id)
+	ih.SetName(name)
+	ih.SetType(typ)
+	ih.SetStatus(storage.IntegrationHealth_UNINITIALIZED)
+	ih.SetLastTimestamp(now)
+	ih.SetErrorMessage("")
+	d.UpdateIntegrationHealthAsync(ih)
 
 	return nil
 }

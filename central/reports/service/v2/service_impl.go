@@ -102,10 +102,9 @@ func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *apiV
 		return nil, errors.Wrap(err, "Validating report configuration")
 	}
 
-	creator := &storage.SlimUser{
-		Id:   creatorID.UID(),
-		Name: stringutils.FirstNonEmpty(creatorID.FullName(), creatorID.FriendlyName()),
-	}
+	creator := &storage.SlimUser{}
+	creator.SetId(creatorID.UID())
+	creator.SetName(stringutils.FirstNonEmpty(creatorID.FullName(), creatorID.FriendlyName()))
 
 	protoReportConfig := s.convertV2ReportConfigurationToProto(request, creator, common.ExtractAccessScopeRules(creatorID))
 
@@ -198,7 +197,9 @@ func (s *serviceImpl) ListReportConfigurations(ctx context.Context, query *apiV2
 		}
 		v2Configs = append(v2Configs, converted)
 	}
-	return &apiV2.ListReportConfigurationsResponse{ReportConfigs: v2Configs}, nil
+	lrcr := &apiV2.ListReportConfigurationsResponse{}
+	lrcr.SetReportConfigs(v2Configs)
+	return lrcr, nil
 }
 
 func (s *serviceImpl) GetReportConfiguration(ctx context.Context, req *apiV2.ResourceByID) (*apiV2.ReportConfiguration, error) {
@@ -234,7 +235,9 @@ func (s *serviceImpl) CountReportConfigurations(ctx context.Context, request *ap
 	if err != nil {
 		return nil, err
 	}
-	return &apiV2.CountReportConfigurationsResponse{Count: int32(numReportConfigs)}, nil
+	crcr := &apiV2.CountReportConfigurationsResponse{}
+	crcr.SetCount(int32(numReportConfigs))
+	return crcr, nil
 }
 
 func (s *serviceImpl) DeleteReportConfiguration(ctx context.Context, id *apiV2.ResourceByID) (*apiV2.Empty, error) {
@@ -277,7 +280,9 @@ func (s *serviceImpl) GetReportStatus(ctx context.Context, req *apiV2.ResourceBy
 		return nil, errors.Wrapf(errox.NotFound, "Report snapshot not found for job id %s", req.GetId())
 	}
 	status := s.convertPrototoV2Reportstatus(rep.GetReportStatus())
-	return &apiV2.ReportStatusResponse{Status: status}, err
+	rsr := &apiV2.ReportStatusResponse{}
+	rsr.SetStatus(status)
+	return rsr, err
 }
 
 func (s *serviceImpl) GetReportHistory(ctx context.Context, req *apiV2.GetReportHistoryRequest) (*apiV2.ReportHistoryResponse, error) {
@@ -304,9 +309,8 @@ func (s *serviceImpl) GetReportHistory(ctx context.Context, req *apiV2.GetReport
 	if err != nil {
 		return nil, errors.Wrap(err, "Error converting storage report snapshots to response.")
 	}
-	res := apiV2.ReportHistoryResponse{
-		ReportSnapshots: snapshots,
-	}
+	res := &apiV2.ReportHistoryResponse{}
+	res.SetReportSnapshots(snapshots)
 	return &res, nil
 }
 
@@ -347,9 +351,8 @@ func (s *serviceImpl) GetMyReportHistory(ctx context.Context, req *apiV2.GetRepo
 	if err != nil {
 		return nil, errors.Wrap(err, "Error converting storage report snapshots to response.")
 	}
-	res := apiV2.ReportHistoryResponse{
-		ReportSnapshots: snapshots,
-	}
+	res := &apiV2.ReportHistoryResponse{}
+	res.SetReportSnapshots(snapshots)
 	return &res, nil
 }
 
@@ -383,10 +386,10 @@ func (s *serviceImpl) RunReport(ctx context.Context, req *apiV2.RunReportRequest
 		return nil, err
 	}
 
-	return &apiV2.RunReportResponse{
-		ReportConfigId: req.GetReportConfigId(),
-		ReportId:       reportID,
-	}, nil
+	rrr := &apiV2.RunReportResponse{}
+	rrr.SetReportConfigId(req.GetReportConfigId())
+	rrr.SetReportId(reportID)
+	return rrr, nil
 }
 
 func (s *serviceImpl) CancelReport(ctx context.Context, req *apiV2.ResourceByID) (*apiV2.Empty, error) {
@@ -498,7 +501,10 @@ func (s *serviceImpl) PostViewBasedReport(ctx context.Context, req *apiV2.Report
 		return nil, errors.Wrapf(errox.ServerError, "Scheduler error:%s", err)
 	}
 
-	return &apiV2.RunReportResponseViewBased{ReportID: reportID, RequestName: reportReq.ReportSnapshot.GetName()}, nil
+	rrrvb := &apiV2.RunReportResponseViewBased{}
+	rrrvb.SetReportID(reportID)
+	rrrvb.SetRequestName(reportReq.ReportSnapshot.GetName())
+	return rrrvb, nil
 }
 
 func (s *serviceImpl) GetViewBasedReportHistory(ctx context.Context, req *apiV2.GetViewBasedReportHistoryRequest) (*apiV2.ReportHistoryResponse, error) {
@@ -529,9 +535,8 @@ func (s *serviceImpl) GetViewBasedReportHistory(ctx context.Context, req *apiV2.
 	if err != nil {
 		return nil, errors.Wrap(err, "Error converting storage report snapshots to response.")
 	}
-	res := apiV2.ReportHistoryResponse{
-		ReportSnapshots: snapshots,
-	}
+	res := &apiV2.ReportHistoryResponse{}
+	res.SetReportSnapshots(snapshots)
 	return &res, nil
 }
 
@@ -575,9 +580,8 @@ func (s *serviceImpl) GetViewBasedMyReportHistory(ctx context.Context, req *apiV
 	if err != nil {
 		return nil, errors.Wrap(err, "Error converting storage report snapshots to response.")
 	}
-	res := apiV2.ReportHistoryResponse{
-		ReportSnapshots: snapshots,
-	}
+	res := &apiV2.ReportHistoryResponse{}
+	res.SetReportSnapshots(snapshots)
 	return &res, nil
 }
 

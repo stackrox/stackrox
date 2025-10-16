@@ -47,9 +47,9 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 func (s *serviceImpl) ListMitreAttackVectors(_ context.Context, _ *v1.Empty) (*v1.ListMitreAttackVectorsResponse, error) {
-	return &v1.ListMitreAttackVectorsResponse{
-		MitreAttackVectors: s.store.GetAll(),
-	}, nil
+	lmavr := &v1.ListMitreAttackVectorsResponse{}
+	lmavr.SetMitreAttackVectors(s.store.GetAll())
+	return lmavr, nil
 }
 
 func (s *serviceImpl) GetMitreAttackVector(_ context.Context, req *v1.ResourceByID) (*v1.GetMitreVectorResponse, error) {
@@ -58,7 +58,7 @@ func (s *serviceImpl) GetMitreAttackVector(_ context.Context, req *v1.ResourceBy
 		return nil, err
 	}
 
-	return &v1.GetMitreVectorResponse{
-		MitreAttackVector: vector,
-	}, nil
+	gmvr := &v1.GetMitreVectorResponse{}
+	gmvr.SetMitreAttackVector(vector)
+	return gmvr, nil
 }

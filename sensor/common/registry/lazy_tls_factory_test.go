@@ -18,19 +18,17 @@ func TestCreateRegistryErrors(t *testing.T) {
 		source  *storage.ImageIntegration
 	}{
 		{"nil source", "integration is nil", nil},
-		{"unknown type", "registry with type", &storage.ImageIntegration{
+		{"unknown type", "registry with type", storage.ImageIntegration_builder{
 			Type: "fake",
-		}},
-		{"nil docker config", "docker config is nil", &storage.ImageIntegration{
-			Type:              types.DockerType,
-			IntegrationConfig: &storage.ImageIntegration_Docker{},
-		}},
-		{"empty registry host", "empty registry host", &storage.ImageIntegration{
-			Type: types.DockerType,
-			IntegrationConfig: &storage.ImageIntegration_Docker{
-				Docker: &storage.DockerConfig{},
-			},
-		}},
+		}.Build()},
+		{"nil docker config", "docker config is nil", storage.ImageIntegration_builder{
+			Type:   types.DockerType,
+			Docker: &storage.DockerConfig{},
+		}.Build()},
+		{"empty registry host", "empty registry host", storage.ImageIntegration_builder{
+			Type:   types.DockerType,
+			Docker: &storage.DockerConfig{},
+		}.Build()},
 	}
 
 	for _, tc := range tcs {

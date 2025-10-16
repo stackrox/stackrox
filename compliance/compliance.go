@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/proto"
 )
 
 var log = logging.LoggerForModule()
@@ -150,10 +151,10 @@ func (c *Compliance) Start() {
 }
 
 func (c *Compliance) createIndexMsg(report *v4.IndexReport, nodeName string) *sensor.MsgFromCompliance {
-	return &sensor.MsgFromCompliance{
-		Node: nodeName,
-		Msg:  &sensor.MsgFromCompliance_IndexReport{IndexReport: report},
-	}
+	mfc := &sensor.MsgFromCompliance{}
+	mfc.SetNode(nodeName)
+	mfc.SetIndexReport(proto.ValueOrDefault(report))
+	return mfc
 }
 
 func (c *Compliance) manageNodeInventoryScanLoop(ctx context.Context) <-chan *sensor.MsgFromCompliance {
@@ -308,20 +309,20 @@ func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceServic
 		if err != nil {
 			return errors.Wrap(err, "receiving msg from sensor")
 		}
-		switch t := msg.GetMsg().(type) {
-		case *sensor.MsgToCompliance_Trigger:
-			if err := compliance_checks.RunChecks(client, config, t.Trigger, c.nodeNameProvider); err != nil {
+		switch t := msg.WhichMsg(); t {
+		case sensor.MsgToCompliance_Trigger_case:
+			if err := compliance_checks.RunChecks(client, config, msg.GetTrigger(), c.nodeNameProvider); err != nil {
 				return errors.Wrap(err, "running compliance checks")
 			}
-		case *sensor.MsgToCompliance_AuditLogCollectionRequest_:
-			switch r := t.AuditLogCollectionRequest.GetReq().(type) {
-			case *sensor.MsgToCompliance_AuditLogCollectionRequest_StartReq:
+		case sensor.MsgToCompliance_AuditLogCollectionRequest_case:
+			switch msg.GetAuditLogCollectionRequest().WhichReq() {
+			case sensor.MsgToCompliance_AuditLogCollectionRequest_StartReq_case:
 				if auditReader != nil {
 					log.Info("Audit log reader is being restarted")
 					auditReader.StopReader() // stop the old one
 				}
-				auditReader = c.startAuditLogCollection(ctx, client, r.StartReq)
-			case *sensor.MsgToCompliance_AuditLogCollectionRequest_StopReq:
+				auditReader = c.startAuditLogCollection(ctx, client, msg.GetAuditLogCollectionRequest().GetStartReq())
+			case sensor.MsgToCompliance_AuditLogCollectionRequest_StopReq_case:
 				if auditReader != nil {
 					log.Infof("Stopping audit log reader on node %s.", c.nodeNameProvider.GetNodeName())
 					auditReader.StopReader()
@@ -330,31 +331,31 @@ func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceServic
 					log.Warn("Attempting to stop an un-started audit log reader - this is a no-op")
 				}
 			}
-		case *sensor.MsgToCompliance_Ack:
-			switch t.Ack.GetAction() {
+		case sensor.MsgToCompliance_Ack_case:
+			switch msg.GetAck().GetAction() {
 			case sensor.MsgToCompliance_NodeInventoryACK_ACK:
-				switch t.Ack.GetMessageType() {
+				switch msg.GetAck().GetMessageType() {
 				case sensor.MsgToCompliance_NodeInventoryACK_NodeInventory:
 					c.umhNodeInventory.HandleACK()
 				case sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer:
 					c.umhNodeIndex.HandleACK()
 				default:
-					log.Errorf("Unknown ACK Type: %s", t.Ack.GetMessageType())
+					log.Errorf("Unknown ACK Type: %s", msg.GetAck().GetMessageType())
 				}
 			case sensor.MsgToCompliance_NodeInventoryACK_NACK:
-				switch t.Ack.GetMessageType() {
+				switch msg.GetAck().GetMessageType() {
 				case sensor.MsgToCompliance_NodeInventoryACK_NodeInventory:
 					c.umhNodeInventory.HandleNACK()
 				case sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer:
 					c.umhNodeIndex.HandleNACK()
 				default:
-					log.Errorf("Unknown ACK Type: %s", t.Ack.GetMessageType())
+					log.Errorf("Unknown ACK Type: %s", msg.GetAck().GetMessageType())
 				}
 			default:
-				log.Errorf("Unknown ACK Action: %s", t.Ack.GetAction())
+				log.Errorf("Unknown ACK Action: %s", msg.GetAck().GetAction())
 			}
 		default:
-			utils.Should(errors.Errorf("Unhandled msg type: %T", t))
+			utils.Should(errors.Errorf("Unhandled msg type: %v", t))
 		}
 	}
 }

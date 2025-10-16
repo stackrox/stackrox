@@ -17,10 +17,10 @@ const (
 func ComplianceOperatorRule(sensorData *central.ComplianceOperatorRuleV2, clusterID string) *storage.ComplianceOperatorRuleV2 {
 	fixes := make([]*storage.ComplianceOperatorRuleV2_Fix, 0, len(sensorData.GetFixes()))
 	for _, fix := range sensorData.GetFixes() {
-		fixes = append(fixes, &storage.ComplianceOperatorRuleV2_Fix{
-			Platform:   fix.GetPlatform(),
-			Disruption: fix.GetDisruption(),
-		})
+		cf := &storage.ComplianceOperatorRuleV2_Fix{}
+		cf.SetPlatform(fix.GetPlatform())
+		cf.SetDisruption(fix.GetDisruption())
+		fixes = append(fixes, cf)
 	}
 
 	// The standards and controls that a rule applies to are stored within the annotations of the Rule CR.
@@ -49,32 +49,32 @@ func ComplianceOperatorRule(sensorData *central.ComplianceOperatorRuleV2, cluste
 
 		// Add a control entry for each Control + Standard. This data is intentionally denormalized for easier querying.
 		for _, controlValue := range controlAnnotationValues {
-			controls = append(controls, &storage.RuleControls{
-				Standard: standard,
-				Control:  controlValue,
-			})
+			rc := &storage.RuleControls{}
+			rc.SetStandard(standard)
+			rc.SetControl(controlValue)
+			controls = append(controls, rc)
 		}
 	}
 
 	parentRule := sensorData.GetAnnotations()[v1alpha1.RuleIDAnnotationKey]
 
-	return &storage.ComplianceOperatorRuleV2{
-		Id:           sensorData.GetId(),
-		RuleId:       sensorData.GetRuleId(),
-		Name:         sensorData.GetName(),
-		RuleType:     sensorData.GetRuleType(),
-		Severity:     severityToV2[sensorData.GetSeverity()],
-		Labels:       sensorData.GetLabels(),
-		Annotations:  sensorData.GetAnnotations(),
-		Title:        sensorData.GetTitle(),
-		Description:  sensorData.GetDescription(),
-		Rationale:    sensorData.GetRationale(),
-		Fixes:        fixes,
-		Warning:      sensorData.GetWarning(),
-		Controls:     controls,
-		ClusterId:    clusterID,
-		RuleRefId:    BuildNameRefID(clusterID, parentRule),
-		Instructions: sensorData.GetInstructions(),
-		ParentRule:   parentRule,
-	}
+	corv2 := &storage.ComplianceOperatorRuleV2{}
+	corv2.SetId(sensorData.GetId())
+	corv2.SetRuleId(sensorData.GetRuleId())
+	corv2.SetName(sensorData.GetName())
+	corv2.SetRuleType(sensorData.GetRuleType())
+	corv2.SetSeverity(severityToV2[sensorData.GetSeverity()])
+	corv2.SetLabels(sensorData.GetLabels())
+	corv2.SetAnnotations(sensorData.GetAnnotations())
+	corv2.SetTitle(sensorData.GetTitle())
+	corv2.SetDescription(sensorData.GetDescription())
+	corv2.SetRationale(sensorData.GetRationale())
+	corv2.SetFixes(fixes)
+	corv2.SetWarning(sensorData.GetWarning())
+	corv2.SetControls(controls)
+	corv2.SetClusterId(clusterID)
+	corv2.SetRuleRefId(BuildNameRefID(clusterID, parentRule))
+	corv2.SetInstructions(sensorData.GetInstructions())
+	corv2.SetParentRule(parentRule)
+	return corv2
 }

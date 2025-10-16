@@ -61,19 +61,19 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 
 // Run runs the pipeline template on the input and returns the output.
 func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
-	switch m := msg.GetClusterStatusUpdate().GetMsg().(type) {
-	case *central.ClusterStatusUpdate_DeploymentEnvUpdate:
-		s.deploymentEnvsMgr.UpdateDeploymentEnvironments(clusterID, m.DeploymentEnvUpdate.GetEnvironments())
+	switch m := msg.GetClusterStatusUpdate().WhichMsg(); m {
+	case central.ClusterStatusUpdate_DeploymentEnvUpdate_case:
+		s.deploymentEnvsMgr.UpdateDeploymentEnvironments(clusterID, msg.GetClusterStatusUpdate().GetDeploymentEnvUpdate().GetEnvironments())
 		return nil
-	case *central.ClusterStatusUpdate_Status:
-		if err := s.clusters.UpdateClusterStatus(ctx, clusterID, m.Status); err != nil {
+	case central.ClusterStatusUpdate_Status_case:
+		if err := s.clusters.UpdateClusterStatus(ctx, clusterID, msg.GetClusterStatusUpdate().GetStatus()); err != nil {
 			return err
 		}
 		go s.cveFetcher.HandleClusterConnection()
 		s.cloudSourcesManager.MarkClusterSecured(clusterID)
 		return nil
 	default:
-		return errors.Errorf("unknown cluster status update message type %T", m)
+		return errors.Errorf("unknown cluster status update message type %v", m)
 	}
 }
 

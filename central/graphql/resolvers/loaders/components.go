@@ -13,10 +13,12 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var componentLoaderType = reflect.TypeOf(storage.ImageComponent{})
+// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+var componentLoaderType = reflect.TypeOf(&storage.ImageComponent{})
 
 func init() {
-	RegisterTypeFactory(reflect.TypeOf(storage.ImageComponent{}), func() interface{} {
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	RegisterTypeFactory(reflect.TypeOf(&storage.ImageComponent{}), func() interface{} {
 		return NewComponentLoader(datastore.Singleton())
 	})
 }

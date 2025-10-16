@@ -58,19 +58,18 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	sInfo := msg.GetClusterHealthInfo().GetScannerHealthInfo()
 
 	conn := connection.FromContext(ctx)
-	clusterHealthStatus := &storage.ClusterHealthStatus{
-		CollectorHealthInfo:          cInfo,
-		AdmissionControlHealthInfo:   aInfo,
-		ScannerHealthInfo:            sInfo,
-		SensorHealthStatus:           storage.ClusterHealthStatus_HEALTHY,
-		CollectorHealthStatus:        clusterhealth.PopulateCollectorStatus(cInfo),
-		AdmissionControlHealthStatus: clusterhealth.PopulateAdmissionControlStatus(aInfo),
-		ScannerHealthStatus:          clusterhealth.PopulateLocalScannerStatus(sInfo),
-		LastContact:                  protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
-		// When sensor health monitoring is revised update the sensor capability
-		HealthInfoComplete: conn != nil && conn.HasCapability(centralsensor.HealthMonitoringCap),
-	}
-	clusterHealthStatus.OverallHealthStatus = clusterhealth.PopulateOverallClusterStatus(clusterHealthStatus)
+	clusterHealthStatus := &storage.ClusterHealthStatus{}
+	clusterHealthStatus.SetCollectorHealthInfo(cInfo)
+	clusterHealthStatus.SetAdmissionControlHealthInfo(aInfo)
+	clusterHealthStatus.SetScannerHealthInfo(sInfo)
+	clusterHealthStatus.SetSensorHealthStatus(storage.ClusterHealthStatus_HEALTHY)
+	clusterHealthStatus.SetCollectorHealthStatus(clusterhealth.PopulateCollectorStatus(cInfo))
+	clusterHealthStatus.SetAdmissionControlHealthStatus(clusterhealth.PopulateAdmissionControlStatus(aInfo))
+	clusterHealthStatus.SetScannerHealthStatus(clusterhealth.PopulateLocalScannerStatus(sInfo))
+	clusterHealthStatus.SetLastContact(protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()))
+	// When sensor health monitoring is revised update the sensor capability
+	clusterHealthStatus.SetHealthInfoComplete(conn != nil && conn.HasCapability(centralsensor.HealthMonitoringCap))
+	clusterHealthStatus.SetOverallHealthStatus(clusterhealth.PopulateOverallClusterStatus(clusterHealthStatus))
 
 	if err := s.clusters.UpdateClusterHealth(ctx, clusterID, clusterHealthStatus); err != nil {
 		return err
@@ -79,9 +78,9 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	// We added a response from the ClusterHealth message from Sensor to ensure the Sensor <-> Central connection does
 	// not become stale. Since Sensor drops unknown messages, and we do not require acknowledgement from Sensor, we
 	// do not have to check for specific sensor capabilities here.
-	if err := injector.InjectMessage(ctx, &central.MsgToSensor{
-		Msg: &central.MsgToSensor_ClusterHealthResponse{},
-	}); err != nil {
+	mts := &central.MsgToSensor{}
+	mts.Msg = &central.MsgToSensor_ClusterHealthResponse{}
+	if err := injector.InjectMessage(ctx, mts); err != nil {
 		return errors.Wrapf(err, "sending cluster health response to cluster %q", clusterID)
 	}
 	return nil

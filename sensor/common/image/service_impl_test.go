@@ -203,49 +203,49 @@ func (d *dummyValue) GetIfDone() *storage.Image {
 }
 
 func createScannedImage(name, id string) cache.Value {
-	return &dummyValue{image: &storage.Image{
-		Id: id,
-		Name: &storage.ImageName{
-			FullName: name,
-		},
-		Scan: &storage.ImageScan{},
-	}}
+	imageName := &storage.ImageName{}
+	imageName.SetFullName(name)
+	image := &storage.Image{}
+	image.SetId(id)
+	image.SetName(imageName)
+	image.SetScan(&storage.ImageScan{})
+	return &dummyValue{image: image}
 }
 
 func createImageRequest(name, id string, scanInline bool) *sensor.GetImageRequest {
-	return &sensor.GetImageRequest{
-		ScanInline: scanInline,
-		Image: &storage.ContainerImage{
-			Id: id,
-			Name: &storage.ImageName{
-				FullName: name,
-			},
-		},
-	}
+	imageName := &storage.ImageName{}
+	imageName.SetFullName(name)
+	ci := &storage.ContainerImage{}
+	ci.SetId(id)
+	ci.SetName(imageName)
+	gir := &sensor.GetImageRequest{}
+	gir.SetScanInline(scanInline)
+	gir.SetImage(ci)
+	return gir
 }
 
 func createScanImageInternalResponse(name, id string) *v1.ScanImageInternalResponse {
-	return &v1.ScanImageInternalResponse{
-		Image: &storage.Image{
-			Id: id,
-			Name: &storage.ImageName{
-				FullName: name,
-			},
-			Scan: &storage.ImageScan{},
-		},
-	}
+	imageName := &storage.ImageName{}
+	imageName.SetFullName(name)
+	image := &storage.Image{}
+	image.SetId(id)
+	image.SetName(imageName)
+	image.SetScan(&storage.ImageScan{})
+	siir := &v1.ScanImageInternalResponse{}
+	siir.SetImage(image)
+	return siir
 }
 
 func createImageResponse(name, id string) *sensor.GetImageResponse {
-	return &sensor.GetImageResponse{
-		Image: &storage.Image{
-			Id: id,
-			Name: &storage.ImageName{
-				FullName: name,
-			},
-			Scan: &storage.ImageScan{},
-		},
-	}
+	imageName := &storage.ImageName{}
+	imageName.SetFullName(name)
+	image := &storage.Image{}
+	image.SetId(id)
+	image.SetName(imageName)
+	image.SetScan(&storage.ImageScan{})
+	gir := &sensor.GetImageResponse{}
+	gir.SetImage(image)
+	return gir
 }
 
 type fakeClusterIDPeeker struct{}

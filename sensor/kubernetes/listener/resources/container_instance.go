@@ -18,11 +18,11 @@ func containerInstances(pod *corev1.Pod) []*storage.ContainerInstance {
 		if pod.Status.PodIP != "" {
 			ips = []string{pod.Status.PodIP}
 		}
-		result[i] = &storage.ContainerInstance{
-			InstanceId:      instID,
-			ContainingPodId: podID,
-			ContainerIps:    ips,
-		}
+		ci := &storage.ContainerInstance{}
+		ci.SetInstanceId(instID)
+		ci.SetContainingPodId(podID)
+		ci.SetContainerIps(ips)
+		result[i] = ci
 
 		// Note: Only one of Running/Terminated/Waiting will be set.
 		if c.State.Running != nil {
@@ -30,10 +30,10 @@ func containerInstances(pod *corev1.Pod) []*storage.ContainerInstance {
 			if err != nil {
 				log.Errorf("converting start time from Kubernetes (%v) to proto: %v", c.State.Running.StartedAt.Time, err)
 			}
-			result[i].Started = startTime
+			result[i].SetStarted(startTime)
 		}
 
-		result[i].ContainerName = c.Name
+		result[i].SetContainerName(c.Name)
 
 		// Track terminated containers.
 		if terminated := c.State.Terminated; terminated != nil {
@@ -45,13 +45,13 @@ func containerInstances(pod *corev1.Pod) []*storage.ContainerInstance {
 			if err != nil {
 				log.Errorf("converting finish time from Kubernetes (%v) to proto: %v", terminated.FinishedAt.Time, err)
 			}
-			result[i].Started = startTime
-			result[i].Finished = endTime
-			result[i].ExitCode = terminated.ExitCode
-			result[i].TerminationReason = terminated.Reason
+			result[i].SetStarted(startTime)
+			result[i].SetFinished(endTime)
+			result[i].SetExitCode(terminated.ExitCode)
+			result[i].SetTerminationReason(terminated.Reason)
 		}
 		if digest := imageUtils.ExtractImageDigest(c.ImageID); digest != "" {
-			result[i].ImageDigest = digest
+			result[i].SetImageDigest(digest)
 		}
 	}
 	return result
@@ -59,11 +59,11 @@ func containerInstances(pod *corev1.Pod) []*storage.ContainerInstance {
 
 func containerInstanceID(cs corev1.ContainerStatus, node string) *storage.ContainerInstanceID {
 	runtime, runtimeID := parseContainerID(cs.ContainerID)
-	return &storage.ContainerInstanceID{
-		ContainerRuntime: runtime,
-		Id:               runtimeID,
-		Node:             node,
-	}
+	ciid := &storage.ContainerInstanceID{}
+	ciid.SetContainerRuntime(runtime)
+	ciid.SetId(runtimeID)
+	ciid.SetNode(node)
+	return ciid
 }
 
 func parseContainerID(id string) (storage.ContainerRuntime, string) {

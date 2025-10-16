@@ -54,13 +54,13 @@ func (s *managerTestSuite) TestExpandSelection_OneOne() {
 }
 
 func (s *managerTestSuite) TestExpandSelection_AllOne_OK() {
+	cluster := &storage.Cluster{}
+	cluster.SetId("cluster1")
+	cluster2 := &storage.Cluster{}
+	cluster2.SetId("cluster2")
 	s.mockClusterStore.EXPECT().GetClusters(s.testCtx).Return([]*storage.Cluster{
-		{
-			Id: "cluster1",
-		},
-		{
-			Id: "cluster2",
-		},
+		cluster,
+		cluster2,
 	}, nil)
 	pairs, err := s.manager.ExpandSelection(s.testCtx, manager.Wildcard, "standard1")
 	s.NoError(err)
@@ -93,9 +93,13 @@ func (s *managerTestSuite) TestExpandSelection_OneAll_OK() {
 }
 
 func (s *managerTestSuite) TestExpandSelection_AllAll_OK() {
+	cluster := &storage.Cluster{}
+	cluster.SetId("cluster1")
+	cluster2 := &storage.Cluster{}
+	cluster2.SetId("cluster2")
 	s.mockClusterStore.EXPECT().GetClusters(s.testCtx).Return([]*storage.Cluster{
-		{Id: "cluster1"},
-		{Id: "cluster2"},
+		cluster,
+		cluster2,
 	}, nil)
 	var err error
 	s.standardRegistry, err = standards.NewRegistry(nil,
@@ -113,9 +117,13 @@ func (s *managerTestSuite) TestExpandSelection_AllAll_OK() {
 		{ClusterID: "cluster2", StandardID: "standard2"},
 	})
 	// Test with readOnly ctx
+	cluster3 := &storage.Cluster{}
+	cluster3.SetId("cluster1")
+	cluster4 := &storage.Cluster{}
+	cluster4.SetId("cluster2")
 	s.mockClusterStore.EXPECT().GetClusters(s.readOnlyCtx).Return([]*storage.Cluster{
-		{Id: "cluster1"},
-		{Id: "cluster2"},
+		cluster3,
+		cluster4,
 	}, nil)
 	pairs, err = s.manager.ExpandSelection(s.readOnlyCtx, manager.Wildcard, manager.Wildcard)
 	s.Equal(pairs, []compliance.ClusterStandardPair{})

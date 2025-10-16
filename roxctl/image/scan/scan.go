@@ -287,13 +287,13 @@ func (i *imageScanCommand) getImageResultFromService() (*storage.Image, error) {
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), i.timeout)
 	defer cancel()
 
-	image, err := svc.ScanImage(ctx, &v1.ScanImageRequest{
-		ImageName:      i.image,
-		Force:          i.force,
-		IncludeSnoozed: i.includeSnoozed,
-		Cluster:        i.cluster,
-		Namespace:      i.namespace,
-	})
+	sir := &v1.ScanImageRequest{}
+	sir.SetImageName(i.image)
+	sir.SetForce(i.force)
+	sir.SetIncludeSnoozed(i.includeSnoozed)
+	sir.SetCluster(i.cluster)
+	sir.SetNamespace(i.namespace)
+	image, err := svc.ScanImage(ctx, sir)
 	return image, errors.Wrapf(err, "could not scan image: %q", i.image)
 }
 

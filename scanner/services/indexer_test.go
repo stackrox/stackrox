@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/scanner/indexer/mocks"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -43,16 +44,14 @@ func (s *indexerServiceTestSuite) TearDownTest() {
 }
 
 func createRequest(id, url, username string, insecure bool) *v4.CreateIndexReportRequest {
-	return &v4.CreateIndexReportRequest{
-		HashId: id,
-		ResourceLocator: &v4.CreateIndexReportRequest_ContainerImage{
-			ContainerImage: &v4.ContainerImageLocator{
-				Url:                   url,
-				Username:              username,
-				InsecureSkipTlsVerify: insecure,
-			},
-		},
-	}
+	cil := &v4.ContainerImageLocator{}
+	cil.SetUrl(url)
+	cil.SetUsername(username)
+	cil.SetInsecureSkipTlsVerify(insecure)
+	cirr := &v4.CreateIndexReportRequest{}
+	cirr.SetHashId(id)
+	cirr.SetContainerImage(proto.ValueOrDefault(cil))
+	return cirr
 }
 
 func (s *indexerServiceTestSuite) setupMock(hashID string, optCount int, report *claircore.IndexReport, err error) {
@@ -71,7 +70,11 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenUsername_thenAuthEn
 	req := createRequest(hashID, imageURL, "sample username", false)
 	r, err := s.service.CreateIndexReport(s.ctx, req)
 	s.NoError(err)
-	protoassert.Equal(s.T(), &v4.IndexReport{HashId: hashID, Success: true, Contents: &v4.Contents{}}, r)
+	ir := &v4.IndexReport{}
+	ir.SetHashId(hashID)
+	ir.SetSuccess(true)
+	ir.SetContents(&v4.Contents{})
+	protoassert.Equal(s.T(), ir, r)
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenNoUsername_thenAuthDisabled() {
@@ -79,7 +82,11 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenNoUsername_thenAuth
 	req := createRequest(hashID, imageURL, "", false)
 	r, err := s.service.CreateIndexReport(s.ctx, req)
 	s.NoError(err)
-	protoassert.Equal(s.T(), &v4.IndexReport{HashId: hashID, Success: true, Contents: &v4.Contents{}}, r)
+	ir := &v4.IndexReport{}
+	ir.SetHashId(hashID)
+	ir.SetSuccess(true)
+	ir.SetContents(&v4.Contents{})
+	protoassert.Equal(s.T(), ir, r)
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenIndexerError_thenInternalError() {
@@ -100,7 +107,11 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenDigest_thenNoError(
 	req := createRequest(hashID, iURL, "", false)
 	r, err := s.service.CreateIndexReport(s.ctx, req)
 	s.NoError(err)
-	protoassert.Equal(s.T(), &v4.IndexReport{HashId: hashID, Success: true, Contents: &v4.Contents{}}, r)
+	ir := &v4.IndexReport{}
+	ir.SetHashId(hashID)
+	ir.SetSuccess(true)
+	ir.SetContents(&v4.Contents{})
+	protoassert.Equal(s.T(), ir, r)
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_InvalidInput() {
@@ -119,65 +130,59 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_InvalidInput() {
 		},
 		{
 			name: "when unknown resource type",
-			args: args{req: &v4.CreateIndexReportRequest{
+			args: args{req: v4.CreateIndexReportRequest_builder{
 				HashId:          "foobar",
 				ResourceLocator: nil,
-			}},
+			}.Build()},
 			wantErr: `invalid hash id: "foobar"`,
 		},
 		{
 			name: "when empty resource locator",
 			args: args{
-				req: &v4.CreateIndexReportRequest{
+				req: v4.CreateIndexReportRequest_builder{
 					HashId:          "/v4/containerimage/foobar",
 					ResourceLocator: nil,
-				},
+				}.Build(),
 			},
 			wantErr: "invalid resource locator",
 		},
 		{
 			name: "when empty container image URL",
 			args: args{
-				req: &v4.CreateIndexReportRequest{
+				req: v4.CreateIndexReportRequest_builder{
 					HashId: "/v4/containerimage/foobar",
-					ResourceLocator: &v4.CreateIndexReportRequest_ContainerImage{
-						ContainerImage: &v4.ContainerImageLocator{
-							Url:      "",
-							Username: "",
-							Password: "",
-						},
-					},
-				},
+					ContainerImage: v4.ContainerImageLocator_builder{
+						Url:      "",
+						Username: "",
+						Password: "",
+					}.Build(),
+				}.Build(),
 			},
 			wantErr: "missing image URL",
 		},
 		{
 			name: "when invalid container image URL",
 			args: args{
-				req: &v4.CreateIndexReportRequest{
+				req: v4.CreateIndexReportRequest_builder{
 					HashId: "/v4/containerimage/foobar",
-					ResourceLocator: &v4.CreateIndexReportRequest_ContainerImage{
-						ContainerImage: &v4.ContainerImageLocator{
-							Url:                   "sample-url",
-							InsecureSkipTlsVerify: false,
-						},
-					},
-				},
+					ContainerImage: v4.ContainerImageLocator_builder{
+						Url:                   "sample-url",
+						InsecureSkipTlsVerify: false,
+					}.Build(),
+				}.Build(),
 			},
 			wantErr: "image URL does not start with",
 		},
 		{
 			name: "when invalid image reference in container image URL",
 			args: args{
-				req: &v4.CreateIndexReportRequest{
+				req: v4.CreateIndexReportRequest_builder{
 					HashId: "/v4/containerimage/foobar",
-					ResourceLocator: &v4.CreateIndexReportRequest_ContainerImage{
-						ContainerImage: &v4.ContainerImageLocator{
-							Url:                   "https://invalid-image-reference",
-							InsecureSkipTlsVerify: false,
-						},
-					},
-				},
+					ContainerImage: v4.ContainerImageLocator_builder{
+						Url:                   "https://invalid-image-reference",
+						InsecureSkipTlsVerify: false,
+					}.Build(),
+				}.Build(),
 			},
 			wantErr: "could not parse reference: invalid-image-reference",
 		},
@@ -196,7 +201,8 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_InvalidInput() {
 }
 
 func (s *indexerServiceTestSuite) Test_GetIndexReport() {
-	req := &v4.GetIndexReportRequest{HashId: hashID}
+	req := &v4.GetIndexReportRequest{}
+	req.SetHashId(hashID)
 
 	s.Run("when get index report returns an error", func() {
 		s.indexerMock.
@@ -234,27 +240,24 @@ func (s *indexerServiceTestSuite) Test_GetIndexReport() {
 			Return(&claircore.IndexReport{Success: true, State: "sample state"}, true, nil)
 		r, err := s.service.GetIndexReport(s.ctx, req)
 		s.NoError(err)
-		protoassert.Equal(s.T(), &v4.IndexReport{
-			Success:  true,
-			HashId:   hashID,
-			State:    "sample state",
-			Contents: &v4.Contents{},
-		}, r)
+		ir := &v4.IndexReport{}
+		ir.SetSuccess(true)
+		ir.SetHashId(hashID)
+		ir.SetState("sample state")
+		ir.SetContents(&v4.Contents{})
+		protoassert.Equal(s.T(), ir, r)
 
 	})
 }
 
 func (s *indexerServiceTestSuite) Test_GetOrCreateIndexReport() {
-	req := &v4.GetOrCreateIndexReportRequest{
-		HashId: hashID,
-		ResourceLocator: &v4.GetOrCreateIndexReportRequest_ContainerImage{
-			ContainerImage: &v4.ContainerImageLocator{
-				Url:      "https://quay.io/stackrox-io/test/image:latest",
-				Username: "",
-				Password: "",
-			},
-		},
-	}
+	cil := &v4.ContainerImageLocator{}
+	cil.SetUrl("https://quay.io/stackrox-io/test/image:latest")
+	cil.SetUsername("")
+	cil.SetPassword("")
+	req := &v4.GetOrCreateIndexReportRequest{}
+	req.SetHashId(hashID)
+	req.SetContainerImage(proto.ValueOrDefault(cil))
 
 	s.Run("when index report does not exist then create", func() {
 		s.indexerMock.EXPECT().
@@ -294,7 +297,8 @@ func (s *indexerServiceTestSuite) Test_GetOrCreateIndexReport() {
 }
 
 func (s *indexerServiceTestSuite) Test_HasIndexReport() {
-	req := &v4.HasIndexReportRequest{HashId: hashID}
+	req := &v4.HasIndexReportRequest{}
+	req.SetHashId(hashID)
 
 	s.Run("when get index report returns an error then return error", func() {
 		s.indexerMock.

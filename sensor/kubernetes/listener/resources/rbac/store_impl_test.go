@@ -138,20 +138,18 @@ func TestStore_DispatcherEvents(t *testing.T) {
 				return err
 			},
 			unorderedMessages: []*central.SensorEvent{
-				{
+				central.SensorEvent_builder{
 					Id:     "b1",
 					Action: central.ResourceAction_CREATE_RESOURCE,
-					Resource: &central.SensorEvent_Binding{
-						Binding: &storage.K8SRoleBinding{
-							Id:        "b1",
-							Name:      "b1",
-							Namespace: "n1",
-							// No role ID since the role does not yet exist.
-							CreatedAt: protoconv.ConvertTimeToTimestamp(bindings[0].GetCreationTimestamp().Time),
-							Subjects:  []*storage.Subject{},
-						},
-					},
-				}},
+					Binding: storage.K8SRoleBinding_builder{
+						Id:        "b1",
+						Name:      "b1",
+						Namespace: "n1",
+						// No role ID since the role does not yet exist.
+						CreatedAt: protoconv.ConvertTimeToTimestamp(bindings[0].GetCreationTimestamp().Time),
+						Subjects:  []*storage.Subject{},
+					}.Build(),
+				}.Build()},
 		},
 		{
 			k8sEvent: roles[0],
@@ -161,41 +159,37 @@ func TestStore_DispatcherEvents(t *testing.T) {
 				return err
 			},
 			unorderedMessages: []*central.SensorEvent{
-				{
+				central.SensorEvent_builder{
 					Id:     "r1",
 					Action: central.ResourceAction_CREATE_RESOURCE,
-					Resource: &central.SensorEvent_Role{
-						Role: &storage.K8SRole{
-							Id:        "r1",
-							Name:      "r1",
-							Namespace: "n1",
-							CreatedAt: protoconv.ConvertTimeToTimestamp(roles[0].GetCreationTimestamp().Time),
-							Rules: []*storage.PolicyRule{{
-								ApiGroups: []string{""},
-								Resources: []string{""},
-								Verbs:     []string{"get"},
-							}, {
-								ApiGroups: []string{""},
-								Resources: []string{""},
-								Verbs:     []string{"list"},
-							}},
-						},
-					},
-				},
-				{
+					Role: storage.K8SRole_builder{
+						Id:        "r1",
+						Name:      "r1",
+						Namespace: "n1",
+						CreatedAt: protoconv.ConvertTimeToTimestamp(roles[0].GetCreationTimestamp().Time),
+						Rules: []*storage.PolicyRule{storage.PolicyRule_builder{
+							ApiGroups: []string{""},
+							Resources: []string{""},
+							Verbs:     []string{"get"},
+						}.Build(), storage.PolicyRule_builder{
+							ApiGroups: []string{""},
+							Resources: []string{""},
+							Verbs:     []string{"list"},
+						}.Build()},
+					}.Build(),
+				}.Build(),
+				central.SensorEvent_builder{
 					Id:     "b1",
 					Action: central.ResourceAction_UPDATE_RESOURCE,
-					Resource: &central.SensorEvent_Binding{
-						Binding: &storage.K8SRoleBinding{
-							Id:        "b1",
-							Name:      "b1",
-							Namespace: "n1",
-							CreatedAt: protoconv.ConvertTimeToTimestamp(bindings[0].GetCreationTimestamp().Time),
-							RoleId:    "r1",
-							Subjects:  []*storage.Subject{},
-						},
-					},
-				}},
+					Binding: storage.K8SRoleBinding_builder{
+						Id:        "b1",
+						Name:      "b1",
+						Namespace: "n1",
+						CreatedAt: protoconv.ConvertTimeToTimestamp(bindings[0].GetCreationTimestamp().Time),
+						RoleId:    "r1",
+						Subjects:  []*storage.Subject{},
+					}.Build(),
+				}.Build()},
 		},
 		{
 			k8sEvent: bindings[1],
@@ -205,20 +199,18 @@ func TestStore_DispatcherEvents(t *testing.T) {
 				return err
 			},
 			unorderedMessages: []*central.SensorEvent{
-				{
+				central.SensorEvent_builder{
 					Id:     "b2",
 					Action: central.ResourceAction_CREATE_RESOURCE,
-					Resource: &central.SensorEvent_Binding{
-						Binding: &storage.K8SRoleBinding{
-							Id:        "b2",
-							Name:      "b2",
-							Namespace: "n1",
-							RoleId:    "r1", // Note that the role ID is now filled in.
-							CreatedAt: protoconv.ConvertTimeToTimestamp(bindings[1].GetCreationTimestamp().Time),
-							Subjects:  []*storage.Subject{},
-						},
-					},
-				},
+					Binding: storage.K8SRoleBinding_builder{
+						Id:        "b2",
+						Name:      "b2",
+						Namespace: "n1",
+						RoleId:    "r1", // Note that the role ID is now filled in.
+						CreatedAt: protoconv.ConvertTimeToTimestamp(bindings[1].GetCreationTimestamp().Time),
+						Subjects:  []*storage.Subject{},
+					}.Build(),
+				}.Build(),
 			},
 		},
 		{
@@ -229,21 +221,19 @@ func TestStore_DispatcherEvents(t *testing.T) {
 				return err
 			},
 			unorderedMessages: []*central.SensorEvent{
-				{
+				central.SensorEvent_builder{
 					Id:     "b5",
 					Action: central.ResourceAction_CREATE_RESOURCE,
-					Resource: &central.SensorEvent_Binding{
-						Binding: &storage.K8SRoleBinding{
-							Id:          "b5",
-							Name:        "b5",
-							Namespace:   "n1",
-							RoleId:      "",
-							ClusterRole: true,
-							CreatedAt:   protoconv.ConvertTimeToTimestamp(bindings[2].GetCreationTimestamp().Time),
-							Subjects:    []*storage.Subject{},
-						},
-					},
-				},
+					Binding: storage.K8SRoleBinding_builder{
+						Id:          "b5",
+						Name:        "b5",
+						Namespace:   "n1",
+						RoleId:      "",
+						ClusterRole: true,
+						CreatedAt:   protoconv.ConvertTimeToTimestamp(bindings[2].GetCreationTimestamp().Time),
+						Subjects:    []*storage.Subject{},
+					}.Build(),
+				}.Build(),
 			},
 		},
 		{
@@ -253,20 +243,18 @@ func TestStore_DispatcherEvents(t *testing.T) {
 				_, err := fakeClient.RbacV1().ClusterRoleBindings().Create(context.TODO(), clusterBindings[0], metav1.CreateOptions{})
 				return err
 			},
-			unorderedMessages: []*central.SensorEvent{{
+			unorderedMessages: []*central.SensorEvent{central.SensorEvent_builder{
 				Id:     "b3",
 				Action: central.ResourceAction_CREATE_RESOURCE,
-				Resource: &central.SensorEvent_Binding{
-					Binding: &storage.K8SRoleBinding{
-						Id:   "b3",
-						Name: "b3",
-						// No role ID since the role does not yet exist.
-						ClusterRole: true,
-						CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterBindings[0].GetCreationTimestamp().Time),
-						Subjects:    []*storage.Subject{},
-					},
-				},
-			}},
+				Binding: storage.K8SRoleBinding_builder{
+					Id:   "b3",
+					Name: "b3",
+					// No role ID since the role does not yet exist.
+					ClusterRole: true,
+					CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterBindings[0].GetCreationTimestamp().Time),
+					Subjects:    []*storage.Subject{},
+				}.Build(),
+			}.Build()},
 		},
 		{
 			k8sEvent: clusterRoles[0],
@@ -276,48 +264,42 @@ func TestStore_DispatcherEvents(t *testing.T) {
 				return err
 			},
 			unorderedMessages: []*central.SensorEvent{
-				{
+				central.SensorEvent_builder{
 					Id:     "r2",
 					Action: central.ResourceAction_CREATE_RESOURCE,
-					Resource: &central.SensorEvent_Role{
-						Role: &storage.K8SRole{
-							Id:          "r2",
-							Name:        "r2",
-							ClusterRole: true,
-							CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterRoles[0].GetCreationTimestamp().Time),
-							Rules:       []*storage.PolicyRule{},
-						},
-					},
-				},
-				{
+					Role: storage.K8SRole_builder{
+						Id:          "r2",
+						Name:        "r2",
+						ClusterRole: true,
+						CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterRoles[0].GetCreationTimestamp().Time),
+						Rules:       []*storage.PolicyRule{},
+					}.Build(),
+				}.Build(),
+				central.SensorEvent_builder{
 					Id:     "b5",
 					Action: central.ResourceAction_UPDATE_RESOURCE,
-					Resource: &central.SensorEvent_Binding{
-						Binding: &storage.K8SRoleBinding{
-							Id:          "b5",
-							Name:        "b5",
-							Namespace:   "n1",
-							RoleId:      "r2",
-							ClusterRole: true,
-							CreatedAt:   protoconv.ConvertTimeToTimestamp(bindings[2].GetCreationTimestamp().Time),
-							Subjects:    []*storage.Subject{},
-						},
-					},
-				},
-				{
+					Binding: storage.K8SRoleBinding_builder{
+						Id:          "b5",
+						Name:        "b5",
+						Namespace:   "n1",
+						RoleId:      "r2",
+						ClusterRole: true,
+						CreatedAt:   protoconv.ConvertTimeToTimestamp(bindings[2].GetCreationTimestamp().Time),
+						Subjects:    []*storage.Subject{},
+					}.Build(),
+				}.Build(),
+				central.SensorEvent_builder{
 					Id:     "b3",
 					Action: central.ResourceAction_UPDATE_RESOURCE,
-					Resource: &central.SensorEvent_Binding{
-						Binding: &storage.K8SRoleBinding{
-							Id:          "b3",
-							Name:        "b3",
-							ClusterRole: true,
-							RoleId:      "r2",
-							CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterBindings[0].GetCreationTimestamp().Time),
-							Subjects:    []*storage.Subject{},
-						},
-					},
-				}},
+					Binding: storage.K8SRoleBinding_builder{
+						Id:          "b3",
+						Name:        "b3",
+						ClusterRole: true,
+						RoleId:      "r2",
+						CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterBindings[0].GetCreationTimestamp().Time),
+						Subjects:    []*storage.Subject{},
+					}.Build(),
+				}.Build()},
 		},
 		{
 			k8sEvent: bindings[2],
@@ -326,21 +308,19 @@ func TestStore_DispatcherEvents(t *testing.T) {
 				_, err := fakeClient.RbacV1().RoleBindings(bindings[2].Namespace).Update(context.TODO(), bindings[2], metav1.UpdateOptions{})
 				return err
 			},
-			unorderedMessages: []*central.SensorEvent{{
+			unorderedMessages: []*central.SensorEvent{central.SensorEvent_builder{
 				Id:     "b5",
 				Action: central.ResourceAction_UPDATE_RESOURCE,
-				Resource: &central.SensorEvent_Binding{
-					Binding: &storage.K8SRoleBinding{
-						Id:          "b5",
-						Name:        "b5",
-						Namespace:   "n1",
-						RoleId:      "r2",
-						ClusterRole: true,
-						CreatedAt:   protoconv.ConvertTimeToTimestamp(bindings[2].GetCreationTimestamp().Time),
-						Subjects:    []*storage.Subject{},
-					},
-				},
-			}},
+				Binding: storage.K8SRoleBinding_builder{
+					Id:          "b5",
+					Name:        "b5",
+					Namespace:   "n1",
+					RoleId:      "r2",
+					ClusterRole: true,
+					CreatedAt:   protoconv.ConvertTimeToTimestamp(bindings[2].GetCreationTimestamp().Time),
+					Subjects:    []*storage.Subject{},
+				}.Build(),
+			}.Build()},
 		},
 		{
 			k8sEvent: clusterBindings[0],
@@ -349,20 +329,18 @@ func TestStore_DispatcherEvents(t *testing.T) {
 				_, err := fakeClient.RbacV1().ClusterRoleBindings().Update(context.TODO(), clusterBindings[0], metav1.UpdateOptions{})
 				return err
 			},
-			unorderedMessages: []*central.SensorEvent{{
+			unorderedMessages: []*central.SensorEvent{central.SensorEvent_builder{
 				Id:     "b3",
 				Action: central.ResourceAction_UPDATE_RESOURCE,
-				Resource: &central.SensorEvent_Binding{
-					Binding: &storage.K8SRoleBinding{
-						Id:          "b3",
-						Name:        "b3",
-						RoleId:      "r2", // Note that the role ID is now filled in.
-						ClusterRole: true,
-						CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterBindings[0].GetCreationTimestamp().Time),
-						Subjects:    []*storage.Subject{},
-					},
-				},
-			}},
+				Binding: storage.K8SRoleBinding_builder{
+					Id:          "b3",
+					Name:        "b3",
+					RoleId:      "r2", // Note that the role ID is now filled in.
+					ClusterRole: true,
+					CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterBindings[0].GetCreationTimestamp().Time),
+					Subjects:    []*storage.Subject{},
+				}.Build(),
+			}.Build()},
 		},
 		{
 			k8sEvent: clusterRoles[0],
@@ -370,48 +348,42 @@ func TestStore_DispatcherEvents(t *testing.T) {
 			createK8sResource: func() error {
 				return fakeClient.RbacV1().ClusterRoles().Delete(context.TODO(), clusterRoles[0].Name, metav1.DeleteOptions{})
 			},
-			unorderedMessages: []*central.SensorEvent{{
+			unorderedMessages: []*central.SensorEvent{central.SensorEvent_builder{
 				Id:     "r2",
 				Action: central.ResourceAction_REMOVE_RESOURCE,
-				Resource: &central.SensorEvent_Role{
-					Role: &storage.K8SRole{
-						Id:          "r2",
-						Name:        "r2",
-						ClusterRole: true,
-						CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterRoles[0].GetCreationTimestamp().Time),
-						Rules:       []*storage.PolicyRule{},
-					},
-				},
-			},
-				{
+				Role: storage.K8SRole_builder{
+					Id:          "r2",
+					Name:        "r2",
+					ClusterRole: true,
+					CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterRoles[0].GetCreationTimestamp().Time),
+					Rules:       []*storage.PolicyRule{},
+				}.Build(),
+			}.Build(),
+				central.SensorEvent_builder{
 					Id:     "b5",
 					Action: central.ResourceAction_UPDATE_RESOURCE,
-					Resource: &central.SensorEvent_Binding{
-						Binding: &storage.K8SRoleBinding{
-							Id:        "b5",
-							Name:      "b5",
-							Namespace: "n1",
-							// Note that the role ID is now absent.
-							ClusterRole: true,
-							CreatedAt:   protoconv.ConvertTimeToTimestamp(bindings[2].GetCreationTimestamp().Time),
-							Subjects:    []*storage.Subject{},
-						},
-					},
-				},
-				{
+					Binding: storage.K8SRoleBinding_builder{
+						Id:        "b5",
+						Name:      "b5",
+						Namespace: "n1",
+						// Note that the role ID is now absent.
+						ClusterRole: true,
+						CreatedAt:   protoconv.ConvertTimeToTimestamp(bindings[2].GetCreationTimestamp().Time),
+						Subjects:    []*storage.Subject{},
+					}.Build(),
+				}.Build(),
+				central.SensorEvent_builder{
 					Id:     "b3",
 					Action: central.ResourceAction_UPDATE_RESOURCE,
-					Resource: &central.SensorEvent_Binding{
-						Binding: &storage.K8SRoleBinding{
-							Id:   "b3",
-							Name: "b3",
-							// Note that the role ID is now absent.
-							ClusterRole: true,
-							CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterBindings[0].GetCreationTimestamp().Time),
-							Subjects:    []*storage.Subject{},
-						},
-					},
-				},
+					Binding: storage.K8SRoleBinding_builder{
+						Id:   "b3",
+						Name: "b3",
+						// Note that the role ID is now absent.
+						ClusterRole: true,
+						CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterBindings[0].GetCreationTimestamp().Time),
+						Subjects:    []*storage.Subject{},
+					}.Build(),
+				}.Build(),
 			},
 		},
 	}
@@ -616,8 +588,10 @@ func BenchmarkRBACStoreUpsertTime(b *testing.B) {
 
 func runRBACBenchmarkGetPermissionLevelForDeployment(b *testing.B, store Store, keepCache bool) {
 	for n := 0; n < b.N; n++ {
-		store.GetPermissionLevelForDeployment(
-			&storage.Deployment{ServiceAccount: "default-subject", Namespace: "namespace0"})
+		deployment := &storage.Deployment{}
+		deployment.SetServiceAccount("default-subject")
+		deployment.SetNamespace("namespace0")
+		store.GetPermissionLevelForDeployment(deployment)
 		if !keepCache {
 			// Important! We really want to call b.StopTimer() here and b.StartTimer() below the
 			// UpsertRole call, but when we do this the Benchmarker hangs (see
@@ -646,8 +620,10 @@ func BenchmarkRBACStoreAssignPermissionLevelToDeployment(b *testing.B) {
 			for _, counts := range getCustomerStoreObjectCounts() {
 				store := generateStore(counts)
 				if warmUpCache {
-					_ = store.GetPermissionLevelForDeployment(
-						&storage.Deployment{ServiceAccount: "default-subject", Namespace: "namespace0"})
+					deployment := &storage.Deployment{}
+					deployment.SetServiceAccount("default-subject")
+					deployment.SetNamespace("namespace0")
+					_ = store.GetPermissionLevelForDeployment(deployment)
 				}
 				b.Run(fmt.Sprintf("KeepCache %t WarmUpCache %t %+v", keepCache, warmUpCache, counts), func(b *testing.B) {
 					// The bucket evaluator is not built yet, we will build it initially
@@ -974,24 +950,24 @@ func TestStoreGetPermissionLevelForDeployment(t *testing.T) {
 		deployment *storage.Deployment
 		expected   storage.PermissionLevel
 	}{
-		{expected: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE, deployment: &storage.Deployment{ServiceAccount: "cluster-elevated-subject", Namespace: "n1"}},
-		{expected: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE, deployment: &storage.Deployment{ServiceAccount: "cluster-elevated-subject-2", Namespace: "n1"}},
-		{expected: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE, deployment: &storage.Deployment{ServiceAccount: "cluster-elevated-subject-3"}},
-		{expected: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE, deployment: &storage.Deployment{ServiceAccount: "cluster-elevated-subject-4"}},
-		{expected: storage.PermissionLevel_CLUSTER_ADMIN, deployment: &storage.Deployment{ServiceAccount: "cluster-admin-2", Namespace: "n1"}},
-		{expected: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE, deployment: &storage.Deployment{ServiceAccount: "cluster-namespace-subject", Namespace: "n1"}},
-		{expected: storage.PermissionLevel_NONE, deployment: &storage.Deployment{ServiceAccount: "cluster-elevated-subject"}},
-		{expected: storage.PermissionLevel_NONE, deployment: &storage.Deployment{ServiceAccount: "cluster-admin-subject", Namespace: "n1"}},
-		{expected: storage.PermissionLevel_CLUSTER_ADMIN, deployment: &storage.Deployment{ServiceAccount: "cluster-admin-subject"}},
-		{expected: storage.PermissionLevel_NONE, deployment: &storage.Deployment{ServiceAccount: "cluster-none-subject"}},
-		{expected: storage.PermissionLevel_NONE, deployment: &storage.Deployment{ServiceAccount: "cluster-none-subject", Namespace: "n1"}},
-		{expected: storage.PermissionLevel_ELEVATED_IN_NAMESPACE, deployment: &storage.Deployment{ServiceAccount: "admin-subject", Namespace: "n1"}},
-		{expected: storage.PermissionLevel_DEFAULT, deployment: &storage.Deployment{ServiceAccount: "default-subject", Namespace: "n1"}},
-		{expected: storage.PermissionLevel_ELEVATED_IN_NAMESPACE, deployment: &storage.Deployment{ServiceAccount: "elevated-subject", Namespace: "n1"}},
-		{expected: storage.PermissionLevel_ELEVATED_IN_NAMESPACE, deployment: &storage.Deployment{ServiceAccount: "elevated-subject-2", Namespace: "n1"}},
-		{expected: storage.PermissionLevel_NONE, deployment: &storage.Deployment{ServiceAccount: "elevated-subject-2", Namespace: "n2"}},
-		{expected: storage.PermissionLevel_NONE, deployment: &storage.Deployment{ServiceAccount: "default-subject"}},
-		{expected: storage.PermissionLevel_NONE, deployment: &storage.Deployment{ServiceAccount: "admin-subject"}},
+		{expected: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE, deployment: storage.Deployment_builder{ServiceAccount: "cluster-elevated-subject", Namespace: "n1"}.Build()},
+		{expected: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE, deployment: storage.Deployment_builder{ServiceAccount: "cluster-elevated-subject-2", Namespace: "n1"}.Build()},
+		{expected: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE, deployment: storage.Deployment_builder{ServiceAccount: "cluster-elevated-subject-3"}.Build()},
+		{expected: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE, deployment: storage.Deployment_builder{ServiceAccount: "cluster-elevated-subject-4"}.Build()},
+		{expected: storage.PermissionLevel_CLUSTER_ADMIN, deployment: storage.Deployment_builder{ServiceAccount: "cluster-admin-2", Namespace: "n1"}.Build()},
+		{expected: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE, deployment: storage.Deployment_builder{ServiceAccount: "cluster-namespace-subject", Namespace: "n1"}.Build()},
+		{expected: storage.PermissionLevel_NONE, deployment: storage.Deployment_builder{ServiceAccount: "cluster-elevated-subject"}.Build()},
+		{expected: storage.PermissionLevel_NONE, deployment: storage.Deployment_builder{ServiceAccount: "cluster-admin-subject", Namespace: "n1"}.Build()},
+		{expected: storage.PermissionLevel_CLUSTER_ADMIN, deployment: storage.Deployment_builder{ServiceAccount: "cluster-admin-subject"}.Build()},
+		{expected: storage.PermissionLevel_NONE, deployment: storage.Deployment_builder{ServiceAccount: "cluster-none-subject"}.Build()},
+		{expected: storage.PermissionLevel_NONE, deployment: storage.Deployment_builder{ServiceAccount: "cluster-none-subject", Namespace: "n1"}.Build()},
+		{expected: storage.PermissionLevel_ELEVATED_IN_NAMESPACE, deployment: storage.Deployment_builder{ServiceAccount: "admin-subject", Namespace: "n1"}.Build()},
+		{expected: storage.PermissionLevel_DEFAULT, deployment: storage.Deployment_builder{ServiceAccount: "default-subject", Namespace: "n1"}.Build()},
+		{expected: storage.PermissionLevel_ELEVATED_IN_NAMESPACE, deployment: storage.Deployment_builder{ServiceAccount: "elevated-subject", Namespace: "n1"}.Build()},
+		{expected: storage.PermissionLevel_ELEVATED_IN_NAMESPACE, deployment: storage.Deployment_builder{ServiceAccount: "elevated-subject-2", Namespace: "n1"}.Build()},
+		{expected: storage.PermissionLevel_NONE, deployment: storage.Deployment_builder{ServiceAccount: "elevated-subject-2", Namespace: "n2"}.Build()},
+		{expected: storage.PermissionLevel_NONE, deployment: storage.Deployment_builder{ServiceAccount: "default-subject"}.Build()},
+		{expected: storage.PermissionLevel_NONE, deployment: storage.Deployment_builder{ServiceAccount: "admin-subject"}.Build()},
 	}
 	store := setupStore(roles, clusterRoles, bindings, clusterBindings)
 	storeWithNoRoles := setupStore(roles, clusterRoles, bindings, clusterBindings)

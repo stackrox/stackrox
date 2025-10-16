@@ -64,11 +64,11 @@ func (e *enricherImpl) RemoveNodeIntegration(id string) {
 func (e *enricherImpl) EnrichNodeWithVulnerabilities(node *storage.Node, nodeInventory *storage.NodeInventory, indexReport *v4.IndexReport) error {
 	// Clear any pre-existing notes, as it will all be filled here.
 	// Note: this is valid even if node.Notes is nil.
-	node.Notes = node.GetNotes()[:0]
+	node.SetNotes(node.GetNotes()[:0])
 
 	err := e.enrichWithScan(node, nodeInventory, indexReport)
 	if err != nil {
-		node.Notes = append(node.Notes, storage.Node_MISSING_SCAN_DATA)
+		node.SetNotes(append(node.GetNotes(), storage.Node_MISSING_SCAN_DATA))
 	}
 
 	e.cves.EnrichNodeWithSuppressedCVEs(node)
@@ -148,10 +148,10 @@ func (e *enricherImpl) enrichNodeWithScanner(node *storage.Node, nodeInventory *
 		return nil
 	}
 
-	node.Scan = scan
+	node.SetScan(scan)
 	converter.FillV2NodeVulnerabilities(node)
 	for _, component := range node.GetScan().GetComponents() {
-		component.Vulns = nil
+		component.SetVulns(nil)
 	}
 	FillScanStats(node)
 
@@ -164,9 +164,7 @@ func FillScanStats(n *storage.Node) {
 		return
 	}
 
-	n.SetComponents = &storage.Node_Components{
-		Components: int32(len(n.GetScan().GetComponents())),
-	}
+	n.Set_Components(int32(len(n.GetScan().GetComponents())))
 
 	var fixedByProvided bool
 	var nodeTopCVSS float32
@@ -196,9 +194,7 @@ func FillScanStats(n *storage.Node) {
 		}
 
 		if hasVulns {
-			c.SetTopCvss = &storage.EmbeddedNodeScanComponent_TopCvss{
-				TopCvss: componentTopCVSS,
-			}
+			c.Set_TopCvss(componentTopCVSS)
 		}
 
 		if componentTopCVSS > nodeTopCVSS {
@@ -206,14 +202,10 @@ func FillScanStats(n *storage.Node) {
 		}
 	}
 
-	n.SetCves = &storage.Node_Cves{
-		Cves: int32(len(vulns)),
-	}
+	n.Set_Cves(int32(len(vulns)))
 
 	if len(vulns) > 0 {
-		n.SetTopCvss = &storage.Node_TopCvss{
-			TopCvss: nodeTopCVSS,
-		}
+		n.Set_TopCvss(nodeTopCVSS)
 	}
 
 	if int32(len(vulns)) == 0 || fixedByProvided {
@@ -223,9 +215,7 @@ func FillScanStats(n *storage.Node) {
 				numFixableVulns++
 			}
 		}
-		n.SetFixable = &storage.Node_FixableCves{
-			FixableCves: numFixableVulns,
-		}
+		n.SetFixableCves(numFixableVulns)
 	}
 }
 

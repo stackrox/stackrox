@@ -49,22 +49,21 @@ func (s *nodeScorerImpl) Score(ctx context.Context, node *storage.Node) *storage
 		return nil
 	}
 
-	risk := &storage.Risk{
-		Score:   overallScore,
-		Results: riskResults,
-		Subject: &storage.RiskSubject{
-			Id:        node.GetId(),
-			Type:      storage.RiskSubjectType_NODE,
-			ClusterId: node.GetClusterId(),
-		},
-	}
+	rs := &storage.RiskSubject{}
+	rs.SetId(node.GetId())
+	rs.SetType(storage.RiskSubjectType_NODE)
+	rs.SetClusterId(node.GetClusterId())
+	risk := &storage.Risk{}
+	risk.SetScore(overallScore)
+	risk.SetResults(riskResults)
+	risk.SetSubject(rs)
 
 	riskID, err := datastore.GetID(risk.GetSubject().GetId(), risk.GetSubject().GetType())
 	if err != nil {
 		log.Errorf("Unable to get Risk ID for node %s: %v", node.GetName(), err)
 		return nil
 	}
-	risk.Id = riskID
+	risk.SetId(riskID)
 
 	return risk
 }

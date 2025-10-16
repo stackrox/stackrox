@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -121,10 +122,10 @@ func (c *commandHandlerImpl) run() {
 }
 
 func (c *commandHandlerImpl) runCommand(command *central.ScrapeCommand) []*central.ScrapeUpdate {
-	switch command.GetCommand().(type) {
-	case *central.ScrapeCommand_StartScrape:
+	switch command.WhichCommand() {
+	case central.ScrapeCommand_StartScrape_case:
 		return c.startScrape(command.GetScrapeId(), command.GetStartScrape().GetHostnames(), command.GetStartScrape().GetStandards())
-	case *central.ScrapeCommand_KillScrape:
+	case central.ScrapeCommand_KillScrape_case:
 		return []*central.ScrapeUpdate{c.killScrape(command.GetScrapeId())}
 	default:
 		log.Errorf("unrecognized scrape command: %s", protocompat.MarshalTextString(command))
@@ -138,14 +139,12 @@ func (c *commandHandlerImpl) startScrape(scrapeID string, expectedHosts []string
 		return nil
 	}
 
-	numResults := c.service.RunScrape(&sensor.MsgToCompliance{
-		Msg: &sensor.MsgToCompliance_Trigger{
-			Trigger: &sensor.MsgToCompliance_TriggerRun{
-				ScrapeId:    scrapeID,
-				StandardIds: standards,
-			},
-		},
-	})
+	mt := &sensor.MsgToCompliance_TriggerRun{}
+	mt.SetScrapeId(scrapeID)
+	mt.SetStandardIds(standards)
+	mtc := &sensor.MsgToCompliance{}
+	mtc.SetTrigger(proto.ValueOrDefault(mt))
+	numResults := c.service.RunScrape(mtc)
 
 	// If we succeeded, start tracking the scrape and send a message to central.
 	scrapeState := newScrapeState(scrapeID, numResults, expectedHosts)
@@ -222,11 +221,9 @@ func (c *commandHandlerImpl) sendUpdate(update *central.ScrapeUpdate) {
 	case <-c.stopper.Flow().StopRequested():
 		log.Errorf("component is shutting down, failed to send update: %s", protocompat.MarshalTextString(update))
 		return
-	case c.updates <- message.New(&central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_ScrapeUpdate{
-			ScrapeUpdate: update,
-		},
-	}):
+		mfs := &central.MsgFromSensor{}
+		mfs.SetScrapeUpdate(proto.ValueOrDefault(update))
+	case c.updates <- message.New(mfs):
 		return
 	}
 }
@@ -235,32 +232,26 @@ func (c *commandHandlerImpl) sendUpdate(update *central.ScrapeUpdate) {
 ///////////////////
 
 func scrapeStarted(scrapeID, err string) *central.ScrapeUpdate {
-	return &central.ScrapeUpdate{
-		ScrapeId: scrapeID,
-		Update: &central.ScrapeUpdate_ScrapeStarted{
-			ScrapeStarted: &central.ScrapeStarted{
-				ErrorMessage: err,
-			},
-		},
-	}
+	ss := &central.ScrapeStarted{}
+	ss.SetErrorMessage(err)
+	su := &central.ScrapeUpdate{}
+	su.SetScrapeId(scrapeID)
+	su.SetScrapeStarted(proto.ValueOrDefault(ss))
+	return su
 }
 
 func scrapeKilled(scrapeID, err string) *central.ScrapeUpdate {
-	return &central.ScrapeUpdate{
-		ScrapeId: scrapeID,
-		Update: &central.ScrapeUpdate_ScrapeKilled{
-			ScrapeKilled: &central.ScrapeKilled{
-				ErrorMessage: err,
-			},
-		},
-	}
+	sk := &central.ScrapeKilled{}
+	sk.SetErrorMessage(err)
+	su := &central.ScrapeUpdate{}
+	su.SetScrapeId(scrapeID)
+	su.SetScrapeKilled(proto.ValueOrDefault(sk))
+	return su
 }
 
 func scrapeUpdate(result *compliance.ComplianceReturn) *central.ScrapeUpdate {
-	return &central.ScrapeUpdate{
-		ScrapeId: result.GetScrapeId(),
-		Update: &central.ScrapeUpdate_ComplianceReturn{
-			ComplianceReturn: result,
-		},
-	}
+	su := &central.ScrapeUpdate{}
+	su.SetScrapeId(result.GetScrapeId())
+	su.SetComplianceReturn(proto.ValueOrDefault(result))
+	return su
 }

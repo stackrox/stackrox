@@ -234,16 +234,16 @@ func (resolver *nodeComponentResolver) LastScanned(ctx context.Context) (*graphq
 	}
 
 	componentQuery := resolver.nodeComponentQuery()
-	componentQuery.Pagination = &v1.QueryPagination{
-		Limit:  1,
-		Offset: 0,
-		SortOptions: []*v1.QuerySortOption{
-			{
-				Field:    search.NodeScanTime.String(),
-				Reversed: true,
-			},
-		},
-	}
+	qso := &v1.QuerySortOption{}
+	qso.SetField(search.NodeScanTime.String())
+	qso.SetReversed(true)
+	qp := &v1.QueryPagination{}
+	qp.SetLimit(1)
+	qp.SetOffset(0)
+	qp.SetSortOptions([]*v1.QuerySortOption{
+		qso,
+	})
+	componentQuery.SetPagination(qp)
 
 	nodes, err := nodeLoader.FromQuery(resolver.ctx, componentQuery)
 	if err != nil || len(nodes) == 0 {

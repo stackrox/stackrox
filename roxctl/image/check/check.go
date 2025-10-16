@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stackrox/rox/roxctl/common/report"
 	"github.com/stackrox/rox/roxctl/summaries/policy"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -339,12 +340,12 @@ func buildRequest(image string, sendNotifications, force bool, policyCategories 
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not parse image '%s'", image)
 	}
-	return &v1.BuildDetectionRequest{
-		Resource:          &v1.BuildDetectionRequest_Image{Image: img},
-		SendNotifications: sendNotifications,
-		Force:             force,
-		PolicyCategories:  policyCategories,
-		Cluster:           cluster,
-		Namespace:         namespace,
-	}, nil
+	bdr := &v1.BuildDetectionRequest{}
+	bdr.SetImage(proto.ValueOrDefault(img))
+	bdr.SetSendNotifications(sendNotifications)
+	bdr.SetForce(force)
+	bdr.SetPolicyCategories(policyCategories)
+	bdr.SetCluster(cluster)
+	bdr.SetNamespace(namespace)
+	return bdr, nil
 }

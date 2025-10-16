@@ -45,10 +45,14 @@ func (suite *ImageCVELoaderTestSuite) TearDownTest() {
 
 func (suite *ImageCVELoaderTestSuite) TestFromID() {
 	// Create a loader with some reloaded cves.
+	imageCVE := &storage.ImageCVE{}
+	imageCVE.SetId(imageCve1)
+	imageCVE2 := &storage.ImageCVE{}
+	imageCVE2.SetId(imageCve2)
 	loader := imageCveLoaderImpl{
 		loaded: map[string]*storage.ImageCVE{
-			"cve1": {Id: imageCve1},
-			"cve2": {Id: imageCve2},
+			"cve1": imageCVE,
+			"cve2": imageCVE2,
 		},
 		ds: suite.mockDataStore,
 	}
@@ -59,7 +63,8 @@ func (suite *ImageCVELoaderTestSuite) TestFromID() {
 	protoassert.Equal(suite.T(), loader.loaded[imageCve1], cve)
 
 	// Get a non-preloaded cve from id.
-	thirdCVE := &storage.ImageCVE{Id: imageCve3}
+	thirdCVE := &storage.ImageCVE{}
+	thirdCVE.SetId(imageCve3)
 	suite.mockDataStore.EXPECT().GetBatch(suite.ctx, []string{imageCve3}).
 		Return([]*storage.ImageCVE{thirdCVE}, nil)
 
@@ -75,10 +80,14 @@ func (suite *ImageCVELoaderTestSuite) TestFromID() {
 
 func (suite *ImageCVELoaderTestSuite) TestFromIDs() {
 	// Create a loader with some reloaded cves.
+	imageCVE := &storage.ImageCVE{}
+	imageCVE.SetId(imageCve1)
+	imageCVE2 := &storage.ImageCVE{}
+	imageCVE2.SetId(imageCve2)
 	loader := imageCveLoaderImpl{
 		loaded: map[string]*storage.ImageCVE{
-			"cve1": {Id: imageCve1},
-			"cve2": {Id: imageCve2},
+			"cve1": imageCVE,
+			"cve2": imageCVE2,
 		},
 		ds: suite.mockDataStore,
 	}
@@ -92,7 +101,8 @@ func (suite *ImageCVELoaderTestSuite) TestFromIDs() {
 	}, cves)
 
 	// Get a non-preloaded cve from id.
-	thirdCVE := &storage.ImageCVE{Id: "cve3"}
+	thirdCVE := &storage.ImageCVE{}
+	thirdCVE.SetId("cve3")
 	suite.mockDataStore.EXPECT().GetBatch(suite.ctx, []string{imageCve3}).
 		Return([]*storage.ImageCVE{thirdCVE}, nil)
 
@@ -116,10 +126,14 @@ func (suite *ImageCVELoaderTestSuite) TestFromIDs() {
 
 func (suite *ImageCVELoaderTestSuite) TestFromQuery() {
 	// Create a loader with some reloaded cves.
+	imageCVE := &storage.ImageCVE{}
+	imageCVE.SetId(imageCve1)
+	imageCVE2 := &storage.ImageCVE{}
+	imageCVE2.SetId(imageCve2)
 	loader := imageCveLoaderImpl{
 		loaded: map[string]*storage.ImageCVE{
-			"cve1": {Id: imageCve1},
-			"cve2": {Id: imageCve2},
+			"cve1": imageCVE,
+			"cve2": imageCVE2,
 		},
 		ds: suite.mockDataStore,
 	}
@@ -157,7 +171,8 @@ func (suite *ImageCVELoaderTestSuite) TestFromQuery() {
 	}
 	suite.mockDataStore.EXPECT().Search(suite.ctx, query).Return(results, nil)
 
-	thirdCVE := &storage.ImageCVE{Id: "cve3"}
+	thirdCVE := &storage.ImageCVE{}
+	thirdCVE.SetId("cve3")
 	suite.mockDataStore.EXPECT().GetBatch(suite.ctx, []string{imageCve3}).
 		Return([]*storage.ImageCVE{thirdCVE}, nil)
 

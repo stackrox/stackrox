@@ -126,10 +126,10 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			scopeDesc: `∅ => { }`,
 			scopeStr:  "",
 			scopeJSON: `{}`,
-			scope: &storage.SimpleAccessScope{
+			scope: storage.SimpleAccessScope_builder{
 				Id:   accessScopeID,
 				Name: accessScopeName,
-			},
+			}.Build(),
 			expected: &ScopeTree{
 				State:           Excluded,
 				clusterIDToName: clusterIDs,
@@ -166,16 +166,16 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			scopeDesc: `cluster.labels: ∅ => { }`,
 			scopeStr:  "",
 			scopeJSON: `{}`,
-			scope: &storage.SimpleAccessScope{
+			scope: storage.SimpleAccessScope_builder{
 				Id:   accessScopeID,
 				Name: accessScopeName,
-				Rules: &storage.SimpleAccessScope_Rules{
+				Rules: storage.SimpleAccessScope_Rules_builder{
 					IncludedClusters: []string{},
 					ClusterLabelSelectors: []*storage.SetBasedLabelSelector{
 						{},
 					},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			expected: &ScopeTree{
 				State:           Excluded,
 				clusterIDToName: clusterIDs,
@@ -212,13 +212,13 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			scopeDesc: `cluster: "Arrakis" => { "Arrakis::*" }`,
 			scopeStr:  "Arrakis::*",
 			scopeJSON: `{"Arrakis":["*"]}`,
-			scope: &storage.SimpleAccessScope{
+			scope: storage.SimpleAccessScope_builder{
 				Id:   accessScopeID,
 				Name: accessScopeName,
-				Rules: &storage.SimpleAccessScope_Rules{
+				Rules: storage.SimpleAccessScope_Rules_builder{
 					IncludedClusters: []string{"Arrakis"},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			expected: &ScopeTree{
 				State:           Partial,
 				clusterIDToName: clusterIDs,
@@ -255,13 +255,13 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			scopeDesc: `cluster: "Arrakis" => { "Arrakis::*" }`,
 			scopeStr:  "Arrakis::*",
 			scopeJSON: `{"Arrakis":["*"]}`,
-			scope: &storage.SimpleAccessScope{
+			scope: storage.SimpleAccessScope_builder{
 				Id:   accessScopeID,
 				Name: accessScopeName,
-				Rules: &storage.SimpleAccessScope_Rules{
+				Rules: storage.SimpleAccessScope_Rules_builder{
 					IncludedClusters: []string{"Arrakis"},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			expected: &ScopeTree{
 				State:           Partial,
 				clusterIDToName: clusterIDs,
@@ -280,13 +280,13 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			scopeDesc: `cluster.labels: focus in (melange) => { "Arrakis::*" }`,
 			scopeStr:  "Arrakis::*",
 			scopeJSON: `{"Arrakis":["*"]}`,
-			scope: &storage.SimpleAccessScope{
+			scope: storage.SimpleAccessScope_builder{
 				Id:   accessScopeID,
 				Name: accessScopeName,
-				Rules: &storage.SimpleAccessScope_Rules{
+				Rules: storage.SimpleAccessScope_Rules_builder{
 					ClusterLabelSelectors: labelUtils.LabelSelectors("focus", opIN, []string{"melange"}),
-				},
-			},
+				}.Build(),
+			}.Build(),
 			expected: &ScopeTree{
 				State:           Partial,
 				clusterIDToName: clusterIDs,
@@ -323,18 +323,18 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			scopeDesc: `namespace: "Arrakis::Atreides" => { "Arrakis::Atreides" }`,
 			scopeStr:  "Arrakis::Atreides",
 			scopeJSON: `{"Arrakis":["Atreides"]}`,
-			scope: &storage.SimpleAccessScope{
+			scope: storage.SimpleAccessScope_builder{
 				Id:   accessScopeID,
 				Name: accessScopeName,
-				Rules: &storage.SimpleAccessScope_Rules{
+				Rules: storage.SimpleAccessScope_Rules_builder{
 					IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
-						{
+						storage.SimpleAccessScope_Rules_Namespace_builder{
 							ClusterName:   "Arrakis",
 							NamespaceName: "Atreides",
-						},
+						}.Build(),
 					},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			expected: &ScopeTree{
 				State:           Partial,
 				clusterIDToName: clusterIDs,
@@ -371,13 +371,13 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			scopeDesc: `namespace.labels: focus in (melange) => { "Arrakis::Atreides", "Arrakis::Harkonnen" }`,
 			scopeStr:  "Arrakis::{Atreides, Harkonnen}",
 			scopeJSON: `{"Arrakis":["Atreides","Harkonnen"]}`,
-			scope: &storage.SimpleAccessScope{
+			scope: storage.SimpleAccessScope_builder{
 				Id:   accessScopeID,
 				Name: accessScopeName,
-				Rules: &storage.SimpleAccessScope_Rules{
+				Rules: storage.SimpleAccessScope_Rules_builder{
 					NamespaceLabelSelectors: labelUtils.LabelSelectors("focus", opIN, []string{"melange"}),
-				},
-			},
+				}.Build(),
+			}.Build(),
 			expected: &ScopeTree{
 				State:           Partial,
 				clusterIDToName: clusterIDs,
@@ -414,13 +414,13 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			scopeDesc: `namespace.labels: focus in (transportation) => { "Earth::Skunk Works", "Arrakis::Spacing Guild" }`,
 			scopeStr:  "Arrakis::Spacing Guild, Earth::Skunk Works",
 			scopeJSON: `{"Arrakis":["Spacing Guild"],"Earth":["Skunk Works"]}`,
-			scope: &storage.SimpleAccessScope{
+			scope: storage.SimpleAccessScope_builder{
 				Id:   accessScopeID,
 				Name: accessScopeName,
-				Rules: &storage.SimpleAccessScope_Rules{
+				Rules: storage.SimpleAccessScope_Rules_builder{
 					NamespaceLabelSelectors: labelUtils.LabelSelectors("focus", opIN, []string{"transportation"}),
-				},
-			},
+				}.Build(),
+			}.Build(),
 			expected: &ScopeTree{
 				State:           Partial,
 				clusterIDToName: clusterIDs,
@@ -457,20 +457,20 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			scopeDesc: `namespace.labels: focus in (transportation, applied_research), region in (NA, dune_universe) => { "Earth::Skunk Works", "Earth::JPL", "Arrakis::Spacing Guild" }`,
 			scopeStr:  "Arrakis::Spacing Guild, Earth::{JPL, Skunk Works}",
 			scopeJSON: `{"Earth":["JPL","Skunk Works"],"Arrakis":["Spacing Guild"]}`,
-			scope: &storage.SimpleAccessScope{
+			scope: storage.SimpleAccessScope_builder{
 				Id:   accessScopeID,
 				Name: accessScopeName,
-				Rules: &storage.SimpleAccessScope_Rules{
+				Rules: storage.SimpleAccessScope_Rules_builder{
 					NamespaceLabelSelectors: []*storage.SetBasedLabelSelector{
-						{
+						storage.SetBasedLabelSelector_builder{
 							Requirements: []*storage.SetBasedLabelSelector_Requirement{
 								labelUtils.LabelSelectorRequirement("focus", opIN, []string{"transportation", "applied_research"}),
 								labelUtils.LabelSelectorRequirement("region", opIN, []string{"NA", "dune_universe"}),
 							},
-						},
+						}.Build(),
 					},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			expected: &ScopeTree{
 				State:           Partial,
 				clusterIDToName: clusterIDs,
@@ -507,21 +507,21 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			scopeDesc: `namespace.labels: focus notin (physics, melange), clearance, !founded => { "Earth::Skunk Works" }`,
 			scopeStr:  "Earth::Skunk Works",
 			scopeJSON: `{"Earth":["Skunk Works"]}`,
-			scope: &storage.SimpleAccessScope{
+			scope: storage.SimpleAccessScope_builder{
 				Id:   accessScopeID,
 				Name: accessScopeName,
-				Rules: &storage.SimpleAccessScope_Rules{
+				Rules: storage.SimpleAccessScope_Rules_builder{
 					NamespaceLabelSelectors: []*storage.SetBasedLabelSelector{
-						{
+						storage.SetBasedLabelSelector_builder{
 							Requirements: []*storage.SetBasedLabelSelector_Requirement{
 								labelUtils.LabelSelectorRequirement("focus", opNOTIN, []string{"physics", "melange"}),
 								labelUtils.LabelSelectorRequirement("clearance", opEXISTS, nil),
 								labelUtils.LabelSelectorRequirement("founded", opNOTEXISTS, nil),
 							},
-						},
+						}.Build(),
 					},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			expected: &ScopeTree{
 				State:           Partial,
 				clusterIDToName: clusterIDs,
@@ -558,22 +558,22 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			scopeDesc: `namespace.labels: focus in (transportation), region in (NA) OR region in (EU) OR founded in (1949) => { "Earth::Skunk Works", "Earth::Fraunhofer", "Earth::CERN" }`,
 			scopeStr:  "Earth::{CERN, Fraunhofer, Skunk Works}",
 			scopeJSON: `{"Earth":["CERN","Fraunhofer","Skunk Works"]}`,
-			scope: &storage.SimpleAccessScope{
+			scope: storage.SimpleAccessScope_builder{
 				Id:   accessScopeID,
 				Name: accessScopeName,
-				Rules: &storage.SimpleAccessScope_Rules{
+				Rules: storage.SimpleAccessScope_Rules_builder{
 					NamespaceLabelSelectors: []*storage.SetBasedLabelSelector{
-						{
+						storage.SetBasedLabelSelector_builder{
 							Requirements: []*storage.SetBasedLabelSelector_Requirement{
 								labelUtils.LabelSelectorRequirement("focus", opIN, []string{"transportation"}),
 								labelUtils.LabelSelectorRequirement("region", opIN, []string{"NA"}),
 							},
-						},
+						}.Build(),
 						labelUtils.LabelSelector("region", opIN, []string{"EU"}),
 						labelUtils.LabelSelector("founded", opIN, []string{"1949"}),
 					},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			expected: &ScopeTree{
 				State:           Partial,
 				clusterIDToName: clusterIDs,
@@ -610,20 +610,20 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			scopeDesc: `namespace: "Earth::Skunk Works" OR cluster.labels: focus in (melange) OR namespace.labels: region in (EU) => { "Earth::Skunk Works", "Earth::Fraunhofer", "Earth::CERN", "Arrakis::*" }`,
 			scopeStr:  "Arrakis::*, Earth::{CERN, Fraunhofer, Skunk Works}",
 			scopeJSON: `{"Earth":["CERN","Fraunhofer","Skunk Works"],"Arrakis":["*"]}`,
-			scope: &storage.SimpleAccessScope{
+			scope: storage.SimpleAccessScope_builder{
 				Id:   accessScopeID,
 				Name: accessScopeName,
-				Rules: &storage.SimpleAccessScope_Rules{
+				Rules: storage.SimpleAccessScope_Rules_builder{
 					IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
-						{
+						storage.SimpleAccessScope_Rules_Namespace_builder{
 							ClusterName:   "Earth",
 							NamespaceName: "Skunk Works",
-						},
+						}.Build(),
 					},
 					ClusterLabelSelectors:   labelUtils.LabelSelectors("focus", opIN, []string{"melange"}),
 					NamespaceLabelSelectors: labelUtils.LabelSelectors("region", opIN, []string{"EU"}),
-				},
-			},
+				}.Build(),
+			}.Build(),
 			expected: &ScopeTree{
 				State:           Partial,
 				clusterIDToName: clusterIDs,
@@ -660,13 +660,13 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			scopeDesc: `"namespace.labels: focus in (melange)" => { "Arrakis::Atreides", "Arrakis::Harkonnen" }`,
 			scopeStr:  "Arrakis::{Atreides, Harkonnen}",
 			scopeJSON: `{"Arrakis":["Atreides","Harkonnen"]}`,
-			scope: &storage.SimpleAccessScope{
+			scope: storage.SimpleAccessScope_builder{
 				Id:   accessScopeID,
 				Name: accessScopeName,
-				Rules: &storage.SimpleAccessScope_Rules{
+				Rules: storage.SimpleAccessScope_Rules_builder{
 					NamespaceLabelSelectors: labelUtils.LabelSelectors("focus", opIN, []string{"melange"}),
-				},
-			},
+				}.Build(),
+			}.Build(),
 			expected: &ScopeTree{
 				State:           Partial,
 				clusterIDToName: clusterIDs,
@@ -695,13 +695,13 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			scopeDesc: `"namespace.labels: focus in (melange)" => { "Arrakis::Atreides", "Arrakis::Harkonnen" }`,
 			scopeStr:  "Arrakis::{Atreides, Harkonnen}",
 			scopeJSON: `{"Arrakis":["Atreides","Harkonnen"]}`,
-			scope: &storage.SimpleAccessScope{
+			scope: storage.SimpleAccessScope_builder{
 				Id:   accessScopeID,
 				Name: accessScopeName,
-				Rules: &storage.SimpleAccessScope_Rules{
+				Rules: storage.SimpleAccessScope_Rules_builder{
 					NamespaceLabelSelectors: labelUtils.LabelSelectors("focus", opIN, []string{"melange"}),
-				},
-			},
+				}.Build(),
+			}.Build(),
 			expected: &ScopeTree{
 				State:           Partial,
 				clusterIDToName: clusterIDs,
@@ -741,24 +741,24 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 		},
 		{
 			desc: "no key in cluster label selector",
-			scope: &storage.SimpleAccessScope{
+			scope: storage.SimpleAccessScope_builder{
 				Id:   accessScopeID,
 				Name: accessScopeName,
-				Rules: &storage.SimpleAccessScope_Rules{
+				Rules: storage.SimpleAccessScope_Rules_builder{
 					ClusterLabelSelectors: labelUtils.LabelSelectors("", opIN, []string{"melange"}),
-				},
-			},
+				}.Build(),
+			}.Build(),
 			hasError: true,
 		},
 		{
 			desc: "no key in namespace label selector",
-			scope: &storage.SimpleAccessScope{
+			scope: storage.SimpleAccessScope_builder{
 				Id:   accessScopeID,
 				Name: accessScopeName,
-				Rules: &storage.SimpleAccessScope_Rules{
+				Rules: storage.SimpleAccessScope_Rules_builder{
 					NamespaceLabelSelectors: labelUtils.LabelSelectors("", opIN, []string{"melange"}),
-				},
-			},
+				}.Build(),
+			}.Build(),
 			hasError: true,
 		},
 	}

@@ -9,9 +9,9 @@ import (
 
 func convertScanToImageScan(image *storage.Image, s *scanResult) *storage.ImageScan {
 	os := stringutils.OrDefault(s.Data.Layer.NamespaceName, "unknown")
-	return &storage.ImageScan{
-		OperatingSystem: os,
-		ScanTime:        protocompat.TimestampNow(),
-		Components:      clair.ConvertFeatures(image, s.Data.Layer.Features, os),
-	}
+	imageScan := &storage.ImageScan{}
+	imageScan.SetOperatingSystem(os)
+	imageScan.SetScanTime(protocompat.TimestampNow())
+	imageScan.SetComponents(clair.ConvertFeatures(image, s.Data.Layer.Features, os))
+	return imageScan
 }

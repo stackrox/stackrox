@@ -87,9 +87,8 @@ func (e *exchangeCommand) exchange() error {
 		return errors.Wrap(err, "creating HTTP client")
 	}
 
-	req := &v1.ExchangeAuthMachineToMachineTokenRequest{
-		IdToken: e.token,
-	}
+	req := &v1.ExchangeAuthMachineToMachineTokenRequest{}
+	req.SetIdToken(e.token)
 	buf := &bytes.Buffer{}
 	if err := jsonutil.Marshal(buf, req); err != nil {
 		return errors.Wrap(err, "creating request body")

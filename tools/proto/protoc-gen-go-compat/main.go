@@ -64,6 +64,7 @@ func generateMessage(g *protogen.GeneratedFile, msg *protogen.Message) {
 	g.P("func (m *", name, ") CloneVT() *", name, " { return proto.Clone(m).(*", name, ") }")
 	g.P("func (m *", name, ") MarshalVT() ([]byte, error) { return proto.Marshal(m) }")
 	g.P("func (m *", name, ") UnmarshalVT(dAtA []byte) error { return proto.Unmarshal(dAtA, m) }")
+	g.P("func (m *", name, ") EqualVT(n *", name, ") bool { return proto.Equal(m, n) }")
 	g.P(`// Deprecated: Use UnmarshalVT instead.`)
 	g.P("func (m *", name, ") UnmarshalVTUnsafe(dAtA []byte) error { return m.UnmarshalVT(dAtA) }")
 

@@ -37,7 +37,10 @@ func (s *ClusterMetricsTestSuite) SetupTest() {
 }
 
 func (s *ClusterMetricsTestSuite) TestZeroNodes() {
-	expected := &central.ClusterMetrics{NodeCount: 0, CpuCapacity: 0, ComplianceOperatorVersion: "not installed"}
+	expected := &central.ClusterMetrics{}
+	expected.SetNodeCount(0)
+	expected.SetCpuCapacity(0)
+	expected.SetComplianceOperatorVersion("not installed")
 
 	metrics := s.getClusterMetrics()
 
@@ -45,7 +48,10 @@ func (s *ClusterMetricsTestSuite) TestZeroNodes() {
 }
 
 func (s *ClusterMetricsTestSuite) TestSingleNode() {
-	expected := &central.ClusterMetrics{NodeCount: 1, CpuCapacity: 10, ComplianceOperatorVersion: "not installed"}
+	expected := &central.ClusterMetrics{}
+	expected.SetNodeCount(1)
+	expected.SetCpuCapacity(10)
+	expected.SetComplianceOperatorVersion("not installed")
 	s.addNode("node-1", *resource.NewQuantity(expected.GetCpuCapacity(), resource.DecimalSI))
 
 	metrics := s.getClusterMetrics()
@@ -54,7 +60,10 @@ func (s *ClusterMetricsTestSuite) TestSingleNode() {
 }
 
 func (s *ClusterMetricsTestSuite) TestMultipleNodes() {
-	expected := &central.ClusterMetrics{NodeCount: 3, CpuCapacity: 10, ComplianceOperatorVersion: "not installed"}
+	expected := &central.ClusterMetrics{}
+	expected.SetNodeCount(3)
+	expected.SetCpuCapacity(10)
+	expected.SetComplianceOperatorVersion("not installed")
 	s.addNode("node-1", *resource.NewQuantity(5, resource.DecimalSI))
 	s.addNode("node-2", *resource.NewQuantity(3, resource.DecimalSI))
 	s.addNode("node-3", *resource.NewQuantity(2, resource.DecimalSI))

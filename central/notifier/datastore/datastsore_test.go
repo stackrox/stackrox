@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestNotifierDataStore(t *testing.T) {
@@ -94,13 +95,10 @@ func (s *notifierDataStoreTestSuite) TestExists() {
 }
 
 func (s *notifierDataStoreTestSuite) TestGetScrubbedNotifier() {
-	testNotifier := &storage.Notifier{
-		Config: &storage.Notifier_Generic{
-			Generic: &storage.Generic{
-				Password: "test",
-			},
-		},
-	}
+	generic := &storage.Generic{}
+	generic.SetPassword("test")
+	testNotifier := &storage.Notifier{}
+	testNotifier.SetGeneric(proto.ValueOrDefault(generic))
 
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(testNotifier, true, nil).Times(1)
 
@@ -125,13 +123,10 @@ func (s *notifierDataStoreTestSuite) TestAllowsForEach() {
 }
 
 func (s *notifierDataStoreTestSuite) TestGetScrubbedNotifiers() {
-	testNotifier := &storage.Notifier{
-		Config: &storage.Notifier_Generic{
-			Generic: &storage.Generic{
-				Password: "test",
-			},
-		},
-	}
+	generic := &storage.Generic{}
+	generic.SetPassword("test")
+	testNotifier := &storage.Notifier{}
+	testNotifier.SetGeneric(proto.ValueOrDefault(generic))
 
 	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(_ context.Context, fn func(obj *storage.Notifier) error) error {
@@ -173,10 +168,14 @@ func (s *notifierDataStoreTestSuite) TestErrorOnAdd() {
 func (s *notifierDataStoreTestSuite) TestEnforcesUpdate() {
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Times(0)
 
-	err := s.dataStore.UpdateNotifier(s.hasNoneCtx, &storage.Notifier{Id: "id"})
+	notifier := &storage.Notifier{}
+	notifier.SetId("id")
+	err := s.dataStore.UpdateNotifier(s.hasNoneCtx, notifier)
 	s.Error(err, "expected an error trying to write without permissions")
 
-	err = s.dataStore.UpdateNotifier(s.hasReadCtx, &storage.Notifier{Id: "id"})
+	notifier2 := &storage.Notifier{}
+	notifier2.SetId("id")
+	err = s.dataStore.UpdateNotifier(s.hasReadCtx, notifier2)
 	s.Error(err, "expected an error trying to write without permissions")
 }
 
@@ -184,14 +183,18 @@ func (s *notifierDataStoreTestSuite) TestAllowsUpdate() {
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, true, nil).Times(1)
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
-	err := s.dataStore.UpdateNotifier(s.hasWriteCtx, &storage.Notifier{Id: "id"})
+	notifier := &storage.Notifier{}
+	notifier.SetId("id")
+	err := s.dataStore.UpdateNotifier(s.hasWriteCtx, notifier)
 	s.NoError(err, "expected no error trying to write with permissions")
 }
 
 func (s *notifierDataStoreTestSuite) TestErrorOnUpdate() {
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).Times(1)
 
-	err := s.dataStore.UpdateNotifier(s.hasWriteCtx, &storage.Notifier{Id: "id"})
+	notifier := &storage.Notifier{}
+	notifier.SetId("id")
+	err := s.dataStore.UpdateNotifier(s.hasWriteCtx, notifier)
 	s.Error(err)
 }
 
@@ -214,45 +217,45 @@ func (s *notifierDataStoreTestSuite) TestAllowsRemove() {
 }
 
 func (s *notifierDataStoreTestSuite) TestUpdateMutableToImmutable() {
-	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.Notifier{
-		Id:   "id",
-		Name: "name",
-		Traits: &storage.Traits{
-			MutabilityMode: storage.Traits_ALLOW_MUTATE,
-		},
-	}, true, nil).Times(1)
+	traits := &storage.Traits{}
+	traits.SetMutabilityMode(storage.Traits_ALLOW_MUTATE)
+	notifier := &storage.Notifier{}
+	notifier.SetId("id")
+	notifier.SetName("name")
+	notifier.SetTraits(traits)
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(notifier, true, nil).Times(1)
 
-	err := s.dataStore.UpdateNotifier(s.hasWriteCtx, &storage.Notifier{
-		Id:   "id",
-		Name: "new name",
-		Traits: &storage.Traits{
-			MutabilityMode: storage.Traits_ALLOW_MUTATE_FORCED,
-		},
-	})
+	traits2 := &storage.Traits{}
+	traits2.SetMutabilityMode(storage.Traits_ALLOW_MUTATE_FORCED)
+	notifier2 := &storage.Notifier{}
+	notifier2.SetId("id")
+	notifier2.SetName("new name")
+	notifier2.SetTraits(traits2)
+	err := s.dataStore.UpdateNotifier(s.hasWriteCtx, notifier2)
 	s.ErrorIs(err, errox.InvalidArgs)
 }
 
 func (s *notifierDataStoreTestSuite) TestRemoveDeclarativeViaAPI() {
-	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.Notifier{
-		Id:   "id",
-		Name: "name",
-		Traits: &storage.Traits{
-			Origin: storage.Traits_DECLARATIVE,
-		},
-	}, true, nil).Times(1)
+	traits := &storage.Traits{}
+	traits.SetOrigin(storage.Traits_DECLARATIVE)
+	notifier := &storage.Notifier{}
+	notifier.SetId("id")
+	notifier.SetName("name")
+	notifier.SetTraits(traits)
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(notifier, true, nil).Times(1)
 
 	err := s.dataStore.RemoveNotifier(s.hasWriteCtx, "id")
 	s.ErrorIs(err, errox.NotAuthorized)
 }
 
 func (s *notifierDataStoreTestSuite) TestRemoveDeclarativeSuccess() {
-	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.Notifier{
-		Id:   "id",
-		Name: "name",
-		Traits: &storage.Traits{
-			Origin: storage.Traits_DECLARATIVE,
-		},
-	}, true, nil).Times(1)
+	traits := &storage.Traits{}
+	traits.SetOrigin(storage.Traits_DECLARATIVE)
+	notifier := &storage.Notifier{}
+	notifier.SetId("id")
+	notifier.SetName("name")
+	notifier.SetTraits(traits)
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(notifier, true, nil).Times(1)
 	s.storage.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 	err := s.dataStore.RemoveNotifier(s.hasWriteDeclarativeCtx, "id")
@@ -260,13 +263,12 @@ func (s *notifierDataStoreTestSuite) TestRemoveDeclarativeSuccess() {
 }
 
 func (s *notifierDataStoreTestSuite) TestUpdateDeclarativeViaAPI() {
-	ap := &storage.Notifier{
-		Id:   "id",
-		Name: "name",
-		Traits: &storage.Traits{
-			Origin: storage.Traits_DECLARATIVE,
-		},
-	}
+	traits := &storage.Traits{}
+	traits.SetOrigin(storage.Traits_DECLARATIVE)
+	ap := &storage.Notifier{}
+	ap.SetId("id")
+	ap.SetName("name")
+	ap.SetTraits(traits)
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(ap, true, nil).Times(1)
 
 	err := s.dataStore.UpdateNotifier(s.hasWriteCtx, ap)
@@ -274,13 +276,12 @@ func (s *notifierDataStoreTestSuite) TestUpdateDeclarativeViaAPI() {
 }
 
 func (s *notifierDataStoreTestSuite) TestUpdateDeclarativeSuccess() {
-	ap := &storage.Notifier{
-		Id:   "id",
-		Name: "name",
-		Traits: &storage.Traits{
-			Origin: storage.Traits_DECLARATIVE,
-		},
-	}
+	traits := &storage.Traits{}
+	traits.SetOrigin(storage.Traits_DECLARATIVE)
+	ap := &storage.Notifier{}
+	ap.SetId("id")
+	ap.SetName("name")
+	ap.SetTraits(traits)
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(ap, true, nil).Times(1)
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
@@ -289,26 +290,25 @@ func (s *notifierDataStoreTestSuite) TestUpdateDeclarativeSuccess() {
 }
 
 func (s *notifierDataStoreTestSuite) TestRemoveImperativeDeclaratively() {
-	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.Notifier{
-		Id:   "id",
-		Name: "name",
-		Traits: &storage.Traits{
-			Origin: storage.Traits_IMPERATIVE,
-		},
-	}, true, nil).Times(1)
+	traits := &storage.Traits{}
+	traits.SetOrigin(storage.Traits_IMPERATIVE)
+	notifier := &storage.Notifier{}
+	notifier.SetId("id")
+	notifier.SetName("name")
+	notifier.SetTraits(traits)
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(notifier, true, nil).Times(1)
 
 	err := s.dataStore.RemoveNotifier(s.hasWriteDeclarativeCtx, "id")
 	s.ErrorIs(err, errox.NotAuthorized)
 }
 
 func (s *notifierDataStoreTestSuite) TestUpdateImperativeDeclaratively() {
-	ap := &storage.Notifier{
-		Id:   "id",
-		Name: "name",
-		Traits: &storage.Traits{
-			Origin: storage.Traits_IMPERATIVE,
-		},
-	}
+	traits := &storage.Traits{}
+	traits.SetOrigin(storage.Traits_IMPERATIVE)
+	ap := &storage.Notifier{}
+	ap.SetId("id")
+	ap.SetName("name")
+	ap.SetTraits(traits)
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(ap, true, nil).Times(1)
 
 	err := s.dataStore.UpdateNotifier(s.hasWriteDeclarativeCtx, ap)
@@ -316,26 +316,24 @@ func (s *notifierDataStoreTestSuite) TestUpdateImperativeDeclaratively() {
 }
 
 func (s *notifierDataStoreTestSuite) TestAddDeclarativeViaAPI() {
-	ap := &storage.Notifier{
-		Id:   "id",
-		Name: "name",
-		Traits: &storage.Traits{
-			Origin: storage.Traits_DECLARATIVE,
-		},
-	}
+	traits := &storage.Traits{}
+	traits.SetOrigin(storage.Traits_DECLARATIVE)
+	ap := &storage.Notifier{}
+	ap.SetId("id")
+	ap.SetName("name")
+	ap.SetTraits(traits)
 
 	_, err := s.dataStore.AddNotifier(s.hasWriteCtx, ap)
 	s.ErrorIs(err, errox.NotAuthorized)
 }
 
 func (s *notifierDataStoreTestSuite) TestAddDeclarativeSuccess() {
-	ap := &storage.Notifier{
-		Id:   "id",
-		Name: "name",
-		Traits: &storage.Traits{
-			Origin: storage.Traits_DECLARATIVE,
-		},
-	}
+	traits := &storage.Traits{}
+	traits.SetOrigin(storage.Traits_DECLARATIVE)
+	ap := &storage.Notifier{}
+	ap.SetId("id")
+	ap.SetName("name")
+	ap.SetTraits(traits)
 	s.storage.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(false, nil).Times(1)
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
@@ -344,13 +342,12 @@ func (s *notifierDataStoreTestSuite) TestAddDeclarativeSuccess() {
 }
 
 func (s *notifierDataStoreTestSuite) TestAddImperativeDeclaratively() {
-	ap := &storage.Notifier{
-		Id:   "id",
-		Name: "name",
-		Traits: &storage.Traits{
-			Origin: storage.Traits_IMPERATIVE,
-		},
-	}
+	traits := &storage.Traits{}
+	traits.SetOrigin(storage.Traits_IMPERATIVE)
+	ap := &storage.Notifier{}
+	ap.SetId("id")
+	ap.SetName("name")
+	ap.SetTraits(traits)
 
 	_, err := s.dataStore.AddNotifier(s.hasWriteDeclarativeCtx, ap)
 	s.ErrorIs(err, errox.NotAuthorized)

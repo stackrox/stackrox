@@ -47,7 +47,7 @@ func sanitizeConfiguration(ecr *storage.ECRConfig) error {
 	}
 	// Erase authorization data if any other auth mechanism was set.
 	if ecr.GetUseIam() || ecr.GetAccessKeyId() != "" || ecr.GetSecretAccessKey() != "" || ecr.GetUseAssumeRole() {
-		ecr.AuthorizationData = nil
+		ecr.ClearAuthorizationData()
 	}
 	if ecr.GetAuthorizationData() != nil {
 		if ecr.GetAuthorizationData().GetUsername() == "" {

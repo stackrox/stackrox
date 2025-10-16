@@ -46,21 +46,19 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 	testImg, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil, bundle)
 	require.NoError(t, err, "creating test image")
 
-	successfulCosignConfig := &storage.CosignPublicKeyVerification{
-		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
-			{
-				PublicKeyPemEnc: pemMatchingPubKey,
-			},
-		},
-	}
+	cp := &storage.CosignPublicKeyVerification_PublicKey{}
+	cp.SetPublicKeyPemEnc(pemMatchingPubKey)
+	successfulCosignConfig := &storage.CosignPublicKeyVerification{}
+	successfulCosignConfig.SetPublicKeys([]*storage.CosignPublicKeyVerification_PublicKey{
+		cp,
+	})
 
-	failingCosignConfig := &storage.CosignPublicKeyVerification{
-		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
-			{
-				PublicKeyPemEnc: pemNonMatchingPubKey,
-			},
-		},
-	}
+	cp2 := &storage.CosignPublicKeyVerification_PublicKey{}
+	cp2.SetPublicKeyPemEnc(pemNonMatchingPubKey)
+	failingCosignConfig := &storage.CosignPublicKeyVerification{}
+	failingCosignConfig.SetPublicKeys([]*storage.CosignPublicKeyVerification_PublicKey{
+		cp2,
+	})
 
 	cases := map[string]struct {
 		integration        *storage.SignatureIntegration
@@ -68,30 +66,30 @@ func TestVerifyAgainstSignatureIntegration(t *testing.T) {
 		verifiedReferences []string
 	}{
 		"successful verification": {
-			integration: &storage.SignatureIntegration{
+			integration: storage.SignatureIntegration_builder{
 				Id:     "successful",
 				Cosign: successfulCosignConfig,
-				TransparencyLog: &storage.TransparencyLogVerification{
+				TransparencyLog: storage.TransparencyLogVerification_builder{
 					Enabled:         true,
 					ValidateOffline: true,
-				},
-			},
-			result: &storage.ImageSignatureVerificationResult{
+				}.Build(),
+			}.Build(),
+			result: storage.ImageSignatureVerificationResult_builder{
 				VerifierId:              "successful",
 				Status:                  storage.ImageSignatureVerificationResult_VERIFIED,
 				VerifiedImageReferences: []string{imgString},
-			},
+			}.Build(),
 		},
 		"failing verification": {
-			integration: &storage.SignatureIntegration{
+			integration: storage.SignatureIntegration_builder{
 				Id:     "failure",
 				Cosign: failingCosignConfig,
-			},
-			result: &storage.ImageSignatureVerificationResult{
+			}.Build(),
+			result: storage.ImageSignatureVerificationResult_builder{
 				VerifierId:  "failure",
 				Status:      storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
 				Description: "1 error occurred:",
-			},
+			}.Build(),
 		},
 	}
 
@@ -139,27 +137,25 @@ func benchmarkVerifyAgainstSignatureIntegrations(integrations []*storage.Signatu
 func generateImageWithManySignatures(numberOfSignatures int, imgString string, byteBundle []byte) (*storage.Image, error) {
 	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil, byteBundle)
 	for range numberOfSignatures - 1 {
-		img.GetSignature().Signatures = append(img.GetSignature().Signatures, img.GetSignature().GetSignatures()[0])
+		img.GetSignature().SetSignatures(append(img.GetSignature().GetSignatures(), img.GetSignature().GetSignatures()[0]))
 	}
 	return img, err
 }
 
 func createSignatureIntegration(numberOfIntegrations int, verifyBundle bool) []*storage.SignatureIntegration {
-	successfulCosignConfig := &storage.CosignPublicKeyVerification{
-		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
-			{
-				PublicKeyPemEnc: pemMatchingPubKey,
-			},
-		},
-	}
+	cp := &storage.CosignPublicKeyVerification_PublicKey{}
+	cp.SetPublicKeyPemEnc(pemMatchingPubKey)
+	successfulCosignConfig := &storage.CosignPublicKeyVerification{}
+	successfulCosignConfig.SetPublicKeys([]*storage.CosignPublicKeyVerification_PublicKey{
+		cp,
+	})
 
-	failingCosignConfig := &storage.CosignPublicKeyVerification{
-		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
-			{
-				PublicKeyPemEnc: pemNonMatchingPubKey,
-			},
-		},
-	}
+	cp2 := &storage.CosignPublicKeyVerification_PublicKey{}
+	cp2.SetPublicKeyPemEnc(pemNonMatchingPubKey)
+	failingCosignConfig := &storage.CosignPublicKeyVerification{}
+	failingCosignConfig.SetPublicKeys([]*storage.CosignPublicKeyVerification_PublicKey{
+		cp2,
+	})
 
 	integrations := make([]*storage.SignatureIntegration, 0, numberOfIntegrations)
 
@@ -171,14 +167,14 @@ func createSignatureIntegration(numberOfIntegrations int, verifyBundle bool) []*
 			cosignConfig = failingCosignConfig
 		}
 
-		integrations = append(integrations, &storage.SignatureIntegration{
-			Id:     fmt.Sprintf("sig-integration-%d", i),
-			Cosign: cosignConfig,
-			TransparencyLog: &storage.TransparencyLogVerification{
-				Enabled:         verifyBundle,
-				ValidateOffline: true,
-			},
-		})
+		tlv := &storage.TransparencyLogVerification{}
+		tlv.SetEnabled(verifyBundle)
+		tlv.SetValidateOffline(true)
+		si := &storage.SignatureIntegration{}
+		si.SetId(fmt.Sprintf("sig-integration-%d", i))
+		si.SetCosign(cosignConfig)
+		si.SetTransparencyLog(tlv)
+		integrations = append(integrations, si)
 	}
 
 	return integrations

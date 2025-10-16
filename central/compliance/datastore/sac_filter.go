@@ -46,23 +46,22 @@ func (ds *sacFilterImpl) FilterRunResults(ctx context.Context, runResults *stora
 		return runResults, nil
 	}
 
-	filteredResults := &storage.ComplianceRunResults{
-		Domain:      filteredDomain,
-		RunMetadata: runResults.GetRunMetadata(),
-	}
+	filteredResults := &storage.ComplianceRunResults{}
+	filteredResults.SetDomain(filteredDomain)
+	filteredResults.SetRunMetadata(runResults.GetRunMetadata())
 	if filteredDomain.GetCluster() != nil {
-		filteredResults.ClusterResults = runResults.GetClusterResults()
+		filteredResults.SetClusterResults(runResults.GetClusterResults())
 	}
 	if len(filteredDomain.GetNodes()) > 0 {
-		filteredResults.NodeResults = runResults.GetNodeResults()
+		filteredResults.SetNodeResults(runResults.GetNodeResults())
 	}
 	if len(filteredDomain.GetDeployments()) > 0 {
 		if len(filteredResults.GetDeploymentResults()) == len(runResults.GetDomain().GetDeployments()) {
-			filteredResults.DeploymentResults = runResults.GetDeploymentResults()
+			filteredResults.SetDeploymentResults(runResults.GetDeploymentResults())
 		} else {
-			filteredResults.DeploymentResults = make(map[string]*storage.ComplianceRunResults_EntityResults)
+			filteredResults.SetDeploymentResults(make(map[string]*storage.ComplianceRunResults_EntityResults))
 			for deploymentID := range filteredDomain.GetDeployments() {
-				filteredResults.DeploymentResults[deploymentID] = runResults.GetDeploymentResults()[deploymentID]
+				filteredResults.GetDeploymentResults()[deploymentID] = runResults.GetDeploymentResults()[deploymentID]
 			}
 		}
 	}
@@ -123,7 +122,7 @@ func (ds *sacFilterImpl) filterDomain(ctx context.Context, domain *storage.Compl
 	if err != nil {
 		return nil, false, err
 	} else if ok {
-		newDomain.Cluster = domain.GetCluster()
+		newDomain.SetCluster(domain.GetCluster())
 	} else {
 		filtered = true
 	}
@@ -132,18 +131,18 @@ func (ds *sacFilterImpl) filterDomain(ctx context.Context, domain *storage.Compl
 	if err != nil {
 		return nil, false, err
 	} else if ok {
-		newDomain.Nodes = domain.GetNodes()
+		newDomain.SetNodes(domain.GetNodes())
 	} else {
 		filtered = true
 	}
 
 	deploymentsInClusterChecker := deploymentsSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS, sac.ClusterScopeKey(domain.GetCluster().GetId()))
 	if deploymentsInClusterChecker.IsAllowed() {
-		newDomain.Deployments = domain.GetDeployments()
+		newDomain.SetDeployments(domain.GetDeployments())
 	} else {
-		newDomain.Deployments = sac.FilterMap(deploymentsInClusterChecker, domain.GetDeployments(), func(_ string, deployment *storage.ComplianceDomain_Deployment) sac.ScopePredicate {
+		newDomain.SetDeployments(sac.FilterMap(deploymentsInClusterChecker, domain.GetDeployments(), func(_ string, deployment *storage.ComplianceDomain_Deployment) sac.ScopePredicate {
 			return sac.ScopeSuffix{sac.NamespaceScopeKey(deployment.GetNamespace())}
-		})
+		}))
 		if len(newDomain.GetDeployments()) < len(domain.GetDeployments()) {
 			filtered = true
 		}

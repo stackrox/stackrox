@@ -35,6 +35,6 @@ func getAggregateRiskScore(risks ...*storage.Risk) float32 {
 
 func scrubRiskFactors(risks ...*storage.Risk) {
 	for _, risk := range risks {
-		risk.Results = nil
+		risk.SetResults(nil)
 	}
 }

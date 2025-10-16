@@ -32,11 +32,11 @@ type serviceImpl struct {
 func (s *serviceImpl) GetFeatureFlags(context.Context, *v1.Empty) (*v1.GetFeatureFlagsResponse, error) {
 	resp := &v1.GetFeatureFlagsResponse{}
 	for _, feature := range features.Flags {
-		resp.FeatureFlags = append(resp.FeatureFlags, &v1.FeatureFlag{
-			Name:    feature.Name(),
-			EnvVar:  feature.EnvVar(),
-			Enabled: feature.Enabled(),
-		})
+		ff := &v1.FeatureFlag{}
+		ff.SetName(feature.Name())
+		ff.SetEnvVar(feature.EnvVar())
+		ff.SetEnabled(feature.Enabled())
+		resp.SetFeatureFlags(append(resp.GetFeatureFlags(), ff))
 	}
 
 	sort.Slice(resp.GetFeatureFlags(), func(i, j int) bool {

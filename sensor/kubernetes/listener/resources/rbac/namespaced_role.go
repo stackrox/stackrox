@@ -33,12 +33,11 @@ func ruleToRolePermissionLevel(rule *v1.PolicyRule) rolePermissionLevel {
 	// Note that this will have references to the v1.PolicyRule, so we need to not take
 	// ownership or hold onto the reference beyond the end of this method. This avoids
 	// cloning the PolicyRules at the cost of creating a new ruleSet for each rule.
-	policyRule := &storage.PolicyRule{
-		Verbs:     rule.Verbs,
-		Resources: rule.Resources,
-		ApiGroups: rule.APIGroups,
-		// We do not care about ResourceNames or NonResourceUrls.
-	}
+	policyRule := &storage.PolicyRule{}
+	policyRule.SetVerbs(rule.Verbs)
+	policyRule.SetResources(rule.Resources)
+	policyRule.SetApiGroups(rule.APIGroups)
+	// We do not care about ResourceNames or NonResourceUrls.
 
 	switch {
 	case coreFields.Grants(policyRule, k8srbac.EffectiveAdmin):

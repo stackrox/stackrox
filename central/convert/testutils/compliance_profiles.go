@@ -71,119 +71,119 @@ var (
 
 // GetProfileV1SensorMsg -- returns a V1 storage object
 func GetProfileV1SensorMsg(_ *testing.T) *storage.ComplianceOperatorProfile {
-	return &storage.ComplianceOperatorProfile{
-		Id:          ProfileUID,
-		ProfileId:   profileID,
-		Name:        "ocp-cis",
-		ClusterId:   fixtureconsts.Cluster1,
-		Description: "this is a test",
-		Labels:      nil,
-		Annotations: nil,
-		Rules:       v1StorageRules,
-	}
+	cop := &storage.ComplianceOperatorProfile{}
+	cop.SetId(ProfileUID)
+	cop.SetProfileId(profileID)
+	cop.SetName("ocp-cis")
+	cop.SetClusterId(fixtureconsts.Cluster1)
+	cop.SetDescription("this is a test")
+	cop.SetLabels(nil)
+	cop.SetAnnotations(nil)
+	cop.SetRules(v1StorageRules)
+	return cop
 }
 
 // GetProfileV2SensorMsg -- returns a V2 message from sensor
 func GetProfileV2SensorMsg(_ *testing.T) *central.ComplianceOperatorProfileV2 {
-	return &central.ComplianceOperatorProfileV2{
-		Id:             ProfileUID,
-		ProfileId:      profileID,
-		Name:           "ocp-cis",
-		ProfileVersion: "4.2",
-		Description:    "this is a test",
-		Labels:         nil,
-		Annotations:    nil,
-		Rules:          v2SensorRules,
-		Title:          "Openshift CIS testing",
-		Values:         values,
-	}
+	copv2 := &central.ComplianceOperatorProfileV2{}
+	copv2.SetId(ProfileUID)
+	copv2.SetProfileId(profileID)
+	copv2.SetName("ocp-cis")
+	copv2.SetProfileVersion("4.2")
+	copv2.SetDescription("this is a test")
+	copv2.SetLabels(nil)
+	copv2.SetAnnotations(nil)
+	copv2.SetRules(v2SensorRules)
+	copv2.SetTitle("Openshift CIS testing")
+	copv2.SetValues(values)
+	return copv2
 }
 
 // GetProfileV2Storage -- returns a V2 storage object
 func GetProfileV2Storage(_ *testing.T) *storage.ComplianceOperatorProfileV2 {
-	return &storage.ComplianceOperatorProfileV2{
-		Id:             ProfileUID,
-		ProfileId:      profileID,
-		Name:           "ocp-cis",
-		ProfileVersion: "4.2",
-		Description:    "this is a test",
-		Labels:         nil,
-		Annotations:    nil,
-		Rules:          v2StorageRules,
-		Title:          "Openshift CIS testing",
-		ProductType:    "",
-		Standard:       "",
-		Product:        "",
-		Values:         values,
-		ClusterId:      fixtureconsts.Cluster1,
-		ProfileRefId:   internaltov2storage.BuildProfileRefID(fixtureconsts.Cluster1, profileID, ""),
-	}
+	copv2 := &storage.ComplianceOperatorProfileV2{}
+	copv2.SetId(ProfileUID)
+	copv2.SetProfileId(profileID)
+	copv2.SetName("ocp-cis")
+	copv2.SetProfileVersion("4.2")
+	copv2.SetDescription("this is a test")
+	copv2.SetLabels(nil)
+	copv2.SetAnnotations(nil)
+	copv2.SetRules(v2StorageRules)
+	copv2.SetTitle("Openshift CIS testing")
+	copv2.SetProductType("")
+	copv2.SetStandard("")
+	copv2.SetProduct("")
+	copv2.SetValues(values)
+	copv2.SetClusterId(fixtureconsts.Cluster1)
+	copv2.SetProfileRefId(internaltov2storage.BuildProfileRefID(fixtureconsts.Cluster1, profileID, ""))
+	return copv2
 }
 
 // GetProfilesV2Storage -- returns a V2 storage object
 func GetProfilesV2Storage(_ *testing.T) []*storage.ComplianceOperatorProfileV2 {
+	copv2 := &storage.ComplianceOperatorProfileV2{}
+	copv2.SetId(ProfileUID)
+	copv2.SetProfileId(profileID)
+	copv2.SetName("ocp-cis")
+	copv2.SetProfileVersion("4.2")
+	copv2.SetDescription("this is a test")
+	copv2.SetLabels(nil)
+	copv2.SetAnnotations(nil)
+	copv2.SetRules(v2StorageRules)
+	copv2.SetTitle("Openshift CIS testing")
+	copv2.SetProductType("")
+	copv2.SetStandard("")
+	copv2.SetProduct("")
+	copv2.SetValues(values)
+	copv2.SetClusterId(fixtureconsts.Cluster1)
+	copv2.SetProfileRefId(internaltov2storage.BuildProfileRefID(fixtureconsts.Cluster1, profileID, ""))
+	copv2h2 := &storage.ComplianceOperatorProfileV2{}
+	copv2h2.SetId(profileUID2)
+	copv2h2.SetProfileId(profileID)
+	copv2h2.SetName("rhcos-moderate")
+	copv2h2.SetProfileVersion("4.1.2")
+	copv2h2.SetDescription("this is a test")
+	copv2h2.SetLabels(nil)
+	copv2h2.SetAnnotations(nil)
+	copv2h2.SetRules(v2StorageRules)
+	copv2h2.SetTitle("Openshift CIS testing")
+	copv2h2.SetProductType("")
+	copv2h2.SetStandard("")
+	copv2h2.SetProduct("")
+	copv2h2.SetValues(values)
+	copv2h2.SetClusterId(fixtureconsts.Cluster1)
+	copv2h2.SetProfileRefId(internaltov2storage.BuildProfileRefID(fixtureconsts.Cluster1, profileID, ""))
 	return []*storage.ComplianceOperatorProfileV2{
-		{
-			Id:             ProfileUID,
-			ProfileId:      profileID,
-			Name:           "ocp-cis",
-			ProfileVersion: "4.2",
-			Description:    "this is a test",
-			Labels:         nil,
-			Annotations:    nil,
-			Rules:          v2StorageRules,
-			Title:          "Openshift CIS testing",
-			ProductType:    "",
-			Standard:       "",
-			Product:        "",
-			Values:         values,
-			ClusterId:      fixtureconsts.Cluster1,
-			ProfileRefId:   internaltov2storage.BuildProfileRefID(fixtureconsts.Cluster1, profileID, ""),
-		},
-		{
-			Id:             profileUID2,
-			ProfileId:      profileID,
-			Name:           "rhcos-moderate",
-			ProfileVersion: "4.1.2",
-			Description:    "this is a test",
-			Labels:         nil,
-			Annotations:    nil,
-			Rules:          v2StorageRules,
-			Title:          "Openshift CIS testing",
-			ProductType:    "",
-			Standard:       "",
-			Product:        "",
-			Values:         values,
-			ClusterId:      fixtureconsts.Cluster1,
-			ProfileRefId:   internaltov2storage.BuildProfileRefID(fixtureconsts.Cluster1, profileID, ""),
-		},
+		copv2,
+		copv2h2,
 	}
 }
 
 // GetProfileV2Api returns a V2 API profile that matches GetProfileV2Storage
 func GetProfileV2Api(_ *testing.T) *v2.ComplianceProfile {
-	return &v2.ComplianceProfile{
-		Id:             ProfileUID,
-		Name:           "ocp-cis",
-		ProfileVersion: "4.2",
-		Description:    "this is a test",
-		Rules:          v2ApiRules,
-		Title:          "Openshift CIS testing",
-		ProductType:    "",
-		Standards: []*v2.ComplianceBenchmark{{
-			Name:      "CIS",
-			ShortName: "OCP_CIS",
-			Version:   "1-5",
-		}},
-		Product: "",
-		Values:  values,
-	}
+	cb := &v2.ComplianceBenchmark{}
+	cb.SetName("CIS")
+	cb.SetShortName("OCP_CIS")
+	cb.SetVersion("1-5")
+	cp := &v2.ComplianceProfile{}
+	cp.SetId(ProfileUID)
+	cp.SetName("ocp-cis")
+	cp.SetProfileVersion("4.2")
+	cp.SetDescription("this is a test")
+	cp.SetRules(v2ApiRules)
+	cp.SetTitle("Openshift CIS testing")
+	cp.SetProductType("")
+	cp.SetStandards([]*v2.ComplianceBenchmark{cb})
+	cp.SetProduct("")
+	cp.SetValues(values)
+	return cp
 }
 
 // GetProfilesV2Api returns a list of v2 APIs that match GetProfilesV2Storage
 func GetProfilesV2Api(_ *testing.T) []*v2.ComplianceProfile {
 	return []*v2.ComplianceProfile{
-		{
+		v2.ComplianceProfile_builder{
 			Id:             ProfileUID,
 			Name:           "ocp-cis",
 			ProfileVersion: "4.2",
@@ -191,15 +191,15 @@ func GetProfilesV2Api(_ *testing.T) []*v2.ComplianceProfile {
 			Rules:          v2ApiRules,
 			Title:          "Openshift CIS testing",
 			ProductType:    "",
-			Standards: []*v2.ComplianceBenchmark{{
+			Standards: []*v2.ComplianceBenchmark{v2.ComplianceBenchmark_builder{
 				Name:      "CIS",
 				ShortName: "OCP_CIS",
 				Version:   "1-5",
-			}},
+			}.Build()},
 			Product: "",
 			Values:  values,
-		},
-		{
+		}.Build(),
+		v2.ComplianceProfile_builder{
 			Id:             profileUID2,
 			Name:           "rhcos-moderate",
 			ProfileVersion: "4.1.2",
@@ -207,40 +207,40 @@ func GetProfilesV2Api(_ *testing.T) []*v2.ComplianceProfile {
 			Rules:          v2ApiRules,
 			Title:          "Openshift CIS testing",
 			ProductType:    "",
-			Standards: []*v2.ComplianceBenchmark{{
+			Standards: []*v2.ComplianceBenchmark{v2.ComplianceBenchmark_builder{
 				Name:      "CIS",
 				ShortName: "OCP_CIS",
 				Version:   "1-5",
-			}},
+			}.Build()},
 			Product: "",
 			Values:  values,
-		},
+		}.Build(),
 	}
 }
 
 // GetComplianceRemediationV2Msg -- returns a V2 message from sensor
 func GetComplianceRemediationV2Msg(_ *testing.T) *central.ComplianceOperatorRemediationV2 {
-	return &central.ComplianceOperatorRemediationV2{
-		Id:                        RemediationUID,
-		Name:                      "ocp4-stig-project-config-and-template-network-policy-1",
-		ComplianceCheckResultName: "ocp4-stig-project-config-and-template-network-policy",
-		Apply:                     true,
-		CurrentObject:             "",
-		OutdatedObject:            "",
-		EnforcementType:           "test-type",
-	}
+	corv2 := &central.ComplianceOperatorRemediationV2{}
+	corv2.SetId(RemediationUID)
+	corv2.SetName("ocp4-stig-project-config-and-template-network-policy-1")
+	corv2.SetComplianceCheckResultName("ocp4-stig-project-config-and-template-network-policy")
+	corv2.SetApply(true)
+	corv2.SetCurrentObject("")
+	corv2.SetOutdatedObject("")
+	corv2.SetEnforcementType("test-type")
+	return corv2
 }
 
 // GetComplianceRemediationV2Storage -- returns a v2 message from sensor
 func GetComplianceRemediationV2Storage(_ *testing.T) *storage.ComplianceOperatorRemediationV2 {
-	return &storage.ComplianceOperatorRemediationV2{
-		Id:                        RemediationUID,
-		Name:                      "ocp4-stig-project-config-and-template-network-policy-1",
-		ComplianceCheckResultName: "ocp4-stig-project-config-and-template-network-policy",
-		Apply:                     true,
-		CurrentObject:             "",
-		OutdatedObject:            "",
-		EnforcementType:           "test-type",
-		ClusterId:                 fixtureconsts.Cluster1,
-	}
+	corv2 := &storage.ComplianceOperatorRemediationV2{}
+	corv2.SetId(RemediationUID)
+	corv2.SetName("ocp4-stig-project-config-and-template-network-policy-1")
+	corv2.SetComplianceCheckResultName("ocp4-stig-project-config-and-template-network-policy")
+	corv2.SetApply(true)
+	corv2.SetCurrentObject("")
+	corv2.SetOutdatedObject("")
+	corv2.SetEnforcementType("test-type")
+	corv2.SetClusterId(fixtureconsts.Cluster1)
+	return corv2
 }

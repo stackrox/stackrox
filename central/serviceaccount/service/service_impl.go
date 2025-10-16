@@ -80,14 +80,14 @@ func (s *serviceImpl) GetServiceAccount(ctx context.Context, request *v1.Resourc
 		return nil, err
 	}
 
-	return &v1.GetServiceAccountResponse{
-		SaAndRole: &v1.ServiceAccountAndRoles{
-			ServiceAccount:          sa,
-			ClusterRoles:            clusterRoles,
-			ScopedRoles:             scopedRoles,
-			DeploymentRelationships: s.getDeploymentRelationships(ctx, sa),
-		},
-	}, nil
+	saar := &v1.ServiceAccountAndRoles{}
+	saar.SetServiceAccount(sa)
+	saar.SetClusterRoles(clusterRoles)
+	saar.SetScopedRoles(scopedRoles)
+	saar.SetDeploymentRelationships(s.getDeploymentRelationships(ctx, sa))
+	gsar := &v1.GetServiceAccountResponse{}
+	gsar.SetSaAndRole(saar)
+	return gsar, nil
 }
 
 // ListServiceAccounts returns all service accounts that match the query.
@@ -114,17 +114,17 @@ func (s *serviceImpl) ListServiceAccounts(ctx context.Context, rawQuery *v1.RawQ
 			return nil, err
 		}
 
-		saAndRoles = append(saAndRoles, &v1.ServiceAccountAndRoles{
-			ServiceAccount:          sa,
-			ClusterRoles:            clusterRoles,
-			ScopedRoles:             scopedRoles,
-			DeploymentRelationships: s.getDeploymentRelationships(ctx, sa),
-		})
+		saar := &v1.ServiceAccountAndRoles{}
+		saar.SetServiceAccount(sa)
+		saar.SetClusterRoles(clusterRoles)
+		saar.SetScopedRoles(scopedRoles)
+		saar.SetDeploymentRelationships(s.getDeploymentRelationships(ctx, sa))
+		saAndRoles = append(saAndRoles, saar)
 
 	}
-	return &v1.ListServiceAccountResponse{
-		SaAndRoles: saAndRoles,
-	}, nil
+	lsar := &v1.ListServiceAccountResponse{}
+	lsar.SetSaAndRoles(saAndRoles)
+	return lsar, nil
 }
 
 func (s *serviceImpl) getDeploymentRelationships(ctx context.Context, sa *storage.ServiceAccount) []*v1.SADeploymentRelationship {
@@ -141,10 +141,10 @@ func (s *serviceImpl) getDeploymentRelationships(ctx context.Context, sa *storag
 
 	deployments := make([]*v1.SADeploymentRelationship, 0, len(deploymentResults))
 	for _, r := range deploymentResults {
-		deployments = append(deployments, &v1.SADeploymentRelationship{
-			Id:   r.GetId(),
-			Name: r.GetName(),
-		})
+		sadr := &v1.SADeploymentRelationship{}
+		sadr.SetId(r.GetId())
+		sadr.SetName(r.GetName())
+		deployments = append(deployments, sadr)
 	}
 
 	return deployments
@@ -168,10 +168,10 @@ func (s *serviceImpl) getRoles(ctx context.Context, sa *storage.ServiceAccount) 
 		namespaceRoles := namespaceEvaluator.RolesForSubject(ctx, subject)
 
 		if len(namespaceRoles) != 0 {
-			scopedRoles = append(scopedRoles, &v1.ScopedRoles{
-				Namespace: namespace.GetName(),
-				Roles:     namespaceRoles,
-			})
+			sr := &v1.ScopedRoles{}
+			sr.SetNamespace(namespace.GetName())
+			sr.SetRoles(namespaceRoles)
+			scopedRoles = append(scopedRoles, sr)
 		}
 	}
 

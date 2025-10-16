@@ -187,46 +187,46 @@ func cleanupCredentials(notifier *storage.Notifier) {
 	case pkgNotifiers.JiraType:
 		jira := notifier.GetJira()
 		if jira != nil {
-			jira.Password = ""
+			jira.SetPassword("")
 		}
 	case pkgNotifiers.EmailType:
 		email := notifier.GetEmail()
 		if email != nil {
-			email.Password = ""
+			email.SetPassword("")
 		}
 	case pkgNotifiers.CSCCType:
 		cscc := notifier.GetCscc()
 		if cscc != nil {
-			cscc.ServiceAccount = ""
+			cscc.SetServiceAccount("")
 		}
 	case pkgNotifiers.SplunkType:
 		splunk := notifier.GetSplunk()
 		if splunk != nil {
-			splunk.HttpToken = ""
+			splunk.SetHttpToken("")
 		}
 	case pkgNotifiers.PagerDutyType:
 		pagerDuty := notifier.GetPagerduty()
 		if pagerDuty != nil {
-			pagerDuty.ApiKey = ""
+			pagerDuty.SetApiKey("")
 		}
 	case pkgNotifiers.GenericType:
 		generic := notifier.GetGeneric()
 		if generic != nil {
-			generic.Password = ""
+			generic.SetPassword("")
 		}
 	case pkgNotifiers.AWSSecurityHubType:
 		creds := notifier.GetAwsSecurityHub().GetCredentials()
 		if creds != nil {
-			creds.AccessKeyId = ""
-			creds.SecretAccessKey = ""
+			creds.SetAccessKeyId("")
+			creds.SetSecretAccessKey("")
 		}
 	case pkgNotifiers.MicrosoftSentinelType:
 		sentinel := notifier.GetMicrosoftSentinel()
 		if sentinel != nil {
 			if sentinel.GetClientCertAuthConfig() != nil {
-				sentinel.GetClientCertAuthConfig().PrivateKey = ""
+				sentinel.GetClientCertAuthConfig().SetPrivateKey("")
 			}
-			sentinel.Secret = ""
+			sentinel.SetSecret("")
 		}
 	}
 }

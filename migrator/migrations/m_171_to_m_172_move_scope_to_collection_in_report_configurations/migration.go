@@ -61,17 +61,17 @@ var (
 func buildEmbeddedCollection(scopeName string, index int, rules []*storage.SelectorRule) *storage.ResourceCollection {
 	timeNow := protoconv.ConvertTimeToTimestamp(time.Now())
 	colName := fmt.Sprintf(embeddedCollectionTemplate, index, scopeName)
-	return &storage.ResourceCollection{
-		Id:          idGenerator(colName),
-		Name:        colName,
-		CreatedAt:   timeNow,
-		LastUpdated: timeNow,
-		ResourceSelectors: []*storage.ResourceSelector{
-			{
-				Rules: rules,
-			},
-		},
-	}
+	rs := &storage.ResourceSelector{}
+	rs.SetRules(rules)
+	rc := &storage.ResourceCollection{}
+	rc.SetId(idGenerator(colName))
+	rc.SetName(colName)
+	rc.SetCreatedAt(timeNow)
+	rc.SetLastUpdated(timeNow)
+	rc.SetResourceSelectors([]*storage.ResourceSelector{
+		rs,
+	})
+	return rc
 }
 
 func labelSelectorsToCollections(scopeName string, index int, labelSelectors []*storage.SetBasedLabelSelector, fieldName string) ([]*storage.ResourceCollection, error) {
@@ -84,16 +84,16 @@ func labelSelectorsToCollections(scopeName string, index int, labelSelectors []*
 			}
 			ruleValues := make([]*storage.RuleValue, 0, len(requirement.GetValues()))
 			for _, val := range requirement.GetValues() {
-				ruleValues = append(ruleValues, &storage.RuleValue{
-					Value:     fmt.Sprintf("%s=%s", requirement.GetKey(), val),
-					MatchType: storage.MatchType_EXACT,
-				})
+				ruleValue := &storage.RuleValue{}
+				ruleValue.SetValue(fmt.Sprintf("%s=%s", requirement.GetKey(), val))
+				ruleValue.SetMatchType(storage.MatchType_EXACT)
+				ruleValues = append(ruleValues, ruleValue)
 			}
-			selectorRules = append(selectorRules, &storage.SelectorRule{
-				FieldName: fieldName,
-				Operator:  storage.BooleanOperator_OR,
-				Values:    ruleValues,
-			})
+			sr := &storage.SelectorRule{}
+			sr.SetFieldName(fieldName)
+			sr.SetOperator(storage.BooleanOperator_OR)
+			sr.SetValues(ruleValues)
+			selectorRules = append(selectorRules, sr)
 		}
 		col := buildEmbeddedCollection(scopeName, index, selectorRules)
 		collections = append(collections, col)
@@ -109,17 +109,17 @@ func getCollectionsToEmbed(scope *storage.SimpleAccessScope) ([]*storage.Resourc
 	if includedClusters := scope.GetRules().GetIncludedClusters(); len(includedClusters) > 0 {
 		ruleVals := make([]*storage.RuleValue, 0, len(includedClusters))
 		for _, cluster := range includedClusters {
-			ruleVals = append(ruleVals, &storage.RuleValue{
-				Value:     cluster,
-				MatchType: storage.MatchType_EXACT,
-			})
+			ruleValue := &storage.RuleValue{}
+			ruleValue.SetValue(cluster)
+			ruleValue.SetMatchType(storage.MatchType_EXACT)
+			ruleVals = append(ruleVals, ruleValue)
 		}
+		sr := &storage.SelectorRule{}
+		sr.SetFieldName(search.Cluster.String())
+		sr.SetOperator(storage.BooleanOperator_OR)
+		sr.SetValues(ruleVals)
 		col := buildEmbeddedCollection(scope.GetName(), index, []*storage.SelectorRule{
-			{
-				FieldName: search.Cluster.String(),
-				Operator:  storage.BooleanOperator_OR,
-				Values:    ruleVals,
-			},
+			sr,
 		})
 		collectionsToEmbed = append(collectionsToEmbed, col)
 		index = index + 1
@@ -128,26 +128,26 @@ func getCollectionsToEmbed(scope *storage.SimpleAccessScope) ([]*storage.Resourc
 	if includedNamespaces := scope.GetRules().GetIncludedNamespaces(); len(includedNamespaces) > 0 {
 		for _, namespace := range includedNamespaces {
 			col := buildEmbeddedCollection(scope.GetName(), index, []*storage.SelectorRule{
-				{
+				storage.SelectorRule_builder{
 					FieldName: search.Cluster.String(),
 					Operator:  storage.BooleanOperator_OR,
 					Values: []*storage.RuleValue{
-						{
+						storage.RuleValue_builder{
 							Value:     namespace.GetClusterName(),
 							MatchType: storage.MatchType_EXACT,
-						},
+						}.Build(),
 					},
-				},
-				{
+				}.Build(),
+				storage.SelectorRule_builder{
 					FieldName: search.Namespace.String(),
 					Operator:  storage.BooleanOperator_OR,
 					Values: []*storage.RuleValue{
-						{
+						storage.RuleValue_builder{
 							Value:     namespace.GetNamespaceName(),
 							MatchType: storage.MatchType_EXACT,
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			})
 			collectionsToEmbed = append(collectionsToEmbed, col)
 			index = index + 1
@@ -204,18 +204,17 @@ func createCollectionsForScope(ctx context.Context, scopeID string,
 	}
 	embeddedCollections := make([]*storage.ResourceCollection_EmbeddedResourceCollection, 0, len(collectionsToEmbed))
 	for _, collection := range collectionsToEmbed {
-		embeddedCollections = append(embeddedCollections, &storage.ResourceCollection_EmbeddedResourceCollection{
-			Id: collection.GetId(),
-		})
+		re := &storage.ResourceCollection_EmbeddedResourceCollection{}
+		re.SetId(collection.GetId())
+		embeddedCollections = append(embeddedCollections, re)
 	}
 	timeNow := protoconv.ConvertTimeToTimestamp(time.Now())
-	rootCollection := &storage.ResourceCollection{
-		Id:                  newScopeID,
-		Name:                fmt.Sprintf(rootCollectionTemplate, scope.GetName()),
-		CreatedAt:           timeNow,
-		LastUpdated:         timeNow,
-		EmbeddedCollections: embeddedCollections,
-	}
+	rootCollection := &storage.ResourceCollection{}
+	rootCollection.SetId(newScopeID)
+	rootCollection.SetName(fmt.Sprintf(rootCollectionTemplate, scope.GetName()))
+	rootCollection.SetCreatedAt(timeNow)
+	rootCollection.SetLastUpdated(timeNow)
+	rootCollection.SetEmbeddedCollections(embeddedCollections)
 	if err := collectionStore.Upsert(ctx, rootCollection); err != nil {
 		log.Error(errorWithResolutionMsg(errors.Wrapf(err, "Failed to create collections for scope <%q>", scope.GetName()), scopeID))
 		return "", false
@@ -246,7 +245,7 @@ func moveScopesInReportsToCollections(gormDB *gorm.DB, db postgres.DB) error {
 			// See migration n52_to_n53
 			configs := scopeIDToConfigs[scopeID]
 			for _, config := range configs {
-				config.ScopeId = newScopeID
+				config.SetScopeId(newScopeID)
 				// Do it one at a time even though it's not as performant so that at least some reports will get migrated
 				// even if any fail. It should be rare though.
 				if err := reportConfigStore.Upsert(ctx, config); err != nil {

@@ -33,11 +33,13 @@ func (i *identity) FullName() string {
 }
 
 func (i *identity) User() *storage.UserInfo {
-	return &storage.UserInfo{
-		FriendlyName: i.info.Subject.CommonName,
-		Permissions:  &storage.UserInfo_ResourceToAccess{ResourceToAccess: i.Permissions()},
-		Roles:        utils.ExtractRolesForUserInfo(i.resolvedRoles),
-	}
+	ur := &storage.UserInfo_ResourceToAccess{}
+	ur.SetResourceToAccess(i.Permissions())
+	userInfo := &storage.UserInfo{}
+	userInfo.SetFriendlyName(i.info.Subject.CommonName)
+	userInfo.SetPermissions(ur)
+	userInfo.SetRoles(utils.ExtractRolesForUserInfo(i.resolvedRoles))
+	return userInfo
 }
 
 func (i *identity) Permissions() map[string]storage.Access {

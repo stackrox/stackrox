@@ -42,25 +42,25 @@ var (
 )
 
 func genStorage(enabledFor storage.DelegatedRegistryConfig_EnabledFor, defID string, regs []*storage.DelegatedRegistryConfig_DelegatedRegistry) *storage.DelegatedRegistryConfig {
-	return &storage.DelegatedRegistryConfig{
-		EnabledFor:       enabledFor,
-		DefaultClusterId: defID,
-		Registries:       regs,
-	}
+	drc := &storage.DelegatedRegistryConfig{}
+	drc.SetEnabledFor(enabledFor)
+	drc.SetDefaultClusterId(defID)
+	drc.SetRegistries(regs)
+	return drc
 }
 func genAPI(enabledFor v1.DelegatedRegistryConfig_EnabledFor, defID string, regs []*v1.DelegatedRegistryConfig_DelegatedRegistry) *v1.DelegatedRegistryConfig {
-	return &v1.DelegatedRegistryConfig{
-		EnabledFor:       enabledFor,
-		DefaultClusterId: defID,
-		Registries:       regs,
-	}
+	drc := &v1.DelegatedRegistryConfig{}
+	drc.SetEnabledFor(enabledFor)
+	drc.SetDefaultClusterId(defID)
+	drc.SetRegistries(regs)
+	return drc
 }
 
 func genInnerAPI(enabledFor central.DelegatedRegistryConfig_EnabledFor, regs []*central.DelegatedRegistryConfig_DelegatedRegistry) *central.DelegatedRegistryConfig {
-	return &central.DelegatedRegistryConfig{
-		EnabledFor: enabledFor,
-		Registries: regs,
-	}
+	drc := &central.DelegatedRegistryConfig{}
+	drc.SetEnabledFor(enabledFor)
+	drc.SetRegistries(regs)
+	return drc
 }
 
 func TestStorageToPublicAPI(t *testing.T) {

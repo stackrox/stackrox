@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestCapabilities(t *testing.T) {
@@ -46,32 +47,24 @@ func TestMatch(t *testing.T) {
 		},
 		{
 			name: "bad message type",
-			input: &central.MsgFromSensor{
-				Msg: &central.MsgFromSensor_Event{
-					Event: &central.SensorEvent{
-						Resource: &central.SensorEvent_Node{
-							Node: &storage.Node{
-								Id: "node1",
-							},
-						},
-					},
-				},
-			},
+			input: central.MsgFromSensor_builder{
+				Event: central.SensorEvent_builder{
+					Node: storage.Node_builder{
+						Id: "node1",
+					}.Build(),
+				}.Build(),
+			}.Build(),
 			want: false,
 		},
 		{
 			name: "match",
-			input: &central.MsgFromSensor{
-				Msg: &central.MsgFromSensor_Event{
-					Event: &central.SensorEvent{
-						Resource: &central.SensorEvent_VirtualMachine{
-							VirtualMachine: &virtualMachineV1.VirtualMachine{
-								Id: "virtualMachine1",
-							},
-						},
-					},
-				},
-			},
+			input: central.MsgFromSensor_builder{
+				Event: central.SensorEvent_builder{
+					VirtualMachine: virtualMachineV1.VirtualMachine_builder{
+						Id: "virtualMachine1",
+					}.Build(),
+				}.Build(),
+			}.Build(),
 			want: true,
 		},
 	}
@@ -91,14 +84,14 @@ func TestPipelineRun(t *testing.T) {
 		clusters        *clusterDSMocks.MockDataStore
 		virtualMachines *virtualMachineDSMocks.MockDataStore
 	}
-	var upsertTestVM = &virtualMachineV1.VirtualMachine{
-		Id:        uuid.NewTestUUID(1).String(),
-		Namespace: "test-namespace",
-		Name:      "test-virtual-machine",
-		ClusterId: testClusterID,
-		VsockCid:  0,
-		State:     virtualMachineV1.VirtualMachine_STOPPED,
-	}
+	vm := &virtualMachineV1.VirtualMachine{}
+	vm.SetId(uuid.NewTestUUID(1).String())
+	vm.SetNamespace("test-namespace")
+	vm.SetName("test-virtual-machine")
+	vm.SetClusterId(testClusterID)
+	vm.SetVsockCid(0)
+	vm.SetState(virtualMachineV1.VirtualMachine_STOPPED)
+	var upsertTestVM = vm
 	tests := []struct {
 		name             string
 		setupMocks       func(*mocks)
@@ -130,7 +123,7 @@ func TestPipelineRun(t *testing.T) {
 			name: "Addition upserts despite cluster name lookup failure",
 			setupMocks: func(testMock *mocks) {
 				storedVM := internaltostorage.VirtualMachine(upsertTestVM)
-				storedVM.ClusterName = ""
+				storedVM.SetClusterName("")
 				testMock.clusters.EXPECT().
 					GetClusterName(gomock.Any(), testClusterID).
 					Return("", false, nil)
@@ -144,7 +137,7 @@ func TestPipelineRun(t *testing.T) {
 			name: "Addition upserts with cluster name on lookup success",
 			setupMocks: func(testMock *mocks) {
 				storedVM := internaltostorage.VirtualMachine(upsertTestVM)
-				storedVM.ClusterName = "test-cluster"
+				storedVM.SetClusterName("test-cluster")
 				testMock.clusters.EXPECT().
 					GetClusterName(gomock.Any(), testClusterID).
 					Return("test-cluster", true, nil)
@@ -195,10 +188,10 @@ func TestPipelineReconcile(t *testing.T) {
 			setupMock: func(m *virtualMachineDSMocks.MockDataStore) {
 				m.EXPECT().SearchRawVirtualMachines(gomock.Any(), gomock.Any()).
 					Return([]*storage.VirtualMachine{
-						{
+						storage.VirtualMachine_builder{
 							Id:        "existing-vm",
 							ClusterId: testClusterID,
-						},
+						}.Build(),
 					}, nil)
 			},
 		},
@@ -210,14 +203,14 @@ func TestPipelineReconcile(t *testing.T) {
 			setupMock: func(m *virtualMachineDSMocks.MockDataStore) {
 				m.EXPECT().SearchRawVirtualMachines(gomock.Any(), gomock.Any()).
 					Return([]*storage.VirtualMachine{
-						{
+						storage.VirtualMachine_builder{
 							Id:        "existing-vm",
 							ClusterId: testClusterID,
-						},
-						{
+						}.Build(),
+						storage.VirtualMachine_builder{
 							Id:        "existing-vm-in-other-cluster",
 							ClusterId: otherClusterID,
-						},
+						}.Build(),
 					}, nil)
 			},
 		},
@@ -230,14 +223,14 @@ func TestPipelineReconcile(t *testing.T) {
 				m.EXPECT().
 					SearchRawVirtualMachines(gomock.Any(), gomock.Any()).
 					Return([]*storage.VirtualMachine{
-						{
+						storage.VirtualMachine_builder{
 							Id:        "existing-vm",
 							ClusterId: testClusterID,
-						},
-						{
+						}.Build(),
+						storage.VirtualMachine_builder{
 							Id:        "vm-to-remove-from-cluster",
 							ClusterId: testClusterID,
-						},
+						}.Build(),
 					}, nil)
 				m.EXPECT().
 					DeleteVirtualMachines(gomock.Any(), "vm-to-remove-from-cluster").
@@ -285,39 +278,29 @@ func TestPipelineReconcile(t *testing.T) {
 }
 
 func getNodeMessage() *central.MsgFromSensor {
-	return &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Resource: &central.SensorEvent_Node{},
-			},
-		},
-	}
+	se := &central.SensorEvent{}
+	se.Resource = &central.SensorEvent_Node{}
+	return central.MsgFromSensor_builder{
+		Event: se,
+	}.Build()
 }
 
 func getVirtualMachineRemovalMessage(vmID string) *central.MsgFromSensor {
-	return &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Action: central.ResourceAction_REMOVE_RESOURCE,
-				Resource: &central.SensorEvent_VirtualMachine{
-					VirtualMachine: &virtualMachineV1.VirtualMachine{
-						Id: vmID,
-					},
-				},
-			},
-		},
-	}
+	return central.MsgFromSensor_builder{
+		Event: central.SensorEvent_builder{
+			Action: central.ResourceAction_REMOVE_RESOURCE,
+			VirtualMachine: virtualMachineV1.VirtualMachine_builder{
+				Id: vmID,
+			}.Build(),
+		}.Build(),
+	}.Build()
 }
 
 func getVirtualMachineAdditionMessage(vm *virtualMachineV1.VirtualMachine) *central.MsgFromSensor {
-	return &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Action: central.ResourceAction_CREATE_RESOURCE,
-				Resource: &central.SensorEvent_VirtualMachine{
-					VirtualMachine: vm,
-				},
-			},
-		},
-	}
+	se := &central.SensorEvent{}
+	se.SetAction(central.ResourceAction_CREATE_RESOURCE)
+	se.SetVirtualMachine(proto.ValueOrDefault(vm))
+	return central.MsgFromSensor_builder{
+		Event: se,
+	}.Build()
 }

@@ -315,7 +315,7 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	}
 
 	if testMode {
-		user.IdpToken = authResp.IdpToken
+		user.SetIdpToken(authResp.IdpToken)
 		w.Header().Set("Location", r.userMetadataURL(user, typ, clientState, testMode).String())
 		w.WriteHeader(http.StatusSeeOther)
 		return

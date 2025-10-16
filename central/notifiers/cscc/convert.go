@@ -70,8 +70,8 @@ func convertAlertToFinding(alert *storage.Alert, sourceID string, notifierEndpoi
 	}
 
 	var props *Properties
-	switch alert.GetEntity().(type) {
-	case *storage.Alert_Deployment_:
+	switch alert.WhichEntity() {
+	case storage.Alert_Deployment_case:
 		props = &Properties{
 
 			Namespace:      alert.GetDeployment().GetNamespace(),
@@ -81,7 +81,7 @@ func convertAlertToFinding(alert *storage.Alert, sourceID string, notifierEndpoi
 			EnforcementActions: convertEnforcement(alert),
 			Summary:            convertAlertDescription(alert),
 		}
-	case *storage.Alert_Resource_:
+	case storage.Alert_Resource_case:
 		props = &Properties{
 
 			Namespace:    alert.GetResource().GetNamespace(),

@@ -209,19 +209,18 @@ func GetPolicyGroupFromSearchTerms(fieldLabel search.FieldLabel, searchTerms []s
 		return nil, false, false
 	}
 
-	group := &storage.PolicyGroup{
-		FieldName:       qvm.fieldName,
-		BooleanOperator: storage.BooleanOperator_OR,
-	}
+	group := &storage.PolicyGroup{}
+	group.SetFieldName(qvm.fieldName)
+	group.SetBooleanOperator(storage.BooleanOperator_OR)
 
 	fieldValues, fieldsDropped := qvm.fieldValueMapper(searchTerms)
 	if len(fieldValues) == 0 {
 		return nil, false, true
 	}
 	for _, value := range fieldValues {
-		group.Values = append(group.GetValues(), &storage.PolicyValue{
-			Value: value,
-		})
+		pv := &storage.PolicyValue{}
+		pv.SetValue(value)
+		group.SetValues(append(group.GetValues(), pv))
 	}
 	return group, fieldsDropped, true
 }

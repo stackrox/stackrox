@@ -35,7 +35,9 @@ func compress(compressable interface{}) (*compliance.GZIPDataChunk, error) {
 	if err := gz.Close(); err != nil {
 		return nil, err
 	}
-	return &compliance.GZIPDataChunk{
-		Gzip: buf.Bytes(),
-	}, nil
+	gzipdc := &compliance.GZIPDataChunk{}
+	if x := buf.Bytes(); x != nil {
+		gzipdc.SetGzip(x)
+	}
+	return gzipdc, nil
 }

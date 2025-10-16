@@ -80,9 +80,9 @@ func (cmd *centralRestoreCancelCommand) cancelActiveRestore() error {
 	ctx, cancel = context.WithTimeout(pkgCommon.Context(), cmd.timeout)
 	defer cancel()
 
-	_, err = dbClient.CancelRestoreProcess(ctx, &v1.ResourceByID{
-		Id: processStatus.GetMetadata().GetId(),
-	})
+	rbid := &v1.ResourceByID{}
+	rbid.SetId(processStatus.GetMetadata().GetId())
+	_, err = dbClient.CancelRestoreProcess(ctx, rbid)
 
 	return errors.Wrap(err, "canceling restore process")
 }

@@ -192,22 +192,22 @@ func TestTransformAccessScope(t *testing.T) {
 	assert.Empty(t, scopeProto.GetRules().GetNamespaceLabelSelectors())
 	assert.Empty(t, scopeProto.GetRules().GetIncludedClusters())
 	expectedNamespaces := []*storage.SimpleAccessScope_Rules_Namespace{
-		{
+		storage.SimpleAccessScope_Rules_Namespace_builder{
 			ClusterName:   "clusterA",
 			NamespaceName: "NamespaceA",
-		},
-		{
+		}.Build(),
+		storage.SimpleAccessScope_Rules_Namespace_builder{
 			ClusterName:   "clusterA",
 			NamespaceName: "NamespaceB",
-		},
-		{
+		}.Build(),
+		storage.SimpleAccessScope_Rules_Namespace_builder{
 			ClusterName:   "clusterB",
 			NamespaceName: "NamespaceC",
-		},
-		{
+		}.Build(),
+		storage.SimpleAccessScope_Rules_Namespace_builder{
 			ClusterName:   "clusterB",
 			NamespaceName: "NamespaceD",
-		},
+		}.Build(),
 	}
 	protoassert.ElementsMatch(t, expectedNamespaces, scopeProto.GetRules().GetIncludedNamespaces())
 
@@ -251,22 +251,22 @@ func TestTransformAccessScope(t *testing.T) {
 	compareLabelSelectors(t, scopeConfig.Rules.NamespaceLabelSelectors, scopeProto.GetRules().GetNamespaceLabelSelectors())
 	assert.Equal(t, []string{"clusterC"}, scopeProto.GetRules().GetIncludedClusters())
 	expectedNamespaces = []*storage.SimpleAccessScope_Rules_Namespace{
-		{
+		storage.SimpleAccessScope_Rules_Namespace_builder{
 			ClusterName:   "clusterA",
 			NamespaceName: "NamespaceA",
-		},
-		{
+		}.Build(),
+		storage.SimpleAccessScope_Rules_Namespace_builder{
 			ClusterName:   "clusterA",
 			NamespaceName: "NamespaceB",
-		},
-		{
+		}.Build(),
+		storage.SimpleAccessScope_Rules_Namespace_builder{
 			ClusterName:   "clusterB",
 			NamespaceName: "NamespaceC",
-		},
-		{
+		}.Build(),
+		storage.SimpleAccessScope_Rules_Namespace_builder{
 			ClusterName:   "clusterB",
 			NamespaceName: "NamespaceD",
-		},
+		}.Build(),
 	}
 	protoassert.ElementsMatch(t, expectedNamespaces, scopeProto.GetRules().GetIncludedNamespaces())
 }
@@ -286,14 +286,16 @@ func TestUniversalTransformAccessScope(t *testing.T) {
 	msgs, err := ut.Transform(scopeConfig)
 	assert.NoError(t, err)
 
+	traits := &storage.Traits{}
+	traits.SetOrigin(storage.Traits_DECLARATIVE)
+	sas := &storage.SimpleAccessScope{}
+	sas.SetId(declarativeconfig.NewDeclarativeAccessScopeUUID(scopeConfig.Name).String())
+	sas.SetName(scopeConfig.Name)
+	sas.SetDescription(scopeConfig.Description)
+	sas.SetTraits(traits)
+	sas.SetRules(&storage.SimpleAccessScope_Rules{})
 	expectedMessages := []*storage.SimpleAccessScope{
-		{
-			Id:          declarativeconfig.NewDeclarativeAccessScopeUUID(scopeConfig.Name).String(),
-			Name:        scopeConfig.Name,
-			Description: scopeConfig.Description,
-			Traits:      &storage.Traits{Origin: storage.Traits_DECLARATIVE},
-			Rules:       &storage.SimpleAccessScope_Rules{},
-		},
+		sas,
 	}
 	require.Len(t, msgs, 1)
 	assert.Contains(t, msgs, simpleAccessScopeType)

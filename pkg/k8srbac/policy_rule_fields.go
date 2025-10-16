@@ -12,7 +12,7 @@ func APIGroupsField() PolicyRuleField {
 				return rule.GetApiGroups()
 			},
 			func(value []string, rule *storage.PolicyRule) {
-				rule.ApiGroups = value
+				rule.SetApiGroups(value)
 			},
 		),
 	)
@@ -26,7 +26,7 @@ func ResourcesField() PolicyRuleField {
 				return rule.GetResources()
 			},
 			func(value []string, rule *storage.PolicyRule) {
-				rule.Resources = value
+				rule.SetResources(value)
 			},
 		),
 	)
@@ -40,7 +40,7 @@ func VerbsField() PolicyRuleField {
 				return rule.GetVerbs()
 			},
 			func(value []string, rule *storage.PolicyRule) {
-				rule.Verbs = value
+				rule.SetVerbs(value)
 			},
 		),
 	)
@@ -54,7 +54,7 @@ func NonResourceURLsField() PolicyRuleField {
 				return rule.GetNonResourceUrls()
 			},
 			func(value []string, rule *storage.PolicyRule) {
-				rule.NonResourceUrls = value
+				rule.SetNonResourceUrls(value)
 			},
 		),
 	)
@@ -68,7 +68,7 @@ func ResourceNamesField() PolicyRuleField {
 				return rule.GetResourceNames()
 			},
 			func(value []string, rule *storage.PolicyRule) {
-				rule.ResourceNames = value
+				rule.SetResourceNames(value)
 			},
 		),
 	)

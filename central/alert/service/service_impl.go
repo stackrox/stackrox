@@ -135,9 +135,9 @@ func listAlertsRequestToQuery(request *v1.ListAlertsRequest, sort bool) (*v1.Que
 // ListAlerts returns ListAlerts according to the request.
 func (s *serviceImpl) ListAlerts(ctx context.Context, request *v1.ListAlertsRequest) (*v1.ListAlertsResponse, error) {
 	if request.GetPagination() == nil {
-		request.Pagination = &v1.Pagination{
-			Limit: maxListAlertsReturned,
-		}
+		pagination := &v1.Pagination{}
+		pagination.SetLimit(maxListAlertsReturned)
+		request.SetPagination(pagination)
 	}
 	q, err := listAlertsRequestToQuery(request, true)
 	if err != nil {
@@ -147,7 +147,9 @@ func (s *serviceImpl) ListAlerts(ctx context.Context, request *v1.ListAlertsRequ
 	if err != nil {
 		return nil, err
 	}
-	return &v1.ListAlertsResponse{Alerts: alerts}, nil
+	lar := &v1.ListAlertsResponse{}
+	lar.SetAlerts(alerts)
+	return lar, nil
 }
 
 // CountAlerts counts the number of alerts that match the input query.
@@ -162,7 +164,9 @@ func (s *serviceImpl) CountAlerts(ctx context.Context, request *v1.RawQuery) (*v
 	if err != nil {
 		return nil, err
 	}
-	return &v1.CountAlertsResponse{Count: int32(count)}, nil
+	car := &v1.CountAlertsResponse{}
+	car.SetCount(int32(count))
+	return car, nil
 }
 
 func ensureAllAlertsAreFetched(req *v1.ListAlertsRequest) *v1.ListAlertsRequest {
@@ -170,10 +174,10 @@ func ensureAllAlertsAreFetched(req *v1.ListAlertsRequest) *v1.ListAlertsRequest 
 		req = &v1.ListAlertsRequest{}
 	}
 	if req.GetPagination() == nil {
-		req.Pagination = &v1.Pagination{}
+		req.SetPagination(&v1.Pagination{})
 	}
-	req.Pagination.Offset = 0
-	req.Pagination.Limit = math.MaxInt32
+	req.GetPagination().SetOffset(0)
+	req.GetPagination().SetLimit(math.MaxInt32)
 	return req
 }
 
@@ -201,7 +205,7 @@ func (s *serviceImpl) GetAlertsCounts(ctx context.Context, request *v1.GetAlerts
 		request = &v1.GetAlertsCountsRequest{}
 	}
 
-	request.Request = ensureAllAlertsAreFetched(request.GetRequest())
+	request.SetRequest(ensureAllAlertsAreFetched(request.GetRequest()))
 	requestQ, err := search.ParseQuery(request.GetRequest().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, err
@@ -216,15 +220,15 @@ func (s *serviceImpl) GetAlertsCounts(ctx context.Context, request *v1.GetAlerts
 
 		if matchFieldQuery.MatchFieldQuery.GetField() == search.Cluster.String() {
 			hasClusterQ = true
-			matchFieldQuery.MatchFieldQuery.Highlight = true
+			matchFieldQuery.MatchFieldQuery.SetHighlight(true)
 		}
 		if matchFieldQuery.MatchFieldQuery.GetField() == search.Category.String() {
 			hasCategoryQ = true
-			matchFieldQuery.MatchFieldQuery.Highlight = true
+			matchFieldQuery.MatchFieldQuery.SetHighlight(true)
 		}
 		if matchFieldQuery.MatchFieldQuery.GetField() == search.Severity.String() {
 			hasSeverityQ = true
-			matchFieldQuery.MatchFieldQuery.Highlight = true
+			matchFieldQuery.MatchFieldQuery.SetHighlight(true)
 		}
 	})
 
@@ -286,30 +290,25 @@ func (s *serviceImpl) ResolveAlert(ctx context.Context, req *v1.ResolveAlertRequ
 		// This isn't great as it assumes a single baseline key
 		itemMap := make(map[string][]*storage.BaselineItem)
 		for _, process := range alert.GetProcessViolation().GetProcesses() {
-			itemMap[process.GetContainerName()] = append(itemMap[process.GetContainerName()], &storage.BaselineItem{
-				Item: &storage.BaselineItem_ProcessName{
-					ProcessName: processbaseline.BaselineItemFromProcess(process),
-				},
-			})
+			bi := &storage.BaselineItem{}
+			bi.SetProcessName(processbaseline.BaselineItemFromProcess(process))
+			itemMap[process.GetContainerName()] = append(itemMap[process.GetContainerName()], bi)
 		}
 		for containerName, items := range itemMap {
-			key := &storage.ProcessBaselineKey{
-				DeploymentId:  alert.GetDeployment().GetId(),
-				ContainerName: containerName,
-				ClusterId:     alert.GetDeployment().GetClusterId(),
-				Namespace:     alert.GetDeployment().GetNamespace(),
-			}
+			key := &storage.ProcessBaselineKey{}
+			key.SetDeploymentId(alert.GetDeployment().GetId())
+			key.SetContainerName(containerName)
+			key.SetClusterId(alert.GetDeployment().GetClusterId())
+			key.SetNamespace(alert.GetDeployment().GetNamespace())
 			baseline, err := s.baselines.UpdateProcessBaselineElements(ctx, key, items, nil, false)
 			if err != nil {
 				return nil, err
 			}
-			err = s.connectionManager.SendMessage(alert.GetDeployment().GetClusterId(), &central.MsgToSensor{
-				Msg: &central.MsgToSensor_BaselineSync{
-					BaselineSync: &central.BaselineSync{
-						Baselines: []*storage.ProcessBaseline{baseline},
-					},
-				},
-			})
+			err = s.connectionManager.SendMessage(alert.GetDeployment().GetClusterId(), central.MsgToSensor_builder{
+				BaselineSync: central.BaselineSync_builder{
+					Baselines: []*storage.ProcessBaseline{baseline},
+				}.Build(),
+			}.Build())
 			if err != nil {
 				log.Errorf("Error syncing baseline with cluster %q: %v", alert.GetDeployment().GetClusterId(), err)
 			}
@@ -381,7 +380,7 @@ func (s *serviceImpl) changeAlertsState(ctx context.Context, alerts []*storage.A
 
 	for alertBatch := range slices.Chunk(alerts, alertResolveBatchSize) {
 		for _, alert := range alertBatch {
-			alert.State = state
+			alert.SetState(state)
 		}
 		err := s.dataStore.UpsertAlerts(ctx, alertBatch)
 		if err != nil {
@@ -396,7 +395,7 @@ func (s *serviceImpl) changeAlertsState(ctx context.Context, alerts []*storage.A
 }
 
 func (s *serviceImpl) changeAlertState(ctx context.Context, alert *storage.Alert, state storage.ViolationState) error {
-	alert.State = state
+	alert.SetState(state)
 	err := s.dataStore.UpsertAlert(ctx, alert)
 	if err != nil {
 		log.Error(err)
@@ -444,10 +443,9 @@ func (s *serviceImpl) DeleteAlerts(ctx context.Context, request *v1.DeleteAlerts
 		return nil, err
 	}
 
-	response := &v1.DeleteAlertsResponse{
-		NumDeleted: uint32(len(results)),
-		DryRun:     !request.GetConfirm(),
-	}
+	response := &v1.DeleteAlertsResponse{}
+	response.SetNumDeleted(uint32(len(results)))
+	response.SetDryRun(!request.GetConfirm())
 
 	if !request.GetConfirm() {
 		return response, nil
@@ -473,13 +471,13 @@ func alertsGroupResponseFrom(alerts []*storage.ListAlert) (output *v1.GetAlertsG
 	}
 
 	output = new(v1.GetAlertsGroupResponse)
-	output.AlertsByPolicies = make([]*v1.GetAlertsGroupResponse_PolicyGroup, 0, len(policiesMap))
+	output.SetAlertsByPolicies(make([]*v1.GetAlertsGroupResponse_PolicyGroup, 0, len(policiesMap)))
 
 	for id, p := range policiesMap {
-		output.AlertsByPolicies = append(output.AlertsByPolicies, &v1.GetAlertsGroupResponse_PolicyGroup{
-			Policy:    p,
-			NumAlerts: int64(alertCountsByPolicy[id]),
-		})
+		gp := &v1.GetAlertsGroupResponse_PolicyGroup{}
+		gp.SetPolicy(p)
+		gp.SetNumAlerts(int64(alertCountsByPolicy[id]))
+		output.SetAlertsByPolicies(append(output.GetAlertsByPolicies(), gp))
 	}
 
 	sort.Slice(output.GetAlertsByPolicies(), func(i, j int) bool {
@@ -505,19 +503,20 @@ func alertsCountsResponseFrom(alerts []search.Result, groupBy v1.GetAlertsCounts
 func alertTimeseriesResponseFrom(alerts []*storage.ListAlert) *v1.GetAlertTimeseriesResponse {
 	response := new(v1.GetAlertTimeseriesResponse)
 	for cluster, severityMap := range getGroupToAlertEvents(alerts) {
-		alertCluster := &v1.GetAlertTimeseriesResponse_ClusterAlerts{Cluster: cluster}
+		alertCluster := &v1.GetAlertTimeseriesResponse_ClusterAlerts{}
+		alertCluster.SetCluster(cluster)
 		for severity, alertEvents := range severityMap {
 			// Sort the alert events so they are chronological
 			sort.SliceStable(alertEvents, func(i, j int) bool { return alertEvents[i].GetTime() < alertEvents[j].GetTime() })
-			alertCluster.Severities = append(alertCluster.Severities, &v1.GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents{
-				Severity: severity,
-				Events:   alertEvents,
-			})
+			gca := &v1.GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents{}
+			gca.SetSeverity(severity)
+			gca.SetEvents(alertEvents)
+			alertCluster.SetSeverities(append(alertCluster.GetSeverities(), gca))
 		}
 		sort.Slice(alertCluster.GetSeverities(), func(i, j int) bool {
 			return alertCluster.GetSeverities()[i].GetSeverity() < alertCluster.GetSeverities()[j].GetSeverity()
 		})
-		response.Clusters = append(response.Clusters, alertCluster)
+		response.SetClusters(append(response.GetClusters(), alertCluster))
 	}
 	sort.SliceStable(response.GetClusters(), func(i, j int) bool {
 		return response.GetClusters()[i].GetCluster() < response.GetClusters()[j].GetCluster()
@@ -529,26 +528,26 @@ func countAlerts(alerts []search.Result, groupByFunc func(result search.Result) 
 	groups := getMapOfAlertCounts(alerts, groupByFunc)
 
 	output = new(v1.GetAlertsCountsResponse)
-	output.Groups = make([]*v1.GetAlertsCountsResponse_AlertGroup, 0, len(groups))
+	output.SetGroups(make([]*v1.GetAlertsCountsResponse_AlertGroup, 0, len(groups)))
 
 	for group, countsBySeverity := range groups {
 		bySeverity := make([]*v1.GetAlertsCountsResponse_AlertGroup_AlertCounts, 0, len(countsBySeverity))
 
 		for severity, count := range countsBySeverity {
-			bySeverity = append(bySeverity, &v1.GetAlertsCountsResponse_AlertGroup_AlertCounts{
-				Severity: severity,
-				Count:    int64(count),
-			})
+			gaa := &v1.GetAlertsCountsResponse_AlertGroup_AlertCounts{}
+			gaa.SetSeverity(severity)
+			gaa.SetCount(int64(count))
+			bySeverity = append(bySeverity, gaa)
 		}
 
 		sort.Slice(bySeverity, func(i, j int) bool {
 			return bySeverity[i].GetSeverity() < bySeverity[j].GetSeverity()
 		})
 
-		output.Groups = append(output.Groups, &v1.GetAlertsCountsResponse_AlertGroup{
-			Group:  group,
-			Counts: bySeverity,
-		})
+		ga := &v1.GetAlertsCountsResponse_AlertGroup{}
+		ga.SetGroup(group)
+		ga.SetCounts(bySeverity)
+		output.SetGroups(append(output.GetGroups(), ga))
 	}
 
 	sort.Slice(output.GetGroups(), func(i, j int) bool {
@@ -587,9 +586,17 @@ func getGroupToAlertEvents(alerts []*storage.ListAlert) (clusters map[string]map
 			clusters[alertCluster] = make(map[storage.Severity][]*v1.AlertEvent)
 		}
 		eventList := clusters[alertCluster][a.GetPolicy().GetSeverity()]
-		eventList = append(eventList, &v1.AlertEvent{Time: a.GetTime().GetSeconds() * 1000, Id: a.GetId(), Type: v1.Type_CREATED})
+		ae := &v1.AlertEvent{}
+		ae.SetTime(a.GetTime().GetSeconds() * 1000)
+		ae.SetId(a.GetId())
+		ae.SetType(v1.Type_CREATED)
+		eventList = append(eventList, ae)
 		if a.GetState() == storage.ViolationState_RESOLVED {
-			eventList = append(eventList, &v1.AlertEvent{Time: a.GetTime().GetSeconds() * 1000, Id: a.GetId(), Type: v1.Type_REMOVED})
+			ae2 := &v1.AlertEvent{}
+			ae2.SetTime(a.GetTime().GetSeconds() * 1000)
+			ae2.SetId(a.GetId())
+			ae2.SetType(v1.Type_REMOVED)
+			eventList = append(eventList, ae2)
 		}
 		clusters[alertCluster][a.GetPolicy().GetSeverity()] = eventList
 	}

@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/uuid"
+	"google.golang.org/protobuf/proto"
 )
 
 // Use this context only to
@@ -278,55 +279,49 @@ func generateReportSnapshot(
 	requestType storage.ReportStatus_RunMethod,
 	requesterID authn.Identity,
 ) *storage.ReportSnapshot {
-	snapshot := &storage.ReportSnapshot{
-		ReportConfigurationId: config.GetId(),
-		Name:                  config.GetName(),
-		Description:           config.GetDescription(),
-		Type:                  storage.ReportSnapshot_VULNERABILITY,
-		Collection: &storage.CollectionSnapshot{
-			Id:   config.GetResourceScope().GetCollectionId(),
-			Name: collection.GetName(),
-		},
-		Schedule: config.GetSchedule(),
-		ReportStatus: &storage.ReportStatus{
-			RunState:                 storage.ReportStatus_WAITING,
-			ReportRequestType:        requestType,
-			ReportNotificationMethod: notificationMethod,
-		},
-	}
+	cs := &storage.CollectionSnapshot{}
+	cs.SetId(config.GetResourceScope().GetCollectionId())
+	cs.SetName(collection.GetName())
+	rs := &storage.ReportStatus{}
+	rs.SetRunState(storage.ReportStatus_WAITING)
+	rs.SetReportRequestType(requestType)
+	rs.SetReportNotificationMethod(notificationMethod)
+	snapshot := &storage.ReportSnapshot{}
+	snapshot.SetReportConfigurationId(config.GetId())
+	snapshot.SetName(config.GetName())
+	snapshot.SetDescription(config.GetDescription())
+	snapshot.SetType(storage.ReportSnapshot_VULNERABILITY)
+	snapshot.SetCollection(cs)
+	snapshot.SetSchedule(config.GetSchedule())
+	snapshot.SetReportStatus(rs)
 
 	reportFilters := config.GetVulnReportFilters().CloneVT()
 	var requester *storage.SlimUser
 	switch requestType {
 	case storage.ReportStatus_ON_DEMAND:
-		reportFilters.AccessScopeRules = common.ExtractAccessScopeRules(requesterID)
-		requester = &storage.SlimUser{
-			Id:   requesterID.UID(),
-			Name: stringutils.FirstNonEmpty(requesterID.FullName(), requesterID.FriendlyName()),
-		}
+		reportFilters.SetAccessScopeRules(common.ExtractAccessScopeRules(requesterID))
+		requester = &storage.SlimUser{}
+		requester.SetId(requesterID.UID())
+		requester.SetName(stringutils.FirstNonEmpty(requesterID.FullName(), requesterID.FriendlyName()))
 	case storage.ReportStatus_SCHEDULED:
 		requester = config.GetCreator()
 	}
-	snapshot.Requester = requester
-	snapshot.Filter = &storage.ReportSnapshot_VulnReportFilters{
-		VulnReportFilters: reportFilters,
-	}
+	snapshot.SetRequester(requester)
+	snapshot.SetVulnReportFilters(proto.ValueOrDefault(reportFilters))
 
 	notifierSnaps := make([]*storage.NotifierSnapshot, 0, len(config.GetNotifiers()))
 
 	for i, notifierConf := range config.GetNotifiers() {
-		notifierSnaps = append(notifierSnaps, &storage.NotifierSnapshot{
-			NotifierConfig: &storage.NotifierSnapshot_EmailConfig{
-				EmailConfig: func() *storage.EmailNotifierConfiguration {
-					cfg := notifierConf.GetEmailConfig()
-					cfg.NotifierId = notifierConf.GetId()
-					return cfg
-				}(),
-			},
-			NotifierName: protoNotifiers[i].GetName(),
-		})
+		ns := &storage.NotifierSnapshot{}
+		ns.SetEmailConfig(proto.ValueOrDefault(func() *storage.EmailNotifierConfiguration {
+			cfg := notifierConf.GetEmailConfig()
+			cfg.SetNotifierId(notifierConf.GetId())
+			return cfg
+		}()))
+		ns.SetNotifierName(protoNotifiers[i].GetName())
+		notifierSnaps = append(notifierSnaps, ns)
 	}
-	snapshot.Notifiers = notifierSnaps
+	snapshot.SetNotifiers(notifierSnaps)
 	return snapshot
 }
 
@@ -380,30 +375,25 @@ func (v *Validator) ValidateAndGenerateViewBasedReportRequest(
 	}
 
 	// Convert API filters to storage filters.
-	storageFilters := &storage.ViewBasedVulnerabilityReportFilters{
-		Query:            vbFilters.GetQuery(),
-		AccessScopeRules: common.ExtractAccessScopeRules(requesterID),
-	}
-	requester := &storage.SlimUser{
-		Id:   requesterID.UID(),
-		Name: stringutils.FirstNonEmpty(requesterID.FullName(), requesterID.FriendlyName()),
-	}
+	storageFilters := &storage.ViewBasedVulnerabilityReportFilters{}
+	storageFilters.SetQuery(vbFilters.GetQuery())
+	storageFilters.SetAccessScopeRules(common.ExtractAccessScopeRules(requesterID))
+	requester := &storage.SlimUser{}
+	requester.SetId(requesterID.UID())
+	requester.SetName(stringutils.FirstNonEmpty(requesterID.FullName(), requesterID.FriendlyName()))
 
 	// Build report snapshot.
-	snapshot := &storage.ReportSnapshot{
-		Name:          generateViewBasedRequestName(requester),
-		Type:          storage.ReportSnapshot_VULNERABILITY,
-		AreaOfConcern: req.GetAreaOfConcern(),
-		ReportStatus: &storage.ReportStatus{
-			RunState:                 storage.ReportStatus_WAITING,
-			ReportRequestType:        storage.ReportStatus_VIEW_BASED,
-			ReportNotificationMethod: storage.ReportStatus_DOWNLOAD,
-		},
-		Filter: &storage.ReportSnapshot_ViewBasedVulnReportFilters{
-			ViewBasedVulnReportFilters: storageFilters,
-		},
-		Requester: requester,
-	}
+	rs := &storage.ReportStatus{}
+	rs.SetRunState(storage.ReportStatus_WAITING)
+	rs.SetReportRequestType(storage.ReportStatus_VIEW_BASED)
+	rs.SetReportNotificationMethod(storage.ReportStatus_DOWNLOAD)
+	snapshot := &storage.ReportSnapshot{}
+	snapshot.SetName(generateViewBasedRequestName(requester))
+	snapshot.SetType(storage.ReportSnapshot_VULNERABILITY)
+	snapshot.SetAreaOfConcern(req.GetAreaOfConcern())
+	snapshot.SetReportStatus(rs)
+	snapshot.SetViewBasedVulnReportFilters(proto.ValueOrDefault(storageFilters))
+	snapshot.SetRequester(requester)
 
 	return &reportGen.ReportRequest{
 		ReportSnapshot: snapshot,

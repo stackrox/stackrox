@@ -6,6 +6,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -192,26 +193,30 @@ func disjunctOrConjunctQueries(isConjunct bool, queries ...*v1.Query) *v1.Query 
 		return queries[0]
 	}
 	if isConjunct {
-		return &v1.Query{
-			Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{Queries: queries}},
-		}
+		cq := &v1.ConjunctionQuery{}
+		cq.SetQueries(queries)
+		query := &v1.Query{}
+		query.SetConjunction(proto.ValueOrDefault(cq))
+		return query
 	}
 
-	return &v1.Query{
-		Query: &v1.Query_Disjunction{Disjunction: &v1.DisjunctionQuery{Queries: queries}},
-	}
+	dq := &v1.DisjunctionQuery{}
+	dq.SetQueries(queries)
+	query := &v1.Query{}
+	query.SetDisjunction(proto.ValueOrDefault(dq))
+	return query
 }
 
 func queryFromBaseQuery(baseQuery *v1.BaseQuery) *v1.Query {
-	return &v1.Query{
-		Query: &v1.Query_BaseQuery{BaseQuery: baseQuery},
-	}
+	query := &v1.Query{}
+	query.SetBaseQuery(proto.ValueOrDefault(baseQuery))
+	return query
 }
 
 // FilterQueryByQuery returns a new Query object where the baseQuery is filtered by the filterQuery.
 func FilterQueryByQuery(baseQuery, filterQuery *v1.Query) *v1.Query {
 	filteredQuery := ConjunctionQuery(baseQuery, filterQuery)
-	filteredQuery.Pagination = baseQuery.GetPagination()
+	filteredQuery.SetPagination(baseQuery.GetPagination())
 
 	return filteredQuery
 }
@@ -219,29 +224,39 @@ func FilterQueryByQuery(baseQuery, filterQuery *v1.Query) *v1.Query {
 // MatchFieldQuery returns a match field query.
 // It's a simple convenience wrapper around initializing the struct.
 func MatchFieldQuery(field, value string, highlight bool) *v1.Query {
-	return queryFromBaseQuery(&v1.BaseQuery{
-		Query: &v1.BaseQuery_MatchFieldQuery{MatchFieldQuery: &v1.MatchFieldQuery{Field: field, Value: value, Highlight: highlight}},
-	})
+	mfq := &v1.MatchFieldQuery{}
+	mfq.SetField(field)
+	mfq.SetValue(value)
+	mfq.SetHighlight(highlight)
+	baseQuery := &v1.BaseQuery{}
+	baseQuery.SetMatchFieldQuery(proto.ValueOrDefault(mfq))
+	return queryFromBaseQuery(baseQuery)
 }
 
 // matchLinkedFieldsQuery returns a query that matches
 func matchLinkedFieldsQuery(fieldValues []fieldValue) *v1.Query {
 	mfqs := make([]*v1.MatchFieldQuery, len(fieldValues))
 	for i, fv := range fieldValues {
-		mfqs[i] = &v1.MatchFieldQuery{Field: fv.l.String(), Value: fv.v, Highlight: fv.highlighted}
+		mfq := &v1.MatchFieldQuery{}
+		mfq.SetField(fv.l.String())
+		mfq.SetValue(fv.v)
+		mfq.SetHighlight(fv.highlighted)
+		mfqs[i] = mfq
 	}
 
-	return queryFromBaseQuery(&v1.BaseQuery{
-		Query: &v1.BaseQuery_MatchLinkedFieldsQuery{MatchLinkedFieldsQuery: &v1.MatchLinkedFieldsQuery{
-			Query: mfqs,
-		}},
-	})
+	mlfq := &v1.MatchLinkedFieldsQuery{}
+	mlfq.SetQuery(mfqs)
+	baseQuery := &v1.BaseQuery{}
+	baseQuery.SetMatchLinkedFieldsQuery(proto.ValueOrDefault(mlfq))
+	return queryFromBaseQuery(baseQuery)
 }
 
 func docIDQuery(ids []string) *v1.Query {
-	return queryFromBaseQuery(&v1.BaseQuery{
-		Query: &v1.BaseQuery_DocIdQuery{DocIdQuery: &v1.DocIDQuery{Ids: ids}},
-	})
+	didq := &v1.DocIDQuery{}
+	didq.SetIds(ids)
+	baseQuery := &v1.BaseQuery{}
+	baseQuery.SetDocIdQuery(proto.ValueOrDefault(didq))
+	return queryFromBaseQuery(baseQuery)
 }
 
 // QueryModifier describes the query modifiers for a specific individual query

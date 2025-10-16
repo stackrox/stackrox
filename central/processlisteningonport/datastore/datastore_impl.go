@@ -153,7 +153,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	newPlopObjects := []*storage.ProcessListeningOnPortStorage{}
 	updatePlopObjects := []*storage.ProcessListeningOnPortStorage{}
 	for _, val := range normalizedPLOPs {
-		val.ClusterId = clusterID
+		val.SetClusterId(clusterID)
 		var processInfo *storage.ProcessIndicatorUniqueKey
 
 		indicatorID := getIndicatorIDForPlop(val)
@@ -187,11 +187,11 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 			log.Debugf("Got existing PLOP: %s", plopStorageToNoSecretsString(existingPLOP))
 
 			// Update the timestamp and PodUid
-			existingPLOP.CloseTimestamp = val.GetCloseTimestamp()
-			existingPLOP.Closed = existingPLOP.GetCloseTimestamp() != nil
-			existingPLOP.PodUid = val.GetPodUid()
-			existingPLOP.ClusterId = val.GetClusterId()
-			existingPLOP.Namespace = val.GetNamespace()
+			existingPLOP.SetCloseTimestamp(val.GetCloseTimestamp())
+			existingPLOP.SetClosed(existingPLOP.GetCloseTimestamp() != nil)
+			existingPLOP.SetPodUid(val.GetPodUid())
+			existingPLOP.SetClusterId(val.GetClusterId())
+			existingPLOP.SetNamespace(val.GetNamespace())
 			updatePlopObjects = append(updatePlopObjects, existingPLOP)
 		}
 
@@ -207,7 +207,7 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	// timestamp
 	// * If no existing PLOP is present, they will create a new closed PLOP
 	for _, val := range completedInBatch {
-		val.ClusterId = clusterID
+		val.SetClusterId(clusterID)
 		var processInfo *storage.ProcessIndicatorUniqueKey
 
 		indicatorID := getIndicatorIDForPlop(val)
@@ -234,11 +234,11 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 
 			// Update the timestamp and PodUid
 			if existingPLOP.GetClosed() {
-				existingPLOP.CloseTimestamp = val.GetCloseTimestamp()
+				existingPLOP.SetCloseTimestamp(val.GetCloseTimestamp())
 			}
-			existingPLOP.PodUid = val.GetPodUid()
-			existingPLOP.ClusterId = val.GetClusterId()
-			existingPLOP.Namespace = val.GetNamespace()
+			existingPLOP.SetPodUid(val.GetPodUid())
+			existingPLOP.SetClusterId(val.GetClusterId())
+			existingPLOP.SetNamespace(val.GetNamespace())
 			updatePlopObjects = append(updatePlopObjects, existingPLOP)
 		}
 
@@ -512,21 +512,20 @@ func addNewPLOP(plopObjects []*storage.ProcessListeningOnPortStorage,
 		return plopObjects
 	}
 
-	newPLOP := &storage.ProcessListeningOnPortStorage{
-		// XXX, ResignatingFacepalm: Use regular GENERATE ALWAYS AS
-		// IDENTITY, which would require changes in store generator
-		Id:                 uuid.NewV4().String(),
-		Port:               value.GetPort(),
-		Protocol:           value.GetProtocol(),
-		ProcessIndicatorId: indicatorID,
-		Process:            processInfo,
-		DeploymentId:       value.GetDeploymentId(),
-		PodUid:             value.GetPodUid(),
-		ClusterId:          value.GetClusterId(),
-		Namespace:          value.GetNamespace(),
-		Closed:             value.GetCloseTimestamp() != nil,
-		CloseTimestamp:     value.GetCloseTimestamp(),
-	}
+	newPLOP := &storage.ProcessListeningOnPortStorage{}
+	// XXX, ResignatingFacepalm: Use regular GENERATE ALWAYS AS
+	// IDENTITY, which would require changes in store generator
+	newPLOP.SetId(uuid.NewV4().String())
+	newPLOP.SetPort(value.GetPort())
+	newPLOP.SetProtocol(value.GetProtocol())
+	newPLOP.SetProcessIndicatorId(indicatorID)
+	newPLOP.SetProcess(processInfo)
+	newPLOP.SetDeploymentId(value.GetDeploymentId())
+	newPLOP.SetPodUid(value.GetPodUid())
+	newPLOP.SetClusterId(value.GetClusterId())
+	newPLOP.SetNamespace(value.GetNamespace())
+	newPLOP.SetClosed(value.GetCloseTimestamp() != nil)
+	newPLOP.SetCloseTimestamp(value.GetCloseTimestamp())
 
 	return append(plopObjects, newPLOP)
 }

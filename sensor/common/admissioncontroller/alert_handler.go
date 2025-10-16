@@ -86,18 +86,14 @@ func (h *alertHandlerImpl) processAlerts(alertMsg *sensor.AdmissionControlAlerts
 }
 
 func createAlertResultsMsg(alertResult *central.AlertResults) *message.ExpiringMessage {
-	return message.New(&central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id: alertResult.GetDeploymentId(),
-				Resource: &central.SensorEvent_AlertResults{
-					AlertResults: &central.AlertResults{
-						DeploymentId: alertResult.GetDeploymentId(),
-						Alerts:       alertResult.GetAlerts(),
-						Stage:        alertResult.GetStage(),
-					},
-				},
-			},
-		},
-	})
+	return message.New(central.MsgFromSensor_builder{
+		Event: central.SensorEvent_builder{
+			Id: alertResult.GetDeploymentId(),
+			AlertResults: central.AlertResults_builder{
+				DeploymentId: alertResult.GetDeploymentId(),
+				Alerts:       alertResult.GetAlerts(),
+				Stage:        alertResult.GetStage(),
+			}.Build(),
+		}.Build(),
+	}.Build())
 }

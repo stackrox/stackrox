@@ -33,31 +33,31 @@ func CheckVolumeAccessIsLimited(ctx framework.ComplianceContext) {
 		return subject.GetKind() == storage.SubjectKind_SERVICE_ACCOUNT
 	}
 
-	subjectsWithPersistentVolumeAccess := listSubjectsWithAccess(isServiceAccount, ctx.Data().K8sRoles(), ctx.Data().K8sRoleBindings(), &storage.PolicyRule{
-		Verbs:     []string{"*"},
-		ApiGroups: []string{""},
-		Resources: []string{"persistentvolumes"},
-	})
+	pr := &storage.PolicyRule{}
+	pr.SetVerbs([]string{"*"})
+	pr.SetApiGroups([]string{""})
+	pr.SetResources([]string{"persistentvolumes"})
+	subjectsWithPersistentVolumeAccess := listSubjectsWithAccess(isServiceAccount, ctx.Data().K8sRoles(), ctx.Data().K8sRoleBindings(), pr)
 	if allServiceAccounts.Cardinality() == subjectsWithPersistentVolumeAccess.Cardinality() {
 		framework.Fail(ctx, "All service accounts have unlimited persistent volume access.")
 		return
 	}
 
-	subjectsWithPersistentVolumeClaimsAccess := listSubjectsWithAccess(isServiceAccount, ctx.Data().K8sRoles(), ctx.Data().K8sRoleBindings(), &storage.PolicyRule{
-		Verbs:     []string{"*"},
-		ApiGroups: []string{""},
-		Resources: []string{"persistentvolumeclaims"},
-	})
+	pr2 := &storage.PolicyRule{}
+	pr2.SetVerbs([]string{"*"})
+	pr2.SetApiGroups([]string{""})
+	pr2.SetResources([]string{"persistentvolumeclaims"})
+	subjectsWithPersistentVolumeClaimsAccess := listSubjectsWithAccess(isServiceAccount, ctx.Data().K8sRoles(), ctx.Data().K8sRoleBindings(), pr2)
 	if allServiceAccounts.Cardinality() == subjectsWithPersistentVolumeClaimsAccess.Cardinality() {
 		framework.Fail(ctx, "All service accounts have unlimited persistent volume claims access.")
 		return
 	}
 
-	subjectsWithVolumeAttachmentAccess := listSubjectsWithAccess(isServiceAccount, ctx.Data().K8sRoles(), ctx.Data().K8sRoleBindings(), &storage.PolicyRule{
-		Verbs:     []string{"*"},
-		ApiGroups: []string{""},
-		Resources: []string{"volumeattachments"},
-	})
+	pr3 := &storage.PolicyRule{}
+	pr3.SetVerbs([]string{"*"})
+	pr3.SetApiGroups([]string{""})
+	pr3.SetResources([]string{"volumeattachments"})
+	subjectsWithVolumeAttachmentAccess := listSubjectsWithAccess(isServiceAccount, ctx.Data().K8sRoles(), ctx.Data().K8sRoleBindings(), pr3)
 	if allServiceAccounts.Cardinality() == subjectsWithVolumeAttachmentAccess.Cardinality() {
 		framework.Fail(ctx, "All service accounts have unlimited volume attachment access.")
 		return

@@ -213,9 +213,9 @@ func RunAutoComplete(ctx context.Context, queryString string, categories []v1.Se
 		return nil, errors.Wrapf(errox.InvalidArgs, "unable to parse query %q: %v", queryString, err)
 	}
 	// Set the max return size for the query
-	query.Pagination = &v1.QueryPagination{
-		Limit: pagination,
-	}
+	qp := &v1.QueryPagination{}
+	qp.SetLimit(pagination)
+	query.SetPagination(qp)
 
 	if len(categories) == 0 {
 		categories = autocompleteCategories.AsSlice()
@@ -306,7 +306,9 @@ func (s *serviceImpl) Autocomplete(ctx context.Context, req *v1.RawSearchRequest
 	if err != nil {
 		return nil, err
 	}
-	return &v1.AutocompleteResponse{Values: results}, nil
+	ar := &v1.AutocompleteResponse{}
+	ar.SetValues(results)
+	return ar, nil
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -364,7 +366,10 @@ func GlobalSearch(ctx context.Context, query string, categories []v1.SearchCateg
 	}
 	for _, category := range categories {
 		if category == v1.SearchCategory_ALERTS && !shouldProcessAlerts(parsedRequest) {
-			counts = append(counts, &v1.SearchResponse_Count{Category: category, Count: 0})
+			sc := &v1.SearchResponse_Count{}
+			sc.SetCategory(category)
+			sc.SetCount(0)
+			counts = append(counts, sc)
 			continue
 		}
 		searchFunc, ok := searchFuncMap[category]
@@ -378,7 +383,10 @@ func GlobalSearch(ctx context.Context, query string, categories []v1.SearchCateg
 			log.Errorf("error searching for %s: %v", category, err)
 			return
 		}
-		counts = append(counts, &v1.SearchResponse_Count{Category: category, Count: int64(len(resultsFromCategory))})
+		sc := &v1.SearchResponse_Count{}
+		sc.SetCategory(category)
+		sc.SetCount(int64(len(resultsFromCategory)))
+		counts = append(counts, sc)
 		results = append(results, resultsFromCategory...)
 	}
 	// Sort from highest score to lowest
@@ -392,10 +400,10 @@ func (s *serviceImpl) Search(ctx context.Context, request *v1.RawSearchRequest) 
 	if err != nil {
 		return nil, err
 	}
-	return &v1.SearchResponse{
-		Results: results,
-		Counts:  counts,
-	}, nil
+	sr := &v1.SearchResponse{}
+	sr.SetResults(results)
+	sr.SetCounts(counts)
+	return sr, nil
 }
 
 // Options returns the list of options for the given categories, defaulting to all searchable categories
@@ -409,7 +417,9 @@ func Options(categories []v1.SearchCategory) []string {
 
 // Options returns the options available for the categories specified in the request
 func (s *serviceImpl) Options(_ context.Context, request *v1.SearchOptionsRequest) (*v1.SearchOptionsResponse, error) {
-	return &v1.SearchOptionsResponse{Options: Options(request.GetCategories())}, nil
+	sor := &v1.SearchOptionsResponse{}
+	sor.SetOptions(Options(request.GetCategories()))
+	return sor, nil
 }
 
 // GetAllSearchableCategories returns a list of categories that are currently valid for global search

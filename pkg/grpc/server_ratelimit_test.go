@@ -49,9 +49,8 @@ func (s *pingServiceTestImpl) AuthFuncOverride(ctx context.Context, fullMethodNa
 func (s *pingServiceTestImpl) Ping(context.Context, *v1.Empty) (*v1.PongMessage, error) {
 	s.requestCount++
 
-	result := &v1.PongMessage{
-		Status: "test",
-	}
+	result := &v1.PongMessage{}
+	result.SetStatus("test")
 
 	return result, nil
 }

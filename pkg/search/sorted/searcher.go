@@ -52,7 +52,7 @@ func RemovePrioritySortFromQuery(q *v1.Query, field search.FieldLabel) (*v1.Quer
 		if q.GetPagination().GetSortOptions()[0].GetField() == field.String() {
 			indexQuery = q.CloneVT()
 			reversed = indexQuery.GetPagination().GetSortOptions()[0].GetReversed()
-			indexQuery.Pagination = nil
+			indexQuery.ClearPagination()
 		}
 	}
 

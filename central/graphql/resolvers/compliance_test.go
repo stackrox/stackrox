@@ -31,22 +31,22 @@ func getResultsAndDomains(rowCount int, collapseBy storage.ComplianceAggregation
 	testResults := make([]*storage.ComplianceAggregation_Result, rowCount*2)
 	for i := 0; i < rowCount*2; i += 2 {
 		// Create two results per row so tests can make sure collapsing works correctly
-		testResults[i] = &storage.ComplianceAggregation_Result{
-			AggregationKeys: []*storage.ComplianceAggregation_AggregationKey{
-				{
-					Scope: collapseBy,
-					Id:    fmt.Sprintf("%d", i),
-				},
-			},
-		}
-		testResults[i+1] = &storage.ComplianceAggregation_Result{
-			AggregationKeys: []*storage.ComplianceAggregation_AggregationKey{
-				{
-					Scope: collapseBy,
-					Id:    fmt.Sprintf("%d", i),
-				},
-			},
-		}
+		ca := &storage.ComplianceAggregation_AggregationKey{}
+		ca.SetScope(collapseBy)
+		ca.SetId(fmt.Sprintf("%d", i))
+		cr := &storage.ComplianceAggregation_Result{}
+		cr.SetAggregationKeys([]*storage.ComplianceAggregation_AggregationKey{
+			ca,
+		})
+		testResults[i] = cr
+		ca2 := &storage.ComplianceAggregation_AggregationKey{}
+		ca2.SetScope(collapseBy)
+		ca2.SetId(fmt.Sprintf("%d", i))
+		cr2 := &storage.ComplianceAggregation_Result{}
+		cr2.SetAggregationKeys([]*storage.ComplianceAggregation_AggregationKey{
+			ca2,
+		})
+		testResults[i+1] = cr2
 	}
 	testDomainMap := make(map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, len(testResults))
 	for _, result := range testResults {
@@ -114,13 +114,19 @@ func TestComplianceClusters(t *testing.T) {
 	clusterStore := clusterMocks.NewMockDataStore(mockCtrl)
 	mainResolver := &Resolver{ClusterDataStore: clusterStore}
 
+	cluster := &storage.Cluster{}
+	cluster.SetId(fixtureconsts.Cluster1)
+	cluster.SetName("Cluster 1")
+	cluster2 := &storage.Cluster{}
+	cluster2.SetId(fixtureconsts.Cluster2)
+	cluster2.SetName("Cluster 2")
 	clusterStore.EXPECT().
 		SearchRawClusters(gomock.Any(), gomock.Any()).
 		Times(1).
 		Return(
 			[]*storage.Cluster{
-				{Id: fixtureconsts.Cluster1, Name: "Cluster 1"},
-				{Id: fixtureconsts.Cluster2, Name: "Cluster 2"},
+				cluster,
+				cluster2,
 			},
 			nil,
 		)
@@ -148,9 +154,15 @@ func TestComplianceClusters(t *testing.T) {
 		fetchedScopeObjects = append(fetchedScopeObjects, objectResolver.data)
 	}
 
+	so := &v1.ScopeObject{}
+	so.SetId(fixtureconsts.Cluster1)
+	so.SetName("Cluster 1")
+	so2 := &v1.ScopeObject{}
+	so2.SetId(fixtureconsts.Cluster2)
+	so2.SetName("Cluster 2")
 	expectedScopeObjects := []*v1.ScopeObject{
-		{Id: fixtureconsts.Cluster1, Name: "Cluster 1"},
-		{Id: fixtureconsts.Cluster2, Name: "Cluster 2"},
+		so,
+		so2,
 	}
 
 	protoassert.ElementsMatch(t, expectedScopeObjects, fetchedScopeObjects)

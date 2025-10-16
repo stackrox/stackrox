@@ -352,11 +352,11 @@ func upgradePolicyJSON(json string) (string, error) {
 func ensureReadOnlySettings(policy *storage.Policy) {
 	for _, setting := range readOnlySettings {
 		if setting == common.Mitre.String() {
-			policy.MitreVectorsLocked = true
+			policy.SetMitreVectorsLocked(true)
 		}
 
 		if setting == common.Criteria.String() {
-			policy.CriteriaLocked = true
+			policy.SetCriteriaLocked(true)
 		}
 	}
 }

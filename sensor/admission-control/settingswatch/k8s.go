@@ -111,15 +111,14 @@ func parseSettings(cm *v1.ConfigMap) (*sensor.AdmissionControlSettings, error) {
 	centralEndpoint := string(cm.Data[admissioncontrol.CentralEndpointDataKey])
 	clusterID := string(cm.Data[admissioncontrol.ClusterIDDataKey])
 
-	settings := &sensor.AdmissionControlSettings{
-		ClusterConfig:              &config,
-		EnforcedDeployTimePolicies: deployTimePolicies,
-		RuntimePolicies:            runTimePolicies,
-		Timestamp:                  tsProto,
-		CacheVersion:               cacheVersion,
-		CentralEndpoint:            centralEndpoint,
-		ClusterId:                  clusterID,
-	}
+	settings := &sensor.AdmissionControlSettings{}
+	settings.SetClusterConfig(&config)
+	settings.SetEnforcedDeployTimePolicies(deployTimePolicies)
+	settings.SetRuntimePolicies(runTimePolicies)
+	settings.SetTimestamp(tsProto)
+	settings.SetCacheVersion(cacheVersion)
+	settings.SetCentralEndpoint(centralEndpoint)
+	settings.SetClusterId(clusterID)
 
 	return settings, nil
 }

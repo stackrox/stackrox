@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 	networkingV1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -47,7 +48,7 @@ func (suite *NetworkPolicyDispatcherSuite) SetupTest() {
 	// TODO(ROX-9990): Use the DeploymentStore mock
 	deployments := []*deploymentWrap{
 		{
-			Deployment: &storage.Deployment{
+			Deployment: storage.Deployment_builder{
 				Name:      "deploy-1",
 				Id:        "1",
 				Namespace: "default",
@@ -55,18 +56,18 @@ func (suite *NetworkPolicyDispatcherSuite) SetupTest() {
 					"app":  "sensor",
 					"role": "backend",
 				},
-			},
+			}.Build(),
 		},
 		{
-			Deployment: &storage.Deployment{
+			Deployment: storage.Deployment_builder{
 				Name:      "deploy-2",
 				Id:        "2",
 				Namespace: "default",
 				PodLabels: map[string]string{},
-			},
+			}.Build(),
 		},
 		{
-			Deployment: &storage.Deployment{
+			Deployment: storage.Deployment_builder{
 				Name:      "deploy-3",
 				Id:        "3",
 				Namespace: "secure",
@@ -74,17 +75,17 @@ func (suite *NetworkPolicyDispatcherSuite) SetupTest() {
 					"app":  "sensor",
 					"role": "backend",
 				},
-			},
+			}.Build(),
 		},
 		{
-			Deployment: &storage.Deployment{
+			Deployment: storage.Deployment_builder{
 				Name:      "deploy-4",
 				Id:        "4",
 				Namespace: "default",
 				PodLabels: map[string]string{
 					"app": "sensor-2",
 				},
-			},
+			}.Build(),
 		},
 	}
 
@@ -125,13 +126,11 @@ func createNetworkPolicy(id, namespace string, podSelector map[string]string) *n
 
 func createSensorEvent(np *networkingV1.NetworkPolicy, action central.ResourceAction) map[string]*central.SensorEvent {
 	return map[string]*central.SensorEvent{
-		string(np.UID): {
-			Id:     string(np.UID),
-			Action: action,
-			Resource: &central.SensorEvent_NetworkPolicy{
-				NetworkPolicy: networkPolicyConversion.KubernetesNetworkPolicyWrap{NetworkPolicy: np}.ToRoxNetworkPolicy(),
-			},
-		},
+		string(np.UID): central.SensorEvent_builder{
+			Id:            string(np.UID),
+			Action:        action,
+			NetworkPolicy: proto.ValueOrDefault(networkPolicyConversion.KubernetesNetworkPolicyWrap{NetworkPolicy: np}.ToRoxNetworkPolicy()),
+		}.Build(),
 	}
 }
 
@@ -152,10 +151,10 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 			expectedEvents: nil,
 			expectedDeployments: []*deploymentWrap{
 				{
-					Deployment: &storage.Deployment{
+					Deployment: storage.Deployment_builder{
 						Id:        "1",
 						Namespace: "default",
-					},
+					}.Build(),
 				},
 			},
 		},
@@ -166,22 +165,22 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 			expectedEvents: nil,
 			expectedDeployments: []*deploymentWrap{
 				{
-					Deployment: &storage.Deployment{
+					Deployment: storage.Deployment_builder{
 						Id:        "1",
 						Namespace: "default",
-					},
+					}.Build(),
 				},
 				{
-					Deployment: &storage.Deployment{
+					Deployment: storage.Deployment_builder{
 						Id:        "2",
 						Namespace: "default",
-					},
+					}.Build(),
 				},
 				{
-					Deployment: &storage.Deployment{
+					Deployment: storage.Deployment_builder{
 						Id:        "4",
 						Namespace: "default",
-					},
+					}.Build(),
 				},
 			},
 		},
@@ -216,10 +215,10 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 			expectedEvents: nil,
 			expectedDeployments: []*deploymentWrap{
 				{
-					Deployment: &storage.Deployment{
+					Deployment: storage.Deployment_builder{
 						Id:        "1",
 						Namespace: "default",
-					},
+					}.Build(),
 				},
 			},
 		},
@@ -230,22 +229,22 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 			expectedEvents: nil,
 			expectedDeployments: []*deploymentWrap{
 				{
-					Deployment: &storage.Deployment{
+					Deployment: storage.Deployment_builder{
 						Id:        "1",
 						Namespace: "default",
-					},
+					}.Build(),
 				},
 				{
-					Deployment: &storage.Deployment{
+					Deployment: storage.Deployment_builder{
 						Id:        "2",
 						Namespace: "default",
-					},
+					}.Build(),
 				},
 				{
-					Deployment: &storage.Deployment{
+					Deployment: storage.Deployment_builder{
 						Id:        "4",
 						Namespace: "default",
-					},
+					}.Build(),
 				},
 			},
 		},
@@ -259,22 +258,22 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 			expectedEvents: nil,
 			expectedDeployments: []*deploymentWrap{
 				{
-					Deployment: &storage.Deployment{
+					Deployment: storage.Deployment_builder{
 						Id:        "1",
 						Namespace: "default",
-					},
+					}.Build(),
 				},
 				{
-					Deployment: &storage.Deployment{
+					Deployment: storage.Deployment_builder{
 						Id:        "2",
 						Namespace: "default",
-					},
+					}.Build(),
 				},
 				{
-					Deployment: &storage.Deployment{
+					Deployment: storage.Deployment_builder{
 						Id:        "4",
 						Namespace: "default",
-					},
+					}.Build(),
 				},
 			},
 		},
@@ -288,22 +287,22 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 			expectedEvents: nil,
 			expectedDeployments: []*deploymentWrap{
 				{
-					Deployment: &storage.Deployment{
+					Deployment: storage.Deployment_builder{
 						Id:        "1",
 						Namespace: "default",
-					},
+					}.Build(),
 				},
 				{
-					Deployment: &storage.Deployment{
+					Deployment: storage.Deployment_builder{
 						Id:        "2",
 						Namespace: "default",
-					},
+					}.Build(),
 				},
 				{
-					Deployment: &storage.Deployment{
+					Deployment: storage.Deployment_builder{
 						Id:        "4",
 						Namespace: "default",
-					},
+					}.Build(),
 				},
 			},
 		},
@@ -319,16 +318,16 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 			expectedEvents: nil,
 			expectedDeployments: []*deploymentWrap{
 				{
-					Deployment: &storage.Deployment{
+					Deployment: storage.Deployment_builder{
 						Id:        "1",
 						Namespace: "default",
-					},
+					}.Build(),
 				},
 				{
-					Deployment: &storage.Deployment{
+					Deployment: storage.Deployment_builder{
 						Id:        "4",
 						Namespace: "default",
-					},
+					}.Build(),
 				},
 			},
 		},
@@ -342,10 +341,10 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 			expectedEvents: nil,
 			expectedDeployments: []*deploymentWrap{
 				{
-					Deployment: &storage.Deployment{
+					Deployment: storage.Deployment_builder{
 						Id:        "1",
 						Namespace: "default",
-					},
+					}.Build(),
 				},
 			},
 		},
@@ -356,22 +355,22 @@ func (suite *NetworkPolicyDispatcherSuite) Test_ProcessEvent() {
 			expectedEvents: nil,
 			expectedDeployments: []*deploymentWrap{
 				{
-					Deployment: &storage.Deployment{
+					Deployment: storage.Deployment_builder{
 						Id:        "1",
 						Namespace: "default",
-					},
+					}.Build(),
 				},
 				{
-					Deployment: &storage.Deployment{
+					Deployment: storage.Deployment_builder{
 						Id:        "2",
 						Namespace: "default",
-					},
+					}.Build(),
 				},
 				{
-					Deployment: &storage.Deployment{
+					Deployment: storage.Deployment_builder{
 						Id:        "4",
 						Namespace: "default",
-					},
+					}.Build(),
 				},
 			},
 		},

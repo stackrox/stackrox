@@ -221,7 +221,7 @@ func (ds *datastoreImpl) IterateOverProcessIndicatorsRiskView(ctx context.Contex
 
 	cloned := q.CloneVT()
 	// Add the select fields of the view to the query.
-	cloned.Selects = []*v1.QuerySelect{
+	cloned.SetSelects([]*v1.QuerySelect{
 		pkgSearch.NewQuerySelect(pkgSearch.ProcessID).Proto(),
 		pkgSearch.NewQuerySelect(pkgSearch.ContainerName).Proto(),
 		pkgSearch.NewQuerySelect(pkgSearch.ProcessExecPath).Proto(),
@@ -229,7 +229,7 @@ func (ds *datastoreImpl) IterateOverProcessIndicatorsRiskView(ctx context.Contex
 		pkgSearch.NewQuerySelect(pkgSearch.ProcessCreationTime).Proto(),
 		pkgSearch.NewQuerySelect(pkgSearch.ProcessName).Proto(),
 		pkgSearch.NewQuerySelect(pkgSearch.ProcessArguments).Proto(),
-	}
+	})
 
 	// We do not need the entire process indicator to process risk.  That object is large.  Use a view instead
 	err := pgSearch.RunSelectRequestForSchemaFn[views.ProcessIndicatorRiskView](ctx, ds.db, pkgSchema.ProcessIndicatorsSchema, cloned, fn)

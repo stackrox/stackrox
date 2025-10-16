@@ -95,8 +95,8 @@ func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVuln
 		zlog.Error(ctx).Err(err).Msg("internal error: converting to v4.VulnerabilityReport")
 		return nil, err
 	}
-	report.HashId = req.GetHashId()
-	report.Notes = s.notes(ctx, report)
+	report.SetHashId(req.GetHashId())
+	report.SetNotes(s.notes(ctx, report))
 	return report, nil
 }
 
@@ -110,9 +110,9 @@ func (s *matcherService) GetMetadata(ctx context.Context, _ *protocompat.Empty) 
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
 	}
-	return &v4.Metadata{
-		LastVulnerabilityUpdate: timestamp,
-	}, nil
+	metadata := &v4.Metadata{}
+	metadata.SetLastVulnerabilityUpdate(timestamp)
+	return metadata, nil
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -209,5 +209,9 @@ func (s *matcherService) GetSBOM(ctx context.Context, req *v4.GetSBOMRequest) (*
 		return nil, err
 	}
 
-	return &v4.GetSBOMResponse{Sbom: sbom}, nil
+	gsbomr := &v4.GetSBOMResponse{}
+	if sbom != nil {
+		gsbomr.SetSbom(sbom)
+	}
+	return gsbomr, nil
 }

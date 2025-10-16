@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stretchr/testify/suite"
+	"google.golang.org/protobuf/proto"
 )
 
 type configDetailsTestCase struct {
@@ -43,9 +44,7 @@ func (s *EmailFormatterTestSuite) configDetailsTestCases() []configDetailsTestCa
 			desc: "All severities, image types, fixabilities; Cves since last scheduled report",
 			snapshot: func() *storage.ReportSnapshot {
 				snap := fixtures.GetReportSnapshot()
-				snap.GetVulnReportFilters().CvesSince = &storage.VulnerabilityReportFilters_SinceLastSentScheduledReport{
-					SinceLastSentScheduledReport: true,
-				}
+				snap.GetVulnReportFilters().SetSinceLastSentScheduledReport(true)
 				return snap
 			}(),
 			expectedHTML: `<div>
@@ -131,18 +130,16 @@ func (s *EmailFormatterTestSuite) configDetailsTestCases() []configDetailsTestCa
 			desc: "Critical severity, fixable CVEs, Deployed Images; Cves since custom date",
 			snapshot: func() *storage.ReportSnapshot {
 				snap := fixtures.GetReportSnapshot()
-				snap.GetVulnReportFilters().Severities = []storage.VulnerabilitySeverity{
+				snap.GetVulnReportFilters().SetSeverities([]storage.VulnerabilitySeverity{
 					storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-				}
-				snap.GetVulnReportFilters().Fixability = storage.VulnerabilityReportFilters_FIXABLE
-				snap.GetVulnReportFilters().ImageTypes = []storage.VulnerabilityReportFilters_ImageType{
+				})
+				snap.GetVulnReportFilters().SetFixability(storage.VulnerabilityReportFilters_FIXABLE)
+				snap.GetVulnReportFilters().SetImageTypes([]storage.VulnerabilityReportFilters_ImageType{
 					storage.VulnerabilityReportFilters_DEPLOYED,
-				}
+				})
 				dateTs, err := protocompat.ConvertTimeToTimestampOrError(timeutil.MustParse("2006-01-02 15:04:05", "2023-01-20 22:42:02"))
 				s.Require().NoError(err)
-				snap.GetVulnReportFilters().CvesSince = &storage.VulnerabilityReportFilters_SinceStartDate{
-					SinceStartDate: dateTs,
-				}
+				snap.GetVulnReportFilters().SetSinceStartDate(proto.ValueOrDefault(dateTs))
 				return snap
 			}(),
 			expectedHTML: `<div>

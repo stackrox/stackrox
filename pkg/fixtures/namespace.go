@@ -7,20 +7,20 @@ import (
 
 // GetNamespace returns a mock `*storage.NamespaceMetadata` object.
 func GetNamespace(clusterID, clusterName, namespace string) *storage.NamespaceMetadata {
-	return &storage.NamespaceMetadata{
-		Id:          uuid.NewV4().String(),
-		Name:        namespace,
-		ClusterId:   clusterID,
-		ClusterName: clusterName,
-	}
+	nm := &storage.NamespaceMetadata{}
+	nm.SetId(uuid.NewV4().String())
+	nm.SetName(namespace)
+	nm.SetClusterId(clusterID)
+	nm.SetClusterName(clusterName)
+	return nm
 }
 
 // GetScopedNamespace returns a mock *storage.NamespaceMetadata object.
 func GetScopedNamespace(ID string, clusterID string, namespace string) *storage.NamespaceMetadata {
-	return &storage.NamespaceMetadata{
-		Id:          ID,
-		Name:        namespace,
-		ClusterId:   clusterID,
-		ClusterName: clusterID,
-	}
+	nm := &storage.NamespaceMetadata{}
+	nm.SetId(ID)
+	nm.SetName(namespace)
+	nm.SetClusterId(clusterID)
+	nm.SetClusterName(clusterID)
+	return nm
 }

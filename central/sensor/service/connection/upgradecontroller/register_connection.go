@@ -95,7 +95,8 @@ func (u *upgradeController) maybeTriggerAutoUpgrade() {
 func (u *upgradeController) reconcileInitialUpgradeStatus(sensorVersion string, conn SensorConn) {
 	upgradability, reason := determineUpgradabilityFromVersionInfoAndConn(sensorVersion, conn)
 	log.Infof("Determined upgradability status for sensor from cluster %s: %s. Reason: %s", u.clusterID, upgradability, reason)
-	u.upgradeStatus.Upgradability, u.upgradeStatus.UpgradabilityStatusReason = upgradability, reason
+	u.upgradeStatus.SetUpgradability(upgradability)
+	u.upgradeStatus.SetUpgradabilityStatusReason(reason)
 	u.upgradeStatusChanged = true // we don't check for this but sensor checking in should be comparatively rare
 
 	// No active upgrade process. Maybe trigger an auto-upgrade.

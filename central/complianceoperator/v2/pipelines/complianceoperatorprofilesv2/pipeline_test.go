@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestPipeline(t *testing.T) {
@@ -51,17 +52,13 @@ func (s *PipelineTestSuite) TestRunCreate() {
 	pipeline := NewPipeline(s.v2ProfileDS)
 	s.v2ProfileDS.EXPECT().UpsertProfile(ctx, testutils.GetProfileV2Storage(s.T())).Return(nil).Times(1)
 
-	msg := &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id:     testutils.ProfileUID,
-				Action: central.ResourceAction_CREATE_RESOURCE,
-				Resource: &central.SensorEvent_ComplianceOperatorProfileV2{
-					ComplianceOperatorProfileV2: testutils.GetProfileV2SensorMsg(s.T()),
-				},
-			},
-		},
-	}
+	se := &central.SensorEvent{}
+	se.SetId(testutils.ProfileUID)
+	se.SetAction(central.ResourceAction_CREATE_RESOURCE)
+	se.SetComplianceOperatorProfileV2(proto.ValueOrDefault(testutils.GetProfileV2SensorMsg(s.T())))
+	msg := central.MsgFromSensor_builder{
+		Event: se,
+	}.Build()
 
 	err := pipeline.Run(ctx, fixtureconsts.Cluster1, msg, nil)
 	s.NoError(err)
@@ -73,17 +70,13 @@ func (s *PipelineTestSuite) TestRunDelete() {
 	pipeline := NewPipeline(s.v2ProfileDS)
 	s.v2ProfileDS.EXPECT().DeleteProfileForCluster(ctx, testutils.ProfileUID, fixtureconsts.Cluster1).Return(nil).Times(1)
 
-	msg := &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id:     testutils.ProfileUID,
-				Action: central.ResourceAction_REMOVE_RESOURCE,
-				Resource: &central.SensorEvent_ComplianceOperatorProfileV2{
-					ComplianceOperatorProfileV2: testutils.GetProfileV2SensorMsg(s.T()),
-				},
-			},
-		},
-	}
+	se := &central.SensorEvent{}
+	se.SetId(testutils.ProfileUID)
+	se.SetAction(central.ResourceAction_REMOVE_RESOURCE)
+	se.SetComplianceOperatorProfileV2(proto.ValueOrDefault(testutils.GetProfileV2SensorMsg(s.T())))
+	msg := central.MsgFromSensor_builder{
+		Event: se,
+	}.Build()
 
 	err := pipeline.Run(ctx, fixtureconsts.Cluster1, msg, nil)
 	s.NoError(err)

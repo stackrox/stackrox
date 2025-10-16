@@ -9,34 +9,34 @@ import (
 func ComplianceV2Profile(incoming *storage.ComplianceOperatorProfileV2, benchmarks []*storage.ComplianceOperatorBenchmarkV2) *v2.ComplianceProfile {
 	rules := make([]*v2.ComplianceRule, 0, len(incoming.GetRules()))
 	for _, rule := range incoming.GetRules() {
-		rules = append(rules, &v2.ComplianceRule{
-			Name: rule.GetRuleName(),
-		})
+		cr := &v2.ComplianceRule{}
+		cr.SetName(rule.GetRuleName())
+		rules = append(rules, cr)
 	}
 
 	convertedBenchmarks := make([]*v2.ComplianceBenchmark, 0, len(benchmarks))
 	for _, benchmark := range benchmarks {
-		convertedBenchmarks = append(convertedBenchmarks, &v2.ComplianceBenchmark{
-			Name:        benchmark.GetName(),
-			Version:     benchmark.GetVersion(),
-			Description: benchmark.GetDescription(),
-			Provider:    benchmark.GetProvider(),
-			ShortName:   benchmark.GetShortName(),
-		})
+		cb := &v2.ComplianceBenchmark{}
+		cb.SetName(benchmark.GetName())
+		cb.SetVersion(benchmark.GetVersion())
+		cb.SetDescription(benchmark.GetDescription())
+		cb.SetProvider(benchmark.GetProvider())
+		cb.SetShortName(benchmark.GetShortName())
+		convertedBenchmarks = append(convertedBenchmarks, cb)
 	}
 
-	return &v2.ComplianceProfile{
-		Id:             incoming.GetId(),
-		Name:           incoming.GetName(),
-		ProfileVersion: incoming.GetProfileVersion(),
-		ProductType:    incoming.GetProductType(),
-		Standards:      convertedBenchmarks,
-		Description:    incoming.GetDescription(),
-		Rules:          rules,
-		Product:        incoming.GetProduct(),
-		Title:          incoming.GetTitle(),
-		Values:         incoming.GetValues(),
-	}
+	cp := &v2.ComplianceProfile{}
+	cp.SetId(incoming.GetId())
+	cp.SetName(incoming.GetName())
+	cp.SetProfileVersion(incoming.GetProfileVersion())
+	cp.SetProductType(incoming.GetProductType())
+	cp.SetStandards(convertedBenchmarks)
+	cp.SetDescription(incoming.GetDescription())
+	cp.SetRules(rules)
+	cp.SetProduct(incoming.GetProduct())
+	cp.SetTitle(incoming.GetTitle())
+	cp.SetValues(incoming.GetValues())
+	return cp
 }
 
 // ComplianceV2Profiles converts V2 storage objects to V2 API objects
@@ -60,13 +60,13 @@ func ComplianceProfileSummary(incoming []*storage.ComplianceOperatorProfileV2, b
 	for profileName, benchmarks := range benchmarkProfileMap {
 		convertedBenchmarks := make([]*v2.ComplianceBenchmark, 0, len(benchmarks))
 		for _, benchmark := range benchmarks {
-			convertedBenchmarks = append(convertedBenchmarks, &v2.ComplianceBenchmark{
-				Name:        benchmark.GetName(),
-				Version:     benchmark.GetVersion(),
-				Description: benchmark.GetDescription(),
-				Provider:    benchmark.GetProvider(),
-				ShortName:   benchmark.GetShortName(),
-			})
+			cb := &v2.ComplianceBenchmark{}
+			cb.SetName(benchmark.GetName())
+			cb.SetVersion(benchmark.GetVersion())
+			cb.SetDescription(benchmark.GetDescription())
+			cb.SetProvider(benchmark.GetProvider())
+			cb.SetShortName(benchmark.GetShortName())
+			convertedBenchmarks = append(convertedBenchmarks, cb)
 		}
 		profileBenchmarkNameMap[profileName] = convertedBenchmarks
 	}
@@ -85,15 +85,15 @@ func ComplianceProfileSummary(incoming []*storage.ComplianceOperatorProfileV2, b
 			profileClusterMap[summary.GetName()] = append(profileClusters, summary.GetClusterId())
 		}
 		if _, found := profileSummaryMap[summary.GetName()]; !found {
-			profileSummaryMap[summary.GetName()] = &v2.ComplianceProfileSummary{
-				Name:           summary.GetName(),
-				ProductType:    summary.GetProductType(),
-				Description:    summary.GetDescription(),
-				Title:          summary.GetTitle(),
-				RuleCount:      int32(len(summary.GetRules())),
-				ProfileVersion: summary.GetProfileVersion(),
-				Standards:      profileBenchmarkNameMap[summary.GetName()],
-			}
+			cps := &v2.ComplianceProfileSummary{}
+			cps.SetName(summary.GetName())
+			cps.SetProductType(summary.GetProductType())
+			cps.SetDescription(summary.GetDescription())
+			cps.SetTitle(summary.GetTitle())
+			cps.SetRuleCount(int32(len(summary.GetRules())))
+			cps.SetProfileVersion(summary.GetProfileVersion())
+			cps.SetStandards(profileBenchmarkNameMap[summary.GetName()])
+			profileSummaryMap[summary.GetName()] = cps
 			orderedProfiles = append(orderedProfiles, summary.GetName())
 		}
 	}

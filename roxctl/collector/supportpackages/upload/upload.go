@@ -60,7 +60,7 @@ func (cmd *collectorSPUploadCommand) retrieveExistingProbeFiles(probeFilesInPack
 
 	req := &v1.GetExistingProbesRequest{}
 	for probeFileName := range probeFilesInPackage {
-		req.FilesToCheck = append(req.FilesToCheck, probeFileName)
+		req.SetFilesToCheck(append(req.GetFilesToCheck(), probeFileName))
 	}
 
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), cmd.timeout)
@@ -102,11 +102,11 @@ func buildUploadManifest(probeFilesInPackage map[string]*zip.File, existingFiles
 	mf := &v1.ProbeUploadManifest{}
 	readerFuncs := make([]func() io.Reader, 0, len(probeFilesInPackage))
 	for fileName, pkgEntry := range probeFilesInPackage {
-		mf.Files = append(mf.Files, &v1.ProbeUploadManifest_File{
-			Name:  fileName,
-			Size:  int64(pkgEntry.UncompressedSize64),
-			Crc32: pkgEntry.CRC32,
-		})
+		pf := &v1.ProbeUploadManifest_File{}
+		pf.SetName(fileName)
+		pf.SetSize(int64(pkgEntry.UncompressedSize64))
+		pf.SetCrc32(pkgEntry.CRC32)
+		mf.SetFiles(append(mf.GetFiles(), pf))
 		readerFuncs = append(readerFuncs, readerFuncForZipEntry(pkgEntry))
 	}
 

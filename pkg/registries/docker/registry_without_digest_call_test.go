@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 type fakeRegistry struct {
@@ -49,13 +50,11 @@ func TestMetadataFallback(t *testing.T) {
 			s := httptest.NewServer(http.HandlerFunc(fr.HandlerFunc))
 			defer s.Close()
 
-			r, err := NewRegistryWithoutManifestCall(&storage.ImageIntegration{
-				IntegrationConfig: &storage.ImageIntegration_Docker{
-					Docker: &storage.DockerConfig{
-						Endpoint: s.URL,
-					},
-				},
-			}, true, nil)
+			dc := &storage.DockerConfig{}
+			dc.SetEndpoint(s.URL)
+			ii := &storage.ImageIntegration{}
+			ii.SetDocker(proto.ValueOrDefault(dc))
+			r, err := NewRegistryWithoutManifestCall(ii, true, nil)
 			require.NoError(t, err)
 
 			imgStr := fmt.Sprintf("%s/%s:%s", urlfmt.TrimHTTPPrefixes(s.URL), "repo/path", "tag")

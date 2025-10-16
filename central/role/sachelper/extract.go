@@ -24,10 +24,9 @@ func extractScopeElements(results []search.Result, optionsMap search.OptionsMap,
 		if len(objName) == 0 {
 			objName = fmt.Sprintf("%s with ID %s", searchedField, objID)
 		}
-		element := &v1.ScopeObject{
-			Id:   objID,
-			Name: objName,
-		}
+		element := &v1.ScopeObject{}
+		element.SetId(objID)
+		element.SetName(objName)
 		scopeElements = append(scopeElements, element)
 	}
 	return scopeElements

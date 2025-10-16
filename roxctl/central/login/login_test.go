@@ -31,17 +31,17 @@ import (
 )
 
 func TestVerifyLoginAuthProviders_Successful(t *testing.T) {
+	gl := &v1.GetLoginAuthProvidersResponse_LoginAuthProvider{}
+	gl.SetId("1")
+	gl.SetName("basic")
+	gl.SetType(basic.TypeName)
+	gl2 := &v1.GetLoginAuthProvidersResponse_LoginAuthProvider{}
+	gl2.SetId("2")
+	gl2.SetName("oidc")
+	gl2.SetType(oidc.TypeName)
 	server := httptest.NewServer(loginAuthProvidersHandle(t, []*v1.GetLoginAuthProvidersResponse_LoginAuthProvider{
-		{
-			Id:   "1",
-			Name: "basic",
-			Type: basic.TypeName,
-		},
-		{
-			Id:   "2",
-			Name: "oidc",
-			Type: oidc.TypeName,
-		},
+		gl,
+		gl2,
 	}))
 	defer server.Close()
 
@@ -84,12 +84,12 @@ func TestVerifyLoginAuthProviders_RawResponseData_Successful(t *testing.T) {
 }
 
 func TestVerifyLoginAuthProviders_Failure(t *testing.T) {
+	gl := &v1.GetLoginAuthProvidersResponse_LoginAuthProvider{}
+	gl.SetId("1")
+	gl.SetName("basic")
+	gl.SetType(basic.TypeName)
 	server := httptest.NewServer(loginAuthProvidersHandle(t, []*v1.GetLoginAuthProvidersResponse_LoginAuthProvider{
-		{
-			Id:   "1",
-			Name: "basic",
-			Type: basic.TypeName,
-		},
+		gl,
 	}))
 	defer server.Close()
 
@@ -113,9 +113,9 @@ func loginAuthProvidersHandle(t *testing.T, providers []*v1.GetLoginAuthProvider
 		reqBodyData, err := sysIO.ReadAll(body)
 		assert.NoError(t, err)
 		assert.Len(t, reqBodyData, 0)
-		assert.NoError(t, jsonutil.MarshalPretty(writer, &v1.GetLoginAuthProvidersResponse{
-			AuthProviders: providers,
-		}))
+		glapr := &v1.GetLoginAuthProvidersResponse{}
+		glapr.SetAuthProviders(providers)
+		assert.NoError(t, jsonutil.MarshalPretty(writer, glapr))
 	}
 }
 

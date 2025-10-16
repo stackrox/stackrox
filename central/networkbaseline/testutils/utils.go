@@ -13,29 +13,27 @@ func GetBaselineWithCustomDeploymentFlow(
 	flowPort uint32,
 ) *storage.NetworkBaseline {
 	baseline := fixtures.GetNetworkBaseline()
-	baseline.Peers = []*storage.NetworkBaselinePeer{
-		{
-			Entity: &storage.NetworkEntity{
-				Info: &storage.NetworkEntityInfo{
+	baseline.SetPeers([]*storage.NetworkBaselinePeer{
+		storage.NetworkBaselinePeer_builder{
+			Entity: storage.NetworkEntity_builder{
+				Info: storage.NetworkEntityInfo_builder{
 					Type: storage.NetworkEntityInfo_DEPLOYMENT,
 					Id:   entityID,
-					Desc: &storage.NetworkEntityInfo_Deployment_{
-						Deployment: &storage.NetworkEntityInfo_Deployment{
-							Name: deploymentName,
-						},
-					},
-				},
-				Scope: &storage.NetworkEntity_Scope{ClusterId: entityClusterID},
-			},
+					Deployment: storage.NetworkEntityInfo_Deployment_builder{
+						Name: deploymentName,
+					}.Build(),
+				}.Build(),
+				Scope: storage.NetworkEntity_Scope_builder{ClusterId: entityClusterID}.Build(),
+			}.Build(),
 			Properties: []*storage.NetworkBaselineConnectionProperties{
-				{
+				storage.NetworkBaselineConnectionProperties_builder{
 					Ingress:  flowIsIngress,
 					Port:     flowPort,
 					Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-				},
+				}.Build(),
 			},
-		},
-	}
+		}.Build(),
+	})
 
 	return baseline
 }
@@ -46,24 +44,24 @@ func GetBaselineWithInternet(
 	flowPort uint32,
 ) *storage.NetworkBaseline {
 	baseline := fixtures.GetNetworkBaseline()
-	baseline.Peers = []*storage.NetworkBaselinePeer{
-		{
-			Entity: &storage.NetworkEntity{
-				Info: &storage.NetworkEntityInfo{
+	baseline.SetPeers([]*storage.NetworkBaselinePeer{
+		storage.NetworkBaselinePeer_builder{
+			Entity: storage.NetworkEntity_builder{
+				Info: storage.NetworkEntityInfo_builder{
 					Type: storage.NetworkEntityInfo_INTERNET,
 					Id:   networkgraph.InternetExternalSourceID,
-				},
-				Scope: &storage.NetworkEntity_Scope{ClusterId: entityClusterID},
-			},
+				}.Build(),
+				Scope: storage.NetworkEntity_Scope_builder{ClusterId: entityClusterID}.Build(),
+			}.Build(),
 			Properties: []*storage.NetworkBaselineConnectionProperties{
-				{
+				storage.NetworkBaselineConnectionProperties_builder{
 					Ingress:  flowIsIngress,
 					Port:     flowPort,
 					Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-				},
+				}.Build(),
 			},
-		},
-	}
+		}.Build(),
+	})
 
 	return baseline
 }

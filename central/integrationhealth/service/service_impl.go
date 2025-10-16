@@ -59,9 +59,9 @@ func (s *serviceImpl) GetImageIntegrations(ctx context.Context, _ *v1.Empty) (*v
 	if err != nil {
 		return nil, err
 	}
-	return &v1.GetIntegrationHealthResponse{
-		IntegrationHealth: healthData,
-	}, nil
+	gihr := &v1.GetIntegrationHealthResponse{}
+	gihr.SetIntegrationHealth(healthData)
+	return gihr, nil
 }
 
 // GetNotifiers returns the health status for all configured notifiers.
@@ -70,9 +70,9 @@ func (s *serviceImpl) GetNotifiers(ctx context.Context, _ *v1.Empty) (*v1.GetInt
 	if err != nil {
 		return nil, err
 	}
-	return &v1.GetIntegrationHealthResponse{
-		IntegrationHealth: healthData,
-	}, nil
+	gihr := &v1.GetIntegrationHealthResponse{}
+	gihr.SetIntegrationHealth(healthData)
+	return gihr, nil
 }
 
 // GetBackupPlugins returns the health status for all configured external backup integrations.
@@ -81,9 +81,9 @@ func (s *serviceImpl) GetBackupPlugins(ctx context.Context, _ *v1.Empty) (*v1.Ge
 	if err != nil {
 		return nil, err
 	}
-	return &v1.GetIntegrationHealthResponse{
-		IntegrationHealth: healthData,
-	}, nil
+	gihr := &v1.GetIntegrationHealthResponse{}
+	gihr.SetIntegrationHealth(healthData)
+	return gihr, nil
 }
 
 // GetDeclarativeConfigs returns the health status for all declarative configurations.
@@ -92,7 +92,9 @@ func (s *serviceImpl) GetDeclarativeConfigs(ctx context.Context, _ *v1.Empty) (*
 	if err != nil {
 		return nil, err
 	}
-	return &v1.GetIntegrationHealthResponse{IntegrationHealth: healthData}, nil
+	gihr := &v1.GetIntegrationHealthResponse{}
+	gihr.SetIntegrationHealth(healthData)
+	return gihr, nil
 }
 
 func (s *serviceImpl) GetVulnDefinitionsInfo(_ context.Context, req *v1.VulnDefinitionsInfoRequest) (*v1.VulnDefinitionsInfo, error) {

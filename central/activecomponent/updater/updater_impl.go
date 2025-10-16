@@ -46,7 +46,7 @@ type imageExecutable struct {
 
 func clearExecutables(image *storage.Image) {
 	for _, component := range image.GetScan().GetComponents() {
-		component.Executables = nil
+		component.SetExecutables(nil)
 	}
 }
 
@@ -94,7 +94,7 @@ func (u *updaterImpl) getExecToComponentsMap(imageScan *storage.ImageScan) map[s
 			execToComponents[exec.GetPath()] = append(execToComponents[exec.GetPath()], exec.GetDependencies()...)
 		}
 		// Remove the executables to save some memory. The same image won't be processed again.
-		component.Executables = nil
+		component.SetExecutables(nil)
 	}
 	return execToComponents
 }
@@ -160,7 +160,9 @@ func (u *updaterImpl) updateForDeployment(ctx context.Context, deploymentID stri
 			return errors.Wrapf(err, "failed to get active executables for deployment %s container %s", deploymentID, update.ContainerName)
 		}
 
-		activeContext := &storage.ActiveComponent_ActiveContext{ContainerName: update.ContainerName, ImageId: update.ImageID}
+		activeContext := &storage.ActiveComponent_ActiveContext{}
+		activeContext.SetContainerName(update.ContainerName)
+		activeContext.SetImageId(update.ImageID)
 		for _, execPath := range execPaths.AsSlice() {
 			componentIDs, ok := execToComponents[execPath]
 			if !ok {
@@ -218,12 +220,11 @@ func (u *updaterImpl) createActiveComponentsAndUpdateDb(ctx context.Context, dep
 			utils.Should(err)
 			continue
 		}
-		newAc := &storage.ActiveComponent{
-			Id:                  id,
-			DeploymentId:        deploymentID,
-			ComponentId:         componentID,
-			ActiveContextsSlice: converter.ConvertActiveContextsMapToSlice(activeContexts),
-		}
+		newAc := &storage.ActiveComponent{}
+		newAc.SetId(id)
+		newAc.SetDeploymentId(deploymentID)
+		newAc.SetComponentId(componentID)
+		newAc.SetActiveContextsSlice(converter.ConvertActiveContextsMapToSlice(activeContexts))
 		activeComponents = append(activeComponents, newAc)
 	}
 	log.Debugf("Upserting %d active components and deleting %d for deployment %s", len(activeComponents), len(acToRemove), deploymentID)
@@ -269,7 +270,7 @@ func merge(base *storage.ActiveComponent, subtrahend set.StringSet, addend map[s
 		}
 	}
 
-	base.ActiveContextsSlice = converter.ConvertActiveContextsMapToSlice(contexts)
+	base.SetActiveContextsSlice(converter.ConvertActiveContextsMapToSlice(contexts))
 
 	if len(contexts) == 0 {
 		return nil, true

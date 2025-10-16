@@ -193,10 +193,9 @@ func (s *service) FetchCertificate(ctx context.Context, req *sensor.FetchCertifi
 		return nil, err
 	}
 
-	resp := &sensor.FetchCertificateResponse{
-		PemCert: certPEM,
-		PemKey:  keyPEM,
-	}
+	resp := &sensor.FetchCertificateResponse{}
+	resp.SetPemCert(certPEM)
+	resp.SetPemKey(keyPEM)
 
 	return resp, nil
 }

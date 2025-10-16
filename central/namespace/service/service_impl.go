@@ -62,9 +62,9 @@ func (s *serviceImpl) GetNamespaces(ctx context.Context, req *v1.GetNamespaceReq
 	if err != nil {
 		return nil, errors.Errorf("Failed to retrieve namespaces: %v", err)
 	}
-	return &v1.GetNamespacesResponse{
-		Namespaces: namespaces,
-	}, nil
+	gnr := &v1.GetNamespacesResponse{}
+	gnr.SetNamespaces(namespaces)
+	return gnr, nil
 }
 
 func (s *serviceImpl) GetNamespace(ctx context.Context, req *v1.ResourceByID) (*v1.Namespace, error) {

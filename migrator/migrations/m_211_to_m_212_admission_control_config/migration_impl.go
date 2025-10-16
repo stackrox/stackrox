@@ -54,10 +54,10 @@ func fixAdmissionControllerConfig(ctx context.Context, database *gorm.DB) error 
 			if proto.GetHelmConfig() == nil {
 				if proto.GetDynamicConfig() != nil && proto.GetDynamicConfig().GetAdmissionControllerConfig() != nil {
 					ac := proto.GetDynamicConfig().GetAdmissionControllerConfig()
-					ac.ScanInline = true
+					ac.SetScanInline(true)
 					if ac.GetEnabled() || ac.GetEnforceOnUpdates() {
-						ac.Enabled = true
-						ac.EnforceOnUpdates = true
+						ac.SetEnabled(true)
+						ac.SetEnforceOnUpdates(true)
 					}
 				}
 

@@ -175,12 +175,11 @@ func (g *defaultExtSrcsGathererImpl) writeLocalChecksum(store blobstore.Datastor
 	g.mutex.Lock()
 	defer g.mutex.Unlock()
 
-	b := &storage.Blob{
-		Name:         defaultexternalsrcs.LocalChecksumBlobPath,
-		Length:       int64(len(checksum)),
-		LastUpdated:  protocompat.TimestampNow(),
-		ModifiedTime: protocompat.TimestampNow(),
-	}
+	b := &storage.Blob{}
+	b.SetName(defaultexternalsrcs.LocalChecksumBlobPath)
+	b.SetLength(int64(len(checksum)))
+	b.SetLastUpdated(protocompat.TimestampNow())
+	b.SetModifiedTime(protocompat.TimestampNow())
 	buf := bytes.NewBuffer(checksum)
 	if err := store.Upsert(blobAccessCtx, b, buf); err != nil {
 		return errors.Wrapf(err, "writing provider networks checksum %s", defaultexternalsrcs.LocalChecksumBlobPath)

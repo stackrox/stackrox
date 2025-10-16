@@ -66,23 +66,22 @@ func (s *deploymentScorerImpl) Score(ctx context.Context, deployment *storage.De
 		return nil
 	}
 
-	risk := &storage.Risk{
-		Score:   overallScore,
-		Results: riskResults,
-		Subject: &storage.RiskSubject{
-			Id:        deployment.GetId(),
-			Type:      storage.RiskSubjectType_DEPLOYMENT,
-			Namespace: deployment.GetNamespace(),
-			ClusterId: deployment.GetClusterId(),
-		},
-	}
+	rs := &storage.RiskSubject{}
+	rs.SetId(deployment.GetId())
+	rs.SetType(storage.RiskSubjectType_DEPLOYMENT)
+	rs.SetNamespace(deployment.GetNamespace())
+	rs.SetClusterId(deployment.GetClusterId())
+	risk := &storage.Risk{}
+	risk.SetScore(overallScore)
+	risk.SetResults(riskResults)
+	risk.SetSubject(rs)
 
 	riskID, err := datastore.GetID(risk.GetSubject().GetId(), risk.GetSubject().GetType())
 	if err != nil {
 		log.Error(err)
 		return nil
 	}
-	risk.Id = riskID
+	risk.SetId(riskID)
 
 	return risk
 }

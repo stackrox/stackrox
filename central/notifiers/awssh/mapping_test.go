@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestAllDefaultCategoriesHaveMappings(t *testing.T) {
@@ -36,22 +37,19 @@ func TestAllDefaultCategoriesHaveMappings(t *testing.T) {
 }
 
 func TestGetEntitySectionResourceAlert(t *testing.T) {
-	testAuditLogAlert := storage.Alert{
-		Id: "audit-1",
-		Policy: &storage.Policy{
-			Id: "policy-1",
-		},
-		Entity: &storage.Alert_Resource_{
-			Resource: &storage.Alert_Resource{
-				Name:         "secret1",
-				ClusterId:    "cluster-1",
-				ClusterName:  "cluster1",
-				Namespace:    "namespace1",
-				NamespaceId:  "namespace-1",
-				ResourceType: storage.Alert_Resource_SECRETS,
-			},
-		},
-	}
+	policy := &storage.Policy{}
+	policy.SetId("policy-1")
+	ar := &storage.Alert_Resource{}
+	ar.SetName("secret1")
+	ar.SetClusterId("cluster-1")
+	ar.SetClusterName("cluster1")
+	ar.SetNamespace("namespace1")
+	ar.SetNamespaceId("namespace-1")
+	ar.SetResourceType(storage.Alert_Resource_SECRETS)
+	testAuditLogAlert := &storage.Alert{}
+	testAuditLogAlert.SetId("audit-1")
+	testAuditLogAlert.SetPolicy(policy)
+	testAuditLogAlert.SetResource(proto.ValueOrDefault(ar))
 
 	expectedResource := securityhubTypes.Resource{
 		Id:   aws.String("resource: secret1"),
@@ -74,21 +72,18 @@ func TestGetEntitySectionResourceAlert(t *testing.T) {
 }
 
 func TestGetEntitySectionDeploymentAlert(t *testing.T) {
-	testDeploymentAlert := storage.Alert{
-		Id: "audit-1",
-		Policy: &storage.Policy{
-			Id: "policy-1",
-		},
-		Entity: &storage.Alert_Deployment_{
-			Deployment: &storage.Alert_Deployment{
-				Name:        "deployment1",
-				ClusterId:   "cluster-1",
-				ClusterName: "cluster1",
-				Namespace:   "namespace1",
-				NamespaceId: "namespace-1",
-			},
-		},
-	}
+	policy := &storage.Policy{}
+	policy.SetId("policy-1")
+	ad := &storage.Alert_Deployment{}
+	ad.SetName("deployment1")
+	ad.SetClusterId("cluster-1")
+	ad.SetClusterName("cluster1")
+	ad.SetNamespace("namespace1")
+	ad.SetNamespaceId("namespace-1")
+	testDeploymentAlert := &storage.Alert{}
+	testDeploymentAlert.SetId("audit-1")
+	testDeploymentAlert.SetPolicy(policy)
+	testDeploymentAlert.SetDeployment(proto.ValueOrDefault(ad))
 	expectedResource := securityhubTypes.Resource{
 		Id:   aws.String("deployment: deployment1"),
 		Type: aws.String(resourceTypeOther),

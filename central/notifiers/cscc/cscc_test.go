@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestCSCC(t *testing.T) {
@@ -23,102 +24,93 @@ func TestCSCC(t *testing.T) {
 		config: &config{
 			SourceID: sourceID,
 		},
-		Notifier: &storage.Notifier{
+		Notifier: storage.Notifier_builder{
 			Name:       "FakeSCC",
 			UiEndpoint: "https://central.stackrox",
 			Type:       "scc",
-			Config: &storage.Notifier_Cscc{
-				Cscc: &storage.CSCC{
-					ServiceAccount: "test_service_account",
-					SourceId:       sourceID,
-				},
-			},
-		},
+			Cscc: storage.CSCC_builder{
+				ServiceAccount: "test_service_account",
+				SourceId:       sourceID,
+			}.Build(),
+		}.Build(),
 	}
 
 	clusterStore := clusterMocks.NewMockDataStore(gomock.NewController(t))
-	alert := &storage.Alert{
-		Id: alertID,
-		Policy: &storage.Policy{
-			Id:             "myPolicyID",
-			Name:           "myPolicy",
-			Description:    "Fake policy",
-			PolicySections: []*storage.PolicySection{},
-			Severity:       storage.Severity_HIGH_SEVERITY,
-		},
-		Entity: &storage.Alert_Deployment_{Deployment: &storage.Alert_Deployment{
-			Name:      "myDeployment",
-			Id:        "myDeploymentID",
-			ClusterId: clusterID,
-		}},
-		Time: protocompat.TimestampNow(),
-	}
+	policy := &storage.Policy{}
+	policy.SetId("myPolicyID")
+	policy.SetName("myPolicy")
+	policy.SetDescription("Fake policy")
+	policy.SetPolicySections([]*storage.PolicySection{})
+	policy.SetSeverity(storage.Severity_HIGH_SEVERITY)
+	ad := &storage.Alert_Deployment{}
+	ad.SetName("myDeployment")
+	ad.SetId("myDeploymentID")
+	ad.SetClusterId(clusterID)
+	alert := &storage.Alert{}
+	alert.SetId(alertID)
+	alert.SetPolicy(policy)
+	alert.SetDeployment(proto.ValueOrDefault(ad))
+	alert.SetTime(protocompat.TimestampNow())
 
 	cases := map[string]struct {
 		mockCluster  *storage.Cluster
 		resourceName string
 	}{
 		"alert associated with a GKE cluster": {
-			mockCluster: &storage.Cluster{
+			mockCluster: storage.Cluster_builder{
 				Id:   "test_id",
 				Name: "test_cluster",
-				Status: &storage.ClusterStatus{
-					ProviderMetadata: &storage.ProviderMetadata{
+				Status: storage.ClusterStatus_builder{
+					ProviderMetadata: storage.ProviderMetadata_builder{
 						Region: "test_region",
-						Provider: &storage.ProviderMetadata_Google{
-							Google: &storage.GoogleProviderMetadata{
-								Project:     "test_project",
-								ClusterName: "test_cluster",
-							},
-						},
-						Cluster: &storage.ClusterMetadata{
+						Google: storage.GoogleProviderMetadata_builder{
+							Project:     "test_project",
+							ClusterName: "test_cluster",
+						}.Build(),
+						Cluster: storage.ClusterMetadata_builder{
 							Type: storage.ClusterMetadata_GKE,
-						},
-					},
-				},
-			},
+						}.Build(),
+					}.Build(),
+				}.Build(),
+			}.Build(),
 			resourceName: "//container.googleapis.com/projects/test_project/locations/test_region/clusters/test_cluster",
 		},
 		"alert associated with an OpenShift cluster running on GCP": {
-			mockCluster: &storage.Cluster{
+			mockCluster: storage.Cluster_builder{
 				Id:   "test_id",
 				Name: "test_cluster",
-				Status: &storage.ClusterStatus{
-					ProviderMetadata: &storage.ProviderMetadata{
+				Status: storage.ClusterStatus_builder{
+					ProviderMetadata: storage.ProviderMetadata_builder{
 						Region: "test_region",
-						Provider: &storage.ProviderMetadata_Google{
-							Google: &storage.GoogleProviderMetadata{
-								Project:     "test_project",
-								ClusterName: "test_cluster",
-							},
-						},
-						Cluster: &storage.ClusterMetadata{
+						Google: storage.GoogleProviderMetadata_builder{
+							Project:     "test_project",
+							ClusterName: "test_cluster",
+						}.Build(),
+						Cluster: storage.ClusterMetadata_builder{
 							Type: storage.ClusterMetadata_OSD,
-						},
-					},
-				},
-			},
+						}.Build(),
+					}.Build(),
+				}.Build(),
+			}.Build(),
 			resourceName: "//cloudresourcemanager.googleapis.com/projects/test_project",
 		},
 		"alert associated with a cluster not deployed on GCP": {
-			mockCluster: &storage.Cluster{
+			mockCluster: storage.Cluster_builder{
 				Id:   "test_id",
 				Name: "test_cluster",
-				Status: &storage.ClusterStatus{
-					ProviderMetadata: &storage.ProviderMetadata{
+				Status: storage.ClusterStatus_builder{
+					ProviderMetadata: storage.ProviderMetadata_builder{
 						Region: "test_region",
-						Provider: &storage.ProviderMetadata_Aws{
-							Aws: &storage.AWSProviderMetadata{
-								AccountId: "some-account",
-							},
-						},
-						Cluster: &storage.ClusterMetadata{
+						Aws: storage.AWSProviderMetadata_builder{
+							AccountId: "some-account",
+						}.Build(),
+						Cluster: storage.ClusterMetadata_builder{
 							Type: storage.ClusterMetadata_OSD,
 							Name: "aws-cluster",
-						},
-					},
-				},
-			},
+						}.Build(),
+					}.Build(),
+				}.Build(),
+			}.Build(),
 			resourceName: "OSD/aws-cluster",
 		},
 	}

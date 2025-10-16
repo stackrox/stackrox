@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
+	"google.golang.org/protobuf/proto"
 )
 
 ///////////////////////////////
@@ -90,448 +91,448 @@ import (
 
 // GetEmbeddedImageCVE1234x0001 provides a pseudo-realistic image CVE for connected datastore datastore integration testing.
 func GetEmbeddedImageCVE1234x0001() *storage.EmbeddedVulnerability {
-	return &storage.EmbeddedVulnerability{
-		Cve:          "CVE-1234-0001",
-		Cvss:         5.8,
-		Summary:      "Find some inspiring quote on an evil topic to insert here.",
-		Link:         "book://author/title",
-		SetFixedBy:   &storage.EmbeddedVulnerability_FixedBy{FixedBy: ""},
-		ScoreVersion: storage.EmbeddedVulnerability_V2,
-		CvssV2: &storage.CVSSV2{
-			Vector:              "AV:N/AC:M/Au:N/C:P/I:P/A:N",
-			AttackVector:        storage.CVSSV2_ATTACK_NETWORK,
-			AccessComplexity:    storage.CVSSV2_ACCESS_MEDIUM,
-			Authentication:      storage.CVSSV2_AUTH_NONE,
-			Confidentiality:     storage.CVSSV2_IMPACT_PARTIAL,
-			Integrity:           storage.CVSSV2_IMPACT_PARTIAL,
-			Availability:        storage.CVSSV2_IMPACT_NONE,
-			ExploitabilityScore: 8.6,
-			ImpactScore:         4.9,
-			Score:               5.8,
-			Severity:            storage.CVSSV2_MEDIUM,
-		},
-		CvssV3:            nil,
-		PublishedOn:       protocompat.GetProtoTimestampFromSeconds(1234567890),
-		LastModified:      protocompat.GetProtoTimestampFromSeconds(1235467890),
-		VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-		VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
-			storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-		},
-		Suppressed:            false,
-		SuppressActivation:    nil,
-		SuppressExpiry:        nil,
-		FirstSystemOccurrence: protocompat.GetProtoTimestampFromSeconds(1243567890),
-		FirstImageOccurrence:  protocompat.GetProtoTimestampFromSeconds(1245367890),
-		Severity:              storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
-		State:                 storage.VulnerabilityState_OBSERVED,
-	}
+	cVSSV2 := &storage.CVSSV2{}
+	cVSSV2.SetVector("AV:N/AC:M/Au:N/C:P/I:P/A:N")
+	cVSSV2.SetAttackVector(storage.CVSSV2_ATTACK_NETWORK)
+	cVSSV2.SetAccessComplexity(storage.CVSSV2_ACCESS_MEDIUM)
+	cVSSV2.SetAuthentication(storage.CVSSV2_AUTH_NONE)
+	cVSSV2.SetConfidentiality(storage.CVSSV2_IMPACT_PARTIAL)
+	cVSSV2.SetIntegrity(storage.CVSSV2_IMPACT_PARTIAL)
+	cVSSV2.SetAvailability(storage.CVSSV2_IMPACT_NONE)
+	cVSSV2.SetExploitabilityScore(8.6)
+	cVSSV2.SetImpactScore(4.9)
+	cVSSV2.SetScore(5.8)
+	cVSSV2.SetSeverity(storage.CVSSV2_MEDIUM)
+	ev := &storage.EmbeddedVulnerability{}
+	ev.SetCve("CVE-1234-0001")
+	ev.SetCvss(5.8)
+	ev.SetSummary("Find some inspiring quote on an evil topic to insert here.")
+	ev.SetLink("book://author/title")
+	ev.Set_FixedBy("")
+	ev.SetScoreVersion(storage.EmbeddedVulnerability_V2)
+	ev.SetCvssV2(cVSSV2)
+	ev.ClearCvssV3()
+	ev.SetPublishedOn(protocompat.GetProtoTimestampFromSeconds(1234567890))
+	ev.SetLastModified(protocompat.GetProtoTimestampFromSeconds(1235467890))
+	ev.SetVulnerabilityType(storage.EmbeddedVulnerability_IMAGE_VULNERABILITY)
+	ev.SetVulnerabilityTypes([]storage.EmbeddedVulnerability_VulnerabilityType{
+		storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+	})
+	ev.SetSuppressed(false)
+	ev.ClearSuppressActivation()
+	ev.ClearSuppressExpiry()
+	ev.SetFirstSystemOccurrence(protocompat.GetProtoTimestampFromSeconds(1243567890))
+	ev.SetFirstImageOccurrence(protocompat.GetProtoTimestampFromSeconds(1245367890))
+	ev.SetSeverity(storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY)
+	ev.SetState(storage.VulnerabilityState_OBSERVED)
+	return ev
 }
 
 // GetEmbeddedImageCVE4567x0002 provides a pseudo-realistic image CVE for connected datastore datastore integration testing.
 func GetEmbeddedImageCVE4567x0002() *storage.EmbeddedVulnerability {
-	return &storage.EmbeddedVulnerability{
-		Cve:          "CVE-4567-0002",
-		Cvss:         7.5,
-		Summary:      "Find some inspiring quote on an evil topic to insert here.",
-		Link:         "book://author/title",
-		SetFixedBy:   &storage.EmbeddedVulnerability_FixedBy{FixedBy: "1.1.1"},
-		ScoreVersion: storage.EmbeddedVulnerability_V3,
-		CvssV2: &storage.CVSSV2{
-			Vector:              "AV:N/AC:L/Au:N/C:N/I:P/A:N",
-			AttackVector:        storage.CVSSV2_ATTACK_NETWORK,
-			AccessComplexity:    storage.CVSSV2_ACCESS_LOW,
-			Authentication:      storage.CVSSV2_AUTH_NONE,
-			Confidentiality:     storage.CVSSV2_IMPACT_NONE,
-			Integrity:           storage.CVSSV2_IMPACT_PARTIAL,
-			Availability:        storage.CVSSV2_IMPACT_NONE,
-			ExploitabilityScore: 10.0,
-			ImpactScore:         2.9,
-			Score:               5.0,
-			Severity:            storage.CVSSV2_MEDIUM,
-		},
-		CvssV3: &storage.CVSSV3{
-			Vector:              "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
-			ExploitabilityScore: 3.9,
-			ImpactScore:         3.6,
-			AttackVector:        storage.CVSSV3_ATTACK_NETWORK,
-			AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
-			PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
-			UserInteraction:     storage.CVSSV3_UI_NONE,
-			Scope:               storage.CVSSV3_UNCHANGED,
-			Confidentiality:     storage.CVSSV3_IMPACT_NONE,
-			Integrity:           storage.CVSSV3_IMPACT_HIGH,
-			Availability:        storage.CVSSV3_IMPACT_NONE,
-			Score:               7.5,
-			Severity:            storage.CVSSV3_HIGH,
-		},
-		PublishedOn:       protocompat.GetProtoTimestampFromSeconds(1234567890),
-		LastModified:      protocompat.GetProtoTimestampFromSeconds(1235467890),
-		VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-		VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
-			storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-		},
-		Suppressed:            false,
-		SuppressActivation:    nil,
-		SuppressExpiry:        nil,
-		FirstSystemOccurrence: protocompat.GetProtoTimestampFromSeconds(1243567890),
-		FirstImageOccurrence:  protocompat.GetProtoTimestampFromSeconds(1245367890),
-		Severity:              storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
-		State:                 storage.VulnerabilityState_OBSERVED,
-	}
+	cVSSV2 := &storage.CVSSV2{}
+	cVSSV2.SetVector("AV:N/AC:L/Au:N/C:N/I:P/A:N")
+	cVSSV2.SetAttackVector(storage.CVSSV2_ATTACK_NETWORK)
+	cVSSV2.SetAccessComplexity(storage.CVSSV2_ACCESS_LOW)
+	cVSSV2.SetAuthentication(storage.CVSSV2_AUTH_NONE)
+	cVSSV2.SetConfidentiality(storage.CVSSV2_IMPACT_NONE)
+	cVSSV2.SetIntegrity(storage.CVSSV2_IMPACT_PARTIAL)
+	cVSSV2.SetAvailability(storage.CVSSV2_IMPACT_NONE)
+	cVSSV2.SetExploitabilityScore(10.0)
+	cVSSV2.SetImpactScore(2.9)
+	cVSSV2.SetScore(5.0)
+	cVSSV2.SetSeverity(storage.CVSSV2_MEDIUM)
+	cVSSV3 := &storage.CVSSV3{}
+	cVSSV3.SetVector("CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N")
+	cVSSV3.SetExploitabilityScore(3.9)
+	cVSSV3.SetImpactScore(3.6)
+	cVSSV3.SetAttackVector(storage.CVSSV3_ATTACK_NETWORK)
+	cVSSV3.SetAttackComplexity(storage.CVSSV3_COMPLEXITY_LOW)
+	cVSSV3.SetPrivilegesRequired(storage.CVSSV3_PRIVILEGE_NONE)
+	cVSSV3.SetUserInteraction(storage.CVSSV3_UI_NONE)
+	cVSSV3.SetScope(storage.CVSSV3_UNCHANGED)
+	cVSSV3.SetConfidentiality(storage.CVSSV3_IMPACT_NONE)
+	cVSSV3.SetIntegrity(storage.CVSSV3_IMPACT_HIGH)
+	cVSSV3.SetAvailability(storage.CVSSV3_IMPACT_NONE)
+	cVSSV3.SetScore(7.5)
+	cVSSV3.SetSeverity(storage.CVSSV3_HIGH)
+	ev := &storage.EmbeddedVulnerability{}
+	ev.SetCve("CVE-4567-0002")
+	ev.SetCvss(7.5)
+	ev.SetSummary("Find some inspiring quote on an evil topic to insert here.")
+	ev.SetLink("book://author/title")
+	ev.Set_FixedBy("1.1.1")
+	ev.SetScoreVersion(storage.EmbeddedVulnerability_V3)
+	ev.SetCvssV2(cVSSV2)
+	ev.SetCvssV3(cVSSV3)
+	ev.SetPublishedOn(protocompat.GetProtoTimestampFromSeconds(1234567890))
+	ev.SetLastModified(protocompat.GetProtoTimestampFromSeconds(1235467890))
+	ev.SetVulnerabilityType(storage.EmbeddedVulnerability_IMAGE_VULNERABILITY)
+	ev.SetVulnerabilityTypes([]storage.EmbeddedVulnerability_VulnerabilityType{
+		storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+	})
+	ev.SetSuppressed(false)
+	ev.ClearSuppressActivation()
+	ev.ClearSuppressExpiry()
+	ev.SetFirstSystemOccurrence(protocompat.GetProtoTimestampFromSeconds(1243567890))
+	ev.SetFirstImageOccurrence(protocompat.GetProtoTimestampFromSeconds(1245367890))
+	ev.SetSeverity(storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY)
+	ev.SetState(storage.VulnerabilityState_OBSERVED)
+	return ev
 }
 
 // GetEmbeddedImageCVE1234x0003 provides a pseudo-realistic image CVE for connected datastore datastore integration testing.
 func GetEmbeddedImageCVE1234x0003() *storage.EmbeddedVulnerability {
-	return &storage.EmbeddedVulnerability{
-		Cve:          "CVE-1234-0003",
-		Cvss:         7.5,
-		Summary:      "Find some inspiring quote on an evil topic to insert here.",
-		Link:         "book://author/title",
-		SetFixedBy:   &storage.EmbeddedVulnerability_FixedBy{FixedBy: ""},
-		ScoreVersion: storage.EmbeddedVulnerability_V3,
-		CvssV2: &storage.CVSSV2{
-			Vector:              "AV:N/AC:L/Au:N/C:N/I:N/A:P",
-			AttackVector:        storage.CVSSV2_ATTACK_NETWORK,
-			AccessComplexity:    storage.CVSSV2_ACCESS_LOW,
-			Authentication:      storage.CVSSV2_AUTH_NONE,
-			Confidentiality:     storage.CVSSV2_IMPACT_NONE,
-			Integrity:           storage.CVSSV2_IMPACT_NONE,
-			Availability:        storage.CVSSV2_IMPACT_PARTIAL,
-			ExploitabilityScore: 10.0,
-			ImpactScore:         2.9,
-			Score:               5.0,
-			Severity:            storage.CVSSV2_MEDIUM,
-		},
-		CvssV3: &storage.CVSSV3{
-			Vector:              "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
-			ExploitabilityScore: 3.9,
-			ImpactScore:         3.6,
-			AttackVector:        storage.CVSSV3_ATTACK_NETWORK,
-			AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
-			PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
-			UserInteraction:     storage.CVSSV3_UI_NONE,
-			Scope:               storage.CVSSV3_UNCHANGED,
-			Confidentiality:     storage.CVSSV3_IMPACT_NONE,
-			Integrity:           storage.CVSSV3_IMPACT_NONE,
-			Availability:        storage.CVSSV3_IMPACT_HIGH,
-			Score:               7.5,
-			Severity:            storage.CVSSV3_HIGH,
-		},
-		PublishedOn:       protocompat.GetProtoTimestampFromSeconds(1234567890),
-		LastModified:      protocompat.GetProtoTimestampFromSeconds(1235467890),
-		VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-		VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
-			storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-		},
-		Suppressed:            false,
-		SuppressActivation:    nil,
-		SuppressExpiry:        nil,
-		FirstSystemOccurrence: protocompat.GetProtoTimestampFromSeconds(1243567890),
-		FirstImageOccurrence:  protocompat.GetProtoTimestampFromSeconds(1245367890),
-		Severity:              storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
-		State:                 storage.VulnerabilityState_OBSERVED,
-	}
+	cVSSV2 := &storage.CVSSV2{}
+	cVSSV2.SetVector("AV:N/AC:L/Au:N/C:N/I:N/A:P")
+	cVSSV2.SetAttackVector(storage.CVSSV2_ATTACK_NETWORK)
+	cVSSV2.SetAccessComplexity(storage.CVSSV2_ACCESS_LOW)
+	cVSSV2.SetAuthentication(storage.CVSSV2_AUTH_NONE)
+	cVSSV2.SetConfidentiality(storage.CVSSV2_IMPACT_NONE)
+	cVSSV2.SetIntegrity(storage.CVSSV2_IMPACT_NONE)
+	cVSSV2.SetAvailability(storage.CVSSV2_IMPACT_PARTIAL)
+	cVSSV2.SetExploitabilityScore(10.0)
+	cVSSV2.SetImpactScore(2.9)
+	cVSSV2.SetScore(5.0)
+	cVSSV2.SetSeverity(storage.CVSSV2_MEDIUM)
+	cVSSV3 := &storage.CVSSV3{}
+	cVSSV3.SetVector("CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H")
+	cVSSV3.SetExploitabilityScore(3.9)
+	cVSSV3.SetImpactScore(3.6)
+	cVSSV3.SetAttackVector(storage.CVSSV3_ATTACK_NETWORK)
+	cVSSV3.SetAttackComplexity(storage.CVSSV3_COMPLEXITY_LOW)
+	cVSSV3.SetPrivilegesRequired(storage.CVSSV3_PRIVILEGE_NONE)
+	cVSSV3.SetUserInteraction(storage.CVSSV3_UI_NONE)
+	cVSSV3.SetScope(storage.CVSSV3_UNCHANGED)
+	cVSSV3.SetConfidentiality(storage.CVSSV3_IMPACT_NONE)
+	cVSSV3.SetIntegrity(storage.CVSSV3_IMPACT_NONE)
+	cVSSV3.SetAvailability(storage.CVSSV3_IMPACT_HIGH)
+	cVSSV3.SetScore(7.5)
+	cVSSV3.SetSeverity(storage.CVSSV3_HIGH)
+	ev := &storage.EmbeddedVulnerability{}
+	ev.SetCve("CVE-1234-0003")
+	ev.SetCvss(7.5)
+	ev.SetSummary("Find some inspiring quote on an evil topic to insert here.")
+	ev.SetLink("book://author/title")
+	ev.Set_FixedBy("")
+	ev.SetScoreVersion(storage.EmbeddedVulnerability_V3)
+	ev.SetCvssV2(cVSSV2)
+	ev.SetCvssV3(cVSSV3)
+	ev.SetPublishedOn(protocompat.GetProtoTimestampFromSeconds(1234567890))
+	ev.SetLastModified(protocompat.GetProtoTimestampFromSeconds(1235467890))
+	ev.SetVulnerabilityType(storage.EmbeddedVulnerability_IMAGE_VULNERABILITY)
+	ev.SetVulnerabilityTypes([]storage.EmbeddedVulnerability_VulnerabilityType{
+		storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+	})
+	ev.SetSuppressed(false)
+	ev.ClearSuppressActivation()
+	ev.ClearSuppressExpiry()
+	ev.SetFirstSystemOccurrence(protocompat.GetProtoTimestampFromSeconds(1243567890))
+	ev.SetFirstImageOccurrence(protocompat.GetProtoTimestampFromSeconds(1245367890))
+	ev.SetSeverity(storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY)
+	ev.SetState(storage.VulnerabilityState_OBSERVED)
+	return ev
 }
 
 // GetEmbeddedImageCVE3456x0004 provides a pseudo-realistic image CVE for connected datastore datastore integration testing.
 func GetEmbeddedImageCVE3456x0004() *storage.EmbeddedVulnerability {
-	return &storage.EmbeddedVulnerability{
-		Cve:          "CVE-3456-0004",
-		Cvss:         7.5,
-		Summary:      "Find some inspiring quote on an evil topic to insert here.",
-		Link:         "book://author/title",
-		SetFixedBy:   &storage.EmbeddedVulnerability_FixedBy{FixedBy: ""},
-		ScoreVersion: storage.EmbeddedVulnerability_V3,
-		CvssV2: &storage.CVSSV2{
-			Vector:              "AV:N/AC:M/Au:N/C:N/I:N/A:P",
-			AttackVector:        storage.CVSSV2_ATTACK_NETWORK,
-			AccessComplexity:    storage.CVSSV2_ACCESS_MEDIUM,
-			Authentication:      storage.CVSSV2_AUTH_NONE,
-			Confidentiality:     storage.CVSSV2_IMPACT_NONE,
-			Integrity:           storage.CVSSV2_IMPACT_NONE,
-			Availability:        storage.CVSSV2_IMPACT_PARTIAL,
-			ExploitabilityScore: 8.6,
-			ImpactScore:         2.9,
-			Score:               4.3,
-			Severity:            storage.CVSSV2_MEDIUM,
-		},
-		CvssV3: &storage.CVSSV3{
-			Vector:              "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H",
-			ExploitabilityScore: 2.2,
-			ImpactScore:         3.6,
-			AttackVector:        storage.CVSSV3_ATTACK_NETWORK,
-			AttackComplexity:    storage.CVSSV3_COMPLEXITY_HIGH,
-			PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
-			UserInteraction:     storage.CVSSV3_UI_NONE,
-			Scope:               storage.CVSSV3_UNCHANGED,
-			Confidentiality:     storage.CVSSV3_IMPACT_NONE,
-			Integrity:           storage.CVSSV3_IMPACT_NONE,
-			Availability:        storage.CVSSV3_IMPACT_HIGH,
-			Score:               5.9,
-			Severity:            storage.CVSSV3_MEDIUM,
-		},
-		PublishedOn:       protocompat.GetProtoTimestampFromSeconds(1234567890),
-		LastModified:      protocompat.GetProtoTimestampFromSeconds(1235467890),
-		VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-		VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
-			storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-		},
-		Suppressed:            false,
-		SuppressActivation:    nil,
-		SuppressExpiry:        nil,
-		FirstSystemOccurrence: protocompat.GetProtoTimestampFromSeconds(1243567890),
-		FirstImageOccurrence:  protocompat.GetProtoTimestampFromSeconds(1245367890),
-		Severity:              storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
-		State:                 storage.VulnerabilityState_OBSERVED,
-	}
+	cVSSV2 := &storage.CVSSV2{}
+	cVSSV2.SetVector("AV:N/AC:M/Au:N/C:N/I:N/A:P")
+	cVSSV2.SetAttackVector(storage.CVSSV2_ATTACK_NETWORK)
+	cVSSV2.SetAccessComplexity(storage.CVSSV2_ACCESS_MEDIUM)
+	cVSSV2.SetAuthentication(storage.CVSSV2_AUTH_NONE)
+	cVSSV2.SetConfidentiality(storage.CVSSV2_IMPACT_NONE)
+	cVSSV2.SetIntegrity(storage.CVSSV2_IMPACT_NONE)
+	cVSSV2.SetAvailability(storage.CVSSV2_IMPACT_PARTIAL)
+	cVSSV2.SetExploitabilityScore(8.6)
+	cVSSV2.SetImpactScore(2.9)
+	cVSSV2.SetScore(4.3)
+	cVSSV2.SetSeverity(storage.CVSSV2_MEDIUM)
+	cVSSV3 := &storage.CVSSV3{}
+	cVSSV3.SetVector("CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H")
+	cVSSV3.SetExploitabilityScore(2.2)
+	cVSSV3.SetImpactScore(3.6)
+	cVSSV3.SetAttackVector(storage.CVSSV3_ATTACK_NETWORK)
+	cVSSV3.SetAttackComplexity(storage.CVSSV3_COMPLEXITY_HIGH)
+	cVSSV3.SetPrivilegesRequired(storage.CVSSV3_PRIVILEGE_NONE)
+	cVSSV3.SetUserInteraction(storage.CVSSV3_UI_NONE)
+	cVSSV3.SetScope(storage.CVSSV3_UNCHANGED)
+	cVSSV3.SetConfidentiality(storage.CVSSV3_IMPACT_NONE)
+	cVSSV3.SetIntegrity(storage.CVSSV3_IMPACT_NONE)
+	cVSSV3.SetAvailability(storage.CVSSV3_IMPACT_HIGH)
+	cVSSV3.SetScore(5.9)
+	cVSSV3.SetSeverity(storage.CVSSV3_MEDIUM)
+	ev := &storage.EmbeddedVulnerability{}
+	ev.SetCve("CVE-3456-0004")
+	ev.SetCvss(7.5)
+	ev.SetSummary("Find some inspiring quote on an evil topic to insert here.")
+	ev.SetLink("book://author/title")
+	ev.Set_FixedBy("")
+	ev.SetScoreVersion(storage.EmbeddedVulnerability_V3)
+	ev.SetCvssV2(cVSSV2)
+	ev.SetCvssV3(cVSSV3)
+	ev.SetPublishedOn(protocompat.GetProtoTimestampFromSeconds(1234567890))
+	ev.SetLastModified(protocompat.GetProtoTimestampFromSeconds(1235467890))
+	ev.SetVulnerabilityType(storage.EmbeddedVulnerability_IMAGE_VULNERABILITY)
+	ev.SetVulnerabilityTypes([]storage.EmbeddedVulnerability_VulnerabilityType{
+		storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+	})
+	ev.SetSuppressed(false)
+	ev.ClearSuppressActivation()
+	ev.ClearSuppressExpiry()
+	ev.SetFirstSystemOccurrence(protocompat.GetProtoTimestampFromSeconds(1243567890))
+	ev.SetFirstImageOccurrence(protocompat.GetProtoTimestampFromSeconds(1245367890))
+	ev.SetSeverity(storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY)
+	ev.SetState(storage.VulnerabilityState_OBSERVED)
+	return ev
 }
 
 // GetEmbeddedImageCVE3456x0005 provides a pseudo-realistic image CVE for connected datastore datastore integration testing.
 func GetEmbeddedImageCVE3456x0005() *storage.EmbeddedVulnerability {
-	return &storage.EmbeddedVulnerability{
-		Cve:          "CVE-3456-0005",
-		Cvss:         5.3,
-		Summary:      "Find some inspiring quote on an evil topic to insert here.",
-		Link:         "book://author/title",
-		SetFixedBy:   &storage.EmbeddedVulnerability_FixedBy{FixedBy: ""},
-		ScoreVersion: storage.EmbeddedVulnerability_V3,
-		CvssV2: &storage.CVSSV2{
-			Vector:              "AV:L/AC:L/Au:N/C:P/I:P/A:P",
-			AttackVector:        storage.CVSSV2_ATTACK_LOCAL,
-			AccessComplexity:    storage.CVSSV2_ACCESS_LOW,
-			Authentication:      storage.CVSSV2_AUTH_NONE,
-			Confidentiality:     storage.CVSSV2_IMPACT_PARTIAL,
-			Integrity:           storage.CVSSV2_IMPACT_PARTIAL,
-			Availability:        storage.CVSSV2_IMPACT_PARTIAL,
-			ExploitabilityScore: 3.9,
-			ImpactScore:         6.4,
-			Score:               4.6,
-			Severity:            storage.CVSSV2_MEDIUM,
-		},
-		CvssV3: &storage.CVSSV3{
-			Vector:              "CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L",
-			ExploitabilityScore: 1.8,
-			ImpactScore:         3.4,
-			AttackVector:        storage.CVSSV3_ATTACK_LOCAL,
-			AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
-			PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_LOW,
-			UserInteraction:     storage.CVSSV3_UI_NONE,
-			Scope:               storage.CVSSV3_UNCHANGED,
-			Confidentiality:     storage.CVSSV3_IMPACT_LOW,
-			Integrity:           storage.CVSSV3_IMPACT_LOW,
-			Availability:        storage.CVSSV3_IMPACT_LOW,
-			Score:               5.3,
-			Severity:            storage.CVSSV3_MEDIUM,
-		},
-		PublishedOn:       protocompat.GetProtoTimestampFromSeconds(1234567890),
-		LastModified:      protocompat.GetProtoTimestampFromSeconds(1235467890),
-		VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-		VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
-			storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-		},
-		Suppressed:            false,
-		SuppressActivation:    nil,
-		SuppressExpiry:        nil,
-		FirstSystemOccurrence: protocompat.GetProtoTimestampFromSeconds(1243567890),
-		FirstImageOccurrence:  protocompat.GetProtoTimestampFromSeconds(1245367890),
-		Severity:              storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
-		State:                 storage.VulnerabilityState_OBSERVED,
-	}
+	cVSSV2 := &storage.CVSSV2{}
+	cVSSV2.SetVector("AV:L/AC:L/Au:N/C:P/I:P/A:P")
+	cVSSV2.SetAttackVector(storage.CVSSV2_ATTACK_LOCAL)
+	cVSSV2.SetAccessComplexity(storage.CVSSV2_ACCESS_LOW)
+	cVSSV2.SetAuthentication(storage.CVSSV2_AUTH_NONE)
+	cVSSV2.SetConfidentiality(storage.CVSSV2_IMPACT_PARTIAL)
+	cVSSV2.SetIntegrity(storage.CVSSV2_IMPACT_PARTIAL)
+	cVSSV2.SetAvailability(storage.CVSSV2_IMPACT_PARTIAL)
+	cVSSV2.SetExploitabilityScore(3.9)
+	cVSSV2.SetImpactScore(6.4)
+	cVSSV2.SetScore(4.6)
+	cVSSV2.SetSeverity(storage.CVSSV2_MEDIUM)
+	cVSSV3 := &storage.CVSSV3{}
+	cVSSV3.SetVector("CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:L")
+	cVSSV3.SetExploitabilityScore(1.8)
+	cVSSV3.SetImpactScore(3.4)
+	cVSSV3.SetAttackVector(storage.CVSSV3_ATTACK_LOCAL)
+	cVSSV3.SetAttackComplexity(storage.CVSSV3_COMPLEXITY_LOW)
+	cVSSV3.SetPrivilegesRequired(storage.CVSSV3_PRIVILEGE_LOW)
+	cVSSV3.SetUserInteraction(storage.CVSSV3_UI_NONE)
+	cVSSV3.SetScope(storage.CVSSV3_UNCHANGED)
+	cVSSV3.SetConfidentiality(storage.CVSSV3_IMPACT_LOW)
+	cVSSV3.SetIntegrity(storage.CVSSV3_IMPACT_LOW)
+	cVSSV3.SetAvailability(storage.CVSSV3_IMPACT_LOW)
+	cVSSV3.SetScore(5.3)
+	cVSSV3.SetSeverity(storage.CVSSV3_MEDIUM)
+	ev := &storage.EmbeddedVulnerability{}
+	ev.SetCve("CVE-3456-0005")
+	ev.SetCvss(5.3)
+	ev.SetSummary("Find some inspiring quote on an evil topic to insert here.")
+	ev.SetLink("book://author/title")
+	ev.Set_FixedBy("")
+	ev.SetScoreVersion(storage.EmbeddedVulnerability_V3)
+	ev.SetCvssV2(cVSSV2)
+	ev.SetCvssV3(cVSSV3)
+	ev.SetPublishedOn(protocompat.GetProtoTimestampFromSeconds(1234567890))
+	ev.SetLastModified(protocompat.GetProtoTimestampFromSeconds(1235467890))
+	ev.SetVulnerabilityType(storage.EmbeddedVulnerability_IMAGE_VULNERABILITY)
+	ev.SetVulnerabilityTypes([]storage.EmbeddedVulnerability_VulnerabilityType{
+		storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+	})
+	ev.SetSuppressed(false)
+	ev.ClearSuppressActivation()
+	ev.ClearSuppressExpiry()
+	ev.SetFirstSystemOccurrence(protocompat.GetProtoTimestampFromSeconds(1243567890))
+	ev.SetFirstImageOccurrence(protocompat.GetProtoTimestampFromSeconds(1245367890))
+	ev.SetSeverity(storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY)
+	ev.SetState(storage.VulnerabilityState_OBSERVED)
+	return ev
 }
 
 // GetEmbeddedImageCVE2345x0006 provides a pseudo-realistic image CVE for connected datastore datastore integration testing.
 func GetEmbeddedImageCVE2345x0006() *storage.EmbeddedVulnerability {
-	return &storage.EmbeddedVulnerability{
-		Cve:          "CVE-2345-0006",
-		Cvss:         7.8,
-		Summary:      "Find some inspiring quote on an evil topic to insert here.",
-		Link:         "book://author/title",
-		SetFixedBy:   &storage.EmbeddedVulnerability_FixedBy{FixedBy: ""},
-		ScoreVersion: storage.EmbeddedVulnerability_V3,
-		CvssV2: &storage.CVSSV2{
-			Vector:              "AV:N/AC:M/Au:N/C:P/I:P/A:P",
-			AttackVector:        storage.CVSSV2_ATTACK_NETWORK,
-			AccessComplexity:    storage.CVSSV2_ACCESS_MEDIUM,
-			Authentication:      storage.CVSSV2_AUTH_NONE,
-			Confidentiality:     storage.CVSSV2_IMPACT_PARTIAL,
-			Integrity:           storage.CVSSV2_IMPACT_PARTIAL,
-			Availability:        storage.CVSSV2_IMPACT_PARTIAL,
-			ExploitabilityScore: 8.6,
-			ImpactScore:         6.4,
-			Score:               6.8,
-			Severity:            storage.CVSSV2_MEDIUM,
-		},
-		CvssV3: &storage.CVSSV3{
-			Vector:              "CVSS:3.0/AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H",
-			ExploitabilityScore: 1.8,
-			ImpactScore:         5.9,
-			AttackVector:        storage.CVSSV3_ATTACK_LOCAL,
-			AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
-			PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
-			UserInteraction:     storage.CVSSV3_UI_REQUIRED,
-			Scope:               storage.CVSSV3_UNCHANGED,
-			Confidentiality:     storage.CVSSV3_IMPACT_HIGH,
-			Integrity:           storage.CVSSV3_IMPACT_HIGH,
-			Availability:        storage.CVSSV3_IMPACT_HIGH,
-			Score:               7.8,
-			Severity:            storage.CVSSV3_HIGH,
-		},
-		PublishedOn:       protocompat.GetProtoTimestampFromSeconds(1234567890),
-		LastModified:      protocompat.GetProtoTimestampFromSeconds(1235467890),
-		VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-		VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
-			storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-		},
-		Suppressed:            false,
-		SuppressActivation:    nil,
-		SuppressExpiry:        nil,
-		FirstSystemOccurrence: protocompat.GetProtoTimestampFromSeconds(1243567890),
-		FirstImageOccurrence:  protocompat.GetProtoTimestampFromSeconds(1245367890),
-		Severity:              storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
-		State:                 storage.VulnerabilityState_OBSERVED,
-	}
+	cVSSV2 := &storage.CVSSV2{}
+	cVSSV2.SetVector("AV:N/AC:M/Au:N/C:P/I:P/A:P")
+	cVSSV2.SetAttackVector(storage.CVSSV2_ATTACK_NETWORK)
+	cVSSV2.SetAccessComplexity(storage.CVSSV2_ACCESS_MEDIUM)
+	cVSSV2.SetAuthentication(storage.CVSSV2_AUTH_NONE)
+	cVSSV2.SetConfidentiality(storage.CVSSV2_IMPACT_PARTIAL)
+	cVSSV2.SetIntegrity(storage.CVSSV2_IMPACT_PARTIAL)
+	cVSSV2.SetAvailability(storage.CVSSV2_IMPACT_PARTIAL)
+	cVSSV2.SetExploitabilityScore(8.6)
+	cVSSV2.SetImpactScore(6.4)
+	cVSSV2.SetScore(6.8)
+	cVSSV2.SetSeverity(storage.CVSSV2_MEDIUM)
+	cVSSV3 := &storage.CVSSV3{}
+	cVSSV3.SetVector("CVSS:3.0/AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H")
+	cVSSV3.SetExploitabilityScore(1.8)
+	cVSSV3.SetImpactScore(5.9)
+	cVSSV3.SetAttackVector(storage.CVSSV3_ATTACK_LOCAL)
+	cVSSV3.SetAttackComplexity(storage.CVSSV3_COMPLEXITY_LOW)
+	cVSSV3.SetPrivilegesRequired(storage.CVSSV3_PRIVILEGE_NONE)
+	cVSSV3.SetUserInteraction(storage.CVSSV3_UI_REQUIRED)
+	cVSSV3.SetScope(storage.CVSSV3_UNCHANGED)
+	cVSSV3.SetConfidentiality(storage.CVSSV3_IMPACT_HIGH)
+	cVSSV3.SetIntegrity(storage.CVSSV3_IMPACT_HIGH)
+	cVSSV3.SetAvailability(storage.CVSSV3_IMPACT_HIGH)
+	cVSSV3.SetScore(7.8)
+	cVSSV3.SetSeverity(storage.CVSSV3_HIGH)
+	ev := &storage.EmbeddedVulnerability{}
+	ev.SetCve("CVE-2345-0006")
+	ev.SetCvss(7.8)
+	ev.SetSummary("Find some inspiring quote on an evil topic to insert here.")
+	ev.SetLink("book://author/title")
+	ev.Set_FixedBy("")
+	ev.SetScoreVersion(storage.EmbeddedVulnerability_V3)
+	ev.SetCvssV2(cVSSV2)
+	ev.SetCvssV3(cVSSV3)
+	ev.SetPublishedOn(protocompat.GetProtoTimestampFromSeconds(1234567890))
+	ev.SetLastModified(protocompat.GetProtoTimestampFromSeconds(1235467890))
+	ev.SetVulnerabilityType(storage.EmbeddedVulnerability_IMAGE_VULNERABILITY)
+	ev.SetVulnerabilityTypes([]storage.EmbeddedVulnerability_VulnerabilityType{
+		storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+	})
+	ev.SetSuppressed(false)
+	ev.ClearSuppressActivation()
+	ev.ClearSuppressExpiry()
+	ev.SetFirstSystemOccurrence(protocompat.GetProtoTimestampFromSeconds(1243567890))
+	ev.SetFirstImageOccurrence(protocompat.GetProtoTimestampFromSeconds(1245367890))
+	ev.SetSeverity(storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY)
+	ev.SetState(storage.VulnerabilityState_OBSERVED)
+	return ev
 }
 
 // GetEmbeddedImageCVE2345x0007 provides a pseudo-realistic image CVE for connected datastore datastore integration testing.
 func GetEmbeddedImageCVE2345x0007() *storage.EmbeddedVulnerability {
-	return &storage.EmbeddedVulnerability{
-		Cve:          "CVE-2345-0007",
-		Cvss:         5.9,
-		Summary:      "Find some inspiring quote on an evil topic to insert here.",
-		Link:         "book://author/title",
-		SetFixedBy:   &storage.EmbeddedVulnerability_FixedBy{FixedBy: "2.5.6"},
-		ScoreVersion: storage.EmbeddedVulnerability_V3,
-		CvssV2: &storage.CVSSV2{
-			Vector:              "AV:N/AC:M/Au:N/C:N/I:P/A:N",
-			AttackVector:        storage.CVSSV2_ATTACK_NETWORK,
-			AccessComplexity:    storage.CVSSV2_ACCESS_MEDIUM,
-			Authentication:      storage.CVSSV2_AUTH_NONE,
-			Confidentiality:     storage.CVSSV2_IMPACT_NONE,
-			Integrity:           storage.CVSSV2_IMPACT_PARTIAL,
-			Availability:        storage.CVSSV2_IMPACT_NONE,
-			ExploitabilityScore: 8.6,
-			ImpactScore:         2.9,
-			Score:               4.3,
-			Severity:            storage.CVSSV2_MEDIUM,
-		},
-		CvssV3: &storage.CVSSV3{
-			Vector:              "CVSS:3.0/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:H/A:N",
-			ExploitabilityScore: 2.2,
-			ImpactScore:         3.6,
-			AttackVector:        storage.CVSSV3_ATTACK_NETWORK,
-			AttackComplexity:    storage.CVSSV3_COMPLEXITY_HIGH,
-			PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
-			UserInteraction:     storage.CVSSV3_UI_NONE,
-			Scope:               storage.CVSSV3_UNCHANGED,
-			Confidentiality:     storage.CVSSV3_IMPACT_NONE,
-			Integrity:           storage.CVSSV3_IMPACT_HIGH,
-			Availability:        storage.CVSSV3_IMPACT_NONE,
-			Score:               5.9,
-			Severity:            storage.CVSSV3_MEDIUM,
-		},
-		PublishedOn:       protocompat.GetProtoTimestampFromSeconds(1234567890),
-		LastModified:      protocompat.GetProtoTimestampFromSeconds(1235467890),
-		VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-		VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
-			storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-		},
-		Suppressed:            false,
-		SuppressActivation:    nil,
-		SuppressExpiry:        nil,
-		FirstSystemOccurrence: protocompat.GetProtoTimestampFromSeconds(1243567890),
-		FirstImageOccurrence:  protocompat.GetProtoTimestampFromSeconds(1245367890),
-		Severity:              storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
-		State:                 storage.VulnerabilityState_OBSERVED,
-	}
+	cVSSV2 := &storage.CVSSV2{}
+	cVSSV2.SetVector("AV:N/AC:M/Au:N/C:N/I:P/A:N")
+	cVSSV2.SetAttackVector(storage.CVSSV2_ATTACK_NETWORK)
+	cVSSV2.SetAccessComplexity(storage.CVSSV2_ACCESS_MEDIUM)
+	cVSSV2.SetAuthentication(storage.CVSSV2_AUTH_NONE)
+	cVSSV2.SetConfidentiality(storage.CVSSV2_IMPACT_NONE)
+	cVSSV2.SetIntegrity(storage.CVSSV2_IMPACT_PARTIAL)
+	cVSSV2.SetAvailability(storage.CVSSV2_IMPACT_NONE)
+	cVSSV2.SetExploitabilityScore(8.6)
+	cVSSV2.SetImpactScore(2.9)
+	cVSSV2.SetScore(4.3)
+	cVSSV2.SetSeverity(storage.CVSSV2_MEDIUM)
+	cVSSV3 := &storage.CVSSV3{}
+	cVSSV3.SetVector("CVSS:3.0/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:H/A:N")
+	cVSSV3.SetExploitabilityScore(2.2)
+	cVSSV3.SetImpactScore(3.6)
+	cVSSV3.SetAttackVector(storage.CVSSV3_ATTACK_NETWORK)
+	cVSSV3.SetAttackComplexity(storage.CVSSV3_COMPLEXITY_HIGH)
+	cVSSV3.SetPrivilegesRequired(storage.CVSSV3_PRIVILEGE_NONE)
+	cVSSV3.SetUserInteraction(storage.CVSSV3_UI_NONE)
+	cVSSV3.SetScope(storage.CVSSV3_UNCHANGED)
+	cVSSV3.SetConfidentiality(storage.CVSSV3_IMPACT_NONE)
+	cVSSV3.SetIntegrity(storage.CVSSV3_IMPACT_HIGH)
+	cVSSV3.SetAvailability(storage.CVSSV3_IMPACT_NONE)
+	cVSSV3.SetScore(5.9)
+	cVSSV3.SetSeverity(storage.CVSSV3_MEDIUM)
+	ev := &storage.EmbeddedVulnerability{}
+	ev.SetCve("CVE-2345-0007")
+	ev.SetCvss(5.9)
+	ev.SetSummary("Find some inspiring quote on an evil topic to insert here.")
+	ev.SetLink("book://author/title")
+	ev.Set_FixedBy("2.5.6")
+	ev.SetScoreVersion(storage.EmbeddedVulnerability_V3)
+	ev.SetCvssV2(cVSSV2)
+	ev.SetCvssV3(cVSSV3)
+	ev.SetPublishedOn(protocompat.GetProtoTimestampFromSeconds(1234567890))
+	ev.SetLastModified(protocompat.GetProtoTimestampFromSeconds(1235467890))
+	ev.SetVulnerabilityType(storage.EmbeddedVulnerability_IMAGE_VULNERABILITY)
+	ev.SetVulnerabilityTypes([]storage.EmbeddedVulnerability_VulnerabilityType{
+		storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+	})
+	ev.SetSuppressed(false)
+	ev.ClearSuppressActivation()
+	ev.ClearSuppressExpiry()
+	ev.SetFirstSystemOccurrence(protocompat.GetProtoTimestampFromSeconds(1243567890))
+	ev.SetFirstImageOccurrence(protocompat.GetProtoTimestampFromSeconds(1245367890))
+	ev.SetSeverity(storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY)
+	ev.SetState(storage.VulnerabilityState_OBSERVED)
+	return ev
 }
 
 // GetEmbeddedImageComponent1x1 provides a pseudo-realistic image component for connected datastore integration testing.
 func GetEmbeddedImageComponent1x1() *storage.EmbeddedImageScanComponent {
-	return &storage.EmbeddedImageScanComponent{
-		Name:    "scarlet",
-		Version: "1.1",
-		License: nil,
-		Vulns: []*storage.EmbeddedVulnerability{
-			GetEmbeddedImageCVE1234x0001(),
-			GetEmbeddedImageCVE4567x0002(),
-		},
-		HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 0},
-		Priority:      0,
-		Source:        storage.SourceType_OS,
-		Location:      "",
-		SetTopCvss:    &storage.EmbeddedImageScanComponent_TopCvss{TopCvss: 7.5},
-		RiskScore:     2.154,
-		FixedBy:       "1.1.1",
-		Executables:   []*storage.EmbeddedImageScanComponent_Executable{},
-	}
+	eisc := &storage.EmbeddedImageScanComponent{}
+	eisc.SetName("scarlet")
+	eisc.SetVersion("1.1")
+	eisc.ClearLicense()
+	eisc.SetVulns([]*storage.EmbeddedVulnerability{
+		GetEmbeddedImageCVE1234x0001(),
+		GetEmbeddedImageCVE4567x0002(),
+	})
+	eisc.SetLayerIndex(0)
+	eisc.SetPriority(0)
+	eisc.SetSource(storage.SourceType_OS)
+	eisc.SetLocation("")
+	eisc.Set_TopCvss(7.5)
+	eisc.SetRiskScore(2.154)
+	eisc.SetFixedBy("1.1.1")
+	eisc.SetExecutables([]*storage.EmbeddedImageScanComponent_Executable{})
+	return eisc
 }
 
 // GetEmbeddedImageComponent1x2 provides a pseudo-realistic image component for connected datastore integration testing.
 func GetEmbeddedImageComponent1x2() *storage.EmbeddedImageScanComponent {
-	return &storage.EmbeddedImageScanComponent{
-		Name:    "baskerville",
-		Version: "1.2",
-		License: nil,
-		Vulns: []*storage.EmbeddedVulnerability{
-			GetEmbeddedImageCVE1234x0003(),
-		},
-		HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 1},
-		Priority:      0,
-		Source:        storage.SourceType_PYTHON,
-		Location:      "",
-		SetTopCvss:    &storage.EmbeddedImageScanComponent_TopCvss{TopCvss: 7.5},
-		RiskScore:     1.1625,
-		FixedBy:       "1.2.5",
-		Executables: []*storage.EmbeddedImageScanComponent_Executable{
-			{
-				Path: "/horrific/hound",
-			},
-		},
-	}
+	ee := &storage.EmbeddedImageScanComponent_Executable{}
+	ee.SetPath("/horrific/hound")
+	eisc := &storage.EmbeddedImageScanComponent{}
+	eisc.SetName("baskerville")
+	eisc.SetVersion("1.2")
+	eisc.ClearLicense()
+	eisc.SetVulns([]*storage.EmbeddedVulnerability{
+		GetEmbeddedImageCVE1234x0003(),
+	})
+	eisc.SetLayerIndex(1)
+	eisc.SetPriority(0)
+	eisc.SetSource(storage.SourceType_PYTHON)
+	eisc.SetLocation("")
+	eisc.Set_TopCvss(7.5)
+	eisc.SetRiskScore(1.1625)
+	eisc.SetFixedBy("1.2.5")
+	eisc.SetExecutables([]*storage.EmbeddedImageScanComponent_Executable{
+		ee,
+	})
+	return eisc
 }
 
 // GetEmbeddedImageComponent1s2x3 provides a pseudo-realistic image component for connected datastore integration testing.
 func GetEmbeddedImageComponent1s2x3() *storage.EmbeddedImageScanComponent {
-	return &storage.EmbeddedImageScanComponent{
-		Name:    "downtown-london",
-		Version: "1s.2-3",
-		License: nil,
-		Vulns: []*storage.EmbeddedVulnerability{
-			GetEmbeddedImageCVE3456x0004(),
-			GetEmbeddedImageCVE3456x0005(),
-		},
-		HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 1},
-		Priority:      0,
-		Source:        storage.SourceType_JAVA,
-		Location:      "",
-		SetTopCvss:    &storage.EmbeddedImageScanComponent_TopCvss{TopCvss: 7.5},
-		RiskScore:     1.1625,
-		FixedBy:       "",
-		Executables:   []*storage.EmbeddedImageScanComponent_Executable{},
-	}
+	eisc := &storage.EmbeddedImageScanComponent{}
+	eisc.SetName("downtown-london")
+	eisc.SetVersion("1s.2-3")
+	eisc.ClearLicense()
+	eisc.SetVulns([]*storage.EmbeddedVulnerability{
+		GetEmbeddedImageCVE3456x0004(),
+		GetEmbeddedImageCVE3456x0005(),
+	})
+	eisc.SetLayerIndex(1)
+	eisc.SetPriority(0)
+	eisc.SetSource(storage.SourceType_JAVA)
+	eisc.SetLocation("")
+	eisc.Set_TopCvss(7.5)
+	eisc.SetRiskScore(1.1625)
+	eisc.SetFixedBy("")
+	eisc.SetExecutables([]*storage.EmbeddedImageScanComponent_Executable{})
+	return eisc
 }
 
 // GetEmbeddedImageComponent2x4 provides a pseudo-realistic image component for connected datastore integration testing.
 func GetEmbeddedImageComponent2x4() *storage.EmbeddedImageScanComponent {
-	return &storage.EmbeddedImageScanComponent{
-		Name:          "dr-jekyll-medecine-practice",
-		Version:       "2.4",
-		License:       nil,
-		Vulns:         []*storage.EmbeddedVulnerability{},
-		HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 0},
-		Priority:      0,
-		Source:        storage.SourceType_INFRASTRUCTURE,
-		Location:      "",
-		SetTopCvss:    &storage.EmbeddedImageScanComponent_TopCvss{TopCvss: 0.0},
-		RiskScore:     0.0,
-		FixedBy:       "",
-		Executables:   []*storage.EmbeddedImageScanComponent_Executable{},
-	}
+	eisc := &storage.EmbeddedImageScanComponent{}
+	eisc.SetName("dr-jekyll-medecine-practice")
+	eisc.SetVersion("2.4")
+	eisc.ClearLicense()
+	eisc.SetVulns([]*storage.EmbeddedVulnerability{})
+	eisc.SetLayerIndex(0)
+	eisc.SetPriority(0)
+	eisc.SetSource(storage.SourceType_INFRASTRUCTURE)
+	eisc.SetLocation("")
+	eisc.Set_TopCvss(0.0)
+	eisc.SetRiskScore(0.0)
+	eisc.SetFixedBy("")
+	eisc.SetExecutables([]*storage.EmbeddedImageScanComponent_Executable{})
+	return eisc
 }
 
 // GetEmbeddedImageComponent2x5 provides a pseudo-realistic image component for connected datastore integration testing.
 func GetEmbeddedImageComponent2x5() *storage.EmbeddedImageScanComponent {
-	return &storage.EmbeddedImageScanComponent{
+	return storage.EmbeddedImageScanComponent_builder{
 		Name:    "mr-hyde-secret-entrance",
 		Version: "2.5",
 		License: nil,
@@ -540,75 +541,75 @@ func GetEmbeddedImageComponent2x5() *storage.EmbeddedImageScanComponent {
 			GetEmbeddedImageCVE2345x0006(),
 			GetEmbeddedImageCVE2345x0007(),
 		},
-		HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 2},
-		Priority:      0,
-		Source:        storage.SourceType_RUBY,
-		Location:      "",
-		SetTopCvss:    &storage.EmbeddedImageScanComponent_TopCvss{TopCvss: 7.8},
-		RiskScore:     0.0,
-		FixedBy:       "2.5.6",
+		LayerIndex: proto.Int32(2),
+		Priority:   0,
+		Source:     storage.SourceType_RUBY,
+		Location:   "",
+		TopCvss:    proto.Float32(7.8),
+		RiskScore:  0.0,
+		FixedBy:    "2.5.6",
 		Executables: []*storage.EmbeddedImageScanComponent_Executable{
-			{
+			storage.EmbeddedImageScanComponent_Executable_builder{
 				Path: "/murderous/cane",
 				Dependencies: []string{
 					"experimental-powder",
 				},
-			},
+			}.Build(),
 		},
-	}
+	}.Build()
 }
 
 // GetImageSherlockHolmes1 provides a pseudo-realistic image for connected datastore integration testing.
 func GetImageSherlockHolmes1() *storage.Image {
-	return &storage.Image{
+	return storage.Image_builder{
 		Id: "sha256:50fa59cca653c51d194974830826ff7a9d9095175f78caf40d5423d3fb12c4f7",
-		Name: &storage.ImageName{
+		Name: storage.ImageName_builder{
 			Registry: "baker.st",
 			Remote:   "sherlock/holmes",
 			Tag:      "v1",
 			FullName: "baker.st/sherlock/holmes:v1",
-		},
-		Metadata: &storage.ImageMetadata{
-			V1: &storage.V1Metadata{
+		}.Build(),
+		Metadata: storage.ImageMetadata_builder{
+			V1: storage.V1Metadata_builder{
 				Digest:  "sha256:0a488a3872bfcd9e79a3575b5c273b01c01a21b16e86213a26eb7f3ab540eb84",
 				Created: protocompat.GetProtoTimestampFromSecondsAndNanos(1553642092, 227945051),
 				Author:  "Sir Arthur Conan Doyle",
 				Layers: []*storage.ImageLayer{
-					{
+					storage.ImageLayer_builder{
 						Instruction: "COPY",
 						Value:       "/ / # buildkit",
 						Created:     protocompat.GetProtoTimestampFromSecondsAndNanos(1553640086, 106246179),
-					},
-					{
+					}.Build(),
+					storage.ImageLayer_builder{
 						Instruction: " /usr/local/bin/ # buildkit",
 						Value:       "file:4fc310c0cb879c876c5c0f571af765a0d24d36cb9253e0f53a0cda2f7e4c1844 in /",
 						Created:     protocompat.GetProtoTimestampFromSecondsAndNanos(1553640126, 263243615),
-					},
-					{
+					}.Build(),
+					storage.ImageLayer_builder{
 						Instruction: "ADD",
 						Value:       "file:4fc310c0cb879c876c5c0f571af765a0d24d36cb9253e0f53a0cda2f7e4c1844 in /",
 						Created:     protocompat.GetProtoTimestampFromSecondsAndNanos(1553640134, 213199897),
-					},
+					}.Build(),
 				},
 				User:       "root",
 				Command:    nil,
 				Entrypoint: nil,
 				Volumes:    nil,
 				Labels:     nil,
-			},
-			V2: &storage.V2Metadata{Digest: "sha256:4d818f38fa9dcbf41e7c255f276a72e5c471c1523b6f755a344bac04652351dd"},
+			}.Build(),
+			V2: storage.V2Metadata_builder{Digest: "sha256:4d818f38fa9dcbf41e7c255f276a72e5c471c1523b6f755a344bac04652351dd"}.Build(),
 			LayerShas: []string{
 				"sha256:50fa59cca653c51d194974830826ff7a9d9095175f78caf40d5423d3fb12c4f7",
 				"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
 				"sha256:8e2ee98ae01ebe81fe221f5a444cab18c8f7a26cd00ce1ef23cf7432feef99b4",
 			},
-			DataSource: &storage.DataSource{
+			DataSource: storage.DataSource_builder{
 				Id:   "13e92196-8216-4714-9ac7-fac779bb973b",
 				Name: "Sir Arthur Conan Doyle",
-			},
+			}.Build(),
 			Version: 0,
-		},
-		Scan: &storage.ImageScan{
+		}.Build(),
+		Scan: storage.ImageScan_builder{
 			ScannerVersion: "2.24.0-11-g05cf175999",
 			ScanTime:       protocompat.GetProtoTimestampFromSecondsAndNanos(1654154310, 970783800),
 			Components: []*storage.EmbeddedImageScanComponent{
@@ -617,81 +618,81 @@ func GetImageSherlockHolmes1() *storage.Image {
 				GetEmbeddedImageComponent1s2x3(),
 			},
 			OperatingSystem: "crime-stories",
-			DataSource: &storage.DataSource{
+			DataSource: storage.DataSource_builder{
 				Id:   "169b0d3f-8277-4900-bbce-1127077defae",
 				Name: "Stackrox Scanner",
-			},
+			}.Build(),
 			Notes: []storage.ImageScan_Note{},
-		},
+		}.Build(),
 		SignatureVerificationData: nil,
 		Signature:                 nil,
-		SetComponents:             &storage.Image_Components{Components: 3},
-		SetCves:                   &storage.Image_Cves{Cves: 5},
-		SetFixable:                &storage.Image_FixableCves{FixableCves: 2},
+		Components:                proto.Int32(3),
+		Cves:                      proto.Int32(5),
+		FixableCves:               proto.Int32(2),
 		LastUpdated:               protocompat.GetProtoTimestampFromSecondsAndNanos(1654154313, 67882700),
 		NotPullable:               false,
 		IsClusterLocal:            false,
 		Priority:                  0,
 		RiskScore:                 1.5,
-		SetTopCvss:                &storage.Image_TopCvss{TopCvss: 7.5},
+		TopCvss:                   proto.Float32(7.5),
 		Notes: []storage.Image_Note{
 			storage.Image_MISSING_SIGNATURE_VERIFICATION_DATA,
 			storage.Image_MISSING_SIGNATURE,
 		},
-	}
+	}.Build()
 }
 
 // GetImageDoctorJekyll2 provides a pseudo-realistic image for connected datastore integration testing.
 func GetImageDoctorJekyll2() *storage.Image {
-	return &storage.Image{
+	return storage.Image_builder{
 		Id: "sha256:835762dc5388a591ecf31540eaeb14ec8bc96ad48a3bd11fdef77b7106111eec",
-		Name: &storage.ImageName{
+		Name: storage.ImageName_builder{
 			Registry: "book.worm",
 			Remote:   "doctor/jekyll",
 			Tag:      "v2",
 			FullName: "book.worm/doctor/jekyll:v2",
-		},
-		Metadata: &storage.ImageMetadata{
-			V1: &storage.V1Metadata{
+		}.Build(),
+		Metadata: storage.ImageMetadata_builder{
+			V1: storage.V1Metadata_builder{
 				Digest:  "sha256:9fe0366ee2eead5a66948f853ebedae5464361b5ffb166980db355d294a971ff",
 				Created: protocompat.GetProtoTimestampFromSecondsAndNanos(1553642392, 877872600),
 				Author:  "Sir Arthur Conan Doyle",
 				Layers: []*storage.ImageLayer{
-					{
+					storage.ImageLayer_builder{
 						Instruction: "COPY",
 						Value:       "/ / # buildkit",
 						Created:     protocompat.GetProtoTimestampFromSecondsAndNanos(1553641386, 227945051),
-					},
-					{
+					}.Build(),
+					storage.ImageLayer_builder{
 						Instruction: " /usr/local/bin/ # buildkit",
 						Value:       "file:4fc310c0cb879c876c5c0f571af765a0d24d36cb9253e0f53a0cda2f7e4c1844 in /",
 						Created:     protocompat.GetProtoTimestampFromSecondsAndNanos(1553641426, 106246179),
-					},
-					{
+					}.Build(),
+					storage.ImageLayer_builder{
 						Instruction: "ADD",
 						Value:       "file:4fc310c0cb879c876c5c0f571af765a0d24d36cb9253e0f53a0cda2f7e4c1844 in /",
 						Created:     protocompat.GetProtoTimestampFromSecondsAndNanos(1553641534, 302497847),
-					},
+					}.Build(),
 				},
 				User:       "root",
 				Command:    nil,
 				Entrypoint: nil,
 				Volumes:    nil,
 				Labels:     nil,
-			},
-			V2: &storage.V2Metadata{Digest: "sha256:1e0ccd4630c681f887d799677a5d846d13e7fb69d4c4e25b899ba12ce804ac06"},
+			}.Build(),
+			V2: storage.V2Metadata_builder{Digest: "sha256:1e0ccd4630c681f887d799677a5d846d13e7fb69d4c4e25b899ba12ce804ac06"}.Build(),
 			LayerShas: []string{
 				"sha256:8d5041d30882e1fff9d4f4f90a72bd22896c8e365ad6095189d70d605bf7d3bd",
 				"sha256:9bc15005c6e7e93dcbe4c05f61dae53fcd72ce81aa44b3ae3d989e910ac682b9",
 				"sha256:e83e783ca7567afba7ea4541e6233032ca0303b43811539453c36b11c497eda8",
 			},
-			DataSource: &storage.DataSource{
+			DataSource: storage.DataSource_builder{
 				Id:   "28eacb99-4e61-8be8-c316e6875184",
 				Name: "Robert Louis Stevenson",
-			},
+			}.Build(),
 			Version: 0,
-		},
-		Scan: &storage.ImageScan{
+		}.Build(),
+		Scan: storage.ImageScan_builder{
 			ScannerVersion: "2.24.0-11-g05cf175999",
 			ScanTime:       protocompat.GetProtoTimestampFromSecondsAndNanos(1654154710, 67882700),
 			Components: []*storage.EmbeddedImageScanComponent{
@@ -700,84 +701,84 @@ func GetImageDoctorJekyll2() *storage.Image {
 				GetEmbeddedImageComponent2x5(),
 			},
 			OperatingSystem: "crime-stories",
-			DataSource: &storage.DataSource{
+			DataSource: storage.DataSource_builder{
 				Id:   "169b0d3f-8277-4900-bbce-1127077defae",
 				Name: "Stackrox Scanner",
-			},
+			}.Build(),
 			Notes: []storage.ImageScan_Note{},
-		},
+		}.Build(),
 		SignatureVerificationData: nil,
 		Signature:                 nil,
-		SetComponents:             &storage.Image_Components{Components: 3},
-		SetCves:                   &storage.Image_Cves{Cves: 5},
-		SetFixable:                &storage.Image_FixableCves{FixableCves: 2},
+		Components:                proto.Int32(3),
+		Cves:                      proto.Int32(5),
+		FixableCves:               proto.Int32(2),
 		LastUpdated:               protocompat.GetProtoTimestampFromSecondsAndNanos(1654154413, 970783800),
 		NotPullable:               false,
 		IsClusterLocal:            false,
 		Priority:                  0,
 		RiskScore:                 2.375,
-		SetTopCvss:                &storage.Image_TopCvss{TopCvss: 7.8},
+		TopCvss:                   proto.Float32(7.8),
 		Notes: []storage.Image_Note{
 			storage.Image_MISSING_SIGNATURE_VERIFICATION_DATA,
 			storage.Image_MISSING_SIGNATURE,
 		},
-	}
+	}.Build()
 }
 
 // GetImageV2SherlockHolmes1 provides a pseudo-realistic image (ImageV2) for connected datastore integration testing.
 func GetImageV2SherlockHolmes1() *storage.ImageV2 {
 	imageName := "baker.st/sherlock/holmes:v1"
 	imageSha := "sha256:50fa59cca653c51d194974830826ff7a9d9095175f78caf40d5423d3fb12c4f7"
-	return &storage.ImageV2{
+	return storage.ImageV2_builder{
 		Id:     uuid.NewV5FromNonUUIDs(imageName, imageSha).String(),
 		Digest: imageSha,
-		Name: &storage.ImageName{
+		Name: storage.ImageName_builder{
 			Registry: "baker.st",
 			Remote:   "sherlock/holmes",
 			Tag:      "v1",
 			FullName: imageName,
-		},
-		Metadata: &storage.ImageMetadata{
-			V1: &storage.V1Metadata{
+		}.Build(),
+		Metadata: storage.ImageMetadata_builder{
+			V1: storage.V1Metadata_builder{
 				Digest:  "sha256:0a488a3872bfcd9e79a3575b5c273b01c01a21b16e86213a26eb7f3ab540eb84",
 				Created: protocompat.GetProtoTimestampFromSecondsAndNanos(1553642092, 227945051),
 				Author:  "Sir Arthur Conan Doyle",
 				Layers: []*storage.ImageLayer{
-					{
+					storage.ImageLayer_builder{
 						Instruction: "COPY",
 						Value:       "/ / # buildkit",
 						Created:     protocompat.GetProtoTimestampFromSecondsAndNanos(1553640086, 106246179),
-					},
-					{
+					}.Build(),
+					storage.ImageLayer_builder{
 						Instruction: " /usr/local/bin/ # buildkit",
 						Value:       "file:4fc310c0cb879c876c5c0f571af765a0d24d36cb9253e0f53a0cda2f7e4c1844 in /",
 						Created:     protocompat.GetProtoTimestampFromSecondsAndNanos(1553640126, 263243615),
-					},
-					{
+					}.Build(),
+					storage.ImageLayer_builder{
 						Instruction: "ADD",
 						Value:       "file:4fc310c0cb879c876c5c0f571af765a0d24d36cb9253e0f53a0cda2f7e4c1844 in /",
 						Created:     protocompat.GetProtoTimestampFromSecondsAndNanos(1553640134, 213199897),
-					},
+					}.Build(),
 				},
 				User:       "root",
 				Command:    nil,
 				Entrypoint: nil,
 				Volumes:    nil,
 				Labels:     nil,
-			},
-			V2: &storage.V2Metadata{Digest: "sha256:4d818f38fa9dcbf41e7c255f276a72e5c471c1523b6f755a344bac04652351dd"},
+			}.Build(),
+			V2: storage.V2Metadata_builder{Digest: "sha256:4d818f38fa9dcbf41e7c255f276a72e5c471c1523b6f755a344bac04652351dd"}.Build(),
 			LayerShas: []string{
 				"sha256:50fa59cca653c51d194974830826ff7a9d9095175f78caf40d5423d3fb12c4f7",
 				"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
 				"sha256:8e2ee98ae01ebe81fe221f5a444cab18c8f7a26cd00ce1ef23cf7432feef99b4",
 			},
-			DataSource: &storage.DataSource{
+			DataSource: storage.DataSource_builder{
 				Id:   "13e92196-8216-4714-9ac7-fac779bb973b",
 				Name: "Sir Arthur Conan Doyle",
-			},
+			}.Build(),
 			Version: 0,
-		},
-		Scan: &storage.ImageScan{
+		}.Build(),
+		Scan: storage.ImageScan_builder{
 			ScannerVersion: "2.24.0-11-g05cf175999",
 			ScanTime:       protocompat.GetProtoTimestampFromSecondsAndNanos(1654154310, 970783800),
 			Components: []*storage.EmbeddedImageScanComponent{
@@ -786,19 +787,19 @@ func GetImageV2SherlockHolmes1() *storage.ImageV2 {
 				GetEmbeddedImageComponent1s2x3(),
 			},
 			OperatingSystem: "crime-stories",
-			DataSource: &storage.DataSource{
+			DataSource: storage.DataSource_builder{
 				Id:   "169b0d3f-8277-4900-bbce-1127077defae",
 				Name: "Stackrox Scanner",
-			},
+			}.Build(),
 			Notes: []storage.ImageScan_Note{},
-		},
+		}.Build(),
 		SignatureVerificationData: nil,
 		Signature:                 nil,
-		ScanStats: &storage.ImageV2_ScanStats{
+		ScanStats: storage.ImageV2_ScanStats_builder{
 			ComponentCount:  3,
 			CveCount:        5,
 			FixableCveCount: 1,
-		},
+		}.Build(),
 		LastUpdated:    protocompat.GetProtoTimestampFromSecondsAndNanos(1654154313, 67882700),
 		NotPullable:    false,
 		IsClusterLocal: false,
@@ -809,63 +810,63 @@ func GetImageV2SherlockHolmes1() *storage.ImageV2 {
 			storage.ImageV2_MISSING_SIGNATURE_VERIFICATION_DATA,
 			storage.ImageV2_MISSING_SIGNATURE,
 		},
-	}
+	}.Build()
 }
 
 // GetImageV2DoctorJekyll2 provides a pseudo-realistic image (ImageV2) for connected datastore integration testing.
 func GetImageV2DoctorJekyll2() *storage.ImageV2 {
 	imageName := "book.worm/doctor/jekyll:v2"
 	imageSha := "sha256:835762dc5388a591ecf31540eaeb14ec8bc96ad48a3bd11fdef77b7106111eec"
-	return &storage.ImageV2{
+	return storage.ImageV2_builder{
 		Id: uuid.NewV5FromNonUUIDs(imageName, imageSha).String(),
-		Name: &storage.ImageName{
+		Name: storage.ImageName_builder{
 			Registry: "book.worm",
 			Remote:   "doctor/jekyll",
 			Tag:      "v2",
 			FullName: imageName,
-		},
+		}.Build(),
 		Digest: imageSha,
-		Metadata: &storage.ImageMetadata{
-			V1: &storage.V1Metadata{
+		Metadata: storage.ImageMetadata_builder{
+			V1: storage.V1Metadata_builder{
 				Digest:  "sha256:9fe0366ee2eead5a66948f853ebedae5464361b5ffb166980db355d294a971ff",
 				Created: protocompat.GetProtoTimestampFromSecondsAndNanos(1553642392, 877872600),
 				Author:  "Sir Arthur Conan Doyle",
 				Layers: []*storage.ImageLayer{
-					{
+					storage.ImageLayer_builder{
 						Instruction: "COPY",
 						Value:       "/ / # buildkit",
 						Created:     protocompat.GetProtoTimestampFromSecondsAndNanos(1553641386, 227945051),
-					},
-					{
+					}.Build(),
+					storage.ImageLayer_builder{
 						Instruction: " /usr/local/bin/ # buildkit",
 						Value:       "file:4fc310c0cb879c876c5c0f571af765a0d24d36cb9253e0f53a0cda2f7e4c1844 in /",
 						Created:     protocompat.GetProtoTimestampFromSecondsAndNanos(1553641426, 106246179),
-					},
-					{
+					}.Build(),
+					storage.ImageLayer_builder{
 						Instruction: "ADD",
 						Value:       "file:4fc310c0cb879c876c5c0f571af765a0d24d36cb9253e0f53a0cda2f7e4c1844 in /",
 						Created:     protocompat.GetProtoTimestampFromSecondsAndNanos(1553641534, 302497847),
-					},
+					}.Build(),
 				},
 				User:       "root",
 				Command:    nil,
 				Entrypoint: nil,
 				Volumes:    nil,
 				Labels:     nil,
-			},
-			V2: &storage.V2Metadata{Digest: "sha256:1e0ccd4630c681f887d799677a5d846d13e7fb69d4c4e25b899ba12ce804ac06"},
+			}.Build(),
+			V2: storage.V2Metadata_builder{Digest: "sha256:1e0ccd4630c681f887d799677a5d846d13e7fb69d4c4e25b899ba12ce804ac06"}.Build(),
 			LayerShas: []string{
 				"sha256:8d5041d30882e1fff9d4f4f90a72bd22896c8e365ad6095189d70d605bf7d3bd",
 				"sha256:9bc15005c6e7e93dcbe4c05f61dae53fcd72ce81aa44b3ae3d989e910ac682b9",
 				"sha256:e83e783ca7567afba7ea4541e6233032ca0303b43811539453c36b11c497eda8",
 			},
-			DataSource: &storage.DataSource{
+			DataSource: storage.DataSource_builder{
 				Id:   "28eacb99-4e61-8be8-c316e6875184",
 				Name: "Robert Louis Stevenson",
-			},
+			}.Build(),
 			Version: 0,
-		},
-		Scan: &storage.ImageScan{
+		}.Build(),
+		Scan: storage.ImageScan_builder{
 			ScannerVersion: "2.24.0-11-g05cf175999",
 			ScanTime:       protocompat.GetProtoTimestampFromSecondsAndNanos(1654154710, 67882700),
 			Components: []*storage.EmbeddedImageScanComponent{
@@ -874,19 +875,19 @@ func GetImageV2DoctorJekyll2() *storage.ImageV2 {
 				GetEmbeddedImageComponent2x5(),
 			},
 			OperatingSystem: "crime-stories",
-			DataSource: &storage.DataSource{
+			DataSource: storage.DataSource_builder{
 				Id:   "169b0d3f-8277-4900-bbce-1127077defae",
 				Name: "Stackrox Scanner",
-			},
+			}.Build(),
 			Notes: []storage.ImageScan_Note{},
-		},
+		}.Build(),
 		SignatureVerificationData: nil,
 		Signature:                 nil,
-		ScanStats: &storage.ImageV2_ScanStats{
+		ScanStats: storage.ImageV2_ScanStats_builder{
 			ComponentCount:  3,
 			CveCount:        5,
 			FixableCveCount: 2,
-		},
+		}.Build(),
 		LastUpdated:    protocompat.GetProtoTimestampFromSecondsAndNanos(1654154413, 970783800),
 		NotPullable:    false,
 		IsClusterLocal: false,
@@ -897,12 +898,12 @@ func GetImageV2DoctorJekyll2() *storage.ImageV2 {
 			storage.ImageV2_MISSING_SIGNATURE_VERIFICATION_DATA,
 			storage.ImageV2_MISSING_SIGNATURE,
 		},
-	}
+	}.Build()
 }
 
 // GetDeploymentSherlockHolmes1 provides a pseudo-realistic deployment for connected datastore integration testing.
 func GetDeploymentSherlockHolmes1(id string, namespace *storage.NamespaceMetadata) *storage.Deployment {
-	return &storage.Deployment{
+	return storage.Deployment_builder{
 		Id:                    id,
 		Name:                  "sherlock-holmes-deployment",
 		Hash:                  0,
@@ -913,17 +914,17 @@ func GetDeploymentSherlockHolmes1(id string, namespace *storage.NamespaceMetadat
 		Replicas:              2,
 		Labels:                map[string]string{"k8s-app": "sherlock-holmes"},
 		PodLabels:             map[string]string{"k8s-app": "sherlock-holmes"},
-		LabelSelector:         &storage.LabelSelector{MatchLabels: map[string]string{"k8s-app": "sherlock-holmes"}},
+		LabelSelector:         storage.LabelSelector_builder{MatchLabels: map[string]string{"k8s-app": "sherlock-holmes"}}.Build(),
 		Created:               protocompat.GetProtoTimestampFromSeconds(1643589436),
 		ClusterId:             namespace.GetClusterId(),
 		ClusterName:           namespace.GetClusterName(),
 		Containers: []*storage.Container{
-			{
+			storage.Container_builder{
 				Id: "2edd1e07-2b5a-4f04-8582-42db7fbc9ce7",
-				Config: &storage.ContainerConfig{
+				Config: storage.ContainerConfig_builder{
 					Args: []string{"--investigate-dubious-story"},
-				},
-				Image: &storage.ContainerImage{
+				}.Build(),
+				Image: storage.ContainerImage_builder{
 					Id: func() string {
 						if !features.FlattenImageData.Enabled() {
 							return GetImageSherlockHolmes1().GetId()
@@ -944,8 +945,8 @@ func GetDeploymentSherlockHolmes1(id string, namespace *storage.NamespaceMetadat
 					}(),
 					NotPullable:    false,
 					IsClusterLocal: false,
-				},
-				SecurityContext: &storage.SecurityContext{
+				}.Build(),
+				SecurityContext: storage.SecurityContext_builder{
 					Privileged:               false,
 					Selinux:                  nil,
 					DropCapabilities:         []string{"all"},
@@ -953,15 +954,15 @@ func GetDeploymentSherlockHolmes1(id string, namespace *storage.NamespaceMetadat
 					ReadOnlyRootFilesystem:   true,
 					SeccompProfile:           nil,
 					AllowPrivilegeEscalation: false,
-				},
+				}.Build(),
 				Volumes:        nil,
 				Ports:          nil,
 				Secrets:        nil,
 				Resources:      nil,
 				Name:           "sherlockholmes",
-				LivenessProbe:  &storage.LivenessProbe{Defined: true},
-				ReadinessProbe: &storage.ReadinessProbe{Defined: true},
-			},
+				LivenessProbe:  storage.LivenessProbe_builder{Defined: true}.Build(),
+				ReadinessProbe: storage.ReadinessProbe_builder{Defined: true}.Build(),
+			}.Build(),
 		},
 		Annotations:                   nil,
 		Priority:                      3,
@@ -978,12 +979,12 @@ func GetDeploymentSherlockHolmes1(id string, namespace *storage.NamespaceMetadat
 		Ports:                         nil,
 		StateTimestamp:                1654762976894737,
 		RiskScore:                     1.9846836,
-	}
+	}.Build()
 }
 
 // GetDeploymentDoctorJekyll2 provides a pseudo-realistic deployment for connected datastore integration testing.
 func GetDeploymentDoctorJekyll2(id string, namespace *storage.NamespaceMetadata) *storage.Deployment {
-	return &storage.Deployment{
+	return storage.Deployment_builder{
 		Id:                    id,
 		Name:                  "doctor-jekyll-deployment",
 		Hash:                  0,
@@ -994,17 +995,17 @@ func GetDeploymentDoctorJekyll2(id string, namespace *storage.NamespaceMetadata)
 		Replicas:              2,
 		Labels:                map[string]string{"k8s-app": "mr-hyde"},
 		PodLabels:             map[string]string{"k8s-app": "mr-hyde"},
-		LabelSelector:         &storage.LabelSelector{MatchLabels: map[string]string{"k8s-app": "mr-hyde"}},
+		LabelSelector:         storage.LabelSelector_builder{MatchLabels: map[string]string{"k8s-app": "mr-hyde"}}.Build(),
 		Created:               protocompat.GetProtoTimestampFromSeconds(1643589436),
 		ClusterId:             namespace.GetClusterId(),
 		ClusterName:           namespace.GetClusterName(),
 		Containers: []*storage.Container{
-			{
+			storage.Container_builder{
 				Id: "2edd1e07-2b5a-4f04-8582-42db7fbc9ce7",
-				Config: &storage.ContainerConfig{
+				Config: storage.ContainerConfig_builder{
 					Args: []string{"--tries-to-find-refined-special-crystals"},
-				},
-				Image: &storage.ContainerImage{
+				}.Build(),
+				Image: storage.ContainerImage_builder{
 					Id: func() string {
 						if !features.FlattenImageData.Enabled() {
 							return GetImageDoctorJekyll2().GetId()
@@ -1025,8 +1026,8 @@ func GetDeploymentDoctorJekyll2(id string, namespace *storage.NamespaceMetadata)
 					}(),
 					NotPullable:    false,
 					IsClusterLocal: false,
-				},
-				SecurityContext: &storage.SecurityContext{
+				}.Build(),
+				SecurityContext: storage.SecurityContext_builder{
 					Privileged:               false,
 					Selinux:                  nil,
 					DropCapabilities:         []string{"all"},
@@ -1034,15 +1035,15 @@ func GetDeploymentDoctorJekyll2(id string, namespace *storage.NamespaceMetadata)
 					ReadOnlyRootFilesystem:   true,
 					SeccompProfile:           nil,
 					AllowPrivilegeEscalation: false,
-				},
+				}.Build(),
 				Volumes:        nil,
 				Ports:          nil,
 				Secrets:        nil,
 				Resources:      nil,
 				Name:           "doctorjekyll",
-				LivenessProbe:  &storage.LivenessProbe{Defined: true},
-				ReadinessProbe: &storage.ReadinessProbe{Defined: true},
-			},
+				LivenessProbe:  storage.LivenessProbe_builder{Defined: true}.Build(),
+				ReadinessProbe: storage.ReadinessProbe_builder{Defined: true}.Build(),
+			}.Build(),
 		},
 		Annotations:                   nil,
 		Priority:                      3,
@@ -1059,7 +1060,7 @@ func GetDeploymentDoctorJekyll2(id string, namespace *storage.NamespaceMetadata)
 		Ports:                         nil,
 		StateTimestamp:                1654762976894737,
 		RiskScore:                     1.9846836,
-	}
+	}.Build()
 }
 
 // namespace for deployment can be fetched using the namespace fixture GetNamespace(clusterID, clusterName, namespace)
@@ -1124,193 +1125,192 @@ func GetDeploymentDoctorJekyll2(id string, namespace *storage.NamespaceMetadata)
 // GetEmbeddedNodeCVE1234x0001 provides a pseudo-realistic image CVE for connected datastore datastore integration testing.
 func GetEmbeddedNodeCVE1234x0001() *storage.EmbeddedVulnerability {
 	vulnerability := GetEmbeddedImageCVE1234x0001()
-	vulnerability.VulnerabilityType = storage.EmbeddedVulnerability_NODE_VULNERABILITY
-	vulnerability.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{
+	vulnerability.SetVulnerabilityType(storage.EmbeddedVulnerability_NODE_VULNERABILITY)
+	vulnerability.SetVulnerabilityTypes([]storage.EmbeddedVulnerability_VulnerabilityType{
 		storage.EmbeddedVulnerability_NODE_VULNERABILITY,
-	}
+	})
 	return vulnerability
 }
 
 // GetEmbeddedNodeCVE4567x0002 provides a pseudo-realistic image CVE for connected datastore datastore integration testing.
 func GetEmbeddedNodeCVE4567x0002() *storage.EmbeddedVulnerability {
 	vulnerability := GetEmbeddedImageCVE4567x0002()
-	vulnerability.VulnerabilityType = storage.EmbeddedVulnerability_NODE_VULNERABILITY
-	vulnerability.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{
+	vulnerability.SetVulnerabilityType(storage.EmbeddedVulnerability_NODE_VULNERABILITY)
+	vulnerability.SetVulnerabilityTypes([]storage.EmbeddedVulnerability_VulnerabilityType{
 		storage.EmbeddedVulnerability_NODE_VULNERABILITY,
-	}
+	})
 	return vulnerability
 }
 
 // GetEmbeddedNodeCVE1234x0003 provides a pseudo-realistic image CVE for connected datastore datastore integration testing.
 func GetEmbeddedNodeCVE1234x0003() *storage.EmbeddedVulnerability {
 	vulnerability := GetEmbeddedImageCVE1234x0003()
-	vulnerability.VulnerabilityType = storage.EmbeddedVulnerability_NODE_VULNERABILITY
-	vulnerability.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{
+	vulnerability.SetVulnerabilityType(storage.EmbeddedVulnerability_NODE_VULNERABILITY)
+	vulnerability.SetVulnerabilityTypes([]storage.EmbeddedVulnerability_VulnerabilityType{
 		storage.EmbeddedVulnerability_NODE_VULNERABILITY,
-	}
+	})
 	return vulnerability
 }
 
 // GetEmbeddedNodeCVE3456x0004 provides a pseudo-realistic image CVE for connected datastore datastore integration testing.
 func GetEmbeddedNodeCVE3456x0004() *storage.EmbeddedVulnerability {
 	vulnerability := GetEmbeddedImageCVE3456x0004()
-	vulnerability.VulnerabilityType = storage.EmbeddedVulnerability_NODE_VULNERABILITY
-	vulnerability.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{
+	vulnerability.SetVulnerabilityType(storage.EmbeddedVulnerability_NODE_VULNERABILITY)
+	vulnerability.SetVulnerabilityTypes([]storage.EmbeddedVulnerability_VulnerabilityType{
 		storage.EmbeddedVulnerability_NODE_VULNERABILITY,
-	}
+	})
 	return vulnerability
 }
 
 // GetEmbeddedNodeCVE3456x0005 provides a pseudo-realistic image CVE for connected datastore datastore integration testing.
 func GetEmbeddedNodeCVE3456x0005() *storage.EmbeddedVulnerability {
 	vulnerability := GetEmbeddedImageCVE3456x0005()
-	vulnerability.VulnerabilityType = storage.EmbeddedVulnerability_NODE_VULNERABILITY
-	vulnerability.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{
+	vulnerability.SetVulnerabilityType(storage.EmbeddedVulnerability_NODE_VULNERABILITY)
+	vulnerability.SetVulnerabilityTypes([]storage.EmbeddedVulnerability_VulnerabilityType{
 		storage.EmbeddedVulnerability_NODE_VULNERABILITY,
-	}
+	})
 	return vulnerability
 }
 
 // GetEmbeddedNodeCVE2345x0006 provides a pseudo-realistic image CVE for connected datastore datastore integration testing.
 func GetEmbeddedNodeCVE2345x0006() *storage.EmbeddedVulnerability {
 	vulnerability := GetEmbeddedImageCVE2345x0006()
-	vulnerability.VulnerabilityType = storage.EmbeddedVulnerability_NODE_VULNERABILITY
-	vulnerability.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{
+	vulnerability.SetVulnerabilityType(storage.EmbeddedVulnerability_NODE_VULNERABILITY)
+	vulnerability.SetVulnerabilityTypes([]storage.EmbeddedVulnerability_VulnerabilityType{
 		storage.EmbeddedVulnerability_NODE_VULNERABILITY,
-	}
+	})
 	return vulnerability
 }
 
 // GetEmbeddedNodeCVE2345x0007 provides a pseudo-realistic image CVE for connected datastore datastore integration testing.
 func GetEmbeddedNodeCVE2345x0007() *storage.EmbeddedVulnerability {
 	vulnerability := GetEmbeddedImageCVE2345x0007()
-	vulnerability.VulnerabilityType = storage.EmbeddedVulnerability_NODE_VULNERABILITY
-	vulnerability.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{
+	vulnerability.SetVulnerabilityType(storage.EmbeddedVulnerability_NODE_VULNERABILITY)
+	vulnerability.SetVulnerabilityTypes([]storage.EmbeddedVulnerability_VulnerabilityType{
 		storage.EmbeddedVulnerability_NODE_VULNERABILITY,
-	}
+	})
 	return vulnerability
 }
 
 // GetEmbeddedNodeComponent1x1 provides a pseudo-realistic node component for connected datastore integration testing.
 func GetEmbeddedNodeComponent1x1() *storage.EmbeddedNodeScanComponent {
-	return &storage.EmbeddedNodeScanComponent{
-		Name:    "scarlet",
-		Version: "1.1",
-		Vulns: []*storage.EmbeddedVulnerability{
-			GetEmbeddedNodeCVE1234x0001(),
-			GetEmbeddedNodeCVE4567x0002(),
-		},
-		Vulnerabilities: nil,
-		Priority:        0,
-		SetTopCvss:      &storage.EmbeddedNodeScanComponent_TopCvss{TopCvss: 7.5},
-		RiskScore:       0,
-	}
+	ensc := &storage.EmbeddedNodeScanComponent{}
+	ensc.SetName("scarlet")
+	ensc.SetVersion("1.1")
+	ensc.SetVulns([]*storage.EmbeddedVulnerability{
+		GetEmbeddedNodeCVE1234x0001(),
+		GetEmbeddedNodeCVE4567x0002(),
+	})
+	ensc.SetVulnerabilities(nil)
+	ensc.SetPriority(0)
+	ensc.Set_TopCvss(7.5)
+	ensc.SetRiskScore(0)
+	return ensc
 }
 
 // GetEmbeddedNodeComponent1x2 provides a pseudo-realistic node component for connected datastore integration testing.
 func GetEmbeddedNodeComponent1x2() *storage.EmbeddedNodeScanComponent {
-	return &storage.EmbeddedNodeScanComponent{
-		Name:    "baskerville",
-		Version: "1.2",
-		Vulns: []*storage.EmbeddedVulnerability{
-			GetEmbeddedNodeCVE1234x0003(),
-		},
-		Vulnerabilities: nil,
-		Priority:        0,
-		SetTopCvss:      &storage.EmbeddedNodeScanComponent_TopCvss{TopCvss: 7.5},
-		RiskScore:       0,
-	}
+	ensc := &storage.EmbeddedNodeScanComponent{}
+	ensc.SetName("baskerville")
+	ensc.SetVersion("1.2")
+	ensc.SetVulns([]*storage.EmbeddedVulnerability{
+		GetEmbeddedNodeCVE1234x0003(),
+	})
+	ensc.SetVulnerabilities(nil)
+	ensc.SetPriority(0)
+	ensc.Set_TopCvss(7.5)
+	ensc.SetRiskScore(0)
+	return ensc
 }
 
 // GetEmbeddedNodeComponent1s2x3 provides a pseudo-realistic node component for connected datastore integration testing.
 func GetEmbeddedNodeComponent1s2x3() *storage.EmbeddedNodeScanComponent {
-	return &storage.EmbeddedNodeScanComponent{
-		Name:    "downtown-london",
-		Version: "1s.2-3",
-		Vulns: []*storage.EmbeddedVulnerability{
-			GetEmbeddedNodeCVE3456x0004(),
-			GetEmbeddedNodeCVE3456x0005(),
-		},
-		Vulnerabilities: nil,
-		Priority:        0,
-		SetTopCvss:      &storage.EmbeddedNodeScanComponent_TopCvss{TopCvss: 7.5},
-		RiskScore:       0,
-	}
+	ensc := &storage.EmbeddedNodeScanComponent{}
+	ensc.SetName("downtown-london")
+	ensc.SetVersion("1s.2-3")
+	ensc.SetVulns([]*storage.EmbeddedVulnerability{
+		GetEmbeddedNodeCVE3456x0004(),
+		GetEmbeddedNodeCVE3456x0005(),
+	})
+	ensc.SetVulnerabilities(nil)
+	ensc.SetPriority(0)
+	ensc.Set_TopCvss(7.5)
+	ensc.SetRiskScore(0)
+	return ensc
 }
 
 // GetEmbeddedNodeComponent2x4 provides a pseudo-realistic node component for connected datastore integration testing.
 func GetEmbeddedNodeComponent2x4() *storage.EmbeddedNodeScanComponent {
-	return &storage.EmbeddedNodeScanComponent{
-		Name:            "dr-jekyll-medecine-practice",
-		Version:         "2.4",
-		Vulns:           []*storage.EmbeddedVulnerability{},
-		Vulnerabilities: nil,
-		Priority:        0,
-		SetTopCvss:      &storage.EmbeddedNodeScanComponent_TopCvss{TopCvss: 0.0},
-		RiskScore:       0,
-	}
+	ensc := &storage.EmbeddedNodeScanComponent{}
+	ensc.SetName("dr-jekyll-medecine-practice")
+	ensc.SetVersion("2.4")
+	ensc.SetVulns([]*storage.EmbeddedVulnerability{})
+	ensc.SetVulnerabilities(nil)
+	ensc.SetPriority(0)
+	ensc.Set_TopCvss(0.0)
+	ensc.SetRiskScore(0)
+	return ensc
 }
 
 // GetEmbeddedNodeComponent2x5 provides a pseudo-realistic node component for connected datastore integration testing.
 func GetEmbeddedNodeComponent2x5() *storage.EmbeddedNodeScanComponent {
-	return &storage.EmbeddedNodeScanComponent{
-		Name:    "mr-hyde-secret-entrance",
-		Version: "2.5",
-		Vulns: []*storage.EmbeddedVulnerability{
-			GetEmbeddedNodeCVE4567x0002(),
-			GetEmbeddedNodeCVE2345x0006(),
-			GetEmbeddedNodeCVE2345x0007(),
-		},
-		Vulnerabilities: nil,
-		Priority:        0,
-		SetTopCvss:      &storage.EmbeddedNodeScanComponent_TopCvss{TopCvss: 7.8},
-		RiskScore:       0,
-	}
+	ensc := &storage.EmbeddedNodeScanComponent{}
+	ensc.SetName("mr-hyde-secret-entrance")
+	ensc.SetVersion("2.5")
+	ensc.SetVulns([]*storage.EmbeddedVulnerability{
+		GetEmbeddedNodeCVE4567x0002(),
+		GetEmbeddedNodeCVE2345x0006(),
+		GetEmbeddedNodeCVE2345x0007(),
+	})
+	ensc.SetVulnerabilities(nil)
+	ensc.SetPriority(0)
+	ensc.Set_TopCvss(7.8)
+	ensc.SetRiskScore(0)
+	return ensc
 }
 
 // GetScopedNode1 provides a pseudo-realistic node with scoping information matching the input for
 // connected datastore integration testing.
 func GetScopedNode1(nodeID string, clusterID string) *storage.Node {
-	node := &storage.Node{
-		Id:                      nodeID,
-		Name:                    "sherlock-holmes",
-		Taints:                  nil,
-		ClusterId:               clusterID,
-		ClusterName:             "test-cluster",
-		Labels:                  nil,
-		Annotations:             nil,
-		JoinedAt:                protocompat.GetProtoTimestampFromSeconds(1643789433),
-		InternalIpAddresses:     nil,
-		ExternalIpAddresses:     nil,
-		ContainerRuntimeVersion: "",
-		ContainerRuntime: &storage.ContainerRuntimeInfo{
-			Type:    storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
-			Version: "20.10.10",
-		},
-		KernelVersion:    "",
-		OsImage:          "",
-		KubeletVersion:   "",
-		KubeProxyVersion: "",
-		LastUpdated:      nil,
-		K8SUpdated:       nil,
-		Scan: &storage.NodeScan{
-			ScanTime:        protocompat.GetProtoTimestampFromSecondsAndNanos(1654154292, 870002400),
-			OperatingSystem: "Linux",
-			Components: []*storage.EmbeddedNodeScanComponent{
-				GetEmbeddedNodeComponent1x1(),
-				GetEmbeddedNodeComponent1x2(),
-				GetEmbeddedNodeComponent1s2x3(),
-			},
-			Notes: nil,
-		},
-		SetComponents: &storage.Node_Components{Components: 3},
-		SetCves:       &storage.Node_Cves{Cves: 5},
-		SetFixable:    &storage.Node_FixableCves{FixableCves: 2},
-		Priority:      0,
-		RiskScore:     1.275,
-		SetTopCvss:    &storage.Node_TopCvss{TopCvss: 7.5},
-		Notes:         nil,
-	}
+	cri := &storage.ContainerRuntimeInfo{}
+	cri.SetType(storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME)
+	cri.SetVersion("20.10.10")
+	nodeScan := &storage.NodeScan{}
+	nodeScan.SetScanTime(protocompat.GetProtoTimestampFromSecondsAndNanos(1654154292, 870002400))
+	nodeScan.SetOperatingSystem("Linux")
+	nodeScan.SetComponents([]*storage.EmbeddedNodeScanComponent{
+		GetEmbeddedNodeComponent1x1(),
+		GetEmbeddedNodeComponent1x2(),
+		GetEmbeddedNodeComponent1s2x3(),
+	})
+	nodeScan.SetNotes(nil)
+	node := &storage.Node{}
+	node.SetId(nodeID)
+	node.SetName("sherlock-holmes")
+	node.SetTaints(nil)
+	node.SetClusterId(clusterID)
+	node.SetClusterName("test-cluster")
+	node.SetLabels(nil)
+	node.SetAnnotations(nil)
+	node.SetJoinedAt(protocompat.GetProtoTimestampFromSeconds(1643789433))
+	node.SetInternalIpAddresses(nil)
+	node.SetExternalIpAddresses(nil)
+	node.SetContainerRuntimeVersion("")
+	node.SetContainerRuntime(cri)
+	node.SetKernelVersion("")
+	node.SetOsImage("")
+	node.SetKubeletVersion("")
+	node.SetKubeProxyVersion("")
+	node.ClearLastUpdated()
+	node.ClearK8SUpdated()
+	node.SetScan(nodeScan)
+	node.Set_Components(3)
+	node.Set_Cves(5)
+	node.SetFixableCves(2)
+	node.SetPriority(0)
+	node.SetRiskScore(1.275)
+	node.Set_TopCvss(7.5)
+	node.SetNotes(nil)
 	converter.FillV2NodeVulnerabilities(node)
 	return node
 }
@@ -1318,47 +1318,46 @@ func GetScopedNode1(nodeID string, clusterID string) *storage.Node {
 // GetScopedNode2 provides a pseudo-realistic node with scoping information matching the input for
 // connected datastore integration testing.
 func GetScopedNode2(nodeID string, clusterID string) *storage.Node {
-	node := &storage.Node{
-		Id:                      nodeID,
-		Name:                    "dr-jekyll",
-		Taints:                  nil,
-		ClusterId:               clusterID,
-		ClusterName:             "test-cluster",
-		Labels:                  nil,
-		Annotations:             nil,
-		JoinedAt:                protocompat.GetProtoTimestampFromSeconds(1643789433),
-		InternalIpAddresses:     nil,
-		ExternalIpAddresses:     nil,
-		ContainerRuntimeVersion: "",
-		ContainerRuntime: &storage.ContainerRuntimeInfo{
-			Type:    storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
-			Version: "20.10.10",
-		},
-		KernelVersion:    "",
-		OperatingSystem:  "Docker Desktop",
-		OsImage:          "",
-		KubeletVersion:   "",
-		KubeProxyVersion: "",
-		LastUpdated:      nil,
-		K8SUpdated:       nil,
-		Scan: &storage.NodeScan{
-			ScanTime:        protocompat.GetProtoTimestampFromSecondsAndNanos(1654154292, 870002400),
-			OperatingSystem: "Linux",
-			Components: []*storage.EmbeddedNodeScanComponent{
-				GetEmbeddedNodeComponent1s2x3(),
-				GetEmbeddedNodeComponent2x4(),
-				GetEmbeddedNodeComponent2x5(),
-			},
-			Notes: nil,
-		},
-		SetComponents: &storage.Node_Components{Components: 3},
-		SetCves:       &storage.Node_Cves{Cves: 5},
-		SetFixable:    &storage.Node_FixableCves{FixableCves: 2},
-		Priority:      0,
-		RiskScore:     2.375,
-		SetTopCvss:    &storage.Node_TopCvss{TopCvss: 7.8},
-		Notes:         nil,
-	}
+	cri := &storage.ContainerRuntimeInfo{}
+	cri.SetType(storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME)
+	cri.SetVersion("20.10.10")
+	nodeScan := &storage.NodeScan{}
+	nodeScan.SetScanTime(protocompat.GetProtoTimestampFromSecondsAndNanos(1654154292, 870002400))
+	nodeScan.SetOperatingSystem("Linux")
+	nodeScan.SetComponents([]*storage.EmbeddedNodeScanComponent{
+		GetEmbeddedNodeComponent1s2x3(),
+		GetEmbeddedNodeComponent2x4(),
+		GetEmbeddedNodeComponent2x5(),
+	})
+	nodeScan.SetNotes(nil)
+	node := &storage.Node{}
+	node.SetId(nodeID)
+	node.SetName("dr-jekyll")
+	node.SetTaints(nil)
+	node.SetClusterId(clusterID)
+	node.SetClusterName("test-cluster")
+	node.SetLabels(nil)
+	node.SetAnnotations(nil)
+	node.SetJoinedAt(protocompat.GetProtoTimestampFromSeconds(1643789433))
+	node.SetInternalIpAddresses(nil)
+	node.SetExternalIpAddresses(nil)
+	node.SetContainerRuntimeVersion("")
+	node.SetContainerRuntime(cri)
+	node.SetKernelVersion("")
+	node.SetOperatingSystem("Docker Desktop")
+	node.SetOsImage("")
+	node.SetKubeletVersion("")
+	node.SetKubeProxyVersion("")
+	node.ClearLastUpdated()
+	node.ClearK8SUpdated()
+	node.SetScan(nodeScan)
+	node.Set_Components(3)
+	node.Set_Cves(5)
+	node.SetFixableCves(2)
+	node.SetPriority(0)
+	node.SetRiskScore(2.375)
+	node.Set_TopCvss(7.8)
+	node.SetNotes(nil)
 	converter.FillV2NodeVulnerabilities(node)
 	return node
 }
@@ -1394,147 +1393,147 @@ func GetScopedNode2(nodeID string, clusterID string) *storage.Node {
 
 // GetEmbeddedClusterCVE1234x0001 provides a pseudo-realistic image CVE for connected datastore datastore integration testing.
 func GetEmbeddedClusterCVE1234x0001() *storage.EmbeddedVulnerability {
-	return &storage.EmbeddedVulnerability{
-		Cve:          "CVE-1234-0001",
-		Cvss:         5.8,
-		Summary:      "Find some inspiring quote on an evil topic to insert here.",
-		Link:         "book://author/title",
-		SetFixedBy:   &storage.EmbeddedVulnerability_FixedBy{FixedBy: ""},
-		ScoreVersion: storage.EmbeddedVulnerability_V2,
-		CvssV2: &storage.CVSSV2{
-			Vector:              "AV:N/AC:M/Au:N/C:P/I:P/A:N",
-			AttackVector:        storage.CVSSV2_ATTACK_NETWORK,
-			AccessComplexity:    storage.CVSSV2_ACCESS_MEDIUM,
-			Authentication:      storage.CVSSV2_AUTH_NONE,
-			Confidentiality:     storage.CVSSV2_IMPACT_PARTIAL,
-			Integrity:           storage.CVSSV2_IMPACT_PARTIAL,
-			Availability:        storage.CVSSV2_IMPACT_NONE,
-			ExploitabilityScore: 8.6,
-			ImpactScore:         4.9,
-			Score:               5.8,
-			Severity:            storage.CVSSV2_MEDIUM,
-		},
-		CvssV3:            nil,
-		PublishedOn:       protocompat.GetProtoTimestampFromSeconds(1234567890),
-		LastModified:      protocompat.GetProtoTimestampFromSeconds(1235467890),
-		VulnerabilityType: storage.EmbeddedVulnerability_OPENSHIFT_VULNERABILITY,
-		VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
-			storage.EmbeddedVulnerability_OPENSHIFT_VULNERABILITY,
-		},
-		Suppressed:            false,
-		SuppressActivation:    nil,
-		SuppressExpiry:        nil,
-		FirstSystemOccurrence: protocompat.GetProtoTimestampFromSeconds(1243567890),
-		FirstImageOccurrence:  protocompat.GetProtoTimestampFromSeconds(1245367890),
-		Severity:              storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
-		State:                 storage.VulnerabilityState_OBSERVED,
-	}
+	cVSSV2 := &storage.CVSSV2{}
+	cVSSV2.SetVector("AV:N/AC:M/Au:N/C:P/I:P/A:N")
+	cVSSV2.SetAttackVector(storage.CVSSV2_ATTACK_NETWORK)
+	cVSSV2.SetAccessComplexity(storage.CVSSV2_ACCESS_MEDIUM)
+	cVSSV2.SetAuthentication(storage.CVSSV2_AUTH_NONE)
+	cVSSV2.SetConfidentiality(storage.CVSSV2_IMPACT_PARTIAL)
+	cVSSV2.SetIntegrity(storage.CVSSV2_IMPACT_PARTIAL)
+	cVSSV2.SetAvailability(storage.CVSSV2_IMPACT_NONE)
+	cVSSV2.SetExploitabilityScore(8.6)
+	cVSSV2.SetImpactScore(4.9)
+	cVSSV2.SetScore(5.8)
+	cVSSV2.SetSeverity(storage.CVSSV2_MEDIUM)
+	ev := &storage.EmbeddedVulnerability{}
+	ev.SetCve("CVE-1234-0001")
+	ev.SetCvss(5.8)
+	ev.SetSummary("Find some inspiring quote on an evil topic to insert here.")
+	ev.SetLink("book://author/title")
+	ev.Set_FixedBy("")
+	ev.SetScoreVersion(storage.EmbeddedVulnerability_V2)
+	ev.SetCvssV2(cVSSV2)
+	ev.ClearCvssV3()
+	ev.SetPublishedOn(protocompat.GetProtoTimestampFromSeconds(1234567890))
+	ev.SetLastModified(protocompat.GetProtoTimestampFromSeconds(1235467890))
+	ev.SetVulnerabilityType(storage.EmbeddedVulnerability_OPENSHIFT_VULNERABILITY)
+	ev.SetVulnerabilityTypes([]storage.EmbeddedVulnerability_VulnerabilityType{
+		storage.EmbeddedVulnerability_OPENSHIFT_VULNERABILITY,
+	})
+	ev.SetSuppressed(false)
+	ev.ClearSuppressActivation()
+	ev.ClearSuppressExpiry()
+	ev.SetFirstSystemOccurrence(protocompat.GetProtoTimestampFromSeconds(1243567890))
+	ev.SetFirstImageOccurrence(protocompat.GetProtoTimestampFromSeconds(1245367890))
+	ev.SetSeverity(storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY)
+	ev.SetState(storage.VulnerabilityState_OBSERVED)
+	return ev
 }
 
 // GetEmbeddedClusterCVE4567x0002 provides a pseudo-realistic image CVE for connected datastore datastore integration testing.
 func GetEmbeddedClusterCVE4567x0002() *storage.EmbeddedVulnerability {
-	return &storage.EmbeddedVulnerability{
-		Cve:          "CVE-4567-0002",
-		Cvss:         7.5,
-		Summary:      "Find some inspiring quote on an evil topic to insert here.",
-		Link:         "book://author/title",
-		SetFixedBy:   &storage.EmbeddedVulnerability_FixedBy{FixedBy: "1.1.1"},
-		ScoreVersion: storage.EmbeddedVulnerability_V3,
-		CvssV2: &storage.CVSSV2{
-			Vector:              "AV:N/AC:L/Au:N/C:N/I:P/A:N",
-			AttackVector:        storage.CVSSV2_ATTACK_NETWORK,
-			AccessComplexity:    storage.CVSSV2_ACCESS_LOW,
-			Authentication:      storage.CVSSV2_AUTH_NONE,
-			Confidentiality:     storage.CVSSV2_IMPACT_NONE,
-			Integrity:           storage.CVSSV2_IMPACT_PARTIAL,
-			Availability:        storage.CVSSV2_IMPACT_NONE,
-			ExploitabilityScore: 10.0,
-			ImpactScore:         2.9,
-			Score:               5.0,
-			Severity:            storage.CVSSV2_MEDIUM,
-		},
-		CvssV3: &storage.CVSSV3{
-			Vector:              "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
-			ExploitabilityScore: 3.9,
-			ImpactScore:         3.6,
-			AttackVector:        storage.CVSSV3_ATTACK_NETWORK,
-			AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
-			PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
-			UserInteraction:     storage.CVSSV3_UI_NONE,
-			Scope:               storage.CVSSV3_UNCHANGED,
-			Confidentiality:     storage.CVSSV3_IMPACT_NONE,
-			Integrity:           storage.CVSSV3_IMPACT_HIGH,
-			Availability:        storage.CVSSV3_IMPACT_NONE,
-			Score:               7.5,
-			Severity:            storage.CVSSV3_HIGH,
-		},
-		PublishedOn:       protocompat.GetProtoTimestampFromSeconds(1234567890),
-		LastModified:      protocompat.GetProtoTimestampFromSeconds(1235467890),
-		VulnerabilityType: storage.EmbeddedVulnerability_ISTIO_VULNERABILITY,
-		VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
-			storage.EmbeddedVulnerability_K8S_VULNERABILITY,
-			storage.EmbeddedVulnerability_ISTIO_VULNERABILITY,
-			storage.EmbeddedVulnerability_OPENSHIFT_VULNERABILITY,
-		},
-		Suppressed:            false,
-		SuppressActivation:    nil,
-		SuppressExpiry:        nil,
-		FirstSystemOccurrence: protocompat.GetProtoTimestampFromSeconds(1243567890),
-		FirstImageOccurrence:  protocompat.GetProtoTimestampFromSeconds(1245367890),
-		Severity:              storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
-		State:                 storage.VulnerabilityState_OBSERVED,
-	}
+	cVSSV2 := &storage.CVSSV2{}
+	cVSSV2.SetVector("AV:N/AC:L/Au:N/C:N/I:P/A:N")
+	cVSSV2.SetAttackVector(storage.CVSSV2_ATTACK_NETWORK)
+	cVSSV2.SetAccessComplexity(storage.CVSSV2_ACCESS_LOW)
+	cVSSV2.SetAuthentication(storage.CVSSV2_AUTH_NONE)
+	cVSSV2.SetConfidentiality(storage.CVSSV2_IMPACT_NONE)
+	cVSSV2.SetIntegrity(storage.CVSSV2_IMPACT_PARTIAL)
+	cVSSV2.SetAvailability(storage.CVSSV2_IMPACT_NONE)
+	cVSSV2.SetExploitabilityScore(10.0)
+	cVSSV2.SetImpactScore(2.9)
+	cVSSV2.SetScore(5.0)
+	cVSSV2.SetSeverity(storage.CVSSV2_MEDIUM)
+	cVSSV3 := &storage.CVSSV3{}
+	cVSSV3.SetVector("CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N")
+	cVSSV3.SetExploitabilityScore(3.9)
+	cVSSV3.SetImpactScore(3.6)
+	cVSSV3.SetAttackVector(storage.CVSSV3_ATTACK_NETWORK)
+	cVSSV3.SetAttackComplexity(storage.CVSSV3_COMPLEXITY_LOW)
+	cVSSV3.SetPrivilegesRequired(storage.CVSSV3_PRIVILEGE_NONE)
+	cVSSV3.SetUserInteraction(storage.CVSSV3_UI_NONE)
+	cVSSV3.SetScope(storage.CVSSV3_UNCHANGED)
+	cVSSV3.SetConfidentiality(storage.CVSSV3_IMPACT_NONE)
+	cVSSV3.SetIntegrity(storage.CVSSV3_IMPACT_HIGH)
+	cVSSV3.SetAvailability(storage.CVSSV3_IMPACT_NONE)
+	cVSSV3.SetScore(7.5)
+	cVSSV3.SetSeverity(storage.CVSSV3_HIGH)
+	ev := &storage.EmbeddedVulnerability{}
+	ev.SetCve("CVE-4567-0002")
+	ev.SetCvss(7.5)
+	ev.SetSummary("Find some inspiring quote on an evil topic to insert here.")
+	ev.SetLink("book://author/title")
+	ev.Set_FixedBy("1.1.1")
+	ev.SetScoreVersion(storage.EmbeddedVulnerability_V3)
+	ev.SetCvssV2(cVSSV2)
+	ev.SetCvssV3(cVSSV3)
+	ev.SetPublishedOn(protocompat.GetProtoTimestampFromSeconds(1234567890))
+	ev.SetLastModified(protocompat.GetProtoTimestampFromSeconds(1235467890))
+	ev.SetVulnerabilityType(storage.EmbeddedVulnerability_ISTIO_VULNERABILITY)
+	ev.SetVulnerabilityTypes([]storage.EmbeddedVulnerability_VulnerabilityType{
+		storage.EmbeddedVulnerability_K8S_VULNERABILITY,
+		storage.EmbeddedVulnerability_ISTIO_VULNERABILITY,
+		storage.EmbeddedVulnerability_OPENSHIFT_VULNERABILITY,
+	})
+	ev.SetSuppressed(false)
+	ev.ClearSuppressActivation()
+	ev.ClearSuppressExpiry()
+	ev.SetFirstSystemOccurrence(protocompat.GetProtoTimestampFromSeconds(1243567890))
+	ev.SetFirstImageOccurrence(protocompat.GetProtoTimestampFromSeconds(1245367890))
+	ev.SetSeverity(storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY)
+	ev.SetState(storage.VulnerabilityState_OBSERVED)
+	return ev
 }
 
 // GetEmbeddedClusterCVE2345x0003 provides a pseudo-realistic image CVE for connected datastore datastore integration testing.
 func GetEmbeddedClusterCVE2345x0003() *storage.EmbeddedVulnerability {
-	return &storage.EmbeddedVulnerability{
-		Cve:          "CVE-2345-0003",
-		Cvss:         7.8,
-		Summary:      "Find some inspiring quote on an evil topic to insert here.",
-		Link:         "book://author/title",
-		SetFixedBy:   &storage.EmbeddedVulnerability_FixedBy{FixedBy: ""},
-		ScoreVersion: storage.EmbeddedVulnerability_V3,
-		CvssV2: &storage.CVSSV2{
-			Vector:              "AV:N/AC:M/Au:N/C:P/I:P/A:P",
-			AttackVector:        storage.CVSSV2_ATTACK_NETWORK,
-			AccessComplexity:    storage.CVSSV2_ACCESS_MEDIUM,
-			Authentication:      storage.CVSSV2_AUTH_NONE,
-			Confidentiality:     storage.CVSSV2_IMPACT_PARTIAL,
-			Integrity:           storage.CVSSV2_IMPACT_PARTIAL,
-			Availability:        storage.CVSSV2_IMPACT_PARTIAL,
-			ExploitabilityScore: 8.6,
-			ImpactScore:         6.4,
-			Score:               6.8,
-			Severity:            storage.CVSSV2_MEDIUM,
-		},
-		CvssV3: &storage.CVSSV3{
-			Vector:              "CVSS:3.0/AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H",
-			ExploitabilityScore: 1.8,
-			ImpactScore:         5.9,
-			AttackVector:        storage.CVSSV3_ATTACK_LOCAL,
-			AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
-			PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
-			UserInteraction:     storage.CVSSV3_UI_REQUIRED,
-			Scope:               storage.CVSSV3_UNCHANGED,
-			Confidentiality:     storage.CVSSV3_IMPACT_HIGH,
-			Integrity:           storage.CVSSV3_IMPACT_HIGH,
-			Availability:        storage.CVSSV3_IMPACT_HIGH,
-			Score:               7.8,
-			Severity:            storage.CVSSV3_HIGH,
-		},
-		PublishedOn:       protocompat.GetProtoTimestampFromSeconds(1234567890),
-		LastModified:      protocompat.GetProtoTimestampFromSeconds(1235467890),
-		VulnerabilityType: storage.EmbeddedVulnerability_K8S_VULNERABILITY,
-		VulnerabilityTypes: []storage.EmbeddedVulnerability_VulnerabilityType{
-			storage.EmbeddedVulnerability_K8S_VULNERABILITY,
-		},
-		Suppressed:            false,
-		SuppressActivation:    nil,
-		SuppressExpiry:        nil,
-		FirstSystemOccurrence: protocompat.GetProtoTimestampFromSeconds(1243567890),
-		FirstImageOccurrence:  protocompat.GetProtoTimestampFromSeconds(1245367890),
-		Severity:              storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
-		State:                 storage.VulnerabilityState_OBSERVED,
-	}
+	cVSSV2 := &storage.CVSSV2{}
+	cVSSV2.SetVector("AV:N/AC:M/Au:N/C:P/I:P/A:P")
+	cVSSV2.SetAttackVector(storage.CVSSV2_ATTACK_NETWORK)
+	cVSSV2.SetAccessComplexity(storage.CVSSV2_ACCESS_MEDIUM)
+	cVSSV2.SetAuthentication(storage.CVSSV2_AUTH_NONE)
+	cVSSV2.SetConfidentiality(storage.CVSSV2_IMPACT_PARTIAL)
+	cVSSV2.SetIntegrity(storage.CVSSV2_IMPACT_PARTIAL)
+	cVSSV2.SetAvailability(storage.CVSSV2_IMPACT_PARTIAL)
+	cVSSV2.SetExploitabilityScore(8.6)
+	cVSSV2.SetImpactScore(6.4)
+	cVSSV2.SetScore(6.8)
+	cVSSV2.SetSeverity(storage.CVSSV2_MEDIUM)
+	cVSSV3 := &storage.CVSSV3{}
+	cVSSV3.SetVector("CVSS:3.0/AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H")
+	cVSSV3.SetExploitabilityScore(1.8)
+	cVSSV3.SetImpactScore(5.9)
+	cVSSV3.SetAttackVector(storage.CVSSV3_ATTACK_LOCAL)
+	cVSSV3.SetAttackComplexity(storage.CVSSV3_COMPLEXITY_LOW)
+	cVSSV3.SetPrivilegesRequired(storage.CVSSV3_PRIVILEGE_NONE)
+	cVSSV3.SetUserInteraction(storage.CVSSV3_UI_REQUIRED)
+	cVSSV3.SetScope(storage.CVSSV3_UNCHANGED)
+	cVSSV3.SetConfidentiality(storage.CVSSV3_IMPACT_HIGH)
+	cVSSV3.SetIntegrity(storage.CVSSV3_IMPACT_HIGH)
+	cVSSV3.SetAvailability(storage.CVSSV3_IMPACT_HIGH)
+	cVSSV3.SetScore(7.8)
+	cVSSV3.SetSeverity(storage.CVSSV3_HIGH)
+	ev := &storage.EmbeddedVulnerability{}
+	ev.SetCve("CVE-2345-0003")
+	ev.SetCvss(7.8)
+	ev.SetSummary("Find some inspiring quote on an evil topic to insert here.")
+	ev.SetLink("book://author/title")
+	ev.Set_FixedBy("")
+	ev.SetScoreVersion(storage.EmbeddedVulnerability_V3)
+	ev.SetCvssV2(cVSSV2)
+	ev.SetCvssV3(cVSSV3)
+	ev.SetPublishedOn(protocompat.GetProtoTimestampFromSeconds(1234567890))
+	ev.SetLastModified(protocompat.GetProtoTimestampFromSeconds(1235467890))
+	ev.SetVulnerabilityType(storage.EmbeddedVulnerability_K8S_VULNERABILITY)
+	ev.SetVulnerabilityTypes([]storage.EmbeddedVulnerability_VulnerabilityType{
+		storage.EmbeddedVulnerability_K8S_VULNERABILITY,
+	})
+	ev.SetSuppressed(false)
+	ev.ClearSuppressActivation()
+	ev.ClearSuppressExpiry()
+	ev.SetFirstSystemOccurrence(protocompat.GetProtoTimestampFromSeconds(1243567890))
+	ev.SetFirstImageOccurrence(protocompat.GetProtoTimestampFromSeconds(1245367890))
+	ev.SetSeverity(storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY)
+	ev.SetState(storage.VulnerabilityState_OBSERVED)
+	return ev
 }

@@ -33,6 +33,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/helm"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/proto"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 )
@@ -218,7 +219,9 @@ func centralHandshake(ctx context.Context, k8sClient kubernetes.Interface, centr
 		return nil, errors.New("central headers are missing the SensorHello metadata key ")
 	}
 
-	err = stream.Send(&central.MsgFromSensor{Msg: &central.MsgFromSensor_Hello{Hello: sensorHello}})
+	mfs := &central.MsgFromSensor{}
+	mfs.SetHello(proto.ValueOrDefault(sensorHello))
+	err = stream.Send(mfs)
 	if err != nil {
 		return nil, errors.Wrap(err, "sending SensorHello message to Central")
 	}
@@ -305,10 +308,10 @@ func prepareSensorHelloMessage(ctx context.Context, k8sClient kubernetes.Interfa
 		return nil, errors.Wrap(err, "assembling Helm configuration")
 	}
 
-	return &central.SensorHello{
-		SensorVersion:            version.GetMainVersion(),
-		PolicyVersion:            policyversion.CurrentVersion().String(),
-		DeploymentIdentification: deploymentIdentification,
-		HelmManagedConfigInit:    helmManagedConfigInit,
-	}, nil
+	sh := &central.SensorHello{}
+	sh.SetSensorVersion(version.GetMainVersion())
+	sh.SetPolicyVersion(policyversion.CurrentVersion().String())
+	sh.SetDeploymentIdentification(deploymentIdentification)
+	sh.SetHelmManagedConfigInit(helmManagedConfigInit)
+	return sh, nil
 }

@@ -37,10 +37,10 @@ func getTeamsWithMock(t *testing.T, notifier *storage.Notifier) (*teams, *gomock
 
 func TestTeamsAlertNotify(t *testing.T) {
 	webhook := skip(t)
-	s, mockCtrl := getTeamsWithMock(t, &storage.Notifier{
-		UiEndpoint:   "http://google.com",
-		LabelDefault: webhook,
-	})
+	notifier := &storage.Notifier{}
+	notifier.SetUiEndpoint("http://google.com")
+	notifier.SetLabelDefault(webhook)
+	s, mockCtrl := getTeamsWithMock(t, notifier)
 	defer mockCtrl.Finish()
 
 	assert.NoError(t, s.AlertNotify(context.Background(), fixtures.GetAlert()))
@@ -48,29 +48,27 @@ func TestTeamsAlertNotify(t *testing.T) {
 
 func TestTeamsRandomAlertNotify(t *testing.T) {
 	webhook := skip(t)
-	s, mockCtrl := getTeamsWithMock(t, &storage.Notifier{
-		UiEndpoint:   "http://google.com",
-		LabelDefault: webhook,
-	})
+	notifier := &storage.Notifier{}
+	notifier.SetUiEndpoint("http://google.com")
+	notifier.SetLabelDefault(webhook)
+	s, mockCtrl := getTeamsWithMock(t, notifier)
 	defer mockCtrl.Finish()
 
 	alert := fixtures.GetAlert()
-	alert.Policy.Rationale = ""
-	alert.Policy.Remediation = ""
+	alert.GetPolicy().SetRationale("")
+	alert.GetPolicy().SetRemediation("")
 	assert.NoError(t, s.AlertNotify(context.Background(), alert))
 
-	alert.Policy = &storage.Policy{}
+	alert.SetPolicy(&storage.Policy{})
 	assert.NoError(t, s.AlertNotify(context.Background(), alert))
 
-	alert.Id = ""
-	alert.Violations = []*storage.Alert_Violation{}
-	alert.GetDeployment().ClusterId = ""
-	alert.GetDeployment().ClusterName = ""
+	alert.SetId("")
+	alert.SetViolations([]*storage.Alert_Violation{})
+	alert.GetDeployment().SetClusterId("")
+	alert.GetDeployment().SetClusterName("")
 	assert.NoError(t, s.AlertNotify(context.Background(), alert))
 
-	alert.Entity = &storage.Alert_Deployment_{
-		Deployment: &storage.Alert_Deployment{},
-	}
+	alert.SetDeployment(&storage.Alert_Deployment{})
 	assert.NoError(t, s.AlertNotify(context.Background(), alert))
 
 	alert = &storage.Alert{}
@@ -79,10 +77,10 @@ func TestTeamsRandomAlertNotify(t *testing.T) {
 
 func TestTeamsNetworkPolicyYAMLNotify(t *testing.T) {
 	webhook := skip(t)
-	s, mockCtrl := getTeamsWithMock(t, &storage.Notifier{
-		UiEndpoint:   "http://google.com",
-		LabelDefault: webhook,
-	})
+	notifier := &storage.Notifier{}
+	notifier.SetUiEndpoint("http://google.com")
+	notifier.SetLabelDefault(webhook)
+	s, mockCtrl := getTeamsWithMock(t, notifier)
 	defer mockCtrl.Finish()
 
 	assert.NoError(t, s.NetworkPolicyYAMLNotify(context.Background(), fixtures.GetYAML(), "test-cluster"))
@@ -90,10 +88,10 @@ func TestTeamsNetworkPolicyYAMLNotify(t *testing.T) {
 
 func TestTeamsTest(t *testing.T) {
 	webhook := skip(t)
-	s, mockCtrl := getTeamsWithMock(t, &storage.Notifier{
-		UiEndpoint:   "http://google.com",
-		LabelDefault: webhook,
-	})
+	notifier := &storage.Notifier{}
+	notifier.SetUiEndpoint("http://google.com")
+	notifier.SetLabelDefault(webhook)
+	s, mockCtrl := getTeamsWithMock(t, notifier)
 	defer mockCtrl.Finish()
 
 	assert.NoError(t, s.Test(context.Background()))

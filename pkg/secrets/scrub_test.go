@@ -9,6 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestScrubSecretsFromStruct(t *testing.T) {
@@ -215,14 +216,11 @@ func TestScrubMapFromStructNotSupportedMapWithoutTag(t *testing.T) {
 
 func TestScrubEmbeddedConfig(t *testing.T) {
 	// Test an embedded config
-	ecrIntegration := &storage.ImageIntegration{
-		Name: "hi",
-		IntegrationConfig: &storage.ImageIntegration_Ecr{
-			Ecr: &storage.ECRConfig{
-				SecretAccessKey: "key",
-			},
-		},
-	}
+	eCRConfig := &storage.ECRConfig{}
+	eCRConfig.SetSecretAccessKey("key")
+	ecrIntegration := &storage.ImageIntegration{}
+	ecrIntegration.SetName("hi")
+	ecrIntegration.SetEcr(proto.ValueOrDefault(eCRConfig))
 	ScrubSecretsFromStructWithReplacement(ecrIntegration, "")
 	assert.Empty(t, ecrIntegration.GetEcr().GetSecretAccessKey())
 }
@@ -262,14 +260,11 @@ func TestScrubFromNestedStructWithReplacement(t *testing.T) {
 
 func TestScrubEmbeddedConfigWithReplacement(t *testing.T) {
 	// Test an embedded config
-	ecrIntegration := &storage.ImageIntegration{
-		Name: "hi",
-		IntegrationConfig: &storage.ImageIntegration_Ecr{
-			Ecr: &storage.ECRConfig{
-				SecretAccessKey: "key",
-			},
-		},
-	}
+	eCRConfig := &storage.ECRConfig{}
+	eCRConfig.SetSecretAccessKey("key")
+	ecrIntegration := &storage.ImageIntegration{}
+	ecrIntegration.SetName("hi")
+	ecrIntegration.SetEcr(proto.ValueOrDefault(eCRConfig))
 	ScrubSecretsFromStructWithReplacement(ecrIntegration, ScrubReplacementStr)
 	assert.Equal(t, ecrIntegration.GetEcr().GetSecretAccessKey(), ScrubReplacementStr)
 }
@@ -370,38 +365,66 @@ func TestNonStringPanic(t *testing.T) {
 }
 
 func TestValidateScrubTagTypes(t *testing.T) {
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.ImageIntegration{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.ClairifyConfig{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.DockerConfig{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.QuayConfig{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.ECRConfig{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.GoogleConfig{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.ClairConfig{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.IBMRegistryConfig{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.AzureConfig{})))
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(&storage.ImageIntegration{})))
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(&storage.ClairifyConfig{})))
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(&storage.DockerConfig{})))
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(&storage.QuayConfig{})))
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(&storage.ECRConfig{})))
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(&storage.GoogleConfig{})))
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(&storage.ClairConfig{})))
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(&storage.IBMRegistryConfig{})))
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(&storage.AzureConfig{})))
 
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.Notifier{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.Jira{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.Email{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.CSCC{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.Splunk{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.PagerDuty{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.Generic{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.SumoLogic{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.AWSSecurityHub{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.MicrosoftSentinel{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.Syslog{})))
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(&storage.Notifier{})))
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(&storage.Jira{})))
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(&storage.Email{})))
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(&storage.CSCC{})))
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(&storage.Splunk{})))
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(&storage.PagerDuty{})))
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(&storage.Generic{})))
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(&storage.SumoLogic{})))
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(&storage.AWSSecurityHub{})))
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(&storage.MicrosoftSentinel{})))
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(&storage.Syslog{})))
 
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(v1.ExchangeTokenRequest{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.HTTPEndpointConfig{})))
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(&v1.ExchangeTokenRequest{})))
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(&storage.HTTPEndpointConfig{})))
 
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(v1.CloudSource{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.CloudSource{})))
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(&v1.CloudSource{})))
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(&storage.CloudSource{})))
 
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.AuthProvider{})))
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(&storage.AuthProvider{})))
 
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.S3Config{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.S3Compatible{})))
-	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.GCSConfig{})))
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(&storage.S3Config{})))
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(&storage.S3Compatible{})))
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(&storage.GCSConfig{})))
 
 }

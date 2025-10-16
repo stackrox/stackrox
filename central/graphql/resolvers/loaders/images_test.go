@@ -48,10 +48,14 @@ func (suite *ImageLoaderTestSuite) TearDownTest() {
 
 func (suite *ImageLoaderTestSuite) TestFromID() {
 	// Create a loader with some reloaded images.
+	image2 := &storage.Image{}
+	image2.SetId(sha1)
+	image3 := &storage.Image{}
+	image3.SetId(sha2)
 	loader := imageLoaderImpl{
 		loaded: map[string]*storage.Image{
-			"sha1": {Id: sha1},
-			"sha2": {Id: sha2},
+			"sha1": image2,
+			"sha2": image3,
 		},
 		ds:        suite.mockDataStore,
 		imageView: suite.mockView,
@@ -63,7 +67,8 @@ func (suite *ImageLoaderTestSuite) TestFromID() {
 	protoassert.Equal(suite.T(), loader.loaded[sha1], image)
 
 	// Get a non-preloaded image from id.
-	thirdImage := &storage.Image{Id: sha3}
+	thirdImage := &storage.Image{}
+	thirdImage.SetId(sha3)
 	suite.mockDataStore.EXPECT().GetManyImageMetadata(suite.ctx, []string{sha3}).
 		Return([]*storage.Image{thirdImage}, nil)
 
@@ -79,10 +84,14 @@ func (suite *ImageLoaderTestSuite) TestFromID() {
 
 func (suite *ImageLoaderTestSuite) TestFullImageWithID() {
 	// Create a loader with some reloaded images.
+	image2 := &storage.Image{}
+	image2.SetId(sha1)
+	image3 := &storage.Image{}
+	image3.SetId(sha2)
 	loader := imageLoaderImpl{
 		loaded: map[string]*storage.Image{
-			"sha1": {Id: sha1},
-			"sha2": {Id: sha2},
+			"sha1": image2,
+			"sha2": image3,
 		},
 		ds:        suite.mockDataStore,
 		imageView: suite.mockView,
@@ -94,13 +103,11 @@ func (suite *ImageLoaderTestSuite) TestFullImageWithID() {
 	protoassert.Equal(suite.T(), loader.loaded[sha1], image)
 
 	// Get a non-preloaded image from id.
-	thirdImageNotFull := &storage.Image{
-		Id:            sha3,
-		SetComponents: &storage.Image_Components{Components: 2},
-	}
-	thirdImageFull := &storage.Image{
-		Id: sha3,
-	}
+	thirdImageNotFull := &storage.Image{}
+	thirdImageNotFull.SetId(sha3)
+	thirdImageNotFull.Set_Components(2)
+	thirdImageFull := &storage.Image{}
+	thirdImageFull.SetId(sha3)
 
 	suite.mockDataStore.EXPECT().GetManyImageMetadata(suite.ctx, []string{sha3}).
 		Return([]*storage.Image{thirdImageNotFull}, nil)
@@ -119,10 +126,14 @@ func (suite *ImageLoaderTestSuite) TestFullImageWithID() {
 
 func (suite *ImageLoaderTestSuite) TestFromIDs() {
 	// Create a loader with some reloaded images.
+	image := &storage.Image{}
+	image.SetId(sha1)
+	image2 := &storage.Image{}
+	image2.SetId(sha2)
 	loader := imageLoaderImpl{
 		loaded: map[string]*storage.Image{
-			"sha1": {Id: sha1},
-			"sha2": {Id: sha2},
+			"sha1": image,
+			"sha2": image2,
 		},
 		ds:        suite.mockDataStore,
 		imageView: suite.mockView,
@@ -137,7 +148,8 @@ func (suite *ImageLoaderTestSuite) TestFromIDs() {
 	}, images)
 
 	// Get a non-preloaded image from id.
-	thirdImage := &storage.Image{Id: "sha3"}
+	thirdImage := &storage.Image{}
+	thirdImage.SetId("sha3")
 	suite.mockDataStore.EXPECT().GetManyImageMetadata(suite.ctx, []string{sha3}).
 		Return([]*storage.Image{thirdImage}, nil)
 
@@ -161,10 +173,14 @@ func (suite *ImageLoaderTestSuite) TestFromIDs() {
 
 func (suite *ImageLoaderTestSuite) TestFromQuery() {
 	// Create a loader with some reloaded images.
+	image := &storage.Image{}
+	image.SetId(sha1)
+	image2 := &storage.Image{}
+	image2.SetId(sha2)
 	loader := imageLoaderImpl{
 		loaded: map[string]*storage.Image{
-			"sha1": {Id: sha1},
-			"sha2": {Id: sha2},
+			"sha1": image,
+			"sha2": image2,
 		},
 		ds:        suite.mockDataStore,
 		imageView: suite.mockView,
@@ -206,7 +222,8 @@ func (suite *ImageLoaderTestSuite) TestFromQuery() {
 
 	suite.mockView.EXPECT().Get(suite.ctx, query).Return(results, nil)
 
-	thirdImage := &storage.Image{Id: "sha3"}
+	thirdImage := &storage.Image{}
+	thirdImage.SetId("sha3")
 	suite.mockDataStore.EXPECT().GetManyImageMetadata(suite.ctx, []string{sha3}).
 		Return([]*storage.Image{thirdImage}, nil)
 

@@ -34,6 +34,7 @@ import (
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/secrets"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -113,7 +114,9 @@ func (s *serviceImpl) GetImageIntegrations(ctx context.Context, request *v1.GetI
 	if identity != nil {
 		svc := identity.Service()
 		if svc != nil && svc.GetType() == storage.ServiceType_SENSOR_SERVICE {
-			return &v1.GetImageIntegrationsResponse{Integrations: integrations}, nil
+			giir := &v1.GetImageIntegrationsResponse{}
+			giir.SetIntegrations(integrations)
+			return giir, nil
 		}
 	}
 
@@ -121,7 +124,9 @@ func (s *serviceImpl) GetImageIntegrations(ctx context.Context, request *v1.GetI
 	for _, i := range integrations {
 		scrubImageIntegration(i)
 	}
-	return &v1.GetImageIntegrationsResponse{Integrations: integrations}, nil
+	giir := &v1.GetImageIntegrationsResponse{}
+	giir.SetIntegrations(integrations)
+	return giir, nil
 }
 
 func sortCategories(categories []storage.ImageIntegrationCategory) {
@@ -147,7 +152,10 @@ func (s *serviceImpl) validateTestAndNormalize(ctx context.Context, request *sto
 
 // PutImageIntegration modifies a given image integration, without stored credential reconciliation
 func (s *serviceImpl) PutImageIntegration(ctx context.Context, imageIntegration *storage.ImageIntegration) (*v1.Empty, error) {
-	return s.UpdateImageIntegration(ctx, &v1.UpdateImageIntegrationRequest{Config: imageIntegration, UpdatePassword: true})
+	uiir := &v1.UpdateImageIntegrationRequest{}
+	uiir.SetConfig(imageIntegration)
+	uiir.SetUpdatePassword(true)
+	return s.UpdateImageIntegration(ctx, uiir)
 }
 
 // PostImageIntegration creates an image integration.
@@ -170,7 +178,7 @@ func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *storage
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
-	request.Id = id
+	request.SetId(id)
 
 	if err := s.integrationManager.Upsert(request); err != nil {
 		_ = s.datastore.RemoveImageIntegration(ctx, request.GetId())
@@ -241,7 +249,10 @@ func (s *serviceImpl) UpdateImageIntegration(ctx context.Context, request *v1.Up
 
 // TestImageIntegration checks if the given image integration is correctly configured, without using stored credential reconciliation.
 func (s *serviceImpl) TestImageIntegration(ctx context.Context, imageIntegration *storage.ImageIntegration) (*v1.Empty, error) {
-	return s.TestUpdatedImageIntegration(ctx, &v1.UpdateImageIntegrationRequest{Config: imageIntegration, UpdatePassword: true})
+	uiir := &v1.UpdateImageIntegrationRequest{}
+	uiir.SetConfig(imageIntegration)
+	uiir.SetUpdatePassword(true)
+	return s.TestUpdatedImageIntegration(ctx, uiir)
 }
 
 // TestUpdatedImageIntegration checks if the given image integration is correctly configured, with optional stored credential reconciliation.
@@ -318,13 +329,11 @@ func (s *serviceImpl) testNodeScannerIntegration(integration *storage.NodeIntegr
 
 func (s *serviceImpl) migrateAzureIntegration(request *storage.ImageIntegration) {
 	if dockerCfg := request.GetDocker(); dockerCfg != nil {
-		request.IntegrationConfig = &storage.ImageIntegration_Azure{
-			Azure: &storage.AzureConfig{
-				Endpoint: dockerCfg.GetEndpoint(),
-				Username: dockerCfg.GetUsername(),
-				Password: dockerCfg.GetPassword(),
-			},
-		}
+		ac := &storage.AzureConfig{}
+		ac.SetEndpoint(dockerCfg.GetEndpoint())
+		ac.SetUsername(dockerCfg.GetUsername())
+		ac.SetPassword(dockerCfg.GetPassword())
+		request.SetAzure(proto.ValueOrDefault(ac))
 	}
 }
 
@@ -346,7 +355,9 @@ func (s *serviceImpl) validateIntegration(ctx context.Context, request *storage.
 		return errorList.ToError()
 	}
 
-	integrations, err := s.datastore.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{Name: request.GetName()})
+	giir := &v1.GetImageIntegrationsRequest{}
+	giir.SetName(request.GetName())
+	integrations, err := s.datastore.GetImageIntegrations(ctx, giir)
 	if err != nil {
 		return err
 	}
@@ -415,13 +426,11 @@ func (s *serviceImpl) broadcastUpdate(ctx context.Context, ii *storage.ImageInte
 		return
 	}
 
-	msg := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_ImageIntegrations{
-			ImageIntegrations: &central.ImageIntegrations{
-				UpdatedIntegrations: []*storage.ImageIntegration{ii},
-			},
-		},
-	}
+	msg := central.MsgToSensor_builder{
+		ImageIntegrations: central.ImageIntegrations_builder{
+			UpdatedIntegrations: []*storage.ImageIntegration{ii},
+		}.Build(),
+	}.Build()
 
 	s.broadcast(ctx, "updated", ii, msg)
 }
@@ -433,13 +442,11 @@ func (s *serviceImpl) broadcastDelete(ctx context.Context, ii *storage.ImageInte
 		return
 	}
 
-	msg := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_ImageIntegrations{
-			ImageIntegrations: &central.ImageIntegrations{
-				DeletedIntegrationIds: []string{ii.GetId()},
-			},
-		},
-	}
+	msg := central.MsgToSensor_builder{
+		ImageIntegrations: central.ImageIntegrations_builder{
+			DeletedIntegrationIds: []string{ii.GetId()},
+		}.Build(),
+	}.Build()
 
 	s.broadcast(ctx, "deleted", ii, msg)
 }

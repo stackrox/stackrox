@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/stringutils"
+	"google.golang.org/protobuf/proto"
 	admission "k8s.io/api/admission/v1"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -69,25 +70,23 @@ func podExecEvent(req *admission.AdmissionRequest) (*storage.KubernetesEvent, er
 		return nil, err
 	}
 
-	return &storage.KubernetesEvent{
-		Id:      string(req.UID),
-		ApiVerb: apiVerb,
-		Object: &storage.KubernetesEvent_Object{
-			Name:      req.Name,
-			Resource:  storage.KubernetesEvent_Object_PODS_EXEC,
-			Namespace: req.Namespace,
-		},
-		ObjectArgs: &storage.KubernetesEvent_PodExecArgs_{
-			PodExecArgs: &storage.KubernetesEvent_PodExecArgs{
-				Container: obj.Container,
-				Commands:  obj.Command,
-			},
-		},
-		User: &storage.KubernetesEvent_User{
-			Username: req.UserInfo.Username,
-			Groups:   req.UserInfo.Groups,
-		},
-	}, nil
+	ko := &storage.KubernetesEvent_Object{}
+	ko.SetName(req.Name)
+	ko.SetResource(storage.KubernetesEvent_Object_PODS_EXEC)
+	ko.SetNamespace(req.Namespace)
+	kp := &storage.KubernetesEvent_PodExecArgs{}
+	kp.SetContainer(obj.Container)
+	kp.SetCommands(obj.Command)
+	ku := &storage.KubernetesEvent_User{}
+	ku.SetUsername(req.UserInfo.Username)
+	ku.SetGroups(req.UserInfo.Groups)
+	ke := &storage.KubernetesEvent{}
+	ke.SetId(string(req.UID))
+	ke.SetApiVerb(apiVerb)
+	ke.SetObject(ko)
+	ke.SetPodExecArgs(proto.ValueOrDefault(kp))
+	ke.SetUser(ku)
+	return ke, nil
 }
 
 func podPortForwardEvent(req *admission.AdmissionRequest) (*storage.KubernetesEvent, error) {
@@ -101,22 +100,20 @@ func podPortForwardEvent(req *admission.AdmissionRequest) (*storage.KubernetesEv
 		return nil, err
 	}
 
-	return &storage.KubernetesEvent{
-		Id:      string(req.UID),
-		ApiVerb: apiVerb,
-		Object: &storage.KubernetesEvent_Object{
-			Name:      req.Name,
-			Resource:  storage.KubernetesEvent_Object_PODS_PORTFORWARD,
-			Namespace: req.Namespace,
-		},
-		ObjectArgs: &storage.KubernetesEvent_PodPortForwardArgs_{
-			PodPortForwardArgs: &storage.KubernetesEvent_PodPortForwardArgs{
-				Ports: obj.Ports,
-			},
-		},
-		User: &storage.KubernetesEvent_User{
-			Username: req.UserInfo.Username,
-			Groups:   req.UserInfo.Groups,
-		},
-	}, nil
+	ko := &storage.KubernetesEvent_Object{}
+	ko.SetName(req.Name)
+	ko.SetResource(storage.KubernetesEvent_Object_PODS_PORTFORWARD)
+	ko.SetNamespace(req.Namespace)
+	kp := &storage.KubernetesEvent_PodPortForwardArgs{}
+	kp.SetPorts(obj.Ports)
+	ku := &storage.KubernetesEvent_User{}
+	ku.SetUsername(req.UserInfo.Username)
+	ku.SetGroups(req.UserInfo.Groups)
+	ke := &storage.KubernetesEvent{}
+	ke.SetId(string(req.UID))
+	ke.SetApiVerb(apiVerb)
+	ke.SetObject(ko)
+	ke.SetPodPortForwardArgs(proto.ValueOrDefault(kp))
+	ke.SetUser(ku)
+	return ke, nil
 }

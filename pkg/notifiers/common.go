@@ -45,11 +45,11 @@ func AlertLink(endpoint string, alert *storage.Alert) string {
 		return ""
 	}
 	var alertPath string
-	switch entity := alert.GetEntity().(type) {
-	case *storage.Alert_Deployment_, *storage.Alert_Resource_:
+	switch alert.WhichEntity() {
+	case storage.Alert_Deployment_case, storage.Alert_Resource_case:
 		alertPath = fmt.Sprintf(alertLinkPath, alert.GetId())
-	case *storage.Alert_Image:
-		alertPath = fmt.Sprintf(imageLinkPath, entity.Image.GetId())
+	case storage.Alert_Image_case:
+		alertPath = fmt.Sprintf(imageLinkPath, alert.GetImage().GetId())
 	}
 	u, err := url.Parse(alertPath)
 	if err != nil {

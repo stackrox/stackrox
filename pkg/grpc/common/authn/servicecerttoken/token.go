@@ -74,10 +74,11 @@ func CreateToken(cert *tls.Certificate, currTime time.Time) (string, error) {
 		return "", errors.Wrap(err, "could not create timestamp proto")
 	}
 
-	auth := &central.ServiceCertAuth{
-		CertDer:     cert.Certificate[0],
-		CurrentTime: tsPb,
+	auth := &central.ServiceCertAuth{}
+	if x := cert.Certificate[0]; x != nil {
+		auth.SetCertDer(x)
 	}
+	auth.SetCurrentTime(tsPb)
 
 	authBytes, err := auth.MarshalVT()
 	if err != nil {

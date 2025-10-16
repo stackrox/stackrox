@@ -61,7 +61,9 @@ func (s *serviceImpl) CountDiscoveredClusters(ctx context.Context, request *v1.C
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to count discovered clusters")
 	}
-	return &v1.CountDiscoveredClustersResponse{Count: int32(count)}, nil
+	cdcr := &v1.CountDiscoveredClustersResponse{}
+	cdcr.SetCount(int32(count))
+	return cdcr, nil
 }
 
 // GetDiscoveredCluster returns a specific discovered cluster based on its ID.
@@ -75,7 +77,9 @@ func (s *serviceImpl) GetDiscoveredCluster(ctx context.Context, request *v1.GetD
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get discovered cluster %q", resourceID)
 	}
-	return &v1.GetDiscoveredClusterResponse{Cluster: storagetov1.DiscoveredCluster(discoveredCluster)}, nil
+	gdcr := &v1.GetDiscoveredClusterResponse{}
+	gdcr.SetCluster(storagetov1.DiscoveredCluster(discoveredCluster))
+	return gdcr, nil
 }
 
 // ListDiscoveredClusters returns all discovered clusters matching the request query.
@@ -83,20 +87,18 @@ func (s *serviceImpl) ListDiscoveredClusters(ctx context.Context, request *v1.Li
 ) (*v1.ListDiscoveredClustersResponse, error) {
 	query := getQueryBuilderFromFilter(request.GetFilter()).ProtoQuery()
 	paginated.FillPagination(query, request.GetPagination(), maxPaginationLimit)
+	qso := &v1.QuerySortOption{}
+	qso.SetField(search.Cluster.String())
 	query = paginated.FillDefaultSortOption(
-		query,
-		&v1.QuerySortOption{
-			Field: search.Cluster.String(),
-		},
-	)
+		query, qso)
 
 	discoveredClusters, err := s.ds.ListDiscoveredClusters(ctx, query)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list discovered clusters")
 	}
-	return &v1.ListDiscoveredClustersResponse{
-		Clusters: storagetov1.DiscoveredClusterList(discoveredClusters...),
-	}, nil
+	ldcr := &v1.ListDiscoveredClustersResponse{}
+	ldcr.SetClusters(storagetov1.DiscoveredClusterList(discoveredClusters...))
+	return ldcr, nil
 }
 
 func getQueryBuilderFromFilter(filter *v1.DiscoveredClustersFilter) *search.QueryBuilder {

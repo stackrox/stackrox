@@ -30,6 +30,7 @@ import (
 	sacTestutils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestNetworkGraph(t *testing.T) {
@@ -114,10 +115,9 @@ func (s *NetworkGraphServiceTestSuite) TestGetExternalNetworkEntities() {
 		),
 	)
 
-	req := v1.GetExternalNetworkEntitiesRequest{
-		ClusterId: "mycluster",
-		Query:     "Discovered External Entity:false",
-	}
+	req := &v1.GetExternalNetworkEntitiesRequest{}
+	req.SetClusterId("mycluster")
+	req.SetQuery("Discovered External Entity:false")
 
 	es1aID, _ := externalsrcs.NewClusterScopedID("mycluster", "35.187.144.0/20")
 	es1bID, _ := externalsrcs.NewClusterScopedID("mycluster", "35.187.144.0/16")
@@ -127,10 +127,16 @@ func (s *NetworkGraphServiceTestSuite) TestGetExternalNetworkEntities() {
 	es1b := testutils.GetExtSrcNetworkEntityInfo(es1bID.String(), "net1", "35.187.144.0/16", false, false)
 	es1c := testutils.GetExtSrcNetworkEntityInfo(es1cID.String(), "net1", "35.187.144.0/8", false, false)
 
+	ne := &storage.NetworkEntity{}
+	ne.SetInfo(es1a)
+	ne2 := &storage.NetworkEntity{}
+	ne2.SetInfo(es1b)
+	ne3 := &storage.NetworkEntity{}
+	ne3.SetInfo(es1c)
 	expected := []*storage.NetworkEntity{
-		{Info: es1a},
-		{Info: es1b},
-		{Info: es1c},
+		ne,
+		ne2,
+		ne3,
 	}
 
 	s.entities.EXPECT().GetEntityByQuery(ctx, gomock.Any()).Return(expected, nil)
@@ -158,18 +164,17 @@ func (s *NetworkGraphServiceTestSuite) TestGetExternalNetworkFlows() {
 				},
 			}))
 
-	req := v1.GetExternalNetworkFlowsRequest{
-		ClusterId: "mycluster",
-		Query:     "Namespace:foo",
-	}
+	req := &v1.GetExternalNetworkFlowsRequest{}
+	req.SetClusterId("mycluster")
+	req.SetQuery("Namespace:foo")
 
+	ld := &storage.ListDeployment{}
+	ld.SetId("mydeployment")
+	ld.SetName("mydeployment")
+	ld.SetCluster("mycluster")
+	ld.SetClusterId("mycluster")
 	deployments := []*storage.ListDeployment{
-		{
-			Id:        "mydeployment",
-			Name:      "mydeployment",
-			Cluster:   "mycluster",
-			ClusterId: "mycluster",
-		},
+		ld,
 	}
 
 	s.deployments.EXPECT().Count(gomock.Any(), gomock.Any()).Return(1, nil)
@@ -184,13 +189,13 @@ func (s *NetworkGraphServiceTestSuite) TestGetExternalNetworkFlows() {
 	es1a := testutils.GetExtSrcNetworkEntityInfo(es1aID.String(), "net1", "192.168.0.1/32", false, false)
 	es1b := testutils.GetExtSrcNetworkEntityInfo(es1bID.String(), "net2", "192.168.0.2/32", false, false)
 
+	ne := &storage.NetworkEntity{}
+	ne.SetInfo(es1a)
+	ne2 := &storage.NetworkEntity{}
+	ne2.SetInfo(es1b)
 	entities := []*storage.NetworkEntity{
-		{
-			Info: es1a,
-		},
-		{
-			Info: es1b,
-		},
+		ne,
+		ne2,
 	}
 
 	s.entities.EXPECT().GetEntityByQuery(ctx, gomock.Any()).Return(entities, nil)
@@ -272,14 +277,13 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 
 	now := time.Now().UTC()
 	ts := protoconv.ConvertTimeToTimestampOrNow(&now)
-	req := &v1.NetworkGraphRequest{
-		ClusterId: "mycluster",
-		Query:     "Namespace: foo,bar,far",
-		Scope: &v1.NetworkGraphScope{
-			Query: "Orchestrator Component:false",
-		},
-		Since: ts,
-	}
+	ngs := &v1.NetworkGraphScope{}
+	ngs.SetQuery("Orchestrator Component:false")
+	req := &v1.NetworkGraphRequest{}
+	req.SetClusterId("mycluster")
+	req.SetQuery("Namespace: foo,bar,far")
+	req.SetScope(ngs)
+	req.SetSince(ts)
 
 	ctxHasAllDeploymentsAccessMatcher := sacTestutils.ContextWithAccess(sac.ScopeSuffix{
 		sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
@@ -290,31 +294,31 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 	s.deployments.EXPECT().Count(gomock.Any(), gomock.Any()).Return(5, nil)
 	s.deployments.EXPECT().SearchListDeployments(gomock.Not(ctxHasAllDeploymentsAccessMatcher), gomock.Any()).Return(
 		[]*storage.ListDeployment{
-			{
+			storage.ListDeployment_builder{
 				Id:        "depA",
 				Name:      "depA",
 				Namespace: "foo",
-			},
-			{
+			}.Build(),
+			storage.ListDeployment_builder{
 				Id:        "depB",
 				Name:      "depB",
 				Namespace: "foo",
-			},
-			{
+			}.Build(),
+			storage.ListDeployment_builder{
 				Id:        "depC",
 				Name:      "depC",
 				Namespace: "foo",
-			},
-			{
+			}.Build(),
+			storage.ListDeployment_builder{
 				Id:        "depD",
 				Name:      "depD",
 				Namespace: "bar",
-			},
-			{
+			}.Build(),
+			storage.ListDeployment_builder{
 				Id:        "depE",
 				Name:      "depE",
 				Namespace: "bar",
-			},
+			}.Build(),
 		}, nil)
 
 	es1aID, _ := externalsrcs.NewClusterScopedID("mycluster", "35.187.144.0/20")
@@ -401,62 +405,62 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 
 	s.deployments.EXPECT().SearchListDeployments(gomock.Not(ctxHasAllDeploymentsAccessMatcher), gomock.Any()).Return(
 		[]*storage.ListDeployment{
-			{
+			storage.ListDeployment_builder{
 				Id:        "depA",
 				Name:      "depA",
 				Namespace: "foo",
-			},
-			{
+			}.Build(),
+			storage.ListDeployment_builder{
 				Id:        "depB",
 				Name:      "depB",
 				Namespace: "foo",
-			},
-			{
+			}.Build(),
+			storage.ListDeployment_builder{
 				Id:        "depC",
 				Name:      "depC",
 				Namespace: "foo",
-			},
-			{
+			}.Build(),
+			storage.ListDeployment_builder{
 				Id:        "depD",
 				Name:      "depD",
 				Namespace: "bar",
-			},
+			}.Build(),
 
-			{
+			storage.ListDeployment_builder{
 				Id:        "depE",
 				Name:      "depE",
 				Namespace: "bar",
-			},
+			}.Build(),
 
-			{
+			storage.ListDeployment_builder{
 				Id:        "depF",
 				Name:      "depF",
 				Namespace: "baz",
-			},
+			}.Build(),
 		}, nil)
 
 	s.deployments.EXPECT().SearchListDeployments(ctxHasAllDeploymentsAccessMatcher, gomock.Any()).Return(
 		[]*storage.ListDeployment{
-			{
+			storage.ListDeployment_builder{
 				Id:        "depX",
 				Name:      "depX",
 				Namespace: "secretns",
-			},
-			{
+			}.Build(),
+			storage.ListDeployment_builder{
 				Id:        "depZ",
 				Name:      "depZ",
 				Namespace: "secretns",
-			},
-			{
+			}.Build(),
+			storage.ListDeployment_builder{
 				Id:        "depW",
 				Name:      "depW",
 				Namespace: "supersecretns",
-			},
-			{
+			}.Build(),
+			storage.ListDeployment_builder{
 				Id:        "depQ",
 				Name:      "depQ",
 				Namespace: "far",
-			},
+			}.Build(),
 			// depY was deleted
 		}, nil)
 
@@ -560,176 +564,176 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSACDeterminis
 	es3 := testutils.GetExtSrcNetworkEntityInfo(es3ID.String(), "3", "36.188.144.0/16", false, false)
 
 	fooBarDeploymentsOrdered := []*storage.ListDeployment{
-		{
+		storage.ListDeployment_builder{
 			Id:        "depA",
 			Name:      "depA",
 			Namespace: "foo",
-		},
-		{
+		}.Build(),
+		storage.ListDeployment_builder{
 			Id:        "depB",
 			Name:      "depB",
 			Namespace: "foo",
-		},
-		{
+		}.Build(),
+		storage.ListDeployment_builder{
 			Id:        "depC",
 			Name:      "depC",
 			Namespace: "foo",
-		},
-		{
+		}.Build(),
+		storage.ListDeployment_builder{
 			Id:        "depD",
 			Name:      "depD",
 			Namespace: "bar",
-		},
-		{
+		}.Build(),
+		storage.ListDeployment_builder{
 			Id:        "depE",
 			Name:      "depE",
 			Namespace: "bar",
-		},
+		}.Build(),
 	}
 
 	fooBarDeploymentsShuffled := []*storage.ListDeployment{
-		{
+		storage.ListDeployment_builder{
 			Id:        "depE",
 			Name:      "depE",
 			Namespace: "bar",
-		},
-		{
+		}.Build(),
+		storage.ListDeployment_builder{
 			Id:        "depC",
 			Name:      "depC",
 			Namespace: "foo",
-		},
-		{
+		}.Build(),
+		storage.ListDeployment_builder{
 			Id:        "depA",
 			Name:      "depA",
 			Namespace: "foo",
-		},
-		{
+		}.Build(),
+		storage.ListDeployment_builder{
 			Id:        "depD",
 			Name:      "depD",
 			Namespace: "bar",
-		},
-		{
+		}.Build(),
+		storage.ListDeployment_builder{
 			Id:        "depB",
 			Name:      "depB",
 			Namespace: "foo",
-		},
+		}.Build(),
 	}
 
 	protoassert.ElementsMatch(s.T(), fooBarDeploymentsOrdered, fooBarDeploymentsShuffled)
 
 	fooBarBazDeploymentsOrdered := []*storage.ListDeployment{
-		{
+		storage.ListDeployment_builder{
 			Id:        "depA",
 			Name:      "depA",
 			Namespace: "foo",
-		},
-		{
+		}.Build(),
+		storage.ListDeployment_builder{
 			Id:        "depB",
 			Name:      "depB",
 			Namespace: "foo",
-		},
-		{
+		}.Build(),
+		storage.ListDeployment_builder{
 			Id:        "depC",
 			Name:      "depC",
 			Namespace: "foo",
-		},
-		{
+		}.Build(),
+		storage.ListDeployment_builder{
 			Id:        "depD",
 			Name:      "depD",
 			Namespace: "bar",
-		},
-		{
+		}.Build(),
+		storage.ListDeployment_builder{
 			Id:        "depE",
 			Name:      "depE",
 			Namespace: "bar",
-		},
-		{
+		}.Build(),
+		storage.ListDeployment_builder{
 			Id:        "depF",
 			Name:      "depF",
 			Namespace: "baz",
-		},
+		}.Build(),
 	}
 
 	fooBarBazDeploymentsShuffled := []*storage.ListDeployment{
-		{
+		storage.ListDeployment_builder{
 			Id:        "depE",
 			Name:      "depE",
 			Namespace: "bar",
-		},
-		{
+		}.Build(),
+		storage.ListDeployment_builder{
 			Id:        "depC",
 			Name:      "depC",
 			Namespace: "foo",
-		},
-		{
+		}.Build(),
+		storage.ListDeployment_builder{
 			Id:        "depA",
 			Name:      "depA",
 			Namespace: "foo",
-		},
-		{
+		}.Build(),
+		storage.ListDeployment_builder{
 			Id:        "depF",
 			Name:      "depF",
 			Namespace: "baz",
-		},
-		{
+		}.Build(),
+		storage.ListDeployment_builder{
 			Id:        "depD",
 			Name:      "depD",
 			Namespace: "bar",
-		},
-		{
+		}.Build(),
+		storage.ListDeployment_builder{
 			Id:        "depB",
 			Name:      "depB",
 			Namespace: "foo",
-		},
+		}.Build(),
 	}
 
 	protoassert.ElementsMatch(s.T(), fooBarBazDeploymentsOrdered, fooBarBazDeploymentsShuffled)
 
 	maskedDeploymentsOrdered := []*storage.ListDeployment{
-		{
+		storage.ListDeployment_builder{
 			Id:        "depQ",
 			Name:      "depQ",
 			Namespace: "far",
-		},
-		{
+		}.Build(),
+		storage.ListDeployment_builder{
 			Id:        "depW",
 			Name:      "depW",
 			Namespace: "supersecretns",
-		},
-		{
+		}.Build(),
+		storage.ListDeployment_builder{
 			Id:        "depX",
 			Name:      "depX",
 			Namespace: "secretns",
-		},
-		{
+		}.Build(),
+		storage.ListDeployment_builder{
 			Id:        "depZ",
 			Name:      "depZ",
 			Namespace: "secretns",
-		},
+		}.Build(),
 		// depY was deleted
 	}
 
 	maskedDeploymentsShuffled := []*storage.ListDeployment{
-		{
+		storage.ListDeployment_builder{
 			Id:        "depZ",
 			Name:      "depZ",
 			Namespace: "secretns",
-		},
-		{
+		}.Build(),
+		storage.ListDeployment_builder{
 			Id:        "depQ",
 			Name:      "depQ",
 			Namespace: "far",
-		},
-		{
+		}.Build(),
+		storage.ListDeployment_builder{
 			Id:        "depX",
 			Name:      "depX",
 			Namespace: "secretns",
-		},
-		{
+		}.Build(),
+		storage.ListDeployment_builder{
 			Id:        "depW",
 			Name:      "depW",
 			Namespace: "supersecretns",
-		},
+		}.Build(),
 		// depY was deleted
 	}
 
@@ -888,14 +892,13 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSACDeterminis
 
 	now := time.Now().UTC()
 	ts := protoconv.ConvertTimeToTimestampOrNow(&now)
-	req := &v1.NetworkGraphRequest{
-		ClusterId: "mycluster",
-		Query:     "Namespace: foo,bar,far",
-		Scope: &v1.NetworkGraphScope{
-			Query: "Orchestrator Component:false",
-		},
-		Since: ts,
-	}
+	ngs := &v1.NetworkGraphScope{}
+	ngs.SetQuery("Orchestrator Component:false")
+	req := &v1.NetworkGraphRequest{}
+	req.SetClusterId("mycluster")
+	req.SetQuery("Namespace: foo,bar,far")
+	req.SetScope(ngs)
+	req.SetSince(ts)
 
 	networkTree, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{es1a, es1b, es1c, es2, es3})
 	s.NoError(err)
@@ -1012,11 +1015,10 @@ func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withLis
 
 	now := time.Now().UTC()
 	ts := protoconv.ConvertTimeToTimestampOrNow(&now)
-	req := &v1.NetworkGraphRequest{
-		ClusterId: "mycluster",
-		Query:     "Namespace: foo,bar,far",
-		Since:     ts,
-	}
+	req := &v1.NetworkGraphRequest{}
+	req.SetClusterId("mycluster")
+	req.SetQuery("Namespace: foo,bar,far")
+	req.SetSince(ts)
 
 	ctxHasAllDeploymentsAccessMatcher := sacTestutils.ContextWithAccess(sac.ScopeSuffix{
 		sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
@@ -1025,31 +1027,31 @@ func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withLis
 	})
 
 	relevantDeployments := []*storage.ListDeployment{
-		{
+		storage.ListDeployment_builder{
 			Id:        "depA",
 			Name:      "depA",
 			Namespace: "foo",
-		},
-		{
+		}.Build(),
+		storage.ListDeployment_builder{
 			Id:        "depB",
 			Name:      "depB",
 			Namespace: "foo",
-		},
-		{
+		}.Build(),
+		storage.ListDeployment_builder{
 			Id:        "depC",
 			Name:      "depC",
 			Namespace: "foo",
-		},
-		{
+		}.Build(),
+		storage.ListDeployment_builder{
 			Id:        "depD",
 			Name:      "depD",
 			Namespace: "bar",
-		},
-		{
+		}.Build(),
+		storage.ListDeployment_builder{
 			Id:        "depE",
 			Name:      "depE",
 			Namespace: "bar",
-		},
+		}.Build(),
 	}
 
 	s.deployments.EXPECT().Count(ctxHasAllDeploymentsAccessMatcher, gomock.Any()).Return(len(relevantDeployments), nil)
@@ -1125,53 +1127,53 @@ func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withLis
 
 	s.deployments.EXPECT().SearchListDeployments(ctx, gomock.Any()).Return(
 		[]*storage.ListDeployment{
-			{
+			storage.ListDeployment_builder{
 				Id:        "depA",
 				Name:      "depA",
 				Namespace: "foo",
-			},
-			{
+			}.Build(),
+			storage.ListDeployment_builder{
 				Id:        "depB",
 				Name:      "depB",
 				Namespace: "foo",
-			},
-			{
+			}.Build(),
+			storage.ListDeployment_builder{
 				Id:        "depC",
 				Name:      "depC",
 				Namespace: "foo",
-			},
-			{
+			}.Build(),
+			storage.ListDeployment_builder{
 				Id:        "depD",
 				Name:      "depD",
 				Namespace: "bar",
-			},
+			}.Build(),
 
-			{
+			storage.ListDeployment_builder{
 				Id:        "depE",
 				Name:      "depE",
 				Namespace: "bar",
-			},
+			}.Build(),
 
-			{
+			storage.ListDeployment_builder{
 				Id:        "depF",
 				Name:      "depF",
 				Namespace: "baz",
-			},
-			{
+			}.Build(),
+			storage.ListDeployment_builder{
 				Id:        "depX",
 				Name:      "depX",
 				Namespace: "other",
-			},
-			{
+			}.Build(),
+			storage.ListDeployment_builder{
 				Id:        "depZ",
 				Name:      "depZ",
 				Namespace: "other",
-			},
-			{
+			}.Build(),
+			storage.ListDeployment_builder{
 				Id:        "depW",
 				Name:      "depW",
 				Namespace: "otherother",
-			},
+			}.Build(),
 		}, nil)
 
 	s.deployments.EXPECT().SearchListDeployments(ctxHasAllDeploymentsAccessMatcher, gomock.Any()).Return(
@@ -1181,13 +1183,22 @@ func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withLis
 
 	var expectedListenPorts map[string][]*storage.NetworkEntityInfo_Deployment_ListenPort
 	if withListenPorts {
+		ndl := &storage.NetworkEntityInfo_Deployment_ListenPort{}
+		ndl.SetPort(8443)
+		ndl.SetL4Protocol(storage.L4Protocol_L4_PROTOCOL_TCP)
+		ndl2 := &storage.NetworkEntityInfo_Deployment_ListenPort{}
+		ndl2.SetPort(53)
+		ndl2.SetL4Protocol(storage.L4Protocol_L4_PROTOCOL_TCP)
+		ndl3 := &storage.NetworkEntityInfo_Deployment_ListenPort{}
+		ndl3.SetPort(8080)
+		ndl3.SetL4Protocol(storage.L4Protocol_L4_PROTOCOL_TCP)
 		expectedListenPorts = map[string][]*storage.NetworkEntityInfo_Deployment_ListenPort{
 			"depA": {
-				{Port: 8443, L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP},
+				ndl,
 			},
 			"depD": {
-				{Port: 53, L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP},
-				{Port: 8080, L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP},
+				ndl2,
+				ndl3,
 			},
 		}
 	}
@@ -1248,28 +1259,22 @@ func (s *NetworkGraphServiceTestSuite) TestCreateExternalNetworkEntity() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	// Validation failure-no cluster ID provided
-	request := &v1.CreateNetworkEntityRequest{
-		ClusterId: "",
-		Entity: &storage.NetworkEntityInfo_ExternalSource{
-			Name: "cidr1",
-			Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-				Cidr: "192.0.2.0/24",
-			},
-		},
-	}
+	ne := &storage.NetworkEntityInfo_ExternalSource{}
+	ne.SetName("cidr1")
+	ne.SetCidr("192.0.2.0/24")
+	request := &v1.CreateNetworkEntityRequest{}
+	request.SetClusterId("")
+	request.SetEntity(ne)
 	_, err := s.tested.CreateExternalNetworkEntity(ctx, request)
 	s.Error(err)
 
 	// Valid request
-	request = &v1.CreateNetworkEntityRequest{
-		ClusterId: "c1",
-		Entity: &storage.NetworkEntityInfo_ExternalSource{
-			Name: "cidr1",
-			Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-				Cidr: "192.0.2.0/24",
-			},
-		},
-	}
+	ne2 := &storage.NetworkEntityInfo_ExternalSource{}
+	ne2.SetName("cidr1")
+	ne2.SetCidr("192.0.2.0/24")
+	request = &v1.CreateNetworkEntityRequest{}
+	request.SetClusterId("c1")
+	request.SetEntity(ne2)
 
 	s.entities.EXPECT().CreateExternalNetworkEntity(ctx, gomock.Any(), false).Return(nil)
 	s.clusters.EXPECT().Exists(gomock.Any(), "c1").Return(true, nil)
@@ -1286,25 +1291,22 @@ func (s *NetworkGraphServiceTestSuite) TestDeleteExternalNetworkEntity() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	id, _ := sac.NewClusterScopeResourceID("c1", "id")
-	request := &v1.ResourceByID{
-		Id: id.String(),
-	}
+	request := &v1.ResourceByID{}
+	request.SetId(id.String())
 
 	s.entities.EXPECT().GetEntity(ctx, request.GetId()).Return(&storage.NetworkEntity{}, true, nil)
 	s.entities.EXPECT().DeleteExternalNetworkEntity(ctx, request.GetId()).Return(nil)
 	_, err := s.tested.DeleteExternalNetworkEntity(ctx, request)
 	s.NoError(err)
 
-	s.entities.EXPECT().GetEntity(ctx, request.GetId()).Return(&storage.NetworkEntity{
-		Info: &storage.NetworkEntityInfo{
-			Desc: &storage.NetworkEntityInfo_ExternalSource_{
-				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-					Name: "any",
-					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-						Cidr: "net",
-					},
-					Default: true,
-				}}}}, true, nil)
+	ne := &storage.NetworkEntity{}
+	ne.SetInfo(storage.NetworkEntityInfo_builder{
+		ExternalSource: storage.NetworkEntityInfo_ExternalSource_builder{
+			Name:    "any",
+			Cidr:    proto.String("net"),
+			Default: true,
+		}.Build()}.Build())
+	s.entities.EXPECT().GetEntity(ctx, request.GetId()).Return(ne, true, nil)
 	_, err = s.tested.DeleteExternalNetworkEntity(ctx, request)
 	s.Error(err)
 }
@@ -1313,31 +1315,25 @@ func (s *NetworkGraphServiceTestSuite) TestPatchExternalNetworkEntity() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	// Store an entity first.
-	entity := &storage.NetworkEntity{
-		Info: &storage.NetworkEntityInfo{
-			Id: "cidr1",
-			Desc: &storage.NetworkEntityInfo_ExternalSource_{
-				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-					Name: "cidr1",
-					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-						Cidr: "192.0.2.0/24",
-					},
-				},
-			},
-		},
-	}
+	entity := &storage.NetworkEntity{}
+	entity.SetInfo(storage.NetworkEntityInfo_builder{
+		Id: "cidr1",
+		ExternalSource: storage.NetworkEntityInfo_ExternalSource_builder{
+			Name: "cidr1",
+			Cidr: proto.String("192.0.2.0/24"),
+		}.Build(),
+	}.Build())
 
 	// Valid request
-	patch := &v1.PatchNetworkEntityRequest{
-		Id:   entity.GetInfo().GetId(),
-		Name: "newcidr",
-	}
+	patch := &v1.PatchNetworkEntityRequest{}
+	patch.SetId(entity.GetInfo().GetId())
+	patch.SetName("newcidr")
 
 	s.entities.EXPECT().GetEntity(ctx, entity.GetInfo().GetId()).Return(entity, true, nil)
 	s.entities.EXPECT().UpdateExternalNetworkEntity(ctx, gomock.Any(), false).Return(nil)
 	actual, err := s.tested.PatchExternalNetworkEntity(ctx, patch)
 	s.NoError(err)
-	entity.Info.GetExternalSource().Name = "newcidr"
+	entity.GetInfo().GetExternalSource().SetName("newcidr")
 	protoassert.Equal(s.T(), entity, actual)
 
 	// Not found
@@ -1356,16 +1352,20 @@ func (s *NetworkGraphServiceTestSuite) TestPatchExternalNetworkEntity() {
 func (s *NetworkGraphServiceTestSuite) TestNetworkGraphConfiguration() {
 	ctx := sac.WithAllAccess(context.Background())
 
-	s.graphConfig.EXPECT().GetNetworkGraphConfig(ctx).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: false}, nil)
+	ngc := &storage.NetworkGraphConfig{}
+	ngc.SetHideDefaultExternalSrcs(false)
+	s.graphConfig.EXPECT().GetNetworkGraphConfig(ctx).Return(ngc, nil)
 	_, err := s.tested.GetNetworkGraphConfig(ctx, &v1.Empty{})
 	s.NoError(err)
 
-	s.graphConfig.EXPECT().UpdateNetworkGraphConfig(ctx, &storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}).Return(nil)
-	_, err = s.tested.PutNetworkGraphConfig(ctx, &v1.PutNetworkGraphConfigRequest{
-		Config: &storage.NetworkGraphConfig{
-			HideDefaultExternalSrcs: true,
-		},
-	})
+	ngc2 := &storage.NetworkGraphConfig{}
+	ngc2.SetHideDefaultExternalSrcs(true)
+	s.graphConfig.EXPECT().UpdateNetworkGraphConfig(ctx, ngc2).Return(nil)
+	ngc3 := &storage.NetworkGraphConfig{}
+	ngc3.SetHideDefaultExternalSrcs(true)
+	pngcr := &v1.PutNetworkGraphConfigRequest{}
+	pngcr.SetConfig(ngc3)
+	_, err = s.tested.PutNetworkGraphConfig(ctx, pngcr)
 	s.NoError(err)
 }
 
@@ -1403,11 +1403,10 @@ func (s *NetworkGraphServiceTestSuite) TestReturnErrorIfNumberOfNodesExceedsLimi
 			ctx := sac.WithAllAccess(context.Background())
 
 			ts := protocompat.TimestampNow()
-			req := &v1.NetworkGraphRequest{
-				ClusterId: "mycluster",
-				Query:     "Namespace: foo,bar,far",
-				Since:     ts,
-			}
+			req := &v1.NetworkGraphRequest{}
+			req.SetClusterId("mycluster")
+			req.SetQuery("Namespace: foo,bar,far")
+			req.SetSince(ts)
 
 			_, err := s.tested.GetNetworkGraph(ctx, req)
 			s.Errorf(

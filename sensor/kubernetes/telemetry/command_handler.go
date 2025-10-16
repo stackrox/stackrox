@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/telemetry/gatherers"
+	"google.golang.org/protobuf/proto"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -81,13 +82,13 @@ func newCommandHandler(k8sClient kubernetes.Interface, provider store.Provider) 
 }
 
 func makeChunk(chunk []byte) *central.TelemetryResponsePayload {
-	return &central.TelemetryResponsePayload{
-		Payload: &central.TelemetryResponsePayload_ClusterInfo_{
-			ClusterInfo: &central.TelemetryResponsePayload_ClusterInfo{
-				Chunk: chunk,
-			},
-		},
+	tc := &central.TelemetryResponsePayload_ClusterInfo{}
+	if chunk != nil {
+		tc.SetChunk(chunk)
 	}
+	trp := &central.TelemetryResponsePayload{}
+	trp.SetClusterInfo(proto.ValueOrDefault(tc))
+	return trp
 }
 
 func (h *commandHandler) Start() error {
@@ -114,11 +115,11 @@ func (h *commandHandler) Accepts(msg *central.MsgToSensor) bool {
 }
 
 func (h *commandHandler) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
-	switch m := msg.GetMsg().(type) {
-	case *central.MsgToSensor_TelemetryDataRequest:
-		return h.processRequest(m.TelemetryDataRequest)
-	case *central.MsgToSensor_CancelPullTelemetryDataRequest:
-		return h.processCancelRequest(m.CancelPullTelemetryDataRequest)
+	switch msg.WhichMsg() {
+	case central.MsgToSensor_TelemetryDataRequest_case:
+		return h.processRequest(msg.GetTelemetryDataRequest())
+	case central.MsgToSensor_CancelPullTelemetryDataRequest_case:
+		return h.processCancelRequest(msg.GetCancelPullTelemetryDataRequest())
 	default:
 		return nil
 	}
@@ -170,11 +171,8 @@ func (h *commandHandler) sendResponse(ctx concurrency.ErrorWaitable, resp *centr
 			resp.GetRequestId())
 		return nil
 	}
-	msg := &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_TelemetryDataResponse{
-			TelemetryDataResponse: resp,
-		},
-	}
+	msg := &central.MsgFromSensor{}
+	msg.SetTelemetryDataResponse(proto.ValueOrDefault(resp))
 	select {
 	case h.responsesC <- message.New(msg):
 		return nil
@@ -191,10 +189,9 @@ func (h *commandHandler) dispatchRequest(req *central.PullTelemetryDataRequest) 
 	requestID := req.GetRequestId()
 
 	sendMsg := func(ctx concurrency.ErrorWaitable, payload *central.TelemetryResponsePayload) error {
-		resp := &central.PullTelemetryDataResponse{
-			RequestId: requestID,
-			Payload:   payload,
-		}
+		resp := &central.PullTelemetryDataResponse{}
+		resp.SetRequestId(requestID)
+		resp.SetPayload(payload)
 		return h.sendResponse(ctx, resp)
 	}
 
@@ -237,13 +234,10 @@ func (h *commandHandler) dispatchRequest(req *central.PullTelemetryDataRequest) 
 		errMsg = err.Error()
 	}
 
-	eosPayload := &central.TelemetryResponsePayload{
-		Payload: &central.TelemetryResponsePayload_EndOfStream_{
-			EndOfStream: &central.TelemetryResponsePayload_EndOfStream{
-				ErrorMessage: errMsg,
-			},
-		},
-	}
+	te := &central.TelemetryResponsePayload_EndOfStream{}
+	te.SetErrorMessage(errMsg)
+	eosPayload := &central.TelemetryResponsePayload{}
+	eosPayload.SetEndOfStream(proto.ValueOrDefault(te))
 
 	// Make sure we send the end-of-stream message even if the context is expired
 	if err := sendMsg(&h.stopSig, eosPayload); err != nil {
@@ -256,18 +250,16 @@ func createKubernetesPayload(file k8sintrospect.File) *central.TelemetryResponse
 	if len(contents) > maxK8sFileSize {
 		contents = contents[:maxK8sFileSize]
 	}
-	return &central.TelemetryResponsePayload{
-		Payload: &central.TelemetryResponsePayload_KubernetesInfo_{
-			KubernetesInfo: &central.TelemetryResponsePayload_KubernetesInfo{
-				Files: []*central.TelemetryResponsePayload_KubernetesInfo_File{
-					{
-						Path:     file.Path,
-						Contents: contents,
-					},
-				},
+	return central.TelemetryResponsePayload_builder{
+		KubernetesInfo: central.TelemetryResponsePayload_KubernetesInfo_builder{
+			Files: []*central.TelemetryResponsePayload_KubernetesInfo_File{
+				central.TelemetryResponsePayload_KubernetesInfo_File_builder{
+					Path:     file.Path,
+					Contents: contents,
+				}.Build(),
 			},
-		},
-	}
+		}.Build(),
+	}.Build()
 }
 
 func (h *commandHandler) handleKubernetesInfoRequest(ctx context.Context,
@@ -317,18 +309,16 @@ func (h *commandHandler) handleClusterInfoRequest(ctx context.Context,
 }
 
 func createMetricsPayload(file string, contents []byte) *central.TelemetryResponsePayload {
-	return &central.TelemetryResponsePayload{
-		Payload: &central.TelemetryResponsePayload_MetricsInfo{
-			MetricsInfo: &central.TelemetryResponsePayload_KubernetesInfo{
-				Files: []*central.TelemetryResponsePayload_KubernetesInfo_File{
-					{
-						Path:     file,
-						Contents: contents,
-					},
-				},
+	return central.TelemetryResponsePayload_builder{
+		MetricsInfo: central.TelemetryResponsePayload_KubernetesInfo_builder{
+			Files: []*central.TelemetryResponsePayload_KubernetesInfo_File{
+				central.TelemetryResponsePayload_KubernetesInfo_File_builder{
+					Path:     file,
+					Contents: contents,
+				}.Build(),
 			},
-		},
-	}
+		}.Build(),
+	}.Build()
 }
 
 func (h *commandHandler) handleMetricsInfoRequest(ctx context.Context,

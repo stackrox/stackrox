@@ -543,7 +543,7 @@ func validateExternalNetworkEntity(entity *storage.NetworkEntity) error {
 	}
 
 	if entity.GetInfo().GetExternalSource().GetName() == "" {
-		entity.Info.GetExternalSource().Name = entity.GetInfo().GetExternalSource().GetCidr()
+		entity.GetInfo().GetExternalSource().SetName(entity.GetInfo().GetExternalSource().GetCidr())
 	}
 	// CIDR Block uniqueness is handled by unique key CRUD. Refer to `UpsertExternalNetworkEntity(...)`.
 	return nil

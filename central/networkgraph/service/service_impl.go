@@ -43,6 +43,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -106,9 +107,9 @@ func (s *serviceImpl) GetExternalNetworkEntities(ctx context.Context, request *v
 		return nil, err
 	}
 
-	return &v1.GetExternalNetworkEntitiesResponse{
-		Entities: entities,
-	}, nil
+	gener := &v1.GetExternalNetworkEntitiesResponse{}
+	gener.SetEntities(entities)
+	return gener, nil
 }
 
 func (s *serviceImpl) GetExternalNetworkFlows(ctx context.Context, request *v1.GetExternalNetworkFlowsRequest) (*v1.GetExternalNetworkFlowsResponse, error) {
@@ -131,11 +132,11 @@ func (s *serviceImpl) GetExternalNetworkFlows(ctx context.Context, request *v1.G
 		flows = paginated.PaginateSlice(int(page.GetOffset()), int(page.GetLimit()), flows)
 	}
 
-	return &v1.GetExternalNetworkFlowsResponse{
-		Entity:     entities[0].GetInfo(),
-		Flows:      flows,
-		TotalFlows: total,
-	}, nil
+	genfr := &v1.GetExternalNetworkFlowsResponse{}
+	genfr.SetEntity(entities[0].GetInfo())
+	genfr.SetFlows(flows)
+	genfr.SetTotalFlows(total)
+	return genfr, nil
 }
 
 func (s *serviceImpl) GetExternalNetworkFlowsMetadata(ctx context.Context, request *v1.GetExternalNetworkFlowsMetadataRequest) (*v1.GetExternalNetworkFlowsMetadataResponse, error) {
@@ -157,23 +158,23 @@ func (s *serviceImpl) GetExternalNetworkFlowsMetadata(ctx context.Context, reque
 
 		if src.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
 			if m, ok := entityMeta[src.GetId()]; ok {
-				m.FlowsCount++
+				m.SetFlowsCount(m.GetFlowsCount() + 1)
 			} else {
-				entityMeta[src.GetId()] = &v1.ExternalNetworkFlowMetadata{
-					Entity:     src,
-					FlowsCount: 1,
-				}
+				enfm := &v1.ExternalNetworkFlowMetadata{}
+				enfm.SetEntity(src)
+				enfm.SetFlowsCount(1)
+				entityMeta[src.GetId()] = enfm
 			}
 		}
 
 		if dst.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
 			if m, ok := entityMeta[dst.GetId()]; ok {
-				m.FlowsCount++
+				m.SetFlowsCount(m.GetFlowsCount() + 1)
 			} else {
-				entityMeta[dst.GetId()] = &v1.ExternalNetworkFlowMetadata{
-					Entity:     dst,
-					FlowsCount: 1,
-				}
+				enfm := &v1.ExternalNetworkFlowMetadata{}
+				enfm.SetEntity(dst)
+				enfm.SetFlowsCount(1)
+				entityMeta[dst.GetId()] = enfm
 			}
 		}
 	}
@@ -193,10 +194,10 @@ func (s *serviceImpl) GetExternalNetworkFlowsMetadata(ctx context.Context, reque
 		values = paginated.PaginateSlice(int(page.GetOffset()), int(page.GetLimit()), values)
 	}
 
-	return &v1.GetExternalNetworkFlowsMetadataResponse{
-		Entities:      values,
-		TotalEntities: total,
-	}, nil
+	genfmr := &v1.GetExternalNetworkFlowsMetadataResponse{}
+	genfmr.SetEntities(values)
+	genfmr.SetTotalEntities(total)
+	return genfmr, nil
 }
 
 func (s *serviceImpl) CreateExternalNetworkEntity(ctx context.Context, request *v1.CreateNetworkEntityRequest) (*storage.NetworkEntity, error) {
@@ -210,18 +211,15 @@ func (s *serviceImpl) CreateExternalNetworkEntity(ctx context.Context, request *
 		return nil, err
 	}
 
-	entity := &storage.NetworkEntity{
-		Info: &storage.NetworkEntityInfo{
-			Id:   id.String(),
-			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-			Desc: &storage.NetworkEntityInfo_ExternalSource_{
-				ExternalSource: request.GetEntity(),
-			},
-		},
-		Scope: &storage.NetworkEntity_Scope{
-			ClusterId: request.GetClusterId(),
-		},
-	}
+	nei := &storage.NetworkEntityInfo{}
+	nei.SetId(id.String())
+	nei.SetType(storage.NetworkEntityInfo_EXTERNAL_SOURCE)
+	nei.SetExternalSource(proto.ValueOrDefault(request.GetEntity()))
+	ns := &storage.NetworkEntity_Scope{}
+	ns.SetClusterId(request.GetClusterId())
+	entity := &storage.NetworkEntity{}
+	entity.SetInfo(nei)
+	entity.SetScope(ns)
 
 	err = s.entityDS.CreateExternalNetworkEntity(ctx, entity, false)
 	if err != nil {
@@ -258,7 +256,7 @@ func (s *serviceImpl) PatchExternalNetworkEntity(ctx context.Context, request *v
 		return nil, status.Errorf(codes.FailedPrecondition, "cannot update network entity %q since the stored entity is invalid. Please delete and recreate.", id)
 	}
 
-	entity.Info.GetExternalSource().Name = request.GetName()
+	entity.GetInfo().GetExternalSource().SetName(request.GetName())
 
 	if err := s.entityDS.UpdateExternalNetworkEntity(ctx, entity, false); err != nil {
 		return nil, err
@@ -342,7 +340,7 @@ func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGr
 		if err != nil {
 			utils.Should(err)
 		}
-		requestClone.Since = since
+		requestClone.SetSince(since)
 	}
 
 	deploymentQuery, scopeQuery, err := networkgraph.GetFilterAndScopeQueries(request.GetClusterId(), requestClone.GetQuery(), requestClone.GetScope())
@@ -389,7 +387,7 @@ func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGr
 	graph := builder.Build()
 	for _, node := range graph.GetNodes() {
 		if depSet.Contains(node.GetEntity().GetId()) {
-			node.QueryMatch = true
+			node.SetQueryMatch(true)
 		}
 	}
 
@@ -437,9 +435,9 @@ func (s *serviceImpl) enhanceWithNetworkPolicyIsolationInfo(ctx context.Context,
 			deploymentID := node.GetEntity().GetId()
 			if deployment, ok := deploymentMap[deploymentID]; ok {
 				isolationDetail := matcher.GetIsolationDetails(deployment)
-				node.NonIsolatedEgress = !isolationDetail.EgressIsolated
-				node.NonIsolatedIngress = !isolationDetail.IngressIsolated
-				node.PolicyIds = isolationDetail.PolicyIDs
+				node.SetNonIsolatedEgress(!isolationDetail.EgressIsolated)
+				node.SetNonIsolatedIngress(!isolationDetail.IngressIsolated)
+				node.SetPolicyIds(isolationDetail.PolicyIDs)
 			}
 		}
 	}

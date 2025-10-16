@@ -85,9 +85,9 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 	if id != "" && ok {
 		img := v.GetIfDone()
 		if img != nil && (!req.GetScanInline() || img.GetScan() != nil) {
-			return &sensor.GetImageResponse{
-				Image: img,
-			}, nil
+			gir := &sensor.GetImageResponse{}
+			gir.SetImage(img)
+			return gir, nil
 		}
 	}
 
@@ -104,22 +104,22 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 	// it is considered cluster-local.
 	// This is used to determine that an image is from an OCP internal registry and
 	// should not be sent to central for scanning
-	req.Image.IsClusterLocal = s.registryStore.IsLocal(req.GetImage().GetName())
+	req.GetImage().SetIsClusterLocal(s.registryStore.IsLocal(req.GetImage().GetName()))
 
 	ctx = trace.ContextWithClusterID(ctx, s.clusterID)
 
 	// Ask Central to scan the image if the image is neither internal nor local
 	if !req.GetImage().GetIsClusterLocal() {
-		scanResp, err := s.centralClient.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
-			Image:      req.GetImage(),
-			CachedOnly: !req.GetScanInline(),
-		})
+		siir := &v1.ScanImageInternalRequest{}
+		siir.SetImage(req.GetImage())
+		siir.SetCachedOnly(!req.GetScanInline())
+		scanResp, err := s.centralClient.ScanImageInternal(ctx, siir)
 		if err != nil {
 			return nil, errors.Wrap(err, "scanning image via central")
 		}
-		return &sensor.GetImageResponse{
-			Image: scanResp.GetImage(),
-		}, nil
+		gir := &sensor.GetImageResponse{}
+		gir.SetImage(scanResp.GetImage())
+		return gir, nil
 	}
 
 	img, err := s.localScan.EnrichLocalImageInNamespace(ctx, s.centralClient, &scan.LocalScanRequest{
@@ -132,9 +132,9 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 		return nil, err
 	}
 
-	return &sensor.GetImageResponse{
-		Image: img,
-	}, nil
+	gir := &sensor.GetImageResponse{}
+	gir.SetImage(img)
+	return gir, nil
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

@@ -45,9 +45,8 @@ func (c *perRPCCreds) refreshToken(ctx context.Context) error {
 		return errors.WithMessage(err, "error reading service account token file")
 	}
 
-	req := v1.ExchangeAuthMachineToMachineTokenRequest{
-		IdToken: string(token),
-	}
+	req := &v1.ExchangeAuthMachineToMachineTokenRequest{}
+	req.SetIdToken(string(token))
 
 	resp, err := c.svc.ExchangeAuthMachineToMachineToken(ctx, &req)
 	if err != nil {
@@ -155,7 +154,9 @@ func (gc *grpcClient) ListPolicies(ctx context.Context) ([]*storage.ListPolicy, 
 }
 
 func (gc *grpcClient) GetPolicy(ctx context.Context, id string) (*storage.Policy, error) {
-	policy, err := gc.policySvc.GetPolicy(ctx, &v1.ResourceByID{Id: id})
+	rbid := &v1.ResourceByID{}
+	rbid.SetId(id)
+	policy, err := gc.policySvc.GetPolicy(ctx, rbid)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Failed to fetch policy %s", id)
 	}
@@ -164,10 +165,9 @@ func (gc *grpcClient) GetPolicy(ctx context.Context, id string) (*storage.Policy
 }
 
 func (gc *grpcClient) PostPolicy(ctx context.Context, policy *storage.Policy) (*storage.Policy, error) {
-	req := &v1.PostPolicyRequest{
-		Policy:                 policy,
-		EnableStrictValidation: true,
-	}
+	req := &v1.PostPolicyRequest{}
+	req.SetPolicy(policy)
+	req.SetEnableStrictValidation(true)
 
 	policy, err := gc.policySvc.PostPolicy(ctx, req)
 
@@ -189,7 +189,9 @@ func (gc *grpcClient) PutPolicy(ctx context.Context, policy *storage.Policy) err
 }
 
 func (gc *grpcClient) DeletePolicy(ctx context.Context, id string) error {
-	_, err := gc.policySvc.DeletePolicy(ctx, &v1.ResourceByID{Id: id})
+	rbid := &v1.ResourceByID{}
+	rbid.SetId(id)
+	_, err := gc.policySvc.DeletePolicy(ctx, rbid)
 
 	if err != nil {
 		return errors.Wrapf(err, "Failed to delete policy: %s", id)

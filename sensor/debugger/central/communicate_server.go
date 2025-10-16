@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/proto"
 )
 
 // FakeService represents a fake central gRPC that reads and sends messages to sensor's connected gRPC stream.
@@ -70,6 +71,8 @@ func (s *FakeService) ClearReceivedBuffer() {
 // MakeFakeCentralWithInitialMessages creates a fake gRPC connection that sends `initialMessages` on startup.
 // Once communicate is called and the gRPC stream is enabled, this instance will send all `initialMessages` in order.
 func MakeFakeCentralWithInitialMessages(initialMessages ...*central.MsgToSensor) *FakeService {
+	ds := &central.DeduperState{}
+	ds.SetResourceHashes(make(map[string]uint64))
 	return &FakeService{
 		ConnectionStarted:    concurrency.NewSignal(),
 		KillSwitch:           concurrency.NewSignal(),
@@ -79,7 +82,7 @@ func MakeFakeCentralWithInitialMessages(initialMessages ...*central.MsgToSensor)
 		messageCallback:      func(_ *central.MsgFromSensor) { /* noop */ },
 		messageCallbackLock:  sync.RWMutex{},
 		centralStubMessagesC: make(chan *central.MsgToSensor, 1),
-		deduperState:         &central.DeduperState{ResourceHashes: make(map[string]uint64)},
+		deduperState:         ds,
 	}
 }
 
@@ -167,9 +170,9 @@ func (s *FakeService) Communicate(stream central.SensorService_CommunicateServer
 	}
 
 	if s.deduperStateEnabled.Load() {
-		if err := stream.Send(&central.MsgToSensor{
-			Msg: &central.MsgToSensor_DeduperState{DeduperState: s.deduperState},
-		}); err != nil {
+		mts := &central.MsgToSensor{}
+		mts.SetDeduperState(proto.ValueOrDefault(s.deduperState))
+		if err := stream.Send(mts); err != nil {
 			return errors.Wrap(err, "sending deduper state to sensor")
 		}
 	}

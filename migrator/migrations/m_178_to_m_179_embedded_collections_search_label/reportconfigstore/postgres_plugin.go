@@ -291,7 +291,7 @@ func (s *storeImpl) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 		sacQueryFilter,
 		query,
 	)
-	q.Pagination = pagination
+	q.SetPagination(pagination)
 
 	rows, err := pgSearch.RunGetManyQueryForSchema[storage.ReportConfiguration](ctx, schema, q, s.db)
 	if err != nil {

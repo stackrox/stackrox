@@ -137,7 +137,7 @@ func (ds *datastoreImpl) AddReportSnapshot(ctx context.Context, snap *storage.Re
 	if snap.GetReportId() != "" {
 		return "", errors.New("New report snapshot must have an empty report id")
 	}
-	snap.ReportId = uuid.NewV4().String()
+	snap.SetReportId(uuid.NewV4().String())
 	if err := ds.storage.Upsert(ctx, snap); err != nil {
 		return "", err
 	}
@@ -178,11 +178,11 @@ func (ds *datastoreImpl) Walk(ctx context.Context, fn func(report *storage.Repor
 }
 
 func convertOne(report *storage.ReportSnapshot, result pkgSearch.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_REPORT_SNAPSHOT,
-		Id:             report.GetReportId(),
-		Name:           report.GetReportId(),
-		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+	sr := &v1.SearchResult{}
+	sr.SetCategory(v1.SearchCategory_REPORT_SNAPSHOT)
+	sr.SetId(report.GetReportId())
+	sr.SetName(report.GetReportId())
+	sr.SetFieldToMatches(pkgSearch.GetProtoMatchesMap(result.Matches))
+	sr.SetScore(result.Score)
+	return sr
 }

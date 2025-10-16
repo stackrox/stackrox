@@ -25,15 +25,14 @@ func GetContainerRuntimeData() (*compliance.ContainerRuntimeInfo, error) {
 		return nil, errors.Wrapf(err, "failed to parse CRI-O config file %s", crioConfHostPath)
 	}
 
-	cri := &compliance.ContainerRuntimeInfo{
-		InsecureRegistries: &compliance.InsecureRegistriesConfig{},
-	}
+	cri := &compliance.ContainerRuntimeInfo{}
+	cri.SetInsecureRegistries(&compliance.InsecureRegistriesConfig{})
 
 	for _, insecureRegistry := range crioCfg.Image.InsecureRegistries {
 		if _, _, err := net.ParseCIDR(insecureRegistry); err == nil {
-			cri.InsecureRegistries.InsecureCidrs = append(cri.InsecureRegistries.InsecureCidrs, insecureRegistry)
+			cri.GetInsecureRegistries().SetInsecureCidrs(append(cri.GetInsecureRegistries().GetInsecureCidrs(), insecureRegistry))
 		} else {
-			cri.InsecureRegistries.InsecureRegistries = append(cri.InsecureRegistries.InsecureRegistries, insecureRegistry)
+			cri.GetInsecureRegistries().SetInsecureRegistries(append(cri.GetInsecureRegistries().GetInsecureRegistries(), insecureRegistry))
 		}
 	}
 

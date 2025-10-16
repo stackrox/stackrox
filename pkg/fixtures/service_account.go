@@ -8,19 +8,19 @@ import (
 
 // GetServiceAccount returns a mock Service Account
 func GetServiceAccount() *storage.ServiceAccount {
-	return &storage.ServiceAccount{
-		Id:          uuid.NewDummy().String(),
-		ClusterId:   fixtureconsts.Cluster1,
-		ClusterName: "clustername",
-		Namespace:   "namespace",
-	}
+	sa := &storage.ServiceAccount{}
+	sa.SetId(uuid.NewDummy().String())
+	sa.SetClusterId(fixtureconsts.Cluster1)
+	sa.SetClusterName("clustername")
+	sa.SetNamespace("namespace")
+	return sa
 }
 
 // GetScopedServiceAccount returns a mock ServiceAccount belonging to the input scope.
 func GetScopedServiceAccount(id string, clusterID string, namespace string) *storage.ServiceAccount {
-	return &storage.ServiceAccount{
-		Id:        id,
-		ClusterId: clusterID,
-		Namespace: namespace,
-	}
+	sa := &storage.ServiceAccount{}
+	sa.SetId(id)
+	sa.SetClusterId(clusterID)
+	sa.SetNamespace(namespace)
+	return sa
 }

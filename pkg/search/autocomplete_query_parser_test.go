@@ -24,37 +24,25 @@ func TestParseAutocompleteQuery(t *testing.T) {
 			shouldError: false,
 			parser:      autocompleteQueryParser{},
 			expectedKey: Category.String(),
-			expectedQuery: &v1.Query{
-				Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
+			expectedQuery: v1.Query_builder{
+				Conjunction: v1.ConjunctionQuery_builder{
 					Queries: []*v1.Query{
-						{Query: &v1.Query_Disjunction{Disjunction: &v1.DisjunctionQuery{
+						v1.Query_builder{Disjunction: v1.DisjunctionQuery_builder{
 							Queries: []*v1.Query{
-								{Query: &v1.Query_BaseQuery{
-									BaseQuery: &v1.BaseQuery{
-										Query: &v1.BaseQuery_MatchFieldQuery{
-											MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "field1"},
-										},
-									},
-								}},
-								{Query: &v1.Query_BaseQuery{
-									BaseQuery: &v1.BaseQuery{
-										Query: &v1.BaseQuery_MatchFieldQuery{
-											MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "field12"},
-										},
-									},
-								}},
+								v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+									MatchFieldQuery: v1.MatchFieldQuery_builder{Field: DeploymentName.String(), Value: "field1"}.Build(),
+								}.Build()}.Build(),
+								v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+									MatchFieldQuery: v1.MatchFieldQuery_builder{Field: DeploymentName.String(), Value: "field12"}.Build(),
+								}.Build()}.Build(),
 							},
-						}}},
-						{Query: &v1.Query_BaseQuery{
-							BaseQuery: &v1.BaseQuery{
-								Query: &v1.BaseQuery_MatchFieldQuery{
-									MatchFieldQuery: &v1.MatchFieldQuery{Field: Category.String(), Value: "field2", Highlight: true},
-								},
-							},
-						}},
+						}.Build()}.Build(),
+						v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+							MatchFieldQuery: v1.MatchFieldQuery_builder{Field: Category.String(), Value: "field2", Highlight: true}.Build(),
+						}.Build()}.Build(),
 					},
-				}},
-			},
+				}.Build(),
+			}.Build(),
 		},
 		{
 			desc:        "Empty query",
@@ -74,44 +62,28 @@ func TestParseAutocompleteQuery(t *testing.T) {
 			shouldError: false,
 			parser:      autocompleteQueryParser{},
 			expectedKey: Category.String(),
-			expectedQuery: &v1.Query{
-				Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
+			expectedQuery: v1.Query_builder{
+				Conjunction: v1.ConjunctionQuery_builder{
 					Queries: []*v1.Query{
-						{Query: &v1.Query_Disjunction{Disjunction: &v1.DisjunctionQuery{
+						v1.Query_builder{Disjunction: v1.DisjunctionQuery_builder{
 							Queries: []*v1.Query{
-								{Query: &v1.Query_BaseQuery{
-									BaseQuery: &v1.BaseQuery{
-										Query: &v1.BaseQuery_MatchFieldQuery{
-											MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "field1"},
-										},
-									},
-								}},
-								{Query: &v1.Query_BaseQuery{
-									BaseQuery: &v1.BaseQuery{
-										Query: &v1.BaseQuery_MatchFieldQuery{
-											MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "\"field12+some:thing\""},
-										},
-									},
-								}},
-								{Query: &v1.Query_BaseQuery{
-									BaseQuery: &v1.BaseQuery{
-										Query: &v1.BaseQuery_MatchFieldQuery{
-											MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "field13"},
-										},
-									},
-								}},
+								v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+									MatchFieldQuery: v1.MatchFieldQuery_builder{Field: DeploymentName.String(), Value: "field1"}.Build(),
+								}.Build()}.Build(),
+								v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+									MatchFieldQuery: v1.MatchFieldQuery_builder{Field: DeploymentName.String(), Value: "\"field12+some:thing\""}.Build(),
+								}.Build()}.Build(),
+								v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+									MatchFieldQuery: v1.MatchFieldQuery_builder{Field: DeploymentName.String(), Value: "field13"}.Build(),
+								}.Build()}.Build(),
 							},
-						}}},
-						{Query: &v1.Query_BaseQuery{
-							BaseQuery: &v1.BaseQuery{
-								Query: &v1.BaseQuery_MatchFieldQuery{
-									MatchFieldQuery: &v1.MatchFieldQuery{Field: Category.String(), Value: "\"field2+something\"", Highlight: true},
-								},
-							},
-						}},
+						}.Build()}.Build(),
+						v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+							MatchFieldQuery: v1.MatchFieldQuery_builder{Field: Category.String(), Value: "\"field2+something\"", Highlight: true}.Build(),
+						}.Build()}.Build(),
 					},
-				}},
-			},
+				}.Build(),
+			}.Build(),
 		},
 		{
 			desc:        "Query with plus and comma in double quotes",
@@ -119,44 +91,28 @@ func TestParseAutocompleteQuery(t *testing.T) {
 			shouldError: false,
 			parser:      autocompleteQueryParser{},
 			expectedKey: Category.String(),
-			expectedQuery: &v1.Query{
-				Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
+			expectedQuery: v1.Query_builder{
+				Conjunction: v1.ConjunctionQuery_builder{
 					Queries: []*v1.Query{
-						{Query: &v1.Query_Disjunction{Disjunction: &v1.DisjunctionQuery{
+						v1.Query_builder{Disjunction: v1.DisjunctionQuery_builder{
 							Queries: []*v1.Query{
-								{Query: &v1.Query_BaseQuery{
-									BaseQuery: &v1.BaseQuery{
-										Query: &v1.BaseQuery_MatchFieldQuery{
-											MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "field1"},
-										},
-									},
-								}},
-								{Query: &v1.Query_BaseQuery{
-									BaseQuery: &v1.BaseQuery{
-										Query: &v1.BaseQuery_MatchFieldQuery{
-											MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "\"field12+some,thi:ng\""},
-										},
-									},
-								}},
-								{Query: &v1.Query_BaseQuery{
-									BaseQuery: &v1.BaseQuery{
-										Query: &v1.BaseQuery_MatchFieldQuery{
-											MatchFieldQuery: &v1.MatchFieldQuery{Field: DeploymentName.String(), Value: "field13"},
-										},
-									},
-								}},
+								v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+									MatchFieldQuery: v1.MatchFieldQuery_builder{Field: DeploymentName.String(), Value: "field1"}.Build(),
+								}.Build()}.Build(),
+								v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+									MatchFieldQuery: v1.MatchFieldQuery_builder{Field: DeploymentName.String(), Value: "\"field12+some,thi:ng\""}.Build(),
+								}.Build()}.Build(),
+								v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+									MatchFieldQuery: v1.MatchFieldQuery_builder{Field: DeploymentName.String(), Value: "field13"}.Build(),
+								}.Build()}.Build(),
 							},
-						}}},
-						{Query: &v1.Query_BaseQuery{
-							BaseQuery: &v1.BaseQuery{
-								Query: &v1.BaseQuery_MatchFieldQuery{
-									MatchFieldQuery: &v1.MatchFieldQuery{Field: Category.String(), Value: "\"field2+some,thing\"", Highlight: true},
-								},
-							},
-						}},
+						}.Build()}.Build(),
+						v1.Query_builder{BaseQuery: v1.BaseQuery_builder{
+							MatchFieldQuery: v1.MatchFieldQuery_builder{Field: Category.String(), Value: "\"field2+some,thing\"", Highlight: true}.Build(),
+						}.Build()}.Build(),
 					},
-				}},
-			},
+				}.Build(),
+			}.Build(),
 		},
 	}
 	for _, tc := range testCases {

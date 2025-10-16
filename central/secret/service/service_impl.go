@@ -80,14 +80,14 @@ func (s *serviceImpl) GetSecret(ctx context.Context, request *v1.ResourceByID) (
 
 	var deployments []*storage.SecretDeploymentRelationship
 	for _, r := range deploymentResults {
-		deployments = append(deployments, &storage.SecretDeploymentRelationship{
-			Id:   r.GetId(),
-			Name: r.GetName(),
-		})
+		sdr := &storage.SecretDeploymentRelationship{}
+		sdr.SetId(r.GetId())
+		sdr.SetName(r.GetName())
+		deployments = append(deployments, sdr)
 	}
-	secret.Relationship = &storage.SecretRelationship{
-		DeploymentRelationships: deployments,
-	}
+	sr := &storage.SecretRelationship{}
+	sr.SetDeploymentRelationships(deployments)
+	secret.SetRelationship(sr)
 	return secret, nil
 }
 
@@ -103,7 +103,9 @@ func (s *serviceImpl) CountSecrets(ctx context.Context, request *v1.RawQuery) (*
 	if err != nil {
 		return nil, err
 	}
-	return &v1.CountSecretsResponse{Count: int32(numSecrets)}, nil
+	csr := &v1.CountSecretsResponse{}
+	csr.SetCount(int32(numSecrets))
+	return csr, nil
 }
 
 // ListSecrets returns all secrets that match the query.
@@ -121,5 +123,7 @@ func (s *serviceImpl) ListSecrets(ctx context.Context, request *v1.RawQuery) (*v
 	if err != nil {
 		return nil, err
 	}
-	return &v1.ListSecretsResponse{Secrets: secrets}, nil
+	lsr := &v1.ListSecretsResponse{}
+	lsr.SetSecrets(secrets)
+	return lsr, nil
 }

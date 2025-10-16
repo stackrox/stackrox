@@ -30,39 +30,33 @@ const (
 var (
 	coDeployment = helper.K8sResourceInfo{Kind: "Deployment", YamlFile: "co-deployment.yaml", Name: "compliance-operator"}
 
-	testScanConfig = &central.ApplyComplianceScanConfigRequest{
-		ScanRequest: &central.ApplyComplianceScanConfigRequest_UpdateScan{
-			UpdateScan: &central.ApplyComplianceScanConfigRequest_UpdateScheduledScan{
-				ScanSettings: &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
-					ScanName: "test",
-					Profiles: []string{"ocp4-cis"},
-				},
-				Cron: "0 1 * * *",
-			},
-		},
-	}
-	updatedTestScanConfig = &central.ApplyComplianceScanConfigRequest{
-		ScanRequest: &central.ApplyComplianceScanConfigRequest_UpdateScan{
-			UpdateScan: &central.ApplyComplianceScanConfigRequest_UpdateScheduledScan{
-				ScanSettings: &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
-					ScanName: "test",
-					Profiles: []string{"ocp4-cis", "ocp4-cis-node"},
-				},
-				Cron: "0 2 * * *",
-			},
-		},
-	}
-	testScanConfig2 = &central.ApplyComplianceScanConfigRequest{
-		ScanRequest: &central.ApplyComplianceScanConfigRequest_UpdateScan{
-			UpdateScan: &central.ApplyComplianceScanConfigRequest_UpdateScheduledScan{
-				ScanSettings: &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
-					ScanName: "test-2",
-					Profiles: []string{"ocp4-moderate"},
-				},
-				Cron: "0 1 * * *",
-			},
-		},
-	}
+	testScanConfig = central.ApplyComplianceScanConfigRequest_builder{
+		UpdateScan: central.ApplyComplianceScanConfigRequest_UpdateScheduledScan_builder{
+			ScanSettings: central.ApplyComplianceScanConfigRequest_BaseScanSettings_builder{
+				ScanName: "test",
+				Profiles: []string{"ocp4-cis"},
+			}.Build(),
+			Cron: "0 1 * * *",
+		}.Build(),
+	}.Build()
+	updatedTestScanConfig = central.ApplyComplianceScanConfigRequest_builder{
+		UpdateScan: central.ApplyComplianceScanConfigRequest_UpdateScheduledScan_builder{
+			ScanSettings: central.ApplyComplianceScanConfigRequest_BaseScanSettings_builder{
+				ScanName: "test",
+				Profiles: []string{"ocp4-cis", "ocp4-cis-node"},
+			}.Build(),
+			Cron: "0 2 * * *",
+		}.Build(),
+	}.Build()
+	testScanConfig2 = central.ApplyComplianceScanConfigRequest_builder{
+		UpdateScan: central.ApplyComplianceScanConfigRequest_UpdateScheduledScan_builder{
+			ScanSettings: central.ApplyComplianceScanConfigRequest_BaseScanSettings_builder{
+				ScanName: "test-2",
+				Profiles: []string{"ocp4-moderate"},
+			}.Build(),
+			Cron: "0 1 * * *",
+		}.Build(),
+	}.Build()
 
 	namespaceAPIResource = v1.APIResource{
 		Name:    "namespaces",
@@ -161,17 +155,13 @@ func Test_ComplianceOperatorScanConfigSync(t *testing.T) {
 }
 
 func createSyncScanConfigsMessage(scanConfigs ...*central.ApplyComplianceScanConfigRequest) *central.MsgToSensor {
-	return &central.MsgToSensor{
-		Msg: &central.MsgToSensor_ComplianceRequest{
-			ComplianceRequest: &central.ComplianceRequest{
-				Request: &central.ComplianceRequest_SyncScanConfigs{
-					SyncScanConfigs: &central.SyncComplianceScanConfigRequest{
-						ScanConfigs: scanConfigs,
-					},
-				},
-			},
-		},
-	}
+	return central.MsgToSensor_builder{
+		ComplianceRequest: central.ComplianceRequest_builder{
+			SyncScanConfigs: central.SyncComplianceScanConfigRequest_builder{
+				ScanConfigs: scanConfigs,
+			}.Build(),
+		}.Build(),
+	}.Build()
 }
 
 func assertScanSetting(t *testing.T, expected *central.ApplyComplianceScanConfigRequest, actual *unstructured.Unstructured) {

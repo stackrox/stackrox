@@ -33,7 +33,7 @@ func labelSelectorForNamespace(ns *storage.NamespaceMetadata) *storage.LabelSele
 		matchLabels = nsLabels
 	}
 
-	return &storage.LabelSelector{
-		MatchLabels: matchLabels,
-	}
+	ls := &storage.LabelSelector{}
+	ls.SetMatchLabels(matchLabels)
+	return ls
 }

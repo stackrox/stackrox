@@ -48,18 +48,17 @@ func GenerateImageFromStringWithDefaultTag(imageStr, defaultTag string) (*storag
 		return nil, err
 	}
 
-	image := &storage.ContainerImage{
-		Name:        imageName,
-		NotPullable: false,
-	}
+	image := &storage.ContainerImage{}
+	image.SetName(imageName)
+	image.SetNotPullable(false)
 
 	digest, ok := ref.(reference.Digested)
 	if ok {
-		image.Id = digest.Digest().String()
+		image.SetId(digest.Digest().String())
 	}
 
 	if features.FlattenImageData.Enabled() && image.GetId() != "" {
-		image.IdV2 = NewImageV2ID(image.GetName(), image.GetId())
+		image.SetIdV2(NewImageV2ID(image.GetName(), image.GetId()))
 	}
 
 	// Default the image to latest if and only if there was no tag specific and also no SHA specified
@@ -73,9 +72,8 @@ func GenerateImageFromStringWithDefaultTag(imageStr, defaultTag string) (*storag
 // GenerateImageNameFromString generated an ImageName from a common string format and returns an error if there was an
 // issue parsing it.
 func GenerateImageNameFromString(imageStr string) (*storage.ImageName, reference.Reference, error) {
-	name := &storage.ImageName{
-		FullName: imageStr,
-	}
+	name := &storage.ImageName{}
+	name.SetFullName(imageStr)
 
 	ref, err := reference.ParseAnyReference(imageStr)
 	if err != nil {
@@ -84,18 +82,18 @@ func GenerateImageNameFromString(imageStr string) (*storage.ImageName, reference
 
 	named, ok := ref.(reference.Named)
 	if ok {
-		name.Registry = reference.Domain(named)
-		name.Remote = reference.Path(named)
+		name.SetRegistry(reference.Domain(named))
+		name.SetRemote(reference.Path(named))
 	}
 
 	namedTagged, ok := ref.(reference.NamedTagged)
 	if ok {
-		name.Registry = reference.Domain(namedTagged)
-		name.Remote = reference.Path(namedTagged)
-		name.Tag = namedTagged.Tag()
+		name.SetRegistry(reference.Domain(namedTagged))
+		name.SetRemote(reference.Path(namedTagged))
+		name.SetTag(namedTagged.Tag())
 	}
 
-	name.FullName = ref.String()
+	name.SetFullName(ref.String())
 
 	return name, ref, nil
 }
@@ -103,7 +101,7 @@ func GenerateImageNameFromString(imageStr string) (*storage.ImageName, reference
 // SetImageTagNoSha sets the tag on an ImageName and updates the FullName to reflect the new tag.  This function should be
 // part of a wrapper instead of a util function
 func SetImageTagNoSha(name *storage.ImageName, tag string) *storage.ImageName {
-	name.Tag = tag
+	name.SetTag(tag)
 	NormalizeImageFullNameNoSha(name)
 	return name
 }
@@ -111,7 +109,7 @@ func SetImageTagNoSha(name *storage.ImageName, tag string) *storage.ImageName {
 // NormalizeImageFullNameNoSha sets the ImageName.FullName correctly based on the parts of the name and should be part of a
 // wrapper instead of a util function.
 func NormalizeImageFullNameNoSha(name *storage.ImageName) *storage.ImageName {
-	name.FullName = fmt.Sprintf("%s/%s:%s", name.GetRegistry(), name.GetRemote(), name.GetTag())
+	name.SetFullName(fmt.Sprintf("%s/%s:%s", name.GetRegistry(), name.GetRemote(), name.GetTag()))
 	return name
 }
 
@@ -132,7 +130,7 @@ func NormalizeImageFullName(name *storage.ImageName, digest string) *storage.Ima
 		tag = fmt.Sprintf(":%s", tag)
 	}
 
-	name.FullName = fmt.Sprintf("%s/%s%s%s", name.GetRegistry(), name.GetRemote(), tag, digest)
+	name.SetFullName(fmt.Sprintf("%s/%s%s%s", name.GetRegistry(), name.GetRemote(), tag, digest))
 	return name
 }
 
@@ -155,10 +153,10 @@ func GenerateImageFromStringWithOverride(imageStr, registryOverride string) (*st
 
 	// Only dockerhub can be mirrored: https://docs.docker.com/registry/recipes/mirror/
 	if image.GetName().GetRegistry() == defaultDockerRegistry {
-		image.Name.Registry = registryOverride
+		image.GetName().SetRegistry(registryOverride)
 
 		trimmedFullName := strings.TrimPrefix(image.GetName().GetFullName(), defaultDockerRegistry)
-		image.Name.FullName = fmt.Sprintf("%s%s", registryOverride, trimmedFullName)
+		image.GetName().SetFullName(fmt.Sprintf("%s%s", registryOverride, trimmedFullName))
 	}
 	return image, nil
 }
@@ -295,7 +293,7 @@ func StripCVEDescriptions(img *storage.Image) *storage.Image {
 func StripCVEDescriptionsNoClone(img *storage.Image) {
 	for _, component := range img.GetScan().GetComponents() {
 		for _, vuln := range component.GetVulns() {
-			vuln.Summary = ""
+			vuln.SetSummary("")
 		}
 	}
 }
@@ -311,12 +309,10 @@ func FilterSuppressedCVEsNoClone(img *storage.Image) {
 				filteredVulns = append(filteredVulns, vuln)
 			}
 		}
-		c.Vulns = filteredVulns
+		c.SetVulns(filteredVulns)
 	}
 	if img.GetSetCves() != nil {
-		img.SetCves = &storage.Image_Cves{
-			Cves: int32(len(cveSet)),
-		}
+		img.Set_Cves(int32(len(cveSet)))
 	}
 }
 
@@ -373,8 +369,8 @@ func FillScanStatsV2(i *storage.ImageV2) {
 	if i.GetScanStats() != nil {
 		return
 	}
-	i.ScanStats = &storage.ImageV2_ScanStats{}
-	i.GetScanStats().ComponentCount = int32(len(i.GetScan().GetComponents()))
+	i.SetScanStats(&storage.ImageV2_ScanStats{})
+	i.GetScanStats().SetComponentCount(int32(len(i.GetScan().GetComponents())))
 
 	var imageTopCVSS float32
 	vulns := make(map[string]*cveStats)
@@ -408,9 +404,7 @@ func FillScanStatsV2(i *storage.ImageV2) {
 		}
 
 		if hasVulns {
-			c.SetTopCvss = &storage.EmbeddedImageScanComponent_TopCvss{
-				TopCvss: componentTopCVSS,
-			}
+			c.Set_TopCvss(componentTopCVSS)
 		}
 
 		if componentTopCVSS > imageTopCVSS {
@@ -418,38 +412,38 @@ func FillScanStatsV2(i *storage.ImageV2) {
 		}
 	}
 
-	i.GetScanStats().CveCount = int32(len(vulns))
-	i.TopCvss = imageTopCVSS
+	i.GetScanStats().SetCveCount(int32(len(vulns)))
+	i.SetTopCvss(imageTopCVSS)
 
 	for _, vuln := range vulns {
 		if vuln.fixable {
-			i.GetScanStats().FixableCveCount++
+			i.GetScanStats().SetFixableCveCount(i.GetScanStats().GetFixableCveCount() + 1)
 		}
 		switch vuln.severity {
 		case storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY:
-			i.GetScanStats().UnknownCveCount++
+			i.GetScanStats().SetUnknownCveCount(i.GetScanStats().GetUnknownCveCount() + 1)
 			if vuln.fixable {
-				i.GetScanStats().FixableUnknownCveCount++
+				i.GetScanStats().SetFixableUnknownCveCount(i.GetScanStats().GetFixableUnknownCveCount() + 1)
 			}
 		case storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY:
-			i.GetScanStats().CriticalCveCount++
+			i.GetScanStats().SetCriticalCveCount(i.GetScanStats().GetCriticalCveCount() + 1)
 			if vuln.fixable {
-				i.GetScanStats().FixableCriticalCveCount++
+				i.GetScanStats().SetFixableCriticalCveCount(i.GetScanStats().GetFixableCriticalCveCount() + 1)
 			}
 		case storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY:
-			i.GetScanStats().ImportantCveCount++
+			i.GetScanStats().SetImportantCveCount(i.GetScanStats().GetImportantCveCount() + 1)
 			if vuln.fixable {
-				i.GetScanStats().FixableImportantCveCount++
+				i.GetScanStats().SetFixableImportantCveCount(i.GetScanStats().GetFixableImportantCveCount() + 1)
 			}
 		case storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY:
-			i.GetScanStats().ModerateCveCount++
+			i.GetScanStats().SetModerateCveCount(i.GetScanStats().GetModerateCveCount() + 1)
 			if vuln.fixable {
-				i.GetScanStats().FixableModerateCveCount++
+				i.GetScanStats().SetFixableModerateCveCount(i.GetScanStats().GetFixableModerateCveCount() + 1)
 			}
 		case storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY:
-			i.GetScanStats().LowCveCount++
+			i.GetScanStats().SetLowCveCount(i.GetScanStats().GetLowCveCount() + 1)
 			if vuln.fixable {
-				i.GetScanStats().FixableLowCveCount++
+				i.GetScanStats().SetFixableLowCveCount(i.GetScanStats().GetFixableLowCveCount() + 1)
 			}
 		}
 	}

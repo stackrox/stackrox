@@ -96,7 +96,7 @@ func (ds *dataStoreImpl) Add(ctx context.Context, obj *storage.SecuredUnits) err
 		return err
 	}
 	if obj.GetId() == "" {
-		obj.Id = uuid.NewV4().String()
+		obj.SetId(uuid.NewV4().String())
 	}
 	return errors.Wrap(ds.store.Upsert(ctx, obj), "failed to upsert usage record")
 }

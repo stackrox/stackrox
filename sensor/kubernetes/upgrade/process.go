@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -155,8 +156,8 @@ func (p *process) sendCheckInRequestSingle(req *central.UpgradeCheckInFromSensor
 // checkInWithCentral schedules a check in request for being sent to central. This is done on a best-effort basis; if
 // it fails, NBD. We will keep retrying though while the upgrade process is in progress.
 func (p *process) checkInWithCentral(req *central.UpgradeCheckInFromSensorRequest) {
-	req.ClusterId = p.clusterID.Get()
-	req.UpgradeProcessId = p.GetID()
+	req.SetClusterId(p.clusterID.Get())
+	req.SetUpgradeProcessId(p.GetID())
 
 	// If there is a currently pending request, remove it from the channel - it is now obsolete.
 	select {
@@ -183,11 +184,9 @@ func (p *process) doRun() {
 		launchErrMsg = err.Error()
 	}
 
-	p.checkInWithCentral(&central.UpgradeCheckInFromSensorRequest{
-		State: &central.UpgradeCheckInFromSensorRequest_LaunchError{
-			LaunchError: launchErrMsg,
-		},
-	})
+	ucifsr := &central.UpgradeCheckInFromSensorRequest{}
+	ucifsr.SetLaunchError(launchErrMsg)
+	p.checkInWithCentral(ucifsr)
 
 	p.watchUpgraderDeployment()
 }
@@ -335,20 +334,14 @@ func (p *process) watchUpgraderDeployment() {
 				// to let the timeout logic handle this.
 				log.Errorf("Error polling upgrader deployment/pods: %v", err)
 			} else if deploymentGone {
-				checkIn = &central.UpgradeCheckInFromSensorRequest{
-					State: &central.UpgradeCheckInFromSensorRequest_DeploymentGone{
-						DeploymentGone: true,
-					},
-				}
+				checkIn = &central.UpgradeCheckInFromSensorRequest{}
+				checkIn.SetDeploymentGone(true)
 			} else {
 				// Regular check in with central on upgrader pods.
-				checkIn = &central.UpgradeCheckInFromSensorRequest{
-					State: &central.UpgradeCheckInFromSensorRequest_PodStates{
-						PodStates: &central.UpgradeCheckInFromSensorRequest_UpgraderPodStates{
-							States: podStates,
-						},
-					},
-				}
+				uu := &central.UpgradeCheckInFromSensorRequest_UpgraderPodStates{}
+				uu.SetStates(podStates)
+				checkIn = &central.UpgradeCheckInFromSensorRequest{}
+				checkIn.SetPodStates(proto.ValueOrDefault(uu))
 			}
 
 			if checkIn != nil {
@@ -400,32 +393,31 @@ func (p *process) checkPodStatus(pod *v1.Pod) *central.UpgradeCheckInFromSensorR
 		}
 	}
 
-	s := &central.UpgradeCheckInFromSensorRequest_UpgraderPodState{
-		PodName: pod.GetName(),
-	}
+	s := &central.UpgradeCheckInFromSensorRequest_UpgraderPodState{}
+	s.SetPodName(pod.GetName())
 
 	if upgraderContainerStatus == nil {
 		log.Warnf("no upgrade container found for pod %s", pod.Name)
-		s.Error = &central.UpgradeCheckInFromSensorRequest_PodErrorCondition{
-			Message: "no upgrade container found",
-		}
+		up := &central.UpgradeCheckInFromSensorRequest_PodErrorCondition{}
+		up.SetMessage("no upgrade container found")
+		s.SetError(up)
 	} else if upgraderContainerStatus.State.Running != nil {
 		log.Infof("Upgrader pod %s is running!", pod.GetName())
-		s.Started = true
+		s.SetStarted(true)
 	} else if terminatedState := upgraderContainerStatus.State.Terminated; terminatedState != nil {
-		s.Started = true
+		s.SetStarted(true)
 		if terminatedState.ExitCode != 0 {
-			s.Error = &central.UpgradeCheckInFromSensorRequest_PodErrorCondition{
-				Message: fmt.Sprintf("Pod terminated: %s (%s)", terminatedState.Message, terminatedState.Reason),
-			}
+			up := &central.UpgradeCheckInFromSensorRequest_PodErrorCondition{}
+			up.SetMessage(fmt.Sprintf("Pod terminated: %s (%s)", terminatedState.Message, terminatedState.Reason))
+			s.SetError(up)
 		}
 		log.Infof("Upgrader pod %s terminated, reason: %s (%s)", pod.Name, terminatedState.Reason, terminatedState.Message)
 	} else if waitingState := upgraderContainerStatus.State.Waiting; waitingState != nil {
 		if isImagePullRelatedReason(waitingState.Reason) {
-			s.Error = &central.UpgradeCheckInFromSensorRequest_PodErrorCondition{
-				Message:      fmt.Sprintf("The upgrader had trouble pulling the new \"%s\" image.%s (Reason: %s)", upgraderContainerStatus.Image, getImageErrorRemediation(waitingState.Reason), waitingState.Reason),
-				ImageRelated: true,
-			}
+			up := &central.UpgradeCheckInFromSensorRequest_PodErrorCondition{}
+			up.SetMessage(fmt.Sprintf("The upgrader had trouble pulling the new \"%s\" image.%s (Reason: %s)", upgraderContainerStatus.Image, getImageErrorRemediation(waitingState.Reason), waitingState.Reason))
+			up.SetImageRelated(true)
+			s.SetError(up)
 			log.Warnf("Upgrader pod %s seems to have trouble pulling the image, reason: %s (%s)", pod.Name, waitingState.Reason, waitingState.Message)
 		}
 	}

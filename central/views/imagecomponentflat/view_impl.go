@@ -40,7 +40,7 @@ func (v *imageComponentFlatViewImpl) Count(ctx context.Context, q *v1.Query) (in
 	defer cancel()
 
 	clonedQ := q.CloneVT()
-	clonedQ.Pagination = nil
+	clonedQ.ClearPagination()
 
 	// TODO(ROX-29454) figure out how to get query like `select count(distinct (name, version, operatingsystem)) from image_component_v2;`
 	results, err := v.Get(queryCtx, clonedQ)
@@ -89,18 +89,18 @@ func (v *imageComponentFlatViewImpl) Get(ctx context.Context, q *v1.Query) ([]Co
 func withSelectComponentCoreResponseQuery(q *v1.Query) *v1.Query {
 	cloned := q.CloneVT()
 
-	cloned.Selects = []*v1.QuerySelect{
+	cloned.SetSelects([]*v1.QuerySelect{
 		search.NewQuerySelect(search.Component).Proto(),
 		search.NewQuerySelect(search.ComponentID).Distinct().Proto(),
 		search.NewQuerySelect(search.ComponentVersion).Proto(),
 		search.NewQuerySelect(search.OperatingSystem).Proto(),
 		search.NewQuerySelect(search.ComponentTopCVSS).AggrFunc(aggregatefunc.Max).Proto(),
 		search.NewQuerySelect(search.ComponentRiskScore).AggrFunc(aggregatefunc.Max).Proto(),
-	}
+	})
 
-	cloned.GroupBy = &v1.QueryGroupBy{
-		Fields: []string{search.Component.String(), search.ComponentVersion.String(), search.OperatingSystem.String()},
-	}
+	qgb := &v1.QueryGroupBy{}
+	qgb.SetFields([]string{search.Component.String(), search.ComponentVersion.String(), search.OperatingSystem.String()})
+	cloned.SetGroupBy(qgb)
 
 	return cloned
 }

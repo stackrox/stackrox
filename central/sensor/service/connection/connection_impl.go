@@ -43,6 +43,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -288,30 +289,30 @@ func (c *sensorConnection) InjectMessage(ctx concurrency.Waitable, msg *central.
 }
 
 func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFromSensor) error {
-	switch m := msg.GetMsg().(type) {
-	case *central.MsgFromSensor_ScrapeUpdate:
-		return c.scrapeCtrl.ProcessScrapeUpdate(m.ScrapeUpdate)
-	case *central.MsgFromSensor_NetworkPoliciesResponse:
-		return c.networkPoliciesCtrl.ProcessNetworkPoliciesResponse(m.NetworkPoliciesResponse)
-	case *central.MsgFromSensor_TelemetryDataResponse:
-		return c.telemetryCtrl.ProcessTelemetryDataResponse(ctx, m.TelemetryDataResponse)
-	case *central.MsgFromSensor_IssueLocalScannerCertsRequest:
-		return c.processIssueLocalScannerCertsRequest(ctx, m.IssueLocalScannerCertsRequest)
-	case *central.MsgFromSensor_IssueSecuredClusterCertsRequest:
-		return c.processIssueSecuredClusterCertsRequest(ctx, m.IssueSecuredClusterCertsRequest)
-	case *central.MsgFromSensor_ComplianceResponse:
+	switch msg.WhichMsg() {
+	case central.MsgFromSensor_ScrapeUpdate_case:
+		return c.scrapeCtrl.ProcessScrapeUpdate(msg.GetScrapeUpdate())
+	case central.MsgFromSensor_NetworkPoliciesResponse_case:
+		return c.networkPoliciesCtrl.ProcessNetworkPoliciesResponse(msg.GetNetworkPoliciesResponse())
+	case central.MsgFromSensor_TelemetryDataResponse_case:
+		return c.telemetryCtrl.ProcessTelemetryDataResponse(ctx, msg.GetTelemetryDataResponse())
+	case central.MsgFromSensor_IssueLocalScannerCertsRequest_case:
+		return c.processIssueLocalScannerCertsRequest(ctx, msg.GetIssueLocalScannerCertsRequest())
+	case central.MsgFromSensor_IssueSecuredClusterCertsRequest_case:
+		return c.processIssueSecuredClusterCertsRequest(ctx, msg.GetIssueSecuredClusterCertsRequest())
+	case central.MsgFromSensor_ComplianceResponse_case:
 		return c.processComplianceResponse(ctx, msg.GetComplianceResponse())
-	case *central.MsgFromSensor_Event:
+	case central.MsgFromSensor_Event_case:
 		// Special case the reprocess deployment because its fields are already set
 		if msg.GetEvent().GetReprocessDeployment() != nil {
 			c.sensorEventHandler.addMultiplexed(ctx, msg)
 			return nil
 		}
 		if shallDedupe(msg) {
-			msg.DedupeKey = msg.GetEvent().GetId()
+			msg.SetDedupeKey(msg.GetEvent().GetId())
 		}
 		// Set the hash key for all values
-		msg.HashKey = msg.GetEvent().GetId()
+		msg.SetHashKey(msg.GetEvent().GetId())
 
 		c.sensorEventHandler.addMultiplexed(ctx, msg)
 		return nil
@@ -334,14 +335,14 @@ func shallDedupe(msg *central.MsgFromSensor) bool {
 }
 
 func (c *sensorConnection) processComplianceResponse(ctx context.Context, msg *central.ComplianceResponse) error {
-	switch m := msg.GetResponse().(type) {
-	case *central.ComplianceResponse_ApplyComplianceScanConfigResponse_:
-		return c.complianceOperatorMgr.HandleScanRequestResponse(ctx, m.ApplyComplianceScanConfigResponse.GetId(), c.clusterID, m.ApplyComplianceScanConfigResponse.GetError())
-	case *central.ComplianceResponse_DeleteComplianceScanConfigResponse_:
-		log.Debugf("received delete compliance scan config error response %v for cluster %v", m.DeleteComplianceScanConfigResponse.GetError(), c.clusterID)
+	switch m := msg.WhichResponse(); m {
+	case central.ComplianceResponse_ApplyComplianceScanConfigResponse_case:
+		return c.complianceOperatorMgr.HandleScanRequestResponse(ctx, msg.GetApplyComplianceScanConfigResponse().GetId(), c.clusterID, msg.GetApplyComplianceScanConfigResponse().GetError())
+	case central.ComplianceResponse_DeleteComplianceScanConfigResponse_case:
+		log.Debugf("received delete compliance scan config error response %v for cluster %v", msg.GetDeleteComplianceScanConfigResponse().GetError(), c.clusterID)
 		return nil
 	default:
-		log.Infof("Unimplemented compliance response  %T", m)
+		log.Infof("Unimplemented compliance response  %v", m)
 	}
 	return errors.Errorf("Unimplemented compliance response  %T", msg.GetResponse())
 }
@@ -361,26 +362,20 @@ func (c *sensorConnection) processIssueLocalScannerCertsRequest(ctx context.Cont
 	} else {
 		var certificates *storage.TypedServiceCertificateSet
 		certificates, err = securedclustercertgen.IssueLocalScannerCerts(namespace, clusterID)
-		response = &central.IssueLocalScannerCertsResponse{
-			RequestId: requestID,
-			Response: &central.IssueLocalScannerCertsResponse_Certificates{
-				Certificates: certificates,
-			},
-		}
+		response = &central.IssueLocalScannerCertsResponse{}
+		response.SetRequestId(requestID)
+		response.SetCertificates(proto.ValueOrDefault(certificates))
 	}
 	if err != nil {
-		response = &central.IssueLocalScannerCertsResponse{
-			RequestId: requestID,
-			Response: &central.IssueLocalScannerCertsResponse_Error{
-				Error: &central.LocalScannerCertsIssueError{
-					Message: fmt.Sprintf("%s: %s", errMsg, err.Error()),
-				},
-			},
-		}
+		lscie := &central.LocalScannerCertsIssueError{}
+		lscie.SetMessage(fmt.Sprintf("%s: %s", errMsg, err.Error()))
+		response = &central.IssueLocalScannerCertsResponse{}
+		response.SetRequestId(requestID)
+		response.SetError(proto.ValueOrDefault(lscie))
 	}
-	err = c.InjectMessage(ctx, &central.MsgToSensor{
-		Msg: &central.MsgToSensor_IssueLocalScannerCertsResponse{IssueLocalScannerCertsResponse: response},
-	})
+	mts := &central.MsgToSensor{}
+	mts.SetIssueLocalScannerCertsResponse(proto.ValueOrDefault(response))
+	err = c.InjectMessage(ctx, mts)
 	if err != nil {
 		return errors.Wrap(err, errMsg)
 	}
@@ -404,26 +399,20 @@ func (c *sensorConnection) processIssueSecuredClusterCertsRequest(ctx context.Co
 		sensorSupportsRotation := c.capabilities.Contains(centralsensor.SensorCARotationSupported)
 		caFingerprint := request.GetCaFingerprint()
 		certificates, err = securedclustercertgen.IssueSecuredClusterCerts(namespace, clusterID, sensorSupportsRotation, caFingerprint)
-		response = &central.IssueSecuredClusterCertsResponse{
-			RequestId: requestID,
-			Response: &central.IssueSecuredClusterCertsResponse_Certificates{
-				Certificates: certificates,
-			},
-		}
+		response = &central.IssueSecuredClusterCertsResponse{}
+		response.SetRequestId(requestID)
+		response.SetCertificates(proto.ValueOrDefault(certificates))
 	}
 	if err != nil {
-		response = &central.IssueSecuredClusterCertsResponse{
-			RequestId: requestID,
-			Response: &central.IssueSecuredClusterCertsResponse_Error{
-				Error: &central.SecuredClusterCertsIssueError{
-					Message: fmt.Sprintf("%s: %s", errMsg, err.Error()),
-				},
-			},
-		}
+		sccie := &central.SecuredClusterCertsIssueError{}
+		sccie.SetMessage(fmt.Sprintf("%s: %s", errMsg, err.Error()))
+		response = &central.IssueSecuredClusterCertsResponse{}
+		response.SetRequestId(requestID)
+		response.SetError(proto.ValueOrDefault(sccie))
 	}
-	err = c.InjectMessage(ctx, &central.MsgToSensor{
-		Msg: &central.MsgToSensor_IssueSecuredClusterCertsResponse{IssueSecuredClusterCertsResponse: response},
-	})
+	mts := &central.MsgToSensor{}
+	mts.SetIssueSecuredClusterCertsResponse(proto.ValueOrDefault(response))
+	err = c.InjectMessage(ctx, mts)
 	if err != nil {
 		return errors.Wrap(err, errMsg)
 	}
@@ -487,13 +476,11 @@ func (c *sensorConnection) getPolicySyncMsgFromPolicies(policies []*storage.Poli
 		// Otherwise, sensor supports the same version or newer as central
 	}
 
-	return &central.MsgToSensor{
-		Msg: &central.MsgToSensor_PolicySync{
-			PolicySync: &central.PolicySync{
-				Policies: policies,
-			},
-		},
-	}, nil
+	ps := &central.PolicySync{}
+	ps.SetPolicies(policies)
+	mts := &central.MsgToSensor{}
+	mts.SetPolicySync(proto.ValueOrDefault(ps))
+	return mts, nil
 }
 
 func (c *sensorConnection) getNetworkBaselineSyncMsg(ctx context.Context) (*central.MsgToSensor, error) {
@@ -516,13 +503,11 @@ func (c *sensorConnection) getNetworkBaselineSyncMsg(ctx context.Context) (*cent
 	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, errors.Wrap(err, "could not list network baselines for Sensor connection")
 	}
-	return &central.MsgToSensor{
-		Msg: &central.MsgToSensor_NetworkBaselineSync{
-			NetworkBaselineSync: &central.NetworkBaselineSync{
-				NetworkBaselines: networkBaselines,
-			},
-		},
-	}, nil
+	nbs := &central.NetworkBaselineSync{}
+	nbs.SetNetworkBaselines(networkBaselines)
+	mts := &central.MsgToSensor{}
+	mts.SetNetworkBaselineSync(proto.ValueOrDefault(nbs))
+	return mts, nil
 }
 
 func (c *sensorConnection) getBaselineSyncMsg(ctx context.Context) (*central.MsgToSensor, error) {
@@ -543,13 +528,11 @@ func (c *sensorConnection) getBaselineSyncMsg(ctx context.Context) (*central.Msg
 	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, errors.Wrap(err, "could not list process baselines for Sensor connection")
 	}
-	return &central.MsgToSensor{
-		Msg: &central.MsgToSensor_BaselineSync{
-			BaselineSync: &central.BaselineSync{
-				Baselines: baselines,
-			},
-		},
-	}, nil
+	bs := &central.BaselineSync{}
+	bs.SetBaselines(baselines)
+	mts := &central.MsgToSensor{}
+	mts.SetBaselineSync(proto.ValueOrDefault(bs))
+	return mts, nil
 }
 
 func (c *sensorConnection) getClusterConfigMsg(ctx context.Context) (*central.MsgToSensor, error) {
@@ -560,13 +543,11 @@ func (c *sensorConnection) getClusterConfigMsg(ctx context.Context) (*central.Ms
 	if !exists {
 		return nil, errors.Errorf("could not pull config for cluster %q because it does not exist", c.clusterID)
 	}
-	return &central.MsgToSensor{
-		Msg: &central.MsgToSensor_ClusterConfig{
-			ClusterConfig: &central.ClusterConfig{
-				Config: cluster.GetDynamicConfig(),
-			},
-		},
-	}, nil
+	cc := &central.ClusterConfig{}
+	cc.SetConfig(cluster.GetDynamicConfig())
+	mts := &central.MsgToSensor{}
+	mts.SetClusterConfig(proto.ValueOrDefault(cc))
+	return mts, nil
 }
 
 func (c *sensorConnection) getScanConfigurationMsg(ctx context.Context) (*central.MsgToSensor, error) {
@@ -594,34 +575,28 @@ func (c *sensorConnection) getScanConfigurationMsg(ctx context.Context) (*centra
 		if err != nil {
 			return nil, err
 		}
-		scanConfigRequest := central.ApplyComplianceScanConfigRequest{
-			ScanRequest: &central.ApplyComplianceScanConfigRequest_UpdateScan{
-				UpdateScan: &central.ApplyComplianceScanConfigRequest_UpdateScheduledScan{
-					ScanSettings: &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
-						ScanName:               scanConfig.GetScanConfigName(),
-						Profiles:               profiles,
-						StrictNodeScan:         scanConfig.GetStrictNodeScan(),
-						AutoApplyRemediations:  scanConfig.GetAutoApplyRemediations(),
-						AutoUpdateRemediations: scanConfig.GetAutoUpdateRemediations(),
-					},
-					Cron: cron,
-				},
-			},
-		}
-		reformattedConfigs = append(reformattedConfigs, &scanConfigRequest)
+		scanConfigRequest := central.ApplyComplianceScanConfigRequest_builder{
+			UpdateScan: central.ApplyComplianceScanConfigRequest_UpdateScheduledScan_builder{
+				ScanSettings: central.ApplyComplianceScanConfigRequest_BaseScanSettings_builder{
+					ScanName:               scanConfig.GetScanConfigName(),
+					Profiles:               profiles,
+					StrictNodeScan:         scanConfig.GetStrictNodeScan(),
+					AutoApplyRemediations:  scanConfig.GetAutoApplyRemediations(),
+					AutoUpdateRemediations: scanConfig.GetAutoUpdateRemediations(),
+				}.Build(),
+				Cron: cron,
+			}.Build(),
+		}.Build()
+		reformattedConfigs = append(reformattedConfigs, scanConfigRequest)
 	}
 
-	return &central.MsgToSensor{
-		Msg: &central.MsgToSensor_ComplianceRequest{
-			ComplianceRequest: &central.ComplianceRequest{
-				Request: &central.ComplianceRequest_SyncScanConfigs{
-					SyncScanConfigs: &central.SyncComplianceScanConfigRequest{
-						ScanConfigs: reformattedConfigs,
-					},
-				},
-			},
-		},
-	}, nil
+	return central.MsgToSensor_builder{
+		ComplianceRequest: central.ComplianceRequest_builder{
+			SyncScanConfigs: central.SyncComplianceScanConfigRequest_builder{
+				ScanConfigs: reformattedConfigs,
+			}.Build(),
+		}.Build(),
+	}.Build(), nil
 }
 
 func (c *sensorConnection) getAuditLogSyncMsg(ctx context.Context) (*central.MsgToSensor, error) {
@@ -633,13 +608,11 @@ func (c *sensorConnection) getAuditLogSyncMsg(ctx context.Context) (*central.Msg
 		return nil, errors.Errorf("could not pull config for cluster %q because it does not exist", c.clusterID)
 	}
 
-	return &central.MsgToSensor{
-		Msg: &central.MsgToSensor_AuditLogSync{
-			AuditLogSync: &central.AuditLogSync{
-				NodeAuditLogFileStates: cluster.GetAuditLogState(),
-			},
-		},
-	}, nil
+	als := &central.AuditLogSync{}
+	als.SetNodeAuditLogFileStates(cluster.GetAuditLogState())
+	mts := &central.MsgToSensor{}
+	mts.SetAuditLogSync(proto.ValueOrDefault(als))
+	return mts, nil
 }
 
 func (c *sensorConnection) getDelegatedRegistryConfigMsg(ctx context.Context) (*central.MsgToSensor, error) {
@@ -654,11 +627,9 @@ func (c *sensorConnection) getDelegatedRegistryConfigMsg(ctx context.Context) (*
 		return nil, nil
 	}
 
-	return &central.MsgToSensor{
-		Msg: &central.MsgToSensor_DelegatedRegistryConfig{
-			DelegatedRegistryConfig: delegatedRegistryConfigConvert.StorageToInternalAPI(config),
-		},
-	}, nil
+	mts := &central.MsgToSensor{}
+	mts.SetDelegatedRegistryConfig(proto.ValueOrDefault(delegatedRegistryConfigConvert.StorageToInternalAPI(config)))
+	return mts, nil
 }
 
 // getImageIntegrationMsg builds a MsgToSensor containing registry integrations that should
@@ -683,16 +654,14 @@ func (c *sensorConnection) getImageIntegrationMsg(ctx context.Context) (*central
 		return nil, nil
 	}
 
-	return &central.MsgToSensor{
-		Msg: &central.MsgToSensor_ImageIntegrations{
-			ImageIntegrations: &central.ImageIntegrations{
-				UpdatedIntegrations: imageIntegrations,
-				// On initial/repeat connections to Sensor any previous stored image integrations
-				// should be replaced by these (potentially) new ones.
-				Refresh: true,
-			},
-		},
-	}, nil
+	ii := &central.ImageIntegrations{}
+	ii.SetUpdatedIntegrations(imageIntegrations)
+	// On initial/repeat connections to Sensor any previous stored image integrations
+	// should be replaced by these (potentially) new ones.
+	ii.SetRefresh(true)
+	mts := &central.MsgToSensor{}
+	mts.SetImageIntegrations(proto.ValueOrDefault(ii))
+	return mts, nil
 }
 
 func (c *sensorConnection) Run(ctx context.Context, server central.SensorService_CommunicateServer, connectionCapabilities set.Set[centralsensor.SensorCapability]) error {
@@ -869,13 +838,12 @@ func (c *sensorConnection) SensorVersion() string {
 }
 
 func (c *sensorConnection) sendDeduperState(server central.SensorService_CommunicateServer, payload map[string]uint64, current, total int32) error {
-	deduperMessage := &central.MsgToSensor{Msg: &central.MsgToSensor_DeduperState{
-		DeduperState: &central.DeduperState{
-			ResourceHashes: payload,
-			Current:        current,
-			Total:          total,
-		},
-	}}
+	ds := &central.DeduperState{}
+	ds.SetResourceHashes(payload)
+	ds.SetCurrent(current)
+	ds.SetTotal(total)
+	deduperMessage := &central.MsgToSensor{}
+	deduperMessage.SetDeduperState(proto.ValueOrDefault(ds))
 
 	log.Infof("Sending %d hashes (Size=%d), current chunk: %d, total: %d", len(payload), deduperMessage.SizeVT(), current, total)
 

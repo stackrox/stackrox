@@ -139,7 +139,7 @@ func (w *storeImpl) Revoke(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "reading init bundle %q", id)
 	}
 
-	meta.IsRevoked = true
+	meta.SetIsRevoked(true)
 	if err := w.store.Upsert(ctx, meta); err != nil {
 		return err
 	}

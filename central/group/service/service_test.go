@@ -32,73 +32,73 @@ func (suite *UserServiceTestSuite) SetupSuite() {
 }
 
 func (suite *UserServiceTestSuite) TestBatchUpdate() {
-	update := &v1.GroupBatchUpdateRequest{
+	update := v1.GroupBatchUpdateRequest_builder{
 		PreviousGroups: []*storage.Group{
-			{
-				Props: &storage.GroupProperties{ // should be removed since the props are not in required
+			storage.Group_builder{
+				Props: storage.GroupProperties_builder{ // should be removed since the props are not in required
 					AuthProviderId: "ap1",
 					Key:            "k1",
 					Value:          "v1",
 					Id:             "1",
-				},
+				}.Build(),
 				RoleName: "r1",
-			},
-			{
-				Props: &storage.GroupProperties{ // should be ignored since the props have the same role name in required
+			}.Build(),
+			storage.Group_builder{
+				Props: storage.GroupProperties_builder{ // should be ignored since the props have the same role name in required
 					AuthProviderId: "ap2",
 					Key:            "k1",
 					Value:          "v1",
 					Id:             "2",
-				},
+				}.Build(),
 				RoleName: "r2",
-			},
-			{
-				Props: &storage.GroupProperties{ // should get updated since the props have a new role in required
+			}.Build(),
+			storage.Group_builder{
+				Props: storage.GroupProperties_builder{ // should get updated since the props have a new role in required
 					AuthProviderId: "ap2",
 					Key:            "k1",
 					Value:          "v2",
 					Id:             "3",
-				},
+				}.Build(),
 				RoleName: "r2",
-			},
+			}.Build(),
 		},
 		RequiredGroups: []*storage.Group{
-			{
-				Props: &storage.GroupProperties{ // repeat of the second group above
+			storage.Group_builder{
+				Props: storage.GroupProperties_builder{ // repeat of the second group above
 					AuthProviderId: "ap2",
 					Key:            "k1",
 					Value:          "v1",
 					Id:             "2",
-				},
+				}.Build(),
 				RoleName: "r2",
-			},
-			{
-				Props: &storage.GroupProperties{ // update to the third group above
+			}.Build(),
+			storage.Group_builder{
+				Props: storage.GroupProperties_builder{ // update to the third group above
 					AuthProviderId: "ap2",
 					Key:            "k1",
 					Value:          "v2",
 					Id:             "3",
-				},
+				}.Build(),
 				RoleName: "r3",
-			},
-			{
-				Props: &storage.GroupProperties{ // newly added group since the props do not appear in previous.
+			}.Build(),
+			storage.Group_builder{
+				Props: storage.GroupProperties_builder{ // newly added group since the props do not appear in previous.
 					AuthProviderId: "ap2",
 					Key:            "k2",
 					Value:          "v1",
-				},
+				}.Build(),
 				RoleName: "r4",
-			},
-			{
-				Props: &storage.GroupProperties{ // repeat of the second group above
+			}.Build(),
+			storage.Group_builder{
+				Props: storage.GroupProperties_builder{ // repeat of the second group above
 					AuthProviderId: "ap2",
 					Key:            "k1",
 					Value:          "v1",
-				},
+				}.Build(),
 				RoleName: "r2",
-			},
+			}.Build(),
 		},
-	}
+	}.Build()
 
 	contextForMock := context.Background()
 	suite.groupsMock.EXPECT().
@@ -113,38 +113,38 @@ func (suite *UserServiceTestSuite) TestBatchUpdate() {
 }
 
 func (suite *UserServiceTestSuite) TestBatchUpdate_Dedupe_updated_group() {
-	update := &v1.GroupBatchUpdateRequest{
+	update := v1.GroupBatchUpdateRequest_builder{
 		PreviousGroups: []*storage.Group{
-			{
-				Props: &storage.GroupProperties{
+			storage.Group_builder{
+				Props: storage.GroupProperties_builder{
 					AuthProviderId: "ap1",
 					Key:            "k2",
 					Value:          "v1",
 					Id:             "1",
-				},
+				}.Build(),
 				RoleName: "r1",
-			},
+			}.Build(),
 		},
 		RequiredGroups: []*storage.Group{
-			{
-				Props: &storage.GroupProperties{ // update of the first group in previous groups.
+			storage.Group_builder{
+				Props: storage.GroupProperties_builder{ // update of the first group in previous groups.
 					AuthProviderId: "ap2",
 					Key:            "k1",
 					Value:          "v1",
 					Id:             "1",
-				},
+				}.Build(),
 				RoleName: "r2",
-			},
-			{
-				Props: &storage.GroupProperties{ // dupe of the first group in required groups, should not be added.
+			}.Build(),
+			storage.Group_builder{
+				Props: storage.GroupProperties_builder{ // dupe of the first group in required groups, should not be added.
 					AuthProviderId: "ap2",
 					Key:            "k1",
 					Value:          "v1",
-				},
+				}.Build(),
 				RoleName: "r2",
-			},
+			}.Build(),
 		},
-	}
+	}.Build()
 
 	contextForMock := context.Background()
 	suite.groupsMock.EXPECT().

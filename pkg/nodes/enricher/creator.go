@@ -32,11 +32,11 @@ func (e *enricherImpl) CreateNodeScanner(source *storage.NodeIntegration) (types
 	if err != nil {
 		return nil, err
 	}
+	ds := &storage.DataSource{}
+	ds.SetId(source.GetId())
+	ds.SetName(source.GetName())
 	return &nodeScannerWithDataSource{
 		nodeScanner: scanner,
-		datasource: &storage.DataSource{
-			Id:   source.GetId(),
-			Name: source.GetName(),
-		},
+		datasource:  ds,
 	}, nil
 }

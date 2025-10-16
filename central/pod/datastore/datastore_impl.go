@@ -124,7 +124,7 @@ func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error 
 
 // mergeContainerInstances merges container instances from oldPod into newPod.
 func mergeContainerInstances(newPod *storage.Pod, oldPod *storage.Pod) {
-	newPod.TerminatedInstances = oldPod.GetTerminatedInstances()
+	newPod.SetTerminatedInstances(oldPod.GetTerminatedInstances())
 
 	idxByContainerName := make(map[string]int)
 	for i, instanceList := range newPod.GetTerminatedInstances() {
@@ -136,7 +136,7 @@ func mergeContainerInstances(newPod *storage.Pod, oldPod *storage.Pod) {
 	endIdx := 0
 	for _, instance := range newPod.GetLiveInstances() {
 		if instance.GetFinished() == nil {
-			newPod.LiveInstances[endIdx] = instance
+			newPod.GetLiveInstances()[endIdx] = instance
 			endIdx++
 		} else {
 			// Container Instance has terminated. Move it into the proper dead instances list.
@@ -147,15 +147,15 @@ func mergeContainerInstances(newPod *storage.Pod, oldPod *storage.Pod) {
 					// Remove the oldest entry.
 					startIdx = 1
 				}
-				deadInstancesList.Instances = append(deadInstancesList.Instances[startIdx:], instance)
+				deadInstancesList.SetInstances(append(deadInstancesList.GetInstances()[startIdx:], instance))
 			} else {
-				newPod.TerminatedInstances = append(newPod.TerminatedInstances, &storage.Pod_ContainerInstanceList{
-					Instances: []*storage.ContainerInstance{instance},
-				})
+				pc := &storage.Pod_ContainerInstanceList{}
+				pc.SetInstances([]*storage.ContainerInstance{instance})
+				newPod.SetTerminatedInstances(append(newPod.GetTerminatedInstances(), pc))
 			}
 		}
 	}
-	newPod.LiveInstances = newPod.GetLiveInstances()[:endIdx]
+	newPod.SetLiveInstances(newPod.GetLiveInstances()[:endIdx])
 }
 
 // RemovePod removes a pod from the podStore

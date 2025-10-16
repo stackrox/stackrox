@@ -57,7 +57,7 @@ func (s *supressCveServiceTestErrorImpl) AuthFuncOverride(ctx context.Context, f
 
 func (s *supressCveServiceTestErrorImpl) SuppressCVEs(_ context.Context, req *v1.SuppressCVERequest) (*v1.Empty, error) {
 	duration := req.GetDuration().AsDuration().String()
-	return nil, status.Error(codes.Canceled, strings.Join(append(req.Cves, duration), ", "))
+	return nil, status.Error(codes.Canceled, strings.Join(append(req.GetCves(), duration), ", "))
 }
 
 func (a *MarshalerTest) TestDurationParsing() {

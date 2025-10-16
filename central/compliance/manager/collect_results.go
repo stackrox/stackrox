@@ -34,40 +34,40 @@ func getDomainProto(domain framework.ComplianceDomain) *storage.ComplianceDomain
 		deploymentMap[deployment.GetId()] = convertDeployment(deployment)
 	}
 
-	return &storage.ComplianceDomain{
-		Id:          domain.ID(),
-		Cluster:     convertCluster(domain.Cluster().Cluster()),
-		Nodes:       nodeMap,
-		Deployments: deploymentMap,
-	}
+	cd := &storage.ComplianceDomain{}
+	cd.SetId(domain.ID())
+	cd.SetCluster(convertCluster(domain.Cluster().Cluster()))
+	cd.SetNodes(nodeMap)
+	cd.SetDeployments(deploymentMap)
+	return cd
 }
 
 func convertCluster(cluster *storage.Cluster) *storage.ComplianceDomain_Cluster {
-	return &storage.ComplianceDomain_Cluster{
-		Id:   cluster.GetId(),
-		Name: cluster.GetName(),
-	}
+	cc := &storage.ComplianceDomain_Cluster{}
+	cc.SetId(cluster.GetId())
+	cc.SetName(cluster.GetName())
+	return cc
 }
 
 func convertDeployment(dep *storage.Deployment) *storage.ComplianceDomain_Deployment {
-	return &storage.ComplianceDomain_Deployment{
-		Id:          dep.GetId(),
-		NamespaceId: dep.GetNamespaceId(),
-		Name:        dep.GetName(),
-		Type:        dep.GetType(),
-		Namespace:   dep.GetNamespace(),
-		ClusterId:   dep.GetClusterId(),
-		ClusterName: dep.GetClusterName(),
-	}
+	cd := &storage.ComplianceDomain_Deployment{}
+	cd.SetId(dep.GetId())
+	cd.SetNamespaceId(dep.GetNamespaceId())
+	cd.SetName(dep.GetName())
+	cd.SetType(dep.GetType())
+	cd.SetNamespace(dep.GetNamespace())
+	cd.SetClusterId(dep.GetClusterId())
+	cd.SetClusterName(dep.GetClusterName())
+	return cd
 }
 
 func convertNode(node *storage.Node) *storage.ComplianceDomain_Node {
-	return &storage.ComplianceDomain_Node{
-		Id:          node.GetId(),
-		Name:        node.GetName(),
-		ClusterId:   node.GetClusterId(),
-		ClusterName: node.GetClusterName(),
-	}
+	cn := &storage.ComplianceDomain_Node{}
+	cn.SetId(node.GetId())
+	cn.SetName(node.GetName())
+	cn.SetClusterId(node.GetClusterId())
+	cn.SetClusterName(node.GetClusterName())
+	return cn
 }
 
 func getEvidenceProto(evidence framework.EvidenceRecord) *storage.ComplianceResultValue_Evidence {
@@ -77,10 +77,10 @@ func getEvidenceProto(evidence framework.EvidenceRecord) *storage.ComplianceResu
 		protoStatus = storage.ComplianceState_COMPLIANCE_STATE_ERROR
 		msg = fmt.Sprintf("[unknown control status %v] %s", evidence.Status, msg)
 	}
-	return &storage.ComplianceResultValue_Evidence{
-		State:   protoStatus,
-		Message: msg,
-	}
+	ce := &storage.ComplianceResultValue_Evidence{}
+	ce.SetState(protoStatus)
+	ce.SetMessage(msg)
+	return ce
 }
 
 func getResultValueProto(entityResults framework.Results, remoteResults *storage.ComplianceResultValue, errors []error) *storage.ComplianceResultValue {
@@ -98,10 +98,10 @@ func getResultValueProto(entityResults framework.Results, remoteResults *storage
 	evidenceList = append(evidenceList, remoteResults.GetEvidence()...)
 
 	for _, err := range errors {
-		evidenceList = append(evidenceList, &storage.ComplianceResultValue_Evidence{
-			State:   storage.ComplianceState_COMPLIANCE_STATE_ERROR,
-			Message: err.Error(),
-		})
+		ce := &storage.ComplianceResultValue_Evidence{}
+		ce.SetState(storage.ComplianceState_COMPLIANCE_STATE_ERROR)
+		ce.SetMessage(err.Error())
+		evidenceList = append(evidenceList, ce)
 	}
 
 	overallStatus := storage.ComplianceState_COMPLIANCE_STATE_UNKNOWN
@@ -112,17 +112,17 @@ func getResultValueProto(entityResults framework.Results, remoteResults *storage
 	}
 
 	if overallStatus == storage.ComplianceState_COMPLIANCE_STATE_UNKNOWN {
-		evidenceList = append(evidenceList, &storage.ComplianceResultValue_Evidence{
-			State:   storage.ComplianceState_COMPLIANCE_STATE_ERROR,
-			Message: "compliance run reported no results for this entity/control combination",
-		})
+		ce := &storage.ComplianceResultValue_Evidence{}
+		ce.SetState(storage.ComplianceState_COMPLIANCE_STATE_ERROR)
+		ce.SetMessage("compliance run reported no results for this entity/control combination")
+		evidenceList = append(evidenceList, ce)
 		overallStatus = storage.ComplianceState_COMPLIANCE_STATE_ERROR
 	}
 
-	return &storage.ComplianceResultValue{
-		Evidence:     evidenceList,
-		OverallState: overallStatus,
-	}
+	crv := &storage.ComplianceResultValue{}
+	crv.SetEvidence(evidenceList)
+	crv.SetOverallState(overallStatus)
+	return crv
 }
 
 func collectEntityResults(entity framework.ComplianceTarget, checks []framework.Check, allResults map[string]framework.Results, allRemoteResults map[string]*storage.ComplianceResultValue) *storage.ComplianceRunResults_EntityResults {
@@ -151,22 +151,21 @@ func collectEntityResults(entity framework.ComplianceTarget, checks []framework.
 		}
 	}
 
-	return &storage.ComplianceRunResults_EntityResults{
-		ControlResults: controlResults,
-	}
+	ce := &storage.ComplianceRunResults_EntityResults{}
+	ce.SetControlResults(controlResults)
+	return ce
 }
 
 func (r *runInstance) metadataProto(fixTimestamps bool) *storage.ComplianceRunMetadata {
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 
-	runMetadata := &storage.ComplianceRunMetadata{
-		RunId:      r.id,
-		ClusterId:  r.domain.Cluster().Cluster().GetId(),
-		StandardId: r.standard.Standard.ID,
-		Success:    r.status == v1.ComplianceRun_FINISHED && r.err == nil,
-		DomainId:   r.domain.ID(),
-	}
+	runMetadata := &storage.ComplianceRunMetadata{}
+	runMetadata.SetRunId(r.id)
+	runMetadata.SetClusterId(r.domain.Cluster().Cluster().GetId())
+	runMetadata.SetStandardId(r.standard.Standard.ID)
+	runMetadata.SetSuccess(r.status == v1.ComplianceRun_FINISHED && r.err == nil)
+	runMetadata.SetDomainId(r.domain.ID())
 
 	var err error
 	if !r.startTime.IsZero() {
@@ -185,14 +184,14 @@ func (r *runInstance) metadataProto(fixTimestamps bool) *storage.ComplianceRunMe
 
 	if fixTimestamps {
 		if runMetadata.GetStartTimestamp() == nil {
-			runMetadata.StartTimestamp = protocompat.TimestampNow()
+			runMetadata.SetStartTimestamp(protocompat.TimestampNow())
 		}
 		if runMetadata.GetFinishTimestamp() == nil {
-			runMetadata.FinishTimestamp = protocompat.TimestampNow()
+			runMetadata.SetFinishTimestamp(protocompat.TimestampNow())
 		}
 	}
 	if r.err != nil {
-		runMetadata.ErrorMessage = r.err.Error()
+		runMetadata.SetErrorMessage(r.err.Error())
 	}
 
 	return runMetadata
@@ -224,15 +223,15 @@ func (r *runInstance) collectResults(run framework.ComplianceRun, remoteResults 
 
 	runMetadataProto := r.metadataProto(true)
 	// need to mark this explicitly
-	runMetadataProto.Success = true
+	runMetadataProto.SetSuccess(true)
 
-	return &storage.ComplianceRunResults{
-		RunMetadata:          runMetadataProto,
-		ClusterResults:       clusterResults,
-		NodeResults:          nodeResults,
-		DeploymentResults:    deploymentResults,
-		MachineConfigResults: machineConfigResults,
-	}
+	crr := &storage.ComplianceRunResults{}
+	crr.SetRunMetadata(runMetadataProto)
+	crr.SetClusterResults(clusterResults)
+	crr.SetNodeResults(nodeResults)
+	crr.SetDeploymentResults(deploymentResults)
+	crr.SetMachineConfigResults(machineConfigResults)
+	return crr
 }
 
 func (r *runInstance) foldRemoteResults(remoteResults map[string]map[string]*compliance.ComplianceStandardResult) (map[string]*storage.ComplianceResultValue, map[string]map[string]*storage.ComplianceResultValue) {
@@ -264,9 +263,9 @@ func mergeComplianceResultValue(destination, source map[string]*storage.Complian
 			destination[checkName] = sourceComplianceResult
 			continue
 		}
-		destinationComplianceResult.Evidence = append(destinationComplianceResult.GetEvidence(), sourceComplianceResult.GetEvidence()...)
+		destinationComplianceResult.SetEvidence(append(destinationComplianceResult.GetEvidence(), sourceComplianceResult.GetEvidence()...))
 		if sourceComplianceResult.GetOverallState() > destinationComplianceResult.GetOverallState() {
-			destinationComplianceResult.OverallState = sourceComplianceResult.GetOverallState()
+			destinationComplianceResult.SetOverallState(sourceComplianceResult.GetOverallState())
 		}
 	}
 }
@@ -302,15 +301,15 @@ func (r *runInstance) noteMissingNodeClusterChecks(clusterResults map[string]*st
 		}
 
 		if evidence, ok := clusterResults[checkName]; !ok || len(evidence.GetEvidence()) == 0 {
-			clusterResults[checkName] = &storage.ComplianceResultValue{
-				Evidence: []*storage.ComplianceResultValue_Evidence{
-					{
-						State:   storage.ComplianceState_COMPLIANCE_STATE_NOTE,
-						Message: "No evidence was received for this check. This can occur when using a managed Kubernetes service or if the compliance pods are not running on the master nodes.",
-					},
-				},
-				OverallState: storage.ComplianceState_COMPLIANCE_STATE_NOTE,
-			}
+			ce := &storage.ComplianceResultValue_Evidence{}
+			ce.SetState(storage.ComplianceState_COMPLIANCE_STATE_NOTE)
+			ce.SetMessage("No evidence was received for this check. This can occur when using a managed Kubernetes service or if the compliance pods are not running on the master nodes.")
+			crv := &storage.ComplianceResultValue{}
+			crv.SetEvidence([]*storage.ComplianceResultValue_Evidence{
+				ce,
+			})
+			crv.SetOverallState(storage.ComplianceState_COMPLIANCE_STATE_NOTE)
+			clusterResults[checkName] = crv
 		}
 	}
 }

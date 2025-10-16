@@ -18,6 +18,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 var _ types.Registry = (*mockRegistry)(nil)
@@ -136,52 +137,52 @@ type imageTestCase struct {
 }
 
 var testImage = imageTestCase{
-	image: &storage.Image{
+	image: storage.Image_builder{
 		Id: "sha256:e361a57a7406adee653f1dcff660d84f0ca302907747af2a387f67821acfce33",
-		Name: &storage.ImageName{
+		Name: storage.ImageName_builder{
 			Registry: "quay.io",
 			Remote:   "hello/howdy",
 			Tag:      "123",
 			FullName: "quay.io/hello/howdy:123",
-		},
-		Metadata: &storage.ImageMetadata{
+		}.Build(),
+		Metadata: storage.ImageMetadata_builder{
 			LayerShas: []string{
 				"sha256:2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
 				"sha256:87298cc2f31fba73181ea2a9e6ef10dce21ed95e98bdac9c4e1504ea16f486e4",
 			},
-		},
-	},
-	expected: &storage.ImageScan{
+		}.Build(),
+	}.Build(),
+	expected: storage.ImageScan_builder{
 		OperatingSystem: "rhel:8",
 		Components: []*storage.EmbeddedImageScanComponent{
-			{
+			storage.EmbeddedImageScanComponent_builder{
 				Name:    "a",
 				Version: "1.2.3",
 				Vulns: []*storage.EmbeddedVulnerability{
-					{
+					storage.EmbeddedVulnerability_builder{
 						Cve:               "CVE-2023-0001",
 						Summary:           "First CVE of 2023",
 						Link:              "https://cve.com/CVE-2023-0001",
 						VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 						Severity:          storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
-					},
-					{
+					}.Build(),
+					storage.EmbeddedVulnerability_builder{
 						Cve:               "CVE-2023-0002",
 						Summary:           "Second CVE of 2023",
 						Link:              "https://cve.com/CVE-2023-0002",
 						VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 						Severity:          storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-						SetFixedBy:        &storage.EmbeddedVulnerability_FixedBy{FixedBy: "1.2.3.4"},
-					},
+						FixedBy:           proto.String("1.2.3.4"),
+					}.Build(),
 				},
-			},
-			{
+			}.Build(),
+			storage.EmbeddedImageScanComponent_builder{
 				Name:    "b",
 				Version: "4.5",
 				Vulns:   []*storage.EmbeddedVulnerability{},
-			},
+			}.Build(),
 		},
-	},
+	}.Build(),
 }
 
 func TestGetScan(t *testing.T) {
@@ -196,16 +197,14 @@ func TestGetScan(t *testing.T) {
 
 	clairServer := httptest.NewServer(&mockClair{})
 	defer clairServer.Close()
-	clair, err := newScanner(&storage.ImageIntegration{
-		Name:       "Mock Clair v4",
-		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
-		IntegrationConfig: &storage.ImageIntegration_ClairV4{
-			ClairV4: &storage.ClairV4Config{
-				Endpoint: clairServer.URL,
-				Insecure: true,
-			},
-		},
-	}, mockSet)
+	cv4c := &storage.ClairV4Config{}
+	cv4c.SetEndpoint(clairServer.URL)
+	cv4c.SetInsecure(true)
+	ii := &storage.ImageIntegration{}
+	ii.SetName("Mock Clair v4")
+	ii.SetCategories([]storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY})
+	ii.SetClairV4(proto.ValueOrDefault(cv4c))
+	clair, err := newScanner(ii, mockSet)
 	require.NoError(t, err)
 
 	scan, err := clair.GetScan(testImage.image)

@@ -175,7 +175,7 @@ func (r *Registry) Controls(standardID string) ([]*v1.ComplianceControl, error) 
 
 	controls := standard.GetControls()
 	for _, control := range controls {
-		control.StandardId = standard.GetMetadata().GetId()
+		control.SetStandardId(standard.GetMetadata().GetId())
 	}
 	return controls, nil
 }
@@ -193,7 +193,7 @@ func (r *Registry) Groups(standardID string) ([]*v1.ComplianceControlGroup, erro
 	}
 	groups := standard.GetGroups()
 	for _, group := range groups {
-		group.StandardId = standard.GetMetadata().GetId()
+		group.SetStandardId(standard.GetMetadata().GetId())
 	}
 	return groups, nil
 }

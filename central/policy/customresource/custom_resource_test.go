@@ -26,54 +26,54 @@ func TestConvertToCR(t *testing.T) {
 
 func getTestPolicy() *storage.Policy {
 	p := fixtures.GetPolicy()
-	p.Notifiers = []string{
+	p.SetNotifiers([]string{
 		"email-notifier-uuid",
-	}
-	p.MitreAttackVectors = []*storage.Policy_MitreAttackVectors{
-		{
-			Tactic:     "This is a tactic.",
-			Techniques: []string{"technique1", "technique2"},
-		},
-		{
-			Tactic:     "This is another tactic.",
-			Techniques: []string{"technique1"},
-		},
-	}
-	p.EnforcementActions = []storage.EnforcementAction{
+	})
+	pm := &storage.Policy_MitreAttackVectors{}
+	pm.SetTactic("This is a tactic.")
+	pm.SetTechniques([]string{"technique1", "technique2"})
+	pm2 := &storage.Policy_MitreAttackVectors{}
+	pm2.SetTactic("This is another tactic.")
+	pm2.SetTechniques([]string{"technique1"})
+	p.SetMitreAttackVectors([]*storage.Policy_MitreAttackVectors{
+		pm,
+		pm2,
+	})
+	p.SetEnforcementActions([]storage.EnforcementAction{
 		storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT,
 		storage.EnforcementAction_KILL_POD_ENFORCEMENT,
-	}
-	p.Exclusions = []*storage.Exclusion{
-		{
+	})
+	p.SetExclusions([]*storage.Exclusion{
+		storage.Exclusion_builder{
 			Name: "exclusionName1",
-			Deployment: &storage.Exclusion_Deployment{
+			Deployment: storage.Exclusion_Deployment_builder{
 				Name: "deployment1",
-				Scope: &storage.Scope{
+				Scope: storage.Scope_builder{
 					Cluster:   "cluster1",
 					Namespace: "label1",
-					Label: &storage.Scope_Label{
+					Label: storage.Scope_Label_builder{
 						Key:   "key1",
 						Value: "value1",
-					},
-				},
-			},
+					}.Build(),
+				}.Build(),
+			}.Build(),
 			Expiration: protocompat.GetProtoTimestampFromSeconds(2334221123),
-		},
-		{
+		}.Build(),
+		storage.Exclusion_builder{
 			Name: "exclusionName2",
-			Deployment: &storage.Exclusion_Deployment{
+			Deployment: storage.Exclusion_Deployment_builder{
 				Name: "deployment2",
-				Scope: &storage.Scope{
+				Scope: storage.Scope_builder{
 					Cluster:   "cluster2",
 					Namespace: "label2",
-					Label: &storage.Scope_Label{
+					Label: storage.Scope_Label_builder{
 						Key:   "key2",
 						Value: "value2",
-					},
-				},
-			},
-		},
-	}
+					}.Build(),
+				}.Build(),
+			}.Build(),
+		}.Build(),
+	})
 	return p
 }
 

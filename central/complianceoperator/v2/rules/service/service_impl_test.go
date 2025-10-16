@@ -62,10 +62,14 @@ func (s *ComplianceRulesServiceTestSuite) TestGetComplianceRuleByName() {
 		search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleName, ruleName).ProtoQuery(),
 		search.EmptyQuery(),
 	)
-	query.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
+	qp := &v1.QueryPagination{}
+	qp.SetLimit(maxPaginationLimit)
+	query.SetPagination(qp)
 	s.ruleDatastore.EXPECT().SearchRules(s.ctx, query).Return([]*storage.ComplianceOperatorRuleV2{convertUtils.GetRuleV2Storage(s.T())}, nil)
 
-	rule, err := s.service.GetComplianceRule(s.ctx, &apiV2.RuleRequest{RuleName: ruleName})
+	rr := &apiV2.RuleRequest{}
+	rr.SetRuleName(ruleName)
+	rule, err := s.service.GetComplianceRule(s.ctx, rr)
 	s.Require().NoError(err)
 	protoassert.Equal(s.T(), convertUtils.GetRuleV2(s.T()), rule)
 }

@@ -60,14 +60,14 @@ func (s *RuntimeDetectorTestSuite) TestConfigMapPolicyWithRegex() {
 	policySet := detection.NewPolicySet()
 
 	cmPolicy := s.getCreateConfigmapPolicy()
-	cmPolicy.PolicySections[0].PolicyGroups = append(cmPolicy.PolicySections[0].PolicyGroups, &storage.PolicyGroup{
-		FieldName: "Kubernetes Resource Name",
-		Values: []*storage.PolicyValue{
-			{
-				Value: "r/config-.*",
-			},
-		},
+	pv := &storage.PolicyValue{}
+	pv.SetValue("r/config-.*")
+	pg := &storage.PolicyGroup{}
+	pg.SetFieldName("Kubernetes Resource Name")
+	pg.SetValues([]*storage.PolicyValue{
+		pv,
 	})
+	cmPolicy.GetPolicySections()[0].SetPolicyGroups(append(cmPolicy.GetPolicySections()[0].GetPolicyGroups(), pg))
 	err := policySet.UpsertPolicy(cmPolicy)
 	s.NoError(err, "upsert policy should succeed")
 
@@ -78,105 +78,104 @@ func (s *RuntimeDetectorTestSuite) TestConfigMapPolicyWithRegex() {
 	s.NoError(err)
 	s.Len(alerts, 1, "incorrect number of alerts received")
 
-	kubeEvent.Object.Name = "secret-hello"
+	kubeEvent.GetObject().SetName("secret-hello")
 	alerts, err = d.DetectForAuditEvents([]*storage.KubernetesEvent{kubeEvent})
 	s.NoError(err)
 	s.Len(alerts, 0, "incorrect number of alerts received")
 }
 
 func (s *RuntimeDetectorTestSuite) getKubeEvent(resource storage.KubernetesEvent_Object_Resource, verb storage.KubernetesEvent_APIVerb, clusterID, namespace, name string, isImpersonated bool) *storage.KubernetesEvent {
-	event := &storage.KubernetesEvent{
-		Id: uuid.NewV4().String(),
-		Object: &storage.KubernetesEvent_Object{
-			Name:      name,
-			Resource:  resource,
-			ClusterId: clusterID,
-			Namespace: namespace,
-		},
-		Timestamp: protocompat.TimestampNow(),
-		ApiVerb:   verb,
-		User: &storage.KubernetesEvent_User{
-			Username: "username",
-			Groups:   []string{"groupA", "groupB"},
-		},
-		SourceIps: []string{"192.168.1.1", "127.0.0.1"},
-		UserAgent: "curl",
-		ResponseStatus: &storage.KubernetesEvent_ResponseStatus{
-			StatusCode: 200,
-			Reason:     "cause",
-		},
-	}
+	ko := &storage.KubernetesEvent_Object{}
+	ko.SetName(name)
+	ko.SetResource(resource)
+	ko.SetClusterId(clusterID)
+	ko.SetNamespace(namespace)
+	ku := &storage.KubernetesEvent_User{}
+	ku.SetUsername("username")
+	ku.SetGroups([]string{"groupA", "groupB"})
+	kr := &storage.KubernetesEvent_ResponseStatus{}
+	kr.SetStatusCode(200)
+	kr.SetReason("cause")
+	event := &storage.KubernetesEvent{}
+	event.SetId(uuid.NewV4().String())
+	event.SetObject(ko)
+	event.SetTimestamp(protocompat.TimestampNow())
+	event.SetApiVerb(verb)
+	event.SetUser(ku)
+	event.SetSourceIps([]string{"192.168.1.1", "127.0.0.1"})
+	event.SetUserAgent("curl")
+	event.SetResponseStatus(kr)
 	if isImpersonated {
-		event.ImpersonatedUser = &storage.KubernetesEvent_User{
-			Username: "impersonatedUser",
-			Groups:   []string{"groupC"},
-		}
+		ku2 := &storage.KubernetesEvent_User{}
+		ku2.SetUsername("impersonatedUser")
+		ku2.SetGroups([]string{"groupC"})
+		event.SetImpersonatedUser(ku2)
 	}
 	return event
 }
 
 func (s *RuntimeDetectorTestSuite) getUpdateSecretPolicy() *storage.Policy {
-	return &storage.Policy{
+	return storage.Policy_builder{
 		Id:            "9dc8b85e-7b35-4423-847b-165cd9b92fc7",
 		PolicyVersion: "1.1",
 		Name:          "Secrets Access",
 		Severity:      storage.Severity_LOW_SEVERITY,
 		Categories:    []string{"Kubernetes Events"},
 		PolicySections: []*storage.PolicySection{
-			{
+			storage.PolicySection_builder{
 				SectionName: "section 1",
 				PolicyGroups: []*storage.PolicyGroup{
-					{
+					storage.PolicyGroup_builder{
 						FieldName: "Kubernetes Resource",
 						Negate:    false,
-						Values:    []*storage.PolicyValue{{Value: "SECRETS"}},
-					},
-					{
+						Values:    []*storage.PolicyValue{storage.PolicyValue_builder{Value: "SECRETS"}.Build()},
+					}.Build(),
+					storage.PolicyGroup_builder{
 						FieldName: "Kubernetes API Verb",
 						Negate:    false,
-						Values:    []*storage.PolicyValue{{Value: "UPDATE"}},
-					},
-					{
+						Values:    []*storage.PolicyValue{storage.PolicyValue_builder{Value: "UPDATE"}.Build()},
+					}.Build(),
+					storage.PolicyGroup_builder{
 						FieldName: "Is Impersonated User",
-						Values:    []*storage.PolicyValue{{Value: "false"}},
-					},
+						Values:    []*storage.PolicyValue{storage.PolicyValue_builder{Value: "false"}.Build()},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
 		EventSource:     storage.EventSource_AUDIT_LOG_EVENT,
-	}
+	}.Build()
 }
 
 func (s *RuntimeDetectorTestSuite) getCreateConfigmapPolicy() *storage.Policy {
-	return &storage.Policy{
+	return storage.Policy_builder{
 		Id:            "9dc8b85e-7b35-4423-847b-165cd9b92fc7",
 		PolicyVersion: "1.1",
 		Name:          "Secrets Access",
 		Severity:      storage.Severity_LOW_SEVERITY,
 		Categories:    []string{"Kubernetes Events"},
 		PolicySections: []*storage.PolicySection{
-			{
+			storage.PolicySection_builder{
 				SectionName: "section 1",
 				PolicyGroups: []*storage.PolicyGroup{
-					{
+					storage.PolicyGroup_builder{
 						FieldName: "Kubernetes Resource",
 						Negate:    false,
-						Values:    []*storage.PolicyValue{{Value: "CONFIGMAPS"}},
-					},
-					{
+						Values:    []*storage.PolicyValue{storage.PolicyValue_builder{Value: "CONFIGMAPS"}.Build()},
+					}.Build(),
+					storage.PolicyGroup_builder{
 						FieldName: "Kubernetes API Verb",
 						Negate:    false,
-						Values:    []*storage.PolicyValue{{Value: "CREATE"}},
-					},
-					{
+						Values:    []*storage.PolicyValue{storage.PolicyValue_builder{Value: "CREATE"}.Build()},
+					}.Build(),
+					storage.PolicyGroup_builder{
 						FieldName: "Is Impersonated User",
-						Values:    []*storage.PolicyValue{{Value: "true"}},
-					},
+						Values:    []*storage.PolicyValue{storage.PolicyValue_builder{Value: "true"}.Build()},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
 		EventSource:     storage.EventSource_AUDIT_LOG_EVENT,
-	}
+	}.Build()
 }

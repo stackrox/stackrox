@@ -15,92 +15,92 @@ func TestClusterMatcher(t *testing.T) {
 		matches    bool
 	}{
 		{
-			cluster: &storage.Cluster{
+			cluster: storage.Cluster_builder{
 				Id: "cluster1",
-			},
+			}.Build(),
 			namespaces: []*storage.NamespaceMetadata{
-				{
+				storage.NamespaceMetadata_builder{
 					ClusterId: "cluster1",
 					Name:      "ns1",
-				},
+				}.Build(),
 			},
-			policy: &storage.Policy{
+			policy: storage.Policy_builder{
 				Scope: []*storage.Scope{
-					{
+					storage.Scope_builder{
 						Cluster: "cluster1",
-					},
+					}.Build(),
 				},
 				Disabled: true,
-			},
+			}.Build(),
 			matches: false,
 		},
 		{
-			cluster: &storage.Cluster{
+			cluster: storage.Cluster_builder{
 				Id: "cluster1",
-			},
+			}.Build(),
 			namespaces: []*storage.NamespaceMetadata{
-				{
+				storage.NamespaceMetadata_builder{
 					ClusterId: "cluster1",
 					Name:      "ns1",
-				},
+				}.Build(),
 			},
-			policy: &storage.Policy{
+			policy: storage.Policy_builder{
 				Scope: []*storage.Scope{
-					{
+					storage.Scope_builder{
 						Cluster: "cluster1",
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 			matches: true,
 		},
 		{
-			cluster: &storage.Cluster{
+			cluster: storage.Cluster_builder{
 				Id: "cluster1",
-			},
+			}.Build(),
 			namespaces: []*storage.NamespaceMetadata{
-				{
+				storage.NamespaceMetadata_builder{
 					ClusterId: "cluster1",
 					Name:      "ns1",
-				},
+				}.Build(),
 			},
-			policy: &storage.Policy{
+			policy: storage.Policy_builder{
 				Scope: []*storage.Scope{
-					{
+					storage.Scope_builder{
 						Cluster:   "cluster2",
 						Namespace: "ns1",
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 			matches: false,
 		},
 		{
-			cluster: &storage.Cluster{
+			cluster: storage.Cluster_builder{
 				Id: "cluster1",
-			},
+			}.Build(),
 			namespaces: []*storage.NamespaceMetadata{
-				{
+				storage.NamespaceMetadata_builder{
 					ClusterId: "cluster1",
 					Name:      "ns1",
-				},
+				}.Build(),
 			},
-			policy: &storage.Policy{
+			policy: storage.Policy_builder{
 				Scope: []*storage.Scope{
-					{
+					storage.Scope_builder{
 						Namespace: "ns1",
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 			matches: true,
 		},
 		{
-			cluster: &storage.Cluster{
+			cluster: storage.Cluster_builder{
 				Id: "cluster1",
-			},
+			}.Build(),
 			namespaces: []*storage.NamespaceMetadata{
-				{
+				storage.NamespaceMetadata_builder{
 					ClusterId: "cluster1",
 					Name:      "ns1",
-				},
+				}.Build(),
 			},
 			policy:  &storage.Policy{},
 			matches: true,
@@ -121,111 +121,111 @@ func TestClusterMatcherWithExclusion(t *testing.T) {
 		matches    bool
 	}{
 		{
-			cluster: &storage.Cluster{
+			cluster: storage.Cluster_builder{
 				Id: "cluster1",
-			},
+			}.Build(),
 			namespaces: []*storage.NamespaceMetadata{
-				{
+				storage.NamespaceMetadata_builder{
 					ClusterId: "cluster1",
 					Name:      "ns1",
-				},
+				}.Build(),
 			},
-			policy: &storage.Policy{
+			policy: storage.Policy_builder{
 				Scope: []*storage.Scope{
-					{
+					storage.Scope_builder{
 						Cluster: "cluster1",
-					},
+					}.Build(),
 				},
 				Exclusions: []*storage.Exclusion{
-					{
-						Deployment: &storage.Exclusion_Deployment{
-							Scope: &storage.Scope{
+					storage.Exclusion_builder{
+						Deployment: storage.Exclusion_Deployment_builder{
+							Scope: storage.Scope_builder{
 								Namespace: "ns.*",
-							},
-						},
-					},
+							}.Build(),
+						}.Build(),
+					}.Build(),
 				},
-			},
+			}.Build(),
 			matches: false,
 		},
 		{
-			cluster: &storage.Cluster{
+			cluster: storage.Cluster_builder{
 				Id: "cluster1",
-			},
+			}.Build(),
 			namespaces: []*storage.NamespaceMetadata{
-				{
+				storage.NamespaceMetadata_builder{
 					ClusterId: "cluster1",
 					Name:      "ns1",
-				},
+				}.Build(),
 			},
-			policy: &storage.Policy{
+			policy: storage.Policy_builder{
 				Scope: []*storage.Scope{
-					{
+					storage.Scope_builder{
 						Cluster:   "cluster2",
 						Namespace: "ns1",
-					},
+					}.Build(),
 				},
 				Exclusions: []*storage.Exclusion{
-					{
-						Deployment: &storage.Exclusion_Deployment{
-							Scope: &storage.Scope{
+					storage.Exclusion_builder{
+						Deployment: storage.Exclusion_Deployment_builder{
+							Scope: storage.Scope_builder{
 								Namespace: "ns.*",
-							},
-						},
-					},
+							}.Build(),
+						}.Build(),
+					}.Build(),
 				},
-			},
+			}.Build(),
 			matches: false,
 		},
 		{
-			cluster: &storage.Cluster{
+			cluster: storage.Cluster_builder{
 				Id: "cluster1",
-			},
+			}.Build(),
 			namespaces: []*storage.NamespaceMetadata{
-				{
+				storage.NamespaceMetadata_builder{
 					ClusterId: "cluster1",
 					Name:      "ns1",
-				},
+				}.Build(),
 			},
-			policy: &storage.Policy{
+			policy: storage.Policy_builder{
 				Scope: []*storage.Scope{
-					{
+					storage.Scope_builder{
 						Namespace: "ns1",
-					},
+					}.Build(),
 				},
 				Exclusions: []*storage.Exclusion{
-					{
-						Deployment: &storage.Exclusion_Deployment{
-							Scope: &storage.Scope{
+					storage.Exclusion_builder{
+						Deployment: storage.Exclusion_Deployment_builder{
+							Scope: storage.Scope_builder{
 								Cluster: "cluster1",
-							},
-						},
-					},
+							}.Build(),
+						}.Build(),
+					}.Build(),
 				},
-			},
+			}.Build(),
 			matches: false,
 		},
 		{
-			cluster: &storage.Cluster{
+			cluster: storage.Cluster_builder{
 				Id: "cluster1",
-			},
+			}.Build(),
 			namespaces: []*storage.NamespaceMetadata{
-				{
+				storage.NamespaceMetadata_builder{
 					ClusterId: "cluster1",
 					Name:      "ns1",
-				},
+				}.Build(),
 			},
-			policy: &storage.Policy{
+			policy: storage.Policy_builder{
 				Exclusions: []*storage.Exclusion{
-					{
-						Deployment: &storage.Exclusion_Deployment{
-							Scope: &storage.Scope{
+					storage.Exclusion_builder{
+						Deployment: storage.Exclusion_Deployment_builder{
+							Scope: storage.Scope_builder{
 								Namespace: "ns2.*",
-							},
-						},
-					},
+							}.Build(),
+						}.Build(),
+					}.Build(),
 				},
-			},
+			}.Build(),
 			matches: true,
 		},
 	}

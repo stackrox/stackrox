@@ -43,7 +43,9 @@ func (s *SensorUpgradeServiceTestSuite) SetupTest() {
 }
 
 func configWith(v bool) *storage.SensorUpgradeConfig {
-	return &storage.SensorUpgradeConfig{EnableAutoUpgrade: v}
+	suc := &storage.SensorUpgradeConfig{}
+	suc.SetEnableAutoUpgrade(v)
+	return suc
 }
 
 func (s *SensorUpgradeServiceTestSuite) Test_UpdateSensorUpgradeConfig() {
@@ -56,58 +58,58 @@ func (s *SensorUpgradeServiceTestSuite) Test_UpdateSensorUpgradeConfig() {
 	}{
 		"Nil config should yield an error": {
 			upgraderEnabled:   true,
-			req:               &v1.UpdateSensorUpgradeConfigRequest{Config: nil},
+			req:               v1.UpdateSensorUpgradeConfigRequest_builder{Config: nil}.Build(),
 			expectedErr:       errox.InvalidArgs,
 			upsertTimesCalled: 0,
 		},
 		"Enabling upgrader through the config should work on managed centrals": {
 			managedCentral:  true,
 			upgraderEnabled: true,
-			req: &v1.UpdateSensorUpgradeConfigRequest{
+			req: v1.UpdateSensorUpgradeConfigRequest_builder{
 				Config: configWith(true),
-			},
+			}.Build(),
 			expectedErr:       nil,
 			upsertTimesCalled: 1,
 		},
 		"Enabling upgrader through the config should fail on managed centrals if upgrader is explicitly disabled": {
 			managedCentral:  true,
 			upgraderEnabled: false,
-			req: &v1.UpdateSensorUpgradeConfigRequest{
+			req: v1.UpdateSensorUpgradeConfigRequest_builder{
 				Config: configWith(true),
-			},
+			}.Build(),
 			expectedErr:       errox.InvalidArgs,
 			upsertTimesCalled: 0,
 		},
 		"Disabling upgrader through the config should work on managed centrals": {
 			managedCentral:  true,
 			upgraderEnabled: true,
-			req: &v1.UpdateSensorUpgradeConfigRequest{
+			req: v1.UpdateSensorUpgradeConfigRequest_builder{
 				Config: configWith(false),
-			},
+			}.Build(),
 			upsertTimesCalled: 1,
 		},
 		"Enabling upgrader through the config should work on non-CS centrals": {
 			managedCentral:  false,
 			upgraderEnabled: true,
-			req: &v1.UpdateSensorUpgradeConfigRequest{
+			req: v1.UpdateSensorUpgradeConfigRequest_builder{
 				Config: configWith(true),
-			},
+			}.Build(),
 			upsertTimesCalled: 1,
 		},
 		"Disabling upgrader through the config should work on non-CS centrals": {
 			managedCentral:  false,
 			upgraderEnabled: true,
-			req: &v1.UpdateSensorUpgradeConfigRequest{
+			req: v1.UpdateSensorUpgradeConfigRequest_builder{
 				Config: configWith(false),
-			},
+			}.Build(),
 			upsertTimesCalled: 1,
 		},
 		"Disabling upgrader through the config should not yield an error on non-CS centrals even if upgrader is explicitly disabled": {
 			managedCentral:  false,
 			upgraderEnabled: false,
-			req: &v1.UpdateSensorUpgradeConfigRequest{
+			req: v1.UpdateSensorUpgradeConfigRequest_builder{
 				Config: configWith(false),
-			},
+			}.Build(),
 			expectedErr:       nil,
 			upsertTimesCalled: 1,
 		},

@@ -83,7 +83,8 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	log.Debugf("Received virtual machine index report: %s", index.GetId())
 
 	// Get or create VM
-	vm := &storage.VirtualMachine{Id: index.GetId()}
+	vm := &storage.VirtualMachine{}
+	vm.SetId(index.GetId())
 
 	// Extract Scanner V4 index report from VM index report event
 	indexV4 := index.GetIndex().GetIndexV4()

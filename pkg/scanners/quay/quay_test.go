@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/suite"
+	"google.golang.org/protobuf/proto"
 )
 
 const manifestPayload = `{
@@ -86,14 +87,11 @@ func (suite *QuaySuite) SetupSuite() {
 	// Set the global variable of the Quay endpoint
 	suite.server = masterServer
 
-	protoImageIntegration := &storage.ImageIntegration{
-		IntegrationConfig: &storage.ImageIntegration_Quay{
-			Quay: &storage.QuayConfig{
-				OauthToken: "token",
-				Endpoint:   "http://" + masterServer.Listener.Addr().String(),
-			},
-		},
-	}
+	qc := &storage.QuayConfig{}
+	qc.SetOauthToken("token")
+	qc.SetEndpoint("http://" + masterServer.Listener.Addr().String())
+	protoImageIntegration := &storage.ImageIntegration{}
+	protoImageIntegration.SetQuay(proto.ValueOrDefault(qc))
 
 	var err error
 	// newScanner is tested within setup
@@ -113,14 +111,13 @@ func (suite *QuaySuite) TestScanTest() {
 }
 
 func (suite *QuaySuite) TestGetScan() {
-	image := &storage.Image{
-		Id: "sha256:0346349a1a640da9535acfc0f68be9d9b81e85957725ecb76f3b522f4e2f0455",
-		Name: &storage.ImageName{
-			Registry: "quay.io",
-			Remote:   "integration/nginx",
-			Tag:      "1.10",
-		},
-	}
+	imageName := &storage.ImageName{}
+	imageName.SetRegistry("quay.io")
+	imageName.SetRemote("integration/nginx")
+	imageName.SetTag("1.10")
+	image := &storage.Image{}
+	image.SetId("sha256:0346349a1a640da9535acfc0f68be9d9b81e85957725ecb76f3b522f4e2f0455")
+	image.SetName(imageName)
 	scan, err := suite.scanner.GetScan(image)
 	suite.NoError(err)
 

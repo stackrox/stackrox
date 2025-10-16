@@ -129,9 +129,9 @@ func setupMocks(b *testing.B, doneSignal *concurrency.Signal) {
 		}
 	})
 	mockDeploymentStore.EXPECT().Get(gomock.Any()).AnyTimes().DoAndReturn(func(id string) *storage.Deployment {
-		return &storage.Deployment{
-			Id: id,
-		}
+		deployment := &storage.Deployment{}
+		deployment.SetId(id)
+		return deployment
 	})
 	mockEndpointManager.EXPECT().OnDeploymentCreateOrUpdateByID(gomock.Any()).AnyTimes()
 	mockRBACStore.EXPECT().GetPermissionLevelForDeployment(gomock.Any()).AnyTimes().DoAndReturn(func(d *storage.Deployment) storage.PermissionLevel {
@@ -144,17 +144,17 @@ func setupMocks(b *testing.B, doneSignal *concurrency.Signal) {
 					Port:     intstr.FromInt32(80),
 					Protocol: v1.ProtocolTCP,
 				}: []*storage.PortConfig_ExposureInfo{
-					{
+					storage.PortConfig_ExposureInfo_builder{
 						Level: storage.PortConfig_INTERNAL,
-					},
+					}.Build(),
 				},
 			},
 		}
 	})
 	mockDeploymentStore.EXPECT().BuildDeploymentWithDependencies(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(id string, _ store.Dependencies) (*storage.Deployment, bool, error) {
-		return &storage.Deployment{
-			Id: id,
-		}, true, nil
+		deployment := &storage.Deployment{}
+		deployment.SetId(id)
+		return deployment, true, nil
 	})
 }
 

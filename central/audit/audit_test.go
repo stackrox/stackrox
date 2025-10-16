@@ -83,31 +83,31 @@ func (suite *AuditLogTestSuite) TestCalculateAuditStatus() {
 }
 
 func (suite *AuditLogTestSuite) TestPermissionsRemoval() {
-	userInfo := &storage.UserInfo{
+	userInfo := storage.UserInfo_builder{
 		Username:     "sample-user",
 		FriendlyName: "friendly-sample-user",
-		Permissions: &storage.UserInfo_ResourceToAccess{
+		Permissions: storage.UserInfo_ResourceToAccess_builder{
 			ResourceToAccess: map[string]storage.Access{
 				resources.Administration.String(): storage.Access_READ_ACCESS,
 				resources.Integration.String():    storage.Access_READ_WRITE_ACCESS,
 				resources.Access.String():         storage.Access_NO_ACCESS,
 			},
-		},
+		}.Build(),
 		Roles: []*storage.UserInfo_Role{
-			{
+			storage.UserInfo_Role_builder{
 				Name: "sample-role",
 				ResourceToAccess: map[string]storage.Access{
 					resources.Administration.String(): storage.Access_READ_ACCESS,
 				},
-			},
-			{
+			}.Build(),
+			storage.UserInfo_Role_builder{
 				Name: "yet-another-sample-role",
 				ResourceToAccess: map[string]storage.Access{
 					resources.Integration.String(): storage.Access_READ_WRITE_ACCESS,
 				},
-			},
+			}.Build(),
 		},
-	}
+	}.Build()
 	suite.identityMock.EXPECT().Service().Return(nil).AnyTimes()
 	suite.identityMock.EXPECT().User().Return(userInfo).AnyTimes()
 

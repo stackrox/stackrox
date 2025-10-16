@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -311,7 +312,7 @@ func TestFormatAlert(t *testing.T) {
 	runFormatTest(t, fixtures.GetAlert(), expectedFormattedDeploymentAlert)
 
 	imageAlert := fixtures.GetAlert()
-	imageAlert.Entity = &storage.Alert_Image{Image: types.ToContainerImage(fixtures.GetImage())}
+	imageAlert.SetImage(proto.ValueOrDefault(types.ToContainerImage(fixtures.GetImage())))
 	runFormatTest(t, imageAlert, expectedFormatImageAlert)
 }
 
@@ -367,7 +368,7 @@ func runFormatTest(t *testing.T, alert *storage.Alert, expectedFormattedAlert st
 
 func TestSummaryForAlert(t *testing.T) {
 	alertWithNoEntity := fixtures.GetAlert()
-	alertWithNoEntity.Entity = nil
+	alertWithNoEntity.ClearEntity()
 
 	cases := []struct {
 		name            string

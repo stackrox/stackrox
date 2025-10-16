@@ -142,7 +142,7 @@ func (ds *datastoreImpl) SearchRawPolicies(ctx context.Context, q *v1.Query) ([]
 			continue
 		}
 		for _, c := range categories {
-			p.Categories = append(p.Categories, c.GetName())
+			p.SetCategories(append(p.GetCategories(), c.GetName()))
 		}
 	}
 	return policies, nil
@@ -173,7 +173,7 @@ func (ds *datastoreImpl) fillCategoryNames(ctx context.Context, policies ...*sto
 			return err
 		}
 		for _, c := range categories {
-			p.Categories = append(p.Categories, c.GetName())
+			p.SetCategories(append(p.GetCategories(), c.GetName()))
 		}
 	}
 	return nil
@@ -248,7 +248,7 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 	}
 
 	if policy.GetId() == "" {
-		policy.Id = uuid.NewV4().String()
+		policy.SetId(uuid.NewV4().String())
 	}
 
 	ds.policyMutex.Lock()
@@ -282,7 +282,7 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 	// Make sure to reset the policy categories field on a clone before upserting; otherwise the given reference
 	// will be changed and information lost when the reference is being kept in-memory (like in policy sets).
 	clonedPolicy := policy.CloneVT()
-	clonedPolicy.Categories = []string{}
+	clonedPolicy.SetCategories([]string{})
 	err = ds.storage.Upsert(ctx, clonedPolicy)
 	if err != nil {
 		return "", ds.wrapWithRollback(ctx, tx, err)
@@ -333,7 +333,7 @@ func (ds *datastoreImpl) UpdatePolicy(ctx context.Context, policy *storage.Polic
 	// Make sure to reset the policy categories field on a clone before upserting; otherwise the given reference
 	// will be changed and information lost when the reference is being kept in-memory (like in policy sets).
 	clonedPolicy := policy.CloneVT()
-	clonedPolicy.Categories = []string{}
+	clonedPolicy.SetCategories([]string{})
 
 	if err = ds.storage.Upsert(ctx, clonedPolicy); err != nil {
 		return ds.wrapWithRollback(ctx, tx, err)
@@ -403,10 +403,10 @@ func (ds *datastoreImpl) ImportPolicies(ctx context.Context, importPolicies []*s
 			allSucceeded = false
 		}
 		if changedIndices.Contains(i) {
-			response.Errors = append(response.Errors, &v1.ImportPolicyError{
-				Message: "Cluster scopes, cluster exclusions, and notification options have been removed from this policy.",
-				Type:    policiesPkg.ErrImportClustersOrNotifiersRemoved,
-			})
+			ipe := &v1.ImportPolicyError{}
+			ipe.SetMessage("Cluster scopes, cluster exclusions, and notification options have been removed from this policy.")
+			ipe.SetType(policiesPkg.ErrImportClustersOrNotifiersRemoved)
+			response.SetErrors(append(response.GetErrors(), ipe))
 		}
 
 		responses[i] = response
@@ -418,45 +418,44 @@ func (ds *datastoreImpl) ImportPolicies(ctx context.Context, importPolicies []*s
 func (ds *datastoreImpl) importPolicy(ctx context.Context, policy *storage.Policy, overwrite bool, policyNameToPolicyMap map[string]*storage.Policy) *v1.ImportPolicyResponse {
 	if policy.GetId() == "" {
 		// generate id here since upsert no longer generates id
-		policy.Id = uuid.NewV4().String()
+		policy.SetId(uuid.NewV4().String())
 	}
 
-	result := &v1.ImportPolicyResponse{
-		Policy: policy.CloneVT(),
-	}
+	result := &v1.ImportPolicyResponse{}
+	result.SetPolicy(policy.CloneVT())
 
 	importErrors, err := ds.validateUniqueNameAndID(ctx, policy, result, overwrite, policyNameToPolicyMap)
 	if err != nil {
-		result.Errors = getImportErrorsFromError(err)
+		result.SetErrors(getImportErrorsFromError(err))
 		return result
 	}
 	if len(importErrors) > 0 {
-		result.Errors = importErrors
+		result.SetErrors(importErrors)
 		return result
 	}
 
 	if overwrite {
 		err = ds.importOverwrite(ctx, policy, policyNameToPolicyMap)
 		if err != nil {
-			result.Errors = getImportErrorsFromError(err)
+			result.SetErrors(getImportErrorsFromError(err))
 			return result
 		}
 	} else {
 		policyCategories := policy.GetCategories()
-		policy.Categories = []string{}
+		policy.SetCategories([]string{})
 		err = ds.storage.Upsert(ctx, policy)
 		if err != nil {
-			result.Errors = getImportErrorsFromError(err)
+			result.SetErrors(getImportErrorsFromError(err))
 			return result
 		}
 
 		err = ds.categoriesDatastore.SetPolicyCategoriesForPolicy(ctx, policy.GetId(), policyCategories)
 		if err != nil {
-			result.Errors = getImportErrorsFromError(err)
+			result.SetErrors(getImportErrorsFromError(err))
 			return result
 		}
 	}
-	result.Succeeded = true
+	result.SetSucceeded(true)
 	return result
 }
 
@@ -467,7 +466,7 @@ func (ds *datastoreImpl) validateUniqueNameAndID(ctx context.Context, policy *st
 	if policy.GetId() != "" {
 		existingPolicy, exists, err := ds.storage.Get(ctx, policy.GetId())
 		if err != nil {
-			result.Errors = getImportErrorsFromError(err)
+			result.SetErrors(getImportErrorsFromError(err))
 			return importErrors, err
 		}
 		if exists {
@@ -497,13 +496,11 @@ func (ds *datastoreImpl) validateUniqueNameAndID(ctx context.Context, policy *st
 }
 
 func duplicateNameImportErrf(errType string, duplicateName string, errMsgTemplate string, args ...interface{}) *v1.ImportPolicyError {
-	return &v1.ImportPolicyError{
-		Message: fmt.Sprintf(errMsgTemplate, args...),
-		Type:    errType,
-		Metadata: &v1.ImportPolicyError_DuplicateName{
-			DuplicateName: duplicateName,
-		},
-	}
+	ipe := &v1.ImportPolicyError{}
+	ipe.SetMessage(fmt.Sprintf(errMsgTemplate, args...))
+	ipe.SetType(errType)
+	ipe.SetDuplicateName(duplicateName)
+	return ipe
 }
 
 func findPolicyWithSameName(policyNameToPolicyMap map[string]*storage.Policy, name string) *storage.Policy {
@@ -536,7 +533,7 @@ func (ds *datastoreImpl) importOverwrite(ctx context.Context, policy *storage.Po
 
 	// This should never create a name violation because we just removed any ID/name conflicts
 	policyCategories := policy.GetCategories()
-	policy.Categories = []string{}
+	policy.SetCategories([]string{})
 	err := ds.storage.Upsert(ctx, policy)
 	if err != nil {
 		return err
@@ -555,11 +552,11 @@ func getImportErrorsFromError(err error) []*v1.ImportPolicyError {
 		return handlePolicyStoreErrorList(policyError)
 	}
 
+	ipe := &v1.ImportPolicyError{}
+	ipe.SetMessage(err.Error())
+	ipe.SetType(policiesPkg.ErrImportUnknown)
 	return []*v1.ImportPolicyError{
-		{
-			Message: err.Error(),
-			Type:    policiesPkg.ErrImportUnknown,
-		},
+		ipe,
 	}
 }
 
@@ -568,32 +565,28 @@ func handlePolicyStoreErrorList(policyError *PolicyStoreErrorList) []*v1.ImportP
 	for _, err := range policyError.Errors {
 		var nameErr *NameConflictError
 		if errors.As(err, &nameErr) {
-			errList = append(errList, &v1.ImportPolicyError{
-				Message: nameErr.ErrString,
-				Type:    policiesPkg.ErrImportDuplicateName,
-				Metadata: &v1.ImportPolicyError_DuplicateName{
-					DuplicateName: nameErr.ExistingPolicyName,
-				},
-			})
+			ipe := &v1.ImportPolicyError{}
+			ipe.SetMessage(nameErr.ErrString)
+			ipe.SetType(policiesPkg.ErrImportDuplicateName)
+			ipe.SetDuplicateName(nameErr.ExistingPolicyName)
+			errList = append(errList, ipe)
 			continue
 		}
 
 		var idError *IDConflictError
 		if errors.As(err, &idError) {
-			errList = append(errList, &v1.ImportPolicyError{
-				Message: idError.ErrString,
-				Type:    policiesPkg.ErrImportDuplicateID,
-				Metadata: &v1.ImportPolicyError_DuplicateName{
-					DuplicateName: idError.ExistingPolicyName,
-				},
-			})
+			ipe := &v1.ImportPolicyError{}
+			ipe.SetMessage(idError.ErrString)
+			ipe.SetType(policiesPkg.ErrImportDuplicateID)
+			ipe.SetDuplicateName(idError.ExistingPolicyName)
+			errList = append(errList, ipe)
 			continue
 		}
 
-		errList = append(errList, &v1.ImportPolicyError{
-			Message: err.Error(),
-			Type:    policiesPkg.ErrImportUnknown,
-		})
+		ipe := &v1.ImportPolicyError{}
+		ipe.SetMessage(err.Error())
+		ipe.SetType(policiesPkg.ErrImportUnknown)
+		errList = append(errList, ipe)
 	}
 	return errList
 }
@@ -627,7 +620,7 @@ func (ds *datastoreImpl) removeForeignClusterScopesAndNotifiers(ctx context.Cont
 			}
 			modified = true
 		}
-		policy.Scope = scopes
+		policy.SetScope(scopes)
 
 		var notifiers []string
 		for _, notifier := range policy.GetNotifiers() {
@@ -645,7 +638,7 @@ func (ds *datastoreImpl) removeForeignClusterScopesAndNotifiers(ctx context.Cont
 			}
 			modified = true
 		}
-		policy.Notifiers = notifiers
+		policy.SetNotifiers(notifiers)
 
 		var exclusions []*storage.Exclusion
 		for _, exclusion := range policy.GetExclusions() {
@@ -661,7 +654,7 @@ func (ds *datastoreImpl) removeForeignClusterScopesAndNotifiers(ctx context.Cont
 			}
 			modified = true
 		}
-		policy.Exclusions = exclusions
+		policy.SetExclusions(exclusions)
 
 		if modified {
 			changedIndices.Add(i)
@@ -679,11 +672,11 @@ func (ds *datastoreImpl) wrapWithRollback(ctx context.Context, tx *pgPkg.Tx, err
 
 // convertPolicy returns proto search result from a policy object and the internal search result
 func convertPolicy(policy *storage.Policy, result searchPkg.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_POLICIES,
-		Id:             policy.GetId(),
-		Name:           policy.GetName(),
-		FieldToMatches: searchPkg.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+	sr := &v1.SearchResult{}
+	sr.SetCategory(v1.SearchCategory_POLICIES)
+	sr.SetId(policy.GetId())
+	sr.SetName(policy.GetName())
+	sr.SetFieldToMatches(searchPkg.GetProtoMatchesMap(result.Matches))
+	sr.SetScore(result.Score)
+	return sr
 }

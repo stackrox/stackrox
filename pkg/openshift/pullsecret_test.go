@@ -24,12 +24,12 @@ func TestGlobalPullSecret(t *testing.T) {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			assert.Equal(t, tc.expected, GlobalPullSecret(tc.ns, tc.name))
 
-			assert.Equal(t, tc.expected, GlobalPullSecretIntegration(&storage.ImageIntegration{
-				Source: &storage.ImageIntegration_Source{
-					Namespace:           tc.ns,
-					ImagePullSecretName: tc.name,
-				},
-			}))
+			is := &storage.ImageIntegration_Source{}
+			is.SetNamespace(tc.ns)
+			is.SetImagePullSecretName(tc.name)
+			ii := &storage.ImageIntegration{}
+			ii.SetSource(is)
+			assert.Equal(t, tc.expected, GlobalPullSecretIntegration(ii))
 
 		})
 	}
@@ -37,6 +37,8 @@ func TestGlobalPullSecret(t *testing.T) {
 	t.Run("edge cases", func(t *testing.T) {
 		assert.False(t, GlobalPullSecretIntegration(nil))
 		assert.False(t, GlobalPullSecretIntegration(&storage.ImageIntegration{}))
-		assert.False(t, GlobalPullSecretIntegration(&storage.ImageIntegration{Source: &storage.ImageIntegration_Source{}}))
+		ii := &storage.ImageIntegration{}
+		ii.SetSource(&storage.ImageIntegration_Source{})
+		assert.False(t, GlobalPullSecretIntegration(ii))
 	})
 }

@@ -101,7 +101,7 @@ func (s *storeImpl) insertIntoNodes(
 	cloned := parts.node
 	if cloned.GetScan().GetComponents() != nil {
 		cloned = parts.node.CloneVT()
-		cloned.Scan.Components = nil
+		cloned.GetScan().SetComponents(nil)
 	}
 	serialized, marshalErr := cloned.MarshalVT()
 	if marshalErr != nil {
@@ -325,14 +325,14 @@ func insertIntoNodeCves(ctx context.Context, tx *postgres.Tx, iTime time.Time, o
 
 	for _, obj := range objs {
 		if storedCVE := existingCVEs[obj.GetId()]; storedCVE != nil {
-			obj.Snoozed = storedCVE.GetSnoozed()
-			obj.CveBaseInfo.CreatedAt = storedCVE.GetCveBaseInfo().GetCreatedAt()
-			obj.SnoozeStart = storedCVE.GetSnoozeStart()
-			obj.SnoozeExpiry = storedCVE.GetSnoozeExpiry()
-			obj.Orphaned = false
-			obj.OrphanedTime = nil
+			obj.SetSnoozed(storedCVE.GetSnoozed())
+			obj.GetCveBaseInfo().SetCreatedAt(storedCVE.GetCveBaseInfo().GetCreatedAt())
+			obj.SetSnoozeStart(storedCVE.GetSnoozeStart())
+			obj.SetSnoozeExpiry(storedCVE.GetSnoozeExpiry())
+			obj.SetOrphaned(false)
+			obj.ClearOrphanedTime()
 		} else {
-			obj.CveBaseInfo.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&iTime)
+			obj.GetCveBaseInfo().SetCreatedAt(protocompat.ConvertTimeToTimestampOrNil(&iTime))
 		}
 	}
 
@@ -511,8 +511,8 @@ func markOrphanedNodeCVEs(ctx context.Context, tx *postgres.Tx) error {
 			return err
 		}
 		if ids.Add(msg.GetId()) {
-			msg.Orphaned = true
-			msg.OrphanedTime = protocompat.ConvertTimeToTimestampOrNil(&iTime)
+			msg.SetOrphaned(true)
+			msg.SetOrphanedTime(protocompat.ConvertTimeToTimestampOrNil(&iTime))
 			orphanedNodeCVEs = append(orphanedNodeCVEs, msg)
 		}
 	}
@@ -531,11 +531,15 @@ func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, er
 	// We skip rewriting components and vulnerabilities if the node scan is older.
 	scanUpdated := protocompat.CompareTimestamps(oldNode.GetScan().GetScanTime(), node.GetScan().GetScanTime()) <= 0
 	if !scanUpdated {
-		node.Scan = oldNode.GetScan()
-		node.RiskScore = oldNode.GetRiskScore()
+		node.SetScan(oldNode.GetScan())
+		node.SetRiskScore(oldNode.GetRiskScore())
+		// DO NOT SUBMIT: Migrate the direct oneof field access (go/go-opaque-special-cases/oneof.md).
 		node.SetComponents = oldNode.GetSetComponents()
+		// DO NOT SUBMIT: Migrate the direct oneof field access (go/go-opaque-special-cases/oneof.md).
 		node.SetCves = oldNode.GetSetCves()
+		// DO NOT SUBMIT: Migrate the direct oneof field access (go/go-opaque-special-cases/oneof.md).
 		node.SetFixable = oldNode.GetSetFixable()
+		// DO NOT SUBMIT: Migrate the direct oneof field access (go/go-opaque-special-cases/oneof.md).
 		node.SetTopCvss = oldNode.GetSetTopCvss()
 	}
 	return scanUpdated, nil
@@ -545,7 +549,7 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Node) error {
 	iTime := time.Now()
 
 	if !s.noUpdateTimestamps {
-		obj.LastUpdated = protocompat.ConvertTimeToTimestampOrNil(&iTime)
+		obj.SetLastUpdated(protocompat.ConvertTimeToTimestampOrNil(&iTime))
 	}
 	scanUpdated, err := s.isUpdated(ctx, obj)
 	if err != nil {
@@ -1133,9 +1137,8 @@ func gatherKeys(parts *nodePartsAsSlice) [][]byte {
 func applyDefaultSort(q *v1.Query) *v1.Query {
 	q = sortfields.TransformSortOptions(q, pkgSchema.NodesSchema.OptionsMap)
 
-	defaultSortOption := &v1.QuerySortOption{
-		Field: search.LastUpdatedTime.String(),
-	}
+	defaultSortOption := &v1.QuerySortOption{}
+	defaultSortOption.SetField(search.LastUpdatedTime.String())
 	// Add pagination sort order if needed.
 	return paginated.FillDefaultSortOption(q, defaultSortOption.CloneVT())
 }

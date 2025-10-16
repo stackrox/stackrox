@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestPipeline(t *testing.T) {
@@ -52,24 +53,20 @@ func (s *PipelineTestSuite) TestRun() {
 	// test create
 	s.v2RemediationDS.EXPECT().UpsertRemediation(ctx, testutils.GetComplianceRemediationV2Storage(s.T())).Return(nil).Times(1)
 
-	msg := &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id:     testutils.RemediationUID,
-				Action: central.ResourceAction_CREATE_RESOURCE,
-				Resource: &central.SensorEvent_ComplianceOperatorRemediationV2{
-					ComplianceOperatorRemediationV2: testutils.GetComplianceRemediationV2Msg(s.T()),
-				},
-			},
-		},
-	}
+	se := &central.SensorEvent{}
+	se.SetId(testutils.RemediationUID)
+	se.SetAction(central.ResourceAction_CREATE_RESOURCE)
+	se.SetComplianceOperatorRemediationV2(proto.ValueOrDefault(testutils.GetComplianceRemediationV2Msg(s.T())))
+	msg := central.MsgFromSensor_builder{
+		Event: se,
+	}.Build()
 
 	err := pipeline.Run(ctx, fixtureconsts.Cluster1, msg, nil)
 	s.NoError(err)
 
 	// test delete
 	s.v2RemediationDS.EXPECT().DeleteRemediation(ctx, testutils.RemediationUID).Return(nil).Times(1)
-	msg.GetEvent().Action = central.ResourceAction_REMOVE_RESOURCE
+	msg.GetEvent().SetAction(central.ResourceAction_REMOVE_RESOURCE)
 	err = pipeline.Run(ctx, fixtureconsts.Cluster1, msg, nil)
 	s.Require().NoError(err)
 }

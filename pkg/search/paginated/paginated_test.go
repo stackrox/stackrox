@@ -74,63 +74,63 @@ func TestPageResults(t *testing.T) {
 		{
 			name:     "nil pagination - return all results",
 			results:  fakeResults,
-			query:    &v1.Query{Pagination: nil},
+			query:    v1.Query_builder{Pagination: nil}.Build(),
 			expected: fakeResults,
 		},
 		{
 			name:    "offset only",
 			results: fakeResults,
-			query: &v1.Query{
-				Pagination: &v1.QueryPagination{Offset: 2},
-			},
+			query: v1.Query_builder{
+				Pagination: v1.QueryPagination_builder{Offset: 2}.Build(),
+			}.Build(),
 			expected: fakeResults[2:],
 		},
 		{
 			name:    "limit only",
 			results: fakeResults,
-			query: &v1.Query{
-				Pagination: &v1.QueryPagination{Limit: 3},
-			},
+			query: v1.Query_builder{
+				Pagination: v1.QueryPagination_builder{Limit: 3}.Build(),
+			}.Build(),
 			expected: fakeResults[:3],
 		},
 		{
 			name:    "offset and limit",
 			results: fakeResults,
-			query: &v1.Query{
-				Pagination: &v1.QueryPagination{Offset: 1, Limit: 2},
-			},
+			query: v1.Query_builder{
+				Pagination: v1.QueryPagination_builder{Offset: 1, Limit: 2}.Build(),
+			}.Build(),
 			expected: fakeResults[1:3],
 		},
 		{
 			name:    "offset beyond results",
 			results: fakeResults,
-			query: &v1.Query{
-				Pagination: &v1.QueryPagination{Offset: 10},
-			},
+			query: v1.Query_builder{
+				Pagination: v1.QueryPagination_builder{Offset: 10}.Build(),
+			}.Build(),
 			expected: nil,
 		},
 		{
 			name:    "empty results",
 			results: []search.Result{},
-			query: &v1.Query{
-				Pagination: &v1.QueryPagination{Offset: 0, Limit: 5},
-			},
+			query: v1.Query_builder{
+				Pagination: v1.QueryPagination_builder{Offset: 0, Limit: 5}.Build(),
+			}.Build(),
 			expected: nil,
 		},
 		{
 			name:    "negative offset",
 			results: fakeResults,
-			query: &v1.Query{
-				Pagination: &v1.QueryPagination{Offset: -1, Limit: 2},
-			},
+			query: v1.Query_builder{
+				Pagination: v1.QueryPagination_builder{Offset: -1, Limit: 2}.Build(),
+			}.Build(),
 			expected: fakeResults[:2], // Should treat negative offset as 0
 		},
 		{
 			name:    "negative limit",
 			results: fakeResults,
-			query: &v1.Query{
-				Pagination: &v1.QueryPagination{Offset: 1, Limit: -1},
-			},
+			query: v1.Query_builder{
+				Pagination: v1.QueryPagination_builder{Offset: 1, Limit: -1}.Build(),
+			}.Build(),
 			expected: fakeResults[1:], // Should treat negative limit as unlimited
 		},
 	}
@@ -162,7 +162,7 @@ func TestFillPagination(t *testing.T) {
 		{
 			name:            "basic pagination",
 			query:           &v1.Query{},
-			pagination:      &v1.Pagination{Limit: 10, Offset: 5},
+			pagination:      v1.Pagination_builder{Limit: 10, Offset: 5}.Build(),
 			maxLimit:        100,
 			expectedLimit:   10,
 			expectedOffset:  5,
@@ -171,7 +171,7 @@ func TestFillPagination(t *testing.T) {
 		{
 			name:            "limit exceeds max - should cap to max",
 			query:           &v1.Query{},
-			pagination:      &v1.Pagination{Limit: 200, Offset: 0},
+			pagination:      v1.Pagination_builder{Limit: 200, Offset: 0}.Build(),
 			maxLimit:        100,
 			expectedLimit:   100,
 			expectedOffset:  0,
@@ -180,7 +180,7 @@ func TestFillPagination(t *testing.T) {
 		{
 			name:            "zero limit - should use max",
 			query:           &v1.Query{},
-			pagination:      &v1.Pagination{Limit: 0, Offset: 10},
+			pagination:      v1.Pagination_builder{Limit: 0, Offset: 10}.Build(),
 			maxLimit:        50,
 			expectedLimit:   50,
 			expectedOffset:  10,
@@ -189,14 +189,14 @@ func TestFillPagination(t *testing.T) {
 		{
 			name:  "with sort options",
 			query: &v1.Query{},
-			pagination: &v1.Pagination{
+			pagination: v1.Pagination_builder{
 				Limit:  25,
 				Offset: 0,
 				SortOptions: []*v1.SortOption{
-					{Field: search.Cluster.String(), Reversed: true},
-					{Field: search.Namespace.String(), Reversed: false},
+					v1.SortOption_builder{Field: search.Cluster.String(), Reversed: true}.Build(),
+					v1.SortOption_builder{Field: search.Namespace.String(), Reversed: false}.Build(),
 				},
-			},
+			}.Build(),
 			maxLimit:        100,
 			expectedLimit:   25,
 			expectedOffset:  0,
@@ -205,11 +205,11 @@ func TestFillPagination(t *testing.T) {
 		{
 			name:  "with legacy sort option",
 			query: &v1.Query{},
-			pagination: &v1.Pagination{
+			pagination: v1.Pagination_builder{
 				Limit:      15,
 				Offset:     5,
-				SortOption: &v1.SortOption{Field: search.Priority.String(), Reversed: true},
-			},
+				SortOption: v1.SortOption_builder{Field: search.Priority.String(), Reversed: true}.Build(),
+			}.Build(),
 			maxLimit:        100,
 			expectedLimit:   15,
 			expectedOffset:  5,
@@ -218,14 +218,14 @@ func TestFillPagination(t *testing.T) {
 		{
 			name:  "sort options take precedence over legacy sort option",
 			query: &v1.Query{},
-			pagination: &v1.Pagination{
+			pagination: v1.Pagination_builder{
 				Limit:  20,
 				Offset: 0,
 				SortOptions: []*v1.SortOption{
-					{Field: search.Cluster.String()},
+					v1.SortOption_builder{Field: search.Cluster.String()}.Build(),
 				},
-				SortOption: &v1.SortOption{Field: search.Priority.String()},
-			},
+				SortOption: v1.SortOption_builder{Field: search.Priority.String()}.Build(),
+			}.Build(),
 			maxLimit:        100,
 			expectedLimit:   20,
 			expectedOffset:  0,
@@ -259,7 +259,7 @@ func TestFillPaginationV2(t *testing.T) {
 		{
 			name:            "basic pagination v2",
 			query:           &v1.Query{},
-			pagination:      &v2.Pagination{Limit: 15, Offset: 3},
+			pagination:      v2.Pagination_builder{Limit: 15, Offset: 3}.Build(),
 			maxLimit:        50,
 			expectedLimit:   15,
 			expectedOffset:  3,
@@ -268,13 +268,13 @@ func TestFillPaginationV2(t *testing.T) {
 		{
 			name:  "with v2 sort options",
 			query: &v1.Query{},
-			pagination: &v2.Pagination{
+			pagination: v2.Pagination_builder{
 				Limit:  30,
 				Offset: 0,
 				SortOptions: []*v2.SortOption{
-					{Field: search.CVE.String(), Reversed: false},
+					v2.SortOption_builder{Field: search.CVE.String(), Reversed: false}.Build(),
 				},
-			},
+			}.Build(),
 			maxLimit:        100,
 			expectedLimit:   30,
 			expectedOffset:  0,
@@ -283,20 +283,20 @@ func TestFillPaginationV2(t *testing.T) {
 		{
 			name:  "with v2 aggregate sort option",
 			query: &v1.Query{},
-			pagination: &v2.Pagination{
+			pagination: v2.Pagination_builder{
 				Limit:  20,
 				Offset: 5,
 				SortOptions: []*v2.SortOption{
-					{
+					v2.SortOption_builder{
 						Field:    search.CVE.String(),
 						Reversed: true,
-						AggregateBy: &v2.AggregateBy{
+						AggregateBy: v2.AggregateBy_builder{
 							AggrFunc: v2.Aggregation_COUNT,
 							Distinct: true,
-						},
-					},
+						}.Build(),
+					}.Build(),
 				},
-			},
+			}.Build(),
 			maxLimit:        100,
 			expectedLimit:   20,
 			expectedOffset:  5,
@@ -318,10 +318,9 @@ func TestFillPaginationV2(t *testing.T) {
 
 // Test FillDefaultSortOption function
 func TestFillDefaultSortOption(t *testing.T) {
-	defaultSort := &v1.QuerySortOption{
-		Field:    search.ViolationTime.String(),
-		Reversed: true,
-	}
+	defaultSort := &v1.QuerySortOption{}
+	defaultSort.SetField(search.ViolationTime.String())
+	defaultSort.SetReversed(true)
 
 	tests := []struct {
 		name     string
@@ -331,53 +330,53 @@ func TestFillDefaultSortOption(t *testing.T) {
 		{
 			name:  "nil query - should create with default sort",
 			query: nil,
-			expected: &v1.Query{
-				Pagination: &v1.QueryPagination{
+			expected: v1.Query_builder{
+				Pagination: v1.QueryPagination_builder{
 					SortOptions: []*v1.QuerySortOption{defaultSort},
-				},
-			},
+				}.Build(),
+			}.Build(),
 		},
 		{
 			name:  "query without pagination - should add pagination with default sort",
 			query: &v1.Query{},
-			expected: &v1.Query{
-				Pagination: &v1.QueryPagination{
+			expected: v1.Query_builder{
+				Pagination: v1.QueryPagination_builder{
 					SortOptions: []*v1.QuerySortOption{defaultSort},
-				},
-			},
+				}.Build(),
+			}.Build(),
 		},
 		{
 			name: "query with pagination but no sort options - should add default sort",
-			query: &v1.Query{
-				Pagination: &v1.QueryPagination{
+			query: v1.Query_builder{
+				Pagination: v1.QueryPagination_builder{
 					Limit:  10,
 					Offset: 5,
-				},
-			},
-			expected: &v1.Query{
-				Pagination: &v1.QueryPagination{
+				}.Build(),
+			}.Build(),
+			expected: v1.Query_builder{
+				Pagination: v1.QueryPagination_builder{
 					Limit:       10,
 					Offset:      5,
 					SortOptions: []*v1.QuerySortOption{defaultSort},
-				},
-			},
+				}.Build(),
+			}.Build(),
 		},
 		{
 			name: "query with existing sort options - should not add default",
-			query: &v1.Query{
-				Pagination: &v1.QueryPagination{
+			query: v1.Query_builder{
+				Pagination: v1.QueryPagination_builder{
 					SortOptions: []*v1.QuerySortOption{
-						{Field: search.Cluster.String()},
+						v1.QuerySortOption_builder{Field: search.Cluster.String()}.Build(),
 					},
-				},
-			},
-			expected: &v1.Query{
-				Pagination: &v1.QueryPagination{
+				}.Build(),
+			}.Build(),
+			expected: v1.Query_builder{
+				Pagination: v1.QueryPagination_builder{
 					SortOptions: []*v1.QuerySortOption{
-						{Field: search.Cluster.String()},
+						v1.QuerySortOption_builder{Field: search.Cluster.String()}.Build(),
 					},
-				},
-			},
+				}.Build(),
+			}.Build(),
 		},
 	}
 
@@ -476,10 +475,9 @@ func TestGetViolationTimeSortOption(t *testing.T) {
 // Test helper functions
 func TestToQuerySortOption(t *testing.T) {
 	// Test basic sort option conversion
-	sortOption := &v1.SortOption{
-		Field:    search.Cluster.String(),
-		Reversed: true,
-	}
+	sortOption := &v1.SortOption{}
+	sortOption.SetField(search.Cluster.String())
+	sortOption.SetReversed(true)
 
 	result := toQuerySortOption(sortOption)
 	assert.Equal(t, sortOption.GetField(), result.GetField())
@@ -487,14 +485,13 @@ func TestToQuerySortOption(t *testing.T) {
 	assert.Nil(t, result.GetAggregateBy())
 
 	// Test with aggregate
-	sortOptionWithAggregate := &v1.SortOption{
-		Field:    search.CVE.String(),
-		Reversed: false,
-		AggregateBy: &v1.AggregateBy{
-			AggrFunc: v1.Aggregation_COUNT,
-			Distinct: true,
-		},
-	}
+	ab := &v1.AggregateBy{}
+	ab.SetAggrFunc(v1.Aggregation_COUNT)
+	ab.SetDistinct(true)
+	sortOptionWithAggregate := &v1.SortOption{}
+	sortOptionWithAggregate.SetField(search.CVE.String())
+	sortOptionWithAggregate.SetReversed(false)
+	sortOptionWithAggregate.SetAggregateBy(ab)
 
 	resultWithAggregate := toQuerySortOption(sortOptionWithAggregate)
 	assert.Equal(t, sortOptionWithAggregate.GetField(), resultWithAggregate.GetField())
@@ -506,10 +503,9 @@ func TestToQuerySortOption(t *testing.T) {
 
 func TestToQuerySortOptionV2(t *testing.T) {
 	// Test basic v2 sort option conversion
-	sortOption := &v2.SortOption{
-		Field:    search.Namespace.String(),
-		Reversed: false,
-	}
+	sortOption := &v2.SortOption{}
+	sortOption.SetField(search.Namespace.String())
+	sortOption.SetReversed(false)
 
 	result := toQuerySortOptionV2(sortOption)
 	assert.Equal(t, sortOption.GetField(), result.GetField())
@@ -517,14 +513,13 @@ func TestToQuerySortOptionV2(t *testing.T) {
 	assert.Nil(t, result.GetAggregateBy())
 
 	// Test with v2 aggregate
-	sortOptionWithAggregate := &v2.SortOption{
-		Field:    search.CVE.String(),
-		Reversed: true,
-		AggregateBy: &v2.AggregateBy{
-			AggrFunc: v2.Aggregation_MAX,
-			Distinct: false,
-		},
-	}
+	ab := &v2.AggregateBy{}
+	ab.SetAggrFunc(v2.Aggregation_MAX)
+	ab.SetDistinct(false)
+	sortOptionWithAggregate := &v2.SortOption{}
+	sortOptionWithAggregate.SetField(search.CVE.String())
+	sortOptionWithAggregate.SetReversed(true)
+	sortOptionWithAggregate.SetAggregateBy(ab)
 
 	resultWithAggregate := toQuerySortOptionV2(sortOptionWithAggregate)
 	assert.Equal(t, sortOptionWithAggregate.GetField(), resultWithAggregate.GetField())
@@ -535,10 +530,9 @@ func TestToQuerySortOptionV2(t *testing.T) {
 }
 
 func TestConvertV2AggregateByToV1(t *testing.T) {
-	v2Aggregate := &v2.AggregateBy{
-		AggrFunc: v2.Aggregation_MIN,
-		Distinct: true,
-	}
+	v2Aggregate := &v2.AggregateBy{}
+	v2Aggregate.SetAggrFunc(v2.Aggregation_MIN)
+	v2Aggregate.SetDistinct(true)
 
 	result := convertV2AggregateByToV1(v2Aggregate)
 	assert.NotNil(t, result)

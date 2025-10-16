@@ -36,26 +36,26 @@ var (
 // ComplianceOperatorCheckResult converts internal api V2 check result to a V2 storage check result
 func ComplianceOperatorCheckResult(sensorData *central.ComplianceOperatorCheckResultV2, clusterID string, clusterName string) *storage.ComplianceOperatorCheckResultV2 {
 	lastStartedTimestamp, _ := protocompat.ParseRFC3339NanoTimestamp(sensorData.GetAnnotations()[LastScannedAnnotationKey])
-	return &storage.ComplianceOperatorCheckResultV2{
-		Id:              sensorData.GetId(),
-		CheckId:         sensorData.GetCheckId(),
-		CheckName:       sensorData.GetCheckName(),
-		ClusterId:       clusterID,
-		ClusterName:     clusterName,
-		Status:          statusToV2[sensorData.GetStatus()],
-		Severity:        severityToV2[sensorData.GetSeverity()],
-		Description:     sensorData.GetDescription(),
-		Instructions:    sensorData.GetInstructions(),
-		Labels:          sensorData.GetLabels(),
-		Annotations:     sensorData.GetAnnotations(),
-		CreatedTime:     sensorData.GetCreatedTime(),
-		ScanName:        sensorData.GetScanName(),
-		ScanConfigName:  sensorData.GetSuiteName(),
-		Rationale:       sensorData.GetRationale(),
-		ValuesUsed:      sensorData.GetValuesUsed(),
-		Warnings:        sensorData.GetWarnings(),
-		ScanRefId:       BuildNameRefID(clusterID, sensorData.GetScanName()),
-		RuleRefId:       BuildNameRefID(clusterID, sensorData.GetAnnotations()[v1alpha1.RuleIDAnnotationKey]),
-		LastStartedTime: lastStartedTimestamp,
-	}
+	cocrv2 := &storage.ComplianceOperatorCheckResultV2{}
+	cocrv2.SetId(sensorData.GetId())
+	cocrv2.SetCheckId(sensorData.GetCheckId())
+	cocrv2.SetCheckName(sensorData.GetCheckName())
+	cocrv2.SetClusterId(clusterID)
+	cocrv2.SetClusterName(clusterName)
+	cocrv2.SetStatus(statusToV2[sensorData.GetStatus()])
+	cocrv2.SetSeverity(severityToV2[sensorData.GetSeverity()])
+	cocrv2.SetDescription(sensorData.GetDescription())
+	cocrv2.SetInstructions(sensorData.GetInstructions())
+	cocrv2.SetLabels(sensorData.GetLabels())
+	cocrv2.SetAnnotations(sensorData.GetAnnotations())
+	cocrv2.SetCreatedTime(sensorData.GetCreatedTime())
+	cocrv2.SetScanName(sensorData.GetScanName())
+	cocrv2.SetScanConfigName(sensorData.GetSuiteName())
+	cocrv2.SetRationale(sensorData.GetRationale())
+	cocrv2.SetValuesUsed(sensorData.GetValuesUsed())
+	cocrv2.SetWarnings(sensorData.GetWarnings())
+	cocrv2.SetScanRefId(BuildNameRefID(clusterID, sensorData.GetScanName()))
+	cocrv2.SetRuleRefId(BuildNameRefID(clusterID, sensorData.GetAnnotations()[v1alpha1.RuleIDAnnotationKey]))
+	cocrv2.SetLastStartedTime(lastStartedTimestamp)
+	return cocrv2
 }

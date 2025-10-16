@@ -262,12 +262,12 @@ func (d *deploymentCheckCommand) getAlertsAndIgnoredObjectRefs(deploymentYaml st
 	ctx, cancel := context.WithTimeout(context.Background(), d.timeout)
 	defer cancel()
 
-	response, err := svc.DetectDeployTimeFromYAML(ctx, &v1.DeployYAMLDetectionRequest{
-		Yaml:             deploymentYaml,
-		PolicyCategories: d.policyCategories,
-		Cluster:          d.cluster,
-		Namespace:        d.namespace,
-	})
+	dyamldr := &v1.DeployYAMLDetectionRequest{}
+	dyamldr.SetYaml(deploymentYaml)
+	dyamldr.SetPolicyCategories(d.policyCategories)
+	dyamldr.SetCluster(d.cluster)
+	dyamldr.SetNamespace(d.namespace)
+	response, err := svc.DetectDeployTimeFromYAML(ctx, dyamldr)
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "could not check deploy-time alerts")
 	}

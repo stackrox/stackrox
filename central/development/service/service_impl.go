@@ -77,7 +77,7 @@ func (s *serviceImpl) ReplicateImage(ctx context.Context, req *central.Replicate
 		return nil, errors.Errorf("image %q does not exist", req.GetId())
 	}
 	for i := 0; i < int(req.GetTimes()); i++ {
-		image.Id = random.GenerateString(65, random.HexValues)
+		image.SetId(random.GenerateString(65, random.HexValues))
 		if err := s.riskManager.CalculateRiskAndUpsertImage(image); err != nil {
 			return nil, err
 		}
@@ -97,11 +97,11 @@ func (s *serviceImpl) ReconciliationStatsByCluster(context.Context, *central.Emp
 				convertedDeletions[k] = int32(v)
 			}
 		}
-		resp.Stats = append(resp.Stats, &central.ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster{
-			ClusterId:            conn.ClusterID(),
-			ReconciliationDone:   reconciliationDone,
-			DeletedObjectsByType: convertedDeletions,
-		})
+		rr := &central.ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster{}
+		rr.SetClusterId(conn.ClusterID())
+		rr.SetReconciliationDone(reconciliationDone)
+		rr.SetDeletedObjectsByType(convertedDeletions)
+		resp.SetStats(append(resp.GetStats(), rr))
 	}
 	return &resp, nil
 }
@@ -129,28 +129,28 @@ func (s *serviceImpl) URLHasValidCert(_ context.Context, req *central.URLHasVali
 		err = verifyProvidedCert(req, u)
 	}
 	if err == nil {
-		return &central.URLHasValidCertResponse{
-			Result: central.URLHasValidCertResponse_REQUEST_SUCCEEDED,
-		}, nil
+		urlhvcr := &central.URLHasValidCertResponse{}
+		urlhvcr.SetResult(central.URLHasValidCertResponse_REQUEST_SUCCEEDED)
+		return urlhvcr, nil
 	}
 
 	errStr := err.Error()
 	if strings.Contains(errStr, x509Err) {
-		return &central.URLHasValidCertResponse{
-			Result:  central.URLHasValidCertResponse_CERT_SIGNED_BY_UNKNOWN_AUTHORITY,
-			Details: errStr,
-		}, nil
+		urlhvcr := &central.URLHasValidCertResponse{}
+		urlhvcr.SetResult(central.URLHasValidCertResponse_CERT_SIGNED_BY_UNKNOWN_AUTHORITY)
+		urlhvcr.SetDetails(errStr)
+		return urlhvcr, nil
 	}
 	if strings.Contains(errStr, "x509:") {
-		return &central.URLHasValidCertResponse{
-			Result:  central.URLHasValidCertResponse_CERT_SIGNING_AUTHORITY_VALID_BUT_OTHER_ERROR,
-			Details: errStr,
-		}, nil
+		urlhvcr := &central.URLHasValidCertResponse{}
+		urlhvcr.SetResult(central.URLHasValidCertResponse_CERT_SIGNING_AUTHORITY_VALID_BUT_OTHER_ERROR)
+		urlhvcr.SetDetails(errStr)
+		return urlhvcr, nil
 	}
-	return &central.URLHasValidCertResponse{
-		Result:  central.URLHasValidCertResponse_OTHER_GET_ERROR,
-		Details: errStr,
-	}, nil
+	urlhvcr := &central.URLHasValidCertResponse{}
+	urlhvcr.SetResult(central.URLHasValidCertResponse_OTHER_GET_ERROR)
+	urlhvcr.SetDetails(errStr)
+	return urlhvcr, nil
 }
 
 func verifyProvidedCert(req *central.URLHasValidCertRequest, u *url.URL) error {
@@ -178,14 +178,15 @@ func verifyProvidedCert(req *central.URLHasValidCertRequest, u *url.URL) error {
 
 func (s *serviceImpl) EnvVars(_ context.Context, _ *central.Empty) (*central.EnvVarsResponse, error) {
 	envVars := os.Environ()
-	return &central.EnvVarsResponse{
-		EnvVars: envVars,
-	}, nil
+	evr := &central.EnvVarsResponse{}
+	evr.SetEnvVars(envVars)
+	return evr, nil
 }
 
 func (s *serviceImpl) RandomData(_ context.Context, req *central.RandomDataRequest) (*central.RandomDataResponse, error) {
-	resp := &central.RandomDataResponse{
-		Data: make([]byte, req.GetSize()),
+	resp := &central.RandomDataResponse{}
+	if x := make([]byte, req.GetSize()); x != nil {
+		resp.SetData(x)
 	}
 
 	_, _ = rand.Read(resp.GetData())

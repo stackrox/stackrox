@@ -52,10 +52,11 @@ func (l handlerImpl) post(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	log := &storage.LogImbue{
-		Id:        uuid.NewV4().String(),
-		Timestamp: protocompat.TimestampNow(),
-		Log:       buff.Bytes(),
+	log := &storage.LogImbue{}
+	log.SetId(uuid.NewV4().String())
+	log.SetTimestamp(protocompat.TimestampNow())
+	if x := buff.Bytes(); x != nil {
+		log.SetLog(x)
 	}
 	if err := l.storage.Upsert(req.Context(), log); err != nil {
 		resp.WriteHeader(http.StatusInternalServerError)

@@ -13,7 +13,9 @@ type resourceWithTraitsMock struct {
 }
 
 func (m *resourceWithTraitsMock) GetTraits() *storage.Traits {
-	return &storage.Traits{Origin: m.origin}
+	traits := &storage.Traits{}
+	traits.SetOrigin(m.origin)
+	return traits
 }
 
 func TestContext(t *testing.T) {

@@ -135,13 +135,12 @@ func (r *runInstance) ToProto() *v1.ComplianceRun {
 		errorMessage = r.err.Error()
 	}
 
-	proto := &v1.ComplianceRun{
-		Id:           r.id,
-		ClusterId:    r.domain.Cluster().Cluster().GetId(),
-		StandardId:   r.standardID(),
-		State:        r.status,
-		ErrorMessage: errorMessage,
-	}
+	proto := &v1.ComplianceRun{}
+	proto.SetId(r.id)
+	proto.SetClusterId(r.domain.Cluster().Cluster().GetId())
+	proto.SetStandardId(r.standardID())
+	proto.SetState(r.status)
+	proto.SetErrorMessage(errorMessage)
 	if !r.startTime.IsZero() {
 		proto.StartTime, _ = protocompat.ConvertTimeToTimestampOrError(r.startTime)
 	}

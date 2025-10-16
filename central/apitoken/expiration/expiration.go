@@ -108,9 +108,8 @@ func (n *expirationNotifierImpl) checkAndNotifyExpirations() {
 		return
 	}
 	if !found || notificationSchedule == nil {
-		notificationSchedule = &storage.NotificationSchedule{
-			LastRun: protoconv.ConvertTimeToTimestamp(staleNotificationDate.Add(-1 * time.Hour)),
-		}
+		notificationSchedule = &storage.NotificationSchedule{}
+		notificationSchedule.SetLastRun(protoconv.ConvertTimeToTimestamp(staleNotificationDate.Add(-1 * time.Hour)))
 	}
 	// API Token expiration should be notified at regular and long intervals.
 	// The check below is there to enforce a notification back-off mechanism.
@@ -121,7 +120,7 @@ func (n *expirationNotifierImpl) checkAndNotifyExpirations() {
 	if protocompat.CompareTimestamps(notificationSchedule.GetLastRun(), staleNotificationTimestamp) >= 0 {
 		return
 	}
-	notificationSchedule.LastRun = protoconv.ConvertTimeToTimestamp(now)
+	notificationSchedule.SetLastRun(protoconv.ConvertTimeToTimestamp(now))
 	err = n.store.UpsertNotificationSchedule(scheduleCtx, notificationSchedule)
 	if err != nil {
 		log.Error(errors.Wrap(err, "failed to update expired API token notification last run"))

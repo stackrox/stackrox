@@ -13,51 +13,51 @@ import (
 )
 
 func TestParseCVSSV3(t *testing.T) {
+	cVSSV3 := &storage.CVSSV3{}
+	cVSSV3.SetVector("CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N")
+	cVSSV3.SetAttackVector(storage.CVSSV3_ATTACK_NETWORK)
+	cVSSV3.SetAttackComplexity(storage.CVSSV3_COMPLEXITY_LOW)
+	cVSSV3.SetPrivilegesRequired(storage.CVSSV3_PRIVILEGE_NONE)
+	cVSSV3.SetUserInteraction(storage.CVSSV3_UI_NONE)
+	cVSSV3.SetScope(storage.CVSSV3_UNCHANGED)
+	cVSSV3.SetConfidentiality(storage.CVSSV3_IMPACT_NONE)
+	cVSSV3.SetIntegrity(storage.CVSSV3_IMPACT_NONE)
+	cVSSV3.SetAvailability(storage.CVSSV3_IMPACT_NONE)
+	cVSSV3h2 := &storage.CVSSV3{}
+	cVSSV3h2.SetVector("CVSS:3.0/AV:N/AC:H/PR:H/UI:N/S:U/C:L/I:H/A:L")
+	cVSSV3h2.SetAttackVector(storage.CVSSV3_ATTACK_NETWORK)
+	cVSSV3h2.SetAttackComplexity(storage.CVSSV3_COMPLEXITY_HIGH)
+	cVSSV3h2.SetPrivilegesRequired(storage.CVSSV3_PRIVILEGE_HIGH)
+	cVSSV3h2.SetUserInteraction(storage.CVSSV3_UI_NONE)
+	cVSSV3h2.SetScope(storage.CVSSV3_UNCHANGED)
+	cVSSV3h2.SetConfidentiality(storage.CVSSV3_IMPACT_LOW)
+	cVSSV3h2.SetIntegrity(storage.CVSSV3_IMPACT_HIGH)
+	cVSSV3h2.SetAvailability(storage.CVSSV3_IMPACT_LOW)
+	cVSSV3h3 := &storage.CVSSV3{}
+	cVSSV3h3.SetVector("CVSS:3.1/AV:P/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N")
+	cVSSV3h3.SetAttackVector(storage.CVSSV3_ATTACK_PHYSICAL)
+	cVSSV3h3.SetAttackComplexity(storage.CVSSV3_COMPLEXITY_LOW)
+	cVSSV3h3.SetPrivilegesRequired(storage.CVSSV3_PRIVILEGE_NONE)
+	cVSSV3h3.SetUserInteraction(storage.CVSSV3_UI_NONE)
+	cVSSV3h3.SetScope(storage.CVSSV3_UNCHANGED)
+	cVSSV3h3.SetConfidentiality(storage.CVSSV3_IMPACT_NONE)
+	cVSSV3h3.SetIntegrity(storage.CVSSV3_IMPACT_HIGH)
+	cVSSV3h3.SetAvailability(storage.CVSSV3_IMPACT_NONE)
 	cases := []struct {
 		input  string
 		cvssV3 *storage.CVSSV3
 	}{
 		{
-			input: "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N",
-			cvssV3: &storage.CVSSV3{
-				Vector:             "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N",
-				AttackVector:       storage.CVSSV3_ATTACK_NETWORK,
-				AttackComplexity:   storage.CVSSV3_COMPLEXITY_LOW,
-				PrivilegesRequired: storage.CVSSV3_PRIVILEGE_NONE,
-				UserInteraction:    storage.CVSSV3_UI_NONE,
-				Scope:              storage.CVSSV3_UNCHANGED,
-				Confidentiality:    storage.CVSSV3_IMPACT_NONE,
-				Integrity:          storage.CVSSV3_IMPACT_NONE,
-				Availability:       storage.CVSSV3_IMPACT_NONE,
-			},
+			input:  "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N",
+			cvssV3: cVSSV3,
 		},
 		{
-			input: "CVSS:3.0/AV:N/AC:H/PR:H/UI:N/S:U/C:L/I:H/A:L",
-			cvssV3: &storage.CVSSV3{
-				Vector:             "CVSS:3.0/AV:N/AC:H/PR:H/UI:N/S:U/C:L/I:H/A:L",
-				AttackVector:       storage.CVSSV3_ATTACK_NETWORK,
-				AttackComplexity:   storage.CVSSV3_COMPLEXITY_HIGH,
-				PrivilegesRequired: storage.CVSSV3_PRIVILEGE_HIGH,
-				UserInteraction:    storage.CVSSV3_UI_NONE,
-				Scope:              storage.CVSSV3_UNCHANGED,
-				Confidentiality:    storage.CVSSV3_IMPACT_LOW,
-				Integrity:          storage.CVSSV3_IMPACT_HIGH,
-				Availability:       storage.CVSSV3_IMPACT_LOW,
-			},
+			input:  "CVSS:3.0/AV:N/AC:H/PR:H/UI:N/S:U/C:L/I:H/A:L",
+			cvssV3: cVSSV3h2,
 		},
 		{
-			input: "CVSS:3.1/AV:P/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
-			cvssV3: &storage.CVSSV3{
-				Vector:             "CVSS:3.1/AV:P/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
-				AttackVector:       storage.CVSSV3_ATTACK_PHYSICAL,
-				AttackComplexity:   storage.CVSSV3_COMPLEXITY_LOW,
-				PrivilegesRequired: storage.CVSSV3_PRIVILEGE_NONE,
-				UserInteraction:    storage.CVSSV3_UI_NONE,
-				Scope:              storage.CVSSV3_UNCHANGED,
-				Confidentiality:    storage.CVSSV3_IMPACT_NONE,
-				Integrity:          storage.CVSSV3_IMPACT_HIGH,
-				Availability:       storage.CVSSV3_IMPACT_NONE,
-			},
+			input:  "CVSS:3.1/AV:P/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
+			cvssV3: cVSSV3h3,
 		},
 	}
 

@@ -438,14 +438,14 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVESubResolvers() {
 		},
 	}
 	nodeCVEs := []*storage.NodeCVE{
-		{
+		storage.NodeCVE_builder{
 			Id:          cveIDsToTest[0],
-			CveBaseInfo: &storage.CVEInfo{Cve: cve},
-		},
-		{
+			CveBaseInfo: storage.CVEInfo_builder{Cve: cve}.Build(),
+		}.Build(),
+		storage.NodeCVE_builder{
 			Id:          "22",
-			CveBaseInfo: &storage.CVEInfo{Cve: cve},
-		},
+			CveBaseInfo: storage.CVEInfo_builder{Cve: cve}.Build(),
+		}.Build(),
 	}
 	cveCoreMock.EXPECT().GetCVEIDs().Return(cveIDsToTest)
 	expectedQ = search.NewQueryBuilder().AddExactMatches(search.CVEID, cveIDsToTest...).
@@ -465,13 +465,13 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVESubResolvers() {
 
 	// Nodes
 	nodeIDsToTest := []string{fixtureconsts.Node1, fixtureconsts.Node2}
+	node := &storage.Node{}
+	node.SetId(nodeIDsToTest[0])
+	node2 := &storage.Node{}
+	node2.SetId(nodeIDsToTest[1])
 	expectedNodes := []*storage.Node{
-		{
-			Id: nodeIDsToTest[0],
-		},
-		{
-			Id: nodeIDsToTest[1],
-		},
+		node,
+		node2,
 	}
 
 	expectedQ = search.NewQueryBuilder().AddExactMatches(search.CVE, cve).ProtoQuery()
@@ -486,6 +486,6 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVESubResolvers() {
 func noOrphanedCVEsQuery(_ *testing.T, q *v1.Query) *v1.Query {
 	pagination := q.GetPagination()
 	ret := search.ConjunctionQuery(q, search.NewQueryBuilder().AddBools(search.CVEOrphaned, false).ProtoQuery())
-	ret.Pagination = pagination
+	ret.SetPagination(pagination)
 	return ret
 }

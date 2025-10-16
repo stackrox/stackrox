@@ -71,9 +71,9 @@ func (s *serviceImpl) GetExternalBackups(ctx context.Context, _ *v1.Empty) (*v1.
 	if err != nil {
 		return nil, err
 	}
-	return &v1.GetExternalBackupsResponse{
-		ExternalBackups: backups,
-	}, nil
+	gebr := &v1.GetExternalBackupsResponse{}
+	gebr.SetExternalBackups(backups)
+	return gebr, nil
 }
 
 func validateBackup(backup *storage.ExternalBackup) error {
@@ -101,7 +101,10 @@ func (s *serviceImpl) testBackup(ctx context.Context, backup *storage.ExternalBa
 
 // TestExternalBackup tests that the current config is valid, without stored credential reconciliation
 func (s *serviceImpl) TestExternalBackup(ctx context.Context, externalBackup *storage.ExternalBackup) (*v1.Empty, error) {
-	return s.TestUpdatedExternalBackup(ctx, &v1.UpdateExternalBackupRequest{ExternalBackup: externalBackup, UpdatePassword: true})
+	uebr := &v1.UpdateExternalBackupRequest{}
+	uebr.SetExternalBackup(externalBackup)
+	uebr.SetUpdatePassword(true)
+	return s.TestUpdatedExternalBackup(ctx, uebr)
 }
 
 // TestUpdatedExternalBackup tests that the provided config is valid
@@ -142,7 +145,10 @@ func (s *serviceImpl) upsertExternalBackup(ctx context.Context, request *storage
 
 // PutExternalBackup inserts a new external backup into the system, without stored credential reconciliation
 func (s *serviceImpl) PutExternalBackup(ctx context.Context, externalBackup *storage.ExternalBackup) (*storage.ExternalBackup, error) {
-	return s.UpdateExternalBackup(ctx, &v1.UpdateExternalBackupRequest{ExternalBackup: externalBackup, UpdatePassword: true})
+	uebr := &v1.UpdateExternalBackupRequest{}
+	uebr.SetExternalBackup(externalBackup)
+	uebr.SetUpdatePassword(true)
+	return s.UpdateExternalBackup(ctx, uebr)
 }
 
 // UpdateExternalBackup inserts a new external backup into the system
@@ -170,7 +176,7 @@ func (s *serviceImpl) PostExternalBackup(ctx context.Context, request *storage.E
 	if err := validateBackup(request); err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
-	request.Id = uuid.NewV4().String()
+	request.SetId(uuid.NewV4().String())
 	if err := s.upsertExternalBackup(ctx, request); err != nil {
 		return nil, err
 	}

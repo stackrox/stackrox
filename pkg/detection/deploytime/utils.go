@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
+	"google.golang.org/protobuf/proto"
 )
 
 // Label key used for unsatisfiable node constraint enforcement.
@@ -20,19 +21,18 @@ func PolicyDeploymentAndViolationsToAlert(policy *storage.Policy, deployment *st
 		return nil
 	}
 
-	alert := &storage.Alert{
-		Id:             uuid.NewV4().String(),
-		LifecycleStage: storage.LifecycleStage_DEPLOY,
-		Entity:         convert.ToAlertDeployment(deployment),
-		Policy:         policy.CloneVT(),
-		Violations:     violations,
-		Time:           protocompat.TimestampNow(),
-	}
+	alert := &storage.Alert{}
+	alert.SetId(uuid.NewV4().String())
+	alert.SetLifecycleStage(storage.LifecycleStage_DEPLOY)
+	alert.SetDeployment(proto.ValueOrDefault(convert.ToAlertDeployment(deployment).Deployment))
+	alert.SetPolicy(policy.CloneVT())
+	alert.SetViolations(violations)
+	alert.SetTime(protocompat.TimestampNow())
 	if action, msg := buildEnforcement(policy, deployment); action != storage.EnforcementAction_UNSET_ENFORCEMENT {
-		alert.Enforcement = &storage.Alert_Enforcement{
-			Action:  action,
-			Message: msg,
-		}
+		ae := &storage.Alert_Enforcement{}
+		ae.SetAction(action)
+		ae.SetMessage(msg)
+		alert.SetEnforcement(ae)
 	}
 	return alert
 }

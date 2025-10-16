@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
+	"google.golang.org/protobuf/proto"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apimachineryversion "k8s.io/apimachinery/pkg/version"
@@ -117,11 +118,9 @@ func (u *updaterImpl) sendMessage(msg *central.ClusterStatusUpdate) bool {
 	select {
 	case <-ctx.Done():
 		return false
-	case u.updates <- message.NewExpiring(ctx, &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_ClusterStatusUpdate{
-			ClusterStatusUpdate: msg,
-		},
-	}):
+		mfs := &central.MsgFromSensor{}
+		mfs.SetClusterStatusUpdate(proto.ValueOrDefault(msg))
+	case u.updates <- message.NewExpiring(ctx, mfs):
 		return true
 	case <-u.stopSig.Done():
 		return false
@@ -132,15 +131,12 @@ func (u *updaterImpl) run() {
 	orchestratorMetadata := u.getOrchestratorMetadata()
 	cloudProviderMetadata := u.getCloudProviderMetadata(context.Background())
 
-	updateMessage := &central.ClusterStatusUpdate{
-		Msg: &central.ClusterStatusUpdate_Status{
-			Status: &storage.ClusterStatus{
-				SensorVersion:        version.GetMainVersion(),
-				ProviderMetadata:     cloudProviderMetadata,
-				OrchestratorMetadata: orchestratorMetadata,
-			},
-		},
-	}
+	cs := &storage.ClusterStatus{}
+	cs.SetSensorVersion(version.GetMainVersion())
+	cs.SetProviderMetadata(cloudProviderMetadata)
+	cs.SetOrchestratorMetadata(orchestratorMetadata)
+	updateMessage := &central.ClusterStatusUpdate{}
+	updateMessage.SetStatus(proto.ValueOrDefault(cs))
 
 	if !u.sendMessage(updateMessage) {
 		return
@@ -152,13 +148,11 @@ func (u *updaterImpl) run() {
 	if deploymentEnvFromMD == "" {
 		return
 	}
-	updateMessage = &central.ClusterStatusUpdate{
-		Msg: &central.ClusterStatusUpdate_DeploymentEnvUpdate{
-			DeploymentEnvUpdate: &central.DeploymentEnvironmentUpdate{
-				Environments: []string{deploymentEnvFromMD},
-			},
-		},
-	}
+	updateMessage = central.ClusterStatusUpdate_builder{
+		DeploymentEnvUpdate: central.DeploymentEnvironmentUpdate_builder{
+			Environments: []string{deploymentEnvFromMD},
+		}.Build(),
+	}.Build()
 
 	u.sendMessage(updateMessage)
 }
@@ -175,11 +169,10 @@ func (u *updaterImpl) getOrchestratorMetadata() *storage.OrchestratorMetadata {
 		log.Error(err)
 	}
 
-	metadata := &storage.OrchestratorMetadata{
-		Version:     serverVersion.GitVersion,
-		BuildDate:   protoconv.ConvertTimeToTimestamp(buildDate),
-		ApiVersions: u.getAPIVersions(),
-	}
+	metadata := &storage.OrchestratorMetadata{}
+	metadata.SetVersion(serverVersion.GitVersion)
+	metadata.SetBuildDate(protoconv.ConvertTimeToTimestamp(buildDate))
+	metadata.SetApiVersions(u.getAPIVersions())
 
 	if env.OpenshiftAPI.BooleanSetting() {
 		// Update Openshift version
@@ -198,7 +191,7 @@ func (u *updaterImpl) getOrchestratorMetadata() *storage.OrchestratorMetadata {
 			return metadata
 		}
 		log.Infof("Openshift version: %s", openshiftVersion)
-		metadata.IsOpenshift = &storage.OrchestratorMetadata_OpenshiftVersion{OpenshiftVersion: openshiftVersion}
+		metadata.SetOpenshiftVersion(openshiftVersion)
 	}
 	return metadata
 }

@@ -44,10 +44,14 @@ func (suite *NodeComponentLoaderTestSuite) TearDownTest() {
 }
 
 func (suite *NodeComponentLoaderTestSuite) TestFromID() {
+	nc := &storage.NodeComponent{}
+	nc.SetId(nodeComponent1)
+	nc2 := &storage.NodeComponent{}
+	nc2.SetId(nodeComponent2)
 	loader := nodeComponentLoaderImpl{
 		loaded: map[string]*storage.NodeComponent{
-			"nodeComponent1": {Id: nodeComponent1},
-			"nodeComponent2": {Id: nodeComponent2},
+			"nodeComponent1": nc,
+			"nodeComponent2": nc2,
 		},
 		ds: suite.mockDataStore,
 	}
@@ -58,7 +62,8 @@ func (suite *NodeComponentLoaderTestSuite) TestFromID() {
 	protoassert.Equal(suite.T(), loader.loaded[nodeComponent1], component)
 
 	// Get a non-preloaded component from id.
-	thirdComponent := &storage.NodeComponent{Id: nodeComponent3}
+	thirdComponent := &storage.NodeComponent{}
+	thirdComponent.SetId(nodeComponent3)
 	suite.mockDataStore.EXPECT().GetBatch(suite.ctx, []string{nodeComponent3}).
 		Return([]*storage.NodeComponent{thirdComponent}, nil)
 
@@ -73,10 +78,14 @@ func (suite *NodeComponentLoaderTestSuite) TestFromID() {
 }
 
 func (suite *NodeComponentLoaderTestSuite) TestFromIDs() {
+	nc := &storage.NodeComponent{}
+	nc.SetId(nodeComponent1)
+	nc2 := &storage.NodeComponent{}
+	nc2.SetId(nodeComponent2)
 	loader := nodeComponentLoaderImpl{
 		loaded: map[string]*storage.NodeComponent{
-			"nodeComponent1": {Id: nodeComponent1},
-			"nodeComponent2": {Id: nodeComponent2},
+			"nodeComponent1": nc,
+			"nodeComponent2": nc2,
 		},
 		ds: suite.mockDataStore,
 	}
@@ -90,7 +99,8 @@ func (suite *NodeComponentLoaderTestSuite) TestFromIDs() {
 	}, components)
 
 	// Get a non-preloaded component from id.
-	thirdComponent := &storage.NodeComponent{Id: nodeComponent3}
+	thirdComponent := &storage.NodeComponent{}
+	thirdComponent.SetId(nodeComponent3)
 	suite.mockDataStore.EXPECT().GetBatch(suite.ctx, []string{nodeComponent3}).
 		Return([]*storage.NodeComponent{thirdComponent}, nil)
 
@@ -113,10 +123,14 @@ func (suite *NodeComponentLoaderTestSuite) TestFromIDs() {
 }
 
 func (suite *NodeComponentLoaderTestSuite) TestFromQuery() {
+	nc := &storage.NodeComponent{}
+	nc.SetId(nodeComponent1)
+	nc2 := &storage.NodeComponent{}
+	nc2.SetId(nodeComponent2)
 	loader := nodeComponentLoaderImpl{
 		loaded: map[string]*storage.NodeComponent{
-			"nodeComponent1": {Id: nodeComponent1},
-			"nodeComponent2": {Id: nodeComponent2},
+			"nodeComponent1": nc,
+			"nodeComponent2": nc2,
 		},
 		ds: suite.mockDataStore,
 	}
@@ -153,7 +167,8 @@ func (suite *NodeComponentLoaderTestSuite) TestFromQuery() {
 	}
 	suite.mockDataStore.EXPECT().Search(suite.ctx, query).Return(results, nil)
 
-	thirdComponent := &storage.NodeComponent{Id: nodeComponent3}
+	thirdComponent := &storage.NodeComponent{}
+	thirdComponent.SetId(nodeComponent3)
 	suite.mockDataStore.EXPECT().GetBatch(suite.ctx, []string{nodeComponent3}).
 		Return([]*storage.NodeComponent{thirdComponent}, nil)
 

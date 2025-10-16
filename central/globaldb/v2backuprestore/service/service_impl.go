@@ -56,10 +56,10 @@ func (s *service) RegisterServiceHandler(ctx context.Context, mux *runtime.Serve
 }
 
 func (s *service) GetExportCapabilities(_ context.Context, _ *v1.Empty) (*v1.GetDBExportCapabilitiesResponse, error) {
-	return &v1.GetDBExportCapabilitiesResponse{
-		Formats:            s.mgr.GetExportFormats().ToProtos(),
-		SupportedEncodings: s.mgr.GetSupportedFileEncodings(),
-	}, nil
+	gdbecr := &v1.GetDBExportCapabilitiesResponse{}
+	gdbecr.SetFormats(s.mgr.GetExportFormats().ToProtos())
+	gdbecr.SetSupportedEncodings(s.mgr.GetSupportedFileEncodings())
+	return gdbecr, nil
 }
 
 func (s *service) GetActiveRestoreProcess(_ context.Context, _ *v1.Empty) (*v1.GetActiveDBRestoreProcessResponse, error) {
@@ -67,9 +67,9 @@ func (s *service) GetActiveRestoreProcess(_ context.Context, _ *v1.Empty) (*v1.G
 	if process == nil {
 		return &v1.GetActiveDBRestoreProcessResponse{}, nil
 	}
-	return &v1.GetActiveDBRestoreProcessResponse{
-		ActiveStatus: process.ProtoStatus(),
-	}, nil
+	gadbrpr := &v1.GetActiveDBRestoreProcessResponse{}
+	gadbrpr.SetActiveStatus(process.ProtoStatus())
+	return gadbrpr, nil
 }
 
 func (s *service) CancelRestoreProcess(ctx context.Context, req *v1.ResourceByID) (*v1.Empty, error) {
@@ -95,9 +95,9 @@ func (s *service) InterruptRestoreProcess(ctx context.Context, req *v1.Interrupt
 	if err != nil {
 		return nil, err
 	}
-	return &v1.InterruptDBRestoreProcessResponse{
-		ResumeInfo: resumeInfo,
-	}, nil
+	idbrpr := &v1.InterruptDBRestoreProcessResponse{}
+	idbrpr.SetResumeInfo(resumeInfo)
+	return idbrpr, nil
 }
 
 func validateRestoreProcess(process manager.RestoreProcess, id string) error {

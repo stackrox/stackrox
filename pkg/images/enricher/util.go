@@ -63,16 +63,16 @@ func EnrichImageV2ByName(ctx context.Context, enricher ImageEnricherV2, enrichme
 }
 
 func imageIntegrationToDataSource(i *storage.ImageIntegration) *storage.DataSource {
-	return &storage.DataSource{
-		Id:   i.GetId(),
-		Name: i.GetName(),
-	}
+	ds := &storage.DataSource{}
+	ds.SetId(i.GetId())
+	ds.SetName(i.GetName())
+	return ds
 }
 
 func normalizeVulnerabilities(scan *storage.ImageScan) {
 	for _, c := range scan.GetComponents() {
 		for _, v := range c.GetVulns() {
-			v.Severity = cvss.VulnToSeverity(cvss.NewFromEmbeddedVulnerability(v))
+			v.SetSeverity(cvss.VulnToSeverity(cvss.NewFromEmbeddedVulnerability(v)))
 		}
 	}
 }

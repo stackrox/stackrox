@@ -25,21 +25,21 @@ func (s *SortOption) AsV1SortOption() *v1.SortOption {
 	if s == nil {
 		return nil
 	}
-	return &v1.SortOption{
-		Field: func() string {
-			if s.Field == nil {
-				return ""
-			}
-			return *s.Field
-		}(),
-		AggregateBy: s.AggregateBy.AsV1AggregateBy(),
-		Reversed: func() bool {
-			if s.Reversed == nil {
-				return false
-			}
-			return *s.Reversed
-		}(),
-	}
+	so := &v1.SortOption{}
+	so.SetField(func() string {
+		if s.Field == nil {
+			return ""
+		}
+		return *s.Field
+	}())
+	so.SetAggregateBy(s.AggregateBy.AsV1AggregateBy())
+	so.SetReversed(func() bool {
+		if s.Reversed == nil {
+			return false
+		}
+		return *s.Reversed
+	}())
+	return so
 }
 
 // AsV1AggregateBy converts the aggregation to proto.
@@ -51,13 +51,13 @@ func (a *AggregateBy) AsV1AggregateBy() *v1.AggregateBy {
 	if aggrFunc == aggregatefunc.Unset {
 		return nil
 	}
-	return &v1.AggregateBy{
-		AggrFunc: aggrFunc.Proto(),
-		Distinct: func() bool {
-			if a.Distinct == nil {
-				return false
-			}
-			return *a.Distinct
-		}(),
-	}
+	ab := &v1.AggregateBy{}
+	ab.SetAggrFunc(aggrFunc.Proto())
+	ab.SetDistinct(func() bool {
+		if a.Distinct == nil {
+			return false
+		}
+		return *a.Distinct
+	}())
+	return ab
 }

@@ -431,10 +431,9 @@ func GetDefaultSort(sortOption string, reversed bool) *v1.QuerySortOption {
 		return nil
 	}
 
-	defaultSortOption := &v1.QuerySortOption{
-		Field:    sortOption,
-		Reversed: reversed,
-	}
+	defaultSortOption := &v1.QuerySortOption{}
+	defaultSortOption.SetField(sortOption)
+	defaultSortOption.SetReversed(reversed)
 
 	return defaultSortOption
 }

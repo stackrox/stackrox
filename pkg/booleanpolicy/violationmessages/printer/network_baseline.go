@@ -35,27 +35,25 @@ func GenerateNetworkFlowViolation(networkFlow *augmentedobjs.NetworkFlowDetails)
 		return nil, err
 	}
 
-	return &storage.Alert_Violation{
+	return storage.Alert_Violation_builder{
 		Message: messageBuilder.String(),
-		MessageAttributes: &storage.Alert_Violation_NetworkFlowInfo_{
-			NetworkFlowInfo: &storage.Alert_Violation_NetworkFlowInfo{
-				Source: &storage.Alert_Violation_NetworkFlowInfo_Entity{
-					Name:                networkFlow.SrcEntityName,
-					EntityType:          networkFlow.SrcEntityType,
-					DeploymentNamespace: networkFlow.SrcDeploymentNamespace,
-					DeploymentType:      networkFlow.SrcDeploymentType,
-				},
-				Destination: &storage.Alert_Violation_NetworkFlowInfo_Entity{
-					Name:                networkFlow.DstEntityName,
-					EntityType:          networkFlow.DstEntityType,
-					DeploymentNamespace: networkFlow.DstDeploymentNamespace,
-					DeploymentType:      networkFlow.DstDeploymentType,
-					Port:                int32(networkFlow.DstPort),
-				},
-				Protocol: networkFlow.L4Protocol,
-			},
-		},
+		NetworkFlowInfo: storage.Alert_Violation_NetworkFlowInfo_builder{
+			Source: storage.Alert_Violation_NetworkFlowInfo_Entity_builder{
+				Name:                networkFlow.SrcEntityName,
+				EntityType:          networkFlow.SrcEntityType,
+				DeploymentNamespace: networkFlow.SrcDeploymentNamespace,
+				DeploymentType:      networkFlow.SrcDeploymentType,
+			}.Build(),
+			Destination: storage.Alert_Violation_NetworkFlowInfo_Entity_builder{
+				Name:                networkFlow.DstEntityName,
+				EntityType:          networkFlow.DstEntityType,
+				DeploymentNamespace: networkFlow.DstDeploymentNamespace,
+				DeploymentType:      networkFlow.DstDeploymentType,
+				Port:                int32(networkFlow.DstPort),
+			}.Build(),
+			Protocol: networkFlow.L4Protocol,
+		}.Build(),
 		Type: storage.Alert_Violation_NETWORK_FLOW,
 		Time: protocompat.ConvertTimeToTimestampOrNil(&networkFlow.LastSeenTimestamp),
-	}, nil
+	}.Build(), nil
 }

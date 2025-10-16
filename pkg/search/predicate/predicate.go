@@ -122,14 +122,14 @@ func (tb Factory) generatePredicateInternal(query *v1.Query) (internalPredicate,
 	if query == nil || query.GetQuery() == nil {
 		return alwaysTrue, nil
 	}
-	switch query.GetQuery().(type) {
-	case *v1.Query_Disjunction:
+	switch query.WhichQuery() {
+	case v1.Query_Disjunction_case:
 		return tb.or(query.GetDisjunction())
-	case *v1.Query_Conjunction:
+	case v1.Query_Conjunction_case:
 		return tb.and(query.GetConjunction())
-	case *v1.Query_BooleanQuery:
+	case v1.Query_BooleanQuery_case:
 		return tb.boolean(query.GetBooleanQuery())
-	case *v1.Query_BaseQuery:
+	case v1.Query_BaseQuery_case:
 		return tb.base(query.GetBaseQuery())
 	default:
 		return nil, fmt.Errorf("unrecognized query type: %T", query.GetQuery())
@@ -187,14 +187,14 @@ func (tb Factory) boolean(q *v1.BooleanQuery) (internalPredicate, error) {
 }
 
 func (tb Factory) base(q *v1.BaseQuery) (internalPredicate, error) {
-	switch q.GetQuery().(type) {
-	case *v1.BaseQuery_DocIdQuery:
+	switch q.WhichQuery() {
+	case v1.BaseQuery_DocIdQuery_case:
 		return tb.docID(q.GetDocIdQuery())
-	case *v1.BaseQuery_MatchNoneQuery:
+	case v1.BaseQuery_MatchNoneQuery_case:
 		return tb.matchNone(q.GetMatchNoneQuery())
-	case *v1.BaseQuery_MatchFieldQuery:
+	case v1.BaseQuery_MatchFieldQuery_case:
 		return tb.match(q.GetMatchFieldQuery())
-	case *v1.BaseQuery_MatchLinkedFieldsQuery:
+	case v1.BaseQuery_MatchLinkedFieldsQuery_case:
 		return tb.matchLinked(q.GetMatchLinkedFieldsQuery())
 	default:
 		return nil, fmt.Errorf("cannot handle base query of type %T", q.GetQuery())

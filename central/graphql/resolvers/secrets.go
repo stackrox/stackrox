@@ -162,12 +162,12 @@ func (resolver *Resolver) getDeploymentRelationships(ctx context.Context, secret
 
 	var deployments []*storage.SecretDeploymentRelationship
 	for _, r := range deploymentResults {
-		deployments = append(deployments, &storage.SecretDeploymentRelationship{
-			Id:   r.GetId(),
-			Name: r.GetName(),
-		})
+		sdr := &storage.SecretDeploymentRelationship{}
+		sdr.SetId(r.GetId())
+		sdr.SetName(r.GetName())
+		deployments = append(deployments, sdr)
 	}
-	secret.Relationship = &storage.SecretRelationship{
-		DeploymentRelationships: deployments,
-	}
+	sr := &storage.SecretRelationship{}
+	sr.SetDeploymentRelationships(deployments)
+	secret.SetRelationship(sr)
 }

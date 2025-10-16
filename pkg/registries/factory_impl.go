@@ -53,12 +53,12 @@ func (e *factoryImpl) CreateRegistry(source *storage.ImageIntegration, options .
 		return nil, err
 	}
 
+	ds := &storage.DataSource{}
+	ds.SetId(source.GetId())
+	ds.SetName(source.GetName())
 	return &registryWithDataSource{
-		Registry: integration,
-		datasource: &storage.DataSource{
-			Id:   source.GetId(),
-			Name: source.GetName(),
-		},
-		source: source,
+		Registry:   integration,
+		datasource: ds,
+		source:     source,
 	}, nil
 }

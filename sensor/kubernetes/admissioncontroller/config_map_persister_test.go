@@ -27,43 +27,43 @@ func TestSettingsToConfigMap(t *testing.T) {
 			expectNil: true,
 		},
 		{
-			settings: &sensor.AdmissionControlSettings{
+			settings: sensor.AdmissionControlSettings_builder{
 				ClusterConfig: &storage.DynamicClusterConfig{},
-			},
+			}.Build(),
 			expectNil: true,
 		},
 		{
-			settings: &sensor.AdmissionControlSettings{
+			settings: sensor.AdmissionControlSettings_builder{
 				EnforcedDeployTimePolicies: &storage.PolicyList{},
-			},
+			}.Build(),
 			expectNil: true,
 		},
 		{
-			settings: &sensor.AdmissionControlSettings{
+			settings: sensor.AdmissionControlSettings_builder{
 				RuntimePolicies: &storage.PolicyList{},
-			},
+			}.Build(),
 			expectNil: true,
 		},
 		{
-			settings: &sensor.AdmissionControlSettings{
+			settings: sensor.AdmissionControlSettings_builder{
 				ClusterConfig:              &storage.DynamicClusterConfig{},
 				EnforcedDeployTimePolicies: &storage.PolicyList{},
-			},
+			}.Build(),
 			expectNil: true,
 		},
 		{
-			settings: &sensor.AdmissionControlSettings{
+			settings: sensor.AdmissionControlSettings_builder{
 				ClusterConfig:   &storage.DynamicClusterConfig{},
 				RuntimePolicies: &storage.PolicyList{},
-			},
+			}.Build(),
 			expectNil: true,
 		},
 		{
-			settings: &sensor.AdmissionControlSettings{
+			settings: sensor.AdmissionControlSettings_builder{
 				ClusterConfig:              &storage.DynamicClusterConfig{},
 				EnforcedDeployTimePolicies: &storage.PolicyList{},
 				RuntimePolicies:            &storage.PolicyList{},
-			},
+			}.Build(),
 			expectNil: false,
 		},
 	}

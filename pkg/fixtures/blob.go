@@ -9,10 +9,10 @@ import (
 // GetBlobWithData returns a mocked blob with data for testing
 func GetBlobWithData() (*storage.Blob, *bytes.Buffer) {
 	buffer := bytes.NewBuffer([]byte("some data"))
-	return &storage.Blob{
-		Name:         "/blobpath",
-		Oid:          123,
-		Length:       int64(buffer.Len()),
-		ModifiedTime: nil,
-	}, buffer
+	blob := &storage.Blob{}
+	blob.SetName("/blobpath")
+	blob.SetOid(123)
+	blob.SetLength(int64(buffer.Len()))
+	blob.ClearModifiedTime()
+	return blob, buffer
 }

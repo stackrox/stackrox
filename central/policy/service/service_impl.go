@@ -54,6 +54,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -152,7 +153,7 @@ func (s *serviceImpl) getPolicy(ctx context.Context, id string) (*storage.Policy
 		return nil, errors.Wrapf(errox.NotFound, "policy with ID '%s' does not exist", id)
 	}
 	if len(policy.GetCategories()) == 0 {
-		policy.Categories = []string{uncategorizedCategory}
+		policy.SetCategories([]string{uncategorizedCategory})
 	}
 	return policy, nil
 }
@@ -160,19 +161,19 @@ func (s *serviceImpl) getPolicy(ctx context.Context, id string) (*storage.Policy
 func convertPoliciesToListPolicies(policies []*storage.Policy) []*storage.ListPolicy {
 	listPolicies := make([]*storage.ListPolicy, 0, len(policies))
 	for _, p := range policies {
-		listPolicies = append(listPolicies, &storage.ListPolicy{
-			Id:              p.GetId(),
-			Name:            p.GetName(),
-			Description:     p.GetDescription(),
-			Severity:        p.GetSeverity(),
-			Disabled:        p.GetDisabled(),
-			LifecycleStages: p.GetLifecycleStages(),
-			Notifiers:       p.GetNotifiers(),
-			LastUpdated:     p.GetLastUpdated(),
-			EventSource:     p.GetEventSource(),
-			IsDefault:       p.GetIsDefault(),
-			Source:          p.GetSource(),
-		})
+		lp := &storage.ListPolicy{}
+		lp.SetId(p.GetId())
+		lp.SetName(p.GetName())
+		lp.SetDescription(p.GetDescription())
+		lp.SetSeverity(p.GetSeverity())
+		lp.SetDisabled(p.GetDisabled())
+		lp.SetLifecycleStages(p.GetLifecycleStages())
+		lp.SetNotifiers(p.GetNotifiers())
+		lp.SetLastUpdated(p.GetLastUpdated())
+		lp.SetEventSource(p.GetEventSource())
+		lp.SetIsDefault(p.GetIsDefault())
+		lp.SetSource(p.GetSource())
+		listPolicies = append(listPolicies, lp)
 	}
 	return listPolicies
 }
@@ -187,9 +188,8 @@ func (s *serviceImpl) ListPolicies(ctx context.Context, request *v1.RawQuery) (*
 	// Fill in pagination.
 	pagination := request.GetPagination()
 	if request.GetPagination() == nil {
-		pagination = &v1.Pagination{
-			Limit: maxPoliciesReturned,
-		}
+		pagination = &v1.Pagination{}
+		pagination.SetLimit(maxPoliciesReturned)
 	}
 	paginated.FillPagination(parsedQuery, pagination, maxPoliciesReturned)
 
@@ -197,7 +197,7 @@ func (s *serviceImpl) ListPolicies(ctx context.Context, request *v1.RawQuery) (*
 	if err != nil {
 		return nil, err
 	}
-	resp.Policies = convertPoliciesToListPolicies(policies)
+	resp.SetPolicies(convertPoliciesToListPolicies(policies))
 
 	return resp, nil
 }
@@ -226,7 +226,7 @@ func (s *serviceImpl) addOrUpdatePolicy(ctx context.Context, request *storage.Po
 		return nil, err
 	}
 
-	request.LastUpdated = protoconv.ConvertTimeToTimestamp(time.Now())
+	request.SetLastUpdated(protoconv.ConvertTimeToTimestamp(time.Now()))
 	if err := updateFunc(ctx, request); err != nil {
 		return nil, err
 	}
@@ -254,7 +254,7 @@ func (s *serviceImpl) addPolicyToStoreAndSetID(ctx context.Context, p *storage.P
 	if err != nil {
 		return err
 	}
-	p.Id = id
+	p.SetId(id)
 	return nil
 }
 
@@ -270,12 +270,11 @@ func (s *serviceImpl) GetPolicyMitreVectors(ctx context.Context, request *v1.Get
 		return nil, errors.Wrapf(err, "fetching MITRE ATT&CK vectors for policy %q", request.GetId())
 	}
 
-	resp := &v1.GetPolicyMitreVectorsResponse{
-		Vectors: fullVectors,
-	}
+	resp := &v1.GetPolicyMitreVectorsResponse{}
+	resp.SetVectors(fullVectors)
 
 	if !request.GetOptions().GetExcludePolicy() {
-		resp.Policy = policy
+		resp.SetPolicy(policy)
 	}
 
 	return resp, nil
@@ -309,8 +308,8 @@ func (s *serviceImpl) PatchPolicy(ctx context.Context, request *v1.PatchPolicyRe
 	if !exists {
 		return nil, errors.Wrapf(errox.NotFound, "Policy with id '%s' not found", request.GetId())
 	}
-	if request.SetDisabled != nil {
-		policy.Disabled = request.GetDisabled()
+	if request.HasSetDisabled() {
+		policy.SetDisabled(request.GetDisabled())
 	}
 
 	return s.PutPolicy(ctx, policy)
@@ -379,9 +378,9 @@ func (s *serviceImpl) SubmitDryRunPolicyJob(ctx context.Context, request *storag
 		return nil, errors.Errorf("failed to add dry-run job: %v", err)
 	}
 
-	return &v1.JobId{
-		JobId: id,
-	}, nil
+	jobId := &v1.JobId{}
+	jobId.SetJobId(id)
+	return jobId, nil
 }
 
 func (s *serviceImpl) QueryDryRunJobStatus(ctx context.Context, jobid *v1.JobId) (*v1.DryRunJobStatusResponse, error) {
@@ -394,9 +393,8 @@ func (s *serviceImpl) QueryDryRunJobStatus(ctx context.Context, jobid *v1.JobId)
 		return nil, err
 	}
 
-	resp := &v1.DryRunJobStatusResponse{
-		Pending: !completed,
-	}
+	resp := &v1.DryRunJobStatusResponse{}
+	resp.SetPending(!completed)
 
 	if completed {
 		resp.Result, _ = res.(*v1.DryRunResponse)
@@ -465,7 +463,7 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 					allAlertsProcessedSig.Signal()
 					return
 				}
-				resp.Alerts = append(resp.Alerts, alert)
+				resp.SetAlerts(append(resp.GetAlerts(), alert))
 			case <-cancelCtx.Done():
 				// context canceled or expired
 				return
@@ -531,7 +529,10 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 				convertedViolations = append(convertedViolations, violations.ProcessViolation.GetMessage())
 			}
 
-			alertChan <- &v1.DryRunResponse_Alert{Deployment: deployment.GetName(), Violations: convertedViolations}
+			da := &v1.DryRunResponse_Alert{}
+			da.SetDeployment(deployment.GetName())
+			da.SetViolations(convertedViolations)
+			alertChan <- da
 		}(id)
 	}
 
@@ -562,7 +563,7 @@ func (s *serviceImpl) GetPolicyCategories(ctx context.Context, _ *v1.Empty) (*v1
 	}
 
 	response := new(v1.PolicyCategoriesResponse)
-	response.Categories = categorySet.AsSlice()
+	response.SetCategories(categorySet.AsSlice())
 	slices.Sort(response.GetCategories())
 
 	return response, nil
@@ -635,7 +636,7 @@ func (s *serviceImpl) enablePolicyNotification(ctx context.Context, policyID str
 		if notifierSet.Contains(notifierID) {
 			continue
 		}
-		policy.Notifiers = append(policy.Notifiers, notifierID)
+		policy.SetNotifiers(append(policy.GetNotifiers(), notifierID))
 	}
 
 	_, err = s.PutPolicy(ctx, policy)
@@ -680,7 +681,7 @@ func (s *serviceImpl) disablePolicyNotification(ctx context.Context, policyID st
 		notifierSet.Remove(notifierID)
 	}
 
-	policy.Notifiers = notifierSet.AsSlice()
+	policy.SetNotifiers(notifierSet.AsSlice())
 	_, err = s.PutPolicy(ctx, policy)
 	if err != nil {
 		errorList.AddStringf("policy could not be updated with notifier %v", err)
@@ -720,12 +721,12 @@ func (s *serviceImpl) ExportPolicies(ctx context.Context, request *v1.ExportPoli
 	errDetails := &v1.PolicyOperationErrorList{}
 	for _, missingIndex := range missingIndices {
 		policyID := request.GetPolicyIds()[missingIndex]
-		errDetails.Errors = append(errDetails.Errors, &v1.PolicyOperationError{
-			PolicyId: policyID,
-			Error: &v1.PolicyError{
-				Error: "not found",
-			},
-		})
+		pe := &v1.PolicyError{}
+		pe.SetError("not found")
+		poe := &v1.PolicyOperationError{}
+		poe.SetPolicyId(policyID)
+		poe.SetError(pe)
+		errDetails.SetErrors(append(errDetails.GetErrors(), poe))
 		log.Warnf("A policy error occurred for id %s: not found", policyID)
 
 	}
@@ -740,18 +741,18 @@ func (s *serviceImpl) ExportPolicies(ctx context.Context, request *v1.ExportPoli
 	for _, policy := range policyList {
 		removeInternal(policy)
 	}
-	return &storage.ExportPoliciesResponse{
-		Policies: policyList,
-	}, nil
+	epr := &storage.ExportPoliciesResponse{}
+	epr.SetPolicies(policyList)
+	return epr, nil
 }
 
 func removeInternal(policy *storage.Policy) {
 	if policy == nil {
 		return
 	}
-	policy.SORTLifecycleStage = ""
-	policy.SORTEnforcement = false
-	policy.SORTName = ""
+	policy.SetSORTLifecycleStage("")
+	policy.SetSORTEnforcement(false)
+	policy.SetSORTName("")
 }
 
 func (s *serviceImpl) convertAndValidateForImport(p *storage.Policy) error {
@@ -790,15 +791,15 @@ func (s *serviceImpl) ImportPolicies(ctx context.Context, request *v1.ImportPoli
 	for _, importResponse := range importResponses {
 		if importResponse.GetSucceeded() {
 			if err := s.addActivePolicy(importResponse.GetPolicy()); err != nil {
-				importResponse.Succeeded = false
-				importResponse.Errors = append(importResponse.GetErrors(), &v1.ImportPolicyError{
-					Message: errors.Wrap(err, "Policy could not be imported due to").Error(),
-					Type:    policies.ErrImportUnknown,
-				})
+				importResponse.SetSucceeded(false)
+				ipe := &v1.ImportPolicyError{}
+				ipe.SetMessage(errors.Wrap(err, "Policy could not be imported due to").Error())
+				ipe.SetType(policies.ErrImportUnknown)
+				importResponse.SetErrors(append(importResponse.GetErrors(), ipe))
 			}
 		}
 		// Clone here because this may be the same object stored by the DB
-		importResponse.Policy = importResponse.GetPolicy().CloneVT()
+		importResponse.SetPolicy(importResponse.GetPolicy().CloneVT())
 		removeInternal(importResponse.GetPolicy())
 	}
 
@@ -807,26 +808,24 @@ func (s *serviceImpl) ImportPolicies(ctx context.Context, request *v1.ImportPoli
 	}
 
 	responses = append(responses, importResponses...)
-	return &v1.ImportPoliciesResponse{
-		Responses:    responses,
-		AllSucceeded: allValidationSucceeded && allImportsSucceeded,
-	}, nil
+	ipr := &v1.ImportPoliciesResponse{}
+	ipr.SetResponses(responses)
+	ipr.SetAllSucceeded(allValidationSucceeded && allImportsSucceeded)
+	return ipr, nil
 }
 
 func makeValidationError(policy *storage.Policy, err error) *v1.ImportPolicyResponse {
-	return &v1.ImportPolicyResponse{
-		Succeeded: false,
-		Policy:    policy,
-		Errors: []*v1.ImportPolicyError{
-			{
-				Message: "Invalid policy",
-				Type:    policies.ErrImportValidation,
-				Metadata: &v1.ImportPolicyError_ValidationError{
-					ValidationError: err.Error(),
-				},
-			},
-		},
-	}
+	ipr := &v1.ImportPolicyResponse{}
+	ipr.SetSucceeded(false)
+	ipr.SetPolicy(policy)
+	ipr.SetErrors([]*v1.ImportPolicyError{
+		v1.ImportPolicyError_builder{
+			Message:         "Invalid policy",
+			Type:            policies.ErrImportValidation,
+			ValidationError: proto.String(err.Error()),
+		}.Build(),
+	})
+	return ipr
 }
 
 func (s *serviceImpl) PolicyFromSearch(ctx context.Context, request *v1.PolicyFromSearchRequest) (*v1.PolicyFromSearchResponse, error) {
@@ -835,13 +834,12 @@ func (s *serviceImpl) PolicyFromSearch(ctx context.Context, request *v1.PolicyFr
 		return nil, errors.Wrap(err, "error creating policy from search string")
 	}
 
-	response := &v1.PolicyFromSearchResponse{
-		Policy:             policy,
-		HasNestedFields:    hasNestedFields,
-		AlteredSearchTerms: make([]string, 0, len(unconvertableCriteria)),
-	}
+	response := &v1.PolicyFromSearchResponse{}
+	response.SetPolicy(policy)
+	response.SetHasNestedFields(hasNestedFields)
+	response.SetAlteredSearchTerms(make([]string, 0, len(unconvertableCriteria)))
 	for _, fieldName := range unconvertableCriteria {
-		response.AlteredSearchTerms = append(response.AlteredSearchTerms, fieldName.String())
+		response.SetAlteredSearchTerms(append(response.GetAlteredSearchTerms(), fieldName.String()))
 	}
 	return response, nil
 }
@@ -921,36 +919,35 @@ func (s *serviceImpl) makePolicyFromFieldMap(ctx context.Context, fieldMap map[s
 
 	policyGroups := flattenPolicyGroupMap(policyGroupMap)
 
-	policy := &storage.Policy{
-		PolicyVersion: policyversion.CurrentVersion().String(),
-	}
+	policy := &storage.Policy{}
+	policy.SetPolicyVersion(policyversion.CurrentVersion().String())
 	if len(scopes) > 0 {
-		policy.Scope = scopes
+		policy.SetScope(scopes)
 	}
 	if len(policyGroups) > 0 {
-		policy.PolicySections = []*storage.PolicySection{
-			{
-				PolicyGroups: policyGroups,
-			},
-		}
+		ps := &storage.PolicySection{}
+		ps.SetPolicyGroups(policyGroups)
+		policy.SetPolicySections([]*storage.PolicySection{
+			ps,
+		})
 	}
 
 	// We have to add and remove a policy name because the BPL validator requires a policy name for these checks
-	policy.Name = "Policy from Search"
+	policy.SetName("Policy from Search")
 
 	for _, group := range policyGroups {
 		// Only check for Deployment event fields since audit log fields are not searchable anyways.
 		if booleanpolicy.FieldMetadataSingleton().IsDeploymentEventField(group.GetFieldName()) {
-			policy.EventSource = storage.EventSource_DEPLOYMENT_EVENT
+			policy.SetEventSource(storage.EventSource_DEPLOYMENT_EVENT)
 			break
 		}
 	}
 
 	if lifecycleStages := s.validator.getAllowedLifecyclesForPolicy(policy); len(lifecycleStages) > 0 {
-		policy.LifecycleStages = lifecycleStages
+		policy.SetLifecycleStages(lifecycleStages)
 	}
 
-	policy.Name = ""
+	policy.SetName("")
 	return policy, unconvertableFields, nil
 }
 
@@ -983,18 +980,17 @@ func (s *serviceImpl) makeScopes(ctx context.Context, fieldMap map[search.FieldL
 		labelKey, labelValue := stringutils.Split2(label, "=")
 		var labelObject *storage.Scope_Label
 		if labelKey != "" || labelValue != "" {
-			labelObject = &storage.Scope_Label{
-				Key:   labelKey,
-				Value: labelValue,
-			}
+			labelObject = &storage.Scope_Label{}
+			labelObject.SetKey(labelKey)
+			labelObject.SetValue(labelValue)
 		}
 		for _, clusterID := range clusterIDs {
 			for _, namespace := range namespaces {
-				scopes = append(scopes, &storage.Scope{
-					Cluster:   clusterID,
-					Namespace: namespace,
-					Label:     labelObject,
-				})
+				scope := &storage.Scope{}
+				scope.SetCluster(clusterID)
+				scope.SetNamespace(namespace)
+				scope.SetLabel(labelObject)
+				scopes = append(scopes, scope)
 			}
 		}
 	}
@@ -1049,10 +1045,10 @@ func flattenPolicyGroupMap(policyGroupMap map[string][]*storage.PolicyGroup) []*
 		}
 		combinedValues := combinePolicyValues(policyValueLists)
 
-		policyGroupList = append(policyGroupList, &storage.PolicyGroup{
-			FieldName: groupName,
-			Values:    combinedValues,
-		})
+		pg := &storage.PolicyGroup{}
+		pg.SetFieldName(groupName)
+		pg.SetValues(combinedValues)
+		policyGroupList = append(policyGroupList, pg)
 	}
 	return policyGroupList
 }
@@ -1083,9 +1079,9 @@ func combinePolicyValues(policyValues []*storage.PolicyValue) []*storage.PolicyV
 	combinations := combineStrings(partsToCombine)
 	values := make([]*storage.PolicyValue, len(combinations))
 	for i, combination := range combinations {
-		values[i] = &storage.PolicyValue{
-			Value: combination,
-		}
+		pv := &storage.PolicyValue{}
+		pv.SetValue(combination)
+		values[i] = pv
 	}
 
 	return values

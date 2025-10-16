@@ -10,12 +10,11 @@ import (
 )
 
 func TestClone(t *testing.T) {
-	m1 := &storage.NamespaceMetadata{
-		Id:          testconsts.NamespaceA,
-		Name:        "Namespace A",
-		ClusterId:   testconsts.Cluster1,
-		ClusterName: "Cluster 1",
-	}
+	m1 := &storage.NamespaceMetadata{}
+	m1.SetId(testconsts.NamespaceA)
+	m1.SetName("Namespace A")
+	m1.SetClusterId(testconsts.Cluster1)
+	m1.SetClusterName("Cluster 1")
 
 	cloned := Clone(m1)
 
@@ -25,17 +24,16 @@ func TestClone(t *testing.T) {
 	// to the original struct.
 	clonedNamespace, casted := cloned.(*storage.NamespaceMetadata)
 	assert.True(t, casted)
-	clonedNamespace.Name = "Namespace AA"
+	clonedNamespace.SetName("Namespace AA")
 	assert.False(t, m1.EqualVT(cloned.(*storage.NamespaceMetadata)))
 }
 
 func TestMarshalTextString(t *testing.T) {
-	msg := &storage.NamespaceMetadata{
-		Id:          testconsts.NamespaceA,
-		Name:        "Namespace A",
-		ClusterId:   testconsts.Cluster1,
-		ClusterName: "Cluster 1",
-	}
+	msg := &storage.NamespaceMetadata{}
+	msg.SetId(testconsts.NamespaceA)
+	msg.SetName("Namespace A")
+	msg.SetClusterId(testconsts.Cluster1)
+	msg.SetClusterName("Cluster 1")
 	asString := MarshalTextString(msg)
 
 	// String output is not guarantied.
@@ -52,15 +50,13 @@ func TestMarshalTextString(t *testing.T) {
 }
 
 func TestMerge(t *testing.T) {
-	msgDst := &storage.NamespaceMetadata{
-		Id:          testconsts.NamespaceA,
-		ClusterName: "Cluster 1",
-	}
+	msgDst := &storage.NamespaceMetadata{}
+	msgDst.SetId(testconsts.NamespaceA)
+	msgDst.SetClusterName("Cluster 1")
 
-	msgSrc := &storage.NamespaceMetadata{
-		Name:        "Namespace A",
-		ClusterName: "Cluster 2",
-	}
+	msgSrc := &storage.NamespaceMetadata{}
+	msgSrc.SetName("Namespace A")
+	msgSrc.SetClusterName("Cluster 2")
 
 	Merge(msgDst, msgSrc)
 
@@ -78,12 +74,11 @@ func TestMarshalMap(t *testing.T) {
 		"name":        "Namespace A",
 	}
 
-	msg := &storage.NamespaceMetadata{
-		Id:          testconsts.NamespaceA,
-		Name:        "Namespace A",
-		ClusterId:   testconsts.Cluster1,
-		ClusterName: "Cluster 1",
-	}
+	msg := &storage.NamespaceMetadata{}
+	msg.SetId(testconsts.NamespaceA)
+	msg.SetName("Namespace A")
+	msg.SetClusterId(testconsts.Cluster1)
+	msg.SetClusterName("Cluster 1")
 
 	marshalled, err := MarshalMap(msg)
 	require.NoError(t, err)

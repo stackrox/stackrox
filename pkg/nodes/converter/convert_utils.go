@@ -9,7 +9,7 @@ func FillV2NodeVulnerabilities(node *storage.Node) {
 	for _, component := range node.GetScan().GetComponents() {
 		for _, vuln := range component.GetVulns() {
 			nodeVuln := EmbeddedVulnerabilityToNodeVulnerability(vuln)
-			component.Vulnerabilities = append(component.Vulnerabilities, nodeVuln)
+			component.SetVulnerabilities(append(component.GetVulnerabilities(), nodeVuln))
 		}
 	}
 }
@@ -18,34 +18,31 @@ func FillV2NodeVulnerabilities(node *storage.Node) {
 func MoveNodeVulnsToNewField(node *storage.Node) {
 	FillV2NodeVulnerabilities(node)
 	for _, component := range node.GetScan().GetComponents() {
-		component.Vulns = nil
+		component.SetVulns(nil)
 	}
 }
 
 // EmbeddedVulnerabilityToNodeVulnerability converts a *storage.EmbeddedVulnerability object to a *storage.NodeVulnerability one.
 func EmbeddedVulnerabilityToNodeVulnerability(vuln *storage.EmbeddedVulnerability) *storage.NodeVulnerability {
-	ret := &storage.NodeVulnerability{
-		CveBaseInfo: &storage.CVEInfo{
-			Cve:          vuln.GetCve(),
-			Summary:      vuln.GetSummary(),
-			Link:         vuln.GetLink(),
-			PublishedOn:  vuln.GetPublishedOn(),
-			CreatedAt:    vuln.GetFirstSystemOccurrence(),
-			LastModified: vuln.GetLastModified(),
-			CvssV3:       vuln.GetCvssV3(),
-			CvssV2:       vuln.GetCvssV2(),
-			ScoreVersion: cveInfoScoreVersion(vuln.GetScoreVersion()),
-		},
-		Cvss:         vuln.GetCvss(),
-		Severity:     vuln.GetSeverity(),
-		Snoozed:      vuln.GetSuppressed(),
-		SnoozeStart:  vuln.GetSuppressActivation(),
-		SnoozeExpiry: vuln.GetSuppressExpiry(),
-	}
+	cVEInfo := &storage.CVEInfo{}
+	cVEInfo.SetCve(vuln.GetCve())
+	cVEInfo.SetSummary(vuln.GetSummary())
+	cVEInfo.SetLink(vuln.GetLink())
+	cVEInfo.SetPublishedOn(vuln.GetPublishedOn())
+	cVEInfo.SetCreatedAt(vuln.GetFirstSystemOccurrence())
+	cVEInfo.SetLastModified(vuln.GetLastModified())
+	cVEInfo.SetCvssV3(vuln.GetCvssV3())
+	cVEInfo.SetCvssV2(vuln.GetCvssV2())
+	cVEInfo.SetScoreVersion(cveInfoScoreVersion(vuln.GetScoreVersion()))
+	ret := &storage.NodeVulnerability{}
+	ret.SetCveBaseInfo(cVEInfo)
+	ret.SetCvss(vuln.GetCvss())
+	ret.SetSeverity(vuln.GetSeverity())
+	ret.SetSnoozed(vuln.GetSuppressed())
+	ret.SetSnoozeStart(vuln.GetSuppressActivation())
+	ret.SetSnoozeExpiry(vuln.GetSuppressExpiry())
 	if vuln.GetSetFixedBy() != nil {
-		ret.SetFixedBy = &storage.NodeVulnerability_FixedBy{
-			FixedBy: vuln.GetFixedBy(),
-		}
+		ret.Set_FixedBy(vuln.GetFixedBy())
 	}
 	return ret
 }

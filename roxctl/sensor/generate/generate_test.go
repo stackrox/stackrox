@@ -56,14 +56,14 @@ func (m *mockClustersServiceServer) PostCluster(_ context.Context, cluster *stor
 
 func (m *mockClustersServiceServer) GetClusters(_ context.Context, _ *v1.GetClustersRequest) (*v1.ClustersList, error) {
 	m.getClusterCalled = true
-	return &v1.ClustersList{
-		Clusters: []*storage.Cluster{
-			{
-				Name: "test-cluster",
-				Id:   "cluster-id",
-			},
-		},
-	}, nil
+	cluster := &storage.Cluster{}
+	cluster.SetName("test-cluster")
+	cluster.SetId("cluster-id")
+	cl := &v1.ClustersList{}
+	cl.SetClusters([]*storage.Cluster{
+		cluster,
+	})
+	return cl, nil
 }
 
 type sensorGenerateTestSuite struct {
@@ -132,9 +132,9 @@ var emptyGetBundle = func(params apiparams.ClusterZip, _ string, _ time.Duration
 
 func legacyKernelSupport(flag bool) func() (*v1.KernelSupportAvailableResponse, error) {
 	return func() (*v1.KernelSupportAvailableResponse, error) {
-		return &v1.KernelSupportAvailableResponse{
-			KernelSupportAvailable: flag,
-		}, nil
+		ksar := &v1.KernelSupportAvailableResponse{}
+		ksar.SetKernelSupportAvailable(flag)
+		return ksar, nil
 	}
 }
 
@@ -146,18 +146,18 @@ func getDefaultsUnimplemented() func() (*v1.ClusterDefaultsResponse, error) {
 
 func getDefaultsFake(kernelSupport bool) func() (*v1.ClusterDefaultsResponse, error) {
 	return func() (*v1.ClusterDefaultsResponse, error) {
-		return &v1.ClusterDefaultsResponse{
-			KernelSupportAvailable: kernelSupport,
-		}, nil
+		cdr := &v1.ClusterDefaultsResponse{}
+		cdr.SetKernelSupportAvailable(kernelSupport)
+		return cdr, nil
 	}
 }
 
 // postClusterFake base fake function for service.PostCluster that returns the same cluster with fake id
 func postClusterFake(cluster *storage.Cluster) (*v1.ClusterResponse, error) {
-	cluster.Id = "test-id"
-	return &v1.ClusterResponse{
-		Cluster: cluster,
-	}, nil
+	cluster.SetId("test-id")
+	cr := &v1.ClusterResponse{}
+	cr.SetCluster(cluster)
+	return cr, nil
 }
 
 // postClusterAlreadyExistsFake fake function for service.PostCluster that always returns error codes.AlreadyExists
@@ -219,7 +219,7 @@ func (s *sensorGenerateTestSuite) TestHandleClusterAlreadyExists() {
 			// Setup generateCmd
 			generateCmd.timeout = time.Duration(5) * time.Second
 			generateCmd.continueIfExists = testCase.continueIfExistsFlag
-			generateCmd.cluster.Name = testCase.clusterName
+			generateCmd.cluster.SetName(testCase.clusterName)
 			getBundleCalled := false
 			generateCmd.getBundleFn = func(_ apiparams.ClusterZip, _ string, _ time.Duration, _ environment.Environment) error {
 				getBundleCalled = true
@@ -271,7 +271,7 @@ func (s *sensorGenerateTestSuite) TestMainImageDefaultAndOverride() {
 			// Setup generateCmd
 			generateCmd.timeout = time.Duration(5) * time.Second
 			generateCmd.getBundleFn = emptyGetBundle
-			generateCmd.cluster.MainImage = testCase.mainImageOverride
+			generateCmd.cluster.SetMainImage(testCase.mainImageOverride)
 
 			// Create cluster
 			err := generateCmd.fullClusterCreation()

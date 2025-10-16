@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/sensor/common/cloudproviders/gcp"
 	registryMetrics "github.com/stackrox/rox/sensor/common/registry/metrics"
+	"google.golang.org/protobuf/proto"
 )
 
 const defaultSA = "default"
@@ -172,19 +173,17 @@ func createImageIntegration(host string, dce config.DockerConfigEntry, name stri
 		registryType = types.RedHatType
 	}
 
-	return &storage.ImageIntegration{
-		Id:         name,
-		Name:       name,
-		Type:       registryType,
-		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
-		IntegrationConfig: &storage.ImageIntegration_Docker{
-			Docker: &storage.DockerConfig{
-				Endpoint: host,
-				Username: dce.Username,
-				Password: dce.Password,
-			},
-		},
-	}
+	dc := &storage.DockerConfig{}
+	dc.SetEndpoint(host)
+	dc.SetUsername(dce.Username)
+	dc.SetPassword(dce.Password)
+	ii := &storage.ImageIntegration{}
+	ii.SetId(name)
+	ii.SetName(name)
+	ii.SetType(registryType)
+	ii.SetCategories([]storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY})
+	ii.SetDocker(proto.ValueOrDefault(dc))
+	return ii
 }
 
 // genIntegrationName returns a string to use as an integration name. It's meant to aid in identifying where

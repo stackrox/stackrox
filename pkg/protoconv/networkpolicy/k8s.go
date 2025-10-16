@@ -54,21 +54,21 @@ func (np KubernetesNetworkPolicyWrap) ToYaml() (string, error) {
 // ToRoxNetworkPolicy converts a k8s network policy to a proto network policy
 // This code allows for our tests to call the conversion on k8s network policies
 func (np KubernetesNetworkPolicyWrap) ToRoxNetworkPolicy() *storage.NetworkPolicy {
-	return &storage.NetworkPolicy{
-		Id:          string(np.GetUID()),
-		Name:        np.GetName(),
-		Namespace:   np.GetNamespace(),
-		Labels:      np.GetLabels(),
-		Annotations: np.GetAnnotations(),
-		Created:     protoconv.ConvertTimeToTimestamp(np.GetCreationTimestamp().Time),
-		ApiVersion:  np.APIVersion,
-		Spec: &storage.NetworkPolicySpec{
-			PodSelector: np.convertSelector(&np.Spec.PodSelector),
-			Ingress:     np.convertIngressRules(np.Spec.Ingress),
-			Egress:      np.convertEgressRules(np.Spec.Egress),
-			PolicyTypes: k8sPolicyTypesToRox(&np.Spec),
-		},
-	}
+	nps := &storage.NetworkPolicySpec{}
+	nps.SetPodSelector(np.convertSelector(&np.Spec.PodSelector))
+	nps.SetIngress(np.convertIngressRules(np.Spec.Ingress))
+	nps.SetEgress(np.convertEgressRules(np.Spec.Egress))
+	nps.SetPolicyTypes(k8sPolicyTypesToRox(&np.Spec))
+	np2 := &storage.NetworkPolicy{}
+	np2.SetId(string(np.GetUID()))
+	np2.SetName(np.GetName())
+	np2.SetNamespace(np.GetNamespace())
+	np2.SetLabels(np.GetLabels())
+	np2.SetAnnotations(np.GetAnnotations())
+	np2.SetCreated(protoconv.ConvertTimeToTimestamp(np.GetCreationTimestamp().Time))
+	np2.SetApiVersion(np.APIVersion)
+	np2.SetSpec(nps)
+	return np2
 }
 
 func (np KubernetesNetworkPolicyWrap) convertSelector(sel *k8sMetaV1.LabelSelector) *storage.LabelSelector {
@@ -97,19 +97,14 @@ func (np KubernetesNetworkPolicyWrap) convertProtocol(p *k8sCoreV1.Protocol) sto
 func (np KubernetesNetworkPolicyWrap) convertPorts(k8sPorts []networkingV1.NetworkPolicyPort) []*storage.NetworkPolicyPort {
 	ports := make([]*storage.NetworkPolicyPort, 0, len(k8sPorts))
 	for _, p := range k8sPorts {
-		netPolPort := &storage.NetworkPolicyPort{
-			Protocol: np.convertProtocol(p.Protocol),
-		}
+		netPolPort := &storage.NetworkPolicyPort{}
+		netPolPort.SetProtocol(np.convertProtocol(p.Protocol))
 		if p.Port != nil {
 			switch p.Port.Type {
 			case intstr.Int:
-				netPolPort.PortRef = &storage.NetworkPolicyPort_Port{
-					Port: p.Port.IntVal,
-				}
+				netPolPort.SetPort(p.Port.IntVal)
 			case intstr.String:
-				netPolPort.PortRef = &storage.NetworkPolicyPort_PortName{
-					PortName: p.Port.StrVal,
-				}
+				netPolPort.SetPortName(p.Port.StrVal)
 			default:
 				utils.Should(errors.Errorf(
 					"UNEXPECTED: port IntOrStr %+v is neither int nor string, treating as no port spec", p.Port))
@@ -124,20 +119,20 @@ func (np KubernetesNetworkPolicyWrap) convertIPBlock(ipBlock *networkingV1.IPBlo
 	if ipBlock == nil {
 		return nil
 	}
-	return &storage.IPBlock{
-		Cidr:   ipBlock.CIDR,
-		Except: ipBlock.Except,
-	}
+	iPBlock := &storage.IPBlock{}
+	iPBlock.SetCidr(ipBlock.CIDR)
+	iPBlock.SetExcept(ipBlock.Except)
+	return iPBlock
 }
 
 func (np KubernetesNetworkPolicyWrap) convertNetworkPolicyPeer(k8sPeers []networkingV1.NetworkPolicyPeer) []*storage.NetworkPolicyPeer {
 	peers := make([]*storage.NetworkPolicyPeer, 0, len(k8sPeers))
 	for _, peer := range k8sPeers {
-		peers = append(peers, &storage.NetworkPolicyPeer{
-			PodSelector:       np.convertSelector(peer.PodSelector),
-			NamespaceSelector: np.convertSelector(peer.NamespaceSelector),
-			IpBlock:           np.convertIPBlock(peer.IPBlock),
-		})
+		npp := &storage.NetworkPolicyPeer{}
+		npp.SetPodSelector(np.convertSelector(peer.PodSelector))
+		npp.SetNamespaceSelector(np.convertSelector(peer.NamespaceSelector))
+		npp.SetIpBlock(np.convertIPBlock(peer.IPBlock))
+		peers = append(peers, npp)
 	}
 	return peers
 }
@@ -148,10 +143,10 @@ func (np KubernetesNetworkPolicyWrap) convertIngressRules(k8sIngressRules []netw
 	}
 	ingressRules := make([]*storage.NetworkPolicyIngressRule, 0, len(k8sIngressRules))
 	for _, rule := range k8sIngressRules {
-		ingressRules = append(ingressRules, &storage.NetworkPolicyIngressRule{
-			Ports: np.convertPorts(rule.Ports),
-			From:  np.convertNetworkPolicyPeer(rule.From),
-		})
+		npir := &storage.NetworkPolicyIngressRule{}
+		npir.SetPorts(np.convertPorts(rule.Ports))
+		npir.SetFrom(np.convertNetworkPolicyPeer(rule.From))
+		ingressRules = append(ingressRules, npir)
 	}
 	return ingressRules
 }
@@ -162,10 +157,10 @@ func (np KubernetesNetworkPolicyWrap) convertEgressRules(k8sEgressRules []networ
 	}
 	egressRules := make([]*storage.NetworkPolicyEgressRule, 0, len(k8sEgressRules))
 	for _, rule := range k8sEgressRules {
-		egressRules = append(egressRules, &storage.NetworkPolicyEgressRule{
-			Ports: np.convertPorts(rule.Ports),
-			To:    np.convertNetworkPolicyPeer(rule.To),
-		})
+		nper := &storage.NetworkPolicyEgressRule{}
+		nper.SetPorts(np.convertPorts(rule.Ports))
+		nper.SetTo(np.convertNetworkPolicyPeer(rule.To))
+		egressRules = append(egressRules, nper)
 	}
 	return egressRules
 }

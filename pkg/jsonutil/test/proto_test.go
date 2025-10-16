@@ -56,6 +56,6 @@ func TestMarshalString(t *testing.T) {
 
 func alert() *storage.Alert {
 	input := fixtures.GetAlert()
-	input.Time = protocompat.GetProtoTimestampZero()
+	input.SetTime(protocompat.GetProtoTimestampZero())
 	return input
 }

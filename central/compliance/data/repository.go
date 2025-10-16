@@ -202,10 +202,9 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 	clusterID := r.cluster.GetId()
 
 	clusterQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
-	infPagination := &v1.QueryPagination{
-		Limit: math.MaxInt32,
-	}
-	clusterQuery.Pagination = infPagination
+	infPagination := &v1.QueryPagination{}
+	infPagination.SetLimit(math.MaxInt32)
+	clusterQuery.SetPagination(infPagination)
 
 	networkPolicies, err := f.networkPoliciesStore.GetNetworkPolicies(ctx, clusterID, "")
 	if err != nil {
@@ -255,7 +254,7 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 	}
 
 	hasIndicatorsQuery := clusterQuery.CloneVT()
-	hasIndicatorsQuery.Pagination.Limit = 1
+	hasIndicatorsQuery.GetPagination().SetLimit(1)
 	result, err := f.processIndicatorStore.Search(ctx, hasIndicatorsQuery)
 	if err != nil {
 		return err
@@ -297,7 +296,7 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 		clusterQuery,
 		search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery(),
 	)
-	alertQuery.Pagination = infPagination
+	alertQuery.SetPagination(infPagination)
 	r.unresolvedAlerts, err = f.alertStore.SearchListAlerts(ctx, alertQuery, true)
 	if err != nil {
 		return err
@@ -340,7 +339,7 @@ func (r *repository) AddHostScrapedData(scrapeResults map[string]*compliance.Com
 	// Flatten the files so we can do direct lookups on the nested values
 	for _, n := range scrapeResults {
 		totalNodeFiles := data.FlattenFileMap(n.GetFiles())
-		n.Files = totalNodeFiles
+		n.SetFiles(totalNodeFiles)
 	}
 
 	r.hostScrape = scrapeResults

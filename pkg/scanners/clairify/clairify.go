@@ -252,13 +252,13 @@ func convertLayerToImageScan(image *storage.Image, layerEnvelope *clairV1.LayerE
 	}
 
 	os := stringutils.OrDefault(layerEnvelope.Layer.NamespaceName, "unknown")
-	return &storage.ImageScan{
-		OperatingSystem: os,
-		ScanTime:        protocompat.TimestampNow(),
-		ScannerVersion:  layerEnvelope.ScannerVersion,
-		Components:      clairConv.ConvertFeatures(image, layerEnvelope.Layer.Features, os),
-		Notes:           notes,
-	}
+	imageScan := &storage.ImageScan{}
+	imageScan.SetOperatingSystem(os)
+	imageScan.SetScanTime(protocompat.TimestampNow())
+	imageScan.SetScannerVersion(layerEnvelope.ScannerVersion)
+	imageScan.SetComponents(clairConv.ConvertFeatures(image, layerEnvelope.Layer.Features, os))
+	imageScan.SetNotes(notes)
+	return imageScan
 }
 
 func isPartialScan(notes set.StringSet) bool {
@@ -508,9 +508,9 @@ func (c *clairify) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
 		return nil, err
 	}
 
-	return &v1.VulnDefinitionsInfo{
-		LastUpdatedTimestamp: info.GetLastUpdatedTime(),
-	}, nil
+	vdi := &v1.VulnDefinitionsInfo{}
+	vdi.SetLastUpdatedTimestamp(info.GetLastUpdatedTime())
+	return vdi, nil
 }
 
 // OrchestratorScannerCreator provides creator for OrchestratorScanner

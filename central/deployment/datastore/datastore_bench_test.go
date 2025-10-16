@@ -27,7 +27,7 @@ func BenchmarkSearchAllDeployments(b *testing.B) {
 		if i > 0 && i%100 == 0 {
 			fmt.Println("Added", i, "deployments")
 		}
-		deploymentPrototype.Id = uuid.NewV4().String()
+		deploymentPrototype.SetId(uuid.NewV4().String())
 		require.NoError(b, deploymentsDatastore.UpsertDeployment(ctx, deploymentPrototype))
 	}
 

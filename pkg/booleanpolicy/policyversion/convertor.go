@@ -30,7 +30,7 @@ func EnsureConvertedTo(p *storage.Policy, toVersion PolicyVersion) error {
 	// NOTE: This will be removed soon, and we will prevent anyone from making an API call without version set
 	// This is an intermediate step.
 	if ver.String() == legacyVersion {
-		p.PolicyVersion = version1_1
+		p.SetPolicyVersion(version1_1)
 	}
 
 	switch diff := Compare(ver, toVersion); {

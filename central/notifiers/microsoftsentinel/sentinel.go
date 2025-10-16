@@ -226,24 +226,23 @@ func (s sentinel) Test(ctx context.Context) *notifiers.NotifierError {
 }
 
 func (s sentinel) getTestAuditLogMessage() *v1.Audit_Message {
-	return &v1.Audit_Message{
-		Request: &v1.Audit_Message_Request{
-			Endpoint: "test-endpoint",
-			Method:   "GET",
-		},
-	}
+	amr := &v1.Audit_Message_Request{}
+	amr.SetEndpoint("test-endpoint")
+	amr.SetMethod("GET")
+	am := &v1.Audit_Message{}
+	am.SetRequest(amr)
+	return am
 }
 
 func (s sentinel) getTestAlert() *storage.Alert {
-	alert := &storage.Alert{
-		Policy: &storage.Policy{
-			Name:        "test-policy",
-			Description: "Test policy description",
-		},
-		ClusterName: "test-cluster",
-		ClusterId:   uuid.NewDummy().String(),
-		Namespace:   "test-namespace",
-	}
+	policy := &storage.Policy{}
+	policy.SetName("test-policy")
+	policy.SetDescription("Test policy description")
+	alert := &storage.Alert{}
+	alert.SetPolicy(policy)
+	alert.SetClusterName("test-cluster")
+	alert.SetClusterId(uuid.NewDummy().String())
+	alert.SetNamespace("test-namespace")
 	return alert
 }
 

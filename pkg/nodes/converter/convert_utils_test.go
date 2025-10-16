@@ -12,15 +12,15 @@ import (
 func TestNodeVulnConv(t *testing.T) {
 	vuln := &storage.EmbeddedVulnerability{}
 	require.NoError(t, testutils.FullInit(vuln, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-	vuln.SetFixedBy = &storage.EmbeddedVulnerability_FixedBy{FixedBy: "a"}
+	vuln.Set_FixedBy("a")
 
 	nodeVuln := &storage.NodeVulnerability{}
 	require.NoError(t, testutils.FullInit(nodeVuln, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
-	nodeVuln.SetFixedBy = &storage.NodeVulnerability_FixedBy{FixedBy: "a"}
+	nodeVuln.Set_FixedBy("a")
 	// EmbeddedVulns do not have a reference field.
-	nodeVuln.CveBaseInfo.References = nil
-	nodeVuln.CveBaseInfo.CvssMetrics = nil
-	nodeVuln.CveBaseInfo.Epss = nil
+	nodeVuln.GetCveBaseInfo().SetReferences(nil)
+	nodeVuln.GetCveBaseInfo().SetCvssMetrics(nil)
+	nodeVuln.GetCveBaseInfo().ClearEpss()
 	embedvuln := EmbeddedVulnerabilityToNodeVulnerability(vuln)
 	protoassert.Equal(t, nodeVuln, embedvuln)
 }

@@ -376,20 +376,20 @@ func clusterIDsToNegationQuery(clusterIDSet set.FrozenStringSet) *v1.Query {
 	} else {
 		// Manually generating a disjunction because search.DisjunctionQuery returns a v1.Query if there's only thing it's matching on
 		// which then results in a nil disjunction inside boolean query. That means this search will match everything.
-		mustNot = (&v1.Query{
-			Query: &v1.Query_Disjunction{Disjunction: &v1.DisjunctionQuery{
+		mustNot = (v1.Query_builder{
+			Disjunction: v1.DisjunctionQuery_builder{
 				Queries: []*v1.Query{search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterIDSet.AsSlice()...).ProtoQuery()},
-			}},
-		}).GetDisjunction()
+			}.Build(),
+		}.Build()).GetDisjunction()
 	}
 
-	must := (&v1.Query{
+	must := (v1.Query_builder{
 		// Similar to disjunction, conjunction needs multiple queries, or it has to be manually created
 		// Unlike disjunction, if there's only one query when the boolean query is used it will panic
-		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
+		Conjunction: v1.ConjunctionQuery_builder{
 			Queries: []*v1.Query{search.NewQueryBuilder().AddStrings(search.ClusterID, search.WildcardString).ProtoQuery()},
-		}},
-	}).GetConjunction()
+		}.Build(),
+	}.Build()).GetConjunction()
 
 	return search.NewBooleanQuery(must, mustNot)
 }
@@ -446,12 +446,11 @@ func (g *garbageCollectorImpl) removeOrphanedProcessBaselines(deployments set.Fr
 	defer metrics.SetPruningDuration(time.Now(), "ProcessBaselines")
 	var baselineBatchOffset, prunedProcessBaselines int32
 	for {
-		allQuery := &v1.Query{
-			Pagination: &v1.QueryPagination{
-				Offset: baselineBatchOffset,
-				Limit:  baselineBatchLimit,
-			},
-		}
+		qp := &v1.QueryPagination{}
+		qp.SetOffset(baselineBatchOffset)
+		qp.SetLimit(baselineBatchLimit)
+		allQuery := &v1.Query{}
+		allQuery.SetPagination(qp)
 
 		res, err := g.processbaseline.Search(pruningCtx, allQuery)
 		if err != nil {

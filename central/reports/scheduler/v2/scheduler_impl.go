@@ -285,8 +285,8 @@ func (s *scheduler) SubmitReportRequest(ctx context.Context, request *reportGen.
 		return "", err
 	}
 
-	request.ReportSnapshot.ReportStatus.RunState = storage.ReportStatus_WAITING
-	request.ReportSnapshot.ReportStatus.QueuedAt = protocompat.TimestampNow()
+	request.ReportSnapshot.GetReportStatus().SetRunState(storage.ReportStatus_WAITING)
+	request.ReportSnapshot.GetReportStatus().SetQueuedAt(protocompat.TimestampNow())
 	request.ReportSnapshot.ReportId, err = s.validateAndPersistSnapshot(ctx, request.ReportSnapshot, reSubmission)
 	if err != nil {
 		return "", err

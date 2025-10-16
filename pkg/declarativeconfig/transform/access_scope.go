@@ -27,15 +27,14 @@ func (a *accessScopeTransform) Transform(configuration declarativeconfig.Configu
 	if err != nil {
 		return nil, errox.InvalidArgs.CausedBy(err)
 	}
-	scopeProto := &storage.SimpleAccessScope{
-		Id:          declarativeconfig.NewDeclarativeAccessScopeUUID(scopeConfig.Name).String(),
-		Name:        scopeConfig.Name,
-		Description: scopeConfig.Description,
-		Rules:       rules,
-		Traits: &storage.Traits{
-			Origin: storage.Traits_DECLARATIVE,
-		},
-	}
+	traits := &storage.Traits{}
+	traits.SetOrigin(storage.Traits_DECLARATIVE)
+	scopeProto := &storage.SimpleAccessScope{}
+	scopeProto.SetId(declarativeconfig.NewDeclarativeAccessScopeUUID(scopeConfig.Name).String())
+	scopeProto.SetName(scopeConfig.Name)
+	scopeProto.SetDescription(scopeConfig.Description)
+	scopeProto.SetRules(rules)
+	scopeProto.SetTraits(traits)
 
 	return map[reflect.Type][]protocompat.Message{
 		reflect.TypeOf((*storage.SimpleAccessScope)(nil)): {scopeProto},
@@ -52,12 +51,12 @@ func rulesFromScopeConfig(scope *declarativeconfig.AccessScope) (*storage.Simple
 		return nil, err
 	}
 
-	return &storage.SimpleAccessScope_Rules{
-		IncludedClusters:        includedClustersFromScopeConfig(scope),
-		IncludedNamespaces:      includedNamespacesFromScopeConfig(scope),
-		ClusterLabelSelectors:   clusterLabelSelectors,
-		NamespaceLabelSelectors: namespaceLabelSelectors,
-	}, nil
+	sr := &storage.SimpleAccessScope_Rules{}
+	sr.SetIncludedClusters(includedClustersFromScopeConfig(scope))
+	sr.SetIncludedNamespaces(includedNamespacesFromScopeConfig(scope))
+	sr.SetClusterLabelSelectors(clusterLabelSelectors)
+	sr.SetNamespaceLabelSelectors(namespaceLabelSelectors)
+	return sr, nil
 }
 
 func includedClustersFromScopeConfig(scope *declarativeconfig.AccessScope) []string {
@@ -77,10 +76,10 @@ func includedNamespacesFromScopeConfig(scope *declarativeconfig.AccessScope) []*
 	var namespaces []*storage.SimpleAccessScope_Rules_Namespace
 	for _, obj := range scope.Rules.IncludedObjects {
 		for _, namespace := range obj.Namespaces {
-			namespaces = append(namespaces, &storage.SimpleAccessScope_Rules_Namespace{
-				ClusterName:   obj.Cluster,
-				NamespaceName: namespace,
-			})
+			srn := &storage.SimpleAccessScope_Rules_Namespace{}
+			srn.SetClusterName(obj.Cluster)
+			srn.SetNamespaceName(namespace)
+			namespaces = append(namespaces, srn)
 		}
 	}
 	return namespaces
@@ -92,15 +91,15 @@ func labelSelectorsFromScopeConfig(labelSelectors []declarativeconfig.LabelSelec
 	for _, ls := range labelSelectors {
 		reqs := make([]*storage.SetBasedLabelSelector_Requirement, 0, len(ls.Requirements))
 		for _, req := range ls.Requirements {
-			reqs = append(reqs, &storage.SetBasedLabelSelector_Requirement{
-				Key:    req.Key,
-				Op:     storage.SetBasedLabelSelector_Operator(req.Operator),
-				Values: req.Values,
-			})
+			sr := &storage.SetBasedLabelSelector_Requirement{}
+			sr.SetKey(req.Key)
+			sr.SetOp(storage.SetBasedLabelSelector_Operator(req.Operator))
+			sr.SetValues(req.Values)
+			reqs = append(reqs, sr)
 		}
-		setBasedLabelSelectors = append(setBasedLabelSelectors, &storage.SetBasedLabelSelector{
-			Requirements: reqs,
-		})
+		sbls := &storage.SetBasedLabelSelector{}
+		sbls.SetRequirements(reqs)
+		setBasedLabelSelectors = append(setBasedLabelSelectors, sbls)
 	}
 	return setBasedLabelSelectors, labelSelectorErrs.ErrorOrNil()
 }

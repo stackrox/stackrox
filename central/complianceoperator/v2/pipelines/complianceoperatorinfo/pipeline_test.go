@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestPipeline(t *testing.T) {
@@ -51,33 +52,25 @@ func (suite *PipelineTestSuite) TearDownTest() {
 }
 
 func (suite *PipelineTestSuite) TestComplianceInfoMsgFromSensor() {
-	complianceMsg := &central.ComplianceOperatorInfo{
-		Version:   env.ComplianceMinimalSupportedVersion.VersionSetting().String(),
-		Namespace: fixtureconsts.Namespace1,
-		TotalDesiredPodsOpt: &central.ComplianceOperatorInfo_TotalDesiredPods{
-			TotalDesiredPods: 5,
-		},
-		TotalReadyPodsOpt: &central.ComplianceOperatorInfo_TotalReadyPods{
-			TotalReadyPods: 2,
-		},
-	}
+	complianceMsg := &central.ComplianceOperatorInfo{}
+	complianceMsg.SetVersion(env.ComplianceMinimalSupportedVersion.VersionSetting().String())
+	complianceMsg.SetNamespace(fixtureconsts.Namespace1)
+	complianceMsg.SetTotalDesiredPods(5)
+	complianceMsg.SetTotalReadyPods(2)
 
 	statusErrors := []string{"Compliance operator is not ready. Only 2 pods out of desired 5 are ready."}
-	expectedInfo := &storage.ComplianceIntegration{
-		Version:             env.ComplianceMinimalSupportedVersion.VersionSetting().String(),
-		ClusterId:           fixtureconsts.Cluster1,
-		ComplianceNamespace: fixtureconsts.Namespace1,
-		StatusErrors:        statusErrors,
-		OperatorStatus:      storage.COStatus_UNHEALTHY,
-	}
+	expectedInfo := &storage.ComplianceIntegration{}
+	expectedInfo.SetVersion(env.ComplianceMinimalSupportedVersion.VersionSetting().String())
+	expectedInfo.SetClusterId(fixtureconsts.Cluster1)
+	expectedInfo.SetComplianceNamespace(fixtureconsts.Namespace1)
+	expectedInfo.SetStatusErrors(statusErrors)
+	expectedInfo.SetOperatorStatus(storage.COStatus_UNHEALTHY)
 
 	suite.manager.EXPECT().ProcessComplianceOperatorInfo(gomock.Any(), expectedInfo).Return(nil).Times(1)
 
-	err := suite.pipeline.Run(context.Background(), fixtureconsts.Cluster1, &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_ComplianceOperatorInfo{
-			ComplianceOperatorInfo: complianceMsg,
-		},
-	}, nil)
+	mfs := &central.MsgFromSensor{}
+	mfs.SetComplianceOperatorInfo(proto.ValueOrDefault(complianceMsg))
+	err := suite.pipeline.Run(context.Background(), fixtureconsts.Cluster1, mfs, nil)
 	suite.NoError(err)
 }
 
@@ -158,66 +151,50 @@ func (suite *PipelineTestSuite) TestComplianceInfoMinimalRequiredVersion() {
 		suite.T().Run(name, func(tt *testing.T) {
 			assert.NoError(tt, os.Setenv("ROX_COMPLIANCE_MINIMAL_SUPPORTED_OPERATOR_VERSION", tc.envVersion))
 
-			complianceMsg := &central.ComplianceOperatorInfo{
-				Version:     tc.operatorVersion,
-				IsInstalled: true,
-				Namespace:   fixtureconsts.Namespace1,
-				TotalDesiredPodsOpt: &central.ComplianceOperatorInfo_TotalDesiredPods{
-					TotalDesiredPods: 1,
-				},
-				TotalReadyPodsOpt: &central.ComplianceOperatorInfo_TotalReadyPods{
-					TotalReadyPods: 1,
-				},
-			}
+			complianceMsg := &central.ComplianceOperatorInfo{}
+			complianceMsg.SetVersion(tc.operatorVersion)
+			complianceMsg.SetIsInstalled(true)
+			complianceMsg.SetNamespace(fixtureconsts.Namespace1)
+			complianceMsg.SetTotalDesiredPods(1)
+			complianceMsg.SetTotalReadyPods(1)
 
-			expectedInfo := &storage.ComplianceIntegration{
-				Version:             tc.operatorVersion,
-				OperatorInstalled:   true,
-				ClusterId:           fixtureconsts.Cluster1,
-				ComplianceNamespace: fixtureconsts.Namespace1,
-				StatusErrors:        tc.expectedErrors,
-				OperatorStatus:      tc.expectedStatus,
-			}
+			expectedInfo := &storage.ComplianceIntegration{}
+			expectedInfo.SetVersion(tc.operatorVersion)
+			expectedInfo.SetOperatorInstalled(true)
+			expectedInfo.SetClusterId(fixtureconsts.Cluster1)
+			expectedInfo.SetComplianceNamespace(fixtureconsts.Namespace1)
+			expectedInfo.SetStatusErrors(tc.expectedErrors)
+			expectedInfo.SetOperatorStatus(tc.expectedStatus)
 
 			suite.manager.EXPECT().ProcessComplianceOperatorInfo(gomock.Any(), expectedInfo).Return(nil).Times(1)
-			err := suite.pipeline.Run(context.Background(), fixtureconsts.Cluster1, &central.MsgFromSensor{
-				Msg: &central.MsgFromSensor_ComplianceOperatorInfo{
-					ComplianceOperatorInfo: complianceMsg,
-				},
-			}, nil)
+			mfs := &central.MsgFromSensor{}
+			mfs.SetComplianceOperatorInfo(proto.ValueOrDefault(complianceMsg))
+			err := suite.pipeline.Run(context.Background(), fixtureconsts.Cluster1, mfs, nil)
 			suite.NoError(err)
 		})
 	}
 }
 
 func (suite *PipelineTestSuite) TestComplianceInfoMinimalRequiredVersionNotInstalled() {
-	complianceMsg := &central.ComplianceOperatorInfo{
-		Version:     "not-valid",
-		IsInstalled: false,
-		StatusError: "not installed",
-		Namespace:   fixtureconsts.Namespace1,
-		TotalDesiredPodsOpt: &central.ComplianceOperatorInfo_TotalDesiredPods{
-			TotalDesiredPods: 1,
-		},
-		TotalReadyPodsOpt: &central.ComplianceOperatorInfo_TotalReadyPods{
-			TotalReadyPods: 1,
-		},
-	}
+	complianceMsg := &central.ComplianceOperatorInfo{}
+	complianceMsg.SetVersion("not-valid")
+	complianceMsg.SetIsInstalled(false)
+	complianceMsg.SetStatusError("not installed")
+	complianceMsg.SetNamespace(fixtureconsts.Namespace1)
+	complianceMsg.SetTotalDesiredPods(1)
+	complianceMsg.SetTotalReadyPods(1)
 
-	expectedInfo := &storage.ComplianceIntegration{
-		Version:             "not-valid",
-		OperatorInstalled:   false,
-		ClusterId:           fixtureconsts.Cluster1,
-		ComplianceNamespace: fixtureconsts.Namespace1,
-		StatusErrors:        []string{complianceMsg.GetStatusError()},
-		OperatorStatus:      storage.COStatus_UNHEALTHY,
-	}
+	expectedInfo := &storage.ComplianceIntegration{}
+	expectedInfo.SetVersion("not-valid")
+	expectedInfo.SetOperatorInstalled(false)
+	expectedInfo.SetClusterId(fixtureconsts.Cluster1)
+	expectedInfo.SetComplianceNamespace(fixtureconsts.Namespace1)
+	expectedInfo.SetStatusErrors([]string{complianceMsg.GetStatusError()})
+	expectedInfo.SetOperatorStatus(storage.COStatus_UNHEALTHY)
 
 	suite.manager.EXPECT().ProcessComplianceOperatorInfo(gomock.Any(), expectedInfo).Return(nil).Times(1)
-	err := suite.pipeline.Run(context.Background(), fixtureconsts.Cluster1, &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_ComplianceOperatorInfo{
-			ComplianceOperatorInfo: complianceMsg,
-		},
-	}, nil)
+	mfs := &central.MsgFromSensor{}
+	mfs.SetComplianceOperatorInfo(proto.ValueOrDefault(complianceMsg))
+	err := suite.pipeline.Run(context.Background(), fixtureconsts.Cluster1, mfs, nil)
 	suite.NoError(err)
 }

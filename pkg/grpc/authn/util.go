@@ -38,8 +38,8 @@ func UserFromContext(ctx context.Context) *storage.SlimUser {
 	if identity == nil {
 		return nil
 	}
-	return &storage.SlimUser{
-		Id:   identity.UID(),
-		Name: stringutils.FirstNonEmpty(identity.FullName(), identity.FriendlyName()),
-	}
+	slimUser := &storage.SlimUser{}
+	slimUser.SetId(identity.UID())
+	slimUser.SetName(stringutils.FirstNonEmpty(identity.FullName(), identity.FriendlyName()))
+	return slimUser
 }

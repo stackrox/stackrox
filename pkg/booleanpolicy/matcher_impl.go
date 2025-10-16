@@ -267,7 +267,9 @@ func (m *matcherImpl) getViolations(
 	}
 
 	if processIndicatorMatched {
-		v.ProcessViolation = &storage.Alert_ProcessViolation{Processes: []*storage.ProcessIndicator{indicator}}
+		ap := &storage.Alert_ProcessViolation{}
+		ap.SetProcesses([]*storage.ProcessIndicator{indicator})
+		v.ProcessViolation = ap
 		printer.UpdateProcessAlertViolationMessage(v.ProcessViolation)
 	} else if kubeOrAuditEventMatched {
 		v.AlertViolations = append(v.AlertViolations, printer.GenerateKubeEventViolationMsg(kubeEvent))

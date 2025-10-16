@@ -30,6 +30,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -109,28 +110,27 @@ func authStatusForID(id authn.Identity) (*v1.AuthStatus, error) {
 		return nil, pkgErrors.Errorf("expiration time: %s", err)
 	}
 
-	result := &v1.AuthStatus{
-		Expires:        exp,
-		UserInfo:       id.User().CloneVT(),
-		UserAttributes: userPkg.ConvertAttributes(id.Attributes()),
-	}
+	result := &v1.AuthStatus{}
+	result.SetExpires(exp)
+	result.SetUserInfo(id.User().CloneVT())
+	result.SetUserAttributes(userPkg.ConvertAttributes(id.Attributes()))
 
 	if provider := id.ExternalAuthProvider(); provider != nil {
 		// every Identity should now have an auth provider but API token Identities won't have a Backend
 		if backend := provider.Backend(); backend != nil {
-			result.RefreshUrl = backend.RefreshURL()
+			result.SetRefreshUrl(backend.RefreshURL())
 		}
 		authProvider := provider.StorageView().CloneVT()
 		if authProvider != nil {
 			// config might contain semi-sensitive values, so strip it
-			authProvider.Config = nil
+			authProvider.SetConfig(nil)
 		}
-		result.AuthProvider = authProvider
+		result.SetAuthProvider(authProvider)
 	}
 	if svc := id.Service(); svc != nil {
-		result.Id = &v1.AuthStatus_ServiceId{ServiceId: svc}
+		result.SetServiceId(proto.ValueOrDefault(svc))
 	} else {
-		result.Id = &v1.AuthStatus_UserId{UserId: id.UID()}
+		result.SetUserId(id.UID())
 	}
 	return result, nil
 }
@@ -149,7 +149,9 @@ func (s *serviceImpl) ListAuthMachineToMachineConfigs(ctx context.Context, _ *v1
 		return nil, err
 	}
 
-	return &v1.ListAuthMachineToMachineConfigResponse{Configs: storagetov1.AuthM2MConfigs(storageConfigs)}, nil
+	lamtmcr := &v1.ListAuthMachineToMachineConfigResponse{}
+	lamtmcr.SetConfigs(storagetov1.AuthM2MConfigs(storageConfigs))
+	return lamtmcr, nil
 }
 
 func (s *serviceImpl) GetAuthMachineToMachineConfig(ctx context.Context, id *v1.ResourceByID) (*v1.GetAuthMachineToMachineConfigResponse, error) {
@@ -163,7 +165,9 @@ func (s *serviceImpl) GetAuthMachineToMachineConfig(ctx context.Context, id *v1.
 	if !exists {
 		return nil, errox.NotFound.Newf("auth machine to machine config with id %q", id.GetId())
 	}
-	return &v1.GetAuthMachineToMachineConfigResponse{Config: storagetov1.AuthM2MConfig(config)}, nil
+	gamtmcr := &v1.GetAuthMachineToMachineConfigResponse{}
+	gamtmcr.SetConfig(storagetov1.AuthM2MConfig(config))
+	return gamtmcr, nil
 }
 
 func (s *serviceImpl) AddAuthMachineToMachineConfig(ctx context.Context, request *v1.AddAuthMachineToMachineConfigRequest) (*v1.AddAuthMachineToMachineConfigResponse, error) {
@@ -175,13 +179,15 @@ func (s *serviceImpl) AddAuthMachineToMachineConfig(ctx context.Context, request
 	if err := s.validateAuthMachineToMachineConfig(config, true); err != nil {
 		return nil, err
 	}
-	config.Id = uuid.NewV4().String()
+	config.SetId(uuid.NewV4().String())
 	storageConfig, err := s.authDataStore.UpsertAuthM2MConfig(ctx, v1tostorage.AuthM2MConfig(config))
 	if err != nil {
 		return nil, err
 	}
 
-	return &v1.AddAuthMachineToMachineConfigResponse{Config: storagetov1.AuthM2MConfig(storageConfig)}, nil
+	aamtmcr := &v1.AddAuthMachineToMachineConfigResponse{}
+	aamtmcr.SetConfig(storagetov1.AuthM2MConfig(storageConfig))
+	return aamtmcr, nil
 }
 
 func (s *serviceImpl) UpdateAuthMachineToMachineConfig(ctx context.Context, request *v1.UpdateAuthMachineToMachineConfigRequest) (*v1.Empty, error) {
@@ -238,7 +244,9 @@ func (s *serviceImpl) ExchangeAuthMachineToMachineToken(ctx context.Context,
 		return nil, err
 	}
 
-	return &v1.ExchangeAuthMachineToMachineTokenResponse{AccessToken: accessToken}, nil
+	eamtmtr := &v1.ExchangeAuthMachineToMachineTokenResponse{}
+	eamtmtr.SetAccessToken(accessToken)
+	return eamtmtr, nil
 }
 
 func (s *serviceImpl) validateAuthMachineToMachineConfig(config *v1.AuthMachineToMachineConfig, skipIDCheck bool) error {
@@ -309,7 +317,7 @@ func validateIssuer(config *v1.AuthMachineToMachineConfig) error {
 
 func resolveGitHubActionsIssuer(config *v1.AuthMachineToMachineConfig) {
 	if config != nil && config.GetType() == v1.AuthMachineToMachineConfig_GITHUB_ACTIONS && config.GetIssuer() == "" {
-		config.Issuer = githubActionsIssuer
+		config.SetIssuer(githubActionsIssuer)
 	}
 }
 

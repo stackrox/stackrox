@@ -23,121 +23,121 @@ func TestWithinScope(t *testing.T) {
 		},
 		{
 			name: "matching cluster",
-			scope: &storage.Scope{
+			scope: storage.Scope_builder{
 				Cluster: "cluster",
-			},
-			deployment: &storage.Deployment{
+			}.Build(),
+			deployment: storage.Deployment_builder{
 				ClusterId: "cluster",
-			},
+			}.Build(),
 			result: true,
 		},
 		{
 			name: "not matching cluster",
-			scope: &storage.Scope{
+			scope: storage.Scope_builder{
 				Cluster: "cluster1",
-			},
-			deployment: &storage.Deployment{
+			}.Build(),
+			deployment: storage.Deployment_builder{
 				ClusterId: "cluster",
-			},
+			}.Build(),
 			result: false,
 		},
 		{
 			name: "matching namespace",
-			scope: &storage.Scope{
+			scope: storage.Scope_builder{
 				Namespace: "namespace",
-			},
-			deployment: &storage.Deployment{
+			}.Build(),
+			deployment: storage.Deployment_builder{
 				Namespace: "namespace",
-			},
+			}.Build(),
 			result: true,
 		},
 		{
 			name: "not matching namespace",
-			scope: &storage.Scope{
+			scope: storage.Scope_builder{
 				Namespace: "namespace1",
-			},
-			deployment: &storage.Deployment{
+			}.Build(),
+			deployment: storage.Deployment_builder{
 				Namespace: "namespace",
-			},
+			}.Build(),
 			result: false,
 		},
 		{
 			name: "matching cluster with no namespace scope",
-			scope: &storage.Scope{
+			scope: storage.Scope_builder{
 				Cluster: "cluster",
-			},
-			deployment: &storage.Deployment{
+			}.Build(),
+			deployment: storage.Deployment_builder{
 				ClusterId: "cluster",
 				Namespace: "namespace",
-			},
+			}.Build(),
 			result: true,
 		},
 		{
 			name: "matching label",
-			scope: &storage.Scope{
-				Label: &storage.Scope_Label{
+			scope: storage.Scope_builder{
+				Label: storage.Scope_Label_builder{
 					Key:   "key",
 					Value: "value",
-				},
-			},
-			deployment: &storage.Deployment{
+				}.Build(),
+			}.Build(),
+			deployment: storage.Deployment_builder{
 				Labels: map[string]string{
 					"key":  "value",
 					"key2": "value2",
 				},
-			},
+			}.Build(),
 			result: true,
 		},
 		{
 			name: "not matching label value",
-			scope: &storage.Scope{
-				Label: &storage.Scope_Label{
+			scope: storage.Scope_builder{
+				Label: storage.Scope_Label_builder{
 					Key:   "key",
 					Value: "value",
-				},
-			},
-			deployment: &storage.Deployment{
+				}.Build(),
+			}.Build(),
+			deployment: storage.Deployment_builder{
 				Labels: map[string]string{
 					"key":  "value1",
 					"key2": "value2",
 				},
-			},
+			}.Build(),
 			result: false,
 		},
 		{
 			name: "not matching key value",
-			scope: &storage.Scope{
-				Label: &storage.Scope_Label{
+			scope: storage.Scope_builder{
+				Label: storage.Scope_Label_builder{
 					Key:   "key",
 					Value: "value",
-				},
-			},
-			deployment: &storage.Deployment{
+				}.Build(),
+			}.Build(),
+			deployment: storage.Deployment_builder{
 				Labels: map[string]string{
 					"key":  "value1",
 					"key2": "value2",
 				},
-			},
+			}.Build(),
 			result: false,
 		},
 		{
 			name: "match all",
-			scope: &storage.Scope{
+			scope: storage.Scope_builder{
 				Cluster:   "cluster",
 				Namespace: "namespace",
-				Label: &storage.Scope_Label{
+				Label: storage.Scope_Label_builder{
 					Key:   "key",
 					Value: "value",
-				},
-			},
-			deployment: &storage.Deployment{
+				}.Build(),
+			}.Build(),
+			deployment: storage.Deployment_builder{
 				ClusterId: "cluster",
 				Namespace: "namespace",
 				Labels: map[string]string{
 					"key":  "value",
 					"key2": "value2",
 				},
-			},
+			}.Build(),
 			result: true,
 		},
 	}

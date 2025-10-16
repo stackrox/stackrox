@@ -20,7 +20,7 @@ func BenchmarkAddIndicator(b *testing.B) {
 	var indicators []*storage.ProcessIndicator
 	for i := 0; i < 100000; i++ {
 		pi := fixtures.GetProcessIndicator()
-		pi.Id = uuid.NewV4().String()
+		pi.SetId(uuid.NewV4().String())
 		indicators = append(indicators, pi)
 	}
 
@@ -42,15 +42,15 @@ func BenchmarkSearchIndicator(b *testing.B) {
 	var indicators []*storage.ProcessIndicator
 	for i := 0; i < 10000; i++ {
 		pi := fixtures.GetProcessIndicator()
-		pi.Id = uuid.NewV4().String()
+		pi.SetId(uuid.NewV4().String())
 		// spreading these across some deployments to set up search test
 		switch i % 3 {
 		case 0:
-			pi.DeploymentId = fixtureconsts.Deployment1
+			pi.SetDeploymentId(fixtureconsts.Deployment1)
 		case 1:
-			pi.DeploymentId = fixtureconsts.Deployment2
+			pi.SetDeploymentId(fixtureconsts.Deployment2)
 		case 2:
-			pi.DeploymentId = fixtureconsts.Deployment3
+			pi.SetDeploymentId(fixtureconsts.Deployment3)
 		}
 
 		indicators = append(indicators, pi)

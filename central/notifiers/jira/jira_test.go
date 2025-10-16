@@ -23,26 +23,26 @@ func TestMapPriorities(t *testing.T) {
 		{
 			name:  "mapping with no priorities",
 			prios: nil,
-			integration: &storage.Jira{
+			integration: storage.Jira_builder{
 				PriorityMappings: []*storage.Jira_PriorityMapping{
-					{
+					storage.Jira_PriorityMapping_builder{
 						Severity:     storage.Severity_LOW_SEVERITY,
 						PriorityName: "1",
-					},
-					{
+					}.Build(),
+					storage.Jira_PriorityMapping_builder{
 						Severity:     storage.Severity_MEDIUM_SEVERITY,
 						PriorityName: "2",
-					},
-					{
+					}.Build(),
+					storage.Jira_PriorityMapping_builder{
 						Severity:     storage.Severity_HIGH_SEVERITY,
 						PriorityName: "3",
-					},
-					{
+					}.Build(),
+					storage.Jira_PriorityMapping_builder{
 						Severity:     storage.Severity_CRITICAL_SEVERITY,
 						PriorityName: "4",
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 			output: map[storage.Severity]string{
 				storage.Severity_LOW_SEVERITY:      "1",
 				storage.Severity_MEDIUM_SEVERITY:   "2",
@@ -109,26 +109,26 @@ func TestMapPriorities(t *testing.T) {
 					Name: "P4 Lowest",
 				},
 			},
-			integration: &storage.Jira{
+			integration: storage.Jira_builder{
 				PriorityMappings: []*storage.Jira_PriorityMapping{
-					{
+					storage.Jira_PriorityMapping_builder{
 						Severity:     storage.Severity_LOW_SEVERITY,
 						PriorityName: "P3-Mumble",
-					},
-					{
+					}.Build(),
+					storage.Jira_PriorityMapping_builder{
 						Severity:     storage.Severity_MEDIUM_SEVERITY,
 						PriorityName: "P2/Normal",
-					},
-					{
+					}.Build(),
+					storage.Jira_PriorityMapping_builder{
 						Severity:     storage.Severity_HIGH_SEVERITY,
 						PriorityName: "P1/Major",
-					},
-					{
+					}.Build(),
+					storage.Jira_PriorityMapping_builder{
 						Severity:     storage.Severity_CRITICAL_SEVERITY,
 						PriorityName: "P0/Blocker",
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 			output: map[storage.Severity]string{
 				storage.Severity_LOW_SEVERITY:      "P3-Mumble",
 				storage.Severity_MEDIUM_SEVERITY:   "P2/Normal",
@@ -149,26 +149,26 @@ func TestMapPriorities(t *testing.T) {
 					Name: "Critical",
 				},
 			},
-			integration: &storage.Jira{
+			integration: storage.Jira_builder{
 				PriorityMappings: []*storage.Jira_PriorityMapping{
-					{
+					storage.Jira_PriorityMapping_builder{
 						Severity:     storage.Severity_LOW_SEVERITY,
 						PriorityName: "Minor",
-					},
-					{
+					}.Build(),
+					storage.Jira_PriorityMapping_builder{
 						Severity:     storage.Severity_MEDIUM_SEVERITY,
 						PriorityName: "Normal",
-					},
-					{
+					}.Build(),
+					storage.Jira_PriorityMapping_builder{
 						Severity:     storage.Severity_HIGH_SEVERITY,
 						PriorityName: "Major",
-					},
-					{
+					}.Build(),
+					storage.Jira_PriorityMapping_builder{
 						Severity:     storage.Severity_CRITICAL_SEVERITY,
 						PriorityName: "Critical",
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 			output: nil,
 			// Every priority referenced in mapping has to exist in Jira
 			shouldError: true,
@@ -193,22 +193,22 @@ func TestMapPriorities(t *testing.T) {
 					Name: "Critical",
 				},
 			},
-			integration: &storage.Jira{
+			integration: storage.Jira_builder{
 				PriorityMappings: []*storage.Jira_PriorityMapping{
-					{
+					storage.Jira_PriorityMapping_builder{
 						Severity:     storage.Severity_MEDIUM_SEVERITY,
 						PriorityName: "Normal",
-					},
-					{
+					}.Build(),
+					storage.Jira_PriorityMapping_builder{
 						Severity:     storage.Severity_HIGH_SEVERITY,
 						PriorityName: "Major",
-					},
-					{
+					}.Build(),
+					storage.Jira_PriorityMapping_builder{
 						Severity:     storage.Severity_CRITICAL_SEVERITY,
 						PriorityName: "Critical",
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 			// Note that this is not really valid, but the Validate function in jira.go should catch
 			// the case where there aren't enough in the storage mappings
 			output: map[storage.Severity]string{

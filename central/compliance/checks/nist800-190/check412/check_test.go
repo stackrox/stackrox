@@ -22,22 +22,22 @@ var (
 	}
 
 	testDeployments = []*storage.Deployment{
-		{
+		storage.Deployment_builder{
 			Id: uuid.NewV4().String(),
 			Containers: []*storage.Container{
-				{
+				storage.Container_builder{
 					Name: "container1",
-				},
+				}.Build(),
 			},
-		},
-		{
+		}.Build(),
+		storage.Deployment_builder{
 			Id: uuid.NewV4().String(),
 			Containers: []*storage.Container{
-				{
+				storage.Container_builder{
 					Name: "container2",
-				},
+				}.Build(),
 			},
-		},
+		}.Build(),
 	}
 
 	testNodes = []*storage.Node{
@@ -51,98 +51,98 @@ var (
 
 	domain = framework.NewComplianceDomain(testCluster, testNodes, testDeployments, nil)
 
-	cvssPolicyEnabledAndEnforced = &storage.Policy{
+	cvssPolicyEnabledAndEnforced = storage.Policy_builder{
 		Id:                 uuid.NewV4().String(),
 		Name:               "CVSS >= 6 and Privileged",
 		Categories:         []string{"Vulnerability Management", "Privileges"},
 		Disabled:           false,
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
 		PolicySections: []*storage.PolicySection{
-			{
+			storage.PolicySection_builder{
 				SectionName: "section-1",
 				PolicyGroups: []*storage.PolicyGroup{
-					{
+					storage.PolicyGroup_builder{
 						FieldName: fieldnames.CVSS,
 						Values: []*storage.PolicyValue{
-							{
+							storage.PolicyValue_builder{
 								Value: "7",
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 		PolicyVersion: "1.1",
-	}
+	}.Build()
 
-	buildPolicy = &storage.Policy{
+	buildPolicy = storage.Policy_builder{
 		Id:                 uuid.NewV4().String(),
 		Name:               "Sample build time policy",
 		LifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_BUILD},
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
 		PolicySections: []*storage.PolicySection{
-			{
+			storage.PolicySection_builder{
 				SectionName: "section-1",
 				PolicyGroups: []*storage.PolicyGroup{
-					{
+					storage.PolicyGroup_builder{
 						FieldName: fieldnames.CVSS,
 						Values: []*storage.PolicyValue{
-							{
+							storage.PolicyValue_builder{
 								Value: "7",
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 		PolicyVersion: "1.1",
-	}
+	}.Build()
 
 	indicatorsWithSSH = []*storage.ProcessIndicator{
-		{
+		storage.ProcessIndicator_builder{
 			Id:            uuid.NewV4().String(),
 			DeploymentId:  testDeployments[0].GetId(),
 			ContainerName: testDeployments[0].GetContainers()[0].GetName(),
-			Signal: &storage.ProcessSignal{
+			Signal: storage.ProcessSignal_builder{
 				Pid:          15,
 				Name:         "ssh",
 				ExecFilePath: "/usr/bin/ssh",
-			},
-		},
-		{
+			}.Build(),
+		}.Build(),
+		storage.ProcessIndicator_builder{
 			Id:            uuid.NewV4().String(),
 			DeploymentId:  testDeployments[1].GetId(),
 			ContainerName: testDeployments[1].GetContainers()[0].GetName(),
-			Signal: &storage.ProcessSignal{
+			Signal: storage.ProcessSignal_builder{
 				Pid:          32,
 				Name:         "sshd",
 				ExecFilePath: "/bin/sshd",
-			},
-		},
+			}.Build(),
+		}.Build(),
 	}
 
-	privPolicyDisabled = &storage.Policy{
+	privPolicyDisabled = storage.Policy_builder{
 		Id:                 uuid.NewV4().String(),
 		Name:               "Privileged Container",
 		Disabled:           true,
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
 		PolicySections: []*storage.PolicySection{
-			{
+			storage.PolicySection_builder{
 				SectionName: "section-1",
 				PolicyGroups: []*storage.PolicyGroup{
-					{
+					storage.PolicyGroup_builder{
 						FieldName: fieldnames.PrivilegedContainer,
 						Values: []*storage.PolicyValue{
-							{
+							storage.PolicyValue_builder{
 								Value: "true",
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 		PolicyVersion: "1.1",
-	}
+	}.Build()
 
 	imageIntegrations = []*storage.ImageIntegration{
 		{
@@ -159,48 +159,48 @@ var (
 		},
 	}
 
-	sshPolicy = &storage.Policy{
+	sshPolicy = storage.Policy_builder{
 		Id:   uuid.NewV4().String(),
 		Name: "SSH Policy",
 		PolicySections: []*storage.PolicySection{
-			{
+			storage.PolicySection_builder{
 				SectionName: "section-1",
 				PolicyGroups: []*storage.PolicyGroup{
-					{
+					storage.PolicyGroup_builder{
 						FieldName: fieldnames.ProcessName,
 						Values: []*storage.PolicyValue{
-							{
+							storage.PolicyValue_builder{
 								Value: "sshd",
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 		PolicyVersion:      "1.1",
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
-	}
+	}.Build()
 
-	sshPolicyWithNoEnforcement = &storage.Policy{
+	sshPolicyWithNoEnforcement = storage.Policy_builder{
 		Id:   uuid.NewV4().String(),
 		Name: "SSH Policy",
 		PolicySections: []*storage.PolicySection{
-			{
+			storage.PolicySection_builder{
 				SectionName: "section-1",
 				PolicyGroups: []*storage.PolicyGroup{
-					{
+					storage.PolicyGroup_builder{
 						FieldName: fieldnames.ProcessName,
 						Values: []*storage.PolicyValue{
-							{
+							storage.PolicyValue_builder{
 								Value: "sshd",
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 		PolicyVersion: "1.1",
-	}
+	}.Build()
 )
 
 func getPolicies(t *testing.T, policies ...*storage.Policy) map[string]*storage.Policy {

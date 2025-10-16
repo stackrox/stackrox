@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -36,19 +37,15 @@ type networkEntity struct {
 }
 
 func (e *networkEntity) ToProto() *storage.NetworkEntityInfo {
-	return &storage.NetworkEntityInfo{
-		Id:   e.id,
-		Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-		Desc: &storage.NetworkEntityInfo_ExternalSource_{
-			ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-				Name: getNameNetworkEntity(e),
-				Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-					Cidr: e.cidr,
-				},
-				Default: true,
-			},
-		},
-	}
+	nei := &storage.NetworkEntityInfo{}
+	nei.SetId(e.id)
+	nei.SetType(storage.NetworkEntityInfo_EXTERNAL_SOURCE)
+	nei.SetExternalSource(storage.NetworkEntityInfo_ExternalSource_builder{
+		Name:    getNameNetworkEntity(e),
+		Cidr:    proto.String(e.cidr),
+		Default: true,
+	}.Build())
+	return nei
 }
 
 func getNameNetworkEntity(entity *networkEntity) string {
@@ -90,9 +87,9 @@ func (p *networkDataParser) parse(sources *common.ExternalNetworkSources) []*sto
 
 	ret := make([]*storage.NetworkEntity, 0, len(p.entities))
 	for _, entity := range p.entities {
-		ret = append(ret, &storage.NetworkEntity{
-			Info: entity.ToProto(),
-		})
+		ne := &storage.NetworkEntity{}
+		ne.SetInfo(entity.ToProto())
+		ret = append(ret, ne)
 	}
 
 	return ret

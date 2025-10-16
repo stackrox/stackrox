@@ -31,7 +31,7 @@ func (u *upgradeController) makeProcessActive(cluster *storage.Cluster, processS
 		trigger: constructTriggerUpgradeRequest(cluster, processStatus),
 		status:  processStatus,
 	}
-	u.upgradeStatus.MostRecentProcess = processStatus
+	u.upgradeStatus.SetMostRecentProcess(processStatus)
 	u.upgradeStatusChanged = true
 	go u.reconcileUpgradeStateRegularly(processStatus.GetId())
 }

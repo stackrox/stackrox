@@ -276,7 +276,7 @@ func (m *managerImpl) changeStatusForDiscoveredClusters(clusterID string, status
 	}
 
 	for _, discoveredCluster := range discoveredClusters {
-		discoveredCluster.Status = status
+		discoveredCluster.SetStatus(status)
 	}
 
 	if err := m.discoveredClustersDataStore.UpsertDiscoveredClusters(discoveredClusterCtx,

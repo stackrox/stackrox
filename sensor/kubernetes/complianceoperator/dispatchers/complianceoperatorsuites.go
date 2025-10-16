@@ -38,22 +38,20 @@ func (c *SuitesDispatcher) ProcessEvent(obj, _ interface{}, action central.Resou
 	}
 
 	events := []*central.SensorEvent{
-		{
+		central.SensorEvent_builder{
 			Id:     string(complianceSuite.GetUID()),
 			Action: action,
-			Resource: &central.SensorEvent_ComplianceOperatorSuiteV2{
-				ComplianceOperatorSuiteV2: &central.ComplianceOperatorSuiteV2{
-					Id:   string(complianceSuite.GetUID()),
-					Name: complianceSuite.Name,
-					Status: &central.ComplianceOperatorStatus{
-						Phase:        string(complianceSuite.Status.Phase),
-						Result:       string(complianceSuite.Status.Result),
-						ErrorMessage: string(complianceSuite.Status.ErrorMessage),
-						Conditions:   getStatusConditions(complianceSuite.Status.Conditions),
-					},
-				},
-			},
-		},
+			ComplianceOperatorSuiteV2: central.ComplianceOperatorSuiteV2_builder{
+				Id:   string(complianceSuite.GetUID()),
+				Name: complianceSuite.Name,
+				Status: central.ComplianceOperatorStatus_builder{
+					Phase:        string(complianceSuite.Status.Phase),
+					Result:       string(complianceSuite.Status.Result),
+					ErrorMessage: string(complianceSuite.Status.ErrorMessage),
+					Conditions:   getStatusConditions(complianceSuite.Status.Conditions),
+				}.Build(),
+			}.Build(),
+		}.Build(),
 	}
 
 	return component.NewEvent(events...)

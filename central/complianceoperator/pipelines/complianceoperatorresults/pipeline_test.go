@@ -57,27 +57,23 @@ func (suite *PipelineTestSuite) TestRunV1Create() {
 	suite.v1ResultDS.EXPECT().Upsert(ctx, getV1TestRec(fixtureconsts.Cluster1)).Return(nil).Times(1)
 	pipeline := NewPipeline(suite.v1ResultDS)
 
-	msg := &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id:     id,
-				Action: central.ResourceAction_CREATE_RESOURCE,
-				Resource: &central.SensorEvent_ComplianceOperatorResult{
-					ComplianceOperatorResult: &storage.ComplianceOperatorCheckResult{
-						Id:           id,
-						CheckId:      checkID,
-						CheckName:    mockCheckRuleName,
-						ClusterId:    fixtureconsts.Cluster1,
-						Status:       storage.ComplianceOperatorCheckResult_FAIL,
-						Description:  "this is a test",
-						Instructions: "this is a test",
-						Labels:       nil,
-						Annotations:  nil,
-					},
-				},
-			},
-		},
-	}
+	msg := central.MsgFromSensor_builder{
+		Event: central.SensorEvent_builder{
+			Id:     id,
+			Action: central.ResourceAction_CREATE_RESOURCE,
+			ComplianceOperatorResult: storage.ComplianceOperatorCheckResult_builder{
+				Id:           id,
+				CheckId:      checkID,
+				CheckName:    mockCheckRuleName,
+				ClusterId:    fixtureconsts.Cluster1,
+				Status:       storage.ComplianceOperatorCheckResult_FAIL,
+				Description:  "this is a test",
+				Instructions: "this is a test",
+				Labels:       nil,
+				Annotations:  nil,
+			}.Build(),
+		}.Build(),
+	}.Build()
 
 	err := pipeline.Run(ctx, fixtureconsts.Cluster1, msg, nil)
 	suite.NoError(err)
@@ -89,42 +85,38 @@ func (suite *PipelineTestSuite) TestRunV1Delete() {
 	suite.v1ResultDS.EXPECT().Delete(ctx, id).Return(nil).Times(1)
 	pipeline := NewPipeline(suite.v1ResultDS)
 
-	msg := &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id:     id,
-				Action: central.ResourceAction_REMOVE_RESOURCE,
-				Resource: &central.SensorEvent_ComplianceOperatorResult{
-					ComplianceOperatorResult: &storage.ComplianceOperatorCheckResult{
-						Id:           id,
-						CheckId:      checkID,
-						CheckName:    mockCheckRuleName,
-						ClusterId:    fixtureconsts.Cluster1,
-						Status:       storage.ComplianceOperatorCheckResult_FAIL,
-						Description:  "this is a test",
-						Instructions: "this is a test",
-						Labels:       nil,
-						Annotations:  nil,
-					},
-				},
-			},
-		},
-	}
+	msg := central.MsgFromSensor_builder{
+		Event: central.SensorEvent_builder{
+			Id:     id,
+			Action: central.ResourceAction_REMOVE_RESOURCE,
+			ComplianceOperatorResult: storage.ComplianceOperatorCheckResult_builder{
+				Id:           id,
+				CheckId:      checkID,
+				CheckName:    mockCheckRuleName,
+				ClusterId:    fixtureconsts.Cluster1,
+				Status:       storage.ComplianceOperatorCheckResult_FAIL,
+				Description:  "this is a test",
+				Instructions: "this is a test",
+				Labels:       nil,
+				Annotations:  nil,
+			}.Build(),
+		}.Build(),
+	}.Build()
 
 	err := pipeline.Run(ctx, fixtureconsts.Cluster1, msg, nil)
 	suite.NoError(err)
 }
 
 func getV1TestRec(clusterID string) *storage.ComplianceOperatorCheckResult {
-	return &storage.ComplianceOperatorCheckResult{
-		Id:           id,
-		CheckId:      checkID,
-		CheckName:    mockCheckRuleName,
-		ClusterId:    clusterID,
-		Status:       storage.ComplianceOperatorCheckResult_FAIL,
-		Description:  "this is a test",
-		Instructions: "this is a test",
-		Labels:       nil,
-		Annotations:  nil,
-	}
+	cocr := &storage.ComplianceOperatorCheckResult{}
+	cocr.SetId(id)
+	cocr.SetCheckId(checkID)
+	cocr.SetCheckName(mockCheckRuleName)
+	cocr.SetClusterId(clusterID)
+	cocr.SetStatus(storage.ComplianceOperatorCheckResult_FAIL)
+	cocr.SetDescription("this is a test")
+	cocr.SetInstructions("this is a test")
+	cocr.SetLabels(nil)
+	cocr.SetAnnotations(nil)
+	return cocr
 }

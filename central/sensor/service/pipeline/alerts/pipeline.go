@@ -77,19 +77,19 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	}
 
 	for _, a := range alertResults.GetAlerts() {
-		a.ClusterId = clusterID
-		a.ClusterName = clusterName
+		a.SetClusterId(clusterID)
+		a.SetClusterName(clusterName)
 		if deployment := a.GetDeployment(); deployment != nil {
-			deployment.ClusterId = clusterID
-			deployment.ClusterName = clusterName
-			a.Namespace = deployment.GetNamespace()
-			a.NamespaceId = deployment.GetNamespaceId()
+			deployment.SetClusterId(clusterID)
+			deployment.SetClusterName(clusterName)
+			a.SetNamespace(deployment.GetNamespace())
+			a.SetNamespaceId(deployment.GetNamespaceId())
 		}
 		if resource := a.GetResource(); resource != nil {
-			resource.ClusterId = clusterID
-			resource.ClusterName = clusterName
-			a.Namespace = resource.GetNamespace()
-			a.NamespaceId = resource.GetNamespaceId()
+			resource.SetClusterId(clusterID)
+			resource.SetClusterName(clusterName)
+			a.SetNamespace(resource.GetNamespace())
+			a.SetNamespaceId(resource.GetNamespaceId())
 		}
 	}
 

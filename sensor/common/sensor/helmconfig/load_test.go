@@ -43,19 +43,19 @@ clusterConfig:
 	config, err := load(clusterConfig)
 	require.NoError(t, err)
 
-	expectedClusterConfig := &storage.CompleteClusterConfig{
-		DynamicConfig: &storage.DynamicClusterConfig{
-			AdmissionControllerConfig: &storage.AdmissionControllerConfig{
+	expectedClusterConfig := storage.CompleteClusterConfig_builder{
+		DynamicConfig: storage.DynamicClusterConfig_builder{
+			AdmissionControllerConfig: storage.AdmissionControllerConfig_builder{
 				Enabled:          false,
 				TimeoutSeconds:   3,
 				ScanInline:       false,
 				DisableBypass:    false,
 				EnforceOnUpdates: false,
-			},
+			}.Build(),
 			RegistryOverride: "",
 			DisableAuditLogs: true,
-		},
-		StaticConfig: &storage.StaticClusterConfig{
+		}.Build(),
+		StaticConfig: storage.StaticClusterConfig_builder{
 			Type:                       storage.ClusterType_KUBERNETES_CLUSTER,
 			MainImage:                  "stackrox/main",
 			CentralApiEndpoint:         "central.stackrox:443",
@@ -63,18 +63,17 @@ clusterConfig:
 			CollectorImage:             "stackrox/collector",
 			AdmissionController:        true,
 			AdmissionControllerUpdates: false,
-			TolerationsConfig:          &storage.TolerationsConfig{Disabled: false},
+			TolerationsConfig:          storage.TolerationsConfig_builder{Disabled: false}.Build(),
 			AdmissionControllerEvents:  true,
-		},
+		}.Build(),
 		ConfigFingerprint: "69c6a7ea9452e9dc13aaf7d29e2b9ac4207a53d95b900b3853dce46f47df8407-1",
 		ClusterLabels:     map[string]string{"my-label1": "my value 1", "my-label2": "my value 2"},
-	}
+	}.Build()
 
-	expectedConfig := &central.HelmManagedConfigInit{
-		ClusterConfig: expectedClusterConfig,
-		ClusterName:   "remote",
-		ClusterId:     "",
-	}
+	expectedConfig := &central.HelmManagedConfigInit{}
+	expectedConfig.SetClusterConfig(expectedClusterConfig)
+	expectedConfig.SetClusterName("remote")
+	expectedConfig.SetClusterId("")
 
 	assert.True(t, expectedConfig.EqualVT(config), "Converted proto and expected proto do not match")
 }

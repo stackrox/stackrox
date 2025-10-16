@@ -128,14 +128,16 @@ func TestUniversalTransformRole_DefaultValues(t *testing.T) {
 	require.Len(t, protos, 1)
 	require.Contains(t, protos, roleType)
 
+	traits := &storage.Traits{}
+	traits.SetOrigin(storage.Traits_DECLARATIVE)
+	role2 := &storage.Role{}
+	role2.SetName(role.Name)
+	role2.SetDescription(role.Description)
+	role2.SetAccessScopeId(accesscontrol.DefaultAccessScopeIDs[role.AccessScope])
+	role2.SetPermissionSetId(accesscontrol.DefaultPermissionSetIDs[role.PermissionSet])
+	role2.SetTraits(traits)
 	expectedMessages := []*storage.Role{
-		{
-			Name:            role.Name,
-			Description:     role.Description,
-			AccessScopeId:   accesscontrol.DefaultAccessScopeIDs[role.AccessScope],
-			PermissionSetId: accesscontrol.DefaultPermissionSetIDs[role.PermissionSet],
-			Traits:          &storage.Traits{Origin: storage.Traits_DECLARATIVE},
-		},
+		role2,
 	}
 	require.Len(t, protos[roleType], 1)
 	obtainedMessages := make([]*storage.Role, 0, len(protos[roleType]))

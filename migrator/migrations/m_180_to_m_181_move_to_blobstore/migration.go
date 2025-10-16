@@ -106,16 +106,15 @@ func moveFileToBlob(tx *gorm.DB, blobName string, file string, crc32Data []byte)
 	}
 
 	// Prepare blob
-	blob := &storage.Blob{
-		Name:         blobName,
-		Length:       stat.Size(),
-		LastUpdated:  protocompat.TimestampNow(),
-		ModifiedTime: modTime,
-	}
+	blob := &storage.Blob{}
+	blob.SetName(blobName)
+	blob.SetLength(stat.Size())
+	blob.SetLastUpdated(protocompat.TimestampNow())
+	blob.SetModifiedTime(modTime)
 	var dataReader io.ReadCloser = fd
 	if crc32Data != nil {
 		dataReader = ioutils.NewCRC32ChecksumReader(fd, crc32.IEEETable, binary.BigEndian.Uint32(crc32Data))
-		blob.Checksum = string(crc32Data)
+		blob.SetChecksum(string(crc32Data))
 	}
 	los := largeobject.LargeObjects{DB: tx}
 
@@ -137,7 +136,7 @@ func moveFileToBlob(tx *gorm.DB, blobName string, file string, crc32Data []byte)
 		if err != nil {
 			return errors.Wrapf(err, "existing blob is not valid %+v", targets[0])
 		}
-		blob.Oid = existingBlob.GetOid()
+		blob.SetOid(existingBlob.GetOid())
 	}
 	blobModel, err := schema.ConvertBlobFromProto(blob)
 	if err != nil {

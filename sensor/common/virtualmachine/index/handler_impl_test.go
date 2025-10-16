@@ -61,7 +61,8 @@ func (s *virtualMachineHandlerSuite) TestSend() {
 		})
 
 	// Test that the goroutine processes sent VMs.
-	vm := &v1.IndexReport{VsockCid: cid}
+	vm := &v1.IndexReport{}
+	vm.SetVsockCid(cid)
 	go func() {
 		err := s.handler.Send(context.Background(), vm)
 		s.Require().NoError(err)
@@ -118,9 +119,8 @@ func (s *virtualMachineHandlerSuite) TestConcurrentSends() {
 			for range numVMsPerGoroutine {
 				var req *v1.IndexReport
 				concurrency.WithLock(&mu, func() {
-					req = &v1.IndexReport{
-						VsockCid: fmt.Sprintf("%d", cont),
-					}
+					req = &v1.IndexReport{}
+					req.SetVsockCid(fmt.Sprintf("%d", cont))
 					cont++
 				})
 				err := s.handler.Send(ctx, req)
@@ -154,7 +154,8 @@ func (s *virtualMachineHandlerSuite) TestVirtualMachineNotFound() {
 	s.store.EXPECT().GetFromCID(gomock.Eq(uint32(1))).Times(1).Return(nil)
 
 	// Test that the goroutine processes sent VMs.
-	vm := &v1.IndexReport{VsockCid: cid}
+	vm := &v1.IndexReport{}
+	vm.SetVsockCid(cid)
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
@@ -183,7 +184,8 @@ func (s *virtualMachineHandlerSuite) TestInvalidCID() {
 	cid := "invalid-cid"
 
 	// Test that the goroutine processes sent VMs.
-	vm := &v1.IndexReport{VsockCid: cid}
+	vm := &v1.IndexReport{}
+	vm.SetVsockCid(cid)
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {

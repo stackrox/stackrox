@@ -39,9 +39,9 @@ func TestValidateTokenProviderUpdate(t *testing.T) {
 					IssuedAt: jwt.NewNumericDate(time.Now()),
 				},
 			},
-			provider: &storage.AuthProvider{
+			provider: storage.AuthProvider_builder{
 				LastUpdated: before,
-			},
+			}.Build(),
 		},
 		"non-empty timestamp higher than issued at should lead to error": {
 			claims: &tokens.Claims{
@@ -49,9 +49,9 @@ func TestValidateTokenProviderUpdate(t *testing.T) {
 					IssuedAt: jwt.NewNumericDate(time.Now()),
 				},
 			},
-			provider: &storage.AuthProvider{
+			provider: storage.AuthProvider_builder{
 				LastUpdated: after,
-			},
+			}.Build(),
 			fails: true,
 		},
 		"non-empty timestamp higher than issued at but within leeway should lead to no error": {
@@ -60,9 +60,9 @@ func TestValidateTokenProviderUpdate(t *testing.T) {
 					IssuedAt: jwt.NewNumericDate(time.Now()),
 				},
 			},
-			provider: &storage.AuthProvider{
+			provider: storage.AuthProvider_builder{
 				LastUpdated: leeway,
-			},
+			}.Build(),
 		},
 	}
 

@@ -28,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/testutils/roletest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"google.golang.org/protobuf/proto"
 )
 
 /********
@@ -357,21 +358,19 @@ var (
 	expiresTime      = time.Date(2020, time.December, 31, 23, 59, 59, 999999999, time.UTC)
 	expiresTimestamp = protocompat.ConvertTimeToTimestampOrNil(&expiresTime)
 
-	testAuthStatus = &v1.AuthStatus{
-		Id: &v1.AuthStatus_UserId{
-			UserId: "admin",
-		},
+	testAuthStatus = v1.AuthStatus_builder{
+		UserId:  proto.String("admin"),
 		Expires: expiresTimestamp,
-		AuthProvider: &storage.AuthProvider{
+		AuthProvider: storage.AuthProvider_builder{
 			Id:   "adaaaaaa-cccc-4011-0000-111111111111",
 			Name: "Login with username/password",
 			Type: "basic",
-		},
-		UserInfo: &storage.UserInfo{
+		}.Build(),
+		UserInfo: storage.UserInfo_builder{
 			Username:     "admin",
 			FriendlyName: "",
 			Roles: []*storage.UserInfo_Role{
-				{
+				storage.UserInfo_Role_builder{
 					Name: "Admin",
 					ResourceToAccess: map[string]storage.Access{
 						"Access":                           storage.Access_READ_WRITE_ACCESS,
@@ -399,21 +398,21 @@ var (
 						"WatchedImages":                    storage.Access_READ_WRITE_ACCESS,
 						"WorkflowAdministration":           storage.Access_READ_WRITE_ACCESS,
 					},
-				},
+				}.Build(),
 			},
-		},
+		}.Build(),
 		UserAttributes: []*v1.UserAttribute{
-			{
+			v1.UserAttribute_builder{
 				Key:    "role",
 				Values: []string{"Admin"},
-			},
-			{
+			}.Build(),
+			v1.UserAttribute_builder{
 				Key:    "username",
 				Values: []string{"admin"},
-			},
+			}.Build(),
 		},
 		IdpToken: "abcdefghijklmnopqrstuvwxyz0123456789",
-	}
+	}.Build()
 )
 
 //go:embed serialized_test_auth_status.json

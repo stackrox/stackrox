@@ -102,55 +102,55 @@ func TestConvertWithRegistryOverride(t *testing.T) {
 				},
 			},
 		},
-		expectedDeployment: &storage.Deployment{
+		expectedDeployment: storage.Deployment_builder{
 			Id:          "FooID",
 			ClusterId:   testClusterID,
 			Name:        "deployment",
 			Namespace:   "namespace",
 			NamespaceId: "FAKENSID",
 			Type:        kubernetes.Deployment,
-			LabelSelector: &storage.LabelSelector{
+			LabelSelector: storage.LabelSelector_builder{
 				MatchLabels: map[string]string{},
-			},
+			}.Build(),
 			Created:                      protocompat.GetProtoTimestampFromSeconds(1000),
 			Tolerations:                  []*storage.Toleration{},
 			ServiceAccount:               "default",
 			AutomountServiceAccountToken: true,
 			ImagePullSecrets:             []string{},
 			Containers: []*storage.Container{
-				{
+				storage.Container_builder{
 					Id:   "FooID:container1",
 					Name: "container1",
-					Config: &storage.ContainerConfig{
+					Config: storage.ContainerConfig_builder{
 						Env: []*storage.ContainerConfig_EnvironmentConfig{},
-					},
+					}.Build(),
 					SecurityContext: &storage.SecurityContext{},
 					Resources:       &storage.Resources{},
-					Image: &storage.ContainerImage{
+					Image: storage.ContainerImage_builder{
 						Id:          "sha256:aa561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
 						Name:        &storage.ImageName{},
 						NotPullable: true,
-					},
-					LivenessProbe:  &storage.LivenessProbe{Defined: false},
-					ReadinessProbe: &storage.ReadinessProbe{Defined: false},
-				},
-				{
+					}.Build(),
+					LivenessProbe:  storage.LivenessProbe_builder{Defined: false}.Build(),
+					ReadinessProbe: storage.ReadinessProbe_builder{Defined: false}.Build(),
+				}.Build(),
+				storage.Container_builder{
 					Id:   "FooID:container2",
 					Name: "container2",
-					Config: &storage.ContainerConfig{
+					Config: storage.ContainerConfig_builder{
 						Env: []*storage.ContainerConfig_EnvironmentConfig{},
-					},
-					Image: &storage.ContainerImage{
+					}.Build(),
+					Image: storage.ContainerImage_builder{
 						Id:   "sha256:6b561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
 						Name: &storage.ImageName{},
-					},
+					}.Build(),
 					SecurityContext: &storage.SecurityContext{},
 					Resources:       &storage.Resources{},
-					LivenessProbe:   &storage.LivenessProbe{Defined: false},
-					ReadinessProbe:  &storage.ReadinessProbe{Defined: false},
-				},
+					LivenessProbe:   storage.LivenessProbe_builder{Defined: false}.Build(),
+					ReadinessProbe:  storage.ReadinessProbe_builder{Defined: false}.Build(),
+				}.Build(),
 			},
-		},
+		}.Build(),
 	}
 
 	cases := []struct {
@@ -162,35 +162,35 @@ func TestConvertWithRegistryOverride(t *testing.T) {
 			"use registry override",
 			false,
 			[]*storage.ImageName{
-				{
+				storage.ImageName_builder{
 					Registry: "hello.io",
 					Remote:   "stackrox/kafka",
 					Tag:      "latest",
 					FullName: "hello.io/stackrox/kafka:latest",
-				}, {
+				}.Build(), storage.ImageName_builder{
 					Registry: "hello.io",
 					Remote:   "stackrox/policy-engine",
 					Tag:      "1.3",
 					FullName: "hello.io/stackrox/policy-engine:1.3",
-				},
+				}.Build(),
 			},
 		},
 		{
 			"use registry from runtime",
 			true,
 			[]*storage.ImageName{
-				{
+				storage.ImageName_builder{
 					Registry: "quay.io",
 					Remote:   "stackrox/kafka",
 					Tag:      "latest",
 					FullName: "quay.io/stackrox/kafka:latest",
-				},
-				{
+				}.Build(),
+				storage.ImageName_builder{
 					Registry: "quay.io",
 					Remote:   "stackrox/policy-engine",
 					Tag:      "1.3",
 					FullName: "quay.io/stackrox/policy-engine:1.3",
-				},
+				}.Build(),
 			},
 		},
 	}
@@ -200,14 +200,14 @@ func TestConvertWithRegistryOverride(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			testutils.MustUpdateFeature(t, features.UnqualifiedSearchRegistries, c.enableUnqualifiedFeature)
 			for i, container := range base.expectedDeployment.GetContainers() {
-				container.Image.Name = c.expectedImageNames[i]
+				container.GetImage().SetName(c.expectedImageNames[i])
 			}
 
 			actual := newDeploymentEventFromResource(base.inputObj, &base.action, base.deploymentType, testClusterID,
 				base.podLister, mockNamespaceStore, hierarchyFromPodLister(base.podLister), base.registryOverride,
 				storeProvider.orchestratorNamespaces).GetDeployment()
 			if actual != nil {
-				actual.StateTimestamp = 0
+				actual.SetStateTimestamp(0)
 			}
 			protoassert.Equal(t, base.expectedDeployment, actual)
 		})

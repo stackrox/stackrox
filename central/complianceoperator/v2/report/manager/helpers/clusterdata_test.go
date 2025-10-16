@@ -21,25 +21,25 @@ func TestGetFailedClusters(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	snapshotStore := snapshotDS.NewMockDataStore(ctrl)
 	scanStore := scanDS.NewMockDataStore(ctrl)
-	snapshot := &storage.ComplianceOperatorReportSnapshotV2{
+	snapshot := storage.ComplianceOperatorReportSnapshotV2_builder{
 		FailedClusters: []*storage.ComplianceOperatorReportSnapshotV2_FailedCluster{
-			{
+			storage.ComplianceOperatorReportSnapshotV2_FailedCluster_builder{
 				ClusterId:       "cluster-id",
 				ClusterName:     "cluster-name",
 				Reasons:         []string{"some reason"},
 				OperatorVersion: "v1.6.0",
 				ScanNames:       []string{"scan-2"},
-			},
+			}.Build(),
 		},
 		Scans: []*storage.ComplianceOperatorReportSnapshotV2_Scan{
-			{
+			storage.ComplianceOperatorReportSnapshotV2_Scan_builder{
 				ScanRefId: "scan-ref-id-1",
-			},
-			{
+			}.Build(),
+			storage.ComplianceOperatorReportSnapshotV2_Scan_builder{
 				ScanRefId: "scan-ref-id-2",
-			},
+			}.Build(),
 		},
-	}
+	}.Build()
 	t.Run("failure retrieving snapshot from the store", func(tt *testing.T) {
 		snapshotStore.EXPECT().
 			GetLastSnapshotFromScanConfig(gomock.Any(), gomock.Eq(scanConfigID)).
@@ -62,11 +62,11 @@ func TestGetFailedClusters(t *testing.T) {
 		snapshotStore.EXPECT().
 			GetLastSnapshotFromScanConfig(gomock.Any(), gomock.Eq(scanConfigID)).
 			Times(1).Return(snapshot, nil)
+		cosv2 := &storage.ComplianceOperatorScanV2{}
+		cosv2.SetScanName("scan-2")
+		cosv2.SetScanRefId("scan-ref-id-2")
 		scans := []*storage.ComplianceOperatorScanV2{
-			{
-				ScanName:  "scan-2",
-				ScanRefId: "scan-ref-id-2",
-			},
+			cosv2,
 		}
 		scanStore.EXPECT().SearchScans(gomock.Any(), gomock.Any()).
 			Times(1).Return(scans, nil)
@@ -96,21 +96,20 @@ func TestGetFailedClusters(t *testing.T) {
 
 func TestGetClusterData(t *testing.T) {
 	ctx := context.Background()
-	reportData := &storage.ComplianceOperatorReportData{
-		ScanConfiguration: &storage.ComplianceOperatorScanConfigurationV2{
-			Id: "scan-config-id",
-		},
-		ClusterStatus: []*storage.ComplianceOperatorReportData_ClusterStatus{
-			{
-				ClusterId:   "cluster-1",
-				ClusterName: "cluster-1",
-			},
-			{
-				ClusterId:   "cluster-2",
-				ClusterName: "cluster-2",
-			},
-		},
-	}
+	coscv2 := &storage.ComplianceOperatorScanConfigurationV2{}
+	coscv2.SetId("scan-config-id")
+	cc := &storage.ComplianceOperatorReportData_ClusterStatus{}
+	cc.SetClusterId("cluster-1")
+	cc.SetClusterName("cluster-1")
+	cc2 := &storage.ComplianceOperatorReportData_ClusterStatus{}
+	cc2.SetClusterId("cluster-2")
+	cc2.SetClusterName("cluster-2")
+	reportData := &storage.ComplianceOperatorReportData{}
+	reportData.SetScanConfiguration(coscv2)
+	reportData.SetClusterStatus([]*storage.ComplianceOperatorReportData_ClusterStatus{
+		cc,
+		cc2,
+	})
 	failedClusters := map[string]*report.FailedCluster{
 		"cluster-2": {
 			ClusterId:       "cluster-2",
@@ -118,12 +117,12 @@ func TestGetClusterData(t *testing.T) {
 			Reasons:         []string{"some reason"},
 			OperatorVersion: "v1.6.0",
 			FailedScans: []*storage.ComplianceOperatorScanV2{
-				{
+				storage.ComplianceOperatorScanV2_builder{
 					ScanName: "scan-2",
-					Profile: &storage.ProfileShim{
+					Profile: storage.ProfileShim_builder{
 						ProfileRefId: "profile-ref-id",
-					},
-				},
+					}.Build(),
+				}.Build(),
 			},
 		},
 	}
@@ -143,26 +142,26 @@ func TestGetClusterData(t *testing.T) {
 		assert.Nil(tt, clusterData)
 	})
 	t.Run("no failed clusters", func(tt *testing.T) {
+		cosv2 := &storage.ComplianceOperatorScanV2{}
+		cosv2.SetScanName("scan-1")
+		cosv2h2 := &storage.ComplianceOperatorScanV2{}
+		cosv2h2.SetScanName("scan-2")
+		cosv2h3 := &storage.ComplianceOperatorScanV2{}
+		cosv2h3.SetScanName("scan-1")
+		cosv2h4 := &storage.ComplianceOperatorScanV2{}
+		cosv2h4.SetScanName("scan-2")
 		gomock.InOrder(
 			scanStore.EXPECT().
 				SearchScans(gomock.Any(), gomock.Any()).
 				Times(1).Return([]*storage.ComplianceOperatorScanV2{
-				{
-					ScanName: "scan-1",
-				},
-				{
-					ScanName: "scan-2",
-				},
+				cosv2,
+				cosv2h2,
 			}, nil),
 			scanStore.EXPECT().
 				SearchScans(gomock.Any(), gomock.Any()).
 				Times(1).Return([]*storage.ComplianceOperatorScanV2{
-				{
-					ScanName: "scan-1",
-				},
-				{
-					ScanName: "scan-2",
-				},
+				cosv2h3,
+				cosv2h4,
 			}, nil),
 		)
 		expectedClusterData := map[string]*report.ClusterData{
@@ -182,26 +181,26 @@ func TestGetClusterData(t *testing.T) {
 		assertClusterData(tt, expectedClusterData, clusterData)
 	})
 	t.Run("with failed clusters", func(tt *testing.T) {
+		cosv2 := &storage.ComplianceOperatorScanV2{}
+		cosv2.SetScanName("scan-1")
+		cosv2h2 := &storage.ComplianceOperatorScanV2{}
+		cosv2h2.SetScanName("scan-2")
+		cosv2h3 := &storage.ComplianceOperatorScanV2{}
+		cosv2h3.SetScanName("scan-1")
+		cosv2h4 := &storage.ComplianceOperatorScanV2{}
+		cosv2h4.SetScanName("scan-2")
 		gomock.InOrder(
 			scanStore.EXPECT().
 				SearchScans(gomock.Any(), gomock.Any()).
 				Times(1).Return([]*storage.ComplianceOperatorScanV2{
-				{
-					ScanName: "scan-1",
-				},
-				{
-					ScanName: "scan-2",
-				},
+				cosv2,
+				cosv2h2,
 			}, nil),
 			scanStore.EXPECT().
 				SearchScans(gomock.Any(), gomock.Any()).
 				Times(1).Return([]*storage.ComplianceOperatorScanV2{
-				{
-					ScanName: "scan-1",
-				},
-				{
-					ScanName: "scan-2",
-				},
+				cosv2h3,
+				cosv2h4,
 			}, nil),
 		)
 		expectedClusterData := map[string]*report.ClusterData{
@@ -220,12 +219,12 @@ func TestGetClusterData(t *testing.T) {
 					OperatorVersion: "v1.6.0",
 					Reasons:         []string{"some reason"},
 					FailedScans: []*storage.ComplianceOperatorScanV2{
-						{
+						storage.ComplianceOperatorScanV2_builder{
 							ScanName: "scan-2",
-							Profile: &storage.ProfileShim{
+							Profile: storage.ProfileShim_builder{
 								ProfileRefId: "profile-ref-id",
-							},
-						},
+							}.Build(),
+						}.Build(),
 					},
 				},
 			},

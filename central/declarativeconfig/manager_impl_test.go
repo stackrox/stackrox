@@ -19,6 +19,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 var supportedTypesCount = len(types.GetSupportedProtobufTypesInProcessingOrder())
@@ -68,47 +69,37 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 	mockUpdater := updaterMocks.NewMockResourceUpdater(controller)
 	mockHealthDS := declarativeConfigHealthMock.NewMockDataStore(controller)
 
-	permissionSet1 := &storage.PermissionSet{
-		Name: "permission-set-1",
-		Id:   "id-perm-set-1",
-	}
-	permissionSet2 := &storage.PermissionSet{
-		Name: "permission-set-2",
-		Id:   "id-perm-set-2",
-	}
-	accessScope := &storage.SimpleAccessScope{
-		Name: "accessScope",
-		Id:   "id-access-scope",
-	}
-	role := &storage.Role{
-		Name: "role",
-	}
-	authProvider := &storage.AuthProvider{
-		Name: "authProvider",
-		Id:   "id-auth-provider",
-	}
-	group := &storage.Group{
-		Props: &storage.GroupProperties{
-			Id:             "group",
-			AuthProviderId: "some-auth-provider",
-			Key:            "email",
-			Value:          "some@example.com",
-		},
-		RoleName: "Admin",
-	}
-	notifier := &storage.Notifier{
-		Name: "notifierName",
-		Id:   "notifierId",
-		Config: &storage.Notifier_Splunk{
-			Splunk: &storage.Splunk{
-				HttpToken: "http-token",
-			},
-		},
-	}
-	m2mConfig := &storage.AuthMachineToMachineConfig{
-		Id:     "m2m-config-id",
-		Issuer: "https://kubernetes.default.svc",
-	}
+	permissionSet1 := &storage.PermissionSet{}
+	permissionSet1.SetName("permission-set-1")
+	permissionSet1.SetId("id-perm-set-1")
+	permissionSet2 := &storage.PermissionSet{}
+	permissionSet2.SetName("permission-set-2")
+	permissionSet2.SetId("id-perm-set-2")
+	accessScope := &storage.SimpleAccessScope{}
+	accessScope.SetName("accessScope")
+	accessScope.SetId("id-access-scope")
+	role := &storage.Role{}
+	role.SetName("role")
+	authProvider := &storage.AuthProvider{}
+	authProvider.SetName("authProvider")
+	authProvider.SetId("id-auth-provider")
+	gp := &storage.GroupProperties{}
+	gp.SetId("group")
+	gp.SetAuthProviderId("some-auth-provider")
+	gp.SetKey("email")
+	gp.SetValue("some@example.com")
+	group := &storage.Group{}
+	group.SetProps(gp)
+	group.SetRoleName("Admin")
+	splunk := &storage.Splunk{}
+	splunk.SetHttpToken("http-token")
+	notifier := &storage.Notifier{}
+	notifier.SetName("notifierName")
+	notifier.SetId("notifierId")
+	notifier.SetSplunk(proto.ValueOrDefault(splunk))
+	m2mConfig := &storage.AuthMachineToMachineConfig{}
+	m2mConfig.SetId("m2m-config-id")
+	m2mConfig.SetIssuer("https://kubernetes.default.svc")
 
 	gomock.InOrder(
 		mockUpdater.EXPECT().Upsert(gomock.Any(), accessScope),
@@ -121,71 +112,71 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 		mockUpdater.EXPECT().Upsert(gomock.Any(), m2mConfig),
 	)
 
+	dch := &storage.DeclarativeConfigHealth{}
+	dch.SetId("id-access-scope")
+	dch.SetName("accessScope in config map test-handler-1")
+	dch.SetResourceType(storage.DeclarativeConfigHealth_ACCESS_SCOPE)
+	dch.SetResourceName("accessScope")
+	dch.SetStatus(storage.DeclarativeConfigHealth_HEALTHY)
+	dch.SetErrorMessage("")
+	dch2 := &storage.DeclarativeConfigHealth{}
+	dch2.SetId("id-perm-set-1")
+	dch2.SetName("permission-set-1 in config map test-handler-1")
+	dch2.SetResourceType(storage.DeclarativeConfigHealth_PERMISSION_SET)
+	dch2.SetResourceName("permission-set-1")
+	dch2.SetStatus(storage.DeclarativeConfigHealth_HEALTHY)
+	dch2.SetErrorMessage("")
+	dch3 := &storage.DeclarativeConfigHealth{}
+	dch3.SetId("id-perm-set-2")
+	dch3.SetName("permission-set-2 in config map test-handler-1")
+	dch3.SetResourceType(storage.DeclarativeConfigHealth_PERMISSION_SET)
+	dch3.SetResourceName("permission-set-2")
+	dch3.SetStatus(storage.DeclarativeConfigHealth_HEALTHY)
+	dch3.SetErrorMessage("")
+	dch4 := &storage.DeclarativeConfigHealth{}
+	dch4.SetId("61a68f2a-2599-5a9f-a98a-8fc83e2c06cf")
+	dch4.SetName("role in config map test-handler-2")
+	dch4.SetResourceType(storage.DeclarativeConfigHealth_ROLE)
+	dch4.SetResourceName("role")
+	dch4.SetStatus(storage.DeclarativeConfigHealth_HEALTHY)
+	dch4.SetErrorMessage("")
+	dch5 := &storage.DeclarativeConfigHealth{}
+	dch5.SetId("id-auth-provider")
+	dch5.SetName("authProvider in config map test-handler-2")
+	dch5.SetResourceType(storage.DeclarativeConfigHealth_AUTH_PROVIDER)
+	dch5.SetResourceName("authProvider")
+	dch5.SetStatus(storage.DeclarativeConfigHealth_HEALTHY)
+	dch5.SetErrorMessage("")
+	dch6 := &storage.DeclarativeConfigHealth{}
+	dch6.SetId("group")
+	dch6.SetName("group email:some@example.com:Admin for auth provider ID some-auth-provider in config map test-handler-2")
+	dch6.SetResourceType(storage.DeclarativeConfigHealth_GROUP)
+	dch6.SetResourceName("group email:some@example.com:Admin for auth provider ID some-auth-provider")
+	dch6.SetStatus(storage.DeclarativeConfigHealth_HEALTHY)
+	dch6.SetErrorMessage("")
+	dch7 := &storage.DeclarativeConfigHealth{}
+	dch7.SetId("notifierId")
+	dch7.SetName("notifierName in config map test-handler-2")
+	dch7.SetResourceType(storage.DeclarativeConfigHealth_NOTIFIER)
+	dch7.SetResourceName("notifierName")
+	dch7.SetStatus(storage.DeclarativeConfigHealth_HEALTHY)
+	dch7.SetErrorMessage("")
+	dch8 := &storage.DeclarativeConfigHealth{}
+	dch8.SetId("m2m-config-id")
+	dch8.SetName("https://kubernetes.default.svc in config map test-handler-2")
+	dch8.SetResourceType(storage.DeclarativeConfigHealth_AUTH_MACHINE_TO_MACHINE_CONFIG)
+	dch8.SetResourceName("https://kubernetes.default.svc")
+	dch8.SetStatus(storage.DeclarativeConfigHealth_HEALTHY)
+	dch8.SetErrorMessage("")
 	gomock.InOrder(
-		mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(&storage.DeclarativeConfigHealth{
-			Id:           "id-access-scope",
-			Name:         "accessScope in config map test-handler-1",
-			ResourceType: storage.DeclarativeConfigHealth_ACCESS_SCOPE,
-			ResourceName: "accessScope",
-			Status:       storage.DeclarativeConfigHealth_HEALTHY,
-			ErrorMessage: "",
-		})),
-		mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(&storage.DeclarativeConfigHealth{
-			Id:           "id-perm-set-1",
-			Name:         "permission-set-1 in config map test-handler-1",
-			ResourceType: storage.DeclarativeConfigHealth_PERMISSION_SET,
-			ResourceName: "permission-set-1",
-			Status:       storage.DeclarativeConfigHealth_HEALTHY,
-			ErrorMessage: "",
-		})),
-		mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(&storage.DeclarativeConfigHealth{
-			Id:           "id-perm-set-2",
-			Name:         "permission-set-2 in config map test-handler-1",
-			ResourceType: storage.DeclarativeConfigHealth_PERMISSION_SET,
-			ResourceName: "permission-set-2",
-			Status:       storage.DeclarativeConfigHealth_HEALTHY,
-			ErrorMessage: "",
-		})),
-		mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(&storage.DeclarativeConfigHealth{
-			Id:           "61a68f2a-2599-5a9f-a98a-8fc83e2c06cf",
-			Name:         "role in config map test-handler-2",
-			ResourceType: storage.DeclarativeConfigHealth_ROLE,
-			ResourceName: "role",
-			Status:       storage.DeclarativeConfigHealth_HEALTHY,
-			ErrorMessage: "",
-		})),
-		mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(&storage.DeclarativeConfigHealth{
-			Id:           "id-auth-provider",
-			Name:         "authProvider in config map test-handler-2",
-			ResourceType: storage.DeclarativeConfigHealth_AUTH_PROVIDER,
-			ResourceName: "authProvider",
-			Status:       storage.DeclarativeConfigHealth_HEALTHY,
-			ErrorMessage: "",
-		})),
-		mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(&storage.DeclarativeConfigHealth{
-			Id:           "group",
-			Name:         "group email:some@example.com:Admin for auth provider ID some-auth-provider in config map test-handler-2",
-			ResourceType: storage.DeclarativeConfigHealth_GROUP,
-			ResourceName: "group email:some@example.com:Admin for auth provider ID some-auth-provider",
-			Status:       storage.DeclarativeConfigHealth_HEALTHY,
-			ErrorMessage: "",
-		})),
-		mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(&storage.DeclarativeConfigHealth{
-			Id:           "notifierId",
-			Name:         "notifierName in config map test-handler-2",
-			ResourceType: storage.DeclarativeConfigHealth_NOTIFIER,
-			ResourceName: "notifierName",
-			Status:       storage.DeclarativeConfigHealth_HEALTHY,
-			ErrorMessage: "",
-		})),
-		mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(&storage.DeclarativeConfigHealth{
-			Id:           "m2m-config-id",
-			Name:         "https://kubernetes.default.svc in config map test-handler-2",
-			ResourceType: storage.DeclarativeConfigHealth_AUTH_MACHINE_TO_MACHINE_CONFIG,
-			ResourceName: "https://kubernetes.default.svc",
-			Status:       storage.DeclarativeConfigHealth_HEALTHY,
-			ErrorMessage: "",
-		})),
+		mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(dch)),
+		mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(dch2)),
+		mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(dch3)),
+		mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(dch4)),
+		mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(dch5)),
+		mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(dch6)),
+		mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(dch7)),
+		mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(dch8)),
 	)
 
 	// Delete resources should be called in order, ignoring the existing IDs from the previously upserted resources.
@@ -203,41 +194,41 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 	// in its name should be deleted.
 	gomock.InOrder(
 		mockHealthDS.EXPECT().GetDeclarativeConfigs(gomock.Any()).Return([]*storage.DeclarativeConfigHealth{
-			{
+			storage.DeclarativeConfigHealth_builder{
 				Id:           "some-id",
 				Name:         "Config Map some-config-map",
 				ResourceType: storage.DeclarativeConfigHealth_CONFIG_MAP,
-			},
-			{
+			}.Build(),
+			storage.DeclarativeConfigHealth_builder{
 				Id:           "notifierId",
 				Name:         "",
 				ResourceType: storage.DeclarativeConfigHealth_NOTIFIER,
-			},
-			{
+			}.Build(),
+			storage.DeclarativeConfigHealth_builder{
 				Id:           "group",
 				Name:         "",
 				ResourceType: storage.DeclarativeConfigHealth_GROUP,
-			},
-			{
+			}.Build(),
+			storage.DeclarativeConfigHealth_builder{
 				Id:           "id-auth-provider",
 				Name:         "",
 				ResourceType: storage.DeclarativeConfigHealth_AUTH_PROVIDER,
-			},
-			{
+			}.Build(),
+			storage.DeclarativeConfigHealth_builder{
 				Id:           "role",
 				Name:         "",
 				ResourceType: storage.DeclarativeConfigHealth_ROLE,
-			},
-			{
+			}.Build(),
+			storage.DeclarativeConfigHealth_builder{
 				Id:           "skipping-scope",
 				Name:         "",
 				ResourceType: storage.DeclarativeConfigHealth_ACCESS_SCOPE,
-			},
-			{
+			}.Build(),
+			storage.DeclarativeConfigHealth_builder{
 				Id:           "some-non-existent-id",
 				Name:         "I should be deleted",
 				ResourceType: storage.DeclarativeConfigHealth_GROUP,
-			},
+			}.Build(),
 		}, nil),
 		mockHealthDS.EXPECT().RemoveDeclarativeConfig(gomock.Any(), "some-non-existent-id"),
 	)
@@ -281,22 +272,21 @@ func TestReconcileTransformedMessages_ErrorPropagatedToReporter(t *testing.T) {
 	mockUpdater := updaterMocks.NewMockResourceUpdater(controller)
 	mockHealthDS := declarativeConfigHealthMock.NewMockDataStore(controller)
 
-	permissionSet1 := &storage.PermissionSet{
-		Name: "permission-set-1",
-		Id:   "some-id",
-	}
+	permissionSet1 := &storage.PermissionSet{}
+	permissionSet1.SetName("permission-set-1")
+	permissionSet1.SetId("some-id")
 
 	testError := errors.New("test error")
 	mockUpdater.EXPECT().Upsert(gomock.Any(), permissionSet1).Return(testError).Times(3)
 
-	mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(&storage.DeclarativeConfigHealth{
-		Id:           "some-id",
-		Name:         "permission-set-1 in config map test-handler-1",
-		ResourceType: storage.DeclarativeConfigHealth_PERMISSION_SET,
-		ResourceName: "permission-set-1",
-		Status:       storage.DeclarativeConfigHealth_UNHEALTHY,
-		ErrorMessage: "test error",
-	}))
+	dch := &storage.DeclarativeConfigHealth{}
+	dch.SetId("some-id")
+	dch.SetName("permission-set-1 in config map test-handler-1")
+	dch.SetResourceType(storage.DeclarativeConfigHealth_PERMISSION_SET)
+	dch.SetResourceName("permission-set-1")
+	dch.SetStatus(storage.DeclarativeConfigHealth_UNHEALTHY)
+	dch.SetErrorMessage("test error")
+	mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(dch))
 
 	mockUpdater.EXPECT().DeleteResources(gomock.Any(), gomock.Any()).Return(nil, nil).Times(supportedTypesCount)
 
@@ -324,10 +314,9 @@ func TestReconcileTransformedMessages_SkipReconciliationWithNoChanges(t *testing
 	mockUpdater := updaterMocks.NewMockResourceUpdater(controller)
 	mockHealthDS := declarativeConfigHealthMock.NewMockDataStore(controller)
 
-	permissionSet1 := &storage.PermissionSet{
-		Name: "permission-set-1",
-		Id:   "some-id",
-	}
+	permissionSet1 := &storage.PermissionSet{}
+	permissionSet1.SetName("permission-set-1")
+	permissionSet1.SetId("some-id")
 
 	m := newTestManager(t)
 	m.updaters = fillTypeResourceUpdaters(t, mockUpdater)
@@ -367,10 +356,9 @@ func TestReconcileTransformedMessages_SkipDeletion(t *testing.T) {
 	mockUpdater := updaterMocks.NewMockResourceUpdater(controller)
 	mockHealthDS := declarativeConfigHealthMock.NewMockDataStore(controller)
 
-	permissionSet1 := &storage.PermissionSet{
-		Name: "permission-set-1",
-		Id:   "some-id",
-	}
+	permissionSet1 := &storage.PermissionSet{}
+	permissionSet1.SetName("permission-set-1")
+	permissionSet1.SetId("some-id")
 
 	m := newTestManager(t)
 	m.updaters = fillTypeResourceUpdaters(t, mockUpdater)
@@ -424,10 +412,9 @@ func TestReconcileTransformedMessages_SkipUpsert(t *testing.T) {
 	mockUpdater := updaterMocks.NewMockResourceUpdater(controller)
 	mockHealthDS := declarativeConfigHealthMock.NewMockDataStore(controller)
 
-	permissionSet1 := &storage.PermissionSet{
-		Name: "permission-set-1",
-		Id:   "some-id",
-	}
+	permissionSet1 := &storage.PermissionSet{}
+	permissionSet1.SetName("permission-set-1")
+	permissionSet1.SetId("some-id")
 
 	m := newTestManager(t)
 	m.updaters = fillTypeResourceUpdaters(t, mockUpdater)
@@ -489,6 +476,11 @@ func TestUpdateDeclarativeConfigContents_RegisterHealthStatus(t *testing.T) {
 	m.universalTransformer = transformer
 	m.declarativeConfigHealthDS = mockHealthDS
 
+	role := &storage.Role{}
+	role.SetName("test-name")
+	role.SetDescription("test-description")
+	role.SetPermissionSetId("access-scope")
+	role.SetAccessScopeId("permission-set")
 	transformer.EXPECT().Transform(&declarativeconfig.Role{
 		Name:          "test-name",
 		Description:   "test-description",
@@ -496,34 +488,29 @@ func TestUpdateDeclarativeConfigContents_RegisterHealthStatus(t *testing.T) {
 		PermissionSet: "permission-set",
 	}).Return(map[reflect.Type][]protocompat.Message{
 		types.RoleType: {
-			&storage.Role{
-				Name:            "test-name",
-				Description:     "test-description",
-				PermissionSetId: "access-scope",
-				AccessScopeId:   "permission-set",
-			},
+			role,
 		},
 	}, nil)
 
 	mockHealthDS.EXPECT().GetDeclarativeConfig(gomock.Any(), gomock.Any()).Return(nil, false, nil).AnyTimes()
 
-	mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(&storage.DeclarativeConfigHealth{
-		Id:           "04a87e34-b568-5e14-90ac-380d25c8689b",
-		Name:         "test-name in config map my-cool-config-map",
-		ResourceType: storage.DeclarativeConfigHealth_ROLE,
-		ResourceName: "test-name",
-		Status:       storage.DeclarativeConfigHealth_HEALTHY,
-		ErrorMessage: "",
-	}))
+	dch := &storage.DeclarativeConfigHealth{}
+	dch.SetId("04a87e34-b568-5e14-90ac-380d25c8689b")
+	dch.SetName("test-name in config map my-cool-config-map")
+	dch.SetResourceType(storage.DeclarativeConfigHealth_ROLE)
+	dch.SetResourceName("test-name")
+	dch.SetStatus(storage.DeclarativeConfigHealth_HEALTHY)
+	dch.SetErrorMessage("")
+	mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(dch))
 
-	mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(&storage.DeclarativeConfigHealth{
-		Id:           declarativeconfig.NewDeclarativeHandlerUUID("my-cool-config-map").String(),
-		Name:         "Config Map my-cool-config-map",
-		ResourceType: storage.DeclarativeConfigHealth_CONFIG_MAP,
-		ResourceName: "my-cool-config-map",
-		Status:       storage.DeclarativeConfigHealth_HEALTHY,
-		ErrorMessage: "",
-	}))
+	dch2 := &storage.DeclarativeConfigHealth{}
+	dch2.SetId(declarativeconfig.NewDeclarativeHandlerUUID("my-cool-config-map").String())
+	dch2.SetName("Config Map my-cool-config-map")
+	dch2.SetResourceType(storage.DeclarativeConfigHealth_CONFIG_MAP)
+	dch2.SetResourceName("my-cool-config-map")
+	dch2.SetStatus(storage.DeclarativeConfigHealth_HEALTHY)
+	dch2.SetErrorMessage("")
+	mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(dch2))
 
 	m.UpdateDeclarativeConfigContents("/some/config/dir/to/my-cool-config-map", [][]byte{
 		[]byte(`
@@ -546,15 +533,15 @@ func TestUpdateDeclarativeConfigContents_Errors(t *testing.T) {
 	m.declarativeConfigHealthDS = reporter
 
 	// 1. Failure in unmarshalling the file.
-	reporter.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(&storage.DeclarativeConfigHealth{
-		Id:           declarativeconfig.NewDeclarativeHandlerUUID("my-cool-config-map").String(),
-		Name:         "Config Map my-cool-config-map",
-		ResourceType: storage.DeclarativeConfigHealth_CONFIG_MAP,
-		ResourceName: "my-cool-config-map",
-		Status:       storage.DeclarativeConfigHealth_UNHEALTHY,
-		ErrorMessage: fmt.Sprintf("could not unmarshal configuration into any of the supported types [%s]",
-			declarativeconfig.SupportedConfigurationTypes()),
-	}))
+	dch := &storage.DeclarativeConfigHealth{}
+	dch.SetId(declarativeconfig.NewDeclarativeHandlerUUID("my-cool-config-map").String())
+	dch.SetName("Config Map my-cool-config-map")
+	dch.SetResourceType(storage.DeclarativeConfigHealth_CONFIG_MAP)
+	dch.SetResourceName("my-cool-config-map")
+	dch.SetStatus(storage.DeclarativeConfigHealth_UNHEALTHY)
+	dch.SetErrorMessage(fmt.Sprintf("could not unmarshal configuration into any of the supported types [%s]",
+		declarativeconfig.SupportedConfigurationTypes()))
+	reporter.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(dch))
 
 	m.UpdateDeclarativeConfigContents("/some/config/dir/to/my-cool-config-map", [][]byte{
 		[]byte(`
@@ -566,14 +553,14 @@ func TestUpdateDeclarativeConfigContents_Errors(t *testing.T) {
 
 	transformer.EXPECT().Transform(gomock.Any()).Return(nil, errors.New("some-error-happened"))
 
-	reporter.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(&storage.DeclarativeConfigHealth{
-		Id:           declarativeconfig.NewDeclarativeHandlerUUID("my-cool-config-map").String(),
-		Name:         "Config Map my-cool-config-map",
-		ResourceType: storage.DeclarativeConfigHealth_CONFIG_MAP,
-		ResourceName: "my-cool-config-map",
-		Status:       storage.DeclarativeConfigHealth_UNHEALTHY,
-		ErrorMessage: "during transforming configuration: 1 error occurred:\n\t* some-error-happened\n\n",
-	}))
+	dch2 := &storage.DeclarativeConfigHealth{}
+	dch2.SetId(declarativeconfig.NewDeclarativeHandlerUUID("my-cool-config-map").String())
+	dch2.SetName("Config Map my-cool-config-map")
+	dch2.SetResourceType(storage.DeclarativeConfigHealth_CONFIG_MAP)
+	dch2.SetResourceName("my-cool-config-map")
+	dch2.SetStatus(storage.DeclarativeConfigHealth_UNHEALTHY)
+	dch2.SetErrorMessage("during transforming configuration: 1 error occurred:\n\t* some-error-happened\n\n")
+	reporter.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(dch2))
 
 	m.UpdateDeclarativeConfigContents("/some/config/dir/to/my-cool-config-map", [][]byte{
 		[]byte(`

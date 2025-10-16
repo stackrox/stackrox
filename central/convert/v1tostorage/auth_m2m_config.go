@@ -7,14 +7,13 @@ import (
 
 // AuthM2MConfig converts the given v1.AuthMachineToMachineConfig to storage.AuthMachineToMachineConfig.
 func AuthM2MConfig(config *v1.AuthMachineToMachineConfig) *storage.AuthMachineToMachineConfig {
-	storageConfig := &storage.AuthMachineToMachineConfig{
-		Id:                      config.GetId(),
-		Type:                    convertTypeEnum(config.GetType()),
-		TokenExpirationDuration: config.GetTokenExpirationDuration(),
-		Mappings:                convertMappings(config.GetMappings()),
-		Issuer:                  config.GetIssuer(),
-		Traits:                  Traits(config.GetTraits()),
-	}
+	storageConfig := &storage.AuthMachineToMachineConfig{}
+	storageConfig.SetId(config.GetId())
+	storageConfig.SetType(convertTypeEnum(config.GetType()))
+	storageConfig.SetTokenExpirationDuration(config.GetTokenExpirationDuration())
+	storageConfig.SetMappings(convertMappings(config.GetMappings()))
+	storageConfig.SetIssuer(config.GetIssuer())
+	storageConfig.SetTraits(Traits(config.GetTraits()))
 
 	return storageConfig
 }
@@ -25,11 +24,11 @@ func convertMappings(mappings []*v1.AuthMachineToMachineConfig_Mapping) []*stora
 	}
 	storageMappings := make([]*storage.AuthMachineToMachineConfig_Mapping, 0, len(mappings))
 	for _, mapping := range mappings {
-		storageMappings = append(storageMappings, &storage.AuthMachineToMachineConfig_Mapping{
-			Key:             mapping.GetKey(),
-			ValueExpression: mapping.GetValueExpression(),
-			Role:            mapping.GetRole(),
-		})
+		am := &storage.AuthMachineToMachineConfig_Mapping{}
+		am.SetKey(mapping.GetKey())
+		am.SetValueExpression(mapping.GetValueExpression())
+		am.SetRole(mapping.GetRole())
+		storageMappings = append(storageMappings, am)
 	}
 	return storageMappings
 }

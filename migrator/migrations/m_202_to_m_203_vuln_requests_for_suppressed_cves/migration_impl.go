@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
+	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm/clause"
 )
 
@@ -170,7 +171,7 @@ func updateImageCVEEdges(ctx context.Context, database *types.Databases, cveMap 
 			return errors.Wrapf(err, "failed to convert %+v to proto", proto)
 		}
 
-		proto.State = storage.VulnerabilityState_DEFERRED
+		proto.SetState(storage.VulnerabilityState_DEFERRED)
 
 		converted, err := schema.ConvertImageCVEEdgeFromProto(proto)
 		if err != nil {
@@ -221,7 +222,7 @@ func checkMatchingRequestsExist(ctx context.Context, database *types.Databases, 
 }
 
 func createVulnerabilityRequest(cve string, now, expiry *protocompat.Timestamp) *storage.VulnerabilityRequest {
-	return &storage.VulnerabilityRequest{
+	return storage.VulnerabilityRequest_builder{
 		Id:          exceptionID(cve),
 		Name:        exceptionName(cve),
 		TargetState: storage.VulnerabilityState_DEFERRED,
@@ -234,31 +235,25 @@ func createVulnerabilityRequest(cve string, now, expiry *protocompat.Timestamp) 
 		CreatedAt:   now,
 		LastUpdated: now,
 		Comments: []*storage.RequestComment{
-			{
+			storage.RequestComment_builder{
 				Id:        uuid.NewV4().String(),
 				Message:   "This is a system-generated exception for legacy global vulnerability deferral found during system upgrade",
 				User:      sysUser,
 				CreatedAt: now,
-			},
+			}.Build(),
 		},
-		Scope: &storage.VulnerabilityRequest_Scope{
-			Info: &storage.VulnerabilityRequest_Scope_ImageScope{
-				ImageScope: &storage.VulnerabilityRequest_Scope_Image{
-					Registry: ".*",
-					Remote:   ".*",
-					Tag:      ".*",
-				},
-			},
-		},
-		Req: &storage.VulnerabilityRequest_DeferralReq{
-			DeferralReq: getDeferralRequest(expiry),
-		},
-		Entities: &storage.VulnerabilityRequest_Cves{
-			Cves: &storage.VulnerabilityRequest_CVEs{
-				Cves: []string{cve},
-			},
-		},
-	}
+		Scope: storage.VulnerabilityRequest_Scope_builder{
+			ImageScope: storage.VulnerabilityRequest_Scope_Image_builder{
+				Registry: ".*",
+				Remote:   ".*",
+				Tag:      ".*",
+			}.Build(),
+		}.Build(),
+		DeferralReq: proto.ValueOrDefault(getDeferralRequest(expiry)),
+		Cves: storage.VulnerabilityRequest_CVEs_builder{
+			Cves: []string{cve},
+		}.Build(),
+	}.Build()
 }
 
 // This guarantees unique exception name because CVE is unique. This approach avoids extra database lookup
@@ -274,23 +269,21 @@ func exceptionID(cve string) string {
 
 func getDeferralRequest(expiry *protocompat.Timestamp) *storage.DeferralRequest {
 	if expiry == nil {
-		return &storage.DeferralRequest{
-			Expiry: &storage.RequestExpiry{
-				// Expiry is a OneOf type, and the OneOf wrapper types should be
-				// filled with valid data. Reflection-based proto encoding would
-				// panic on a non-nil *storage.RequestExpiry_ExpiresOn wrapping
-				// a nil timestamp object.
-				Expiry:     nil,
-				ExpiryType: storage.RequestExpiry_TIME,
-			},
-		}
+		re := &storage.RequestExpiry{}
+		// Expiry is a OneOf type, and the OneOf wrapper types should be
+		// filled with valid data. Reflection-based proto encoding would
+		// panic on a non-nil *storage.RequestExpiry_ExpiresOn wrapping
+		// a nil timestamp object.
+		re.ClearExpiry()
+		re.SetExpiryType(storage.RequestExpiry_TIME)
+		dr := &storage.DeferralRequest{}
+		dr.SetExpiry(re)
+		return dr
 	}
-	return &storage.DeferralRequest{
-		Expiry: &storage.RequestExpiry{
-			ExpiryType: storage.RequestExpiry_TIME,
-			Expiry: &storage.RequestExpiry_ExpiresOn{
-				ExpiresOn: expiry,
-			},
-		},
-	}
+	re := &storage.RequestExpiry{}
+	re.SetExpiryType(storage.RequestExpiry_TIME)
+	re.SetExpiresOn(proto.ValueOrDefault(expiry))
+	dr := &storage.DeferralRequest{}
+	dr.SetExpiry(re)
+	return dr
 }

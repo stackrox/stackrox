@@ -28,112 +28,112 @@ func TestMatchesDeploymentExclusion(t *testing.T) {
 		{
 			name:       "Named excluded scope",
 			deployment: fixtures.GetDeployment(),
-			policy: &storage.Policy{
+			policy: storage.Policy_builder{
 				Exclusions: []*storage.Exclusion{
-					{
-						Deployment: &storage.Exclusion_Deployment{Name: fixtures.GetDeployment().GetName()},
-					},
+					storage.Exclusion_builder{
+						Deployment: storage.Exclusion_Deployment_builder{Name: fixtures.GetDeployment().GetName()}.Build(),
+					}.Build(),
 				},
-			},
+			}.Build(),
 			shouldMatch: true,
 		},
 		{
 			name:       "Named excluded scope with matching regex",
 			deployment: fixtures.GetDeployment(),
-			policy: &storage.Policy{
+			policy: storage.Policy_builder{
 				Exclusions: []*storage.Exclusion{
-					{
-						Deployment: &storage.Exclusion_Deployment{Name: "nginx.*"},
-					},
+					storage.Exclusion_builder{
+						Deployment: storage.Exclusion_Deployment_builder{Name: "nginx.*"}.Build(),
+					}.Build(),
 				},
-			},
+			}.Build(),
 			shouldMatch: true,
 		},
 		{
 			name:       "Named excluded scope with non-matching regex",
 			deployment: fixtures.GetDeployment(),
-			policy: &storage.Policy{
+			policy: storage.Policy_builder{
 				Exclusions: []*storage.Exclusion{
-					{
-						Deployment: &storage.Exclusion_Deployment{Name: "nginy.*"},
-					},
+					storage.Exclusion_builder{
+						Deployment: storage.Exclusion_Deployment_builder{Name: "nginy.*"}.Build(),
+					}.Build(),
 				},
-			},
+			}.Build(),
 			shouldMatch: false,
 		},
 		{
 			name:       "Named excluded scope with invalid regex (ensure no error)",
 			deployment: fixtures.GetDeployment(),
-			policy: &storage.Policy{
+			policy: storage.Policy_builder{
 				Exclusions: []*storage.Exclusion{
-					{
-						Deployment: &storage.Exclusion_Deployment{Name: "ngin\\K"},
-					},
+					storage.Exclusion_builder{
+						Deployment: storage.Exclusion_Deployment_builder{Name: "ngin\\K"}.Build(),
+					}.Build(),
 				},
-			},
+			}.Build(),
 			shouldMatch: false,
 		},
 		{
 			name:       "Named excluded scope, and another with a different name",
 			deployment: fixtures.GetDeployment(),
-			policy: &storage.Policy{
+			policy: storage.Policy_builder{
 				Exclusions: []*storage.Exclusion{
-					{
-						Deployment: &storage.Exclusion_Deployment{Name: fixtures.GetDeployment().GetName()},
-					},
-					{
-						Deployment: &storage.Exclusion_Deployment{Name: uuid.NewV4().String()},
-					},
+					storage.Exclusion_builder{
+						Deployment: storage.Exclusion_Deployment_builder{Name: fixtures.GetDeployment().GetName()}.Build(),
+					}.Build(),
+					storage.Exclusion_builder{
+						Deployment: storage.Exclusion_Deployment_builder{Name: uuid.NewV4().String()}.Build(),
+					}.Build(),
 				},
-			},
+			}.Build(),
 			shouldMatch: true,
 		},
 		{
 			name:       "Named excluded scope with different name",
 			deployment: fixtures.GetDeployment(),
-			policy: &storage.Policy{
+			policy: storage.Policy_builder{
 				Exclusions: []*storage.Exclusion{
-					{
-						Deployment: &storage.Exclusion_Deployment{Name: uuid.NewV4().String()},
-					},
+					storage.Exclusion_builder{
+						Deployment: storage.Exclusion_Deployment_builder{Name: uuid.NewV4().String()}.Build(),
+					}.Build(),
 				},
-			},
+			}.Build(),
 			shouldMatch: false,
 		},
 		{
 			name:       "Scoped excluded scope",
 			deployment: fixtures.GetDeployment(),
-			policy: &storage.Policy{
+			policy: storage.Policy_builder{
 				Exclusions: []*storage.Exclusion{
-					{
-						Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: fixtures.GetDeployment().GetNamespace()}},
-					},
+					storage.Exclusion_builder{
+						Deployment: storage.Exclusion_Deployment_builder{Scope: storage.Scope_builder{Namespace: fixtures.GetDeployment().GetNamespace()}.Build()}.Build(),
+					}.Build(),
 				},
-			},
+			}.Build(),
 			shouldMatch: true,
 		},
 		{
 			name:       "Scoped excluded scope with wrong name",
 			deployment: fixtures.GetDeployment(),
-			policy: &storage.Policy{
+			policy: storage.Policy_builder{
 				Exclusions: []*storage.Exclusion{
-					{
-						Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: uuid.NewV4().String()}},
-					},
+					storage.Exclusion_builder{
+						Deployment: storage.Exclusion_Deployment_builder{Scope: storage.Scope_builder{Namespace: uuid.NewV4().String()}.Build()}.Build(),
+					}.Build(),
 				},
-			},
+			}.Build(),
 			shouldMatch: false,
 		},
 		{
 			name:       "Scoped excluded scope, but different name",
 			deployment: fixtures.GetDeployment(),
-			policy: &storage.Policy{
+			policy: storage.Policy_builder{
 				Exclusions: []*storage.Exclusion{
-					{
-						Deployment: &storage.Exclusion_Deployment{Name: uuid.NewV4().String(), Scope: &storage.Scope{Namespace: fixtures.GetDeployment().GetNamespace()}},
-					},
+					storage.Exclusion_builder{
+						Deployment: storage.Exclusion_Deployment_builder{Name: uuid.NewV4().String(), Scope: storage.Scope_builder{Namespace: fixtures.GetDeployment().GetNamespace()}.Build()}.Build(),
+					}.Build(),
 				},
-			},
+			}.Build(),
 			shouldMatch: false,
 		},
 	}
@@ -152,16 +152,20 @@ func TestMatchesDeploymentExclusion(t *testing.T) {
 			// If it should match, make sure it doesn't match if the exclusions are all expired.
 			if c.shouldMatch {
 				for _, exclusion := range c.policy.GetExclusions() {
-					exclusion.Expiration = protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour))
+					exclusion.SetExpiration(protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)))
 				}
 				assert.False(t, deploymentMatchesExclusions(c.deployment, compiledExclusions))
 
 				for _, exclusion := range c.policy.GetExclusions() {
-					exclusion.Expiration = protoconv.MustConvertTimeToTimestamp(time.Now().Add(time.Hour))
+					exclusion.SetExpiration(protoconv.MustConvertTimeToTimestamp(time.Now().Add(time.Hour)))
 				}
 				assert.True(t, deploymentMatchesExclusions(c.deployment, compiledExclusions))
 			}
-			c.policy.Exclusions = append(c.policy.Exclusions, &storage.Exclusion{Image: &storage.Exclusion_Image{Name: "BLAH"}})
+			ei := &storage.Exclusion_Image{}
+			ei.SetName("BLAH")
+			exclusion := &storage.Exclusion{}
+			exclusion.SetImage(ei)
+			c.policy.SetExclusions(append(c.policy.GetExclusions(), exclusion))
 			assert.Equal(t, c.shouldMatch, got)
 		})
 	}
@@ -177,51 +181,51 @@ func TestMatchesImageExclusion(t *testing.T) {
 		{
 			name:  "no excluded scopes",
 			image: "docker.io/stackrox/main",
-			policy: &storage.Policy{
+			policy: storage.Policy_builder{
 				Exclusions: []*storage.Exclusion{},
-			},
+			}.Build(),
 			shouldMatch: false,
 		},
 		{
 			name:  "doesn't match",
 			image: "docker.io/stackrox/main",
-			policy: &storage.Policy{
+			policy: storage.Policy_builder{
 				Exclusions: []*storage.Exclusion{
-					{Image: &storage.Exclusion_Image{Name: "docker.io/stackrox/mainasfasf"}},
+					storage.Exclusion_builder{Image: storage.Exclusion_Image_builder{Name: "docker.io/stackrox/mainasfasf"}.Build()}.Build(),
 				},
-			},
+			}.Build(),
 			shouldMatch: false,
 		},
 		{
 			name:  "matches",
 			image: "docker.io/stackrox/main",
-			policy: &storage.Policy{
+			policy: storage.Policy_builder{
 				Exclusions: []*storage.Exclusion{
-					{Image: &storage.Exclusion_Image{Name: "docker.io/stackrox/m"}},
+					storage.Exclusion_builder{Image: storage.Exclusion_Image_builder{Name: "docker.io/stackrox/m"}.Build()}.Build(),
 				},
-			},
+			}.Build(),
 			shouldMatch: true,
 		},
 		{
 			name:  "one matches",
 			image: "docker.io/stackrox/main",
-			policy: &storage.Policy{
+			policy: storage.Policy_builder{
 				Exclusions: []*storage.Exclusion{
-					{Image: &storage.Exclusion_Image{Name: "BLAH"}},
-					{Image: &storage.Exclusion_Image{Name: "docker.io/stackrox/m"}},
+					storage.Exclusion_builder{Image: storage.Exclusion_Image_builder{Name: "BLAH"}.Build()}.Build(),
+					storage.Exclusion_builder{Image: storage.Exclusion_Image_builder{Name: "docker.io/stackrox/m"}.Build()}.Build(),
 				},
-			},
+			}.Build(),
 			shouldMatch: true,
 		},
 		{
 			name:  "neither matches",
 			image: "docker.io/stackrox/main",
-			policy: &storage.Policy{
+			policy: storage.Policy_builder{
 				Exclusions: []*storage.Exclusion{
-					{Image: &storage.Exclusion_Image{Name: "BLAH"}},
-					{Image: &storage.Exclusion_Image{Name: "docker.io/stackrox/masfasfa"}},
+					storage.Exclusion_builder{Image: storage.Exclusion_Image_builder{Name: "BLAH"}.Build()}.Build(),
+					storage.Exclusion_builder{Image: storage.Exclusion_Image_builder{Name: "docker.io/stackrox/masfasfa"}.Build()}.Build(),
 				},
-			},
+			}.Build(),
 			shouldMatch: false,
 		},
 	}
@@ -233,16 +237,20 @@ func TestMatchesImageExclusion(t *testing.T) {
 			// If it should match, make sure it doesn't match if the excluded scopes are all expired.
 			if c.shouldMatch {
 				for _, exclusion := range c.policy.GetExclusions() {
-					exclusion.Expiration = protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour))
+					exclusion.SetExpiration(protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)))
 				}
 				assert.False(t, matchesImageExclusion(c.image, c.policy))
 
 				for _, exclusion := range c.policy.GetExclusions() {
-					exclusion.Expiration = protoconv.MustConvertTimeToTimestamp(time.Now().Add(time.Hour))
+					exclusion.SetExpiration(protoconv.MustConvertTimeToTimestamp(time.Now().Add(time.Hour)))
 				}
 				assert.True(t, matchesImageExclusion(c.image, c.policy))
 			}
-			c.policy.Exclusions = append(c.policy.Exclusions, &storage.Exclusion{Deployment: &storage.Exclusion_Deployment{Name: "BLAH"}})
+			ed := &storage.Exclusion_Deployment{}
+			ed.SetName("BLAH")
+			exclusion := &storage.Exclusion{}
+			exclusion.SetDeployment(ed)
+			c.policy.SetExclusions(append(c.policy.GetExclusions(), exclusion))
 			assert.Equal(t, c.shouldMatch, got)
 		})
 	}

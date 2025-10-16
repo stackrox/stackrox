@@ -50,7 +50,9 @@ type pingService struct {
 func (s *pingService) Ping(ctx context.Context, in *pb.Empty) (*pb.PongMessage, error) {
 	ri := FromContext(ctx)
 	s.ri = &ri
-	return &pb.PongMessage{Status: "pong"}, nil
+	pm := &pb.PongMessage{}
+	pm.SetStatus("pong")
+	return pm, nil
 }
 
 func Test_PureGRPC(t *testing.T) {

@@ -63,7 +63,9 @@ type fakePodsService struct {
 
 func (s *fakePodsService) ExportPods(_ *v1.ExportPodRequest, srv v1.PodService_ExportPodsServer) error {
 	testPod := fixtures.GetPod()
-	return srv.Send(&v1.ExportPodResponse{Pod: testPod})
+	epr := &v1.ExportPodResponse{}
+	epr.SetPod(testPod)
+	return srv.Send(epr)
 }
 
 func (s *fakePodsService) GetPods(_ context.Context, _ *v1.RawQuery) (*v1.PodsResponse, error) {

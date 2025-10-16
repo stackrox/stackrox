@@ -159,7 +159,7 @@ func (h *ExportServicePostgresTestHelper) InjectImages(
 		for j := 0; j < copyCount; j++ {
 			clone := img.CloneVT()
 			hash := random.GenerateString(64, random.HexValues)
-			clone.Id = fmt.Sprintf("sha256:%s", hash)
+			clone.SetId(fmt.Sprintf("sha256:%s", hash))
 			err := h.Images.UpsertImage(upsertCtx, clone)
 			if err != nil {
 				return nil, nil, err
@@ -198,46 +198,45 @@ func (h *ExportServicePostgresTestHelper) InjectDeployments(
 			idx := int(rand.Int31()) % len(imageIDs)
 			imageID := imageIDs[idx]
 			imageName := imageNamesByIDs[imageID]
-			containerImage := &storage.ContainerImage{
-				Id:             imageID,
-				Name:           imageName,
-				NotPullable:    false,
-				IsClusterLocal: false,
-			}
+			containerImage := &storage.ContainerImage{}
+			containerImage.SetId(imageID)
+			containerImage.SetName(imageName)
+			containerImage.SetNotPullable(false)
+			containerImage.SetIsClusterLocal(false)
 			// region ensure enum values are valid
 			// Note: the unique initializer considers enum fields as int32
 			// and fills them with values that are mostly out of the valid
 			// range. These get reverted to fixed valid values so decoders
 			// do not break.
-			container.Image = containerImage
+			container.SetImage(containerImage)
 			for _, v := range container.GetVolumes() {
-				v.MountPropagation = storage.Volume_NONE
+				v.SetMountPropagation(storage.Volume_NONE)
 			}
 			if container.GetConfig() != nil {
 				for _, e := range container.GetConfig().GetEnv() {
-					e.EnvVarSource = storage.ContainerConfig_EnvironmentConfig_UNKNOWN
+					e.SetEnvVarSource(storage.ContainerConfig_EnvironmentConfig_UNKNOWN)
 				}
 			}
 			for _, portConfig := range container.GetPorts() {
-				portConfig.Exposure = storage.PortConfig_INTERNAL
+				portConfig.SetExposure(storage.PortConfig_INTERNAL)
 				for _, exposureInfo := range portConfig.GetExposureInfos() {
-					exposureInfo.Level = storage.PortConfig_INTERNAL
+					exposureInfo.SetLevel(storage.PortConfig_INTERNAL)
 				}
 			}
 			// endregion ensure enum values are valid
 			containers = append(containers, container)
 		}
-		deployment.Containers = containers
+		deployment.SetContainers(containers)
 		if i%10 == 9 {
-			deployment.Namespace = namespace10pct
+			deployment.SetNamespace(namespace10pct)
 		} else {
-			deployment.Namespace = namepsace90pct
+			deployment.SetNamespace(namepsace90pct)
 		}
 		// Set the enum values to valid data.
 		for _, portConfig := range deployment.GetPorts() {
-			portConfig.Exposure = storage.PortConfig_INTERNAL
+			portConfig.SetExposure(storage.PortConfig_INTERNAL)
 			for _, exposureInfo := range portConfig.GetExposureInfos() {
-				exposureInfo.Level = storage.PortConfig_INTERNAL
+				exposureInfo.SetLevel(storage.PortConfig_INTERNAL)
 			}
 		}
 
@@ -262,9 +261,9 @@ func (h *ExportServicePostgresTestHelper) InjectPods(
 		if err != nil {
 			return err
 		}
-		pod.DeploymentId = dep.GetId()
-		pod.Namespace = dep.GetNamespace()
-		pod.ClusterId = dep.GetClusterId()
+		pod.SetDeploymentId(dep.GetId())
+		pod.SetNamespace(dep.GetNamespace())
+		pod.SetClusterId(dep.GetClusterId())
 
 		podLiveInstances := make([]*storage.ContainerInstance, 0, len(dep.GetContainers()))
 		for _, container := range dep.GetContainers() {
@@ -274,13 +273,13 @@ func (h *ExportServicePostgresTestHelper) InjectPods(
 				return err
 			}
 
-			instance.ContainerName = container.GetName()
-			instance.ContainingPodId = pod.GetId()
-			instance.ImageDigest = container.GetImage().GetId()
+			instance.SetContainerName(container.GetName())
+			instance.SetContainingPodId(pod.GetId())
+			instance.SetImageDigest(container.GetImage().GetId())
 
 			podLiveInstances = append(podLiveInstances, instance)
 		}
-		pod.LiveInstances = podLiveInstances
+		pod.SetLiveInstances(podLiveInstances)
 
 		err = h.Pods.UpsertPod(upsertCtx, pod)
 		if err != nil {

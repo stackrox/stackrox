@@ -206,7 +206,7 @@ func (h sbomHttpHandler) scannedByScannerV4(img *storage.Image) bool {
 
 // saveImage saves the image to Central's database.
 func (h sbomHttpHandler) saveImage(img *storage.Image) error {
-	img.Id = utils.GetSHA(img)
+	img.SetId(utils.GetSHA(img))
 	if img.GetId() == "" {
 		return nil
 	}

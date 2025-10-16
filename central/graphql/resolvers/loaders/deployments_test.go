@@ -62,10 +62,14 @@ func (suite *DeploymentLoaderTestSuite) TearDownTest() {
 
 func (suite *DeploymentLoaderTestSuite) TestFromID() {
 	// Create a loader with some reloaded deployments.
+	deployment2 := &storage.Deployment{}
+	deployment2.SetId(dep1)
+	deployment3 := &storage.Deployment{}
+	deployment3.SetId(dep2)
 	loader := deploymentLoaderImpl{
 		loaded: map[string]*storage.Deployment{
-			"dep1": {Id: dep1},
-			"dep2": {Id: dep2},
+			"dep1": deployment2,
+			"dep2": deployment3,
 		},
 		ds:             suite.mockDataStore,
 		deploymentView: suite.mockView,
@@ -77,7 +81,8 @@ func (suite *DeploymentLoaderTestSuite) TestFromID() {
 	protoassert.Equal(suite.T(), loader.loaded[dep1], deployment)
 
 	// Get a non-preloaded deployment from id.
-	thirdDeployment := &storage.Deployment{Id: dep3}
+	thirdDeployment := &storage.Deployment{}
+	thirdDeployment.SetId(dep3)
 	suite.mockDataStore.EXPECT().GetDeployments(suite.ctx, []string{dep3}).
 		Return([]*storage.Deployment{thirdDeployment}, nil)
 
@@ -93,10 +98,14 @@ func (suite *DeploymentLoaderTestSuite) TestFromID() {
 
 func (suite *DeploymentLoaderTestSuite) TestFromIDs() {
 	// Create a loader with some reloaded deployments.
+	deployment := &storage.Deployment{}
+	deployment.SetId(dep1)
+	deployment2 := &storage.Deployment{}
+	deployment2.SetId(dep2)
 	loader := deploymentLoaderImpl{
 		loaded: map[string]*storage.Deployment{
-			"dep1": {Id: dep1},
-			"dep2": {Id: dep2},
+			"dep1": deployment,
+			"dep2": deployment2,
 		},
 		ds:             suite.mockDataStore,
 		deploymentView: suite.mockView,
@@ -111,7 +120,8 @@ func (suite *DeploymentLoaderTestSuite) TestFromIDs() {
 	}, deployments)
 
 	// Get a non-preloaded deployment from id.
-	thirdDeployment := &storage.Deployment{Id: "dep3"}
+	thirdDeployment := &storage.Deployment{}
+	thirdDeployment.SetId("dep3")
 	suite.mockDataStore.EXPECT().GetDeployments(suite.ctx, []string{dep3}).
 		Return([]*storage.Deployment{thirdDeployment}, nil)
 
@@ -135,10 +145,14 @@ func (suite *DeploymentLoaderTestSuite) TestFromIDs() {
 
 func (suite *DeploymentLoaderTestSuite) TestFromQuery() {
 	// Create a loader with some reloaded deployments.
+	deployment := &storage.Deployment{}
+	deployment.SetId(dep1)
+	deployment2 := &storage.Deployment{}
+	deployment2.SetId(dep2)
 	loader := deploymentLoaderImpl{
 		loaded: map[string]*storage.Deployment{
-			"dep1": {Id: dep1},
-			"dep2": {Id: dep2},
+			"dep1": deployment,
+			"dep2": deployment2,
 		},
 		ds:             suite.mockDataStore,
 		deploymentView: suite.mockView,
@@ -207,7 +221,8 @@ func (suite *DeploymentLoaderTestSuite) TestFromQuery() {
 		suite.mockView.EXPECT().Get(suite.ctx, query).Return(results, nil)
 	}
 
-	thirdDeployment := &storage.Deployment{Id: "dep3"}
+	thirdDeployment := &storage.Deployment{}
+	thirdDeployment.SetId("dep3")
 	suite.mockDataStore.EXPECT().GetDeployments(suite.ctx, []string{dep3}).
 		Return([]*storage.Deployment{thirdDeployment}, nil)
 

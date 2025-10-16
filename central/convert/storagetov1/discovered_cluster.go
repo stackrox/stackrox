@@ -8,21 +8,20 @@ import (
 // DiscoveredCluster converts the given storage.DiscoveredCluster to a v1.DiscoveredCluster.
 func DiscoveredCluster(discoveredCluster *storage.DiscoveredCluster) *v1.DiscoveredCluster {
 	metadata := discoveredCluster.GetMetadata()
-	v1DiscoveredCluster := &v1.DiscoveredCluster{
-		Id: discoveredCluster.GetId(),
-		Metadata: &v1.DiscoveredCluster_Metadata{
-			Id:                metadata.GetId(),
-			Name:              metadata.GetName(),
-			Type:              discoveredClusterToV1TypeEnum(metadata.GetType()),
-			ProviderType:      discoveredClusterToV1ProviderTypeEnum(metadata.GetProviderType()),
-			Region:            metadata.GetRegion(),
-			FirstDiscoveredAt: metadata.GetFirstDiscoveredAt(),
-		},
-		Status: discoveredClusterToV1StatusEnum(discoveredCluster.GetStatus()),
-		Source: &v1.DiscoveredCluster_CloudSource{
-			Id: discoveredCluster.GetSourceId(),
-		},
-	}
+	dm := &v1.DiscoveredCluster_Metadata{}
+	dm.SetId(metadata.GetId())
+	dm.SetName(metadata.GetName())
+	dm.SetType(discoveredClusterToV1TypeEnum(metadata.GetType()))
+	dm.SetProviderType(discoveredClusterToV1ProviderTypeEnum(metadata.GetProviderType()))
+	dm.SetRegion(metadata.GetRegion())
+	dm.SetFirstDiscoveredAt(metadata.GetFirstDiscoveredAt())
+	dc := &v1.DiscoveredCluster_CloudSource{}
+	dc.SetId(discoveredCluster.GetSourceId())
+	v1DiscoveredCluster := &v1.DiscoveredCluster{}
+	v1DiscoveredCluster.SetId(discoveredCluster.GetId())
+	v1DiscoveredCluster.SetMetadata(dm)
+	v1DiscoveredCluster.SetStatus(discoveredClusterToV1StatusEnum(discoveredCluster.GetStatus()))
+	v1DiscoveredCluster.SetSource(dc)
 	return v1DiscoveredCluster
 }
 

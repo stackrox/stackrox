@@ -89,16 +89,16 @@ func getLatestViolationTime(ctx context.Context, root *Resolver, q *v1.Query) (*
 		search.NewQueryBuilder().
 			AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery())
 
-	q.Pagination = &v1.QueryPagination{
-		SortOptions: []*v1.QuerySortOption{
-			{
-				Field:    search.ViolationTime.String(),
-				Reversed: true,
-			},
-		},
-		Limit:  1,
-		Offset: 0,
-	}
+	qso := &v1.QuerySortOption{}
+	qso.SetField(search.ViolationTime.String())
+	qso.SetReversed(true)
+	qp := &v1.QueryPagination{}
+	qp.SetSortOptions([]*v1.QuerySortOption{
+		qso,
+	})
+	qp.SetLimit(1)
+	qp.SetOffset(0)
+	q.SetPagination(qp)
 
 	alerts, err := root.ViolationsDataStore.SearchRawAlerts(ctx, q, true)
 	if err != nil || len(alerts) == 0 || alerts[0] == nil {
@@ -121,9 +121,9 @@ func anyActiveDeployAlerts(ctx context.Context, root *Resolver, q *v1.Query) (bo
 	if err != nil {
 		return false, err
 	}
-	q.Pagination = &v1.QueryPagination{
-		Limit: 1,
-	}
+	qp := &v1.QueryPagination{}
+	qp.SetLimit(1)
+	q.SetPagination(qp)
 
 	results, err := root.ViolationsDataStore.Search(ctx, q, true)
 	return len(results) != 0, err

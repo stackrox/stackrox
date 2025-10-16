@@ -59,28 +59,28 @@ func FillPagination(query *v1.Query, pagination *v1.Pagination, maxLimit int32) 
 
 	// Fill in limit, and check boundaries.
 	if pagination.GetLimit() == 0 || pagination.GetLimit() > maxLimit {
-		queryPagination.Limit = maxLimit
+		queryPagination.SetLimit(maxLimit)
 	} else {
-		queryPagination.Limit = pagination.GetLimit()
+		queryPagination.SetLimit(pagination.GetLimit())
 	}
 	// Fill in offset.
-	queryPagination.Offset = pagination.GetOffset()
+	queryPagination.SetOffset(pagination.GetOffset())
 
 	// Fill in sort options.
 	for _, so := range pagination.GetSortOptions() {
-		queryPagination.SortOptions = append(queryPagination.SortOptions, toQuerySortOption(so))
+		queryPagination.SetSortOptions(append(queryPagination.GetSortOptions(), toQuerySortOption(so)))
 	}
 
 	// Prefer the new field over the old one.
 	if len(pagination.GetSortOptions()) > 0 {
-		query.Pagination = queryPagination
+		query.SetPagination(queryPagination)
 		return
 	}
 
 	if pagination.GetSortOption() != nil {
-		queryPagination.SortOptions = append(queryPagination.SortOptions, toQuerySortOption(pagination.GetSortOption()))
+		queryPagination.SetSortOptions(append(queryPagination.GetSortOptions(), toQuerySortOption(pagination.GetSortOption())))
 	}
-	query.Pagination = queryPagination
+	query.SetPagination(queryPagination)
 }
 
 // FillDefaultSortOption returns a copy of the query with the default sort option added if none is present.
@@ -91,21 +91,20 @@ func FillDefaultSortOption(q *v1.Query, defaultSortOption *v1.QuerySortOption) *
 	// Add pagination sort order if needed.
 	local := q.CloneVT()
 	if local.GetPagination() == nil {
-		local.Pagination = new(v1.QueryPagination)
+		local.SetPagination(new(v1.QueryPagination))
 	}
 	if len(local.GetPagination().GetSortOptions()) == 0 {
-		local.Pagination.SortOptions = append(local.Pagination.SortOptions, defaultSortOption)
+		local.GetPagination().SetSortOptions(append(local.GetPagination().GetSortOptions(), defaultSortOption))
 	}
 	return local
 }
 
 func toQuerySortOption(sortOption *v1.SortOption) *v1.QuerySortOption {
-	ret := &v1.QuerySortOption{
-		Field:    sortOption.GetField(),
-		Reversed: sortOption.GetReversed(),
-	}
+	ret := &v1.QuerySortOption{}
+	ret.SetField(sortOption.GetField())
+	ret.SetReversed(sortOption.GetReversed())
 	if sortOption.GetAggregateBy() != nil {
-		ret.AggregateBy = sortOption.GetAggregateBy()
+		ret.SetAggregateBy(sortOption.GetAggregateBy())
 	}
 	return ret
 }
@@ -116,46 +115,45 @@ func FillPaginationV2(query *v1.Query, pagination *v2.Pagination, maxLimit int32
 
 	// Fill in limit, and check boundaries.
 	if pagination.GetLimit() == 0 || pagination.GetLimit() > maxLimit {
-		queryPagination.Limit = maxLimit
+		queryPagination.SetLimit(maxLimit)
 	} else {
-		queryPagination.Limit = pagination.GetLimit()
+		queryPagination.SetLimit(pagination.GetLimit())
 	}
 	// Fill in offset.
-	queryPagination.Offset = pagination.GetOffset()
+	queryPagination.SetOffset(pagination.GetOffset())
 
 	// Fill in sort options.
 	for _, so := range pagination.GetSortOptions() {
-		queryPagination.SortOptions = append(queryPagination.SortOptions, toQuerySortOptionV2(so))
+		queryPagination.SetSortOptions(append(queryPagination.GetSortOptions(), toQuerySortOptionV2(so)))
 	}
 
 	// Prefer the new field over the old one.
 	if len(pagination.GetSortOptions()) > 0 {
-		query.Pagination = queryPagination
+		query.SetPagination(queryPagination)
 		return
 	}
 
 	if pagination.GetSortOption() != nil {
-		queryPagination.SortOptions = append(queryPagination.SortOptions, toQuerySortOptionV2(pagination.GetSortOption()))
+		queryPagination.SetSortOptions(append(queryPagination.GetSortOptions(), toQuerySortOptionV2(pagination.GetSortOption())))
 	}
-	query.Pagination = queryPagination
+	query.SetPagination(queryPagination)
 }
 
 func toQuerySortOptionV2(sortOption *v2.SortOption) *v1.QuerySortOption {
-	ret := &v1.QuerySortOption{
-		Field:    sortOption.GetField(),
-		Reversed: sortOption.GetReversed(),
-	}
+	ret := &v1.QuerySortOption{}
+	ret.SetField(sortOption.GetField())
+	ret.SetReversed(sortOption.GetReversed())
 	if sortOption.GetAggregateBy() != nil {
-		ret.AggregateBy = convertV2AggregateByToV1(sortOption.GetAggregateBy())
+		ret.SetAggregateBy(convertV2AggregateByToV1(sortOption.GetAggregateBy()))
 	}
 	return ret
 }
 
 func convertV2AggregateByToV1(aggregateBy *v2.AggregateBy) *v1.AggregateBy {
-	return &v1.AggregateBy{
-		AggrFunc: v1.Aggregation(aggregateBy.GetAggrFunc()),
-		Distinct: aggregateBy.GetDistinct(),
-	}
+	ab := &v1.AggregateBy{}
+	ab.SetAggrFunc(v1.Aggregation(aggregateBy.GetAggrFunc()))
+	ab.SetDistinct(aggregateBy.GetDistinct())
+	return ab
 }
 
 func PaginateSlice[T any](offset, limit int, slice []T) []T {

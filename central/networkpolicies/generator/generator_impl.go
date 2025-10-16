@@ -62,10 +62,10 @@ func markGeneratedPoliciesForDeletion(policies []*storage.NetworkPolicy) ([]*sto
 			continue
 		}
 		if isGeneratedPolicy(policy) {
-			toDelete = append(toDelete, &storage.NetworkPolicyReference{
-				Name:      policy.GetName(),
-				Namespace: policy.GetNamespace(),
-			})
+			npr := &storage.NetworkPolicyReference{}
+			npr.SetName(policy.GetName())
+			npr.SetNamespace(policy.GetNamespace())
+			toDelete = append(toDelete, npr)
 		} else {
 			userPolicies = append(userPolicies, policy)
 		}
@@ -80,10 +80,10 @@ func markAllPoliciesForDeletion(policies []*storage.NetworkPolicy) []*storage.Ne
 		if isProtectedNamespace(policy.GetNamespace()) {
 			continue
 		}
-		toDelete = append(toDelete, &storage.NetworkPolicyReference{
-			Name:      policy.GetName(),
-			Namespace: policy.GetNamespace(),
-		})
+		npr := &storage.NetworkPolicyReference{}
+		npr.SetName(policy.GetName())
+		npr.SetNamespace(policy.GetNamespace())
+		toDelete = append(toDelete, npr)
 	}
 	return toDelete
 }
@@ -194,22 +194,21 @@ func generatePolicy(node *node, namespacesByName map[string]*storage.NamespaceMe
 		return nil
 	}
 
-	policy := &storage.NetworkPolicy{
-		Name:        fmt.Sprintf("stackrox-generated-%s", node.deployment.GetName()),
-		Namespace:   node.deployment.GetNamespace(),
-		ClusterId:   node.deployment.GetClusterId(),
-		ClusterName: node.deployment.GetClusterName(),
-		Labels: map[string]string{
-			generatedNetworkPolicyLabel: "true",
-		},
-		ApiVersion: networkPolicyAPIVersion,
-		Spec: &storage.NetworkPolicySpec{
-			PodSelector: labelSelectorForDeployment(node.deployment),
-		},
-	}
+	nps := &storage.NetworkPolicySpec{}
+	nps.SetPodSelector(labelSelectorForDeployment(node.deployment))
+	policy := &storage.NetworkPolicy{}
+	policy.SetName(fmt.Sprintf("stackrox-generated-%s", node.deployment.GetName()))
+	policy.SetNamespace(node.deployment.GetNamespace())
+	policy.SetClusterId(node.deployment.GetClusterId())
+	policy.SetClusterName(node.deployment.GetClusterName())
+	policy.SetLabels(map[string]string{
+		generatedNetworkPolicyLabel: "true",
+	})
+	policy.SetApiVersion(networkPolicyAPIVersion)
+	policy.SetSpec(nps)
 
-	policy.Spec.Ingress = generateIngressRules(node, namespacesByName)
-	policy.Spec.PolicyTypes = []storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE}
+	policy.GetSpec().SetIngress(generateIngressRules(node, namespacesByName))
+	policy.GetSpec().SetPolicyTypes([]storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE})
 
 	return policy
 }
@@ -220,22 +219,21 @@ func (g *generator) getBaselineGeneratedPolicyName(deploymentName string) string
 
 func (g *generator) getBaselineGeneratedPolicy(node *node, namespacesByName map[string]*storage.NamespaceMetadata) *storage.NetworkPolicy {
 
-	policy := &storage.NetworkPolicy{
-		Name:        g.getBaselineGeneratedPolicyName(node.deployment.GetName()),
-		Namespace:   node.deployment.GetNamespace(),
-		ClusterId:   node.deployment.GetClusterId(),
-		ClusterName: node.deployment.GetClusterName(),
-		Labels: map[string]string{
-			baselineGeneratedNetworkPolicyLabel: "true",
-		},
-		ApiVersion: networkPolicyAPIVersion,
-		Spec: &storage.NetworkPolicySpec{
-			PodSelector: labelSelectorForDeployment(node.deployment),
-		},
-	}
+	nps := &storage.NetworkPolicySpec{}
+	nps.SetPodSelector(labelSelectorForDeployment(node.deployment))
+	policy := &storage.NetworkPolicy{}
+	policy.SetName(g.getBaselineGeneratedPolicyName(node.deployment.GetName()))
+	policy.SetNamespace(node.deployment.GetNamespace())
+	policy.SetClusterId(node.deployment.GetClusterId())
+	policy.SetClusterName(node.deployment.GetClusterName())
+	policy.SetLabels(map[string]string{
+		baselineGeneratedNetworkPolicyLabel: "true",
+	})
+	policy.SetApiVersion(networkPolicyAPIVersion)
+	policy.SetSpec(nps)
 
-	policy.Spec.Ingress = generateIngressRules(node, namespacesByName)
-	policy.Spec.PolicyTypes = []storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE}
+	policy.GetSpec().SetIngress(generateIngressRules(node, namespacesByName))
+	policy.GetSpec().SetPolicyTypes([]storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE})
 
 	return policy
 }
@@ -329,5 +327,8 @@ func (g *generator) GenerateFromBaselineForDeployment(
 	// This is because we keep exactly one baseline-generated network policy per deployment, and we make it comprehensive.
 	// This allows us to ensure, e.g, that deletions from a baseline reflect in the network policy.
 	// It also makes the end state idempotent and not path-dependent.
-	return []*storage.NetworkPolicy{policy}, []*storage.NetworkPolicyReference{{Name: policy.GetName(), Namespace: policy.GetNamespace()}}, nil
+	npr := &storage.NetworkPolicyReference{}
+	npr.SetName(policy.GetName())
+	npr.SetNamespace(policy.GetNamespace())
+	return []*storage.NetworkPolicy{policy}, []*storage.NetworkPolicyReference{npr}, nil
 }

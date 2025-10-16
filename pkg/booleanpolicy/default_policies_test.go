@@ -31,6 +31,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -39,7 +40,7 @@ const (
 )
 
 func changeName(p *storage.Policy, newName string) *storage.Policy {
-	p.Name = newName
+	p.SetName(newName)
 	return p
 }
 
@@ -113,42 +114,41 @@ func (suite *DefaultPoliciesTestSuite) imageIDFromDep(deployment *storage.Deploy
 }
 
 func (suite *DefaultPoliciesTestSuite) TestNVDCVSSCriteria() {
-	heartbleedDep := &storage.Deployment{
+	heartbleedDep := storage.Deployment_builder{
 		Id: "HEARTBLEEDDEPID",
 		Containers: []*storage.Container{
-			{
+			storage.Container_builder{
 				Name:            "nginx",
-				SecurityContext: &storage.SecurityContext{Privileged: true},
-				Image:           &storage.ContainerImage{Id: "HEARTBLEEDDEPSHA"},
-			},
+				SecurityContext: storage.SecurityContext_builder{Privileged: true}.Build(),
+				Image:           storage.ContainerImage_builder{Id: "HEARTBLEEDDEPSHA"}.Build(),
+			}.Build(),
 		},
-	}
+	}.Build()
 
 	ts := time.Now().AddDate(0, 0, -5)
 	protoTs, err := protocompat.ConvertTimeToTimestampOrError(ts)
 	require.NoError(suite.T(), err)
 
-	suite.addDepAndImages(heartbleedDep, &storage.Image{
+	suite.addDepAndImages(heartbleedDep, storage.Image_builder{
 		Id:   "HEARTBLEEDDEPSHA",
-		Name: &storage.ImageName{FullName: "heartbleed"},
-		Scan: &storage.ImageScan{
+		Name: storage.ImageName_builder{FullName: "heartbleed"}.Build(),
+		Scan: storage.ImageScan_builder{
 			Components: []*storage.EmbeddedImageScanComponent{
-				{Name: "heartbleed", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
-					{Cve: "CVE-2014-0160", Link: "https://heartbleed", Cvss: 6, NvdCvss: 8, SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v1.2"},
-						FirstImageOccurrence: protoTs},
-				}},
+				storage.EmbeddedImageScanComponent_builder{Name: "heartbleed", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
+					storage.EmbeddedVulnerability_builder{Cve: "CVE-2014-0160", Link: "https://heartbleed", Cvss: 6, NvdCvss: 8, FixedBy: proto.String("v1.2"),
+						FirstImageOccurrence: protoTs}.Build(),
+				}}.Build(),
 			},
-		},
-	})
+		}.Build(),
+	}.Build())
 
-	nvdCvssPolicyGroup := &storage.PolicyGroup{
-		FieldName: fieldnames.NvdCvss,
-		Values: []*storage.PolicyValue{
-			{
-				Value: "> 6",
-			},
-		},
-	}
+	pv := &storage.PolicyValue{}
+	pv.SetValue("> 6")
+	nvdCvssPolicyGroup := &storage.PolicyGroup{}
+	nvdCvssPolicyGroup.SetFieldName(fieldnames.NvdCvss)
+	nvdCvssPolicyGroup.SetValues([]*storage.PolicyValue{
+		pv,
+	})
 
 	policy := policyWithGroups(storage.EventSource_NOT_APPLICABLE, nvdCvssPolicyGroup)
 
@@ -163,42 +163,44 @@ func (suite *DefaultPoliciesTestSuite) TestNVDCVSSCriteria() {
 }
 
 func (suite *DefaultPoliciesTestSuite) TestFixableAndImageFirstOccurenceCriteria() {
-	heartbleedDep := &storage.Deployment{
+	heartbleedDep := storage.Deployment_builder{
 		Id: "HEARTBLEEDDEPID",
 		Containers: []*storage.Container{
-			{
+			storage.Container_builder{
 				Name:            "nginx",
-				SecurityContext: &storage.SecurityContext{Privileged: true},
-				Image:           &storage.ContainerImage{Id: "HEARTBLEEDDEPSHA"},
-			},
+				SecurityContext: storage.SecurityContext_builder{Privileged: true}.Build(),
+				Image:           storage.ContainerImage_builder{Id: "HEARTBLEEDDEPSHA"}.Build(),
+			}.Build(),
 		},
-	}
+	}.Build()
 
 	ts := time.Now().AddDate(0, 0, -5)
 	protoTs, err := protocompat.ConvertTimeToTimestampOrError(ts)
 	require.NoError(suite.T(), err)
 
-	suite.addDepAndImages(heartbleedDep, &storage.Image{
+	suite.addDepAndImages(heartbleedDep, storage.Image_builder{
 		Id:   "HEARTBLEEDDEPSHA",
-		Name: &storage.ImageName{FullName: "heartbleed"},
-		Scan: &storage.ImageScan{
+		Name: storage.ImageName_builder{FullName: "heartbleed"}.Build(),
+		Scan: storage.ImageScan_builder{
 			Components: []*storage.EmbeddedImageScanComponent{
-				{Name: "heartbleed", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
-					{Cve: "CVE-2014-0160", Link: "https://heartbleed", Cvss: 6, SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v1.2"},
-						FirstImageOccurrence: protoTs},
-				}},
+				storage.EmbeddedImageScanComponent_builder{Name: "heartbleed", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
+					storage.EmbeddedVulnerability_builder{Cve: "CVE-2014-0160", Link: "https://heartbleed", Cvss: 6, FixedBy: proto.String("v1.2"),
+						FirstImageOccurrence: protoTs}.Build(),
+				}}.Build(),
 			},
-		},
-	})
+		}.Build(),
+	}.Build())
 
-	fixablePolicyGroup := &storage.PolicyGroup{
-		FieldName: fieldnames.Fixable,
-		Values:    []*storage.PolicyValue{{Value: "true"}},
-	}
-	firstImageOccurrenceGroup := &storage.PolicyGroup{
-		FieldName: fieldnames.DaysSinceImageFirstDiscovered,
-		Values:    []*storage.PolicyValue{{Value: "2"}},
-	}
+	pv := &storage.PolicyValue{}
+	pv.SetValue("true")
+	fixablePolicyGroup := &storage.PolicyGroup{}
+	fixablePolicyGroup.SetFieldName(fieldnames.Fixable)
+	fixablePolicyGroup.SetValues([]*storage.PolicyValue{pv})
+	pv2 := &storage.PolicyValue{}
+	pv2.SetValue("2")
+	firstImageOccurrenceGroup := &storage.PolicyGroup{}
+	firstImageOccurrenceGroup.SetFieldName(fieldnames.DaysSinceImageFirstDiscovered)
+	firstImageOccurrenceGroup.SetValues([]*storage.PolicyValue{pv2})
 
 	policy := policyWithGroups(storage.EventSource_NOT_APPLICABLE, fixablePolicyGroup, firstImageOccurrenceGroup)
 
@@ -212,42 +214,44 @@ func (suite *DefaultPoliciesTestSuite) TestFixableAndImageFirstOccurenceCriteria
 }
 
 func (suite *DefaultPoliciesTestSuite) TestDaysSinceCVEPublishedCriteria() {
-	heartbleedDep := &storage.Deployment{
+	heartbleedDep := storage.Deployment_builder{
 		Id: "HEARTBLEEDDEPID",
 		Containers: []*storage.Container{
-			{
+			storage.Container_builder{
 				Name:            "nginx",
-				SecurityContext: &storage.SecurityContext{Privileged: true},
-				Image:           &storage.ContainerImage{Id: "HEARTBLEEDDEPSHA"},
-			},
+				SecurityContext: storage.SecurityContext_builder{Privileged: true}.Build(),
+				Image:           storage.ContainerImage_builder{Id: "HEARTBLEEDDEPSHA"}.Build(),
+			}.Build(),
 		},
-	}
+	}.Build()
 
 	ts := time.Now().AddDate(0, 0, -5)
 	protoTs, err := protocompat.ConvertTimeToTimestampOrError(ts)
 	require.NoError(suite.T(), err)
 
-	suite.addDepAndImages(heartbleedDep, &storage.Image{
+	suite.addDepAndImages(heartbleedDep, storage.Image_builder{
 		Id:   "HEARTBLEEDDEPSHA",
-		Name: &storage.ImageName{FullName: "heartbleed"},
-		Scan: &storage.ImageScan{
+		Name: storage.ImageName_builder{FullName: "heartbleed"}.Build(),
+		Scan: storage.ImageScan_builder{
 			Components: []*storage.EmbeddedImageScanComponent{
-				{Name: "heartbleed", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
-					{Cve: "CVE-2014-0160", Link: "https://heartbleed", Cvss: 6, SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v1.2"},
-						PublishedOn: protoTs},
-				}},
+				storage.EmbeddedImageScanComponent_builder{Name: "heartbleed", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
+					storage.EmbeddedVulnerability_builder{Cve: "CVE-2014-0160", Link: "https://heartbleed", Cvss: 6, FixedBy: proto.String("v1.2"),
+						PublishedOn: protoTs}.Build(),
+				}}.Build(),
 			},
-		},
-	})
+		}.Build(),
+	}.Build())
 
-	fixablePolicyGroup := &storage.PolicyGroup{
-		FieldName: fieldnames.Fixable,
-		Values:    []*storage.PolicyValue{{Value: "true"}},
-	}
-	cvePublishedGroup := &storage.PolicyGroup{
-		FieldName: fieldnames.DaysSincePublished,
-		Values:    []*storage.PolicyValue{{Value: "2"}},
-	}
+	pv := &storage.PolicyValue{}
+	pv.SetValue("true")
+	fixablePolicyGroup := &storage.PolicyGroup{}
+	fixablePolicyGroup.SetFieldName(fieldnames.Fixable)
+	fixablePolicyGroup.SetValues([]*storage.PolicyValue{pv})
+	pv2 := &storage.PolicyValue{}
+	pv2.SetValue("2")
+	cvePublishedGroup := &storage.PolicyGroup{}
+	cvePublishedGroup.SetFieldName(fieldnames.DaysSincePublished)
+	cvePublishedGroup.SetValues([]*storage.PolicyValue{pv2})
 
 	policy := policyWithGroups(storage.EventSource_NOT_APPLICABLE, fixablePolicyGroup, cvePublishedGroup)
 
@@ -294,35 +298,44 @@ func (suite *DefaultPoliciesTestSuite) addImage(img *storage.Image) *storage.Ima
 }
 
 func imageWithComponents(components []*storage.EmbeddedImageScanComponent) *storage.Image {
-	return &storage.Image{
-		Id:   uuid.NewV4().String(),
-		Name: &storage.ImageName{FullName: "docker.io/ASFASF", Remote: "ASFASF"},
-		Scan: &storage.ImageScan{
-			Components: components,
-		},
-	}
+	imageName := &storage.ImageName{}
+	imageName.SetFullName("docker.io/ASFASF")
+	imageName.SetRemote("ASFASF")
+	imageScan := &storage.ImageScan{}
+	imageScan.SetComponents(components)
+	image := &storage.Image{}
+	image.SetId(uuid.NewV4().String())
+	image.SetName(imageName)
+	image.SetScan(imageScan)
+	return image
 }
 
 func imageWithLayers(layers []*storage.ImageLayer) *storage.Image {
-	return &storage.Image{
-		Id:   uuid.NewV4().String(),
-		Name: &storage.ImageName{FullName: "docker.io/ASFASF", Remote: "ASFASF"},
-		Metadata: &storage.ImageMetadata{
-			V1: &storage.V1Metadata{
-				Layers: layers,
-			},
-		},
-	}
+	imageName := &storage.ImageName{}
+	imageName.SetFullName("docker.io/ASFASF")
+	imageName.SetRemote("ASFASF")
+	v1m := &storage.V1Metadata{}
+	v1m.SetLayers(layers)
+	im := &storage.ImageMetadata{}
+	im.SetV1(v1m)
+	image := &storage.Image{}
+	image.SetId(uuid.NewV4().String())
+	image.SetName(imageName)
+	image.SetMetadata(im)
+	return image
 }
 
 func imageWithOS(os string) *storage.Image {
-	return &storage.Image{
-		Id:   uuid.NewV4().String(),
-		Name: &storage.ImageName{FullName: "docker.io/ASFASF", Remote: "ASFASF"},
-		Scan: &storage.ImageScan{
-			OperatingSystem: os,
-		},
-	}
+	imageName := &storage.ImageName{}
+	imageName.SetFullName("docker.io/ASFASF")
+	imageName.SetRemote("ASFASF")
+	imageScan := &storage.ImageScan{}
+	imageScan.SetOperatingSystem(os)
+	image := &storage.Image{}
+	image.SetId(uuid.NewV4().String())
+	image.SetName(imageName)
+	image.SetScan(imageScan)
+	return image
 }
 
 func (suite *DefaultPoliciesTestSuite) imageWithSignatureVerificationResults(name string, results []*storage.ImageSignatureVerificationResult) *storage.Image {
@@ -333,17 +346,16 @@ func (suite *DefaultPoliciesTestSuite) imageWithSignatureVerificationResults(nam
 	}
 
 	// Restore fullName to the passed string, to maintain original behavior
-	imageName.FullName = name
+	imageName.SetFullName(name)
 
-	img := &storage.Image{
-		Id:   uuid.NewV4().String(),
-		Name: imageName,
-	}
+	img := &storage.Image{}
+	img.SetId(uuid.NewV4().String())
+	img.SetName(imageName)
 
 	if results != nil {
-		img.SignatureVerificationData = &storage.ImageSignatureVerificationData{
-			Results: results,
-		}
+		isvd := &storage.ImageSignatureVerificationData{}
+		isvd.SetResults(results)
+		img.SetSignatureVerificationData(isvd)
 	}
 	return img
 }
@@ -356,36 +368,41 @@ func deploymentWithImage(id string, img *storage.Image) *storage.Deployment {
 	remoteSplit := strings.Split(img.GetName().GetFullName(), "/")
 	alphaOnly := regexp.MustCompile("[^A-Za-z]+")
 	containerName := alphaOnly.ReplaceAllString(remoteSplit[len(remoteSplit)-1], "")
-	return &storage.Deployment{
-		Id:         id,
-		Containers: []*storage.Container{{Id: img.GetId(), Name: containerName, Image: types.ToContainerImage(img)}},
-	}
+	container := &storage.Container{}
+	container.SetId(img.GetId())
+	container.SetName(containerName)
+	container.SetImage(types.ToContainerImage(img))
+	deployment := &storage.Deployment{}
+	deployment.SetId(id)
+	deployment.SetContainers([]*storage.Container{container})
+	return deployment
 }
 
 func (suite *DefaultPoliciesTestSuite) addIndicator(deploymentID, name, args, path string, lineage []string, uid uint32) *storage.ProcessIndicator {
 	deployment := suite.deployments[deploymentID]
 	if len(deployment.GetContainers()) == 0 {
-		deployment.Containers = []*storage.Container{{Name: uuid.NewV4().String()}}
+		container := &storage.Container{}
+		container.SetName(uuid.NewV4().String())
+		deployment.SetContainers([]*storage.Container{container})
 	}
 	lineageInfo := make([]*storage.ProcessSignal_LineageInfo, len(lineage))
 	for i, ancestor := range lineage {
-		lineageInfo[i] = &storage.ProcessSignal_LineageInfo{
-			ParentExecFilePath: ancestor,
-		}
+		pl := &storage.ProcessSignal_LineageInfo{}
+		pl.SetParentExecFilePath(ancestor)
+		lineageInfo[i] = pl
 	}
-	indicator := &storage.ProcessIndicator{
-		Id:            uuid.NewV4().String(),
-		DeploymentId:  deploymentID,
-		ContainerName: deployment.GetContainers()[0].GetName(),
-		Signal: &storage.ProcessSignal{
-			Name:         name,
-			Args:         args,
-			ExecFilePath: path,
-			Time:         protocompat.TimestampNow(),
-			LineageInfo:  lineageInfo,
-			Uid:          uid,
-		},
-	}
+	ps := &storage.ProcessSignal{}
+	ps.SetName(name)
+	ps.SetArgs(args)
+	ps.SetExecFilePath(path)
+	ps.SetTime(protocompat.TimestampNow())
+	ps.SetLineageInfo(lineageInfo)
+	ps.SetUid(uid)
+	indicator := &storage.ProcessIndicator{}
+	indicator.SetId(uuid.NewV4().String())
+	indicator.SetDeploymentId(deploymentID)
+	indicator.SetContainerName(deployment.GetContainers()[0].GetName())
+	indicator.SetSignal(ps)
 	suite.deploymentsToIndicators[deploymentID] = append(suite.deploymentsToIndicators[deploymentID], indicator)
 	return indicator
 }
@@ -434,88 +451,86 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 	suite.addDepAndImages(fixtureDep, fixturesImages...)
 
-	nginx110 := &storage.Image{
-		Id: "SHANGINX110",
-		Name: &storage.ImageName{
-			Registry: "docker.io",
-			Remote:   "library/nginx",
-			Tag:      "1.10",
-			FullName: "docker.io/library/nginx:1.10",
-		},
-	}
+	imageName := &storage.ImageName{}
+	imageName.SetRegistry("docker.io")
+	imageName.SetRemote("library/nginx")
+	imageName.SetTag("1.10")
+	imageName.SetFullName("docker.io/library/nginx:1.10")
+	nginx110 := &storage.Image{}
+	nginx110.SetId("SHANGINX110")
+	nginx110.SetName(imageName)
 
 	nginx110Dep := deploymentWithImage("nginx110", nginx110)
 	suite.addDepAndImages(nginx110Dep, nginx110)
 
 	oldScannedTime := time.Now().Add(-31 * 24 * time.Hour)
 
-	oldScannedImage := &storage.Image{
-		Id: "SHAOLDSCANNED",
-		Name: &storage.ImageName{
-			FullName: "docker.io/stackrox/old-scanned-image:0.1",
-		},
-		Scan: &storage.ImageScan{
-			ScanTime: protoconv.ConvertTimeToTimestamp(oldScannedTime),
-		},
-	}
+	imageName2 := &storage.ImageName{}
+	imageName2.SetFullName("docker.io/stackrox/old-scanned-image:0.1")
+	imageScan := &storage.ImageScan{}
+	imageScan.SetScanTime(protoconv.ConvertTimeToTimestamp(oldScannedTime))
+	oldScannedImage := &storage.Image{}
+	oldScannedImage.SetId("SHAOLDSCANNED")
+	oldScannedImage.SetName(imageName2)
+	oldScannedImage.SetScan(imageScan)
 	oldScannedDep := deploymentWithImage("oldscanned", oldScannedImage)
 	suite.addDepAndImages(oldScannedDep, oldScannedImage)
 
+	il := &storage.ImageLayer{}
+	il.SetInstruction("ADD")
+	il.SetValue("deploy.sh")
+	il2 := &storage.ImageLayer{}
+	il2.SetInstruction("RUN")
+	il2.SetValue("deploy.sh")
 	addDockerFileImg := imageWithLayers([]*storage.ImageLayer{
-		{
-			Instruction: "ADD",
-			Value:       "deploy.sh",
-		},
-		{
-			Instruction: "RUN",
-			Value:       "deploy.sh",
-		},
+		il,
+		il2,
 	})
 	addDockerFileDep := deploymentWithImageAnyID(addDockerFileImg)
 	suite.addDepAndImages(addDockerFileDep, addDockerFileImg)
 
+	il3 := &storage.ImageLayer{}
+	il3.SetInstruction("EXPOSE")
+	il3.SetValue("22/tcp")
 	imagePort22Image := imageWithLayers([]*storage.ImageLayer{
-		{
-			Instruction: "EXPOSE",
-			Value:       "22/tcp",
-		},
+		il3,
 	})
 	imagePort22Dep := deploymentWithImageAnyID(imagePort22Image)
 	suite.addDepAndImages(imagePort22Dep, imagePort22Image)
 
+	il4 := &storage.ImageLayer{}
+	il4.SetInstruction("CMD")
+	il4.SetValue("do an insecure thing")
 	insecureCMDImage := imageWithLayers([]*storage.ImageLayer{
-		{
-			Instruction: "CMD",
-			Value:       "do an insecure thing",
-		},
+		il4,
 	})
 
 	insecureCMDDep := deploymentWithImageAnyID(insecureCMDImage)
 	suite.addDepAndImages(insecureCMDDep, insecureCMDImage)
 
+	il5 := &storage.ImageLayer{}
+	il5.SetInstruction("VOLUME")
+	il5.SetValue("/run/secrets")
 	runSecretsImage := imageWithLayers([]*storage.ImageLayer{
-		{
-			Instruction: "VOLUME",
-			Value:       "/run/secrets",
-		},
+		il5,
 	})
+	il6 := &storage.ImageLayer{}
+	il6.SetInstruction("VOLUME")
+	il6.SetValue("[/run/secrets]")
 	runSecretsArrayImage := imageWithLayers([]*storage.ImageLayer{
-		{
-			Instruction: "VOLUME",
-			Value:       "[/run/secrets]",
-		},
+		il6,
 	})
+	il7 := &storage.ImageLayer{}
+	il7.SetInstruction("VOLUME")
+	il7.SetValue("/var/something /run/secrets")
 	runSecretsListImage := imageWithLayers([]*storage.ImageLayer{
-		{
-			Instruction: "VOLUME",
-			Value:       "/var/something /run/secrets",
-		},
+		il7,
 	})
+	il8 := &storage.ImageLayer{}
+	il8.SetInstruction("VOLUME")
+	il8.SetValue("[/var/something /run/secrets]")
 	runSecretsArrayListImage := imageWithLayers([]*storage.ImageLayer{
-		{
-			Instruction: "VOLUME",
-			Value:       "[/var/something /run/secrets]",
-		},
+		il8,
 	})
 	runSecretsDep := deploymentWithImageAnyID(runSecretsImage)
 	runSecretsArrayDep := deploymentWithImageAnyID(runSecretsArrayImage)
@@ -527,125 +542,138 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	suite.addDepAndImages(runSecretsArrayListDep, runSecretsArrayListImage)
 
 	oldImageCreationTime := time.Now().Add(-100 * 24 * time.Hour)
-	oldCreatedImage := &storage.Image{
-		Id: "SHA:OLDCREATEDIMAGE",
-		Name: &storage.ImageName{
-			FullName: "docker.io/stackrox/old-image:0.1",
-		},
-		Metadata: &storage.ImageMetadata{
-			V1: &storage.V1Metadata{
-				Created: protoconv.ConvertTimeToTimestamp(oldImageCreationTime),
-			},
-		},
-	}
+	imageName3 := &storage.ImageName{}
+	imageName3.SetFullName("docker.io/stackrox/old-image:0.1")
+	v1m := &storage.V1Metadata{}
+	v1m.SetCreated(protoconv.ConvertTimeToTimestamp(oldImageCreationTime))
+	im := &storage.ImageMetadata{}
+	im.SetV1(v1m)
+	oldCreatedImage := &storage.Image{}
+	oldCreatedImage.SetId("SHA:OLDCREATEDIMAGE")
+	oldCreatedImage.SetName(imageName3)
+	oldCreatedImage.SetMetadata(im)
 	oldImageDep := deploymentWithImage("oldimagedep", oldCreatedImage)
 	suite.addDepAndImages(oldImageDep, oldCreatedImage)
 
+	eisc := &storage.EmbeddedImageScanComponent{}
+	eisc.SetName("apk-tools")
+	eisc.SetVersion("1.2")
+	eisc2 := &storage.EmbeddedImageScanComponent{}
+	eisc2.SetName("asfa")
+	eisc2.SetVersion("1.5")
 	apkImage := imageWithComponents([]*storage.EmbeddedImageScanComponent{
-		{Name: "apk-tools", Version: "1.2"},
-		{Name: "asfa", Version: "1.5"},
+		eisc,
+		eisc2,
 	})
 	apkDep := deploymentWithImageAnyID(apkImage)
 	suite.addDepAndImages(apkDep, apkImage)
 
+	eisc3 := &storage.EmbeddedImageScanComponent{}
+	eisc3.SetName("curl")
+	eisc3.SetVersion("1.3")
+	eisc4 := &storage.EmbeddedImageScanComponent{}
+	eisc4.SetName("curlwithextra")
+	eisc4.SetVersion("0.9")
 	curlImage := imageWithComponents([]*storage.EmbeddedImageScanComponent{
-		{Name: "curl", Version: "1.3"},
-		{Name: "curlwithextra", Version: "0.9"},
+		eisc3,
+		eisc4,
 	})
 	curlDep := deploymentWithImageAnyID(curlImage)
 	suite.addDepAndImages(curlDep, curlImage)
 
 	componentDeps := make(map[string]*storage.Deployment)
 	for _, component := range []string{"apt", "dnf", "wget"} {
+		eisc5 := &storage.EmbeddedImageScanComponent{}
+		eisc5.SetName(component)
 		img := imageWithComponents([]*storage.EmbeddedImageScanComponent{
-			{Name: component},
+			eisc5,
 		})
 		dep := deploymentWithImageAnyID(img)
 		suite.addDepAndImages(dep, img)
 		componentDeps[component] = dep
 	}
 
-	heartbleedDep := &storage.Deployment{
+	heartbleedDep := storage.Deployment_builder{
 		Id: "HEARTBLEEDDEPID",
 		Containers: []*storage.Container{
-			{
+			storage.Container_builder{
 				Name:            "nginx",
-				SecurityContext: &storage.SecurityContext{Privileged: true},
-				Image:           &storage.ContainerImage{Id: "HEARTBLEEDDEPSHA"},
-			},
+				SecurityContext: storage.SecurityContext_builder{Privileged: true}.Build(),
+				Image:           storage.ContainerImage_builder{Id: "HEARTBLEEDDEPSHA"}.Build(),
+			}.Build(),
 		},
-	}
-	suite.addDepAndImages(heartbleedDep, &storage.Image{
+	}.Build()
+	suite.addDepAndImages(heartbleedDep, storage.Image_builder{
 		Id:   "HEARTBLEEDDEPSHA",
-		Name: &storage.ImageName{FullName: "heartbleed"},
-		Scan: &storage.ImageScan{
+		Name: storage.ImageName_builder{FullName: "heartbleed"}.Build(),
+		Scan: storage.ImageScan_builder{
 			Components: []*storage.EmbeddedImageScanComponent{
-				{Name: "heartbleed", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
-					{Cve: "CVE-2014-0160", Link: "https://heartbleed", Cvss: 6, SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v1.2"}},
-				}},
+				storage.EmbeddedImageScanComponent_builder{Name: "heartbleed", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
+					storage.EmbeddedVulnerability_builder{Cve: "CVE-2014-0160", Link: "https://heartbleed", Cvss: 6, FixedBy: proto.String("v1.2")}.Build(),
+				}}.Build(),
 			},
-		},
-	})
+		}.Build(),
+	}.Build())
 
-	requiredImageLabel := &storage.Deployment{
+	requiredImageLabel := storage.Deployment_builder{
 		Id: "requiredImageLabel",
 		Containers: []*storage.Container{
-			{
+			storage.Container_builder{
 				Name:  "REQUIREDIMAGELABEL",
-				Image: &storage.ContainerImage{Id: "requiredImageLabelImage"},
-			},
+				Image: storage.ContainerImage_builder{Id: "requiredImageLabelImage"}.Build(),
+			}.Build(),
 		},
-	}
-	suite.addDepAndImages(requiredImageLabel, &storage.Image{
+	}.Build()
+	suite.addDepAndImages(requiredImageLabel, storage.Image_builder{
 		Id: "requiredImageLabelImage",
-		Name: &storage.ImageName{
+		Name: storage.ImageName_builder{
 			FullName: "docker.io/stackrox/required-image:0.1",
-		},
-		Metadata: &storage.ImageMetadata{
-			V1: &storage.V1Metadata{
+		}.Build(),
+		Metadata: storage.ImageMetadata_builder{
+			V1: storage.V1Metadata_builder{
 				Labels: map[string]string{
 					"required-label": "required-value",
 				},
-			},
-		},
-	})
+			}.Build(),
+		}.Build(),
+	}.Build())
 
 	shellshockImage := imageWithComponents([]*storage.EmbeddedImageScanComponent{
-		{Name: "shellshock", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
-			{Cve: "CVE-2014-6271", Link: "https://shellshock", Cvss: 6},
-			{Cve: "CVE-ARBITRARY", Link: "https://notshellshock"},
-		}},
+		storage.EmbeddedImageScanComponent_builder{Name: "shellshock", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
+			storage.EmbeddedVulnerability_builder{Cve: "CVE-2014-6271", Link: "https://shellshock", Cvss: 6}.Build(),
+			storage.EmbeddedVulnerability_builder{Cve: "CVE-ARBITRARY", Link: "https://notshellshock"}.Build(),
+		}}.Build(),
 	})
 	shellshockDep := deploymentWithImageAnyID(shellshockImage)
 	suite.addDepAndImages(shellshockDep, shellshockImage)
 
 	suppressedShellshockImage := imageWithComponents([]*storage.EmbeddedImageScanComponent{
-		{Name: "shellshock", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
-			{Cve: "CVE-2014-6271", Link: "https://shellshock", Cvss: 6, Suppressed: true},
-			{Cve: "CVE-ARBITRARY", Link: "https://notshellshock"},
-		}},
+		storage.EmbeddedImageScanComponent_builder{Name: "shellshock", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
+			storage.EmbeddedVulnerability_builder{Cve: "CVE-2014-6271", Link: "https://shellshock", Cvss: 6, Suppressed: true}.Build(),
+			storage.EmbeddedVulnerability_builder{Cve: "CVE-ARBITRARY", Link: "https://notshellshock"}.Build(),
+		}}.Build(),
 	})
 	suppressedShellShockDep := deploymentWithImageAnyID(suppressedShellshockImage)
 	suite.addDepAndImages(suppressedShellShockDep, suppressedShellshockImage)
 
 	strutsImage := imageWithComponents([]*storage.EmbeddedImageScanComponent{
-		{Name: "struts", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
-			{Cve: "CVE-2017-5638", Link: "https://struts", Cvss: 8, Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY, SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v1.3"}},
-		}},
-		{Name: "OTHER", Version: "1.3", Vulns: []*storage.EmbeddedVulnerability{
-			{Cve: "CVE-1223-451", Link: "https://cvefake"},
-		}},
+		storage.EmbeddedImageScanComponent_builder{Name: "struts", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
+			storage.EmbeddedVulnerability_builder{Cve: "CVE-2017-5638", Link: "https://struts", Cvss: 8, Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY, FixedBy: proto.String("v1.3")}.Build(),
+		}}.Build(),
+		storage.EmbeddedImageScanComponent_builder{Name: "OTHER", Version: "1.3", Vulns: []*storage.EmbeddedVulnerability{
+			storage.EmbeddedVulnerability_builder{Cve: "CVE-1223-451", Link: "https://cvefake"}.Build(),
+		}}.Build(),
 	})
 	strutsDep := deploymentWithImageAnyID(strutsImage)
 	suite.addDepAndImages(strutsDep, strutsImage)
 
 	strutsImageSuppressed := imageWithComponents([]*storage.EmbeddedImageScanComponent{
-		{Name: "struts", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
-			{Cve: "CVE-2017-5638", Link: "https://struts", Suppressed: true, Cvss: 8, Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY, SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v1.3"}},
-		}},
-		{Name: "OTHER", Version: "1.3", Vulns: []*storage.EmbeddedVulnerability{
-			{Cve: "CVE-1223-451", Link: "https://cvefake"},
-		}},
+		storage.EmbeddedImageScanComponent_builder{Name: "struts", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
+			storage.EmbeddedVulnerability_builder{Cve: "CVE-2017-5638", Link: "https://struts", Suppressed: true, Cvss: 8, Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY, FixedBy: proto.String("v1.3")}.Build(),
+		}}.Build(),
+		storage.EmbeddedImageScanComponent_builder{Name: "OTHER", Version: "1.3", Vulns: []*storage.EmbeddedVulnerability{
+			storage.EmbeddedVulnerability_builder{Cve: "CVE-1223-451", Link: "https://cvefake"}.Build(),
+		}}.Build(),
 	})
 	strutsDepSuppressed := deploymentWithImageAnyID(strutsImageSuppressed)
 	suite.addDepAndImages(strutsDepSuppressed, strutsImageSuppressed)
@@ -654,344 +682,342 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	// However, here we are specifically testing whether detection is taking the new vulnerability state field into
 	// account by not setting the suppressed field.
 	structImageWithDeferredVulns := imageWithComponents([]*storage.EmbeddedImageScanComponent{
-		{Name: "deferred-struts", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
-			{Cve: "CVE-2017-5638", Link: "https://struts", State: storage.VulnerabilityState_DEFERRED, Cvss: 8, Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY, SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v1.3"}},
-			{Cve: "CVE-2017-FP", Link: "https://struts", State: storage.VulnerabilityState_FALSE_POSITIVE, Cvss: 8, Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY, SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v1.3"}},
-			{Cve: "CVE-2017-FAKE", Link: "https://struts", Cvss: 8, Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY, SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v1.3"}},
-		}},
+		storage.EmbeddedImageScanComponent_builder{Name: "deferred-struts", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
+			storage.EmbeddedVulnerability_builder{Cve: "CVE-2017-5638", Link: "https://struts", State: storage.VulnerabilityState_DEFERRED, Cvss: 8, Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY, FixedBy: proto.String("v1.3")}.Build(),
+			storage.EmbeddedVulnerability_builder{Cve: "CVE-2017-FP", Link: "https://struts", State: storage.VulnerabilityState_FALSE_POSITIVE, Cvss: 8, Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY, FixedBy: proto.String("v1.3")}.Build(),
+			storage.EmbeddedVulnerability_builder{Cve: "CVE-2017-FAKE", Link: "https://struts", Cvss: 8, Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY, FixedBy: proto.String("v1.3")}.Build(),
+		}}.Build(),
 	})
 	structDepWithDeferredVulns := deploymentWithImageAnyID(structImageWithDeferredVulns)
 	suite.addDepAndImages(structDepWithDeferredVulns, structImageWithDeferredVulns)
 
 	depWithNonSeriousVulnsImage := imageWithComponents([]*storage.EmbeddedImageScanComponent{
-		{Name: "NOSERIOUS", Version: "2.3", Vulns: []*storage.EmbeddedVulnerability{
-			{Cve: "CVE-1234-5678", Link: "https://abcdefgh"},
-			{Cve: "CVE-5678-1234", Link: "https://lmnopqrst"},
-		}},
+		storage.EmbeddedImageScanComponent_builder{Name: "NOSERIOUS", Version: "2.3", Vulns: []*storage.EmbeddedVulnerability{
+			storage.EmbeddedVulnerability_builder{Cve: "CVE-1234-5678", Link: "https://abcdefgh"}.Build(),
+			storage.EmbeddedVulnerability_builder{Cve: "CVE-5678-1234", Link: "https://lmnopqrst"}.Build(),
+		}}.Build(),
 	})
 	depWithNonSeriousVulns := deploymentWithImageAnyID(depWithNonSeriousVulnsImage)
 	suite.addDepAndImages(depWithNonSeriousVulns, depWithNonSeriousVulnsImage)
 
-	dockerSockDep := &storage.Deployment{
+	dockerSockDep := storage.Deployment_builder{
 		Id: "DOCKERSOCDEP",
 		Containers: []*storage.Container{
-			{
+			storage.Container_builder{
 				Name: "dockersock",
 				Volumes: []*storage.Volume{
-					{Source: "/var/run/docker.sock", Name: "DOCKERSOCK", Type: "HostPath", ReadOnly: true},
-					{Source: "NOTDOCKERSOCK"},
-				}},
+					storage.Volume_builder{Source: "/var/run/docker.sock", Name: "DOCKERSOCK", Type: "HostPath", ReadOnly: true}.Build(),
+					storage.Volume_builder{Source: "NOTDOCKERSOCK"}.Build(),
+				}}.Build(),
 		},
-	}
+	}.Build()
 	suite.addDepAndImages(dockerSockDep)
 
-	crioSockDep := &storage.Deployment{
+	crioSockDep := storage.Deployment_builder{
 		Id: "CRIOSOCDEP",
 		Containers: []*storage.Container{
-			{
+			storage.Container_builder{
 				Name: "criosock",
 				Volumes: []*storage.Volume{
-					{Source: "/run/crio/crio.sock", Name: "CRIOSOCK", Type: "HostPath", ReadOnly: true},
-					{Source: "NOTCRIORSOCK"},
-				}},
+					storage.Volume_builder{Source: "/run/crio/crio.sock", Name: "CRIOSOCK", Type: "HostPath", ReadOnly: true}.Build(),
+					storage.Volume_builder{Source: "NOTCRIORSOCK"}.Build(),
+				}}.Build(),
 		},
-	}
+	}.Build()
 	suite.addDepAndImages(crioSockDep)
 
-	containerPort22Dep := &storage.Deployment{
-		Id: "CONTAINERPORT22DEP",
-		Ports: []*storage.PortConfig{
-			{Protocol: "TCP", ContainerPort: 22},
-			{Protocol: "UDP", ContainerPort: 4125},
-		},
-	}
+	pc := &storage.PortConfig{}
+	pc.SetProtocol("TCP")
+	pc.SetContainerPort(22)
+	pc2 := &storage.PortConfig{}
+	pc2.SetProtocol("UDP")
+	pc2.SetContainerPort(4125)
+	containerPort22Dep := &storage.Deployment{}
+	containerPort22Dep.SetId("CONTAINERPORT22DEP")
+	containerPort22Dep.SetPorts([]*storage.PortConfig{
+		pc,
+		pc2,
+	})
 	suite.addDepAndImages(containerPort22Dep)
 
-	secretEnvDep := &storage.Deployment{
+	secretEnvDep := storage.Deployment_builder{
 		Id: "SECRETENVDEP",
 		Containers: []*storage.Container{
-			{
+			storage.Container_builder{
 				Name: "secretenv",
-				Config: &storage.ContainerConfig{
+				Config: storage.ContainerConfig_builder{
 					Env: []*storage.ContainerConfig_EnvironmentConfig{
-						{Key: "THIS_IS_SECRET_VAR", Value: "stealthmode", EnvVarSource: storage.ContainerConfig_EnvironmentConfig_RAW},
-						{Key: "HOME", Value: "/home/stackrox"},
+						storage.ContainerConfig_EnvironmentConfig_builder{Key: "THIS_IS_SECRET_VAR", Value: "stealthmode", EnvVarSource: storage.ContainerConfig_EnvironmentConfig_RAW}.Build(),
+						storage.ContainerConfig_EnvironmentConfig_builder{Key: "HOME", Value: "/home/stackrox"}.Build(),
 					},
-				}},
+				}.Build()}.Build(),
 		},
-	}
+	}.Build()
 	suite.addDepAndImages(secretEnvDep)
 
-	secretEnvSrcUnsetDep := &storage.Deployment{
+	secretEnvSrcUnsetDep := storage.Deployment_builder{
 		Id: "SECRETENVSRCUNSETDEP",
 		Containers: []*storage.Container{
-			{
+			storage.Container_builder{
 				Name: "secretenvsrcunset",
-				Config: &storage.ContainerConfig{
+				Config: storage.ContainerConfig_builder{
 					Env: []*storage.ContainerConfig_EnvironmentConfig{
-						{Key: "THIS_IS_SECRET_VAR", Value: "stealthmode"},
+						storage.ContainerConfig_EnvironmentConfig_builder{Key: "THIS_IS_SECRET_VAR", Value: "stealthmode"}.Build(),
 					},
-				}},
+				}.Build()}.Build(),
 		},
-	}
+	}.Build()
 	suite.addDepAndImages(secretEnvSrcUnsetDep)
 
-	secretKeyRefDep := &storage.Deployment{
+	secretKeyRefDep := storage.Deployment_builder{
 		Id: "SECRETKEYREFDEP",
 		Containers: []*storage.Container{
-			{Config: &storage.ContainerConfig{
+			storage.Container_builder{Config: storage.ContainerConfig_builder{
 				Env: []*storage.ContainerConfig_EnvironmentConfig{
-					{Key: "THIS_IS_SECRET_VAR", EnvVarSource: storage.ContainerConfig_EnvironmentConfig_SECRET_KEY},
-					{Key: "HOME", Value: "/home/stackrox"},
+					storage.ContainerConfig_EnvironmentConfig_builder{Key: "THIS_IS_SECRET_VAR", EnvVarSource: storage.ContainerConfig_EnvironmentConfig_SECRET_KEY}.Build(),
+					storage.ContainerConfig_EnvironmentConfig_builder{Key: "HOME", Value: "/home/stackrox"}.Build(),
 				},
-			}},
+			}.Build()}.Build(),
 		},
-	}
+	}.Build()
 	suite.addDepAndImages(secretKeyRefDep)
 
 	// Fake deployment that shouldn't match anything, just to make sure
 	// that none of our queries will accidentally match it.
-	suite.addDepAndImages(&storage.Deployment{Id: "FAKEID", Name: "FAKENAME"})
+	deployment := &storage.Deployment{}
+	deployment.SetId("FAKEID")
+	deployment.SetName("FAKENAME")
+	suite.addDepAndImages(deployment)
 
-	depWithGoodEmailAnnotation := &storage.Deployment{
-		Id: "GOODEMAILDEPID",
-		Annotations: map[string]string{
-			"email": "vv@stackrox.com",
-		},
-	}
+	depWithGoodEmailAnnotation := &storage.Deployment{}
+	depWithGoodEmailAnnotation.SetId("GOODEMAILDEPID")
+	depWithGoodEmailAnnotation.SetAnnotations(map[string]string{
+		"email": "vv@stackrox.com",
+	})
 	suite.addDepAndImages(depWithGoodEmailAnnotation)
 
-	depWithOwnerAnnotation := &storage.Deployment{
-		Id: "OWNERANNOTATIONDEP",
-		Annotations: map[string]string{
-			"owner": "IOWNTHIS",
-			"blah":  "Blah",
-		},
-	}
+	depWithOwnerAnnotation := &storage.Deployment{}
+	depWithOwnerAnnotation.SetId("OWNERANNOTATIONDEP")
+	depWithOwnerAnnotation.SetAnnotations(map[string]string{
+		"owner": "IOWNTHIS",
+		"blah":  "Blah",
+	})
 	suite.addDepAndImages(depWithOwnerAnnotation)
 
-	depWithOwnerLabel := &storage.Deployment{
-		Id: "OWNERLABELDEP",
-		Labels: map[string]string{
-			"owner": "IOWNTHIS",
-			"blah":  "Blah",
-		},
-	}
+	depWithOwnerLabel := &storage.Deployment{}
+	depWithOwnerLabel.SetId("OWNERLABELDEP")
+	depWithOwnerLabel.SetLabels(map[string]string{
+		"owner": "IOWNTHIS",
+		"blah":  "Blah",
+	})
 	suite.addDepAndImages(depWithOwnerLabel)
 
-	depWitharbitraryAnnotations := &storage.Deployment{
-		Id: "ARBITRARYANNOTATIONDEPID",
-		Annotations: map[string]string{
-			"emailnot": "vv@stackrox.com",
-			"notemail": "vv@stackrox.com",
-			"ownernot": "vv",
-			"nowner":   "vv",
-		},
-	}
+	depWitharbitraryAnnotations := &storage.Deployment{}
+	depWitharbitraryAnnotations.SetId("ARBITRARYANNOTATIONDEPID")
+	depWitharbitraryAnnotations.SetAnnotations(map[string]string{
+		"emailnot": "vv@stackrox.com",
+		"notemail": "vv@stackrox.com",
+		"ownernot": "vv",
+		"nowner":   "vv",
+	})
 	suite.addDepAndImages(depWitharbitraryAnnotations)
 
-	depWithBadEmailAnnotation := &storage.Deployment{
-		Id: "BADEMAILDEPID",
-		Annotations: map[string]string{
-			"email": "NOTANEMAIL",
-		},
-	}
+	depWithBadEmailAnnotation := &storage.Deployment{}
+	depWithBadEmailAnnotation.SetId("BADEMAILDEPID")
+	depWithBadEmailAnnotation.SetAnnotations(map[string]string{
+		"email": "NOTANEMAIL",
+	})
 	suite.addDepAndImages(depWithBadEmailAnnotation)
 
-	sysAdminDep := &storage.Deployment{
+	sysAdminDep := storage.Deployment_builder{
 		Id: "SYSADMINDEPID",
 		Containers: []*storage.Container{
-			{
+			storage.Container_builder{
 				Name: "cap-sys",
-				SecurityContext: &storage.SecurityContext{
+				SecurityContext: storage.SecurityContext_builder{
 					AddCapabilities: []string{"SYS_ADMIN"},
-				},
-			},
+				}.Build(),
+			}.Build(),
 		},
-	}
+	}.Build()
 	suite.addDepAndImages(sysAdminDep)
 
-	depWithAllResourceLimitsRequestsSpecified := &storage.Deployment{
+	depWithAllResourceLimitsRequestsSpecified := storage.Deployment_builder{
 		Id: "ALLRESOURCESANDLIMITSDEP",
 		Containers: []*storage.Container{
-			{Resources: &storage.Resources{
+			storage.Container_builder{Resources: storage.Resources_builder{
 				CpuCoresRequest: 0.1,
 				CpuCoresLimit:   0.3,
 				MemoryMbLimit:   100,
 				MemoryMbRequest: 1251,
-			}},
+			}.Build()}.Build(),
 		},
-	}
+	}.Build()
 	suite.addDepAndImages(depWithAllResourceLimitsRequestsSpecified)
 
-	depWithEnforcementBypassAnnotation := &storage.Deployment{
-		Id: "ENFORCEMENTBYPASS",
-		Annotations: map[string]string{
-			"admission.stackrox.io/break-glass": "ticket-1234",
-			"some-other":                        "annotation",
-		},
-	}
+	depWithEnforcementBypassAnnotation := &storage.Deployment{}
+	depWithEnforcementBypassAnnotation.SetId("ENFORCEMENTBYPASS")
+	depWithEnforcementBypassAnnotation.SetAnnotations(map[string]string{
+		"admission.stackrox.io/break-glass": "ticket-1234",
+		"some-other":                        "annotation",
+	})
 	suite.addDepAndImages(depWithEnforcementBypassAnnotation)
 
-	hostMountDep := &storage.Deployment{
+	hostMountDep := storage.Deployment_builder{
 		Id: "HOSTMOUNT",
 		Containers: []*storage.Container{
-			{
+			storage.Container_builder{
 				Name: "hostmount",
 				Volumes: []*storage.Volume{
-					{Source: "/etc/passwd", Name: "HOSTMOUNT", Type: "HostPath"},
-					{Source: "/var/lib/kubelet", Name: "KUBELET", Type: "HostPath", ReadOnly: true},
-				}},
+					storage.Volume_builder{Source: "/etc/passwd", Name: "HOSTMOUNT", Type: "HostPath"}.Build(),
+					storage.Volume_builder{Source: "/var/lib/kubelet", Name: "KUBELET", Type: "HostPath", ReadOnly: true}.Build(),
+				}}.Build(),
 		},
-	}
+	}.Build()
 	suite.addDepAndImages(hostMountDep)
 
-	hostPIDDep := &storage.Deployment{
-		Id:      "HOSTPID",
-		HostPid: true,
-	}
+	hostPIDDep := &storage.Deployment{}
+	hostPIDDep.SetId("HOSTPID")
+	hostPIDDep.SetHostPid(true)
 	suite.addDepAndImages(hostPIDDep)
 
-	hostIPCDep := &storage.Deployment{
-		Id:      "HOSTIPC",
-		HostIpc: true,
-	}
+	hostIPCDep := &storage.Deployment{}
+	hostIPCDep.SetId("HOSTIPC")
+	hostIPCDep.SetHostIpc(true)
 	suite.addDepAndImages(hostIPCDep)
 
 	imgWithFixedByEmpty := suite.addImage(imageWithComponents([]*storage.EmbeddedImageScanComponent{
-		{Name: "EXplicitlyEmptyFixedBy", Version: "2.3", Vulns: []*storage.EmbeddedVulnerability{
-			{Cve: "CVE-1234-5678", Cvss: 8, Link: "https://abcdefgh", SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{}},
-		}},
+		storage.EmbeddedImageScanComponent_builder{Name: "EXplicitlyEmptyFixedBy", Version: "2.3", Vulns: []*storage.EmbeddedVulnerability{
+			storage.EmbeddedVulnerability_builder{Cve: "CVE-1234-5678", Cvss: 8, Link: "https://abcdefgh", FixedBy: proto.String("")}.Build(),
+		}}.Build(),
 	}))
 
 	imgWithFixedByEmptyOnlyForSome := suite.addImage(imageWithComponents([]*storage.EmbeddedImageScanComponent{
-		{Name: "EXplicitlyEmptyFixedBy", Version: "2.3", Vulns: []*storage.EmbeddedVulnerability{
-			{Cve: "CVE-1234-5678", Cvss: 8, Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY, Link: "https://abcdefgh", SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{}},
-		}},
-		{Name: "Normal", Version: "2.3", Vulns: []*storage.EmbeddedVulnerability{
-			{Cve: "CVE-5612-1245", Cvss: 8, Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY, Link: "https://abcdefgh", SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "actually_fixable"}},
-		}},
+		storage.EmbeddedImageScanComponent_builder{Name: "EXplicitlyEmptyFixedBy", Version: "2.3", Vulns: []*storage.EmbeddedVulnerability{
+			storage.EmbeddedVulnerability_builder{Cve: "CVE-1234-5678", Cvss: 8, Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY, Link: "https://abcdefgh", FixedBy: proto.String("")}.Build(),
+		}}.Build(),
+		storage.EmbeddedImageScanComponent_builder{Name: "Normal", Version: "2.3", Vulns: []*storage.EmbeddedVulnerability{
+			storage.EmbeddedVulnerability_builder{Cve: "CVE-5612-1245", Cvss: 8, Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY, Link: "https://abcdefgh", FixedBy: proto.String("actually_fixable")}.Build(),
+		}}.Build(),
 	}))
 
-	rootUserImage := &storage.Image{
-		Id: "SHA:ROOTUSERIMAGE",
-		Name: &storage.ImageName{
-			FullName: "docker.io/stackrox/rootuser:0.1",
-		},
-		Metadata: &storage.ImageMetadata{
-			V1: &storage.V1Metadata{
-				User: "root",
-			},
-		},
-	}
+	imageName4 := &storage.ImageName{}
+	imageName4.SetFullName("docker.io/stackrox/rootuser:0.1")
+	v1m2 := &storage.V1Metadata{}
+	v1m2.SetUser("root")
+	im2 := &storage.ImageMetadata{}
+	im2.SetV1(v1m2)
+	rootUserImage := &storage.Image{}
+	rootUserImage.SetId("SHA:ROOTUSERIMAGE")
+	rootUserImage.SetName(imageName4)
+	rootUserImage.SetMetadata(im2)
 	depWithRootUser := deploymentWithImageAnyID(rootUserImage)
 	suite.addDepAndImages(depWithRootUser, rootUserImage)
 
+	il9 := &storage.ImageLayer{}
+	il9.SetInstruction("RUN")
+	il9.SetValue("apt-get update")
 	updateInstructionImage := imageWithLayers([]*storage.ImageLayer{
-		{
-			Instruction: "RUN",
-			Value:       "apt-get update",
-		},
+		il9,
 	})
 	depWithUpdate := deploymentWithImageAnyID(updateInstructionImage)
 	suite.addDepAndImages(depWithUpdate, updateInstructionImage)
 
-	restrictedHostPortDep := &storage.Deployment{
+	restrictedHostPortDep := storage.Deployment_builder{
 		Id: "RESTRICTEDHOSTPORT",
 		Ports: []*storage.PortConfig{
-			{
+			storage.PortConfig_builder{
 				ExposureInfos: []*storage.PortConfig_ExposureInfo{
-					{
+					storage.PortConfig_ExposureInfo_builder{
 						NodePort: 22,
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
-	}
+	}.Build()
 
 	suite.addDepAndImages(restrictedHostPortDep)
 
-	mountPropagationDep := &storage.Deployment{
+	mountPropagationDep := storage.Deployment_builder{
 		Id: "MOUNTPROPAGATIONDEP",
 		Containers: []*storage.Container{
-			{
+			storage.Container_builder{
 				Id: "MOUNTPROPAGATIONCONTAINER",
 				Volumes: []*storage.Volume{
-					{
+					storage.Volume_builder{
 						Name:             "ThisMountIsOnFire",
 						MountPropagation: storage.Volume_BIDIRECTIONAL,
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
-	}
+	}.Build()
 	suite.addDepAndImages(mountPropagationDep)
 
-	noSeccompProfileDep := &storage.Deployment{
+	noSeccompProfileDep := storage.Deployment_builder{
 		Id: "NOSECCOMPPROFILEDEP",
 		Containers: []*storage.Container{
-			{
-				SecurityContext: &storage.SecurityContext{
-					SeccompProfile: &storage.SecurityContext_SeccompProfile{
+			storage.Container_builder{
+				SecurityContext: storage.SecurityContext_builder{
+					SeccompProfile: storage.SecurityContext_SeccompProfile_builder{
 						Type: storage.SecurityContext_SeccompProfile_UNCONFINED,
-					},
-				},
-			},
+					}.Build(),
+				}.Build(),
+			}.Build(),
 		},
-	}
+	}.Build()
 	suite.addDepAndImages(noSeccompProfileDep)
 
-	hostNetworkDep := &storage.Deployment{
-		Id:          "HOSTNETWORK",
-		HostNetwork: true,
-	}
+	hostNetworkDep := &storage.Deployment{}
+	hostNetworkDep.SetId("HOSTNETWORK")
+	hostNetworkDep.SetHostNetwork(true)
 	suite.addDepAndImages(hostNetworkDep)
 
-	noAppArmorProfileDep := &storage.Deployment{
+	noAppArmorProfileDep := storage.Deployment_builder{
 		Id: "NOAPPARMORPROFILEDEP",
 		Containers: []*storage.Container{
-			{
+			storage.Container_builder{
 				Name: "No AppArmor Profile",
-				Config: &storage.ContainerConfig{
+				Config: storage.ContainerConfig_builder{
 					AppArmorProfile: "unconfined",
-				},
-			},
+				}.Build(),
+			}.Build(),
 		},
-	}
+	}.Build()
 	suite.addDepAndImages(noAppArmorProfileDep)
 
 	// Images "made by Red Hat" - coming from Red Hat registries or Red Hat remotes in quay.io
+	isvr := &storage.ImageSignatureVerificationResult{}
+	isvr.SetVerifierId(signatures.DefaultRedHatSignatureIntegration.GetId())
+	isvr.SetStatus(storage.ImageSignatureVerificationResult_FAILED_VERIFICATION)
 	registryAccessRedhatComUnverifiedImg := suite.imageWithSignatureVerificationResults("registry.access.redhat.com/redhat/ubi8:latest",
 		[]*storage.ImageSignatureVerificationResult{
-			{
-				VerifierId: signatures.DefaultRedHatSignatureIntegration.GetId(),
-				Status:     storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
-			},
+			isvr,
 		},
 	)
+	isvr2 := &storage.ImageSignatureVerificationResult{}
+	isvr2.SetVerifierId(signatures.DefaultRedHatSignatureIntegration.GetId())
+	isvr2.SetStatus(storage.ImageSignatureVerificationResult_FAILED_VERIFICATION)
 	registryRedHatIoUnverifiedImg := suite.imageWithSignatureVerificationResults("registry.redhat.io/redhat/ubi8:latest",
 		[]*storage.ImageSignatureVerificationResult{
-			{
-				VerifierId: signatures.DefaultRedHatSignatureIntegration.GetId(),
-				Status:     storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
-			},
+			isvr2,
 		},
 	)
 
+	isvr3 := &storage.ImageSignatureVerificationResult{}
+	isvr3.SetVerifierId(signatures.DefaultRedHatSignatureIntegration.GetId())
+	isvr3.SetStatus(storage.ImageSignatureVerificationResult_FAILED_VERIFICATION)
 	quayOCPReleaseUnverifiedImg := suite.imageWithSignatureVerificationResults("quay.io/openshift-release-dev/ocp-release:latest",
 		[]*storage.ImageSignatureVerificationResult{
-			{
-				VerifierId: signatures.DefaultRedHatSignatureIntegration.GetId(),
-				Status:     storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
-			},
+			isvr3,
 		},
 	)
+	isvr4 := &storage.ImageSignatureVerificationResult{}
+	isvr4.SetVerifierId(signatures.DefaultRedHatSignatureIntegration.GetId())
+	isvr4.SetStatus(storage.ImageSignatureVerificationResult_FAILED_VERIFICATION)
 	quayOCPArtDevUnverifiedImg := suite.imageWithSignatureVerificationResults("quay.io/openshift-release-dev/ocp-v4.0-art-dev:latest",
 		[]*storage.ImageSignatureVerificationResult{
-			{
-				VerifierId: signatures.DefaultRedHatSignatureIntegration.GetId(),
-				Status:     storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
-			},
+			isvr4,
 		},
 	)
 
@@ -1663,7 +1689,9 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 						if c.policyName == "Images with no scans" {
 							if len(suite.deployments[id].GetContainers()) == 1 {
 								msg := fmt.Sprintf(c.sampleViolationForMatched, suite.deployments[id].GetContainers()[0].GetName())
-								protoassert.SlicesEqual(t, actualViolations[id], []*storage.Alert_Violation{{Message: msg}})
+								av := &storage.Alert_Violation{}
+								av.SetMessage(msg)
+								protoassert.SlicesEqual(t, actualViolations[id], []*storage.Alert_Violation{av})
 							}
 						}
 					}
@@ -1992,7 +2020,9 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				for id := range suite.images {
 					if _, shouldNotMatch := c.shouldNotMatch[id]; !shouldNotMatch {
 						assert.Contains(t, actualViolations, id)
-						protoassert.SlicesEqual(t, actualViolations[id], []*storage.Alert_Violation{{Message: c.sampleViolationForMatched}})
+						av := &storage.Alert_Violation{}
+						av.SetMessage(c.sampleViolationForMatched)
+						protoassert.SlicesEqual(t, actualViolations[id], []*storage.Alert_Violation{av})
 					}
 				}
 			}
@@ -2001,26 +2031,23 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 }
 
 func (suite *DefaultPoliciesTestSuite) TestMapPolicyMatchOne() {
-	noAnnotation := &storage.Deployment{
-		Id: "noAnnotation",
-	}
+	noAnnotation := &storage.Deployment{}
+	noAnnotation.SetId("noAnnotation")
 	suite.addDepAndImages(noAnnotation)
 
-	noValidAnnotation := &storage.Deployment{
-		Id: "noValidAnnotation",
-		Annotations: map[string]string{
-			"email":               "notavalidemail",
-			"someotherannotation": "vv@stackrox.com",
-		},
-	}
+	noValidAnnotation := &storage.Deployment{}
+	noValidAnnotation.SetId("noValidAnnotation")
+	noValidAnnotation.SetAnnotations(map[string]string{
+		"email":               "notavalidemail",
+		"someotherannotation": "vv@stackrox.com",
+	})
 	suite.addDepAndImages(noValidAnnotation)
 
-	validAnnotation := &storage.Deployment{
-		Id: "validAnnotation",
-		Annotations: map[string]string{
-			"email": "joseph@rules.gov",
-		},
-	}
+	validAnnotation := &storage.Deployment{}
+	validAnnotation.SetId("validAnnotation")
+	validAnnotation.SetAnnotations(map[string]string{
+		"email": "joseph@rules.gov",
+	})
 	suite.addDepAndImages(validAnnotation)
 
 	policy := suite.defaultPolicies["Required Annotation: Email"]
@@ -2051,7 +2078,9 @@ func (suite *DefaultPoliciesTestSuite) TestMapPolicyMatchOne() {
 			suite.NoError(err)
 			var expectedMessages []*storage.Alert_Violation
 			for _, v := range c.expectedViolations {
-				expectedMessages = append(expectedMessages, &storage.Alert_Violation{Message: v})
+				av := &storage.Alert_Violation{}
+				av.SetMessage(v)
+				expectedMessages = append(expectedMessages, av)
 			}
 			protoassert.SlicesEqual(suite.T(), matched.AlertViolations, expectedMessages)
 		})
@@ -2085,16 +2114,24 @@ func checkRegexCompiles(sections []*storage.PolicySection, fieldname string) {
 }
 
 func policyWithGroups(eventSrc storage.EventSource, groups ...*storage.PolicyGroup) *storage.Policy {
-	return &storage.Policy{
-		PolicyVersion:  policyversion.CurrentVersion().String(),
-		Name:           uuid.NewV4().String(),
-		EventSource:    eventSrc,
-		PolicySections: []*storage.PolicySection{{PolicyGroups: groups}},
-	}
+	ps := &storage.PolicySection{}
+	ps.SetPolicyGroups(groups)
+	policy := &storage.Policy{}
+	policy.SetPolicyVersion(policyversion.CurrentVersion().String())
+	policy.SetName(uuid.NewV4().String())
+	policy.SetEventSource(eventSrc)
+	policy.SetPolicySections([]*storage.PolicySection{ps})
+	return policy
 }
 
 func policyGroupWithSingleKeyValue(fieldName, value string, negate bool) *storage.PolicyGroup {
-	return &storage.PolicyGroup{FieldName: fieldName, Values: []*storage.PolicyValue{{Value: value}}, Negate: negate}
+	pv := &storage.PolicyValue{}
+	pv.SetValue(value)
+	pg := &storage.PolicyGroup{}
+	pg.SetFieldName(fieldName)
+	pg.SetValues([]*storage.PolicyValue{pv})
+	pg.SetNegate(negate)
+	return pg
 }
 
 func policyWithSingleKeyValue(fieldName, value string, negate bool) *storage.Policy {
@@ -2102,9 +2139,16 @@ func policyWithSingleKeyValue(fieldName, value string, negate bool) *storage.Pol
 }
 
 func policyWithSingleFieldAndValues(fieldName string, values []string, negate bool, op storage.BooleanOperator) *storage.Policy {
-	return policyWithGroups(storage.EventSource_NOT_APPLICABLE, &storage.PolicyGroup{FieldName: fieldName, Values: sliceutils.Map(values, func(val string) *storage.PolicyValue {
-		return &storage.PolicyValue{Value: val}
-	}), Negate: negate, BooleanOperator: op})
+	pg := &storage.PolicyGroup{}
+	pg.SetFieldName(fieldName)
+	pg.SetValues(sliceutils.Map(values, func(val string) *storage.PolicyValue {
+		pv := &storage.PolicyValue{}
+		pv.SetValue(val)
+		return pv
+	}))
+	pg.SetNegate(negate)
+	pg.SetBooleanOperator(op)
+	return policyWithGroups(storage.EventSource_NOT_APPLICABLE, pg)
 }
 
 func processBaselineMessage(dep *storage.Deployment, baseline bool, privileged bool, processNames ...string) []*storage.Alert_Violation {
@@ -2113,7 +2157,9 @@ func processBaselineMessage(dep *storage.Deployment, baseline bool, privileged b
 	for _, p := range processNames {
 		if baseline {
 			msg := fmt.Sprintf("Unexpected process '%s' in container '%s'", p, containerName)
-			violations = append(violations, &storage.Alert_Violation{Message: msg})
+			av := &storage.Alert_Violation{}
+			av.SetMessage(msg)
+			violations = append(violations, av)
 		}
 		if privileged {
 			violations = append(violations, privilegedMessage(dep)...)
@@ -2140,12 +2186,12 @@ func assertNetworkBaselineMessagesEqual(
 	thatWithoutTime := make([]*storage.Alert_Violation, 0, len(that))
 	for _, violation := range this {
 		cp := violation.CloneVT()
-		cp.Time = nil
+		cp.ClearTime()
 		thisWithoutTime = append(thisWithoutTime, cp)
 	}
 	for _, violation := range that {
 		cp := violation.CloneVT()
-		cp.Time = nil
+		cp.ClearTime()
 		thatWithoutTime = append(thatWithoutTime, cp)
 	}
 	protoassert.ElementsMatch(suite.T(), thisWithoutTime, thatWithoutTime)
@@ -2153,7 +2199,9 @@ func assertNetworkBaselineMessagesEqual(
 
 func privilegedMessage(dep *storage.Deployment) []*storage.Alert_Violation {
 	containerName := dep.GetContainers()[0].GetName()
-	return []*storage.Alert_Violation{{Message: fmt.Sprintf("Container '%s' is privileged", containerName)}}
+	av := &storage.Alert_Violation{}
+	av.SetMessage(fmt.Sprintf("Container '%s' is privileged", containerName))
+	return []*storage.Alert_Violation{av}
 }
 
 func rbacPermissionMessage(level string) []*storage.Alert_Violation {
@@ -2163,14 +2211,16 @@ func rbacPermissionMessage(level string) []*storage.Alert_Violation {
 		"ELEVATED_IN_NAMESPACE": "elevated access in namespace",
 		"ELEVATED_CLUSTER_WIDE": "elevated access cluster wide",
 		"CLUSTER_ADMIN":         "cluster admin access"}
-	return []*storage.Alert_Violation{{Message: fmt.Sprintf("Service account permission level with %s", permissionToDescMap[level])}}
+	av := &storage.Alert_Violation{}
+	av.SetMessage(fmt.Sprintf("Service account permission level with %s", permissionToDescMap[level]))
+	return []*storage.Alert_Violation{av}
 }
 
 func (suite *DefaultPoliciesTestSuite) TestK8sRBACField() {
 	deployments := make(map[string]*storage.Deployment)
 	for permissionLevelStr, permissionLevel := range storage.PermissionLevel_value {
 		dep := fixtures.GetDeployment().CloneVT()
-		dep.ServiceAccountPermissionLevel = storage.PermissionLevel(permissionLevel)
+		dep.SetServiceAccountPermissionLevel(storage.PermissionLevel(permissionLevel))
 		deployments[permissionLevelStr] = dep
 	}
 
@@ -2244,7 +2294,7 @@ func (suite *DefaultPoliciesTestSuite) TestPortExposure() {
 	deployments := make(map[string]*storage.Deployment)
 	for exposureLevelStr, exposureLevel := range storage.PortConfig_ExposureLevel_value {
 		dep := fixtures.GetDeployment().CloneVT()
-		dep.Ports = []*storage.PortConfig{{ExposureInfos: []*storage.PortConfig_ExposureInfo{{Level: storage.PortConfig_ExposureLevel(exposureLevel)}}}}
+		dep.SetPorts([]*storage.PortConfig{storage.PortConfig_builder{ExposureInfos: []*storage.PortConfig_ExposureInfo{storage.PortConfig_ExposureInfo_builder{Level: storage.PortConfig_ExposureLevel(exposureLevel)}.Build()}}.Build()})
 		deployments[exposureLevelStr] = dep
 	}
 
@@ -2311,12 +2361,12 @@ func (suite *DefaultPoliciesTestSuite) TestImageOS() {
 	} {
 		img := imageWithOS(imgName)
 		dep := fixtures.GetDeployment().CloneVT()
-		dep.Containers = []*storage.Container{
-			{
-				Name:  imgName,
-				Image: types.ToContainerImage(img),
-			},
-		}
+		container := &storage.Container{}
+		container.SetName(imgName)
+		container.SetImage(types.ToContainerImage(img))
+		dep.SetContainers([]*storage.Container{
+			container,
+		})
 		depToImg[dep] = img
 	}
 
@@ -2392,37 +2442,37 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 
 	var images = []*storage.Image{
 		suite.imageWithSignatureVerificationResults("image_no_results", []*storage.ImageSignatureVerificationResult{{}}),
-		suite.imageWithSignatureVerificationResults("image_empty_results", []*storage.ImageSignatureVerificationResult{{
+		suite.imageWithSignatureVerificationResults("image_empty_results", []*storage.ImageSignatureVerificationResult{storage.ImageSignatureVerificationResult_builder{
 			VerifierId: "",
 			Status:     storage.ImageSignatureVerificationResult_UNSET,
-		}}),
+		}.Build()}),
 		suite.imageWithSignatureVerificationResults("image_nil_results", nil),
-		suite.imageWithSignatureVerificationResults("verified_by_0", []*storage.ImageSignatureVerificationResult{{
+		suite.imageWithSignatureVerificationResults("verified_by_0", []*storage.ImageSignatureVerificationResult{storage.ImageSignatureVerificationResult_builder{
 			VerifierId:              verifier0,
 			Status:                  storage.ImageSignatureVerificationResult_VERIFIED,
 			VerifiedImageReferences: []string{"verified_by_0"},
-		}}),
-		suite.imageWithSignatureVerificationResults("unverified_image", []*storage.ImageSignatureVerificationResult{{
+		}.Build()}),
+		suite.imageWithSignatureVerificationResults("unverified_image", []*storage.ImageSignatureVerificationResult{storage.ImageSignatureVerificationResult_builder{
 			VerifierId: unverifier,
 			Status:     storage.ImageSignatureVerificationResult_UNSET,
-		}}),
-		suite.imageWithSignatureVerificationResults("verified_by_3", []*storage.ImageSignatureVerificationResult{{
+		}.Build()}),
+		suite.imageWithSignatureVerificationResults("verified_by_3", []*storage.ImageSignatureVerificationResult{storage.ImageSignatureVerificationResult_builder{
 			VerifierId: verifier2,
 			Status:     storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
-		}, {
+		}.Build(), storage.ImageSignatureVerificationResult_builder{
 			VerifierId:              verifier3,
 			Status:                  storage.ImageSignatureVerificationResult_VERIFIED,
 			VerifiedImageReferences: []string{"verified_by_3"},
-		}}),
-		suite.imageWithSignatureVerificationResults("verified_by_2_and_3", []*storage.ImageSignatureVerificationResult{{
+		}.Build()}),
+		suite.imageWithSignatureVerificationResults("verified_by_2_and_3", []*storage.ImageSignatureVerificationResult{storage.ImageSignatureVerificationResult_builder{
 			VerifierId:              verifier2,
 			Status:                  storage.ImageSignatureVerificationResult_VERIFIED,
 			VerifiedImageReferences: []string{"verified_by_2_and_3"},
-		}, {
+		}.Build(), storage.ImageSignatureVerificationResult_builder{
 			VerifierId:              verifier3,
 			Status:                  storage.ImageSignatureVerificationResult_VERIFIED,
 			VerifiedImageReferences: []string{"verified_by_2_and_3"},
-		}}),
+		}.Build()}),
 	}
 
 	var allImages set.FrozenStringSet
@@ -2523,31 +2573,31 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified_WithDeployment() {
 		verifier3 = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000004"
 	)
 
+	isvr := &storage.ImageSignatureVerificationResult{}
+	isvr.SetVerifierId(verifier1)
+	isvr.SetStatus(storage.ImageSignatureVerificationResult_VERIFIED)
+	isvr.SetVerifiedImageReferences([]string{"image_verified_by_1"})
 	imgVerifiedAndMatchingReference := suite.imageWithSignatureVerificationResults("image_verified_by_1",
 		[]*storage.ImageSignatureVerificationResult{
-			{
-				VerifierId:              verifier1,
-				Status:                  storage.ImageSignatureVerificationResult_VERIFIED,
-				VerifiedImageReferences: []string{"image_verified_by_1"},
-			},
+			isvr,
 		})
 
+	isvr2 := &storage.ImageSignatureVerificationResult{}
+	isvr2.SetVerifierId(verifier3)
+	isvr2.SetStatus(storage.ImageSignatureVerificationResult_VERIFIED)
+	isvr2.SetVerifiedImageReferences([]string{"image_with_alternative_verified_reference", "image_verified_by_2"})
 	imgVerifiedAndMatchingMultipleReferences := suite.imageWithSignatureVerificationResults("image_verified_by_2",
 		[]*storage.ImageSignatureVerificationResult{
-			{
-				VerifierId:              verifier3,
-				Status:                  storage.ImageSignatureVerificationResult_VERIFIED,
-				VerifiedImageReferences: []string{"image_with_alternative_verified_reference", "image_verified_by_2"},
-			},
+			isvr2,
 		})
 
+	isvr3 := &storage.ImageSignatureVerificationResult{}
+	isvr3.SetVerifierId(verifier2)
+	isvr3.SetStatus(storage.ImageSignatureVerificationResult_VERIFIED)
+	isvr3.SetVerifiedImageReferences([]string{"image_verified_by_2"})
 	imgVerifiedButNotMatchingReference := suite.imageWithSignatureVerificationResults("image_with_alternative_verified_reference",
 		[]*storage.ImageSignatureVerificationResult{
-			{
-				VerifierId:              verifier2,
-				Status:                  storage.ImageSignatureVerificationResult_VERIFIED,
-				VerifiedImageReferences: []string{"image_verified_by_2"},
-			},
+			isvr3,
 		})
 
 	cases := map[string]struct {
@@ -2605,11 +2655,11 @@ func (suite *DefaultPoliciesTestSuite) TestContainerName() {
 		"external_container",
 	} {
 		dep := fixtures.GetDeployment().CloneVT()
-		dep.Containers = []*storage.Container{
-			{
-				Name: containerName,
-			},
-		}
+		container := &storage.Container{}
+		container.SetName(containerName)
+		dep.SetContainers([]*storage.Container{
+			container,
+		})
 		deps = append(deps, dep)
 	}
 
@@ -2684,9 +2734,9 @@ func (suite *DefaultPoliciesTestSuite) TestAllowPrivilegeEscalationPolicyCriteri
 		},
 	} {
 		dep := fixtures.GetDeployment().CloneVT()
-		dep.Containers[0].Name = d.ContainerName
+		dep.GetContainers()[0].SetName(d.ContainerName)
 		if d.AllowPrivilegeEscalation {
-			dep.Containers[0].SecurityContext.AllowPrivilegeEscalation = d.AllowPrivilegeEscalation
+			dep.GetContainers()[0].GetSecurityContext().SetAllowPrivilegeEscalation(d.AllowPrivilegeEscalation)
 		}
 		deps = append(deps, dep)
 	}
@@ -2758,26 +2808,30 @@ func (suite *DefaultPoliciesTestSuite) TestAutomountServiceAccountToken() {
 		},
 	} {
 		dep := fixtures.GetDeployment().CloneVT()
-		dep.Name = d.DeploymentName
-		dep.ServiceAccount = d.ServiceAccountName
-		dep.AutomountServiceAccountToken = d.AutomountServiceAccountTokens
+		dep.SetName(d.DeploymentName)
+		dep.SetServiceAccount(d.ServiceAccountName)
+		dep.SetAutomountServiceAccountToken(d.AutomountServiceAccountTokens)
 		deployments[dep.GetName()] = dep
 	}
 
-	automountServiceAccountTokenPolicyGroup := &storage.PolicyGroup{
-		FieldName: fieldnames.AutomountServiceAccountToken,
-		Values:    []*storage.PolicyValue{{Value: "true"}},
-	}
-	defaultServiceAccountPolicyGroup := &storage.PolicyGroup{
-		FieldName: fieldnames.ServiceAccount,
-		Values:    []*storage.PolicyValue{{Value: "default"}},
-	}
+	pv := &storage.PolicyValue{}
+	pv.SetValue("true")
+	automountServiceAccountTokenPolicyGroup := &storage.PolicyGroup{}
+	automountServiceAccountTokenPolicyGroup.SetFieldName(fieldnames.AutomountServiceAccountToken)
+	automountServiceAccountTokenPolicyGroup.SetValues([]*storage.PolicyValue{pv})
+	pv2 := &storage.PolicyValue{}
+	pv2.SetValue("default")
+	defaultServiceAccountPolicyGroup := &storage.PolicyGroup{}
+	defaultServiceAccountPolicyGroup.SetFieldName(fieldnames.ServiceAccount)
+	defaultServiceAccountPolicyGroup.SetValues([]*storage.PolicyValue{pv2})
 
 	allAutomountServiceAccountTokenPolicy := policyWithGroups(storage.EventSource_NOT_APPLICABLE, automountServiceAccountTokenPolicyGroup)
 	defaultAutomountServiceAccountTokenPolicy := policyWithGroups(storage.EventSource_NOT_APPLICABLE, automountServiceAccountTokenPolicyGroup, defaultServiceAccountPolicyGroup)
 
-	automountAlert := &storage.Alert_Violation{Message: "Deployment mounts the service account tokens."}
-	defaultServiceAccountAlert := &storage.Alert_Violation{Message: "Service Account is set to 'default'"}
+	automountAlert := &storage.Alert_Violation{}
+	automountAlert.SetMessage("Deployment mounts the service account tokens.")
+	defaultServiceAccountAlert := &storage.Alert_Violation{}
+	defaultServiceAccountAlert.SetMessage("Service Account is set to 'default'")
 
 	for _, c := range []struct {
 		CaseName       string
@@ -2833,7 +2887,7 @@ func (suite *DefaultPoliciesTestSuite) TestRuntimeClass() {
 		"blah",
 	} {
 		dep := fixtures.GetDeployment().CloneVT()
-		dep.RuntimeClass = runtimeClass
+		dep.SetRuntimeClass(runtimeClass)
 		deps = append(deps, dep)
 	}
 
@@ -2893,7 +2947,7 @@ func (suite *DefaultPoliciesTestSuite) TestNamespace() {
 		"external_dep",
 	} {
 		dep := fixtures.GetDeployment().CloneVT()
-		dep.Namespace = namespace
+		dep.SetNamespace(namespace)
 		deps = append(deps, dep)
 	}
 
@@ -2955,9 +3009,9 @@ func (suite *DefaultPoliciesTestSuite) TestDropCaps() {
 	deployments := make(map[string]*storage.Deployment)
 	for _, idxs := range [][]int{{}, {0}, {1}, {2}, {0, 1}, {1, 2}, {0, 1, 2}, {3}} {
 		dep := fixtures.GetDeployment().CloneVT()
-		dep.Containers[0].SecurityContext.DropCapabilities = make([]string, 0, len(idxs))
+		dep.GetContainers()[0].GetSecurityContext().SetDropCapabilities(make([]string, 0, len(idxs)))
 		for _, idx := range idxs {
-			dep.Containers[0].SecurityContext.DropCapabilities = append(dep.Containers[0].SecurityContext.DropCapabilities, testCaps[idx])
+			dep.GetContainers()[0].GetSecurityContext().SetDropCapabilities(append(dep.GetContainers()[0].GetSecurityContext().GetDropCapabilities(), testCaps[idx]))
 		}
 		deployments[strings.ReplaceAll(strings.Join(dep.GetContainers()[0].GetSecurityContext().GetDropCapabilities(), ","), "SYS_", "")] = dep
 	}
@@ -3033,9 +3087,9 @@ func (suite *DefaultPoliciesTestSuite) TestAddCaps() {
 	deployments := make(map[string]*storage.Deployment)
 	for _, idxs := range [][]int{{}, {0}, {1}, {2}, {0, 1}, {1, 2}, {0, 1, 2}} {
 		dep := fixtures.GetDeployment().CloneVT()
-		dep.Containers[0].SecurityContext.AddCapabilities = make([]string, 0, len(idxs))
+		dep.GetContainers()[0].GetSecurityContext().SetAddCapabilities(make([]string, 0, len(idxs)))
 		for _, idx := range idxs {
-			dep.Containers[0].SecurityContext.AddCapabilities = append(dep.Containers[0].SecurityContext.AddCapabilities, testCaps[idx])
+			dep.GetContainers()[0].GetSecurityContext().SetAddCapabilities(append(dep.GetContainers()[0].GetSecurityContext().GetAddCapabilities(), testCaps[idx]))
 		}
 		deployments[strings.ReplaceAll(strings.Join(dep.GetContainers()[0].GetSecurityContext().GetAddCapabilities(), ","), "SYS_", "")] = dep
 	}
@@ -3087,12 +3141,12 @@ func (suite *DefaultPoliciesTestSuite) TestAddCaps() {
 
 func (suite *DefaultPoliciesTestSuite) TestProcessBaseline() {
 	privilegedDep := fixtures.GetDeployment().CloneVT()
-	privilegedDep.Id = "PRIVILEGED"
+	privilegedDep.SetId("PRIVILEGED")
 	suite.addDepAndImages(privilegedDep)
 
 	nonPrivilegedDep := fixtures.GetDeployment().CloneVT()
-	nonPrivilegedDep.Id = "NOTPRIVILEGED"
-	nonPrivilegedDep.Containers[0].SecurityContext.Privileged = false
+	nonPrivilegedDep.SetId("NOTPRIVILEGED")
+	nonPrivilegedDep.GetContainers()[0].GetSecurityContext().SetPrivileged(false)
 	suite.addDepAndImages(nonPrivilegedDep)
 
 	const aptGetKey = "apt-get"
@@ -3280,8 +3334,9 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventConstraints() {
 		suite.T().Run(fmt.Sprintf("%+v", c.groups), func(t *testing.T) {
 			policy := policyWithGroups(storage.EventSource_DEPLOYMENT_EVENT, c.groups...)
 			if c.withProcessSection {
-				policy.PolicySections = append(policy.PolicySections,
-					&storage.PolicySection{PolicyGroups: []*storage.PolicyGroup{aptGetGroup}})
+				ps := &storage.PolicySection{}
+				ps.SetPolicyGroups([]*storage.PolicyGroup{aptGetGroup})
+				policy.SetPolicySections(append(policy.GetPolicySections(), ps))
 			}
 
 			m, err := BuildKubeEventMatcher(policy)
@@ -3321,17 +3376,15 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventDefaultPolicies() {
 		// Event without CREATE.
 		{
 			policyName: "Kubernetes Actions: Exec into Pod",
-			event: &storage.KubernetesEvent{
-				Object: &storage.KubernetesEvent_Object{
+			event: storage.KubernetesEvent_builder{
+				Object: storage.KubernetesEvent_Object_builder{
 					Name:     "p1",
 					Resource: storage.KubernetesEvent_Object_PODS_EXEC,
-				},
-				ObjectArgs: &storage.KubernetesEvent_PodExecArgs_{
-					PodExecArgs: &storage.KubernetesEvent_PodExecArgs{
-						Container: "c1",
-					},
-				},
-			},
+				}.Build(),
+				PodExecArgs: storage.KubernetesEvent_PodExecArgs_builder{
+					Container: "c1",
+				}.Build(),
+			}.Build(),
 			expectedViolations: []*storage.Alert_Violation{podExecViolationMsg("p1", "c1", "")},
 		},
 		{
@@ -3344,17 +3397,15 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventDefaultPolicies() {
 		},
 		{
 			policyName: "Kubernetes Actions: Port Forward to Pod",
-			event: &storage.KubernetesEvent{
-				Object: &storage.KubernetesEvent_Object{
+			event: storage.KubernetesEvent_builder{
+				Object: storage.KubernetesEvent_Object_builder{
 					Name:     "p1",
 					Resource: storage.KubernetesEvent_Object_PODS_PORTFORWARD,
-				},
-				ObjectArgs: &storage.KubernetesEvent_PodPortForwardArgs_{
-					PodPortForwardArgs: &storage.KubernetesEvent_PodPortForwardArgs{
-						Ports: []int32{8000},
-					},
-				},
-			},
+				}.Build(),
+				PodPortForwardArgs: storage.KubernetesEvent_PodPortForwardArgs_builder{
+					Ports: []int32{8000},
+				}.Build(),
+			}.Build(),
 			expectedViolations: []*storage.Alert_Violation{podPortForwardViolationMsg("p1", 8000)},
 		},
 	} {
@@ -3430,7 +3481,7 @@ func (suite *DefaultPoliciesTestSuite) TestReplicasPolicyCriteria() {
 			replicas:    5,
 			policyValue: "5",
 			negate:      false,
-			alerts:      []*storage.Alert_Violation{{Message: "Replicas is set to '5'"}},
+			alerts:      []*storage.Alert_Violation{storage.Alert_Violation_builder{Message: "Replicas is set to '5'"}.Build()},
 		},
 		{
 			caseName:    "Should not raise unless replicas==3.",
@@ -3444,40 +3495,40 @@ func (suite *DefaultPoliciesTestSuite) TestReplicasPolicyCriteria() {
 			replicas:    5,
 			policyValue: "3",
 			negate:      true,
-			alerts:      []*storage.Alert_Violation{{Message: "Replicas is set to '5'"}},
+			alerts:      []*storage.Alert_Violation{storage.Alert_Violation_builder{Message: "Replicas is set to '5'"}.Build()},
 		},
 		{
 			caseName:    "Should raise when replicas>=5.",
 			replicas:    5,
 			policyValue: ">=5",
 			negate:      false,
-			alerts:      []*storage.Alert_Violation{{Message: "Replicas is set to '5'"}},
+			alerts:      []*storage.Alert_Violation{storage.Alert_Violation_builder{Message: "Replicas is set to '5'"}.Build()},
 		},
 		{
 			caseName:    "Should raise when replicas<=5.",
 			replicas:    5,
 			policyValue: "<=5",
 			negate:      false,
-			alerts:      []*storage.Alert_Violation{{Message: "Replicas is set to '5'"}},
+			alerts:      []*storage.Alert_Violation{storage.Alert_Violation_builder{Message: "Replicas is set to '5'"}.Build()},
 		},
 		{
 			caseName:    "Should raise when replicas<5.",
 			replicas:    1,
 			policyValue: "<5",
 			negate:      false,
-			alerts:      []*storage.Alert_Violation{{Message: "Replicas is set to '1'"}},
+			alerts:      []*storage.Alert_Violation{storage.Alert_Violation_builder{Message: "Replicas is set to '1'"}.Build()},
 		},
 		{
 			caseName:    "Should raise when replicas>5.",
 			replicas:    10,
 			policyValue: ">5",
 			negate:      false,
-			alerts:      []*storage.Alert_Violation{{Message: "Replicas is set to '10'"}},
+			alerts:      []*storage.Alert_Violation{storage.Alert_Violation_builder{Message: "Replicas is set to '10'"}.Build()},
 		},
 	} {
 		suite.Run(testCase.caseName, func() {
 			deployment := fixtures.GetDeployment().CloneVT()
-			deployment.Replicas = testCase.replicas
+			deployment.SetReplicas(testCase.replicas)
 			policy := policyWithSingleKeyValue(fieldnames.Replicas, testCase.policyValue, testCase.negate)
 
 			matcher, err := BuildDeploymentMatcher(policy)
@@ -3501,17 +3552,17 @@ func (suite *DefaultPoliciesTestSuite) TestLivenessProbePolicyCriteria() {
 		{
 			caseName: "Should raise alert since liveness probe is defined.",
 			containers: []*storage.Container{
-				{Name: "container", LivenessProbe: &storage.LivenessProbe{Defined: true}},
+				storage.Container_builder{Name: "container", LivenessProbe: storage.LivenessProbe_builder{Defined: true}.Build()}.Build(),
 			},
 			policyValue: "true",
 			alerts: []*storage.Alert_Violation{
-				{Message: "Liveness probe is defined for container 'container'"},
+				storage.Alert_Violation_builder{Message: "Liveness probe is defined for container 'container'"}.Build(),
 			},
 		},
 		{
 			caseName: "Should not raise alert since liveness probe is defined.",
 			containers: []*storage.Container{
-				{Name: "container", LivenessProbe: &storage.LivenessProbe{Defined: true}},
+				storage.Container_builder{Name: "container", LivenessProbe: storage.LivenessProbe_builder{Defined: true}.Build()}.Build(),
 			},
 			policyValue: "false",
 			alerts:      nil,
@@ -3519,7 +3570,7 @@ func (suite *DefaultPoliciesTestSuite) TestLivenessProbePolicyCriteria() {
 		{
 			caseName: "Should not raise alert since liveness probe is not defined.",
 			containers: []*storage.Container{
-				{Name: "container", LivenessProbe: &storage.LivenessProbe{Defined: false}},
+				storage.Container_builder{Name: "container", LivenessProbe: storage.LivenessProbe_builder{Defined: false}.Build()}.Build(),
 			},
 			policyValue: "true",
 			alerts:      nil,
@@ -3527,40 +3578,40 @@ func (suite *DefaultPoliciesTestSuite) TestLivenessProbePolicyCriteria() {
 		{
 			caseName: "Should raise alert since liveness probe is not defined.",
 			containers: []*storage.Container{
-				{Name: "container", LivenessProbe: &storage.LivenessProbe{Defined: false}},
+				storage.Container_builder{Name: "container", LivenessProbe: storage.LivenessProbe_builder{Defined: false}.Build()}.Build(),
 			},
 			policyValue: "false",
 			alerts: []*storage.Alert_Violation{
-				{Message: "Liveness probe is not defined for container 'container'"},
+				storage.Alert_Violation_builder{Message: "Liveness probe is not defined for container 'container'"}.Build(),
 			},
 		},
 		{
 			caseName: "Should raise alert for both containers.",
 			containers: []*storage.Container{
-				{Name: "container-1", LivenessProbe: &storage.LivenessProbe{Defined: false}},
-				{Name: "container-2", LivenessProbe: &storage.LivenessProbe{Defined: false}},
+				storage.Container_builder{Name: "container-1", LivenessProbe: storage.LivenessProbe_builder{Defined: false}.Build()}.Build(),
+				storage.Container_builder{Name: "container-2", LivenessProbe: storage.LivenessProbe_builder{Defined: false}.Build()}.Build(),
 			},
 			policyValue: "false",
 			alerts: []*storage.Alert_Violation{
-				{Message: "Liveness probe is not defined for container 'container-1'"},
-				{Message: "Liveness probe is not defined for container 'container-2'"},
+				storage.Alert_Violation_builder{Message: "Liveness probe is not defined for container 'container-1'"}.Build(),
+				storage.Alert_Violation_builder{Message: "Liveness probe is not defined for container 'container-2'"}.Build(),
 			},
 		},
 		{
 			caseName: "Should raise alert only for container-2.",
 			containers: []*storage.Container{
-				{Name: "container-1", LivenessProbe: &storage.LivenessProbe{Defined: true}},
-				{Name: "container-2", LivenessProbe: &storage.LivenessProbe{Defined: false}},
+				storage.Container_builder{Name: "container-1", LivenessProbe: storage.LivenessProbe_builder{Defined: true}.Build()}.Build(),
+				storage.Container_builder{Name: "container-2", LivenessProbe: storage.LivenessProbe_builder{Defined: false}.Build()}.Build(),
 			},
 			policyValue: "false",
 			alerts: []*storage.Alert_Violation{
-				{Message: "Liveness probe is not defined for container 'container-2'"},
+				storage.Alert_Violation_builder{Message: "Liveness probe is not defined for container 'container-2'"}.Build(),
 			},
 		},
 	} {
 		suite.Run(testCase.caseName, func() {
 			deployment := fixtures.GetDeployment().CloneVT()
-			deployment.Containers = testCase.containers
+			deployment.SetContainers(testCase.containers)
 			policy := policyWithSingleKeyValue(fieldnames.LivenessProbeDefined, testCase.policyValue, false)
 
 			matcher, err := BuildDeploymentMatcher(policy)
@@ -3594,7 +3645,7 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 				HasEgressNetworkPolicy:  true,
 			},
 			alerts: []*storage.Alert_Violation{
-				{Message: "The deployment is missing Ingress Network Policy.", Type: storage.Alert_Violation_NETWORK_POLICY},
+				storage.Alert_Violation_builder{Message: "The deployment is missing Ingress Network Policy.", Type: storage.Alert_Violation_NETWORK_POLICY}.Build(),
 			},
 		},
 		"Missing Egress Network Policy": {
@@ -3603,7 +3654,7 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 				HasEgressNetworkPolicy:  false,
 			},
 			alerts: []*storage.Alert_Violation{
-				{Message: "The deployment is missing Egress Network Policy.", Type: storage.Alert_Violation_NETWORK_POLICY},
+				storage.Alert_Violation_builder{Message: "The deployment is missing Egress Network Policy.", Type: storage.Alert_Violation_NETWORK_POLICY}.Build(),
 			},
 		},
 		"Both policies missing": {
@@ -3612,8 +3663,8 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 				HasEgressNetworkPolicy:  false,
 			},
 			alerts: []*storage.Alert_Violation{
-				{Message: "The deployment is missing Ingress Network Policy.", Type: storage.Alert_Violation_NETWORK_POLICY},
-				{Message: "The deployment is missing Egress Network Policy.", Type: storage.Alert_Violation_NETWORK_POLICY},
+				storage.Alert_Violation_builder{Message: "The deployment is missing Ingress Network Policy.", Type: storage.Alert_Violation_NETWORK_POLICY}.Build(),
+				storage.Alert_Violation_builder{Message: "The deployment is missing Egress Network Policy.", Type: storage.Alert_Violation_NETWORK_POLICY}.Build(),
 			},
 		},
 		"No alerts": {
@@ -3632,22 +3683,20 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 				HasIngressNetworkPolicy: false,
 				HasEgressNetworkPolicy:  true,
 				Policies: map[string]*storage.NetworkPolicy{
-					"ID1": {Id: "ID1", Name: "policy1"},
+					"ID1": storage.NetworkPolicy_builder{Id: "ID1", Name: "policy1"}.Build(),
 				},
 			},
 			alerts: []*storage.Alert_Violation{
-				{
+				storage.Alert_Violation_builder{
 					Message: "The deployment is missing Ingress Network Policy.",
 					Type:    storage.Alert_Violation_NETWORK_POLICY,
-					MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
-						KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
-							Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
-								{Key: printer.PolicyID, Value: "ID1"},
-								{Key: printer.PolicyName, Value: "policy1"},
-							},
+					KeyValueAttrs: storage.Alert_Violation_KeyValueAttrs_builder{
+						Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
+							storage.Alert_Violation_KeyValueAttrs_KeyValueAttr_builder{Key: printer.PolicyID, Value: "ID1"}.Build(),
+							storage.Alert_Violation_KeyValueAttrs_KeyValueAttr_builder{Key: printer.PolicyName, Value: "policy1"}.Build(),
 						},
-					},
-				},
+					}.Build(),
+				}.Build(),
 			},
 		},
 	}
@@ -3689,17 +3738,17 @@ func (suite *DefaultPoliciesTestSuite) TestReadinessProbePolicyCriteria() {
 		{
 			caseName: "Should raise alert since readiness probe is defined.",
 			containers: []*storage.Container{
-				{Name: "container", ReadinessProbe: &storage.ReadinessProbe{Defined: true}},
+				storage.Container_builder{Name: "container", ReadinessProbe: storage.ReadinessProbe_builder{Defined: true}.Build()}.Build(),
 			},
 			policyValue: "true",
 			alerts: []*storage.Alert_Violation{
-				{Message: "Readiness probe is defined for container 'container'"},
+				storage.Alert_Violation_builder{Message: "Readiness probe is defined for container 'container'"}.Build(),
 			},
 		},
 		{
 			caseName: "Should not raise alert since readiness probe is defined.",
 			containers: []*storage.Container{
-				{Name: "container", ReadinessProbe: &storage.ReadinessProbe{Defined: true}},
+				storage.Container_builder{Name: "container", ReadinessProbe: storage.ReadinessProbe_builder{Defined: true}.Build()}.Build(),
 			},
 			policyValue: "false",
 			alerts:      nil,
@@ -3707,7 +3756,7 @@ func (suite *DefaultPoliciesTestSuite) TestReadinessProbePolicyCriteria() {
 		{
 			caseName: "Should not raise alert since readiness probe is not defined.",
 			containers: []*storage.Container{
-				{Name: "container", ReadinessProbe: &storage.ReadinessProbe{Defined: false}},
+				storage.Container_builder{Name: "container", ReadinessProbe: storage.ReadinessProbe_builder{Defined: false}.Build()}.Build(),
 			},
 			policyValue: "true",
 			alerts:      nil,
@@ -3715,40 +3764,40 @@ func (suite *DefaultPoliciesTestSuite) TestReadinessProbePolicyCriteria() {
 		{
 			caseName: "Should raise alert since readiness probe is not defined.",
 			containers: []*storage.Container{
-				{Name: "container", ReadinessProbe: &storage.ReadinessProbe{Defined: false}},
+				storage.Container_builder{Name: "container", ReadinessProbe: storage.ReadinessProbe_builder{Defined: false}.Build()}.Build(),
 			},
 			policyValue: "false",
 			alerts: []*storage.Alert_Violation{
-				{Message: "Readiness probe is not defined for container 'container'"},
+				storage.Alert_Violation_builder{Message: "Readiness probe is not defined for container 'container'"}.Build(),
 			},
 		},
 		{
 			caseName: "Should raise alert for both containers.",
 			containers: []*storage.Container{
-				{Name: "container-1", ReadinessProbe: &storage.ReadinessProbe{Defined: false}},
-				{Name: "container-2", ReadinessProbe: &storage.ReadinessProbe{Defined: false}},
+				storage.Container_builder{Name: "container-1", ReadinessProbe: storage.ReadinessProbe_builder{Defined: false}.Build()}.Build(),
+				storage.Container_builder{Name: "container-2", ReadinessProbe: storage.ReadinessProbe_builder{Defined: false}.Build()}.Build(),
 			},
 			policyValue: "false",
 			alerts: []*storage.Alert_Violation{
-				{Message: "Readiness probe is not defined for container 'container-1'"},
-				{Message: "Readiness probe is not defined for container 'container-2'"},
+				storage.Alert_Violation_builder{Message: "Readiness probe is not defined for container 'container-1'"}.Build(),
+				storage.Alert_Violation_builder{Message: "Readiness probe is not defined for container 'container-2'"}.Build(),
 			},
 		},
 		{
 			caseName: "Should raise alert only for container-2.",
 			containers: []*storage.Container{
-				{Name: "container-1", ReadinessProbe: &storage.ReadinessProbe{Defined: true}},
-				{Name: "container-2", ReadinessProbe: &storage.ReadinessProbe{Defined: false}},
+				storage.Container_builder{Name: "container-1", ReadinessProbe: storage.ReadinessProbe_builder{Defined: true}.Build()}.Build(),
+				storage.Container_builder{Name: "container-2", ReadinessProbe: storage.ReadinessProbe_builder{Defined: false}.Build()}.Build(),
 			},
 			policyValue: "false",
 			alerts: []*storage.Alert_Violation{
-				{Message: "Readiness probe is not defined for container 'container-2'"},
+				storage.Alert_Violation_builder{Message: "Readiness probe is not defined for container 'container-2'"}.Build(),
 			},
 		},
 	} {
 		suite.Run(testCase.caseName, func() {
 			deployment := fixtures.GetDeployment().CloneVT()
-			deployment.Containers = testCase.containers
+			deployment.SetContainers(testCase.containers)
 			policy := policyWithSingleKeyValue(fieldnames.ReadinessProbeDefined, testCase.policyValue, false)
 
 			matcher, err := BuildDeploymentMatcher(policy)
@@ -3763,25 +3812,25 @@ func (suite *DefaultPoliciesTestSuite) TestReadinessProbePolicyCriteria() {
 }
 
 func newIndicator(deployment *storage.Deployment, name, args, execFilePath string) *storage.ProcessIndicator {
-	return &storage.ProcessIndicator{
-		Id:            uuid.NewV4().String(),
-		ContainerName: deployment.GetContainers()[0].GetName(),
-		Signal: &storage.ProcessSignal{
-			Name:         name,
-			Args:         args,
-			ExecFilePath: execFilePath,
-		},
-	}
+	ps := &storage.ProcessSignal{}
+	ps.SetName(name)
+	ps.SetArgs(args)
+	ps.SetExecFilePath(execFilePath)
+	pi := &storage.ProcessIndicator{}
+	pi.SetId(uuid.NewV4().String())
+	pi.SetContainerName(deployment.GetContainers()[0].GetName())
+	pi.SetSignal(ps)
+	return pi
 }
 
 func BenchmarkProcessPolicies(b *testing.B) {
 	privilegedDep := fixtures.GetDeployment().CloneVT()
-	privilegedDep.Id = "PRIVILEGED"
+	privilegedDep.SetId("PRIVILEGED")
 	images := []*storage.Image{fixtures.GetImage(), fixtures.GetImage()}
 
 	nonPrivilegedDep := fixtures.GetDeployment().CloneVT()
-	nonPrivilegedDep.Id = "NOTPRIVILEGED"
-	nonPrivilegedDep.Containers[0].SecurityContext.Privileged = false
+	nonPrivilegedDep.SetId("NOTPRIVILEGED")
+	nonPrivilegedDep.GetContainers()[0].GetSecurityContext().SetPrivileged(false)
 
 	const aptGetKey = "apt-get"
 	const aptGet2Key = "apt-get2"
@@ -3956,80 +4005,70 @@ func BenchmarkProcessPolicies(b *testing.B) {
 
 func podExecViolationMsg(pod, container, command string) *storage.Alert_Violation {
 	if command == "" {
-		return &storage.Alert_Violation{
+		return storage.Alert_Violation_builder{
 			Message: fmt.Sprintf("Kubernetes API received exec request into pod '%s' container '%s'", pod, container),
 			Type:    storage.Alert_Violation_K8S_EVENT,
-			MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
-				KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
-					Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
-						{Key: "pod", Value: pod},
-						{Key: "container", Value: container},
-					},
+			KeyValueAttrs: storage.Alert_Violation_KeyValueAttrs_builder{
+				Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
+					storage.Alert_Violation_KeyValueAttrs_KeyValueAttr_builder{Key: "pod", Value: pod}.Build(),
+					storage.Alert_Violation_KeyValueAttrs_KeyValueAttr_builder{Key: "container", Value: container}.Build(),
 				},
-			},
-		}
+			}.Build(),
+		}.Build()
 	}
 
-	return &storage.Alert_Violation{
+	return storage.Alert_Violation_builder{
 		Message: fmt.Sprintf("Kubernetes API received exec '%s' request into pod '%s' container '%s'",
 			command, pod, container),
 		Type: storage.Alert_Violation_K8S_EVENT,
-		MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
-			KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
-				Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
-					{Key: "pod", Value: pod},
-					{Key: "container", Value: container},
-					{Key: "commands", Value: command},
-				},
+		KeyValueAttrs: storage.Alert_Violation_KeyValueAttrs_builder{
+			Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
+				storage.Alert_Violation_KeyValueAttrs_KeyValueAttr_builder{Key: "pod", Value: pod}.Build(),
+				storage.Alert_Violation_KeyValueAttrs_KeyValueAttr_builder{Key: "container", Value: container}.Build(),
+				storage.Alert_Violation_KeyValueAttrs_KeyValueAttr_builder{Key: "commands", Value: command}.Build(),
 			},
-		},
-	}
+		}.Build(),
+	}.Build()
 }
 
 func podPortForwardViolationMsg(pod string, port int) *storage.Alert_Violation {
-	return &storage.Alert_Violation{
+	return storage.Alert_Violation_builder{
 		Message: fmt.Sprintf("Kubernetes API received port forward request to pod '%s' ports '%s'", pod, strconv.Itoa(port)),
 		Type:    storage.Alert_Violation_K8S_EVENT,
-		MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
-			KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
-				Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
-					{Key: "pod", Value: pod},
-					{Key: "ports", Value: strconv.Itoa(port)},
-				},
+		KeyValueAttrs: storage.Alert_Violation_KeyValueAttrs_builder{
+			Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
+				storage.Alert_Violation_KeyValueAttrs_KeyValueAttr_builder{Key: "pod", Value: pod}.Build(),
+				storage.Alert_Violation_KeyValueAttrs_KeyValueAttr_builder{Key: "ports", Value: strconv.Itoa(port)}.Build(),
 			},
-		},
-	}
+		}.Build(),
+	}.Build()
 }
 
 func podExecEvent(pod, container, command string) *storage.KubernetesEvent {
-	return &storage.KubernetesEvent{
-		Object: &storage.KubernetesEvent_Object{
+	return storage.KubernetesEvent_builder{
+		Object: storage.KubernetesEvent_Object_builder{
 			Name:     pod,
 			Resource: storage.KubernetesEvent_Object_PODS_EXEC,
-		},
+		}.Build(),
 		ApiVerb: storage.KubernetesEvent_CREATE,
-		ObjectArgs: &storage.KubernetesEvent_PodExecArgs_{
-			PodExecArgs: &storage.KubernetesEvent_PodExecArgs{
-				Container: container,
-				Commands:  []string{command},
-			},
-		},
-	}
+		PodExecArgs: storage.KubernetesEvent_PodExecArgs_builder{
+			Container: container,
+			Commands:  []string{command},
+		}.Build(),
+	}.Build()
 }
 
 func podPortForwardEvent(pod string, port int32) *storage.KubernetesEvent {
-	return &storage.KubernetesEvent{
-		Object: &storage.KubernetesEvent_Object{
+	return storage.KubernetesEvent_builder{
+		Object: storage.KubernetesEvent_Object_builder{
 			Name:     pod,
 			Resource: storage.KubernetesEvent_Object_PODS_PORTFORWARD,
-		},
+		}.Build(),
 		ApiVerb: storage.KubernetesEvent_CREATE,
-		ObjectArgs: &storage.KubernetesEvent_PodPortForwardArgs_{
-			PodPortForwardArgs: &storage.KubernetesEvent_PodPortForwardArgs{
-				Ports: []int32{port},
-			},
-		},
-	}
+		PodPortForwardArgs: storage.KubernetesEvent_PodPortForwardArgs_builder{
+			Ports: []int32{port},
+		}.Build(),
+	}.Build()
 }
 
 func assertViolations(t testing.TB, expected, actual Violations) {

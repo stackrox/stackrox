@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
+	"google.golang.org/protobuf/proto"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -84,17 +85,15 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 
 	clusterMetadata := getClusterMetadata(ctx, &metadata)
 
-	return &storage.ProviderMetadata{
-		Region: metadata.Compute.Location,
-		Zone:   metadata.Compute.Zone,
-		Provider: &storage.ProviderMetadata_Azure{
-			Azure: &storage.AzureProviderMetadata{
-				SubscriptionId: metadata.Compute.SubscriptionID,
-			},
-		},
-		Verified: verified,
-		Cluster:  clusterMetadata,
-	}, nil
+	apm := &storage.AzureProviderMetadata{}
+	apm.SetSubscriptionId(metadata.Compute.SubscriptionID)
+	pm := &storage.ProviderMetadata{}
+	pm.SetRegion(metadata.Compute.Location)
+	pm.SetZone(metadata.Compute.Zone)
+	pm.SetAzure(proto.ValueOrDefault(apm))
+	pm.SetVerified(verified)
+	pm.SetCluster(clusterMetadata)
+	return pm, nil
 }
 
 func getClusterMetadata(ctx context.Context, metadata *azureInstanceMetadata) *storage.ClusterMetadata {
@@ -127,7 +126,11 @@ func getClusterMetadataFromNodeLabels(ctx context.Context,
 		clusterName := strings.TrimPrefix(value, "MC_")
 		clusterName = strings.TrimSuffix(clusterName, fmt.Sprintf("_%s", metadata.Compute.Location))
 		clusterID := fmt.Sprintf("%s_%s", metadata.Compute.SubscriptionID, value)
-		return &storage.ClusterMetadata{Type: storage.ClusterMetadata_AKS, Name: clusterName, Id: clusterID}
+		cm := &storage.ClusterMetadata{}
+		cm.SetType(storage.ClusterMetadata_AKS)
+		cm.SetName(clusterName)
+		cm.SetId(clusterID)
+		return cm
 	}
 	return nil
 }

@@ -19,201 +19,201 @@ func TestCheckConnReplace(t *testing.T) {
 			expectErr: false,
 		},
 		{
-			a: &storage.SensorDeploymentIdentification{
+			a: storage.SensorDeploymentIdentification_builder{
 				SystemNamespaceId:   "kube-system-id",
 				DefaultNamespaceId:  "default-id",
 				AppNamespace:        "stackrox",
 				AppNamespaceId:      "stackrox-id",
 				AppServiceaccountId: "stackrox-sa-id",
-			},
+			}.Build(),
 			b:         nil,
 			expectErr: false,
 		},
 		{
-			a: &storage.SensorDeploymentIdentification{
+			a: storage.SensorDeploymentIdentification_builder{
 				SystemNamespaceId:   "kube-system-id",
 				DefaultNamespaceId:  "default-id",
 				AppNamespace:        "stackrox",
 				AppNamespaceId:      "stackrox-id",
 				AppServiceaccountId: "stackrox-sa-id",
-			},
-			b: &storage.SensorDeploymentIdentification{
+			}.Build(),
+			b: storage.SensorDeploymentIdentification_builder{
 				SystemNamespaceId:   "kube-system-id",
 				DefaultNamespaceId:  "default-id",
 				AppNamespace:        "stackrox",
 				AppNamespaceId:      "stackrox-id",
 				AppServiceaccountId: "stackrox-sa-id",
-			},
+			}.Build(),
 			expectErr: false,
 		},
 		{
-			a: &storage.SensorDeploymentIdentification{
+			a: storage.SensorDeploymentIdentification_builder{
 				SystemNamespaceId:   "",
 				DefaultNamespaceId:  "default-id",
 				AppNamespace:        "stackrox",
 				AppNamespaceId:      "stackrox-id",
 				AppServiceaccountId: "stackrox-sa-id",
-			},
-			b: &storage.SensorDeploymentIdentification{
+			}.Build(),
+			b: storage.SensorDeploymentIdentification_builder{
 				SystemNamespaceId:   "kube-system-id",
 				DefaultNamespaceId:  "default-id",
 				AppNamespace:        "stackrox",
 				AppNamespaceId:      "stackrox-id",
 				AppServiceaccountId: "stackrox-sa-id",
-			},
+			}.Build(),
 			expectErr: false,
 		},
 		{
-			a: &storage.SensorDeploymentIdentification{
+			a: storage.SensorDeploymentIdentification_builder{
 				SystemNamespaceId:   "kube-system-id",
 				DefaultNamespaceId:  "",
 				AppNamespace:        "stackrox",
 				AppNamespaceId:      "stackrox-id",
 				AppServiceaccountId: "stackrox-sa-id",
-			},
-			b: &storage.SensorDeploymentIdentification{
+			}.Build(),
+			b: storage.SensorDeploymentIdentification_builder{
 				SystemNamespaceId:   "kube-system-id",
 				DefaultNamespaceId:  "default-id",
 				AppNamespace:        "stackrox",
 				AppNamespaceId:      "stackrox-id",
 				AppServiceaccountId: "stackrox-sa-id",
-			},
+			}.Build(),
 			expectErr: false,
 		},
 		{
-			a: &storage.SensorDeploymentIdentification{
+			a: storage.SensorDeploymentIdentification_builder{
 				SystemNamespaceId:   "kube-system-id",
 				DefaultNamespaceId:  "default-id",
 				AppNamespace:        "",
 				AppNamespaceId:      "stackrox-id",
 				AppServiceaccountId: "stackrox-sa-id",
-			},
-			b: &storage.SensorDeploymentIdentification{
+			}.Build(),
+			b: storage.SensorDeploymentIdentification_builder{
 				SystemNamespaceId:   "kube-system-id",
 				DefaultNamespaceId:  "default-id",
 				AppNamespace:        "stackrox",
 				AppNamespaceId:      "stackrox-id",
 				AppServiceaccountId: "stackrox-sa-id",
-			},
+			}.Build(),
 			expectErr: false,
 		},
 		{
-			a: &storage.SensorDeploymentIdentification{
+			a: storage.SensorDeploymentIdentification_builder{
 				SystemNamespaceId:   "kube-system-id",
 				DefaultNamespaceId:  "default-id",
 				AppNamespace:        "stackrox",
 				AppNamespaceId:      "",
 				AppServiceaccountId: "stackrox-sa-id",
-			},
-			b: &storage.SensorDeploymentIdentification{
+			}.Build(),
+			b: storage.SensorDeploymentIdentification_builder{
 				SystemNamespaceId:   "kube-system-id",
 				DefaultNamespaceId:  "default-id",
 				AppNamespace:        "stackrox",
 				AppNamespaceId:      "stackrox-id",
 				AppServiceaccountId: "stackrox-sa-id",
-			},
+			}.Build(),
 			expectErr: false,
 		},
 		{
-			a: &storage.SensorDeploymentIdentification{
+			a: storage.SensorDeploymentIdentification_builder{
 				SystemNamespaceId:   "kube-system-id",
 				DefaultNamespaceId:  "default-id",
 				AppNamespace:        "stackrox",
 				AppNamespaceId:      "stackrox-id",
 				AppServiceaccountId: "",
-			},
-			b: &storage.SensorDeploymentIdentification{
+			}.Build(),
+			b: storage.SensorDeploymentIdentification_builder{
 				SystemNamespaceId:   "kube-system-id",
 				DefaultNamespaceId:  "default-id",
 				AppNamespace:        "stackrox",
 				AppNamespaceId:      "stackrox-id",
 				AppServiceaccountId: "stackrox-sa-id",
-			},
+			}.Build(),
 			expectErr: false,
 		},
 		{
-			a: &storage.SensorDeploymentIdentification{
+			a: storage.SensorDeploymentIdentification_builder{
 				SystemNamespaceId:   "kube-system-id",
 				DefaultNamespaceId:  "default-id",
 				AppNamespace:        "stackrox",
 				AppNamespaceId:      "stackrox-id",
 				AppServiceaccountId: "stackrox-sa-id",
-			},
-			b: &storage.SensorDeploymentIdentification{
+			}.Build(),
+			b: storage.SensorDeploymentIdentification_builder{
 				SystemNamespaceId:   "kube-system-id2",
 				DefaultNamespaceId:  "default-id",
 				AppNamespace:        "stackrox",
 				AppNamespaceId:      "stackrox-id",
 				AppServiceaccountId: "stackrox-sa-id",
-			},
+			}.Build(),
 			expectErr: true,
 		},
 		{
-			a: &storage.SensorDeploymentIdentification{
+			a: storage.SensorDeploymentIdentification_builder{
 				SystemNamespaceId:   "kube-system-id",
 				DefaultNamespaceId:  "default-id",
 				AppNamespace:        "stackrox",
 				AppNamespaceId:      "stackrox-id",
 				AppServiceaccountId: "stackrox-sa-id",
-			},
-			b: &storage.SensorDeploymentIdentification{
+			}.Build(),
+			b: storage.SensorDeploymentIdentification_builder{
 				SystemNamespaceId:   "kube-system-id",
 				DefaultNamespaceId:  "default-id2",
 				AppNamespace:        "stackrox",
 				AppNamespaceId:      "stackrox-id",
 				AppServiceaccountId: "stackrox-sa-id",
-			},
+			}.Build(),
 			expectErr: true,
 		},
 		{
-			a: &storage.SensorDeploymentIdentification{
+			a: storage.SensorDeploymentIdentification_builder{
 				SystemNamespaceId:   "kube-system-id",
 				DefaultNamespaceId:  "default-id",
 				AppNamespace:        "stackrox",
 				AppNamespaceId:      "stackrox-id",
 				AppServiceaccountId: "stackrox-sa-id",
-			},
-			b: &storage.SensorDeploymentIdentification{
+			}.Build(),
+			b: storage.SensorDeploymentIdentification_builder{
 				SystemNamespaceId:   "kube-system-id",
 				DefaultNamespaceId:  "default-id",
 				AppNamespace:        "stackrox2",
 				AppNamespaceId:      "stackrox-id",
 				AppServiceaccountId: "stackrox-sa-id",
-			},
+			}.Build(),
 			expectErr: true,
 		},
 		{
-			a: &storage.SensorDeploymentIdentification{
+			a: storage.SensorDeploymentIdentification_builder{
 				SystemNamespaceId:   "kube-system-id",
 				DefaultNamespaceId:  "default-id",
 				AppNamespace:        "stackrox",
 				AppNamespaceId:      "stackrox-id",
 				AppServiceaccountId: "stackrox-sa-id",
-			},
-			b: &storage.SensorDeploymentIdentification{
+			}.Build(),
+			b: storage.SensorDeploymentIdentification_builder{
 				SystemNamespaceId:   "kube-system-id",
 				DefaultNamespaceId:  "default-id",
 				AppNamespace:        "stackrox",
 				AppNamespaceId:      "stackrox-id2",
 				AppServiceaccountId: "stackrox-sa-id",
-			},
+			}.Build(),
 			expectErr: false, // same cluster, different namespace ID
 		},
 		{
-			a: &storage.SensorDeploymentIdentification{
+			a: storage.SensorDeploymentIdentification_builder{
 				SystemNamespaceId:   "kube-system-id",
 				DefaultNamespaceId:  "default-id",
 				AppNamespace:        "stackrox",
 				AppNamespaceId:      "stackrox-id",
 				AppServiceaccountId: "stackrox-sa-id",
-			},
-			b: &storage.SensorDeploymentIdentification{
+			}.Build(),
+			b: storage.SensorDeploymentIdentification_builder{
 				SystemNamespaceId:   "kube-system-id",
 				DefaultNamespaceId:  "default-id",
 				AppNamespace:        "stackrox",
 				AppNamespaceId:      "stackrox-id",
 				AppServiceaccountId: "stackrox-sa-id2",
-			},
+			}.Build(),
 			expectErr: false, // same cluster, different service account
 		},
 	}

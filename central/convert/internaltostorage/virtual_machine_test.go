@@ -11,6 +11,20 @@ import (
 )
 
 func TestVirtualMachine(t *testing.T) {
+	vm := &virtualMachineV1.VirtualMachine{}
+	vm.SetId("VM-ID-1")
+	vm.SetNamespace("virtual-machine-namespace")
+	vm.SetName("virtual-machine-name")
+	vm.SetClusterId(uuid.NewTestUUID(1).String())
+	vm.SetVsockCid(42)
+	vm.SetState(virtualMachineV1.VirtualMachine_RUNNING)
+	vm2 := &storage.VirtualMachine{}
+	vm2.SetId("VM-ID-1")
+	vm2.SetNamespace("virtual-machine-namespace")
+	vm2.SetName("virtual-machine-name")
+	vm2.SetClusterId(uuid.NewTestUUID(1).String())
+	vm2.SetVsockCid(42)
+	vm2.SetState(storage.VirtualMachine_RUNNING)
 	tests := []struct {
 		name     string
 		input    *virtualMachineV1.VirtualMachine
@@ -22,23 +36,9 @@ func TestVirtualMachine(t *testing.T) {
 			expected: nil,
 		},
 		{
-			name: "basic virtual machine",
-			input: &virtualMachineV1.VirtualMachine{
-				Id:        "VM-ID-1",
-				Namespace: "virtual-machine-namespace",
-				Name:      "virtual-machine-name",
-				ClusterId: uuid.NewTestUUID(1).String(),
-				VsockCid:  42,
-				State:     virtualMachineV1.VirtualMachine_RUNNING,
-			},
-			expected: &storage.VirtualMachine{
-				Id:        "VM-ID-1",
-				Namespace: "virtual-machine-namespace",
-				Name:      "virtual-machine-name",
-				ClusterId: uuid.NewTestUUID(1).String(),
-				VsockCid:  42,
-				State:     storage.VirtualMachine_RUNNING,
-			},
+			name:     "basic virtual machine",
+			input:    vm,
+			expected: vm2,
 		},
 	}
 

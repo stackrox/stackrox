@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
+	"google.golang.org/protobuf/proto"
 )
 
 type outputQueueImpl struct {
@@ -47,11 +48,9 @@ func (q *outputQueueImpl) Stop() {
 }
 
 func wrapSensorEvent(update *central.SensorEvent) *central.MsgFromSensor {
-	return &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: update,
-		},
-	}
+	mfs := &central.MsgFromSensor{}
+	mfs.SetEvent(proto.ValueOrDefault(update))
+	return mfs
 }
 
 // runOutputQueue reads messages from the inner queue, forwards them to the forwardQueue channel

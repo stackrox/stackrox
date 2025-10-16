@@ -95,18 +95,16 @@ func (s *netPolDataStoreTestSuite) TestEnforcesAdd() {
 }
 
 func (s *netPolDataStoreTestSuite) TestGetNetworkPolicies() {
-	netPolNm1 := &storage.NetworkPolicy{
-		Id:        FakeID1,
-		Name:      FakeName1,
-		ClusterId: FakeClusterID,
-		Namespace: FakeNamespace1,
-	}
-	netPolNm2 := &storage.NetworkPolicy{
-		Id:        FakeID2,
-		Name:      FakeName2,
-		ClusterId: FakeClusterID,
-		Namespace: FakeNamespace2,
-	}
+	netPolNm1 := &storage.NetworkPolicy{}
+	netPolNm1.SetId(FakeID1)
+	netPolNm1.SetName(FakeName1)
+	netPolNm1.SetClusterId(FakeClusterID)
+	netPolNm1.SetNamespace(FakeNamespace1)
+	netPolNm2 := &storage.NetworkPolicy{}
+	netPolNm2.SetId(FakeID2)
+	netPolNm2.SetName(FakeName2)
+	netPolNm2.SetClusterId(FakeClusterID)
+	netPolNm2.SetNamespace(FakeNamespace2)
 
 	// Test we can get with NS1 permissions
 	s.storage.EXPECT().Get(gomock.Any(), FakeID1).Return(netPolNm1, true, nil)
@@ -203,10 +201,14 @@ func (s *netPolDataStoreTestSuite) TestAllowGetUndo() {
 func (s *netPolDataStoreTestSuite) TestEnforceUpdateUndo() {
 	s.undoStorage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Times(0)
 
-	err := s.dataStore.UpsertUndoRecord(s.hasNoneCtx, &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID})
+	npaur := &storage.NetworkPolicyApplicationUndoRecord{}
+	npaur.SetClusterId(FakeClusterID)
+	err := s.dataStore.UpsertUndoRecord(s.hasNoneCtx, npaur)
 	s.Error(err, "expected an error trying to write without permissions")
 
-	err = s.dataStore.UpsertUndoRecord(s.hasNS1ReadCtx, &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID})
+	npaur2 := &storage.NetworkPolicyApplicationUndoRecord{}
+	npaur2.SetClusterId(FakeClusterID)
+	err = s.dataStore.UpsertUndoRecord(s.hasNS1ReadCtx, npaur2)
 	s.Error(err, "expected an error trying to write without permissions")
 }
 
@@ -214,16 +216,23 @@ func (s *netPolDataStoreTestSuite) TestAllowUpdateUndo() {
 	s.undoStorage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil)
 	s.undoStorage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil)
 
-	err := s.dataStore.UpsertUndoRecord(s.hasWriteCtx, &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID})
+	npaur := &storage.NetworkPolicyApplicationUndoRecord{}
+	npaur.SetClusterId(FakeClusterID)
+	err := s.dataStore.UpsertUndoRecord(s.hasWriteCtx, npaur)
 	s.NoError(err, "expected an error trying to write without permissions")
 }
 
 func (s *netPolDataStoreTestSuite) TestAllowUpdateUndoNewer() {
-	oldCluster := &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID, ApplyTimestamp: protocompat.TimestampNow()}
+	oldCluster := &storage.NetworkPolicyApplicationUndoRecord{}
+	oldCluster.SetClusterId(FakeClusterID)
+	oldCluster.SetApplyTimestamp(protocompat.TimestampNow())
 	s.undoStorage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(oldCluster, true, nil)
 	s.undoStorage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil)
 
-	err := s.dataStore.UpsertUndoRecord(s.hasWriteCtx, &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID, ApplyTimestamp: protocompat.TimestampNow()})
+	npaur := &storage.NetworkPolicyApplicationUndoRecord{}
+	npaur.SetClusterId(FakeClusterID)
+	npaur.SetApplyTimestamp(protocompat.TimestampNow())
+	err := s.dataStore.UpsertUndoRecord(s.hasWriteCtx, npaur)
 	s.NoError(err, "expected an error trying to write without permissions")
 }
 
@@ -232,9 +241,14 @@ func (s *netPolDataStoreTestSuite) TestDisallowUpdateUndoOlder() {
 	newTS := protocompat.TimestampNow()
 	// Ensure the timestamps differ
 	newTS.Nanos += 1000
-	oldCluster := &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID, ApplyTimestamp: newTS}
+	oldCluster := &storage.NetworkPolicyApplicationUndoRecord{}
+	oldCluster.SetClusterId(FakeClusterID)
+	oldCluster.SetApplyTimestamp(newTS)
 	s.undoStorage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(oldCluster, true, nil)
 
-	err := s.dataStore.UpsertUndoRecord(s.hasWriteCtx, &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID, ApplyTimestamp: oldTS})
+	npaur := &storage.NetworkPolicyApplicationUndoRecord{}
+	npaur.SetClusterId(FakeClusterID)
+	npaur.SetApplyTimestamp(oldTS)
+	err := s.dataStore.UpsertUndoRecord(s.hasWriteCtx, npaur)
 	s.Error(err, "expected an error trying to write without permissions")
 }

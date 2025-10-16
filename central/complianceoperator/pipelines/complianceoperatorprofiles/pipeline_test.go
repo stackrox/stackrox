@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestPipeline(t *testing.T) {
@@ -53,17 +54,13 @@ func (s *PipelineTestSuite) TestRunV1Create() {
 	pipeline := NewPipeline(s.v1ProfileDS, s.manager)
 	s.manager.EXPECT().AddProfile(testutils.GetProfileV1SensorMsg(s.T())).Return(nil).Times(1)
 
-	msg := &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id:     testutils.ProfileUID,
-				Action: central.ResourceAction_CREATE_RESOURCE,
-				Resource: &central.SensorEvent_ComplianceOperatorProfile{
-					ComplianceOperatorProfile: testutils.GetProfileV1SensorMsg(s.T()),
-				},
-			},
-		},
-	}
+	se := &central.SensorEvent{}
+	se.SetId(testutils.ProfileUID)
+	se.SetAction(central.ResourceAction_CREATE_RESOURCE)
+	se.SetComplianceOperatorProfile(proto.ValueOrDefault(testutils.GetProfileV1SensorMsg(s.T())))
+	msg := central.MsgFromSensor_builder{
+		Event: se,
+	}.Build()
 
 	err := pipeline.Run(ctx, fixtureconsts.Cluster1, msg, nil)
 	s.NoError(err)
@@ -75,17 +72,13 @@ func (s *PipelineTestSuite) TestRunV1Delete() {
 	pipeline := NewPipeline(s.v1ProfileDS, s.manager)
 	s.manager.EXPECT().DeleteProfile(testutils.GetProfileV1SensorMsg(s.T())).Return(nil).Times(1)
 
-	msg := &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id:     testutils.ProfileUID,
-				Action: central.ResourceAction_REMOVE_RESOURCE,
-				Resource: &central.SensorEvent_ComplianceOperatorProfile{
-					ComplianceOperatorProfile: testutils.GetProfileV1SensorMsg(s.T()),
-				},
-			},
-		},
-	}
+	se := &central.SensorEvent{}
+	se.SetId(testutils.ProfileUID)
+	se.SetAction(central.ResourceAction_REMOVE_RESOURCE)
+	se.SetComplianceOperatorProfile(proto.ValueOrDefault(testutils.GetProfileV1SensorMsg(s.T())))
+	msg := central.MsgFromSensor_builder{
+		Event: se,
+	}.Build()
 
 	err := pipeline.Run(ctx, fixtureconsts.Cluster1, msg, nil)
 	s.NoError(err)

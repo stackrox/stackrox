@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/stringutils"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -54,16 +55,14 @@ func GenerateKubeEventViolationMsg(event *storage.KubernetesEvent) *storage.Aler
 		message, attrs = defaultViolationMsg(event)
 	}
 
-	return &storage.Alert_Violation{
-		Message: message,
-		MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
-			KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
-				Attrs: attrs,
-			},
-		},
-		Type: storage.Alert_Violation_K8S_EVENT,
-		Time: event.GetTimestamp(),
-	}
+	avk := &storage.Alert_Violation_KeyValueAttrs{}
+	avk.SetAttrs(attrs)
+	av := &storage.Alert_Violation{}
+	av.SetMessage(message)
+	av.SetKeyValueAttrs(proto.ValueOrDefault(avk))
+	av.SetType(storage.Alert_Violation_K8S_EVENT)
+	av.SetTime(event.GetTimestamp())
+	return av
 }
 
 func defaultViolationMsg(event *storage.KubernetesEvent) (string, []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr) {
@@ -115,38 +114,62 @@ func getDefaultViolationMsgViolationAttr(event *storage.KubernetesEvent, options
 
 	// the proto guarantees that this will always have a value (even if it's UNKNOWN)
 	if !options.skipVerb {
-		attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: APIVerbKey, Value: event.GetApiVerb().String()})
+		avkk := &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{}
+		avkk.SetKey(APIVerbKey)
+		avkk.SetValue(event.GetApiVerb().String())
+		attrs = append(attrs, avkk)
 	}
 
 	if event.GetUser() != nil {
 		if event.GetUser().GetUsername() != "" {
-			attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: UsernameKey, Value: event.GetUser().GetUsername()})
+			avkk := &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{}
+			avkk.SetKey(UsernameKey)
+			avkk.SetValue(event.GetUser().GetUsername())
+			attrs = append(attrs, avkk)
 		}
 		if len(event.GetUser().GetGroups()) > 0 {
-			attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: UserGroupsKey, Value: strings.Join(event.GetUser().GetGroups(), ", ")})
+			avkk := &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{}
+			avkk.SetKey(UserGroupsKey)
+			avkk.SetValue(strings.Join(event.GetUser().GetGroups(), ", "))
+			attrs = append(attrs, avkk)
 		}
 	}
 
 	if event.GetUserAgent() != "" {
-		attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: UserAgentKey, Value: event.GetUserAgent()})
+		avkk := &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{}
+		avkk.SetKey(UserAgentKey)
+		avkk.SetValue(event.GetUserAgent())
+		attrs = append(attrs, avkk)
 	}
 
 	if len(event.GetSourceIps()) > 0 {
-		attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: IPAddressKey, Value: strings.Join(event.GetSourceIps(), ", ")})
+		avkk := &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{}
+		avkk.SetKey(IPAddressKey)
+		avkk.SetValue(strings.Join(event.GetSourceIps(), ", "))
+		attrs = append(attrs, avkk)
 	}
 
 	if !options.skipResourceURI {
 		if uriParts := strings.Split(event.GetRequestUri(), "?"); len(uriParts) > 0 && !stringutils.AllEmpty(uriParts...) {
-			attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: ResourceURIKey, Value: uriParts[0]})
+			avkk := &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{}
+			avkk.SetKey(ResourceURIKey)
+			avkk.SetValue(uriParts[0])
+			attrs = append(attrs, avkk)
 		}
 	}
 
 	if event.GetImpersonatedUser() != nil {
 		if event.GetImpersonatedUser().GetUsername() != "" {
-			attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: ImpersonatedUsernameKey, Value: event.GetImpersonatedUser().GetUsername()})
+			avkk := &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{}
+			avkk.SetKey(ImpersonatedUsernameKey)
+			avkk.SetValue(event.GetImpersonatedUser().GetUsername())
+			attrs = append(attrs, avkk)
 		}
 		if len(event.GetImpersonatedUser().GetGroups()) > 0 {
-			attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: ImpersonatedUserGroupsKey, Value: strings.Join(event.GetImpersonatedUser().GetGroups(), ", ")})
+			avkk := &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{}
+			avkk.SetKey(ImpersonatedUserGroupsKey)
+			avkk.SetValue(strings.Join(event.GetImpersonatedUser().GetGroups(), ", "))
+			attrs = append(attrs, avkk)
 		}
 	}
 	return attrs
@@ -175,16 +198,25 @@ func getExecMsgHeader(event *storage.KubernetesEvent) string {
 func getExecMsgViolationAttr(event *storage.KubernetesEvent) []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr {
 	attrs := make([]*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr, 0, 3)
 	if pod := event.GetObject().GetName(); pod != "" {
-		attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: PodKey, Value: pod})
+		avkk := &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{}
+		avkk.SetKey(PodKey)
+		avkk.SetValue(pod)
+		attrs = append(attrs, avkk)
 	}
 
 	args := event.GetPodExecArgs()
 	if container := args.GetContainer(); container != "" {
-		attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: ContainerKey, Value: container})
+		avkk := &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{}
+		avkk.SetKey(ContainerKey)
+		avkk.SetValue(container)
+		attrs = append(attrs, avkk)
 	}
 
 	if cmds := stringutils.JoinNonEmpty(" ", args.GetCommands()...); cmds != "" {
-		attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: CommandsKey, Value: cmds})
+		avkk := &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{}
+		avkk.SetKey(CommandsKey)
+		avkk.SetValue(cmds)
+		attrs = append(attrs, avkk)
 	}
 
 	attrs = append(attrs, getDefaultViolationMsgViolationAttr(event, &attributeOptions{skipVerb: true, skipResourceURI: true})...)
@@ -210,11 +242,17 @@ func getPFMsgHeader(event *storage.KubernetesEvent) string {
 func getPFMsgViolationAttr(event *storage.KubernetesEvent) []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr {
 	attrs := make([]*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr, 0, 2)
 	if pod := event.GetObject().GetName(); pod != "" {
-		attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: PodKey, Value: pod})
+		avkk := &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{}
+		avkk.SetKey(PodKey)
+		avkk.SetValue(pod)
+		attrs = append(attrs, avkk)
 	}
 
 	if ports := stringutils.JoinInt32(", ", event.GetPodPortForwardArgs().GetPorts()...); ports != "" {
-		attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: PortsKey, Value: ports})
+		avkk := &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{}
+		avkk.SetKey(PortsKey)
+		avkk.SetValue(ports)
+		attrs = append(attrs, avkk)
 	}
 
 	attrs = append(attrs, getDefaultViolationMsgViolationAttr(event, &attributeOptions{skipVerb: true, skipResourceURI: true})...)

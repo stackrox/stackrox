@@ -78,9 +78,9 @@ func (ds *datastoreImpl) UpdateStatusForDeclarativeConfig(ctx context.Context, i
 		status = storage.DeclarativeConfigHealth_UNHEALTHY
 	}
 
-	existingHealth.ErrorMessage = errMsg
-	existingHealth.LastTimestamp = protocompat.TimestampNow()
-	existingHealth.Status = status
+	existingHealth.SetErrorMessage(errMsg)
+	existingHealth.SetLastTimestamp(protocompat.TimestampNow())
+	existingHealth.SetStatus(status)
 
 	return ds.UpsertDeclarativeConfig(ctx, existingHealth)
 }

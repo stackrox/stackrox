@@ -39,7 +39,7 @@ func migrate(database *types.Databases) error {
 					// Access set with les restrictive level than Role, propagate minimum level
 					accessLevelForPermissionAccess = accessLevel
 				}
-				obj.ResourceToAccess[Access] = accessLevelForPermissionAccess
+				obj.GetResourceToAccess()[Access] = accessLevelForPermissionAccess
 				delete(obj.GetResourceToAccess(), Role)
 			}
 		}

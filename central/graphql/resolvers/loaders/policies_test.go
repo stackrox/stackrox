@@ -45,10 +45,14 @@ func (suite *PolicyLoaderTestSuite) TearDownTest() {
 
 func (suite *PolicyLoaderTestSuite) TestFromID() {
 	// Create a loader with some reloaded policies.
+	policy4 := &storage.Policy{}
+	policy4.SetId(policy1)
+	policy5 := &storage.Policy{}
+	policy5.SetId(policy2)
 	loader := policyLoaderImpl{
 		loaded: map[string]*storage.Policy{
-			"policy1": {Id: policy1},
-			"policy2": {Id: policy2},
+			"policy1": policy4,
+			"policy2": policy5,
 		},
 		policyDS: suite.mockDataStore,
 	}
@@ -59,7 +63,8 @@ func (suite *PolicyLoaderTestSuite) TestFromID() {
 	protoassert.Equal(suite.T(), loader.loaded[policy1], policy)
 
 	// Get a non-preloaded policy from id.
-	thirdPolicy := &storage.Policy{Id: policy3}
+	thirdPolicy := &storage.Policy{}
+	thirdPolicy.SetId(policy3)
 	suite.mockDataStore.EXPECT().
 		SearchRawPolicies(suite.ctx, search.NewQueryBuilder().AddDocIDs(policy3).ProtoQuery()).
 		Return([]*storage.Policy{thirdPolicy}, nil)
@@ -76,10 +81,14 @@ func (suite *PolicyLoaderTestSuite) TestFromID() {
 
 func (suite *PolicyLoaderTestSuite) TestFromIDs() {
 	// Create a loader with some reloaded policies.
+	policy := &storage.Policy{}
+	policy.SetId(policy1)
+	policy4 := &storage.Policy{}
+	policy4.SetId(policy2)
 	loader := policyLoaderImpl{
 		loaded: map[string]*storage.Policy{
-			"policy1": {Id: policy1},
-			"policy2": {Id: policy2},
+			"policy1": policy,
+			"policy2": policy4,
 		},
 		policyDS: suite.mockDataStore,
 	}
@@ -93,7 +102,8 @@ func (suite *PolicyLoaderTestSuite) TestFromIDs() {
 	}, policies)
 
 	// Get a non-preloaded policy from id.
-	thirdPolicy := &storage.Policy{Id: "policy3"}
+	thirdPolicy := &storage.Policy{}
+	thirdPolicy.SetId("policy3")
 	suite.mockDataStore.EXPECT().
 		SearchRawPolicies(suite.ctx, search.NewQueryBuilder().AddDocIDs(policy3).ProtoQuery()).
 		Return([]*storage.Policy{thirdPolicy}, nil)
@@ -118,10 +128,14 @@ func (suite *PolicyLoaderTestSuite) TestFromIDs() {
 
 func (suite *PolicyLoaderTestSuite) TestFromQuery() {
 	// Create a loader with some reloaded policies.
+	policy := &storage.Policy{}
+	policy.SetId(policy1)
+	policy4 := &storage.Policy{}
+	policy4.SetId(policy2)
 	loader := policyLoaderImpl{
 		loaded: map[string]*storage.Policy{
-			"policy1": {Id: policy1},
-			"policy2": {Id: policy2},
+			"policy1": policy,
+			"policy2": policy4,
 		},
 		policyDS: suite.mockDataStore,
 	}
@@ -159,7 +173,8 @@ func (suite *PolicyLoaderTestSuite) TestFromQuery() {
 	}
 	suite.mockDataStore.EXPECT().Search(suite.ctx, query).Return(results, nil)
 
-	thirdPolicy := &storage.Policy{Id: "policy3"}
+	thirdPolicy := &storage.Policy{}
+	thirdPolicy.SetId("policy3")
 	suite.mockDataStore.EXPECT().
 		SearchRawPolicies(suite.ctx, search.NewQueryBuilder().AddDocIDs(policy3).ProtoQuery()).
 		Return([]*storage.Policy{thirdPolicy}, nil)

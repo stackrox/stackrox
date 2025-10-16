@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestTimePredicate(t *testing.T) {
@@ -42,9 +43,9 @@ func TestTimePredicate(t *testing.T) {
 	for _, c := range cases {
 		t.Run(fmt.Sprintf("%s-%s", c.imageQueryString, c.imageScanDate.String()), func(t *testing.T) {
 			img := fixtures.GetImage()
-			img.Scan = &storage.ImageScan{
-				ScanTime: protoconv.ConvertTimeToTimestamp(c.imageScanDate),
-			}
+			imageScan := &storage.ImageScan{}
+			imageScan.SetScanTime(protoconv.ConvertTimeToTimestamp(c.imageScanDate))
+			img.SetScan(imageScan)
 			predicate, err := imageFactory.GeneratePredicate(search.NewQueryBuilder().AddStringsHighlighted(search.ImageScanTime, c.imageQueryString).ProtoQuery())
 			require.NoError(t, err)
 			assert.Equal(t, c.expectedMatch, predicate.Matches(img))
@@ -62,73 +63,66 @@ func TestSearchPredicate(t *testing.T) {
 	// Pass the predicate
 	ts, err := protocompat.ConvertTimeToTimestampOrError(baseTime.Add(time.Hour))
 	assert.NoError(t, err)
-	passingImage := &storage.Image{
+	passingImage := storage.Image_builder{
 		Id: "sha",
-		Name: &storage.ImageName{
+		Name: storage.ImageName_builder{
 			FullName: "averygoodname",
-		},
-		SetCves: &storage.Image_Cves{
-			Cves: 3,
-		},
-		Metadata: &storage.ImageMetadata{
-			V1: &storage.V1Metadata{
+		}.Build(),
+		Cves: proto.Int32(3),
+		Metadata: storage.ImageMetadata_builder{
+			V1: storage.V1Metadata_builder{
 				Labels: map[string]string{
 					"labelOne": "test.label.one",
 					"labelTwo": "test.label.two",
 				},
-			},
-		},
-		Scan: &storage.ImageScan{
+			}.Build(),
+		}.Build(),
+		Scan: storage.ImageScan_builder{
 			Components: []*storage.EmbeddedImageScanComponent{
-				{
+				storage.EmbeddedImageScanComponent_builder{
 					Name:    "firstComponent",
 					Version: "1.0",
 					Vulns: []*storage.EmbeddedVulnerability{
-						{
-							Cve: "cve-2018-1",
-							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-								FixedBy: "1.1",
-							},
+						storage.EmbeddedVulnerability_builder{
+							Cve:          "cve-2018-1",
+							FixedBy:      proto.String("1.1"),
 							ScoreVersion: storage.EmbeddedVulnerability_V2,
-						},
+						}.Build(),
 					},
-				},
-				{
+				}.Build(),
+				storage.EmbeddedImageScanComponent_builder{
 					Name:    "SecondComponent",
 					Version: "1.1",
 					Vulns: []*storage.EmbeddedVulnerability{
-						{
-							Cve: "cve-2018-1",
-							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-								FixedBy: "1.5",
-							},
+						storage.EmbeddedVulnerability_builder{
+							Cve:          "cve-2018-1",
+							FixedBy:      proto.String("1.5"),
 							ScoreVersion: storage.EmbeddedVulnerability_V3,
-						},
+						}.Build(),
 					},
-				},
-				{
+				}.Build(),
+				storage.EmbeddedImageScanComponent_builder{
 					Name:    "ThirdComponent",
 					Version: "1.0",
 					Vulns: []*storage.EmbeddedVulnerability{
-						{
+						storage.EmbeddedVulnerability_builder{
 							Cve:          "cve-2019-1",
 							ScoreVersion: storage.EmbeddedVulnerability_V3,
-						},
-						{
+						}.Build(),
+						storage.EmbeddedVulnerability_builder{
 							Cve:          "cve-2019-2",
 							ScoreVersion: storage.EmbeddedVulnerability_V2,
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
-		},
+		}.Build(),
 		LastUpdated: ts,
-	}
+	}.Build()
 
-	deployment := &storage.Deployment{
-		Name:      "foo",
-		Namespace: "bar",
-	}
+	deployment := &storage.Deployment{}
+	deployment.SetName("foo")
+	deployment.SetNamespace("bar")
 
 	cases := []struct {
 		name        string
@@ -230,76 +224,60 @@ func TestSearchPredicate(t *testing.T) {
 		},
 		{
 			name: "negated exact match matches different strings",
-			query: &v1.Query{
-				Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{
-								Field:     "Image",
-								Value:     "!\"abcd\"",
-								Highlight: false,
-							},
-						},
-					},
-				},
-			},
+			query: v1.Query_builder{
+				BaseQuery: v1.BaseQuery_builder{
+					MatchFieldQuery: v1.MatchFieldQuery_builder{
+						Field:     "Image",
+						Value:     "!\"abcd\"",
+						Highlight: false,
+					}.Build(),
+				}.Build(),
+			}.Build(),
 			factory:     imageFactory,
 			object:      passingImage,
 			expectation: true,
 		},
 		{
 			name: "negated exact match does not match the same string",
-			query: &v1.Query{
-				Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{
-								Field:     "Image",
-								Value:     "!\"averygoodname\"",
-								Highlight: false,
-							},
-						},
-					},
-				},
-			},
+			query: v1.Query_builder{
+				BaseQuery: v1.BaseQuery_builder{
+					MatchFieldQuery: v1.MatchFieldQuery_builder{
+						Field:     "Image",
+						Value:     "!\"averygoodname\"",
+						Highlight: false,
+					}.Build(),
+				}.Build(),
+			}.Build(),
 			factory:     imageFactory,
 			object:      passingImage,
 			expectation: false,
 		},
 		{
 			name: "negated prefix query does not match a string with a matching prefix",
-			query: &v1.Query{
-				Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{
-								Field:     "Image",
-								Value:     "!averygood",
-								Highlight: false,
-							},
-						},
-					},
-				},
-			},
+			query: v1.Query_builder{
+				BaseQuery: v1.BaseQuery_builder{
+					MatchFieldQuery: v1.MatchFieldQuery_builder{
+						Field:     "Image",
+						Value:     "!averygood",
+						Highlight: false,
+					}.Build(),
+				}.Build(),
+			}.Build(),
 			factory:     imageFactory,
 			object:      passingImage,
 			expectation: false,
 		},
 		{
 			name: "negated prefix query does match a string with a different prefix",
-			query: &v1.Query{
-				Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{
-								Field:     "Image",
-								Value:     "!abcd",
-								Highlight: false,
-							},
-						},
-					},
-				},
-			},
+			query: v1.Query_builder{
+				BaseQuery: v1.BaseQuery_builder{
+					MatchFieldQuery: v1.MatchFieldQuery_builder{
+						Field:     "Image",
+						Value:     "!abcd",
+						Highlight: false,
+					}.Build(),
+				}.Build(),
+			}.Build(),
 			factory:     imageFactory,
 			object:      passingImage,
 			expectation: true,
@@ -374,12 +352,11 @@ func TestSearchPredicateWithEnums(t *testing.T) {
 	policyFactory := NewFactory("policy", &storage.Policy{})
 
 	// Pass the predicate
-	testPolicy := &storage.Policy{
-		Id: "p1",
-		LifecycleStages: []storage.LifecycleStage{
-			storage.LifecycleStage_BUILD,
-		},
-	}
+	testPolicy := &storage.Policy{}
+	testPolicy.SetId("p1")
+	testPolicy.SetLifecycleStages([]storage.LifecycleStage{
+		storage.LifecycleStage_BUILD,
+	})
 
 	cases := []struct {
 		name        string
@@ -413,15 +390,11 @@ func TestSearchPredicateWithEnums(t *testing.T) {
 		},
 		{
 			name: "handles any casing",
-			query: &v1.Query{
-				Query: &v1.Query_BaseQuery{
-					BaseQuery: &v1.BaseQuery{
-						Query: &v1.BaseQuery_MatchFieldQuery{
-							MatchFieldQuery: &v1.MatchFieldQuery{Field: "LifeCYCLE staGE", Value: "<RUNTIME"},
-						},
-					},
-				},
-			},
+			query: v1.Query_builder{
+				BaseQuery: v1.BaseQuery_builder{
+					MatchFieldQuery: v1.MatchFieldQuery_builder{Field: "LifeCYCLE staGE", Value: "<RUNTIME"}.Build(),
+				}.Build(),
+			}.Build(),
 			expectation: true,
 		},
 	}

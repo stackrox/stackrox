@@ -16,12 +16,11 @@ func ValidResultsAndSources(allResults map[compliance.ClusterStandardPair]types.
 		if res.LastSuccessfulResults != nil {
 			validResults = append(validResults, res.LastSuccessfulResults)
 		}
-		source := &storage.ComplianceAggregation_Source{
-			ClusterId:     key.ClusterID,
-			StandardId:    key.StandardID,
-			SuccessfulRun: res.LastSuccessfulResults.GetRunMetadata(), // nil-safe
-			FailedRuns:    res.FailedRuns,
-		}
+		source := &storage.ComplianceAggregation_Source{}
+		source.SetClusterId(key.ClusterID)
+		source.SetStandardId(key.StandardID)
+		source.SetSuccessfulRun(res.LastSuccessfulResults.GetRunMetadata()) // nil-safe
+		source.SetFailedRuns(res.FailedRuns)
 		sources = append(sources, source)
 	}
 	return validResults, sources

@@ -20,26 +20,26 @@ const (
 //go:embed "release-key-3.pub.txt"
 var releaseKey3PublicKey string
 
-var DefaultRedHatSignatureIntegration = &storage.SignatureIntegration{
+var DefaultRedHatSignatureIntegration = storage.SignatureIntegration_builder{
 	// PLEASE DON'T CHANGE THIS ID!! A migration may be needed if this is changed.
 	Id:   SignatureIntegrationIDPrefix + "12a37a37-760e-4388-9e79-d62726c075b2",
 	Name: "Red Hat",
-	Cosign: &storage.CosignPublicKeyVerification{
+	Cosign: storage.CosignPublicKeyVerification_builder{
 		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
-			{
+			storage.CosignPublicKeyVerification_PublicKey_builder{
 				Name:            "Red Hat Release Key 3",
 				PublicKeyPemEnc: releaseKey3PublicKey,
-			},
+			}.Build(),
 		},
-	},
+	}.Build(),
 	CosignCertificates: nil,
-	TransparencyLog: &storage.TransparencyLogVerification{
+	TransparencyLog: storage.TransparencyLogVerification_builder{
 		Enabled:         false,
 		Url:             "",
 		ValidateOffline: false,
 		PublicKeyPemEnc: "",
-	},
-	Traits: &storage.Traits{
+	}.Build(),
+	Traits: storage.Traits_builder{
 		Origin: storage.Traits_DEFAULT,
-	},
-}
+	}.Build(),
+}.Build()

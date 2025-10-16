@@ -3,6 +3,7 @@ package mock
 import (
 	"github.com/stackrox/rox/generated/storage"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
+	"google.golang.org/protobuf/proto"
 )
 
 // GetTestScannerVulns returns test clair vulns and also the expected converted proto vulns
@@ -47,16 +48,14 @@ func GetTestScannerVulns() ([]scannerV1.Vulnerability, []*storage.EmbeddedVulner
 	}
 
 	protoVulns := []*storage.EmbeddedVulnerability{
-		{
-			Cve:     "CVE-2017-7246",
-			Link:    "https://security-tracker.debian.org/tracker/CVE-2017-7246",
-			Summary: "Stack-based buffer overflow in the pcre32_copy_substring function in pcre_get.c in libpcre1 in PCRE 8.40 allows remote attackers to cause a denial of service (WRITE of size 268) or possibly have unspecified other impact via a crafted file.",
-			Cvss:    4.9,
-			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-				FixedBy: "fixedby",
-			},
+		storage.EmbeddedVulnerability_builder{
+			Cve:          "CVE-2017-7246",
+			Link:         "https://security-tracker.debian.org/tracker/CVE-2017-7246",
+			Summary:      "Stack-based buffer overflow in the pcre32_copy_substring function in pcre_get.c in libpcre1 in PCRE 8.40 allows remote attackers to cause a denial of service (WRITE of size 268) or possibly have unspecified other impact via a crafted file.",
+			Cvss:         4.9,
+			FixedBy:      proto.String("fixedby"),
 			ScoreVersion: storage.EmbeddedVulnerability_V3,
-			CvssV2: &storage.CVSSV2{
+			CvssV2: storage.CVSSV2_builder{
 				Vector:              "AV:L/AC:L/Au:N/C:P/I:P/A:P",
 				Score:               4.6,
 				ExploitabilityScore: 3.9,
@@ -68,8 +67,8 @@ func GetTestScannerVulns() ([]scannerV1.Vulnerability, []*storage.EmbeddedVulner
 				Integrity:           storage.CVSSV2_IMPACT_PARTIAL,
 				Availability:        storage.CVSSV2_IMPACT_PARTIAL,
 				Severity:            storage.CVSSV2_MEDIUM,
-			},
-			CvssV3: &storage.CVSSV3{
+			}.Build(),
+			CvssV3: storage.CVSSV3_builder{
 				Vector:              "CVSS:3.0/AV:L/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:L",
 				Score:               4.9,
 				ExploitabilityScore: 1.4,
@@ -83,19 +82,17 @@ func GetTestScannerVulns() ([]scannerV1.Vulnerability, []*storage.EmbeddedVulner
 				Integrity:           storage.CVSSV3_IMPACT_LOW,
 				Availability:        storage.CVSSV3_IMPACT_LOW,
 				Severity:            storage.CVSSV3_MEDIUM,
-			},
+			}.Build(),
 			VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
-		},
-		{
-			Cve:     "CVE-2017-7247",
-			Link:    "https://security-tracker.debian.org/tracker/CVE-2017-7246",
-			Summary: "Stack-based buffer overflow in the pcre32_copy_substring function in pcre_get.c in libpcre1 in PCRE 8.40 allows remote attackers to cause a denial of service (WRITE of size 268) or possibly have unspecified other impact via a crafted file.",
-			Cvss:    4.9,
-			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-				FixedBy: "",
-			},
+		}.Build(),
+		storage.EmbeddedVulnerability_builder{
+			Cve:          "CVE-2017-7247",
+			Link:         "https://security-tracker.debian.org/tracker/CVE-2017-7246",
+			Summary:      "Stack-based buffer overflow in the pcre32_copy_substring function in pcre_get.c in libpcre1 in PCRE 8.40 allows remote attackers to cause a denial of service (WRITE of size 268) or possibly have unspecified other impact via a crafted file.",
+			Cvss:         4.9,
+			FixedBy:      proto.String(""),
 			ScoreVersion: storage.EmbeddedVulnerability_V3,
-			CvssV3: &storage.CVSSV3{
+			CvssV3: storage.CVSSV3_builder{
 				Vector:              "CVSS:3.0/AV:L/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:L",
 				Score:               4.9,
 				ExploitabilityScore: 1.4,
@@ -109,9 +106,9 @@ func GetTestScannerVulns() ([]scannerV1.Vulnerability, []*storage.EmbeddedVulner
 				Integrity:           storage.CVSSV3_IMPACT_LOW,
 				Availability:        storage.CVSSV3_IMPACT_LOW,
 				Severity:            storage.CVSSV3_MEDIUM,
-			},
+			}.Build(),
 			VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
-		},
+		}.Build(),
 	}
 
 	return scannerVulns, protoVulns

@@ -13,19 +13,15 @@ var (
 	// EntityTypeToEntityInfoDesc collects the functions to get names from corresponding network entity types
 	EntityTypeToEntityInfoDesc = map[storage.NetworkEntityInfo_Type]func(name string, info *storage.NetworkEntityInfo, customProperties EntityProperties){
 		storage.NetworkEntityInfo_DEPLOYMENT: func(name string, info *storage.NetworkEntityInfo, _ EntityProperties) {
-			info.Desc = &storage.NetworkEntityInfo_Deployment_{
-				Deployment: &storage.NetworkEntityInfo_Deployment{
-					Name: name,
-				},
-			}
+			nd := &storage.NetworkEntityInfo_Deployment{}
+			nd.SetName(name)
+			info.SetDeployment(nd)
 		},
 		storage.NetworkEntityInfo_EXTERNAL_SOURCE: func(name string, info *storage.NetworkEntityInfo, custom EntityProperties) {
-			info.Desc = &storage.NetworkEntityInfo_ExternalSource_{
-				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-					Name:   name,
-					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{Cidr: custom.CIDRBlock},
-				},
-			}
+			ne := &storage.NetworkEntityInfo_ExternalSource{}
+			ne.SetName(name)
+			ne.SetCidr(custom.CIDRBlock)
+			info.SetExternalSource(ne)
 		},
 		storage.NetworkEntityInfo_INTERNET: func(name string, info *storage.NetworkEntityInfo, _ EntityProperties) {
 			// No-op.
@@ -117,22 +113,21 @@ func ConvertPeersToProto(peerSet map[Peer]struct{}) ([]*storage.NetworkBaselineP
 		}
 
 		if properties, ok := propertiesByEntity[entity]; ok {
-			properties.ConnectionProperties = append(propertiesByEntity[entity].ConnectionProperties,
-				&storage.NetworkBaselineConnectionProperties{
-					Ingress:  peer.IsIngress,
-					Port:     peer.DstPort,
-					Protocol: peer.Protocol,
-				})
+			nbcp := &storage.NetworkBaselineConnectionProperties{}
+			nbcp.SetIngress(peer.IsIngress)
+			nbcp.SetPort(peer.DstPort)
+			nbcp.SetProtocol(peer.Protocol)
+			properties.ConnectionProperties = append(propertiesByEntity[entity].ConnectionProperties, nbcp)
 			propertiesByEntity[entity] = properties
 		} else {
+			nbcp := &storage.NetworkBaselineConnectionProperties{}
+			nbcp.SetIngress(peer.IsIngress)
+			nbcp.SetPort(peer.DstPort)
+			nbcp.SetProtocol(peer.Protocol)
 			propertiesByEntity[entity] = EntityProperties{
 				CIDRBlock: peer.CidrBlock,
 				ConnectionProperties: []*storage.NetworkBaselineConnectionProperties{
-					{
-						Ingress:  peer.IsIngress,
-						Port:     peer.DstPort,
-						Protocol: peer.Protocol,
-					},
+					nbcp,
 				},
 			}
 		}
@@ -155,10 +150,9 @@ func ConvertPeersToProto(peerSet map[Peer]struct{}) ([]*storage.NetworkBaselineP
 		propertiesByEntity[entity] = properties
 
 		// Get corresponding entity proto
-		entityInfo := &storage.NetworkEntityInfo{
-			Type: entity.Type,
-			Id:   entity.ID,
-		}
+		entityInfo := &storage.NetworkEntityInfo{}
+		entityInfo.SetType(entity.Type)
+		entityInfo.SetId(entity.ID)
 		infoDescFn, ok := EntityTypeToEntityInfoDesc[entity.Type]
 		if !ok {
 			// Unsupported type
@@ -167,10 +161,12 @@ func ConvertPeersToProto(peerSet map[Peer]struct{}) ([]*storage.NetworkBaselineP
 
 		// Fill desc of info
 		infoDescFn(entity.Name, entityInfo, EntityProperties{CIDRBlock: properties.CIDRBlock})
-		out = append(out, &storage.NetworkBaselinePeer{
-			Entity:     &storage.NetworkEntity{Info: entityInfo},
-			Properties: properties.ConnectionProperties,
-		})
+		ne := &storage.NetworkEntity{}
+		ne.SetInfo(entityInfo)
+		nbp := &storage.NetworkBaselinePeer{}
+		nbp.SetEntity(ne)
+		nbp.SetProperties(properties.ConnectionProperties)
+		out = append(out, nbp)
 	}
 	sort.Slice(out, func(i, j int) bool {
 		return out[i].GetEntity().GetInfo().GetId() < out[j].GetEntity().GetInfo().GetId()

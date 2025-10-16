@@ -29,13 +29,13 @@ var (
 func sendRequest(upgradeCtx *upgradectx.UpgradeContext, svc central.SensorUpgradeControlServiceClient, workflow string, stage sensorupgrader.Stage, lastExecutedStageError string) (*central.UpgradeCheckInFromUpgraderResponse, error) {
 	ctx, cancel := context.WithTimeout(upgradeCtx.Context(), timeout)
 	defer cancel()
-	resp, err := svc.UpgradeCheckInFromUpgrader(ctx, &central.UpgradeCheckInFromUpgraderRequest{
-		UpgradeProcessId:       upgradeCtx.ProcessID(),
-		ClusterId:              upgradeCtx.ClusterID(),
-		CurrentWorkflow:        workflow,
-		LastExecutedStage:      stage.String(),
-		LastExecutedStageError: lastExecutedStageError,
-	})
+	ucifur := &central.UpgradeCheckInFromUpgraderRequest{}
+	ucifur.SetUpgradeProcessId(upgradeCtx.ProcessID())
+	ucifur.SetClusterId(upgradeCtx.ClusterID())
+	ucifur.SetCurrentWorkflow(workflow)
+	ucifur.SetLastExecutedStage(stage.String())
+	ucifur.SetLastExecutedStageError(lastExecutedStageError)
+	resp, err := svc.UpgradeCheckInFromUpgrader(ctx, ucifur)
 	if err != nil {
 		return nil, errors.Wrap(err, "sending upgrade check-in to Central")
 	}

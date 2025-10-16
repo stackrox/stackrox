@@ -60,7 +60,7 @@ func (s *pipelineImpl) Run(_ context.Context, clusterID string, msg *central.Msg
 		indicator := event.GetProcessIndicator()
 		normalize.Indicator(indicator)
 
-		indicator.ClusterId = clusterID
+		indicator.SetClusterId(clusterID)
 
 		// Build indicator from exec filepath, process, and args
 		// This allows for a consistent ID to be inserted into the DB

@@ -7,42 +7,39 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestBaseline(t *testing.T) {
 	process := fixtures.GetProcessIndicator()
 
-	notInUnlockedBaseline := &storage.ProcessBaseline{
-		Key: &storage.ProcessBaselineKey{
-			DeploymentId:  process.GetDeploymentId(),
-			ContainerName: process.GetContainerName(),
-		},
-	}
+	pbk := &storage.ProcessBaselineKey{}
+	pbk.SetDeploymentId(process.GetDeploymentId())
+	pbk.SetContainerName(process.GetContainerName())
+	notInUnlockedBaseline := &storage.ProcessBaseline{}
+	notInUnlockedBaseline.SetKey(pbk)
 
-	notInBaseline := &storage.ProcessBaseline{
-		Key: &storage.ProcessBaselineKey{
-			DeploymentId:  process.GetDeploymentId(),
-			ContainerName: process.GetContainerName(),
-		},
-		UserLockedTimestamp: protocompat.TimestampNow(),
-	}
+	pbk2 := &storage.ProcessBaselineKey{}
+	pbk2.SetDeploymentId(process.GetDeploymentId())
+	pbk2.SetContainerName(process.GetContainerName())
+	notInBaseline := &storage.ProcessBaseline{}
+	notInBaseline.SetKey(pbk2)
+	notInBaseline.SetUserLockedTimestamp(protocompat.TimestampNow())
 
-	inBaseline := &storage.ProcessBaseline{
-		Key: &storage.ProcessBaselineKey{
+	inBaseline := storage.ProcessBaseline_builder{
+		Key: storage.ProcessBaselineKey_builder{
 			DeploymentId:  process.GetDeploymentId(),
 			ContainerName: process.GetContainerName(),
-		},
+		}.Build(),
 		Elements: []*storage.BaselineElement{
-			{
-				Element: &storage.BaselineItem{
-					Item: &storage.BaselineItem_ProcessName{
-						ProcessName: process.GetSignal().GetExecFilePath(),
-					},
-				},
-			},
+			storage.BaselineElement_builder{
+				Element: storage.BaselineItem_builder{
+					ProcessName: proto.String(process.GetSignal().GetExecFilePath()),
+				}.Build(),
+			}.Build(),
 		},
 		UserLockedTimestamp: protocompat.TimestampNow(),
-	}
+	}.Build()
 
 	evaluator := NewBaselineEvaluator()
 	// No baseline added, nothing is outside a locked baseline

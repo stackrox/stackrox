@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/roxctl/sensor/util"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -53,27 +54,27 @@ type sensorGenerateCommand struct {
 }
 
 func defaultCluster() *storage.Cluster {
-	return &storage.Cluster{
+	return storage.Cluster_builder{
 		AdmissionController:            true,
 		AdmissionControllerEvents:      true,
 		AdmissionControllerUpdates:     true,
 		AdmissionControllerFailOnError: false,
-		TolerationsConfig: &storage.TolerationsConfig{
+		TolerationsConfig: storage.TolerationsConfig_builder{
 			Disabled: false,
-		},
-		DynamicConfig: &storage.DynamicClusterConfig{
-			AdmissionControllerConfig: &storage.AdmissionControllerConfig{
+		}.Build(),
+		DynamicConfig: storage.DynamicClusterConfig_builder{
+			AdmissionControllerConfig: storage.AdmissionControllerConfig_builder{
 				Enabled:          true,
 				ScanInline:       true,
 				DisableBypass:    false,
 				EnforceOnUpdates: true,
 				TimeoutSeconds:   0,
-			},
-			AutoLockProcessBaselinesConfig: &storage.AutoLockProcessBaselinesConfig{
+			}.Build(),
+			AutoLockProcessBaselinesConfig: storage.AutoLockProcessBaselinesConfig_builder{
 				Enabled: false,
-			},
-		},
-	}
+			}.Build(),
+		}.Build(),
+	}.Build()
 }
 
 func (s *sensorGenerateCommand) Construct(cmd *cobra.Command) error {
@@ -87,7 +88,7 @@ func (s *sensorGenerateCommand) setClusterDefaults(envDefaults *util.CentralEnv)
 		// If no override was provided, use a possible default value from `envDefaults`. If this is a legacy central,
 		// envDefaults.MainImage will hold a local default (from Release Flag). If env.Defaults.MainImage is empty it
 		// means that roxctl is talking to newer version of Central which will accept empty MainImage values.
-		s.cluster.MainImage = envDefaults.MainImage
+		s.cluster.SetMainImage(envDefaults.MainImage)
 	}
 }
 
@@ -118,7 +119,7 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 		// used in admission controller business logic as "enforce on creates". The line below ensures we have
 		// enforcement "on" for both operations, or "off" for both, in line with the new design based on
 		// customer expectations.
-		acc.Enabled = acc.GetEnforceOnUpdates()
+		acc.SetEnabled(acc.GetEnforceOnUpdates())
 	}
 
 	id, err := s.createCluster(ctx, service)
@@ -129,7 +130,9 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 			// Need to get the clusters and get the one with the name
 			ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 			defer cancel()
-			clusterResponse, err := service.GetClusters(ctx, &v1.GetClustersRequest{Query: search.NewQueryBuilder().AddExactMatches(search.Cluster, s.cluster.GetName()).Query()})
+			gcr := &v1.GetClustersRequest{}
+			gcr.SetQuery(search.NewQueryBuilder().AddExactMatches(search.Cluster, s.cluster.GetName()).Query())
+			clusterResponse, err := service.GetClusters(ctx, gcr)
 			if err != nil {
 				return errors.Wrap(err, "error getting clusters")
 			}
@@ -184,12 +187,12 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c.PersistentFlags().StringVar(&generateCmd.outputDir, "output-dir", "", "Output directory for bundle contents (default: auto-generated directory name inside the current directory).")
 	c.PersistentFlags().BoolVar(&generateCmd.continueIfExists, "continue-if-exists", false, "Continue with downloading the sensor bundle even if the cluster already exists.")
-	c.PersistentFlags().StringVar(&generateCmd.cluster.Name, "name", "", "Cluster name to identify the cluster.")
-	c.PersistentFlags().StringVar(&generateCmd.cluster.CentralApiEndpoint, "central", "central.stackrox:443", "Endpoint that sensor should connect to.")
-	c.PersistentFlags().StringVar(&generateCmd.cluster.MainImage, mainImageRepository, "", "Image repository sensor should be deployed with (if unset, a default will be used).")
-	c.PersistentFlags().StringVar(&generateCmd.cluster.CollectorImage, "collector-image-repository", "", "Image repository collector should be deployed with (if unset, a default will be derived according to the effective --"+mainImageRepository+" value).")
+	c.PersistentFlags().StringVar(proto.String(generateCmd.cluster.GetName()), "name", "", "Cluster name to identify the cluster.")
+	c.PersistentFlags().StringVar(proto.String(generateCmd.cluster.GetCentralApiEndpoint()), "central", "central.stackrox:443", "Endpoint that sensor should connect to.")
+	c.PersistentFlags().StringVar(proto.String(generateCmd.cluster.GetMainImage()), mainImageRepository, "", "Image repository sensor should be deployed with (if unset, a default will be used).")
+	c.PersistentFlags().StringVar(proto.String(generateCmd.cluster.GetCollectorImage()), "collector-image-repository", "", "Image repository collector should be deployed with (if unset, a default will be derived according to the effective --"+mainImageRepository+" value).")
 
-	c.PersistentFlags().Var(&collectionTypeWrapper{CollectionMethod: &generateCmd.cluster.CollectionMethod}, "collection-method", "Which collection method to use for runtime support (none, default, core_bpf).")
+	c.PersistentFlags().Var(&collectionTypeWrapper{CollectionMethod: generateCmd.cluster.GetCollectionMethod().Enum()}, "collection-method", "Which collection method to use for runtime support (none, default, core_bpf).")
 
 	c.PersistentFlags().BoolVar(&generateCmd.createUpgraderSA, "create-upgrader-sa", true, "Whether to create the upgrader service account, with cluster-admin privileges, to facilitate automated sensor upgrades.")
 
@@ -198,7 +201,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			"Generate deployment files supporting the given Istio version. Valid versions: %s.",
 			strings.Join(istioutils.ListKnownIstioVersions(), ", ")))
 
-	c.PersistentFlags().BoolVar(&generateCmd.cluster.GetTolerationsConfig().Disabled, "disable-tolerations", false, "Disable tolerations for tainted nodes.")
+	c.PersistentFlags().BoolVar(proto.Bool(generateCmd.cluster.GetTolerationsConfig().GetDisabled()), "disable-tolerations", false, "Disable tolerations for tainted nodes.")
 	c.PersistentFlags().BoolVar(&generateCmd.enablePodSecurityPolicies, "enable-pod-security-policies", false, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes).")
 
 	// Note: If you need to change the default values for any of the flags below this comment, please change the defaults in the defaultCluster function above
@@ -216,7 +219,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.PersistentFlags().BoolVar(&ignoredBoolFlag, "admission-controller-scan-inline", true, "Get scans inline when using the admission controller.")
 	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-scan-inline", warningAdmissionControllerScanInlineSet))
 
-	c.PersistentFlags().BoolVar(&ac.DisableBypass, "admission-controller-disable-bypass", false, "Disable the bypass annotations for the admission controller.")
+	c.PersistentFlags().BoolVar(proto.Bool(ac.GetDisableBypass()), "admission-controller-disable-bypass", false, "Disable the bypass annotations for the admission controller.")
 
 	c.PersistentFlags().BoolVar(&ignoredBoolFlag, "admission-controller-enforce-on-creates", true, "Dynamic enable for enforcing on object creates in the admission controller.")
 	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-enforce-on-creates", warningAdmissionControllerEnforceOnCreatesSet))
@@ -224,9 +227,9 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.PersistentFlags().BoolVar(&ignoredBoolFlag, "admission-controller-enforce-on-updates", true, "Dynamic enable for enforcing on object updates in the admission controller.")
 	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-enforce-on-updates", warningAdmissionControllerEnforceOnUpdatesSet))
 
-	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionControllerFailOnError, "admission-controller-fail-on-error", false, "Fail the admission review request in case of errors or timeouts in request evaluation.")
-	c.PersistentFlags().BoolVar(&generateCmd.cluster.DynamicConfig.AutoLockProcessBaselinesConfig.Enabled, "auto-lock-process-baselines", false, "Locks process baselines when their deployments leave the observation period.")
-	c.PersistentFlags().BoolVar(&ac.EnforceOnUpdates, "admission-controller-enforcement", true, "Enforce security policies on the admission review request.")
+	c.PersistentFlags().BoolVar(proto.Bool(generateCmd.cluster.GetAdmissionControllerFailOnError()), "admission-controller-fail-on-error", false, "Fail the admission review request in case of errors or timeouts in request evaluation.")
+	c.PersistentFlags().BoolVar(proto.Bool(generateCmd.cluster.GetDynamicConfig().GetAutoLockProcessBaselinesConfig().GetEnabled()), "auto-lock-process-baselines", false, "Locks process baselines when their deployments leave the observation period.")
+	c.PersistentFlags().BoolVar(proto.Bool(ac.GetEnforceOnUpdates()), "admission-controller-enforcement", true, "Enforce security policies on the admission review request.")
 
 	c.MarkFlagsMutuallyExclusive("admission-controller-enforce-on-creates", "admission-controller-enforcement")
 	c.MarkFlagsMutuallyExclusive("admission-controller-enforce-on-updates", "admission-controller-enforcement")

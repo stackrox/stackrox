@@ -63,6 +63,9 @@ func (e *lazyFactory) CreateRegistry(source *storage.ImageIntegration, options .
 		return nil, errors.New("empty registry hostname")
 	}
 
+	ds := &storage.DataSource{}
+	ds.SetId(source.GetId())
+	ds.SetName(source.GetName())
 	return &lazyTLSCheckRegistry{
 		source:           source,
 		creator:          creator,
@@ -70,10 +73,7 @@ func (e *lazyFactory) CreateRegistry(source *storage.ImageIntegration, options .
 		dockerConfig:     dockerConfig,
 		url:              url,
 		registryHostname: hostname,
-		dataSource: &storage.DataSource{
-			Id:   source.GetId(),
-			Name: source.GetName(),
-		},
-		tlsCheckCache: e.tlsCheckCache,
+		dataSource:       ds,
+		tlsCheckCache:    e.tlsCheckCache,
 	}, nil
 }

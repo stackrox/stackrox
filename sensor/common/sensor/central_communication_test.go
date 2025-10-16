@@ -169,69 +169,69 @@ func (c *centralCommunicationSuite) Test_ClientReconciliation() {
 	}{
 		"Deduper hash hit": {
 			deduperStates: []*central.DeduperState{
-				{
+				central.DeduperState_builder{
 					ResourceHashes: map[string]uint64{
 						deploymentKey(fixtureconsts.Deployment1): hash1,
 					},
 					Total:   1,
 					Current: 1,
-				},
+				}.Build(),
 			},
 			componentMessages: []*central.MsgFromSensor{dep1},
 			expectedMessages:  newMessagesMatcher("no deployment should be sent"),
 		},
 		"Deduper hash hit with multiple deduper states": {
 			deduperStates: []*central.DeduperState{
-				{
+				central.DeduperState_builder{
 					ResourceHashes: map[string]uint64{
 						deploymentKey(fixtureconsts.Deployment1): hash1,
 						deploymentKey(fixtureconsts.Deployment2): hash2,
 					},
 					Total:   2,
 					Current: 1,
-				},
-				{
+				}.Build(),
+				central.DeduperState_builder{
 					ResourceHashes: map[string]uint64{
 						deploymentKey(fixtureconsts.Deployment3): hash3,
 					},
 					Total:   2,
 					Current: 2,
-				},
+				}.Build(),
 			},
 			componentMessages: []*central.MsgFromSensor{dep1, dep2, dep3},
 			expectedMessages:  newMessagesMatcher("no deployment should be sent"),
 		},
 		"Deduper hash hit in second event": {
 			deduperStates: []*central.DeduperState{
-				{
+				central.DeduperState_builder{
 					ResourceHashes: map[string]uint64{},
 					Total:          1,
 					Current:        1,
-				},
+				}.Build(),
 			},
 			componentMessages: []*central.MsgFromSensor{dep1, dep1},
 			expectedMessages:  newMessagesMatcher("first deployment should be sent", dep1),
 		},
 		"All deployments sent": {
 			deduperStates: []*central.DeduperState{
-				{
+				central.DeduperState_builder{
 					ResourceHashes: map[string]uint64{},
 					Total:          1,
 					Current:        1,
-				},
+				}.Build(),
 			},
 			componentMessages: []*central.MsgFromSensor{dep1, dep2},
 			expectedMessages:  newMessagesMatcher("all deployments should be sent", dep1, dep2),
 		},
 		"Updated deployment": {
 			deduperStates: []*central.DeduperState{
-				{
+				central.DeduperState_builder{
 					ResourceHashes: map[string]uint64{
 						deploymentKey(fixtureconsts.Deployment1): hash1,
 					},
 					Total:   1,
 					Current: 1,
-				},
+				}.Build(),
 			},
 			componentMessages: []*central.MsgFromSensor{updatedDep1},
 			expectedMessages:  newMessagesMatcher("updated deployment should be sent", updatedDep1),
@@ -467,36 +467,32 @@ func deploymentKey(id string) string {
 }
 
 func givenDeployment(uuid, name string, labels map[string]string) *central.MsgFromSensor {
-	return &central.MsgFromSensor{
+	return central.MsgFromSensor_builder{
 		HashKey:           "",
 		DedupeKey:         "",
 		ProcessingAttempt: 0,
-		Msg: &central.MsgFromSensor_Event{
-			// The hash in the gRPC deduper is constructed by the central.SensorEvent struct
-			// Any changes in this struct will prevent the deduper from filtering the message
-			Event: &central.SensorEvent{
-				Id:     uuid,
-				Action: 0,
-				Timing: nil,
-				// SensorHash stores the SensorEvent hash. It is set later
-				SensorHashOneof: nil,
-				Resource: &central.SensorEvent_Deployment{
-					Deployment: &storage.Deployment{
-						Id:     uuid,
-						Name:   name,
-						Labels: labels,
-					},
-				},
+		// The hash in the gRPC deduper is constructed by the central.SensorEvent struct
+		// Any changes in this struct will prevent the deduper from filtering the message
+		Event: central.SensorEvent_builder{
+			Id:     uuid,
+			Action: 0,
+			Timing: nil,
+			// SensorHash stores the SensorEvent hash. It is set later
+			SensorHashOneof: nil,
+			Resource: &central.SensorEvent_Deployment{
+				Deployment: storage.Deployment_builder{
+					Id:     uuid,
+					Name:   name,
+					Labels: labels,
+				}.Build(),
 			},
-		},
-	}
+		}.Build(),
+	}.Build()
 }
 
 func setSensorHash(sensorMsg *central.MsgFromSensor, sensorHash uint64) {
 	if event := sensorMsg.GetEvent(); event != nil {
-		event.SensorHashOneof = &central.SensorEvent_SensorHash{
-			SensorHash: sensorHash,
-		}
+		event.SetSensorHash(sensorHash)
 	}
 }
 
@@ -507,15 +503,11 @@ func NewFakeSensorComponent(responsesC chan *message.ExpiringMessage) common.Sen
 }
 
 func syncMessage() *central.MsgFromSensor {
-	return &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Resource: &central.SensorEvent_Synced{
-					Synced: &central.SensorEvent_ResourcesSynced{},
-				},
-			},
-		},
-	}
+	return central.MsgFromSensor_builder{
+		Event: central.SensorEvent_builder{
+			Synced: &central.SensorEvent_ResourcesSynced{},
+		}.Build(),
+	}.Build()
 }
 
 type fakeSensorComponent struct {

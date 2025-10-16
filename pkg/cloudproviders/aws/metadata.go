@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
+	"google.golang.org/protobuf/proto"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -61,17 +62,15 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 
 	clusterMetadata := getClusterMetadata(ctx, mdClient, doc)
 
-	return &storage.ProviderMetadata{
-		Region: doc.Region,
-		Zone:   doc.AvailabilityZone,
-		Provider: &storage.ProviderMetadata_Aws{
-			Aws: &storage.AWSProviderMetadata{
-				AccountId: doc.AccountID,
-			},
-		},
-		Verified: verified,
-		Cluster:  clusterMetadata,
-	}, nil
+	awspm := &storage.AWSProviderMetadata{}
+	awspm.SetAccountId(doc.AccountID)
+	pm := &storage.ProviderMetadata{}
+	pm.SetRegion(doc.Region)
+	pm.SetZone(doc.AvailabilityZone)
+	pm.SetAws(proto.ValueOrDefault(awspm))
+	pm.SetVerified(verified)
+	pm.SetCluster(clusterMetadata)
+	return pm, nil
 }
 
 func signedIdentityDoc(ctx context.Context, mdClient *imds.Client) (*imds.InstanceIdentityDocument, error) {
@@ -170,5 +169,9 @@ func getClusterNameFromNodeLabels(ctx context.Context, k8sClient kubernetes.Inte
 func clusterMetadataFromName(clusterName string, doc *imds.InstanceIdentityDocument,
 ) *storage.ClusterMetadata {
 	clusterARN := fmt.Sprintf("arn:aws:eks:%s:%s:cluster/%s", doc.Region, doc.AccountID, clusterName)
-	return &storage.ClusterMetadata{Type: storage.ClusterMetadata_EKS, Name: clusterName, Id: clusterARN}
+	cm := &storage.ClusterMetadata{}
+	cm.SetType(storage.ClusterMetadata_EKS)
+	cm.SetName(clusterName)
+	cm.SetId(clusterARN)
+	return cm
 }

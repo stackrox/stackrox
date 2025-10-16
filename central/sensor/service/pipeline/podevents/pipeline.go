@@ -53,7 +53,9 @@ func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap
 
 	store := storeMap.Get((*central.SensorEvent_Pod)(nil))
 	return reconciliation.Perform(store, search.ResultsToIDSet(results), "pods", func(id string) error {
-		return s.runRemovePipeline(ctx, &storage.Pod{Id: id})
+		pod := &storage.Pod{}
+		pod.SetId(id)
+		return s.runRemovePipeline(ctx, pod)
 	})
 }
 

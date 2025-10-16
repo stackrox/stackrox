@@ -168,9 +168,9 @@ func exchangeHandle(t *testing.T, expectedToken, responseToken string) http.Hand
 		assert.NoError(t, jsonutil.JSONReaderToProto(request.Body, &m2mRequest))
 		assert.Equal(t, expectedToken, m2mRequest.GetIdToken())
 
-		assert.NoError(t, jsonutil.MarshalPretty(writer, &v1.ExchangeAuthMachineToMachineTokenResponse{
-			AccessToken: responseToken,
-		}))
+		eamtmtr := &v1.ExchangeAuthMachineToMachineTokenResponse{}
+		eamtmtr.SetAccessToken(responseToken)
+		assert.NoError(t, jsonutil.MarshalPretty(writer, eamtmtr))
 	}
 }
 

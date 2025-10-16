@@ -75,63 +75,63 @@ var (
 
 func TestValidateSignatureIntegration_Failure(t *testing.T) {
 	testCasesBad := map[string]*storage.SignatureIntegration{
-		"name field must be set": {
+		"name field must be set": storage.SignatureIntegration_builder{
 			Id:     goodID,
 			Cosign: goodCosignConfig,
-		},
-		"id must follow format": {
+		}.Build(),
+		"id must follow format": storage.SignatureIntegration_builder{
 			Id:     badID,
 			Name:   goodName,
 			Cosign: goodCosignConfig,
-		},
-		"id field must be set": {
+		}.Build(),
+		"id field must be set": storage.SignatureIntegration_builder{
 			Name:   goodName,
 			Cosign: goodCosignConfig,
-		},
-		"at least one signature verification config should be present": {
+		}.Build(),
+		"at least one signature verification config should be present": storage.SignatureIntegration_builder{
 			Id:   goodID,
 			Name: goodName,
-		},
-		"at least one public key in cosign config should be present": {
+		}.Build(),
+		"at least one public key in cosign config should be present": storage.SignatureIntegration_builder{
 			Id:     goodID,
 			Name:   goodName,
 			Cosign: badEmptyCosignConfig,
-		},
-		"public keys in cosign config should be PEM-encoded": {
+		}.Build(),
+		"public keys in cosign config should be PEM-encoded": storage.SignatureIntegration_builder{
 			Id:     goodID,
 			Name:   goodName,
 			Cosign: badPEMEncodingCosignConfig,
-		},
-		"at least one certificate verification config should be present": {
+		}.Build(),
+		"at least one certificate verification config should be present": storage.SignatureIntegration_builder{
 			Id:                 goodID,
 			Name:               goodName,
 			CosignCertificates: badEmptyCosignCertificateVerificationConfig,
-		},
-		"certificates in the config should be PEM encoded and required fields filled": {
+		}.Build(),
+		"certificates in the config should be PEM encoded and required fields filled": storage.SignatureIntegration_builder{
 			Id:                 goodID,
 			Name:               goodName,
 			CosignCertificates: badCosignCertificateVerificationConfig,
-		},
-		"invalid regexp for identity and issuer": {
+		}.Build(),
+		"invalid regexp for identity and issuer": storage.SignatureIntegration_builder{
 			Id:                 goodID,
 			Name:               goodName,
 			CosignCertificates: invalidCosignCertificateVerificationConfig,
-		},
-		"invalid ctlog public key": {
+		}.Build(),
+		"invalid ctlog public key": storage.SignatureIntegration_builder{
 			Id:                 goodID,
 			Name:               goodName,
 			CosignCertificates: invalidCTLogPublicKeyConfig,
-		},
-		"invalid rekor public key": {
+		}.Build(),
+		"invalid rekor public key": storage.SignatureIntegration_builder{
 			Id:              goodID,
 			Name:            goodName,
 			TransparencyLog: invalidRekorPublicKeyConfig,
-		},
-		"invalid rekor url": {
+		}.Build(),
+		"invalid rekor url": storage.SignatureIntegration_builder{
 			Id:              goodID,
 			Name:            goodName,
 			TransparencyLog: invalidRekorURLConfig,
-		},
+		}.Build(),
 	}
 
 	for desc, signatureIntegration := range testCasesBad {
@@ -143,17 +143,17 @@ func TestValidateSignatureIntegration_Failure(t *testing.T) {
 }
 
 func TestValidateSignatureIntegration_Success(t *testing.T) {
+	si := &storage.SignatureIntegration{}
+	si.SetId(goodID)
+	si.SetName(goodName)
+	si.SetCosign(goodCosignConfig)
+	si2 := &storage.SignatureIntegration{}
+	si2.SetId(goodID)
+	si2.SetName(goodName)
+	si2.SetCosignCertificates(goodCosignCertificateVerificationConfig)
 	testCasesGood := map[string]*storage.SignatureIntegration{
-		"valid name, id, and cosign config": {
-			Id:     goodID,
-			Name:   goodName,
-			Cosign: goodCosignConfig,
-		},
-		"valid name, id, and cosign certificate config": {
-			Id:                 goodID,
-			Name:               goodName,
-			CosignCertificates: goodCosignCertificateVerificationConfig,
-		},
+		"valid name, id, and cosign config":             si,
+		"valid name, id, and cosign certificate config": si2,
 	}
 
 	for desc, signatureIntegration := range testCasesGood {

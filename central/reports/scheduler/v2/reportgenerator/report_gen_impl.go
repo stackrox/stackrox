@@ -148,7 +148,7 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 		return err
 	}
 
-	req.ReportSnapshot.ReportStatus.CompletedAt = protocompat.TimestampNow()
+	req.ReportSnapshot.GetReportStatus().SetCompletedAt(protocompat.TimestampNow())
 	err = rg.updateReportStatus(req.ReportSnapshot, storage.ReportStatus_GENERATED)
 	if err != nil {
 		return errors.Wrap(err, "Error changing report status to GENERATED")
@@ -229,12 +229,11 @@ func (rg *reportGeneratorImpl) saveReportData(configID, reportID string, data *b
 	}
 
 	// Store downloadable report in blob storage
-	b := &storage.Blob{
-		Name:         common.GetReportBlobPath(configID, reportID),
-		LastUpdated:  protocompat.TimestampNow(),
-		ModifiedTime: protocompat.TimestampNow(),
-		Length:       int64(data.Len()),
-	}
+	b := &storage.Blob{}
+	b.SetName(common.GetReportBlobPath(configID, reportID))
+	b.SetLastUpdated(protocompat.TimestampNow())
+	b.SetModifiedTime(protocompat.TimestampNow())
+	b.SetLength(int64(data.Len()))
 	return rg.blobStore.Upsert(reportGenCtx, b, data)
 }
 
@@ -254,8 +253,8 @@ func (rg *reportGeneratorImpl) getReportDataSQF(snap *storage.ReportSnapshot, co
 	var cveResponses []*ImageCVEQueryResponse
 	if filterOnImageType(snap.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_DEPLOYED) {
 		query := search.ConjunctionQuery(rQuery.DeploymentsQuery, cveFilterQuery)
-		query.Pagination = deployedImagesQueryParts.Pagination
-		query.Selects = deployedImagesQueryParts.Selects
+		query.SetPagination(deployedImagesQueryParts.Pagination)
+		query.SetSelects(deployedImagesQueryParts.Selects)
 		cveResponses, err = pgSearch.RunSelectRequestForSchema[ImageCVEQueryResponse](reportGenCtx, rg.db,
 			deployedImagesQueryParts.Schema, query)
 		if err != nil {
@@ -274,8 +273,8 @@ func (rg *reportGeneratorImpl) getReportDataSQF(snap *storage.ReportSnapshot, co
 			query := search.ConjunctionQuery(
 				search.NewQueryBuilder().AddExactMatches(search.ImageName, watchedImages...).ProtoQuery(),
 				cveFilterQuery)
-			query.Pagination = watchedImagesQueryParts.Pagination
-			query.Selects = watchedImagesQueryParts.Selects
+			query.SetPagination(watchedImagesQueryParts.Pagination)
+			query.SetSelects(watchedImagesQueryParts.Selects)
 			watchedImageCVEResponses, err := pgSearch.RunSelectRequestForSchema[ImageCVEQueryResponse](reportGenCtx, rg.db,
 				watchedImagesQueryParts.Schema, query)
 			if err != nil {
@@ -310,8 +309,8 @@ func (rg *reportGeneratorImpl) getReportDataViewBased(snap *storage.ReportSnapsh
 
 	numDeployedImageResults := 0
 	var cveResponses []*ImageCVEQueryResponse
-	query.DeployedImagesQuery.Pagination = deployedImagesQueryParts.Pagination
-	query.DeployedImagesQuery.Selects = deployedImagesQueryParts.Selects
+	query.DeployedImagesQuery.SetPagination(deployedImagesQueryParts.Pagination)
+	query.DeployedImagesQuery.SetSelects(deployedImagesQueryParts.Selects)
 	cveResponses, err = pgSearch.RunSelectRequestForSchema[ImageCVEQueryResponse](reportGenCtx, rg.db,
 		deployedImagesQueryParts.Schema, query.DeployedImagesQuery)
 	if err != nil {
@@ -322,8 +321,8 @@ func (rg *reportGeneratorImpl) getReportDataViewBased(snap *storage.ReportSnapsh
 	numWatchedImageResults := 0
 
 	if len(watchedImages) != 0 {
-		query.WatchedImagesQuery.Pagination = watchedImagesQueryParts.Pagination
-		query.WatchedImagesQuery.Selects = watchedImagesQueryParts.Selects
+		query.WatchedImagesQuery.SetPagination(watchedImagesQueryParts.Pagination)
+		query.WatchedImagesQuery.SetSelects(watchedImagesQueryParts.Selects)
 		watchedImageCVEResponses, err := pgSearch.RunSelectRequestForSchema[ImageCVEQueryResponse](reportGenCtx, rg.db,
 			watchedImagesQueryParts.Schema, query.WatchedImagesQuery)
 		if err != nil {
@@ -482,7 +481,7 @@ func (rg *reportGeneratorImpl) withCVEReferenceLinks(imageCVEResponses []*ImageC
 }
 
 func (rg *reportGeneratorImpl) updateReportStatus(snapshot *storage.ReportSnapshot, status storage.ReportStatus_RunState) error {
-	snapshot.ReportStatus.RunState = status
+	snapshot.GetReportStatus().SetRunState(status)
 	return rg.reportSnapshotStore.UpdateReportSnapshot(reportGenCtx, snapshot)
 }
 
@@ -493,9 +492,9 @@ func (rg *reportGeneratorImpl) logAndUpsertError(reportErr error, req *ReportReq
 	}
 	if reportErr != nil {
 		log.Errorf("Error while running report for config '%s': %s", req.ReportSnapshot.GetName(), reportErr)
-		req.ReportSnapshot.ReportStatus.ErrorMsg = reportErr.Error()
+		req.ReportSnapshot.GetReportStatus().SetErrorMsg(reportErr.Error())
 	}
-	req.ReportSnapshot.ReportStatus.CompletedAt = protocompat.TimestampNow()
+	req.ReportSnapshot.GetReportStatus().SetCompletedAt(protocompat.TimestampNow())
 	err := rg.updateReportStatus(req.ReportSnapshot, storage.ReportStatus_FAILURE)
 
 	if err != nil {

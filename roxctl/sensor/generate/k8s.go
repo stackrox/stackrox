@@ -17,8 +17,8 @@ type sensorGenerateK8sCommand struct {
 }
 
 func (s *sensorGenerateK8sCommand) ConstructK8s() {
-	s.cluster.Type = storage.ClusterType_KUBERNETES_CLUSTER
-	s.cluster.DynamicConfig.DisableAuditLogs = true
+	s.cluster.SetType(storage.ClusterType_KUBERNETES_CLUSTER)
+	s.cluster.GetDynamicConfig().SetDisableAuditLogs(true)
 }
 
 func k8s(generateCmd *sensorGenerateCommand) *cobra.Command {

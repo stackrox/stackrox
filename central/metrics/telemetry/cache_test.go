@@ -13,23 +13,47 @@ func TestInfoMetric(t *testing.T) {
 	cache := newMetricsCache()
 	require.NotNil(t, cache)
 
-	cache.Set("cluster-1", &central.ClusterMetrics{CpuCapacity: 10, NodeCount: 1})
-	protoassert.Equal(t, &central.ClusterMetrics{CpuCapacity: 10, NodeCount: 1}, cache.Sum())
+	cm := &central.ClusterMetrics{}
+	cm.SetCpuCapacity(10)
+	cm.SetNodeCount(1)
+	cache.Set("cluster-1", cm)
+	cm2 := &central.ClusterMetrics{}
+	cm2.SetCpuCapacity(10)
+	cm2.SetNodeCount(1)
+	protoassert.Equal(t, cm2, cache.Sum())
 	assert.Equal(t, 1, cache.Len())
 
-	cache.Set("cluster-2", &central.ClusterMetrics{CpuCapacity: 20, NodeCount: 2})
-	protoassert.Equal(t, &central.ClusterMetrics{CpuCapacity: 30, NodeCount: 3}, cache.Sum())
+	cm3 := &central.ClusterMetrics{}
+	cm3.SetCpuCapacity(20)
+	cm3.SetNodeCount(2)
+	cache.Set("cluster-2", cm3)
+	cm4 := &central.ClusterMetrics{}
+	cm4.SetCpuCapacity(30)
+	cm4.SetNodeCount(3)
+	protoassert.Equal(t, cm4, cache.Sum())
 	assert.Equal(t, 2, cache.Len())
 
-	cache.Set("cluster-1", &central.ClusterMetrics{CpuCapacity: 20, NodeCount: 3})
-	protoassert.Equal(t, &central.ClusterMetrics{CpuCapacity: 40, NodeCount: 5}, cache.Sum())
+	cm5 := &central.ClusterMetrics{}
+	cm5.SetCpuCapacity(20)
+	cm5.SetNodeCount(3)
+	cache.Set("cluster-1", cm5)
+	cm6 := &central.ClusterMetrics{}
+	cm6.SetCpuCapacity(40)
+	cm6.SetNodeCount(5)
+	protoassert.Equal(t, cm6, cache.Sum())
 	assert.Equal(t, 2, cache.Len())
 
 	cache.Delete("cluster-1")
-	protoassert.Equal(t, &central.ClusterMetrics{CpuCapacity: 20, NodeCount: 2}, cache.Sum())
+	cm7 := &central.ClusterMetrics{}
+	cm7.SetCpuCapacity(20)
+	cm7.SetNodeCount(2)
+	protoassert.Equal(t, cm7, cache.Sum())
 	assert.Equal(t, 1, cache.Len())
 
 	cache.Delete("cluster-3")
-	protoassert.Equal(t, &central.ClusterMetrics{CpuCapacity: 20, NodeCount: 2}, cache.Sum())
+	cm8 := &central.ClusterMetrics{}
+	cm8.SetCpuCapacity(20)
+	cm8.SetNodeCount(2)
+	protoassert.Equal(t, cm8, cache.Sum())
 	assert.Equal(t, 1, cache.Len())
 }

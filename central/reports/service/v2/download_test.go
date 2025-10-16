@@ -49,10 +49,10 @@ func (s *handlerTestSuite) SetupSuite() {
 
 func (s *handlerTestSuite) TestDownloadReport() {
 	reportSnapshot := fixtures.GetReportSnapshot()
-	reportSnapshot.ReportId = uuid.NewV4().String()
-	reportSnapshot.ReportConfigurationId = uuid.NewV4().String()
-	reportSnapshot.ReportStatus.RunState = storage.ReportStatus_GENERATED
-	reportSnapshot.ReportStatus.ReportNotificationMethod = storage.ReportStatus_DOWNLOAD
+	reportSnapshot.SetReportId(uuid.NewV4().String())
+	reportSnapshot.SetReportConfigurationId(uuid.NewV4().String())
+	reportSnapshot.GetReportStatus().SetRunState(storage.ReportStatus_GENERATED)
+	reportSnapshot.GetReportStatus().SetReportNotificationMethod(storage.ReportStatus_DOWNLOAD)
 	user := reportSnapshot.GetRequester()
 	userContext := s.getContextForUser(user)
 	blob, blobData := fixtures.GetBlobWithData()
@@ -95,10 +95,10 @@ func (s *handlerTestSuite) TestDownloadReport() {
 			ctx:  userContext,
 			mockGen: func() {
 				snap := reportSnapshot.CloneVT()
-				snap.Requester = &storage.SlimUser{
-					Id:   reportSnapshot.GetRequester().GetId() + "-1",
-					Name: reportSnapshot.GetRequester().GetName() + "-1",
-				}
+				slimUser := &storage.SlimUser{}
+				slimUser.SetId(reportSnapshot.GetRequester().GetId() + "-1")
+				slimUser.SetName(reportSnapshot.GetRequester().GetName() + "-1")
+				snap.SetRequester(slimUser)
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(snap, true, nil).Times(1)
 			},
@@ -110,7 +110,7 @@ func (s *handlerTestSuite) TestDownloadReport() {
 			ctx:  userContext,
 			mockGen: func() {
 				snap := reportSnapshot.CloneVT()
-				snap.ReportStatus.ReportNotificationMethod = storage.ReportStatus_EMAIL
+				snap.GetReportStatus().SetReportNotificationMethod(storage.ReportStatus_EMAIL)
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(snap, true, nil).Times(1)
 			},
@@ -122,7 +122,7 @@ func (s *handlerTestSuite) TestDownloadReport() {
 			ctx:  userContext,
 			mockGen: func() {
 				snap := reportSnapshot.CloneVT()
-				snap.ReportStatus.RunState = storage.ReportStatus_PREPARING
+				snap.GetReportStatus().SetRunState(storage.ReportStatus_PREPARING)
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(snap, true, nil).Times(1)
 			},
@@ -158,7 +158,7 @@ func (s *handlerTestSuite) TestDownloadReport() {
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(reportSnapshot, true, nil).Times(1)
 				snap := reportSnapshot.CloneVT()
-				snap.ReportStatus.RunState = storage.ReportStatus_DELIVERED
+				snap.GetReportStatus().SetRunState(storage.ReportStatus_DELIVERED)
 				s.reportSnapshotDataStore.EXPECT().UpdateReportSnapshot(gomock.Any(), snap).
 					Return(nil).Times(1)
 				s.blobStore.EXPECT().Get(gomock.Any(), blobName, gomock.Any()).Times(1).DoAndReturn(
@@ -177,7 +177,7 @@ func (s *handlerTestSuite) TestDownloadReport() {
 			ctx:  userContext,
 			mockGen: func() {
 				snap := reportSnapshot.CloneVT()
-				snap.ReportStatus.RunState = storage.ReportStatus_DELIVERED
+				snap.GetReportStatus().SetRunState(storage.ReportStatus_DELIVERED)
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), snap.GetReportId()).
 					Return(snap, true, nil).Times(1)
 				s.blobStore.EXPECT().Get(gomock.Any(), blobName, gomock.Any()).Times(1).DoAndReturn(

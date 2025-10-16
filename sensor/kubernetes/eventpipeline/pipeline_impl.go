@@ -225,12 +225,12 @@ func (p *eventPipeline) processInvalidateImageCache(req *central.InvalidateImage
 	}
 	keys := make([]*storage.Image, len(req.GetImageKeys()))
 	for i, image := range req.GetImageKeys() {
-		keys[i] = &storage.Image{
-			Id: image.GetImageId(),
-			Name: &storage.ImageName{
-				FullName: image.GetImageFullName(),
-			},
-		}
+		imageName := &storage.ImageName{}
+		imageName.SetFullName(image.GetImageFullName())
+		image2 := &storage.Image{}
+		image2.SetId(image.GetImageId())
+		image2.SetName(imageName)
+		keys[i] = image2
 	}
 	msg := component.NewEvent()
 	msg.AddDeploymentReference(resolver.ResolveDeploymentsByImages(keys...),

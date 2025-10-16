@@ -107,7 +107,7 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 			},
 			systemNamespaces: storeProvider.orchestratorNamespaces,
 			registryStore:    storeProvider.Registries(),
-			expectedDeployment: &storage.Deployment{
+			expectedDeployment: storage.Deployment_builder{
 				Id:                    "FooID",
 				ClusterId:             testClusterID,
 				Name:                  "deployment",
@@ -115,58 +115,58 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 				OrchestratorComponent: false,
 				NamespaceId:           "FAKENSID",
 				Type:                  kubernetes.Deployment,
-				LabelSelector: &storage.LabelSelector{
+				LabelSelector: storage.LabelSelector_builder{
 					MatchLabels: map[string]string{},
-				},
+				}.Build(),
 				Created:                      protocompat.GetProtoTimestampFromSeconds(1000),
 				ImagePullSecrets:             []string{},
 				Tolerations:                  []*storage.Toleration{},
 				ServiceAccount:               "default",
 				AutomountServiceAccountToken: true,
 				Containers: []*storage.Container{
-					{
+					storage.Container_builder{
 						Id:   "FooID:container1",
 						Name: "container1",
-						Image: &storage.ContainerImage{
-							Name: &storage.ImageName{
+						Image: storage.ContainerImage_builder{
+							Name: storage.ImageName_builder{
 								Registry: "docker.io",
 								Remote:   "stackrox/kafka",
 								Tag:      "latest",
 								FullName: "docker.io/stackrox/kafka:latest",
-							},
+							}.Build(),
 							NotPullable: false,
-						},
-						Config: &storage.ContainerConfig{
+						}.Build(),
+						Config: storage.ContainerConfig_builder{
 							Env: []*storage.ContainerConfig_EnvironmentConfig{},
-						},
+						}.Build(),
 						SecurityContext: &storage.SecurityContext{},
 						Resources:       &storage.Resources{},
-						LivenessProbe:   &storage.LivenessProbe{Defined: false},
-						ReadinessProbe:  &storage.ReadinessProbe{Defined: false},
-					},
-					{
+						LivenessProbe:   storage.LivenessProbe_builder{Defined: false}.Build(),
+						ReadinessProbe:  storage.ReadinessProbe_builder{Defined: false}.Build(),
+					}.Build(),
+					storage.Container_builder{
 						Id:   "FooID:container2",
 						Name: "container2",
-						Image: &storage.ContainerImage{
+						Image: storage.ContainerImage_builder{
 							Id: "sha256:6b561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
-							Name: &storage.ImageName{
+							Name: storage.ImageName_builder{
 								Registry: "docker.io",
 								Remote:   "stackrox/policy-engine",
 								Tag:      "1.3",
 								FullName: "docker.io/stackrox/policy-engine:1.3",
-							},
+							}.Build(),
 							NotPullable: false,
-						},
-						Config: &storage.ContainerConfig{
+						}.Build(),
+						Config: storage.ContainerConfig_builder{
 							Env: []*storage.ContainerConfig_EnvironmentConfig{},
-						},
+						}.Build(),
 						SecurityContext: &storage.SecurityContext{},
 						Resources:       &storage.Resources{},
-						LivenessProbe:   &storage.LivenessProbe{Defined: false},
-						ReadinessProbe:  &storage.ReadinessProbe{Defined: false},
-					},
+						LivenessProbe:   storage.LivenessProbe_builder{Defined: false}.Build(),
+						ReadinessProbe:  storage.ReadinessProbe_builder{Defined: false}.Build(),
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 		{
 			name: "Orchestrator deployment",
@@ -245,7 +245,7 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 			},
 			systemNamespaces: storeProvider.orchestratorNamespaces,
 			registryStore:    storeProvider.Registries(),
-			expectedDeployment: &storage.Deployment{
+			expectedDeployment: storage.Deployment_builder{
 				Id:                    "FooID",
 				ClusterId:             testClusterID,
 				Name:                  "deployment",
@@ -253,58 +253,58 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 				OrchestratorComponent: true,
 				NamespaceId:           "KUBESYSID",
 				Type:                  kubernetes.Deployment,
-				LabelSelector: &storage.LabelSelector{
+				LabelSelector: storage.LabelSelector_builder{
 					MatchLabels: map[string]string{},
-				},
+				}.Build(),
 				Created:                      protocompat.GetProtoTimestampFromSeconds(1000),
 				ImagePullSecrets:             []string{},
 				Tolerations:                  []*storage.Toleration{},
 				ServiceAccount:               "default",
 				AutomountServiceAccountToken: true,
 				Containers: []*storage.Container{
-					{
+					storage.Container_builder{
 						Id:   "FooID:container1",
 						Name: "container1",
-						Image: &storage.ContainerImage{
-							Name: &storage.ImageName{
+						Image: storage.ContainerImage_builder{
+							Name: storage.ImageName_builder{
 								Registry: "docker.io",
 								Remote:   "stackrox/kafka",
 								Tag:      "latest",
 								FullName: "docker.io/stackrox/kafka:latest",
-							},
+							}.Build(),
 							NotPullable: false,
-						},
-						Config: &storage.ContainerConfig{
+						}.Build(),
+						Config: storage.ContainerConfig_builder{
 							Env: []*storage.ContainerConfig_EnvironmentConfig{},
-						},
+						}.Build(),
 						SecurityContext: &storage.SecurityContext{},
 						Resources:       &storage.Resources{},
-						LivenessProbe:   &storage.LivenessProbe{Defined: false},
-						ReadinessProbe:  &storage.ReadinessProbe{Defined: false},
-					},
-					{
+						LivenessProbe:   storage.LivenessProbe_builder{Defined: false}.Build(),
+						ReadinessProbe:  storage.ReadinessProbe_builder{Defined: false}.Build(),
+					}.Build(),
+					storage.Container_builder{
 						Id:   "FooID:container2",
 						Name: "container2",
-						Image: &storage.ContainerImage{
+						Image: storage.ContainerImage_builder{
 							Id: "sha256:6b561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
-							Name: &storage.ImageName{
+							Name: storage.ImageName_builder{
 								Registry: "docker.io",
 								Remote:   "stackrox/policy-engine",
 								Tag:      "1.3",
 								FullName: "docker.io/stackrox/policy-engine:1.3",
-							},
+							}.Build(),
 							NotPullable: false,
-						},
-						Config: &storage.ContainerConfig{
+						}.Build(),
+						Config: storage.ContainerConfig_builder{
 							Env: []*storage.ContainerConfig_EnvironmentConfig{},
-						},
+						}.Build(),
 						SecurityContext: &storage.SecurityContext{},
 						Resources:       &storage.Resources{},
-						LivenessProbe:   &storage.LivenessProbe{Defined: false},
-						ReadinessProbe:  &storage.ReadinessProbe{Defined: false},
-					},
+						LivenessProbe:   storage.LivenessProbe_builder{Defined: false}.Build(),
+						ReadinessProbe:  storage.ReadinessProbe_builder{Defined: false}.Build(),
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 	}
 
@@ -312,7 +312,7 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, testClusterID, c.podLister, mockNamespaceStore, hierarchyFromPodLister(c.podLister), "", c.systemNamespaces).GetDeployment()
 			if actual != nil {
-				actual.StateTimestamp = 0
+				actual.SetStateTimestamp(0)
 			}
 			protoassert.Equal(t, c.expectedDeployment, actual)
 		})

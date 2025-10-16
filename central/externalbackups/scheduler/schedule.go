@@ -80,24 +80,24 @@ func (s *scheduler) RunBackup(backup types.ExternalBackup, plugin *storage.Exter
 	err := s.send(pr, backup)
 
 	if err != nil {
-		s.reporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
-			Id:            plugin.GetId(),
-			Name:          plugin.GetName(),
-			Type:          storage.IntegrationHealth_BACKUP,
-			Status:        storage.IntegrationHealth_UNHEALTHY,
-			LastTimestamp: protocompat.TimestampNow(),
-			ErrorMessage:  err.Error(),
-		})
+		ih := &storage.IntegrationHealth{}
+		ih.SetId(plugin.GetId())
+		ih.SetName(plugin.GetName())
+		ih.SetType(storage.IntegrationHealth_BACKUP)
+		ih.SetStatus(storage.IntegrationHealth_UNHEALTHY)
+		ih.SetLastTimestamp(protocompat.TimestampNow())
+		ih.SetErrorMessage(err.Error())
+		s.reporter.UpdateIntegrationHealthAsync(ih)
 		return err
 	}
-	s.reporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
-		Id:            plugin.GetId(),
-		Name:          plugin.GetName(),
-		Type:          storage.IntegrationHealth_BACKUP,
-		Status:        storage.IntegrationHealth_HEALTHY,
-		LastTimestamp: protocompat.TimestampNow(),
-		ErrorMessage:  "",
-	})
+	ih := &storage.IntegrationHealth{}
+	ih.SetId(plugin.GetId())
+	ih.SetName(plugin.GetName())
+	ih.SetType(storage.IntegrationHealth_BACKUP)
+	ih.SetStatus(storage.IntegrationHealth_HEALTHY)
+	ih.SetLastTimestamp(protocompat.TimestampNow())
+	ih.SetErrorMessage("")
+	s.reporter.UpdateIntegrationHealthAsync(ih)
 	log.Infof("Successfully ran backup to %T", backup)
 	return nil
 }

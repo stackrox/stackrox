@@ -28,59 +28,59 @@ type LightPolicy struct {
 }
 
 func (l *LightPolicy) convert() *storage.Policy {
-	p := &storage.Policy{
+	p := storage.Policy_builder{
 		Id:       stringutils.OrDefault(l.ID, uuid.NewV4().String()),
 		Name:     l.Name,
 		Disabled: l.Disabled,
 		PolicySections: []*storage.PolicySection{
-			{
+			storage.PolicySection_builder{
 				SectionName: "section-1",
 				PolicyGroups: []*storage.PolicyGroup{
-					{
+					storage.PolicyGroup_builder{
 						FieldName: fieldnames.ImageRegistry,
 						Values: []*storage.PolicyValue{
-							{
+							storage.PolicyValue_builder{
 								Value: l.ImageRegistry,
-							},
+							}.Build(),
 						},
-					},
-					{
+					}.Build(),
+					storage.PolicyGroup_builder{
 						FieldName: fieldnames.CVE,
 						Values: []*storage.PolicyValue{
-							{
+							storage.PolicyValue_builder{
 								Value: l.CVE,
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 		Notifiers:     l.Notifiers,
 		PolicyVersion: "1.1",
-	}
+	}.Build()
 	if l.CVSSGreaterThan > 0 {
 		s := fmt.Sprintf("> %0.3f", l.CVSSGreaterThan)
-		p.PolicySections[0].PolicyGroups = append(p.PolicySections[0].PolicyGroups, &storage.PolicyGroup{
-			FieldName: fieldnames.CVSS,
-			Values: []*storage.PolicyValue{
-				{
-					Value: s,
-				},
-			},
+		pv := &storage.PolicyValue{}
+		pv.SetValue(s)
+		pg := &storage.PolicyGroup{}
+		pg.SetFieldName(fieldnames.CVSS)
+		pg.SetValues([]*storage.PolicyValue{
+			pv,
 		})
+		p.GetPolicySections()[0].SetPolicyGroups(append(p.GetPolicySections()[0].GetPolicyGroups(), pg))
 	}
 	if l.EnvKey != "" || l.EnvValue != "" {
-		p.PolicySections[0].PolicyGroups = append(p.PolicySections[0].PolicyGroups, &storage.PolicyGroup{
-			FieldName: fieldnames.EnvironmentVariable,
-			Values: []*storage.PolicyValue{
-				{
-					Value: fmt.Sprintf("=%s=%s", l.EnvKey, l.EnvValue),
-				},
-			},
+		pv := &storage.PolicyValue{}
+		pv.SetValue(fmt.Sprintf("=%s=%s", l.EnvKey, l.EnvValue))
+		pg := &storage.PolicyGroup{}
+		pg.SetFieldName(fieldnames.EnvironmentVariable)
+		pg.SetValues([]*storage.PolicyValue{
+			pv,
 		})
+		p.GetPolicySections()[0].SetPolicyGroups(append(p.GetPolicySections()[0].GetPolicyGroups(), pg))
 	}
 	if l.Enforced {
-		p.EnforcementActions = append(p.EnforcementActions, storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT)
+		p.SetEnforcementActions(append(p.GetEnforcementActions(), storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT))
 	}
 
 	return p

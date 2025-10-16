@@ -32,17 +32,14 @@ func NewClusterCVEParts(cve *storage.ClusterCVE, clusters []*storage.Cluster, fi
 }
 
 func generateClusterCVEEdge(cluster *storage.Cluster, cve *storage.ClusterCVE, fixVersions string) *storage.ClusterCVEEdge {
-	ret := &storage.ClusterCVEEdge{
-		Id:        pgSearch.IDFromPks([]string{cluster.GetId(), cve.GetId()}),
-		IsFixable: len(fixVersions) != 0,
-		ClusterId: cluster.GetId(),
-		CveId:     cve.GetId(),
-	}
+	ret := &storage.ClusterCVEEdge{}
+	ret.SetId(pgSearch.IDFromPks([]string{cluster.GetId(), cve.GetId()}))
+	ret.SetIsFixable(len(fixVersions) != 0)
+	ret.SetClusterId(cluster.GetId())
+	ret.SetCveId(cve.GetId())
 
 	if ret.GetIsFixable() {
-		ret.HasFixedBy = &storage.ClusterCVEEdge_FixedBy{
-			FixedBy: fixVersions,
-		}
+		ret.SetFixedBy(fixVersions)
 	}
 	return ret
 }

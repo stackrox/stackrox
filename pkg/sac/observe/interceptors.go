@@ -41,13 +41,12 @@ func AuthzTraceHTTPInterceptor(authzTraceSink AuthzTraceSink) httputil.HTTPInter
 }
 
 func sendAuthzTrace(ctx context.Context, authzTraceSink AuthzTraceSink, rpcMethod string, handlerErr error, trace *AuthzTrace) {
-	traceResp := &v1.AuthorizationTraceResponse{
-		ArrivedAt:   protoconv.ConvertMicroTSToProtobufTS(trace.arrivedAt.LoadAtomic()),
-		ProcessedAt: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
-		Request:     calculateRequest(ctx, rpcMethod),
-		Response:    calculateResponse(handlerErr),
-		User:        calculateUser(ctx),
-		Trace:       calculateTrace(trace),
-	}
+	traceResp := &v1.AuthorizationTraceResponse{}
+	traceResp.SetArrivedAt(protoconv.ConvertMicroTSToProtobufTS(trace.arrivedAt.LoadAtomic()))
+	traceResp.SetProcessedAt(protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()))
+	traceResp.SetRequest(calculateRequest(ctx, rpcMethod))
+	traceResp.SetResponse(calculateResponse(handlerErr))
+	traceResp.SetUser(calculateUser(ctx))
+	traceResp.SetTrace(calculateTrace(trace))
 	authzTraceSink.PublishAuthzTrace(traceResp)
 }

@@ -248,8 +248,8 @@ func (ds *datastoreImpl) MarkAlertsResolvedBatch(ctx context.Context, ids ...str
 				return sac.ErrResourceAccessDenied
 			}
 
-			alert.State = storage.ViolationState_RESOLVED
-			alert.ResolvedAt = resolvedAt
+			alert.SetState(storage.ViolationState_RESOLVED)
+			alert.SetResolvedAt(resolvedAt)
 		}
 
 		return ds.updateAlertNoLock(ctx, resolvedAlerts...)
@@ -296,12 +296,12 @@ func sacKeyForAlert(alert *storage.Alert) []sac.ScopeKey {
 }
 
 func getNSScopedObjectFromAlert(alert *storage.Alert) sac.NamespaceScopedObject {
-	switch alert.GetEntity().(type) {
-	case *storage.Alert_Deployment_:
+	switch alert.WhichEntity() {
+	case storage.Alert_Deployment_case:
 		return alert.GetDeployment()
-	case *storage.Alert_Resource_:
+	case storage.Alert_Resource_case:
 		return alert.GetResource()
-	case *storage.Alert_Image:
+	case storage.Alert_Image_case:
 		return nil // This is theoretically possible even though image doesn't have a ns/cluster
 	default:
 		log.Errorf("UNEXPECTED: Alert Entity %s unknown", alert.GetEntity())
@@ -316,12 +316,12 @@ func (ds *datastoreImpl) updateAlertNoLock(ctx context.Context, alerts ...*stora
 
 	if features.PlatformComponents.Enabled() {
 		for _, alert := range alerts {
-			alert.EntityType = alertutils.GetEntityType(alert)
+			alert.SetEntityType(alertutils.GetEntityType(alert))
 			match, err := ds.platformMatcher.MatchAlert(alert)
 			if err != nil {
 				return err
 			}
-			alert.PlatformComponent = match
+			alert.SetPlatformComponent(match)
 		}
 	}
 
@@ -383,7 +383,7 @@ func applyDefaultState(q *v1.Query) *v1.Query {
 			searchCommon.ViolationState,
 			storage.ViolationState_ACTIVE.String(),
 			storage.ViolationState_ATTEMPTED.String()).ProtoQuery())
-		cq.Pagination = q.GetPagination()
+		cq.SetPagination(q.GetPagination())
 		return cq
 	}
 	return q
@@ -393,11 +393,11 @@ func applyDefaultState(q *v1.Query) *v1.Query {
 func convertAlert(alert *storage.ListAlert, result searchCommon.Result) *v1.SearchResult {
 	entityInfo := alert.GetCommonEntityInfo()
 	var entityName string
-	switch entity := alert.GetEntity().(type) {
-	case *storage.ListAlert_Resource:
-		entityName = entity.Resource.GetName()
-	case *storage.ListAlert_Deployment:
-		entityName = entity.Deployment.GetName()
+	switch alert.WhichEntity() {
+	case storage.ListAlert_Resource_case:
+		entityName = alert.GetResource().GetName()
+	case storage.ListAlert_Deployment_case:
+		entityName = alert.GetDeployment().GetName()
 	}
 	resourceTypeTitleCase := strings.Title(strings.ToLower(entityInfo.GetResourceType().String()))
 	var location string
@@ -408,12 +408,12 @@ func convertAlert(alert *storage.ListAlert, result searchCommon.Result) *v1.Sear
 		location = fmt.Sprintf("/%s/%s/%s",
 			entityInfo.GetClusterName(), resourceTypeTitleCase, entityName)
 	}
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_ALERTS,
-		Id:             alert.GetId(),
-		Name:           alert.GetPolicy().GetName(),
-		FieldToMatches: searchCommon.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-		Location:       location,
-	}
+	sr := &v1.SearchResult{}
+	sr.SetCategory(v1.SearchCategory_ALERTS)
+	sr.SetId(alert.GetId())
+	sr.SetName(alert.GetPolicy().GetName())
+	sr.SetFieldToMatches(searchCommon.GetProtoMatchesMap(result.Matches))
+	sr.SetScore(result.Score)
+	sr.SetLocation(location)
+	return sr
 }

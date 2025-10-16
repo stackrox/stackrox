@@ -81,12 +81,11 @@ func (s *PolicyDatastoreTestSuite) testImportFailResponse(expectedPolicy *storag
 }
 
 func (s *PolicyDatastoreTestSuite) TestImportPolicySucceeds() {
-	policy := &storage.Policy{
-		Name:       "policy-to-import",
-		Id:         "import-1",
-		SORTName:   "policy-to-import",
-		Categories: []string{"DevOps Best Practices"},
-	}
+	policy := &storage.Policy{}
+	policy.SetName("policy-to-import")
+	policy.SetId("import-1")
+	policy.SetSORTName("policy-to-import")
+	policy.SetCategories([]string{"DevOps Best Practices"})
 
 	s.clusterDatastore.EXPECT().GetClusters(s.hasReadWriteWorkflowAdministrationAccess).Return(nil, nil)
 	s.store.EXPECT().Get(s.hasReadWriteWorkflowAdministrationAccess, policy.GetId()).Return(nil, false, nil)
@@ -103,11 +102,10 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicySucceeds() {
 }
 
 func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateID() {
-	policy := &storage.Policy{
-		Name:     "test policy",
-		Id:       "test-policy-1",
-		SORTName: "test policy",
-	}
+	policy := &storage.Policy{}
+	policy.SetName("test policy")
+	policy.SetId("test-policy-1")
+	policy.SetSORTName("test policy")
 
 	errString := "policy with id \"test-policy-1\" already exists, unable to import policy"
 
@@ -130,11 +128,10 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateID() {
 
 func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateName() {
 	name := "test-duplicate-policy-name"
-	policy := &storage.Policy{
-		Name:     name,
-		Id:       "duplicate-1",
-		SORTName: name,
-	}
+	policy := &storage.Policy{}
+	policy.SetName(name)
+	policy.SetId("duplicate-1")
+	policy.SetSORTName(name)
 
 	errString := fmt.Sprintf("policy with id %q already exists, unable to import policy", policy.GetId())
 
@@ -144,11 +141,11 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateName() {
 
 	s.store.EXPECT().Walk(s.hasReadWriteWorkflowAdministrationAccess, gomock.Any()).DoAndReturn(
 		func(_ context.Context, fn func(obj *storage.Policy) error) error {
-			return fn(&storage.Policy{
-				Name:     name,
-				Id:       "some-other-id",
-				SORTName: name,
-			})
+			policy2 := &storage.Policy{}
+			policy2.SetName(name)
+			policy2.SetId("some-other-id")
+			policy2.SetSORTName(name)
+			return fn(policy2)
 		})
 	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWriteWorkflowAdministrationAccess, []*storage.Policy{policy.CloneVT()}, false)
 	s.NoError(err)
@@ -160,25 +157,22 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateName() {
 
 func (s *PolicyDatastoreTestSuite) TestImportPolicyMixedSuccessAndFailure() {
 	succeedName := "success"
-	policySucceed := &storage.Policy{
-		Name:       succeedName,
-		Id:         "Succeed ID",
-		SORTName:   succeedName,
-		Categories: []string{},
-	}
+	policySucceed := &storage.Policy{}
+	policySucceed.SetName(succeedName)
+	policySucceed.SetId("Succeed ID")
+	policySucceed.SetSORTName(succeedName)
+	policySucceed.SetCategories([]string{})
 	fail1Name := "fail 1 name"
-	policyFail1 := &storage.Policy{
-		Name:       fail1Name,
-		Id:         "Fail 1 ID",
-		SORTName:   fail1Name,
-		Categories: []string{},
-	}
-	policyFail2 := &storage.Policy{
-		Name:       "import failure name",
-		Id:         "Fail 2 ID",
-		SORTName:   "import failure name",
-		Categories: []string{},
-	}
+	policyFail1 := &storage.Policy{}
+	policyFail1.SetName(fail1Name)
+	policyFail1.SetId("Fail 1 ID")
+	policyFail1.SetSORTName(fail1Name)
+	policyFail1.SetCategories([]string{})
+	policyFail2 := &storage.Policy{}
+	policyFail2.SetName("import failure name")
+	policyFail2.SetId("Fail 2 ID")
+	policyFail2.SetSORTName("import failure name")
+	policyFail2.SetCategories([]string{})
 
 	errString := "some error string"
 	errorFail1 := &PolicyStoreErrorList{
@@ -225,12 +219,11 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyMixedSuccessAndFailure() {
 
 func (s *PolicyDatastoreTestSuite) TestUnknownError() {
 	name := "unknown-error"
-	policy := &storage.Policy{
-		Name:       name,
-		Id:         "unknown-error-id",
-		SORTName:   name,
-		Categories: []string{},
-	}
+	policy := &storage.Policy{}
+	policy.SetName(name)
+	policy.SetId("unknown-error-id")
+	policy.SetSORTName(name)
+	policy.SetCategories([]string{})
 
 	errString := "this is not a structured error type"
 	storeError := errors.New(errString)
@@ -249,27 +242,23 @@ func (s *PolicyDatastoreTestSuite) TestUnknownError() {
 
 func (s *PolicyDatastoreTestSuite) TestImportOverwrite() {
 	id1 := "ID1"
-	policy1 := &storage.Policy{
-		Name:     "new name 1",
-		Id:       id1,
-		SORTName: "new name 1",
-	}
+	policy1 := &storage.Policy{}
+	policy1.SetName("new name 1")
+	policy1.SetId(id1)
+	policy1.SetSORTName("new name 1")
 	policy2Name := "a very good name"
-	policy2 := &storage.Policy{
-		Name:     policy2Name,
-		Id:       "new ID 2",
-		SORTName: policy2Name,
-	}
+	policy2 := &storage.Policy{}
+	policy2.SetName(policy2Name)
+	policy2.SetId("new ID 2")
+	policy2.SetSORTName(policy2Name)
 	// Same ID as policy1, unique name
-	existingPolicy1 := &storage.Policy{
-		Name: "existing name 1",
-		Id:   id1,
-	}
+	existingPolicy1 := &storage.Policy{}
+	existingPolicy1.SetName("existing name 1")
+	existingPolicy1.SetId(id1)
 	// Unique ID, same name as policy 2
-	existingPolicy2 := &storage.Policy{
-		Name: policy2Name,
-		Id:   "existing ID 2",
-	}
+	existingPolicy2 := &storage.Policy{}
+	existingPolicy2.SetName(policy2Name)
+	existingPolicy2.SetId("existing ID 2")
 
 	s.clusterDatastore.EXPECT().GetClusters(s.hasReadWriteWorkflowAdministrationAccess).Return(nil, nil)
 
@@ -308,32 +297,31 @@ func (s *PolicyDatastoreTestSuite) TestImportOverwrite() {
 func (s *PolicyDatastoreTestSuite) TestRemoveScopesAndNotifiers() {
 	clusterName := "test"
 	notifierName := "test"
-	policy := &storage.Policy{
+	policy := storage.Policy_builder{
 		Name:     "Boo's policy",
 		Id:       "policy-boo",
 		SORTName: "Boo's policy",
 		Scope: []*storage.Scope{
-			{
+			storage.Scope_builder{
 				Cluster: clusterName,
-			},
+			}.Build(),
 		},
 		Exclusions: []*storage.Exclusion{
-			{
-				Deployment: &storage.Exclusion_Deployment{
-					Scope: &storage.Scope{
+			storage.Exclusion_builder{
+				Deployment: storage.Exclusion_Deployment_builder{
+					Scope: storage.Scope_builder{
 						Cluster: clusterName,
-					},
-				},
-			},
+					}.Build(),
+				}.Build(),
+			}.Build(),
 		},
 		Notifiers: []string{notifierName},
-	}
+	}.Build()
 
-	resultPolicy := &storage.Policy{
-		Name:     "Boo's policy",
-		Id:       "policy-boo",
-		SORTName: "Boo's policy",
-	}
+	resultPolicy := &storage.Policy{}
+	resultPolicy.SetName("Boo's policy")
+	resultPolicy.SetId("policy-boo")
+	resultPolicy.SetSORTName("Boo's policy")
 
 	s.clusterDatastore.EXPECT().GetClusters(s.hasReadWriteWorkflowAdministrationAccess).Return(nil, nil)
 	s.notifierDatastore.EXPECT().GetNotifier(s.hasReadWriteWorkflowAdministrationAccess, notifierName).Return(nil, false, nil)
@@ -359,32 +347,32 @@ func (s *PolicyDatastoreTestSuite) TestRemoveScopesAndNotifiers() {
 func (s *PolicyDatastoreTestSuite) TestDoesNotRemoveScopesAndNotifiers() {
 	clusterID := "test"
 	notifierName := "test"
-	policy := &storage.Policy{
+	policy := storage.Policy_builder{
 		Name:     "Some Name",
 		Id:       "Some ID",
 		SORTName: "Some Name",
 		Scope: []*storage.Scope{
-			{
+			storage.Scope_builder{
 				Cluster: clusterID,
-			},
+			}.Build(),
 		},
 		Exclusions: []*storage.Exclusion{
-			{
-				Deployment: &storage.Exclusion_Deployment{
-					Scope: &storage.Scope{
+			storage.Exclusion_builder{
+				Deployment: storage.Exclusion_Deployment_builder{
+					Scope: storage.Scope_builder{
 						Cluster: clusterID,
-					},
-				},
-			},
+					}.Build(),
+				}.Build(),
+			}.Build(),
 		},
 		Notifiers:  []string{notifierName},
 		Categories: []string{"DevOps Best Practices"},
-	}
+	}.Build()
 
+	cluster := &storage.Cluster{}
+	cluster.SetId(clusterID)
 	mockClusters := []*storage.Cluster{
-		{
-			Id: clusterID,
-		},
+		cluster,
 	}
 	s.clusterDatastore.EXPECT().GetClusters(s.hasReadWriteWorkflowAdministrationAccess).Return(mockClusters, nil)
 	s.notifierDatastore.EXPECT().GetNotifier(s.hasReadWriteWorkflowAdministrationAccess, notifierName).Return(nil, true, nil)
@@ -408,7 +396,7 @@ func (s *PolicyDatastoreTestSuite) TestDoesNotRemoveScopesAndNotifiers() {
 func eq(expected *storage.Policy) gomock.Matcher {
 	return gomock.Cond(func(actual *storage.Policy) bool {
 		e := expected.CloneVT()
-		e.Categories = nil
+		e.SetCategories(nil)
 		return e.EqualVT(actual)
 	})
 }

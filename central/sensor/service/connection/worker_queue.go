@@ -80,7 +80,7 @@ func (w *workerQueue) runWorker(ctx context.Context, idx int, stopSig *concurren
 		if err != nil {
 			if !errors.Is(err, context.Canceled) {
 				if pgutils.IsTransientError(err) {
-					msgFromSensor.ProcessingAttempt++
+					msgFromSensor.SetProcessingAttempt(msgFromSensor.GetProcessingAttempt() + 1)
 
 					if msgFromSensor.GetProcessingAttempt() == maxHandlerAttempts {
 						log.Errorf("Error handling sensor message %T permanently: %v", msgFromSensor.GetEvent().GetResource(), err)

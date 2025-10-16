@@ -9,14 +9,14 @@ import (
 
 // ToNodeInventory converts a NodeInventory response to a native storage.NodeInventory version
 func ToNodeInventory(resp *scannerV1.GetNodeInventoryResponse) *storage.NodeInventory {
-	return &storage.NodeInventory{
-		// NodeId is only available to Sensor. Until it arrives there, we add a placeholder
-		NodeId:     uuid.Nil.String(),
-		NodeName:   resp.GetNodeName(),
-		ScanTime:   protocompat.TimestampNow(),
-		Components: toStorageComponents(resp.GetComponents()),
-		Notes:      convertNotes(resp.GetNotes()),
-	}
+	ni := &storage.NodeInventory{}
+	// NodeId is only available to Sensor. Until it arrives there, we add a placeholder
+	ni.SetNodeId(uuid.Nil.String())
+	ni.SetNodeName(resp.GetNodeName())
+	ni.SetScanTime(protocompat.TimestampNow())
+	ni.SetComponents(toStorageComponents(resp.GetComponents()))
+	ni.SetNotes(convertNotes(resp.GetNotes()))
+	return ni
 }
 
 func toStorageComponents(c *scannerV1.Components) *storage.NodeInventory_Components {
@@ -24,11 +24,11 @@ func toStorageComponents(c *scannerV1.Components) *storage.NodeInventory_Compone
 		return nil
 	}
 
-	return &storage.NodeInventory_Components{
-		Namespace:       c.GetNamespace(),
-		RhelComponents:  convertRHELComponents(c.GetRhelComponents()),
-		RhelContentSets: c.GetRhelContentSets(),
-	}
+	nc := &storage.NodeInventory_Components{}
+	nc.SetNamespace(c.GetNamespace())
+	nc.SetRhelComponents(convertRHELComponents(c.GetRhelComponents()))
+	nc.SetRhelContentSets(c.GetRhelContentSets())
+	return nc
 }
 
 func convertRHELComponents(rhelComponents []*scannerV1.RHELComponent) []*storage.NodeInventory_Components_RHELComponent {
@@ -37,16 +37,15 @@ func convertRHELComponents(rhelComponents []*scannerV1.RHELComponent) []*storage
 	}
 	convertedComponents := make([]*storage.NodeInventory_Components_RHELComponent, 0, len(rhelComponents))
 	for _, c := range rhelComponents {
-		sc := storage.NodeInventory_Components_RHELComponent{
-			Id:          c.GetId(),
-			Name:        c.GetName(),
-			Namespace:   c.GetNamespace(),
-			Version:     c.GetVersion(),
-			Arch:        c.GetArch(),
-			Module:      c.GetModule(),
-			AddedBy:     c.GetAddedBy(),
-			Executables: convertExecutables(c.GetExecutables()),
-		}
+		sc := &storage.NodeInventory_Components_RHELComponent{}
+		sc.SetId(c.GetId())
+		sc.SetName(c.GetName())
+		sc.SetNamespace(c.GetNamespace())
+		sc.SetVersion(c.GetVersion())
+		sc.SetArch(c.GetArch())
+		sc.SetModule(c.GetModule())
+		sc.SetAddedBy(c.GetAddedBy())
+		sc.SetExecutables(convertExecutables(c.GetExecutables()))
 		convertedComponents = append(convertedComponents, &sc)
 	}
 	return convertedComponents
@@ -58,10 +57,10 @@ func convertExecutables(executables []*scannerV1.Executable) []*storage.NodeInve
 	}
 	convertedExecutables := make([]*storage.NodeInventory_Components_RHELComponent_Executable, 0, len(executables))
 	for _, e := range executables {
-		convertedExecutables = append(convertedExecutables, &storage.NodeInventory_Components_RHELComponent_Executable{
-			Path:             e.GetPath(),
-			RequiredFeatures: convertRequiredFeatures(e.GetRequiredFeatures()),
-		})
+		ncre := &storage.NodeInventory_Components_RHELComponent_Executable{}
+		ncre.SetPath(e.GetPath())
+		ncre.SetRequiredFeatures(convertRequiredFeatures(e.GetRequiredFeatures()))
+		convertedExecutables = append(convertedExecutables, ncre)
 	}
 	return convertedExecutables
 }
@@ -72,10 +71,10 @@ func convertRequiredFeatures(features []*scannerV1.FeatureNameVersion) []*storag
 	}
 	convertedFeatures := make([]*storage.NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion, 0, len(features))
 	for _, f := range features {
-		convertedFeatures = append(convertedFeatures, &storage.NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion{
-			Name:    f.GetName(),
-			Version: f.GetVersion(),
-		})
+		ncref := &storage.NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion{}
+		ncref.SetName(f.GetName())
+		ncref.SetVersion(f.GetVersion())
+		convertedFeatures = append(convertedFeatures, ncref)
 	}
 	return convertedFeatures
 }

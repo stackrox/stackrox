@@ -62,9 +62,9 @@ func (s *serviceImpl) GetServiceIdentities(ctx context.Context, _ *v1.Empty) (*v
 	if err != nil {
 		return nil, err
 	}
-	return &v1.ServiceIdentityResponse{
-		Identities: serviceIdentities,
-	}, nil
+	sir := &v1.ServiceIdentityResponse{}
+	sir.SetIdentities(serviceIdentities)
+	return sir, nil
 }
 
 // CreateServiceIdentity generates a new key and certificate for a service.
@@ -88,11 +88,15 @@ func (s *serviceImpl) CreateServiceIdentity(ctx context.Context, request *v1.Cre
 		return nil, err
 	}
 
-	return &v1.CreateServiceIdentityResponse{
-		Identity:       issuedCert.ID,
-		CertificatePem: issuedCert.CertPEM,
-		PrivateKeyPem:  issuedCert.KeyPEM,
-	}, nil
+	csir := &v1.CreateServiceIdentityResponse{}
+	csir.SetIdentity(issuedCert.ID)
+	if issuedCert.CertPEM != nil {
+		csir.SetCertificatePem(issuedCert.CertPEM)
+	}
+	if issuedCert.KeyPEM != nil {
+		csir.SetPrivateKeyPem(issuedCert.KeyPEM)
+	}
+	return csir, nil
 }
 
 // GetAuthorities returns the authorities currently in use.
@@ -101,11 +105,13 @@ func (s *serviceImpl) GetAuthorities(_ context.Context, _ *v1.Empty) (*v1.Author
 	if err != nil {
 		return nil, err
 	}
-	return &v1.Authorities{
-		Authorities: []*v1.Authority{
-			{
-				CertificatePem: ca,
-			},
-		},
-	}, nil
+	authority := &v1.Authority{}
+	if ca != nil {
+		authority.SetCertificatePem(ca)
+	}
+	authorit := &v1.Authorities{}
+	authorit.SetAuthorities([]*v1.Authority{
+		authority,
+	})
+	return authorit, nil
 }

@@ -66,10 +66,10 @@ type responseStatusRef struct {
 }
 
 func (u *userRef) ToKubernetesEventUser() *storage.KubernetesEvent_User {
-	return &storage.KubernetesEvent_User{
-		Username: u.Username,
-		Groups:   u.Groups,
-	}
+	ku := &storage.KubernetesEvent_User{}
+	ku.SetUsername(u.Username)
+	ku.SetGroups(u.Groups)
+	return ku
 }
 
 func (e *auditEvent) ToKubernetesEvent(clusterID string) *storage.KubernetesEvent {
@@ -103,28 +103,27 @@ func (e *auditEvent) ToKubernetesEvent(clusterID string) *storage.KubernetesEven
 		resource = storage.KubernetesEvent_Object_UNKNOWN
 	}
 
-	k8sEvent := &storage.KubernetesEvent{
-		Id: e.AuditID,
-		Object: &storage.KubernetesEvent_Object{
-			Name:      e.ObjectRef.Name,
-			Resource:  resource,
-			ClusterId: clusterID,
-			Namespace: e.ObjectRef.Namespace,
-		},
-		Timestamp: protoTime,
-		ApiVerb:   storage.KubernetesEvent_APIVerb(storage.KubernetesEvent_APIVerb_value[strings.ToUpper(e.Verb)]),
-		User:      e.User.ToKubernetesEventUser(),
-		SourceIps: e.SourceIPs,
-		UserAgent: e.UserAgent,
-		ResponseStatus: &storage.KubernetesEvent_ResponseStatus{
-			StatusCode: e.ResponseStatus.Code,
-			Reason:     reason,
-		},
-		RequestUri: e.RequestURI,
-	}
+	ko := &storage.KubernetesEvent_Object{}
+	ko.SetName(e.ObjectRef.Name)
+	ko.SetResource(resource)
+	ko.SetClusterId(clusterID)
+	ko.SetNamespace(e.ObjectRef.Namespace)
+	kr := &storage.KubernetesEvent_ResponseStatus{}
+	kr.SetStatusCode(e.ResponseStatus.Code)
+	kr.SetReason(reason)
+	k8sEvent := &storage.KubernetesEvent{}
+	k8sEvent.SetId(e.AuditID)
+	k8sEvent.SetObject(ko)
+	k8sEvent.SetTimestamp(protoTime)
+	k8sEvent.SetApiVerb(storage.KubernetesEvent_APIVerb(storage.KubernetesEvent_APIVerb_value[strings.ToUpper(e.Verb)]))
+	k8sEvent.SetUser(e.User.ToKubernetesEventUser())
+	k8sEvent.SetSourceIps(e.SourceIPs)
+	k8sEvent.SetUserAgent(e.UserAgent)
+	k8sEvent.SetResponseStatus(kr)
+	k8sEvent.SetRequestUri(e.RequestURI)
 
 	if e.ImpersonatedUser != nil {
-		k8sEvent.ImpersonatedUser = e.ImpersonatedUser.ToKubernetesEventUser()
+		k8sEvent.SetImpersonatedUser(e.ImpersonatedUser.ToKubernetesEventUser())
 	}
 
 	return k8sEvent

@@ -94,9 +94,9 @@ func (p *providerImpl) StorageView() *storage.AuthProvider {
 		result = &storage.AuthProvider{}
 	}
 	if p.backendFactory != nil {
-		result.Config = p.backendFactory.RedactConfig(result.GetConfig())
+		result.SetConfig(p.backendFactory.RedactConfig(result.GetConfig()))
 	} else {
-		result.Config = nil
+		result.SetConfig(nil)
 	}
 	return result
 }

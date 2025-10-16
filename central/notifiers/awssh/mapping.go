@@ -125,11 +125,11 @@ func mapAlertToFinding(account string, arn string, alertURL string, alert *stora
 }
 
 func getEntitySection(alert *storage.Alert) []securityhubTypes.Resource {
-	switch entity := alert.GetEntity().(type) {
-	case *storage.Alert_Deployment_:
-		return getDeploymentSection(entity.Deployment)
-	case *storage.Alert_Resource_:
-		return getResourceSection(entity.Resource)
+	switch alert.WhichEntity() {
+	case storage.Alert_Deployment_case:
+		return getDeploymentSection(alert.GetDeployment())
+	case storage.Alert_Resource_case:
+		return getResourceSection(alert.GetResource())
 	}
 	return nil
 }

@@ -62,7 +62,7 @@ func (u *permissionSetUpdater) DeleteResources(ctx context.Context, resourceIDsT
 				log.Errorf("Failed to update the declarative config health status %q: %v", permissionSet.GetId(), err)
 			}
 			if errors.Is(err, errox.ReferencedByAnotherObject) {
-				permissionSet.Traits.Origin = storage.Traits_DECLARATIVE_ORPHANED
+				permissionSet.GetTraits().SetOrigin(storage.Traits_DECLARATIVE_ORPHANED)
 				if err = u.roleDS.UpsertPermissionSet(ctx, permissionSet); err != nil {
 					permissionSetDeletionErr = multierror.Append(permissionSetDeletionErr, errors.Wrap(err, "setting origin to orphaned"))
 				}

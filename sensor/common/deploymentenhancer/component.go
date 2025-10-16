@@ -119,16 +119,14 @@ func (d *DeploymentEnhancer) enhanceDeployments(deploymentMsg *central.Deploymen
 }
 
 func (d *DeploymentEnhancer) sendDeploymentsToCentral(id string, deployments []*storage.Deployment) {
-	d.responsesC <- message.New(&central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_DeploymentEnhancementResponse{
-			DeploymentEnhancementResponse: &central.DeploymentEnhancementResponse{
-				Msg: &central.DeploymentEnhancementMessage{
-					Id:          id,
-					Deployments: deployments,
-				},
-			},
-		},
-	})
+	d.responsesC <- message.New(central.MsgFromSensor_builder{
+		DeploymentEnhancementResponse: central.DeploymentEnhancementResponse_builder{
+			Msg: central.DeploymentEnhancementMessage_builder{
+				Id:          id,
+				Deployments: deployments,
+			}.Build(),
+		}.Build(),
+	}.Build())
 }
 
 func (d *DeploymentEnhancer) enhanceDeployment(deployment *storage.Deployment) {

@@ -8,28 +8,28 @@ import (
 
 // GetTestSingleKeyStruct returns filled TestSingleKeyStruct
 func GetTestSingleKeyStruct() *storage.TestSingleKeyStruct {
-	return &storage.TestSingleKeyStruct{
-		Key:  uuid.NewDummy().String(),
-		Name: "name",
-		StringSlice: []string{
-			"slice1", "slice2",
-		},
-		Bool:   true,
-		Uint64: 16,
-		Int64:  32,
-		Float:  4.56,
-		Labels: map[string]string{
-			"key1": "value1",
-			"key2": "value2",
-		},
-		Timestamp: protocompat.GetProtoTimestampFromSecondsAndNanos(
-			1645640515,
-			0),
+	tsks := &storage.TestSingleKeyStruct{}
+	tsks.SetKey(uuid.NewDummy().String())
+	tsks.SetName("name")
+	tsks.SetStringSlice([]string{
+		"slice1", "slice2",
+	})
+	tsks.SetBool(true)
+	tsks.SetUint64(16)
+	tsks.SetInt64(32)
+	tsks.SetFloat(4.56)
+	tsks.SetLabels(map[string]string{
+		"key1": "value1",
+		"key2": "value2",
+	})
+	tsks.SetTimestamp(protocompat.GetProtoTimestampFromSecondsAndNanos(
+		1645640515,
+		0))
 
-		Enum: storage.TestSingleKeyStruct_ENUM1,
-		Enums: []storage.TestSingleKeyStruct_Enum{
-			storage.TestSingleKeyStruct_ENUM1,
-			storage.TestSingleKeyStruct_ENUM2,
-		},
-	}
+	tsks.SetEnum(storage.TestSingleKeyStruct_ENUM1)
+	tsks.SetEnums([]storage.TestSingleKeyStruct_Enum{
+		storage.TestSingleKeyStruct_ENUM1,
+		storage.TestSingleKeyStruct_ENUM2,
+	})
+	return tsks
 }

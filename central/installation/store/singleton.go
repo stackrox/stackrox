@@ -31,10 +31,9 @@ func createInitial() {
 	if exists {
 		return
 	}
-	info := &storage.InstallationInfo{
-		Id:      uuid.NewV4().String(),
-		Created: protocompat.TimestampNow(),
-	}
+	info := &storage.InstallationInfo{}
+	info.SetId(uuid.NewV4().String())
+	info.SetCreated(protocompat.TimestampNow())
 	err = storeSingleton.Upsert(ctx, info)
 	if err != nil {
 		panic(err)

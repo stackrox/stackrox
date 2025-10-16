@@ -10,11 +10,12 @@ import (
 )
 
 func TestCloudSourceSecretScrub(t *testing.T) {
-	storageCloudSource := &storage.CloudSource{
-		Credentials: &storage.CloudSource_Credentials{
-			Secret: "", ClientId: "id", ClientSecret: "secret",
-		},
-	}
+	cc := &storage.CloudSource_Credentials{}
+	cc.SetSecret("")
+	cc.SetClientId("id")
+	cc.SetClientSecret("secret")
+	storageCloudSource := &storage.CloudSource{}
+	storageCloudSource.SetCredentials(cc)
 	v1CloudSource := CloudSource(storageCloudSource)
 	require.NotNil(t, v1CloudSource)
 

@@ -86,13 +86,12 @@ func TestCodec(t *testing.T) {
 
 	// create a small message that will be below (<=)
 	// buffer pooling threshold
-	request := v1.SuppressCVERequest{
-		Cves: []string{"ABC", "XYZ"},
-		Duration: &durationpb.Duration{
-			Seconds: 100,
-			Nanos:   0,
-		},
-	}
+	request := &v1.SuppressCVERequest{}
+	request.SetCves([]string{"ABC", "XYZ"})
+	request.SetDuration(&durationpb.Duration{
+		Seconds: 100,
+		Nanos:   0,
+	})
 
 	_, err := svc.SuppressCVEs(context.Background(), &request)
 	assert.Error(t, err)
@@ -100,7 +99,7 @@ func TestCodec(t *testing.T) {
 	// create a big message that will be above (>)
 	// buffer pooling threshold
 	for i := 0; i < 1<<10; i++ {
-		request.Cves = append(request.Cves, fmt.Sprintf("CVE-%d", i))
+		request.SetCves(append(request.GetCves(), fmt.Sprintf("CVE-%d", i)))
 	}
 	_, err = svc.SuppressCVEs(context.Background(), &request)
 	assert.Error(t, err)
@@ -109,13 +108,12 @@ func TestCodec(t *testing.T) {
 func BenchmarkProtoUnmarshal(b *testing.B) {
 	svc := getClientForServer(b)
 
-	request := v1.SuppressCVERequest{
-		Cves: []string{"ABC", "XYZ"},
-		Duration: &durationpb.Duration{
-			Seconds: 100,
-			Nanos:   0,
-		},
-	}
+	request := &v1.SuppressCVERequest{}
+	request.SetCves([]string{"ABC", "XYZ"})
+	request.SetDuration(&durationpb.Duration{
+		Seconds: 100,
+		Nanos:   0,
+	})
 
 	_, err := svc.SuppressCVEs(context.Background(), &request)
 	require.EqualError(b, err, "rpc error: code = Canceled desc = ABC, XYZ, 1m40s")
@@ -129,7 +127,7 @@ func BenchmarkProtoUnmarshal(b *testing.B) {
 
 	b.Run("big", func(b *testing.B) {
 		for i := 0; i < 1<<10; i++ {
-			request.Cves = append(request.Cves, fmt.Sprintf("CVE-%d", i))
+			request.SetCves(append(request.GetCves(), fmt.Sprintf("CVE-%d", i)))
 		}
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {

@@ -18,9 +18,9 @@ import (
 type mockNodeIndexer struct{}
 
 func (m mockNodeIndexer) IndexNode(_ context.Context) (*v4.IndexReport, error) {
-	return &v4.IndexReport{
-		HashId: "mockIndexerTestReport",
-	}, nil
+	ir := &v4.IndexReport{}
+	ir.SetHashId("mockIndexerTestReport")
+	return ir, nil
 }
 
 func (m mockNodeIndexer) GetIntervals() *utils.NodeScanIntervals {
@@ -53,33 +53,33 @@ func (s *TestCachingIndexerSuite) TestCachedIndexNode() {
 		"cached index should be returned on success": {
 			cachedWrap: &reportWrap{
 				CacheValidUntil: time.Now().Add(1 * time.Minute),
-				Report:          &v4.IndexReport{HashId: "cached"},
+				Report:          v4.IndexReport_builder{HashId: "cached"}.Build(),
 			},
-			expectedIndex: &v4.IndexReport{HashId: "cached"},
+			expectedIndex: v4.IndexReport_builder{HashId: "cached"}.Build(),
 		},
 		"fresh index is generated if cached report is too old": {
 			cachedWrap: &reportWrap{
 				CacheValidUntil: time.Now().Add(-10 * time.Hour),
-				Report:          &v4.IndexReport{HashId: "cached"},
+				Report:          v4.IndexReport_builder{HashId: "cached"}.Build(),
 			},
-			expectedIndex: &v4.IndexReport{
+			expectedIndex: v4.IndexReport_builder{
 				HashId: "mockIndexerTestReport",
-			},
+			}.Build(),
 		},
 		"fresh index is generated if cached report is broken": {
 			cachedWrap: &reportWrap{
 				CacheValidUntil: time.Now().Add(1 * time.Minute),
 				Report:          nil,
 			},
-			expectedIndex: &v4.IndexReport{
+			expectedIndex: v4.IndexReport_builder{
 				HashId: "mockIndexerTestReport",
-			},
+			}.Build(),
 		},
 		"fresh index is generated if no cache exists": {
 			cachedWrap: nil,
-			expectedIndex: &v4.IndexReport{
+			expectedIndex: v4.IndexReport_builder{
 				HashId: "mockIndexerTestReport",
-			},
+			}.Build(),
 		},
 	}
 	for name, c := range cases {
@@ -125,7 +125,8 @@ func (s *TestCachingIndexerSuite) TestCachedIndexNodeIllegalJSON() {
 	actual, err := ci.IndexNode(context.TODO())
 
 	s.NoError(err)
-	expected := &v4.IndexReport{HashId: "mockIndexerTestReport"}
+	expected := &v4.IndexReport{}
+	expected.SetHashId("mockIndexerTestReport")
 	protoassert.Equal(s.T(), expected, actual)
 }
 
@@ -138,7 +139,8 @@ func (s *TestCachingIndexerSuite) TestIllegalPathReturnsReport() {
 
 	s.NoError(err)
 	s.NoFileExists(path)
-	expected := &v4.IndexReport{HashId: "mockIndexerTestReport"}
+	expected := &v4.IndexReport{}
+	expected.SetHashId("mockIndexerTestReport")
 	protoassert.Equal(s.T(), expected, actual)
 }
 

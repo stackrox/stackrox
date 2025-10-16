@@ -25,11 +25,11 @@ func TransformFixableFieldsQuery(q *v1.Query) *v1.Query {
 	// Local copy to avoid changing input.
 	local := q.CloneVT()
 	pagination := local.GetPagination()
-	local.Pagination = nil
+	local.ClearPagination()
 
 	handleFixableQuery(local)
 
-	local.Pagination = pagination
+	local.SetPagination(pagination)
 	return local
 }
 
@@ -45,11 +45,11 @@ func handleFixableQuery(q *v1.Query) {
 		}
 
 		if matchFieldQuery.MatchFieldQuery.GetField() == search.FixedBy.String() {
-			matchFieldQuery.MatchFieldQuery.Field = search.ClusterCVEFixedBy.String()
+			matchFieldQuery.MatchFieldQuery.SetField(search.ClusterCVEFixedBy.String())
 		}
 
 		if matchFieldQuery.MatchFieldQuery.GetField() == search.Fixable.String() {
-			matchFieldQuery.MatchFieldQuery.Field = search.ClusterCVEFixable.String()
+			matchFieldQuery.MatchFieldQuery.SetField(search.ClusterCVEFixable.String())
 		}
 	})
 }
@@ -59,17 +59,17 @@ func getCVEEdgeQuery(q *v1.Query) {
 		return
 	}
 
-	switch typedQ := q.GetQuery().(type) {
-	case *v1.Query_Disjunction:
-		for _, subQ := range typedQ.Disjunction.GetQueries() {
+	switch q.WhichQuery() {
+	case v1.Query_Disjunction_case:
+		for _, subQ := range q.GetDisjunction().GetQueries() {
 			getCVEEdgeQuery(subQ)
 		}
-	case *v1.Query_Conjunction:
-		for _, subQ := range typedQ.Conjunction.GetQueries() {
+	case v1.Query_Conjunction_case:
+		for _, subQ := range q.GetConjunction().GetQueries() {
 			getCVEEdgeQuery(subQ)
 		}
-	case *v1.Query_BaseQuery:
-		matchFieldQuery, ok := typedQ.BaseQuery.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+	case v1.Query_BaseQuery_case:
+		matchFieldQuery, ok := q.GetBaseQuery().GetQuery().(*v1.BaseQuery_MatchFieldQuery)
 		if !ok {
 			return
 		}

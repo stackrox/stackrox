@@ -71,12 +71,12 @@ func (h httpHandler) saveAsCustomResources(ctx context.Context, request *apipara
 	errDetails := &v1.PolicyOperationErrorList{}
 	for _, missingIndex := range missingIndices {
 		policyID := request.IDs[missingIndex]
-		errDetails.Errors = append(errDetails.Errors, &v1.PolicyOperationError{
-			PolicyId: policyID,
-			Error: &v1.PolicyError{
-				Error: "not found",
-			},
-		})
+		pe := &v1.PolicyError{}
+		pe.SetError("not found")
+		poe := &v1.PolicyOperationError{}
+		poe.SetPolicyId(policyID)
+		poe.SetError(pe)
+		errDetails.SetErrors(append(errDetails.GetErrors(), poe))
 		log.Errorf("A policy error occurred for id %s: not found", policyID)
 	}
 	if len(errDetails.GetErrors()) > 0 {
@@ -134,12 +134,12 @@ func (h httpHandler) saveAsCustomResources(ctx context.Context, request *apipara
 		}
 		err = customresource.WriteCustomResource(crWriter, cr)
 		if err != nil {
-			errDetails.Errors = append(errDetails.Errors, &v1.PolicyOperationError{
-				PolicyId: policy.GetId(),
-				Error: &v1.PolicyError{
-					Error: errors.Wrap(err, "Failed to marshal policy to custom resource").Error(),
-				},
-			})
+			pe := &v1.PolicyError{}
+			pe.SetError(errors.Wrap(err, "Failed to marshal policy to custom resource").Error())
+			poe := &v1.PolicyOperationError{}
+			poe.SetPolicyId(policy.GetId())
+			poe.SetError(pe)
+			errDetails.SetErrors(append(errDetails.GetErrors(), poe))
 		}
 	}
 	if len(errDetails.GetErrors()) > 0 {

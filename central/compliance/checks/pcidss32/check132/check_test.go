@@ -47,11 +47,11 @@ func (s *suiteImpl) TestHostNetwork() {
 	tc.networkPolicies = s.networkPolicies()
 
 	// host network enabled (should fail)
+	deployment := &storage.Deployment{}
+	deployment.SetId(uuid.NewV4().String())
+	deployment.SetHostNetwork(true)
 	tc.deployments = []*storage.Deployment{
-		{
-			Id:          uuid.NewV4().String(),
-			HostNetwork: true,
-		},
+		deployment,
 	}
 
 	// ingress and egress networkpolicies enabled
@@ -70,10 +70,10 @@ func (s *suiteImpl) TestEgress() {
 	tc.nodes = s.nodes()
 	tc.networkPolicies = s.networkPolicies()
 
+	deployment := &storage.Deployment{}
+	deployment.SetId(uuid.NewV4().String())
 	tc.deployments = []*storage.Deployment{
-		{
-			Id: uuid.NewV4().String(),
-		},
+		deployment,
 	}
 
 	// only egress networkpolicies enabled
@@ -92,10 +92,10 @@ func (s *suiteImpl) TestIngress() {
 	tc.nodes = s.nodes()
 	tc.networkPolicies = s.networkPolicies()
 
+	deployment := &storage.Deployment{}
+	deployment.SetId(uuid.NewV4().String())
 	tc.deployments = []*storage.Deployment{
-		{
-			Id: uuid.NewV4().String(),
-		},
+		deployment,
 	}
 
 	// only ingress networkpolicies enabled
@@ -114,12 +114,12 @@ func (s *suiteImpl) TestKubeSystem() {
 	tc.nodes = s.nodes()
 	tc.networkPolicies = s.networkPolicies()
 
+	deployment := &storage.Deployment{}
+	deployment.SetId(uuid.NewV4().String())
+	deployment.SetHostNetwork(true)
+	deployment.SetNamespace("kube-system")
 	tc.deployments = []*storage.Deployment{
-		{
-			Id:          uuid.NewV4().String(),
-			HostNetwork: true,
-			Namespace:   "kube-system",
-		},
+		deployment,
 	}
 
 	tc.deploymentsToNetworkPolicies = map[string][]*storage.NetworkPolicy{
@@ -138,13 +138,13 @@ func (s *suiteImpl) TestPass() {
 	tc.networkPolicies = s.networkPolicies()
 	tc.expectedStatus = framework.PassStatus
 
+	deployment := &storage.Deployment{}
+	deployment.SetId(uuid.NewV4().String())
+	deployment2 := &storage.Deployment{}
+	deployment2.SetId(uuid.NewV4().String())
 	tc.deployments = []*storage.Deployment{
-		{
-			Id: uuid.NewV4().String(),
-		},
-		{
-			Id: uuid.NewV4().String(),
-		},
+		deployment,
+		deployment2,
 	}
 
 	tc.deploymentsToNetworkPolicies = map[string][]*storage.NetworkPolicy{
@@ -192,45 +192,45 @@ func (s *suiteImpl) checkTestCase(tc *testCase) {
 }
 
 func (s *suiteImpl) cluster() *storage.Cluster {
-	return &storage.Cluster{
-		Id: uuid.NewV4().String(),
-	}
+	cluster := &storage.Cluster{}
+	cluster.SetId(uuid.NewV4().String())
+	return cluster
 }
 
 func (s *suiteImpl) networkPolicies() []*storage.NetworkPolicy {
 	return []*storage.NetworkPolicy{
-		{
+		storage.NetworkPolicy_builder{
 			Id: uuid.NewV4().String(),
-			Spec: &storage.NetworkPolicySpec{
+			Spec: storage.NetworkPolicySpec_builder{
 				PolicyTypes: []storage.NetworkPolicyType{
 					storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE,
 				},
 				Ingress: []*storage.NetworkPolicyIngressRule{
 					{},
 				},
-			},
-		},
-		{
+			}.Build(),
+		}.Build(),
+		storage.NetworkPolicy_builder{
 			Id: uuid.NewV4().String(),
-			Spec: &storage.NetworkPolicySpec{
+			Spec: storage.NetworkPolicySpec_builder{
 				PolicyTypes: []storage.NetworkPolicyType{
 					storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE,
 				},
 				Egress: []*storage.NetworkPolicyEgressRule{
 					{},
 				},
-			},
-		},
+			}.Build(),
+		}.Build(),
 	}
 }
 
 func (s *suiteImpl) nodes() []*storage.Node {
+	node := &storage.Node{}
+	node.SetId(uuid.NewV4().String())
+	node2 := &storage.Node{}
+	node2.SetId(uuid.NewV4().String())
 	return []*storage.Node{
-		{
-			Id: uuid.NewV4().String(),
-		},
-		{
-			Id: uuid.NewV4().String(),
-		},
+		node,
+		node2,
 	}
 }

@@ -10,11 +10,11 @@ func TransformCategoryNameFieldsQuery(q *v1.Query) *v1.Query {
 	// Local copy to avoid changing input.
 	local := q.CloneVT()
 	pagination := local.GetPagination()
-	local.Pagination = nil
+	local.ClearPagination()
 
 	handleCategoryNameQuery(local)
 
-	local.Pagination = pagination
+	local.SetPagination(pagination)
 	return local
 }
 
@@ -30,7 +30,7 @@ func handleCategoryNameQuery(q *v1.Query) {
 		}
 
 		if matchFieldQuery.MatchFieldQuery.GetField() == search.Category.String() {
-			matchFieldQuery.MatchFieldQuery.Field = search.PolicyCategoryName.String()
+			matchFieldQuery.MatchFieldQuery.SetField(search.PolicyCategoryName.String())
 		}
 	})
 }

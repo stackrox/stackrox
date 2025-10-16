@@ -61,11 +61,11 @@ func moveDeclarativeConfigHealthToNewStore(db postgres.DB, gormDB *gorm.DB) erro
 
 func convertIntegrationHealthToDeclarativeHealth(obj *storage.IntegrationHealth) *storage.DeclarativeConfigHealth {
 	healthStatus := utils.IfThenElse(obj.GetStatus() == storage.IntegrationHealth_UNHEALTHY, storage.DeclarativeConfigHealth_UNHEALTHY, storage.DeclarativeConfigHealth_HEALTHY)
-	return &storage.DeclarativeConfigHealth{
-		Id:            obj.GetId(),
-		Name:          obj.GetName(),
-		Status:        healthStatus,
-		ErrorMessage:  obj.GetErrorMessage(),
-		LastTimestamp: obj.GetLastTimestamp(),
-	}
+	dch := &storage.DeclarativeConfigHealth{}
+	dch.SetId(obj.GetId())
+	dch.SetName(obj.GetName())
+	dch.SetStatus(healthStatus)
+	dch.SetErrorMessage(obj.GetErrorMessage())
+	dch.SetLastTimestamp(obj.GetLastTimestamp())
+	return dch
 }

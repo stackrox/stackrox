@@ -16,12 +16,10 @@ type auditLogSenderImpl struct {
 func (s *auditLogSenderImpl) Send(_ context.Context, event *auditEvent) error {
 	k8sEvent := event.ToKubernetesEvent(s.clusterID)
 
-	return s.client.Send(&sensor.MsgFromCompliance{
+	return s.client.Send(sensor.MsgFromCompliance_builder{
 		Node: s.nodeName,
-		Msg: &sensor.MsgFromCompliance_AuditEvents{
-			AuditEvents: &sensor.AuditEvents{
-				Events: []*storage.KubernetesEvent{k8sEvent},
-			},
-		},
-	})
+		AuditEvents: sensor.AuditEvents_builder{
+			Events: []*storage.KubernetesEvent{k8sEvent},
+		}.Build(),
+	}.Build())
 }

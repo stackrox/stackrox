@@ -59,7 +59,9 @@ func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap
 
 	store := storeMap.Get((*central.SensorEvent_Secret)(nil))
 	return reconciliation.Perform(store, search.ResultsToIDSet(results), "secrets", func(id string) error {
-		return s.runRemovePipeline(ctx, central.ResourceAction_REMOVE_RESOURCE, &storage.Secret{Id: id})
+		secret := &storage.Secret{}
+		secret.SetId(id)
+		return s.runRemovePipeline(ctx, central.ResourceAction_REMOVE_RESOURCE, secret)
 	})
 }
 
@@ -73,7 +75,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	event := msg.GetEvent()
 	secret := event.GetSecret()
-	secret.ClusterId = clusterID
+	secret.SetClusterId(clusterID)
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
@@ -124,7 +126,7 @@ func (s *pipelineImpl) validateInput(secret *storage.Secret) error {
 }
 
 func (s *pipelineImpl) enrichCluster(ctx context.Context, secret *storage.Secret) error {
-	secret.ClusterName = ""
+	secret.SetClusterName("")
 
 	clusterName, clusterExists, err := s.clusters.GetClusterName(ctx, secret.GetClusterId())
 	switch {
@@ -133,7 +135,7 @@ func (s *pipelineImpl) enrichCluster(ctx context.Context, secret *storage.Secret
 	case !clusterExists:
 		log.Warnf("Couldn't find cluster '%s'", secret.GetClusterId())
 	default:
-		secret.ClusterName = clusterName
+		secret.SetClusterName(clusterName)
 	}
 	return nil
 }

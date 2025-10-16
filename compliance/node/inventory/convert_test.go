@@ -78,28 +78,28 @@ func (s *inventoryConvertTestSuite) TestToStorageComponents() {
 				},
 				RhelContentSets: []string{"rhel-8-for-x86_64-appstream-rpms", "rhel-8-for-x86_64-baseos-rpms"},
 			},
-			outComponent: &storage.NodeInventory_Components{
+			outComponent: storage.NodeInventory_Components_builder{
 				Namespace: "rhcos:testme",
 				RhelComponents: []*storage.NodeInventory_Components_RHELComponent{
-					{
+					storage.NodeInventory_Components_RHELComponent_builder{
 						Id:        int64(1),
 						Name:      "libksba",
 						Namespace: "rhel:8",
 						Version:   "1.3.5-7.el8",
 						Arch:      "x86_64",
 						Module:    "",
-					},
-					{
+					}.Build(),
+					storage.NodeInventory_Components_RHELComponent_builder{
 						Id:        int64(2),
 						Name:      "tar",
 						Namespace: "rhel:8",
 						Version:   "1.27.1.el8",
 						Arch:      "x86_64",
 						Module:    "",
-					},
+					}.Build(),
 				},
 				RhelContentSets: []string{"rhel-8-for-x86_64-appstream-rpms", "rhel-8-for-x86_64-baseos-rpms"},
-			},
+			}.Build(),
 		},
 		"nil component": {
 			inComponent:  nil,
@@ -113,11 +113,11 @@ func (s *inventoryConvertTestSuite) TestToStorageComponents() {
 				LanguageComponents: nil,
 				RhelContentSets:    nil,
 			},
-			outComponent: &storage.NodeInventory_Components{
+			outComponent: storage.NodeInventory_Components_builder{
 				Namespace:       "",
 				RhelComponents:  nil,
 				RhelContentSets: nil,
-			},
+			}.Build(),
 		},
 	}
 	for caseName, testCase := range testCases {
@@ -153,14 +153,14 @@ func (s *inventoryConvertTestSuite) TestConvertRHELComponents() {
 				},
 			},
 			outComponents: []*storage.NodeInventory_Components_RHELComponent{
-				{
+				storage.NodeInventory_Components_RHELComponent_builder{
 					Id:        42,
 					Name:      "zlib",
 					Namespace: "MockDist",
 					Version:   "1.2.11-16.el8_2",
 					Arch:      "x86_64",
 					Module:    "",
-				},
+				}.Build(),
 			},
 		},
 		"multi-component": {
@@ -181,20 +181,20 @@ func (s *inventoryConvertTestSuite) TestConvertRHELComponents() {
 				},
 			},
 			outComponents: []*storage.NodeInventory_Components_RHELComponent{
-				{
+				storage.NodeInventory_Components_RHELComponent_builder{
 					Id:        10,
 					Name:      "zlib",
 					Namespace: "MockDist",
 					Version:   "1.2.11-16.el8_2",
 					Arch:      "x86_64",
-				},
-				{
+				}.Build(),
+				storage.NodeInventory_Components_RHELComponent_builder{
 					Id:        11,
 					Name:      "redhat-release",
 					Namespace: "MockDist",
 					Version:   "8.3-1.0.el8",
 					Arch:      "x86_64",
-				},
+				}.Build(),
 			},
 		},
 	}
@@ -229,15 +229,15 @@ func (s *inventoryConvertTestSuite) TestConvertExecutables() {
 				},
 			},
 			expected: []*storage.NodeInventory_Components_RHELComponent_Executable{
-				{
+				storage.NodeInventory_Components_RHELComponent_Executable_builder{
 					Path: "/root/1",
 					RequiredFeatures: []*storage.NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion{
-						{
+						storage.NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion_builder{
 							Name:    "name1",
 							Version: "version1",
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 		},
 		"RequiredFeatures empty": {
@@ -248,10 +248,10 @@ func (s *inventoryConvertTestSuite) TestConvertExecutables() {
 				},
 			},
 			expected: []*storage.NodeInventory_Components_RHELComponent_Executable{
-				{
+				storage.NodeInventory_Components_RHELComponent_Executable_builder{
 					Path:             "/root/1",
 					RequiredFeatures: []*storage.NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion{},
-				},
+				}.Build(),
 			},
 		},
 		"RequiredFeatures nil": {
@@ -262,10 +262,10 @@ func (s *inventoryConvertTestSuite) TestConvertExecutables() {
 				},
 			},
 			expected: []*storage.NodeInventory_Components_RHELComponent_Executable{
-				{
+				storage.NodeInventory_Components_RHELComponent_Executable_builder{
 					Path:             "/root/1",
 					RequiredFeatures: nil,
-				},
+				}.Build(),
 			},
 		},
 	}

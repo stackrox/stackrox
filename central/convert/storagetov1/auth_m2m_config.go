@@ -17,14 +17,13 @@ func AuthM2MConfigs(configs []*storage.AuthMachineToMachineConfig) []*v1.AuthMac
 
 // AuthM2MConfig converts the given storage.AuthMachineToMachineConfig to v1.AuthMachineToMachineConfig.
 func AuthM2MConfig(config *storage.AuthMachineToMachineConfig) *v1.AuthMachineToMachineConfig {
-	v1Config := &v1.AuthMachineToMachineConfig{
-		Id:                      config.GetId(),
-		Type:                    convertTypeEnum(config.GetType()),
-		TokenExpirationDuration: config.GetTokenExpirationDuration(),
-		Mappings:                convertMappings(config.GetMappings()),
-		Issuer:                  config.GetIssuer(),
-		Traits:                  Traits(config.GetTraits()),
-	}
+	v1Config := &v1.AuthMachineToMachineConfig{}
+	v1Config.SetId(config.GetId())
+	v1Config.SetType(convertTypeEnum(config.GetType()))
+	v1Config.SetTokenExpirationDuration(config.GetTokenExpirationDuration())
+	v1Config.SetMappings(convertMappings(config.GetMappings()))
+	v1Config.SetIssuer(config.GetIssuer())
+	v1Config.SetTraits(Traits(config.GetTraits()))
 
 	return v1Config
 }
@@ -39,11 +38,11 @@ func convertMappings(mappings []*storage.AuthMachineToMachineConfig_Mapping) []*
 	}
 	v1Mappings := make([]*v1.AuthMachineToMachineConfig_Mapping, 0, len(mappings))
 	for _, mapping := range mappings {
-		v1Mappings = append(v1Mappings, &v1.AuthMachineToMachineConfig_Mapping{
-			Key:             mapping.GetKey(),
-			ValueExpression: mapping.GetValueExpression(),
-			Role:            mapping.GetRole(),
-		})
+		am := &v1.AuthMachineToMachineConfig_Mapping{}
+		am.SetKey(mapping.GetKey())
+		am.SetValueExpression(mapping.GetValueExpression())
+		am.SetRole(mapping.GetRole())
+		v1Mappings = append(v1Mappings, am)
 	}
 	return v1Mappings
 }

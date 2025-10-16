@@ -39,14 +39,12 @@ func computeNodeDiff(oldG, newG *networkGraphWrapper, id string) (oldNodeDiff, n
 	newNodePolicies := getPolicyIDs(newNode)
 	oldPolicyIDs, newPolicyIDs := sliceutils.Diff(oldNodePolicies, newNodePolicies, func(a, b string) bool { return a < b })
 	if len(oldPolicyIDs) > 0 {
-		oldNodeDiff = &v1.NetworkNodeDiff{
-			PolicyIds: oldPolicyIDs,
-		}
+		oldNodeDiff = &v1.NetworkNodeDiff{}
+		oldNodeDiff.SetPolicyIds(oldPolicyIDs)
 	}
 	if len(newPolicyIDs) > 0 {
-		newNodeDiff = &v1.NetworkNodeDiff{
-			PolicyIds: newPolicyIDs,
-		}
+		newNodeDiff = &v1.NetworkNodeDiff{}
+		newNodeDiff.SetPolicyIds(newPolicyIDs)
 	}
 
 	oldAdjacencies := getAdjacentNodeIDs(oldG.getNodeOutEdges(id))
@@ -56,13 +54,13 @@ func computeNodeDiff(oldG, newG *networkGraphWrapper, id string) (oldNodeDiff, n
 		if oldNodeDiff == nil {
 			oldNodeDiff = &v1.NetworkNodeDiff{}
 		}
-		oldNodeDiff.OutEdges = adjacentNodeIDsToMap(removedAdjacencies)
+		oldNodeDiff.SetOutEdges(adjacentNodeIDsToMap(removedAdjacencies))
 	}
 	if len(addedAdjacencies) > 0 {
 		if newNodeDiff == nil {
 			newNodeDiff = &v1.NetworkNodeDiff{}
 		}
-		newNodeDiff.OutEdges = adjacentNodeIDsToMap(addedAdjacencies)
+		newNodeDiff.SetOutEdges(adjacentNodeIDsToMap(addedAdjacencies))
 	}
 
 	if oldNode.GetNonIsolatedIngress() != newNode.GetNonIsolatedIngress() {
@@ -70,12 +68,12 @@ func computeNodeDiff(oldG, newG *networkGraphWrapper, id string) (oldNodeDiff, n
 			if oldNodeDiff == nil {
 				oldNodeDiff = &v1.NetworkNodeDiff{}
 			}
-			oldNodeDiff.NonIsolatedIngress = true
+			oldNodeDiff.SetNonIsolatedIngress(true)
 		} else {
 			if newNodeDiff == nil {
 				newNodeDiff = &v1.NetworkNodeDiff{}
 			}
-			newNodeDiff.NonIsolatedIngress = true
+			newNodeDiff.SetNonIsolatedIngress(true)
 		}
 	}
 	if oldNode.GetNonIsolatedEgress() != newNode.GetNonIsolatedEgress() {
@@ -83,12 +81,12 @@ func computeNodeDiff(oldG, newG *networkGraphWrapper, id string) (oldNodeDiff, n
 			if oldNodeDiff == nil {
 				oldNodeDiff = &v1.NetworkNodeDiff{}
 			}
-			oldNodeDiff.NonIsolatedEgress = true
+			oldNodeDiff.SetNonIsolatedEgress(true)
 		} else {
 			if newNodeDiff == nil {
 				newNodeDiff = &v1.NetworkNodeDiff{}
 			}
-			newNodeDiff.NonIsolatedEgress = true
+			newNodeDiff.SetNonIsolatedEgress(true)
 		}
 	}
 	return
@@ -96,33 +94,31 @@ func computeNodeDiff(oldG, newG *networkGraphWrapper, id string) (oldNodeDiff, n
 
 // ComputeDiff computes a diff between the old and the new graph.
 func ComputeDiff(oldGraph, newGraph *v1.NetworkGraph) (removed, added *v1.NetworkGraphDiff, _ error) {
-	added = &v1.NetworkGraphDiff{
-		NodeDiffs: make(map[string]*v1.NetworkNodeDiff),
-	}
-	removed = &v1.NetworkGraphDiff{
-		NodeDiffs: make(map[string]*v1.NetworkNodeDiff),
-	}
+	added = &v1.NetworkGraphDiff{}
+	added.SetNodeDiffs(make(map[string]*v1.NetworkNodeDiff))
+	removed = &v1.NetworkGraphDiff{}
+	removed.SetNodeDiffs(make(map[string]*v1.NetworkNodeDiff))
 
 	oldG := newNetworkGraph(oldGraph)
 	newG := newNetworkGraph(newGraph)
 
 	for id := range newG.graphNodes {
 		if oldNode := oldG.getNode(id); oldNode == nil {
-			added.NodeDiffs[id] = newG.getNetworkNodeDiffProto(id)
+			added.GetNodeDiffs()[id] = newG.getNetworkNodeDiffProto(id)
 		}
 	}
 
 	for id := range oldG.graphNodes {
 		if newNode := newG.getNode(id); newNode == nil {
-			removed.NodeDiffs[id] = oldG.getNetworkNodeDiffProto(id)
+			removed.GetNodeDiffs()[id] = oldG.getNetworkNodeDiffProto(id)
 			continue
 		}
 		oldNodeDiff, newNodeDiff := computeNodeDiff(oldG, newG, id)
 		if oldNodeDiff != nil {
-			removed.NodeDiffs[id] = oldNodeDiff
+			removed.GetNodeDiffs()[id] = oldNodeDiff
 		}
 		if newNodeDiff != nil {
-			added.NodeDiffs[id] = newNodeDiff
+			added.GetNodeDiffs()[id] = newNodeDiff
 		}
 	}
 	return
@@ -174,10 +170,10 @@ func (g *networkGraphWrapper) getNetworkNodeDiffProto(id string) *v1.NetworkNode
 		return nil
 	}
 
-	return &v1.NetworkNodeDiff{
-		PolicyIds:          getPolicyIDs(node),
-		OutEdges:           g.getNodeOutEdges(id),
-		NonIsolatedIngress: node.GetNonIsolatedIngress(),
-		NonIsolatedEgress:  node.GetNonIsolatedEgress(),
-	}
+	nnd := &v1.NetworkNodeDiff{}
+	nnd.SetPolicyIds(getPolicyIDs(node))
+	nnd.SetOutEdges(g.getNodeOutEdges(id))
+	nnd.SetNonIsolatedIngress(node.GetNonIsolatedIngress())
+	nnd.SetNonIsolatedEgress(node.GetNonIsolatedEgress())
+	return nnd
 }

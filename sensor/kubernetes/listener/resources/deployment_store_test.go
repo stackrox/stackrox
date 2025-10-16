@@ -37,7 +37,10 @@ var _ suite.SetupTestSuite = &deploymentStoreSuite{}
 
 func (s *deploymentStoreSuite) SetupTest() {
 	s.namespaceStore = newNamespaceStore()
-	s.namespaceStore.addNamespace(&storage.NamespaceMetadata{Name: "test-ns", Id: "1"})
+	nm := &storage.NamespaceMetadata{}
+	nm.SetName("test-ns")
+	nm.SetId("1")
+	s.namespaceStore.addNamespace(nm)
 	s.deploymentStore = newDeploymentStore()
 	s.mockPodLister = &mockPodLister{}
 }
@@ -114,37 +117,37 @@ func (s *deploymentStoreSuite) Test_BuildDeployments_CachedDependencies() {
 	s.T().Setenv(features.SensorDeploymentBuildOptimization.EnvVar(), "true")
 	defaultExposure := []map[service.PortRef][]*storage.PortConfig_ExposureInfo{
 		{
-			service.PortRefOf(stubService()): []*storage.PortConfig_ExposureInfo{{
+			service.PortRefOf(stubService()): []*storage.PortConfig_ExposureInfo{storage.PortConfig_ExposureInfo_builder{
 				Level:       storage.PortConfig_EXTERNAL,
 				ServiceName: "test.service",
 				ServicePort: 5432,
-			}},
+			}.Build()},
 		},
 		{
-			service.PortRefOf(stubService()): []*storage.PortConfig_ExposureInfo{{
+			service.PortRefOf(stubService()): []*storage.PortConfig_ExposureInfo{storage.PortConfig_ExposureInfo_builder{
 				Level:       storage.PortConfig_HOST,
 				ServiceName: "test2.service",
 				ServicePort: 2345,
 				ExternalIps: []string{"a.com", "b.com"},
-			}},
+			}.Build()},
 		},
 	}
 
 	defaultExposureUnordered := []map[service.PortRef][]*storage.PortConfig_ExposureInfo{
 		{
-			service.PortRefOf(stubService()): []*storage.PortConfig_ExposureInfo{{
+			service.PortRefOf(stubService()): []*storage.PortConfig_ExposureInfo{storage.PortConfig_ExposureInfo_builder{
 				Level:       storage.PortConfig_HOST,
 				ServiceName: "test2.service",
 				ServicePort: 2345,
 				ExternalIps: []string{"b.com", "a.com"},
-			}},
+			}.Build()},
 		},
 		{
-			service.PortRefOf(stubService()): []*storage.PortConfig_ExposureInfo{{
+			service.PortRefOf(stubService()): []*storage.PortConfig_ExposureInfo{storage.PortConfig_ExposureInfo_builder{
 				Level:       storage.PortConfig_EXTERNAL,
 				ServiceName: "test.service",
 				ServicePort: 5432,
-			}},
+			}.Build()},
 		},
 	}
 
@@ -219,11 +222,10 @@ func (s *deploymentStoreSuite) Test_BuildDeploymentWithDependencies() {
 	wrap := s.createDeploymentWrap(makeDeploymentObject("test-deployment", "test-ns", types.UID(uid)))
 	s.deploymentStore.addOrUpdateDeployment(wrap)
 
-	expectedExposureInfo := &storage.PortConfig_ExposureInfo{
-		Level:       storage.PortConfig_EXTERNAL,
-		ServiceName: "test.service",
-		ServicePort: 5432,
-	}
+	expectedExposureInfo := &storage.PortConfig_ExposureInfo{}
+	expectedExposureInfo.SetLevel(storage.PortConfig_EXTERNAL)
+	expectedExposureInfo.SetServiceName("test.service")
+	expectedExposureInfo.SetServicePort(5432)
 
 	_, isBuilt := s.deploymentStore.GetBuiltDeployment(uid)
 	s.Assert().False(isBuilt, "deployment should not be fully built yet")
@@ -274,11 +276,11 @@ func (s *deploymentStoreSuite) Test_DeleteSnapshot() {
 	s.NoError(err, "should not have error building dependencies")
 	s.Assert().Len(s.deploymentStore.deploymentSnapshots, 1)
 
+	deployment2 := &storage.Deployment{}
+	deployment2.SetId(deployment.GetId())
+	deployment2.SetNamespace(deployment.GetNamespace())
 	s.deploymentStore.removeDeployment(&deploymentWrap{
-		Deployment: &storage.Deployment{
-			Id:        deployment.GetId(),
-			Namespace: deployment.GetNamespace(),
-		},
+		Deployment: deployment2,
 	})
 	s.Assert().Len(s.deploymentStore.deploymentSnapshots, 0)
 }
@@ -375,12 +377,12 @@ func withImage(deployment *v1.Deployment, image string) *v1.Deployment {
 }
 
 func newImage(id string, fullName string) *storage.Image {
-	return &storage.Image{
-		Id: id,
-		Name: &storage.ImageName{
-			FullName: fullName,
-		},
-	}
+	imageName := &storage.ImageName{}
+	imageName.SetFullName(fullName)
+	image := &storage.Image{}
+	image.SetId(id)
+	image.SetName(imageName)
+	return image
 }
 
 func (s *deploymentStoreSuite) Test_FindDeploymentIDsByImages() {
@@ -405,7 +407,7 @@ func (s *deploymentStoreSuite) Test_FindDeploymentIDsByImages() {
 		wrap := s.createDeploymentWrap(r.deployment)
 		// Manually set the ID for testing purposes
 		for i := range wrap.GetDeployment().GetContainers() {
-			wrap.GetDeployment().GetContainers()[i].GetImage().Id = r.imageID
+			wrap.GetDeployment().GetContainers()[i].GetImage().SetId(r.imageID)
 		}
 		s.deploymentStore.addOrUpdateDeployment(wrap)
 	}
@@ -537,7 +539,10 @@ func (s *deploymentStoreSuite) Test_DeleteAllDeployments() {
 	for _, testCase := range testCases {
 		s.Run(fmt.Sprintf("Create %d before %d after", len(testCase.before), len(testCase.after)), func() {
 			s.namespaceStore = newNamespaceStore()
-			s.namespaceStore.addNamespace(&storage.NamespaceMetadata{Name: "test-ns", Id: "1"})
+			nm := &storage.NamespaceMetadata{}
+			nm.SetName("test-ns")
+			nm.SetId("1")
+			s.namespaceStore.addNamespace(nm)
 			s.deploymentStore = newDeploymentStore()
 			s.mockPodLister = &mockPodLister{}
 
@@ -568,10 +573,9 @@ func (s *deploymentStoreSuite) Test_DeleteAllDeployments() {
 }
 
 func (s *deploymentStoreSuite) TestEnhanceDeploymentReadOnly() {
-	d := storage.Deployment{
-		Id:   uuid.NewV4().String(),
-		Name: "testDeployment",
-	}
+	d := &storage.Deployment{}
+	d.SetId(uuid.NewV4().String())
+	d.SetName("testDeployment")
 	deps := store.Dependencies{
 		PermissionLevel: storage.PermissionLevel_CLUSTER_ADMIN,
 		Exposures: []map[service.PortRef][]*storage.PortConfig_ExposureInfo{
@@ -585,7 +589,10 @@ func (s *deploymentStoreSuite) TestEnhanceDeploymentReadOnly() {
 	s.deploymentStore.EnhanceDeploymentReadOnly(&d, deps)
 
 	s.Equal(storage.PermissionLevel_CLUSTER_ADMIN, d.GetServiceAccountPermissionLevel())
-	protoassert.SliceContains(s.T(), d.GetPorts(), &storage.PortConfig{ContainerPort: 4321, Protocol: "TCP"})
+	pc := &storage.PortConfig{}
+	pc.SetContainerPort(4321)
+	pc.SetProtocol("TCP")
+	protoassert.SliceContains(s.T(), d.GetPorts(), pc)
 	s.Empty(s.deploymentStore.deployments, "EnhanceDeploymentReadOnly mustn't modify deployment store")
 }
 

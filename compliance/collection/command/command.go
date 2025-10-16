@@ -66,10 +66,10 @@ func parseCommandline(processes ...string) (*compliance.CommandLine, bool, error
 
 	// Populate the configuration with the arguments
 	a := parseArgs(args)
-	return &compliance.CommandLine{
-		Process: processPath,
-		Args:    a,
-	}, true, nil
+	cl := &compliance.CommandLine{}
+	cl.SetProcess(processPath)
+	cl.SetArgs(a)
+	return cl, true, nil
 }
 
 func getProcessFromCmdLineBytes(cmdlineBytes []byte) string {
@@ -131,10 +131,10 @@ func getCommandLine(processes ...string) (string, error) {
 
 func newArg(k string, values ...string) *compliance.CommandLine_Args {
 	k = strings.TrimLeft(k, "-")
-	return &compliance.CommandLine_Args{
-		Key:    k,
-		Values: values,
-	}
+	ca := &compliance.CommandLine_Args{}
+	ca.SetKey(k)
+	ca.SetValues(values)
+	return ca
 }
 
 func parseArg(arg, nextArg string) (string, []string, bool) {
@@ -176,7 +176,7 @@ func parseArgs(args []string) []*compliance.CommandLine_Args {
 		if flagsWithFiles.Contains(arg.GetKey()) && len(arg.GetValues()) > 0 {
 			f, exists, err := file.EvaluatePath(arg.GetValues()[0], false, true)
 			if exists && err == nil {
-				arg.File = f
+				arg.SetFile(f)
 			}
 		}
 		retArgs = append(retArgs, arg)

@@ -71,7 +71,9 @@ func (s *serviceImpl) CountProcesses(ctx context.Context, request *v1.RawQuery) 
 	if err != nil {
 		return nil, err
 	}
-	return &v1.CountProcessesResponse{Count: int32(numProcesses)}, nil
+	cpr := &v1.CountProcessesResponse{}
+	cpr.SetCount(int32(numProcesses))
+	return cpr, nil
 }
 
 // GetDeployment returns the deployment with given id.
@@ -94,9 +96,9 @@ func (s *serviceImpl) GetProcessesByDeployment(ctx context.Context, req *v1.GetP
 	if err != nil {
 		return nil, err
 	}
-	return &v1.GetProcessesResponse{
-		Processes: indicators,
-	}, nil
+	gpr := &v1.GetProcessesResponse{}
+	gpr.SetProcesses(indicators)
+	return gpr, nil
 }
 
 func sortIndicators(indicators []*storage.ProcessIndicator) {
@@ -117,7 +119,7 @@ func (s *serviceImpl) setSuspicious(ctx context.Context, groupedIndicators []*v1
 			}
 			baselines[group.GetContainerName()] = elementSet
 		}
-		group.Suspicious = elementSet != nil && !elementSet.Contains(group.GetName())
+		group.SetSuspicious(elementSet != nil && !elementSet.Contains(group.GetName()))
 	}
 	return nil
 }
@@ -131,12 +133,11 @@ func (s *serviceImpl) getElementSet(ctx context.Context, deploymentID string, co
 		return nil, errors.Wrapf(errox.NotFound, "deployment with id '%s' does not exist", deploymentID)
 	}
 
-	key := &storage.ProcessBaselineKey{
-		ClusterId:     deployment.GetClusterId(),
-		Namespace:     deployment.GetNamespace(),
-		DeploymentId:  deploymentID,
-		ContainerName: containerName,
-	}
+	key := &storage.ProcessBaselineKey{}
+	key.SetClusterId(deployment.GetClusterId())
+	key.SetNamespace(deployment.GetNamespace())
+	key.SetDeploymentId(deploymentID)
+	key.SetContainerName(containerName)
 	baseline, exists, err := s.baselines.GetProcessBaseline(ctx, key)
 	if !exists || err != nil {
 		return nil, err
@@ -175,16 +176,19 @@ func indicatorsToGroupedResponsesWithContainer(indicators []*storage.ProcessIndi
 		processGroups := make([]*v1.ProcessGroup, 0, len(groupMap))
 		for args, indicators := range groupMap {
 			sortIndicators(indicators)
-			processGroups = append(processGroups, &v1.ProcessGroup{Args: args, Signals: indicators})
+			pg := &v1.ProcessGroup{}
+			pg.SetArgs(args)
+			pg.SetSignals(indicators)
+			processGroups = append(processGroups, pg)
 		}
 		sort.SliceStable(processGroups, func(i, j int) bool { return processGroups[i].GetArgs() < processGroups[j].GetArgs() })
-		groups = append(groups, &v1.ProcessNameAndContainerNameGroup{
-			Name:          groupKey.processName,
-			ContainerName: groupKey.containerName,
-			Groups:        processGroups,
-			TimesExecuted: uint32(processNameToContainers[groupKey].Cardinality()),
-			Suspicious:    false,
-		})
+		pnacng := &v1.ProcessNameAndContainerNameGroup{}
+		pnacng.SetName(groupKey.processName)
+		pnacng.SetContainerName(groupKey.containerName)
+		pnacng.SetGroups(processGroups)
+		pnacng.SetTimesExecuted(uint32(processNameToContainers[groupKey].Cardinality()))
+		pnacng.SetSuspicious(false)
+		groups = append(groups, pnacng)
 	}
 	sort.SliceStable(groups, func(i, j int) bool { return groups[i].GetName() < groups[j].GetName() })
 	return groups
@@ -201,7 +205,9 @@ func (s *serviceImpl) GetGroupedProcessByDeploymentAndContainer(ctx context.Cont
 	if err != nil {
 		return nil, err
 	}
-	return &v1.GetGroupedProcessesWithContainerResponse{Groups: groupedIndicators}, nil
+	ggpwcr := &v1.GetGroupedProcessesWithContainerResponse{}
+	ggpwcr.SetGroups(groupedIndicators)
+	return ggpwcr, nil
 }
 
 // IndicatorsToGroupedResponses rearranges process indicator storage items into API process name group items.
@@ -225,14 +231,17 @@ func IndicatorsToGroupedResponses(indicators []*storage.ProcessIndicator) []*v1.
 		processGroups := make([]*v1.ProcessGroup, 0, len(nameMap))
 		for args, indicators := range nameMap {
 			sortIndicators(indicators)
-			processGroups = append(processGroups, &v1.ProcessGroup{Args: args, Signals: indicators})
+			pg := &v1.ProcessGroup{}
+			pg.SetArgs(args)
+			pg.SetSignals(indicators)
+			processGroups = append(processGroups, pg)
 		}
 		sort.SliceStable(processGroups, func(i, j int) bool { return processGroups[i].GetArgs() < processGroups[j].GetArgs() })
-		groups = append(groups, &v1.ProcessNameGroup{
-			Name:          name,
-			Groups:        processGroups,
-			TimesExecuted: uint32(processNameToContainers[name].Cardinality()),
-		})
+		png := &v1.ProcessNameGroup{}
+		png.SetName(name)
+		png.SetGroups(processGroups)
+		png.SetTimesExecuted(uint32(processNameToContainers[name].Cardinality()))
+		groups = append(groups, png)
 	}
 	sort.SliceStable(groups, func(i, j int) bool { return groups[i].GetName() < groups[j].GetName() })
 	return groups
@@ -244,9 +253,9 @@ func (s *serviceImpl) GetGroupedProcessByDeployment(ctx context.Context, req *v1
 		return nil, err
 	}
 
-	return &v1.GetGroupedProcessesResponse{
-		Groups: IndicatorsToGroupedResponses(indicators),
-	}, nil
+	ggpr := &v1.GetGroupedProcessesResponse{}
+	ggpr.SetGroups(IndicatorsToGroupedResponses(indicators))
+	return ggpr, nil
 }
 
 func (s *serviceImpl) validateGetProcesses(ctx context.Context, req *v1.GetProcessesByDeploymentRequest) ([]*storage.ProcessIndicator, error) {

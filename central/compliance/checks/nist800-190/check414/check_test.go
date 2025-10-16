@@ -47,86 +47,86 @@ func TestNIST414_Success(t *testing.T) {
 	require.NotNil(t, check)
 
 	testDeployments := []*storage.Deployment{
-		{
+		storage.Deployment_builder{
 			Id:   uuid.NewV4().String(),
 			Name: "container1",
 			Containers: []*storage.Container{
-				{
+				storage.Container_builder{
 					Volumes: []*storage.Volume{
-						{
+						storage.Volume_builder{
 							Name:        "username",
 							Destination: "/tmp/",
 							Type:        "secret",
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
-		},
-		{
+		}.Build(),
+		storage.Deployment_builder{
 			Id:   uuid.NewV4().String(),
 			Name: "container2",
 			Containers: []*storage.Container{
-				{
+				storage.Container_builder{
 					Volumes: []*storage.Volume{
-						{
+						storage.Volume_builder{
 							Name:        "passwd",
 							Destination: "/tmp/",
 							Type:        "secret",
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
-		},
+		}.Build(),
 	}
 
-	envSecretsEnabledAndEnforced := storage.Policy{
+	envSecretsEnabledAndEnforced := storage.Policy_builder{
 		Id:   uuid.NewV4().String(),
 		Name: "Foo",
 		PolicySections: []*storage.PolicySection{
-			{
+			storage.PolicySection_builder{
 				SectionName: "section-1",
 				PolicyGroups: []*storage.PolicyGroup{
-					{
+					storage.PolicyGroup_builder{
 						FieldName: fieldnames.EnvironmentVariable,
 						Values: []*storage.PolicyValue{
-							{
+							storage.PolicyValue_builder{
 								Value: "=FOO_SECRET=34463",
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 		PolicyVersion:      "1.1",
 		Disabled:           false,
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
-	}
-	envLowerSecretsEnabledAndEnforced := storage.Policy{
+	}.Build()
+	envLowerSecretsEnabledAndEnforced := storage.Policy_builder{
 		Id:   uuid.NewV4().String(),
 		Name: "Foo",
 		PolicySections: []*storage.PolicySection{
-			{
+			storage.PolicySection_builder{
 				SectionName: "section-1",
 				PolicyGroups: []*storage.PolicyGroup{
-					{
+					storage.PolicyGroup_builder{
 						FieldName: fieldnames.EnvironmentVariable,
 						Values: []*storage.PolicyValue{
-							{
+							storage.PolicyValue_builder{
 								Value: "=FOO_Secret_Blah=34463",
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 		PolicyVersion:      "1.1",
 		Disabled:           false,
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
-	}
+	}.Build()
 
 	policies := make(map[string]*storage.Policy)
-	policies[envSecretsEnabledAndEnforced.GetName()] = &envSecretsEnabledAndEnforced
-	policies[envLowerSecretsEnabledAndEnforced.GetName()] = &envLowerSecretsEnabledAndEnforced
+	policies[envSecretsEnabledAndEnforced.GetName()] = envSecretsEnabledAndEnforced
+	policies[envLowerSecretsEnabledAndEnforced.GetName()] = envLowerSecretsEnabledAndEnforced
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -165,90 +165,90 @@ func TestNIST414_FAIL(t *testing.T) {
 	}()
 
 	testDeployments := []*storage.Deployment{
-		{
+		storage.Deployment_builder{
 			Id:   uuid.NewV4().String(),
 			Name: "container1",
 			Containers: []*storage.Container{
-				{
+				storage.Container_builder{
 					Volumes: []*storage.Volume{
-						{
+						storage.Volume_builder{
 							Name:        "username",
 							Destination: "/tmp/",
 							Type:        "secret",
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
-		},
-		{
+		}.Build(),
+		storage.Deployment_builder{
 			Id:   uuid.NewV4().String(),
 			Name: "container2",
 			Containers: []*storage.Container{
-				{
+				storage.Container_builder{
 					Volumes: []*storage.Volume{
-						{
+						storage.Volume_builder{
 							Name:        "passwd",
 							Destination: "/tmp/",
 							Type:        "secret",
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
-		},
+		}.Build(),
 	}
 
-	envSecretsEnabledAndEnforced := storage.Policy{
+	envSecretsEnabledAndEnforced := storage.Policy_builder{
 		Id:   uuid.NewV4().String(),
 		Name: "Foo",
 		PolicySections: []*storage.PolicySection{
-			{
+			storage.PolicySection_builder{
 				SectionName: "section-1",
 				PolicyGroups: []*storage.PolicyGroup{
-					{
+					storage.PolicyGroup_builder{
 						FieldName: fieldnames.EnvironmentVariable,
 						Values: []*storage.PolicyValue{
-							{
+							storage.PolicyValue_builder{
 								Value: "FOO_SECRET=34463",
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 		PolicyVersion:      "1.1",
 		Disabled:           true,
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
-	}
-	envLowerSecretsEnabledAndEnforced := storage.Policy{
+	}.Build()
+	envLowerSecretsEnabledAndEnforced := storage.Policy_builder{
 		Id:   uuid.NewV4().String(),
 		Name: "Foo",
 		PolicySections: []*storage.PolicySection{
-			{
+			storage.PolicySection_builder{
 				SectionName: "section-1",
 				PolicyGroups: []*storage.PolicyGroup{
-					{
+					storage.PolicyGroup_builder{
 						FieldName: fieldnames.EnvironmentVariable,
 						Values: []*storage.PolicyValue{
-							{
+							storage.PolicyValue_builder{
 								Value: "FOO_secret_Blah=34463",
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 		PolicyVersion:      "1.1",
 		Disabled:           true,
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
-	}
+	}.Build()
 
 	registry := framework.RegistrySingleton()
 	check := registry.Lookup(standardID)
 	require.NotNil(t, check)
 
 	policies := make(map[string]*storage.Policy)
-	policies[envSecretsEnabledAndEnforced.GetName()] = &envSecretsEnabledAndEnforced
-	policies[envLowerSecretsEnabledAndEnforced.GetName()] = &envLowerSecretsEnabledAndEnforced
+	policies[envSecretsEnabledAndEnforced.GetName()] = envSecretsEnabledAndEnforced
+	policies[envLowerSecretsEnabledAndEnforced.GetName()] = envLowerSecretsEnabledAndEnforced
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()

@@ -80,12 +80,10 @@ func (s *resolverSuite) Test_MessageSentToOutput() {
 
 	s.resolver.Send(&component.ResourceEvent{
 		ForwardMessages: []*central.SensorEvent{
-			{
-				Action: central.ResourceAction_UPDATE_RESOURCE,
-				Resource: &central.SensorEvent_Deployment{
-					Deployment: &storage.Deployment{Id: "abc"},
-				},
-			},
+			central.SensorEvent_builder{
+				Action:     central.ResourceAction_UPDATE_RESOURCE,
+				Deployment: storage.Deployment_builder{Id: "abc"}.Build(),
+			}.Build(),
 		},
 	})
 
@@ -157,15 +155,15 @@ func (s *resolverSuite) Test_Send_DeploymentsWithServiceExposure() {
 		s.givenStubPortExposure(),
 	})
 
+	pe := &storage.PortConfig_ExposureInfo{}
+	pe.SetLevel(storage.PortConfig_EXTERNAL)
+	pe.SetServiceName("my.service")
+	pe.SetServicePort(80)
 	expectedDeployment := deploymentMatcher{
 		id:              "1234",
 		permissionLevel: storage.PermissionLevel_NONE,
 		expectedExposureInfos: []*storage.PortConfig_ExposureInfo{
-			{
-				Level:       storage.PortConfig_EXTERNAL,
-				ServiceName: "my.service",
-				ServicePort: 80,
-			},
+			pe,
 		},
 		acceptableNumberOfMismatches: 1,
 	}
@@ -312,9 +310,11 @@ func (s *resolverSuite) Test_Send_DetectorReference() {
 	messageReceived := sync.WaitGroup{}
 	messageReceived.Add(1)
 
+	deployment := &storage.Deployment{}
+	deployment.SetId("1234")
 	detectionObject := []component.DeploytimeDetectionRequest{
 		{
-			Object: &storage.Deployment{Id: "1234"},
+			Object: deployment,
 			Action: central.ResourceAction_UPDATE_RESOURCE,
 		},
 	}
@@ -411,16 +411,16 @@ func (s *resolverSuite) givenStubSensorEvent() *central.SensorEvent {
 }
 
 func (s *resolverSuite) givenStubPortExposure() map[service.PortRef][]*storage.PortConfig_ExposureInfo {
+	pe := &storage.PortConfig_ExposureInfo{}
+	pe.SetLevel(storage.PortConfig_EXTERNAL)
+	pe.SetServiceName("my.service")
+	pe.SetServicePort(80)
 	return map[service.PortRef][]*storage.PortConfig_ExposureInfo{
 		{
 			Port:     intstr.IntOrString{IntVal: 8080},
 			Protocol: "TCP",
 		}: {
-			{
-				Level:       storage.PortConfig_EXTERNAL,
-				ServiceName: "my.service",
-				ServicePort: 80,
-			},
+			pe,
 		},
 	}
 }
@@ -457,9 +457,9 @@ func (s *resolverSuite) givenNilDeployment(wg *sync.WaitGroup) {
 
 func (s *resolverSuite) givenPermissionLevelForDeployment(deployment string, permissionLevel storage.PermissionLevel) {
 	s.mockDeploymentStore.EXPECT().Get(gomock.Eq(deployment)).Times(1).DoAndReturn(func(arg0 interface{}) *storage.Deployment {
-		return &storage.Deployment{
-			Labels: map[string]string{},
-		}
+		deployment2 := &storage.Deployment{}
+		deployment2.SetLabels(map[string]string{})
+		return deployment2
 	})
 
 	s.mockEndpointManager.EXPECT().OnDeploymentCreateOrUpdateByID(gomock.Eq(deployment)).Times(1)
@@ -479,16 +479,19 @@ func (s *resolverSuite) givenPermissionLevelForDeployment(deployment string, per
 		})).
 		Times(1).
 		DoAndReturn(func(arg0, arg1 interface{}) (*storage.Deployment, bool, error) {
-			return &storage.Deployment{Id: deployment, ServiceAccountPermissionLevel: permissionLevel}, true, nil
+			deployment2 := &storage.Deployment{}
+			deployment2.SetId(deployment)
+			deployment2.SetServiceAccountPermissionLevel(permissionLevel)
+			return deployment2, true, nil
 		})
 }
 
 func (s *resolverSuite) givenServiceExposureForDeployment(deployment string, exposure []map[service.PortRef][]*storage.PortConfig_ExposureInfo) {
 	s.mockDeploymentStore.EXPECT().Get(gomock.Eq(deployment)).Times(1).DoAndReturn(func(arg0 interface{}) *storage.Deployment {
-		return &storage.Deployment{
-			Namespace: "example",
-			Labels:    map[string]string{"app": "a"},
-		}
+		deployment2 := &storage.Deployment{}
+		deployment2.SetNamespace("example")
+		deployment2.SetLabels(map[string]string{"app": "a"})
+		return deployment2
 	})
 
 	s.mockEndpointManager.EXPECT().OnDeploymentCreateOrUpdateByID(gomock.Eq(deployment)).Times(1)
@@ -514,15 +517,15 @@ func (s *resolverSuite) givenServiceExposureForDeployment(deployment string, exp
 		})).
 		Times(1).
 		DoAndReturn(func(arg0, arg1 interface{}) (*storage.Deployment, bool, error) {
-			return &storage.Deployment{
-				Id:                            deployment,
-				ServiceAccountPermissionLevel: storage.PermissionLevel_NONE,
-				Ports: []*storage.PortConfig{
-					{
-						ExposureInfos: flatExposures,
-					},
-				},
-			}, true, nil
+			pc := &storage.PortConfig{}
+			pc.SetExposureInfos(flatExposures)
+			deployment2 := &storage.Deployment{}
+			deployment2.SetId(deployment)
+			deployment2.SetServiceAccountPermissionLevel(storage.PermissionLevel_NONE)
+			deployment2.SetPorts([]*storage.PortConfig{
+				pc,
+			})
+			return deployment2, true, nil
 		})
 }
 

@@ -34,7 +34,7 @@ func WithBackendFromFactory(ctx context.Context, factory BackendFactory) Provide
 		}
 
 		pr.backend = backend
-		pr.storedInfo.Config = backend.Config()
+		pr.storedInfo.SetConfig(backend.Config())
 		return nil
 	}
 }
@@ -69,7 +69,7 @@ func WithID(id string) ProviderOption {
 		if pr.storedInfo == nil {
 			return errox.InvariantViolation.CausedBy("no storage data for auth provider")
 		}
-		pr.storedInfo.Id = id
+		pr.storedInfo.SetId(id)
 		return nil
 	}
 }
@@ -80,7 +80,7 @@ func WithType(typ string) ProviderOption {
 		if pr.storedInfo == nil {
 			return errox.InvariantViolation.CausedBy("no storage data for auth provider")
 		}
-		pr.storedInfo.Type = typ
+		pr.storedInfo.SetType(typ)
 		return nil
 	}
 }
@@ -91,7 +91,7 @@ func WithName(name string) ProviderOption {
 		if pr.storedInfo == nil {
 			return errox.InvariantViolation.CausedBy("no storage data for auth provider")
 		}
-		pr.storedInfo.Name = name
+		pr.storedInfo.SetName(name)
 		return nil
 	}
 }
@@ -102,7 +102,7 @@ func WithEnabled(enabled bool) ProviderOption {
 		if pr.storedInfo == nil {
 			return errox.InvariantViolation.CausedBy("no storage data for auth provider")
 		}
-		pr.storedInfo.Enabled = enabled
+		pr.storedInfo.SetEnabled(enabled)
 		return nil
 	}
 }
@@ -123,8 +123,8 @@ func WithActive(active bool) ProviderOption {
 		if pr.storedInfo == nil {
 			return errox.InvariantViolation.CausedBy("no storage data for auth provider")
 		}
-		pr.storedInfo.Validated = active
-		pr.storedInfo.Active = active
+		pr.storedInfo.SetValidated(active)
+		pr.storedInfo.SetActive(active)
 		return nil
 	}
 }
@@ -135,7 +135,7 @@ func WithConfig(config map[string]string) ProviderOption {
 		if pr.storedInfo == nil {
 			return errox.InvariantViolation.CausedBy("no storage data for auth provider")
 		}
-		pr.storedInfo.Config = config
+		pr.storedInfo.SetConfig(config)
 		return nil
 	}
 }
@@ -159,9 +159,11 @@ func WithVisibility(visibility storage.Traits_Visibility) ProviderOption {
 			return errox.InvariantViolation.CausedBy("no storage data for auth provider")
 		}
 		if pr.storedInfo.GetTraits() != nil {
-			pr.storedInfo.Traits.Visibility = visibility
+			pr.storedInfo.GetTraits().SetVisibility(visibility)
 		} else {
-			pr.storedInfo.Traits = &storage.Traits{Visibility: visibility}
+			traits := &storage.Traits{}
+			traits.SetVisibility(visibility)
+			pr.storedInfo.SetTraits(traits)
 		}
 		return nil
 	}

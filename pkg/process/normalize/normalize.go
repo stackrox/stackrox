@@ -18,11 +18,11 @@ func Indicator(indicator *storage.ProcessIndicator) {
 	if signal == nil {
 		return
 	}
-	signal.ExecFilePath = sanitizeString(signal.GetExecFilePath())
-	signal.Name = sanitizeString(signal.GetName())
-	signal.Args = sanitizeString(signal.GetArgs())
+	signal.SetExecFilePath(sanitizeString(signal.GetExecFilePath()))
+	signal.SetName(sanitizeString(signal.GetName()))
+	signal.SetArgs(sanitizeString(signal.GetArgs()))
 	for _, lineage := range signal.GetLineageInfo() {
-		lineage.ParentExecFilePath = sanitizeString(lineage.GetParentExecFilePath())
+		lineage.SetParentExecFilePath(sanitizeString(lineage.GetParentExecFilePath()))
 	}
 }
 
@@ -32,7 +32,7 @@ func NetworkEndpoint(endpoint *sensor.NetworkEndpoint) {
 	if originator == nil {
 		return
 	}
-	originator.ProcessExecFilePath = sanitizeString(originator.GetProcessExecFilePath())
-	originator.ProcessName = sanitizeString(originator.GetProcessName())
-	originator.ProcessArgs = sanitizeString(originator.GetProcessArgs())
+	originator.SetProcessExecFilePath(sanitizeString(originator.GetProcessExecFilePath()))
+	originator.SetProcessName(sanitizeString(originator.GetProcessName()))
+	originator.SetProcessArgs(sanitizeString(originator.GetProcessArgs()))
 }

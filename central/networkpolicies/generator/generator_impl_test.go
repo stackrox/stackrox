@@ -49,58 +49,58 @@ func TestGenerator(t *testing.T) {
 }
 
 var testNetworkPolicies = []*storage.NetworkPolicy{
-	{
+	storage.NetworkPolicy_builder{
 		Id:        "policy1",
 		Name:      "policy1",
 		Namespace: "ns1",
-	},
-	{
+	}.Build(),
+	storage.NetworkPolicy_builder{
 		Id:        "policy2",
 		Name:      "policy2",
 		Namespace: "ns1",
 		Labels: map[string]string{
 			generatedNetworkPolicyLabel: "true",
 		},
-	},
-	{
+	}.Build(),
+	storage.NetworkPolicy_builder{
 		Id:        "policy3",
 		Name:      "policy3",
 		Namespace: "ns2",
-	},
-	{
+	}.Build(),
+	storage.NetworkPolicy_builder{
 		Id:        "policy4",
 		Name:      "policy4",
 		Namespace: "ns2",
 		Labels: map[string]string{
 			generatedNetworkPolicyLabel: "true",
 		},
-	},
-	{
+	}.Build(),
+	storage.NetworkPolicy_builder{
 		Id:        "policy5",
 		Name:      "policy5",
 		Namespace: "kube-system",
-	},
-	{
+	}.Build(),
+	storage.NetworkPolicy_builder{
 		Id:        "policy6",
 		Name:      "policy6",
 		Namespace: "kube-system",
 		Labels: map[string]string{
 			generatedNetworkPolicyLabel: "true",
 		},
-	},
-	{
+	}.Build(),
+	storage.NetworkPolicy_builder{
 		Id:        "policy7",
 		Name:      "policy7",
 		Namespace: "stackrox",
-	},
-	{
+	}.Build(),
+	storage.NetworkPolicy_builder{
 		Id:        "policy8",
 		Name:      "policy8",
 		Namespace: "stackrox",
 		Labels: map[string]string{
 			generatedNetworkPolicyLabel: "true",
 		},
-	},
+	}.Build(),
 }
 
 func (s *generatorTestSuite) SetupTest() {
@@ -160,15 +160,15 @@ func (s *generatorTestSuite) TestGetNetworkPolicies_DeleteGenerated() {
 	existing, toDelete, err := s.generator.getNetworkPolicies(s.hasReadCtx, v1.GenerateNetworkPoliciesRequest_GENERATED_ONLY, "cluster")
 	s.NoError(err)
 	protoassert.ElementsMatch(s.T(), existing, []*storage.NetworkPolicy{testNetworkPolicies[0], testNetworkPolicies[2]})
+	npr := &storage.NetworkPolicyReference{}
+	npr.SetNamespace(testNetworkPolicies[1].GetNamespace())
+	npr.SetName(testNetworkPolicies[1].GetName())
+	npr2 := &storage.NetworkPolicyReference{}
+	npr2.SetNamespace(testNetworkPolicies[3].GetNamespace())
+	npr2.SetName(testNetworkPolicies[3].GetName())
 	protoassert.ElementsMatch(s.T(), toDelete, []*storage.NetworkPolicyReference{
-		{
-			Namespace: testNetworkPolicies[1].GetNamespace(),
-			Name:      testNetworkPolicies[1].GetName(),
-		},
-		{
-			Namespace: testNetworkPolicies[3].GetNamespace(),
-			Name:      testNetworkPolicies[3].GetName(),
-		},
+		npr,
+		npr2,
 	})
 }
 
@@ -179,22 +179,22 @@ func (s *generatorTestSuite) TestGetNetworkPolicies_DeleteAll() {
 	s.NoError(err)
 	s.Empty(existing)
 	protoassert.ElementsMatch(s.T(), toDelete, []*storage.NetworkPolicyReference{
-		{
+		storage.NetworkPolicyReference_builder{
 			Namespace: testNetworkPolicies[0].GetNamespace(),
 			Name:      testNetworkPolicies[0].GetName(),
-		},
-		{
+		}.Build(),
+		storage.NetworkPolicyReference_builder{
 			Namespace: testNetworkPolicies[1].GetNamespace(),
 			Name:      testNetworkPolicies[1].GetName(),
-		},
-		{
+		}.Build(),
+		storage.NetworkPolicyReference_builder{
 			Namespace: testNetworkPolicies[2].GetNamespace(),
 			Name:      testNetworkPolicies[2].GetName(),
-		},
-		{
+		}.Build(),
+		storage.NetworkPolicyReference_builder{
 			Namespace: testNetworkPolicies[3].GetNamespace(),
 			Name:      testNetworkPolicies[3].GetName(),
-		},
+		}.Build(),
 	})
 }
 
@@ -217,11 +217,10 @@ func sortPolicies(policies []*storage.NetworkPolicy) {
 func (s *generatorTestSuite) TestGenerate() {
 	now := time.Now().UTC()
 	ts := protoconv.ConvertTimeToTimestampOrNow(&now)
-	req := &v1.GenerateNetworkPoliciesRequest{
-		ClusterId:        "mycluster",
-		DeleteExisting:   v1.GenerateNetworkPoliciesRequest_NONE,
-		NetworkDataSince: ts,
-	}
+	req := &v1.GenerateNetworkPoliciesRequest{}
+	req.SetClusterId("mycluster")
+	req.SetDeleteExisting(v1.GenerateNetworkPoliciesRequest_NONE)
+	req.SetNetworkDataSince(ts)
 
 	ctxHasDeploymentsAccessMatcher := sacTestutils.ContextWithAccess(sac.ScopeSuffix{
 		sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
@@ -231,87 +230,87 @@ func (s *generatorTestSuite) TestGenerate() {
 
 	s.mockDeployments.EXPECT().SearchRawDeployments(ctxHasDeploymentsAccessMatcher, gomock.Any()).Return(
 		[]*storage.Deployment{
-			{
+			storage.Deployment_builder{
 				Id:        "depA",
 				Name:      "depA",
 				Namespace: "ns1",
 				PodLabels: map[string]string{"depID": "A"},
-				LabelSelector: &storage.LabelSelector{
+				LabelSelector: storage.LabelSelector_builder{
 					MatchLabels: map[string]string{"depID": "A"},
-				},
-			},
-			{
+				}.Build(),
+			}.Build(),
+			storage.Deployment_builder{
 				Id:        "depB",
 				Name:      "depB",
 				Namespace: "ns1",
 				PodLabels: map[string]string{"depID": "B"},
-				LabelSelector: &storage.LabelSelector{
+				LabelSelector: storage.LabelSelector_builder{
 					MatchLabels: map[string]string{"depID": "B"},
-				},
-			},
-			{
+				}.Build(),
+			}.Build(),
+			storage.Deployment_builder{
 				Id:        "depC",
 				Name:      "depC",
 				Namespace: "ns1",
 				PodLabels: map[string]string{"depID": "C"},
-				LabelSelector: &storage.LabelSelector{
+				LabelSelector: storage.LabelSelector_builder{
 					MatchLabels: map[string]string{"depID": "C"},
-				},
-			},
-			{
+				}.Build(),
+			}.Build(),
+			storage.Deployment_builder{
 				Id:        "depD",
 				Name:      "depD",
 				Namespace: "ns2",
 				PodLabels: map[string]string{"depID": "D"},
-				LabelSelector: &storage.LabelSelector{
+				LabelSelector: storage.LabelSelector_builder{
 					MatchLabels: map[string]string{"depID": "D"},
-				},
-			},
+				}.Build(),
+			}.Build(),
 		}, nil)
 
+	nm := &storage.NamespaceMetadata{}
+	nm.SetId("1")
+	nm.SetName("ns1")
+	nm.SetLabels(map[string]string{
+		namespaces.NamespaceNameLabel: "ns1",
+	})
+	nm2 := &storage.NamespaceMetadata{}
+	nm2.SetId("2")
+	nm2.SetName("ns2")
+	nm2.SetLabels(map[string]string{
+		namespaces.NamespaceNameLabel: "ns2",
+	})
 	s.mockNamespaceStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return(
 		[]*storage.NamespaceMetadata{
-			{
-				Id:   "1",
-				Name: "ns1",
-				Labels: map[string]string{
-					namespaces.NamespaceNameLabel: "ns1",
-				},
-			},
-			{
-				Id:   "2",
-				Name: "ns2",
-				Labels: map[string]string{
-					namespaces.NamespaceNameLabel: "ns2",
-				},
-			},
+			nm,
+			nm2,
 		}, nil)
 
 	clusterIDMatcher := testutils.PredMatcher("check cluster ID", func(clusterID string) bool { return clusterID == "mycluster" })
 	s.mocksNetworkPolicies.EXPECT().GetNetworkPolicies(s.hasReadCtx, clusterIDMatcher, "").Return(
 		[]*storage.NetworkPolicy{
-			{
+			storage.NetworkPolicy_builder{
 				Id:        "np1",
 				ClusterId: "mycluster",
 				Namespace: "ns1",
-				Spec: &storage.NetworkPolicySpec{
-					PodSelector: &storage.LabelSelector{
+				Spec: storage.NetworkPolicySpec_builder{
+					PodSelector: storage.LabelSelector_builder{
 						MatchLabels: map[string]string{"depID": "A"},
-					},
+					}.Build(),
 					PolicyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE},
-				},
-			},
-			{
+				}.Build(),
+			}.Build(),
+			storage.NetworkPolicy_builder{
 				Id:        "np2",
 				ClusterId: "mycluster",
 				Namespace: "ns1",
-				Spec: &storage.NetworkPolicySpec{
-					PodSelector: &storage.LabelSelector{
+				Spec: storage.NetworkPolicySpec_builder{
+					PodSelector: storage.LabelSelector_builder{
 						MatchLabels: map[string]string{"depID": "B"},
-					},
+					}.Build(),
 					PolicyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
-				},
-			},
+				}.Build(),
+			}.Build(),
 		}, nil)
 
 	mockFlowStore := nfDSMocks.NewMockFlowDataStore(s.mockCtrl)
@@ -325,65 +324,65 @@ func (s *generatorTestSuite) TestGenerate() {
 
 	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(&now)).Return(
 		[]*storage.NetworkFlow{
-			{
-				Props: &storage.NetworkFlowProperties{
-					SrcEntity: &storage.NetworkEntityInfo{
+			storage.NetworkFlow_builder{
+				Props: storage.NetworkFlowProperties_builder{
+					SrcEntity: storage.NetworkEntityInfo_builder{
 						Type: storage.NetworkEntityInfo_DEPLOYMENT,
 						Id:   "depA",
-					},
-					DstEntity: &storage.NetworkEntityInfo{
+					}.Build(),
+					DstEntity: storage.NetworkEntityInfo_builder{
 						Type: storage.NetworkEntityInfo_DEPLOYMENT,
 						Id:   "depB",
-					},
-				},
-			},
-			{
-				Props: &storage.NetworkFlowProperties{
-					SrcEntity: &storage.NetworkEntityInfo{
+					}.Build(),
+				}.Build(),
+			}.Build(),
+			storage.NetworkFlow_builder{
+				Props: storage.NetworkFlowProperties_builder{
+					SrcEntity: storage.NetworkEntityInfo_builder{
 						Type: storage.NetworkEntityInfo_DEPLOYMENT,
 						Id:   "depA",
-					},
-					DstEntity: &storage.NetworkEntityInfo{
+					}.Build(),
+					DstEntity: storage.NetworkEntityInfo_builder{
 						Type: storage.NetworkEntityInfo_DEPLOYMENT,
 						Id:   "depC",
-					},
-				},
-			},
-			{
-				Props: &storage.NetworkFlowProperties{
-					SrcEntity: &storage.NetworkEntityInfo{
+					}.Build(),
+				}.Build(),
+			}.Build(),
+			storage.NetworkFlow_builder{
+				Props: storage.NetworkFlowProperties_builder{
+					SrcEntity: storage.NetworkEntityInfo_builder{
 						Type: storage.NetworkEntityInfo_DEPLOYMENT,
 						Id:   "depC",
-					},
-					DstEntity: &storage.NetworkEntityInfo{
+					}.Build(),
+					DstEntity: storage.NetworkEntityInfo_builder{
 						Type: storage.NetworkEntityInfo_DEPLOYMENT,
 						Id:   "depB",
-					},
-				},
-			},
-			{
-				Props: &storage.NetworkFlowProperties{
-					SrcEntity: &storage.NetworkEntityInfo{
+					}.Build(),
+				}.Build(),
+			}.Build(),
+			storage.NetworkFlow_builder{
+				Props: storage.NetworkFlowProperties_builder{
+					SrcEntity: storage.NetworkEntityInfo_builder{
 						Type: storage.NetworkEntityInfo_DEPLOYMENT,
 						Id:   "depD",
-					},
-					DstEntity: &storage.NetworkEntityInfo{
+					}.Build(),
+					DstEntity: storage.NetworkEntityInfo_builder{
 						Type: storage.NetworkEntityInfo_DEPLOYMENT,
 						Id:   "depB",
-					},
-				},
-			},
-			{
-				Props: &storage.NetworkFlowProperties{
-					SrcEntity: &storage.NetworkEntityInfo{
+					}.Build(),
+				}.Build(),
+			}.Build(),
+			storage.NetworkFlow_builder{
+				Props: storage.NetworkFlowProperties_builder{
+					SrcEntity: storage.NetworkEntityInfo_builder{
 						Type: storage.NetworkEntityInfo_INTERNET,
-					},
-					DstEntity: &storage.NetworkEntityInfo{
+					}.Build(),
+					DstEntity: storage.NetworkEntityInfo_builder{
 						Type: storage.NetworkEntityInfo_DEPLOYMENT,
 						Id:   "depC",
-					},
-				},
-			},
+					}.Build(),
+				}.Build(),
+			}.Build(),
 		}, &now, nil)
 
 	s.mockNetTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(nil)
@@ -397,72 +396,72 @@ func (s *generatorTestSuite) TestGenerate() {
 	// canonicalize policies, strip out uninteresting fields
 	for _, policy := range generatedPolicies {
 		s.Equal("true", policy.GetLabels()[generatedNetworkPolicyLabel])
-		policy.Labels = nil
+		policy.SetLabels(nil)
 		s.Equal(networkPolicyAPIVersion, policy.GetApiVersion())
-		policy.ApiVersion = ""
+		policy.SetApiVersion("")
 	}
 
 	sortPolicies(generatedPolicies)
 
 	expectedPolicies := []*storage.NetworkPolicy{
 		// No policy for depA as there already is an existing policy
-		{
+		storage.NetworkPolicy_builder{
 			Name:      "stackrox-generated-depB",
 			Namespace: "ns1",
-			Spec: &storage.NetworkPolicySpec{
+			Spec: storage.NetworkPolicySpec_builder{
 				PolicyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE},
-				PodSelector: &storage.LabelSelector{
+				PodSelector: storage.LabelSelector_builder{
 					MatchLabels: map[string]string{"depID": "B"},
-				},
+				}.Build(),
 				Ingress: []*storage.NetworkPolicyIngressRule{
-					{
+					storage.NetworkPolicyIngressRule_builder{
 						From: []*storage.NetworkPolicyPeer{
-							{
-								PodSelector: &storage.LabelSelector{
+							storage.NetworkPolicyPeer_builder{
+								PodSelector: storage.LabelSelector_builder{
 									MatchLabels: map[string]string{"depID": "A"},
-								},
-							},
-							{
-								PodSelector: &storage.LabelSelector{
+								}.Build(),
+							}.Build(),
+							storage.NetworkPolicyPeer_builder{
+								PodSelector: storage.LabelSelector_builder{
 									MatchLabels: map[string]string{"depID": "C"},
-								},
-							},
-							{
-								NamespaceSelector: &storage.LabelSelector{
+								}.Build(),
+							}.Build(),
+							storage.NetworkPolicyPeer_builder{
+								NamespaceSelector: storage.LabelSelector_builder{
 									MatchLabels: map[string]string{namespaces.NamespaceNameLabel: "ns2"},
-								},
-								PodSelector: &storage.LabelSelector{
+								}.Build(),
+								PodSelector: storage.LabelSelector_builder{
 									MatchLabels: map[string]string{"depID": "D"},
-								},
-							},
+								}.Build(),
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
-		},
-		{
+			}.Build(),
+		}.Build(),
+		storage.NetworkPolicy_builder{
 			Name:      "stackrox-generated-depC",
 			Namespace: "ns1",
-			Spec: &storage.NetworkPolicySpec{
+			Spec: storage.NetworkPolicySpec_builder{
 				PolicyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE},
-				PodSelector: &storage.LabelSelector{
+				PodSelector: storage.LabelSelector_builder{
 					MatchLabels: map[string]string{"depID": "C"},
-				},
+				}.Build(),
 				Ingress: []*storage.NetworkPolicyIngressRule{
 					allowAllIngress,
 				},
-			},
-		},
-		{
+			}.Build(),
+		}.Build(),
+		storage.NetworkPolicy_builder{
 			Name:      "stackrox-generated-depD",
 			Namespace: "ns2",
-			Spec: &storage.NetworkPolicySpec{
+			Spec: storage.NetworkPolicySpec_builder{
 				PolicyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE},
-				PodSelector: &storage.LabelSelector{
+				PodSelector: storage.LabelSelector_builder{
 					MatchLabels: map[string]string{"depID": "D"},
-				},
-			},
-		},
+				}.Build(),
+			}.Build(),
+		}.Build(),
 	}
 
 	sortPolicies(expectedPolicies)
@@ -471,18 +470,18 @@ func (s *generatorTestSuite) TestGenerate() {
 }
 
 func depFlow(fromID, toID string) *storage.NetworkFlow {
-	return &storage.NetworkFlow{
-		Props: &storage.NetworkFlowProperties{
-			SrcEntity: &storage.NetworkEntityInfo{
-				Type: storage.NetworkEntityInfo_DEPLOYMENT,
-				Id:   toID,
-			},
-			DstEntity: &storage.NetworkEntityInfo{
-				Type: storage.NetworkEntityInfo_DEPLOYMENT,
-				Id:   fromID,
-			},
-		},
-	}
+	nei := &storage.NetworkEntityInfo{}
+	nei.SetType(storage.NetworkEntityInfo_DEPLOYMENT)
+	nei.SetId(toID)
+	nei2 := &storage.NetworkEntityInfo{}
+	nei2.SetType(storage.NetworkEntityInfo_DEPLOYMENT)
+	nei2.SetId(fromID)
+	nfp := &storage.NetworkFlowProperties{}
+	nfp.SetSrcEntity(nei)
+	nfp.SetDstEntity(nei2)
+	nf := &storage.NetworkFlow{}
+	nf.SetProps(nfp)
+	return nf
 }
 
 func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
@@ -533,12 +532,11 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 
 	now := time.Now().UTC()
 	ts := protoconv.ConvertTimeToTimestampOrNow(&now)
-	req := &v1.GenerateNetworkPoliciesRequest{
-		ClusterId:        "mycluster",
-		Query:            "Namespace: foo,bar,qux",
-		DeleteExisting:   v1.GenerateNetworkPoliciesRequest_NONE,
-		NetworkDataSince: ts,
-	}
+	req := &v1.GenerateNetworkPoliciesRequest{}
+	req.SetClusterId("mycluster")
+	req.SetQuery("Namespace: foo,bar,qux")
+	req.SetDeleteExisting(v1.GenerateNetworkPoliciesRequest_NONE)
+	req.SetNetworkDataSince(ts)
 
 	ctxHasAllDeploymentsAccessMatcher := sacTestutils.ContextWithAccess(sac.ScopeSuffix{
 		sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
@@ -548,60 +546,60 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 
 	s.mockDeployments.EXPECT().SearchRawDeployments(gomock.Not(ctxHasAllDeploymentsAccessMatcher), gomock.Any()).Return(
 		[]*storage.Deployment{
-			{
+			storage.Deployment_builder{
 				Id:        "depA",
 				Name:      "depA",
 				Namespace: "foo",
 				PodLabels: map[string]string{"depID": "A"},
-				LabelSelector: &storage.LabelSelector{
+				LabelSelector: storage.LabelSelector_builder{
 					MatchLabels: map[string]string{"depID": "A"},
-				},
-			},
-			{
+				}.Build(),
+			}.Build(),
+			storage.Deployment_builder{
 				Id:        "depB",
 				Name:      "depB",
 				Namespace: "foo",
 				PodLabels: map[string]string{"depID": "B"},
-				LabelSelector: &storage.LabelSelector{
+				LabelSelector: storage.LabelSelector_builder{
 					MatchLabels: map[string]string{"depID": "B"},
-				},
-			},
-			{
+				}.Build(),
+			}.Build(),
+			storage.Deployment_builder{
 				Id:        "depC",
 				Name:      "depC",
 				Namespace: "foo",
 				PodLabels: map[string]string{"depID": "C"},
-				LabelSelector: &storage.LabelSelector{
+				LabelSelector: storage.LabelSelector_builder{
 					MatchLabels: map[string]string{"depID": "C"},
-				},
-			},
-			{
+				}.Build(),
+			}.Build(),
+			storage.Deployment_builder{
 				Id:        "depD",
 				Name:      "depD",
 				Namespace: "bar",
 				PodLabels: map[string]string{"depID": "D"},
-				LabelSelector: &storage.LabelSelector{
+				LabelSelector: storage.LabelSelector_builder{
 					MatchLabels: map[string]string{"depID": "D"},
-				},
-			},
-			{
+				}.Build(),
+			}.Build(),
+			storage.Deployment_builder{
 				Id:        "depF",
 				Name:      "depF",
 				Namespace: "qux",
 				PodLabels: map[string]string{"depID": "F"},
-				LabelSelector: &storage.LabelSelector{
+				LabelSelector: storage.LabelSelector_builder{
 					MatchLabels: map[string]string{"depID": "F"},
-				},
-			},
-			{
+				}.Build(),
+			}.Build(),
+			storage.Deployment_builder{
 				Id:        "depG",
 				Name:      "depG",
 				Namespace: "qux",
 				PodLabels: map[string]string{"depID": "G"},
-				LabelSelector: &storage.LabelSelector{
+				LabelSelector: storage.LabelSelector_builder{
 					MatchLabels: map[string]string{"depID": "G"},
-				},
-			},
+				}.Build(),
+			}.Build(),
 		}, nil)
 
 	ctxHasAllNamespaceAccessMatcher := sacTestutils.ContextWithAccess(sac.ScopeSuffix{
@@ -610,29 +608,29 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 		sac.ClusterScopeKey("mycluster"),
 	})
 
+	nm := &storage.NamespaceMetadata{}
+	nm.SetId("1")
+	nm.SetName("foo")
+	nm.SetLabels(map[string]string{
+		namespaces.NamespaceNameLabel: "foo",
+	})
+	nm2 := &storage.NamespaceMetadata{}
+	nm2.SetId("2")
+	nm2.SetName("bar")
+	nm2.SetLabels(map[string]string{
+		namespaces.NamespaceNameLabel: "bar",
+	})
+	nm3 := &storage.NamespaceMetadata{}
+	nm3.SetId("3")
+	nm3.SetName("baz")
+	nm3.SetLabels(map[string]string{
+		namespaces.NamespaceNameLabel: "baz",
+	})
 	s.mockNamespaceStore.EXPECT().SearchNamespaces(gomock.Not(ctxHasAllNamespaceAccessMatcher), gomock.Any()).Return(
 		[]*storage.NamespaceMetadata{
-			{
-				Id:   "1",
-				Name: "foo",
-				Labels: map[string]string{
-					namespaces.NamespaceNameLabel: "foo",
-				},
-			},
-			{
-				Id:   "2",
-				Name: "bar",
-				Labels: map[string]string{
-					namespaces.NamespaceNameLabel: "bar",
-				},
-			},
-			{
-				Id:   "3",
-				Name: "baz",
-				Labels: map[string]string{
-					namespaces.NamespaceNameLabel: "baz",
-				},
-			},
+			nm,
+			nm2,
+			nm3,
 		}, nil,
 	)
 
@@ -676,24 +674,24 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 		// depD is part of the query since it was eliminated as irrelevant before.
 		testutils.AssertionMatcher(assert.ElementsMatch, []string{"depD", "depE", "depX", "depY"})).Return(
 		[]*storage.Deployment{
-			{
+			storage.Deployment_builder{
 				Id:        "depD",
 				Name:      "depD",
 				Namespace: "bar",
 				PodLabels: map[string]string{"depID": "D"},
-				LabelSelector: &storage.LabelSelector{
+				LabelSelector: storage.LabelSelector_builder{
 					MatchLabels: map[string]string{"depID": "D"},
-				},
-			},
-			{
+				}.Build(),
+			}.Build(),
+			storage.Deployment_builder{
 				Id:        "depE",
 				Name:      "depE",
 				Namespace: "baz",
 				PodLabels: map[string]string{"depID": "E"},
-				LabelSelector: &storage.LabelSelector{
+				LabelSelector: storage.LabelSelector_builder{
 					MatchLabels: map[string]string{"depID": "E"},
-				},
-			},
+				}.Build(),
+			}.Build(),
 		}, nil,
 	)
 
@@ -714,9 +712,9 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 	// canonicalize policies, strip out uninteresting fields
 	for _, policy := range generatedPolicies {
 		s.Equal("true", policy.GetLabels()[generatedNetworkPolicyLabel])
-		policy.Labels = nil
+		policy.SetLabels(nil)
 		s.Equal(networkPolicyAPIVersion, policy.GetApiVersion())
-		policy.ApiVersion = ""
+		policy.SetApiVersion("")
 	}
 
 	sortPolicies(generatedPolicies)
@@ -730,145 +728,145 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 	// - netpol for qux (don't need NS metadata for netpol generation, only for peers in other namespaces)
 	expectedPolicies := []*storage.NetworkPolicy{
 		// No policy for depA as there already is an existing policy
-		{
+		storage.NetworkPolicy_builder{
 			Name:      "stackrox-generated-depA",
 			Namespace: "foo",
-			Spec: &storage.NetworkPolicySpec{
+			Spec: storage.NetworkPolicySpec_builder{
 				PolicyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE},
-				PodSelector: &storage.LabelSelector{
+				PodSelector: storage.LabelSelector_builder{
 					MatchLabels: map[string]string{"depID": "A"},
-				},
+				}.Build(),
 				Ingress: []*storage.NetworkPolicyIngressRule{
-					{
+					storage.NetworkPolicyIngressRule_builder{
 						From: []*storage.NetworkPolicyPeer{
-							{
-								PodSelector: &storage.LabelSelector{
+							storage.NetworkPolicyPeer_builder{
+								PodSelector: storage.LabelSelector_builder{
 									MatchLabels: map[string]string{"depID": "B"},
-								},
-							},
-							{
-								NamespaceSelector: &storage.LabelSelector{
+								}.Build(),
+							}.Build(),
+							storage.NetworkPolicyPeer_builder{
+								NamespaceSelector: storage.LabelSelector_builder{
 									MatchLabels: map[string]string{namespaces.NamespaceNameLabel: "bar"},
-								},
-								PodSelector: &storage.LabelSelector{
+								}.Build(),
+								PodSelector: storage.LabelSelector_builder{
 									MatchLabels: map[string]string{"depID": "D"},
-								},
-							},
-							{
-								NamespaceSelector: &storage.LabelSelector{
+								}.Build(),
+							}.Build(),
+							storage.NetworkPolicyPeer_builder{
+								NamespaceSelector: storage.LabelSelector_builder{
 									MatchLabels: map[string]string{namespaces.NamespaceNameLabel: "baz"},
-								},
-								PodSelector: &storage.LabelSelector{
+								}.Build(),
+								PodSelector: storage.LabelSelector_builder{
 									MatchLabels: map[string]string{"depID": "E"},
-								},
-							},
+								}.Build(),
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
-		},
-		{
+			}.Build(),
+		}.Build(),
+		storage.NetworkPolicy_builder{
 			Name:      "stackrox-generated-depB",
 			Namespace: "foo",
-			Spec: &storage.NetworkPolicySpec{
+			Spec: storage.NetworkPolicySpec_builder{
 				PolicyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE},
-				PodSelector: &storage.LabelSelector{
+				PodSelector: storage.LabelSelector_builder{
 					MatchLabels: map[string]string{"depID": "B"},
-				},
+				}.Build(),
 				Ingress: []*storage.NetworkPolicyIngressRule{
 					allowAllPodsAllNS,
 				},
-			},
-		},
-		{
+			}.Build(),
+		}.Build(),
+		storage.NetworkPolicy_builder{
 			Name:      "stackrox-generated-depC",
 			Namespace: "foo",
-			Spec: &storage.NetworkPolicySpec{
+			Spec: storage.NetworkPolicySpec_builder{
 				PolicyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE},
-				PodSelector: &storage.LabelSelector{
+				PodSelector: storage.LabelSelector_builder{
 					MatchLabels: map[string]string{"depID": "C"},
-				},
+				}.Build(),
 				Ingress: []*storage.NetworkPolicyIngressRule{
-					{
+					storage.NetworkPolicyIngressRule_builder{
 						From: []*storage.NetworkPolicyPeer{
-							{
-								PodSelector: &storage.LabelSelector{
+							storage.NetworkPolicyPeer_builder{
+								PodSelector: storage.LabelSelector_builder{
 									MatchLabels: map[string]string{
 										"depID": "A",
 									},
-								},
-							},
-							{
+								}.Build(),
+							}.Build(),
+							storage.NetworkPolicyPeer_builder{
 								NamespaceSelector: &storage.LabelSelector{},
-								PodSelector: &storage.LabelSelector{
+								PodSelector: storage.LabelSelector_builder{
 									MatchLabels: map[string]string{
 										"depID": "F",
 									},
-								},
-							},
+								}.Build(),
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
-		},
-		{
+			}.Build(),
+		}.Build(),
+		storage.NetworkPolicy_builder{
 			Name:      "stackrox-generated-depF",
 			Namespace: "qux",
-			Spec: &storage.NetworkPolicySpec{
+			Spec: storage.NetworkPolicySpec_builder{
 				PolicyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE},
-				PodSelector: &storage.LabelSelector{
+				PodSelector: storage.LabelSelector_builder{
 					MatchLabels: map[string]string{"depID": "F"},
-				},
+				}.Build(),
 				Ingress: []*storage.NetworkPolicyIngressRule{
-					{
+					storage.NetworkPolicyIngressRule_builder{
 						From: []*storage.NetworkPolicyPeer{
-							{
-								NamespaceSelector: &storage.LabelSelector{
+							storage.NetworkPolicyPeer_builder{
+								NamespaceSelector: storage.LabelSelector_builder{
 									MatchLabels: map[string]string{
 										namespaces.NamespaceNameLabel: "foo",
 									},
-								},
-								PodSelector: &storage.LabelSelector{
+								}.Build(),
+								PodSelector: storage.LabelSelector_builder{
 									MatchLabels: map[string]string{
 										"depID": "C",
 									},
-								},
-							},
-							{
-								NamespaceSelector: &storage.LabelSelector{
+								}.Build(),
+							}.Build(),
+							storage.NetworkPolicyPeer_builder{
+								NamespaceSelector: storage.LabelSelector_builder{
 									MatchLabels: map[string]string{
 										namespaces.NamespaceNameLabel: "bar",
 									},
-								},
-								PodSelector: &storage.LabelSelector{
+								}.Build(),
+								PodSelector: storage.LabelSelector_builder{
 									MatchLabels: map[string]string{
 										"depID": "D",
 									},
-								},
-							},
-							{
-								PodSelector: &storage.LabelSelector{
+								}.Build(),
+							}.Build(),
+							storage.NetworkPolicyPeer_builder{
+								PodSelector: storage.LabelSelector_builder{
 									MatchLabels: map[string]string{
 										"depID": "G",
 									},
-								},
-							},
+								}.Build(),
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
-		},
-		{
+			}.Build(),
+		}.Build(),
+		storage.NetworkPolicy_builder{
 			Name:      "stackrox-generated-depG",
 			Namespace: "qux",
-			Spec: &storage.NetworkPolicySpec{
+			Spec: storage.NetworkPolicySpec_builder{
 				PolicyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE},
-				PodSelector: &storage.LabelSelector{
+				PodSelector: storage.LabelSelector_builder{
 					MatchLabels: map[string]string{"depID": "G"},
-				},
+				}.Build(),
 				Ingress: nil,
-			},
-		},
+			}.Build(),
+		}.Build(),
 	}
 
 	sortPolicies(expectedPolicies)

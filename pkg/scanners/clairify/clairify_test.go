@@ -14,13 +14,12 @@ import (
 func getTestScan() (*clairV1.LayerEnvelope, *storage.ImageScan, *storage.Image) {
 	scannerVersion := "2.22.0"
 
-	image := &storage.Image{
-		Name: &storage.ImageName{
-			Registry: "docker.io",
-			Remote:   "integration/nginx",
-			Tag:      "1.10",
-		},
-	}
+	imageName := &storage.ImageName{}
+	imageName.SetRegistry("docker.io")
+	imageName.SetRemote("integration/nginx")
+	imageName.SetTag("1.10")
+	image := &storage.Image{}
+	image.SetName(imageName)
 	clairFeatures, protoComponents := mock.GetTestFeatures()
 
 	env := clairV1.LayerEnvelope{
@@ -31,14 +30,13 @@ func getTestScan() (*clairV1.LayerEnvelope, *storage.ImageScan, *storage.Image) 
 		ScannerVersion: scannerVersion,
 	}
 
-	protoScan := &storage.ImageScan{
-		Components:      protoComponents,
-		ScannerVersion:  scannerVersion,
-		OperatingSystem: "debian:8",
-		Notes: []storage.ImageScan_Note{
-			storage.ImageScan_OS_CVES_STALE,
-		},
-	}
+	protoScan := &storage.ImageScan{}
+	protoScan.SetComponents(protoComponents)
+	protoScan.SetScannerVersion(scannerVersion)
+	protoScan.SetOperatingSystem("debian:8")
+	protoScan.SetNotes([]storage.ImageScan_Note{
+		storage.ImageScan_OS_CVES_STALE,
+	})
 	return &env, protoScan, image
 }
 

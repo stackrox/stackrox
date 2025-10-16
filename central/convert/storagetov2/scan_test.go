@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -29,7 +30,7 @@ func TestEmbeddedVirtualMachineScanComponents(t *testing.T) {
 		{
 			name: "input vector without nil entry",
 			input: []*storage.EmbeddedVirtualMachineScanComponent{
-				{
+				storage.EmbeddedVirtualMachineScanComponent_builder{
 					Name:      testComponentName,
 					Version:   testComponentVersion,
 					RiskScore: testComponentRiskScore,
@@ -39,10 +40,10 @@ func TestEmbeddedVirtualMachineScanComponents(t *testing.T) {
 					Notes: []storage.EmbeddedVirtualMachineScanComponent_Note{
 						storage.EmbeddedVirtualMachineScanComponent_UNSCANNED,
 					},
-				},
+				}.Build(),
 			},
 			expected: []*v2.ScanComponent{
-				{
+				v2.ScanComponent_builder{
 					Name:      testComponentName,
 					Version:   testComponentVersion,
 					RiskScore: testComponentRiskScore,
@@ -52,32 +53,32 @@ func TestEmbeddedVirtualMachineScanComponents(t *testing.T) {
 					Notes: []v2.ScanComponent_Note{
 						v2.ScanComponent_UNSCANNED,
 					},
-				},
+				}.Build(),
 			},
 		},
 		{
 			name: "nil entries in input vector are ignored",
 			input: []*storage.EmbeddedVirtualMachineScanComponent{
 				nil,
-				{
+				storage.EmbeddedVirtualMachineScanComponent_builder{
 					Name:      testComponentName,
 					Version:   testComponentVersion,
 					RiskScore: testComponentRiskScore,
 					Vulnerabilities: []*storage.VirtualMachineVulnerability{
 						storageVirtualMachineTestVuln,
 					},
-				},
+				}.Build(),
 				nil,
 			},
 			expected: []*v2.ScanComponent{
-				{
+				v2.ScanComponent_builder{
 					Name:      testComponentName,
 					Version:   testComponentVersion,
 					RiskScore: testComponentRiskScore,
 					Vulns: []*v2.EmbeddedVulnerability{
 						v2VirtualMachineTestVuln,
 					},
-				},
+				}.Build(),
 			},
 		},
 	}
@@ -103,7 +104,7 @@ func TestEmbeddedVirtualMachineScanComponent(t *testing.T) {
 		},
 		{
 			name: "component without SetTopCVSS",
-			input: &storage.EmbeddedVirtualMachineScanComponent{
+			input: storage.EmbeddedVirtualMachineScanComponent_builder{
 				Name:      testComponentName,
 				Version:   testComponentVersion,
 				RiskScore: testComponentRiskScore,
@@ -111,8 +112,8 @@ func TestEmbeddedVirtualMachineScanComponent(t *testing.T) {
 					storageVirtualMachineTestVuln,
 				},
 				Source: storage.SourceType_INFRASTRUCTURE,
-			},
-			expected: &v2.ScanComponent{
+			}.Build(),
+			expected: v2.ScanComponent_builder{
 				Name:      testComponentName,
 				Version:   testComponentVersion,
 				RiskScore: testComponentRiskScore,
@@ -120,32 +121,28 @@ func TestEmbeddedVirtualMachineScanComponent(t *testing.T) {
 					v2VirtualMachineTestVuln,
 				},
 				Source: v2.SourceType_INFRASTRUCTURE,
-			},
+			}.Build(),
 		},
 		{
 			name: "component with SetTopCVSS",
-			input: &storage.EmbeddedVirtualMachineScanComponent{
+			input: storage.EmbeddedVirtualMachineScanComponent_builder{
 				Name:      testComponentName,
 				Version:   testComponentVersion,
 				RiskScore: testComponentRiskScore,
-				SetTopCvss: &storage.EmbeddedVirtualMachineScanComponent_TopCvss{
-					TopCvss: 7.1,
-				},
+				TopCvss:   proto.Float32(7.1),
 				Vulnerabilities: []*storage.VirtualMachineVulnerability{
 					storageVirtualMachineTestVuln,
 				},
-			},
-			expected: &v2.ScanComponent{
+			}.Build(),
+			expected: v2.ScanComponent_builder{
 				Name:      testComponentName,
 				Version:   testComponentVersion,
 				RiskScore: testComponentRiskScore,
-				SetTopCvss: &v2.ScanComponent_TopCvss{
-					TopCvss: 7.1,
-				},
+				TopCvss:   proto.Float32(7.1),
 				Vulns: []*v2.EmbeddedVulnerability{
 					v2VirtualMachineTestVuln,
 				},
-			},
+			}.Build(),
 		},
 	}
 

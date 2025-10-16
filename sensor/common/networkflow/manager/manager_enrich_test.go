@@ -98,9 +98,9 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichConnection() {
 				indicator: &indicator.NetworkConn{
 					DstPort:  80,
 					Protocol: net.TCP.ToProtobuf(),
-					DstEntity: networkgraph.EntityFromProto(&storage.NetworkEntityInfo{
+					DstEntity: networkgraph.EntityFromProto(storage.NetworkEntityInfo_builder{
 						Id: dstID,
-					}),
+					}.Build()),
 					SrcEntity: networkgraph.EntityForDeployment(srcID),
 				},
 			},
@@ -166,9 +166,9 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichConnection() {
 				indicator: &indicator.NetworkConn{
 					DstPort:  80,
 					Protocol: net.TCP.ToProtobuf(),
-					DstEntity: networkgraph.EntityFromProto(&storage.NetworkEntityInfo{
+					DstEntity: networkgraph.EntityFromProto(storage.NetworkEntityInfo_builder{
 						Id: dstID,
-					}),
+					}.Build()),
 					SrcEntity: networkgraph.EntityForDeployment(srcID),
 				},
 			},

@@ -30,7 +30,7 @@ func TestNoUpgraderLeftBehind(t *testing.T) {
 func SetupUpgradersForTest(_ *testing.T) {
 	simpleUpgrader := func(policy *storage.Policy) {
 		v, _ := strconv.ParseFloat(policy.GetPolicyVersion(), 64)
-		policy.PolicyVersion = fmt.Sprintf("%.1f", v+1.0)
+		policy.SetPolicyVersion(fmt.Sprintf("%.1f", v+1.0))
 	}
 
 	// Always set the top three versions to the test versions
@@ -64,36 +64,36 @@ func TestUpgradePolicyTo(t *testing.T) {
 	}{
 		{
 			"Upgrade from 99 to 100",
-			&storage.Policy{
+			storage.Policy_builder{
 				PolicyVersion: "99.0",
-			},
+			}.Build(),
 			"100.0",
 			false,
 			"100.0",
 		},
 		{
 			"Upgrade from 99 to 99 should be no-op",
-			&storage.Policy{
+			storage.Policy_builder{
 				PolicyVersion: "99.0",
-			},
+			}.Build(),
 			"99.0",
 			false,
 			"99.0",
 		},
 		{
 			"Upgrade from 99 to an older version should be error",
-			&storage.Policy{
+			storage.Policy_builder{
 				PolicyVersion: "99.0",
-			},
+			}.Build(),
 			"98.0",
 			true,
 			"99.0",
 		},
 		{
 			"Upgrade from a non-existent version should be error",
-			&storage.Policy{
+			storage.Policy_builder{
 				PolicyVersion: "199.0",
-			},
+			}.Build(),
 			"100.0",
 			true,
 			"199.0",

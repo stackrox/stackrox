@@ -117,10 +117,10 @@ func (s *serviceImpl) GetComplianceProfileStats(ctx context.Context, request *v2
 	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
 
 	profileStats, count, err := s.getProfileStats(ctx, parsedQuery, countQuery)
-	return &v2.ListComplianceProfileScanStatsResponse{
-		ScanStats:  profileStats,
-		TotalCount: int32(count),
-	}, err
+	lcpssr := &v2.ListComplianceProfileScanStatsResponse{}
+	lcpssr.SetScanStats(profileStats)
+	lcpssr.SetTotalCount(int32(count))
+	return lcpssr, err
 }
 
 // GetComplianceProfilesStats lists current scan stats grouped by profile
@@ -138,10 +138,10 @@ func (s *serviceImpl) GetComplianceProfilesStats(ctx context.Context, query *v2.
 	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
 
 	profileStats, count, err := s.getProfileStats(ctx, parsedQuery, countQuery)
-	return &v2.ListComplianceProfileScanStatsResponse{
-		ScanStats:  profileStats,
-		TotalCount: int32(count),
-	}, err
+	lcpssr := &v2.ListComplianceProfileScanStatsResponse{}
+	lcpssr.SetScanStats(profileStats)
+	lcpssr.SetTotalCount(int32(count))
+	return lcpssr, err
 }
 
 // GetComplianceProfilesClusterStats lists current scan stats grouped by profile
@@ -177,12 +177,12 @@ func (s *serviceImpl) GetComplianceProfilesClusterStats(ctx context.Context, req
 	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
 
 	profileStats, count, err := s.getProfileStats(ctx, parsedQuery, countQuery)
-	return &v2.ListComplianceClusterProfileStatsResponse{
-		ScanStats:   profileStats,
-		ClusterId:   request.GetClusterId(),
-		ClusterName: clusterName,
-		TotalCount:  int32(count),
-	}, err
+	lccpsr := &v2.ListComplianceClusterProfileStatsResponse{}
+	lccpsr.SetScanStats(profileStats)
+	lccpsr.SetClusterId(request.GetClusterId())
+	lccpsr.SetClusterName(clusterName)
+	lccpsr.SetTotalCount(int32(count))
+	return lccpsr, err
 }
 
 func (s *serviceImpl) getProfileStats(ctx context.Context, parsedQuery *v1.Query, countQuery *v1.Query) ([]*v2.ComplianceProfileScanStats, int, error) {
@@ -267,10 +267,10 @@ func (s *serviceImpl) GetComplianceClusterScanStats(ctx context.Context, request
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for request %v", request)
 	}
 
-	return &v2.ListComplianceClusterScanStatsResponse{
-		ScanStats:  storagetov2.ComplianceV2ClusterStats(scanResults, scanConfigToIDs),
-		TotalCount: int32(count),
-	}, nil
+	lccssr := &v2.ListComplianceClusterScanStatsResponse{}
+	lccssr.SetScanStats(storagetov2.ComplianceV2ClusterStats(scanResults, scanConfigToIDs))
+	lccssr.SetTotalCount(int32(count))
+	return lccssr, nil
 }
 
 // GetComplianceOverallClusterStats lists current scan stats grouped by cluster
@@ -307,10 +307,10 @@ func (s *serviceImpl) GetComplianceOverallClusterStats(ctx context.Context, quer
 		clusterErrors[result.ClusterID] = integrations[0].GetStatusErrors()
 	}
 
-	return &v2.ListComplianceClusterOverallStatsResponse{
-		ScanStats:  storagetov2.ComplianceV2ClusterOverallStats(scanResults, clusterErrors),
-		TotalCount: int32(count),
-	}, nil
+	lccosr := &v2.ListComplianceClusterOverallStatsResponse{}
+	lccosr.SetScanStats(storagetov2.ComplianceV2ClusterOverallStats(scanResults, clusterErrors))
+	lccosr.SetTotalCount(int32(count))
+	return lccosr, nil
 }
 
 // GetComplianceClusterStats lists current scan stats grouped by cluster
@@ -369,10 +369,10 @@ func (s *serviceImpl) GetComplianceClusterStats(ctx context.Context, request *v2
 		}
 	}
 
-	return &v2.ListComplianceClusterOverallStatsResponse{
-		ScanStats:  storagetov2.ComplianceV2ClusterOverallStats(scanResults, clusterErrors),
-		TotalCount: int32(count),
-	}, nil
+	lccosr := &v2.ListComplianceClusterOverallStatsResponse{}
+	lccosr.SetScanStats(storagetov2.ComplianceV2ClusterOverallStats(scanResults, clusterErrors))
+	lccosr.SetTotalCount(int32(count))
+	return lccosr, nil
 }
 
 // GetComplianceProfileCheckStats lists current scan stats grouped by the specified profile and compliance check
@@ -417,9 +417,9 @@ func (s *serviceImpl) GetComplianceProfileCheckStats(ctx context.Context, reques
 		return nil, errors.Wrapf(err, "Unable to retrieve controls for compliance profile check stats for %+v", request)
 	}
 
-	return &v2.ListComplianceProfileResults{
-		ProfileResults: storagetov2.ComplianceV2ProfileResults(scanResults, controls),
-		ProfileName:    request.GetProfileName(),
-		TotalCount:     int32(1),
-	}, nil
+	lcpr := &v2.ListComplianceProfileResults{}
+	lcpr.SetProfileResults(storagetov2.ComplianceV2ProfileResults(scanResults, controls))
+	lcpr.SetProfileName(request.GetProfileName())
+	lcpr.SetTotalCount(int32(1))
+	return lcpr, nil
 }

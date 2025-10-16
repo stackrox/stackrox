@@ -128,11 +128,11 @@ func convertMany(secrets []*storage.ListSecret, results []pkgSearch.Result) ([]*
 }
 
 func convertOne(secret *storage.ListSecret, result *pkgSearch.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_SECRETS,
-		Id:             secret.GetId(),
-		Name:           secret.GetName(),
-		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+	sr := &v1.SearchResult{}
+	sr.SetCategory(v1.SearchCategory_SECRETS)
+	sr.SetId(secret.GetId())
+	sr.SetName(secret.GetName())
+	sr.SetFieldToMatches(pkgSearch.GetProtoMatchesMap(result.Matches))
+	sr.SetScore(result.Score)
+	return sr
 }

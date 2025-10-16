@@ -37,30 +37,29 @@ func CreateRoleBasedIdentity(ctx context.Context, provider Provider, authResp *A
 	var authProvider *storage.AuthProvider
 	if provider.StorageView() != nil {
 		authProvider = provider.StorageView().CloneVT()
-		authProvider.Config = nil
+		authProvider.SetConfig(nil)
 	}
 
 	resolvedRoles, err := provider.RoleMapper().FromUserDescriptor(ctx, ud)
 	if err != nil {
 		return nil, err
 	}
-	return &v1.AuthStatus{
-		Id: &v1.AuthStatus_UserId{
-			UserId: authResp.Claims.UserID,
-		},
-		AuthProvider:   authProvider,
-		Expires:        protoconv.ConvertTimeToTimestampOrNil(authResp.Expiration),
-		UserAttributes: user.ConvertAttributes(authResp.Claims.Attributes),
-		UserInfo:       getUserInfo(authResp.Claims, resolvedRoles),
-	}, nil
+	as := &v1.AuthStatus{}
+	as.SetUserId(authResp.Claims.UserID)
+	as.SetAuthProvider(authProvider)
+	as.SetExpires(protoconv.ConvertTimeToTimestampOrNil(authResp.Expiration))
+	as.SetUserAttributes(user.ConvertAttributes(authResp.Claims.Attributes))
+	as.SetUserInfo(getUserInfo(authResp.Claims, resolvedRoles))
+	return as, nil
 }
 
 func getUserInfo(externalUserClaim *tokens.ExternalUserClaim, resolvedRoles []permissions.ResolvedRole) *storage.UserInfo {
-	userInfo := &storage.UserInfo{
-		Username:     externalUserClaim.UserID,
-		FriendlyName: externalUserClaim.FullName,
-		Permissions:  &storage.UserInfo_ResourceToAccess{ResourceToAccess: utils.NewUnionPermissions(resolvedRoles)},
-		Roles:        utils.ExtractRolesForUserInfo(resolvedRoles),
-	}
+	ur := &storage.UserInfo_ResourceToAccess{}
+	ur.SetResourceToAccess(utils.NewUnionPermissions(resolvedRoles))
+	userInfo := &storage.UserInfo{}
+	userInfo.SetUsername(externalUserClaim.UserID)
+	userInfo.SetFriendlyName(externalUserClaim.FullName)
+	userInfo.SetPermissions(ur)
+	userInfo.SetRoles(utils.ExtractRolesForUserInfo(resolvedRoles))
 	return userInfo
 }

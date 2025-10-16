@@ -105,11 +105,10 @@ func SetVersionGormDB(ctx context.Context, db *gorm.DB, updatedVersion *storage.
 
 // SetCurrentVersionPostgres - sets the current version in the postgres database
 func SetCurrentVersionPostgres(ctx context.Context) {
-	newVersion := &storage.Version{
-		SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
-		Version:       version.GetMainVersion(),
-		MinSeqNum:     int32(migrations.MinimumSupportedDBVersionSeqNum()),
-		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
-	}
+	newVersion := &storage.Version{}
+	newVersion.SetSeqNum(int32(migrations.CurrentDBVersionSeqNum()))
+	newVersion.SetVersion(version.GetMainVersion())
+	newVersion.SetMinSeqNum(int32(migrations.MinimumSupportedDBVersionSeqNum()))
+	newVersion.SetLastPersisted(protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()))
 	SetVersionPostgres(ctx, migrations.GetCurrentClone(), newVersion)
 }

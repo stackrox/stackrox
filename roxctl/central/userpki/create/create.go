@@ -117,32 +117,33 @@ func (cmd *centralUserPkiCreateCommand) createProvider() error {
 	authService := v1.NewAuthProviderServiceClient(conn)
 	groupService := v1.NewGroupServiceClient(conn)
 	roleService := v1.NewRoleServiceClient(conn)
-	_, err = roleService.GetRole(ctx, &v1.ResourceByID{Id: cmd.roleName})
+	rbid := &v1.ResourceByID{}
+	rbid.SetId(cmd.roleName)
+	_, err = roleService.GetRole(ctx, rbid)
 	if err != nil {
 		return errors.Wrap(err, cmd.roleName)
 	}
 
-	req := &v1.PostAuthProviderRequest{
-		Provider: &storage.AuthProvider{
-			Type:    userpki.TypeName,
-			Name:    cmd.providerName,
-			Enabled: true,
-			Config: map[string]string{
-				userpki.ConfigKeys: pems.String(),
-			},
-		},
-	}
+	ap := &storage.AuthProvider{}
+	ap.SetType(userpki.TypeName)
+	ap.SetName(cmd.providerName)
+	ap.SetEnabled(true)
+	ap.SetConfig(map[string]string{
+		userpki.ConfigKeys: pems.String(),
+	})
+	req := &v1.PostAuthProviderRequest{}
+	req.SetProvider(ap)
 	provider, err := authService.PostAuthProvider(ctx, req)
 	if err != nil {
 		return errors.Wrap(err, "creating auth provider")
 	}
 
-	_, err = groupService.CreateGroup(ctx, &storage.Group{
-		Props: &storage.GroupProperties{
-			AuthProviderId: provider.GetId(),
-		},
-		RoleName: cmd.roleName,
-	})
+	gp := &storage.GroupProperties{}
+	gp.SetAuthProviderId(provider.GetId())
+	group := &storage.Group{}
+	group.SetProps(gp)
+	group.SetRoleName(cmd.roleName)
+	_, err = groupService.CreateGroup(ctx, group)
 
 	if err != nil {
 		return errors.Wrap(err, "creating group")

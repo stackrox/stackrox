@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/networkflow/updatecomputer"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 func createManager(mockCtrl *gomock.Controller, enrichTicker <-chan time.Time) (*networkFlowManager, *mocksManager.MockEntityStore, *mocksExternalSrc.MockStore, *mocksDetector.MockDetector) {
@@ -295,42 +296,40 @@ type expectedEntitiesPair struct {
 func createExpectedSensorMessageWithConnections(pairs ...*expectedEntitiesPair) *central.MsgFromSensor {
 	var updates []*storage.NetworkFlow
 	for _, pair := range pairs {
-		updates = append(updates, &storage.NetworkFlow{
-			Props: &storage.NetworkFlowProperties{
-				SrcEntity:  networkgraph.EntityForDeployment(pair.srcID).ToProto(),
-				DstEntity:  networkgraph.EntityFromProto(&storage.NetworkEntityInfo{Id: pair.dstID}).ToProto(),
-				DstPort:    80,
-				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-			},
-		})
+		nei := &storage.NetworkEntityInfo{}
+		nei.SetId(pair.dstID)
+		nfp := &storage.NetworkFlowProperties{}
+		nfp.SetSrcEntity(networkgraph.EntityForDeployment(pair.srcID).ToProto())
+		nfp.SetDstEntity(networkgraph.EntityFromProto(nei).ToProto())
+		nfp.SetDstPort(80)
+		nfp.SetL4Protocol(storage.L4Protocol_L4_PROTOCOL_TCP)
+		nf := &storage.NetworkFlow{}
+		nf.SetProps(nfp)
+		updates = append(updates, nf)
 	}
-	return &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_NetworkFlowUpdate{
-			NetworkFlowUpdate: &central.NetworkFlowUpdate{
-				Updated: updates,
-			},
-		},
-	}
+	nfu := &central.NetworkFlowUpdate{}
+	nfu.SetUpdated(updates)
+	mfs := &central.MsgFromSensor{}
+	mfs.SetNetworkFlowUpdate(proto.ValueOrDefault(nfu))
+	return mfs
 }
 
 func createExpectedSensorMessageWithEndpoints(ids ...string) *central.MsgFromSensor {
 	var updates []*storage.NetworkEndpoint
 	for _, id := range ids {
-		updates = append(updates, &storage.NetworkEndpoint{
-			Props: &storage.NetworkEndpointProperties{
-				Entity:     networkgraph.EntityForDeployment(id).ToProto(),
-				Port:       80,
-				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-			},
-		})
+		nep := &storage.NetworkEndpointProperties{}
+		nep.SetEntity(networkgraph.EntityForDeployment(id).ToProto())
+		nep.SetPort(80)
+		nep.SetL4Protocol(storage.L4Protocol_L4_PROTOCOL_TCP)
+		ne := &storage.NetworkEndpoint{}
+		ne.SetProps(nep)
+		updates = append(updates, ne)
 	}
-	return &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_NetworkFlowUpdate{
-			NetworkFlowUpdate: &central.NetworkFlowUpdate{
-				UpdatedEndpoints: updates,
-			},
-		},
-	}
+	nfu := &central.NetworkFlowUpdate{}
+	nfu.SetUpdatedEndpoints(updates)
+	mfs := &central.MsgFromSensor{}
+	mfs.SetNetworkFlowUpdate(proto.ValueOrDefault(nfu))
+	return mfs
 }
 
 func (s *NetworkFlowManagerTestSuite) assertSensorMessageConnectionIDs(expectedUpdates []*storage.NetworkFlow, actualUpdates []*storage.NetworkFlow) {
@@ -422,7 +421,9 @@ func (me *mockExpectations) expectEndpointNotFound() *mockExpectations {
 func (me *mockExpectations) expectExternalFound(entityID string) *mockExpectations {
 	me.externalStore.EXPECT().LookupByNetwork(gomock.Any()).Times(1).DoAndReturn(
 		func(_ any) *storage.NetworkEntityInfo {
-			return &storage.NetworkEntityInfo{Id: entityID}
+			nei := &storage.NetworkEntityInfo{}
+			nei.SetId(entityID)
+			return nei
 		})
 	return me
 }

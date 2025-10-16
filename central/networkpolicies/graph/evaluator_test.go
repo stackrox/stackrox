@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 	k8sV1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
@@ -29,9 +30,9 @@ func init() {
 			panic(err)
 		}
 		np := networkPolicyConversion.KubernetesNetworkPolicyWrap{NetworkPolicy: &k8sNp}.ToRoxNetworkPolicy()
-		np.Id = k8sNp.GetName()
+		np.SetId(k8sNp.GetName())
 		if np.GetNamespace() == "" {
-			np.Namespace = "default"
+			np.SetNamespace("default")
 		}
 		networkPolicyFixtures[np.GetName()] = np
 	}
@@ -543,30 +544,30 @@ func TestDoesNamespaceMatchLabel(t *testing.T) {
 		},
 		{
 			name: "matching values in selector",
-			namespace: &storage.NamespaceMetadata{
+			namespace: storage.NamespaceMetadata_builder{
 				Labels: map[string]string{
 					"hello": "hi",
 				},
-			},
-			selector: &storage.LabelSelector{
+			}.Build(),
+			selector: storage.LabelSelector_builder{
 				MatchLabels: map[string]string{
 					"hello": "hi",
 				},
-			},
+			}.Build(),
 			expected: true,
 		},
 		{
 			name: "non matching values in selector",
-			namespace: &storage.NamespaceMetadata{
+			namespace: storage.NamespaceMetadata_builder{
 				Labels: map[string]string{
 					"hello": "hi1",
 				},
-			},
-			selector: &storage.LabelSelector{
+			}.Build(),
+			selector: storage.LabelSelector_builder{
 				MatchLabels: map[string]string{
 					"hello": "hi",
 				},
-			},
+			}.Build(),
 			expected: false,
 		},
 	}
@@ -601,30 +602,30 @@ func TestDoesPodLabelsMatchLabel(t *testing.T) {
 		},
 		{
 			name: "matching values in selector",
-			deployment: &storage.Deployment{
+			deployment: storage.Deployment_builder{
 				PodLabels: map[string]string{
 					"hello": "hi",
 				},
-			},
-			selector: &storage.LabelSelector{
+			}.Build(),
+			selector: storage.LabelSelector_builder{
 				MatchLabels: map[string]string{
 					"hello": "hi",
 				},
-			},
+			}.Build(),
 			expected: true,
 		},
 		{
 			name: "non matching values in selector",
-			deployment: &storage.Deployment{
+			deployment: storage.Deployment_builder{
 				PodLabels: map[string]string{
 					"hello": "hi1",
 				},
-			},
-			selector: &storage.LabelSelector{
+			}.Build(),
+			selector: storage.LabelSelector_builder{
 				MatchLabels: map[string]string{
 					"hello": "hi",
 				},
-			},
+			}.Build(),
 			expected: false,
 		},
 	}
@@ -706,56 +707,50 @@ func flattenEdges(edges ...[]testEdge) []testEdge {
 
 func mockNode(node string, namespace string, internetAccess, nonIsolatedIngress, nonIsolatedEgress bool, queryMatch bool, policies ...string) *v1.NetworkNode {
 	slices.Sort(policies)
-	return &v1.NetworkNode{
-		Entity: &storage.NetworkEntityInfo{
-			Type: storage.NetworkEntityInfo_DEPLOYMENT,
-			Id:   node,
-			Desc: &storage.NetworkEntityInfo_Deployment_{
-				Deployment: &storage.NetworkEntityInfo_Deployment{
-					Namespace: namespace,
-				},
-			},
-		},
-		PolicyIds:          policies,
-		InternetAccess:     internetAccess,
-		NonIsolatedIngress: nonIsolatedIngress,
-		NonIsolatedEgress:  nonIsolatedEgress,
-		QueryMatch:         queryMatch,
-		OutEdges:           make(map[int32]*v1.NetworkEdgePropertiesBundle),
-	}
+	nn := &v1.NetworkNode{}
+	nn.SetEntity(storage.NetworkEntityInfo_builder{
+		Type: storage.NetworkEntityInfo_DEPLOYMENT,
+		Id:   node,
+		Deployment: storage.NetworkEntityInfo_Deployment_builder{
+			Namespace: namespace,
+		}.Build(),
+	}.Build())
+	nn.SetPolicyIds(policies)
+	nn.SetInternetAccess(internetAccess)
+	nn.SetNonIsolatedIngress(nonIsolatedIngress)
+	nn.SetNonIsolatedEgress(nonIsolatedEgress)
+	nn.SetQueryMatch(queryMatch)
+	nn.SetOutEdges(make(map[int32]*v1.NetworkEdgePropertiesBundle))
+	return nn
 }
 
 func mockExternalNode(node string, cidr string) *v1.NetworkNode {
-	return &v1.NetworkNode{
-		Entity: &storage.NetworkEntityInfo{
-			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-			Id:   node,
-			Desc: &storage.NetworkEntityInfo_ExternalSource_{
-				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-						Cidr: cidr,
-					},
-				},
-			},
-		},
-		InternetAccess:     true,
-		NonIsolatedIngress: true,
-		NonIsolatedEgress:  true,
-		OutEdges:           make(map[int32]*v1.NetworkEdgePropertiesBundle),
-	}
+	nn := &v1.NetworkNode{}
+	nn.SetEntity(storage.NetworkEntityInfo_builder{
+		Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+		Id:   node,
+		ExternalSource: storage.NetworkEntityInfo_ExternalSource_builder{
+			Cidr: proto.String(cidr),
+		}.Build(),
+	}.Build())
+	nn.SetInternetAccess(true)
+	nn.SetNonIsolatedIngress(true)
+	nn.SetNonIsolatedEgress(true)
+	nn.SetOutEdges(make(map[int32]*v1.NetworkEdgePropertiesBundle))
+	return nn
 }
 
 func mockInternetNode() *v1.NetworkNode {
-	return &v1.NetworkNode{
-		Entity: &storage.NetworkEntityInfo{
-			Type: storage.NetworkEntityInfo_INTERNET,
-			Id:   networkgraph.InternetExternalSourceID,
-		},
-		InternetAccess:     true,
-		NonIsolatedIngress: true,
-		NonIsolatedEgress:  true,
-		OutEdges:           make(map[int32]*v1.NetworkEdgePropertiesBundle),
-	}
+	nei := &storage.NetworkEntityInfo{}
+	nei.SetType(storage.NetworkEntityInfo_INTERNET)
+	nei.SetId(networkgraph.InternetExternalSourceID)
+	nn := &v1.NetworkNode{}
+	nn.SetEntity(nei)
+	nn.SetInternetAccess(true)
+	nn.SetNonIsolatedIngress(true)
+	nn.SetNonIsolatedEgress(true)
+	nn.SetOutEdges(make(map[int32]*v1.NetworkEdgePropertiesBundle))
+	return nn
 }
 
 func deploymentLabels(values ...string) map[string]string {
@@ -773,43 +768,31 @@ func TestEvaluateClusters(t *testing.T) {
 	g := newMockGraphEvaluator()
 
 	t1, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{
-		{
+		storage.NetworkEntityInfo_builder{
 			Id:   "es1",
 			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-			Desc: &storage.NetworkEntityInfo_ExternalSource_{
-				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-						Cidr: "172.17.0.0/24",
-					},
-				},
-			},
-		},
+			ExternalSource: storage.NetworkEntityInfo_ExternalSource_builder{
+				Cidr: proto.String("172.17.0.0/24"),
+			}.Build(),
+		}.Build(),
 	})
 	assert.NoError(t, err)
 
 	t2, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{
-		{
+		storage.NetworkEntityInfo_builder{
 			Id:   "es1",
 			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-			Desc: &storage.NetworkEntityInfo_ExternalSource_{
-				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-						Cidr: "172.17.10.0/24",
-					},
-				},
-			},
-		},
-		{
+			ExternalSource: storage.NetworkEntityInfo_ExternalSource_builder{
+				Cidr: proto.String("172.17.10.0/24"),
+			}.Build(),
+		}.Build(),
+		storage.NetworkEntityInfo_builder{
 			Id:   "es2",
 			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-			Desc: &storage.NetworkEntityInfo_ExternalSource_{
-				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-						Cidr: "172.17.15.0/24",
-					},
-				},
-			},
-		},
+			ExternalSource: storage.NetworkEntityInfo_ExternalSource_builder{
+				Cidr: proto.String("172.17.15.0/24"),
+			}.Build(),
+		}.Build(),
 	})
 	assert.NoError(t, err)
 
@@ -826,12 +809,12 @@ func TestEvaluateClusters(t *testing.T) {
 		{
 			name: "No policies - fully connected",
 			deployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id: "d1",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id: "d2",
-				},
+				}.Build(),
 			},
 			networkTree: t1,
 			nodes: []*v1.NetworkNode{
@@ -843,22 +826,22 @@ func TestEvaluateClusters(t *testing.T) {
 		{
 			name: "deny all to app=web",
 			deployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "web"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d3",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
+				}.Build(),
 			},
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("web-deny-all"),
@@ -873,24 +856,24 @@ func TestEvaluateClusters(t *testing.T) {
 		{
 			name: "limit traffic to application",
 			deployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "bookstore", "role", "api"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "bookstore", "role", "frontend"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d3",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "coffeeshop", "role", "api"),
-				},
+				}.Build(),
 			},
 			edges: flattenEdges(
 				ingressEdges("d1", "d2"),
@@ -908,22 +891,22 @@ func TestEvaluateClusters(t *testing.T) {
 		{
 			name: "allow all ingress even if deny all",
 			deployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "web"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d3",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
+				}.Build(),
 			},
 			edges: flattenEdges(
 				ingressEdges("d1", "d2", "d3", networkgraph.InternetExternalSourceID),
@@ -942,22 +925,22 @@ func TestEvaluateClusters(t *testing.T) {
 		{
 			name: "DENY all non-whitelisted traffic to a namespace", // TODO: update to inclusive language when updating actual code
 			deployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "web"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d3",
 					Namespace:   "stackrox",
 					NamespaceId: "stackrox",
-				},
+				}.Build(),
 			},
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("default-deny-all"),
@@ -972,21 +955,21 @@ func TestEvaluateClusters(t *testing.T) {
 		{
 			name: "DENY all traffic from other namespaces",
 			deployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d3",
 					Namespace:   "stackrox",
 					NamespaceId: "stackrox",
-				},
+				}.Build(),
 			},
 			edges: flattenEdges(
 				fullyConnectedEdges("d1", "d2"),
@@ -1004,22 +987,22 @@ func TestEvaluateClusters(t *testing.T) {
 		{
 			name: "Web allow all traffic from other namespaces",
 			deployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "web"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d3",
 					Namespace:   "stackrox",
 					NamespaceId: "stackrox",
-				},
+				}.Build(),
 			},
 			edges: flattenEdges(
 				fullyConnectedEdges("d1", "d2"),
@@ -1039,22 +1022,22 @@ func TestEvaluateClusters(t *testing.T) {
 		{
 			name: "Web allow all traffic from stackrox namespace",
 			deployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "web"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "other",
 					NamespaceId: "other",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d3",
 					Namespace:   "stackrox",
 					NamespaceId: "stackrox",
-				},
+				}.Build(),
 			},
 			edges: flattenEdges(
 				ingressEdges("d1", "d3"),
@@ -1072,29 +1055,29 @@ func TestEvaluateClusters(t *testing.T) {
 		{
 			name: "Allow traffic from apps using multiple selectors",
 			deployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "web", "role", "db"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "bookstore", "role", "search"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d3",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "bookstore", "role", "api"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d4",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
+				}.Build(),
 			},
 			edges: flattenEdges(
 				ingressEdges("d1", "d2", "d3"),
@@ -1114,17 +1097,17 @@ func TestEvaluateClusters(t *testing.T) {
 		{
 			name: "web deny egress",
 			deployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "web"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
+				}.Build(),
 			},
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("web-deny-egress"),
@@ -1138,22 +1121,22 @@ func TestEvaluateClusters(t *testing.T) {
 		{
 			name: "deny egress from namespace",
 			deployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "web"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d3",
 					Namespace:   "stackrox",
 					NamespaceId: "stackrox",
-				},
+				}.Build(),
 			},
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("default-deny-all-egress"),
@@ -1168,22 +1151,22 @@ func TestEvaluateClusters(t *testing.T) {
 		{
 			name: "deny internetAccess egress from cluster",
 			deployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "web"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d3",
 					Namespace:   "stackrox",
 					NamespaceId: "stackrox",
-				},
+				}.Build(),
 			},
 			edges: flattenEdges(
 				egressEdges("d1", "d2", "d3"),
@@ -1201,28 +1184,28 @@ func TestEvaluateClusters(t *testing.T) {
 		{
 			name: "deny all ingress except for app = web",
 			deployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "qa",
 					NamespaceId: "qa",
 					PodLabels:   deploymentLabels("app", "web"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "qa",
 					NamespaceId: "qa",
 					PodLabels:   deploymentLabels("app", "client"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d3",
 					Namespace:   "stackrox",
 					NamespaceId: "stackrox",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d4",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
+				}.Build(),
 			},
 			edges: flattenEdges(
 				ingressEdges("d1", "d2", "d3", "d4"),
@@ -1242,16 +1225,16 @@ func TestEvaluateClusters(t *testing.T) {
 		{
 			name: "fully isolate all pods",
 			deployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
+				}.Build(),
 			},
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("fully-isolate"),
@@ -1264,11 +1247,11 @@ func TestEvaluateClusters(t *testing.T) {
 		{
 			name: "allow only egress to ipblock",
 			deployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
+				}.Build(),
 			},
 			networkTree: t2,
 			nps: []*storage.NetworkPolicy{
@@ -1286,21 +1269,21 @@ func TestEvaluateClusters(t *testing.T) {
 		{
 			name: "public egress cidr block shouldn't show edges to other deployments in cluster",
 			deployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "qa",
 					NamespaceId: "qa",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d3",
 					Namespace:   "qa",
 					NamespaceId: "qa",
-				},
+				}.Build(),
 			},
 			networkTree: t1,
 			nps: []*storage.NetworkPolicy{
@@ -1319,24 +1302,24 @@ func TestEvaluateClusters(t *testing.T) {
 		{
 			name: "ingress and egress combination",
 			deployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "a",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "a"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "b",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "b"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "c",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "c"),
-				},
+				}.Build(),
 			},
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("a-ingress-tcp-8080"),
@@ -1373,43 +1356,31 @@ func TestEvaluateNeighbors(t *testing.T) {
 	g := newMockGraphEvaluator()
 
 	t1, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{
-		{
+		storage.NetworkEntityInfo_builder{
 			Id:   "es1",
 			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-			Desc: &storage.NetworkEntityInfo_ExternalSource_{
-				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-						Cidr: "172.17.0.0/24",
-					},
-				},
-			},
-		},
+			ExternalSource: storage.NetworkEntityInfo_ExternalSource_builder{
+				Cidr: proto.String("172.17.0.0/24"),
+			}.Build(),
+		}.Build(),
 	})
 	assert.NoError(t, err)
 
 	t2, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{
-		{
+		storage.NetworkEntityInfo_builder{
 			Id:   "es1",
 			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-			Desc: &storage.NetworkEntityInfo_ExternalSource_{
-				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-						Cidr: "172.17.10.0/24",
-					},
-				},
-			},
-		},
-		{
+			ExternalSource: storage.NetworkEntityInfo_ExternalSource_builder{
+				Cidr: proto.String("172.17.10.0/24"),
+			}.Build(),
+		}.Build(),
+		storage.NetworkEntityInfo_builder{
 			Id:   "es2",
 			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-			Desc: &storage.NetworkEntityInfo_ExternalSource_{
-				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-						Cidr: "172.17.15.0/24",
-					},
-				},
-			},
-		},
+			ExternalSource: storage.NetworkEntityInfo_ExternalSource_builder{
+				Cidr: proto.String("172.17.15.0/24"),
+			}.Build(),
+		}.Build(),
 	})
 	assert.NoError(t, err)
 
@@ -1428,15 +1399,15 @@ func TestEvaluateNeighbors(t *testing.T) {
 			name:             "No policies - fully connected",
 			queryDeployments: set.NewStringSet("d1", "d2"),
 			clusterDeployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id: "d1",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id: "d2",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id: "d3",
-				},
+				}.Build(),
 			},
 			networkTree: t1,
 			nodes: []*v1.NetworkNode{
@@ -1450,24 +1421,24 @@ func TestEvaluateNeighbors(t *testing.T) {
 			name:             "limit traffic to application",
 			queryDeployments: set.NewStringSet("d1", "d3"),
 			clusterDeployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "bookstore", "role", "api"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "bookstore", "role", "frontend"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d3",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "coffeeshop", "role", "api"),
-				},
+				}.Build(),
 			},
 			edges: flattenEdges(
 				ingressEdges("d1", "d2"),
@@ -1486,27 +1457,27 @@ func TestEvaluateNeighbors(t *testing.T) {
 			name:             "allow all ingress even if deny all",
 			queryDeployments: set.NewStringSet("d1", "d2", "d3"),
 			clusterDeployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "web"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d3",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d5",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
+				}.Build(),
 			},
 			edges: flattenEdges(
 				ingressEdges("d1", "d2", "d3", "d5", networkgraph.InternetExternalSourceID),
@@ -1527,27 +1498,27 @@ func TestEvaluateNeighbors(t *testing.T) {
 			name:             "DENY all non-whitelisted traffic to a namespace", // TODO: update to inclusive language when updating actual code
 			queryDeployments: set.NewStringSet("d1", "d2", "d3"),
 			clusterDeployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "web"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d3",
 					Namespace:   "stackrox",
 					NamespaceId: "stackrox",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d4",
 					Namespace:   "stackrox",
 					NamespaceId: "stackrox",
-				},
+				}.Build(),
 			},
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("default-deny-all"),
@@ -1564,21 +1535,21 @@ func TestEvaluateNeighbors(t *testing.T) {
 			name:             "DENY all traffic from other namespaces",
 			queryDeployments: set.NewStringSet("d1"),
 			clusterDeployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d3",
 					Namespace:   "stackrox",
 					NamespaceId: "stackrox",
-				},
+				}.Build(),
 			},
 			edges: flattenEdges(
 				fullyConnectedEdges("d1", "d2"),
@@ -1597,22 +1568,22 @@ func TestEvaluateNeighbors(t *testing.T) {
 			name:             "Web allow all traffic from other namespaces",
 			queryDeployments: set.NewStringSet("d1"),
 			clusterDeployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "web"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d3",
 					Namespace:   "stackrox",
 					NamespaceId: "stackrox",
-				},
+				}.Build(),
 			},
 			edges: flattenEdges(
 				fullyConnectedEdges("d1", "d2"),
@@ -1633,27 +1604,27 @@ func TestEvaluateNeighbors(t *testing.T) {
 			name:             "Web allow all traffic from stackrox namespace",
 			queryDeployments: set.NewStringSet("d1"),
 			clusterDeployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "web"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "other",
 					NamespaceId: "other",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d3",
 					Namespace:   "stackrox",
 					NamespaceId: "stackrox",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d4",
 					Namespace:   "stackrox",
 					NamespaceId: "stackrox",
-				},
+				}.Build(),
 			},
 			edges: flattenEdges(
 				ingressEdges("d1", "d3", "d4"),
@@ -1673,22 +1644,22 @@ func TestEvaluateNeighbors(t *testing.T) {
 			name:             "deny egress from namespace",
 			queryDeployments: set.NewStringSet(),
 			clusterDeployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "web"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d3",
 					Namespace:   "stackrox",
 					NamespaceId: "stackrox",
-				},
+				}.Build(),
 			},
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("default-deny-all-egress"),
@@ -1698,22 +1669,22 @@ func TestEvaluateNeighbors(t *testing.T) {
 			name:             "deny internetAccess egress from cluster",
 			queryDeployments: set.NewStringSet("d3"),
 			clusterDeployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "web"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d3",
 					Namespace:   "stackrox",
 					NamespaceId: "stackrox",
-				},
+				}.Build(),
 			},
 			edges: flattenEdges(
 				egressEdges("d1", "d3"),
@@ -1732,28 +1703,28 @@ func TestEvaluateNeighbors(t *testing.T) {
 			name:             "deny all ingress except for app=web",
 			queryDeployments: set.NewStringSet("d3"),
 			clusterDeployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "qa",
 					NamespaceId: "qa",
 					PodLabels:   deploymentLabels("app", "web"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "qa",
 					NamespaceId: "qa",
 					PodLabels:   deploymentLabels("app", "client"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d3",
 					Namespace:   "stackrox",
 					NamespaceId: "stackrox",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d4",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
+				}.Build(),
 			},
 			edges: flattenEdges(
 				ingressEdges("d1", "d3"),
@@ -1774,28 +1745,28 @@ func TestEvaluateNeighbors(t *testing.T) {
 			name:             "deny all ingress except for app=web; app=web queried",
 			queryDeployments: set.NewStringSet("d1"),
 			clusterDeployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "qa",
 					NamespaceId: "qa",
 					PodLabels:   deploymentLabels("app", "web"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "qa",
 					NamespaceId: "qa",
 					PodLabels:   deploymentLabels("app", "client"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d3",
 					Namespace:   "stackrox",
 					NamespaceId: "stackrox",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d4",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
+				}.Build(),
 			},
 			edges: flattenEdges(
 				ingressEdges("d1", "d2", "d3", "d4"),
@@ -1816,28 +1787,28 @@ func TestEvaluateNeighbors(t *testing.T) {
 			name:             "deny all traffic except ingress for app=web; app=web queried",
 			queryDeployments: set.NewStringSet("d1"),
 			clusterDeployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "qa",
 					NamespaceId: "qa",
 					PodLabels:   deploymentLabels("app", "web"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "qa",
 					NamespaceId: "qa",
 					PodLabels:   deploymentLabels("app", "client"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d3",
 					Namespace:   "stackrox",
 					NamespaceId: "stackrox",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d4",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
+				}.Build(),
 			},
 			edges: flattenEdges(
 				ingressEdges("d1", "d2", "d3", "d4"),
@@ -1857,16 +1828,16 @@ func TestEvaluateNeighbors(t *testing.T) {
 			name:             "fully isolate all pods",
 			queryDeployments: set.NewStringSet("d1"),
 			clusterDeployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
+				}.Build(),
 			},
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("fully-isolate"),
@@ -1879,17 +1850,17 @@ func TestEvaluateNeighbors(t *testing.T) {
 			name:             "fully isolate app=web pods; app=web queried",
 			queryDeployments: set.NewStringSet("d1"),
 			clusterDeployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "web"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
+				}.Build(),
 			},
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("fully-isolate-web"),
@@ -1902,17 +1873,17 @@ func TestEvaluateNeighbors(t *testing.T) {
 			name:             "fully isolate app=web pods; app=web queried; reverse order",
 			queryDeployments: set.NewStringSet("d1"),
 			clusterDeployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "web"),
-				},
+				}.Build(),
 			},
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("fully-isolate-web"),
@@ -1925,17 +1896,17 @@ func TestEvaluateNeighbors(t *testing.T) {
 			name:             "fully isolate app=web pods; other dep queried",
 			queryDeployments: set.NewStringSet("d2"),
 			clusterDeployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "web"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
+				}.Build(),
 			},
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("fully-isolate-web"),
@@ -1949,21 +1920,21 @@ func TestEvaluateNeighbors(t *testing.T) {
 			name:             "fully isolate qa namespace; qa namespace queried",
 			queryDeployments: set.NewStringSet("d2"),
 			clusterDeployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "qa",
 					NamespaceId: "qa",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "qa",
 					NamespaceId: "qa",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d3",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
+				}.Build(),
 			},
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("fully-isolate-qa-ns"),
@@ -1977,11 +1948,11 @@ func TestEvaluateNeighbors(t *testing.T) {
 			name:             "allow only egress to ipblock",
 			queryDeployments: set.NewStringSet(),
 			clusterDeployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "default",
 					NamespaceId: "default",
-				},
+				}.Build(),
 			},
 			networkTree: t2,
 			nps: []*storage.NetworkPolicy{
@@ -1992,24 +1963,24 @@ func TestEvaluateNeighbors(t *testing.T) {
 			name:             "ingress and egress combination",
 			queryDeployments: set.NewStringSet("a"),
 			clusterDeployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "a",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "a"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "b",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "b"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "c",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "c"),
-				},
+				}.Build(),
 			},
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("a-ingress-tcp-8080"),
@@ -2052,30 +2023,30 @@ func TestGetApplicable(t *testing.T) {
 		{
 			name: "No policies",
 			deployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id: "d1",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id: "d2",
-				},
+				}.Build(),
 			},
 		},
 		{
 			name: "deny all to app=web with match",
 			deployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:        "d1",
 					Namespace: "default",
 					PodLabels: deploymentLabels("app", "web"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:        "d2",
 					Namespace: "default",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:        "d3",
 					Namespace: "default",
-				},
+				}.Build(),
 			},
 			policies: []*storage.NetworkPolicy{
 				getExamplePolicy("web-deny-all"),
@@ -2087,21 +2058,21 @@ func TestGetApplicable(t *testing.T) {
 		{
 			name: "limit traffic to application with match",
 			deployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:        "d1",
 					Namespace: "default",
 					PodLabels: deploymentLabels("app", "bookstore", "role", "api"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:        "d2",
 					Namespace: "default",
 					PodLabels: deploymentLabels("app", "bookstore", "role", "frontend"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:        "d3",
 					Namespace: "default",
 					PodLabels: deploymentLabels("app", "coffeeshop", "role", "api"),
-				},
+				}.Build(),
 			},
 			policies: []*storage.NetworkPolicy{
 				getExamplePolicy("limit-traffic"),
@@ -2113,19 +2084,19 @@ func TestGetApplicable(t *testing.T) {
 		{
 			name: "limit traffic to application no match",
 			deployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:        "d1",
 					Namespace: "default",
 					PodLabels: deploymentLabels("app", "web"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:        "d2",
 					Namespace: "default",
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:        "d3",
 					Namespace: "default",
-				},
+				}.Build(),
 			},
 			policies: []*storage.NetworkPolicy{
 				getExamplePolicy("limit-traffic"),
@@ -2156,8 +2127,8 @@ func populateOutEdges(nodes []*v1.NetworkNode, edges []testEdge) {
 		bundle := &v1.NetworkEdgePropertiesBundle{}
 		pds := e.Ports.Clone()
 		pds.normalizeInPlace()
-		bundle.Properties = pds.ToProto()
-		srcNode.OutEdges[int32(tgtIndex)] = bundle
+		bundle.SetProperties(pds.ToProto())
+		srcNode.GetOutEdges()[int32(tgtIndex)] = bundle
 	}
 }
 
@@ -2174,24 +2145,24 @@ func TestEvaluateClustersWithPorts(t *testing.T) {
 		{
 			name: "only allow port 5000 on API server",
 			deployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "apiserver"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("role", "monitoring"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d3",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("role", "other"),
-				},
+				}.Build(),
 			},
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("api-allow-5000"),
@@ -2209,24 +2180,24 @@ func TestEvaluateClustersWithPorts(t *testing.T) {
 		{
 			name: "only allow DNS egress",
 			deployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "apiserver"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("role", "app"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d3",
 					Namespace:   "kube-system",
 					NamespaceId: "kube-system",
 					PodLabels:   deploymentLabels("role", "kube-dns"),
-				},
+				}.Build(),
 			},
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("allow-dns-egress-only"),
@@ -2244,31 +2215,31 @@ func TestEvaluateClustersWithPorts(t *testing.T) {
 		{
 			name: "allow traffic on named API port",
 			deployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "d1",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "apiserver"),
 					Ports: []*storage.PortConfig{
-						{
+						storage.PortConfig_builder{
 							Name:          "api",
 							ContainerPort: 8443,
 							Protocol:      "TCP",
-						},
+						}.Build(),
 					},
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d2",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "apiserver"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "d3",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("role", "monitoring"),
-				},
+				}.Build(),
 			},
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("api-allow-named-api-port"),
@@ -2286,24 +2257,24 @@ func TestEvaluateClustersWithPorts(t *testing.T) {
 		{
 			name: "ingress and egress combination",
 			deployments: []*storage.Deployment{
-				{
+				storage.Deployment_builder{
 					Id:          "a",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "a"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "b",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "b"),
-				},
-				{
+				}.Build(),
+				storage.Deployment_builder{
 					Id:          "c",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels:   deploymentLabels("app", "c"),
-				},
+				}.Build(),
 			},
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("a-ingress-tcp-8080"),
@@ -2335,25 +2306,25 @@ func TestEvaluateClustersWithPorts(t *testing.T) {
 func TestGetApplyingPoliciesPerDeployment(t *testing.T) {
 	evaluator := newMockGraphEvaluator()
 
+	deployment := &storage.Deployment{}
+	deployment.SetId("a")
+	deployment.SetNamespace("default")
+	deployment.SetNamespaceId("default")
+	deployment.SetPodLabels(deploymentLabels("app", "a"))
+	deployment2 := &storage.Deployment{}
+	deployment2.SetId("b")
+	deployment2.SetNamespace("default")
+	deployment2.SetNamespaceId("default")
+	deployment2.SetPodLabels(deploymentLabels("app", "b"))
+	deployment3 := &storage.Deployment{}
+	deployment3.SetId("c")
+	deployment3.SetNamespace("default")
+	deployment3.SetNamespaceId("default")
+	deployment3.SetPodLabels(deploymentLabels("app", "c"))
 	deployments := []*storage.Deployment{
-		{
-			Id:          "a",
-			Namespace:   "default",
-			NamespaceId: "default",
-			PodLabels:   deploymentLabels("app", "a"),
-		},
-		{
-			Id:          "b",
-			Namespace:   "default",
-			NamespaceId: "default",
-			PodLabels:   deploymentLabels("app", "b"),
-		},
-		{
-			Id:          "c",
-			Namespace:   "default",
-			NamespaceId: "default",
-			PodLabels:   deploymentLabels("app", "c"),
-		},
+		deployment,
+		deployment2,
+		deployment3,
 	}
 
 	networkPolicies := []*storage.NetworkPolicy{

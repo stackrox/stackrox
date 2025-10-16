@@ -7,6 +7,6 @@ import (
 
 func applyDefaultValues(integration *storage.SignatureIntegration) {
 	if tlog := integration.GetTransparencyLog(); tlog.GetEnabled() && tlog.GetUrl() == "" {
-		tlog.Url = rekorClient.DefaultHost
+		tlog.SetUrl(rekorClient.DefaultHost)
 	}
 }

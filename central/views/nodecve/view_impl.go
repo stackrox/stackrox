@@ -113,9 +113,9 @@ func (n *nodeCVECoreViewImpl) GetNodeIDs(ctx context.Context, q *v1.Query) ([]st
 		return nil, err
 	}
 
-	q.Selects = []*v1.QuerySelect{
+	q.SetSelects([]*v1.QuerySelect{
 		search.NewQuerySelect(search.NodeID).Distinct().Proto(),
-	}
+	})
 
 	var results []*nodeResponse
 	results, err = pgSearch.RunSelectRequestForSchema[nodeResponse](ctx, n.db, n.schema, q)
@@ -132,7 +132,7 @@ func (n *nodeCVECoreViewImpl) GetNodeIDs(ctx context.Context, q *v1.Query) ([]st
 
 func withSelectQuery(q *v1.Query) *v1.Query {
 	cloned := q.CloneVT()
-	cloned.Selects = []*v1.QuerySelect{
+	cloned.SetSelects([]*v1.QuerySelect{
 		search.NewQuerySelect(search.CVE).Proto(),
 		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
 		search.NewQuerySelect(search.CVSS).AggrFunc(aggregatefunc.Max).Proto(),
@@ -140,11 +140,11 @@ func withSelectQuery(q *v1.Query) *v1.Query {
 		search.NewQuerySelect(search.CVECreatedTime).AggrFunc(aggregatefunc.Min).Proto(),
 		search.NewQuerySelect(search.OperatingSystem).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
 		search.NewQuerySelect(search.NodeID).Distinct().Proto(),
-	}
-	cloned.Selects = append(cloned.Selects, common.WithCountBySeverityAndFixabilityQuery(q, search.NodeID).GetSelects()...)
+	})
+	cloned.SetSelects(append(cloned.GetSelects(), common.WithCountBySeverityAndFixabilityQuery(q, search.NodeID).GetSelects()...))
 
-	cloned.GroupBy = &v1.QueryGroupBy{
-		Fields: []string{search.CVE.String()},
-	}
+	qgb := &v1.QueryGroupBy{}
+	qgb.SetFields([]string{search.CVE.String()})
+	cloned.SetGroupBy(qgb)
 	return cloned
 }

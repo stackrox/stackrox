@@ -36,13 +36,13 @@ func Test_v4Client_GetImageAnalysis(t *testing.T) {
 					Return(&v4.IndexReport{}, status.Error(codes.Unavailable, "index failed"))
 			},
 			args: args{
-				image: &storage.Image{
+				image: storage.Image_builder{
 					Id: "sha256:9124cd5256c6d674f6b11a4d01fea8148259be1f66ca2cf9dfbaafc83c31874e",
-					Name: &storage.ImageName{
+					Name: storage.ImageName_builder{
 						Registry: "example.com",
 						Remote:   "foobar",
-					},
-				},
+					}.Build(),
+				}.Build(),
 				cfg: &types.Config{},
 			},
 			wantErr: "index failed",
@@ -52,19 +52,19 @@ func Test_v4Client_GetImageAnalysis(t *testing.T) {
 			setMock: func(m *mocks.MockScanner) {
 				m.EXPECT().
 					GetOrCreateImageIndex(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-					Return(&v4.IndexReport{
+					Return(v4.IndexReport_builder{
 						State:    "IndexFinished",
 						Contents: &v4.Contents{},
-					}, nil)
+					}.Build(), nil)
 			},
 			args: args{
-				image: &storage.Image{
+				image: storage.Image_builder{
 					Id: "sha256:9124cd5256c6d674f6b11a4d01fea8148259be1f66ca2cf9dfbaafc83c31874e",
-					Name: &storage.ImageName{
+					Name: storage.ImageName_builder{
 						Registry: "example.com",
 						Remote:   "foobar",
-					},
-				},
+					}.Build(),
+				}.Build(),
 				cfg: &types.Config{},
 			},
 			want: &ImageAnalysis{

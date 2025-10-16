@@ -38,9 +38,8 @@ func (suite *PipelineTestSuite) TearDownTest() {
 }
 
 func (suite *PipelineTestSuite) TestCallsMatchingPipeline() {
-	msg := &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{},
-	}
+	msg := &central.MsgFromSensor{}
+	msg.Msg = &central.MsgFromSensor_Event{}
 	ctx := context.Background()
 
 	suite.depMock.EXPECT().Match(msg).Return(true)
@@ -51,9 +50,8 @@ func (suite *PipelineTestSuite) TestCallsMatchingPipeline() {
 }
 
 func (suite *PipelineTestSuite) TestHandlesNoMatchingPipeline() {
-	msg := &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{},
-	}
+	msg := &central.MsgFromSensor{}
+	msg.Msg = &central.MsgFromSensor_Event{}
 	ctx := context.Background()
 
 	suite.depMock.EXPECT().Match(msg).Return(false)

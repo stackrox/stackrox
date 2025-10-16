@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/sensor/admission-control/manager"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
 )
 
 // ProcessPodEvent adds a pod to the admission controllers pod storage. In a production system the given pod is running inside a cluster. The
@@ -22,10 +23,10 @@ func ProcessPodEvent(t *testing.T, mgr manager.Manager, pod *storage.Pod) {
 	}
 	require.True(t, mgr.IsReady())
 
-	mgr.ResourceUpdatesC() <- &sensor.AdmCtrlUpdateResourceRequest{
-		Resource: &sensor.AdmCtrlUpdateResourceRequest_Pod{Pod: pod},
-		Action:   central.ResourceAction_CREATE_RESOURCE,
-	}
+	acurr := &sensor.AdmCtrlUpdateResourceRequest{}
+	acurr.SetPod(proto.ValueOrDefault(pod))
+	acurr.SetAction(central.ResourceAction_CREATE_RESOURCE)
+	mgr.ResourceUpdatesC() <- acurr
 }
 
 // ProcessDeploymentEvent adds deployment to the admission controller deployment storage. In a production system
@@ -36,10 +37,10 @@ func ProcessDeploymentEvent(t *testing.T, mgr manager.Manager, deployment *stora
 	}
 	require.True(t, mgr.IsReady())
 
-	mgr.ResourceUpdatesC() <- &sensor.AdmCtrlUpdateResourceRequest{
-		Resource: &sensor.AdmCtrlUpdateResourceRequest_Deployment{Deployment: deployment},
-		Action:   central.ResourceAction_CREATE_RESOURCE,
-	}
+	acurr := &sensor.AdmCtrlUpdateResourceRequest{}
+	acurr.SetDeployment(proto.ValueOrDefault(deployment))
+	acurr.SetAction(central.ResourceAction_CREATE_RESOURCE)
+	mgr.ResourceUpdatesC() <- acurr
 }
 
 func addPolicyToSettings(t *testing.T, settings *sensor.AdmissionControlSettings, policy *storage.Policy) {
@@ -55,8 +56,12 @@ func addPolicyToSettings(t *testing.T, settings *sensor.AdmissionControlSettings
 		runtimePolicies = append(runtimePolicies, policy)
 	}
 
-	settings.RuntimePolicies = &storage.PolicyList{Policies: runtimePolicies}
-	settings.EnforcedDeployTimePolicies = &storage.PolicyList{Policies: deploytimePolicies}
+	pl := &storage.PolicyList{}
+	pl.SetPolicies(runtimePolicies)
+	settings.SetRuntimePolicies(pl)
+	pl2 := &storage.PolicyList{}
+	pl2.SetPolicies(deploytimePolicies)
+	settings.SetEnforcedDeployTimePolicies(pl2)
 }
 
 // TestManagerOptions define the options for the testing manager.

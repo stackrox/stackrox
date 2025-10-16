@@ -85,10 +85,10 @@ func (g *evaluatorImpl) GetGraph(clusterID string, queryDeploymentIDs set.String
 	b.AddEdgesForNetworkPolicies(networkPolicies)
 	b.PostProcess()
 	nodes := b.ToProto(includePorts)
-	return &v1.NetworkGraph{
-		Epoch: g.Epoch(clusterID),
-		Nodes: nodes,
-	}
+	ng := &v1.NetworkGraph{}
+	ng.SetEpoch(g.Epoch(clusterID))
+	ng.SetNodes(nodes)
+	return ng
 }
 
 // GetApplyingPoliciesPerDeployment creates a map of deployment IDs to the applying network policies

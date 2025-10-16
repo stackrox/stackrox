@@ -40,74 +40,74 @@ var (
 
 	domain = framework.NewComplianceDomain(testCluster, testNodes, testDeployments, nil)
 
-	latestTagEnabledAndEnforced = &storage.Policy{
+	latestTagEnabledAndEnforced = storage.Policy_builder{
 		Id:   uuid.NewV4().String(),
 		Name: "Foo",
 		PolicySections: []*storage.PolicySection{
-			{
+			storage.PolicySection_builder{
 				SectionName: "section-1",
 				PolicyGroups: []*storage.PolicyGroup{
-					{
+					storage.PolicyGroup_builder{
 						FieldName: fieldnames.ImageTag,
 						Values: []*storage.PolicyValue{
-							{
+							storage.PolicyValue_builder{
 								Value: "latest",
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 		PolicyVersion:      "1.1",
 		Disabled:           false,
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
-	}
+	}.Build()
 
-	imageAgePolicyEnabledAndEnforced = &storage.Policy{
+	imageAgePolicyEnabledAndEnforced = storage.Policy_builder{
 		Id:   uuid.NewV4().String(),
 		Name: "Bar",
 		PolicySections: []*storage.PolicySection{
-			{
+			storage.PolicySection_builder{
 				SectionName: "section-1",
 				PolicyGroups: []*storage.PolicyGroup{
-					{
+					storage.PolicyGroup_builder{
 						FieldName: fieldnames.ImageAge,
 						Values: []*storage.PolicyValue{
-							{
+							storage.PolicyValue_builder{
 								Value: "30",
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 		PolicyVersion:      "1.1",
 		Disabled:           false,
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
-	}
+	}.Build()
 
-	randomPolicy = &storage.Policy{
+	randomPolicy = storage.Policy_builder{
 		Id:       uuid.NewV4().String(),
 		Name:     "Random",
 		Disabled: false,
 		PolicySections: []*storage.PolicySection{
-			{
+			storage.PolicySection_builder{
 				SectionName: "section-1",
 				PolicyGroups: []*storage.PolicyGroup{
-					{
+					storage.PolicyGroup_builder{
 						FieldName: fieldnames.ProcessName,
 						Values: []*storage.PolicyValue{
-							{
+							storage.PolicyValue_builder{
 								Value: "sshd",
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 		PolicyVersion:      "1.1",
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
-	}
+	}.Build()
 )
 
 func getPolicies(t *testing.T, policies ...*storage.Policy) map[string]*storage.Policy {

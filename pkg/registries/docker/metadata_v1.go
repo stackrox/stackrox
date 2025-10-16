@@ -51,12 +51,12 @@ func convertImageToDockerFileLine(img *v1.Image) *storage.ImageLayer {
 	if err != nil {
 		log.Error(err)
 	}
-	return &storage.ImageLayer{
-		Instruction: instruction,
-		Value:       value,
-		Created:     protoTS,
-		Author:      img.Author,
-	}
+	il := &storage.ImageLayer{}
+	il.SetInstruction(instruction)
+	il.SetValue(value)
+	il.SetCreated(protoTS)
+	il.SetAuthor(img.Author)
+	return il
 }
 
 func (r *Registry) populateV1DataFromManifest(manifest *schema1.SignedManifest, ref string) (*storage.ImageMetadata, error) {
@@ -91,16 +91,16 @@ func (r *Registry) populateV1DataFromManifest(manifest *schema1.SignedManifest, 
 		labels = nil
 	}
 
-	return &storage.ImageMetadata{
-		V1: &storage.V1Metadata{
-			Digest:  ref,
-			Created: latest.GetCreated(),
-			Author:  latest.GetAuthor(),
-			Layers:  layers,
-			Labels:  labels,
-		},
-		LayerShas: fsLayers,
-	}, nil
+	v1m := &storage.V1Metadata{}
+	v1m.SetDigest(ref)
+	v1m.SetCreated(latest.GetCreated())
+	v1m.SetAuthor(latest.GetAuthor())
+	v1m.SetLayers(layers)
+	v1m.SetLabels(labels)
+	im := &storage.ImageMetadata{}
+	im.SetV1(v1m)
+	im.SetLayerShas(fsLayers)
+	return im, nil
 }
 
 // HandleV1SignedManifest takes in a signed v1 ref and returns the image metadata
@@ -138,37 +138,37 @@ func (r *Registry) handleV1ManifestLayer(remote string, ref digest.Digest) (*sto
 	var layers []*storage.ImageLayer
 	for _, h := range img.History {
 		instruction, value := lineToInstructionAndValue(h.CreatedBy)
-		layers = append(layers, &storage.ImageLayer{
-			Created:     protoconv.ConvertTimeToTimestampOrNow(h.Created),
-			Author:      h.Author,
-			Instruction: instruction,
-			Value:       value,
-			Empty:       h.EmptyLayer,
-		})
+		il := &storage.ImageLayer{}
+		il.SetCreated(protoconv.ConvertTimeToTimestampOrNow(h.Created))
+		il.SetAuthor(h.Author)
+		il.SetInstruction(instruction)
+		il.SetValue(value)
+		il.SetEmpty(h.EmptyLayer)
+		layers = append(layers, il)
 	}
 
-	var metadata = &storage.V1Metadata{
-		Digest:  ref.String(),
-		Created: protoconv.ConvertTimeToTimestampOrNow(img.Created),
-		Labels:  img.Config.Labels,
-	}
+	v1m := &storage.V1Metadata{}
+	v1m.SetDigest(ref.String())
+	v1m.SetCreated(protoconv.ConvertTimeToTimestampOrNow(img.Created))
+	v1m.SetLabels(img.Config.Labels)
+	var metadata = v1m
 
-	metadata.Volumes = make([]string, 0, len(img.Config.Volumes))
+	metadata.SetVolumes(make([]string, 0, len(img.Config.Volumes)))
 	for k := range img.Config.Volumes {
-		metadata.Volumes = append(metadata.Volumes, k)
+		metadata.SetVolumes(append(metadata.GetVolumes(), k))
 	}
 
-	metadata.User = "root"
+	metadata.SetUser("root")
 	if img.Config.User != "" {
-		metadata.User = img.Config.User
+		metadata.SetUser(img.Config.User)
 	}
-	metadata.Command = img.Config.Cmd
-	metadata.Entrypoint = img.Config.Entrypoint
+	metadata.SetCommand(img.Config.Cmd)
+	metadata.SetEntrypoint(img.Config.Entrypoint)
 
 	if len(layers) != 0 {
 		lastLayer := layers[len(layers)-1]
-		metadata.Author = lastLayer.GetAuthor()
+		metadata.SetAuthor(lastLayer.GetAuthor())
 	}
-	metadata.Layers = layers
+	metadata.SetLayers(layers)
 	return metadata, nil
 }

@@ -42,12 +42,12 @@ func (c customMarshaler) unmarshalBackwardCompatible(data []byte, v interface{})
 		// We want users choose the new format.
 		return false
 	}
-	suppressCVERequest.Cves = goStruct.CVES
+	suppressCVERequest.SetCves(goStruct.CVES)
 	duration, err := time.ParseDuration(goStruct.Duration)
 	if err != nil {
 		return false
 	}
-	suppressCVERequest.Duration = protocompat.DurationProto(duration)
+	suppressCVERequest.SetDuration(protocompat.DurationProto(duration))
 	return true
 }
 

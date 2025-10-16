@@ -42,22 +42,22 @@ func TestPolicySet_RemoveNotifier(t *testing.T) {
 	}
 
 	policySetMock.EXPECT().GetCompiledPolicies().Return(map[string]detection.CompiledPolicy{
-		"policy1": wrapPolicy(&storage.Policy{
+		"policy1": wrapPolicy(storage.Policy_builder{
 			Id:        "policy1",
 			Notifiers: []string{"notifier1", "notifier2"},
-		}),
-		"policy2": wrapPolicy(&storage.Policy{
+		}.Build()),
+		"policy2": wrapPolicy(storage.Policy_builder{
 			Id:        "policy2",
 			Notifiers: []string{"notifier2", "notifier3"},
-		}),
-		"policy3": wrapPolicy(&storage.Policy{
+		}.Build()),
+		"policy3": wrapPolicy(storage.Policy_builder{
 			Id:        "policy3",
 			Notifiers: []string{"notifier1", "notifier2", "notifier3"},
-		}),
-		"policy4": wrapPolicy(&storage.Policy{
+		}.Build()),
+		"policy4": wrapPolicy(storage.Policy_builder{
 			Id:        "policy4",
 			Notifiers: []string{"notifier1", "notifier3"},
-		}),
+		}.Build()),
 	})
 
 	var updatedPolicies []*storage.Policy
@@ -68,19 +68,19 @@ func TestPolicySet_RemoveNotifier(t *testing.T) {
 
 	require.NoError(t, policySet.RemoveNotifier("notifier2"))
 
+	policy := &storage.Policy{}
+	policy.SetId("policy1")
+	policy.SetNotifiers([]string{"notifier1"})
+	policy2 := &storage.Policy{}
+	policy2.SetId("policy2")
+	policy2.SetNotifiers([]string{"notifier3"})
+	policy3 := &storage.Policy{}
+	policy3.SetId("policy3")
+	policy3.SetNotifiers([]string{"notifier1", "notifier3"})
 	expectedUpdates := []*storage.Policy{
-		{
-			Id:        "policy1",
-			Notifiers: []string{"notifier1"},
-		},
-		{
-			Id:        "policy2",
-			Notifiers: []string{"notifier3"},
-		},
-		{
-			Id:        "policy3",
-			Notifiers: []string{"notifier1", "notifier3"},
-		},
+		policy,
+		policy2,
+		policy3,
 	}
 
 	protoassert.ElementsMatch(t, expectedUpdates, updatedPolicies)

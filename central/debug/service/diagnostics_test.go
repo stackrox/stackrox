@@ -42,27 +42,27 @@ func TestGetK8sDiagnostics(t *testing.T) {
 	conn.EXPECT().ClusterID().Return("123")
 	conn.EXPECT().HasCapability(centralsensor.PullTelemetryDataCap).Return(true)
 	telemetryCtrl := &telemetryController{
-		payload: &central.TelemetryResponsePayload_KubernetesInfo{
+		payload: central.TelemetryResponsePayload_KubernetesInfo_builder{
 			Files: []*central.TelemetryResponsePayload_KubernetesInfo_File{
-				{
+				central.TelemetryResponsePayload_KubernetesInfo_File_builder{
 					Path:     "test/something",
 					Contents: []byte("test something"),
-				},
+				}.Build(),
 			},
-		},
+		}.Build(),
 	}
 
 	conn.EXPECT().Telemetry().Return(telemetryCtrl)
 	connMgr.EXPECT().GetActiveConnections().Return([]connection.SensorConnection{conn})
+	cluster := &storage.Cluster{}
+	cluster.SetId("1")
+	cluster.SetName("1")
+	cluster2 := &storage.Cluster{}
+	cluster2.SetId("2")
+	cluster2.SetName("2")
 	clusters.EXPECT().GetClusters(gomock.Any()).Return([]*storage.Cluster{
-		{
-			Id:   "1",
-			Name: "1",
-		},
-		{
-			Id:   "2",
-			Name: "2",
-		},
+		cluster,
+		cluster2,
 	}, nil)
 
 	s := serviceImpl{clusters: clusters, sensorConnMgr: connMgr}
@@ -95,27 +95,27 @@ func TestPullSensorMetrics(t *testing.T) {
 	conn.EXPECT().ClusterID().Return("123")
 	conn.EXPECT().HasCapability(centralsensor.PullMetricsCap).Return(true)
 	telemetryCtrl := &telemetryController{
-		payload: &central.TelemetryResponsePayload_KubernetesInfo{
+		payload: central.TelemetryResponsePayload_KubernetesInfo_builder{
 			Files: []*central.TelemetryResponsePayload_KubernetesInfo_File{
-				{
+				central.TelemetryResponsePayload_KubernetesInfo_File_builder{
 					Path:     "test/something",
 					Contents: []byte("test something"),
-				},
+				}.Build(),
 			},
-		},
+		}.Build(),
 	}
 
 	conn.EXPECT().Telemetry().Return(telemetryCtrl)
 	connMgr.EXPECT().GetActiveConnections().Return([]connection.SensorConnection{conn})
+	cluster := &storage.Cluster{}
+	cluster.SetId("1")
+	cluster.SetName("1")
+	cluster2 := &storage.Cluster{}
+	cluster2.SetId("2")
+	cluster2.SetName("2")
 	clusters.EXPECT().GetClusters(gomock.Any()).Return([]*storage.Cluster{
-		{
-			Id:   "1",
-			Name: "1",
-		},
-		{
-			Id:   "2",
-			Name: "2",
-		},
+		cluster,
+		cluster2,
 	}, nil)
 
 	s := serviceImpl{clusters: clusters, sensorConnMgr: connMgr}

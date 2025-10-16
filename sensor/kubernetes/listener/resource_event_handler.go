@@ -434,11 +434,9 @@ func (k *listenerImpl) handleAllEvents() {
 
 	k.outputQueue.Send(&component.ResourceEvent{
 		ForwardMessages: []*central.SensorEvent{
-			{
-				Resource: &central.SensorEvent_Synced{
-					Synced: &central.SensorEvent_ResourcesSynced{},
-				},
-			},
+			central.SensorEvent_builder{
+				Synced: &central.SensorEvent_ResourcesSynced{},
+			}.Build(),
 		},
 		Context: k.context,
 	})

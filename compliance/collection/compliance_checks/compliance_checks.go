@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"google.golang.org/protobuf/proto"
 )
 
 var log = logging.LoggerForModule()
@@ -58,10 +59,9 @@ func getCheckResults(run *sensor.MsgToCompliance_TriggerRun, _ *sensor.MsgToComp
 func addCheckResultsToResponse(results map[string]*compliance.ComplianceStandardResult, standardID, checkName string, target framework.TargetKind, evidence []*storage.ComplianceResultValue_Evidence) {
 	standardResults, ok := results[standardID]
 	if !ok {
-		standardResults = &compliance.ComplianceStandardResult{
-			NodeCheckResults:    make(map[string]*storage.ComplianceResultValue),
-			ClusterCheckResults: make(map[string]*storage.ComplianceResultValue),
-		}
+		standardResults = &compliance.ComplianceStandardResult{}
+		standardResults.SetNodeCheckResults(make(map[string]*storage.ComplianceResultValue))
+		standardResults.SetClusterCheckResults(make(map[string]*storage.ComplianceResultValue))
 		results[standardID] = standardResults
 	}
 
@@ -72,16 +72,15 @@ func addCheckResultsToResponse(results map[string]*compliance.ComplianceStandard
 		}
 	}
 
-	resultValue := &storage.ComplianceResultValue{
-		Evidence:     evidence,
-		OverallState: overallState,
-	}
+	resultValue := &storage.ComplianceResultValue{}
+	resultValue.SetEvidence(evidence)
+	resultValue.SetOverallState(overallState)
 
 	switch target {
 	case framework.NodeKind:
-		standardResults.NodeCheckResults[checkName] = resultValue
+		standardResults.GetNodeCheckResults()[checkName] = resultValue
 	case framework.ClusterKind:
-		standardResults.ClusterCheckResults[checkName] = resultValue
+		standardResults.GetClusterCheckResults()[checkName] = resultValue
 	}
 }
 
@@ -92,17 +91,15 @@ func sendResults(results map[string]*compliance.ComplianceStandardResult,
 		return err
 	}
 
-	return client.Send(&sensor.MsgFromCompliance{
-		Node: nodeNameProvider.GetNodeName(),
-		Msg: &sensor.MsgFromCompliance_Return{
-			Return: &compliance.ComplianceReturn{
-				NodeName: nodeNameProvider.GetNodeName(),
-				ScrapeId: runID,
-				Time:     protocompat.TimestampNow(),
-				Evidence: compressedResults,
-			},
-		},
-	})
+	cr := &compliance.ComplianceReturn{}
+	cr.SetNodeName(nodeNameProvider.GetNodeName())
+	cr.SetScrapeId(runID)
+	cr.SetTime(protocompat.TimestampNow())
+	cr.SetEvidence(compressedResults)
+	mfc := &sensor.MsgFromCompliance{}
+	mfc.SetNode(nodeNameProvider.GetNodeName())
+	mfc.SetReturn(proto.ValueOrDefault(cr))
+	return client.Send(mfc)
 }
 
 func gatherData(scrapeConfig *sensor.MsgToCompliance_ScrapeConfig,

@@ -69,7 +69,9 @@ func (s *serviceImpl) GetRole(ctx context.Context, request *v1.ResourceByID) (*v
 		return nil, errors.Wrapf(errox.NotFound, "k8s role with id '%q' does not exist", request.GetId())
 	}
 
-	return &v1.GetRoleResponse{Role: role}, nil
+	grr := &v1.GetRoleResponse{}
+	grr.SetRole(role)
+	return grr, nil
 }
 
 // ListRoles returns all roles that match the query.
@@ -86,7 +88,9 @@ func (s *serviceImpl) ListRoles(ctx context.Context, rawQuery *v1.RawQuery) (*v1
 		return nil, errors.Errorf("failed to retrieve k8s roles: %v", err)
 	}
 
-	return &v1.ListRolesResponse{Roles: roles}, nil
+	lrr := &v1.ListRolesResponse{}
+	lrr.SetRoles(roles)
+	return lrr, nil
 }
 
 // GetRole returns the k8s role binding for the id.
@@ -99,7 +103,9 @@ func (s *serviceImpl) GetRoleBinding(ctx context.Context, request *v1.ResourceBy
 		return nil, errors.Wrapf(errox.NotFound, "k8s role binding with id '%q' does not exist", request.GetId())
 	}
 
-	return &v1.GetRoleBindingResponse{Binding: binding}, nil
+	grbr := &v1.GetRoleBindingResponse{}
+	grbr.SetBinding(binding)
+	return grbr, nil
 }
 
 // ListRoleBindings returns all role bindings that match the query.
@@ -112,7 +118,9 @@ func (s *serviceImpl) ListRoleBindings(ctx context.Context, rawQuery *v1.RawQuer
 	if err != nil {
 		return nil, err
 	}
-	return &v1.ListRoleBindingsResponse{Bindings: bindings}, nil
+	lrbr := &v1.ListRoleBindingsResponse{}
+	lrbr.SetBindings(bindings)
+	return lrbr, nil
 }
 
 // GetSubject returns the subject with the input ID (the unique subject name).
@@ -123,12 +131,11 @@ func (s *serviceImpl) GetSubject(ctx context.Context, request *v1.ResourceByID) 
 // ListSubjects returns all of the subjects granted roles that match the input query.
 func (s *serviceImpl) ListSubjects(ctx context.Context, rawQuery *v1.RawQuery) (*v1.ListSubjectsResponse, error) {
 	// Keep only binding specific fields in the query.
-	bindingQuery := &v1.RawQuery{
-		Query: search.FilterFields(rawQuery.GetQuery(), func(field string) bool {
-			_, isBindingField := schema.RoleBindingsSchema.OptionsMap.Get(field)
-			return isBindingField
-		}),
-	}
+	bindingQuery := &v1.RawQuery{}
+	bindingQuery.SetQuery(search.FilterFields(rawQuery.GetQuery(), func(field string) bool {
+		_, isBindingField := schema.RoleBindingsSchema.OptionsMap.Get(field)
+		return isBindingField
+	}))
 	bindingsSearch, err := s.ListRoleBindings(ctx, bindingQuery)
 	if err != nil {
 		return nil, err

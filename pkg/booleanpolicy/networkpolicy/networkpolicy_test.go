@@ -18,8 +18,8 @@ type NetworkPolicySuite struct {
 
 func policy(classificationEnums []storage.NetworkPolicyType) *storage.NetworkPolicy {
 	netpol := new(storage.NetworkPolicy)
-	netpol.Spec = new(storage.NetworkPolicySpec)
-	netpol.Spec.PolicyTypes = classificationEnums
+	netpol.SetSpec(new(storage.NetworkPolicySpec))
+	netpol.GetSpec().SetPolicyTypes(classificationEnums)
 	return netpol
 }
 
@@ -112,15 +112,16 @@ func (suite *NetworkPolicySuite) Test_FilterForDeployment() {
 			var policies []*storage.NetworkPolicy
 			for idx, sel := range testCase.netpolSelectors {
 				p := policy([]storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE})
-				p.Spec.PodSelector = &storage.LabelSelector{MatchLabels: sel}
-				p.Id = strconv.Itoa(idx)
+				ls := &storage.LabelSelector{}
+				ls.SetMatchLabels(sel)
+				p.GetSpec().SetPodSelector(ls)
+				p.SetId(strconv.Itoa(idx))
 				policies = append(policies, p)
 			}
 
-			dep := &storage.Deployment{
-				Labels:    testCase.deploymentLabels,
-				PodLabels: testCase.specPodTemplateLabels,
-			}
+			dep := &storage.Deployment{}
+			dep.SetLabels(testCase.deploymentLabels)
+			dep.SetPodLabels(testCase.specPodTemplateLabels)
 			suite.Len(FilterForDeployment(policies, dep), testCase.expectedPoliciesMatched)
 		})
 	}

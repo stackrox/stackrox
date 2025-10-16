@@ -13,11 +13,11 @@ func GetNode() *storage.Node {
 	componentCount := 50
 	components := make([]*storage.EmbeddedNodeScanComponent, 0, componentCount)
 	for i := 0; i < componentCount; i++ {
-		components = append(components, &storage.EmbeddedNodeScanComponent{
-			Name:    "name",
-			Version: "1.2.3.4",
-			Vulns:   getVulnsPerComponent(i, 5, storage.EmbeddedVulnerability_NODE_VULNERABILITY),
-		})
+		ensc := &storage.EmbeddedNodeScanComponent{}
+		ensc.SetName("name")
+		ensc.SetVersion("1.2.3.4")
+		ensc.SetVulns(getVulnsPerComponent(i, 5, storage.EmbeddedVulnerability_NODE_VULNERABILITY))
+		components = append(components, ensc)
 	}
 	return getNodeWithComponents(components)
 }
@@ -26,33 +26,31 @@ func GetNode() *storage.Node {
 func GetNodeWithUniqueComponents(numComponents, numVulns int) *storage.Node {
 	components := make([]*storage.EmbeddedNodeScanComponent, 0, numComponents)
 	for i := 0; i < numComponents; i++ {
-		components = append(components, &storage.EmbeddedNodeScanComponent{
-			Name:    fmt.Sprintf("name-%d", i),
-			Version: fmt.Sprintf("%d.2.3.4", i),
-			Vulns:   getVulnsPerComponent(i, numVulns, storage.EmbeddedVulnerability_NODE_VULNERABILITY),
-		})
+		ensc := &storage.EmbeddedNodeScanComponent{}
+		ensc.SetName(fmt.Sprintf("name-%d", i))
+		ensc.SetVersion(fmt.Sprintf("%d.2.3.4", i))
+		ensc.SetVulns(getVulnsPerComponent(i, numVulns, storage.EmbeddedVulnerability_NODE_VULNERABILITY))
+		components = append(components, ensc)
 	}
 	return getNodeWithComponents(components)
 }
 
 func getNodeWithComponents(components []*storage.EmbeddedNodeScanComponent) *storage.Node {
-	return &storage.Node{
-		Id:   fixtureconsts.Node1,
-		Name: "name",
-		Scan: &storage.NodeScan{
-			ScanTime:   protocompat.TimestampNow(),
-			Components: components,
-		},
-		SetComponents: &storage.Node_Components{
-			Components: int32(len(components)),
-		},
-	}
+	nodeScan := &storage.NodeScan{}
+	nodeScan.SetScanTime(protocompat.TimestampNow())
+	nodeScan.SetComponents(components)
+	node := &storage.Node{}
+	node.SetId(fixtureconsts.Node1)
+	node.SetName("name")
+	node.SetScan(nodeScan)
+	node.Set_Components(int32(len(components)))
+	return node
 }
 
 // GetScopedNode returns a mock Node belonging to the input scope.
 func GetScopedNode(ID string, clusterID string) *storage.Node {
-	return &storage.Node{
-		Id:        ID,
-		ClusterId: clusterID,
-	}
+	node := &storage.Node{}
+	node.SetId(ID)
+	node.SetClusterId(clusterID)
+	return node
 }

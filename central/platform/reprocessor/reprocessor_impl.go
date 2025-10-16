@@ -117,9 +117,9 @@ func (pr *platformReprocessorImpl) reprocessAlerts() error {
 	} else {
 		q = unsetPlatformComponentQuery
 	}
-	q.Pagination = &v1.QueryPagination{
-		Limit: batchSize,
-	}
+	qp := &v1.QueryPagination{}
+	qp.SetLimit(batchSize)
+	q.SetPagination(qp)
 
 	var alerts []*storage.Alert
 	for {
@@ -129,12 +129,12 @@ func (pr *platformReprocessorImpl) reprocessAlerts() error {
 		}
 
 		err := pr.alertDatastore.WalkByQuery(reprocessorCtx, q, func(alert *storage.Alert) error {
-			alert.EntityType = alertutils.GetEntityType(alert)
+			alert.SetEntityType(alertutils.GetEntityType(alert))
 			match, err := pr.platformMatcher.MatchAlert(alert)
 			if err != nil {
 				return errors.Wrap(err, "matching alert")
 			}
-			alert.PlatformComponent = match
+			alert.SetPlatformComponent(match)
 			alerts = append(alerts, alert)
 			return nil
 		})
@@ -149,7 +149,7 @@ func (pr *platformReprocessorImpl) reprocessAlerts() error {
 			return err
 		}
 		alerts = alerts[:0]
-		q.Pagination.Offset += batchSize
+		q.GetPagination().SetOffset(q.GetPagination().GetOffset() + batchSize)
 	}
 	log.Info("Done reprocessing alerts with platform rules")
 	return nil
@@ -162,9 +162,9 @@ func (pr *platformReprocessorImpl) reprocessDeployments() error {
 	} else {
 		q = unsetPlatformComponentQuery
 	}
-	q.Pagination = &v1.QueryPagination{
-		Limit: batchSize,
-	}
+	qp := &v1.QueryPagination{}
+	qp.SetLimit(batchSize)
+	q.SetPagination(qp)
 
 	for {
 		if pr.stopSignal.IsDone() {
@@ -183,14 +183,14 @@ func (pr *platformReprocessorImpl) reprocessDeployments() error {
 			if err != nil {
 				return err
 			}
-			dep.PlatformComponent = match
+			dep.SetPlatformComponent(match)
 			err = pr.deploymentDatastore.UpsertDeployment(reprocessorCtx, dep)
 			if err != nil {
 				return err
 			}
 		}
 
-		q.Pagination.Offset += batchSize
+		q.GetPagination().SetOffset(q.GetPagination().GetOffset() + batchSize)
 	}
 	log.Info("Done reprocessing deployments with platform rules")
 	return nil

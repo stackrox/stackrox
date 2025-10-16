@@ -71,10 +71,10 @@ func TestViolationAttrsForAuditLogEventsAddsImpersonatedUser(t *testing.T) {
 	}
 
 	kubeEvent := getKubeEvent(storage.KubernetesEvent_Object_SECRETS, storage.KubernetesEvent_GET, "cluster-id", "namespace", "the-secret")
-	kubeEvent.ImpersonatedUser = &storage.KubernetesEvent_User{
-		Username: "test-service-account",
-		Groups:   []string{"service-accounts", "groupC"},
-	}
+	ku := &storage.KubernetesEvent_User{}
+	ku.SetUsername("test-service-account")
+	ku.SetGroups([]string{"service-accounts", "groupC"})
+	kubeEvent.SetImpersonatedUser(ku)
 	validateViolationAttrs(t, kubeEvent, expectedAttrs)
 }
 
@@ -95,26 +95,26 @@ func getKubeEvent(resource storage.KubernetesEvent_Object_Resource, verb storage
 	if verb == storage.KubernetesEvent_LIST {
 		requestURI = fmt.Sprintf("/api/v1/namespaces/%s/%s?limit=500", namespace, strings.ToLower(resource.String()))
 	}
-	return &storage.KubernetesEvent{
-		Id: uuid.NewV4().String(),
-		Object: &storage.KubernetesEvent_Object{
-			Name:      name,
-			Resource:  resource,
-			ClusterId: clusterID,
-			Namespace: namespace,
-		},
-		Timestamp: protocompat.TimestampNow(),
-		ApiVerb:   verb,
-		User: &storage.KubernetesEvent_User{
-			Username: "username",
-			Groups:   []string{"groupA", "groupB"},
-		},
-		SourceIps: []string{"192.168.1.1", "127.0.0.1"},
-		UserAgent: "curl",
-		ResponseStatus: &storage.KubernetesEvent_ResponseStatus{
-			StatusCode: 200,
-			Reason:     "cause",
-		},
-		RequestUri: requestURI,
-	}
+	ko := &storage.KubernetesEvent_Object{}
+	ko.SetName(name)
+	ko.SetResource(resource)
+	ko.SetClusterId(clusterID)
+	ko.SetNamespace(namespace)
+	ku := &storage.KubernetesEvent_User{}
+	ku.SetUsername("username")
+	ku.SetGroups([]string{"groupA", "groupB"})
+	kr := &storage.KubernetesEvent_ResponseStatus{}
+	kr.SetStatusCode(200)
+	kr.SetReason("cause")
+	ke := &storage.KubernetesEvent{}
+	ke.SetId(uuid.NewV4().String())
+	ke.SetObject(ko)
+	ke.SetTimestamp(protocompat.TimestampNow())
+	ke.SetApiVerb(verb)
+	ke.SetUser(ku)
+	ke.SetSourceIps([]string{"192.168.1.1", "127.0.0.1"})
+	ke.SetUserAgent("curl")
+	ke.SetResponseStatus(kr)
+	ke.SetRequestUri(requestURI)
+	return ke
 }

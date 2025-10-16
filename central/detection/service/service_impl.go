@@ -156,7 +156,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 	}
 	// This is a workaround for those who post the full image, but don't fill in fullname
 	if name := image.GetName(); name != nil && name.GetFullName() == "" {
-		name.FullName = types.Wrapper{GenericImage: image}.FullName()
+		name.SetFullName(types.Wrapper{GenericImage: image}.FullName())
 	}
 
 	img := types.ToImage(image)
@@ -186,7 +186,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 		return nil, err
 	}
 	if enrichResult.ImageUpdated {
-		img.Id = utils.GetSHA(img)
+		img.SetId(utils.GetSHA(img))
 		if img.GetId() != "" {
 			if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
 				return nil, err
@@ -206,9 +206,9 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 
 	s.maybeSendNotifications(req, alerts)
 
-	return &apiV1.BuildDetectionResponse{
-		Alerts: alerts,
-	}, nil
+	bdr := &apiV1.BuildDetectionResponse{}
+	bdr.SetAlerts(alerts)
+	return bdr, nil
 }
 
 func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enricher.EnrichmentContext, deployment *storage.Deployment, policyCategories ...string) (*apiV1.DeployDetectionResponse_Run, error) {
@@ -218,7 +218,7 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 	}
 	for _, idx := range updatedIndices {
 		img := images[idx]
-		img.Id = utils.GetSHA(img)
+		img.SetId(utils.GetSHA(img))
 		if err := s.riskManager.CalculateRiskAndUpsertImage(images[idx]); err != nil {
 			return nil, err
 		}
@@ -254,11 +254,11 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 	if len(unusedCategories) > 0 {
 		return nil, errors.Errorf("allowed categories %v did not match any policy categories", unusedCategories)
 	}
-	return &apiV1.DeployDetectionResponse_Run{
-		Name:   deployment.GetName(),
-		Type:   deployment.GetType(),
-		Alerts: alerts,
-	}, nil
+	dr := &apiV1.DeployDetectionResponse_Run{}
+	dr.SetName(deployment.GetName())
+	dr.SetType(deployment.GetType())
+	dr.SetAlerts(alerts)
+	return dr, nil
 }
 
 func (s *serviceImpl) getAppliedNetpolsForDeployment(ctx context.Context, enrichmentContext enricher.EnrichmentContext, deployment *storage.Deployment) (*augmentedobjs.NetworkPoliciesApplied, error) {
@@ -282,7 +282,7 @@ func (s *serviceImpl) runDeployTimeDetect(ctx context.Context, enrichmentContext
 	// Deployment ID is empty because the processed yaml comes from roxctl and therefore doesn't
 	// get a Kubernetes generated ID. This is a temporary ID only required for roxctl to distinguish
 	// between different generated deployments.
-	deployment.Id = uuid.NewV4().String()
+	deployment.SetId(uuid.NewV4().String())
 
 	return s.enrichAndDetect(ctx, enrichmentContext, deployment, policyCategories...)
 }
@@ -427,11 +427,11 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 			return nil, errors.Wrap(err, "failed waiting for augmented deployment response")
 		}
 		for _, d := range deployments {
-			remarks[d.GetName()] = &apiV1.DeployDetectionRemark{
-				Name:                   d.GetName(),
-				PermissionLevel:        d.GetServiceAccountPermissionLevel().String(),
-				AppliedNetworkPolicies: nil,
-			}
+			ddr := &apiV1.DeployDetectionRemark{}
+			ddr.SetName(d.GetName())
+			ddr.SetPermissionLevel(d.GetServiceAccountPermissionLevel().String())
+			ddr.SetAppliedNetworkPolicies(nil)
+			remarks[d.GetName()] = ddr
 		}
 	}
 
@@ -457,16 +457,18 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		}
 
 		if remarks[d.GetName()] == nil {
-			remarks[d.GetName()] = &apiV1.DeployDetectionRemark{Name: d.GetName()}
+			ddr := &apiV1.DeployDetectionRemark{}
+			ddr.SetName(d.GetName())
+			remarks[d.GetName()] = ddr
 		}
-		remarks[d.GetName()].AppliedNetworkPolicies = getPolicyNamesAsSlice(an.Policies)
+		remarks[d.GetName()].SetAppliedNetworkPolicies(getPolicyNamesAsSlice(an.Policies))
 	}
 
-	return &apiV1.DeployDetectionResponse{
-		Runs:              runs,
-		IgnoredObjectRefs: ignoredObjectRefs,
-		Remarks:           slices.Collect(maps.Values(remarks)),
-	}, nil
+	ddr := &apiV1.DeployDetectionResponse{}
+	ddr.SetRuns(runs)
+	ddr.SetIgnoredObjectRefs(ignoredObjectRefs)
+	ddr.SetRemarks(slices.Collect(maps.Values(remarks)))
+	return ddr, nil
 }
 
 func getPolicyNamesAsSlice(policies map[string]*storage.NetworkPolicy) (policyNames []string) {
@@ -499,8 +501,8 @@ func (s *serviceImpl) populateDeploymentWithClusterInfo(ctx context.Context, clu
 	if !exists {
 		return errox.InvalidArgs.Newf("cluster with ID %q does not exist", clusterID)
 	}
-	deployment.ClusterId = clusterID
-	deployment.ClusterName = clusterName
+	deployment.SetClusterId(clusterID)
+	deployment.SetClusterName(clusterName)
 	return nil
 }
 
@@ -524,15 +526,15 @@ func (s *serviceImpl) DetectDeployTime(ctx context.Context, req *apiV1.DeployDet
 			return nil
 		})
 		if !evaluationRequired {
-			return &apiV1.DeployDetectionResponse{
-				Runs: []*apiV1.DeployDetectionResponse_Run{
-					{
-						Name:   req.GetDeployment().GetName(),
-						Type:   req.GetDeployment().GetType(),
-						Alerts: nil,
-					},
-				},
-			}, nil
+			dr := &apiV1.DeployDetectionResponse_Run{}
+			dr.SetName(req.GetDeployment().GetName())
+			dr.SetType(req.GetDeployment().GetType())
+			dr.SetAlerts(nil)
+			ddr := &apiV1.DeployDetectionResponse{}
+			ddr.SetRuns([]*apiV1.DeployDetectionResponse_Run{
+				dr,
+			})
+			return ddr, nil
 		}
 	}
 
@@ -547,11 +549,11 @@ func (s *serviceImpl) DetectDeployTime(ctx context.Context, req *apiV1.DeployDet
 	if err != nil {
 		return nil, err
 	}
-	return &apiV1.DeployDetectionResponse{
-		Runs: []*apiV1.DeployDetectionResponse_Run{
-			run,
-		},
-	}, nil
+	ddr := &apiV1.DeployDetectionResponse{}
+	ddr.SetRuns([]*apiV1.DeployDetectionResponse_Run{
+		run,
+	})
+	return ddr, nil
 }
 
 func getIgnoredObjectRefFromYAML(yaml string) (string, error) {

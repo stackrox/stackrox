@@ -18,13 +18,13 @@ func SecretToSecretList(s *storage.Secret) *storage.ListSecret {
 		typeSlice = append(typeSlice, storage.SecretType_UNDETERMINED)
 	}
 
-	return &storage.ListSecret{
-		Id:          s.GetId(),
-		Name:        s.GetName(),
-		ClusterId:   s.GetClusterId(),
-		ClusterName: s.GetClusterName(),
-		Namespace:   s.GetNamespace(),
-		Types:       typeSlice,
-		CreatedAt:   s.GetCreatedAt(),
-	}
+	ls := &storage.ListSecret{}
+	ls.SetId(s.GetId())
+	ls.SetName(s.GetName())
+	ls.SetClusterId(s.GetClusterId())
+	ls.SetClusterName(s.GetClusterName())
+	ls.SetNamespace(s.GetNamespace())
+	ls.SetTypes(typeSlice)
+	ls.SetCreatedAt(s.GetCreatedAt())
+	return ls
 }

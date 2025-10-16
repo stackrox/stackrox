@@ -89,18 +89,14 @@ func WaitToReceiveMessagesFromCollectorWithTimeout(ctx context.Context, signal *
 
 // SendSignalMessage uses FakeCollector to send a fake SignalStreamMessage.
 func SendSignalMessage(fakeCollector *collector.FakeCollector, containerID string, signalName string) {
-	fakeCollector.SendFakeSignal(&sensor.SignalStreamMessage{
-		Msg: &sensor.SignalStreamMessage_Signal{
-			Signal: &v1.Signal{
-				Signal: &v1.Signal_ProcessSignal{
-					ProcessSignal: &storage.ProcessSignal{
-						ContainerId: containerID,
-						Name:        signalName,
-					},
-				},
-			},
-		},
-	})
+	fakeCollector.SendFakeSignal(sensor.SignalStreamMessage_builder{
+		Signal: v1.Signal_builder{
+			ProcessSignal: storage.ProcessSignal_builder{
+				ContainerId: containerID,
+				Name:        signalName,
+			}.Build(),
+		}.Build(),
+	}.Build())
 }
 
 // SendFlowMessage uses FakeCollector to send a fake NetworkConnectionInfoMessage.
@@ -112,44 +108,42 @@ func SendFlowMessage(fakeCollector *collector.FakeCollector,
 	fromIP string,
 	toIP string,
 	port uint32) {
-	fakeCollector.SendFakeNetworkFlow(&sensor.NetworkConnectionInfoMessage{
-		Msg: &sensor.NetworkConnectionInfoMessage_Info{
-			Info: &sensor.NetworkConnectionInfo{
-				UpdatedConnections: []*sensor.NetworkConnection{
-					{
-						SocketFamily: socketFamily,
-						Protocol:     protocol,
-						Role:         sensor.ClientServerRole_ROLE_CLIENT,
-						ContainerId:  fromID,
-						LocalAddress: &sensor.NetworkAddress{
-							AddressData: nil,
-							IpNetwork:   nil,
-							Port:        0,
-						},
-						RemoteAddress: &sensor.NetworkAddress{
-							AddressData: net2.ParseIP(toIP).AsNetIP(),
-							IpNetwork:   net2.ParseIP(toIP).AsNetIP(),
-							Port:        port,
-						},
-					},
-					{
-						SocketFamily: socketFamily,
-						Protocol:     protocol,
-						Role:         sensor.ClientServerRole_ROLE_SERVER,
-						ContainerId:  toID,
-						LocalAddress: &sensor.NetworkAddress{
-							AddressData: nil,
-							IpNetwork:   nil,
-							Port:        port,
-						},
-						RemoteAddress: &sensor.NetworkAddress{
-							AddressData: net2.ParseIP(fromIP).AsNetIP(),
-							IpNetwork:   net2.ParseIP(fromIP).AsNetIP(),
-							Port:        0,
-						},
-					},
-				},
+	fakeCollector.SendFakeNetworkFlow(sensor.NetworkConnectionInfoMessage_builder{
+		Info: sensor.NetworkConnectionInfo_builder{
+			UpdatedConnections: []*sensor.NetworkConnection{
+				sensor.NetworkConnection_builder{
+					SocketFamily: socketFamily,
+					Protocol:     protocol,
+					Role:         sensor.ClientServerRole_ROLE_CLIENT,
+					ContainerId:  fromID,
+					LocalAddress: sensor.NetworkAddress_builder{
+						AddressData: nil,
+						IpNetwork:   nil,
+						Port:        0,
+					}.Build(),
+					RemoteAddress: sensor.NetworkAddress_builder{
+						AddressData: net2.ParseIP(toIP).AsNetIP(),
+						IpNetwork:   net2.ParseIP(toIP).AsNetIP(),
+						Port:        port,
+					}.Build(),
+				}.Build(),
+				sensor.NetworkConnection_builder{
+					SocketFamily: socketFamily,
+					Protocol:     protocol,
+					Role:         sensor.ClientServerRole_ROLE_SERVER,
+					ContainerId:  toID,
+					LocalAddress: sensor.NetworkAddress_builder{
+						AddressData: nil,
+						IpNetwork:   nil,
+						Port:        port,
+					}.Build(),
+					RemoteAddress: sensor.NetworkAddress_builder{
+						AddressData: net2.ParseIP(fromIP).AsNetIP(),
+						IpNetwork:   net2.ParseIP(fromIP).AsNetIP(),
+						Port:        0,
+					}.Build(),
+				}.Build(),
 			},
-		},
-	})
+		}.Build(),
+	}.Build())
 }

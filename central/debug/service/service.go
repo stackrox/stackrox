@@ -209,13 +209,14 @@ func (s *serviceImpl) GetLogLevel(_ context.Context, req *v1.GetLogLevelRequest)
 	// If the request is global, then return all modules who have a log level that does not match the global level
 	if len(req.GetModules()) == 0 {
 		level := logging.GetGlobalLogLevel()
-		resp.Level = logging.LabelForLevelOrInvalid(level)
+		resp.SetLevel(logging.LabelForLevelOrInvalid(level))
 		forEachModule = func(name string, m *logging.Module) {
 			moduleLevel := m.GetLogLevel()
 			if moduleLevel != level {
-				resp.ModuleLevels = append(resp.ModuleLevels, &v1.ModuleLevel{
-					Module: name, Level: logging.LabelForLevelOrInvalid(moduleLevel),
-				})
+				ml := &v1.ModuleLevel{}
+				ml.SetModule(name)
+				ml.SetLevel(logging.LabelForLevelOrInvalid(moduleLevel))
+				resp.SetModuleLevels(append(resp.GetModuleLevels(), ml))
 			}
 		}
 	} else {
@@ -223,9 +224,10 @@ func (s *serviceImpl) GetLogLevel(_ context.Context, req *v1.GetLogLevelRequest)
 			if m == nil {
 				unknownModules = append(unknownModules, name)
 			} else {
-				resp.ModuleLevels = append(resp.ModuleLevels, &v1.ModuleLevel{
-					Module: name, Level: logging.LabelForLevelOrInvalid(m.GetLogLevel()),
-				})
+				ml := &v1.ModuleLevel{}
+				ml.SetModule(name)
+				ml.SetLevel(logging.LabelForLevelOrInvalid(m.GetLogLevel()))
+				resp.SetModuleLevels(append(resp.GetModuleLevels(), ml))
 			}
 		}
 	}

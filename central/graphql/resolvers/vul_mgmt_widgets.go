@@ -93,7 +93,7 @@ func (r *FailingPolicyResolver) Severity(_ context.Context) string {
 
 func deploymentsWithMostSevereViolations(ctx context.Context, resolver *Resolver, q *v1.Query) ([]*DeploymentsWithMostSevereViolationsResolver, error) {
 	pagination := q.GetPagination()
-	q.Pagination = nil
+	q.ClearPagination()
 
 	q, err := search.AddAsConjunction(q, search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery())
 	if err != nil {

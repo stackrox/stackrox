@@ -429,19 +429,19 @@ func (s *HandlerTestSuite) sendMessage(times int, msg *central.MsgToSensor) *cen
 
 func (s *HandlerTestSuite) assert(expected expectedResponse, actual *central.ComplianceResponse) {
 	var actualID, actualErr string
-	switch r := actual.GetResponse().(type) {
-	case *central.ComplianceResponse_EnableComplianceResponse_:
-		actualID = r.EnableComplianceResponse.GetId()
-		actualErr = r.EnableComplianceResponse.GetError()
-	case *central.ComplianceResponse_DisableComplianceResponse_:
-		actualID = r.DisableComplianceResponse.GetId()
-		actualErr = r.DisableComplianceResponse.GetError()
-	case *central.ComplianceResponse_ApplyComplianceScanConfigResponse_:
-		actualID = r.ApplyComplianceScanConfigResponse.GetId()
-		actualErr = r.ApplyComplianceScanConfigResponse.GetError()
-	case *central.ComplianceResponse_DeleteComplianceScanConfigResponse_:
-		actualID = r.DeleteComplianceScanConfigResponse.GetId()
-		actualErr = r.DeleteComplianceScanConfigResponse.GetError()
+	switch actual.WhichResponse() {
+	case central.ComplianceResponse_EnableComplianceResponse_case:
+		actualID = actual.GetEnableComplianceResponse().GetId()
+		actualErr = actual.GetEnableComplianceResponse().GetError()
+	case central.ComplianceResponse_DisableComplianceResponse_case:
+		actualID = actual.GetDisableComplianceResponse().GetId()
+		actualErr = actual.GetDisableComplianceResponse().GetError()
+	case central.ComplianceResponse_ApplyComplianceScanConfigResponse_case:
+		actualID = actual.GetApplyComplianceScanConfigResponse().GetId()
+		actualErr = actual.GetApplyComplianceScanConfigResponse().GetError()
+	case central.ComplianceResponse_DeleteComplianceScanConfigResponse_case:
+		actualID = actual.GetDeleteComplianceScanConfigResponse().GetId()
+		actualErr = actual.GetDeleteComplianceScanConfigResponse().GetError()
 	}
 
 	s.Equal(expected.id, actualID)
@@ -453,158 +453,114 @@ func (s *HandlerTestSuite) assert(expected expectedResponse, actual *central.Com
 }
 
 func getTestOneTimeScanRequestMsg(name string, profiles ...string) *central.MsgToSensor {
-	return &central.MsgToSensor{
-		Msg: &central.MsgToSensor_ComplianceRequest{
-			ComplianceRequest: &central.ComplianceRequest{
-				Request: &central.ComplianceRequest_ApplyScanConfig{
-					ApplyScanConfig: &central.ApplyComplianceScanConfigRequest{
-						Id: uuid.NewV4().String(),
-						ScanRequest: &central.ApplyComplianceScanConfigRequest_ScheduledScan_{
-							ScheduledScan: &central.ApplyComplianceScanConfigRequest_ScheduledScan{
-								ScanSettings: &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
-									ScanName:       name,
-									StrictNodeScan: true,
-									Profiles:       profiles,
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+	return central.MsgToSensor_builder{
+		ComplianceRequest: central.ComplianceRequest_builder{
+			ApplyScanConfig: central.ApplyComplianceScanConfigRequest_builder{
+				Id: uuid.NewV4().String(),
+				ScheduledScan: central.ApplyComplianceScanConfigRequest_ScheduledScan_builder{
+					ScanSettings: central.ApplyComplianceScanConfigRequest_BaseScanSettings_builder{
+						ScanName:       name,
+						StrictNodeScan: true,
+						Profiles:       profiles,
+					}.Build(),
+				}.Build(),
+			}.Build(),
+		}.Build(),
+	}.Build()
 }
 
 func getTestScheduledScanRequestMsg(name, cron string, profiles ...string) *central.MsgToSensor {
-	return &central.MsgToSensor{
-		Msg: &central.MsgToSensor_ComplianceRequest{
-			ComplianceRequest: &central.ComplianceRequest{
-				Request: &central.ComplianceRequest_ApplyScanConfig{
-					ApplyScanConfig: &central.ApplyComplianceScanConfigRequest{
-						Id: uuid.NewV4().String(),
-						ScanRequest: &central.ApplyComplianceScanConfigRequest_ScheduledScan_{
-							ScheduledScan: &central.ApplyComplianceScanConfigRequest_ScheduledScan{
-								ScanSettings: &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
-									ScanName:       name,
-									StrictNodeScan: true,
-									Profiles:       profiles,
-								},
-								Cron: cron,
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+	return central.MsgToSensor_builder{
+		ComplianceRequest: central.ComplianceRequest_builder{
+			ApplyScanConfig: central.ApplyComplianceScanConfigRequest_builder{
+				Id: uuid.NewV4().String(),
+				ScheduledScan: central.ApplyComplianceScanConfigRequest_ScheduledScan_builder{
+					ScanSettings: central.ApplyComplianceScanConfigRequest_BaseScanSettings_builder{
+						ScanName:       name,
+						StrictNodeScan: true,
+						Profiles:       profiles,
+					}.Build(),
+					Cron: cron,
+				}.Build(),
+			}.Build(),
+		}.Build(),
+	}.Build()
 }
 
 func getTestUpdateScanRequestMsg(name, cron string, profiles ...string) *central.MsgToSensor {
-	return &central.MsgToSensor{
-		Msg: &central.MsgToSensor_ComplianceRequest{
-			ComplianceRequest: &central.ComplianceRequest{
-				Request: &central.ComplianceRequest_ApplyScanConfig{
-					ApplyScanConfig: &central.ApplyComplianceScanConfigRequest{
-						Id: uuid.NewV4().String(),
-						ScanRequest: &central.ApplyComplianceScanConfigRequest_UpdateScan{
-							UpdateScan: &central.ApplyComplianceScanConfigRequest_UpdateScheduledScan{
-								ScanSettings: &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
-									ScanName:       name,
-									StrictNodeScan: true,
-									Profiles:       profiles,
-								},
-								Cron: cron,
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+	return central.MsgToSensor_builder{
+		ComplianceRequest: central.ComplianceRequest_builder{
+			ApplyScanConfig: central.ApplyComplianceScanConfigRequest_builder{
+				Id: uuid.NewV4().String(),
+				UpdateScan: central.ApplyComplianceScanConfigRequest_UpdateScheduledScan_builder{
+					ScanSettings: central.ApplyComplianceScanConfigRequest_BaseScanSettings_builder{
+						ScanName:       name,
+						StrictNodeScan: true,
+						Profiles:       profiles,
+					}.Build(),
+					Cron: cron,
+				}.Build(),
+			}.Build(),
+		}.Build(),
+	}.Build()
 }
 
 func getDisableComplianceMsg() *central.MsgToSensor {
-	return &central.MsgToSensor{
-		Msg: &central.MsgToSensor_ComplianceRequest{
-			ComplianceRequest: &central.ComplianceRequest{
-				Request: &central.ComplianceRequest_DisableCompliance{
-					DisableCompliance: &central.DisableComplianceRequest{
-						Id: uuid.NewV4().String(),
-					},
-				},
-			},
-		},
-	}
+	return central.MsgToSensor_builder{
+		ComplianceRequest: central.ComplianceRequest_builder{
+			DisableCompliance: central.DisableComplianceRequest_builder{
+				Id: uuid.NewV4().String(),
+			}.Build(),
+		}.Build(),
+	}.Build()
 }
 
 func getTestDeleteScanConfigMsg(name string) *central.MsgToSensor {
-	return &central.MsgToSensor{
-		Msg: &central.MsgToSensor_ComplianceRequest{
-			ComplianceRequest: &central.ComplianceRequest{
-				Request: &central.ComplianceRequest_DeleteScanConfig{
-					DeleteScanConfig: &central.DeleteComplianceScanConfigRequest{
-						Id:   uuid.NewV4().String(),
-						Name: name,
-					},
-				},
-			},
-		},
-	}
+	return central.MsgToSensor_builder{
+		ComplianceRequest: central.ComplianceRequest_builder{
+			DeleteScanConfig: central.DeleteComplianceScanConfigRequest_builder{
+				Id:   uuid.NewV4().String(),
+				Name: name,
+			}.Build(),
+		}.Build(),
+	}.Build()
 }
 
 func getTestRerunScanMsg(name string) *central.MsgToSensor {
-	return &central.MsgToSensor{
-		Msg: &central.MsgToSensor_ComplianceRequest{
-			ComplianceRequest: &central.ComplianceRequest{
-				Request: &central.ComplianceRequest_ApplyScanConfig{
-					ApplyScanConfig: &central.ApplyComplianceScanConfigRequest{
-						Id: uuid.NewV4().String(),
-						ScanRequest: &central.ApplyComplianceScanConfigRequest_RerunScan{
-							RerunScan: &central.ApplyComplianceScanConfigRequest_RerunScheduledScan{
-								ScanName: name,
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+	return central.MsgToSensor_builder{
+		ComplianceRequest: central.ComplianceRequest_builder{
+			ApplyScanConfig: central.ApplyComplianceScanConfigRequest_builder{
+				Id: uuid.NewV4().String(),
+				RerunScan: central.ApplyComplianceScanConfigRequest_RerunScheduledScan_builder{
+					ScanName: name,
+				}.Build(),
+			}.Build(),
+		}.Build(),
+	}.Build()
 }
 
 func getTestSuspendScanMsg(name string) *central.MsgToSensor {
-	return &central.MsgToSensor{
-		Msg: &central.MsgToSensor_ComplianceRequest{
-			ComplianceRequest: &central.ComplianceRequest{
-				Request: &central.ComplianceRequest_ApplyScanConfig{
-					ApplyScanConfig: &central.ApplyComplianceScanConfigRequest{
-						Id: uuid.NewV4().String(),
-						ScanRequest: &central.ApplyComplianceScanConfigRequest_SuspendScan{
-							SuspendScan: &central.ApplyComplianceScanConfigRequest_SuspendScheduledScan{
-								ScanName: name,
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+	return central.MsgToSensor_builder{
+		ComplianceRequest: central.ComplianceRequest_builder{
+			ApplyScanConfig: central.ApplyComplianceScanConfigRequest_builder{
+				Id: uuid.NewV4().String(),
+				SuspendScan: central.ApplyComplianceScanConfigRequest_SuspendScheduledScan_builder{
+					ScanName: name,
+				}.Build(),
+			}.Build(),
+		}.Build(),
+	}.Build()
 }
 
 func getTestResumeScanMsg(name string) *central.MsgToSensor {
-	return &central.MsgToSensor{
-		Msg: &central.MsgToSensor_ComplianceRequest{
-			ComplianceRequest: &central.ComplianceRequest{
-				Request: &central.ComplianceRequest_ApplyScanConfig{
-					ApplyScanConfig: &central.ApplyComplianceScanConfigRequest{
-						Id: uuid.NewV4().String(),
-						ScanRequest: &central.ApplyComplianceScanConfigRequest_ResumeScan{
-							ResumeScan: &central.ApplyComplianceScanConfigRequest_ResumeScheduledScan{
-								ScanName: name,
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+	return central.MsgToSensor_builder{
+		ComplianceRequest: central.ComplianceRequest_builder{
+			ApplyScanConfig: central.ApplyComplianceScanConfigRequest_builder{
+				Id: uuid.NewV4().String(),
+				ResumeScan: central.ApplyComplianceScanConfigRequest_ResumeScheduledScan_builder{
+					ScanName: name,
+				}.Build(),
+			}.Build(),
+		}.Build(),
+	}.Build()
 }

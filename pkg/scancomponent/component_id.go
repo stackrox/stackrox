@@ -21,7 +21,7 @@ func ComponentIDV2(component *storage.EmbeddedImageScanComponent, imageID string
 	// as that is added by the enricher and may vary.  So we want to ignore it.  Since it is
 	// a oneof we cannot simply flag it as ignore in the proto, sadly.
 	clonedComponent := component.CloneVT()
-	clonedComponent.SetTopCvss = nil
+	clonedComponent.ClearSetTopCvss()
 
 	hash, err := hashstructure.Hash(clonedComponent, hashstructure.FormatV2, &hashstructure.HashOptions{ZeroNil: true})
 	if err != nil {

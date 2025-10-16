@@ -91,17 +91,17 @@ func endpointsToListenFlows(endpoints []*storage.NetworkEndpoint) []*storage.Net
 	listenFlows := make([]*storage.NetworkFlow, 0, len(endpoints))
 
 	for _, ep := range endpoints {
-		listenFlows = append(listenFlows, &storage.NetworkFlow{
-			Props: &storage.NetworkFlowProperties{
-				SrcEntity: ep.GetProps().GetEntity(),
-				DstEntity: &storage.NetworkEntityInfo{
-					Type: storage.NetworkEntityInfo_LISTEN_ENDPOINT,
-				},
-				DstPort:    ep.GetProps().GetPort(),
-				L4Protocol: ep.GetProps().GetL4Protocol(),
-			},
-			LastSeenTimestamp: ep.GetLastActiveTimestamp(),
-		})
+		nei := &storage.NetworkEntityInfo{}
+		nei.SetType(storage.NetworkEntityInfo_LISTEN_ENDPOINT)
+		nfp := &storage.NetworkFlowProperties{}
+		nfp.SetSrcEntity(ep.GetProps().GetEntity())
+		nfp.SetDstEntity(nei)
+		nfp.SetDstPort(ep.GetProps().GetPort())
+		nfp.SetL4Protocol(ep.GetProps().GetL4Protocol())
+		nf := &storage.NetworkFlow{}
+		nf.SetProps(nfp)
+		nf.SetLastSeenTimestamp(ep.GetLastActiveTimestamp())
+		listenFlows = append(listenFlows, nf)
 	}
 	return listenFlows
 }

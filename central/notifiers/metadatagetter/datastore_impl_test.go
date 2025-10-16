@@ -15,42 +15,41 @@ import (
 )
 
 func namespaceWithAnnotation(annotationKey, annotationValue string) *storage.NamespaceMetadata {
-	ns := &storage.NamespaceMetadata{
-		Id:          fixtureconsts.Namespace1,
-		Name:        "name",
-		ClusterId:   fixtureconsts.Cluster1,
-		ClusterName: "cluster-name",
-	}
+	ns := &storage.NamespaceMetadata{}
+	ns.SetId(fixtureconsts.Namespace1)
+	ns.SetName("name")
+	ns.SetClusterId(fixtureconsts.Cluster1)
+	ns.SetClusterName("cluster-name")
 
 	if annotationKey != "" {
-		ns.Annotations = map[string]string{
+		ns.SetAnnotations(map[string]string{
 			annotationKey: annotationValue,
-		}
+		})
 	}
 
 	return ns
 }
 
 func namespaceWithLabels() *storage.NamespaceMetadata {
-	return &storage.NamespaceMetadata{
-		Id:          fixtureconsts.Namespace1,
-		Name:        "name",
-		ClusterId:   fixtureconsts.Cluster1,
-		ClusterName: "cluster-name",
-		Labels: map[string]string{
-			"x":                           "y",
-			"abc":                         "xyz",
-			"kubernetes.io/metadata.name": "name",
-		},
-	}
+	nm := &storage.NamespaceMetadata{}
+	nm.SetId(fixtureconsts.Namespace1)
+	nm.SetName("name")
+	nm.SetClusterId(fixtureconsts.Cluster1)
+	nm.SetClusterName("cluster-name")
+	nm.SetLabels(map[string]string{
+		"x":                           "y",
+		"abc":                         "xyz",
+		"kubernetes.io/metadata.name": "name",
+	})
+	return nm
 }
 
 func alertWithDeploymentAnnotation(annotationKey, annotationValue string) *storage.Alert {
 	alert := fixtures.GetAlert()
 	if annotationKey != "" {
-		alert.GetDeployment().Annotations = map[string]string{
+		alert.GetDeployment().SetAnnotations(map[string]string{
 			annotationKey: annotationValue,
-		}
+		})
 	}
 
 	return alert
@@ -59,9 +58,9 @@ func alertWithDeploymentAnnotation(annotationKey, annotationValue string) *stora
 func alertWithDeploymentLabel(labelKey, labelValue string) *storage.Alert {
 	alert := fixtures.GetAlert()
 	if labelKey != "" {
-		alert.GetDeployment().Labels = map[string]string{
+		alert.GetDeployment().SetLabels(map[string]string{
 			labelKey: labelValue,
-		}
+		})
 	}
 
 	return alert
@@ -69,13 +68,13 @@ func alertWithDeploymentLabel(labelKey, labelValue string) *storage.Alert {
 
 func TestGetAnnotationValue(t *testing.T) {
 	alertWithNoClusterID := fixtures.GetResourceAlert()
-	alertWithNoClusterID.GetResource().ClusterId = ""
+	alertWithNoClusterID.GetResource().SetClusterId("")
 
 	deployAlertWithNoNamespace := fixtures.GetAlert()
-	deployAlertWithNoNamespace.GetDeployment().Namespace = ""
+	deployAlertWithNoNamespace.GetDeployment().SetNamespace("")
 
 	resourceAlertWithNoNamespace := fixtures.GetResourceAlert()
-	resourceAlertWithNoNamespace.GetResource().Namespace = ""
+	resourceAlertWithNoNamespace.GetResource().SetNamespace("")
 
 	clusterResourceAlert := fixtures.GetClusterResourceAlert()
 
@@ -212,10 +211,10 @@ func TestGetAnnotationValue(t *testing.T) {
 
 func TestGetNamespaceLabels(t *testing.T) {
 	alertWithNoClusterID := fixtures.GetResourceAlert()
-	alertWithNoClusterID.GetResource().ClusterId = ""
+	alertWithNoClusterID.GetResource().SetClusterId("")
 
 	alertWithNoNamespace := fixtures.GetResourceAlert()
-	alertWithNoNamespace.GetResource().Namespace = ""
+	alertWithNoNamespace.GetResource().SetNamespace("")
 
 	cases := []struct {
 		name          string

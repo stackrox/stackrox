@@ -91,7 +91,9 @@ func (s *serviceImpl) GetGroups(ctx context.Context, req *v1.GetGroupsRequest) (
 		return nil, err
 	}
 
-	return &v1.GetGroupsResponse{Groups: groups}, nil
+	ggr := &v1.GetGroupsResponse{}
+	ggr.SetGroups(groups)
+	return ggr, nil
 }
 
 func (s *serviceImpl) GetGroup(ctx context.Context, props *storage.GroupProperties) (*storage.Group, error) {
@@ -141,12 +143,12 @@ func (s *serviceImpl) UpdateGroup(ctx context.Context, updateReq *v1.UpdateGroup
 }
 
 func (s *serviceImpl) DeleteGroup(ctx context.Context, deleteReq *v1.DeleteGroupRequest) (*v1.Empty, error) {
-	err := s.groups.Remove(ctx, &storage.GroupProperties{
-		Id:             deleteReq.GetId(),
-		AuthProviderId: deleteReq.GetAuthProviderId(),
-		Key:            deleteReq.GetKey(),
-		Value:          deleteReq.GetValue(),
-	}, deleteReq.GetForce())
+	gp := &storage.GroupProperties{}
+	gp.SetId(deleteReq.GetId())
+	gp.SetAuthProviderId(deleteReq.GetAuthProviderId())
+	gp.SetKey(deleteReq.GetKey())
+	gp.SetValue(deleteReq.GetValue())
+	err := s.groups.Remove(ctx, gp, deleteReq.GetForce())
 	if err != nil {
 		return nil, err
 	}

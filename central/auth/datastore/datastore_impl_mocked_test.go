@@ -93,30 +93,27 @@ func (s *datastoreMockedTestSuite) TestVerifyConfigRoleExists() {
 
 	const existingDeclarativeRole1 = "existing declarative role 1"
 
-	declarativeRole1 := &storage.Role{
-		Name:            existingDeclarativeRole1,
-		AccessScopeId:   uuid.NewTestUUID(1).String(),
-		PermissionSetId: uuid.NewTestUUID(2).String(),
-		Traits:          declarativeTraits.CloneVT(),
-	}
+	declarativeRole1 := &storage.Role{}
+	declarativeRole1.SetName(existingDeclarativeRole1)
+	declarativeRole1.SetAccessScopeId(uuid.NewTestUUID(1).String())
+	declarativeRole1.SetPermissionSetId(uuid.NewTestUUID(2).String())
+	declarativeRole1.SetTraits(declarativeTraits.CloneVT())
 
 	const existingDeclarativeRole2 = "existing declarative role 2"
 
-	declarativeRole2 := &storage.Role{
-		Name:            existingDeclarativeRole2,
-		AccessScopeId:   uuid.NewTestUUID(3).String(),
-		PermissionSetId: uuid.NewTestUUID(4).String(),
-		Traits:          declarativeTraits.CloneVT(),
-	}
+	declarativeRole2 := &storage.Role{}
+	declarativeRole2.SetName(existingDeclarativeRole2)
+	declarativeRole2.SetAccessScopeId(uuid.NewTestUUID(3).String())
+	declarativeRole2.SetPermissionSetId(uuid.NewTestUUID(4).String())
+	declarativeRole2.SetTraits(declarativeTraits.CloneVT())
 
 	const existingImperativeRole = "existing imperative role"
 
-	imperativeRole := &storage.Role{
-		Name:            existingImperativeRole,
-		AccessScopeId:   uuid.NewTestUUID(5).String(),
-		PermissionSetId: uuid.NewTestUUID(6).String(),
-		Traits:          imperativeTraits.CloneVT(),
-	}
+	imperativeRole := &storage.Role{}
+	imperativeRole.SetName(existingImperativeRole)
+	imperativeRole.SetAccessScopeId(uuid.NewTestUUID(5).String())
+	imperativeRole.SetPermissionSetId(uuid.NewTestUUID(6).String())
+	imperativeRole.SetTraits(imperativeTraits.CloneVT())
 
 	const missingRole = "missing role"
 	const missingImperativeRole = "missing imperative role"
@@ -249,21 +246,20 @@ func (s *datastoreMockedTestSuite) TestVerifyConfigRoleExists() {
 }
 
 func getBasicM2mConfig(traits *storage.Traits, id string, issuer string, targetRoles ...string) *storage.AuthMachineToMachineConfig {
-	m2mConfig := &storage.AuthMachineToMachineConfig{
-		Id:                      id,
-		Type:                    storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
-		TokenExpirationDuration: "20m",
-		Issuer:                  issuer,
-		Traits:                  traits.CloneVT(),
-	}
+	m2mConfig := &storage.AuthMachineToMachineConfig{}
+	m2mConfig.SetId(id)
+	m2mConfig.SetType(storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT)
+	m2mConfig.SetTokenExpirationDuration("20m")
+	m2mConfig.SetIssuer(issuer)
+	m2mConfig.SetTraits(traits.CloneVT())
 	mappings := make([]*storage.AuthMachineToMachineConfig_Mapping, 0, len(targetRoles))
 	for ix, role := range targetRoles {
-		mappings = append(mappings, &storage.AuthMachineToMachineConfig_Mapping{
-			Key:             "sub",
-			ValueExpression: fmt.Sprintf("system:serviceaccount:stackrox:config-controller%d", ix),
-			Role:            role,
-		})
+		am := &storage.AuthMachineToMachineConfig_Mapping{}
+		am.SetKey("sub")
+		am.SetValueExpression(fmt.Sprintf("system:serviceaccount:stackrox:config-controller%d", ix))
+		am.SetRole(role)
+		mappings = append(mappings, am)
 	}
-	m2mConfig.Mappings = mappings
+	m2mConfig.SetMappings(mappings)
 	return m2mConfig
 }

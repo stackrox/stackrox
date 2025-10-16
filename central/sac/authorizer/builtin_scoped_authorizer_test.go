@@ -114,7 +114,7 @@ func TestBuiltInScopeAuthorizerWithTracing(t *testing.T) {
 		},
 		{
 			name:      "deny read from anything when scope is empty",
-			roles:     []permissions.ResolvedRole{role(allResourcesView, &storage.SimpleAccessScope{Id: "empty"})},
+			roles:     []permissions.ResolvedRole{role(allResourcesView, storage.SimpleAccessScope_builder{Id: "empty"}.Build())},
 			scopeKeys: readCluster(firstClusterID, resources.Cluster.Resource),
 			results:   []bool{false, false, false},
 		},
@@ -375,25 +375,25 @@ func TestEffectiveAccessScope(t *testing.T) {
 		},
 		{
 			name:      "Access to all resources (read-only) for empty scope gives deny-all scope tree for any resource and access (case read cluster)",
-			roles:     []permissions.ResolvedRole{role(allResourcesEdit, &storage.SimpleAccessScope{Id: "empty"})},
+			roles:     []permissions.ResolvedRole{role(allResourcesEdit, storage.SimpleAccessScope_builder{Id: "empty"}.Build())},
 			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Cluster),
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
 		},
 		{
 			name:      "Access to all resources (read-write) for empty scope gives deny-all scope tree for any resource and access (case write cluster)",
-			roles:     []permissions.ResolvedRole{role(allResourcesEdit, &storage.SimpleAccessScope{Id: "empty"})},
+			roles:     []permissions.ResolvedRole{role(allResourcesEdit, storage.SimpleAccessScope_builder{Id: "empty"}.Build())},
 			resource:  resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Cluster),
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
 		},
 		{
 			name:      "Access to all resources (read-only) for empty scope gives deny-all scope tree for any resource and access (case read namespace)",
-			roles:     []permissions.ResolvedRole{role(allResourcesEdit, &storage.SimpleAccessScope{Id: "empty"})},
+			roles:     []permissions.ResolvedRole{role(allResourcesEdit, storage.SimpleAccessScope_builder{Id: "empty"}.Build())},
 			resource:  resourceWithAccess(storage.Access_READ_ACCESS, resources.Namespace),
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
 		},
 		{
 			name:      "Access to all resources (read-write) for empty scope gives deny-all scope tree for any resource and access (case write namespace)",
-			roles:     []permissions.ResolvedRole{role(allResourcesEdit, &storage.SimpleAccessScope{Id: "empty"})},
+			roles:     []permissions.ResolvedRole{role(allResourcesEdit, storage.SimpleAccessScope_builder{Id: "empty"}.Build())},
 			resource:  resourceWithAccess(storage.Access_READ_WRITE_ACCESS, resources.Namespace),
 			resultEAS: effectiveaccessscope.DenyAllEffectiveAccessScope(),
 		},
@@ -720,13 +720,13 @@ func TestBuiltInScopeAuthorizerPanicsWhenErrorOnComputeAccessScope(t *testing.T)
 	}{
 		{
 			name: "error when could not compute effective access scope",
-			roles: []permissions.ResolvedRole{role(allResourcesView, &storage.SimpleAccessScope{
+			roles: []permissions.ResolvedRole{role(allResourcesView, storage.SimpleAccessScope_builder{
 				Id: "with-invalid-key",
-				Rules: &storage.SimpleAccessScope_Rules{
-					ClusterLabelSelectors: []*storage.SetBasedLabelSelector{{
+				Rules: storage.SimpleAccessScope_Rules_builder{
+					ClusterLabelSelectors: []*storage.SetBasedLabelSelector{storage.SetBasedLabelSelector_builder{
 						Requirements: []*storage.SetBasedLabelSelector_Requirement{
-							{Key: "invalid key"},
-						}}}}})},
+							storage.SetBasedLabelSelector_Requirement_builder{Key: "invalid key"}.Build(),
+						}}.Build()}}.Build()}.Build())},
 			scopeKeys: readCluster(firstClusterID, resources.Cluster.Resource),
 			results:   []bool{false},
 		},
@@ -769,33 +769,33 @@ func scopeKeys(access storage.Access, res permissions.Resource, clusterID, names
 }
 
 func withAccessTo1Cluster() *storage.SimpleAccessScope {
-	return &storage.SimpleAccessScope{
-		Id: "withAccessTo1Cluster",
-		Rules: &storage.SimpleAccessScope_Rules{
-			IncludedClusters: []string{firstClusterName},
-		},
-	}
+	sr := &storage.SimpleAccessScope_Rules{}
+	sr.SetIncludedClusters([]string{firstClusterName})
+	sas := &storage.SimpleAccessScope{}
+	sas.SetId("withAccessTo1Cluster")
+	sas.SetRules(sr)
+	return sas
 }
 
 func withAccessTo2Cluster() *storage.SimpleAccessScope {
-	return &storage.SimpleAccessScope{
-		Id: "withAccessTo2Cluster",
-		Rules: &storage.SimpleAccessScope_Rules{
-			IncludedClusters: []string{secondClusterName},
-		},
-	}
+	sr := &storage.SimpleAccessScope_Rules{}
+	sr.SetIncludedClusters([]string{secondClusterName})
+	sas := &storage.SimpleAccessScope{}
+	sas.SetId("withAccessTo2Cluster")
+	sas.SetRules(sr)
+	return sas
 }
 
 func withAccessTo1Namespace() *storage.SimpleAccessScope {
-	return &storage.SimpleAccessScope{
+	return storage.SimpleAccessScope_builder{
 		Id: "withAccessTo1Namespace",
-		Rules: &storage.SimpleAccessScope_Rules{
-			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{{
+		Rules: storage.SimpleAccessScope_Rules_builder{
+			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{storage.SimpleAccessScope_Rules_Namespace_builder{
 				ClusterName:   firstClusterName,
 				NamespaceName: firstNamespaceName,
-			}},
-		},
-	}
+			}.Build()},
+		}.Build(),
+	}.Build()
 }
 
 func resourceWithAccess(access storage.Access, resource permissions.ResourceMetadata) permissions.ResourceWithAccess {

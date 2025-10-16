@@ -26,14 +26,12 @@ var (
 		Profiles:   []string{"profile-1", "profile-2"},
 	}
 	notifiers = []*storage.NotifierConfiguration{
-		{
-			NotifierConfig: &storage.NotifierConfiguration_EmailConfig{
-				EmailConfig: &storage.EmailNotifierConfiguration{
-					NotifierId:   "notifier-id",
-					MailingLists: []string{"mail-1@test.com", "mail-2@test.com"},
-				},
-			},
-		},
+		storage.NotifierConfiguration_builder{
+			EmailConfig: storage.EmailNotifierConfiguration_builder{
+				NotifierId:   "notifier-id",
+				MailingLists: []string{"mail-1@test.com", "mail-2@test.com"},
+			}.Build(),
+		}.Build(),
 	}
 )
 

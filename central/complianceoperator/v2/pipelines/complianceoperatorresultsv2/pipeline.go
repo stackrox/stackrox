@@ -69,7 +69,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	event := msg.GetEvent()
 	checkResult := event.GetComplianceOperatorResultV2()
-	checkResult.ClusterId = clusterID
+	checkResult.SetClusterId(clusterID)
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:

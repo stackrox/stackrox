@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
+	"google.golang.org/protobuf/proto"
 )
 
 // IsDeployment returns true if the network entity is a deployment (by type).
@@ -86,17 +87,15 @@ func AnyDeploymentInFilter(src, dst *storage.NetworkEntityInfo, filter map[strin
 
 // NetworkEntityForDeployment returns a NetworkEntityInfo for the given deployment.
 func NetworkEntityForDeployment(deployment *storage.ListDeployment) *storage.NetworkEntityInfo {
-	return &storage.NetworkEntityInfo{
-		Type: storage.NetworkEntityInfo_DEPLOYMENT,
-		Id:   deployment.GetId(),
-		Desc: &storage.NetworkEntityInfo_Deployment_{
-			Deployment: &storage.NetworkEntityInfo_Deployment{
-				Name:      deployment.GetName(),
-				Namespace: deployment.GetNamespace(),
-				Cluster:   deployment.GetCluster(),
-			},
-		},
-	}
+	nd := &storage.NetworkEntityInfo_Deployment{}
+	nd.SetName(deployment.GetName())
+	nd.SetNamespace(deployment.GetNamespace())
+	nd.SetCluster(deployment.GetCluster())
+	nei := &storage.NetworkEntityInfo{}
+	nei.SetType(storage.NetworkEntityInfo_DEPLOYMENT)
+	nei.SetId(deployment.GetId())
+	nei.SetDeployment(proto.ValueOrDefault(nd))
+	return nei
 }
 
 // PopulateDeploymentDesc populates the entity with deployment information from the given map. It returns false if
@@ -110,13 +109,11 @@ func PopulateDeploymentDesc(entity *storage.NetworkEntityInfo, deploymentsMap ma
 	if deployment == nil {
 		return false
 	}
-	entity.Desc = &storage.NetworkEntityInfo_Deployment_{
-		Deployment: &storage.NetworkEntityInfo_Deployment{
-			Name:      deployment.GetName(),
-			Namespace: deployment.GetNamespace(),
-			Cluster:   deployment.GetCluster(),
-		},
-	}
+	nd := &storage.NetworkEntityInfo_Deployment{}
+	nd.SetName(deployment.GetName())
+	nd.SetNamespace(deployment.GetNamespace())
+	nd.SetCluster(deployment.GetCluster())
+	entity.SetDeployment(proto.ValueOrDefault(nd))
 	return true
 }
 
@@ -166,6 +163,7 @@ func PopulateExternalSrcsDesc(entity *storage.NetworkEntityInfo, extSrcMapper fu
 		*entity = *InternetEntity().ToProto()
 		return
 	}
+	// DO NOT SUBMIT: Migrate the direct oneof field access (go/go-opaque-special-cases/oneof.md).
 	entity.Desc = src.GetDesc()
 }
 

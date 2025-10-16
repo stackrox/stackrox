@@ -64,13 +64,13 @@ func HandleV2Manifest(r *Registry, remote, ref string) (*storage.ImageMetadata, 
 			return nil, err
 		}
 	}
-	return &storage.ImageMetadata{
-		V1: v1Metadata,
-		V2: &storage.V2Metadata{
-			Digest: digestOrRef(ref, dig),
-		},
-		LayerShas: layers,
-	}, nil
+	v2m := &storage.V2Metadata{}
+	v2m.SetDigest(digestOrRef(ref, dig))
+	im := &storage.ImageMetadata{}
+	im.SetV1(v1Metadata)
+	im.SetV2(v2m)
+	im.SetLayerShas(layers)
+	return im, nil
 }
 
 // HandleOCIImageIndex handles fetching data if the media type is OCI image index.
@@ -100,13 +100,13 @@ func HandleOCIManifest(r *Registry, remote, ref string) (*storage.ImageMetadata,
 			return nil, err
 		}
 	}
-	return &storage.ImageMetadata{
-		V1: v1Metadata,
-		V2: &storage.V2Metadata{
-			Digest: digestOrRef(ref, dig),
-		},
-		LayerShas: layers,
-	}, nil
+	v2m := &storage.V2Metadata{}
+	v2m.SetDigest(digestOrRef(ref, dig))
+	im := &storage.ImageMetadata{}
+	im.SetV1(v1Metadata)
+	im.SetV2(v2m)
+	im.SetLayerShas(layers)
+	return im, nil
 }
 
 // digestOrRef returns digest if populated and ref is NOT a valid digest, otherwise returns ref.

@@ -124,7 +124,9 @@ func (resolver *Resolver) Namespaces(ctx context.Context, args PaginatedQuery) (
 	}
 	namespaces := make([]*v1.Namespace, 0, len(metadataSlice))
 	for _, metadata := range metadataSlice {
-		namespaces = append(namespaces, &v1.Namespace{Metadata: metadata})
+		namespace2 := &v1.Namespace{}
+		namespace2.SetMetadata(metadata)
+		namespaces = append(namespaces, namespace2)
 	}
 	return resolver.wrapNamespacesWithContext(ctx, namespaces, nil)
 }
@@ -219,7 +221,7 @@ func (resolver *namespaceResolver) Subjects(ctx context.Context, args PaginatedQ
 	}
 
 	pagination := baseQuery.GetPagination()
-	baseQuery.Pagination = nil
+	baseQuery.ClearPagination()
 
 	subjects, err := resolver.getSubjects(ctx, baseQuery)
 	if err != nil {
@@ -361,9 +363,9 @@ func (resolver *namespaceResolver) Policies(ctx context.Context, args PaginatedQ
 
 	// remove pagination from query since we want to paginate the final result
 	pagination := q.GetPagination()
-	q.Pagination = &v1.QueryPagination{
-		SortOptions: pagination.GetSortOptions(),
-	}
+	qp := &v1.QueryPagination{}
+	qp.SetSortOptions(pagination.GetSortOptions())
+	q.SetPagination(qp)
 
 	policyResolvers, err := resolver.root.wrapPolicies(resolver.getApplicablePolicies(ctx, q))
 	if err != nil {
@@ -450,9 +452,9 @@ func (resolver *namespaceResolver) PolicyStatusOnly(ctx context.Context, args Ra
 		return "", err
 	}
 
-	q.Pagination = &v1.QueryPagination{
-		Limit: 1,
-	}
+	qp := &v1.QueryPagination{}
+	qp.SetLimit(1)
+	q.SetPagination(qp)
 	results, err := resolver.root.ViolationsDataStore.Search(ctx, search.ConjunctionQuery(q,
 		search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
 			AddExactMatches(search.Namespace, resolver.data.GetMetadata().GetName()).
@@ -607,21 +609,20 @@ func (resolver *namespaceResolver) getNamespaceRisk(ctx context.Context) (*stora
 		return nil, false, nil
 	}
 
-	risk := &storage.Risk{
-		Score: aggregateRiskScore,
-		Subject: &storage.RiskSubject{
-			Id:        ns.GetMetadata().GetId(),
-			Namespace: ns.GetMetadata().GetName(),
-			ClusterId: ns.GetMetadata().GetClusterId(),
-			Type:      storage.RiskSubjectType_NAMESPACE,
-		},
-	}
+	rs := &storage.RiskSubject{}
+	rs.SetId(ns.GetMetadata().GetId())
+	rs.SetNamespace(ns.GetMetadata().GetName())
+	rs.SetClusterId(ns.GetMetadata().GetClusterId())
+	rs.SetType(storage.RiskSubjectType_NAMESPACE)
+	risk := &storage.Risk{}
+	risk.SetScore(aggregateRiskScore)
+	risk.SetSubject(rs)
 
 	id, err := riskDS.GetID(risk.GetSubject().GetId(), risk.GetSubject().GetType())
 	if err != nil {
 		return nil, false, err
 	}
-	risk.Id = id
+	risk.SetId(id)
 
 	return risk, true, nil
 }

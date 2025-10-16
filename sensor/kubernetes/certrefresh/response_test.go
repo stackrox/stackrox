@@ -10,25 +10,25 @@ import (
 )
 
 func createCertificatesSet() *storage.TypedServiceCertificateSet {
-	return &storage.TypedServiceCertificateSet{
+	return storage.TypedServiceCertificateSet_builder{
 		CaPem: []byte("ca_cert_pem"),
 		ServiceCerts: []*storage.TypedServiceCertificate{
-			{
+			storage.TypedServiceCertificate_builder{
 				ServiceType: storage.ServiceType_SCANNER_SERVICE,
-				Cert: &storage.ServiceCertificate{
+				Cert: storage.ServiceCertificate_builder{
 					CertPem: []byte("scanner_cert_pem"),
 					KeyPem:  []byte("scanner_key_pem"),
-				},
-			},
-			{
+				}.Build(),
+			}.Build(),
+			storage.TypedServiceCertificate_builder{
 				ServiceType: storage.ServiceType_SENSOR_SERVICE,
-				Cert: &storage.ServiceCertificate{
+				Cert: storage.ServiceCertificate_builder{
 					CertPem: []byte("sensor_cert_pem"),
 					KeyPem:  []byte("sensor_key_pem"),
-				},
-			},
+				}.Build(),
+			}.Build(),
 		},
-	}
+	}.Build()
 }
 
 func TestConvertSecuredClusterCertsResponse(t *testing.T) {
@@ -47,14 +47,12 @@ func TestConvertSecuredClusterCertsResponse(t *testing.T) {
 		},
 		{
 			name: "Response with error",
-			input: &central.IssueSecuredClusterCertsResponse{
+			input: central.IssueSecuredClusterCertsResponse_builder{
 				RequestId: "12345",
-				Response: &central.IssueSecuredClusterCertsResponse_Error{
-					Error: &central.SecuredClusterCertsIssueError{
-						Message: errorMessage,
-					},
-				},
-			},
+				Error: central.SecuredClusterCertsIssueError_builder{
+					Message: errorMessage,
+				}.Build(),
+			}.Build(),
 			expectedResult: &Response{
 				RequestId:    "12345",
 				ErrorMessage: &errorMessage,
@@ -63,12 +61,10 @@ func TestConvertSecuredClusterCertsResponse(t *testing.T) {
 		},
 		{
 			name: "Response with certificates",
-			input: &central.IssueSecuredClusterCertsResponse{
-				RequestId: "67890",
-				Response: &central.IssueSecuredClusterCertsResponse_Certificates{
-					Certificates: certificatesSet,
-				},
-			},
+			input: central.IssueSecuredClusterCertsResponse_builder{
+				RequestId:    "67890",
+				Certificates: proto.ValueOrDefault(certificatesSet),
+			}.Build(),
 			expectedResult: &Response{
 				RequestId:    "67890",
 				ErrorMessage: nil,

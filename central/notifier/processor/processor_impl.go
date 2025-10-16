@@ -83,14 +83,14 @@ func (p *processorImpl) ProcessAuditMessage(ctx context.Context, msg *v1.Audit_M
 }
 
 func (p *processorImpl) UpdateNotifierHealthStatus(notifier notifiers.Notifier, healthStatus storage.IntegrationHealth_Status, errMessage string) {
-	p.reporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
-		Id:            notifier.ProtoNotifier().GetId(),
-		Name:          notifier.ProtoNotifier().GetId(),
-		Type:          storage.IntegrationHealth_NOTIFIER,
-		Status:        healthStatus,
-		LastTimestamp: protocompat.TimestampNow(),
-		ErrorMessage:  errMessage,
-	})
+	ih := &storage.IntegrationHealth{}
+	ih.SetId(notifier.ProtoNotifier().GetId())
+	ih.SetName(notifier.ProtoNotifier().GetId())
+	ih.SetType(storage.IntegrationHealth_NOTIFIER)
+	ih.SetStatus(healthStatus)
+	ih.SetLastTimestamp(protocompat.TimestampNow())
+	ih.SetErrorMessage(errMessage)
+	p.reporter.UpdateIntegrationHealthAsync(ih)
 }
 
 func (p *processorImpl) tryToSendAudit(ctx context.Context, notifier notifiers.Notifier, msg *v1.Audit_Message) {

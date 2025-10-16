@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/common/store/resolver"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
+	"google.golang.org/protobuf/proto"
 	networkingV1 "k8s.io/api/networking/v1"
 )
 
@@ -44,13 +45,11 @@ func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action cent
 
 	events.AddDeploymentReference(resolver.ResolveDeploymentLabels(roxNetpol.GetNamespace(), sel),
 		component.WithForceDetection())
-	events.AddSensorEvent(&central.SensorEvent{
-		Id:     string(np.UID),
-		Action: action,
-		Resource: &central.SensorEvent_NetworkPolicy{
-			NetworkPolicy: roxNetpol,
-		},
-	})
+	se := &central.SensorEvent{}
+	se.SetId(string(np.UID))
+	se.SetAction(action)
+	se.SetNetworkPolicy(proto.ValueOrDefault(roxNetpol))
+	events.AddSensorEvent(se)
 
 	return &events
 }

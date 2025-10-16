@@ -51,14 +51,16 @@ func (s *apiTokenDataStoreTestSuite) TearDownTest() {
 }
 
 func (s *apiTokenDataStoreTestSuite) TestAddToken() {
-	token := &storage.TokenMetadata{Id: "id"}
+	token := &storage.TokenMetadata{}
+	token.SetId("id")
 	s.storage.EXPECT().Upsert(gomock.Any(), token).Return(nil).MaxTimes(1)
 
 	s.NoError(s.dataStore.AddToken(s.hasWriteCtx, token))
 }
 
 func (s *apiTokenDataStoreTestSuite) TestGetTokenOrNil() {
-	expectedToken := &storage.TokenMetadata{Id: "id"}
+	expectedToken := &storage.TokenMetadata{}
+	expectedToken.SetId("id")
 	s.storage.EXPECT().Get(gomock.Any(), "id").Return(nil, false, nil).MaxTimes(1)
 
 	token, err := s.dataStore.GetTokenOrNil(s.hasReadCtx, "id")
@@ -73,7 +75,8 @@ func (s *apiTokenDataStoreTestSuite) TestGetTokenOrNil() {
 }
 
 func (s *apiTokenDataStoreTestSuite) TestRevokeToken() {
-	expectedToken := &storage.TokenMetadata{Id: "id"}
+	expectedToken := &storage.TokenMetadata{}
+	expectedToken.SetId("id")
 	s.storage.EXPECT().Get(gomock.Any(), "id").Return(nil, false, nil).MaxTimes(1)
 
 	exists, err := s.dataStore.RevokeToken(s.hasWriteCtx, "id")
@@ -81,7 +84,7 @@ func (s *apiTokenDataStoreTestSuite) TestRevokeToken() {
 	s.False(exists)
 
 	s.storage.EXPECT().Get(gomock.Any(), "id").Return(expectedToken, true, nil).MaxTimes(1)
-	expectedToken.Revoked = true
+	expectedToken.SetRevoked(true)
 	s.storage.EXPECT().Upsert(gomock.Any(), expectedToken).Return(nil).MaxTimes(1)
 
 	exists, err = s.dataStore.RevokeToken(s.hasWriteCtx, "id")

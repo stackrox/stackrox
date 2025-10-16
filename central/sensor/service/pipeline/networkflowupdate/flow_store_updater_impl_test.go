@@ -65,32 +65,32 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateNoExternalIPs() {
 
 	firstTimestamp := time.Now()
 	storedFlows := []*storage.NetworkFlow{
-		{
-			Props: &storage.NetworkFlowProperties{
-				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
-				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode2"},
+		storage.NetworkFlow_builder{
+			Props: storage.NetworkFlowProperties_builder{
+				SrcEntity:  storage.NetworkEntityInfo_builder{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"}.Build(),
+				DstEntity:  storage.NetworkEntityInfo_builder{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode2"}.Build(),
 				DstPort:    1,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-			},
+			}.Build(),
 			LastSeenTimestamp: protoconv.ConvertTimeToTimestampOrNow(&firstTimestamp),
-		},
-		{
-			Props: &storage.NetworkFlowProperties{
-				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode1"},
-				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"},
+		}.Build(),
+		storage.NetworkFlow_builder{
+			Props: storage.NetworkFlowProperties_builder{
+				SrcEntity:  storage.NetworkEntityInfo_builder{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode1"}.Build(),
+				DstEntity:  storage.NetworkEntityInfo_builder{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"}.Build(),
 				DstPort:    2,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-			},
-		},
-		{
-			Props: &storage.NetworkFlowProperties{
-				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
-				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"},
+			}.Build(),
+		}.Build(),
+		storage.NetworkFlow_builder{
+			Props: storage.NetworkFlowProperties_builder{
+				SrcEntity:  storage.NetworkEntityInfo_builder{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"}.Build(),
+				DstEntity:  storage.NetworkEntityInfo_builder{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"}.Build(),
 				DstPort:    2,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-			},
+			}.Build(),
 			LastSeenTimestamp: protoconv.ConvertTimeToTimestampOrNow(&firstTimestamp),
-		},
+		}.Build(),
 	}
 
 	discoveredEntity1 := networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{1, 2, 3, 4, 32})).ToProto()
@@ -98,76 +98,76 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateNoExternalIPs() {
 
 	secondTimestamp := time.Now()
 	newFlows := []*storage.NetworkFlow{
-		{
-			Props: &storage.NetworkFlowProperties{
-				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
-				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode2"},
+		storage.NetworkFlow_builder{
+			Props: storage.NetworkFlowProperties_builder{
+				SrcEntity:  storage.NetworkEntityInfo_builder{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"}.Build(),
+				DstEntity:  storage.NetworkEntityInfo_builder{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode2"}.Build(),
 				DstPort:    1,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-			},
+			}.Build(),
 			LastSeenTimestamp: nil,
-		},
-		{
-			Props: &storage.NetworkFlowProperties{
-				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
-				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"},
+		}.Build(),
+		storage.NetworkFlow_builder{
+			Props: storage.NetworkFlowProperties_builder{
+				SrcEntity:  storage.NetworkEntityInfo_builder{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"}.Build(),
+				DstEntity:  storage.NetworkEntityInfo_builder{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"}.Build(),
 				DstPort:    2,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-			},
+			}.Build(),
 			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(secondTimestamp),
-		},
-		{
-			Props: &storage.NetworkFlowProperties{
-				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+		}.Build(),
+		storage.NetworkFlow_builder{
+			Props: storage.NetworkFlowProperties_builder{
+				SrcEntity:  storage.NetworkEntityInfo_builder{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"}.Build(),
 				DstEntity:  discoveredEntity1,
 				DstPort:    3,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-			},
+			}.Build(),
 			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(secondTimestamp),
-		},
-		{
-			Props: &storage.NetworkFlowProperties{
+		}.Build(),
+		storage.NetworkFlow_builder{
+			Props: storage.NetworkFlowProperties_builder{
 				SrcEntity:  discoveredEntity2,
-				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+				DstEntity:  storage.NetworkEntityInfo_builder{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"}.Build(),
 				DstPort:    4,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-			},
+			}.Build(),
 			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(secondTimestamp),
-		},
+		}.Build(),
 	}
 
 	// The properties of the flows we expect updates to. Properties identify flows uniquely.
 	expectedUpdateProps := []*storage.NetworkFlowProperties{
-		{
-			SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
-			DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode2"},
+		storage.NetworkFlowProperties_builder{
+			SrcEntity:  storage.NetworkEntityInfo_builder{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"}.Build(),
+			DstEntity:  storage.NetworkEntityInfo_builder{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode2"}.Build(),
 			DstPort:    1,
 			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-		},
-		{
-			SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode1"},
-			DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"},
+		}.Build(),
+		storage.NetworkFlowProperties_builder{
+			SrcEntity:  storage.NetworkEntityInfo_builder{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode1"}.Build(),
+			DstEntity:  storage.NetworkEntityInfo_builder{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"}.Build(),
 			DstPort:    2,
 			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-		},
-		{
-			SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
-			DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"},
+		}.Build(),
+		storage.NetworkFlowProperties_builder{
+			SrcEntity:  storage.NetworkEntityInfo_builder{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"}.Build(),
+			DstEntity:  storage.NetworkEntityInfo_builder{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"}.Build(),
 			DstPort:    2,
 			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-		},
-		{
-			SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+		}.Build(),
+		storage.NetworkFlowProperties_builder{
+			SrcEntity:  storage.NetworkEntityInfo_builder{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"}.Build(),
 			DstEntity:  networkgraph.InternetEntity().ToProto(), // features.ExternalIPs is disabled
 			DstPort:    3,
 			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-		},
-		{
+		}.Build(),
+		storage.NetworkFlowProperties_builder{
 			SrcEntity:  networkgraph.InternetEntity().ToProto(), // features.ExternalIPs is disabled
-			DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+			DstEntity:  storage.NetworkEntityInfo_builder{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"}.Build(),
 			DstPort:    4,
 			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-		},
+		}.Build(),
 	}
 
 	// Return storedFlows on DB read.
@@ -284,77 +284,77 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateWithExternalIPs() {
 
 	secondTimestamp := time.Now()
 	newFlows := []*storage.NetworkFlow{
-		{
-			Props: &storage.NetworkFlowProperties{
-				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+		storage.NetworkFlow_builder{
+			Props: storage.NetworkFlowProperties_builder{
+				SrcEntity:  storage.NetworkEntityInfo_builder{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"}.Build(),
 				DstEntity:  discoveredEntity1,
 				DstPort:    3,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-			},
+			}.Build(),
 			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(secondTimestamp),
-		},
-		{
-			Props: &storage.NetworkFlowProperties{
+		}.Build(),
+		storage.NetworkFlow_builder{
+			Props: storage.NetworkFlowProperties_builder{
 				SrcEntity:  discoveredEntity2,
-				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+				DstEntity:  storage.NetworkEntityInfo_builder{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"}.Build(),
 				DstPort:    4,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-			},
+			}.Build(),
 			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(secondTimestamp),
-		},
-		{
-			Props: &storage.NetworkFlowProperties{
+		}.Build(),
+		storage.NetworkFlow_builder{
+			Props: storage.NetworkFlowProperties_builder{
 				SrcEntity:  discoveredEntity3,
-				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+				DstEntity:  storage.NetworkEntityInfo_builder{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"}.Build(),
 				DstPort:    4,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-			},
+			}.Build(),
 			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(secondTimestamp),
-		},
+		}.Build(),
 	}
 
 	actuallyUpsertedFlows := []*storage.NetworkFlow{
-		{
-			Props: &storage.NetworkFlowProperties{
-				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+		storage.NetworkFlow_builder{
+			Props: storage.NetworkFlowProperties_builder{
+				SrcEntity:  storage.NetworkEntityInfo_builder{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"}.Build(),
 				DstEntity:  discoveredEntity1,
 				DstPort:    3,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-			},
+			}.Build(),
 			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(secondTimestamp),
-		},
-		{
-			Props: &storage.NetworkFlowProperties{
+		}.Build(),
+		storage.NetworkFlow_builder{
+			Props: storage.NetworkFlowProperties_builder{
 				SrcEntity:  discoveredEntity2,
-				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+				DstEntity:  storage.NetworkEntityInfo_builder{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"}.Build(),
 				DstPort:    4,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-			},
+			}.Build(),
 			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(secondTimestamp),
-		},
+		}.Build(),
 		// We simulate that the third flow was filtered out during Upsert().
 	}
 
 	// The properties of the flows we expect updates to. Properties identify flows uniquely.
 	expectedUpdateProps := []*storage.NetworkFlowProperties{
-		{
-			SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+		storage.NetworkFlowProperties_builder{
+			SrcEntity:  storage.NetworkEntityInfo_builder{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"}.Build(),
 			DstEntity:  fixedupDiscoveredEntity1,
 			DstPort:    3,
 			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-		},
-		{
+		}.Build(),
+		storage.NetworkFlowProperties_builder{
 			SrcEntity:  fixedupDiscoveredEntity2,
-			DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+			DstEntity:  storage.NetworkEntityInfo_builder{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"}.Build(),
 			DstPort:    4,
 			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-		},
-		{
+		}.Build(),
+		storage.NetworkFlowProperties_builder{
 			SrcEntity:  fixedupDiscoveredEntity3,
-			DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+			DstEntity:  storage.NetworkEntityInfo_builder{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"}.Build(),
 			DstPort:    4,
 			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-		},
+		}.Build(),
 	}
 
 	// Return storedFlows on DB read.

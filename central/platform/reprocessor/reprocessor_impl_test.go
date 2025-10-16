@@ -142,165 +142,141 @@ func (s *platformReprocessorImplTestSuite) TestStartAndStop() {
 
 func testAlerts() []*storage.Alert {
 	return []*storage.Alert{
-		{
-			Id: "1",
-			Entity: &storage.Alert_Resource_{
-				Resource: &storage.Alert_Resource{},
-			},
-		},
-		{
-			Id: "2",
-			Entity: &storage.Alert_Image{
-				Image: &storage.ContainerImage{},
-			},
-		},
-		{
+		storage.Alert_builder{
+			Id:       "1",
+			Resource: &storage.Alert_Resource{},
+		}.Build(),
+		storage.Alert_builder{
+			Id:    "2",
+			Image: &storage.ContainerImage{},
+		}.Build(),
+		storage.Alert_builder{
 			Id: "3",
-			Entity: &storage.Alert_Deployment_{
-				Deployment: &storage.Alert_Deployment{
-					Name:      "dep1",
-					Namespace: "my-namespace",
-				},
-			},
-		},
-		{
+			Deployment: storage.Alert_Deployment_builder{
+				Name:      "dep1",
+				Namespace: "my-namespace",
+			}.Build(),
+		}.Build(),
+		storage.Alert_builder{
 			Id: "4",
-			Entity: &storage.Alert_Deployment_{
-				Deployment: &storage.Alert_Deployment{
-					Name:      "dep1",
-					Namespace: "hive-suffix",
-				},
-			},
-		},
-		{
+			Deployment: storage.Alert_Deployment_builder{
+				Name:      "dep1",
+				Namespace: "hive-suffix",
+			}.Build(),
+		}.Build(),
+		storage.Alert_builder{
 			Id: "5",
-			Entity: &storage.Alert_Deployment_{
-				Deployment: &storage.Alert_Deployment{
-					Name:      "dep1",
-					Namespace: "openshift-123",
-				},
-			},
-		},
-		{
+			Deployment: storage.Alert_Deployment_builder{
+				Name:      "dep1",
+				Namespace: "openshift-123",
+			}.Build(),
+		}.Build(),
+		storage.Alert_builder{
 			Id: "6",
-			Entity: &storage.Alert_Deployment_{
-				Deployment: &storage.Alert_Deployment{
-					Name:      "dep1",
-					Namespace: "stackrox",
-				},
-			},
-		},
+			Deployment: storage.Alert_Deployment_builder{
+				Name:      "dep1",
+				Namespace: "stackrox",
+			}.Build(),
+		}.Build(),
 	}
 }
 
 func expectedAlerts() []*storage.Alert {
 	return []*storage.Alert{
-		{
-			Id: "1",
-			Entity: &storage.Alert_Resource_{
-				Resource: &storage.Alert_Resource{},
-			},
+		storage.Alert_builder{
+			Id:                "1",
+			Resource:          &storage.Alert_Resource{},
 			EntityType:        storage.Alert_RESOURCE,
 			PlatformComponent: false,
-		},
-		{
-			Id: "2",
-			Entity: &storage.Alert_Image{
-				Image: &storage.ContainerImage{},
-			},
+		}.Build(),
+		storage.Alert_builder{
+			Id:                "2",
+			Image:             &storage.ContainerImage{},
 			EntityType:        storage.Alert_CONTAINER_IMAGE,
 			PlatformComponent: false,
-		},
-		{
+		}.Build(),
+		storage.Alert_builder{
 			Id: "3",
-			Entity: &storage.Alert_Deployment_{
-				Deployment: &storage.Alert_Deployment{
-					Name:      "dep1",
-					Namespace: "my-namespace",
-				},
-			},
+			Deployment: storage.Alert_Deployment_builder{
+				Name:      "dep1",
+				Namespace: "my-namespace",
+			}.Build(),
 			EntityType:        storage.Alert_DEPLOYMENT,
 			PlatformComponent: false,
-		},
-		{
+		}.Build(),
+		storage.Alert_builder{
 			Id: "4",
-			Entity: &storage.Alert_Deployment_{
-				Deployment: &storage.Alert_Deployment{
-					Name:      "dep1",
-					Namespace: "hive-suffix",
-				},
-			},
+			Deployment: storage.Alert_Deployment_builder{
+				Name:      "dep1",
+				Namespace: "hive-suffix",
+			}.Build(),
 			EntityType:        storage.Alert_DEPLOYMENT,
 			PlatformComponent: false,
-		},
-		{
+		}.Build(),
+		storage.Alert_builder{
 			Id: "5",
-			Entity: &storage.Alert_Deployment_{
-				Deployment: &storage.Alert_Deployment{
-					Name:      "dep1",
-					Namespace: "openshift-123",
-				},
-			},
+			Deployment: storage.Alert_Deployment_builder{
+				Name:      "dep1",
+				Namespace: "openshift-123",
+			}.Build(),
 			EntityType:        storage.Alert_DEPLOYMENT,
 			PlatformComponent: true,
-		},
-		{
+		}.Build(),
+		storage.Alert_builder{
 			Id: "6",
-			Entity: &storage.Alert_Deployment_{
-				Deployment: &storage.Alert_Deployment{
-					Name:      "dep1",
-					Namespace: "stackrox",
-				},
-			},
+			Deployment: storage.Alert_Deployment_builder{
+				Name:      "dep1",
+				Namespace: "stackrox",
+			}.Build(),
 			EntityType:        storage.Alert_DEPLOYMENT,
 			PlatformComponent: true,
-		},
+		}.Build(),
 	}
 }
 
 func testDeployments() []*storage.Deployment {
 	return []*storage.Deployment{
-		{
+		storage.Deployment_builder{
 			Id:        "1",
 			Namespace: "my-namespace",
-		},
-		{
+		}.Build(),
+		storage.Deployment_builder{
 			Id:        "2",
 			Namespace: "prefix-aap",
-		},
-		{
+		}.Build(),
+		storage.Deployment_builder{
 			Id:        "3",
 			Namespace: "kube-123",
-		},
-		{
+		}.Build(),
+		storage.Deployment_builder{
 			Id:        "4",
 			Namespace: "open-cluster-management",
-		},
+		}.Build(),
 	}
 }
 
 func expectedDeployments() []*storage.Deployment {
 	return []*storage.Deployment{
-		{
+		storage.Deployment_builder{
 			Id:                "1",
 			Namespace:         "my-namespace",
 			PlatformComponent: false,
-		},
-		{
+		}.Build(),
+		storage.Deployment_builder{
 			Id:                "2",
 			Namespace:         "prefix-aap",
 			PlatformComponent: false,
-		},
-		{
+		}.Build(),
+		storage.Deployment_builder{
 			Id:                "3",
 			Namespace:         "kube-123",
 			PlatformComponent: true,
-		},
-		{
+		}.Build(),
+		storage.Deployment_builder{
 			Id:                "4",
 			Namespace:         "open-cluster-management",
 			PlatformComponent: true,
-		},
+		}.Build(),
 	}
 }
 

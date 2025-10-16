@@ -29,79 +29,79 @@ func TestVersionComparator(t *testing.T) {
 
 func TestComparatorWithControlScope(t *testing.T) {
 	// A should be after b because it has the same scopes but a greater id.
+	ca := &storage.ComplianceAggregation_AggregationKey{}
+	ca.SetScope(storage.ComplianceAggregation_CONTROL)
+	ca.SetId("1_20_a")
+	ca2 := &storage.ComplianceAggregation_AggregationKey{}
+	ca2.SetScope(storage.ComplianceAggregation_DEPLOYMENT)
+	ca2.SetId("d1")
 	a := []*storage.ComplianceAggregation_AggregationKey{
-		{
-			Scope: storage.ComplianceAggregation_CONTROL,
-			Id:    "1_20_a",
-		},
-		{
-			Scope: storage.ComplianceAggregation_DEPLOYMENT,
-			Id:    "d1",
-		},
+		ca,
+		ca2,
 	}
+	ca3 := &storage.ComplianceAggregation_AggregationKey{}
+	ca3.SetScope(storage.ComplianceAggregation_CONTROL)
+	ca3.SetId("1_2_a")
+	ca4 := &storage.ComplianceAggregation_AggregationKey{}
+	ca4.SetScope(storage.ComplianceAggregation_DEPLOYMENT)
+	ca4.SetId("d1")
 	b := []*storage.ComplianceAggregation_AggregationKey{
-		{
-			Scope: storage.ComplianceAggregation_CONTROL,
-			Id:    "1_2_a",
-		},
-		{
-			Scope: storage.ComplianceAggregation_DEPLOYMENT,
-			Id:    "d1",
-		},
+		ca3,
+		ca4,
 	}
 	assert.Equal(t, false, aBeforeB(a, b))
 }
 
 func TestComparatorWithoutControlScope(t *testing.T) {
 	// A should be before b because it has the same scope, but a lesser ID.
+	ca := &storage.ComplianceAggregation_AggregationKey{}
+	ca.SetScope(storage.ComplianceAggregation_CLUSTER)
+	ca.SetId("c1")
+	ca2 := &storage.ComplianceAggregation_AggregationKey{}
+	ca2.SetScope(storage.ComplianceAggregation_DEPLOYMENT)
+	ca2.SetId("d1")
 	a := []*storage.ComplianceAggregation_AggregationKey{
-		{
-			Scope: storage.ComplianceAggregation_CLUSTER,
-			Id:    "c1",
-		},
-		{
-			Scope: storage.ComplianceAggregation_DEPLOYMENT,
-			Id:    "d1",
-		},
+		ca,
+		ca2,
 	}
+	ca3 := &storage.ComplianceAggregation_AggregationKey{}
+	ca3.SetScope(storage.ComplianceAggregation_CLUSTER)
+	ca3.SetId("c2")
+	ca4 := &storage.ComplianceAggregation_AggregationKey{}
+	ca4.SetScope(storage.ComplianceAggregation_DEPLOYMENT)
+	ca4.SetId("d1")
 	b := []*storage.ComplianceAggregation_AggregationKey{
-		{
-			Scope: storage.ComplianceAggregation_CLUSTER,
-			Id:    "c2",
-		},
-		{
-			Scope: storage.ComplianceAggregation_DEPLOYMENT,
-			Id:    "d1",
-		},
+		ca3,
+		ca4,
 	}
 	assert.Equal(t, true, aBeforeB(a, b))
 }
 
 func TestDifferentKeyLengthsMatter(t *testing.T) {
 	// A should be after b because it is more scoped.
+	ca := &storage.ComplianceAggregation_AggregationKey{}
+	ca.SetScope(storage.ComplianceAggregation_CLUSTER)
+	ca.SetId("c1")
+	ca2 := &storage.ComplianceAggregation_AggregationKey{}
+	ca2.SetScope(storage.ComplianceAggregation_DEPLOYMENT)
+	ca2.SetId("d1")
+	ca3 := &storage.ComplianceAggregation_AggregationKey{}
+	ca3.SetScope(storage.ComplianceAggregation_NAMESPACE)
+	ca3.SetId("n1")
 	a := []*storage.ComplianceAggregation_AggregationKey{
-		{
-			Scope: storage.ComplianceAggregation_CLUSTER,
-			Id:    "c1",
-		},
-		{
-			Scope: storage.ComplianceAggregation_DEPLOYMENT,
-			Id:    "d1",
-		},
-		{
-			Scope: storage.ComplianceAggregation_NAMESPACE,
-			Id:    "n1",
-		},
+		ca,
+		ca2,
+		ca3,
 	}
+	ca4 := &storage.ComplianceAggregation_AggregationKey{}
+	ca4.SetScope(storage.ComplianceAggregation_CLUSTER)
+	ca4.SetId("c2")
+	ca5 := &storage.ComplianceAggregation_AggregationKey{}
+	ca5.SetScope(storage.ComplianceAggregation_DEPLOYMENT)
+	ca5.SetId("d1")
 	b := []*storage.ComplianceAggregation_AggregationKey{
-		{
-			Scope: storage.ComplianceAggregation_CLUSTER,
-			Id:    "c2",
-		},
-		{
-			Scope: storage.ComplianceAggregation_DEPLOYMENT,
-			Id:    "d1",
-		},
+		ca4,
+		ca5,
 	}
 	assert.Equal(t, false, aBeforeB(a, b))
 }

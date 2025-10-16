@@ -23,7 +23,7 @@ func mergeComponentsV2(parts ImageParts, image *storage.Image) {
 			continue
 		}
 		// Generate an embedded component from the non-embedded version.
-		image.GetScan().Components = append(image.GetScan().Components, generateEmbeddedComponentV2(cp))
+		image.GetScan().SetComponents(append(image.GetScan().GetComponents(), generateEmbeddedComponentV2(cp)))
 	}
 }
 
@@ -37,26 +37,23 @@ func generateEmbeddedComponentV2(cp ComponentParts) *storage.EmbeddedImageScanCo
 		vulns = append(vulns, utils.ImageCVEV2ToEmbeddedVulnerability(cve.CVEV2))
 	}
 
-	ret := &storage.EmbeddedImageScanComponent{
-		Name:         cp.ComponentV2.GetName(),
-		Version:      cp.ComponentV2.GetVersion(),
-		Architecture: cp.ComponentV2.GetArchitecture(),
-		Source:       cp.ComponentV2.GetSource(),
-		Location:     cp.ComponentV2.GetLocation(),
-		FixedBy:      cp.ComponentV2.GetFixedBy(),
-		RiskScore:    cp.ComponentV2.GetRiskScore(),
-		Priority:     cp.ComponentV2.GetPriority(),
-		Vulns:        vulns,
+	ret := &storage.EmbeddedImageScanComponent{}
+	ret.SetName(cp.ComponentV2.GetName())
+	ret.SetVersion(cp.ComponentV2.GetVersion())
+	ret.SetArchitecture(cp.ComponentV2.GetArchitecture())
+	ret.SetSource(cp.ComponentV2.GetSource())
+	ret.SetLocation(cp.ComponentV2.GetLocation())
+	ret.SetFixedBy(cp.ComponentV2.GetFixedBy())
+	ret.SetRiskScore(cp.ComponentV2.GetRiskScore())
+	ret.SetPriority(cp.ComponentV2.GetPriority())
+	ret.SetVulns(vulns)
+
+	if cp.ComponentV2.HasHasLayerIndex() {
+		ret.SetLayerIndex(cp.ComponentV2.GetLayerIndex())
 	}
 
-	if cp.ComponentV2.HasLayerIndex != nil {
-		ret.HasLayerIndex = &storage.EmbeddedImageScanComponent_LayerIndex{
-			LayerIndex: cp.ComponentV2.GetLayerIndex(),
-		}
-	}
-
-	if cp.ComponentV2.SetTopCvss != nil {
-		ret.SetTopCvss = &storage.EmbeddedImageScanComponent_TopCvss{TopCvss: cp.ComponentV2.GetTopCvss()}
+	if cp.ComponentV2.HasSetTopCvss() {
+		ret.Set_TopCvss(cp.ComponentV2.GetTopCvss())
 	}
 
 	return ret

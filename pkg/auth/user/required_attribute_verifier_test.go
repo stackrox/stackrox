@@ -15,28 +15,28 @@ func TestCheckRequiredAttributesImpl_Check(t *testing.T) {
 	}{
 		"required attribute set should not fail": {
 			required: []*storage.AuthProvider_RequiredAttribute{
-				{AttributeKey: "required-attribute", AttributeValue: "some-value"},
+				storage.AuthProvider_RequiredAttribute_builder{AttributeKey: "required-attribute", AttributeValue: "some-value"}.Build(),
 			},
 			attributes: map[string][]string{"required-attribute": {"some-value"}},
 		},
 		"required attribute not set should fail": {
 			required: []*storage.AuthProvider_RequiredAttribute{
-				{AttributeKey: "required-attribute", AttributeValue: "some-value"},
+				storage.AuthProvider_RequiredAttribute_builder{AttributeKey: "required-attribute", AttributeValue: "some-value"}.Build(),
 			},
 			attributes: map[string][]string{"other-attribute": {"some-value"}},
 			shouldFail: true,
 		},
 		"no attribute set should fail": {
 			required: []*storage.AuthProvider_RequiredAttribute{
-				{AttributeKey: "required-attribute", AttributeValue: "some-value"},
+				storage.AuthProvider_RequiredAttribute_builder{AttributeKey: "required-attribute", AttributeValue: "some-value"}.Build(),
 			},
 			attributes: nil,
 			shouldFail: true,
 		},
 		"multiple required attributes set should not fail": {
 			required: []*storage.AuthProvider_RequiredAttribute{
-				{AttributeKey: "required-attribute", AttributeValue: "some-value"},
-				{AttributeKey: "another-required-attribute", AttributeValue: "another-value"},
+				storage.AuthProvider_RequiredAttribute_builder{AttributeKey: "required-attribute", AttributeValue: "some-value"}.Build(),
+				storage.AuthProvider_RequiredAttribute_builder{AttributeKey: "another-required-attribute", AttributeValue: "another-value"}.Build(),
 			},
 			attributes: map[string][]string{
 				"required-attribute":         {"some-value"},
@@ -45,8 +45,8 @@ func TestCheckRequiredAttributesImpl_Check(t *testing.T) {
 		},
 		"only some required attributes set should fail": {
 			required: []*storage.AuthProvider_RequiredAttribute{
-				{AttributeKey: "required-attribute", AttributeValue: "some-value"},
-				{AttributeKey: "another-required-attribute", AttributeValue: "another-value"},
+				storage.AuthProvider_RequiredAttribute_builder{AttributeKey: "required-attribute", AttributeValue: "some-value"}.Build(),
+				storage.AuthProvider_RequiredAttribute_builder{AttributeKey: "another-required-attribute", AttributeValue: "another-value"}.Build(),
 			},
 			attributes: map[string][]string{
 				"another-required-attribute": {"another-value"},
@@ -55,7 +55,7 @@ func TestCheckRequiredAttributesImpl_Check(t *testing.T) {
 		},
 		"required attribute in map but nil value should fail": {
 			required: []*storage.AuthProvider_RequiredAttribute{
-				{AttributeKey: "required-attribute", AttributeValue: "some-value"},
+				storage.AuthProvider_RequiredAttribute_builder{AttributeKey: "required-attribute", AttributeValue: "some-value"}.Build(),
 			},
 			attributes: map[string][]string{
 				"required-attribute": nil,
@@ -64,21 +64,21 @@ func TestCheckRequiredAttributesImpl_Check(t *testing.T) {
 		},
 		"required attribute set but value does not match": {
 			required: []*storage.AuthProvider_RequiredAttribute{
-				{AttributeKey: "required-attribute", AttributeValue: "some-value"},
+				storage.AuthProvider_RequiredAttribute_builder{AttributeKey: "required-attribute", AttributeValue: "some-value"}.Build(),
 			},
 			attributes: map[string][]string{"required-attribute": {"other-value"}},
 			shouldFail: true,
 		},
 		"required attribute in map but empty array value should fail": {
 			required: []*storage.AuthProvider_RequiredAttribute{
-				{AttributeKey: "required-attribute", AttributeValue: "some-value"},
+				storage.AuthProvider_RequiredAttribute_builder{AttributeKey: "required-attribute", AttributeValue: "some-value"}.Build(),
 			},
 			attributes: map[string][]string{"required-attribute": {}},
 			shouldFail: true,
 		},
 		"required attribute in map but empty string value should fail": {
 			required: []*storage.AuthProvider_RequiredAttribute{
-				{AttributeKey: "required-attribute", AttributeValue: "some-value"},
+				storage.AuthProvider_RequiredAttribute_builder{AttributeKey: "required-attribute", AttributeValue: "some-value"}.Build(),
 			},
 			attributes: map[string][]string{"required-attribute": {""}},
 			shouldFail: true,

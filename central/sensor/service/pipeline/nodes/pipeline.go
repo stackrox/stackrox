@@ -92,10 +92,10 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	}
 
 	node = node.CloneVT()
-	node.ClusterId = clusterID
+	node.SetClusterId(clusterID)
 	clusterName, ok, err := p.clusterStore.GetClusterName(ctx, clusterID)
 	if err == nil && ok {
-		node.ClusterName = clusterName
+		node.SetClusterName(clusterName)
 	}
 
 	// ROX-22002: Remove invalid null characters in annotations
@@ -106,7 +106,7 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		// metadata. We call upsert without scan. Upsert will read scan information from
 		// the database before writing. This is safe because NodeInventory and Node
 		// pipelines never run concurrently by the Sensor Event worker queues.
-		node.Scan = nil
+		node.ClearScan()
 		if err := p.nodeDatastore.UpsertNode(ctx, node); err != nil {
 			err = errors.Wrapf(err, "upserting node %s", nodeDatastore.NodeString(node))
 			log.Error(err)

@@ -37,37 +37,37 @@ func (s *suiteImpl) TestUnusedPorts() {
 
 	// Both deployments have port 3 exposed.
 	deployments := []*storage.Deployment{
-		{
+		storage.Deployment_builder{
 			Id: uuid.NewV4().String(),
 			Ports: []*storage.PortConfig{
-				{
+				storage.PortConfig_builder{
 					ContainerPort: 3,
-				},
+				}.Build(),
 			},
-		},
-		{
+		}.Build(),
+		storage.Deployment_builder{
 			Id: uuid.NewV4().String(),
 			Ports: []*storage.PortConfig{
-				{
+				storage.PortConfig_builder{
 					ContainerPort: 3,
-				},
+				}.Build(),
 			},
-		},
+		}.Build(),
 	}
 
 	// No network flows occuring on port 3.
 	flows := []*storage.NetworkFlow{
-		{
-			Props: &storage.NetworkFlowProperties{
+		storage.NetworkFlow_builder{
+			Props: storage.NetworkFlowProperties_builder{
 				DstPort: 2,
-				DstEntity: &storage.NetworkEntityInfo{
+				DstEntity: storage.NetworkEntityInfo_builder{
 					Id: deployments[0].GetId(),
-				},
-				SrcEntity: &storage.NetworkEntityInfo{
+				}.Build(),
+				SrcEntity: storage.NetworkEntityInfo_builder{
 					Id: deployments[1].GetId(),
-				},
-			},
-		},
+				}.Build(),
+			}.Build(),
+		}.Build(),
 	}
 
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
@@ -99,48 +99,48 @@ func (s *suiteImpl) TestPass() {
 
 	// Both deployments have port 3 exposed.
 	deployments := []*storage.Deployment{
-		{
+		storage.Deployment_builder{
 			Id: uuid.NewV4().String(),
 			Ports: []*storage.PortConfig{
-				{
+				storage.PortConfig_builder{
 					ContainerPort: 3,
-				},
+				}.Build(),
 			},
-		},
-		{
+		}.Build(),
+		storage.Deployment_builder{
 			Id: uuid.NewV4().String(),
 			Ports: []*storage.PortConfig{
-				{
+				storage.PortConfig_builder{
 					ContainerPort: 3,
-				},
+				}.Build(),
 			},
-		},
+		}.Build(),
 	}
 
 	// Both deployments talk to each other on port 3.
 	flows := []*storage.NetworkFlow{
-		{
-			Props: &storage.NetworkFlowProperties{
+		storage.NetworkFlow_builder{
+			Props: storage.NetworkFlowProperties_builder{
 				DstPort: 3,
-				DstEntity: &storage.NetworkEntityInfo{
+				DstEntity: storage.NetworkEntityInfo_builder{
 					Id: deployments[0].GetId(),
-				},
-				SrcEntity: &storage.NetworkEntityInfo{
+				}.Build(),
+				SrcEntity: storage.NetworkEntityInfo_builder{
 					Id: deployments[1].GetId(),
-				},
-			},
-		},
-		{
-			Props: &storage.NetworkFlowProperties{
+				}.Build(),
+			}.Build(),
+		}.Build(),
+		storage.NetworkFlow_builder{
+			Props: storage.NetworkFlowProperties_builder{
 				DstPort: 3,
-				DstEntity: &storage.NetworkEntityInfo{
+				DstEntity: storage.NetworkEntityInfo_builder{
 					Id: deployments[1].GetId(),
-				},
-				SrcEntity: &storage.NetworkEntityInfo{
+				}.Build(),
+				SrcEntity: storage.NetworkEntityInfo_builder{
 					Id: deployments[0].GetId(),
-				},
-			},
-		},
+				}.Build(),
+			}.Build(),
+		}.Build(),
 	}
 
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
@@ -176,7 +176,7 @@ func (s *suiteImpl) verifyCheckRegistered() framework.Check {
 }
 
 func (s *suiteImpl) cluster() *storage.Cluster {
-	return &storage.Cluster{
-		Id: uuid.NewV4().String(),
-	}
+	cluster := &storage.Cluster{}
+	cluster.SetId(uuid.NewV4().String())
+	return cluster
 }

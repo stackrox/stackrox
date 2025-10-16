@@ -34,31 +34,30 @@ func (n *LoadGeneratingNodeScanner) GetIntervals() *utils.NodeScanIntervals {
 
 // ScanNode generates a MsgFromCompliance with node scan
 func (n *LoadGeneratingNodeScanner) ScanNode(_ context.Context) (*sensor.MsgFromCompliance, error) {
-	msg := &sensor.MsgFromCompliance{
+	msg := sensor.MsgFromCompliance_builder{
 		Node: n.nodeProvider.GetNodeName(),
-		Msg: &sensor.MsgFromCompliance_NodeInventory{
-			NodeInventory: &storage.NodeInventory{
-				NodeId:   "",
-				NodeName: n.nodeProvider.GetNodeName(),
-				ScanTime: protocompat.TimestampNow(),
-				Components: &storage.NodeInventory_Components{
-					Namespace:       "rhcos:4.11",
-					RhelContentSets: []string{"rhel-8-for-x86_64-appstream-rpms", "rhel-8-for-x86_64-baseos-rpms"},
-					RhelComponents: []*storage.NodeInventory_Components_RHELComponent{
-						{
-							Id:        int64(1),
-							Name:      "vim-minimal",
-							Namespace: "rhel:8",
-							Version:   "2:7.4.629-6.el8",
-							Arch:      "x86_64",
-							Module:    "",
-							AddedBy:   "",
-						},
-					},
+		NodeInventory: storage.NodeInventory_builder{
+			NodeId:   "",
+			NodeName: n.nodeProvider.GetNodeName(),
+			ScanTime: protocompat.TimestampNow(),
+			Components: storage.NodeInventory_Components_builder{
+				Namespace:       "rhcos:4.11",
+				RhelContentSets: []string{"rhel-8-for-x86_64-appstream-rpms", "rhel-8-for-x86_64-baseos-rpms"},
+				RhelComponents: []*storage.NodeInventory_Components_RHELComponent{
+					storage.NodeInventory_Components_RHELComponent_builder{
+						Id:        int64(1),
+						Name:      "vim-minimal",
+						Namespace: "rhel:8",
+						Version:   "2:7.4.629-6.el8",
+						Arch:      "x86_64",
+						Module:    "",
+						AddedBy:   "",
+					}.Build(),
 				},
-				Notes: nil,
-			}},
-	}
+			}.Build(),
+			Notes: nil,
+		}.Build(),
+	}.Build()
 	log.Info("Generating Node Inventory")
 	return msg, nil
 }

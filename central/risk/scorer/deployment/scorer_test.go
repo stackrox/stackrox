@@ -39,13 +39,13 @@ func TestScore(t *testing.T) {
 	deployment := pkgScorer.GetMockDeployment()
 	scorer := NewDeploymentScorer(&getters.MockAlertsSearcher{
 		Alerts: []*storage.ListAlert{
-			{
-				Entity: &storage.ListAlert_Deployment{Deployment: &storage.ListAlertDeployment{}},
-				Policy: &storage.ListAlertPolicy{
+			storage.ListAlert_builder{
+				Deployment: &storage.ListAlertDeployment{},
+				Policy: storage.ListAlertPolicy_builder{
 					Name:     "Test",
 					Severity: storage.Severity_CRITICAL_SEVERITY,
-				},
-			},
+				}.Build(),
+			}.Build(),
 		},
 	}, mockEvaluator)
 
@@ -54,45 +54,45 @@ func TestScore(t *testing.T) {
 	// Without user defined function
 	expectedRiskScore := 12.1794405
 	expectedRiskResults := []*storage.Risk_Result{
-		{
+		storage.Risk_Result_builder{
 			Name:    deploymentMultiplier.PolicyViolationsHeading,
-			Factors: []*storage.Risk_Result_Factor{{Message: "Test (severity: Critical)"}},
+			Factors: []*storage.Risk_Result_Factor{storage.Risk_Result_Factor_builder{Message: "Test (severity: Critical)"}.Build()},
 			Score:   1.96,
-		},
-		{
+		}.Build(),
+		storage.Risk_Result_builder{
 			Name: imageMultiplier.VulnerabilitiesHeading,
 			Factors: []*storage.Risk_Result_Factor{
-				{Message: "Image \"docker.io/library/nginx:1.10\" contains 3 CVEs with severities ranging between Moderate and Critical"},
+				storage.Risk_Result_Factor_builder{Message: "Image \"docker.io/library/nginx:1.10\" contains 3 CVEs with severities ranging between Moderate and Critical"}.Build(),
 			},
 			Score: 1.5535,
-		},
-		{
+		}.Build(),
+		storage.Risk_Result_builder{
 			Name: deploymentMultiplier.ServiceConfigHeading,
 			Factors: []*storage.Risk_Result_Factor{
-				{Message: "Volumes rw volume were mounted RW"},
-				{Message: "Secrets secret are used inside the deployment"},
-				{Message: "Capabilities ALL were added"},
-				{Message: "No capabilities were dropped"},
-				{Message: fmt.Sprintf("Container %q in the deployment is privileged", deployment.GetContainers()[0].GetName())},
+				storage.Risk_Result_Factor_builder{Message: "Volumes rw volume were mounted RW"}.Build(),
+				storage.Risk_Result_Factor_builder{Message: "Secrets secret are used inside the deployment"}.Build(),
+				storage.Risk_Result_Factor_builder{Message: "Capabilities ALL were added"}.Build(),
+				storage.Risk_Result_Factor_builder{Message: "No capabilities were dropped"}.Build(),
+				storage.Risk_Result_Factor_builder{Message: fmt.Sprintf("Container %q in the deployment is privileged", deployment.GetContainers()[0].GetName())}.Build(),
 			},
 			Score: 2.0,
-		},
-		{
+		}.Build(),
+		storage.Risk_Result_builder{
 			Name: deploymentMultiplier.ReachabilityHeading,
 			Factors: []*storage.Risk_Result_Factor{
-				{Message: "Port 22 is exposed to external clients"},
-				{Message: "Port 23 is exposed in the cluster"},
-				{Message: "Port 24 is exposed on node interfaces"},
+				storage.Risk_Result_Factor_builder{Message: "Port 22 is exposed to external clients"}.Build(),
+				storage.Risk_Result_Factor_builder{Message: "Port 23 is exposed in the cluster"}.Build(),
+				storage.Risk_Result_Factor_builder{Message: "Port 24 is exposed on node interfaces"}.Build(),
 			},
 			Score: 1.6,
-		},
-		{
+		}.Build(),
+		storage.Risk_Result_builder{
 			Name: imageMultiplier.ImageAgeHeading,
 			Factors: []*storage.Risk_Result_Factor{
-				{Message: "Image \"docker.io/library/nginx:1.10\" is 180 days old"},
+				storage.Risk_Result_Factor_builder{Message: "Image \"docker.io/library/nginx:1.10\" is 180 days old"}.Build(),
 			},
 			Score: 1.25,
-		},
+		}.Build(),
 	}
 
 	actualRisk := scorer.Score(ctx, deployment, getMockImagesRisk())

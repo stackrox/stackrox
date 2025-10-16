@@ -9,48 +9,48 @@ import (
 )
 
 func TestStringsRoundTrip(t *testing.T) {
-	results := &storage.ComplianceRunResults{
-		ClusterResults: &storage.ComplianceRunResults_EntityResults{
+	results := storage.ComplianceRunResults_builder{
+		ClusterResults: storage.ComplianceRunResults_EntityResults_builder{
 			ControlResults: map[string]*storage.ComplianceResultValue{
-				"ctrl1": {
+				"ctrl1": storage.ComplianceResultValue_builder{
 					Evidence: []*storage.ComplianceResultValue_Evidence{
-						{
+						storage.ComplianceResultValue_Evidence_builder{
 							Message: "foo",
-						},
-						{
+						}.Build(),
+						storage.ComplianceResultValue_Evidence_builder{
 							Message: "bar",
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
-		},
+		}.Build(),
 		NodeResults: map[string]*storage.ComplianceRunResults_EntityResults{
-			"node1": {
+			"node1": storage.ComplianceRunResults_EntityResults_builder{
 				ControlResults: map[string]*storage.ComplianceResultValue{
-					"ctrl2": {
+					"ctrl2": storage.ComplianceResultValue_builder{
 						Evidence: []*storage.ComplianceResultValue_Evidence{
-							{
+							storage.ComplianceResultValue_Evidence_builder{
 								Message: "baz",
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 		DeploymentResults: map[string]*storage.ComplianceRunResults_EntityResults{
-			"deployment1": {
+			"deployment1": storage.ComplianceRunResults_EntityResults_builder{
 				ControlResults: map[string]*storage.ComplianceResultValue{
-					"ctrl3": {
+					"ctrl3": storage.ComplianceResultValue_builder{
 						Evidence: []*storage.ComplianceResultValue_Evidence{
-							{
+							storage.ComplianceResultValue_Evidence_builder{
 								Message: "foo",
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
-	}
+	}.Build()
 
 	resultsWithoutStrings := results.CloneVT()
 	stringsProto := ExternalizeStrings(resultsWithoutStrings)

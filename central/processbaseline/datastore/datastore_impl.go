@@ -82,11 +82,11 @@ func (ds *datastoreImpl) AddProcessBaseline(ctx context.Context, baseline *stora
 }
 
 func (ds *datastoreImpl) addProcessBaselineUnlocked(ctx context.Context, id string, baseline *storage.ProcessBaseline) (string, error) {
-	baseline.Id = id
-	baseline.Created = protocompat.TimestampNow()
-	baseline.LastUpdate = baseline.GetCreated()
+	baseline.SetId(id)
+	baseline.SetCreated(protocompat.TimestampNow())
+	baseline.SetLastUpdate(baseline.GetCreated())
 	lockTime := ds.generateLockTimestamp()
-	baseline.StackRoxLockedTimestamp = protocompat.ConvertTimeToTimestampOrNil(&lockTime)
+	baseline.SetStackRoxLockedTimestamp(protocompat.ConvertTimeToTimestampOrNil(&lockTime))
 
 	if err := ds.storage.Upsert(ctx, baseline); err != nil {
 		return id, errors.Wrapf(err, "inserting process baseline %q into store", baseline.GetId())
@@ -202,7 +202,7 @@ func makeElementList(elementMap map[string]*storage.BaselineElement) []*storage.
 }
 
 func (ds *datastoreImpl) updateProcessBaselineAndSetTimestamp(ctx context.Context, baseline *storage.ProcessBaseline) error {
-	baseline.LastUpdate = protocompat.TimestampNow()
+	baseline.SetLastUpdate(protocompat.TimestampNow())
 	return ds.storage.Upsert(ctx, baseline)
 }
 
@@ -218,10 +218,10 @@ func (ds *datastoreImpl) updateProcessBaselineElements(ctx context.Context, base
 		existing, ok := baselineMap[element.GetProcessName()]
 		if !ok || existing.GetAuto() {
 			delete(graveyardMap, element.GetProcessName())
-			baselineMap[element.GetProcessName()] = &storage.BaselineElement{
-				Element: element,
-				Auto:    auto,
-			}
+			be := &storage.BaselineElement{}
+			be.SetElement(element)
+			be.SetAuto(auto)
+			baselineMap[element.GetProcessName()] = be
 		}
 	}
 
@@ -229,15 +229,15 @@ func (ds *datastoreImpl) updateProcessBaselineElements(ctx context.Context, base
 		delete(baselineMap, removeElement.GetProcessName())
 		existing, ok := graveyardMap[removeElement.GetProcessName()]
 		if !ok || existing.GetAuto() {
-			graveyardMap[removeElement.GetProcessName()] = &storage.BaselineElement{
-				Element: removeElement,
-				Auto:    auto,
-			}
+			be := &storage.BaselineElement{}
+			be.SetElement(removeElement)
+			be.SetAuto(auto)
+			graveyardMap[removeElement.GetProcessName()] = be
 		}
 	}
 
-	baseline.Elements = makeElementList(baselineMap)
-	baseline.ElementGraveyard = makeElementList(graveyardMap)
+	baseline.SetElements(makeElementList(baselineMap))
+	baseline.SetElementGraveyard(makeElementList(graveyardMap))
 
 	err := ds.updateProcessBaselineAndSetTimestamp(ctx, baseline)
 	if err != nil {
@@ -293,17 +293,21 @@ func (ds *datastoreImpl) UpsertProcessBaseline(ctx context.Context, key *storage
 	timestamp := protocompat.TimestampNow()
 	var elements []*storage.BaselineElement
 	for _, element := range addElements {
-		elements = append(elements, &storage.BaselineElement{Element: &storage.BaselineItem{Item: &storage.BaselineItem_ProcessName{ProcessName: element.GetProcessName()}}, Auto: auto})
+		bi := &storage.BaselineItem{}
+		bi.SetProcessName(element.GetProcessName())
+		be := &storage.BaselineElement{}
+		be.SetElement(bi)
+		be.SetAuto(auto)
+		elements = append(elements, be)
 	}
 
-	baseline = &storage.ProcessBaseline{
-		Id:                      id,
-		Key:                     key,
-		Elements:                elements,
-		Created:                 timestamp,
-		LastUpdate:              timestamp,
-		StackRoxLockedTimestamp: timestamp,
-	}
+	baseline = &storage.ProcessBaseline{}
+	baseline.SetId(id)
+	baseline.SetKey(key)
+	baseline.SetElements(elements)
+	baseline.SetCreated(timestamp)
+	baseline.SetLastUpdate(timestamp)
+	baseline.SetStackRoxLockedTimestamp(timestamp)
 	if lock {
 		_, err = ds.addProcessBaselineLocked(ctx, baseline)
 	} else {
@@ -333,10 +337,10 @@ func (ds *datastoreImpl) UserLockProcessBaseline(ctx context.Context, key *stora
 	}
 
 	if locked && baseline.GetUserLockedTimestamp() == nil {
-		baseline.UserLockedTimestamp = protocompat.TimestampNow()
+		baseline.SetUserLockedTimestamp(protocompat.TimestampNow())
 		err = ds.updateProcessBaselineAndSetTimestamp(ctx, baseline)
 	} else if !locked && baseline.GetUserLockedTimestamp() != nil {
-		baseline.UserLockedTimestamp = nil
+		baseline.ClearUserLockedTimestamp()
 		err = ds.updateProcessBaselineAndSetTimestamp(ctx, baseline)
 	}
 	if err != nil {
@@ -379,25 +383,30 @@ func (ds *datastoreImpl) CreateUnlockedProcessBaseline(ctx context.Context, key 
 	for _, indicator := range baselineList {
 		baselineItem := processBaselinePkg.BaselineItemFromProcess(indicator)
 
-		insertableElement := &storage.BaselineItem{Item: &storage.BaselineItem_ProcessName{ProcessName: baselineItem}}
+		insertableElement := &storage.BaselineItem{}
+		insertableElement.SetProcessName(baselineItem)
 
 		elements[baselineItem] = insertableElement
 	}
 
 	baseElements := make([]*storage.BaselineElement, 0, len(elements))
 	for _, element := range elements {
-		baseElements = append(baseElements, &storage.BaselineElement{Element: &storage.BaselineItem{Item: &storage.BaselineItem_ProcessName{ProcessName: element.GetProcessName()}}, Auto: true})
+		bi := &storage.BaselineItem{}
+		bi.SetProcessName(element.GetProcessName())
+		be := &storage.BaselineElement{}
+		be.SetElement(bi)
+		be.SetAuto(true)
+		baseElements = append(baseElements, be)
 	}
 
 	// Build the baseline itself
 	timestamp := protocompat.TimestampNow()
-	baseline = &storage.ProcessBaseline{
-		Id:         id,
-		Key:        key,
-		Elements:   baseElements,
-		Created:    timestamp,
-		LastUpdate: timestamp,
-	}
+	baseline = &storage.ProcessBaseline{}
+	baseline.SetId(id)
+	baseline.SetKey(key)
+	baseline.SetElements(baseElements)
+	baseline.SetCreated(timestamp)
+	baseline.SetLastUpdate(timestamp)
 
 	// Store the unlocked baseline.
 	_, err = ds.addProcessBaselineUnlocked(ctx, id, baseline)
@@ -455,14 +464,14 @@ func (ds *datastoreImpl) ClearProcessBaselines(ctx context.Context, ids []string
 			return sac.ErrResourceAccessDenied
 		}
 
-		baseline.Elements = nil
-		baseline.ElementGraveyard = nil
+		baseline.SetElements(nil)
+		baseline.SetElementGraveyard(nil)
 
 		// We need to extend the stackrox lock timestamp to re-observe the processes.
 		lockTime := ds.generateLockTimestamp()
 		lockTimestamp := protocompat.ConvertTimeToTimestampOrNil(&lockTime)
-		baseline.StackRoxLockedTimestamp = lockTimestamp
-		baseline.LastUpdate = protocompat.TimestampNow()
+		baseline.SetStackRoxLockedTimestamp(lockTimestamp)
+		baseline.SetLastUpdate(protocompat.TimestampNow())
 	}
 	return ds.storage.UpsertMany(ctx, baselines)
 }

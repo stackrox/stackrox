@@ -73,7 +73,7 @@ func NewServiceCertSecretSpec(secretName string) ServiceCertSecretSpec {
 // for that secret will contain a zero value.
 func (r *ServiceCertificatesRepoSecrets) GetServiceCertificates(ctx context.Context) (*storage.TypedServiceCertificateSet, error) {
 	certificates := &storage.TypedServiceCertificateSet{}
-	certificates.ServiceCerts = make([]*storage.TypedServiceCertificate, 0)
+	certificates.SetServiceCerts(make([]*storage.TypedServiceCertificate, 0))
 	var getErr error
 	for serviceType, secretSpec := range r.Secrets {
 		// on context cancellation abort getting other secrets.
@@ -87,14 +87,18 @@ func (r *ServiceCertificatesRepoSecrets) GetServiceCertificates(ctx context.Cont
 			continue
 		}
 		if certificates.GetCaPem() == nil {
-			certificates.CaPem = ca
+			if ca != nil {
+				certificates.SetCaPem(ca)
+			} else {
+				certificates.ClearCaPem()
+			}
 		} else {
 			if !bytes.Equal(certificates.GetCaPem(), ca) {
 				getErr = multierror.Append(getErr, ErrDifferentCAForDifferentServiceTypes)
 				continue
 			}
 		}
-		certificates.ServiceCerts = append(certificates.ServiceCerts, certificate)
+		certificates.SetServiceCerts(append(certificates.GetServiceCerts(), certificate))
 	}
 
 	if getErr != nil {
@@ -126,13 +130,17 @@ func (r *ServiceCertificatesRepoSecrets) getServiceCertificate(ctx context.Conte
 		return nil, nil, ErrMissingSecretData
 	}
 
-	return &storage.TypedServiceCertificate{
-		ServiceType: serviceType,
-		Cert: &storage.ServiceCertificate{
-			CertPem: secretData[secretSpec.ServiceCertFileName],
-			KeyPem:  secretData[secretSpec.ServiceKeyFileName],
-		},
-	}, secretData[secretSpec.CaCertFileName], nil
+	sc := &storage.ServiceCertificate{}
+	if x := secretData[secretSpec.ServiceCertFileName]; x != nil {
+		sc.SetCertPem(x)
+	}
+	if x := secretData[secretSpec.ServiceKeyFileName]; x != nil {
+		sc.SetKeyPem(x)
+	}
+	tsc := &storage.TypedServiceCertificate{}
+	tsc.SetServiceType(serviceType)
+	tsc.SetCert(sc)
+	return tsc, secretData[secretSpec.CaCertFileName], nil
 }
 
 // EnsureServiceCertificates ensures the k8s secrets for the services exist, and that they contain the certificates

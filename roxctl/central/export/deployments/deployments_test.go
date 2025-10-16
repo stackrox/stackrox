@@ -66,7 +66,9 @@ type fakeDeploymentService struct {
 
 func (s *fakeDeploymentService) ExportDeployments(_ *v1.ExportDeploymentRequest, srv v1.DeploymentService_ExportDeploymentsServer) error {
 	var testDeployment = getDeploymentForSerializationTest()
-	return srv.Send(&v1.ExportDeploymentResponse{Deployment: testDeployment})
+	edr := &v1.ExportDeploymentResponse{}
+	edr.SetDeployment(testDeployment)
+	return srv.Send(edr)
 }
 
 func (s *fakeDeploymentService) GetDeployment(_ context.Context, _ *v1.ResourceByID) (*storage.Deployment, error) {
@@ -97,6 +99,6 @@ func (s *fakeDeploymentService) GetLabels(_ context.Context, _ *v1.Empty) (*v1.D
 func getDeploymentForSerializationTest() *storage.Deployment {
 	deployment := fixtures.LightweightDeployment()
 	var createdDate = time.Date(2020, time.December, 24, 23, 59, 59, 999999999, time.UTC)
-	deployment.Created = protocompat.ConvertTimeToTimestampOrNil(&createdDate)
+	deployment.SetCreated(protocompat.ConvertTimeToTimestampOrNil(&createdDate))
 	return deployment
 }

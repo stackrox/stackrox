@@ -55,123 +55,123 @@ func mockStandardsRepo(t require.TestingT) standards.Repository {
 }
 
 func mockRunResult(cluster, standard string) *storage.ComplianceRunResults {
-	return &storage.ComplianceRunResults{
-		Domain: &storage.ComplianceDomain{
-			Cluster: &storage.ComplianceDomain_Cluster{
+	return storage.ComplianceRunResults_builder{
+		Domain: storage.ComplianceDomain_builder{
+			Cluster: storage.ComplianceDomain_Cluster_builder{
 				Id: cluster,
-			},
+			}.Build(),
 			Deployments: map[string]*storage.ComplianceDomain_Deployment{
-				cluster + "deployment1": {
+				cluster + "deployment1": storage.ComplianceDomain_Deployment_builder{
 					Id:          cluster + "deployment1",
 					Namespace:   qualifiedNamespace(cluster, "namespace1"),
 					NamespaceId: qualifiedNamespaceID(cluster, "namespace1"),
 					ClusterId:   cluster,
-				},
-				cluster + "deployment2": {
+				}.Build(),
+				cluster + "deployment2": storage.ComplianceDomain_Deployment_builder{
 					Id:          cluster + "deployment2",
 					Namespace:   qualifiedNamespace(cluster, "namespace2"),
 					NamespaceId: qualifiedNamespaceID(cluster, "namespace2"),
 					ClusterId:   cluster,
-				},
-				cluster + "deployment3": {
+				}.Build(),
+				cluster + "deployment3": storage.ComplianceDomain_Deployment_builder{
 					Id:          cluster + "deployment3",
 					Namespace:   qualifiedNamespace(cluster, "namespace3"),
 					NamespaceId: qualifiedNamespaceID(cluster, "namespace3"),
 					ClusterId:   cluster,
-				},
+				}.Build(),
 			},
 			Nodes: map[string]*storage.ComplianceDomain_Node{
-				cluster + "node1": {
+				cluster + "node1": storage.ComplianceDomain_Node_builder{
 					Id: cluster + "node1",
-				},
-				cluster + "node1": {
+				}.Build(),
+				cluster + "node1": storage.ComplianceDomain_Node_builder{
 					Id: cluster + "node2",
-				},
+				}.Build(),
 			},
-		},
-		RunMetadata: &storage.ComplianceRunMetadata{
+		}.Build(),
+		RunMetadata: storage.ComplianceRunMetadata_builder{
 			StandardId: standard,
-		},
-		ClusterResults: &storage.ComplianceRunResults_EntityResults{
+		}.Build(),
+		ClusterResults: storage.ComplianceRunResults_EntityResults_builder{
 			ControlResults: map[string]*storage.ComplianceResultValue{
-				standard + ":control1": {
+				standard + ":control1": storage.ComplianceResultValue_builder{
 					OverallState: storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
-				},
-				standard + ":control2": {
+				}.Build(),
+				standard + ":control2": storage.ComplianceResultValue_builder{
 					OverallState: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
-				},
-				standard + ":control7": {
+				}.Build(),
+				standard + ":control7": storage.ComplianceResultValue_builder{
 					OverallState: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
-				},
+				}.Build(),
 			},
-		},
+		}.Build(),
 		NodeResults: map[string]*storage.ComplianceRunResults_EntityResults{
-			cluster + "node1": {
+			cluster + "node1": storage.ComplianceRunResults_EntityResults_builder{
 				ControlResults: map[string]*storage.ComplianceResultValue{
-					standard + ":control3": {
+					standard + ":control3": storage.ComplianceResultValue_builder{
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_ERROR,
-					},
-					standard + ":control4": {
+					}.Build(),
+					standard + ":control4": storage.ComplianceResultValue_builder{
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
-					},
+					}.Build(),
 				},
-			},
-			cluster + "node2": {
+			}.Build(),
+			cluster + "node2": storage.ComplianceRunResults_EntityResults_builder{
 				ControlResults: map[string]*storage.ComplianceResultValue{
-					standard + ":control3": {
+					standard + ":control3": storage.ComplianceResultValue_builder{
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
-					},
-					standard + ":control4": {
+					}.Build(),
+					standard + ":control4": storage.ComplianceResultValue_builder{
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 		DeploymentResults: map[string]*storage.ComplianceRunResults_EntityResults{
-			cluster + "deployment1": {
+			cluster + "deployment1": storage.ComplianceRunResults_EntityResults_builder{
 				ControlResults: map[string]*storage.ComplianceResultValue{
-					standard + ":control5": {
+					standard + ":control5": storage.ComplianceResultValue_builder{
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
-					},
-					standard + ":control6": {
+					}.Build(),
+					standard + ":control6": storage.ComplianceResultValue_builder{
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
-					},
-					standard + ":control7": {
+					}.Build(),
+					standard + ":control7": storage.ComplianceResultValue_builder{
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
-					},
+					}.Build(),
 				},
-			},
-			cluster + "deployment2": {
+			}.Build(),
+			cluster + "deployment2": storage.ComplianceRunResults_EntityResults_builder{
 				ControlResults: map[string]*storage.ComplianceResultValue{
-					standard + ":control5": {
+					standard + ":control5": storage.ComplianceResultValue_builder{
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
-					},
-					standard + ":control6": {
+					}.Build(),
+					standard + ":control6": storage.ComplianceResultValue_builder{
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
-					},
-					standard + ":control7": {
+					}.Build(),
+					standard + ":control7": storage.ComplianceResultValue_builder{
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
-					},
-					standard + ":control8": {
+					}.Build(),
+					standard + ":control8": storage.ComplianceResultValue_builder{
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_NOTE,
-					},
+					}.Build(),
 				},
-			},
-			cluster + "deployment3": {
+			}.Build(),
+			cluster + "deployment3": storage.ComplianceRunResults_EntityResults_builder{
 				ControlResults: map[string]*storage.ComplianceResultValue{
-					standard + ":control5": {
+					standard + ":control5": storage.ComplianceResultValue_builder{
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_SKIP,
-					},
-					standard + ":control6": {
+					}.Build(),
+					standard + ":control6": storage.ComplianceResultValue_builder{
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_SKIP,
-					},
-					standard + ":control7": {
+					}.Build(),
+					standard + ":control7": storage.ComplianceResultValue_builder{
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_SKIP,
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
-	}
+	}.Build()
 }
 
 func testName(groupBy []storage.ComplianceAggregation_Scope, unit storage.ComplianceAggregation_Scope) string {
@@ -347,62 +347,62 @@ func TestDomainAttribution(t *testing.T) {
 		standards: mockStandardsRepo(t),
 	}
 	complianceRunResults := []*storage.ComplianceRunResults{
-		{
+		storage.ComplianceRunResults_builder{
 			NodeResults: map[string]*storage.ComplianceRunResults_EntityResults{
-				"cluster1-node1": {
+				"cluster1-node1": storage.ComplianceRunResults_EntityResults_builder{
 					ControlResults: map[string]*storage.ComplianceResultValue{
 						"check1": {},
 						"check2": {},
 					},
-				},
-				"cluster1-node2": {
+				}.Build(),
+				"cluster1-node2": storage.ComplianceRunResults_EntityResults_builder{
 					ControlResults: map[string]*storage.ComplianceResultValue{
 						"check1": {},
 						"check2": {},
 					},
-				},
+				}.Build(),
 			},
-			Domain: &storage.ComplianceDomain{
+			Domain: storage.ComplianceDomain_builder{
 				Nodes: map[string]*storage.ComplianceDomain_Node{
-					"cluster1-node1": {
+					"cluster1-node1": storage.ComplianceDomain_Node_builder{
 						Id:   "cluster1-node1",
 						Name: "cluster1-node1",
-					},
-					"cluster1-node2": {
+					}.Build(),
+					"cluster1-node2": storage.ComplianceDomain_Node_builder{
 						Id:   "cluster1-node2",
 						Name: "cluster1-node2",
-					},
+					}.Build(),
 				},
-			},
-		},
-		{
+			}.Build(),
+		}.Build(),
+		storage.ComplianceRunResults_builder{
 			NodeResults: map[string]*storage.ComplianceRunResults_EntityResults{
-				"cluster2-node1": {
+				"cluster2-node1": storage.ComplianceRunResults_EntityResults_builder{
 					ControlResults: map[string]*storage.ComplianceResultValue{
 						"check1": {},
 						"check2": {},
 					},
-				},
-				"cluster2-node2": {
+				}.Build(),
+				"cluster2-node2": storage.ComplianceRunResults_EntityResults_builder{
 					ControlResults: map[string]*storage.ComplianceResultValue{
 						"check1": {},
 						"check2": {},
 					},
-				},
+				}.Build(),
 			},
-			Domain: &storage.ComplianceDomain{
+			Domain: storage.ComplianceDomain_builder{
 				Nodes: map[string]*storage.ComplianceDomain_Node{
-					"cluster2-node1": {
+					"cluster2-node1": storage.ComplianceDomain_Node_builder{
 						Id:   "cluster2-node1",
 						Name: "cluster2-node1",
-					},
-					"cluster2-node2": {
+					}.Build(),
+					"cluster2-node2": storage.ComplianceDomain_Node_builder{
 						Id:   "cluster2-node2",
 						Name: "cluster2-node2",
-					},
+					}.Build(),
 				},
-			},
-		},
+			}.Build(),
+		}.Build(),
 	}
 
 	results, domainMap := ag.getAggregatedResults(
@@ -545,40 +545,39 @@ func mockBenchmarkRunResult() *storage.ComplianceRunResults {
 	deploymentResults := make(map[string]*storage.ComplianceRunResults_EntityResults)
 	deployments := make(map[string]*storage.ComplianceDomain_Deployment)
 	for i := 0; i < 10000; i++ {
-		results := &storage.ComplianceRunResults_EntityResults{
-			ControlResults: make(map[string]*storage.ComplianceResultValue),
-		}
+		results := &storage.ComplianceRunResults_EntityResults{}
+		results.SetControlResults(make(map[string]*storage.ComplianceResultValue))
 		for i := 0; i < 50; i++ {
-			results.ControlResults[fmt.Sprintf("%s:control%d", registeredStandardID, i)] = &storage.ComplianceResultValue{
-				OverallState: storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
-			}
+			crv := &storage.ComplianceResultValue{}
+			crv.SetOverallState(storage.ComplianceState_COMPLIANCE_STATE_FAILURE)
+			results.GetControlResults()[fmt.Sprintf("%s:control%d", registeredStandardID, i)] = crv
 		}
 		fixture := fixtures.GetDeployment()
-		fixture.Id = uuid.NewV4().String()
+		fixture.SetId(uuid.NewV4().String())
 
 		deploymentResults[fixture.GetId()] = results
-		deployments[fixture.GetId()] = &storage.ComplianceDomain_Deployment{
-			Id:          fixture.GetId(),
-			NamespaceId: fixture.GetNamespaceId(),
-			Name:        fixture.GetName(),
-			Type:        fixture.GetType(),
-			Namespace:   fixture.GetNamespace(),
-			ClusterName: fixture.GetClusterName(),
-		}
+		cd := &storage.ComplianceDomain_Deployment{}
+		cd.SetId(fixture.GetId())
+		cd.SetNamespaceId(fixture.GetNamespaceId())
+		cd.SetName(fixture.GetName())
+		cd.SetType(fixture.GetType())
+		cd.SetNamespace(fixture.GetNamespace())
+		cd.SetClusterName(fixture.GetClusterName())
+		deployments[fixture.GetId()] = cd
 	}
 
-	return &storage.ComplianceRunResults{
-		Domain: &storage.ComplianceDomain{
-			Cluster: &storage.ComplianceDomain_Cluster{
-				Id: "cluster",
-			},
-			Deployments: deployments,
-		},
-		RunMetadata: &storage.ComplianceRunMetadata{
-			StandardId: registeredStandardID,
-		},
-		DeploymentResults: deploymentResults,
-	}
+	cc := &storage.ComplianceDomain_Cluster{}
+	cc.SetId("cluster")
+	cd := &storage.ComplianceDomain{}
+	cd.SetCluster(cc)
+	cd.SetDeployments(deployments)
+	crm := &storage.ComplianceRunMetadata{}
+	crm.SetStandardId(registeredStandardID)
+	crr := &storage.ComplianceRunResults{}
+	crr.SetDomain(cd)
+	crr.SetRunMetadata(crm)
+	crr.SetDeploymentResults(deploymentResults)
+	return crr
 }
 
 func BenchmarkAggregatedResults(b *testing.B) {

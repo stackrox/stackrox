@@ -67,8 +67,8 @@ func (m *manager) evaluateRuntimeAdmissionRequest(s *state, req *admission.Admis
 
 		return nil, errors.Wrap(err, "translating admission request object from request")
 	}
-	event.Timestamp = protocompat.TimestampNow()
-	event.Object.ClusterId = s.ClusterId
+	event.SetTimestamp(protocompat.TimestampNow())
+	event.GetObject().SetClusterId(s.ClusterId)
 
 	log.Debugf("Evaluating policies on kubernetes request %s", kubernetes.EventAsString(event))
 
@@ -150,10 +150,10 @@ func (m *manager) waitForDeploymentAndDetect(s *state, event *storage.Kubernetes
 	case <-m.initialSyncSig.Done():
 		deployment := m.getDeploymentForPod(event.GetObject().GetNamespace(), event.GetObject().GetName())
 		if deployment == nil {
-			dep, err := m.depClient.GetDeploymentForPod(context.Background(), &sensor.GetDeploymentForPodRequest{
-				PodName:   event.GetObject().GetName(),
-				Namespace: event.GetObject().GetNamespace(),
-			})
+			gdfpr := &sensor.GetDeploymentForPodRequest{}
+			gdfpr.SetPodName(event.GetObject().GetName())
+			gdfpr.SetNamespace(event.GetObject().GetNamespace())
+			dep, err := m.depClient.GetDeploymentForPod(context.Background(), gdfpr)
 			if err != nil {
 				log.Errorf("Could not fetch deployment for namespace/%s/pod/%s from Sensor. ",
 					event.GetObject().GetNamespace(), event.GetObject().GetName())

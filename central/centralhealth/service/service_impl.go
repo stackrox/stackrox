@@ -52,12 +52,11 @@ func (s *serviceImpl) GetUpgradeStatus(_ context.Context, _ *v1.Empty) (*v1.GetU
 		return nil, err
 	}
 
-	upgradeStatus := &v1.CentralUpgradeStatus{
-		Version: version.GetMainVersion(),
-		// Due to backwards compatibility going forward we can assume
-		// we can rollback after an upgrade
-		CanRollbackAfterUpgrade: true,
-	}
+	upgradeStatus := &v1.CentralUpgradeStatus{}
+	upgradeStatus.SetVersion(version.GetMainVersion())
+	// Due to backwards compatibility going forward we can assume
+	// we can rollback after an upgrade
+	upgradeStatus.SetCanRollbackAfterUpgrade(true)
 
 	if !pgconfig.IsExternalDatabase() {
 		exists, err := pgadmin.CheckIfDBExists(adminConfig, migrations.PreviousDatabase)
@@ -78,7 +77,7 @@ func (s *serviceImpl) GetUpgradeStatus(_ context.Context, _ *v1.Empty) (*v1.GetU
 				log.Infof("Unable to get previous version, leaving ForceRollbackTo empty.  %v", err)
 			}
 			if err == nil && migVer.SeqNum > 0 && version.CompareVersionsOr(migVer.MainVersion, minForceRollbackTo, -1) >= 0 {
-				upgradeStatus.ForceRollbackTo = migVer.MainVersion
+				upgradeStatus.SetForceRollbackTo(migVer.MainVersion)
 			}
 		} else {
 			// It is possible that we had a Rocks previously, so we may be able to rollback to that version.
@@ -88,12 +87,12 @@ func (s *serviceImpl) GetUpgradeStatus(_ context.Context, _ *v1.Empty) (*v1.GetU
 				log.Infof("Unable to get previous version, leaving ForceRollbackTo empty.  %v", err)
 			}
 			if err == nil && migVer.SeqNum > 0 && version.CompareVersionsOr(migVer.MainVersion, minForceRollbackTo, -1) >= 0 {
-				upgradeStatus.ForceRollbackTo = migVer.MainVersion
+				upgradeStatus.SetForceRollbackTo(migVer.MainVersion)
 			}
 		}
 	}
 
-	return &v1.GetUpgradeStatusResponse{
-		UpgradeStatus: upgradeStatus,
-	}, nil
+	gusr := &v1.GetUpgradeStatusResponse{}
+	gusr.SetUpgradeStatus(upgradeStatus)
+	return gusr, nil
 }

@@ -43,12 +43,12 @@ func (resolver *nodeScanResolver) Components(_ context.Context, args PaginatedQu
 	}
 
 	pagination := query.GetPagination()
-	query.Pagination = nil
+	query.ClearPagination()
 
+	node := &storage.Node{}
+	node.SetScan(resolver.data)
 	vulns, err := mapNodesToComponentResolvers(resolver.root, []*storage.Node{
-		{
-			Scan: resolver.data,
-		},
+		node,
 	}, query)
 
 	return paginate(pagination, vulns, err)

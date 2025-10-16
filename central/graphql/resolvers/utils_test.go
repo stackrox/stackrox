@@ -9,22 +9,37 @@ import (
 
 func TestPagination(t *testing.T) {
 	stuff := []int{1, 2}
-	result, _ := paginate(&v1.QueryPagination{Offset: 0, Limit: 2}, stuff, nil)
+	qp := &v1.QueryPagination{}
+	qp.SetOffset(0)
+	qp.SetLimit(2)
+	result, _ := paginate(qp, stuff, nil)
 	assert.Equal(t, []int{1, 2}, result)
 
 	stuff = []int{1, 2, 3}
-	result, _ = paginate(&v1.QueryPagination{Offset: 1, Limit: 2}, stuff, nil)
+	qp2 := &v1.QueryPagination{}
+	qp2.SetOffset(1)
+	qp2.SetLimit(2)
+	result, _ = paginate(qp2, stuff, nil)
 	assert.Equal(t, []int{2, 3}, result)
 
 	stuff = []int{1, 2, 3}
-	result, _ = paginate(&v1.QueryPagination{Offset: 2, Limit: 2}, stuff, nil)
+	qp3 := &v1.QueryPagination{}
+	qp3.SetOffset(2)
+	qp3.SetLimit(2)
+	result, _ = paginate(qp3, stuff, nil)
 	assert.Equal(t, []int{3}, result)
 
 	stuff = []int{1, 2}
-	result, _ = paginate(&v1.QueryPagination{Offset: 2, Limit: 2}, stuff, nil)
+	qp4 := &v1.QueryPagination{}
+	qp4.SetOffset(2)
+	qp4.SetLimit(2)
+	result, _ = paginate(qp4, stuff, nil)
 	assert.Nil(t, result)
 
 	stuff = []int{}
-	result, _ = paginate(&v1.QueryPagination{Offset: 2, Limit: 2}, stuff, nil)
+	qp5 := &v1.QueryPagination{}
+	qp5.SetOffset(2)
+	qp5.SetLimit(2)
+	result, _ = paginate(qp5, stuff, nil)
 	assert.Equal(t, []int{}, result)
 }

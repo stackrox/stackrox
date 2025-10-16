@@ -202,9 +202,9 @@ func (s *serviceImpl) GetVulnerabilityExceptionConfig(ctx context.Context, _ *v1
 	if err != nil {
 		return nil, err
 	}
-	return &v1.GetVulnerabilityExceptionConfigResponse{
-		Config: storagetov1.VulnerabilityExceptionConfig(vmExceptionConfig),
-	}, nil
+	gvecr := &v1.GetVulnerabilityExceptionConfigResponse{}
+	gvecr.SetConfig(storagetov1.VulnerabilityExceptionConfig(vmExceptionConfig))
+	return gvecr, nil
 }
 
 // UpdateVulnerabilityExceptionConfig updates Central's vulnerability exception configuration.
@@ -228,17 +228,17 @@ func (s *serviceImpl) UpdateVulnerabilityExceptionConfig(ctx context.Context, re
 		config = &storage.Config{}
 	}
 	if config.GetPrivateConfig() == nil {
-		config.PrivateConfig = &storage.PrivateConfig{}
+		config.SetPrivateConfig(&storage.PrivateConfig{})
 	}
 
-	config.PrivateConfig.VulnerabilityExceptionConfig = exceptionCfg
+	config.GetPrivateConfig().SetVulnerabilityExceptionConfig(exceptionCfg)
 	if err := s.datastore.UpsertConfig(ctx, config); err != nil {
 		return nil, err
 	}
 
-	return &v1.UpdateVulnerabilityExceptionConfigResponse{
-		Config: req.GetConfig(),
-	}, nil
+	uvecr := &v1.UpdateVulnerabilityExceptionConfigResponse{}
+	uvecr.SetConfig(req.GetConfig())
+	return uvecr, nil
 }
 
 func (s *serviceImpl) GetPlatformComponentConfig(ctx context.Context, _ *v1.Empty) (*storage.PlatformComponentConfig, error) {
@@ -277,9 +277,9 @@ func (s *serviceImpl) UpdatePlatformComponentConfig(ctx context.Context, req *v1
 }
 
 func (s *serviceImpl) GetDefaultRedHatLayeredProductsRegex(_ context.Context, _ *v1.Empty) (*v1.GetDefaultRedHatLayeredProductsRegexResponse, error) {
-	return &v1.GetDefaultRedHatLayeredProductsRegexResponse{
-		Regex: datastore.PlatformComponentLayeredProductsDefaultRegex,
-	}, nil
+	gdrhlprr := &v1.GetDefaultRedHatLayeredProductsRegexResponse{}
+	gdrhlprr.SetRegex(datastore.PlatformComponentLayeredProductsDefaultRegex)
+	return gdrhlprr, nil
 }
 
 func validateExceptionConfigReq(config *storage.VulnerabilityExceptionConfig) error {

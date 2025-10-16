@@ -31,7 +31,7 @@ func GetSubjectsAdjustedByKind(binding *storage.K8SRoleBinding) []*storage.Subje
 		// Minimize number of CloneVT() calls.
 		if subject.GetNamespace() != "" && (subject.GetKind() == storage.SubjectKind_USER || subject.GetKind() == storage.SubjectKind_GROUP) {
 			adjustedSubject := subject.CloneVT()
-			adjustedSubject.Namespace = ""
+			adjustedSubject.SetNamespace("")
 			adjustedSubjectSet.Add(adjustedSubject)
 
 			continue
@@ -66,24 +66,24 @@ func GetSubjectForDeployment(deployment *storage.Deployment) *storage.Subject {
 		serviceAccount = deployment.GetServiceAccount()
 	}
 
-	return &storage.Subject{
-		Kind:        storage.SubjectKind_SERVICE_ACCOUNT,
-		Name:        serviceAccount,
-		Namespace:   deployment.GetNamespace(),
-		ClusterId:   deployment.GetClusterId(),
-		ClusterName: deployment.GetClusterName(),
-	}
+	subject := &storage.Subject{}
+	subject.SetKind(storage.SubjectKind_SERVICE_ACCOUNT)
+	subject.SetName(serviceAccount)
+	subject.SetNamespace(deployment.GetNamespace())
+	subject.SetClusterId(deployment.GetClusterId())
+	subject.SetClusterName(deployment.GetClusterName())
+	return subject
 }
 
 // GetSubjectForServiceAccount returns the subject represented by a service account.
 func GetSubjectForServiceAccount(sa *storage.ServiceAccount) *storage.Subject {
-	return &storage.Subject{
-		Kind:        storage.SubjectKind_SERVICE_ACCOUNT,
-		Name:        sa.GetName(),
-		Namespace:   sa.GetNamespace(),
-		ClusterName: sa.GetClusterName(),
-		ClusterId:   sa.GetClusterId(),
-	}
+	subject := &storage.Subject{}
+	subject.SetKind(storage.SubjectKind_SERVICE_ACCOUNT)
+	subject.SetName(sa.GetName())
+	subject.SetNamespace(sa.GetNamespace())
+	subject.SetClusterName(sa.GetClusterName())
+	subject.SetClusterId(sa.GetClusterId())
+	return subject
 }
 
 // GetAllSubjects get the subjects of the specified types in the referenced in a set of bindings.

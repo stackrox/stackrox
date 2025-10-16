@@ -43,12 +43,11 @@ func (suite *SecretServiceTestSuite) SetupTest() {
 func (suite *SecretServiceTestSuite) TestGetSecret() {
 	secretID := "id1"
 
-	expectedSecret := &storage.Secret{
-		Id:        secretID,
-		Name:      "secretname",
-		ClusterId: "cluster",
-		Namespace: "namespace",
-	}
+	expectedSecret := &storage.Secret{}
+	expectedSecret.SetId(secretID)
+	expectedSecret.SetName("secretname")
+	expectedSecret.SetClusterId("cluster")
+	expectedSecret.SetNamespace("namespace")
 	suite.mockSecretStore.EXPECT().GetSecret(gomock.Any(), secretID).Return(expectedSecret, true, nil)
 
 	psr := search.NewQueryBuilder().
@@ -57,25 +56,26 @@ func (suite *SecretServiceTestSuite) TestGetSecret() {
 		AddExactMatches(search.SecretName, "secretname").
 		ProtoQuery()
 
+	sr := &v1.SearchResult{}
+	sr.SetId("d1")
+	sr.SetName("deployment1")
 	results := []*v1.SearchResult{
-		{
-			Id:   "d1",
-			Name: "deployment1",
-		},
+		sr,
 	}
 
 	suite.mockDeploymentStore.EXPECT().SearchDeployments(gomock.Any(), psr).Return(results, nil)
 
-	expectedRelationship := &storage.SecretRelationship{
-		DeploymentRelationships: []*storage.SecretDeploymentRelationship{
-			{
-				Id:   "d1",
-				Name: "deployment1",
-			},
-		},
-	}
+	sdr := &storage.SecretDeploymentRelationship{}
+	sdr.SetId("d1")
+	sdr.SetName("deployment1")
+	expectedRelationship := &storage.SecretRelationship{}
+	expectedRelationship.SetDeploymentRelationships([]*storage.SecretDeploymentRelationship{
+		sdr,
+	})
 
-	actualSecretAndRelationship, err := suite.service.GetSecret((context.Context)(nil), &v1.ResourceByID{Id: secretID})
+	rbid := &v1.ResourceByID{}
+	rbid.SetId(secretID)
+	actualSecretAndRelationship, err := suite.service.GetSecret((context.Context)(nil), rbid)
 	suite.NoError(err)
 	protoassert.Equal(suite.T(), expectedSecret, actualSecretAndRelationship)
 	protoassert.Equal(suite.T(), expectedRelationship, actualSecretAndRelationship.GetRelationship())
@@ -87,7 +87,9 @@ func (suite *SecretServiceTestSuite) TestGetSecretsWithStoreSecretNotExists() {
 
 	suite.mockSecretStore.EXPECT().GetSecret(gomock.Any(), secretID).Return((*storage.Secret)(nil), false, nil)
 
-	_, err := suite.service.GetSecret((context.Context)(nil), &v1.ResourceByID{Id: secretID})
+	rbid := &v1.ResourceByID{}
+	rbid.SetId(secretID)
+	_, err := suite.service.GetSecret((context.Context)(nil), rbid)
 	suite.Error(err)
 }
 
@@ -98,7 +100,9 @@ func (suite *SecretServiceTestSuite) TestGetSecretsWithStoreSecretFailure() {
 	expectedErr := errors.New("failure")
 	suite.mockSecretStore.EXPECT().GetSecret(gomock.Any(), secretID).Return((*storage.Secret)(nil), true, expectedErr)
 
-	_, actualErr := suite.service.GetSecret((context.Context)(nil), &v1.ResourceByID{Id: secretID})
+	rbid := &v1.ResourceByID{}
+	rbid.SetId(secretID)
+	_, actualErr := suite.service.GetSecret((context.Context)(nil), rbid)
 	suite.Error(actualErr)
 }
 
@@ -106,12 +110,11 @@ func (suite *SecretServiceTestSuite) TestGetSecretsWithStoreSecretFailure() {
 func (suite *SecretServiceTestSuite) TestGetSecretsWithNoRelationship() {
 	secretID := "id1"
 
-	expectedSecret := &storage.Secret{
-		Id:        secretID,
-		Name:      "secretname",
-		ClusterId: "cluster",
-		Namespace: "namespace",
-	}
+	expectedSecret := &storage.Secret{}
+	expectedSecret.SetId(secretID)
+	expectedSecret.SetName("secretname")
+	expectedSecret.SetClusterId("cluster")
+	expectedSecret.SetNamespace("namespace")
 	suite.mockSecretStore.EXPECT().GetSecret(gomock.Any(), secretID).Return(expectedSecret, true, nil)
 
 	psr := search.NewQueryBuilder().
@@ -122,7 +125,9 @@ func (suite *SecretServiceTestSuite) TestGetSecretsWithNoRelationship() {
 
 	suite.mockDeploymentStore.EXPECT().SearchDeployments(gomock.Any(), psr).Return([]*v1.SearchResult{}, nil)
 
-	_, err := suite.service.GetSecret((context.Context)(nil), &v1.ResourceByID{Id: secretID})
+	rbid := &v1.ResourceByID{}
+	rbid.SetId(secretID)
+	_, err := suite.service.GetSecret((context.Context)(nil), rbid)
 	suite.NoError(err)
 }
 
@@ -130,12 +135,11 @@ func (suite *SecretServiceTestSuite) TestGetSecretsWithNoRelationship() {
 func (suite *SecretServiceTestSuite) TestGetSecretsWithStoreRelationshipFailure() {
 	secretID := "id1"
 
-	expectedSecret := &storage.Secret{
-		Id:        secretID,
-		Name:      "secretname",
-		ClusterId: "cluster",
-		Namespace: "namespace",
-	}
+	expectedSecret := &storage.Secret{}
+	expectedSecret.SetId(secretID)
+	expectedSecret.SetName("secretname")
+	expectedSecret.SetClusterId("cluster")
+	expectedSecret.SetNamespace("namespace")
 	suite.mockSecretStore.EXPECT().GetSecret(gomock.Any(), secretID).Return(expectedSecret, true, nil)
 
 	psr := search.NewQueryBuilder().
@@ -147,20 +151,24 @@ func (suite *SecretServiceTestSuite) TestGetSecretsWithStoreRelationshipFailure(
 	expectedErr := errors.New("failure")
 	suite.mockDeploymentStore.EXPECT().SearchDeployments(gomock.Any(), psr).Return(([]*v1.SearchResult)(nil), expectedErr)
 
-	_, actualErr := suite.service.GetSecret((context.Context)(nil), &v1.ResourceByID{Id: secretID})
+	rbid := &v1.ResourceByID{}
+	rbid.SetId(secretID)
+	_, actualErr := suite.service.GetSecret((context.Context)(nil), rbid)
 	suite.Error(actualErr)
 }
 
 // Test happy path for searching secrets and relationships
 func (suite *SecretServiceTestSuite) TestSearchSecret() {
+	ls := &storage.ListSecret{}
+	ls.SetId("id1")
 	expectedReturns := []*storage.ListSecret{
-		{Id: "id1"},
+		ls,
 	}
 
 	emptyWithPag := search.EmptyQuery()
-	emptyWithPag.Pagination = &v1.QueryPagination{
-		Limit: maxSecretsReturned,
-	}
+	qp := &v1.QueryPagination{}
+	qp.SetLimit(maxSecretsReturned)
+	emptyWithPag.SetPagination(qp)
 	suite.mockSecretStore.EXPECT().SearchListSecrets(gomock.Any(), emptyWithPag).Return(expectedReturns, nil)
 
 	_, err := suite.service.ListSecrets((context.Context)(nil), &v1.RawQuery{})
@@ -172,9 +180,9 @@ func (suite *SecretServiceTestSuite) TestSearchSecretFailure() {
 	expectedError := errors.New("failure")
 
 	emptyWithPag := search.EmptyQuery()
-	emptyWithPag.Pagination = &v1.QueryPagination{
-		Limit: maxSecretsReturned,
-	}
+	qp := &v1.QueryPagination{}
+	qp.SetLimit(maxSecretsReturned)
+	emptyWithPag.SetPagination(qp)
 	suite.mockSecretStore.EXPECT().SearchListSecrets(gomock.Any(), emptyWithPag).Return(([]*storage.ListSecret)(nil), expectedError)
 
 	_, actualErr := suite.service.ListSecrets((context.Context)(nil), &v1.RawQuery{})

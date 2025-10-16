@@ -107,10 +107,18 @@ func ConvertFileMapToTypedServiceCertificateSet(fileMap map[string]string) (*sto
 		}
 
 		if certPem != nil {
-			serviceCertMap[serviceType].CertPem = certPem
+			if certPem != nil {
+				serviceCertMap[serviceType].SetCertPem(certPem)
+			} else {
+				serviceCertMap[serviceType].ClearCertPem()
+			}
 		}
 		if keyPem != nil {
-			serviceCertMap[serviceType].KeyPem = keyPem
+			if keyPem != nil {
+				serviceCertMap[serviceType].SetKeyPem(keyPem)
+			} else {
+				serviceCertMap[serviceType].ClearKeyPem()
+			}
 		}
 		// When certificate and key have been retrieved from the file map, validate them against the CA.
 		if len(serviceCertMap[serviceType].GetCertPem()) > 0 && len(serviceCertMap[serviceType].GetKeyPem()) > 0 {
@@ -138,16 +146,15 @@ func ConvertFileMapToTypedServiceCertificateSet(fileMap map[string]string) (*sto
 		if len(serviceCert.GetKeyPem()) == 0 {
 			return nil, nil, errors.Errorf("missing key for service %s in file map", serviceType.String())
 		}
-		typedServiceCerts = append(typedServiceCerts, &storage.TypedServiceCertificate{
-			ServiceType: serviceType,
-			Cert:        serviceCert,
-		})
+		tsc := &storage.TypedServiceCertificate{}
+		tsc.SetServiceType(serviceType)
+		tsc.SetCert(serviceCert)
+		typedServiceCerts = append(typedServiceCerts, tsc)
 	}
 
-	certSet := storage.TypedServiceCertificateSet{
-		CaPem:        []byte(fileMap[caCertKey]),
-		ServiceCerts: typedServiceCerts,
-	}
+	certSet := &storage.TypedServiceCertificateSet{}
+	certSet.SetCaPem([]byte(fileMap[caCertKey]))
+	certSet.SetServiceCerts(typedServiceCerts)
 
 	var unknownServicesSlice []string
 	if unknownServices != nil {

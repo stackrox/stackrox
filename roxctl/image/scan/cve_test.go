@@ -5,64 +5,65 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestNewCVESummaryForPrinting(t *testing.T) {
 	vulnsWithAllSeverities := []*storage.EmbeddedVulnerability{
-		{
-			Cve:        "CVE-TEST-2",
-			Summary:    "CVE Test 2",
-			Link:       "cve-link-2",
-			Severity:   storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
-			Cvss:       1.2,
-			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "1.0"},
-		},
-		{
-			Cve:        "CVE-TEST-1",
-			Summary:    "CVE Test 1",
-			Link:       "cve-link-1",
-			Severity:   storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-			Cvss:       10.0,
-			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "1.2"},
-		},
-		{
-			Cve:        "CVE-TEST-3",
-			Summary:    "CVE Test 3",
-			Link:       "cve-link-3",
-			Severity:   storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
-			Cvss:       7.5,
-			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "1.3"},
-		},
-		{
-			Cve:        "CVE-TEST-4",
-			Summary:    "CVE Test 4",
-			Link:       "cve-link-4",
-			Severity:   storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
-			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "1.4"},
-		},
-		{
-			Cve:        "CVE-TEST-5",
-			Summary:    "CVE Test 5",
-			Link:       "cve-link-5",
-			Severity:   storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
-			Cvss:       8.1,
-			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "1.5"},
-			Advisory: &storage.Advisory{
+		storage.EmbeddedVulnerability_builder{
+			Cve:      "CVE-TEST-2",
+			Summary:  "CVE Test 2",
+			Link:     "cve-link-2",
+			Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
+			Cvss:     1.2,
+			FixedBy:  proto.String("1.0"),
+		}.Build(),
+		storage.EmbeddedVulnerability_builder{
+			Cve:      "CVE-TEST-1",
+			Summary:  "CVE Test 1",
+			Link:     "cve-link-1",
+			Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+			Cvss:     10.0,
+			FixedBy:  proto.String("1.2"),
+		}.Build(),
+		storage.EmbeddedVulnerability_builder{
+			Cve:      "CVE-TEST-3",
+			Summary:  "CVE Test 3",
+			Link:     "cve-link-3",
+			Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+			Cvss:     7.5,
+			FixedBy:  proto.String("1.3"),
+		}.Build(),
+		storage.EmbeddedVulnerability_builder{
+			Cve:      "CVE-TEST-4",
+			Summary:  "CVE Test 4",
+			Link:     "cve-link-4",
+			Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+			FixedBy:  proto.String("1.4"),
+		}.Build(),
+		storage.EmbeddedVulnerability_builder{
+			Cve:      "CVE-TEST-5",
+			Summary:  "CVE Test 5",
+			Link:     "cve-link-5",
+			Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+			Cvss:     8.1,
+			FixedBy:  proto.String("1.5"),
+			Advisory: storage.Advisory_builder{
 				Name: "ADVISORY-TEST-5",
 				Link: "advisory-link-5",
-			},
-		},
-		{
-			Cve:        "CVE-TEST-6",
-			Summary:    "CVE Test 6",
-			Link:       "cve-link-6",
-			Severity:   storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
-			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "1.6"},
-			Advisory: &storage.Advisory{
+			}.Build(),
+		}.Build(),
+		storage.EmbeddedVulnerability_builder{
+			Cve:      "CVE-TEST-6",
+			Summary:  "CVE Test 6",
+			Link:     "cve-link-6",
+			Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
+			FixedBy:  proto.String("1.6"),
+			Advisory: storage.Advisory_builder{
 				Name: "ADVISORY-TEST-6",
 				Link: "advisory-link-6",
-			},
-		},
+			}.Build(),
+		}.Build(),
 	}
 
 	// Expected vulns and components without filtering.
@@ -119,9 +120,9 @@ func TestNewCVESummaryForPrinting(t *testing.T) {
 		expectedOutput *cveJSONResult
 	}{
 		"empty img scan results": {
-			scan: &storage.ImageScan{
+			scan: storage.ImageScan_builder{
 				Components: nil,
-			},
+			}.Build(),
 			severities: []string{lowCVESeverity.String(), moderateCVESeverity.String(), importantCVESeverity.String(),
 				criticalCVESeverity.String()},
 			expectedOutput: &cveJSONResult{
@@ -141,40 +142,40 @@ func TestNewCVESummaryForPrinting(t *testing.T) {
 		"duplicated CVEs across multiple components": {
 			severities: []string{lowCVESeverity.String(), moderateCVESeverity.String(), importantCVESeverity.String(),
 				criticalCVESeverity.String()},
-			scan: &storage.ImageScan{
+			scan: storage.ImageScan_builder{
 				Components: []*storage.EmbeddedImageScanComponent{
-					{
+					storage.EmbeddedImageScanComponent_builder{
 						Name:    "dbus",
 						Version: "1:1.12.20-6.el9.x86_64",
 						Vulns: []*storage.EmbeddedVulnerability{
-							{
+							storage.EmbeddedVulnerability_builder{
 								Cve:      "CVE-2022-42010",
 								Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
-							},
+							}.Build(),
 						},
-					},
-					{
+					}.Build(),
+					storage.EmbeddedImageScanComponent_builder{
 						Name:    "dbus-common",
 						Version: "1:1.12.20-6.el9.noarch",
 						Vulns: []*storage.EmbeddedVulnerability{
-							{
+							storage.EmbeddedVulnerability_builder{
 								Cve:      "CVE-2022-42010",
 								Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
-							},
+							}.Build(),
 						},
-					},
-					{
+					}.Build(),
+					storage.EmbeddedImageScanComponent_builder{
 						Name:    "dbus-libs",
 						Version: "1:1.12.20-6.el9.x86_64",
 						Vulns: []*storage.EmbeddedVulnerability{
-							{
+							storage.EmbeddedVulnerability_builder{
 								Cve:      "CVE-2022-42010",
 								Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 			expectedOutput: &cveJSONResult{
 				Result: cveJSONStructure{
 					Summary: map[string]int{
@@ -211,42 +212,42 @@ func TestNewCVESummaryForPrinting(t *testing.T) {
 		"components with vulnerabilities of all severity": {
 			severities: []string{lowCVESeverity.String(), moderateCVESeverity.String(), importantCVESeverity.String(),
 				criticalCVESeverity.String()},
-			scan: &storage.ImageScan{
+			scan: storage.ImageScan_builder{
 				Components: []*storage.EmbeddedImageScanComponent{
-					{
+					storage.EmbeddedImageScanComponent_builder{
 						Name:    "componentD",
 						Version: "1.0.0-1",
 						Vulns: []*storage.EmbeddedVulnerability{
-							{
-								Cve:        "CVE-TEST-10",
-								Summary:    "CVE Test 10",
-								Link:       "cve-link-10",
-								Severity:   storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "3.0"},
-							},
+							storage.EmbeddedVulnerability_builder{
+								Cve:      "CVE-TEST-10",
+								Summary:  "CVE Test 10",
+								Link:     "cve-link-10",
+								Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+								FixedBy:  proto.String("3.0"),
+							}.Build(),
 						},
 						FixedBy: "3.0",
-					},
-					{
+					}.Build(),
+					storage.EmbeddedImageScanComponent_builder{
 						Name:    "componentA",
 						Version: "1.0.0-1",
 						Vulns:   vulnsWithAllSeverities,
 						FixedBy: "2.0",
-					},
-					{
+					}.Build(),
+					storage.EmbeddedImageScanComponent_builder{
 						Name:    "componentC",
 						Version: "1.0.0-3",
 						FixedBy: "2.0",
 						Vulns:   vulnsWithAllSeverities,
-					},
-					{
+					}.Build(),
+					storage.EmbeddedImageScanComponent_builder{
 						Name:    "componentB",
 						Version: "1.0.0-2",
 						Vulns:   vulnsWithAllSeverities,
 						FixedBy: "2.0",
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 			expectedOutput: &cveJSONResult{
 				Result: cveJSONStructure{
 					Summary: map[string]int{
@@ -263,42 +264,42 @@ func TestNewCVESummaryForPrinting(t *testing.T) {
 		},
 		"components with vulnerabilities of all severity but filtering": {
 			severities: []string{moderateCVESeverity.String(), importantCVESeverity.String()},
-			scan: &storage.ImageScan{
+			scan: storage.ImageScan_builder{
 				Components: []*storage.EmbeddedImageScanComponent{
-					{
+					storage.EmbeddedImageScanComponent_builder{
 						Name:    "componentD",
 						Version: "1.0.0-1",
 						Vulns: []*storage.EmbeddedVulnerability{
-							{
-								Cve:        "CVE-TEST-10",
-								Summary:    "CVE Test 10",
-								Link:       "cve-link-10",
-								Severity:   storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-								SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "3.0"},
-							},
+							storage.EmbeddedVulnerability_builder{
+								Cve:      "CVE-TEST-10",
+								Summary:  "CVE Test 10",
+								Link:     "cve-link-10",
+								Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+								FixedBy:  proto.String("3.0"),
+							}.Build(),
 						},
 						FixedBy: "3.0",
-					},
-					{
+					}.Build(),
+					storage.EmbeddedImageScanComponent_builder{
 						Name:    "componentA",
 						Version: "1.0.0-1",
 						Vulns:   vulnsWithAllSeverities,
 						FixedBy: "2.0",
-					},
-					{
+					}.Build(),
+					storage.EmbeddedImageScanComponent_builder{
 						Name:    "componentC",
 						Version: "1.0.0-3",
 						FixedBy: "2.0",
 						Vulns:   vulnsWithAllSeverities,
-					},
-					{
+					}.Build(),
+					storage.EmbeddedImageScanComponent_builder{
 						Name:    "componentB",
 						Version: "1.0.0-2",
 						Vulns:   vulnsWithAllSeverities,
 						FixedBy: "2.0",
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 			expectedOutput: &cveJSONResult{
 				Result: cveJSONStructure{
 					Summary: map[string]int{

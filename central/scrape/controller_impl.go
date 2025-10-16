@@ -21,33 +21,25 @@ type controllerImpl struct {
 }
 
 func (s *controllerImpl) sendStartScrapeMsg(ctx concurrency.Waitable, scrape *scrapeImpl) error {
-	msg := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_ScrapeCommand{
-			ScrapeCommand: &central.ScrapeCommand{
-				ScrapeId: scrape.scrapeID,
-				Command: &central.ScrapeCommand_StartScrape{
-					StartScrape: &central.StartScrape{
-						Hostnames: scrape.expectedHosts.AsSlice(),
-						Standards: scrape.GetStandardIDs(),
-					},
-				},
-			},
-		},
-	}
+	msg := central.MsgToSensor_builder{
+		ScrapeCommand: central.ScrapeCommand_builder{
+			ScrapeId: scrape.scrapeID,
+			StartScrape: central.StartScrape_builder{
+				Hostnames: scrape.expectedHosts.AsSlice(),
+				Standards: scrape.GetStandardIDs(),
+			}.Build(),
+		}.Build(),
+	}.Build()
 	return s.msgInjector.InjectMessage(ctx, msg)
 }
 
 func (s *controllerImpl) sendKillScrapeMsg(ctx concurrency.Waitable, scrape *scrapeImpl) error {
-	msg := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_ScrapeCommand{
-			ScrapeCommand: &central.ScrapeCommand{
-				ScrapeId: scrape.scrapeID,
-				Command: &central.ScrapeCommand_KillScrape{
-					KillScrape: &central.KillScrape{},
-				},
-			},
-		},
-	}
+	msg := central.MsgToSensor_builder{
+		ScrapeCommand: central.ScrapeCommand_builder{
+			ScrapeId:   scrape.scrapeID,
+			KillScrape: &central.KillScrape{},
+		}.Build(),
+	}.Build()
 	return s.msgInjector.InjectMessage(ctx, msg)
 }
 

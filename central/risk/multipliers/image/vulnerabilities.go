@@ -39,16 +39,16 @@ func (c *vulnerabilitiesMultiplier) Score(_ context.Context, image *storage.Imag
 	}
 
 	score := multipliers.NormalizeScore(sum, vulnSaturation, vulnMaxScore)
-	return &storage.Risk_Result{
-		Name: VulnerabilitiesHeading,
-		Factors: []*storage.Risk_Result_Factor{
-			{
-				Message: fmt.Sprintf("Image %q contains %d CVEs with severities ranging between %s and %s",
-					image.GetName().GetFullName(), num, min.Severity, max.Severity),
-			},
-		},
-		Score: score,
-	}
+	rrf := &storage.Risk_Result_Factor{}
+	rrf.SetMessage(fmt.Sprintf("Image %q contains %d CVEs with severities ranging between %s and %s",
+		image.GetName().GetFullName(), num, min.Severity, max.Severity))
+	rr := &storage.Risk_Result{}
+	rr.SetName(VulnerabilitiesHeading)
+	rr.SetFactors([]*storage.Risk_Result_Factor{
+		rrf,
+	})
+	rr.SetScore(score)
+	return rr
 }
 
 // ScoreV2 takes an image and evaluates its risk based on vulnerabilities
@@ -64,14 +64,14 @@ func (c *vulnerabilitiesMultiplier) ScoreV2(_ context.Context, image *storage.Im
 	}
 
 	score := multipliers.NormalizeScore(sum, vulnSaturation, vulnMaxScore)
-	return &storage.Risk_Result{
-		Name: VulnerabilitiesHeading,
-		Factors: []*storage.Risk_Result_Factor{
-			{
-				Message: fmt.Sprintf("Image %q contains %d CVEs with severities ranging between %s and %s",
-					image.GetName().GetFullName(), num, min.Severity, max.Severity),
-			},
-		},
-		Score: score,
-	}
+	rrf := &storage.Risk_Result_Factor{}
+	rrf.SetMessage(fmt.Sprintf("Image %q contains %d CVEs with severities ranging between %s and %s",
+		image.GetName().GetFullName(), num, min.Severity, max.Severity))
+	rr := &storage.Risk_Result{}
+	rr.SetName(VulnerabilitiesHeading)
+	rr.SetFactors([]*storage.Risk_Result_Factor{
+		rrf,
+	})
+	rr.SetScore(score)
+	return rr
 }

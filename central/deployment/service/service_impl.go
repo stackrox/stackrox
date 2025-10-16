@@ -74,7 +74,9 @@ func (s *serviceImpl) ExportDeployments(req *v1.ExportDeploymentRequest, srv v1.
 		defer cancel()
 	}
 	return s.datastore.WalkByQuery(ctx, parsedQuery, func(d *storage.Deployment) error {
-		if err := srv.Send(&v1.ExportDeploymentResponse{Deployment: d}); err != nil {
+		edr := &v1.ExportDeploymentResponse{}
+		edr.SetDeployment(d)
+		if err := srv.Send(edr); err != nil {
 			return err
 		}
 		return nil
@@ -96,7 +98,7 @@ func (s *serviceImpl) fillBaselineResults(ctx context.Context, resp *v1.ListDepl
 			if err != nil {
 				return err
 			}
-			depWithProc.BaselineStatuses = baselineResults.GetBaselineStatuses()
+			depWithProc.SetBaselineStatuses(baselineResults.GetBaselineStatuses())
 		}
 	}
 	return nil
@@ -110,11 +112,9 @@ func (s *serviceImpl) ListDeploymentsWithProcessInfo(ctx context.Context, rawQue
 
 	resp := &v1.ListDeploymentsWithProcessInfoResponse{}
 	for _, deployment := range deployments.GetDeployments() {
-		resp.Deployments = append(resp.Deployments,
-			&v1.ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo{
-				Deployment: deployment,
-			},
-		)
+		ld := &v1.ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo{}
+		ld.SetDeployment(deployment)
+		resp.SetDeployments(append(resp.GetDeployments(), ld))
 	}
 	if err := s.fillBaselineResults(ctx, resp); err != nil {
 		return nil, err
@@ -164,10 +164,10 @@ func (s *serviceImpl) GetDeploymentWithRisk(ctx context.Context, request *v1.Res
 		return nil, err
 	}
 
-	return &v1.GetDeploymentWithRiskResponse{
-		Deployment: deployment,
-		Risk:       risk,
-	}, nil
+	gdwrr := &v1.GetDeploymentWithRiskResponse{}
+	gdwrr.SetDeployment(deployment)
+	gdwrr.SetRisk(risk)
+	return gdwrr, nil
 }
 
 // CountDeployments counts the number of deployments that match the input query.
@@ -182,7 +182,9 @@ func (s *serviceImpl) CountDeployments(ctx context.Context, request *v1.RawQuery
 	if err != nil {
 		return nil, err
 	}
-	return &v1.CountDeploymentsResponse{Count: int32(numDeployments)}, nil
+	cdr := &v1.CountDeploymentsResponse{}
+	cdr.SetCount(int32(numDeployments))
+	return cdr, nil
 }
 
 // ListDeployments returns ListDeployments according to the request.
@@ -201,16 +203,16 @@ func (s *serviceImpl) ListDeployments(ctx context.Context, request *v1.RawQuery)
 		return nil, err
 	}
 
-	return &v1.ListDeploymentsResponse{
-		Deployments: deployments,
-	}, nil
+	ldr := &v1.ListDeploymentsResponse{}
+	ldr.SetDeployments(deployments)
+	return ldr, nil
 }
 
 func queryForLabels() *v1.Query {
 	q := search.NewQueryBuilder().AddStringsHighlighted(search.DeploymentLabel, search.WildcardString).ProtoQuery()
-	q.Pagination = &v1.QueryPagination{
-		Limit: math.MaxInt32,
-	}
+	qp := &v1.QueryPagination{}
+	qp.SetLimit(math.MaxInt32)
+	q.SetPagination(qp)
 	return q
 }
 
@@ -224,10 +226,10 @@ func (s *serviceImpl) GetLabels(ctx context.Context, _ *v1.Empty) (*v1.Deploymen
 
 	labelsMap, values := labelsMapFromSearchResults(searchRes)
 
-	return &v1.DeploymentLabelsResponse{
-		Labels: labelsMap,
-		Values: values,
-	}, nil
+	dlr := &v1.DeploymentLabelsResponse{}
+	dlr.SetLabels(labelsMap)
+	dlr.SetValues(values)
+	return dlr, nil
 }
 
 func labelsMapFromSearchResults(results []search.Result) (map[string]*v1.DeploymentLabelsResponse_LabelValues, []string) {
@@ -265,9 +267,9 @@ func labelsMapFromSearchResults(results []search.Result) (map[string]*v1.Deploym
 	keyValuesMap := make(map[string]*v1.DeploymentLabelsResponse_LabelValues, len(tempSet))
 	var values []string
 	for k, valSet := range tempSet {
-		keyValuesMap[k] = &v1.DeploymentLabelsResponse_LabelValues{
-			Values: valSet.AsSlice(),
-		}
+		dl := &v1.DeploymentLabelsResponse_LabelValues{}
+		dl.SetValues(valSet.AsSlice())
+		keyValuesMap[k] = dl
 		slices.Sort(keyValuesMap[k].GetValues())
 	}
 	values = globalValueSet.AsSlice()

@@ -13,8 +13,9 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
+// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
 var (
-	componentV2LoaderType = reflect.TypeOf(storage.ImageComponentV2{})
+	componentV2LoaderType = reflect.TypeOf(&storage.ImageComponentV2{})
 )
 
 func init() {

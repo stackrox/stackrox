@@ -100,7 +100,7 @@ func (m *managerImpl) ProcessComplianceOperatorInfo(ctx context.Context, complia
 
 	// An update, so we need the ID from the one that was returned
 	id := existingIntegrations[0].GetId()
-	complianceIntegration.Id = id
+	complianceIntegration.SetId(id)
 
 	return m.integrationDS.UpdateComplianceIntegration(ctx, complianceIntegration)
 }
@@ -136,8 +136,8 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 		return nil, errors.Errorf("Scan configuration named %q already exists.", scanRequest.GetScanConfigName())
 	}
 
-	scanRequest.Id = uuid.NewV4().String()
-	scanRequest.CreatedTime = protocompat.TimestampNow()
+	scanRequest.SetId(uuid.NewV4().String())
+	scanRequest.SetCreatedTime(protocompat.TimestampNow())
 
 	return m.processRequestToSensor(ctx, scanRequest, cron, clusters, true)
 }
@@ -183,7 +183,7 @@ func (m *managerImpl) UpdateScanRequest(ctx context.Context, scanRequest *storag
 	m.removeObsoleteResultsByProfiles(ctx, oldScanConfig, scanRequest)
 
 	// Use the created time from the DB
-	scanRequest.CreatedTime = oldScanConfig.GetCreatedTime()
+	scanRequest.SetCreatedTime(oldScanConfig.GetCreatedTime())
 	scanRequest, err = m.processRequestToSensor(ctx, scanRequest, cron, clusters, false)
 	if err != nil {
 		return nil, err
@@ -322,18 +322,14 @@ func (m *managerImpl) processClusterDelete(ctx context.Context, scanRequest *sto
 		// id for the request message to sensor
 		sensorRequestID := uuid.NewV4().String()
 
-		sensorMessage := &central.MsgToSensor{
-			Msg: &central.MsgToSensor_ComplianceRequest{
-				ComplianceRequest: &central.ComplianceRequest{
-					Request: &central.ComplianceRequest_DeleteScanConfig{
-						DeleteScanConfig: &central.DeleteComplianceScanConfigRequest{
-							Id:   sensorRequestID,
-							Name: scanRequest.GetScanConfigName(),
-						},
-					},
-				},
-			},
-		}
+		sensorMessage := central.MsgToSensor_builder{
+			ComplianceRequest: central.ComplianceRequest_builder{
+				DeleteScanConfig: central.DeleteComplianceScanConfigRequest_builder{
+					Id:   sensorRequestID,
+					Name: scanRequest.GetScanConfigName(),
+				}.Build(),
+			}.Build(),
+		}.Build()
 
 		err := m.sensorConnMgr.SendMessage(clusterID, sensorMessage)
 		if err != nil {
@@ -439,22 +435,16 @@ func (m *managerImpl) ProcessRescanRequest(ctx context.Context, scanID string) e
 
 	errList := make([]string, 0)
 	for _, c := range clusters {
-		msg := &central.MsgToSensor{
-			Msg: &central.MsgToSensor_ComplianceRequest{
-				ComplianceRequest: &central.ComplianceRequest{
-					Request: &central.ComplianceRequest_ApplyScanConfig{
-						ApplyScanConfig: &central.ApplyComplianceScanConfigRequest{
-							Id: uuid.NewV4().String(),
-							ScanRequest: &central.ApplyComplianceScanConfigRequest_RerunScan{
-								RerunScan: &central.ApplyComplianceScanConfigRequest_RerunScheduledScan{
-									ScanName: scanConfig.GetScanConfigName(),
-								},
-							},
-						},
-					},
-				},
-			},
-		}
+		msg := central.MsgToSensor_builder{
+			ComplianceRequest: central.ComplianceRequest_builder{
+				ApplyScanConfig: central.ApplyComplianceScanConfigRequest_builder{
+					Id: uuid.NewV4().String(),
+					RerunScan: central.ApplyComplianceScanConfigRequest_RerunScheduledScan_builder{
+						ScanName: scanConfig.GetScanConfigName(),
+					}.Build(),
+				}.Build(),
+			}.Build(),
+		}.Build()
 
 		errSendMessage := m.sensorConnMgr.SendMessage(c.GetClusterId(), msg)
 		if errSendMessage != nil {
@@ -485,18 +475,14 @@ func (m *managerImpl) DeleteScan(ctx context.Context, scanID string) error {
 
 	// send delete request to sensor
 	sensorRequestID := uuid.NewV4().String()
-	sensorMessage := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_ComplianceRequest{
-			ComplianceRequest: &central.ComplianceRequest{
-				Request: &central.ComplianceRequest_DeleteScanConfig{
-					DeleteScanConfig: &central.DeleteComplianceScanConfigRequest{
-						Id:   sensorRequestID,
-						Name: scanConfigName,
-					},
-				},
-			},
-		},
-	}
+	sensorMessage := central.MsgToSensor_builder{
+		ComplianceRequest: central.ComplianceRequest_builder{
+			DeleteScanConfig: central.DeleteComplianceScanConfigRequest_builder{
+				Id:   sensorRequestID,
+				Name: scanConfigName,
+			}.Build(),
+		}.Build(),
+	}.Build()
 	m.sensorConnMgr.BroadcastMessage(sensorMessage)
 
 	return nil

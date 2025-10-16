@@ -50,19 +50,17 @@ func Test_loopImpl_reprocessNode(t *testing.T) {
 		{
 			name: "when node is RHCOS then nothing is done",
 			setUpMocks: func(t *testing.T, a *args, m *mocks) {
-				node := &storage.Node{
-					OsImage: "Red Hat Enterprise Linux CoreOS 412.86.202302091419-0 (Ootpa)",
-				}
+				node := &storage.Node{}
+				node.SetOsImage("Red Hat Enterprise Linux CoreOS 412.86.202302091419-0 (Ootpa)")
 				m.nodes.EXPECT().GetNode(gomock.Any(), a.id).Return(node, true, nil)
 			},
 		},
 		{
 			name: "when node is not RHCOS then scanner is called and node is upserted",
 			setUpMocks: func(t *testing.T, a *args, m *mocks) {
-				node := &storage.Node{
-					OsImage:     "Something that is not RHCOS",
-					LastUpdated: protocompat.TimestampNow(),
-				}
+				node := &storage.Node{}
+				node.SetOsImage("Something that is not RHCOS")
+				node.SetLastUpdated(protocompat.TimestampNow())
 				gomock.InOrder(
 					m.nodes.EXPECT().GetNode(gomock.Any(), gomock.Eq(a.id)).Times(1).Return(node, true, nil),
 					m.nodeEnricher.EXPECT().EnrichNode(node).Times(1).Return(nil),
@@ -189,14 +187,18 @@ func TestReprocessImage(t *testing.T) {
 	})
 	t.Run("image is not pullable", func(tt *testing.T) {
 		testLoop, imageDS, _ := newTestLoop(tt)
-		imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(&storage.Image{NotPullable: true}, true, nil)
+		image2 := &storage.Image{}
+		image2.SetNotPullable(true)
+		imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(image2, true, nil)
 		image, reprocessed := testLoop.reprocessImage(imageID, imageEnricher.UseCachesIfPossible, nil)
 		assert.Nil(tt, image)
 		assert.False(tt, reprocessed)
 	})
 	t.Run("image is cluster local", func(tt *testing.T) {
 		testLoop, imageDS, _ := newTestLoop(tt)
-		imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(&storage.Image{IsClusterLocal: true}, true, nil)
+		image2 := &storage.Image{}
+		image2.SetIsClusterLocal(true)
+		imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(image2, true, nil)
 		image, reprocessed := testLoop.reprocessImage(imageID, imageEnricher.UseCachesIfPossible, nil)
 		assert.Nil(tt, image)
 		assert.False(tt, reprocessed)
@@ -244,7 +246,8 @@ func TestReprocessImage(t *testing.T) {
 	t.Run("re-fetch image", func(tt *testing.T) {
 		testLoop, imageDS, riskManager := newTestLoop(tt)
 		initialImage := &storage.Image{}
-		secondImage := &storage.Image{Scan: &storage.ImageScan{}}
+		secondImage := &storage.Image{}
+		secondImage.SetScan(&storage.ImageScan{})
 		gomock.InOrder(
 			imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(initialImage, true, nil),
 			riskManager.EXPECT().CalculateRiskAndUpsertImage(gomock.Eq(initialImage)).Times(1).Return(nil),
@@ -272,7 +275,9 @@ func TestReprocessImagesAndResyncDeployments_SkipBrokenSensor(t *testing.T) {
 	for _, cluster := range []string{"a", "b"} { // two clusters
 		// Create at least one more image than max semaphore size to ensure skip logic is executed.
 		for i := range imageReprocessorSemaphoreSize + 1 {
-			imgs = append(imgs, &storage.Image{Id: fmt.Sprintf("img%d-%s", i, cluster)})
+			image := &storage.Image{}
+			image.SetId(fmt.Sprintf("img%d-%s", i, cluster))
+			imgs = append(imgs, image)
 		}
 	}
 
@@ -361,11 +366,8 @@ func TestReprocessImagesAndResyncDeployments_SkipBrokenSensor(t *testing.T) {
 
 func TestInjectMessage(t *testing.T) {
 	ctx := context.Background()
-	msg := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_ReprocessDeployments{
-			ReprocessDeployments: &central.ReprocessDeployments{},
-		},
-	}
+	msg := &central.MsgToSensor{}
+	msg.SetReprocessDeployments(&central.ReprocessDeployments{})
 	contextWithTimeout := gomock.Cond(func(ctx context.Context) bool {
 		_, hasTimeout := ctx.Deadline()
 		return hasTimeout

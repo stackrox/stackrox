@@ -55,50 +55,42 @@ func (suite *PipelineTestSuite) TearDownTest() {
 
 // Helper function to create a virtual machine message
 func createVMIndexMessage(vmID string, action central.ResourceAction) *central.MsgFromSensor {
-	return &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id:     vmID,
-				Action: action,
-				Resource: &central.SensorEvent_VirtualMachineIndexReport{
-					VirtualMachineIndexReport: &v1.IndexReportEvent{
-						Id: vmID,
-						Index: &v1.IndexReport{
-							IndexV4: &v4.IndexReport{
-								Contents: &v4.Contents{
-									Packages: map[string]*v4.Package{
-										"pkg-1": {
-											Id:      "pkg-1",
-											Name:    "test-package",
-											Version: "1.0.0",
-										},
-									},
-								},
+	return central.MsgFromSensor_builder{
+		Event: central.SensorEvent_builder{
+			Id:     vmID,
+			Action: action,
+			VirtualMachineIndexReport: v1.IndexReportEvent_builder{
+				Id: vmID,
+				Index: v1.IndexReport_builder{
+					IndexV4: v4.IndexReport_builder{
+						Contents: v4.Contents_builder{
+							Packages: map[string]*v4.Package{
+								"pkg-1": v4.Package_builder{
+									Id:      "pkg-1",
+									Name:    "test-package",
+									Version: "1.0.0",
+								}.Build(),
 							},
-						},
-					},
-				},
-			},
-		},
-	}
+						}.Build(),
+					}.Build(),
+				}.Build(),
+			}.Build(),
+		}.Build(),
+	}.Build()
 }
 
 // Helper function to create a non-VM message
 func createNonVMMessage() *central.MsgFromSensor {
-	return &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id:     "test-id",
-				Action: central.ResourceAction_CREATE_RESOURCE,
-				Resource: &central.SensorEvent_Node{
-					Node: &storage.Node{
-						Id:   "node-id",
-						Name: "node-name",
-					},
-				},
-			},
-		},
-	}
+	return central.MsgFromSensor_builder{
+		Event: central.SensorEvent_builder{
+			Id:     "test-id",
+			Action: central.ResourceAction_CREATE_RESOURCE,
+			Node: storage.Node_builder{
+				Id:   "node-id",
+				Name: "node-name",
+			}.Build(),
+		}.Build(),
+	}.Build()
 }
 
 func (suite *PipelineTestSuite) TestMatch_VirtualMachineMessage() {
@@ -109,17 +101,15 @@ func (suite *PipelineTestSuite) TestMatch_VirtualMachineMessage() {
 
 func (suite *PipelineTestSuite) TestRun_NilVirtualMachine() {
 	suite.T().Setenv(features.VirtualMachines.EnvVar(), "true")
-	msg := &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id:     "test-id",
-				Action: central.ResourceAction_SYNC_RESOURCE,
-				Resource: &central.SensorEvent_VirtualMachine{
-					VirtualMachine: nil,
-				},
-			},
-		},
+	se := &central.SensorEvent{}
+	se.SetId("test-id")
+	se.SetAction(central.ResourceAction_SYNC_RESOURCE)
+	se.Resource = &central.SensorEvent_VirtualMachine{
+		VirtualMachine: nil,
 	}
+	msg := central.MsgFromSensor_builder{
+		Event: se,
+	}.Build()
 
 	err := suite.pipeline.Run(ctx, testClusterID, msg, nil)
 	suite.Error(err)
@@ -280,10 +270,9 @@ func TestPipelineEdgeCases(t *testing.T) {
 	})
 
 	t.Run("message with nil event", func(t *testing.T) {
-		msg := &central.MsgFromSensor{
-			Msg: &central.MsgFromSensor_Event{
-				Event: nil,
-			},
+		msg := &central.MsgFromSensor{}
+		msg.Msg = &central.MsgFromSensor_Event{
+			Event: nil,
 		}
 		result := pipeline.Match(msg)
 		assert.False(t, result)
@@ -296,25 +285,18 @@ func TestPipelineEdgeCases(t *testing.T) {
 	})
 
 	t.Run("message with sensorHello", func(t *testing.T) {
-		msg := &central.MsgFromSensor{
-			Msg: &central.MsgFromSensor_Hello{
-				Hello: &central.SensorHello{},
-			},
-		}
+		msg := &central.MsgFromSensor{}
+		msg.SetHello(&central.SensorHello{})
 		result := pipeline.Match(msg)
 		assert.False(t, result, "Should not match messages without events")
 	})
 
 	t.Run("event with wrong resource type", func(t *testing.T) {
-		msg := &central.MsgFromSensor{
-			Msg: &central.MsgFromSensor_Event{
-				Event: &central.SensorEvent{
-					Resource: &central.SensorEvent_Node{
-						Node: &storage.Node{},
-					},
-				},
-			},
-		}
+		msg := central.MsgFromSensor_builder{
+			Event: central.SensorEvent_builder{
+				Node: &storage.Node{},
+			}.Build(),
+		}.Build()
 		err := pipeline.Run(ctx, testClusterID, msg, nil)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "unexpected resource type")

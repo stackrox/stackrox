@@ -26,9 +26,15 @@ func TestClusterIDFromNameOrID(t *testing.T) {
 		assert.Empty(t, clusterID)
 	})
 
+	so := &v1.ScopeObject{}
+	so.SetId("cluster1-id")
+	so.SetName("cluster1-name")
+	so2 := &v1.ScopeObject{}
+	so2.SetId("cluster2-id")
+	so2.SetName("cluster2-name")
 	clusters := []*v1.ScopeObject{
-		{Id: "cluster1-id", Name: "cluster1-name"},
-		{Id: "cluster2-id", Name: "cluster2-name"},
+		so,
+		so2,
 	}
 
 	t.Run("id returned on id match", func(t *testing.T) {
@@ -46,9 +52,15 @@ func TestClusterIDFromNameOrID(t *testing.T) {
 	})
 
 	t.Run("id returned on id match when name matches another clusters id", func(t *testing.T) {
+		so3 := &v1.ScopeObject{}
+		so3.SetId("cluster1-id")
+		so3.SetName("cluster2-id")
+		so4 := &v1.ScopeObject{}
+		so4.SetId("cluster2-id")
+		so4.SetName("cluster2-name")
 		clusters := []*v1.ScopeObject{
-			{Id: "cluster1-id", Name: "cluster2-id"},
-			{Id: "cluster2-id", Name: "cluster2-name"},
+			so3,
+			so4,
 		}
 
 		clusterSACHelper.EXPECT().GetClustersForPermissions(ctx, nil, nil).Return(clusters, nil)

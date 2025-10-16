@@ -134,12 +134,12 @@ func TestSetImpl_GetAllUnique(t *testing.T) {
 
 func TestSetImpl_Clear(t *testing.T) {
 	integration := func(id string) *storage.ImageIntegration {
-		return &storage.ImageIntegration{
-			Id:                id,
-			Name:              id,
-			Type:              types.DockerType,
-			IntegrationConfig: &storage.ImageIntegration_Docker{},
-		}
+		ii := &storage.ImageIntegration{}
+		ii.SetId(id)
+		ii.SetName(id)
+		ii.SetType(types.DockerType)
+		ii.IntegrationConfig = &storage.ImageIntegration_Docker{}
+		return ii
 	}
 
 	factory := NewFactory(FactoryOptions{})
@@ -161,12 +161,12 @@ func TestSetImpl_Clear(t *testing.T) {
 
 func TestUpdateImageIntegration(t *testing.T) {
 	integration := func(id string) *storage.ImageIntegration {
-		return &storage.ImageIntegration{
-			Id:                id,
-			Name:              id,
-			Type:              types.DockerType,
-			IntegrationConfig: &storage.ImageIntegration_Docker{},
-		}
+		ii := &storage.ImageIntegration{}
+		ii.SetId(id)
+		ii.SetName(id)
+		ii.SetType(types.DockerType)
+		ii.IntegrationConfig = &storage.ImageIntegration_Docker{}
+		return ii
 	}
 
 	t.Run("bool return correctly indicates if entry existed in set", func(t *testing.T) {

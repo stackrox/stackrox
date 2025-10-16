@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestPipeline(t *testing.T) {
@@ -35,39 +36,29 @@ func (suite *PipelineTestSuite) TearDownTest() {
 
 func (suite *PipelineTestSuite) TestRun() {
 	ctx := context.Background()
-	statusInfo := &central.AuditLogStatusInfo{
-		NodeAuditLogFileStates: map[string]*storage.AuditLogFileState{
-			"node-a": {
-				CollectLogsSince: protocompat.TimestampNow(),
-				LastAuditId:      "last-id",
-			},
-		},
-	}
+	alfs := &storage.AuditLogFileState{}
+	alfs.SetCollectLogsSince(protocompat.TimestampNow())
+	alfs.SetLastAuditId("last-id")
+	statusInfo := &central.AuditLogStatusInfo{}
+	statusInfo.SetNodeAuditLogFileStates(map[string]*storage.AuditLogFileState{
+		"node-a": alfs,
+	})
 	suite.clusters.EXPECT().UpdateAuditLogFileStates(ctx, "clusterid", statusInfo.GetNodeAuditLogFileStates()).Return(nil)
 
 	pipeline := NewPipeline(suite.clusters)
-	msg := &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_AuditLogStatusInfo{
-			AuditLogStatusInfo: statusInfo,
-		},
-	}
+	msg := &central.MsgFromSensor{}
+	msg.SetAuditLogStatusInfo(proto.ValueOrDefault(statusInfo))
 	suite.NoError(pipeline.Run(ctx, "clusterid", msg, nil))
 }
 
 func (suite *PipelineTestSuite) TestMatchOnlyMatchesAuditLogStatusInfoMsg() {
 	pipeline := NewPipeline(suite.clusters)
 
-	statusMsg := &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_AuditLogStatusInfo{
-			AuditLogStatusInfo: &central.AuditLogStatusInfo{},
-		},
-	}
+	statusMsg := &central.MsgFromSensor{}
+	statusMsg.SetAuditLogStatusInfo(&central.AuditLogStatusInfo{})
 	suite.True(pipeline.Match(statusMsg), "When given AuditLogStatusInfo it should match")
 
-	helloMsg := &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Hello{
-			Hello: &central.SensorHello{},
-		},
-	}
+	helloMsg := &central.MsgFromSensor{}
+	helloMsg.SetHello(&central.SensorHello{})
 	suite.False(pipeline.Match(helloMsg), "When given another message it should _not_ match")
 }

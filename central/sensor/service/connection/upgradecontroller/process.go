@@ -10,7 +10,7 @@ import (
 )
 
 func updateTagToMainVersionAndGetFullName(imageName *storage.ImageName) string {
-	imageName.Tag = version.GetMainVersion()
+	imageName.SetTag(version.GetMainVersion())
 	return utils.NormalizeImageFullNameNoSha(imageName).GetFullName()
 }
 
@@ -19,13 +19,13 @@ func newCertRotationProcess() *storage.ClusterUpgradeStatus_UpgradeProcessStatus
 }
 
 func baseNewUpgradeProcess(typ storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType) *storage.ClusterUpgradeStatus_UpgradeProcessStatus {
-	return &storage.ClusterUpgradeStatus_UpgradeProcessStatus{
-		Active:      true,
-		Id:          uuid.NewV4().String(),
-		InitiatedAt: protocompat.TimestampNow(),
-		Progress:    &storage.UpgradeProgress{},
-		Type:        typ,
-	}
+	cu := &storage.ClusterUpgradeStatus_UpgradeProcessStatus{}
+	cu.SetActive(true)
+	cu.SetId(uuid.NewV4().String())
+	cu.SetInitiatedAt(protocompat.TimestampNow())
+	cu.SetProgress(&storage.UpgradeProgress{})
+	cu.SetType(typ)
+	return cu
 }
 
 func newUpgradeProcess(cluster *storage.Cluster) (*storage.ClusterUpgradeStatus_UpgradeProcessStatus, error) {
@@ -39,8 +39,8 @@ func newUpgradeProcess(cluster *storage.Cluster) (*storage.ClusterUpgradeStatus_
 	upgraderImage := updateTagToMainVersionAndGetFullName(imageName)
 
 	process := baseNewUpgradeProcess(storage.ClusterUpgradeStatus_UpgradeProcessStatus_UPGRADE)
-	process.UpgraderImage = upgraderImage
-	process.TargetVersion = version.GetMainVersion()
+	process.SetUpgraderImage(upgraderImage)
+	process.SetTargetVersion(version.GetMainVersion())
 	return process, nil
 }
 

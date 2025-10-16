@@ -224,20 +224,20 @@ func (m metricDispatcher) ProcessEvent(obj, oldObj interface{}, action central.R
 	}
 
 	for _, e := range events.ForwardMessages {
-		e.Timing = &central.Timing{
-			Dispatcher: dispatcher,
-			Resource:   metricsPkg.GetResourceString(e),
-			Nanos:      start,
-		}
+		timing := &central.Timing{}
+		timing.SetDispatcher(dispatcher)
+		timing.SetResource(metricsPkg.GetResourceString(e))
+		timing.SetNanos(start)
+		e.SetTiming(timing)
 		metrics.SetResourceProcessingDurationForResource(e)
 	}
 	metrics.IncK8sEventCount(action.String(), dispatcher)
 
-	events.DeploymentTiming = &central.Timing{
-		Dispatcher: dispatcher,
-		Resource:   "Deployment",
-		Nanos:      start,
-	}
+	timing := &central.Timing{}
+	timing.SetDispatcher(dispatcher)
+	timing.SetResource("Deployment")
+	timing.SetNanos(start)
+	events.DeploymentTiming = timing
 
 	return events
 }

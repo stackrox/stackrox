@@ -73,19 +73,19 @@ func (m datastoreMetadataGetter) GetAnnotationValue(ctx context.Context, alert *
 // Tries to fetch the NamespaceMetadata object given the namespace name within the alert.
 func getNamespaceFromAlert(ctx context.Context, alert *storage.Alert, namespaceStore namespaceDataStore.DataStore) *storage.NamespaceMetadata {
 	var namespaceName, clusterID string
-	switch entity := alert.GetEntity().(type) {
-	case *storage.Alert_Deployment_:
-		namespaceName = entity.Deployment.GetNamespace()
-		clusterID = entity.Deployment.GetClusterId()
-	case *storage.Alert_Resource_:
-		resourceType := entity.Resource.GetResourceType()
+	switch alert.WhichEntity() {
+	case storage.Alert_Deployment_case:
+		namespaceName = alert.GetDeployment().GetNamespace()
+		clusterID = alert.GetDeployment().GetClusterId()
+	case storage.Alert_Resource_case:
+		resourceType := alert.GetResource().GetResourceType()
 		if resourceType == storage.Alert_Resource_CLUSTER_ROLES || resourceType == storage.Alert_Resource_CLUSTER_ROLE_BINDINGS {
 			// These two resource types have no namespace
 			return nil
 		}
-		namespaceName = entity.Resource.GetNamespace()
-		clusterID = entity.Resource.GetClusterId()
-	case *storage.Alert_Image:
+		namespaceName = alert.GetResource().GetNamespace()
+		clusterID = alert.GetResource().GetClusterId()
+	case storage.Alert_Image_case:
 		// An image doesn't have a namespace, but it's not an error so just return
 		return nil
 	default:

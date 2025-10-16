@@ -38,12 +38,11 @@ func errorHandler(ctx context.Context, serv *runtime.ServeMux, marshaler runtime
 	runtime.DefaultHTTPErrorHandler(ctx, serv, marshaler, wWrapper, r, err)
 
 	protoStatus := status.Convert(err).Proto()
-	extendedStatus := &apiCommon.ExtendedRpcStatus{
-		Code:    protoStatus.GetCode(),
-		Message: protoStatus.GetMessage(),
-		Details: protoStatus.GetDetails(),
-		Error:   protoStatus.GetMessage(),
-	}
+	extendedStatus := &apiCommon.ExtendedRpcStatus{}
+	extendedStatus.SetCode(protoStatus.GetCode())
+	extendedStatus.SetMessage(protoStatus.GetMessage())
+	extendedStatus.SetDetails(protoStatus.GetDetails())
+	extendedStatus.SetError(protoStatus.GetMessage())
 
 	buf, _ := marshaler.Marshal(extendedStatus)
 	if _, err := w.Write(buf); err != nil {

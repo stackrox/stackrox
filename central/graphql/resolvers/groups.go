@@ -44,16 +44,16 @@ func (resolver *Resolver) Group(ctx context.Context, args struct{ AuthProviderID
 	}
 	props := &storage.GroupProperties{}
 	if args.AuthProviderID != nil {
-		props.AuthProviderId = *args.AuthProviderID
+		props.SetAuthProviderId(*args.AuthProviderID)
 	}
 	if args.Key != nil {
-		props.Key = *args.Key
+		props.SetKey(*args.Key)
 	}
 	if args.Value != nil {
-		props.Value = *args.Value
+		props.SetValue(*args.Value)
 	}
 	if args.ID != nil {
-		props.Id = *args.ID
+		props.SetId(*args.ID)
 	}
 	grp, err := resolver.GroupDataStore.Get(ctx, props)
 	return resolver.wrapGroup(grp, grp != nil, err)

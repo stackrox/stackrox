@@ -85,15 +85,15 @@ func (s *serviceImpl) GetStandards(ctx context.Context, _ *v1.Empty) (*v1.GetCom
 		hide, exists, _ := s.complianceDataStore.GetConfig(ctx, standard.GetId())
 		if s.manager.IsStandardActive(standard.GetId()) {
 			if exists {
-				standard.HideScanResults = hide.GetHideScanResults()
+				standard.SetHideScanResults(hide.GetHideScanResults())
 			}
 			filteredStandards = append(filteredStandards, standard)
 		}
 	}
 
-	return &v1.GetComplianceStandardsResponse{
-		Standards: filteredStandards,
-	}, nil
+	gcsr := &v1.GetComplianceStandardsResponse{}
+	gcsr.SetStandards(filteredStandards)
+	return gcsr, nil
 }
 
 // GetStandard returns details + controls for a given standard
@@ -108,16 +108,16 @@ func (s *serviceImpl) GetStandard(ctx context.Context, req *v1.ResourceByID) (*v
 
 	hide, exists, _ := s.complianceDataStore.GetConfig(ctx, req.GetId())
 	if exists {
-		standard.Metadata.HideScanResults = hide.GetHideScanResults()
+		standard.GetMetadata().SetHideScanResults(hide.GetHideScanResults())
 	}
-	return &v1.GetComplianceStandardResponse{
-		Standard: standard,
-	}, nil
+	gcsr := &v1.GetComplianceStandardResponse{}
+	gcsr.SetStandard(standard)
+	return gcsr, nil
 }
 
 func (s *serviceImpl) GetAggregatedResults(ctx context.Context, request *v1.ComplianceAggregationRequest) (*storage.ComplianceAggregation_Response, error) {
 	if request.GetUnit() == storage.ComplianceAggregation_UNKNOWN {
-		request.Unit = storage.ComplianceAggregation_CHECK
+		request.SetUnit(storage.ComplianceAggregation_CHECK)
 	}
 	validResults, sources, _, err := s.aggregator.Aggregate(ctx, request.GetWhere().GetQuery(), request.GetGroupBy(), request.GetUnit())
 	if err != nil {
@@ -136,10 +136,10 @@ func (s *serviceImpl) GetAggregatedResults(ctx context.Context, request *v1.Comp
 		}
 		filteredSources = append(filteredSources, source)
 	}
-	return &storage.ComplianceAggregation_Response{
-		Results: validResults,
-		Sources: filteredSources,
-	}, nil
+	cr := &storage.ComplianceAggregation_Response{}
+	cr.SetResults(validResults)
+	cr.SetSources(filteredSources)
+	return cr, nil
 }
 
 func (s *serviceImpl) GetRunResults(ctx context.Context, request *v1.GetComplianceRunResultsRequest) (*v1.GetComplianceRunResultsResponse, error) {
@@ -153,10 +153,10 @@ func (s *serviceImpl) GetRunResults(ctx context.Context, request *v1.GetComplian
 	if err != nil {
 		return nil, err
 	}
-	return &v1.GetComplianceRunResultsResponse{
-		Results:    results.LastSuccessfulResults,
-		FailedRuns: results.FailedRuns,
-	}, nil
+	gcrrr := &v1.GetComplianceRunResultsResponse{}
+	gcrrr.SetResults(results.LastSuccessfulResults)
+	gcrrr.SetFailedRuns(results.FailedRuns)
+	return gcrrr, nil
 }
 
 // UpdateComplianceStandardConfig updates compliance standards config

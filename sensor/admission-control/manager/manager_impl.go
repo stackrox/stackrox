@@ -392,19 +392,19 @@ func (m *manager) filterAndPutAttemptedAlertsOnChan(op admission.Operation, aler
 
 		// Update enforcement for deploy time policy enforcements.
 		if op == admission.Create {
-			alert.GetDeployment().Inactive = true
-			alert.Enforcement = &storage.Alert_Enforcement{
-				Action:  storage.EnforcementAction_FAIL_DEPLOYMENT_CREATE_ENFORCEMENT,
-				Message: "Failed deployment create in response to this policy violation.",
-			}
+			alert.GetDeployment().SetInactive(true)
+			ae := &storage.Alert_Enforcement{}
+			ae.SetAction(storage.EnforcementAction_FAIL_DEPLOYMENT_CREATE_ENFORCEMENT)
+			ae.SetMessage("Failed deployment create in response to this policy violation.")
+			alert.SetEnforcement(ae)
 		} else if op == admission.Update {
-			alert.Enforcement = &storage.Alert_Enforcement{
-				Action:  storage.EnforcementAction_FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT,
-				Message: "Failed deployment update in response to this policy violation.",
-			}
+			ae := &storage.Alert_Enforcement{}
+			ae.SetAction(storage.EnforcementAction_FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT)
+			ae.SetMessage("Failed deployment update in response to this policy violation.")
+			alert.SetEnforcement(ae)
 		}
 
-		alert.State = storage.ViolationState_ATTEMPTED
+		alert.SetState(storage.ViolationState_ATTEMPTED)
 
 		filtered = append(filtered, alert)
 	}
@@ -423,15 +423,15 @@ func (m *manager) putAlertsOnChan(alerts []*storage.Alert) {
 }
 
 func (m *manager) processUpdateResourceRequest(req *sensor.AdmCtrlUpdateResourceRequest) {
-	switch req.GetResource().(type) {
-	case *sensor.AdmCtrlUpdateResourceRequest_Synced:
+	switch req.WhichResource() {
+	case sensor.AdmCtrlUpdateResourceRequest_Synced_case:
 		m.initialSyncSig.Signal()
 		log.Info("Initial resource sync with Sensor complete")
-	case *sensor.AdmCtrlUpdateResourceRequest_Deployment:
+	case sensor.AdmCtrlUpdateResourceRequest_Deployment_case:
 		m.deployments.ProcessEvent(req.GetAction(), req.GetDeployment())
-	case *sensor.AdmCtrlUpdateResourceRequest_Pod:
+	case sensor.AdmCtrlUpdateResourceRequest_Pod_case:
 		m.pods.ProcessEvent(req.GetAction(), req.GetPod())
-	case *sensor.AdmCtrlUpdateResourceRequest_Namespace:
+	case sensor.AdmCtrlUpdateResourceRequest_Namespace_case:
 		m.namespaces.ProcessEvent(req.GetAction(), req.GetNamespace())
 	default:
 		log.Warnf("Received message of unknown type %T from sensor, not sure what to do with it ...", m)

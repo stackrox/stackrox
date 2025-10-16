@@ -18,18 +18,18 @@ func TestVulnerabilitiesScore(t *testing.T) {
 	assert.Equal(t, float32(1.1815), result.GetScore())
 
 	// Changing CVSS should not change result.
-	nodes[0].GetScan().GetComponents()[0].GetVulns()[0].Cvss = 0
+	nodes[0].GetScan().GetComponents()[0].GetVulns()[0].SetCvss(0)
 	result = mult.Score(ctx, nodes[0])
 	assert.Equal(t, float32(1.1815), result.GetScore())
-	nodes[0].GetScan().GetComponents()[0].GetVulns()[0].Cvss = 10
+	nodes[0].GetScan().GetComponents()[0].GetVulns()[0].SetCvss(10)
 	result = mult.Score(ctx, nodes[0])
 	assert.Equal(t, float32(1.1815), result.GetScore())
 
 	// Set both severity ratings to unknown and then there should be a nil RiskResult
-	nodes[0].GetScan().GetComponents()[0].GetVulns()[0].Severity = storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
-	nodes[0].GetScan().GetComponents()[1].GetVulns()[0].Severity = storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
-	nodes[0].GetScan().GetComponents()[0].GetVulnerabilities()[0].Severity = storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
-	nodes[0].GetScan().GetComponents()[1].GetVulnerabilities()[0].Severity = storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
+	nodes[0].GetScan().GetComponents()[0].GetVulns()[0].SetSeverity(storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY)
+	nodes[0].GetScan().GetComponents()[1].GetVulns()[0].SetSeverity(storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY)
+	nodes[0].GetScan().GetComponents()[0].GetVulnerabilities()[0].SetSeverity(storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY)
+	nodes[0].GetScan().GetComponents()[1].GetVulnerabilities()[0].SetSeverity(storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY)
 	result = mult.Score(ctx, nodes[0])
 	assert.Nil(t, result)
 }

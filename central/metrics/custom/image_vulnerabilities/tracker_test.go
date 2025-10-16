@@ -25,22 +25,23 @@ func makeTestImage(_ *testing.T, id string) *testImage {
 
 func (i *testImage) withCVE(cve ...*storage.EmbeddedVulnerability) *testImage {
 	if i.Scan == nil {
-		i.Scan = &storage.ImageScan{
-			OperatingSystem: "os",
-			Components:      []*storage.EmbeddedImageScanComponent{{}}}
+		imageScan := &storage.ImageScan{}
+		imageScan.SetOperatingSystem("os")
+		imageScan.SetComponents([]*storage.EmbeddedImageScanComponent{{}})
+		i.Scan = imageScan
 	}
 	is := i.Scan
-	is.Components[0].Vulns = append(is.Components[0].Vulns, cve...)
+	is.GetComponents()[0].SetVulns(append(is.GetComponents()[0].GetVulns(), cve...))
 	return i
 }
 
 func (i *testImage) withTags(tags ...string) *testImage {
 	for _, tag := range tags {
-		i.Names = append(i.Names, &storage.ImageName{
-			Remote:   "remote",
-			Tag:      tag,
-			Registry: "registry",
-		})
+		imageName := &storage.ImageName{}
+		imageName.SetRemote("remote")
+		imageName.SetTag(tag)
+		imageName.SetRegistry("registry")
+		i.Names = append(i.Names, imageName)
 	}
 	return i
 }
@@ -51,10 +52,10 @@ func getTestData(t *testing.T) ([]*storage.Deployment, map[string][]*storage.Ima
 	images := getTestImages(t, cves)
 
 	deployments := []*storage.Deployment{
-		{Id: "deployment-0", Name: "D0", Namespace: "namespace-1", ClusterName: "cluster-1"},
-		{Id: "deployment-1", Name: "D1", Namespace: "namespace-2", ClusterName: "cluster-1"},
-		{Id: "deployment-2", Name: "D2", Namespace: "namespace-2", ClusterName: "cluster-1"},
-		{Id: "deployment-3", Name: "D3", Namespace: "namespace-2", ClusterName: "cluster-2"},
+		storage.Deployment_builder{Id: "deployment-0", Name: "D0", Namespace: "namespace-1", ClusterName: "cluster-1"}.Build(),
+		storage.Deployment_builder{Id: "deployment-1", Name: "D1", Namespace: "namespace-2", ClusterName: "cluster-1"}.Build(),
+		storage.Deployment_builder{Id: "deployment-2", Name: "D2", Namespace: "namespace-2", ClusterName: "cluster-1"}.Build(),
+		storage.Deployment_builder{Id: "deployment-3", Name: "D3", Namespace: "namespace-2", ClusterName: "cluster-2"}.Build(),
 	}
 
 	deploymentImages := map[string][]*storage.Image{
@@ -77,18 +78,18 @@ func getTestImages(t *testing.T, cves []*storage.EmbeddedVulnerability) []*stora
 
 func getTestCVEs(*testing.T) []*storage.EmbeddedVulnerability {
 	return []*storage.EmbeddedVulnerability{
-		{Cve: "cve-0", Cvss: 7.5,
-			CvssV3:   &storage.CVSSV3{Severity: storage.CVSSV3_CRITICAL},
+		storage.EmbeddedVulnerability_builder{Cve: "cve-0", Cvss: 7.5,
+			CvssV3:   storage.CVSSV3_builder{Severity: storage.CVSSV3_CRITICAL}.Build(),
 			Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-		},
-		{Cve: "cve-1", Cvss: 5.0,
-			CvssV3:   &storage.CVSSV3{Severity: storage.CVSSV3_MEDIUM},
+		}.Build(),
+		storage.EmbeddedVulnerability_builder{Cve: "cve-1", Cvss: 5.0,
+			CvssV3:   storage.CVSSV3_builder{Severity: storage.CVSSV3_MEDIUM}.Build(),
 			Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
-		},
-		{Cve: "cve-2", Cvss: 3.0,
-			CvssV3:   &storage.CVSSV3{Severity: storage.CVSSV3_LOW},
+		}.Build(),
+		storage.EmbeddedVulnerability_builder{Cve: "cve-2", Cvss: 3.0,
+			CvssV3:   storage.CVSSV3_builder{Severity: storage.CVSSV3_LOW}.Build(),
 			Severity: storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
-		},
+		}.Build(),
 	}
 }
 
@@ -115,19 +116,19 @@ func TestQueryDeploymentsAndImages(t *testing.T) {
 	tracker := New(ds)
 
 	cfg, err := tracker.NewConfiguration(
-		&storage.PrometheusMetrics_Group{
+		storage.PrometheusMetrics_Group_builder{
 			GatheringPeriodMinutes: 121,
 			Descriptors: map[string]*storage.PrometheusMetrics_Group_Labels{
-				"Severity_count": {
+				"Severity_count": storage.PrometheusMetrics_Group_Labels_builder{
 					Labels: []string{"Severity"},
-				},
-				"Cluster_Namespace_Severity_count": {
+				}.Build(),
+				"Cluster_Namespace_Severity_count": storage.PrometheusMetrics_Group_Labels_builder{
 					Labels: []string{"Cluster", "Namespace", "Severity"},
-				},
-				"Deployment_ImageTag_count": {
+				}.Build(),
+				"Deployment_ImageTag_count": storage.PrometheusMetrics_Group_Labels_builder{
 					Labels: []string{"Deployment", "ImageTag"},
-				}},
-		})
+				}.Build()},
+		}.Build())
 
 	assert.NoError(t, err)
 	tracker.Reconfigure(cfg)

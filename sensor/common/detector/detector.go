@@ -233,7 +233,7 @@ func (d *detectorImpl) serializeDeployTimeOutput() {
 						// more deploytime alerts that are active as those alerts will not be cleaned up
 						// instead, mark the states of all alerts as RESOLVED
 						for _, alert := range alertResults.GetAlerts() {
-							alert.State = storage.ViolationState_RESOLVED
+							alert.SetState(storage.ViolationState_RESOLVED)
 						}
 						return true
 					}
@@ -404,11 +404,11 @@ func (d *detectorImpl) runDetector() {
 				return
 			case <-d.serializerStopper.Flow().StopRequested():
 				return
+				ar := &central.AlertResults{}
+				ar.SetDeploymentId(scanOutput.deployment.GetId())
+				ar.SetAlerts(alerts)
 			case d.deploymentAlertOutputChan <- outputResult{
-				results: &central.AlertResults{
-					DeploymentId: scanOutput.deployment.GetId(),
-					Alerts:       alerts,
-				},
+				results:   ar,
 				timestamp: scanOutput.deployment.GetStateTimestamp(),
 				action:    scanOutput.action,
 				context:   scanOutput.context,
@@ -442,20 +442,16 @@ func (d *detectorImpl) runAuditLogEventDetector() {
 				return alerts[i].GetPolicy().GetId() < alerts[j].GetPolicy().GetId()
 			})
 
-			msg := &central.MsgFromSensor{
-				Msg: &central.MsgFromSensor_Event{
-					Event: &central.SensorEvent{
-						Action: central.ResourceAction_CREATE_RESOURCE,
-						Resource: &central.SensorEvent_AlertResults{
-							AlertResults: &central.AlertResults{
-								Source: central.AlertResults_AUDIT_EVENT,
-								Alerts: alerts,
-								Stage:  storage.LifecycleStage_RUNTIME,
-							},
-						},
-					},
-				},
-			}
+			msg := central.MsgFromSensor_builder{
+				Event: central.SensorEvent_builder{
+					Action: central.ResourceAction_CREATE_RESOURCE,
+					AlertResults: central.AlertResults_builder{
+						Source: central.AlertResults_AUDIT_EVENT,
+						Alerts: alerts,
+						Stage:  storage.LifecycleStage_RUNTIME,
+					}.Build(),
+				}.Build(),
+			}.Build()
 
 			// These messages are coming from compliance, and since compliance supports offline mode as well
 			// it should be ok to leave these messages without expiration.
@@ -530,9 +526,11 @@ func (d *detectorImpl) processDeploymentNoLock(ctx context.Context, deployment *
 			select {
 			case <-d.alertStopSig.Done():
 				return
+				ar := &central.AlertResults{}
+				ar.SetDeploymentId(deployment.GetId())
 			case d.deploymentAlertOutputChan <- outputResult{
 				context: ctx,
-				results: &central.AlertResults{DeploymentId: deployment.GetId()},
+				results: ar,
 				action:  action,
 			}:
 			}
@@ -564,21 +562,17 @@ func (d *detectorImpl) ProcessIndicator(ctx context.Context, pi *storage.Process
 }
 
 func createAlertResultsMsg(ctx context.Context, action central.ResourceAction, alertResults *central.AlertResults) *message.ExpiringMessage {
-	msgFromSensor := &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id:     alertResults.GetDeploymentId(),
-				Action: action,
-				Resource: &central.SensorEvent_AlertResults{
-					AlertResults: &central.AlertResults{
-						DeploymentId: alertResults.GetDeploymentId(),
-						Alerts:       alertResults.GetAlerts(),
-						Stage:        alertResults.GetStage(),
-					},
-				},
-			},
-		},
-	}
+	msgFromSensor := central.MsgFromSensor_builder{
+		Event: central.SensorEvent_builder{
+			Id:     alertResults.GetDeploymentId(),
+			Action: action,
+			AlertResults: central.AlertResults_builder{
+				DeploymentId: alertResults.GetDeploymentId(),
+				Alerts:       alertResults.GetAlerts(),
+				Stage:        alertResults.GetStage(),
+			}.Build(),
+		}.Build(),
+	}.Build()
 
 	return message.NewExpiring(ctx, msgFromSensor)
 }
@@ -626,11 +620,10 @@ func (d *detectorImpl) processIndicator() {
 				// No need to process runtime alerts that have no violations
 				continue
 			}
-			alertResults := &central.AlertResults{
-				DeploymentId: item.Indicator.GetDeploymentId(),
-				Alerts:       alerts,
-				Stage:        storage.LifecycleStage_RUNTIME,
-			}
+			alertResults := &central.AlertResults{}
+			alertResults.SetDeploymentId(item.Indicator.GetDeploymentId())
+			alertResults.SetAlerts(alerts)
+			alertResults.SetStage(storage.LifecycleStage_RUNTIME)
 
 			d.enforcer.ProcessAlertResults(central.ResourceAction_CREATE_RESOURCE, storage.LifecycleStage_RUNTIME, alertResults)
 
@@ -749,11 +742,10 @@ func (d *detectorImpl) processAlertsForFlowOnEntity() {
 				// No need to process runtime alerts that have no violations
 				continue
 			}
-			alertResults := &central.AlertResults{
-				DeploymentId: item.Deployment.GetId(),
-				Alerts:       alerts,
-				Stage:        storage.LifecycleStage_RUNTIME,
-			}
+			alertResults := &central.AlertResults{}
+			alertResults.SetDeploymentId(item.Deployment.GetId())
+			alertResults.SetAlerts(alerts)
+			alertResults.SetStage(storage.LifecycleStage_RUNTIME)
 
 			d.enforcer.ProcessAlertResults(central.ResourceAction_CREATE_RESOURCE, storage.LifecycleStage_RUNTIME, alertResults)
 

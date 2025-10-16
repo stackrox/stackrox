@@ -214,11 +214,10 @@ func assembleManifestFromZIP(file *os.File, supportedCompressionTypes map[v1.DBE
 			continue // ignore directories
 		}
 
-		manifestFile := &v1.DBExportManifest_File{
-			Name:         entry.Name,
-			DecodedSize:  int64(entry.UncompressedSize64),
-			DecodedCrc32: entry.CRC32,
-		}
+		manifestFile := &v1.DBExportManifest_File{}
+		manifestFile.SetName(entry.Name)
+		manifestFile.SetDecodedSize(int64(entry.UncompressedSize64))
+		manifestFile.SetDecodedCrc32(entry.CRC32)
 
 		compressionType := v1.DBExportManifest_UNKNOWN
 		switch entry.Method {
@@ -229,14 +228,14 @@ func assembleManifestFromZIP(file *os.File, supportedCompressionTypes map[v1.DBE
 		}
 
 		if _, formatSupported := supportedCompressionTypes[compressionType]; formatSupported {
-			manifestFile.Encoding = compressionType
-			manifestFile.EncodedSize = int64(entry.CompressedSize64)
+			manifestFile.SetEncoding(compressionType)
+			manifestFile.SetEncodedSize(int64(entry.CompressedSize64))
 		} else {
-			manifestFile.Encoding = v1.DBExportManifest_UNCOMPREESSED
-			manifestFile.EncodedSize = manifestFile.GetDecodedSize()
+			manifestFile.SetEncoding(v1.DBExportManifest_UNCOMPREESSED)
+			manifestFile.SetEncodedSize(manifestFile.GetDecodedSize())
 		}
 
-		mf.Files = append(mf.Files, manifestFile)
+		mf.SetFiles(append(mf.GetFiles(), manifestFile))
 	}
 
 	return mf, nil

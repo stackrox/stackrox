@@ -9,14 +9,14 @@ func VirtualMachine(virtualMachine *virtualMachineV1.VirtualMachine) *storage.Vi
 	if virtualMachine == nil {
 		return nil
 	}
-	return &storage.VirtualMachine{
-		Id:        virtualMachine.GetId(),
-		Namespace: virtualMachine.GetNamespace(),
-		Name:      virtualMachine.GetName(),
-		ClusterId: virtualMachine.GetClusterId(),
-		VsockCid:  virtualMachine.GetVsockCid(),
-		State:     convertVirtualMachineState(virtualMachine.GetState()),
-	}
+	vm := &storage.VirtualMachine{}
+	vm.SetId(virtualMachine.GetId())
+	vm.SetNamespace(virtualMachine.GetNamespace())
+	vm.SetName(virtualMachine.GetName())
+	vm.SetClusterId(virtualMachine.GetClusterId())
+	vm.SetVsockCid(virtualMachine.GetVsockCid())
+	vm.SetState(convertVirtualMachineState(virtualMachine.GetState()))
+	return vm
 }
 
 func convertVirtualMachineState(state virtualMachineV1.VirtualMachine_State) storage.VirtualMachine_State {

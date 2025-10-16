@@ -38,7 +38,7 @@ func TestVirtualMachineTelemetry(t *testing.T) {
 		},
 		"should count single cluster with one running VM and recent scan": {
 			vms: []*storage.VirtualMachine{
-				{Id: "vm1", ClusterId: "cluster1", Name: "test-vm", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(1 * time.Hour)},
+				storage.VirtualMachine_builder{Id: "vm1", ClusterId: "cluster1", Name: "test-vm", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(1 * time.Hour)}.Build(),
 			},
 			expectedClustersWithRunningVMs: 1,
 			expectedTotalVMs:               1,
@@ -46,9 +46,9 @@ func TestVirtualMachineTelemetry(t *testing.T) {
 		},
 		"should count total VMs correctly including stopped ones": {
 			vms: []*storage.VirtualMachine{
-				{Id: "vm1", ClusterId: "cluster1", Name: "vm-1", State: storage.VirtualMachine_RUNNING},
-				{Id: "vm2", ClusterId: "cluster1", Name: "vm-2", State: storage.VirtualMachine_STOPPED},
-				{Id: "vm3", ClusterId: "cluster2", Name: "vm-3", State: storage.VirtualMachine_UNKNOWN},
+				storage.VirtualMachine_builder{Id: "vm1", ClusterId: "cluster1", Name: "vm-1", State: storage.VirtualMachine_RUNNING}.Build(),
+				storage.VirtualMachine_builder{Id: "vm2", ClusterId: "cluster1", Name: "vm-2", State: storage.VirtualMachine_STOPPED}.Build(),
+				storage.VirtualMachine_builder{Id: "vm3", ClusterId: "cluster2", Name: "vm-3", State: storage.VirtualMachine_UNKNOWN}.Build(),
 			},
 			expectedClustersWithRunningVMs: 1, // Only cluster1 has RUNNING VM
 			expectedTotalVMs:               3, // All VMs counted
@@ -56,9 +56,9 @@ func TestVirtualMachineTelemetry(t *testing.T) {
 		},
 		"should exclude VMs with old scans from active agent count": {
 			vms: []*storage.VirtualMachine{
-				{Id: "vm1", ClusterId: "cluster1", Name: "vm-1", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(1 * time.Hour)},
-				{Id: "vm2", ClusterId: "cluster1", Name: "vm-2", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(48 * time.Hour)},
-				{Id: "vm3", ClusterId: "cluster2", Name: "vm-3", State: storage.VirtualMachine_STOPPED, Scan: createScanWithAge(1 * time.Hour)},
+				storage.VirtualMachine_builder{Id: "vm1", ClusterId: "cluster1", Name: "vm-1", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(1 * time.Hour)}.Build(),
+				storage.VirtualMachine_builder{Id: "vm2", ClusterId: "cluster1", Name: "vm-2", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(48 * time.Hour)}.Build(),
+				storage.VirtualMachine_builder{Id: "vm3", ClusterId: "cluster2", Name: "vm-3", State: storage.VirtualMachine_STOPPED, Scan: createScanWithAge(1 * time.Hour)}.Build(),
 			},
 			expectedClustersWithRunningVMs: 1, // cluster1 (both VMs running)
 			expectedTotalVMs:               3,
@@ -66,9 +66,9 @@ func TestVirtualMachineTelemetry(t *testing.T) {
 		},
 		"should count multiple distinct clusters with running VMs": {
 			vms: []*storage.VirtualMachine{
-				{Id: "vm1", ClusterId: "cluster1", Name: "vm-1", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(1 * time.Hour)},
-				{Id: "vm2", ClusterId: "cluster2", Name: "vm-2", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(1 * time.Hour)},
-				{Id: "vm3", ClusterId: "cluster3", Name: "vm-3", State: storage.VirtualMachine_RUNNING, Scan: nil},
+				storage.VirtualMachine_builder{Id: "vm1", ClusterId: "cluster1", Name: "vm-1", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(1 * time.Hour)}.Build(),
+				storage.VirtualMachine_builder{Id: "vm2", ClusterId: "cluster2", Name: "vm-2", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(1 * time.Hour)}.Build(),
+				storage.VirtualMachine_builder{Id: "vm3", ClusterId: "cluster3", Name: "vm-3", State: storage.VirtualMachine_RUNNING, Scan: nil}.Build(),
 			},
 			expectedClustersWithRunningVMs: 3,
 			expectedTotalVMs:               3,
@@ -76,9 +76,9 @@ func TestVirtualMachineTelemetry(t *testing.T) {
 		},
 		"should exclude VMs with empty cluster id from cluster count only": {
 			vms: []*storage.VirtualMachine{
-				{Id: "vm1", ClusterId: "cluster1", Name: "vm-1", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(1 * time.Hour)},
-				{Id: "vm2", ClusterId: "", Name: "vm-orphan", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(1 * time.Hour)},
-				{Id: "vm3", ClusterId: "cluster2", Name: "vm-2", State: storage.VirtualMachine_RUNNING},
+				storage.VirtualMachine_builder{Id: "vm1", ClusterId: "cluster1", Name: "vm-1", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(1 * time.Hour)}.Build(),
+				storage.VirtualMachine_builder{Id: "vm2", ClusterId: "", Name: "vm-orphan", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(1 * time.Hour)}.Build(),
+				storage.VirtualMachine_builder{Id: "vm3", ClusterId: "cluster2", Name: "vm-2", State: storage.VirtualMachine_RUNNING}.Build(),
 			},
 			expectedClustersWithRunningVMs: 2, // Empty cluster_id excluded
 			expectedTotalVMs:               3, // All VMs counted
@@ -86,11 +86,11 @@ func TestVirtualMachineTelemetry(t *testing.T) {
 		},
 		"should handle complex mixed scenario with various scan ages": {
 			vms: []*storage.VirtualMachine{
-				{Id: "vm1", ClusterId: "cluster1", Name: "vm-1", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(1 * time.Hour)},
-				{Id: "vm2", ClusterId: "cluster1", Name: "vm-2", State: storage.VirtualMachine_STOPPED, Scan: createScanWithAge(48 * time.Hour)},
-				{Id: "vm3", ClusterId: "", Name: "vm-orphan", State: storage.VirtualMachine_RUNNING, Scan: nil},
-				{Id: "vm4", ClusterId: "cluster2", Name: "vm-4", State: storage.VirtualMachine_UNKNOWN, Scan: createScanWithAge(1 * time.Hour)},
-				{Id: "vm5", ClusterId: "cluster3", Name: "vm-5", State: storage.VirtualMachine_RUNNING, Scan: nil},
+				storage.VirtualMachine_builder{Id: "vm1", ClusterId: "cluster1", Name: "vm-1", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(1 * time.Hour)}.Build(),
+				storage.VirtualMachine_builder{Id: "vm2", ClusterId: "cluster1", Name: "vm-2", State: storage.VirtualMachine_STOPPED, Scan: createScanWithAge(48 * time.Hour)}.Build(),
+				storage.VirtualMachine_builder{Id: "vm3", ClusterId: "", Name: "vm-orphan", State: storage.VirtualMachine_RUNNING, Scan: nil}.Build(),
+				storage.VirtualMachine_builder{Id: "vm4", ClusterId: "cluster2", Name: "vm-4", State: storage.VirtualMachine_UNKNOWN, Scan: createScanWithAge(1 * time.Hour)}.Build(),
+				storage.VirtualMachine_builder{Id: "vm5", ClusterId: "cluster3", Name: "vm-5", State: storage.VirtualMachine_RUNNING, Scan: nil}.Build(),
 			},
 			expectedClustersWithRunningVMs: 2, // cluster1 and cluster3
 			expectedTotalVMs:               5, // All VMs
@@ -98,9 +98,9 @@ func TestVirtualMachineTelemetry(t *testing.T) {
 		},
 		"should handle VMs with nil and invalid scan timestamps": {
 			vms: []*storage.VirtualMachine{
-				{Id: "vm1", ClusterId: "cluster1", Name: "vm-1", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(1 * time.Hour)},
-				{Id: "vm2", ClusterId: "cluster1", Name: "vm-2", State: storage.VirtualMachine_RUNNING, Scan: nil},
-				{Id: "vm3", ClusterId: "cluster2", Name: "vm-3", State: storage.VirtualMachine_RUNNING, Scan: &storage.VirtualMachineScan{ScanTime: nil}},
+				storage.VirtualMachine_builder{Id: "vm1", ClusterId: "cluster1", Name: "vm-1", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(1 * time.Hour)}.Build(),
+				storage.VirtualMachine_builder{Id: "vm2", ClusterId: "cluster1", Name: "vm-2", State: storage.VirtualMachine_RUNNING, Scan: nil}.Build(),
+				storage.VirtualMachine_builder{Id: "vm3", ClusterId: "cluster2", Name: "vm-3", State: storage.VirtualMachine_RUNNING, Scan: storage.VirtualMachineScan_builder{ScanTime: nil}.Build()}.Build(),
 			},
 			expectedClustersWithRunningVMs: 2, // cluster1 and cluster2
 			expectedTotalVMs:               3,
@@ -108,8 +108,8 @@ func TestVirtualMachineTelemetry(t *testing.T) {
 		},
 		"should include VM with scan exactly at 24h boundary": {
 			vms: []*storage.VirtualMachine{
-				{Id: "vm1", ClusterId: "cluster1", Name: "vm-1", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(24 * time.Hour)},
-				{Id: "vm2", ClusterId: "cluster1", Name: "vm-2", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(1 * time.Hour)},
+				storage.VirtualMachine_builder{Id: "vm1", ClusterId: "cluster1", Name: "vm-1", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(24 * time.Hour)}.Build(),
+				storage.VirtualMachine_builder{Id: "vm2", ClusterId: "cluster1", Name: "vm-2", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(1 * time.Hour)}.Build(),
 			},
 			expectedClustersWithRunningVMs: 1,
 			expectedTotalVMs:               2,
@@ -117,8 +117,8 @@ func TestVirtualMachineTelemetry(t *testing.T) {
 		},
 		"should include VM with scan just under 24h threshold": {
 			vms: []*storage.VirtualMachine{
-				{Id: "vm1", ClusterId: "cluster1", Name: "vm-1", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(23 * time.Hour)},
-				{Id: "vm2", ClusterId: "cluster2", Name: "vm-2", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(25 * time.Hour)},
+				storage.VirtualMachine_builder{Id: "vm1", ClusterId: "cluster1", Name: "vm-1", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(23 * time.Hour)}.Build(),
+				storage.VirtualMachine_builder{Id: "vm2", ClusterId: "cluster2", Name: "vm-2", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(25 * time.Hour)}.Build(),
 			},
 			expectedClustersWithRunningVMs: 2,
 			expectedTotalVMs:               2,
@@ -126,8 +126,8 @@ func TestVirtualMachineTelemetry(t *testing.T) {
 		},
 		"should exclude VM with scan just over 24h threshold": {
 			vms: []*storage.VirtualMachine{
-				{Id: "vm1", ClusterId: "cluster1", Name: "vm-1", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(25 * time.Hour)},
-				{Id: "vm2", ClusterId: "cluster1", Name: "vm-2", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(1 * time.Hour)},
+				storage.VirtualMachine_builder{Id: "vm1", ClusterId: "cluster1", Name: "vm-1", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(25 * time.Hour)}.Build(),
+				storage.VirtualMachine_builder{Id: "vm2", ClusterId: "cluster1", Name: "vm-2", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(1 * time.Hour)}.Build(),
 			},
 			expectedClustersWithRunningVMs: 1,
 			expectedTotalVMs:               2,
@@ -135,9 +135,9 @@ func TestVirtualMachineTelemetry(t *testing.T) {
 		},
 		"should return zero active agents when all VMs have old scans": {
 			vms: []*storage.VirtualMachine{
-				{Id: "vm1", ClusterId: "cluster1", Name: "vm-1", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(48 * time.Hour)},
-				{Id: "vm2", ClusterId: "cluster2", Name: "vm-2", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(25 * time.Hour)},
-				{Id: "vm3", ClusterId: "cluster3", Name: "vm-3", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(48 * time.Hour)},
+				storage.VirtualMachine_builder{Id: "vm1", ClusterId: "cluster1", Name: "vm-1", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(48 * time.Hour)}.Build(),
+				storage.VirtualMachine_builder{Id: "vm2", ClusterId: "cluster2", Name: "vm-2", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(25 * time.Hour)}.Build(),
+				storage.VirtualMachine_builder{Id: "vm3", ClusterId: "cluster3", Name: "vm-3", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(48 * time.Hour)}.Build(),
 			},
 			expectedClustersWithRunningVMs: 3, // All running VMs count for cluster metric
 			expectedTotalVMs:               3, // All VMs count for total
@@ -145,11 +145,11 @@ func TestVirtualMachineTelemetry(t *testing.T) {
 		},
 		"should handle mixed scan ages across boundary": {
 			vms: []*storage.VirtualMachine{
-				{Id: "vm1", ClusterId: "cluster1", Name: "vm-recent", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(1 * time.Hour)},     // 1h ago - counted
-				{Id: "vm2", ClusterId: "cluster1", Name: "vm-justunder", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(23 * time.Hour)}, // 23h ago - counted
-				{Id: "vm3", ClusterId: "cluster1", Name: "vm-boundary", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(24 * time.Hour)},  // 24h ago - counted
-				{Id: "vm4", ClusterId: "cluster1", Name: "vm-justover", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(25 * time.Hour)},  // 25h ago - excluded
-				{Id: "vm5", ClusterId: "cluster1", Name: "vm-old", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(48 * time.Hour)},       // 48h ago - excluded
+				storage.VirtualMachine_builder{Id: "vm1", ClusterId: "cluster1", Name: "vm-recent", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(1 * time.Hour)}.Build(),     // 1h ago - counted
+				storage.VirtualMachine_builder{Id: "vm2", ClusterId: "cluster1", Name: "vm-justunder", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(23 * time.Hour)}.Build(), // 23h ago - counted
+				storage.VirtualMachine_builder{Id: "vm3", ClusterId: "cluster1", Name: "vm-boundary", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(24 * time.Hour)}.Build(),  // 24h ago - counted
+				storage.VirtualMachine_builder{Id: "vm4", ClusterId: "cluster1", Name: "vm-justover", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(25 * time.Hour)}.Build(),  // 25h ago - excluded
+				storage.VirtualMachine_builder{Id: "vm5", ClusterId: "cluster1", Name: "vm-old", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(48 * time.Hour)}.Build(),       // 48h ago - excluded
 			},
 			expectedClustersWithRunningVMs: 1, // All in cluster1
 			expectedTotalVMs:               5, // All VMs counted
@@ -188,10 +188,22 @@ func TestVirtualMachineTelemetryWithFeatureFlagDisabled(t *testing.T) {
 	ctx := sac.WithAllAccess(context.Background())
 
 	// Create a mock datastore with VMs (which should NOT be queried)
+	vm := &storage.VirtualMachine{}
+	vm.SetId("vm1")
+	vm.SetClusterId("cluster1")
+	vm.SetName("test-vm")
+	vm.SetState(storage.VirtualMachine_RUNNING)
+	vm.SetScan(createScanWithAge(1 * time.Hour))
+	vm2 := &storage.VirtualMachine{}
+	vm2.SetId("vm2")
+	vm2.SetClusterId("cluster2")
+	vm2.SetName("test-vm2")
+	vm2.SetState(storage.VirtualMachine_RUNNING)
+	vm2.SetScan(createScanWithAge(1 * time.Hour))
 	ds := &mockDataStore{
 		vms: []*storage.VirtualMachine{
-			{Id: "vm1", ClusterId: "cluster1", Name: "test-vm", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(1 * time.Hour)},
-			{Id: "vm2", ClusterId: "cluster2", Name: "test-vm2", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(1 * time.Hour)},
+			vm,
+			vm2,
 		},
 	}
 
@@ -210,9 +222,9 @@ func TestVirtualMachineTelemetryWithFeatureFlagDisabled(t *testing.T) {
 // For example, createScanWithAge(1 * time.Hour) creates a scan from 1 hour ago.
 func createScanWithAge(age time.Duration) *storage.VirtualMachineScan {
 	scanTime := arbitraryNow.Add(-age)
-	return &storage.VirtualMachineScan{
-		ScanTime: protocompat.ConvertTimeToTimestampOrNil(&scanTime),
-	}
+	vms := &storage.VirtualMachineScan{}
+	vms.SetScanTime(protocompat.ConvertTimeToTimestampOrNil(&scanTime))
+	return vms
 }
 
 type mockDataStore struct {

@@ -68,9 +68,8 @@ func (a *audit) newAuditMessage(ctx context.Context, req interface{}, grpcFullMe
 	authError interceptor.AuthStatus, requestError error) *v1.Audit_Message {
 	ri := requestinfo.FromContext(ctx)
 
-	msg := &v1.Audit_Message{
-		Time: protocompat.TimestampNow(),
-	}
+	msg := &v1.Audit_Message{}
+	msg.SetTime(protocompat.TimestampNow())
 
 	identity := authn.IdentityFromContextOrNil(ctx)
 	// Ignore requests from services
@@ -78,10 +77,10 @@ func (a *audit) newAuditMessage(ctx context.Context, req interface{}, grpcFullMe
 		if identity.Service() != nil {
 			return nil
 		}
-		msg.User = utils.IfThenElse(a.withoutPermissions,
+		msg.SetUser(utils.IfThenElse(a.withoutPermissions,
 			stripPermissionsFromUserInfo(identity.User()),
 			identity.User(),
-		)
+		))
 	}
 
 	var method, endpoint string
@@ -89,33 +88,33 @@ func (a *audit) newAuditMessage(ctx context.Context, req interface{}, grpcFullMe
 		method = ri.HTTPRequest.Method
 		endpoint = ri.HTTPRequest.URL.String()
 		if referer := ri.HTTPRequest.Headers.Get(refererKey); referer != "" {
-			msg.Method = v1.Audit_UI
+			msg.SetMethod(v1.Audit_UI)
 		} else {
-			msg.Method = v1.Audit_API
+			msg.SetMethod(v1.Audit_API)
 		}
 	} else {
 		method = defaultGRPCMethod
 		endpoint = grpcFullMethod
-		msg.Method = v1.Audit_CLI
+		msg.SetMethod(v1.Audit_CLI)
 	}
 
 	interaction, ok := requestInteractionMap[method]
 	if !ok {
 		return nil
 	}
-	msg.Interaction = interaction
+	msg.SetInteraction(interaction)
 
-	msg.Request = &v1.Audit_Message_Request{
-		Endpoint: endpoint,
-		Method:   method,
-		Payload:  protoutils.RequestToAny(req),
-		SourceHeaders: &v1.Audit_Message_Request_SourceHeaders{
-			XForwardedFor: ri.Source.XForwardedFor,
-			RemoteAddr:    ri.Source.RemoteAddr,
-			RequestAddr:   ri.Source.RequestAddr,
-		},
-		SourceIp: ri.Source.GetSourceIP(),
-	}
+	amrs := &v1.Audit_Message_Request_SourceHeaders{}
+	amrs.SetXForwardedFor(ri.Source.XForwardedFor)
+	amrs.SetRemoteAddr(ri.Source.RemoteAddr)
+	amrs.SetRequestAddr(ri.Source.RequestAddr)
+	amr := &v1.Audit_Message_Request{}
+	amr.SetEndpoint(endpoint)
+	amr.SetMethod(method)
+	amr.SetPayload(protoutils.RequestToAny(req))
+	amr.SetSourceHeaders(amrs)
+	amr.SetSourceIp(ri.Source.GetSourceIP())
+	msg.SetRequest(amr)
 
 	msg.Status, msg.StatusReason = calculateAuditStatus(authError, requestError)
 	return msg
@@ -158,15 +157,15 @@ func calculateAuditStatus(authError interceptor.AuthStatus, requestError error) 
 
 func stripPermissionsFromUserInfo(userInfo *storage.UserInfo) *storage.UserInfo {
 	userInfoWithoutPermissions := userInfo.CloneVT()
-	userInfoWithoutPermissions.Permissions = nil
+	userInfoWithoutPermissions.ClearPermissions()
 
 	userRolesWithoutPermissions := make([]*storage.UserInfo_Role, 0, len(userInfo.GetRoles()))
 	for _, userRole := range userInfo.GetRoles() {
-		userRolesWithoutPermissions = append(userRolesWithoutPermissions, &storage.UserInfo_Role{
-			Name: userRole.GetName(),
-		})
+		ur := &storage.UserInfo_Role{}
+		ur.SetName(userRole.GetName())
+		userRolesWithoutPermissions = append(userRolesWithoutPermissions, ur)
 	}
-	userInfoWithoutPermissions.Roles = userRolesWithoutPermissions
+	userInfoWithoutPermissions.SetRoles(userRolesWithoutPermissions)
 
 	return userInfoWithoutPermissions
 }

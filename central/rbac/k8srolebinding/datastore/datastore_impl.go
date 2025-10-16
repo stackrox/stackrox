@@ -103,11 +103,11 @@ func convertMany(bindings []*storage.K8SRoleBinding, results []searchPkg.Result)
 }
 
 func convertOne(binding *storage.K8SRoleBinding, result *searchPkg.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_ROLEBINDINGS,
-		Id:             binding.GetId(),
-		Name:           binding.GetName(),
-		FieldToMatches: searchPkg.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+	sr := &v1.SearchResult{}
+	sr.SetCategory(v1.SearchCategory_ROLEBINDINGS)
+	sr.SetId(binding.GetId())
+	sr.SetName(binding.GetName())
+	sr.SetFieldToMatches(searchPkg.GetProtoMatchesMap(result.Matches))
+	sr.SetScore(result.Score)
+	return sr
 }

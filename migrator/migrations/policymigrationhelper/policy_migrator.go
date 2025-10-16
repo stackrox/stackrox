@@ -71,39 +71,39 @@ func (u *PolicyUpdates) applyToPolicy(policy *storage.Policy) {
 
 	// Add new exclusions as needed
 	if u.ExclusionsToAdd != nil {
-		policy.Exclusions = append(policy.Exclusions, u.ExclusionsToAdd...)
+		policy.SetExclusions(append(policy.GetExclusions(), u.ExclusionsToAdd...))
 	}
 
 	// If policy section is to be updated, just clear the old one for the new
 	if u.PolicySections != nil {
-		policy.PolicySections = u.PolicySections
+		policy.SetPolicySections(u.PolicySections)
 	}
 
 	// If policy mitre is to be updated, just clear the old one for the new
 	if u.MitreVectors != nil {
-		policy.MitreAttackVectors = u.MitreVectors
+		policy.SetMitreAttackVectors(u.MitreVectors)
 	}
 
 	// Check if policy should be enabled or disabled
 	if u.Disable != nil {
-		policy.Disabled = *u.Disable
+		policy.SetDisabled(*u.Disable)
 	}
 
 	// Update string fields as needed
 	if u.Name != nil {
-		policy.Name = *u.Name
+		policy.SetName(*u.Name)
 	}
 	if u.Rationale != nil {
-		policy.Rationale = *u.Rationale
+		policy.SetRationale(*u.Rationale)
 	}
 	if u.Remediation != nil {
-		policy.Remediation = *u.Remediation
+		policy.SetRemediation(*u.Remediation)
 	}
 	if u.Description != nil {
-		policy.Description = *u.Description
+		policy.SetDescription(*u.Description)
 	}
 	if u.Severity != 0 {
-		policy.Severity = u.Severity
+		policy.SetSeverity(u.Severity)
 	}
 
 	for _, toRemove := range u.CategoriesToRemove {
@@ -115,7 +115,7 @@ func (u *PolicyUpdates) applyToPolicy(policy *storage.Policy) {
 
 	// Add new categories as needed (unless it already exists)
 	if u.CategoriesToAdd != nil {
-		policy.Categories = append(policy.Categories, sliceutils.Without(u.CategoriesToAdd, policy.GetCategories())...)
+		policy.SetCategories(append(policy.GetCategories(), sliceutils.Without(u.CategoriesToAdd, policy.GetCategories())...))
 	}
 
 }
@@ -124,7 +124,7 @@ func removeExclusion(policy *storage.Policy, exclusionToRemove *storage.Exclusio
 	exclusions := policy.GetExclusions()
 	for i, exclusion := range exclusions {
 		if exclusion.EqualVT(exclusionToRemove) {
-			policy.Exclusions = append(exclusions[:i], exclusions[i+1:]...)
+			policy.SetExclusions(append(exclusions[:i], exclusions[i+1:]...))
 			return true
 		}
 	}
@@ -135,7 +135,7 @@ func removeCategory(policy *storage.Policy, categoryToRemove string) bool {
 	categories := policy.GetCategories()
 	for i, category := range categories {
 		if category == categoryToRemove {
-			policy.Categories = append(categories[:i], categories[i+1:]...)
+			policy.SetCategories(append(categories[:i], categories[i+1:]...))
 			return true
 		}
 	}
@@ -210,69 +210,69 @@ func diffPolicies(beforePolicy, afterPolicy *storage.Policy) (PolicyUpdates, err
 
 	// Diff exclusions and clear out if they are similar
 	getExclusionsUpdates(beforePolicy, afterPolicy, &updates)
-	beforePolicy.Exclusions = nil
-	afterPolicy.Exclusions = nil
+	beforePolicy.SetExclusions(nil)
+	afterPolicy.SetExclusions(nil)
 
 	// Policy section
 	if !protoutils.SlicesEqual(beforePolicy.GetPolicySections(), afterPolicy.GetPolicySections()) {
 		updates.PolicySections = afterPolicy.GetPolicySections()
 	}
-	beforePolicy.PolicySections = nil
-	afterPolicy.PolicySections = nil
+	beforePolicy.SetPolicySections(nil)
+	afterPolicy.SetPolicySections(nil)
 
 	// MITRE section
 	if !protoutils.SlicesEqual(beforePolicy.GetMitreAttackVectors(), afterPolicy.GetMitreAttackVectors()) {
 		updates.MitreVectors = afterPolicy.GetMitreAttackVectors()
 	}
-	beforePolicy.MitreAttackVectors = nil
-	afterPolicy.MitreAttackVectors = nil
+	beforePolicy.SetMitreAttackVectors(nil)
+	afterPolicy.SetMitreAttackVectors(nil)
 
 	// Name
 	if beforePolicy.GetName() != afterPolicy.GetName() {
 		updates.Name = strPtr(afterPolicy.GetName())
 	}
-	beforePolicy.Name = ""
-	afterPolicy.Name = ""
+	beforePolicy.SetName("")
+	afterPolicy.SetName("")
 
 	// Description
 	if beforePolicy.GetDescription() != afterPolicy.GetDescription() {
 		updates.Description = strPtr(afterPolicy.GetDescription())
 	}
-	beforePolicy.Description = ""
-	afterPolicy.Description = ""
+	beforePolicy.SetDescription("")
+	afterPolicy.SetDescription("")
 
 	// Rationale
 	if beforePolicy.GetRationale() != afterPolicy.GetRationale() {
 		updates.Rationale = strPtr(afterPolicy.GetRationale())
 	}
-	beforePolicy.Rationale = ""
-	afterPolicy.Rationale = ""
+	beforePolicy.SetRationale("")
+	afterPolicy.SetRationale("")
 
 	// Remediation
 	if beforePolicy.GetRemediation() != afterPolicy.GetRemediation() {
 		updates.Remediation = strPtr(afterPolicy.GetRemediation())
 	}
-	beforePolicy.Remediation = ""
-	afterPolicy.Remediation = ""
+	beforePolicy.SetRemediation("")
+	afterPolicy.SetRemediation("")
 
 	// Severity
 	if beforePolicy.GetSeverity() != afterPolicy.GetSeverity() {
 		updates.Severity = afterPolicy.GetSeverity()
 	}
-	beforePolicy.Severity = 0
-	afterPolicy.Severity = 0
+	beforePolicy.SetSeverity(0)
+	afterPolicy.SetSeverity(0)
 
 	// Enable/Disable
 	if beforePolicy.GetDisabled() != afterPolicy.GetDisabled() {
 		updates.Disable = boolPtr(afterPolicy.GetDisabled())
 	}
-	beforePolicy.Disabled = false
-	afterPolicy.Disabled = false
+	beforePolicy.SetDisabled(false)
+	afterPolicy.SetDisabled(false)
 
 	// Diff categories and clear out if they are similar
 	getCategoryUpdates(beforePolicy, afterPolicy, &updates)
-	beforePolicy.Categories = nil
-	afterPolicy.Categories = nil
+	beforePolicy.SetCategories(nil)
+	afterPolicy.SetCategories(nil)
 
 	// TODO: Add others as needed
 

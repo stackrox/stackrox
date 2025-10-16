@@ -37,11 +37,11 @@ func (e *factoryImpl) CreateScanner(source *storage.ImageIntegration) (types.Ima
 	if err != nil {
 		return nil, err
 	}
+	ds := &storage.DataSource{}
+	ds.SetId(source.GetId())
+	ds.SetName(source.GetName())
 	return &imageScannerWithDataSource{
-		scanner: scanner,
-		datasource: &storage.DataSource{
-			Id:   source.GetId(),
-			Name: source.GetName(),
-		},
+		scanner:    scanner,
+		datasource: ds,
 	}, nil
 }

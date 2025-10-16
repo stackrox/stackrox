@@ -76,10 +76,9 @@ func TestComplianceReportManager(t *testing.T) {
 
 func (m *ManagerTestSuite) TestSubmitReportRequest() {
 	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
-	reportRequest := &storage.ComplianceOperatorScanConfigurationV2{
-		ScanConfigName: "test_scan_config",
-		Id:             "test_scan_config",
-	}
+	reportRequest := &storage.ComplianceOperatorScanConfigurationV2{}
+	reportRequest.SetScanConfigName("test_scan_config")
+	reportRequest.SetId("test_scan_config")
 	err := manager.SubmitReportRequest(m.ctx, reportRequest, storage.ComplianceOperatorReportStatus_EMAIL)
 	m.Require().NoError(err)
 	err = manager.SubmitReportRequest(m.ctx, reportRequest, storage.ComplianceOperatorReportStatus_EMAIL)
@@ -227,7 +226,7 @@ func (m *ManagerTestSuite) TestFailedReportWithWatcherRunningAndNoNotifiers() {
 	manager.Start()
 	now := protocompat.TimestampNow()
 	scanConfig := getTestScanConfig()
-	scanConfig.Notifiers = nil
+	scanConfig.SetNotifiers(nil)
 	scans := getTestScansFromScanConfig(scanConfig, now)
 	scan := getTestScan(scans[0].GetId(), scanConfig.GetScanConfigName(), scans[0].GetClusterId(), now, true)
 	wg := concurrency.NewWaitGroup(1)
@@ -282,12 +281,12 @@ func (m *ManagerTestSuite) TestFailedReportWithWatcherRunningAndNoNotifiers() {
 }
 
 func (m *ManagerTestSuite) TestHandleScan() {
+	coscv2 := &storage.ComplianceOperatorScanConfigurationV2{}
+	coscv2.SetId("scan-config-id")
 	m.scanConfigDataStore.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).AnyTimes().
 		Return(
 			[]*storage.ComplianceOperatorScanConfigurationV2{
-				{
-					Id: "scan-config-id",
-				},
+				coscv2,
 			}, nil,
 		)
 	m.snapshotDataStore.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).AnyTimes().
@@ -295,20 +294,19 @@ func (m *ManagerTestSuite) TestHandleScan() {
 	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
 	managerImplementation, ok := manager.(*managerImpl)
 	require.True(m.T(), ok)
-	scan := &storage.ComplianceOperatorScanV2{
-		ClusterId: "cluster-id",
-	}
+	scan := &storage.ComplianceOperatorScanV2{}
+	scan.SetClusterId("cluster-id")
 	err := manager.HandleScan(context.Background(), scan.CloneVT())
 	assert.Error(m.T(), err)
 
-	scan.Id = "scan-id"
+	scan.SetId("scan-id")
 	err = manager.HandleScan(context.Background(), scan.CloneVT())
 	assert.NoError(m.T(), err)
 	concurrency.WithLock(&managerImplementation.watchingScansLock, func() {
 		assert.Len(m.T(), managerImplementation.watchingScans, 0)
 	})
 
-	scan.LastStartedTime = protocompat.TimestampNow()
+	scan.SetLastStartedTime(protocompat.TimestampNow())
 	err = manager.HandleScan(context.Background(), scan.CloneVT())
 	assert.NoError(m.T(), err)
 	id, err := watcher.GetWatcherIDFromScan(context.Background(), scan, m.snapshotDataStore, m.scanConfigDataStore, nil)
@@ -327,11 +325,10 @@ func (m *ManagerTestSuite) TestHandleScanRemove() {
 	manager.Start()
 
 	scanID := "scan-1"
-	scan := &storage.ComplianceOperatorScanV2{
-		Id:              scanID,
-		ClusterId:       "cluster-id",
-		LastStartedTime: protocompat.TimestampNow(),
-	}
+	scan := &storage.ComplianceOperatorScanV2{}
+	scan.SetId(scanID)
+	scan.SetClusterId("cluster-id")
+	scan.SetLastStartedTime(protocompat.TimestampNow())
 
 	m.Run("GetScan datastore failure", func() {
 		m.scanDataStore.EXPECT().GetScan(gomock.Any(), gomock.Any()).Times(1).Return(nil, false, errors.New("some error"))
@@ -352,12 +349,12 @@ func (m *ManagerTestSuite) TestHandleScanRemove() {
 	})
 
 	m.Run("Scan watcher running for scan", func() {
+		coscv2 := &storage.ComplianceOperatorScanConfigurationV2{}
+		coscv2.SetId("scan-config-id")
 		m.scanConfigDataStore.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).AnyTimes().
 			Return(
 				[]*storage.ComplianceOperatorScanConfigurationV2{
-					{
-						Id: "scan-config-id",
-					},
+					coscv2,
 				}, nil,
 			)
 		waitForDeleteCall := concurrency.NewWaitGroup(1)
@@ -405,23 +402,21 @@ func (m *ManagerTestSuite) TestHandleResult() {
 	nowRFCFormat := timeNow.Format(time.RFC3339Nano)
 	pastRFCFormat := pastTime.Format(time.RFC3339Nano)
 	futureRFCFormat := futureTime.Format(time.RFC3339Nano)
-	result := &storage.ComplianceOperatorCheckResultV2{
-		Annotations: map[string]string{
-			"compliance.openshift.io/last-scanned-timestamp": pastRFCFormat,
-		},
-	}
-	scan := &storage.ComplianceOperatorScanV2{
-		ClusterId: "cluster-id",
-		Id:        "scan-id",
-	}
+	result := &storage.ComplianceOperatorCheckResultV2{}
+	result.SetAnnotations(map[string]string{
+		"compliance.openshift.io/last-scanned-timestamp": pastRFCFormat,
+	})
+	scan := &storage.ComplianceOperatorScanV2{}
+	scan.SetClusterId("cluster-id")
+	scan.SetId("scan-id")
 	m.scanDataStore.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Times(2).
 		Return([]*storage.ComplianceOperatorScanV2{scan}, nil)
+	coscv2 := &storage.ComplianceOperatorScanConfigurationV2{}
+	coscv2.SetId("scan-config-id")
 	m.scanConfigDataStore.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).AnyTimes().
 		Return(
 			[]*storage.ComplianceOperatorScanConfigurationV2{
-				{
-					Id: "scan-config-id",
-				},
+				coscv2,
 			}, nil,
 		)
 	m.snapshotDataStore.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).AnyTimes().
@@ -437,7 +432,7 @@ func (m *ManagerTestSuite) TestHandleResult() {
 		delete(managerImplementation.watchingScans, id)
 	})
 
-	scan.LastStartedTime = timeNowProto
+	scan.SetLastStartedTime(timeNowProto)
 	m.scanDataStore.EXPECT().SearchScans(gomock.Any(), gomock.Any()).AnyTimes().
 		Return([]*storage.ComplianceOperatorScanV2{scan}, nil)
 
@@ -447,7 +442,7 @@ func (m *ManagerTestSuite) TestHandleResult() {
 		assert.Len(m.T(), managerImplementation.watchingScans, 0)
 	})
 
-	result.Annotations["compliance.openshift.io/last-scanned-timestamp"] = nowRFCFormat
+	result.GetAnnotations()["compliance.openshift.io/last-scanned-timestamp"] = nowRFCFormat
 	err = manager.HandleResult(context.Background(), result.CloneVT())
 	assert.NoError(m.T(), err)
 	id, err = watcher.GetWatcherIDFromCheckResult(context.Background(), result, m.scanDataStore, m.snapshotDataStore, m.scanConfigDataStore)
@@ -458,7 +453,7 @@ func (m *ManagerTestSuite) TestHandleResult() {
 		assert.NotNil(m.T(), w)
 		delete(managerImplementation.watchingScans, id)
 	})
-	result.Annotations["compliance.openshift.io/last-scanned-timestamp"] = futureRFCFormat
+	result.GetAnnotations()["compliance.openshift.io/last-scanned-timestamp"] = futureRFCFormat
 	err = manager.HandleResult(context.Background(), result.CloneVT())
 	assert.NoError(m.T(), err)
 	id, err = watcher.GetWatcherIDFromCheckResult(context.Background(), result, m.scanDataStore, m.snapshotDataStore, m.scanConfigDataStore)
@@ -472,36 +467,34 @@ func (m *ManagerTestSuite) TestHandleResult() {
 }
 
 func getTestScanConfig() *storage.ComplianceOperatorScanConfigurationV2 {
-	return &storage.ComplianceOperatorScanConfigurationV2{
+	return storage.ComplianceOperatorScanConfigurationV2_builder{
 		ScanConfigName: "test-scan",
 		Id:             "test-scan-id",
 		Clusters: []*storage.ComplianceOperatorScanConfigurationV2_Cluster{
-			{
+			storage.ComplianceOperatorScanConfigurationV2_Cluster_builder{
 				ClusterId: "cluster-1",
-			},
-			{
+			}.Build(),
+			storage.ComplianceOperatorScanConfigurationV2_Cluster_builder{
 				ClusterId: "cluster-2",
-			},
+			}.Build(),
 		},
 		Profiles: []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
-			{
+			storage.ComplianceOperatorScanConfigurationV2_ProfileName_builder{
 				ProfileName: "profile-1",
-			},
-			{
+			}.Build(),
+			storage.ComplianceOperatorScanConfigurationV2_ProfileName_builder{
 				ProfileName: "profile-2",
-			},
+			}.Build(),
 		},
 		Notifiers: []*storage.NotifierConfiguration{
-			{
-				NotifierConfig: &storage.NotifierConfiguration_EmailConfig{
-					EmailConfig: &storage.EmailNotifierConfiguration{
-						NotifierId:   "notifier-1",
-						MailingLists: []string{"test@test.com"},
-					},
-				},
-			},
+			storage.NotifierConfiguration_builder{
+				EmailConfig: storage.EmailNotifierConfiguration_builder{
+					NotifierId:   "notifier-1",
+					MailingLists: []string{"test@test.com"},
+				}.Build(),
+			}.Build(),
 		},
-	}
+	}.Build()
 }
 
 func (m *ManagerTestSuite) pushScansAndResults(manager Manager, sc *storage.ComplianceOperatorScanConfigurationV2, timestamp *protocompat.Timestamp) {
@@ -720,36 +713,35 @@ func (m *ManagerTestSuite) setupExpectCallsFromFinishScan(scan *storage.Complian
 func getTestClusterStatusFromScanConfig(sc *storage.ComplianceOperatorScanConfigurationV2) []*storage.ComplianceOperatorClusterScanConfigStatus {
 	ret := make([]*storage.ComplianceOperatorClusterScanConfigStatus, 0, len(sc.GetClusters()))
 	for _, c := range sc.GetClusters() {
-		ret = append(ret, &storage.ComplianceOperatorClusterScanConfigStatus{
-			ClusterId:   c.GetClusterId(),
-			ClusterName: fmt.Sprintf("cluster-name-%s", c.GetClusterId()),
-		})
+		cocscs := &storage.ComplianceOperatorClusterScanConfigStatus{}
+		cocscs.SetClusterId(c.GetClusterId())
+		cocscs.SetClusterName(fmt.Sprintf("cluster-name-%s", c.GetClusterId()))
+		ret = append(ret, cocscs)
 	}
 	return ret
 }
 
 func getTestScan(scan, scanConfigName, cluster string, timestamp *timestamppb.Timestamp, done bool) *storage.ComplianceOperatorScanV2 {
-	ret := &storage.ComplianceOperatorScanV2{
-		Id:              scan,
-		ClusterId:       cluster,
-		LastStartedTime: timestamp,
-		ScanConfigName:  scanConfigName,
-	}
+	ret := &storage.ComplianceOperatorScanV2{}
+	ret.SetId(scan)
+	ret.SetClusterId(cluster)
+	ret.SetLastStartedTime(timestamp)
+	ret.SetScanConfigName(scanConfigName)
 	if done {
-		ret.Annotations = map[string]string{
+		ret.SetAnnotations(map[string]string{
 			watcher.CheckCountAnnotationKey: "1",
-		}
+		})
 	}
 	return ret
 }
 
 func getTestResult(scan *storage.ComplianceOperatorScanV2, timestamp *protocompat.Timestamp) *storage.ComplianceOperatorCheckResultV2 {
-	return &storage.ComplianceOperatorCheckResultV2{
-		ScanRefId: scan.GetScanRefId(),
-		Annotations: map[string]string{
-			watcher.LastScannedAnnotationKey: timestamp.AsTime().Format(time.RFC3339Nano),
-		},
-	}
+	cocrv2 := &storage.ComplianceOperatorCheckResultV2{}
+	cocrv2.SetScanRefId(scan.GetScanRefId())
+	cocrv2.SetAnnotations(map[string]string{
+		watcher.LastScannedAnnotationKey: timestamp.AsTime().Format(time.RFC3339Nano),
+	})
+	return cocrv2
 }
 
 func handleWaitGroup(t *testing.T, wg *concurrency.WaitGroup, timeout time.Duration, msg string) {
@@ -765,9 +757,9 @@ func getScans(numProfiles int) []*storage.ComplianceOperatorScanV2 {
 	var ret []*storage.ComplianceOperatorScanV2
 	for i := 0; i < numProfiles; i++ {
 		name := fmt.Sprintf("profile-%d", i)
-		ret = append(ret, &storage.ComplianceOperatorScanV2{
-			ScanName: name,
-		})
+		cosv2 := &storage.ComplianceOperatorScanV2{}
+		cosv2.SetScanName(name)
+		ret = append(ret, cosv2)
 	}
 	return ret
 }

@@ -161,10 +161,10 @@ func (w *scanConfigWatcherImpl) GetScans() []*storage.ComplianceOperatorReportSn
 	concurrency.WithLock(&w.resultsLock, func() {
 		// We return the current scans to be appended to the snapshot
 		for _, scanResult := range w.scanConfigResults.ScanResults {
-			scans = append(scans, &storage.ComplianceOperatorReportSnapshotV2_Scan{
-				ScanRefId:       scanResult.Scan.GetScanRefId(),
-				LastStartedTime: scanResult.Scan.GetLastStartedTime(),
-			})
+			cs := &storage.ComplianceOperatorReportSnapshotV2_Scan{}
+			cs.SetScanRefId(scanResult.Scan.GetScanRefId())
+			cs.SetLastStartedTime(scanResult.Scan.GetLastStartedTime())
+			scans = append(scans, cs)
 		}
 	})
 	return scans
@@ -263,10 +263,10 @@ func (w *scanConfigWatcherImpl) appendScanToSnapshots(ctx context.Context, scan 
 		for _, snapshot := range w.scanConfigResults.ReportSnapshot {
 			// The new Scan is appended to the Snapshot. This allows us later to make sure
 			// we do not generate duplicate Report Snapshots if we received an update in the Scan
-			snapshot.Scans = append(snapshot.Scans, &storage.ComplianceOperatorReportSnapshotV2_Scan{
-				ScanRefId:       scan.GetScanRefId(),
-				LastStartedTime: scan.GetLastStartedTime(),
-			})
+			cs := &storage.ComplianceOperatorReportSnapshotV2_Scan{}
+			cs.SetScanRefId(scan.GetScanRefId())
+			cs.SetLastStartedTime(scan.GetLastStartedTime())
+			snapshot.SetScans(append(snapshot.GetScans(), cs))
 			if err := w.snapshotDS.UpsertSnapshot(ctx, snapshot); err != nil {
 				errList.AddError(err)
 			}

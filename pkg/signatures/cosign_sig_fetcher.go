@@ -29,6 +29,7 @@ import (
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/retry"
 	"golang.org/x/time/rate"
+	"google.golang.org/protobuf/proto"
 )
 
 type cosignSignatureFetcher struct {
@@ -135,17 +136,25 @@ func (c *cosignSignatureFetcher) FetchSignatures(ctx context.Context, image *sto
 
 		// Since we are only focusing on public keys and certificates, we are ignoring the rekor bundles associated with
 		// the signature.
-		cosignSignatures = append(cosignSignatures, &storage.Signature{
-			Signature: &storage.Signature_Cosign{
-				Cosign: &storage.CosignSignature{
-					RawSignature:     rawSig,
-					SignaturePayload: signedPayload.Payload,
-					CertPem:          certPEM,
-					CertChainPem:     chainPEM,
-					RekorBundle:      rekorBundle,
-				},
-			},
-		})
+		cs := &storage.CosignSignature{}
+		if rawSig != nil {
+			cs.SetRawSignature(rawSig)
+		}
+		if signedPayload.Payload != nil {
+			cs.SetSignaturePayload(signedPayload.Payload)
+		}
+		if certPEM != nil {
+			cs.SetCertPem(certPEM)
+		}
+		if chainPEM != nil {
+			cs.SetCertChainPem(chainPEM)
+		}
+		if rekorBundle != nil {
+			cs.SetRekorBundle(rekorBundle)
+		}
+		signature := &storage.Signature{}
+		signature.SetCosign(proto.ValueOrDefault(cs))
+		cosignSignatures = append(cosignSignatures, signature)
 	}
 
 	// Since we are skipping invalid base64 signatures, need to check the length of the result.

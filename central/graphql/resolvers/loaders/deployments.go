@@ -15,10 +15,12 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var deploymentLoaderType = reflect.TypeOf(storage.Deployment{})
+// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+var deploymentLoaderType = reflect.TypeOf(&storage.Deployment{})
 
 func init() {
-	RegisterTypeFactory(reflect.TypeOf(storage.Deployment{}), func() interface{} {
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	RegisterTypeFactory(reflect.TypeOf(&storage.Deployment{}), func() interface{} {
 		return NewDeploymentLoader(datastore.Singleton(), deploymentsView.Singleton())
 	})
 }

@@ -23,11 +23,10 @@ func TestAuthz(t *testing.T) {
 func TestGetVirtualMachine(t *testing.T) {
 	ctx := context.Background()
 
-	storedTestVM := &storage.VirtualMachine{
-		Id:        "test-vm-id",
-		Name:      "test-vm",
-		Namespace: "test-namespace",
-	}
+	storedTestVM := &storage.VirtualMachine{}
+	storedTestVM.SetId("test-vm-id")
+	storedTestVM.SetName("test-vm")
+	storedTestVM.SetNamespace("test-namespace")
 
 	testVM := storagetov2.VirtualMachine(storedTestVM)
 
@@ -40,9 +39,9 @@ func TestGetVirtualMachine(t *testing.T) {
 	}{
 		{
 			name: "successful get",
-			request: &v2.GetVirtualMachineRequest{
+			request: v2.GetVirtualMachineRequest_builder{
 				Id: "test-vm-id",
-			},
+			}.Build(),
 			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
 				mockDS.EXPECT().
 					GetVirtualMachine(ctx, "test-vm-id").
@@ -53,18 +52,18 @@ func TestGetVirtualMachine(t *testing.T) {
 		},
 		{
 			name: "empty ID",
-			request: &v2.GetVirtualMachineRequest{
+			request: v2.GetVirtualMachineRequest_builder{
 				Id: "",
-			},
+			}.Build(),
 			setupMock:      func(mockDS *datastoreMocks.MockDataStore) {},
 			expectedResult: nil,
 			expectedError:  "id must be specified",
 		},
 		{
 			name: "virtual machine not found",
-			request: &v2.GetVirtualMachineRequest{
+			request: v2.GetVirtualMachineRequest_builder{
 				Id: "non-existent-vm",
-			},
+			}.Build(),
 			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
 				mockDS.EXPECT().
 					GetVirtualMachine(ctx, "non-existent-vm").
@@ -75,9 +74,9 @@ func TestGetVirtualMachine(t *testing.T) {
 		},
 		{
 			name: "datastore error",
-			request: &v2.GetVirtualMachineRequest{
+			request: v2.GetVirtualMachineRequest_builder{
 				Id: "test-vm-id",
-			},
+			}.Build(),
 			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
 				mockDS.EXPECT().
 					GetVirtualMachine(ctx, "test-vm-id").
@@ -118,17 +117,17 @@ func TestGetVirtualMachine(t *testing.T) {
 func TestListVirtualMachines(t *testing.T) {
 	ctx := context.Background()
 
+	vm := &storage.VirtualMachine{}
+	vm.SetId("vm-1")
+	vm.SetName("test-vm-1")
+	vm.SetNamespace("namespace-1")
+	vm2 := &storage.VirtualMachine{}
+	vm2.SetId("vm-2")
+	vm2.SetName("test-vm-2")
+	vm2.SetNamespace("namespace-2")
 	storageVMs := []*storage.VirtualMachine{
-		{
-			Id:        "vm-1",
-			Name:      "test-vm-1",
-			Namespace: "namespace-1",
-		},
-		{
-			Id:        "vm-2",
-			Name:      "test-vm-2",
-			Namespace: "namespace-2",
-		},
+		vm,
+		vm2,
 	}
 
 	testVMs := make([]*v2.VirtualMachine, len(storageVMs))
@@ -165,10 +164,10 @@ func TestListVirtualMachines(t *testing.T) {
 					Times(1).
 					Return(len(storageVMs), nil)
 			},
-			expectedResult: &v2.ListVirtualMachinesResponse{
+			expectedResult: v2.ListVirtualMachinesResponse_builder{
 				VirtualMachines: testVMs,
 				TotalCount:      int32(len(storageVMs)),
-			},
+			}.Build(),
 			expectedError: "",
 		},
 		{
@@ -183,9 +182,9 @@ func TestListVirtualMachines(t *testing.T) {
 					Times(1).
 					Return(0, nil)
 			},
-			expectedResult: &v2.ListVirtualMachinesResponse{
+			expectedResult: v2.ListVirtualMachinesResponse_builder{
 				VirtualMachines: []*v2.VirtualMachine{},
-			},
+			}.Build(),
 			expectedError: "",
 		},
 		{

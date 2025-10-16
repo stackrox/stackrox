@@ -15,10 +15,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
 var (
 	updateFlag = flag.Bool("update", false, "update .golden files")
 
-	imageAlertOne = storage.Alert{
+	imageAlertOne = &storage.Alert{
 		Policy: &storage.Policy{
 			Name:        "CI Test Policy One",
 			Description: "CI policy one that is used for tests",
@@ -39,7 +40,7 @@ var (
 		},
 	}
 
-	imageAlertTwo = storage.Alert{
+	imageAlertTwo = &storage.Alert{
 		Policy: &storage.Policy{
 			Name:        "CI Test Policy Two",
 			Description: "CI policy two that is used for tests",
@@ -56,47 +57,47 @@ var (
 			},
 		},
 	}
-	imageAlertThree = storage.Alert{
-		Policy: &storage.Policy{
+	imageAlertThree = storage.Alert_builder{
+		Policy: storage.Policy_builder{
 			Name:        "CI Test Policy Three",
 			Description: "CI policy three that is used for tests",
 			Severity:    storage.Severity_MEDIUM_SEVERITY,
 			Rationale:   "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean eleifend ac purus id vehicula. Vivamus malesuada eros at malesuada scelerisque. Praesent pellentesque ipsum mauris, eu tempus diam interdum quis.",
 			Remediation: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin nec vehicula magna.",
-		},
+		}.Build(),
 		Violations: []*storage.Alert_Violation{
-			{Message: "This is cool"},
-			{Message: "This is more cool"},
-			{Message: "This is another violation"},
-			{Message: "This is a lot of violations"},
-			{Message: "This would be neat if I could come up with"},
-			{Message: "A lot of unique violations"},
-			{Message: "This might make the code reviewers laugh"},
-			{Message: "But I have run out of words"},
-			{Message: "nine"},
-			{Message: "ten"},
-			{Message: "eleven"},
-			{Message: "twelve"},
-			{Message: "thirteen"},
-			{Message: "fourteen"},
-			{Message: "fifteen"},
-			{Message: "sixteen"},
-			{Message: "seventeen"},
-			{Message: "eighteen"},
-			{Message: "ninteen"},
-			{Message: "twenty"},
-			{Message: "twenty one"},
-			{Message: "twenty two"},
-			{Message: "twenty three"},
-			{Message: "twenty four"},
+			storage.Alert_Violation_builder{Message: "This is cool"}.Build(),
+			storage.Alert_Violation_builder{Message: "This is more cool"}.Build(),
+			storage.Alert_Violation_builder{Message: "This is another violation"}.Build(),
+			storage.Alert_Violation_builder{Message: "This is a lot of violations"}.Build(),
+			storage.Alert_Violation_builder{Message: "This would be neat if I could come up with"}.Build(),
+			storage.Alert_Violation_builder{Message: "A lot of unique violations"}.Build(),
+			storage.Alert_Violation_builder{Message: "This might make the code reviewers laugh"}.Build(),
+			storage.Alert_Violation_builder{Message: "But I have run out of words"}.Build(),
+			storage.Alert_Violation_builder{Message: "nine"}.Build(),
+			storage.Alert_Violation_builder{Message: "ten"}.Build(),
+			storage.Alert_Violation_builder{Message: "eleven"}.Build(),
+			storage.Alert_Violation_builder{Message: "twelve"}.Build(),
+			storage.Alert_Violation_builder{Message: "thirteen"}.Build(),
+			storage.Alert_Violation_builder{Message: "fourteen"}.Build(),
+			storage.Alert_Violation_builder{Message: "fifteen"}.Build(),
+			storage.Alert_Violation_builder{Message: "sixteen"}.Build(),
+			storage.Alert_Violation_builder{Message: "seventeen"}.Build(),
+			storage.Alert_Violation_builder{Message: "eighteen"}.Build(),
+			storage.Alert_Violation_builder{Message: "ninteen"}.Build(),
+			storage.Alert_Violation_builder{Message: "twenty"}.Build(),
+			storage.Alert_Violation_builder{Message: "twenty one"}.Build(),
+			storage.Alert_Violation_builder{Message: "twenty two"}.Build(),
+			storage.Alert_Violation_builder{Message: "twenty three"}.Build(),
+			storage.Alert_Violation_builder{Message: "twenty four"}.Build(),
 		},
-	}
+	}.Build()
 
-	deploymentAlertOne = storage.Alert{
-		Entity: &storage.Alert_Deployment_{Deployment: &storage.Alert_Deployment{
+	deploymentAlertOne = storage.Alert_builder{
+		Deployment: storage.Alert_Deployment_builder{
 			Name: "deployment1",
-		}},
-		Policy: &storage.Policy{
+		}.Build(),
+		Policy: storage.Policy_builder{
 			Name:        "CI Test Policy One",
 			Description: "CI policy one that is used for tests",
 			Severity:    storage.Severity_CRITICAL_SEVERITY,
@@ -105,45 +106,45 @@ var (
 			EnforcementActions: []storage.EnforcementAction{
 				storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT,
 			},
-		},
+		}.Build(),
 		Violations: []*storage.Alert_Violation{
-			{
+			storage.Alert_Violation_builder{
 				Message: "This is awesome",
-			},
-			{
+			}.Build(),
+			storage.Alert_Violation_builder{
 				Message: "This is more awesome",
-			},
+			}.Build(),
 		},
-	}
+	}.Build()
 
-	deploymentAlertTwo = storage.Alert{
-		Entity: &storage.Alert_Deployment_{Deployment: &storage.Alert_Deployment{
+	deploymentAlertTwo = storage.Alert_builder{
+		Deployment: storage.Alert_Deployment_builder{
 			Name: "deployment2",
-		}},
-		Policy: &storage.Policy{
+		}.Build(),
+		Policy: storage.Policy_builder{
 			Name:        "CI Test Policy Two",
 			Description: "CI policy two that is used for tests",
 			Severity:    storage.Severity_MEDIUM_SEVERITY,
 			Rationale:   "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean eleifend ac purus id vehicula. Vivamus malesuada eros at malesuada scelerisque. Praesent pellentesque ipsum mauris, eu tempus diam interdum quis.",
 			Remediation: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin nec vehicula magna.",
-		},
+		}.Build(),
 		Violations: []*storage.Alert_Violation{
-			{
+			storage.Alert_Violation_builder{
 				Message: "This is cool",
-			},
-			{
+			}.Build(),
+			storage.Alert_Violation_builder{
 				Message: "This is more cool",
-			},
+			}.Build(),
 		},
-	}
+	}.Build()
 
-	remarkOne = v1.DeployDetectionRemark{
+	remarkOne = &v1.DeployDetectionRemark{
 		Name:                   "deployment1",
 		PermissionLevel:        storage.PermissionLevel_CLUSTER_ADMIN.String(),
 		AppliedNetworkPolicies: []string{"Policy1, Policy2"},
 	}
 
-	remarkTwo = v1.DeployDetectionRemark{
+	remarkTwo = &v1.DeployDetectionRemark{
 		Name:                   "deployment2",
 		PermissionLevel:        storage.PermissionLevel_NONE.String(),
 		AppliedNetworkPolicies: nil,

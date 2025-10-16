@@ -73,7 +73,7 @@ func CheckImageScannerWasUsed(ctx framework.ComplianceContext) {
 // Check fails if we find fixed CVEs since we need to upgrade the image.
 func CheckFixedCVES(ctx framework.ComplianceContext) {
 	for _, image := range ctx.Data().Images() {
-		if image.SetCves == nil {
+		if !image.HasSetCves() {
 			framework.Failf(ctx, "Image %s was never scanned for CVEs", image.GetName())
 			continue
 		}

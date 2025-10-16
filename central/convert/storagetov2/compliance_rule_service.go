@@ -9,24 +9,24 @@ import (
 func ComplianceRule(incoming *storage.ComplianceOperatorRuleV2) *v2.ComplianceRule {
 	fixes := make([]*v2.ComplianceRule_Fix, 0, len(incoming.GetFixes()))
 	for _, fix := range incoming.GetFixes() {
-		fixes = append(fixes, &v2.ComplianceRule_Fix{
-			Platform:   fix.GetPlatform(),
-			Disruption: fix.GetDisruption(),
-		})
+		cf := &v2.ComplianceRule_Fix{}
+		cf.SetPlatform(fix.GetPlatform())
+		cf.SetDisruption(fix.GetDisruption())
+		fixes = append(fixes, cf)
 	}
 
-	return &v2.ComplianceRule{
-		Name:         incoming.GetName(),
-		RuleType:     incoming.GetRuleType(),
-		Severity:     incoming.GetSeverity().String(),
-		Title:        incoming.GetTitle(),
-		Description:  incoming.GetDescription(),
-		Rationale:    incoming.GetRationale(),
-		Fixes:        fixes,
-		Id:           incoming.GetId(),
-		RuleId:       incoming.GetRuleId(),
-		Instructions: incoming.GetInstructions(),
-		Warning:      incoming.GetWarning(),
-		ParentRule:   incoming.GetParentRule(),
-	}
+	cr := &v2.ComplianceRule{}
+	cr.SetName(incoming.GetName())
+	cr.SetRuleType(incoming.GetRuleType())
+	cr.SetSeverity(incoming.GetSeverity().String())
+	cr.SetTitle(incoming.GetTitle())
+	cr.SetDescription(incoming.GetDescription())
+	cr.SetRationale(incoming.GetRationale())
+	cr.SetFixes(fixes)
+	cr.SetId(incoming.GetId())
+	cr.SetRuleId(incoming.GetRuleId())
+	cr.SetInstructions(incoming.GetInstructions())
+	cr.SetWarning(incoming.GetWarning())
+	cr.SetParentRule(incoming.GetParentRule())
+	return cr
 }

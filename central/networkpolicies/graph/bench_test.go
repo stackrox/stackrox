@@ -10,38 +10,40 @@ import (
 )
 
 func getMockDeployment(id string) *storage.Deployment {
-	return &storage.Deployment{
-		Id:          id,
-		Namespace:   "default",
-		NamespaceId: "default",
-		Labels:      deploymentLabels("app", "web"),
-		PodLabels:   map[string]string{},
-	}
+	deployment := &storage.Deployment{}
+	deployment.SetId(id)
+	deployment.SetNamespace("default")
+	deployment.SetNamespaceId("default")
+	deployment.SetLabels(deploymentLabels("app", "web"))
+	deployment.SetPodLabels(map[string]string{})
+	return deployment
 }
 
 func getMockNetworkPolicy(name string) *storage.NetworkPolicy {
-	return &storage.NetworkPolicy{
+	return storage.NetworkPolicy_builder{
 		Name:      name,
 		Id:        name,
 		Namespace: "default",
-		Spec: &storage.NetworkPolicySpec{
-			PodSelector: &storage.LabelSelector{
+		Spec: storage.NetworkPolicySpec_builder{
+			PodSelector: storage.LabelSelector_builder{
 				MatchLabels: map[string]string{name: name},
-			},
-		},
-	}
+			}.Build(),
+		}.Build(),
+	}.Build()
 }
 
 func matchIngress(np *storage.NetworkPolicy, dep *storage.Deployment) {
 	spec := np.GetSpec()
-	newRule := &storage.NetworkPolicyIngressRule{From: getPeer(dep.GetId())}
-	spec.Ingress = append(spec.Ingress, newRule)
+	newRule := &storage.NetworkPolicyIngressRule{}
+	newRule.SetFrom(getPeer(dep.GetId()))
+	spec.SetIngress(append(spec.GetIngress(), newRule))
 }
 
 func matchEgress(np *storage.NetworkPolicy, dep *storage.Deployment) {
 	spec := np.GetSpec()
-	newRule := &storage.NetworkPolicyEgressRule{To: getPeer(dep.GetId())}
-	spec.Egress = append(spec.Egress, newRule)
+	newRule := &storage.NetworkPolicyEgressRule{}
+	newRule.SetTo(getPeer(dep.GetId()))
+	spec.SetEgress(append(spec.GetEgress(), newRule))
 }
 
 func applyPolicy(np *storage.NetworkPolicy, deployment *storage.Deployment) {
@@ -50,11 +52,11 @@ func applyPolicy(np *storage.NetworkPolicy, deployment *storage.Deployment) {
 
 func getPeer(podSelector string) []*storage.NetworkPolicyPeer {
 	return []*storage.NetworkPolicyPeer{
-		{
-			PodSelector: &storage.LabelSelector{
+		storage.NetworkPolicyPeer_builder{
+			PodSelector: storage.LabelSelector_builder{
 				MatchLabels: map[string]string{podSelector: podSelector},
-			},
-		},
+			}.Build(),
+		}.Build(),
 	}
 }
 

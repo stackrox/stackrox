@@ -73,15 +73,15 @@ func TestBasicFilter(t *testing.T) {
 		t.Run(currCase.name, func(t *testing.T) {
 			filter := NewFilter(2, 2, []int{3, 2, 1})
 			for i, arg := range currCase.args {
-				result := filter.Add(&storage.ProcessIndicator{
-					PodId:         "pod",
-					ContainerName: "name",
-					Signal: &storage.ProcessSignal{
-						ContainerId:  "id",
-						ExecFilePath: "path",
-						Args:         arg,
-					},
-				})
+				ps := &storage.ProcessSignal{}
+				ps.SetContainerId("id")
+				ps.SetExecFilePath("path")
+				ps.SetArgs(arg)
+				pi := &storage.ProcessIndicator{}
+				pi.SetPodId("pod")
+				pi.SetContainerName("name")
+				pi.SetSignal(ps)
+				result := filter.Add(pi)
 				assert.Equal(t, currCase.expected[i], result)
 			}
 		})
@@ -97,7 +97,7 @@ func TestMultiProcessFilter(t *testing.T) {
 	assert.True(t, filter.Add(pi))
 	assert.False(t, filter.Add(pi))
 
-	pi.Signal.ContainerId = "newcontainer"
+	pi.GetSignal().SetContainerId("newcontainer")
 	assert.True(t, filter.Add(pi))
 	assert.True(t, filter.Add(pi))
 	assert.False(t, filter.Add(pi))
@@ -110,10 +110,10 @@ func TestMaxFilePaths(t *testing.T) {
 	pi := fixtures.GetProcessIndicator()
 	assert.True(t, filter.Add(pi))
 
-	pi.Signal.Name = "signal2"
+	pi.GetSignal().SetName("signal2")
 	assert.True(t, filter.Add(pi))
 
-	pi.Signal.Name = "signal3"
+	pi.GetSignal().SetName("signal3")
 	assert.False(t, filter.Add(pi))
 }
 
@@ -136,7 +136,7 @@ func TestPodUpdate(t *testing.T) {
 
 	// The container id has changed so the container reference should be removed, but the deployment reference should remain
 	filter.Add(pi)
-	pod.LiveInstances[0].InstanceId.Id = "newcontainerid"
+	pod.GetLiveInstances()[0].GetInstanceId().SetId("newcontainerid")
 	filter.UpdateByPod(pod)
 	assert.Len(t, filter.containersInDeployment, 1)
 	assert.Len(t, filter.containersInDeployment[pi.GetDeploymentId()], 0)
@@ -146,12 +146,12 @@ func TestPodUpdateWithInstanceTruncation(t *testing.T) {
 	filter := NewFilter(2, 2, []int{3, 2, 1}).(*filterImpl)
 
 	pi := fixtures.GetProcessIndicator()
-	pi.Signal.ContainerId = "0123456789ab"
+	pi.GetSignal().SetContainerId("0123456789ab")
 	filter.Add(pi)
 
 	pod := fixtures.GetPod()
 	// instance id to > 12 digits but it should be truncated to the proper length
-	pod.LiveInstances[0].InstanceId.Id = "0123456789abcdef"
+	pod.GetLiveInstances()[0].GetInstanceId().SetId("0123456789abcdef")
 	filter.UpdateByPod(pod)
 	assert.Len(t, filter.containersInDeployment, 1)
 	assert.Len(t, filter.containersInDeployment[pi.GetDeploymentId()], 1)

@@ -87,11 +87,11 @@ func convertMany(components []*storage.ImageComponentEdge, results []searchPkg.R
 }
 
 func convertOne(obj *storage.ImageComponentEdge, result *searchPkg.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_IMAGE_COMPONENT_EDGE,
-		Id:             obj.GetId(),
-		Name:           obj.GetId(),
-		FieldToMatches: searchPkg.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+	sr := &v1.SearchResult{}
+	sr.SetCategory(v1.SearchCategory_IMAGE_COMPONENT_EDGE)
+	sr.SetId(obj.GetId())
+	sr.SetName(obj.GetId())
+	sr.SetFieldToMatches(searchPkg.GetProtoMatchesMap(result.Matches))
+	sr.SetScore(result.Score)
+	return sr
 }

@@ -38,7 +38,7 @@ func mergeComponents(parts *NodeParts, node *storage.Node) {
 			log.Errorf("UNEXPECTED: nil component when retrieving components for node %q", nodeID)
 			continue
 		}
-		node.Scan.Components = append(node.Scan.Components, generateEmbeddedComponent(cp))
+		node.GetScan().SetComponents(append(node.GetScan().GetComponents(), generateEmbeddedComponent(cp)))
 	}
 
 	components := node.GetScan().GetComponents()
@@ -56,24 +56,23 @@ func mergeComponents(parts *NodeParts, node *storage.Node) {
 }
 
 func generateEmbeddedComponent(cp *ComponentParts) *storage.EmbeddedNodeScanComponent {
-	ret := &storage.EmbeddedNodeScanComponent{
-		Name:      cp.Component.GetName(),
-		Version:   cp.Component.GetVersion(),
-		RiskScore: cp.Component.GetRiskScore(),
-		Priority:  cp.Component.GetPriority(),
-	}
+	ret := &storage.EmbeddedNodeScanComponent{}
+	ret.SetName(cp.Component.GetName())
+	ret.SetVersion(cp.Component.GetVersion())
+	ret.SetRiskScore(cp.Component.GetRiskScore())
+	ret.SetPriority(cp.Component.GetPriority())
 
 	if cp.Component.GetSetTopCvss() != nil {
-		ret.SetTopCvss = &storage.EmbeddedNodeScanComponent_TopCvss{TopCvss: cp.Component.GetTopCvss()}
+		ret.Set_TopCvss(cp.Component.GetTopCvss())
 	}
 
-	ret.Vulnerabilities = make([]*storage.NodeVulnerability, 0, len(cp.Children))
+	ret.SetVulnerabilities(make([]*storage.NodeVulnerability, 0, len(cp.Children)))
 	for _, cve := range cp.Children {
 		if cve.CVE == nil {
 			log.Errorf("UNEXPECTED: nil CVE when adding vulns for component %q", cp.Component.GetId())
 			continue
 		}
-		ret.Vulnerabilities = append(ret.Vulnerabilities, generateEmbeddedCVE(cve))
+		ret.SetVulnerabilities(append(ret.GetVulnerabilities(), generateEmbeddedCVE(cve)))
 	}
 	return ret
 }
@@ -81,9 +80,7 @@ func generateEmbeddedComponent(cp *ComponentParts) *storage.EmbeddedNodeScanComp
 func generateEmbeddedCVE(cp *CVEParts) *storage.NodeVulnerability {
 	ret := utils.NodeCVEToNodeVulnerability(cp.CVE)
 	if cp.Edge.GetFixedBy() != "" {
-		ret.SetFixedBy = &storage.NodeVulnerability_FixedBy{
-			FixedBy: cp.Edge.GetFixedBy(),
-		}
+		ret.Set_FixedBy(cp.Edge.GetFixedBy())
 	}
 	return ret
 }

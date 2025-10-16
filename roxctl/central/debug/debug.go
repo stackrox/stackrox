@@ -86,7 +86,9 @@ func (cmd *centralDebugLogLevelCommand) getLogLevel() error {
 	defer cancel()
 
 	client := v1.NewDebugServiceClient(conn)
-	logResponse, err := client.GetLogLevel(ctx, &v1.GetLogLevelRequest{Modules: cmd.modules})
+	gllr := &v1.GetLogLevelRequest{}
+	gllr.SetModules(cmd.modules)
+	logResponse, err := client.GetLogLevel(ctx, gllr)
 	if err != nil {
 		return errors.Wrap(err, "could not get log level from central")
 	}
@@ -127,7 +129,10 @@ func (cmd *centralDebugLogLevelCommand) setLogLevel() error {
 	ctx, cancel := context.WithTimeout(context.Background(), cmd.timeout)
 	defer cancel()
 
-	_, err = client.SetLogLevel(ctx, &v1.LogLevelRequest{Level: cmd.level, Modules: cmd.modules})
+	llr := &v1.LogLevelRequest{}
+	llr.SetLevel(cmd.level)
+	llr.SetModules(cmd.modules)
+	_, err = client.SetLogLevel(ctx, llr)
 	if err != nil {
 		return errors.Wrap(err, "could not set log level on central")
 	}

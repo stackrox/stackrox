@@ -186,20 +186,16 @@ func (h *handlerImpl) newMessageToCentral(indexReport *v1.IndexReport) (*message
 		return nil, errors.Wrapf(errVirtualMachineNotFound, "VirtualMachine with Vsock CID %q not found", indexReport.GetVsockCid())
 	}
 
-	return message.New(&central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id:     string(vmInfo.ID),
-				Action: central.ResourceAction_SYNC_RESOURCE,
-				Resource: &central.SensorEvent_VirtualMachineIndexReport{
-					VirtualMachineIndexReport: &v1.IndexReportEvent{
-						Id:    string(vmInfo.ID),
-						Index: indexReport,
-					},
-				},
-			},
-		},
-	}), nil
+	return message.New(central.MsgFromSensor_builder{
+		Event: central.SensorEvent_builder{
+			Id:     string(vmInfo.ID),
+			Action: central.ResourceAction_SYNC_RESOURCE,
+			VirtualMachineIndexReport: v1.IndexReportEvent_builder{
+				Id:    string(vmInfo.ID),
+				Index: indexReport,
+			}.Build(),
+		}.Build(),
+	}.Build()), nil
 }
 
 func (h *handlerImpl) sendIndexReportEvent(

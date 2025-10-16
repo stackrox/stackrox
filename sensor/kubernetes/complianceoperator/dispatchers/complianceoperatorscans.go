@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
+	"google.golang.org/protobuf/proto"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -45,21 +46,18 @@ func (c *ScanDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 	// of time.  However, we should not need to send the same profile twice, the pipeline can convert the V2 sensor message
 	// so V1 and V2 objects can both be stored.
 
-	protoScan := &storage.ComplianceOperatorScan{
-		Id:          uid,
-		Name:        complianceScan.Name,
-		ProfileId:   complianceScan.Spec.Profile,
-		Labels:      complianceScan.Labels,
-		Annotations: complianceScan.Annotations,
-	}
+	protoScan := &storage.ComplianceOperatorScan{}
+	protoScan.SetId(uid)
+	protoScan.SetName(complianceScan.Name)
+	protoScan.SetProfileId(complianceScan.Spec.Profile)
+	protoScan.SetLabels(complianceScan.Labels)
+	protoScan.SetAnnotations(complianceScan.Annotations)
+	se := &central.SensorEvent{}
+	se.SetId(protoScan.GetId())
+	se.SetAction(action)
+	se.SetComplianceOperatorScan(proto.ValueOrDefault(protoScan))
 	events := []*central.SensorEvent{
-		{
-			Id:     protoScan.GetId(),
-			Action: action,
-			Resource: &central.SensorEvent_ComplianceOperatorScan{
-				ComplianceOperatorScan: protoScan,
-			},
-		},
+		se,
 	}
 
 	// Build a V2 event if central is capable of receiving it
@@ -69,22 +67,21 @@ func (c *ScanDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 			log.Warnf("unable to convert creation time %v", err)
 		}
 
-		protoStatus := &central.ComplianceOperatorScanStatusV2{
-			Phase:            string(complianceScan.Status.Phase),
-			Result:           string(complianceScan.Status.Result),
-			ErrorMessage:     complianceScan.Status.ErrorMessage,
-			CurrentIndex:     complianceScan.Status.CurrentIndex,
-			Warnings:         complianceScan.Status.Warnings,
-			RemainingRetries: int64(complianceScan.Status.RemainingRetries),
-			StartTime:        creationTime,
-		}
+		protoStatus := &central.ComplianceOperatorScanStatusV2{}
+		protoStatus.SetPhase(string(complianceScan.Status.Phase))
+		protoStatus.SetResult(string(complianceScan.Status.Result))
+		protoStatus.SetErrorMessage(complianceScan.Status.ErrorMessage)
+		protoStatus.SetCurrentIndex(complianceScan.Status.CurrentIndex)
+		protoStatus.SetWarnings(complianceScan.Status.Warnings)
+		protoStatus.SetRemainingRetries(int64(complianceScan.Status.RemainingRetries))
+		protoStatus.SetStartTime(creationTime)
 
 		if complianceScan.Status.EndTimestamp != nil {
 			endTime, err := protocompat.ConvertTimeToTimestampOrError(complianceScan.Status.EndTimestamp.Time)
 			if err != nil {
 				log.Warnf("unable to convert end time %v", err)
 			} else {
-				protoStatus.EndTime = endTime
+				protoStatus.SetEndTime(endTime)
 			}
 		}
 
@@ -93,26 +90,23 @@ func (c *ScanDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 			if err != nil {
 				log.Warnf("unable to convert start time %v", err)
 			} else {
-				protoStatus.LastStartTime = startTime
+				protoStatus.SetLastStartTime(startTime)
 			}
 		}
 
-		protoScan := &central.ComplianceOperatorScanV2{
-			Id:          uid,
-			Name:        complianceScan.Name,
-			ProfileId:   complianceScan.Spec.Profile,
-			Labels:      complianceScan.Labels,
-			Annotations: complianceScan.Annotations,
-			ScanType:    string(complianceScan.Spec.ScanType),
-			Status:      protoStatus,
-		}
-		events = append(events, &central.SensorEvent{
-			Id:     protoScan.GetId(),
-			Action: action,
-			Resource: &central.SensorEvent_ComplianceOperatorScanV2{
-				ComplianceOperatorScanV2: protoScan,
-			},
-		})
+		protoScan := &central.ComplianceOperatorScanV2{}
+		protoScan.SetId(uid)
+		protoScan.SetName(complianceScan.Name)
+		protoScan.SetProfileId(complianceScan.Spec.Profile)
+		protoScan.SetLabels(complianceScan.Labels)
+		protoScan.SetAnnotations(complianceScan.Annotations)
+		protoScan.SetScanType(string(complianceScan.Spec.ScanType))
+		protoScan.SetStatus(protoStatus)
+		se2 := &central.SensorEvent{}
+		se2.SetId(protoScan.GetId())
+		se2.SetAction(action)
+		se2.SetComplianceOperatorScanV2(proto.ValueOrDefault(protoScan))
+		events = append(events, se2)
 	}
 
 	return component.NewEvent(events...)

@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -49,22 +50,18 @@ func (suite *PipelineTestSuite) TearDownTest() {
 }
 
 func newSensorEvent(_ bool, action central.ResourceAction) *central.SensorEvent {
-	return &central.SensorEvent{
-		Resource: &central.SensorEvent_Pod{
-			Pod: &storage.Pod{
-				Id: "id1",
-			},
-		},
-		Action: action,
-	}
+	pod := &storage.Pod{}
+	pod.SetId("id1")
+	se := &central.SensorEvent{}
+	se.SetPod(proto.ValueOrDefault(pod))
+	se.SetAction(action)
+	return se
 }
 
 func newMsgFromSensor(event *central.SensorEvent) *central.MsgFromSensor {
-	return &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: event,
-		},
-	}
+	mfs := &central.MsgFromSensor{}
+	mfs.SetEvent(proto.ValueOrDefault(event))
+	return mfs
 }
 
 func (suite *PipelineTestSuite) TestAddPod() {

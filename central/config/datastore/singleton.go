@@ -48,6 +48,7 @@ const (
 	PlatformComponentLayeredProductsDefaultRegex = `^aap$|^ack-system$|^aws-load-balancer-operator$|^cert-manager-operator$|^cert-utils-operator$|^costmanagement-metrics-operator$|^external-dns-operator$|^metallb-system$|^mtr$|^multicluster-engine$|^multicluster-global-hub$|^node-observability-operator$|^open-cluster-management$|^openshift-adp$|^openshift-apiserver-operator$|^openshift-authentication$|^openshift-authentication-operator$|^openshift-builds$|^openshift-cloud-controller-manager$|^openshift-cloud-controller-manager-operator$|^openshift-cloud-credential-operator$|^openshift-cloud-network-config-controller$|^openshift-cluster-csi-drivers$|^openshift-cluster-machine-approver$|^openshift-cluster-node-tuning-operator$|^openshift-cluster-observability-operator$|^openshift-cluster-samples-operator$|^openshift-cluster-storage-operator$|^openshift-cluster-version$|^openshift-cnv$|^openshift-compliance$|^openshift-config$|^openshift-config-managed$|^openshift-config-operator$|^openshift-console$|^openshift-console-operator$|^openshift-console-user-settings$|^openshift-controller-manager$|^openshift-controller-manager-operator$|^openshift-dbaas-operator$|^openshift-distributed-tracing$|^openshift-dns$|^openshift-dns-operator$|^openshift-dpu-network-operator$|^openshift-dr-system$|^openshift-etcd$|^openshift-etcd-operator$|^openshift-file-integrity$|^openshift-gitops-operator$|^openshift-host-network$|^openshift-image-registry$|^openshift-infra$|^openshift-ingress$|^openshift-ingress-canary$|^openshift-ingress-node-firewall$|^openshift-ingress-operator$|^openshift-insights$|^openshift-keda$|^openshift-kmm$|^openshift-kmm-hub$|^openshift-kni-infra$|^openshift-kube-apiserver$|^openshift-kube-apiserver-operator$|^openshift-kube-controller-manager$|^openshift-kube-controller-manager-operator$|^openshift-kube-scheduler$|^openshift-kube-scheduler-operator$|^openshift-kube-storage-version-migrator$|^openshift-kube-storage-version-migrator-operator$|^openshift-lifecycle-agent$|^openshift-local-storage$|^openshift-logging$|^openshift-machine-api$|^openshift-machine-config-operator$|^openshift-marketplace$|^openshift-migration$|^openshift-monitoring$|^openshift-mta$|^openshift-mtv$|^openshift-multus$|^openshift-netobserv-operator$|^openshift-network-diagnostics$|^openshift-network-node-identity$|^openshift-network-operator$|^openshift-nfd$|^openshift-nmstate$|^openshift-node$|^openshift-nutanix-infra$|^openshift-oauth-apiserver$|^openshift-openstack-infra$|^openshift-opentelemetry-operator$|^openshift-operator-lifecycle-manager$|^openshift-operators$|^openshift-operators-redhat$|^openshift-ovirt-infra$|^openshift-ovn-kubernetes$|^openshift-ptp$|^openshift-route-controller-manager$|^openshift-sandboxed-containers-operator$|^openshift-security-profiles$|^openshift-serverless$|^openshift-serverless-logic$|^openshift-service-ca$|^openshift-service-ca-operator$|^openshift-sriov-network-operator$|^openshift-storage$|^openshift-tempo-operator$|^openshift-update-service$|^openshift-user-workload-monitoring$|^openshift-vertical-pod-autoscaler$|^openshift-vsphere-infra$|^openshift-windows-machine-config-operator$|^openshift-workload-availability$|^redhat-ods-operator$|^rhdh-operator$|^service-telemetry$|^stackrox$|^submariner-operator$`
 )
 
+// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
 var (
 	once sync.Once
 
@@ -63,40 +64,40 @@ var (
 		},
 	}
 
-	defaultPrivateConfig = storage.PrivateConfig{
+	defaultPrivateConfig = &storage.PrivateConfig{
 		ImageRetentionDurationDays:          DefaultImageRetention,
 		AlertRetention:                      defaultAlertRetention,
 		ExpiredVulnReqRetentionDurationDays: DefaultExpiredVulnReqRetention,
 	}
 
-	defaultVulnerabilityDeferralConfig = &storage.VulnerabilityExceptionConfig{
-		ExpiryOptions: &storage.VulnerabilityExceptionConfig_ExpiryOptions{
+	defaultVulnerabilityDeferralConfig = storage.VulnerabilityExceptionConfig_builder{
+		ExpiryOptions: storage.VulnerabilityExceptionConfig_ExpiryOptions_builder{
 			DayOptions: []*storage.DayOption{
-				{
+				storage.DayOption_builder{
 					NumDays: 14,
 					Enabled: true,
-				},
-				{
+				}.Build(),
+				storage.DayOption_builder{
 					NumDays: 30,
 					Enabled: true,
-				},
-				{
+				}.Build(),
+				storage.DayOption_builder{
 					NumDays: 60,
 					Enabled: true,
-				},
-				{
+				}.Build(),
+				storage.DayOption_builder{
 					NumDays: 90,
 					Enabled: true,
-				},
+				}.Build(),
 			},
-			FixableCveOptions: &storage.VulnerabilityExceptionConfig_FixableCVEOptions{
+			FixableCveOptions: storage.VulnerabilityExceptionConfig_FixableCVEOptions_builder{
 				AllFixable: true,
 				AnyFixable: true,
-			},
+			}.Build(),
 			CustomDate: false,
 			Indefinite: false,
-		},
-	}
+		}.Build(),
+	}.Build()
 
 	defaultDecommissionedClusterRetention = &storage.DecommissionedClusterRetentionConfig{
 		RetentionDurationDays: DefaultDecommissionedClusterRetentionDays,
@@ -152,24 +153,24 @@ func validateConfigAndPopulateMissingDefaults(datastore DataStore) {
 	}
 
 	if privateConfig.GetDecommissionedClusterRetention() == nil {
-		privateConfig.DecommissionedClusterRetention = defaultDecommissionedClusterRetention
+		privateConfig.SetDecommissionedClusterRetention(defaultDecommissionedClusterRetention)
 		needsUpsert = true
 	}
 
 	if privateConfig.GetReportRetentionConfig() == nil {
-		privateConfig.ReportRetentionConfig = defaultReportRetentionConfig
+		privateConfig.SetReportRetentionConfig(defaultReportRetentionConfig)
 		needsUpsert = true
 	}
 
 	if features.UnifiedCVEDeferral.Enabled() {
 		if privateConfig.GetVulnerabilityExceptionConfig() == nil {
-			privateConfig.VulnerabilityExceptionConfig = defaultVulnerabilityDeferralConfig
+			privateConfig.SetVulnerabilityExceptionConfig(defaultVulnerabilityDeferralConfig)
 			needsUpsert = true
 		}
 	}
 
 	if privateConfig.GetAdministrationEventsConfig() == nil {
-		privateConfig.AdministrationEventsConfig = defaultAdministrationEventsConfig
+		privateConfig.SetAdministrationEventsConfig(defaultAdministrationEventsConfig)
 		needsUpsert = true
 	}
 
@@ -178,7 +179,7 @@ func validateConfigAndPopulateMissingDefaults(datastore DataStore) {
 	}
 
 	if needsUpsert {
-		config.PrivateConfig = privateConfig
+		config.SetPrivateConfig(privateConfig)
 		utils.Must(datastore.UpsertConfig(ctx, config))
 	}
 }
@@ -188,13 +189,13 @@ func validateConfigAndPopulateMissingDefaults(datastore DataStore) {
 func populateDefaultSystemRulesIfMissing(config *storage.Config) bool {
 	// If there is no platform component config, initialize both system and layered product rules and return
 	if config.GetPlatformComponentConfig() == nil {
-		config.PlatformComponentConfig = &storage.PlatformComponentConfig{
-			Rules: []*storage.PlatformComponentConfig_Rule{
-				defaultPlatformConfigSystemRule,
-				defaultPlatformConfigLayeredProductsRule,
-			},
-			NeedsReevaluation: true,
-		}
+		pcc := &storage.PlatformComponentConfig{}
+		pcc.SetRules([]*storage.PlatformComponentConfig_Rule{
+			defaultPlatformConfigSystemRule,
+			defaultPlatformConfigLayeredProductsRule,
+		})
+		pcc.SetNeedsReevaluation(true)
+		config.SetPlatformComponentConfig(pcc)
 		return true
 	}
 	hasSystemRule := false
@@ -214,19 +215,19 @@ func populateDefaultSystemRulesIfMissing(config *storage.Config) bool {
 
 	if !hasSystemRule {
 		// if system rule is missing, initialize it
-		config.GetPlatformComponentConfig().Rules = append(
-			config.GetPlatformComponentConfig().Rules,
+		config.GetPlatformComponentConfig().SetRules(append(
+			config.GetPlatformComponentConfig().GetRules(),
 			defaultPlatformConfigSystemRule,
-		)
-		config.GetPlatformComponentConfig().NeedsReevaluation = true
+		))
+		config.GetPlatformComponentConfig().SetNeedsReevaluation(true)
 	}
 	if !hasLayeredProductsRule {
 		// if layered products rule is missing, initialize it
-		config.GetPlatformComponentConfig().Rules = append(
-			config.GetPlatformComponentConfig().Rules,
+		config.GetPlatformComponentConfig().SetRules(append(
+			config.GetPlatformComponentConfig().GetRules(),
 			defaultPlatformConfigLayeredProductsRule,
-		)
-		config.GetPlatformComponentConfig().NeedsReevaluation = true
+		))
+		config.GetPlatformComponentConfig().SetNeedsReevaluation(true)
 	}
 	return true
 }

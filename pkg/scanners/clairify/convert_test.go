@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/scanners/clairify/mock"
 	v1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestConvertNodeToVulnRequest(t *testing.T) {
@@ -27,10 +28,10 @@ func TestConvertNodeToVulnRequest(t *testing.T) {
 			osImage:          "linux",
 			kubeletVersion:   "v1.14.8",
 			kubeProxyVersion: "v1.16.13-gke.401",
-			containerRuntime: &storage.ContainerRuntimeInfo{
+			containerRuntime: storage.ContainerRuntimeInfo_builder{
 				Type:    storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
 				Version: "19.3.5",
-			},
+			}.Build(),
 			expected: &v1.GetNodeVulnerabilitiesRequest{
 				KernelVersion:    "3.10.0-1127.13.1.el7.x86_64",
 				OsImage:          "linux",
@@ -43,10 +44,10 @@ func TestConvertNodeToVulnRequest(t *testing.T) {
 			},
 		},
 		{
-			containerRuntime: &storage.ContainerRuntimeInfo{
+			containerRuntime: storage.ContainerRuntimeInfo_builder{
 				Type:    storage.ContainerRuntime_CRIO_CONTAINER_RUNTIME,
 				Version: "1.11.13-1.rhaos3.11.gitfb88a9c.el7",
-			},
+			}.Build(),
 			expected: &v1.GetNodeVulnerabilitiesRequest{
 				Runtime: &v1.GetNodeVulnerabilitiesRequest_ContainerRuntime{
 					Name:    "cri-o",
@@ -55,10 +56,10 @@ func TestConvertNodeToVulnRequest(t *testing.T) {
 			},
 		},
 		{
-			containerRuntime: &storage.ContainerRuntimeInfo{
+			containerRuntime: storage.ContainerRuntimeInfo_builder{
 				Type:    storage.ContainerRuntime_UNKNOWN_CONTAINER_RUNTIME,
 				Version: "containerd://1.2.8",
-			},
+			}.Build(),
 			expected: &v1.GetNodeVulnerabilitiesRequest{
 				Runtime: &v1.GetNodeVulnerabilitiesRequest_ContainerRuntime{
 					Name:    "containerd",
@@ -67,12 +68,12 @@ func TestConvertNodeToVulnRequest(t *testing.T) {
 			},
 		},
 		{
-			nodeInventory: &storage.NodeInventory{
-				Components: &storage.NodeInventory_Components{
+			nodeInventory: storage.NodeInventory_builder{
+				Components: storage.NodeInventory_Components_builder{
 					Namespace:       "rhcos:4.11",
 					RhelContentSets: []string{"rhel-8-for-x86_64-appstream-rpms", "rhel-8-for-x86_64-baseos-rpms"},
 					RhelComponents: []*storage.NodeInventory_Components_RHELComponent{
-						{
+						storage.NodeInventory_Components_RHELComponent_builder{
 							Id:        int64(1),
 							Name:      "vim-minimal",
 							Namespace: "rhel:8",
@@ -80,18 +81,18 @@ func TestConvertNodeToVulnRequest(t *testing.T) {
 							Arch:      "x86_64",
 							Module:    "",
 							AddedBy:   "",
-						},
+						}.Build(),
 					},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			kernelVersion:    "3.10.0-1127.13.1.el7.x86_64",
 			osImage:          "linux",
 			kubeletVersion:   "v1.14.8",
 			kubeProxyVersion: "v1.16.13-gke.401",
-			containerRuntime: &storage.ContainerRuntimeInfo{
+			containerRuntime: storage.ContainerRuntimeInfo_builder{
 				Type:    storage.ContainerRuntime_UNKNOWN_CONTAINER_RUNTIME,
 				Version: "containerd://1.2.8",
-			},
+			}.Build(),
 			expected: &v1.GetNodeVulnerabilitiesRequest{
 				KernelVersion:    "3.10.0-1127.13.1.el7.x86_64",
 				OsImage:          "linux",
@@ -123,13 +124,12 @@ func TestConvertNodeToVulnRequest(t *testing.T) {
 			},
 		},
 	} {
-		node := &storage.Node{
-			ContainerRuntime: testCase.containerRuntime,
-			KernelVersion:    testCase.kernelVersion,
-			OsImage:          testCase.osImage,
-			KubeletVersion:   testCase.kubeletVersion,
-			KubeProxyVersion: testCase.kubeProxyVersion,
-		}
+		node := &storage.Node{}
+		node.SetContainerRuntime(testCase.containerRuntime)
+		node.SetKernelVersion(testCase.kernelVersion)
+		node.SetOsImage(testCase.osImage)
+		node.SetKubeletVersion(testCase.kubeletVersion)
+		node.SetKubeProxyVersion(testCase.kubeProxyVersion)
 		protoassert.Equal(t, testCase.expected, convertNodeToVulnRequest(node, testCase.nodeInventory))
 	}
 }
@@ -195,68 +195,58 @@ func TestConvertVulnResponseToNodeScan(t *testing.T) {
 			},
 			expectedNotes: []storage.NodeScan_Note{storage.NodeScan_UNSUPPORTED, storage.NodeScan_KERNEL_UNSUPPORTED, storage.NodeScan_CERTIFIED_RHEL_CVES_UNAVAILABLE},
 			expectedComponents: []*storage.EmbeddedNodeScanComponent{
-				{
+				storage.EmbeddedNodeScanComponent_builder{
 					Name:    "docker",
 					Version: "19.3.5",
 					Vulns: []*storage.EmbeddedVulnerability{
-						{
-							Cve:  "CVE-2020-0000",
-							Link: "link0",
-							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-								FixedBy: "0",
-							},
+						storage.EmbeddedVulnerability_builder{
+							Cve:               "CVE-2020-0000",
+							Link:              "link0",
+							FixedBy:           proto.String("0"),
 							VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
-						},
+						}.Build(),
 					},
-				},
-				{
+				}.Build(),
+				storage.EmbeddedNodeScanComponent_builder{
 					Name:    "kernel",
 					Version: "4.9.184-linuxkit",
 					Vulns: []*storage.EmbeddedVulnerability{
-						{
-							Cve:  "CVE-2020-1111",
-							Link: "link1",
-							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-								FixedBy: "1",
-							},
+						storage.EmbeddedVulnerability_builder{
+							Cve:               "CVE-2020-1111",
+							Link:              "link1",
+							FixedBy:           proto.String("1"),
 							VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
-						},
-					}},
-				{
+						}.Build(),
+					}}.Build(),
+				storage.EmbeddedNodeScanComponent_builder{
 					Name:    "kubelet",
 					Version: "v1.16.13-gke.401",
 					Vulns: []*storage.EmbeddedVulnerability{
-						{
-							Cve:  "CVE-2020-2222",
-							Link: "link2",
-							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-								FixedBy: "2",
-							},
+						storage.EmbeddedVulnerability_builder{
+							Cve:               "CVE-2020-2222",
+							Link:              "link2",
+							FixedBy:           proto.String("2"),
 							VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
-						},
-					}},
-				{
+						}.Build(),
+					}}.Build(),
+				storage.EmbeddedNodeScanComponent_builder{
 					Name:    "kube-proxy",
 					Version: "v1.17.14-gke.400",
 					Vulns: []*storage.EmbeddedVulnerability{
-						{
-							Cve:  "CVE-2020-3333",
-							Link: "link3",
-							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-								FixedBy: "3",
-							},
+						storage.EmbeddedVulnerability_builder{
+							Cve:               "CVE-2020-3333",
+							Link:              "link3",
+							FixedBy:           proto.String("3"),
 							VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
-						},
-						{
-							Cve:  "CVE-2020-4444",
-							Link: "link4",
-							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-								FixedBy: "4",
-							},
+						}.Build(),
+						storage.EmbeddedVulnerability_builder{
+							Cve:               "CVE-2020-4444",
+							Link:              "link4",
+							FixedBy:           proto.String("4"),
 							VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 		},
 		{
@@ -310,28 +300,24 @@ func TestConvertVulnResponseToNodeScan(t *testing.T) {
 			},
 			expectedNotes: []storage.NodeScan_Note{storage.NodeScan_UNSUPPORTED, storage.NodeScan_KERNEL_UNSUPPORTED},
 			expectedComponents: []*storage.EmbeddedNodeScanComponent{
-				{
+				storage.EmbeddedNodeScanComponent_builder{
 					Name:    "vim-minimal",
 					Version: "2:7.4.629-6.el8",
 					Vulns: []*storage.EmbeddedVulnerability{
-						{
-							Cve:  "CVE-2020-0000",
-							Link: "link0",
-							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-								FixedBy: "0",
-							},
+						storage.EmbeddedVulnerability_builder{
+							Cve:               "CVE-2020-0000",
+							Link:              "link0",
+							FixedBy:           proto.String("0"),
 							VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
-						},
-						{
-							Cve:  "CVE-2020-1111",
-							Link: "link1",
-							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-								FixedBy: "1",
-							},
+						}.Build(),
+						storage.EmbeddedVulnerability_builder{
+							Cve:               "CVE-2020-1111",
+							Link:              "link1",
+							FixedBy:           proto.String("1"),
 							VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 		},
 	} {
@@ -350,40 +336,40 @@ func TestConvertNodeVulnerabilities(t *testing.T) {
 
 func TestConvertFeatures(t *testing.T) {
 	// metadata is based on the fixture used below.
-	metadata := &storage.ImageMetadata{
-		V1: &storage.V1Metadata{
+	metadata := storage.ImageMetadata_builder{
+		V1: storage.V1Metadata_builder{
 			Digest: "sha256:idk",
 			Author: "stackrox",
 			Layers: []*storage.ImageLayer{
-				{
+				storage.ImageLayer_builder{
 					Instruction: "FROM",
 					Value:       "ubi8",
 					Author:      "Red Hat",
-				},
-				{
+				}.Build(),
+				storage.ImageLayer_builder{
 					Instruction: "COPY",
 					Value:       "stackrox.go /",
 					Author:      "StackRox",
-				},
+				}.Build(),
 			},
 			Command: []string{"go", "run", "stackrox.go"},
-		},
-		V2: &storage.V2Metadata{
+		}.Build(),
+		V2: storage.V2Metadata_builder{
 			Digest: "sha256:idk",
-		},
+		}.Build(),
 		LayerShas: []string{"sha256:idk0", "sha256:idk1"},
 		Version:   0,
-	}
+	}.Build()
 
 	features := fixtures.ScannerFeaturesV1()
 
 	expectedFeatures := []*storage.EmbeddedImageScanComponent{
-		{
+		storage.EmbeddedImageScanComponent_builder{
 			Name:    "rpm",
 			Version: "4.16.0",
 			FixedBy: "4.16.1",
 			Vulns: []*storage.EmbeddedVulnerability{
-				{
+				storage.EmbeddedVulnerability_builder{
 					Cve:               "CVE-2022-1234",
 					Summary:           "This is the worst vulnerability I have ever seen",
 					Link:              "https://access.redhat.com/security/cve/CVE-2022-1234",
@@ -391,7 +377,7 @@ func TestConvertFeatures(t *testing.T) {
 					Severity:          storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
 					Cvss:              6.3,
 					ScoreVersion:      storage.EmbeddedVulnerability_V3,
-					CvssV2: &storage.CVSSV2{
+					CvssV2: storage.CVSSV2_builder{
 						Vector:              "AV:A/AC:M/Au:M/C:N/I:P/A:C",
 						AttackVector:        storage.CVSSV2_ATTACK_ADJACENT,
 						AccessComplexity:    storage.CVSSV2_ACCESS_MEDIUM,
@@ -403,8 +389,8 @@ func TestConvertFeatures(t *testing.T) {
 						ImpactScore:         7.8,
 						Score:               5.4,
 						Severity:            storage.CVSSV2_MEDIUM,
-					},
-					CvssV3: &storage.CVSSV3{
+					}.Build(),
+					CvssV3: storage.CVSSV3_builder{
 						Vector:              "CVSS:3.1/AV:A/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:H",
 						ExploitabilityScore: 2.1,
 						ImpactScore:         4.2,
@@ -418,12 +404,10 @@ func TestConvertFeatures(t *testing.T) {
 						Availability:        storage.CVSSV3_IMPACT_HIGH,
 						Score:               6.3,
 						Severity:            storage.CVSSV3_MEDIUM,
-					},
-					SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-						FixedBy: "4.16.1",
-					},
-				},
-				{
+					}.Build(),
+					FixedBy: proto.String("4.16.1"),
+				}.Build(),
+				storage.EmbeddedVulnerability_builder{
 					Cve:               "CVE-2022-1235",
 					Summary:           "This is the second worst vulnerability I have ever seen",
 					Link:              "https://access.redhat.com/security/cve/CVE-2022-1235",
@@ -431,7 +415,7 @@ func TestConvertFeatures(t *testing.T) {
 					Severity:          storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
 					Cvss:              5.4,
 					ScoreVersion:      storage.EmbeddedVulnerability_V2,
-					CvssV2: &storage.CVSSV2{
+					CvssV2: storage.CVSSV2_builder{
 						Vector:              "AV:A/AC:M/Au:M/C:N/I:P/A:C",
 						AttackVector:        storage.CVSSV2_ATTACK_ADJACENT,
 						AccessComplexity:    storage.CVSSV2_ACCESS_MEDIUM,
@@ -443,35 +427,29 @@ func TestConvertFeatures(t *testing.T) {
 						ImpactScore:         7.8,
 						Score:               5.4,
 						Severity:            storage.CVSSV2_MEDIUM,
-					},
-					SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{},
-				},
+					}.Build(),
+					FixedBy: proto.String(""),
+				}.Build(),
 			},
-			HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
-				LayerIndex: 0,
-			},
+			LayerIndex:  proto.Int32(0),
 			Executables: []*storage.EmbeddedImageScanComponent_Executable{},
-		},
-		{
-			Name:    "curl",
-			Version: "1",
-			Vulns:   []*storage.EmbeddedVulnerability{},
-			HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
-				LayerIndex: 0,
-			},
+		}.Build(),
+		storage.EmbeddedImageScanComponent_builder{
+			Name:        "curl",
+			Version:     "1",
+			Vulns:       []*storage.EmbeddedVulnerability{},
+			LayerIndex:  proto.Int32(0),
 			Executables: []*storage.EmbeddedImageScanComponent_Executable{},
-		},
-		{
-			Name:     "java.jar",
-			Version:  "1",
-			Location: "/java/jar/path/java.jar",
-			Source:   storage.SourceType_JAVA,
-			Vulns:    []*storage.EmbeddedVulnerability{},
-			HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
-				LayerIndex: 1,
-			},
+		}.Build(),
+		storage.EmbeddedImageScanComponent_builder{
+			Name:        "java.jar",
+			Version:     "1",
+			Location:    "/java/jar/path/java.jar",
+			Source:      storage.SourceType_JAVA,
+			Vulns:       []*storage.EmbeddedVulnerability{},
+			LayerIndex:  proto.Int32(1),
 			Executables: []*storage.EmbeddedImageScanComponent_Executable{},
-		},
+		}.Build(),
 	}
 
 	converted := convertFeatures(metadata, features, "")

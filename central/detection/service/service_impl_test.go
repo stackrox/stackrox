@@ -664,15 +664,15 @@ func TestFetchOptionFromRequest(t *testing.T) {
 			fetchOption: enricher.UseCachesIfPossible,
 		},
 		"no external metadata set and no force should result in NoExternalMetadata": {
-			req:         &v1.BuildDetectionRequest{NoExternalMetadata: true},
+			req:         v1.BuildDetectionRequest_builder{NoExternalMetadata: true}.Build(),
 			fetchOption: enricher.NoExternalMetadata,
 		},
 		"force set and no external metadata should result in ForceRefetch": {
-			req:         &v1.BuildDetectionRequest{Force: true},
+			req:         v1.BuildDetectionRequest_builder{Force: true}.Build(),
 			fetchOption: enricher.UseImageNamesRefetchCachedValues,
 		},
 		"both force and no external metadata set should result in an error": {
-			req:         &v1.BuildDetectionRequest{NoExternalMetadata: true, Force: true},
+			req:         v1.BuildDetectionRequest_builder{NoExternalMetadata: true, Force: true}.Build(),
 			fetchOption: enricher.UseCachesIfPossible,
 			err:         errox.InvalidArgs,
 		},
@@ -697,14 +697,16 @@ func TestGetAppliedNetpolsForDeployment(t *testing.T) {
 	mockNetpolDS := networkPolicyMockStore.NewMockDataStore(mockCtrl)
 	mockNetpolDS.EXPECT().GetNetworkPolicies(gomock.Any(), mockClusterID, "ns").Return(
 		[]*storage.NetworkPolicy{
-			{Id: uuid.NewV4().String(), Spec: &storage.NetworkPolicySpec{PodSelector: &storage.LabelSelector{MatchLabels: map[string]string{"app": "match"}}}},
-			{Id: uuid.NewV4().String(), Spec: &storage.NetworkPolicySpec{PodSelector: &storage.LabelSelector{MatchLabels: map[string]string{"nomatch": "nomatch"}}}},
+			storage.NetworkPolicy_builder{Id: uuid.NewV4().String(), Spec: storage.NetworkPolicySpec_builder{PodSelector: storage.LabelSelector_builder{MatchLabels: map[string]string{"app": "match"}}.Build()}.Build()}.Build(),
+			storage.NetworkPolicy_builder{Id: uuid.NewV4().String(), Spec: storage.NetworkPolicySpec_builder{PodSelector: storage.LabelSelector_builder{MatchLabels: map[string]string{"nomatch": "nomatch"}}.Build()}.Build()}.Build(),
 		}, nil)
 	s := serviceImpl{
 		netpols: mockNetpolDS,
 	}
 	eCtx := enricher.EnrichmentContext{Namespace: "ns", ClusterID: mockClusterID}
-	d := storage.Deployment{Id: uuid.NewV4().String(), PodLabels: map[string]string{"app": "match"}}
+	d := &storage.Deployment{}
+	d.SetId(uuid.NewV4().String())
+	d.SetPodLabels(map[string]string{"app": "match"})
 
 	actual, err := s.getAppliedNetpolsForDeployment(context.Background(), eCtx, &d)
 
@@ -722,11 +724,11 @@ func TestGetPolicyNamesAsSlice(t *testing.T) {
 			expected: nil,
 		},
 		"Mutliple policies": {
-			policies: map[string]*storage.NetworkPolicy{"1": {Name: "1"}, "2": {Name: "2"}},
+			policies: map[string]*storage.NetworkPolicy{"1": storage.NetworkPolicy_builder{Name: "1"}.Build(), "2": storage.NetworkPolicy_builder{Name: "2"}.Build()},
 			expected: []string{"1", "2"},
 		},
 		"Nil policy": {
-			policies: map[string]*storage.NetworkPolicy{"1": {Name: "1"}, "2": nil},
+			policies: map[string]*storage.NetworkPolicy{"1": storage.NetworkPolicy_builder{Name: "1"}.Build(), "2": nil},
 			expected: []string{"1"},
 		},
 	}

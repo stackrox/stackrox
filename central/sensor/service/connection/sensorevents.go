@@ -85,10 +85,10 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 	}
 
 	var workerType string
-	switch event.GetResource().(type) {
+	switch event.WhichResource() {
 	// The occurrence of a "Synced" event from the sensor marks the conclusion
 	// of the initial synchronization process.
-	case *central.SensorEvent_Synced:
+	case central.SensorEvent_Synced_case:
 		// Call the reconcile functions
 		log.Info("Receiving reconciliation event")
 
@@ -111,22 +111,22 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 		s.deduper.ProcessSync()
 		s.reconciliationMap.Close()
 		return
-	case *central.SensorEvent_ReprocessDeployment:
+	case central.SensorEvent_ReprocessDeployment_case:
 		workerType = deploymentEventType
-	case *central.SensorEvent_NodeInventory:
+	case central.SensorEvent_NodeInventory_case:
 		// This will put all: NodeIndex, NodeInventory and Node events in the same worker queue,
 		// preventing events for the same Node ID to run concurrently.
 		workerType = nodeEventType
 		// Node, NodeInventory and IndexReport dedupe on Node ID. We use a different dedupe key for
 		// IndexReport because the three should not dedupe between themselves.
-		msg.DedupeKey = fmt.Sprintf("NodeInventory:%s", msg.GetDedupeKey())
-	case *central.SensorEvent_IndexReport:
+		msg.SetDedupeKey(fmt.Sprintf("NodeInventory:%s", msg.GetDedupeKey()))
+	case central.SensorEvent_IndexReport_case:
 		// This will put both NodeIndex and Node events in the same worker queue,
 		// preventing events for the same Node ID to run concurrently.
 		workerType = nodeEventType
 		// Node, NodeInventory and IndexReport dedupe on Node ID. We use a different dedupe key for
 		// IndexReport because the three should not dedupe between themselves.
-		msg.DedupeKey = fmt.Sprintf("NodeIndex:%s", msg.GetDedupeKey())
+		msg.SetDedupeKey(fmt.Sprintf("NodeIndex:%s", msg.GetDedupeKey()))
 	default:
 		if event.GetResource() == nil {
 			log.Errorf("Received event with unknown resource from cluster %s (%s). May be due to Sensor (%s) version mismatch with Central (%s)", s.cluster.GetName(), s.cluster.GetId(), s.sensorVersion, version.GetMainVersion())

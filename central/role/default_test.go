@@ -9,9 +9,15 @@ import (
 )
 
 func TestIsDefaultRole(t *testing.T) {
-	defaultRoleWithTraits := &storage.Role{Name: accesscontrol.Admin, Traits: &storage.Traits{Origin: storage.Traits_DEFAULT}}
-	defaultRoleWithoutTraits := &storage.Role{Name: accesscontrol.Admin}
-	nonDefaultRole := &storage.Role{Name: "some-random-role"}
+	traits := &storage.Traits{}
+	traits.SetOrigin(storage.Traits_DEFAULT)
+	defaultRoleWithTraits := &storage.Role{}
+	defaultRoleWithTraits.SetName(accesscontrol.Admin)
+	defaultRoleWithTraits.SetTraits(traits)
+	defaultRoleWithoutTraits := &storage.Role{}
+	defaultRoleWithoutTraits.SetName(accesscontrol.Admin)
+	nonDefaultRole := &storage.Role{}
+	nonDefaultRole.SetName("some-random-role")
 
 	assert.True(t, IsDefaultRole(defaultRoleWithTraits))
 	assert.True(t, IsDefaultRole(defaultRoleWithoutTraits))
@@ -19,10 +25,15 @@ func TestIsDefaultRole(t *testing.T) {
 }
 
 func TestIsDefaultAccessScope(t *testing.T) {
-	defaultAccessScopeWithTraits := &storage.SimpleAccessScope{Id: AccessScopeIncludeAll.GetId(),
-		Traits: &storage.Traits{Origin: storage.Traits_DEFAULT}}
-	defaultAccessScopeWithoutTraits := &storage.SimpleAccessScope{Id: AccessScopeIncludeAll.GetId()}
-	nonDefaultAccessScope := &storage.SimpleAccessScope{Id: "some-random-access-scope"}
+	traits := &storage.Traits{}
+	traits.SetOrigin(storage.Traits_DEFAULT)
+	defaultAccessScopeWithTraits := &storage.SimpleAccessScope{}
+	defaultAccessScopeWithTraits.SetId(AccessScopeIncludeAll.GetId())
+	defaultAccessScopeWithTraits.SetTraits(traits)
+	defaultAccessScopeWithoutTraits := &storage.SimpleAccessScope{}
+	defaultAccessScopeWithoutTraits.SetId(AccessScopeIncludeAll.GetId())
+	nonDefaultAccessScope := &storage.SimpleAccessScope{}
+	nonDefaultAccessScope.SetId("some-random-access-scope")
 
 	assert.True(t, IsDefaultAccessScope(defaultAccessScopeWithTraits))
 	assert.True(t, IsDefaultAccessScope(defaultAccessScopeWithoutTraits))
@@ -30,10 +41,15 @@ func TestIsDefaultAccessScope(t *testing.T) {
 }
 
 func TestIsDefaultPermissionSet(t *testing.T) {
-	defaultPermissionSetWithTraits := &storage.PermissionSet{Name: accesscontrol.Admin,
-		Traits: &storage.Traits{Origin: storage.Traits_DEFAULT}}
-	defaultPermissionSetWithoutTraits := &storage.PermissionSet{Name: accesscontrol.Admin}
-	nonDefaultPermissionSet := &storage.PermissionSet{Name: "some-random-permission-set"}
+	traits := &storage.Traits{}
+	traits.SetOrigin(storage.Traits_DEFAULT)
+	defaultPermissionSetWithTraits := &storage.PermissionSet{}
+	defaultPermissionSetWithTraits.SetName(accesscontrol.Admin)
+	defaultPermissionSetWithTraits.SetTraits(traits)
+	defaultPermissionSetWithoutTraits := &storage.PermissionSet{}
+	defaultPermissionSetWithoutTraits.SetName(accesscontrol.Admin)
+	nonDefaultPermissionSet := &storage.PermissionSet{}
+	nonDefaultPermissionSet.SetName("some-random-permission-set")
 
 	assert.True(t, IsDefaultPermissionSet(defaultPermissionSetWithTraits))
 	assert.True(t, IsDefaultPermissionSet(defaultPermissionSetWithoutTraits))

@@ -77,21 +77,20 @@ func (p *processBaselineMultiplier) Score(_ context.Context, deployment *storage
 	}
 
 	scorer := newScorer()
-	riskResult := &storage.Risk_Result{
-		Name: processBaselineHeading,
-	}
+	riskResult := &storage.Risk_Result{}
+	riskResult.SetName(processBaselineHeading)
 
 	for _, process := range violatingProcesses {
 		scorer.addProcess()
-		riskResult.Factors = append(riskResult.Factors, &storage.Risk_Result_Factor{
-			Message: formatProcess(process),
-		})
+		rrf := &storage.Risk_Result_Factor{}
+		rrf.SetMessage(formatProcess(process))
+		riskResult.SetFactors(append(riskResult.GetFactors(), rrf))
 	}
 
 	if len(riskResult.GetFactors()) == 0 {
 		return nil
 	}
 
-	riskResult.Score = multipliers.NormalizeScore(scorer.getScore(), processBaselineSaturation, processBaselineValue)
+	riskResult.SetScore(multipliers.NormalizeScore(scorer.getScore(), processBaselineSaturation, processBaselineValue))
 	return riskResult
 }

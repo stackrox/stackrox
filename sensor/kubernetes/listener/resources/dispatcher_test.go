@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -23,21 +24,17 @@ var (
 
 	testResourceEvent = &component.ResourceEvent{
 		ForwardMessages: []*central.SensorEvent{
-			{
+			central.SensorEvent_builder{
 				Id:     "536e7372-4576-4011-1111-111111111111",
 				Action: central.ResourceAction_SYNC_RESOURCE,
-				Timing: &central.Timing{
+				Timing: central.Timing_builder{
 					Dispatcher: "Namespace Dispatcher",
 					Resource:   "namespace",
 					Nanos:      42,
-				},
-				SensorHashOneof: &central.SensorEvent_SensorHash{
-					SensorHash: uint64(123456789012),
-				},
-				Resource: &central.SensorEvent_Namespace{
-					Namespace: testNamespace,
-				},
-			},
+				}.Build(),
+				SensorHash: proto.Uint64(uint64(123456789012)),
+				Namespace:  proto.ValueOrDefault(testNamespace),
+			}.Build(),
 		},
 	}
 

@@ -50,28 +50,25 @@ func TestGetSuppressionCacheEntry(t *testing.T) {
 	entry1 := getSuppressionCacheEntry(cve1)
 	assert.Equal(t, expectedEntry1, entry1)
 
-	cve2 := &storage.ClusterCVE{
-		SnoozeStart: protoStart,
-	}
+	cve2 := &storage.ClusterCVE{}
+	cve2.SetSnoozeStart(protoStart)
 	expectedEntry2 := common.SuppressionCacheEntry{
 		SuppressActivation: &activation,
 	}
 	entry2 := getSuppressionCacheEntry(cve2)
 	assert.Equal(t, expectedEntry2, entry2)
 
-	cve3 := &storage.ClusterCVE{
-		SnoozeExpiry: protoExpiration,
-	}
+	cve3 := &storage.ClusterCVE{}
+	cve3.SetSnoozeExpiry(protoExpiration)
 	expectedEntry3 := common.SuppressionCacheEntry{
 		SuppressExpiry: &expiration,
 	}
 	entry3 := getSuppressionCacheEntry(cve3)
 	assert.Equal(t, expectedEntry3, entry3)
 
-	cve4 := &storage.ClusterCVE{
-		SnoozeStart:  protoStart,
-		SnoozeExpiry: protoExpiration,
-	}
+	cve4 := &storage.ClusterCVE{}
+	cve4.SetSnoozeStart(protoStart)
+	cve4.SetSnoozeExpiry(protoExpiration)
 	expectedEntry4 := common.SuppressionCacheEntry{
 		SuppressActivation: &activation,
 		SuppressExpiry:     &expiration,

@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -65,13 +66,9 @@ func updatePeer(
 		}
 
 		entityCidrBlock := entity.GetInfo().GetExternalSource().GetCidr()
-		externalSource.Source = &storage.NetworkEntityInfo_ExternalSource_Cidr{
-			Cidr: entityCidrBlock,
-		}
+		externalSource.SetCidr(entityCidrBlock)
 
-		peer.Entity.Info.Desc = &storage.NetworkEntityInfo_ExternalSource_{
-			ExternalSource: externalSource,
-		}
+		peer.GetEntity().GetInfo().SetExternalSource(proto.ValueOrDefault(externalSource))
 		return true, nil
 	}
 	return false, nil

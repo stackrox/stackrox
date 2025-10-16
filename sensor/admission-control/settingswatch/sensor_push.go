@@ -89,22 +89,22 @@ func (w *sensorPushWatch) runWithStream(stream sensor.AdmissionControlManagement
 }
 
 func (w *sensorPushWatch) dispatchMsg(msg *sensor.MsgToAdmissionControl) error {
-	switch m := msg.GetMsg().(type) {
-	case *sensor.MsgToAdmissionControl_SettingsPush:
+	switch m := msg.WhichMsg(); m {
+	case sensor.MsgToAdmissionControl_SettingsPush_case:
 		select {
 		case <-w.ctx.Done():
 			return errors.Wrap(w.ctx.Err(), "dispatching settings push")
-		case w.settingsOutC <- m.SettingsPush:
-			log.Infof("Received and propagated updated admission controller settings via sensor push, timestamp: %v", m.SettingsPush.GetTimestamp())
+		case w.settingsOutC <- msg.GetSettingsPush():
+			log.Infof("Received and propagated updated admission controller settings via sensor push, timestamp: %v", msg.GetSettingsPush().GetTimestamp())
 		}
-	case *sensor.MsgToAdmissionControl_UpdateResourceRequest:
+	case sensor.MsgToAdmissionControl_UpdateResourceRequest_case:
 		select {
 		case <-w.ctx.Done():
 			return errors.Wrap(w.ctx.Err(), "dispatching update resource request")
-		case w.updateResourceReqOutC <- m.UpdateResourceRequest:
+		case w.updateResourceReqOutC <- msg.GetUpdateResourceRequest():
 		}
 	default:
-		log.Warnf("Received message of unknown type %T from sensor, not sure what to do with it ...", m)
+		log.Warnf("Received message of unknown type %v from sensor, not sure what to do with it ...", m)
 	}
 	return nil
 }

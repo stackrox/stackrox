@@ -27,7 +27,7 @@ func SplitV2(image *storage.Image, withComponents bool) (ImageParts, error) {
 
 	// Clear components in the top level image.
 	if parts.Image.GetScan() != nil {
-		parts.Image.Scan.Components = nil
+		parts.Image.GetScan().SetComponents(nil)
 	}
 	return parts, nil
 }
@@ -98,28 +98,25 @@ func GenerateImageComponentV2(os string, image *storage.Image, from *storage.Emb
 		return nil, err
 	}
 
-	ret := &storage.ImageComponentV2{
-		Id:              componentID,
-		Name:            from.GetName(),
-		Version:         from.GetVersion(),
-		Source:          from.GetSource(),
-		FixedBy:         from.GetFixedBy(),
-		RiskScore:       from.GetRiskScore(),
-		Priority:        from.GetPriority(),
-		OperatingSystem: os,
-		ImageId:         image.GetId(),
-		Location:        from.GetLocation(),
-		Architecture:    from.GetArchitecture(),
-	}
+	ret := &storage.ImageComponentV2{}
+	ret.SetId(componentID)
+	ret.SetName(from.GetName())
+	ret.SetVersion(from.GetVersion())
+	ret.SetSource(from.GetSource())
+	ret.SetFixedBy(from.GetFixedBy())
+	ret.SetRiskScore(from.GetRiskScore())
+	ret.SetPriority(from.GetPriority())
+	ret.SetOperatingSystem(os)
+	ret.SetImageId(image.GetId())
+	ret.SetLocation(from.GetLocation())
+	ret.SetArchitecture(from.GetArchitecture())
 
 	if from.GetSetTopCvss() != nil {
-		ret.SetTopCvss = &storage.ImageComponentV2_TopCvss{TopCvss: from.GetTopCvss()}
+		ret.Set_TopCvss(from.GetTopCvss())
 	}
 
-	if from.HasLayerIndex != nil {
-		ret.HasLayerIndex = &storage.ImageComponentV2_LayerIndex{
-			LayerIndex: from.GetLayerIndex(),
-		}
+	if from.HasHasLayerIndex() {
+		ret.SetLayerIndex(from.GetLayerIndex())
 	}
 
 	return ret, nil

@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
+	"google.golang.org/protobuf/proto"
 )
 
 type gcpMetadata struct {
@@ -68,25 +69,27 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 	}
 	clusterMetadata := getClusterMetadataFromAttributes(c)
 
-	return &storage.ProviderMetadata{
-		Region: region,
-		Zone:   md.Zone,
-		Provider: &storage.ProviderMetadata_Google{
-			Google: &storage.GoogleProviderMetadata{
-				Project:     md.ProjectID,
-				ClusterName: clusterName,
-			},
-		},
-		Verified: verified,
-		Cluster:  clusterMetadata,
-	}, nil
+	gpm := &storage.GoogleProviderMetadata{}
+	gpm.SetProject(md.ProjectID)
+	gpm.SetClusterName(clusterName)
+	pm := &storage.ProviderMetadata{}
+	pm.SetRegion(region)
+	pm.SetZone(md.Zone)
+	pm.SetGoogle(proto.ValueOrDefault(gpm))
+	pm.SetVerified(verified)
+	pm.SetCluster(clusterMetadata)
+	return pm, nil
 }
 
 func getClusterMetadataFromAttributes(client *metadata.Client) *storage.ClusterMetadata {
 	name, _ := client.InstanceAttributeValue("cluster-name")
 	id, _ := client.InstanceAttributeValue("cluster-uid")
 	if name != "" && id != "" {
-		return &storage.ClusterMetadata{Type: storage.ClusterMetadata_GKE, Name: name, Id: id}
+		cm := &storage.ClusterMetadata{}
+		cm.SetType(storage.ClusterMetadata_GKE)
+		cm.SetName(name)
+		cm.SetId(id)
+		return cm
 	}
 	return nil
 }

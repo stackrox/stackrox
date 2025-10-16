@@ -15,12 +15,12 @@ import (
 func TestVersionSerialization(t *testing.T) {
 	obj := &storage.Version{}
 	assert.NoError(t, testutils.FullInit(obj, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-	obj.LastPersisted = protocompat.TimestampNow()
+	obj.SetLastPersisted(protocompat.TimestampNow())
 	m, err := ConvertVersionFromProto(obj)
 	assert.NoError(t, err)
 	conv, err := ConvertVersionToProto(m)
 	assert.NoError(t, err)
 	// ConvertVersionFromProto and ConvertVersionToProto rounds up ts to microseconds, so make sure obj field is also rounded up.
-	obj.LastPersisted = protoutils.RoundTimestamp(obj.GetLastPersisted(), time.Microsecond)
+	obj.SetLastPersisted(protoutils.RoundTimestamp(obj.GetLastPersisted(), time.Microsecond))
 	protoassert.Equal(t, obj, conv)
 }

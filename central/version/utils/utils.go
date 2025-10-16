@@ -55,12 +55,11 @@ func SetCurrentVersionPostgres(pool postgres.DB) {
 		curr.MainVersion != version.GetMainVersion() ||
 		curr.SeqNum != migrations.CurrentDBVersionSeqNum() ||
 		curr.MinimumSeqNum != migrations.MinimumSupportedDBVersionSeqNum() {
-		newVersion := &storage.Version{
-			SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
-			Version:       version.GetMainVersion(),
-			MinSeqNum:     int32(migrations.MinimumSupportedDBVersionSeqNum()),
-			LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
-		}
+		newVersion := &storage.Version{}
+		newVersion.SetSeqNum(int32(migrations.CurrentDBVersionSeqNum()))
+		newVersion.SetVersion(version.GetMainVersion())
+		newVersion.SetMinSeqNum(int32(migrations.MinimumSupportedDBVersionSeqNum()))
+		newVersion.SetLastPersisted(protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()))
 		setVersionPostgres(pool, newVersion)
 	}
 }

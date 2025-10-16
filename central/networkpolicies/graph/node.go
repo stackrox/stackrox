@@ -3,6 +3,7 @@ package graph
 import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv/k8s"
+	"google.golang.org/protobuf/proto"
 )
 
 // namedPort identifies a port that is referenced by name.
@@ -54,16 +55,14 @@ func (d *node) toEntityProto() *storage.NetworkEntityInfo {
 		return d.extSrc
 	}
 
-	return &storage.NetworkEntityInfo{
-		Type: storage.NetworkEntityInfo_DEPLOYMENT,
-		Id:   d.deployment.GetId(),
-		Desc: &storage.NetworkEntityInfo_Deployment_{
-			Deployment: &storage.NetworkEntityInfo_Deployment{
-				Name:      d.deployment.GetName(),
-				Namespace: d.deployment.GetNamespace(),
-			},
-		},
-	}
+	nd := &storage.NetworkEntityInfo_Deployment{}
+	nd.SetName(d.deployment.GetName())
+	nd.SetNamespace(d.deployment.GetNamespace())
+	nei := &storage.NetworkEntityInfo{}
+	nei.SetType(storage.NetworkEntityInfo_DEPLOYMENT)
+	nei.SetId(d.deployment.GetId())
+	nei.SetDeployment(proto.ValueOrDefault(nd))
+	return nei
 }
 
 func (d *node) initNamedPorts() {
@@ -104,11 +103,11 @@ func (d *node) resolvePorts(ports []*storage.NetworkPolicyPort) portDescs {
 		}
 
 		var portNum int32
-		switch r := p.GetPortRef().(type) {
-		case *storage.NetworkPolicyPort_Port:
-			portNum = r.Port
-		case *storage.NetworkPolicyPort_PortName:
-			portNum = d.portByName(l4Proto, r.PortName)
+		switch p.WhichPortRef() {
+		case storage.NetworkPolicyPort_Port_case:
+			portNum = p.GetPort()
+		case storage.NetworkPolicyPort_PortName_case:
+			portNum = d.portByName(l4Proto, p.GetPortName())
 		}
 
 		if portNum == 0 && p.GetPortRef() != nil {

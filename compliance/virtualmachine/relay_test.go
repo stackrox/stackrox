@@ -88,7 +88,8 @@ func (s *relayTestSuite) TestHandleVsockConnection_RejectsMismatchingVsockCID() 
 
 	for name, c := range cases {
 		s.Run(name, func() {
-			indexReport := &v1.IndexReport{VsockCid: strconv.Itoa(c.indexReportVsockCID)}
+			indexReport := &v1.IndexReport{}
+			indexReport.SetVsockCid(strconv.Itoa(c.indexReportVsockCID))
 			conn, err := newMockVsockConn().withVsockCID(uint32(c.connVsockCID)).withIndexReport(indexReport)
 			s.Require().NoError(err)
 			client := newMockSensorClient()
@@ -227,7 +228,9 @@ func (s *relayTestSuite) TestSendReportToSensor_RetriesOnRetryableErrors() {
 
 func (s *relayTestSuite) defaultVsockConn() *mockVsockConn {
 	c := newMockVsockConn().withVsockCID(1234)
-	c, err := c.withIndexReport(&v1.IndexReport{VsockCid: "1234"})
+	ir := &v1.IndexReport{}
+	ir.SetVsockCid("1234")
+	c, err := c.withIndexReport(ir)
 	s.Require().NoError(err)
 	return c
 }

@@ -74,7 +74,7 @@ func ValidatePartial(cluster *storage.Cluster) *errorhelpers.ErrorList {
 	if err != nil {
 		errorList.AddString(fmt.Sprintf("Central API Endpoint must be a valid endpoint. Error: %s", err))
 	}
-	cluster.CentralApiEndpoint = centralEndpoint
+	cluster.SetCentralApiEndpoint(centralEndpoint)
 
 	return errorList
 }

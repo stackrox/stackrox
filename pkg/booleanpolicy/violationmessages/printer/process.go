@@ -68,5 +68,5 @@ func UpdateProcessAlertViolationMessage(v *storage.Alert_ProcessViolation) {
 		fmt.Fprintf(&sb, " under %d different user IDs", uidSet.Cardinality())
 	}
 
-	v.Message = sb.String()
+	v.SetMessage(sb.String())
 }

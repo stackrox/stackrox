@@ -44,11 +44,10 @@ func (l *backupListenerImpl) OnBackupSuccess(ctx context.Context) {
 }
 
 func (l *backupListenerImpl) updateSystemInfo(ctx context.Context, backupStatus storage.OperationStatus) {
-	backupInfo := &storage.BackupInfo{
-		BackupLastRunAt: protocompat.TimestampNow(),
-		Status:          backupStatus,
-		Requestor:       authn.UserFromContext(ctx),
-	}
+	backupInfo := &storage.BackupInfo{}
+	backupInfo.SetBackupLastRunAt(protocompat.TimestampNow())
+	backupInfo.SetStatus(backupStatus)
+	backupInfo.SetRequestor(authn.UserFromContext(ctx))
 
 	// This is a system op.
 	ctx = sac.WithAllAccess(context.Background())
@@ -61,7 +60,7 @@ func (l *backupListenerImpl) updateSystemInfo(ctx context.Context, backupStatus 
 	if storedInfo == nil {
 		storedInfo = &storage.SystemInfo{}
 	}
-	storedInfo.BackupInfo = backupInfo
+	storedInfo.SetBackupInfo(backupInfo)
 	if err := l.systemInfoStore.Upsert(ctx, storedInfo); err != nil {
 		log.Errorf("Could not store backup metadata: %v", err)
 	}

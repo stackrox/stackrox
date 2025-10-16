@@ -32,7 +32,8 @@ func TestAuthz(t *testing.T) {
 }
 
 func TestBuildNames(t *testing.T) {
-	srcImage := &storage.ImageName{FullName: "si"}
+	srcImage := &storage.ImageName{}
+	srcImage.SetFullName("si")
 
 	t.Run("nil metadata", func(t *testing.T) {
 		names := buildNames(srcImage, nil, nil)
@@ -47,7 +48,8 @@ func TestBuildNames(t *testing.T) {
 	})
 
 	t.Run("metadata with empty data source", func(t *testing.T) {
-		metadata := &storage.ImageMetadata{DataSource: &storage.DataSource{}}
+		metadata := &storage.ImageMetadata{}
+		metadata.SetDataSource(&storage.DataSource{})
 		names := buildNames(srcImage, nil, metadata)
 		assert.Len(t, names, 1)
 		assert.Equal(t, srcImage.GetFullName(), names[0].GetFullName())
@@ -55,7 +57,10 @@ func TestBuildNames(t *testing.T) {
 
 	t.Run("metadata with mirror", func(t *testing.T) {
 		mirror := "example.com/mirror/image:latest"
-		metadata := &storage.ImageMetadata{DataSource: &storage.DataSource{Mirror: mirror}}
+		ds := &storage.DataSource{}
+		ds.SetMirror(mirror)
+		metadata := &storage.ImageMetadata{}
+		metadata.SetDataSource(ds)
 		names := buildNames(srcImage, nil, metadata)
 		assert.Len(t, names, 2)
 		assert.Equal(t, srcImage.GetFullName(), names[0].GetFullName())
@@ -64,7 +69,10 @@ func TestBuildNames(t *testing.T) {
 
 	t.Run("metadata with invalid mirror", func(t *testing.T) {
 		mirror := "example.com/mirror/image@sha256:bad"
-		metadata := &storage.ImageMetadata{DataSource: &storage.DataSource{Mirror: mirror}}
+		ds := &storage.DataSource{}
+		ds.SetMirror(mirror)
+		metadata := &storage.ImageMetadata{}
+		metadata.SetDataSource(ds)
 		names := buildNames(srcImage, nil, metadata)
 		assert.Len(t, names, 1)
 		assert.Equal(t, srcImage.GetFullName(), names[0].GetFullName())
@@ -72,13 +80,16 @@ func TestBuildNames(t *testing.T) {
 
 	t.Run("existing names and mirror", func(t *testing.T) {
 		existingNames := []*storage.ImageName{
-			{FullName: "si"}, // Dupe should be omitted
-			{FullName: "e1"},
-			{FullName: "e2"},
-			{FullName: "si"}, // Dupe should be omitted
+			storage.ImageName_builder{FullName: "si"}.Build(), // Dupe should be omitted
+			storage.ImageName_builder{FullName: "e1"}.Build(),
+			storage.ImageName_builder{FullName: "e2"}.Build(),
+			storage.ImageName_builder{FullName: "si"}.Build(), // Dupe should be omitted
 		}
 		mirror := "example.com/mirror/image:latest"
-		metadata := &storage.ImageMetadata{DataSource: &storage.DataSource{Mirror: mirror}}
+		ds := &storage.DataSource{}
+		ds.SetMirror(mirror)
+		metadata := &storage.ImageMetadata{}
+		metadata.SetDataSource(ds)
 
 		names := buildNames(srcImage, existingNames, metadata)
 		require.Len(t, names, 4)
@@ -96,13 +107,29 @@ func TestShouldUpdateExistingScan(t *testing.T) {
 	feature := true
 	update := true
 	imgExists := true
-	v4DataSource := &storage.DataSource{Id: iiStore.DefaultScannerV4Integration.GetId()}
-	v4MatchReq := &v1.EnrichLocalImageInternalRequest{IndexerVersion: "v4"}
+	v4DataSource := &storage.DataSource{}
+	v4DataSource.SetId(iiStore.DefaultScannerV4Integration.GetId())
+	v4MatchReq := &v1.EnrichLocalImageInternalRequest{}
+	v4MatchReq.SetIndexerVersion("v4")
 	v2MatchReq := &v1.EnrichLocalImageInternalRequest{}
-	v2ExpiredScan := &storage.Image{Scan: &storage.ImageScan{ScanTime: protoconv.NowMinus(reprocessInterval * 2)}}
-	v2CurrentScan := &storage.Image{Scan: &storage.ImageScan{ScanTime: protoconv.NowMinus(0)}}
-	v4ExpiredScan := &storage.Image{Scan: &storage.ImageScan{ScanTime: v2ExpiredScan.GetScan().GetScanTime(), DataSource: v4DataSource}}
-	v4CurrentScan := &storage.Image{Scan: &storage.ImageScan{ScanTime: protoconv.NowMinus(0), DataSource: v4DataSource}}
+	imageScan := &storage.ImageScan{}
+	imageScan.SetScanTime(protoconv.NowMinus(reprocessInterval * 2))
+	v2ExpiredScan := &storage.Image{}
+	v2ExpiredScan.SetScan(imageScan)
+	imageScan2 := &storage.ImageScan{}
+	imageScan2.SetScanTime(protoconv.NowMinus(0))
+	v2CurrentScan := &storage.Image{}
+	v2CurrentScan.SetScan(imageScan2)
+	imageScan3 := &storage.ImageScan{}
+	imageScan3.SetScanTime(v2ExpiredScan.GetScan().GetScanTime())
+	imageScan3.SetDataSource(v4DataSource)
+	v4ExpiredScan := &storage.Image{}
+	v4ExpiredScan.SetScan(imageScan3)
+	imageScan4 := &storage.ImageScan{}
+	imageScan4.SetScanTime(protoconv.NowMinus(0))
+	imageScan4.SetDataSource(v4DataSource)
+	v4CurrentScan := &storage.Image{}
+	v4CurrentScan.SetScan(imageScan4)
 
 	testCases := []struct {
 		desc           string
@@ -193,8 +220,11 @@ func TestUpdatingImageFromRequest(t *testing.T) {
 	imgCName := createImgName("docker.io/different/nginx:latest")   // diff remote
 	imgDName := createImgName("example.com/different/nginx:latest") // diff registry and remote
 
-	imgA := &storage.Image{Name: imgAName}
-	imgAWithMeta := &storage.Image{Name: imgAName, Metadata: &storage.ImageMetadata{}}
+	imgA := &storage.Image{}
+	imgA.SetName(imgAName)
+	imgAWithMeta := &storage.Image{}
+	imgAWithMeta.SetName(imgAName)
+	imgAWithMeta.SetMetadata(&storage.ImageMetadata{})
 
 	tcs := []struct {
 		name         string
@@ -251,20 +281,20 @@ func TestScanExpired(t *testing.T) {
 	}{
 		{
 			"expired scan",
-			&storage.Image{
-				Scan: &storage.ImageScan{
+			storage.Image_builder{
+				Scan: storage.ImageScan_builder{
 					ScanTime: timestamppb.New(time.Now().Add(-reprocessInterval * 2)),
-				},
-			},
+				}.Build(),
+			}.Build(),
 			true,
 		},
 		{
 			"not expired scan",
-			&storage.Image{
-				Scan: &storage.ImageScan{
+			storage.Image_builder{
+				Scan: storage.ImageScan_builder{
 					ScanTime: timestamppb.New(time.Now()),
-				},
-			},
+				}.Build(),
+			}.Build(),
 			false,
 		},
 	}
@@ -282,9 +312,15 @@ func TestResetClusterLocal(t *testing.T) {
 	require.NoError(t, err)
 
 	names := []*storage.ImageName{name}
-	scanReq := &v1.ScanImageInternalRequest{Image: &storage.ContainerImage{Id: "id", Name: name}}
-	curScan := &storage.ImageScan{ScanTime: timestamppb.New(time.Now())}
-	expScan := &storage.ImageScan{ScanTime: timestamppb.New(time.Now().Add(-reprocessInterval * 2))}
+	ci := &storage.ContainerImage{}
+	ci.SetId("id")
+	ci.SetName(name)
+	scanReq := &v1.ScanImageInternalRequest{}
+	scanReq.SetImage(ci)
+	curScan := &storage.ImageScan{}
+	curScan.SetScanTime(timestamppb.New(time.Now()))
+	expScan := &storage.ImageScan{}
+	expScan.SetScanTime(timestamppb.New(time.Now().Add(-reprocessInterval * 2)))
 
 	tcs := []struct {
 		desc              string
@@ -295,32 +331,32 @@ func TestResetClusterLocal(t *testing.T) {
 	}{
 		{
 			"do not reset flag when scan not expired",
-			&storage.Image{IsClusterLocal: true, Name: name, Names: names, Scan: curScan},
+			storage.Image_builder{IsClusterLocal: true, Name: name, Names: names, Scan: curScan}.Build(),
 			enricher.UseCachesIfPossible, nil, true,
 		},
 		{
 			"reset flag when scan expired",
-			&storage.Image{IsClusterLocal: true, Name: name, Names: names, Scan: expScan},
+			storage.Image_builder{IsClusterLocal: true, Name: name, Names: names, Scan: expScan}.Build(),
 			enricher.IgnoreExistingImages, nil, false,
 		},
 		{
 			"do not reset flag when scan not expired and existing name not found",
-			&storage.Image{IsClusterLocal: true, Name: name, Names: nil, Scan: curScan},
+			storage.Image_builder{IsClusterLocal: true, Name: name, Names: nil, Scan: curScan}.Build(),
 			enricher.ForceRefetchSignaturesOnly, nil, true,
 		},
 		{
 			"reset flag when scan expired and existing name not found",
-			&storage.Image{IsClusterLocal: true, Name: name, Names: nil, Scan: expScan},
+			storage.Image_builder{IsClusterLocal: true, Name: name, Names: nil, Scan: expScan}.Build(),
 			enricher.IgnoreExistingImages, nil, false,
 		},
 		{
 			"do not reset flag when scan not expired and new scan fails",
-			&storage.Image{IsClusterLocal: true, Name: name, Names: names, Scan: curScan},
+			storage.Image_builder{IsClusterLocal: true, Name: name, Names: names, Scan: curScan}.Build(),
 			enricher.IgnoreExistingImages, errors.New("broken"), true,
 		},
 		{
 			"reset flag when scan expired and new scan fails",
-			&storage.Image{IsClusterLocal: true, Name: name, Names: names, Scan: expScan},
+			storage.Image_builder{IsClusterLocal: true, Name: name, Names: names, Scan: expScan}.Build(),
 			enricher.IgnoreExistingImages, errors.New("broken"), false,
 		},
 	}
@@ -382,16 +418,16 @@ func TestEnrichLocalImageInternal_ImageNames(t *testing.T) {
 		Return(enricher.EnrichmentResult{}, nil)
 
 	imageDSMock := imageDSMocks.NewMockDataStore(ctrl)
+	image := &storage.Image{}
+	image.SetId("fake-id")
+	image.ClearScan() // A nil scan should trigger a re-scan.
+	image.SetNames([]*storage.ImageName{
+		genImageName("fake/image:A"),
+		genImageName("fake/image:B"),
+	})
 	imageDSMock.EXPECT().GetImage(gomock.Any(), gomock.Any()).
 		AnyTimes().
-		Return(&storage.Image{
-			Id:   "fake-id",
-			Scan: nil, // A nil scan should trigger a re-scan.
-			Names: []*storage.ImageName{
-				genImageName("fake/image:A"),
-				genImageName("fake/image:B"),
-			},
-		}, true, nil)
+		Return(image, true, nil)
 
 	riskManagerMock := riskManagerMocks.NewMockManager(ctrl)
 	riskManagerMock.EXPECT().CalculateRiskAndUpsertImage(gomock.Any()).
@@ -405,10 +441,10 @@ func TestEnrichLocalImageInternal_ImageNames(t *testing.T) {
 		riskManager:           riskManagerMock,
 	}
 
-	resp, err := s.EnrichLocalImageInternal(ctx, &v1.EnrichLocalImageInternalRequest{
-		ImageId:   "fake-id",
-		ImageName: genImageName("fake/image:C"),
-	})
+	eliir := &v1.EnrichLocalImageInternalRequest{}
+	eliir.SetImageId("fake-id")
+	eliir.SetImageName(genImageName("fake/image:C"))
+	resp, err := s.EnrichLocalImageInternal(ctx, eliir)
 	require.NoError(t, err)
 	// Verify that the names from the cached image are carried forward.
 	require.Len(t, resp.GetImage().GetNames(), 3)

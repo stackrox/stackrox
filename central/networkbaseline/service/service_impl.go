@@ -82,7 +82,9 @@ func (s *serviceImpl) GetNetworkBaselineStatusForFlows(
 
 	// Got the baseline, check status of each passed in peer
 	statuses := s.getStatusesForPeers(baseline, request.GetPeers())
-	return &v1.NetworkBaselineStatusResponse{Statuses: statuses}, nil
+	nbsr := &v1.NetworkBaselineStatusResponse{}
+	nbsr.SetStatuses(statuses)
+	return nbsr, nil
 }
 
 func (s *serviceImpl) GetNetworkBaselineStatusForExternalFlows(ctx context.Context, request *v1.NetworkBaselineExternalStatusRequest) (*v1.NetworkBaselineExternalStatusResponse, error) {
@@ -144,12 +146,12 @@ func (s *serviceImpl) GetNetworkBaselineStatusForExternalFlows(ctx context.Conte
 		baselineFlows = paginated.PaginateSlice(int(pg.GetOffset()), int(pg.GetLimit()), baselineFlows)
 	}
 
-	return &v1.NetworkBaselineExternalStatusResponse{
-		Anomalous:      anomalousFlows,
-		TotalAnomalous: int32(totalAnomalous),
-		Baseline:       baselineFlows,
-		TotalBaseline:  int32(totalBaseline),
-	}, nil
+	nbesr := &v1.NetworkBaselineExternalStatusResponse{}
+	nbesr.SetAnomalous(anomalousFlows)
+	nbesr.SetTotalAnomalous(int32(totalAnomalous))
+	nbesr.SetBaseline(baselineFlows)
+	nbesr.SetTotalBaseline(int32(totalBaseline))
+	return nbesr, nil
 }
 
 // GetNetworkBaseline gets the network baseline associated with the deployment.
@@ -216,13 +218,12 @@ func (s *serviceImpl) getStatusesForPeers(
 				}
 			}
 		}
+		nbps := &v1.NetworkBaselinePeerStatus{}
+		nbps.SetPeer(examinedPeer)
+		nbps.SetStatus(status)
 		statuses =
 			append(
-				statuses,
-				&v1.NetworkBaselinePeerStatus{
-					Peer:   examinedPeer,
-					Status: status,
-				})
+				statuses, nbps)
 	}
 
 	return statuses

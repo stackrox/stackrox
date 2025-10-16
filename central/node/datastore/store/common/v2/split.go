@@ -20,7 +20,7 @@ func Split(node *storage.Node, withComponents bool) *NodeParts {
 
 	// Clear components in the top level node.
 	if parts.Node.GetScan() != nil {
-		parts.Node.Scan.Components = nil
+		parts.Node.GetScan().SetComponents(nil)
 	}
 
 	return parts
@@ -67,43 +67,38 @@ func splitCVEs(os string, component *ComponentParts, embedded *storage.EmbeddedN
 }
 
 func generateComponentCVEEdge(convertedComponent *storage.NodeComponent, convertedCVE *storage.NodeCVE, embedded *storage.NodeVulnerability) *storage.NodeComponentCVEEdge {
-	ret := &storage.NodeComponentCVEEdge{
-		Id:              pgSearch.IDFromPks([]string{convertedComponent.GetId(), convertedCVE.GetId()}),
-		IsFixable:       embedded.GetFixedBy() != "",
-		NodeCveId:       convertedCVE.GetId(),
-		NodeComponentId: convertedComponent.GetId(),
-	}
+	ret := &storage.NodeComponentCVEEdge{}
+	ret.SetId(pgSearch.IDFromPks([]string{convertedComponent.GetId(), convertedCVE.GetId()}))
+	ret.SetIsFixable(embedded.GetFixedBy() != "")
+	ret.SetNodeCveId(convertedCVE.GetId())
+	ret.SetNodeComponentId(convertedComponent.GetId())
 
 	if ret.GetIsFixable() {
-		ret.HasFixedBy = &storage.NodeComponentCVEEdge_FixedBy{
-			FixedBy: embedded.GetFixedBy(),
-		}
+		ret.SetFixedBy(embedded.GetFixedBy())
 	}
 	return ret
 }
 
 // GenerateNodeComponent returns top-level node component from embedded component.
 func GenerateNodeComponent(os string, from *storage.EmbeddedNodeScanComponent) *storage.NodeComponent {
-	ret := &storage.NodeComponent{
-		Id:              scancomponent.ComponentID(from.GetName(), from.GetVersion(), os),
-		OperatingSystem: os,
-		Name:            from.GetName(),
-		Version:         from.GetVersion(),
-		RiskScore:       from.GetRiskScore(),
-		Priority:        from.GetPriority(),
-	}
+	ret := &storage.NodeComponent{}
+	ret.SetId(scancomponent.ComponentID(from.GetName(), from.GetVersion(), os))
+	ret.SetOperatingSystem(os)
+	ret.SetName(from.GetName())
+	ret.SetVersion(from.GetVersion())
+	ret.SetRiskScore(from.GetRiskScore())
+	ret.SetPriority(from.GetPriority())
 
 	if from.GetSetTopCvss() != nil {
-		ret.SetTopCvss = &storage.NodeComponent_TopCvss{TopCvss: from.GetTopCvss()}
+		ret.Set_TopCvss(from.GetTopCvss())
 	}
 	return ret
 }
 
 func generateNodeComponentEdge(node *storage.Node, convertedComponent *storage.NodeComponent) *storage.NodeComponentEdge {
-	ret := &storage.NodeComponentEdge{
-		Id:              pgSearch.IDFromPks([]string{node.GetId(), convertedComponent.GetId()}),
-		NodeId:          node.GetId(),
-		NodeComponentId: convertedComponent.GetId(),
-	}
+	ret := &storage.NodeComponentEdge{}
+	ret.SetId(pgSearch.IDFromPks([]string{node.GetId(), convertedComponent.GetId()}))
+	ret.SetNodeId(node.GetId())
+	ret.SetNodeComponentId(convertedComponent.GetId())
 	return ret
 }

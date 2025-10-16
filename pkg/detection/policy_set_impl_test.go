@@ -84,66 +84,66 @@ func (suite *PolicyTestSuite) TestThrowsErrorForNotCompilable() {
 	suite.False(hasMatch, "policy set should not contain a matching policy")
 }
 
-var goodPolicy = &storage.Policy{
+var goodPolicy = storage.Policy_builder{
 	Id:         "1",
 	Name:       "latest",
 	Severity:   storage.Severity_LOW_SEVERITY,
 	Categories: []string{"Image Assurance", "Privileges Capabilities"},
 	PolicySections: []*storage.PolicySection{
-		{
+		storage.PolicySection_builder{
 			SectionName: "section-1",
 			PolicyGroups: []*storage.PolicyGroup{
-				{
+				storage.PolicyGroup_builder{
 					FieldName: fieldnames.ImageTag,
 					Values: []*storage.PolicyValue{
-						{
+						storage.PolicyValue_builder{
 							Value: "latest",
-						},
+						}.Build(),
 					},
-				},
-				{
+				}.Build(),
+				storage.PolicyGroup_builder{
 					FieldName: fieldnames.PrivilegedContainer,
 					Values: []*storage.PolicyValue{
-						{
+						storage.PolicyValue_builder{
 							Value: "true",
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
-		},
+		}.Build(),
 	},
 	PolicyVersion:   "1.1",
 	LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
-}
+}.Build()
 
-var badPolicy = &storage.Policy{
+var badPolicy = storage.Policy_builder{
 	Id:         "2",
 	Name:       "latest",
 	Severity:   storage.Severity_LOW_SEVERITY,
 	Categories: []string{"Image Assurance", "Privileges Capabilities"},
 	PolicySections: []*storage.PolicySection{
-		{
+		storage.PolicySection_builder{
 			SectionName: "section-1",
 			PolicyGroups: []*storage.PolicyGroup{
-				{
+				storage.PolicyGroup_builder{
 					FieldName: fieldnames.ImageTag,
 					Values: []*storage.PolicyValue{
-						{
+						storage.PolicyValue_builder{
 							Value: "^^[/",
-						},
+						}.Build(),
 					},
-				},
-				{
+				}.Build(),
+				storage.PolicyGroup_builder{
 					FieldName: fieldnames.PrivilegedContainer,
 					Values: []*storage.PolicyValue{
-						{
+						storage.PolicyValue_builder{
 							Value: "true",
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
-		},
+		}.Build(),
 	},
 	PolicyVersion:   "1.1",
 	LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
-}
+}.Build()

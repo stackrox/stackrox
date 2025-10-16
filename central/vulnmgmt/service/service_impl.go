@@ -121,7 +121,11 @@ func (s *serviceImpl) VulnMgmtExportWorkloads(req *v1.VulnMgmtExportWorkloadsReq
 			log.Errorf("Error getting live pod count for deployment ID '%s'", d.GetId())
 		}
 
-		if err := srv.Send(&v1.VulnMgmtExportWorkloadsResponse{Deployment: d, Images: images, LivePods: int32(livePods)}); err != nil {
+		vmewr := &v1.VulnMgmtExportWorkloadsResponse{}
+		vmewr.SetDeployment(d)
+		vmewr.SetImages(images)
+		vmewr.SetLivePods(int32(livePods))
+		if err := srv.Send(vmewr); err != nil {
 			return err
 		}
 		return nil

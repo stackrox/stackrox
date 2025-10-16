@@ -88,11 +88,10 @@ func (ds *datastoreImpl) SetPolicyCategoriesForPolicy(ctx context.Context, polic
 		if ds.categoryNameIDMap[c] != "" {
 			categoryIds = append(categoryIds, ds.categoryNameIDMap[c])
 		} else {
-			newCategory := &storage.PolicyCategory{
-				Id:        uuid.NewV4().String(),
-				Name:      c,
-				IsDefault: false,
-			}
+			newCategory := &storage.PolicyCategory{}
+			newCategory.SetId(uuid.NewV4().String())
+			newCategory.SetName(c)
+			newCategory.SetIsDefault(false)
 			categoriesToAdd = append(categoriesToAdd, newCategory)
 			categoryIds = append(categoryIds, newCategory.GetId())
 		}
@@ -109,11 +108,11 @@ func (ds *datastoreImpl) SetPolicyCategoriesForPolicy(ctx context.Context, polic
 
 	policyCategoryEdges := make([]*storage.PolicyCategoryEdge, 0, len(categoryIds))
 	for _, id := range categoryIds {
-		policyCategoryEdges = append(policyCategoryEdges, &storage.PolicyCategoryEdge{
-			Id:         uuid.NewV4().String(),
-			PolicyId:   policyID,
-			CategoryId: id,
-		})
+		pce := &storage.PolicyCategoryEdge{}
+		pce.SetId(uuid.NewV4().String())
+		pce.SetPolicyId(policyID)
+		pce.SetCategoryId(id)
+		policyCategoryEdges = append(policyCategoryEdges, pce)
 	}
 	return ds.policyCategoryEdgeDS.UpsertMany(ctx, policyCategoryEdges)
 }
@@ -236,15 +235,15 @@ func (ds *datastoreImpl) AddPolicyCategory(ctx context.Context, category *storag
 		return nil, sac.ErrResourceAccessDenied
 	}
 	if category.GetId() == "" {
-		category.Id = uuid.NewV4().String()
+		category.SetId(uuid.NewV4().String())
 	}
 	// Any category added after startup must be marked custom category.
-	category.IsDefault = false
+	category.SetIsDefault(false)
 
 	ds.categoryMutex.Lock()
 	defer ds.categoryMutex.Unlock()
 
-	category.Name = titleCase.String(category.GetName())
+	category.SetName(titleCase.String(category.GetName()))
 	err := ds.storage.Upsert(ctx, category)
 	if err != nil {
 		return nil, err
@@ -279,7 +278,7 @@ func (ds *datastoreImpl) RenamePolicyCategory(ctx context.Context, id, newName s
 		return nil, errorsPkg.Wrap(errox.InvalidArgs, fmt.Sprintf("policy category %q is a default category, cannot be renamed", id))
 	}
 
-	category.Name = titleCase.String(newName)
+	category.SetName(titleCase.String(newName))
 	err = ds.storage.Upsert(ctx, category)
 	if err != nil {
 		return nil, errorsPkg.Wrap(err, fmt.Sprintf("failed to rename category '%q' to '%q'", id, newName))
@@ -287,11 +286,11 @@ func (ds *datastoreImpl) RenamePolicyCategory(ctx context.Context, id, newName s
 	delete(ds.categoryNameIDMap, existingCategoryName)
 	ds.categoryNameIDMap[category.GetName()] = category.GetId()
 
-	return &storage.PolicyCategory{
-		Id:        category.GetId(),
-		Name:      category.GetName(),
-		IsDefault: category.GetIsDefault(),
-	}, nil
+	pc := &storage.PolicyCategory{}
+	pc.SetId(category.GetId())
+	pc.SetName(category.GetName())
+	pc.SetIsDefault(category.GetIsDefault())
+	return pc, nil
 }
 
 // DeletePolicyCategory removes a policy from the storage
@@ -325,11 +324,11 @@ func (ds *datastoreImpl) DeletePolicyCategory(ctx context.Context, id string) er
 
 // convertCategory returns proto search result from a category object and the internal search result
 func convertCategory(category *storage.PolicyCategory, result searchPkg.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_POLICY_CATEGORIES,
-		Id:             category.GetId(),
-		Name:           category.GetName(),
-		FieldToMatches: searchPkg.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+	sr := &v1.SearchResult{}
+	sr.SetCategory(v1.SearchCategory_POLICY_CATEGORIES)
+	sr.SetId(category.GetId())
+	sr.SetName(category.GetName())
+	sr.SetFieldToMatches(searchPkg.GetProtoMatchesMap(result.Matches))
+	sr.SetScore(result.Score)
+	return sr
 }

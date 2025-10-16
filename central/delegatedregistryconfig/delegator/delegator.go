@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/waiter"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -113,16 +114,13 @@ func (d *delegatorImpl) DelegateScanImage(ctx context.Context, imgName *storage.
 	}
 	defer w.Close()
 
-	msg := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_ScanImage{
-			ScanImage: &central.ScanImage{
-				RequestId: w.ID(),
-				ImageName: imgName.GetFullName(),
-				Force:     force,
-				Namespace: namespace,
-			},
-		},
-	}
+	scanImage := &central.ScanImage{}
+	scanImage.SetRequestId(w.ID())
+	scanImage.SetImageName(imgName.GetFullName())
+	scanImage.SetForce(force)
+	scanImage.SetNamespace(namespace)
+	msg := &central.MsgToSensor{}
+	msg.SetScanImage(proto.ValueOrDefault(scanImage))
 
 	err = d.connManager.SendMessage(clusterID, msg)
 	if err != nil {
@@ -171,16 +169,13 @@ func (d *delegatorImpl) DelegateScanImageV2(ctx context.Context, imgName *storag
 	}
 	defer w.Close()
 
-	msg := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_ScanImage{
-			ScanImage: &central.ScanImage{
-				RequestId: w.ID(),
-				ImageName: imgName.GetFullName(),
-				Force:     force,
-				Namespace: namespace,
-			},
-		},
-	}
+	scanImage := &central.ScanImage{}
+	scanImage.SetRequestId(w.ID())
+	scanImage.SetImageName(imgName.GetFullName())
+	scanImage.SetForce(force)
+	scanImage.SetNamespace(namespace)
+	msg := &central.MsgToSensor{}
+	msg.SetScanImage(proto.ValueOrDefault(scanImage))
 
 	err = d.connManager.SendMessage(clusterID, msg)
 	if err != nil {

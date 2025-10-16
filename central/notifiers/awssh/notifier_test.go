@@ -20,6 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 // A LightAlert is a lightweight alert struct that is very convenient to define in tests.
@@ -29,44 +30,42 @@ type LightAlert struct {
 }
 
 func (l *LightAlert) convert() *storage.Alert {
-	return &storage.Alert{
+	return storage.Alert_builder{
 		Id: stringutils.OrDefault(l.id, uuid.NewV4().String()),
-		Policy: &storage.Policy{
+		Policy: storage.Policy_builder{
 			Id:          uuid.NewV4().String(),
 			Name:        "example policy",
 			Description: "Some random description",
 			Severity:    storage.Severity_HIGH_SEVERITY,
-		},
-		Entity: &storage.Alert_Deployment_{
-			Deployment: &storage.Alert_Deployment{
-				Id:          uuid.NewV4().String(),
-				Name:        "example deployment",
-				Namespace:   "example namespace",
-				ClusterId:   uuid.NewV4().String(),
-				ClusterName: "example cluster",
-				Containers: []*storage.Alert_Deployment_Container{
-					{
-						Name: "example container",
-						Image: &storage.ContainerImage{
-							Id: uuid.NewV4().String(),
-							Name: &storage.ImageName{
-								FullName: "registry/path/to/image:tag",
-							},
-						},
-					},
-				},
+		}.Build(),
+		Deployment: storage.Alert_Deployment_builder{
+			Id:          uuid.NewV4().String(),
+			Name:        "example deployment",
+			Namespace:   "example namespace",
+			ClusterId:   uuid.NewV4().String(),
+			ClusterName: "example cluster",
+			Containers: []*storage.Alert_Deployment_Container{
+				storage.Alert_Deployment_Container_builder{
+					Name: "example container",
+					Image: storage.ContainerImage_builder{
+						Id: uuid.NewV4().String(),
+						Name: storage.ImageName_builder{
+							FullName: "registry/path/to/image:tag",
+						}.Build(),
+					}.Build(),
+				}.Build(),
 			},
-		},
+		}.Build(),
 		Violations: []*storage.Alert_Violation{
-			{Message: "one"},
-			{Message: "two"},
-			{Message: "three"},
-			{Message: "https://www.stackrox.com"},
+			storage.Alert_Violation_builder{Message: "one"}.Build(),
+			storage.Alert_Violation_builder{Message: "two"}.Build(),
+			storage.Alert_Violation_builder{Message: "three"}.Build(),
+			storage.Alert_Violation_builder{Message: "https://www.stackrox.com"}.Build(),
 		},
 		FirstOccurred: protocompat.TimestampNow(),
 		Time:          protocompat.TimestampNow(),
 		State:         l.state,
-	}
+	}.Build()
 }
 
 type BatchSizeMatcher struct {
@@ -293,35 +292,35 @@ func (s *notifierTestSuite) TestThrottling() {
 }
 
 func configFromEnv() (*storage.AWSSecurityHub, error) {
-	result := storage.AWSSecurityHub{}
+	result := &storage.AWSSecurityHub{}
 
 	if v, ok := os.LookupEnv("NOTIFIER_AWS_ACCOUNT_ID"); ok {
-		result.AccountId = v
+		result.SetAccountId(v)
 	} else {
 		return nil, errors.New("missing value for NOTIFIER_AWS_ACCOUNT_ID in env")
 	}
 
 	if v, ok := os.LookupEnv("NOTIFIER_AWS_SECURITY_HUB_REGION"); ok {
-		result.Region = v
+		result.SetRegion(v)
 	} else {
 		return nil, errors.New("missing value for NOTIFIER_AWS_SECURITY_HUB_REGION in env")
 	}
 
 	if v, ok := os.LookupEnv("NOTIFIER_AWS_SECURITY_HUB_ACCESS_KEY_ID"); ok {
-		result.Credentials = &storage.AWSSecurityHub_Credentials{
-			AccessKeyId: v,
-		}
+		ac := &storage.AWSSecurityHub_Credentials{}
+		ac.SetAccessKeyId(v)
+		result.SetCredentials(ac)
 	} else {
 		return nil, errors.New("missing value for NOTIFIER_AWS_SECURITY_HUB_ACCESS_KEY_ID in env")
 	}
 
 	if v, ok := os.LookupEnv("NOTIFIER_AWS_SECURITY_HUB_SECRET_ACCESS_KEY"); ok {
-		result.Credentials.SecretAccessKey = v
+		result.GetCredentials().SetSecretAccessKey(v)
 	} else {
 		return nil, errors.New("missing value for NOTIFIER_AWS_SECURITY_HUB_SECRET_ACCESS_KEY in env")
 	}
 
-	return &result, nil
+	return result, nil
 }
 
 // TestNotifierCreationFromEnvAndTest exercises very basic functionality. In fact,
@@ -337,11 +336,9 @@ func TestNotifierCreationFromEnvAndTest(t *testing.T) {
 	defer cancel()
 
 	configuration := defaultConfiguration
-	configuration.descriptor = &storage.Notifier{
-		Config: &storage.Notifier_AwsSecurityHub{
-			AwsSecurityHub: config,
-		},
-	}
+	notifier2 := &storage.Notifier{}
+	notifier2.SetAwsSecurityHub(proto.ValueOrDefault(config))
+	configuration.descriptor = notifier2
 	configuration.maxBatchSize = 3
 	configuration.minUploadDelay = 1 * time.Second
 	configuration.maxUploadDelay = 15 * time.Second

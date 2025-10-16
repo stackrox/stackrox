@@ -337,22 +337,17 @@ func (s *UpdaterTestSuite) createCO(ds *appsV1.Deployment) {
 }
 
 func (s *UpdaterTestSuite) assertEqual(expected expectedInfo, actual *central.ComplianceOperatorInfo) {
-	expectedVal := &central.ComplianceOperatorInfo{
-		Version:     expected.version,
-		Namespace:   expected.namespace,
-		StatusError: expected.error,
-		IsInstalled: actual.GetIsInstalled(),
-	}
+	expectedVal := &central.ComplianceOperatorInfo{}
+	expectedVal.SetVersion(expected.version)
+	expectedVal.SetNamespace(expected.namespace)
+	expectedVal.SetStatusError(expected.error)
+	expectedVal.SetIsInstalled(actual.GetIsInstalled())
 
 	if expected.desired > 0 {
-		expectedVal.TotalDesiredPodsOpt = &central.ComplianceOperatorInfo_TotalDesiredPods{
-			TotalDesiredPods: expected.desired,
-		}
+		expectedVal.SetTotalDesiredPods(expected.desired)
 	}
 	if expected.ready > 0 {
-		expectedVal.TotalReadyPodsOpt = &central.ComplianceOperatorInfo_TotalReadyPods{
-			TotalReadyPods: expected.ready,
-		}
+		expectedVal.SetTotalReadyPods(expected.ready)
 	}
 	protoassert.Equal(s.T(), expectedVal, actual)
 }

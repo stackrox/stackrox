@@ -26,10 +26,9 @@ func (s *generateCertsTestSuite) SetupTest() {
 }
 
 func (s *generateCertsTestSuite) TestGenerateCertsAndAddToZip() {
-	cluster := &storage.Cluster{
-		Id:                  "123",
-		AdmissionController: true,
-	}
+	cluster := &storage.Cluster{}
+	cluster.SetId("123")
+	cluster.SetAdmissionController(true)
 
 	ctrl := gomock.NewController(s.T())
 	mockStore := mocks.NewMockDataStore(ctrl)

@@ -32,28 +32,28 @@ func TestCloneAndEnsureConverted(t *testing.T) {
 		},
 		{
 			desc: "unknown version",
-			policy: &storage.Policy{
+			policy: storage.Policy_builder{
 				PolicyVersion: "-1",
-			},
+			}.Build(),
 			expected: nil,
 			hasError: true,
 		},
 		{
 			desc:     "Noop when already at current version",
-			policy:   &storage.Policy{PolicyVersion: "100.0"},
-			expected: &storage.Policy{PolicyVersion: "100.0"},
+			policy:   storage.Policy_builder{PolicyVersion: "100.0"}.Build(),
+			expected: storage.Policy_builder{PolicyVersion: "100.0"}.Build(),
 			hasError: false,
 		},
 		{
 			desc:     "Upgrade from one version below current version",
-			policy:   &storage.Policy{PolicyVersion: "99.0"},
-			expected: &storage.Policy{PolicyVersion: "100.0"},
+			policy:   storage.Policy_builder{PolicyVersion: "99.0"}.Build(),
+			expected: storage.Policy_builder{PolicyVersion: "100.0"}.Build(),
 			hasError: false,
 		},
 		{
 			desc:     "Upgrade from multiple versions below current version",
-			policy:   &storage.Policy{PolicyVersion: "98.0"},
-			expected: &storage.Policy{PolicyVersion: "100.0"},
+			policy:   storage.Policy_builder{PolicyVersion: "98.0"}.Build(),
+			expected: storage.Policy_builder{PolicyVersion: "100.0"}.Build(),
 			hasError: false,
 		},
 	}

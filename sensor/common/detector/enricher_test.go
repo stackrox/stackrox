@@ -75,15 +75,15 @@ func (f *fakeClusterIDPeekWaiter) GetNoWait() string {
 }
 
 func createScanImageRequest(containerID int, imageID string, fullName string, notPullable bool) *scanImageRequest {
+	imageName := &storage.ImageName{}
+	imageName.SetFullName(fullName)
+	ci := &storage.ContainerImage{}
+	ci.SetName(imageName)
+	ci.SetId(imageID)
+	ci.SetNotPullable(notPullable)
 	return &scanImageRequest{
-		containerIdx: containerID,
-		containerImage: &storage.ContainerImage{
-			Name: &storage.ImageName{
-				FullName: fullName,
-			},
-			Id:          imageID,
-			NotPullable: notPullable,
-		},
+		containerIdx:   containerID,
+		containerImage: ci,
 	}
 }
 
@@ -172,9 +172,9 @@ func (m *mockImageServiceServer) ScanImageInternal(_ context.Context, req *v1.Sc
 		return nil, errors.New("broken")
 	}
 
-	return &v1.ScanImageInternalResponse{
-		Image: types.ToImage(req.GetImage()),
-	}, nil
+	siir := &v1.ScanImageInternalResponse{}
+	siir.SetImage(types.ToImage(req.GetImage()))
+	return siir, nil
 }
 
 func (s *enricherSuite) TestScanAndSetWithLock() {
@@ -259,22 +259,21 @@ func (s *enricherSuite) TestUpdateImageNoLock() {
 	})
 
 	s.T().Run("do not update cache value on nil image", func(t *testing.T) {
-		genCacheValue := func() *cacheValue { return &cacheValue{image: &storage.Image{Name: name1}} }
+		genCacheValue := func() *cacheValue { image := &storage.Image{}; image.SetName(name1); return &cacheValue{image: image} }
 		cValue := genCacheValue()
 		cValue.updateImageNoLock(nil)
 		protoassert.Equal(t, genCacheValue().image, cValue.image)
 	})
 
 	s.T().Run("keep existing names when name removed", func(t *testing.T) {
-		cValue := &cacheValue{image: &storage.Image{
-			Name:  name1,
-			Names: []*storage.ImageName{name1, name2},
-		}}
+		image := &storage.Image{}
+		image.SetName(name1)
+		image.SetNames([]*storage.ImageName{name1, name2})
+		cValue := &cacheValue{image: image}
 
-		updatedImage := &storage.Image{
-			Name:  name2,
-			Names: []*storage.ImageName{name2},
-		}
+		updatedImage := &storage.Image{}
+		updatedImage.SetName(name2)
+		updatedImage.SetNames([]*storage.ImageName{name2})
 
 		cValue.updateImageNoLock(updatedImage)
 		assert.Len(t, cValue.image.GetNames(), 2)
@@ -283,15 +282,14 @@ func (s *enricherSuite) TestUpdateImageNoLock() {
 	})
 
 	s.T().Run("append to names when new one added", func(t *testing.T) {
-		cValue := &cacheValue{image: &storage.Image{
-			Name:  name1,
-			Names: []*storage.ImageName{name1},
-		}}
+		image := &storage.Image{}
+		image.SetName(name1)
+		image.SetNames([]*storage.ImageName{name1})
+		cValue := &cacheValue{image: image}
 
-		updatedImage := &storage.Image{
-			Name:  name2,
-			Names: []*storage.ImageName{name1, name2},
-		}
+		updatedImage := &storage.Image{}
+		updatedImage.SetName(name2)
+		updatedImage.SetNames([]*storage.ImageName{name1, name2})
 
 		cValue.updateImageNoLock(updatedImage)
 		assert.Len(t, cValue.image.GetNames(), 2)
@@ -300,15 +298,14 @@ func (s *enricherSuite) TestUpdateImageNoLock() {
 	})
 
 	s.T().Run("append to names when new one added and one removed", func(t *testing.T) {
-		cValue := &cacheValue{image: &storage.Image{
-			Name:  name1,
-			Names: []*storage.ImageName{name1, name2},
-		}}
+		image := &storage.Image{}
+		image.SetName(name1)
+		image.SetNames([]*storage.ImageName{name1, name2})
+		cValue := &cacheValue{image: image}
 
-		updatedImage := &storage.Image{
-			Name:  name2,
-			Names: []*storage.ImageName{name1, name3},
-		}
+		updatedImage := &storage.Image{}
+		updatedImage.SetName(name2)
+		updatedImage.SetNames([]*storage.ImageName{name1, name3})
 
 		cValue.updateImageNoLock(updatedImage)
 		assert.Len(t, cValue.image.GetNames(), 3)
@@ -324,21 +321,19 @@ func (s *enricherSuite) TestGetPullSecrets() {
 	sa := "fake-sa" // service account
 
 	// Get only secrets from pod spec if defined.
-	deployment := &storage.Deployment{
-		ImagePullSecrets: imagePullSecs,
-		Namespace:        ns,
-		ServiceAccount:   sa,
-	}
+	deployment := &storage.Deployment{}
+	deployment.SetImagePullSecrets(imagePullSecs)
+	deployment.SetNamespace(ns)
+	deployment.SetServiceAccount(sa)
 	secs := s.enricher.getPullSecrets(deployment)
 	s.Len(secs, 2)
 	s.Equal("sec1", secs[0])
 	s.Equal("sec2", secs[1])
 
 	// Get service account pull secrets otherwise.
-	deployment = &storage.Deployment{
-		Namespace:      ns,
-		ServiceAccount: sa,
-	}
+	deployment = &storage.Deployment{}
+	deployment.SetNamespace(ns)
+	deployment.SetServiceAccount(sa)
 
 	s.mockServiceAccountStore.EXPECT().GetImagePullSecrets(ns, sa).Return(
 		[]string{"not", "from", "spec"},

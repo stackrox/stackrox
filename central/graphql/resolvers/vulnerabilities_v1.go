@@ -239,14 +239,14 @@ func (evr *EmbeddedVulnerabilityResolver) Nodes(ctx context.Context, args Pagina
 	}
 
 	pagination := query.GetPagination()
-	query.Pagination = nil
+	query.ClearPagination()
 
 	query, err = search.AddAsConjunction(evr.vulnQuery(), query)
 	if err != nil {
 		return nil, err
 	}
 
-	query.Pagination = pagination
+	query.SetPagination(pagination)
 
 	return evr.root.wrapNodes(nodeLoader.FromQuery(ctx, query))
 }
@@ -445,14 +445,14 @@ func (evr *EmbeddedVulnerabilityResolver) loadImages(ctx context.Context, query 
 	}
 
 	pagination := query.GetPagination()
-	query.Pagination = nil
+	query.ClearPagination()
 
 	query, err = search.AddAsConjunction(evr.vulnQuery(), query)
 	if err != nil {
 		return nil, err
 	}
 
-	query.Pagination = pagination
+	query.SetPagination(pagination)
 
 	if features.FlattenImageData.Enabled() {
 		resolvers, err := evr.root.wrapImageV2s(imageV2Loader.FromQuery(ctx, query))
@@ -482,14 +482,14 @@ func (evr *EmbeddedVulnerabilityResolver) loadDeployments(ctx context.Context, q
 	}
 
 	pagination := query.GetPagination()
-	query.Pagination = nil
+	query.ClearPagination()
 
 	query, err = search.AddAsConjunction(deploymentBaseQuery, query)
 	if err != nil {
 		return nil, err
 	}
 
-	query.Pagination = pagination
+	query.SetPagination(pagination)
 
 	return evr.root.wrapListDeployments(ListDeploymentLoader.FromQuery(ctx, query))
 }

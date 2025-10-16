@@ -27,26 +27,26 @@ func handleInitialScanResults(id string, scanDS *scanMocks.MockDataStore, profil
 	return func(t *testing.T, watcher ScanConfigWatcher) {
 		profileDS.EXPECT().SearchProfiles(gomock.Any(), gomock.Any()).Times(1).
 			DoAndReturn(func(_, _ any) ([]*storage.ComplianceOperatorProfileV2, error) {
+				copv2 := &storage.ComplianceOperatorProfileV2{}
+				copv2.SetId(fmt.Sprintf("profile-%s", id))
 				return []*storage.ComplianceOperatorProfileV2{
-					{
-						Id: fmt.Sprintf("profile-%s", id),
-					},
+					copv2,
 				}, nil
 			})
 		scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Times(1).
 			DoAndReturn(func(_, _ any) ([]*storage.ComplianceOperatorScanV2, error) {
 				ret := make([]*storage.ComplianceOperatorScanV2, numOfScans)
 				for i := 0; i < numOfScans; i++ {
-					ret[i] = &storage.ComplianceOperatorScanV2{
-						Id: fmt.Sprintf("scan-%d", i),
-					}
+					cosv2 := &storage.ComplianceOperatorScanV2{}
+					cosv2.SetId(fmt.Sprintf("scan-%d", i))
+					ret[i] = cosv2
 				}
 				return ret, nil
 			})
+		cosv2 := &storage.ComplianceOperatorScanV2{}
+		cosv2.SetId(id)
 		err := watcher.PushScanResults(&ScanWatcherResults{
-			Scan: &storage.ComplianceOperatorScanV2{
-				Id: id,
-			},
+			Scan: cosv2,
 		})
 		require.NoError(t, err)
 	}
@@ -54,10 +54,10 @@ func handleInitialScanResults(id string, scanDS *scanMocks.MockDataStore, profil
 
 func handleScanResults(id string) scanConfigTestEvent {
 	return func(t *testing.T, watcher ScanConfigWatcher) {
+		cosv2 := &storage.ComplianceOperatorScanV2{}
+		cosv2.SetId(id)
 		err := watcher.PushScanResults(&ScanWatcherResults{
-			Scan: &storage.ComplianceOperatorScanV2{
-				Id: id,
-			},
+			Scan: cosv2,
 		})
 		require.NoError(t, err)
 	}
@@ -65,10 +65,10 @@ func handleScanResults(id string) scanConfigTestEvent {
 
 func handleScanResultsWithError(id string) scanConfigTestEvent {
 	return func(t *testing.T, watcher ScanConfigWatcher) {
+		cosv2 := &storage.ComplianceOperatorScanV2{}
+		cosv2.SetId(id)
 		err := watcher.PushScanResults(&ScanWatcherResults{
-			Scan: &storage.ComplianceOperatorScanV2{
-				Id: id,
-			},
+			Scan:  cosv2,
 			Error: errors.New("some error in the scan"),
 		})
 		require.NoError(t, err)
@@ -128,15 +128,16 @@ func TestScanConfigWatcher(t *testing.T) {
 	for tName, tCase := range cases {
 		t.Run(tName, func(t *testing.T) {
 			watcherID := "sc-id"
-			scanConfig := &storage.ComplianceOperatorScanConfigurationV2{
-				Id: watcherID,
-			}
+			scanConfig := &storage.ComplianceOperatorScanConfigurationV2{}
+			scanConfig.SetId(watcherID)
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 			resultsQueue := queue.NewQueue[*ScanConfigWatcherResults]()
 			scanConfigWatcher := NewScanConfigWatcher(ctx, ctx, watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultsQueue)
 			for _, id := range tCase.snapshotIDs {
-				require.NoError(t, scanConfigWatcher.Subscribe(&storage.ComplianceOperatorReportSnapshotV2{ReportId: id}))
+				corsv2 := &storage.ComplianceOperatorReportSnapshotV2{}
+				corsv2.SetReportId(id)
+				require.NoError(t, scanConfigWatcher.Subscribe(corsv2))
 			}
 			for _, event := range tCase.events {
 				event(t, scanConfigWatcher)
@@ -180,9 +181,8 @@ func TestScanConfigWatcherCancel(t *testing.T) {
 	snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).AnyTimes().
 		DoAndReturn(func(_, _ any) error { return nil })
 	watcherID := "sc-id"
-	scanConfig := &storage.ComplianceOperatorScanConfigurationV2{
-		Id: watcherID,
-	}
+	scanConfig := &storage.ComplianceOperatorScanConfigurationV2{}
+	scanConfig.SetId(watcherID)
 	ctx, cancel := context.WithCancel(context.Background())
 	resultQueue := queue.NewQueue[*ScanConfigWatcherResults]()
 	scanConfigWatcher := NewScanConfigWatcher(ctx, ctx, watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultQueue)
@@ -210,9 +210,8 @@ func TestScanConfigWatcherStop(t *testing.T) {
 	snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).AnyTimes().
 		DoAndReturn(func(_, _ any) error { return nil })
 	watcherID := "sc-id"
-	scanConfig := &storage.ComplianceOperatorScanConfigurationV2{
-		Id: watcherID,
-	}
+	scanConfig := &storage.ComplianceOperatorScanConfigurationV2{}
+	scanConfig.SetId(watcherID)
 	resultQueue := queue.NewQueue[*ScanConfigWatcherResults]()
 	scanConfigWatcher := NewScanConfigWatcher(context.Background(), context.Background(), watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultQueue)
 	handleInitialScanResults("scan-0", scanDS, profileDS, 2)(t, scanConfigWatcher)
@@ -260,6 +259,8 @@ func TestScanConfigWatcherTimeout(t *testing.T) {
 	timeout := &testTimer{
 		ch: timeoutC,
 	}
+	coscv2 := &storage.ComplianceOperatorScanConfigurationV2{}
+	coscv2.SetId("id")
 	scanConfigWatcher := &scanConfigWatcherImpl{
 		ctx:                 ctx,
 		sensorCtx:           ctx,
@@ -270,11 +271,9 @@ func TestScanConfigWatcherTimeout(t *testing.T) {
 		snapshotDS:          snapshotDS,
 		scanWatcherResoutsC: make(chan *ScanWatcherResults),
 		scanConfigResults: &ScanConfigWatcherResults{
-			SensorCtx: ctx,
-			WatcherID: "id",
-			ScanConfig: &storage.ComplianceOperatorScanConfigurationV2{
-				Id: "id",
-			},
+			SensorCtx:   ctx,
+			WatcherID:   "id",
+			ScanConfig:  coscv2,
 			ScanResults: make(map[string]*ScanWatcherResults),
 		},
 		readyQueue:  resultQueue,
@@ -306,18 +305,21 @@ func TestScanConfigWatcherSubscribe(t *testing.T) {
 	snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).AnyTimes().
 		DoAndReturn(func(_, _ any) error { return nil })
 	watcherID := "sc-id"
-	scanConfig := &storage.ComplianceOperatorScanConfigurationV2{
-		Id: watcherID,
-	}
+	scanConfig := &storage.ComplianceOperatorScanConfigurationV2{}
+	scanConfig.SetId(watcherID)
 	resultsQueue := queue.NewQueue[*ScanConfigWatcherResults]()
 	scanIDs := []string{"scan-0", "scan-1", "scan-2"}
 	snapshotIDS := []string{"snapshot-0", "snapshot-1"}
 	scanConfigWatcher := NewScanConfigWatcher(context.Background(), context.Background(), watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultsQueue)
-	err := scanConfigWatcher.Subscribe(&storage.ComplianceOperatorReportSnapshotV2{ReportId: snapshotIDS[0]})
+	corsv2 := &storage.ComplianceOperatorReportSnapshotV2{}
+	corsv2.SetReportId(snapshotIDS[0])
+	err := scanConfigWatcher.Subscribe(corsv2)
 	assert.NoError(t, err)
 	handleInitialScanResults(scanIDs[0], scanDS, profileDS, len(scanIDs))(t, scanConfigWatcher)
 	handleScanResults(scanIDs[1])(t, scanConfigWatcher)
-	err = scanConfigWatcher.Subscribe(&storage.ComplianceOperatorReportSnapshotV2{ReportId: snapshotIDS[1]})
+	corsv2h2 := &storage.ComplianceOperatorReportSnapshotV2{}
+	corsv2h2.SetReportId(snapshotIDS[1])
+	err = scanConfigWatcher.Subscribe(corsv2h2)
 	assert.NoError(t, err)
 	handleScanResults(scanIDs[2])(t, scanConfigWatcher)
 
@@ -357,9 +359,8 @@ func TestScanConfigWatcherGetScans(t *testing.T) {
 	snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).AnyTimes().
 		DoAndReturn(func(_, _ any) error { return nil })
 	watcherID := "sc-id"
-	scanConfig := &storage.ComplianceOperatorScanConfigurationV2{
-		Id: watcherID,
-	}
+	scanConfig := &storage.ComplianceOperatorScanConfigurationV2{}
+	scanConfig.SetId(watcherID)
 	resultsQueue := queue.NewQueue[*ScanConfigWatcherResults]()
 	scanConfigWatcher := NewScanConfigWatcher(context.Background(), context.Background(), watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultsQueue)
 	scans := scanConfigWatcher.GetScans()
@@ -414,10 +415,10 @@ func TestDeleteOldResultsFromMissingScans(t *testing.T) {
 		profileDS.EXPECT().SearchProfiles(gomock.Any(), gomock.Any()).Times(1).Return([]*storage.ComplianceOperatorProfileV2{
 			{},
 		}, nil)
+		cosv2 := &storage.ComplianceOperatorScanV2{}
+		cosv2.SetId(scanID)
 		scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Times(1).Return([]*storage.ComplianceOperatorScanV2{
-			{
-				Id: scanID,
-			},
+			cosv2,
 		}, nil)
 		scanDS.EXPECT().GetScan(gomock.Any(), gomock.Eq(scanID)).Times(1).Return(&storage.ComplianceOperatorScanV2{}, false, errors.New("some error"))
 		assert.Error(tt, DeleteOldResultsFromMissingScans(context.Background(), results, profileDS, scanDS, checkDS))
@@ -429,10 +430,10 @@ func TestDeleteOldResultsFromMissingScans(t *testing.T) {
 		profileDS.EXPECT().SearchProfiles(gomock.Any(), gomock.Any()).Times(1).Return([]*storage.ComplianceOperatorProfileV2{
 			{},
 		}, nil)
+		cosv2 := &storage.ComplianceOperatorScanV2{}
+		cosv2.SetId(scanID)
 		scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Times(1).Return([]*storage.ComplianceOperatorScanV2{
-			{
-				Id: scanID,
-			},
+			cosv2,
 		}, nil)
 		scanDS.EXPECT().GetScan(gomock.Any(), gomock.Eq(scanID)).Times(1).Return(&storage.ComplianceOperatorScanV2{}, false, nil)
 		assert.Error(tt, DeleteOldResultsFromMissingScans(context.Background(), results, profileDS, scanDS, checkDS))
@@ -444,15 +445,15 @@ func TestDeleteOldResultsFromMissingScans(t *testing.T) {
 		profileDS.EXPECT().SearchProfiles(gomock.Any(), gomock.Any()).Times(1).Return([]*storage.ComplianceOperatorProfileV2{
 			{},
 		}, nil)
+		cosv2 := &storage.ComplianceOperatorScanV2{}
+		cosv2.SetId(scanID)
 		scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Times(1).Return([]*storage.ComplianceOperatorScanV2{
-			{
-				Id: scanID,
-			},
+			cosv2,
 		}, nil)
-		scanDS.EXPECT().GetScan(gomock.Any(), gomock.Eq(scanID)).Times(1).Return(&storage.ComplianceOperatorScanV2{
-			ScanRefId:       scanRefID,
-			LastStartedTime: timeNow,
-		}, true, nil)
+		cosv2h2 := &storage.ComplianceOperatorScanV2{}
+		cosv2h2.SetScanRefId(scanRefID)
+		cosv2h2.SetLastStartedTime(timeNow)
+		scanDS.EXPECT().GetScan(gomock.Any(), gomock.Eq(scanID)).Times(1).Return(cosv2h2, true, nil)
 		checkDS.EXPECT().DeleteOldResults(gomock.Any(), gomock.Eq(timeNow), gomock.Eq(scanRefID), gomock.Eq(true)).Times(1).Return(errors.New("some error"))
 		assert.Error(tt, DeleteOldResultsFromMissingScans(context.Background(), results, profileDS, scanDS, checkDS))
 	})
@@ -463,15 +464,15 @@ func TestDeleteOldResultsFromMissingScans(t *testing.T) {
 		profileDS.EXPECT().SearchProfiles(gomock.Any(), gomock.Any()).Times(1).Return([]*storage.ComplianceOperatorProfileV2{
 			{},
 		}, nil)
+		cosv2 := &storage.ComplianceOperatorScanV2{}
+		cosv2.SetId(scanID)
 		scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Times(1).Return([]*storage.ComplianceOperatorScanV2{
-			{
-				Id: scanID,
-			},
+			cosv2,
 		}, nil)
-		scanDS.EXPECT().GetScan(gomock.Any(), gomock.Eq(scanID)).Times(1).Return(&storage.ComplianceOperatorScanV2{
-			ScanRefId:       scanRefID,
-			LastStartedTime: timeNow,
-		}, true, nil)
+		cosv2h2 := &storage.ComplianceOperatorScanV2{}
+		cosv2h2.SetScanRefId(scanRefID)
+		cosv2h2.SetLastStartedTime(timeNow)
+		scanDS.EXPECT().GetScan(gomock.Any(), gomock.Eq(scanID)).Times(1).Return(cosv2h2, true, nil)
 		checkDS.EXPECT().DeleteOldResults(gomock.Any(), gomock.Eq(timeNow), gomock.Eq(scanRefID), gomock.Eq(true)).Times(1).Return(nil)
 		assert.NoError(tt, DeleteOldResultsFromMissingScans(context.Background(), results, profileDS, scanDS, checkDS))
 	})

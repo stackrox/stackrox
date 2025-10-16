@@ -99,16 +99,16 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Reques
 	}
 
 	if snapshot != nil {
-		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_GENERATED
+		snapshot.GetReportStatus().SetRunState(storage.ComplianceOperatorReportStatus_GENERATED)
 		if req.NumFailedClusters > 0 {
 			switch req.NotificationMethod {
 			case storage.ComplianceOperatorReportStatus_EMAIL:
-				snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_EMAIL
+				snapshot.GetReportStatus().SetRunState(storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_EMAIL)
 			case storage.ComplianceOperatorReportStatus_DOWNLOAD:
-				snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_DOWNLOAD
+				snapshot.GetReportStatus().SetRunState(storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_DOWNLOAD)
 			}
 			if req.NumFailedClusters == len(req.ClusterIDs) {
-				snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_FAILURE
+				snapshot.GetReportStatus().SetRunState(storage.ComplianceOperatorReportStatus_FAILURE)
 			}
 		}
 		if err := rg.snapshotDS.UpsertSnapshot(req.Ctx, snapshot); err != nil {
@@ -122,7 +122,7 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Reques
 				}
 				return errors.Wrap(err, errUnableToSaveTheReportBlobStr)
 			}
-			snapshot.GetReportStatus().CompletedAt = protocompat.TimestampNow()
+			snapshot.GetReportStatus().SetCompletedAt(protocompat.TimestampNow())
 			if err := rg.snapshotDS.UpsertSnapshot(req.Ctx, snapshot); err != nil {
 				return errors.Wrap(err, errUnableToUpdateSnapshotOnBlobSuccessStr)
 			}
@@ -171,9 +171,9 @@ func (rg *complianceReportGeneratorImpl) getOnAsyncSenderSuccess(ctx context.Con
 			return err
 		}
 		if snapshot.GetReportStatus().GetRunState() == storage.ComplianceOperatorReportStatus_GENERATED {
-			snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_DELIVERED
+			snapshot.GetReportStatus().SetRunState(storage.ComplianceOperatorReportStatus_DELIVERED)
 		}
-		snapshot.GetReportStatus().CompletedAt = protocompat.TimestampNow()
+		snapshot.GetReportStatus().SetCompletedAt(protocompat.TimestampNow())
 		if dbErr := rg.snapshotDS.UpsertSnapshot(ctx, snapshot); dbErr != nil {
 			log.Errorf("Unable to update snapshot on send email success: %v", dbErr)
 		}
@@ -197,11 +197,10 @@ func (rg *complianceReportGeneratorImpl) saveReportData(ctx context.Context, con
 		return errors.Errorf("no data found for snapshot %s and scan configuration %s", snapshotID, configID)
 	}
 
-	b := &storage.Blob{
-		Name:         common.GetComplianceReportBlobPath(configID, snapshotID),
-		LastUpdated:  protocompat.TimestampNow(),
-		ModifiedTime: protocompat.TimestampNow(),
-		Length:       int64(data.Len()),
-	}
+	b := &storage.Blob{}
+	b.SetName(common.GetComplianceReportBlobPath(configID, snapshotID))
+	b.SetLastUpdated(protocompat.TimestampNow())
+	b.SetModifiedTime(protocompat.TimestampNow())
+	b.SetLength(int64(data.Len()))
 	return rg.blobStore.Upsert(ctx, b, data)
 }

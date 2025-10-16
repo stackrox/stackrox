@@ -19,6 +19,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestNoPanics(t *testing.T) {
@@ -253,20 +254,21 @@ func TestAttemptToTriggerRace(t *testing.T) {
 }
 
 func genImageIntegration(endpoint string) *storage.ImageIntegration {
-	return &storage.ImageIntegration{
-		Id:   "fake-id",
-		Name: "fake-name",
-		IntegrationConfig: &storage.ImageIntegration_Docker{
-			Docker: &storage.DockerConfig{
-				Endpoint: endpoint,
-			},
-		},
-	}
+	dc := &storage.DockerConfig{}
+	dc.SetEndpoint(endpoint)
+	ii := &storage.ImageIntegration{}
+	ii.SetId("fake-id")
+	ii.SetName("fake-name")
+	ii.SetDocker(proto.ValueOrDefault(dc))
+	return ii
 }
 
 func createReg(source *storage.ImageIntegration, creator types.Creator, tlsCheckFunc tlscheckcache.CheckTLSFunc, options ...types.CreatorOption) (*lazyTLSCheckRegistry, error) {
 	cfg := source.GetDocker()
 	host, url := docker.RegistryHostnameURL(cfg.GetEndpoint())
+	ds := &storage.DataSource{}
+	ds.SetId(source.GetId())
+	ds.SetName(source.GetName())
 	reg := &lazyTLSCheckRegistry{
 		source:           source,
 		creator:          creator,
@@ -274,11 +276,8 @@ func createReg(source *storage.ImageIntegration, creator types.Creator, tlsCheck
 		dockerConfig:     cfg,
 		url:              url,
 		registryHostname: host,
-		dataSource: &storage.DataSource{
-			Id:   source.GetId(),
-			Name: source.GetName(),
-		},
-		tlsCheckCache: tlscheckcache.New(tlscheckcache.WithTLSCheckFunc(tlsCheckFunc)),
+		dataSource:       ds,
+		tlsCheckCache:    tlscheckcache.New(tlscheckcache.WithTLSCheckFunc(tlsCheckFunc)),
 	}
 
 	return reg, nil

@@ -18,12 +18,18 @@ func TestGetDeployment(t *testing.T) {
 	mocks := mockResolver(t)
 	testClusterID := "testClusterID"
 	testDeploymentID := "testDeploymentID"
+	deployment := &storage.Deployment{}
+	deployment.SetId(testDeploymentID)
+	deployment.SetClusterId(testClusterID)
+	deployment.SetName("deployment name")
+	deployment.SetType("deployment type")
 	mocks.deployment.EXPECT().GetDeployments(gomock.Any(), []string{testDeploymentID}).Return([]*storage.Deployment{
-		{Id: testDeploymentID, ClusterId: testClusterID, Name: "deployment name", Type: "deployment type"},
+		deployment,
 	}, nil)
-	mocks.cluster.EXPECT().GetCluster(gomock.Any(), testClusterID).Return(&storage.Cluster{
-		Id: testClusterID, Name: "cluster name",
-	}, true, nil)
+	cluster := &storage.Cluster{}
+	cluster.SetId(testClusterID)
+	cluster.SetName("cluster name")
+	mocks.cluster.EXPECT().GetCluster(gomock.Any(), testClusterID).Return(cluster, true, nil)
 
 	rec := executeTestQuery(t, mocks, fmt.Sprintf(`{deployment(id: %q){ id name type cluster { name } }}`, testDeploymentID))
 
@@ -45,13 +51,15 @@ func TestGetDeployments(t *testing.T) {
 		{ID: "one"},
 		{ID: "two"},
 	}, nil)
+	deployment := &storage.Deployment{}
+	deployment.SetId("one")
+	deployment.SetName("one name")
+	deployment2 := &storage.Deployment{}
+	deployment2.SetId("two")
+	deployment2.SetName("two name")
 	mocks.deployment.EXPECT().GetDeployments(gomock.Any(), gomock.Any()).Return([]*storage.Deployment{
-		{
-			Id: "one", Name: "one name",
-		},
-		{
-			Id: "two", Name: "two name",
-		},
+		deployment,
+		deployment2,
 	}, nil)
 
 	rec := executeTestQuery(t, mocks, "{deployments { id name }}")
@@ -80,13 +88,15 @@ func TestGetDeploymentsFlattenedCVEData(t *testing.T) {
 	results = append(results, core2)
 
 	mocks.deploymentView.EXPECT().Get(gomock.Any(), gomock.Any()).Return(results, nil)
+	deployment := &storage.Deployment{}
+	deployment.SetId("one")
+	deployment.SetName("one name")
+	deployment2 := &storage.Deployment{}
+	deployment2.SetId("two")
+	deployment2.SetName("two name")
 	mocks.deployment.EXPECT().GetDeployments(gomock.Any(), gomock.Any()).Return([]*storage.Deployment{
-		{
-			Id: "one", Name: "one name",
-		},
-		{
-			Id: "two", Name: "two name",
-		},
+		deployment,
+		deployment2,
 	}, nil)
 
 	rec := executeTestQuery(t, mocks, "{deployments { id name }}")
@@ -111,26 +121,28 @@ const processQuery = `query d($d:ID) {
 func TestGetDeploymentProcessGroup(t *testing.T) {
 	testDeploymentID := "deploymentId"
 	mocks := mockResolver(t)
+	deployment := &storage.Deployment{}
+	deployment.SetId(testDeploymentID)
 	mocks.deployment.EXPECT().GetDeployments(gomock.Any(), []string{testDeploymentID}).Return([]*storage.Deployment{
-		{Id: testDeploymentID},
+		deployment,
 	}, nil)
+	ps := &storage.ProcessSignal{}
+	ps.SetId("signalId")
+	ps.SetName("process")
+	ps.SetTime(protocompat.GetProtoTimestampFromSeconds(100))
+	ps.SetContainerId("containerId")
+	ps.SetExecFilePath("/bin/process")
+	ps.SetPid(1)
+	ps.SetUid(0)
+	ps.SetGid(0)
+	pi := &storage.ProcessIndicator{}
+	pi.SetId("processId")
+	pi.SetContainerName("container_name")
+	pi.SetDeploymentId(testDeploymentID)
+	pi.SetPodId("podId")
+	pi.SetSignal(ps)
 	mocks.process.EXPECT().SearchRawProcessIndicators(gomock.Any(), gomock.Any()).Return([]*storage.ProcessIndicator{
-		{
-			Id:            "processId",
-			ContainerName: "container_name",
-			DeploymentId:  testDeploymentID,
-			PodId:         "podId",
-			Signal: &storage.ProcessSignal{
-				Id:           "signalId",
-				Name:         "process",
-				Time:         protocompat.GetProtoTimestampFromSeconds(100),
-				ContainerId:  "containerId",
-				ExecFilePath: "/bin/process",
-				Pid:          1,
-				Uid:          0,
-				Gid:          0,
-			},
-		},
+		pi,
 	}, nil)
 	rec := executeTestQueryWithVariables(t, mocks, processQuery, map[string]string{"d": testDeploymentID})
 	assertJSONMatches(t, rec.Body, ".data.deployment.id", testDeploymentID)

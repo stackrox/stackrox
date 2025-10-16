@@ -93,16 +93,15 @@ func setCollectorOverrideToMetaValues(collectorImage *storage.ImageName, metaVal
 func determineCollectorImage(clusterMainImage, clusterCollectorImage *storage.ImageName, imageFlavor *defaults.ImageFlavor) *storage.ImageName {
 	var collectorImage *storage.ImageName
 	if clusterCollectorImage == nil && imageFlavor.IsImageDefaultMain(clusterMainImage) {
-		collectorImage = &storage.ImageName{
-			Registry: imageFlavor.CollectorRegistry,
-			Remote:   imageFlavor.CollectorImageName,
-		}
+		collectorImage = &storage.ImageName{}
+		collectorImage.SetRegistry(imageFlavor.CollectorRegistry)
+		collectorImage.SetRemote(imageFlavor.CollectorImageName)
 	} else if clusterCollectorImage == nil {
 		collectorImage = deriveImageWithNewName(clusterMainImage, imageFlavor.CollectorImageName)
 	} else {
 		collectorImage = clusterCollectorImage.CloneVT()
 	}
-	collectorImage.Tag = imageFlavor.CollectorImageTag
+	collectorImage.SetTag(imageFlavor.CollectorImageTag)
 	return collectorImage
 }
 
@@ -115,10 +114,10 @@ func deriveImageWithNewName(baseImage *storage.ImageName, name string) *storage.
 	imageNameWithoutNamespace := name[strings.IndexRune(name, '/')+1:]
 	baseRemote := baseImage.GetRemote()
 	remote := baseRemote[:strings.IndexRune(baseRemote, '/')+1] + imageNameWithoutNamespace
-	return &storage.ImageName{
-		Registry: baseImage.GetRegistry(),
-		Remote:   remote,
-	}
+	imageName := &storage.ImageName{}
+	imageName.SetRegistry(baseImage.GetRegistry())
+	imageName.SetRemote(remote)
+	return imageName
 }
 
 func getBaseMetaValues(c *storage.Cluster, imageFlavor *defaults.ImageFlavor, chartRepo defaults.ChartRepo, opts *RenderOptions) *charts.MetaValues {

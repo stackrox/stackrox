@@ -34,22 +34,22 @@ func GetNetworkPolicy() *storage.NetworkPolicy {
 
 // GetScopedNetworkPolicy returns a network policy holding the provided scope information.
 func GetScopedNetworkPolicy(id string, clusterID string, namespace string) *storage.NetworkPolicy {
-	return &storage.NetworkPolicy{
-		Id:          id,
-		Name:        "network-policy-name",
-		ClusterId:   clusterID,
-		ClusterName: "",
-		Namespace:   namespace,
-		Labels:      nil,
-		Annotations: nil,
-		Spec: &storage.NetworkPolicySpec{
-			PodSelector: nil,
-			Ingress:     nil,
-			Egress:      nil,
-			PolicyTypes: nil,
-		},
-		Yaml:       "",
-		ApiVersion: "",
-		Created:    nil,
-	}
+	nps := &storage.NetworkPolicySpec{}
+	nps.ClearPodSelector()
+	nps.SetIngress(nil)
+	nps.SetEgress(nil)
+	nps.SetPolicyTypes(nil)
+	np := &storage.NetworkPolicy{}
+	np.SetId(id)
+	np.SetName("network-policy-name")
+	np.SetClusterId(clusterID)
+	np.SetClusterName("")
+	np.SetNamespace(namespace)
+	np.SetLabels(nil)
+	np.SetAnnotations(nil)
+	np.SetSpec(nps)
+	np.SetYaml("")
+	np.SetApiVersion("")
+	np.ClearCreated()
+	return np
 }

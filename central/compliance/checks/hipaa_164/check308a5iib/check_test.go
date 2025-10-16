@@ -35,10 +35,10 @@ func (s *suiteImpl) TestFail() {
 
 	testCluster := s.cluster()
 	testNodes := s.nodes()
+	deployment := &storage.Deployment{}
+	deployment.SetId(uuid.NewV4().String())
 	testDeployments := []*storage.Deployment{
-		{
-			Id: uuid.NewV4().String(),
-		},
+		deployment,
 	}
 
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
@@ -67,10 +67,10 @@ func (s *suiteImpl) TestPass() {
 
 	testCluster := s.cluster()
 
+	deployment := &storage.Deployment{}
+	deployment.SetId(uuid.NewV4().String())
 	testDeployments := []*storage.Deployment{
-		{
-			Id: uuid.NewV4().String(),
-		},
+		deployment,
 	}
 
 	testNodes := s.nodes()
@@ -108,32 +108,32 @@ func (s *suiteImpl) verifyCheckRegistered() framework.Check {
 }
 
 func (s *suiteImpl) cluster() *storage.Cluster {
-	return &storage.Cluster{
-		Id: uuid.NewV4().String(),
-	}
+	cluster := &storage.Cluster{}
+	cluster.SetId(uuid.NewV4().String())
+	return cluster
 }
 
 func (s *suiteImpl) policies() map[string]*storage.Policy {
 	policiesMap := make(map[string]*storage.Policy)
+	policy := &storage.Policy{}
+	policy.SetId(uuid.NewV4().String())
+	policy.SetName("Sample Build time")
+	policy.SetLifecycleStages([]storage.LifecycleStage{storage.LifecycleStage_BUILD})
+	policy.SetDisabled(false)
+	policy2 := &storage.Policy{}
+	policy2.SetId(uuid.NewV4().String())
+	policy2.SetName("Sample Deploy time")
+	policy2.SetLifecycleStages([]storage.LifecycleStage{storage.LifecycleStage_DEPLOY})
+	policy2.SetDisabled(false)
+	policy3 := &storage.Policy{}
+	policy3.SetId(uuid.NewV4().String())
+	policy3.SetName("Sample Runtime time")
+	policy3.SetLifecycleStages([]storage.LifecycleStage{storage.LifecycleStage_RUNTIME})
+	policy3.SetDisabled(false)
 	policies := []*storage.Policy{
-		{
-			Id:              uuid.NewV4().String(),
-			Name:            "Sample Build time",
-			LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD},
-			Disabled:        false,
-		},
-		{
-			Id:              uuid.NewV4().String(),
-			Name:            "Sample Deploy time",
-			LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
-			Disabled:        false,
-		},
-		{
-			Id:              uuid.NewV4().String(),
-			Name:            "Sample Runtime time",
-			LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
-			Disabled:        false,
-		},
+		policy,
+		policy2,
+		policy3,
 	}
 
 	for _, p := range policies {
@@ -144,12 +144,12 @@ func (s *suiteImpl) policies() map[string]*storage.Policy {
 }
 
 func (s *suiteImpl) nodes() []*storage.Node {
+	node := &storage.Node{}
+	node.SetId(uuid.NewV4().String())
+	node2 := &storage.Node{}
+	node2.SetId(uuid.NewV4().String())
 	return []*storage.Node{
-		{
-			Id: uuid.NewV4().String(),
-		},
-		{
-			Id: uuid.NewV4().String(),
-		},
+		node,
+		node2,
 	}
 }

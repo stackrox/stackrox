@@ -148,7 +148,9 @@ func (c *Client) GetTLSTrustedCerts(ctx context.Context) (certs []*x509.Certific
 		return nil, nil, errors.Wrap(err, "creating challenge token")
 	}
 
-	resp, hostCertChain, err := c.doTLSChallengeRequest(ctx, &v1.TLSChallengeRequest{ChallengeToken: token})
+	tlscr := &v1.TLSChallengeRequest{}
+	tlscr.SetChallengeToken(token)
+	resp, hostCertChain, err := c.doTLSChallengeRequest(ctx, tlscr)
 	if err != nil {
 		return nil, nil, err
 	}

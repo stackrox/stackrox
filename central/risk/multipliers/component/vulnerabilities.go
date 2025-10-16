@@ -36,14 +36,14 @@ func (c *vulnerabilitiesMultiplier) Score(_ context.Context, component scancompo
 		return nil
 	}
 
-	return &storage.Risk_Result{
-		Name: c.heading,
-		Factors: []*storage.Risk_Result_Factor{
-			{
-				Message: fmt.Sprintf("%s Component %s version %s contains %d CVEs with severities ranging between %s and %s",
-					c.typ, component.GetName(), component.GetVersion(), numCVEs, min.Severity, max.Severity),
-			},
-		},
-		Score: multipliers.NormalizeScore(sum, vulnSaturation, vulnMaxScore),
-	}
+	rrf := &storage.Risk_Result_Factor{}
+	rrf.SetMessage(fmt.Sprintf("%s Component %s version %s contains %d CVEs with severities ranging between %s and %s",
+		c.typ, component.GetName(), component.GetVersion(), numCVEs, min.Severity, max.Severity))
+	rr := &storage.Risk_Result{}
+	rr.SetName(c.heading)
+	rr.SetFactors([]*storage.Risk_Result_Factor{
+		rrf,
+	})
+	rr.SetScore(multipliers.NormalizeScore(sum, vulnSaturation, vulnMaxScore))
+	return rr
 }

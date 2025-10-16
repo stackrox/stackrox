@@ -141,13 +141,12 @@ func isScopeManagerRoleReferenced(ctx context.Context, apiTokenStorage apiTokenS
 
 func updateScopeManagerRole(ctx context.Context, roleStorage roleStore.Store) error {
 	// Push the expected Role content to the storage regardless of any previous value
-	scopeManagerRole := &storage.Role{
-		Name:            scopeManagerObjectName,
-		Description:     oldScopeManagerDescription + updatedDescriptionSuffix,
-		PermissionSetId: scopeManagerPermissionSetID,
-		AccessScopeId:   unrestrictedAccessScopeID,
-		Traits:          imperativeObjectTraits,
-	}
+	scopeManagerRole := &storage.Role{}
+	scopeManagerRole.SetName(scopeManagerObjectName)
+	scopeManagerRole.SetDescription(oldScopeManagerDescription + updatedDescriptionSuffix)
+	scopeManagerRole.SetPermissionSetId(scopeManagerPermissionSetID)
+	scopeManagerRole.SetAccessScopeId(unrestrictedAccessScopeID)
+	scopeManagerRole.SetTraits(imperativeObjectTraits)
 	return roleStorage.UpsertMany(ctx, []*storage.Role{scopeManagerRole})
 }
 
@@ -177,19 +176,18 @@ func isScopeManagerPermissionSetReferenced(ctx context.Context, roleStorage role
 }
 
 func updateScopeManagerPermissionSet(ctx context.Context, permissionSetStorage permissionSetStore.Store) error {
-	scopeManagerPermissionSet := &storage.PermissionSet{
-		Id:          scopeManagerPermissionSetID,
-		Name:        scopeManagerObjectName,
-		Description: oldScopeManagerDescription + updatedDescriptionSuffix,
-		ResourceToAccess: map[string]storage.Access{
-			// The permission set is meant to be able to create Access Scopes.
-			// This now requires write to Access, and read to Cluster and Namespace
-			access:    storage.Access_READ_WRITE_ACCESS,
-			cluster:   storage.Access_READ_ACCESS,
-			namespace: storage.Access_READ_ACCESS,
-		},
-		Traits: imperativeObjectTraits,
-	}
+	scopeManagerPermissionSet := &storage.PermissionSet{}
+	scopeManagerPermissionSet.SetId(scopeManagerPermissionSetID)
+	scopeManagerPermissionSet.SetName(scopeManagerObjectName)
+	scopeManagerPermissionSet.SetDescription(oldScopeManagerDescription + updatedDescriptionSuffix)
+	scopeManagerPermissionSet.SetResourceToAccess(map[string]storage.Access{
+		// The permission set is meant to be able to create Access Scopes.
+		// This now requires write to Access, and read to Cluster and Namespace
+		access:    storage.Access_READ_WRITE_ACCESS,
+		cluster:   storage.Access_READ_ACCESS,
+		namespace: storage.Access_READ_ACCESS,
+	})
+	scopeManagerPermissionSet.SetTraits(imperativeObjectTraits)
 	return permissionSetStorage.UpsertMany(ctx, []*storage.PermissionSet{scopeManagerPermissionSet})
 }
 

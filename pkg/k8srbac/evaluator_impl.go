@@ -96,17 +96,17 @@ func getClusterAdminRoles(roles []*storage.K8SRole) set.StringSet {
 func grantsAllCoreAPIAccess(role *storage.K8SRole) bool {
 	ruleSet := NewPolicyRuleSet(CoreFields()...)
 	ruleSet.Add(role.GetRules()...)
-	return ruleSet.Grants(&storage.PolicyRule{
-		ApiGroups: []string{
-			"",
-		},
-		Resources: []string{
-			"*",
-		},
-		Verbs: []string{
-			"*",
-		},
+	pr := &storage.PolicyRule{}
+	pr.SetApiGroups([]string{
+		"",
 	})
+	pr.SetResources([]string{
+		"*",
+	})
+	pr.SetVerbs([]string{
+		"*",
+	})
+	return ruleSet.Grants(pr)
 }
 
 func buildMap(roles []*storage.K8SRole, bindings []*storage.K8SRoleBinding) map[SubjectSet]*storage.K8SRole {

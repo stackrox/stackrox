@@ -343,7 +343,11 @@ func (m *mockCentral) setMigrationVersion(path string, ver *versionPair) {
 }
 
 func (m *mockCentral) setMigrationVersionPostgres(clone string, ver *versionPair) {
-	migVer.SetVersionPostgres(m.ctx, clone, &storage.Version{SeqNum: int32(ver.seqNum), Version: ver.version, MinSeqNum: int32(ver.minSeqNum)})
+	version2 := &storage.Version{}
+	version2.SetSeqNum(int32(ver.seqNum))
+	version2.SetVersion(ver.version)
+	version2.SetMinSeqNum(int32(ver.minSeqNum))
+	migVer.SetVersionPostgres(m.ctx, clone, version2)
 }
 
 func (m *mockCentral) verifyMigrationVersion(dbPath string, ver *versionPair) {

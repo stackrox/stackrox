@@ -197,7 +197,7 @@ func getPackageAndVersion(installation *_package.Installation) packageAndVersion
 
 func (c *googleScanner) processComponent(pv packageAndVersion, vulns []*grafeas.Occurrence, convertChan chan *storage.EmbeddedImageScanComponent) {
 	component := c.convertComponentFromPackageAndVersion(pv)
-	component.Vulns = c.convertVulnsFromOccurrences(vulns)
+	component.SetVulns(c.convertVulnsFromOccurrences(vulns))
 	convertChan <- component
 }
 
@@ -248,14 +248,14 @@ func (c *googleScanner) GetScan(image *storage.Image) (*storage.ImageScan, error
 		components = append(components, <-convertChan)
 	}
 	// Google can't give the data via layers at this time
-	return &storage.ImageScan{
-		ScanTime:        protocompat.TimestampNow(),
-		Components:      components,
-		OperatingSystem: "unknown",
-		Notes: []storage.ImageScan_Note{
-			storage.ImageScan_OS_UNAVAILABLE,
-		},
-	}, nil
+	imageScan := &storage.ImageScan{}
+	imageScan.SetScanTime(protocompat.TimestampNow())
+	imageScan.SetComponents(components)
+	imageScan.SetOperatingSystem("unknown")
+	imageScan.SetNotes([]storage.ImageScan_Note{
+		storage.ImageScan_OS_UNAVAILABLE,
+	})
+	return imageScan, nil
 }
 
 // Match decides if the image is contained within this scanner

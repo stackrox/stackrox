@@ -23,21 +23,20 @@ type scanResultKey struct {
 
 // ComplianceV2CheckResult converts a storage check result to a v2 check result
 func ComplianceV2CheckResult(incoming *storage.ComplianceOperatorCheckResultV2, lastScanTime *types.Timestamp, ruleName string, controlResults []*compRule.ControlResult) *v2.ComplianceClusterCheckStatus {
-	converted := &v2.ComplianceClusterCheckStatus{
-		CheckId:   incoming.GetCheckId(),
-		CheckName: incoming.GetCheckName(),
-		Clusters: []*v2.ClusterCheckStatus{
-			clusterStatus(incoming, lastScanTime),
-		},
-		Description:  incoming.GetDescription(),
-		Instructions: incoming.GetInstructions(),
-		Rationale:    incoming.GetRationale(),
-		ValuesUsed:   incoming.GetValuesUsed(),
-		Warnings:     incoming.GetWarnings(),
-		Labels:       incoming.GetLabels(),
-		Annotations:  incoming.GetAnnotations(),
-		Controls:     GetControls(ruleName, controlResults),
-	}
+	converted := &v2.ComplianceClusterCheckStatus{}
+	converted.SetCheckId(incoming.GetCheckId())
+	converted.SetCheckName(incoming.GetCheckName())
+	converted.SetClusters([]*v2.ClusterCheckStatus{
+		clusterStatus(incoming, lastScanTime),
+	})
+	converted.SetDescription(incoming.GetDescription())
+	converted.SetInstructions(incoming.GetInstructions())
+	converted.SetRationale(incoming.GetRationale())
+	converted.SetValuesUsed(incoming.GetValuesUsed())
+	converted.SetWarnings(incoming.GetWarnings())
+	converted.SetLabels(incoming.GetLabels())
+	converted.SetAnnotations(incoming.GetAnnotations())
+	converted.SetControls(GetControls(ruleName, controlResults))
 
 	return converted
 }
@@ -51,23 +50,22 @@ func ComplianceV2SpecificCheckResult(incoming []*storage.ComplianceOperatorCheck
 		}
 
 		if converted == nil {
-			converted = &v2.ComplianceClusterCheckStatus{
-				CheckId:   result.GetCheckId(),
-				CheckName: result.GetCheckName(),
-				Clusters: []*v2.ClusterCheckStatus{
-					clusterStatus(result, nil),
-				},
-				Description:  result.GetDescription(),
-				Instructions: result.GetInstructions(),
-				Rationale:    result.GetRationale(),
-				ValuesUsed:   result.GetValuesUsed(),
-				Warnings:     result.GetWarnings(),
-				Labels:       result.GetLabels(),
-				Annotations:  result.GetAnnotations(),
-				Controls:     controls,
-			}
+			converted = &v2.ComplianceClusterCheckStatus{}
+			converted.SetCheckId(result.GetCheckId())
+			converted.SetCheckName(result.GetCheckName())
+			converted.SetClusters([]*v2.ClusterCheckStatus{
+				clusterStatus(result, nil),
+			})
+			converted.SetDescription(result.GetDescription())
+			converted.SetInstructions(result.GetInstructions())
+			converted.SetRationale(result.GetRationale())
+			converted.SetValuesUsed(result.GetValuesUsed())
+			converted.SetWarnings(result.GetWarnings())
+			converted.SetLabels(result.GetLabels())
+			converted.SetAnnotations(result.GetAnnotations())
+			converted.SetControls(controls)
 		} else {
-			converted.Clusters = append(converted.Clusters, clusterStatus(result, nil))
+			converted.SetClusters(append(converted.GetClusters(), clusterStatus(result, nil)))
 		}
 	}
 
@@ -98,7 +96,7 @@ func ComplianceV2ScanResults(incoming []*storage.ComplianceOperatorCheckResultV2
 			resultsByScanCheck[key] = ComplianceV2CheckResult(result, nil, "", nil)
 		} else {
 			// Append the new cluster status to the v2 check result.
-			workingResult.Clusters = append(workingResult.Clusters, clusterStatus(result, nil))
+			workingResult.SetClusters(append(workingResult.GetClusters(), clusterStatus(result, nil)))
 			resultsByScanCheck[key] = workingResult
 		}
 	}
@@ -131,12 +129,12 @@ func ComplianceV2ScanResults(incoming []*storage.ComplianceOperatorCheckResultV2
 	}
 
 	for _, key := range scanOrder {
-		convertedResults = append(convertedResults, &v2.ComplianceScanResult{
-			ScanName:     key.scanConfigName,
-			ScanConfigId: key.scanConfigID,
-			ProfileName:  key.profileName,
-			CheckResults: resultsByScan[key],
-		})
+		csr := &v2.ComplianceScanResult{}
+		csr.SetScanName(key.scanConfigName)
+		csr.SetScanConfigId(key.scanConfigID)
+		csr.SetProfileName(key.profileName)
+		csr.SetCheckResults(resultsByScan[key])
+		convertedResults = append(convertedResults, csr)
 	}
 
 	return convertedResults
@@ -149,42 +147,42 @@ func ComplianceV2ProfileResults(resultCounts []*datastore.ResourceResultsByProfi
 	for _, resultCount := range resultCounts {
 		controls := GetControls(resultCount.RuleName, controlResults)
 
-		profileResults = append(profileResults, &v2.ComplianceCheckResultStatusCount{
+		profileResults = append(profileResults, v2.ComplianceCheckResultStatusCount_builder{
 			CheckName: resultCount.CheckName,
 			Rationale: resultCount.CheckRationale,
 			RuleName:  resultCount.RuleName,
 			Controls:  controls,
 			CheckStats: []*v2.ComplianceCheckStatusCount{
-				{
+				v2.ComplianceCheckStatusCount_builder{
 					Count:  int32(resultCount.FailCount),
 					Status: v2.ComplianceCheckStatus_FAIL,
-				},
-				{
+				}.Build(),
+				v2.ComplianceCheckStatusCount_builder{
 					Count:  int32(resultCount.InfoCount),
 					Status: v2.ComplianceCheckStatus_INFO,
-				},
-				{
+				}.Build(),
+				v2.ComplianceCheckStatusCount_builder{
 					Count:  int32(resultCount.PassCount),
 					Status: v2.ComplianceCheckStatus_PASS,
-				},
-				{
+				}.Build(),
+				v2.ComplianceCheckStatusCount_builder{
 					Count:  int32(resultCount.ErrorCount),
 					Status: v2.ComplianceCheckStatus_ERROR,
-				},
-				{
+				}.Build(),
+				v2.ComplianceCheckStatusCount_builder{
 					Count:  int32(resultCount.ManualCount),
 					Status: v2.ComplianceCheckStatus_MANUAL,
-				},
-				{
+				}.Build(),
+				v2.ComplianceCheckStatusCount_builder{
 					Count:  int32(resultCount.InconsistentCount),
 					Status: v2.ComplianceCheckStatus_INCONSISTENT,
-				},
-				{
+				}.Build(),
+				v2.ComplianceCheckStatusCount_builder{
 					Count:  int32(resultCount.NotApplicableCount),
 					Status: v2.ComplianceCheckStatus_NOT_APPLICABLE,
-				},
+				}.Build(),
 			},
-		})
+		}.Build())
 	}
 
 	return profileResults
@@ -213,55 +211,55 @@ func ComplianceV2CheckResults(incoming []*storage.ComplianceOperatorCheckResultV
 func ComplianceV2CheckData(incoming []*storage.ComplianceOperatorCheckResultV2, ruleMap map[string]string, controlMap map[string][]*compRule.ControlResult) []*v2.ComplianceCheckData {
 	results := make([]*v2.ComplianceCheckData, 0, len(incoming))
 	for _, result := range incoming {
-		results = append(results, &v2.ComplianceCheckData{
-			ClusterId: result.GetClusterId(),
-			ScanName:  result.GetScanConfigName(),
-			Result:    checkResult(result, ruleMap[result.GetRuleRefId()], controlMap[result.GetCheckName()]),
-		})
+		ccd := &v2.ComplianceCheckData{}
+		ccd.SetClusterId(result.GetClusterId())
+		ccd.SetScanName(result.GetScanConfigName())
+		ccd.SetResult(checkResult(result, ruleMap[result.GetRuleRefId()], controlMap[result.GetCheckName()]))
+		results = append(results, ccd)
 	}
 
 	return results
 }
 
 func clusterStatus(incoming *storage.ComplianceOperatorCheckResultV2, lastScanTime *types.Timestamp) *v2.ClusterCheckStatus {
-	return &v2.ClusterCheckStatus{
-		Cluster: &v2.ComplianceScanCluster{
-			ClusterId:   incoming.GetClusterId(),
-			ClusterName: incoming.GetClusterName(),
-		},
-		Status:       convertComplianceCheckStatus(incoming.GetStatus()),
-		CreatedTime:  incoming.GetCreatedTime(),
-		CheckUid:     incoming.GetId(),
-		LastScanTime: lastScanTime,
-	}
+	csc := &v2.ComplianceScanCluster{}
+	csc.SetClusterId(incoming.GetClusterId())
+	csc.SetClusterName(incoming.GetClusterName())
+	ccs := &v2.ClusterCheckStatus{}
+	ccs.SetCluster(csc)
+	ccs.SetStatus(convertComplianceCheckStatus(incoming.GetStatus()))
+	ccs.SetCreatedTime(incoming.GetCreatedTime())
+	ccs.SetCheckUid(incoming.GetId())
+	ccs.SetLastScanTime(lastScanTime)
+	return ccs
 }
 
 func checkResult(incoming *storage.ComplianceOperatorCheckResultV2, ruleName string, controlResults []*compRule.ControlResult) *v2.ComplianceCheckResult {
-	return &v2.ComplianceCheckResult{
-		CheckId:      incoming.GetCheckId(),
-		CheckName:    incoming.GetCheckName(),
-		CheckUid:     incoming.GetId(),
-		Description:  incoming.GetDescription(),
-		Instructions: incoming.GetInstructions(),
-		Controls:     GetControls(ruleName, controlResults),
-		Rationale:    incoming.GetRationale(),
-		ValuesUsed:   incoming.GetValuesUsed(),
-		Warnings:     incoming.GetWarnings(),
-		Status:       convertComplianceCheckStatus(incoming.GetStatus()),
-		RuleName:     ruleName,
-		Labels:       incoming.GetLabels(),
-		Annotations:  incoming.GetAnnotations(),
-	}
+	ccr := &v2.ComplianceCheckResult{}
+	ccr.SetCheckId(incoming.GetCheckId())
+	ccr.SetCheckName(incoming.GetCheckName())
+	ccr.SetCheckUid(incoming.GetId())
+	ccr.SetDescription(incoming.GetDescription())
+	ccr.SetInstructions(incoming.GetInstructions())
+	ccr.SetControls(GetControls(ruleName, controlResults))
+	ccr.SetRationale(incoming.GetRationale())
+	ccr.SetValuesUsed(incoming.GetValuesUsed())
+	ccr.SetWarnings(incoming.GetWarnings())
+	ccr.SetStatus(convertComplianceCheckStatus(incoming.GetStatus()))
+	ccr.SetRuleName(ruleName)
+	ccr.SetLabels(incoming.GetLabels())
+	ccr.SetAnnotations(incoming.GetAnnotations())
+	return ccr
 }
 
 func GetControls(ruleName string, controlResults []*compRule.ControlResult) []*v2.ComplianceControl {
 	var controls []*v2.ComplianceControl
 	for _, controlResult := range controlResults {
 		if controlResult.RuleName == ruleName {
-			controls = append(controls, &v2.ComplianceControl{
-				Standard: controlResult.Standard,
-				Control:  controlResult.Control,
-			})
+			cc := &v2.ComplianceControl{}
+			cc.SetStandard(controlResult.Standard)
+			cc.SetControl(controlResult.Control)
+			controls = append(controls, cc)
 		}
 	}
 

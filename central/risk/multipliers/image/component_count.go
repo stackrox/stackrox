@@ -38,13 +38,15 @@ func (c *componentCountMultiplier) Score(_ context.Context, image *storage.Image
 		return nil
 	}
 	message := GetComponentCountRiskFactorMsg(image.GetName().GetFullName(), count)
-	return &storage.Risk_Result{
-		Name: ComponentCountHeading,
-		Factors: []*storage.Risk_Result_Factor{
-			{Message: message},
-		},
-		Score: score,
-	}
+	rrf := &storage.Risk_Result_Factor{}
+	rrf.SetMessage(message)
+	rr := &storage.Risk_Result{}
+	rr.SetName(ComponentCountHeading)
+	rr.SetFactors([]*storage.Risk_Result_Factor{
+		rrf,
+	})
+	rr.SetScore(score)
+	return rr
 }
 
 // ScoreV2 takes an image and evaluates its risk based on component counts.
@@ -60,13 +62,15 @@ func (c *componentCountMultiplier) ScoreV2(_ context.Context, image *storage.Ima
 		return nil
 	}
 	message := GetComponentCountRiskFactorMsg(image.GetName().GetFullName(), count)
-	return &storage.Risk_Result{
-		Name: ComponentCountHeading,
-		Factors: []*storage.Risk_Result_Factor{
-			{Message: message},
-		},
-		Score: score,
-	}
+	rrf := &storage.Risk_Result_Factor{}
+	rrf.SetMessage(message)
+	rr := &storage.Risk_Result{}
+	rr.SetName(ComponentCountHeading)
+	rr.SetFactors([]*storage.Risk_Result_Factor{
+		rrf,
+	})
+	rr.SetScore(score)
+	return rr
 }
 
 func componentKey(comp *storage.EmbeddedImageScanComponent) string {

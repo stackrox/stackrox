@@ -45,10 +45,14 @@ func (suite *ComponentLoaderTestSuite) TearDownTest() {
 
 func (suite *ComponentLoaderTestSuite) TestFromID() {
 	// Create a loader with some reloaded components.
+	ic := &storage.ImageComponent{}
+	ic.SetId(component1)
+	ic2 := &storage.ImageComponent{}
+	ic2.SetId(component2)
 	loader := componentLoaderImpl{
 		loaded: map[string]*storage.ImageComponent{
-			"component1": {Id: component1},
-			"component2": {Id: component2},
+			"component1": ic,
+			"component2": ic2,
 		},
 		ds: suite.mockDataStore,
 	}
@@ -59,7 +63,8 @@ func (suite *ComponentLoaderTestSuite) TestFromID() {
 	protoassert.Equal(suite.T(), loader.loaded[component1], component)
 
 	// Get a non-preloaded component from id.
-	thirdComponent := &storage.ImageComponent{Id: component3}
+	thirdComponent := &storage.ImageComponent{}
+	thirdComponent.SetId(component3)
 	suite.mockDataStore.EXPECT().GetBatch(suite.ctx, []string{component3}).
 		Return([]*storage.ImageComponent{thirdComponent}, nil)
 
@@ -75,10 +80,14 @@ func (suite *ComponentLoaderTestSuite) TestFromID() {
 
 func (suite *ComponentLoaderTestSuite) TestFromIDs() {
 	// Create a loader with some reloaded components.
+	ic := &storage.ImageComponent{}
+	ic.SetId(component1)
+	ic2 := &storage.ImageComponent{}
+	ic2.SetId(component2)
 	loader := componentLoaderImpl{
 		loaded: map[string]*storage.ImageComponent{
-			"component1": {Id: component1},
-			"component2": {Id: component2},
+			"component1": ic,
+			"component2": ic2,
 		},
 		ds: suite.mockDataStore,
 	}
@@ -92,7 +101,8 @@ func (suite *ComponentLoaderTestSuite) TestFromIDs() {
 	}, components)
 
 	// Get a non-preloaded component from id.
-	thirdComponent := &storage.ImageComponent{Id: "component3"}
+	thirdComponent := &storage.ImageComponent{}
+	thirdComponent.SetId("component3")
 	suite.mockDataStore.EXPECT().GetBatch(suite.ctx, []string{component3}).
 		Return([]*storage.ImageComponent{thirdComponent}, nil)
 
@@ -116,10 +126,14 @@ func (suite *ComponentLoaderTestSuite) TestFromIDs() {
 
 func (suite *ComponentLoaderTestSuite) TestFromQuery() {
 	// Create a loader with some reloaded components.
+	ic := &storage.ImageComponent{}
+	ic.SetId(component1)
+	ic2 := &storage.ImageComponent{}
+	ic2.SetId(component2)
 	loader := componentLoaderImpl{
 		loaded: map[string]*storage.ImageComponent{
-			"component1": {Id: component1},
-			"component2": {Id: component2},
+			"component1": ic,
+			"component2": ic2,
 		},
 		ds: suite.mockDataStore,
 	}
@@ -157,7 +171,8 @@ func (suite *ComponentLoaderTestSuite) TestFromQuery() {
 	}
 	suite.mockDataStore.EXPECT().Search(suite.ctx, query).Return(results, nil)
 
-	thirdComponent := &storage.ImageComponent{Id: "component3"}
+	thirdComponent := &storage.ImageComponent{}
+	thirdComponent.SetId("component3")
 	suite.mockDataStore.EXPECT().GetBatch(suite.ctx, []string{component3}).
 		Return([]*storage.ImageComponent{thirdComponent}, nil)
 

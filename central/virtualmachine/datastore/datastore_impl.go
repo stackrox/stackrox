@@ -60,7 +60,7 @@ func (ds *datastoreImpl) UpsertVirtualMachine(ctx context.Context, virtualMachin
 	}
 
 	now := time.Now()
-	virtualMachine.LastUpdated = protocompat.ConvertTimeToTimestampOrNil(&now)
+	virtualMachine.SetLastUpdated(protocompat.ConvertTimeToTimestampOrNil(&now))
 
 	ds.mutex.Lock()
 	defer ds.mutex.Unlock()
@@ -70,7 +70,7 @@ func (ds *datastoreImpl) UpsertVirtualMachine(ctx context.Context, virtualMachin
 	}
 	if found && oldVM != nil {
 		// Propagate previous scan information to updated virtual machine
-		virtualMachine.Scan = oldVM.GetScan()
+		virtualMachine.SetScan(oldVM.GetScan())
 	}
 
 	return ds.store.UpsertMany(ctx, []*storage.VirtualMachine{virtualMachine})
@@ -92,7 +92,7 @@ func (ds *datastoreImpl) UpdateVirtualMachineScan(
 	if !found {
 		return errox.NotFound
 	}
-	vmToUpdate.Scan = scanData
+	vmToUpdate.SetScan(scanData)
 
 	return ds.store.UpsertMany(ctx, []*storage.VirtualMachine{vmToUpdate})
 }
@@ -120,16 +120,16 @@ func (ds *datastoreImpl) SearchRawVirtualMachines(
 	searchQuery := query.CloneVT()
 	if len(searchQuery.GetPagination().GetSortOptions()) == 0 {
 		if searchQuery.GetPagination() == nil {
-			searchQuery.Pagination = &v1.QueryPagination{}
+			searchQuery.SetPagination(&v1.QueryPagination{})
 		}
-		searchQuery.Pagination.SortOptions = []*v1.QuerySortOption{
-			{
-				Field: search.VirtualMachineName.String(),
-			},
-			{
-				Field: search.Namespace.String(),
-			},
-		}
+		qso := &v1.QuerySortOption{}
+		qso.SetField(search.VirtualMachineName.String())
+		qso2 := &v1.QuerySortOption{}
+		qso2.SetField(search.Namespace.String())
+		searchQuery.GetPagination().SetSortOptions([]*v1.QuerySortOption{
+			qso,
+			qso2,
+		})
 	}
 	pageSize := searchQuery.GetPagination().GetLimit()
 	if pageSize <= 0 {

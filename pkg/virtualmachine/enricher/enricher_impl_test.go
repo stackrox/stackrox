@@ -36,100 +36,100 @@ func TestEnrichVirtualMachineWithVulnerabilities_Success(t *testing.T) {
 	}{
 		{
 			name: "successful enrichment with vulnerabilities",
-			vm: &storage.VirtualMachine{
+			vm: storage.VirtualMachine_builder{
 				Id:   "vm-id-1",
 				Name: "test-vm",
-			},
-			indexReport: &v4.IndexReport{
-				Contents: &v4.Contents{
+			}.Build(),
+			indexReport: v4.IndexReport_builder{
+				Contents: v4.Contents_builder{
 					Packages: map[string]*v4.Package{
-						"pkg-1": {
+						"pkg-1": v4.Package_builder{
 							Id:      "pkg-1",
 							Name:    "libssl",
 							Version: "1.1.1",
-						},
-						"pkg-2": {
+						}.Build(),
+						"pkg-2": v4.Package_builder{
 							Id:      "pkg-2",
 							Name:    "curl",
 							Version: "7.68.0",
-						},
+						}.Build(),
 					},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			expectedVulnerabilitiesCount: 3,
 			expectedScanNotesCount:       0,
 		},
 		{
 			name: "successful enrichment with no vulnerabilities",
-			vm: &storage.VirtualMachine{
+			vm: storage.VirtualMachine_builder{
 				Id:   "vm-id-2",
 				Name: "clean-vm",
-			},
-			indexReport: &v4.IndexReport{
-				Contents: &v4.Contents{
+			}.Build(),
+			indexReport: v4.IndexReport_builder{
+				Contents: v4.Contents_builder{
 					Packages: map[string]*v4.Package{
-						"pkg-safe": {
+						"pkg-safe": v4.Package_builder{
 							Id:      "pkg-safe",
 							Name:    "safe-package",
 							Version: "1.0.0",
-						},
+						}.Build(),
 					},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			expectedVulnerabilitiesCount: 0,
 			expectedScanNotesCount:       0,
 		},
 		{
 			name: "enrichment with empty package list",
-			vm: &storage.VirtualMachine{
+			vm: storage.VirtualMachine_builder{
 				Id:   "vm-id-3",
 				Name: "empty-vm",
-			},
-			indexReport: &v4.IndexReport{
-				Contents: &v4.Contents{
+			}.Build(),
+			indexReport: v4.IndexReport_builder{
+				Contents: v4.Contents_builder{
 					Packages: map[string]*v4.Package{},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			expectedVulnerabilitiesCount: 0,
 			expectedScanNotesCount:       0,
 		},
 		{
 			name: "enrichment with scan notes",
-			vm: &storage.VirtualMachine{
+			vm: storage.VirtualMachine_builder{
 				Id:   "vm-id-4",
 				Name: "noted-vm",
-			},
-			indexReport: &v4.IndexReport{
-				Contents: &v4.Contents{
+			}.Build(),
+			indexReport: v4.IndexReport_builder{
+				Contents: v4.Contents_builder{
 					Packages: map[string]*v4.Package{
-						"pkg-1": {
+						"pkg-1": v4.Package_builder{
 							Id:      "pkg-1",
 							Name:    "test-package",
 							Version: "1.0.0",
-						},
+						}.Build(),
 					},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			expectedVulnerabilitiesCount: 0,
 			expectedScanNotesCount:       2,
 		},
 		{
 			name: "enrichment with multiple scan notes",
-			vm: &storage.VirtualMachine{
+			vm: storage.VirtualMachine_builder{
 				Id:   "vm-id-5",
 				Name: "multi-noted-vm",
-			},
-			indexReport: &v4.IndexReport{
-				Contents: &v4.Contents{
+			}.Build(),
+			indexReport: v4.IndexReport_builder{
+				Contents: v4.Contents_builder{
 					Packages: map[string]*v4.Package{
-						"pkg-1": {
+						"pkg-1": v4.Package_builder{
 							Id:      "pkg-1",
 							Name:    "another-package",
 							Version: "2.0.0",
-						},
+						}.Build(),
 					},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			expectedVulnerabilitiesCount: 1,
 			expectedScanNotesCount:       4, // Test with 4 notes to show cycling
 		},
@@ -144,7 +144,7 @@ func TestEnrichVirtualMachineWithVulnerabilities_Success(t *testing.T) {
 			vulnReport := createVulnerabilityReportFromIndexReport(tt.indexReport, tt.expectedVulnerabilitiesCount)
 
 			// Add notes based on expected count
-			vulnReport.Notes = make([]v4.VulnerabilityReport_Note, tt.expectedScanNotesCount)
+			vulnReport.SetNotes(make([]v4.VulnerabilityReport_Note, tt.expectedScanNotesCount))
 			for i := range tt.expectedScanNotesCount {
 				// Cycle through available note types
 				noteTypes := []v4.VulnerabilityReport_Note{
@@ -152,7 +152,7 @@ func TestEnrichVirtualMachineWithVulnerabilities_Success(t *testing.T) {
 					v4.VulnerabilityReport_NOTE_OS_UNSUPPORTED,
 					v4.VulnerabilityReport_NOTE_UNSPECIFIED,
 				}
-				vulnReport.Notes[i] = noteTypes[i%len(noteTypes)]
+				vulnReport.GetNotes()[i] = noteTypes[i%len(noteTypes)]
 			}
 
 			mockClient := mocks.NewMockScanner(ctrl)
@@ -200,23 +200,23 @@ func TestEnrichVirtualMachineWithVulnerabilities_Errors(t *testing.T) {
 	}{
 		{
 			name: "nil scanner client",
-			vm: &storage.VirtualMachine{
+			vm: storage.VirtualMachine_builder{
 				Id:   "vm-id",
 				Name: "test-vm",
-			},
-			indexReport: &v4.IndexReport{
+			}.Build(),
+			indexReport: v4.IndexReport_builder{
 				Contents: &v4.Contents{},
-			},
+			}.Build(),
 			useNilClient:  true,
 			expectedError: "Scanner V4 client not available for VM enrichment",
 			expectedNotes: []storage.VirtualMachine_Note{storage.VirtualMachine_MISSING_SCAN_DATA},
 		},
 		{
 			name: "nil index report",
-			vm: &storage.VirtualMachine{
+			vm: storage.VirtualMachine_builder{
 				Id:   "vm-id",
 				Name: "test-vm",
-			},
+			}.Build(),
 			indexReport: nil,
 			setupMock: func(mockClient *mocks.MockScanner) {
 				// No expectations since we should fail before calling scanner
@@ -226,13 +226,13 @@ func TestEnrichVirtualMachineWithVulnerabilities_Errors(t *testing.T) {
 		},
 		{
 			name: "scanner client returns error",
-			vm: &storage.VirtualMachine{
+			vm: storage.VirtualMachine_builder{
 				Id:   "vm-id",
 				Name: "test-vm",
-			},
-			indexReport: &v4.IndexReport{
+			}.Build(),
+			indexReport: v4.IndexReport_builder{
 				Contents: &v4.Contents{},
-			},
+			}.Build(),
 			setupMock: func(mockClient *mocks.MockScanner) {
 				mockClient.EXPECT().GetVulnerabilities(gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(nil, errors.New("scanner service unavailable"))
@@ -270,23 +270,22 @@ func TestEnrichVirtualMachineWithVulnerabilities_ClearPreExistingNotes(t *testin
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	vm := &storage.VirtualMachine{
-		Id:    "vm-id",
-		Name:  "test-vm",
-		Notes: []storage.VirtualMachine_Note{storage.VirtualMachine_MISSING_SCAN_DATA}, // Pre-existing notes
-	}
+	vm := &storage.VirtualMachine{}
+	vm.SetId("vm-id")
+	vm.SetName("test-vm")
+	vm.SetNotes([]storage.VirtualMachine_Note{storage.VirtualMachine_MISSING_SCAN_DATA}) // Pre-existing notes
 
-	indexReport := &v4.IndexReport{
-		Contents: &v4.Contents{
+	indexReport := v4.IndexReport_builder{
+		Contents: v4.Contents_builder{
 			Packages: map[string]*v4.Package{
-				"pkg-1": {
+				"pkg-1": v4.Package_builder{
 					Id:      "pkg-1",
 					Name:    "test-package",
 					Version: "1.0.0",
-				},
+				}.Build(),
 			},
-		},
-	}
+		}.Build(),
+	}.Build()
 
 	vulnReport := createVulnerabilityReportFromIndexReport(indexReport, 0)
 	mockClient := mocks.NewMockScanner(ctrl)
@@ -313,52 +312,51 @@ func TestEnrichVirtualMachineWithVulnerabilities_ComponentConversion(t *testing.
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	vm := &storage.VirtualMachine{
-		Id:   "vm-id",
-		Name: "test-vm",
-	}
+	vm := &storage.VirtualMachine{}
+	vm.SetId("vm-id")
+	vm.SetName("test-vm")
 
-	indexReport := &v4.IndexReport{
-		Contents: &v4.Contents{
+	indexReport := v4.IndexReport_builder{
+		Contents: v4.Contents_builder{
 			Packages: map[string]*v4.Package{
-				"pkg-1": {
+				"pkg-1": v4.Package_builder{
 					Id:      "pkg-1",
 					Name:    "openssl",
 					Version: "1.1.1f",
-				},
-				"pkg-2": {
+				}.Build(),
+				"pkg-2": v4.Package_builder{
 					Id:      "pkg-2",
 					Name:    "libssl",
 					Version: "1.1.1f",
-				},
+				}.Build(),
 			},
-		},
-	}
+		}.Build(),
+	}.Build()
 
-	vulnReport := &v4.VulnerabilityReport{
+	vulnReport := v4.VulnerabilityReport_builder{
 		Contents: indexReport.GetContents(),
 		PackageVulnerabilities: map[string]*v4.StringList{
-			"pkg-1": {Values: []string{"vuln-1", "vuln-2"}},
-			"pkg-2": {Values: []string{"vuln-1"}}, // Shared vulnerability
+			"pkg-1": v4.StringList_builder{Values: []string{"vuln-1", "vuln-2"}}.Build(),
+			"pkg-2": v4.StringList_builder{Values: []string{"vuln-1"}}.Build(), // Shared vulnerability
 		},
 		Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
-			"vuln-1": {
+			"vuln-1": v4.VulnerabilityReport_Vulnerability_builder{
 				Name:               "CVE-2021-1234",
 				Description:        "Critical SSL vulnerability",
 				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL,
 				Link:               "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-1234",
 				Issued:             protocompat.TimestampNow(),
 				FixedInVersion:     "1.1.1g",
-			},
-			"vuln-2": {
+			}.Build(),
+			"vuln-2": v4.VulnerabilityReport_Vulnerability_builder{
 				Name:               "CVE-2021-5678",
 				Description:        "Moderate SSL vulnerability",
 				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
 				Issued:             protocompat.TimestampNow(),
-			},
+			}.Build(),
 		},
 		Notes: []v4.VulnerabilityReport_Note{},
-	}
+	}.Build()
 
 	mockClient := mocks.NewMockScanner(ctrl)
 	mockClient.EXPECT().GetVulnerabilities(gomock.Any(), gomock.Any(), gomock.Any()).Return(vulnReport, nil)
@@ -415,14 +413,12 @@ func TestEnrichVirtualMachineWithVulnerabilities_Timeout(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	vm := &storage.VirtualMachine{
-		Id:   "vm-id",
-		Name: "test-vm",
-	}
+	vm := &storage.VirtualMachine{}
+	vm.SetId("vm-id")
+	vm.SetName("test-vm")
 
-	indexReport := &v4.IndexReport{
-		Contents: &v4.Contents{},
-	}
+	indexReport := &v4.IndexReport{}
+	indexReport.SetContents(&v4.Contents{})
 
 	// Create a scanner client that simulates timeout
 	mockClient := mocks.NewMockScanner(ctrl)
@@ -455,27 +451,29 @@ func createVulnerabilityReportFromIndexReport(indexReport *v4.IndexReport, vulnC
 	for i := range vulnCount {
 		vulnID := fmt.Sprintf("vuln-%d", i)
 
-		vulns[vulnID] = &v4.VulnerabilityReport_Vulnerability{
-			Name:               fmt.Sprintf("CVE-2021-%04d", 1000+i),
-			Description:        fmt.Sprintf("Test vulnerability %d", i),
-			NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
-			Issued:             protocompat.TimestampNow(),
-		}
+		vv := &v4.VulnerabilityReport_Vulnerability{}
+		vv.SetName(fmt.Sprintf("CVE-2021-%04d", 1000+i))
+		vv.SetDescription(fmt.Sprintf("Test vulnerability %d", i))
+		vv.SetNormalizedSeverity(v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE)
+		vv.SetIssued(protocompat.TimestampNow())
+		vulns[vulnID] = vv
 
 		// Distribute vulnerabilities across available packages, or create test packages if none exist
 		if len(packages) > 0 {
 			pkgID := packages[keys[i%len(packages)]].GetId()
 			if packageVulns[pkgID] == nil {
-				packageVulns[pkgID] = &v4.StringList{Values: []string{}}
+				sl := &v4.StringList{}
+				sl.SetValues([]string{})
+				packageVulns[pkgID] = sl
 			}
-			packageVulns[pkgID].Values = append(packageVulns[pkgID].Values, vulnID)
+			packageVulns[pkgID].SetValues(append(packageVulns[pkgID].GetValues(), vulnID))
 		}
 	}
 
-	return &v4.VulnerabilityReport{
-		Contents:               indexReport.GetContents(),
-		PackageVulnerabilities: packageVulns,
-		Vulnerabilities:        vulns,
-		Notes:                  []v4.VulnerabilityReport_Note{},
-	}
+	vr := &v4.VulnerabilityReport{}
+	vr.SetContents(indexReport.GetContents())
+	vr.SetPackageVulnerabilities(packageVulns)
+	vr.SetVulnerabilities(vulns)
+	vr.SetNotes([]v4.VulnerabilityReport_Note{})
+	return vr
 }

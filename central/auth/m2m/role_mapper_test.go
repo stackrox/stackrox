@@ -28,40 +28,40 @@ func TestResolveRolesForClaims(t *testing.T) {
 		"repository": {"github.com/sample-org/sample-repo:main:062348SHA"},
 		"iss":        {"https://stackrox.io"},
 	}
-	config := &storage.AuthMachineToMachineConfig{
+	config := storage.AuthMachineToMachineConfig_builder{
 		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{
-			{
+			storage.AuthMachineToMachineConfig_Mapping_builder{
 				Key:             "sub",
 				ValueExpression: "something",
 				Role:            "Admin",
-			},
-			{
+			}.Build(),
+			storage.AuthMachineToMachineConfig_Mapping_builder{
 				Key:             "aud",
 				ValueExpression: "somewhere",
 				Role:            "Analyst",
-			},
-			{
+			}.Build(),
+			storage.AuthMachineToMachineConfig_Mapping_builder{
 				Key:             "aud",
 				ValueExpression: "something",
 				Role:            "Analyst",
-			},
-			{
+			}.Build(),
+			storage.AuthMachineToMachineConfig_Mapping_builder{
 				Key:             "aud",
 				ValueExpression: "elsewhere",
 				Role:            "Continuous Integration",
-			},
-			{
+			}.Build(),
+			storage.AuthMachineToMachineConfig_Mapping_builder{
 				Key:             "repository",
 				ValueExpression: "github.com/sample-org/sample-repo.*",
 				Role:            "roxctl",
-			},
-			{
+			}.Build(),
+			storage.AuthMachineToMachineConfig_Mapping_builder{
 				Key:             "iss",
 				ValueExpression: ".*",
 				Role:            authn.NoneRole,
-			},
+			}.Build(),
 		},
-	}
+	}.Build()
 	roles := map[string]permissions.ResolvedRole{
 		"Admin":        &testResolvedRole{name: "Admin"},
 		"Analyst":      &testResolvedRole{name: "Analyst"},

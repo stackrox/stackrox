@@ -18,30 +18,24 @@ import (
 )
 
 func TestClustersForPermissions(t *testing.T) {
-	cluster1 := &storage.Cluster{
-		Id:   fixtureconsts.Cluster1,
-		Name: "Cluster 1",
-	}
-	scopeObject1 := &v1.ScopeObject{
-		Id:   fixtureconsts.Cluster1,
-		Name: "Cluster 1",
-	}
-	cluster2 := &storage.Cluster{
-		Id:   fixtureconsts.Cluster2,
-		Name: "Cluster 2",
-	}
-	scopeObject2 := &v1.ScopeObject{
-		Id:   fixtureconsts.Cluster2,
-		Name: "Cluster 2",
-	}
-	cluster3 := &storage.Cluster{
-		Id:   fixtureconsts.Cluster3,
-		Name: "Cluster 3",
-	}
-	scopeObject3 := &v1.ScopeObject{
-		Id:   fixtureconsts.Cluster3,
-		Name: "Cluster 3",
-	}
+	cluster1 := &storage.Cluster{}
+	cluster1.SetId(fixtureconsts.Cluster1)
+	cluster1.SetName("Cluster 1")
+	scopeObject1 := &v1.ScopeObject{}
+	scopeObject1.SetId(fixtureconsts.Cluster1)
+	scopeObject1.SetName("Cluster 1")
+	cluster2 := &storage.Cluster{}
+	cluster2.SetId(fixtureconsts.Cluster2)
+	cluster2.SetName("Cluster 2")
+	scopeObject2 := &v1.ScopeObject{}
+	scopeObject2.SetId(fixtureconsts.Cluster2)
+	scopeObject2.SetName("Cluster 2")
+	cluster3 := &storage.Cluster{}
+	cluster3.SetId(fixtureconsts.Cluster3)
+	cluster3.SetName("Cluster 3")
+	scopeObject3 := &v1.ScopeObject{}
+	scopeObject3.SetId(fixtureconsts.Cluster3)
+	scopeObject3.SetName("Cluster 3")
 	storeInvalidErr := errox.InvalidArgs.CausedBy("Wrong arguments")
 
 	testCases := map[string]struct {

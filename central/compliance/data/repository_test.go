@@ -44,42 +44,44 @@ func compressTestData(toCompress map[string]*compliance.ComplianceStandardResult
 	if err := gz.Close(); err != nil {
 		return nil, err
 	}
-	return &compliance.GZIPDataChunk{
-		Gzip: buf.Bytes(),
-	}, nil
+	gzipdc := &compliance.GZIPDataChunk{}
+	if x := buf.Bytes(); x != nil {
+		gzipdc.SetGzip(x)
+	}
+	return gzipdc, nil
 }
 
 func (s *RepositoryTestSuite) TestGetNodeResults() {
 	testNodeName := "testNodeName"
 
 	testEvidence := map[string]*compliance.ComplianceStandardResult{
-		"testStandardName": {
+		"testStandardName": compliance.ComplianceStandardResult_builder{
 			NodeCheckResults: map[string]*storage.ComplianceResultValue{
-				"testCheckName": {
+				"testCheckName": storage.ComplianceResultValue_builder{
 					Evidence: []*storage.ComplianceResultValue_Evidence{
-						{
+						storage.ComplianceResultValue_Evidence_builder{
 							State:   0,
 							Message: "Joseph Rules",
-						},
+						}.Build(),
 					},
 					OverallState: 0,
-				},
+				}.Build(),
 			},
-		},
+		}.Build(),
 	}
 
 	compressedEvidence, err := compressTestData(testEvidence)
 	s.Require().NoError(err)
 
 	testScrapeResults := map[string]*compliance.ComplianceReturn{
-		testNodeName: {
+		testNodeName: compliance.ComplianceReturn_builder{
 			Evidence: compressedEvidence,
-		},
-		"notDecompressable": {
-			Evidence: &compliance.GZIPDataChunk{
+		}.Build(),
+		"notDecompressable": compliance.ComplianceReturn_builder{
+			Evidence: compliance.GZIPDataChunk_builder{
 				Gzip: []byte("Not Decompressable"),
-			},
-		},
+			}.Build(),
+		}.Build(),
 		"noEvidence": {},
 	}
 

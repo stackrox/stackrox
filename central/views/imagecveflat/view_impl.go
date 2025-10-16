@@ -88,7 +88,9 @@ func (v *imageCVEFlatViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 		if cloned.GetPagination() != nil && cloned.GetPagination().GetSortOptions() != nil {
 			// The CVE ID list that we get from the above query is paginated. So when we fetch the details and aggregates for those CVEs,
 			// we do not need to re-apply pagination limit and offset
-			cloned.Pagination = &v1.QueryPagination{SortOptions: cloned.GetPagination().GetSortOptions()}
+			qp := &v1.QueryPagination{}
+			qp.SetSortOptions(cloned.GetPagination().GetSortOptions())
+			cloned.SetPagination(qp)
 		}
 	}
 
@@ -115,12 +117,12 @@ func (v *imageCVEFlatViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 
 func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 	cloned := q.CloneVT()
-	cloned.Selects = []*v1.QuerySelect{
+	cloned.SetSelects([]*v1.QuerySelect{
 		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
-	}
-	cloned.GroupBy = &v1.QueryGroupBy{
-		Fields: []string{search.CVE.String()},
-	}
+	})
+	qgb := &v1.QueryGroupBy{}
+	qgb.SetFields([]string{search.CVE.String()})
+	cloned.SetGroupBy(qgb)
 
 	return cloned
 }
@@ -129,10 +131,10 @@ func withSelectCVEFlatResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 	cloned := q.CloneVT()
 	if len(cveIDsToFilter) > 0 {
 		cloned = search.ConjunctionQuery(cloned, search.NewQueryBuilder().AddDocIDs(cveIDsToFilter...).ProtoQuery())
-		cloned.Pagination = q.GetPagination()
+		cloned.SetPagination(q.GetPagination())
 	}
 
-	cloned.Selects = []*v1.QuerySelect{
+	cloned.SetSelects([]*v1.QuerySelect{
 		search.NewQuerySelect(search.CVE).Proto(),
 		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
 		search.NewQuerySelect(search.EPSSProbablity).AggrFunc(aggregatefunc.Max).Proto(),
@@ -140,9 +142,9 @@ func withSelectCVEFlatResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 		search.NewQuerySelect(search.FirstImageOccurrenceTimestamp).AggrFunc(aggregatefunc.Min).Proto(),
 		search.NewQuerySelect(search.VulnerabilityState).AggrFunc(aggregatefunc.Max).Proto(),
 		search.NewQuerySelect(search.Severity).AggrFunc(aggregatefunc.Max).Proto(),
-	}
+	})
 	if !options.SkipGetTopCVSS {
-		cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.CVSS).AggrFunc(aggregatefunc.Max).Proto())
+		cloned.SetSelects(append(cloned.GetSelects(), search.NewQuerySelect(search.CVSS).AggrFunc(aggregatefunc.Max).Proto()))
 	}
 	var searchField search.FieldLabel
 	if features.FlattenImageData.Enabled() {
@@ -151,21 +153,21 @@ func withSelectCVEFlatResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 		searchField = search.ImageSHA
 	}
 	if !options.SkipGetAffectedImages {
-		cloned.Selects = append(cloned.Selects, search.NewQuerySelect(searchField).AggrFunc(aggregatefunc.Count).Distinct().Proto())
+		cloned.SetSelects(append(cloned.GetSelects(), search.NewQuerySelect(searchField).AggrFunc(aggregatefunc.Count).Distinct().Proto()))
 	}
 	if !options.SkipGetFirstDiscoveredInSystem {
-		cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.CVECreatedTime).AggrFunc(aggregatefunc.Min).Proto())
+		cloned.SetSelects(append(cloned.GetSelects(), search.NewQuerySelect(search.CVECreatedTime).AggrFunc(aggregatefunc.Min).Proto()))
 	}
 	if !options.SkipPublishedDate {
-		cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.CVEPublishedOn).AggrFunc(aggregatefunc.Min).Proto())
+		cloned.SetSelects(append(cloned.GetSelects(), search.NewQuerySelect(search.CVEPublishedOn).AggrFunc(aggregatefunc.Min).Proto()))
 	}
 	if !options.SkipGetTopNVDCVSS {
-		cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.NVDCVSS).AggrFunc(aggregatefunc.Max).Proto())
+		cloned.SetSelects(append(cloned.GetSelects(), search.NewQuerySelect(search.NVDCVSS).AggrFunc(aggregatefunc.Max).Proto()))
 	}
 
-	cloned.GroupBy = &v1.QueryGroupBy{
-		Fields: []string{search.CVE.String()},
-	}
+	qgb := &v1.QueryGroupBy{}
+	qgb.SetFields([]string{search.CVE.String()})
+	cloned.SetGroupBy(qgb)
 
 	return cloned
 }

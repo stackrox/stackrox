@@ -5,6 +5,7 @@ import (
 	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/virtualmachine"
 	sensorVirtualMachine "github.com/stackrox/rox/sensor/common/virtualmachine"
+	"google.golang.org/protobuf/proto"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -44,19 +45,17 @@ func createEvent(action central.ResourceAction, clusterID string, vm *sensorVirt
 		return nil
 	}
 	vSockCID, vSockCIDSet := getVirtualMachineVSockCID(vm)
-	return &central.SensorEvent{
-		Id:     string(vm.ID),
-		Action: action,
-		Resource: &central.SensorEvent_VirtualMachine{
-			VirtualMachine: &virtualMachineV1.VirtualMachine{
-				Id:          string(vm.ID),
-				Namespace:   vm.Namespace,
-				Name:        vm.Name,
-				ClusterId:   clusterID,
-				VsockCid:    vSockCID,
-				VsockCidSet: vSockCIDSet,
-				State:       getVirtualMachineState(vm),
-			},
-		},
-	}
+	vm2 := &virtualMachineV1.VirtualMachine{}
+	vm2.SetId(string(vm.ID))
+	vm2.SetNamespace(vm.Namespace)
+	vm2.SetName(vm.Name)
+	vm2.SetClusterId(clusterID)
+	vm2.SetVsockCid(vSockCID)
+	vm2.SetVsockCidSet(vSockCIDSet)
+	vm2.SetState(getVirtualMachineState(vm))
+	se := &central.SensorEvent{}
+	se.SetId(string(vm.ID))
+	se.SetAction(action)
+	se.SetVirtualMachine(proto.ValueOrDefault(vm2))
+	return se
 }

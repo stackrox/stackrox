@@ -111,13 +111,13 @@ func validateCloudSource(cloudSource *storage.CloudSource) error {
 
 func validateCredentials(cloudSource *storage.CloudSource) error {
 	creds := cloudSource.GetCredentials()
-	switch cloudSource.GetConfig().(type) {
-	case *storage.CloudSource_PaladinCloud:
+	switch cloudSource.WhichConfig() {
+	case storage.CloudSource_PaladinCloud_case:
 		if creds.GetSecret() == "" {
 			return errors.New("cloud source credentials must be defined")
 		}
 		return nil
-	case *storage.CloudSource_Ocm:
+	case storage.CloudSource_Ocm_case:
 		// TODO(ROX-25633): fail validation if token is used for authentication.
 		if creds.GetSecret() != "" {
 			log.Warn("secret is deprecated for type OCM - use clientId and clientSecret instead")
@@ -135,13 +135,13 @@ func validateType(cloudSource *storage.CloudSource) error {
 	if cloudSourceType == storage.CloudSource_TYPE_UNSPECIFIED {
 		return errors.New("cloud source type must be specified")
 	}
-	switch cloudSource.GetConfig().(type) {
-	case *storage.CloudSource_PaladinCloud:
+	switch cloudSource.WhichConfig() {
+	case storage.CloudSource_PaladinCloud_case:
 		if cloudSourceType != storage.CloudSource_TYPE_PALADIN_CLOUD {
 			return errors.Errorf("invalid cloud source type %q", cloudSourceType.String())
 		}
 		return nil
-	case *storage.CloudSource_Ocm:
+	case storage.CloudSource_Ocm_case:
 		if cloudSourceType != storage.CloudSource_TYPE_OCM {
 			return errors.Errorf("invalid cloud source type %q", cloudSourceType.String())
 		}

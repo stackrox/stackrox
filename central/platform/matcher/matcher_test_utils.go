@@ -14,21 +14,21 @@ func GetTestPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl *gomock.C
 }
 
 func GetDefaultPlatformComponentConfig() *storage.PlatformComponentConfig {
-	return &storage.PlatformComponentConfig{
+	return storage.PlatformComponentConfig_builder{
 		NeedsReevaluation: false,
 		Rules: []*storage.PlatformComponentConfig_Rule{
-			{
+			storage.PlatformComponentConfig_Rule_builder{
 				Name: "system rule",
-				NamespaceRule: &storage.PlatformComponentConfig_Rule_NamespaceRule{
+				NamespaceRule: storage.PlatformComponentConfig_Rule_NamespaceRule_builder{
 					Regex: `^kube-.*|^openshift-.*`,
-				},
-			},
-			{
+				}.Build(),
+			}.Build(),
+			storage.PlatformComponentConfig_Rule_builder{
 				Name: "red hat layered products",
-				NamespaceRule: &storage.PlatformComponentConfig_Rule_NamespaceRule{
+				NamespaceRule: storage.PlatformComponentConfig_Rule_NamespaceRule_builder{
 					Regex: `^stackrox$|^rhacs-operator$|^open-cluster-management$|^multicluster-engine$|^aap$|^hive$`,
-				},
-			},
+				}.Build(),
+			}.Build(),
 		},
-	}
+	}.Build()
 }

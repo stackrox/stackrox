@@ -14,7 +14,8 @@ import (
 
 func TestGetNamespaces(t *testing.T) {
 	mocks := mockResolver(t)
-	loaders.RegisterTypeFactory(reflect.TypeOf(storage.NamespaceMetadata{}), func() interface{} {
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	loaders.RegisterTypeFactory(reflect.TypeOf(&storage.NamespaceMetadata{}), func() interface{} {
 		return loaders.NewNamespaceLoader(mocks.namespace)
 	})
 	mocks.namespace.EXPECT().Search(gomock.Any(), emptyPaginatedQuery()).Return([]search.Result{
@@ -22,13 +23,13 @@ func TestGetNamespaces(t *testing.T) {
 			ID: fakeNamespaceID,
 		},
 	}, nil)
+	nm := &storage.NamespaceMetadata{}
+	nm.SetId(fakeNamespaceID)
+	nm.SetName(fakeNamespaceName)
+	nm.SetClusterId(fakeClusterID)
+	nm.SetClusterName(fakeClusterName)
 	mocks.namespace.EXPECT().GetManyNamespaces(gomock.Any(), []string{fakeNamespaceID}).Return([]*storage.NamespaceMetadata{
-		{
-			Id:          fakeNamespaceID,
-			Name:        fakeNamespaceName,
-			ClusterId:   fakeClusterID,
-			ClusterName: fakeClusterName,
-		},
+		nm,
 	}, nil)
 	response := executeTestQuery(t, mocks, "{namespaces { metadata { id name clusterId clusterName } } }")
 	assert.Equal(t, 200, response.Code)
@@ -40,12 +41,12 @@ func TestGetNamespaces(t *testing.T) {
 
 func TestGetNamespace(t *testing.T) {
 	mocks := mockResolver(t)
-	mocks.namespace.EXPECT().GetNamespace(gomock.Any(), fakeNamespaceID).Return(&storage.NamespaceMetadata{
-		Id:          fakeNamespaceID,
-		Name:        fakeNamespaceName,
-		ClusterId:   fakeClusterID,
-		ClusterName: fakeClusterName,
-	}, true, nil)
+	nm := &storage.NamespaceMetadata{}
+	nm.SetId(fakeNamespaceID)
+	nm.SetName(fakeNamespaceName)
+	nm.SetClusterId(fakeClusterID)
+	nm.SetClusterName(fakeClusterName)
+	mocks.namespace.EXPECT().GetNamespace(gomock.Any(), fakeNamespaceID).Return(nm, true, nil)
 	response := executeTestQuery(t, mocks, fmt.Sprintf(`{namespace(id:"%s") {metadata{id name clusterId clusterName} }}`, fakeNamespaceID))
 	assert.Equal(t, 200, response.Code)
 	assertJSONMatches(t, response.Body, ".data.namespace.metadata.id", fakeNamespaceID)

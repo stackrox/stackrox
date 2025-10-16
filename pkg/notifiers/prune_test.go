@@ -11,7 +11,7 @@ import (
 
 func getProcessIndicatorWithID(id string) *storage.ProcessIndicator {
 	p := fixtures.GetProcessIndicator()
-	p.Id = id
+	p.SetId(id)
 	return p
 }
 
@@ -116,18 +116,18 @@ func TestFilterViolations(t *testing.T) {
 		{
 			name: "no trim",
 			violations: []*storage.Alert_Violation{
-				{
+				storage.Alert_Violation_builder{
 					Message: "message a",
-				},
-				{
+				}.Build(),
+				storage.Alert_Violation_builder{
 					Message: "message b",
-				},
-				{
+				}.Build(),
+				storage.Alert_Violation_builder{
 					Message: "message c",
-				},
-				{
+				}.Build(),
+				storage.Alert_Violation_builder{
 					Message: "message d",
-				},
+				}.Build(),
 			},
 			currSize:       100,
 			maxSize:        10000,
@@ -136,18 +136,18 @@ func TestFilterViolations(t *testing.T) {
 		{
 			name: "trim",
 			violations: []*storage.Alert_Violation{
-				{
+				storage.Alert_Violation_builder{
 					Message: "message a",
-				},
-				{
+				}.Build(),
+				storage.Alert_Violation_builder{
 					Message: "message b",
-				},
-				{
+				}.Build(),
+				storage.Alert_Violation_builder{
 					Message: "message c",
-				},
-				{
+				}.Build(),
+				storage.Alert_Violation_builder{
 					Message: "message d",
-				},
+				}.Build(),
 			},
 			currSize:       140,
 			maxSize:        100,

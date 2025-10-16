@@ -192,15 +192,15 @@ func (d *datastoreImpl) UpsertConfig(ctx context.Context, config *storage.Config
 			return err
 		}
 		if oldConf != nil {
-			clusterRetentionConf.CreatedAt = oldConf.GetCreatedAt()
+			clusterRetentionConf.SetCreatedAt(oldConf.GetCreatedAt())
 		} else {
-			clusterRetentionConf.CreatedAt = protocompat.TimestampNow()
+			clusterRetentionConf.SetCreatedAt(protocompat.TimestampNow())
 		}
 
 		hasUpdate := !clusterRetentionConfigsEqual(oldConf, clusterRetentionConf)
 
 		if hasUpdate {
-			clusterRetentionConf.LastUpdated = protocompat.TimestampNow()
+			clusterRetentionConf.SetLastUpdated(protocompat.TimestampNow())
 		}
 	}
 	if config.GetPlatformComponentConfig() != nil {
@@ -209,7 +209,7 @@ func (d *datastoreImpl) UpsertConfig(ctx context.Context, config *storage.Config
 		if err != nil {
 			return err
 		}
-		config.PlatformComponentConfig = platformConfig
+		config.SetPlatformComponentConfig(platformConfig)
 	}
 
 	upsertErr := d.store.Upsert(ctx, config)
@@ -314,17 +314,16 @@ func validateAndUpdatePlatformComponentConfig(config *storage.PlatformComponentC
 		parsedRules = append(parsedRules, defaultPlatformConfigLayeredProductsRule)
 	}
 	if config == nil {
-		config = &storage.PlatformComponentConfig{
-			Rules:             parsedRules,
-			NeedsReevaluation: true,
-		}
+		config = &storage.PlatformComponentConfig{}
+		config.SetRules(parsedRules)
+		config.SetNeedsReevaluation(true)
 	} else {
 		slices.SortFunc(config.GetRules(), ruleNameSortFunc)
 		slices.SortFunc(parsedRules, ruleNameSortFunc)
 		if !protoutils.SlicesEqual(config.GetRules(), parsedRules) {
-			config.NeedsReevaluation = true
+			config.SetNeedsReevaluation(true)
 		}
-		config.Rules = parsedRules
+		config.SetRules(parsedRules)
 	}
 	return config, nil
 }
@@ -345,6 +344,6 @@ func (d *datastoreImpl) MarkPCCReevaluated(ctx context.Context) error {
 		return err
 	}
 
-	config.GetPlatformComponentConfig().NeedsReevaluation = false
+	config.GetPlatformComponentConfig().SetNeedsReevaluation(false)
 	return d.store.Upsert(ctx, config)
 }

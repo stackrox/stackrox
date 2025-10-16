@@ -32,224 +32,224 @@ func TestIndicatorsToGroupedResponses(t *testing.T) {
 		{
 			name: "test grouping",
 			indicators: []*storage.ProcessIndicator{
-				{
+				storage.ProcessIndicator_builder{
 					ContainerName: "one",
-					Signal: &storage.ProcessSignal{
+					Signal: storage.ProcessSignal_builder{
 						Id:           "1",
 						ExecFilePath: "cat",
 						Args:         "hello",
 						ContainerId:  "A",
-					},
-				},
-				{
+					}.Build(),
+				}.Build(),
+				storage.ProcessIndicator_builder{
 					ContainerName: "one",
-					Signal: &storage.ProcessSignal{
+					Signal: storage.ProcessSignal_builder{
 						Id:           "2",
 						ExecFilePath: "cat",
 						Args:         "hello",
 						ContainerId:  "B",
-					},
-				},
-				{
+					}.Build(),
+				}.Build(),
+				storage.ProcessIndicator_builder{
 					ContainerName: "one",
-					Signal: &storage.ProcessSignal{
+					Signal: storage.ProcessSignal_builder{
 						Id:           "3",
 						ExecFilePath: "cat",
 						Args:         "boo",
 						ContainerId:  "A",
-					},
-				},
-				{
+					}.Build(),
+				}.Build(),
+				storage.ProcessIndicator_builder{
 					ContainerName: "one",
-					Signal: &storage.ProcessSignal{
+					Signal: storage.ProcessSignal_builder{
 						Id:           "4",
 						ExecFilePath: "blah",
 						Args:         "boo",
 						ContainerId:  "C",
-					},
-				},
-				{
+					}.Build(),
+				}.Build(),
+				storage.ProcessIndicator_builder{
 					ContainerName: "two",
-					Signal: &storage.ProcessSignal{
+					Signal: storage.ProcessSignal_builder{
 						Id:           "5",
 						ExecFilePath: "grah",
 						Args:         "boo",
 						ContainerId:  "D",
-					},
-				},
+					}.Build(),
+				}.Build(),
 			},
 			nameGroups: []*v1.ProcessNameGroup{
-				{
+				v1.ProcessNameGroup_builder{
 					Name:          "blah",
 					TimesExecuted: 1,
 					Groups: []*v1.ProcessGroup{
-						{
+						v1.ProcessGroup_builder{
 							Args: "boo",
 							Signals: []*storage.ProcessIndicator{
-								{
+								storage.ProcessIndicator_builder{
 									ContainerName: "one",
-									Signal: &storage.ProcessSignal{
+									Signal: storage.ProcessSignal_builder{
 										Id:           "4",
 										ExecFilePath: "blah",
 										Args:         "boo",
 										ContainerId:  "C",
-									},
-								},
+									}.Build(),
+								}.Build(),
 							},
-						},
+						}.Build(),
 					},
-				},
-				{
+				}.Build(),
+				v1.ProcessNameGroup_builder{
 					Name:          "cat",
 					TimesExecuted: 2,
 					Groups: []*v1.ProcessGroup{
-						{
+						v1.ProcessGroup_builder{
 							Args: "boo",
 							Signals: []*storage.ProcessIndicator{
-								{
+								storage.ProcessIndicator_builder{
 									ContainerName: "one",
-									Signal: &storage.ProcessSignal{
+									Signal: storage.ProcessSignal_builder{
 										Id:           "3",
 										ExecFilePath: "cat",
 										Args:         "boo",
 										ContainerId:  "A",
-									},
-								},
+									}.Build(),
+								}.Build(),
 							},
-						},
-						{
+						}.Build(),
+						v1.ProcessGroup_builder{
 							Args: "hello",
 							Signals: []*storage.ProcessIndicator{
-								{
+								storage.ProcessIndicator_builder{
 									ContainerName: "one",
-									Signal: &storage.ProcessSignal{
+									Signal: storage.ProcessSignal_builder{
 										Id:           "1",
 										ExecFilePath: "cat",
 										Args:         "hello",
 										ContainerId:  "A",
-									},
-								},
-								{
+									}.Build(),
+								}.Build(),
+								storage.ProcessIndicator_builder{
 									ContainerName: "one",
-									Signal: &storage.ProcessSignal{
+									Signal: storage.ProcessSignal_builder{
 										Id:           "2",
 										ExecFilePath: "cat",
 										Args:         "hello",
 										ContainerId:  "B",
-									},
-								},
+									}.Build(),
+								}.Build(),
 							},
-						},
+						}.Build(),
 					},
-				},
-				{
+				}.Build(),
+				v1.ProcessNameGroup_builder{
 					Name:          "grah",
 					TimesExecuted: 1,
 					Groups: []*v1.ProcessGroup{
-						{
+						v1.ProcessGroup_builder{
 							Args: "boo",
 							Signals: []*storage.ProcessIndicator{
-								{
+								storage.ProcessIndicator_builder{
 									ContainerName: "two",
-									Signal: &storage.ProcessSignal{
+									Signal: storage.ProcessSignal_builder{
 										Id:           "5",
 										ExecFilePath: "grah",
 										Args:         "boo",
 										ContainerId:  "D",
-									},
-								},
+									}.Build(),
+								}.Build(),
 							},
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			nameContainerGroups: []*v1.ProcessNameAndContainerNameGroup{
-				{
+				v1.ProcessNameAndContainerNameGroup_builder{
 					Name:          "blah",
 					ContainerName: "one",
 					TimesExecuted: 1,
 					Groups: []*v1.ProcessGroup{
-						{
+						v1.ProcessGroup_builder{
 							Args: "boo",
 							Signals: []*storage.ProcessIndicator{
-								{
+								storage.ProcessIndicator_builder{
 									ContainerName: "one",
-									Signal: &storage.ProcessSignal{
+									Signal: storage.ProcessSignal_builder{
 										Id:           "4",
 										ExecFilePath: "blah",
 										Args:         "boo",
 										ContainerId:  "C",
-									},
-								},
+									}.Build(),
+								}.Build(),
 							},
-						},
+						}.Build(),
 					},
-				},
-				{
+				}.Build(),
+				v1.ProcessNameAndContainerNameGroup_builder{
 					Name:          "cat",
 					ContainerName: "one",
 					TimesExecuted: 2,
 					Groups: []*v1.ProcessGroup{
-						{
+						v1.ProcessGroup_builder{
 							Args: "boo",
 							Signals: []*storage.ProcessIndicator{
-								{
+								storage.ProcessIndicator_builder{
 									ContainerName: "one",
-									Signal: &storage.ProcessSignal{
+									Signal: storage.ProcessSignal_builder{
 										Id:           "3",
 										ExecFilePath: "cat",
 										Args:         "boo",
 										ContainerId:  "A",
-									},
-								},
+									}.Build(),
+								}.Build(),
 							},
-						},
-						{
+						}.Build(),
+						v1.ProcessGroup_builder{
 							Args: "hello",
 							Signals: []*storage.ProcessIndicator{
-								{
+								storage.ProcessIndicator_builder{
 									ContainerName: "one",
-									Signal: &storage.ProcessSignal{
+									Signal: storage.ProcessSignal_builder{
 										Id:           "1",
 										ExecFilePath: "cat",
 										Args:         "hello",
 										ContainerId:  "A",
-									},
-								},
-								{
+									}.Build(),
+								}.Build(),
+								storage.ProcessIndicator_builder{
 									ContainerName: "one",
-									Signal: &storage.ProcessSignal{
+									Signal: storage.ProcessSignal_builder{
 										Id:           "2",
 										ExecFilePath: "cat",
 										Args:         "hello",
 										ContainerId:  "B",
-									},
-								},
+									}.Build(),
+								}.Build(),
 							},
-						},
+						}.Build(),
 					},
-				},
-				{
+				}.Build(),
+				v1.ProcessNameAndContainerNameGroup_builder{
 					Name:          "grah",
 					ContainerName: "two",
 					TimesExecuted: 1,
 					Groups: []*v1.ProcessGroup{
-						{
+						v1.ProcessGroup_builder{
 							Args: "boo",
 							Signals: []*storage.ProcessIndicator{
-								{
+								storage.ProcessIndicator_builder{
 									ContainerName: "two",
-									Signal: &storage.ProcessSignal{
+									Signal: storage.ProcessSignal_builder{
 										Id:           "5",
 										ExecFilePath: "grah",
 										Args:         "boo",
 										ContainerId:  "D",
-									},
-								},
+									}.Build(),
+								}.Build(),
 							},
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 		},
 	}
@@ -274,10 +274,10 @@ func TestBaselineCheck(t *testing.T) {
 	}{
 		{
 			name: "In the baseline",
-			nameContainerGroup: &v1.ProcessNameAndContainerNameGroup{
+			nameContainerGroup: v1.ProcessNameAndContainerNameGroup_builder{
 				Name:          "Name One",
 				ContainerName: "Container One",
-			},
+			}.Build(),
 			baselineElements:   []*storage.BaselineElement{fixtures.GetBaselineElement("Name One")},
 			baselineExists:     true,
 			baselineLocked:     true,
@@ -285,10 +285,10 @@ func TestBaselineCheck(t *testing.T) {
 		},
 		{
 			name: "Not in the baseline",
-			nameContainerGroup: &v1.ProcessNameAndContainerNameGroup{
+			nameContainerGroup: v1.ProcessNameAndContainerNameGroup_builder{
 				Name:          "Name Two",
 				ContainerName: "Container One",
-			},
+			}.Build(),
 			baselineElements:   []*storage.BaselineElement{fixtures.GetBaselineElement("Name One")},
 			baselineExists:     true,
 			baselineLocked:     true,
@@ -296,19 +296,19 @@ func TestBaselineCheck(t *testing.T) {
 		},
 		{
 			name: "No baseline",
-			nameContainerGroup: &v1.ProcessNameAndContainerNameGroup{
+			nameContainerGroup: v1.ProcessNameAndContainerNameGroup_builder{
 				Name:          "Name One",
 				ContainerName: "Container One",
-			},
+			}.Build(),
 			baselineExists:     false,
 			expectedSuspicious: false,
 		},
 		{
 			name: "Unlocked baseline",
-			nameContainerGroup: &v1.ProcessNameAndContainerNameGroup{
+			nameContainerGroup: v1.ProcessNameAndContainerNameGroup_builder{
 				Name:          "Name Two",
 				ContainerName: "Container One",
-			},
+			}.Build(),
 			baselineElements:   []*storage.BaselineElement{fixtures.GetBaselineElement("Name One")},
 			baselineExists:     true,
 			baselineLocked:     false,
@@ -316,10 +316,10 @@ func TestBaselineCheck(t *testing.T) {
 		},
 		{
 			name: "Empty locked baseline",
-			nameContainerGroup: &v1.ProcessNameAndContainerNameGroup{
+			nameContainerGroup: v1.ProcessNameAndContainerNameGroup_builder{
 				Name:          "Name One",
 				ContainerName: "Container One",
-			},
+			}.Build(),
 			baselineElements:   []*storage.BaselineElement{},
 			baselineExists:     true,
 			baselineLocked:     true,
@@ -327,10 +327,10 @@ func TestBaselineCheck(t *testing.T) {
 		},
 		{
 			name: "Empty unlocked baseline",
-			nameContainerGroup: &v1.ProcessNameAndContainerNameGroup{
+			nameContainerGroup: v1.ProcessNameAndContainerNameGroup_builder{
 				Name:          "Name One",
 				ContainerName: "Container One",
-			},
+			}.Build(),
 			baselineElements:   []*storage.BaselineElement{},
 			baselineExists:     true,
 			baselineLocked:     false,
@@ -353,22 +353,20 @@ func TestBaselineCheck(t *testing.T) {
 			var baseline *storage.ProcessBaseline
 			if c.baselineExists {
 				baseline = fixtures.GetProcessBaseline()
-				baseline.Elements = c.baselineElements
+				baseline.SetElements(c.baselineElements)
 				if c.baselineLocked {
-					baseline.UserLockedTimestamp = testStart
+					baseline.SetUserLockedTimestamp(testStart)
 				}
 			}
-			deployment := &storage.Deployment{
-				ClusterId: testClusterID,
-				Namespace: testNamespace,
-				Id:        testDeploymentID,
-			}
-			key := &storage.ProcessBaselineKey{
-				ClusterId:     testClusterID,
-				Namespace:     testNamespace,
-				DeploymentId:  testDeploymentID,
-				ContainerName: c.nameContainerGroup.GetContainerName(),
-			}
+			deployment := &storage.Deployment{}
+			deployment.SetClusterId(testClusterID)
+			deployment.SetNamespace(testNamespace)
+			deployment.SetId(testDeploymentID)
+			key := &storage.ProcessBaselineKey{}
+			key.SetClusterId(testClusterID)
+			key.SetNamespace(testNamespace)
+			key.SetDeploymentId(testDeploymentID)
+			key.SetContainerName(c.nameContainerGroup.GetContainerName())
 			deployments.EXPECT().GetDeployment(gomock.Any(), testDeploymentID).Return(deployment, true, nil)
 			baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(baseline, true, nil)
 			err := service.setSuspicious(hasReadCtx, []*v1.ProcessNameAndContainerNameGroup{c.nameContainerGroup}, testDeploymentID)

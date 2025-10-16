@@ -66,7 +66,9 @@ func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap
 	}
 	store := storeMap.Get((*central.SensorEvent_NetworkPolicy)(nil))
 	return reconciliation.Perform(store, existingIDs, "network policies", func(id string) error {
-		return s.runRemovePipeline(ctx, central.ResourceAction_REMOVE_RESOURCE, &storage.NetworkPolicy{Id: id})
+		np := &storage.NetworkPolicy{}
+		np.SetId(id)
+		return s.runRemovePipeline(ctx, central.ResourceAction_REMOVE_RESOURCE, np)
 	})
 }
 
@@ -80,7 +82,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	event := msg.GetEvent()
 	networkPolicy := event.GetNetworkPolicy()
-	networkPolicy.ClusterId = clusterID
+	networkPolicy.SetClusterId(clusterID)
 
 	// ROX-22002: Remove invalid null characters in annotations
 	stringutils.SanitizeMapValues(networkPolicy.GetAnnotations())
@@ -136,7 +138,7 @@ func (s *pipelineImpl) validateInput(np *storage.NetworkPolicy) error {
 }
 
 func (s *pipelineImpl) enrichCluster(ctx context.Context, np *storage.NetworkPolicy) error {
-	np.ClusterName = ""
+	np.SetClusterName("")
 
 	clusterName, clusterExists, err := s.clusters.GetClusterName(ctx, np.GetClusterId())
 	switch {
@@ -145,7 +147,7 @@ func (s *pipelineImpl) enrichCluster(ctx context.Context, np *storage.NetworkPol
 	case !clusterExists:
 		log.Warnf("Couldn't find cluster '%s'", np.GetClusterId())
 	default:
-		np.ClusterName = clusterName
+		np.SetClusterName(clusterName)
 	}
 	return nil
 }

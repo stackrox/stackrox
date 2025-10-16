@@ -72,7 +72,9 @@ func (s *countEventsTestSuite) SetupTest() {
 	s.baseTestSuite.SetupTest()
 
 	s.fakeCountEventsRequest = &v1.CountAdministrationEventsRequest{}
-	s.fakeCountEventsResponse = &v1.CountAdministrationEventsResponse{Count: 1}
+	caer := &v1.CountAdministrationEventsResponse{}
+	caer.SetCount(1)
+	s.fakeCountEventsResponse = caer
 }
 
 func (s *countEventsTestSuite) TestCountAdministrationEvents_Success() {
@@ -103,10 +105,12 @@ type getEventTestSuite struct {
 func (s *getEventTestSuite) SetupTest() {
 	s.baseTestSuite.SetupTest()
 
-	s.fakeResourceByIDRequest = &v1.ResourceByID{Id: fakeID}
-	s.fakeGetEventResponse = &v1.GetAdministrationEventResponse{
-		Event: toV1Proto(fakeEvent),
-	}
+	rbid := &v1.ResourceByID{}
+	rbid.SetId(fakeID)
+	s.fakeResourceByIDRequest = rbid
+	gaer := &v1.GetAdministrationEventResponse{}
+	gaer.SetEvent(toV1Proto(fakeEvent))
+	s.fakeGetEventResponse = gaer
 }
 
 func (s *getEventTestSuite) TestGetAdministrationEvent_Success() {
@@ -150,7 +154,9 @@ func (s *listEventsTestSuite) SetupTest() {
 	s.fakeStorageEventsList = []*storage.AdministrationEvent{fakeEvent}
 	s.fakeServiceEventsList = []*v1.AdministrationEvent{toV1Proto(fakeEvent)}
 	s.fakeListEventsRequest = &v1.ListAdministrationEventsRequest{}
-	s.fakeListEventsResponse = &v1.ListAdministrationEventsResponse{Events: s.fakeServiceEventsList}
+	laer := &v1.ListAdministrationEventsResponse{}
+	laer.SetEvents(s.fakeServiceEventsList)
+	s.fakeListEventsResponse = laer
 }
 
 func (s *listEventsTestSuite) TestListAdministrationEvents_Success() {
@@ -172,14 +178,13 @@ func (s *listEventsTestSuite) TestListAdministrationEvents_Error() {
 // Test query builder
 
 func TestAdministrationEventsQueryBuilder(t *testing.T) {
-	filter := &v1.AdministrationEventsFilter{
-		From:         protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
-		Until:        protoconv.ConvertTimeToTimestamp(time.Unix(10000, 0)),
-		Domain:       []string{"domain", "domain"},
-		ResourceType: []string{"resourceType", "resourceType"},
-		Type:         []v1.AdministrationEventType{v1.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC},
-		Level:        []v1.AdministrationEventLevel{v1.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR},
-	}
+	filter := &v1.AdministrationEventsFilter{}
+	filter.SetFrom(protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)))
+	filter.SetUntil(protoconv.ConvertTimeToTimestamp(time.Unix(10000, 0)))
+	filter.SetDomain([]string{"domain", "domain"})
+	filter.SetResourceType([]string{"resourceType", "resourceType"})
+	filter.SetType([]v1.AdministrationEventType{v1.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC})
+	filter.SetLevel([]v1.AdministrationEventLevel{v1.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR})
 	queryBuilder := getQueryBuilderFromFilter(filter)
 
 	rawQuery, err := queryBuilder.RawQuery()

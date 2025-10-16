@@ -110,52 +110,49 @@ func (suite *PodDataStoreTestSuite) TestUpsertPodExists() {
 	oldPod := expectedPod
 
 	pod := fixtures.GetPod()
-	pod.TerminatedInstances = make([]*storage.Pod_ContainerInstanceList, 0)
+	pod.SetTerminatedInstances(make([]*storage.Pod_ContainerInstanceList, 0))
 	// Update one instance.
-	pod.LiveInstances[0] = &storage.ContainerInstance{
-		InstanceId:    pod.GetLiveInstances()[0].GetInstanceId(),
-		ContainerName: pod.GetLiveInstances()[0].GetContainerName(),
-		ImageDigest:   "sha256:3984274924983274198",
-	}
+	ci := &storage.ContainerInstance{}
+	ci.SetInstanceId(pod.GetLiveInstances()[0].GetInstanceId())
+	ci.SetContainerName(pod.GetLiveInstances()[0].GetContainerName())
+	ci.SetImageDigest("sha256:3984274924983274198")
+	pod.GetLiveInstances()[0] = ci
 	// Terminate the other instance.
-	terminatedInst0 := &storage.ContainerInstance{
-		InstanceId:        pod.GetLiveInstances()[1].GetInstanceId(),
-		ContainerName:     pod.GetLiveInstances()[1].GetContainerName(),
-		Finished:          protocompat.GetProtoTimestampFromSeconds(10),
-		ExitCode:          0,
-		TerminationReason: "Completed",
-	}
-	pod.LiveInstances[1] = terminatedInst0
+	terminatedInst0 := &storage.ContainerInstance{}
+	terminatedInst0.SetInstanceId(pod.GetLiveInstances()[1].GetInstanceId())
+	terminatedInst0.SetContainerName(pod.GetLiveInstances()[1].GetContainerName())
+	terminatedInst0.SetFinished(protocompat.GetProtoTimestampFromSeconds(10))
+	terminatedInst0.SetExitCode(0)
+	terminatedInst0.SetTerminationReason("Completed")
+	pod.GetLiveInstances()[1] = terminatedInst0
 	// Add a new terminated instance.
-	terminatedInst1 := &storage.ContainerInstance{
-		InstanceId: &storage.ContainerInstanceID{
-			Id: "newdeadcontainerid",
-		},
-		ContainerName:     "newdeadcontainername",
-		Finished:          protocompat.GetProtoTimestampFromSeconds(9),
-		ExitCode:          137,
-		TerminationReason: "Error",
-	}
-	pod.LiveInstances = append(pod.LiveInstances, terminatedInst1)
+	ciid := &storage.ContainerInstanceID{}
+	ciid.SetId("newdeadcontainerid")
+	terminatedInst1 := &storage.ContainerInstance{}
+	terminatedInst1.SetInstanceId(ciid)
+	terminatedInst1.SetContainerName("newdeadcontainername")
+	terminatedInst1.SetFinished(protocompat.GetProtoTimestampFromSeconds(9))
+	terminatedInst1.SetExitCode(137)
+	terminatedInst1.SetTerminationReason("Error")
+	pod.SetLiveInstances(append(pod.GetLiveInstances(), terminatedInst1))
 	// Add a new live instance.
-	liveInst := &storage.ContainerInstance{
-		InstanceId: &storage.ContainerInstanceID{
-			Id: "newlivecontainerid",
-		},
-		ContainerName: "newlivecontainername",
-		Started:       protocompat.GetProtoTimestampFromSeconds(8),
-	}
-	pod.LiveInstances = append(pod.LiveInstances, liveInst)
+	ciid2 := &storage.ContainerInstanceID{}
+	ciid2.SetId("newlivecontainerid")
+	liveInst := &storage.ContainerInstance{}
+	liveInst.SetInstanceId(ciid2)
+	liveInst.SetContainerName("newlivecontainername")
+	liveInst.SetStarted(protocompat.GetProtoTimestampFromSeconds(8))
+	pod.SetLiveInstances(append(pod.GetLiveInstances(), liveInst))
 
 	// merged should have all the previously dead instances plus the two new ones
 	// as well as the new live instances.
 	// This is the pod we expect to actually upsert to the DB.
 	merged := fixtures.GetPod()
-	merged.LiveInstances = []*storage.ContainerInstance{pod.GetLiveInstances()[0], pod.GetLiveInstances()[3]}
-	merged.TerminatedInstances[1].Instances = append(merged.TerminatedInstances[1].Instances, terminatedInst0)
-	merged.TerminatedInstances = append(merged.TerminatedInstances, &storage.Pod_ContainerInstanceList{
-		Instances: []*storage.ContainerInstance{terminatedInst1},
-	})
+	merged.SetLiveInstances([]*storage.ContainerInstance{pod.GetLiveInstances()[0], pod.GetLiveInstances()[3]})
+	merged.GetTerminatedInstances()[1].SetInstances(append(merged.GetTerminatedInstances()[1].GetInstances(), terminatedInst0))
+	pc := &storage.Pod_ContainerInstanceList{}
+	pc.SetInstances([]*storage.ContainerInstance{terminatedInst1})
+	merged.SetTerminatedInstances(append(merged.GetTerminatedInstances(), pc))
 	suite.storage.EXPECT().Get(ctx, pod.GetId()).Return(oldPod, true, nil)
 	suite.storage.EXPECT().Upsert(ctx, merged).Return(nil)
 	suite.NoError(suite.datastore.UpsertPod(ctx, pod))

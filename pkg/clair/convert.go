@@ -78,16 +78,13 @@ func ConvertVulnerability(v clairV1.Vulnerability) *storage.EmbeddedVulnerabilit
 	if v.Link == "" {
 		v.Link = link
 	}
-	vul := &storage.EmbeddedVulnerability{
-		Cve:     v.Name,
-		Summary: v.Description,
-		Link:    v.Link,
-		SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-			FixedBy: v.FixedBy,
-		},
-		VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-		Severity:          SeverityToStorageSeverity(v.Severity),
-	}
+	vul := &storage.EmbeddedVulnerability{}
+	vul.SetCve(v.Name)
+	vul.SetSummary(v.Description)
+	vul.SetLink(v.Link)
+	vul.Set_FixedBy(v.FixedBy)
+	vul.SetVulnerabilityType(storage.EmbeddedVulnerability_IMAGE_VULNERABILITY)
+	vul.SetSeverity(SeverityToStorageSeverity(v.Severity))
 
 	d, err := json.Marshal(vulnMetadataMap)
 	if err != nil {
@@ -97,20 +94,20 @@ func ConvertVulnerability(v clairV1.Vulnerability) *storage.EmbeddedVulnerabilit
 	if err := json.Unmarshal(d, &m); err != nil {
 		return vul
 	}
-	vul.PublishedOn = protoconv.ConvertTimeString(m.PublishedOn)
-	vul.LastModified = protoconv.ConvertTimeString(m.LastModified)
+	vul.SetPublishedOn(protoconv.ConvertTimeString(m.PublishedOn))
+	vul.SetLastModified(protoconv.ConvertTimeString(m.LastModified))
 
 	if m.CvssV2 != nil && m.CvssV2.Vectors != "" {
 		if cvssV2, err := cvssv2.ParseCVSSV2(m.CvssV2.Vectors); err == nil {
-			cvssV2.ExploitabilityScore = m.CvssV2.ExploitabilityScore
-			cvssV2.ImpactScore = m.CvssV2.ImpactScore
-			cvssV2.Score = m.CvssV2.Score
+			cvssV2.SetExploitabilityScore(m.CvssV2.ExploitabilityScore)
+			cvssV2.SetImpactScore(m.CvssV2.ImpactScore)
+			cvssV2.SetScore(m.CvssV2.Score)
 
-			vul.CvssV2 = cvssV2
+			vul.SetCvssV2(cvssV2)
 			// This sets the top level score for use in policies. It will be overwritten if v3 exists
-			vul.Cvss = m.CvssV2.Score
-			vul.ScoreVersion = storage.EmbeddedVulnerability_V2
-			vul.GetCvssV2().Severity = cvssv2.Severity(vul.GetCvss())
+			vul.SetCvss(m.CvssV2.Score)
+			vul.SetScoreVersion(storage.EmbeddedVulnerability_V2)
+			vul.GetCvssV2().SetSeverity(cvssv2.Severity(vul.GetCvss()))
 		} else {
 			log.Error(err)
 		}
@@ -118,14 +115,14 @@ func ConvertVulnerability(v clairV1.Vulnerability) *storage.EmbeddedVulnerabilit
 
 	if m.CvssV3 != nil && m.CvssV3.Vectors != "" {
 		if cvssV3, err := cvssv3.ParseCVSSV3(m.CvssV3.Vectors); err == nil {
-			cvssV3.ExploitabilityScore = m.CvssV3.ExploitabilityScore
-			cvssV3.ImpactScore = m.CvssV3.ImpactScore
-			cvssV3.Score = m.CvssV3.Score
+			cvssV3.SetExploitabilityScore(m.CvssV3.ExploitabilityScore)
+			cvssV3.SetImpactScore(m.CvssV3.ImpactScore)
+			cvssV3.SetScore(m.CvssV3.Score)
 
-			vul.CvssV3 = cvssV3
-			vul.Cvss = m.CvssV3.Score
-			vul.ScoreVersion = storage.EmbeddedVulnerability_V3
-			vul.GetCvssV3().Severity = cvssv3.Severity(vul.GetCvss())
+			vul.SetCvssV3(cvssV3)
+			vul.SetCvss(m.CvssV3.Score)
+			vul.SetScoreVersion(storage.EmbeddedVulnerability_V3)
+			vul.GetCvssV3().SetSeverity(cvssv3.Severity(vul.GetCvss()))
 		} else {
 			log.Error(err)
 		}
@@ -134,20 +131,19 @@ func ConvertVulnerability(v clairV1.Vulnerability) *storage.EmbeddedVulnerabilit
 }
 
 func convertFeature(feature clairV1.Feature, os string) *storage.EmbeddedImageScanComponent {
-	component := &storage.EmbeddedImageScanComponent{
-		Name:     feature.Name,
-		Version:  feature.Version,
-		Location: feature.Location,
-		FixedBy:  feature.FixedBy,
-	}
+	component := &storage.EmbeddedImageScanComponent{}
+	component.SetName(feature.Name)
+	component.SetVersion(feature.Version)
+	component.SetLocation(feature.Location)
+	component.SetFixedBy(feature.FixedBy)
 
 	if source, ok := VersionFormatsToSource[feature.VersionFormat]; ok {
-		component.Source = source
+		component.SetSource(source)
 	}
-	component.Vulns = make([]*storage.EmbeddedVulnerability, 0, len(feature.Vulnerabilities))
+	component.SetVulns(make([]*storage.EmbeddedVulnerability, 0, len(feature.Vulnerabilities)))
 	for _, v := range feature.Vulnerabilities {
 		if convertedVuln := ConvertVulnerability(v); convertedVuln != nil {
-			component.Vulns = append(component.Vulns, convertedVuln)
+			component.SetVulns(append(component.GetVulns(), convertedVuln))
 		}
 	}
 	// TODO:  Figure out what is happening with Active Vuln Management
@@ -158,10 +154,12 @@ func convertFeature(feature clairV1.Feature, os string) *storage.EmbeddedImageSc
 			for _, f := range executable.GetRequiredFeatures() {
 				imageComponentIds = append(imageComponentIds, scancomponent.ComponentID(f.GetName(), f.GetVersion(), os))
 			}
-			exec := &storage.EmbeddedImageScanComponent_Executable{Path: executable.GetPath(), Dependencies: imageComponentIds}
+			exec := &storage.EmbeddedImageScanComponent_Executable{}
+			exec.SetPath(executable.GetPath())
+			exec.SetDependencies(imageComponentIds)
 			executables = append(executables, exec)
 		}
-		component.Executables = executables
+		component.SetExecutables(executables)
 	}
 
 	return component
@@ -205,9 +203,7 @@ func ConvertFeatures(image *storage.Image, features []clairV1.Feature, os string
 	for _, feature := range features {
 		convertedComponent := convertFeature(feature, os)
 		if val, ok := layerSHAToIndex[feature.AddedBy]; ok {
-			convertedComponent.HasLayerIndex = &storage.EmbeddedImageScanComponent_LayerIndex{
-				LayerIndex: val,
-			}
+			convertedComponent.SetLayerIndex(val)
 		}
 		components = append(components, convertedComponent)
 	}

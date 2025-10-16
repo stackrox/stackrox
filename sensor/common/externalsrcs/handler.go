@@ -148,11 +148,11 @@ func (h *handlerImpl) regenerateAndPushExternalSrcsToValueStream() {
 
 	for ipNet := range h.entities {
 		if ipV4 := ipNet.IP().AsNetIP().To4(); ipV4 != nil {
-			ipNetworkList.Ipv4Networks = append(ipNetworkList.Ipv4Networks, ipV4...)
-			ipNetworkList.Ipv4Networks = append(ipNetworkList.Ipv4Networks, ipNet.PrefixLen())
+			ipNetworkList.SetIpv4Networks(append(ipNetworkList.GetIpv4Networks(), ipV4...))
+			ipNetworkList.SetIpv4Networks(append(ipNetworkList.GetIpv4Networks(), ipNet.PrefixLen()))
 		} else if ipV6 := ipNet.IP().AsNetIP().To16(); ipV6 != nil {
-			ipNetworkList.Ipv6Networks = append(ipNetworkList.Ipv6Networks, ipV6...)
-			ipNetworkList.Ipv6Networks = append(ipNetworkList.Ipv6Networks, ipNet.PrefixLen())
+			ipNetworkList.SetIpv6Networks(append(ipNetworkList.GetIpv6Networks(), ipV6...))
+			ipNetworkList.SetIpv6Networks(append(ipNetworkList.GetIpv6Networks(), ipNet.PrefixLen()))
 		}
 	}
 

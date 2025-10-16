@@ -14,16 +14,16 @@ func GetNetworkBaseline() *storage.NetworkBaseline {
 
 // GetScopedNetworkBaseline returns a mock network baseline belonging to the input scope.
 func GetScopedNetworkBaseline(id, clusterID, namespace string) *storage.NetworkBaseline {
-	return &storage.NetworkBaseline{
-		DeploymentId:         id,
-		ClusterId:            clusterID,
-		Namespace:            namespace,
-		Peers:                nil,
-		ForbiddenPeers:       nil,
-		ObservationPeriodEnd: nil,
-		Locked:               false,
-		DeploymentName:       GetDeployment().GetName(),
-	}
+	nb := &storage.NetworkBaseline{}
+	nb.SetDeploymentId(id)
+	nb.SetClusterId(clusterID)
+	nb.SetNamespace(namespace)
+	nb.SetPeers(nil)
+	nb.SetForbiddenPeers(nil)
+	nb.ClearObservationPeriodEnd()
+	nb.SetLocked(false)
+	nb.SetDeploymentName(GetDeployment().GetName())
+	return nb
 }
 
 // GetSACTestNetworkBaseline returns a set of mock network baselines that can be

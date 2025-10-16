@@ -27,7 +27,7 @@ func (resolver *Resolver) Tokens(ctx context.Context, args struct{ Revoked *bool
 	}
 	req := &v1.GetAPITokensRequest{}
 	if args.Revoked != nil {
-		req.RevokedOneof = &v1.GetAPITokensRequest_Revoked{Revoked: *args.Revoked}
+		req.SetRevoked(*args.Revoked)
 	}
 	return resolver.wrapTokenMetadatas(
 		resolver.APITokenBackend.GetTokens(ctx, req))

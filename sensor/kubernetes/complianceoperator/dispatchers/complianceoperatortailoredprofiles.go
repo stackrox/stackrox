@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
+	"google.golang.org/protobuf/proto"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/cache"
@@ -61,15 +62,14 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 		return nil
 	}
 
-	protoProfile := &storage.ComplianceOperatorProfile{
-		Id:        string(tailoredProfile.UID),
-		ProfileId: tailoredProfile.Status.ID,
-		Name:      tailoredProfile.Name,
-		// We want to use the original compliance profiles labels and annotations as they hold data about the type of profile
-		Labels:      complianceProfile.Labels,
-		Annotations: complianceProfile.Annotations,
-		Description: stringutils.FirstNonEmpty(tailoredProfile.Spec.Description, complianceProfile.Description),
-	}
+	protoProfile := &storage.ComplianceOperatorProfile{}
+	protoProfile.SetId(string(tailoredProfile.UID))
+	protoProfile.SetProfileId(tailoredProfile.Status.ID)
+	protoProfile.SetName(tailoredProfile.Name)
+	// We want to use the original compliance profiles labels and annotations as they hold data about the type of profile
+	protoProfile.SetLabels(complianceProfile.Labels)
+	protoProfile.SetAnnotations(complianceProfile.Annotations)
+	protoProfile.SetDescription(stringutils.FirstNonEmpty(tailoredProfile.Spec.Description, complianceProfile.Description))
 	removedRules := set.NewStringSet()
 	for _, rule := range tailoredProfile.Spec.DisableRules {
 		removedRules.Add(rule.Name)
@@ -79,24 +79,22 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 		if removedRules.Contains(string(r)) {
 			continue
 		}
-		protoProfile.Rules = append(protoProfile.Rules, &storage.ComplianceOperatorProfile_Rule{
-			Name: string(r),
-		})
+		cr := &storage.ComplianceOperatorProfile_Rule{}
+		cr.SetName(string(r))
+		protoProfile.SetRules(append(protoProfile.GetRules(), cr))
 	}
 	for _, rule := range tailoredProfile.Spec.EnableRules {
-		protoProfile.Rules = append(protoProfile.Rules, &storage.ComplianceOperatorProfile_Rule{
-			Name: rule.Name,
-		})
+		cr := &storage.ComplianceOperatorProfile_Rule{}
+		cr.SetName(rule.Name)
+		protoProfile.SetRules(append(protoProfile.GetRules(), cr))
 	}
 
+	se := &central.SensorEvent{}
+	se.SetId(protoProfile.GetId())
+	se.SetAction(action)
+	se.SetComplianceOperatorProfile(proto.ValueOrDefault(protoProfile))
 	events := []*central.SensorEvent{
-		{
-			Id:     protoProfile.GetId(),
-			Action: action,
-			Resource: &central.SensorEvent_ComplianceOperatorProfile{
-				ComplianceOperatorProfile: protoProfile,
-			},
-		},
+		se,
 	}
 	return component.NewEvent(events...)
 }

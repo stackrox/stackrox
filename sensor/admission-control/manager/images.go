@@ -67,10 +67,10 @@ func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img
 	// Note: Sensor is required to scan images in the local registry.
 	if !m.sensorConnStatus.Get() && s.centralConn != nil && s.centralConn.GetState() != connectivity.Shutdown {
 		// Central route
-		resp, err := v1.NewImageServiceClient(s.centralConn).ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
-			Image:      img,
-			CachedOnly: !s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline(),
-		})
+		siir := &v1.ScanImageInternalRequest{}
+		siir.SetImage(img)
+		siir.SetCachedOnly(!s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline())
+		resp, err := v1.NewImageServiceClient(s.centralConn).ScanImageInternal(ctx, siir)
 		if err != nil {
 			return nil, errors.Wrap(err, "scanning image via central")
 		}
@@ -78,11 +78,11 @@ func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img
 	}
 
 	// Sensor route
-	resp, err := m.client.GetImage(ctx, &sensor.GetImageRequest{
-		Image:      img,
-		ScanInline: s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline(),
-		Namespace:  deployment.GetNamespace(),
-	})
+	gir := &sensor.GetImageRequest{}
+	gir.SetImage(img)
+	gir.SetScanInline(s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline())
+	gir.SetNamespace(deployment.GetNamespace())
+	resp, err := m.client.GetImage(ctx, gir)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting image from sensor")
 	}

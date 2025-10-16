@@ -18,54 +18,54 @@ var (
 
 // GetScanSettingBindingV1Storage -- returns V1 storage scan setting binding storage object
 func GetScanSettingBindingV1Storage(_ *testing.T, clusterID string) *storage.ComplianceOperatorScanSettingBinding {
-	return &storage.ComplianceOperatorScanSettingBinding{
-		Id:        ScanSettingUID,
-		Name:      "ocp-scan-setting-binding-name",
-		ClusterId: clusterID,
-	}
+	cossb := &storage.ComplianceOperatorScanSettingBinding{}
+	cossb.SetId(ScanSettingUID)
+	cossb.SetName("ocp-scan-setting-binding-name")
+	cossb.SetClusterId(clusterID)
+	return cossb
 }
 
 // GetScanSettingBindingV2Storage -- returns V2 storage scan setting binding storage object
 func GetScanSettingBindingV2Storage(_ *testing.T, clusterID string) *storage.ComplianceOperatorScanSettingBindingV2 {
-	return &storage.ComplianceOperatorScanSettingBindingV2{
+	return storage.ComplianceOperatorScanSettingBindingV2_builder{
 		Id:              ScanSettingUID,
 		ClusterId:       clusterID,
 		Name:            "ocp-scan-setting-binding-name",
 		ProfileNames:    []string{"profile-1", "profile-2"},
 		ScanSettingName: "ocp-scan-setting-name",
-		Status: &storage.ComplianceOperatorStatus{
+		Status: storage.ComplianceOperatorStatus_builder{
 			Phase: "Ready",
 			Conditions: []*storage.ComplianceOperatorCondition{
-				{
+				storage.ComplianceOperatorCondition_builder{
 					Type:               "Ready",
 					Status:             "True",
 					Reason:             "Processed",
 					Message:            "This is a message",
 					LastTransitionTime: TransitionTime,
-				},
+				}.Build(),
 			},
-		},
-	}
+		}.Build(),
+	}.Build()
 }
 
 // GetScanSettingBindingV2SensorMsg -- returns V2 internal scan setting binding storage object
 func GetScanSettingBindingV2SensorMsg(_ *testing.T) *central.ComplianceOperatorScanSettingBindingV2 {
-	return &central.ComplianceOperatorScanSettingBindingV2{
+	return central.ComplianceOperatorScanSettingBindingV2_builder{
 		Id:              ScanSettingUID,
 		Name:            "ocp-scan-setting-binding-name",
 		ProfileNames:    []string{"profile-1", "profile-2"},
 		ScanSettingName: "ocp-scan-setting-name",
-		Status: &central.ComplianceOperatorStatus{
+		Status: central.ComplianceOperatorStatus_builder{
 			Phase: "Ready",
 			Conditions: []*central.ComplianceOperatorCondition{
-				{
+				central.ComplianceOperatorCondition_builder{
 					Type:               "Ready",
 					Status:             "True",
 					Reason:             "Processed",
 					Message:            "This is a message",
 					LastTransitionTime: TransitionTime,
-				},
+				}.Build(),
 			},
-		},
-	}
+		}.Build(),
+	}.Build()
 }

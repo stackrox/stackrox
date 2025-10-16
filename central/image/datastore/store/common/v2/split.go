@@ -23,7 +23,7 @@ func Split(image *storage.Image, withComponents bool) (ImageParts, error) {
 
 	// Clear components in the top level image.
 	if parts.Image.GetScan() != nil {
-		parts.Image.Scan.Components = nil
+		parts.Image.GetScan().SetComponents(nil)
 	}
 	return parts, nil
 }
@@ -69,17 +69,14 @@ func splitCVEs(parts ImageParts, component ComponentParts, embedded *storage.Emb
 }
 
 func generateComponentCVEEdge(convertedComponent *storage.ImageComponent, convertedCVE *storage.ImageCVE, embedded *storage.EmbeddedVulnerability) *storage.ComponentCVEEdge {
-	ret := &storage.ComponentCVEEdge{
-		Id:               pgSearch.IDFromPks([]string{convertedComponent.GetId(), convertedCVE.GetId()}),
-		IsFixable:        embedded.GetFixedBy() != "",
-		ImageCveId:       convertedCVE.GetId(),
-		ImageComponentId: convertedComponent.GetId(),
-	}
+	ret := &storage.ComponentCVEEdge{}
+	ret.SetId(pgSearch.IDFromPks([]string{convertedComponent.GetId(), convertedCVE.GetId()}))
+	ret.SetIsFixable(embedded.GetFixedBy() != "")
+	ret.SetImageCveId(convertedCVE.GetId())
+	ret.SetImageComponentId(convertedComponent.GetId())
 
 	if ret.GetIsFixable() {
-		ret.HasFixedBy = &storage.ComponentCVEEdge_FixedBy{
-			FixedBy: embedded.GetFixedBy(),
-		}
+		ret.SetFixedBy(embedded.GetFixedBy())
 	}
 	return ret
 }
@@ -87,46 +84,41 @@ func generateComponentCVEEdge(convertedComponent *storage.ImageComponent, conver
 // Deprecated: replaced with equivalent functions using storage.ImageComponentV2
 // GenerateImageComponent returns top-level image component from embedded component.
 func GenerateImageComponent(os string, from *storage.EmbeddedImageScanComponent) *storage.ImageComponent {
-	ret := &storage.ImageComponent{
-		Id:              scancomponent.ComponentID(from.GetName(), from.GetVersion(), os),
-		Name:            from.GetName(),
-		Version:         from.GetVersion(),
-		License:         from.GetLicense().CloneVT(),
-		Source:          from.GetSource(),
-		FixedBy:         from.GetFixedBy(),
-		RiskScore:       from.GetRiskScore(),
-		Priority:        from.GetPriority(),
-		OperatingSystem: os,
-	}
+	ret := &storage.ImageComponent{}
+	ret.SetId(scancomponent.ComponentID(from.GetName(), from.GetVersion(), os))
+	ret.SetName(from.GetName())
+	ret.SetVersion(from.GetVersion())
+	ret.SetLicense(from.GetLicense().CloneVT())
+	ret.SetSource(from.GetSource())
+	ret.SetFixedBy(from.GetFixedBy())
+	ret.SetRiskScore(from.GetRiskScore())
+	ret.SetPriority(from.GetPriority())
+	ret.SetOperatingSystem(os)
 
 	if from.GetSetTopCvss() != nil {
-		ret.SetTopCvss = &storage.ImageComponent_TopCvss{TopCvss: from.GetTopCvss()}
+		ret.Set_TopCvss(from.GetTopCvss())
 	}
 	return ret
 }
 
 func generateImageComponentEdge(image *storage.Image, convImgComponent *storage.ImageComponent, embedded *storage.EmbeddedImageScanComponent) *storage.ImageComponentEdge {
-	ret := &storage.ImageComponentEdge{
-		Id:               pgSearch.IDFromPks([]string{image.GetId(), convImgComponent.GetId()}),
-		ImageId:          image.GetId(),
-		ImageComponentId: convImgComponent.GetId(),
-		Location:         embedded.GetLocation(),
-	}
+	ret := &storage.ImageComponentEdge{}
+	ret.SetId(pgSearch.IDFromPks([]string{image.GetId(), convImgComponent.GetId()}))
+	ret.SetImageId(image.GetId())
+	ret.SetImageComponentId(convImgComponent.GetId())
+	ret.SetLocation(embedded.GetLocation())
 
-	if embedded.HasLayerIndex != nil {
-		ret.HasLayerIndex = &storage.ImageComponentEdge_LayerIndex{
-			LayerIndex: embedded.GetLayerIndex(),
-		}
+	if embedded.HasHasLayerIndex() {
+		ret.SetLayerIndex(embedded.GetLayerIndex())
 	}
 	return ret
 }
 
 func generateImageCVEEdge(imageID string, convertedCVE *storage.ImageCVE, embedded *storage.EmbeddedVulnerability) *storage.ImageCVEEdge {
-	ret := &storage.ImageCVEEdge{
-		Id:         pgSearch.IDFromPks([]string{imageID, convertedCVE.GetId()}),
-		State:      embedded.GetState(),
-		ImageId:    imageID,
-		ImageCveId: convertedCVE.GetId(),
-	}
+	ret := &storage.ImageCVEEdge{}
+	ret.SetId(pgSearch.IDFromPks([]string{imageID, convertedCVE.GetId()}))
+	ret.SetState(embedded.GetState())
+	ret.SetImageId(imageID)
+	ret.SetImageCveId(convertedCVE.GetId())
 	return ret
 }

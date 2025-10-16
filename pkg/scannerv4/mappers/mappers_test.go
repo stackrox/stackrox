@@ -41,7 +41,7 @@ func Test_ToProtoV4IndexReport(t *testing.T) {
 		{
 			name: "when default values then contents is defined",
 			arg:  &claircore.IndexReport{},
-			want: &v4.IndexReport{Contents: &v4.Contents{}},
+			want: v4.IndexReport_builder{Contents: &v4.Contents{}}.Build(),
 		},
 	}
 	for _, tt := range tests {
@@ -71,7 +71,7 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 		"when nil then nil": {},
 		"when default values then attributes are defined": {
 			arg:  &claircore.VulnerabilityReport{},
-			want: &v4.VulnerabilityReport{Contents: &v4.Contents{}},
+			want: v4.VulnerabilityReport_builder{Contents: &v4.Contents{}}.Build(),
 		},
 		"when invalid time in vulnerability map then nil issued": {
 			arg: &claircore.VulnerabilityReport{
@@ -83,13 +83,13 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 					},
 				},
 			},
-			want: &v4.VulnerabilityReport{
+			want: v4.VulnerabilityReport_builder{
 				Contents: &v4.Contents{},
 				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
-					"sample CVE": {
+					"sample CVE": v4.VulnerabilityReport_Vulnerability_builder{
 						Id: "sample CVE",
-					},
-				}},
+					}.Build(),
+				}}.Build(),
 		},
 		"when sample fields are set then conversion is successful": {
 			arg: &claircore.VulnerabilityReport{
@@ -113,11 +113,11 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 					"sample pkg id": {"sample vuln ID"},
 				},
 			},
-			want: &v4.VulnerabilityReport{
+			want: v4.VulnerabilityReport_builder{
 				// Converter doesn't set HashId to empty.
 				HashId: "",
 				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
-					"sample vuln ID": {
+					"sample vuln ID": v4.VulnerabilityReport_Vulnerability_builder{
 						Id:                 "sample vuln ID",
 						Name:               "sample vuln name",
 						Description:        "sample vuln description",
@@ -129,15 +129,15 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 						DistributionId:     "sample vuln distribution id",
 						RepositoryId:       "sample vuln repository id",
 						FixedInVersion:     "sample vuln fixed in",
-					},
+					}.Build(),
 				},
 				PackageVulnerabilities: map[string]*v4.StringList{
-					"sample pkg id": {
+					"sample pkg id": v4.StringList_builder{
 						Values: []string{"sample vuln ID"},
-					},
+					}.Build(),
 				},
 				Contents: &v4.Contents{},
-			},
+			}.Build(),
 			wantErr: "",
 		},
 		"when there are duplicate vulnerabilities then they are filtered": {
@@ -177,11 +177,11 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 					"sample pkg id": {"0", "1"},
 				},
 			},
-			want: &v4.VulnerabilityReport{
+			want: v4.VulnerabilityReport_builder{
 				// Converter doesn't set HashId to empty.
 				HashId: "",
 				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
-					"0": {
+					"0": v4.VulnerabilityReport_Vulnerability_builder{
 						Id:                 "0",
 						Name:               "CVE-2019-12900",
 						Description:        "sample vuln description",
@@ -193,8 +193,8 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 						DistributionId:     "sample vuln distribution id",
 						RepositoryId:       "sample vuln repository id",
 						FixedInVersion:     "sample vuln fixed in",
-					},
-					"1": {
+					}.Build(),
+					"1": v4.VulnerabilityReport_Vulnerability_builder{
 						Id:                 "1",
 						Name:               "CVE-2019-12900",
 						Description:        "sample vuln description",
@@ -206,15 +206,15 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 						DistributionId:     "sample vuln distribution id",
 						RepositoryId:       "sample vuln repository id 2",
 						FixedInVersion:     "sample vuln fixed in",
-					},
+					}.Build(),
 				},
 				PackageVulnerabilities: map[string]*v4.StringList{
-					"sample pkg id": {
+					"sample pkg id": v4.StringList_builder{
 						Values: []string{"0"},
-					},
+					}.Build(),
 				},
 				Contents: &v4.Contents{},
-			},
+			}.Build(),
 			wantErr: "",
 		},
 		"when there are similar vulnerabilities with different severities and updaters then they are not filtered": {
@@ -254,11 +254,11 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 					"sample pkg id": {"0", "1"},
 				},
 			},
-			want: &v4.VulnerabilityReport{
+			want: v4.VulnerabilityReport_builder{
 				// Converter doesn't set HashId to empty.
 				HashId: "",
 				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
-					"0": {
+					"0": v4.VulnerabilityReport_Vulnerability_builder{
 						Id:                 "0",
 						Name:               "CVE-2019-12900",
 						Description:        "sample vuln description",
@@ -270,8 +270,8 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 						DistributionId:     "sample vuln distribution id",
 						RepositoryId:       "sample vuln repository id",
 						FixedInVersion:     "sample vuln fixed in",
-					},
-					"1": {
+					}.Build(),
+					"1": v4.VulnerabilityReport_Vulnerability_builder{
 						Id:                 "1",
 						Name:               "CVE-2019-12900",
 						Description:        "sample vuln description",
@@ -283,15 +283,15 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 						DistributionId:     "sample vuln distribution id",
 						RepositoryId:       "sample vuln repository id 2",
 						FixedInVersion:     "sample vuln fixed in",
-					},
+					}.Build(),
 				},
 				PackageVulnerabilities: map[string]*v4.StringList{
-					"sample pkg id": {
+					"sample pkg id": v4.StringList_builder{
 						Values: []string{"1", "0"}, // "1" has a higher severity
-					},
+					}.Build(),
 				},
 				Contents: &v4.Contents{},
-			},
+			}.Build(),
 			wantErr: "",
 		},
 	}
@@ -378,11 +378,11 @@ func Test_ToProtoV4VulnerabilityReport_FilterNodeJS(t *testing.T) {
 					"2": {},
 				},
 			},
-			want: &v4.VulnerabilityReport{
+			want: v4.VulnerabilityReport_builder{
 				// Converter doesn't set HashId to empty.
 				HashId: "",
 				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
-					"1": {
+					"1": v4.VulnerabilityReport_Vulnerability_builder{
 						Id:                 "1",
 						Name:               "sample vuln name",
 						Description:        "sample vuln description",
@@ -394,56 +394,56 @@ func Test_ToProtoV4VulnerabilityReport_FilterNodeJS(t *testing.T) {
 						DistributionId:     "sample vuln distribution id",
 						RepositoryId:       "sample vuln repository id",
 						FixedInVersion:     "sample vuln fixed in",
-					},
+					}.Build(),
 				},
 				PackageVulnerabilities: map[string]*v4.StringList{
-					"1": {
+					"1": v4.StringList_builder{
 						Values: []string{"1"},
-					},
+					}.Build(),
 				},
-				Contents: &v4.Contents{
+				Contents: v4.Contents_builder{
 					PackagesDEPRECATED: []*v4.Package{
-						{
+						v4.Package_builder{
 							Id:      "1",
 							Name:    "nodejs1",
 							Version: "1",
-							NormalizedVersion: &v4.NormalizedVersion{
+							NormalizedVersion: v4.NormalizedVersion_builder{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-							},
+							}.Build(),
 							Cpe: emptyCPE,
-						},
+						}.Build(),
 					},
 					Packages: map[string]*v4.Package{
-						"1": {
+						"1": v4.Package_builder{
 							Id:      "1",
 							Name:    "nodejs1",
 							Version: "1",
-							NormalizedVersion: &v4.NormalizedVersion{
+							NormalizedVersion: v4.NormalizedVersion_builder{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-							},
+							}.Build(),
 							Cpe: emptyCPE,
-						},
+						}.Build(),
 					},
 					EnvironmentsDEPRECATED: map[string]*v4.Environment_List{
-						"1": {
+						"1": v4.Environment_List_builder{
 							Environments: []*v4.Environment{
-								{
+								v4.Environment_builder{
 									PackageDb: "nodejs:/app/nodejs1",
-								},
+								}.Build(),
 							},
-						},
+						}.Build(),
 					},
 					Environments: map[string]*v4.Environment_List{
-						"1": {
+						"1": v4.Environment_List_builder{
 							Environments: []*v4.Environment{
-								{
+								v4.Environment_builder{
 									PackageDb: "nodejs:/app/nodejs1",
-								},
+								}.Build(),
 							},
-						},
+						}.Build(),
 					},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			wantErr: "",
 		},
 	}
@@ -565,215 +565,215 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 					"3": {"0", "1", "2", "3"},
 				},
 			},
-			want: &v4.VulnerabilityReport{
+			want: v4.VulnerabilityReport_builder{
 				// Converter doesn't set HashId to empty.
 				HashId: "",
 				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
-					"0": {
+					"0": v4.VulnerabilityReport_Vulnerability_builder{
 						Id:   "0",
 						Name: "0",
-					},
-					"1": {
+					}.Build(),
+					"1": v4.VulnerabilityReport_Vulnerability_builder{
 						Id:   "1",
 						Name: "1",
-					},
-					"2": {
+					}.Build(),
+					"2": v4.VulnerabilityReport_Vulnerability_builder{
 						Id:   "2",
 						Name: "2",
-					},
-					"3": {
+					}.Build(),
+					"3": v4.VulnerabilityReport_Vulnerability_builder{
 						Id:   "3",
 						Name: "3",
-					},
+					}.Build(),
 				},
 				PackageVulnerabilities: map[string]*v4.StringList{
-					"0": {
+					"0": v4.StringList_builder{
 						Values: []string{"0", "1"},
-					},
-					"1": {
+					}.Build(),
+					"1": v4.StringList_builder{
 						Values: []string{"1", "2"},
-					},
-					"3": {
+					}.Build(),
+					"3": v4.StringList_builder{
 						Values: []string{"0", "1", "2", "3"},
-					},
+					}.Build(),
 				},
-				Contents: &v4.Contents{
+				Contents: v4.Contents_builder{
 					Packages: map[string]*v4.Package{
-						"0": {
+						"0": v4.Package_builder{
 							Id:      "0",
 							Name:    "my go binary",
 							Version: "0",
-							NormalizedVersion: &v4.NormalizedVersion{
+							NormalizedVersion: v4.NormalizedVersion_builder{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-							},
+							}.Build(),
 							Cpe: emptyCPE,
-						},
-						"1": {
+						}.Build(),
+						"1": v4.Package_builder{
 							Id:      "1",
 							Name:    "my java jar",
 							Version: "1",
-							NormalizedVersion: &v4.NormalizedVersion{
+							NormalizedVersion: v4.NormalizedVersion_builder{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-							},
+							}.Build(),
 							Cpe: emptyCPE,
-						},
-						"2": {
+						}.Build(),
+						"2": v4.Package_builder{
 							Id:      "2",
 							Name:    "my python egg",
 							Version: "2",
-							NormalizedVersion: &v4.NormalizedVersion{
+							NormalizedVersion: v4.NormalizedVersion_builder{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-							},
+							}.Build(),
 							Cpe: emptyCPE,
-						},
-						"3": {
+						}.Build(),
+						"3": v4.Package_builder{
 							Id:      "3",
 							Name:    "my ruby gem",
 							Version: "3",
-							NormalizedVersion: &v4.NormalizedVersion{
+							NormalizedVersion: v4.NormalizedVersion_builder{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-							},
+							}.Build(),
 							Cpe: emptyCPE,
-						},
+						}.Build(),
 					},
 					PackagesDEPRECATED: []*v4.Package{
-						{
+						v4.Package_builder{
 							Id:      "0",
 							Name:    "my go binary",
 							Version: "0",
-							NormalizedVersion: &v4.NormalizedVersion{
+							NormalizedVersion: v4.NormalizedVersion_builder{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-							},
+							}.Build(),
 							Cpe: emptyCPE,
-						},
-						{
+						}.Build(),
+						v4.Package_builder{
 							Id:      "1",
 							Name:    "my java jar",
 							Version: "1",
-							NormalizedVersion: &v4.NormalizedVersion{
+							NormalizedVersion: v4.NormalizedVersion_builder{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-							},
+							}.Build(),
 							Cpe: emptyCPE,
-						},
-						{
+						}.Build(),
+						v4.Package_builder{
 							Id:      "2",
 							Name:    "my python egg",
 							Version: "2",
-							NormalizedVersion: &v4.NormalizedVersion{
+							NormalizedVersion: v4.NormalizedVersion_builder{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-							},
+							}.Build(),
 							Cpe: emptyCPE,
-						},
-						{
+						}.Build(),
+						v4.Package_builder{
 							Id:      "3",
 							Name:    "my ruby gem",
 							Version: "3",
-							NormalizedVersion: &v4.NormalizedVersion{
+							NormalizedVersion: v4.NormalizedVersion_builder{
 								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-							},
+							}.Build(),
 							Cpe: emptyCPE,
-						},
+						}.Build(),
 					},
 					Repositories: map[string]*v4.Repository{
-						"0": {
+						"0": v4.Repository_builder{
 							Id:   "0",
 							Name: "Red Hat Container Catalog",
 							Uri:  `https://catalog.redhat.com/software/containers/explore`,
 							Cpe:  emptyCPE,
-						},
-						"something else": {
+						}.Build(),
+						"something else": v4.Repository_builder{
 							Id:   "1",
 							Name: "something else",
 							Key:  "rhel-cpe-repository",
 							Uri:  "somethingelse.com",
 							Cpe:  emptyCPE,
-						},
+						}.Build(),
 					},
 					RepositoriesDEPRECATED: []*v4.Repository{
-						{
+						v4.Repository_builder{
 							Id:   "0",
 							Name: "Red Hat Container Catalog",
 							Uri:  `https://catalog.redhat.com/software/containers/explore`,
 							Cpe:  emptyCPE,
-						},
-						{
+						}.Build(),
+						v4.Repository_builder{
 							Id:   "1",
 							Name: "something else",
 							Key:  "rhel-cpe-repository",
 							Uri:  "somethingelse.com",
 							Cpe:  emptyCPE,
-						},
+						}.Build(),
 					},
 					Environments: map[string]*v4.Environment_List{
-						"0": {
+						"0": v4.Environment_List_builder{
 							Environments: []*v4.Environment{
-								{
+								v4.Environment_builder{
 									RepositoryIds: []string{"0", "something else"},
 									IntroducedIn:  layerA.String(),
-								},
+								}.Build(),
 							},
-						},
-						"1": {
+						}.Build(),
+						"1": v4.Environment_List_builder{
 							Environments: []*v4.Environment{
-								{
+								v4.Environment_builder{
 									RepositoryIds: []string{"something else"},
 									IntroducedIn:  layerB.String(),
-								},
+								}.Build(),
 							},
-						},
-						"2": {
+						}.Build(),
+						"2": v4.Environment_List_builder{
 							Environments: []*v4.Environment{
-								{
+								v4.Environment_builder{
 									RepositoryIds: []string{"0"},
 									IntroducedIn:  layerA.String(),
-								},
+								}.Build(),
 							},
-						},
-						"3": {
+						}.Build(),
+						"3": v4.Environment_List_builder{
 							Environments: []*v4.Environment{
-								{
+								v4.Environment_builder{
 									RepositoryIds: []string{"something else"},
 									IntroducedIn:  layerB.String(),
-								},
+								}.Build(),
 							},
-						},
+						}.Build(),
 					},
 					EnvironmentsDEPRECATED: map[string]*v4.Environment_List{
-						"0": {
+						"0": v4.Environment_List_builder{
 							Environments: []*v4.Environment{
-								{
+								v4.Environment_builder{
 									RepositoryIds: []string{"0", "1"},
 									IntroducedIn:  layerA.String(),
-								},
+								}.Build(),
 							},
-						},
-						"1": {
+						}.Build(),
+						"1": v4.Environment_List_builder{
 							Environments: []*v4.Environment{
-								{
+								v4.Environment_builder{
 									RepositoryIds: []string{"1"},
 									IntroducedIn:  layerB.String(),
-								},
+								}.Build(),
 							},
-						},
-						"2": {
+						}.Build(),
+						"2": v4.Environment_List_builder{
 							Environments: []*v4.Environment{
-								{
+								v4.Environment_builder{
 									RepositoryIds: []string{"0"},
 									IntroducedIn:  layerA.String(),
-								},
+								}.Build(),
 							},
-						},
-						"3": {
+						}.Build(),
+						"3": v4.Environment_List_builder{
 							Environments: []*v4.Environment{
-								{
+								v4.Environment_builder{
 									RepositoryIds: []string{"1"},
 									IntroducedIn:  layerB.String(),
-								},
+								}.Build(),
 							},
-						},
+						}.Build(),
 					},
-				},
-			},
+				}.Build(),
+			}.Build(),
 			wantErr: "",
 		},
 	}
@@ -818,101 +818,101 @@ func Test_ToClairCoreIndexReport(t *testing.T) {
 			want: &claircore.IndexReport{},
 		},
 		"when content package has source with source then error": {
-			arg: &v4.Contents{
+			arg: v4.Contents_builder{
 				PackagesDEPRECATED: []*v4.Package{
-					{
+					v4.Package_builder{
 						Id:  "sample package",
 						Cpe: "cpe:2.3:a:redhat:scanner:4:*:el9:*:*:*:*:*",
-						Source: &v4.Package{
+						Source: v4.Package_builder{
 							Id:     "source",
 							Cpe:    "cpe:2.3:a:redhat:scanner:4:*:el9:*:*:*:*:*",
-							Source: &v4.Package{Id: "deep source"},
-						},
-					},
+							Source: v4.Package_builder{Id: "deep source"}.Build(),
+						}.Build(),
+					}.Build(),
 				},
-			},
+			}.Build(),
 			wantErr: "source specifies source",
 		},
 		"when content package has invalid CPE then error": {
-			arg: &v4.Contents{
+			arg: v4.Contents_builder{
 				PackagesDEPRECATED: []*v4.Package{
-					{
+					v4.Package_builder{
 						Id:  "sample package",
 						Cpe: "something that is not a cpe",
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 			wantErr: `internal error: package "sample package": "something that is not a cpe"`,
 		},
 		"when distribution contains invalid cpe then error": {
-			arg: &v4.Contents{
+			arg: v4.Contents_builder{
 				DistributionsDEPRECATED: []*v4.Distribution{
-					{
+					v4.Distribution_builder{
 						Cpe: "something that is not a cpe",
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 			wantErr: `internal error: distribution "": "something that is not a cpe"`,
 		},
 		"when repository contains invalid cpe then error": {
-			arg: &v4.Contents{
+			arg: v4.Contents_builder{
 				RepositoriesDEPRECATED: []*v4.Repository{
-					{
+					v4.Repository_builder{
 						Cpe: "something that is not a cpe",
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 			wantErr: `internal error: repository "": "something that is not a cpe"`,
 		},
 
 		"when all fields are valid then return success": {
-			arg: &v4.Contents{
+			arg: v4.Contents_builder{
 				Packages: map[string]*v4.Package{
-					"sample pkg id": {
+					"sample pkg id": v4.Package_builder{
 						Id:      "sample pkg id",
 						Name:    "sample pkg name",
 						Version: "sample pkg version",
-						NormalizedVersion: &v4.NormalizedVersion{
+						NormalizedVersion: v4.NormalizedVersion_builder{
 							Kind: "test",
 							V:    []int32{1, 2, 3, 4, 5, 6, 7, 8, 9, 0},
-						},
+						}.Build(),
 						Kind: "sample pkg kind",
-						Source: &v4.Package{
+						Source: v4.Package_builder{
 							Id:   "sample source id",
 							Name: "sample source name",
 							Cpe:  "cpe:2.3:a:redhat:scanner:4:*:el9:*:*:*:*:*",
-						},
+						}.Build(),
 						PackageDb:      "sample pkg db",
 						RepositoryHint: "sample pkg repo hint",
 						Module:         "sample pkg module",
 						Arch:           "sample pkg arch",
 						Cpe:            "cpe:2.3:a:redhat:scanner:4:*:el9:*:*:*:*:*",
-					},
+					}.Build(),
 				},
 				PackagesDEPRECATED: []*v4.Package{
-					{
+					v4.Package_builder{
 						Id:      "sample pkg id",
 						Name:    "sample pkg name",
 						Version: "sample pkg version",
-						NormalizedVersion: &v4.NormalizedVersion{
+						NormalizedVersion: v4.NormalizedVersion_builder{
 							Kind: "test",
 							V:    []int32{1, 2, 3, 4, 5, 6, 7, 8, 9, 0},
-						},
+						}.Build(),
 						Kind: "sample pkg kind",
-						Source: &v4.Package{
+						Source: v4.Package_builder{
 							Id:   "sample source id",
 							Name: "sample source name",
 							Cpe:  "cpe:2.3:a:redhat:scanner:4:*:el9:*:*:*:*:*",
-						},
+						}.Build(),
 						PackageDb:      "sample pkg db",
 						RepositoryHint: "sample pkg repo hint",
 						Module:         "sample pkg module",
 						Arch:           "sample pkg arch",
 						Cpe:            "cpe:2.3:a:redhat:scanner:4:*:el9:*:*:*:*:*",
-					},
+					}.Build(),
 				},
 				Distributions: map[string]*v4.Distribution{
-					"sample dist id": {
+					"sample dist id": v4.Distribution_builder{
 						Id:              "sample dist id",
 						Did:             "sample dist did",
 						Name:            "sample dist name",
@@ -922,10 +922,10 @@ func Test_ToClairCoreIndexReport(t *testing.T) {
 						Arch:            "sample dist arch",
 						Cpe:             "cpe:2.3:a:redhat:scanner:4:*:el9:*:*:*:*:*",
 						PrettyName:      "sample dist pretty",
-					},
+					}.Build(),
 				},
 				DistributionsDEPRECATED: []*v4.Distribution{
-					{
+					v4.Distribution_builder{
 						Id:              "sample dist id",
 						Did:             "sample dist did",
 						Name:            "sample dist name",
@@ -935,39 +935,39 @@ func Test_ToClairCoreIndexReport(t *testing.T) {
 						Arch:            "sample dist arch",
 						Cpe:             "cpe:2.3:a:redhat:scanner:4:*:el9:*:*:*:*:*",
 						PrettyName:      "sample dist pretty",
-					},
+					}.Build(),
 				},
 				Repositories: map[string]*v4.Repository{
-					"sample id": {
+					"sample id": v4.Repository_builder{
 						Id:   "sample id",
 						Name: "sample name",
 						Key:  "sample key",
 						Uri:  "sample URI",
 						Cpe:  "cpe:2.3:a:redhat:scanner:4:*:el9:*:*:*:*:*",
-					},
+					}.Build(),
 				},
 				RepositoriesDEPRECATED: []*v4.Repository{
-					{
+					v4.Repository_builder{
 						Id:   "sample id",
 						Name: "sample name",
 						Key:  "sample key",
 						Uri:  "sample URI",
 						Cpe:  "cpe:2.3:a:redhat:scanner:4:*:el9:*:*:*:*:*",
-					},
+					}.Build(),
 				},
 				Environments: map[string]*v4.Environment_List{
-					"sample env": {
+					"sample env": v4.Environment_List_builder{
 						Environments: []*v4.Environment{
-							{
+							v4.Environment_builder{
 								PackageDb:      "sample env pkg db",
 								IntroducedIn:   "sha256:9124cd5256c6d674f6b11a4d01fea8148259be1f66ca2cf9dfbaafc83c31874e",
 								DistributionId: "sample env distribution id",
 								RepositoryIds:  []string{"sample env repository id"},
-							},
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 			want: &claircore.IndexReport{
 				Hash:  claircore.Digest{},
 				State: "",
@@ -1070,14 +1070,14 @@ func Test_toProtoV4Package(t *testing.T) {
 				Arch:   "sample arch",
 				CPE:    cpe.WFN{},
 			},
-			want: &v4.Package{
+			want: v4.Package_builder{
 				Id:      "sample id",
 				Name:    "sample name",
 				Version: "sample version",
-				NormalizedVersion: &v4.NormalizedVersion{
+				NormalizedVersion: v4.NormalizedVersion_builder{
 					Kind: "test",
 					V:    []int32{1, 2, 3, 4, 5, 6, 7, 8, 9, 0},
-				},
+				}.Build(),
 				Kind:           "sample kind",
 				Source:         nil,
 				PackageDb:      "sample package db",
@@ -1085,7 +1085,7 @@ func Test_toProtoV4Package(t *testing.T) {
 				Module:         "sample module",
 				Arch:           "sample arch",
 				Cpe:            emptyCPE,
-			},
+			}.Build(),
 		},
 		{
 			name: "when source with source then error",
@@ -1131,6 +1131,18 @@ func Test_toProtoV4Package(t *testing.T) {
 }
 
 func Test_toProtoV4Distribution(t *testing.T) {
+	distribut := &v4.Distribution{}
+	distribut.SetCpe(emptyCPE)
+	distribut2 := &v4.Distribution{}
+	distribut2.SetId("sample id")
+	distribut2.SetDid("sample did")
+	distribut2.SetName("sample name")
+	distribut2.SetVersion("sample version")
+	distribut2.SetVersionCodeName("sample version codename")
+	distribut2.SetVersionId("sample version id")
+	distribut2.SetArch("sample arch")
+	distribut2.SetCpe("cpe:2.3:a:redhat:openshift:4.12:*:el8:*:*:*:*:*")
+	distribut2.SetPrettyName("sample pretty name")
 	tests := []struct {
 		name    string
 		arg     *claircore.Distribution
@@ -1143,7 +1155,7 @@ func Test_toProtoV4Distribution(t *testing.T) {
 		{
 			name: "when default then no errors",
 			arg:  &claircore.Distribution{},
-			want: &v4.Distribution{Cpe: emptyCPE},
+			want: distribut,
 		},
 		{
 			name: "when default then no errors",
@@ -1158,17 +1170,7 @@ func Test_toProtoV4Distribution(t *testing.T) {
 				CPE:             cpe.MustUnbind("cpe:/a:redhat:openshift:4.12::el8"),
 				PrettyName:      "sample pretty name",
 			},
-			want: &v4.Distribution{
-				Id:              "sample id",
-				Did:             "sample did",
-				Name:            "sample name",
-				Version:         "sample version",
-				VersionCodeName: "sample version codename",
-				VersionId:       "sample version id",
-				Arch:            "sample arch",
-				Cpe:             "cpe:2.3:a:redhat:openshift:4.12:*:el8:*:*:*:*:*",
-				PrettyName:      "sample pretty name",
-			},
+			want: distribut2,
 		},
 	}
 	for _, tt := range tests {
@@ -1181,6 +1183,12 @@ func Test_toProtoV4Distribution(t *testing.T) {
 }
 
 func Test_toProtoV4Repository(t *testing.T) {
+	repository := &v4.Repository{}
+	repository.SetId("sample id")
+	repository.SetName("sample name")
+	repository.SetKey("sample key")
+	repository.SetUri("sample URI")
+	repository.SetCpe("cpe:2.3:a:redhat:openshift:4.12:*:el8:*:*:*:*:*")
 	tests := []struct {
 		name string
 		arg  *claircore.Repository
@@ -1198,13 +1206,7 @@ func Test_toProtoV4Repository(t *testing.T) {
 				URI:  "sample URI",
 				CPE:  cpe.MustUnbind("cpe:/a:redhat:openshift:4.12::el8"),
 			},
-			want: &v4.Repository{
-				Id:   "sample id",
-				Name: "sample name",
-				Key:  "sample key",
-				Uri:  "sample URI",
-				Cpe:  "cpe:2.3:a:redhat:openshift:4.12:*:el8:*:*:*:*:*",
-			},
+			want: repository,
 		},
 	}
 	for _, tt := range tests {
@@ -1238,20 +1240,20 @@ func Test_toProtoV4Environment(t *testing.T) {
 				DistributionID: "sample distribution",
 				RepositoryIDs:  nil,
 			},
-			want: &v4.Environment{
+			want: v4.Environment_builder{
 				PackageDb:      "sample package db",
 				IntroducedIn:   "",
 				DistributionId: "sample distribution",
 				RepositoryIds:  nil,
-			},
+			}.Build(),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := v4Environment(tt.arg)
 			protoassert.Equal(t, tt.want, got)
-			if tt.want != nil && tt.want.RepositoryIds != nil {
-				assert.NotEqual(t, &tt.want.RepositoryIds, &got.RepositoryIds)
+			if tt.want != nil && tt.want.GetRepositoryIds() != nil {
+				assert.NotEqual(t, &tt.want.RepositoryIds /* DO_NOT_SUBMIT: missing rewrite for address of field */, &got.RepositoryIds /* DO_NOT_SUBMIT: missing rewrite for address of field */)
 			}
 		})
 	}
@@ -1278,46 +1280,46 @@ func Test_toProtoV4Contents(t *testing.T) {
 					"sample env": {{}},
 				},
 			},
-			want: &v4.Contents{
+			want: v4.Contents_builder{
 				Packages: map[string]*v4.Package{
-					"sample pkg": {
+					"sample pkg": v4.Package_builder{
 						Cpe: emptyCPE,
-						NormalizedVersion: &v4.NormalizedVersion{
+						NormalizedVersion: v4.NormalizedVersion_builder{
 							Kind: "",
 							V:    make([]int32, 10),
-						},
-					},
+						}.Build(),
+					}.Build(),
 				},
-				PackagesDEPRECATED: []*v4.Package{{
+				PackagesDEPRECATED: []*v4.Package{v4.Package_builder{
 					Cpe: emptyCPE,
-					NormalizedVersion: &v4.NormalizedVersion{
+					NormalizedVersion: v4.NormalizedVersion_builder{
 						Kind: "",
 						V:    make([]int32, 10),
-					},
-				}},
+					}.Build(),
+				}.Build()},
 				Distributions: map[string]*v4.Distribution{
-					"sample dist": {Cpe: emptyCPE},
+					"sample dist": v4.Distribution_builder{Cpe: emptyCPE}.Build(),
 				},
-				DistributionsDEPRECATED: []*v4.Distribution{{
+				DistributionsDEPRECATED: []*v4.Distribution{v4.Distribution_builder{
 					Cpe: emptyCPE,
-				}},
+				}.Build()},
 				Repositories: map[string]*v4.Repository{
-					"sample repo": {Cpe: emptyCPE},
+					"sample repo": v4.Repository_builder{Cpe: emptyCPE}.Build(),
 				},
-				RepositoriesDEPRECATED: []*v4.Repository{{
+				RepositoriesDEPRECATED: []*v4.Repository{v4.Repository_builder{
 					Cpe: emptyCPE,
-				}},
+				}.Build()},
 				Environments: map[string]*v4.Environment_List{
-					"sample env": {
+					"sample env": v4.Environment_List_builder{
 						Environments: []*v4.Environment{{}},
-					},
+					}.Build(),
 				},
 				EnvironmentsDEPRECATED: map[string]*v4.Environment_List{
-					"sample env": {
+					"sample env": v4.Environment_List_builder{
 						Environments: []*v4.Environment{{}},
-					},
+					}.Build(),
 				},
-			},
+			}.Build(),
 		},
 	}
 	for name, tt := range tests {
@@ -1387,33 +1389,33 @@ func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 				},
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
-				"foo": {
-					EpssMetrics: &v4.VulnerabilityReport_Vulnerability_EPSS{
+				"foo": v4.VulnerabilityReport_Vulnerability_builder{
+					EpssMetrics: v4.VulnerabilityReport_Vulnerability_EPSS_builder{
 						ModelVersion: "v2023.03.01",
 						Date:         "2025-01-15T00:00:00+0000",
 						Probability:  0.00215,
 						Percentile:   0.59338,
-					},
+					}.Build(),
 					Id:     "foo",
 					Issued: protoNow,
 					Name:   "CVE-1234-567",
-					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
-						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+					Cvss: v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+						V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{
 							Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
-						},
+						}.Build(),
 						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
 						Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
-					},
+					}.Build(),
 					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
-						{
-							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+						v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+							V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{
 								Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
-							},
+							}.Build(),
 							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
 							Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 		},
 
@@ -1469,34 +1471,34 @@ func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 					}},
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
-				"foo": {
-					EpssMetrics: &v4.VulnerabilityReport_Vulnerability_EPSS{
+				"foo": v4.VulnerabilityReport_Vulnerability_builder{
+					EpssMetrics: v4.VulnerabilityReport_Vulnerability_EPSS_builder{
 						ModelVersion: "v2023.03.01",
 						Date:         "2025-01-15T00:00:00+0000",
 						Probability:  0.04215,
 						Percentile:   0.69338,
-					},
+					}.Build(),
 					Id:          "foo",
 					Issued:      protoNow,
 					Name:        "RHSA-2021:1234",
 					Cvss:        nil,
 					CvssMetrics: nil,
 					Link:        "https://access.redhat.com/errata/RHSA-2021:1234",
-				},
-				"bar": {
-					EpssMetrics: &v4.VulnerabilityReport_Vulnerability_EPSS{
+				}.Build(),
+				"bar": v4.VulnerabilityReport_Vulnerability_builder{
+					EpssMetrics: v4.VulnerabilityReport_Vulnerability_EPSS_builder{
 						ModelVersion: "v2023.03.01",
 						Date:         "2025-01-15T00:00:00+0000",
 						Probability:  0.04215,
 						Percentile:   0.69338,
-					},
+					}.Build(),
 					Id:          "bar",
 					Issued:      protoNow,
 					Name:        "RHSA-2021:1234",
 					Cvss:        nil,
 					CvssMetrics: nil,
 					Link:        "https://access.redhat.com/errata/RHSA-2021:1234",
-				},
+				}.Build(),
 			},
 		},
 		"EPSS Missing": { // it could be the feature is turned off or EPSS data is missing for some reason
@@ -1527,28 +1529,28 @@ func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 			},
 			epssItems: nil,
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
-				"bar": {
+				"bar": v4.VulnerabilityReport_Vulnerability_builder{
 					Id:     "bar",
 					Name:   "CVE-5678-1234",
 					Issued: protoNow,
-					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
-						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+					Cvss: v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+						V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{
 							Vector: "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:N",
-						},
+						}.Build(),
 						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
 						Url:    "https://nvd.nist.gov/vuln/detail/CVE-5678-1234",
-					},
+					}.Build(),
 					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
-						{
-							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+						v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+							V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{
 								Vector: "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:N",
-							},
+							}.Build(),
 							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
 							Url:    "https://nvd.nist.gov/vuln/detail/CVE-5678-1234",
-						},
+						}.Build(),
 					},
 					// No EpssMetrics because epssItems has no entry for CVE-5678-1234
-				},
+				}.Build(),
 			},
 		},
 	}
@@ -1595,16 +1597,16 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
-				"foo": {
+				"foo": v4.VulnerabilityReport_Vulnerability_builder{
 					Issued:             protoNow,
 					Severity:           "Critical",
 					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL,
-				},
-				"bar": {
+				}.Build(),
+				"bar": v4.VulnerabilityReport_Vulnerability_builder{
 					Issued:             protoNow,
 					Severity:           "High",
 					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
-				},
+				}.Build(),
 			},
 		},
 		"when vuln with plain fixedIn then convert": {
@@ -1615,10 +1617,10 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
-				"foo": {
+				"foo": v4.VulnerabilityReport_Vulnerability_builder{
 					Issued:         protoNow,
 					FixedInVersion: "1.2.3",
-				},
+				}.Build(),
 			},
 		},
 		"when vuln with introduced&lastAffected fixedIn then return empty": {
@@ -1629,10 +1631,10 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
-				"foo": {
+				"foo": v4.VulnerabilityReport_Vulnerability_builder{
 					Issued:         protoNow,
 					FixedInVersion: "",
-				},
+				}.Build(),
 			},
 		},
 		"when vuln with lastAffected fixedIn then return empty": {
@@ -1643,10 +1645,10 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
-				"foo": {
+				"foo": v4.VulnerabilityReport_Vulnerability_builder{
 					Issued:         protoNow,
 					FixedInVersion: "",
-				},
+				}.Build(),
 			},
 		},
 		"when vuln with introduced fixedIn then return empty": {
@@ -1657,10 +1659,10 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
-				"foo": {
+				"foo": v4.VulnerabilityReport_Vulnerability_builder{
 					Issued:         protoNow,
 					FixedInVersion: "",
-				},
+				}.Build(),
 			},
 		},
 		"when vuln urlencoded fixedIn then use fixed value in fixedIn": {
@@ -1671,10 +1673,10 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
-				"foo": {
+				"foo": v4.VulnerabilityReport_Vulnerability_builder{
 					Issued:         protoNow,
 					FixedInVersion: "4.5.6",
-				},
+				}.Build(),
 			},
 		},
 		"when severity and unknown distribution then populate the proto": {
@@ -1685,10 +1687,10 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
-				"foo": {
+				"foo": v4.VulnerabilityReport_Vulnerability_builder{
 					Issued:   protoNow,
 					Severity: "sample severity",
-				},
+				}.Build(),
 			},
 		},
 		"when severity with CVSSv3 and RHEL then find CVSS score": {
@@ -1701,29 +1703,29 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
-				"foo": {
+				"foo": v4.VulnerabilityReport_Vulnerability_builder{
 					Name:     "CVE-1234-567",
 					Issued:   protoNow,
 					Severity: "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
-					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
-						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+					Cvss: v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+						V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{
 							BaseScore: 9.8,
 							Vector:    "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
-						},
+						}.Build(),
 						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
 						Url:    "https://access.redhat.com/security/cve/CVE-1234-567",
-					},
+					}.Build(),
 					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
-						{
-							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+						v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+							V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{
 								BaseScore: 9.8,
 								Vector:    "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
-							},
+							}.Build(),
 							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
 							Url:    "https://access.redhat.com/security/cve/CVE-1234-567",
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 		},
 		"when severity with CVSSv2 and RHEL then find CVSS score": {
@@ -1736,29 +1738,29 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
-				"foo": {
+				"foo": v4.VulnerabilityReport_Vulnerability_builder{
 					Name:     "CVE-2013-12342",
 					Issued:   protoNow,
 					Severity: "AV:N/AC:L/Au:N/C:P/I:P/A:P",
-					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
-						V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+					Cvss: v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+						V2: v4.VulnerabilityReport_Vulnerability_CVSS_V2_builder{
 							BaseScore: 7.5,
 							Vector:    "AV:N/AC:L/Au:N/C:P/I:P/A:P",
-						},
+						}.Build(),
 						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
 						Url:    "https://access.redhat.com/security/cve/CVE-2013-12342",
-					},
+					}.Build(),
 					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
-						{
-							V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+						v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+							V2: v4.VulnerabilityReport_Vulnerability_CVSS_V2_builder{
 								BaseScore: 7.5,
 								Vector:    "AV:N/AC:L/Au:N/C:P/I:P/A:P",
-							},
+							}.Build(),
 							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
 							Url:    "https://access.redhat.com/security/cve/CVE-2013-12342",
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 		},
 		"when severity with CVSSv2 is invalid skip CVSS": {
@@ -1770,10 +1772,10 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
-				"foo": {
+				"foo": v4.VulnerabilityReport_Vulnerability_builder{
 					Issued:   protoNow,
 					Severity: "invalid cvss2 vector",
-				},
+				}.Build(),
 			},
 		},
 		"when severity with CVSSv3 is invalid skip CVSS": {
@@ -1785,10 +1787,10 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
-				"foo": {
+				"foo": v4.VulnerabilityReport_Vulnerability_builder{
 					Issued:   protoNow,
 					Severity: "invalid cvss3 vector",
-				},
+				}.Build(),
 			},
 		},
 		"when OSV and severity with CVSSv3 then return": {
@@ -1801,29 +1803,29 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
-				"foo": {
+				"foo": v4.VulnerabilityReport_Vulnerability_builder{
 					Name:     "CVE-2024-1234",
 					Issued:   protoNow,
 					Severity: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
-					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
-						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+					Cvss: v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+						V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{
 							BaseScore: 10.0,
 							Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
-						},
+						}.Build(),
 						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_OSV,
 						Url:    "https://osv.dev/vulnerability/CVE-2024-1234",
-					},
+					}.Build(),
 					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
-						{
-							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+						v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+							V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{
 								BaseScore: 10.0,
 								Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
-							},
+							}.Build(),
 							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_OSV,
 							Url:    "https://osv.dev/vulnerability/CVE-2024-1234",
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 		},
 		"when OSV and severity is not CVSS skip CVSS": {
@@ -1836,11 +1838,11 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
-				"foo": {
+				"foo": v4.VulnerabilityReport_Vulnerability_builder{
 					Issued:             protoNow,
 					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW,
 					Severity:           "LOW",
-				},
+				}.Build(),
 			},
 		},
 		"when unknown updater then return NVD scores": {
@@ -1873,27 +1875,27 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
-				"foo": {
+				"foo": v4.VulnerabilityReport_Vulnerability_builder{
 					Id:     "foo",
 					Issued: protoNow,
 					Name:   "CVE-1234-567",
-					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
-						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+					Cvss: v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+						V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{
 							Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
-						},
+						}.Build(),
 						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
 						Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
-					},
+					}.Build(),
 					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
-						{
-							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+						v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+							V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{
 								Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
-							},
+							}.Build(),
 							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
 							Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 		},
 		"when OSV missing severity then return NVD scores": {
@@ -1926,27 +1928,27 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
-				"foo": {
+				"foo": v4.VulnerabilityReport_Vulnerability_builder{
 					Id:     "foo",
 					Issued: protoNow,
 					Name:   "CVE-1234-567",
-					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
-						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+					Cvss: v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+						V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{
 							Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
-						},
+						}.Build(),
 						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
 						Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
-					},
+					}.Build(),
 					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
-						{
-							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+						v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+							V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{
 								Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
-							},
+							}.Build(),
 							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
 							Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 		},
 		"when using NVD and vuln name is not CVE then return first NVD scores": {
@@ -1976,27 +1978,27 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
-				"foo": {
+				"foo": v4.VulnerabilityReport_Vulnerability_builder{
 					Id:     "foo",
 					Name:   "CVE-1234-567",
 					Issued: protoNow,
-					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
-						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+					Cvss: v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+						V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{
 							Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
-						},
+						}.Build(),
 						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
 						Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
-					},
+					}.Build(),
 					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
-						{
-							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+						v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+							V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{
 								Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
-							},
+							}.Build(),
 							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
 							Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 		},
 		"when issued time is empty, use NVD published time": {
@@ -2016,11 +2018,11 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
-				"foo": {
+				"foo": v4.VulnerabilityReport_Vulnerability_builder{
 					Id:     "foo",
 					Name:   "CVE-2021-44228",
 					Issued: proto2021,
-				},
+				}.Build(),
 			},
 		},
 		"when manual vulnerability with NVD link, do not get NVD data again": {
@@ -2052,31 +2054,31 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
-				"foo": {
+				"foo": v4.VulnerabilityReport_Vulnerability_builder{
 					Id:       "foo",
 					Name:     "CVE-2021-44228",
 					Link:     "https://nvd.nist.gov/vuln/detail/CVE-2021-44228",
 					Issued:   protoNow,
 					Severity: "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
-					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
-						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+					Cvss: v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+						V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{
 							BaseScore: 9.3,
 							Vector:    "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
-						},
+						}.Build(),
 						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
 						Url:    "https://nvd.nist.gov/vuln/detail/CVE-2021-44228",
-					},
+					}.Build(),
 					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
-						{
-							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+						v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+							V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{
 								BaseScore: 9.3,
 								Vector:    "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
-							},
+							}.Build(),
 							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
 							Url:    "https://nvd.nist.gov/vuln/detail/CVE-2021-44228",
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 		},
 		"when Red Hat CVEs disabled return RHSA": {
@@ -2126,7 +2128,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
-				"foo": {
+				"foo": v4.VulnerabilityReport_Vulnerability_builder{
 					Id:                 "foo",
 					Name:               "RHSA-2021:5132",
 					Description:        "RHSA description",
@@ -2134,41 +2136,41 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					Issued:             protoNow,
 					Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
 					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
-					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
-						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+					Cvss: v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+						V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{
 							BaseScore: 9.1,
 							Vector:    "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N",
-						},
-						V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+						}.Build(),
+						V2: v4.VulnerabilityReport_Vulnerability_CVSS_V2_builder{
 							BaseScore: 9.4,
 							Vector:    "AV:N/AC:L/Au:N/C:C/I:C/A:N",
-						},
+						}.Build(),
 						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
 						Url:    "https://access.redhat.com/errata/RHSA-2021:5132",
-					},
+					}.Build(),
 					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
-						{
-							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+						v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+							V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{
 								BaseScore: 9.1,
 								Vector:    "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N",
-							},
-							V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+							}.Build(),
+							V2: v4.VulnerabilityReport_Vulnerability_CVSS_V2_builder{
 								BaseScore: 9.4,
 								Vector:    "AV:N/AC:L/Au:N/C:C/I:C/A:N",
-							},
+							}.Build(),
 							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
 							Url:    "https://access.redhat.com/errata/RHSA-2021:5132",
-						},
-						{
-							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+						}.Build(),
+						v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+							V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{
 								BaseScore: 10.0,
 								Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
-							},
+							}.Build(),
 							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
 							Url:    "https://nvd.nist.gov/vuln/detail/CVE-2021-44228",
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 		},
 		"when Red Hat CVEs enabled return CVE": {
@@ -2203,44 +2205,44 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 			},
 			enableRedHatCVEs: true,
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
-				"foo": {
+				"foo": v4.VulnerabilityReport_Vulnerability_builder{
 					Id:   "foo",
 					Name: "CVE-2021-44228",
-					Advisory: &v4.VulnerabilityReport_Advisory{
+					Advisory: v4.VulnerabilityReport_Advisory_builder{
 						Name: "RHSA-2021:5132",
 						Link: "https://access.redhat.com/errata/RHSA-2021:5132",
-					},
+					}.Build(),
 					Link:               "https://access.redhat.com/security/cve/CVE-2021-44228 https://access.redhat.com/errata/RHSA-2021:5132",
 					Issued:             protoNow,
 					Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
 					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL,
-					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
-						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+					Cvss: v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+						V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{
 							BaseScore: 9.8,
 							Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
-						},
+						}.Build(),
 						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
 						Url:    "https://access.redhat.com/security/cve/CVE-2021-44228",
-					},
+					}.Build(),
 					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
-						{
-							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+						v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+							V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{
 								BaseScore: 9.8,
 								Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
-							},
+							}.Build(),
 							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
 							Url:    "https://access.redhat.com/security/cve/CVE-2021-44228",
-						},
-						{
-							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+						}.Build(),
+						v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+							V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{
 								BaseScore: 10.0,
 								Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
-							},
+							}.Build(),
 							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
 							Url:    "https://nvd.nist.gov/vuln/detail/CVE-2021-44228",
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 		},
 		// Note: Scanner V4 should ultimately return a single RHSA, but this is handled via manipulation to
@@ -2289,7 +2291,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
-				"foo": {
+				"foo": v4.VulnerabilityReport_Vulnerability_builder{
 					Id:                 "foo",
 					Name:               "RHSA-2024:10775",
 					Description:        "RHSA description",
@@ -2297,26 +2299,26 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					Issued:             protoNow,
 					Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
 					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
-					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
-						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+					Cvss: v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+						V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{
 							BaseScore: 7.5,
 							Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
-						},
+						}.Build(),
 						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
 						Url:    "https://access.redhat.com/errata/RHSA-2024:10775",
-					},
+					}.Build(),
 					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
-						{
-							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+						v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+							V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{
 								BaseScore: 7.5,
 								Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
-							},
+							}.Build(),
 							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
 							Url:    "https://access.redhat.com/errata/RHSA-2024:10775",
-						},
+						}.Build(),
 					},
-				},
-				"bar": {
+				}.Build(),
+				"bar": v4.VulnerabilityReport_Vulnerability_builder{
 					Id:                 "bar",
 					Name:               "RHSA-2024:10775",
 					Description:        "RHSA description",
@@ -2324,25 +2326,25 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					Issued:             protoNow,
 					Severity:           "CVSS:3.1/AV:L/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N",
 					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
-					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
-						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+					Cvss: v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+						V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{
 							BaseScore: 7.5,
 							Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
-						},
+						}.Build(),
 						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
 						Url:    "https://access.redhat.com/errata/RHSA-2024:10775",
-					},
+					}.Build(),
 					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
-						{
-							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+						v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+							V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{
 								BaseScore: 7.5,
 								Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
-							},
+							}.Build(),
 							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
 							Url:    "https://access.redhat.com/errata/RHSA-2024:10775",
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 		},
 	}
@@ -2414,26 +2416,26 @@ func Test_v4Environments(t *testing.T) {
 				},
 			},
 			expected: map[string]*v4.Environment_List{
-				"0": {
+				"0": v4.Environment_List_builder{
 					Environments: []*v4.Environment{
-						{
+						v4.Environment_builder{
 							PackageDb:     "root/buildinfo/Dockerfile-ubi8-minimal-8.10-1295.1749680713",
 							IntroducedIn:  "sha256:001c8f2552be07ef548604a8c45411bbb3a2694efbcb9be4f6d99723b97c7179",
 							RepositoryIds: []string{"rhel-8-for-x86_64-baseos-rpms", "rhel-8-for-x86_64-appstream-rpms"},
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			expectedDeprecated: map[string]*v4.Environment_List{
-				"0": {
+				"0": v4.Environment_List_builder{
 					Environments: []*v4.Environment{
-						{
+						v4.Environment_builder{
 							PackageDb:     "root/buildinfo/Dockerfile-ubi8-minimal-8.10-1295.1749680713",
 							IntroducedIn:  "sha256:001c8f2552be07ef548604a8c45411bbb3a2694efbcb9be4f6d99723b97c7179",
 							RepositoryIds: []string{"0", "1"},
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 		},
 	}
@@ -2548,6 +2550,9 @@ func Test_vulnerabilityName(t *testing.T) {
 
 func Test_advisory(t *testing.T) {
 	testutils.MustUpdateFeature(t, features.ScannerV4RedHatCVEs, true)
+	va := &v4.VulnerabilityReport_Advisory{}
+	va.SetName("RHSA-2023:1866")
+	va.SetLink("https://access.redhat.com/errata/RHSA-2023:1866")
 	testcases := map[string]struct {
 		vuln     *claircore.Vulnerability
 		expected *v4.VulnerabilityReport_Advisory
@@ -2571,10 +2576,7 @@ func Test_advisory(t *testing.T) {
 				Links:   "https://access.redhat.com/security/cve/CVE-2023-25761 https://access.redhat.com/errata/RHSA-2023:1866 https://access.redhat.com/security/cve/CVE-2023-25762",
 				Updater: "rhel-vex",
 			},
-			expected: &v4.VulnerabilityReport_Advisory{
-				Name: "RHSA-2023:1866",
-				Link: "https://access.redhat.com/errata/RHSA-2023:1866",
-			},
+			expected: va,
 		},
 	}
 	for name, testcase := range testcases {
@@ -2621,12 +2623,12 @@ func Test_sortByNVDCVSS(t *testing.T) {
 			args: args{
 				ids: []string{"0", "1"},
 				vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
-					"0": {
+					"0": v4.VulnerabilityReport_Vulnerability_builder{
 						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{},
-					},
-					"1": {
+					}.Build(),
+					"1": v4.VulnerabilityReport_Vulnerability_builder{
 						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{},
-					},
+					}.Build(),
 				},
 			},
 			want: []string{"0", "1"},
@@ -2636,19 +2638,19 @@ func Test_sortByNVDCVSS(t *testing.T) {
 			args: args{
 				ids: []string{"0", "1"},
 				vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
-					"0": {
+					"0": v4.VulnerabilityReport_Vulnerability_builder{
 						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{},
-					},
-					"1": {
+					}.Build(),
+					"1": v4.VulnerabilityReport_Vulnerability_builder{
 						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
-							{
+							v4.VulnerabilityReport_Vulnerability_CVSS_builder{
 								Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
-								V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+								V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{
 									BaseScore: 1.0,
-								},
-							},
+								}.Build(),
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
 			},
 			want: []string{"1", "0"},
@@ -2658,42 +2660,42 @@ func Test_sortByNVDCVSS(t *testing.T) {
 			args: args{
 				ids: []string{"0", "1", "2"},
 				vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
-					"0": {
+					"0": v4.VulnerabilityReport_Vulnerability_builder{
 						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
-							{
+							v4.VulnerabilityReport_Vulnerability_CVSS_builder{
 								Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_OSV,
-								V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+								V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{
 									BaseScore: 10.0,
-								},
-							},
+								}.Build(),
+							}.Build(),
 						},
-					},
-					"1": {
+					}.Build(),
+					"1": v4.VulnerabilityReport_Vulnerability_builder{
 						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
-							{
+							v4.VulnerabilityReport_Vulnerability_CVSS_builder{
 								Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
-								V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+								V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{
 									BaseScore: 10.0,
-								},
-							},
-							{
+								}.Build(),
+							}.Build(),
+							v4.VulnerabilityReport_Vulnerability_CVSS_builder{
 								Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
-								V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+								V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{
 									BaseScore: 1.0,
-								},
-							},
+								}.Build(),
+							}.Build(),
 						},
-					},
-					"2": {
+					}.Build(),
+					"2": v4.VulnerabilityReport_Vulnerability_builder{
 						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
-							{
+							v4.VulnerabilityReport_Vulnerability_CVSS_builder{
 								Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
-								V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+								V2: v4.VulnerabilityReport_Vulnerability_CVSS_V2_builder{
 									BaseScore: 3.0,
-								},
-							},
+								}.Build(),
+							}.Build(),
 						},
-					},
+					}.Build(),
 				},
 			},
 			want: []string{"2", "1", "0"},
@@ -2720,9 +2722,9 @@ func Test_getMaxBaseScore(t *testing.T) {
 			name: "single V3 score",
 			args: args{
 				cvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
-					{
-						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{BaseScore: 9.8},
-					},
+					v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+						V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{BaseScore: 9.8}.Build(),
+					}.Build(),
 				},
 			},
 			want: 9.8,
@@ -2731,9 +2733,9 @@ func Test_getMaxBaseScore(t *testing.T) {
 			name: "single V2 score",
 			args: args{
 				cvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
-					{
-						V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{BaseScore: 7.5},
-					},
+					v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+						V2: v4.VulnerabilityReport_Vulnerability_CVSS_V2_builder{BaseScore: 7.5}.Build(),
+					}.Build(),
 				},
 			},
 			want: 7.5,
@@ -2742,10 +2744,10 @@ func Test_getMaxBaseScore(t *testing.T) {
 			name: "multiple scores/highest V3",
 			args: args{
 				cvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
-					{
-						V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{BaseScore: 6.0},
-						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{BaseScore: 9.0},
-					},
+					v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+						V2: v4.VulnerabilityReport_Vulnerability_CVSS_V2_builder{BaseScore: 6.0}.Build(),
+						V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{BaseScore: 9.0}.Build(),
+					}.Build(),
 				},
 			},
 			want: 9.0,
@@ -2754,10 +2756,10 @@ func Test_getMaxBaseScore(t *testing.T) {
 			name: "multiple scores/highest V2",
 			args: args{
 				cvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
-					{
-						V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{BaseScore: 8.5},
-						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{BaseScore: 7.0},
-					},
+					v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+						V2: v4.VulnerabilityReport_Vulnerability_CVSS_V2_builder{BaseScore: 8.5}.Build(),
+						V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{BaseScore: 7.0}.Build(),
+					}.Build(),
 				},
 			},
 			want: 7.0,
@@ -2780,10 +2782,10 @@ func Test_getMaxBaseScore(t *testing.T) {
 			name: "nil V3 and V2 in CVSS metrics",
 			args: args{
 				cvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
-					{
+					v4.VulnerabilityReport_Vulnerability_CVSS_builder{
 						V3: nil,
 						V2: nil,
-					},
+					}.Build(),
 				},
 			},
 			want: 0.0,
@@ -2792,12 +2794,12 @@ func Test_getMaxBaseScore(t *testing.T) {
 			name: "multiple first is selected",
 			args: args{
 				cvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
-					{
-						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{BaseScore: 4.0},
-					},
-					{
-						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{BaseScore: 8.0},
-					},
+					v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+						V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{BaseScore: 4.0}.Build(),
+					}.Build(),
+					v4.VulnerabilityReport_Vulnerability_CVSS_builder{
+						V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{BaseScore: 8.0}.Build(),
+					}.Build(),
 				},
 			},
 			want: 4.0,
@@ -2825,9 +2827,9 @@ func Test_sortBySeverity(t *testing.T) {
 			args: args{
 				ids: []string{"111", "222", "333"},
 				vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
-					"111": {NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW},
-					"222": {NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL},
-					"333": {NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT},
+					"111": v4.VulnerabilityReport_Vulnerability_builder{NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW}.Build(),
+					"222": v4.VulnerabilityReport_Vulnerability_builder{NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL}.Build(),
+					"333": v4.VulnerabilityReport_Vulnerability_builder{NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT}.Build(),
 				},
 			},
 			want: []string{"222", "333", "111"},
@@ -2837,21 +2839,21 @@ func Test_sortBySeverity(t *testing.T) {
 			args: args{
 				ids: []string{"111", "222", "333"},
 				vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
-					"111": {
+					"111": v4.VulnerabilityReport_Vulnerability_builder{
 						NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL,
 						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
-							{V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{BaseScore: 8.0}},
+							v4.VulnerabilityReport_Vulnerability_CVSS_builder{V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{BaseScore: 8.0}.Build()}.Build(),
 						},
-					},
-					"222": {
+					}.Build(),
+					"222": v4.VulnerabilityReport_Vulnerability_builder{
 						NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL,
 						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
-							{V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{BaseScore: 9.5}},
+							v4.VulnerabilityReport_Vulnerability_CVSS_builder{V3: v4.VulnerabilityReport_Vulnerability_CVSS_V3_builder{BaseScore: 9.5}.Build()}.Build(),
 						},
-					},
-					"333": {
+					}.Build(),
+					"333": v4.VulnerabilityReport_Vulnerability_builder{
 						NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
-					},
+					}.Build(),
 				},
 			},
 			want: []string{"222", "111", "333"},
@@ -2862,8 +2864,8 @@ func Test_sortBySeverity(t *testing.T) {
 				ids: []string{"111", "222", "333"},
 				vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
 					"111": nil,
-					"222": {NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE},
-					"333": {NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW},
+					"222": v4.VulnerabilityReport_Vulnerability_builder{NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE}.Build(),
+					"333": v4.VulnerabilityReport_Vulnerability_builder{NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW}.Build(),
 				},
 			},
 			want: []string{"222", "333", "111"},
@@ -2873,8 +2875,8 @@ func Test_sortBySeverity(t *testing.T) {
 			args: args{
 				ids: []string{"111", "222", "333"},
 				vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
-					"111": {NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE},
-					"222": {NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW},
+					"111": v4.VulnerabilityReport_Vulnerability_builder{NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE}.Build(),
+					"222": v4.VulnerabilityReport_Vulnerability_builder{NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW}.Build(),
 					"333": nil,
 				},
 			},
@@ -2904,24 +2906,24 @@ func Test_sortBySeverity(t *testing.T) {
 			args: args{
 				ids: []string{"111", "222", "333"},
 				vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
-					"111": {
+					"111": v4.VulnerabilityReport_Vulnerability_builder{
 						NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW,
 						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
-							{V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{BaseScore: 4.0}},
+							v4.VulnerabilityReport_Vulnerability_CVSS_builder{V2: v4.VulnerabilityReport_Vulnerability_CVSS_V2_builder{BaseScore: 4.0}.Build()}.Build(),
 						},
-					},
-					"222": {
+					}.Build(),
+					"222": v4.VulnerabilityReport_Vulnerability_builder{
 						NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW,
 						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
-							{V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{BaseScore: 4.0}},
+							v4.VulnerabilityReport_Vulnerability_CVSS_builder{V2: v4.VulnerabilityReport_Vulnerability_CVSS_V2_builder{BaseScore: 4.0}.Build()}.Build(),
 						},
-					},
-					"3": {
+					}.Build(),
+					"3": v4.VulnerabilityReport_Vulnerability_builder{
 						NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW,
 						CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
-							{V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{BaseScore: 4.0}},
+							v4.VulnerabilityReport_Vulnerability_CVSS_builder{V2: v4.VulnerabilityReport_Vulnerability_CVSS_V2_builder{BaseScore: 4.0}.Build()}.Build(),
 						},
-					},
+					}.Build(),
 				},
 			},
 			want: []string{"111", "222", "333"},
@@ -2948,7 +2950,7 @@ func Test_dedupeAdvisories(t *testing.T) {
 			name:    "basic",
 			vulnIDs: []string{"0", "1", "2", "3", "4", "5"},
 			vulns: map[string]*v4.VulnerabilityReport_Vulnerability{
-				"0": {
+				"0": v4.VulnerabilityReport_Vulnerability_builder{
 					Id:                 "0",
 					Name:               "RHSA-2021:0735",
 					Description:        "Red Hat Security Advisory: nodejs:10 security update",
@@ -2956,8 +2958,8 @@ func Test_dedupeAdvisories(t *testing.T) {
 					Link:               "https://access.redhat.com/errata/RHSA-2021:0735",
 					Severity:           "Important",
 					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
-				},
-				"1": {
+				}.Build(),
+				"1": v4.VulnerabilityReport_Vulnerability_builder{
 					Id:                 "1",
 					Name:               "RHSA-2021:0735",
 					Description:        "Red Hat Security Advisory: nodejs:10 security update",
@@ -2965,8 +2967,8 @@ func Test_dedupeAdvisories(t *testing.T) {
 					Link:               "https://access.redhat.com/errata/RHSA-2021:0735",
 					Severity:           "Important",
 					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
-				},
-				"2": {
+				}.Build(),
+				"2": v4.VulnerabilityReport_Vulnerability_builder{
 					Id:                 "2",
 					Name:               "RHSA-2021:0548",
 					Description:        "Red Hat Security Advisory: nodejs:10 security update",
@@ -2974,13 +2976,13 @@ func Test_dedupeAdvisories(t *testing.T) {
 					Link:               "https://access.redhat.com/errata/RHSA-2021:0548",
 					Severity:           "Moderate",
 					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
-				},
-				"3": {
+				}.Build(),
+				"3": v4.VulnerabilityReport_Vulnerability_builder{
 					Id:          "3",
 					Name:        "CVE-2025-12342",
 					Description: "very vulnerable",
-				},
-				"4": {
+				}.Build(),
+				"4": v4.VulnerabilityReport_Vulnerability_builder{
 					Id:                 "4",
 					Name:               "RHSA-2021:0548",
 					Description:        "Red Hat Security Advisory: nodejs:10 security update",
@@ -2988,12 +2990,12 @@ func Test_dedupeAdvisories(t *testing.T) {
 					Link:               "https://access.redhat.com/errata/RHSA-2021:0548",
 					Severity:           "Moderate",
 					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
-				},
-				"5": {
+				}.Build(),
+				"5": v4.VulnerabilityReport_Vulnerability_builder{
 					Id:          "5",
 					Name:        "CVE-2025-12342",
 					Description: "very vulnerable",
-				},
+				}.Build(),
 			},
 			expected: []string{"0", "2", "3", "5"},
 		},

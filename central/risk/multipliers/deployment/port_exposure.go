@@ -28,20 +28,20 @@ func NewReachability() Multiplier {
 // Score takes a deployment and evaluates its risk based on the service configuration
 func (s *reachabilityMultiplier) Score(_ context.Context, deployment *storage.Deployment, _ map[string][]*storage.Risk_Result) *storage.Risk_Result {
 	var score float32
-	riskResult := &storage.Risk_Result{
-		Name: ReachabilityHeading,
-	}
+	riskResult := &storage.Risk_Result{}
+	riskResult.SetName(ReachabilityHeading)
 	for _, p := range deployment.GetPorts() {
 		score += exposureValue(p.GetExposure())
 
-		riskResult.Factors = append(riskResult.Factors,
-			&storage.Risk_Result_Factor{Message: fmt.Sprintf("Port %d is exposed %s",
-				p.GetContainerPort(), exposureString(p.GetExposure()))})
+		rrf := &storage.Risk_Result_Factor{}
+		rrf.SetMessage(fmt.Sprintf("Port %d is exposed %s",
+			p.GetContainerPort(), exposureString(p.GetExposure())))
+		riskResult.SetFactors(append(riskResult.GetFactors(), rrf))
 	}
 	if score == 0 {
 		return nil
 	}
-	riskResult.Score = multipliers.NormalizeScore(score, reachabilitySaturation, reachabilityValue)
+	riskResult.SetScore(multipliers.NormalizeScore(score, reachabilitySaturation, reachabilityValue))
 	return riskResult
 }
 

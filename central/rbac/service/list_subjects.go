@@ -34,16 +34,16 @@ func listSubjects(rawQuery *v1.RawQuery, roles []*storage.K8SRole, bindings []*s
 	subjectsAndRoles := make([]*v1.SubjectAndRoles, 0, len(subjectsToList))
 	for _, subject := range subjectsToList {
 		roles := evaluator.RolesForSubject(subject)
-		subjectsAndRoles = append(subjectsAndRoles, &v1.SubjectAndRoles{
-			Subject: subject,
-			Roles:   roles,
-		})
+		sar := &v1.SubjectAndRoles{}
+		sar.SetSubject(subject)
+		sar.SetRoles(roles)
+		subjectsAndRoles = append(subjectsAndRoles, sar)
 	}
 
 	// Build response.
-	return &v1.ListSubjectsResponse{
-		SubjectAndRoles: subjectsAndRoles,
-	}, nil
+	lsr := &v1.ListSubjectsResponse{}
+	lsr.SetSubjectAndRoles(subjectsAndRoles)
+	return lsr, nil
 }
 
 // Filter subjects referenced in a set of bindings with a raw search query.
@@ -54,12 +54,11 @@ func getFilteredSubjectsByRoleBinding(rawQuery *v1.RawQuery, bindings []*storage
 	}
 
 	// Filter the input query to only have subject fields.
-	subjectQuery := &v1.RawQuery{
-		Query: search.FilterFields(rawQuery.GetQuery(), func(field string) bool {
-			_, isSubjectField := subjectMapping.OptionsMap.Get(field)
-			return isSubjectField
-		}),
-	}
+	subjectQuery := &v1.RawQuery{}
+	subjectQuery.SetQuery(search.FilterFields(rawQuery.GetQuery(), func(field string) bool {
+		_, isSubjectField := subjectMapping.OptionsMap.Get(field)
+		return isSubjectField
+	}))
 	if subjectQuery.GetQuery() == "" {
 		return subjectsToFilter, nil
 	}
@@ -223,11 +222,11 @@ func (s *SubjectSearcher) SearchSubjects(ctx context.Context, q *v1.Query) ([]*v
 	var searchResults []*v1.SearchResult
 	for _, subject := range subjects {
 		if pred.Matches(subject) {
-			searchResults = append(searchResults, &v1.SearchResult{
-				Id:       subject.GetName(),
-				Name:     subject.GetName(),
-				Category: v1.SearchCategory_SUBJECTS,
-			})
+			sr := &v1.SearchResult{}
+			sr.SetId(subject.GetName())
+			sr.SetName(subject.GetName())
+			sr.SetCategory(v1.SearchCategory_SUBJECTS)
+			searchResults = append(searchResults, sr)
 		}
 	}
 	return searchResults, nil

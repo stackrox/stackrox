@@ -21,9 +21,9 @@ func convertScope(p *storage.Scope) *Scope {
 	}
 
 	return &Scope{
-		Cluster:   p.Cluster,
-		Namespace: p.Namespace,
-		Label:     p.Label,
+		Cluster:   p.GetCluster(),
+		Namespace: p.GetNamespace(),
+		Label:     p.GetLabel(),
 	}
 }
 
@@ -40,8 +40,8 @@ func convertExclusion_Deployment(p *storage.Exclusion_Deployment) *Exclusion_Dep
 	}
 
 	return &Exclusion_Deployment{
-		Name:  p.Name,
-		Scope: convertScope(p.Scope),
+		Name:  p.GetName(),
+		Scope: convertScope(p.GetScope()),
 	}
 }
 
@@ -60,10 +60,10 @@ func convertExclusion(p *storage.Exclusion) *Exclusion {
 	}
 
 	return &Exclusion{
-		Name:       p.Name,
-		Deployment: convertExclusion_Deployment(p.Deployment),
-		Image:      p.Image,
-		Expiration: timestampToFormatRFC3339(p.Expiration),
+		Name:       p.GetName(),
+		Deployment: convertExclusion_Deployment(p.GetDeployment()),
+		Image:      p.GetImage(),
+		Expiration: timestampToFormatRFC3339(p.GetExpiration()),
 	}
 }
 
@@ -82,10 +82,10 @@ func convertPolicyGroup(p *storage.PolicyGroup) *PolicyGroup {
 	}
 
 	return &PolicyGroup{
-		FieldName:       p.FieldName,
-		BooleanOperator: p.BooleanOperator.String(),
-		Negate:          p.Negate,
-		Values:          p.Values,
+		FieldName:       p.GetFieldName(),
+		BooleanOperator: p.GetBooleanOperator().String(),
+		Negate:          p.GetNegate(),
+		Values:          p.GetValues(),
 	}
 }
 
@@ -102,8 +102,8 @@ func convertPolicySection(p *storage.PolicySection) *PolicySection {
 	}
 
 	return &PolicySection{
-		SectionName:  p.SectionName,
-		PolicyGroups: sliceutils.ConvertSlice(p.PolicyGroups, convertPolicyGroup),
+		SectionName:  p.GetSectionName(),
+		PolicyGroups: sliceutils.ConvertSlice(p.GetPolicyGroups(), convertPolicyGroup),
 	}
 }
 
@@ -136,24 +136,24 @@ func convertPolicy(p *storage.Policy) *Policy {
 	}
 
 	return &Policy{
-		Name:               p.Name,
-		Description:        p.Description,
-		Rationale:          p.Rationale,
-		Remediation:        p.Remediation,
-		Disabled:           p.Disabled,
-		Categories:         p.Categories,
-		LifecycleStages:    sliceutils.StringSlice(p.LifecycleStages...),
-		EventSource:        p.EventSource.String(),
-		Exclusions:         sliceutils.ConvertSlice(p.Exclusions, convertExclusion),
-		Scope:              sliceutils.ConvertSlice(p.Scope, convertScope),
-		Severity:           p.Severity.String(),
-		EnforcementActions: sliceutils.StringSlice(p.EnforcementActions...),
-		Notifiers:          p.Notifiers,
-		PolicySections:     sliceutils.ConvertSlice(p.PolicySections, convertPolicySection),
-		MitreAttackVectors: p.MitreAttackVectors,
-		CriteriaLocked:     p.CriteriaLocked,
-		MitreVectorsLocked: p.MitreVectorsLocked,
-		IsDefault:          p.IsDefault,
+		Name:               p.GetName(),
+		Description:        p.GetDescription(),
+		Rationale:          p.GetRationale(),
+		Remediation:        p.GetRemediation(),
+		Disabled:           p.GetDisabled(),
+		Categories:         p.GetCategories(),
+		LifecycleStages:    sliceutils.StringSlice(p.GetLifecycleStages()...),
+		EventSource:        p.GetEventSource().String(),
+		Exclusions:         sliceutils.ConvertSlice(p.GetExclusions(), convertExclusion),
+		Scope:              sliceutils.ConvertSlice(p.GetScope(), convertScope),
+		Severity:           p.GetSeverity().String(),
+		EnforcementActions: sliceutils.StringSlice(p.GetEnforcementActions()...),
+		Notifiers:          p.GetNotifiers(),
+		PolicySections:     sliceutils.ConvertSlice(p.GetPolicySections(), convertPolicySection),
+		MitreAttackVectors: p.GetMitreAttackVectors(),
+		CriteriaLocked:     p.GetCriteriaLocked(),
+		MitreVectorsLocked: p.GetMitreVectorsLocked(),
+		IsDefault:          p.GetIsDefault(),
 	}
 }
 

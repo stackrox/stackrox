@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -139,14 +140,12 @@ func sendComplianceAck(ctx context.Context, node *storage.Node, injector common.
 }
 
 func replyCompliance(clusterID, nodeName string, t central.NodeInventoryACK_Action) *central.MsgToSensor {
-	return &central.MsgToSensor{
-		Msg: &central.MsgToSensor_NodeInventoryAck{
-			NodeInventoryAck: &central.NodeInventoryACK{
-				ClusterId:   clusterID,
-				NodeName:    nodeName,
-				Action:      t,
-				MessageType: central.NodeInventoryACK_NodeIndexer,
-			},
-		},
-	}
+	niack := &central.NodeInventoryACK{}
+	niack.SetClusterId(clusterID)
+	niack.SetNodeName(nodeName)
+	niack.SetAction(t)
+	niack.SetMessageType(central.NodeInventoryACK_NodeIndexer)
+	mts := &central.MsgToSensor{}
+	mts.SetNodeInventoryAck(proto.ValueOrDefault(niack))
+	return mts
 }

@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stretchr/testify/suite"
+	"google.golang.org/protobuf/proto"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -160,20 +161,19 @@ func (s *updaterSuite) Test_OfflineMode() {
 }
 
 func (s *updaterSuite) Test_GetCloudProviderMetadata() {
-	testProviderMetadata := &storage.ProviderMetadata{
-		Region: "us-east1",
-		Zone:   "us-east1-a",
-		Provider: &storage.ProviderMetadata_Google{Google: &storage.GoogleProviderMetadata{
-			Project:     "sample-thing",
-			ClusterName: "sample-cluster",
-		}},
-		Verified: true,
-		Cluster: &storage.ClusterMetadata{
-			Type: storage.ClusterMetadata_GKE,
-			Name: "sample-cluster",
-			Id:   "1",
-		},
-	}
+	gpm := &storage.GoogleProviderMetadata{}
+	gpm.SetProject("sample-thing")
+	gpm.SetClusterName("sample-cluster")
+	cm := &storage.ClusterMetadata{}
+	cm.SetType(storage.ClusterMetadata_GKE)
+	cm.SetName("sample-cluster")
+	cm.SetId("1")
+	testProviderMetadata := &storage.ProviderMetadata{}
+	testProviderMetadata.SetRegion("us-east1")
+	testProviderMetadata.SetZone("us-east1-a")
+	testProviderMetadata.SetGoogle(proto.ValueOrDefault(gpm))
+	testProviderMetadata.SetVerified(true)
+	testProviderMetadata.SetCluster(cm)
 
 	nilGetProviders := func(_ context.Context) *storage.ProviderMetadata { return nil }
 
@@ -220,16 +220,16 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 				ObjectMeta: cvObjectMeta,
 				Spec:       configv1.ClusterVersionSpec{ClusterID: "44a6254c-8bc4-4724-abfe-c510747742b8"},
 			},
-			metadata: &storage.ProviderMetadata{
+			metadata: storage.ProviderMetadata_builder{
 				Region:   "us-east1",
-				Provider: &storage.ProviderMetadata_Aws{Aws: &storage.AWSProviderMetadata{}},
+				Aws:      &storage.AWSProviderMetadata{},
 				Verified: true,
-				Cluster: &storage.ClusterMetadata{
+				Cluster: storage.ClusterMetadata_builder{
 					Type: storage.ClusterMetadata_OCP,
 					Name: "cluster-1",
 					Id:   "44a6254c-8bc4-4724-abfe-c510747742b8",
-				},
-			},
+				}.Build(),
+			}.Build(),
 		},
 		"on openshift running on GCP should return GCP provider metadata": {
 			getProviders: nilGetProviders,
@@ -252,18 +252,18 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 				ObjectMeta: cvObjectMeta,
 				Spec:       configv1.ClusterVersionSpec{ClusterID: "44a6254c-8bc4-4724-abfe-c510747742b8"},
 			},
-			metadata: &storage.ProviderMetadata{
+			metadata: storage.ProviderMetadata_builder{
 				Region: "us-east1",
-				Provider: &storage.ProviderMetadata_Google{Google: &storage.GoogleProviderMetadata{
+				Google: storage.GoogleProviderMetadata_builder{
 					Project: "project-1",
-				}},
+				}.Build(),
 				Verified: true,
-				Cluster: &storage.ClusterMetadata{
+				Cluster: storage.ClusterMetadata_builder{
 					Type: storage.ClusterMetadata_OCP,
 					Name: "cluster-1",
 					Id:   "44a6254c-8bc4-4724-abfe-c510747742b8",
-				},
-			},
+				}.Build(),
+			}.Build(),
 		},
 		"on openshift running on Azure should return Azure provider metadata": {
 			getProviders: nilGetProviders,
@@ -284,16 +284,16 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 				ObjectMeta: cvObjectMeta,
 				Spec:       configv1.ClusterVersionSpec{ClusterID: "44a6254c-8bc4-4724-abfe-c510747742b8"},
 			},
-			metadata: &storage.ProviderMetadata{
+			metadata: storage.ProviderMetadata_builder{
 				Region:   "",
-				Provider: &storage.ProviderMetadata_Azure{Azure: &storage.AzureProviderMetadata{}},
+				Azure:    &storage.AzureProviderMetadata{},
 				Verified: true,
-				Cluster: &storage.ClusterMetadata{
+				Cluster: storage.ClusterMetadata_builder{
 					Type: storage.ClusterMetadata_OCP,
 					Name: "cluster-1",
 					Id:   "44a6254c-8bc4-4724-abfe-c510747742b8",
-				},
-			},
+				}.Build(),
+			}.Build(),
 		},
 		"on openshift running on a provider not supported should return basic information": {
 			getProviders: nilGetProviders,
@@ -314,13 +314,13 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 				ObjectMeta: cvObjectMeta,
 				Spec:       configv1.ClusterVersionSpec{ClusterID: "44a6254c-8bc4-4724-abfe-c510747742b8"},
 			},
-			metadata: &storage.ProviderMetadata{
-				Cluster: &storage.ClusterMetadata{
+			metadata: storage.ProviderMetadata_builder{
+				Cluster: storage.ClusterMetadata_builder{
 					Type: storage.ClusterMetadata_OCP,
 					Name: "cluster-1",
 					Id:   "44a6254c-8bc4-4724-abfe-c510747742b8",
-				},
-			},
+				}.Build(),
+			}.Build(),
 		},
 		"on openshift running OSD on AWS should return AWS provider metadata and OSD cluster type": {
 			getProviders: nilGetProviders,
@@ -348,16 +348,16 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 				ObjectMeta: cvObjectMeta,
 				Spec:       configv1.ClusterVersionSpec{ClusterID: "44a6254c-8bc4-4724-abfe-c510747742b8"},
 			},
-			metadata: &storage.ProviderMetadata{
+			metadata: storage.ProviderMetadata_builder{
 				Region:   "us-east1",
-				Provider: &storage.ProviderMetadata_Aws{Aws: &storage.AWSProviderMetadata{}},
+				Aws:      &storage.AWSProviderMetadata{},
 				Verified: true,
-				Cluster: &storage.ClusterMetadata{
+				Cluster: storage.ClusterMetadata_builder{
 					Type: storage.ClusterMetadata_OSD,
 					Name: "cluster-1",
 					Id:   "44a6254c-8bc4-4724-abfe-c510747742b8",
-				},
-			},
+				}.Build(),
+			}.Build(),
 		},
 		"on openshift running OSD on GCP should return GCP provider metadata and OSD cluster type": {
 			getProviders: nilGetProviders,
@@ -386,18 +386,18 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 				ObjectMeta: cvObjectMeta,
 				Spec:       configv1.ClusterVersionSpec{ClusterID: "44a6254c-8bc4-4724-abfe-c510747742b8"},
 			},
-			metadata: &storage.ProviderMetadata{
+			metadata: storage.ProviderMetadata_builder{
 				Region: "us-east1",
-				Provider: &storage.ProviderMetadata_Google{Google: &storage.GoogleProviderMetadata{
+				Google: storage.GoogleProviderMetadata_builder{
 					Project: "project-1",
-				}},
+				}.Build(),
 				Verified: true,
-				Cluster: &storage.ClusterMetadata{
+				Cluster: storage.ClusterMetadata_builder{
 					Type: storage.ClusterMetadata_OSD,
 					Name: "cluster-1",
 					Id:   "44a6254c-8bc4-4724-abfe-c510747742b8",
-				},
-			},
+				}.Build(),
+			}.Build(),
 		},
 		"on openshift running ROSA on AWS should return AWS provider metadata and ROSA cluster type": {
 			getProviders: nilGetProviders,
@@ -425,16 +425,16 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 				ObjectMeta: cvObjectMeta,
 				Spec:       configv1.ClusterVersionSpec{ClusterID: "44a6254c-8bc4-4724-abfe-c510747742b8"},
 			},
-			metadata: &storage.ProviderMetadata{
+			metadata: storage.ProviderMetadata_builder{
 				Region:   "us-east1",
-				Provider: &storage.ProviderMetadata_Aws{Aws: &storage.AWSProviderMetadata{}},
+				Aws:      &storage.AWSProviderMetadata{},
 				Verified: true,
-				Cluster: &storage.ClusterMetadata{
+				Cluster: storage.ClusterMetadata_builder{
 					Type: storage.ClusterMetadata_ROSA,
 					Name: "cluster-1",
 					Id:   "44a6254c-8bc4-4724-abfe-c510747742b8",
-				},
-			},
+				}.Build(),
+			}.Build(),
 		},
 		"on openshift running ARO on Azure should return Azure provider metadata and ARO cluster type": {
 			getProviders: nilGetProviders,
@@ -462,16 +462,16 @@ func (s *updaterSuite) Test_GetCloudProviderMetadata() {
 				ObjectMeta: cvObjectMeta,
 				Spec:       configv1.ClusterVersionSpec{ClusterID: "44a6254c-8bc4-4724-abfe-c510747742b8"},
 			},
-			metadata: &storage.ProviderMetadata{
+			metadata: storage.ProviderMetadata_builder{
 				Region:   "",
-				Provider: &storage.ProviderMetadata_Azure{Azure: &storage.AzureProviderMetadata{}},
+				Azure:    &storage.AzureProviderMetadata{},
 				Verified: true,
-				Cluster: &storage.ClusterMetadata{
+				Cluster: storage.ClusterMetadata_builder{
 					Type: storage.ClusterMetadata_ARO,
 					Name: "cluster-1",
 					Id:   "44a6254c-8bc4-4724-abfe-c510747742b8",
-				},
-			},
+				}.Build(),
+			}.Build(),
 		},
 	}
 

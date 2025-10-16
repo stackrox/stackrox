@@ -21,19 +21,19 @@ func TestETCDChecks(t *testing.T) {
 		{
 			name: "CIS_Kubernetes_v1_5:2_1",
 			commandLines: map[string]*compliance.CommandLine{
-				"test": {
+				"test": compliance.CommandLine_builder{
 					Process: "etcd",
 					Args: []*compliance.CommandLine_Args{
-						{
+						compliance.CommandLine_Args_builder{
 							Key:    "cert-file",
 							Values: []string{"test"},
-						},
-						{
+						}.Build(),
+						compliance.CommandLine_Args_builder{
 							Key:    "key-file",
 							Values: []string{"test"},
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			status:     storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 			numResults: 2,
@@ -41,17 +41,17 @@ func TestETCDChecks(t *testing.T) {
 		{
 			name: "CIS_Kubernetes_v1_5:2_1",
 			commandLines: map[string]*compliance.CommandLine{
-				"test": {
+				"test": compliance.CommandLine_builder{
 					Process: "etcd",
 					Args: []*compliance.CommandLine_Args{
-						{
+						compliance.CommandLine_Args_builder{
 							Key: "cert-file",
-						},
-						{
+						}.Build(),
+						compliance.CommandLine_Args_builder{
 							Key: "key-file",
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			status:     storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
 			numResults: 2,
@@ -59,15 +59,15 @@ func TestETCDChecks(t *testing.T) {
 		{
 			name: "CIS_Kubernetes_v1_5:2_2",
 			commandLines: map[string]*compliance.CommandLine{
-				"test": {
+				"test": compliance.CommandLine_builder{
 					Process: "etcd",
 					Args: []*compliance.CommandLine_Args{
-						{
+						compliance.CommandLine_Args_builder{
 							Key:    "client-cert-auth",
 							Values: []string{"true"},
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			status:     storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 			numResults: 1,
@@ -75,15 +75,15 @@ func TestETCDChecks(t *testing.T) {
 		{
 			name: "CIS_Kubernetes_v1_5:2_2",
 			commandLines: map[string]*compliance.CommandLine{
-				"test": {
+				"test": compliance.CommandLine_builder{
 					Process: "etcd",
 					Args: []*compliance.CommandLine_Args{
-						{
+						compliance.CommandLine_Args_builder{
 							Key:    "client-cert-auth",
 							Values: []string{"false"},
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			status:     storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
 			numResults: 1,
@@ -91,15 +91,15 @@ func TestETCDChecks(t *testing.T) {
 		{
 			name: "CIS_Kubernetes_v1_5:2_3",
 			commandLines: map[string]*compliance.CommandLine{
-				"test": {
+				"test": compliance.CommandLine_builder{
 					Process: "etcd",
 					Args: []*compliance.CommandLine_Args{
-						{
+						compliance.CommandLine_Args_builder{
 							Key:    "auto-tls",
 							Values: []string{"false"},
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			status:     storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 			numResults: 1,
@@ -107,15 +107,15 @@ func TestETCDChecks(t *testing.T) {
 		{
 			name: "CIS_Kubernetes_v1_5:2_3",
 			commandLines: map[string]*compliance.CommandLine{
-				"test": {
+				"test": compliance.CommandLine_builder{
 					Process: "etcd",
 					Args: []*compliance.CommandLine_Args{
-						{
+						compliance.CommandLine_Args_builder{
 							Key:    "auto-tls",
 							Values: []string{"true"},
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			status:     storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
 			numResults: 1,
@@ -123,19 +123,19 @@ func TestETCDChecks(t *testing.T) {
 		{
 			name: "CIS_Kubernetes_v1_5:2_4",
 			commandLines: map[string]*compliance.CommandLine{
-				"test": {
+				"test": compliance.CommandLine_builder{
 					Process: "etcd",
 					Args: []*compliance.CommandLine_Args{
-						{
+						compliance.CommandLine_Args_builder{
 							Key:    "peer-cert-file",
 							Values: []string{"test"},
-						},
-						{
+						}.Build(),
+						compliance.CommandLine_Args_builder{
 							Key:    "peer-key-file",
 							Values: []string{"test"},
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			status:     storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 			numResults: 2,
@@ -143,17 +143,17 @@ func TestETCDChecks(t *testing.T) {
 		{
 			name: "CIS_Kubernetes_v1_5:2_4",
 			commandLines: map[string]*compliance.CommandLine{
-				"test": {
+				"test": compliance.CommandLine_builder{
 					Process: "etcd",
 					Args: []*compliance.CommandLine_Args{
-						{
+						compliance.CommandLine_Args_builder{
 							Key: "peer-cert-file",
-						},
-						{
+						}.Build(),
+						compliance.CommandLine_Args_builder{
 							Key: "peer-key-file",
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			status:     storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
 			numResults: 2,
@@ -161,15 +161,15 @@ func TestETCDChecks(t *testing.T) {
 		{
 			name: "CIS_Kubernetes_v1_5:2_5",
 			commandLines: map[string]*compliance.CommandLine{
-				"test": {
+				"test": compliance.CommandLine_builder{
 					Process: "etcd",
 					Args: []*compliance.CommandLine_Args{
-						{
+						compliance.CommandLine_Args_builder{
 							Key:    "peer-client-cert-auth",
 							Values: []string{"true"},
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			status:     storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 			numResults: 1,
@@ -177,15 +177,15 @@ func TestETCDChecks(t *testing.T) {
 		{
 			name: "CIS_Kubernetes_v1_5:2_5",
 			commandLines: map[string]*compliance.CommandLine{
-				"test": {
+				"test": compliance.CommandLine_builder{
 					Process: "etcd",
 					Args: []*compliance.CommandLine_Args{
-						{
+						compliance.CommandLine_Args_builder{
 							Key:    "peer-client-cert-auth",
 							Values: []string{"false"},
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			status:     storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
 			numResults: 1,
@@ -193,15 +193,15 @@ func TestETCDChecks(t *testing.T) {
 		{
 			name: "CIS_Kubernetes_v1_5:2_6",
 			commandLines: map[string]*compliance.CommandLine{
-				"test": {
+				"test": compliance.CommandLine_builder{
 					Process: "etcd",
 					Args: []*compliance.CommandLine_Args{
-						{
+						compliance.CommandLine_Args_builder{
 							Key:    "peer-auto-tls",
 							Values: []string{"false"},
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			status:     storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 			numResults: 1,
@@ -209,15 +209,15 @@ func TestETCDChecks(t *testing.T) {
 		{
 			name: "CIS_Kubernetes_v1_5:2_6",
 			commandLines: map[string]*compliance.CommandLine{
-				"test": {
+				"test": compliance.CommandLine_builder{
 					Process: "etcd",
 					Args: []*compliance.CommandLine_Args{
-						{
+						compliance.CommandLine_Args_builder{
 							Key:    "peer-auto-tls",
 							Values: []string{"true"},
-						},
+						}.Build(),
 					},
-				},
+				}.Build(),
 			},
 			status:     storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
 			numResults: 1,

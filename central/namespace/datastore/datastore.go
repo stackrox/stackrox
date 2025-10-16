@@ -215,14 +215,14 @@ func (b *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.S
 	searchResults := make([]*v1.SearchResult, 0, len(namespaces))
 	for i, r := range results {
 		namespace := namespaces[i]
-		searchResults = append(searchResults, &v1.SearchResult{
-			Id:             r.ID,
-			Name:           namespace.GetName(),
-			Category:       v1.SearchCategory_NAMESPACES,
-			Score:          r.Score,
-			FieldToMatches: search.GetProtoMatchesMap(r.Matches),
-			Location:       fmt.Sprintf("%s/%s", namespace.GetClusterName(), namespace.GetName()),
-		})
+		sr := &v1.SearchResult{}
+		sr.SetId(r.ID)
+		sr.SetName(namespace.GetName())
+		sr.SetCategory(v1.SearchCategory_NAMESPACES)
+		sr.SetScore(r.Score)
+		sr.SetFieldToMatches(search.GetProtoMatchesMap(r.Matches))
+		sr.SetLocation(fmt.Sprintf("%s/%s", namespace.GetClusterName(), namespace.GetName()))
+		searchResults = append(searchResults, sr)
 	}
 	return searchResults, nil
 }
@@ -262,6 +262,6 @@ func (b *datastoreImpl) SearchNamespaces(ctx context.Context, q *v1.Query) ([]*s
 
 func (b *datastoreImpl) updateNamespacePriority(nss ...*storage.NamespaceMetadata) {
 	for _, ns := range nss {
-		ns.Priority = b.namespaceRanker.GetRankForID(ns.GetId())
+		ns.SetPriority(b.namespaceRanker.GetRankForID(ns.GetId()))
 	}
 }

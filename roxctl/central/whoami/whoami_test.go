@@ -37,16 +37,16 @@ type mockAuthServiceServer struct {
 }
 
 func (m *mockAuthServiceServer) GetAuthStatus(_ context.Context, _ *v1.Empty) (*v1.AuthStatus, error) {
-	return &v1.AuthStatus{
-		Id: &v1.AuthStatus_UserId{
-			UserId: m.userInfo.GetUsername(),
-		},
-		UserInfo: m.userInfo,
-	}, nil
+	as := &v1.AuthStatus{}
+	as.SetUserId(m.userInfo.GetUsername())
+	as.SetUserInfo(m.userInfo)
+	return as, nil
 }
 
 func (m *mockAuthServiceServer) GetMyPermissions(_ context.Context, _ *v1.Empty) (*v1.GetPermissionsResponse, error) {
-	return &v1.GetPermissionsResponse{ResourceToAccess: m.resourceToAccess}, nil
+	gpr := &v1.GetPermissionsResponse{}
+	gpr.SetResourceToAccess(m.resourceToAccess)
+	return gpr, nil
 }
 
 func (c *centralWhoAmITestSuite) createGRPCMockServices(mockServer *mockAuthServiceServer) (*grpc.ClientConn, func()) {
@@ -102,18 +102,18 @@ func (c *centralWhoAmITestSuite) TestWhoAmIEmpty() {
 
 func (c *centralWhoAmITestSuite) TestWhoIsHarald() {
 	mockServer := &mockAuthServiceServer{
-		userInfo: &storage.UserInfo{
+		userInfo: storage.UserInfo_builder{
 			Username:     "Harald",
 			FriendlyName: "Harald the second",
 			Roles: []*storage.UserInfo_Role{
-				{
+				storage.UserInfo_Role_builder{
 					Name: "Warrior",
-				},
-				{
+				}.Build(),
+				storage.UserInfo_Role_builder{
 					Name: "Engineer",
-				},
+				}.Build(),
 			},
-		},
+		}.Build(),
 		resourceToAccess: map[string]storage.Access{
 			"Smartphone": storage.Access_READ_WRITE_ACCESS,
 			"Library":    storage.Access_READ_ACCESS,

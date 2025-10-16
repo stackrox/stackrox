@@ -8,13 +8,13 @@ import (
 func getConditions(conditionsData []*central.ComplianceOperatorCondition) []*storage.ComplianceOperatorCondition {
 	conditions := make([]*storage.ComplianceOperatorCondition, 0, len(conditionsData))
 	for _, c := range conditionsData {
-		conditions = append(conditions, &storage.ComplianceOperatorCondition{
-			Type:               c.GetType(),
-			Status:             c.GetStatus(),
-			Message:            c.GetMessage(),
-			Reason:             c.GetReason(),
-			LastTransitionTime: c.GetLastTransitionTime(),
-		})
+		coc := &storage.ComplianceOperatorCondition{}
+		coc.SetType(c.GetType())
+		coc.SetStatus(c.GetStatus())
+		coc.SetMessage(c.GetMessage())
+		coc.SetReason(c.GetReason())
+		coc.SetLastTransitionTime(c.GetLastTransitionTime())
+		conditions = append(conditions, coc)
 	}
 	return conditions
 }
@@ -22,17 +22,17 @@ func getConditions(conditionsData []*central.ComplianceOperatorCondition) []*sto
 // ComplianceOperatorScanSettingBindingObject converts internal api V2 compliance scan setting binding object to a V2 storage
 // compliance scan setting binding object
 func ComplianceOperatorScanSettingBindingObject(sensorData *central.ComplianceOperatorScanSettingBindingV2, clusterID string) *storage.ComplianceOperatorScanSettingBindingV2 {
-	return &storage.ComplianceOperatorScanSettingBindingV2{
-		Id:              sensorData.GetId(),
-		Name:            sensorData.GetName(),
-		ClusterId:       clusterID,
-		ScanSettingName: sensorData.GetScanSettingName(),
-		ProfileNames:    sensorData.GetProfileNames(),
-		Status: &storage.ComplianceOperatorStatus{
-			Phase:      sensorData.GetStatus().GetPhase(),
-			Conditions: getConditions(sensorData.GetStatus().GetConditions()),
-		},
-		Labels:      sensorData.GetLabels(),
-		Annotations: sensorData.GetAnnotations(),
-	}
+	cos := &storage.ComplianceOperatorStatus{}
+	cos.SetPhase(sensorData.GetStatus().GetPhase())
+	cos.SetConditions(getConditions(sensorData.GetStatus().GetConditions()))
+	cossbv2 := &storage.ComplianceOperatorScanSettingBindingV2{}
+	cossbv2.SetId(sensorData.GetId())
+	cossbv2.SetName(sensorData.GetName())
+	cossbv2.SetClusterId(clusterID)
+	cossbv2.SetScanSettingName(sensorData.GetScanSettingName())
+	cossbv2.SetProfileNames(sensorData.GetProfileNames())
+	cossbv2.SetStatus(cos)
+	cossbv2.SetLabels(sensorData.GetLabels())
+	cossbv2.SetAnnotations(sensorData.GetAnnotations())
+	return cossbv2
 }

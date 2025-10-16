@@ -70,34 +70,30 @@ func (suite *PipelineTestSuite) TestRunCreate() {
 	suite.reportMgr.EXPECT().HandleResult(gomock.Any(), gomock.Any()).Times(1)
 	pipeline := NewPipeline(suite.v2ResultDS, suite.clusterDS, suite.reportMgr)
 
-	msg := &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id:     id,
-				Action: central.ResourceAction_CREATE_RESOURCE,
-				Resource: &central.SensorEvent_ComplianceOperatorResultV2{
-					ComplianceOperatorResultV2: &central.ComplianceOperatorCheckResultV2{
-						Id:           id,
-						CheckId:      checkID,
-						CheckName:    mockCheckRuleName,
-						ClusterId:    fixtureconsts.Cluster1,
-						Status:       central.ComplianceOperatorCheckResultV2_FAIL,
-						Severity:     central.ComplianceOperatorRuleSeverity_HIGH_RULE_SEVERITY,
-						Description:  "this is a test",
-						Instructions: "this is a test",
-						Labels:       nil,
-						Annotations:  nil,
-						CreatedTime:  createdTime,
-						ScanName:     mockScanName,
-						SuiteName:    mockSuiteName,
-						Rationale:    "test rationale",
-						ValuesUsed:   []string{"var1", "var2"},
-						Warnings:     []string{"warning1", "warning2"},
-					},
-				},
-			},
-		},
-	}
+	msg := central.MsgFromSensor_builder{
+		Event: central.SensorEvent_builder{
+			Id:     id,
+			Action: central.ResourceAction_CREATE_RESOURCE,
+			ComplianceOperatorResultV2: central.ComplianceOperatorCheckResultV2_builder{
+				Id:           id,
+				CheckId:      checkID,
+				CheckName:    mockCheckRuleName,
+				ClusterId:    fixtureconsts.Cluster1,
+				Status:       central.ComplianceOperatorCheckResultV2_FAIL,
+				Severity:     central.ComplianceOperatorRuleSeverity_HIGH_RULE_SEVERITY,
+				Description:  "this is a test",
+				Instructions: "this is a test",
+				Labels:       nil,
+				Annotations:  nil,
+				CreatedTime:  createdTime,
+				ScanName:     mockScanName,
+				SuiteName:    mockSuiteName,
+				Rationale:    "test rationale",
+				ValuesUsed:   []string{"var1", "var2"},
+				Warnings:     []string{"warning1", "warning2"},
+			}.Build(),
+		}.Build(),
+	}.Build()
 
 	err := pipeline.Run(ctx, fixtureconsts.Cluster1, msg, nil)
 	suite.NoError(err)
@@ -109,59 +105,55 @@ func (suite *PipelineTestSuite) TestRunDelete() {
 	suite.v2ResultDS.EXPECT().DeleteResult(ctx, id).Return(nil).Times(1)
 	pipeline := NewPipeline(suite.v2ResultDS, suite.clusterDS, suite.reportMgr)
 
-	msg := &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id:     id,
-				Action: central.ResourceAction_REMOVE_RESOURCE,
-				Resource: &central.SensorEvent_ComplianceOperatorResultV2{
-					ComplianceOperatorResultV2: &central.ComplianceOperatorCheckResultV2{
-						Id:           id,
-						CheckId:      checkID,
-						CheckName:    mockCheckRuleName,
-						ClusterId:    fixtureconsts.Cluster1,
-						Status:       central.ComplianceOperatorCheckResultV2_FAIL,
-						Severity:     central.ComplianceOperatorRuleSeverity_HIGH_RULE_SEVERITY,
-						Description:  "this is a test",
-						Instructions: "this is a test",
-						Labels:       nil,
-						Annotations:  nil,
-						CreatedTime:  createdTime,
-						ScanName:     mockScanName,
-						SuiteName:    mockSuiteName,
-						Rationale:    "test rationale",
-						ValuesUsed:   []string{"var1", "var2"},
-						Warnings:     []string{"warning1", "warning2"},
-					},
-				},
-			},
-		},
-	}
+	msg := central.MsgFromSensor_builder{
+		Event: central.SensorEvent_builder{
+			Id:     id,
+			Action: central.ResourceAction_REMOVE_RESOURCE,
+			ComplianceOperatorResultV2: central.ComplianceOperatorCheckResultV2_builder{
+				Id:           id,
+				CheckId:      checkID,
+				CheckName:    mockCheckRuleName,
+				ClusterId:    fixtureconsts.Cluster1,
+				Status:       central.ComplianceOperatorCheckResultV2_FAIL,
+				Severity:     central.ComplianceOperatorRuleSeverity_HIGH_RULE_SEVERITY,
+				Description:  "this is a test",
+				Instructions: "this is a test",
+				Labels:       nil,
+				Annotations:  nil,
+				CreatedTime:  createdTime,
+				ScanName:     mockScanName,
+				SuiteName:    mockSuiteName,
+				Rationale:    "test rationale",
+				ValuesUsed:   []string{"var1", "var2"},
+				Warnings:     []string{"warning1", "warning2"},
+			}.Build(),
+		}.Build(),
+	}.Build()
 
 	err := pipeline.Run(ctx, fixtureconsts.Cluster1, msg, nil)
 	suite.NoError(err)
 }
 
 func getTestRec(clusterID string) *storage.ComplianceOperatorCheckResultV2 {
-	return &storage.ComplianceOperatorCheckResultV2{
-		Id:             id,
-		CheckId:        checkID,
-		CheckName:      mockCheckRuleName,
-		ClusterId:      clusterID,
-		ClusterName:    "cluster1",
-		Status:         storage.ComplianceOperatorCheckResultV2_FAIL,
-		Severity:       storage.RuleSeverity_HIGH_RULE_SEVERITY,
-		Description:    "this is a test",
-		Instructions:   "this is a test",
-		Labels:         nil,
-		Annotations:    nil,
-		CreatedTime:    createdTime,
-		ScanConfigName: mockSuiteName,
-		ScanName:       mockScanName,
-		Rationale:      "test rationale",
-		ValuesUsed:     []string{"var1", "var2"},
-		Warnings:       []string{"warning1", "warning2"},
-		ScanRefId:      internaltov2storage.BuildNameRefID(clusterID, mockScanName),
-		RuleRefId:      internaltov2storage.BuildNameRefID(clusterID, ""),
-	}
+	cocrv2 := &storage.ComplianceOperatorCheckResultV2{}
+	cocrv2.SetId(id)
+	cocrv2.SetCheckId(checkID)
+	cocrv2.SetCheckName(mockCheckRuleName)
+	cocrv2.SetClusterId(clusterID)
+	cocrv2.SetClusterName("cluster1")
+	cocrv2.SetStatus(storage.ComplianceOperatorCheckResultV2_FAIL)
+	cocrv2.SetSeverity(storage.RuleSeverity_HIGH_RULE_SEVERITY)
+	cocrv2.SetDescription("this is a test")
+	cocrv2.SetInstructions("this is a test")
+	cocrv2.SetLabels(nil)
+	cocrv2.SetAnnotations(nil)
+	cocrv2.SetCreatedTime(createdTime)
+	cocrv2.SetScanConfigName(mockSuiteName)
+	cocrv2.SetScanName(mockScanName)
+	cocrv2.SetRationale("test rationale")
+	cocrv2.SetValuesUsed([]string{"var1", "var2"})
+	cocrv2.SetWarnings([]string{"warning1", "warning2"})
+	cocrv2.SetScanRefId(internaltov2storage.BuildNameRefID(clusterID, mockScanName))
+	cocrv2.SetRuleRefId(internaltov2storage.BuildNameRefID(clusterID, ""))
+	return cocrv2
 }

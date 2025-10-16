@@ -13,10 +13,12 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var imageCveLoaderType = reflect.TypeOf(storage.ImageCVE{})
+// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+var imageCveLoaderType = reflect.TypeOf(&storage.ImageCVE{})
 
 func init() {
-	RegisterTypeFactory(reflect.TypeOf(storage.ImageCVE{}), func() interface{} {
+	// DO NOT SUBMIT: fix callers to work with a pointer (go/goprotoapi-findings#message-value)
+	RegisterTypeFactory(reflect.TypeOf(&storage.ImageCVE{}), func() interface{} {
 		return NewImageCVELoader(ImageCVEDataStore.Singleton())
 	})
 }

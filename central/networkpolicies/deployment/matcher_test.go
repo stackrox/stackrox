@@ -21,54 +21,54 @@ var (
 )
 
 func givenNetworkPolicy(id, cluster, namespace string, types []storage.NetworkPolicyType, podSelector *storage.LabelSelector) *storage.NetworkPolicy {
-	return &storage.NetworkPolicy{
-		Id:          id,
-		Name:        fmt.Sprintf("name-%s", id),
-		ClusterId:   cluster,
-		Namespace:   namespace,
-		ClusterName: fmt.Sprintf("name-%s", cluster),
-		Spec: &storage.NetworkPolicySpec{
-			PodSelector: podSelector,
-			PolicyTypes: types,
-		},
-	}
+	nps := &storage.NetworkPolicySpec{}
+	nps.SetPodSelector(podSelector)
+	nps.SetPolicyTypes(types)
+	np := &storage.NetworkPolicy{}
+	np.SetId(id)
+	np.SetName(fmt.Sprintf("name-%s", id))
+	np.SetClusterId(cluster)
+	np.SetNamespace(namespace)
+	np.SetClusterName(fmt.Sprintf("name-%s", cluster))
+	np.SetSpec(nps)
+	return np
 }
 
 func givenPodSelector(key, value string) *storage.LabelSelector {
-	return &storage.LabelSelector{
-		MatchLabels: map[string]string{
-			key: value,
-		},
-	}
+	ls := &storage.LabelSelector{}
+	ls.SetMatchLabels(map[string]string{
+		key: value,
+	})
+	return ls
 }
 
 func givenIncorrectPodSelector() *storage.LabelSelector {
-	return &storage.LabelSelector{
+	return storage.LabelSelector_builder{
 		Requirements: []*storage.LabelSelector_Requirement{
-			{
+			storage.LabelSelector_Requirement_builder{
 				Key:    "bogus",
 				Op:     storage.LabelSelector_UNKNOWN,
 				Values: []string{"a", "b"},
-			},
+			}.Build(),
 		},
-	}
+	}.Build()
 }
 
 func givenEmptySelector() *storage.LabelSelector {
-	return &storage.LabelSelector{
-		MatchLabels: map[string]string{
-			"app": "any",
-		},
-	}
+	ls := &storage.LabelSelector{}
+	ls.SetMatchLabels(map[string]string{
+		"app": "any",
+	})
+	return ls
 }
 
 func givenDeployment(id, cluster, namespace string, labels map[string]string) *storage.Deployment {
-	return &storage.Deployment{
-		Id:        id,
-		ClusterId: cluster,
-		Namespace: namespace,
-		PodLabels: labels,
-	}
+	deployment := &storage.Deployment{}
+	deployment.SetId(id)
+	deployment.SetClusterId(cluster)
+	deployment.SetNamespace(namespace)
+	deployment.SetPodLabels(labels)
+	return deployment
 }
 
 func Test_MatchDeployments_NoError_SelectorCompileError(t *testing.T) {

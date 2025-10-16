@@ -85,11 +85,11 @@ func (p *pipelineImpl) Run(
 	p.metricsStore.Set(clusterID, clusterMetrics)
 	p.telemetryMetrics.SetClusterMetrics(clusterID, clusterMetrics)
 
+	su := &storage.SecuredUnits{}
+	su.SetNumNodes(clusterMetrics.GetNodeCount())
+	su.SetNumCpuUnits(clusterMetrics.GetCpuCapacity())
 	if err := p.usageStore.UpdateUsage(sac.WithGlobalAccessScopeChecker(ctx, administrationUsageWriteSCC),
-		clusterID, &storage.SecuredUnits{
-			NumNodes:    clusterMetrics.GetNodeCount(),
-			NumCpuUnits: clusterMetrics.GetCpuCapacity(),
-		}); err != nil {
+		clusterID, su); err != nil {
 		logging.GetRateLimitedLogger().Warn(
 			"Error while trying to update secured units usage: ", err.Error())
 	}

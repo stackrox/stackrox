@@ -65,7 +65,9 @@ type fakeImageService struct {
 
 func (s *fakeImageService) ExportImages(_ *v1.ExportImageRequest, srv v1.ImageService_ExportImagesServer) error {
 	testImage := getImageForSerializationTest()
-	return srv.Send(&v1.ExportImageResponse{Image: testImage})
+	eir := &v1.ExportImageResponse{}
+	eir.SetImage(testImage)
+	return srv.Send(eir)
 }
 
 func (s *fakeImageService) GetImage(_ context.Context, _ *v1.GetImageRequest) (*storage.Image, error) {
@@ -125,6 +127,6 @@ func getImageForSerializationTest() *storage.Image {
 	// This image is generated in `deployment.go`
 	image := fixtures.LightweightDeploymentImage()
 	var scanDate = time.Date(2020, time.December, 24, 23, 59, 59, 999999999, time.UTC)
-	image.Scan.ScanTime = protocompat.ConvertTimeToTimestampOrNil(&scanDate)
+	image.GetScan().SetScanTime(protocompat.ConvertTimeToTimestampOrNil(&scanDate))
 	return image
 }
