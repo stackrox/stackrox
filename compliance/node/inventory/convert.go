@@ -46,7 +46,7 @@ func convertRHELComponents(rhelComponents []*scannerV1.RHELComponent) []*storage
 		sc.SetModule(c.GetModule())
 		sc.SetAddedBy(c.GetAddedBy())
 		sc.SetExecutables(convertExecutables(c.GetExecutables()))
-		convertedComponents = append(convertedComponents, &sc)
+		convertedComponents = append(convertedComponents, sc)
 	}
 	return convertedComponents
 }

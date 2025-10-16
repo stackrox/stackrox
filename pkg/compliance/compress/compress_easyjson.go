@@ -91,7 +91,7 @@ func easyjson24245084EncodeGithubComStackroxRoxPkgComplianceCompress(out *jwrite
 				if v2Value == nil {
 					out.RawString("null")
 				} else {
-					easyjson24245084EncodeGithubComStackroxRoxGeneratedInternalapiCompliance(out, *v2Value)
+					easyjson24245084EncodeGithubComStackroxRoxGeneratedInternalapiCompliance(out, v2Value)
 				}
 			}
 			out.RawByte('}')
@@ -225,7 +225,7 @@ func easyjson24245084EncodeGithubComStackroxRoxGeneratedInternalapiCompliance(ou
 				if v5Value == nil {
 					out.RawString("null")
 				} else {
-					easyjson24245084EncodeGithubComStackroxRoxGeneratedStorage(out, *v5Value)
+					easyjson24245084EncodeGithubComStackroxRoxGeneratedStorage(out, v5Value)
 				}
 			}
 			out.RawByte('}')
@@ -253,7 +253,7 @@ func easyjson24245084EncodeGithubComStackroxRoxGeneratedInternalapiCompliance(ou
 				if v6Value == nil {
 					out.RawString("null")
 				} else {
-					easyjson24245084EncodeGithubComStackroxRoxGeneratedStorage(out, *v6Value)
+					easyjson24245084EncodeGithubComStackroxRoxGeneratedStorage(out, v6Value)
 				}
 			}
 			out.RawByte('}')
@@ -339,7 +339,7 @@ func easyjson24245084EncodeGithubComStackroxRoxGeneratedStorage(out *jwriter.Wri
 				if v9 == nil {
 					out.RawString("null")
 				} else {
-					easyjson24245084EncodeGithubComStackroxRoxGeneratedStorageComplianceResultValue(out, *v9)
+					easyjson24245084EncodeGithubComStackroxRoxGeneratedStorageComplianceResultValue(out, v9)
 				}
 			}
 			out.RawByte(']')

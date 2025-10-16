@@ -94,10 +94,10 @@ func RoleNamesFromUserInfo(roles []*storage.UserInfo_Role) []string {
 // ExtractRolesForUserInfo converts each ResolvedRole to *storage.Role.
 func ExtractRolesForUserInfo(roles []permissions.ResolvedRole) []*storage.UserInfo_Role {
 	result := make([]*storage.UserInfo_Role, 0, len(roles))
-	for _, role := range roles {
+	for _, resolvedRole := range roles {
 		role := &storage.UserInfo_Role{}
-		role.SetName(role.GetRoleName())
-		role.SetResourceToAccess(role.GetPermissions())
+		role.SetName(resolvedRole.GetRoleName())
+		role.SetResourceToAccess(resolvedRole.GetPermissions())
 		result = append(result, role)
 	}
 	return result

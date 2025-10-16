@@ -287,14 +287,14 @@ func (c *nodeInventoryHandlerImpl) sendNodeInventory(toC chan<- *message.Expirin
 	if inventory == nil {
 		return
 	}
+	se := &central.SensorEvent{}
+	se.SetId(inventory.GetNodeId())
+	// ResourceAction_UNSET_ACTION_RESOURCE is the only one supported by Central 4.6 and older.
+	// This can be changed to CREATE or UPDATE for Sensor 4.8 or when Central 4.6 is out of support.
+	se.SetAction(central.ResourceAction_UNSET_ACTION_RESOURCE)
+	se.SetNodeInventory(proto.ValueOrDefault(inventory))
 	select {
 	case <-c.stopper.Flow().StopRequested():
-		se := &central.SensorEvent{}
-		se.SetId(inventory.GetNodeId())
-		// ResourceAction_UNSET_ACTION_RESOURCE is the only one supported by Central 4.6 and older.
-		// This can be changed to CREATE or UPDATE for Sensor 4.8 or when Central 4.6 is out of support.
-		se.SetAction(central.ResourceAction_UNSET_ACTION_RESOURCE)
-		se.SetNodeInventory(proto.ValueOrDefault(inventory))
 	case toC <- message.New(central.MsgFromSensor_builder{
 		Event: se,
 	}.Build()):

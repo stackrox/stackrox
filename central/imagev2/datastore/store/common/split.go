@@ -116,7 +116,7 @@ func GenerateImageComponentV2(os string, image *storage.ImageV2, from *storage.E
 	}
 
 	if from.HasHasLayerIndex() {
-		ret.SetLayerIndex(from.GetLayerIndex())
+		ret.Set_LayerIndex(from.GetLayerIndex())
 	}
 
 	return ret, nil

@@ -159,14 +159,12 @@ func (c *certIssuerImpl) issueCertificates(namespace string, clusterID string) (
 		} else {
 			if caBundlePem != nil {
 				certsSet.SetCaBundlePem(caBundlePem)
-			} else {
-				certsSet.ClearCaBundlePem()
 			}
 			log.Debug("Populated CA bundle for rotation-capable Sensor")
 		}
 	}
 
-	return &certsSet, nil
+	return certsSet, nil
 }
 
 func (c *certIssuerImpl) certificateFor(serviceType storage.ServiceType, namespace string, clusterID string) (caPem []byte, cert *storage.TypedServiceCertificate, err error) {

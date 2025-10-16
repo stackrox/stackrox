@@ -78,7 +78,7 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 		// If we always set HasLayerIndex to layerIdx, then
 		// it will never be nil, as layerIdx always has a type.
 		if layerIdx != nil {
-			component.SetLayerIndex(layerIdx.LayerIndex)
+			component.Set_LayerIndex(layerIdx.LayerIndex)
 		}
 
 		components = append(components, component)

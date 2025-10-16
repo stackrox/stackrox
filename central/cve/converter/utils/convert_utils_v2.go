@@ -110,7 +110,7 @@ func EmbeddedVulnerabilityToImageCVEV2(imageID string, componentID string, from 
 	}
 
 	if from.GetFixedBy() != "" {
-		ret.SetFixedBy(from.GetFixedBy())
+		ret.Set_FixedBy(from.GetFixedBy())
 	}
 
 	return ret, nil

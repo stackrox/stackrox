@@ -257,9 +257,9 @@ func extractViolations(alert *storage.Alert, fromTime time.Time, toTime time.Tim
 		violation.SetPolicyInfo(policyInfo)
 		violation.SetNetworkFlowInfo(v.GetNetworkFlowInfo().CloneVT())
 
-		addEntityInfoToSplunkViolation(alert, &violation, deploymentInfo)
+		addEntityInfoToSplunkViolation(alert, violation, deploymentInfo)
 
-		result = append(result, &violation)
+		result = append(result, violation)
 	}
 	if genericViolationMessage.Len() != 0 {
 		violationInfo := extractGenericViolationInfo(alert, genericViolationMessage.String())
@@ -497,7 +497,7 @@ func extractPolicyInfo(alertID string, from *storage.Policy) *integrations.Splun
 }
 
 func extractDeploymentInfo(from *storage.Alert) *integrations.SplunkViolation_DeploymentInfo {
-	var res integrations.SplunkViolation_DeploymentInfo
+	var res *integrations.SplunkViolation_DeploymentInfo
 
 	switch from.WhichEntity() {
 	case storage.Alert_Deployment_case:
@@ -536,7 +536,7 @@ func extractDeploymentInfo(from *storage.Alert) *integrations.SplunkViolation_De
 		log.Warnw("Alert.Entity unrecognized or not set. Resulting violation item will not have deployment details.", logging.AlertID(from.GetId()))
 	}
 
-	return &res
+	return res
 }
 
 func extractResourceInfo(from *storage.Alert_Resource) *integrations.SplunkViolation_ResourceInfo {

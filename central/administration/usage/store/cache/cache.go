@@ -112,5 +112,5 @@ func (u *cacheImpl) AggregateAndReset() *storage.SecuredUnits {
 		}
 		*m = make(map[string]int64)
 	})
-	return &result
+	return result
 }

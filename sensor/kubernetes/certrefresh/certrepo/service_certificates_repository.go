@@ -89,8 +89,6 @@ func (r *ServiceCertificatesRepoSecrets) GetServiceCertificates(ctx context.Cont
 		if certificates.GetCaPem() == nil {
 			if ca != nil {
 				certificates.SetCaPem(ca)
-			} else {
-				certificates.ClearCaPem()
 			}
 		} else {
 			if !bytes.Equal(certificates.GetCaPem(), ca) {

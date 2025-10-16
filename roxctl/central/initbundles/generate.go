@@ -60,7 +60,7 @@ func generateInitBundle(cliEnvironment environment.Environment, name string,
 
 	req := &v1.InitBundleGenRequest{}
 	req.SetName(name)
-	resp, err := svc.GenerateInitBundle(ctx, &req)
+	resp, err := svc.GenerateInitBundle(ctx, req)
 	if err != nil {
 		return errors.Wrap(err, "generating new init bundle")
 	}

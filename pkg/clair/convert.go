@@ -203,7 +203,7 @@ func ConvertFeatures(image *storage.Image, features []clairV1.Feature, os string
 	for _, feature := range features {
 		convertedComponent := convertFeature(feature, os)
 		if val, ok := layerSHAToIndex[feature.AddedBy]; ok {
-			convertedComponent.SetLayerIndex(val)
+			convertedComponent.Set_LayerIndex(val)
 		}
 		components = append(components, convertedComponent)
 	}

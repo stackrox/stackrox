@@ -321,7 +321,6 @@ func testClusterCVEParts(clusterIDs []string) []converter.ClusterCVEParts {
 					Edge: storage.ClusterCVEEdge_builder{
 						Id:         pgSearch.IDFromPks([]string{clusterIDs[0], cveIds[1]}),
 						IsFixable:  false,
-						HasFixedBy: nil,
 						ClusterId:  clusterIDs[0],
 						CveId:      cveIds[1],
 					}.Build(),
@@ -331,7 +330,6 @@ func testClusterCVEParts(clusterIDs []string) []converter.ClusterCVEParts {
 					Edge: storage.ClusterCVEEdge_builder{
 						Id:         pgSearch.IDFromPks([]string{clusterIDs[1], cveIds[1]}),
 						IsFixable:  false,
-						HasFixedBy: nil,
 						ClusterId:  clusterIDs[1],
 						CveId:      cveIds[1],
 					}.Build(),
@@ -377,7 +375,6 @@ func testClusterCVEParts(clusterIDs []string) []converter.ClusterCVEParts {
 					Edge: storage.ClusterCVEEdge_builder{
 						Id:         pgSearch.IDFromPks([]string{clusterIDs[0], cveIds[3]}),
 						IsFixable:  false,
-						HasFixedBy: nil,
 						ClusterId:  clusterIDs[0],
 						CveId:      cveIds[3],
 					}.Build(),
@@ -408,7 +405,6 @@ func testClusterCVEParts(clusterIDs []string) []converter.ClusterCVEParts {
 					Edge: storage.ClusterCVEEdge_builder{
 						Id:         pgSearch.IDFromPks([]string{clusterIDs[0], cveIds[4]}),
 						IsFixable:  false,
-						HasFixedBy: nil,
 						ClusterId:  clusterIDs[0],
 						CveId:      cveIds[4],
 					}.Build(),

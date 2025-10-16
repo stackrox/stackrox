@@ -217,12 +217,12 @@ func (c *commandHandlerImpl) sendUpdates(updates []*central.ScrapeUpdate) {
 }
 
 func (c *commandHandlerImpl) sendUpdate(update *central.ScrapeUpdate) {
+	mfs := &central.MsgFromSensor{}
+	mfs.SetScrapeUpdate(proto.ValueOrDefault(update))
 	select {
 	case <-c.stopper.Flow().StopRequested():
 		log.Errorf("component is shutting down, failed to send update: %s", protocompat.MarshalTextString(update))
 		return
-		mfs := &central.MsgFromSensor{}
-		mfs.SetScrapeUpdate(proto.ValueOrDefault(update))
 	case c.updates <- message.New(mfs):
 		return
 	}

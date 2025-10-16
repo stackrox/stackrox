@@ -242,7 +242,7 @@ func convertFeatures(metadata *storage.ImageMetadata, features []*v1.Feature, os
 	for _, feature := range features {
 		convertedComponent := convertFeature(feature, os)
 		if val, ok := layerSHAToIndex[feature.GetAddedByLayer()]; ok {
-			convertedComponent.SetLayerIndex(val)
+			convertedComponent.Set_LayerIndex(val)
 		}
 		components = append(components, convertedComponent)
 	}

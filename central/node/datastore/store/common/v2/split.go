@@ -74,7 +74,7 @@ func generateComponentCVEEdge(convertedComponent *storage.NodeComponent, convert
 	ret.SetNodeComponentId(convertedComponent.GetId())
 
 	if ret.GetIsFixable() {
-		ret.SetFixedBy(embedded.GetFixedBy())
+		ret.Set_FixedBy(embedded.GetFixedBy())
 	}
 	return ret
 }

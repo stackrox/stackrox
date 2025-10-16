@@ -355,7 +355,7 @@ func (c *gRPCScanner) getOrCreateImageIndex(ctx context.Context, ref name.Digest
 	var ir *v4.IndexReport
 	var responseMetadata metadata.MD
 	err = retryWithBackoff(ctx, defaultBackoff(), "indexer.GetOrCreateIndexReport", func() (err error) {
-		ir, err = c.indexer.GetOrCreateIndexReport(ctx, &req, grpc.Header(&responseMetadata))
+		ir, err = c.indexer.GetOrCreateIndexReport(ctx, req, grpc.Header(&responseMetadata))
 		return err
 	})
 	if err != nil {

@@ -76,7 +76,7 @@ func generateComponentCVEEdge(convertedComponent *storage.ImageComponent, conver
 	ret.SetImageComponentId(convertedComponent.GetId())
 
 	if ret.GetIsFixable() {
-		ret.SetFixedBy(embedded.GetFixedBy())
+		ret.Set_FixedBy(embedded.GetFixedBy())
 	}
 	return ret
 }
@@ -109,7 +109,7 @@ func generateImageComponentEdge(image *storage.Image, convImgComponent *storage.
 	ret.SetLocation(embedded.GetLocation())
 
 	if embedded.HasHasLayerIndex() {
-		ret.SetLayerIndex(embedded.GetLayerIndex())
+		ret.Set_LayerIndex(embedded.GetLayerIndex())
 	}
 	return ret
 }

@@ -399,14 +399,14 @@ func (d *detectorImpl) runDetector() {
 				return alerts[i].GetPolicy().GetId() < alerts[j].GetPolicy().GetId()
 			})
 
+			ar := &central.AlertResults{}
+			ar.SetDeploymentId(scanOutput.deployment.GetId())
+			ar.SetAlerts(alerts)
 			select {
 			case <-d.detectorStopper.Flow().StopRequested():
 				return
 			case <-d.serializerStopper.Flow().StopRequested():
 				return
-				ar := &central.AlertResults{}
-				ar.SetDeploymentId(scanOutput.deployment.GetId())
-				ar.SetAlerts(alerts)
 			case d.deploymentAlertOutputChan <- outputResult{
 				results:   ar,
 				timestamp: scanOutput.deployment.GetStateTimestamp(),
@@ -523,11 +523,11 @@ func (d *detectorImpl) processDeploymentNoLock(ctx context.Context, deployment *
 		go func() {
 			// Push an empty AlertResults object to the channel which will mark deploytime alerts as stale
 			// This allows us to not worry about synchronizing alert msgs with deployment msgs
+			ar := &central.AlertResults{}
+			ar.SetDeploymentId(deployment.GetId())
 			select {
 			case <-d.alertStopSig.Done():
 				return
-				ar := &central.AlertResults{}
-				ar.SetDeploymentId(deployment.GetId())
 			case d.deploymentAlertOutputChan <- outputResult{
 				context: ctx,
 				results: ar,

@@ -456,7 +456,7 @@ func GetEmbeddedImageComponent1x1() *storage.EmbeddedImageScanComponent {
 		GetEmbeddedImageCVE1234x0001(),
 		GetEmbeddedImageCVE4567x0002(),
 	})
-	eisc.SetLayerIndex(0)
+	eisc.Set_LayerIndex(0)
 	eisc.SetPriority(0)
 	eisc.SetSource(storage.SourceType_OS)
 	eisc.SetLocation("")
@@ -478,7 +478,7 @@ func GetEmbeddedImageComponent1x2() *storage.EmbeddedImageScanComponent {
 	eisc.SetVulns([]*storage.EmbeddedVulnerability{
 		GetEmbeddedImageCVE1234x0003(),
 	})
-	eisc.SetLayerIndex(1)
+	eisc.Set_LayerIndex(1)
 	eisc.SetPriority(0)
 	eisc.SetSource(storage.SourceType_PYTHON)
 	eisc.SetLocation("")
@@ -501,7 +501,7 @@ func GetEmbeddedImageComponent1s2x3() *storage.EmbeddedImageScanComponent {
 		GetEmbeddedImageCVE3456x0004(),
 		GetEmbeddedImageCVE3456x0005(),
 	})
-	eisc.SetLayerIndex(1)
+	eisc.Set_LayerIndex(1)
 	eisc.SetPriority(0)
 	eisc.SetSource(storage.SourceType_JAVA)
 	eisc.SetLocation("")
@@ -519,7 +519,7 @@ func GetEmbeddedImageComponent2x4() *storage.EmbeddedImageScanComponent {
 	eisc.SetVersion("2.4")
 	eisc.ClearLicense()
 	eisc.SetVulns([]*storage.EmbeddedVulnerability{})
-	eisc.SetLayerIndex(0)
+	eisc.Set_LayerIndex(0)
 	eisc.SetPriority(0)
 	eisc.SetSource(storage.SourceType_INFRASTRUCTURE)
 	eisc.SetLocation("")

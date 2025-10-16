@@ -115,11 +115,11 @@ func (u *updaterImpl) ResponsesC() <-chan *message.ExpiringMessage {
 
 func (u *updaterImpl) sendMessage(msg *central.ClusterStatusUpdate) bool {
 	ctx := u.getCurrentContext()
+	mfs := &central.MsgFromSensor{}
+	mfs.SetClusterStatusUpdate(proto.ValueOrDefault(msg))
 	select {
 	case <-ctx.Done():
 		return false
-		mfs := &central.MsgFromSensor{}
-		mfs.SetClusterStatusUpdate(proto.ValueOrDefault(msg))
 	case u.updates <- message.NewExpiring(ctx, mfs):
 		return true
 	case <-u.stopSig.Done():

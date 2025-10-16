@@ -278,8 +278,6 @@ func (s *serviceImpl) TLSChallenge(_ context.Context, req *v1.TLSChallengeReques
 		} else {
 			if secondarySign.Signature != nil {
 				resp.SetSignatureSecondaryCa(secondarySign.Signature)
-			} else {
-				resp.ClearSignatureSecondaryCa()
 			}
 		}
 	}

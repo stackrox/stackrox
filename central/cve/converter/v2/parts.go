@@ -39,7 +39,7 @@ func generateClusterCVEEdge(cluster *storage.Cluster, cve *storage.ClusterCVE, f
 	ret.SetCveId(cve.GetId())
 
 	if ret.GetIsFixable() {
-		ret.SetFixedBy(fixVersions)
+		ret.Set_FixedBy(fixVersions)
 	}
 	return ret
 }

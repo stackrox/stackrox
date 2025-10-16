@@ -311,7 +311,7 @@ func (s *serviceImpl) GetReportHistory(ctx context.Context, req *apiV2.GetReport
 	}
 	res := &apiV2.ReportHistoryResponse{}
 	res.SetReportSnapshots(snapshots)
-	return &res, nil
+	return res, nil
 }
 
 func (s *serviceImpl) GetMyReportHistory(ctx context.Context, req *apiV2.GetReportHistoryRequest) (*apiV2.ReportHistoryResponse, error) {
@@ -353,7 +353,7 @@ func (s *serviceImpl) GetMyReportHistory(ctx context.Context, req *apiV2.GetRepo
 	}
 	res := &apiV2.ReportHistoryResponse{}
 	res.SetReportSnapshots(snapshots)
-	return &res, nil
+	return res, nil
 }
 
 func (s *serviceImpl) RunReport(ctx context.Context, req *apiV2.RunReportRequest) (*apiV2.RunReportResponse, error) {
@@ -537,7 +537,7 @@ func (s *serviceImpl) GetViewBasedReportHistory(ctx context.Context, req *apiV2.
 	}
 	res := &apiV2.ReportHistoryResponse{}
 	res.SetReportSnapshots(snapshots)
-	return &res, nil
+	return res, nil
 }
 
 func (s *serviceImpl) GetViewBasedMyReportHistory(ctx context.Context, req *apiV2.GetViewBasedReportHistoryRequest) (*apiV2.ReportHistoryResponse, error) {
@@ -582,7 +582,7 @@ func (s *serviceImpl) GetViewBasedMyReportHistory(ctx context.Context, req *apiV
 	}
 	res := &apiV2.ReportHistoryResponse{}
 	res.SetReportSnapshots(snapshots)
-	return &res, nil
+	return res, nil
 }
 
 func verifyNoUserSearchLabels(q *v1.Query) error {

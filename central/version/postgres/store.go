@@ -133,7 +133,7 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*storage.Version, bool, e
 	if lastPersistedTime != nil {
 		msg.SetLastPersisted(protoconv.MustConvertTimeToTimestamp(*lastPersistedTime))
 	}
-	return &msg, true, nil
+	return msg, true, nil
 }
 
 // GetPrevious returns the object, if it exists from central_previous

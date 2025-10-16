@@ -49,7 +49,7 @@ func generateEmbeddedComponentV2(cp ComponentParts) *storage.EmbeddedImageScanCo
 	ret.SetVulns(vulns)
 
 	if cp.ComponentV2.HasHasLayerIndex() {
-		ret.SetLayerIndex(cp.ComponentV2.GetLayerIndex())
+		ret.Set_LayerIndex(cp.ComponentV2.GetLayerIndex())
 	}
 
 	if cp.ComponentV2.HasSetTopCvss() {

@@ -107,18 +107,10 @@ func ConvertFileMapToTypedServiceCertificateSet(fileMap map[string]string) (*sto
 		}
 
 		if certPem != nil {
-			if certPem != nil {
-				serviceCertMap[serviceType].SetCertPem(certPem)
-			} else {
-				serviceCertMap[serviceType].ClearCertPem()
-			}
+			serviceCertMap[serviceType].SetCertPem(certPem)
 		}
 		if keyPem != nil {
-			if keyPem != nil {
-				serviceCertMap[serviceType].SetKeyPem(keyPem)
-			} else {
-				serviceCertMap[serviceType].ClearKeyPem()
-			}
+			serviceCertMap[serviceType].SetKeyPem(keyPem)
 		}
 		// When certificate and key have been retrieved from the file map, validate them against the CA.
 		if len(serviceCertMap[serviceType].GetCertPem()) > 0 && len(serviceCertMap[serviceType].GetKeyPem()) > 0 {
@@ -162,5 +154,5 @@ func ConvertFileMapToTypedServiceCertificateSet(fileMap map[string]string) (*sto
 		slices.Sort(unknownServicesSlice)
 	}
 
-	return &certSet, unknownServicesSlice, nil
+	return certSet, unknownServicesSlice, nil
 }

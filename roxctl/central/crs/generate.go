@@ -119,7 +119,7 @@ func generateCrsExtended(
 		req.SetValidUntil(timestamppb.New(validUntil))
 	}
 
-	crs, err := svc.GenerateCRSExtended(ctx, &req)
+	crs, err := svc.GenerateCRSExtended(ctx, req)
 	return crs, errors.Wrap(err, "generating CRS extended")
 }
 

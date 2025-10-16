@@ -70,7 +70,7 @@ func generateEmbeddedComponent(_ string, cp ComponentParts, imageCVEEdges map[st
 	ret.SetPriority(cp.Component.GetPriority())
 
 	if cp.Edge.HasHasLayerIndex() {
-		ret.SetLayerIndex(cp.Edge.GetLayerIndex())
+		ret.Set_LayerIndex(cp.Edge.GetLayerIndex())
 	}
 
 	if cp.Component.GetSetTopCvss() != nil {
